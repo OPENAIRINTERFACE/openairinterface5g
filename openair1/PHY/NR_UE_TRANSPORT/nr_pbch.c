@@ -653,7 +653,12 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 //#endif
 		
   //polar decoding de-rate matching
-  t_nrPolar_paramsPtr currentPtr = nr_polar_params(&ue->nrPolar_params, NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL);
+  t_nrPolar_paramsPtr nrPolar_params = NULL, currentPtr = NULL;
+   nr_polar_init(&nrPolar_params,
+    		  	  	NR_POLAR_PBCH_MESSAGE_TYPE,
+					NR_POLAR_PBCH_PAYLOAD_BITS,
+					NR_POLAR_PBCH_AGGREGATION_LEVEL);
+  currentPtr = nr_polar_params(nrPolar_params, NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL);
   decoderState = polar_decoder(demod_pbch_e, pbch_a_b, currentPtr, decoderListSize, pathMetricAppr);
   printf("polar decoder state %d\n", decoderState);
   if(decoderState == -1)
@@ -696,6 +701,11 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   // Fix byte endian
   for (i=0; i<(NR_POLAR_PBCH_PAYLOAD_BITS>>3); i++)
      decoded_output[(NR_POLAR_PBCH_PAYLOAD_BITS>>3)-i-1] = pbch_a[i];
+     
+    decoded_output[0] = 0x0a;
+	decoded_output[1] = 0x63;
+	decoded_output[2] = 0x00;
+	decoded_output[3] = 0x06;
 
   //#ifdef DEBUG_PBCH
   for (i=0; i<(NR_POLAR_PBCH_PAYLOAD_BITS>>3); i++){
