@@ -363,7 +363,7 @@ then
     scp -o StrictHostKeyChecking=no /etc/apt/apt.conf.d/01proxy ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu
 
     # ltebox specific actions (install and start)
-    if [ $LTEBOX -eq 2 ]
+    if [ $LTEBOX -eq 1 ]
     then
         echo "############################################################"
         echo "Copying ltebox archives into EPC VM ($EPC_VM_NAME)" 
