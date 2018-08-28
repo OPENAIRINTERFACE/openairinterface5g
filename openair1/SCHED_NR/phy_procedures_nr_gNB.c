@@ -145,7 +145,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int subframe) {
       gNB->pbch_configured = 0;
     }
     nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index],txdataF, AMP_OVER_2, ssb_start_symbol, cfg, fp);
-    nr_generate_pbch(&gNB->pbch, pbch_pdu, txdataF, AMP_OVER_2, ssb_start_symbol, n_hf, Lmax, ssb_index, frame, cfg, fp);
+    nr_generate_pbch(&gNB->pbch, gNB->nrPolar_params, pbch_pdu, txdataF, AMP_OVER_2, ssb_start_symbol, n_hf, Lmax, ssb_index, frame, cfg, fp);
   }
 
 }
@@ -190,7 +190,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
     if (nfapi_mode == 0 || nfapi_mode == 1)
       nr_generate_dci_top(gNB->pdcch_vars,
-    		  	  	  	  &gNB->nrPolar_params,
+                          gNB->nrPolar_params,
                           gNB->nr_gold_pdcch_dmrs[slot_idx],
                           gNB->common_vars.txdataF,
                           AMP, *fp, *cfg);

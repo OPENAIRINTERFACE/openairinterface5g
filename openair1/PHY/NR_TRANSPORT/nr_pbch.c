@@ -199,6 +199,7 @@ uint8_t nr_pbch_payload_interleaver(uint8_t i) {
 //                                                    29,31,16,23,18,17,8,30,10,6,24,7,0,5,3,2};
 
 int nr_generate_pbch(NR_gNB_PBCH *pbch,
+                     t_nrPolar_paramsPtr polar_params,
                      uint8_t *pbch_pdu,
                      int32_t **txdataF,
                      int16_t amp,
@@ -288,7 +289,7 @@ pbch_a_b[m] = ((pbch->pbch_a_prime[m/8]>>(m&7))&01);
 }
 
   /// CRC, coding and rate matching
-  polar_encoder (pbch->pbch_a_prime, pbch->pbch_e, &frame_parms->pbch_polar_params);
+  polar_encoder (pbch->pbch_a_prime, pbch->pbch_e, polar_params);
 #ifdef DEBUG_PBCH_ENCODING
   printf("Channel coding:\n");
   for (int i=0; i<NR_POLAR_PBCH_E>>3; i++)
