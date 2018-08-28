@@ -135,6 +135,7 @@ case $key in
     LOG_PATTERN=basic_simulator
     NB_PATTERN_FILES=2
     BUILD_OPTIONS="--basic-simulator"
+    VM_MEMORY=8192
     shift
     ;;
     -v3)
@@ -186,6 +187,7 @@ case $key in
         LOG_PATTERN=basic_simulator
         NB_PATTERN_FILES=2
         BUILD_OPTIONS="--basic-simulator"
+        VM_MEMORY=8192
         ;;
         phy-sim)
         VM_NAME=ci-phy-sim
@@ -289,6 +291,7 @@ echo "############################################################"
 echo "Running install and build script on VM ($VM_NAME)"
 echo "############################################################"
 echo "sudo cp 01proxy /etc/apt/apt.conf.d/" > $VM_CMDS
+echo "touch /home/ubuntu/.hushlogin" >> $VM_CMDS
 if [[ "$VM_NAME" == *"-cppcheck"* ]]
 then
     echo "echo \"sudo apt-get --yes --quiet install zip cppcheck \"" >> $VM_CMDS

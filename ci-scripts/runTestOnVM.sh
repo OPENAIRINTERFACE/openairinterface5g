@@ -122,6 +122,8 @@ case $key in
     ;;
     -v2)
     VM_NAME=ci-basic-sim
+    RUN_OPTIONS="complex"
+    ARCHIVES_LOC=basic_sim/test
     shift
     ;;
     -v3)
@@ -150,6 +152,8 @@ case $key in
         ;;
         basic-sim)
         VM_NAME=ci-basic-sim
+        RUN_OPTIONS="complex"
+        ARCHIVES_LOC=basic_sim/test
         ;;
         phy-sim)
         VM_NAME=ci-phy-sim
@@ -210,8 +214,11 @@ echo "$VM_NAME has for IP addr = $VM_IP_ADDR"
 if [ "$RUN_OPTIONS" == "none" ]
 then
     echo "No run on VM testing for this variant currently"
-else
+    exit $STATUS
+fi
 
+if [[ $RUN_OPTIONS =~ .*run_exec_autotests.* ]]
+then
     echo "############################################################"
     echo "Running test script on VM ($VM_NAME)"
     echo "############################################################"
@@ -271,7 +278,7 @@ else
     rm -f $VM_CMDS
 
     echo "############################################################"
-    echo "Checking build status"
+    echo "Checking run status"
     echo "############################################################"
 
     LOG_FILES=`ls $ARCHIVES_LOC/results_autotests*.xml`
@@ -313,6 +320,221 @@ else
         echo "STATUS failed?"
     fi
 
+fi
+
+if [[ "$RUN_OPTIONS" == "complex" ]] && [[ $VM_NAME =~ .*-basic-sim.* ]]
+then
+    if [ -d $ARCHIVES_LOC ]
+    then
+        rm -Rf $ARCHIVES_LOC
+    fi
+    mkdir --parents $ARCHIVES_LOC
+
+    EPC_VM_NAME=`echo $VM_NAME | sed -e "s#basic-sim#epc#"`
+    LTEBOX=0
+    if [ -d /opt/ltebox-archives/ ]
+    then
+        # Checking if all ltebox archives are available to run ltebx epc on a brand new VM
+        if [ -f /opt/ltebox-archives/ltebox_2.2.70_16_04_amd64.deb ] && [ -f /opt/ltebox-archives/etc-conf.zip ] && [ -f /opt/ltebox-archives/hss-sim.zip ]
+        then
+            echo "############################################################"
+            echo "Test EPC on VM ($EPC_VM_NAME) will be using ltebox"
+            echo "############################################################"
+            LTEBOX=1
+        fi
+    fi
+    # Here we could have other types of EPC detection
+
+    # Do we need to start the EPC VM
+    EPC_VM_CMDS=`echo $VM_CMDS | sed -e "s#cmds#epc-cmds#"`
+    echo "EPC_VM_CMD_FILE     = $EPC_VM_CMDS"
+    IS_EPC_VM_ALIVE=`uvt-kvm list | grep -c $EPC_VM_NAME`
+    if [ $IS_EPC_VM_ALIVE -eq 0 ]
+    then
+        echo "############################################################"
+        echo "Creating test EPC VM ($EPC_VM_NAME) on Ubuntu Cloud Image base"
+        echo "############################################################"
+        uvt-kvm create $EPC_VM_NAME release=xenial --unsafe-caching
+    fi
+
+    uvt-kvm wait $EPC_VM_NAME --insecure
+    EPC_VM_IP_ADDR=`uvt-kvm ip $EPC_VM_NAME`
+    echo "$EPC_VM_NAME has for IP addr = $EPC_VM_IP_ADDR"
+    scp -o StrictHostKeyChecking=no /etc/apt/apt.conf.d/01proxy ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu
+
+    # ltebox specific actions (install and start)
+    if [ $LTEBOX -eq 2 ]
+    then
+        echo "############################################################"
+        echo "Copying ltebox archives into EPC VM ($EPC_VM_NAME)" 
+        echo "############################################################"
+        scp -o StrictHostKeyChecking=no /opt/ltebox-archives/ltebox_2.2.70_16_04_amd64.deb ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu
+        scp -o StrictHostKeyChecking=no /opt/ltebox-archives/etc-conf.zip ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu
+        scp -o StrictHostKeyChecking=no /opt/ltebox-archives/hss-sim.zip ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu
+
+        echo "############################################################"
+        echo "Running install and start EPC on EPC VM ($EPC_VM_NAME)"
+        echo "############################################################"
+        echo "sudo cp 01proxy /etc/apt/apt.conf.d/" > $EPC_VM_CMDS
+        echo "touch /home/ubuntu/.hushlogin" >> $EPC_VM_CMDS
+        echo "echo \"sudo apt-get --yes --quiet install zip openjdk-8-jre libconfuse-dev libreadline-dev liblog4c-dev libgcrypt-dev libsctp-dev python2.7 python2.7-dev daemon iperf\"" >> $EPC_VM_CMDS
+        echo "sudo apt-get update > zip-install.txt 2>&1" >> $EPC_VM_CMDS
+        echo "sudo apt-get --yes install zip openjdk-8-jre libconfuse-dev libreadline-dev liblog4c-dev libgcrypt-dev libsctp-dev python2.7 python2.7-dev daemon iperf >> zip-install.txt 2>&1" >> $EPC_VM_CMDS
+
+        # Installing and Starting HSS
+        echo "echo \"cd /opt\"" >> $EPC_VM_CMDS
+        echo "cd /opt" >> $EPC_VM_CMDS
+        echo "echo \"sudo unzip -qq /home/ubuntu/hss-sim.zip\"" >> $EPC_VM_CMDS
+        echo "sudo unzip -qq /home/ubuntu/hss-sim.zip" >> $EPC_VM_CMDS
+        echo "echo \"cd /opt/hss_sim0609\"" >> $EPC_VM_CMDS
+        echo "cd /opt/hss_sim0609" >> $EPC_VM_CMDS
+
+        echo "echo \"sudo daemon --unsafe --name=simulated_hss --chdir=/opt/hss_sim0609 ./starthss_real\"" >> $EPC_VM_CMDS
+        echo "sudo daemon --unsafe --name=simulated_hss --chdir=/opt/hss_sim0609 ./starthss_real" >> $EPC_VM_CMDS
+
+        # Installing and Starting ltebox
+        echo "echo \"cd /home/ubuntu\"" >> $EPC_VM_CMDS
+        echo "cd /home/ubuntu" >> $EPC_VM_CMDS
+        echo "echo \"sudo dpkg -i ltebox_2.2.70_16_04_amd64.deb \"" >> $EPC_VM_CMDS
+        echo "sudo dpkg -i ltebox_2.2.70_16_04_amd64.deb >> zip-install.txt 2>&1" >> $EPC_VM_CMDS
+
+        echo "echo \"cd /opt/ltebox/etc/\"" >> $EPC_VM_CMDS
+        echo "cd /opt/ltebox/etc/" >> $EPC_VM_CMDS
+        echo "echo \"sudo unzip -qq -o /home/ubuntu/etc-conf.zip\"" >> $EPC_VM_CMDS
+        echo "sudo unzip -qq -o /home/ubuntu/etc-conf.zip" >> $EPC_VM_CMDS
+        echo "sudo sed -i  -e 's#EPC_VM_IP_ADDRESS#$EPC_VM_IP_ADDR#' gw.conf" >> $EPC_VM_CMDS
+        echo "sudo sed -i  -e 's#EPC_VM_IP_ADDRESS#$EPC_VM_IP_ADDR#' mme.conf" >> $EPC_VM_CMDS
+
+        echo "echo \"cd /opt/ltebox/tools/\"" >> $EPC_VM_CMDS
+        echo "cd /opt/ltebox/tools/" >> $EPC_VM_CMDS
+        echo "echo \"sudo ./start_ltebox\"" >> $EPC_VM_CMDS
+        echo "nohup sudo ./start_ltebox > /home/ubuntu/ltebox.txt" >> $EPC_VM_CMDS
+
+        ssh -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR < $EPC_VM_CMDS
+        rm -f $EPC_VM_CMDS
+
+        # We may have some adaptation to do
+        if [ -f /opt/ltebox-archives/adapt_ue_sim.txt ]
+        then
+            echo "############################################################"
+            echo "Doing some adaptation on UE side"
+            echo "############################################################"
+            ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < /opt/ltebox-archives/adapt_ue_sim.txt
+        fi
+    fi
+
+    # HERE ADD any install actions for another EPC
+
+    # Retrieve EPC real IP address
+    if [ $LTEBOX -eq 1 ]
+    then
+        # in our configuration file, we are using pool 5
+        echo "ifconfig tun5 | egrep \"inet addr\" | sed -e 's#^.*inet addr:##' -e 's#  P-t-P:.*\$##'" > $EPC_VM_CMDS
+        REAL_EPC_IP_ADDR=`ssh -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR < $EPC_VM_CMDS`
+        echo "EPC IP Address     is : $REAL_EPC_IP_ADDR"
+        rm $EPC_VM_CMDS
+    fi
+
+    echo "############################################################"
+    echo "Starting the eNB"
+    echo "############################################################"
+    echo "cd /home/ubuntu/tmp" > $VM_CMDS
+    echo "echo \"sudo apt-get --yes --quiet install daemon \"" >> $VM_CMDS
+    echo "sudo apt-get --yes install daemon >> /home/ubuntu/tmp/cmake_targets/log/daemon-install.txt 2>&1" >> $VM_CMDS
+    echo "echo \"export ENODEB=1\"" >> $VM_CMDS
+    echo "export ENODEB=1" >> $VM_CMDS
+    echo "echo \"source oaienv\"" >> $VM_CMDS
+    echo "source oaienv" >> $VM_CMDS
+    echo "cd ci-scripts/conf_files/" >> $VM_CMDS
+    echo "cp lte-basic-sim.conf ci-lte-basic-sim.conf" >> $VM_CMDS
+    echo "sed -i -e 's#CI_MME_IP_ADDR#$EPC_VM_IP_ADDR#' -e 's#CI_ENB_IP_ADDR#$VM_IP_ADDR#' ci-lte-basic-sim.conf" >> $VM_CMDS
+    echo "echo \"cd /home/ubuntu/tmp/cmake_targets/basic_simulator/enb/\"" >> $VM_CMDS
+    echo "cd /home/ubuntu/tmp/cmake_targets/basic_simulator/enb/" >> $VM_CMDS
+    echo "echo \"./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-lte-basic-sim.conf\" > ./my-lte-softmodem-run.sh " >> $VM_CMDS
+    echo "chmod 775 ./my-lte-softmodem-run.sh" >> $VM_CMDS
+    echo "cat ./my-lte-softmodem-run.sh" >> $VM_CMDS
+    echo "sudo -E daemon --inherit --unsafe --name=enb_daemon --chdir=/home/ubuntu/tmp/cmake_targets/basic_simulator/enb -o /home/ubuntu/tmp/cmake_targets/log/enb.log ./my-lte-softmodem-run.sh" >> $VM_CMDS
+
+    ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
+
+    echo "############################################################"
+    echo "Starting the UE"
+    echo "############################################################"
+    echo "echo \"cd /home/ubuntu/tmp/cmake_targets/basic_simulator/ue\"" > $VM_CMDS
+    echo "cd /home/ubuntu/tmp/cmake_targets/basic_simulator/ue" > $VM_CMDS
+    echo "echo \"./lte-uesoftmodem -C 2680000000 -r 25 --ue-rxgain 140\" > ./my-lte-uesoftmodem-run.sh" >> $VM_CMDS
+    echo "chmod 775 ./my-lte-uesoftmodem-run.sh" >> $VM_CMDS
+    echo "cat ./my-lte-uesoftmodem-run.sh" >> $VM_CMDS
+    echo "sudo -E daemon --inherit --unsafe --name=ue_daemon --chdir=/home/ubuntu/tmp/cmake_targets/basic_simulator/ue -o /home/ubuntu/tmp/cmake_targets/log/ue.log ./my-lte-uesoftmodem-run.sh" >> $VM_CMDS
+
+    ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
+    rm $VM_CMDS
+    sleep 10
+    echo "ifconfig oip1 | egrep \"inet addr\" | sed -e 's#^.*inet addr:##' -e 's#  P-t-P:.*\$##'" > $VM_CMDS
+    UE_IP_ADDR=`ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS`
+    echo "UE IP Address for EPC is : $UE_IP_ADDR"
+    rm $VM_CMDS
+
+    echo "############################################################"
+    echo "Pinging the UE"
+    echo "############################################################"
+    echo "echo \"ping -c 20 $UE_IP_ADDR\"" > $EPC_VM_CMDS
+    echo "ping -c 20 $UE_IP_ADDR | tee -a ping_ue.txt" >> $EPC_VM_CMDS
+    ssh -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR < $EPC_VM_CMDS
+    rm -f $EPC_VM_CMDS
+    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/ping_ue.txt $ARCHIVES_LOC
+
+    echo "############################################################"
+    echo "Iperf DL"
+    echo "############################################################"
+    echo "echo \"iperf -u -s -i 1\"" > $VM_CMDS
+    echo "nohup iperf -u -s -i 1 > tmp/cmake_targets/log/iperf_dl_server.txt &" >> $VM_CMDS
+    ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
+    rm $VM_CMDS
+
+    echo "echo \"iperf -c $UE_IP_ADDR -u -t 30 -b 15M -i 1\"" > $EPC_VM_CMDS
+    echo "iperf -c $UE_IP_ADDR -u -t 30 -b 15M -i 1 | tee -a iperf_dl_client.txt" >> $EPC_VM_CMDS
+    ssh -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR < $EPC_VM_CMDS
+    rm -f $EPC_VM_CMDS
+
+    echo "killall --signal SIGKILL iperf" >> $VM_CMDS
+    ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
+    rm $VM_CMDS
+    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/iperf_dl_client.txt $ARCHIVES_LOC
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/iperf_dl_server.txt $ARCHIVES_LOC
+
+    echo "############################################################"
+    echo "Iperf UL"
+    echo "############################################################"
+    echo "echo \"iperf -u -s -i 1\"" > $EPC_VM_CMDS
+    echo "nohup iperf -u -s -i 1 > iperf_ul_server.txt &" >> $EPC_VM_CMDS
+    ssh -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR < $EPC_VM_CMDS
+    rm $EPC_VM_CMDS
+
+    echo "echo \"iperf -c $REAL_EPC_IP_ADDR -u -t 30 -b 4M -i 1\"" > $VM_CMDS
+    echo "iperf -c $REAL_EPC_IP_ADDR -u -t 30 -b 4M -i 1 | tee -a /home/ubuntu/tmp/cmake_targets/log/iperf_ul_client.txt" >> $VM_CMDS
+    ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
+    rm -f $VM_CMDS
+
+    echo "killall --signal SIGKILL iperf" >> $EPC_VM_CMDS
+    ssh -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR < $EPC_VM_CMDS
+    rm $EPC_VM_CMDS
+    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/iperf_ul_server.txt $ARCHIVES_LOC
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/iperf_ul_client.txt $ARCHIVES_LOC
+
+    echo "############################################################"
+    echo "Terminate enb/ue simulators"
+    echo "############################################################"
+    echo "echo \"sudo daemon --name=enb_daemon --stop\"" > $VM_CMDS
+    echo "sudo daemon --name=enb_daemon --stop" >> $VM_CMDS
+    echo "echo \"sudo daemon --name=ue_daemon --stop\"" >> $VM_CMDS
+    echo "sudo daemon --name=ue_daemon --stop" >> $VM_CMDS
+    echo "echo \"sudo killall --signal SIGKILL lte-softmodem\"" >> $VM_CMDS
+    echo "sudo killall --signal SIGKILL lte-softmodem" >> $VM_CMDS
+    ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
+    rm -f $VM_CMDS
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/enb.log $ARCHIVES_LOC
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/ue.log $ARCHIVES_LOC
 fi
 
 exit $STATUS
