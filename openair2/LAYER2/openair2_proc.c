@@ -35,7 +35,7 @@
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_extern.h"
 #include "LAYER2/PDCP_v10.1.0/pdcp.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "common/ran_context.h"
 
 static mapping rrc_status_names[] = {

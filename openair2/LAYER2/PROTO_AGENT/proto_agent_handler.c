@@ -68,7 +68,7 @@ static const char *proto_agent_direction2String[] = {
 };
 
 
-Protocol__FlexsplitMessage* proto_agent_handle_message (mid_t mod_id,
+Protocol__FlexsplitMessage* proto_agent_handle_message (mod_id_t mod_id,
 						    uint8_t *data, 
 						    uint32_t size){
   

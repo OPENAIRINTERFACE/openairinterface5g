@@ -192,14 +192,14 @@ typedef struct{
 }UE_MAC_BCH_indication_body_t;
 
 
-// Panos: Corresponding to inputs of MAC functions: ue_send_sdu(), ue_decode_si(), ue_decode_p().
+// Corresponding to inputs of MAC functions: ue_send_sdu(), ue_decode_si(), ue_decode_p().
 typedef struct{
 	uint8_t* 	data;
 	uint16_t 	data_len;
 }UE_MAC_dlsch_pdu;
 
 
-// Panos: Corresponding to inputs of MAC function: process_rar().
+// Corresponding to inputs of MAC function: process_rar().
 typedef struct{
 	rnti_t 		ra_rnti;
 	uint8_t* 	rar_input_buffer; // Originating from PHY

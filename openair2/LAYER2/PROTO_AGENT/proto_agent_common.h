@@ -61,7 +61,7 @@
 #define FLEXSPLIT_VERSION 0
 
 typedef int (*proto_agent_message_decoded_callback)(
-	mid_t mod_id,
+	mod_id_t mod_id,
        	const void *params,
 	Protocol__FlexsplitMessage **msg
 );
@@ -88,29 +88,29 @@ err_code_t proto_agent_destroy_flexsplit_message(Protocol__FlexsplitMessage *msg
 
 int fsp_create_header(xid_t xid, Protocol__FspType type, Protocol__FspHeader **header);
 
-int proto_agent_hello(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
+int proto_agent_hello(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
 int proto_agent_destroy_hello(Protocol__FlexsplitMessage *msg);
-int proto_agent_echo_request(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
+int proto_agent_echo_request(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
 int proto_agent_destroy_echo_request(Protocol__FlexsplitMessage *msg);
-int proto_agent_echo_reply(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
+int proto_agent_echo_reply(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
 int proto_agent_destroy_echo_reply(Protocol__FlexsplitMessage *msg);
 
-int proto_agent_pdcp_data_req(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
-int proto_agent_pdcp_data_req_ack(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
+int proto_agent_pdcp_data_req(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
+int proto_agent_pdcp_data_req_ack(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
 int proto_agent_destroy_pdcp_data_req(Protocol__FlexsplitMessage *msg);
 int proto_agent_destroy_pdcp_data_req_ack(Protocol__FlexsplitMessage *msg);
-int proto_agent_pdcp_data_ind(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
+int proto_agent_pdcp_data_ind(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
 int proto_agent_destroy_pdcp_data_ind(Protocol__FlexsplitMessage *msg);
-int proto_agent_pdcp_data_ind_ack(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
+int proto_agent_pdcp_data_ind_ack(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
 int proto_agent_destroy_pdcp_data_ind_ack(Protocol__FlexsplitMessage *msg);
 
-int just_print(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
+int just_print(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
 
 
-int proto_agent_get_ack_result(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
+int proto_agent_get_ack_result(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
 
 
-Protocol__FlexsplitMessage* proto_agent_handle_message (mid_t mod_id, 
+Protocol__FlexsplitMessage* proto_agent_handle_message (mod_id_t mod_id, 
 						    uint8_t *data, 
 						    uint32_t size);
 

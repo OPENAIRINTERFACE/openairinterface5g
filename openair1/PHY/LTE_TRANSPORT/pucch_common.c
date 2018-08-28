@@ -33,11 +33,10 @@
 #include "PHY/phy_extern.h" 
 #include "LAYER2/MAC/mac.h"
 
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 
-#include "T.h"
 
 void init_ncs_cell(LTE_DL_FRAME_PARMS *frame_parms,uint8_t ncs_cell[20][7])
 {

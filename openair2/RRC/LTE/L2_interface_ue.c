@@ -31,7 +31,7 @@
 #include "platform_types.h"
 #include "rrc_defs.h"
 #include "rrc_extern.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "rrc_eNB_UE_context.h"
 #include "pdcp.h"
 #include "msc.h"
@@ -67,7 +67,7 @@ mac_rrc_data_req_ue(
 #endif
 
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
      LOG_D(RRC,"[UE %d] Frame %d Filling SL DISCOVERY SRB_ID %d\n",Mod_idP,frameP,Srb_id);
      LOG_D(RRC,"[UE %d] Frame %d buffer_pP status %d,\n",Mod_idP,frameP, UE_rrc_inst[Mod_idP].SL_Discovery[eNB_index].Tx_buffer.payload_size);
 
@@ -331,7 +331,7 @@ rrc_data_req_ue(
            sdu_sizeP,
            buffer_pP,
            modeP
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
            ,NULL, NULL
 #endif
            );
@@ -350,7 +350,7 @@ rrc_data_ind_ue(
 {
   rb_id_t    DCCH_index = Srb_id;
 
-    LOG_N(RRC, "[UE %x] Frame %d: received a DCCH %d message on SRB %d with Size %d from eNB %d\n",
+    LOG_I(RRC, "[UE %x] Frame %d: received a DCCH %d message on SRB %d with Size %d from eNB %d\n",
           ctxt_pP->module_id, ctxt_pP->frame, DCCH_index,Srb_id,sdu_sizeP,  ctxt_pP->eNB_index);
 
 #if defined(ENABLE_ITTI)
@@ -403,7 +403,6 @@ void rrc_in_sync_ind(module_id_t Mod_idP, frame_t frameP, uint16_t eNB_index)
   UE_rrc_inst[Mod_idP].Info[eNB_index].N310_cnt=0;
 
   if (UE_rrc_inst[Mod_idP].Info[eNB_index].T310_active==1) {
-    LOG_D(RRC, "Panos-D: rrc_in_sync_ind 1 \n");
     UE_rrc_inst[Mod_idP].Info[eNB_index].N311_cnt++;
   }
 

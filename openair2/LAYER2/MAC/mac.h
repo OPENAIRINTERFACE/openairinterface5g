@@ -87,7 +87,7 @@
 #define PCCH_PAYLOAD_SIZE_MAX 128
 #define RAR_PAYLOAD_SIZE_MAX 128
 
-#define SCH_PAYLOAD_SIZE_MAX 4096
+#define SCH_PAYLOAD_SIZE_MAX 8192
 #define DCH_PAYLOAD_SIZE_MAX 4096
 /// Logical channel ids from 36-311 (Note BCCH is not specified in 36-311, uses the same as first DRB)
 
@@ -130,11 +130,7 @@
 /*!\brief Maximum number od control elemenets */
 #define MAX_NUM_CE 5
 /*!\brief Maximum number of random access process */
-#if defined(USRP_REC_PLAY)
-#define NB_RA_PROC_MAX 1
-#else
 #define NB_RA_PROC_MAX 4
-#endif
 /*!\brief size of buffer status report table */
 #define BSR_TABLE_SIZE 64
 /*!\brief The power headroom reporting range is from -23 ...+40 dB and beyond, with step 1 */
@@ -328,7 +324,6 @@ typedef struct {
     uint8_t Buffer_size0:6;
 } __attribute__ ((__packed__)) BSR_LONG;
 
-// Panos:
 /*!\brief  mac control element: sidelink buffer status report */
 typedef struct {
 	uint8_t DST_1:4;
@@ -511,7 +506,9 @@ typedef enum {
     MSG2,
     WAITMSG3,
     MSG4,
-    WAITMSG4ACK
+    WAITMSG4ACK,
+    MSGCRNTI,
+    MSGCRNTI_ACK
 } RA_state;
 
 /*!\brief  UE ULSCH scheduling states*/
@@ -540,6 +537,12 @@ typedef enum {
     CBA_PF_S,			/// proportional fair (kind of) with small RB allocation
     CBA_RS			/// random allocation
 } CBA_POLICY;
+
+/*!\brief  scheduler mode */
+typedef enum {
+    SCHED_MODE_DEFAULT = 0,			/// default cheduler
+    SCHED_MODE_FAIR_RR			/// fair raund robin
+} SCHEDULER_MODES;
 
 
 /*! \brief temporary struct for ULSCH sched */
@@ -948,7 +951,10 @@ typedef struct {
     int16_t ta_update;
     uint16_t ul_consecutive_errors;
     int32_t context_active_timer;
+    /// timer for regular CQI request on PUSCH
     int32_t cqi_req_timer;
+    /// indicator that CQI was received on PUSCH when requested
+    int32_t cqi_received;
     int32_t ul_inactivity_timer;
     int32_t ul_failure_timer;
     uint32_t ue_reestablishment_reject_timer;
@@ -984,7 +990,9 @@ typedef struct {
     uint8_t aperiodic_wideband_cqi1[NFAPI_CC_MAX];
     uint8_t aperiodic_wideband_pmi1[NFAPI_CC_MAX];
     uint8_t dl_cqi[NFAPI_CC_MAX];
-    int32_t       uplane_inactivity_timer;
+    int32_t uplane_inactivity_timer;
+    uint8_t crnti_reconfigurationcomplete_flag;
+    uint8_t cqi_req_flag;
 } UE_sched_ctrl;
 /*! \brief eNB template for the Random access information */
 typedef struct {
@@ -1043,6 +1051,8 @@ typedef struct {
     uint8_t msg2_narrowband;
     uint8_t msg34_narrowband;
 #endif
+    int32_t  crnti_rrc_mui;
+    int8_t   crnti_harq_pid;
 } RA_t;
 
 
@@ -1091,6 +1101,22 @@ typedef struct {
     uint16_t sorting_criteria[MAX_NUM_SLICES][CR_NUM];
 
 } UE_list_t;
+
+/*! \brief deleting control information*/
+typedef struct {
+    ///rnti of UE
+    rnti_t rnti;
+    ///remove UE context flag
+    boolean_t removeContextFlg;
+} UE_free_ctrl;
+/*! \brief REMOVE UE list used by eNB to order UEs/CC for deleting*/
+typedef struct {
+    /// deleting control info
+    UE_free_ctrl UE_free_ctrl[NUMBER_OF_UE_MAX+1];
+    int num_UEs;
+    int head_freelist; ///the head position of the delete list
+    int tail_freelist; ///the tail position of the delete list
+} UE_free_list_t;
 
 /*! \brief eNB common channels */
 typedef struct {
@@ -1180,7 +1206,7 @@ typedef struct eNB_MAC_INST_s {
   /// Common cell resources
   COMMON_channels_t common_channels[NFAPI_CC_MAX];
   /// current PDU index (BCH,MCH,DLSCH)
-  uint16_t pdu_index[NFAPI_CC_MAX];
+  int16_t pdu_index[NFAPI_CC_MAX];
   
   /// NFAPI Config Request Structure
   nfapi_config_request_t config[NFAPI_CC_MAX];
@@ -1201,9 +1227,9 @@ typedef struct eNB_MAC_INST_s {
   nfapi_ul_config_request_t UL_req_tmp[NFAPI_CC_MAX][10];
   /// Preallocated HI_DCI0 pdu list
   nfapi_hi_dci0_request_pdu_t
-  hi_dci0_pdu_list[NFAPI_CC_MAX][MAX_NUM_HI_DCI0_PDU];
+  hi_dci0_pdu_list[NFAPI_CC_MAX][10][MAX_NUM_HI_DCI0_PDU];
   /// NFAPI HI/DCI0 Config Request Structure
-  nfapi_hi_dci0_request_t HI_DCI0_req[NFAPI_CC_MAX];
+  nfapi_hi_dci0_request_t HI_DCI0_req[NFAPI_CC_MAX][10];
   /// Prealocated TX pdu list
   nfapi_tx_request_pdu_t
   tx_request_pdu[NFAPI_CC_MAX][MAX_NUM_TX_REQUEST_PDU];
@@ -1242,6 +1268,13 @@ typedef struct eNB_MAC_INST_s {
   time_stats_t rx_ulsch_sdu;	// include rlc_data_ind
   /// processing time of eNB PCH scheduler
   time_stats_t schedule_pch;
+
+  UE_free_list_t UE_free_list;
+  /// for scheduling selection
+  SCHEDULER_MODES scheduler_mode;
+
+  int32_t puSch10xSnr;
+  int32_t puCch10xSnr;
 } eNB_MAC_INST;
 
 /*
@@ -1400,12 +1433,12 @@ typedef struct {
     RAR_PDU RAR_pdu;
     /// Incoming DLSCH pdu for PHY
     DLSCH_PDU DLSCH_pdu[MAX_MOBILES_PER_ENB][2];
-#ifdef Rel14
-  int sltx_active;
-  SLSCH_t slsch;
-  SLDCH_t sldch;
-  ULSCH_PDU slsch_pdu;
-  int slsch_lcid;
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+    int sltx_active;
+    SLSCH_t slsch;
+    SLDCH_t sldch;
+    ULSCH_PDU slsch_pdu;
+    int slsch_lcid;
 #endif
     /// number of attempt for rach
     uint8_t RA_attempt_number;
@@ -1491,13 +1524,13 @@ typedef struct {
   time_stats_t rx_si;
   /// UE PCCH rx processing time including RLC interface (mac_rrc_data_ind)
   time_stats_t rx_p;
-  /// Panos: Mutex for nfapi UL_INFO
+  /// Mutex for nfapi UL_INFO
   pthread_mutex_t      UL_INFO_mutex;
-  /// Panos: UE_Mode variable should be used in the case of Phy_stub operation since we won't have access to PHY_VARS_UE
+  /// UE_Mode variable should be used in the case of Phy_stub operation since we won't have access to PHY_VARS_UE
   /// where the UE_mode originally is for the full stack operation mode. The transitions between the states of the UE_Mode
   /// will be triggered within phy_stub_ue.c in this case
   UE_MODE_t        UE_mode[NUMBER_OF_CONNECTED_eNB_MAX];
-  /// Panos: Phy_stub mode: Boolean variable to distinguish whether a Msg3 or a regular ULSCH data pdu should be generated
+  /// Phy_stub mode: Boolean variable to distinguish whether a Msg3 or a regular ULSCH data pdu should be generated
   /// after the reception of NFAPI_UL_CONFIG_ULSCH_PDU_TYPE.
   uint8_t first_ULSCH_Tx;
   uint8_t SI_Decoded;
@@ -1513,6 +1546,23 @@ typedef struct {
     uint8_t n_adj_cells;
 } neigh_cell_id_t;
 
+typedef struct {
+  volatile uint8_t flag;
+  rnti_t rnti;
+  mui_t  rrc_eNB_mui;
+}RRC_release_ctrl;
+ 
+typedef struct {
+    uint16_t num_UEs;
+    RRC_release_ctrl RRC_release_ctrl[NUMBER_OF_UE_MAX];
+} RRC_release_list_t;
+
+typedef  struct {
+  uint8_t                      rrc_mui_num;
+  mui_t                        rrc_mui[128];
+}mac_rlc_am_muilist_t;
+
 #include "mac_proto.h"
+
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */

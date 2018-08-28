@@ -30,7 +30,7 @@
 #include "list.h"
 #include "rlc_am.h"
 #include "LAYER2/MAC/mac_extern.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 
 //-----------------------------------------------------------------------------
 void rlc_am_pdu_polling (
@@ -209,7 +209,7 @@ void rlc_am_segment_10 (
       }
 
       if (!(pdu_mem_p = get_free_mem_block (data_pdu_size + sizeof(struct mac_tb_req), __func__))) {
-        LOG_C(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEGMENT] ERROR COULD NOT GET NEW PDU, EXIT\n",
+        LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEGMENT] ERROR COULD NOT GET NEW PDU, EXIT\n",
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
         RLC_AM_MUTEX_UNLOCK(&rlc_pP->lock_input_sdus);
         return;
@@ -299,7 +299,12 @@ void rlc_am_segment_10 (
 
       pdu_mngt_p->sdus_index[pdu_mngt_p->nb_sdus++] = sdu_buffer_index;
       sdu_mngt_p->pdus_index[sdu_mngt_p->nb_pdus++] = rlc_pP->vt_s % RLC_AM_PDU_RETRANSMISSION_BUFFER_SIZE;
-      assert(sdu_mngt_p->nb_pdus < RLC_AM_MAX_SDU_FRAGMENTS);
+      //assert(sdu_mngt_p->nb_pdus < RLC_AM_MAX_SDU_FRAGMENTS);
+      if(sdu_mngt_p->nb_pdus >= RLC_AM_MAX_SDU_FRAGMENTS) {
+        LOG_E(RLC,PROTOCOL_RLC_AM_CTXT_FMT"[SEGMENT] loop error. %d %d\n",
+          PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP), sdu_mngt_p->nb_pdus, RLC_AM_MAX_SDU_FRAGMENTS);
+        break;
+      }
       sdu_buffer_index = (sdu_buffer_index + 1) % RLC_AM_SDU_CONTROL_BUFFER_SIZE;
     }
 
@@ -353,6 +358,8 @@ void rlc_am_segment_10 (
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
               pdu_remaining_size);
         //msg ("[FRAME %05d][%s][RLC_AM][MOD %u/%u][RB %u][SEGMENT] pdu_mem_p %p pdu_p %p pdu_p->data %p data %p data_sdu_p %p pdu_remaining_size %d\n", rlc_pP->module_id, rlc_pP->rb_id, ctxt_pP->frame, pdu_mem_p, pdu_p, pdu_p->data, data, data_sdu_p,pdu_remaining_size);
+        rlc_am_mui.rrc_mui[rlc_am_mui.rrc_mui_num] = sdu_mngt_p->mui;
+        rlc_am_mui.rrc_mui_num++;
 
         memcpy(data, data_sdu_p, pdu_remaining_size);
         pdu_mngt_p->payload_size += pdu_remaining_size;
@@ -371,6 +378,9 @@ void rlc_am_segment_10 (
         LOG_T(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEGMENT] Exactly Filling remaining PDU with %d remaining bytes of SDU\n",
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
               pdu_remaining_size);
+        rlc_am_mui.rrc_mui[rlc_am_mui.rrc_mui_num] = sdu_mngt_p->mui;
+        rlc_am_mui.rrc_mui_num++;
+
         memcpy(data, data_sdu_p, pdu_remaining_size);
         pdu_mngt_p->payload_size += pdu_remaining_size;
 
@@ -387,6 +397,8 @@ void rlc_am_segment_10 (
         continue_fill_pdu_with_sdu = 0;
         pdu_remaining_size = 0;
       } else if ((sdu_mngt_p->sdu_remaining_size + (li_length_in_bytes ^ 3)) < pdu_remaining_size ) {
+        rlc_am_mui.rrc_mui[rlc_am_mui.rrc_mui_num] = sdu_mngt_p->mui;
+        rlc_am_mui.rrc_mui_num++;
         if (fill_num_li == (RLC_AM_MAX_SDU_IN_PDU - 1)) {
           LOG_T(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEGMENT] [SIZE %d] REACHING RLC_AM_MAX_SDU_IN_PDU LIs -> STOP SEGMENTATION FOR THIS PDU SDU\n",
                 PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
@@ -462,11 +474,14 @@ void rlc_am_segment_10 (
           rlc_pP->current_sdu_index = (rlc_pP->current_sdu_index + 1) % RLC_AM_SDU_CONTROL_BUFFER_SIZE;
         }
       } else {
-        LOG_T(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEGMENT] Filling  PDU with %d all remaining bytes of SDU and reduce TB size by %d bytes\n",
+        LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEGMENT] Filling  PDU with %d all remaining bytes of SDU and reduce TB size by %d bytes\n",
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
               sdu_mngt_p->sdu_remaining_size,
               pdu_remaining_size - sdu_mngt_p->sdu_remaining_size);
-        assert(1!=1);
+        //assert(1!=1);
+        rlc_am_mui.rrc_mui[rlc_am_mui.rrc_mui_num] = sdu_mngt_p->mui;
+        rlc_am_mui.rrc_mui_num++;
+
         memcpy(data, data_sdu_p, sdu_mngt_p->sdu_remaining_size);
         pdu_mngt_p->payload_size += sdu_mngt_p->sdu_remaining_size;
         pdu_remaining_size = pdu_remaining_size - sdu_mngt_p->sdu_remaining_size;
@@ -520,7 +535,11 @@ void rlc_am_segment_10 (
     pdu_tb_req_p->data_ptr        = (unsigned char*)pdu_p;
     pdu_tb_req_p->tb_size         = data_pdu_size - pdu_remaining_size;
 //#warning "why 3000: changed to RLC_SDU_MAX_SIZE "
-    assert(pdu_tb_req_p->tb_size < RLC_SDU_MAX_SIZE );
+    //assert(pdu_tb_req_p->tb_size < RLC_SDU_MAX_SIZE );
+    if(pdu_tb_req_p->tb_size >= RLC_SDU_MAX_SIZE) {
+      LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEGMENT] tb_size error. %d, %d\n",
+            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),pdu_tb_req_p->tb_size, RLC_SDU_MAX_SIZE);
+    }
     rlc_am_pdu_polling(ctxt_pP, rlc_pP, pdu_p, pdu_mngt_p->payload_size,true);
 
     //list_add_tail_eurecom (pdu_mem_p, &rlc_pP->segmentation_pdu_list);

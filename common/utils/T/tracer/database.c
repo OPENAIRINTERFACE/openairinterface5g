@@ -13,6 +13,7 @@ typedef struct {
   char **arg_type;
   char **arg_name;
   int  asize;
+  char *vcd_name;
   int  id;
 } id;
 
@@ -138,6 +139,7 @@ id *add_id(database *r, char *idname, int i)
   r->i[r->isize].arg_type = NULL;
   r->i[r->isize].arg_name = NULL;
   r->i[r->isize].asize = 0;
+  r->i[r->isize].vcd_name = NULL;
   r->i[r->isize].id = i;
   r->isize++;
   qsort(r->i, r->isize, sizeof(id), id_cmp);
@@ -222,6 +224,12 @@ void add_desc(id *i, char *desc)
 {
   if (i == NULL) {printf("ERROR: DESC line before ID line\n");exit(1);}
   i->desc = strdup(desc); if (i->desc == NULL) abort();
+}
+
+void add_vcd_name(id *i, char *vcd_name)
+{
+  if (i == NULL) {printf("ERROR: VCD_NAME line before ID line\n");exit(1);}
+  i->vcd_name = strdup(vcd_name); if (i->vcd_name == NULL) abort();
 }
 
 char *format_get_next_token(char **cur)
@@ -320,6 +328,7 @@ void *parse_database(char *filename)
     if (!strcmp(name, "GROUP")) add_groups(r, last_id, value);
     if (!strcmp(name, "DESC")) add_desc(last_id, value);
     if (!strcmp(name, "FORMAT")) add_format(last_id, value);
+    if (!strcmp(name, "VCD_NAME")) add_vcd_name(last_id, value);
   }
 
   fclose(in);
@@ -422,6 +431,12 @@ char *event_name_from_id(void *_database, int id)
 {
   database *d = _database;
   return d->i[d->id_to_pos[id]].name;
+}
+
+char *event_vcd_name_from_id(void *_database, int id)
+{
+  database *d = _database;
+  return d->i[d->id_to_pos[id]].vcd_name;
 }
 
 int event_id_from_name(void *_database, char *name)

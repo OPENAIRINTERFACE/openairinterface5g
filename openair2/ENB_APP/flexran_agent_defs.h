@@ -102,7 +102,7 @@ typedef enum {
 } ran_name_t;
 
 typedef uint8_t xid_t;  
-typedef uint8_t mid_t;  // module or enb id 
+typedef uint16_t mid_t;  // module or enb id 
 typedef uint8_t lcid_t;
 typedef int32_t  err_code_t; 
 

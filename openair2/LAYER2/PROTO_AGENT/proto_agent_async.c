@@ -32,13 +32,13 @@
 #include "proto_agent_defs.h"
 
 
-#include "log.h"
+#include "common/utils/LOG/log.h"
 
 uint16_t proto_udp = 0;
 uint16_t proto_tcp = 0;
 uint16_t proto_sctp = 0;
 
-proto_agent_async_channel_t * proto_server_async_channel_info(mid_t mod_id, char *dst_ip, uint16_t dst_port, const char* type, const char *peer_addr) {
+proto_agent_async_channel_t * proto_server_async_channel_info(mod_id_t mod_id, char *dst_ip, uint16_t dst_port, const char* type, const char *peer_addr) {
 
   proto_agent_async_channel_t *channel;
   channel = (proto_agent_async_channel_t *) malloc(sizeof(proto_agent_channel_t));
@@ -99,7 +99,7 @@ proto_agent_async_channel_t * proto_server_async_channel_info(mid_t mod_id, char
 }
 
 
-proto_agent_async_channel_t * proto_agent_async_channel_info(mid_t mod_id, char *dst_ip, uint16_t dst_port, const char* type, const char *peer_addr) {
+proto_agent_async_channel_t * proto_agent_async_channel_info(mod_id_t mod_id, char *dst_ip, uint16_t dst_port, const char* type, const char *peer_addr) {
 
   proto_agent_async_channel_t *channel;
   channel = (proto_agent_async_channel_t *) malloc(sizeof(proto_agent_channel_t));

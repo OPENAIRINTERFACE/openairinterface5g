@@ -29,9 +29,9 @@
  ***************************************************************************/
 
 #ifdef CMAKER
-#include "asn1_constants.h"
+#include "asn_constant.h"
 #else
-#include "RRC/LITE/MESSAGES/asn1_constants.h"
+#include "RRC/LTE/MESSAGES/asn1_constants.h"
 #endif
 
 #ifndef __PLATFORM_CONSTANTS_H__
@@ -67,15 +67,22 @@
 
 #    define MAX_MODULES                NB_MODULES_MAX
 
-#ifdef LARGE_SCALE
+#ifndef UE_EXPANSION
+# ifdef LARGE_SCALE
 #    define MAX_MOBILES_PER_ENB         128
 #    define MAX_MOBILES_PER_ENB_NB_IoT  128
 #    define MAX_eNB                      2
-#else
+# else
 #    define MAX_MOBILES_PER_ENB         16
 #    define MAX_MOBILES_PER_ENB_NB_IoT  16
 #    define MAX_eNB                      2
+# endif
+#else
+#    define MAX_MOBILES_PER_ENB 256
+#    define MAX_MOBILES_PER_ENB_NB_IoT 256
+#    define MAX_eNB                      2
 #endif
+
 
 #define MAX_MANAGED_ENB_PER_MOBILE  2
 

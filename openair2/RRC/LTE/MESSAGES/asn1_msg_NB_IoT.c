@@ -34,7 +34,7 @@
 #include <string.h> /* for strerror(3) */
 #include <sysexits.h> /* for EX_* exit codes */
 #include <errno.h>  /* for errno */
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include <asn_application.h>
 #include <asn_internal.h> /* for _ASN_DEFAULT_STACK_MAX */
 #include <per_encoder.h>
@@ -1345,7 +1345,7 @@ uint8_t do_RRCConnectionReestablishment_NB_IoT(
 	rrcConnectionReestablishment_NB_IoT->criticalExtensions.choice.c1.choice.rrcConnectionReestablishment_r13.nextHopChainingCount_r13=0;
 
 	enc_rval = uper_encode_to_buffer(&asn_DEF_DL_CCCH_Message_NB,
-                                         NULL,
+                                           NULL,
 	                                   (void*)&dl_ccch_msg_NB_IoT,
 	                                   buffer,
 	                                   RRC_BUF_SIZE);

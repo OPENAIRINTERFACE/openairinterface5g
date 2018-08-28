@@ -313,10 +313,10 @@ int rx_sss(PHY_VARS_UE *ue,int32_t *tot_metric,uint8_t *flip_max,uint8_t *phase_
                   pss_ext,
                   sss0_ext,0);
   /*
-  write_output("rxsig0.m","rxs0",&ue->common_vars.rxdata[0][0],ue->frame_parms.samples_per_tti,1,1);
-  write_output("rxdataF0.m","rxF0",&ue->common_vars.rxdataF[0][0],2*14*ue->frame_parms.ofdm_symbol_size,2,1);
-  write_output("pss_ext0.m","pssext0",pss_ext,72,1,1);
-  write_output("sss0_ext0.m","sss0ext0",sss0_ext,72,1,1);
+  LOG_M("rxsig0.m","rxs0",&ue->common_vars.rxdata[0][0],ue->frame_parms.samples_per_tti,1,1);
+  LOG_M("rxdataF0.m","rxF0",&ue->common_vars.rxdataF[0][0],2*14*ue->frame_parms.ofdm_symbol_size,2,1);
+  LOG_M("pss_ext0.m","pssext0",pss_ext,72,1,1);
+  LOG_M("sss0_ext0.m","sss0ext0",sss0_ext,72,1,1);
   */
 
   // get conjugated channel estimate from PSS (symbol 6), H* = R* \cdot PSS
@@ -326,7 +326,7 @@ int rx_sss(PHY_VARS_UE *ue,int32_t *tot_metric,uint8_t *flip_max,uint8_t *phase_
              pss_ext,
              sss0_ext);
 
-  //  write_output("sss0_comp0.m","sss0comp0",sss0_ext,72,1,1);
+  //  LOG_M("sss0_comp0.m","sss0comp0",sss0_ext,72,1,1);
 
   if (ue->frame_parms.frame_type == FDD) { // FDD
 
@@ -364,7 +364,7 @@ int rx_sss(PHY_VARS_UE *ue,int32_t *tot_metric,uint8_t *flip_max,uint8_t *phase_
                   pss_ext,
                   sss5_ext,5);
 
-  //  write_output("sss5_ext0.m","sss5ext0",sss5_ext,72,1,1);
+  //  LOG_M("sss5_ext0.m","sss5ext0",sss5_ext,72,1,1);
   // get conjugated channel estimate from PSS (symbol 6), H* = R* \cdot PSS
   // and do channel estimation and compensation based on PSS
 

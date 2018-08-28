@@ -45,8 +45,8 @@
 
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "RRC/LTE/rrc_extern.h"
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
@@ -475,8 +475,8 @@ ue_send_sdu(module_id_t module_idP,
 			    LOG_E(MAC,
 				  "[UE %d][RAPROC] Contention detected, RA failed\n",
 				  module_idP);
-			    if(nfapi_mode == 3) { // Panos: phy_stub mode
-			    	// Panos: Modification for phy_stub mode operation here. We only need to make sure that the ue_mode is back to
+			    if(nfapi_mode == 3) { // phy_stub mode
+			    	//  Modification for phy_stub mode operation here. We only need to make sure that the ue_mode is back to
 			    	// PRACH state.
 			    	LOG_I(MAC, "nfapi_mode3: Setting UE_mode BACK to PRACH 1\n");
 			    	UE_mac_inst[module_idP].UE_mode[eNB_index] = PRACH;
@@ -502,7 +502,7 @@ ue_send_sdu(module_id_t module_idP,
 			RA_contention_resolution_timer_active = 0;
 		    if(nfapi_mode == 3) // phy_stub mode
 		    	{
-		    	//Panos: Modification for phy_stub mode operation here. We only need to change the ue_mode to PUSCH
+		    	// Modification for phy_stub mode operation here. We only need to change the ue_mode to PUSCH
 		    	UE_mac_inst[module_idP].UE_mode[eNB_index] = PUSCH;
 		    	}
 		    else { // Full stack mode
@@ -519,7 +519,7 @@ ue_send_sdu(module_id_t module_idP,
 		      payload_ptr[0]);
 #endif
 
-	  // Panos: Eliminate call to process_timing_advance for the phy_stub UE operation mode. Is this correct?
+	  // Eliminate call to process_timing_advance for the phy_stub UE operation mode. Is this correct?
       if (nfapi_mode!=3)
       {
     	  process_timing_advance(module_idP,CC_id,payload_ptr[0]);
@@ -881,17 +881,6 @@ void ue_send_sl_sdu(module_id_t module_idP,
   } else { //SL_DISCOVERY
      uint16_t len = sdu_len;
      LOG_I( MAC, "SL DISCOVERY \n");
-     // Panos: Ask TTN if we should be calling mac_rrc_data_ind_ue() instead of mac_rrc_data_ind() now!
-     /*mac_rrc_data_ind(module_idP,
-                      CC_id,
-                      frameP,subframeP,
-                      UE_mac_inst[module_idP].crnti,
-                      SL_DISCOVERY,
-                      sdu, //(uint8_t*)&UE_mac_inst[Mod_id].SL_Discovery[0].Rx_buffer.Payload[0],
-                      len,
-                      ENB_FLAG_NO,
-                      eNB_index,
-                      0);*/
      mac_rrc_data_ind_ue(module_idP,
                            CC_id,
                            frameP,subframeP,
@@ -1623,7 +1612,6 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
 	   uint8_t * ulsch_buffer, uint16_t buflen, uint8_t * access_mode)
 {
 
-	//LOG_I(MAC, "Panos-D: UE[%d] In ue_get_sdu() 1  \n", module_idP);
     uint8_t total_rlc_pdu_header_len = 0, rlc_pdu_header_len_last = 0;
     uint16_t buflen_remain = 0;
     uint8_t bsr_len = 0, bsr_ce_len = 0, bsr_header_len = 0;
@@ -1853,7 +1841,7 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
 							 lcid,
 							 buflen_remain,
 							 (char *)&ulsch_buff[sdu_length_total]
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 							 ,0,
                               0
 #endif
@@ -1997,7 +1985,7 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
     // build PHR and update the timers
     if (phr_ce_len == sizeof(POWER_HEADROOM_CMD)) {
     	if(nfapi_mode ==3){
-    		//Panos: Substitute with a static value for the MAC layer abstraction (phy_stub mode)
+    		//Substitute with a static value for the MAC layer abstraction (phy_stub mode)
     		phr_p->PH = 40;
     	}
     	else{
@@ -2212,7 +2200,6 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
 	  buflen - sdu_length_total - payload_offset);
     // cycle through SDUs and place in ulsch_buffer
     if (sdu_length_total) {
-    	//LOG_I(MAC, "Panos-D: [UE %d] ue_get_sdu() 2 before copying to ulsch_buffer, SFN/SF: %d/%d \n \n \n", module_idP, frameP, subframe);
 	memcpy(&ulsch_buffer[payload_offset], ulsch_buff,
 	       sdu_length_total);
     }
@@ -2311,8 +2298,6 @@ ue_scheduler(const module_id_t module_idP,
 
 #if defined(ENABLE_ITTI)
     MessageDef *msg_p;
-    const char *msg_name;
-    instance_t instance;
     int result;
 #endif
 #if UE_TIMING_TRACE
@@ -2331,14 +2316,12 @@ ue_scheduler(const module_id_t module_idP,
 	itti_poll_msg(TASK_MAC_UE, &msg_p);
 
 	if (msg_p != NULL) {
-	    msg_name = ITTI_MSG_NAME(msg_p);
-	    instance = ITTI_MSG_INSTANCE(msg_p);
 
 	    switch (ITTI_MSG_ID(msg_p)) {
 	    case RRC_MAC_CCCH_DATA_REQ:
 		LOG_I(MAC,
 		      "Received %s from %s: instance %d, frameP %d, eNB_index %d\n",
-		      msg_name, ITTI_MSG_ORIGIN_NAME(msg_p), instance,
+		      ITTI_MSG_NAME(msg_p), ITTI_MSG_ORIGIN_NAME(msg_p), ITTI_MSG_INSTANCE(msg_p),
 		      RRC_MAC_CCCH_DATA_REQ(msg_p).frame,
 		      RRC_MAC_CCCH_DATA_REQ(msg_p).enb_index);
 
@@ -2347,7 +2330,7 @@ ue_scheduler(const module_id_t module_idP,
 
 
 	    default:
-		LOG_E(MAC, "Received unexpected message %s\n", msg_name);
+		LOG_E(MAC, "Received unexpected message %s\n", ITTI_MSG_NAME(msg_p));
 		break;
 	    }
 
@@ -2399,7 +2382,7 @@ ue_scheduler(const module_id_t module_idP,
 	return (PHY_RESYNCH);
 
     case RRC_Handover_failed:
-	LOG_N(MAC, "Handover failure for UE %d eNB_index %d\n", module_idP,
+	LOG_I(MAC, "Handover failure for UE %d eNB_index %d\n", module_idP,
 	      eNB_indexP);
 	//Invalid...need to add another MAC UE state for re-connection procedure
 	phy_config_afterHO_ue(module_idP, 0, eNB_indexP,
@@ -2466,8 +2449,8 @@ ue_scheduler(const module_id_t module_idP,
 	    LOG_E(MAC,
 		  "Module id %u Contention resolution timer expired, RA failed\n",
 		  module_idP);
-	    if(nfapi_mode == 3) { // Panos: phy_stub mode
-	    	// Panos: Modification for phy_stub mode operation here. We only need to make sure that the ue_mode is back to
+	    if(nfapi_mode == 3) { // phy_stub mode
+	    	// Modification for phy_stub mode operation here. We only need to make sure that the ue_mode is back to
 	    	// PRACH state.
 	    	LOG_I(MAC, "nfapi_mode3: Setting UE_mode to PRACH 2 \n");
 	    	UE_mac_inst[module_idP].UE_mode[eNB_indexP] = PRACH;
@@ -2840,7 +2823,7 @@ update_bsr(module_id_t module_idP, frame_t frameP,
 		    rlc_status = mac_rlc_status_ind(module_idP, UE_mac_inst[module_idP].crnti,eNB_index,frameP,subframeP,ENB_FLAG_NO,MBMS_FLAG_NO,
 		                                    lcid,
 		                                    0xFFFF //TBS is not used in RLC at this step, set a special value for debug
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                           ,0, 0
 #endif
                                           );
@@ -3201,16 +3184,6 @@ SLDCH_t *ue_get_sldch(module_id_t Mod_id,int CC_id,frame_t frame_tx,sub_frame_t 
 
     //UE_MAC_INST *ue = &UE_mac_inst[Mod_id];
     SLDCH_t *sldch = &UE_mac_inst[Mod_id].sldch;
-    // Panos: Ask TTN if we should be calling mac_rrc_data_req_ue() instead of mac_rrc_data_req() now!
-    /*sldch->payload_length = mac_rrc_data_req(Mod_id,
-            CC_id,
-            frame_tx,
-            SL_DISCOVERY,
-            1,
-            (char*)(sldch->payload), //&UE_mac_inst[Mod_id].SL_Discovery[0].Tx_buffer.Payload[0],
-            0,
-            0, //eNB_indexP
-            0);*/
 
     sldch->payload_length = mac_rrc_data_req_ue(Mod_id,
                 CC_id,
@@ -3291,7 +3264,7 @@ SLSCH_t *ue_get_slsch(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_
                ue->slsch_lcid,
                req,
                (char*)(ue->slsch_pdu.payload + sizeof(SLSCH_SUBHEADER_24_Bit_DST_LONG))
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                ,ue->sourceL2Id,
                ue->destinationL2Id
 #endif

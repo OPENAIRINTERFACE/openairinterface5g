@@ -96,7 +96,7 @@ typedef enum {
 } ran_name_t;
 */
 typedef uint8_t xid_t;  
-typedef uint8_t mid_t;  // module or enb id 
+typedef uint8_t mod_id_t;  // module or enb id 
 typedef uint8_t lcid_t;
 typedef int32_t  err_code_t; 
 
@@ -116,7 +116,7 @@ typedef struct {
 }proto_agent_info_t;
 
 typedef struct {
-  mid_t enb_id;
+  mod_id_t enb_id;
   proto_agent_info_t agent_info;
   
 }proto_agent_instance_t;

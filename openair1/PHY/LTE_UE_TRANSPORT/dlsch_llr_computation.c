@@ -642,7 +642,7 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
   uint32_t *rxF = (uint32_t*)&rxdataF_comp[0][((int32_t)symbol*frame_parms->N_RB_DL*12)];
   uint32_t *llr32;
-  int i,len;
+  int len;
   uint8_t symbol_mod = (symbol >= (7-frame_parms->Ncp))? (symbol-(7-frame_parms->Ncp)) : symbol;
 
   /*
@@ -681,17 +681,26 @@ int dlsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
              dlsch_llr,
              llr32);
   */
-  //printf("ll32p=%p , dlsch_llr=%p, symbol=%d, flag=%d \n", llr32, dlsch_llr, symbol, first_symbol_flag);
-  for (i=0; i<len; i++) {
-    *llr32 = *rxF;
-     //printf("llr %d : (%d,%d)\n",i,((int16_t*)llr32)[0],((int16_t*)llr32)[1]);
-    rxF++;
-    llr32++;
-  }
 
-  //*llr32p = (int16_t *)llr32;
+  qpsk_llr((short *)rxF,
+           (short *)llr32,
+           len);
 
   return(0);
+}
+
+void qpsk_llr(int16_t *stream0_in,
+              int16_t *stream0_out,
+              int length)
+{
+  int i;
+  for (i=0; i<2*length; i++) {
+    *stream0_out = *stream0_in;
+    //printf("llr %d : (%d,%d)\n",i,((int16_t*)stream0_out)[0],((int16_t*)stream0_out)[1]);
+    stream0_in++;
+    stream0_out++;
+  }
+
 }
 
 int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
@@ -765,11 +774,11 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
                     13);
 
 #ifdef DEBUG_LLR_SIC
-    write_output("rho_for_multipl.m","rho_for_m", rho_1,len,1,
+    LOG_M("rho_for_multipl.m","rho_for_m", rho_1,len,1,
      symbol==num_pdcch_symbols ? 15 :
      symbol==nsymb-1 ? 14 : 13);
 
-    write_output("rho_rho_in_llr.m","rho2", rho_rho_amp_x0,len,1,
+    LOG_M("rho_rho_in_llr.m","rho2", rho_rho_amp_x0,len,1,
      symbol==num_pdcch_symbols ? 15 :
      symbol==nsymb-1 ? 14 : 13);
 #endif
@@ -781,8 +790,8 @@ int32_t dlsch_qpsk_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
                      len*2);
 
 #ifdef DEBUG_LLR_SIC
-    write_output("rxFdata_comp1_after.m","rxF_a", rxF,len,1,1);
-    write_output("rxF_comp1.m","rxF_1_comp", rxF,len,1,
+    LOG_M("rxFdata_comp1_after.m","rxF_a", rxF,len,1,1);
+    LOG_M("rxF_comp1.m","rxF_1_comp", rxF,len,1,
                  symbol==num_pdcch_symbols ? 15 :
                  symbol==nsymb-1 ? 14 : 13);
 #endif
@@ -817,45 +826,21 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                      int16_t **llr32p,
                      uint8_t beamforming_mode)
 {
+  int32_t *rxF = (int32_t*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
+  int32_t *ch_mag = (int32_t*)&dl_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
+  int32_t *llr32;
 
-#if defined(__x86_64__) || defined(__i386__)
-  __m128i *rxF = (__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
-  __m128i *ch_mag;
-  __m128i llr128[2];
-  uint32_t *llr32;
-#elif defined(__arm__)
-  int16x8_t *rxF = (int16x8_t*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
-  int16x8_t *ch_mag;
-  int16x8_t xmm0;
-  int16_t *llr16;
-#endif
-
-
-  int i,len;
+  int len;
   unsigned char symbol_mod,len_mod4=0;
 
-
-#if defined(__x86_64__) || defined(__i386__)
   if (first_symbol_flag==1) {
-    llr32 = (uint32_t*)dlsch_llr;
+    llr32 = (int32_t*)dlsch_llr;
   } else {
-    llr32 = (uint32_t*)*llr32p;
+    llr32 = (int32_t*)*llr32p;
   }
-#elif defined(__arm__)
-  if (first_symbol_flag==1) {
-    llr16 = (int16_t*)dlsch_llr;
-  } else {
-    llr16 = (int16_t*)*llr32p;
-  }
-#endif
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
-#if defined(__x86_64__) || defined(__i386__)
-  ch_mag = (__m128i*)&dl_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
-#elif defined(__arm__)
-  ch_mag = (int16x8_t*)&dl_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
-#endif
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
     if (frame_parms->nb_antenna_ports_eNB!=1)
       len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
@@ -881,18 +866,45 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   len>>=2;  // length in quad words (4 REs)
  // printf("len>>=2=%d\n", len);
   len+=(len_mod4==0 ? 0 : 1);
- // printf("len+=%d\n", len);
-  for (i=0; i<len; i++) {
 
+  qam16_llr((short *)rxF,
+            (short *)ch_mag,
+            (short *)llr32,
+            len);
+ // printf ("This line in qam16_llr is %d.\n", __LINE__);
+
+}
+
+void qam16_llr(int16_t *stream0_in,
+               int16_t *chan_magn,
+               int16_t *llr,
+               int length)
+{
+  int i;
+  #if defined(__x86_64__) || defined(__i386__)
+  __m128i *rxF_128 = (__m128i*)stream0_in;
+  __m128i *ch_mag_128 = (__m128i*)chan_magn;
+  __m128i llr128[2];
+  int32_t *llr32 = (int32_t*) llr;
+#elif defined(__arm__)
+  int16x8_t *rxF_128 = (int16x8_t*)stream0_in;
+  int16x8_t *ch_mag_128 = (int16x8_t*)chan_magn;
+  int16x8_t xmm0;
+  int16_t *llr16 = (int16_t*)llr;
+#endif
+
+ // printf ("This line in qam16_llr is %d.\n", __LINE__);
+
+  for (i=0; i<length; i++) {
 #if defined(__x86_64__) || defined(__i386)
-    xmm0 = _mm_abs_epi16(rxF[i]);
-    xmm0 = _mm_subs_epi16(ch_mag[i],xmm0);
+   xmm0 = _mm_abs_epi16(rxF_128[i]);
+   xmm0 = _mm_subs_epi16(ch_mag_128[i],xmm0);
 
     // lambda_1=y_R, lambda_2=|y_R|-|h|^2, lamda_3=y_I, lambda_4=|y_I|-|h|^2
-    llr128[0] = _mm_unpacklo_epi32(rxF[i],xmm0);
-    llr128[1] = _mm_unpackhi_epi32(rxF[i],xmm0);
+    llr128[0] = _mm_unpacklo_epi32(rxF_128[i],xmm0);
+    llr128[1] = _mm_unpackhi_epi32(rxF_128[i],xmm0);
     llr32[0] = _mm_extract_epi32(llr128[0],0); //((uint32_t *)&llr128[0])[0];
-    llr32[1] = _mm_extract_epi32(llr128[0],1); //((uint32_t *)&llr128[0])[1];
+    llr32[1] = _mm_extract_epi32(llr128[0],1); //((uint32_t *)&llr128[0])[0];
     llr32[2] = _mm_extract_epi32(llr128[0],2); //((uint32_t *)&llr128[0])[2];
     llr32[3] = _mm_extract_epi32(llr128[0],3); //((uint32_t *)&llr128[0])[3];
     llr32[4] = _mm_extract_epi32(llr128[1],0); //((uint32_t *)&llr128[1])[0];
@@ -922,14 +934,17 @@ void dlsch_16qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     llr16[14] = vgetq_lane_s16(xmm0,7);
     llr16[15] = vgetq_lane_s16(xmm0,7);
     llr16+=16;
+
 #endif
 
   }
 
-#if defined(__x86_64__) || defined(__i386__)
+#if defined(__x86_64__) || defined(__i386)
   _mm_empty();
   _m_empty();
 #endif
+
+
 }
 
 void dlsch_16qam_llr_SIC (LTE_DL_FRAME_PARMS *frame_parms,
@@ -1036,6 +1051,7 @@ void dlsch_16qam_llr_SIC (LTE_DL_FRAME_PARMS *frame_parms,
 }
 }
 
+
 //----------------------------------------------------------------------------------------------
 // 64-QAM
 //----------------------------------------------------------------------------------------------
@@ -1053,14 +1069,10 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                      uint32_t llr_offset,
                      uint8_t beamforming_mode)
 {
-#if defined(__x86_64__) || defined(__i386__)
-  __m128i *rxF = (__m128i*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
-  __m128i *ch_mag,*ch_magb;
-#elif defined(__arm__)
-  int16x8_t *rxF = (int16x8_t*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
-  int16x8_t *ch_mag,*ch_magb,xmm1,xmm2;
-#endif
-  int i,len,len2;
+  int32_t *rxF = (int32_t*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
+  int32_t *ch_mag = (int32_t*)&dl_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
+  int32_t *ch_magb = (int32_t*)&dl_ch_magb[0][(symbol*frame_parms->N_RB_DL*12)];
+  int len,len2;
   unsigned char symbol_mod,len_mod4;
   short *llr;
   int16_t *llr2;
@@ -1079,13 +1091,6 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
-#if defined(__x86_64__) || defined(__i386__)
-  ch_mag = (__m128i*)&dl_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
-  ch_magb = (__m128i*)&dl_ch_magb[0][(symbol*frame_parms->N_RB_DL*12)];
-#elif defined(__arm__)
-  ch_mag = (int16x8_t*)&dl_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
-  ch_magb = (int16x8_t*)&dl_ch_magb[0][(symbol*frame_parms->N_RB_DL*12)];
-#endif
   if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
     if (frame_parms->nb_antenna_ports_eNB!=1)
       len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
@@ -1115,18 +1120,49 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   len2=len>>2;  // length in quad words (4 REs)
   len2+=((len_mod4==0)?0:1);
 
-  for (i=0; i<len2; i++) {
+  qam64_llr((short *)rxF,
+           (short *)ch_mag,
+           (short *)ch_magb,
+           llr2,
+           len2);
+}
+
+
+void qam64_llr(int16_t *stream0_in,
+               int16_t *chan_magn,
+               int16_t *chan_magn_b,
+               int16_t *llr,
+               int length)
+{
 
 #if defined(__x86_64__) || defined(__i386__)
-    xmm1 = _mm_abs_epi16(rxF[i]);
-    xmm1 = _mm_subs_epi16(ch_mag[i],xmm1);
-    xmm2 = _mm_abs_epi16(xmm1);
-    xmm2 = _mm_subs_epi16(ch_magb[i],xmm2);
+  __m128i *rxF_128 = (__m128i*)stream0_in;
+  __m128i *ch_mag_128 = (__m128i*)chan_magn;
+  __m128i *ch_magb_128 = (__m128i*)chan_magn_b;
 #elif defined(__arm__)
-    xmm1 = vabsq_s16(rxF[i]);
-    xmm1 = vsubq_s16(ch_mag[i],xmm1);
+  int16x8_t *rxF_128 = (int16x8_t*)stream0_in;
+  int16x8_t *ch_mag_128 = (int16x8_t*)chan_magn;
+  int16x8_t *ch_magb_128 = (int16x8_t*)chan_magn_b;
+  int16x8_t xmm1,xmm2;
+#endif
+
+
+  int i;
+  //int16_t *llr2;
+  //llr2 = llr;
+
+  for (i=0; i<length; i++) {
+
+#if defined(__x86_64__) || defined(__i386__)
+    xmm1 = _mm_abs_epi16(rxF_128[i]);
+    xmm1 = _mm_subs_epi16(ch_mag_128[i],xmm1);
+    xmm2 = _mm_abs_epi16(xmm1);
+    xmm2 = _mm_subs_epi16(ch_magb_128[i],xmm2);
+#elif defined(__arm__)
+    xmm1 = vabsq_s16(rxF_128[i]);
+    xmm1 = vsubq_s16(ch_mag_128[i],xmm1);
     xmm2 = vabsq_s16(xmm1);
-    xmm2 = vsubq_s16(ch_magb[i],xmm2);
+    xmm2 = vsubq_s16(ch_magb_128[i],xmm2);
 #endif
     // loop over all LLRs in quad word (24 coded bits)
     /*
@@ -1141,64 +1177,64 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
      llr2+=6;
       }
     */
-    llr2[0] = ((short *)&rxF[i])[0];
-    llr2[1] = ((short *)&rxF[i])[1];
+    llr[0] = ((short *)&rxF_128[i])[0];
+    llr[1] = ((short *)&rxF_128[i])[1];
 #if defined(__x86_64__) || defined(__i386__)
-    llr2[2] = _mm_extract_epi16(xmm1,0);
-    llr2[3] = _mm_extract_epi16(xmm1,1);//((short *)&xmm1)[j+1];
-    llr2[4] = _mm_extract_epi16(xmm2,0);//((short *)&xmm2)[j];
-    llr2[5] = _mm_extract_epi16(xmm2,1);//((short *)&xmm2)[j+1];
+    llr[2] = _mm_extract_epi16(xmm1,0);
+    llr[3] = _mm_extract_epi16(xmm1,1);//((short *)&xmm1)[j+1];
+    llr[4] = _mm_extract_epi16(xmm2,0);//((short *)&xmm2)[j];
+    llr[5] = _mm_extract_epi16(xmm2,1);//((short *)&xmm2)[j+1];
 #elif defined(__arm__)
-    llr2[2] = vgetq_lane_s16(xmm1,0);
-    llr2[3] = vgetq_lane_s16(xmm1,1);//((short *)&xmm1)[j+1];
-    llr2[4] = vgetq_lane_s16(xmm2,0);//((short *)&xmm2)[j];
-    llr2[5] = vgetq_lane_s16(xmm2,1);//((short *)&xmm2)[j+1];
+    llr[2] = vgetq_lane_s16(xmm1,0);
+    llr[3] = vgetq_lane_s16(xmm1,1);//((short *)&xmm1)[j+1];
+    llr[4] = vgetq_lane_s16(xmm2,0);//((short *)&xmm2)[j];
+    llr[5] = vgetq_lane_s16(xmm2,1);//((short *)&xmm2)[j+1];
 #endif
 
-    llr2+=6;
-    llr2[0] = ((short *)&rxF[i])[2];
-    llr2[1] = ((short *)&rxF[i])[3];
+    llr+=6;
+    llr[0] = ((short *)&rxF_128[i])[2];
+    llr[1] = ((short *)&rxF_128[i])[3];
 #if defined(__x86_64__) || defined(__i386__)
-    llr2[2] = _mm_extract_epi16(xmm1,2);
-    llr2[3] = _mm_extract_epi16(xmm1,3);//((short *)&xmm1)[j+1];
-    llr2[4] = _mm_extract_epi16(xmm2,2);//((short *)&xmm2)[j];
-    llr2[5] = _mm_extract_epi16(xmm2,3);//((short *)&xmm2)[j+1];
+    llr[2] = _mm_extract_epi16(xmm1,2);
+    llr[3] = _mm_extract_epi16(xmm1,3);//((short *)&xmm1)[j+1];
+    llr[4] = _mm_extract_epi16(xmm2,2);//((short *)&xmm2)[j];
+    llr[5] = _mm_extract_epi16(xmm2,3);//((short *)&xmm2)[j+1];
 #elif defined(__arm__)
-    llr2[2] = vgetq_lane_s16(xmm1,2);
-    llr2[3] = vgetq_lane_s16(xmm1,3);//((short *)&xmm1)[j+1];
-    llr2[4] = vgetq_lane_s16(xmm2,2);//((short *)&xmm2)[j];
-    llr2[5] = vgetq_lane_s16(xmm2,3);//((short *)&xmm2)[j+1];
+    llr[2] = vgetq_lane_s16(xmm1,2);
+    llr[3] = vgetq_lane_s16(xmm1,3);//((short *)&xmm1)[j+1];
+    llr[4] = vgetq_lane_s16(xmm2,2);//((short *)&xmm2)[j];
+    llr[5] = vgetq_lane_s16(xmm2,3);//((short *)&xmm2)[j+1];
 #endif
 
-    llr2+=6;
-    llr2[0] = ((short *)&rxF[i])[4];
-    llr2[1] = ((short *)&rxF[i])[5];
+    llr+=6;
+    llr[0] = ((short *)&rxF_128[i])[4];
+    llr[1] = ((short *)&rxF_128[i])[5];
 #if defined(__x86_64__) || defined(__i386__)
-    llr2[2] = _mm_extract_epi16(xmm1,4);
-    llr2[3] = _mm_extract_epi16(xmm1,5);//((short *)&xmm1)[j+1];
-    llr2[4] = _mm_extract_epi16(xmm2,4);//((short *)&xmm2)[j];
-    llr2[5] = _mm_extract_epi16(xmm2,5);//((short *)&xmm2)[j+1];
+    llr[2] = _mm_extract_epi16(xmm1,4);
+    llr[3] = _mm_extract_epi16(xmm1,5);//((short *)&xmm1)[j+1];
+    llr[4] = _mm_extract_epi16(xmm2,4);//((short *)&xmm2)[j];
+    llr[5] = _mm_extract_epi16(xmm2,5);//((short *)&xmm2)[j+1];
 #elif defined(__arm__)
-    llr2[2] = vgetq_lane_s16(xmm1,4);
-    llr2[3] = vgetq_lane_s16(xmm1,5);//((short *)&xmm1)[j+1];
-    llr2[4] = vgetq_lane_s16(xmm2,4);//((short *)&xmm2)[j];
-    llr2[5] = vgetq_lane_s16(xmm2,5);//((short *)&xmm2)[j+1];
+    llr[2] = vgetq_lane_s16(xmm1,4);
+    llr[3] = vgetq_lane_s16(xmm1,5);//((short *)&xmm1)[j+1];
+    llr[4] = vgetq_lane_s16(xmm2,4);//((short *)&xmm2)[j];
+    llr[5] = vgetq_lane_s16(xmm2,5);//((short *)&xmm2)[j+1];
 #endif
-    llr2+=6;
-    llr2[0] = ((short *)&rxF[i])[6];
-    llr2[1] = ((short *)&rxF[i])[7];
+    llr+=6;
+    llr[0] = ((short *)&rxF_128[i])[6];
+    llr[1] = ((short *)&rxF_128[i])[7];
 #if defined(__x86_64__) || defined(__i386__)
-    llr2[2] = _mm_extract_epi16(xmm1,6);
-    llr2[3] = _mm_extract_epi16(xmm1,7);//((short *)&xmm1)[j+1];
-    llr2[4] = _mm_extract_epi16(xmm2,6);//((short *)&xmm2)[j];
-    llr2[5] = _mm_extract_epi16(xmm2,7);//((short *)&xmm2)[j+1];
+    llr[2] = _mm_extract_epi16(xmm1,6);
+    llr[3] = _mm_extract_epi16(xmm1,7);//((short *)&xmm1)[j+1];
+    llr[4] = _mm_extract_epi16(xmm2,6);//((short *)&xmm2)[j];
+    llr[5] = _mm_extract_epi16(xmm2,7);//((short *)&xmm2)[j+1];
 #elif defined(__arm__)
-    llr2[2] = vgetq_lane_s16(xmm1,6);
-    llr2[3] = vgetq_lane_s16(xmm1,7);//((short *)&xmm1)[j+1];
-    llr2[4] = vgetq_lane_s16(xmm2,6);//((short *)&xmm2)[j];
-    llr2[5] = vgetq_lane_s16(xmm2,7);//((short *)&xmm2)[j+1];
+    llr[2] = vgetq_lane_s16(xmm1,6);
+    llr[3] = vgetq_lane_s16(xmm1,7);//((short *)&xmm1)[j+1];
+    llr[4] = vgetq_lane_s16(xmm2,6);//((short *)&xmm2)[j];
+    llr[5] = vgetq_lane_s16(xmm2,7);//((short *)&xmm2)[j+1];
 #endif
-    llr2+=6;
+    llr+=6;
 
   }
 
@@ -1208,7 +1244,6 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
 #endif
 }
 
-//#if 0
 void dlsch_64qam_llr_SIC(LTE_DL_FRAME_PARMS *frame_parms,
                          int32_t **rxdataF_comp,
                          int32_t **sic_buffer,  //Q15
@@ -8859,15 +8894,6 @@ int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   memcpy(ch_mag_i_256i, ch_mag_i, len*4);
   memcpy(rho_256i, rho, len*4);
 
-#if 0
-  qam64_qam16_avx2((short *)rxF_256i,
-                   (short *)rxF_i_256i,
-                   (short *)ch_mag_256i,
-                   (short *)ch_mag_i_256i,
-                   (short *)llr16,
-                   (short *) rho_256i,
-                   len);
-#else
   qam64_qam64_avx2((int32_t *)rxF_256i,
                    (int32_t *)rxF_i_256i,
                    (int32_t *)ch_mag_256i,
@@ -8875,8 +8901,7 @@ int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                    (int16_t *)llr16,
                    (int32_t *) rho_256i,
                    len);
-#endif
-  
+
   free16(rxF_256i, sizeof(rxF_256i));
   free16(rxF_i_256i, sizeof(rxF_i_256i));
   free16(ch_mag_256i, sizeof(ch_mag_256i));

@@ -1,4 +1,37 @@
-// Comments
+#!/bin/groovy
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
+
+// Abstraction function to send social media messages:
+// like on Slack or Mattermost
+def sendSocialMediaMessage(pipeChannel, pipeColor, pipeMessage) {
+    if (params.pipelineUsesSlack != null) {
+        if (params.pipelineUsesSlack) {
+            slackSend channel: pipeChannel, color: pipeColor, message: pipeMessage
+        }
+    }
+}
+
+def doRedHatBuild = false
+def FDD_Band7_B210_Status
 
 pipeline {
     agent {
@@ -8,11 +41,35 @@ pipeline {
         disableConcurrentBuilds()
         timestamps()
         gitLabConnection('OAI GitLab')
-        //gitlabBuilds(builds: ["Build", "Test"])
-        gitlabBuilds(builds: ["Local Build"])
+        gitlabBuilds(builds: ["Build eNb-USRP", "Build basic-sim", "Build phy-sim", "Build eNb-ethernet", "Build UE-ethernet", "Analysis with cppcheck", "Test phy-sim", "Test-FDD-Band7"])
+        ansiColor('xterm')
     }
 
     stages {
+        stage ("Verify Parameters") {
+            steps {
+                script {
+                    echo '\u2705 \u001B[32mVerify Parameters\u001B[0m'
+                    def allParametersPresent = true
+
+                    if (params.RedHatRemoteServer == null) {
+                        allParametersPresent = false
+                    }
+                    if (params.RedHatRemoteCredentials == null) {
+                        allParametersPresent = false
+                    }
+                    if (params.RedHatWorkingPath == null) {
+                        allParametersPresent = false
+                    }
+                    if (allParametersPresent) {
+			echo "Performing Red Hat Build"
+                        doRedHatBuild = true
+                    } else {
+                        doRedHatBuild = false
+                    }
+                }
+            }
+        }
         stage ("Verify Guidelines") {
             steps {
                 echo "Git URL         is ${GIT_URL}"
@@ -22,6 +79,7 @@ pipeline {
                         // GitLab-Jenkins plugin integration is lacking to perform the merge by itself
                         // Doing it manually --> it may have merge conflicts
                         sh "./ci-scripts/doGitLabMerge.sh --src-branch ${env.gitlabSourceBranch} --src-commit ${env.gitlabMergeRequestLastCommit} --target-branch ${env.gitlabTargetBranch} --target-commit ${GIT_COMMIT}"
+                        sh "zip -r -qq localZip.zip ."
 
                         // Running astyle options on the list of modified files by the merge request
                         // For the moment, there is no fail criteria. Just a notification of number of files that do not follow
@@ -38,27 +96,144 @@ pipeline {
                         echo "Git Branch      is ${GIT_BRANCH}"
                         echo "Git Commit      is ${GIT_COMMIT}"
 
+                        sh "zip -r -qq localZip.zip ."
                         // Running astyle options on all C/H files in the repository
                         // For the moment, there is no fail criteria. Just a notification of number of files that do not follow
                         sh "./ci-scripts/checkCodingFormattingRules.sh"
                     }
                 }
             }
+            post {
+                failure {
+                    script {
+                        def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): Merge Conflicts -- Cannot perform CI"
+                        addGitLabMRComment comment: message
+                    }
+                }
+            }
         }
-        stage ("Local Build") {
+
+        stage ("Start VM -- cppcheck") {
             steps {
-                gitlabCommitStatus(name: "Local Build") {
-                    sh "./ci-scripts/buildLocally.sh --workspace $WORKSPACE"
+                sh "./ci-scripts/createVM.sh --variant cppcheck --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+            }
+        }
+
+        stage ("Start VM -- enb-usrp") {
+            steps {
+                sh "./ci-scripts/createVM.sh --variant enb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+            }
+        }
+
+        stage ("Start VM -- basic-sim") {
+            steps {
+                sh "./ci-scripts/createVM.sh --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+            }
+        }
+
+        stage ("Start VM -- phy-sim") {
+            steps {
+                sh "./ci-scripts/createVM.sh --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+            }
+        }
+
+        stage ("Start VM -- enb-ethernet") {
+            steps {
+                sh "./ci-scripts/createVM.sh --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+            }
+        }
+
+        stage ("Start VM -- ue-ethernet") {
+            steps {
+                sh "./ci-scripts/createVM.sh --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+            }
+        }
+
+        stage ("Variant Builds") {
+            parallel {
+                stage ("Analysis with cppcheck") {
+                    steps {
+                        gitlabCommitStatus(name: "Analysis with cppcheck") {
+                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant cppcheck --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                        }
+                    }
+                }
+                stage ("Build eNb-USRP") {
+                    steps {
+                        gitlabCommitStatus(name: "Build eNb-USRP") {
+                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant enb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                        }
+                    }
+                }
+                stage ("Build basic simulator") {
+                    steps {
+                        gitlabCommitStatus(name: "Build basic-sim") {
+                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                        }
+                    }
+                }
+                stage ("Build physical simulators") {
+                    steps {
+                        gitlabCommitStatus(name: "Build phy-sim") {
+                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                        }
+                    }
+                }
+                stage ("Build eNb-ethernet") {
+                    steps {
+                        gitlabCommitStatus(name: "Build eNb-ethernet") {
+                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                        }
+                    }
+                }
+                stage ("Build UE-ethernet") {
+                    steps {
+                        gitlabCommitStatus(name: "Build UE-ethernet") {
+                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                        }
+                    }
+                }
+                stage ("Build eNb-USRP on Red Hat") {
+                    when {
+                        expression {doRedHatBuild}
+                    }
+                    steps {
+                        gitlabCommitStatus(name: "Build eNb-USRP-CentOS") {
+                            script {
+                                try {
+                                    withCredentials([
+                                        [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.RedHatRemoteCredentials}", usernameVariable: 'RH_Username', passwordVariable: 'RH_Password']
+                                    ]) {
+                                        sh "./ci-scripts/buildOnRH.sh --workspace $WORKSPACE --job-name ${JOB_NAME} --build-id ${BUILD_ID} --remote-host ${params.RedHatRemoteServer} --remote-path ${params.RedHatWorkingPath} --remote-user-name ${RH_Username} --remote-password ${RH_Password}"
+                                    }
+                                } catch (Exception e) {
+                                    echo "Red Hat build failed not an error now"
+                                }
+                            }
+                        }
+                    }
                 }
             }
             post {
                 always {
                     script {
-                        if(fileExists('archives/local_build_logs.zip')) {
-                            archiveArtifacts artifacts: 'archives/local_build_logs.zip'
+                        dir ('archives') {
+                            sh "zip -r -qq vm_build_logs.zip basic_sim enb_usrp phy_sim cppcheck enb_eth ue_eth red_hat"
+                        }
+                        if(fileExists('archives/vm_build_logs.zip')) {
+                            archiveArtifacts artifacts: 'archives/vm_build_logs.zip'
                         }
                         if ("MERGE".equals(env.gitlabActionType)) {
                             sh "./ci-scripts/reportBuildLocally.sh --git-url ${GIT_URL} --job-name ${JOB_NAME} --build-id ${BUILD_ID} --trigger merge-request --src-branch ${env.gitlabSourceBranch} --src-commit ${env.gitlabMergeRequestLastCommit} --target-branch ${env.gitlabTargetBranch} --target-commit ${GIT_COMMIT}"
+                            sh "./ci-scripts/checkAddedWarnings.sh --src-branch ${env.gitlabSourceBranch} --target-branch ${env.gitlabTargetBranch}"
+                            def res=readFile('./oai_warning_files.txt').trim();
+                            if ("0".equals(res)) {
+                                echo "No issues w/ warnings/errors in this merge request"
+                            } else {
+                                def fileList=readFile('./oai_warning_files_list.txt').trim();
+                                def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): Some modified files in Merge Request MAY have INTRODUCED WARNINGS (" + fileList + ")"
+                                addGitLabMRComment comment: message
+                            }
                         } else {
                             sh "./ci-scripts/reportBuildLocally.sh --git-url ${GIT_URL} --job-name ${JOB_NAME} --build-id ${BUILD_ID} --trigger push --branch ${GIT_BRANCH} --commit ${GIT_COMMIT}"
                         }
@@ -69,11 +244,103 @@ pipeline {
                 }
             }
         }
+
+        stage ("Variant Tests") {
+            parallel {
+                stage ("Test physical simulators") {
+                    steps {
+                        gitlabCommitStatus(name: "Test phy-sim") {
+                            sh "./ci-scripts/runTestOnVM.sh --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                        }
+                    }
+                }
+                stage ("Test basic simulator") {
+                    steps {
+                        //gitlabCommitStatus(name: "Test basic-sim") {
+                            sh "./ci-scripts/runTestOnVM.sh --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                        //}
+                    }
+                }
+		stage ("Test FDD - Band 7 - B210") {
+                    steps {
+                        gitlabCommitStatus(name: "Test-FDD-Band7") {
+                            script {
+                                if ("MERGE".equals(env.gitlabActionType)) {
+                                    FDD_Band7_B210_Status = build job: 'eNB-CI-FDD-Band7-B210',
+                                       parameters: [
+                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+                                           string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
+                                           string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
+                                           booleanParam(name: 'eNB_mergeRequest', value: true)
+                                       ]
+                                } else {
+                                    FDD_Band7_B210_Status = build job: 'eNB-CI-FDD-Band7-B210',
+                                       parameters: [
+                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+                                           string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
+                                           string(name: 'eNB_CommitID', value: String.valueOf(GIT_COMMIT)),
+                                           booleanParam(name: 'eNB_mergeRequest', value: false)
+                                       ]
+                                }
+                            }
+                        }
+                    }
+                    post {
+                        // In case of success we really pick the report from the exact slave build number
+                        success {
+                            script {
+                                copyArtifacts(projectName: 'eNB-CI-FDD-Band7-B210',
+                                              filter: 'test_results*.html',
+                                              selector: specific("${FDD_Band7_B210_Status.number}"))
+                                if (fileExists('test_results-eNB-CI-FDD-Band7-B210.html')) {
+                                    archiveArtifacts artifacts: 'test_results-eNB-CI-FDD-Band7-B210.html'
+                                }
+                            }
+                        }
+                        // In case of any non-success, we are retrieving the HTML report of the last completed
+                        // slave job. Note that we could use that syntax also in case of success.
+                        // The only drop-back is that we may retrieve the HTML report of a previous build
+                        cleanup {
+                            script {
+                                if (!fileExists('test_results-eNB-CI-FDD-Band7-B210.html')) {
+                                    copyArtifacts(projectName: 'eNB-CI-FDD-Band7-B210',
+                                                  filter: 'test_results*.html',
+                                                  selector: lastCompleted())
+                                    if (fileExists('test_results-eNB-CI-FDD-Band7-B210.html')) {
+                                        archiveArtifacts artifacts: 'test_results-eNB-CI-FDD-Band7-B210.html'
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            post {
+                always {
+                    script {
+                        dir ('archives') {
+                            sh "if [ -d */test ]; then zip -r -qq vm_tests_logs.zip */test ; fi"
+                        }
+                        if(fileExists('archives/vm_tests_logs.zip')) {
+                            archiveArtifacts artifacts: 'archives/vm_tests_logs.zip'
+                            archiveArtifacts artifacts: 'archives/*/test/results_autotests*.xml'
+                            archiveArtifacts artifacts: 'archives/*/test/*.xsl'
+                        }
+                    }
+                }
+            }
+        }
+        stage ("Destroy all Virtual Machines") {
+            steps {
+                sh "./ci-scripts/destroyAllRunningVM.sh --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+            }
+        }
     }
     post {
         always {
             script {
-                echo "End of script"
+                // Stage destroy may not be run if error in previous stage
+                sh "./ci-scripts/destroyAllRunningVM.sh --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
             }
         }
         success {
@@ -83,9 +350,9 @@ pipeline {
                     echo "This is a MERGE event"
                     addGitLabMRComment comment: message
                     def message2 = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): passed (" + BUILD_URL + ") -- MergeRequest #" + env.gitlabMergeRequestIid + " (" + env.gitlabMergeRequestTitle + ")"
-                    slackSend channel: 'ci-enb', color: 'good', message: message2
+                    sendSocialMediaMessage('ci-enb', 'good', message2)
                 } else {
-                    slackSend channel: 'ci-enb', color: 'good', message: message
+                    sendSocialMediaMessage('ci-enb', 'good', message)
                 }
             }
         }
@@ -96,9 +363,9 @@ pipeline {
                     echo "This is a MERGE event"
                     addGitLabMRComment comment: message
                     def message2 = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): failed (" + BUILD_URL + ") -- MergeRequest #" + env.gitlabMergeRequestIid + " (" + env.gitlabMergeRequestTitle + ")"
-                    slackSend channel: 'ci-enb', color: 'danger', message: message2
+                    sendSocialMediaMessage('ci-enb', 'danger', message2)
                 } else {
-                    slackSend channel: 'ci-enb', color: 'danger', message: message
+                    sendSocialMediaMessage('ci-enb', 'danger', message)
                 }
             }
         }

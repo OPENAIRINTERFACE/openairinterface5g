@@ -43,7 +43,6 @@
 #include "intertask_interface.h"
 #include "s1ap_eNB_default_values.h"
 #include "s1ap_common.h"
-#include "s1ap_ies_defs.h"
 #include "s1ap_eNB_defs.h"
 #include "s1ap_eNB_management_procedures.h"
 #include "assertions.h"
@@ -162,8 +161,8 @@ void s1ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
 }
 
 void s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
-                                  net_ip_address_t    *mme_ip_address,
-                                  net_ip_address_t    *local_ip_addr)
+                           net_ip_address_t    *mme_ip_address,
+                           net_ip_address_t    *local_ip_addr)
 {
   MessageDef                 *message_p                   = NULL;
   sctp_new_association_req_t *sctp_new_association_req_p  = NULL;

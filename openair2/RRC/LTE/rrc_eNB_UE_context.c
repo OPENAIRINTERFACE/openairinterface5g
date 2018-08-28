@@ -33,7 +33,7 @@
 #include <string.h>
 #include <limits.h>
 
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "rrc_eNB_UE_context.h"
 #include "msc.h"
 
@@ -155,9 +155,6 @@ rrc_eNB_get_ue_context(
   memset(&temp, 0, sizeof(struct rrc_eNB_ue_context_s));
   /* eNB ue rrc id = 24 bits wide */
   temp.ue_id_rnti = rntiP;
-#if 0
-  return RB_FIND(rrc_ue_tree_s, &rrc_instance_pP->rrc_ue_head, &temp);
-#endif
   struct rrc_eNB_ue_context_s   *ue_context_p = NULL;
   ue_context_p = RB_FIND(rrc_ue_tree_s, &rrc_instance_pP->rrc_ue_head, &temp);
   if ( ue_context_p != NULL) {

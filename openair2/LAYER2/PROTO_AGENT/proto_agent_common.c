@@ -231,12 +231,12 @@ int fsp_create_header(xid_t xid, Protocol__FspType type,  Protocol__FspHeader **
   return -1;
 }
 
-int just_print(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg)
+int just_print(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg)
 {
     return 1;
 }
 
-int proto_agent_pdcp_data_req(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg)
+int proto_agent_pdcp_data_req(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg)
 {
   
   // Initialize the PDCP params
@@ -367,7 +367,7 @@ int proto_agent_destroy_pdcp_data_req(Protocol__FlexsplitMessage *msg) {
     return -1;
 }
 
-int proto_agent_get_ack_result(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg)
+int proto_agent_get_ack_result(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg)
 {
   Protocol__FspHeader *header;
   xid_t xid;
@@ -383,7 +383,7 @@ int proto_agent_get_ack_result(mid_t mod_id, const void *params, Protocol__Flexs
 }
 
 
-int proto_agent_pdcp_data_req_ack(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg)
+int proto_agent_pdcp_data_req_ack(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg)
 {
   Protocol__FspHeader *header;
   xid_t xid;
@@ -517,7 +517,7 @@ int proto_agent_destroy_pdcp_data_ind(Protocol__FlexsplitMessage *msg) {
     return -1;
 }
 
-int proto_agent_pdcp_data_ind(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg)
+int proto_agent_pdcp_data_ind(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg)
 {
   
   // Initialize the PDCP params
@@ -630,7 +630,7 @@ int proto_agent_pdcp_data_ind(mid_t mod_id, const void *params, Protocol__Flexsp
 }
 
 
-int proto_agent_pdcp_data_ind_ack(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg)
+int proto_agent_pdcp_data_ind_ack(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg)
 {
   Protocol__FspHeader *header;
   xid_t xid;
@@ -741,7 +741,7 @@ int proto_agent_destroy_pdcp_data_ind_ack(Protocol__FlexsplitMessage *msg) {
     return -1;
 }
 
-int proto_agent_hello(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg) {
+int proto_agent_hello(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg) {
  
   Protocol__FspHeader *header;
   /*TODO: Need to set random xid or xid from received hello message*/
@@ -795,7 +795,7 @@ int proto_agent_destroy_hello(Protocol__FlexsplitMessage *msg) {
   return -1;
 }
 
-int proto_agent_echo_request(mid_t mod_id, const void* params, Protocol__FlexsplitMessage **msg) {
+int proto_agent_echo_request(mod_id_t mod_id, const void* params, Protocol__FlexsplitMessage **msg) {
   Protocol__FspHeader *header;
 
   xid_t xid = mod_id;
@@ -847,7 +847,7 @@ int proto_agent_destroy_echo_request(Protocol__FlexsplitMessage *msg) {
   return -1;
 }
 
-int proto_agent_echo_reply(mid_t mod_id, const void *params, Protocol__FlexsplitMessage **msg) {
+int proto_agent_echo_reply(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg) {
   
   xid_t xid;
   Protocol__FlexsplitMessage *input = (Protocol__FlexsplitMessage *)params;

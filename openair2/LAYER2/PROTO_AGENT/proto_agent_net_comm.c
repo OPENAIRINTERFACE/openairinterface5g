@@ -35,13 +35,13 @@
  */
 
 #include "proto_agent_net_comm.h"
-#include "log.h"
+#include "common/utils/LOG/log.h"
 
 proto_agent_channel_t *agent_channel[NUM_MAX_ENB][ENB_AGENT_MAX];
 proto_agent_channel_instance_t channel_instance;
 int proto_agent_channel_id = 0;
 
-int proto_agent_msg_send(mid_t mod_id, agent_id_t agent_id, void *data, int size, int priority) {
+int proto_agent_msg_send(mod_id_t mod_id, agent_id_t agent_id, void *data, int size, int priority) {
   /*Check if agent id is valid*/
   if (agent_id >= ENB_AGENT_MAX || agent_id < 0) {
     goto error;
@@ -61,7 +61,7 @@ int proto_agent_msg_send(mid_t mod_id, agent_id_t agent_id, void *data, int size
   return -1;
 }
 
-int proto_agent_msg_recv(mid_t mod_id, agent_id_t agent_id, void **data, int *size, int *priority) {
+int proto_agent_msg_recv(mod_id_t mod_id, agent_id_t agent_id, void **data, int *size, int *priority) {
   /*Check if agent id is valid*/
   if (agent_id >= ENB_AGENT_MAX || agent_id < 0) {
     goto error;
@@ -81,7 +81,7 @@ int proto_agent_msg_recv(mid_t mod_id, agent_id_t agent_id, void **data, int *si
   return -1;
 }
 
-int proto_agent_register_channel(mid_t mod_id, proto_agent_channel_t *channel, agent_id_t agent_id) {
+int proto_agent_register_channel(mod_id_t mod_id, proto_agent_channel_t *channel, agent_id_t agent_id) {
   int i;
 
   if (channel == NULL) {
@@ -98,7 +98,7 @@ int proto_agent_register_channel(mid_t mod_id, proto_agent_channel_t *channel, a
   return 0;
 }
 
-void proto_agent_unregister_channel(mid_t mod_id, agent_id_t agent_id) {
+void proto_agent_unregister_channel(mod_id_t mod_id, agent_id_t agent_id) {
   int i;
 
   if (agent_id == ENB_AGENT_MAX) {

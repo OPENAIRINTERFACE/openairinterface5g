@@ -248,14 +248,11 @@ BOOL test_pdcp_data_req(void)
        * XXX mem_block_t doesn't hold buffer size, how do we keep the size
        * information if we pass mem_block_ts via a linked list?
        */
-#if 0
 
       if (pdcp_test_pdu_buffer_size == 0 || pdcp_test_pdu_buffer == NULL) {
         msg("[TEST] PDU created by pdcp_data_req() is invalid!\n");
         return FALSE;
       }
-
-#endif
 
       /*
        * Serialize incoming mem_block_t into an unsigned character array

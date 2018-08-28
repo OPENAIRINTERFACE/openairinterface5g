@@ -69,6 +69,38 @@
 #include <pthread.h>
 #include "assertions.h"
 
+#ifdef MEX
+#include "mex.h"
+# define msg mexPrintf
+# undef LOG_D
+# undef LOG_E
+# undef LOG_I
+# undef LOG_N
+# undef LOG_T
+# undef LOG_W
+# undef LOG_M
+# define LOG_D(x, ...) mexPrintf(__VA_ARGS__)
+# define LOG_E(x, ...) mexPrintf(__VA_ARGS__)
+# define LOG_I(x, ...) mexPrintf(__VA_ARGS__)
+# define LOG_N(x, ...) mexPrintf(__VA_ARGS__)
+# define LOG_T(x, ...) mexPrintf(__VA_ARGS__)
+# define LOG_W(x, ...) mexPrintf(__VA_ARGS__)
+# define LOG_M(x, ...) mexPrintf(__VA_ARGS__)
+#else
+# ifdef OPENAIR2
+#   if ENABLE_RAL
+#     include "collection/hashtable/hashtable.h"
+#     include "COMMON/ral_messages_types.h"
+#     include "UTIL/queue.h"
+#   endif
+#   include "log.h"
+#   define msg(aRGS...) LOG_D(PHY, ##aRGS)
+# else
+#   define msg printf
+# endif
+#endif
+
+
 
 /// Context data structure for RX/TX portion of subframe processing
 typedef struct {
@@ -161,12 +193,12 @@ typedef struct {
   UE_rxtx_proc_t proc_rxtx[RX_NB_TH];
 } UE_proc_t;
 
-/// Panos: Structure holding timer_thread related elements (phy_stub_UE mode)
+/// Structure holding timer_thread related elements (phy_stub_UE mode)
 typedef struct {
 	pthread_t pthread_timer;
-	/// Panos: mutex for waiting SF ticking
+	/// mutex for waiting SF ticking
 	pthread_mutex_t mutex_ticking;
-	/// Panos: \brief ticking var for ticking thread.
+	/// \brief ticking var for ticking thread.
 	/// \internal This variable is protected by \ref mutex_ticking.
 	int ticking_var;
 	/// condition variable for timer_thread;
@@ -273,13 +305,13 @@ typedef struct {
   /// - first index: rx antenna [0..nb_antennas_rx[
   /// - second index: symbol [0..28*ofdm_symbol_size[
   int32_t **rxdataF;
-  
+
   /// \brief Hold the channel estimates in frequency domain.
   /// - first index: eNB id [0..6] (hard coded)
   /// - second index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - third index: samples? [0..symbols_per_tti*(ofdm_symbol_size+LTE_CE_FILTER_LENGTH)[
   int32_t **dl_ch_estimates[7];
-  
+
   /// \brief Hold the channel estimates in time domain (used for tracking).
   /// - first index: eNB id [0..6] (hard coded)
   /// - second index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
@@ -848,7 +880,7 @@ typedef struct {
 
   /// RF and Interface devices per CC
 
-  openair0_device rfdevice; 
+  openair0_device rfdevice;
 } PHY_VARS_UE;
 
 /* this structure is used to pass both UE phy vars and

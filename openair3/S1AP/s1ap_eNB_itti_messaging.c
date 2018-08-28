@@ -56,7 +56,8 @@ void s1ap_eNB_itti_send_nas_downlink_ind(instance_t instance,
 
   s1ap_downlink_nas->ue_initial_id  = ue_initial_id;
   s1ap_downlink_nas->eNB_ue_s1ap_id = eNB_ue_s1ap_id;
-  s1ap_downlink_nas->nas_pdu.buffer = nas_pdu;
+  s1ap_downlink_nas->nas_pdu.buffer = malloc(sizeof(uint8_t) * nas_pdu_length);
+  memcpy(s1ap_downlink_nas->nas_pdu.buffer, nas_pdu, nas_pdu_length);
   s1ap_downlink_nas->nas_pdu.length = nas_pdu_length;
 
   itti_send_msg_to_task(TASK_RRC_ENB, instance, message_p);

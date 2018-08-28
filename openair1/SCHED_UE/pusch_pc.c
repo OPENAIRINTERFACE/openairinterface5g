@@ -114,7 +114,7 @@ void pusch_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_
     else if (ue->ulsch[eNB_id]->PHR > 40)
       ue->ulsch[eNB_id]->PHR = 40;
 
-    LOG_D(PHY,"[UE  %d][PUSCH %d] AbsSubframe %d.%d: nb_rb: %d, Po_PUSCH %d dBm : tx power %d, Po_NOMINAL_PUSCH %d,log10(NPRB) %f,PHR %d, PL %d, alpha*PL %f,delta_IF %f,f_pusch %d\n",
+    LOG_D(PHY,"[UE  %d][PUSCH %d] AbsSubframe %d.%d: nb_rb: %d, Po_PUSCH %d dBm : tx power max %d , Po_NOMINAL_PUSCH %d,log10(NPRB) %f,PHR %d, PL %d, alpha*PL %f,delta_IF %f,f_pusch %d\n",
           ue->Mod_id,harq_pid,proc->frame_tx,proc->subframe_tx,nb_rb,
           ue->ulsch[eNB_id]->Po_PUSCH,
           ue->tx_power_max_dBm,

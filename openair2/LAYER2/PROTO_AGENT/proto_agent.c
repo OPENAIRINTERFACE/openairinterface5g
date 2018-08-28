@@ -56,7 +56,7 @@ pthread_t new_thread(void *(*f)(void *), void *b);
 pthread_t cu_thread[MAX_DU], du_thread;
 Protocol__FlexsplitMessage *proto_agent_timeout_fsp(void* args);
 
-mid_t client_mod[MAX_DU], server_mod;
+mod_id_t client_mod[MAX_DU], server_mod;
 proto_agent_instance_t *client_channel[MAX_DU], *server_channel;
 proto_recv_t client_info[MAX_DU];
 
@@ -148,7 +148,7 @@ pthread_t new_thread(void *(*f)(void *), void *b) {
 void * proto_server_init(void *args)
 {
    //printf( "Initializing server thread for listening connections\n");
-   mid_t mod_id = (mid_t) 0;
+   mod_id_t mod_id = (mod_id_t) 0;
    cudu_params_t* cudu = NULL;
    cudu = get_cudu_config();
    proto_server_start(mod_id, (const cudu_params_t*) cudu);
@@ -158,7 +158,7 @@ void * proto_server_init(void *args)
 /*  Server side function; upon a new connection 
     reception, sends the hello packets
 */
-int proto_server_start(mid_t mod_id, const cudu_params_t* cudu){
+int proto_server_start(mod_id_t mod_id, const cudu_params_t* cudu){
   
   int channel_id;
   char *peer_address;
@@ -304,7 +304,7 @@ error:
 
 }
 
-int proto_agent_start(uint8_t enb_id, mid_t cu_id, uint8_t type_id, cudu_params_t *cudu){
+int proto_agent_start(uint8_t enb_id, mod_id_t cu_id, uint8_t type_id, cudu_params_t *cudu){
   
   int channel_id;
   char *peer_address = NULL;
@@ -660,7 +660,7 @@ proto_client_receive(void *args)
 {
   
   proto_recv_t*         recv = args;
-  mid_t 	      recv_mod = recv->mod_id;
+  mod_id_t 	      recv_mod = recv->mod_id;
   uint8_t 	      type = recv->type_id;
 
   LOG_D(PROTO_AGENT, "\n\nrecv mod is %u\n\n",recv_mod);  

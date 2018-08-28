@@ -59,16 +59,16 @@ typedef struct proto_agent_channel_instance_s{
 } proto_agent_channel_instance_t;
 
 /*Send and receive messages using the channel registered for a specific agent*/
-int proto_agent_msg_send(mid_t mod_id, agent_id_t agent_id, void *data, int size, int priority);
+int proto_agent_msg_send(mod_id_t mod_id, agent_id_t agent_id, void *data, int size, int priority);
 
-int proto_agent_msg_recv(mid_t mod_id, agent_id_t agent_id, void **data, int *size, int *priority);
+int proto_agent_msg_recv(mod_id_t mod_id, agent_id_t agent_id, void **data, int *size, int *priority);
 
 /*Register a channel to an agent. Use ENB_AGENT_MAX to register the
  *same channel to all agents*/
-int proto_agent_register_channel(mid_t mod_id, proto_agent_channel_t *channel, agent_id_t agent_id);
+int proto_agent_register_channel(mod_id_t mod_id, proto_agent_channel_t *channel, agent_id_t agent_id);
 
 /*Unregister the current channel of an agent. Use ENB_AGENT_MAX to unregister all channels*/
-void proto_agent_unregister_channel(mid_t mod_id, agent_id_t agent_id);
+void proto_agent_unregister_channel(mod_id_t mod_id, agent_id_t agent_id);
 
 /*Create a new channel. Returns the id of the new channel or negative number otherwise*/
 int proto_agent_create_channel(void *channel_info,
