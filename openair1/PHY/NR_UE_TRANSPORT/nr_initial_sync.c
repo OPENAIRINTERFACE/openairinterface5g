@@ -238,6 +238,11 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 
     nr_gold_pbch(ue);
     ret = nr_pbch_detection(ue,mode);
+    
+    nr_gold_pdcch(ue,0, 2);
+    nr_slot_fep(ue,0, 0, ue->rx_offset, 1, 1, NR_PDCCH_EST);
+    nr_slot_fep(ue,1, 0, ue->rx_offset, 1, 1, NR_PDCCH_EST);
+	
 
 LOG_I(PHY,"[UE  %d] AUTOTEST Cell Sync : frame = %d, rx_offset %d, freq_offset %d \n",
               ue->Mod_id,
