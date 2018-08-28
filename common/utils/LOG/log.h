@@ -173,6 +173,7 @@ typedef enum {
     GTPU,
     SPGW,
     S1AP,
+    F1AP,
     SCTP,
     HW,
     OSA,

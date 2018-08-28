@@ -251,6 +251,37 @@ do {                                                                    \
           + pLMN.MNCdigit2 * 10 + pLMN.MNCdigit1;                       \
 } while(0)
 
+
+/* TS 38.473 v15.1.1 section 9.3.2.1:
+ * NR CELL ID
+ */
+#define TRANSPORT_LAYER_ADDRESS_TO_BIT_STRING(mACRO, bITsTRING)    \
+do {                                                    \
+    (bITsTRING)->buf = calloc(5, sizeof(uint8_t));      \
+    (bITsTRING)->buf[0] = (mACRO) >> 28;                \
+    (bITsTRING)->buf[1] = (mACRO) >> 20;                \
+    (bITsTRING)->buf[2] = (mACRO) >> 12;                \
+    (bITsTRING)->buf[3] = (mACRO) >> 4;                 \
+    (bITsTRING)->buf[4] = ((mACRO) & 0x0f) << 4;        \
+    (bITsTRING)->size = 5;                              \
+    (bITsTRING)->bits_unused = 4;                       \
+} while(0)
+
+/* TS 38.473 v15.1.1 section 9.3.1.12:
+ * NR CELL ID
+ */
+#define NR_CELL_ID_TO_BIT_STRING(mACRO, bITsTRING)      \
+do {                                                    \
+    (bITsTRING)->buf = calloc(5, sizeof(uint8_t));      \
+    (bITsTRING)->buf[0] = (mACRO) >> 28;                \
+    (bITsTRING)->buf[1] = (mACRO) >> 20;                \
+    (bITsTRING)->buf[2] = (mACRO) >> 12;                \
+    (bITsTRING)->buf[3] = (mACRO) >> 4;                 \
+    (bITsTRING)->buf[4] = ((mACRO) & 0x0f) << 4;        \
+    (bITsTRING)->size = 5;                              \
+    (bITsTRING)->bits_unused = 4;                       \
+} while(0)
+
 /* TS 36.413 v10.9.0 section 9.2.1.37:
  * Macro eNB ID:
  * Equal to the 20 leftmost bits of the Cell

@@ -170,7 +170,7 @@ set(CMAKE_C_FLAGS
   "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} -std=gnu99 -Wall -Wstrict-prototypes -fno-strict-aliasing -rdynamic -funroll-loops -Wno-packed-bitfield-compat -fPIC ")
 # add autotools definitions that were maybe used!
 set(CMAKE_C_FLAGS
-  "${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP -DASN_DISABLE_OER_SUPPORT -D'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'"
+  "${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP -D'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'"
 )
 set(CMAKE_CXX_FLAGS
   "${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -std=c++11 "
@@ -478,15 +478,13 @@ include_directories ("${X2AP_DIR}")
 
 
 
-#F1AP
-# Same limitation as described in RRC/S1AP: unknown generated file list
-# so we generate it at cmake time
+# F1AP
 ##############
 add_list1_option(F1AP_RELEASE R15 "F1AP ASN.1 grammar version" R15)
 set(F1AP_DIR ${OPENAIR2_DIR}/F1AP)
 if (${F1AP_RELEASE} STREQUAL "R15")
-  make_version(F1AP_VERSION 15 1 1)
-  set (ASN1RELDIR R15.1.1)
+  make_version(F1AP_VERSION 15 2 1)
+  set (ASN1RELDIR R15.2.1)
 endif(${F1AP_RELEASE} STREQUAL "R15")
 add_definitions(-DF1AP_VERSION=${F1AP_VERSION})
 set(F1AP_ASN_DIR ${F1AP_DIR}/MESSAGES/ASN1/${ASN1RELDIR})
@@ -507,47 +505,53 @@ unset(ENV{ASN1C_PREFIX})
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${asn1c_call}: error")
 endif (NOT ${ret} STREQUAL 0)
-#execute_process(COMMAND python ${F1AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f ${F1AP_ASN_DIR}/F1AP-PDU-Contents.asn -o ${F1AP_C_DIR}
-#                RESULT_VARIABLE ret)
-#if (NOT ${ret} STREQUAL 0)
-#  message(FATAL_ERROR "asn1tostruct.py: error")
-#endif (NOT ${ret} STREQUAL 0)
-#execute_process(COMMAND ${fix_asn1c_call} ${F1AP_C_DIR} F1AP ${F1AP_VERSION}
-#                RESULT_VARIABLE ret)
-#if (NOT ${ret} STREQUAL 0)
-#  message(FATAL_ERROR "${fix_asn1c_call}: error")
-#endif (NOT ${ret} STREQUAL 0)
 file(GLOB F1AP_source ${F1AP_C_DIR}/*.c)
 
 #set(F1AP_OAI_generated
-#  ${X2AP_C_DIR}/x2ap_decoder.c
-#  ${X2AP_C_DIR}/x2ap_encoder.c
-#  ${X2AP_C_DIR}/x2ap_xer_print.c
-#  ${X2AP_C_DIR}/x2ap_ies_defs.h
+#  ${F1AP_C_DIR}/per_decoder.c
+#  ${F1AP_C_DIR}/per_encoder.c
+  #${F1AP_C_DIR}/f1ap_xer_print.c
+#  ${F1AP_C_DIR}/F1AP_ProtocolIE-Field.h
 #  )
+
 file(GLOB f1ap_h ${F1AP_C_DIR}/*.h)
 set(f1ap_h ${f1ap_h} )
 
-##message("calling ${X2AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f ${X2AP_ASN_DIR}/X2AP-PDU-Contents.asn -o ${X2AP_C_DIR}")
-#add_custom_command (
-#  OUTPUT ${F1AP_OAI_generated}
-#  COMMAND ${asn1c_call} ${F1AP_C_DIR} ${F1AP_ASN_FILES}
-#  COMMAND python ${F1AP_DIR}/MESSAGES/ASN1/asn1tostruct.py -f ${F1AP_ASN_DIR}/F1AP-PDU-Contents.asn -o ${F1AP_C_DIR}
-#  COMMAND ${fix_asn1c_call} ${F1AP_C_DIR} F1AP ${F1AP_VERSION}
-#  DEPENDS ${F1AP_ASN_FILES}
-#  )
-
 add_library(F1AP_LIB
-  ${F1AP_OAI_generated}
+  #${F1AP_OAI_generated}
+  #${f1ap_h}
   ${F1AP_source}
-#  ${F1AP_DIR}/f1ap_common.c
   )
 
 include_directories ("${F1AP_C_DIR}")
 include_directories ("${F1AP_DIR}")
 
 
+add_library(F1AP
+  #${F1AP_DIR}/test.c
+  ${F1AP_DIR}/DU_F1AP.c
+  ${F1AP_DIR}/CU_F1AP.c
+  )
 
+add_executable(test_f1ap_du
+  ${F1AP_DIR}/test_f1ap_du.c
+  ${F1AP_DIR}/DU_F1AP.c
+  ${F1AP_DIR}/sctp_du.c
+  )
+
+target_link_libraries(test_f1ap_du
+  -Wl,--start-group F1AP_LIB sctp pthread -Wl,--end-group
+  )
+
+add_executable(test_f1ap_cu
+  ${F1AP_DIR}/test_f1ap_cu.c
+  ${F1AP_DIR}/CU_F1AP.c
+  ${F1AP_DIR}/sctp_cu.c
+  )
+
+target_link_libraries(test_f1ap_cu
+  -Wl,--start-group F1AP_LIB sctp pthread -Wl,--end-group
+  )
 
 # Hardware dependant options
 ###################################
@@ -832,6 +836,7 @@ include_directories("${OPENAIR3_DIR}/SECU")
 include_directories("${OPENAIR3_DIR}/SCTP")
 include_directories("${OPENAIR3_DIR}/S1AP")
 include_directories("${OPENAIR2_DIR}/X2AP")
+include_directories("${OPENAIR2_DIR}/F1AP")
 include_directories("${OPENAIR3_DIR}/UDP")
 include_directories("${OPENAIR3_DIR}/GTPV1-U")
 include_directories("${OPENAIR_DIR}/targets/COMMON")
@@ -2049,6 +2054,8 @@ add_definitions(-DASN1_MINIMUM_VERSION=924)
 add_executable(lte-softmodem
   ${rrc_h}
   ${s1ap_h}
+  ${f1ap_h}
+  #${OPENAIR_BIN_DIR}/messages_xml.h
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-enb.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
@@ -2073,7 +2080,7 @@ add_executable(lte-softmodem
 
 target_link_libraries (lte-softmodem
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB PHY_COMMON PHY PHY_RU LFDS L2 
+  RRC_LIB S1AP_LIB S1AP_ENB F1AP_LIB F1AP GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB PHY_COMMON PHY PHY_RU LFDS L2 
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} ${FSPT_MSG_LIB} ${PROTO_AGENT_LIB} LFDS7
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
@@ -2088,6 +2095,8 @@ target_link_libraries (lte-softmodem ${T_LIB})
 add_executable(lte-softmodem-nos1
   ${rrc_h}
   ${s1ap_h}
+  ${f1ap_h}
+  #${OPENAIR_BIN_DIR}/messages_xml.h
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-enb.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
@@ -2126,6 +2135,8 @@ target_link_libraries (lte-softmodem-nos1 ${T_LIB})
 add_executable(lte-uesoftmodem
   ${rrc_h}
   ${s1ap_h}
+  ${f1ap_h}
+  #${OPENAIR_BIN_DIR}/messages_xml.h
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
   ${OPENAIR_TARGETS}/RT/USER/lte-uesoftmodem.c
@@ -2149,7 +2160,7 @@ add_executable(lte-uesoftmodem
 
 target_link_libraries (lte-uesoftmodem
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_UE PHY_RU LFDS L2_UE SIMU
+  RRC_LIB S1AP_LIB S1AP_ENB F1AP_LIB F1AP GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_UE PHY_RU LFDS L2_UE SIMU 
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES}
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
@@ -2164,6 +2175,8 @@ target_link_libraries (lte-uesoftmodem ${T_LIB})
 add_executable(lte-uesoftmodem-nos1
   ${rrc_h}
   ${s1ap_h}
+  ${f1ap_h}
+#  ${OPENAIR_BIN_DIR}/messages_xml.h
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
   ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
   ${OPENAIR_TARGETS}/RT/USER/lte-uesoftmodem.c
@@ -2266,7 +2279,7 @@ add_executable(test_epc_generate_scenario
   ${OPENAIR3_DIR}/S1AP/s1ap_eNB_defs.h
   )
 target_link_libraries (test_epc_generate_scenario
-  -Wl,--start-group RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB GTPV1U LIB_NAS_UE SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS ${ITTI_LIB} ${MSC_LIB} L2 -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${LIBXSLT_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES}
+  -Wl,--start-group RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB F1AP_LIB F1AP GTPV1U LIB_NAS_UE SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS ${ITTI_LIB} ${MSC_LIB} L2 -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${LIBXSLT_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES}
   )
 
 add_executable(test_epc_play_scenario
@@ -2286,7 +2299,7 @@ add_executable(test_epc_play_scenario
   )
 target_include_directories(test_epc_play_scenario PUBLIC /usr/local/share/asn1c)
 target_link_libraries (test_epc_play_scenario
-  -Wl,--start-group RRC_LIB S1AP_LIB X2AP_LIB GTPV1U LIB_NAS_UE SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY_COMMON PHY PHY_UE LFDS ${ITTI_LIB} ${MSC_LIB} -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${LIBXSLT_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES}
+  -Wl,--start-group RRC_LIB S1AP_LIB X2AP_LIB F1AP_LIB F1AP GTPV1U LIB_NAS_UE SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY_COMMON PHY PHY_UE LFDS ${ITTI_LIB} ${MSC_LIB} -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${LIBXSLT_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES}
   )
 
 
@@ -2322,7 +2335,7 @@ if (${T_TRACER})
         dlsim_tm4 dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim
         pdcchsim pucchsim prachsim syncsim ulsim
         #all "add_library" definitions
-        ITTI RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB
+        ITTI RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB F1AP_LIB F1AP
         oai_exmimodevif oai_usrpdevif oai_bladerfdevif oai_lmssdrdevif
         oai_eth_transpro
         FLPT_MSG ASYNC_IF FLEXRAN_AGENT HASHTABLE MSC UTIL OMG_SUMO SECU_OSA
