@@ -385,12 +385,14 @@ typedef struct {
   boolean_t ra_flag;
   /// rnti
   rnti_t rnti;
+  /// rnti type
+  //crc_scrambled_t rnti_type;
   /// Format
   NR_DCI_format_t format;
   /// search space
   dci_space_t search_space;
   /// DCI pdu
-  uint8_t dci_pdu[8];
+  uint32_t dci_pdu[4];
 //#if defined(UPGRADE_RAT_NR)
 #if 1
   /// harq information
