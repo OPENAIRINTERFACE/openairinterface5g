@@ -2929,7 +2929,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
     pdcch_channel_level(pdcch_vars[eNB_id]->dl_ch_estimates_ext,
                         frame_parms,
                         avgP,
-                        frame_parms->N_RB_DL);
+						n_rb_offset);
     avgs = 0;
     for (aatx = 0; aatx < frame_parms->nb_antenna_ports_eNB; aatx++)
       for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++)

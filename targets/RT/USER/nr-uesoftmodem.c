@@ -649,8 +649,8 @@ void set_default_frame_parms(NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
         frame_parms[CC_id]->frame_type          = FDD;
         frame_parms[CC_id]->tdd_config          = 3;
         //frame_parms[CC_id]->tdd_config_S        = 0;
-        frame_parms[CC_id]->N_RB_DL             = 100;
-        frame_parms[CC_id]->N_RB_UL             = 100;
+        frame_parms[CC_id]->N_RB_DL             = 106;
+        frame_parms[CC_id]->N_RB_UL             = 106;
         frame_parms[CC_id]->Ncp                 = NORMAL;
         //frame_parms[CC_id]->Ncp_UL              = NORMAL;
         frame_parms[CC_id]->Nid_cell            = 0;
@@ -715,8 +715,8 @@ void set_default_frame_parms_single(nfapi_nr_config_request_t *config, NR_DL_FRA
         frame_parms->frame_type          = FDD;
         frame_parms->tdd_config          = 3;
         //frame_parms[CC_id]->tdd_config_S        = 0;
-        frame_parms->N_RB_DL             = 100;
-        frame_parms->N_RB_UL             = 100;
+        frame_parms->N_RB_DL             = 106;
+        frame_parms->N_RB_UL             = 106;
         frame_parms->Ncp                 = NORMAL;
         //frame_parms[CC_id]->Ncp_UL              = NORMAL;
         frame_parms->Nid_cell            = 0;
@@ -771,7 +771,7 @@ void init_openair0() {
         openair0_cfg[card].mmapped_dma=mmapped_dma;
         openair0_cfg[card].configFilename = NULL;
 
-        if(frame_parms[0]->N_RB_DL == 100) {
+        if(frame_parms[0]->N_RB_DL == 106) {
 	  if (numerology==0) {
             if (frame_parms[0]->threequarter_fs) {
                 openair0_cfg[card].sample_rate=23.04e6;
