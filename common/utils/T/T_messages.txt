@@ -838,6 +838,28 @@ ID = LEGACY_CLI_TRACE
     GROUP = ALL:LEGACY_CLI:LEGACY_GROUP_TRACE:LEGACY
     FORMAT = string,log
 
+ID = LEGACY_PROTO_AGENT_DEBUG
+    DESC = PROTO AGENT legacy logs - debug level
+    GROUP = ALL:LEGACY_PROTO_AGENT:LEGACY_GROUP_DEBUG:LEGACY
+    FORMAT = string,log
+ID = LEGACY_PROTO_AGENT_INFO
+    DESC = PROTO AGENT legacy logs - info level
+    GROUP = ALL:LEGACY_PROTO_AGENT:LEGACY_GROUP_INFO:LEGACY
+    FORMAT = string,log
+ID = LEGACY_PROTO_AGENT_ERROR
+    DESC = PROTO AGENT legacy logs - error level
+    GROUP = ALL:LEGACY_PROTO_AGENT:LEGACY_GROUP_ERROR:LEGACY
+    FORMAT = string,log
+
+ID = LEGACY_F1U_ERROR
+    DESC = F1U legacy logs - error level
+    GROUP = ALL:LEGACY_F1U:LEGACY_GROUP_ERROR:LEGACY
+    FORMAT = string,log
+ID = LEGACY_F1U_DEBUG
+    DESC = F1U legacy logs - debug level
+    GROUP = ALL:LEGACY_F1U:LEGACY_GROUP_DEBUG:LEGACY
+    FORMAT = string,log
+
 #################
 #### UE LOGS ####
 #################
