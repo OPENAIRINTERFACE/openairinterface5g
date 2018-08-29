@@ -156,7 +156,6 @@ case $key in
     LOG_PATTERN=cppcheck.xml
     NB_PATTERN_FILES=1
     BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2 -i openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c"
-
     shift
     ;;
     -v5)
