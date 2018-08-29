@@ -524,6 +524,7 @@ add_library(X2AP_LIB
 include_directories ("${X2AP_C_DIR}")
 include_directories ("${X2AP_DIR}")
 
+
 # Hardware dependant options
 ###################################
 add_list1_option(NB_ANTENNAS_RX "2" "Number of antennas in reception" "1" "2" "4")
