@@ -647,33 +647,8 @@ static void *UE_thread_rxn_txnp4(void *arg) {
         pickTime(current);
 //        updateTimes(proc->gotIQs, &t2, 10000, "Delay to wake up UE_Thread_Rx (case 2)");
 
-#ifndef NO_RAT_NR
         // Process Rx data for one sub-frame
         if (slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx) & NR_DOWNLINK_SLOT) {
-#else
-        // Process Rx data for one sub-frame
-        lte_subframe_t sf_type = subframe_select( &UE->frame_parms, proc->subframe_rx);
-        if ((sf_type == SF_DL) ||
-                (UE->frame_parms.frame_type == FDD) ||
-                (sf_type == SF_S)) {
-
-            if (UE->frame_parms.frame_type == TDD) {
-                LOG_D(PHY, "%s,TDD%d,%s: calling UE_RX\n",
-                      threadname,
-                      UE->frame_parms.tdd_config,
-                      (sf_type==SF_DL? "SF_DL" :
-                       (sf_type==SF_UL? "SF_UL" :
-                        (sf_type==SF_S ? "SF_S"  : "UNKNOWN_SF_TYPE"))));
-            } else {
-                LOG_D(PHY, "%s,%s,%s: calling UE_RX\n",
-                      threadname,
-                      (UE->frame_parms.frame_type==FDD? "FDD":
-                       (UE->frame_parms.frame_type==TDD? "TDD":"UNKNOWN_DUPLEX_MODE")),
-                      (sf_type==SF_DL? "SF_DL" :
-                       (sf_type==SF_UL? "SF_UL" :
-                        (sf_type==SF_S ? "SF_S"  : "UNKNOWN_SF_TYPE"))));
-            }
-#endif
 
             //clean previous FAPI MESSAGE
             UE->rx_ind.number_pdus = 0;
@@ -767,9 +742,9 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 #else
         if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_UL) ||
                 (UE->frame_parms.frame_type == FDD) )
+#endif
             if (UE->mode != loop_through_memory)
                 phy_procedures_UE_TX(UE,proc,0,0,UE->mode,no_relay);
-#endif
 #endif
 #if 0
         if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_S) &&

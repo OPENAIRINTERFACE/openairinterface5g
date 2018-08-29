@@ -61,15 +61,24 @@
 
 /************* TYPE ***********************************************/
 
-typedef enum {
- NEW_TRANSMISSION_HARQ,
- RETRANSMISSION_HARQ
-} harq_result_t;
 
 /************** VARIABLES *****************************************/
 
 
 /*************** FUNCTIONS ****************************************/
+
+
+/** \brief This function updates HARQ context according to dci
+    @param PHY_VARS_NR_UE ue context
+    @param nr_dci_info_extracted extracted information from dci
+    @param dlsch downlink context
+    @param ulsch uplink context
+    @param nr_tti_rx rx slot
+    @param tx_offset slot offset for tx
+    @returns none */
+
+void get_dci_info_for_harq(PHY_VARS_NR_UE *ue, NR_DCI_INFO_EXTRACTED_t *nr_dci_info_extracted,
+		                   NR_UE_DLSCH_t **dlsch, NR_UE_ULSCH_t *ulsch, uint8_t nr_tti_rx, uint8_t tx_offset);
 
 /** \brief This function configures uplink HARQ context
     @param PHY_VARS_NR_UE ue context
@@ -87,32 +96,26 @@ void config_uplink_harq_process(PHY_VARS_NR_UE *ue, int gNB_id, uint8_t number_h
 void release_uplink_harq_process(PHY_VARS_NR_UE *ue, int gNB_id);
 
 /** \brief This function stores slot for transmission in HARQ context
-    @param ulsch_harq uplink harq context
+    @param ulsch uplink context
     @param harq process identifier harq_pid
     @param slot_tx slot for transmission related to current downlink PDCCH
     @returns 0 none */
 
-void set_tx_harq_id(PHY_VARS_NR_UE *ue, int gNB_id, int harq_pid, int slot_tx);
+void set_tx_harq_id(NR_UE_ULSCH_t *ulsch, int harq_pid, int slot_tx);
 
 /** \brief This function initialises context of an uplink HARQ process
-    @param ulsch_harq uplink harq context
+    @param ulsch uplink context
     @param harq process identifier harq_pid
-    @returns 0 none */
+    @returns harq number for tx slot */
 
-int get_tx_harq_id(PHY_VARS_NR_UE *ue, int gNB_id, int slot_tx);
-
-/** \brief This function returns number of slots between current reception and related transmission
-    @param dci value
-    @returns slots number between reception and related transmission */
-
-int get_dci_slot_rx_to_tx(int dci_index);
+int get_tx_harq_id(NR_UE_ULSCH_t *ulsch, int slot_tx);
 
 /** \brief This function update uplink harq context and return transmission type (new transmission or retransmission)
     @param ulsch uplink harq context
     @param harq process identifier harq_pid
     @returns retransmission or new transmission */
 
-harq_result_t uplink_harq_process(NR_UE_ULSCH_t *ulsch, int harq_pid, int ndi, nr_rnti_type_t rnti_type);
+harq_result_t uplink_harq_process(NR_UE_ULSCH_t *ulsch, int harq_pid, int ndi, uint8_t rnti_type);
 
 /** \brief This function initialises downlink HARQ status
     @param pointer to downlink harq status
@@ -145,7 +148,7 @@ void release_downlink_harq_process(PHY_VARS_NR_UE *ue, int gNB_id, int TB_id, in
     @param rnti_type type of rnti
     @returns retransmission or new transmission */
 
-harq_result_t downlink_harq_process(NR_DL_UE_HARQ_t *dlsch, int harq_pid, int ndi, nr_rnti_type_t rnti_type);
+harq_result_t downlink_harq_process(NR_DL_UE_HARQ_t *dlsch, int harq_pid, int ndi, uint8_t rnti_type);
 
 #undef EXTERN
 #undef INIT_VARIABLES_HARQ_NR_H

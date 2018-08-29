@@ -250,6 +250,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
       nb_symbols_total = initial_pucch_resource[initial_pucch_id].nrofSymbols;
 
       int N_CS = initial_pucch_resource[initial_pucch_id].nb_CS_indexes;
+      /* see TS 38213 Table 9.2.1-1: PUCCH resource sets before dedicated PUCCH resource configuration */
       int RB_BWP_offset;
       if (initial_pucch_id == 15) {
         RB_BWP_offset = ue->systemInformationBlockType1_nr.N_BWP_SIZE/4;
@@ -469,10 +470,10 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                          frame_tx%1024, nr_tti_tx, N_UCI,  pucch_payload, O_ACK, pucch_ack_payload, O_SR, sr_payload, csi_status, csi_payload);
 
   NR_TST_PHY_PRINTF("PUCCH ( format : %d ) ( modulation : %s ) ( nb prb : %d ) ( nb symbols total: %d ) ( nb symbols : %d ) ( max code rate*100 : %d ) ( starting_symbol_index : %d ) \n",
-                        format, (Q_m == BITS_PER_SYMBOL_QPSK ? " QPSK " : " BPSK "), nb_of_prbs, nb_symbols_total, nb_symbols, max_code_rate, starting_symbol_index);
+                             format, (Q_m == BITS_PER_SYMBOL_QPSK ? " QPSK " : " BPSK "), nb_of_prbs, nb_symbols_total, nb_symbols, max_code_rate, starting_symbol_index);
 
   NR_TST_PHY_PRINTF("PUCCH ( starting_prb : %d ) ( second_hop : %d ) ( m_0 : %d ) ( m_CS : %d ) ( time_domain_occ %d ) (occ_length : %d ) ( occ_Index : %d ) \n",
-                         starting_prb,         second_hop,         m_0,         m_CS,         time_domain_occ,      occ_length,         occ_Index);
+                             starting_prb,         second_hop,         m_0,         m_CS,         time_domain_occ,      occ_length,         occ_Index);
 
   /* Part - IV */
   /* Generate PUCCH signal according to its format and parameters */
@@ -619,7 +620,6 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
   else {
     number_of_code_word = 1;
   }
-
 
   if (ue->n_connected_eNB > 1) {
     LOG_E(PHY,"PUCCH ACK feedback is not implemented for mutiple gNB cells : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);

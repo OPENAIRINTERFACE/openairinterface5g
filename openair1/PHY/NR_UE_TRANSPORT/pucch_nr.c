@@ -430,6 +430,12 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
   #ifdef DEBUG_NR_PUCCH_TX
     printf("\t [nr_generate_pucch0] sequence generation\n");
   #endif
+
+  // number of symbols defined in the PUCCH-Config from higher layers: format 0 {1-2} FIXME!
+  //uint8_t nrofSymbols;
+  //uint8_t startingSymbolIndex;
+  //uint8_t startingPRB;
+
   /*
    * Defining cyclic shift hopping TS 38.211 Subclause 6.3.2.2.2
    */
@@ -469,7 +475,9 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
 //    PUCCH_GroupHopping=0;
 //    n_id=10;
     //PUCCH_Frequency_Hopping = 0;
+#ifdef DEBUG_NR_PUCCH_TX
     printf("\t [nr_generate_pucch0] sequence generation: variable initialization for test\n");
+#endif
   /////////////////////////////////////////////////////// ending variables initialization for test
 
   // x_n contains the sequence r_u_v_alpha_delta(n)

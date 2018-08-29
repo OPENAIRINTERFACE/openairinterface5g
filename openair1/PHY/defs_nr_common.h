@@ -33,6 +33,7 @@
 #ifndef __PHY_DEFS_NR_COMMON__H__
 #define __PHY_DEFS_NR_COMMON__H__
 
+#include "PHY/impl_defs_top.h"
 #include "defs_common.h"
 #include "nfapi_nr_interface.h"
 #include "impl_defs_nr.h"
@@ -176,7 +177,7 @@ typedef struct NR_DL_FRAME_PARMS {
   TDD_UL_DL_SlotConfig_t    *p_TDD_UL_DL_ConfigDedicated;
 
   /// TDD configuration
-  uint16_t tdd_uplink_nr[MAX_NR_OF_SLOTS]; /* this is a bitmap of symbol of each slot given for 2 frames */
+  uint16_t tdd_uplink_nr[2*NR_MAX_SLOTS_PER_FRAME]; /* this is a bitmap of symbol of each slot given for 2 frames */
 
    //SSB related params
   /// Start in Subcarrier index of the SSB block

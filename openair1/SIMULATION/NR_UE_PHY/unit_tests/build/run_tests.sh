@@ -28,9 +28,10 @@
 # - checking output files with reference files.
 # ./run_test to build/run and check all tests
 # -b no build
-# -r no run
+# -e no execution
 # -c no check
-# an alone specific test can be executed ./run_test test_name
+# -m no run of meld
+# an alone specific test can be executed ./run_tests test_name
 #----------------------------------------------------------------------------
 # CONFIGURATION
 # files and directories
@@ -48,8 +49,9 @@ BROWSER="firefox"
 
 BUILD_TEST="yes"
 CHECK_TEST="yes"
-RUN_TEST="yes"
+EXECUTE_TEST="yes"
 SINGLE_TEST="no"
+RUN_MELD="yes"
 # for removing files
 REMOVE="rm -f"
 COMPARE="cmp"
@@ -76,23 +78,28 @@ do
       echo "No build of unit test"
       BUILD_TEST="no"
       ;;
-   -r) 
-      echo "No run of unit test"
-      RUN_TEST="no"
+   -e) 
+      echo "No execution of unit test"
+      EXECUTE_TEST="no"
       ;;
    -c) 
       echo "No check of unit test"
       CHECK_TEST="no"
+      ;;
+   -m) 
+      echo "No run of meld tool"
+      RUN_MELD="no"
       ;;
    -h) 
       echo "Option of run_test script"
       echo "-b : No Build of unit tests"
       echo "-c : No check for unit test"
       echo "-r : No run of unit tests"
+      echo "-m : No run of meld tool"
       exit
       BUILD_TEST="no"
       CHECK_TEST="no"
-      RUN_TEST="no"
+      EXECUTE_TEST="no"
       ;;
     *) 
       for file in $tst_files
@@ -109,7 +116,7 @@ do
        echo "Unknown parameter $1"
        BUILD_TEST="no"
        CHECK_TEST="no"
-       RUN_TEST="no"
+       EXECUTE_TEST="no"
        exit
       fi
       ;;
@@ -121,15 +128,12 @@ done
 
 #--------------------------------------------------------------------------------------------
 #  RUN AND CHECK RESULTS
-# compare reference log file to results file
-# diff -s -d -a -q ./testlogs/*.txt ./reflog/*.txt
-# compare $RESULTS_FILE to $REFERENCE_DIR/$RESULTS_FILE
 
 numberDisplayFilesDifferencies=0
 let MAX_NUMBER_DISPLAY_FILES_DIFFERENCES=8
 num_diff=0
 
-if [ $RUN_TEST == "yes" ] 
+if [ $EXECUTE_TEST == "yes" ] 
 then
   mkdir $RESULT_DIR
 fi
@@ -174,7 +178,7 @@ for file in $tst_files
       make $file   
     fi
 
-    if [ $RUN_TEST == "yes" ] 
+    if [ $EXECUTE_TEST == "yes" ] 
     then
        echo "rm $RESULT_DIR/$RESULT_TEST_FILE"
       rm $RESULT_DIR/$RESULT_TEST_FILE
@@ -195,20 +199,25 @@ for file in $tst_files
 
         if [ $? == 0 ]
         then
-            echo "Same file for $file"
+        	echo "Test $file is PASS"
+            echo "Same logging file for $file"
         else
-          echo "Difference for scenario $file"
+          echo "Test $file is FAIL"
+      echo "Difference of logging file for scenario $file"          
           let "num_diff=$num_diff + 1"
-          meld $RESULT_DIR/$RESULT_TEST_FILE $REFERENCE_DIR/$RESULT_TEST_FILE &
-          let "numberDisplayFilesDifferencies=$numberDisplayFilesDifferencies + 1"
-          echo "Meld number "$numberDisplayFilesDifferencies
-          if [ $numberDisplayFilesDifferencies = $MAX_NUMBER_DISPLAY_FILES_DIFFERENCES ] 
+          if  [ $RUN_MELD == "yes" ]
           then
-            echo "######  ERROR  ######  ERROR  ######  ERROR  ######  ERROR  ######  ERROR  ######  ERROR  ######"
-            echo "=> ERROR Test aborted because there are already $MAX_NUMBER_DISPLAY_FILES_DIFFERENCES detected files which are different"
-            break
+            meld $RESULT_DIR/$RESULT_TEST_FILE $REFERENCE_DIR/$RESULT_TEST_FILE &
+            let "numberDisplayFilesDifferencies=$numberDisplayFilesDifferencies + 1"
+            echo "Meld number "$numberDisplayFilesDifferencies
+            if [ $numberDisplayFilesDifferencies = $MAX_NUMBER_DISPLAY_FILES_DIFFERENCES ] 
+            then
+              echo "######  ERROR  ######  ERROR  ######  ERROR  ######  ERROR  ######  ERROR  ######  ERROR  ######"
+              echo "=> ERROR Test aborted because there are already $MAX_NUMBER_DISPLAY_FILES_DIFFERENCES detected logging files which are different"
+              break
+            fi
           fi
-        fi
+         fi
       else
         echo "No reference file for test $file"
       fi   

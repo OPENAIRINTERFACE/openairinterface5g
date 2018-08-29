@@ -114,8 +114,6 @@ SystemInformationBlockType1_nr_t;
 *
 ************************************************************************/
 
-#define MAX_NR_OF_SLOTS                    (320)    /* maximum number of slots */
-
 #define NR_TDD_DOWNLINK_SLOT               (0x0000)
 #define NR_TDD_UPLINK_SLOT                 (0x3FFF) /* uplink bitmap for each symbol, there are 14 symbols per slots */
 #define NR_TDD_SET_ALL_SYMBOLS             (0x3FFF)
@@ -544,7 +542,7 @@ typedef struct {
 
 const initial_pucch_resource_t initial_pucch_resource[NB_INITIAL_PUCCH_RESOURCE]; /* TS 36.213 Table 9.2.1-1: PUCCH resource sets before dedicated PUCCH resource configuration */
 
-/* structure with all possible field for pucch format from 0 to 4  */
+/* structure with all possible fields for pucch format from 0 to 4  */
 typedef struct {
   pucch_format_nr_t      format;              /* format   0    1    2    3    4    */
   uint8_t                initialCyclicShift;  /*          x    x                   */
