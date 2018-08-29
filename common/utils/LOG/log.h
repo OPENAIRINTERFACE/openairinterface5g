@@ -269,6 +269,20 @@ int  is_newline( char *str, int size);
 
 int register_log_component(char *name, char *fext, int compidx);
 
+#define LOG_MEM_SIZE 500*1024*1024
+#define LOG_MEM_FILE "./logmem.log"
+void flush_mem_to_file(void);
+void log_output_memory(const char *file, const char *func, int line, int comp, int level, const char* format,va_list args);
+int logInit_log_mem(void);
+void close_log_mem(void);
+  
+typedef struct {
+  char* buf_p;
+  int buf_index;
+  int enable_flag;
+} log_mem_cnt_t;
+
+
 /* @}*/
 
 /*!\fn int32_t write_file_matlab(const char *fname, const char *vname, void *data, int length, int dec, char format);

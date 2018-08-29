@@ -117,18 +117,21 @@ int signal_handle(int *end)
     case SIGUSR1:
       SIG_DEBUG("Received SIGUSR1\n");
       *end = 1;
+      close_log_mem();
       break;
 
     case SIGSEGV:   /* Fall through */
     case SIGABRT:
       SIG_DEBUG("Received SIGABORT\n");
       backtrace_handle_signal(&info);
+      close_log_mem();
       break;
 
     case SIGINT:
       printf("Received SIGINT\n");
       itti_send_terminate_message(TASK_UNKNOWN);
       *end = 1;
+      close_log_mem();
       break;
 
     default:

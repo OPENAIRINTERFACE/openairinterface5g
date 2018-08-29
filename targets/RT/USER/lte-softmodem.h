@@ -202,6 +202,7 @@
 {"R" ,  		  	 CONFIG_HLP_FLOG,	0,                uptr:&online_log_messages,		defintval:1,			   TYPE_INT,	  0},			   \
 {"g" ,  		  	 CONFIG_HLP_LOGL,	0,		  uptr:&glog_level,			defintval:0,			   TYPE_UINT,     0},			   \
 {"telnetsrv",    		 CONFIG_HLP_TELN,	PARAMFLAG_BOOL,	  uptr:&start_telnetsrv,		defintval:0,			   TYPE_UINT,     0},			   \
+{"log-mem",                       NULL,                  0,                strptr:(char **)&logmem_filename,    defstrval:"./logmem.log",          TYPE_STRING,   sizeof(logmem_filename)},    \
 }
 #define CMDLINE_ONLINELOG_IDX     0 
 #define CMDLINE_GLOGLEVEL_IDX     1
