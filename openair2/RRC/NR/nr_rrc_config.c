@@ -253,3 +253,10 @@ void rrc_config_physicalcellgroup(uint8_t Mod_id,
   physicalcellgroup_config->sp_CSI_RNTI[CC_id]                      = 0;
   physicalcellgroup_config->RNTI_Value[CC_id]                       = 0;
 }
+
+void rrc_config_rachdedicated(uint8_t Mod_id,
+                              int CC_id,
+                              physicalcellgroup_t *physicalcellgroup_config
+                              ){
+  
+}

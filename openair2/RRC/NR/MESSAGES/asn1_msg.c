@@ -1064,3 +1064,36 @@ void  do_PHYSICALCELLGROUP(uint8_t Mod_id,
   }
 
 }
+
+void  do_SpCellConfig(uint8_t Mod_id,
+                      int CC_id,
+                      struct NR_SpCellConfig  *spconfig){
+
+  //spconfig->servCellIndex = CALLOC(1,sizeof(NR_ServCellIndex_t));
+  //*(spconfig->servCellIndex)=
+
+  gNB_RrcConfigurationReq  *common_configuration;
+  common_configuration = CALLOC(1,sizeof(gNB_RrcConfigurationReq));
+  //Fill servingcellconfigcommon config value
+  rrc_config_servingcellconfigcommon(Mod_id,
+                                     CC_id
+                                     #if defined(ENABLE_ITTI)
+                                     ,common_configuration
+                                     #endif
+                                     );
+  //Fill common config to structure
+  do_SERVINGCELLCONFIGCOMMON(Mod_id,
+                             CC_id,
+                             #if defined(ENABLE_ITTI)
+                             common_configuration,
+                             #endif
+                             0
+                             );
+
+  spconfig->reconfigurationWithSync = CALLOC(1,sizeof(struct NR_ReconfigurationWithSync));
+/*
+  memcpy( spconfig->reconfigurationWithSync, 
+          RC.nrrrc[Mod_id]->carrier[0].servingcellconfigcommon,
+          sizeof(struct NR_ServingCellConfigCommon));
+*/
+}

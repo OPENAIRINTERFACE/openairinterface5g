@@ -160,13 +160,13 @@ void rrc_gNB_generate_SgNBAdditionRequestAcknowledge(
   cellGroupconfig->mac_CellGroupConfig      = CALLOC(1,sizeof(struct NR_MAC_CellGroupConfig));
   cellGroupconfig->physicalCellGroupConfig  = CALLOC(1,sizeof(struct NR_PhysicalCellGroupConfig));
   cellGroupconfig->spCellConfig             = CALLOC(1,sizeof(struct NR_SpCellConfig));
-  cellGroupconfig->sCellToAddModList        = CALLOC(1,sizeof(struct NR_CellGroupConfig__sCellToAddModList));
+  //cellGroupconfig->sCellToAddModList        = CALLOC(1,sizeof(struct NR_CellGroupConfig__sCellToAddModList));
 
   rlc_BearerToAddModList   = cellGroupconfig->rlc_BearerToAddModList;
   mac_CellGroupConfig      = cellGroupconfig->mac_CellGroupConfig;
   physicalCellGroupConfig  = cellGroupconfig->physicalCellGroupConfig;
   spCellConfig             = cellGroupconfig->spCellConfig;
-  sCellToAddModList        = cellGroupconfig->sCellToAddModList;
+  //sCellToAddModList        = cellGroupconfig->sCellToAddModList;
   
   rlc_bearer_config_t *rlc_config;
   rlc_config = CALLOC(1,sizeof(rlc_bearer_config_t));
@@ -207,28 +207,11 @@ void rrc_gNB_generate_SgNBAdditionRequestAcknowledge(
                        physicalCellGroupConfig,
                        physicalcellgroup_config);
 
-  gNB_RrcConfigurationReq  *common_configuration;
-  common_configuration = CALLOC(1,sizeof(gNB_RrcConfigurationReq));
-  //Fill servingcellconfigcommon config value
-  rrc_config_servingcellconfigcommon(ctxt_pP->module_id,
-                                     ue_context_pP->ue_context.primaryCC_id
-                                     #if defined(ENABLE_ITTI)
-                                     ,common_configuration
-                                     #endif
-                                     );
-  //Fill common config to structure
-  do_SERVINGCELLCONFIGCOMMON(ctxt_pP->module_id,
-                               ue_context_pP->ue_context.primaryCC_id,
-                               #if defined(ENABLE_ITTI)
-                               common_configuration,
-                               #endif
-                               0
-                               );
-/*
-  memcpy( (*spCellConfig)->reconfigurationWithSync->spCellConfigCommon , 
-          RC.nrrrc[ctxt_pP->module_id]->carrier[0].servingcellconfigcommon,
-          sizeof(struct NR_ServingCellConfigCommon));
-*/
+
+  do_SpCellConfig(ctxt_pP->module_id,
+                  ue_context_pP->ue_context.primaryCC_id,
+                  spCellConfig);
+
 
 }
 

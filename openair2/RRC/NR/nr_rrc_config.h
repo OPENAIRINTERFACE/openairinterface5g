@@ -111,6 +111,11 @@ typedef struct physicalcellgroup_s{
   long        RNTI_Value[MAX_NUM_CCs];
 }physicalcellgroup_t;
 
+typedef struct rach_dedicated_s{
+  
+  
+}rach_dedicated_t;
+
 void rrc_config_servingcellconfigcommon(uint8_t Mod_id,
                                         int CC_id
                                         #if defined(ENABLE_ITTI)

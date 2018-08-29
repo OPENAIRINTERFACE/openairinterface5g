@@ -104,6 +104,10 @@ void  do_PHYSICALCELLGROUP(uint8_t Mod_id,
                            struct NR_PhysicalCellGroupConfig *physicalCellGroupConfig,
                            physicalcellgroup_t *physicalcellgroup_config);
 
+void  do_SpCellConfig(uint8_t Mod_id,
+                      int CC_id,
+                      struct NR_SpCellConfig  *spconfig);
+
 
 
 
