@@ -76,7 +76,7 @@ int set_tdd_configuration_dedicated_nr(NR_DL_FRAME_PARMS *frame_parms);
  *  @param nr_tti   : slot number
     @returns nr_slot_t : downlink or uplink */
 
-nr_slot_t slot_select_nr(NR_DL_FRAME_PARMS *frame_parms, int nr_frame, int nr_tti);
+int slot_select_nr(NR_DL_FRAME_PARMS *frame_parms, int nr_frame, int nr_tti);
 
 /** \brief This function frees tdd configuration for nr
  *  @param frame_parms NR DL Frame parameters

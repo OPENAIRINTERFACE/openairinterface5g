@@ -50,14 +50,14 @@ int encode_parity_check_part_orig(unsigned char *c,unsigned char *d, short BG,sh
   int i1,i2,i3,i4,i5,temp_prime;
   unsigned char channel_temp,temp;
 
-  //if (BG==1)
+  if (BG==1)
   {
     no_shift_values=(short *) no_shift_values_BG1;
     pointer_shift_values=(short *) pointer_shift_values_BG1;
       nrows=46; //parity check bits
       ncols=22; //info bits
   }
-  /*else if (BG==2)
+  else if (BG==2)
   {
     no_shift_values=(short *) no_shift_values_BG2;
     pointer_shift_values=(short *) pointer_shift_values_BG2;
@@ -68,7 +68,7 @@ int encode_parity_check_part_orig(unsigned char *c,unsigned char *d, short BG,sh
     printf("problem with BG\n");
     return(-1);
   }
-  */
+  
 
   no_punctured_columns=(int)((nrows-2)*Zc+block_length-block_length*3)/Zc;
 

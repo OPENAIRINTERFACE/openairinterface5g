@@ -88,4 +88,47 @@ const float   table_38213_13_12_c1[16] = { 0, 0, 2.5f, 2.5f, 5, 5, 0, 2.5f, 5, 7
 const int32_t table_38213_13_12_c2[16] = { 1,  2,  1,  2,  1,  2,  2,  2,  2,  1,  2,  2,  1,  1,  reserved,  reserved}; // index 14-15 reserved
 const float   table_38213_13_12_c3[16] = { 1, 0.5f, 1, 0.5f, 1, 0.5f, 0.5f, 0.5f, 0.5f, 1, 0.5f, 0.5f, 1, 1,  reserved,  reserved}; // M, index 14-15 reserved
 
-const int32_t table_38213_10_1_1_c2[3] = { 4, 2, 1 };
+const int32_t table_38213_10_1_1_c2[5] = { 0, 0, 4, 2, 1 };
+
+
+ #define mu_pusch 1
+// definition table j Table 6.1.2.1.1-4
+ #define j ((mu_pusch==3)?3:(mu_pusch==2)?2:1)
+ uint8_t table_6_1_2_1_1_2_time_dom_res_alloc_A[16][3]={ // for PUSCH from TS 38.214 subclause 6.1.2.1.1
+  {j,  0,14}, // row index 1
+  {j,  0,12}, // row index 2
+  {j,  0,10}, // row index 3
+  {j,  2,10}, // row index 4
+  {j,  4,10}, // row index 5
+  {j,  4,8},  // row index 6
+  {j,  4,6},  // row index 7
+  {j+1,0,14}, // row index 8
+  {j+1,0,12}, // row index 9
+  {j+1,0,10}, // row index 10
+  {j+2,0,14}, // row index 11
+  {j+2,0,12}, // row index 12
+  {j+2,0,10}, // row index 13
+  {j,  8,6},  // row index 14
+  {j+3,0,14}, // row index 15
+  {j+3,0,10}  // row index 16
+  };
+
+ #define dmrs_typeA_pos 2
+ uint8_t table_5_1_2_1_1_2_time_dom_res_alloc_A[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
+  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?12:11}, // row index 1
+  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?10:9},  // row index 2
+  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?9:8},   // row index 3
+  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?7:6},   // row index 4
+  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?5:4},   // row index 5
+  {0,(dmrs_typeA_pos == 2)?9:10,(dmrs_typeA_pos == 2)?4:4},   // row index 6
+  {0,(dmrs_typeA_pos == 2)?4:6, (dmrs_typeA_pos == 2)?4:4},   // row index 7
+  {0,5,7},  // row index 8
+  {0,5,2},  // row index 9
+  {0,9,2},  // row index 10
+  {0,12,2}, // row index 11
+  {0,1,13}, // row index 12
+  {0,1,6},  // row index 13
+  {0,2,4},  // row index 14
+  {0,4,7},  // row index 15
+  {0,8,4}   // row index 16
+  };

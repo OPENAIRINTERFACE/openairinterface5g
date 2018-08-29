@@ -64,7 +64,7 @@ void nr_gold_pbch(PHY_VARS_NR_UE* ue)
 
 }
 
-void nr_gold_pdcch(PHY_VARS_NR_UE* ue,unsigned int Nid_cell, unsigned short n_idDMRS, unsigned short length_dmrs)
+void nr_gold_pdcch(PHY_VARS_NR_UE* ue,unsigned short n_idDMRS, unsigned short length_dmrs)
 {
 
   unsigned char ns,l;
@@ -74,7 +74,7 @@ void nr_gold_pdcch(PHY_VARS_NR_UE* ue,unsigned int Nid_cell, unsigned short n_id
     if (n_idDMRS)
       nid = n_idDMRS;
     else
-      nid = Nid_cell;
+      nid = ue->frame_parms.Nid_cell;
 
     for (ns=0; ns<20; ns++) {
 
@@ -95,7 +95,7 @@ void nr_gold_pdcch(PHY_VARS_NR_UE* ue,unsigned int Nid_cell, unsigned short n_id
             //printf("x1 : %x, x2 : %x\n",x1,x2);
         }
 
-        for (n=0; n<10; n++) {
+        for (n=0; n<52; n++) {
           x1 = (x1>>1) ^ (x1>>4);
           x1 = x1 ^ (x1<<31) ^ (x1<<28);
           x2 = (x2>>1) ^ (x2>>2) ^ (x2>>3) ^ (x2>>4);
@@ -107,7 +107,7 @@ void nr_gold_pdcch(PHY_VARS_NR_UE* ue,unsigned int Nid_cell, unsigned short n_id
     }
 }
 
-void nr_gold_pdsch(PHY_VARS_NR_UE* ue,unsigned short lbar,unsigned int Nid_cell, unsigned short *n_idDMRS, unsigned short length_dmrs)
+void nr_gold_pdsch(PHY_VARS_NR_UE* ue,unsigned short lbar,unsigned short *n_idDMRS, unsigned short length_dmrs)
 {
 
   unsigned char ns,l;
@@ -122,7 +122,7 @@ void nr_gold_pdsch(PHY_VARS_NR_UE* ue,unsigned short lbar,unsigned int Nid_cell,
     if (n_idDMRS)
       nid = n_idDMRS[nscid];
     else
-      nid = Nid_cell;
+      nid = ue->frame_parms.Nid_cell;
 
     for (ns=0; ns<20; ns++) {
 

@@ -47,6 +47,7 @@
 extern openair0_config_t openair0_cfg[];
 static  nfapi_nr_config_request_t config_t;
 static  nfapi_nr_config_request_t* config =&config_t;
+int cnt=0;
 /* forward declarations */
 void set_default_frame_parms_single(nfapi_nr_config_request_t *config, NR_DL_FRAME_PARMS *frame_parms);
 
@@ -54,7 +55,7 @@ void set_default_frame_parms_single(nfapi_nr_config_request_t *config, NR_DL_FRA
 
 int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
 {
-
+  printf("nr pbch detec RB_DL %d\n", ue->frame_parms.N_RB_DL);
   uint8_t l,pbch_decoded,frame_mod4,pbch_tx_ant,dummy;
   NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   char phich_resource[6];
@@ -174,9 +175,10 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   //  LOG_I(PHY,"**************************************************************\n");
   // First try FDD normal prefix
   frame_parms->Ncp=NORMAL;
-  frame_parms->frame_type=FDD;
+  frame_parms->frame_type=TDD;
   set_default_frame_parms_single(config,frame_parms);
-  nr_init_frame_parms_ue(config,frame_parms);
+  nr_init_frame_parms_ue(frame_parms);
+  printf("nr_initial sync ue RB_DL %d\n", ue->frame_parms.N_RB_DL);
   /*
   write_output("rxdata0.m","rxd0",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
   exit(-1);
@@ -194,7 +196,9 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   *                     --------------------------
   *          sync_pos            SS/PBCH block
   */
-
+  cnt++;
+  if (cnt >100){
+	  cnt =0;
   /* process pss search on received buffer */
   sync_pos = pss_synchro_nr(ue, NO_RATE_CHANGE);
 
@@ -211,7 +215,7 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
     else
       ue->rx_offset = FRAME_LENGTH_COMPLEX_SAMPLES + sync_pos2 - sync_pos_slot;
 
-  printf("sync_pos %d sync_pos_slot %d rx_offset\n",sync_pos,sync_pos_slot, ue->rx_offset);
+  printf("sync_pos %d sync_pos_slot %d rx_offset %d\n",sync_pos,sync_pos_slot, ue->rx_offset);
 
 
   //  write_output("rxdata1.m","rxd1",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
@@ -234,6 +238,11 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 
     nr_gold_pbch(ue);
     ret = nr_pbch_detection(ue,mode);
+    
+    nr_gold_pdcch(ue,0, 2);
+    nr_slot_fep(ue,0, 0, ue->rx_offset, 1, 1, NR_PDCCH_EST);
+    nr_slot_fep(ue,1, 0, ue->rx_offset, 1, 1, NR_PDCCH_EST);
+	
 
 LOG_I(PHY,"[UE  %d] AUTOTEST Cell Sync : frame = %d, rx_offset %d, freq_offset %d \n",
               ue->Mod_id,
@@ -253,6 +262,10 @@ LOG_I(PHY,"[UE  %d] AUTOTEST Cell Sync : frame = %d, rx_offset %d, freq_offset %
 #ifdef DEBUG_INITIAL_SYNCH
     LOG_I(PHY,"FDD Normal prefix: SSS error condition: sync_pos %d, sync_pos_slot %d\n", sync_pos, sync_pos_slot);
 #endif
+  }
+  }
+  else {
+	  ret = -1;
   }
 
   /* Consider this is a false detection if the offset is > 1000 Hz */

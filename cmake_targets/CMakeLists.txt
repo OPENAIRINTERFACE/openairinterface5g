@@ -1122,7 +1122,7 @@ set(PHY_POLARSRC
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_crc_byte.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_bit_insertion.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_channel_interleaver_pattern.c
-  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_crc.c
+ # ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_crc.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_decoding_tools.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_info_bit_pattern.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_interleaving_pattern.c
@@ -1137,7 +1137,13 @@ set(PHY_POLARSRC
 )
 set(PHY_TURBOIF
   ${OPENAIR1_DIR}/PHY/CODING/coding_load.c
-)
+  )
+set(PHY_LDPCSRC
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder2.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_generate_coefficient.c
+  )
 
 add_library(coding MODULE ${PHY_TURBOSRC} )
 
@@ -1299,6 +1305,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/TOOLS/time_meas.c
   ${OPENAIR1_DIR}/PHY/TOOLS/lut.c
   ${PHY_POLARSRC}
+  ${PHY_LDPCSRC}
   )
 
   set(PHY_NR_UE_SRC
@@ -1336,6 +1343,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/TOOLS/lut.c
   ${OPENAIR1_DIR}/PHY/INIT/nr_init_ue.c
   ${PHY_POLARSRC}
+  ${PHY_LDPCSRC}
   )
 
 
@@ -1346,6 +1354,10 @@ endif  (${SMBV})
 if (${COMPILATION_AVX2} STREQUAL "True")
   #set(PHY_SRC ${PHY_SRC} ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dlsch_llr_computation_avx2.c)
   set(PHY_SRC_UE ${PHY_SRC_UE} ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation_avx2.c)
+endif ()
+
+if (${COMPILATION_AVX2} STREQUAL "True")
+  set(PHY_NR_UE_SRC ${PHY_NR_UE_SRC} ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation_avx2.c)
 endif ()
 
 add_library(PHY_COMMON ${PHY_SRC_COMMON})
@@ -1597,6 +1609,7 @@ set ( NR_LTE_UE_REUSE_SRC
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_dl_channel_estimation.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_ue_measurements.c
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_demodulation.c
+  #${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation_avx2.c
 )
 
 add_library( NR_LTE_UE_REUSE_LIB
@@ -2485,7 +2498,10 @@ target_link_libraries (dlsim_tm4
   )
 
 add_executable(polartest ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/polartest.c)
-target_link_libraries(polartest m SIMU PHY PHY_NR -lm ${ATLAS_LIBRARIES})
+target_link_libraries(polartest m SIMU PHY PHY_NR PHY_COMMON -lm ${ATLAS_LIBRARIES})
+
+add_executable(ldpctest  ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c)
+target_link_libraries(ldpctest m SIMU PHY PHY_NR ${ATLAS_LIBRARIES})
 
 foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)
 

@@ -30,7 +30,7 @@
  * \warning
  */
 
-
+//	Type0-PDCCH search space
 extern const int32_t table_38213_13_1_c2[16];
 extern const int32_t table_38213_13_1_c3[16];
 extern const int32_t table_38213_13_1_c4[16];
@@ -80,4 +80,10 @@ extern const float   table_38213_13_12_c1[16];
 extern const int32_t table_38213_13_12_c2[16];
 extern const float   table_38213_13_12_c3[16];
 
-extern const int32_t table_38213_10_1_1_c2[3];
+extern const int32_t table_38213_10_1_1_c2[5];
+
+//  DCI extraction
+//  for PUSCH from TS 38.214 subclause 6.1.2.1.1
+extern uint8_t table_6_1_2_1_1_2_time_dom_res_alloc_A[16][3];
+//  for PDSCH from TS 38.214 subclause 5.1.2.1.1
+extern uint8_t table_5_1_2_1_1_2_time_dom_res_alloc_A[16][3];

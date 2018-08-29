@@ -151,8 +151,7 @@ int nr_init_frame_parms(nfapi_nr_config_request_t* config,
   return 0;
 }
 
-int nr_init_frame_parms_ue(nfapi_nr_config_request_t* config,
-                        NR_DL_FRAME_PARMS *frame_parms)
+int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *frame_parms)
 {
 
   int N_RB = 106;
@@ -275,7 +274,7 @@ int nr_init_frame_parms_ue(nfapi_nr_config_request_t* config,
     frame_parms->ofdm_symbol_size = 2048;
     frame_parms->samples_per_tti = 30720;
     frame_parms->samples_per_subframe = 30720 * frame_parms->ttis_per_subframe;
-    frame_parms->first_carrier_offset = 2048-600;
+    //frame_parms->first_carrier_offset = 2048-600;
 
   frame_parms->symbols_per_slot = ((Ncp == NORMAL)? 14 : 12); // to redefine for different slot formats
   frame_parms->samples_per_subframe_wCP = frame_parms->ofdm_symbol_size * frame_parms->symbols_per_slot * frame_parms->slots_per_subframe;

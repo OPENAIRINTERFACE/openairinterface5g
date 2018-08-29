@@ -54,26 +54,24 @@ void display_frame_configuration(NR_DL_FRAME_PARMS *frame_parms) {
   printf("\nTdd configuration tti %d downlink %d uplink %d period %d \n", frame_parms->ttis_per_subframe, frame_parms->p_tdd_UL_DL_Configuration->nrofDownlinkSlots,
       frame_parms->p_tdd_UL_DL_Configuration->nrofUplinkSlots, frame_parms->p_tdd_UL_DL_Configuration->dl_UL_TransmissionPeriodicity);
 
-  int k = (TDD_CONFIG_NB_FRAMES * LTE_NUMBER_OF_SUBFRAMES_PER_FRAME) - 1; //19;
+  int k = (TDD_CONFIG_NB_FRAMES * NR_NUMBER_OF_SUBFRAMES_PER_FRAME) - 1; //19;
   int tti = 0;
-  for (int j = 0; j < TDD_CONFIG_NB_FRAMES * frame_parms->ttis_per_subframe * LTE_NUMBER_OF_SUBFRAMES_PER_FRAME; j++) {
+  for (int j = 0; j < TDD_CONFIG_NB_FRAMES * frame_parms->ttis_per_subframe * NR_NUMBER_OF_SUBFRAMES_PER_FRAME; j++) {
     int frame = 0;
     if (j != 0) {
-      frame = (frame_parms->ttis_per_subframe * LTE_NUMBER_OF_SUBFRAMES_PER_FRAME)/j;
-      tti = (j)%(frame_parms->ttis_per_subframe * LTE_NUMBER_OF_SUBFRAMES_PER_FRAME);
+      frame = (frame_parms->ttis_per_subframe * NR_NUMBER_OF_SUBFRAMES_PER_FRAME)/j;
+      tti = (j)%(frame_parms->ttis_per_subframe * NR_NUMBER_OF_SUBFRAMES_PER_FRAME);
     }
     else {
       frame = 0;
       tti = 0;
     }
 
-    if (slot_select_nr(frame_parms, frame, tti)  == NR_TDD_DOWNLINK_SLOT) {
-    //if (frame_parms->tdd_uplink_nr[j] == NR_TDD_DOWNLINK_SLOT) {
+    if (slot_select_nr(frame_parms, frame, tti) & NR_DOWNLINK_SLOT) {
       printf(" [%3d] D", j);
     }
     else {
-      if (slot_select_nr(frame_parms, frame, tti)  == NR_TDD_UPLINK_SLOT) {
-      //if (frame_parms->tdd_uplink_nr[j] == NR_TDD_UPLINK_SLOT) {
+      if (slot_select_nr(frame_parms, frame, tti) & NR_UPLINK_SLOT) {
         printf(" [%3d] U", j);
       }
       else {
@@ -83,7 +81,7 @@ void display_frame_configuration(NR_DL_FRAME_PARMS *frame_parms) {
     }
     if (j == k) {
       printf("\n");
-      k += (TDD_CONFIG_NB_FRAMES * LTE_NUMBER_OF_SUBFRAMES_PER_FRAME); // 20
+      k += (TDD_CONFIG_NB_FRAMES * NR_NUMBER_OF_SUBFRAMES_PER_FRAME); // 20
     }
   }
   printf("\n");
@@ -120,7 +118,7 @@ void set_tti_test(NR_DL_FRAME_PARMS *frame_parms, int ttis_per_subframe)
 
 int test_frame_configuration(PHY_VARS_NR_UE *PHY_vars_UE)
 {
-  LTE_DL_FRAME_PARMS *frame_parms = &(PHY_vars_UE->frame_parms);
+  NR_DL_FRAME_PARMS *frame_parms = &(PHY_vars_UE->frame_parms);
   int v_return = 0;
 
   #define  NO_DOWNLINK_SYMBOL           (0)

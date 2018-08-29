@@ -245,7 +245,7 @@ int emulate_rf = 0;
 threads_t threads= {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
 
 /* forward declarations */
-void set_default_frame_parms(nfapi_nr_config_request_t *config[MAX_NUM_CCs], NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
+void set_default_frame_parms(NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
 
 
 /* see file openair2/LAYER2/MAC/main.c for why abstraction_flag is needed
@@ -628,7 +628,7 @@ int T_port = 2021;    /* default port to listen to to wait for the tracer */
 int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
 #endif
 
-  void set_default_frame_parms(nfapi_nr_config_request_t *config[MAX_NUM_CCs], NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
+void set_default_frame_parms(NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
 
   int CC_id;
 
@@ -700,7 +700,6 @@ void set_default_frame_parms_single(nfapi_nr_config_request_t *config, NR_DL_FRA
   //int CC_id;
 
   //for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-        frame_parms = (NR_DL_FRAME_PARMS*) malloc(sizeof(NR_DL_FRAME_PARMS));
         /* Set some default values that may be overwritten while reading options */
         frame_parms = (NR_DL_FRAME_PARMS*) malloc(sizeof(NR_DL_FRAME_PARMS));
         config = (nfapi_nr_config_request_t*) malloc(sizeof(nfapi_nr_config_request_t));
@@ -899,7 +898,7 @@ int main( int argc, char **argv ) {
     set_latency_target();
 
     // set default parameters
-    set_default_frame_parms(config,frame_parms);
+    set_default_frame_parms(frame_parms);
 
     // initialize logging
     logInit();
@@ -985,6 +984,7 @@ int main( int argc, char **argv ) {
 
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
 
+   // set_default_frame_parms(frame_parms);//
   // init the parameters
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
@@ -995,10 +995,10 @@ int main( int argc, char **argv ) {
 
       LOG_I(PHY,"Set nb_rx_antenna %d , nb_tx_antenna %d \n",frame_parms[CC_id]->nb_antennas_rx, frame_parms[CC_id]->nb_antennas_tx);
 
-      set_default_frame_parms(config[CC_id],frame_parms[CC_id]);
+      //set_default_frame_parms(config[CC_id],frame_parms[CC_id]);
       
     //init_ul_hopping(frame_parms[CC_id]);
-    nr_init_frame_parms_ue(config[CC_id],frame_parms[CC_id]);
+    nr_init_frame_parms_ue(frame_parms[CC_id]);
     printf("after init frame_parms %d\n",frame_parms[CC_id]->ofdm_symbol_size);
     //   phy_init_top(frame_parms[CC_id]);
     phy_init_nr_top(frame_parms[CC_id]);
@@ -1238,7 +1238,7 @@ int main( int argc, char **argv ) {
    //}
 
     // connect the TX/RX buffers
-    if (UE_flag==1) {
+    //if (UE_flag==1) {
 
         for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
@@ -1265,7 +1265,7 @@ int main( int argc, char **argv ) {
                 printf("error reading from file\n");
         }
         //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
-    }
+    //}
     sleep(3);
 
 
