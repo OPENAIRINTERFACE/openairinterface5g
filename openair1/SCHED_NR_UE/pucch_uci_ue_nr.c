@@ -501,7 +501,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   switch(format) {
     case pucch_format0_nr:
     {
-      nr_generate_pucch0(ue->common_vars.txdataF,
+      nr_generate_pucch0(ue,ue->common_vars.txdataF,
                          &ue->frame_parms,
                          &ue->pucch_config_dedicated_nr[gNB_id],
 						 tx_amp,
@@ -514,7 +514,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     }
     case pucch_format1_nr:
     {
-      nr_generate_pucch1(ue->common_vars.txdataF,
+      nr_generate_pucch1(ue,ue->common_vars.txdataF,
                          &ue->frame_parms,
                          &ue->pucch_config_dedicated_nr[gNB_id],
                          pucch_payload,
@@ -530,7 +530,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     }
     case pucch_format2_nr:
     {
-      nr_generate_pucch2(ue->common_vars.txdataF,
+      nr_generate_pucch2(ue,ue->common_vars.txdataF,
                          &ue->frame_parms,
                          &ue->pucch_config_dedicated_nr[gNB_id],
                          pucch_payload,
@@ -546,7 +546,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     case pucch_format3_nr:
     case pucch_format4_nr:
     {
-      nr_generate_pucch3_4(ue->common_vars.txdataF,
+      nr_generate_pucch3_4(ue,ue->common_vars.txdataF,
                            &ue->frame_parms,
                            format,
                            &ue->pucch_config_dedicated_nr[gNB_id],
@@ -557,6 +557,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                            starting_symbol_index,
                            nb_of_prbs,
                            starting_prb,
+						   second_hop,
                            (uint8_t)N_UCI,
                            (uint8_t)occ_length,
                            (uint8_t)occ_Index);

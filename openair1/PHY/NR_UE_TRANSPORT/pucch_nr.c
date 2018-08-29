@@ -32,6 +32,7 @@
 //#include "PHY/defs.h"
 #include "PHY/impl_defs_nr.h"
 #include "PHY/defs_nr_common.h"
+#include "PHY/defs_nr_UE.h"
 //#include "PHY/extern.h" 
 //#include "LAYER2/MAC/extern.h"
 
@@ -304,8 +305,10 @@
   {-23170, 23170,-23170, 23170,-23170, 23170, 23170, 23170, 23170,-23170,-23170,-23170, 23170, 23170,-23170,-23170, 23170, 23170,-23170,-23170,-23170,-23170,-23170,-23170},
   { 23170,-23170,-23170, 23170, 23170,-23170,-23170,-23170,-23170, 23170,-23170,-23170,-23170,-23170, 23170,-23170, 23170, 23170, 23170,-23170, 23170,-23170,-23170,-23170}
   };
-void nr_group_sequence_hopping (uint8_t PUCCH_GroupHopping,
-                                uint32_t n_id,
+void nr_group_sequence_hopping (//pucch_GroupHopping_t ue->pucch_config_common_nr.puch_GroupHopping,
+                                //uint8_t PUCCH_GroupHopping,
+                                PHY_VARS_NR_UE *ue,
+                                //uint32_t n_id,
                                 uint8_t n_hop,
                                 int nr_tti_tx,
                                 uint8_t *u,
@@ -322,6 +325,22 @@ void nr_group_sequence_hopping (uint8_t PUCCH_GroupHopping,
  *                n_hop=0 for the first hop
  *                n_hop=1 for the second hop
  */
+  // depending on the value of the PUCCH_GroupHopping, we will obtain different values for u,v
+  pucch_GroupHopping_t PUCCH_GroupHopping = ue->pucch_config_common_nr->pucch_GroupHopping; // from higher layers FIXME!!!
+  // n_id defined as per TS 38.211 subclause 6.3.2.2.1 (is given by the higher-layer parameter hoppingId)
+  // it is hoppingId from PUCCH-ConfigCommon:
+  // Cell-Specific scrambling ID for group hoppping and sequence hopping if enabled
+  // Corresponds to L1 parameter 'HoppingID' (see 38.211, section 6.3.2.2) BIT STRING (SIZE (10))
+  uint16_t n_id = ue->pucch_config_common_nr->hoppingId; // from higher layers FIXME!!!
+
+
+//////////////////////////////////////initialization to be removed///////////////////////////////////////////////////////////
+  PUCCH_GroupHopping=neither;
+  n_id=10;
+  printf("\t\t [nr_group_sequence_hopping] initialization PUCCH_GroupHopping=%d, n_id=%d -> variable initializations TO BE REMOVED\n",PUCCH_GroupHopping,n_id);
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
   uint8_t f_ss=0,f_gh=0;
   *u=0;
   *v=0;
@@ -331,17 +350,17 @@ void nr_group_sequence_hopping (uint8_t PUCCH_GroupHopping,
     printf("\t\t [nr_group_sequence_hopping] calculating u,v -> ");
   #endif
 
-  if (PUCCH_GroupHopping == 0){ // PUCCH_GroupHopping 'neither'
+  if (PUCCH_GroupHopping == neither){ // PUCCH_GroupHopping 'neither'
     f_ss = n_id%30;
   }
-  if (PUCCH_GroupHopping == 1){ // PUCCH_GroupHopping 'enabled'
+  if (PUCCH_GroupHopping == enable){ // PUCCH_GroupHopping 'enabled'
     for (int m=0; m<8; m++){
       f_gh = f_gh + ((1<<m)*((uint8_t)((s>>(8*(2*nr_tti_tx+n_hop)+m))&1))); // Not sure we have to use nr_tti_tx FIXME!!!
     }
     f_gh = f_gh%30;
     f_ss = n_id%30;
   }
-  if (PUCCH_GroupHopping == 2){ // PUCCH_GroupHopping 'disabled'
+  if (PUCCH_GroupHopping == disable){ // PUCCH_GroupHopping 'disabled'
     f_ss = n_id%30;
     *v = (uint8_t)((s>>(2*nr_tti_tx+n_hop))&1); // Not sure we have to use nr_tti_tx FIXME!!!
   }
@@ -350,7 +369,7 @@ void nr_group_sequence_hopping (uint8_t PUCCH_GroupHopping,
     printf("%d,%d\n",*u,*v);
   #endif
 }
-double nr_cyclic_shift_hopping(uint32_t n_id,
+double nr_cyclic_shift_hopping(PHY_VARS_NR_UE *ue,
                                uint8_t m0,
                                uint8_t mcs,
                                uint8_t lnormal,
@@ -366,11 +385,19 @@ double nr_cyclic_shift_hopping(uint32_t n_id,
  */
   // alpha_init initialized to 2*PI/12=0.5235987756
   double alpha = 0.5235987756;
-  uint32_t c_init = n_id; // we initialize c_init again to calculate n_cs
+  uint16_t c_init = ue->pucch_config_common_nr->hoppingId; // we initialize c_init again to calculate n_cs
+
+
+  //////////////////////////////////////initialization to be removed///////////////////////////////////////////////////////////
+    c_init=10;
+    printf("\t\t [nr_cyclic_shift_hopping] initialization c_init=%d -> variable initialization TO BE REMOVED\n",c_init);
+  /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
   uint32_t x1,s = lte_gold_generic(&x1, &c_init, 1); // TS 38.211 Subclause 5.2.1
   uint8_t n_cs=0;
   #ifdef DEBUG_NR_PUCCH_TX
-    printf("\t\t [nr_cyclic_shift_hopping] calculating alpha (cyclic shift) -> ");
+    printf("\t\t [nr_cyclic_shift_hopping] calculating alpha (cyclic shift) using c_init=%d -> ",c_init);
   #endif
   for (int m=0; m<8; m++){
     // calculating n_cs (Not sure we have to use nr_tti_tx FIXME!!!)
@@ -378,11 +405,12 @@ double nr_cyclic_shift_hopping(uint32_t n_id,
   }
   alpha = (alpha * (double)((m0+mcs+n_cs)%12));
   #ifdef DEBUG_NR_PUCCH_TX
-    printf("%lf\n",alpha);
+    printf("n_cs=%d -> %lf\n",n_cs,alpha);
   #endif
   return(alpha);
 }
-void nr_generate_pucch0(int32_t **txdataF,
+void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
+                        int32_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
                         PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
                         int16_t amp,
@@ -392,7 +420,7 @@ void nr_generate_pucch0(int32_t **txdataF,
                         uint8_t startingSymbolIndex,
                         uint16_t startingPRB) {
   #ifdef DEBUG_NR_PUCCH_TX
-    printf("\t [nr_generate_pucch0] start function\n");
+    printf("\t [nr_generate_pucch0] start function at slot(nr_tti_tx)=%d\n",nr_tti_tx);
   #endif
 
   /*
@@ -402,12 +430,6 @@ void nr_generate_pucch0(int32_t **txdataF,
   #ifdef DEBUG_NR_PUCCH_TX
     printf("\t [nr_generate_pucch0] sequence generation\n");
   #endif
-
-  // number of symbols defined in the PUCCH-Config from higher layers: format 0 {1-2} FIXME!
-  //uint8_t nrofSymbols;
-  //uint8_t startingSymbolIndex;
-  //uint8_t startingPRB;
-
   /*
    * Defining cyclic shift hopping TS 38.211 Subclause 6.3.2.2.2
    */
@@ -434,25 +456,19 @@ void nr_generate_pucch0(int32_t **txdataF,
    */
   // the value of u,v (delta always 0 for PUCCH) has to be calculated according to TS 38.211 Subclause 6.3.2.2.1
   uint8_t u=0,v=0,delta=0;
-  // depending on the value of the PUCCH_GroupHopping, we will obtain different values for u,v
-  uint8_t PUCCH_GroupHopping; // from higher layers FIXME!!
-  // n_id is hoppingId from PUCCH-ConfigCommon:
-  // Cell-Specific scrambling ID for group hoppping and sequence hopping if enabled
-  // Corresponds to L1 parameter 'HoppingID' (see 38.211, section 6.3.2.2) BIT STRING (SIZE (10))
-  uint32_t n_id; // from higher layers FIXME!!
   // if frequency hopping is disabled by the higher-layer parameter PUCCH-frequency-hopping
   //              n_hop = 0
   // if frequency hopping is enabled by the higher-layer parameter PUCCH-frequency-hopping
   //              n_hop = 0 for first hop
   //              n_hop = 1 for second hop
   uint8_t n_hop = 0;
-  uint8_t PUCCH_Frequency_Hopping; // from higher layers FIXME!!
+  //uint8_t PUCCH_Frequency_Hopping; // from higher layers FIXME!!
 
   /////////////////////////////////////////////////////////// initializing some variables for test
     m0=0;
-    PUCCH_GroupHopping=0;
-    n_id=10;
-    PUCCH_Frequency_Hopping = 0;
+//    PUCCH_GroupHopping=0;
+//    n_id=10;
+    //PUCCH_Frequency_Hopping = 0;
     printf("\t [nr_generate_pucch0] sequence generation: variable initialization for test\n");
   /////////////////////////////////////////////////////// ending variables initialization for test
 
@@ -462,8 +478,8 @@ void nr_generate_pucch0(int32_t **txdataF,
   for (int l=0; l<nrofSymbols; l++){
     // if frequency hopping is enabled n_hop = 1 for second hop. Not sure frequency hopping concerns format 0. FIXME!!!
     //if ((PUCCH_Frequency_Hopping == 1)&&(l == (nrofSymbols-1))) n_hop = 1;
-    nr_group_sequence_hopping(PUCCH_GroupHopping,n_id,n_hop,nr_tti_tx,&u,&v); // calculating u and v value
-    alpha = nr_cyclic_shift_hopping(n_id,m0,mcs,l,startingSymbolIndex,nr_tti_tx);
+    nr_group_sequence_hopping(ue,n_hop,nr_tti_tx,&u,&v); // calculating u and v value
+    alpha = nr_cyclic_shift_hopping(ue,m0,mcs,l,startingSymbolIndex,nr_tti_tx);
     #ifdef DEBUG_NR_PUCCH_TX
       printf("\t [nr_generate_pucch0] sequence generation \tu=%d \tv=%d \talpha=%lf \t(for symbol l=%d)\n",u,v,alpha,l);
     #endif
@@ -519,7 +535,8 @@ void nr_generate_pucch0(int32_t **txdataF,
     }
   }
 }
-void nr_generate_pucch1(int32_t **txdataF,
+void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
+                        int32_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
                         PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
                         uint64_t payload,
@@ -532,7 +549,8 @@ void nr_generate_pucch1(int32_t **txdataF,
                         uint8_t timeDomainOCC,
                         uint8_t nr_bit) {
 #ifdef DEBUG_NR_PUCCH_TX
-  printf("\t [nr_generate_pucch1] start function\n");
+	  printf("\t [nr_generate_pucch1] start function at slot(nr_tti_tx)=%d\n",nr_tti_tx);
+	  printf("\t [nr_generate_pucch1] startingPRB=%d startingPRB_intraSlotHopping=%d\n",startingPRB,startingPRB_intraSlotHopping);
 #endif
 
   /*
@@ -642,12 +660,6 @@ void nr_generate_pucch1(int32_t **txdataF,
    */
   // the value of u,v (delta always 0 for PUCCH) has to be calculated according to TS 38.211 Subclause 6.3.2.2.1
   uint8_t u=0,v=0,delta=0;
-  // depending on the value of the PUCCH_GroupHopping, we will obtain different values for u,v
-  uint8_t PUCCH_GroupHopping=0; // from higher layers FIXME!!
-  // n_id is hoppingId from PUCCH-ConfigCommon:
-  // Cell-Specific scrambling ID for group hoppping and sequence hopping if enabled
-  // Corresponds to L1 parameter 'HoppingID' (see 38.211, section 6.3.2.2) BIT STRING (SIZE (10))
-  uint32_t n_id=0; // from higher layers FIXME!!
   // if frequency hopping is disabled, intraSlotFrequencyHopping is not provided
   //              n_hop = 0
   // if frequency hopping is enabled,  intraSlotFrequencyHopping is     provided
@@ -662,7 +674,7 @@ void nr_generate_pucch1(int32_t **txdataF,
   if (startingPRB != startingPRB_intraSlotHopping){
     intraSlotFrequencyHopping=1;
     #ifdef DEBUG_NR_PUCCH_TX
-      printf("\t [nr_generate_pucch1] intraSlotFrequencyHopping%d \n",intraSlotFrequencyHopping);
+      printf("\t [nr_generate_pucch1] intraSlotFrequencyHopping=%d \n",intraSlotFrequencyHopping);
     #endif
     // n_hop = 1 for second hop;
     // FIXME
@@ -672,21 +684,21 @@ void nr_generate_pucch1(int32_t **txdataF,
   // y_n contains the complex value d multiplied by the sequence r_u_v
   int16_t y_n_re[12],y_n_im[12];
   #ifdef DEBUG_NR_PUCCH_TX
-    printf("\t [nr_generate_pucch1] entering function nr_group_sequence_hopping with PUCCH_GroupHopping=%d,n_id=%d, n_hop=%d, nr_tti_tx=%d\n",
-            PUCCH_GroupHopping,n_id,n_hop,nr_tti_tx);
+    printf("\t [nr_generate_pucch1] entering function nr_group_sequence_hopping with n_hop=%d, nr_tti_tx=%d\n",
+            n_hop,nr_tti_tx);
   #endif
-  nr_group_sequence_hopping(PUCCH_GroupHopping,n_id,n_hop,nr_tti_tx,&u,&v); // calculating u and v value
-  alpha = nr_cyclic_shift_hopping(n_id,m0,mcs,lnormal,lprime,nr_tti_tx);
+  nr_group_sequence_hopping(ue,n_hop,nr_tti_tx,&u,&v); // calculating u and v value
+  alpha = nr_cyclic_shift_hopping(ue,m0,mcs,lnormal,lprime,nr_tti_tx);
   for (int n=0; n<12; n++){
-    r_u_v_alpha_delta_re[n] = (int16_t)((((int32_t)(round(32767*cos(alpha*n)))*table_5_2_2_2_2_Re[u][n])>>15)
-                                      - (((int32_t)(round(32767*sin(alpha*n)))*table_5_2_2_2_2_Im[u][n])>>15)); // Re part of base sequence shifted by alpha
-    r_u_v_alpha_delta_im[n] = (int16_t)((((int32_t)(round(32767*cos(alpha*n)))*table_5_2_2_2_2_Im[u][n])>>15)
-                                      + (((int32_t)(round(32767*sin(alpha*n)))*table_5_2_2_2_2_Re[u][n])>>15)); // Im part of base sequence shifted by alpha
+    r_u_v_alpha_delta_re[n] = (int16_t)(((((int32_t)(round(32767*cos(alpha*n))) * table_5_2_2_2_2_Re[u][n])>>15)
+                                       - (((int32_t)(round(32767*sin(alpha*n))) * table_5_2_2_2_2_Im[u][n])>>15))); // Re part of base sequence shifted by alpha
+    r_u_v_alpha_delta_im[n] = (int16_t)(((((int32_t)(round(32767*cos(alpha*n))) * table_5_2_2_2_2_Im[u][n])>>15)
+                                       + (((int32_t)(round(32767*sin(alpha*n))) * table_5_2_2_2_2_Re[u][n])>>15))); // Im part of base sequence shifted by alpha
     // PUCCH sequence = DM-RS sequence multiplied by d(0)
-    y_n_re[n]               = (int16_t)((((int32_t)(r_u_v_alpha_delta_re[n])*d_re)>>15)
-                                      - (((int32_t)(r_u_v_alpha_delta_im[n])*d_im)>>15)); // Re part of y(n)
-    y_n_im[n]               = (int16_t)((((int32_t)(r_u_v_alpha_delta_re[n])*d_im)>>15)
-                                      + (((int32_t)(r_u_v_alpha_delta_im[n])*d_re)>>15)); // Im part of y(n)
+    y_n_re[n]               = (int16_t)(((((int32_t)(r_u_v_alpha_delta_re[n])*d_re)>>15)
+                                       - (((int32_t)(r_u_v_alpha_delta_im[n])*d_im)>>15))); // Re part of y(n)
+    y_n_im[n]               = (int16_t)(((((int32_t)(r_u_v_alpha_delta_re[n])*d_im)>>15)
+                                       + (((int32_t)(r_u_v_alpha_delta_im[n])*d_re)>>15))); // Im part of y(n)
     // DM-RS sequence
     r_u_v_alpha_delta_re[n] = (int16_t)(((int32_t)amp*r_u_v_alpha_delta_re[n])>>15);
     r_u_v_alpha_delta_im[n] = (int16_t)(((int32_t)amp*r_u_v_alpha_delta_im[n])>>15);
@@ -898,30 +910,42 @@ void nr_uci_encoding(uint64_t payload,
     E_init = (is_pi_over_2_bpsk_enabled == 0) ? 24:12;
     if (nrofSymbols == 4) {
       E = (intraSlotFrequencyHopping == 0)?(E_init*(nrofSymbols-1)*nrofPRB):((E_init*(nrofSymbols-1)*nrofPRB));
-      printf("format 3 nrofSymbols =4 and E_init=%d,E=%d\n",E_init,E);
+      #ifdef DEBUG_NR_PUCCH_TX
+        printf("format 3 nrofSymbols =4 and E_init=%d,E=%d\n",E_init,E);
+      #endif
     }
     if (nrofSymbols > 4)  {
       E = E_init*(nrofSymbols-2)*nrofPRB;
-      printf("format 3 nrofSymbols >4 and E_init=%d,E = %d\n",E_init,E);
+      #ifdef DEBUG_NR_PUCCH_TX
+        printf("format 3 nrofSymbols >4 and E_init=%d,E = %d\n",E_init,E);
+      #endif
     }
     if (nrofSymbols > 9)  {
       E = (add_dmrs == 0)?(E_init*(nrofSymbols-2)*nrofPRB):((E_init*(nrofSymbols-4)*nrofPRB));
-      printf("format 3 nrofSymbols >9 and E_init=%d,E = %d\n",E_init,E);
+      #ifdef DEBUG_NR_PUCCH_TX
+        printf("format 3 nrofSymbols >9 and E_init=%d,E = %d\n",E_init,E);
+      #endif
     }
   }
   if (fmt == pucch_format4_nr){
     E_init = (is_pi_over_2_bpsk_enabled == 0) ? 24:12;
     if (nrofSymbols == 4) {
       E = (intraSlotFrequencyHopping == 0)?(E_init*(nrofSymbols-1)/n_SF_PUCCH_s):((E_init*(nrofSymbols-1)/n_SF_PUCCH_s));
-      printf("format 4 nrofSymbols =4 and E_init=%d,E=%d\n",E_init,E);
+      #ifdef DEBUG_NR_PUCCH_TX
+        printf("format 4 nrofSymbols =4 and E_init=%d,E=%d\n",E_init,E);
+      #endif
     }
     if (nrofSymbols > 4)  {
       E = E_init*(nrofSymbols-2)/n_SF_PUCCH_s;
-      printf("format 4 nrofSymbols >4 and E_init=%d,E = %d\n",E_init,E);
+      #ifdef DEBUG_NR_PUCCH_TX
+        printf("format 4 nrofSymbols >4 and E_init=%d,E = %d\n",E_init,E);
+      #endif
     }
     if (nrofSymbols > 9)  {
       E = (add_dmrs == 0)?(E_init*(nrofSymbols-2)/n_SF_PUCCH_s):((E_init*(nrofSymbols-4)/n_SF_PUCCH_s));
-      printf("format 4 nrofSymbols >9 and E_init=%d,E = %d\n",E_init,E);
+      #ifdef DEBUG_NR_PUCCH_TX
+        printf("format 4 nrofSymbols >9 and E_init=%d,E = %d\n",E_init,E);
+      #endif
     }
   }
   *M_bit = E;
@@ -952,7 +976,8 @@ void nr_uci_encoding(uint64_t payload,
   }
 }
 //#if 0
-void nr_generate_pucch2(int32_t **txdataF,
+void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
+                        int32_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
                         PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
                         uint64_t payload,
@@ -964,7 +989,7 @@ void nr_generate_pucch2(int32_t **txdataF,
                         uint16_t startingPRB,
                         uint8_t nr_bit) {
   #ifdef DEBUG_NR_PUCCH_TX
-    printf("\t [nr_generate_pucch2] start function with payload=%d and nr_bit=%d\n", payload, nr_bit);
+    printf("\t [nr_generate_pucch2] start function at slot(nr_tti_tx)=%d  with payload=%d and nr_bit=%d\n",nr_tti_tx, payload, nr_bit);
   #endif
   // b is the block of bits transmitted on the physical channel after payload coding
   uint64_t b;
@@ -1092,23 +1117,25 @@ void nr_generate_pucch2(int32_t **txdataF,
   }
 }
 //#if 0
-void nr_generate_pucch3_4(int32_t **txdataF,
-                         NR_DL_FRAME_PARMS *frame_parms,
-                         pucch_format_nr_t fmt,
-                         PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
-                         uint64_t payload,
-                         int16_t amp,
-                         int nr_tti_tx,
-                         uint8_t nrofSymbols,
-                         uint8_t startingSymbolIndex,
-                         uint8_t nrofPRB,
-                         uint16_t startingPRB,
-                         uint8_t nr_bit,
-                         uint8_t occ_length_format4,
-                         uint8_t occ_index_format4) {
+void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
+                          int32_t **txdataF,
+                          NR_DL_FRAME_PARMS *frame_parms,
+                          pucch_format_nr_t fmt,
+                          PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
+                          uint64_t payload,
+                          int16_t amp,
+                          int nr_tti_tx,
+                          uint8_t nrofSymbols,
+                          uint8_t startingSymbolIndex,
+                          uint8_t nrofPRB,
+                          uint16_t startingPRB,
+                          uint16_t startingPRB_intraSlotHopping,
+                          uint8_t nr_bit,
+                          uint8_t occ_length_format4,
+                          uint8_t occ_index_format4) {
 
   #ifdef DEBUG_NR_PUCCH_TX
-    printf("\t [nr_generate_pucch3_4] start function with payload=%d and nr_bit=%d\n", payload, nr_bit);
+    printf("\t [nr_generate_pucch3_4] start function at slot(nr_tti_tx)=%d with payload=%d and nr_bit=%d\n", nr_tti_tx, payload, nr_bit);
   #endif
   // b is the block of bits transmitted on the physical channel after payload coding
   uint64_t b;
@@ -1320,8 +1347,6 @@ void nr_generate_pucch3_4(int32_t **txdataF,
    */
   // the value of u,v (delta always 0 for PUCCH) has to be calculated according to TS 38.211 Subclause 6.3.2.2.1
   uint8_t u=0,v=0,delta=0;
-  // depending on the value of the PUCCH_GroupHopping, we will obtain different values for u,v
-  uint8_t PUCCH_GroupHopping; // from higher layers FIXME!!
   // if frequency hopping is disabled, intraSlotFrequencyHopping is not provided
   //              n_hop = 0
   // if frequency hopping is enabled,  intraSlotFrequencyHopping is     provided
@@ -1350,7 +1375,7 @@ void nr_generate_pucch3_4(int32_t **txdataF,
   int16_t *r_u_v_base_im        = malloc(sizeof(int16_t)*12*nrofPRB);
   int16_t *r_u_v_alpha_delta_re = malloc(sizeof(int16_t)*12*nrofPRB);
   int16_t *r_u_v_alpha_delta_im = malloc(sizeof(int16_t)*12*nrofPRB);
-  nr_group_sequence_hopping(PUCCH_GroupHopping,n_id,n_hop,nr_tti_tx,&u,&v); // calculating u and v value
+  nr_group_sequence_hopping(ue,n_hop,nr_tti_tx,&u,&v); // calculating u and v value
   // Next we proceed to calculate base sequence for DM-RS signal, according to TS 38.211 subclause 6.4.1.33
   if (nrofPRB >= 3) { // TS 38.211 subclause 5.2.2.1 (Base sequences of length 36 or larger) applies
     uint8_t list_of_prime_numbers[46] = {2,  3,  5,  7,  11, 13, 17, 19, 23, 29,
@@ -1415,7 +1440,7 @@ void nr_generate_pucch3_4(int32_t **txdataF,
   uint16_t k=0;
   for (int l=0; l<nrofSymbols; l++) {
     uint16_t j=0;
-    alpha = nr_cyclic_shift_hopping(n_id,m0,mcs,l,startingSymbolIndex,nr_tti_tx);
+    alpha = nr_cyclic_shift_hopping(ue,m0,mcs,l,startingSymbolIndex,nr_tti_tx);
     for (int rb=0; rb<nrofPRB; rb++){
       //startingPRB = startingPRB + rb;
       if (((rb+startingPRB) <  (frame_parms->N_RB_DL>>1)) && ((frame_parms->N_RB_DL & 1) == 0)) { // if number RBs in bandwidth is even and current PRB is lower band
