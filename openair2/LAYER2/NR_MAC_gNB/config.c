@@ -194,13 +194,13 @@ void config_common(int Mod_idP,
   //cfg->subframe_config.tl.tag = 
   //cfg->num_tlv++;
 
-  cfg->rf_config.dl_channel_bandwidth.value    = dl_BandwidthP;
-  cfg->rf_config.dl_channel_bandwidth.tl.tag   = NFAPI_RF_CONFIG_DL_CHANNEL_BANDWIDTH_TAG; //temporary
+  cfg->rf_config.dl_carrier_bandwidth.value    = dl_BandwidthP;
+  cfg->rf_config.dl_carrier_bandwidth.tl.tag   = NFAPI_RF_CONFIG_DL_CHANNEL_BANDWIDTH_TAG; //temporary
   cfg->num_tlv++;
   LOG_I(PHY,"%s() dl_BandwidthP:%d\n", __FUNCTION__, dl_BandwidthP);
 
-  cfg->rf_config.ul_channel_bandwidth.value    = dl_BandwidthP;
-  cfg->rf_config.ul_channel_bandwidth.tl.tag   = NFAPI_RF_CONFIG_UL_CHANNEL_BANDWIDTH_TAG;  //temporary
+  cfg->rf_config.ul_carrier_bandwidth.value    = dl_BandwidthP;
+  cfg->rf_config.ul_carrier_bandwidth.tl.tag   = NFAPI_RF_CONFIG_UL_CHANNEL_BANDWIDTH_TAG;  //temporary
   cfg->num_tlv++;
 
   //cfg->sch_config.half_frame_index.value = 0; Fix in PHY

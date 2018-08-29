@@ -574,8 +574,8 @@ void set_default_frame_parms(nfapi_nr_config_request_t *config[MAX_NUM_CCs], NR_
     config[CC_id]->subframe_config.numerology_index_mu.value =1;
     config[CC_id]->subframe_config.duplex_mode.value = 1; //FDD
     config[CC_id]->subframe_config.dl_cyclic_prefix_type.value = 0; //NORMAL
-    config[CC_id]->rf_config.dl_channel_bandwidth.value = 106;
-    config[CC_id]->rf_config.ul_channel_bandwidth.value = 106;
+    config[CC_id]->rf_config.dl_carrier_bandwidth.value = 106;
+    config[CC_id]->rf_config.ul_carrier_bandwidth.value = 106;
     config[CC_id]->rf_config.tx_antenna_ports.value = 1;
     config[CC_id]->rf_config.rx_antenna_ports.value = 1;
     config[CC_id]->sch_config.physical_cell_id.value = 0;
@@ -633,7 +633,7 @@ void init_openair0(void) {
     openair0_cfg[card].mmapped_dma=mmapped_dma;
     openair0_cfg[card].configFilename = NULL;
 
-    if(config[0]->rf_config.dl_channel_bandwidth.value == 100) {
+    if(config[0]->rf_config.dl_carrier_bandwidth.value == 100) {
       if (frame_parms[0]->threequarter_fs) {
 	openair0_cfg[card].sample_rate=23.04e6;
 	openair0_cfg[card].samples_per_frame = 230400;
@@ -645,17 +645,17 @@ void init_openair0(void) {
 	openair0_cfg[card].tx_bw = 10e6;
 	openair0_cfg[card].rx_bw = 10e6;
       }
-    } else if(config[0]->rf_config.dl_channel_bandwidth.value == 50) {
+    } else if(config[0]->rf_config.dl_carrier_bandwidth.value == 50) {
       openair0_cfg[card].sample_rate=15.36e6;
       openair0_cfg[card].samples_per_frame = 153600;
       openair0_cfg[card].tx_bw = 5e6;
       openair0_cfg[card].rx_bw = 5e6;
-    } else if (config[0]->rf_config.dl_channel_bandwidth.value == 25) {
+    } else if (config[0]->rf_config.dl_carrier_bandwidth.value == 25) {
       openair0_cfg[card].sample_rate=7.68e6;
       openair0_cfg[card].samples_per_frame = 76800;
       openair0_cfg[card].tx_bw = 2.5e6;
       openair0_cfg[card].rx_bw = 2.5e6;
-    } else if (config[0]->rf_config.dl_channel_bandwidth.value == 6) {
+    } else if (config[0]->rf_config.dl_carrier_bandwidth.value == 6) {
       openair0_cfg[card].sample_rate=1.92e6;
       openair0_cfg[card].samples_per_frame = 19200;
       openair0_cfg[card].tx_bw = 1.5e6;
@@ -673,7 +673,7 @@ void init_openair0(void) {
 	   RC.gNB[0][0]->gNB_config.rf_config.tx_antenna_ports.value );
     openair0_cfg[card].Mod_id = 0;
 
-    openair0_cfg[card].num_rb_dl=config[0]->rf_config.dl_channel_bandwidth.value;
+    openair0_cfg[card].num_rb_dl=config[0]->rf_config.dl_carrier_bandwidth.value;
 
     openair0_cfg[card].clock_source = clock_source;
 

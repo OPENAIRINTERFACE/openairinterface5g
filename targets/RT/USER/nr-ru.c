@@ -1181,7 +1181,7 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
   NR_DL_FRAME_PARMS *fp   = ru->nr_frame_parms;
   nfapi_nr_config_request_t *gNB_config = &ru->gNB_list[0]->gNB_config; //tmp index
   openair0_config_t *cfg   = &ru->openair0_cfg;
-  int N_RB = gNB_config->rf_config.dl_channel_bandwidth.value;
+  int N_RB = gNB_config->rf_config.dl_carrier_bandwidth.value;
   int mu = gNB_config->subframe_config.numerology_index_mu.value;
 
   if (mu == NR_MU_0) { //or if LTE
@@ -1867,8 +1867,8 @@ void configure_ru(int idx,
   //config->tdd_config_S[0]        = ru->nr_frame_parms->tdd_config_S;
   config->att_tx[0]              = ru->att_tx;
   config->att_rx[0]              = ru->att_rx;
-  config->N_RB_DL[0]             = gNB_config->rf_config.dl_channel_bandwidth.value;
-  config->N_RB_UL[0]             = gNB_config->rf_config.ul_channel_bandwidth.value;
+  config->N_RB_DL[0]             = gNB_config->rf_config.dl_carrier_bandwidth.value;
+  config->N_RB_UL[0]             = gNB_config->rf_config.ul_carrier_bandwidth.value;
   config->threequarter_fs[0]     = ru->nr_frame_parms->threequarter_fs;
 /*  if (ru->if_south==REMOTE_IF4p5) {
     config->prach_FreqOffset[0]  = ru->nr_frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset;
@@ -1899,8 +1899,8 @@ void configure_rru(int idx,
   gNB_config->subframe_config.duplex_mode.value                            = FDD;
   ru->att_tx                                                               = config->att_tx[0];
   ru->att_rx                                                               = config->att_rx[0];
-  gNB_config->rf_config.dl_channel_bandwidth.value                         = config->N_RB_DL[0];
-  gNB_config->rf_config.ul_channel_bandwidth.value                         = config->N_RB_UL[0];
+  gNB_config->rf_config.dl_carrier_bandwidth.value                         = config->N_RB_DL[0];
+  gNB_config->rf_config.ul_carrier_bandwidth.value                         = config->N_RB_UL[0];
   ru->nr_frame_parms->threequarter_fs                                       = config->threequarter_fs[0];
   //ru->nr_frame_parms->pdsch_config_common.referenceSignalPower                 = ru->max_pdschReferenceSignalPower-config->att_tx[0];
   if (ru->function==NGFI_RRU_IF4p5) {

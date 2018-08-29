@@ -81,17 +81,17 @@ typedef struct
 
 typedef struct{
   nfapi_tl_t tl;
-  uint16_t  controlResourceSetId;                           ///// L1 parameter 'CORESET-ID'
-  uint16_t  frequencyDomainResources;                       ///// L1 parameter 'CORESET-freq-dom'
+  uint16_t  corset_ID;                           ///// L1 parameter 'CORESET-ID'
+  uint16_t  freq_dom;                       ///// L1 parameter 'CORESET-freq-dom'
   uint16_t  duration;                                       ///// L1 parameter 'CORESET-time-duration'
-  uint16_t  cce_REG_MappingType;                            ///// L1 parameter 'CORESET-CCE-REG-mapping-type'
-  uint16_t  reg_BundleSize;                                 ///// L1 parameter 'CORESET-REG-bundle-size'
-  uint16_t  interleaverSize;                                ///// L1 parameter 'CORESET-interleaver-size'
-  uint16_t  shiftIndex;                                     ///// L1 parameter 'CORESET-shift-index'
-  uint16_t  precoderGranularity;                            ///// L1 parameter 'CORESET-precoder-granuality'
-  uint16_t  TCI_StateId;                                    ///// L1 parameter 'TCI-StatesPDCCH'
-  uint16_t  tci_PresentInDCI;                               ///// L1 parameter 'TCI-PresentInDCI'
-  uint16_t  pdcch_DMRS_ScramblingID;                        ///// L1 parameter 'PDCCH-DMRS-Scrambling-ID'
+  uint16_t  reg_type;                            ///// L1 parameter 'CORESET-CCE-REG-mapping-type'
+  uint16_t  reg_bundlesize;                                 ///// L1 parameter 'CORESET-REG-bundle-size'
+  uint16_t  interleaversize;                                ///// L1 parameter 'CORESET-interleaver-size'
+  uint16_t  shiftindex;                                     ///// L1 parameter 'CORESET-shift-index'
+  uint16_t  precodergranularity;                            ///// L1 parameter 'CORESET-precoder-granuality'
+  uint16_t  tci_stateId;                                    ///// L1 parameter 'TCI-StatesPDCCH'
+  uint16_t  tci_present;                               ///// L1 parameter 'TCI-PresentInDCI'
+  uint16_t  dmrs_scramblingID;                        ///// L1 parameter 'PDCCH-DMRS-Scrambling-ID'
 } nfapi_nr_ControlResourcesSet_t;
 
 typedef struct{
@@ -104,10 +104,9 @@ typedef struct{
   uint16_t  nrofCand_aggLevel4;                             ///// L1 parameter 'Aggregation-level-4'
   uint16_t  nrofCand_aggLevel8;                             ///// L1 parameter 'Aggregation-level-8'
   uint16_t  nrofCand_aggLevel16;                            ///// L1 parameter 'Aggregation-level-16'
-  uint16_t  Com_dci_Format2_0_nrofCand_SFI_And_aggLevel;    ///// L1 parameters 'SFI-Num-PDCCH-cand' and 'SFI-Aggregation-Level'
-  uint16_t  Com_dci_Format2_3_monitoringPeriodicity;        ///// L1 parameter 'SRS-monitoring-periodicity'
-  uint16_t  Com_dci_Format2_3_nrofPDCCH_Candidates;         ///// L1 parameter 'SRS-Num-PDCCH-cand'
-  uint16_t  ue_Specific_dci_Formats;
+  uint16_t  sfi_agg_fmt2_0;    ///// L1 parameters 'SFI-Num-PDCCH-cand' and 'SFI-Aggregation-Level'
+  uint16_t  monitoringperiodicity_fmt2_3;        ///// L1 parameter 'SRS-monitoring-periodicity'
+  uint16_t  nrof_candidates_fmt_2_3;         ///// L1 parameter 'SRS-Num-PDCCH-cand'
 } nfapi_nr_SearchSpace_t;
 
 
@@ -127,24 +126,22 @@ typedef struct {
 
 typedef struct {
   nfapi_uint16_tlv_t  tx_antenna_ports;
-  nfapi_uint16_tlv_t  rx_antenna_ports;
-  nfapi_uint16_tlv_t  dl_channel_bandwidth;
-  nfapi_uint16_tlv_t  ul_channel_bandwidth;  
-  nfapi_uint16_tlv_t  dl_BWP_carrierBandwidth;
-  nfapi_uint16_tlv_t  ul_BWP_carrierBandwidth;
-  nfapi_uint16_tlv_t  dl_locationAndBandwidth;
-  nfapi_uint16_tlv_t  ul_locationAndBandwidth;
-  nfapi_uint16_tlv_t  dl_BWP_SubcarrierSpacing;
-  nfapi_uint16_tlv_t  ul_BWP_SubcarrierSpacing;
-  nfapi_uint16_tlv_t  dl_absoluteFrequencyPointA;
-  nfapi_uint16_tlv_t  ul_absoluteFrequencyPointA;
-  nfapi_uint16_tlv_t  dl_offsetToCarrier;
-  nfapi_uint16_tlv_t  ul_offsetToCarrier;
-  nfapi_uint16_tlv_t  dl_SCS_SubcarrierSpacing;
-  nfapi_uint16_tlv_t  ul_SCS_SubcarrierSpacing;
-  nfapi_uint16_tlv_t  dl_SCS_SpecificCarrier_k0;
-  nfapi_uint16_tlv_t  ul_SCS_SpecificCarrier_k0;
-  nfapi_uint16_tlv_t  NIA_SubcarrierSpacing;
+  nfapi_uint16_tlv_t  rx_antenna_ports; 
+  nfapi_uint16_tlv_t  dl_carrier_bandwidth;
+  nfapi_uint16_tlv_t  ul_carrier_bandwidth;
+  nfapi_uint16_tlv_t  dl_bwp_subcarrierspacing;
+  nfapi_uint16_tlv_t  ul_bwp_subcarrierspacing;
+  nfapi_uint16_tlv_t  dl_locationandbandwidth;
+  nfapi_uint16_tlv_t  ul_locationandbandwidth;
+  nfapi_uint16_tlv_t  dl_absolutefrequencypointA;
+  nfapi_uint16_tlv_t  ul_absolutefrequencypointA;
+  nfapi_uint16_tlv_t  dl_offsettocarrier;
+  nfapi_uint16_tlv_t  ul_offsettocarrier;
+  nfapi_uint16_tlv_t  dl_scs_subcarrierspacing;
+  nfapi_uint16_tlv_t  ul_scs_subcarrierspacing;
+  nfapi_uint16_tlv_t  dl_scs_specificcarrier_k0;
+  nfapi_uint16_tlv_t  ul_scs_specificcarrier_k0;
+  nfapi_uint16_tlv_t  NIA_subcarrierspacing;
 } nfapi_nr_rf_config_t;
 
 #define NFAPI_NR_RF_CONFIG_DL_CHANNEL_BANDWIDTH_TAG 0x500A
@@ -215,35 +212,33 @@ typedef struct {
 
 typedef struct {
 //NR TDD-UL-DL-ConfigCommon                ///// L1 parameter 'UL-DL-configuration-common'
-  nfapi_uint16_tlv_t  referenceSubcarrierSpacing;                                     ///// L1 parameter 'reference-SCS'
-  nfapi_uint16_tlv_t  dl_UL_TransmissionPeriodicity;                                  ///// L1 parameter 'DL-UL-transmission-periodicity'
+  nfapi_uint16_tlv_t  subcarrierspacing;                                     ///// L1 parameter 'reference-SCS'
+  nfapi_uint16_tlv_t  dl_ul_periodicity;                                  ///// L1 parameter 'DL-UL-transmission-periodicity'
   nfapi_uint16_tlv_t  nrofDownlinkSlots;                                              ///// L1 parameter 'number-of-DL-slots'
   nfapi_uint16_tlv_t  nrofDownlinkSymbols;                                            ///// L1 parameter 'number-of-DL-symbols-common'
   nfapi_uint16_tlv_t  nrofUplinkSlots;                                                ///// L1 parameter 'number-of-UL-slots'
   nfapi_uint16_tlv_t  nrofUplinkSymbols;                                              ///// L1 parameter 'number-of-UL-symbols-common'
 } nfapi_nr_tdd_ul_dl_config_t;
 
-
 typedef struct {
  //RateMatchPattern  is used to configure one rate matching pattern for PDSCH    ///// L1 parameter 'Resource-set-cekk'             
-  nfapi_uint16_tlv_t  rateMatchPatternId;
-  nfapi_uint16_tlv_t  RateMatchPattern_patternType;
-  nfapi_uint16_tlv_t  symbolsInResourceBlock;                                          ///// L1 parameter 'rate-match-PDSCH-bitmap2
-  nfapi_uint16_tlv_t  periodicityAndPattern;                                           ///// L1 parameter 'rate-match-PDSCH-bitmap3'
-  nfapi_uint16_tlv_t  RateMatchPattern_controlResourceSet;
-  nfapi_uint16_tlv_t  RateMatchPattern_subcarrierSpacing;                              ///// L1 parameter 'resource-pattern-scs'
-  nfapi_uint16_tlv_t  RateMatchPattern_mode; 
+  nfapi_uint16_tlv_t  Match_Id;
+  nfapi_uint16_tlv_t  patternType;
+  nfapi_uint16_tlv_t  symbolsInResourceBlock;                  ///// L1 parameter 'rate-match-PDSCH-bitmap2
+  nfapi_uint16_tlv_t  periodicityAndPattern;                   ///// L1 parameter 'rate-match-PDSCH-bitmap3'
+  nfapi_uint16_tlv_t  controlResourceSet;
+  nfapi_uint16_tlv_t  subcarrierSpacing;                       ///// L1 parameter 'resource-pattern-scs'
+  nfapi_uint16_tlv_t  mode; 
 } nfapi_nr_ratematchpattern_t;
 
 typedef struct {
   //NR  RateMatchPatternLTE-CRS
-  nfapi_uint16_tlv_t  RateMatchPatternLTE_CRS_carrierFreqDL;                           ///// L1 parameter 'center-subcarrier-location'
-  nfapi_uint16_tlv_t  RateMatchPatternLTE_CRS_carrierBandwidthDL;                      ///// L1 parameter 'BW'
-  nfapi_uint16_tlv_t  RateMatchPatternLTE_CRS_nrofCRS_Ports;                           ///// L1 parameter 'rate-match-resources-numb-LTE-CRS-antenna-port'
-  nfapi_uint16_tlv_t  RateMatchPatternLTE_CRS_v_Shift;                                 ///// L1 parameter 'rate-match-resources-LTE-CRS-v-shift'
-  nfapi_uint16_tlv_t  RateMatchPatternLTE_CRS_radioframeAllocationPeriod;
-  nfapi_uint16_tlv_t  RateMatchPatternLTE_CRS_radioframeAllocationOffset;
-  nfapi_uint16_tlv_t  RateMatchPatternLTE_CRS_subframeAllocation_choice;
+  nfapi_uint16_tlv_t  carrierfreqDL;                           ///// L1 parameter 'center-subcarrier-location'
+  nfapi_uint16_tlv_t  dl_bandwidth;                      ///// L1 parameter 'BW'
+  nfapi_uint16_tlv_t  nrofcrs_Ports;                           ///// L1 parameter 'rate-match-resources-numb-LTE-CRS-antenna-port'
+  nfapi_uint16_tlv_t  v_Shift;                                 ///// L1 parameter 'rate-match-resources-LTE-CRS-v-shift'
+  nfapi_uint16_tlv_t  frame_Period;
+  nfapi_uint16_tlv_t  frame_Offset;
 } nfapi_nr_ratematchpattern_lte_crs_t;
 
 typedef struct {
@@ -406,7 +401,7 @@ typedef struct {
 typedef struct {
   nfapi_tl_t tl;
   uint16_t length;
-  int16_t pdu_index;
+  int16_t  pdu_index;
   uint16_t transmission_power;
 } nfapi_nr_dl_config_bch_pdu_rel15_t;
 #define NFAPI_NR_DL_CONFIG_REQUEST_BCH_PDU_REL15_TAG 0x5025
