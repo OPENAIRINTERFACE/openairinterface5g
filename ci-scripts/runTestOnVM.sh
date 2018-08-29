@@ -421,6 +421,10 @@ then
             echo "############################################################"
             ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < /opt/ltebox-archives/adapt_ue_sim.txt
         fi
+
+        # for the moment, just a plain sleep
+        # TODO: more sophiscated way to detect EPC is started
+        sleep 5
     fi
 
     # HERE ADD any install actions for another EPC
@@ -469,6 +473,8 @@ then
 
     ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
     rm $VM_CMDS
+    # for the moment, just a plain sleep
+    # TODO: more sophiscated way to detect eNB is started and that UE is connected
     sleep 10
     echo "ifconfig oip1 | egrep \"inet addr\" | sed -e 's#^.*inet addr:##' -e 's#  P-t-P:.*\$##'" > $VM_CMDS
     UE_IP_ADDR=`ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS`
