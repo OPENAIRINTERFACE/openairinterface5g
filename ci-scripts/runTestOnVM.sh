@@ -313,13 +313,6 @@ then
     if [ $NB_RUNS -eq 0 ]; then STATUS=-1; fi
     if [ $NB_FAILURES -ne 0 ]; then STATUS=-1; fi
 
-    if [ $STATUS -eq 0 ]
-    then
-        echo "STATUS seems OK"
-    else
-        echo "STATUS failed?"
-    fi
-
 fi
 
 if [[ "$RUN_OPTIONS" == "complex" ]] && [[ $VM_NAME =~ .*-basic-sim.* ]]
@@ -422,12 +415,28 @@ then
             ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < /opt/ltebox-archives/adapt_ue_sim.txt
         fi
 
-        # for the moment, just a plain sleep
-        # TODO: more sophiscated way to detect EPC is started
-        sleep 5
+        i="0"
+        echo "ifconfig tun5 | egrep -c \"inet addr\"" > $EPC_VM_CMDS
+        while [ $i -lt 10 ]
+        do
+            sleep 2
+            CONNECTED=`ssh -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR < $EPC_VM_CMDS`
+            if [ $CONNECTED -eq 1 ]
+            then
+                i="100"
+            else
+                i=$[$i+1]
+            fi
+        done
+        rm $EPC_VM_CMDS
+        if [ $i -lt 50 ]
+        then
+            echo "Problem w/ starting ltebox EPC"
+            exit -1
+        fi
     fi
 
-    # HERE ADD any install actions for another EPC
+    # HERE ADD ANY INSTALL ACTIONS FOR ANOTHER EPC
 
     # Retrieve EPC real IP address
     if [ $LTEBOX -eq 1 ]
@@ -473,9 +482,35 @@ then
 
     ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
     rm $VM_CMDS
-    # for the moment, just a plain sleep
-    # TODO: more sophiscated way to detect eNB is started and that UE is connected
-    sleep 10
+    i="0"
+    echo "ifconfig oip1 | egrep -c \"inet addr\"" > $VM_CMDS
+    while [ $i -lt 10 ]
+    do
+        sleep 5
+        CONNECTED=`ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS`
+        if [ $CONNECTED -eq 1 ]
+        then
+            i="100"
+        else
+            i=$[$i+1]
+        fi
+    done
+    rm $VM_CMDS
+    if [ $i -lt 50 ]
+    then
+        echo "Problem w/ eNB and UE not syncing"
+        echo "echo \"sudo daemon --name=enb_daemon --stop\"" > $VM_CMDS
+        echo "sudo daemon --name=enb_daemon --stop" >> $VM_CMDS
+        echo "echo \"sudo daemon --name=ue_daemon --stop\"" >> $VM_CMDS
+        echo "sudo daemon --name=ue_daemon --stop" >> $VM_CMDS
+        echo "echo \"sudo killall --signal SIGKILL lte-softmodem\"" >> $VM_CMDS
+        echo "sudo killall --signal SIGKILL lte-softmodem" >> $VM_CMDS
+        ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
+        rm -f $VM_CMDS
+        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/enb.log $ARCHIVES_LOC
+        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/ue.log $ARCHIVES_LOC
+        exit -1
+    fi
     echo "ifconfig oip1 | egrep \"inet addr\" | sed -e 's#^.*inet addr:##' -e 's#  P-t-P:.*\$##'" > $VM_CMDS
     UE_IP_ADDR=`ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS`
     echo "UE IP Address for EPC is : $UE_IP_ADDR"
@@ -485,6 +520,7 @@ then
     echo "Pinging the UE"
     echo "############################################################"
     echo "echo \"ping -c 20 $UE_IP_ADDR\"" > $EPC_VM_CMDS
+    echo "echo \"COMMAND IS: ping -c 20 $UE_IP_ADDR\" > ping_ue.txt" > $EPC_VM_CMDS
     echo "ping -c 20 $UE_IP_ADDR | tee -a ping_ue.txt" >> $EPC_VM_CMDS
     ssh -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR < $EPC_VM_CMDS
     rm -f $EPC_VM_CMDS
@@ -494,11 +530,13 @@ then
     echo "Iperf DL"
     echo "############################################################"
     echo "echo \"iperf -u -s -i 1\"" > $VM_CMDS
-    echo "nohup iperf -u -s -i 1 > tmp/cmake_targets/log/iperf_dl_server.txt &" >> $VM_CMDS
+    echo "echo \"COMMAND IS: iperf -u -s -i 1\" > tmp/cmake_targets/log/iperf_dl_server.txt" > $VM_CMDS
+    echo "nohup iperf -u -s -i 1 >> tmp/cmake_targets/log/iperf_dl_server.txt &" >> $VM_CMDS
     ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
     rm $VM_CMDS
 
     echo "echo \"iperf -c $UE_IP_ADDR -u -t 30 -b 15M -i 1\"" > $EPC_VM_CMDS
+    echo "echo \"COMMAND IS: iperf -c $UE_IP_ADDR -u -t 30 -b 15M -i 1\" > iperf_dl_client.txt" > $EPC_VM_CMDS
     echo "iperf -c $UE_IP_ADDR -u -t 30 -b 15M -i 1 | tee -a iperf_dl_client.txt" >> $EPC_VM_CMDS
     ssh -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR < $EPC_VM_CMDS
     rm -f $EPC_VM_CMDS
@@ -513,11 +551,13 @@ then
     echo "Iperf UL"
     echo "############################################################"
     echo "echo \"iperf -u -s -i 1\"" > $EPC_VM_CMDS
-    echo "nohup iperf -u -s -i 1 > iperf_ul_server.txt &" >> $EPC_VM_CMDS
+    echo "echo \"COMMAND IS: iperf -u -s -i 1\" > iperf_ul_server.txt" > $EPC_VM_CMDS
+    echo "nohup iperf -u -s -i 1 >> iperf_ul_server.txt &" >> $EPC_VM_CMDS
     ssh -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR < $EPC_VM_CMDS
     rm $EPC_VM_CMDS
 
     echo "echo \"iperf -c $REAL_EPC_IP_ADDR -u -t 30 -b 4M -i 1\"" > $VM_CMDS
+    echo "echo \"COMMAND IS: iperf -c $REAL_EPC_IP_ADDR -u -t 30 -b 4M -i 1\" > /home/ubuntu/tmp/cmake_targets/log/iperf_ul_client.txt" > $VM_CMDS
     echo "iperf -c $REAL_EPC_IP_ADDR -u -t 30 -b 4M -i 1 | tee -a /home/ubuntu/tmp/cmake_targets/log/iperf_ul_client.txt" >> $VM_CMDS
     ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
     rm -f $VM_CMDS
@@ -541,6 +581,77 @@ then
     rm -f $VM_CMDS
     scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/enb.log $ARCHIVES_LOC
     scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/ue.log $ARCHIVES_LOC
+
+    echo "############################################################"
+    echo "Checking run status"
+    echo "############################################################"
+
+    # checking ping result
+    if [ -f $ARCHIVES_LOC/ping_ue.txt ]
+    then
+        FILE_COMPLETE=`egrep -c "ping statistics" $ARCHIVES_LOC/ping_ue.txt`
+        if [ $FILE_COMPLETE -eq 0 ]
+        then
+            STATUS=-1
+        else
+            ALL_PACKET_RECEIVED=`egrep -c "20 received" $ARCHIVES_LOC/ping_ue.txt`
+            if [ $ALL_PACKET_RECEIVED -eq 1 ]
+            then
+                echo "got all ping packets"
+            else
+                STATUS=-1
+            fi
+        fi
+    else
+        STATUS=-1
+    fi
+
+    # checking dl iperf result
+    if [ -f $ARCHIVES_LOC/iperf_dl_client.txt ]
+    then
+        FILE_COMPLETE=`egrep -c "Server Report" $ARCHIVES_LOC/iperf_dl_client.txt`
+        if [ $FILE_COMPLETE -eq 0 ]
+        then
+            STATUS=-1
+        else
+            EFFECTIVE_BANDWIDTH=`tail -n3 $ARCHIVES_LOC/iperf_dl_client.txt | egrep "Mbits/sec" | sed -e "s#^.*MBytes *##" -e "s#sec.*#sec#"`
+            if [[ $EFFECTIVE_BANDWIDTH =~ .*15.*Mbits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*14.*Mbits.* ]]
+            then
+                echo "got requested DL bandwidth: $EFFECTIVE_BANDWIDTH"
+            else
+                STATUS=-1
+            fi
+        fi
+    else
+        STATUS=-1
+    fi
+
+    # checking ul iperf result
+    if [ -f $ARCHIVES_LOC/iperf_ul_client.txt ]
+    then
+        FILE_COMPLETE=`egrep -c "Server Report" $ARCHIVES_LOC/iperf_ul_client.txt`
+        if [ $FILE_COMPLETE -eq 0 ]
+        then
+            STATUS=-1
+        else
+            EFFECTIVE_BANDWIDTH=`tail -n3 $ARCHIVES_LOC/iperf_ul_client.txt | egrep "Mbits/sec" | sed -e "s#^.*MBytes *##" -e "s#sec.*#sec#"`
+            if [[ $EFFECTIVE_BANDWIDTH =~ .*4.*Mbits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*3.*Mbits.* ]]
+            then
+                echo "got requested UL bandwidth: $EFFECTIVE_BANDWIDTH"
+            else
+                STATUS=-1
+            fi
+        fi
+    else
+        STATUS=-1
+    fi
+fi
+
+if [ $STATUS -eq 0 ]
+then
+    echo "STATUS seems OK"
+else
+    echo "STATUS failed?"
 fi
 
 exit $STATUS
