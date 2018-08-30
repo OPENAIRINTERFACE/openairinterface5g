@@ -1,4 +1,4 @@
-#!/Bin/groovy
+#!/bin/groovy
 /*
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -41,7 +41,7 @@ pipeline {
         disableConcurrentBuilds()
         timestamps()
         gitLabConnection('OAI GitLab')
-        gitlabBuilds(builds: ["Build eNb-USRP", "Build basic-sim", "Build phy-sim", "Build eNb-ethernet", "Build UE-ethernet", "Build gNb-usrp", "Build nr-UE-usrp", "Analysis with cppcheck", "Test phy-sim", "Test-FDD-Band7"])
+        gitlabBuilds(builds: ["Build eNb-USRP", "Build gNb-usrp", "Build nr-UE-usrp", "Build phy-sim", "Analysis with cppcheck"])
         ansiColor('xterm')
     }
 
@@ -125,28 +125,12 @@ pipeline {
             }
         }
 
-        stage ("Start VM -- basic-sim") {
-            steps {
-                sh "./ci-scripts/createVM.sh --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-            }
-        }
-
         stage ("Start VM -- phy-sim") {
             steps {
                 sh "./ci-scripts/createVM.sh --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
             }
         }
 
-        stage ("Start VM -- enb-ethernet") {
-            steps {
-                sh "./ci-scripts/createVM.sh --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-            }
-        }
-
-        stage ("Start VM -- ue-ethernet") {
-            steps {
-                sh "./ci-scripts/createVM.sh --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-		
         stage ("Start VM -- gnb-usrp") {
             steps {
                 sh "./ci-scripts/createVM.sh --variant gnb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
@@ -172,13 +156,6 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build eNb-USRP") {
                             sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant enb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
-                        }
-                    }
-                }
-                stage ("Build basic simulator") {
-                    steps {
-                        gitlabCommitStatus(name: "Build basic-sim") {
-                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                         }
                     }
                 }
@@ -228,7 +205,7 @@ pipeline {
                 always {
                     script {
                         dir ('archives') {
-                            sh "zip -r -qq vm_build_logs.zip basic_sim enb_usrp phy_sim cppcheck enb_eth ue_eth gnb_usrp nrue_usrp red_hat"
+                            sh "zip -r -qq vm_build_logs.zip enb_usrp phy_sim cppcheck gnb_usrp nrue_usrp red_hat"
                         }
                         if(fileExists('archives/vm_build_logs.zip')) {
                             archiveArtifacts artifacts: 'archives/vm_build_logs.zip'
@@ -255,75 +232,6 @@ pipeline {
             }
         }
 
-        stage ("Variant Tests") {
-            parallel {
-                stage ("Test physical simulators") {
-                    steps {
-                        gitlabCommitStatus(name: "Test phy-sim") {
-                            sh "./ci-scripts/runTestOnVM.sh --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
-                        }
-                    }
-                }
-                stage ("Test basic simulator") {
-                    steps {
-                        //gitlabCommitStatus(name: "Test basic-sim") {
-                            sh "./ci-scripts/runTestOnVM.sh --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
-                        //}
-                    }
-                }
-		stage ("Test FDD - Band 7 - B210") {
-                    steps {
-                        gitlabCommitStatus(name: "Test-FDD-Band7") {
-                            script {
-                                if ("MERGE".equals(env.gitlabActionType)) {
-                                    FDD_Band7_B210_Status = build job: 'eNB-CI-FDD-Band7-B210',
-                                       parameters: [
-                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
-                                           string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
-                                           string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: true)
-                                       ]
-                                } else {
-                                    FDD_Band7_B210_Status = build job: 'eNB-CI-FDD-Band7-B210',
-                                       parameters: [
-                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
-                                           string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
-                                           string(name: 'eNB_CommitID', value: String.valueOf(GIT_COMMIT)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: false)
-                                       ]
-                                }
-                            }
-                        }
-                    }
-                    post {
-                        always {
-                            script {
-                                copyArtifacts(projectName: 'eNB-CI-FDD-Band7-B210',
-                                              filter: 'test_results*.html',
-                                              selector: specific("${FDD_Band7_B210_Status.number}"))
-                                if (fileExists('test_results-eNB-CI-FDD-Band7-B210.html')) {
-                                    archiveArtifacts artifacts: 'test_results-eNB-CI-FDD-Band7-B210.html'
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            post {
-                always {
-                    script {
-                        dir ('archives') {
-                            sh "if [ -d */test ]; then zip -r -qq vm_tests_logs.zip */test ; fi"
-                        }
-                        if(fileExists('archives/vm_tests_logs.zip')) {
-                            archiveArtifacts artifacts: 'archives/vm_tests_logs.zip'
-                            archiveArtifacts artifacts: 'archives/*/test/results_autotests*.xml'
-                            archiveArtifacts artifacts: 'archives/*/test/*.xsl'
-                        }
-                    }
-                }
-            }
-        }
         stage ("Destroy all Virtual Machines") {
             steps {
                 sh "./ci-scripts/destroyAllRunningVM.sh --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
