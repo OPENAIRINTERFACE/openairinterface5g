@@ -375,7 +375,7 @@ void help (void) {
   printf("  -V Enable VCD (generated file will be located atopenair_dump_eNB.vcd, read it with target/RT/USER/eNB.gtkw\n");
   printf("  -x Set the transmission mode, valid options: 1 \n");
   printf("  -E Apply three-quarter of sampling frequency, 23.04 Msps to reduce the data rate on USB/PCIe transfers (only valid for 20 MHz)\n");
-#if T_TRACER
+#if 0 //T_TRACER
     printf("  --T_port [port]    use given port\n");
     printf("  --T_nowait         don't wait for tracer, start immediately\n");
     printf("  --T_dont_fork      to ease debugging with gdb\n");
@@ -619,7 +619,7 @@ static void get_options (int argc, char **argv) {
 
 }
 
-#if T_TRACER
+#if 0 //T_TRACER
 int T_wait = 1;       /* by default we wait for the tracer */
 int T_port = 2021;    /* default port to listen to to wait for the tracer */
 int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
@@ -903,7 +903,7 @@ int main( int argc, char **argv ) {
     // get options and fill parameters from configuration file
     get_options (argc, argv); //Command-line options, enb_properties
 
-#if T_TRACER
+#if 0 //T_TRACER
     T_init(T_port, T_wait, T_dont_fork);
 #endif
 

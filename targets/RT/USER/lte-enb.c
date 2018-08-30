@@ -1031,9 +1031,13 @@ void kill_eNB_proc(int inst) {
     proc = &eNB->proc;
     proc_rxtx = &proc->proc_rxtx[0];
 
-    kill_td_thread(eNB);
-    kill_te_thread(eNB);
-    LOG_I(PHY, "Killing TX CC_id %d inst %d\n", CC_id, inst );
+    if(get_nprocs() > 2 && codingw)
+    {
+      kill_td_thread(eNB);
+      kill_te_thread(eNB);
+      LOG_I(PHY, "Killing TX CC_id %d inst %d\n", CC_id, inst );
+    }
+    
     for (i=0; i<2; i++) {
       pthread_mutex_lock(&proc_rxtx[i].mutex_rxtx);
       proc_rxtx[i].instance_cnt_rxtx = 0;
