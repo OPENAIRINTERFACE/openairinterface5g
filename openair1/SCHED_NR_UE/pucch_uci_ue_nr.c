@@ -228,10 +228,10 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   uint8_t nb_symbols_total = 0;
   uint8_t  nb_symbols = 0;
   uint16_t starting_prb = 0;;  /* it can be considered as first  hop on case of pucch hopping */
-  uint16_t second_hop = 0;    /* second part for pucch for hopping */
+  uint16_t second_hop = 0;     /* second part for pucch for hopping */
   uint8_t  nb_of_prbs = 0;
-  int m_0 = 0;         /* format 0 only */
-  int m_CS = 0;     /* for all format except for format 0 */
+  int m_0 = 0;                 /* format 0 only */
+  int m_CS = 0;                /* for all format except for format 0 */
   int index_additional_dmrs = I_PUCCH_NO_ADDITIONAL_DMRS;
   int index_hopping = I_PUCCH_NO_HOPPING;
   int time_domain_occ = 0;
@@ -494,7 +494,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   tx_amp = get_tx_amp(pucch_tx_power,
                       ue->tx_power_max_dBm,
                       ue->frame_parms.N_RB_UL,
-					  nb_of_prbs);
+                      nb_of_prbs);
 #else
   tx_amp = AMP;
 #endif
@@ -505,10 +505,11 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
       nr_generate_pucch0(ue,ue->common_vars.txdataF,
                          &ue->frame_parms,
                          &ue->pucch_config_dedicated_nr[gNB_id],
-						 tx_amp,
+                         tx_amp,
                          nr_tti_tx,
+                         (uint8_t)m_0,
                          (uint8_t)m_CS,
-						 nb_symbols_total,
+                         nb_symbols_total,
                          starting_symbol_index,
                          starting_prb);
       break;
@@ -519,9 +520,10 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                          &ue->frame_parms,
                          &ue->pucch_config_dedicated_nr[gNB_id],
                          pucch_payload,
-						 tx_amp,
+                         tx_amp,
                          nr_tti_tx,
-						 nb_symbols_total,
+                         (uint8_t)m_0,
+                         nb_symbols_total,
                          starting_symbol_index,
                          starting_prb,
                          second_hop,
@@ -535,9 +537,9 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                          &ue->frame_parms,
                          &ue->pucch_config_dedicated_nr[gNB_id],
                          pucch_payload,
-						 tx_amp,
+                         tx_amp,
                          nr_tti_tx,
-						 nb_symbols_total,
+                         nb_symbols_total,
                          starting_symbol_index,
                          nb_of_prbs,
                          starting_prb,
@@ -552,13 +554,13 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                            format,
                            &ue->pucch_config_dedicated_nr[gNB_id],
                            pucch_payload,
-						   tx_amp,
+                           tx_amp,
                            nr_tti_tx,
-						   nb_symbols_total,
+                           nb_symbols_total,
                            starting_symbol_index,
                            nb_of_prbs,
                            starting_prb,
-						   second_hop,
+                           second_hop,
                            (uint8_t)N_UCI,
                            (uint8_t)occ_length,
                            (uint8_t)occ_Index);

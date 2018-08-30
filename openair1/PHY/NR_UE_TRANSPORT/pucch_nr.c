@@ -40,8 +40,10 @@
 #include "UTIL/LOG/vcd_signal_dumper.h"
 
 #include "T.h"
-#define DEBUG_PUCCH_TX
-#define DEBUG_NR_PUCCH_TX
+#ifndef NR_UNIT_TEST
+  #define DEBUG_PUCCH_TX
+  #define DEBUG_NR_PUCCH_TX
+#endif
 #define ONE_OVER_SQRT2 23170 // 32767/sqrt(2) = 23170 (ONE_OVER_SQRT2)
 
   /*
@@ -337,7 +339,9 @@ void nr_group_sequence_hopping (//pucch_GroupHopping_t ue->pucch_config_common_n
 //////////////////////////////////////initialization to be removed///////////////////////////////////////////////////////////
   PUCCH_GroupHopping=neither;
   n_id=10;
-  printf("\t\t [nr_group_sequence_hopping] initialization PUCCH_GroupHopping=%d, n_id=%d -> variable initializations TO BE REMOVED\n",PUCCH_GroupHopping,n_id);
+  #ifdef DEBUG_NR_PUCCH_TX
+    printf("\t\t [nr_group_sequence_hopping] initialization PUCCH_GroupHopping=%d, n_id=%d -> variable initializations TO BE REMOVED\n",PUCCH_GroupHopping,n_id);
+  #endif
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -390,7 +394,9 @@ double nr_cyclic_shift_hopping(PHY_VARS_NR_UE *ue,
 
   //////////////////////////////////////initialization to be removed///////////////////////////////////////////////////////////
     c_init=10;
-    printf("\t\t [nr_cyclic_shift_hopping] initialization c_init=%d -> variable initialization TO BE REMOVED\n",c_init);
+    #ifdef DEBUG_NR_PUCCH_TX
+      printf("\t\t [nr_cyclic_shift_hopping] initialization c_init=%d -> variable initialization TO BE REMOVED\n",c_init);
+    #endif
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -415,6 +421,7 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
                         PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
                         int16_t amp,
                         int nr_tti_tx,
+                        uint8_t m0,
                         uint8_t mcs,
                         uint8_t nrofSymbols,
                         uint8_t startingSymbolIndex,
@@ -441,8 +448,6 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
    */
   // alpha is cyclic shift
   double alpha;
-  // m0 is provided by higher layer parameter PUCCH-F0-F1-initial-cyclic-shift of PUCCH-F0-resource-config
-  uint8_t m0;
   // lnormal is the OFDM symbol number in the PUCCH transmission where l=0 corresponds to the first OFDM symbol of the PUCCH transmission
   uint8_t lnormal;
   // lprime is the index of the OFDM symbol in the slot that corresponds to the first OFDM symbol of the PUCCH transmission in the slot given by [5, TS 38.213]
@@ -470,15 +475,9 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
   uint8_t n_hop = 0;
   //uint8_t PUCCH_Frequency_Hopping; // from higher layers FIXME!!
 
-  /////////////////////////////////////////////////////////// initializing some variables for test
-    m0=0;
-//    PUCCH_GroupHopping=0;
-//    n_id=10;
-    //PUCCH_Frequency_Hopping = 0;
 #ifdef DEBUG_NR_PUCCH_TX
     printf("\t [nr_generate_pucch0] sequence generation: variable initialization for test\n");
 #endif
-  /////////////////////////////////////////////////////// ending variables initialization for test
 
   // x_n contains the sequence r_u_v_alpha_delta(n)
   int16_t x_n_re[24],x_n_im[24];
@@ -550,6 +549,7 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
                         uint64_t payload,
                         int16_t amp,
                         int nr_tti_tx,
+                        uint8_t m0,
                         uint8_t nrofSymbols,
                         uint8_t startingSymbolIndex,
                         uint16_t startingPRB,
@@ -557,8 +557,8 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
                         uint8_t timeDomainOCC,
                         uint8_t nr_bit) {
 #ifdef DEBUG_NR_PUCCH_TX
-	  printf("\t [nr_generate_pucch1] start function at slot(nr_tti_tx)=%d\n",nr_tti_tx);
-	  printf("\t [nr_generate_pucch1] startingPRB=%d startingPRB_intraSlotHopping=%d\n",startingPRB,startingPRB_intraSlotHopping);
+  printf("\t [nr_generate_pucch1] start function at slot(nr_tti_tx)=%d\n",nr_tti_tx);
+  printf("\t [nr_generate_pucch1] startingPRB=%d startingPRB_intraSlotHopping=%d\n",startingPRB,startingPRB_intraSlotHopping);
 #endif
 
   /*
@@ -646,8 +646,6 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
    */
   // alpha is cyclic shift
   double alpha;
-  // m0 is provided by higher layer parameter PUCCH-F0-F1-initial-cyclic-shift of PUCCH-F0-resource-config
-  uint8_t m0;
   // lnormal is the OFDM symbol number in the PUCCH transmission where l=0 corresponds to the first OFDM symbol of the PUCCH transmission
   uint8_t lnormal = 0 ;
   // lprime is the index of the OFDM symbol in the slot that corresponds to the first OFDM symbol of the PUCCH transmission in the slot given by [5, TS 38.213]
@@ -882,7 +880,7 @@ inline void nr_pucch2_3_4_scrambling(uint16_t M_bit,uint16_t rnti,uint16_t n_id,
   for (i=0;i<M_bit;i++) {
     c = (uint8_t)((s>>i)&1);
     btilde[i] = (((B>>i)&1) ^ c);
-    #ifndef DEBUG_NR_PUCCH_TX
+    #ifdef DEBUG_NR_PUCCH_TX
       printf("\t\t\t btilde[%d]=%lx from scrambled bit %d\n",i,btilde[i],((B>>i)&1));
     #endif
   }
@@ -1338,7 +1336,7 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
         z_im[l*(12*nrofPRB)+k] = z_im[l*(12*nrofPRB)+k]
                                + (int16_t)(((int32_t)round(32767/sqrt(12*nrofPRB))*(int16_t)((((int32_t)y_n_im[l*(12*nrofPRB)+m] * (int16_t)round(32767 * cos(2*M_PI*m*k/(12*nrofPRB))))>>15)
                                                                                            - (((int32_t)y_n_re[l*(12*nrofPRB)+m] * (int16_t)round(32767 * sin(2*M_PI*m*k/(12*nrofPRB))))>>15)))>>15);
-        #ifndef DEBUG_NR_PUCCH_TX
+        #ifdef DEBUG_NR_PUCCH_TX
           printf("\t [nr_generate_pucch3_4] transform precoding for formats 3 and 4: (l,k,m)=(%d,%d,%d)\tz(%d)   = \t(%d, %d)\n",
                   l,k,m,l*(12*nrofPRB)+k,z_re[l*(12*nrofPRB)+k],z_im[l*(12*nrofPRB)+k]);
         #endif
@@ -1453,25 +1451,37 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
       //startingPRB = startingPRB + rb;
       if (((rb+startingPRB) <  (frame_parms->N_RB_DL>>1)) && ((frame_parms->N_RB_DL & 1) == 0)) { // if number RBs in bandwidth is even and current PRB is lower band
         re_offset = ((l+startingSymbolIndex)*frame_parms->ofdm_symbol_size) + (12*(rb+startingPRB)) + frame_parms->first_carrier_offset;
-        printf("1   ");
+        #ifdef DEBUG_NR_PUCCH_TX
+          printf("1   ");
+        #endif
       }
       if (((rb+startingPRB) >= (frame_parms->N_RB_DL>>1)) && ((frame_parms->N_RB_DL & 1) == 0)) { // if number RBs in bandwidth is even and current PRB is upper band
         re_offset = ((l+startingSymbolIndex)*frame_parms->ofdm_symbol_size) + (12*((rb+startingPRB)-(frame_parms->N_RB_DL>>1)));
-        printf("2   ");
+        #ifdef DEBUG_NR_PUCCH_TX
+          printf("2   ");
+        #endif
       }
       if (((rb+startingPRB) <  (frame_parms->N_RB_DL>>1)) && ((frame_parms->N_RB_DL & 1) == 1)) { // if number RBs in bandwidth is odd  and current PRB is lower band
         re_offset = ((l+startingSymbolIndex)*frame_parms->ofdm_symbol_size) + (12*(rb+startingPRB)) + frame_parms->first_carrier_offset;
-        printf("3   ");
+        #ifdef DEBUG_NR_PUCCH_TX
+          printf("3   ");
+        #endif
       }
       if (((rb+startingPRB) >  (frame_parms->N_RB_DL>>1)) && ((frame_parms->N_RB_DL & 1) == 1)) { // if number RBs in bandwidth is odd  and current PRB is upper band
         re_offset = ((l+startingSymbolIndex)*frame_parms->ofdm_symbol_size) + (12*((rb+startingPRB)-(frame_parms->N_RB_DL>>1))) + 6;
-        printf("4   ");
+        #ifdef DEBUG_NR_PUCCH_TX
+          printf("4   ");
+        #endif
       }
       if (((rb+startingPRB) == (frame_parms->N_RB_DL>>1)) && ((frame_parms->N_RB_DL & 1) == 1)) { // if number RBs in bandwidth is odd  and current PRB contains DC
         re_offset = ((l+startingSymbolIndex)*frame_parms->ofdm_symbol_size) + (12*(rb+startingPRB)) + frame_parms->first_carrier_offset;
-        printf("5   ");
+        #ifdef DEBUG_NR_PUCCH_TX
+          printf("5   ");
+        #endif
       }
-      printf("re_offset=%d,(rb+startingPRB)=%d\n",re_offset,(rb+startingPRB));
+      #ifdef DEBUG_NR_PUCCH_TX
+        printf("re_offset=%d,(rb+startingPRB)=%d\n",re_offset,(rb+startingPRB));
+      #endif
       txptr = &txdataF[0][re_offset];
       for (int n=0; n<12; n++){
         if ((n==6) && ((rb+startingPRB) == (frame_parms->N_RB_DL>>1)) && ((frame_parms->N_RB_DL & 1) == 1)) {

@@ -55,6 +55,9 @@ RUN_MELD="yes"
 # for removing files
 REMOVE="rm -f"
 COMPARE="cmp"
+TESTS_RUN=0
+TESTS_PASS=0
+TESTS_FAIL=0
 
 #----------------------------------------------------------------------------
 # List of tests
@@ -94,7 +97,7 @@ do
       echo "Option of run_test script"
       echo "-b : No Build of unit tests"
       echo "-c : No check for unit test"
-      echo "-r : No run of unit tests"
+      echo "-e : No run of unit tests"
       echo "-m : No run of meld tool"
       exit
       BUILD_TEST="no"
@@ -180,11 +183,11 @@ for file in $tst_files
 
     if [ $EXECUTE_TEST == "yes" ] 
     then
-       echo "rm $RESULT_DIR/$RESULT_TEST_FILE"
+      echo "rm $RESULT_DIR/$RESULT_TEST_FILE"
       rm $RESULT_DIR/$RESULT_TEST_FILE
       echo "$EXECUTABLE_DIR/$file > $RESULT_DIR/$RESULT_TEST_FILE"
       $EXECUTABLE_DIR/$file > $RESULT_DIR/$RESULT_TEST_FILE    
-      
+      TESTS_RUN=$((TESTS_RUN+1))
     fi
     
     if [ $CHECK_TEST == "yes" ] 
@@ -201,8 +204,10 @@ for file in $tst_files
         then
         	echo "Test $file is PASS"
             echo "Same logging file for $file"
+            TESTS_PASS=$((TESTS_PASS+1))
         else
           echo "Test $file is FAIL"
+          TESTS_FAIL=$((TESTS_FAIL+1))
       echo "Difference of logging file for scenario $file"          
           let "num_diff=$num_diff + 1"
           if  [ $RUN_MELD == "yes" ]
@@ -225,7 +230,8 @@ for file in $tst_files
     
     if [ $SINGLE_TEST == "yes" ] 
     then
-      exit
+      echo "Test $file has been executed"
+      break
     fi
   done
 
@@ -233,5 +239,7 @@ if [ $CHECK_TEST == "yes" ]
 then
   echo "There are $num_diff result files which are different"
 fi
+
+  echo " tests run : $TESTS_RUN pass : $TESTS_PASS fail : $TESTS_FAIL" 
 
 # end of script
