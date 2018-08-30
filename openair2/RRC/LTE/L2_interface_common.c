@@ -31,7 +31,7 @@
 #include "platform_types.h"
 #include "rrc_defs.h"
 #include "rrc_extern.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "rrc_eNB_UE_context.h"
 #include "pdcp.h"
 #include "msc.h"
@@ -57,6 +57,11 @@ rrc_data_req(
 )
 //------------------------------------------------------------------------------
 {
+  if(sdu_sizeP == 255)
+  {
+    LOG_I(RRC,"sdu_sizeP == 255");
+    return FALSE;
+  }
   MSC_LOG_TX_MESSAGE(
     ctxt_pP->enb_flag ? MSC_RRC_ENB : MSC_RRC_UE,
     ctxt_pP->enb_flag ? MSC_PDCP_ENB : MSC_PDCP_UE,
@@ -127,10 +132,10 @@ rrc_data_ind(
   rb_id_t    DCCH_index = Srb_id;
 
   if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
-    LOG_N(RRC, "[UE %x] Frame %d: received a DCCH %d message on SRB %d with Size %d from eNB %d\n",
+    LOG_I(RRC, "[UE %x] Frame %d: received a DCCH %d message on SRB %d with Size %d from eNB %d\n",
           ctxt_pP->module_id, ctxt_pP->frame, DCCH_index,Srb_id,sdu_sizeP,  ctxt_pP->eNB_index);
   } else {
-    LOG_N(RRC, "[eNB %d] Frame %d: received a DCCH %d message on SRB %d with Size %d from UE %x\n",
+    LOG_I(RRC, "[eNB %d] Frame %d: received a DCCH %d message on SRB %d with Size %d from UE %x\n",
           ctxt_pP->module_id,
           ctxt_pP->frame,
           DCCH_index,

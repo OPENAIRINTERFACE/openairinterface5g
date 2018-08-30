@@ -1,14 +1,48 @@
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
+
+/*! \file config.c
+ * \brief gNB configuration performed by RRC or as a consequence of RRC procedures
+ * \author  Navid Nikaein and Raymond Knopp, WEI-TAI CHEN
+ * \date 2010 - 2014, 2018
+ * \version 0.1
+ * \company Eurecom, NTUST
+ * \email: navid.nikaein@eurecom.fr, kroempa@gmail.com
+ * @ingroup _mac
+
+ */
+
 #include "COMMON/platform_types.h"
 #include "COMMON/platform_constants.h"
 #include "common/ran_context.h"
 
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "NR_BCCH-BCH-Message.h"
 #include "NR_ServingCellConfigCommon.h"
 
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
+
+#include "NR_MIB.h"
 
 extern RAN_CONTEXT_t RC;
 //extern int l2_init_gNB(void);
@@ -162,13 +196,13 @@ void config_common(int Mod_idP,
   //cfg->subframe_config.tl.tag = 
   //cfg->num_tlv++;
 
-  cfg->rf_config.dl_channel_bandwidth.value    = dl_BandwidthP;
-  cfg->rf_config.dl_channel_bandwidth.tl.tag   = NFAPI_RF_CONFIG_DL_CHANNEL_BANDWIDTH_TAG; //temporary
+  cfg->rf_config.dl_carrier_bandwidth.value    = dl_BandwidthP;
+  cfg->rf_config.dl_carrier_bandwidth.tl.tag   = NFAPI_RF_CONFIG_DL_CHANNEL_BANDWIDTH_TAG; //temporary
   cfg->num_tlv++;
   LOG_I(PHY,"%s() dl_BandwidthP:%d\n", __FUNCTION__, dl_BandwidthP);
 
-  cfg->rf_config.ul_channel_bandwidth.value    = dl_BandwidthP;
-  cfg->rf_config.ul_channel_bandwidth.tl.tag   = NFAPI_RF_CONFIG_UL_CHANNEL_BANDWIDTH_TAG;  //temporary
+  cfg->rf_config.ul_carrier_bandwidth.value    = dl_BandwidthP;
+  cfg->rf_config.ul_carrier_bandwidth.tl.tag   = NFAPI_RF_CONFIG_UL_CHANNEL_BANDWIDTH_TAG;  //temporary
   cfg->num_tlv++;
 
   //cfg->sch_config.half_frame_index.value = 0; Fix in PHY

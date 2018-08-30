@@ -60,7 +60,7 @@ extern uint32_t        g_constraints;
 //{
 //}
 
-void update_xpath_node_mme_ue_s1ap_id(et_s1ap_t *const s1ap, xmlNode *node, const S1AP_MME_UE_S1AP_ID_t new_id)
+void update_xpath_node_mme_ue_s1ap_id(et_s1ap_t * const s1ap, xmlNode *node, const S1ap_MME_UE_S1AP_ID_t new_id)
 {
   xmlNode       *cur_node = NULL;
   xmlAttrPtr     attr     = NULL;
@@ -73,30 +73,24 @@ void update_xpath_node_mme_ue_s1ap_id(et_s1ap_t *const s1ap, xmlNode *node, cons
   // modify
   for (cur_node = (xmlNode *)node; cur_node; cur_node = cur_node->next) {
     go_deeper_in_tree = 1;
-
     if ((!xmlStrcmp(cur_node->name, (const xmlChar *)"field"))) {
       // do not get hidden fields
       xml_char = xmlGetProp((xmlNode *)cur_node, (const xmlChar *)"hide");
-
       if (NULL != xml_char) {
         if ((!xmlStrcmp(xml_char, (const xmlChar *)"yes"))) {
           go_deeper_in_tree = 0;
         }
-
         xmlFree(xml_char);
       }
-
       if (0 < go_deeper_in_tree) {
         // first get size
         xml_char = xmlGetProp((xmlNode *)cur_node, (const xmlChar *)"pos");
-
         if (NULL != xml_char) {
           pos = strtoul((const char *)xml_char, NULL, 0);
           pos -= s1ap->xml_stream_pos_offset;
           AssertFatal(pos >= 0, "Bad pos %d xml_stream_pos_offset %d", pos, s1ap->xml_stream_pos_offset);
           xmlFree(xml_char);
           xml_char = xmlGetProp((xmlNode *)cur_node, (const xmlChar *)"size");
-
           if (NULL != xml_char) {
             const xmlChar value_d[32];
             const xmlChar value_h[20];
@@ -106,6 +100,7 @@ void update_xpath_node_mme_ue_s1ap_id(et_s1ap_t *const s1ap, xmlNode *node, cons
             unsigned long int uli = 0;
             char          hex[3]  = {0,0,0};
             char         *end_ptr = NULL;
+
             size = strtoul((const char *)xml_char, NULL, 0);
             xmlFree(xml_char);
             // second: try to set value (always hex)
@@ -115,12 +110,12 @@ void update_xpath_node_mme_ue_s1ap_id(et_s1ap_t *const s1ap, xmlNode *node, cons
             AssertFatal((ret > 0) && (ret < 20), "Could not convert int to hex str");
             ret = snprintf((char *)showname, 64, "MME-UE-S1AP-ID: %d", new_id);
             AssertFatal((ret > 0) && (ret < 64), "Could not convert int to dec str");
+
             attr = xmlSetProp((xmlNode *)cur_node, (const xmlChar *)"value", value_h);
             attr = xmlSetProp((xmlNode *)cur_node, (const xmlChar *)"show", value_d);
             attr = xmlSetProp((xmlNode *)cur_node, (const xmlChar *)"showname", showname);
             //TODO update s1ap->binary_stream @pos with new_id_hex, size
             AssertFatal((pos+size) < s1ap->binary_stream_allocated_size, "Rewrite of mme_ue_s1ap_id out of bounds of binary_stream");
-
             //avoid endianess issues
             do {
               hex[0] = value_h[pos2++];
@@ -131,7 +126,6 @@ void update_xpath_node_mme_ue_s1ap_id(et_s1ap_t *const s1ap, xmlNode *node, cons
               AssertFatal((uli != ULONG_MAX) && (end_ptr != NULL) && (*end_ptr == '\0'), "Conversion of hexstring %s failed returned %ld errno %d", hex, uli, errno);
               s1ap->binary_stream[pos++] = (unsigned char)uli;
             } while (pos2 < (2*5));
-
             // update ASN1
             et_decode_s1ap(s1ap);
             //S1AP_INFO("Updated ASN1 for %s\n", showname);
@@ -139,7 +133,6 @@ void update_xpath_node_mme_ue_s1ap_id(et_s1ap_t *const s1ap, xmlNode *node, cons
         }
       }
     }
-
     if (0 < go_deeper_in_tree) {
       update_xpath_node_mme_ue_s1ap_id(s1ap, cur_node->children, new_id);
     }
@@ -154,11 +147,12 @@ void update_xpath_node_mme_ue_s1ap_id(et_s1ap_t *const s1ap, xmlNode *node, cons
  * Prints the @nodes content to @output.
  * From http://www.xmlsoft.org/examples/#xpath2.c
  */
-void update_xpath_nodes_mme_ue_s1ap_id(et_s1ap_t *const s1ap_payload, xmlNodeSetPtr nodes, const S1AP_MME_UE_S1AP_ID_t new_id)
+void update_xpath_nodes_mme_ue_s1ap_id(et_s1ap_t * const s1ap_payload, xmlNodeSetPtr nodes, const S1ap_MME_UE_S1AP_ID_t new_id)
 {
   int           size = 0;
   int           i    = 0;
   xmlNode      *s1ap_node = NULL;
+
   size = (nodes) ? nodes->nodeNr : 0;
   //S1AP_DEBUG("%s() num nodes %u\n", __FUNCTION__, size);
 
@@ -174,7 +168,6 @@ void update_xpath_nodes_mme_ue_s1ap_id(et_s1ap_t *const s1ap_payload, xmlNodeSet
     s1ap_node = nodes->nodeTab[i];
     AssertFatal(NULL != s1ap_node, "One element of resultset of XPATH expression is NULL\n");
     update_xpath_node_mme_ue_s1ap_id(s1ap_payload, s1ap_node, new_id);
-
     /*
      * All the elements returned by an XPath query are pointers to
      * elements from the tree *except* namespace nodes where the XPath
@@ -197,24 +190,26 @@ void update_xpath_nodes_mme_ue_s1ap_id(et_s1ap_t *const s1ap_payload, xmlNodeSet
   }
 }
 //------------------------------------------------------------------------------
-int et_s1ap_update_mme_ue_s1ap_id(et_packet_t *const packet, const S1AP_MME_UE_S1AP_ID_t old_id, const S1AP_MME_UE_S1AP_ID_t new_id)
+int et_s1ap_update_mme_ue_s1ap_id(et_packet_t * const packet, const S1ap_MME_UE_S1AP_ID_t old_id, const S1ap_MME_UE_S1AP_ID_t new_id)
 {
   xmlChar              xpath_expression[ET_XPATH_EXPRESSION_MAX_LENGTH];
   int                  ret       = 0;
   xmlDocPtr            doc       = NULL;
   xmlXPathContextPtr   xpath_ctx = NULL;
   xmlXPathObjectPtr    xpath_obj = NULL;
+
   //S1AP_DEBUG("%s() packet num %u original frame number %u, mme_ue_s1ap_id %u -> %u\n", __FUNCTION__, packet->packet_number, packet->original_frame_number, old_id, new_id);
+
   ret = snprintf(xpath_expression, ET_XPATH_EXPRESSION_MAX_LENGTH, "//field[@name=\"s1ap.MME_UE_S1AP_ID\"][@show=\"%u\"]", old_id);
   AssertFatal((ret > 0) && (ret < ET_XPATH_EXPRESSION_MAX_LENGTH), "Could not build XPATH expression err=%d", ret);
+
   doc = packet->sctp_hdr.u.data_hdr.payload.doc;
   // Create xpath evaluation context
   xpath_ctx = xmlXPathNewContext(doc);
-
   if(xpath_ctx == NULL) {
-    fprintf(stderr,"Error: unable to create new XPath context\n");
-    xmlFreeDoc(doc);
-    return(-1);
+      fprintf(stderr,"Error: unable to create new XPath context\n");
+      xmlFreeDoc(doc);
+      return(-1);
   }
 
   // Evaluate xpath expression
@@ -222,16 +217,17 @@ int et_s1ap_update_mme_ue_s1ap_id(et_packet_t *const packet, const S1AP_MME_UE_S
   xmlXPathFreeContext(xpath_ctx);
   AssertFatal(xpath_obj != NULL, "Unable to evaluate XPATH expression \"%s\"\n", xpath_expression);
 
-  if(xmlXPathNodeSetIsEmpty(xpath_obj->nodesetval)) {
+  if(xmlXPathNodeSetIsEmpty(xpath_obj->nodesetval)){
     xmlXPathFreeObject(xpath_obj);
     S1AP_DEBUG("%s() No match \"%s\"packet num %u original frame number %u, mme_ue_s1ap_id %u -> %u\n",
-               __FUNCTION__, xpath_expression, packet->packet_number, packet->original_frame_number, old_id, new_id);
+        __FUNCTION__, xpath_expression, packet->packet_number, packet->original_frame_number, old_id, new_id);
     return -1;
   }
-
   // update selected nodes
   update_xpath_nodes_mme_ue_s1ap_id(&packet->sctp_hdr.u.data_hdr.payload, xpath_obj->nodesetval, new_id);
+
   // Cleanup of XPath data
   xmlXPathFreeObject(xpath_obj);
+
   return 0;
 }

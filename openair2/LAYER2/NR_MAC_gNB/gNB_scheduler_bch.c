@@ -19,12 +19,13 @@
  *      contact@openairinterface.org
  */
 
-/*! \file eNB_scheduler_bch.c
+/*! \file gNB_scheduler_bch.c
  * \brief procedures related to eNB for the BCH transport channel
- * \author  Navid Nikaein and Raymond Knopp
- * \date 2010 - 2014
- * \email: navid.nikaein@eurecom.fr
+ * \author  Navid Nikaein and Raymond Knopp, WEI-TAI CHEN
+ * \date 2010 - 2014, 2018
+ * \email: navid.nikaein@eurecom.fr, kroempa@gmail.com
  * \version 1.0
+ * \company Eurecom, NTUST
  * @ingroup _mac
 
  */
@@ -33,8 +34,8 @@
 #include "LAYER2/NR_MAC_gNB/mac.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "LAYER2/MAC/mac_extern.h"
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
@@ -96,10 +97,10 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
       memset((void *) dl_config_pdu, 0,sizeof(nfapi_nr_dl_config_request_pdu_t));
       dl_config_pdu->pdu_type      = NFAPI_NR_DL_CONFIG_BCH_PDU_TYPE;
       dl_config_pdu->pdu_size      =2 + sizeof(nfapi_nr_dl_config_bch_pdu_rel15_t);
-      dl_config_pdu->bch_pdu_rel15.tl.tag             = NFAPI_NR_DL_CONFIG_REQUEST_BCH_PDU_REL15_TAG;
-      dl_config_pdu->bch_pdu_rel15.length             = mib_sdu_length;
-      dl_config_pdu->bch_pdu_rel15.pdu_index          = gNB->pdu_index[CC_id];
-      dl_config_pdu->bch_pdu_rel15.transmission_power = 6000;
+      dl_config_pdu->bch_pdu.bch_pdu_rel15.tl.tag             = NFAPI_NR_DL_CONFIG_REQUEST_BCH_PDU_REL15_TAG;
+      dl_config_pdu->bch_pdu.bch_pdu_rel15.length             = mib_sdu_length;
+      dl_config_pdu->bch_pdu.bch_pdu_rel15.pdu_index          = gNB->pdu_index[CC_id];
+      dl_config_pdu->bch_pdu.bch_pdu_rel15.transmission_power = 6000;
       dl_req->tl.tag                            = NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
       dl_req->number_pdu++;
       dl_config_request->header.message_id = NFAPI_DL_CONFIG_REQUEST;

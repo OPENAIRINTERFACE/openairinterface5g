@@ -341,8 +341,6 @@ typedef struct eNB_proc_NB_IoT_t_s {
   int                     instance_cnt_asynch_rxtx;
   /// pthread structure for FH processing thread
   pthread_t               pthread_FH;
-  /// pthread structure for eNB single processing thread
-  pthread_t               pthread_single;
   /// pthread structure for asychronous RX/TX processing thread
   pthread_t               pthread_asynch_rxtx;
   /// flag to indicate first RX acquisition
@@ -427,7 +425,7 @@ typedef struct eNB_proc_NB_IoT_t_s {
   int RU_mask;
   /// mask for RUs serving nbiot (PRACH)
   int RU_mask_prach;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// mask for RUs serving eNB (PRACH)
   int RU_mask_prach_br;
 #endif

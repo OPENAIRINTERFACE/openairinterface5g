@@ -52,14 +52,10 @@
 #include "SCHED_NR/phy_frame_config_nr.h"
 //#endif
 
-#include "../../../openair1/PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
+#include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 
-#include "UTIL/LOG/log_extern.h"
-#include "UTIL/OTG/otg_tx.h"
-#include "UTIL/OTG/otg_externs.h"
-#include "UTIL/MATH/oml.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
-#include "UTIL/OPT/opt.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "T.h"
 

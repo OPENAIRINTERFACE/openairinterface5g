@@ -36,7 +36,6 @@
 #include "s1ap_common.h"
 #include "s1ap_eNB_decoder.h"
 
-
 static int s1ap_eNB_decode_initiating_message(S1AP_S1AP_PDU_t *pdu)
 {
   MessageDef *message_p;
@@ -123,7 +122,19 @@ static int s1ap_eNB_decode_initiating_message(S1AP_S1AP_PDU_t *pdu)
       memcpy(&message_p->ittiMsg.s1ap_e_rab_release_request_log.text, res.buffer, res.result.encoded);
       itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
       free(res.buffer);
-      S1AP_INFO("TODO  E_RABRelease nitiating message\n");
+      S1AP_INFO("TODO E_RABRelease initiating message\n");
+      break;
+
+    case S1AP_ProcedureCode_id_ErrorIndication:
+      res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_S1AP_S1AP_PDU, pdu);
+      message_id = S1AP_ERROR_INDICATION_LOG;
+      message_p = itti_alloc_new_message_sized(TASK_S1AP, message_id,
+                  res.result.encoded + sizeof (IttiMsgText));
+      message_p->ittiMsg.s1ap_error_indication_log.size = res.result.encoded;
+      memcpy(&message_p->ittiMsg.s1ap_error_indication_log.text, res.buffer, res.result.encoded);
+      itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
+      free(res.buffer);
+      S1AP_INFO("TODO ErrorIndication initiating message\n");
       break;
 
     default:
@@ -195,11 +206,13 @@ int s1ap_eNB_decode_pdu(S1AP_S1AP_PDU_t *pdu, const uint8_t *const buffer,
                         const uint32_t length)
 {
   asn_dec_rval_t dec_ret;
+
   DevAssert(pdu != NULL);
   DevAssert(buffer != NULL);
+
   dec_ret = aper_decode(NULL,
                         &asn_DEF_S1AP_S1AP_PDU,
-                        (void **)pdu,
+                        (void **)&pdu,
                         buffer,
                         length,
                         0,

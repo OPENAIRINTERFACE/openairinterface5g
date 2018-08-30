@@ -1,0 +1,65 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+-->
+<testCaseList>
+	<TestCaseRequestedList>030101 040101 040301 040501 040401 040201 030201</TestCaseRequestedList>
+	<TestCaseExclusionList></TestCaseExclusionList>
+
+	<testCase id="030101">
+		<class>Initialize_eNB</class>
+		<desc>Initialize eNB (FDD/Band1/5MHz/info)</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.50PRB.usrpb210.conf</Initialize_eNB_args>
+	</testCase>
+
+	<testCase id="030201">
+		<class>Terminate_eNB</class>
+		<desc>Terminate eNB</desc>
+	</testCase>
+
+	<testCase id="040101">
+		<class>Initialize_UE</class>
+		<desc>Initialize UE</desc>
+	</testCase>
+
+	<testCase id="040201">
+		<class>Terminate_UE</class>
+		<desc>Terminate UE</desc>
+	</testCase>
+
+        <testCase id="040301">
+                <class>Attach_UE</class>
+                <desc>Attach UE</desc>
+        </testCase>
+
+        <testCase id="040401">
+                <class>Detach_UE</class>
+                <desc>Detach UE</desc>
+        </testCase>
+
+        <testCase id="040501">
+                <class>Ping</class>
+                <desc>ping (20 sec)</desc>
+                <ping_args>-c 20</ping_args>
+                <ping_packetloss_threshold>5</ping_packetloss_threshold>
+        </testCase>
+
+</testCaseList>

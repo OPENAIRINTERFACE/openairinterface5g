@@ -40,15 +40,14 @@
 #include "transport_proto.h"
 #include "transport_common_proto.h"
 #include "assertions.h" 
-#include "T.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 
 //#define DEBUG_DCI_ENCODING 1
 //#define DEBUG_DCI_DECODING 1
 //#define DEBUG_PHY
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 void generate_edci_top(PHY_VARS_eNB *eNB, int frame, int subframe) {
 
 }

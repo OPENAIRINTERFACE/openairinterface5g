@@ -28,8 +28,7 @@
 #define __CODING_DEFS__H__
 
 #include <stdint.h>
-
-#include "PHY/defs_common.h"
+#include <PHY/defs_common.h>
 
 #define CRC24_A 0
 #define CRC24_B 1
@@ -39,7 +38,24 @@
 #define MAX_TURBO_ITERATIONS_MBSFN 8
 #define MAX_TURBO_ITERATIONS max_turbo_iterations
 
+typedef struct {
+  unsigned short nb_bits;
+  unsigned short f1;
+  unsigned short f2;
+} interleaver_TS_36_212_t;
+
+extern const interleaver_TS_36_212_t f1f2[188];
+
 #define LTE_NULL 2
+typedef struct interleaver_codebook {
+  unsigned long nb_bits;
+  unsigned short f1;
+  unsigned short f2;
+  unsigned int beg_index;
+} t_interleaver_codebook;
+extern t_interleaver_codebook *f1f2mat;
+extern short *il_tb;
+
 
 /** @addtogroup _PHY_CODING_BLOCKS_
  * @{
@@ -321,7 +337,7 @@ void ccodedab_init_inv(void);
 
 /*!\fn void crcTableInit(void)
 \brief This function initializes the different crc tables.*/
-void crcTableInit (void);
+//void crcTableInit (void);
 
 
 
@@ -331,7 +347,7 @@ based on 3GPP UMTS/LTE specifications.
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits
 */
-uint32_t crc24a (uint8_t *inPtr, int32_t bitlen);
+unsigned int crc24a (unsigned char * inptr, int bitlen);
 
 /*!\fn uint32_t crc24b(uint8_t *inPtr, int32_t bitlen)
 \brief This computes a 24-bit crc ('b' variant for transport-block segments)
@@ -339,26 +355,26 @@ based on 3GPP UMTS/LTE specifications.
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits
 */
-uint32_t crc24b (uint8_t *inPtr, int32_t bitlen);
-
+unsigned int crc24b (unsigned char * inptr, int bitlen);
+    
 /*!\fn uint32_t crc16(uint8_t *inPtr, int32_t bitlen)
 \brief This computes a 16-bit crc based on 3GPP UMTS specifications.
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits*/
-uint32_t crc16 (uint8_t *inPtr, int32_t bitlen);
+unsigned int crc16 (unsigned char * inptr, int bitlen);
 
 /*!\fn uint32_t crc12(uint8_t *inPtr, int32_t bitlen)
 \brief This computes a 12-bit crc based on 3GPP UMTS specifications.
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits*/
-uint32_t crc12 (uint8_t *inPtr, int32_t bitlen);
+unsigned int crc12 (unsigned char * inptr, int bitlen);
 
 /*!\fn uint32_t crc8(uint8_t *inPtr, int32_t bitlen)
 \brief This computes a 8-bit crc based on 3GPP UMTS specifications.
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits*/
-uint32_t crc8  (uint8_t *inPtr, int32_t bitlen);
-
+unsigned int crc8 (unsigned char * inptr, int bitlen);
+    
 /*!\fn void phy_viterbi_dot11_sse2(int8_t *y, uint8_t *decoded_bytes, uint16_t n,int offset,int traceback)
 \brief This routine performs a SIMD optmized Viterbi decoder for the 802.11 64-state convolutional code. It can be
 run in segments with final trace back after last segment.
@@ -415,11 +431,13 @@ int32_t rate_matching_lte(uint32_t N_coded,
 
 
 
-uint32_t crcbit (uint8_t * ,
-                 int32_t,
-                 uint32_t);
+unsigned int crcbit (unsigned char * inputptr, int octetlen, unsigned int poly);
 
 int16_t reverseBits(int32_t ,int32_t);
 void phy_viterbi_dot11(int8_t *,uint8_t *,uint16_t);
+
+decoder_if_t phy_threegpplte_turbo_decoder;
+decoder_if_t phy_threegpplte_turbo_decoder8;
+decoder_if_t phy_threegpplte_turbo_decoder16;
 
 #endif

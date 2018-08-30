@@ -67,17 +67,12 @@ void generate_qpsk_table(void)
 void init_lte_top(LTE_DL_FRAME_PARMS *frame_parms)
 {
 
-  crcTableInit();
-
-  ccodedot11_init();
-  ccodedot11_init_inv();
-
   ccodelte_init();
   ccodelte_init_inv();
 
+  init_dfts();
 
 
-  phy_generate_viterbi_tables();
   phy_generate_viterbi_tables_lte();
 
   load_codinglib();
@@ -88,6 +83,7 @@ void init_lte_top(LTE_DL_FRAME_PARMS *frame_parms)
 
   generate_64qam_table();
   generate_16qam_table();
+  generate_qpsk_table();
   generate_RIV_tables();
 
   init_unscrambling_lut();

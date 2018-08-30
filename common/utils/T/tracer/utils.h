@@ -24,11 +24,14 @@ list *list_append(list *l, void *data);
 #define DEFAULT_REMOTE_IP "127.0.0.1"
 #define DEFAULT_REMOTE_PORT 2021
 
+int create_listen_socket(char *addr, int port);
+int socket_accept(int s);
 /* socket_send: return 0 if okay, -1 on error */
 int socket_send(int socket, void *buffer, int size);
 int get_connection(char *addr, int port);
 /* fullread: return length read if okay (that is: 'count'), -1 on error */
 int fullread(int fd, void *_buf, int count);
+int try_connect_to(char *addr, int port);
 int connect_to(char *addr, int port);
 
 /****************************************************************************/

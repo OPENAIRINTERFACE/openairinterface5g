@@ -19,12 +19,13 @@
  *      contact@openairinterface.org
  */
 
-/*! \file eNB_scheduler_primitives.c
- * \brief primitives used by eNB for BCH, RACH, ULSCH, DLSCH scheduling
- * \author  Navid Nikaein and Raymond Knopp
- * \date 2010 - 2014
- * \email: navid.nikaein@eurecom.fr
+/*! \file gNB_scheduler_primitives.c
+ * \brief primitives used by gNB for BCH, RACH, ULSCH, DLSCH scheduling
+ * \author  Navid Nikaein and Raymond Knopp, WEI-TAI CHEN
+ * \date 2010 - 2014, 2018
+ * \email: navid.nikaein@eurecom.fr, kroempa@gmail.com
  * \version 1.0
+ * \company Eurecom, NTUST
  * @ingroup _mac
 
  */
@@ -36,8 +37,8 @@
 #include "LAYER2/MAC/mac_extern.h"
 
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"

@@ -291,4 +291,6 @@ uint32_t conv_1C_RIV(int32_t rballoc,uint32_t N_RB_DL);
 
 void conv_rballoc(uint8_t ra_header,uint32_t rb_alloc,uint32_t N_RB_DL,uint32_t *rb_alloc2);
 
+int16_t estimate_ue_tx_power(uint32_t tbs, uint32_t nb_rb, uint8_t control_only, lte_prefix_type_t ncp, uint8_t use_srs);
+
 #endif

@@ -38,7 +38,7 @@
 #include "rlc_primitives.h"
 #include "list.h"
 #include "LAYER2/MAC/mac_extern.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "UL-AM-RLC.h"
 #include "DL-AM-RLC.h"
 
@@ -200,7 +200,7 @@ void
 config_req_rlc_am (
   const protocol_ctxt_t* const ctxt_pP,
   const srb_flag_t             srb_flagP,
-  rlc_am_info_t  * const       config_am_pP,
+  const rlc_am_info_t  *       config_am_pP,
   const rb_id_t                rb_idP,
   const logical_chan_id_t      chan_idP 
 )
@@ -240,7 +240,7 @@ config_req_rlc_am (
 uint16_t pollPDU_tab[PollPDU_pInfinity+1]= {4,8,16,32,64,128,256,RLC_AM_POLL_PDU_INFINITE}; //PollPDU_pInfinity is chosen to 0xFFFF for now
 uint32_t maxRetxThreshold_tab[UL_AM_RLC__maxRetxThreshold_t32+1]= {1,2,3,4,6,8,16,32};
 uint32_t pollByte_tab[PollByte_spare1]= {25000,50000,75000,100000,125000,250000,375000,500000,750000,1000000,1250000,1500000,2000000,3000000,RLC_AM_POLL_BYTE_INFINITE}; // PollByte_kBinfinity is chosen to 0xFFFFFFFF for now
-#if defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 uint32_t PollRetransmit_tab[T_PollRetransmit_spare5]= {5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,155,160,165,170,175,180,185,190,195,200,205,210,215,220,225,230,235,240,245,250,300,350,400,450,500,800,1000,2000,4000};
 uint32_t am_t_Reordering_tab[32]= {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200,1600};
 uint32_t t_StatusProhibit_tab[T_StatusProhibit_spare2]= {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,155,160,165,170,175,180,185,190,195,200,205,210,215,220,225,230,235,240,245,250,300,350,400,450,500,800,1000,1200,1600,2000,2400};
@@ -271,7 +271,7 @@ void config_req_rlc_am_asn1 (
     if ((config_am_pP->ul_AM_RLC.maxRetxThreshold <= UL_AM_RLC__maxRetxThreshold_t32) &&
         (config_am_pP->ul_AM_RLC.pollPDU<=PollPDU_pInfinity) &&
         (config_am_pP->ul_AM_RLC.pollByte<PollByte_spare1) &&
-#if defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
         (config_am_pP->ul_AM_RLC.t_PollRetransmit<T_PollRetransmit_spare5) &&
         (config_am_pP->dl_AM_RLC.t_Reordering<32) &&
         (config_am_pP->dl_AM_RLC.t_StatusProhibit<T_StatusProhibit_spare2) ) {
@@ -499,7 +499,7 @@ rlc_am_rx (
   switch (rlc->protocol_state) {
 
   case RLC_NULL_STATE:
-    LOG_N(RLC, PROTOCOL_RLC_AM_CTXT_FMT" ERROR MAC_DATA_IND IN RLC_NULL_STATE\n", PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP, rlc));
+    LOG_I(RLC, PROTOCOL_RLC_AM_CTXT_FMT" ERROR MAC_DATA_IND IN RLC_NULL_STATE\n", PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP, rlc));
     list_free (&data_indP.data);
     break;
 
@@ -509,6 +509,7 @@ rlc_am_rx (
 
   default:
     LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT" TX UNKNOWN PROTOCOL STATE 0x%02X\n", PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP, rlc), rlc->protocol_state);
+    list_free (&data_indP.data);
   }
 }
 
@@ -551,7 +552,9 @@ rlc_am_mac_status_indication (
 
   rlc->last_absolute_subframe_status_indication = PROTOCOL_CTXT_TIME_MILLI_SECONDS(ctxt_pP);
 
-  rlc->nb_bytes_requested_by_mac = tb_sizeP;
+  if (tb_sizeP > 0) {
+    rlc->nb_bytes_requested_by_mac = tb_sizeP;
+  }
 
   status_resp.buffer_occupancy_in_bytes = rlc_am_get_buffer_occupancy_in_bytes(ctxt_pP, rlc);
 
@@ -585,7 +588,6 @@ rlc_am_mac_status_indication (
 
     sdu_size            = ((rlc_am_tx_sdu_management_t *) (rlc->input_sdus[rlc->current_sdu_index].mem_block->data))->sdu_size;
     sdu_remaining_size  = ((rlc_am_tx_sdu_management_t *) (rlc->input_sdus[rlc->current_sdu_index].mem_block->data))->sdu_remaining_size;
-
     status_resp.head_sdu_remaining_size_to_send = sdu_remaining_size;
 
     if (sdu_size == sdu_remaining_size)  {
@@ -1139,7 +1141,6 @@ rlc_am_data_req (
   uint32_t             mui;
   uint16_t             data_offset;
   uint16_t             data_size;
-  uint8_t              conf;
 #if TRACE_RLC_AM_PDU
   char                 message_string[7000];
   size_t               message_string_size = 0;
@@ -1162,7 +1163,6 @@ rlc_am_data_req (
     mui         = ((struct rlc_am_data_req *) (sdu_pP->data))->mui;
     data_offset = ((struct rlc_am_data_req *) (sdu_pP->data))->data_offset;
     data_size   = ((struct rlc_am_data_req *) (sdu_pP->data))->data_size;
-    conf        = ((struct rlc_am_data_req *) (sdu_pP->data))->conf;
 
     MSC_LOG_RX_MESSAGE(
       (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_RLC_ENB:MSC_RLC_UE,
@@ -1180,7 +1180,7 @@ rlc_am_data_req (
     message_string_size += sprintf(&message_string[message_string_size], "Bearer      : %u\n", l_rlc_p->rb_id);
     message_string_size += sprintf(&message_string[message_string_size], "SDU size    : %u\n", data_size);
     message_string_size += sprintf(&message_string[message_string_size], "MUI         : %u\n", mui);
-    message_string_size += sprintf(&message_string[message_string_size], "CONF        : %u\n", conf);
+    message_string_size += sprintf(&message_string[message_string_size], "CONF        : %u\n", ((struct rlc_am_data_req *) (sdu_pP->data))->conf);
 
     message_string_size += sprintf(&message_string[message_string_size], "\nPayload  : \n");
     message_string_size += sprintf(&message_string[message_string_size], "------+-------------------------------------------------|\n");
@@ -1231,7 +1231,6 @@ rlc_am_data_req (
 
     l_rlc_p->input_sdus[l_rlc_p->next_sdu_index].mui      = mui;
     l_rlc_p->input_sdus[l_rlc_p->next_sdu_index].sdu_size = data_size;
-    //l_rlc_p->input_sdus[l_rlc_p->next_sdu_index].confirm  = conf;
 
     l_rlc_p->sdu_buffer_occupancy += data_size;
     l_rlc_p->nb_sdu += 1;
@@ -1259,7 +1258,7 @@ rlc_am_data_req (
           l_rlc_p->nb_sdu,
           l_rlc_p->current_sdu_index,
           l_rlc_p->next_sdu_index,
-          conf,
+          ((struct rlc_am_data_req *) (sdu_pP->data))->conf,
           mui,
 		  l_rlc_p->vt_a,
 		  l_rlc_p->vt_s);

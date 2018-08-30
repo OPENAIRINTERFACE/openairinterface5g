@@ -1,3 +1,11 @@
+/*
+                                nfapi_nr_interface.h
+                             -------------------
+  AUTHOR  : Raymond Knopp, Guy de Souza, WEI-TAI CHEN
+  COMPANY : EURECOM, NTUST
+  EMAIL   : Lionel.Gauthier@eurecom.fr, desouza@eurecom.fr, kroempa@gmail.com
+*/
+
 #ifndef _NFAPI_NR_INTERFACE_H_
 #define _NFAPI_NR_INTERFACE_H_
 
@@ -70,6 +78,38 @@ typedef struct
 #define NFAPI_NR_NFAPI_NMM_UPLINK_RSSI_SUPPORTED_TAG 0x5133
 
 // P5 Message Structures
+
+typedef struct{
+  nfapi_tl_t tl;
+  uint16_t  corset_ID;                           ///// L1 parameter 'CORESET-ID'
+  uint16_t  freq_dom;                       ///// L1 parameter 'CORESET-freq-dom'
+  uint16_t  duration;                                       ///// L1 parameter 'CORESET-time-duration'
+  uint16_t  reg_type;                            ///// L1 parameter 'CORESET-CCE-REG-mapping-type'
+  uint16_t  reg_bundlesize;                                 ///// L1 parameter 'CORESET-REG-bundle-size'
+  uint16_t  interleaversize;                                ///// L1 parameter 'CORESET-interleaver-size'
+  uint16_t  shiftindex;                                     ///// L1 parameter 'CORESET-shift-index'
+  uint16_t  precodergranularity;                            ///// L1 parameter 'CORESET-precoder-granuality'
+  uint16_t  tci_stateId;                                    ///// L1 parameter 'TCI-StatesPDCCH'
+  uint16_t  tci_present;                               ///// L1 parameter 'TCI-PresentInDCI'
+  uint16_t  dmrs_scramblingID;                        ///// L1 parameter 'PDCCH-DMRS-Scrambling-ID'
+} nfapi_nr_ControlResourcesSet_t;
+
+typedef struct{
+  nfapi_tl_t tl;
+  nfapi_nr_ControlResourcesSet_t coreset;
+  uint16_t  monitoringSlotPeriodicityAndOffset;             ///// L1 parameters 'Montoring-periodicity-PDCCH-slot'
+  uint16_t  monitoringSymbolsWithinSlot;                    ///// L1 parameter 'Montoring-symbols-PDCCH-within-slot'
+  uint16_t  nrofCand_aggLevel1;                             ///// L1 parameter 'Aggregation-level-1'
+  uint16_t  nrofCand_aggLevel2;                             ///// L1 parameter 'Aggregation-level-2'
+  uint16_t  nrofCand_aggLevel4;                             ///// L1 parameter 'Aggregation-level-4'
+  uint16_t  nrofCand_aggLevel8;                             ///// L1 parameter 'Aggregation-level-8'
+  uint16_t  nrofCand_aggLevel16;                            ///// L1 parameter 'Aggregation-level-16'
+  uint16_t  sfi_agg_fmt2_0;    ///// L1 parameters 'SFI-Num-PDCCH-cand' and 'SFI-Aggregation-Level'
+  uint16_t  monitoringperiodicity_fmt2_3;        ///// L1 parameter 'SRS-monitoring-periodicity'
+  uint16_t  nrof_candidates_fmt_2_3;         ///// L1 parameter 'SRS-Num-PDCCH-cand'
+} nfapi_nr_SearchSpace_t;
+
+
 typedef struct {
   nfapi_uint16_tlv_t  numerology_index_mu;
   nfapi_uint16_tlv_t  duplex_mode;
@@ -86,24 +126,22 @@ typedef struct {
 
 typedef struct {
   nfapi_uint16_tlv_t  tx_antenna_ports;
-  nfapi_uint16_tlv_t  rx_antenna_ports;
-  nfapi_uint16_tlv_t  dl_channel_bandwidth;
-  nfapi_uint16_tlv_t  ul_channel_bandwidth;  
-  nfapi_uint16_tlv_t  dl_BWP_carrierBandwidth;
-  nfapi_uint16_tlv_t  ul_BWP_carrierBandwidth;
-  nfapi_uint16_tlv_t  dl_locationAndBandwidth;
-  nfapi_uint16_tlv_t  ul_locationAndBandwidth;
-  nfapi_uint16_tlv_t  dl_BWP_SubcarrierSpacing;
-  nfapi_uint16_tlv_t  ul_BWP_SubcarrierSpacing;
-  nfapi_uint16_tlv_t  dl_absoluteFrequencyPointA;
-  nfapi_uint16_tlv_t  ul_absoluteFrequencyPointA;
-  nfapi_uint16_tlv_t  dl_offsetToCarrier;
-  nfapi_uint16_tlv_t  ul_offsetToCarrier;
-  nfapi_uint16_tlv_t  dl_SCS_SubcarrierSpacing;
-  nfapi_uint16_tlv_t  ul_SCS_SubcarrierSpacing;
-  nfapi_uint16_tlv_t  dl_SCS_SpecificCarrier_k0;
-  nfapi_uint16_tlv_t  ul_SCS_SpecificCarrier_k0;
-  nfapi_uint16_tlv_t  NIA_SubcarrierSpacing;
+  nfapi_uint16_tlv_t  rx_antenna_ports; 
+  nfapi_uint16_tlv_t  dl_carrier_bandwidth;
+  nfapi_uint16_tlv_t  ul_carrier_bandwidth;
+  nfapi_uint16_tlv_t  dl_bwp_subcarrierspacing;
+  nfapi_uint16_tlv_t  ul_bwp_subcarrierspacing;
+  nfapi_uint16_tlv_t  dl_locationandbandwidth;
+  nfapi_uint16_tlv_t  ul_locationandbandwidth;
+  nfapi_uint16_tlv_t  dl_absolutefrequencypointA;
+  nfapi_uint16_tlv_t  ul_absolutefrequencypointA;
+  nfapi_uint16_tlv_t  dl_offsettocarrier;
+  nfapi_uint16_tlv_t  ul_offsettocarrier;
+  nfapi_uint16_tlv_t  dl_scs_subcarrierspacing;
+  nfapi_uint16_tlv_t  ul_scs_subcarrierspacing;
+  nfapi_uint16_tlv_t  dl_scs_specificcarrier_k0;
+  nfapi_uint16_tlv_t  ul_scs_specificcarrier_k0;
+  nfapi_uint16_tlv_t  NIA_subcarrierspacing;
 } nfapi_nr_rf_config_t;
 
 #define NFAPI_NR_RF_CONFIG_DL_CHANNEL_BANDWIDTH_TAG 0x500A
@@ -166,36 +204,41 @@ typedef struct {
 
 
 typedef struct {
+  nfapi_tl_t tl;
+  nfapi_nr_SearchSpace_t           sib1searchSpace;
+  nfapi_nr_SearchSpace_t           sibssearchSpace; 
+  nfapi_nr_SearchSpace_t           ra_SearchSpace;
+}nfapi_nr_pdcch_config_t;
+
+typedef struct {
 //NR TDD-UL-DL-ConfigCommon                ///// L1 parameter 'UL-DL-configuration-common'
-  nfapi_uint16_tlv_t  referenceSubcarrierSpacing;                                     ///// L1 parameter 'reference-SCS'
-  nfapi_uint16_tlv_t  dl_UL_TransmissionPeriodicity;                                  ///// L1 parameter 'DL-UL-transmission-periodicity'
+  nfapi_uint16_tlv_t  subcarrierspacing;                                     ///// L1 parameter 'reference-SCS'
+  nfapi_uint16_tlv_t  dl_ul_periodicity;                                  ///// L1 parameter 'DL-UL-transmission-periodicity'
   nfapi_uint16_tlv_t  nrofDownlinkSlots;                                              ///// L1 parameter 'number-of-DL-slots'
   nfapi_uint16_tlv_t  nrofDownlinkSymbols;                                            ///// L1 parameter 'number-of-DL-symbols-common'
   nfapi_uint16_tlv_t  nrofUplinkSlots;                                                ///// L1 parameter 'number-of-UL-slots'
   nfapi_uint16_tlv_t  nrofUplinkSymbols;                                              ///// L1 parameter 'number-of-UL-symbols-common'
 } nfapi_nr_tdd_ul_dl_config_t;
 
-
 typedef struct {
  //RateMatchPattern  is used to configure one rate matching pattern for PDSCH    ///// L1 parameter 'Resource-set-cekk'             
-  nfapi_uint16_tlv_t  rateMatchPatternId;
-  nfapi_uint16_tlv_t  RateMatchPattern_patternType;
-  nfapi_uint16_tlv_t  symbolsInResourceBlock;                                          ///// L1 parameter 'rate-match-PDSCH-bitmap2
-  nfapi_uint16_tlv_t  periodicityAndPattern;                                           ///// L1 parameter 'rate-match-PDSCH-bitmap3'
-  nfapi_uint16_tlv_t  RateMatchPattern_controlResourceSet;
-  nfapi_uint16_tlv_t  RateMatchPattern_subcarrierSpacing;                              ///// L1 parameter 'resource-pattern-scs'
-  nfapi_uint16_tlv_t  RateMatchPattern_mode; 
+  nfapi_uint16_tlv_t  Match_Id;
+  nfapi_uint16_tlv_t  patternType;
+  nfapi_uint16_tlv_t  symbolsInResourceBlock;                  ///// L1 parameter 'rate-match-PDSCH-bitmap2
+  nfapi_uint16_tlv_t  periodicityAndPattern;                   ///// L1 parameter 'rate-match-PDSCH-bitmap3'
+  nfapi_uint16_tlv_t  controlResourceSet;
+  nfapi_uint16_tlv_t  subcarrierSpacing;                       ///// L1 parameter 'resource-pattern-scs'
+  nfapi_uint16_tlv_t  mode; 
 } nfapi_nr_ratematchpattern_t;
 
 typedef struct {
   //NR  RateMatchPatternLTE-CRS
-  nfapi_uint16_tlv_t  RateMatchPatternLTE_CRS_carrierFreqDL;                           ///// L1 parameter 'center-subcarrier-location'
-  nfapi_uint16_tlv_t  RateMatchPatternLTE_CRS_carrierBandwidthDL;                      ///// L1 parameter 'BW'
-  nfapi_uint16_tlv_t  RateMatchPatternLTE_CRS_nrofCRS_Ports;                           ///// L1 parameter 'rate-match-resources-numb-LTE-CRS-antenna-port'
-  nfapi_uint16_tlv_t  RateMatchPatternLTE_CRS_v_Shift;                                 ///// L1 parameter 'rate-match-resources-LTE-CRS-v-shift'
-  nfapi_uint16_tlv_t  RateMatchPatternLTE_CRS_radioframeAllocationPeriod;
-  nfapi_uint16_tlv_t  RateMatchPatternLTE_CRS_radioframeAllocationOffset;
-  nfapi_uint16_tlv_t  RateMatchPatternLTE_CRS_subframeAllocation_choice;
+  nfapi_uint16_tlv_t  carrierfreqDL;                           ///// L1 parameter 'center-subcarrier-location'
+  nfapi_uint16_tlv_t  dl_bandwidth;                      ///// L1 parameter 'BW'
+  nfapi_uint16_tlv_t  nrofcrs_Ports;                           ///// L1 parameter 'rate-match-resources-numb-LTE-CRS-antenna-port'
+  nfapi_uint16_tlv_t  v_Shift;                                 ///// L1 parameter 'rate-match-resources-LTE-CRS-v-shift'
+  nfapi_uint16_tlv_t  frame_Period;
+  nfapi_uint16_tlv_t  frame_Offset;
 } nfapi_nr_ratematchpattern_lte_crs_t;
 
 typedef struct {
@@ -208,6 +251,7 @@ typedef struct {
   nfapi_nr_pdsch_config_t                   pdsch_config;
   nfapi_nr_pusch_config_t                   pusch_config;
   nfapi_nr_pucch_config_t                   pucch_config;
+  nfapi_nr_pdcch_config_t                   pdcch_config;
   nfapi_nr_tdd_ul_dl_config_t               tdd_ul_dl_config;
   nfapi_nr_ratematchpattern_t               ratematchpattern;
   nfapi_nr_ratematchpattern_lte_crs_t       ratematchpattern_lte_crs;
@@ -215,6 +259,8 @@ typedef struct {
 
   nfapi_vendor_extension_tlv_t              vendor_extension;
 } nfapi_nr_config_request_t;
+
+
 
 typedef enum {
   NFAPI_NR_DL_DCI_FORMAT_1_0 = 0,
@@ -341,88 +387,62 @@ uint8_t block_number_count;
 uint8_t *block_numbers;
 
 } nfapi_nr_dl_config_dci_dl_pdu_rel15_t;
+
 //#define NFAPI_NR_DL_CONFIG_REQUEST_DCI_DL_PDU_REL15_TAG 0x????
 
+typedef struct {
+  nfapi_nr_dl_config_dci_dl_pdu_rel15_t   dci_dl_pdu_rel15;
+} nfapi_nr_dl_config_dci_dl_pdu;
 
-typedef struct{
-  nfapi_uint16_tlv_t  controlResourceSetId;                           ///// L1 parameter 'CORESET-ID'
-  nfapi_uint16_tlv_t  frequencyDomainResources;                       ///// L1 parameter 'CORESET-freq-dom'
-  nfapi_uint16_tlv_t  duration;                                       ///// L1 parameter 'CORESET-time-duration'
-  nfapi_uint16_tlv_t  cce_REG_MappingType;                            ///// L1 parameter 'CORESET-CCE-REG-mapping-type'
-  nfapi_uint16_tlv_t  reg_BundleSize;                                 ///// L1 parameter 'CORESET-REG-bundle-size'
-  nfapi_uint16_tlv_t  interleaverSize;                                ///// L1 parameter 'CORESET-interleaver-size'
-  nfapi_uint16_tlv_t  shiftIndex;                                     ///// L1 parameter 'CORESET-shift-index'
-  nfapi_uint16_tlv_t  precoderGranularity;                            ///// L1 parameter 'CORESET-precoder-granuality'
-  nfapi_uint16_tlv_t  TCI_StateId;                                    ///// L1 parameter 'TCI-StatesPDCCH'
-  nfapi_uint16_tlv_t  tci_PresentInDCI;                               ///// L1 parameter 'TCI-PresentInDCI'
-  nfapi_uint16_tlv_t  pdcch_DMRS_ScramblingID;                        ///// L1 parameter 'PDCCH-DMRS-Scrambling-ID'
-} nfapi_nr_ControlResourcesSets_t;
-
-typedef struct{
-  nfapi_uint16_tlv_t  SearchSpaceId;
-  nfapi_uint16_tlv_t  controlResourceSetId;
-  nfapi_uint16_tlv_t  monitoringSlotPeriodicityAndOffset;             ///// L1 parameters 'Montoring-periodicity-PDCCH-slot'
-  nfapi_uint16_tlv_t  monitoringSymbolsWithinSlot;                    ///// L1 parameter 'Montoring-symbols-PDCCH-within-slot'
-  nfapi_uint16_tlv_t  nrofCand_aggLevel1;                             ///// L1 parameter 'Aggregation-level-1'
-  nfapi_uint16_tlv_t  nrofCand_aggLevel2;                             ///// L1 parameter 'Aggregation-level-2'
-  nfapi_uint16_tlv_t  nrofCand_aggLevel4;                             ///// L1 parameter 'Aggregation-level-4'
-  nfapi_uint16_tlv_t  nrofCand_aggLevel8;                             ///// L1 parameter 'Aggregation-level-8'
-  nfapi_uint16_tlv_t  nrofCand_aggLevel16;                            ///// L1 parameter 'Aggregation-level-16'
-  nfapi_uint16_tlv_t  Com_dci_Format2_0_nrofCand_SFI_And_aggLevel;    ///// L1 parameters 'SFI-Num-PDCCH-cand' and 'SFI-Aggregation-Level'
-  nfapi_uint16_tlv_t  Com_dci_Format2_3_monitoringPeriodicity;        ///// L1 parameter 'SRS-monitoring-periodicity'
-  nfapi_uint16_tlv_t  Com_dci_Format2_3_nrofPDCCH_Candidates;         ///// L1 parameter 'SRS-Num-PDCCH-cand'
-  nfapi_uint16_tlv_t  ue_Specific_dci_Formats;
-} nfapi_nr_SearchSpaces_t;
+typedef struct {
+  nfapi_nr_ul_config_dci_ul_pdu_rel15_t   dci_ul_pdu_rel15;
+} nfapi_nr_ul_config_dci_ul_pdu;
 
 typedef struct {
   nfapi_tl_t tl;
   uint16_t length;
-  uint16_t pdu_index;
+  int16_t  pdu_index;
   uint16_t transmission_power;
-}nfapi_nr_dl_config_bch_pdu_rel15_t;
+} nfapi_nr_dl_config_bch_pdu_rel15_t;
 #define NFAPI_NR_DL_CONFIG_REQUEST_BCH_PDU_REL15_TAG 0x5025
 
+typedef struct {
+  nfapi_nr_dl_config_bch_pdu_rel15_t bch_pdu_rel15;
+} nfapi_nr_dl_config_bch_pdu;
+
+typedef struct {
+
+} nfapi_nr_dl_config_dlsch_pdu;
 
 typedef struct {
   nfapi_tl_t tl;
-  nfapi_nr_SearchSpaces_t           sib1searchSpace;
-  nfapi_nr_ControlResourcesSets_t   sib1ControlResourceSets;
-  nfapi_nr_SearchSpaces_t           sibssearchSpace;
-  nfapi_nr_ControlResourcesSets_t   sibsControlResourceSets; 
-  nfapi_nr_SearchSpaces_t           ra_SearchSpace;
-  nfapi_nr_ControlResourcesSets_t   ra_ControlResourceSets;
-}nfapi_nr_dl_config_dlsch_pdu_rel15_t;
-
-typedef struct {
-  nfapi_tl_t tl;
-  nfapi_nr_SearchSpaces_t           pagingSearchSpace;
-  nfapi_nr_ControlResourcesSets_t   pagingControlResourceSets;
-}nfapi_nr_dl_config_pch_pdu_rel15_t;
+  nfapi_nr_SearchSpace_t           pagingSearchSpace;
+} nfapi_nr_dl_config_pch_pdu;
 
 typedef struct {
   
-}nfapi_nr_dl_config_nbch_pdu_rel15_t;
+} nfapi_nr_dl_config_nbch_pdu;
 
 typedef struct {
   
-}nfapi_nr_dl_config_npdcch_pdu_rel15_t;
+} nfapi_nr_dl_config_npdcch_pdu;
 
 typedef struct {
   
-}nfapi_nr_dl_config_ndlsch_pdu_rel15_t;
+} nfapi_nr_dl_config_ndlsch_pdu;
 
 typedef struct {
   uint8_t pdu_type;
   uint8_t pdu_size;
   union {
-    nfapi_nr_dl_config_dci_dl_pdu_rel15_t     dci_dl_pdu_rel15;
-    nfapi_nr_ul_config_dci_ul_pdu_rel15_t     dci_ul_pdu_rel15;
-    nfapi_nr_dl_config_bch_pdu_rel15_t        bch_pdu_rel15;
-    nfapi_nr_dl_config_dlsch_pdu_rel15_t      dlsch_pdu_rel15;
-    nfapi_nr_dl_config_pch_pdu_rel15_t        pch_pdu_rel15;
-    nfapi_nr_dl_config_nbch_pdu_rel15_t       nbch_pdu_rel15;
-    nfapi_nr_dl_config_npdcch_pdu_rel15_t     npdcch_pdu_rel15;
-    nfapi_nr_dl_config_ndlsch_pdu_rel15_t     ndlsch_pdu_rel15;
+    nfapi_nr_dl_config_dci_dl_pdu     dci_dl_pdu;
+    nfapi_nr_ul_config_dci_ul_pdu     dci_ul_pdu;
+    nfapi_nr_dl_config_bch_pdu        bch_pdu;
+    nfapi_nr_dl_config_dlsch_pdu      dlsch_pdu;
+    nfapi_nr_dl_config_pch_pdu        pch_pdu;
+    nfapi_nr_dl_config_nbch_pdu       nbch_pdu;
+    nfapi_nr_dl_config_npdcch_pdu     npdcch_pdu;
+    nfapi_nr_dl_config_ndlsch_pdu     ndlsch_pdu;
   };
 } nfapi_nr_dl_config_request_pdu_t;
  

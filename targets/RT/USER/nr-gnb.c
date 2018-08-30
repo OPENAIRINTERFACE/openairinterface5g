@@ -70,11 +70,11 @@
 #include "LAYER2/MAC/mac_proto.h"
 #include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_interface.h"
-#include "UTIL/LOG/log_extern.h"
+#include "common/utils/LOG/log_extern.h"
 #include "UTIL/OTG/otg_tx.h"
 #include "UTIL/OTG/otg_externs.h"
 #include "UTIL/MATH/oml.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "enb_config.h"
 
@@ -201,7 +201,7 @@ static inline int rxtx(PHY_VARS_gNB *gNB,gNB_rxtx_proc_t *proc, char *thread_nam
   // ****************************************
   // Common RX procedures subframe n
 
-  T(T_gNB_PHY_DL_TICK, T_INT(gNB->Mod_id), T_INT(proc->frame_tx), T_INT(proc->subframe_tx));
+  T(T_GNB_PHY_DL_TICK, T_INT(gNB->Mod_id), T_INT(proc->frame_tx), T_INT(proc->subframe_tx));
 /*
   // if this is IF5 or 3GPP_gNB
   if (gNB && gNB->RU_list && gNB->RU_list[0] && gNB->RU_list[0]->function < NGFI_RAU_IF4p5) {
@@ -551,7 +551,7 @@ static void* gNB_thread_prach( void* param ) {
 
     LOG_D(PHY,"Running gNB prach procedures\n");
     prach_procedures(gNB
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 		     ,0
 #endif
 		     );

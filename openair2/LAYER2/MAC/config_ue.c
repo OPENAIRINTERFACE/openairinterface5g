@@ -36,7 +36,7 @@
 #include "SystemInformationBlockType2.h"
 //#include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 #include "PRACH-ConfigSIB-v1310.h"
 #endif
 #include "MeasGapConfig.h"
@@ -46,11 +46,12 @@
 #include "mac.h"
 #include "mac_proto.h"
 #include "mac_extern.h"
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
+#include "PHY/INIT/phy_init.h"
 
 #include "common/ran_context.h"
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 #include "MBSFN-AreaInfoList-r9.h"
 #include "MBSFN-AreaInfo-r9.h"
 #include "MBSFN-SubframeConfigList.h"
@@ -59,6 +60,8 @@
 
 extern void mac_init_cell_params(int Mod_idP,int CC_idP);
 extern void phy_reset_ue(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index);
+
+extern uint8_t  nfapi_mode;
 
 
 /* sec 5.9, 36.321: MAC Reset Procedure */
@@ -108,7 +111,7 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 		      radioResourceConfigCommon,
 		      struct PhysicalConfigDedicated
 		      *physicalConfigDedicated,
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 		      SCellToAddMod_r10_t * sCellToAddMod_r10,
 		      //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
@@ -127,13 +130,18 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 		      additionalSpectrumEmission,
 		      struct MBSFN_SubframeConfigList
 		      *mbsfn_SubframeConfigList
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 		      , uint8_t MBMS_Flag,
 		      MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList,
 		      PMCH_InfoList_r9_t * pmch_InfoList
 #endif
 #ifdef CBA
 		      , uint8_t num_active_cba_groups, uint16_t cba_rnti
+#endif
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  ,config_action_t  config_action
+  ,const uint32_t * const sourceL2Id
+  ,const uint32_t * const destinationL2Id
 #endif
 		      )
 {
@@ -211,7 +219,7 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 	  mac_MainConfig->ul_SCH_Config->periodicBSR_Timer;
       } else {
 	UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_Timer =
-#ifndef Rel14
+#if (RRC_VERSION < MAKE_VERSION(12, 0, 0))
 	  (uint16_t)
 	  MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity
 #else
@@ -228,16 +236,17 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 	  (uint16_t)
 	  MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
       }
-      phy_config_harq_ue(Mod_idP, 0, eNB_index,
-			 UE_mac_inst[Mod_idP].
-			 scheduling_info.maxHARQ_Tx);
+      if(nfapi_mode!=3)
+        phy_config_harq_ue(Mod_idP, 0, eNB_index,
+			   UE_mac_inst[Mod_idP].
+			   scheduling_info.maxHARQ_Tx);
 
       if (mac_MainConfig->ul_SCH_Config->retxBSR_Timer) {
 	UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer =
 	  (uint16_t) mac_MainConfig->ul_SCH_Config->
 	  retxBSR_Timer;
       } else {
-#ifndef Rel14
+#if (RRC_VERSION < MAKE_VERSION(12, 0, 0))
 	UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer =
 	  (uint16_t)
 	  MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf2560;
@@ -247,7 +256,7 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 #endif
       }
     }
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
     if (mac_MainConfig->ext1
 	&& mac_MainConfig->ext1->sr_ProhibitTimer_r9) {
@@ -348,11 +357,12 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 
 
   if (physicalConfigDedicated != NULL) {
-    phy_config_dedicated_ue(Mod_idP, 0, eNB_index,
-			    physicalConfigDedicated);
+    if(nfapi_mode!=3)
+      phy_config_dedicated_ue(Mod_idP, 0, eNB_index,
+			      physicalConfigDedicated);
     UE_mac_inst[Mod_idP].physicalConfigDedicated = physicalConfigDedicated;	// for SR proc
   }
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   if (sCellToAddMod_r10 != NULL) {
 
@@ -522,7 +532,7 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
       //    UE_mac_inst[Mod_idP].mbsfn_SubframeConfig[i]->subframeAllocation.choice.oneFrame.buf[0]);
     }
   }
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   if (mbsfn_AreaInfoList != NULL) {
     LOG_I(MAC, "[UE %d][CONFIG] Received %d MBSFN Area Info\n",
@@ -579,6 +589,34 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 #endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
     (VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);
+  //for D2D
+  #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+    switch (config_action) {
+    case CONFIG_ACTION_ADD:
+       if (sourceL2Id){
+          UE_mac_inst[Mod_idP].sourceL2Id = *sourceL2Id;
+          LOG_I(MAC,"[UE %d] Configure source L2Id 0x%08x \n", Mod_idP, *sourceL2Id );
+       }
+       if (destinationL2Id) {
+          LOG_I(MAC,"[UE %d] Configure destination L2Id 0x%08x\n", Mod_idP, *destinationL2Id );
+          int j = 0;
+          int i = 0;
+          for (i=0; i< MAX_NUM_DEST; i++) {
+             if ((UE_mac_inst[Mod_idP].destinationList[i] == 0) && (j == 0)) j = i+1;
+             if (UE_mac_inst[Mod_idP].destinationList[i] == *destinationL2Id) break; //destination already exists!
+          }
+          if ((i == MAX_NUM_DEST) && (j > 0))  UE_mac_inst[Mod_idP].destinationList[j-1] = *destinationL2Id;
+          UE_mac_inst[Mod_idP].numCommFlows++;
+       }
+       break;
+    case CONFIG_ACTION_REMOVE:
+       //TODO
+       break;
+    default:
+       break;
+    }
+
+  #endif
 
   return (0);
 }

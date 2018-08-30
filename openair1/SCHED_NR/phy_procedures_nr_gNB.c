@@ -27,8 +27,8 @@
 #include "SCHED/sched_common_extern.h"
 #include "nfapi_interface.h"
 #include "SCHED/fapi_l1.h"
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "T.h"
 

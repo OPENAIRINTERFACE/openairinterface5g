@@ -357,18 +357,6 @@ int wake_eNB_rxtx(PHY_VARS_eNB *eNB, uint16_t sfn, uint16_t sf) {
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
 
-#if 0
-  /* accept some delay in processing - up to 5ms */
-  for (i = 0; i < 10 && proc_rxtx->instance_cnt_rxtx == 0; i++) {
-    LOG_W( PHY,"[eNB] sfn/sf:%d:%d proc_rxtx[%d]:TXsfn:%d/%d eNB RXn-TXnp4 thread busy!! (cnt_rxtx %i)\n", sfn, sf, sf&1, proc_rxtx->frame_tx, proc_rxtx->subframe_tx, proc_rxtx->instance_cnt_rxtx);
-    usleep(500);
-  }
-  if (proc_rxtx->instance_cnt_rxtx == 0) {
-    exit_fun( "TX thread busy" );
-    return(-1);
-  }
-#endif
-
   // wake up TX for subframe n+sf_ahead
   // lock the TX mutex and make sure the thread is ready
   if (pthread_mutex_timedlock(&proc_rxtx->mutex_rxtx,&wait) != 0) {
@@ -692,36 +680,13 @@ void vnf_deallocate(void* ptr) {
   free(ptr);
 }
 
-extern void nfapi_log(char *file, char *func, int line, int comp, int level, const char* format, va_list args);
 
 void vnf_trace(nfapi_trace_level_t nfapi_level, const char* message, ...) {
 
   va_list args;
-  int oai_level;
-
-  if (nfapi_level==NFAPI_TRACE_ERROR)
-  {
-    oai_level = LOG_ERR;
-  }
-  else if (nfapi_level==NFAPI_TRACE_WARN)
-  {
-    oai_level = LOG_WARNING;
-  }
-  else if (nfapi_level==NFAPI_TRACE_NOTE)
-  {
-    oai_level = LOG_INFO;
-  }
-  else if (nfapi_level==NFAPI_TRACE_INFO)
-  {
-    oai_level = LOG_INFO;
-  }
-  else
-  {
-    oai_level = LOG_INFO;
-  }
 
   va_start(args, message);
-  nfapi_log("FILE>", "FUNC", 999, PHY, oai_level, message, args);
+  nfapi_log("FILE>", "FUNC", 999, PHY, nfapitooai_level(nfapi_level), message, args);
   va_end(args);
 }
 

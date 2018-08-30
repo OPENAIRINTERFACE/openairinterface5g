@@ -24,7 +24,7 @@
 # include "assertions.h"
 # include "intertask_interface.h"
 # include "nas_ue_task.h"
-# include "UTIL/LOG/log.h"
+# include "common/utils/LOG/log.h"
 
 # include "user_defs.h"
 # include "user_api.h"
@@ -89,7 +89,6 @@ void *nas_ue_task(void *args_p)
   int                   nb_events;
   struct epoll_event   *events;
   MessageDef           *msg_p;
-  const char           *msg_name;
   instance_t            instance;
   unsigned int          Mod_id;
   int                   result;
@@ -147,19 +146,18 @@ void *nas_ue_task(void *args_p)
     itti_receive_msg (TASK_NAS_UE, &msg_p);
 
     if (msg_p != NULL) {
-      msg_name = ITTI_MSG_NAME (msg_p);
       instance = ITTI_MSG_INSTANCE (msg_p);
       Mod_id = instance - NB_eNB_INST;
       if (instance == INSTANCE_DEFAULT) {
         printf("%s:%d: FATAL: instance is INSTANCE_DEFAULT, should not happen.\n",
                __FILE__, __LINE__);
-        abort();
+        exit_fun("exit... \n");
       }
       nas_user_t *user = &users->item[Mod_id];
 
       switch (ITTI_MSG_ID(msg_p)) {
       case INITIALIZE_MESSAGE:
-        LOG_I(NAS, "[UE %d] Received %s\n", Mod_id, msg_name);
+        LOG_I(NAS, "[UE %d] Received %s\n", Mod_id,  ITTI_MSG_NAME (msg_p));
 #if (NAS_UE_AUTOSTART != 0)
         {
           /* Send an activate modem command to NAS like UserProcess should do it */
@@ -175,11 +173,11 @@ void *nas_ue_task(void *args_p)
         break;
 
       case MESSAGE_TEST:
-        LOG_I(NAS, "[UE %d] Received %s\n", Mod_id, msg_name);
+        LOG_I(NAS, "[UE %d] Received %s\n", Mod_id,  ITTI_MSG_NAME (msg_p));
         break;
 
       case NAS_CELL_SELECTION_CNF:
-        LOG_I(NAS, "[UE %d] Received %s: errCode %u, cellID %u, tac %u\n", Mod_id, msg_name,
+        LOG_I(NAS, "[UE %d] Received %s: errCode %u, cellID %u, tac %u\n", Mod_id,  ITTI_MSG_NAME (msg_p),
               NAS_CELL_SELECTION_CNF (msg_p).errCode, NAS_CELL_SELECTION_CNF (msg_p).cellID, NAS_CELL_SELECTION_CNF (msg_p).tac);
 
         {
@@ -192,21 +190,21 @@ void *nas_ue_task(void *args_p)
         break;
 
       case NAS_CELL_SELECTION_IND:
-        LOG_I(NAS, "[UE %d] Received %s: cellID %u, tac %u\n", Mod_id, msg_name,
+        LOG_I(NAS, "[UE %d] Received %s: cellID %u, tac %u\n", Mod_id,  ITTI_MSG_NAME (msg_p),
               NAS_CELL_SELECTION_IND (msg_p).cellID, NAS_CELL_SELECTION_IND (msg_p).tac);
 
         /* TODO not processed by NAS currently */
         break;
 
       case NAS_PAGING_IND:
-        LOG_I(NAS, "[UE %d] Received %s: cause %u\n", Mod_id, msg_name,
+        LOG_I(NAS, "[UE %d] Received %s: cause %u\n", Mod_id,  ITTI_MSG_NAME (msg_p),
               NAS_PAGING_IND (msg_p).cause);
 
         /* TODO not processed by NAS currently */
         break;
 
       case NAS_CONN_ESTABLI_CNF:
-        LOG_I(NAS, "[UE %d] Received %s: errCode %u, length %u\n", Mod_id, msg_name,
+        LOG_I(NAS, "[UE %d] Received %s: errCode %u, length %u\n", Mod_id,  ITTI_MSG_NAME (msg_p),
               NAS_CONN_ESTABLI_CNF (msg_p).errCode, NAS_CONN_ESTABLI_CNF (msg_p).nasMsg.length);
 
         if ((NAS_CONN_ESTABLI_CNF (msg_p).errCode == AS_SUCCESS)
@@ -221,14 +219,14 @@ void *nas_ue_task(void *args_p)
         break;
 
       case NAS_CONN_RELEASE_IND:
-        LOG_I(NAS, "[UE %d] Received %s: cause %u\n", Mod_id, msg_name,
+        LOG_I(NAS, "[UE %d] Received %s: cause %u\n", Mod_id,  ITTI_MSG_NAME (msg_p),
               NAS_CONN_RELEASE_IND (msg_p).cause);
 
         nas_proc_release_ind (user, NAS_CONN_RELEASE_IND (msg_p).cause);
         break;
 
       case NAS_UPLINK_DATA_CNF:
-        LOG_I(NAS, "[UE %d] Received %s: UEid %u, errCode %u\n", Mod_id, msg_name,
+        LOG_I(NAS, "[UE %d] Received %s: UEid %u, errCode %u\n", Mod_id,  ITTI_MSG_NAME (msg_p),
               NAS_UPLINK_DATA_CNF (msg_p).UEid, NAS_UPLINK_DATA_CNF (msg_p).errCode);
 
         if (NAS_UPLINK_DATA_CNF (msg_p).errCode == AS_SUCCESS) {
@@ -240,7 +238,7 @@ void *nas_ue_task(void *args_p)
         break;
 
       case NAS_DOWNLINK_DATA_IND:
-        LOG_I(NAS, "[UE %d] Received %s: UEid %u, length %u\n", Mod_id, msg_name,
+        LOG_I(NAS, "[UE %d] Received %s: UEid %u, length %u\n", Mod_id,  ITTI_MSG_NAME (msg_p),
               NAS_DOWNLINK_DATA_IND (msg_p).UEid, NAS_DOWNLINK_DATA_IND (msg_p).nasMsg.length);
 
         nas_proc_dl_transfer_ind (user, NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.data, NAS_DOWNLINK_DATA_IND(msg_p).nasMsg.length);
@@ -254,7 +252,7 @@ void *nas_ue_task(void *args_p)
         break;
 
       default:
-        LOG_E(NAS, "[UE %d] Received unexpected message %s\n", Mod_id, msg_name);
+        LOG_E(NAS, "[UE %d] Received unexpected message %s\n", Mod_id,  ITTI_MSG_NAME (msg_p));
         break;
       }
 

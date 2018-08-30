@@ -29,7 +29,6 @@
 #include "TDD-Config.h"
 #include "LAYER2/MAC/mac_extern.h"
 #include "MBSFN-SubframeConfigList.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
 #include "assertions.h"
 #include <math.h>
 
@@ -203,13 +202,13 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
     for (i=0; i<2; i++) {
       // RK 2 times because of output format of FFT!
       // FIXME We should get rid of this
-      pusch_vars[UE_id]->rxdataF_ext[i]      = (int32_t*)malloc16_clear( sizeof(int32_t)*cfg->rf_config.ul_channel_bandwidth.value*12*fp->symbols_per_slot );
-      pusch_vars[UE_id]->rxdataF_ext2[i]     = (int32_t*)malloc16_clear( sizeof(int32_t)*cfg->rf_config.ul_channel_bandwidth.value*12*fp->symbols_per_slot );
-      pusch_vars[UE_id]->drs_ch_estimates[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*cfg->rf_config.ul_channel_bandwidth.value*12*fp->symbols_per_slot );
+      pusch_vars[UE_id]->rxdataF_ext[i]      = (int32_t*)malloc16_clear( sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12*fp->symbols_per_slot );
+      pusch_vars[UE_id]->rxdataF_ext2[i]     = (int32_t*)malloc16_clear( sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12*fp->symbols_per_slot );
+      pusch_vars[UE_id]->drs_ch_estimates[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12*fp->symbols_per_slot );
       pusch_vars[UE_id]->drs_ch_estimates_time[i] = (int32_t*)malloc16_clear( 2*sizeof(int32_t)*fp->ofdm_symbol_size );
-      pusch_vars[UE_id]->rxdataF_comp[i]     = (int32_t*)malloc16_clear( sizeof(int32_t)*cfg->rf_config.ul_channel_bandwidth.value*12*fp->symbols_per_slot );
-      pusch_vars[UE_id]->ul_ch_mag[i]  = (int32_t*)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*cfg->rf_config.ul_channel_bandwidth.value*12 );
-      pusch_vars[UE_id]->ul_ch_magb[i] = (int32_t*)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*cfg->rf_config.ul_channel_bandwidth.value*12 );
+      pusch_vars[UE_id]->rxdataF_comp[i]     = (int32_t*)malloc16_clear( sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12*fp->symbols_per_slot );
+      pusch_vars[UE_id]->ul_ch_mag[i]  = (int32_t*)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12 );
+      pusch_vars[UE_id]->ul_ch_magb[i] = (int32_t*)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12 );
       }
     
     pusch_vars[UE_id]->llr = (int16_t*)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) );
@@ -235,8 +234,8 @@ void phy_config_request(PHY_Config_t *phy_config) {
   NR_DL_FRAME_PARMS *fp;
   PHICH_RESOURCE_t phich_resource_table[4]={oneSixth,half,one,two};
   int                 eutra_band     = cfg->nfapi_config.rf_bands.rf_band[0];  
-  int                 dl_Bandwidth   = cfg->rf_config.dl_channel_bandwidth.value;
-  int                 ul_Bandwidth   = cfg->rf_config.ul_channel_bandwidth.value;
+  int                 dl_Bandwidth   = cfg->rf_config.dl_carrier_bandwidth.value;
+  int                 ul_Bandwidth   = cfg->rf_config.ul_carrier_bandwidth.value;
   int                 Nid_cell       = cfg->sch_config.physical_cell_id.value;
   int                 Ncp            = cfg->subframe_config.dl_cyclic_prefix_type.value;
   int                 p_eNB          = cfg->rf_config.tx_antenna_ports.value;
@@ -353,8 +352,8 @@ void install_schedule_handlers(IF_Module_t *if_inst)
   gNB_config->subframe_config.numerology_index_mu.value = 1;
   gNB_config->subframe_config.duplex_mode.value = FDD;
   gNB_config->rf_config.tx_antenna_ports.value = 1;
-  gNB_config->rf_config.dl_channel_bandwidth.value = 106;
-  gNB_config->rf_config.ul_channel_bandwidth.value = 106;
+  gNB_config->rf_config.dl_carrier_bandwidth.value = 106;
+  gNB_config->rf_config.ul_carrier_bandwidth.value = 106;
   gNB_config->sch_config.half_frame_index.value = 0;
   gNB_config->sch_config.ssb_subcarrier_offset.value = 0;
   gNB_config->sch_config.n_ssb_crb.value = 86;
@@ -388,8 +387,8 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config)
   gNB_config->nfapi_config.earfcn.value                 = phy_config->cfg->nfapi_config.earfcn.value; //6600
   gNB_config->subframe_config.numerology_index_mu.value = phy_config->cfg->subframe_config.numerology_index_mu.value;//1
   gNB_config->rf_config.tx_antenna_ports.value          = phy_config->cfg->rf_config.tx_antenna_ports.value; //1
-  gNB_config->rf_config.dl_channel_bandwidth.value      = phy_config->cfg->rf_config.dl_channel_bandwidth.value;//106;
-  gNB_config->rf_config.ul_channel_bandwidth.value      = phy_config->cfg->rf_config.ul_channel_bandwidth.value;//106;
+  gNB_config->rf_config.dl_carrier_bandwidth.value      = phy_config->cfg->rf_config.dl_carrier_bandwidth.value;//106;
+  gNB_config->rf_config.ul_carrier_bandwidth.value      = phy_config->cfg->rf_config.ul_carrier_bandwidth.value;//106;
   gNB_config->sch_config.half_frame_index.value         = 0;
   gNB_config->sch_config.ssb_subcarrier_offset.value    = phy_config->cfg->sch_config.ssb_subcarrier_offset.value;//0;
   gNB_config->sch_config.n_ssb_crb.value                = 86;
@@ -412,8 +411,8 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config)
   Mod_id, 
   CC_id, 
   gNB_config->nfapi_config.rf_bands.rf_band[0], 
-  gNB_config->rf_config.dl_channel_bandwidth.value, 
-  gNB_config->rf_config.ul_channel_bandwidth.value, 
+  gNB_config->rf_config.dl_carrier_bandwidth.value, 
+  gNB_config->rf_config.ul_carrier_bandwidth.value, 
   gNB_config->sch_config.physical_cell_id.value, 
   gNB_config->rf_config.tx_antenna_ports.value,
   fp->dl_CarrierFreq );

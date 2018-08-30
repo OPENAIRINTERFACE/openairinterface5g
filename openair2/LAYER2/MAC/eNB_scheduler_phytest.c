@@ -32,14 +32,15 @@
 #include "assertions.h"
 #include "PHY/defs_eNB.h"
 #include "PHY/phy_extern.h"
+#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 
 #include "SCHED/sched_eNB.h"
 
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_proto.h"
 #include "LAYER2/MAC/mac_extern.h"
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
@@ -66,13 +67,13 @@ schedule_ue_spec_phy_test(
   uint16_t                       TBS;
   uint16_t                       nb_rb;
 
-  unsigned char                  harq_pid  = subframeP%5;
+  unsigned char                  harq_pid  = (frameP*10+subframeP)%8;
   uint16_t                       rnti      = 0x1235;
-  uint32_t                       rb_alloc  = 0x1FFFFFFF;
+  uint32_t                       rb_alloc  = 0x1FFFFF;
   int32_t                        tpc       = 1;
   int32_t                        mcs       = 28;
   int32_t                        cqi       = 15;
-  int32_t                        ndi       = subframeP/5;
+  int32_t                        ndi       = (frameP*10+subframeP)/8;
   int32_t                        dai       = 0;
 
   eNB_MAC_INST                   *eNB      = RC.mac[module_idP];
@@ -91,10 +92,9 @@ schedule_ue_spec_phy_test(
       continue;
 
     nb_rb = conv_nprb(0,rb_alloc,N_RB_DL);
-    //printf("////////////////////////////////////*************************nb_rb = %d\n",nb_rb);
     TBS = get_TBS_DL(mcs,nb_rb);
 
-    LOG_D(PHY,"schedule_ue_spec_phy_test: subframe %d/%d: nb_rb=%d, TBS=%d, mcs=%d (rb_alloc=%x, N_RB_DL=%d)\n",frameP,subframeP,nb_rb,TBS,mcs,rb_alloc,N_RB_DL);
+    LOG_D(MAC,"schedule_ue_spec_phy_test: subframe %d/%d: nb_rb=%d, TBS=%d, mcs=%d harq_pid=%d (rb_alloc=%x, N_RB_DL=%d) pdu_number = %d \n", frameP, subframeP, nb_rb, TBS, mcs, harq_pid, rb_alloc, N_RB_DL, dl_req->number_pdu);
 
     dl_config_pdu                                                         = &dl_req->dl_config_pdu_list[dl_req->number_pdu]; 
     memset((void*)dl_config_pdu,0,sizeof(nfapi_dl_config_request_pdu_t));
@@ -135,6 +135,8 @@ schedule_ue_spec_phy_test(
       //ue_sched_ctl->round[CC_id][harq_pid] = 0;
       dl_req->number_dci++;
       dl_req->number_pdu++;
+      eNB->DL_req[CC_id].sfn_sf = frameP<<4 | subframeP;
+      //eNB->DL_req[CC_id].header.message_id = NFAPI_DL_CONFIG_REQUEST;
       
       // Toggle NDI for next time
       /*
@@ -148,7 +150,6 @@ schedule_ue_spec_phy_test(
       AssertFatal(UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated!=NULL,"physicalConfigDedicated is NULL\n");
       AssertFatal(UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->pdsch_ConfigDedicated!=NULL,"physicalConfigDedicated->pdsch_ConfigDedicated is NULL\n");
       */
-
 
       
       fill_nfapi_dlsch_config(eNB,
@@ -195,32 +196,35 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
   int               UE_id = 0;
   uint8_t           aggregation    = 2;
   rnti_t            rnti           = 0x1235;
-  uint8_t           mcs            = 0;
+  uint8_t           mcs            = 20;
   uint8_t           harq_pid       = 0;
   uint32_t          cqi_req = 0,cshift,ndi,tpc = 1;
   int32_t           normalized_rx_power;
   int32_t           target_rx_power= 178;
   int               CC_id = 0;
   int               nb_rb = 96;
-  eNB_MAC_INST      *eNB = RC.mac[module_idP];
-  COMMON_channels_t *cc  = eNB->common_channels;
-  UE_list_t         *UE_list=&eNB->UE_list;
+  eNB_MAC_INST      *mac = RC.mac[module_idP];
+  COMMON_channels_t *cc  = &mac->common_channels[0];
+  UE_list_t         *UE_list=&mac->UE_list;
   UE_TEMPLATE       *UE_template;
   UE_sched_ctrl     *UE_sched_ctrl;
   int               sched_frame=frameP;
   int               sched_subframe = (subframeP+4)%10;
+  uint16_t          ul_req_index;
+  uint8_t           dlsch_flag;
   
   if (sched_subframe<subframeP) sched_frame++;
 
-  nfapi_hi_dci0_request_body_t   *hi_dci0_req = &eNB->HI_DCI0_req[CC_id].hi_dci0_request_body;
+  nfapi_hi_dci0_request_t        *hi_dci0_req = &mac->HI_DCI0_req[CC_id][subframeP];
+  nfapi_hi_dci0_request_body_t   *hi_dci0_req_body = &hi_dci0_req->hi_dci0_request_body;
   nfapi_hi_dci0_request_pdu_t    *hi_dci0_pdu;
 
   //nfapi_ul_config_request_pdu_t  *ul_config_pdu = &ul_req->ul_config_pdu_list[0];;
-  nfapi_ul_config_request_body_t *ul_req       = &eNB->UL_req[CC_id].ul_config_request_body;
+  nfapi_ul_config_request_body_t *ul_req       = &mac->UL_req[CC_id].ul_config_request_body;
 
 
-  eNB->UL_req[CC_id].sfn_sf   = (sched_frame<<4) + sched_subframe;
-  eNB->HI_DCI0_req[CC_id].sfn_sf = (frameP<<4)+subframeP;
+  mac->UL_req[CC_id].sfn_sf   = (sched_frame<<4) + sched_subframe;
+  hi_dci0_req->sfn_sf = (frameP << 4) + subframeP;
   
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     //rnti = UE_RNTI(module_idP,UE_id);
@@ -234,7 +238,6 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
       UE_sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
       harq_pid      = subframe2harqpid(&cc[CC_id],sched_frame,sched_subframe);
 
-      LOG_D(MAC,"Scheduling for frame %d, subframe %d => harq_pid %d\n",sched_frame,sched_subframe,harq_pid);
 
       RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP*10)+subframeP] = UE_template->TBS_UL[harq_pid];
 
@@ -244,7 +247,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
       //compute the expected ULSCH RX power (for the stats)
 	  
       // this is the normalized RX power and this should be constant (regardless of mcs
-      normalized_rx_power = UE_sched_ctrl->pusch_snr[CC_id];
+      normalized_rx_power = (5*UE_sched_ctrl->pusch_snr[CC_id]-640)/10+30;
 	  
       // new transmission
 	  
@@ -280,7 +283,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
 	  // save it for a potential retransmission
       UE_template->cshift[harq_pid] = cshift;	    
 
-	  hi_dci0_pdu                                                         = &hi_dci0_req->hi_dci0_pdu_list[eNB->HI_DCI0_req[CC_id].hi_dci0_request_body.number_of_dci+eNB->HI_DCI0_req[CC_id].hi_dci0_request_body.number_of_hi]; 	
+	  hi_dci0_pdu                                                         = &hi_dci0_req_body->hi_dci0_pdu_list[hi_dci0_req_body->number_of_dci + hi_dci0_req_body->number_of_hi];
 	  memset((void*)hi_dci0_pdu,0,sizeof(nfapi_hi_dci0_request_pdu_t));
 	  hi_dci0_pdu->pdu_type                                               = NFAPI_HI_DCI0_DCI_PDU_TYPE; 
 	  hi_dci0_pdu->pdu_size                                               = 2+sizeof(nfapi_hi_dci0_dci_pdu);
@@ -297,18 +300,28 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
 	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.tpc                               = tpc;
 	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.cqi_csi_request                   = cqi_req;
 	  hi_dci0_pdu->dci_pdu.dci_pdu_rel8.dl_assignment_index               = UE_template->DAI_ul[sched_subframe];
+          hi_dci0_pdu->dci_pdu.dci_pdu_rel8.harq_pid                          = harq_pid;
 
+
+	  hi_dci0_req_body->number_of_dci++;
 	    
-	  eNB->HI_DCI0_req[CC_id].hi_dci0_request_body.number_of_dci++;
-	    
-	    
+	  ul_req_index = 0;
+            dlsch_flag = 0;
+            for(ul_req_index = 0;ul_req_index < ul_req->number_of_pdus;ul_req_index++){
+              if(ul_req->ul_config_pdu_list[ul_req_index].pdu_type == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE){
+                dlsch_flag = 1;
+                LOG_D(MAC,"Frame %d, Subframe %d:rnti %x ul_req_index %d Switched UCI HARQ to ULSCH HARQ(first)\n",frameP,subframeP,rnti,ul_req_index);
+                break;
+              }
+            }
+
 	  // Add UL_config PDUs
-	  fill_nfapi_ulsch_config_request_rel8(&ul_req->ul_config_pdu_list[ul_req->number_of_pdus],
+	  fill_nfapi_ulsch_config_request_rel8(& ul_req->ul_config_pdu_list[ul_req_index],
 						 cqi_req,
 						 cc,
 						 0,//UE_template->physicalConfigDedicated,
 						 get_tmode(module_idP,CC_id,UE_id),
-						 eNB->ul_handle,
+						 mac->ul_handle,//eNB->ul_handle,
 						 rnti,
 						 first_rb[CC_id], // resource_block_start
 						 nb_rb, // number_of_resource_blocks
@@ -324,9 +337,9 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
 						 0, // n_srs
 						 get_TBS_UL(mcs,nb_rb)
 						 );
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	  if (UE_template->rach_resource_type>0) { // This is a BL/CE UE allocation
-	    fill_nfapi_ulsch_config_request_emtc(&ul_req->ul_config_pdu_list[ul_req->number_of_pdus],
+	    fill_nfapi_ulsch_config_request_emtc(&ul_req->ul_config_pdu_list[ul_req_index],
 						   UE_template->rach_resource_type>2 ? 2 : 1,
 						   1, //total_number_of_repetitions
 						   1, //repetition_number
@@ -334,7 +347,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
 	    }
 #endif
 	  ul_req->number_of_pdus = 1;
-	  eNB->ul_handle++;
+	  mac->ul_handle++;
 	    
 	    
 	  	

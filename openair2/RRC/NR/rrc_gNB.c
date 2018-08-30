@@ -24,12 +24,13 @@
  * \author Navid Nikaein and  Raymond Knopp , WEI-TAI CHEN
  * \date 2011 - 2014 , 2018
  * \version 1.0
- * \company Eurecom
- * \email: navid.nikaein@eurecom.fr and raymond.knopp@eurecom.fr
+ * \company Eurecom, NTUST
+ * \email: navid.nikaein@eurecom.fr and raymond.knopp@eurecom.fr, kroempa@gmail.com
  */
 #define RRC_GNB_C
 #define RRC_GNB_C
 
+#include "nr_rrc_config.h"
 #include "nr_rrc_defs.h"
 #include "nr_rrc_extern.h"
 #include "assertions.h"
@@ -39,22 +40,21 @@
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "LAYER2/RLC/rlc.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "COMMON/mac_rrc_primitives.h"
 #include "RRC/NR/MESSAGES/asn1_msg.h"
-
 
 #include "NR_BCCH-BCH-Message.h"
 #include "NR_UL-DCCH-Message.h"
 #include "NR_DL-DCCH-Message.h"
-
+#include "NR_CellGroupConfig.h"
 #include "NR_MeasResults.h"
 
 #include "rlc.h"
 #include "rrc_eNB_UE_context.h"
 #include "platform_types.h"
 #include "msc.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "T.h"
 
@@ -114,38 +114,117 @@ mui_t                               rrc_gNB_mui = 0;
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
 
-void
-openair_nr_rrc_on(
-  const protocol_ctxt_t* const ctxt_pP
-)
-//-----------------------------------------------------------------------------
-{
+void openair_nr_rrc_on(const protocol_ctxt_t* const ctxt_pP){
+  
   int            CC_id;
+  LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_FMT" gNB:OPENAIR NR RRC IN....\n",PROTOCOL_NR_RRC_CTXT_ARGS(ctxt_pP));
 
-    LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_FMT" gNB:OPENAIR NR RRC IN....\n",
-          PROTOCOL_NR_RRC_CTXT_ARGS(ctxt_pP));
-    for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-      rrc_config_nr_buffer (&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].SI, BCCH, 1);
-      RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].SI.Active = 1;
-      rrc_config_nr_buffer (&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].Srb0, CCCH, 1);
-      RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Active = 1;
-    }
+  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+    rrc_config_nr_buffer (&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].SI, BCCH, 1);
+    RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].SI.Active = 1;
+    rrc_config_nr_buffer (&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].Srb0, CCCH, 1);
+    RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Active = 1;
+  }
+
 }
 
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
 
-static void
-init_NR_SI(
-  const protocol_ctxt_t* const ctxt_pP,
-  const int              CC_id
-#if defined(ENABLE_ITTI)
-  ,
-  gNB_RrcConfigurationReq * configuration
-#endif
-)
-//-----------------------------------------------------------------------------
-{
+void rrc_gNB_process_SgNBAdditionRequest( 
+     const protocol_ctxt_t  *const ctxt_pP,
+     rrc_gNB_ue_context_t   *ue_context_pP 
+     ){
+
+  rrc_gNB_generate_SgNBAdditionRequestAcknowledge(ctxt_pP,ue_context_pP);
+}
+
+void rrc_gNB_generate_SgNBAdditionRequestAcknowledge( 
+     const protocol_ctxt_t  *const ctxt_pP,
+     rrc_gNB_ue_context_t   *const ue_context_pP
+     ){
+  
+  uint8_t size;
+  uint8_t buffer[100];
+  int     CC_id = ue_context_pP->ue_context.primaryCC_id;
+  OCTET_STRING_t                                      *secondaryCellGroup;
+  NR_CellGroupConfig_t                                *cellGroupconfig;
+  struct NR_CellGroupConfig__rlc_BearerToAddModList   *rlc_BearerToAddModList;
+  struct NR_MAC_CellGroupConfig                       *mac_CellGroupConfig;
+  struct NR_PhysicalCellGroupConfig                   *physicalCellGroupConfig;
+  struct NR_SpCellConfig                              *spCellConfig;
+  struct NR_CellGroupConfig__sCellToAddModList        *sCellToAddModList;
+
+  cellGroupconfig                           = CALLOC(1,sizeof(NR_CellGroupConfig_t));
+  cellGroupconfig->rlc_BearerToAddModList   = CALLOC(1,sizeof(struct NR_CellGroupConfig__rlc_BearerToAddModList));
+  cellGroupconfig->mac_CellGroupConfig      = CALLOC(1,sizeof(struct NR_MAC_CellGroupConfig));
+  cellGroupconfig->physicalCellGroupConfig  = CALLOC(1,sizeof(struct NR_PhysicalCellGroupConfig));
+  cellGroupconfig->spCellConfig             = CALLOC(1,sizeof(struct NR_SpCellConfig));
+  //cellGroupconfig->sCellToAddModList        = CALLOC(1,sizeof(struct NR_CellGroupConfig__sCellToAddModList));
+
+  rlc_BearerToAddModList   = cellGroupconfig->rlc_BearerToAddModList;
+  mac_CellGroupConfig      = cellGroupconfig->mac_CellGroupConfig;
+  physicalCellGroupConfig  = cellGroupconfig->physicalCellGroupConfig;
+  spCellConfig             = cellGroupconfig->spCellConfig;
+  //sCellToAddModList        = cellGroupconfig->sCellToAddModList;
+  
+  rlc_bearer_config_t *rlc_config;
+  rlc_config = CALLOC(1,sizeof(rlc_bearer_config_t));
+  //Fill rlc_bearer config value
+  rrc_config_rlc_bearer(ctxt_pP->module_id,
+                        ue_context_pP->ue_context.primaryCC_id,
+                        rlc_config
+                       );
+  //Fill rlc_bearer config to structure
+  do_RLC_BEARER(ctxt_pP->module_id,
+                ue_context_pP->ue_context.primaryCC_id,
+                rlc_BearerToAddModList,
+                rlc_config);
+
+  mac_cellgroup_t *mac_cellgroup_config;
+  mac_cellgroup_config = CALLOC(1,sizeof(mac_cellgroup_t));
+  //Fill mac_cellgroup_config config value
+  rrc_config_mac_cellgroup(ctxt_pP->module_id,
+                           ue_context_pP->ue_context.primaryCC_id,
+                           mac_cellgroup_config
+                          );
+  //Fill mac_cellgroup config to structure
+  do_MAC_CELLGROUP(ctxt_pP->module_id,
+                   ue_context_pP->ue_context.primaryCC_id,
+                   mac_CellGroupConfig,
+                   mac_cellgroup_config);
+
+  physicalcellgroup_t *physicalcellgroup_config;
+  physicalcellgroup_config = CALLOC(1,sizeof(physicalcellgroup_t));
+  //Fill physicalcellgroup_config config value
+  rrc_config_physicalcellgroup(ctxt_pP->module_id,
+                               ue_context_pP->ue_context.primaryCC_id,
+                               physicalcellgroup_config
+                              );
+  //Fill physicalcellgroup config to structure
+  do_PHYSICALCELLGROUP(ctxt_pP->module_id,
+                       ue_context_pP->ue_context.primaryCC_id,
+                       physicalCellGroupConfig,
+                       physicalcellgroup_config);
+
+
+  do_SpCellConfig(ctxt_pP->module_id,
+                  ue_context_pP->ue_context.primaryCC_id,
+                  spCellConfig);
+
+
+}
+
+///---------------------------------------------------------------------------------------------------------------///
+///---------------------------------------------------------------------------------------------------------------///
+
+static void init_NR_SI(const protocol_ctxt_t* const ctxt_pP,
+                       const int              CC_id
+                       #if defined(ENABLE_ITTI)
+                       ,
+                       gNB_RrcConfigurationReq * configuration
+                       #endif
+                      ){
   //int                                 i;
 
   LOG_D(RRC,"%s()\n\n\n\n",__FUNCTION__);
@@ -173,10 +252,11 @@ init_NR_SI(
                                                                             );
 
   do_SERVINGCELLCONFIGCOMMON(ctxt_pP->module_id,
-                             CC_id
+                             CC_id,
                              #if defined(ENABLE_ITTI)
-                             ,configuration
+                             configuration,
                              #endif
+                             1
                              );
   
   LOG_I(NR_RRC,"Done init_NR_SI\n");

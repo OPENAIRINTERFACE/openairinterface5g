@@ -59,7 +59,7 @@ struct LogicalChannelConfig__ul_SpecificParameters LCSRB2 =  {3,
 };
 
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 struct LogicalChannelConfig__ext1 logicalChannelSR_Mask_r9_ext1 = {
          logicalChannelSR_Mask_r9: &logicalChannelSR_Mask_r9
 };
@@ -67,14 +67,14 @@ struct LogicalChannelConfig__ext1 logicalChannelSR_Mask_r9_ext1 = {
 
 // These are the default SRB configurations from 36.331 (Chapter 9, p. 176-179 in v8.6)
 LogicalChannelConfig_t  SRB1_logicalChannelConfig_defaultValue = {ul_SpecificParameters: &LCSRB1
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                                                                   ,
                                                                   ext1: &logicalChannelSR_Mask_r9_ext1
 #endif
                                                                  };
 
 LogicalChannelConfig_t SRB2_logicalChannelConfig_defaultValue = {ul_SpecificParameters: &LCSRB2
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                                                                  ,
                                                                  ext1: &logicalChannelSR_Mask_r9_ext1
 #endif

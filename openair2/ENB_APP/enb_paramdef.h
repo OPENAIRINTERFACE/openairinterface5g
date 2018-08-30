@@ -35,11 +35,6 @@
 
 
 
-
-
-
-
-
 #define ENB_CONFIG_STRING_CC_NODE_FUNCTION                              "node_function"
 #define ENB_CONFIG_STRING_CC_NODE_TIMING                                "node_timing"   
 #define ENB_CONFIG_STRING_CC_NODE_SYNCH_REF                             "node_synch_ref"   
@@ -259,7 +254,7 @@ typedef enum {
 #define ENB_CONFIG_STRING_PUCCH_DELTA_SHIFT                             "pucch_delta_shift"
 #define ENB_CONFIG_STRING_PUCCH_NRB_CQI                                 "pucch_nRB_CQI"
 #define ENB_CONFIG_STRING_PUCCH_NCS_AN                                  "pucch_nCS_AN"
-//#if !defined(Rel10) && !defined(Rel14)
+//#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 #define ENB_CONFIG_STRING_PUCCH_N1_AN                                   "pucch_n1_AN"
 //#endif
 #define ENB_CONFIG_STRING_PDSCH_RS_EPRE                                 "pdsch_referenceSignalPower"
@@ -309,7 +304,56 @@ typedef enum {
 #define ENB_CONFIG_STRING_UETIMERS_N310                                 "ue_TimersAndConstants_n310"
 #define ENB_CONFIG_STRING_UETIMERS_N311                                 "ue_TimersAndConstants_n311"
 #define ENB_CONFIG_STRING_UE_TRANSMISSION_MODE                          "ue_TransmissionMode"
+#define ENB_CONFIG_STRING_UE_MULTIPLE_MAX                               "ue_multiple_max"
 
+//TTN - for D2D
+//SIB18
+#define ENB_CONFIG_STRING_RXPOOL_SC_CP_LEN                              "rxPool_sc_CP_Len"
+#define ENB_CONFIG_STRING_RXPOOL_SC_PRIOD                               "rxPool_sc_Period"
+#define ENB_CONFIG_STRING_RXPOOL_DATA_CP_LEN                            "rxPool_data_CP_Len"
+#define ENB_CONFIG_STRING_RXPOOL_RC_PRB_NUM                             "rxPool_ResourceConfig_prb_Num"
+#define ENB_CONFIG_STRING_RXPOOL_RC_PRB_START                           "rxPool_ResourceConfig_prb_Start"
+#define ENB_CONFIG_STRING_RXPOOL_RC_PRB_END                             "rxPool_ResourceConfig_prb_End"
+#define ENB_CONFIG_STRING_RXPOOL_RC_OFFSETIND_PRESENT                   "rxPool_ResourceConfig_offsetIndicator_present"
+#define ENB_CONFIG_STRING_RXPOOL_RC_OFFSETIND_CHOICE                    "rxPool_ResourceConfig_offsetIndicator_choice"
+#define ENB_CONFIG_STRING_RXPOOL_RC_SFBITMAP_PRESENT                    "rxPool_ResourceConfig_subframeBitmap_present"
+#define ENB_CONFIG_STRING_RXPOOL_RC_SFBITMAP_CHOICE_BS_BUF              "rxPool_ResourceConfig_subframeBitmap_choice_bs_buf"
+#define ENB_CONFIG_STRING_RXPOOL_RC_SFBITMAP_CHOICE_BS_SIZE             "rxPool_ResourceConfig_subframeBitmap_choice_bs_size"
+#define ENB_CONFIG_STRING_RXPOOL_RC_SFBITMAP_CHOICE_BS_ASN_BITS_UNUSED  "rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused"
+//SIB19 for DiscRxPool
+#define ENB_CONFIG_STRING_DISCRXPOOL_CP_LEN                                 "discRxPool_cp_Len"
+#define ENB_CONFIG_STRING_DISCRXPOOL_DISCPERIOD                             "discRxPool_discPeriod"
+#define ENB_CONFIG_STRING_DISCRXPOOL_NUMRETX                                "discRxPool_numRetx"
+#define ENB_CONFIG_STRING_DISCRXPOOL_NUMREPETITION                          "discRxPool_numRepetition"
+#define ENB_CONFIG_STRING_DISCRXPOOL_RC_PRB_NUM                             "discRxPool_ResourceConfig_prb_Num"
+#define ENB_CONFIG_STRING_DISCRXPOOL_RC_PRB_START                           "discRxPool_ResourceConfig_prb_Start"
+#define ENB_CONFIG_STRING_DISCRXPOOL_RC_PRB_END                             "discRxPool_ResourceConfig_prb_End"
+#define ENB_CONFIG_STRING_DISCRXPOOL_RC_OFFSETIND_PRESENT                   "discRxPool_ResourceConfig_offsetIndicator_present"
+#define ENB_CONFIG_STRING_DISCRXPOOL_RC_OFFSETIND_CHOICE                    "discRxPool_ResourceConfig_offsetIndicator_choice"
+#define ENB_CONFIG_STRING_DISCRXPOOL_RC_SFBITMAP_PRESENT                    "discRxPool_ResourceConfig_subframeBitmap_present"
+#define ENB_CONFIG_STRING_DISCRXPOOL_RC_SFBITMAP_CHOICE_BS_BUF              "discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf"
+#define ENB_CONFIG_STRING_DISCRXPOOL_RC_SFBITMAP_CHOICE_BS_SIZE             "discRxPool_ResourceConfig_subframeBitmap_choice_bs_size"
+#define ENB_CONFIG_STRING_DISCRXPOOL_RC_SFBITMAP_CHOICE_BS_ASN_BITS_UNUSED  "discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused"
+
+//SIB19 for DiscRxPoolPS
+#define ENB_CONFIG_STRING_DISCRXPOOLPS_CP_LEN                                 "DISCRXPOOLPS_cp_Len"
+#define ENB_CONFIG_STRING_DISCRXPOOLPS_DISCPERIOD                             "DISCRXPOOLPS_discPeriod"
+#define ENB_CONFIG_STRING_DISCRXPOOLPS_NUMRETX                                "DISCRXPOOLPS_numRetx"
+#define ENB_CONFIG_STRING_DISCRXPOOLPS_NUMREPETITION                          "DISCRXPOOLPS_numRepetition"
+#define ENB_CONFIG_STRING_DISCRXPOOLPS_RC_PRB_NUM                             "DISCRXPOOLPS_ResourceConfig_prb_Num"
+#define ENB_CONFIG_STRING_DISCRXPOOLPS_RC_PRB_START                           "DISCRXPOOLPS_ResourceConfig_prb_Start"
+#define ENB_CONFIG_STRING_DISCRXPOOLPS_RC_PRB_END                             "DISCRXPOOLPS_ResourceConfig_prb_End"
+#define ENB_CONFIG_STRING_DISCRXPOOLPS_RC_OFFSETIND_PRESENT                   "DISCRXPOOLPS_ResourceConfig_offsetIndicator_present"
+#define ENB_CONFIG_STRING_DISCRXPOOLPS_RC_OFFSETIND_CHOICE                    "DISCRXPOOLPS_ResourceConfig_offsetIndicator_choice"
+#define ENB_CONFIG_STRING_DISCRXPOOLPS_RC_SFBITMAP_PRESENT                    "DISCRXPOOLPS_ResourceConfig_subframeBitmap_present"
+#define ENB_CONFIG_STRING_DISCRXPOOLPS_RC_SFBITMAP_CHOICE_BS_BUF              "DISCRXPOOLPS_ResourceConfig_subframeBitmap_choice_bs_buf"
+#define ENB_CONFIG_STRING_DISCRXPOOLPS_RC_SFBITMAP_CHOICE_BS_SIZE             "DISCRXPOOLPS_ResourceConfig_subframeBitmap_choice_bs_size"
+#define ENB_CONFIG_STRING_DISCRXPOOLPS_RC_SFBITMAP_CHOICE_BS_ASN_BITS_UNUSED  "DISCRXPOOLPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused"
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                     component carriers configuration parameters                                                                                                     */
+/*   optname                                                   helpstr   paramflags    XXXptr                                        defXXXval                    type         numelt  */
+/*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /* init for checkedparam_t structure */
 
 #define CCPARAMS_CHECK                 {                                     \
@@ -381,11 +425,51 @@ typedef enum {
              { .s1a= { config_check_modify_integer, UETIMER_N310_OKVALUES, UETIMER_N310_MODVALUES,8}} , 					      \
              { .s1a= { config_check_modify_integer, UETIMER_N311_OKVALUES, UETIMER_N311_MODVALUES,8}} , 					      \
              { .s5= {NULL }} ,						     \
+             { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
+                          { .s5= {NULL }} ,						     \
 }
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                     component carriers configuration parameters                                                                                                                   */
 /*   optname                                                   helpstr   paramflags    XXXptr                                        defXXXval                    type         numelt  checked_param */
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
 #define CCPARAMS_DESC { \
 {ENB_CONFIG_STRING_FRAME_TYPE,                                   NULL,   0,           strptr:&frame_type,                             defstrval:"FDD",           TYPE_STRING,     0},  \
 {ENB_CONFIG_STRING_TDD_CONFIG,                                   NULL,   0,           iptr:&tdd_config,                               defintval:3,               TYPE_UINT,       0},  \
@@ -407,7 +491,7 @@ typedef enum {
 {ENB_CONFIG_STRING_PUCCH_DELTA_SHIFT,                            NULL,   0,           iptr:&pucch_delta_shift,                        defintval:1,               TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_PUCCH_NRB_CQI,                                NULL,   0,           iptr:&pucch_nRB_CQI,                            defintval:1,               TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_PUCCH_NCS_AN,                                 NULL,   0,           iptr:&pucch_nCS_AN,                             defintval:0,               TYPE_UINT,       0},  \
-{ENB_CONFIG_STRING_PUCCH_N1_AN,                                  NULL,   0,           iptr:&pucch_n1_AN,                              defintval:32,              TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_PUCCH_N1_AN,                                  NULL,   0,           iptr:&pucch_n1_AN,                              defintval:0,               TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_PDSCH_RS_EPRE,                                NULL,   0,           iptr:&pdsch_referenceSignalPower,               defintval:-29,             TYPE_INT,        0},  \
 {ENB_CONFIG_STRING_PDSCH_PB,                                     NULL,   0,           iptr:&pdsch_p_b,                                defintval:0,               TYPE_INT,        0},  \
 {ENB_CONFIG_STRING_PUSCH_N_SB,                                   NULL,   0,           iptr:&pusch_n_SB,                               defintval:1,               TYPE_INT,        0},  \
@@ -454,7 +538,46 @@ typedef enum {
 {ENB_CONFIG_STRING_UETIMERS_T311,                                NULL,   0,           iptr:&ue_TimersAndConstants_t311,               defintval:10000,           TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_UETIMERS_N310,                                NULL,   0,           iptr:&ue_TimersAndConstants_n310,               defintval:20,              TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_UETIMERS_N311,                                NULL,   0,           iptr:&ue_TimersAndConstants_n311,               defintval:1,               TYPE_UINT,       0},  \
-{ENB_CONFIG_STRING_UE_TRANSMISSION_MODE,                         NULL,   0,           iptr:&ue_TransmissionMode,                      defintval:1,               TYPE_UINT,       0}   \
+{ENB_CONFIG_STRING_UE_TRANSMISSION_MODE,                         NULL,   0,           iptr:&ue_TransmissionMode,                      defintval:1,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_UE_MULTIPLE_MAX,                              NULL,   0,           iptr:&ue_multiple_max,                          defintval:4,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_RXPOOL_SC_CP_LEN,                             NULL,   0,   strptr:(char **)&rxPool_sc_CP_Len,          defstrval:"normal",  TYPE_STRING,  0}, \
+{ENB_CONFIG_STRING_RXPOOL_SC_PRIOD,                              NULL,   0,   strptr:(char **)&rxPool_sc_Period,          defstrval:"sf40",  TYPE_STRING,  0}, \
+{ENB_CONFIG_STRING_RXPOOL_DATA_CP_LEN,                           NULL,   0,   strptr:(char **)&rxPool_data_CP_Len,          defstrval:"normal",  TYPE_STRING,  0}, \
+{ENB_CONFIG_STRING_RXPOOL_RC_PRB_NUM,                            NULL,   0,   iptr:(int32_t *)&rxPool_ResourceConfig_prb_Num,         defintval:1,       TYPE_UINT,    0}, \
+{ENB_CONFIG_STRING_RXPOOL_RC_PRB_START,                          NULL,   0,   iptr:(int32_t *)&rxPool_ResourceConfig_prb_Start,         defintval:1,       TYPE_UINT,    0}, \
+{ENB_CONFIG_STRING_RXPOOL_RC_PRB_END,                            NULL,   0,   iptr:(int32_t *)&rxPool_ResourceConfig_prb_End,         defintval:1,       TYPE_UINT,    0}, \
+{ENB_CONFIG_STRING_RXPOOL_RC_OFFSETIND_PRESENT,                  NULL,   0,   strptr:(char **)&rxPool_ResourceConfig_offsetIndicator_present,            defstrval:"prNothing",  TYPE_STRING,  0}, \
+{ENB_CONFIG_STRING_RXPOOL_RC_OFFSETIND_CHOICE,                   NULL,   0,   iptr:(int32_t *)&rxPool_ResourceConfig_offsetIndicator_choice,         defintval:1,       TYPE_UINT,    0}, \
+{ENB_CONFIG_STRING_RXPOOL_RC_SFBITMAP_PRESENT,                   NULL,   0,   strptr:(char **)&rxPool_ResourceConfig_subframeBitmap_present,            defstrval:"prNothing",  TYPE_STRING,  0}, \
+{ENB_CONFIG_STRING_RXPOOL_RC_SFBITMAP_CHOICE_BS_BUF,             NULL,   0,   strptr:(char **)&rxPool_ResourceConfig_subframeBitmap_choice_bs_buf,            defstrval:"001001",  TYPE_STRING,  0}, \
+{ENB_CONFIG_STRING_RXPOOL_RC_SFBITMAP_CHOICE_BS_SIZE,            NULL,   0,   iptr:(int32_t *)&rxPool_ResourceConfig_subframeBitmap_choice_bs_size,         defintval:1,       TYPE_UINT,    0}, \
+{ENB_CONFIG_STRING_RXPOOL_RC_SFBITMAP_CHOICE_BS_ASN_BITS_UNUSED, NULL,   0,   iptr:(int32_t *)&rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused,         defintval:1,       TYPE_UINT,    0}, \
+{ENB_CONFIG_STRING_DISCRXPOOL_CP_LEN,                            NULL,   0,   strptr:(char **)&discRxPool_cp_Len,          defstrval:"normal",  TYPE_STRING,  0}, \
+{ENB_CONFIG_STRING_DISCRXPOOL_DISCPERIOD,                        NULL,   0,   strptr:(char **)&discRxPool_discPeriod,          defstrval:"rf32",  TYPE_STRING,  0}, \
+{ENB_CONFIG_STRING_DISCRXPOOL_NUMRETX,                           NULL,   0,   iptr:(int32_t *)&discRxPool_numRetx,         defintval:1,       TYPE_UINT,    0}, \
+{ENB_CONFIG_STRING_DISCRXPOOL_NUMREPETITION,                     NULL,   0,   iptr:(int32_t *)&discRxPool_numRepetition,         defintval:1,       TYPE_UINT,    0}, \
+{ENB_CONFIG_STRING_DISCRXPOOL_RC_PRB_NUM,                        NULL,   0,   iptr:(int32_t *)&discRxPool_ResourceConfig_prb_Num,         defintval:1,       TYPE_UINT,    0}, \
+{ENB_CONFIG_STRING_DISCRXPOOL_RC_PRB_START,                      NULL,   0,   iptr:(int32_t *)&discRxPool_ResourceConfig_prb_Start,         defintval:1,       TYPE_UINT,    0}, \
+{ENB_CONFIG_STRING_DISCRXPOOL_RC_PRB_END,                        NULL,   0,   iptr:(int32_t *)&discRxPool_ResourceConfig_prb_End,         defintval:1,       TYPE_UINT,    0}, \
+{ENB_CONFIG_STRING_DISCRXPOOL_RC_OFFSETIND_PRESENT,              NULL,   0,   strptr:(char **)&discRxPool_ResourceConfig_offsetIndicator_present,            defstrval:"prNothing",  TYPE_STRING,  0}, \
+{ENB_CONFIG_STRING_DISCRXPOOL_RC_OFFSETIND_CHOICE,               NULL,   0,   iptr:(int32_t *)&discRxPool_ResourceConfig_offsetIndicator_choice,         defintval:1,       TYPE_UINT,    0}, \
+{ENB_CONFIG_STRING_DISCRXPOOL_RC_SFBITMAP_PRESENT,               NULL,   0,   strptr:(char **)&discRxPool_ResourceConfig_subframeBitmap_present,            defstrval:"prNothing",  TYPE_STRING,  0}, \
+{ENB_CONFIG_STRING_DISCRXPOOL_RC_SFBITMAP_CHOICE_BS_BUF,         NULL,   0,   strptr:(char **)&discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf,            defstrval:"001001",  TYPE_STRING,  0}, \
+{ENB_CONFIG_STRING_DISCRXPOOL_RC_SFBITMAP_CHOICE_BS_SIZE,        NULL,   0,   iptr:(int32_t *)&discRxPool_ResourceConfig_subframeBitmap_choice_bs_size,         defintval:1,       TYPE_UINT,    0}, \
+{ENB_CONFIG_STRING_DISCRXPOOL_RC_SFBITMAP_CHOICE_BS_ASN_BITS_UNUSED,NULL,   0,   iptr:(int32_t *)&discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused,         defintval:1,       TYPE_UINT,    0}, \
+{ENB_CONFIG_STRING_DISCRXPOOLPS_CP_LEN,                            NULL,   0,   strptr:(char **)&discRxPoolPS_cp_Len,          defstrval:"normal",  TYPE_STRING,  0}, \
+{ENB_CONFIG_STRING_DISCRXPOOLPS_DISCPERIOD,                        NULL,   0,   strptr:(char **)&discRxPoolPS_discPeriod,          defstrval:"rf32",  TYPE_STRING,  0}, \
+{ENB_CONFIG_STRING_DISCRXPOOLPS_NUMRETX,                           NULL,   0,   iptr:(int32_t *)&discRxPoolPS_numRetx,         defintval:1,       TYPE_UINT,    0}, \
+{ENB_CONFIG_STRING_DISCRXPOOLPS_NUMREPETITION,                     NULL,   0,   iptr:(int32_t *)&discRxPoolPS_numRepetition,         defintval:1,       TYPE_UINT,    0}, \
+{ENB_CONFIG_STRING_DISCRXPOOLPS_RC_PRB_NUM,                        NULL,   0,   iptr:(int32_t *)&discRxPoolPS_ResourceConfig_prb_Num,         defintval:1,       TYPE_UINT,    0}, \
+{ENB_CONFIG_STRING_DISCRXPOOLPS_RC_PRB_START,                      NULL,   0,   iptr:(int32_t *)&discRxPoolPS_ResourceConfig_prb_Start,         defintval:1,       TYPE_UINT,    0}, \
+{ENB_CONFIG_STRING_DISCRXPOOLPS_RC_PRB_END,                        NULL,   0,   iptr:(int32_t *)&discRxPoolPS_ResourceConfig_prb_End,         defintval:1,       TYPE_UINT,    0}, \
+{ENB_CONFIG_STRING_DISCRXPOOLPS_RC_OFFSETIND_PRESENT,              NULL,   0,   strptr:(char **)&discRxPoolPS_ResourceConfig_offsetIndicator_present,            defstrval:"prNothing",  TYPE_STRING,  0}, \
+{ENB_CONFIG_STRING_DISCRXPOOLPS_RC_OFFSETIND_CHOICE,               NULL,   0,   iptr:(int32_t *)&discRxPoolPS_ResourceConfig_offsetIndicator_choice,         defintval:1,       TYPE_UINT,    0}, \
+{ENB_CONFIG_STRING_DISCRXPOOLPS_RC_SFBITMAP_PRESENT,               NULL,   0,   strptr:(char **)&discRxPoolPS_ResourceConfig_subframeBitmap_present,            defstrval:"prNothing",  TYPE_STRING,  0}, \
+{ENB_CONFIG_STRING_DISCRXPOOLPS_RC_SFBITMAP_CHOICE_BS_BUF,         NULL,   0,   strptr:(char **)&discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf,            defstrval:"001001",  TYPE_STRING,  0}, \
+{ENB_CONFIG_STRING_DISCRXPOOLPS_RC_SFBITMAP_CHOICE_BS_SIZE,        NULL,   0,   iptr:(int32_t *)&discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size,         defintval:1,       TYPE_UINT,    0}, \
+{ENB_CONFIG_STRING_DISCRXPOOLPS_RC_SFBITMAP_CHOICE_BS_ASN_BITS_UNUSED,NULL,   0,   iptr:(int32_t *)&discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused,         defintval:1,       TYPE_UINT,    0} \
 }
 
 #define ENB_CONFIG_FRAME_TYPE_IDX                            0  			     
@@ -705,8 +828,8 @@ typedef enum {
 #define CONFIG_STRING_MACRLC_REMOTE_S_PORTC                "remote_s_portc"
 #define CONFIG_STRING_MACRLC_LOCAL_S_PORTD                 "local_s_portd"
 #define CONFIG_STRING_MACRLC_REMOTE_S_PORTD                "remote_s_portd"
+#define CONFIG_STRING_MACRLC_SCHED_MODE                    "scheduler_mode"
 #define CONFIG_STRING_MACRLC_PHY_TEST_MODE                 "phy_test_mode"
-
 
 #define MACRLC_CC_IDX                                          0
 #define MACRLC_TRANSPORT_N_PREFERENCE_IDX                      1
@@ -725,5 +848,6 @@ typedef enum {
 #define MACRLC_REMOTE_S_PORTC_IDX                              14
 #define MACRLC_LOCAL_S_PORTD_IDX                               15
 #define MACRLC_REMOTE_S_PORTD_IDX                              16
-#define MACRLC_PHY_TEST_IDX                                    17
+#define MACRLC_SCHED_MODE_IDX                                  17
+#define MACRLC_PHY_TEST_IDX                                    18
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------*/

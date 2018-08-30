@@ -18,13 +18,13 @@
  *      contact@openairinterface.org
  */
 
-/*! \file RRC/LITE/defs_NR.h
+/*! \file nr_rrc_defs.h
 * \brief NR RRC struct definitions and function prototypes
-* \author Navid Nikaein, Raymond Knopp 
+* \author Navid Nikaein, Raymond Knopp, WEI-TAI CHEN
 * \date 2010 - 2014, 2018
 * \version 1.0
-* \company Eurecom
-* \email: navid.nikaein@eurecom.fr, raymond.knopp@eurecom.fr
+* \company Eurecom, NTSUT
+* \email: navid.nikaein@eurecom.fr, raymond.knopp@eurecom.fr, kroempa@gmail.com
 */
 
 #ifndef __OPENAIR_RRC_DEFS_NR_H__
@@ -44,7 +44,7 @@
 //#include "LAYER2/RLC/rlc.h"
 
 //#include "COMMON/mac_rrc_primitives.h"
-#if defined(NR_Rel15)
+
 #include "NR_SIB1.h"
 //#include "SystemInformation.h"
 //#include "RRCConnectionReconfiguration.h"
@@ -64,8 +64,9 @@
 //#include "AS-Context.h"
 #include "NR_UE-NR-Capability.h"
 #include "NR_MeasResults.h"
+#include "NR_MeasResults.h"
+#include "NR_CellGroupConfig.h"
 #include "NR_ServingCellConfigCommon.h"
-#endif
 //-------------------
 
 #if defined(ENABLE_ITTI)
@@ -255,7 +256,120 @@ typedef struct SRB_INFO_TABLE_ENTRY_NR_s {
   uint32_t                                            Next_check_frame;
 } NR_SRB_INFO_TABLE_ENTRY;
 
-//called "carrier"--> data from PHY layer
+
+typedef struct gNB_RRC_UE_s {
+  uint8_t                            primaryCC_id;
+#if defined(Rel10) || defined(Rel14)
+  SCellToAddMod_r10_t                sCell_config[2];
+#endif
+  SRB_ToAddModList_t*                SRB_configList;
+  SRB_ToAddModList_t*                SRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
+  DRB_ToAddModList_t*                DRB_configList;
+  DRB_ToAddModList_t*                DRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
+  DRB_ToReleaseList_t*               DRB_Release_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
+  uint8_t                            DRB_active[8];
+
+  SRB_INFO                           SI;
+  SRB_INFO                           Srb0;
+  SRB_INFO_TABLE_ENTRY               Srb1;
+  SRB_INFO_TABLE_ENTRY               Srb2;
+  MeasConfig_t*                      measConfig;
+  HANDOVER_INFO*                     handover_info;
+  MeasResults_t*                     measResults;
+
+  UE_EUTRA_Capability_t*             UE_Capability;
+  ImsiMobileIdentity_t               imsi;
+
+#if defined(ENABLE_SECURITY)
+  /* KeNB as derived from KASME received from EPC */
+  uint8_t kenb[32];
+  int8_t  kenb_ncc;
+  uint8_t nh[32];
+  int8_t  nh_ncc;
+#endif
+  /* Used integrity/ciphering algorithms */
+  CipheringAlgorithm_r12_t                          ciphering_algorithm;
+  e_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm;
+
+  uint8_t                            Status;
+  rnti_t                             rnti;
+  uint64_t                           random_ue_identity;
+
+#if defined(ENABLE_ITTI)
+  /* Information from UE RRC ConnectionRequest */
+  UE_S_TMSI                          Initialue_identity_s_TMSI;
+  EstablishmentCause_t               establishment_cause;
+
+  /* Information from UE RRC ConnectionReestablishmentRequest */
+  ReestablishmentCause_t             reestablishment_cause;
+
+  /* UE id for initial connection to S1AP */
+  uint16_t                           ue_initial_id;
+
+  /* Information from S1AP initial_context_setup_req */
+  uint32_t                           gNB_ue_s1ap_id :24;
+
+  security_capabilities_t            security_capabilities;
+
+  /* Total number of e_rab already setup in the list */
+  uint8_t                           setup_e_rabs;
+  /* Number of e_rab to be setup in the list */
+  uint8_t                            nb_of_e_rabs;
+  /* Number of e_rab to be modified in the list */
+  uint8_t                            nb_of_modify_e_rabs;
+  uint8_t                            nb_of_failed_e_rabs;
+  e_rab_param_t                      modify_e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
+  /* list of e_rab to be setup by RRC layers */
+  e_rab_param_t                      e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
+  //release e_rabs
+  uint8_t                            nb_release_of_e_rabs;
+  e_rab_failed_t                     e_rabs_release_failed[S1AP_MAX_E_RAB];
+  // LG: For GTPV1 TUNNELS
+  uint32_t                           enb_gtp_teid[S1AP_MAX_E_RAB];
+  transport_layer_addr_t             enb_gtp_addrs[S1AP_MAX_E_RAB];
+  rb_id_t                            enb_gtp_ebi[S1AP_MAX_E_RAB];
+#endif
+  uint32_t                           ul_failure_timer;
+  uint32_t                           ue_release_timer;
+  uint32_t                           ue_release_timer_thres;
+  uint32_t                           ue_release_timer_s1;
+  uint32_t                           ue_release_timer_thres_s1;
+  uint32_t                           ue_release_timer_rrc;
+  uint32_t                           ue_release_timer_thres_rrc;
+  uint32_t                           ue_reestablishment_timer;
+  uint32_t                           ue_reestablishment_timer_thres;
+  uint8_t                            e_rab_release_command_flag;
+//------------------------------------------------------------------------------//
+  NR_CellGroupId_t                                      cellGroupId;
+  struct NR_SpCellConfig                                *spCellConfig;
+  struct NR_CellGroupConfig__sCellToAddModList          *sCellconfig;
+  struct NR_CellGroupConfig__sCellToReleaseList         *sCellconfigRelease;
+  struct NR_CellGroupConfig__rlc_BearerToAddModList     *rlc_BearerBonfig;
+  struct NR_CellGroupConfig__rlc_BearerToReleaseList    *rlc_BearerRelease;
+  struct NR_MAC_CellGroupConfig                         *mac_CellGroupConfig;
+  struct NR_PhysicalCellGroupConfig                     *physicalCellGroupConfig;
+  
+} gNB_RRC_UE_t;
+
+typedef uid_t ue_uid_t;
+
+typedef struct rrc_gNB_ue_context_s {
+  /* Tree related data */
+  RB_ENTRY(rrc_gNB_ue_context_s) entries;
+
+  /* Uniquely identifies the UE between MME and eNB within the eNB.
+   * This id is encoded on 24bits.
+   */
+  rnti_t         ue_id_rnti;
+
+  // another key for protocol layers but should not be used as a key for RB tree
+  ue_uid_t       local_uid;
+
+  /* UE id for initial connection to S1AP */
+  struct gNB_RRC_UE_s   ue_context;
+} rrc_gNB_ue_context_t;
+
+
 typedef struct {
 
   // buffer that contains the encoded messages

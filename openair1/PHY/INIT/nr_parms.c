@@ -30,7 +30,7 @@ int nr_init_frame_parms(nfapi_nr_config_request_t* config,
                         NR_DL_FRAME_PARMS *frame_parms)
 {
 
-  int N_RB = config->rf_config.dl_channel_bandwidth.value;
+  int N_RB = config->rf_config.dl_carrier_bandwidth.value;
   int Ncp = config->subframe_config.dl_cyclic_prefix_type.value;
   int mu = config->subframe_config.numerology_index_mu.value;
 

@@ -20,18 +20,18 @@
  */
 
 /*
-  enb_config.c
+  gnb_config.c
   -------------------
-  AUTHOR  : Lionel GAUTHIER, navid nikaein, Laurent Winckel
-  COMPANY : EURECOM
-  EMAIL   : Lionel.Gauthier@eurecom.fr, navid.nikaein@eurecom.fr
+  AUTHOR  : Lionel GAUTHIER, navid nikaein, Laurent Winckel, WEI-TAI CHEN
+  COMPANY : EURECOM, NTUST
+  EMAIL   : Lionel.Gauthier@eurecom.fr, navid.nikaein@eurecom.fr, kroempa@gmail.com
 */
 
 #include <string.h>
 #include <inttypes.h>
 
-#include "log.h"
-#include "log_extern.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/log_extern.h"
 #include "assertions.h"
 #include "gnb_config.h"
 #include "UTIL/OTG/otg.h"
@@ -60,6 +60,22 @@
 #include "gnb_paramdef.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 
+#include "NR_SCS-SpecificCarrier.h"
+#include "NR_TDD-UL-DL-ConfigCommon.h"
+#include "NR_FrequencyInfoUL.h"
+#include "NR_RACH-ConfigGeneric.h"
+#include "NR_RACH-ConfigCommon.h"
+#include "NR_PUSCH-TimeDomainResourceAllocation.h"
+#include "NR_PUSCH-ConfigCommon.h"
+#include "NR_PUCCH-ConfigCommon.h"
+#include "NR_PDSCH-TimeDomainResourceAllocation.h"
+#include "NR_PDSCH-ConfigCommon.h"
+#include "NR_RateMatchPattern.h"
+#include "NR_RateMatchPatternLTE-CRS.h"
+#include "NR_SearchSpace.h"
+#include "NR_ControlResourceSet.h"
+#include "NR_EUTRA-MBSFN-SubframeConfig.h"
+
 extern uint16_t sf_ahead;
 
 void RCconfig_nr_flexran()
@@ -81,7 +97,9 @@ void RCconfig_nr_flexran()
   char      *frame_type, *DL_prefix_type, *UL_prefix_type, *SIB1_frequencyOffsetSSB,
             *DL_SCS_SubcarrierSpacing, *DL_BWP_SubcarrierSpacing, *DL_BWP_prefix_type,
             *UL_frequencyShift7p5khz, *UL_SCS_SubcarrierSpacing, *UL_BWP_SubcarrierSpacing,
-            *UL_BWP_prefix_type, *ServingCellConfigCommon_ssb_PositionsInBurst_PR,
+            *UL_BWP_prefix_type, *UL_timeAlignmentTimerCommon, 
+            *ServingCellConfigCommon_n_TimingAdvanceOffset,
+            *ServingCellConfigCommon_ssb_PositionsInBurst_PR,
             *NIA_SubcarrierSpacing, *referenceSubcarrierSpacing, *dl_UL_TransmissionPeriodicity,
             *rach_ssb_perRACH_OccasionAndCB_PreamblesPerSSB_choice,
             *rach_groupBconfigured, *rach_messagePowerOffsetGroupB, 
@@ -101,11 +119,11 @@ void RCconfig_nr_flexran()
   int32_t   eutra_band, uplink_frequency_offset, N_RB_DL, nb_antenna_ports,
             MIB_subCarrierSpacingCommon, MIB_ssb_SubcarrierOffset, MIB_dmrs_TypeA_Position,
             pdcch_ConfigSIB1, SIB1_ssb_PeriodicityServingCell, SIB1_ss_PBCH_BlockPower,
-            absoluteFrequencySSB, ssb_SubcarrierOffset, DL_FreqBandIndicatorNR,
-            DL_absoluteFrequencyPointA, DL_offsetToCarrier, DL_SCS_SpecificCarrier_k0,
+            absoluteFrequencySSB, DL_FreqBandIndicatorNR,
+            DL_absoluteFrequencyPointA, DL_offsetToCarrier,
             DL_carrierBandwidth, DL_locationAndBandwidth, UL_FreqBandIndicatorNR,
             UL_absoluteFrequencyPointA, UL_additionalSpectrumEmission, UL_p_Max,
-            UL_offsetToCarrier, UL_SCS_SpecificCarrier_k0, UL_carrierBandwidth,
+            UL_offsetToCarrier, UL_carrierBandwidth,
             UL_locationAndBandwidth, ServingCellConfigCommon_ssb_periodicityServingCell,
             ServingCellConfigCommon_dmrs_TypeA_Position, ServingCellConfigCommon_ss_PBCH_BlockPower,
             nrofDownlinkSlots, nrofDownlinkSymbols, nrofUplinkSlots, nrofUplinkSymbols,
@@ -122,20 +140,19 @@ void RCconfig_nr_flexran()
             prach_RootSequenceIndex_l139, prach_ConfigurationIndex, prach_msg1_FrequencyStart,
             zeroCorrelationZoneConfig, preambleReceivedTargetPower, preambleTransMax,
             ra_ResponseWindow, msg3_DeltaPreamble, p0_NominalWithGrant,
-            PUSCH_TimeDomainResourceAllocation_k2, p0_nominal, PDSCH_TimeDomainResourceAllocation_k0,
+            PUSCH_TimeDomainResourceAllocation_k2,
+            PUSCH_TimeDomainResourceAllocation_startSymbolAndLength,
+            pucch_ResourceCommon, hoppingId, p0_nominal, PDSCH_TimeDomainResourceAllocation_k0,
+            PDSCH_TimeDomainResourceAllocation_startSymbolAndLength,
             rateMatchPatternId, periodicityAndPattern, RateMatchPattern_controlResourceSet,
+            controlResourceSetZero, searchSpaceZero,
             searchSpaceSIB1, searchSpaceOtherSystemInformation, pagingSearchSpace,
-            ra_SearchSpace, rach_ra_ControlResourceSet, PDCCH_common_controlResourceSetId,
+            ra_SearchSpace, PDCCH_common_controlResourceSetId,
             PDCCH_common_ControlResourceSet_duration, PDCCH_reg_BundleSize, PDCCH_interleaverSize,
-            PDCCH_shiftIndex, PDCCH_TCI_StateId, SearchSpaceId, commonSearchSpaces_controlResourceSetId,
-            SearchSpace_monitoringSlotPeriodicityAndOffset_sl1,
-            SearchSpace_monitoringSlotPeriodicityAndOffset_sl2,
-            SearchSpace_monitoringSlotPeriodicityAndOffset_sl4,
-            SearchSpace_monitoringSlotPeriodicityAndOffset_sl5,
-            SearchSpace_monitoringSlotPeriodicityAndOffset_sl8,
-            SearchSpace_monitoringSlotPeriodicityAndOffset_sl10,
-            SearchSpace_monitoringSlotPeriodicityAndOffset_sl16,
-            SearchSpace_monitoringSlotPeriodicityAndOffset_sl20,
+            PDCCH_shiftIndex, PDCCH_TCI_StateId, PDCCH_DMRS_ScramblingID,
+            SearchSpaceId, commonSearchSpaces_controlResourceSetId,
+            SearchSpace_monitoringSlotPeriodicityAndOffset_value,
+            SearchSpace_duration,
             SearchSpace_nrofCandidates_aggregationLevel1,
             SearchSpace_nrofCandidates_aggregationLevel2,
             SearchSpace_nrofCandidates_aggregationLevel4,
@@ -398,7 +415,7 @@ void RCconfig_nr_macrlc() {
 
 }
 
-int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
+void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
   int                    num_gnbs                                                      = 0;
   int                    num_component_carriers                                        = 0;
@@ -428,23 +445,22 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   char*                  SIB1_frequencyOffsetSSB                                       = NULL; 
   int32_t                SIB1_ssb_PeriodicityServingCell                               = 0;
   int32_t                SIB1_ss_PBCH_BlockPower                                       = 0;
+  //DownlinkConfigCommon
   //NR FrequencyInfoDL
   int32_t                absoluteFrequencySSB                                          = 0;
-  int32_t                ssb_SubcarrierOffset                                          = 0;
   int32_t                DL_FreqBandIndicatorNR                                        = 0;
   int32_t                DL_absoluteFrequencyPointA                                    = 0;
 
   //NR DL SCS-SpecificCarrier
   int32_t                DL_offsetToCarrier                                            = 0;
   char*                  DL_SCS_SubcarrierSpacing                                      = 0;
-  int32_t                DL_SCS_SpecificCarrier_k0                                     = 0;
   int32_t                DL_carrierBandwidth                                           = 0;
 
   // NR BWP-DownlinkCommon
   int32_t                DL_locationAndBandwidth                                       = 0;
   char*                  DL_BWP_SubcarrierSpacing                                      = 0;
   char*                  DL_BWP_prefix_type                                            = NULL;  
-
+  
   //NR FrequencyInfoUL
   int32_t                UL_FreqBandIndicatorNR                                        = 0;
   int32_t                UL_absoluteFrequencyPointA                                    = 0;
@@ -455,14 +471,15 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   //NR UL SCS-SpecificCarrier
   int32_t                UL_offsetToCarrier                                            = 0;
   char*                  UL_SCS_SubcarrierSpacing                                      = 0;
-  int32_t                UL_SCS_SpecificCarrier_k0                                     = 0;
   int32_t                UL_carrierBandwidth                                           = 0;
 
   // NR BWP-UplinkCommon
   int32_t                UL_locationAndBandwidth                                       = 0;
   char*                  UL_BWP_SubcarrierSpacing                                      = 0;
   char*                  UL_BWP_prefix_type                                            = NULL; 
+  char*                  UL_timeAlignmentTimerCommon                                   = 0;
   
+  char*                  ServingCellConfigCommon_n_TimingAdvanceOffset                 = 0;
   char*                  ServingCellConfigCommon_ssb_PositionsInBurst_PR               = 0;
   int32_t                ServingCellConfigCommon_ssb_periodicityServingCell            = 0;
   int32_t                ServingCellConfigCommon_dmrs_TypeA_Position                   = 0;
@@ -521,15 +538,19 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   ///PUSCH-TimeDomainResourceAllocation
   int32_t                PUSCH_TimeDomainResourceAllocation_k2                         = 0;
   char*                  PUSCH_TimeDomainResourceAllocation_mappingType                = NULL;
+  int32_t                PUSCH_TimeDomainResourceAllocation_startSymbolAndLength       = 0;
 
   //PUCCH-ConfigCommon
+  int32_t                pucch_ResourceCommon                                          = 0;
   char*                  pucch_GroupHopping                                            = NULL;
+  int32_t                hoppingId                                                     = 0;
   int32_t                p0_nominal                                                    = 0;
 
   //PDSCH-ConfigCOmmon
   //PDSCH-TimeDomainResourceAllocation
   int32_t                PDSCH_TimeDomainResourceAllocation_k0                         = 0;
   char*                  PDSCH_TimeDomainResourceAllocation_mappingType                = NULL;
+  int32_t                PDSCH_TimeDomainResourceAllocation_startSymbolAndLength       = 0;
 
   //RateMatchPattern  is used to configure one rate matching pattern for PDSCH
   int32_t                rateMatchPatternId                                            = 0;
@@ -541,11 +562,13 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   char*                  RateMatchPattern_mode                                         = NULL;
 
   //PDCCH-ConfigCommon
+  int32_t                controlResourceSetZero                                        = 0;
+  int32_t                searchSpaceZero                                               = 0;
   int32_t                searchSpaceSIB1                                               = 0;
   int32_t                searchSpaceOtherSystemInformation                             = 0;
   int32_t                pagingSearchSpace                                             = 0;
   int32_t                ra_SearchSpace                                                = 0;
-  int32_t                rach_ra_ControlResourceSet                                    = 0;
+  
   //NR PDCCH-ConfigCommon commonControlResourcesSets
   int32_t                PDCCH_common_controlResourceSetId                             = 0;
   int32_t                PDCCH_common_ControlResourceSet_duration                      = 0;
@@ -556,19 +579,14 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   char*                  PDCCH_precoderGranularity                                     = NULL;
   int32_t                PDCCH_TCI_StateId                                             = 0;
   char*                  tci_PresentInDCI                                              = NULL;
+  int32_t                PDCCH_DMRS_ScramblingID                                       = 0;
 
   //NR PDCCH-ConfigCommon commonSearchSpaces
   int32_t                SearchSpaceId                                                 = 0;
   int32_t                commonSearchSpaces_controlResourceSetId                       = 0;
   char*                  SearchSpace_monitoringSlotPeriodicityAndOffset_choice         = NULL;
-  int32_t                SearchSpace_monitoringSlotPeriodicityAndOffset_sl1            = 0;
-  int32_t                SearchSpace_monitoringSlotPeriodicityAndOffset_sl2            = 0;
-  int32_t                SearchSpace_monitoringSlotPeriodicityAndOffset_sl4            = 0;
-  int32_t                SearchSpace_monitoringSlotPeriodicityAndOffset_sl5            = 0;
-  int32_t                SearchSpace_monitoringSlotPeriodicityAndOffset_sl8            = 0;
-  int32_t                SearchSpace_monitoringSlotPeriodicityAndOffset_sl10           = 0;
-  int32_t                SearchSpace_monitoringSlotPeriodicityAndOffset_sl16           = 0;
-  int32_t                SearchSpace_monitoringSlotPeriodicityAndOffset_sl20           = 0;
+  int32_t                SearchSpace_monitoringSlotPeriodicityAndOffset_value          = 0;
+  int32_t                SearchSpace_duration                                          = 0;
   int32_t                SearchSpace_nrofCandidates_aggregationLevel1                  = 0;
   int32_t                SearchSpace_nrofCandidates_aggregationLevel2                  = 0;
   int32_t                SearchSpace_nrofCandidates_aggregationLevel4                  = 0;
@@ -591,14 +609,14 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   int32_t                RateMatchPatternLTE_CRS_radioframeAllocationPeriod            = 0;
   int32_t                RateMatchPatternLTE_CRS_radioframeAllocationOffset            = 0;
   char*                  RateMatchPatternLTE_CRS_subframeAllocation_choice             = NULL;
-
+/*
   int32_t                srb1_timer_poll_retransmit    = 0;
   int32_t                srb1_timer_reordering         = 0;
   int32_t                srb1_timer_status_prohibit    = 0;
   int32_t                srb1_poll_pdu                 = 0;
   int32_t                srb1_poll_byte                = 0;
   int32_t                srb1_max_retx_threshold       = 0;
-
+*/
   //int32_t             my_int;
 
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
@@ -610,7 +628,12 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   paramdef_t CCsParams[] = NRCCPARAMS_DESC;
   paramlist_def_t CCsParamList = {GNB_CONFIG_STRING_COMPONENT_CARRIERS,NULL,0};
   
-  paramdef_t SRB1Params[] = SRB1PARAMS_DESC;  
+  //paramdef_t SRB1Params[] = SRB1PARAMS_DESC;  
+
+  /* map parameter checking array instances to parameter definition array instances */
+  for (int I = 0; I < (sizeof(CCsParams) / sizeof(paramdef_t)); I++) {
+    CCsParams[I].chkPptr = &(config_check_CCparams[I]);
+  }
 
   /* get global parameters, defined outside any section in the config file */
  
@@ -870,12 +893,6 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
                            RC.config_file_name, i, absoluteFrequencySSB);
             }
 
-            NRRRC_CONFIGURATION_REQ (msg_p).ssb_SubcarrierOffset[j] = ssb_SubcarrierOffset;
-            if ((ssb_SubcarrierOffset <1) || (ssb_SubcarrierOffset > 23)){
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for ssb_SubcarrierOffset choice: 1..23 !\n",
-                           RC.config_file_name, i, ssb_SubcarrierOffset);
-            }
-
             NRRRC_CONFIGURATION_REQ (msg_p).DL_FreqBandIndicatorNR[j] = DL_FreqBandIndicatorNR;
             if ((DL_FreqBandIndicatorNR <1) || (DL_FreqBandIndicatorNR > 1024)){
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for DL_FreqBandIndicatorNR choice: 1..1024 !\n",
@@ -909,25 +926,6 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }else { 
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for DL_SCS_SubcarrierSpacing choice: minusinfinity,kHz15,kHz30,kHz60,kHz120,kHz240!\n",
                            RC.config_file_name, i, DL_SCS_SubcarrierSpacing);
-            }
-
-            switch (DL_SCS_SpecificCarrier_k0) {
-              case -6:
-                NRRRC_CONFIGURATION_REQ (msg_p).DL_SCS_SpecificCarrier_k0[j] =  NR_SCS_SpecificCarrier__k0_n_6;
-                break;
-
-              case 0:
-                NRRRC_CONFIGURATION_REQ (msg_p).DL_SCS_SpecificCarrier_k0[j] =  NR_SCS_SpecificCarrier__k0_n0;
-                break;
-
-              case 6:
-                NRRRC_CONFIGURATION_REQ (msg_p).DL_SCS_SpecificCarrier_k0[j] =  NR_SCS_SpecificCarrier__k0_n6;
-                break;
-
-               default:
-                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for DL_SCS_SpecificCarrier_k0 choice: -6,0,6 !\n",
-                             RC.config_file_name, i, DL_SCS_SpecificCarrier_k0);
-                break;
             }
 
             NRRRC_CONFIGURATION_REQ (msg_p).DL_carrierBandwidth[j] = DL_carrierBandwidth;
@@ -1022,31 +1020,11 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
               RC.config_file_name, i, UL_SCS_SubcarrierSpacing);
             }
 
-            switch (UL_SCS_SpecificCarrier_k0) {
-              case -6:
-                NRRRC_CONFIGURATION_REQ (msg_p).UL_SCS_SpecificCarrier_k0[j] =  NR_SCS_SpecificCarrier__k0_n_6;
-                break;
-
-              case 0:
-                NRRRC_CONFIGURATION_REQ (msg_p).UL_SCS_SpecificCarrier_k0[j] =  NR_SCS_SpecificCarrier__k0_n0;
-                break;
-
-              case 6:
-                NRRRC_CONFIGURATION_REQ (msg_p).UL_SCS_SpecificCarrier_k0[j] =  NR_SCS_SpecificCarrier__k0_n6;
-                break;
-
-               default:
-                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for UL_SCS_SpecificCarrier_k0 choice: -6,0,6 !\n",
-                             RC.config_file_name, i, UL_SCS_SpecificCarrier_k0);
-                break;
-            }
-
             NRRRC_CONFIGURATION_REQ (msg_p).UL_carrierBandwidth[j] = UL_carrierBandwidth;
             if ((UL_carrierBandwidth <1) || (UL_carrierBandwidth > 275)){
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for UL_carrierBandwidth choice: 1..275 !\n",
               RC.config_file_name, i, UL_carrierBandwidth);
             }
-
 
             /////////////////////////////////NR BWP-UplinkCommon///////////////////////////
             NRRRC_CONFIGURATION_REQ (msg_p).UL_locationAndBandwidth[j] = UL_locationAndBandwidth;
@@ -1081,6 +1059,38 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for UL_BWP_prefix_type choice: NORMAL or EXTENDED !\n",
                            RC.config_file_name, i, UL_BWP_prefix_type);
             }  
+
+            if (strcmp(UL_timeAlignmentTimerCommon,"ms500")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_timeAlignmentTimerCommon[j] = NR_TimeAlignmentTimer_ms500;
+            }else if (strcmp(UL_timeAlignmentTimerCommon,"ms750")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_timeAlignmentTimerCommon[j] = NR_TimeAlignmentTimer_ms750;
+            }else if (strcmp(UL_timeAlignmentTimerCommon,"ms1280")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_timeAlignmentTimerCommon[j] = NR_TimeAlignmentTimer_ms1280;
+            }else if (strcmp(UL_timeAlignmentTimerCommon,"ms1920")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_timeAlignmentTimerCommon[j] = NR_TimeAlignmentTimer_ms1920;
+            }else if (strcmp(UL_timeAlignmentTimerCommon,"ms2560")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_timeAlignmentTimerCommon[j] = NR_TimeAlignmentTimer_ms2560;
+            }else if (strcmp(UL_timeAlignmentTimerCommon,"ms5120")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_timeAlignmentTimerCommon[j] = NR_TimeAlignmentTimer_ms5120;
+            }else if (strcmp(UL_timeAlignmentTimerCommon,"ms10240")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_timeAlignmentTimerCommon[j] = NR_TimeAlignmentTimer_ms10240;
+            }else if (strcmp(UL_timeAlignmentTimerCommon,"infinity")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).UL_timeAlignmentTimerCommon[j] = NR_TimeAlignmentTimer_infinity;
+            }else { 
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for UL_timeAlignmentTimerCommon choice: ms500,ms750,ms1280,ms1920,ms2560,ms5120,ms10240,infinity!\n",
+                           RC.config_file_name, i, UL_timeAlignmentTimerCommon);
+            }
+
+            if (strcmp(ServingCellConfigCommon_n_TimingAdvanceOffset,"n0")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_n_TimingAdvanceOffset[j] = NR_ServingCellConfigCommon__n_TimingAdvanceOffset_n0;
+            }else if (strcmp(ServingCellConfigCommon_n_TimingAdvanceOffset,"n25600")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_n_TimingAdvanceOffset[j] = NR_ServingCellConfigCommon__n_TimingAdvanceOffset_n25600;
+            }else if (strcmp(ServingCellConfigCommon_n_TimingAdvanceOffset,"n39936")==0) {
+              NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_n_TimingAdvanceOffset[j] = NR_ServingCellConfigCommon__n_TimingAdvanceOffset_n39936;
+            }else { 
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for ServingCellConfigCommon_n_TimingAdvanceOffset choice n0,n25600,n39936!\n",
+                           RC.config_file_name, i, ServingCellConfigCommon_n_TimingAdvanceOffset);
+            }        
 
             if (strcmp(ServingCellConfigCommon_ssb_PositionsInBurst_PR,"shortBitmap")==0) {
               NRRRC_CONFIGURATION_REQ (msg_p).ServingCellConfigCommon_ssb_PositionsInBurst_PR[j] = NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_shortBitmap;
@@ -1179,21 +1189,21 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }
 
             if (strcmp(dl_UL_TransmissionPeriodicity,"ms0p5")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = NR_TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms0p5;
+              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms0p5;
             }else if (strcmp(dl_UL_TransmissionPeriodicity,"ms0p625")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = NR_TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms0p625;
+              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms0p625;
             }else if (strcmp(dl_UL_TransmissionPeriodicity,"ms1")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = NR_TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms1;
+              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms1;
             }else if (strcmp(dl_UL_TransmissionPeriodicity,"ms1p25")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = NR_TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms1p25;
+              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms1p25;
             }else if (strcmp(dl_UL_TransmissionPeriodicity,"ms2")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = NR_TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms2;
+              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms2;
             }else if (strcmp(dl_UL_TransmissionPeriodicity,"ms2p5")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = NR_TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms2p5;
+              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms2p5;
             }else if (strcmp(dl_UL_TransmissionPeriodicity,"ms5")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = NR_TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms5;
+              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms5;
             }else if (strcmp(dl_UL_TransmissionPeriodicity,"ms10")==0) {
-              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = NR_TDD_UL_DL_ConfigCommon__dl_UL_TransmissionPeriodicity_ms10;    
+              NRRRC_CONFIGURATION_REQ (msg_p).dl_UL_TransmissionPeriodicity[j] = NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms10;
             }else { 
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for dl_UL_TransmissionPeriodicity choice: minusinfinity,ms0p5,ms0p625,ms1,ms1p25,ms2,ms2p5,ms5,ms10 !\n",
                            RC.config_file_name, i, dl_UL_TransmissionPeriodicity);
@@ -1823,7 +1833,7 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
             /////////////////////////////////NR PUSCH-TimeDomainResourceAllocation///////////////////////////
             NRRRC_CONFIGURATION_REQ (msg_p).PUSCH_TimeDomainResourceAllocation_k2[j] = PUSCH_TimeDomainResourceAllocation_k2;
-            if ((PUSCH_TimeDomainResourceAllocation_k2 <0) || (PUSCH_TimeDomainResourceAllocation_k2>7)){
+            if ((PUSCH_TimeDomainResourceAllocation_k2 <0) || (PUSCH_TimeDomainResourceAllocation_k2>32)){
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for PUSCH_TimeDomainResourceAllocation_k2 choice: 0..7 !\n",
                            RC.config_file_name, i, PUSCH_TimeDomainResourceAllocation_k2);
             }
@@ -1837,7 +1847,19 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
                            RC.config_file_name, i, PUSCH_TimeDomainResourceAllocation_mappingType);
             }
 
+            NRRRC_CONFIGURATION_REQ (msg_p).PUSCH_TimeDomainResourceAllocation_startSymbolAndLength[j] = PUSCH_TimeDomainResourceAllocation_startSymbolAndLength;
+            if ((PUSCH_TimeDomainResourceAllocation_startSymbolAndLength <0) || (PUSCH_TimeDomainResourceAllocation_startSymbolAndLength>127)){
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for PUSCH_TimeDomainResourceAllocation_startSymbolAndLength choice: 0..127 !\n",
+                           RC.config_file_name, i, PUSCH_TimeDomainResourceAllocation_startSymbolAndLength);
+            }
+
             /////////////////////////////////NR PUCCH-ConfigCommon///////////////////////////
+            NRRRC_CONFIGURATION_REQ (msg_p).pucch_ResourceCommon[j] = pucch_ResourceCommon;
+            if ((pucch_ResourceCommon <0) || (pucch_ResourceCommon>15)){
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for pucch_ResourceCommon choice: 0..15 !\n",
+                           RC.config_file_name, i, pucch_ResourceCommon);
+            }
+
             if (strcmp(pucch_GroupHopping , "neither") == 0){
               NRRRC_CONFIGURATION_REQ (msg_p).pucch_GroupHopping[j] =  NR_PUCCH_ConfigCommon__pucch_GroupHopping_neither;
             }else if (strcmp(pucch_GroupHopping , "enable") == 0){
@@ -1847,6 +1869,12 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }else {
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for pucch_GroupHopping !\n",
                            RC.config_file_name, i, pucch_GroupHopping);
+            }
+
+            NRRRC_CONFIGURATION_REQ (msg_p).hoppingId[j] = hoppingId;
+            if ((hoppingId <0) || (hoppingId>1024)){
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for hoppingId choice: 0..1024 !\n",
+                           RC.config_file_name, i, hoppingId);
             }
 
             NRRRC_CONFIGURATION_REQ (msg_p).p0_nominal[j] = p0_nominal;
@@ -1869,6 +1897,12 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }else {
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%s\" for PDSCH_TimeDomainResourceAllocation_mappingType !\n",
                            RC.config_file_name, i, PDSCH_TimeDomainResourceAllocation_mappingType);
+            }
+
+            NRRRC_CONFIGURATION_REQ (msg_p).PDSCH_TimeDomainResourceAllocation_startSymbolAndLength[j] = PDSCH_TimeDomainResourceAllocation_startSymbolAndLength;
+            if ((PDSCH_TimeDomainResourceAllocation_startSymbolAndLength <0) || (PDSCH_TimeDomainResourceAllocation_startSymbolAndLength>127)){
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for PDSCH_TimeDomainResourceAllocation_startSymbolAndLength choice: 0..127 !\n",
+                           RC.config_file_name, i, PDSCH_TimeDomainResourceAllocation_startSymbolAndLength);
             }
 
             //////////////////////////////////NR RateMatchPattern///////////////////////////
@@ -1959,6 +1993,18 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }
 
             //////////////////////////////////NR PDCCH-ConfigCommon///////////////////////////
+            NRRRC_CONFIGURATION_REQ (msg_p).controlResourceSetZero[j] = controlResourceSetZero;
+            if ((controlResourceSetZero <0) || (controlResourceSetZero>15)){
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for controlResourceSetZero choice: 0..15 !\n",
+                           RC.config_file_name, i, controlResourceSetZero);
+            }
+
+            NRRRC_CONFIGURATION_REQ (msg_p).searchSpaceZero[j] = searchSpaceZero;
+            if ((searchSpaceZero <0) || (searchSpaceZero>15)){
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for searchSpaceZero choice: 0..15 !\n",
+                           RC.config_file_name, i, searchSpaceZero);
+            }
+
             NRRRC_CONFIGURATION_REQ (msg_p).searchSpaceSIB1[j] = searchSpaceSIB1;
             if ((searchSpaceSIB1 <0) || (searchSpaceSIB1>39)){
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for searchSpaceSIB1 choice: 0..39 !\n",
@@ -1981,12 +2027,6 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             if ((ra_SearchSpace <0) || (ra_SearchSpace>39)){
               AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for ra_SearchSpace choice: 0..39 !\n",
                            RC.config_file_name, i, ra_SearchSpace);
-            }
-
-            NRRRC_CONFIGURATION_REQ (msg_p).rach_ra_ControlResourceSet[j] = rach_ra_ControlResourceSet;
-            if ((rach_ra_ControlResourceSet <0) || (rach_ra_ControlResourceSet>11)){
-              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for rach_ra_ControlResourceSet choice: 0..11 !\n",
-                           RC.config_file_name, i, rach_ra_ControlResourceSet);
             }
 
             //////////////////////////////////NR PDCCH commonControlResourcesSets///////////////////////////
@@ -2070,6 +2110,12 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
               NRRRC_CONFIGURATION_REQ (msg_p).tci_PresentInDCI[j] = TRUE;
             }
 
+            NRRRC_CONFIGURATION_REQ (msg_p).PDCCH_DMRS_ScramblingID[j] = PDCCH_DMRS_ScramblingID;
+            if ((PDCCH_DMRS_ScramblingID <0) || (PDCCH_DMRS_ScramblingID>65535)){
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for PDCCH_DMRS_ScramblingID choice: 0..65535 !\n",
+                           RC.config_file_name, i, PDCCH_DMRS_ScramblingID);
+            }
+
             //////////////////////////////////NR PDCCH commonSearchSpaces///////////////////////////
             NRRRC_CONFIGURATION_REQ (msg_p).SearchSpaceId[j] = SearchSpaceId;
             if ((SearchSpaceId <0) || (SearchSpaceId>39)){
@@ -2086,69 +2132,69 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             if (strcmp(SearchSpace_monitoringSlotPeriodicityAndOffset_choice , "sl1") == 0){
               NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1;
               
-              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_sl1[j] = 0;                 
+              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_value[j] = 0;                 
 
             }else if (strcmp(SearchSpace_monitoringSlotPeriodicityAndOffset_choice , "sl2") == 0){
               NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl2;
               
-              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_sl2[j] = SearchSpace_monitoringSlotPeriodicityAndOffset_sl2;
-              if ((SearchSpace_monitoringSlotPeriodicityAndOffset_sl2 <0) || (SearchSpace_monitoringSlotPeriodicityAndOffset_sl2>1)){
-                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SearchSpace_monitoringSlotPeriodicityAndOffset_sl2 choice: 0..1 !\n",
-                             RC.config_file_name, i, SearchSpace_monitoringSlotPeriodicityAndOffset_sl2);
+              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_value[j] = SearchSpace_monitoringSlotPeriodicityAndOffset_value;
+              if ((SearchSpace_monitoringSlotPeriodicityAndOffset_value <0) || (SearchSpace_monitoringSlotPeriodicityAndOffset_value>1)){
+                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SearchSpace_monitoringSlotPeriodicityAndOffset_value choice: 0..1 !\n",
+                             RC.config_file_name, i, SearchSpace_monitoringSlotPeriodicityAndOffset_value);
               }   
 
             }else if (strcmp(SearchSpace_monitoringSlotPeriodicityAndOffset_choice , "sl4") == 0){
               NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl4;
             
-              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_sl4[j] = SearchSpace_monitoringSlotPeriodicityAndOffset_sl4;
-              if ((SearchSpace_monitoringSlotPeriodicityAndOffset_sl4 <0) || (SearchSpace_monitoringSlotPeriodicityAndOffset_sl4>3)){
-                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SearchSpace_monitoringSlotPeriodicityAndOffset_sl4 choice: 0..3 !\n",
-                             RC.config_file_name, i, SearchSpace_monitoringSlotPeriodicityAndOffset_sl4);
+              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_value[j] = SearchSpace_monitoringSlotPeriodicityAndOffset_value;
+              if ((SearchSpace_monitoringSlotPeriodicityAndOffset_value <0) || (SearchSpace_monitoringSlotPeriodicityAndOffset_value>3)){
+                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SearchSpace_monitoringSlotPeriodicityAndOffset_value choice: 0..3 !\n",
+                             RC.config_file_name, i, SearchSpace_monitoringSlotPeriodicityAndOffset_value);
               }                 
 
             }else if (strcmp(SearchSpace_monitoringSlotPeriodicityAndOffset_choice , "sl5") == 0){
               NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl5;
             
-              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_sl5[j] = SearchSpace_monitoringSlotPeriodicityAndOffset_sl5;
-              if ((SearchSpace_monitoringSlotPeriodicityAndOffset_sl5 <0) || (SearchSpace_monitoringSlotPeriodicityAndOffset_sl5>4)){
-                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SearchSpace_monitoringSlotPeriodicityAndOffset_sl5 choice: 0..4 !\n",
-                             RC.config_file_name, i, SearchSpace_monitoringSlotPeriodicityAndOffset_sl5);
+              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_value[j] = SearchSpace_monitoringSlotPeriodicityAndOffset_value;
+              if ((SearchSpace_monitoringSlotPeriodicityAndOffset_value <0) || (SearchSpace_monitoringSlotPeriodicityAndOffset_value>4)){
+                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SearchSpace_monitoringSlotPeriodicityAndOffset_value choice: 0..4 !\n",
+                             RC.config_file_name, i, SearchSpace_monitoringSlotPeriodicityAndOffset_value);
               }   
 
             }else if (strcmp(SearchSpace_monitoringSlotPeriodicityAndOffset_choice , "sl8") == 0){
               NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl8;
             
-              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_sl8[j] = SearchSpace_monitoringSlotPeriodicityAndOffset_sl8;
-              if ((SearchSpace_monitoringSlotPeriodicityAndOffset_sl8 <0) || (SearchSpace_monitoringSlotPeriodicityAndOffset_sl8>7)){
-                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SearchSpace_monitoringSlotPeriodicityAndOffset_sl8 choice: 0..7 !\n",
-                             RC.config_file_name, i, SearchSpace_monitoringSlotPeriodicityAndOffset_sl8);
+              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_value[j] = SearchSpace_monitoringSlotPeriodicityAndOffset_value;
+              if ((SearchSpace_monitoringSlotPeriodicityAndOffset_value <0) || (SearchSpace_monitoringSlotPeriodicityAndOffset_value>7)){
+                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SearchSpace_monitoringSlotPeriodicityAndOffset_value choice: 0..7 !\n",
+                             RC.config_file_name, i, SearchSpace_monitoringSlotPeriodicityAndOffset_value);
               }   
 
             }else if (strcmp(SearchSpace_monitoringSlotPeriodicityAndOffset_choice , "sl10") == 0){
               NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl10;
             
-              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_sl10[j] = SearchSpace_monitoringSlotPeriodicityAndOffset_sl10;
-              if ((SearchSpace_monitoringSlotPeriodicityAndOffset_sl10 <0) || (SearchSpace_monitoringSlotPeriodicityAndOffset_sl10>9)){
-                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SearchSpace_monitoringSlotPeriodicityAndOffset_sl10 choice: 0..9 !\n",
-                             RC.config_file_name, i, SearchSpace_monitoringSlotPeriodicityAndOffset_sl10);
+              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_value[j] = SearchSpace_monitoringSlotPeriodicityAndOffset_value;
+              if ((SearchSpace_monitoringSlotPeriodicityAndOffset_value <0) || (SearchSpace_monitoringSlotPeriodicityAndOffset_value>9)){
+                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SearchSpace_monitoringSlotPeriodicityAndOffset_value choice: 0..9 !\n",
+                             RC.config_file_name, i, SearchSpace_monitoringSlotPeriodicityAndOffset_value);
               } 
 
             }else if (strcmp(SearchSpace_monitoringSlotPeriodicityAndOffset_choice , "sl16") == 0){
               NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl16;
             
-              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_sl16[j] = SearchSpace_monitoringSlotPeriodicityAndOffset_sl16;
-              if ((SearchSpace_monitoringSlotPeriodicityAndOffset_sl16 <0) || (SearchSpace_monitoringSlotPeriodicityAndOffset_sl16>15)){
-                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SearchSpace_monitoringSlotPeriodicityAndOffset_sl16 choice: 0..15 !\n",
-                             RC.config_file_name, i, SearchSpace_monitoringSlotPeriodicityAndOffset_sl16);
+              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_value[j] = SearchSpace_monitoringSlotPeriodicityAndOffset_value;
+              if ((SearchSpace_monitoringSlotPeriodicityAndOffset_value <0) || (SearchSpace_monitoringSlotPeriodicityAndOffset_value>15)){
+                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SearchSpace_monitoringSlotPeriodicityAndOffset_value choice: 0..15 !\n",
+                             RC.config_file_name, i, SearchSpace_monitoringSlotPeriodicityAndOffset_value);
               } 
 
             }else if (strcmp(SearchSpace_monitoringSlotPeriodicityAndOffset_choice , "sl20") == 0){
               NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_choice[j] =  NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl20;
             
-              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_sl20[j] = SearchSpace_monitoringSlotPeriodicityAndOffset_sl20;
-              if ((SearchSpace_monitoringSlotPeriodicityAndOffset_sl20 <0) || (SearchSpace_monitoringSlotPeriodicityAndOffset_sl20>19)){
-                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SearchSpace_monitoringSlotPeriodicityAndOffset_sl20 choice: 0..19 !\n",
-                             RC.config_file_name, i, SearchSpace_monitoringSlotPeriodicityAndOffset_sl20);
+              NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_monitoringSlotPeriodicityAndOffset_value[j] = SearchSpace_monitoringSlotPeriodicityAndOffset_value;
+              if ((SearchSpace_monitoringSlotPeriodicityAndOffset_value <0) || (SearchSpace_monitoringSlotPeriodicityAndOffset_value>19)){
+                AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SearchSpace_monitoringSlotPeriodicityAndOffset_value choice: 0..19 !\n",
+                             RC.config_file_name, i, SearchSpace_monitoringSlotPeriodicityAndOffset_value);
               } 
 
             }else if (strcmp(SearchSpace_monitoringSlotPeriodicityAndOffset_choice , "UNABLE") == 0){
@@ -2159,7 +2205,12 @@ int RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
                            RC.config_file_name, i, SearchSpace_monitoringSlotPeriodicityAndOffset_choice);
             }// End if (strcmp(SearchSpace_monitoringSlotPeriodicityAndOffset_choice , "sl1")
 
-            
+            NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_duration[j] = SearchSpace_duration;
+            if ((SearchSpace_duration <2) || (SearchSpace_duration>2559)){
+              AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for SearchSpace_duration choice: 2..2559 !\n",
+                           RC.config_file_name, i, SearchSpace_duration);
+            }
+
             switch(SearchSpace_nrofCandidates_aggregationLevel1){
               case 0:
                 NRRRC_CONFIGURATION_REQ (msg_p).SearchSpace_nrofCandidates_aggregationLevel1[j] =  NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;

@@ -40,7 +40,7 @@
 #ifdef CMAKER
 #include "SystemInformationBlockType2.h"
 #else
-#include "RRC/LITE/MESSAGES/SystemInformationBlockType2.h"
+#include "RRC/LTE/MESSAGES/SystemInformationBlockType2.h"
 #endif
 
 #define IPV4_STR_ADDR_TO_INT_NWBO(AdDr_StR,NwBo,MeSsAgE ) do {\

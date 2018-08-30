@@ -32,7 +32,7 @@
 #ifndef __TRANSPORT_ENB__H__
 #define __TRANSPORT_ENB__H__
 #include "transport_common.h"
-#include "PHY/defs_eNB.h"
+//#include "PHY/defs_eNB.h"
 #include "dci.h"
 #include "mdci.h"
 #include "uci_common.h"
@@ -124,6 +124,15 @@ typedef struct {
   uint8_t first_layer;
   /// codeword this transport block is mapped to
   uint8_t codeword;
+#ifdef PHY_TX_THREAD
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  /// indicator that this DLSCH corresponds to SIB1-BR, needed for c_init for scrambling
+  uint8_t sib1_br_flag;
+  /// initial absolute subframe (see 36.211 Section 6.3.1), needed for c_init for scrambling
+  uint16_t i0;
+  CEmode_t CEmode;
+#endif
+#endif
 } LTE_DL_eNB_HARQ_t;
 
 
@@ -131,13 +140,17 @@ typedef struct {
   /// TX buffers for UE-spec transmission (antenna ports 5 or 7..14, prior to precoding)
   int32_t *txdataF[8];
   /// beamforming weights for UE-spec transmission (antenna ports 5 or 7..14), for each codeword, maximum 4 layers?
-  int32_t **ue_spec_bf_weights[4]; 
+  int32_t **ue_spec_bf_weights[4];
   /// dl channel estimates (estimated from ul channel estimates)
   int32_t **calib_dl_ch_estimates;
   /// Allocated RNTI (0 means DLSCH_t is not currently used)
   uint16_t rnti;
   /// Active flag for baseband transmitter processing
+#ifdef PHY_TX_THREAD
+  uint8_t active[10];
+#else
   uint8_t active;
+#endif
   /// HARQ process mask, indicates which processes are currently active
   uint16_t harq_mask;
   /// Indicator of TX activation per subframe.  Used during PUCCH detection for ACK/NAK.
@@ -145,7 +158,7 @@ typedef struct {
   /// First CCE of last PDSCH scheduling per subframe.  Again used during PUCCH detection for ACK/NAK.
   uint8_t nCCE[10];
   /// Process ID's per subframe.  Used to associate received ACKs on PUSCH/PUCCH to DLSCH harq process ids
-  uint8_t harq_ids[10];
+  uint8_t harq_ids[2][10];
   /// Window size (in outgoing transport blocks) for fine-grain rate adaptation
   uint8_t ra_window_size;
   /// First-round error threshold for fine-grain rate adaptation
@@ -168,12 +181,14 @@ typedef struct {
   int16_t sqrt_rho_a;
   /// amplitude of PDSCH (compared to RS) in symbols containing pilots
   int16_t sqrt_rho_b;
-#ifdef Rel14
+#ifndef PHY_TX_THREAD
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// indicator that this DLSCH corresponds to SIB1-BR, needed for c_init for scrambling
   uint8_t sib1_br_flag;
   /// initial absolute subframe (see 36.211 Section 6.3.1), needed for c_init for scrambling
   uint16_t i0;
   CEmode_t CEmode;
+#endif
 #endif
 } LTE_eNB_DLSCH_t;
 
@@ -205,7 +220,7 @@ typedef struct {
   /// is done after a new scheduling
   uint16_t previous_first_rb;
   /// Current Number of RBs
-  uint16_t nb_rb; 
+  uint16_t nb_rb;
   /// Current Modulation order
   uint8_t Qm;
   /// Transport block size
@@ -332,7 +347,7 @@ typedef struct {
   uint8_t     tdd_bundling;
   /// Received Energy
   uint32_t stat;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// non BL/CE, CEmodeA, CEmodeB
   UE_type_t ue_type;
   /// Indicates the symbols that are left empty due to eMTC retuning.
@@ -456,8 +471,6 @@ typedef struct {
   /// allocated CBA RNTI for this ulsch
   uint16_t cba_rnti[4];//NUM_MAX_CBA_GROUP];
 } LTE_eNB_ULSCH_t;
-
-
 
 
 /**@}*/

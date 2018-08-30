@@ -97,21 +97,22 @@ int nr_rrc_mac_config_req_ue(
             
         }
 
-        if(mac_cell_group_configP->cs_RNTI != NULL ){
-            switch(mac_cell_group_configP->cs_RNTI->present){
+        if(phy_cell_group_configP->cs_RNTI != NULL ){
+            switch(phy_cell_group_configP->cs_RNTI->present){
                 case NR_SetupRelease_RNTI_Value_PR_NOTHING:
                     break;
                 case NR_SetupRelease_RNTI_Value_PR_release:
                     mac->cs_RNTI = NULL;
                     break;
                 case NR_SetupRelease_RNTI_Value_PR_setup:
-                    mac->cs_RNTI = &mac_cell_group_configP->cs_RNTI->choice.setup;
+                    mac->cs_RNTI = &phy_cell_group_configP->cs_RNTI->choice.setup;
                     break;
                 default:
                     break;
             }
             
         }
+	
     }
     
     if(phy_cell_group_configP != NULL ){

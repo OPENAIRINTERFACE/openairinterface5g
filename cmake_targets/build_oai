@@ -42,12 +42,13 @@ conf_nvram_path=$OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf
 
 MSC_GEN="False"
 XFORMS="True"
+UE_EXPANSION="False"
 PRINT_STATS="False"
 VCD_TIMING="False"
 DEADLINE_SCHEDULER_FLAG_USER="False"
 FORCE_DEADLINE_SCHEDULER_FLAG_USER=""
 CPU_AFFINITY_FLAG_USER="False" #Only valid when lowlatecy flag is set to False
-REL="Rel14"
+REL="Rel15"
 NR_REL="NR_Rel15"
 HW="None"
 TP="None"
@@ -59,7 +60,7 @@ CFLAGS_PROCESSOR_USER=""
 RUN_GROUP=0
 TEST_CASE_GROUP=""
 BUILD_DOXYGEN=0
-T_TRACER="False"
+T_TRACER="True"
 DISABLE_HARDWARE_DEPENDENCY="False"
 CMAKE_BUILD_TYPE=""
 CMAKE_CMD="$CMAKE"
@@ -71,7 +72,7 @@ USRP_REC_PLAY="False"
 BUILD_ECLIPSE=0
 NR="False"
 UE_NAS_USE_TUN="False"
-
+BASIC_SIMULATOR=0
 trap handle_ctrl_c INT
 
 function print_help() {
@@ -120,8 +121,6 @@ Options
 -t | --transport protocol
    ETHERNET , None
    Adds this trasport protocol support in compilation
---oaisim
-   Makes the oaisim simulator. Hardware will be defaulted to \"None\".
 --phy_simulators
    Makes the unitary tests Layer 1 simulators
 --core_simulators
@@ -133,12 +132,12 @@ Options
 -V | --vcd
    Adds a debgging facility to the binary files: GUI with major internal synchronization events
 -x | --xforms
-   Adds a software oscilloscope feature to the produced binaries. If oaisim, then enable PRINT_STATS.
+   Adds a software oscilloscope feature to the produced binaries. 
 --install-system-files
    Install OpenArInterface required files in Linux system
    (will ask root password)
 --noS1 
-   Compiles oaisim or lte-softmodem without S1 interface, using direct link to IP instead
+   Compiles lte-softmodem without S1 interface, using direct link to IP instead
 --verbose-compile
    Shows detailed compilation instructions in makefile
 --cflags_processor
@@ -151,8 +150,8 @@ Options
    Enable deadline scheduler of Linux kernel (>=3.14.x). 
 --disable-cpu-affinity
    Disables CPU Affinity between UHD/TX/RX Threads (Valid only when deadline scheduler is disabled). By defaulT, CPU Affinity is enabled when not using deadline scheduler. It is enabled only with >2 CPUs. For eNB, CPU_0-> Device library (UHD), CPU_1->TX Threads, CPU_2...CPU_MAX->Rx Threads. For UE, CPU_0->Device Library(UHD), CPU_1..CPU_MAX -> All the UE threads
---T-tracer
-   Enables the T tracer.
+--disable-T-Tracer
+   Disables the T tracer.
 --disable-hardware-dependency
    Disable HW dependency during installation
 --ue-autotest-trace
@@ -169,12 +168,12 @@ Options
    Build for I/Q record-playback modes
 --ue-nas-use-tun
    Use TUN devices for the UEs instead of ue_ip.ko
+--basic-simulator
+   Generates a basic [1 UE + 1 eNB + no channel] simulator.
+   See targets/ARCH/tcp_bridge/README.tcp_bridge_oai for documentation.
 Usage (first build):
- oaisim (eNB + UE): ./build_oai -I  --oaisim -x --install-system-files
- Eurecom EXMIMO + COTS UE : ./build_oai -I  --eNB -x --install-system-files
  NI/ETTUS B201  + COTS UE : ./build_oai -I  --eNB -x --install-system-files -w USRP
 Usage (Regular):
- oaisim : ./build_oai --oaisim -x 
  Eurecom EXMIMO + OAI ENB : ./build_oai --eNB -x 
  NI/ETTUS B201  + OAI ENB : ./build_oai --eNB -x -w USRP"
 }
@@ -230,8 +229,12 @@ function main() {
             NR="True"
             echo_info "Will compile NR UE"
             shift;;
+       --mu)
+            UE_EXPANSION="True"
+            echo_info "Will compile with UE_EXPANSION"
+            shift;;
        --UE-conf-nvram)
-            conf_nvram_path=$(readlink -f "$1")
+            conf_nvram_path=$(readlink -f $2)
             shift 2;;
         --UE-gen-nvram)
             gen_nvram_path=$(readlink -f $2)
@@ -269,10 +272,6 @@ function main() {
 		echo_info "Setting transport protocol to: $TP"		
 	    fi
             shift 2;;
-	--oaisim)
-            oaisim=1
-            echo_info "Will compile oaisim and drivers nasmesh, ..."
-            shift;;
        --phy_simulators)
             SIMUS_PHY=1
             echo_info "Will compile dlsim, ulsim, ..."
@@ -340,9 +339,9 @@ function main() {
             CPU_AFFINITY_FLAG_USER="False"
             echo_info "Disabling CPU Affinity (only valid when not using deadline scheduler)"
             shift 1;;
-       --T-tracer)
-            T_TRACER="True"
-            echo_info "Enabling the T tracer"
+       --disable-T-Tracer)
+            T_TRACER="False"
+            echo_info "Disabling the T tracer"
             shift 1;;
        --disable-hardware-dependency)
             echo_info "Disabling hardware dependency for compiling software"
@@ -384,6 +383,10 @@ function main() {
         --ue-nas-use-tun)
             UE_NAS_USE_TUN="True"
             echo_info "Enabling UE NAS TUN device usage instead of ue_ip.ko"
+            shift 1;;
+        --basic-simulator)
+            BASIC_SIMULATOR=1
+            echo_info "Compiling the basic simulator"
             shift 1;;
         -h | --help)
             print_help
@@ -526,16 +529,6 @@ function main() {
     check_install_additional_tools
   fi
 
-  if [ "$oaisim" = "1" ] ; then
-      #to be discussed
-      # there is no RF device  transport protocol 
-      HW="None" 
-      TP="ETHERNET"
-      
-      if [ "$XFORMS" == "True" ] ; then 
-	  PRINT_STATS="True"
-      fi 
-  fi
   
   
   echo_info "3. building the compilation directives ..."
@@ -564,7 +557,9 @@ function main() {
          exec=lte-uesoftmodem
        fi
   fi
-
+  if [ "$T_TRACER" =  "False" ] ; then
+      lte_build_dir=${lte_build_dir}_noLOG
+  fi
 # configuration module libraries, one currently available, using libconfig 
   config_libconfig_shlib=params_libconfig
   
@@ -582,6 +577,9 @@ function main() {
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
     echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
     echo "set ( XFORMS $XFORMS )"                  >>  $cmake_file
+    echo "set ( UE_EXPANSION $UE_EXPANSION )"      >>  $cmake_file
+#    echo "set ( PHY_TX_THREAD $UE_EXPANSION )"     >>  $cmake_file
+    echo "set ( PRE_SCD_THREAD $UE_EXPANSION )"    >>  $cmake_file
     echo "set ( RRC_ASN1_VERSION \"${REL}\")"      >>  $cmake_file
     echo "set ( NR_RRC_ASN1_VERSION \"${NR_REL}\")"      >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
@@ -732,123 +730,7 @@ function main() {
     cp $OPENAIR_DIR/cmake_targets/tools/init_exmimo2 $dbin
   fi
 
-  # oaisim compilation
-  ###############
-  if [ "$oaisim" = "1" ] ; then
-    dconf=$OPENAIR_DIR/targets/bin
-      if [ "$NOS1" =  "1" ] ; then
-	  oaisim_build_dir=oaisim_noS1_build_oai
-	  oaisim_exec=oaisim_nos1
-      else
-	  oaisim_build_dir=oaisim_build_oai
-	  oaisim_exec=oaisim
-      fi
-    
-    echo_info "Compiling $oaisim_exec ($oaisim_build_dir)"
-    cmake_file=$DIR/$oaisim_build_dir/CMakeLists.txt
-    cp $DIR/$oaisim_build_dir/CMakeLists.template $cmake_file
-    echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
-    echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
-    echo "set ( XFORMS $XFORMS )" >>  $cmake_file
-    echo "set ( PRINT_STATS $PRINT_STATS )" >>  $cmake_file
-    echo "set ( RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
-    echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
-    echo "set ( T_TRACER $T_TRACER )"          >>  $cmake_file
-    echo "set ( UE_NAS_USE_TUN $UE_NAS_USE_TUN )" >>  $cmake_file
-    echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
-    [ "$CLEAN" = "1" ] && rm -rf $DIR/$oaisim_build_dir/build
-    mkdir -p $DIR/$oaisim_build_dir/build
-    cd $DIR/$oaisim_build_dir/build
-    eval $CMAKE_CMD
-    compilations \
-	  $oaisim_build_dir $oaisim_exec \
-	  $oaisim_exec $dbin/$oaisim_exec.$REL
-    compilations \
-	  $oaisim_build_dir $config_libconfig_shlib \
-	  lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
-    compilations \
-          $oaisim_build_dir coding \
-          libcoding.so $dbin/libcoding.so
 
-    if [ "$NOS1" != "1" ] ; then
-
-	[ "$CLEAN" = "1" ] && rm -rf $DIR/at_commands/build
-    	echo_info "Compiling at_nas_ue"
-	mkdir -p $DIR/at_commands/build
-	cd $DIR/at_commands/build
-	eval $CMAKE_CMD
-	compilations \
-	    at_commands at_nas_ue \
-	    at_nas_ue $dbin/at_nas_ue
-
-	# ue_ip driver compilation
-	echo_info "Compiling UE specific part (ue_ip driver and usim tools)"
-	compilations \
-	    oaisim_build_oai ue_ip \
-	    CMakeFiles/ue_ip/ue_ip.ko $dbin/ue_ip.ko
-
-	[ "$CLEAN" = "1" ] && rm -rf $DIR/nas_sim_tools/build
-	mkdir -p $DIR/nas_sim_tools/build
-	cd $DIR/nas_sim_tools/build
-	eval $CMAKE_CMD
-	compilations \
-	    nas_sim_tools usim \
-	    usim $dbin/usim
-	compilations \
-	    nas_sim_tools nvram \
-	    nvram $dbin/nvram
-	compilations \
-        nas_sim_tools conf2uedata \
-        conf2uedata $dbin/conf2uedata
-
-	# generate USIM data
-	if [ -f $dbin/conf2uedata ]; then
-	    install_nas_tools $conf_nvram_path $gen_nvram_path
-	else
-	    echo_warning "not generated UE NAS files: binaries not found"
-	fi
-    else
-
-	compilations \
-	    $oaisim_build_dir rb_tool \
-	    rb_tool $dbin/rb_tool
-
-	# nasmesh driver compilation
-	compilations \
-	    $oaisim_build_dir nasmesh \
-	    CMakeFiles/nasmesh/nasmesh.ko $dbin/nasmesh.ko
-
-	#oai_nw_drv
-	#compilations \
-	#    $oaisim_build_dir oai_nw_drv \
-	#    CMakeFiles/oai_nw_drv/oai_nw_drv.ko $dbin/oai_nw_drv.ko
-    fi
-
-    if [ "$TP" == "ETHERNET" ] ; then
-	compilations \
-	    $oaisim_build_dir oai_eth_transpro \
-	    liboai_eth_transpro.so $dbin/liboai_eth_transpro.so.$REL
-	ln -sf liboai_eth_transpro.so liboai_transpro.so
-	ln -sf $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
-	echo_info "liboai_transpro.so is linked with ETHERNET library"	 
-    fi
-      
-    cmake_file=$DIR/oaisim_mme_build_oai/CMakeLists.txt
-    cp $DIR/oaisim_mme_build_oai/CMakeLists.template $cmake_file
-    echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
-    echo "set ( XFORMS $XFORMS )" >>  $cmake_file
-    echo "set ( RRC_ASN1_VERSION \"${REL}\")" >>  $cmake_file
-    echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )" >>  $cmake_file
-    echo "set ( T_TRACER $T_TRACER )"        >>  $cmake_file
-    echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../CMakeLists.txt)' >> $cmake_file
-    #[ "$CLEAN" = "1" ] && rm -rf $DIR/oaisim_mme_build_oai/build
-    #mkdir -p $DIR/oaisim_mme_build_oai/build
-    #cd $DIR/oaisim_mme_build_oai/build
-    #eval $CMAKE_CMD
-    #compilations \
-	#  oaisim_mme_build_oai oaisim_mme \
-	#  oaisim_mme $dbin/oaisim_mme.$REL
-  fi
 
   # Telnet server compilation
   #####################
@@ -1030,6 +912,124 @@ fi
     wait
   else
     echo_info "10. Bypassing the Tests ..."
+  fi
+
+  # basic simulator
+  #####################
+  if [ "$BASIC_SIMULATOR" = "1" ]; then
+    echo_info "Build basic simulator"
+    [ "$CLEAN" = "1" ] && rm -rf $OPENAIR_DIR/cmake_targets/basic_simulator
+    [ "$CLEAN" = "1" ] && rm -rf $OPENAIR_DIR/cmake_targets/nas_sim_tools/build
+    mkdir -p $OPENAIR_DIR/cmake_targets/basic_simulator
+    mkdir -p $OPENAIR_DIR/cmake_targets/basic_simulator/enb
+    mkdir -p $OPENAIR_DIR/cmake_targets/basic_simulator/ue
+    mkdir -p $OPENAIR_DIR/cmake_targets/nas_sim_tools/build
+
+    # enb
+
+    cmake_file=$OPENAIR_DIR/cmake_targets/basic_simulator/enb/CMakeLists.txt
+    echo "cmake_minimum_required(VERSION 2.8)"         >  $cmake_file
+    echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )"  >> $cmake_file
+    echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
+    echo "set ( RRC_ASN1_VERSION \"${REL}\")"          >>  $cmake_file
+    echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"         >>  $cmake_file
+    echo "set ( XFORMS $XFORMS )"                      >>  $cmake_file
+    echo "set ( RF_BOARD \"OAI_USRP\")"                >>  $cmake_file
+    echo "set ( TRANSP_PRO \"None\")"                  >>  $cmake_file
+    echo "set(PACKAGE_NAME \"simulator_enb\")"         >>  $cmake_file
+    echo "set (DEADLINE_SCHEDULER \"False\" )"         >>  $cmake_file
+    echo "set (CPU_AFFINITY \"False\" )"               >>  $cmake_file
+    echo "set ( T_TRACER \"True\" )"                   >>  $cmake_file
+    echo "set (UE_AUTOTEST_TRACE $UE_AUTOTEST_TRACE)"  >>  $cmake_file
+    echo "set (UE_DEBUG_TRACE $UE_DEBUG_TRACE)"        >>  $cmake_file
+    echo "set (UE_TIMING_TRACE $UE_TIMING_TRACE)"      >>  $cmake_file
+    echo "set (DISABLE_LOG_X $DISABLE_LOG_X)"          >>  $cmake_file
+    echo "set (USRP_REC_PLAY $USRP_REC_PLAY)"          >>  $cmake_file
+    echo "set (BASIC_SIMULATOR \"True\" )"             >>  $cmake_file
+    echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../../CMakeLists.txt)' >> $cmake_file
+
+    echo_info "Build eNB"
+    echo_info "logs are in $dlog/basic_simulator_enb.txt"
+    set +e
+    {
+      cd $OPENAIR_DIR/cmake_targets/basic_simulator/enb
+      cmake .
+      make -j`nproc` lte-softmodem
+      make -j`nproc` coding params_libconfig tcp_bridge_oai
+      ln -sf libtcp_bridge_oai.so liboai_device.so
+      cd ../..
+    } > $dlog/basic_simulator_enb.txt 2>&1
+    set -e
+    if [ -s $OPENAIR_DIR/cmake_targets/basic_simulator/enb/lte-softmodem          -a \
+         -s $OPENAIR_DIR/cmake_targets/basic_simulator/enb/libcoding.so           -a \
+         -s $OPENAIR_DIR/cmake_targets/basic_simulator/enb/libparams_libconfig.so -a \
+         -s $OPENAIR_DIR/cmake_targets/basic_simulator/enb/libtcp_bridge_oai.so ] ; then
+      echo_success "eNB compiled"
+      check_warnings "$dlog/basic_simulator_enb.txt"
+    else
+      echo_error "eNB compilation failed"
+      exit 1
+    fi
+
+    # ue
+
+    echo_info "Compile conf2uedata"
+    cd $OPENAIR_DIR/cmake_targets/nas_sim_tools/build
+    eval $CMAKE_CMD
+    compilations \
+        nas_sim_tools conf2uedata \
+        conf2uedata $dbin/conf2uedata
+
+    cmake_file=$OPENAIR_DIR/cmake_targets/basic_simulator/ue/CMakeLists.txt
+    echo "cmake_minimum_required(VERSION 2.8)"        >  $cmake_file
+    echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
+    echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
+    echo "set ( RRC_ASN1_VERSION \"${REL}\")"         >>  $cmake_file
+    echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"        >>  $cmake_file
+    echo "set ( XFORMS $XFORMS )"                     >>  $cmake_file
+    echo "set ( RF_BOARD \"OAI_USRP\")"               >>  $cmake_file
+    echo "set ( TRANSP_PRO \"None\")"                 >>  $cmake_file
+    echo "set(PACKAGE_NAME \"simulator_ue\")"         >>  $cmake_file
+    echo "set (DEADLINE_SCHEDULER \"False\" )"        >>  $cmake_file
+    echo "set (CPU_AFFINITY \"False\" )"              >>  $cmake_file
+    echo "set ( T_TRACER \"True\" )"                  >>  $cmake_file
+    echo "set (UE_AUTOTEST_TRACE $UE_AUTOTEST_TRACE)" >>  $cmake_file
+    echo "set (UE_DEBUG_TRACE $UE_DEBUG_TRACE)"       >>  $cmake_file
+    echo "set (UE_TIMING_TRACE $UE_TIMING_TRACE)"     >>  $cmake_file
+    echo "set (DISABLE_LOG_X $DISABLE_LOG_X)"         >>  $cmake_file
+    echo "set (USRP_REC_PLAY $USRP_REC_PLAY)"         >>  $cmake_file
+    echo "set (LINUX True )"                          >>  $cmake_file
+    echo "set (PDCP_USE_NETLINK True )"               >>  $cmake_file
+    echo "set (BASIC_SIMULATOR \"True\" )"            >>  $cmake_file
+    echo "set (UE_NAS_USE_TUN \"True\" )"             >>  $cmake_file
+    echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../../CMakeLists.txt)' >> $cmake_file
+
+    echo_info "Build UE"
+    echo_info "logs are in $dlog/basic_simulator_ue.txt"
+    set +e
+    {
+      cd $OPENAIR_DIR/cmake_targets/basic_simulator/ue
+      cmake .
+      make -j`nproc` lte-uesoftmodem
+      make -j`nproc` coding params_libconfig tcp_bridge_oai
+      ln -sf libtcp_bridge_oai.so liboai_device.so
+      cd ../..
+    } > $dlog/basic_simulator_ue.txt 2>&1
+    set -e
+    if [ -s $OPENAIR_DIR/cmake_targets/basic_simulator/ue/lte-uesoftmodem -a \
+         -s $OPENAIR_DIR/cmake_targets/basic_simulator/ue/libcoding.so -a \
+         -s $OPENAIR_DIR/cmake_targets/basic_simulator/ue/libparams_libconfig.so -a \
+         -s $OPENAIR_DIR/cmake_targets/basic_simulator/ue/libtcp_bridge_oai.so ] ; then
+      echo_success "UE compiled"
+      check_warnings "$dlog/basic_simulator_ue.txt"
+    else
+      echo_error "UE compilation failed"
+      exit 1
+    fi
+
+    echo_info "Generate UE SIM data"
+    $OPENAIR_DIR/targets/bin/conf2uedata -c $OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf -o $OPENAIR_DIR/cmake_targets/basic_simulator/ue
+
   fi
 }
 

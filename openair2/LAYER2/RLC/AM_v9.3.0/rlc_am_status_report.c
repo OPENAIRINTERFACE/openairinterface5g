@@ -32,7 +32,7 @@
 #include "assertions.h"
 #include "list.h"
 #include "rlc_am.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 
 #   if ENABLE_ITTI
 //-----------------------------------------------------------------------------
@@ -153,7 +153,10 @@ rlc_am_write16_bit_field(
   signed int bits_to_writeP,
   const uint16_t valueP)
 {
-  assert(bits_to_writeP <= 16);
+  //assert(bits_to_writeP <= 16);
+  if(bits_to_writeP > 16) {
+    LOG_E(RLC, "bits_to_writeP error. %d\n", bits_to_writeP);
+  }
 
   if (bits_to_writeP > 8) {
     rlc_am_write8_bit_field(data_ppP,bit_pos_pP,  bits_to_writeP - 8, (uint8_t)(valueP >> 8));
@@ -211,6 +214,9 @@ rlc_am_get_control_pdu_infos(
         if (!pdu_info_pP->nack_list[pdu_info_pP->num_nack - 1].e1) {
           nack_to_read = 0;
           *total_size_pP = *total_size_pP - (sdu_size_t)((uint64_t)byte_pos_p + (uint64_t)((bit_pos + 7)/8) - (uint64_t)header_pP);
+          if (*total_size_pP != 0) {
+            LOG_E(RLC, "[RLC_AM_GET_CONTROL_PDU_INFOS][FIRST]header_pP->b1=%d,header_pP->b2=%d\n",header_pP->b1,header_pP->b2);
+          }
           return 0;
         }
 
@@ -224,7 +230,9 @@ rlc_am_get_control_pdu_infos(
     } else {
       *total_size_pP = *total_size_pP - 2;
     }
-
+    if (*total_size_pP != 0) {
+      LOG_E(RLC, "[RLC_AM_GET_CONTROL_PDU_INFOS][SECOND]header_pP->b1=%d,header_pP->b2=%d\n",header_pP->b1,header_pP->b2);
+    }
     return 0;
   } else {
     return -1;
@@ -308,8 +316,13 @@ rlc_am_receive_process_control_pdu(
     //     POLL_SN:
     //     - if t-PollRetransmit is running:
     //         - stop and reset t-PollRetransmit.
-    assert(ack_sn < RLC_AM_SN_MODULO);
-    assert(rlc_pP->control_pdu_info.num_nack < RLC_AM_MAX_NACK_IN_STATUS_PDU);
+    //assert(ack_sn < RLC_AM_SN_MODULO);
+    //assert(rlc_pP->control_pdu_info.num_nack < RLC_AM_MAX_NACK_IN_STATUS_PDU);
+    if(ack_sn >= RLC_AM_SN_MODULO || rlc_pP->control_pdu_info.num_nack >= RLC_AM_MAX_NACK_IN_STATUS_PDU) {
+      LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT" illegal ack_sn %d, num_nack %d\n",
+            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP), ack_sn, rlc_pP->control_pdu_info.num_nack);
+      return;
+    }
 
     /* Note : ackSn can be equal to current vtA only in case the status pdu contains a list of nack_sn with same value = vtA with SOStart/SOEnd */
     /* and meaning the report is not complete due to not enough ressources to fill all SOStart/SOEnd of this NACK_SN */
@@ -387,13 +400,15 @@ rlc_am_receive_process_control_pdu(
 
 
     } else {
-      LOG_N(RLC, PROTOCOL_RLC_AM_CTXT_FMT" WARNING CONTROL PDU ACK SN %d OUT OF WINDOW vtA=%d vtS=%d\n",
+      LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT" WARNING CONTROL PDU ACK SN %d OUT OF WINDOW vtA=%d vtS=%d\n",
             PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),ack_sn,rlc_pP->vt_a,rlc_pP->vt_s);
+      *tb_size_in_bytes_pP = 0;
       status = FALSE;
     }
   } else {
-    LOG_W(RLC, PROTOCOL_RLC_AM_CTXT_FMT" ERROR IN DECODING CONTROL PDU\n",
+    LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT" ERROR IN DECODING CONTROL PDU\n",
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
+    *tb_size_in_bytes_pP = 0;
     status = FALSE;
   }
 
@@ -610,10 +625,13 @@ rlc_am_send_status_pdu(
 
       /* Now process all Segments of sn_cursor if PDU not fully received */
       if ((!status_report_completed) && (all_segments_received == 0) && (sn_cursor != rlc_pP->vr_ms)) {
-    	  AssertFatal (sn_nack == sn_cursor, "RLC AM Tx Status PDU Data sn_nack=%d and sn_cursor=%d should be equal LcId=%d\n",sn_nack,sn_cursor, rlc_pP->channel_id);
+    	  //AssertFatal (sn_nack == sn_cursor, "RLC AM Tx Status PDU Data sn_nack=%d and sn_cursor=%d should be equal LcId=%d\n",sn_nack,sn_cursor, rlc_pP->channel_id);
+      	if(sn_nack != sn_cursor){
+      		LOG_E(RLC, "RLC AM Tx Status PDU Data sn_nack=%d and sn_cursor=%d should be equal LcId=%d\n",sn_nack,sn_cursor, rlc_pP->channel_id);
+      	}
 
     	  /* First ensure there is enough TBS for at least 1 SOStart/SOEnd, else break */
-    	  if ((nb_bits_transmitted + RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1) + (RLC_AM_STATUS_PDU_SO_LENGTH << 1)) <= nb_bits_to_transmit) {
+        else if ((nb_bits_transmitted + RLC_AM_SN_BITS + (RLC_AM_PDU_E_BITS << 1) + (RLC_AM_STATUS_PDU_SO_LENGTH << 1)) <= nb_bits_to_transmit) {
     		  /* Init loop flags */
               /* Check lsf */
     		  segment_loop_end = (pdu_info_cursor_p->lsf == 1);
@@ -756,8 +774,14 @@ rlc_am_send_status_pdu(
     } // End main while NACK_SN
 
     /* Clear E1 of last nack_sn entry */
-	AssertFatal ((control_pdu_info.num_nack) || (all_segments_received == 0), "RLC AM Tx Status PDU Data Error no NACK_SN vrR=%d vrMS=%d lastSN_NACK=%d Completed=%d NbBytesAvailable=%d LcId=%d\n",
-	        rlc_pP->vr_r,rlc_pP->vr_ms,sn_nack,status_report_completed,(nb_bits_to_transmit >> 3),rlc_pP->channel_id);
+//	AssertFatal ((control_pdu_info.num_nack) || (all_segments_received == 0), "RLC AM Tx Status PDU Data Error no NACK_SN vrR=%d vrMS=%d lastSN_NACK=%d Completed=%d NbBytesAvailable=%d LcId=%d\n",
+//	        rlc_pP->vr_r,rlc_pP->vr_ms,sn_nack,status_report_completed,(nb_bits_to_transmit >> 3),rlc_pP->channel_id);
+  	if (!((control_pdu_info.num_nack) || (all_segments_received == 0))){
+  		LOG_E(RLC, "RLC AM Tx Status PDU Data Error no NACK_SN vrR=%d vrMS=%d lastSN_NACK=%d Completed=%d NbBytesAvailable=%d LcId=%d\n",
+		        rlc_pP->vr_r,rlc_pP->vr_ms,sn_nack,status_report_completed,(nb_bits_to_transmit >> 3),rlc_pP->channel_id);
+  		return;
+  	}
+  	
 	if (control_pdu_info.num_nack) {
 	    control_pdu_info.nack_list[control_pdu_info.num_nack - 1].e1  = 0;
 	}
@@ -795,8 +819,13 @@ rlc_am_send_status_pdu(
 
   /* encode the control pdu */
   pdu_size = (nb_bits_transmitted + 7) >> 3;
-  AssertFatal (pdu_size <= rlc_pP->nb_bytes_requested_by_mac, "RLC AM Tx Status PDU Data size=%d bigger than remaining TBS=%d nb_bits_transmitted=%d LcId=%d\n",
+//  AssertFatal (pdu_size <= rlc_pP->nb_bytes_requested_by_mac, "RLC AM Tx Status PDU Data size=%d bigger than remaining TBS=%d nb_bits_transmitted=%d LcId=%d\n",
+//		  pdu_size,rlc_pP->nb_bytes_requested_by_mac,nb_bits_transmitted, rlc_pP->channel_id);
+	if(pdu_size > rlc_pP->nb_bytes_requested_by_mac){
+		LOG_E(RLC, "RLC AM Tx Status PDU Data size=%d bigger than remaining TBS=%d nb_bits_transmitted=%d LcId=%d\n",
 		  pdu_size,rlc_pP->nb_bytes_requested_by_mac,nb_bits_transmitted, rlc_pP->channel_id);
+		return;
+	}
 
 
 #if TRACE_RLC_AM_STATUS_CREATION
@@ -806,6 +835,7 @@ rlc_am_send_status_pdu(
         pdu_size);
 #endif
   tb_p = get_free_mem_block(sizeof(struct mac_tb_req) + pdu_size, __func__);
+  if(tb_p == NULL) return;
   memset(tb_p->data, 0, sizeof(struct mac_tb_req) + pdu_size);
   //estimation only ((struct mac_tb_req*)(tb_p->data))->tb_size  = pdu_size;
   ((struct mac_tb_req*)(tb_p->data))->data_ptr         = (uint8_t*)&(tb_p->data[sizeof(struct mac_tb_req)]);
@@ -824,8 +854,14 @@ rlc_am_send_status_pdu(
         nb_bits_to_transmit >> 3);
 #endif
 
-  AssertFatal (pdu_size == ((nb_bits_transmitted + 7) >> 3), "RLC AM Tx Status PDU Data encoding size=%d different than expected=%d LcId=%d\n",
+//  AssertFatal (pdu_size == ((nb_bits_transmitted + 7) >> 3), "RLC AM Tx Status PDU Data encoding size=%d different than expected=%d LcId=%d\n",
+//  		  pdu_size,((nb_bits_transmitted + 7) >> 3), rlc_pP->channel_id);
+	if(pdu_size != ((nb_bits_transmitted + 7) >> 3)){
+		LOG_E(RLC, "RLC AM Tx Status PDU Data encoding size=%d different than expected=%d LcId=%d\n",
   		  pdu_size,((nb_bits_transmitted + 7) >> 3), rlc_pP->channel_id);
+		pdu_size = 0;
+		return;
+	}
 
   // remaining bytes to transmit for RLC (retrans pdus and new data pdus)
   rlc_pP->nb_bytes_requested_by_mac = rlc_pP->nb_bytes_requested_by_mac - pdu_size;
@@ -836,345 +872,4 @@ rlc_am_send_status_pdu(
 
 }
 
-
-#if 0
-//-----------------------------------------------------------------------------
-void
-rlc_am_send_status_pdu_backup(
-  const protocol_ctxt_t* const  ctxt_pP,
-  rlc_am_entity_t *const rlc_pP
-)
-{
-  // When STATUS reporting has been triggered, the receiving side of an AM RLC entity shall:
-  // - if t-StatusProhibit is not running:
-  //     - at the first transmission opportunity indicated by lower layer, construct a STATUS PDU and deliver it to lower layer;
-  // - else:
-  //     - at the first transmission opportunity indicated by lower layer after t-StatusProhibit expires, construct a single
-  //       STATUS PDU even if status reporting was triggered several times while t-StatusProhibit was running and
-  //       deliver it to lower layer;
-  //
-  // When a STATUS PDU has been delivered to lower layer, the receiving side of an AM RLC entity shall:
-  //     - start t-StatusProhibit.
-  //
-  // When constructing a STATUS PDU, the AM RLC entity shall:
-  //     - for the AMD PDUs with SN such that VR(R) <= SN < VR(MR) that has not been completely received yet, in
-  //       increasing SN of PDUs and increasing byte segment order within PDUs, starting with SN = VR(R) up to
-  //       the point where the resulting STATUS PDU still fits to the total size of RLC PDU(s) indicated by lower layer:
-  //         - for an AMD PDU for which no byte segments have been received yet::
-  //             - include in the STATUS PDU a NACK_SN which is set to the SN of the AMD PDU;
-  //         - for a continuous sequence of byte segments of a partly received AMD PDU that have not been received yet:
-  //             - include in the STATUS PDU a set of NACK_SN, SOstart and SOend
-  //     - set the ACK_SN to the SN of the next not received RLC Data PDU which is not indicated as missing in the
-  //       resulting STATUS PDU.
-
-  signed int                    nb_bits_to_transmit   = rlc_pP->nb_bytes_requested_by_mac << 3;
-  rlc_am_control_pdu_info_t     control_pdu_info;
-  rlc_am_pdu_info_t            *pdu_info_cursor_p     = NULL;
-  rlc_sn_t                      previous_sn_cursor    = (rlc_pP->vr_r - 1) & RLC_AM_SN_MASK;
-  rlc_sn_t                      sn_cursor             = 0;
-  mem_block_t                  *cursor_p              = rlc_pP->receiver_buffer.head;
-  int                           all_segments_received = 0;
-  int                           waited_so             = 0;
-  mem_block_t                  *tb_p                  = NULL;
-  sdu_size_t                    pdu_size              = 0;
-
-  memset(&control_pdu_info, 0, sizeof(rlc_am_control_pdu_info_t));
-  // header size
-  nb_bits_to_transmit = nb_bits_to_transmit - 15;
-#if TRACE_RLC_AM_STATUS_CREATION
-  LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] nb_bits_to_transmit %d (15 already allocated for header)\n",
-        PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-        nb_bits_to_transmit);
-  rlc_am_rx_list_display(rlc_pP, " DISPLAY BEFORE CONSTRUCTION OF STATUS REPORT");
-#endif
-
-
-  if (cursor_p != NULL) {
-    pdu_info_cursor_p       = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
-    sn_cursor             = pdu_info_cursor_p->sn;
-
-    while (!(RLC_AM_SN_IN_WINDOW(sn_cursor, rlc_pP->vr_r))) {
-      cursor_p                = cursor_p->next;
-      previous_sn_cursor    = sn_cursor;
-
-      pdu_info_cursor_p       = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
-      sn_cursor             = pdu_info_cursor_p->sn;
-#if TRACE_RLC_AM_STATUS_CREATION
-      LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d FIND VR(R) <= SN sn_cursor %04d -> %04d\n",
-            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-            __LINE__,
-            previous_sn_cursor,
-            sn_cursor);
-#endif
-    }
-
-    // 12 bits = size of NACK_SN field + E1, E2 bits
-    // 42 bits = size of NACK_SN field + SO_START, SO_END fields, E1, E2 bits
-    while ((cursor_p != NULL) && (nb_bits_to_transmit >= 12)) {
-      pdu_info_cursor_p       = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
-      all_segments_received = ((rlc_am_rx_pdu_management_t*)(cursor_p->data))->all_segments_received;
-      sn_cursor             = pdu_info_cursor_p->sn;
-#if TRACE_RLC_AM_STATUS_CREATION
-      LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d LOOPING sn_cursor %04d previous sn_cursor %04d \n",
-            PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-            __LINE__,
-            sn_cursor,
-            previous_sn_cursor);
-#endif
-
-      // -------------------------------------------------------------------------------
-      // case resegmentation : several PDUs related to the same SN queued in list
-      // -------------------------------------------------------------------------------
-      if (sn_cursor == previous_sn_cursor) {
-        do {
-          cursor_p = cursor_p->next;
-
-          if (cursor_p != NULL) {
-            pdu_info_cursor_p       = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
-            all_segments_received = ((rlc_am_rx_pdu_management_t*)(cursor_p->data))->all_segments_received;
-            sn_cursor             = pdu_info_cursor_p->sn;
-#if TRACE_RLC_AM_STATUS_CREATION
-            LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d NOW sn_cursor %04d \n",
-                  PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-                  __LINE__,
-                  sn_cursor);
-#endif
-          } else {
-            if (all_segments_received) {
-              control_pdu_info.ack_sn = (sn_cursor + 1) & RLC_AM_SN_MASK;
-#if TRACE_RLC_AM_STATUS_CREATION
-              LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d PREPARE SENDING ACK SN %04d \n",
-                    PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-                    __LINE__,
-                    control_pdu_info.ack_sn);
-#endif
-            } else {
-              control_pdu_info.ack_sn = (previous_sn_cursor + 1) & RLC_AM_SN_MASK;
-#if TRACE_RLC_AM_STATUS_CREATION
-              LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d PREPARE SENDING ACK SN %04d (CASE PREVIOUS SN)\n",
-                    PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-                    __LINE__,
-                    control_pdu_info.ack_sn);
-#endif
-            }
-
-            goto end_push_nack;
-          }
-        } while ((cursor_p != NULL) && (sn_cursor == previous_sn_cursor));
-      }
-
-      // -------------------------------------------------------------------------------
-      // simple case, PDU(s) is/are missing
-      // -------------------------------------------------------------------------------
-      while (((previous_sn_cursor + 1) & RLC_AM_SN_MASK) != sn_cursor) {
-        if (nb_bits_to_transmit > 12) {
-          previous_sn_cursor = (previous_sn_cursor + 1) & RLC_AM_SN_MASK;
-          control_pdu_info.nack_list[control_pdu_info.num_nack].nack_sn   = previous_sn_cursor;
-          control_pdu_info.nack_list[control_pdu_info.num_nack].so_start  = 0;
-          control_pdu_info.nack_list[control_pdu_info.num_nack].so_end    = 0x7ff;
-          control_pdu_info.nack_list[control_pdu_info.num_nack].e1        = 1;
-          control_pdu_info.nack_list[control_pdu_info.num_nack].e2        = 0;
-          control_pdu_info.num_nack += 1;
-          nb_bits_to_transmit = nb_bits_to_transmit - 12;
-#if TRACE_RLC_AM_STATUS_CREATION
-          LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d PREPARE SENDING NACK %04d\n",
-                PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-                __LINE__,
-                previous_sn_cursor);
-#endif
-        } else {
-          control_pdu_info.ack_sn = (previous_sn_cursor + 1) & RLC_AM_SN_MASK;
-#if TRACE_RLC_AM_STATUS_CREATION
-          LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d NO MORE BITS FOR SENDING NACK %04d -> ABORT AND SET FINAL ACK %04d\n",
-                PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-                __LINE__,
-                previous_sn_cursor,
-                control_pdu_info.ack_sn);
-#endif
-          goto end_push_nack;
-        }
-      }
-
-      // -------------------------------------------------------------------------------
-      // not so simple case, a resegmented PDU(s) is missing
-      // -------------------------------------------------------------------------------
-      if (all_segments_received == 0) {
-        waited_so = 0;
-#if TRACE_RLC_AM_STATUS_CREATION
-        LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] if (all_segments_received == 0) \n",
-              PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
-#endif
-
-        do {
-          if (pdu_info_cursor_p->so > waited_so) {
-            if (nb_bits_to_transmit >= 42) {
-              control_pdu_info.nack_list[control_pdu_info.num_nack].nack_sn   = sn_cursor;
-              control_pdu_info.nack_list[control_pdu_info.num_nack].so_start  = waited_so;
-              control_pdu_info.nack_list[control_pdu_info.num_nack].so_end    = pdu_info_cursor_p->so - 1;
-              control_pdu_info.nack_list[control_pdu_info.num_nack].e1        = 1;
-              control_pdu_info.nack_list[control_pdu_info.num_nack].e2        = 1;
-              control_pdu_info.num_nack += 1;
-              nb_bits_to_transmit = nb_bits_to_transmit - 42;
-#if TRACE_RLC_AM_STATUS_CREATION
-              LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d PREPARE SENDING NACK %04d SO START %05d SO END %05d (CASE SO %d > WAITED SO %d)\n",
-                    PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-                    __LINE__,
-                    sn_cursor,
-                    waited_so,
-                    pdu_info_cursor_p->so - 1,
-                    pdu_info_cursor_p->so,
-                    waited_so);
-#endif
-
-              if (pdu_info_cursor_p->lsf == 1) { // last segment flag
-                //waited_so = 0x7FF;
-                waited_so = 0x7FFF;
-#if TRACE_RLC_AM_STATUS_CREATION
-                LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d SN %04d SET WAITED SO 0x7FFF)\n",
-                      PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-                      __LINE__, sn_cursor);
-#endif
-                //break;
-              } else {
-                waited_so = pdu_info_cursor_p->so + pdu_info_cursor_p->payload_size;
-#if TRACE_RLC_AM_STATUS_CREATION
-                LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d SN %04d SET WAITED SO %d @1\n",
-                      PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-                      __LINE__,
-                      sn_cursor,
-                      waited_so);
-#endif
-              }
-            } else {
-              control_pdu_info.ack_sn = sn_cursor;
-              goto end_push_nack;
-            }
-          } else { //else { // pdu_info_cursor_p->so <= waited_so
-            waited_so = pdu_info_cursor_p->so + pdu_info_cursor_p->payload_size;
-
-            if (pdu_info_cursor_p->lsf == 1) { // last segment flag
-              //waited_so = 0x7FF;
-              waited_so = 0x7FFF;
-            }
-
-#if TRACE_RLC_AM_STATUS_CREATION
-            LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d SN %04d SET WAITED SO %d @2\n",
-                  PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-                  __LINE__,
-                  sn_cursor, waited_so);
-#endif
-          }
-
-          cursor_p = cursor_p->next;
-
-          if (cursor_p != NULL) {
-            pdu_info_cursor_p       = &((rlc_am_rx_pdu_management_t*)(cursor_p->data))->pdu_info;
-            all_segments_received = ((rlc_am_rx_pdu_management_t*)(cursor_p->data))->all_segments_received;
-            previous_sn_cursor    = sn_cursor;
-            sn_cursor             = pdu_info_cursor_p->sn;
-          } else {
-            // LG control_pdu_info.ack_sn = (previous_sn_cursor + 1) & RLC_AM_SN_MASK;
-            control_pdu_info.ack_sn = previous_sn_cursor;
-            goto end_push_nack;
-          }
-        } while ((cursor_p != NULL) && (sn_cursor == previous_sn_cursor));
-
-        // may be last segment of PDU not received
-        //if ((sn_cursor != previous_sn_cursor) && (waited_so != 0x7FF)) {
-        if ((sn_cursor != previous_sn_cursor) && (waited_so != 0x7FFF)) {
-          if (nb_bits_to_transmit >= 42) {
-            control_pdu_info.nack_list[control_pdu_info.num_nack].nack_sn   = previous_sn_cursor;
-            control_pdu_info.nack_list[control_pdu_info.num_nack].so_start  = waited_so;
-            //control_pdu_info.nack_list[control_pdu_info.num_nack].so_end    = 0x7FF;
-            control_pdu_info.nack_list[control_pdu_info.num_nack].so_end    = 0x7FFF;
-            control_pdu_info.nack_list[control_pdu_info.num_nack].e1        = 1;
-            control_pdu_info.nack_list[control_pdu_info.num_nack].e2        = 1;
-            control_pdu_info.num_nack += 1;
-            nb_bits_to_transmit = nb_bits_to_transmit - 42;
-#if TRACE_RLC_AM_STATUS_CREATION
-            LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d PREPARE SENDING NACK %04d SO START %05d SO END %05d\n",
-                  PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-                  __LINE__,
-                  previous_sn_cursor,
-                  waited_so,
-                  0x7FFF);
-#endif
-          } else {
-            control_pdu_info.ack_sn = previous_sn_cursor;
-            goto end_push_nack;
-          }
-        }
-
-        waited_so = 0;
-      } else {
-        waited_so = 0;
-        cursor_p = cursor_p->next;
-        previous_sn_cursor = sn_cursor;
-      }
-    }
-
-    control_pdu_info.ack_sn = (previous_sn_cursor + 1) & RLC_AM_SN_MASK;
-  } else {
-    control_pdu_info.ack_sn = rlc_pP->vr_r;
-#if TRACE_RLC_AM_STATUS_CREATION
-    LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d PREPARE SENDING ACK %04d  = VR(R)\n",
-          PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-          __LINE__,
-          control_pdu_info.ack_sn);
-#endif
-  }
-
-end_push_nack:
-
-  if (control_pdu_info.num_nack > 0) {
-    control_pdu_info.nack_list[control_pdu_info.num_nack - 1].e1  = 0;
-  }
-
-  //msg ("[FRAME %5u][%s][RLC_AM][MOD %u/%u][RB %u] nb_bits_to_transmit %d\n",
-  //     rlc_pP->module_id, rlc_pP->rb_id, ctxt_pP->frame,nb_bits_to_transmit);
-
-#if TRACE_RLC_AM_STATUS_CREATION
-  LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d PREPARE SENDING ACK %04d NUM NACK %d\n",
-        PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-        __LINE__,
-        control_pdu_info.ack_sn,
-        control_pdu_info.num_nack);
-#endif
-  // encode the control pdu
-  pdu_size = rlc_pP->nb_bytes_requested_by_mac - ((nb_bits_to_transmit - 7 )>> 3);
-
-#if TRACE_RLC_AM_STATUS_CREATION
-  LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] LINE %d forecast pdu_size %d\n",
-        PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-        __LINE__,
-        pdu_size);
-#endif
-  tb_p = get_free_mem_block(sizeof(struct mac_tb_req) + pdu_size, __func__);
-  memset(tb_p->data, 0, sizeof(struct mac_tb_req) + pdu_size);
-  //estimation only ((struct mac_tb_req*)(tb_p->data))->tb_size  = pdu_size;
-  ((struct mac_tb_req*)(tb_p->data))->data_ptr         = (uint8_t*)&(tb_p->data[sizeof(struct mac_tb_req)]);
-
-  // warning reuse of pdu_size
-  pdu_size = rlc_am_write_status_pdu(ctxt_pP, rlc_pP,(rlc_am_pdu_sn_10_t*)(((struct mac_tb_req*)(tb_p->data))->data_ptr), &control_pdu_info);
-  ((struct mac_tb_req*)(tb_p->data))->tb_size  = pdu_size;
-  //assert((((struct mac_tb_req*)(tb_p->data))->tb_size) < 3000);
-
-#if TRACE_RLC_AM_STATUS_CREATION
-  LOG_D(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEND-STATUS] SEND STATUS PDU SIZE %d, rlc_pP->nb_bytes_requested_by_mac %d, nb_bits_to_transmit>>3 %d\n",
-        PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP),
-        pdu_size,
-        rlc_pP->nb_bytes_requested_by_mac,
-        nb_bits_to_transmit >> 3);
-#endif
-  assert(pdu_size == (rlc_pP->nb_bytes_requested_by_mac - (nb_bits_to_transmit >> 3)));
-
-  // remaining bytes to transmit for RLC (retrans pdus and new data pdus)
-  rlc_pP->nb_bytes_requested_by_mac = rlc_pP->nb_bytes_requested_by_mac - pdu_size;
-  // put pdu in trans
-  list_add_head(tb_p, &rlc_pP->control_pdu_list);
-  rlc_pP->stat_tx_control_pdu   += 1;
-  rlc_pP->stat_tx_control_bytes += pdu_size;
-
-}
-#endif
 

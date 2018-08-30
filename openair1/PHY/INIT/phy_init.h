@@ -34,7 +34,7 @@
 #include "PHICH-Config.h"
 #include "MBSFN-SubframeConfigList.h"
 #include "MobilityControlInfo.h"
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 #include "SCellToAddMod-r10.h"
 #endif
 /** @addtogroup _PHY_STRUCTURES_
@@ -351,7 +351,7 @@ void lte_param_init(PHY_VARS_eNB **eNBp,
 		    uint32_t perfect_ce);
 
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 void phy_config_dedicated_scell_ue(uint8_t Mod_id,
                                    uint8_t eNB_index,
                                    SCellToAddMod_r10_t *sCellToAddMod_r10,
@@ -382,6 +382,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB, unsigned char is_secondary_gNB, unsigned 
 void nr_phy_config_request(NR_PHY_Config_t *gNB);
 void phy_free_nr_gNB(PHY_VARS_gNB *gNB);
 int l1_north_init_gNB(void);
+
+void init_dfts(void);
 
 /** @} */
 #endif
