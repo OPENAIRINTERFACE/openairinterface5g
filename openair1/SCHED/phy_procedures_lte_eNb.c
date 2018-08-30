@@ -1604,6 +1604,16 @@ static void do_release_harq(PHY_VARS_eNB *eNB,int UE_id,int tb,uint16_t frame,ui
     dlsch1_harq     = dlsch1->harq_processes[harq_pid];
     AssertFatal(dlsch0_harq!=NULL,"dlsch0_harq is null\n");
 
+#if T_TRACER
+    if (after_rounds != -1) {
+      T(T_ENB_PHY_DLSCH_UE_NACK, T_INT(0), T_INT(frame), T_INT(subframe),
+        T_INT(dlsch0->rnti), T_INT(harq_pid));
+    } else {
+      T(T_ENB_PHY_DLSCH_UE_ACK, T_INT(0), T_INT(frame), T_INT(subframe),
+        T_INT(dlsch0->rnti), T_INT(harq_pid));
+    }
+#endif
+
     if (dlsch0_harq->round >= after_rounds) {
       dlsch0_harq->status = SCH_IDLE;
       /*if ((dlsch1_harq == NULL)||
@@ -1631,6 +1641,15 @@ static void do_release_harq(PHY_VARS_eNB *eNB,int UE_id,int tb,uint16_t frame,ui
 	  dlsch1_harq     = dlsch1->harq_processes[harq_pid];
 	  AssertFatal(dlsch0_harq!=NULL,"dlsch0_harq is null\n");
       
+#if T_TRACER
+          if (after_rounds != -1) {
+            T(T_ENB_PHY_DLSCH_UE_NACK, T_INT(0), T_INT(frame), T_INT(subframe),
+              T_INT(dlsch0->rnti), T_INT(harq_pid));
+          } else {
+            T(T_ENB_PHY_DLSCH_UE_ACK, T_INT(0), T_INT(frame), T_INT(subframe),
+              T_INT(dlsch0->rnti), T_INT(harq_pid));
+          }
+#endif
           if (dlsch0_harq->round >= after_rounds) {
 	    dlsch0_harq->status = SCH_IDLE;
 	    if ((dlsch1_harq == NULL)||
@@ -1753,22 +1772,6 @@ void fill_ulsch_harq_indication(PHY_VARS_eNB *eNB,LTE_UL_eNB_HARQ_t *ulsch_harq,
       pdu->harq_indication_fdd_rel13.harq_tb_n[i] = 2-ulsch_harq->o_ACK[i];
       // release DLSCH if needed
       release_harq(eNB,UE_id,i,frame,subframe,0xffff, ulsch_harq->o_ACK[i] == 1);
-
-
-#if T_TRACER
-      /* TODO: get correct harq pid */
-      {
-        int subframe_tx = (subframe+6)%10;
-        int frame_tx = subframe_tx >= 6 ? (frame+1023)%1024 : frame;
-        if (ulsch_harq->o_ACK[i] != 1) {
-          T(T_ENB_PHY_DLSCH_UE_NACK, T_INT(0), T_INT(frame), T_INT(subframe),
-            T_INT(rnti), T_INT(eNB->dlsch[UE_id][0]->harq_ids[frame_tx%2][subframe_tx]));
-        } else {
-          T(T_ENB_PHY_DLSCH_UE_ACK, T_INT(0), T_INT(frame), T_INT(subframe),
-            T_INT(rnti), T_INT(eNB->dlsch[UE_id][0]->harq_ids[frame_tx%2][subframe_tx]));
-        }
-      }
-#endif
     }
   }
   else { // TDD
@@ -1857,21 +1860,6 @@ void fill_uci_harq_indication(PHY_VARS_eNB *eNB,
       pdu->harq_indication_fdd_rel13.harq_tb_n[0] = harq_ack[0];
       // release DLSCH if needed
       release_harq(eNB,UE_id,0,frame,subframe,0xffff, harq_ack[0] == 1);
-
-
-#if T_TRACER
-      {
-        int subframe_tx = (subframe+6)%10;
-        int frame_tx = subframe_tx >= 6 ? (frame+1023)%1024 : frame;
-        if (harq_ack[0] != 1) {
-          T(T_ENB_PHY_DLSCH_UE_NACK, T_INT(0), T_INT(frame), T_INT(subframe),
-            T_INT(uci->rnti), T_INT(eNB->dlsch[UE_id][0]->harq_ids[frame_tx%2][subframe_tx]));
-        } else {
-          T(T_ENB_PHY_DLSCH_UE_ACK, T_INT(0), T_INT(frame), T_INT(subframe),
-            T_INT(uci->rnti), T_INT(eNB->dlsch[UE_id][0]->harq_ids[frame_tx%2][subframe_tx]));
-        }
-      }
-#endif
     }
     else if (uci->pucch_fmt == pucch_format1b) {
       pdu->harq_indication_fdd_rel13.tl.tag = NFAPI_HARQ_INDICATION_FDD_REL13_TAG;
@@ -2041,15 +2029,14 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
   const int subframe = proc->subframe_rx;
   const int frame    = proc->frame_rx;
 
-
-  if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_UL)) return;
-
-  T(T_ENB_PHY_UL_TICK, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe));
-
   /* TODO: use correct rxdata */
   T(T_ENB_PHY_INPUT_SIGNAL, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(0),
     T_BUFFER(&eNB->RU_list[0]->common.rxdata[0][subframe*eNB->frame_parms.samples_per_tti],
              eNB->frame_parms.samples_per_tti * 4));
+
+  if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_UL)) return;
+
+  T(T_ENB_PHY_UL_TICK, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe));
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC, 1 );
 
