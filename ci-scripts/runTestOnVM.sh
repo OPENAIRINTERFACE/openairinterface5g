@@ -70,6 +70,30 @@ function variant_usage {
     echo ""
 }
 
+function terminate_enb_ue_basic_sim {
+    echo "echo \"sudo daemon --name=enb_daemon --stop\"" > $1
+    echo "sudo daemon --name=enb_daemon --stop" >> $1
+    echo "echo \"sudo daemon --name=ue_daemon --stop\"" >> $1
+    echo "sudo daemon --name=ue_daemon --stop" >> $1
+    echo "echo \"sudo killall --signal SIGKILL lte-softmodem\"" >> $1
+    echo "sudo killall --signal SIGKILL lte-softmodem" >> $1
+    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+    rm -f $1
+}
+
+function terminate_ltebox_epc {
+    echo "echo \"cd /opt/ltebox/tools\"" > $1
+    echo "cd /opt/ltebox/tools" >> $1
+    echo "echo \"sudo ./stop_ltebox\"" >> $1
+    echo "sudo ./stop_ltebox" >> $1
+    echo "echo \"sudo daemon --name=simulated_hss --stop\"" >> $1
+    echo "sudo daemon --name=simulated_hss --stop" >> $1
+    echo "echo \"sudo killall --signal SIGKILL hss_sim\"" >> $1
+    echo "sudo killall --signal SIGKILL hss_sim" >> $1
+    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+    rm $1
+}
+
 if [ $# -lt 1 ] || [ $# -gt 9 ]
 then
     echo "Syntax Error: not the correct number of arguments"
@@ -356,7 +380,16 @@ then
     scp -o StrictHostKeyChecking=no /etc/apt/apt.conf.d/01proxy ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu
 
     # ltebox specific actions (install and start)
+    LTE_BOX_TO_INSTALL=1
     if [ $LTEBOX -eq 1 ]
+    then
+        echo "ls -ls /opt/ltebox/tools/start_ltebox" > $EPC_VM_CMDS
+        RESPONSE=`ssh -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR < $EPC_VM_CMDS`
+        NB_EXES=`echo $RESPONSE | grep -c ltebox`
+        if [ $NB_EXES -eq 1 ]; then LTE_BOX_TO_INSTALL=0; fi
+    fi
+
+    if [ $LTEBOX -eq 1 ] && [ $LTE_BOX_TO_INSTALL -eq 1 ]
     then
         echo "############################################################"
         echo "Copying ltebox archives into EPC VM ($EPC_VM_NAME)" 
@@ -366,7 +399,7 @@ then
         scp -o StrictHostKeyChecking=no /opt/ltebox-archives/hss-sim.zip ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu
 
         echo "############################################################"
-        echo "Running install and start EPC on EPC VM ($EPC_VM_NAME)"
+        echo "Install EPC on EPC VM ($EPC_VM_NAME)"
         echo "############################################################"
         echo "sudo cp 01proxy /etc/apt/apt.conf.d/" > $EPC_VM_CMDS
         echo "touch /home/ubuntu/.hushlogin" >> $EPC_VM_CMDS
@@ -374,7 +407,7 @@ then
         echo "sudo apt-get update > zip-install.txt 2>&1" >> $EPC_VM_CMDS
         echo "sudo apt-get --yes install zip openjdk-8-jre libconfuse-dev libreadline-dev liblog4c-dev libgcrypt-dev libsctp-dev python2.7 python2.7-dev daemon iperf >> zip-install.txt 2>&1" >> $EPC_VM_CMDS
 
-        # Installing and Starting HSS
+        # Installing HSS
         echo "echo \"cd /opt\"" >> $EPC_VM_CMDS
         echo "cd /opt" >> $EPC_VM_CMDS
         echo "echo \"sudo unzip -qq /home/ubuntu/hss-sim.zip\"" >> $EPC_VM_CMDS
@@ -382,10 +415,7 @@ then
         echo "echo \"cd /opt/hss_sim0609\"" >> $EPC_VM_CMDS
         echo "cd /opt/hss_sim0609" >> $EPC_VM_CMDS
 
-        echo "echo \"sudo daemon --unsafe --name=simulated_hss --chdir=/opt/hss_sim0609 ./starthss_real\"" >> $EPC_VM_CMDS
-        echo "sudo daemon --unsafe --name=simulated_hss --chdir=/opt/hss_sim0609 ./starthss_real" >> $EPC_VM_CMDS
-
-        # Installing and Starting ltebox
+        # Installing ltebox
         echo "echo \"cd /home/ubuntu\"" >> $EPC_VM_CMDS
         echo "cd /home/ubuntu" >> $EPC_VM_CMDS
         echo "echo \"sudo dpkg -i ltebox_2.2.70_16_04_amd64.deb \"" >> $EPC_VM_CMDS
@@ -397,6 +427,18 @@ then
         echo "sudo unzip -qq -o /home/ubuntu/etc-conf.zip" >> $EPC_VM_CMDS
         echo "sudo sed -i  -e 's#EPC_VM_IP_ADDRESS#$EPC_VM_IP_ADDR#' gw.conf" >> $EPC_VM_CMDS
         echo "sudo sed -i  -e 's#EPC_VM_IP_ADDRESS#$EPC_VM_IP_ADDR#' mme.conf" >> $EPC_VM_CMDS
+    fi
+
+    # Starting EPC
+    if [ $LTEBOX -eq 1 ]
+    then
+        echo "############################################################"
+        echo "Start EPC on EPC VM ($EPC_VM_NAME)"
+        echo "############################################################"
+        echo "echo \"cd /opt/hss_sim0609\"" >> $EPC_VM_CMDS
+        echo "cd /opt/hss_sim0609" >> $EPC_VM_CMDS
+        echo "echo \"sudo daemon --unsafe --name=simulated_hss --chdir=/opt/hss_sim0609 ./starthss_real\"" >> $EPC_VM_CMDS
+        echo "sudo daemon --unsafe --name=simulated_hss --chdir=/opt/hss_sim0609 ./starthss_real" >> $EPC_VM_CMDS
 
         echo "echo \"cd /opt/ltebox/tools/\"" >> $EPC_VM_CMDS
         echo "cd /opt/ltebox/tools/" >> $EPC_VM_CMDS
@@ -484,7 +526,7 @@ then
     rm $VM_CMDS
     i="0"
     echo "ifconfig oip1 | egrep -c \"inet addr\"" > $VM_CMDS
-    while [ $i -lt 10 ]
+    while [ $i -lt 40 ]
     do
         sleep 5
         CONNECTED=`ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS`
@@ -499,16 +541,10 @@ then
     if [ $i -lt 50 ]
     then
         echo "Problem w/ eNB and UE not syncing"
-        echo "echo \"sudo daemon --name=enb_daemon --stop\"" > $VM_CMDS
-        echo "sudo daemon --name=enb_daemon --stop" >> $VM_CMDS
-        echo "echo \"sudo daemon --name=ue_daemon --stop\"" >> $VM_CMDS
-        echo "sudo daemon --name=ue_daemon --stop" >> $VM_CMDS
-        echo "echo \"sudo killall --signal SIGKILL lte-softmodem\"" >> $VM_CMDS
-        echo "sudo killall --signal SIGKILL lte-softmodem" >> $VM_CMDS
-        ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
-        rm -f $VM_CMDS
+        terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
         scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/enb.log $ARCHIVES_LOC
         scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/ue.log $ARCHIVES_LOC
+        terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
         exit -1
     fi
     echo "ifconfig oip1 | egrep \"inet addr\" | sed -e 's#^.*inet addr:##' -e 's#  P-t-P:.*\$##'" > $VM_CMDS
@@ -571,16 +607,18 @@ then
     echo "############################################################"
     echo "Terminate enb/ue simulators"
     echo "############################################################"
-    echo "echo \"sudo daemon --name=enb_daemon --stop\"" > $VM_CMDS
-    echo "sudo daemon --name=enb_daemon --stop" >> $VM_CMDS
-    echo "echo \"sudo daemon --name=ue_daemon --stop\"" >> $VM_CMDS
-    echo "sudo daemon --name=ue_daemon --stop" >> $VM_CMDS
-    echo "echo \"sudo killall --signal SIGKILL lte-softmodem\"" >> $VM_CMDS
-    echo "sudo killall --signal SIGKILL lte-softmodem" >> $VM_CMDS
-    ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
-    rm -f $VM_CMDS
+    terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
     scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/enb.log $ARCHIVES_LOC
     scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/ue.log $ARCHIVES_LOC
+
+    echo "############################################################"
+    echo "Terminate EPC"
+    echo "############################################################"
+
+    if [ $LTEBOX -eq 1 ]
+    then
+        terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+    fi
 
     echo "############################################################"
     echo "Checking run status"
