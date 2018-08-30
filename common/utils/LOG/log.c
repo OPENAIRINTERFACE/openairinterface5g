@@ -61,7 +61,7 @@ volatile int log_mem_write_flag=0;
 volatile int log_mem_write_side=0;
 char __log_mem_filename[1024]={0};
 char * log_mem_filename = &__log_mem_filename[0];
-
+char logmem_filename[1024] = {0};
 
 mapping log_level_names[] = {
   {"error",  OAILOG_ERR},

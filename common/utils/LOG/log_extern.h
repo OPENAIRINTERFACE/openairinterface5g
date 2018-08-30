@@ -30,3 +30,4 @@ extern mapping log_maskmap[];
 
 extern int log_mem_flag;
 extern char * log_mem_filename;
+extern char logmem_filename[1024];
