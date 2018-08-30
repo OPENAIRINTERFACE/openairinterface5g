@@ -36,7 +36,7 @@
 
 #include "LAYER2/PDCP_v10.1.0/pdcp.h"
 #include "RRC/NR/nr_rrc_defs.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 //#include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 #include "common/ran_context.h"

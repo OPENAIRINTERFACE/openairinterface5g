@@ -42,10 +42,10 @@
 #include "OCG.h"
 #include "OCG_extern.h"
 #include "otg_rx.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include <inttypes.h>
 #include "platform_constants.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "msc.h"
 
 #if defined(ENABLE_SECURITY)
@@ -915,16 +915,6 @@ pdcp_run (
 //-----------------------------------------------------------------------------
 {
   
-#if defined(ENABLE_ITTI)
-  MessageDef   *msg_p;
-  const char   *msg_name;
-  instance_t    instance;
-  int           result;
-  protocol_ctxt_t  ctxt;
-#endif
-
-
-  
   if (ctxt_pP->enb_flag) {
     start_meas(&eNB_pdcp_stats[ctxt_pP->module_id].pdcp_run);
   } else {
@@ -939,14 +929,15 @@ pdcp_run (
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_RUN, VCD_FUNCTION_IN);
 
 #if defined(ENABLE_ITTI)
+  MessageDef   *msg_p;
+  int           result;
+  protocol_ctxt_t  ctxt;
 
   do {
     // Checks if a message has been sent to PDCP sub-task
     itti_poll_msg (ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE, &msg_p);
 
     if (msg_p != NULL) {
-      msg_name = ITTI_MSG_NAME (msg_p);
-      instance = ITTI_MSG_INSTANCE (msg_p);
 
       switch (ITTI_MSG_ID(msg_p)) {
       case RRC_DCCH_DATA_REQ:
@@ -960,9 +951,9 @@ pdcp_run (
 	  RRC_DCCH_DATA_REQ (msg_p).eNB_index);
         LOG_I(PDCP, PROTOCOL_CTXT_FMT"Received %s from %s: instance %d, rb_id %d, muiP %d, confirmP %d, mode %d\n",
               PROTOCOL_CTXT_ARGS(&ctxt),
-              msg_name,
+              ITTI_MSG_NAME (msg_p),
               ITTI_MSG_ORIGIN_NAME(msg_p),
-              instance,
+              ITTI_MSG_INSTANCE (msg_p),
               RRC_DCCH_DATA_REQ (msg_p).rb_id,
               RRC_DCCH_DATA_REQ (msg_p).muip,
               RRC_DCCH_DATA_REQ (msg_p).confirmp,
@@ -1004,7 +995,7 @@ pdcp_run (
       break;
 
       default:
-        LOG_E(PDCP, "Received unexpected message %s\n", msg_name);
+        LOG_E(PDCP, "Received unexpected message %s\n", ITTI_MSG_NAME (msg_p));
         break;
       }
 
@@ -1583,7 +1574,7 @@ pdcp_config_req_asn1 (
     pdcp_pP->first_missing_pdu                = -1;
     pdcp_pP->rx_hfn_offset                    = 0;
 
-    LOG_N(PDCP, PROTOCOL_PDCP_CTXT_FMT" Action ADD  LCID %d (%s id %d) "
+    LOG_I(PDCP, PROTOCOL_PDCP_CTXT_FMT" Action ADD  LCID %d (%s id %d) "
             "configured with SN size %d bits and RLC %s\n",
           PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_pP),
           lc_idP,
@@ -1632,7 +1623,7 @@ pdcp_config_req_asn1 (
       pdcp_pP->seq_num_size=5;
     }
 
-    LOG_N(PDCP,PROTOCOL_PDCP_CTXT_FMT" Action MODIFY LCID %d "
+    LOG_I(PDCP,PROTOCOL_PDCP_CTXT_FMT" Action MODIFY LCID %d "
             "RB id %d reconfigured with SN size %d and RLC %s \n",
           PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_pP),
           lc_idP,

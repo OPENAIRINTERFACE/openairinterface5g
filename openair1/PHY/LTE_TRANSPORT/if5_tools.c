@@ -37,7 +37,7 @@
 
 //#include "targets/ARCH/ETHERNET/USERSPACE/LIB/if_defs.h"
 #include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 //#define DEBUG_DL_MOBIPASS
 //#define DEBUG_UL_MOBIPASS
 #define SUBFRAME_SKIP_NUM_MOBIPASS 8

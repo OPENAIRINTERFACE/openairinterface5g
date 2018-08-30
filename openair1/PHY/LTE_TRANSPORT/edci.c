@@ -40,8 +40,7 @@
 #include "transport_proto.h"
 #include "transport_common_proto.h"
 #include "assertions.h" 
-#include "T.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 
 //#define DEBUG_DCI_ENCODING 1

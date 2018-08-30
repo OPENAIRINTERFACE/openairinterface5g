@@ -40,6 +40,7 @@
 #include "PHY/types.h"
 #include "PHY/defs_eNB.h"
 #include "PHY/defs_UE.h"
+#include "PHY/defs_nr_UE.h"
 #include "PHY/phy_vars.h"
 
 #include "SCHED/sched_eNB.h"
@@ -47,7 +48,7 @@
 #include "LAYER2/MAC/mac_vars.h"
 
 #include "OCG_vars.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "UTIL/LISTS/list.h"
 
 #include "unitary_defs.h"
@@ -67,6 +68,7 @@
 #include "common/config/config_load_configmodule.h"
 #include "PHY/INIT/phy_init.h"
 
+
 void feptx_ofdm(RU_t *ru);
 void feptx_prec(RU_t *ru);
 
@@ -82,6 +84,8 @@ int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
 
 int codingw = 0;
+
+int emulate_rf = 0;
 
 void handler(int sig)
 {
@@ -149,7 +153,7 @@ void DL_channel(RU_t *ru,PHY_VARS_UE *UE,uint subframe,int awgn_flag,double SNR,
 
   //    printf("Copying tx ..., nsymb %d (n_tx %d), awgn %d\n",nsymb,eNB->frame_parms.nb_antennas_tx,awgn_flag);
   for (i=0; i<2*UE->frame_parms.samples_per_tti; i++) {
-    for (aa=0; aa<ru->frame_parms.nb_antennas_tx; aa++) {
+    for (aa=0; aa<ru->frame_parms->nb_antennas_tx; aa++) {
       if (awgn_flag == 0) {
 	s_re[aa][i] = ((double)(((short *)ru->common.txdata[aa]))[(2*subframe*UE->frame_parms.samples_per_tti) + (i<<1)]);
 	s_im[aa][i] = ((double)(((short *)ru->common.txdata[aa]))[(2*subframe*UE->frame_parms.samples_per_tti) +(i<<1)+1]);
@@ -195,11 +199,11 @@ void DL_channel(RU_t *ru,PHY_VARS_UE *UE,uint subframe,int awgn_flag,double SNR,
   if(abstx) {
     if (trials==0 && round==0) {
       // calculate freq domain representation to compute SINR
-      freq_channel(eNB2UE[0], ru->frame_parms.N_RB_DL,2*ru->frame_parms.N_RB_DL + 1);
+      freq_channel(eNB2UE[0], ru->frame_parms->N_RB_DL,2*ru->frame_parms->N_RB_DL + 1);
       // snr=pow(10.0,.1*SNR);
       fprintf(csv_fd,"%f,",SNR);
 
-      for (u=0; u<2*ru->frame_parms.N_RB_DL; u++) {
+      for (u=0; u<2*ru->frame_parms->N_RB_DL; u++) {
 	for (aarx=0; aarx<eNB2UE[0]->nb_rx; aarx++) {
 	  for (aatx=0; aatx<eNB2UE[0]->nb_tx; aatx++) {
 	    channelx = eNB2UE[0]->chF[aarx+(aatx*eNB2UE[0]->nb_rx)][u].x;
@@ -210,9 +214,9 @@ void DL_channel(RU_t *ru,PHY_VARS_UE *UE,uint subframe,int awgn_flag,double SNR,
       }
 
       if(num_rounds>1) {
-	freq_channel(eNB2UE[1], ru->frame_parms.N_RB_DL,2*ru->frame_parms.N_RB_DL + 1);
+	freq_channel(eNB2UE[1], ru->frame_parms->N_RB_DL,2*ru->frame_parms->N_RB_DL + 1);
 
-	for (u=0; u<2*ru->frame_parms.N_RB_DL; u++) {
+	for (u=0; u<2*ru->frame_parms->N_RB_DL; u++) {
 	  for (aarx=0; aarx<eNB2UE[1]->nb_rx; aarx++) {
 	    for (aatx=0; aatx<eNB2UE[1]->nb_tx; aatx++) {
 	      channelx = eNB2UE[1]->chF[aarx+(aatx*eNB2UE[1]->nb_rx)][u].x;
@@ -222,9 +226,9 @@ void DL_channel(RU_t *ru,PHY_VARS_UE *UE,uint subframe,int awgn_flag,double SNR,
 	  }
 	}
 
-	freq_channel(eNB2UE[2], ru->frame_parms.N_RB_DL,2*ru->frame_parms.N_RB_DL + 1);
+	freq_channel(eNB2UE[2], ru->frame_parms->N_RB_DL,2*ru->frame_parms->N_RB_DL + 1);
 
-	for (u=0; u<2*ru->frame_parms.N_RB_DL; u++) {
+	for (u=0; u<2*ru->frame_parms->N_RB_DL; u++) {
 	  for (aarx=0; aarx<eNB2UE[2]->nb_rx; aarx++) {
 	    for (aatx=0; aatx<eNB2UE[2]->nb_tx; aatx++) {
 	      channelx = eNB2UE[2]->chF[aarx+(aatx*eNB2UE[2]->nb_rx)][u].x;
@@ -234,9 +238,9 @@ void DL_channel(RU_t *ru,PHY_VARS_UE *UE,uint subframe,int awgn_flag,double SNR,
 	  }
 	}
 
-	freq_channel(eNB2UE[3], ru->frame_parms.N_RB_DL,2*ru->frame_parms.N_RB_DL + 1);
+	freq_channel(eNB2UE[3], ru->frame_parms->N_RB_DL,2*ru->frame_parms->N_RB_DL + 1);
 
-	for (u=0; u<2*ru->frame_parms.N_RB_DL; u++) {
+	for (u=0; u<2*ru->frame_parms->N_RB_DL; u++) {
 	  for (aarx=0; aarx<eNB2UE[3]->nb_rx; aarx++) {
 	    for (aatx=0; aatx<eNB2UE[3]->nb_tx; aatx++) {
 	      channelx = eNB2UE[3]->chF[aarx+(aatx*eNB2UE[3]->nb_rx)][u].x;
@@ -252,7 +256,7 @@ void DL_channel(RU_t *ru,PHY_VARS_UE *UE,uint subframe,int awgn_flag,double SNR,
   //AWGN
   // tx_lev is the average energy over the whole subframe
   // but SNR should be better defined wrt the energy in the reference symbols
-  sigma2_dB = 10*log10((double)tx_lev) +10*log10((double)ru->frame_parms.ofdm_symbol_size/(double)(ru->frame_parms.N_RB_DL*12)) - SNR;
+  sigma2_dB = 10*log10((double)tx_lev) +10*log10((double)ru->frame_parms->ofdm_symbol_size/(double)(ru->frame_parms->N_RB_DL*12)) - SNR;
   sigma2 = pow(10,sigma2_dB/10);
 
   for (i=0; i<2*UE->frame_parms.samples_per_tti; i++) {
@@ -647,7 +651,6 @@ int main(int argc, char **argv)
   int two_thread_flag=0;
   int DLSCH_RB_ALLOC = 0;
 
-  int log_level = LOG_ERR;
   int dci_received;
   PHY_VARS_eNB *eNB;
   RU_t *ru;
@@ -999,7 +1002,7 @@ int main(int argc, char **argv)
       break;
 
     case 'L':
-      log_level=atoi(optarg);
+      set_glog(atoi(optarg));
       break;
 
     case 'h':
@@ -1047,8 +1050,7 @@ int main(int argc, char **argv)
 	      "cannot load configuration module, exiting\n");
   logInit();
   // enable these lines if you need debug info
-  set_comp_log(PHY,LOG_INFO,LOG_HIGH,1);
-  set_glog(log_level,LOG_HIGH);
+  set_glog(LOG_DEBUG);
   // moreover you need to init itti with the following line
   // however itti will catch all signals, so ctrl-c won't work anymore
   // alternatively you can disable ITTI completely in CMakeLists.txt
@@ -1123,7 +1125,7 @@ int main(int argc, char **argv)
   printf("lte_param_init done\n");
   if ((transmission_mode==1) || (transmission_mode==7)) {
     for (aa=0; aa<ru->nb_tx; aa++)
-     for (re=0; re<ru->frame_parms.ofdm_symbol_size; re++)
+     for (re=0; re<ru->frame_parms->ofdm_symbol_size; re++)
        ru->beam_weights[0][0][aa][re] = 0x00007fff/eNB->frame_parms.nb_antennas_tx;
   }
 
@@ -1629,7 +1631,7 @@ int main(int argc, char **argv)
 	    start_meas(&eNB->ofdm_mod_stats);
 
 	    ru->proc.subframe_tx=subframe;
-	    memcpy((void*)&ru->frame_parms,(void*)&eNB->frame_parms,sizeof(LTE_DL_FRAME_PARMS));
+	    memcpy((void*)ru->frame_parms,(void*)&eNB->frame_parms,sizeof(LTE_DL_FRAME_PARMS));
 	    feptx_prec(ru);
 	    feptx_ofdm(ru);
 

@@ -37,7 +37,7 @@
 
 #include "SCHED_UE/sched_UE.h"
 #include "SCHED/sched_common_extern.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "../LTE_TRANSPORT/prach_extern.h"
 
@@ -415,7 +415,7 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
       memmove( prach, prach+4096, Ncp<<2 );
       prach_len = 2048+Ncp;
     } else {
-      idft12288(prachF,prach2);
+      idft12288(prachF,prach2,1);
       memmove( prach, prach+24576, Ncp<<2 );
       prach_len = 12288+Ncp;
 
@@ -434,7 +434,7 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
       memmove( prach, prach+6144, Ncp<<2 );
       prach_len = 3072+Ncp;
     } else {
-      idft18432(prachF,prach2);
+      idft18432(prachF,prach2,1);
       memmove( prach, prach+36864, Ncp<<2 );
       prach_len = 18432+Ncp;
 
@@ -453,7 +453,7 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
 	memmove( prach, prach+8192, Ncp<<2 );
 	prach_len = 4096+Ncp;
       } else {
-	idft24576(prachF,prach2);
+	idft24576(prachF,prach2,1);
 	memmove( prach, prach+49152, Ncp<<2 );
 	prach_len = 24576+Ncp;
 	
@@ -470,7 +470,7 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
 	memmove( prach, prach+6144, Ncp<<2 );
 	prach_len = 3072+Ncp;
       } else {
-	idft18432(prachF,prach2);
+	idft18432(prachF,prach2,1);
 	memmove( prach, prach+36864, Ncp<<2 );
 	prach_len = 18432+Ncp;
 	printf("Generated prach for 100 PRB, 3/4 sampling\n");

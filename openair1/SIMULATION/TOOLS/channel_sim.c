@@ -35,8 +35,7 @@
 
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_extern.h"
-#include "UTIL/LOG/log_if.h"
-#include "UTIL/LOG/log_extern.h"
+#include "common/utils/LOG/log.h"
 #include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_interface_extern.h"
 #include "UTIL/OCG/OCG.h"
@@ -45,10 +44,6 @@
 #include "UTIL/FIFO/types.h"
 
 #define RF
-//#define DEBUG_SIM
-
-//#undef LOG_D
-//#define LOG_D(A,B,C...) printf(B,C)
 
 
 
@@ -109,15 +104,15 @@ void do_DL_sig(sim_t *sim,
   
   if (sim->RU_output_mask[UE_id] == 0) {  //  This is the first eNodeB for this UE, clear the buffer
     for (aa=0; aa<nb_antennas_rx; aa++) {
-      memset((void*)sim->r_re_DL[UE_id][aa],0,(RC.ru[0]->frame_parms.samples_per_tti)*sizeof(double));
-      memset((void*)sim->r_im_DL[UE_id][aa],0,(RC.ru[0]->frame_parms.samples_per_tti)*sizeof(double));
+      memset((void*)sim->r_re_DL[UE_id][aa],0,(RC.ru[0]->frame_parms->samples_per_tti)*sizeof(double));
+      memset((void*)sim->r_im_DL[UE_id][aa],0,(RC.ru[0]->frame_parms->samples_per_tti)*sizeof(double));
     }
   }
   pthread_mutex_unlock(&sim->RU_output_mutex[UE_id]);
   
   for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
     txdata = RC.ru[ru_id]->common.txdata;
-    frame_parms = &RC.ru[ru_id]->frame_parms;
+    frame_parms = RC.ru[ru_id]->frame_parms;
     
     //    sf_offset = (subframe*frame_parms->samples_per_tti) + offset;
     sf_offset = (subframe*frame_parms->samples_per_tti);

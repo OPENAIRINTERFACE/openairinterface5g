@@ -245,6 +245,7 @@ typedef struct RU_proc_t_s {
   pthread_cond_t cond_emulateRF;
   /// condition variable for eNB signal
   pthread_cond_t cond_eNBs;
+  /// condition variable for gNB signal
   pthread_cond_t cond_gNBs;
   /// mutex for RU FH
   pthread_mutex_t mutex_FH;
@@ -259,6 +260,7 @@ typedef struct RU_proc_t_s {
   pthread_mutex_t mutex_synch;
   /// mutex for eNB signal
   pthread_mutex_t mutex_eNBs;
+  /// mutex for eNB signal
   pthread_mutex_t mutex_gNBs;
   /// mutex for asynch RX/TX thread
   pthread_mutex_t mutex_asynch_rxtx;
@@ -274,9 +276,38 @@ typedef struct RU_proc_t_s {
   int                  num_slaves;
   /// array of pointers to slaves
   struct RU_proc_t_s           **slave_proc;
+#ifdef PHY_TX_THREAD
+  /// pthread structure for PRACH thread
+  pthread_t pthread_phy_tx;
+  pthread_mutex_t mutex_phy_tx;
+  pthread_cond_t cond_phy_tx;
+  /// \internal This variable is protected by \ref mutex_phy_tx.
+  int instance_cnt_phy_tx;
+  /// frame to act upon for transmission
+  int frame_phy_tx;
+  /// subframe to act upon for transmission
+  int subframe_phy_tx;
+  /// timestamp to send to "slave rru"
+  openair0_timestamp timestamp_phy_tx;
+  /// pthread structure for RF TX thread
+  pthread_t pthread_rf_tx;
+  pthread_mutex_t mutex_rf_tx;
+  pthread_cond_t cond_rf_tx;
+  /// \internal This variable is protected by \ref mutex_rf_tx.
+  int instance_cnt_rf_tx;
+#endif
+#if defined(PRE_SCD_THREAD)
+  pthread_t pthread_pre_scd;
+  /// condition variable for time processing thread
+  pthread_cond_t cond_pre_scd;
+  /// mutex for time thread
+  pthread_mutex_t mutex_pre_scd;
+  int instance_pre_scd;
+#endif
   /// pipeline ready state
   int ru_rx_ready;
   int ru_tx_ready;
+  int emulate_rf_busy;
 } RU_proc_t;
 
 
@@ -383,7 +414,7 @@ typedef struct RU_t_s{
   void (*wakeup_prach_eNB)(struct PHY_VARS_eNB_s *eNB,struct RU_t_s *ru,int frame,int subframe);
 
   void (*wakeup_prach_gNB)(struct PHY_VARS_gNB_s *gNB,struct RU_t_s *ru,int frame,int subframe);
-  #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// function pointer to wakeup routine in lte-enb.
   void (*wakeup_prach_eNB_br)(struct PHY_VARS_eNB_s *eNB,struct RU_t_s *ru,int frame,int subframe);
   #endif
@@ -416,7 +447,8 @@ typedef struct RU_t_s{
   RU_COMMON            common;
   /// beamforming weight vectors per eNB
   int32_t **beam_weights[NUMBER_OF_eNB_MAX+1][15];
-
+  /// beamforming weight vectors per eNB
+  int32_t **nrbeam_weights[NUMBER_OF_gNB_MAX+1][16];
   /// received frequency-domain signal for PRACH (IF4p5 RRU) 
   int16_t              **prach_rxsigF;
   /// received frequency-domain signal for PRACH BR (IF4p5 RRU) 

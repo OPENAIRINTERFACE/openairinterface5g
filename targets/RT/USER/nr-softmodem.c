@@ -57,17 +57,17 @@
 #include "RRC/LTE/rrc_vars.h"
 #include "PHY_INTERFACE/phy_interface_vars.h"
 #include "gnb_config.h"
+
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"
 unsigned short config_frames[4] = {2,9,11,13};
 #endif
-#include "UTIL/LOG/log_extern.h"
-#include "UTIL/OTG/otg_tx.h"
-#include "UTIL/OTG/otg_externs.h"
-#include "UTIL/MATH/oml.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
+
 #include "UTIL/OPT/opt.h"
-#include "enb_config.h"
+
 //#include "PHY/TOOLS/time_meas.h"
 
 #ifndef OPENAIR2
@@ -531,11 +531,9 @@ static void get_options(void) {
       set_glog_onlinelog(online_log_messages);
   }
   if(config_isparamset(cmdline_logparams,CMDLINE_GLOGLEVEL_IDX)) {
-      set_glog(glog_level, -1);
+      set_glog(glog_level);
   }
-  if(config_isparamset(cmdline_logparams,CMDLINE_GLOGVERBO_IDX)) {
-      set_glog(-1, glog_verbosity);
-  }
+
   if (start_telnetsrv) {
      load_module_shlib("telnetsrv",NULL,0);
   }
@@ -945,7 +943,6 @@ int main( int argc, char **argv )
   cpuf=get_cpu_freq_GHz();
 
 #if defined(ENABLE_ITTI)
-  log_set_instance_type (LOG_INSTANCE_ENB);
 
   printf("ITTI init\n");
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);

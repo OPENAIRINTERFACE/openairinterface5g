@@ -63,13 +63,13 @@
 #endif
 
 #include "LAYER2/NR_MAC_UE/mac_defs.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 
 #ifdef EMOS
 fifo_dump_emos_UE emos_dump_UE;
 #endif
 
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 
 #if defined(ENABLE_ITTI)

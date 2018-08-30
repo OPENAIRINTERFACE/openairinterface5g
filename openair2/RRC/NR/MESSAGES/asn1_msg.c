@@ -35,7 +35,7 @@
 #include <string.h> /* for strerror(3) */
 #include <sysexits.h> /* for EX_* exit codes */
 #include <errno.h>  /* for errno */
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include <asn_application.h>
 #include <asn_internal.h> /* for _ASN_DEFAULT_STACK_MAX */
 #include <per_encoder.h>
@@ -44,6 +44,29 @@
 #include "RRC/NR/nr_rrc_extern.h"
 
 #if defined(NR_Rel15)
+#include "NR_SCS-SpecificCarrier.h"
+#include "NR_TDD-UL-DL-ConfigCommon.h"
+#include "NR_FrequencyInfoUL.h"
+#include "NR_FrequencyInfoDL.h"
+#include "NR_RACH-ConfigGeneric.h"
+#include "NR_RACH-ConfigCommon.h"
+#include "NR_PUSCH-TimeDomainResourceAllocation.h"
+#include "NR_PUSCH-ConfigCommon.h"
+#include "NR_PUCCH-ConfigCommon.h"
+#include "NR_PDSCH-TimeDomainResourceAllocation.h"
+#include "NR_PDSCH-ConfigCommon.h"
+#include "NR_RateMatchPattern.h"
+#include "NR_RateMatchPatternLTE-CRS.h"
+#include "NR_SearchSpace.h"
+#include "NR_ControlResourceSet.h"
+#include "NR_EUTRA-MBSFN-SubframeConfig.h"
+#include "NR_BWP-DownlinkCommon.h"
+#include "NR_BWP-DownlinkDedicated.h"
+#include "NR_UplinkConfigCommon.h"
+#include "NR_SetupRelease.h"
+#include "NR_PDCCH-ConfigCommon.h"
+#include "NR_BWP-UplinkCommon.h"
+
 #include "assertions.h"
 //#include "RRCConnectionRequest.h"
 //#include "UL-CCCH-Message.h"

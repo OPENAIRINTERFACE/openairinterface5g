@@ -27,7 +27,7 @@
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
 #include "MBSFN-SubframeConfigList.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "assertions.h"
 #include <math.h>
 #include "PHY/LTE_TRANSPORT/transport_common_proto.h"
@@ -190,7 +190,7 @@ void phy_config_sib13_ue(module_id_t Mod_id,int CC_id,uint8_t eNB_id,int mbsfn_A
 
   if (mbsfn_Area_idx == 0) {
     fp->Nid_cell_mbsfn = (uint16_t)mbsfn_AreaId_r9;
-    LOG_N(PHY,"Fix me: only called when mbsfn_Area_idx == 0)\n");
+    LOG_I(PHY,"Fix me: only called when mbsfn_Area_idx == 0)\n");
   }
 
   lte_gold_mbsfn(fp,PHY_vars_UE_g[Mod_id][CC_id]->lte_gold_mbsfn_table,fp->Nid_cell_mbsfn);

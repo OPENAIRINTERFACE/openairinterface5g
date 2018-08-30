@@ -531,6 +531,27 @@ summary_table_row "UL Simulator - Release 14" ./archives/phy_sim/ulsim.Rel14.txt
 summary_table_row "Coding - Release 14" ./archives/phy_sim/coding.Rel14.txt "Built target coding" ./phy_sim_row3.html
 summary_table_footer
 
+
+if [ -f archives/gnb_usrp/nr-softmodem.Rel14.txt ]
+then
+    summary_table_header "OAI Build gNB -- USRP option"
+    summary_table_row "LTE SoftModem - Release 15" ./archives/gnb_usrp/nr-softmodem.Rel14.txt "Built target nr-softmodem" ./gnb_usrp_row1.html
+    summary_table_row "Coding - Release 14" ./archives/gnb_usrp/coding.Rel14.txt "Built target coding" ./gnb_usrp_row2.html
+    summary_table_row "OAI USRP device if - Release 14" ./archives/gnb_usrp/oai_usrpdevif.Rel14.txt "Built target oai_usrpdevif" ./gnb_usrp_row3.html
+    summary_table_row "Parameters Lib Config - Release 14" ./archives/gnb_usrp/params_libconfig.Rel14.txt "Built target params_libconfig" ./gnb_usrp_row4.html
+    summary_table_footer
+fi
+
+if [ -f archives/nrue_usrp/nr-uesoftmodem.Rel14.txt ]
+then
+    summary_table_header "OAI Build 5G NR UE -- USRP option"
+    summary_table_row "UE SoftModem - Release 15" ./archives/nrue_usrp/nr-uesoftmodem.Rel14.txt "Built target nr-uesoftmodem" ./nrue_usrp_row1.html
+    summary_table_row "Coding - Release 14" ./archives/nrue_usrp/coding.Rel14.txt "Built target coding" ./nrue_usrp_row2.html
+    summary_table_row "OAI USRP device if - Release 14" ./archives/nrue_usrp/oai_usrpdevif.Rel14.txt "Built target oai_usrpdevif" ./nrue_usrp_row3.html
+    summary_table_row "Parameters Lib Config - Release 14" ./archives/nrue_usrp/params_libconfig.Rel14.txt "Built target params_libconfig" ./nrue_usrp_row4.html
+    summary_table_footer
+fi
+
 summary_table_header "OAI Build eNB -- ETHERNET transport option"
 summary_table_row "LTE SoftModem w/o S1 - Release 14" ./archives/enb_eth/lte-softmodem-nos1.Rel14.txt "Built target lte-softmodem" ./enb_eth_row1.html
 summary_table_row "Coding - Release 14" ./archives/enb_eth/coding.Rel14.txt "Built target coding" ./enb_eth_row2.html
@@ -569,6 +590,15 @@ do
     cat $DETAILS_TABLE >> ./build_results.html
 done
 for DETAILS_TABLE in `ls ./phy_sim_row*.html`
+do
+    cat $DETAILS_TABLE >> ./build_results.html
+done
+
+for DETAILS_TABLE in `ls ./gnb_usrp_row*.html`
+do
+    cat $DETAILS_TABLE >> ./build_results.html
+done
+for DETAILS_TABLE in `ls ./nrue_usrp_row*.html`
 do
     cat $DETAILS_TABLE >> ./build_results.html
 done

@@ -383,6 +383,8 @@ void nr_phy_config_request(NR_PHY_Config_t *gNB);
 void phy_free_nr_gNB(PHY_VARS_gNB *gNB);
 int l1_north_init_gNB(void);
 
+void init_dfts(void);
+
 /** @} */
 #endif
 

@@ -98,6 +98,7 @@ nfapi_tx_request_t TX_req;
 Sched_Rsp_t sched_resp;
 
 int codingw = 0;
+int emulate_rf = 0;
 
 void
 fill_nfapi_ulsch_config_request(nfapi_ul_config_request_pdu_t *ul_config_pdu,
@@ -1143,6 +1144,10 @@ int main(int argc, char **argv)
 	  if (mcs < 11)      modulation_type = 2;
 	  else if (mcs < 21) modulation_type = 4;
 	  else if (mcs < 29) modulation_type = 6;
+          else {
+             LOG_E(SIM,"mcs %i is not valid\n",mcs);
+             exit(-1);
+          }
 
 	  fill_ulsch_dci(eNB,proc_rxtx->frame_rx,subframe,&sched_resp,14,(void*)&UL_alloc_pdu,first_rb,nb_rb,(round==0)?mcs:(28+rvidx[round]),modulation_type,ndi,get_TBS_UL(mcs,nb_rb),cqi_flag,beta_CQI,beta_RI,cqi_size);
 
@@ -1488,23 +1493,23 @@ int main(int argc, char **argv)
 
       if (dump_table == 1 ) {
         int n;
-        set_component_filelog(USIM); // file located in /tmp/usim.txt
-        LOG_F(USIM,"The transmitter raw data: \n");
+        set_component_filelog(SIM); // file located in /tmp/usim.txt
+        LOG_F(SIM,"The transmitter raw data: \n");
 
         for (n=0; n< time_vector_tx.size; n++) {
           //   printf("%f ", table_tx[n]);
-          LOG_F(USIM,"%f ", table_tx[n]);
+          LOG_F(SIM,"%f ", table_tx[n]);
         }
 
-        LOG_F(USIM,"\n");
-        LOG_F(USIM,"The receiver raw data: \n");
+        LOG_F(SIM,"\n");
+        LOG_F(SIM,"The receiver raw data: \n");
 
         for (n=0; n< time_vector_rx.size; n++) {
           // printf("%f ", table_rx[n]);
-          LOG_F(USIM,"%f ", table_rx[n]);
+          LOG_F(SIM,"%f ", table_rx[n]);
         }
 
-        LOG_F(USIM,"\n");
+        LOG_F(SIM,"\n");
       }
 
       double tx_median = table_tx[time_vector_tx.size/2];

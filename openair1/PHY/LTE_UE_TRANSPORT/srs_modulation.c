@@ -31,7 +31,7 @@
 */
 #include "PHY/defs_UE.h"
 #include "PHY/phy_extern_ue.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 
 unsigned short msrsb_6_40[8][4] = {{36,12,4,4},
   {32,16,8,4},
@@ -134,7 +134,6 @@ int32_t generate_srs(LTE_DL_FRAME_PARMS *frame_parms,
   //uint32_t subframe_offset;
   uint8_t Bsrs  = soundingrs_ul_config_dedicated->srs_Bandwidth;
   uint8_t Csrs  = frame_parms->soundingrs_ul_config_common.srs_BandwidthConfig;
-  uint8_t Ssrs  = frame_parms->soundingrs_ul_config_common.srs_SubframeConfig;
   uint8_t n_RRC = soundingrs_ul_config_dedicated->freqDomainPosition;
   uint8_t kTC   = soundingrs_ul_config_dedicated->transmissionComb;
 
@@ -144,7 +143,9 @@ int32_t generate_srs(LTE_DL_FRAME_PARMS *frame_parms,
   uint32_t v=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[1+(subframe<<1)];
 
   LOG_D(PHY,"SRS root sequence: u %d, v %d\n",u,v);
-  LOG_D(PHY,"CommonSrsConfig:    Csrs %d, Ssrs %d, AnSrsSimultan %d \n",Csrs,Ssrs,frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission);
+  LOG_D(PHY,"CommonSrsConfig:    Csrs %d, Ssrs %d, AnSrsSimultan %d \n",Csrs,
+        frame_parms->soundingrs_ul_config_common.srs_SubframeConfig,
+        frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission);
   LOG_D(PHY,"DedicatedSrsConfig: Bsrs %d, bhop %d, nRRC %d, Isrs %d, kTC %d, n_SRS %d\n",Bsrs,soundingrs_ul_config_dedicated->srs_HoppingBandwidth,n_RRC
                                                                                        ,soundingrs_ul_config_dedicated->srs_ConfigIndex,kTC
                                                                                        ,soundingrs_ul_config_dedicated->cyclicShift);

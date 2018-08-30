@@ -324,7 +324,11 @@ static const struct net_device_ops nasmesh_netdev_ops = {
   .ndo_set_mac_address  = NULL,
   .ndo_set_config     = nas_set_config,
   .ndo_do_ioctl       = nas_CTL_ioctl,
+#if RHEL_RELEASE_CODE>=1797
+  .extended.ndo_change_mtu   = nas_change_mtu,
+#else
   .ndo_change_mtu   = nas_change_mtu,
+#endif
   .ndo_tx_timeout   = nas_tx_timeout,
 };
 

@@ -29,7 +29,6 @@
 #include "TDD-Config.h"
 #include "LAYER2/MAC/mac_extern.h"
 #include "MBSFN-SubframeConfigList.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
 #include "assertions.h"
 #include <math.h>
 

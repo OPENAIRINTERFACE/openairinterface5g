@@ -80,23 +80,6 @@
 #include "targets/COMMON/openairinterface5g_limits.h"
 
 
-#if defined(EXMIMO) || defined(OAI_USRP)
-//#define NUMBER_OF_eNB_MAX 1
-//#define NUMBER_OF_UE_MAX 16
-
-//#define NUMBER_OF_CONNECTED_eNB_MAX 3
-#else
-#ifdef LARGE_SCALE
-//#define NUMBER_OF_eNB_MAX 2
-//#define NUMBER_OF_UE_MAX 120
-//#define NUMBER_OF_CONNECTED_eNB_MAX 1 // to save some memory
-#else
-//#define NUMBER_OF_eNB_MAX 3
-//#define NUMBER_OF_UE_MAX 16
-//#define NUMBER_OF_RU_MAX 64
-//#define NUMBER_OF_CONNECTED_eNB_MAX 1
-#endif
-#endif
 #define NUMBER_OF_SUBBANDS_MAX 13
 #define NUMBER_OF_HARQ_PID_MAX 8
 
@@ -728,4 +711,5 @@ typedef struct PHY_VARS_eNB_s {
   int32_t pusch_stats_BO[NUMBER_OF_UE_MAX][10240];
 } PHY_VARS_eNB;
 
-#endif //  __PHY_DEFS_eNB_H__
+
+#endif /* __PHY_DEFS_ENB__H__ */

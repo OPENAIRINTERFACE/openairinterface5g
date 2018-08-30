@@ -70,11 +70,11 @@
 #include "RRC/LTE/rrc_vars.h"
 #include "PHY_INTERFACE/phy_interface_vars.h"
 
-#include "UTIL/LOG/log_extern.h"
+#include "common/utils/LOG/log.h"
 #include "UTIL/OTG/otg_tx.h"
 #include "UTIL/OTG/otg_externs.h"
 #include "UTIL/MATH/oml.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "enb_config.h"
 //#include "PHY/TOOLS/time_meas.h"
@@ -136,7 +136,7 @@ volatile int             start_UE = 0;
 #endif
 volatile int             oai_exit = 0;
 
-static clock_source_t clock_source = internal;
+clock_source_t clock_source = internal;
 static int wait_for_sync = 0;
 
 unsigned int                    mmapped_dma=0;
@@ -327,6 +327,7 @@ void exit_fun(const char* s)
 {
   int CC_id;
 
+  logClean();
   if (s != NULL) {
     printf("%s %s() Exiting OAI softmodem: %s\n",__FILE__, __FUNCTION__, s);
   }
@@ -334,8 +335,11 @@ void exit_fun(const char* s)
   oai_exit = 1;
 
   for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-	if (PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func)
-	  PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][CC_id]->rfdevice);
+     if (PHY_vars_UE_g)
+      if (PHY_vars_UE_g[0])
+         if (PHY_vars_UE_g[0][CC_id])
+	    if (PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func)
+	        PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][CC_id]->rfdevice);
     }
 
 #if defined(ENABLE_ITTI)
@@ -467,19 +471,19 @@ void *l2l1_task(void *arg) {
 extern int16_t dlsch_demod_shift;
 
 static void get_options(void) {
-  char logmem_filename[1024] = {0};
   int CC_id;
   int tddflag, nonbiotflag;
   char *loopfile=NULL;
   int dumpframe;
   uint32_t online_log_messages;
-  uint32_t glog_level, glog_verbosity;
+  uint32_t glog_level;
   uint32_t start_telnetsrv;
 
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
   paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
 
   set_default_frame_parms(frame_parms);
+  CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL); 
 
   if (strlen(in_path) > 0) {
@@ -498,10 +502,7 @@ static void get_options(void) {
       set_glog_onlinelog(online_log_messages);
   }
   if(config_isparamset(cmdline_logparams,CMDLINE_GLOGLEVEL_IDX)) {
-      set_glog(glog_level, -1);
-  }
-  if(config_isparamset(cmdline_logparams,CMDLINE_GLOGVERBO_IDX)) {
-      set_glog(-1, glog_verbosity);
+      set_glog(glog_level);
   }
   if (start_telnetsrv) {
      load_module_shlib("telnetsrv",NULL,0);
@@ -512,6 +513,7 @@ static void get_options(void) {
 
 
   config_process_cmdline( cmdline_uemodeparams,sizeof(cmdline_uemodeparams)/sizeof(paramdef_t),NULL);
+  CONFIG_CLEARRTFLAG(CONFIG_NOEXITONHELP);
   config_process_cmdline( cmdline_ueparams,sizeof(cmdline_ueparams)/sizeof(paramdef_t),NULL);
   if (loopfile != NULL) {
       printf("Input file for hardware emulation: %s",loopfile);
@@ -829,17 +831,17 @@ int main( int argc, char **argv )
   set_taus_seed (0);
 
 
-    set_comp_log(HW,      LOG_DEBUG,  LOG_HIGH, 1);
-    set_comp_log(PHY,     LOG_INFO,   LOG_HIGH, 1);
-    set_comp_log(MAC,     LOG_INFO,   LOG_HIGH, 1);
-    set_comp_log(RLC,     LOG_INFO,   LOG_HIGH | FLAG_THREAD, 1);
-    set_comp_log(PDCP,    LOG_INFO,   LOG_HIGH, 1);
-    set_comp_log(OTG,     LOG_INFO,   LOG_HIGH, 1);
-    set_comp_log(RRC,     LOG_INFO,   LOG_HIGH, 1);
+    set_log(HW,      OAILOG_DEBUG,   1);
+    set_log(PHY,     OAILOG_INFO,    1);
+    set_log(MAC,     OAILOG_INFO,    1);
+    set_log(RLC,     OAILOG_INFO,    1);
+    set_log(PDCP,    OAILOG_INFO,    1);
+    set_log(OTG,     OAILOG_INFO,    1);
+    set_log(RRC,     OAILOG_INFO,    1);
 #if defined(ENABLE_ITTI)
-    set_comp_log(SIM,     LOG_INFO,   LOG_MED, 1);
+    set_log(SIM,     OAILOG_INFO,   1);
 # if defined(ENABLE_USE_MME)
-    set_comp_log(NAS,     LOG_INFO,   LOG_HIGH, 1);
+    set_log(NAS,     OAILOG_INFO,    1);
 # endif
 #endif
 
@@ -849,11 +851,6 @@ int main( int argc, char **argv )
   pthread_mutex_init(&sync_mutex, NULL);
 
 #if defined(ENABLE_ITTI)
-
-  log_set_instance_type (LOG_INSTANCE_UE);
-
-
-
   printf("ITTI init\n");
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 

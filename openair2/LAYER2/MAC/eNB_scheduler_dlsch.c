@@ -33,8 +33,8 @@
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_proto.h"
 #include "LAYER2/MAC/mac_extern.h"
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "OCG.h"
 #include "OCG_extern.h"
@@ -386,6 +386,7 @@ set_ul_DAI(int module_idP, int UE_idP, int CC_idP, int frameP,
         UE_list->UE_template[CC_idP][UE_idP].DAI_ul[3] = DAI;
         break;
       }
+      break;
 
     case 2:
       //      if ((subframeP==3)||(subframeP==8))
@@ -474,7 +475,7 @@ schedule_dlsch(module_id_t module_idP,
       slice_sched_dl[i] = dlsym(NULL, dl_scheduler_type[i]);
       update_dl_scheduler[i] = 0 ;
       update_dl_scheduler_current[i] = 0;
-      LOG_N(MAC,"update dl scheduler slice %d\n", i);
+      LOG_I(MAC,"update dl scheduler slice %d\n", i);
     }
 
     if (total_slice_percentage <= 1.0){ // the new total RB share is within the range
@@ -482,7 +483,7 @@ schedule_dlsch(module_id_t module_idP,
       // check if the number of slices has changed, and log
       if (n_active_slices_current != n_active_slices ){
 	if ((n_active_slices > 0) && (n_active_slices <= MAX_NUM_SLICES)) {
-	  LOG_N(MAC,"[eNB %d]frame %d subframe %d: number of active DL slices has changed: %d-->%d\n",
+	  LOG_I(MAC,"[eNB %d]frame %d subframe %d: number of active DL slices has changed: %d-->%d\n",
 		module_idP, frameP, subframeP, n_active_slices_current, n_active_slices);
 
 	  n_active_slices_current = n_active_slices;
@@ -495,7 +496,7 @@ schedule_dlsch(module_id_t module_idP,
 
       // check if the slice rb share has changed, and log the console
       if (slice_percentage_current[i] != slice_percentage[i]){ // new slice percentage
-	LOG_N(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: total percentage %f-->%f, slice RB percentage has changed: %f-->%f\n",
+	LOG_I(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: total percentage %f-->%f, slice RB percentage has changed: %f-->%f\n",
 	      module_idP, i, frameP, subframeP, total_slice_percentage_current, total_slice_percentage, slice_percentage_current[i], slice_percentage[i]);
 	total_slice_percentage_current= total_slice_percentage;
 	slice_percentage_current[i] = slice_percentage[i];
@@ -505,7 +506,7 @@ schedule_dlsch(module_id_t module_idP,
       // check if the slice max MCS, and log the console
       if (slice_maxmcs_current[i] != slice_maxmcs[i]){
 	if ((slice_maxmcs[i] >= 0) && (slice_maxmcs[i] < 29)){
-	  LOG_N(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: slice MAX MCS has changed: %d-->%d\n",
+	  LOG_I(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: slice MAX MCS has changed: %d-->%d\n",
 		module_idP, i, frameP, subframeP, slice_maxmcs_current[i], slice_maxmcs[i]);
 	  slice_maxmcs_current[i] = slice_maxmcs[i];
 	} else {
@@ -516,7 +517,7 @@ schedule_dlsch(module_id_t module_idP,
 
       // check if a new scheduler, and log the console
       if (update_dl_scheduler_current[i] != update_dl_scheduler[i]){
-	LOG_N(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: DL scheduler for this slice is updated: %s \n",
+	LOG_I(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: DL scheduler for this slice is updated: %s \n",
 	      module_idP, i, frameP, subframeP, dl_scheduler_type[i]);
 	update_dl_scheduler_current[i] = update_dl_scheduler[i];
       }
@@ -542,7 +543,7 @@ schedule_dlsch(module_id_t module_idP,
 
     // Check for new sorting policy
     if (sorting_policy_current[i] != sorting_policy[i]) {
-      LOG_N(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: UE sorting policy has changed (%x-->%x)\n",
+      LOG_I(MAC,"[eNB %d][SLICE %d][DL] frame %d subframe %d: UE sorting policy has changed (%x-->%x)\n",
             module_idP, i, frameP, subframeP, sorting_policy_current[i], sorting_policy[i]);
       sorting_policy_current[i] = sorting_policy[i];
     }
@@ -1780,7 +1781,7 @@ set_ue_dai(sub_frame_t subframeP,
 
   default:
     UE_list->UE_template[CC_id][UE_id].DAI = 0;
-    LOG_N(MAC, "unknow TDD config %d\n", tdd_config);
+    LOG_I(MAC, "unknow TDD config %d\n", tdd_config);
     break;
   }
 }

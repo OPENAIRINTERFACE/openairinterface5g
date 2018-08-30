@@ -27,7 +27,7 @@
  */
 
 #include "flexran_agent_net_comm.h"
-#include "log.h"
+#include "common/utils/LOG/log.h"
 
 flexran_agent_channel_t *agent_channel[NUM_MAX_ENB][FLEXRAN_AGENT_MAX];
 flexran_agent_channel_instance_t channel_instance;

@@ -48,6 +48,8 @@ function usage {
     echo "    --variant basic-sim    OR -v2"
     echo "    --variant phy-sim      OR -v3"
     echo "    --variant cppcheck     OR -v4"
+    echo "    --variant gnb-usrp     OR -v5"
+    echo "    --variant nu-ue-usrp   OR -v6"
     echo "    --variant enb-ethernet OR -v7"
     echo "    --variant ue-ethernet  OR -v8"
     echo "    Specify the variant to build."
@@ -68,6 +70,8 @@ function variant_usage {
     echo "    --variant basic-sim    OR -v2"
     echo "    --variant phy-sim      OR -v3"
     echo "    --variant cppcheck     OR -v4"
+    echo "    --variant gnb-usrp     OR -v5"
+    echo "    --variant nu-ue-usrp   OR -v6"
     echo "    --variant enb-ethernet OR -v7"
     echo "    --variant ue-ethernet  OR -v8"
     echo ""
@@ -147,11 +151,27 @@ case $key in
     ;;
     -v4)
     VM_NAME=ci-cppcheck
-    VM_MEMORY=4096
+    VM_MEMORY=8192
     ARCHIVES_LOC=cppcheck
     LOG_PATTERN=cppcheck.xml
     NB_PATTERN_FILES=1
-    BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2"
+    BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2 -i openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c"
+    shift
+    ;;
+    -v5)
+    VM_NAME=ci-gnb-usrp
+    ARCHIVES_LOC=gnb_usrp
+    LOG_PATTERN=.Rel14.txt
+    NB_PATTERN_FILES=4
+    BUILD_OPTIONS="--gNB -w USRP"
+    shift
+    ;;
+    -v6)
+    VM_NAME=ci-ue-nr-usrp
+    ARCHIVES_LOC=nrue_usrp
+    LOG_PATTERN=.Rel14.txt
+    NB_PATTERN_FILES=4
+    BUILD_OPTIONS="--nrUE -w USRP"
     shift
     ;;
     -v7)
@@ -196,11 +216,25 @@ case $key in
         ;;
         cppcheck)
         VM_NAME=ci-cppcheck
-        VM_MEMORY=4096
+        VM_MEMORY=8192
         ARCHIVES_LOC=cppcheck
         LOG_PATTERN=cppcheck.xml
         NB_PATTERN_FILES=1
-        BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2"
+        BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2 -i openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c"
+        ;;
+        gnb-usrp)
+        VM_NAME=ci-gnb-usrp
+        ARCHIVES_LOC=gnb_usrp
+        LOG_PATTERN=.Rel14.txt
+        NB_PATTERN_FILES=4
+        BUILD_OPTIONS="--gNB -w USRP"
+        ;;
+        nu-ue-usrp)
+        VM_NAME=ci-ue-nr-usrp
+        ARCHIVES_LOC=nrue_usrp
+        LOG_PATTERN=.Rel14.txt
+        NB_PATTERN_FILES=4
+        BUILD_OPTIONS="--nrUE -w USRP"
         ;;
         enb-ethernet)
         VM_NAME=ci-enb-ethernet

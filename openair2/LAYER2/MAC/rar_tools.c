@@ -32,7 +32,7 @@
 #include "mac_proto.h"
 #include "mac_extern.h"
 #include "SIMULATION/TOOLS/sim.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "OCG.h"
 #include "OCG_extern.h"
 #include "UTIL/OPT/opt.h"

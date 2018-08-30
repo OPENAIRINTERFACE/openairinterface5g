@@ -47,7 +47,7 @@ extern RAN_CONTEXT_t RC;
 #include <vendor_ext.h>
 #include "fapi_stub.h"
 //#include "fapi_l1.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "openair2/LAYER2/MAC/mac_proto.h"
 
 #include "PHY/INIT/phy_init.h"
@@ -193,26 +193,25 @@ typedef struct {
 static pnf_info pnf;
 static pthread_t pnf_start_pthread;
 
-extern void nfapi_log(char *file, char *func, int line, int comp, int level, const char* format, va_list args);
+int nfapitooai_level(int nfapi_level) {
+  switch(nfapi_level) {
+    case NFAPI_TRACE_ERROR: 
+         return LOG_ERR;
+    case NFAPI_TRACE_WARN: 
+         return LOG_WARNING;
+    case NFAPI_TRACE_NOTE:
+         return LOG_INFO;
+    case NFAPI_TRACE_INFO: 
+         return LOG_DEBUG;
+  } 
+  return LOG_ERR;
+}
 
 void pnf_nfapi_trace(nfapi_trace_level_t nfapi_level, const char* message, ...) {
   va_list args;
-  int oai_level;
-
-  if (nfapi_level==NFAPI_TRACE_ERROR) {
-    oai_level = LOG_ERR;
-  } else if (nfapi_level==NFAPI_TRACE_WARN) {
-    oai_level = LOG_WARNING;
-  } else if (nfapi_level==NFAPI_TRACE_NOTE) {
-    oai_level = LOG_INFO;
-  } else if (nfapi_level==NFAPI_TRACE_INFO) {
-    oai_level = LOG_DEBUG;
-  } else {
-    oai_level = LOG_ERR;
-  }
 
   va_start(args, message);
-  nfapi_log("FILE>", "FUNC", 999, PHY, oai_level, message, args);
+  nfapi_log("FILE>", "FUNC", 999, PHY, nfapitooai_level(nfapi_level), message, args);
   va_end(args);
 }
 

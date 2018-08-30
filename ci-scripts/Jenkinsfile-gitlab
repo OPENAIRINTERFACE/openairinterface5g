@@ -1,4 +1,4 @@
-#!/bin/groovy
+#!/Bin/groovy
 /*
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -41,7 +41,7 @@ pipeline {
         disableConcurrentBuilds()
         timestamps()
         gitLabConnection('OAI GitLab')
-        gitlabBuilds(builds: ["Build eNb-USRP", "Build basic-sim", "Build phy-sim", "Build eNb-ethernet", "Build UE-ethernet", "Analysis with cppcheck", "Test phy-sim", "Test-FDD-Band7"])
+        gitlabBuilds(builds: ["Build eNb-USRP", "Build basic-sim", "Build phy-sim", "Build eNb-ethernet", "Build UE-ethernet", "Build gNb-usrp", "Build nr-UE-usrp", "Analysis with cppcheck", "Test phy-sim", "Test-FDD-Band7"])
         ansiColor('xterm')
     }
 
@@ -146,6 +146,16 @@ pipeline {
         stage ("Start VM -- ue-ethernet") {
             steps {
                 sh "./ci-scripts/createVM.sh --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+		
+        stage ("Start VM -- gnb-usrp") {
+            steps {
+                sh "./ci-scripts/createVM.sh --variant gnb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+            }
+        }
+
+        stage ("Start VM -- nu-ue-usrp") {
+            steps {
+                sh "./ci-scripts/createVM.sh --variant nu-ue-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
             }
         }
 
@@ -172,24 +182,24 @@ pipeline {
                         }
                     }
                 }
+                stage ("Build 5G gNB-USRP") {
+                    steps {
+                        gitlabCommitStatus(name: "Build gNb-usrp") {
+                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant gnb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                        }
+                    }
+                }
+                stage ("Build 5G NR-UE-USRP") {
+                    steps {
+                        gitlabCommitStatus(name: "Build nr-UE-usrp") {
+                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant nu-ue-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                        }
+                    }
+                }
                 stage ("Build physical simulators") {
                     steps {
                         gitlabCommitStatus(name: "Build phy-sim") {
                             sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
-                        }
-                    }
-                }
-                stage ("Build eNb-ethernet") {
-                    steps {
-                        gitlabCommitStatus(name: "Build eNb-ethernet") {
-                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
-                        }
-                    }
-                }
-                stage ("Build UE-ethernet") {
-                    steps {
-                        gitlabCommitStatus(name: "Build UE-ethernet") {
-                            sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                         }
                     }
                 }
@@ -218,7 +228,7 @@ pipeline {
                 always {
                     script {
                         dir ('archives') {
-                            sh "zip -r -qq vm_build_logs.zip basic_sim enb_usrp phy_sim cppcheck enb_eth ue_eth red_hat"
+                            sh "zip -r -qq vm_build_logs.zip basic_sim enb_usrp phy_sim cppcheck enb_eth ue_eth gnb_usrp nrue_usrp red_hat"
                         }
                         if(fileExists('archives/vm_build_logs.zip')) {
                             archiveArtifacts artifacts: 'archives/vm_build_logs.zip'

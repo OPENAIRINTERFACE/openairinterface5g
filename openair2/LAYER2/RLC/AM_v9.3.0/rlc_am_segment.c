@@ -30,7 +30,7 @@
 #include "list.h"
 #include "rlc_am.h"
 #include "LAYER2/MAC/mac_extern.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 
 //-----------------------------------------------------------------------------
 void rlc_am_pdu_polling (
@@ -209,7 +209,7 @@ void rlc_am_segment_10 (
       }
 
       if (!(pdu_mem_p = get_free_mem_block (data_pdu_size + sizeof(struct mac_tb_req), __func__))) {
-        LOG_C(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEGMENT] ERROR COULD NOT GET NEW PDU, EXIT\n",
+        LOG_E(RLC, PROTOCOL_RLC_AM_CTXT_FMT"[SEGMENT] ERROR COULD NOT GET NEW PDU, EXIT\n",
               PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,rlc_pP));
         RLC_AM_MUTEX_UNLOCK(&rlc_pP->lock_input_sdus);
         return;

@@ -147,14 +147,15 @@ s1ap_message_decoded_callback messages_callback[][3] = {
   { 0, 0, 0 }, /* UplinkNonUEAssociatedLPPaTransport */
 #endif /* #if (S1AP_VERSION >= MAKE_VERSION(9, 0, 0)) */
 };
-
-static const char *s1ap_direction2String[] = {
+char *s1ap_direction2String(int s1ap_dir) {
+static char *s1ap_direction_String[] = {
   "", /* Nothing */
   "Originating message", /* originating message */
   "Successfull outcome", /* successfull outcome */
   "UnSuccessfull outcome", /* successfull outcome */
 };
-
+return(s1ap_direction_String[s1ap_dir]);
+}
 void s1ap_handle_s1_setup_message(s1ap_eNB_mme_data_t *mme_desc_p, int sctp_shutdown)
 {
   if (sctp_shutdown) {
@@ -230,7 +231,7 @@ int s1ap_eNB_handle_message(uint32_t assoc_id, int32_t stream,
   if (messages_callback[pdu.choice.initiatingMessage.procedureCode][pdu.present - 1] == NULL) {
     S1AP_ERROR("[SCTP %d] No handler for procedureCode %ld in %s\n",
                assoc_id, pdu.choice.initiatingMessage.procedureCode,
-               s1ap_direction2String[pdu.present - 1]);
+               s1ap_direction2String(pdu.present - 1));
     ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_S1AP_S1AP_PDU, &pdu);
     return -1;
   }
@@ -852,7 +853,7 @@ int s1ap_eNB_handle_ue_context_release_command(uint32_t   assoc_id,
         MSC_S1AP_MME,
         NULL,0,
         "0 UEContextRelease/%s eNB_ue_s1ap_id "S1AP_UE_ID_FMT" mme_ue_s1ap_id "S1AP_UE_ID_FMT" len %u",
-        s1ap_direction2String[pdu->present - 1],
+        s1ap_direction2String(pdu->present - 1),
         enb_ue_s1ap_id,
         mme_ue_s1ap_id);
 
@@ -1331,6 +1332,7 @@ int s1ap_eNB_handle_e_rab_release_command(uint32_t               assoc_id,
     S1AP_ERROR("[SCTP %d] Received E-RAB release command for non existing MME context\n", assoc_id);
     return -1;
   }
+
 
   /* id-MME-UE-S1AP-ID */
   S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_E_RABReleaseCommandIEs_t, ie, container,

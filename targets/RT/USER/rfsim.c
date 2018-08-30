@@ -51,7 +51,7 @@
 #include "common/ran_context.h"
 #include "PHY/defs_UE.h"
 #include "PHY/defs_eNB.h"
-#include "vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 RAN_CONTEXT_t RC;
 extern PHY_VARS_UE ***PHY_vars_UE_g;
@@ -80,11 +80,11 @@ void wait_RUs(void)
   
   // copy frame parameters from RU to UEs
   for (i=0;i<NB_UE_INST;i++) {
-    sim.current_UE_rx_timestamp[i][0] = RC.ru[0]->frame_parms.samples_per_tti + RC.ru[0]->frame_parms.ofdm_symbol_size + RC.ru[0]->frame_parms.nb_prefix_samples0;
+    sim.current_UE_rx_timestamp[i][0] = RC.ru[0]->frame_parms->samples_per_tti + RC.ru[0]->frame_parms->ofdm_symbol_size + RC.ru[0]->frame_parms->nb_prefix_samples0;
 
   }
 
-  for (int ru_id=0;ru_id<RC.nb_RU;ru_id++) sim.current_ru_rx_timestamp[ru_id][0] = RC.ru[ru_id]->frame_parms.samples_per_tti;
+  for (int ru_id=0;ru_id<RC.nb_RU;ru_id++) sim.current_ru_rx_timestamp[ru_id][0] = RC.ru[ru_id]->frame_parms->samples_per_tti;
 
   printf("RUs are ready, let's go\n");
 }
@@ -176,7 +176,7 @@ int ru_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
   LOG_D(SIM,"RU_trx_read nsamps %d TS(%llu,%llu) => subframe %d\n",nsamps,
         (unsigned long long)sim.current_ru_rx_timestamp[ru_id][CC_id],
         (unsigned long long)sim.last_ru_rx_timestamp[ru_id][CC_id],
-	(int)((*ptimestamp/RC.ru[ru_id]->frame_parms.samples_per_tti)%10));
+	(int)((*ptimestamp/RC.ru[ru_id]->frame_parms->samples_per_tti)%10));
   // if we're at a subframe boundary generate UL signals for this ru
 
   while (sample_count<nsamps) {
@@ -188,8 +188,8 @@ int ru_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
 
    
  
-    subframe = (sim.last_ru_rx_timestamp[ru_id][CC_id]/RC.ru[ru_id]->frame_parms.samples_per_tti)%10;
-    if (subframe_select(&RC.ru[ru_id]->frame_parms,subframe) != SF_DL || RC.ru[ru_id]->frame_parms.frame_type == FDD) { 
+    subframe = (sim.last_ru_rx_timestamp[ru_id][CC_id]/RC.ru[ru_id]->frame_parms->samples_per_tti)%10;
+    if (subframe_select(RC.ru[ru_id]->frame_parms,subframe) != SF_DL || RC.ru[ru_id]->frame_parms->frame_type == FDD) { 
       LOG_D(SIM,"RU_trx_read generating UL subframe %d (Ts %llu, current TS %llu)\n",
 	    subframe,(unsigned long long)*ptimestamp,
 	    (unsigned long long)sim.current_ru_rx_timestamp[ru_id][CC_id]);
@@ -197,14 +197,14 @@ int ru_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
       do_UL_sig(&sim,
 		subframe,
 		0,  // abstraction_flag
-		&RC.ru[ru_id]->frame_parms,
+		RC.ru[ru_id]->frame_parms,
 		0,  // frame is only used for abstraction
 		ru_id,
 		CC_id);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SIM_DO_UL_SIGNAL,0);
     }
-    sim.last_ru_rx_timestamp[ru_id][CC_id] += RC.ru[ru_id]->frame_parms.samples_per_tti;
-    sample_count += RC.ru[ru_id]->frame_parms.samples_per_tti;
+    sim.last_ru_rx_timestamp[ru_id][CC_id] += RC.ru[ru_id]->frame_parms->samples_per_tti;
+    sample_count += RC.ru[ru_id]->frame_parms->samples_per_tti;
   }
   
 
@@ -300,7 +300,7 @@ int ru_trx_write(openair0_device *device,openair0_timestamp timestamp, void **bu
 
   int ru_id = device->Mod_id;
 
-  LTE_DL_FRAME_PARMS *frame_parms = &RC.ru[ru_id]->frame_parms;
+  LTE_DL_FRAME_PARMS *frame_parms = RC.ru[ru_id]->frame_parms;
 
   pthread_mutex_lock(&sim.subframe_mutex);
   LOG_D(SIM,"[TXPATH] ru_trx_write: RU %d mask %d\n",ru_id,sim.subframe_ru_mask);
@@ -391,13 +391,13 @@ void init_ocm(double snr_dB,double sinr_dB)
       for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
 	LOG_I(PHY,"Initializing channel descriptors (RU %d, UE %d) for N_RB_DL %d\n",ru_id,UE_id,
-	      RC.ru[ru_id]->frame_parms.N_RB_DL);
+	      RC.ru[ru_id]->frame_parms->N_RB_DL);
         sim.RU2UE[ru_id][UE_id][CC_id] = 
 	  new_channel_desc_scm(RC.ru[ru_id]->nb_tx,
 			       PHY_vars_UE_g[UE_id][CC_id]->frame_parms.nb_antennas_rx,
 			       AWGN,
-			       N_RB2sampling_rate(RC.ru[ru_id]->frame_parms.N_RB_DL),
-			       N_RB2channel_bandwidth(RC.ru[ru_id]->frame_parms.N_RB_DL),
+			       N_RB2sampling_rate(RC.ru[ru_id]->frame_parms->N_RB_DL),
+			       N_RB2channel_bandwidth(RC.ru[ru_id]->frame_parms->N_RB_DL),
 			       0.0,
 			       0,
 			       0);
@@ -409,8 +409,8 @@ void init_ocm(double snr_dB,double sinr_dB)
 	  new_channel_desc_scm(PHY_vars_UE_g[UE_id][CC_id]->frame_parms.nb_antennas_tx,
 			       RC.ru[ru_id]->nb_rx,
 			       AWGN,
-			       N_RB2sampling_rate(RC.ru[ru_id]->frame_parms.N_RB_UL),
-			       N_RB2channel_bandwidth(RC.ru[ru_id]->frame_parms.N_RB_UL),
+			       N_RB2sampling_rate(RC.ru[ru_id]->frame_parms->N_RB_UL),
+			       N_RB2channel_bandwidth(RC.ru[ru_id]->frame_parms->N_RB_UL),
 			       0.0,
 			       0,
 			       0);
@@ -424,16 +424,16 @@ void init_ocm(double snr_dB,double sinr_dB)
 	AssertFatal(sim.UE2RU[UE_id][ru_id][CC_id]!=NULL,"UE2RU[%d][%d][%d] is null\n",UE_id,ru_id,CC_id);
 	//pathloss: -132.24 dBm/15kHz RE + target SNR - eNB TX power per RE
 	if (ru_id == (UE_id % RC.nb_RU)) {
-	  sim.RU2UE[ru_id][UE_id][CC_id]->path_loss_dB = -132.24 + snr_dB - RC.ru[ru_id]->frame_parms.pdsch_config_common.referenceSignalPower;
-	  sim.UE2RU[UE_id][ru_id][CC_id]->path_loss_dB = -132.24 + snr_dB - RC.ru[ru_id]->frame_parms.pdsch_config_common.referenceSignalPower; 
+	  sim.RU2UE[ru_id][UE_id][CC_id]->path_loss_dB = -132.24 + snr_dB - RC.ru[ru_id]->frame_parms->pdsch_config_common.referenceSignalPower;
+	  sim.UE2RU[UE_id][ru_id][CC_id]->path_loss_dB = -132.24 + snr_dB - RC.ru[ru_id]->frame_parms->pdsch_config_common.referenceSignalPower; 
 	} else {
-	  sim.RU2UE[ru_id][UE_id][CC_id]->path_loss_dB = -132.24 + sinr_dB - RC.ru[ru_id]->frame_parms.pdsch_config_common.referenceSignalPower;
-	  sim.UE2RU[UE_id][ru_id][CC_id]->path_loss_dB = -132.24 + sinr_dB - RC.ru[ru_id]->frame_parms.pdsch_config_common.referenceSignalPower;
+	  sim.RU2UE[ru_id][UE_id][CC_id]->path_loss_dB = -132.24 + sinr_dB - RC.ru[ru_id]->frame_parms->pdsch_config_common.referenceSignalPower;
+	  sim.UE2RU[UE_id][ru_id][CC_id]->path_loss_dB = -132.24 + sinr_dB - RC.ru[ru_id]->frame_parms->pdsch_config_common.referenceSignalPower;
 	}
 	
 	LOG_I(OCM,"Path loss from eNB %d to UE %d (CCid %d)=> %f dB (eNB TX %d, SNR %f)\n",ru_id,UE_id,CC_id,
 	      sim.RU2UE[ru_id][UE_id][CC_id]->path_loss_dB,
-	      RC.ru[ru_id]->frame_parms.pdsch_config_common.referenceSignalPower,snr_dB);
+	      RC.ru[ru_id]->frame_parms->pdsch_config_common.referenceSignalPower,snr_dB);
 	
 
       }
@@ -456,16 +456,16 @@ void update_ocm(double snr_dB,double sinr_dB)
 	 AssertFatal(sim.UE2RU[UE_id][ru_id][CC_id]!=NULL,"UE2RU[%d][%d][%d] is null\n",UE_id,ru_id,CC_id);
 	 //pathloss: -132.24 dBm/15kHz RE + target SNR - eNB TX power per RE
 	 if (ru_id == (UE_id % RC.nb_RU)) {
-	   sim.RU2UE[ru_id][UE_id][CC_id]->path_loss_dB = -132.24 + snr_dB - RC.ru[ru_id]->frame_parms.pdsch_config_common.referenceSignalPower;
-	   sim.UE2RU[UE_id][ru_id][CC_id]->path_loss_dB = -132.24 + snr_dB - RC.ru[ru_id]->frame_parms.pdsch_config_common.referenceSignalPower; 
+	   sim.RU2UE[ru_id][UE_id][CC_id]->path_loss_dB = -132.24 + snr_dB - RC.ru[ru_id]->frame_parms->pdsch_config_common.referenceSignalPower;
+	   sim.UE2RU[UE_id][ru_id][CC_id]->path_loss_dB = -132.24 + snr_dB - RC.ru[ru_id]->frame_parms->pdsch_config_common.referenceSignalPower; 
 	 } else {
-	   sim.RU2UE[ru_id][UE_id][CC_id]->path_loss_dB = -132.24 + sinr_dB - RC.ru[ru_id]->frame_parms.pdsch_config_common.referenceSignalPower;
-	   sim.UE2RU[UE_id][ru_id][CC_id]->path_loss_dB = -132.24 + sinr_dB - RC.ru[ru_id]->frame_parms.pdsch_config_common.referenceSignalPower;
+	   sim.RU2UE[ru_id][UE_id][CC_id]->path_loss_dB = -132.24 + sinr_dB - RC.ru[ru_id]->frame_parms->pdsch_config_common.referenceSignalPower;
+	   sim.UE2RU[UE_id][ru_id][CC_id]->path_loss_dB = -132.24 + sinr_dB - RC.ru[ru_id]->frame_parms->pdsch_config_common.referenceSignalPower;
 	 }
 	    
 	 LOG_D(OCM,"Path loss from eNB %d to UE %d (CCid %d)=> %f dB (eNB TX %d, SNR %f)\n",ru_id,UE_id,CC_id,
 	      sim.RU2UE[ru_id][UE_id][CC_id]->path_loss_dB,
-	      RC.ru[ru_id]->frame_parms.pdsch_config_common.referenceSignalPower,snr_dB);
+	      RC.ru[ru_id]->frame_parms->pdsch_config_common.referenceSignalPower,snr_dB);
 	    
        }
      }
@@ -508,8 +508,8 @@ void *rfsim_top(void *n_frames) {
 	
 	pthread_mutex_lock(&sim.subframe_mutex);
 
-	int subframe_ru_mask_local  = (subframe_select(&RC.ru[0]->frame_parms,(sf+4)%10)!=SF_UL) ? sim.subframe_ru_mask : ((1<<RC.nb_RU)-1);
-	int subframe_UE_mask_local  = (RC.ru[0]->frame_parms.frame_type == FDD || subframe_select(&RC.ru[0]->frame_parms,(sf+4)%10)!=SF_DL) ? sim.subframe_UE_mask : ((1<<NB_UE_INST)-1);
+	int subframe_ru_mask_local  = (subframe_select(RC.ru[0]->frame_parms,(sf+4)%10)!=SF_UL) ? sim.subframe_ru_mask : ((1<<RC.nb_RU)-1);
+	int subframe_UE_mask_local  = (RC.ru[0]->frame_parms->frame_type == FDD || subframe_select(RC.ru[0]->frame_parms,(sf+4)%10)!=SF_DL) ? sim.subframe_UE_mask : ((1<<NB_UE_INST)-1);
 	pthread_mutex_unlock(&sim.subframe_mutex);
 	LOG_D(SIM,"Frame %d, Subframe %d, NB_RU %d, NB_UE %d: Checking masks %x,%x\n",frame,sf,RC.nb_RU,NB_UE_INST,subframe_ru_mask_local,subframe_UE_mask_local);
 	if ((subframe_ru_mask_local == ((1<<RC.nb_RU)-1)) &&
@@ -526,7 +526,7 @@ void *rfsim_top(void *n_frames) {
       
       // increment timestamps
       for (int ru_id=0;ru_id<RC.nb_RU;ru_id++) {
-	sim.current_ru_rx_timestamp[ru_id][CC_id] += RC.ru[ru_id]->frame_parms.samples_per_tti;
+	sim.current_ru_rx_timestamp[ru_id][CC_id] += RC.ru[ru_id]->frame_parms->samples_per_tti;
 	LOG_D(SIM,"RU %d/%d: TS %"PRIi64"\n",ru_id,CC_id,sim.current_ru_rx_timestamp[ru_id][CC_id]);
       }
       for (int UE_inst = 0; UE_inst<NB_UE_INST;UE_inst++) {

@@ -58,25 +58,19 @@
 #include "assertions.h"
 #include "msc.h"
 
-#include "PHY/types.h"
-
-#include "PHY/defs_nr_common.h"
-#undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
-
-
 #include "../../ARCH/COMMON/common_lib.h"
 #include "../../ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
 
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 #include "PHY/LTE_TRANSPORT/if5_tools.h"
 
+#include "PHY/types.h"
+#include "PHY/defs_nr_common.h"
 #include "PHY/phy_extern.h"
-#include "LAYER2/MAC/mac_extern.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
+#include "PHY/INIT/phy_init.h"
 #include "SCHED/sched_eNB.h"
 #include "SCHED_NR/sched_nr.h"
-#include "PHY/LTE_ESTIMATION/lte_estimation.h"
-#include "PHY/INIT/phy_init.h"
 
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_extern.h"
@@ -84,26 +78,15 @@
 #include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_interface.h"
 
-#include "UTIL/LOG/log_extern.h"
-#include "UTIL/OTG/otg_tx.h"
-#include "UTIL/OTG/otg_externs.h"
-#include "UTIL/MATH/oml.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
-#include "UTIL/OPT/opt.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
+
 #include "enb_config.h"
 
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"
 unsigned short config_frames[4] = {2,9,11,13};
 #endif
-#include "UTIL/LOG/log_extern.h"
-#include "UTIL/OTG/otg_tx.h"
-#include "UTIL/OTG/otg_externs.h"
-#include "UTIL/MATH/oml.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
-#include "UTIL/OPT/opt.h"
-#include "enb_config.h"
-//#include "PHY/TOOLS/time_meas.h"
 
 /* these variables have to be defined before including ENB_APP/enb_paramdef.h */
 static int DEFBANDS[] = {7};

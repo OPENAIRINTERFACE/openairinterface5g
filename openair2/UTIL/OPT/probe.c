@@ -543,11 +543,11 @@ int init_opt(char *path, char *ip, char *port, radio_type_t radio_type_p)
   }
 
   if ( opt_type == OPT_WIRESHARK )
-    LOG_G(OPT,"mode Wireshark: ip %s port %d\n", in_ip, in_port);
+    LOG_E(OPT,"mode Wireshark: ip %s port %d\n", in_ip, in_port);
   else if (opt_type == OPT_PCAP)
-    LOG_G(OPT,"mode PCAB : path is %s \n",in_path);
+    LOG_E(OPT,"mode PCAB : path is %s \n",in_path);
   else
-    LOG_G(OPT,"Unsupported or unknown mode %d \n", opt_type);
+    LOG_E(OPT,"Unsupported or unknown mode %d \n", opt_type);
 
   //  mac_info = (mac_info*)malloc16(sizeof(mac_lte_info));
   // memset(mac_info, 0, sizeof(mac_lte_info)+pdu_buffer_size + 8);

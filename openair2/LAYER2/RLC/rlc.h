@@ -45,7 +45,7 @@
 #    include "rlc_tm_structs.h"
 #    include "rlc_um_structs.h"
 #    include "asn_constant.h"
-#    include "UTIL/LOG/log.h"
+#    include "common/utils/LOG/log.h"
 #    include "mem_block.h"
 //#    include "PHY/defs.h"
 #    include "RLC-Config.h"

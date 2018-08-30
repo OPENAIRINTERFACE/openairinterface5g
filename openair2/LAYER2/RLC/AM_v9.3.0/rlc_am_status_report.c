@@ -32,7 +32,7 @@
 #include "assertions.h"
 #include "list.h"
 #include "rlc_am.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 
 #   if ENABLE_ITTI
 //-----------------------------------------------------------------------------

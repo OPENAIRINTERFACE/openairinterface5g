@@ -34,13 +34,15 @@
 #include "COMMON/platform_constants.h"
 #include "common/ran_context.h"
 
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "NR_BCCH-BCH-Message.h"
 #include "NR_ServingCellConfigCommon.h"
 
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
+
+#include "NR_MIB.h"
 
 extern RAN_CONTEXT_t RC;
 //extern int l2_init_gNB(void);

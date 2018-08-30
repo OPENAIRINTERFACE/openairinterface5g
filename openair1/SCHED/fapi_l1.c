@@ -668,7 +668,6 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
   AssertFatal(RC.eNB[Mod_id][CC_id]!=NULL,"RC.eNB[%d][%d] is null\n",Mod_id,CC_id);
 
 
-
   eNB         = RC.eNB[Mod_id][CC_id];
   fp          = &eNB->frame_parms;
   proc        = &eNB->proc.proc_rxtx[0];
