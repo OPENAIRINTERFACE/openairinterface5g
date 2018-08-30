@@ -54,6 +54,7 @@
 //#define NR_PDCCH_DCI_DEBUG            // activates NR_PDCCH_DCI_DEBUG logs
 #define NR_NBR_CORESET_ACT_BWP 3      // The number of CoreSets per BWP is limited to 3 (including initial CORESET: ControlResourceId 0)
 #define NR_NBR_SEARCHSPACE_ACT_BWP 10 // The number of SearSpaces per BWP is limited to 10 (including initial SEARCHSPACE: SearchSpaceId 0)
+#define PDCCH_TEST_POLAR_TEMP_FIX
 
 //#undef ALL_AGGREGATION
 
@@ -4150,8 +4151,14 @@ void nr_dci_decoding_procedure0(int s,                                          
       for (int m=0; m < (nCCE[p]*6*9*2); m++)
         polar_input[m] = (pdcch_vars[eNB_id]->e_rx[CCEind * 54+m]>0) ? (1.0):(-1.0);
 
-      nr_polar_init(nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, sizeof_bits, L);
-	  t_nrPolar_paramsPtr currentPtr = nr_polar_params(*nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, sizeof_bits,L);
+      #ifdef PDCCH_TEST_POLAR_TEMP_FIX
+      	  t_nrPolar_paramsPtr currentPtr = NULL;
+      	  nr_polar_init(&currentPtr, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
+
+	  #else
+		  nr_polar_init(nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, sizeof_bits, L);
+		  t_nrPolar_paramsPtr currentPtr = nr_polar_params(*nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, sizeof_bits,L);
+      #endif
       
       dci_decoding(sizeof_bits, L, currentPtr, polar_input, &dci_decoded_output[current_thread_id][0]);
       /*
