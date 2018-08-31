@@ -46,6 +46,10 @@
 #   include "gtpv1u_eNB_task.h"
 # endif
 
+//#   include "x2ap_eNB.h"
+#   include "x2ap_messages_types.h"
+#   define X2AP_ENB_REGISTER_RETRY_DELAY   10
+
 #include "openair1/PHY/INIT/phy_init.h"
 extern unsigned char NB_eNB_INST;
 #endif
@@ -136,6 +140,30 @@ static uint32_t eNB_app_register(uint32_t enb_id_start, uint32_t enb_id_end)//, 
 #endif
 
 /*------------------------------------------------------------------------------*/
+static uint32_t eNB_app_register_x2(uint32_t enb_id_start, uint32_t enb_id_end)
+{
+  uint32_t         enb_id;
+  MessageDef      *msg_p;
+  uint32_t         register_enb_x2_pending = 0;
+
+  for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
+
+    {
+
+      msg_p = itti_alloc_new_message (TASK_ENB_APP, X2AP_REGISTER_ENB_REQ);
+
+      RCconfig_X2(msg_p, enb_id);
+
+	//itti_send_msg_to_task (TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
+
+      register_enb_x2_pending++;
+    }
+  }
+
+  return register_enb_x2_pending;
+}
+
+/*------------------------------------------------------------------------------*/
 void *eNB_app_task(void *args_p)
 {
 #if defined(ENABLE_ITTI)
@@ -147,6 +175,9 @@ void *eNB_app_task(void *args_p)
   uint32_t                        registered_enb;
   long                            enb_register_retry_timer_id;
 # endif
+  uint32_t                        x2_register_enb_pending;
+  //uint32_t                        x2_registered_enb;
+  //long                            x2_enb_register_retry_timer_id;
   uint32_t                        enb_id;
   MessageDef                     *msg_p           = NULL;
   instance_t                      instance;
@@ -191,6 +222,10 @@ void *eNB_app_task(void *args_p)
   msg_p = itti_alloc_new_message(TASK_ENB_APP, INITIALIZE_MESSAGE);
   itti_send_msg_to_task(TASK_L2L1, INSTANCE_DEFAULT, msg_p);
 # endif
+
+  /* Try to register each eNB with each other */
+ // x2_registered_enb = 0;
+  x2_register_enb_pending = eNB_app_register_x2 (enb_id_start, enb_id_end);
 
   do {
     // Wait for a message
