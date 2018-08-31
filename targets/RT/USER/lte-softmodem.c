@@ -775,10 +775,10 @@ int stop_L1L2(module_id_t enb_id)
   terminate_task(enb_id, TASK_ENB_APP, TASK_RRC_ENB);
   terminate_task(enb_id, TASK_ENB_APP, TASK_L2L1);
   oai_exit = 1;
-  LOG_I(ENB_APP, "calling kill_eNB_proc() for instance %d\n", enb_id);
-  kill_eNB_proc(enb_id);
   LOG_I(ENB_APP, "calling kill_RU_proc() for instance %d\n", enb_id);
   kill_RU_proc(RC.ru[enb_id]);
+  LOG_I(ENB_APP, "calling kill_eNB_proc() for instance %d\n", enb_id);
+  kill_eNB_proc(enb_id);
   oai_exit = 0;
   for (int cc_id = 0; cc_id < RC.nb_CC[enb_id]; cc_id++) {
     free_transport(RC.eNB[enb_id][cc_id]);
