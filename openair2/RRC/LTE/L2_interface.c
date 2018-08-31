@@ -232,6 +232,33 @@ mac_rrc_data_req(
   return(0);
 }
 
+//--------------------------------------------------------------------------
+int8_t
+mac_du_data_ind(
+  const module_id_t     module_idP,
+  const int             CC_idP,
+  const int             UE_id,
+  const rnti_t          rntiP,
+  const uint8_t        *sduP,
+  const sdu_size_t      sdu_lenP
+)
+//--------------------------------------------------------------------------
+{
+  printf(
+      "[F1 %d][RAPROC] CC_id %d current_rnti %x Received Msg3 from already registered UE %d: length %d, offset %ld\n",
+      module_idP, CC_idP, rntiP,
+      UE_id, sdu_lenP, sduP);
+
+  DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(
+      module_idP,
+      CC_idP,
+      UE_id,
+      rntiP,  
+      sduP,
+      sdu_lenP
+  );
+}
+
 //------------------------------------------------------------------------------
 int8_t
 mac_rrc_data_ind(
@@ -239,14 +266,28 @@ mac_rrc_data_ind(
   const int             CC_id,
   const frame_t         frameP,
   const sub_frame_t     sub_frameP,
+  const int             UE_id,
   const rnti_t          rntiP,
   const rb_id_t         srb_idP,
   const uint8_t*        sduP,
   const sdu_size_t      sdu_lenP,
-  const uint8_t         mbsfn_sync_areaP
+  const uint8_t         mbsfn_sync_areaP,
+  const int             du_flag
 )
 //--------------------------------------------------------------------------
 {
+
+  // navid update / Bing-Kai modify
+  if (du_flag) {
+    mac_du_data_ind(
+       module_idP,
+       CC_id,
+       UE_id,
+       rntiP,
+       sduP,
+       sdu_lenP);
+  }
+
   SRB_INFO *Srb_info;
   protocol_ctxt_t ctxt;
   sdu_size_t      sdu_size = 0;

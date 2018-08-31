@@ -6446,6 +6446,7 @@ rrc_eNB_decode_ccch(
             rrc_eNB_generate_RRCConnectionReject(ctxt_pP,
                              rrc_eNB_get_ue_context(RC.rrc[ctxt_pP->module_id], ctxt_pP->rnti),
                              CC_id);
+            // navid:
             break;
           }
 

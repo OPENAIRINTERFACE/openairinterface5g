@@ -252,8 +252,21 @@ do {                                                                    \
 } while(0)
 
 
+/* TS 38.473 v15.2.1 section 9.3.1.32:
+ * C RNTI
+ */
+#define C_RNTI_TO_BIT_STRING(mACRO, bITsTRING)          \
+do {                                                    \
+    (bITsTRING)->buf = calloc(2, sizeof(uint8_t));      \
+    (bITsTRING)->buf[0] = (mACRO) >> 4;                 \
+    (bITsTRING)->buf[1] = ((mACRO) & 0x0f) << 4;        \
+    (bITsTRING)->size = 2;                              \
+    (bITsTRING)->bits_unused = 0;                       \
+} while(0)
+
+
 /* TS 38.473 v15.1.1 section 9.3.2.1:
- * NR CELL ID
+ * TRANSPORT LAYER ADDRESS
  */
 #define TRANSPORT_LAYER_ADDRESS_TO_BIT_STRING(mACRO, bITsTRING)    \
 do {                                                    \
