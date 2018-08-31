@@ -1002,6 +1002,32 @@
       <nruns>3</nruns>
     </testCase>
 
+    <testCase id="015102">
+      <class>execution</class>
+      <desc>ldpctest test cases.</desc>
+      <pre_compile_prog></pre_compile_prog>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
+      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+      <pre_exec_args></pre_exec_args>
+      <main_exec> $OPENAIR_DIR/targets/bin/ldpctest.Rel15</main_exec>
+      <main_exec_args>-l3872 -s10 -n100
+                      -l4224 -s10 -n100
+		      -l4576 -s10 -n100
+		      -l4928 -s10 -n100
+		      -l5280 -s10 -n100
+		      -l5632 -s10 -n100
+		      -l6336 -s10 -n100
+		      -l7040 -s10 -n100
+		      -l7744 -s10 -n100
+		      -l8448 -s10 -n100
+      </main_exec_args>
+      <tags>ldpctest.test1</tags>
+      <search_expr_true>BLER 0.000000</search_expr_true>
+      <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <nruns>3</nruns>
+    </testCase>
+    
     <testCase id="015110">
       <class>execution</class>
       <desc>dlsim_tm4 test cases (Test 1: 10 MHz, R2.FDD (MCS 5), EVA5, -1dB), 
