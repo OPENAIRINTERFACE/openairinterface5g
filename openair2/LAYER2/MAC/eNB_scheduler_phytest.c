@@ -212,7 +212,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
   int               sched_frame=frameP;
   int               sched_subframe = (subframeP+4)%10;
   uint16_t          ul_req_index;
-  
+
   if (sched_subframe<subframeP) sched_frame++;
 
   nfapi_hi_dci0_request_t        *hi_dci0_req = &mac->HI_DCI0_req[CC_id][subframeP];

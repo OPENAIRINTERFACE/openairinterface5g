@@ -470,7 +470,7 @@ void *l2l1_task(void *arg) {
 
 extern int16_t dlsch_demod_shift;
 
-static void get_options(void) {
+static void get_options(unsigned int *start_msc) {
   int CC_id;
   int tddflag, nonbiotflag;
   char *loopfile=NULL;
@@ -505,7 +505,7 @@ static void get_options(void) {
       set_glog(glog_level);
   }
   if (start_telnetsrv) {
-     load_module_shlib("telnetsrv",NULL,0);
+     load_module_shlib("telnetsrv",NULL,0,NULL);
   }
 
   paramdef_t cmdline_uemodeparams[] =CMDLINE_UEMODEPARAMS_DESC;
@@ -770,6 +770,7 @@ int main( int argc, char **argv )
 
   int CC_id;
   uint8_t  abstraction_flag=0;
+  unsigned int start_msc=0;
 
   // Default value for the number of UEs. It will hold,
   // if not changed from the command line option --num-ues
@@ -797,7 +798,7 @@ int main( int argc, char **argv )
   printf("Reading in command-line options\n");
 
   for (int i=0;i<MAX_NUM_CCs;i++) tx_max_power[i]=23; 
-  get_options ();
+  get_options (&start_msc);
 
 
   printf("Running with %d UE instances\n",NB_UE_INST);
@@ -830,21 +831,6 @@ int main( int argc, char **argv )
   //randominit (0);
   set_taus_seed (0);
 
-
-    set_log(HW,      OAILOG_DEBUG,   1);
-    set_log(PHY,     OAILOG_INFO,    1);
-    set_log(MAC,     OAILOG_INFO,    1);
-    set_log(RLC,     OAILOG_INFO,    1);
-    set_log(PDCP,    OAILOG_INFO,    1);
-    set_log(OTG,     OAILOG_INFO,    1);
-    set_log(RRC,     OAILOG_INFO,    1);
-#if defined(ENABLE_ITTI)
-    set_log(SIM,     OAILOG_INFO,   1);
-# if defined(ENABLE_USE_MME)
-    set_log(NAS,     OAILOG_INFO,    1);
-# endif
-#endif
-
   cpuf=get_cpu_freq_GHz();
 
   pthread_cond_init(&sync_cond,NULL);
@@ -858,6 +844,9 @@ int main( int argc, char **argv )
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
   // initialize mscgen log after ITTI
+  if (start_msc) {
+     load_module_shlib("msc",NULL,0,&msc_interface);
+  }
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
 #endif
 

@@ -523,7 +523,7 @@ int main(int argc, char **argv)
   int c;
   int k,i,j,aa;
   int re;
-
+  int loglvl=OAILOG_DEBUG;
 
   int s,Kr,Kr_bytes;
 
@@ -1001,7 +1001,7 @@ int main(int argc, char **argv)
       break;
 
     case 'L':
-      set_glog(atoi(optarg));
+      loglvl = atoi(optarg);
       break;
 
     case 'h':
@@ -1049,7 +1049,7 @@ int main(int argc, char **argv)
 	      "cannot load configuration module, exiting\n");
   logInit();
   // enable these lines if you need debug info
-  set_glog(LOG_DEBUG);
+  set_glog(loglvl);
   // moreover you need to init itti with the following line
   // however itti will catch all signals, so ctrl-c won't work anymore
   // alternatively you can disable ITTI completely in CMakeLists.txt
@@ -2046,24 +2046,9 @@ int main(int argc, char **argv)
       qsort (table_rx, time_vector_rx.size, sizeof(double), &compare);
 
       if (dump_table == 1 ) {
-        set_component_filelog(USIM);  // file located in /tmp/usim.txt
-        int n;
-        LOG_F(USIM,"The transmitter raw data: \n");
-
-        for (n=0; n< time_vector_tx.size; n++) {
-          printf("%f ", table_tx[n]);
-          LOG_F(USIM,"%f ", table_tx[n]);
-        }
-
-        LOG_F(USIM,"\n");
-        LOG_F(USIM,"The receiver raw data: \n");
-
-        for (n=0; n< time_vector_rx.size; n++) {
-          // printf("%f ", table_rx[n]);
-          LOG_F(USIM,"%f ", table_rx[n]);
-        }
-
-        LOG_F(USIM,"\n");
+        set_component_filelog(SIM);  // file located in /tmp/usim.txt
+        LOG_UDUMPMSG(SIM,table_tx,time_vector_tx.size,LOG_DUMP_DOUBLE,"The transmitter raw data: \n");
+        LOG_UDUMPMSG(SIM,table_rx,time_vector_rx.size,LOG_DUMP_DOUBLE,"Thereceiver raw data: \n");
       }
 
       double tx_median = table_tx[time_vector_tx.size/2];

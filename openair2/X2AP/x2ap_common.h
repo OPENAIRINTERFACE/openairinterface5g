@@ -57,7 +57,6 @@
 #define FALSE 0
 #endif
 
-extern int asn_debug;
 extern int asn1_xer_print;
 
 #if defined(ENB_MODE)

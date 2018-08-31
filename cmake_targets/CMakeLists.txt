@@ -892,12 +892,9 @@ add_library(HASHTABLE
 )
 include_directories(${OPENAIR_DIR}/common/utils/hashtable)
 
-if (MESSAGE_CHART_GENERATOR)
-  add_library(MSC
-    ${OPENAIR_DIR}/common/utils/msc/msc.c
-  )
-  set(MSC_LIB MSC)
-endif()
+add_library(msc MODULE ${OPENAIR_DIR}/common/utils/msc/msc.c )
+target_link_libraries (msc LFDS)
+
 include_directories(${OPENAIR_DIR}/common/utils/msc)
 
 set(UTIL_SRC
@@ -1392,7 +1389,6 @@ include_directories(${NFAPI_USER_DIR})
 add_library(CN_UTILS
   ${OPENAIR3_DIR}/UTILS/conversions.c
   ${OPENAIR3_DIR}/UTILS/enum_string.c
-  ${OPENAIR3_DIR}/UTILS/log.c
   ${OPENAIR3_DIR}/UTILS/mcc_mnc_itu.c
   )
 
@@ -1567,7 +1563,6 @@ set(libnas_ies_OBJS
 set (libnas_utils_OBJS
   ${NAS_SRC}COMMON/UTIL/device.c
   ${NAS_SRC}COMMON/UTIL/memory.c
-  ${NAS_SRC}COMMON/UTIL/nas_log.c
   ${NAS_SRC}COMMON/UTIL/nas_timer.c
   ${NAS_SRC}COMMON/UTIL/socket.c
   ${NAS_SRC}COMMON/UTIL/stty.c
@@ -1984,7 +1979,7 @@ add_executable(lte-softmodem-nos1
   )
 target_link_libraries (lte-softmodem-nos1
   -Wl,--start-group
-  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_LIB SCHED_RU_LIB PHY_COMMON PHY PHY_RU LFDS L2 ${MSC_LIB} ${RAL_LIB} ${ITTI_LIB}
+  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_LIB SCHED_RU_LIB PHY_COMMON PHY PHY_RU LFDS L2  ${RAL_LIB} ${ITTI_LIB}
   ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl )
@@ -2062,7 +2057,7 @@ add_executable(lte-uesoftmodem-nos1
 
 target_link_libraries (lte-uesoftmodem-nos1
   -Wl,--start-group
-  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_UE PHY_RU LFDS L2_UE SIMU ${MSC_LIB} ${RAL_LIB} ${ITTI_LIB}
+  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_UE PHY_RU LFDS L2_UE SIMU ${RAL_LIB} ${ITTI_LIB}
   ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES}
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl )
@@ -2140,7 +2135,7 @@ add_executable(test_epc_generate_scenario
   ${OPENAIR3_DIR}/S1AP/s1ap_eNB_defs.h
   )
 target_link_libraries (test_epc_generate_scenario
-  -Wl,--start-group RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB GTPV1U LIB_NAS_UE SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS ${ITTI_LIB} ${MSC_LIB} L2 -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${LIBXSLT_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES}
+  -Wl,--start-group RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB GTPV1U LIB_NAS_UE SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS ${ITTI_LIB} L2 -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${LIBXSLT_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES}
   )
 
 add_executable(test_epc_play_scenario

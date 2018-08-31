@@ -99,10 +99,6 @@ int send_ue_information = 0;
 // for malloc_clear
 #include "PHY/defs_UE.h"
 
-//#define XER_PRINT
-
-
-
 extern void pdcp_config_set_security(
   const protocol_ctxt_t* const  ctxt_pP,
   pdcp_t         * const pdcp_pP,
@@ -733,9 +729,9 @@ int rrc_ue_decode_ccch( const protocol_ctxt_t* const ctxt_pP, const SRB_INFO* co
                          (uint8_t*)Srb_info->Rx_buffer.Payload,
                          100,0,0);
 
-#ifdef XER_PRINT
-  xer_fprint(stdout,&asn_DEF_DL_CCCH_Message,(void*)dl_ccch_msg);
-#endif
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+     xer_fprint(stdout,&asn_DEF_DL_CCCH_Message,(void*)dl_ccch_msg);
+  }
 
 #if defined(ENABLE_ITTI)
 # if defined(DISABLE_ITTI_XER_PRINT)
@@ -1931,9 +1927,9 @@ rrc_ue_process_securityModeCommand(
     AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
 		 enc_rval.failed_type->name, enc_rval.encoded);
     
-#ifdef XER_PRINT
-    xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)&ul_dcch_msg);
-#endif
+    if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+       xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)&ul_dcch_msg);
+    }
     
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
@@ -2042,9 +2038,9 @@ rrc_ue_process_ueCapabilityEnquiry(
       AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
 		   enc_rval.failed_type->name, enc_rval.encoded);
       
-#ifdef XER_PRINT
-      xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)&ul_dcch_msg);
-#endif
+      if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+         xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void*)&ul_dcch_msg);
+      }
       
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
@@ -2429,9 +2425,9 @@ rrc_ue_decode_dcch(
               (uint8_t*)Buffer,
               RRC_BUF_SIZE,0,0);
 
-#ifdef XER_PRINT
-  xer_fprint(stdout,&asn_DEF_DL_DCCH_Message,(void*)dl_dcch_msg);
-#endif
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+     xer_fprint(stdout,&asn_DEF_DL_DCCH_Message,(void*)dl_dcch_msg);
+  }
 
 #if defined(ENABLE_ITTI)
 # if defined(DISABLE_ITTI_XER_PRINT)
@@ -4560,9 +4556,9 @@ int decode_MCCH_Message( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB
       return -1;
     }
 
-#ifdef XER_PRINT
-    xer_fprint(stdout, &asn_DEF_MCCH_Message, (void*)mcch);
-#endif
+    if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+      xer_fprint(stdout, &asn_DEF_MCCH_Message, (void*)mcch);
+    }
 
     if (mcch->message.present == MCCH_MessageType_PR_c1) {
       LOG_D(RRC,"[UE %d] Found mcch message \n",
@@ -5578,9 +5574,9 @@ void *rrc_control_socket_thread_fct(void *arg)
       //process the message
       switch (sl_ctrl_msg_recv->type) {
       case SESSION_INIT_REQ:
-LOG_DEBUG_BEGIN(DEBUG_CTRLSOCKET)
-         LOG_UI(RRC,"Received SessionInitializationRequest on socket from ProSe App (msg type: %d)\n", sl_ctrl_msg_recv->type);
-LOG_DEBUG_END
+         if (LOG_DEBUGFLAG(DEBUG_CTRLSOCKET)){
+           LOG_UI(RRC,"Received SessionInitializationRequest on socket from ProSe App (msg type: %d)\n", sl_ctrl_msg_recv->type);
+         }
          //TODO: get SL_UE_STATE from lower layer
 
          LOG_I(RRC,"Send UEStateInformation to ProSe App \n");
@@ -5599,12 +5595,12 @@ LOG_DEBUG_END
             exit(EXIT_FAILURE);
          }
 
-LOG_DEBUG_BEGIN(DEBUG_CTRLSOCKET)
-         struct sidelink_ctrl_element *ptr_ctrl_msg = NULL;
-         ptr_ctrl_msg = (struct sidelink_ctrl_element *) send_buf;
-         LOG_UI(RRC,"[UEStateInformation] msg type: %d\n",ptr_ctrl_msg->type);
-         LOG_UI(RRC,"[UEStateInformation] UE state: %d\n",ptr_ctrl_msg->sidelinkPrimitive.ue_state);
-LOG_DEBUG_END
+         if (LOG_DEBUGFLAG(DEBUG_CTRLSOCKET)){
+           struct sidelink_ctrl_element *ptr_ctrl_msg = NULL;
+           ptr_ctrl_msg = (struct sidelink_ctrl_element *) send_buf;
+           LOG_UI(RRC,"[UEStateInformation] msg type: %d\n",ptr_ctrl_msg->type);
+           LOG_UI(RRC,"[UEStateInformation] UE state: %d\n",ptr_ctrl_msg->sidelinkPrimitive.ue_state);
+         }
          /*  if (enable_notification > 0) {
               //create thread to send status notification (for testing purpose, status notification will be sent e.g., every 20 seconds)
               pthread_t notification_thread;
@@ -5619,12 +5615,12 @@ LOG_DEBUG_END
          sourceL2Id = sl_ctrl_msg_recv->sidelinkPrimitive.group_comm_establish_req.sourceL2Id;
          groupL2Id = sl_ctrl_msg_recv->sidelinkPrimitive.group_comm_establish_req.groupL2Id;
 
-LOG_DEBUG_BEGIN(DEBUG_CTRLSOCKET)
-         LOG_UI(RRC,"[GroupCommunicationEstablishReq] Received on socket from ProSe App (msg type: %d)\n",sl_ctrl_msg_recv->type);
-         LOG_UI(RRC,"[GroupCommunicationEstablishReq] source Id: 0x%08x\n",sl_ctrl_msg_recv->sidelinkPrimitive.group_comm_establish_req.sourceL2Id);
-         LOG_UI(RRC,"[GroupCommunicationEstablishReq] group Id: 0x%08x\n",sl_ctrl_msg_recv->sidelinkPrimitive.group_comm_establish_req.groupL2Id);
-         LOG_UI(RRC,"[GroupCommunicationEstablishReq] group IP Address: " IPV4_ADDR "\n",IPV4_ADDR_FORMAT(sl_ctrl_msg_recv->sidelinkPrimitive.group_comm_establish_req.groupIpAddress));
-LOG_DEBUG_END
+         if (LOG_DEBUGFLAG(DEBUG_CTRLSOCKET)){
+           LOG_UI(RRC,"[GroupCommunicationEstablishReq] Received on socket from ProSe App (msg type: %d)\n",sl_ctrl_msg_recv->type);
+           LOG_UI(RRC,"[GroupCommunicationEstablishReq] source Id: 0x%08x\n",sl_ctrl_msg_recv->sidelinkPrimitive.group_comm_establish_req.sourceL2Id);
+           LOG_UI(RRC,"[GroupCommunicationEstablishReq] group Id: 0x%08x\n",sl_ctrl_msg_recv->sidelinkPrimitive.group_comm_establish_req.groupL2Id);
+           LOG_UI(RRC,"[GroupCommunicationEstablishReq] group IP Address: " IPV4_ADDR "\n",IPV4_ADDR_FORMAT(sl_ctrl_msg_recv->sidelinkPrimitive.group_comm_establish_req.groupIpAddress));
+         }
 
          //store sourceL2Id/groupL2Id
          UE_rrc_inst[module_id].sourceL2Id = sourceL2Id;
@@ -5784,20 +5780,20 @@ LOG_DEBUG_END
             exit(EXIT_FAILURE);
          }
 
-LOG_DEBUG_BEGIN(DEBUG_CTRLSOCKET)
-         struct sidelink_ctrl_element *ptr_ctrl_msg = NULL;
-         ptr_ctrl_msg = (struct sidelink_ctrl_element *) send_buf;
-         LOG_UI(RRC,"[GroupCommunicationEstablishResponse]  msg type: %d\n",ptr_ctrl_msg->type);
-         LOG_UI(RRC,"[GroupCommunicationEstablishResponse]  slrb_id: %d\n",ptr_ctrl_msg->sidelinkPrimitive.slrb_id);
-LOG_DEBUG_END
+         if (LOG_DEBUGFLAG(DEBUG_CTRLSOCKET)){
+           struct sidelink_ctrl_element *ptr_ctrl_msg = NULL;
+           ptr_ctrl_msg = (struct sidelink_ctrl_element *) send_buf;
+           LOG_UI(RRC,"[GroupCommunicationEstablishResponse]  msg type: %d\n",ptr_ctrl_msg->type);
+           LOG_UI(RRC,"[GroupCommunicationEstablishResponse]  slrb_id: %d\n",ptr_ctrl_msg->sidelinkPrimitive.slrb_id);
+         }
          break;
 
       case GROUP_COMMUNICATION_RELEASE_REQ:
          printf("-----------------------------------\n");
-LOG_DEBUG_BEGIN(DEBUG_CTRLSOCKET)
-         LOG_UI(RRC,"[GroupCommunicationReleaseRequest] Received on socket from ProSe App (msg type: %d)\n",sl_ctrl_msg_recv->type);
-         LOG_UI(RRC,"[GroupCommunicationReleaseRequest] Slrb Id: %i\n",sl_ctrl_msg_recv->sidelinkPrimitive.slrb_id);
-LOG_DEBUG_END
+         if (LOG_DEBUGFLAG(DEBUG_CTRLSOCKET)){
+           LOG_UI(RRC,"[GroupCommunicationReleaseRequest] Received on socket from ProSe App (msg type: %d)\n",sl_ctrl_msg_recv->type);
+           LOG_UI(RRC,"[GroupCommunicationReleaseRequest] Slrb Id: %i\n",sl_ctrl_msg_recv->sidelinkPrimitive.slrb_id);
+         }
          //reset groupL2ID from MAC LAYER
          UE_rrc_inst[module_id].groupL2Id = 0x00000000;
          sourceL2Id = UE_rrc_inst[module_id].sourceL2Id;
@@ -5869,11 +5865,11 @@ LOG_DEBUG_END
          sourceL2Id = sl_ctrl_msg_recv->sidelinkPrimitive.direct_comm_establish_req.sourceL2Id;
          destinationL2Id = sl_ctrl_msg_recv->sidelinkPrimitive.direct_comm_establish_req.destinationL2Id;
 
-LOG_DEBUG_BEGIN(DEBUG_CTRLSOCKET)
-         LOG_UI(RRC,"[DirectCommunicationEstablishReq] Received on socket from ProSe App (msg type: %d)\n",sl_ctrl_msg_recv->type);
-         LOG_UI(RRC,"[DirectCommunicationEstablishReq] source Id: 0x%08x\n",sl_ctrl_msg_recv->sidelinkPrimitive.group_comm_establish_req.sourceL2Id);
-         LOG_UI(RRC,"[DirectCommunicationEstablishReq] destination Id: 0x%08x\n",sl_ctrl_msg_recv->sidelinkPrimitive.group_comm_establish_req.groupL2Id);
-LOG_DEBUG_END
+         if (LOG_DEBUGFLAG(DEBUG_CTRLSOCKET)){
+           LOG_UI(RRC,"[DirectCommunicationEstablishReq] Received on socket from ProSe App (msg type: %d)\n",sl_ctrl_msg_recv->type);
+           LOG_UI(RRC,"[DirectCommunicationEstablishReq] source Id: 0x%08x\n",sl_ctrl_msg_recv->sidelinkPrimitive.group_comm_establish_req.sourceL2Id);
+           LOG_UI(RRC,"[DirectCommunicationEstablishReq] destination Id: 0x%08x\n",sl_ctrl_msg_recv->sidelinkPrimitive.group_comm_establish_req.groupL2Id);
+         }
 
          //store sourceL2Id/destinationL2Id
          UE_rrc_inst[module_id].sourceL2Id = sourceL2Id;
@@ -6033,27 +6029,27 @@ LOG_DEBUG_END
          }
 
 
-LOG_DEBUG_BEGIN(DEBUG_CTRLSOCKET)
-         struct sidelink_ctrl_element *ptr_ctrl_msg = NULL;
-         ptr_ctrl_msg = (struct sidelink_ctrl_element *) send_buf;
-         LOG_UI(RRC,"[DirectCommunicationEstablishResponse]  msg type: %d\n",ptr_ctrl_msg->type);
-         LOG_UI(RRC,"[DirectCommunicationEstablishResponse]  slrb_id: %d\n",ptr_ctrl_msg->sidelinkPrimitive.slrb_id);
-LOG_DEBUG_END
+         if (LOG_DEBUGFLAG(DEBUG_CTRLSOCKET)){
+           struct sidelink_ctrl_element *ptr_ctrl_msg = NULL;
+           ptr_ctrl_msg = (struct sidelink_ctrl_element *) send_buf;
+           LOG_UI(RRC,"[DirectCommunicationEstablishResponse]  msg type: %d\n",ptr_ctrl_msg->type);
+           LOG_UI(RRC,"[DirectCommunicationEstablishResponse]  slrb_id: %d\n",ptr_ctrl_msg->sidelinkPrimitive.slrb_id);
+         }
          break;
 
       case PC5S_ESTABLISH_REQ:
-         type =  sl_ctrl_msg_recv->sidelinkPrimitive.pc5s_establish_req.type;
-         sourceL2Id = sl_ctrl_msg_recv->sidelinkPrimitive.pc5s_establish_req.sourceL2Id;
-LOG_DEBUG_BEGIN(DEBUG_CTRLSOCKET)
-         LOG_UI(RRC,"[PC5EstablishReq] Received on socket from ProSe App (msg type: %d)\n",sl_ctrl_msg_recv->type);
-         LOG_UI(RRC,"[PC5EstablishReq] type: %d\n",sl_ctrl_msg_recv->sidelinkPrimitive.pc5s_establish_req.type); //RX/TX
-         LOG_UI(RRC,"[PC5EstablishReq] source Id: 0x%08x \n",sl_ctrl_msg_recv->sidelinkPrimitive.pc5s_establish_req.sourceL2Id);
-LOG_DEBUG_END
+           type =  sl_ctrl_msg_recv->sidelinkPrimitive.pc5s_establish_req.type;
+           sourceL2Id = sl_ctrl_msg_recv->sidelinkPrimitive.pc5s_establish_req.sourceL2Id;
+           if (LOG_DEBUGFLAG(DEBUG_CTRLSOCKET)){
+             LOG_UI(RRC,"[PC5EstablishReq] Received on socket from ProSe App (msg type: %d)\n",sl_ctrl_msg_recv->type);
+             LOG_UI(RRC,"[PC5EstablishReq] type: %d\n",sl_ctrl_msg_recv->sidelinkPrimitive.pc5s_establish_req.type); //RX/TX
+             LOG_UI(RRC,"[PC5EstablishReq] source Id: 0x%08x \n",sl_ctrl_msg_recv->sidelinkPrimitive.pc5s_establish_req.sourceL2Id);
+           }
          if (type > 0) {
             destinationL2Id = sl_ctrl_msg_recv->sidelinkPrimitive.pc5s_establish_req.destinationL2Id;
-LOG_DEBUG_BEGIN(DEBUG_CTRLSOCKET)
-            LOG_UI(RRC,"[PC5EstablishReq] destination Id: 0x%08x \n",sl_ctrl_msg_recv->sidelinkPrimitive.pc5s_establish_req.destinationL2Id);
-LOG_DEBUG_END
+            if (LOG_DEBUGFLAG(DEBUG_CTRLSOCKET)){
+              LOG_UI(RRC,"[PC5EstablishReq] destination Id: 0x%08x \n",sl_ctrl_msg_recv->sidelinkPrimitive.pc5s_establish_req.destinationL2Id);
+            }
          }
 
          //store sourceL2Id/destinationL2Id
@@ -6264,9 +6260,9 @@ LOG_DEBUG_END
 
       case PC5_DISCOVERY_MESSAGE:
 
-LOG_DEBUG_BEGIN(DEBUG_CTRLSOCKET)
+         if (LOG_DEBUGFLAG(DEBUG_CTRLSOCKET)){
            LOG_UI(RRC,"[PC5DiscoveryMessage] Received on socket from ProSe App (msg type: %d)\n",sl_ctrl_msg_recv->type);
-LOG_DEBUG_END
+         }
         //prepare SL_Discovery buffer
          if (UE_rrc_inst) {
            memcpy((void*)&UE_rrc_inst[module_id].SL_Discovery[0].Tx_buffer.Payload[0], (void*)&sl_ctrl_msg_recv->sidelinkPrimitive.pc5_discovery_message.payload[0], PC5_DISCOVERY_PAYLOAD_SIZE);

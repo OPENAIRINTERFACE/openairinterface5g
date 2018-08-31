@@ -43,7 +43,7 @@
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "RRC/LTE/rrc_eNB_UE_context.h"
 #include "PHY/phy_extern.h"
-#include "log.h"
+#include "common/utils/LOG/log.h"
 
 /****************************
  * get generic info from RAN

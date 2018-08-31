@@ -347,7 +347,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 	  dlsch_harq->rvidx,
 	  dlsch_harq->round);
   }    
-#if defined(MESSAGE_CHART_GENERATOR_PHY)
+
   MSC_LOG_TX_MESSAGE(
 		     MSC_PHY_ENB,MSC_PHY_UE,
 		     NULL,0,
@@ -368,7 +368,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 		     pmi2hex_2Ar1(dlsch_harq->pmi_alloc),
 		     dlsch_harq->rvidx,
 		     dlsch_harq->round);
-#endif
+
   
   
   if (ue_stats) ue_stats->dlsch_sliding_cnt++;
@@ -1375,7 +1375,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	  ulsch->harq_mask   &= ~(1 << harq_pid);
 	  ulsch_harq->round   = 0;
 	}
-#if defined(MESSAGE_CHART_GENERATOR_PHY)
+
         MSC_LOG_RX_DISCARDED_MESSAGE(
 				     MSC_PHY_ENB,MSC_PHY_UE,
 				     NULL,0,
@@ -1384,7 +1384,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 				     ulsch->rnti,harq_pid,
 				     ulsch_harq->round-1
 				     );
-#endif
+
 	
         /* Mark the HARQ process to release it later if max transmission reached
          * (see below).
@@ -1403,7 +1403,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
         T(T_ENB_PHY_ULSCH_UE_ACK, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(ulsch->rnti),
           T_INT(harq_pid));
 
-#if defined(MESSAGE_CHART_GENERATOR_PHY)
+
           MSC_LOG_RX_MESSAGE(
               MSC_PHY_ENB,MSC_PHY_UE,
               NULL,0,
@@ -1411,7 +1411,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
               frame,subframe,
               ulsch->rnti,harq_pid
               );
-#endif
+
 
 #ifdef DEBUG_PHY_PROC
 #ifdef DEBUG_ULSCH

@@ -1882,13 +1882,13 @@ void *ru_thread_synch(void *arg) {
 
 	LOG_I(PHY,"Estimated sync_pos %d, peak_val %d => timing offset %d\n",sync_pos,peak_val,ru->rx_offset);
 	
-LOG_M_BEGIN(RU)	
-	if ((peak_val > 300000) && (sync_pos > 0)) {
-	   LOG_M("ru_sync.m","sync",(void*)&sync_corr[0],fp->samples_per_tti*5,1,2);
-	   LOG_M("ru_rx.m","rxs",&(ru->eNB_list[0]->common_vars.rxdata[0][0]),fp->samples_per_tti*10,1,1);
-	exit(-1);
-	}
-LOG_M_END
+        if (LOG_DEBUGFLAG(RU)) {	
+	  if ((peak_val > 300000) && (sync_pos > 0)) {
+	     LOG_M("ru_sync.m","sync",(void*)&sync_corr[0],fp->samples_per_tti*5,1,2);
+	     LOG_M("ru_rx.m","rxs",&(ru->eNB_list[0]->common_vars.rxdata[0][0]),fp->samples_per_tti*10,1,1);
+	  exit(-1);
+	  }
+        }
 	ru->in_synch=1;
       }
     }

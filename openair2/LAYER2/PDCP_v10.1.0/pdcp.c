@@ -362,16 +362,10 @@ boolean_t pdcp_data_req(
      * Ask sublayer to transmit data and check return value
      * to see if RLC succeeded
      */
-#ifdef PDCP_MSG_PRINT
-    int i=0;
-    LOG_F(PDCP,"[MSG] PDCP DL %s PDU on rb_id %d\n", (srb_flagP)? "CONTROL" : "DATA", rb_idP);
 
-    for (i = 0; i < pdcp_pdu_size; i++) {
-      LOG_F(PDCP,"%02x ", ((uint8_t*)pdcp_pdu_p->data)[i]);
-    }
+    LOG_DUMPMSG(PDCP,DEBUG_PDCP,(char *)pdcp_pdu_p->data,pdcp_pdu_size,
+                "[MSG] PDCP DL %s PDU on rb_id %d\n",(srb_flagP)? "CONTROL" : "DATA", rb_idP);
 
-    LOG_F(PDCP,"\n");
-#endif
     rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                              ,sourceL2Id
@@ -474,17 +468,8 @@ pdcp_data_ind(
 
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_DATA_IND,VCD_FUNCTION_IN);
-
-#ifdef PDCP_MSG_PRINT
-  int i=0;
-  LOG_F(PDCP,"[MSG] PDCP UL %s PDU on rb_id %d\n", (srb_flagP)? "CONTROL" : "DATA", rb_idP);
-
-  for (i = 0; i < sdu_buffer_sizeP; i++) {
-    LOG_F(PDCP,"%02x ", ((uint8_t*)sdu_buffer_pP->data)[i]);
-  }
-
-  LOG_F(PDCP,"\n");
-#endif
+  LOG_DUMPMSG(PDCP,DEBUG_PDCP,(char *)sdu_buffer_pP->data,sdu_buffer_sizeP,
+              "[MSG] PDCP UL %s PDU on rb_id %d\n", (srb_flagP)? "CONTROL" : "DATA", rb_idP);
 
 #if T_TRACER
   if (ctxt_pP->enb_flag != ENB_FLAG_NO)
