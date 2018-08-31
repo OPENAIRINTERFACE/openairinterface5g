@@ -150,7 +150,17 @@ x_image *x_create_image(x_connection *_x, unsigned char *data,
   vs = XGetVisualInfo(x->d, VisualDepthMask | VisualClassMask |
       VisualRedMaskMask | VisualGreenMaskMask | VisualBlueMaskMask |
       VisualBitsPerRGBMask, &template, &nvs);
-  if (vs == NULL || nvs == 0) ERR("no good visual found\n");
+
+  if (vs == NULL) {
+    /* try again with 32 bpp */
+    template.depth = 32;
+    vs = XGetVisualInfo(x->d, VisualDepthMask | VisualClassMask |
+        VisualRedMaskMask | VisualGreenMaskMask | VisualBlueMaskMask |
+        VisualBitsPerRGBMask, &template, &nvs);
+  }
+
+  if (vs == NULL) ERR("no good visual found\n");
+
   v = vs[0].visual;
   XFree(vs);
 
