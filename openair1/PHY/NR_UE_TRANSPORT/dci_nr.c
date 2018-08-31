@@ -51,7 +51,7 @@
 
 //#define NR_LTE_PDCCH_DCI_SWITCH
 #define NR_PDCCH_DCI_RUN              // activates new nr functions
-//#define NR_PDCCH_DCI_DEBUG            // activates NR_PDCCH_DCI_DEBUG logs
+#define NR_PDCCH_DCI_DEBUG            // activates NR_PDCCH_DCI_DEBUG logs
 #define NR_NBR_CORESET_ACT_BWP 3      // The number of CoreSets per BWP is limited to 3 (including initial CORESET: ControlResourceId 0)
 #define NR_NBR_SEARCHSPACE_ACT_BWP 10 // The number of SearSpaces per BWP is limited to 10 (including initial SEARCHSPACE: SearchSpaceId 0)
 #define PDCCH_TEST_POLAR_TEMP_FIX
@@ -550,11 +550,12 @@ void nr_pdcch_deinterleaving(NR_DL_FRAME_PARMS *frame_parms, uint16_t *z,
  * if interleaved then do this: wbar table has bundles interleaved. We have to de-interleave then
  * following procedure described in 38.211 Section 7.3.2.2:
  */
-  uint32_t bundle_id, bundle_interleaved, c=0 ,r=-1, k, l, i=0;
-  uint32_t coreset_C = (uint32_t)(coreset_nbr_rb / (coreset_interleaver_size_R*reg_bundle_size_L));
-  uint16_t *wptr;
-  wptr = &wtemp_rx[0];
-  z = &wtemp_rx[0];
+  int c=0 ,r=-1;
+  uint32_t bundle_id, bundle_interleaved, k, l, i=0;
+  uint32_t coreset_C = (uint32_t)(coreset_nbr_rb * coreset_time_dur/ (coreset_interleaver_size_R*reg_bundle_size_L));
+  //uint16_t *wptr;
+  //wptr = &wtemp_rx[0];
+  //z = &wtemp_rx[0];
   bundle_id=0;
   for (k=0 ; k<9*coreset_nbr_rb*coreset_time_dur; k++){
     #ifdef NR_PDCCH_DCI_DEBUG
@@ -571,7 +572,7 @@ void nr_pdcch_deinterleaving(NR_DL_FRAME_PARMS *frame_parms, uint16_t *z,
         r++;
       }
       #ifdef NR_PDCCH_DCI_DEBUG
-       printf("\t --> time to modify bundle_interleaved and bundle_id --> r=%d c=%d",r,c);
+       printf("\t --> time to modify bundle_interleaved and bundle_id --> r=%d c=%d\n",r,c);
       #endif
       bundle_id=c*coreset_interleaver_size_R+r;
       bundle_interleaved=(r*coreset_C+c+n_shift)%(coreset_nbr_rb * coreset_time_dur/reg_bundle_size_L);
@@ -579,15 +580,15 @@ void nr_pdcch_deinterleaving(NR_DL_FRAME_PARMS *frame_parms, uint16_t *z,
     if (coreset_interleaved == 1){
       //wptr[i+(bundle_interleaved-bundle_id)*9*reg_bundle_size_L]=wbar[i];
       #ifdef NR_PDCCH_DCI_DEBUG
-        printf("\n\t\t\t\t\t\t\t\t\t wptr[%d] <-> wbar[%d]",i,i+(bundle_interleaved-bundle_id)*9*reg_bundle_size_L);
+        printf("\t\t\t\t\t wptr[%d] = (%d,%d) <-> wbar[%d]",i, *(char*) &wbar[i], *(1 + (char*) &wbar[i]),i+(bundle_interleaved-bundle_id)*9*reg_bundle_size_L);
       #endif
-      wptr[i]=wbar[i+(bundle_interleaved-bundle_id)*9*reg_bundle_size_L];
+      z[i]=wbar[i+(bundle_interleaved-bundle_id)*9*reg_bundle_size_L];
       #ifdef NR_PDCCH_DCI_DEBUG
         printf("\t\t bundle_id = %d \t bundle_interleaved = %d (r=%d, c=%d)\n",bundle_id,bundle_interleaved,r,c);
       #endif
       i++;
     } else {
-      wptr[i]=wbar[i];
+      z[i]=wbar[i];
       i++;
     }
     //bundle_id=c*coreset_interleaver_size_R+r;
@@ -759,11 +760,11 @@ int32_t pdcch_qpsk_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
 int32_t nr_pdcch_llr(NR_DL_FRAME_PARMS *frame_parms, int32_t **rxdataF_comp,
 		char *pdcch_llr, uint8_t symbol,uint32_t coreset_nbr_rb) {
 
-	int16_t *rxF = (int16_t*) &rxdataF_comp[0][(symbol * frame_parms->N_RB_DL * 12)];
+	int16_t *rxF = (int16_t*) &rxdataF_comp[0][(symbol * coreset_nbr_rb * 9)];
 	int32_t i;
 	char *pdcch_llr8;
 
-	pdcch_llr8 = &pdcch_llr[2 * symbol * frame_parms->N_RB_DL * 12];
+	pdcch_llr8 = &pdcch_llr[2 * symbol * coreset_nbr_rb * 9];
 
 	if (!pdcch_llr8) {
 		printf("pdcch_qpsk_llr: llr is null, symbol %d\n", symbol);
@@ -1157,15 +1158,15 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
       #endif
     }
 
-    dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol * (frame_parms->N_RB_DL * NBR_RE_PER_RB_WITHOUT_DMRS)];
+    dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol * (coreset_nbr_rb * NBR_RE_PER_RB_WITHOUT_DMRS)];
     #ifdef NR_PDCCH_DCI_DEBUG
       printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> dl_ch0_ext = &dl_ch_estimates_ext[aarx = (%d)][symbol * (frame_parms->N_RB_DL * 9) = (%d)]\n",
-             aarx,symbol * (frame_parms->N_RB_DL * NBR_RE_PER_RB_WITHOUT_DMRS));
+             aarx,symbol * (coreset_nbr_rb * NBR_RE_PER_RB_WITHOUT_DMRS));
     #endif
-    rxF_ext = &rxdataF_ext[aarx][symbol * (frame_parms->N_RB_DL * NBR_RE_PER_RB_WITHOUT_DMRS)];
+    rxF_ext = &rxdataF_ext[aarx][symbol * (coreset_nbr_rb * NBR_RE_PER_RB_WITHOUT_DMRS)];
     #ifdef NR_PDCCH_DCI_DEBUG
       printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> rxF_ext = &rxdataF_ext[aarx = (%d)][symbol * (frame_parms->N_RB_DL * 9) = (%d)]\n",
-             aarx,symbol * (frame_parms->N_RB_DL * NBR_RE_PER_RB_WITHOUT_DMRS));
+             aarx,symbol * (coreset_nbr_rb * NBR_RE_PER_RB_WITHOUT_DMRS));
       printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> (for symbol=%d, aarx=%d), symbol_mod=%d, nushiftmod3=%d \n",symbol,aarx,symbol_mod,nushiftmod3);
     #endif
 
@@ -1332,7 +1333,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
             #endif
             dl_ch0_ext[j++] = dl_ch0[i];
             //printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> ch %d => dl_ch0(%d,%d)\n", i, *(short *) &dl_ch0[i], *(1 + (short*) &dl_ch0[i]));
-            printf("\t-> ch %d => dl_ch0(%d,%d)\n", i, *(short *) &dl_ch0[i], *(1 + (short*) &dl_ch0[i]));
+            printf("\t-> dl_ch0[%d] => dl_ch0_ext[%d](%d,%d)\n", i,(j-1), *(short *) &dl_ch0[i], *(1 + (short*) &dl_ch0[i]));
           } else {
             #ifdef NR_PDCCH_DCI_DEBUG
               printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> RB[c_rb %d] \t RE[re %d] => rxF_ext[%d]=(%d,%d)\t rxF[%d]=(%d,%d) \t\t <==> DM-RS PDCCH, this is a pilot symbol\n",
@@ -2105,9 +2106,9 @@ short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
         // dl_ch128 = (__m128i *) &dl_ch_estimates_ext[(aatx << 1) + aarx][symbol * frame_parms->N_RB_DL * 12];
         // rxdataF128 = (__m128i *) &rxdataF_ext[aarx][symbol * frame_parms->N_RB_DL * 12];
         // rxdataF_comp128 = (__m128i *) &rxdataF_comp[(aatx << 1) + aarx][symbol * frame_parms->N_RB_DL * 12];
-        dl_ch128 = (__m128i *) &dl_ch_estimates_ext[(aatx << 1) + aarx][symbol * coreset_nbr_rb * 12];
-        rxdataF128 = (__m128i *) &rxdataF_ext[aarx][symbol * coreset_nbr_rb * 12];
-        rxdataF_comp128 = (__m128i *) &rxdataF_comp[(aatx << 1) + aarx][symbol * coreset_nbr_rb * 12];
+        dl_ch128 = (__m128i *) &dl_ch_estimates_ext[(aatx << 1) + aarx][symbol * coreset_nbr_rb * 9];
+        rxdataF128 = (__m128i *) &rxdataF_ext[aarx][symbol * coreset_nbr_rb * 9];
+        rxdataF_comp128 = (__m128i *) &rxdataF_comp[(aatx << 1) + aarx][symbol * coreset_nbr_rb * 9];
       #elif defined(__arm__)
       #endif
       #ifdef NR_PDCCH_DCI_DEBUG
@@ -2120,7 +2121,10 @@ short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
         #endif
         #if defined(__x86_64__) || defined(__i386__)
         #ifdef NR_PDCCH_DCI_DEBUG
-          printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_channel_compensation)-> rxdataF x dl_ch -> RB[%d] RE[%d]\n",rb,k);
+          printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_channel_compensation)-> rxdataF_comp = rxdataF_ext(%d,%d) x dl_ch_ext(%d,%d) -> RB[%d] RE[%d]\n",
+                  *(short *) &rxdataF_ext[(rb*9)+k],*(1 + (short*) &rxdataF_ext[(rb*9)+k]),
+                  *(short *) &dl_ch_estimates_ext[(rb*9)+k],*(1 + (short*) &dl_ch_estimates_ext[(rb*9)+k]),
+                  rb,k);
         #endif
         k++;
         if (k%9 == 0) rb++;
@@ -2815,7 +2819,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   // For each BWP the number of CORESETs is limited to 3 (including initial CORESET Id=0 -> ControlResourceSetId (0..maxNrofControlReourceSets-1) (0..12-1)
   //uint32_t n_BWP_start = 0;
   //uint32_t n_rb_offset = 0;
-  uint32_t n_rb_offset                                      = pdcch_vars2->coreset[nb_coreset_active].rb_offset;
+  uint32_t n_rb_offset                                      = pdcch_vars2->coreset[nb_coreset_active].rb_offset+43; //to be removed 43
   // start time position for CORESET
   // parameter symbol_mon is a 14 bits bitmap indicating monitoring symbols within a slot
   uint8_t start_symbol = 0;
@@ -2823,11 +2827,12 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   // at the moment we are considering that the PDCCH is always starting at symbol 0 of current slot
   // the following code to initialize start_symbol must be activated once we implement PDCCH demapping on symbol not equal to 0 (considering symbol_mon)
   for (int i=0; i < 14; i++) {
-    if (symbol_mon >> (13-i) != 0) {
+    if ((symbol_mon >> (i+1))&0x1 != 0) {
       start_symbol = i;
       i=14;
     }
   }
+  
 #ifdef NR_PDCCH_DCI_DEBUG
   printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> symbol_mon=(%d) and start_symbol=(%d)\n",symbol_mon,start_symbol);
   printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> coreset_freq_dom=(%lld) n_rb_offset=(%d) coreset_time_dur=(%d) n_shift=(%d) reg_bundle_size_L=(%d) coreset_interleaver_size_R=(%d) \n",
@@ -2904,6 +2909,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
     #ifdef NR_PDCCH_DCI_DEBUG
       printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> we enter nr_pdcch_extract_rbs_single(is_secondary_ue=%d) to remove DM-RS PDCCH\n",
               is_secondary_ue);
+      printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> in nr_pdcch_extract_rbs_single(rxdataF -> rxdataF_ext || dl_ch_estimates -> dl_ch_estimates_ext)\n");
     #endif
     nr_pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
                                 common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].dl_ch_estimates[eNB_id],
@@ -2930,6 +2936,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 
     #ifdef NR_PDCCH_DCI_DEBUG
       printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> we enter pdcch_channel_level(avgP=%d) => compute channel level based on ofdm symbol 0, pdcch_vars[eNB_id]->dl_ch_estimates_ext\n",avgP);
+      printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> in pdcch_channel_level(dl_ch_estimates_ext -> dl_ch_estimates_ext)\n");
     #endif
     // compute channel level based on ofdm symbol 0
     pdcch_channel_level(pdcch_vars[eNB_id]->dl_ch_estimates_ext,
@@ -2951,6 +2958,7 @@ T(T_UE_PHY_PDCCH_ENERGY, T_INT(eNB_id), T_INT(0), T_INT(frame%1024), T_INT(nr_tt
 #endif
     #ifdef NR_PDCCH_DCI_DEBUG
       printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> we enter nr_pdcch_channel_compensation(log2_maxh=%d)\n",log2_maxh);
+      printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> in nr_pdcch_channel_compensation(rxdataF_ext x dl_ch_estimates_ext -> rxdataF_comp)\n");
     #endif
     // compute LLRs for ofdm symbol 0 only
     nr_pdcch_channel_compensation(pdcch_vars[eNB_id]->rxdataF_ext,
@@ -3058,6 +3066,7 @@ printf("\t### in nr_rx_pdcch() function we enter pdcch_channel_compensation(log2
 
     #ifdef NR_PDCCH_DCI_DEBUG
       printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> we enter nr_pdcch_llr(for symbol %d), pdcch_vars[eNB_id]->rxdataF_comp ---> pdcch_vars[eNB_id]->llr \n",s);
+      printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> in nr_pdcch_llr(rxdataF_comp -> llr)\n");
     #endif
     nr_pdcch_llr(frame_parms,
                  pdcch_vars[eNB_id]->rxdataF_comp,
@@ -3107,6 +3116,11 @@ T(T_UE_PHY_PDCCH_IQ, T_INT(frame_parms->N_RB_DL), T_INT(frame_parms->N_RB_DL),
                           coreset_nbr_rb);
   #ifdef NR_PDCCH_DCI_DEBUG
     printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> we enter nr_pdcch_unscrambling()\n");
+    for (int i=0; i<(coreset_time_dur*coreset_nbr_rb*9); i++){
+		printf("\te_rx[%d]=(%d,%d)",i,*(char*) &pdcch_vars[eNB_id]->e_rx[i],*(1 + (char*) &pdcch_vars[eNB_id]->e_rx[i]));
+		if (i%10 == 0) printf("\n");
+	}
+	printf("\n");
   #endif
   nr_pdcch_unscrambling(pdcch_vars[eNB_id]->crnti,
                         frame_parms,
@@ -3116,6 +3130,15 @@ T(T_UE_PHY_PDCCH_IQ, T_INT(frame_parms->N_RB_DL), T_INT(frame_parms->N_RB_DL),
                         // get_nCCE(n_pdcch_symbols, frame_parms, mi) * 72,
                         pdcch_DMRS_scrambling_id,
                         do_common);
+   #ifdef NR_PDCCH_DCI_DEBUG
+    printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> we end nr_pdcch_unscrambling()\n");
+    for (int i=0; i<(coreset_time_dur*coreset_nbr_rb*9); i++){
+		printf("\te_rx[%d]=(%d,%d)",i,*(char*) &pdcch_vars[eNB_id]->e_rx[i],*(1 + (char*) &pdcch_vars[eNB_id]->e_rx[i]));
+		if (i%10 == 0) printf("\n");
+	}
+	printf("\n");
+  #endif
+
 /*
 	printf("\t### in nr_rx_pdcch() function we enter pdcch_demapping()\n");
 
@@ -3724,39 +3747,6 @@ uint8_t generate_dci_top_emul(PHY_VARS_eNB *phy_vars_eNB,
 #endif
 
 
-void dci_decoding(uint8_t DCI_LENGTH,
-                  uint8_t aggregation_level,
-                  t_nrPolar_paramsPtr currentPtr,
-                  double *e,
-                  uint8_t *decoded_output)
-{
-	
-	int8_t decoderState=0;
-
-#ifdef DEBUG_DCI_DECODING
-  int32_t i;
-#endif
-
-  if (aggregation_level>16) {
-    LOG_I(PHY," dci.c: dci_decoding FATAL, illegal aggregation_level %d\n",aggregation_level);
-    return;
-  }
-
-
-#ifdef DEBUG_DCI_DECODING
-  LOG_I(PHY," Doing DCI decoding for %d bits, DCI_LENGTH %d,coded_bits %d, e %p\n",3*(DCI_LENGTH+16),DCI_LENGTH,coded_bits,e);
-#endif
-
-   
-  decoderState = polar_decoder(e,
-							   decoded_output,
-							   currentPtr,
-							   8,
-							   0);
-									 
-}
-
-
 static uint8_t dci_decoded_output[RX_NB_TH][(MAX_DCI_SIZE_BITS+64)/8];
 
 /*uint16_t get_nCCE(uint8_t num_pdcch_symbols,NR_DL_FRAME_PARMS *frame_parms,uint8_t mi)
@@ -3946,10 +3936,11 @@ void nr_dci_decoding_procedure0(int s,                                          
 
   uint16_t crc, CCEind, nCCE[3];
   uint32_t *CCEmap = NULL, CCEmap_mask = 0;
-  int L2 = (1 << L);
+  uint8_t L2 = (1 << L);
   unsigned int Yk, nb_candidates = 0, i, m;
   unsigned int CCEmap_cand;
-  double *polar_input = malloc (sizeof(double) * 108*L);
+  double *polar_input = malloc (sizeof(double) * 108*L2);
+  int8_t decoderState=0;
 
   // A[p], p is the current active CORESET
   uint16_t A[3]={39827,39829,39839};
@@ -4037,6 +4028,9 @@ void nr_dci_decoding_procedure0(int s,                                          
         nb_candidates = pdcch_vars[eNB_id]->searchSpace[s].searchSpaceType.srs_nrofCandidates;
     } else {
       nb_candidates = (L2 == 4) ? 4 : ((L2 == 8)? 2 : 1); // according to Table 10.1-1 (38.213 section 10.1)
+      #ifdef NR_PDCCH_DCI_DEBUG
+        printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> we are in common searchSpace and nb_candidates=%d for L2=%d\n",nb_candidates,L2);
+      #endif
     }
   } else {
     switch (L2) {
@@ -4058,6 +4052,7 @@ void nr_dci_decoding_procedure0(int s,                                          
     default:
       break;
     }
+
     // Find first available in ue specific search space
     // according to procedure in Section 10.1 of 38.213
     // compute Yk
@@ -4148,19 +4143,31 @@ void nr_dci_decoding_procedure0(int s,                                          
         printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> ... we have to replace this part of the code by polar decoding\n");
       #endif
       
-      for (int m=0; m < (nCCE[p]*6*9*2); m++)
+//      for (int m=0; m < (nCCE[p]*6*9*2); m++)
+  printf("polar intput: ");
+      for (int m=0; m < (L2*6*9*2); m++){
         polar_input[m] = (pdcch_vars[eNB_id]->e_rx[CCEind * 54+m]>0) ? (1.0):(-1.0);
+        printf("\t polar_input[%d]=%lf <-> e_rx[%d]=%d\n",m,polar_input[m],(CCEind * 54+m),pdcch_vars[eNB_id]->e_rx[CCEind * 54+m]);
+	}
+	printf("\n");
 
       #ifdef PDCCH_TEST_POLAR_TEMP_FIX
       	  t_nrPolar_paramsPtr currentPtr = NULL;
-      	  nr_polar_init(&currentPtr, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
+      	  nr_polar_init(&currentPtr, NR_POLAR_DCI_MESSAGE_TYPE, 41, 8);
 
-	  #else
-		  nr_polar_init(nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, sizeof_bits, L);
-		  t_nrPolar_paramsPtr currentPtr = nr_polar_params(*nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, sizeof_bits,L);
+	  //#else
+		//  nr_polar_init(nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, (uint16_t)sizeof_bits, L2);
+		//  t_nrPolar_paramsPtr currentPtr = nr_polar_params(*nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, (uint16_t)sizeof_bits,L2);
       #endif
-      
-      dci_decoding(sizeof_bits, L, currentPtr, polar_input, &dci_decoded_output[current_thread_id][0]);
+  
+      decoderState = polar_decoder(polar_input,
+							   &dci_decoded_output[current_thread_id][0],
+							   currentPtr,
+							   8,
+							   0);
+			printf("decoderState %d\n", decoderState);				   
+							   
+      //dci_decoding(sizeof_bits, 2, currentPtr, polar_input, &dci_decoded_output[current_thread_id][0]);
       /*
       for (i=0;i<3+(sizeof_bits>>3);i++)
       printf("dci_decoded_output[%d] => %x\n",i,dci_decoded_output[i]);
@@ -5093,30 +5100,37 @@ uint8_t nr_dci_decoding_procedure(int s,
                                   int p,
                                   PHY_VARS_NR_UE *ue,
                                   NR_DCI_ALLOC_t *dci_alloc,
-                                  int do_common,
+                                  NR_SEARCHSPACE_TYPE_t searchSpacetype,
                                   int16_t eNB_id,
                                   uint8_t nr_tti_rx,
-                                  uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS],
                                   uint8_t dci_fields_sizes_cnt[MAX_NR_DCI_DECODED_SLOT][NBR_NR_DCI_FIELDS][NBR_NR_FORMATS],
                                   uint16_t n_RB_ULBWP,
                                   uint16_t n_RB_DLBWP,
                                   crc_scrambled_t *crc_scrambled,
                                   format_found_t *format_found) {
+//                                  uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS],
 
+  #ifdef NR_PDCCH_DCI_DEBUG
+    printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure) nr_tti_rx=%d n_RB_ULBWP=%d n_RB_DLBWP=%d format_found=%d\n",
+            nr_tti_rx,n_RB_ULBWP,n_RB_DLBWP,*format_found);
+  #endif
+
+  int do_common = (int)searchSpacetype;
+  uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS];
   crc_scrambled_t crc_scrambled_ = *crc_scrambled;
   format_found_t format_found_   = *format_found;
-  #ifdef NR_PDCCH_DCI_DEBUG
-    printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure) nr_tti_rx=%d and format_found=%d %d\n",nr_tti_rx,*format_found,format_found_);
-  #endif
   uint8_t dci_cnt = 0, old_dci_cnt = 0;
   uint32_t CCEmap0 = 0, CCEmap1 = 0, CCEmap2 = 0;
 
   NR_UE_PDCCH **pdcch_vars = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]];
+  NR_UE_PDCCH *pdcch_vars2 = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id];
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   t_nrPolar_paramsPtr *nrPolar_params = &ue->nrPolar_params;
   uint8_t mi;// = get_mi(&ue->frame_parms, nr_tti_rx);
   // we need to initialize this values as crc is going to be compared with them
-  uint16_t c_rnti=pdcch_vars[eNB_id]->crnti;
+  //uint16_t c_rnti=pdcch_vars[eNB_id]->crnti;
+  uint16_t c_rnti=pdcch_vars2->crnti; //to be removed FIXME!!!
+  printf("c_rnti=%d\n",c_rnti);
   uint16_t cs_rnti,new_rnti,tc_rnti;
   uint16_t p_rnti=P_RNTI;
   uint16_t si_rnti=SI_RNTI;
@@ -5150,9 +5164,8 @@ uint8_t nr_dci_decoding_procedure(int s,
    *
    */
 
-  NR_UE_PDCCH *pdcch_vars2                         = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id];
-  NR_UE_SEARCHSPACE_CSS_DCI_FORMAT_t css_dci_format = pdcch_vars2->searchSpace[s].searchSpaceType.common_dci_formats;
-  NR_UE_SEARCHSPACE_USS_DCI_FORMAT_t uss_dci_format = pdcch_vars2->searchSpace[s].searchSpaceType.ue_specific_dci_formats;
+  NR_UE_SEARCHSPACE_CSS_DCI_FORMAT_t css_dci_format = pdcch_vars2->searchSpace[s].searchSpaceType.common_dci_formats;       //FIXME!!!
+  NR_UE_SEARCHSPACE_USS_DCI_FORMAT_t uss_dci_format = pdcch_vars2->searchSpace[s].searchSpaceType.ue_specific_dci_formats;  //FIXME!!!
 
   // The following initialization is only for test purposes. To be removed
   // NR_UE_SEARCHSPACE_CSS_DCI_FORMAT_t
@@ -5168,14 +5181,16 @@ uint8_t nr_dci_decoding_procedure(int s,
 
   #ifdef NR_PDCCH_DCI_DEBUG
     printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> searSpaceType=%d\n",do_common);
-    if (do_common) {
+    if (do_common==0) {
       printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> css_dci_format=%d\n",css_dci_format);
     } else {
       printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> uss_dci_format=%d\n",uss_dci_format);
     }
   #endif
+  
+  
   // A set of PDCCH candidates for a UE to monitor is defined in terms of PDCCH search spaces
-  if (do_common) { // COMMON SearchSpaceType assigned to current SearchSpace/CORESET
+  if (do_common==0) { // COMMON SearchSpaceType assigned to current SearchSpace/CORESET
     // Type0-PDCCH  common search space for a DCI format with CRC scrambled by a SI-RNTI
                // number of consecutive resource blocks and a number of consecutive symbols for
                // the control resource set of the Type0-PDCCH common search space from
@@ -5207,6 +5222,7 @@ uint8_t nr_dci_decoding_procedure(int s,
         printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> calculating dci format size for common searchSpaces with format css_dci_format=%d, format_0_0_1_0_size_bits=%d, format_0_0_1_0_size_bytes=%d\n",
                 css_dci_format,format_0_0_1_0_size_bits,format_0_0_1_0_size_bytes);
       #endif
+#if 0
       // for aggregation level 4. The number of candidates (L2=4) will be calculated in function nr_dci_decoding_procedure0
       #ifdef NR_PDCCH_DCI_DEBUG
         printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> common searchSpaces with format css_dci_format=%d and aggregation_level=%d\n",
@@ -5225,6 +5241,7 @@ uint8_t nr_dci_decoding_procedure(int s,
           for (int j=0; j<NBR_NR_FORMATS; j++)
             dci_fields_sizes_cnt[dci_cnt-1][i][j]=dci_fields_sizes[i][j];
       }
+#endif
       // for aggregation level 8. The number of candidates (L2=8) will be calculated in function nr_dci_decoding_procedure0
       #ifdef NR_PDCCH_DCI_DEBUG
         printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> common searchSpaces with format css_dci_format=%d and aggregation_level=%d\n",
@@ -5243,6 +5260,7 @@ uint8_t nr_dci_decoding_procedure(int s,
           for (int j=0; j<NBR_NR_FORMATS; j++)
             dci_fields_sizes_cnt[dci_cnt-1][i][j]=dci_fields_sizes[i][j];
       }
+#if 0
       // for aggregation level 16. The number of candidates (L2=16) will be calculated in function nr_dci_decoding_procedure0
       #ifdef NR_PDCCH_DCI_DEBUG
         printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> common searchSpaces with format css_dci_format=%d and aggregation_level=%d\n",
@@ -5261,6 +5279,7 @@ uint8_t nr_dci_decoding_procedure(int s,
           for (int j=0; j<NBR_NR_FORMATS; j++)
             dci_fields_sizes_cnt[dci_cnt-1][i][j]=dci_fields_sizes[i][j];
       }
+#endif
     }
 
     // Type3-PDCCH  common search space for a DCI format with CRC scrambled by INT-RNTI, or SFI-RNTI,
