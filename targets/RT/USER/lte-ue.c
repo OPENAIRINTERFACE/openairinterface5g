@@ -446,7 +446,6 @@ static void *UE_thread_synch(void *arg)
   int freq_offset=0;
   char threadname[128];
 
-  UE->is_synchronized = 0;
   printf("UE_thread_sync in with PHY_vars_UE %p\n",arg);
 
   cpu_set_t cpuset;
@@ -521,11 +520,6 @@ static void *UE_thread_synch(void *arg)
   wait_sync("UE_thread_sync");
 
   printf("Started device, unlocked sync_mutex (UE_sync_thread)\n");
-
-  if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) {
-    LOG_E(HW,"Could not start the device\n");
-    oai_exit=1;
-  }
 
   while (oai_exit==0) {
     AssertFatal ( 0== pthread_mutex_lock(&UE->proc.mutex_synch), "");
@@ -755,7 +749,6 @@ static void *UE_thread_rxn_txnp4(void *arg) {
   UE_rxtx_proc_t *proc = rtd->proc;
   PHY_VARS_UE    *UE   = rtd->UE;
 
-  proc->instance_cnt_rxtx=-1;
   proc->subframe_rx=proc->sub_frame_start;
 
   char threadname[256];
@@ -1457,20 +1450,25 @@ void *UE_thread(void *arg) {
   int sub_frame=-1;
   //int cumulated_shift=0;
 
+  if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) {
+    LOG_E(HW,"Could not start the device\n");
+    oai_exit=1;
+  }
 
   while (!oai_exit) {
+#if BASIC_SIMULATOR
+    while (!(UE->proc.instance_cnt_synch < 0)) {
+      printf("ue sync not ready\n");
+      usleep(500*1000);
+    }
+#endif
+
     AssertFatal ( 0== pthread_mutex_lock(&UE->proc.mutex_synch), "");
     int instance_cnt_synch = UE->proc.instance_cnt_synch;
     int is_synchronized    = UE->is_synchronized;
     AssertFatal ( 0== pthread_mutex_unlock(&UE->proc.mutex_synch), "");
 
     if (is_synchronized == 0) {
-#if BASIC_SIMULATOR
-      while (!((instance_cnt_synch = UE->proc.instance_cnt_synch) < 0)) {
-        printf("ue sync not ready\n");
-        usleep(500*1000);
-      }
-#endif
       if (instance_cnt_synch < 0) {  // we can invoke the synch
 	// grab 10 ms of signal and wakeup synch thread
 	for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
@@ -1661,12 +1659,7 @@ void *UE_thread(void *arg) {
 
                     proc->instance_cnt_rxtx++;
                     LOG_D( PHY, "[SCHED][UE %d] UE RX instance_cnt_rxtx %d subframe %d !!\n", UE->Mod_id, proc->instance_cnt_rxtx,proc->subframe_rx);
-                    if (proc->instance_cnt_rxtx == 0) {
-                      if (pthread_cond_signal(&proc->cond_rxtx) != 0) {
-                        LOG_E( PHY, "[SCHED][UE %d] ERROR pthread_cond_signal for UE RX thread\n", UE->Mod_id);
-                        exit_fun("nothing to add");
-                      }
-                    } else {
+                    if (proc->instance_cnt_rxtx != 0) {
                       LOG_E( PHY, "[SCHED][UE %d] UE RX thread busy (IC %d)!!\n", UE->Mod_id, proc->instance_cnt_rxtx);
                       if (proc->instance_cnt_rxtx > 2)
                         exit_fun("instance_cnt_rxtx > 2");
@@ -1717,6 +1710,8 @@ void init_UE_threads(int inst) {
 
   pthread_mutex_init(&UE->proc.mutex_synch,NULL);
   pthread_cond_init(&UE->proc.cond_synch,NULL);
+  UE->proc.instance_cnt_synch = -1;
+  UE->is_synchronized = 0;
 
   // the threads are not yet active, therefore access is allowed without locking
   int nb_threads=RX_NB_TH;
@@ -1728,6 +1723,7 @@ void init_UE_threads(int inst) {
 
     pthread_mutex_init(&UE->proc.proc_rxtx[i].mutex_rxtx,NULL);
     pthread_cond_init(&UE->proc.proc_rxtx[i].cond_rxtx,NULL);
+    UE->proc.proc_rxtx[i].instance_cnt_rxtx = -1;
     UE->proc.proc_rxtx[i].sub_frame_start=i;
     UE->proc.proc_rxtx[i].sub_frame_step=nb_threads;
     printf("Init_UE_threads rtd %d proc %d nb_threads %d i %d\n",rtd->proc->sub_frame_start, UE->proc.proc_rxtx[i].sub_frame_start,nb_threads, i);
