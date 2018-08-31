@@ -183,13 +183,13 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
 {
 
   asn_enc_rval_t enc_rval;
-  BCCH_BCH_Message_t *mib = &carrier->mib ;
+  BCCH_BCH_Message_t *mib = &carrier->mib;
   uint8_t sfn = (uint8_t)((frame>>2)&0xff);
   uint16_t *spare = calloc(1, sizeof(uint16_t));
   if (spare == NULL) abort();
 
   switch (N_RB_DL) {
-    
+
     case 6:
       mib->message.dl_Bandwidth = MasterInformationBlock__dl_Bandwidth_n6;
       break;
@@ -698,6 +698,9 @@ uint8_t do_SIB23(uint8_t Mod_id,
     = configuration->pcch_defaultPagingCycle[CC_id];
   (*sib2)->radioResourceConfigCommon.pcch_Config.nB
     = configuration->pcch_nB[CC_id];
+  LOG_E(RRC,"[SIB2] With ITTI. Basic config of paging cycle DRX: radio frame cycle length %x, paging occasion number %x\n",
+      (uint32_t)configuration->pcch_defaultPagingCycle[CC_id],
+      (uint32_t)configuration->pcch_nB[CC_id]);
 
   // PRACH-Config
   (*sib2)->radioResourceConfigCommon.prach_Config.rootSequenceIndex
