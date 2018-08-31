@@ -1020,8 +1020,7 @@
 		      -l6336 -s10 -n100
 		      -l7040 -s10 -n100
 		      -l7744 -s10 -n100
-		      -l8448 -s10 -n100
-      </main_exec_args>
+		      -l8448 -s10 -n100</main_exec_args>
       <tags>ldpctest.test1</tags>
       <search_expr_true>BLER 0.000000</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
