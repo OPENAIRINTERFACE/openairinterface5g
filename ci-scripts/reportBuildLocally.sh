@@ -529,6 +529,14 @@ summary_table_header "OAI Build Physical simulators option"
 summary_table_row "DL Simulator - Release 15" ./archives/phy_sim/dlsim.Rel15.txt "Built target dlsim" ./phy_sim_row1.html
 summary_table_row "UL Simulator - Release 15" ./archives/phy_sim/ulsim.Rel15.txt "Built target ulsim" ./phy_sim_row2.html
 summary_table_row "Coding - Release 15" ./archives/phy_sim/coding.Rel15.txt "Built target coding" ./phy_sim_row3.html
+if [ -f ./archives/phy_sim/./archives/phy_sim/ldpctest.Rel15.txt ]
+then
+    summary_table_row "LDPC Test - Release 15" ./archives/phy_sim/ldpctest.Rel15.txt "Built target coding" ./phy_sim_row4.html
+fi
+if [ -f ./archives/phy_sim/./archives/phy_sim/polartest.Rel15.txt ]
+then
+    summary_table_row "Polar Test - Release 15" ./archives/phy_sim/polartest.Rel15.txt "Built target coding" ./phy_sim_row5.html
+fi
 summary_table_footer
 
 

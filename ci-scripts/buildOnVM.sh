@@ -145,7 +145,7 @@ case $key in
     VM_NAME=ci-phy-sim
     ARCHIVES_LOC=phy_sim
     LOG_PATTERN=.Rel15.txt
-    NB_PATTERN_FILES=3
+    NB_PATTERN_FILES=5
     BUILD_OPTIONS="--phy_simulators"
     shift
     ;;
@@ -211,7 +211,7 @@ case $key in
         VM_NAME=ci-phy-sim
         ARCHIVES_LOC=phy_sim
         LOG_PATTERN=.Rel15.txt
-        NB_PATTERN_FILES=3
+        NB_PATTERN_FILES=5
         BUILD_OPTIONS="--phy_simulators"
         ;;
         cppcheck)

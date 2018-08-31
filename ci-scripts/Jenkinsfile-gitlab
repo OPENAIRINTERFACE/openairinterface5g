@@ -232,6 +232,48 @@ pipeline {
             }
         }
 
+        stage ("Variant Tests") {
+            parallel {
+                stage ("Test physical simulators") {
+                    steps {
+                        gitlabCommitStatus(name: "Test phy-sim") {
+                            sh "./ci-scripts/runTestOnVM.sh --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                        }
+                    }
+                }
+                stage ("Test basic simulator") {
+                    steps {
+                        echo '\u2705 \u001B[32mBasic Simulator testing not done in this pipeline\u001B[0m'
+                    }
+                }
+                stage ("Test FDD - Band 7 - B210") {
+                    steps {
+                        echo '\u2705 \u001B[32mFDD Band7 testing with COTS-UE not done in this pipeline\u001B[0m'
+                    }
+                }
+            }
+            post {
+                always {
+                    script {
+                        dir ('archives') {
+                            sh "if [ -d basic_sim/test ] || [ -d phy_sim/test]; then zip -r -qq vm_tests_logs.zip */test ; fi"
+                        }
+                        if(fileExists('archives/vm_tests_logs.zip')) {
+                            archiveArtifacts artifacts: 'archives/vm_tests_logs.zip'
+                            if ("MERGE".equals(env.gitlabActionType)) {
+                                sh "./ci-scripts/reportTestLocally.sh --git-url ${GIT_URL} --job-name ${JOB_NAME} --build-id ${BUILD_ID} --trigger merge-request --src-branch ${env.gitlabSourceBranch} --src-commit ${env.gitlabMergeRequestLastCommit} --target-branch ${env.gitlabTargetBranch} --target-commit ${GIT_COMMIT}"
+                            } else {
+                                sh "./ci-scripts/reportTestLocally.sh --git-url ${GIT_URL} --job-name ${JOB_NAME} --build-id ${BUILD_ID} --trigger push --branch ${GIT_BRANCH} --commit ${GIT_COMMIT}"
+                            }
+                            if(fileExists('test_simulator_results.html')) {
+                                archiveArtifacts artifacts: 'test_simulator_results.html'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         stage ("Destroy all Virtual Machines") {
             steps {
                 sh "./ci-scripts/destroyAllRunningVM.sh --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
