@@ -9,19 +9,19 @@ int16_t *d0_sss;
 int16_t *d5_sss;
 
 #define MyAssert(x) { if(!(x)) { printf("Error in table intialization: %s:%d\n",__FILE__,__LINE__); exit(1);}}
-#define gen(table, formula) {			\
-    int x[31]= {0};				\
-    x[4]=1;					\
-    for(int i=0; i<26; i++)			\
-      x[i+5]=formula;				\
-    for (int i=0; i<31; i++)			\
-      table[i]=1-2*x[i];			\
-}
+#define gen(table, formula) {     \
+    int x[31]= {0};       \
+    x[4]=1;         \
+    for(int i=0; i<26; i++)     \
+      x[i+5]=formula;       \
+    for (int i=0; i<31; i++)      \
+      table[i]=1-2*x[i];      \
+  }
 
 #define mod31(a) (a)%31
 #define mod2(a)  (a)%2
 #define mod8(a)  (a)%8
-__attribute__((constructor)) static void init_sss(void) {
+void init_sss(void) {
   MyAssert(0==posix_memalign((void **)&d0_sss, 16,504*31*2*sizeof(*d0_sss)));
   MyAssert(0==posix_memalign((void **)&d5_sss, 16,504*31*2*sizeof(*d5_sss)));
   int s[31];
@@ -39,11 +39,12 @@ __attribute__((constructor)) static void init_sss(void) {
       int m0 = mprime%31;
       int m1 = (m0+mprime/31+1)%31;
       int rowIndex=(Nid2+3*Nid1)*31*2;
+
       for (int i=0; i<31; i++) {
         d0_sss[rowIndex+i*2]=   s[mod31(i+m0)] * c[mod31(i+Nid2)];
         d5_sss[rowIndex+i*2]=   s[mod31(i+m1)] * c[mod31(i+Nid2)];
         d0_sss[rowIndex+i*2+1]= s[mod31(i+m1)] * c[mod31(i+Nid2+3)] * z[mod31(i+mod8(m0))];
-	d5_sss[rowIndex+i*2+1]= s[mod31(i+m0)] * c[mod31(i+Nid2+3)] * z[mod31(i+mod8(m1))];
+        d5_sss[rowIndex+i*2+1]= s[mod31(i+m0)] * c[mod31(i+Nid2+3)] * z[mod31(i+mod8(m1))];
       }
     }
   }
@@ -52,7 +53,7 @@ __attribute__((constructor)) static void init_sss(void) {
 #ifdef SSS_TABLES_TEST
 void main () {
   printf("int16_t d0_sss[504*62] = {");
-  
+
   for (int i=0; i<504*62; i++)
     printf("%d,\n",d0_sss[i]);
 
@@ -63,6 +64,5 @@ void main () {
     printf("%d,\n",d5_sss[i]);
 
   printf("};\n\n");
-  
 }
 #endif
