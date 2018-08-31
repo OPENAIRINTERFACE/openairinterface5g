@@ -153,7 +153,8 @@ void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe);
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 void wakeup_prach_eNB_br(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe);
 #endif
-extern int codingw;
+extern uint8_t get_thread_paralle_stage(void);
+extern uint8_t get_thread_worker_stage(void);
 
 extern uint8_t nfapi_mode;
 extern void oai_subframe_ind(uint16_t sfn, uint16_t sf);
@@ -225,7 +226,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER , 1 );
 
-  if(!eNB->single_thread_flag && get_nprocs() >= 8){
+  if(get_thread_paralle_stage() == 2){
     if(wait_on_condition(&proc[1].mutex_rxtx,&proc[1].cond_rxtx,&proc[1].pipe_ready,"wakeup_tx")<0) {
       LOG_E(PHY,"Frame %d, subframe %d: TX1 not ready\n",proc[1].frame_rx,proc[1].subframe_rx);
       return(-1);
@@ -247,7 +248,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   /* CONFLICT RESOLUTION: BEGIN */
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER , 0 );
   if(oai_exit) return(-1);
-  if(eNB->single_thread_flag || get_nprocs() <= 4){
+  if(get_thread_paralle_stage() == 0){
 #ifndef PHY_TX_THREAD
     phy_procedures_eNB_TX(eNB, proc, 1);
 #endif
@@ -423,8 +424,8 @@ static void* eNB_thread_rxtx( void* param ) {
     }
     pthread_mutex_unlock( &proc->mutex_rxtx );
     if (nfapi_mode!=2){
-    	if(get_nprocs() >= 8)      wakeup_tx(eNB,eNB->proc.ru_proc);
-    	else
+    	if(get_thread_paralle_stage() == 2)      wakeup_tx(eNB,eNB->proc.ru_proc);
+    	else if(get_thread_paralle_stage() == 1)
     	{
     		phy_procedures_eNB_TX(eNB, proc, 1);
     		wakeup_txfh(proc,eNB->proc.ru_proc);
@@ -883,7 +884,7 @@ static void* process_stats_thread(void* param) {
 
 void init_eNB_proc(int inst) {
   
-  int i=0;
+  /*int i=0;*/
   int CC_id;
   PHY_VARS_eNB *eNB;
   eNB_proc_t *proc;
@@ -955,7 +956,7 @@ void init_eNB_proc(int inst) {
     //    attr_te     = &proc->attr_te; 
 #endif
 
-    if(get_nprocs() > 2 && codingw)
+    if(get_thread_worker_stage())
     {
       init_te_thread(eNB);
       init_td_thread(eNB);
@@ -964,7 +965,7 @@ void init_eNB_proc(int inst) {
 
     LOG_I(PHY,"eNB->single_thread_flag:%d\n", eNB->single_thread_flag);
 
-    if (eNB->single_thread_flag==0 && nfapi_mode!=2) {
+    if (get_thread_paralle_stage()!=0 && nfapi_mode!=2) {
       pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, proc );
       pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, tx_thread, proc);
     }
@@ -972,13 +973,13 @@ void init_eNB_proc(int inst) {
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     pthread_create( &proc->pthread_prach_br, attr_prach_br, eNB_thread_prach_br, eNB );
 #endif
-    char name[16];
+    /*char name[16];
     if (eNB->single_thread_flag==0) {
       snprintf( name, sizeof(name), "RXTX0 %d", i );
       pthread_setname_np( proc_rxtx[0].pthread_rxtx, name );
       snprintf( name, sizeof(name), "RXTX1 %d", i );
       pthread_setname_np( proc_rxtx[1].pthread_rxtx, name );
-    }
+    }*/
 
     AssertFatal(proc->instance_cnt_prach == -1,"instance_cnt_prach = %d\n",proc->instance_cnt_prach);
 	
@@ -1311,8 +1312,8 @@ void init_eNB(int single_thread_flag,int wait_for_sync) {
 #endif
 
 
-      eNB->td                   = ulsch_decoding_data_all;//(get_nprocs()<=4) ? ulsch_decoding_data : ulsch_decoding_data_2thread;
-      eNB->te                   = dlsch_encoding_all;//(get_nprocs()<=4) ? dlsch_encoding : dlsch_encoding_2threads;
+      eNB->td                   = ulsch_decoding_data_all;
+      eNB->te                   = dlsch_encoding_all;
 
       
       LOG_I(PHY,"Registering with MAC interface module\n");

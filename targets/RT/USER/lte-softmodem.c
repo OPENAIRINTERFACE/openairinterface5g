@@ -216,8 +216,48 @@ extern void init_eNB_afterRU(void);
 int transmission_mode=1;
 int emulate_rf = 0;
 int numerology = 0;
-int codingw = 0;
-int fepw = 0;
+int dis_worker = 1;
+
+static THREAD_STRUCT thread_struct;
+void thread_structure_init(void)
+{
+  thread_struct.core_number = get_nprocs();
+  if(thread_struct.core_number>=8)
+  {
+    thread_struct.paralle_stage = 2;
+    thread_struct.worker_stage  = 1;
+  }
+  else if(thread_struct.core_number>=4)
+  {
+    thread_struct.paralle_stage = 1;
+    thread_struct.worker_stage  = 1;
+  }
+  else
+  {
+    thread_struct.paralle_stage = 0;
+    thread_struct.worker_stage  = 0;
+  }
+  if(single_thread_flag) thread_struct.paralle_stage = 0;
+  if(dis_worker) thread_struct.worker_stage  = 0;
+printf("single_thread_flag=%d, dis_worker=%d \n" ,single_thread_flag, dis_worker);
+printf("~~~~~~~~~~paralle_stage=%d, worker_stage=%d, core_number=%d ~~~~~~~~~~~~~~~~\n",
+  thread_struct.paralle_stage,
+  thread_struct.worker_stage,
+  thread_struct.core_number);
+}
+
+uint8_t get_thread_paralle_stage(void)
+{
+  return thread_struct.paralle_stage;
+} 
+uint8_t get_thread_worker_stage(void)
+{
+  return thread_struct.worker_stage;
+} 
+int get_thread_core_number(void)
+{
+  return thread_struct.core_number;
+} 
 
 
 
@@ -1174,6 +1214,7 @@ int main( int argc, char **argv )
 
     printf("wait_eNBs()\n");
     wait_eNBs();
+    thread_structure_init();
 
     printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
     if (RC.nb_RU >0) {

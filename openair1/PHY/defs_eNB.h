@@ -888,6 +888,12 @@ typedef struct {
   int            prach_I0;
 } PHY_MEASUREMENTS_eNB;
 
+typedef struct THREAD_STRUCT_s {
+  uint8_t  paralle_stage;
+  uint8_t  worker_stage;
+  int      core_number;
+} THREAD_STRUCT;
+
 
 /// Top-level PHY Data Structure for eNB
 typedef struct PHY_VARS_eNB_s {

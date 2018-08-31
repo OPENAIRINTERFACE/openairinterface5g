@@ -58,7 +58,6 @@
 		     uint64_t deadline,
 		     uint64_t period);*/
 
-extern int codingw;
 
 void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch)
 {
@@ -615,8 +614,10 @@ int dlsch_encoding_all(PHY_VARS_eNB *eNB,
 		}
 	}
 
-    if(C >= 8 && get_nprocs()>=16 && codingw)//one main three worker
+    if(get_thread_worker_stage())
     {
+      if(C >= 8)//one main three worker
+      {
         encoding_return =
 		dlsch_encoding_2threads(eNB,
 				   a,
@@ -632,9 +633,9 @@ int dlsch_encoding_all(PHY_VARS_eNB *eNB,
                    te_wakeup_stats1,
                    i_stats,
                    3);
-    }
-    else if(C >= 6 && get_nprocs()>=8 && codingw)//one main two worker
-    {
+      }
+      else if(C >= 6)//one main two worker
+      {
         encoding_return =
 		dlsch_encoding_2threads(eNB,
 				   a,
@@ -650,9 +651,9 @@ int dlsch_encoding_all(PHY_VARS_eNB *eNB,
                    te_wakeup_stats1,
                    i_stats,
                    2);
-    }
-    else if(C >= 4 && get_nprocs()>=4 && codingw)//one main one worker
-    {
+      }
+      else if(C >= 4)//one main one worker
+      {
         encoding_return =
 		dlsch_encoding_2threads(eNB,
 				   a,
@@ -668,9 +669,9 @@ int dlsch_encoding_all(PHY_VARS_eNB *eNB,
                    te_wakeup_stats1,
                    i_stats,
                    1);
-    }
-	else
-	{
+      }
+      else
+      {
 		encoding_return =
 		dlsch_encoding(eNB,
 				   a,
@@ -681,7 +682,21 @@ int dlsch_encoding_all(PHY_VARS_eNB *eNB,
                    rm_stats,
                    te_stats,
                    i_stats);
-	}
+      }
+    }
+    else
+    {
+		encoding_return =
+		dlsch_encoding(eNB,
+				   a,
+                   num_pdcch_symbols,
+                   dlsch,
+                   frame,
+                   subframe,
+                   rm_stats,
+                   te_stats,
+                   i_stats);
+    }
 	return encoding_return;
 }
 

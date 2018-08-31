@@ -45,7 +45,7 @@
 #include "targets/RT/USER/rt_wrapper.h"
 #include "transport_proto.h"
 
-extern int codingw;
+extern uint8_t get_thread_worker_stage(void);
 
 void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch)
 {
@@ -723,7 +723,7 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
 int ulsch_decoding_data_all(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
 {
   int ret = 0;
-  /*if(codingw)
+  /*if(get_thread_worker_stage())
   {
     ret = ulsch_decoding_data_2thread(eNB,UE_id,harq_pid,llr8_flag);
   }

@@ -92,8 +92,7 @@
 #define CONFIG_HLP_TNOFORK       "to ease debugging with gdb\n"
 
 #define CONFIG_HLP_NUMEROLOGY    "adding numerology for 5G\n"
-#define CONFIG_HLP_CODINGW       "coding worker thread enable(disable by defult)\n"
-#define CONFIG_HLP_FEPW          "FEP worker thread enabled(disable by defult)\n"
+#define CONFIG_HLP_WORKER        "coding and FEP worker thread disable(enable by defult)\n"
 #define CONFIG_HLP_EMULATE_RF    "Emulated RF enabled(disable by defult)\n"
 
 #define CONFIG_HLP_DISABLNBIOT   "disable nb-iot, even if defined in config\n"
@@ -186,8 +185,7 @@
 {"s" ,                      CONFIG_HLP_SNR,         0,                      iptr:&snr_dB,                       defintval:25,                   TYPE_INT,       0},                     \
 {"numerology" ,             CONFIG_HLP_NUMEROLOGY,  PARAMFLAG_BOOL,         iptr:&numerology,                   defintval:0,                    TYPE_INT,       0},                     \
 {"emulate-rf" ,             CONFIG_HLP_EMULATE_RF,  PARAMFLAG_BOOL,         iptr:&emulate_rf,                   defintval:0,                    TYPE_INT,       0},                     \
-{"codingw" ,                CONFIG_HLP_CODINGW,     PARAMFLAG_BOOL,         iptr:&codingw,                      defintval:0,                    TYPE_INT,       0},                     \
-{"fepw" ,                   CONFIG_HLP_FEPW,        PARAMFLAG_BOOL,         iptr:&fepw,                         defintval:0,                    TYPE_INT,       0},                     \
+{"worker-disable" ,         CONFIG_HLP_WORKER,      PARAMFLAG_BOOL,         iptr:&dis_worker,                   defintval:0,                    TYPE_INT,       0},                     \
 {"nbiot-disable",           CONFIG_HLP_DISABLNBIOT, PARAMFLAG_BOOL,         iptr:&nonbiotflag,			defintval:0,			TYPE_INT,	0} \
 }
 
@@ -278,6 +276,10 @@ PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
                           uint8_t UE_id,
                           uint8_t abstraction_flag);
 void init_eNB_afterRU(void);
+void thread_structure_init(void);
+uint8_t get_thread_paralle_stage(void);
+uint8_t get_thread_worker_stage(void);
+int get_thread_core_number(void);
 
 extern int stop_L1L2(module_id_t enb_id);
 extern int restart_L1L2(module_id_t enb_id);
