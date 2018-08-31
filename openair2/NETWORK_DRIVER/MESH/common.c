@@ -309,7 +309,7 @@ void nas_COMMON_receive(uint16_t dlen,
 
   printk("\n");
 #endif //NAS_DEBUG_RECEIVE
-  netif_rx(skb);
+  netif_rx_ni(skb);
 #ifdef NAS_DEBUG_RECEIVE
   printk("NAS_COMMON_RECEIVE: end\n");
 #endif

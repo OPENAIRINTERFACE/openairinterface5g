@@ -30,6 +30,8 @@
 #define PDCP_C
 //#define DEBUG_PDCP_FIFO_FLUSH_SDU
 
+#define MBMS_MULTICAST_OUT
+
 #include "assertions.h"
 #include "hashtable.h"
 #include "pdcp.h"
@@ -65,6 +67,17 @@ extern int otg_enabled;
 
 #include "common/ran_context.h"
 extern RAN_CONTEXT_t RC;
+
+#ifdef MBMS_MULTICAST_OUT
+# include <sys/types.h>
+# include <sys/socket.h>
+# include <netinet/in.h>
+# include <netinet/ip.h>
+# include <netinet/udp.h>
+# include <unistd.h>
+
+static int mbms_socket = -1;
+#endif
 
 //-----------------------------------------------------------------------------
 /*
@@ -758,11 +771,26 @@ pdcp_data_ind(
   packet_forwarded = FALSE;
 #endif
 
+#ifdef MBMS_MULTICAST_OUT
+  if ((MBMS_flagP != 0) && (mbms_socket != -1)) {
+    struct iphdr   *ip_header = (struct iphdr*)&sdu_buffer_pP->data[payload_offset];
+    struct udphdr *udp_header = (struct udphdr*)&sdu_buffer_pP->data[payload_offset + sizeof(struct iphdr)];
+    struct sockaddr_in dest_addr;
+
+    dest_addr.sin_family      = AF_INET;
+    dest_addr.sin_port        = udp_header->dest;
+    dest_addr.sin_addr.s_addr = ip_header->daddr;
+
+    sendto(mbms_socket, &sdu_buffer_pP->data[payload_offset], sdu_buffer_sizeP - payload_offset, MSG_DONTWAIT, (struct sockaddr*)&dest_addr, sizeof(dest_addr));
+    packet_forwarded = TRUE;
+  }
+#endif
+
   if (FALSE == packet_forwarded) {
     new_sdu_p = get_free_mem_block(sdu_buffer_sizeP - payload_offset + sizeof (pdcp_data_ind_header_t), __func__);
 
     if (new_sdu_p) {
-      if (pdcp_p->rlc_mode == RLC_MODE_AM ) {
+      if ((MBMS_flagP == 0) && (pdcp_p->rlc_mode == RLC_MODE_AM)) {
         pdcp_p->last_submitted_pdcp_rx_sn = sequence_number;
       }
 
@@ -803,7 +831,6 @@ pdcp_data_ind(
       
       
     }
-  }
 
   /* Print octets of incoming data in hexadecimal form */
   LOG_D(PDCP, "Following content has been received from RLC (%d,%d)(PDCP header has already been removed):\n",
@@ -839,12 +866,13 @@ pdcp_data_ind(
 
   
 #if defined(STOP_ON_IP_TRAFFIC_OVERLOAD)
-  else {
-    AssertFatal(0, PROTOCOL_PDCP_CTXT_FMT" PDCP_DATA_IND SDU DROPPED, OUT OF MEMORY \n",
-                PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p));
-  }
-
+    else {
+      AssertFatal(0, PROTOCOL_PDCP_CTXT_FMT" PDCP_DATA_IND SDU DROPPED, OUT OF MEMORY \n",
+                  PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p));
+    }
 #endif
+
+  }
 
   free_mem_block(sdu_buffer_pP, __func__);
 
@@ -1458,8 +1486,12 @@ rrc_pdcp_config_asn1_req (
 
       for (j=0; j<mbms_SessionInfoList_r9_p->list.count; j++) {
         MBMS_SessionInfo_p = mbms_SessionInfoList_r9_p->list.array[j];
-        lc_id = MBMS_SessionInfo_p->sessionId_r9->buf[0];
+        if (MBMS_SessionInfo_p->sessionId_r9)
+          lc_id = MBMS_SessionInfo_p->sessionId_r9->buf[0];
+        else
+          lc_id = MBMS_SessionInfo_p->logicalChannelIdentity_r9;
         mch_id = MBMS_SessionInfo_p->tmgi_r9.serviceId_r9.buf[2]; //serviceId is 3-octet string
+//        mch_id = j;
 
         // can set the mch_id = i
         if (ctxt_pP->enb_flag) {
@@ -1479,6 +1511,14 @@ rrc_pdcp_config_asn1_req (
             action = CONFIG_ACTION_MBMS_ADD;
           }
         }
+
+        LOG_D(PDCP, "lc_id (%02ld) mch_id(%02x,%02x,%02x) drb_id(%ld) action(%d)\n",
+          lc_id,
+          MBMS_SessionInfo_p->tmgi_r9.serviceId_r9.buf[0],
+          MBMS_SessionInfo_p->tmgi_r9.serviceId_r9.buf[1],
+          MBMS_SessionInfo_p->tmgi_r9.serviceId_r9.buf[2],
+          drb_id,
+          action);
 
         pdcp_config_req_asn1 (
           ctxt_pP,
@@ -2018,6 +2058,12 @@ void pdcp_layer_init(void)
 #endif
   }
 
+#ifdef MBMS_MULTICAST_OUT
+  mbms_socket = socket(AF_INET, SOCK_RAW, IPPROTO_RAW);
+  if (mbms_socket == -1)
+    LOG_W(PDCP, "Could not create RAW socket, MBMS packets will not be put to the network\n");
+#endif
+
   LOG_I(PDCP, "PDCP layer has been initialized\n");
 
   pdcp_output_sdu_bytes_to_write=0;
@@ -2068,6 +2114,12 @@ void pdcp_layer_cleanup (void)
 {
   list_free (&pdcp_sdu_list);
   hashtable_destroy(pdcp_coll_p);
+#ifdef MBMS_MULTICAST_OUT
+  if(mbms_socket != -1) {
+    close(mbms_socket);
+    mbms_socket = -1;
+  }
+#endif
 }
 
 #ifdef PDCP_USE_RT_FIFO
