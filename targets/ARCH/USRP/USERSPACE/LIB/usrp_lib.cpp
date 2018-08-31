@@ -1263,7 +1263,7 @@ extern "C" {
             }
         }
 
-      LOG_D(PHY, "usrp->get_tx_num_channels() == %d\n", s->usrp->get_tx_num_channels());
+      LOG_D(PHY, "usrp->get_tx_num_channels() == %zd\n", s->usrp->get_tx_num_channels());
       LOG_D(PHY, "openair0_cfg[0].tx_num_channels == %d\n", openair0_cfg[0].tx_num_channels);
       for(int i=0; i<s->usrp->get_tx_num_channels(); i++) {
         ::uhd::gain_range_t gain_range_tx = s->usrp->get_tx_gain_range(i);
