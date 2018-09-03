@@ -593,9 +593,9 @@ then
     ssh -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR < $EPC_VM_CMDS
     rm $EPC_VM_CMDS
 
-    echo "echo \"iperf -c $REAL_EPC_IP_ADDR -u -t 30 -b 4M -i 1\"" > $VM_CMDS
-    echo "echo \"COMMAND IS: iperf -c $REAL_EPC_IP_ADDR -u -t 30 -b 4M -i 1\" > /home/ubuntu/tmp/cmake_targets/log/iperf_ul_client.txt" > $VM_CMDS
-    echo "iperf -c $REAL_EPC_IP_ADDR -u -t 30 -b 4M -i 1 | tee -a /home/ubuntu/tmp/cmake_targets/log/iperf_ul_client.txt" >> $VM_CMDS
+    echo "echo \"iperf -c $REAL_EPC_IP_ADDR -u -t 30 -b 2M -i 1\"" > $VM_CMDS
+    echo "echo \"COMMAND IS: iperf -c $REAL_EPC_IP_ADDR -u -t 30 -b 2M -i 1\" > /home/ubuntu/tmp/cmake_targets/log/iperf_ul_client.txt" > $VM_CMDS
+    echo "iperf -c $REAL_EPC_IP_ADDR -u -t 30 -b 2M -i 1 | tee -a /home/ubuntu/tmp/cmake_targets/log/iperf_ul_client.txt" >> $VM_CMDS
     ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
     rm -f $VM_CMDS
 
@@ -674,7 +674,7 @@ then
             STATUS=-1
         else
             EFFECTIVE_BANDWIDTH=`tail -n3 $ARCHIVES_LOC/iperf_ul_client.txt | egrep "Mbits/sec" | sed -e "s#^.*MBytes *##" -e "s#sec.*#sec#"`
-            if [[ $EFFECTIVE_BANDWIDTH =~ .*4.*Mbits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*3.*Mbits.* ]]
+            if [[ $EFFECTIVE_BANDWIDTH =~ .*2.*Mbits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*1.*Mbits.* ]]
             then
                 echo "got requested UL bandwidth: $EFFECTIVE_BANDWIDTH"
             else
