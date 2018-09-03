@@ -351,11 +351,11 @@ void reset_stats(FL_OBJECT *button, long arg)
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     for (k=0; k<8; k++) { //harq_processes
-      for (j=0; j<phy_vars_gNB->dlsch[i][0]->Mlimit; j++) {
+/*      for (j=0; j<phy_vars_gNB->dlsch[i][0]->Mlimit; j++) {
 	phy_vars_gNB->UE_stats[i].dlsch_NAK[k][j]=0;
 	phy_vars_gNB->UE_stats[i].dlsch_ACK[k][j]=0;
 	phy_vars_gNB->UE_stats[i].dlsch_trials[k][j]=0;
-      }
+      }*/
 
       phy_vars_gNB->UE_stats[i].dlsch_l2_errors[k]=0;
       phy_vars_gNB->UE_stats[i].ulsch_errors[k]=0;

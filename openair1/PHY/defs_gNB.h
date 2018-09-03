@@ -64,6 +64,143 @@ typedef struct {
   NR_gNB_DCI_ALLOC_t dci_alloc[256];
 } NR_gNB_PDCCH;
 
+
+typedef struct {
+/*  /// Status Flag indicating for this DLSCH (idle,active,disabled)
+  //SCH_status_t status;
+  /// Transport block size
+  uint32_t TBS;
+  /// pointer to pdu from MAC interface (this is "a" in 36.212)
+  uint8_t *pdu;
+  /// The payload + CRC size in bits, "B" from 36-212
+  uint32_t B;
+  /// Pointer to the payload
+  uint8_t *b;
+  /// Pointers to transport block segments
+  uint8_t *c[MAX_NUM_DLSCH_SEGMENTS];
+  /// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)
+  uint32_t RTC[MAX_NUM_DLSCH_SEGMENTS];
+  /// Frame where current HARQ round was sent
+  uint32_t frame;
+  /// Subframe where current HARQ round was sent
+  uint32_t subframe;
+  /// Index of current HARQ round for this DLSCH
+  uint8_t round;
+  /// Modulation order
+  uint8_t Qm;
+  /// MCS
+  uint8_t mcs;
+  /// Redundancy-version of the current sub-frame
+  uint8_t rvidx;
+  /// MIMO mode for this DLSCH
+  MIMO_mode_t mimo_mode;
+  /// Current RB allocation
+  uint32_t rb_alloc[4];
+  /// distributed/localized flag
+  vrb_t vrb_type;
+  /// Current subband PMI allocation
+  uint16_t pmi_alloc;
+  /// Current subband RI allocation
+  uint32_t ri_alloc;
+  /// Current subband CQI1 allocation
+  uint32_t cqi_alloc1;
+  /// Current subband CQI2 allocation
+  uint32_t cqi_alloc2;
+  /// Current Number of RBs
+  uint16_t nb_rb;
+  /// Current NDI
+  uint8_t ndi;
+  /// downlink power offset field
+  uint8_t dl_power_off;
+  /// start symbold of pdsch
+  uint8_t pdsch_start;
+  /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18)
+  uint8_t e[MAX_NUM_CHANNEL_BITS] __attribute__((aligned(32)));
+  /// Turbo-code outputs (36-212 V8.6 2009-03, p.12
+  uint8_t *d[MAX_NUM_DLSCH_SEGMENTS];//[(96+3+(3*6144))];
+  /// Sub-block interleaver outputs (36-212 V8.6 2009-03, p.16-17)
+  uint8_t w[MAX_NUM_DLSCH_SEGMENTS][3*6144];
+  /// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)
+  uint32_t C;
+  /// Number of "small" code segments (for definition see 36-212 V8.6 2009-03, p.10)
+  uint32_t Cminus;
+  /// Number of "large" code segments (for definition see 36-212 V8.6 2009-03, p.10)
+  uint32_t Cplus;
+  /// Number of bits in "small" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10)
+  uint32_t Kminus;
+  /// Number of bits in "large" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10)
+  uint32_t Kplus;
+  /// Number of "Filler" bits (for definition see 36-212 V8.6 2009-03, p.10)
+  uint32_t F;
+  /// Number of MIMO layers (streams) (for definition see 36-212 V8.6 2009-03, p.17, TM3-4)
+  uint8_t Nl;
+  /// Number of layers for this PDSCH transmission (TM8-10)
+  uint8_t Nlayers;
+  /// First layer for this PSCH transmission
+  uint8_t first_layer;
+  /// codeword this transport block is mapped to
+  uint8_t codeword;*/
+} NR_DL_gNB_HARQ_t;
+
+
+typedef struct {
+
+  /// Pointers to 8 HARQ processes for the DLSCH
+  LTE_DL_eNB_HARQ_t *harq_processes[8];
+  nfapi_nr_pdsch_time_domain_alloc_type_e time_alloc_type;
+  uint8_t time_alloc_list_flag;
+
+
+//LTE remainders to be removed
+/*  /// TX buffers for UE-spec transmission (antenna ports 5 or 7..14, prior to precoding)
+  int32_t *txdataF[8];
+  /// beamforming weights for UE-spec transmission (antenna ports 5 or 7..14), for each codeword, maximum 4 layers?
+  int32_t **ue_spec_bf_weights[4]; 
+  /// dl channel estimates (estimated from ul channel estimates)
+  int32_t **calib_dl_ch_estimates;
+  /// Allocated RNTI (0 means DLSCH_t is not currently used)
+  uint16_t rnti;
+  /// Active flag for baseband transmitter processing
+  uint8_t active;
+  /// HARQ process mask, indicates which processes are currently active
+  uint16_t harq_mask;
+  /// Indicator of TX activation per subframe.  Used during PUCCH detection for ACK/NAK.
+  uint8_t subframe_tx[10];
+  /// First CCE of last PDSCH scheduling per subframe.  Again used during PUCCH detection for ACK/NAK.
+  uint8_t nCCE[10];
+  /// Process ID's per subframe.  Used to associate received ACKs on PUSCH/PUCCH to DLSCH harq process ids
+  uint8_t harq_ids[10];
+  /// Window size (in outgoing transport blocks) for fine-grain rate adaptation
+  uint8_t ra_window_size;
+  /// First-round error threshold for fine-grain rate adaptation
+  uint8_t error_threshold;
+
+  /// Number of soft channel bits
+  uint32_t G;
+  /// Codebook index for this dlsch (0,1,2,3)
+  uint8_t codebook_index;
+  /// Maximum number of HARQ processes (for definition see 36-212 V8.6 2009-03, p.17)
+  uint8_t Mdlharq;
+  /// Maximum number of HARQ rounds
+  uint8_t Mlimit;
+  /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
+  uint8_t Kmimo;
+  /// Nsoft parameter related to UE Category
+  uint32_t Nsoft;
+  /// amplitude of PDSCH (compared to RS) in symbols without pilots
+  int16_t sqrt_rho_a;
+  /// amplitude of PDSCH (compared to RS) in symbols containing pilots
+  int16_t sqrt_rho_b;
+#ifdef Rel14
+  /// indicator that this DLSCH corresponds to SIB1-BR, needed for c_init for scrambling
+  uint8_t sib1_br_flag;
+  /// initial absolute subframe (see 36.211 Section 6.3.1), needed for c_init for scrambling
+  uint16_t i0;
+  CEmode_t CEmode;
+#endif*/
+} NR_gNB_DLSCH_t;
+
+
 typedef struct {
   /// \brief Pointers (dynamic) to the received data in the time domain.
   /// - first index: rx antenna [0..nb_antennas_rx[
@@ -295,11 +432,11 @@ typedef struct PHY_VARS_gNB_s {
   LTE_eNB_SRS          srs_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_PUSCH       *pusch_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_PRACH        prach_vars;
-  LTE_eNB_DLSCH_t     *dlsch[NUMBER_OF_UE_MAX][2];   // Nusers times two spatial streams
+  NR_gNB_DLSCH_t     *dlsch[NUMBER_OF_UE_MAX][2];   // Nusers times two spatial streams
   LTE_eNB_ULSCH_t     *ulsch[NUMBER_OF_UE_MAX+1];      // Nusers + number of RA
-  LTE_eNB_DLSCH_t     *dlsch_SI,*dlsch_ra,*dlsch_p;
-  LTE_eNB_DLSCH_t     *dlsch_MCH;
-  LTE_eNB_DLSCH_t     *dlsch_PCH;
+  NR_gNB_DLSCH_t     *dlsch_SI,*dlsch_ra,*dlsch_p;
+  NR_gNB_DLSCH_t     *dlsch_MCH;
+  NR_gNB_DLSCH_t     *dlsch_PCH;
   LTE_eNB_UE_stats     UE_stats[NUMBER_OF_UE_MAX];
   LTE_eNB_UE_stats    *UE_stats_ptr[NUMBER_OF_UE_MAX];
 

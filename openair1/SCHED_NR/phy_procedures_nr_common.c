@@ -166,6 +166,8 @@ void nr_configure_css_dci_from_mib(nfapi_nr_dl_config_pdcch_parameters_rel15_t* 
       AssertFatal(1==0, "Invalid SSB and coreset multiplexing pattern %d\n", pdcch_params->mux_pattern);
   }
   pdcch_params->config_type = NFAPI_NR_CSET_CONFIG_MIB_SIB1;
+  pdcch_params->search_space_type = NFAPI_NR_SEARCH_SPACE_TYPE_COMMON;
+  pdcch_params->common_search_space_type = NFAPI_NR_COMMON_SEARCH_SPACE_TYPE_0;
   pdcch_params->cr_mapping_type = NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED;
   pdcch_params->precoder_granularity = NFAPI_NR_CSET_SAME_AS_REG_BUNDLE;
   pdcch_params->reg_bundle_size = 6;

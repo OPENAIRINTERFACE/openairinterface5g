@@ -279,6 +279,13 @@ typedef enum {
 } nfapi_nr_search_space_type_e;
 
 typedef enum {
+  NFAPI_NR_COMMON_SEARCH_SPACE_TYPE_0=0,
+  NFAPI_NR_COMMON_SEARCH_SPACE_TYPE_0A,
+  NFAPI_NR_COMMON_SEARCH_SPACE_TYPE_1,
+  NFAPI_NR_COMMON_SEARCH_SPACE_TYPE_2
+} nfapi_nr_common_search_space_type_e;
+
+typedef enum {
   NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE1=0,
   NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE2,
   NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE3
@@ -298,6 +305,12 @@ typedef enum {
   NFAPI_NR_CSET_SAME_AS_REG_BUNDLE=0,
   NFAPI_NR_CSET_ALL_CONTIGUOUS_RBS
 } nfapi_nr_coreset_precoder_granularity_type_e;
+
+typedef enum {
+  NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_A=0,
+  NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_B,
+  NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_C
+} nfapi_nr_pdsch_time_domain_alloc_type_e;
 
 // P7 Sub Structures
 
@@ -406,7 +419,8 @@ typedef struct {
   uint8_t rnti_type;
   uint8_t dci_format;
   uint8_t config_type;
-  uint8_t search_space_type;  
+  uint8_t search_space_type;
+  uint8_t common_search_space_type;  
   uint8_t aggregation_level;
   uint8_t n_rb;
   uint8_t n_symb;
