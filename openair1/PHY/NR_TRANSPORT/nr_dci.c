@@ -163,11 +163,13 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
                             nfapi_nr_config_request_t config)
 {
 
-  int16_t mod_dmrs[3][NR_MAX_PDCCH_DMRS_LENGTH>>1]; // 3 for the max coreset duration
+  int16_t mod_dmrs[NR_MAX_CSET_DURATION][NR_MAX_PDCCH_DMRS_LENGTH>>1]; // 3 for the max coreset duration
   uint8_t idx=0;
   uint16_t a;
   int k,l,k_prime,dci_idx, dmrs_idx;
   nr_cce_t cce;
+  nr_reg_t reg;
+  nr_reg_t reg_mapping_list[NR_MAX_PDCCH_AGG_LEVEL*NR_NB_REG_PER_CCE];
 
   /*First iteration: single DCI*/
   NR_gNB_DCI_ALLOC_t dci_alloc = pdcch_vars.dci_alloc[0];
@@ -245,31 +247,44 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
 
     if (pdcch_params.precoder_granularity == NFAPI_NR_CSET_SAME_AS_REG_BUNDLE) {
 
+      /*Reorder REG list for a freq first mapping*/
+      uint8_t symb_idx[NR_MAX_CSET_DURATION] = {0,0,0};
+      uint8_t nb_regs = dci_alloc.L*NR_NB_REG_PER_CCE;
+      uint8_t regs_per_symb = nb_regs/cset_nsymb;
       for (int cce_idx=0; cce_idx<dci_alloc.L; cce_idx++){
         cce = dci_alloc.cce_list[cce_idx];
-          for (int reg_idx=0; reg_idx<NR_NB_REG_PER_CCE; reg_idx++) {
-            k = cset_start_sc + cce.reg_list[reg_idx].start_sc_idx;
-            if (k >= frame_parms.ofdm_symbol_size)
-                k -= frame_parms.ofdm_symbol_size;
-            l = cset_start_symb + cce.reg_list[reg_idx].symb_idx;
-            dmrs_idx = (cce.reg_list[reg_idx].reg_idx/cset_nsymb)*3;
-            k_prime = 0;
-            for (int m=0; m<NR_NB_SC_PER_RB; m++) {
-              if ( m == (k_prime<<2)+1) { // DMRS
-                ((int16_t*)txdataF[aa])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (a * mod_dmrs[l][dmrs_idx<<1]) >> 15;
-                ((int16_t*)txdataF[aa])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (a * mod_dmrs[l][(dmrs_idx<<1) + 1]) >> 15;
-                k_prime++;
-                dmrs_idx++;
-              }
-              else { // DCI payload
-                ((int16_t*)txdataF[aa])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (a * mod_dci[dci_idx<<1]) >> 15;
-                ((int16_t*)txdataF[aa])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (a * mod_dci[(dci_idx<<1) + 1]) >> 15;
-                dci_idx++;
-              }
-              k++;
-              if (k >= frame_parms.ofdm_symbol_size)
-                k -= frame_parms.ofdm_symbol_size;
-            }
+        for (int reg_idx=0; reg_idx<NR_NB_REG_PER_CCE; reg_idx++) {
+          reg = cce.reg_list[reg_idx];
+          reg_mapping_list[reg.symb_idx*regs_per_symb + symb_idx[reg.symb_idx]++] = reg;
+        }
+      }
+printf("REG list reordered: %d %d %d %d %d %d %d %d\n", reg_mapping_list[0].reg_idx, reg_mapping_list[1].reg_idx, reg_mapping_list[2].reg_idx, reg_mapping_list[3].reg_idx,
+      reg_mapping_list[4].reg_idx, reg_mapping_list[5].reg_idx, reg_mapping_list[6].reg_idx, reg_mapping_list[7].reg_idx);
+
+      /*Now mapping based on newly constructed list*/
+      for (int reg_idx=0; reg_idx<nb_regs; reg_idx++) {
+        reg = reg_mapping_list[reg_idx];
+        k = cset_start_sc + reg.start_sc_idx;
+        if (k >= frame_parms.ofdm_symbol_size)
+            k -= frame_parms.ofdm_symbol_size;
+        l = cset_start_symb + reg.symb_idx;
+        dmrs_idx = (reg.reg_idx/cset_nsymb)*3;
+        k_prime = 0;
+        for (int m=0; m<NR_NB_SC_PER_RB; m++) {
+          if ( m == (k_prime<<2)+1) { // DMRS
+            ((int16_t*)txdataF[aa])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (a * mod_dmrs[l][dmrs_idx<<1]) >> 15;
+            ((int16_t*)txdataF[aa])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (a * mod_dmrs[l][(dmrs_idx<<1) + 1]) >> 15;
+            k_prime++;
+            dmrs_idx++;
+          }
+          else { // DCI payload
+            ((int16_t*)txdataF[aa])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (a * mod_dci[dci_idx<<1]) >> 15;
+            ((int16_t*)txdataF[aa])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (a * mod_dci[(dci_idx<<1) + 1]) >> 15;
+            dci_idx++;
+          }
+          k++;
+          if (k >= frame_parms.ofdm_symbol_size)
+            k -= frame_parms.ofdm_symbol_size;
         }
       }
     }

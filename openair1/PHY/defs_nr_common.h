@@ -76,6 +76,7 @@
 #define NR_MAX_NUM_BWP 4
 
 #define NR_MAX_PDCCH_AGG_LEVEL 16
+#define NR_MAX_CSET_DURATION 3
 
 typedef enum {
   NR_MU_0=0,
