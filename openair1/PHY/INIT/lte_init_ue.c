@@ -165,11 +165,11 @@ void phy_config_sib2_ue(module_id_t Mod_id,int CC_id,
       } else if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_fourFrames) { // 24-bit subframe configuration
         fp->MBSFN_config[i].fourFrames_flag = 1;
         fp->MBSFN_config[i].mbsfn_SubframeConfig =
-          mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]|
+          mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[2]|
           (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[1]<<8)|
-          (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[2]<<16);
+          (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]<<16);
 
-        LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %d\n", i,
+        LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %x\n", i,
               fp->MBSFN_config[i].mbsfn_SubframeConfig);
       }
     }

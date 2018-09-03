@@ -1655,8 +1655,8 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
           }
 
           if (opt_enabled == 1) {
-            trace_pdu(1, (uint8_t *)UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],
-                      TBS, module_idP, 3, UE_RNTI(module_idP,UE_id),
+            trace_pdu(DIRECTION_DOWNLINK, (uint8_t *)UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],
+                      TBS, module_idP, WS_RA_RNTI, UE_RNTI(module_idP,UE_id),
                       eNB->frame, eNB->subframe,0,0);
             LOG_D(OPT,"[eNB %d][DLSCH] CC_id %d Frame %d  rnti %x  with size %d\n",
                   module_idP, CC_id, frameP, UE_RNTI(module_idP,UE_id), TBS);
@@ -1696,9 +1696,9 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
           // this is the normalized RX power
 	  eNB_UE_stats =  &UE_list->eNB_UE_stats[CC_id][UE_id];
 
-          /* TODO: fix how we deal with power, unit is not dBm, it's special from nfapi */
-	  normalized_rx_power = ue_sched_ctl->pucch1_snr[CC_id];
-	  target_rx_power = 208;
+          /* Unit is not dBm, it's special from nfapi */
+      normalized_rx_power = (5*ue_sched_ctl->pucch1_snr[CC_id]-640)/10+30;//(+eNB->measurements.n0_power_dB[0])
+	  target_rx_power= eNB->puCch10xSnr/10 + 30;//(+eNB->measurements.n0_power_dB[0])
 	    
           // this assumes accumulated tpc
 	  // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
@@ -2690,9 +2690,25 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
       if (status < RRC_CONNECTED)
         cqi_req = 0;
       else if (UE_sched_ctrl->cqi_req_timer>30) {
-        cqi_req = 1;
-        UE_sched_ctrl->cqi_req_timer=0;
-        UE_sched_ctrl->cqi_req_flag |= 1 << sched_subframeP;
+    	  cqi_req = 1;
+		   // To be safe , do not ask CQI in special SFs:36.213/7.2.3 CQI definition
+			if (cc->tdd_Config) {
+			  switch (cc->tdd_Config->subframeAssignment) {
+				  case 1:
+					if( subframeP == 1 || subframeP == 6 ) cqi_req=0;
+					break;
+				  case 3:
+					if( subframeP == 1 ) cqi_req=0;
+					break;
+				  default:
+					LOG_E(MAC," TDD config not supported\n");
+					break;
+			  }
+			}
+			if(cqi_req == 1){
+				UE_sched_ctrl->cqi_req_timer=0;
+				UE_sched_ctrl->cqi_req_flag |= 1 << sched_subframeP;
+			}
       }
       else
         cqi_req = 0;
@@ -2701,8 +2717,8 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
       //compute the expected ULSCH RX power (for the stats)
 
       // this is the normalized RX power and this should be constant (regardless of mcs
-      normalized_rx_power = UE_sched_ctrl->pusch_snr[CC_id];
-      target_rx_power = 178;
+      normalized_rx_power = (5*UE_sched_ctrl->pusch_snr[CC_id]-640)/10+30; //(+eNB->measurements.n0_power_dB[0])
+      target_rx_power= eNB->puSch10xSnr/10 + 30; //(+eNB->measurements.n0_power_dB[0])
 
       // this assumes accumulated tpc
       // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out

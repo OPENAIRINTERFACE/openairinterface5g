@@ -1491,24 +1491,9 @@ int main(int argc, char **argv)
       qsort (table_rx, time_vector_rx.size, sizeof(double), &compare);
 
       if (dump_table == 1 ) {
-        int n;
         set_component_filelog(SIM); // file located in /tmp/usim.txt
-        LOG_F(SIM,"The transmitter raw data: \n");
-
-        for (n=0; n< time_vector_tx.size; n++) {
-          //   printf("%f ", table_tx[n]);
-          LOG_F(SIM,"%f ", table_tx[n]);
-        }
-
-        LOG_F(SIM,"\n");
-        LOG_F(SIM,"The receiver raw data: \n");
-
-        for (n=0; n< time_vector_rx.size; n++) {
-          // printf("%f ", table_rx[n]);
-          LOG_F(SIM,"%f ", table_rx[n]);
-        }
-
-        LOG_F(SIM,"\n");
+        LOG_UDUMPMSG(SIM,table_tx,time_vector_tx.size,LOG_DUMP_DOUBLE,"The transmitter raw data: \n");
+        LOG_UDUMPMSG(SIM,table_rx,time_vector_rx.size,LOG_DUMP_DOUBLE,"The receiver raw data: \n");
       }
 
       double tx_median = table_tx[time_vector_tx.size/2];

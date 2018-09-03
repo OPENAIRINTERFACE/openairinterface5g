@@ -473,17 +473,11 @@ int s1ap_eNB_handle_nas_downlink(uint32_t         assoc_id,
     MSC_LOG_RX_DISCARDED_MESSAGE(
       MSC_S1AP_ENB,
       MSC_S1AP_MME,
-      (const char *)NULL,
       NULL,
+      0,
       MSC_AS_TIME_FMT" downlinkNASTransport  eNB_ue_s1ap_id %u mme_ue_s1ap_id %u",
-      0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
       enb_ue_s1ap_id,
       mme_ue_s1ap_id);
-    /* TODO: fix this log - the original version is suspicious (twice downlink_NAS_transport_p->eNB_UE_S1AP_ID?) */
-    /*S1AP_ERROR("[SCTP %d] Received NAS downlink message for non existing UE context eNB_UE_S1AP_ID: 0x%"PRIx32" %u\n",
-               assoc_id,
-               downlink_NAS_transport_p->eNB_UE_S1AP_ID,
-               downlink_NAS_transport_p->eNB_UE_S1AP_ID);*/
     S1AP_ERROR("[SCTP %d] Received NAS downlink message for non existing UE context eNB_UE_S1AP_ID: 0x%lx\n",
                assoc_id,
                enb_ue_s1ap_id);
@@ -518,11 +512,10 @@ int s1ap_eNB_handle_nas_downlink(uint32_t         assoc_id,
   MSC_LOG_RX_MESSAGE(
     MSC_S1AP_ENB,
     MSC_S1AP_MME,
-    (const char *)NULL,
     NULL,
+    0,
     MSC_AS_TIME_FMT" downlinkNASTransport  eNB_ue_s1ap_id %u mme_ue_s1ap_id %u",
-    0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-    enb_ue_s1ap_id,
+    assoc_id,
     mme_ue_s1ap_id);
 
   S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_DownlinkNASTransport_IEs_t, ie, container,

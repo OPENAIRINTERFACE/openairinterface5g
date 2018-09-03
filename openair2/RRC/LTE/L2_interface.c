@@ -43,9 +43,6 @@
 
 #include "flexran_agent_extern.h"
 
-//#define RRC_DATA_REQ_DEBUG
-//#define DEBUG_RRC 1
-
 
 extern RAN_CONTEXT_t RC;
 
@@ -68,10 +65,9 @@ mac_rrc_data_req(
   uint8_t sfn                     = (uint8_t)((frameP>>2)&0xff);
 
 
-#ifdef DEBUG_RRC
-  int i;
-  LOG_I(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%d\n",Mod_idP,Srb_id);
-#endif
+  if (LOG_DEBUGFLAG(DEBUG_RRC)) {
+    LOG_D(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%d\n",Mod_idP,Srb_id);
+  }
 
   eNB_RRC_INST *rrc;
   rrc_eNB_carrier_data_t *carrier;
@@ -96,15 +92,15 @@ mac_rrc_data_req(
                RC.rrc[Mod_idP]->carrier[CC_id].SIB1,
                RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1);
 
-#ifdef DEBUG_RRC
-        LOG_T(RRC,"[eNB %d] Frame %d : BCCH request => SIB 1\n",Mod_idP,frameP);
+        if (LOG_DEBUGFLAG(DEBUG_RRC)) {
+          LOG_T(RRC,"[eNB %d] Frame %d : BCCH request => SIB 1\n",Mod_idP,frameP);
 
-        for (i=0; i<RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1; i++) {
-          LOG_T(RRC,"%x.",buffer_pP[i]);
-        }
+          for (int i=0; i<RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1; i++) {
+            LOG_T(RRC,"%x.",buffer_pP[i]);
+          }
 
-        LOG_T(RRC,"\n");
-#endif
+          LOG_T(RRC,"\n");
+        } /* LOG_DEBUGFLAG(DEBUG_RRC) */
 
         return (RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1);
       } // All RFN mod 8 transmit SIB2-3 in SF 5
@@ -113,15 +109,15 @@ mac_rrc_data_req(
                RC.rrc[Mod_idP]->carrier[CC_id].SIB23,
                RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB23);
 
-#ifdef DEBUG_RRC
-        LOG_T(RRC,"[eNB %d] Frame %d BCCH request => SIB 2-3\n",Mod_idP,frameP);
+        if (LOG_DEBUGFLAG(DEBUG_RRC)) {
+          LOG_T(RRC,"[eNB %d] Frame %d BCCH request => SIB 2-3\n",Mod_idP,frameP);
 
-        for (i=0; i<RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB23; i++) {
-          LOG_T(RRC,"%x.",buffer_pP[i]);
-        }
+          for (int i=0; i<RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB23; i++) {
+               LOG_T(RRC,"%x.",buffer_pP[i]);
+          }
 
-        LOG_T(RRC,"\n");
-#endif
+          LOG_T(RRC,"\n");
+        } /* LOG_DEBUGFLAG(DEBUG_RRC) */
         return(RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB23);
       } else {
         return(0);
@@ -193,20 +189,17 @@ mac_rrc_data_req(
              RC.rrc[Mod_idP]->carrier[CC_id].MCCH_MESSAGE[mbsfn_sync_area],
              RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area]);
 
-#ifdef DEBUG_RRC
-      LOG_D(RRC,"[eNB %d] Frame %d : MCCH request => MCCH_MESSAGE \n",Mod_idP,frameP);
+     if (LOG_DEBUGFLAG(DEBUG_RRC)) {
+       LOG_D(RRC,"[eNB %d] Frame %d : MCCH request => MCCH_MESSAGE \n",Mod_idP,frameP);
 
-      for (i=0; i<RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area]; i++) {
-        LOG_T(RRC,"%x.",buffer_pP[i]);
-      }
+       for (int i=0; i<RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area]; i++) {
+            LOG_T(RRC,"%x.",buffer_pP[i]);
+       }
 
-      LOG_T(RRC,"\n");
-#endif
+       LOG_T(RRC,"\n");
+     } /* LOG_DEBUGFLAG(DEBUG_RRC) */
 
-      return (RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area]);
-      //      }
-      //else
-      //return(0);
+     return (RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area]);
     }
 
 #endif // #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
@@ -329,7 +322,7 @@ void mac_eNB_rrc_ul_failure(const module_id_t Mod_instP,
 								     rntiP,
 								     PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
   }
-//  rrc_mac_remove_ue(Mod_instP,rntiP);
+  rrc_mac_remove_ue(Mod_instP,rntiP);
 }
 
 void mac_eNB_rrc_uplane_failure(const module_id_t Mod_instP,

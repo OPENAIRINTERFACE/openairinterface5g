@@ -106,6 +106,7 @@ void                          ru_config_display(void);
 
 int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc);
 int RCconfig_S1(MessageDef *msg_p, uint32_t i);
+int RCconfig_X2(MessageDef *msg_p, uint32_t i);
 
 #endif /* ENB_CONFIG_H_ */
 /** @} */

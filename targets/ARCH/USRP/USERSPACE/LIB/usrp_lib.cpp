@@ -950,11 +950,15 @@ int trx_usrp_recplay_config_init(paramdef_t *usrp_recplay_params) {
 #endif
 
 extern "C" {
-    /*! \brief Initialize Openair USRP target. It returns 0 if OK
-    * \param device the hardware to use
-         * \param openair0_cfg RF frontend parameters set by application
-         */
-    int device_init(openair0_device* device, openair0_config_t *openair0_cfg) {
+  /*! \brief Initialize Openair USRP target. It returns 0 if OK
+   * \param device the hardware to use
+   * \param openair0_cfg RF frontend parameters set by application
+   */
+  int device_init(openair0_device* device, openair0_config_t *openair0_cfg) {
+
+    LOG_D(PHY, "openair0_cfg[0].sdr_addrs == '%s'\n", openair0_cfg[0].sdr_addrs);
+    LOG_D(PHY, "openair0_cfg[0].clock_source == '%d'\n", openair0_cfg[0].clock_source);
+
 #if defined(USRP_REC_PLAY)
       paramdef_t usrp_recplay_params[7];
       struct sysinfo systeminfo;
@@ -1022,8 +1026,30 @@ extern "C" {
         // Initialize USRP device
         device->openair0_cfg = openair0_cfg;
 
-        std::string args = "type=b200";
-        uhd::device_addrs_t device_adds = uhd::device::find(args);
+      std::string args = "type=b200";
+
+      char *addr_args = NULL;
+      // Check whether sdr_addrs is set in the config or not
+      if (openair0_cfg[0].sdr_addrs != NULL) {
+	if (strcmp(openair0_cfg[0].sdr_addrs, "0.0.0.0") != 0) {
+        // Check whether sdr_addrs contains multiple IP addresses
+        // and split and add them to addr_args
+          if (strstr(openair0_cfg[0].sdr_addrs, ",") != NULL) {
+            char *addr0 = openair0_cfg[0].sdr_addrs;
+            // Replace , with \0
+            strsep(&openair0_cfg[0].sdr_addrs, ",");
+            char *addr1 = openair0_cfg[0].sdr_addrs;
+            // Allocate memory for ",addr0=,addr1=\0" and the addresses
+            size_t addr_args_len = sizeof(char)*(15 + strlen(addr0) + strlen(addr1));
+            addr_args = (char *)malloc(addr_args_len);
+            snprintf(addr_args, addr_args_len, ",addr0=%s,addr1=%s", addr0, addr1);
+            args += addr_args;
+            LOG_D(PHY, "addr_args == '%s'\n", addr_args);
+	  }
+        }
+      }
+
+      uhd::device_addrs_t device_adds = uhd::device::find(args);
 
         int vers=0,subvers=0,subsubvers=0;
         int bw_gain_adjust=0;
@@ -1037,12 +1063,17 @@ extern "C" {
         LOG_I(PHY,"Checking for USRPs : UHD %s (%d.%d.%d)\n",
               uhd::get_version_string().c_str(),vers,subvers,subsubvers);
 
-        if(device_adds.size() == 0)  {
-            double usrp_master_clock = 184.32e6;
-            std::string args = "type=x300";
+      if(device_adds.size() == 0)  {
 
-            // workaround for an api problem, master clock has to be set with the constructor not via set_master_clock_rate
-            args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
+        double usrp_master_clock = 184.32e6;
+        std::string args = "type=x300";
+        
+	if (addr_args) {
+          args += addr_args;
+        }
+
+        // workaround for an api problem, master clock has to be set with the constructor not via set_master_clock_rate
+        args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
 
             //    args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=4096, recv_frame_size=4096";
             uhd::device_addrs_t device_adds = uhd::device::find(args);
@@ -1232,12 +1263,14 @@ extern "C" {
             }
         }
 
-        for(int i=0; i<s->usrp->get_tx_num_channels(); i++) {
-	  ::uhd::gain_range_t gain_range_tx = s->usrp->get_tx_gain_range(i);
-            if (i<openair0_cfg[0].tx_num_channels) {
-                s->usrp->set_tx_rate(openair0_cfg[0].sample_rate,i);
-                s->usrp->set_tx_freq(openair0_cfg[0].tx_freq[i],i);
-                s->usrp->set_tx_gain(gain_range_tx.stop()-openair0_cfg[0].tx_gain[i],i);
+      LOG_D(PHY, "usrp->get_tx_num_channels() == %zd\n", s->usrp->get_tx_num_channels());
+      LOG_D(PHY, "openair0_cfg[0].tx_num_channels == %d\n", openair0_cfg[0].tx_num_channels);
+      for(int i=0; i<s->usrp->get_tx_num_channels(); i++) {
+        ::uhd::gain_range_t gain_range_tx = s->usrp->get_tx_gain_range(i);
+        if (i<openair0_cfg[0].tx_num_channels) {
+          s->usrp->set_tx_rate(openair0_cfg[0].sample_rate,i);
+          s->usrp->set_tx_freq(openair0_cfg[0].tx_freq[i],i);
+          s->usrp->set_tx_gain(gain_range_tx.stop()-openair0_cfg[0].tx_gain[i],i);
 
                 LOG_I(PHY,"USRP TX_GAIN:%3.2lf gain_range:%3.2lf tx_gain:%3.2lf\n", gain_range_tx.stop()-openair0_cfg[0].tx_gain[i], gain_range_tx.stop(), openair0_cfg[0].tx_gain[i]);
             }

@@ -55,11 +55,6 @@
 
 
 
-#if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
-extern int asn_debug;
-extern int asn1_xer_print;
-#endif
-
 #ifdef LIBCONFIG_LONG
 #define libconfig_int long
 #else
@@ -102,6 +97,8 @@ typedef enum {
 #define CONFIG_STRING_RU_MAX_RXGAIN               "max_rxgain"
 #define CONFIG_STRING_RU_IF_COMPRESSION           "if_compression"
 #define CONFIG_STRING_RU_NBIOTRRC_LIST            "NbIoT_RRC_instances"
+#define CONFIG_STRING_RU_SDR_ADDRS                "sdr_addrs"
+#define CONFIG_STRING_RU_SDR_CLK_SRC              "clock_src"
 
 #define RU_LOCAL_IF_NAME_IDX          0
 #define RU_LOCAL_ADDRESS_IDX          1
@@ -121,6 +118,8 @@ typedef enum {
 #define RU_ATT_TX_IDX                 15
 #define RU_ATT_RX_IDX                 16
 #define RU_NBIOTRRC_LIST_IDX          17
+#define RU_SDR_ADDRS                  18
+#define RU_SDR_CLK_SRC                19
 
 
 
@@ -147,6 +146,8 @@ typedef enum {
 {CONFIG_STRING_RU_ATT_TX,                   	 NULL,       0,       uptr:NULL,       defintval:0,		TYPE_UINT,	  0}, \
 {CONFIG_STRING_RU_ATT_RX,                   	 NULL,       0,       uptr:NULL,       defintval:0,		TYPE_UINT,	  0}, \
 {CONFIG_STRING_RU_NBIOTRRC_LIST,                 NULL,       0,       uptr:NULL,       defintarrayval:DEFENBS,  TYPE_INTARRAY,    1}, \
+{CONFIG_STRING_RU_SDR_ADDRS,                 	 NULL,       0,       strptr:NULL,     defstrval:"0.0.0.0",   TYPE_STRING,      0}, \
+{CONFIG_STRING_RU_SDR_CLK_SRC,               	 NULL,       0,       strptr:NULL,     defstrval:"internal",   TYPE_STRING,      0}, \
 }
 
 /*---------------------------------------------------------------------------------------------------------------------------------------*/
@@ -160,25 +161,19 @@ typedef enum {
 /* global parameters, not under a specific section   */
 #define ENB_CONFIG_STRING_ASN1_VERBOSITY           "Asn1_verbosity"
 #define ENB_CONFIG_STRING_ACTIVE_ENBS              "Active_eNBs"
+#define ENB_CONFIG_STRING_NOS1                     "noS1"
 /*--------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            global configuration parameters                                                                                   */
-/*   optname                                   helpstr   paramflags    XXXptr        defXXXval                                        type           numelt     */
+/*   optname                          helpstr      paramflags          XXXptr        defXXXval                                        type           numelt     */
 /*--------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define ENBSPARAMS_DESC {                                                                                             \
-{ENB_CONFIG_STRING_ASN1_VERBOSITY,             NULL,     0,        uptr:NULL,   defstrval:ENB_CONFIG_STRING_ASN1_VERBOSITY_NONE,   TYPE_STRING,      0},   \
-{ENB_CONFIG_STRING_ACTIVE_ENBS,                NULL,     0,        uptr:NULL,   defstrval:NULL, 				   TYPE_STRINGLIST,  0}    \
+{ENB_CONFIG_STRING_ASN1_VERBOSITY,      NULL,     0,                   uptr:NULL,   defstrval:ENB_CONFIG_STRING_ASN1_VERBOSITY_NONE,   TYPE_STRING,      0},   \
+{ENB_CONFIG_STRING_ACTIVE_ENBS,         NULL,     0,                   uptr:NULL,   defstrval:NULL, 				       TYPE_STRINGLIST,  0},   \
+{ENB_CONFIG_STRING_NOS1,                NULL,     PARAMFLAG_BOOL,      uptr:NULL,   defintval:0, 				       TYPE_UINT,        0},   \
 }
 #define ENB_ASN1_VERBOSITY_IDX                     0
 #define ENB_ACTIVE_ENBS_IDX                        1
-
-
-/*
-{ENB_CONFIG_STRING_COMPONENT_CARRIERS,"",   "",   0,   uptr:NULL,defstrval:ENB_CONFIG_STRING_ASN1_VERBOSITY_NONE,TYPE_STRING,0},           \
-{ENB_CONFIG_STRING_CC_NODE_FUNCTION,"",   "",   0,   uptr:NULL,defstrval:ENB_CONFIG_STRING_ASN1_VERBOSITY_NONE,TYPE_STRING,0},           \
-{ENB_CONFIG_STRING_CC_NODE_TIMING,"",   "",   0,   uptr:NULL,defstrval:ENB_CONFIG_STRING_ASN1_VERBOSITY_NONE,TYPE_STRING,0},           \
-{ENB_CONFIG_STRING_CC_NODE_SYNCH_REF,"",   "",   0,   uptr:NULL,defstrval:ENB_CONFIG_STRING_ASN1_VERBOSITY_NONE,TYPE_STRING,0},           \
-*/
-
+#define ENB_NOS1_IDX                               2
 
 
 /*------------------------------------------------------------------------------------------------------------------------------------------*/
@@ -704,6 +699,31 @@ typedef enum {
 #define ENB_MME_IP_ADDRESS_ACTIVE_IDX     2
 #define ENB_MME_IP_ADDRESS_PREFERENCE_IDX 3
 /*---------------------------------------------------------------------------------------------------------------------------------------*/
+
+/* X2 configuration parameters section name */
+#define ENB_CONFIG_STRING_TARGET_ENB_X2_IP_ADDRESS                "target_enb_x2_ip_address"
+
+/* X2 configuration parameters names   */
+
+
+#define ENB_CONFIG_STRING_TARGET_ENB_X2_IPV4_ADDRESS              "ipv4"
+#define ENB_CONFIG_STRING_TARGET_ENB_X2_IPV6_ADDRESS              "ipv6"
+#define ENB_CONFIG_STRING_TARGET_ENB_X2_IP_ADDRESS_PREFERENCE     "preference"
+
+
+/*-------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                            X2 configuration parameters                                                             */
+/*   optname                                          helpstr   paramflags    XXXptr       defXXXval         type           numelt     */
+/*-------------------------------------------------------------------------------------------------------------------------------------*/
+#define X2PARAMS_DESC {  \
+{ENB_CONFIG_STRING_TARGET_ENB_X2_IPV4_ADDRESS,                   NULL,      0,         uptr:NULL,   defstrval:NULL,   TYPE_STRING,   0},          \
+{ENB_CONFIG_STRING_TARGET_ENB_X2_IPV6_ADDRESS,                   NULL,      0,         uptr:NULL,   defstrval:NULL,   TYPE_STRING,   0},          \
+{ENB_CONFIG_STRING_TARGET_ENB_X2_IP_ADDRESS_PREFERENCE,          NULL,      0,         uptr:NULL,   defstrval:NULL,   TYPE_STRING,   0},          \
+}
+
+#define ENB_X2_IPV4_ADDRESS_IDX          0
+#define ENB_X2_IPV6_ADDRESS_IDX          1
+#define ENB_X2_IP_ADDRESS_PREFERENCE_IDX 2
 /*---------------------------------------------------------------------------------------------------------------------------------------*/
 /* SCTP configuration parameters section name */
 #define ENB_CONFIG_STRING_SCTP_CONFIG                    "SCTP"
@@ -735,6 +755,8 @@ typedef enum {
 #define ENB_INTERFACE_NAME_FOR_S1U_IDX             2
 #define ENB_IPV4_ADDR_FOR_S1U_IDX                  3
 #define ENB_PORT_FOR_S1U_IDX                       4
+#define ENB_IPV4_ADDR_FOR_X2C_IDX		   5
+#define ENB_PORT_FOR_X2C_IDX			   6
 
 /* S1 interface configuration parameters names   */
 #define ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_S1_MME "ENB_INTERFACE_NAME_FOR_S1_MME"
@@ -743,8 +765,12 @@ typedef enum {
 #define ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_S1U         "ENB_IPV4_ADDRESS_FOR_S1U"
 #define ENB_CONFIG_STRING_ENB_PORT_FOR_S1U              "ENB_PORT_FOR_S1U"
 
+/* X2 interface configuration parameters names */
+#define ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_X2C         "ENB_IPV4_ADDRESS_FOR_X2C"
+#define ENB_CONFIG_STRING_ENB_PORT_FOR_X2C              "ENB_PORT_FOR_X2C"
+
 /*--------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                            S1 interface configuration parameters                                                                 */
+/*                                            S1/X2 interface configuration parameters                                                                 */
 /*   optname                                            helpstr   paramflags    XXXptr              defXXXval             type           numelt     */
 /*--------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define NETPARAMS_DESC {  \
@@ -752,7 +778,9 @@ typedef enum {
 {ENB_CONFIG_STRING_ENB_IPV4_ADDRESS_FOR_S1_MME,          NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
 {ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_S1U,           NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
 {ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_S1U,                NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
-{ENB_CONFIG_STRING_ENB_PORT_FOR_S1U,                     NULL,      0,         uptr:NULL,           defintval:2152L,     TYPE_UINT,        0}       \
+{ENB_CONFIG_STRING_ENB_PORT_FOR_S1U,                     NULL,      0,         uptr:NULL,           defintval:2152L,     TYPE_UINT,        0},      \
+{ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_X2C,                NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
+{ENB_CONFIG_STRING_ENB_PORT_FOR_X2C,                     NULL,      0,         uptr:NULL,           defintval:0L,        TYPE_UINT,        0},      \
 }   
 
 

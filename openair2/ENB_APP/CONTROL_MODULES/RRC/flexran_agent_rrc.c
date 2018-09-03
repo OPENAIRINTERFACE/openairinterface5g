@@ -31,7 +31,7 @@
 
 #include "liblfds700.h"
 
-#include "log.h"
+#include "common/utils/LOG/log.h"
 
 /*Trigger boolean for RRC measurement*/
 bool triggered_rrc = false;
