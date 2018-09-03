@@ -31,8 +31,6 @@ def sendSocialMediaMessage(pipeChannel, pipeColor, pipeMessage) {
 }
 
 def doRedHatBuild = false
-def FDD_Band7_B210_Status
-def TDD_Band40_B210_Status
 
 pipeline {
     agent {
@@ -267,19 +265,21 @@ pipeline {
                     stages {
                         stage ("Test FDD - Band 7 - B210") {
                             steps {
-                                gitlabCommitStatus(name: "Test-FDD-Band7") {
-                                    script {
-                                        try {
-                                            if ("MERGE".equals(env.gitlabActionType)) {
-                                                FDD_Band7_B210_Status = build job: 'eNB-CI-FDD-Band7-B210',
+                                script {
+                                    try {
+                                        if ("MERGE".equals(env.gitlabActionType)) {
+                                            gitlabCommitStatus(name: "Test-FDD-Band7") {
+                                                build job: 'eNB-CI-FDD-Band7-B210',
                                                    parameters: [
                                                        string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
                                                        string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
                                                        string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
                                                        booleanParam(name: 'eNB_mergeRequest', value: true)
                                                    ]
-                                            } else {
-                                                FDD_Band7_B210_Status = build job: 'eNB-CI-FDD-Band7-B210',
+                                            }
+                                        } else {
+                                            gitlabCommitStatus(name: "Test-FDD-Band7") {
+                                                build job: 'eNB-CI-FDD-Band7-B210',
                                                    parameters: [
                                                        string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
                                                        string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
@@ -287,9 +287,9 @@ pipeline {
                                                        booleanParam(name: 'eNB_mergeRequest', value: false)
                                                    ]
                                             }
-                                        } catch (Exception e) {
-                                            currentBuild.result = 'FAILURE'
                                         }
+                                    } catch (Exception e) {
+                                        currentBuild.result = 'FAILURE'
                                     }
                                 }
                             }
@@ -313,19 +313,21 @@ pipeline {
                         }
                         stage ("Test TDD - Band 40 - B210") {
                             steps {
-                                gitlabCommitStatus(name: "Test-TDD-Band40") {
-                                    script {
-                                        try {
-                                            if ("MERGE".equals(env.gitlabActionType)) {
-                                                TDD_Band40_B210_Status = build job: 'eNB-CI-TDD-Band40-B210',
+                                script {
+                                    try {
+                                        if ("MERGE".equals(env.gitlabActionType)) {
+                                            gitlabCommitStatus(name: "Test-TDD-Band40") {
+                                                build job: 'eNB-CI-TDD-Band40-B210',
                                                    parameters: [
                                                        string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
                                                        string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
                                                        string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
                                                        booleanParam(name: 'eNB_mergeRequest', value: true)
                                                    ]
-                                            } else {
-                                                TDD_Band40_B210_Status = build job: 'eNB-CI-TDD-Band40-B210',
+                                            }
+                                        } else {
+                                            gitlabCommitStatus(name: "Test-TDD-Band40") {
+                                                build job: 'eNB-CI-TDD-Band40-B210',
                                                    parameters: [
                                                        string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
                                                        string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
@@ -333,9 +335,9 @@ pipeline {
                                                        booleanParam(name: 'eNB_mergeRequest', value: false)
                                                    ]
                                             }
-                                        } catch (Exception e) {
-                                            currentBuild.result = 'FAILURE'
                                         }
+                                    } catch (Exception e) {
+                                        currentBuild.result = 'FAILURE'
                                     }
                                 }
                             }
