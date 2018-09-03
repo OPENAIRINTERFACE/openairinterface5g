@@ -300,9 +300,9 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_pr
     dlsch0_harq->pdsch_start        = rel10->pdsch_start;
   }
 #ifdef PHY_TX_THREAD
-  dlsch0_harq->i0          = 0xFFFF;
+  dlsch0_harq->i0          = rel13->initial_transmission_sf_io;
 #else
-  dlsch0->i0               = 0xFFFF;
+  dlsch0->i0               = rel13->initial_transmission_sf_io;
 #endif
 
 #endif
