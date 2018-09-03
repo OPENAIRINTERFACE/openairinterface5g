@@ -430,4 +430,20 @@ uint32_t crcbit (uint8_t * ,
 int16_t reverseBits(int32_t ,int32_t);
 void phy_viterbi_dot11(int8_t *,uint8_t *,uint16_t);
 
+int32_t nr_segmentation(unsigned char *input_buffer,
+                     unsigned char **output_buffers,
+                     unsigned int B,
+                     unsigned int *C,
+                     unsigned int *Kplus,
+                     unsigned int *Kminus,
+					 unsigned int *Zout,
+                     unsigned int *F);
+
+uint32_t nr_compute_tbs(uint8_t mcs,
+						uint16_t nb_rb,
+						uint16_t nb_symb_sch,
+						uint8_t nb_re_dmrs,
+						uint16_t length_dmrs,
+						uint8_t Nl);
+
 #endif
