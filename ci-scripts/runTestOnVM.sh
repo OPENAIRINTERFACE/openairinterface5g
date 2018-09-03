@@ -511,6 +511,7 @@ then
     echo "sudo -E daemon --inherit --unsafe --name=enb_daemon --chdir=/home/ubuntu/tmp/cmake_targets/basic_simulator/enb -o /home/ubuntu/tmp/cmake_targets/log/enb.log ./my-lte-softmodem-run.sh" >> $VM_CMDS
 
     ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
+    sleep 60
 
     echo "############################################################"
     echo "Starting the UE"
