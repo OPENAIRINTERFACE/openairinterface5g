@@ -108,6 +108,7 @@ case $key in
     ;;
     -v2)
     VM_NAME=ci-basic-sim
+    VM_MEMORY=8192
     shift
     ;;
     -v3)
@@ -136,6 +137,7 @@ case $key in
         ;;
         basic-sim)
         VM_NAME=ci-basic-sim
+        VM_MEMORY=8192
         ;;
         phy-sim)
         VM_NAME=ci-phy-sim

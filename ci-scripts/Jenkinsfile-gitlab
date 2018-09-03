@@ -32,6 +32,7 @@ def sendSocialMediaMessage(pipeChannel, pipeColor, pipeMessage) {
 
 def doRedHatBuild = false
 def FDD_Band7_B210_Status
+def TDD_Band40_B210_Status
 
 pipeline {
     agent {
@@ -41,7 +42,7 @@ pipeline {
         disableConcurrentBuilds()
         timestamps()
         gitLabConnection('OAI GitLab')
-        gitlabBuilds(builds: ["Build eNb-USRP", "Build basic-sim", "Build phy-sim", "Build eNb-ethernet", "Build UE-ethernet", "Analysis with cppcheck", "Test phy-sim", "Test basic-sim", "Test-FDD-Band7"])
+        gitlabBuilds(builds: ["Build eNb-USRP", "Build basic-sim", "Build phy-sim", "Build eNb-ethernet", "Build UE-ethernet", "Analysis with cppcheck", "Test phy-sim", "Test basic-sim", "Test-FDD-Band7", "Test-TDD-Band40"])
         ansiColor('xterm')
     }
 
@@ -62,7 +63,7 @@ pipeline {
                         allParametersPresent = false
                     }
                     if (allParametersPresent) {
-			echo "Performing Red Hat Build"
+                        echo "Performing Red Hat Build"
                         doRedHatBuild = true
                     } else {
                         doRedHatBuild = false
@@ -262,53 +263,110 @@ pipeline {
                         }
                     }
                 }
-		stage ("Test FDD - Band 7 - B210") {
-                    steps {
-                        gitlabCommitStatus(name: "Test-FDD-Band7") {
-                            script {
-                                if ("MERGE".equals(env.gitlabActionType)) {
-                                    FDD_Band7_B210_Status = build job: 'eNB-CI-FDD-Band7-B210',
-                                       parameters: [
-                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
-                                           string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
-                                           string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: true)
-                                       ]
-                                } else {
-                                    FDD_Band7_B210_Status = build job: 'eNB-CI-FDD-Band7-B210',
-                                       parameters: [
-                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
-                                           string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
-                                           string(name: 'eNB_CommitID', value: String.valueOf(GIT_COMMIT)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: false)
-                                       ]
+                stage ("Test on CI bench #1") {
+                    stages {
+                        stage ("Test FDD - Band 7 - B210") {
+                            steps {
+                                gitlabCommitStatus(name: "Test-FDD-Band7") {
+                                    script {
+                                        if ("MERGE".equals(env.gitlabActionType)) {
+                                            FDD_Band7_B210_Status = build job: 'eNB-CI-FDD-Band7-B210',
+                                               parameters: [
+                                                   string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+                                                   string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
+                                                   string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
+                                                   booleanParam(name: 'eNB_mergeRequest', value: true)
+                                               ]
+                                        } else {
+                                            FDD_Band7_B210_Status = build job: 'eNB-CI-FDD-Band7-B210',
+                                               parameters: [
+                                                   string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+                                                   string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
+                                                   string(name: 'eNB_CommitID', value: String.valueOf(GIT_COMMIT)),
+                                                   booleanParam(name: 'eNB_mergeRequest', value: false)
+                                               ]
+                                        }
+                                    }
+                                }
+                            }
+                            post {
+                                // In case of success we really pick the report from the exact slave build number
+                                success {
+                                    script {
+                                        copyArtifacts(projectName: 'eNB-CI-FDD-Band7-B210',
+                                                      filter: 'test_results*.html',
+                                                      selector: specific("${FDD_Band7_B210_Status.number}"))
+                                        if (fileExists('test_results-eNB-CI-FDD-Band7-B210.html')) {
+                                            archiveArtifacts artifacts: 'test_results-eNB-CI-FDD-Band7-B210.html'
+                                        }
+                                    }
+                                }
+                                // In case of any non-success, we are retrieving the HTML report of the last completed
+                                // slave job. Note that we could use that syntax also in case of success.
+                                // The only drop-back is that we may retrieve the HTML report of a previous build
+                                cleanup {
+                                    script {
+                                        if (!fileExists('test_results-eNB-CI-FDD-Band7-B210.html')) {
+                                            copyArtifacts(projectName: 'eNB-CI-FDD-Band7-B210',
+                                                          filter: 'test_results*.html',
+                                                          selector: lastCompleted())
+                                            if (fileExists('test_results-eNB-CI-FDD-Band7-B210.html')) {
+                                                archiveArtifacts artifacts: 'test_results-eNB-CI-FDD-Band7-B210.html'
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
-                    }
-                    post {
-                        // In case of success we really pick the report from the exact slave build number
-                        success {
-                            script {
-                                copyArtifacts(projectName: 'eNB-CI-FDD-Band7-B210',
-                                              filter: 'test_results*.html',
-                                              selector: specific("${FDD_Band7_B210_Status.number}"))
-                                if (fileExists('test_results-eNB-CI-FDD-Band7-B210.html')) {
-                                    archiveArtifacts artifacts: 'test_results-eNB-CI-FDD-Band7-B210.html'
+                        stage ("Test TDD - Band 40 - B210") {
+                            steps {
+                                gitlabCommitStatus(name: "Test-TDD-Band40") {
+                                    script {
+                                        if ("MERGE".equals(env.gitlabActionType)) {
+                                            TDD_Band40_B210_Status = build job: 'eNB-CI-TDD-Band40-B210',
+                                               parameters: [
+                                                   string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+                                                   string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
+                                                   string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
+                                                   booleanParam(name: 'eNB_mergeRequest', value: true)
+                                               ]
+                                        } else {
+                                            TDD_Band40_B210_Status = build job: 'eNB-CI-TDD-Band40-B210',
+                                               parameters: [
+                                                   string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+                                                   string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
+                                                   string(name: 'eNB_CommitID', value: String.valueOf(GIT_COMMIT)),
+                                                   booleanParam(name: 'eNB_mergeRequest', value: false)
+                                               ]
+                                        }
+                                    }
                                 }
                             }
-                        }
-                        // In case of any non-success, we are retrieving the HTML report of the last completed
-                        // slave job. Note that we could use that syntax also in case of success.
-                        // The only drop-back is that we may retrieve the HTML report of a previous build
-                        cleanup {
-                            script {
-                                if (!fileExists('test_results-eNB-CI-FDD-Band7-B210.html')) {
-                                    copyArtifacts(projectName: 'eNB-CI-FDD-Band7-B210',
-                                                  filter: 'test_results*.html',
-                                                  selector: lastCompleted())
-                                    if (fileExists('test_results-eNB-CI-FDD-Band7-B210.html')) {
-                                        archiveArtifacts artifacts: 'test_results-eNB-CI-FDD-Band7-B210.html'
+                            post {
+                                // In case of success we really pick the report from the exact slave build number
+                                success {
+                                    script {
+                                        copyArtifacts(projectName: 'eNB-CI-TDD-Band40-B210',
+                                                      filter: 'test_results*.html',
+                                                      selector: specific("${TDD_Band40_B210_Status.number}"))
+                                        if (fileExists('test_results-eNB-CI-TDD-Band40-B210.html')) {
+                                            archiveArtifacts artifacts: 'test_results-eNB-CI-TDD-Band40-B210.html'
+                                        }
+                                    }
+                                }
+                                // In case of any non-success, we are retrieving the HTML report of the last completed
+                                // slave job. Note that we could use that syntax also in case of success.
+                                // The only drop-back is that we may retrieve the HTML report of a previous build
+                                cleanup {
+                                    script {
+                                        if (!fileExists('test_results-eNB-CI-TDD-Band40-B210.html')) {
+                                            copyArtifacts(projectName: 'eNB-CI-TDD-Band40-B210',
+                                                          filter: 'test_results*.html',
+                                                          selector: lastCompleted())
+                                            if (fileExists('test_results-eNB-CI-TDD-Band40-B210.html')) {
+                                                archiveArtifacts artifacts: 'test_results-eNB-CI-TDD-Band40-B210.html'
+                                            }
+                                        }
                                     }
                                 }
                             }
