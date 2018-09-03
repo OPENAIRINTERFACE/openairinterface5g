@@ -21,7 +21,7 @@
 
 -->
 <testCaseList>
-        <TestCaseRequestedList>050101 060101 070101 040101 030105 040301 040501 040602 040601 040401 040201 030201 050201 060201 070201 050101 060101 070101 040101 030104 040301 040501 040702 040701 040401 040201 030201 050201 060201 070201</TestCaseRequestedList>
+        <TestCaseRequestedList>050101 060101 070101 040101 030105 040301 040501 040602 040601 040603 040401 040201 030201 050201 060201 070201 050101 060101 070101 040101 030104 040301 040501 040702 040701 040401 040201 030201 050201 060201 070201</TestCaseRequestedList>
 	<TestCaseExclusionList>010101 </TestCaseExclusionList>
 
 	<testCase id="010101">
@@ -84,24 +84,24 @@
 
         <testCase id="040602">
 		<class>Iperf</class>
-		<desc>iperf (5MHz - DL/13.5Mbps/UDP)(30 sec)(single-ue)</desc>
-		<iperf_args>-u -b 13.5M -t 30 -i 1</iperf_args>
+		<desc>iperf (5MHz - DL/6.5Mbps/UDP)(30 sec)(single-ue)</desc>
+		<iperf_args>-u -b 6.5M -t 30 -i 1</iperf_args>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
 		<iperf_profile>single-ue</iperf_profile>
         </testCase>
 
         <testCase id="040603">
 		<class>Iperf</class>
-		<desc>iperf (5MHz - DL/15Mbps/UDP)(30 sec)(unbalanced)</desc>
-		<iperf_args>-u -b 15M -t 30 -i 1</iperf_args>
+		<desc>iperf (5MHz - DL/6.5Mbps/UDP)(30 sec)(unbalanced)</desc>
+		<iperf_args>-u -b 6.5M -t 30 -i 1</iperf_args>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
 		<iperf_profile>unbalanced</iperf_profile>
         </testCase>
 
 	<testCase id="040701">
                 <class>Iperf</class>
-                <desc>iperf (10MHz - DL/6.5Mbps/UDP)(30 sec)(balanced)</desc>
-                <iperf_args>-u -b 6.5M -t 30 -i 1</iperf_args>
+                <desc>iperf (10MHz - DL/13.5Mbps/UDP)(30 sec)(balanced)</desc>
+                <iperf_args>-u -b 13.5M -t 30 -i 1</iperf_args>
                 <iperf_packetloss_threshold>50</iperf_packetloss_threshold>
                 <iperf_profile>balanced</iperf_profile>
         </testCase>

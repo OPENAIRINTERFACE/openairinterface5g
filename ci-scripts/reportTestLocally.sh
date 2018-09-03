@@ -363,28 +363,34 @@ then
         echo "        <td>$NAME</td>" >> ./test_simulator_results.html
         CMD=`egrep "COMMAND IS" $IPERF_CASE | sed -e "s#COMMAND IS: ##"`
         echo "        <td>$CMD</td>" >> ./test_simulator_results.html
+        REQ_BITRATE=`echo $CMD | sed -e "s#^.*-b ##" -e "s#-i 1.*##"`
+        if [[ $REQ_BITRATE =~ .*K.* ]]
+        then
+            REQ_BITRATE=`echo $REQ_BITRATE | sed -e "s#K##"`
+            FLOAT_REQ_BITRATE=`echo "$REQ_BITRATE * 1000.0" | bc -l`
+        fi
+        if [[ $REQ_BITRATE =~ .*M.* ]]
+        then
+            REQ_BITRATE=`echo $REQ_BITRATE | sed -e "s#M##"`
+            FLOAT_REQ_BITRATE=`echo "$REQ_BITRATE * 1000000.0" | bc -l`
+        fi
+        if [[ $REQ_BITRATE =~ .*G.* ]]
+        then
+            REQ_BITRATE=`echo $REQ_BITRATE | sed -e "s#G##"`
+            FLOAT_REQ_BITRATE=`echo "$REQ_BITRATE * 1000000000.0" | bc -l`
+        fi
         FILE_COMPLETE=`egrep -c "Server Report" $IPERF_CASE`
         if [ $FILE_COMPLETE -eq 0 ]
         then
             echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
-            echo "        <td>N/A</td>" >> ./test_simulator_results.html
+            SERVER_FILE=`echo $IPERF_CASE | sed -e "s#client#server#"`
+            FLOAT_EFF_BITRATE=`grep --color=never sec $SERVER_FILE | sed -e "s#^.*Bytes *##" -e "s#sec *.*#sec#" | awk 'BEGIN{s=0;n=0}{n++;if ($2 ~/Mbits/){a = $1 * 1000000}; s=s+a}END{br=s/n; printf "%.0f", br}'`
+            EFFECTIVE_BITRATE=`grep --color=never sec $SERVER_FILE | sed -e "s#^.*Bytes *##" -e "s#sec *.*#sec#" | awk 'BEGIN{s=0;n=0}{n++;if ($2 ~/Mbits/){a = $1 * 1000000}; s=s+a}END{br=s/n; if(br>1000000){printf "%.2f MBits/sec", br/1000000}}'`
+            PERF=`echo "100 * $FLOAT_EFF_BITRATE / $FLOAT_REQ_BITRATE" | bc -l | awk '{printf "%.2f", $0}'`
+            JITTER=`grep --color=never sec $SERVER_FILE | sed -e "s#^.*/sec *##" -e "s# *ms.*##" | awk 'BEGIN{s=0;n=0}{n++;s+=$1}END{jitter=s/n; printf "%.3f ms", jitter}'`
+            PACKETLOSS_NOSIGN=`grep --color=never sec $SERVER_FILE | sed -e "s#^.*(##" -e "s#%.*##" | awk 'BEGIN{s=0;n=0}{n++;s+=$1}END{per=s/n; printf "%.1f", per}'`
+            PACKETLOSS=`echo "${PACKETLOSS_NOSIGN}%"`
         else
-            REQ_BITRATE=`echo $CMD | sed -e "s#^.*-b ##" -e "s#-i 1.*##"`
-            if [[ $REQ_BITRATE =~ .*K.* ]]
-            then
-                REQ_BITRATE=`echo $REQ_BITRATE | sed -e "s#K##"`
-                FLOAT_REQ_BITRATE=`echo "$REQ_BITRATE * 1000.0" | bc -l`
-            fi
-            if [[ $REQ_BITRATE =~ .*M.* ]]
-            then
-                REQ_BITRATE=`echo $REQ_BITRATE | sed -e "s#M##"`
-                FLOAT_REQ_BITRATE=`echo "$REQ_BITRATE * 1000000.0" | bc -l`
-            fi
-            if [[ $REQ_BITRATE =~ .*G.* ]]
-            then
-                REQ_BITRATE=`echo $REQ_BITRATE | sed -e "s#G##"`
-                FLOAT_REQ_BITRATE=`echo "$REQ_BITRATE * 1000000000.0" | bc -l`
-            fi
             EFFECTIVE_BITRATE=`tail -n3 $IPERF_CASE | egrep "Mbits/sec" | sed -e "s#^.*MBytes *##" -e "s#sec.*#sec#"`
             if [[ $EFFECTIVE_BITRATE =~ .*Kbits/sec.* ]]
             then
@@ -409,18 +415,18 @@ then
             else
                 echo "        <td bgcolor = \"green\" >OK</td>" >> ./test_simulator_results.html
             fi
-            echo "        <td>" >> ./test_simulator_results.html
-            echo "            <pre>" >> ./test_simulator_results.html
             EFFECTIVE_BITRATE=`tail -n3 $IPERF_CASE | egrep "Mbits/sec" | sed -e "s#^.*MBytes *##" -e "s#sec.*#sec#"`
-            echo "Bitrate      : $EFFECTIVE_BITRATE" >> ./test_simulator_results.html
-            echo "Bitrate Perf : $PERF %" >> ./test_simulator_results.html
             JITTER=`tail -n3 $IPERF_CASE | egrep "Mbits/sec" | sed -e "s#^.*Mbits/sec *##" -e "s#ms.*#ms#"`
-            echo "Jitter       : $JITTER" >> ./test_simulator_results.html
             PACKETLOSS=`tail -n3 $IPERF_CASE | egrep "Mbits/sec" | sed -e "s#^.*(##" -e "s#).*##"`
-            echo "Packet Loss  : $PACKETLOSS" >> ./test_simulator_results.html
-            echo "            </pre>" >> ./test_simulator_results.html
-            echo "        </td>" >> ./test_simulator_results.html
         fi
+        echo "        <td>" >> ./test_simulator_results.html
+        echo "            <pre>" >> ./test_simulator_results.html
+        echo "Bitrate      : $EFFECTIVE_BITRATE" >> ./test_simulator_results.html
+        echo "Bitrate Perf : $PERF %" >> ./test_simulator_results.html
+        echo "Jitter       : $JITTER" >> ./test_simulator_results.html
+        echo "Packet Loss  : $PACKETLOSS" >> ./test_simulator_results.html
+        echo "            </pre>" >> ./test_simulator_results.html
+        echo "        </td>" >> ./test_simulator_results.html
         echo "      </tr>" >> ./test_simulator_results.html
     done
 
