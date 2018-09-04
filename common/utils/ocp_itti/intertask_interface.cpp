@@ -51,6 +51,8 @@ extern "C" {
 
   mem_block_t *get_free_mem_block (uint32_t sizeP, const char *caller) {
     mem_block_t *ptr=(mem_block_t *)malloc(sizeP+sizeof(mem_block_t));
+    ptr->next = NULL;
+    ptr->previous = NULL;
     ptr->data=((unsigned char *)ptr)+sizeof(mem_block_t);
     ptr->size=sizeP;
     return ptr;
