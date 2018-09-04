@@ -70,7 +70,6 @@
 unsigned short config_frames[4] = {2,9,11,13};
 #endif
 #include "common/utils/LOG/log.h"
-#include "common/utils/LOG/log_extern.h"
 #include "UTIL/OTG/otg_tx.h"
 #include "UTIL/OTG/otg_externs.h"
 #include "UTIL/MATH/oml.h"
@@ -141,6 +140,7 @@ static int8_t                     threequarter_fs=0;
 
 uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
+
 
 // This is a dummy declaration (dlsch_demodulation.c is no longer compiled for eNodeB)
 int16_t dlsch_demod_shift = 0;
@@ -550,12 +550,7 @@ static void get_options(void) {
   if (start_telnetsrv) {
      load_module_shlib("telnetsrv",NULL,0);
   }
-  if (strlen(logmem_filename) > 0) {
-    log_mem_filename = &logmem_filename[0];
-    log_mem_flag = 1;
-    printf("Enabling OPT for log save at memory %s\n",log_mem_filename);
-    logInit_log_mem();
-  }
+
 
 
   if ( !(CONFIG_ISFLAGSET(CONFIG_ABORT)) ) {

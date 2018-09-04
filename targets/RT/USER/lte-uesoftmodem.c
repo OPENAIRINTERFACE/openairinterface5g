@@ -71,7 +71,6 @@
 #include "PHY_INTERFACE/phy_interface_vars.h"
 
 #include "common/utils/LOG/log.h"
-#include "common/utils/LOG/log_extern.h"
 #include "UTIL/OTG/otg_tx.h"
 #include "UTIL/OTG/otg_externs.h"
 #include "UTIL/MATH/oml.h"
