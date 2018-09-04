@@ -335,6 +335,12 @@ void lte_idft(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *z, uint16_t Msc_PUSCH)
     dft720((int16_t*)idft_in2,(int16_t*)idft_out2,1);
     break;
 
+  case 768:
+    dft768((int16_t*)idft_in0,(int16_t*)idft_out0,1);
+    dft768((int16_t*)idft_in1,(int16_t*)idft_out1,1);
+    dft768((int16_t*)idft_in2,(int16_t*)idft_out2,1);
+    break;
+
   case 864:
     dft864((int16_t*)idft_in0,(int16_t*)idft_out0,1);
     dft864((int16_t*)idft_in1,(int16_t*)idft_out1,1);
