@@ -59,6 +59,9 @@
 #include "RRC_config_tools.h"
 #include "enb_paramdef.h"
 
+#include "SystemInformationBlockType1.h"
+#include "SIB-Type.h"
+
 extern uint16_t sf_ahead;
 
 void RCconfig_flexran()
@@ -2707,22 +2710,232 @@ void RCConfig(void) {
  
 }
 
+int check_plmn_identity(rrc_eNB_carrier_data_t *carrier,uint16_t mcc,uint16_t mnc,uint8_t mnc_digit_length) {
+
+  AssertFatal(carrier->sib1->cellAccessRelatedInfo.plmn_IdentityList.list.count > 0,
+	      "plmn info isn't there\n");
+  AssertFatal(mnc_digit_length ==2 || mnc_digit_length == 3,
+	      "impossible mnc_digit_length %d\n",mnc_digit_length);
+
+  PLMN_IdentityInfo_t *plmn_Identity_info = carrier->sib1->cellAccessRelatedInfo.plmn_IdentityList.list.array[0];
+
+  // check if mcc is different and return failure if so
+  if (mcc != 
+      (*plmn_Identity_info->plmn_Identity.mcc->list.array[0]*100)+
+      (*plmn_Identity_info->plmn_Identity.mcc->list.array[1]*10) +
+      (*plmn_Identity_info->plmn_Identity.mcc->list.array[2])) return(0);
+
+  // check that mnc digit length is different and return failure if so
+  if (mnc_digit_length != plmn_Identity_info->plmn_Identity.mnc.list.count) return 0;
+
+  // check that 2 digit mnc is different and return failure if so
+  if (mnc_digit_length == 2 &&
+      (mnc !=       
+       (*plmn_Identity_info->plmn_Identity.mnc.list.array[0]*10) +
+       (*plmn_Identity_info->plmn_Identity.mnc.list.array[1]))) return(0);
+  else if (mnc_digit_length == 3 &&
+	   (mnc !=       
+	    (*plmn_Identity_info->plmn_Identity.mnc.list.array[0]*100) +
+	    (*plmn_Identity_info->plmn_Identity.mnc.list.array[1]*10) +
+	    (*plmn_Identity_info->plmn_Identity.mnc.list.array[2]))) return(0);
+
+  // if we're here, the mcc/mnc match so return success
+  return(1);
+
+}
+
+void extract_and_decode_SI(int inst,int si_ind,uint8_t *si_container,int si_container_length) {
+
+  eNB_RRC_INST *rrc = RC.rrc[inst];
+  rrc_eNB_carrier_data_t *carrier = &rrc->carrier[0];
+  BCCH_DL_SCH_Message_t *bcch_message ;
+
+  AssertFatal(si_ind==0,"Can only handle a single SI block for now\n");
+
+  // point to first SI block
+  bcch_message = &carrier->systemInformation;
+  asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
+						  &asn_DEF_BCCH_DL_SCH_Message,
+						  (void **)&bcch_message,
+						  (const void *)si_container,
+						  si_container_length);
+  
+  if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+    AssertFatal(1==0, "[ENB_APP][RRC inst %"PRIu8"] Failed to decode BCCH_DLSCH_MESSAGE (%zu bits)\n",
+		inst,
+		dec_rval.consumed );
+
+    if (bcch_message->message.present == BCCH_DL_SCH_MessageType_PR_c1) {
+      switch (bcch_message->message.choice.c1.present) {
+      case BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1:
+	AssertFatal(1==0,"Should have received SIB1 from CU\n");
+	break;
+      case BCCH_DL_SCH_MessageType__c1_PR_systemInformation:
+	{
+	  SystemInformation_t *si = &bcch_message->message.choice.c1.choice.systemInformation;
+	  
+	  for (int i=0; i<si->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.count; i++) {
+	    struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member *typeandinfo;
+	    typeandinfo = si->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.array[i];
+	    
+	    switch(typeandinfo->present) {
+	    case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2:
+	      carrier->sib2 = &typeandinfo->choice.sib2;
+	      LOG_I( ENB_APP, "[RRC %"PRIu8"] Found SIB2 in CU F1AP_SETUP_RESP message\n", inst);
+	      break;
+	    case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib3:
+	      carrier->sib3 = &typeandinfo->choice.sib3;
+	      LOG_I( ENB_APP, "[RRC %"PRIu8"] Found SIB3 in CU F1AP_SETUP_RESP message\n", inst);
+	      break;
+	    case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib4:
+	      //carrier->sib4 = &typeandinfo->choice.sib4;
+	      LOG_I( ENB_APP, "[RRC %"PRIu8"] Found SIB4 in CU F1AP_SETUP_RESP message\n", inst);
+	      break;
+	    case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib5:
+	      //carrier->sib5 = &typeandinfo->choice.sib5;
+	      LOG_I( ENB_APP, "[RRC %"PRIu8"] Found SIB5 in CU F1AP_SETUP_RESP message\n", inst);
+	      break;
+	    case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib6:
+	      //carrier->sib6 = &typeandinfo->choice.sib6;
+	      LOG_I( ENB_APP, "[RRC %"PRIu8"] Found SIB6 in CU F1AP_SETUP_RESP message\n", inst);
+	      break;
+	    case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib7:
+	      //carrier->sib7 = &typeandinfo->choice.sib7;
+	      LOG_I( ENB_APP, "[RRC %"PRIu8"] Found SIB7 in CU F1AP_SETUP_RESP message\n", inst);
+	      break;
+	    case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib8:
+	      //carrier->sib8 = &typeandinfo->choice.sib8;
+	      LOG_I( ENB_APP, "[RRC %"PRIu8"] Found SIB8 in CU F1AP_SETUP_RESP message\n", inst);
+	      break;
+	    case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib9:
+	      //carrier->sib9 = &typeandinfo->choice.sib9;
+	      LOG_I( ENB_APP, "[RRC %"PRIu8"] Found SIB9 in CU F1AP_SETUP_RESP message\n", inst);
+	      break;
+	    case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib10:
+	      //carrier->sib10 = &typeandinfo->choice.sib10;
+	      LOG_I( ENB_APP, "[RRC %"PRIu8"] Found SIB10 in CU F1AP_SETUP_RESP message\n", inst);
+	      break;
+	    case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib11:
+	      //carrier->sib11 = &typeandinfo->choice.sib11;
+	      LOG_I( ENB_APP, "[RRC %"PRIu8"] Found SIB11 in CU F1AP_SETUP_RESP message\n", inst);
+	      break;
+
+#if (RRC_VERSION >= MAKE_VERSION(9, 2, 0))
+
+	    case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib12_v920:
+	      //carrier->sib12 = &typeandinfo->choice.sib12;
+	      LOG_I( ENB_APP, "[RRC %"PRIu8"] Found SIB12 in CU F1AP_SETUP_RESP message\n", inst);
+	      break;
+	      
+	    case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib13_v920:
+	      carrier->sib13 = &typeandinfo->choice.sib13_v920;
+	      LOG_I( ENB_APP, "[RRC %"PRIu8"] Found SIB13 in CU F1AP_SETUP_RESP message\n", inst);
+	      break;
+#endif
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+	      //SIB18
+	    case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib18_v1250:
+	      carrier->sib18 = &typeandinfo->choice.sib18_v1250;
+	      LOG_I( ENB_APP, "[RRC %"PRIu8"] Found SIB18 in CU F1AP_SETUP_RESP message\n", inst);
+	      break;
+	      //SIB19
+	    case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib19_v1250:
+	      carrier->sib19 = &typeandinfo->choice.sib19_v1250;
+	      LOG_I( ENB_APP, "[RRC %"PRIu8"] Found SIB19 in CU F1AP_SETUP_RESP message\n", inst);
+	      break;
+	      //SIB21
+	    case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib21_v1430:
+	      carrier->sib21 = &typeandinfo->choice.sib21_v1430;
+	      LOG_I( ENB_APP, "[RRC %"PRIu8"] Found SIB21 in CU F1AP_SETUP_RESP message\n", inst);
+	      break;
+#endif
+	    default:
+	      AssertFatal(1==0,"Shouldn't have received this SI %d\n",typeandinfo->present);
+	      break;
+	    }
+	  }
+	  break;
+	}
+      }
+    }
+    }
+  else AssertFatal(1==0,"No SI messages\n");
+
+
+}
+
+void configure_du_mac(int inst) {
+
+  eNB_RRC_INST *rrc = RC.rrc[inst];
+  rrc_eNB_carrier_data_t *carrier = &rrc->carrier[0];
+
+  rrc_mac_config_req_eNB(inst, 0,
+			 carrier->physCellId,
+			 carrier->p_eNB,
+			 carrier->Ncp,
+			 carrier->sib1->freqBandIndicator,
+			 carrier->dl_CarrierFreq,
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+			 carrier->pbch_repetition,
+#endif
+			 0, // rnti
+			 (BCCH_BCH_Message_t *)
+			 NULL,
+			 (RadioResourceConfigCommonSIB_t *) &
+			 carrier->sib2->radioResourceConfigCommon,
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+			 (RadioResourceConfigCommonSIB_t *) 
+			 NULL,
+#endif
+			 (struct PhysicalConfigDedicated *)NULL,
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+			 (SCellToAddMod_r10_t *)NULL,
+			 //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
+#endif
+			 (MeasObjectToAddMod_t **) NULL,
+			 (MAC_MainConfig_t *) NULL, 0,
+			 (struct LogicalChannelConfig *)NULL,
+			 (MeasGapConfig_t *) NULL,
+			 NULL,
+			 NULL,
+			 &carrier->sib1->schedulingInfoList,
+			 carrier->ul_CarrierFreq,
+			 carrier->sib2->freqInfo.ul_Bandwidth,
+			 &carrier->sib2->freqInfo.additionalSpectrumEmission,
+			 (MBSFN_SubframeConfigList_t*) carrier->sib2->mbsfn_SubframeConfigList
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+			 ,
+			 carrier->MBMS_flag,
+			 (MBSFN_AreaInfoList_r9_t*) & carrier->sib13->mbsfn_AreaInfoList_r9,
+			 (PMCH_InfoList_r9_t *) NULL
+#endif
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
+			 , 
+			 NULL
+#endif
+			 );
+  
+}
+
 void handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
 
 
   int i,j,si_ind;
-  AssertFatal(1==0, "Shouldn't get here yet\n");
-  /*
+  
   for (j=0;j<resp->num_cells_to_activate;j++) {
     for (i=0;i<RC.nb_inst;i++) {
       rrc_eNB_carrier_data_t *carrier =  &RC.rrc[i]->carrier[0];
       // identify local index of cell j by plmn identity
       if (check_plmn_identity(carrier, resp->mcc[j], resp->mnc[j], resp->mnc_digit_length[j])>0 &&
           resp->nrpci[j] == carrier->physCellId) {
-	// copy system information and decode it to perform MAC/L1 common configuration
-	for (si_ind=0;si_ind<resp->num_SI[j];si_ind++) {
-	  
-	}
+	// copy system information and decode it 
+	for (si_ind=0;si_ind<resp->num_SI[j];si_ind++)  extract_and_decode_SI(i,
+									      si_ind,
+									      resp->SI_container[j][si_ind],
+									      resp->SI_container_length[j][si_ind]);
+	// perform MAC/L1 common configuration
+	configure_du_mac(i);
       }
-  */
+    }
+  }
 }

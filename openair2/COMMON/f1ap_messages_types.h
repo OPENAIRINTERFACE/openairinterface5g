@@ -132,8 +132,9 @@ typedef struct f1ap_setup_req_s {
 
   // System Information
   uint8_t *mib[F1AP_MAX_NB_CELLS];
+  int     mib_length[F1AP_MAX_NB_CELLS];
   uint8_t *sib1[F1AP_MAX_NB_CELLS];
-
+  int     sib1_length[F1AP_MAX_NB_CELLS];
 
 
 } f1ap_setup_req_t;
@@ -155,6 +156,7 @@ typedef struct f1ap_setup_resp_s {
   uint8_t num_SI[F1AP_MAX_NB_CELLS];
   /// SI message containers (up to 21 messages per cell)
   uint8_t *SI_container[F1AP_MAX_NB_CELLS][21];
+  int      SI_container_length[F1AP_MAX_NB_CELLS][21];
 } f1ap_setup_resp_t;
 
 typedef struct f1ap_setup_failure_s {
@@ -171,6 +173,7 @@ typedef struct f1ap_dl_rrc_message_s {
   uint8_t  srb_id;
   uint8_t  execute_duplication;
   uint8_t *rrc_container;
+  int      rrc_container_length;
   union {
     // both map 0..255 => 1..256
     uint8_t en_dc;
@@ -188,7 +191,9 @@ typedef struct f1ap_initial_ul_rrc_message_s {
   uint8_t mnc_digit_length;
   uint16_t crnti;
   uint8_t *rrc_container;
+  int      rrc_container_length;
   uint8_t *du2cu_rrc_container;
+  int      du2cu_rrc_container_length;
 } f1ap_initial_ul_rrc_message_t;
 
 typedef struct f1ap_ul_rrc_message_s {
@@ -196,6 +201,7 @@ typedef struct f1ap_ul_rrc_message_s {
   uint32_t gNB_DU_ue_id;
   uint8_t srb_id;
   uint8_t *rrc_container;
+  int      rrc_container_length;
 } f1ap_ul_rrc_message_t;
 
 /*typedef struct f1ap_ue_context_setup_req_s {
