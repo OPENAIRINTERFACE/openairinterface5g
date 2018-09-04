@@ -23,7 +23,7 @@
    purpose: Compute NR TBS
    author: Hongzhi WANG (TCL)
 */
-//#include "PHY/defs.h"
+#include "PHY/defs_nr_UE.h"
 //#include "SCHED/extern.h"
 
 #define INDEX_MAX_TBS_TABLE (93)
