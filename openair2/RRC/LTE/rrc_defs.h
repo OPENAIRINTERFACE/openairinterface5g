@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include "collection/tree.h"
+#include "common/ngran_types.h"
 #include "rrc_types.h"
 //#include "PHY/phy_defs.h"
 #include "LAYER2/RLC/rlc.h"
@@ -673,8 +674,10 @@ typedef struct {
   uint32_t                           sizeof_paging[MAX_MOBILES_PER_ENB];
 } rrc_eNB_carrier_data_t;
 
+  
 typedef struct eNB_RRC_INST_s {
   /// southbound midhaul configuration
+  ngran_node_t                    node_type;
   eth_params_t                    eth_params_s;
   rrc_eNB_carrier_data_t          carrier[MAX_NUM_CCs];
   uid_allocator_t                    uid_allocator; // for rrc_ue_head
@@ -715,6 +718,8 @@ typedef struct eNB_RRC_INST_s {
   int srb1_timer_reordering;
   int srb1_timer_status_prohibit;
   int srs_enable[MAX_NUM_CCs];
+  int cell_info_configured;
+  pthread_mutex_t cell_info_mutex;
 } eNB_RRC_INST;
 
 #define MAX_UE_CAPABILITY_SIZE 255

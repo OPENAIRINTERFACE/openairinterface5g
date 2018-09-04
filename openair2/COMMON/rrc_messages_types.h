@@ -32,6 +32,7 @@
 #include "as_message.h"
 #include "rrc_types.h"
 #include "s1ap_messages_types.h"
+#include "f1ap_messages_types.h"
 #ifdef CMAKER
 #include "SystemInformationBlockType2.h"
 #else

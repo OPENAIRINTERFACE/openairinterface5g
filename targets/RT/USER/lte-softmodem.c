@@ -1062,7 +1062,7 @@ int main( int argc, char **argv )
 #if defined(ENABLE_ITTI)
   if (RC.nb_inst > 0)  {
     
-    // don't create if node doesn't connect to RRC/S1/GTP
+    // don't create if node doesn't connect to RRC/S1/F1/GTP
       if (create_tasks(1) < 0) {
         printf("cannot create ITTI tasks\n");
         exit(-1); // need a softer mode

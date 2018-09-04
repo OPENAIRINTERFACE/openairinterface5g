@@ -40,8 +40,9 @@
 #include "nas_messages_types.h"
 #if ENABLE_RAL
 #include "ral_messages_types.h"
-#endif
+#endif 
 #include "s1ap_messages_types.h"
+#include "f1ap_messages_types.h"
 #include "x2ap_messages_types.h"
 #include "sctp_messages_types.h"
 #include "udp_messages_types.h"

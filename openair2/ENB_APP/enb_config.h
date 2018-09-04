@@ -40,6 +40,7 @@
 #include "PHY/impl_defs_lte.h"
 #include "PHY/defs_eNB.h"
 #include "s1ap_messages_types.h"
+#include "f1ap_messages_types.h"
 #ifdef CMAKER
 #include "SystemInformationBlockType2.h"
 #include "rrc_messages_types.h"
@@ -134,7 +135,7 @@ typedef struct ru_config_s {
 extern void RCconfig_RU(void);
 extern void RCconfig_flexran(void);
 extern void RCconfig_L1(void);
-extern void RCconfig_macrlc(void);
+extern void RCconfig_macrlc(int*);
 extern void UE_config_stub_pnf(void);
 extern int  RCconfig_gtpu(void );
 extern void RCConfig(void);
@@ -144,6 +145,9 @@ void                          ru_config_display(void);
 
 int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc);
 int RCconfig_S1(MessageDef *msg_p, uint32_t i);
+int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i);
+int RCconfig_CU_F1(uint32_t i);
+
 void RCconfig_cudu(void);
 cudu_params_t *get_cudu_config(void);
 

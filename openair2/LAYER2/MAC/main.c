@@ -104,9 +104,9 @@ void mac_top_init_eNB(void)
 		    "Could not initialize RLC layer\n");
 
 	// These should be out of here later
-	pdcp_layer_init();
+	//pdcp_layer_init();
 
-	rrc_init_global_param();
+	//	rrc_init_global_param();
 
     } else {
 	RC.mac = NULL;

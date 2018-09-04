@@ -113,7 +113,7 @@ static void configure_rrc(uint32_t enb_id)
 
 /*------------------------------------------------------------------------------*/
 # if defined(ENABLE_USE_MME)
-static uint32_t eNB_app_register(uint32_t enb_id_start, uint32_t enb_id_end)//, const Enb_properties_array_t *enb_properties)
+static uint32_t eNB_app_register(ngran_node_t node_type,uint32_t enb_id_start, uint32_t enb_id_end)//, const Enb_properties_array_t *enb_properties)
 {
   uint32_t         enb_id;
   MessageDef      *msg_p;
@@ -121,20 +121,38 @@ static uint32_t eNB_app_register(uint32_t enb_id_start, uint32_t enb_id_end)//, 
 
   for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
     {
-      /* note:  there is an implicit relationship between the data structure and the message name */
-      msg_p = itti_alloc_new_message (TASK_ENB_APP, S1AP_REGISTER_ENB_REQ);
+      if (node_type == ngran_eNB_DU) { // F1AP registration
 
-      RCconfig_S1(msg_p, enb_id);
+	// configure F1AP here for F1C
+	LOG_I(ENB_APP,"ngran_eNB_DU: Allocating ITTI message for F1AP_SETUP_REQ\n");
+	msg_p = itti_alloc_new_message (TASK_ENB_APP, F1AP_SETUP_REQ);
+	RCconfig_DU_F1(msg_p, enb_id);
 
-      if (enb_id == 0) RCconfig_gtpu();
+	LOG_I(ENB_APP,"[eNB %d] eNB_app_register via F1AP for instance %d\n", enb_id, ENB_MODULE_ID_TO_INSTANCE(enb_id));	
+	AssertFatal(1==0,"No ITTI ask for F1AP yet\n");
+	//	itti_send_msg_to_task (TASK_F1AP, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
+	// configure GTPu here for F1U
+      }
+      else { // S1AP registration
+	/* note:  there is an implicit relationship between the data structure and the message name */
+	msg_p = itti_alloc_new_message (TASK_ENB_APP, S1AP_REGISTER_ENB_REQ);
+	
+	RCconfig_S1(msg_p, enb_id);
 
-      LOG_I(ENB_APP,"default drx %d\n",((S1AP_REGISTER_ENB_REQ(msg_p)).default_drx));
+	if (node_type == ngran_eNB_CU || node_type == ngran_ng_eNB_CU) RCconfig_CU_F1(enb_id);
 
-      LOG_I(ENB_APP,"[eNB %d] eNB_app_register for instance %d\n", enb_id, ENB_MODULE_ID_TO_INSTANCE(enb_id));
+	if (enb_id == 0) RCconfig_gtpu();
+	
+	LOG_I(ENB_APP,"default drx %d\n",((S1AP_REGISTER_ENB_REQ(msg_p)).default_drx));
+	
+	LOG_I(ENB_APP,"[eNB %d] eNB_app_register via S1AP for instance %d\n", enb_id, ENB_MODULE_ID_TO_INSTANCE(enb_id));
+	itti_send_msg_to_task (TASK_S1AP, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
+      }
 
-      itti_send_msg_to_task (TASK_S1AP, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
 
+      
       register_enb_pending++;
+    
     }
   }
 
@@ -161,6 +179,9 @@ void *eNB_app_task(void *args_p)
   int                             result;
   /* for no gcc warnings */
   (void)instance;
+  int mac_has_f1[MAX_MAC_INST];
+
+  memset(mac_has_f1,0,MAX_MAC_INST*sizeof(int));
 
   itti_mark_task_ready (TASK_ENB_APP);
 
@@ -168,11 +189,14 @@ void *eNB_app_task(void *args_p)
 
   RCconfig_L1();
 
-  RCconfig_macrlc();
+  RCconfig_macrlc(mac_has_f1);
+
+  LOG_I(PHY, "%s() RC.nb_L1_inst:%d\n", __FUNCTION__, RC.nb_macrlc_inst);
 
   LOG_I(PHY, "%s() RC.nb_L1_inst:%d\n", __FUNCTION__, RC.nb_L1_inst);
 
   if (RC.nb_L1_inst>0) AssertFatal(l1_north_init_eNB()==0,"could not initialize L1 north interface\n");
+
 
   AssertFatal (enb_nb <= RC.nb_inst,
                "Number of eNB is greater than eNB defined in configuration file (%d/%d)!",
@@ -183,17 +207,26 @@ void *eNB_app_task(void *args_p)
   RC.rrc = (eNB_RRC_INST **)malloc(RC.nb_inst*sizeof(eNB_RRC_INST *));
   LOG_I(PHY, "%s() RC.nb_inst:%d RC.rrc:%p\n", __FUNCTION__, RC.nb_inst, RC.rrc);
 
+  if (RC.nb_macrlc_inst>0) AssertFatal(RC.nb_macrlc_inst == enb_id_end-enb_id_start,
+				       "Number of MACRLC instances %d != number of RRC instances %d\n",
+				       RC.nb_macrlc_inst,enb_id_end-enb_id_start);
   for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
     RC.rrc[enb_id] = (eNB_RRC_INST*)malloc(sizeof(eNB_RRC_INST));
     LOG_I(PHY, "%s() Creating RRC instance RC.rrc[%d]:%p (%d of %d)\n", __FUNCTION__, enb_id, RC.rrc[enb_id], enb_id+1, enb_id_end);
     memset((void *)RC.rrc[enb_id],0,sizeof(eNB_RRC_INST));
     configure_rrc(enb_id);
+
+    if (RC.nb_macrlc_inst >0 && mac_has_f1[enb_id]==1) RC.rrc[enb_id]->node_type = ngran_eNB_DU;
+
+    pdcp_layer_init();
   }
+
 
 # if defined(ENABLE_USE_MME)
   /* Try to register each eNB */
   registered_enb = 0;
-  register_enb_pending = eNB_app_register (enb_id_start, enb_id_end);//, enb_properties_p);
+  // This assumes that node_type of all RRC instances is the same
+  register_enb_pending = eNB_app_register (RC.rrc[0]->node_type,enb_id_start, enb_id_end);//, enb_properties_p);
 # else
   /* Start L2L1 task */
   msg_p = itti_alloc_new_message(TASK_ENB_APP, INITIALIZE_MESSAGE);
@@ -251,7 +284,7 @@ void *eNB_app_task(void *args_p)
             sleep(ENB_REGISTER_RETRY_DELAY);
             /* Restart the registration process */
             registered_enb = 0;
-            register_enb_pending = eNB_app_register (enb_id_start, enb_id_end);//, enb_properties_p);
+            register_enb_pending = eNB_app_register (RC.rrc[0]->node_type,enb_id_start, enb_id_end);//, enb_properties_p);
           }
         }
       }
@@ -271,7 +304,7 @@ void *eNB_app_task(void *args_p)
       if (TIMER_HAS_EXPIRED (msg_p).timer_id == enb_register_retry_timer_id) {
         /* Restart the registration process */
         registered_enb = 0;
-        register_enb_pending = eNB_app_register (enb_id_start, enb_id_end);//, enb_properties_p);
+        register_enb_pending = eNB_app_register (RC.rrc[0]->node_type,enb_id_start, enb_id_end);//, enb_properties_p);
       }
 
       break;
