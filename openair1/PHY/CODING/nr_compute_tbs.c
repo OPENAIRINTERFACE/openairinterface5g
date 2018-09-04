@@ -100,7 +100,7 @@ uint32_t nr_compute_tbs(uint8_t mcs,
     	n = floor(log2(Ninfo-24)) - 5;
         Np_info = max(3840, pow(n,2) * round((Ninfo - 24)/pow(n,2)));
 
-        if (R <= 1/4) {
+        if (R <= 1024/4) {
             C = ceil( (Np_info + 24)/3816 );
             nr_tbs = 8 * C * ceil( (Np_info + 24)/(8*C) ) - 24;
         }
