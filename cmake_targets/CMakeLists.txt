@@ -1143,7 +1143,13 @@ set(PHY_POLARSRC
 )
 set(PHY_TURBOIF
   ${OPENAIR1_DIR}/PHY/CODING/coding_load.c
-)
+  )
+set(PHY_LDPCSRC
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_encoder2.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrLDPC_encoder/ldpc_generate_coefficient.c
+  )
 
 add_library(coding MODULE ${PHY_TURBOSRC} )
 
@@ -1298,6 +1304,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/TOOLS/time_meas.c
   ${OPENAIR1_DIR}/PHY/TOOLS/lut.c
   ${PHY_POLARSRC}
+  ${PHY_LDPCSRC}
   )
 
   set(PHY_NR_UE_SRC
@@ -1335,6 +1342,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/TOOLS/lut.c
   ${OPENAIR1_DIR}/PHY/INIT/nr_init_ue.c
   ${PHY_POLARSRC}
+  ${PHY_LDPCSRC}
   )
 
 
@@ -2556,6 +2564,9 @@ target_link_libraries (dlsim_tm4
 
 add_executable(polartest ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/polartest.c)
 target_link_libraries(polartest m SIMU PHY PHY_NR PHY_COMMON -lm ${ATLAS_LIBRARIES})
+
+add_executable(ldpctest  ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c)
+target_link_libraries(ldpctest m SIMU PHY PHY_NR ${ATLAS_LIBRARIES})
 
 foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)
 
