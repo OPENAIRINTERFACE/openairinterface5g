@@ -1309,7 +1309,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 	    //            buffer_occupancy = UE_template->ul_total_buffer;
 
 
-	    while (((rb_table[rb_table_index] > (N_RB_UL - 1 - first_rb_slice[CC_id]))
+	    while (((rb_table[rb_table_index] > (N_RB_UL - first_rb_slice[CC_id]))
                     || (rb_table[rb_table_index] > 45))
                     && (rb_table_index > 0)) {
 	      rb_table_index--;
