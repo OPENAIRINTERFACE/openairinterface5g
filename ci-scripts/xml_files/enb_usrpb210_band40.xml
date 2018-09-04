@@ -21,8 +21,8 @@
 
 -->
 <testCaseList>
-        <TestCaseRequestedList>050101 060101 070101 040101 030105 040301 040501 040602 040601 040603 040401 040201 030201 050201 060201 070201 050101 060101 070101 040101 030104 040301 040501 040702 040701 040401 040201 030201 050201 060201 070201</TestCaseRequestedList>
-	<TestCaseExclusionList>010101 </TestCaseExclusionList>
+        <TestCaseRequestedList>010101 050101 060101 070101 040101 030104 040301 040501 040602 040601 040603 040401 040201 030201 030105 040301 040502 040702 040701 040401 040201 030201 050201 060201 070201</TestCaseRequestedList>
+	<TestCaseExclusionList></TestCaseExclusionList>
 
 	<testCase id="010101">
 		<class>Build_eNB</class>
@@ -30,13 +30,13 @@
 		<Build_eNB_args>-w USRP -c --eNB</Build_eNB_args>
 	</testCase>
 
-	<testCase id="030105">
+	<testCase id="030104">
 		<class>Initialize_eNB</class>
 		<desc>Initialize eNB (FDD/Band40/10MHz)</desc>
 		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band40.tm1.25PRB.FairScheduler.usrpb210.conf --codingw --fepw</Initialize_eNB_args>
 	</testCase>
 	
-	<testCase id="030104">
+	<testCase id="030105">
                 <class>Initialize_eNB</class>
                 <desc>Initialize eNB (TDD/Band40/5MHz/info)</desc>
                 <Initialize_eNB_args>-O ci-scripts/conf_files/enb.band40.tm1.50PRB.FairScheduler.usrpb210.conf --codingw --fepw</Initialize_eNB_args>
@@ -70,6 +70,13 @@
         <testCase id="040501">
                 <class>Ping</class>
                 <desc>ping (5MHz - 20 sec)</desc>
+                <ping_args>-c 20</ping_args>
+                <ping_packetloss_threshold>25</ping_packetloss_threshold>
+        </testCase>
+
+        <testCase id="040502">
+                <class>Ping</class>
+                <desc>ping (10MHz - 20 sec)</desc>
                 <ping_args>-c 20</ping_args>
                 <ping_packetloss_threshold>25</ping_packetloss_threshold>
         </testCase>
