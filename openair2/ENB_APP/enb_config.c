@@ -2706,3 +2706,23 @@ void RCConfig(void) {
     RC.nb_RU     = RUParamList.numelt; 
  
 }
+
+void handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
+
+
+  int i,j,si_ind;
+  AssertFatal(1==0, "Shouldn't get here yet\n");
+  /*
+  for (j=0;j<resp->num_cells_to_activate;j++) {
+    for (i=0;i<RC.nb_inst;i++) {
+      rrc_eNB_carrier_data_t *carrier =  &RC.rrc[i]->carrier[0];
+      // identify local index of cell j by plmn identity
+      if (check_plmn_identity(carrier, resp->mcc[j], resp->mnc[j], resp->mnc_digit_length[j])>0 &&
+          resp->nrpci[j] == carrier->physCellId) {
+	// copy system information and decode it to perform MAC/L1 common configuration
+	for (si_ind=0;si_ind<resp->num_SI[j];si_ind++) {
+	  
+	}
+      }
+  */
+}
