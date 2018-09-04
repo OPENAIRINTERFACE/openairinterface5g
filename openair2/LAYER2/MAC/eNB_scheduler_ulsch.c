@@ -366,14 +366,19 @@ rx_sdu(const module_id_t enb_mod_idP,
           for (ii = 0; ii < NB_RA_PROC_MAX; ii++) {
             ra = &mac->common_channels[CC_idP].ra[ii];
             if ((ra->rnti == current_rnti) && (ra->state != IDLE)) {
-              mac_rrc_data_ind(enb_mod_idP,
-                               CC_idP,
-                               frameP, subframeP,
-                               old_rnti,
-                               DCCH,
-                               (uint8_t *) payload_ptr,
-                               rx_lengths[i],
-                               0);
+              //int RC.cudu.du_flag = 1;
+              int du_flag = 1;
+              mac_rrc_data_ind(
+                   enb_mod_idP,
+                   CC_idP,
+                   frameP, subframeP, old_UE_id,
+                   old_rnti,
+                   DCCH,
+                   (uint8_t *) payload_ptr,
+                   rx_lengths[i],
+                   0,
+                   du_flag
+              );
               // prepare transmission of Msg4(RRCConnectionReconfiguration)
               ra->state = MSGCRNTI;
               LOG_I(MAC,
@@ -612,15 +617,20 @@ rx_sdu(const module_id_t enb_mod_idP,
 		  rx_lengths[i], payload_ptr - sduP);
 	    // kill RA procedure
 	  }
-
-	  mac_rrc_data_ind(enb_mod_idP,
+    
+    //int RC.cudu.du_flag = 1;
+    int du_flag = 1;
+	  mac_rrc_data_ind(
+         enb_mod_idP,
 			   CC_idP,
-			   frameP, subframeP,
+			   frameP, subframeP, UE_id,
 			   current_rnti,
 			   CCCH,
 			   (uint8_t *) payload_ptr,
 			   rx_lengths[i],
-			   0);
+			   0,
+         du_flag
+    );
 
 
 	  if (num_ce > 0) {	// handle msg3 which is not RRCConnectionRequest
