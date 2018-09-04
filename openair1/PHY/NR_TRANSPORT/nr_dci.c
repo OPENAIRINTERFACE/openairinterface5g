@@ -207,7 +207,9 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   /// DCI payload processing
   // CRC attachment + Scrambling + Channel coding + Rate matching
   uint32_t encoder_output[NR_MAX_DCI_SIZE_DWORD];
-  uint16_t n_RNTI = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? pdcch_params.rnti : 0;
+  uint32_t scrambled_output[NR_MAX_DCI_SIZE_DWORD];
+  uint16_t n_RNTI = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? ((pdcch_params.scrambling_id)?pdcch_params.rnti:0) : 0;
+  uint16_t Nid = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? pdcch_params.scrambling_id : config.sch_config.physical_cell_id.value;
 #ifdef PDCCH_TEST_POLAR_TEMP_FIX
   t_nrPolar_paramsPtr currentPtr = NULL;//, polarParams = NULL;
   nr_polar_init(&currentPtr, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
@@ -224,11 +226,12 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   printf("Encoded Payload: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
 		  encoder_output[0], encoder_output[1], encoder_output[2], encoder_output[3]);
 #endif
+  nr_pdcch_scrambling(encoder_output, encoded_length, Nid, n_RNTI, scrambled_output);
 
     // QPSK modulation
   int16_t mod_dci[NR_MAX_DCI_SIZE>>1];
   for (int i=0; i<encoded_length>>1; i++) {
-    idx = (((encoder_output[i<<1]>>(i<<1))&1)<<1) ^ ((encoder_output[(i<<1)+1]>>((i<<1)+1))&1);
+    idx = (((scrambled_output[i<<1]>>(i<<1))&1)<<1) ^ ((scrambled_output[(i<<1)+1]>>((i<<1)+1))&1);
     mod_dci[i<<1] = nr_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
     mod_dci[(i<<1)+1] = nr_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
 #ifdef DEBUG_DCI
@@ -258,8 +261,12 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
           reg_mapping_list[reg.symb_idx*regs_per_symb + symb_idx[reg.symb_idx]++] = reg;
         }
       }
-printf("REG list reordered: %d %d %d %d %d %d %d %d\n", reg_mapping_list[0].reg_idx, reg_mapping_list[1].reg_idx, reg_mapping_list[2].reg_idx, reg_mapping_list[3].reg_idx,
-      reg_mapping_list[4].reg_idx, reg_mapping_list[5].reg_idx, reg_mapping_list[6].reg_idx, reg_mapping_list[7].reg_idx);
+#ifdef DEBUG_DCI
+  printf("\n Ordered REG list:\n");
+  for (int i=0; i<nb_regs; i++)
+    printf("%d\t",reg_mapping_list[i].reg_idx );
+  printf("\n");
+#endif
 
       /*Now mapping based on newly constructed list*/
       for (int reg_idx=0; reg_idx<nb_regs; reg_idx++) {
