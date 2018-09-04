@@ -1696,6 +1696,8 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
         first_rb_offset = UE_list->first_rb_offset[CC_id][slice_idx];
         available_rbs = cmin(ue_sched_ctl->max_rbs_allowed_slice_uplink[CC_id][slice_idx],
                              N_RB_UL - first_rb[CC_id] - first_rb_offset);
+        if (available_rbs < 0)
+          available_rbs = 0;
 
         if (total_ue_count[CC_id] == 0) {
           average_rbs_per_user[CC_id] = 0;
