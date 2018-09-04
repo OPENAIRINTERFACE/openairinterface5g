@@ -1410,7 +1410,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
             }
 
 	    // Add UL_config PDUs
-	    fill_nfapi_ulsch_config_request_rel8(&ul_req_tmp_body->ul_config_pdu_list[ul_req_index], cqi_req, cc, UE_template->physicalConfigDedicated, get_tmode(module_idP, CC_id, UE_id), mac->ul_handle, rnti, first_rb[CC_id],	// resource_block_start
+	    fill_nfapi_ulsch_config_request_rel8(&ul_req_tmp_body->ul_config_pdu_list[ul_req_index], cqi_req, cc, UE_template->physicalConfigDedicated, get_tmode(module_idP, CC_id, UE_id), mac->ul_handle, rnti, first_rb_slice[CC_id], // resource_block_start
 						 rb_table[rb_table_index],	// number_of_resource_blocks
 						 UE_template->mcs_UL[harq_pid], cshift,	// cyclic_shift_2_for_drms
 						 0,	// frequency_hopping_enabled_flag
