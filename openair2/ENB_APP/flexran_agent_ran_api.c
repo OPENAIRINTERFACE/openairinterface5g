@@ -1756,6 +1756,8 @@ char *flexran_get_dl_slice_scheduler(mid_t mod_id, int slice_idx)
 int flexran_set_dl_slice_scheduler(mid_t mod_id, int slice_idx, char *name)
 {
   if (!mac_is_present(mod_id)) return 0;
+  if (RC.mac[mod_id]->slice_info.dl[slice_idx].sched_name)
+    free(RC.mac[mod_id]->slice_info.dl[slice_idx].sched_name);
   RC.mac[mod_id]->slice_info.dl[slice_idx].sched_name = strdup(name);
   RC.mac[mod_id]->slice_info.dl[slice_idx].sched_cb = dlsym(NULL, name);
   return RC.mac[mod_id]->slice_info.dl[slice_idx].sched_cb != NULL;
@@ -1788,7 +1790,7 @@ int flexran_remove_ul_slice(mid_t mod_id, int slice_idx)
   slice_info_t *sli = &RC.mac[mod_id]->slice_info;
   if (sli->n_ul <= 1) return -1;
 
-  if (sli->dl[slice_idx].sched_name) free(sli->dl[slice_idx].sched_name);
+  if (sli->ul[slice_idx].sched_name) free(sli->ul[slice_idx].sched_name);
   --sli->n_ul;
   /* move last element to the position of the removed one */
   if (slice_idx != sli->n_ul)
@@ -1869,6 +1871,8 @@ char *flexran_get_ul_slice_scheduler(mid_t mod_id, int slice_idx)
 int flexran_set_ul_slice_scheduler(mid_t mod_id, int slice_idx, char *name)
 {
   if (!mac_is_present(mod_id)) return 0;
+  if (RC.mac[mod_id]->slice_info.ul[slice_idx].sched_name)
+    free(RC.mac[mod_id]->slice_info.ul[slice_idx].sched_name);
   RC.mac[mod_id]->slice_info.ul[slice_idx].sched_name = strdup(name);
   RC.mac[mod_id]->slice_info.ul[slice_idx].sched_cb = dlsym(NULL, name);
   return RC.mac[mod_id]->slice_info.ul[slice_idx].sched_cb != NULL;
