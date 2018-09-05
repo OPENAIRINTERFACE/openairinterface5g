@@ -807,11 +807,11 @@ then
     echo "############################################################"
     echo "Iperf UL"
     echo "############################################################"
-    CURR_IPERF_LOG_BASE=20MHz_iperf_ul
-    iperf_ul $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 1 $CURR_IPERF_LOG_BASE
-    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_server.txt $ARCHIVES_LOC
-    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/${CURR_IPERF_LOG_BASE}_client.txt $ARCHIVES_LOC
-    check_iperf $ARCHIVES_LOC/$CURR_IPERF_LOG_BASE 1
+#    CURR_IPERF_LOG_BASE=20MHz_iperf_ul
+#    iperf_ul $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 1 $CURR_IPERF_LOG_BASE
+#    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_server.txt $ARCHIVES_LOC
+#    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/${CURR_IPERF_LOG_BASE}_client.txt $ARCHIVES_LOC
+#    check_iperf $ARCHIVES_LOC/$CURR_IPERF_LOG_BASE 1
 
     echo "############################################################"
     echo "Terminate enb/ue simulators"
