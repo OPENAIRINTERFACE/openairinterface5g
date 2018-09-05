@@ -75,3 +75,31 @@ void nr_init_pdcch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid)
   }
 
 }
+
+
+void nr_init_pdsch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid)
+{
+  
+  uint32_t x1, x2;
+  uint8_t reset;
+  int Nscid;
+  NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
+  uint32_t ***pdsch_dmrs = gNB->nr_gold_pdsch_dmrs;
+  //x2 compute by 38.211 7.4.1.1.1
+  Nscid = 0;
+  for (uint8_t slot=0; slot<fp->slots_per_frame; slot++) {
+    for (uint8_t symb=0; symb<fp->symbols_per_slot; symb++) {
+
+      reset = 1;
+      x2 = ((1<<17) * (slot*symb*slot+symb+1) * (Nid+1) *((Nid<<1)+Nscid))&(((uint32_t)1<<31)-1);
+      printf("x2 = %d\n",x2);
+      for (uint32_t n=0; n<NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD; n++) {
+        pdsch_dmrs[slot][symb][n] = lte_gold_generic(&x1, &x2, reset);
+    printf("slot = %d***  symb = %d*** n = %d*** \n",slot,symb,n);
+
+        reset = 0;
+      }
+    }  
+  }
+
+}
