@@ -1550,12 +1550,12 @@ int apply_new_slice_ul_config(mid_t mod_id, Protocol__FlexUlSlice *oldc, Protoco
     flexran_set_ul_slice_maxmcs(mod_id, slice_idx, newc->maxmcs);
     changes++;
   }
-  if (check_ul_sorting_update(oldc, newc)) {
-    /*flexran_set_ul_slice_sorting(mod_id, slice_idx, newc->sorting, n);
-    changes++;*/
+  /*if (check_ul_sorting_update(oldc, newc)) {
+    flexran_set_ul_slice_sorting(mod_id, slice_idx, newc->sorting, n);
+    changes++;
     LOG_W(FLEXRAN_AGENT, "[%d][UL slice %d] setting the sorting is not supported\n",
         mod_id, newc->id);
-  }
+  }*/
   if (oldc->accounting != newc->accounting) {
     /*flexran_set_ul_slice_accounting_policy(mod_id, slice_idx, newc->accounting);
      *changes++;*/
