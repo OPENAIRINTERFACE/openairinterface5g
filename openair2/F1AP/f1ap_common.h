@@ -375,7 +375,7 @@ extern int asn1_xer_print;
 #include "assertions.h"
 
 #if defined(ENB_MODE)
-# include "log.h"
+# include "common/utils/LOG/log.h"
 # include "f1ap_default_values.h"
 # define F1AP_ERROR(x, args...) LOG_E(F1AP, x, ##args)
 # define F1AP_WARN(x, args...)  LOG_W(F1AP, x, ##args)
@@ -394,30 +394,30 @@ extern int asn1_xer_print;
 //Forward declaration
 //struct f1ap_message_s;
 
-typedef struct net_ip_address_s {
+typedef struct f1ap_net_ip_address_s {
   unsigned ipv4:1;
   unsigned ipv6:1;
   char ipv4_address[16];
   char ipv6_address[46];
-} net_ip_address_t;
+} f1ap_net_ip_address_t;
 
 
-typedef struct f1ap_message_s {
+/*typedef struct f1ap_message_s {
     F1AP_ProtocolIE_ID_t id;
     F1AP_Criticality_t   criticality;
     uint8_t            direction;
     union {
         F1AP_F1SetupRequestIEs_t f1ap_F1SetupRequestIEs;
     } msg;
-} f1ap_message;
+} f1ap_message;*/
 
 /** \brief Function callback prototype.
  **/
-/*typedef int (*f1ap_message_decoded_callback)(
+typedef int (*f1ap_message_decoded_callback)(
   uint32_t               assoc_id,
   uint32_t               stream,
   struct f1ap_message_s *message_p
-);*/
+);
 
 /** \brief Encode a successfull outcome message
  \param buffer pointer to buffer in which data will be encoded

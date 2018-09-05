@@ -37,199 +37,142 @@
 #include "intertask_interface.h"
 
 #include "f1ap_common.h"
-#include "f1ap_ies_defs.h"
 #include "f1ap_decoder.h"
 
-static int f1ap_decode_initiating_message(f1ap_message *message,
-    F1ap_InitiatingMessage_t *initiating_p)
+static int f1ap_eNB_decode_initiating_message(F1AP_F1AP_PDU_t *pdu)
 {
-  int         ret = -1;
   MessageDef *message_p;
-  char       *message_string = NULL;
-  size_t      message_string_size;
   MessagesIds message_id;
+  asn_encode_to_new_buffer_result_t res = { NULL, {0, NULL, NULL} };
+  DevAssert(pdu != NULL);
 
-  DevAssert(initiating_p != NULL);
+  switch(pdu->choice.initiatingMessage->procedureCode) {
 
-  message_string = calloc(10000, sizeof(char));
+    case F1AP_ProcedureCode_id_F1Setup:
+      res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
+      printf("f1ap_eNB_decode_initiating_message!\n");
+      break;
+    // case F1AP_ProcedureCode_id_InitialContextSetup:
+    //   res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
+    //   message_id = F1AP_INITIAL_CONTEXT_SETUP_LOG;
+    //   message_p = itti_alloc_new_message_sized(TASK_F1AP, message_id,
+    //               res.result.encoded + sizeof (IttiMsgText));
+    //   message_p->ittiMsg.f1ap_initial_context_setup_log.size = res.result.encoded;
+    //   memcpy(&message_p->ittiMsg.f1ap_initial_context_setup_log.text, res.buffer, res.result.encoded);
+    //   itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
+    //   free(res.buffer);
+    //   break;
 
-  f1ap_string_total_size = 0;
-
-  message->procedureCode = initiating_p->procedureCode;
-  message->criticality   = initiating_p->criticality;
-
-  switch(initiating_p->procedureCode) {
-
-  case F1ap_ProcedureCode_id_InitialContextSetup:
-    ret = f1ap_decode_f1ap_initialcontextsetuprequesties(
-            &message->msg.f1ap_InitialContextSetupRequestIEs, &initiating_p->value);
-    f1ap_xer_print_f1ap_initialcontextsetuprequest(f1ap_xer__print2sp, message_string, message);
-    message_id = F1AP_INITIAL_CONTEXT_SETUP_LOG;
-    message_string_size = strlen(message_string);
-    message_p           = itti_alloc_new_message_sized(TASK_F1AP,
-                          message_id,
-                          message_string_size + sizeof (IttiMsgText));
-    message_p->ittiMsg.f1ap_initial_context_setup_log.size = message_string_size;
-    memcpy(&message_p->ittiMsg.f1ap_initial_context_setup_log.text, message_string, message_string_size);
-    itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
-    free(message_string);
-    break;
-
-  case F1ap_ProcedureCode_id_UEContextRelease:
-    ret = f1ap_decode_f1ap_uecontextreleasecommandies(
-            &message->msg.f1ap_UEContextReleaseCommandIEs, &initiating_p->value);
-    f1ap_xer_print_f1ap_uecontextreleasecommand(f1ap_xer__print2sp, message_string, message);
-    message_id = F1AP_UE_CONTEXT_RELEASE_COMMAND_LOG;
-    message_string_size = strlen(message_string);
-    message_p           = itti_alloc_new_message_sized(TASK_F1AP,
-                          message_id,
-                          message_string_size + sizeof (IttiMsgText));
-    message_p->ittiMsg.f1ap_ue_context_release_command_log.size = message_string_size;
-    memcpy(&message_p->ittiMsg.f1ap_ue_context_release_command_log.text, message_string, message_string_size);
-    itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
-    free(message_string);
-    break;
-
-  case F1ap_ProcedureCode_id_ErrorIndication:
-    ret = f1ap_decode_f1ap_errorindicationies(
-            &message->msg.f1ap_ErrorIndicationIEs, &initiating_p->value);
-    f1ap_xer_print_f1ap_errorindication(f1ap_xer__print2sp, message_string, message);
-    message_id = F1AP_E_RAB_ERROR_INDICATION_LOG;
-    message_string_size = strlen(message_string);
-    message_p           = itti_alloc_new_message_sized(TASK_F1AP,
-                          message_id,
-                          message_string_size + sizeof (IttiMsgText));
-    message_p->ittiMsg.f1ap_e_rab_release_request_log.size = message_string_size;
-    memcpy(&message_p->ittiMsg.f1ap_error_indication_log.text, message_string, message_string_size);
-    itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
-    free(message_string);
-    F1AP_INFO("ErrorIndication initiating message\n");
-    break;
-
-  default:
-    F1AP_ERROR("Unknown procedure ID (%d) for initiating message\n",
-               (int)initiating_p->procedureCode);
-    AssertFatal( 0 , "Unknown procedure ID (%d) for initiating message\n",
-                 (int)initiating_p->procedureCode);
-    return -1;
+    default:
+      // F1AP_ERROR("Unknown procedure ID (%d) for initiating message\n",
+      //            (int)pdu->choice.initiatingMessage->procedureCode);
+      printf("Unknown procedure ID (%d) for initiating message\n",
+                  (int)pdu->choice.initiatingMessage->procedureCode);
+      AssertFatal( 0, "Unknown procedure ID (%d) for initiating message\n",
+                   (int)pdu->choice.initiatingMessage->procedureCode);
+      return -1;
   }
 
-
-  return ret;
+  return 0;
 }
 
-static int f1ap_decode_successful_outcome(f1ap_message *message,
-    F1ap_SuccessfulOutcome_t *successfullOutcome_p)
+static int f1ap_eNB_decode_successful_outcome(F1AP_F1AP_PDU_t *pdu)
 {
-  int ret = -1;
   MessageDef *message_p;
-  char       *message_string = NULL;
-  size_t      message_string_size;
   MessagesIds message_id;
+  asn_encode_to_new_buffer_result_t res = { NULL, {0, NULL, NULL} };
+  DevAssert(pdu != NULL);
 
-  DevAssert(successfullOutcome_p != NULL);
+  switch(pdu->choice.successfulOutcome->procedureCode) {
+    // case F1AP_ProcedureCode_id_F1Setup:
+    //   res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
+    //   message_id = F1AP_F1_SETUP_LOG;
+    //   message_p = itti_alloc_new_message_sized(TASK_F1AP, message_id, res.result.encoded + sizeof (IttiMsgText));
+    //   message_p->ittiMsg.f1ap_s1_setup_log.size = res.result.encoded;
+    //   memcpy(&message_p->ittiMsg.f1ap_s1_setup_log.text, res.buffer, res.result.encoded);
+    //   itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
+    //   free(res.buffer);
+    //   break;
 
-  message_string = malloc(sizeof(char) * 10000);
-  memset((void*)message_string,0,sizeof(char) * 10000);
-
-  f1ap_string_total_size = 0;
-
-  message->procedureCode = successfullOutcome_p->procedureCode;
-  message->criticality   = successfullOutcome_p->criticality;
-
-  switch(successfullOutcome_p->procedureCode) {
-  case F1ap_ProcedureCode_id_F1Setup:
-    ret = f1ap_decode_f1ap_f1setupresponseies(
-            &message->msg.f1ap_F1SetupResponseIEs, &successfullOutcome_p->value);
-    f1ap_xer_print_f1ap_f1setupresponse(f1ap_xer__print2sp, message_string, message);
-    message_id = F1AP_F1_SETUP_LOG;
-    break;
-
-  default:
-    F1AP_ERROR("Unknown procedure ID (%d) for successfull outcome message\n",
-               (int)successfullOutcome_p->procedureCode);
-    return -1;
+    default:
+      // F1AP_ERROR("Unknown procedure ID (%d) for successfull outcome message\n",
+      //            (int)pdu->choice.successfulOutcome->procedureCode);
+      printf("Unknown procedure ID (%d) for successfull outcome message\n",
+                 (int)pdu->choice.successfulOutcome->procedureCode);
+      return -1;
   }
 
-  message_string_size = strlen(message_string);
-
-  message_p = itti_alloc_new_message_sized(TASK_F1AP, message_id, message_string_size + sizeof (IttiMsgText));
-  message_p->ittiMsg.f1ap_f1_setup_log.size = message_string_size;
-  memcpy(&message_p->ittiMsg.f1ap_f1_setup_log.text, message_string, message_string_size);
-
-  itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
-
-  free(message_string);
-
-  return ret;
+  return 0;
 }
 
-static int f1ap_decode_unsuccessful_outcome(f1ap_message *message,
-    F1ap_UnsuccessfulOutcome_t *unSuccessfullOutcome_p)
+static int f1ap_eNB_decode_unsuccessful_outcome(F1AP_F1AP_PDU_t *pdu)
 {
-  int ret = -1;
-  DevAssert(unSuccessfullOutcome_p != NULL);
+  MessageDef *message_p;
+  MessagesIds message_id;
+  asn_encode_to_new_buffer_result_t res = { NULL, {0, NULL, NULL} };
+  DevAssert(pdu != NULL);
 
-  message->procedureCode = unSuccessfullOutcome_p->procedureCode;
-  message->criticality   = unSuccessfullOutcome_p->criticality;
+  switch(pdu->choice.unsuccessfulOutcome->procedureCode) {
+    // case F1AP_ProcedureCode_id_F1Setup:
+    //   res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
+    //   message_id = F1AP_F1_SETUP_LOG;
+    //   message_p = itti_alloc_new_message_sized(TASK_F1AP, message_id, res.result.encoded + sizeof (IttiMsgText));
+    //   message_p->ittiMsg.f1ap_f1_setup_log.size = res.result.encoded;
+    //   memcpy(&message_p->ittiMsg.f1ap_f1_setup_log.text, res.buffer, res.result.encoded);
+    //   itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
+    //   free(res.buffer);
+    //   break;
 
-  switch(unSuccessfullOutcome_p->procedureCode) {
-  case F1ap_ProcedureCode_id_F1Setup:
-    return f1ap_decode_f1ap_f1setupfailureies(
-             &message->msg.f1ap_F1SetupFailureIEs, &unSuccessfullOutcome_p->value);
-
-  default:
-    F1AP_ERROR("Unknown procedure ID (%d) for unsuccessfull outcome message\n",
-               (int)unSuccessfullOutcome_p->procedureCode);
-    break;
+    default:
+      // F1AP_ERROR("Unknown procedure ID (%d) for unsuccessfull outcome message\n",
+      //            (int)pdu->choice.unsuccessfulOutcome->procedureCode);
+    printf("Unknown procedure ID (%d) for unsuccessfull outcome message\n",
+                 (int)pdu->choice.unsuccessfulOutcome->procedureCode);
+      return -1;
   }
 
-  return ret;
+  return 0;
 }
 
-int f1ap_decode_pdu(f1ap_message *message, const uint8_t * const buffer,
+int f1ap_decode_pdu(F1AP_F1AP_PDU_t *pdu, const uint8_t *const buffer,
                         const uint32_t length)
 {
-  F1AP_PDU_t  pdu;
-  F1AP_PDU_t *pdu_p = &pdu;
   asn_dec_rval_t dec_ret;
 
   DevAssert(buffer != NULL);
 
-  memset((void *)pdu_p, 0, sizeof(F1AP_PDU_t));
-
   dec_ret = aper_decode(NULL,
-                        &asn_DEF_F1AP_PDU,
-                        (void **)&pdu_p,
+                        &asn_DEF_F1AP_F1AP_PDU,
+                        (void **)&pdu,
                         buffer,
                         length,
                         0,
                         0);
 
+  //xer_fprint(stdout, &asn_DEF_F1AP_F1AP_PDU, pdu_p);
+
   if (dec_ret.code != RC_OK) {
-    F1AP_ERROR("Failed to decode pdu\n");
+    //F1AP_ERROR("Failed to decode pdu\n");
+    printf("Failed to decode pdu\n");
     return -1;
   }
 
-  message->direction = pdu_p->present;
+  switch(pdu->present) {
+    case F1AP_F1AP_PDU_PR_initiatingMessage:
+      return f1ap_eNB_decode_initiating_message(pdu);
 
-  switch(pdu_p->present) {
-  case F1AP_F1AP_PDU_PR_initiatingMessage:
-    return f1ap_decode_initiating_message(message,
-           &pdu_p->choice.initiatingMessage);
+    case F1AP_F1AP_PDU_PR_successfulOutcome:
+      return f1ap_eNB_decode_successful_outcome(pdu);
 
-  case F1AP_F1AP_PDU_PR_successfulOutcome:
-    return f1ap_decode_successful_outcome(message,
-           &pdu_p->choice.successfulOutcome);
+    case F1AP_F1AP_PDU_PR_unsuccessfulOutcome:
+      return f1ap_eNB_decode_unsuccessful_outcome(pdu);
 
-  case F1AP_F1AP_PDU_PR_unsuccessfulOutcome:
-    return f1ap_decode_unsuccessful_outcome(message,
-           &pdu_p->choice.unsuccessfulOutcome);
-
-  default:
-    F1AP_DEBUG("Unknown presence (%d) or not implemented\n", (int)pdu_p->present);
-    break;
+    default:
+      //F1AP_DEBUG("Unknown presence (%d) or not implemented\n", (int)pdu->present);
+      printf("Unknown presence (%d) or not implemented\n", (int)pdu->present);
+      break;
   }
+
 
   return -1;
 }

@@ -30,13 +30,10 @@
  * \warning
  */
 
-#include <stdint.h>
-#include "f1ap_ies_defs.h"
+#ifndef F1AP_ENB_ENCODER_H_
+#define F1AP_ENB_ENCODER_H_
 
-#ifndef F1AP_DECODER_H_
-#define F1AP_DECODER_H_
+int f1ap_eNB_encode_pdu(F1AP_F1AP_PDU_t *pdu, uint8_t **buffer, uint32_t *len)
+__attribute__ ((warn_unused_result));
 
-int f1ap_decode_pdu(f1ap_message *message, const uint8_t * const buffer,
-                        const uint32_t length) __attribute__ ((warn_unused_result));
-
-#endif /* F1AP_DECODER_H_ */
+#endif /* F1AP_ENB_ENCODER_H_ */

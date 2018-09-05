@@ -323,7 +323,9 @@ set (RRC_FULL_DIR ${asn1_generated_dir}/RRC_${RRC_ASN1_VERSION})
 message("calling asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}")
 execute_process(COMMAND mkdir -p ${RRC_FULL_DIR}
                 COMMAND env asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}
-                RESULT_VARIABLE ret)
+                RESULT_VARIABLE ret
+                OUTPUT_QUIET
+                ERROR_QUIET)
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${ret}: error")
 endif (NOT ${ret} STREQUAL 0)
@@ -384,7 +386,10 @@ set(S1AP_C_DIR ${asn1_generated_dir}/S1AP_${S1AP_RELEASE})
 message("calling ASN1C_PREFIX=S1AP_ asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${S1AP_C_DIR} ${S1AP_ASN_DIR}/${S1AP_ASN_FILES}")
 execute_process(COMMAND mkdir -p ${S1AP_C_DIR}
                 COMMAND env "ASN1C_PREFIX=S1AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${S1AP_C_DIR} ${S1AP_ASN_DIR}/${S1AP_ASN_FILES}
-                RESULT_VARIABLE ret)
+                RESULT_VARIABLE ret
+                OUTPUT_QUIET
+                ERROR_QUIET)
+
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${ret}: error")
 endif (NOT ${ret} STREQUAL 0)
@@ -451,7 +456,9 @@ set(X2AP_C_DIR ${asn1_generated_dir}/X2AP_${X2AP_RELEASE})
 message("calling ASN1C_PREFIX=X2AP_ asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}")
 execute_process(COMMAND mkdir -p ${X2AP_C_DIR}
                 COMMAND env "ASN1C_PREFIX=X2AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
-                RESULT_VARIABLE ret)
+                RESULT_VARIABLE ret
+                OUTPUT_QUIET
+                ERROR_QUIET)
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${ret}: error")
 endif (NOT ${ret} STREQUAL 0)
@@ -498,10 +505,13 @@ set(F1AP_ASN_FILES
   )
 
 set(F1AP_C_DIR ${asn1_generated_dir}/F1AP_${ASN1RELDIR})
-set(ENV{ASN1C_PREFIX} F1AP_)
-execute_process(COMMAND ${asn1c_call} ${F1AP_C_DIR} ${F1AP_ASN_FILES}
-                RESULT_VARIABLE reti)
-unset(ENV{ASN1C_PREFIX})
+message("calling ASN1C_PREFIX=F1AP_ asn1c -gen-PER -fcompound-names -no-gen-example -findirect-choice -fno-include-deps -D ${F1AP_C_DIR} ${F1AP_ASN_FILES}")
+execute_process(COMMAND mkdir -p ${F1AP_C_DIR}
+                COMMAND env "ASN1C_PREFIX=F1AP_" asn1c -gen-PER -fcompound-names -no-gen-example -findirect-choice -fno-include-deps -D ${F1AP_C_DIR} ${F1AP_ASN_FILES}
+                RESULT_VARIABLE ret
+                OUTPUT_QUIET
+                ERROR_QUIET)
+
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${asn1c_call}: error")
 endif (NOT ${ret} STREQUAL 0)
@@ -533,6 +543,8 @@ add_library(F1AP
   #${F1AP_DIR}/test.c
   ${F1AP_DIR}/DU_F1AP.c
   ${F1AP_DIR}/CU_F1AP.c
+  ${F1AP_DIR}/f1ap_decoder.c
+  ${F1AP_DIR}/f1ap_handlers.c
   ${F1AP_DIR}/sctp_du.c
   ${F1AP_DIR}/sctp_cu.c
   )
@@ -540,21 +552,25 @@ add_library(F1AP
 add_executable(test_f1ap_du
   ${F1AP_DIR}/test_f1ap_du.c
   ${F1AP_DIR}/DU_F1AP.c
+  ${F1AP_DIR}/f1ap_decoder.c
+  ${F1AP_DIR}/f1ap_handlers.c
   ${F1AP_DIR}/sctp_du.c
   )
 
 target_link_libraries(test_f1ap_du
-  -Wl,--start-group F1AP_LIB sctp pthread -Wl,--end-group
+  -Wl,--start-group F1AP_LIB ${T_LIB} sctp pthread -Wl,--end-group
   )
 
 add_executable(test_f1ap_cu
   ${F1AP_DIR}/test_f1ap_cu.c
   ${F1AP_DIR}/CU_F1AP.c
+  ${F1AP_DIR}/f1ap_decoder.c
+  ${F1AP_DIR}/f1ap_handlers.c
   ${F1AP_DIR}/sctp_cu.c
   )
 
 target_link_libraries(test_f1ap_cu
-  -Wl,--start-group F1AP_LIB sctp pthread -Wl,--end-group
+  -Wl,--start-group F1AP_LIB ${T_LIB} sctp pthread -Wl,--end-group
   )
 
 # Hardware dependant options

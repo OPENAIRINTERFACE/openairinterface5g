@@ -33,8 +33,6 @@
 #ifndef F1AP_HANDLERS_H_
 #define F1AP_HANDLERS_H_
 
-void f1ap_handle_f1_setup_message(f1ap_eNB_mme_data_t *mme_desc_p, int sctp_shutdown);
-
 int f1ap_handle_message(uint32_t assoc_id, int32_t stream,
                             const uint8_t * const data, const uint32_t data_length);
 
