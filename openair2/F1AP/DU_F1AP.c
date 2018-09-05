@@ -93,7 +93,7 @@ uint8_t F1AP_get_UE_identifier(module_id_t enb_mod_idP, int CC_idP, int UE_id) {
 
 // ==============================================================================
 
-void F1AP_DU_task() {
+void F1AP_DU_task(void) {
   printf("Start F1AP DU task!\n");
 
   sctp_du_init();
@@ -116,7 +116,7 @@ void F1AP_DU_task() {
 
   // } // while
 
-  return NULL;
+  return;
 }
 
 // ==============================================================================
@@ -136,7 +136,6 @@ void DU_send_F1_SETUP_REQUEST(module_id_t enb_mod_idP, module_id_t du_mod_idP) {
 
   uint8_t  *buffer;
   uint32_t  len;
-  int       ret = 0;
   int       i = 0;
 
   // for test
@@ -607,8 +606,6 @@ void DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(
 
   uint8_t  *buffer;
   uint32_t  len;
-  int       ret = 0;
-  int       i = 0;
 
   // for test
   f1ap_info_t f1ap_info;
@@ -700,15 +697,13 @@ void DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(
 }
 
 //void DU_send_UL_RRC_MESSAGE_TRANSFER(F1AP_ULRRCMessageTransfer_t *ULRRCMessageTransfer) {
-void DU_send_UL_RRC_MESSAGE_TRANSFER() {
+void DU_send_UL_RRC_MESSAGE_TRANSFER(void) {
   F1AP_F1AP_PDU_t                pdu;
   F1AP_ULRRCMessageTransfer_t    *out;
   F1AP_ULRRCMessageTransferIEs_t *ie;
 
   uint8_t  *buffer;
   uint32_t  len;
-  int       ret = 0;
-  int       i = 0;
 
   /* Create */
   /* 0. Message Type */
@@ -786,7 +781,6 @@ void DU_send_gNB_DU_CONFIGURATION_UPDATE(module_id_t enb_mod_idP, module_id_t du
 
   uint8_t  *buffer;
   uint32_t  len;
-  int       ret = 0;
   int       i = 0;
 
   // for test
@@ -1263,14 +1257,13 @@ void DU_handle_UE_CONTEXT_SETUP_REQUEST(F1AP_UEContextSetupRequest_t *UEContextS
 }
 
 //void DU_send_UE_CONTEXT_SETUP_RESPONSE(F1AP_UEContextSetupResponse_t *UEContextSetupResponse) {
-void DU_send_UE_CONTEXT_SETUP_RESPONSE() {
+void DU_send_UE_CONTEXT_SETUP_RESPONSE(void) {
   F1AP_F1AP_PDU_t                  pdu;
   F1AP_UEContextSetupResponse_t    *out;
   F1AP_UEContextSetupResponseIEs_t *ie;
 
   uint8_t  *buffer;
   uint32_t  len;
-  int       ret = 0;
   int       i = 0;
 
   f1ap_info_t f1ap_info;
@@ -1533,7 +1526,7 @@ void DU_send_UE_CONTEXT_SETUP_RESPONSE() {
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     printf("Failed to encode F1 setup request\n");
-    return -1;
+    return;
   }
 
   printf("\n");
@@ -1569,14 +1562,13 @@ void DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(F1AP_UEContextModificationRequest
 }
 
 //void DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(F1AP_UEContextModificationResponse_t *UEContextModificationResponse) {
-void DU_send_UE_CONTEXT_MODIFICATION_RESPONSE() {
+void DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(void) {
   F1AP_F1AP_PDU_t                        pdu;
   F1AP_UEContextModificationResponse_t    *out;
   F1AP_UEContextModificationResponseIEs_t *ie;
 
   uint8_t  *buffer;
   uint32_t  len;
-  int       ret = 0;
   int       i = 0;
 
   f1ap_info_t f1ap_info;
@@ -1922,7 +1914,7 @@ void DU_send_UE_CONTEXT_MODIFICATION_RESPONSE() {
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     printf("Failed to encode F1 setup request\n");
-    return -1;
+    return;
   }
 
   printf("\n");

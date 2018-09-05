@@ -83,7 +83,7 @@ f1ap_message_decoded_callback messages_callback[][3] = {
   { 0, 0, 0 }, /* PWSFailureIndication */
 };
 
-char *f1ap_direction2String(int f1ap_dir) {
+const char *f1ap_direction2String(int f1ap_dir) {
 static const char *f1ap_direction_String[] = {
   "", /* Nothing */
   "Initiating message", /* initiating message */
