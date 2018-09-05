@@ -40,6 +40,7 @@
 #include <pthread.h>
 #include <unistd.h> // for close
 #include <stdlib.h>
+#include "f1ap_handlers.h"
 
 #define MAX_BUFFER  1024
 
@@ -81,7 +82,10 @@ void *recv_func(void *cfd) {
 
         printf("\n");
 
-        f1ap_decode_pdu(NULL , buffer_recv, sizeof(buffer_recv));
+        f1ap_handle_message(1/*sctp_data_ind->assoc_id*/, 1/*sctp_data_ind->stream*/,
+                            buffer_recv, sizeof(buffer_recv));
+
+        //f1ap_decode_pdu(NULL , buffer_recv, sizeof(buffer_recv));
     }
     printf("ret = %d\n", ret);
     close( *(int*)cfd );

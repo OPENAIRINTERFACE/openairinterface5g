@@ -52,7 +52,7 @@ typedef struct f1ap_info {
   
   /* This is the optional name provided by the MME */
   char *GNB_CU_Name;
-  net_ip_address_t    mme_net_ip_address; // useful for joining assoc_id and ip address of packets
+  f1ap_net_ip_address_t    mme_net_ip_address; // useful for joining assoc_id and ip address of packets
 
   
   /* Number of input/ouput streams */
@@ -87,25 +87,38 @@ uint8_t F1AP_get_next_transaction_identifier(module_id_t enb_mod_idP, module_id_
 void F1AP_CU_task() {
   printf("Start F1AP CU task!\n");
 
-  //sctp_cu_init();
+  sctp_cu_init();
+
+  // MessageDef *received_msg = NULL;
+  // int         result;
+
+  // F1AP_DEBUG("Starting F1AP layer\n");
+
+  // f1ap_eNB_prepare_internal_data();
+
+  // itti_mark_task_ready(TASK_F1AP);
 
   // while (1) {
+  // switch (ITTI_MSG_ID(received_msg)) {
+  //   case F1AP_SETUP_RESP:
+  //     CU_send_F1_SETUP_RESPONSE();
+  //     break;
+  //   case F1AP_INITIAL_UL_RRC_MESSAGE:
+  //     CU_handle_UL_INITIAL_RRC_MESSAGE_TRANSFER();
+  //     break;
+  //   case F1AP_DL_RRC_MESSAGE:
+  //     CU_send_DL_RRC_MESSAGE_TRANSFER();  // SRBID and RRCContainer get issue when decode.
+  //     break;
+  //       //CU_send_UE_CONTEXT_SETUP_REQUEST();
+  //   case F1AP_UE_CONTEXT_MODIFICATION_REQ:
+  //       CU_send_UE_CONTEXT_MODIFICATION_REQUEST();
+  //     break;
+  //       //CU_send_gNB_CU_CONFIGURATION_UPDATE((module_id_t)1, (module_id_t)2); // some problem found
+  //        break;
 
-  //   switch () {
+  //      default:
 
-       //case F1AP_ProcedureCode_id_F1Setup:
-        CU_send_F1_SETUP_RESPONSE();
-        //case F1AP_ProcedureCode_id_InitialULRRCMessageTransfer:
-        //  CU_handle_UL_INITIAL_RRC_MESSAGE_TRANSFER ();
-        //CU_send_DL_RRC_MESSAGE_TRANSFER();  // SRBID and RRCContainer get issue when decode.
-        //CU_send_UE_CONTEXT_SETUP_REQUEST();
-        //CU_send_UE_CONTEXT_MODIFICATION_REQUEST();
-        //CU_send_gNB_CU_CONFIGURATION_UPDATE((module_id_t)1, (module_id_t)2); // some problem found
-  //       break;
-
-  //     default:
-
-  //   } // switch
+  // } // switch
 
   // } // while
 
@@ -321,59 +334,59 @@ int f1ap_encode_pdu(F1AP_F1AP_PDU_t *pdu, uint8_t **buffer, uint32_t *length) {
 }
 
 
-int f1ap_decode_pdu(F1AP_F1AP_PDU_t *message, uint8_t *buffer, uint32_t length) {
+// int f1ap_decode_pdu(F1AP_F1AP_PDU_t *message, uint8_t *buffer, uint32_t length) {
 
-  //LOG_I(F1AP,"Entering main loop of DU F1AP pdu receiver\n");
-  F1AP_F1AP_PDU_t pdu;
-  F1AP_F1AP_PDU_t *pdu_p = &pdu;
-  asn_dec_rval_t dec_ret;
+//   //LOG_I(F1AP,"Entering main loop of DU F1AP pdu receiver\n");
+//   F1AP_F1AP_PDU_t pdu;
+//   F1AP_F1AP_PDU_t *pdu_p = &pdu;
+//   asn_dec_rval_t dec_ret;
   
-  DevAssert(buffer != NULL);
+//   DevAssert(buffer != NULL);
 
-  printf("buffer = \n");
-  int i_ret;
-  for (i_ret = 0; i_ret < length; i_ret++) {
-      printf("%x ", *(buffer+i_ret));
-  }
-  printf("\n");
+//   printf("buffer = \n");
+//   int i_ret;
+//   for (i_ret = 0; i_ret < length; i_ret++) {
+//       printf("%x ", *(buffer+i_ret));
+//   }
+//   printf("\n");
 
-  memset((void *)pdu_p, 0, sizeof(F1AP_F1AP_PDU_t));
+//   memset((void *)pdu_p, 0, sizeof(F1AP_F1AP_PDU_t));
   
 
-  dec_ret = aper_decode(NULL,
-                        &asn_DEF_F1AP_F1AP_PDU,
-                        (void **)&pdu_p,
-                        buffer,
-                        length,
-                        0,
-                        0);
+//   dec_ret = aper_decode(NULL,
+//                         &asn_DEF_F1AP_F1AP_PDU,
+//                         (void **)&pdu_p,
+//                         buffer,
+//                         length,
+//                         0,
+//                         0);
 
-  xer_fprint(stdout, &asn_DEF_F1AP_F1AP_PDU, pdu_p);
+//   xer_fprint(stdout, &asn_DEF_F1AP_F1AP_PDU, pdu_p);
 
-  printf("\n");
+//   printf("\n");
 
-  printf("dec_ret.code = %d \n", dec_ret.code);
+//   printf("dec_ret.code = %d \n", dec_ret.code);
 
-  AssertFatal(dec_ret.code == RC_OK,"Failed to decode pdu\n");
+//   AssertFatal(dec_ret.code == RC_OK,"Failed to decode pdu\n");
 
-  // switch(pdu_p->present) {
-  //   case F1AP_F1AP_PDU_PR_initiatingpdu:
-  //     return F1AP_DU_decode_initiating_pdu(&pdu_p->choice.initiatingpdu);
+//   // switch(pdu_p->present) {
+//   //   case F1AP_F1AP_PDU_PR_initiatingpdu:
+//   //     return F1AP_DU_decode_initiating_pdu(&pdu_p->choice.initiatingpdu);
       
-  //   case F1AP_F1AP_PDU_PR_successfulOutcome:
-  //     return F1AP_DU_decode_successful_outcome(&pdu_p->choice.successfulOutcome);
+//   //   case F1AP_F1AP_PDU_PR_successfulOutcome:
+//   //     return F1AP_DU_decode_successful_outcome(&pdu_p->choice.successfulOutcome);
       
-  //   case F1AP_F1AP_PDU_PR_unsuccessfulOutcome:
-  //     return F1AP_DU_decode_unsuccessful_outcome(&pdu_p->choice.unsuccessfulOutcome);
+//   //   case F1AP_F1AP_PDU_PR_unsuccessfulOutcome:
+//   //     return F1AP_DU_decode_unsuccessful_outcome(&pdu_p->choice.unsuccessfulOutcome);
       
-  //   default:
-  //     /*AssertFatal(1==0,"Unknown presence (%d) or not implemented\n", (int)pdu_p->present);*/
-  //     break;
-  // }
+//   //   default:
+//   //     /*AssertFatal(1==0,"Unknown presence (%d) or not implemented\n", (int)pdu_p->present);*/
+//   //     break;
+//   // }
   
-  //AssertFatal(1==0,"Shouldn't get here\n");
-  return -1;
-}
+//   //AssertFatal(1==0,"Shouldn't get here\n");
+//   return -1;
+// }
 
 void CU_send_F1_SETUP_FAILURE(F1AP_F1SetupFailure_t *F1SetupFailure) {
   AssertFatal(1==0,"Not implemented yet\n");
