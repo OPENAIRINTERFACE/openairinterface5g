@@ -288,7 +288,7 @@ extern "C" {
   void itti_terminate_tasks(task_id_t task_id) {
     // Sends Terminate signals to all tasks.
     itti_send_terminate_message (task_id);
-    pthread_exit (NULL);
+    usleep(100*1000); // Allow the tasks to receive the message before going returning to main thread
   }
 
   int itti_init(task_id_t task_max, thread_id_t thread_max, MessagesIds messages_id_max, const task_info_t *tasks_info,

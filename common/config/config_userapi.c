@@ -37,8 +37,8 @@
 #include <dlfcn.h>
 #include <arpa/inet.h>
 
+#include <platform_types.h>
 #include "config_userapi.h"
-extern void exit_fun(const char* s);  // lte-softmodem clean exit function
 
 
 configmodule_interface_t *config_get_if(void)

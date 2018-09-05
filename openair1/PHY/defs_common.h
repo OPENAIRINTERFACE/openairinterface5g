@@ -930,7 +930,6 @@ typedef enum {
 #endif
 
 
-void exit_fun(const char* s);
 
 #include "common/utils/LOG/log_extern.h"
 extern pthread_cond_t sync_cond;

@@ -141,7 +141,6 @@ static struct {
 
 extern double cpuf;
 
-void exit_fun(const char* s);
 
 void init_eNB(int,int);
 void stop_eNB(int nb_inst);
