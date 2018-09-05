@@ -124,7 +124,7 @@ typedef struct NR_BWP_PARMS {
 
 typedef struct {
   uint8_t reg_idx;
-  uint8_t start_sc_idx;
+  uint16_t start_sc_idx;
   uint8_t symb_idx;
 } nr_reg_t;
 

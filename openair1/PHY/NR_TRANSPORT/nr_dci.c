@@ -205,9 +205,8 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   }
 
   /// DCI payload processing
-  // CRC attachment + Scrambling + Channel coding + Rate matching
+    // CRC attachment + Scrambling + Channel coding + Rate matching
   uint32_t encoder_output[NR_MAX_DCI_SIZE_DWORD];
-  uint32_t scrambled_output[NR_MAX_DCI_SIZE_DWORD];
   uint16_t n_RNTI = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? ((pdcch_params.scrambling_id)?pdcch_params.rnti:0) : 0;
   uint16_t Nid = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? pdcch_params.scrambling_id : config.sch_config.physical_cell_id.value;
 #ifdef PDCCH_TEST_POLAR_TEMP_FIX
@@ -226,6 +225,9 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   printf("Encoded Payload: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
 		  encoder_output[0], encoder_output[1], encoder_output[2], encoder_output[3]);
 #endif
+
+  /// Scrambling
+  uint32_t scrambled_output[NR_MAX_DCI_SIZE_DWORD];
   nr_pdcch_scrambling(encoder_output, encoded_length, Nid, n_RNTI, scrambled_output);
 
     // QPSK modulation
