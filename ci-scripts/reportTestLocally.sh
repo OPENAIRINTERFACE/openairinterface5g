@@ -317,7 +317,7 @@ then
     echo "        <th>Statistics</th>" >> ./test_simulator_results.html
     echo "      </tr>" >> ./test_simulator_results.html
 
-    PING_TESTS=`ls $ARCHIVES_LOC/ping*txt`
+    PING_TESTS=`ls $ARCHIVES_LOC/*ping*txt`
     for PING_CASE in $PING_TESTS
     do
         echo "      <tr>" >> ./test_simulator_results.html
@@ -355,7 +355,7 @@ then
         echo "      </tr>" >> ./test_simulator_results.html
     done
 
-    IPERF_TESTS=`ls $ARCHIVES_LOC/iperf*client*txt`
+    IPERF_TESTS=`ls $ARCHIVES_LOC/*iperf*client*txt`
     for IPERF_CASE in $IPERF_TESTS
     do
         echo "      <tr>" >> ./test_simulator_results.html
@@ -384,8 +384,8 @@ then
         then
             echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
             SERVER_FILE=`echo $IPERF_CASE | sed -e "s#client#server#"`
-            FLOAT_EFF_BITRATE=`grep --color=never sec $SERVER_FILE | sed -e "s#^.*Bytes *##" -e "s#sec *.*#sec#" | awk 'BEGIN{s=0;n=0}{n++;if ($2 ~/Mbits/){a = $1 * 1000000}; s=s+a}END{br=s/n; printf "%.0f", br}'`
-            EFFECTIVE_BITRATE=`grep --color=never sec $SERVER_FILE | sed -e "s#^.*Bytes *##" -e "s#sec *.*#sec#" | awk 'BEGIN{s=0;n=0}{n++;if ($2 ~/Mbits/){a = $1 * 1000000}; s=s+a}END{br=s/n; if(br>1000000){printf "%.2f MBits/sec", br/1000000}}'`
+            FLOAT_EFF_BITRATE=`grep --color=never sec $SERVER_FILE | sed -e "s#^.*Bytes *##" -e "s#sec *.*#sec#" | awk 'BEGIN{s=0;n=0}{n++;if ($2 ~/Mbits/){a = $1 * 1000000};if ($2 ~/Kbits/){a = $1 * 1000};s=s+a}END{br=s/n; printf "%.0f", br}'`
+            EFFECTIVE_BITRATE=`grep --color=never sec $SERVER_FILE | sed -e "s#^.*Bytes *##" -e "s#sec *.*#sec#" | awk 'BEGIN{s=0;n=0}{n++;if ($2 ~/Mbits/){a = $1 * 1000000};if ($2 ~/Kbits/){a = $1 * 1000};s=s+a}END{br=s/n; if(br>1000000){printf "%.2f MBits/sec", br/1000000}}'`
             PERF=`echo "100 * $FLOAT_EFF_BITRATE / $FLOAT_REQ_BITRATE" | bc -l | awk '{printf "%.2f", $0}'`
             JITTER=`grep --color=never sec $SERVER_FILE | sed -e "s#^.*/sec *##" -e "s# *ms.*##" | awk 'BEGIN{s=0;n=0}{n++;s+=$1}END{jitter=s/n; printf "%.3f ms", jitter}'`
             PACKETLOSS_NOSIGN=`grep --color=never sec $SERVER_FILE | sed -e "s#^.*(##" -e "s#%.*##" | awk 'BEGIN{s=0;n=0}{n++;s+=$1}END{per=s/n; printf "%.1f", per}'`

@@ -70,6 +70,172 @@ function variant_usage {
     echo ""
 }
 
+function start_basic_sim_enb {
+    local LOC_VM_IP_ADDR=$2
+    local LOC_EPC_IP_ADDR=$3
+    local LOC_LOG_FILE=$4
+    local LOC_NB_RBS=$5
+    echo "cd /home/ubuntu/tmp" > $1
+    echo "echo \"sudo apt-get --yes --quiet install daemon \"" >> $1
+    echo "sudo apt-get --yes install daemon >> /home/ubuntu/tmp/cmake_targets/log/daemon-install.txt 2>&1" >> $1
+    echo "echo \"export ENODEB=1\"" >> $1
+    echo "export ENODEB=1" >> $1
+    echo "echo \"source oaienv\"" >> $1
+    echo "source oaienv" >> $1
+    echo "cd ci-scripts/conf_files/" >> $1
+    echo "cp lte-basic-sim.conf ci-lte-basic-sim.conf" >> $1
+    echo "sed -i -e 's#N_RB_DL.*=.*;#N_RB_DL                                         = $LOC_NB_RBS;#' -e 's#CI_MME_IP_ADDR#$LOC_EPC_IP_ADDR#' -e 's#CI_ENB_IP_ADDR#$LOC_VM_IP_ADDR#' ci-lte-basic-sim.conf" >> $1
+    echo "echo \"grep N_RB_DL ci-lte-basic-sim.conf\"" >> $1
+    echo "grep N_RB_DL ci-lte-basic-sim.conf | sed -e 's#N_RB_DL.*=#N_RB_DL =#'" >> $1
+    echo "echo \"cd /home/ubuntu/tmp/cmake_targets/basic_simulator/enb/\"" >> $1
+    echo "cd /home/ubuntu/tmp/cmake_targets/basic_simulator/enb/" >> $1
+    echo "echo \"./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-lte-basic-sim.conf\" > ./my-lte-softmodem-run.sh " >> $1
+    echo "chmod 775 ./my-lte-softmodem-run.sh" >> $1
+    echo "cat ./my-lte-softmodem-run.sh" >> $1
+    echo "sudo -E daemon --inherit --unsafe --name=enb_daemon --chdir=/home/ubuntu/tmp/cmake_targets/basic_simulator/enb -o /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ./my-lte-softmodem-run.sh" >> $1
+
+    ssh -o StrictHostKeyChecking=no ubuntu@$LOC_VM_IP_ADDR < $1
+    sleep 60
+    rm $1
+}
+
+function start_basic_sim_ue {
+    local LOC_UE_LOG_FILE=$3
+    local LOC_NB_RBS=$4
+    echo "echo \"cd /home/ubuntu/tmp/cmake_targets/basic_simulator/ue\"" > $1
+    echo "cd /home/ubuntu/tmp/cmake_targets/basic_simulator/ue" > $1
+    echo "echo \"./lte-uesoftmodem -C 2680000000 -r $LOC_NB_RBS --ue-rxgain 140\" > ./my-lte-uesoftmodem-run.sh" >> $1
+    echo "chmod 775 ./my-lte-uesoftmodem-run.sh" >> $1
+    echo "cat ./my-lte-uesoftmodem-run.sh" >> $1
+    echo "sudo -E daemon --inherit --unsafe --name=ue_daemon --chdir=/home/ubuntu/tmp/cmake_targets/basic_simulator/ue -o /home/ubuntu/tmp/cmake_targets/log/$LOC_UE_LOG_FILE ./my-lte-uesoftmodem-run.sh" >> $1
+
+    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+    rm $1
+
+    local i="0"
+    echo "ifconfig oip1 | egrep -c \"inet addr\"" > $1
+    while [ $i -lt 40 ]
+    do
+        sleep 5
+        CONNECTED=`ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1`
+        if [ $CONNECTED -eq 1 ]
+        then
+            i="100"
+        else
+            i=$[$i+1]
+        fi
+    done
+    rm $1
+    if [ $i -lt 50 ]
+    then
+        UE_SYNC=0
+    else
+        UE_SYNC=1
+    fi
+}
+
+function get_ue_ip_addr {
+    echo "ifconfig oip1 | egrep \"inet addr\" | sed -e 's#^.*inet addr:##' -e 's#  P-t-P:.*\$##'" > $1
+    UE_IP_ADDR=`ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1`
+    echo "UE IP Address for EPC is : $UE_IP_ADDR"
+    rm $1
+}
+
+function ping_ue_ip_addr {
+    echo "echo \"ping -c 20 $3\"" > $1
+    echo "echo \"COMMAND IS: ping -c 20 $3\" > $4" > $1
+    echo "ping -c 20 $UE_IP_ADDR | tee -a $4" >> $1
+    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+    rm -f $1
+}
+
+function check_ping_result {
+    local LOC_PING_FILE=$1
+    local LOC_NB_PINGS=$2
+    if [ -f $LOC_PING_FILE ]
+    then
+        local FILE_COMPLETE=`egrep -c "ping statistics" $LOC_PING_FILE`
+        if [ $FILE_COMPLETE -eq 0 ]
+        then
+            PING_STATUS=-1
+        else
+            local ALL_PACKET_RECEIVED=`egrep -c "$LOC_NB_PINGS received" $LOC_PING_FILE`
+            if [ $ALL_PACKET_RECEIVED -eq 1 ]
+            then
+                echo "got all ping packets"
+            else
+                PING_STATUS=-1
+            fi
+        fi
+    else
+        PING_STATUS=-1
+    fi
+}
+
+function iperf_dl {
+    local REQ_BANDWIDTH=$5
+    local BASE_LOG_FILE=$6
+    echo "echo \"iperf -u -s -i 1\"" > $1
+    echo "echo \"COMMAND IS: iperf -u -s -i 1\" > tmp/cmake_targets/log/${BASE_LOG_FILE}_server.txt" > $1
+    echo "nohup iperf -u -s -i 1 >> tmp/cmake_targets/log/${BASE_LOG_FILE}_server.txt &" >> $1
+    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+    rm $1
+
+    echo "echo \"iperf -c $UE_IP_ADDR -u -t 30 -b ${REQ_BANDWIDTH}M -i 1\"" > $3
+    echo "echo \"COMMAND IS: iperf -c $UE_IP_ADDR -u -t 30 -b ${REQ_BANDWIDTH}M -i 1\" > ${BASE_LOG_FILE}_client.txt" > $3
+    echo "iperf -c $UE_IP_ADDR -u -t 30 -b ${REQ_BANDWIDTH}M -i 1 | tee -a ${BASE_LOG_FILE}_client.txt" >> $3
+    ssh -o StrictHostKeyChecking=no ubuntu@$4 < $3
+    rm -f $3
+
+    echo "killall --signal SIGKILL iperf" >> $1
+    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+    rm $1
+}
+
+function iperf_ul {
+    local REQ_BANDWIDTH=$5
+    local BASE_LOG_FILE=$6
+    echo "echo \"iperf -u -s -i 1\"" > $3
+    echo "echo \"COMMAND IS: iperf -u -s -i 1\" > ${BASE_LOG_FILE}_server.txt" > $3
+    echo "nohup iperf -u -s -i 1 >> ${BASE_LOG_FILE}_server.txt &" >> $3
+    ssh -o StrictHostKeyChecking=no ubuntu@$4 < $3
+    rm $3
+
+    echo "echo \"iperf -c $REAL_EPC_IP_ADDR -u -t 30 -b ${REQ_BANDWIDTH}M -i 1\"" > $1
+    echo "echo \"COMMAND IS: iperf -c $REAL_EPC_IP_ADDR -u -t 30 -b ${REQ_BANDWIDTH}M -i 1\" > /home/ubuntu/tmp/cmake_targets/log/${BASE_LOG_FILE}_client.txt" > $1
+    echo "iperf -c $REAL_EPC_IP_ADDR -u -t 30 -b ${REQ_BANDWIDTH}M -i 1 | tee -a /home/ubuntu/tmp/cmake_targets/log/${BASE_LOG_FILE}_client.txt" >> $1
+    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+    rm -f $1
+
+    echo "killall --signal SIGKILL iperf" >> $3
+    ssh -o StrictHostKeyChecking=no ubuntu@$4 < $3
+    rm $3
+}
+
+function check_iperf {
+    local LOC_BASE_LOG=$1
+    local LOC_REQ_BW=$2
+    local LOC_REQ_BW_MINUS_ONE=`echo "$LOC_REQ_BW - 1" | bc -l`
+    if [ -f ${LOC_BASE_LOG}_client.txt ]
+    then
+        local FILE_COMPLETE=`egrep -c "Server Report" ${LOC_BASE_LOG}_client.txt`
+        if [ $FILE_COMPLETE -eq 0 ]
+        then
+            IPERF_STATUS=-1
+        else
+            local EFFECTIVE_BANDWIDTH=`tail -n3 ${LOC_BASE_LOG}_client.txt | egrep "Mbits/sec" | sed -e "s#^.*MBytes *##" -e "s#sec.*#sec#"`
+            if [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW}.*Mbits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW_MINUS_ONE}.*Mbits.* ]]
+            then
+                echo "got requested DL bandwidth: $EFFECTIVE_BANDWIDTH"
+            else
+                IPERF_STATUS=-1
+            fi
+        fi
+    else
+        IPERF_STATUS=-1
+    fi
+}
+
 function terminate_enb_ue_basic_sim {
     echo "echo \"sudo daemon --name=enb_daemon --stop\"" > $1
     echo "sudo daemon --name=enb_daemon --stop" >> $1
@@ -341,6 +507,8 @@ fi
 
 if [[ "$RUN_OPTIONS" == "complex" ]] && [[ $VM_NAME =~ .*-basic-sim.* ]]
 then
+    PING_STATUS=0
+    IPERF_STATUS=0
     if [ -d $ARCHIVES_LOC ]
     then
         rm -Rf $ARCHIVES_LOC
@@ -491,126 +659,166 @@ then
     fi
 
     echo "############################################################"
-    echo "Starting the eNB"
+    echo "Starting the eNB at 5MHz"
     echo "############################################################"
-    echo "cd /home/ubuntu/tmp" > $VM_CMDS
-    echo "echo \"sudo apt-get --yes --quiet install daemon \"" >> $VM_CMDS
-    echo "sudo apt-get --yes install daemon >> /home/ubuntu/tmp/cmake_targets/log/daemon-install.txt 2>&1" >> $VM_CMDS
-    echo "echo \"export ENODEB=1\"" >> $VM_CMDS
-    echo "export ENODEB=1" >> $VM_CMDS
-    echo "echo \"source oaienv\"" >> $VM_CMDS
-    echo "source oaienv" >> $VM_CMDS
-    echo "cd ci-scripts/conf_files/" >> $VM_CMDS
-    echo "cp lte-basic-sim.conf ci-lte-basic-sim.conf" >> $VM_CMDS
-    echo "sed -i -e 's#CI_MME_IP_ADDR#$EPC_VM_IP_ADDR#' -e 's#CI_ENB_IP_ADDR#$VM_IP_ADDR#' ci-lte-basic-sim.conf" >> $VM_CMDS
-    echo "echo \"cd /home/ubuntu/tmp/cmake_targets/basic_simulator/enb/\"" >> $VM_CMDS
-    echo "cd /home/ubuntu/tmp/cmake_targets/basic_simulator/enb/" >> $VM_CMDS
-    echo "echo \"./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-lte-basic-sim.conf\" > ./my-lte-softmodem-run.sh " >> $VM_CMDS
-    echo "chmod 775 ./my-lte-softmodem-run.sh" >> $VM_CMDS
-    echo "cat ./my-lte-softmodem-run.sh" >> $VM_CMDS
-    echo "sudo -E daemon --inherit --unsafe --name=enb_daemon --chdir=/home/ubuntu/tmp/cmake_targets/basic_simulator/enb -o /home/ubuntu/tmp/cmake_targets/log/enb.log ./my-lte-softmodem-run.sh" >> $VM_CMDS
-
-    ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
-    sleep 60
+    CURRENT_ENB_LOG_FILE=enb_05MHz.log
+    start_basic_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 25
 
     echo "############################################################"
-    echo "Starting the UE"
+    echo "Starting the UE at 5MHz"
     echo "############################################################"
-    echo "echo \"cd /home/ubuntu/tmp/cmake_targets/basic_simulator/ue\"" > $VM_CMDS
-    echo "cd /home/ubuntu/tmp/cmake_targets/basic_simulator/ue" > $VM_CMDS
-    echo "echo \"./lte-uesoftmodem -C 2680000000 -r 25 --ue-rxgain 140\" > ./my-lte-uesoftmodem-run.sh" >> $VM_CMDS
-    echo "chmod 775 ./my-lte-uesoftmodem-run.sh" >> $VM_CMDS
-    echo "cat ./my-lte-uesoftmodem-run.sh" >> $VM_CMDS
-    echo "sudo -E daemon --inherit --unsafe --name=ue_daemon --chdir=/home/ubuntu/tmp/cmake_targets/basic_simulator/ue -o /home/ubuntu/tmp/cmake_targets/log/ue.log ./my-lte-uesoftmodem-run.sh" >> $VM_CMDS
-
-    ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
-    rm $VM_CMDS
-    i="0"
-    echo "ifconfig oip1 | egrep -c \"inet addr\"" > $VM_CMDS
-    while [ $i -lt 40 ]
-    do
-        sleep 5
-        CONNECTED=`ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS`
-        if [ $CONNECTED -eq 1 ]
-        then
-            i="100"
-        else
-            i=$[$i+1]
-        fi
-    done
-    rm $VM_CMDS
-    if [ $i -lt 50 ]
+    CURRENT_UE_LOG_FILE=ue_05MHz.log
+    start_basic_sim_ue $VM_CMDS $VM_IP_ADDR $CURRENT_UE_LOG_FILE 25
+    if [ $UE_SYNC -eq 0 ]
     then
         echo "Problem w/ eNB and UE not syncing"
         terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
-        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/enb.log $ARCHIVES_LOC
-        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/ue.log $ARCHIVES_LOC
+        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
         terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
         exit -1
     fi
-    echo "ifconfig oip1 | egrep \"inet addr\" | sed -e 's#^.*inet addr:##' -e 's#  P-t-P:.*\$##'" > $VM_CMDS
-    UE_IP_ADDR=`ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS`
-    echo "UE IP Address for EPC is : $UE_IP_ADDR"
-    rm $VM_CMDS
+    get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
 
     echo "############################################################"
     echo "Pinging the UE"
     echo "############################################################"
-    echo "echo \"ping -c 20 $UE_IP_ADDR\"" > $EPC_VM_CMDS
-    echo "echo \"COMMAND IS: ping -c 20 $UE_IP_ADDR\" > ping_ue.txt" > $EPC_VM_CMDS
-    echo "ping -c 20 $UE_IP_ADDR | tee -a ping_ue.txt" >> $EPC_VM_CMDS
-    ssh -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR < $EPC_VM_CMDS
-    rm -f $EPC_VM_CMDS
-    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/ping_ue.txt $ARCHIVES_LOC
+    ping_ue_ip_addr $EPC_VM_CMDS $EPC_VM_IP_ADDR $UE_IP_ADDR 05MHz_ping_ue.txt
+    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/05MHz_ping_ue.txt $ARCHIVES_LOC
+    check_ping_result $ARCHIVES_LOC/05MHz_ping_ue.txt 20
 
     echo "############################################################"
     echo "Iperf DL"
     echo "############################################################"
-    echo "echo \"iperf -u -s -i 1\"" > $VM_CMDS
-    echo "echo \"COMMAND IS: iperf -u -s -i 1\" > tmp/cmake_targets/log/iperf_dl_server.txt" > $VM_CMDS
-    echo "nohup iperf -u -s -i 1 >> tmp/cmake_targets/log/iperf_dl_server.txt &" >> $VM_CMDS
-    ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
-    rm $VM_CMDS
-
-    echo "echo \"iperf -c $UE_IP_ADDR -u -t 30 -b 15M -i 1\"" > $EPC_VM_CMDS
-    echo "echo \"COMMAND IS: iperf -c $UE_IP_ADDR -u -t 30 -b 15M -i 1\" > iperf_dl_client.txt" > $EPC_VM_CMDS
-    echo "iperf -c $UE_IP_ADDR -u -t 30 -b 15M -i 1 | tee -a iperf_dl_client.txt" >> $EPC_VM_CMDS
-    ssh -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR < $EPC_VM_CMDS
-    rm -f $EPC_VM_CMDS
-
-    echo "killall --signal SIGKILL iperf" >> $VM_CMDS
-    ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
-    rm $VM_CMDS
-    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/iperf_dl_client.txt $ARCHIVES_LOC
-    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/iperf_dl_server.txt $ARCHIVES_LOC
+    CURR_IPERF_LOG_BASE=05MHz_iperf_dl
+    iperf_dl $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 15 $CURR_IPERF_LOG_BASE
+    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_client.txt $ARCHIVES_LOC
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/${CURR_IPERF_LOG_BASE}_server.txt $ARCHIVES_LOC
+    check_iperf $ARCHIVES_LOC/$CURR_IPERF_LOG_BASE 15
 
     echo "############################################################"
     echo "Iperf UL"
     echo "############################################################"
-    echo "echo \"iperf -u -s -i 1\"" > $EPC_VM_CMDS
-    echo "echo \"COMMAND IS: iperf -u -s -i 1\" > iperf_ul_server.txt" > $EPC_VM_CMDS
-    echo "nohup iperf -u -s -i 1 >> iperf_ul_server.txt &" >> $EPC_VM_CMDS
-    ssh -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR < $EPC_VM_CMDS
-    rm $EPC_VM_CMDS
-
-    echo "echo \"iperf -c $REAL_EPC_IP_ADDR -u -t 30 -b 2M -i 1\"" > $VM_CMDS
-    echo "echo \"COMMAND IS: iperf -c $REAL_EPC_IP_ADDR -u -t 30 -b 2M -i 1\" > /home/ubuntu/tmp/cmake_targets/log/iperf_ul_client.txt" > $VM_CMDS
-    echo "iperf -c $REAL_EPC_IP_ADDR -u -t 30 -b 2M -i 1 | tee -a /home/ubuntu/tmp/cmake_targets/log/iperf_ul_client.txt" >> $VM_CMDS
-    ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
-    rm -f $VM_CMDS
-
-    echo "killall --signal SIGKILL iperf" >> $EPC_VM_CMDS
-    ssh -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR < $EPC_VM_CMDS
-    rm $EPC_VM_CMDS
-    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/iperf_ul_server.txt $ARCHIVES_LOC
-    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/iperf_ul_client.txt $ARCHIVES_LOC
+    CURR_IPERF_LOG_BASE=05MHz_iperf_ul
+    iperf_ul $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 2 $CURR_IPERF_LOG_BASE
+    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_server.txt $ARCHIVES_LOC
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/${CURR_IPERF_LOG_BASE}_client.txt $ARCHIVES_LOC
+    check_iperf $ARCHIVES_LOC/$CURR_IPERF_LOG_BASE 2
 
     echo "############################################################"
     echo "Terminate enb/ue simulators"
     echo "############################################################"
     terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
-    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/enb.log $ARCHIVES_LOC
-    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/ue.log $ARCHIVES_LOC
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+
+    echo "############################################################"
+    echo "Starting the eNB at 10MHz"
+    echo "############################################################"
+    CURRENT_ENB_LOG_FILE=enb_10MHz.log
+    start_basic_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 50
+
+    echo "############################################################"
+    echo "Starting the UE at 10MHz"
+    echo "############################################################"
+    CURRENT_UE_LOG_FILE=ue_10MHz.log
+    start_basic_sim_ue $VM_CMDS $VM_IP_ADDR $CURRENT_UE_LOG_FILE 50
+    if [ $UE_SYNC -eq 0 ]
+    then
+        echo "Problem w/ eNB and UE not syncing"
+        terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+        terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+        exit -1
+    fi
+    get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
+
+    echo "############################################################"
+    echo "Pinging the UE"
+    echo "############################################################"
+    ping_ue_ip_addr $EPC_VM_CMDS $EPC_VM_IP_ADDR $UE_IP_ADDR 10MHz_ping_ue.txt
+    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/10MHz_ping_ue.txt $ARCHIVES_LOC
+    check_ping_result $ARCHIVES_LOC/10MHz_ping_ue.txt 20
+
+    echo "############################################################"
+    echo "Iperf DL"
+    echo "############################################################"
+    CURR_IPERF_LOG_BASE=10MHz_iperf_dl
+    iperf_dl $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 15 $CURR_IPERF_LOG_BASE
+    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_client.txt $ARCHIVES_LOC
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/${CURR_IPERF_LOG_BASE}_server.txt $ARCHIVES_LOC
+    check_iperf $ARCHIVES_LOC/$CURR_IPERF_LOG_BASE 15
+
+    echo "############################################################"
+    echo "Iperf UL"
+    echo "############################################################"
+    CURR_IPERF_LOG_BASE=10MHz_iperf_ul
+    iperf_ul $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 2 $CURR_IPERF_LOG_BASE
+    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_server.txt $ARCHIVES_LOC
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/${CURR_IPERF_LOG_BASE}_client.txt $ARCHIVES_LOC
+    check_iperf $ARCHIVES_LOC/$CURR_IPERF_LOG_BASE 2
+
+    echo "############################################################"
+    echo "Terminate enb/ue simulators"
+    echo "############################################################"
+    terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+
+    echo "############################################################"
+    echo "Starting the eNB at 20MHz"
+    echo "############################################################"
+    CURRENT_ENB_LOG_FILE=enb_20MHz.log
+    start_basic_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 100
+
+    echo "############################################################"
+    echo "Starting the UE at 20MHz"
+    echo "############################################################"
+    CURRENT_UE_LOG_FILE=ue_20MHz.log
+    start_basic_sim_ue $VM_CMDS $VM_IP_ADDR $CURRENT_UE_LOG_FILE 100
+    if [ $UE_SYNC -eq 0 ]
+    then
+        echo "Problem w/ eNB and UE not syncing"
+        terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+        terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+        exit -1
+    fi
+    get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
+
+    echo "############################################################"
+    echo "Pinging the UE"
+    echo "############################################################"
+    ping_ue_ip_addr $EPC_VM_CMDS $EPC_VM_IP_ADDR $UE_IP_ADDR 20MHz_ping_ue.txt
+    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/20MHz_ping_ue.txt $ARCHIVES_LOC
+    check_ping_result $ARCHIVES_LOC/20MHz_ping_ue.txt 20
+
+    echo "############################################################"
+    echo "Iperf DL"
+    echo "############################################################"
+    CURR_IPERF_LOG_BASE=20MHz_iperf_dl
+    iperf_dl $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 15 $CURR_IPERF_LOG_BASE
+    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_client.txt $ARCHIVES_LOC
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/${CURR_IPERF_LOG_BASE}_server.txt $ARCHIVES_LOC
+    check_iperf $ARCHIVES_LOC/$CURR_IPERF_LOG_BASE 15
+
+    echo "############################################################"
+    echo "Iperf UL"
+    echo "############################################################"
+    CURR_IPERF_LOG_BASE=20MHz_iperf_ul
+    iperf_ul $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 1 $CURR_IPERF_LOG_BASE
+    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_server.txt $ARCHIVES_LOC
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/${CURR_IPERF_LOG_BASE}_client.txt $ARCHIVES_LOC
+    check_iperf $ARCHIVES_LOC/$CURR_IPERF_LOG_BASE 1
+
+    echo "############################################################"
+    echo "Terminate enb/ue simulators"
+    echo "############################################################"
+    terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
 
     echo "############################################################"
     echo "Terminate EPC"
@@ -625,65 +833,9 @@ then
     echo "Checking run status"
     echo "############################################################"
 
-    # checking ping result
-    if [ -f $ARCHIVES_LOC/ping_ue.txt ]
-    then
-        FILE_COMPLETE=`egrep -c "ping statistics" $ARCHIVES_LOC/ping_ue.txt`
-        if [ $FILE_COMPLETE -eq 0 ]
-        then
-            STATUS=-1
-        else
-            ALL_PACKET_RECEIVED=`egrep -c "20 received" $ARCHIVES_LOC/ping_ue.txt`
-            if [ $ALL_PACKET_RECEIVED -eq 1 ]
-            then
-                echo "got all ping packets"
-            else
-                STATUS=-1
-            fi
-        fi
-    else
-        STATUS=-1
-    fi
+    if [ $PING_STATUS -ne 0 ]; then STATUS=-1; fi
+    if [ $IPERF_STATUS -ne 0 ]; then STATUS=-1; fi
 
-    # checking dl iperf result
-    if [ -f $ARCHIVES_LOC/iperf_dl_client.txt ]
-    then
-        FILE_COMPLETE=`egrep -c "Server Report" $ARCHIVES_LOC/iperf_dl_client.txt`
-        if [ $FILE_COMPLETE -eq 0 ]
-        then
-            STATUS=-1
-        else
-            EFFECTIVE_BANDWIDTH=`tail -n3 $ARCHIVES_LOC/iperf_dl_client.txt | egrep "Mbits/sec" | sed -e "s#^.*MBytes *##" -e "s#sec.*#sec#"`
-            if [[ $EFFECTIVE_BANDWIDTH =~ .*15.*Mbits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*14.*Mbits.* ]]
-            then
-                echo "got requested DL bandwidth: $EFFECTIVE_BANDWIDTH"
-            else
-                STATUS=-1
-            fi
-        fi
-    else
-        STATUS=-1
-    fi
-
-    # checking ul iperf result
-    if [ -f $ARCHIVES_LOC/iperf_ul_client.txt ]
-    then
-        FILE_COMPLETE=`egrep -c "Server Report" $ARCHIVES_LOC/iperf_ul_client.txt`
-        if [ $FILE_COMPLETE -eq 0 ]
-        then
-            STATUS=-1
-        else
-            EFFECTIVE_BANDWIDTH=`tail -n3 $ARCHIVES_LOC/iperf_ul_client.txt | egrep "Mbits/sec" | sed -e "s#^.*MBytes *##" -e "s#sec.*#sec#"`
-            if [[ $EFFECTIVE_BANDWIDTH =~ .*2.*Mbits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*1.*Mbits.* ]]
-            then
-                echo "got requested UL bandwidth: $EFFECTIVE_BANDWIDTH"
-            else
-                STATUS=-1
-            fi
-        fi
-    else
-        STATUS=-1
-    fi
 fi
 
 if [ $STATUS -eq 0 ]
