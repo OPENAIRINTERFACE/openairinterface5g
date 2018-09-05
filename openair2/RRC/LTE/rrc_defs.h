@@ -720,6 +720,9 @@ typedef struct eNB_RRC_INST_s {
   int srs_enable[MAX_NUM_CCs];
   int cell_info_configured;
   pthread_mutex_t cell_info_mutex;
+  uint16_t sctp_in_streams;
+  uint16_t sctp_out_streams;
+
 } eNB_RRC_INST;
 
 #define MAX_UE_CAPABILITY_SIZE 255

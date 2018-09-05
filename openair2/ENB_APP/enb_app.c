@@ -139,8 +139,6 @@ static uint32_t eNB_app_register(ngran_node_t node_type,uint32_t enb_id_start, u
 	
 	RCconfig_S1(msg_p, enb_id);
 
-	if (node_type == ngran_eNB_CU || node_type == ngran_ng_eNB_CU) RCconfig_CU_F1(enb_id);
-
 	if (enb_id == 0) RCconfig_gtpu();
 	
 	LOG_I(ENB_APP,"default drx %d\n",((S1AP_REGISTER_ENB_REQ(msg_p)).default_drx));
@@ -205,14 +203,14 @@ void *eNB_app_task(void *args_p)
   LOG_I(ENB_APP,"Allocating eNB_RRC_INST for %d instances\n",RC.nb_inst);
 
   RC.rrc = (eNB_RRC_INST **)malloc(RC.nb_inst*sizeof(eNB_RRC_INST *));
-  LOG_I(PHY, "%s() RC.nb_inst:%d RC.rrc:%p\n", __FUNCTION__, RC.nb_inst, RC.rrc);
+  LOG_I(ENB_APP, "%s() RC.nb_inst:%d RC.rrc:%p\n", __FUNCTION__, RC.nb_inst, RC.rrc);
 
   if (RC.nb_macrlc_inst>0) AssertFatal(RC.nb_macrlc_inst == enb_id_end-enb_id_start,
 				       "Number of MACRLC instances %d != number of RRC instances %d\n",
 				       RC.nb_macrlc_inst,enb_id_end-enb_id_start);
   for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
     RC.rrc[enb_id] = (eNB_RRC_INST*)malloc(sizeof(eNB_RRC_INST));
-    LOG_I(PHY, "%s() Creating RRC instance RC.rrc[%d]:%p (%d of %d)\n", __FUNCTION__, enb_id, RC.rrc[enb_id], enb_id+1, enb_id_end);
+    LOG_I(ENB_APP, "%s() Creating RRC instance RC.rrc[%d]:%p (%d of %d)\n", __FUNCTION__, enb_id, RC.rrc[enb_id], enb_id+1, enb_id_end);
     memset((void *)RC.rrc[enb_id],0,sizeof(eNB_RRC_INST));
     configure_rrc(enb_id);
 

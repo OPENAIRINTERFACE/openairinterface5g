@@ -784,6 +784,20 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 	rrc->node_type                             = ngran_eNB;
       }
       else if (strcmp(*(ENBParamList.paramarray[i][ENB_TRANSPORT_S_PREFERENCE_IDX].strptr), "f1") == 0) {
+
+	paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
+	paramdef_t NETParams[]  =  NETPARAMS_DESC;
+	char aprefix[MAX_OPTNAME_SIZE*2 + 8];
+
+	sprintf(aprefix,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,i,ENB_CONFIG_STRING_SCTP_CONFIG);
+	config_get( SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix); 
+
+        int gNB_CU_id        = *(ENBParamList.paramarray[0][ENB_ENB_ID_IDX].uptr);
+	LOG_I(ENB_APP,"F1AP: gNB_CU_id[%d] %d\n",k,gNB_CU_id);
+
+	char *gNB_CU_name = *(ENBParamList.paramarray[0][ENB_ENB_NAME_IDX].strptr);
+	LOG_I(ENB_APP,"F1AP: gNB_CU_name[%d] %s\n",k,gNB_CU_name);
+
 	rrc->eth_params_s.local_if_name            = strdup(*(ENBParamList.paramarray[i][ENB_LOCAL_S_IF_NAME_IDX].strptr));
 	LOG_I(RRC,"Configuring CU-DU interfaces for MACRLC on %s\n",rrc->eth_params_s.local_if_name);
 	rrc->eth_params_s.my_addr                  = strdup(*(ENBParamList.paramarray[i][ENB_LOCAL_S_ADDRESS_IDX].strptr));
@@ -800,6 +814,8 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 	LOG_I(RRC,"remote port (F1U) %d\n",rrc->eth_params_s.remote_portd);
 	rrc->eth_params_s.transp_preference        = ETH_UDP_MODE;
 	rrc->node_type                             = ngran_eNB_CU;
+	rrc->sctp_in_streams                       = (uint16_t)*(SCTPParams[ENB_SCTP_INSTREAMS_IDX].uptr);
+	rrc->sctp_out_streams                      = (uint16_t)*(SCTPParams[ENB_SCTP_OUTSTREAMS_IDX].uptr);
       }
       
       else { // no F1
@@ -2339,17 +2355,6 @@ int RCconfig_gtpu(void ) {
 
 	  RC.gtpv1u_data_g->enb_port_for_S1u_S12_S4_up = enb_port_for_S1U;
 return 0;
-}
-
-int RCconfig_CU_F1(uint32_t i) {
-
-  AssertFatal(1==0,"Shouldn't get here yet\n");
-
-  // 1. wait for F1AP_SETUP_REQ
-  // 2. configure cells with selected PLMN(s)
-  // 3. send F1AP_SETUP_RESP and return to setup S1AP
-
-  while(
 }
 
 int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
