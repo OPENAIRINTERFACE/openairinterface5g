@@ -815,10 +815,9 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 	  char enbpath[MAX_OPTNAME_SIZE + 8];
 
 
-	  if (rrc->node_type != ngran_eNB_CU && rrc->node_type != ngran_ng_eNB_CU) {
-	    LOG_I(RRC,"Configuring Cell Information\n");
-	    // PLMN information for SIB1 in DU
-	    RRC_CONFIGURATION_REQ (msg_p).cell_identity = enb_id;
+	  LOG_I(RRC,"Configuring Cell Information\n");
+	  // PLMN information for SIB1 in DU
+	  RRC_CONFIGURATION_REQ (msg_p).cell_identity = enb_id;
 	  
 	  /*    
 		if (strcmp(*(ENBParamList.paramarray[i][ENB_CELL_TYPE_IDX].strptr), "CELL_MACRO_ENB") == 0) {
@@ -833,21 +832,20 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 		
 		enb_properties_loc.properties[enb_properties_loc_index]->eNB_name         = strdup(enb_name);
 	  */
-	    RRC_CONFIGURATION_REQ (msg_p).tac              = (uint16_t)atoi( *(ENBParamList.paramarray[i][ENB_TRACKING_AREA_CODE_IDX].strptr) );
-	    RRC_CONFIGURATION_REQ (msg_p).mcc              = (uint16_t)atoi( *(ENBParamList.paramarray[i][ENB_MOBILE_COUNTRY_CODE_IDX].strptr) );
-	    RRC_CONFIGURATION_REQ (msg_p).mnc              = (uint16_t)atoi( *(ENBParamList.paramarray[i][ENB_MOBILE_NETWORK_CODE_IDX].strptr) );
-	    RRC_CONFIGURATION_REQ (msg_p).mnc_digit_length = strlen(*(ENBParamList.paramarray[i][ENB_MOBILE_NETWORK_CODE_IDX].strptr));
-	    AssertFatal((RRC_CONFIGURATION_REQ (msg_p).mnc_digit_length == 2) ||
-			(RRC_CONFIGURATION_REQ (msg_p).mnc_digit_length == 3),
-			"BAD MNC DIGIT LENGTH %d",
-			RRC_CONFIGURATION_REQ (msg_p).mnc_digit_length);
-	    
+	  RRC_CONFIGURATION_REQ (msg_p).tac              = (uint16_t)atoi( *(ENBParamList.paramarray[i][ENB_TRACKING_AREA_CODE_IDX].strptr) );
+	  RRC_CONFIGURATION_REQ (msg_p).mcc              = (uint16_t)atoi( *(ENBParamList.paramarray[i][ENB_MOBILE_COUNTRY_CODE_IDX].strptr) );
+	  RRC_CONFIGURATION_REQ (msg_p).mnc              = (uint16_t)atoi( *(ENBParamList.paramarray[i][ENB_MOBILE_NETWORK_CODE_IDX].strptr) );
+	  RRC_CONFIGURATION_REQ (msg_p).mnc_digit_length = strlen(*(ENBParamList.paramarray[i][ENB_MOBILE_NETWORK_CODE_IDX].strptr));
+	  AssertFatal((RRC_CONFIGURATION_REQ (msg_p).mnc_digit_length == 2) ||
+		      (RRC_CONFIGURATION_REQ (msg_p).mnc_digit_length == 3),
+		      "BAD MNC DIGIT LENGTH %d",
+		      RRC_CONFIGURATION_REQ (msg_p).mnc_digit_length);
+	  
+  
+	  // Parse optional physical parameters
+	  sprintf(enbpath,"%s.[%i]",ENB_CONFIG_STRING_ENB_LIST,k),
+	    config_getlist( &CCsParamList,NULL,0,enbpath); 
 	
-	    // Parse optional physical parameters
-	    sprintf(enbpath,"%s.[%i]",ENB_CONFIG_STRING_ENB_LIST,k),
-	      config_getlist( &CCsParamList,NULL,0,enbpath); 
-	  }
-
 
 	  LOG_I(RRC,"num component carriers %d \n",CCsParamList.numelt);  
 	  if ( CCsParamList.numelt> 0) {
@@ -2346,6 +2344,12 @@ return 0;
 int RCconfig_CU_F1(uint32_t i) {
 
   AssertFatal(1==0,"Shouldn't get here yet\n");
+
+  // 1. wait for F1AP_SETUP_REQ
+  // 2. configure cells with selected PLMN(s)
+  // 3. send F1AP_SETUP_RESP and return to setup S1AP
+
+  while(
 }
 
 int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
