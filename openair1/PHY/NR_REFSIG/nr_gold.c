@@ -91,12 +91,9 @@ void nr_init_pdsch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid)
     for (uint8_t symb=0; symb<fp->symbols_per_slot; symb++) {
 
       reset = 1;
-      x2 = ((1<<17) * (slot*symb*slot+symb+1) * (Nid+1) *((Nid<<1)+Nscid))&(((uint32_t)1<<31)-1);
-      printf("x2 = %d\n",x2);
+      x2 = ((1<<17) * (slot*symb*slot+symb+1) * ((Nid<<1)+1) +((Nid<<1)+Nscid))&(((uint32_t)1<<31)-1);
       for (uint32_t n=0; n<NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD; n++) {
         pdsch_dmrs[slot][symb][n] = lte_gold_generic(&x1, &x2, reset);
-    printf("slot = %d***  symb = %d*** n = %d*** \n",slot,symb,n);
-
         reset = 0;
       }
     }  
