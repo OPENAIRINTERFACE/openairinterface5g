@@ -38,7 +38,7 @@
 
 #include "liblfds700.h"
 
-#include "log.h"
+#include "common/utils/LOG/log.h"
 
 /*Flags showing if a mac agent has already been registered*/
 unsigned int mac_agent_registered[NUM_MAX_ENB];

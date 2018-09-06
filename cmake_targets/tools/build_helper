@@ -597,7 +597,7 @@ check_install_oai_software() {
         echo "EPEL repos not present. Installing them."
         $SUDO $INSTALLER install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
       fi
-      $SUDO $INSTALLER install -y python-epdb
+      $SUDO $INSTALLER install -y python-epdb vim-common
     else
       $SUDO $INSTALLER install -y mscgen pydb
     fi
@@ -683,7 +683,7 @@ install_asn1c_from_source(){
     # better to use a given commit than a branch in case the branch
     # is updated and requires modifications in the source of OAI
     #git checkout velichkov_s1ap_plus_option_group
-    git checkout ec830d70bbb014b769810355a2f321a91ccd8a58
+    git checkout 73d6b23dcec9ab36605b4af884143824392134c1
     autoreconf -iv
     ./configure
     make -j`nproc`

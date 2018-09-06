@@ -81,7 +81,7 @@ void lte_sync_timefreq(PHY_VARS_UE *ue,int band,unsigned int DL_freq)
 
       //compute frequency-domain representation of 6144-sample chunk
       dft6144((int16_t *)rxp,
-              sp);
+              sp,1);
 
 
       /*

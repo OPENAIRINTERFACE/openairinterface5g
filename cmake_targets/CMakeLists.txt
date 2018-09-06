@@ -472,6 +472,16 @@ add_library(X2AP_LIB
 include_directories ("${X2AP_C_DIR}")
 include_directories ("${X2AP_DIR}")
 
+#add_library(X2AP_ENB
+ # ${X2AP_DIR}/x2ap_eNB.c
+ # ${X2AP_DIR}/x2ap_eNB_decoder.c
+ # ${X2AP_DIR}/x2ap_eNB_encoder.c
+ # ${X2AP_DIR}/x2ap_eNB_handler.c
+ # ${X2AP_DIR}/x2ap_eNB_itti_messaging.c
+ # ${X2AP_DIR}/x2ap_eNB_management_procedures.c
+ # ${X2AP_DIR}/x2ap_eNB_generate_messages.c
+ # )
+
 # Hardware dependant options
 ###################################
 add_list1_option(NB_ANTENNAS_RX "2" "Number of antennas in reception" "1" "2" "4")
@@ -883,12 +893,9 @@ add_library(HASHTABLE
 )
 include_directories(${OPENAIR_DIR}/common/utils/hashtable)
 
-if (MESSAGE_CHART_GENERATOR)
-  add_library(MSC
-    ${OPENAIR_DIR}/common/utils/msc/msc.c
-  )
-  set(MSC_LIB MSC)
-endif()
+add_library(msc MODULE ${OPENAIR_DIR}/common/utils/msc/msc.c )
+target_link_libraries (msc LFDS)
+
 include_directories(${OPENAIR_DIR}/common/utils/msc)
 
 set(UTIL_SRC
@@ -1216,6 +1223,11 @@ set(PHY_MEX_UE
   ${OPENAIR1_DIR}/PHY/TOOLS/signal_energy.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_ue_measurements.c
   ${OPENAIR_DIR}/common/utils/LOG/log.c
+  ${OPENAIR_DIR}/common/utils/T/T.c
+  ${OPENAIR_DIR}/common/utils/T/local_tracer.c
+  ${OPENAIR_DIR}/common/config/config_cmdline.c
+  ${OPENAIR_DIR}/common/config/config_userapi.c
+  ${OPENAIR_DIR}/common/config/config_load_configmodule.c
   )
 add_library(PHY_MEX ${PHY_MEX_UE})
 
@@ -1378,7 +1390,6 @@ include_directories(${NFAPI_USER_DIR})
 add_library(CN_UTILS
   ${OPENAIR3_DIR}/UTILS/conversions.c
   ${OPENAIR3_DIR}/UTILS/enum_string.c
-  ${OPENAIR3_DIR}/UTILS/log.c
   ${OPENAIR3_DIR}/UTILS/mcc_mnc_itu.c
   )
 
@@ -1553,7 +1564,6 @@ set(libnas_ies_OBJS
 set (libnas_utils_OBJS
   ${NAS_SRC}COMMON/UTIL/device.c
   ${NAS_SRC}COMMON/UTIL/memory.c
-  ${NAS_SRC}COMMON/UTIL/nas_log.c
   ${NAS_SRC}COMMON/UTIL/nas_timer.c
   ${NAS_SRC}COMMON/UTIL/socket.c
   ${NAS_SRC}COMMON/UTIL/stty.c
@@ -1876,9 +1886,13 @@ endif (${T_TRACER})
 #This rule and the following deal with it.
 add_custom_command (
   OUTPUT ${OPENAIR_DIR}/common/utils/T/T_IDs.h
-  COMMAND make
+  COMMAND $(MAKE) clean
+  COMMAND $(MAKE)
+  COMMAND $(MAKE) check_vcd
   WORKING_DIRECTORY ${OPENAIR_DIR}/common/utils/T
   DEPENDS ${OPENAIR_DIR}/common/utils/T/T_messages.txt
+          ${OPENAIR_DIR}/common/utils/LOG/vcd_signal_dumper.c
+          ${OPENAIR_DIR}/common/utils/LOG/vcd_signal_dumper.h
   )
 
 #This rule is specifically needed to generate T files
@@ -1929,7 +1943,7 @@ add_executable(lte-softmodem
 
 target_link_libraries (lte-softmodem
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB PHY_COMMON PHY PHY_RU LFDS L2
+  RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB PHY_COMMON PHY PHY_RU LFDS L2
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
@@ -1966,7 +1980,7 @@ add_executable(lte-softmodem-nos1
   )
 target_link_libraries (lte-softmodem-nos1
   -Wl,--start-group
-  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_LIB SCHED_RU_LIB PHY_COMMON PHY PHY_RU LFDS L2 ${MSC_LIB} ${RAL_LIB} ${ITTI_LIB}
+  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_LIB SCHED_RU_LIB PHY_COMMON PHY PHY_RU LFDS L2  ${RAL_LIB} ${ITTI_LIB}
   ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl )
@@ -2005,7 +2019,7 @@ add_executable(lte-uesoftmodem
 
 target_link_libraries (lte-uesoftmodem
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_UE PHY_RU LFDS L2_UE SIMU
+  RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_UE PHY_RU LFDS L2_UE SIMU
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES}
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
@@ -2044,7 +2058,7 @@ add_executable(lte-uesoftmodem-nos1
 
 target_link_libraries (lte-uesoftmodem-nos1
   -Wl,--start-group
-  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_UE PHY_RU LFDS L2_UE SIMU ${MSC_LIB} ${RAL_LIB} ${ITTI_LIB}
+  RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_UE PHY_RU LFDS L2_UE SIMU ${RAL_LIB} ${ITTI_LIB}
   ${MIH_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES}
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl )
@@ -2122,7 +2136,7 @@ add_executable(test_epc_generate_scenario
   ${OPENAIR3_DIR}/S1AP/s1ap_eNB_defs.h
   )
 target_link_libraries (test_epc_generate_scenario
-  -Wl,--start-group RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB GTPV1U LIB_NAS_UE SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS ${ITTI_LIB} ${MSC_LIB} L2 -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${LIBXSLT_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES}
+  -Wl,--start-group RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB GTPV1U LIB_NAS_UE SECU_CN UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB PHY LFDS ${ITTI_LIB} L2 -Wl,--end-group pthread m rt crypt sctp ${LIBXML2_LIBRARIES} ${LIBXSLT_LIBRARIES} ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} ${CONFIG_LIBRARIES}
   )
 
 add_executable(test_epc_play_scenario
@@ -2183,7 +2197,8 @@ if (${T_TRACER})
         oai_eth_transpro
         FLPT_MSG ASYNC_IF FLEXRAN_AGENT HASHTABLE MSC UTIL OMG_SUMO SECU_OSA
         SECU_CN SCHED_LIB PHY L2 default_sched remote_sched RAL CN_UTILS
-        GTPV1U SCTP_CLIENT UDP LIB_NAS_UE LFDS LFDS7 SIMU OPENAIR0_LIB)
+        GTPV1U SCTP_CLIENT UDP LIB_NAS_UE LFDS LFDS7 SIMU OPENAIR0_LIB PHY_MEX
+        coding)
     if (TARGET ${i})
       add_dependencies(${i} generate_T)
     endif()
@@ -2226,7 +2241,7 @@ function(make_driver name dir)
   endforeach()
   CONFIGURE_FILE(${OPENAIR_CMAKE}/tools/Kbuild.cmake ${OPENAIR_BIN_DIR}/${name}/Kbuild)
   add_custom_command(OUTPUT ${name}.ko
-    COMMAND make -C ${module_build_path} M=${OPENAIR_BIN_DIR}/${name}
+    COMMAND $(MAKE) -C ${module_build_path} M=${OPENAIR_BIN_DIR}/${name}
     WORKING_DIRECTORY ${OPENAIR_BIN_DIR}/${name}
     COMMENT "building ${module}.ko"
     VERBATIM

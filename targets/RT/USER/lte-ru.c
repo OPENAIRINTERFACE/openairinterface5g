@@ -120,7 +120,8 @@ extern volatile int                    oai_exit;
 extern int emulate_rf;
 extern int numerology;
 extern int fepw;
-
+extern int single_thread_flag;
+extern clock_source_t clock_source;
 
 extern void  phy_init_RU(RU_t*);
 extern void  phy_free_RU(RU_t*);
@@ -714,6 +715,11 @@ static void* emulatedRF_thread(void* param) {
   wait_sync("emulatedRF_thread");
   while(!oai_exit){
     nanosleep(&req, (struct timespec *)NULL);
+    if(proc->emulate_rf_busy )
+    {
+      LOG_E(PHY,"rf being delayed in emulated RF\n");
+    }
+    proc->emulate_rf_busy = 1;
     pthread_mutex_lock(&proc->mutex_emulateRF);
     ++proc->instance_cnt_emulateRF;
     pthread_mutex_unlock(&proc->mutex_emulateRF);
@@ -1016,7 +1022,6 @@ void wakeup_slaves(RU_proc_t *proc) {
   wait.tv_nsec=5000000L;
   
   for (i=0;i<proc->num_slaves;i++) {
-    //printf("////////////////////calling for slave thrads\n");////////////////////////********
     RU_proc_t *slave_proc = proc->slave_proc[i];
     // wake up slave FH thread
     // lock the FH mutex and make sure the thread is ready
@@ -1252,13 +1257,14 @@ void wakeup_eNBs(RU_t *ru) {
   LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
 
 
-  if (ru->num_eNB==1 && ru->eNB_top!=0 && get_nprocs() <= 4) {
+  if (ru->num_eNB==1 && ru->eNB_top!=0 && (get_nprocs() <= 4 || single_thread_flag)) {
     // call eNB function directly
   
     char string[20];
     sprintf(string,"Incoming RU %d",ru->idx);
     LOG_D(PHY,"RU %d Call eNB_top\n",ru->idx);
     ru->eNB_top(eNB_list[0],ru->proc.frame_rx,ru->proc.subframe_rx,string,ru);
+    ru->proc.emulate_rf_busy = 0;
   }
   else {
 
@@ -1270,8 +1276,9 @@ void wakeup_eNBs(RU_t *ru) {
       eNB_list[i]->proc.ru_proc = &ru->proc;
       if (ru->wakeup_rxtx!=0 && ru->wakeup_rxtx(eNB_list[i],ru) < 0)
       {
-	LOG_E(PHY,"could not wakeup eNB rxtx process for subframe %d\n", ru->proc.subframe_rx);
+        LOG_E(PHY,"could not wakeup eNB rxtx process for subframe %d\n", ru->proc.subframe_rx);
       }
+      ru->proc.emulate_rf_busy = 0;
     }
   }
 }
@@ -1404,7 +1411,8 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
   cfg->num_rb_dl=fp->N_RB_DL;
   cfg->tx_num_channels=ru->nb_tx;
   cfg->rx_num_channels=ru->nb_rx;
-  
+  cfg->clock_source=clock_source;
+
   for (i=0; i<ru->nb_tx; i++) {
     
     cfg->tx_freq[i] = (double)fp->dl_CarrierFreq;
@@ -1490,12 +1498,11 @@ int setup_RU_buffers(RU_t *ru) {
 static void* ru_stats_thread(void* param) {
 
   RU_t               *ru      = (RU_t*)param;
-
   wait_sync("ru_stats_thread");
 
   while (!oai_exit) {
      sleep(1);
-     if (opp_enabled == 1 && fepw) {
+     if (opp_enabled) {
        if (ru->feprx) print_meas(&ru->ofdm_demod_stats,"feprx",NULL,NULL);
        if (ru->feptx_ofdm) print_meas(&ru->ofdm_mod_stats,"feptx_ofdm",NULL,NULL);
        if (ru->fh_north_asynch_in) print_meas(&ru->rx_fhaul,"rx_fhaul",NULL,NULL);
@@ -1529,6 +1536,7 @@ static void* ru_thread_tx( void* param ) {
   //wait_sync("ru_thread_tx");
 
   wait_on_condition(&proc->mutex_FH1,&proc->cond_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
+  
 
   printf( "ru_thread_tx ready\n");
   while (!oai_exit) { 
@@ -1722,7 +1730,6 @@ static void* ru_thread( void* param ) {
           ru->do_prach,
           is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx),
           proc->frame_rx,proc->subframe_rx);
- 
     if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)==1)) {
       wakeup_prach_ru(ru);
     }
@@ -1775,7 +1782,7 @@ static void* ru_thread( void* param ) {
     if (ru->num_eNB>0) wakeup_eNBs(ru);
     
 #ifndef PHY_TX_THREAD
-    if(get_nprocs() <= 4 || ru->num_eNB==0){
+    if(get_nprocs() <= 4 || ru->num_eNB==0 || single_thread_flag){
       // do TX front-end processing if needed (precoding and/or IDFTs)
       if (ru->feptx_prec) ru->feptx_prec(ru);
       
@@ -1787,6 +1794,7 @@ static void* ru_thread( void* param ) {
         
         if (ru->fh_north_out) ru->fh_north_out(ru);
       }
+      proc->emulate_rf_busy = 0;
     }
 #else
     struct timespec time_req, time_rem;
@@ -1803,10 +1811,12 @@ static void* ru_thread( void* param ) {
 
   printf( "Exiting ru_thread \n");
 
-  if (ru->stop_rf != NULL) {
-    if (ru->stop_rf(ru) != 0)
-      LOG_E(HW,"Could not stop the RF device\n");
-    else LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
+  if (!emulate_rf){
+    if (ru->stop_rf != NULL) {
+      if (ru->stop_rf(ru) != 0)
+        LOG_E(HW,"Could not stop the RF device\n");
+      else LOG_I(PHY,"RU %d rf device stopped\n",ru->idx);
+    }
   }
 
   ru_thread_status = 0;
@@ -1872,13 +1882,13 @@ void *ru_thread_synch(void *arg) {
 
 	LOG_I(PHY,"Estimated sync_pos %d, peak_val %d => timing offset %d\n",sync_pos,peak_val,ru->rx_offset);
 	
-LOG_M_BEGIN(RU)	
-	if ((peak_val > 300000) && (sync_pos > 0)) {
-	   LOG_M("ru_sync.m","sync",(void*)&sync_corr[0],fp->samples_per_tti*5,1,2);
-	   LOG_M("ru_rx.m","rxs",&(ru->eNB_list[0]->common_vars.rxdata[0][0]),fp->samples_per_tti*10,1,1);
-	exit(-1);
-	}
-LOG_M_END
+        if (LOG_DEBUGFLAG(RU)) {	
+	  if ((peak_val > 300000) && (sync_pos > 0)) {
+	     LOG_M("ru_sync.m","sync",(void*)&sync_corr[0],fp->samples_per_tti*5,1,2);
+	     LOG_M("ru_rx.m","rxs",&(ru->eNB_list[0]->common_vars.rxdata[0][0]),fp->samples_per_tti*10,1,1);
+	  exit(-1);
+	  }
+        }
 	ru->in_synch=1;
       }
     }
@@ -2076,6 +2086,8 @@ extern void feptx_ofdm_2thread(RU_t *ru);
 extern void feptx_prec(RU_t *ru);
 extern void init_fep_thread(RU_t *ru,pthread_attr_t *attr);
 extern void init_feptx_thread(RU_t *ru,pthread_attr_t *attr);
+extern void kill_fep_thread(RU_t *ru);
+extern void kill_feptx_thread(RU_t *ru);
 
 void init_RU_proc(RU_t *ru) {
    
@@ -2183,7 +2195,7 @@ void init_RU_proc(RU_t *ru) {
   if(emulate_rf)
     pthread_create( &proc->pthread_emulateRF, attr_emulateRF, emulatedRF_thread, (void*)proc );
 
-  if (get_nprocs() > 4)
+  if (!single_thread_flag && get_nprocs() > 4)
     pthread_create( &proc->pthread_FH1, attr_FH1, ru_thread_tx, (void*)ru );
 
   if (ru->function == NGFI_RRU_IF4p5) {
@@ -2211,8 +2223,8 @@ void init_RU_proc(RU_t *ru) {
   }
 
   if (get_nprocs()> 2 && fepw) { 
-    if (ru->feprx) init_fep_thread(ru,NULL); 
-    if (ru->feptx_ofdm) init_feptx_thread(ru,NULL);
+    init_fep_thread(ru,NULL); 
+    init_feptx_thread(ru,NULL);
   } 
   if (opp_enabled == 1) pthread_create(&ru->ru_stats_thread,NULL,ru_stats_thread,(void*)ru); 
   
@@ -2222,6 +2234,13 @@ void kill_RU_proc(int inst)
 {
   RU_t *ru = RC.ru[inst];
   RU_proc_t *proc = &ru->proc;
+
+  if (get_nprocs() > 2 && fepw) {
+      LOG_D(PHY, "killing FEP thread\n"); 
+      kill_fep_thread(ru);
+      LOG_D(PHY, "killing FEP TX thread\n"); 
+      kill_feptx_thread(ru);
+  }
 
   pthread_mutex_lock(&proc->mutex_FH);
   proc->instance_cnt_FH = 0;
@@ -2261,10 +2280,10 @@ void kill_RU_proc(int inst)
   pthread_cond_signal(&proc->cond_asynch_rxtx);
   pthread_mutex_unlock(&proc->mutex_asynch_rxtx);
 
-  LOG_D(PHY, "Joining pthread_FH\n");
+  /*LOG_D(PHY, "Joining pthread_FH\n");
   pthread_join(proc->pthread_FH, NULL);
   LOG_D(PHY, "Joining pthread_FHTX\n");
-  pthread_join(proc->pthread_FH1, NULL);
+  pthread_join(proc->pthread_FH1, NULL);*/
   if (ru->function == NGFI_RRU_IF4p5) {
     LOG_D(PHY, "Joining pthread_prach\n");
     pthread_join(proc->pthread_prach, NULL);
@@ -2282,28 +2301,6 @@ void kill_RU_proc(int inst)
         (ru->function == NGFI_RRU_IF4p5)) {
       LOG_D(PHY, "Joining pthread_asynch_rxtx\n");
       pthread_join(proc->pthread_asynch_rxtx, NULL);
-    }
-  }
-  if (get_nprocs() > 2 && fepw) {
-    if (ru->feprx) {
-      pthread_mutex_lock(&proc->mutex_fep);
-      proc->instance_cnt_fep = 0;
-      pthread_mutex_unlock(&proc->mutex_fep);
-      pthread_cond_signal(&proc->cond_fep);
-      LOG_D(PHY, "Joining pthread_fep\n");
-      pthread_join(proc->pthread_fep, NULL);
-      pthread_mutex_destroy(&proc->mutex_fep);
-      pthread_cond_destroy(&proc->cond_fep);
-    }
-    if (ru->feptx_ofdm) {
-      pthread_mutex_lock(&proc->mutex_feptx);
-      proc->instance_cnt_feptx = 0;
-      pthread_mutex_unlock(&proc->mutex_feptx);
-      pthread_cond_signal(&proc->cond_feptx);
-      LOG_D(PHY, "Joining pthread_feptx\n");
-      pthread_join(proc->pthread_feptx, NULL);
-      pthread_mutex_destroy(&proc->mutex_feptx);
-      pthread_cond_destroy(&proc->cond_feptx);
     }
   }
   if (opp_enabled) {
@@ -2670,7 +2667,7 @@ void set_function_spec_param(RU_t *ru)
   } // switch on interface type
 }
 
-extern void RCconfig_RU(void);
+//extern void RCconfig_RU(void);
 
 void init_RU(char *rf_config_file) {
   
@@ -2841,6 +2838,24 @@ void RCconfig_RU(void) {
 	    RC.ru[j]->num_eNB                           = 0;
       for (i=0;i<RC.ru[j]->num_eNB;i++) RC.ru[j]->eNB_list[i] = RC.eNB[RUParamList.paramarray[j][RU_ENB_LIST_IDX].iptr[i]][0];     
 
+      if (config_isparamset(RUParamList.paramarray[j], RU_SDR_ADDRS)) {
+        RC.ru[j]->openair0_cfg.sdr_addrs = strdup(*(RUParamList.paramarray[j][RU_SDR_ADDRS].strptr));
+      }
+
+      if (config_isparamset(RUParamList.paramarray[j], RU_SDR_CLK_SRC)) {
+        if (strcmp(*(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr), "internal") == 0) {
+          RC.ru[j]->openair0_cfg.clock_source = internal;
+          LOG_D(PHY, "RU clock source set as internal\n");
+        } else if (strcmp(*(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr), "external") == 0) {
+          RC.ru[j]->openair0_cfg.clock_source = external;
+          LOG_D(PHY, "RU clock source set as external\n");
+        } else if (strcmp(*(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr), "gpsdo") == 0) {
+          RC.ru[j]->openair0_cfg.clock_source = gpsdo;
+          LOG_D(PHY, "RU clock source set as gpsdo\n");
+        } else {
+          LOG_E(PHY, "Erroneous RU clock source in the provided configuration file: '%s'\n", *(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr));
+        }
+      }
 
       if (strcmp(*(RUParamList.paramarray[j][RU_LOCAL_RF_IDX].strptr), "yes") == 0) {
 	if ( !(config_isparamset(RUParamList.paramarray[j],RU_LOCAL_IF_NAME_IDX)) ) {

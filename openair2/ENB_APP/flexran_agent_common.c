@@ -36,7 +36,7 @@
 #include "flexran_agent_net_comm.h"
 #include "flexran_agent_ran_api.h"
 //#include "PHY/extern.h"
-#include "log.h"
+#include "common/utils/LOG/log.h"
 
 //#include "SCHED/defs.h"
 #include "RRC/LTE/rrc_extern.h"

@@ -57,11 +57,10 @@
 #define FALSE 0
 #endif
 
-extern int asn_debug;
 extern int asn1_xer_print;
 
 #if defined(ENB_MODE)
-# include "log.h"
+# include "common/utils/LOG/log.h"
 # define X2AP_ERROR(x, args...) LOG_E(X2AP, x, ##args)
 # define X2AP_WARN(x, args...)  LOG_W(X2AP, x, ##args)
 # define X2AP_DEBUG(x, args...) LOG_D(X2AP, x, ##args)

@@ -511,16 +511,15 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
       proc->tep[i].total_worker      = worker_num;
       proc->tep[i].current_worker    = i;
       if (pthread_cond_signal(&proc->tep[i].cond_te) != 0) {
-      printf("[eNB] ERROR pthread_cond_signal for te thread exit\n");
-      exit_fun( "ERROR pthread_cond_signal" );
-      return (-1);
+        printf("[eNB] ERROR pthread_cond_signal for te thread exit\n");
+        exit_fun( "ERROR pthread_cond_signal" );
+        return (-1);
       }
     }
   }
 
   // Fill in the "e"-sequence from 36-212, V8.6 2009-03, p. 16-17 (for each "e") and concatenate the
   // outputs for each code segment, see Section 5.1.5 p.20
-
   for (r=0,r_offset=0; r<dlsch->harq_processes[harq_pid]->C; r++) {
 
     // get information for E for the segments that are handled by the worker thread

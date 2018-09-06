@@ -45,7 +45,7 @@ import xml.etree.ElementTree as ET
 import logging
 import datetime
 import signal
-from multiprocessing import Process,Lock
+from multiprocessing import Process, Lock, SimpleQueue
 logging.basicConfig(
 	level=logging.DEBUG,
 	format="[%(asctime)s] %(name)s:%(levelname)s: %(message)s"
@@ -59,6 +59,7 @@ class SSHConnection():
 		self.eNBIPAddress = ''
 		self.eNBRepository = ''
 		self.eNBBranch = ''
+		self.eNB_AllowMerge = False
 		self.eNBCommitID = ''
 		self.eNBUserName = ''
 		self.eNBPassword = ''
@@ -80,8 +81,13 @@ class SSHConnection():
 		self.ping_packetloss_threshold = ''
 		self.iperf_args = ''
 		self.iperf_packetloss_threshold = ''
+		self.iperf_profile = ''
 		self.UEDevices = []
 		self.UEIPAddresses = []
+		self.htmlFile = ''
+		self.htmlHeaderCreated = False
+		self.htmlFooterCreated = False
+		self.htmlUEConnected = 0
 
 	def open(self, ipaddress, username, password):
 		self.ssh = pexpect.spawn('ssh', [username + '@' + ipaddress], timeout = 5)
@@ -148,6 +154,34 @@ class SSHConnection():
 		else:
 			logging.debug('\u001B[1;37;41m Unexpected Others \u001B[0m')
 
+	def copy(self, ipaddress, username, password, source, destination):
+		logging.debug('scp '+ username + '@' + ipaddress + ':' + source + ' ' + destination)
+		scp_spawn = pexpect.spawn('scp '+ username + '@' + ipaddress + ':' + source + ' ' + destination, timeout = 5)
+		scp_response = scp_spawn.expect(['Are you sure you want to continue connecting (yes/no)?', 'password:', pexpect.EOF, pexpect.TIMEOUT])
+		if scp_response == 0:
+			scp_spawn.sendline('yes')
+			scp_spawn.expect('password:')
+			scp_spawn.sendline(password)
+			scp_response = scp_spawn.expect(['\$', 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
+			if scp_response == 0:
+				pass
+			else:
+				logging.debug('1 - scp_response = ' + str(scp_response))
+				sys.exit('SCP failed')
+		elif scp_response == 1:
+			scp_spawn.sendline(password)
+			scp_response = scp_spawn.expect(['\$', 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
+			if scp_response == 0 or scp_response == 3:
+				pass
+			else:
+				logging.debug('2 - scp_response = ' + str(scp_response))
+				sys.exit('SCP failed')
+		elif scp_response == 2:
+			pass
+		else:
+			logging.debug('3 - scp_response = ' + str(scp_response))
+			sys.exit('SCP failed')
+
 	def BuildeNB(self):
 		if self.eNBIPAddress == '' or self.eNBRepository == '' or self.eNBBranch == '' or self.eNBUserName == '' or self.eNBPassword == '' or self.eNBSourceCodePath == '':
 			Usage()
@@ -165,8 +199,9 @@ class SSHConnection():
 			self.command('git checkout -f ' + self.eNBCommitID, '\$', 5)
 		# if the branch is not develop, then it is a merge request and we need to do 
 		# the potential merge. Note that merge conflicts should already been checked earlier
-		if (self.eNBBranch != 'develop') and (self.eNBBranch != 'origin/develop'):
-			self.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
+		if (self.eNB_AllowMerge):
+			if (self.eNBBranch != 'develop') and (self.eNBBranch != 'origin/develop'):
+				self.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
 		self.command('mkdir -p  log', '\$', 5)
@@ -176,6 +211,7 @@ class SSHConnection():
 		self.command('echo ' + self.eNBPassword + ' | sudo -S mv log/* ' + 'build_log_' + SSH.testCase_id, '\$', 5)
 		self.command('echo ' + self.eNBPassword + ' | sudo -S mv compile_oai_enb.log ' + 'build_log_' + SSH.testCase_id, '\$', 5)
 		self.close()
+		self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', 0)
 
 	def InitializeHSS(self):
 		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '' or self.EPCSourceCodePath == '' or self.EPCType == '':
@@ -196,6 +232,7 @@ class SSHConnection():
 			self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f hss.log daemon.log', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S echo "Starting sudo session" && sudo daemon --unsafe --name=simulated_hss --chdir=/opt/hss_sim0609 ./starthss_real  ', '\$', 5)
 		self.close()
+		self.CreateHtmlTestRow(self.EPCType, 'OK', 0)
 
 	def InitializeMME(self):
 		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '' or self.EPCSourceCodePath == '' or self.EPCType == '':
@@ -217,6 +254,7 @@ class SSHConnection():
 			self.command('cd /opt/ltebox/tools', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S ./start_mme', '\$', 5)
 		self.close()
+		self.CreateHtmlTestRow(self.EPCType, 'OK', 0)
 
 	def InitializeSPGW(self):
 		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '' or self.EPCSourceCodePath == '' or self.EPCType == '':
@@ -232,29 +270,43 @@ class SSHConnection():
 			self.command('cd /opt/ltebox/tools', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S ./start_xGw', '\$', 5)
 		self.close()
+		self.CreateHtmlTestRow(self.EPCType, 'OK', 0)
 
 	def InitializeeNB(self):
 		if self.eNBIPAddress == '' or self.eNBUserName == '' or self.eNBPassword == '' or self.eNBSourceCodePath == '':
 			Usage()
 			sys.exit('Insufficient Parameter')
 		initialize_eNB_flag = True
-		self.CheckProcessExist(initialize_eNB_flag)
+		pStatus = self.CheckProcessExist(initialize_eNB_flag)
+		if (pStatus < 0):
+			self.CreateHtmlTestRow(self.Initialize_eNB_args, 'KO', pStatus)
+			self.CreateHtmlFooter()
+			sys.exit(1)
 		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 		# Initialize_eNB_args usually start with -O and followed by the location in repository
 		full_config_file = self.Initialize_eNB_args.replace('-O ','')
-		config_path, config_file = os.path.split(full_config_file)
+		extIdx = full_config_file.find('.conf')
+		if (extIdx > 0):
+			extra_options = full_config_file[extIdx + 5:]
+			full_config_file = full_config_file[:extIdx + 5]
+			config_path, config_file = os.path.split(full_config_file)
+		else:
+			sys.exit('Insufficient Parameter')
 		ci_full_config_file = config_path + '/ci-' + config_file
 		# Make a copy and adapt to EPC / eNB IP addresses
 		self.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
 		self.command('sed -i -e \'s/mme_ip_address.*$/mme_ip_address      = ( { ipv4       = "' + self.EPCIPAddress + '";/\' ' + ci_full_config_file, '\$', 2);
 		self.command('sed -i -e \'s/ENB_IPV4_ADDRESS_FOR_S1_MME.*$/ENB_IPV4_ADDRESS_FOR_S1_MME              = "' + self.eNBIPAddress + '";/\' ' + ci_full_config_file, '\$', 2);
 		self.command('sed -i -e \'s/ENB_IPV4_ADDRESS_FOR_S1U.*$/ENB_IPV4_ADDRESS_FOR_S1U                 = "' + self.eNBIPAddress + '";/\' ' + ci_full_config_file, '\$', 2);
+		self.command('sed -i -e \'s/ENB_IPV4_ADDRESS_FOR_X2C.*$/ENB_IPV4_ADDRESS_FOR_X2C                 = "' + self.eNBIPAddress + '";/\' ' + ci_full_config_file, '\$', 2);
 		# Launch eNB with the modified config file
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
-		# Replacing with a nohup and a direct redirection of stdout to a file
-		self.command('echo ' + self.eNBPassword + ' | nohup sudo -S -E stdbuf -o0 ./lte_build_oai/build/lte-softmodem -O ' + self.eNBSourceCodePath + '/' + ci_full_config_file + ' > enb_' + SSH.testCase_id + '.log 2>&1 &', '\$', 5)
+		self.command('echo "./lte_build_oai/build/lte-softmodem -O ' + self.eNBSourceCodePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run.sh ', '\$', 5)
+		self.command('chmod 775 ./my-lte-softmodem-run.sh ', '\$', 5)
+		self.command('echo ' + self.eNBPassword + ' | sudo -S rm -Rf enb_' + SSH.testCase_id + '.log', '\$', 5)
+		self.command('echo ' + self.eNBPassword + ' | sudo -S -E daemon --inherit --unsafe --name=enb_daemon --chdir=' + self.eNBSourceCodePath + '/cmake_targets -o ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + SSH.testCase_id + '.log ./my-lte-softmodem-run.sh', '\$', 5)
 		time.sleep(6)
 		doLoop = True
 		loopCounter = 10
@@ -262,16 +314,35 @@ class SSHConnection():
 			loopCounter = loopCounter - 1
 			if (loopCounter == 0):
 				doLoop = False
-				logging.debug('\u001B[1;37;41m Starting eNB Failed -- taking too much time \u001B[0m')
-				sys.exit(1)
-			self.command('stdbuf -o0 cat enb_' + SSH.testCase_id + '.log', '\$', 10)
-			result = re.search('got sync', str(self.ssh.before))
-			if result is None:
-				time.sleep(6)
+				# Checking if process is still alive
+				#self.command('stdbuf -o0 ps -aux | grep -v grep | grep --color=never lte-softmodem', '\$', 5)
+				#result = re.search('lte-softmodem', str(self.ssh.before))
+				#if result is None:
+				#	self.command('rsync -v enb_' + SSH.testCase_id + '.log enb_' + SSH.testCase_id + '.txt; stdbuf -o0 cat enb_' + SSH.testCase_id + '.log | egrep --color=never -i "segmentation fault"', '\$', 5)
+				#	result = re.search('egmentation fault', str(self.ssh.before))
+				#	logging.debug('\u001B[1;37;41m eNB process is already down \u001B[0m')
+				#	if result is not None:
+				#		logging.debug('\u001B[1;37;41m Segmentation fault \u001B[0m')
+				#	logging.debug(str(self.ssh.before))
+				#	self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'KO', 0)
+				#	self.CreateHtmlFooter()
+				#	self.close()
+				#	sys.exit(1)
+				logging.debug('\u001B[1;30;43m eNB logging system did not show got sync! See with attach later \u001B[0m')
+				self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'eNB not showing got sync!', 0)
+				# Not getting got sync is bypassed for the moment
+				#sys.exit(1)
 			else:
-				doLoop = False
-				logging.debug('\u001B[1m Initialize eNB Completed\u001B[0m')
+				self.command('rsync -v enb_' + SSH.testCase_id + '.log enb_' + SSH.testCase_id + '.txt; stdbuf -o0 cat enb_' + SSH.testCase_id + '.log | grep --color=never -i sync', '\$', 4)
+				result = re.search('got sync', str(self.ssh.before))
+				if result is None:
+					time.sleep(6)
+				else:
+					doLoop = False
+					self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'OK', 0)
+					logging.debug('\u001B[1m Initialize eNB Completed\u001B[0m')
 
+		self.command('rm -f enb_' + SSH.testCase_id + '.txt', '\$', 5)
 		self.close()
 
 	def InitializeUE_common(self, device_id):
@@ -302,22 +373,34 @@ class SSHConnection():
 			multi_jobs.append(p)
 		for job in multi_jobs:
 			job.join()
+		self.CreateHtmlTestRow('N/A', 'OK', 0)
 
-	def AttachUE_common(self, device_id):
+	def AttachUE_common(self, device_id, statusQueue, lock):
 		try:
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 			self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/on', '\$', 60)
 			time.sleep(2)
-			count = 45
+			max_count = 45
+			count = max_count
 			while count > 0:
 				self.command('stdbuf -o0 adb -s ' + device_id + ' shell dumpsys telephony.registry | grep mDataConnectionState', '\$', 15)
 				result = re.search('mDataConnectionState.*=(?P<state>[0-9\-]+)', str(self.ssh.before))
 				if result is None:
 					logging.debug('\u001B[1;37;41m mDataConnectionState Not Found! \u001B[0m')
-					sys.exit(1)
+					lock.acquire()
+					statusQueue.put(-1)
+					statusQueue.put(device_id)
+					statusQueue.put('mDataConnectionState Not Found!')
+					lock.release()
+					break
 				mDataConnectionState = int(result.group('state'))
 				if mDataConnectionState == 2:
 					logging.debug('\u001B[1mUE (' + device_id + ') Attach Completed\u001B[0m')
+					lock.acquire()
+					statusQueue.put(max_count - count)
+					statusQueue.put(device_id)
+					statusQueue.put('Attach Completed')
+					lock.release()
 					break
 				count = count - 1
 				if count == 15 or count == 30:
@@ -326,11 +409,15 @@ class SSHConnection():
 					time.sleep(0.5)
 					self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/on', '\$', 60)
 					time.sleep(0.5)
-				logging.debug('\u001B[1mWait UE (' + device_id + ') a second until mDataConnectionState=2 (' + str(45-count) + ' times)\u001B[0m')
+				logging.debug('\u001B[1mWait UE (' + device_id + ') a second until mDataConnectionState=2 (' + str(max_count-count) + ' times)\u001B[0m')
 				time.sleep(1)
 			if count == 0:
 				logging.debug('\u001B[1;37;41m UE (' + device_id + ') Attach Failed \u001B[0m')
-				sys.exit(1)
+				lock.acquire()
+				statusQueue.put(-1)
+				statusQueue.put(device_id)
+				statusQueue.put('Attach Failed')
+				lock.release()
 			self.close()
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
@@ -340,15 +427,45 @@ class SSHConnection():
 			Usage()
 			sys.exit('Insufficient Parameter')
 		initialize_eNB_flag = False
-		self.CheckProcessExist(initialize_eNB_flag)
+		pStatus = self.CheckProcessExist(initialize_eNB_flag)
+		if (pStatus < 0):
+			self.CreateHtmlTestRow('N/A', 'KO', pStatus)
+			self.CreateHtmlFooter()
+			sys.exit(1)
 		multi_jobs = []
+		status_queue = SimpleQueue()
+		lock = Lock()
 		for device_id in self.UEDevices:
-			p = Process(target = SSH.AttachUE_common, args = (device_id,))
+			p = Process(target = SSH.AttachUE_common, args = (device_id, status_queue, lock,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
 		for job in multi_jobs:
 			job.join()
+
+		if (status_queue.empty()):
+			self.CreateHtmlTestRow('N/A', 'KO', 0)
+			sys.exit(1)
+		else:
+			attach_status = True
+			html_queue = SimpleQueue()
+			while (not status_queue.empty()):
+				count = status_queue.get()
+				if (count < 0):
+					attach_status = False
+				device_id = status_queue.get()
+				message = status_queue.get()
+				if (count < 0):
+					html_cell = "<pre>UE (" + device_id + ")\n" + message + "</pre>"
+				else:
+					html_cell = "<pre>UE (" + device_id + ")\n" + message + ' in ' + str(count + 2) + ' seconds</pre>'
+				html_queue.put(html_cell)
+			if (attach_status):
+				self.CreateHtmlTestRowQueue('N/A', 'OK', len(self.UEDevices), html_queue)
+			else:
+				self.CreateHtmlTestRowQueue('N/A', 'KO', len(self.UEDevices), html_queue)
+				self.CreateHtmlFooter()
+				sys.exit(1)
 
 	def DetachUE_common(self, device_id):
 		try:
@@ -364,7 +481,11 @@ class SSHConnection():
 			Usage()
 			sys.exit('Insufficient Parameter')
 		initialize_eNB_flag = False
-		self.CheckProcessExist(initialize_eNB_flag)
+		pStatus = self.CheckProcessExist(initialize_eNB_flag)
+		if (pStatus < 0):
+			self.CreateHtmlTestRow('N/A', 'KO', pStatus)
+			self.CreateHtmlFooter()
+			sys.exit(1)
 		multi_jobs = []
 		for device_id in self.UEDevices:
 			p = Process(target = SSH.DetachUE_common, args = (device_id,))
@@ -373,6 +494,7 @@ class SSHConnection():
 			multi_jobs.append(p)
 		for job in multi_jobs:
 			job.join()
+		self.CreateHtmlTestRow('N/A', 'OK', 0)
 
 	def RebootUE_common(self, device_id):
 		try:
@@ -418,7 +540,11 @@ class SSHConnection():
 			Usage()
 			sys.exit('Insufficient Parameter')
 		initialize_eNB_flag = False
-		self.CheckProcessExist(initialize_eNB_flag)
+		pStatus = self.CheckProcessExist(initialize_eNB_flag)
+		if (pStatus < 0):
+			self.CreateHtmlTestRow('N/A', 'KO', pStatus)
+			self.CreateHtmlFooter()
+			sys.exit(1)
 		multi_jobs = []
 		for device_id in self.UEDevices:
 			p = Process(target = SSH.RebootUE_common, args = (device_id,))
@@ -427,6 +553,7 @@ class SSHConnection():
 			multi_jobs.append(p)
 		for job in multi_jobs:
 			job.join()
+		self.CreateHtmlTestRow('N/A', 'OK', 0)
 
 	def GetAllUEDevices(self, terminate_ue_flag):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
@@ -462,7 +589,7 @@ class SSHConnection():
 			self.UEIPAddresses.append(UE_IPAddress)
 		self.close()
 
-	def Ping_common(self, lock, UE_IPAddress, device_id):
+	def Ping_common(self, lock, UE_IPAddress, device_id,statusQueue):
 		try:
 			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 			self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
@@ -471,32 +598,65 @@ class SSHConnection():
 			self.command('stdbuf -o0 ping ' + self.ping_args + ' ' + UE_IPAddress + ' 2>&1 | stdbuf -o0 tee -a ping_' + SSH.testCase_id + '_' + device_id + '.log', '\$', int(ping_time[0])*1.5)
 			result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', str(self.ssh.before))
 			if result is None:
-				logging.debug('\u001B[1;37;41m Packet Loss Not Found! \u001B[0m')
-				sys.exit(1)
+				message = 'Packet Loss Not Found!'
+				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				lock.acquire()
+				statusQueue.put(-1)
+				statusQueue.put(device_id)
+				statusQueue.put(message)
+				lock.release()
+				return
 			packetloss = result.group('packetloss')
 			if float(packetloss) == 100:
-				logging.debug('\u001B[1;37;41m Packet Loss is 100% \u001B[0m')
-				sys.exit(1)
+				message = 'Packet Loss is 100%'
+				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				lock.acquire()
+				statusQueue.put(-1)
+				statusQueue.put(device_id)
+				statusQueue.put(message)
+				lock.release()
+				return
 			result = re.search('rtt min\/avg\/max\/mdev = (?P<rtt_min>[0-9\.]+)\/(?P<rtt_avg>[0-9\.]+)\/(?P<rtt_max>[0-9\.]+)\/[0-9\.]+ ms', str(self.ssh.before))
 			if result is None:
-				logging.debug('\u001B[1;37;41m Ping RTT_Min RTT_Avg RTT_Max Not Found! \u001B[0m')
-				sys.exit(1)
+				message = 'Ping RTT_Min RTT_Avg RTT_Max Not Found!'
+				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				lock.acquire()
+				statusQueue.put(-1)
+				statusQueue.put(device_id)
+				statusQueue.put(message)
+				lock.release()
+				return
 			rtt_min = result.group('rtt_min')
 			rtt_avg = result.group('rtt_avg')
 			rtt_max = result.group('rtt_max')
+			pal_msg = 'Packet Loss : ' + packetloss + '%'
+			min_msg = 'RTT(Min)    : ' + rtt_min + ' ms'
+			avg_msg = 'RTT(Avg)    : ' + rtt_avg + ' ms'
+			max_msg = 'RTT(Max)    : ' + rtt_max + ' ms'
 			lock.acquire()
 			logging.debug('\u001B[1;37;44m ping result (' + UE_IPAddress + ') \u001B[0m')
-			logging.debug('\u001B[1;34m    Packet Loss : ' + packetloss + '%\u001B[0m')
-			logging.debug('\u001B[1;34m    RTT(Min)    : ' + rtt_min + ' ms' + '\u001B[0m')
-			logging.debug('\u001B[1;34m    RTT(Avg)    : ' + rtt_avg + ' ms' + '\u001B[0m')
-			logging.debug('\u001B[1;34m    RTT(Max)    : ' + rtt_max + ' ms' + '\u001B[0m')
-			lock.release()
+			logging.debug('\u001B[1;34m    ' + pal_msg + '\u001B[0m')
+			logging.debug('\u001B[1;34m    ' + min_msg + '\u001B[0m')
+			logging.debug('\u001B[1;34m    ' + avg_msg + '\u001B[0m')
+			logging.debug('\u001B[1;34m    ' + max_msg + '\u001B[0m')
+			qMsg = pal_msg + '\n' + min_msg + '\n' + avg_msg + '\n' + max_msg
+			packetLossOK = True
 			if packetloss is not None:
 				if float(packetloss) > float(self.ping_packetloss_threshold):
+					qMsg += '\nPacket Loss too high'
 					logging.debug('\u001B[1;37;41m Packet Loss too high \u001B[0m')
-					sys.exit(1)
+					packetLossOK = False
 				elif float(packetloss) > 0:
+					qMsg += '\nPacket Loss is not 0%'
 					logging.debug('\u001B[1;37;43m Packet Loss is not 0% \u001B[0m')
+			if (packetLossOK):
+				statusQueue.put(0)
+			else:
+				statusQueue.put(-1)
+			statusQueue.put(device_id)
+			statusQueue.put(UE_IPAddress)
+			statusQueue.put(qMsg)
+			lock.release()
 			self.close()
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
@@ -506,14 +666,19 @@ class SSHConnection():
 			Usage()
 			sys.exit('Insufficient Parameter')
 		initialize_eNB_flag = False
-		self.CheckProcessExist(initialize_eNB_flag)
+		pStatus = self.CheckProcessExist(initialize_eNB_flag)
+		if (pStatus < 0):
+			self.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
+			self.CreateHtmlFooter()
+			sys.exit(1)
 		self.GetAllUEIPAddresses()
 		multi_jobs = []
 		i = 0
 		lock = Lock()
+		status_queue = SimpleQueue()
 		for UE_IPAddress in self.UEIPAddresses:
 			device_id = self.UEDevices[i]
-			p = Process(target = SSH.Ping_common, args = (lock,UE_IPAddress,device_id,))
+			p = Process(target = SSH.Ping_common, args = (lock,UE_IPAddress,device_id,status_queue,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
@@ -521,103 +686,391 @@ class SSHConnection():
 		for job in multi_jobs:
 			job.join()
 
-	def Iperf_common(self, lock, UE_IPAddress, device_id, ue_num):
+		if (status_queue.empty()):
+			self.CreateHtmlTestRow(self.ping_args, 'KO', 0)
+			self.CreateHtmlFooter()
+			sys.exit(1)
+		else:
+			ping_status = True
+			html_queue = SimpleQueue()
+			while (not status_queue.empty()):
+				count = status_queue.get()
+				if (count < 0):
+					ping_status = False
+				device_id = status_queue.get()
+				ip_addr = status_queue.get()
+				message = status_queue.get()
+				html_cell = "<pre>UE (" + device_id + ")\nIP Address  : " + ip_addr + "\n" + message + "</pre>"
+				html_queue.put(html_cell)
+			if (ping_status):
+				self.CreateHtmlTestRowQueue(self.ping_args, 'OK', len(self.UEDevices), html_queue)
+			else:
+				self.CreateHtmlTestRowQueue(self.ping_args, 'KO', len(self.UEDevices), html_queue)
+				self.CreateHtmlFooter()
+				sys.exit(1)
+
+	def Iperf_ComputeTime(self):
+		result = re.search('-t (?P<iperf_time>\d+)', str(self.iperf_args))
+		if result is None:
+			logging.debug('\u001B[1;37;41m Iperf time Not Found! \u001B[0m')
+			sys.exit(1)
+		return result.group('iperf_time')
+
+	def Iperf_ComputeModifiedBW(self, idx, ue_num):
+		result = re.search('-b (?P<iperf_bandwidth>[0-9\.]+)[KMG]', str(self.iperf_args))
+		if result is None:
+			logging.debug('\u001B[1;37;41m Iperf bandwidth Not Found! \u001B[0m')
+			sys.exit(1)
+		iperf_bandwidth = result.group('iperf_bandwidth')
+		if SSH.iperf_profile == 'balanced':
+			iperf_bandwidth_new = float(iperf_bandwidth)/ue_num
+		if SSH.iperf_profile == 'single-ue':
+			iperf_bandwidth_new = float(iperf_bandwidth)
+		if SSH.iperf_profile == 'unbalanced':
+			# residual is 2% of max bw
+			residualBW = float(iperf_bandwidth) / 50
+			if idx == 0:
+				iperf_bandwidth_new = float(iperf_bandwidth) - ((ue_num - 1) * residualBW)
+			else:
+				iperf_bandwidth_new = residualBW
+		iperf_bandwidth_str = '-b ' + iperf_bandwidth
+		iperf_bandwidth_str_new = '-b ' + ('%.2f' % iperf_bandwidth_new)
+		result = re.sub(iperf_bandwidth_str, iperf_bandwidth_str_new, str(self.iperf_args))
+		if result is None:
+			logging.debug('\u001B[1;37;41m Calculate Iperf bandwidth Failed! \u001B[0m')
+			sys.exit(1)
+		return result
+
+	def Iperf_analyzeV2Output(self, lock, UE_IPAddress, device_id, statusQueue, iperf_real_options):
+		result = re.search('Server Report:', str(self.ssh.before))
+		if result is None:
+			result = re.search('read failed: Connection refused', str(self.ssh.before))
+			if result is not None:
+				logging.debug('\u001B[1;37;41m Could not connect to iperf server! \u001B[0m')
+			else:
+				logging.debug('\u001B[1;37;41m Server Report and Connection refused Not Found! \u001B[0m')
+			return -1
+		# Computing the requested bandwidth in float
+		result = re.search('-b (?P<iperf_bandwidth>[0-9\.]+)[KMG]', str(iperf_real_options))
+		if result is not None:
+			req_bandwidth = result.group('iperf_bandwidth')
+			req_bw = float(req_bandwidth)
+			result = re.search('-b [0-9\.]+K', str(iperf_real_options))
+			if result is not None:
+				req_bandwidth = '%.1f Kbits/sec' % req_bw
+				req_bw = req_bw * 1000
+			result = re.search('-b [0-9\.]+M', str(iperf_real_options))
+			if result is not None:
+				req_bandwidth = '%.1f Mbits/sec' % req_bw
+				req_bw = req_bw * 1000000
+			result = re.search('-b [0-9\.]+G', str(iperf_real_options))
+			if result is not None:
+				req_bandwidth = '%.1f Gbits/sec' % req_bw
+				req_bw = req_bw * 1000000000
+
+		result = re.search('Server Report:\\\\r\\\\n(?:|\[ *\d+\].*) (?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?P<jitter>[0-9\.]+ ms) +(\d+\/..\d+) (\((?P<packetloss>[0-9\.]+)%\))', str(self.ssh.before))
+		if result is not None:
+			bitrate = result.group('bitrate')
+			packetloss = result.group('packetloss')
+			jitter = result.group('jitter')
+			lock.acquire()
+			logging.debug('\u001B[1;37;44m iperf result (' + UE_IPAddress + ') \u001B[0m')
+			iperfStatus = True
+			msg = 'Req Bitrate : ' + req_bandwidth + '\n'
+			logging.debug('\u001B[1;34m    Req Bitrate : ' + req_bandwidth + '\u001B[0m')
+			if bitrate is not None:
+				msg += 'Bitrate     : ' + bitrate + '\n'
+				logging.debug('\u001B[1;34m    Bitrate     : ' + bitrate + '\u001B[0m')
+				result = re.search('(?P<real_bw>[0-9\.]+) [KMG]bits/sec', str(bitrate))
+				if result is not None:
+					actual_bw = float(str(result.group('real_bw')))
+					result = re.search('[0-9\.]+ K', bitrate)
+					if result is not None:
+						actual_bw = actual_bw * 1000
+					result = re.search('[0-9\.]+ M', bitrate)
+					if result is not None:
+						actual_bw = actual_bw * 1000000
+					result = re.search('[0-9\.]+ G', bitrate)
+					if result is not None:
+						actual_bw = actual_bw * 1000000000
+					br_loss = 100 * actual_bw / req_bw
+					bitperf = '%.2f ' % br_loss
+					msg += 'Bitrate Perf: ' + bitperf + '%\n'
+					logging.debug('\u001B[1;34m    Bitrate Perf: ' + bitperf + '%\u001B[0m')
+			if packetloss is not None:
+				msg += 'Packet Loss : ' + packetloss + '%\n'
+				logging.debug('\u001B[1;34m    Packet Loss : ' + packetloss + '%\u001B[0m')
+				if float(packetloss) > float(self.iperf_packetloss_threshold):
+					msg += 'Packet Loss too high!\n'
+					logging.debug('\u001B[1;37;41m Packet Loss too high \u001B[0m')
+					iperfStatus = False
+			if jitter is not None:
+				msg += 'Jitter      : ' + jitter + '\n'
+				logging.debug('\u001B[1;34m    Jitter      : ' + jitter + '\u001B[0m')
+			if (iperfStatus):
+				statusQueue.put(0)
+			else:
+				statusQueue.put(-1)
+			statusQueue.put(device_id)
+			statusQueue.put(UE_IPAddress)
+			statusQueue.put(msg)
+			lock.release()
+			return 0
+
+	def Iperf_analyzeV2Server(self, lock, UE_IPAddress, device_id, statusQueue, iperf_real_options):
+		if (not os.path.isfile('iperf_server_' + SSH.testCase_id + '_' + device_id + '.log')):
+			lock.acquire()
+			statusQueue.put(-1)
+			statusQueue.put(device_id)
+			statusQueue.put(UE_IPAddress)
+			statusQueue.put('Could not analyze from server log')
+			lock.release()
+			return
+		# Computing the requested bandwidth in float
+		result = re.search('-b (?P<iperf_bandwidth>[0-9\.]+)[KMG]', str(iperf_real_options))
+		if result is None:
+			logging.debug('Iperf bandwidth Not Found!')
+			lock.acquire()
+			statusQueue.put(-1)
+			statusQueue.put(device_id)
+			statusQueue.put(UE_IPAddress)
+			statusQueue.put('Could not compute Iperf bandwidth!')
+			lock.release()
+			return
+		else:
+			req_bandwidth = result.group('iperf_bandwidth')
+			req_bw = float(req_bandwidth)
+			result = re.search('-b [0-9\.]+K', str(iperf_real_options))
+			if result is not None:
+				req_bandwidth = '%.1f Kbits/sec' % req_bw
+				req_bw = req_bw * 1000
+			result = re.search('-b [0-9\.]+M', str(iperf_real_options))
+			if result is not None:
+				req_bandwidth = '%.1f Mbits/sec' % req_bw
+				req_bw = req_bw * 1000000
+			result = re.search('-b [0-9\.]+G', str(iperf_real_options))
+			if result is not None:
+				req_bandwidth = '%.1f Gbits/sec' % req_bw
+				req_bw = req_bw * 1000000000
+
+		server_file = open('iperf_server_' + SSH.testCase_id + '_' + device_id + '.log', 'r')
+		br_sum = 0.0
+		ji_sum = 0.0
+		pl_sum = 0
+		ps_sum = 0
+		row_idx = 0
+		for line in server_file.readlines():
+			result = re.search('(?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?P<jitter>[0-9\.]+ ms) +(?P<lostPack>[0-9]+)/ +(?P<sentPack>[0-9]+)', str(line))
+			if result is not None:
+				bitrate = result.group('bitrate')
+				jitter = result.group('jitter')
+				packetlost = result.group('lostPack')
+				packetsent = result.group('sentPack')
+				br = bitrate.split(' ')
+				ji = jitter.split(' ')
+				row_idx = row_idx + 1
+				curr_br = float(br[0])
+				pl_sum = pl_sum + int(packetlost)
+				ps_sum = ps_sum + int(packetsent)
+				if (br[1] == 'Kbits/sec'):
+					curr_br = curr_br * 1000
+				if (br[1] == 'Mbits/sec'):
+					curr_br = curr_br * 1000 * 1000
+				br_sum = curr_br + br_sum
+				ji_sum = float(ji[0]) + ji_sum
+		if (row_idx > 0):
+			br_sum = br_sum / row_idx
+			ji_sum = ji_sum / row_idx
+			br_loss = 100 * br_sum / req_bw
+			if (br_sum > 1000):
+				br_sum = br_sum / 1000
+				if (br_sum > 1000):
+					br_sum = br_sum / 1000
+					bitrate = '%.2f Mbits/sec' % br_sum
+				else:
+					bitrate = '%.2f Kbits/sec' % br_sum
+			else:
+				bitrate = '%.2f bits/sec' % br_sum
+			bitperf = '%.2f ' % br_loss
+			bitperf += '%'
+			jitter = '%.2f ms' % (ji_sum)
+			if (ps_sum > 0):
+				pl = float(100 * pl_sum / ps_sum)
+				packetloss = '%2.1f ' % (pl)
+				packetloss += '%'
+			else:
+				packetloss = 'unknown'
+			lock.acquire()
+			if (br_loss < 90):
+				statusQueue.put(1)
+			else:
+				statusQueue.put(0)
+			statusQueue.put(device_id)
+			statusQueue.put(UE_IPAddress)
+			req_msg = 'Req Bitrate : ' + req_bandwidth
+			bir_msg = 'Bitrate     : ' + bitrate
+			brl_msg = 'Bitrate Perf: ' + bitperf
+			jit_msg = 'Jitter      : ' + jitter
+			pal_msg = 'Packet Loss : ' + packetloss
+			statusQueue.put(req_msg + '\n' + bir_msg + '\n' + brl_msg + '\n' + jit_msg + '\n' + pal_msg + '\n')
+			logging.debug('\u001B[1;37;45m iperf result (' + UE_IPAddress + ') \u001B[0m')
+			logging.debug('\u001B[1;35m    ' + req_msg + '\u001B[0m')
+			logging.debug('\u001B[1;35m    ' + bir_msg + '\u001B[0m')
+			logging.debug('\u001B[1;35m    ' + brl_msg + '\u001B[0m')
+			logging.debug('\u001B[1;35m    ' + jit_msg + '\u001B[0m')
+			logging.debug('\u001B[1;35m    ' + pal_msg + '\u001B[0m')
+			lock.release()
+		else:
+			lock.acquire()
+			statusQueue.put(-1)
+			statusQueue.put(device_id)
+			statusQueue.put(UE_IPAddress)
+			statusQueue.put('Could not analyze from server log')
+			lock.release()
+
+		server_file.close()
+
+
+	def Iperf_analyzeV3Output(self, lock, UE_IPAddress, device_id, statusQueue):
+		result = re.search('(?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?:|[0-9\.]+ ms +\d+\/\d+ \((?P<packetloss>[0-9\.]+)%\)) +(?:|receiver)\\\\r\\\\n(?:|\[ *\d+\] Sent \d+ datagrams)\\\\r\\\\niperf Done\.', str(self.ssh.before))
+		if result is None:
+			result = re.search('(?P<error>iperf: error - [a-zA-Z0-9 :]+)', str(self.ssh.before))
+			lock.acquire()
+			statusQueue.put(-1)
+			statusQueue.put(device_id)
+			statusQueue.put(UE_IPAddress)
+			if result is not None:
+				logging.debug('\u001B[1;37;41m ' + result.group('error') + ' \u001B[0m')
+				statusQueue.put(result.group('error'))
+			else:
+				logging.debug('\u001B[1;37;41m Bitrate and/or Packet Loss Not Found! \u001B[0m')
+				statusQueue.put('Bitrate and/or Packet Loss Not Found!')
+			lock.release()
+
+		bitrate = result.group('bitrate')
+		packetloss = result.group('packetloss')
+		lock.acquire()
+		logging.debug('\u001B[1;37;44m iperf result (' + UE_IPAddress + ') \u001B[0m')
+		logging.debug('\u001B[1;34m    Bitrate     : ' + bitrate + '\u001B[0m')
+		msg = 'Bitrate     : ' + bitrate + '\n'
+		iperfStatus = True
+		if packetloss is not None:
+			logging.debug('\u001B[1;34m    Packet Loss : ' + packetloss + '%\u001B[0m')
+			msg += 'Packet Loss : ' + packetloss + '%\n'
+			if float(packetloss) > float(self.iperf_packetloss_threshold):
+				logging.debug('\u001B[1;37;41m Packet Loss too high \u001B[0m')
+				msg += 'Packet Loss too high!\n'
+				iperfStatus = False
+		if (iperfStatus):
+			statusQueue.put(0)
+		else:
+			statusQueue.put(-1)
+		statusQueue.put(device_id)
+		statusQueue.put(UE_IPAddress)
+		lock.release()
+
+	def Iperf_UL_common(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue):
+		ipnumbers = UE_IPAddress.split('.')
+		if (len(ipnumbers) == 4):
+			ipnumbers[3] = '1'
+		EPC_Iperf_UE_IPAddress = ipnumbers[0] + '.' + ipnumbers[1] + '.' + ipnumbers[2] + '.' + ipnumbers[3]
+
+		# Launch iperf server on EPC side
+		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+		self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
+		self.command('rm -f iperf_server_' + SSH.testCase_id + '_' + device_id + '.log', '\$', 5)
+		port = 5001 + idx
+		self.command('echo $USER; nohup iperf -u -s -i 1 -p ' + str(port) + ' > iperf_server_' + SSH.testCase_id + '_' + device_id + '.log &', self.EPCUserName, 5)
+		time.sleep(0.5)
+		self.close()
+
+		# Launch iperf client on UE
+		self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+		self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
+		iperf_time = self.Iperf_ComputeTime()
+		time.sleep(0.5)
+
+		modified_options = self.Iperf_ComputeModifiedBW(idx, ue_num)
+		modified_options = modified_options.replace('-R','')
+		time.sleep(0.5)
+
+		self.command('rm -f iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', 5)
+		self.command('stdbuf -o0 adb -s ' + device_id + ' shell "/data/local/tmp/iperf -c ' + EPC_Iperf_UE_IPAddress + ' ' + modified_options + ' -p ' + str(port) + '" 2>&1 | stdbuf -o0 tee -a iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
+		clientStatus = self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue, modified_options)
+
+		# Launch iperf server on EPC side
+		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+		self.command('killall --signal SIGKILL iperf', self.EPCUserName, 5)
+		self.close()
+		if (clientStatus == -1):
+			time.sleep(1)
+			if (os.path.isfile('iperf_server_' + SSH.testCase_id + '_' + device_id + '.log')):
+				os.remove('iperf_server_' + SSH.testCase_id + '_' + device_id + '.log')
+			self.copy(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, self.EPCSourceCodePath + '/scripts/iperf_server_' + SSH.testCase_id + '_' + device_id + '.log', '.')
+			self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, modified_options)
+
+	def Iperf_common(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue):
 		try:
+			# Single-UE profile -- iperf only on one UE
+			if SSH.iperf_profile == 'single-ue' and idx != 0:
+				return
 			useIperf3 = False
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+			# if by chance ADB server and EPC are on the same remote host, at least log collection will take care of it
+			self.command('if [ ! -d ' + self.EPCSourceCodePath + '/scripts ]; then mkdir -p ' + self.EPCSourceCodePath + '/scripts ; fi', '\$', 5)
+			self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
 			# Checking if iperf / iperf3 are installed
 			self.command('adb -s ' + device_id + ' shell "ls /data/local/tmp"', '\$', 5)
 			result = re.search('iperf3', str(self.ssh.before))
 			if result is None:
 				result = re.search('iperf', str(self.ssh.before))
 				if result is None:
-					logging.debug('\u001B[1;37;41m Neither iperf nor iperf3 installed on UE! \u001B[0m')
-					sys.exit(1)
+					message = 'Neither iperf nor iperf3 installed on UE!'
+					lock.acquire()
+					logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+					statusQueue.put(-1)
+					statusQueue.put(device_id)
+					statusQueue.put(UE_IPAddress)
+					statusQueue.put(message)
+					lock.release()
+					return
+					#sys.exit(1)
 			else:
 				useIperf3 = True
+			# in case of iperf, UL has its own function
+			if (not useIperf3):
+				result = re.search('-R', str(self.iperf_args))
+				if result is not None:
+					self.close()
+					self.Iperf_UL_common(lock, UE_IPAddress, device_id, idx, ue_num, statusQueue)
+					return
+
 			if (useIperf3):
 				self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/iperf3 -s &', '\$', 5)
 			else:
-				self.command('rm -f /tmp/iperf_server_' + SSH.testCase_id + '_' + device_id + '.log', '\$', 5)
-				self.command('echo $USER; nohup adb -s ' + device_id + ' shell "/data/local/tmp/iperf -u -s -i 1" > /tmp/iperf_server_' + SSH.testCase_id + '_' + device_id + '.log &', self.ADBUserName, 5)
+				self.command('rm -f iperf_server_' + SSH.testCase_id + '_' + device_id + '.log', '\$', 5)
+				self.command('echo $USER; nohup adb -s ' + device_id + ' shell "/data/local/tmp/iperf -u -s -i 1" > iperf_server_' + SSH.testCase_id + '_' + device_id + '.log &', self.ADBUserName, 5)
 			time.sleep(0.5)
 			self.close()
 
 			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
-			self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
-			self.command('cd scripts', '\$', 5)
-			result = re.search('-t (?P<iperf_time>\d+)', str(self.iperf_args))
-			if result is None:
-				logging.debug('\u001B[1;37;41m Iperf time Not Found! \u001B[0m')
-				sys.exit(1)
-			iperf_time = result.group('iperf_time')
+			self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
+			iperf_time = self.Iperf_ComputeTime()
 			time.sleep(0.5)
 
-			result = re.search('-b (?P<iperf_bandwidth>[0-9\.]+)[KMG]', str(self.iperf_args))
-			if result is None:
-				logging.debug('\u001B[1;37;41m Iperf bandwidth Not Found! \u001B[0m')
-				sys.exit(1)
-			iperf_bandwidth = result.group('iperf_bandwidth')
+			modified_options = self.Iperf_ComputeModifiedBW(idx, ue_num)
 			time.sleep(0.5)
-
-			iperf_bandwidth_new = float(iperf_bandwidth)/ue_num
-			iperf_bandwidth_str = '-b ' + iperf_bandwidth
-			iperf_bandwidth_str_new = '-b ' + str(iperf_bandwidth_new)
-			result = re.sub(iperf_bandwidth_str, iperf_bandwidth_str_new, str(self.iperf_args))
-			if result is None:
-				logging.debug('\u001B[1;37;41m Calculate Iperf bandwidth Failed! \u001B[0m')
-				sys.exit(1)
 
 			self.command('rm -f iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', 5)
 			if (useIperf3):
-				self.command('stdbuf -o0 iperf3 -c ' + UE_IPAddress + ' ' + result + ' 2>&1 | stdbuf -o0 tee -a iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
+				self.command('stdbuf -o0 iperf3 -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee -a iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
 
-				result = re.search('(?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?:|[0-9\.]+ ms +\d+\/\d+ \((?P<packetloss>[0-9\.]+)%\)) +(?:|receiver)\\\\r\\\\n(?:|\[ *\d+\] Sent \d+ datagrams)\\\\r\\\\niperf Done\.', str(self.ssh.before))
-				if result is None:
-					result = re.search('(?P<error>iperf: error - [a-zA-Z0-9 :]+)', str(self.ssh.before))
-					if result is not None:
-						logging.debug('\u001B[1;37;41m ' + result.group('error') + ' \u001B[0m')
-					else:
-						logging.debug('\u001B[1;37;41m Bitrate and/or Packet Loss Not Found! \u001B[0m')
-					sys.exit(1)
-				bitrate = result.group('bitrate')
-				packetloss = result.group('packetloss')
-				lock.acquire()
-				logging.debug('\u001B[1;37;44m iperf result (' + UE_IPAddress + ') \u001B[0m')
-				logging.debug('\u001B[1;34m    Bitrate     : ' + bitrate + '\u001B[0m')
-				if packetloss is not None:
-					logging.debug('\u001B[1;34m    Packet Loss : ' + packetloss + '%\u001B[0m')
-					if float(packetloss) > float(self.iperf_packetloss_threshold):
-						logging.debug('\u001B[1;37;41m Packet Loss too high \u001B[0m')
-						lock.release()
-						sys.exit(1)
-				lock.release()
+				clientStatus = 0
+				self.Iperf_analyzeV3Output(lock, UE_IPAddress, device_id, statusQueue)
 			else:
-				self.command('stdbuf -o0 iperf -c ' + UE_IPAddress + ' ' + result + ' 2>&1 | stdbuf -o0 tee -a iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
+				self.command('stdbuf -o0 iperf -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee -a iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
 
-				result = re.search('Server Report:', str(self.ssh.before))
-				if result is None:
-					result = re.search('read failed: Connection refused', str(self.ssh.before))
-					if result is not None:
-						logging.debug('\u001B[1;37;41m Could not connect to iperf server! \u001B[0m')
-					else:
-						logging.debug('\u001B[1;37;41m Server Report and Connection refused Not Found! \u001B[0m')
-					sys.exit(1)
-				result = re.search('Server Report:\\\\r\\\\n(?:|\[ *\d+\].*) (?P<bitrate>[0-9\.]+ [KMG]bits\/sec) +(?:|[0-9\.]+ ms +\d+\/\d+ \((?P<packetloss>[0-9\.]+)%\))', str(self.ssh.before))
-				if result is not None:
-					bitrate = result.group('bitrate')
-					packetloss = result.group('packetloss')
-					lock.acquire()
-					logging.debug('\u001B[1;37;44m iperf result (' + UE_IPAddress + ') \u001B[0m')
-					if bitrate is not None:
-						logging.debug('\u001B[1;34m    Bitrate     : ' + bitrate + '\u001B[0m')
-					if packetloss is not None:
-						logging.debug('\u001B[1;34m    Packet Loss : ' + packetloss + '%\u001B[0m')
-						if float(packetloss) > float(self.iperf_packetloss_threshold):
-							logging.debug('\u001B[1;37;41m Packet Loss too high \u001B[0m')
-							lock.release()
-							sys.exit(1)
-					lock.release()
+				clientStatus = self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue, modified_options)
 			self.close()
 
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
@@ -627,6 +1080,12 @@ class SSHConnection():
 				pid_iperf = result.group('pid')
 				self.command('stdbuf -o0 adb -s ' + device_id + ' shell kill -KILL ' + pid_iperf, '\$', 5)
 			self.close()
+			if (clientStatus == -1):
+				time.sleep(1)
+				if (os.path.isfile('iperf_server_' + SSH.testCase_id + '_' + device_id + '.log')):
+					os.remove('iperf_server_' + SSH.testCase_id + '_' + device_id + '.log')
+				self.copy(self.ADBIPAddress, self.ADBUserName, self.ADBPassword, self.EPCSourceCodePath + '/scripts/iperf_server_' + SSH.testCase_id + '_' + device_id + '.log', '.')
+				self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, modified_options)
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
@@ -635,15 +1094,20 @@ class SSHConnection():
 			Usage()
 			sys.exit('Insufficient Parameter')
 		initialize_eNB_flag = False
-		self.CheckProcessExist(initialize_eNB_flag)
+		pStatus = self.CheckProcessExist(initialize_eNB_flag)
+		if (pStatus < 0):
+			self.CreateHtmlTestRow(self.iperf_args, 'KO', pStatus)
+			self.CreateHtmlFooter()
+			sys.exit(1)
 		self.GetAllUEIPAddresses()
 		multi_jobs = []
 		i = 0
 		ue_num = len(self.UEIPAddresses)
 		lock = Lock()
+		status_queue = SimpleQueue()
 		for UE_IPAddress in self.UEIPAddresses:
 			device_id = self.UEDevices[i]
-			p = Process(target = SSH.Iperf_common, args = (lock,UE_IPAddress,device_id,ue_num,))
+			p = Process(target = SSH.Iperf_common, args = (lock,UE_IPAddress,device_id,i,ue_num,status_queue,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
@@ -651,41 +1115,83 @@ class SSHConnection():
 		for job in multi_jobs:
 			job.join()
 
+		if (status_queue.empty()):
+			self.CreateHtmlTestRow(self.iperf_args, 'KO', 0)
+			self.CreateHtmlFooter()
+			sys.exit(1)
+		else:
+			iperf_status = True
+			iperf_noperf = False
+			html_queue = SimpleQueue()
+			while (not status_queue.empty()):
+				count = status_queue.get()
+				if (count < 0):
+					iperf_status = False
+				if (count > 0):
+					iperf_noperf = True
+				device_id = status_queue.get()
+				ip_addr = status_queue.get()
+				message = status_queue.get()
+				html_cell = "<pre>UE (" + device_id + ")\nIP Address  : " + ip_addr + "\n" + message + "</pre>"
+				html_queue.put(html_cell)
+			if (iperf_noperf and iperf_status):
+				self.CreateHtmlTestRowQueue(self.iperf_args, 'PERF NOT MET', len(self.UEDevices), html_queue)
+			elif (iperf_status):
+				self.CreateHtmlTestRowQueue(self.iperf_args, 'OK', len(self.UEDevices), html_queue)
+			else:
+				self.CreateHtmlTestRowQueue(self.iperf_args, 'KO', len(self.UEDevices), html_queue)
+				self.CreateHtmlFooter()
+				sys.exit(1)
+
 	def CheckProcessExist(self, initialize_eNB_flag):
 		multi_jobs = []
-		p = Process(target = SSH.CheckHSSProcess, args = ())
+		status_queue = SimpleQueue()
+		p = Process(target = SSH.CheckHSSProcess, args = (status_queue,))
 		p.daemon = True
 		p.start()
 		multi_jobs.append(p)
-		p = Process(target = SSH.CheckMMEProcess, args = ())
+		p = Process(target = SSH.CheckMMEProcess, args = (status_queue,))
 		p.daemon = True
 		p.start()
 		multi_jobs.append(p)
-		p = Process(target = SSH.CheckSPGWProcess, args = ())
+		p = Process(target = SSH.CheckSPGWProcess, args = (status_queue,))
 		p.daemon = True
 		p.start()
 		multi_jobs.append(p)
 		if initialize_eNB_flag == False:
-			p = Process(target = SSH.CheckeNBProcess, args = ())
+			p = Process(target = SSH.CheckeNBProcess, args = (status_queue,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
 		for job in multi_jobs:
 			job.join()
 
-	def CheckeNBProcess(self):
+		if (status_queue.empty()):
+			return -15
+		else:
+			result = 0
+			while (not status_queue.empty()):
+				status = status_queue.get()
+				if (status < 0):
+					result = status
+			return result
+
+	def CheckeNBProcess(self, status_queue):
 		try:
 			self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 			self.command('stdbuf -o0 ps -aux | grep -v grep | grep --color=never lte-softmodem', '\$', 5)
 			result = re.search('lte-softmodem', str(self.ssh.before))
 			if result is None:
 				logging.debug('\u001B[1;37;41m eNB Process Not Found! \u001B[0m')
-				sys.exit(1)
+				#sys.exit(1)
+				status_queue.put(-1)
+			else:
+				status_queue.put(1)
 			self.close()
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
-	def CheckHSSProcess(self):
+	def CheckHSSProcess(self, status_queue):
 		try:
 			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 			self.command('stdbuf -o0 ps -aux | grep -v grep | grep --color=never hss', '\$', 5)
@@ -695,12 +1201,15 @@ class SSHConnection():
 				result = re.search('hss_sim s6as diam_hss', str(self.ssh.before))
 			if result is None:
 				logging.debug('\u001B[1;37;41m HSS Process Not Found! \u001B[0m')
-				sys.exit(1)
+				status_queue.put(-2)
+				#sys.exit(1)
+			else:
+				status_queue.put(2)
 			self.close()
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
-	def CheckMMEProcess(self):
+	def CheckMMEProcess(self, status_queue):
 		try:
 			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 			self.command('stdbuf -o0 ps -aux | grep -v grep | grep --color=never mme', '\$', 5)
@@ -710,12 +1219,15 @@ class SSHConnection():
 				result = re.search('mme', str(self.ssh.before))
 			if result is None:
 				logging.debug('\u001B[1;37;41m MME Process Not Found! \u001B[0m')
-				sys.exit(1)
+				status_queue.put(-3)
+				#sys.exit(1)
+			else:
+				status_queue.put(3)
 			self.close()
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
-	def CheckSPGWProcess(self):
+	def CheckSPGWProcess(self, status_queue):
 		try:
 			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 			if re.match('OAI', self.EPCType, re.IGNORECASE):
@@ -726,13 +1238,19 @@ class SSHConnection():
 				result = re.search('xGw', str(self.ssh.before))
 			if result is None:
 				logging.debug('\u001B[1;37;41m SPGW Process Not Found! \u001B[0m')
-				sys.exit(1)
+				status_queue.put(-4)
+				#sys.exit(1)
+			else:
+				status_queue.put(4)
 			self.close()
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
 	def TerminateeNB(self):
 		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
+		self.command('cd ' + self.eNBSourceCodePath + '/cmake_targets', '\$', 5)
+		self.command('echo ' + self.eNBPassword + ' | sudo -S daemon --name=enb_daemon --stop', '\$', 5)
+		self.command('rm -f my-lte-softmodem-run.sh', '\$', 5)
 		self.command('echo ' + self.eNBPassword + ' | sudo -S killall --signal SIGINT lte-softmodem || true', '\$', 5)
 		time.sleep(5)
 		self.command('stdbuf -o0  ps -aux | grep -v grep | grep lte-softmodem', '\$', 5)
@@ -740,6 +1258,7 @@ class SSHConnection():
 		if result is not None:
 			self.command('echo ' + self.eNBPassword + ' | sudo -S killall --signal SIGKILL lte-softmodem || true', '\$', 5)
 		self.close()
+		self.CreateHtmlTestRow('N/A', 'OK', 0)
 
 	def TerminateHSS(self):
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
@@ -761,6 +1280,7 @@ class SSHConnection():
 			self.command('echo ' + self.EPCPassword + ' | sudo -S ./kill_hss.sh', '\$', 5)
 			self.command('rm ./kill_hss.sh', '\$', 5)
 		self.close()
+		self.CreateHtmlTestRow('N/A', 'OK', 0)
 
 	def TerminateMME(self):
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
@@ -775,6 +1295,7 @@ class SSHConnection():
 			self.command('cd /opt/ltebox/tools', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S ./stop_mme', '\$', 5)
 		self.close()
+		self.CreateHtmlTestRow('N/A', 'OK', 0)
 
 	def TerminateSPGW(self):
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
@@ -789,6 +1310,7 @@ class SSHConnection():
 			self.command('cd /opt/ltebox/tools', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S ./stop_xGw', '\$', 5)
 		self.close()
+		self.CreateHtmlTestRow('N/A', 'OK', 0)
 
 	def TerminateUE_common(self, device_id):
 		try:
@@ -816,27 +1338,31 @@ class SSHConnection():
 			multi_jobs.append(p)
 		for job in multi_jobs:
 			job.join()
+		self.CreateHtmlTestRow('N/A', 'OK', 0)
 
 	def LogCollectBuild(self):
 		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
+		self.command('rm -f build.log.zip', '\$', 5)
 		self.command('zip build.log.zip build_log_*/*', '\$', 60)
-		self.command('rm -rf build_log_*', '\$', 5)
+		self.command('echo ' + self.eNBPassword + ' | sudo -S rm -rf build_log_*', '\$', 5)
 		self.close()
 
 	def LogCollecteNB(self):
 		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
+		self.command('rm -f enb.log.zip', '\$', 5)
 		self.command('zip enb.log.zip enb*.log', '\$', 60)
-		self.command('rm enb*.log', '\$', 5)
+		self.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log', '\$', 5)
 		self.close()
 
 	def LogCollectPing(self):
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 		self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
 		self.command('cd scripts', '\$', 5)
+		self.command('rm -f ping.log.zip', '\$', 5)
 		self.command('zip ping.log.zip ping*.log', '\$', 60)
 		self.command('rm ping*.log', '\$', 5)
 		self.close()
@@ -845,6 +1371,7 @@ class SSHConnection():
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 		self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
 		self.command('cd scripts', '\$', 5)
+		self.command('rm -f iperf.log.zip', '\$', 5)
 		self.command('zip iperf.log.zip iperf*.log', '\$', 60)
 		self.command('rm iperf*.log', '\$', 5)
 		self.close()
@@ -853,6 +1380,7 @@ class SSHConnection():
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 		self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
 		self.command('cd scripts', '\$', 5)
+		self.command('rm -f hss.log.zip', '\$', 5)
 		if re.match('OAI', self.EPCType, re.IGNORECASE):
 			self.command('zip hss.log.zip hss*.log', '\$', 60)
 			self.command('rm hss*.log', '\$', 5)
@@ -865,6 +1393,7 @@ class SSHConnection():
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 		self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
 		self.command('cd scripts', '\$', 5)
+		self.command('rm -f mme.log.zip', '\$', 5)
 		if re.match('OAI', self.EPCType, re.IGNORECASE):
 			self.command('zip mme.log.zip mme*.log', '\$', 60)
 			self.command('rm mme*.log', '\$', 5)
@@ -877,6 +1406,7 @@ class SSHConnection():
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 		self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
 		self.command('cd scripts', '\$', 5)
+		self.command('rm -f spgw.log.zip', '\$', 5)
 		if re.match('OAI', self.EPCType, re.IGNORECASE):
 			self.command('zip spgw.log.zip spgw*.log', '\$', 60)
 			self.command('rm spgw*.log', '\$', 5)
@@ -884,6 +1414,152 @@ class SSHConnection():
 			self.command('cp /opt/ltebox/var/log/xGwLog.0 .', '\$', 5)
 			self.command('zip spgw.log.zip xGwLog.0', '\$', 60)
 		self.close()
+#-----------------------------------------------------------
+# HTML Reporting....
+#-----------------------------------------------------------
+	def CreateHtmlHeader(self):
+		if (not self.htmlHeaderCreated):
+			self.htmlFile = open('test_results.html', 'w')
+			self.htmlFile.write('<!DOCTYPE html>\n')
+			self.htmlFile.write('<html class="no-js" lang="en-US">\n')
+			self.htmlFile.write('<head>\n')
+			self.htmlFile.write('  <title>Test Results for TEMPLATE_JOB_NAME job build #TEMPLATE_BUILD_ID</title>\n')
+			self.htmlFile.write('  <base href = "http://www.openairinterface.org/" />\n')
+			self.htmlFile.write('</head>\n')
+			self.htmlFile.write('<body>\n')
+			self.htmlFile.write('  <table style="border-collapse: collapse; border: none;">\n')
+			self.htmlFile.write('    <tr style="border-collapse: collapse; border: none;">\n')
+			self.htmlFile.write('      <td style="border-collapse: collapse; border: none;">\n')
+			self.htmlFile.write('        <a href="http://www.openairinterface.org/">\n')
+			self.htmlFile.write('           <img src="/wp-content/uploads/2016/03/cropped-oai_final_logo2.png" alt="" border="none" height=50 width=150>\n')
+			self.htmlFile.write('           </img>\n')
+			self.htmlFile.write('        </a>\n')
+			self.htmlFile.write('      </td>\n')
+			self.htmlFile.write('      <td style="border-collapse: collapse; border: none; vertical-align: center;">\n')
+			self.htmlFile.write('        <b><font size = "6">Job Summary -- Job: TEMPLATE_JOB_NAME -- Build-ID: TEMPLATE_BUILD_ID</font></b>\n')
+			self.htmlFile.write('      </td>\n')
+			self.htmlFile.write('    </tr>\n')
+			self.htmlFile.write('  </table>\n')
+			self.htmlFile.write('  <br>\n')
+			self.htmlFile.write('  <table border = "1">\n')
+			self.htmlFile.write('     <tr>\n')
+			self.htmlFile.write('       <td bgcolor = "lightcyan" >GIT Repository</td>\n')
+			self.htmlFile.write('       <td><a href="' + SSH.eNBRepository + '">' + SSH.eNBRepository + '</a></td>\n')
+			self.htmlFile.write('     </tr>\n')
+			self.htmlFile.write('     <tr>\n')
+			self.htmlFile.write('       <td bgcolor = "lightcyan" >Job Trigger</td>\n')
+			if (SSH.eNB_AllowMerge):
+				self.htmlFile.write('       <td>Merge-Request</td>\n')
+			else:
+				self.htmlFile.write('       <td>Push to Branch</td>\n')
+			self.htmlFile.write('     </tr>\n')
+			self.htmlFile.write('     <tr>\n')
+			if (SSH.eNB_AllowMerge):
+				self.htmlFile.write('       <td bgcolor = "lightcyan" >Source Branch</td>\n')
+			else:
+				self.htmlFile.write('       <td bgcolor = "lightcyan" >Branch</td>\n')
+			self.htmlFile.write('       <td>' + SSH.eNBBranch + '</td>\n')
+			self.htmlFile.write('     </tr>\n')
+			self.htmlFile.write('     <tr>\n')
+			if (SSH.eNB_AllowMerge):
+				self.htmlFile.write('       <td bgcolor = "lightcyan" >Source Commit ID</td>\n')
+			else:
+				self.htmlFile.write('       <td bgcolor = "lightcyan" >Commit ID</td>\n')
+			self.htmlFile.write('       <td>' + SSH.eNBCommitID + '</td>\n')
+			self.htmlFile.write('     </tr>\n')
+			if (SSH.eNB_AllowMerge):
+				self.htmlFile.write('     <tr>\n')
+				self.htmlFile.write('       <td bgcolor = "lightcyan" >Target Branch</td>\n')
+				self.htmlFile.write('       <td>develop</td>\n')
+				self.htmlFile.write('     </tr>\n')
+			self.htmlFile.write('  </table>\n')
+
+			terminate_ue_flag = True
+			SSH.GetAllUEDevices(terminate_ue_flag)
+			self.htmlUEConnected = len(self.UEDevices)
+			self.htmlFile.write('<h2>' + str(self.htmlUEConnected) + ' UE(s) is(are) connected to ADB bench server</h2>\n')
+
+			self.htmlFile.write('  <br>\n')
+			self.htmlFile.write('  <h2>Test Summary for ' + SSH.testXMLfile + '</h2>\n')
+			self.htmlFile.write('  <table border = "1">\n')
+			self.htmlFile.write('      <tr bgcolor = "#33CCFF" >\n')
+			self.htmlFile.write('        <th>Test Id</th>\n')
+			self.htmlFile.write('        <th>Test Desc</th>\n')
+			self.htmlFile.write('        <th>Test Options</th>\n')
+			self.htmlFile.write('        <th>Test Status</th>\n')
+			i = 0
+			while (i < self.htmlUEConnected):
+				self.htmlFile.write('        <th>UE' + str(i) + ' Status</th>\n')
+				i += 1
+			self.htmlFile.write('      </tr>\n')
+		self.htmlHeaderCreated = True
+
+	def CreateHtmlFooter(self):
+		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
+			self.htmlFile.write('  </table>\n')
+			self.htmlFile.write('</body>\n')
+			self.htmlFile.write('</html>\n')
+			self.htmlFile.close()
+		self.htmlFooterCreated = False
+
+	def CreateHtmlTestRow(self, options, status, processesStatus):
+		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
+			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <td bgcolor = "lightcyan" >' + SSH.testCase_id  + '</td>\n')
+			self.htmlFile.write('        <td>' + SSH.desc  + '</td>\n')
+			self.htmlFile.write('        <td>' + str(options)  + '</td>\n')
+			if (str(status) == 'OK'):
+				self.htmlFile.write('        <td bgcolor = "lightgreen" >' + str(status)  + '</td>\n')
+			elif (str(status) == 'KO'):
+				if (processesStatus == 0):
+					self.htmlFile.write('        <td bgcolor = "lightcoral" >' + str(status)  + '</td>\n')
+				elif (processesStatus == -1):
+					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - eNB process not found</td>\n')
+				elif (processesStatus == -2):
+					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - HSS process not found</td>\n')
+				elif (processesStatus == -3):
+					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - MME process not found</td>\n')
+				elif (processesStatus == -4):
+					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - SPGW process not found</td>\n')
+				else:
+					self.htmlFile.write('        <td bgcolor = "lightcoral" >' + str(status)  + '</td>\n')
+			else:
+				self.htmlFile.write('        <td bgcolor = "orange" >' + str(status)  + '</td>\n')
+			i = 0
+			while (i < self.htmlUEConnected):
+				self.htmlFile.write('        <td>-</td>\n')
+				i += 1
+			self.htmlFile.write('      </tr>\n')
+
+	def CreateHtmlTestRowQueue(self, options, status, ue_status, ue_queue):
+		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
+			addOrangeBK = False
+			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <td bgcolor = "lightcyan" >' + SSH.testCase_id  + '</td>\n')
+			self.htmlFile.write('        <td>' + SSH.desc  + '</td>\n')
+			self.htmlFile.write('        <td>' + str(options)  + '</td>\n')
+			if (str(status) == 'OK'):
+				self.htmlFile.write('        <td bgcolor = "lightgreen" >' + str(status)  + '</td>\n')
+			elif (str(status) == 'KO'):
+				self.htmlFile.write('        <td bgcolor = "lightcoral" >' + str(status)  + '</td>\n')
+			else:
+				addOrangeBK = True
+				self.htmlFile.write('        <td bgcolor = "orange" >' + str(status)  + '</td>\n')
+			i = 0
+			while (i < self.htmlUEConnected):
+				if (i < ue_status):
+					if (not ue_queue.empty()):
+						if (addOrangeBK):
+							self.htmlFile.write('        <td bgcolor = "orange" >' + str(ue_queue.get()) + '</td>\n')
+						else:
+							self.htmlFile.write('        <td>' + str(ue_queue.get()) + '</td>\n')
+					else:
+						self.htmlFile.write('        <td>-</td>\n')
+				else:
+					self.htmlFile.write('        <td>-</td>\n')
+				i += 1
+			self.htmlFile.write('      </tr>\n')
+
 #-----------------------------------------------------------
 # Usage()
 #-----------------------------------------------------------
@@ -895,8 +1571,8 @@ def Usage():
 	print('  --help  Show this help.')
 	print('  --mode=[Mode]')
 	print('      TesteNB')
-	print('      TerminateeNB, TerminateEPC')
-	print('      LogCollectBuild, LogCollecteNB, LogCollectEPC, LogCollectADB')
+	print('      TerminateeNB, TerminateUE, TerminateHSS, TerminateMME, TerminateSPGW')
+	print('      LogCollectBuild, LogCollecteNB, LogCollectHSS, LogCollectMME, LogCollectSPGW, LogCollectPing, LogCollectIperf')
 	print('  --eNBIPAddress=[eNB\'s IP Address]')
 	print('  --eNBRepository=[eNB\'s Repository URL]')
 	print('  --eNBBranch=[eNB\'s Branch Name]')
@@ -944,6 +1620,13 @@ def GetParametersFromXML(action):
 	if action == 'Iperf':
 		SSH.iperf_args = test.findtext('iperf_args')
 		SSH.iperf_packetloss_threshold = test.findtext('iperf_packetloss_threshold')
+		SSH.iperf_profile = test.findtext('iperf_profile')
+		if (SSH.iperf_profile is None):
+			SSH.iperf_profile = 'balanced'
+		else:
+			if SSH.iperf_profile != 'balanced' and SSH.iperf_profile != 'unbalanced' and SSH.iperf_profile != 'single-ue':
+				logging.debug('ERROR: test-case has wrong profile ' + SSH.iperf_profile)
+				SSH.iperf_profile = 'balanced'
 
 #check if given test is in list
 #it is in list if one of the strings in 'list' is at the beginning of 'test'
@@ -980,6 +1663,11 @@ while len(argvs) > 1:
 	elif re.match('^\-\-eNBRepository=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-eNBRepository=(.+)$', myArgv, re.IGNORECASE)
 		SSH.eNBRepository = matchReg.group(1)
+	elif re.match('^\-\-eNB_AllowMerge=(.+)$', myArgv, re.IGNORECASE):
+		matchReg = re.match('^\-\-eNB_AllowMerge=(.+)$', myArgv, re.IGNORECASE)
+		doMerge = matchReg.group(1)
+		if ((doMerge == 'true') or (doMerge == 'True')):
+			SSH.eNB_AllowMerge = True
 	elif re.match('^\-\-eNBBranch=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-eNBBranch=(.+)$', myArgv, re.IGNORECASE)
 		SSH.eNBBranch = matchReg.group(1)
@@ -1098,6 +1786,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE):
 		Usage()
 		sys.exit('Insufficient Parameter')
 
+	SSH.CreateHtmlHeader()
+
 	#read test_case_list.xml file
         # if no parameters for XML file, use default value
 	if SSH.testXMLfile == '':
@@ -1196,6 +1886,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE):
 				SSH.TerminateSPGW()
 			else:
 				sys.exit('Invalid action')
+
+	SSH.CreateHtmlFooter()
 else:
 	Usage()
 	sys.exit('Invalid mode')

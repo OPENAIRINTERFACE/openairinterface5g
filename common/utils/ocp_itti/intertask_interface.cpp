@@ -1,6 +1,6 @@
 /*
   Author: Laurent THOMAS, Open Cells
-  copyleft: OpenAirInterface Software Alliance
+  copyleft: OpenAirInterface Software Alliance and it's licence 
 */
 #include <vector>
 #include <map>

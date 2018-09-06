@@ -107,6 +107,10 @@ unsigned char                   scope_enb_num_ue = 2;
 static pthread_t                forms_thread; //xforms
 #endif //XFORMS
 
+#ifndef ENABLE_USE_MME
+#define EPC_MODE_ENABLED 0
+#endif
+
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
 int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
@@ -129,11 +133,11 @@ volatile int             start_UE = 0;
 #endif
 volatile int             oai_exit = 0;
 
-static clock_source_t clock_source = internal;
+clock_source_t clock_source = internal;
 static int wait_for_sync = 0;
 
 unsigned int                    mmapped_dma=0;
-int                             single_thread_flag=1;
+int                             single_thread_flag = 0;
 
 static int8_t                     threequarter_fs=0;
 
@@ -513,7 +517,7 @@ void *l2l1_task(void *arg) {
 #endif
 
 
-static void get_options(void) {
+static void get_options(unsigned int *start_msc) {
  
   int tddflag, nonbiotflag;
  
@@ -547,10 +551,8 @@ static void get_options(void) {
       set_glog(glog_level);
   }
   if (start_telnetsrv) {
-     load_module_shlib("telnetsrv",NULL,0);
+     load_module_shlib("telnetsrv",NULL,0,NULL);
   }
-
-
 
   if ( !(CONFIG_ISFLAGSET(CONFIG_ABORT)) ) {
       memset((void*)&RC,0,sizeof(RC));
@@ -787,7 +789,7 @@ int stop_L1L2(module_id_t enb_id)
   oai_exit = 1;
 
   if (!RC.ru) {
-    LOG_F(ENB_APP, "no RU configured\n");
+    LOG_UI(ENB_APP, "no RU configured\n");
     return -1;
   }
 
@@ -900,7 +902,16 @@ static  void wait_nfapi_init(char *thread_name) {
   
   pthread_mutex_unlock(&nfapi_sync_mutex);
   
+  /*
+   * Raphael Defosseux: temporary workaround for CI
+   * -- Repeating the message thrice to make sure
+   * -- it is present during flush.
+   */
   printf( "NFAPI: got sync (%s)\n", thread_name);
+  printf( "NFAPI: got sync (%s)\n", thread_name);
+  printf( "NFAPI: got sync (%s)\n", thread_name);
+  fflush(stdout);
+  fflush(stderr);
 }
 
 int main( int argc, char **argv )
@@ -915,6 +926,7 @@ int main( int argc, char **argv )
 #if defined (XFORMS)
   int ret;
 #endif
+  unsigned int start_msc=0;
 
   if ( load_configmodule(argc,argv) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
@@ -932,7 +944,7 @@ int main( int argc, char **argv )
 
   printf("Reading in command-line options\n");
 
-  get_options (); 
+  get_options (&start_msc);
   if (CONFIG_ISFLAGSET(CONFIG_ABORT) ) {
       fprintf(stderr,"Getting configuration failed\n");
       exit(-1);
@@ -957,22 +969,19 @@ int main( int argc, char **argv )
 
 #if defined(ENABLE_ITTI)
 
-  printf("ITTI init\n");
+  printf("ITTI init, useMME: %i\n" ,EPC_MODE_ENABLED);
+
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
   // initialize mscgen log after ITTI
+  if (start_msc) {
+     load_module_shlib("msc",NULL,0,&msc_interface);
+  }
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
 #endif
 
   if (opt_type != OPT_NONE) {
-    radio_type_t radio_type;
-
-    if (frame_parms[0]->frame_type == FDD)
-      radio_type = RADIO_TYPE_FDD;
-    else
-      radio_type = RADIO_TYPE_TDD;
-
-    if (init_opt(in_path, in_ip, NULL, radio_type) == -1)
+    if (init_opt(in_path, in_ip) == -1)
       LOG_E(OPT,"failed to run OPT \n");
   }
 
@@ -1121,13 +1130,6 @@ int main( int argc, char **argv )
   
   rt_sleep_ns(10*100000000ULL);
 
-  if (nfapi_mode) {
-
-    printf("NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
-    pthread_cond_init(&sync_cond,NULL);
-    pthread_mutex_init(&sync_mutex, NULL);
-  }
-  
   if (nfapi_mode)
   {
     printf("NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");

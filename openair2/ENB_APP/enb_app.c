@@ -35,7 +35,7 @@
 #include "assertions.h"
 #include "common/ran_context.h"
 
-#include "log.h"
+#include "common/utils/LOG/log.h"
 
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
@@ -43,7 +43,13 @@
 #   include "s1ap_eNB.h"
 #   include "sctp_eNB_task.h"
 #   include "gtpv1u_eNB_task.h"
+# else
+#    define EPC_MODE_ENABLED 0
 # endif
+
+//#   include "x2ap_eNB.h"
+#   include "x2ap_messages_types.h"
+#   define X2AP_ENB_REGISTER_RETRY_DELAY   10
 
 #include "openair1/PHY/INIT/phy_init.h"
 extern unsigned char NB_eNB_INST;
@@ -135,6 +141,30 @@ static uint32_t eNB_app_register(uint32_t enb_id_start, uint32_t enb_id_end)//, 
 #endif
 
 /*------------------------------------------------------------------------------*/
+static uint32_t eNB_app_register_x2(uint32_t enb_id_start, uint32_t enb_id_end)
+{
+  uint32_t         enb_id;
+  MessageDef      *msg_p;
+  uint32_t         register_enb_x2_pending = 0;
+
+  for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
+
+    {
+
+      msg_p = itti_alloc_new_message (TASK_ENB_APP, X2AP_REGISTER_ENB_REQ);
+
+      RCconfig_X2(msg_p, enb_id);
+
+	//itti_send_msg_to_task (TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
+
+      register_enb_x2_pending++;
+    }
+  }
+
+  return register_enb_x2_pending;
+}
+
+/*------------------------------------------------------------------------------*/
 void *eNB_app_task(void *args_p)
 {
 #if defined(ENABLE_ITTI)
@@ -142,10 +172,13 @@ void *eNB_app_task(void *args_p)
   uint32_t                        enb_id_start = 0;
   uint32_t                        enb_id_end = enb_id_start + enb_nb;
 # if defined(ENABLE_USE_MME)
-  uint32_t                        register_enb_pending;
+  uint32_t                        register_enb_pending=0;
   uint32_t                        registered_enb;
   long                            enb_register_retry_timer_id;
 # endif
+  uint32_t                        x2_register_enb_pending;
+  //uint32_t                        x2_registered_enb;
+  //long                            x2_enb_register_retry_timer_id;
   uint32_t                        enb_id;
   MessageDef                     *msg_p           = NULL;
   instance_t                      instance;
@@ -183,13 +216,17 @@ void *eNB_app_task(void *args_p)
 
 # if defined(ENABLE_USE_MME)
   /* Try to register each eNB */
-  registered_enb = 0;
-  register_enb_pending = eNB_app_register (enb_id_start, enb_id_end);//, enb_properties_p);
-# else
+    registered_enb = 0;
+    register_enb_pending = eNB_app_register (enb_id_start, enb_id_end);//, enb_properties_p);
+#else
   /* Start L2L1 task */
-  msg_p = itti_alloc_new_message(TASK_ENB_APP, INITIALIZE_MESSAGE);
-  itti_send_msg_to_task(TASK_L2L1, INSTANCE_DEFAULT, msg_p);
-# endif
+    msg_p = itti_alloc_new_message(TASK_ENB_APP, INITIALIZE_MESSAGE);
+    itti_send_msg_to_task(TASK_L2L1, INSTANCE_DEFAULT, msg_p);
+#endif
+
+  /* Try to register each eNB with each other */
+ // x2_registered_enb = 0;
+  x2_register_enb_pending = eNB_app_register_x2 (enb_id_start, enb_id_end);
 
   do {
     // Wait for a message
@@ -207,66 +244,68 @@ void *eNB_app_task(void *args_p)
       LOG_I(ENB_APP, "Received %s\n", ITTI_MSG_NAME(msg_p));
       break;
 
-# if defined(ENABLE_USE_MME)
-
     case S1AP_REGISTER_ENB_CNF:
-      LOG_I(ENB_APP, "[eNB %d] Received %s: associated MME %d\n", instance, ITTI_MSG_NAME (msg_p),
-            S1AP_REGISTER_ENB_CNF(msg_p).nb_mme);
+# if defined(ENABLE_USE_MME)
+  	LOG_I(ENB_APP, "[eNB %d] Received %s: associated MME %d\n", instance, ITTI_MSG_NAME (msg_p),
+  	      S1AP_REGISTER_ENB_CNF(msg_p).nb_mme);
 
-      DevAssert(register_enb_pending > 0);
-      register_enb_pending--;
+  	DevAssert(register_enb_pending > 0);
+  	register_enb_pending--;
 
-      /* Check if at least eNB is registered with one MME */
-      if (S1AP_REGISTER_ENB_CNF(msg_p).nb_mme > 0) {
-        registered_enb++;
-      }
+  	/* Check if at least eNB is registered with one MME */
+  	if (S1AP_REGISTER_ENB_CNF(msg_p).nb_mme > 0) {
+  	  registered_enb++;
+  	}
 
-      /* Check if all register eNB requests have been processed */
-      if (register_enb_pending == 0) {
-        if (registered_enb == enb_nb) {
-          /* If all eNB are registered, start L2L1 task */
-          MessageDef *msg_init_p;
+  	/* Check if all register eNB requests have been processed */
+  	if (register_enb_pending == 0) {
+  	  if (registered_enb == enb_nb) {
+  	    /* If all eNB are registered, start L2L1 task */
+  	    MessageDef *msg_init_p;
 
-          msg_init_p = itti_alloc_new_message (TASK_ENB_APP, INITIALIZE_MESSAGE);
-          itti_send_msg_to_task (TASK_L2L1, INSTANCE_DEFAULT, msg_init_p);
+  	    msg_init_p = itti_alloc_new_message (TASK_ENB_APP, INITIALIZE_MESSAGE);
+  	    itti_send_msg_to_task (TASK_L2L1, INSTANCE_DEFAULT, msg_init_p);
 
-        } else {
-          LOG_W(ENB_APP, " %d eNB not associated with a MME, retrying registration in %d seconds ...\n",
-                enb_nb - registered_enb,  ENB_REGISTER_RETRY_DELAY);
+  	  } else {
+  	    LOG_W(ENB_APP, " %d eNB not associated with a MME, retrying registration in %d seconds ...\n",
+  		  enb_nb - registered_enb,  ENB_REGISTER_RETRY_DELAY);
 
-          /* Restart the eNB registration process in ENB_REGISTER_RETRY_DELAY seconds */
-          if (timer_setup (ENB_REGISTER_RETRY_DELAY, 0, TASK_ENB_APP, INSTANCE_DEFAULT, TIMER_ONE_SHOT,
-                           NULL, &enb_register_retry_timer_id) < 0) {
-            LOG_E(ENB_APP, " Can not start eNB register retry timer, use \"sleep\" instead!\n");
+  	    /* Restart the eNB registration process in ENB_REGISTER_RETRY_DELAY seconds */
+  	    if (timer_setup (ENB_REGISTER_RETRY_DELAY, 0, TASK_ENB_APP, INSTANCE_DEFAULT, TIMER_ONE_SHOT,
+  			     NULL, &enb_register_retry_timer_id) < 0) {
+  	      LOG_E(ENB_APP, " Can not start eNB register retry timer, use \"sleep\" instead!\n");
 
-            sleep(ENB_REGISTER_RETRY_DELAY);
-            /* Restart the registration process */
-            registered_enb = 0;
-            register_enb_pending = eNB_app_register (enb_id_start, enb_id_end);//, enb_properties_p);
-          }
-        }
-      }
-
+  	      sleep(ENB_REGISTER_RETRY_DELAY);
+  	      /* Restart the registration process */
+  	      registered_enb = 0;
+  	      register_enb_pending = eNB_app_register (enb_id_start, enb_id_end);//, enb_properties_p);
+  	    }
+  	  }
+  	}
+#endif
       break;
 
     case S1AP_DEREGISTERED_ENB_IND:
-      LOG_W(ENB_APP, "[eNB %d] Received %s: associated MME %d\n", instance, ITTI_MSG_NAME (msg_p),
-            S1AP_DEREGISTERED_ENB_IND(msg_p).nb_mme);
+      if (EPC_MODE_ENABLED) {
+  	LOG_W(ENB_APP, "[eNB %d] Received %s: associated MME %d\n", instance, ITTI_MSG_NAME (msg_p),
+  	      S1AP_DEREGISTERED_ENB_IND(msg_p).nb_mme);
 
-      /* TODO handle recovering of registration */
+  	/* TODO handle recovering of registration */
+      }
       break;
 
     case TIMER_HAS_EXPIRED:
-      LOG_I(ENB_APP, " Received %s: timer_id %ld\n", ITTI_MSG_NAME (msg_p), TIMER_HAS_EXPIRED(msg_p).timer_id);
+# if defined(ENABLE_USE_MME)
+  	LOG_I(ENB_APP, " Received %s: timer_id %ld\n", ITTI_MSG_NAME (msg_p), TIMER_HAS_EXPIRED(msg_p).timer_id);
 
-      if (TIMER_HAS_EXPIRED (msg_p).timer_id == enb_register_retry_timer_id) {
-        /* Restart the registration process */
-        registered_enb = 0;
-        register_enb_pending = eNB_app_register (enb_id_start, enb_id_end);//, enb_properties_p);
-      }
-
+  	if (TIMER_HAS_EXPIRED (msg_p).timer_id == enb_register_retry_timer_id) {
+  	  /* Restart the registration process */
+  	  registered_enb = 0;
+  	  register_enb_pending = eNB_app_register (enb_id_start, enb_id_end);//, enb_properties_p);
+  	}
+#endif
       break;
-# endif
+
 
     default:
       LOG_E(ENB_APP, "Received unexpected message %s\n", ITTI_MSG_NAME (msg_p));

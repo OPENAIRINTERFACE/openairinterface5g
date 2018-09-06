@@ -43,6 +43,8 @@
 #include "common/utils/LOG/log.h"
 #include "common_lib.h"
 #include "assertions.h"
+#include <sys/sysinfo.h>
+#include <sys/resource.h>
 
 #ifdef __SSE4_1__
 #  include <smmintrin.h>
@@ -274,6 +276,8 @@ static int sync_to_gps(openair0_device *device)
 #include "usrp_lib.h"
 static FILE    *pFile = NULL;
 int             mmapfd = 0;
+int             iqfd = 0;
+int             use_mmap = 1; // default is to use mmap
 struct stat     sb;
 iqrec_t        *ms_sample = NULL;                      // memory for all subframes
 unsigned int    nb_samples = 0;
@@ -406,13 +410,24 @@ static void trx_usrp_end(openair0_device *device) {
       }
     }
     if (u_sf_mode == 2) { // replay
-      if (ms_sample != MAP_FAILED) {
-	munmap(ms_sample, sb.st_size);
-	ms_sample = NULL;
-      }
-      if (mmapfd != 0) {
-	close(mmapfd);
-	mmapfd = 0;
+      if (use_mmap) {
+	if (ms_sample != MAP_FAILED) {
+	  munmap(ms_sample, sb.st_size);
+	  ms_sample = NULL;
+	}
+	if (mmapfd != 0) {
+	  close(mmapfd);
+	  mmapfd = 0;
+	}
+      } else {
+	if (ms_sample != NULL) {
+	  free(ms_sample);
+	  ms_sample = NULL;
+	}
+	if (iqfd != 0) {
+	  close(iqfd);
+	  iqfd = 0;
+	}
       }
     }
 #endif    
@@ -619,15 +634,50 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
 	return 0; // should make calling process exit
       }
       wrap_ts = wrap_count * (nb_samples * (((int)(device->openair0_cfg[0].sample_rate)) / 1000));
-    }
-    if (cur_samples < nb_samples) {
-      *ptimestamp = (ms_sample[0].ts + (cur_samples * (((int)(device->openair0_cfg[0].sample_rate)) / 1000))) + wrap_ts;
-      if (cur_samples == 0) {
-	std::cerr << "starting subframes file with wrap_count=" << wrap_count << " wrap_ts=" << wrap_ts
-		  << " ts=" << *ptimestamp << std::endl;
+      if (!use_mmap) {
+	if (lseek(iqfd, 0, SEEK_SET) == 0) {
+	  std::cerr << "Seeking at the beginning of IQ file" << std::endl;
+	} else {
+	  std::cerr << "Problem seeking at the beginning of IQ file" << std::endl;
+	}
       }
-      memcpy(buff[0], &ms_sample[cur_samples].samples[0], nsamps*4);
-      cur_samples++;
+    }
+    if (use_mmap) {
+      if (cur_samples < nb_samples) {
+	*ptimestamp = (ms_sample[0].ts + (cur_samples * (((int)(device->openair0_cfg[0].sample_rate)) / 1000))) + wrap_ts;
+	if (cur_samples == 0) {
+	  std::cerr << "starting subframes file with wrap_count=" << wrap_count << " wrap_ts=" << wrap_ts
+		    << " ts=" << *ptimestamp << std::endl;
+	}
+	memcpy(buff[0], &ms_sample[cur_samples].samples[0], nsamps*4);
+	cur_samples++;
+      }
+    } else {
+      // read sample from file
+      if (read(iqfd, ms_sample, sizeof(iqrec_t)) != sizeof(iqrec_t)) {
+	std::cerr << "pb reading iqfile at index " << sizeof(iqrec_t)*cur_samples << std::endl;
+	close(iqfd);
+	free(ms_sample);
+	ms_sample = NULL;
+	iqfd = 0;
+	exit(-1);
+      }
+
+      if (cur_samples < nb_samples) {
+	static int64_t ts0 = 0;
+	if ((cur_samples == 0) && (wrap_count == 0)) {
+	  ts0 = ms_sample->ts;
+	}
+	*ptimestamp = ts0 + (cur_samples * (((int)(device->openair0_cfg[0].sample_rate)) / 1000)) + wrap_ts;
+	if (cur_samples == 0) {
+	  std::cerr << "starting subframes file with wrap_count=" << wrap_count << " wrap_ts=" << wrap_ts
+		    << " ts=" << *ptimestamp << std::endl;
+	}
+	memcpy(buff[0], &ms_sample->samples[0], nsamps*4);
+	cur_samples++;
+	// Prepare for next read
+	off_t where = lseek(iqfd, cur_samples * sizeof(iqrec_t), SEEK_SET);
+      }
     }
     struct timespec req;
     req.tv_sec = 0;
@@ -900,13 +950,18 @@ int trx_usrp_recplay_config_init(paramdef_t *usrp_recplay_params) {
 #endif
 
 extern "C" {
-    /*! \brief Initialize Openair USRP target. It returns 0 if OK
-    * \param device the hardware to use
-         * \param openair0_cfg RF frontend parameters set by application
-         */
-    int device_init(openair0_device* device, openair0_config_t *openair0_cfg) {
+  /*! \brief Initialize Openair USRP target. It returns 0 if OK
+   * \param device the hardware to use
+   * \param openair0_cfg RF frontend parameters set by application
+   */
+  int device_init(openair0_device* device, openair0_config_t *openair0_cfg) {
+
+    LOG_D(PHY, "openair0_cfg[0].sdr_addrs == '%s'\n", openair0_cfg[0].sdr_addrs);
+    LOG_D(PHY, "openair0_cfg[0].clock_source == '%d'\n", openair0_cfg[0].clock_source);
+
 #if defined(USRP_REC_PLAY)
       paramdef_t usrp_recplay_params[7];
+      struct sysinfo systeminfo;
       // to check
       static int done = 0;
       if (done == 1) {
@@ -914,6 +969,11 @@ extern "C" {
       } // prevent from multiple init
       done = 1;
       // end to check
+      // Use mmap for IQ files for systems with less than 6GB total RAM
+      sysinfo(&systeminfo);
+      if (systeminfo.totalram < 6144000000) {
+	use_mmap = 0;
+      }
       memset(usrp_recplay_params, 0, 7*sizeof(paramdef_t));
       memset(&u_sf_filename[0], 0, 1024);
       if (trx_usrp_recplay_config_init(usrp_recplay_params) != 0) {
@@ -953,7 +1013,8 @@ extern "C" {
         device->trx_set_freq_func = trx_usrp_set_freq;
         device->trx_set_gains_func   = trx_usrp_set_gains;
         device->openair0_cfg = openair0_cfg;
-	std::cerr << "USRP device initialized in subframes replay mode for " << u_sf_loops << " loops." << std::endl;
+	std::cerr << "USRP device initialized in subframes replay mode for " << u_sf_loops << " loops. Use mmap="
+		  << use_mmap << std::endl;
       } else {
 #endif
         uhd::set_thread_priority_safe(1.0);
@@ -965,8 +1026,30 @@ extern "C" {
         // Initialize USRP device
         device->openair0_cfg = openair0_cfg;
 
-        std::string args = "type=b200";
-        uhd::device_addrs_t device_adds = uhd::device::find(args);
+      std::string args = "type=b200";
+
+      char *addr_args = NULL;
+      // Check whether sdr_addrs is set in the config or not
+      if (openair0_cfg[0].sdr_addrs != NULL) {
+	if (strcmp(openair0_cfg[0].sdr_addrs, "0.0.0.0") != 0) {
+        // Check whether sdr_addrs contains multiple IP addresses
+        // and split and add them to addr_args
+          if (strstr(openair0_cfg[0].sdr_addrs, ",") != NULL) {
+            char *addr0 = openair0_cfg[0].sdr_addrs;
+            // Replace , with \0
+            strsep(&openair0_cfg[0].sdr_addrs, ",");
+            char *addr1 = openair0_cfg[0].sdr_addrs;
+            // Allocate memory for ",addr0=,addr1=\0" and the addresses
+            size_t addr_args_len = sizeof(char)*(15 + strlen(addr0) + strlen(addr1));
+            addr_args = (char *)malloc(addr_args_len);
+            snprintf(addr_args, addr_args_len, ",addr0=%s,addr1=%s", addr0, addr1);
+            args += addr_args;
+            LOG_D(PHY, "addr_args == '%s'\n", addr_args);
+	  }
+        }
+      }
+
+      uhd::device_addrs_t device_adds = uhd::device::find(args);
 
         int vers=0,subvers=0,subsubvers=0;
         int bw_gain_adjust=0;
@@ -980,12 +1063,17 @@ extern "C" {
         LOG_I(PHY,"Checking for USRPs : UHD %s (%d.%d.%d)\n",
               uhd::get_version_string().c_str(),vers,subvers,subsubvers);
 
-        if(device_adds.size() == 0)  {
-            double usrp_master_clock = 184.32e6;
-            std::string args = "type=x300";
+      if(device_adds.size() == 0)  {
 
-            // workaround for an api problem, master clock has to be set with the constructor not via set_master_clock_rate
-            args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
+        double usrp_master_clock = 184.32e6;
+        std::string args = "type=x300";
+        
+	if (addr_args) {
+          args += addr_args;
+        }
+
+        // workaround for an api problem, master clock has to be set with the constructor not via set_master_clock_rate
+        args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
 
             //    args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=4096, recv_frame_size=4096";
             uhd::device_addrs_t device_adds = uhd::device::find(args);
@@ -1175,12 +1263,14 @@ extern "C" {
             }
         }
 
-        for(int i=0; i<s->usrp->get_tx_num_channels(); i++) {
-	  ::uhd::gain_range_t gain_range_tx = s->usrp->get_tx_gain_range(i);
-            if (i<openair0_cfg[0].tx_num_channels) {
-                s->usrp->set_tx_rate(openair0_cfg[0].sample_rate,i);
-                s->usrp->set_tx_freq(openair0_cfg[0].tx_freq[i],i);
-                s->usrp->set_tx_gain(gain_range_tx.stop()-openair0_cfg[0].tx_gain[i],i);
+      LOG_D(PHY, "usrp->get_tx_num_channels() == %zd\n", s->usrp->get_tx_num_channels());
+      LOG_D(PHY, "openair0_cfg[0].tx_num_channels == %d\n", openair0_cfg[0].tx_num_channels);
+      for(int i=0; i<s->usrp->get_tx_num_channels(); i++) {
+        ::uhd::gain_range_t gain_range_tx = s->usrp->get_tx_gain_range(i);
+        if (i<openair0_cfg[0].tx_num_channels) {
+          s->usrp->set_tx_rate(openair0_cfg[0].sample_rate,i);
+          s->usrp->set_tx_freq(openair0_cfg[0].tx_freq[i],i);
+          s->usrp->set_tx_gain(gain_range_tx.stop()-openair0_cfg[0].tx_gain[i],i);
 
                 LOG_I(PHY,"USRP TX_GAIN:%3.2lf gain_range:%3.2lf tx_gain:%3.2lf\n", gain_range_tx.stop()-openair0_cfg[0].tx_gain[i], gain_range_tx.stop(), openair0_cfg[0].tx_gain[i]);
             }
@@ -1282,33 +1372,60 @@ extern "C" {
 	memset(ms_sample, 0, u_sf_max * BELL_LABS_IQ_BYTES_PER_SF);
       }
       if (u_sf_mode == 2) {
-	// use mmap
-	mmapfd = open(u_sf_filename, O_RDONLY | O_LARGEFILE);
-	if (mmapfd != 0) {
-	  fstat(mmapfd, &sb);
-	  std::cerr << "Loading subframes using mmap() from " << u_sf_filename << " size=" << (uint64_t)sb.st_size << " bytes ..." << std::endl;
-	  ms_sample = (iqrec_t*) mmap(NULL, sb.st_size, PROT_WRITE, MAP_PRIVATE, mmapfd, 0);
-	  if (ms_sample != MAP_FAILED) {
-	    nb_samples = (sb.st_size / sizeof(iqrec_t));
-	    int aligned = (((unsigned long)ms_sample & 31) == 0)? 1:0;
-	    std::cerr<< "Loaded "<< nb_samples << " subframes." << std::endl;
-	    if (aligned == 0) {
-	      std::cerr<< "mmap address is not 32 bytes aligned, exiting." << std::endl;
+	if (use_mmap) {
+	  // use mmap
+	  mmapfd = open(u_sf_filename, O_RDONLY | O_LARGEFILE);
+	  if (mmapfd != 0) {
+	    fstat(mmapfd, &sb);
+	    std::cerr << "Loading subframes using mmap() from " << u_sf_filename << " size=" << (uint64_t)sb.st_size << " bytes ..." << std::endl;
+	    ms_sample = (iqrec_t*) mmap(NULL, sb.st_size, PROT_WRITE, MAP_PRIVATE, mmapfd, 0);
+	    if (ms_sample != MAP_FAILED) {
+	      nb_samples = (sb.st_size / sizeof(iqrec_t));
+	      int aligned = (((unsigned long)ms_sample & 31) == 0)? 1:0;
+	      std::cerr<< "Loaded "<< nb_samples << " subframes." << std::endl;
+	      if (aligned == 0) {
+		std::cerr<< "mmap address is not 32 bytes aligned, exiting." << std::endl;
+		close(mmapfd);
+		exit(-1);
+	      }
+	    } else {
+	      std::cerr << "Cannot mmap file, exiting." << std::endl;
 	      close(mmapfd);
 	      exit(-1);
 	    }
 	  } else {
-	    std::cerr << "Cannot mmap file, exiting." << std::endl;
-	    close(mmapfd);
+	    std::cerr << "Cannot open " << u_sf_filename << " , exiting." << std::endl;
 	    exit(-1);
 	  }
 	} else {
+	  iqfd = open(u_sf_filename, O_RDONLY | O_LARGEFILE);
+	  if (iqfd != 0) { 
+	    fstat(iqfd, &sb);
+	    nb_samples = (sb.st_size / sizeof(iqrec_t));
+	    std::cerr << "Loading " << nb_samples << " subframes from " << u_sf_filename
+		      << " size=" << (uint64_t)sb.st_size << " bytes ..." << std::endl;
+	    // allocate buffer for 1 sample at a time
+	    ms_sample = (iqrec_t*) malloc(sizeof(iqrec_t));
+	    if (ms_sample == NULL) {
+	      std::cerr<< "Memory allocation failed for individual subframe replay mode." << std::endl;
+	      close(iqfd);
+	      exit(-1);
+	    }
+	    memset(ms_sample, 0, sizeof(iqrec_t));
+	    // point at beginning of file
+	    if (lseek(iqfd, 0, SEEK_SET) == 0) {
+	      std::cerr << "Initial seek at beginning of the file" << std::endl;
+	    } else {
+	      std::cerr << "Problem initial seek at beginning of the file" << std::endl;
+	    }
+	  } else {
 	    std::cerr << "Cannot open " << u_sf_filename << " , exiting." << std::endl;
 	    exit(-1);
+	  }
 	}
       }
 #endif	
-        return 0;
+      return 0;
     }
 }
 /*@}*/

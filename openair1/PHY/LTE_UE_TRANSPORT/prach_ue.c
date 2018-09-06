@@ -376,7 +376,7 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
       memmove( prach, prach+1024, Ncp<<2 );
       prach_len = 512+Ncp;
     } else {
-      idft3072(prachF,prach2);
+      idft3072(prachF,prach2,1);
       memmove( prach, prach+6144, Ncp<<2 );
       prach_len = 3072+Ncp;
 
@@ -395,7 +395,7 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
       memmove( prach, prach+2048, Ncp<<2 );
       prach_len = 1024+Ncp;
     } else {
-      idft6144(prachF,prach2);
+      idft6144(prachF,prach2,1);
       /*for (i=0;i<6144*2;i++)
       prach2[i]<<=1;*/
       memmove( prach, prach+12288, Ncp<<2 );
@@ -415,7 +415,7 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
       memmove( prach, prach+4096, Ncp<<2 );
       prach_len = 2048+Ncp;
     } else {
-      idft12288(prachF,prach2);
+      idft12288(prachF,prach2,1);
       memmove( prach, prach+24576, Ncp<<2 );
       prach_len = 12288+Ncp;
 
@@ -429,12 +429,12 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
 
   case 75:
     if (prach_fmt == 4) {
-      idft3072(prachF,prach2);
+      idft3072(prachF,prach2,1);
       //TODO: account for repeated format in dft output
       memmove( prach, prach+6144, Ncp<<2 );
       prach_len = 3072+Ncp;
     } else {
-      idft18432(prachF,prach2);
+      idft18432(prachF,prach2,1);
       memmove( prach, prach+36864, Ncp<<2 );
       prach_len = 18432+Ncp;
 
@@ -453,7 +453,7 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
 	memmove( prach, prach+8192, Ncp<<2 );
 	prach_len = 4096+Ncp;
       } else {
-	idft24576(prachF,prach2);
+	idft24576(prachF,prach2,1);
 	memmove( prach, prach+49152, Ncp<<2 );
 	prach_len = 24576+Ncp;
 	
@@ -465,12 +465,12 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
     }
     else {
       if (prach_fmt == 4) {
-	idft3072(prachF,prach2);
+	idft3072(prachF,prach2,1);
 	//TODO: account for repeated format in dft output
 	memmove( prach, prach+6144, Ncp<<2 );
 	prach_len = 3072+Ncp;
       } else {
-	idft18432(prachF,prach2);
+	idft18432(prachF,prach2,1);
 	memmove( prach, prach+36864, Ncp<<2 );
 	prach_len = 18432+Ncp;
 	printf("Generated prach for 100 PRB, 3/4 sampling\n");

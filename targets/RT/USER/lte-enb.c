@@ -223,7 +223,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER , 1 );
 
-  if(get_nprocs() >= 8){
+  if(!eNB->single_thread_flag && get_nprocs() >= 8){
     if(wait_on_condition(&proc[1].mutex_rxtx,&proc[1].cond_rxtx,&proc[1].pipe_ready,"wakeup_tx")<0) {
       LOG_E(PHY,"Frame %d, subframe %d: TX1 not ready\n",proc[1].frame_rx,proc[1].subframe_rx);
       return(-1);
@@ -245,7 +245,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   /* CONFLICT RESOLUTION: BEGIN */
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER , 0 );
   if(oai_exit) return(-1);
-  if(get_nprocs() <= 4){
+  if(eNB->single_thread_flag || get_nprocs() <= 4){
 #ifndef PHY_TX_THREAD
     phy_procedures_eNB_TX(eNB, proc, 1);
 #endif
@@ -558,7 +558,7 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,RU_t *ru) {
   eNB_proc_t *proc=&eNB->proc;
   RU_proc_t *ru_proc=&ru->proc;
 
-  eNB_rxtx_proc_t *proc_rxtx0=&proc->proc_rxtx[0];//*proc_rxtx=&proc->proc_rxtx[proc->frame_rx&1];
+  eNB_rxtx_proc_t *proc_rxtx0=&proc->proc_rxtx[0];
   //eNB_rxtx_proc_t *proc_rxtx1=&proc->proc_rxtx[1];
   
 
@@ -847,7 +847,6 @@ extern void init_td_thread(PHY_VARS_eNB *);
 extern void init_te_thread(PHY_VARS_eNB *);
 extern void kill_td_thread(PHY_VARS_eNB *);
 extern void kill_te_thread(PHY_VARS_eNB *);
-//////////////////////////////////////need to modified////////////////*****
 
 static void* process_stats_thread(void* param) {
 
@@ -856,20 +855,23 @@ static void* process_stats_thread(void* param) {
   wait_sync("process_stats_thread");
 
   while (!oai_exit) {
-     sleep(1);
-     if (opp_enabled == 1) {
-       if (eNB->td) print_meas(&eNB->ulsch_decoding_stats,"ulsch_decoding",NULL,NULL);
-       if (eNB->te)
-       {
-         print_meas(&eNB->dlsch_turbo_encoding_preperation_stats,"dlsch_coding_crc",NULL,NULL);
-         print_meas(&eNB->dlsch_turbo_encoding_segmentation_stats,"dlsch_segmentation",NULL,NULL);
-         print_meas(&eNB->dlsch_encoding_stats,"dlsch_encoding",NULL,NULL);
-         print_meas(&eNB->dlsch_turbo_encoding_signal_stats,"coding_signal",NULL,NULL);
-         print_meas(&eNB->dlsch_turbo_encoding_main_stats,"coding_main",NULL,NULL);
-         print_meas(&eNB->dlsch_turbo_encoding_waiting_stats,"coding_wait",NULL,NULL);
-         print_meas(&eNB->dlsch_turbo_encoding_wakeup_stats0,"coding_worker_0",NULL,NULL);
-         print_meas(&eNB->dlsch_turbo_encoding_wakeup_stats1,"coding_worker_1",NULL,NULL);
-	   }
+    sleep(1);
+      if (opp_enabled == 1) {
+        if (eNB->td) print_meas(&eNB->ulsch_decoding_stats,"ulsch_decoding",NULL,NULL);
+        if (eNB->te)
+        {
+          print_meas(&eNB->dlsch_turbo_encoding_preperation_stats,"dlsch_coding_crc",NULL,NULL);
+          print_meas(&eNB->dlsch_turbo_encoding_segmentation_stats,"dlsch_segmentation",NULL,NULL);
+          print_meas(&eNB->dlsch_encoding_stats,"dlsch_encoding",NULL,NULL);
+          print_meas(&eNB->dlsch_turbo_encoding_signal_stats,"coding_signal",NULL,NULL);
+          print_meas(&eNB->dlsch_turbo_encoding_main_stats,"coding_main",NULL,NULL);
+          print_meas(&eNB->dlsch_turbo_encoding_stats,"turbo_encoding",NULL,NULL);
+          print_meas(&eNB->dlsch_interleaving_stats,"turbo_interleaving",NULL,NULL);
+          print_meas(&eNB->dlsch_rate_matching_stats,"turbo_rate_matching",NULL,NULL);
+          print_meas(&eNB->dlsch_turbo_encoding_waiting_stats,"coding_wait",NULL,NULL);
+          print_meas(&eNB->dlsch_turbo_encoding_wakeup_stats0,"coding_worker_0",NULL,NULL);
+          print_meas(&eNB->dlsch_turbo_encoding_wakeup_stats1,"coding_worker_1",NULL,NULL);
+       }
        print_meas(&eNB->dlsch_modulation_stats,"dlsch_modulation",NULL,NULL);
      }
   }
@@ -950,30 +952,19 @@ void init_eNB_proc(int inst) {
     //    attr_td     = &proc->attr_td;
     //    attr_te     = &proc->attr_te; 
 #endif
-    //////////////////////////////////////need to modified////////////////*****
+
     if(get_nprocs() > 2 && codingw)
     {
       init_te_thread(eNB);
       init_td_thread(eNB);
     }
-    //////////////////////////////////////need to modified////////////////*****
-	//pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, proc );
-
-	//pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, proc_rxtx );
-
-
-    //Should we also include here the case where single_thread_flag = 1 ?
-	if(nfapi_mode!=2){
-		pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, proc );
-		pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, tx_thread, proc);
-	}
 
 
     LOG_I(PHY,"eNB->single_thread_flag:%d\n", eNB->single_thread_flag);
 
-    if (eNB->single_thread_flag==0) {
-      pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, &proc_rxtx[0] );
-      pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, eNB_thread_rxtx, &proc_rxtx[1] );
+    if (eNB->single_thread_flag==0 && nfapi_mode!=2) {
+      pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, proc );
+      pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, tx_thread, proc);
     }
     pthread_create( &proc->pthread_prach, attr_prach, eNB_thread_prach, eNB );
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))

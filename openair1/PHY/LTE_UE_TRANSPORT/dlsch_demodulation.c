@@ -40,8 +40,14 @@
 #include<math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <linux/version.h>
+#if RHEL_RELEASE_CODE >= 1796
+#include <lapacke/lapacke_utils.h>
+#include <lapacke/lapacke.h>
+#else
 #include <lapacke_utils.h>
 #include <lapacke.h>
+#endif
 #include <cblas.h>
 #include "linear_preprocessing_rec.h"
 
@@ -1314,14 +1320,17 @@ void dlsch_channel_compensation(int **rxdataF_ext,
     }
 
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-
-      dl_ch128          = (__m128i *)&dl_ch_estimates_ext[aatx*2 + aarx][symbol*frame_parms->N_RB_DL*12];
+      /* TODO: hack to be removed. There is crash for 1 antenna case, so
+       * for 1 antenna case, I put back the value 2 as it was before
+       * Elena's commit.
+       */
+      int x = frame_parms->nb_antennas_rx > 1 ? frame_parms->nb_antennas_rx : 2;
+      dl_ch128          = (__m128i *)&dl_ch_estimates_ext[aatx*x + aarx][symbol*frame_parms->N_RB_DL*12];
       //print_shorts("dl_ch128[0]=",&dl_ch128[0]);*/
-      dl_ch_mag128      = (__m128i *)&dl_ch_mag[aatx*2 + aarx][symbol*frame_parms->N_RB_DL*12];
-      dl_ch_mag128b     = (__m128i *)&dl_ch_magb[aatx*2 + aarx][symbol*frame_parms->N_RB_DL*12];
+      dl_ch_mag128      = (__m128i *)&dl_ch_mag[aatx*x + aarx][symbol*frame_parms->N_RB_DL*12];
+      dl_ch_mag128b     = (__m128i *)&dl_ch_magb[aatx*x + aarx][symbol*frame_parms->N_RB_DL*12];
       rxdataF128        = (__m128i *)&rxdataF_ext[aarx][symbol*frame_parms->N_RB_DL*12];
-      rxdataF_comp128   = (__m128i *)&rxdataF_comp[aatx*2 + aarx][symbol*frame_parms->N_RB_DL*12];
-
+      rxdataF_comp128   = (__m128i *)&rxdataF_comp[aatx*x + aarx][symbol*frame_parms->N_RB_DL*12];
 
       for (rb=0; rb<nb_rb; rb++) {
         if (mod_order>2) {
@@ -1771,12 +1780,17 @@ void dlsch_channel_compensation_core(int **rxdataF_ext,
     }
 
     for (aarx=0; aarx<n_rx; aarx++) {
+      /* TODO: hack to be removed. There is crash for 1 antenna case, so
+       * for 1 antenna case, I put back the value 2 as it was before
+       * Elena's commit.
+       */
+      int x = n_rx > 1 ? n_rx : 2;
 
-    dl_ch128          = (__m128i *)&dl_ch_estimates_ext[aatx*2 + aarx][start_point];
-    dl_ch_mag128      = (__m128i *)&dl_ch_mag[aatx*2 + aarx][start_point];
-    dl_ch_mag128b     = (__m128i *)&dl_ch_magb[aatx*2 + aarx][start_point];
+    dl_ch128          = (__m128i *)&dl_ch_estimates_ext[aatx*x + aarx][start_point];
+    dl_ch_mag128      = (__m128i *)&dl_ch_mag[aatx*x + aarx][start_point];
+    dl_ch_mag128b     = (__m128i *)&dl_ch_magb[aatx*x + aarx][start_point];
     rxdataF128        = (__m128i *)&rxdataF_ext[aarx][start_point];
-    rxdataF_comp128   = (__m128i *)&rxdataF_comp[aatx*2 + aarx][start_point];
+    rxdataF_comp128   = (__m128i *)&rxdataF_comp[aatx*x + aarx][start_point];
 
       length_mod8 = length&7;
       if (length_mod8 == 0){
@@ -3974,17 +3988,12 @@ void dlsch_channel_level_median(int **dl_ch_estimates_ext,
                     ((int32_t*)&norm128D)[2] +
                     ((int32_t*)&norm128D)[3];
 
-        if (ii<1){
-//        print_ints("norm128D",&norm128D[0]);
-          printf("norm_pack[%d] %d\n", aatx*n_rx + aarx, norm_pack);
-        }
-
         if (norm_pack > max)
           max = norm_pack;
         if (norm_pack < min)
           min = norm_pack;
 
-          dl_ch128+=1;
+        dl_ch128+=1;
       }
 
         median[aatx*n_rx + aarx]  = (max+min)>>1;
