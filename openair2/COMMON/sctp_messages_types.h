@@ -22,13 +22,15 @@
 #ifndef SCTP_MESSAGES_TYPES_H_
 #define SCTP_MESSAGES_TYPES_H_
 
-#define SCTP_NEW_ASSOCIATION_REQ(mSGpTR) (mSGpTR)->ittiMsg.sctp_new_association_req
-#define SCTP_NEW_ASSOCIATION_RESP(mSGpTR)(mSGpTR)->ittiMsg.sctp_new_association_resp
-#define SCTP_NEW_ASSOCIATION_IND(mSGpTR) (mSGpTR)->ittiMsg.sctp_new_association_ind
-#define SCTP_DATA_IND(mSGpTR)            (mSGpTR)->ittiMsg.sctp_data_ind
-#define SCTP_DATA_REQ(mSGpTR)            (mSGpTR)->ittiMsg.sctp_data_req
-#define SCTP_INIT_MSG(mSGpTR)            (mSGpTR)->ittiMsg.sctp_init
-#define SCTP_CLOSE_ASSOCIATION(mSGpTR)   (mSGpTR)->ittiMsg.sctp_close_association
+#define SCTP_NEW_ASSOCIATION_REQ(mSGpTR)       (mSGpTR)->ittiMsg.sctp_new_association_req
+#define SCTP_NEW_ASSOCIATION_REQ_MULTI(mSGpTR) (mSGpTR)->ittiMsg.sctp_new_association_req_multi
+#define SCTP_NEW_ASSOCIATION_RESP(mSGpTR)      (mSGpTR)->ittiMsg.sctp_new_association_resp
+#define SCTP_NEW_ASSOCIATION_IND(mSGpTR)       (mSGpTR)->ittiMsg.sctp_new_association_ind
+#define SCTP_DATA_IND(mSGpTR)                  (mSGpTR)->ittiMsg.sctp_data_ind
+#define SCTP_DATA_REQ(mSGpTR)                  (mSGpTR)->ittiMsg.sctp_data_req
+#define SCTP_INIT_MSG(mSGpTR)                  (mSGpTR)->ittiMsg.sctp_init
+#define SCTP_INIT_MSG_MULTI(mSGpTR)            (mSGpTR)->ittiMsg.sctp_init_multi
+#define SCTP_CLOSE_ASSOCIATION(mSGpTR)         (mSGpTR)->ittiMsg.sctp_close_association
 
 enum sctp_state_e {
   SCTP_STATE_CLOSED,
