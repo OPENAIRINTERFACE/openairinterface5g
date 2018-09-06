@@ -51,6 +51,10 @@
 // Note this should be 512 from maxval in 38.473
 #define F1AP_MAX_NB_CELLS 2
 
+typedef struct f1ap_cu_setup_req_s {
+   //
+} f1ap_cu_setup_req_t;
+
 typedef struct f1ap_setup_req_s {
 
   // Midhaul networking parameters
@@ -67,6 +71,9 @@ typedef struct f1ap_setup_req_s {
   uint32_t gNB_DU_id;
   char *gNB_DU_name;
 
+  /* The type of the cell */
+  enum cell_type_e cell_type;
+  
   /// number of DU cells available
   uint16_t num_cells_available; //0< num_cells_to_available <= 512;
 

@@ -128,8 +128,7 @@ static uint32_t eNB_app_register(ngran_node_t node_type,uint32_t enb_id_start, u
 	msg_p = itti_alloc_new_message (TASK_ENB_APP, F1AP_SETUP_REQ);
 	RCconfig_DU_F1(msg_p, enb_id);
 
-	LOG_I(ENB_APP,"[eNB %d] eNB_app_register via F1AP for instance %d\n", enb_id, ENB_MODULE_ID_TO_INSTANCE(enb_id));	
-	AssertFatal(1==0,"No ITTI ask for F1AP yet\n");
+	LOG_I(ENB_APP,"[eNB %d] eNB_app_register via F1AP for instance %d\n", enb_id, ENB_MODULE_ID_TO_INSTANCE(enb_id));
 	itti_send_msg_to_task (TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
 	// configure GTPu here for F1U
       }
@@ -213,11 +212,10 @@ void *eNB_app_task(void *args_p)
     LOG_I(ENB_APP, "%s() Creating RRC instance RC.rrc[%d]:%p (%d of %d)\n", __FUNCTION__, enb_id, RC.rrc[enb_id], enb_id+1, enb_id_end);
     memset((void *)RC.rrc[enb_id],0,sizeof(eNB_RRC_INST));
     configure_rrc(enb_id);
-
+    
     if (RC.nb_macrlc_inst >0 && mac_has_f1[enb_id]==1) RC.rrc[enb_id]->node_type = ngran_eNB_DU;
     else                                               pdcp_layer_init();
   }
-
 
 # if defined(ENABLE_USE_MME)
   /* Try to register each eNB */

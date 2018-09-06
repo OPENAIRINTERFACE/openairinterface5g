@@ -32,6 +32,7 @@
 
 #include "conversions.h"
 #include "f1ap_common.h"
+#include "cu_f1ap_defs.h"
 #include "f1ap_encoder.h"
 #include "f1ap_decoder.h"
 #include "sctp_cu.h"
@@ -39,7 +40,12 @@
 #include "common/utils/LOG/log.h"
 #include "intertask_interface.h"
 
+#include "T.h"
+
 #define MAX_F1AP_BUFFER_SIZE 4096
+
+#include "common/ran_context.h"
+extern RAN_CONTEXT_t RC;
 
 /* This structure describes association of a DU to a CU */
 typedef struct f1ap_info {
@@ -87,8 +93,7 @@ uint8_t F1AP_get_next_transaction_identifier(module_id_t enb_mod_idP, module_id_
 
 // ==============================================================================
 static
-void CU_handle_sctp_data_ind(sctp_data_ind_t *sctp_data_ind)
-{
+void CU_handle_sctp_data_ind(sctp_data_ind_t *sctp_data_ind) {
   int result;
 
   DevAssert(sctp_data_ind != NULL);
@@ -98,6 +103,30 @@ void CU_handle_sctp_data_ind(sctp_data_ind_t *sctp_data_ind)
 
   result = itti_free(TASK_UNKNOWN, sctp_data_ind->buffer);
   AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+}
+
+void CU_send_sctp_init_req(instance_t enb_id) {
+  // 1. get the itti msg, and retrive the enb_id from the message
+  // 2. use RC.rrc[enb_id] to fill the sctp_init_t with the ip, port
+  // 3. creat an itti message to init
+
+  MessageDef  *message_p = NULL;
+
+  message_p = itti_alloc_new_message (TASK_CU_F1, SCTP_INIT_MSG);
+  message_p->ittiMsg.sctp_init.port = RC.rrc[enb_id]->eth_params_s.my_portc;
+  message_p->ittiMsg.sctp_init.ppid = F1AP_SCTP_PPID;
+  message_p->ittiMsg.sctp_init.ipv4 = 1;
+  message_p->ittiMsg.sctp_init.ipv6 = 0;
+  message_p->ittiMsg.sctp_init.nb_ipv4_addr = 1;
+  message_p->ittiMsg.sctp_init.ipv4_address[0] = RC.rrc[enb_id]->eth_params_s.my_addr;
+  /*
+   * SR WARNING: ipv6 multi-homing fails sometimes for localhost.
+   * * * * Disable it for now.
+   */
+  message_p->ittiMsg.sctp_init.nb_ipv6_addr = 0;
+  message_p->ittiMsg.sctp_init.ipv6_address[0] = "0:0:0:0:0:0:0:1";
+
+  itti_send_msg_to_task(TASK_SCTP, enb_id, message_p);
 }
 
 void *F1AP_CU_task(void *arg) {
@@ -117,12 +146,9 @@ void *F1AP_CU_task(void *arg) {
   while (1) {
     switch (ITTI_MSG_ID(received_msg)) {
 
-      //case F1AP_CU_SCTP_REQ: // this is not a true F1 message, but rather an ITTI message sent by enb_app
-        // 1. save the itti msg so that you can use it to sen f1ap_setup_req
-        // 2. send a sctp_init req
-        // CU_send_sctp_init_req(ITTI_MESSAGE_GET_INSTANCE(received_msg),
-        //                               &F1AP_SETUP_REQ(received_msg));
-      //  break;
+      case F1AP_CU_SCTP_REQ: 
+        CU_send_sctp_init_req(ITTI_MESSAGE_GET_INSTANCE(received_msg));
+        break;
 
       case SCTP_DATA_IND: 
         CU_handle_sctp_data_ind(&received_msg->ittiMsg.sctp_data_ind);

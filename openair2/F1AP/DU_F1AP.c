@@ -32,17 +32,24 @@
 
 #include "conversions.h"
 #include "f1ap_common.h"
+#include "du_f1ap_defs.h"
 #include "platform_types.h"
 #include "common/utils/LOG/log.h"
 #include "sctp_du.h"
 #include "intertask_interface.h"
 
+#include "T.h"
+
+// helper functions 
+#define F1AP_TRANSACTION_IDENTIFIER_NUMBER 3
+#define F1AP_UE_IDENTIFIER_NUMBER 3
+#define NUMBER_OF_eNB_MAX 3
 
 /* This structure describes association of a DU to a CU */
 typedef struct f1ap_info {
 
   module_id_t enb_mod_idP;
-  module_id_t du_mod_idP;
+  module_id_t cu_mod_idP;
 
   /* Unique eNB_id to identify the eNB within EPC.
    * In our case the eNB is a macro eNB so the id will be 20 bits long.
@@ -70,11 +77,6 @@ typedef struct f1ap_info {
   uint8_t   mnc_digit_length;
   
 } f1ap_info_t;
-
-// helper functions 
-#define F1AP_TRANSACTION_IDENTIFIER_NUMBER 3
-#define F1AP_UE_IDENTIFIER_NUMBER 3
-#define NUMBER_OF_eNB_MAX 3
 
 void DU_handle_sctp_association_resp(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp);
 
@@ -122,6 +124,7 @@ void *F1AP_DU_task(void *arg) {
 
   itti_mark_task_ready(TASK_DU_F1);
 
+  // SCTP
   while (1) {
     switch (ITTI_MSG_ID(received_msg)) {
 
@@ -130,12 +133,13 @@ void *F1AP_DU_task(void *arg) {
       //   itti_exit_task();
       //   break;
 
-      //case F1AP_SETUP_REQ: // this is not a true F1 message, but rather an ITTI message sent by enb_app
-        // 1. save the itti msg so that you can use it to sen f1ap_setup_req
+      case F1AP_SETUP_REQ: // this is not a true F1 message, but rather an ITTI message sent by enb_app
+        // 1. save the itti msg so that you can use it to sen f1ap_setup_req, fill the f1ap_setup_req message, 
+        // 2. store the message in f1ap context, that is also stored in RC
         // 2. send a sctp_association req
-        // DU_send_sctp_association_req(ITTI_MESSAGE_GET_INSTANCE(received_msg),
-        //                               &F1AP_SETUP_REQ(received_msg));
-      //  break;
+        DU_send_sctp_association_req(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                              &F1AP_SETUP_REQ(received_msg));
+        break;
 
       case SCTP_NEW_ASSOCIATION_RESP:
         // 1. store the respon
@@ -145,6 +149,7 @@ void *F1AP_DU_task(void *arg) {
         break;
 
       case SCTP_DATA_IND: 
+        // ex: any F1 incoming message for DU ends here
         DU_handle_sctp_data_ind(&received_msg->ittiMsg.sctp_data_ind);
         break;
 
@@ -164,16 +169,73 @@ void *F1AP_DU_task(void *arg) {
 
 // ==============================================================================
 
-void DU_send_sctp_association_req(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp)
+static void du_f1ap_register(du_f1ap_instance_t *instance_p,
+                             char               *cu_ip_address,
+                             int                cu_port,
+                             uint16_t           in_streams,
+                             uint16_t           out_streams)
 {
-  //
-  AssertFatal(0,"Not implemented yet\n");
+  
+  MessageDef                 *message_p                   = NULL;
+  sctp_new_association_req_t *sctp_new_association_req_p  = NULL;
+
+  message_p = itti_alloc_new_message(TASK_S1AP, SCTP_NEW_ASSOCIATION_REQ);
+
+  sctp_new_association_req_p = &message_p->ittiMsg.sctp_new_association_req;
+
+  sctp_new_association_req_p->port = cu_port;
+  sctp_new_association_req_p->ppid = F1AP_SCTP_PPID;
+
+  sctp_new_association_req_p->in_streams  = in_streams;
+  sctp_new_association_req_p->out_streams = out_streams;
+
+  itti_send_msg_to_task(TASK_SCTP, instance_p->instance, message_p);
 }
 
-void DU_handle_sctp_association_resp(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp)
-{
-  //
-  AssertFatal(0,"Not implemented yet\n");
+void DU_send_sctp_association_req(instance_t instance, f1ap_setup_req_t *f1ap_setup_req) {
+  du_f1ap_instance_t *new_instance;
+  //uint8_t index;
+  
+  DevAssert(f1ap_setup_req != NULL);
+
+  /* Look if the provided instance already exists */
+  //new_instance = s1ap_eNB_get_instance(instance);
+
+  // @Todo
+  // if (new_instance != NULL) {
+  //   /* Checks if it is a retry on the same eNB */
+  //   DevCheck(new_instance->gNB_DU_id == f1ap_setup_req->gNB_DU_id, new_instance->gNB_DU_id, f1ap_setup_req->gNB_DU_id, 0);
+  //   DevCheck(new_instance->cell_type == f1ap_setup_req->cell_type, new_instance->cell_type, f1ap_setup_req->cell_type, 0);
+  //   DevCheck(new_instance->tac == f1ap_setup_req->tac, new_instance->tac, f1ap_setup_req->tac, 0);
+  //   DevCheck(new_instance->mcc == f1ap_setup_req->mcc, new_instance->mcc, f1ap_setup_req->mcc, 0);
+  //   DevCheck(new_instance->mnc == f1ap_setup_req->mnc, new_instance->mnc, f1ap_setup_req->mnc, 0);
+  //   DevCheck(new_instance->mnc_digit_length == f1ap_setup_req->mnc_digit_length, new_instance->mnc_digit_length, f1ap_setup_req->mnc_digit_length, 0);
+  //   DevCheck(new_instance->default_drx == f1ap_setup_req->default_drx, new_instance->default_drx, f1ap_setup_req->default_drx, 0);
+  // } else {
+    new_instance = calloc(1, sizeof(du_f1ap_instance_t));
+    DevAssert(new_instance != NULL);
+
+    /* Copy usefull parameters */
+    new_instance->instance         = instance;
+    new_instance->gNB_DU_id        = f1ap_setup_req->gNB_DU_id;
+    new_instance->gNB_DU_name      = f1ap_setup_req->gNB_DU_name;
+    new_instance->tac              = f1ap_setup_req->tac[0];
+    new_instance->mcc              = f1ap_setup_req->mcc[0];
+    new_instance->mnc              = f1ap_setup_req->mnc[0];
+    new_instance->mnc_digit_length = f1ap_setup_req->mnc_digit_length;
+
+  //}
+
+    du_f1ap_register(new_instance,
+                     &f1ap_setup_req->CU_ipv4_address,
+                     &f1ap_setup_req->CU_port,
+                     f1ap_setup_req->sctp_in_streams,
+                     f1ap_setup_req->sctp_out_streams);
+
+}
+
+void DU_handle_sctp_association_resp(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp) {
+  DU_send_F1_SETUP_REQUEST(instance, sctp_new_association_resp);
 }
 
 
@@ -181,7 +243,7 @@ void DU_handle_sctp_association_resp(instance_t instance, sctp_new_association_r
 
 
 // SETUP REQUEST
-void DU_send_F1_SETUP_REQUEST(module_id_t enb_mod_idP, module_id_t du_mod_idP) {
+void DU_send_F1_SETUP_REQUEST(module_id_t enb_mod_idP, module_id_t du_mod_idP, f1ap_setup_req_t *msg_p) {
 //void DU_send_F1_SETUP_REQUEST(F1SetupRequest_t *F1SetupRequest) {
   F1AP_F1AP_PDU_t          pdu; 
   F1AP_F1SetupRequest_t    *out;
@@ -590,8 +652,9 @@ int f1ap_encode_pdu(F1AP_F1AP_PDU_t *pdu, uint8_t **buffer, uint32_t *length) {
 
 
 // SETUP SUCCESSFUL
-void DU_handle_F1_SETUP_RESPONSE(struct F1AP_F1AP_PDU_t *pdu_p) {
-   
+void DU_handle_F1_SETUP_RESPONSE() {
+  
+  AssertFatal(0,"Not implemented yet\n");
   /* decode  */
   //DU_F1AP_decode(args_p);  
 
