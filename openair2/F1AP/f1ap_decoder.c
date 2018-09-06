@@ -134,8 +134,7 @@ static int f1ap_eNB_decode_unsuccessful_outcome(F1AP_F1AP_PDU_t *pdu)
   return 0;
 }
 
-int f1ap_decode_pdu(F1AP_F1AP_PDU_t *pdu, const uint8_t *const buffer,
-                        const uint32_t length)
+int f1ap_decode_pdu(F1AP_F1AP_PDU_t *pdu, const uint8_t *const buffer, uint32_t length)
 {
   asn_dec_rval_t dec_ret;
 

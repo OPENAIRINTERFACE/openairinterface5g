@@ -89,9 +89,10 @@ void *recv_func(void *cfd) {
     }
     printf("ret = %d\n", ret);
     close( *(int*)cfd );
+  return NULL;
 }
 
-int sctp_cu_init() {
+int sctp_cu_init(void) {
     pthread_t threads;
     printf("S - Waiting for socket_accept\n"); 
 

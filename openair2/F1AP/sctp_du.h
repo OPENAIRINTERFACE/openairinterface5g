@@ -19,23 +19,24 @@
  *      contact@openairinterface.org
  */
 
-/*! \file f1ap_encoder.h
- * \brief f1ap pdu encode procedures
- * \author EURECOM/NTUST
+/*! \file sctp_du.h
+ * \brief sctp server procedures for F1AP
+ * \author Robert Schmidt
  * \date 2018
  * \version 0.1
  * \company Eurecom
- * \email: navid.nikaein@eurecom.fr, bing-kai.hong@eurecom.fr
+ * \email: robert.schmidt@eurecom.fr
  * \note
  * \warning
  */
 
-#ifndef F1AP_ENCODER_H_
-#define F1AP_ENCODER_H_
+#ifndef SCTP_DU_H_
+#define SCTP_DU_H_
 
-#include "f1ap_common.h"
+//void f1ap_du_send_message(uint8_t *buffer_send, uint32_t length);
+//void *send_func(void *argument);
+//void *recv_func(void *argument);
+int sctp_du_init(void);
 
-int f1ap_encode_pdu(F1AP_F1AP_PDU_t *message, uint8_t **buffer, uint32_t *len)
-__attribute__ ((warn_unused_result));
 
-#endif /* F1AP_ENCODER_H_ */
+#endif /* SCTP_DU_H_ */

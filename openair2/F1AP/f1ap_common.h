@@ -416,7 +416,7 @@ typedef struct f1ap_net_ip_address_s {
 typedef int (*f1ap_message_decoded_callback)(
   uint32_t               assoc_id,
   uint32_t               stream,
-  struct f1ap_message_s *message_p
+  F1AP_F1AP_PDU_t       *message_p
 );
 
 /** \brief Encode a successfull outcome message

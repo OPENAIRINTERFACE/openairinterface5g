@@ -35,8 +35,7 @@
 #include "f1ap_messages_types.h"
 #include "platform_types.h"
 #include "common/utils/LOG/log.h"
-
-
+#include "sctp_du.h"
 
 
 /* This structure describes association of a DU to a CU */
