@@ -544,7 +544,7 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
   unsigned char MIMO_mode_indicator[MAX_NUM_CCs][N_RBG_MAX];
   uint8_t slice_allocation[MAX_NUM_CCs][N_RBG_MAX];
   int                     UE_id, i; 
-  uint16_t                j;
+  uint16_t                j,c;
   uint16_t                nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
   uint16_t                nb_rbs_required_remaining[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
 //  uint16_t                nb_rbs_required_remaining_1[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
@@ -658,9 +658,9 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
 
       /* slicing support has been introduced into the scheduler. Provide dummy
        * data so that the preprocessor "simply works" */
-      for (int i = 0; i < MAX_NUM_CCs; ++i)
-        for (int j = 0; i < N_RBG_MAX; ++j)
-          slice_allocation[i][j] = 1;
+      for (c = 0; c < MAX_NUM_CCs; ++c)
+        for (j = 0; j < N_RBG_MAX; ++j)
+          slice_allocation[c][j] = 1;
 
       LOG_T(MAC,"calling dlsch_scheduler_pre_processor_allocate .. \n ");
       dlsch_scheduler_pre_processor_allocate (Mod_id,
