@@ -286,10 +286,10 @@ do {                                                    \
 #define NR_CELL_ID_TO_BIT_STRING(mACRO, bITsTRING)      \
 do {                                                    \
     (bITsTRING)->buf = calloc(5, sizeof(uint8_t));      \
-    (bITsTRING)->buf[0] = (mACRO) >> 28;                \
-    (bITsTRING)->buf[1] = (mACRO) >> 20;                \
-    (bITsTRING)->buf[2] = (mACRO) >> 12;                \
-    (bITsTRING)->buf[3] = (mACRO) >> 4;                 \
+    (bITsTRING)->buf[0] = ((mACRO) >> 28) & 0xff;       \
+    (bITsTRING)->buf[1] = ((mACRO) >> 20) & 0xff;       \
+    (bITsTRING)->buf[2] = ((mACRO) >> 12) & 0xff;       \
+    (bITsTRING)->buf[3] = ((mACRO) >> 4)  & 0xff;       \
     (bITsTRING)->buf[4] = ((mACRO) & 0x0f) << 4;        \
     (bITsTRING)->size = 5;                              \
     (bITsTRING)->bits_unused = 4;                       \
