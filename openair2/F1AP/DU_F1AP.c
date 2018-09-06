@@ -32,10 +32,10 @@
 
 #include "conversions.h"
 #include "f1ap_common.h"
-#include "f1ap_messages_types.h"
 #include "platform_types.h"
 #include "common/utils/LOG/log.h"
 #include "sctp_du.h"
+#include "intertask_interface.h"
 
 
 /* This structure describes association of a DU to a CU */
@@ -76,6 +76,9 @@ typedef struct f1ap_info {
 #define F1AP_UE_IDENTIFIER_NUMBER 3
 #define NUMBER_OF_eNB_MAX 3
 
+void DU_handle_sctp_association_resp(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp);
+
+
 uint8_t F1AP_get_next_transaction_identifier(module_id_t enb_mod_idP, module_id_t du_mod_idP) {  
   static uint8_t      transaction_identifier[NUMBER_OF_eNB_MAX];
   transaction_identifier[enb_mod_idP+du_mod_idP] = (transaction_identifier[enb_mod_idP+du_mod_idP] + 1) % F1AP_TRANSACTION_IDENTIFIER_NUMBER;
@@ -91,36 +94,87 @@ uint8_t F1AP_get_UE_identifier(module_id_t enb_mod_idP, int CC_idP, int UE_id) {
 }
 
 // ==============================================================================
+static
+void DU_handle_sctp_data_ind(sctp_data_ind_t *sctp_data_ind)
+{
+  int result;
 
-void F1AP_DU_task(void) {
+  DevAssert(sctp_data_ind != NULL);
+
+  f1ap_handle_message(sctp_data_ind->assoc_id, sctp_data_ind->stream,
+                          sctp_data_ind->buffer, sctp_data_ind->buffer_length);
+
+  result = itti_free(TASK_UNKNOWN, sctp_data_ind->buffer);
+  AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+}
+
+void *F1AP_DU_task(void *arg) {
   printf("Start F1AP DU task!\n");
 
-  sctp_du_init();
+  //sctp_cu_init();
 
-  // while (1) {
+  MessageDef *received_msg = NULL;
+  int         result;
 
-  //   switch () {
+  //F1AP_DEBUG("Starting F1AP at DU\n");
 
-  //     case F1AP_ProcedureCode_id_F1Setup:
-        DU_send_F1_SETUP_REQUEST((module_id_t)1, (module_id_t)2);
-  //       break;
-        //DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER();
-        //DU_send_UL_RRC_MESSAGE_TRANSFER(); // OK
-        //DU_send_UE_CONTEXT_SETUP_RESPONSE(); // OK
-        //DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(); // OK
-        //DU_send_gNB_DU_CONFIGURATION_UPDATE((module_id_t)1, (module_id_t)2);
-  //     default:
+  //f1ap_eNB_prepare_internal_data();
 
-  //   } // switch
+  itti_mark_task_ready(TASK_DU_F1);
 
-  // } // while
+  while (1) {
+    switch (ITTI_MSG_ID(received_msg)) {
 
-  return;
+      // case TERMINATE_MESSAGE:
+      //   //F1AP_WARN(" *** Exiting F1AP DU thread\n");
+      //   itti_exit_task();
+      //   break;
+
+      //case F1AP_SETUP_REQ: // this is not a true F1 message, but rather an ITTI message sent by enb_app
+        // 1. save the itti msg so that you can use it to sen f1ap_setup_req
+        // 2. send a sctp_association req
+        // DU_send_sctp_association_req(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        //                               &F1AP_SETUP_REQ(received_msg));
+      //  break;
+
+      case SCTP_NEW_ASSOCIATION_RESP:
+        // 1. store the respon
+        // 2. send the f1setup_req
+        DU_handle_sctp_association_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                        &received_msg->ittiMsg.sctp_new_association_resp);
+        break;
+
+      case SCTP_DATA_IND: 
+        DU_handle_sctp_data_ind(&received_msg->ittiMsg.sctp_data_ind);
+        break;
+
+      default:
+        // F1AP_ERROR("DU Received unhandled message: %d:%s\n",
+        //          ITTI_MSG_ID(received_msg), ITTI_MSG_NAME(received_msg));
+        break;
+    } // switch
+    result = itti_free (ITTI_MSG_ORIGIN_ID(received_msg), received_msg);
+    AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+
+    received_msg = NULL;
+  } // while
+
+  return NULL;
 }
 
 // ==============================================================================
 
+void DU_send_sctp_association_req(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp)
+{
+  //
+  AssertFatal(0,"Not implemented yet\n");
+}
 
+void DU_handle_sctp_association_resp(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp)
+{
+  //
+  AssertFatal(0,"Not implemented yet\n");
+}
 
 
 // ==============================================================================

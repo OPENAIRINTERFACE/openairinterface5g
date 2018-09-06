@@ -130,7 +130,7 @@ static uint32_t eNB_app_register(ngran_node_t node_type,uint32_t enb_id_start, u
 
 	LOG_I(ENB_APP,"[eNB %d] eNB_app_register via F1AP for instance %d\n", enb_id, ENB_MODULE_ID_TO_INSTANCE(enb_id));	
 	AssertFatal(1==0,"No ITTI ask for F1AP yet\n");
-	//	itti_send_msg_to_task (TASK_F1AP, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
+	itti_send_msg_to_task (TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
 	// configure GTPu here for F1U
       }
       else { // S1AP registration

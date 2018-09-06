@@ -6084,6 +6084,8 @@ openair_rrc_eNB_init(
   openair_rrc_on(&ctxt);
   
   if (RC.rrc[ctxt.module_id]->node_type == ngran_eNB_CU || RC.rrc[ctxt.module_id]->node_type == ngran_ng_eNB_CU) 
+  	// msg_p = itti_alloc_new_message (TASK_ENB_APP, F1AP_SCTP_REQ);
+    // RCconfig_CU_F1(msg_p, enb_id);
     setup_ngran_CU(RC.rrc[ctxt.module_id]);
 	
   return 0;

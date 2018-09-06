@@ -32,12 +32,12 @@
 
 #include "conversions.h"
 #include "f1ap_common.h"
-#include "f1ap_messages_types.h"
 #include "f1ap_encoder.h"
 #include "f1ap_decoder.h"
 #include "sctp_cu.h"
 #include "platform_types.h"
-#include "log.h"
+#include "common/utils/LOG/log.h"
+#include "intertask_interface.h"
 
 #define MAX_F1AP_BUFFER_SIZE 4096
 
@@ -86,46 +86,60 @@ uint8_t F1AP_get_next_transaction_identifier(module_id_t enb_mod_idP, module_id_
 }
 
 // ==============================================================================
+static
+void CU_handle_sctp_data_ind(sctp_data_ind_t *sctp_data_ind)
+{
+  int result;
 
-void F1AP_CU_task(void) {
+  DevAssert(sctp_data_ind != NULL);
+
+  f1ap_handle_message(sctp_data_ind->assoc_id, sctp_data_ind->stream,
+                          sctp_data_ind->buffer, sctp_data_ind->buffer_length);
+
+  result = itti_free(TASK_UNKNOWN, sctp_data_ind->buffer);
+  AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
+}
+
+void *F1AP_CU_task(void *arg) {
   printf("Start F1AP CU task!\n");
 
-  sctp_cu_init();
+  //sctp_cu_init();
 
-  // MessageDef *received_msg = NULL;
-  // int         result;
+  MessageDef *received_msg = NULL;
+  int         result;
 
-  // F1AP_DEBUG("Starting F1AP layer\n");
+  //F1AP_DEBUG("Starting F1AP at DU\n");
 
-  // f1ap_eNB_prepare_internal_data();
+  //f1ap_eNB_prepare_internal_data();
 
-  // itti_mark_task_ready(TASK_F1AP);
+  itti_mark_task_ready(TASK_CU_F1);
 
-  // while (1) {
-  // switch (ITTI_MSG_ID(received_msg)) {
-  //   case F1AP_SETUP_RESP:
-  //     CU_send_F1_SETUP_RESPONSE();
-  //     break;
-  //   case F1AP_INITIAL_UL_RRC_MESSAGE:
-  //     CU_handle_UL_INITIAL_RRC_MESSAGE_TRANSFER();
-  //     break;
-  //   case F1AP_DL_RRC_MESSAGE:
-  //     CU_send_DL_RRC_MESSAGE_TRANSFER();  // SRBID and RRCContainer get issue when decode.
-  //     break;
-  //       //CU_send_UE_CONTEXT_SETUP_REQUEST();
-  //   case F1AP_UE_CONTEXT_MODIFICATION_REQ:
-  //       CU_send_UE_CONTEXT_MODIFICATION_REQUEST();
-  //     break;
-  //       //CU_send_gNB_CU_CONFIGURATION_UPDATE((module_id_t)1, (module_id_t)2); // some problem found
-  //        break;
+  while (1) {
+    switch (ITTI_MSG_ID(received_msg)) {
 
-  //      default:
+      //case F1AP_CU_SCTP_REQ: // this is not a true F1 message, but rather an ITTI message sent by enb_app
+        // 1. save the itti msg so that you can use it to sen f1ap_setup_req
+        // 2. send a sctp_init req
+        // CU_send_sctp_init_req(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        //                               &F1AP_SETUP_REQ(received_msg));
+      //  break;
 
-  // } // switch
+      case SCTP_DATA_IND: 
+        CU_handle_sctp_data_ind(&received_msg->ittiMsg.sctp_data_ind);
+        break;
 
-  // } // while
+      default:
+        // F1AP_ERROR("CU Received unhandled message: %d:%s\n",
+        //          ITTI_MSG_ID(received_msg), ITTI_MSG_NAME(received_msg));
+        break;
+    } // switch
+    result = itti_free (ITTI_MSG_ORIGIN_ID(received_msg), received_msg);
+    AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
 
-  return;
+    received_msg = NULL;
+  } // while
+
+  return NULL;
 }
 
 
