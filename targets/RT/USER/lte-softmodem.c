@@ -986,13 +986,15 @@ int main( int argc, char **argv )
       LOG_E(OPT,"failed to run OPT \n");
   }
 
+  if (RC.rrc[0]->node_type != ngran_eNB_DU) {
 #ifdef PDCP_USE_NETLINK
-  printf("PDCP netlink\n");
-  netlink_init();
+    printf("PDCP netlink\n");
+    netlink_init();
 #if defined(PDCP_USE_NETLINK_QUEUES)
-  pdcp_netlink_init();
+    pdcp_netlink_init();
 #endif
 #endif
+  }
 
 #if !defined(ENABLE_ITTI)
   // to make a graceful exit when ctrl-c is pressed
@@ -1011,13 +1013,13 @@ int main( int argc, char **argv )
 
 
 
-
+  
   printf("Before CC \n");
-
+  
   printf("Runtime table\n");
   fill_modeled_runtime_table(runtime_phy_rx,runtime_phy_tx);
-
-
+  
+    
 #ifndef DEADLINE_SCHEDULER
   
   printf("NO deadline scheduler\n");
@@ -1056,24 +1058,26 @@ int main( int argc, char **argv )
   LOG_I(HW, "CPU Affinity of main() function is... %s\n", cpu_affinity);
 #endif
   
+    
 
-  
-  
-#if defined(ENABLE_ITTI)
+    
+  int have_rrc=0;
+
   if (RC.nb_inst > 0)  {
     
     // don't create if node doesn't connect to RRC/S1/F1/GTP
-      if (create_tasks(1) < 0) {
-        printf("cannot create ITTI tasks\n");
-        exit(-1); // need a softer mode
-      }
+    if (create_tasks(1) < 0) {
+      printf("cannot create ITTI tasks\n");
+      exit(-1); // need a softer mode
+    }
     printf("ITTI tasks created\n");
+    have_rrc=1;
   }
   else {
     printf("No ITTI, Initializing L1\n");
     RCconfig_L1();
   }
-#endif
+
 
   /* Start the agent. If it is turned off in the configuration, it won't start */
   RCconfig_flexran();
@@ -1081,23 +1085,49 @@ int main( int argc, char **argv )
     flexran_agent_start(i);
   }
 
-  // init UE_PF_PO and mutex lock
-  pthread_mutex_init(&ue_pf_po_mutex, NULL);
-  memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*MAX_MOBILES_PER_ENB*MAX_NUM_CCs);
-  
-  mlockall(MCL_CURRENT | MCL_FUTURE);
-  
-  pthread_cond_init(&sync_cond,NULL);
-  pthread_mutex_init(&sync_mutex, NULL);
-  
-#ifdef XFORMS
-  int UE_id;
-  
-  printf("XFORMS\n");
+  int cu_flag =0;
 
-  if (do_forms==1) {
-    fl_initialize (&argc, argv, NULL, 0, 0);
+  if (have_rrc == 1) {
+
+    // wait for RRC to be initialized
     
+
+    int rrc_allocated;
+    do {
+      rrc_allocated=1;
+      for (int i=0;i<RC.nb_inst;i++) 
+	if (RC.rrc == NULL || RC.rrc[i]==NULL) rrc_allocated=0;
+      if (rrc_allocated==0) { printf("Waiting for RRC allocation ...\n"); usleep(10000); }
+    } while (rrc_allocated==0);
+
+    int cell_info_configured;
+    do {
+      pthread_mutex_lock(&RC.rrc[0]->cell_info_mutex);
+      cell_info_configured = RC.rrc[0]->cell_info_configured;
+      pthread_mutex_unlock(&RC.rrc[0]->cell_info_mutex);
+      if (cell_info_configured == 0) {printf ("Waiting for RRC cell configuration\n"); usleep(10000);}
+    } while(cell_info_configured == 0);
+    if (RC.rrc[0]->node_type == ngran_eNB_CU || RC.rrc[0]->node_type == ngran_ng_eNB_CU) cu_flag=1;  
+   }
+ 
+  if (cu_flag == 0) {
+      // init UE_PF_PO and mutex lock
+    pthread_mutex_init(&ue_pf_po_mutex, NULL);
+    memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*MAX_MOBILES_PER_ENB*MAX_NUM_CCs);
+    
+    mlockall(MCL_CURRENT | MCL_FUTURE);
+    
+    pthread_cond_init(&sync_cond,NULL);
+    pthread_mutex_init(&sync_mutex, NULL);
+    
+#ifdef XFORMS
+    int UE_id;
+    
+    printf("XFORMS\n");
+    
+    if (do_forms==1) {
+      fl_initialize (&argc, argv, NULL, 0, 0);
+      
       form_stats_l2 = create_form_stats_form();
       fl_show_form (form_stats_l2->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "l2 stats");
       form_stats = create_form_stats_form();
@@ -1118,29 +1148,29 @@ int main( int argc, char **argv )
 	  }
 	} // CC_id
       } // UE_id
+      
+      ret = pthread_create(&forms_thread, NULL, scope_thread, NULL);
+      
+      if (ret == 0)
+	pthread_setname_np( forms_thread, "xforms" );
+      
+      printf("Scope thread created, ret=%d\n",ret);
+    }
     
-    ret = pthread_create(&forms_thread, NULL, scope_thread, NULL);
-    
-    if (ret == 0)
-      pthread_setname_np( forms_thread, "xforms" );
-    
-    printf("Scope thread created, ret=%d\n",ret);
-  }
-  
 #endif
-  
-  rt_sleep_ns(10*100000000ULL);
-
-  if (nfapi_mode)
-  {
-    printf("NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
-    pthread_cond_init(&sync_cond,NULL);
-    pthread_mutex_init(&sync_mutex, NULL);
-  }
-
-  const char *nfapi_mode_str = "<UNKNOWN>";
-
-  switch(nfapi_mode) {
+    
+    rt_sleep_ns(10*100000000ULL);
+    
+    if (nfapi_mode)
+      {
+	printf("NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
+	pthread_cond_init(&sync_cond,NULL);
+	pthread_mutex_init(&sync_mutex, NULL);
+      }
+    
+    const char *nfapi_mode_str = "<UNKNOWN>";
+    
+    switch(nfapi_mode) {
     case 0:
       nfapi_mode_str = "MONOLITHIC";
       break;
@@ -1153,16 +1183,17 @@ int main( int argc, char **argv )
     default:
       nfapi_mode_str = "<UNKNOWN NFAPI MODE>";
       break;
-  }
-  printf("NFAPI MODE:%s\n", nfapi_mode_str);
-
-  if (nfapi_mode==2) // VNF
-    wait_nfapi_init("main?");
-
-  printf("START MAIN THREADS\n");
-  
-  // start the main threads
-
+    }
+    printf("NFAPI MODE:%s\n", nfapi_mode_str);
+    
+    if (nfapi_mode==2) // VNF
+      wait_nfapi_init("main?");
+    
+    
+    printf("START MAIN THREADS\n");
+    
+    // start the main threads
+    
     number_of_cards = 1;    
     printf("RC.nb_L1_inst:%d\n", RC.nb_L1_inst);
     if (RC.nb_L1_inst > 0) {
@@ -1171,10 +1202,10 @@ int main( int argc, char **argv )
       //      for (inst=0;inst<RC.nb_L1_inst;inst++)
       //	for (CC_id=0;CC_id<RC.nb_L1_CC[inst];CC_id++) phy_init_lte_eNB(RC.eNB[inst][CC_id],0,0);
     }
-
+    
     printf("wait_eNBs()\n");
     wait_eNBs();
-
+    
     printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
     if (RC.nb_RU >0) {
       printf("Initializing RU threads\n");
@@ -1184,45 +1215,46 @@ int main( int argc, char **argv )
 	RC.ru[ru_id]->rf_map.chain=CC_id+chain_offset;
       }
     }
-
+    
     config_sync_var=0;
-
+    
     if (nfapi_mode==1) { // PNF
       wait_nfapi_init("main?");
     }
-
+    
     printf("wait RUs\n");
     wait_RUs();
     printf("ALL RUs READY!\n");
     printf("RC.nb_RU:%d\n", RC.nb_RU);
     // once all RUs are ready intiailize the rest of the eNBs ((dependence on final RU parameters after configuration)
     printf("ALL RUs ready - init eNBs\n");
-
+    
     if (nfapi_mode != 1 && nfapi_mode != 2)
-    {
-      printf("Not NFAPI mode - call init_eNB_afterRU()\n");
-      init_eNB_afterRU();
-    }
+      {
+	printf("Not NFAPI mode - call init_eNB_afterRU()\n");
+	init_eNB_afterRU();
+      }
     else
-    {
-      printf("NFAPI mode - DO NOT call init_eNB_afterRU()\n");
-    }
+      {
+	printf("NFAPI mode - DO NOT call init_eNB_afterRU()\n");
+      }
     
     printf("ALL RUs ready - ALL eNBs ready\n");
-  
-  
-  // connect the TX/RX buffers
+    
+    
+    // connect the TX/RX buffers
  
-  sleep(1); /* wait for thread activation */
-  
-  printf("Sending sync to all threads\n");
-  
-  pthread_mutex_lock(&sync_mutex);
-  sync_var=0;
-  pthread_cond_broadcast(&sync_cond);
-  pthread_mutex_unlock(&sync_mutex);
+    sleep(1); /* wait for thread activation */
+    
+    printf("Sending sync to all threads\n");
+    
+    pthread_mutex_lock(&sync_mutex);
+    sync_var=0;
+    pthread_cond_broadcast(&sync_cond);
+    pthread_mutex_unlock(&sync_mutex);
+  }
 
-  // wait for end of program
+    // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
   //getchar();
 
@@ -1241,34 +1273,38 @@ int main( int argc, char **argv )
 #endif
 
   // stop threads
+
+
+  if (cu_flag == 0) {
+    int UE_id;
 #ifdef XFORMS
-  printf("waiting for XFORMS thread\n");
-
-  if (do_forms==1) {
-    pthread_join(forms_thread,&status);
-    fl_hide_form(form_stats->stats_form);
-    fl_free_form(form_stats->stats_form);
-
+    printf("waiting for XFORMS thread\n");
+    
+    if (do_forms==1) {
+      pthread_join(forms_thread,&status);
+      fl_hide_form(form_stats->stats_form);
+      fl_free_form(form_stats->stats_form);
+      
       fl_hide_form(form_stats_l2->stats_form);
       fl_free_form(form_stats_l2->stats_form);
-
+      
       for(UE_id=0; UE_id<scope_enb_num_ue; UE_id++) {
 	for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 	  fl_hide_form(form_enb[CC_id][UE_id]->lte_phy_scope_enb);
 	  fl_free_form(form_enb[CC_id][UE_id]->lte_phy_scope_enb);
 	}
       }
-  }
-
+    }
+    
 #endif
 
-  printf("stopping MODEM threads\n");
-
-  // cleanup
-  for (ru_id=0;ru_id<RC.nb_RU;ru_id++) {
-    stop_ru(RC.ru[ru_id]);
-  }
-
+    printf("stopping MODEM threads\n");
+    
+    // cleanup
+    for (ru_id=0;ru_id<RC.nb_RU;ru_id++) {
+      stop_ru(RC.ru[ru_id]);
+    }
+    
     stop_eNB(NB_eNB_INST);
     stop_RU(RC.nb_RU);
     /* release memory used by the RU/eNB threads (incomplete), after all
@@ -1284,21 +1320,18 @@ int main( int argc, char **argv )
     }
     free_lte_top();
 
-  printf("About to call end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
-  end_configmodule();
-  printf("Called end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
 
-  pthread_cond_destroy(&sync_cond);
-  pthread_mutex_destroy(&sync_mutex);
-
-  pthread_cond_destroy(&nfapi_sync_cond);
-  pthread_mutex_destroy(&nfapi_sync_mutex);
-
-  pthread_mutex_destroy(&ue_pf_po_mutex);
-
-  // *** Handle per CC_id openair0
-
-
+    pthread_cond_destroy(&sync_cond);
+    pthread_mutex_destroy(&sync_mutex);
+    
+    pthread_cond_destroy(&nfapi_sync_cond);
+    pthread_mutex_destroy(&nfapi_sync_mutex);
+    
+    pthread_mutex_destroy(&ue_pf_po_mutex);
+    
+    // *** Handle per CC_id openair0
+    
+    
     for(ru_id=0; ru_id<RC.nb_RU; ru_id++) {
       if (RC.ru[ru_id]->rfdevice.trx_end_func) {
         RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);
@@ -1309,6 +1342,12 @@ int main( int argc, char **argv )
         RC.ru[ru_id]->ifdevice.trx_end_func = NULL;
       }
     }
+  }
+
+  printf("About to call end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
+  end_configmodule();
+  printf("Called end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
+
   
   if (opt_enabled == 1)
     terminate_opt();
