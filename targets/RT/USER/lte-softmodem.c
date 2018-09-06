@@ -84,7 +84,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #if defined(ENABLE_ITTI)
 #include "intertask_interface_init.h"
-#include "create_tasks.h"
 #endif
 
 #include "PHY/INIT/phy_init.h"
@@ -1064,13 +1063,16 @@ int main( int argc, char **argv )
   int have_rrc=0;
 
   if (RC.nb_inst > 0)  {
-    
-    // don't create if node doesn't connect to RRC/S1/F1/GTP
-    if (create_tasks(1) < 0) {
-      printf("cannot create ITTI tasks\n");
-      exit(-1); // need a softer mode
+    LOG_I(ENB_APP, "Creating ENB_APP eNB Task\n");
+    if (itti_create_task (TASK_ENB_APP, eNB_app_task, NULL) < 0) {
+      LOG_E(ENB_APP, "Create task for eNB APP failed\n");
+      return -1;
     }
-    printf("ITTI tasks created\n");
+    LOG_I(RRC,"Creating RRC eNB Task\n");
+    if (itti_create_task (TASK_RRC_ENB, rrc_enb_task, NULL) < 0) {
+      LOG_E(RRC, "Create task for RRC eNB failed\n");
+      return -1;
+    }
     have_rrc=1;
   }
   else {

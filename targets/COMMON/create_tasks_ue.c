@@ -21,7 +21,6 @@
 
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
-# include "create_tasks.h"
 # include "log.h"
 
 # ifdef OPENAIR2
