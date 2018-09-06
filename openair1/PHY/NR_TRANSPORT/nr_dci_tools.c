@@ -31,7 +31,7 @@
  */
 
 #include "nr_dci.h"
-//#define DEBUG_NFAPI_NR_RNTI_RA
+
 
 void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t* dci_alloc, uint16_t n_shift, uint8_t m) {
 
@@ -131,20 +131,6 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
         case NFAPI_NR_RNTI_RA:
         	// Freq domain assignment
         	fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
-        	#ifdef DEBUG_NFAPI_NR_RNTI_RA
-        	printf("frequency_domain_assignment = %05d = %#010x\n"
-        			"     time_domain_assignment = %05d = %#010x\n"
-        			"         vrb_to_prb_mapping = %05d = %#010x\n"
-        			"                        MCS = %05d = %#010x\n"
-        			"                 tb_scaling = %05d = %#010x\n"
-        			"                       N_RB = %05d = %#010x\n"
-        			"                      fsize = %05d = %#010x\n",
-					pdu_rel15->frequency_domain_assignment,pdu_rel15->frequency_domain_assignment,
-					pdu_rel15->time_domain_assignment,pdu_rel15->time_domain_assignment,
-					pdu_rel15->vrb_to_prb_mapping,pdu_rel15->vrb_to_prb_mapping,
-					pdu_rel15->mcs,pdu_rel15->mcs,pdu_rel15->tb_scaling,pdu_rel15->tb_scaling,
-					N_RB,N_RB,fsize,fsize);
-        	#endif
         	for (int i=0; i<fsize; i++)
         		*dci_pdu |= ((pdu_rel15->frequency_domain_assignment>>(fsize-i-1))&1)<<pos++;
         	// Time domain assignment
@@ -180,50 +166,5 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
                       cfg->sch_config.physical_cell_id.value : dci_alloc->pdcch_params.shift_index;
   nr_fill_cce_list(dci_alloc, n_shift, cand_idx);
   LOG_I(PHY, "DCI type %d payload (size %d) generated on candidate %d\n", dci_alloc->pdcch_params.dci_format, dci_alloc->size, cand_idx);
-  
-  
-
-/*	if (rel15->dci_format == NFAPI_NR_DL_DCI_FORMAT_1_0) {
-		dci_alloc->format = NFAPI_NR_DL_DCI_FORMAT_1_0;
-		dci_alloc->size = nr_get_dci_size(rel15->dci_format, rel15->rnti_type, &fp->initial_bwp_params_dl ,cfg);
-		if (rel15->rnti_type == NFAPI_NR_RNTI_C
-		 || rel15->rnti_type == NFAPI_NR_RNTI_CS
-		 || rel15->rnti_type == NFAPI_NR_RNTI_new) {
-
-		} else if (rel15->rnti_type == NFAPI_NR_RNTI_P) {
-
-		} else if (rel15->rnti_type == NFAPI_NR_RNTI_SI) {
-
-		} else if (rel15->rnti_type == NFAPI_NR_RNTI_RA) {
-
-		} else if (rel15->rnti_type == NFAPI_NR_RNTI_TC) {
-
-		} else {
-			AssertFatal(1==0, "[nr_fill_dci_and_dlsch] Incorrect DCI Format(%d) and RNTI Type(%d) combination",rel15->dci_format, rel15->rnti_type);
-		}
-	} else if (rel15->dci_format == NFAPI_NR_UL_DCI_FORMAT_0_0) {
-		dci_alloc->format = NFAPI_NR_UL_DCI_FORMAT_0_0;
-		dci_alloc->size = nr_get_dci_size(rel15->dci_format, rel15->rnti_type, &fp->initial_bwp_params_ul ,cfg);
-	} else if (rel15->dci_format == NFAPI_NR_DL_DCI_FORMAT_1_1) {
-		dci_alloc->format = NFAPI_NR_DL_DCI_FORMAT_1_1;
-		dci_alloc->size = nr_get_dci_size(rel15->dci_format, rel15->rnti_type, &fp->initial_bwp_params_dl ,cfg);
-	} else if (rel15->dci_format == NFAPI_NR_UL_DCI_FORMAT_0_1) {
-		dci_alloc->format = NFAPI_NR_UL_DCI_FORMAT_0_1;
-		dci_alloc->size = nr_get_dci_size(rel15->dci_format, rel15->rnti_type, &fp->initial_bwp_params_ul ,cfg);
-	} else if (rel15->dci_format == NFAPI_NR_DL_DCI_FORMAT_2_0) {
-		dci_alloc->format = NFAPI_NR_DL_DCI_FORMAT_2_0;
-		dci_alloc->size = nr_get_dci_size(rel15->dci_format, rel15->rnti_type, &fp->initial_bwp_params_dl ,cfg);
-	} else if (rel15->dci_format == NFAPI_NR_DL_DCI_FORMAT_2_1) {
-		dci_alloc->format = NFAPI_NR_DL_DCI_FORMAT_2_1;
-		dci_alloc->size = nr_get_dci_size(rel15->dci_format, rel15->rnti_type, &fp->initial_bwp_params_dl ,cfg);
-	} else if (rel15->dci_format == NFAPI_NR_DL_DCI_FORMAT_2_2) {
-		dci_alloc->format = NFAPI_NR_DL_DCI_FORMAT_2_2;
-		dci_alloc->size = nr_get_dci_size(rel15->dci_format, rel15->rnti_type, &fp->initial_bwp_params_dl ,cfg);
-	} else if (rel15->dci_format == NFAPI_NR_DL_DCI_FORMAT_2_3) {
-		dci_alloc->format = NFAPI_NR_DL_DCI_FORMAT_2_3;
-		dci_alloc->size = nr_get_dci_size(rel15->dci_format, rel15->rnti_type, &fp->initial_bwp_params_dl ,cfg);
-	} else {
-		AssertFatal(1==0, "[nr_fill_dci_and_dlsch] Incorrect DCI Format(%d)",rel15->dci_format);
-	}*/
 
 }
