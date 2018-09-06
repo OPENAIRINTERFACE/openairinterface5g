@@ -41,9 +41,12 @@
 # include "intertask_interface.h"
 # include "timer.h"
 # if defined(ENABLE_USE_MME)
+#   define ENB_REGISTER_RETRY_DELAY 10
 #   include "s1ap_eNB.h"
 #   include "sctp_eNB_task.h"
 #   include "gtpv1u_eNB_task.h"
+#   include "nas_ue_task.h"
+#   include "udp_eNB_task.h"
 # endif
 
 #if defined(FLEXRAN_AGENT_SB_IF)
@@ -54,61 +57,66 @@
 extern unsigned char NB_eNB_INST;
 #endif
 
+extern int emulate_rf;
 extern RAN_CONTEXT_t RC;
+extern void *l2l1_task(void *arg);
 
 #if defined(ENABLE_ITTI)
 
-#include "LAYER2/PROTO_AGENT/proto_agent.h"
-//#include "../PROTO_AGENT/proto_agent.h"
-
-
 /*------------------------------------------------------------------------------*/
-# if defined(ENABLE_USE_MME)
-#   define ENB_REGISTER_RETRY_DELAY 10
-# endif
-
-/*------------------------------------------------------------------------------*/
-
-/*
-static void configure_phy(module_id_t enb_id, const Enb_properties_array_t* enb_properties)
+static void create_remaining_tasks(module_id_t enb_id)
 {
-  MessageDef *msg_p;
-  int CC_id;
-
-  msg_p = itti_alloc_new_message (TASK_ENB_APP, PHY_CONFIGURATION_REQ);
-
-  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-    PHY_CONFIGURATION_REQ (msg_p).frame_type[CC_id]              = enb_properties->properties[enb_id]->frame_type[CC_id];
-    PHY_CONFIGURATION_REQ (msg_p).prefix_type[CC_id]             = enb_properties->properties[enb_id]->prefix_type[CC_id];
-    PHY_CONFIGURATION_REQ (msg_p).downlink_frequency[CC_id]      = enb_properties->properties[enb_id]->downlink_frequency[CC_id];
-    PHY_CONFIGURATION_REQ (msg_p).uplink_frequency_offset[CC_id] = enb_properties->properties[enb_id]->uplink_frequency_offset[CC_id];
-    PHY_CONFIGURATION_REQ (msg_p).nb_antennas_tx[CC_id]          = enb_properties->properties[enb_id]->nb_antennas_tx[CC_id];
-    PHY_CONFIGURATION_REQ (msg_p).nb_antennas_rx[CC_id]          = enb_properties->properties[enb_id]->nb_antennas_rx[CC_id];
-    PHY_CONFIGURATION_REQ (msg_p).tx_gain[CC_id]                 = enb_properties->properties[enb_id]->tx_gain[CC_id];
-    PHY_CONFIGURATION_REQ (msg_p).rx_gain[CC_id]                 = enb_properties->properties[enb_id]->rx_gain[CC_id];
+  ngran_node_t type = RC.rrc[enb_id]->node_type;
+  int rc;
+  itti_wait_ready(1);
+  switch (type) {
+  case ngran_eNB:
+  case ngran_ng_eNB:
+  case ngran_gNB:
+  case ngran_eNB_CU:
+  case ngran_ng_eNB_CU:
+  case ngran_gNB_CU:
+    rc = itti_create_task(TASK_SCTP, sctp_eNB_task, NULL);
+    AssertFatal(rc >= 0, "Create task for SCTP failed\n");
+    rc = itti_create_task(TASK_S1AP, s1ap_eNB_task, NULL);
+    AssertFatal(rc >= 0, "Create task for S1AP failed\n");
+    if (!emulate_rf){
+      rc = itti_create_task(TASK_UDP, udp_eNB_task, NULL);
+      AssertFatal(rc >= 0, "Create task for UDP failed\n");
+    }
+    rc = itti_create_task(TASK_GTPV1_U, &gtpv1u_eNB_task, NULL);
+    AssertFatal(rc >= 0, "Create task for GTPV1U failed\n");
+    break;
+  default:
+    /* intentionally left blank */
+    break;
   }
-
-  itti_send_msg_to_task (TASK_PHY_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
+  switch (type) {
+  case ngran_eNB:
+  case ngran_ng_eNB:
+  case ngran_gNB:
+  case ngran_eNB_DU:
+  case ngran_gNB_DU:
+    rc = itti_create_task (TASK_L2L1, l2l1_task, NULL);
+    AssertFatal(rc >= 0, "Create task for L2L1 failed\n");
+    break;
+  default:
+    /* intentioally left blank */
+    break;
+  }
+  itti_wait_ready(0);
 }
-*/
 
 /*------------------------------------------------------------------------------*/
-static void configure_rrc(uint32_t enb_id)
+static void configure_rrc(uint32_t enb_id, MessageDef **msg_p)
 {
-  MessageDef *msg_p = NULL;
-  //  int CC_id;
-
-  msg_p = itti_alloc_new_message (TASK_ENB_APP, RRC_CONFIGURATION_REQ);
-
-  if (RC.rrc[enb_id]) {
-    RCconfig_RRC(msg_p,enb_id, RC.rrc[enb_id]);
-    
-
-    LOG_I(ENB_APP,"Sending configuration message to RRC task\n");
-    itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
-
-  }
-  else AssertFatal(0,"RRC context for eNB %d not allocated\n",enb_id);
+  RC.rrc[enb_id] = malloc(sizeof(eNB_RRC_INST));
+  AssertFatal(RC.rrc[enb_id], "RRC context for eNB %d not allocated\n", enb_id);
+  LOG_I(ENB_APP, "%s() Creating RRC instance RC.rrc[%d]: %p\n",
+      __FUNCTION__, enb_id, RC.rrc[enb_id]);
+  memset((void *)RC.rrc[enb_id],0,sizeof(eNB_RRC_INST));
+  *msg_p = itti_alloc_new_message (TASK_ENB_APP, RRC_CONFIGURATION_REQ);
+  RCconfig_RRC(*msg_p, enb_id, RC.rrc[enb_id]);
 }
 
 /*------------------------------------------------------------------------------*/
@@ -174,47 +182,48 @@ void *eNB_app_task(void *args_p)
   MessageDef                     *msg_p           = NULL;
   instance_t                      instance;
   int                             result;
+  MessageDef                     *rrc_msg_p[enb_nb];
   /* for no gcc warnings */
   (void)instance;
   int mac_has_f1[MAX_MAC_INST];
-
   memset(mac_has_f1,0,MAX_MAC_INST*sizeof(int));
 
   itti_mark_task_ready (TASK_ENB_APP);
-
-  LOG_I(PHY, "%s() Task ready initialise structures\n", __FUNCTION__);
+  LOG_I(PHY, "%s() Task ready, initialise L1/MAC/RRC structures\n", __FUNCTION__);
 
   RCconfig_L1();
 
   RCconfig_macrlc(mac_has_f1);
 
-  LOG_I(PHY, "%s() RC.nb_L1_inst:%d\n", __FUNCTION__, RC.nb_macrlc_inst);
-
   LOG_I(PHY, "%s() RC.nb_L1_inst:%d\n", __FUNCTION__, RC.nb_L1_inst);
 
-  if (RC.nb_L1_inst>0) AssertFatal(l1_north_init_eNB()==0,"could not initialize L1 north interface\n");
+  LOG_I(PHY, "%s() RC.nb_macrlc_inst:%d\n", __FUNCTION__, RC.nb_macrlc_inst);
 
-
-  AssertFatal (enb_nb <= RC.nb_inst,
-               "Number of eNB is greater than eNB defined in configuration file (%d/%d)!",
-               enb_nb, RC.nb_inst);
+  if (RC.nb_L1_inst>0)
+    AssertFatal(l1_north_init_eNB()==0,"could not initialize L1 north interface\n");
+  if (RC.nb_macrlc_inst>0)
+    AssertFatal(RC.nb_macrlc_inst == enb_id_end-enb_id_start,
+      "Number of MACRLC instances %d != number of RRC instances %d\n",
+      RC.nb_macrlc_inst, enb_id_end-enb_id_start);
 
   LOG_I(ENB_APP,"Allocating eNB_RRC_INST for %d instances\n",RC.nb_inst);
-
   RC.rrc = (eNB_RRC_INST **)malloc(RC.nb_inst*sizeof(eNB_RRC_INST *));
   LOG_I(ENB_APP, "%s() RC.nb_inst:%d RC.rrc:%p\n", __FUNCTION__, RC.nb_inst, RC.rrc);
 
-  if (RC.nb_macrlc_inst>0) AssertFatal(RC.nb_macrlc_inst == enb_id_end-enb_id_start,
-				       "Number of MACRLC instances %d != number of RRC instances %d\n",
-				       RC.nb_macrlc_inst,enb_id_end-enb_id_start);
   for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
-    RC.rrc[enb_id] = (eNB_RRC_INST*)malloc(sizeof(eNB_RRC_INST));
-    LOG_I(ENB_APP, "%s() Creating RRC instance RC.rrc[%d]:%p (%d of %d)\n", __FUNCTION__, enb_id, RC.rrc[enb_id], enb_id+1, enb_id_end);
-    memset((void *)RC.rrc[enb_id],0,sizeof(eNB_RRC_INST));
-    configure_rrc(enb_id);
-    
-    if (RC.nb_macrlc_inst >0 && mac_has_f1[enb_id]==1) RC.rrc[enb_id]->node_type = ngran_eNB_DU;
-    else                                               pdcp_layer_init();
+    configure_rrc(enb_id, &rrc_msg_p[enb_id]);
+
+    if (RC.nb_macrlc_inst > 0 && mac_has_f1[enb_id]==1)
+      RC.rrc[enb_id]->node_type = ngran_eNB_DU;
+    else
+      pdcp_layer_init();
+  }
+
+  create_remaining_tasks(0);
+
+  for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
+    LOG_I(ENB_APP,"Sending configuration message to RRC task\n");
+    itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), rrc_msg_p[enb_id]);
   }
 
 # if defined(ENABLE_USE_MME)
