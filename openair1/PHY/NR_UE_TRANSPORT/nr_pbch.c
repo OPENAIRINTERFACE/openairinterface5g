@@ -34,6 +34,7 @@
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/sse_intrin.h"
 #include "SIMULATION/TOOLS/sim.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
 
 //#define DEBUG_PBCH 1
 //#define DEBUG_PBCH_ENCODING
@@ -508,8 +509,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 		     NR_DL_FRAME_PARMS *frame_parms,
 		     uint8_t eNB_id,
 		     MIMO_mode_t mimo_mode,
-		     uint32_t high_speed_flag,
-		     uint8_t frame_mod4)
+		     uint32_t high_speed_flag)
 {
 
   NR_UE_COMMON *nr_ue_common_vars = &ue->common_vars;
@@ -535,13 +535,13 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   unsigned short idx_demod =0;
   int8_t decoderState=0;
   uint8_t decoderListSize = 8, pathMetricAppr = 0;
-  double aPrioriArray[frame_parms->pbch_polar_params.payloadBits];  // assume no a priori knowledge available about the payload.
+  //double aPrioriArray[frame_parms->pbch_polar_params.payloadBits];  // assume no a priori knowledge available about the payload.
 
   memset(&pbch_a[0], 0, sizeof(uint8_t) * NR_POLAR_PBCH_PAYLOAD_BITS);
 
   //printf("nr_pbch_ue nid_cell %d\n",frame_parms->Nid_cell);
 
-  for (int i=0; i<frame_parms->pbch_polar_params.payloadBits; i++) aPrioriArray[i] = NAN;
+  //for (int i=0; i<frame_parms->pbch_polar_params.payloadBits; i++) aPrioriArray[i] = NAN;
 
   int subframe_rx = proc->subframe_rx;
   

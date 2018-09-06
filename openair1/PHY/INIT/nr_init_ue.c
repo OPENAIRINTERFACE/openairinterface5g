@@ -34,6 +34,9 @@
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
+#include "PHY/INIT/phy_init.h"
+#include "PHY/NR_REFSIG/pss_nr.h"
+#include "openair1/PHY/NR_REFSIG/ul_ref_seq_nr.h"
 
 //uint8_t dmrs1_tab_ue[8] = {0,2,3,4,6,8,9,10};
 
@@ -658,8 +661,8 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   printf("Initializing UE vars (abstraction %"PRIu8") for eNB TXant %"PRIu8", UE RXant %"PRIu8"\n",abstraction_flag,fp->nb_antennas_tx,fp->nb_antennas_rx);
   //LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_UE][MOD %02u][]\n", ue->Mod_id+NB_eNB_INST);
   
+  nr_init_frame_parms_ue(&ue->frame_parms);
   phy_init_nr_top(ue);
-  //nr_init_frame_parms_ue(&ue->frame_parms);
 
   // many memory allocation sizes are hard coded
   AssertFatal( fp->nb_antennas_rx <= 2, "hard coded allocation for ue_common_vars->dl_ch_estimates[eNB_id]" );

@@ -283,9 +283,10 @@ void init_UE(int nb_inst)
     NR_UE_MAC_INST_t *mac_inst;
     for (inst=0; inst < nb_inst; inst++) {
         //    UE->rfdevice.type      = NONE_DEV;
-        PHY_VARS_NR_UE *UE = PHY_vars_UE_g[inst][0];
+        //PHY_VARS_NR_UE *UE = PHY_vars_UE_g[inst][0];
         LOG_I(PHY,"Initializing memory for UE instance %d (%p)\n",inst,PHY_vars_UE_g[inst]);
             PHY_vars_UE_g[inst][0] = init_nr_ue_vars(NULL,inst,0);
+        PHY_VARS_NR_UE *UE = PHY_vars_UE_g[inst][0];
 
         AssertFatal((UE->if_inst = nr_ue_if_module_init(inst)) != NULL, "can not initial IF module\n");
         nr_l3_init_ue();
@@ -295,6 +296,11 @@ void init_UE(int nb_inst)
         mac_inst->if_module = UE->if_inst;
         UE->if_inst->scheduled_response = nr_ue_scheduled_response;
         UE->if_inst->phy_config_request = nr_ue_phy_config_request;
+        
+        LOG_I(PHY,"Intializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
+		//init_UE_threads(inst);
+		//UE = PHY_vars_UE_g[inst][0];
+		
 
         AssertFatal(0 == pthread_create(&UE->proc.pthread_ue,
                                         &UE->proc.attr_ue,
