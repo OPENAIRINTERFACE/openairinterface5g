@@ -171,9 +171,9 @@ typedef struct {
 } nfapi_nr_rach_config_t;
 
 typedef struct {
-  nfapi_uint16_tlv_t  dmrs_TypeA_Position;                                            ///// Position of (first) DL DM-RS
-  nfapi_uint16_tlv_t  TimeDomainResourceAllocation_k0;                                ///// L1 parameter 'K0'
-  nfapi_uint16_tlv_t  TimeDomainResourceAllocation_mappingType;                       ///// L1 parameter 'Mapping-type'
+  nfapi_uint16_tlv_t  dmrs_typeA_position;                                            ///// Position of (first) DL DM-RS
+  nfapi_uint16_tlv_t  time_domain_alloc_k0;                                ///// L1 parameter 'K0'
+  nfapi_uint16_tlv_t  time_domain_alloc_mapping_type;                       ///// L1 parameter 'Mapping-type'
 } nfapi_nr_pdsch_config_t;
 
 typedef struct {
@@ -309,8 +309,14 @@ typedef enum {
 typedef enum {
   NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_A=0,
   NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_B,
-  NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_C
+  NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_C,
+  NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_ALLOC_LIST
 } nfapi_nr_pdsch_time_domain_alloc_type_e;
+
+typedef enum {
+  NFAPI_NR_PDSCH_MAPPING_TYPE_A=0,
+  NFAPI_NR_PDSCH_MAPPING_TYPE_B
+} nfapi_nr_pdsch_mapping_type_e;
 
 // P7 Sub Structures
 

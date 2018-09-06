@@ -33,3 +33,10 @@
 #include "PHY/defs_gNB.h"
 
 
+void nr_get_time_domain_allocation_type(nfapi_nr_config_request_t config,
+                                        NR_gNB_DCI_ALLOC_t dci_alloc,
+                                        NR_gNB_DLSCH_t* dlsch);
+
+void nr_check_time_alloc(uint8_t S, uint8_t L, nfapi_nr_config_request_t config);
+
+uint8_t nr_get_S(uint8_t row_idx, uint8_t CP, uint8_t time_alloc_type, uint8_t dmrs_mapping_type);
