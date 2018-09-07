@@ -2406,21 +2406,21 @@ int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
                     "BAD MNC DIGIT LENGTH %d",
                     F1AP_SETUP_REQ (msg_p).mnc_digit_length[k]);
 	
-        LOG_I(ENB_APP,"F1AP: CU_ip4_address %s\n",RC.mac[k]->eth_params_n.remote_addr);
-        LOG_I(ENB_APP,"FIAP: CU_ip4_address %p, strlen %d\n",F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv4_address,(int)strlen(RC.mac[k]->eth_params_n.remote_addr));
+        LOG_I(ENB_APP,"F1AP: CU_ip4_address in DU %s\n",RC.mac[k]->eth_params_n.remote_addr);
+        LOG_I(ENB_APP,"FIAP: CU_ip4_address in DU %p, strlen %d\n",F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv4_address,(int)strlen(RC.mac[k]->eth_params_n.remote_addr));
  	
         F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv6 = 0;
         F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv4 = 1;
         //strcpy(F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv6_address, "");
-        strcpy(F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv4_address, RC.mac[k]->eth_params_n.my_addr);
+        strcpy(F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv4_address, RC.mac[k]->eth_params_n.remote_addr);
 
-        LOG_I(ENB_APP,"F1AP: DU_ip4_address %s\n",RC.mac[k]->eth_params_n.my_addr);
-        LOG_I(ENB_APP,"FIAP: DU_ip4_address %p, strlen %d\n",F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv4_address,(int)strlen(RC.mac[k]->eth_params_n.my_addr));
+        LOG_I(ENB_APP,"F1AP: DU_ip4_address in DU %s\n",RC.mac[k]->eth_params_n.my_addr);
+        LOG_I(ENB_APP,"FIAP: DU_ip4_address in DU %p, strlen %d\n",F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv4_address,(int)strlen(RC.mac[k]->eth_params_n.my_addr));
   
         F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv6 = 0;
         F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv4 = 1;
         //strcpy(F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv6_address, "");
-        strcpy(F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv4_address, RC.mac[k]->eth_params_n.remote_addr);
+        strcpy(F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv4_address, RC.mac[k]->eth_params_n.my_addr);
 
         //strcpy(F1AP_SETUP_REQ (msg_p).CU_ip_address[l].ipv6_address,*(F1ParamList.paramarray[l][ENB_CU_IPV6_ADDRESS_IDX].strptr));
         //F1AP_SETUP_REQ (msg_p).CU_port = RC.mac[k]->eth_params_n.remote_portc; // maybe we dont need it
