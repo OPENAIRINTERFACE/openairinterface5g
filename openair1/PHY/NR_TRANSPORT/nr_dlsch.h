@@ -39,4 +39,8 @@ void nr_get_time_domain_allocation_type(nfapi_nr_config_request_t config,
 
 void nr_check_time_alloc(uint8_t S, uint8_t L, nfapi_nr_config_request_t config);
 
-uint8_t nr_get_S(uint8_t row_idx, uint8_t CP, uint8_t time_alloc_type, uint8_t dmrs_mapping_type);
+uint8_t nr_get_S(uint8_t row_idx, uint8_t CP, uint8_t time_alloc_type, uint8_t dmrs_typeA_position);
+
+void nr_get_rbg_parms(NR_BWP_PARMS* bwp, uint8_t config_type);
+
+void nr_get_rbg_list(uint32_t bitmap, uint8_t n_rbg, uint8_t* rbg_list);

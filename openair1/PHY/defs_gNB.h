@@ -149,6 +149,7 @@ typedef struct {
   LTE_DL_eNB_HARQ_t *harq_processes[8];
   nfapi_nr_pdsch_time_domain_alloc_type_e time_alloc_type;
   uint8_t time_alloc_list_flag;
+  uint8_t rbg_list[NR_MAX_NB_RBG];
 
 
 //LTE remainders to be removed

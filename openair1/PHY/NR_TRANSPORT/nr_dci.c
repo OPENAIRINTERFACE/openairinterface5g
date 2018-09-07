@@ -20,7 +20,7 @@
  */
 
 /*! \file PHY/NR_TRANSPORT/nr_dci.c
-* \brief Implements DCI encoding/decoding and PDCCH TX/RX procedures (38.212/38.213/38.214). V15.2.0 2018-06.
+* \brief Implements DCI encoding and PDCCH TX procedures (38.212/38.213/38.214). V15.2.0 2018-06.
 * \author Guy De Souza
 * \date 2018
 * \version 0.1

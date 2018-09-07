@@ -81,6 +81,8 @@
 #define NR_MAX_PDCCH_AGG_LEVEL 16
 #define NR_MAX_CSET_DURATION 3
 
+#define NR_MAX_NB_RBG 18
+
 typedef enum {
   NR_MU_0=0,
   NR_MU_1,
@@ -110,6 +112,17 @@ typedef enum {
   nr_FR2
 } nr_frequency_range_e;
 
+typedef struct {
+  /// Size of first RBG
+  uint8_t start_size;
+  /// Nominal size
+  uint8_t P;
+  /// Size of last RBG
+  uint8_t end_size;
+  /// Number of RBG
+  uint8_t N_RBG;
+}nr_rbg_parms_t;
+
 typedef struct NR_BWP_PARMS {
   /// BWP ID
   uint8_t bwp_id;
@@ -123,6 +136,8 @@ typedef struct NR_BWP_PARMS {
   uint16_t ofdm_symbol_size;
   /// Cyclic prefix
   uint8_t cyclic_prefix;
+  /// RBG params
+  nr_rbg_parms_t rbg_parms;
 } NR_BWP_PARMS;
 
 typedef struct {

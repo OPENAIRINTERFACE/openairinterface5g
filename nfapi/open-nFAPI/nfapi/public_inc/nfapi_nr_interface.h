@@ -318,6 +318,11 @@ typedef enum {
   NFAPI_NR_PDSCH_MAPPING_TYPE_B
 } nfapi_nr_pdsch_mapping_type_e;
 
+typedef enum {
+  NFAPI_NR_PDSCH_RBG_CONFIG_TYPE1=0,
+  NFAPI_NR_PDSCH_RBG_CONFIG_TYPE2
+} nfapi_nr_pdsch_rbg_config_type_e;
+
 // P7 Sub Structures
 
 typedef struct {

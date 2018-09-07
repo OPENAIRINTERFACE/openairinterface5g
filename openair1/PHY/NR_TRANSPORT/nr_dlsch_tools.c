@@ -19,13 +19,13 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/LTE_TRANSPORT/dlsch_decoding.c
-* \brief Top-level routines for decoding  Turbo-coded (DLSCH) transport channels from 36-212, V8.6 2009-03
-* \author R. Knopp
-* \date 2011
+/*! \file PHY/NR_TRANSPORT/nr_dlsch_tools.c
+* \brief Top-level routines for decoding  DLSCH transport channel from 38-214, V15.2.0 2018-06
+* \author Guy De Souza
+* \date 2018
 * \version 0.1
 * \company Eurecom
-* \email: knopp@eurecom.fr
+* \email: desouza@eurecom.fr
 * \note
 * \warning
 */
@@ -40,6 +40,9 @@ uint8_t nr_pdsch_default_time_alloc_B_S[16] = {2,4,6,8,10,2,4,2,4,6,8,10,2,2,3,2
 uint8_t nr_pdsch_default_time_alloc_B_L[16] = {2,2,2,2,2,2,2,4,4,4,4,4,7,12,11,4};
 uint8_t nr_pdsch_default_time_alloc_C_S[15] = {2,4,6,8,10,2,4,6,8,10,2,2,3,0,2};
 uint8_t nr_pdsch_default_time_alloc_C_L[15] = {2,2,2,2,2,4,4,4,4,4,7,12,11,6,6};
+
+
+  /// Time domain allocation routines
 
 void nr_get_time_domain_allocation_type(nfapi_nr_config_request_t config,
                                         NR_gNB_DCI_ALLOC_t dci_alloc,
@@ -131,7 +134,7 @@ void nr_check_time_alloc(uint8_t S, uint8_t L, nfapi_nr_config_request_t config)
 
         if (S==3)
           AssertFatal(config.pdsch_config.dmrs_typeA_position.value == 3, "Invalid S %d for dmrs_typeA_position %d\n",
-          S, config.pdsch_config.dmrs_typeA_position);
+          S, config.pdsch_config.dmrs_typeA_position.value);
 
         AssertFatal((L>2)&&(L<15), "Invalid L %d for mapping type A and normal CP\n", L);
 
@@ -152,7 +155,7 @@ void nr_check_time_alloc(uint8_t S, uint8_t L, nfapi_nr_config_request_t config)
 
         if (S==3)
           AssertFatal(config.pdsch_config.dmrs_typeA_position.value == 3, "Invalid S %d for dmrs_typeA_position %d\n",
-          S, config.pdsch_config.dmrs_typeA_position);
+          S, config.pdsch_config.dmrs_typeA_position.value);
 
         AssertFatal((L>2)&&(L<13), "Invalid L %d for mapping type A and extended CP\n", L);
 
@@ -169,4 +172,36 @@ void nr_check_time_alloc(uint8_t S, uint8_t L, nfapi_nr_config_request_t config)
   }
 }
 
+
+  /// Frequency domain allocation routines
+
+    // DL alloc type 0
+static inline uint8_t get_RBG_size_P(uint16_t n_RB, uint8_t RBG_config) {
+  if (RBG_config == NFAPI_NR_PDSCH_RBG_CONFIG_TYPE1)
+    return ((n_RB<37)?2:(n_RB<73)?4:(n_RB<145)?8:16);
+  else if (RBG_config == NFAPI_NR_PDSCH_RBG_CONFIG_TYPE2)
+    return ((n_RB<37)?4:(n_RB<73)?8:(n_RB<145)?16:16);
+  else
+    AssertFatal(0, "Invalid RBG config type (%d)\n", RBG_config);
+}
+
+void nr_get_rbg_parms(NR_BWP_PARMS* bwp, uint8_t config_type) {
+  nr_rbg_parms_t* rbg_parms = &bwp->rbg_parms;
+
+  rbg_parms->P = get_RBG_size_P(bwp->N_RB, config_type);
+  rbg_parms->start_size = rbg_parms->P - bwp->location%rbg_parms->P;
+  rbg_parms->end_size = ((bwp->location + bwp->N_RB)%rbg_parms->P)? ((bwp->location + bwp->N_RB)%rbg_parms->P) : rbg_parms->P;
+  rbg_parms->N_RBG = (uint8_t)ceil( (bwp->N_RB + (bwp->location%rbg_parms->P))/rbg_parms->P);
+  LOG_I(PHY, "RBG parameters for BWP %d location %d N_RB %d:\n", bwp->bwp_id, bwp->location, bwp->N_RB);
+  LOG_I(PHY, "P %d\t start size %d\t endsize %d\t N_RBG %d\n", rbg_parms->P, rbg_parms->start_size, rbg_parms->end_size, rbg_parms->N_RBG);
+}
+
+void nr_get_rbg_list(uint32_t bitmap, uint8_t n_rbg, uint8_t* rbg_list) {
+  uint8_t idx=0;
+  for (int i=0; i<n_rbg; i++)
+    if ((bitmap>>(n_rbg-i-1))&1)
+      rbg_list[idx++]=i;
+}
+
+    // DL alloc type 1
 
