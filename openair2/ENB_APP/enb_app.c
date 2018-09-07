@@ -414,7 +414,7 @@ void handle_reconfiguration(module_id_t mod_id)
 
   if (restart_L1L2(mod_id) < 0) {
     LOG_E(ENB_APP, "can not restart, killing lte-softmodem\n");
-    itti_terminate_tasks(TASK_PHY_ENB);
+    exit_fun("can not restart L1L2, killing lte-softmodem");
     return;
   }
 
