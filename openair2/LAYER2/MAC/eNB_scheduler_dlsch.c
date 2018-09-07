@@ -2018,16 +2018,6 @@ void schedule_PCH(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP)
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.transmission_power          = 6000; // equal to RS power
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.mcs_1                       = mcs;
 
-	// Rel10 fields
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel10.pdsch_start                           = 3;
-#endif
-	// Rel13 fields
-#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.ue_type                               = 0; // regular UE
-	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.pdsch_payload_type                    = 2; // not BR
-	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.initial_transmission_sf_io            = 0xFFFF;
-#endif
 
 	if (!CCE_allocation_infeasible(module_idP, CC_id, 0, subframeP, dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level, P_RNTI)) {
 	  LOG_D(MAC,"Frame %d: Subframe %d : Adding common DCI for P_RNTI\n", frameP,subframeP);
@@ -2068,6 +2058,18 @@ void schedule_PCH(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP)
 	  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_prb_per_subband                 = 1;
 	  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_vector                          = 1;
 	  // dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.bf_vector                    = ;
+
+	// Rel10 fields
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel10.pdsch_start                           = 3;
+#endif
+	// Rel13 fields
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.ue_type                               = 0; // regular UE
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.pdsch_payload_type                    = 2; // not BR
+	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.initial_transmission_sf_io            = 0xFFFF;
+#endif
+
 	  dl_req->number_pdu++;
 
 	  eNB->TX_req[CC_id].sfn_sf                                                     = (frameP<<4)+subframeP;

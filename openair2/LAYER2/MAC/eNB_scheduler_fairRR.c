@@ -787,13 +787,11 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
 //    unsigned char aggregation;
     mac_rlc_status_resp_t rlc_status;
     unsigned char header_len_dcch = 0, header_len_dcch_tmp = 0;
-    unsigned char header_len_dtch = 0, header_len_dtch_tmp =
-	0, header_len_dtch_last = 0;
+    unsigned char header_len_dtch = 0, header_len_dtch_tmp = 0, header_len_dtch_last = 0;
     unsigned char ta_len = 0;
     unsigned char sdu_lcids[NB_RB_MAX], lcid, offset, num_sdus = 0;
     uint16_t nb_rb, nb_rb_temp, nb_available_rb;
-    uint16_t TBS, j, sdu_lengths[NB_RB_MAX], rnti, padding =
-	0, post_padding = 0;
+    uint16_t TBS, j, sdu_lengths[NB_RB_MAX], rnti, padding = 0, post_padding = 0;
     unsigned char dlsch_buffer[MAX_DLSCH_PAYLOAD_BYTES];
     unsigned char round = 0;
     unsigned char harq_pid = 0;
@@ -818,7 +816,10 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
     nfapi_dl_config_request_pdu_t *dl_config_pdu;
     int tdd_sfa;
     int ta_update;
-
+#ifdef DEBUG_eNB_SCHEDULER
+    int k;
+#endif
+  
     start_meas(&eNB->schedule_dlsch);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
 	(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH, VCD_FUNCTION_IN);
@@ -1335,8 +1336,8 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
 			      "[eNB %d][DCCH] CC_id %d Got %d bytes :",
 			      module_idP, CC_id, sdu_lengths[0]);
 
-			for (j = 0; j < sdu_lengths[0]; j++) {
-			    LOG_T(MAC, "%x ", dlsch_buffer[j]);
+			for (k = 0; k < sdu_lengths[0]; k++) {
+			    LOG_T(MAC, "%x ", dlsch_buffer[k]);
 			}
 
 			LOG_T(MAC, "\n");
@@ -1389,8 +1390,8 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
 			      "[eNB %d][DCCH1] CC_id %d Got %d bytes :",
 			      module_idP, CC_id, sdu_lengths[num_sdus]);
 
-			for (j = 0; j < sdu_lengths[num_sdus]; j++) {
-			    LOG_T(MAC, "%x ", dlsch_buffer[j]);
+			for (k = 0; k < sdu_lengths[num_sdus]; k++) {
+			    LOG_T(MAC, "%x ", dlsch_buffer[k]);
 			}
 
 			LOG_T(MAC, "\n");
@@ -1638,8 +1639,8 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
 #ifdef DEBUG_eNB_SCHEDULER
 		    LOG_T(MAC, "[eNB %d] First 16 bytes of DLSCH : \n",module_idP );
 
-		    for (i = 0; i < 16; i++) {
-			LOG_T(MAC, "%x.", dlsch_buffer[i]);
+		    for (k = 0; k < 16; k++) {
+			LOG_T(MAC, "%x.", dlsch_buffer[k]);
 		    }
 
 		    LOG_T(MAC, "\n");
