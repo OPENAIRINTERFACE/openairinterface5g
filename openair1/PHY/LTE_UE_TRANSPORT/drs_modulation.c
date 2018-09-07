@@ -83,7 +83,7 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
   //        cyclic_shift1 = 0;
   Msc_RS = 12*nb_rb;
 
-  Msc_idx_ptr = (uint16_t*) bsearch(&Msc_RS, dftsizes, 33, sizeof(uint16_t), compareints);
+  Msc_idx_ptr = (uint16_t*) bsearch(&Msc_RS, dftsizes, 34, sizeof(uint16_t), compareints);
 
   if (Msc_idx_ptr)
     Msc_RS_idx = Msc_idx_ptr - dftsizes;

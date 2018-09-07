@@ -375,6 +375,7 @@ void dft576(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft600(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft648(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft720(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft768(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft864(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft900(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft960(int16_t *x,int16_t *y,uint8_t scale_flag);

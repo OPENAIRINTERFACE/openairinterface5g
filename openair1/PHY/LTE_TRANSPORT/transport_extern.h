@@ -25,10 +25,10 @@ extern char lte_cqi_snr_dB[15];
 extern short conjugate[8],conjugate2[8];
 extern short minus_one[8];
 extern short minus_one[8];
-extern short *ul_ref_sigs[30][2][33];
-extern short *ul_ref_sigs_rx[30][2][33];
-extern unsigned short dftsizes[33];
-extern unsigned short ref_primes[33];
+extern short *ul_ref_sigs[30][2][34];
+extern short *ul_ref_sigs_rx[30][2][34];
+extern unsigned short dftsizes[34];
+extern unsigned short ref_primes[34];
 
 extern int qam64_table[8],qam16_table[4],qpsk_table[2];
 
