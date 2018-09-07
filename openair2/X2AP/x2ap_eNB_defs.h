@@ -151,7 +151,13 @@ typedef struct x2ap_eNB_instance_s {
   uint16_t  mnc;
   uint8_t   mnc_digit_length;
 
- 
+  net_ip_address_t target_enb_x2_ip_address[X2AP_MAX_NB_ENB_IP_ADDRESS];
+  uint8_t          nb_x2;
+  net_ip_address_t enb_x2_ip_address;
+  uint16_t         sctp_in_streams;
+  uint16_t         sctp_out_streams;
+  uint32_t         enb_port_for_X2C;
+  int              multi_sd;
 } x2ap_eNB_instance_t;
 
 typedef struct {

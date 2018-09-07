@@ -220,10 +220,10 @@ void
 sctp_handle_new_association_req_multi(
   const instance_t instance,
   const task_id_t requestor,
-  const sctp_new_association_req_t * const sctp_new_association_req_p,
-  int   sd)
+  const sctp_new_association_req_multi_t * const sctp_new_association_req_p)
 {
   int                           ns;
+  int sd;
 
   int32_t                       assoc_id = 0;
 
@@ -234,6 +234,8 @@ sctp_handle_new_association_req_multi(
    * to remote host.
    */
   DevAssert(sctp_new_association_req_p != NULL);
+
+  sd = sctp_new_association_req_p->multi_sd;
 
   /* Create new socket with IPv6 affinity */
 //#warning "SCTP may Force IPv4 only, here"
@@ -265,8 +267,9 @@ sctp_handle_new_association_req_multi(
         SCTP_ERROR("Failed to convert ipv6 address %*s to network type\n",
                    (int)strlen(sctp_new_association_req_p->remote_address.ipv6_address),
                    sctp_new_association_req_p->remote_address.ipv6_address);
-        close(sd);
-        return;
+        //close(sd);
+        //return;
+        exit(1);
       }
 
       SCTP_DEBUG("Converted ipv6 address %*s to network type\n",
@@ -284,8 +287,9 @@ sctp_handle_new_association_req_multi(
         SCTP_ERROR("Failed to convert ipv4 address %*s to network type\n",
                    (int)strlen(sctp_new_association_req_p->remote_address.ipv4_address),
                    sctp_new_association_req_p->remote_address.ipv4_address);
-        close(sd);
-        return;
+        //close(sd);
+        //return;
+        exit(1);
       }
 
       SCTP_DEBUG("Converted ipv4 address %*s to network type\n",
@@ -307,7 +311,7 @@ sctp_handle_new_association_req_multi(
           SCTP_STATE_UNREACHABLE, 0, 0);
         /* Add the socket to list of fd monitored by ITTI */
         //itti_unsubscribe_event_fd(TASK_SCTP, sd);
-        close(sd);
+        //close(sd);
         return;
       } else {
         SCTP_DEBUG("connectx assoc_id  %d in progress..., used %d addresses\n",
@@ -1043,7 +1047,6 @@ void *sctp_eNB_task(void *arg)
   struct epoll_event *events;
   MessageDef         *received_msg = NULL;
   int                 result;
-  int                 multi_sd = -1;
 
   SCTP_DEBUG("Starting SCTP layer\n");
 
@@ -1072,8 +1075,10 @@ void *sctp_eNB_task(void *arg)
       }
       break;
 
-      case SCTP_INIT_MSG_MULTI: {
-        SCTP_DEBUG("Received SCTP_INIT_MSG_MULTI\n");
+      case SCTP_INIT_MSG_MULTI_REQ: {
+        int multi_sd;
+
+        SCTP_DEBUG("Received SCTP_INIT_MSG_MULTI_REQ\n");
 
         multi_sd = sctp_create_new_listener(
               ITTI_MESSAGE_GET_INSTANCE(received_msg),
@@ -1084,6 +1089,10 @@ void *sctp_eNB_task(void *arg)
           /* SCTP socket creation or bind failed... */
           SCTP_ERROR("Failed to create new SCTP listener\n");
         }
+        sctp_itti_send_init_msg_multi_cnf(
+                ITTI_MSG_ORIGIN_ID(received_msg),
+                ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                multi_sd);
       }
       break;
 
@@ -1097,8 +1106,7 @@ void *sctp_eNB_task(void *arg)
       case SCTP_NEW_ASSOCIATION_REQ_MULTI: {
         sctp_handle_new_association_req_multi(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                         ITTI_MSG_ORIGIN_ID(received_msg),
-                                        &received_msg->ittiMsg.sctp_new_association_req_multi,
-                                        multi_sd);
+                                        &received_msg->ittiMsg.sctp_new_association_req_multi);
       }
       break;
 

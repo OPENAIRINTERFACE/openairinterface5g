@@ -418,6 +418,7 @@ int logInit (void)
 
 
   register_log_component("S1AP","",S1AP);
+  register_log_component("X2AP","",X2AP);
 
 
   register_log_component("SCTP","",SCTP);
