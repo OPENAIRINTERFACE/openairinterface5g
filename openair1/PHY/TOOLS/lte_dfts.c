@@ -3099,7 +3099,7 @@ void dft128(int16_t *x,int16_t *y,int scale)
   dft64((int16_t*)(xtmp+32),(int16_t*)(ytmp+16),1);
   if (LOG_DUMPFLAG(DEBUG_DFT)) {
     LOG_M("dft128a.m","dfta",ytmp,64,1,1);
-    LOG_M("dft128b.m","dftb",ytmp+16,64,1,1);*/
+    LOG_M("dft128b.m","dftb",ytmp+16,64,1,1);
   }
   for (i=0; i<16; i++) {
     bfly2_16(ytmpp,ytmpp+16,
