@@ -35,6 +35,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
+#include <platform_types.h>
 #include "config_userapi.h"
 
 

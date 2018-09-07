@@ -34,9 +34,6 @@
 #include <stdint.h>
 #endif
 
-#if defined(ENABLE_ITTI)
-#include "itti_types.h"
-#endif
 //-----------------------------------------------------------------------------
 // GENERIC TYPES
 //-----------------------------------------------------------------------------
@@ -288,4 +285,7 @@ typedef struct protocol_ctxt_s {
     (CTXT_Pp)->rnti
 
 #define CHECK_CTXT_ARGS(CTXT_Pp)
+
+#define exit_fun(msg) exit_function(__FILE__,__FUNCTION__,__LINE__,msg)
+void exit_function(const char* file, const char* function, const int line, const char* s);
 #endif

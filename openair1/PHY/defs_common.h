@@ -33,7 +33,9 @@
 #define __PHY_DEFS_COMMON_H__
 
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 #include <sched.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -928,7 +930,6 @@ typedef enum {
 #endif
 
 
-void exit_fun(const char* s);
 
 #include "common/utils/LOG/log_extern.h"
 extern pthread_cond_t sync_cond;

@@ -170,11 +170,12 @@ set(CMAKE_C_FLAGS
   "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} -std=gnu99 -Wall -Wstrict-prototypes -fno-strict-aliasing -rdynamic -funroll-loops -Wno-packed-bitfield-compat -fPIC ")
 # add autotools definitions that were maybe used!
 set(CMAKE_C_FLAGS
-  "${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP -DASN_DISABLE_OER_SUPPORT -D'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'"
+  "${CMAKE_C_FLAGS} -DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP -D'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'"
 )
 set(CMAKE_CXX_FLAGS
-  "${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -std=c++11 "
+  "${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -std=c++11 -D'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'"
 )
+add_definitions("-DASN_DISABLE_OER_SUPPORT")
 
 
 #########################
@@ -256,16 +257,13 @@ add_boolean_option(BASIC_SIMULATOR     False "Has to be True when building the b
 add_boolean_option(DEBUG_CONSOLE False "makes debugging easier, disables stdout/stderr buffering")
 
 add_boolean_option(ENABLE_ITTI True "ITTI is internal messaging, should remain enabled for most targets")
-set (ITTI_DIR ${OPENAIR_DIR}/common/utils/itti)
+set (OCP_ITTI ${OPENAIR_DIR}/common/utils/ocp_itti)
 if (${ENABLE_ITTI})
   add_library(ITTI
     # add .h files if depend on (this one is generated)
-    ${ITTI_DIR}/intertask_interface.h
-    ${ITTI_DIR}/intertask_interface.c
-    ${ITTI_DIR}/backtrace.c
-    ${ITTI_DIR}/memory_pools.c
-    ${ITTI_DIR}/signals.c
-    ${ITTI_DIR}/timer.c
+    ${OCP_ITTI}/intertask_interface.cpp
+    ${OPENAIR_DIR}/common/utils/backtrace.c
+    ${OPENAIR_DIR}/common/utils/memory_pools.c
     )
   set(ITTI_LIB ITTI)
   set(GTPU_need_ITTI ${OPENAIR3_DIR}/GTPV1-U/gtpv1u_eNB.c)
@@ -754,11 +752,14 @@ include_directories("${OPENAIR2_DIR}/LAYER2/PDCP_v10.1.0")
 include_directories("${OPENAIR2_DIR}/RRC/LTE/MESSAGES")
 include_directories("${OPENAIR2_DIR}/RRC/LTE")
 include_directories("${OPENAIR_DIR}/common/utils")
-include_directories("${OPENAIR_DIR}/common/utils/itti")
+include_directories("${OPENAIR_DIR}/common/utils/ocp_itti")
 include_directories("${OPENAIR3_DIR}/NAS/COMMON")
 include_directories("${OPENAIR3_DIR}/NAS/COMMON/API/NETWORK")
 include_directories("${OPENAIR3_DIR}/NAS/COMMON/EMM/MSG")
 include_directories("${OPENAIR3_DIR}/NAS/COMMON/ESM/MSG")
+include_directories("${OPENAIR3_DIR}/NAS/UE/ESM")
+include_directories("${OPENAIR3_DIR}/NAS/UE/EMM")
+include_directories("${OPENAIR3_DIR}/NAS/UE/API/USER")
 include_directories("${OPENAIR3_DIR}/NAS/COMMON/IES")
 include_directories("${OPENAIR3_DIR}/NAS/COMMON/UTIL")
 include_directories("${OPENAIR3_DIR}/SECU")

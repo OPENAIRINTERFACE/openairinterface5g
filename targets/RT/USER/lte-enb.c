@@ -33,7 +33,6 @@
 #define _GNU_SOURCE
 #include <pthread.h>
 
-#include "time_utils.h"
 
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
@@ -142,7 +141,6 @@ static struct {
 
 extern double cpuf;
 
-void exit_fun(const char* s);
 
 void init_eNB(int,int);
 void stop_eNB(int nb_inst);

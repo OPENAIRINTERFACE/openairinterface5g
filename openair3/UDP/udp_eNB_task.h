@@ -31,7 +31,6 @@
 #ifndef UDP_ENB_TASK_H_
 #define UDP_ENB_TASK_H_
 #include "enb_config.h"
-#include "intertask_interface_types.h"
 
 
 /** \brief UDP recv callback prototype. Will be called every time a payload is

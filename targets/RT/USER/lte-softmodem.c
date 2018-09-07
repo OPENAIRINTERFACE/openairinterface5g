@@ -83,7 +83,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 #endif
 
 #if defined(ENABLE_ITTI)
-#include "intertask_interface_init.h"
 #include "create_tasks.h"
 #endif
 
@@ -324,13 +323,13 @@ void signal_handler(int sig) {
 
 
 
-void exit_fun(const char* s)
+void exit_function(const char* file, const char* function, const int line, const char* s)
 {
 
   int ru_id;
 
   if (s != NULL) {
-    printf("%s %s() Exiting OAI softmodem: %s\n",__FILE__, __FUNCTION__, s);
+    printf("%s:%d %s() Exiting OAI softmodem: %s\n",file,line, function, s);
   }
 
   oai_exit = 1;
@@ -350,11 +349,11 @@ void exit_fun(const char* s)
     }
 
 
-#if defined(ENABLE_ITTI)
     sleep(1); //allow lte-softmodem threads to exit first
+#if defined(ENABLE_ITTI)
     itti_terminate_tasks (TASK_UNKNOWN);
 #endif
-
+   exit(1);
 
 }
 
