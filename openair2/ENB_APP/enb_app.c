@@ -76,14 +76,12 @@ static void create_remaining_tasks(module_id_t enb_id)
   case ngran_eNB_CU:
   case ngran_ng_eNB_CU:
   case ngran_gNB_CU:
-    rc = itti_create_task(TASK_CU_F1, F1AP_CU_task, NULL);
+    rc = itti_create_task(TASK_CU_F1, F1AP_CU_task, enb_id);
     AssertFatal(rc >= 0, "Create task for CU F1AP failed\n");
     /* fall through */
   case ngran_eNB:
   case ngran_ng_eNB:
   case ngran_gNB:
-    rc = itti_create_task(TASK_SCTP, sctp_eNB_task, NULL);
-    AssertFatal(rc >= 0, "Create task for SCTP failed\n");
     rc = itti_create_task(TASK_S1AP, s1ap_eNB_task, NULL);
     AssertFatal(rc >= 0, "Create task for S1AP failed\n");
     if (!emulate_rf){

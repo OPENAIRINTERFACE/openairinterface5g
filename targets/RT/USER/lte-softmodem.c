@@ -1063,6 +1063,7 @@ int main( int argc, char **argv )
   int have_rrc=0;
 
   if (RC.nb_inst > 0)  {
+    itti_wait_ready(1);
     LOG_I(ENB_APP, "Creating ENB_APP eNB Task\n");
     if (itti_create_task (TASK_ENB_APP, eNB_app_task, NULL) < 0) {
       LOG_E(ENB_APP, "Create task for eNB APP failed\n");
@@ -1074,6 +1075,11 @@ int main( int argc, char **argv )
       return -1;
     }
     have_rrc=1;
+    if (itti_create_task(TASK_SCTP, sctp_eNB_task, NULL) < 0) {
+      LOG_E(SCTP, "Create task for SCTP failed\n");
+      return -1;
+    }
+    itti_wait_ready(0);
   }
   else {
     printf("No ITTI, Initializing L1\n");

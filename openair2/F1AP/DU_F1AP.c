@@ -40,6 +40,7 @@
 #include "common/utils/LOG/log.h"
 #include "sctp_du.h"
 #include "intertask_interface.h"
+#include "f1ap_itti_messaging.h"
 
 #include "T.h"
 
@@ -102,14 +103,13 @@ void DU_handle_sctp_data_ind(sctp_data_ind_t *sctp_data_ind)
 }
 
 void *F1AP_DU_task(void *arg) {
-  printf("Start F1AP DU task!\n");
 
   //sctp_cu_init();
 
   MessageDef *received_msg = NULL;
   int         result;
 
-  //F1AP_DEBUG("Starting F1AP at DU\n");
+  LOG_I(DU_F1AP, "Starting F1AP at DU\n");
 
   //f1ap_eNB_prepare_internal_data();
 
@@ -118,7 +118,7 @@ void *F1AP_DU_task(void *arg) {
   // SCTP
   while (1) {
     itti_receive_msg(TASK_DU_F1, &received_msg);
-    
+
     switch (ITTI_MSG_ID(received_msg)) {
 
       // case TERMINATE_MESSAGE:
@@ -130,6 +130,7 @@ void *F1AP_DU_task(void *arg) {
         // 1. save the itti msg so that you can use it to sen f1ap_setup_req, fill the f1ap_setup_req message, 
         // 2. store the message in f1ap context, that is also stored in RC
         // 2. send a sctp_association req
+        LOG_I(DU_F1AP, "F1AP_SETUP_REQ\n");
         DU_send_sctp_association_req(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                               &F1AP_SETUP_REQ(received_msg));
         break;
@@ -137,18 +138,20 @@ void *F1AP_DU_task(void *arg) {
       case SCTP_NEW_ASSOCIATION_RESP:
         // 1. store the respon
         // 2. send the f1setup_req
+        LOG_I(DU_F1AP, "SCTP_NEW_ASSOCIATION_RESP\n");
         DU_handle_sctp_association_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                         &received_msg->ittiMsg.sctp_new_association_resp);
         break;
 
       case SCTP_DATA_IND: 
         // ex: any F1 incoming message for DU ends here
+        LOG_I(DU_F1AP, "SCTP_DATA_IND\n");
         DU_handle_sctp_data_ind(&received_msg->ittiMsg.sctp_data_ind);
         break;
 
       default:
-        // F1AP_ERROR("DU Received unhandled message: %d:%s\n",
-        //          ITTI_MSG_ID(received_msg), ITTI_MSG_NAME(received_msg));
+        LOG_E(DU_F1AP, "DU Received unhandled message: %d:%s\n",
+                  ITTI_MSG_ID(received_msg), ITTI_MSG_NAME(received_msg));
         break;
     } // switch
     result = itti_free (ITTI_MSG_ORIGIN_ID(received_msg), received_msg);
@@ -172,7 +175,7 @@ static void du_f1ap_register(du_f1ap_instance_t      *instance_p,
   MessageDef                 *message_p                   = NULL;
   sctp_new_association_req_t *sctp_new_association_req_p  = NULL;
 
-  message_p = itti_alloc_new_message(TASK_S1AP, SCTP_NEW_ASSOCIATION_REQ);
+  message_p = itti_alloc_new_message(TASK_DU_F1, SCTP_NEW_ASSOCIATION_REQ);
 
   sctp_new_association_req_p = &message_p->ittiMsg.sctp_new_association_req;
   sctp_new_association_req_p->ulp_cnx_id = instance_p->instance;
@@ -244,8 +247,11 @@ void DU_handle_sctp_association_resp(instance_t instance, sctp_new_association_r
 
 
 // SETUP REQUEST
-void DU_send_F1_SETUP_REQUEST(module_id_t enb_mod_idP, module_id_t du_mod_idP, f1ap_setup_req_t *msg_p) {
-//void DU_send_F1_SETUP_REQUEST(F1SetupRequest_t *F1SetupRequest) {
+//void DU_send_F1_SETUP_REQUEST(instance_t instance, f1ap_setup_req_t *f1ap_setup_req) {
+void DU_send_F1_SETUP_REQUEST(instance_t instance, sctp_new_association_resp_t *f1ap_setup_req) {
+  module_id_t enb_mod_idP;
+  module_id_t du_mod_idP;
+
   F1AP_F1AP_PDU_t          pdu; 
   F1AP_F1SetupRequest_t    *out;
   F1AP_F1SetupRequestIEs_t *ie;
@@ -478,7 +484,7 @@ void DU_send_F1_SETUP_REQUEST(module_id_t enb_mod_idP, module_id_t du_mod_idP, f
     printf("Failed to encode F1 setup request\n");
   }
 
-  f1ap_du_send_message(buffer, len);
+  du_f1ap_itti_send_sctp_data_req(instance, f1ap_setup_req->assoc_id, buffer, len, 0);
   // printf("\n");
 
   /* decode */

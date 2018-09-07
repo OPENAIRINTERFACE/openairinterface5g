@@ -147,7 +147,7 @@ int f1ap_handle_f1_setup_request(uint32_t               assoc_id,
                                  uint32_t               stream,
                                  F1AP_F1AP_PDU_t       *pdu)
 {
-   printf("OOOOOOOOOOOOOOOOOOOOOOOOOOO\n");
+   printf("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n");
 
    return 0;
 }

@@ -174,6 +174,8 @@ typedef enum {
     SPGW,
     S1AP,
     F1AP,
+    DU_F1AP,
+    CU_F1AP,
     SCTP,
     HW,
     OSA,

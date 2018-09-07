@@ -40,6 +40,8 @@
 #include "platform_types.h"
 #include "common/utils/LOG/log.h"
 #include "intertask_interface.h"
+#include "f1ap_itti_messaging.h"
+#include <arpa/inet.h>
 
 #include "T.h"
 
@@ -100,6 +102,7 @@ void CU_send_sctp_init_req(instance_t enb_id) {
   // 2. use RC.rrc[enb_id] to fill the sctp_init_t with the ip, port
   // 3. creat an itti message to init
 
+  LOG_I(CU_F1AP, "F1AP_CU_SCTP_REQ\n");
   MessageDef  *message_p = NULL;
 
   message_p = itti_alloc_new_message (TASK_CU_F1, SCTP_INIT_MSG);
@@ -108,7 +111,7 @@ void CU_send_sctp_init_req(instance_t enb_id) {
   message_p->ittiMsg.sctp_init.ipv4 = 1;
   message_p->ittiMsg.sctp_init.ipv6 = 0;
   message_p->ittiMsg.sctp_init.nb_ipv4_addr = 1;
-  message_p->ittiMsg.sctp_init.ipv4_address[0] = RC.rrc[enb_id]->eth_params_s.my_addr;
+  message_p->ittiMsg.sctp_init.ipv4_address[0] = inet_addr(RC.rrc[enb_id]->eth_params_s.my_addr);
   /*
    * SR WARNING: ipv6 multi-homing fails sometimes for localhost.
    * * * * Disable it for now.
@@ -116,38 +119,54 @@ void CU_send_sctp_init_req(instance_t enb_id) {
   message_p->ittiMsg.sctp_init.nb_ipv6_addr = 0;
   message_p->ittiMsg.sctp_init.ipv6_address[0] = "0:0:0:0:0:0:0:1";
 
+  LOG_I(CU_F1AP,"CU.my_addr = %s \n", RC.rrc[enb_id]->eth_params_s.my_addr);
+  LOG_I(CU_F1AP,"CU.enb_id = %d \n", enb_id);
   itti_send_msg_to_task(TASK_SCTP, enb_id, message_p);
 }
 
 void *F1AP_CU_task(void *arg) {
-  printf("Start F1AP CU task!\n");
-
   //sctp_cu_init();
 
   MessageDef *received_msg = NULL;
   int         result;
 
-  //F1AP_DEBUG("Starting F1AP at DU\n");
+  LOG_I(CU_F1AP,"Starting F1AP at CU\n");
 
   //f1ap_eNB_prepare_internal_data();
 
   itti_mark_task_ready(TASK_CU_F1);
 
+  CU_send_sctp_init_req(arg);
+
   while (1) {
     itti_receive_msg(TASK_CU_F1, &received_msg);
     switch (ITTI_MSG_ID(received_msg)) {
 
-      case F1AP_CU_SCTP_REQ: 
-        CU_send_sctp_init_req(ITTI_MESSAGE_GET_INSTANCE(received_msg));
+      // case F1AP_CU_SCTP_REQ: 
+      //   LOG_I(CU_F1AP, "F1AP_CU_SCTP_REQ\n");
+        
+      //   break;
+
+      case SCTP_NEW_ASSOCIATION_IND:
+        LOG_I(CU_F1AP, "SCTP_NEW_ASSOCIATION_IND\n");
+        CU_handle_sctp_association_ind(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                         &received_msg->ittiMsg.sctp_new_association_ind);
         break;
 
-      case SCTP_DATA_IND: 
+      case SCTP_NEW_ASSOCIATION_RESP:
+        LOG_I(CU_F1AP, "SCTP_NEW_ASSOCIATION_RESP\n");
+        CU_handle_sctp_association_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                         &received_msg->ittiMsg.sctp_new_association_resp);
+        break;
+
+      case SCTP_DATA_IND:
+        LOG_I(CU_F1AP, "SCTP_DATA_IND\n");
         CU_handle_sctp_data_ind(&received_msg->ittiMsg.sctp_data_ind);
         break;
 
       default:
-        // F1AP_ERROR("CU Received unhandled message: %d:%s\n",
-        //          ITTI_MSG_ID(received_msg), ITTI_MSG_NAME(received_msg));
+        LOG_E(CU_F1AP, "CU Received unhandled message: %d:%s\n",
+                  ITTI_MSG_ID(received_msg), ITTI_MSG_NAME(received_msg));
         break;
     } // switch
     result = itti_free (ITTI_MSG_ORIGIN_ID(received_msg), received_msg);
@@ -159,6 +178,14 @@ void *F1AP_CU_task(void *arg) {
   return NULL;
 }
 
+
+void CU_handle_sctp_association_ind(instance_t instance, sctp_new_association_ind_t *sctp_new_association_ind) {
+  CU_send_F1_SETUP_RESPONSE(instance, sctp_new_association_ind);
+}
+
+void CU_handle_sctp_association_resp(instance_t instance, sctp_new_association_ind_t *sctp_new_association_resp) {
+  //CU_send_F1_SETUP_RESPONSE(instance, sctp_new_association_resp);
+}
 
 // ==============================================================================
 void CU_handle_F1_SETUP_REQUEST(F1AP_F1SetupRequest_t *message_p) {
@@ -184,7 +211,7 @@ void CU_handle_F1_SETUP_REQUEST(F1AP_F1SetupRequest_t *message_p) {
 
 }
 
-void CU_send_F1_SETUP_RESPONSE(void) {
+void CU_send_F1_SETUP_RESPONSE(instance_t instance, sctp_new_association_ind_t *f1ap_setup_ind) {
 //void CU_send_F1_SETUP_RESPONSE(F1AP_F1SetupResponse_t *F1SetupResponse) {
   //AssertFatal(1==0,"Not implemented yet\n");
   
@@ -315,11 +342,11 @@ void CU_send_F1_SETUP_RESPONSE(void) {
   }
 
   // printf("\n");
-
+  cu_f1ap_itti_send_sctp_data_req(instance, f1ap_setup_ind->assoc_id, buffer, len, 0);
   /* decode */
-  if (f1ap_decode_pdu(&pdu, buffer, len) > 0) {
-     printf("Failed to decode F1 setup request\n");
-  }
+  // if (f1ap_decode_pdu(&pdu, buffer, len) > 0) {
+  //    printf("Failed to decode F1 setup request\n");
+  // }
   //printf("F1 setup response present = %d\n", out->value.present);
   //f1ap_send_sctp_data_req(instance_p->instance, f1ap_mme_data_p->assoc_id, buffer, len, 0);
 
