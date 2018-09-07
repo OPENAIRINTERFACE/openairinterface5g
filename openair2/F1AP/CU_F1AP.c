@@ -35,6 +35,7 @@
 #include "cu_f1ap_defs.h"
 #include "f1ap_encoder.h"
 #include "f1ap_decoder.h"
+#include "cu_f1ap_task.h"
 #include "sctp_cu.h"
 #include "platform_types.h"
 #include "common/utils/LOG/log.h"

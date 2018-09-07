@@ -35,6 +35,7 @@
 #include "du_f1ap_defs.h"
 #include "f1ap_encoder.h"
 #include "f1ap_decoder.h"
+#include "du_f1ap_task.h"
 #include "platform_types.h"
 #include "common/utils/LOG/log.h"
 #include "sctp_du.h"

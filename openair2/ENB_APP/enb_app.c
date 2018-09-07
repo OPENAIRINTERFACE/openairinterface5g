@@ -49,6 +49,9 @@
 #   include "udp_eNB_task.h"
 # endif
 
+extern void *F1AP_CU_task(void *);
+extern void *F1AP_DU_task(void *);
+
 #if defined(FLEXRAN_AGENT_SB_IF)
 #   include "flexran_agent.h"
 #endif
@@ -70,12 +73,15 @@ static void create_remaining_tasks(module_id_t enb_id)
   int rc;
   itti_wait_ready(1);
   switch (type) {
-  case ngran_eNB:
-  case ngran_ng_eNB:
-  case ngran_gNB:
   case ngran_eNB_CU:
   case ngran_ng_eNB_CU:
   case ngran_gNB_CU:
+    rc = itti_create_task(TASK_CU_F1, F1AP_CU_task, NULL);
+    AssertFatal(rc >= 0, "Create task for CU F1AP failed\n");
+    /* fall through */
+  case ngran_eNB:
+  case ngran_ng_eNB:
+  case ngran_gNB:
     rc = itti_create_task(TASK_SCTP, sctp_eNB_task, NULL);
     AssertFatal(rc >= 0, "Create task for SCTP failed\n");
     rc = itti_create_task(TASK_S1AP, s1ap_eNB_task, NULL);
@@ -92,11 +98,14 @@ static void create_remaining_tasks(module_id_t enb_id)
     break;
   }
   switch (type) {
+  case ngran_eNB_DU:
+  case ngran_gNB_DU:
+    rc = itti_create_task(TASK_DU_F1, F1AP_DU_task, NULL);
+    AssertFatal(rc >= 0, "Create task for DU F1AP failed\n");
+    /* fall through */
   case ngran_eNB:
   case ngran_ng_eNB:
   case ngran_gNB:
-  case ngran_eNB_DU:
-  case ngran_gNB_DU:
     rc = itti_create_task (TASK_L2L1, l2l1_task, NULL);
     AssertFatal(rc >= 0, "Create task for L2L1 failed\n");
     break;
