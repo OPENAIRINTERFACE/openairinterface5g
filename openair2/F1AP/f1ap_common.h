@@ -37,9 +37,10 @@
 #ifndef F1AP_COMMON_H_
 #define F1AP_COMMON_H_
 
-/* Defined in asn_internal.h */
-// extern int asn_debug_indent;
-extern int asn_debug;
+#include "openairinterface5g_limits.h"
+
+#define F1AP_UE_IDENTIFIER_NUMBER 3
+#define F1AP_TRANSACTION_IDENTIFIER_NUMBER 3
 
 #if defined(EMIT_ASN_DEBUG_EXTERN)
 inline void ASN_DEBUG(const char *fmt, ...);
@@ -369,9 +370,6 @@ inline void ASN_DEBUG(const char *fmt, ...);
 
 #define F1AP_UE_ID_FMT  "0x%06"PRIX32
 
-extern int asn_debug;
-extern int asn1_xer_print;
-
 #include "assertions.h"
 
 #if defined(ENB_MODE)
@@ -401,5 +399,8 @@ typedef int (*f1ap_message_decoded_callback)(
   uint32_t               stream,
   F1AP_F1AP_PDU_t       *message_p
 );
+
+
+uint8_t F1AP_get_next_transaction_identifier(module_id_t enb_mod_idP, module_id_t cu_mod_idP);
 
 #endif /* F1AP_COMMON_H_ */

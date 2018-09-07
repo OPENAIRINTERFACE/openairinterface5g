@@ -42,14 +42,6 @@
 
 #include "T.h"
 
-// helper functions 
-#define F1AP_TRANSACTION_IDENTIFIER_NUMBER 3
-#define F1AP_UE_IDENTIFIER_NUMBER 3
-#define NUMBER_OF_eNB_MAX 3
-
-// #include "common/ran_context.h"
-// extern RAN_CONTEXT_t RC;
-
 /* This structure describes association of a DU to a CU */
 typedef struct f1ap_info {
 
@@ -85,13 +77,6 @@ typedef struct f1ap_info {
 
 void DU_handle_sctp_association_resp(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp);
 
-
-uint8_t F1AP_get_next_transaction_identifier(module_id_t enb_mod_idP, module_id_t du_mod_idP) {  
-  static uint8_t      transaction_identifier[NUMBER_OF_eNB_MAX];
-  transaction_identifier[enb_mod_idP+du_mod_idP] = (transaction_identifier[enb_mod_idP+du_mod_idP] + 1) % F1AP_TRANSACTION_IDENTIFIER_NUMBER;
-  //LOG_T(F1AP,"generated xid is %d\n",transaction_identifier[enb_mod_idP+du_mod_idP]);
-  return transaction_identifier[enb_mod_idP+du_mod_idP];
-}
 
 uint8_t F1AP_get_UE_identifier(module_id_t enb_mod_idP, int CC_idP, int UE_id) {  
   static uint8_t      UE_identifier[NUMBER_OF_eNB_MAX];

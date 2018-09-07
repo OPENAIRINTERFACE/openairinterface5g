@@ -546,6 +546,7 @@ add_library(F1AP
   ${F1AP_DIR}/f1ap_encoder.c
   ${F1AP_DIR}/f1ap_decoder.c
   ${F1AP_DIR}/f1ap_handlers.c
+  ${F1AP_DIR}/f1ap_common.c
   ${F1AP_DIR}/sctp_du.c
   ${F1AP_DIR}/sctp_cu.c
   )

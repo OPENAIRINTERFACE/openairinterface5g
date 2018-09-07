@@ -35,10 +35,10 @@
 #include "f1ap_common.h"
 //#include "S1AP-PDU.h"
 
+#if defined(EMIT_ASN_DEBUG_EXTERN)
 int asn_debug = 0;
 int asn1_xer_print = 0;
 
-#if defined(EMIT_ASN_DEBUG_EXTERN)
 inline void ASN_DEBUG(const char *fmt, ...)
 {
   if (asn_debug) {
@@ -56,6 +56,7 @@ inline void ASN_DEBUG(const char *fmt, ...)
 }
 #endif
 
+/*
 ssize_t f1ap_generate_initiating_message(
   uint8_t               **buffer,
   uint32_t               *length,
@@ -76,9 +77,10 @@ ssize_t f1ap_generate_initiating_message(
 
   if (asn1_xer_print) {
     xer_fprint(stdout, &asn_DEF_S1AP_PDU, (void *)&pdu);
-  }
+  }*/
 
   /* We can safely free list of IE from sptr */
+/*
   ASN_STRUCT_FREE_CONTENTS_ONLY(*td, sptr);
 
   if ((encoded = aper_encode_to_new_buffer(&asn_DEF_S1AP_PDU, 0, &pdu,
@@ -110,9 +112,10 @@ ssize_t f1ap_generate_successfull_outcome(
 
   if (asn1_xer_print) {
     xer_fprint(stdout, &asn_DEF_S1AP_PDU, (void *)&pdu);
-  }
+  }*/
 
   /* We can safely free list of IE from sptr */
+/*
   ASN_STRUCT_FREE_CONTENTS_ONLY(*td, sptr);
 
   if ((encoded = aper_encode_to_new_buffer(&asn_DEF_S1AP_PDU, 0, &pdu,
@@ -146,8 +149,9 @@ ssize_t f1ap_generate_unsuccessfull_outcome(
   if (asn1_xer_print) {
     xer_fprint(stdout, &asn_DEF_S1AP_PDU, (void *)&pdu);
   }
-
+*/
   /* We can safely free list of IE from sptr */
+/*
   ASN_STRUCT_FREE_CONTENTS_ONLY(*td, sptr);
 
   if ((encoded = aper_encode_to_new_buffer(&asn_DEF_S1AP_PDU, 0, &pdu,
@@ -196,4 +200,14 @@ F1ap_IE_t *f1ap_new_ie(
 void f1ap_handle_criticality(F1ap_Criticality_t criticality)
 {
 
+}
+*/
+
+uint8_t F1AP_get_next_transaction_identifier(module_id_t enb_mod_idP, module_id_t cu_mod_idP)
+{
+  static uint8_t transaction_identifier[NUMBER_OF_eNB_MAX];
+  transaction_identifier[enb_mod_idP+cu_mod_idP] =
+      (transaction_identifier[enb_mod_idP+cu_mod_idP] + 1) % F1AP_TRANSACTION_IDENTIFIER_NUMBER;
+  //LOG_T(F1AP,"generated xid is %d\n",transaction_identifier[enb_mod_idP+cu_mod_idP]);
+  return transaction_identifier[enb_mod_idP+cu_mod_idP];
 }

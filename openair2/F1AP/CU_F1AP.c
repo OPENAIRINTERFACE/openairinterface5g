@@ -80,17 +80,6 @@ typedef struct f1ap_info {
   
 } f1ap_info_t;
 
-// helper functions 
-#define F1AP_TRANSACTION_IDENTIFIER_NUMBER 3
-#define NUMBER_OF_eNB_MAX 3
-
-uint8_t F1AP_get_next_transaction_identifier(module_id_t enb_mod_idP, module_id_t cu_mod_idP) {  
-  static uint8_t      transaction_identifier[NUMBER_OF_eNB_MAX];
-  transaction_identifier[enb_mod_idP+cu_mod_idP] = (transaction_identifier[enb_mod_idP+cu_mod_idP] + 1) % F1AP_TRANSACTION_IDENTIFIER_NUMBER;
-  //LOG_T(F1AP,"generated xid is %d\n",transaction_identifier[enb_mod_idP+cu_mod_idP]);
-  return transaction_identifier[enb_mod_idP+cu_mod_idP];
-}
-
 // ==============================================================================
 static
 void CU_handle_sctp_data_ind(sctp_data_ind_t *sctp_data_ind) {
