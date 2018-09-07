@@ -107,9 +107,15 @@ typedef enum {
     CR_HOL   = 2,
     CR_LC    = 3,
     CR_CQI   = 4,
-    CR_NUM   = 5
+    CR_LCP   = 5,
+    CR_NUM   = 6
 } sorting_criterion_t;
 
+typedef enum {
+    POL_FAIR   = 0,
+    POL_GREEDY = 1,
+    POL_NUM    = 2
+} accounting_policy_t;
 //-----------------------------------------------------------------------------
 // PHY TYPES
 //-----------------------------------------------------------------------------

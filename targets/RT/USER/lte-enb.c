@@ -781,10 +781,10 @@ static void* eNB_thread_prach( void* param ) {
 
   while (!oai_exit) {
     
-    if (oai_exit) break;
 
     
     if (wait_on_condition(&proc->mutex_prach,&proc->cond_prach,&proc->instance_cnt_prach,"eNB_prach_thread") < 0) break;
+    if (oai_exit) break;
 
     LOG_D(PHY,"Running eNB prach procedures\n");
     prach_procedures(eNB
@@ -822,10 +822,10 @@ static void* eNB_thread_prach_br( void* param ) {
 
   while (!oai_exit) {
     
-    if (oai_exit) break;
     
 
     if (wait_on_condition(&proc->mutex_prach_br,&proc->cond_prach_br,&proc->instance_cnt_prach_br,"eNB_prach_thread_br") < 0) break;
+    if (oai_exit) break;
 
     LOG_D(PHY,"Running eNB prach procedures for BL/CE UEs\n");
     prach_procedures(eNB,1);
@@ -1029,8 +1029,10 @@ void kill_eNB_proc(int inst) {
     proc = &eNB->proc;
     proc_rxtx = &proc->proc_rxtx[0];
 
-    kill_td_thread(eNB);
-    kill_te_thread(eNB);
+    if(get_nprocs() > 2 && codingw) {
+      kill_td_thread(eNB);
+      kill_te_thread(eNB);
+    }
     LOG_I(PHY, "Killing TX CC_id %d inst %d\n", CC_id, inst );
     for (i=0; i<2; i++) {
       pthread_mutex_lock(&proc_rxtx[i].mutex_rxtx);
@@ -1039,8 +1041,10 @@ void kill_eNB_proc(int inst) {
       pthread_cond_signal(&proc_rxtx[i].cond_rxtx);
       pthread_mutex_unlock(&proc_rxtx[i].mutex_rxtx);
     }
+    pthread_mutex_lock(&proc->mutex_prach);
     proc->instance_cnt_prach = 0;
     pthread_cond_signal( &proc->cond_prach );
+    pthread_mutex_unlock(&proc->mutex_prach);
 
     pthread_cond_signal( &proc->cond_asynch_rxtx );
     pthread_cond_broadcast(&sync_phy_proc.cond_phy_proc_tx);
@@ -1067,6 +1071,16 @@ void kill_eNB_proc(int inst) {
       pthread_mutex_destroy( &proc_rxtx[i].mutex_rxtx );
       pthread_cond_destroy( &proc_rxtx[i].cond_rxtx );
     }
+
+    pthread_attr_destroy(&proc->attr_prach);
+    pthread_attr_destroy(&proc->attr_asynch_rxtx);
+    pthread_attr_destroy(&proc_rxtx[0].attr_rxtx);
+    pthread_attr_destroy(&proc_rxtx[1].attr_rxtx);
+#ifdef Rel14
+    pthread_mutex_destroy(&proc->mutex_RU_PRACH_br);
+    pthread_attr_destroy(&proc->attr_prach_br);
+#endif
+
   }
 }
 
@@ -1104,10 +1118,10 @@ void free_transport(PHY_VARS_eNB *eNB)
   int j;
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-    LOG_I(PHY, "Freeing Transport Channel Buffers for DLSCH, UE %d\n",i);
+    LOG_D(PHY, "Freeing Transport Channel Buffers for DLSCH, UE %d\n",i);
     for (j=0; j<2; j++) free_eNB_dlsch(eNB->dlsch[i][j]);
 
-    LOG_I(PHY, "Freeing Transport Channel Buffer for ULSCH, UE %d\n",i);
+    LOG_D(PHY, "Freeing Transport Channel Buffer for ULSCH, UE %d\n",i);
     free_eNB_ulsch(eNB->ulsch[1+i]);
   }
   free_eNB_ulsch(eNB->ulsch[0]);

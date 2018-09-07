@@ -63,6 +63,9 @@
 
 #include "T.h"
 
+#include "common/ran_context.h"
+extern RAN_CONTEXT_t RC;
+
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_eNB_SCHEDULER 1
 
@@ -72,45 +75,13 @@ extern uint16_t sfnsf_add_subframe(uint16_t frameP, uint16_t subframeP, int offs
 extern int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req);
 extern uint8_t nfapi_mode;
 
-extern uint8_t nfapi_mode;
-
 // This table holds the allowable PRB sizes for ULSCH transmissions
 uint8_t rb_table[34] =
   { 1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 15, 16, 18, 20, 24, 25, 27, 30, 32,
     36, 40, 45, 48, 50, 54, 60, 64, 72, 75, 80, 81, 90, 96, 100
   };
 
-/* number of active slices for  past and current time*/
-int n_active_slices_uplink = 1;
-int n_active_slices_current_uplink = 1;
-
-/* RB share for each slice for past and current time*/
-float avg_slice_percentage_uplink=0.25;
-float slice_percentage_uplink[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
-float slice_percentage_current_uplink[MAX_NUM_SLICES] = {1.0, 0.0, 0.0, 0.0};
-float total_slice_percentage_uplink = 0;
-float total_slice_percentage_current_uplink = 0;
-
-// MAX MCS for each slice for past and current time
-int slice_maxmcs_uplink[MAX_NUM_SLICES] = {20, 20, 20, 20};
-int slice_maxmcs_current_uplink[MAX_NUM_SLICES] = {20,20,20,20};
-
-/*resource blocks allowed*/
-uint16_t         nb_rbs_allowed_slice_uplink[MAX_NUM_CCs][MAX_NUM_SLICES];
-/*Slice Update */
-int update_ul_scheduler[MAX_NUM_SLICES] = {1, 1, 1, 1};
-int update_ul_scheduler_current[MAX_NUM_SLICES] = {1, 1, 1, 1};
-
-/* name of available scheduler*/
-char *ul_scheduler_type[MAX_NUM_SLICES] = {"schedule_ulsch_rnti",
-					   "schedule_ulsch_rnti",
-					   "schedule_ulsch_rnti",
-					   "schedule_ulsch_rnti"
-};
 extern mui_t    rrc_eNB_mui;
-
-/* Slice Function Pointer */
-slice_scheduler_ul slice_sched_ul[MAX_NUM_SLICES] = {0};
 
 void
 rx_sdu(const module_id_t enb_mod_idP,
@@ -432,10 +403,10 @@ rx_sdu(const module_id_t enb_mod_idP,
           UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[lcgid] = BSR_TABLE[bsr];
 
           UE_list->UE_template[CC_idP][UE_id].estimated_ul_buffer =
-              UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[0] +
-              UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[1] +
-              UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[2] +
-              UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[3];
+              UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[LCGID0] +
+              UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[LCGID1] +
+              UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[LCGID2] +
+              UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[LCGID3];
           //UE_list->UE_template[CC_idP][UE_id].estimated_ul_buffer += UE_list->UE_template[CC_idP][UE_id].estimated_ul_buffer / 4;
 
 	  RC.eNB[enb_mod_idP][CC_idP]->pusch_stats_bsr[UE_id][(frameP * 10) + subframeP] = (payload_ptr[0] & 0x3f);
@@ -466,10 +437,10 @@ rx_sdu(const module_id_t enb_mod_idP,
         int bsr2 = ((payload_ptr[1] & 0x0F) << 2) | ((payload_ptr[2] & 0xC0) >> 6);
         int bsr3 = payload_ptr[2] & 0x3F;
 
-        lcgid_updated[0] = 1;
-        lcgid_updated[1] = 1;
-        lcgid_updated[2] = 1;
-        lcgid_updated[3] = 1;
+        lcgid_updated[LCGID0] = 1;
+        lcgid_updated[LCGID1] = 1;
+        lcgid_updated[LCGID2] = 1;
+        lcgid_updated[LCGID3] = 1;
 
         // update buffer info
         UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[LCGID0] = BSR_TABLE[bsr0];
@@ -478,10 +449,10 @@ rx_sdu(const module_id_t enb_mod_idP,
         UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[LCGID3] = BSR_TABLE[bsr3];
 
         UE_list->UE_template[CC_idP][UE_id].estimated_ul_buffer =
-            UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[0] +
-            UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[1] +
-            UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[2] +
-            UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[3];
+            UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[LCGID0] +
+            UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[LCGID1] +
+            UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[LCGID2] +
+            UE_list->UE_template[CC_idP][UE_id].ul_buffer_info[LCGID3];
         //UE_list->UE_template[CC_idP][UE_id].estimated_ul_buffer += UE_list->UE_template[CC_idP][UE_id].estimated_ul_buffer / 4;
 
         LOG_D(MAC,
@@ -951,9 +922,10 @@ void
 schedule_ulsch(module_id_t module_idP, frame_t frameP,
 	       sub_frame_t subframeP)
 {
-  uint16_t first_rb[MAX_NUM_CCs], i;
+  uint16_t first_rb[NFAPI_CC_MAX], i;
   int CC_id;
   eNB_MAC_INST *mac = RC.mac[module_idP];
+  slice_info_t *sli = &RC.mac[module_idP]->slice_info;
   COMMON_channels_t *cc;
 
   start_meas(&mac->schedule_ulsch);
@@ -1034,12 +1006,10 @@ schedule_ulsch(module_id_t module_idP, frame_t frameP,
       break;
     }
   }
+
   if (sched_subframe < subframeP) sched_frame++;
 
-  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-
-
-
+  for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++) {
     //leave out first RB for PUCCH
     first_rb[CC_id] = 1;
 
@@ -1066,102 +1036,9 @@ schedule_ulsch(module_id_t module_idP, frame_t frameP,
     }
   }
 
-  // perform slice-specifc operations
-
-  total_slice_percentage_uplink=0;
-  avg_slice_percentage_uplink=1.0/n_active_slices_uplink;
-
-  // reset the slice percentage for inactive slices
-  for (i = n_active_slices_uplink; i< MAX_NUM_SLICES; i++) {
-    slice_percentage_uplink[i]=0;
-  }
-  for (i = 0; i < n_active_slices_uplink; i++) {
-    if (slice_percentage_uplink[i] < 0 ){
-      LOG_W(MAC, "[eNB %d] frame %d subframe %d:invalid slice %d percentage %f. resetting to zero",
-            module_idP, frameP, subframeP, i, slice_percentage_uplink[i]);
-      slice_percentage_uplink[i]=0;
-    }
-    total_slice_percentage_uplink+=slice_percentage_uplink[i];
-  }
-
-  for (i = 0; i < n_active_slices_uplink; i++) {
-
-    // Load any updated functions
-    if (update_ul_scheduler[i] > 0 ) {
-      slice_sched_ul[i] = dlsym(NULL, ul_scheduler_type[i]);
-      update_ul_scheduler[i] = 0;
-      update_ul_scheduler_current[i] = 0;
-      //slice_percentage_current_uplink[i]= slice_percentage_uplink[i];
-      //total_slice_percentage_current_uplink+=slice_percentage_uplink[i];
-      //if (total_slice_percentage_current_uplink> 1)
-      //total_slice_percentage_current_uplink=1;
-      LOG_I(MAC,"update ul scheduler slice %d\n", i);
-    }
-    // the new total RB share is within the range
-    if (total_slice_percentage_uplink <= 1.0){
-
-      // check if the number of slices has changed, and log
-      if (n_active_slices_current_uplink != n_active_slices_uplink ){
-        if ((n_active_slices_uplink > 0) && (n_active_slices_uplink <= MAX_NUM_SLICES)) {
-          LOG_I(MAC,"[eNB %d]frame %d subframe %d: number of active UL slices has changed: %d-->%d\n",
-                module_idP, frameP, subframeP, n_active_slices_current_uplink, n_active_slices_uplink);
-          n_active_slices_current_uplink = n_active_slices_uplink;
-        } else {
-          LOG_W(MAC,"invalid number of UL slices %d, revert to the previous value %d\n",
-                n_active_slices_uplink, n_active_slices_current_uplink);
-          n_active_slices_uplink = n_active_slices_current_uplink;
-        }
-      }
-
-      // check if the slice rb share has changed, and log the console
-      if (slice_percentage_current_uplink[i] != slice_percentage_uplink[i]){
-        LOG_I(MAC,"[eNB %d][SLICE %d][UL] frame %d subframe %d: total percentage %f-->%f, slice RB percentage has changed: %f-->%f\n",
-              module_idP, i, frameP, subframeP, total_slice_percentage_current_uplink,
-              total_slice_percentage_uplink, slice_percentage_current_uplink[i], slice_percentage_uplink[i]);
-        total_slice_percentage_current_uplink = total_slice_percentage_uplink;
-        slice_percentage_current_uplink[i] = slice_percentage_uplink[i];
-      }
-
-      // check if the slice max MCS, and log the console
-      if (slice_maxmcs_current_uplink[i] != slice_maxmcs_uplink[i]){
-        if ((slice_maxmcs_uplink[i] >= 0) && (slice_maxmcs_uplink[i] <= 16)){
-          LOG_I(MAC,"[eNB %d][SLICE %d][UL] frame %d subframe %d: slice MAX MCS has changed: %d-->%d\n",
-                module_idP, i, frameP, subframeP, slice_maxmcs_current_uplink[i], slice_maxmcs_uplink[i]);
-          slice_maxmcs_current_uplink[i] = slice_maxmcs_uplink[i];
-        } else {
-          LOG_W(MAC,"[eNB %d][SLICE %d][UL] invalid slice max mcs %d, revert the previous value %d\n",
-                module_idP, i, slice_maxmcs_uplink[i],slice_maxmcs_current_uplink[i]);
-          slice_maxmcs_uplink[i] = slice_maxmcs_current_uplink[i];
-        }
-      }
-
-      // check if a new scheduler, and log the console
-      if (update_ul_scheduler_current[i] != update_ul_scheduler[i]){
-        LOG_I(MAC,"[eNB %d][SLICE %d][UL] frame %d subframe %d: UL scheduler for this slice is updated: %s \n",
-              module_idP, i, frameP, subframeP, ul_scheduler_type[i]);
-        update_ul_scheduler_current[i] = update_ul_scheduler[i];
-      }
-    } else {
-      if (n_active_slices_uplink == n_active_slices_current_uplink) {
-        LOG_W(MAC,"[eNB %d][SLICE %d][UL] invalid total RB share (%f->%f), reduce proportionally the RB share by 0.1\n",
-              module_idP, i, total_slice_percentage_current_uplink, total_slice_percentage_uplink);
-        if (slice_percentage_uplink[i] > avg_slice_percentage_uplink) {
-          slice_percentage_uplink[i] -= 0.1;
-          total_slice_percentage_uplink -= 0.1;
-        }
-      } else {
-        // here we can correct the values, e.g. reduce proportionally
-        LOG_W(MAC,"[eNB %d][SLICE %d][UL] invalid total RB share (%f->%f), revert the  number of slice to its previous value (%d->%d)\n",
-              module_idP, i, total_slice_percentage_current_uplink,
-              total_slice_percentage_uplink, n_active_slices_uplink,
-              n_active_slices_current_uplink);
-        n_active_slices_uplink = n_active_slices_current_uplink;
-        slice_percentage_uplink[i] = slice_percentage_current_uplink[i];
-      }
-    }
-
+  for (i = 0; i < sli->n_ul; i++) {
     // Run each enabled slice-specific schedulers one by one
-    slice_sched_ul[i](module_idP, i, frameP, subframeP, sched_subframe, first_rb);
+    sli->ul[i].sched_cb(module_idP, i, frameP, subframeP, sched_subframe, first_rb);
   }
 
   stop_meas(&mac->schedule_ulsch);
@@ -1169,7 +1046,7 @@ schedule_ulsch(module_id_t module_idP, frame_t frameP,
 
 void
 schedule_ulsch_rnti(module_id_t module_idP,
-					slice_id_t slice_id,
+        int slice_idx,
 		    frame_t frameP,
 		    sub_frame_t subframeP,
 		    unsigned char sched_subframeP, uint16_t * first_rb)
@@ -1191,12 +1068,14 @@ schedule_ulsch_rnti(module_id_t module_idP,
   eNB_MAC_INST *mac = RC.mac[module_idP];
   COMMON_channels_t *cc = mac->common_channels;
   UE_list_t *UE_list = &mac->UE_list;
+  slice_info_t *sli = &RC.mac[module_idP]->slice_info;
   UE_TEMPLATE *UE_template;
   UE_sched_ctrl *UE_sched_ctrl;
   int sched_frame = frameP;
   int rvidx_tab[4] = { 0, 2, 3, 1 };
   uint16_t          ul_req_index;
   uint8_t           dlsch_flag;
+  int first_rb_slice[NFAPI_CC_MAX];
 
   if (sched_subframeP < subframeP)
       sched_frame++;
@@ -1208,9 +1087,18 @@ schedule_ulsch_rnti(module_id_t module_idP,
   nfapi_ul_config_request_t *ul_req_tmp            = &mac->UL_req_tmp[CC_id][sched_subframeP];
   nfapi_ul_config_request_body_t *ul_req_tmp_body  = &ul_req_tmp->ul_config_request_body;
   nfapi_ul_config_ulsch_harq_information *ulsch_harq_information;
-  //LOG_D(MAC, "entering ulsch preprocesor\n");
-  ulsch_scheduler_pre_processor(module_idP, slice_id, frameP, subframeP, sched_subframeP, first_rb);
 
+	for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; ++CC_id) {
+    N_RB_UL = to_prb(cc[CC_id].ul_Bandwidth);
+		UE_list->first_rb_offset[CC_id][slice_idx] = cmin(N_RB_UL, sli->ul[slice_idx].first_rb);
+	}
+
+  //LOG_D(MAC, "entering ulsch preprocesor\n");
+  ulsch_scheduler_pre_processor(module_idP, slice_idx, frameP, subframeP, sched_subframeP, first_rb);
+
+	for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; ++CC_id) {
+    first_rb_slice[CC_id] = first_rb[CC_id] + UE_list->first_rb_offset[CC_id][slice_idx];
+  }
   //LOG_D(MAC, "exiting ulsch preprocesor\n");
 
   hi_dci0_req->sfn_sf = (frameP << 4) + subframeP;
@@ -1219,7 +1107,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
   for (UE_id = UE_list->head_ul; UE_id >= 0;
        UE_id = UE_list->next_ul[UE_id]) {
 
-    if (!ue_slice_membership(UE_id, slice_id))
+    if (!ue_ul_slice_membership(module_idP, UE_id, slice_idx))
         continue;
 
     // don't schedule if Msg4 is not received yet
@@ -1296,7 +1184,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
       }
 
       /* be sure that there are some free RBs */
-      if (first_rb[CC_id] >= N_RB_UL - 1) {
+      if (first_rb_slice[CC_id] >= N_RB_UL - 1) {
 	LOG_W(MAC,
 	      "[eNB %d] frame %d subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
 	      module_idP, frameP, subframeP, UE_id, rnti, CC_id);
@@ -1407,7 +1295,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 	    UE_template->oldNDI_UL[harq_pid] = ndi;
 	    UE_list->eNB_UE_stats[CC_id][UE_id].normalized_rx_power = normalized_rx_power;
 	    UE_list->eNB_UE_stats[CC_id][UE_id].target_rx_power = target_rx_power;
-		UE_template->mcs_UL[harq_pid] = cmin(UE_template->pre_assigned_mcs_ul, slice_maxmcs_uplink[slice_id]);
+		UE_template->mcs_UL[harq_pid] = cmin(UE_template->pre_assigned_mcs_ul, sli->ul[slice_idx].maxmcs);
 		UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs1= UE_template->mcs_UL[harq_pid];
 		//cmin (UE_template->pre_assigned_mcs_ul, openair_daq_vars.target_ue_ul_mcs); // adjust, based on user-defined MCS
 	    if (UE_template->pre_allocated_rb_table_index_ul >= 0) {
@@ -1421,7 +1309,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 	    //            buffer_occupancy = UE_template->ul_total_buffer;
 
 
-	    while (((rb_table[rb_table_index] > (N_RB_UL - 1 - first_rb[CC_id]))
+	    while (((rb_table[rb_table_index] > (N_RB_UL - first_rb_slice[CC_id]))
                     || (rb_table[rb_table_index] > 45))
                     && (rb_table_index > 0)) {
 	      rb_table_index--;
@@ -1438,7 +1326,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 	      T_INT(CC_id), T_INT(rnti), T_INT(frameP),
 	      T_INT(subframeP), T_INT(harq_pid),
 	      T_INT(UE_template->mcs_UL[harq_pid]),
-	      T_INT(first_rb[CC_id]),
+	      T_INT(first_rb_slice[CC_id]),
 	      T_INT(rb_table[rb_table_index]),
 	      T_INT(UE_template->TBS_UL[harq_pid]), T_INT(ndi));
 
@@ -1448,14 +1336,14 @@ schedule_ulsch_rnti(module_id_t module_idP,
 		    module_idP, harq_pid, rnti, CC_id, frameP,
 		    subframeP, UE_id,
 		    UE_template->mcs_UL[harq_pid],
-		    first_rb[CC_id], rb_table[rb_table_index],
+                first_rb_slice[CC_id], rb_table[rb_table_index],
 		    rb_table_index,
 		    UE_template->TBS_UL[harq_pid], harq_pid);
 
 	    // bad indices : 20 (40 PRB), 21 (45 PRB), 22 (48 PRB)
 	    //store for possible retransmission
 	    UE_template->nb_rb_ul[harq_pid] = rb_table[rb_table_index];
-	    UE_template->first_rb_ul[harq_pid] = first_rb[CC_id];
+	    UE_template->first_rb_ul[harq_pid] = first_rb_slice[CC_id];
 
 	    UE_sched_ctrl->ul_scheduled |= (1 << harq_pid);
 	    if (UE_id == UE_list->head)
@@ -1487,7 +1375,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 	    hi_dci0_pdu->dci_pdu.dci_pdu_rel8.aggregation_level = aggregation;
 	    hi_dci0_pdu->dci_pdu.dci_pdu_rel8.rnti = rnti;
 	    hi_dci0_pdu->dci_pdu.dci_pdu_rel8.transmission_power = 6000;
-	    hi_dci0_pdu->dci_pdu.dci_pdu_rel8.resource_block_start = first_rb[CC_id];
+	    hi_dci0_pdu->dci_pdu.dci_pdu_rel8.resource_block_start = first_rb_slice[CC_id];
 	    hi_dci0_pdu->dci_pdu.dci_pdu_rel8.number_of_resource_block = rb_table[rb_table_index];
 	    hi_dci0_pdu->dci_pdu.dci_pdu_rel8.mcs_1 = UE_template->mcs_UL[harq_pid];
 	    hi_dci0_pdu->dci_pdu.dci_pdu_rel8.cyclic_shift_2_for_drms = cshift;
@@ -1523,7 +1411,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
             }
 
 	    // Add UL_config PDUs
-	    fill_nfapi_ulsch_config_request_rel8(&ul_req_tmp_body->ul_config_pdu_list[ul_req_index], cqi_req, cc, UE_template->physicalConfigDedicated, get_tmode(module_idP, CC_id, UE_id), mac->ul_handle, rnti, first_rb[CC_id],	// resource_block_start
+	    fill_nfapi_ulsch_config_request_rel8(&ul_req_tmp_body->ul_config_pdu_list[ul_req_index], cqi_req, cc, UE_template->physicalConfigDedicated, get_tmode(module_idP, CC_id, UE_id), mac->ul_handle, rnti, first_rb_slice[CC_id], // resource_block_start
 						 rb_table[rb_table_index],	// number_of_resource_blocks
 						 UE_template->mcs_UL[harq_pid], cshift,	// cyclic_shift_2_for_drms
 						 0,	// frequency_hopping_enabled_flag
@@ -1586,13 +1474,13 @@ schedule_ulsch_rnti(module_id_t module_idP,
 	    LOG_D(MAC,"[PUSCH %d] SFN/SF:%04d%d UL_CFG:SFN/SF:%04d%d CQI:%d for UE %d/%x\n", harq_pid,frameP,subframeP,ul_sched_frame,ul_sched_subframeP,cqi_req,UE_id,rnti);
 
 	    // increment first rb for next UE allocation
-	    first_rb[CC_id] += rb_table[rb_table_index];
+        first_rb_slice[CC_id] += rb_table[rb_table_index];
 	  } else {	// round > 0 => retransmission
 	    T(T_ENB_MAC_UE_UL_SCHEDULE_RETRANSMISSION,
 	      T_INT(module_idP), T_INT(CC_id), T_INT(rnti),
 	      T_INT(frameP), T_INT(subframeP), T_INT(harq_pid),
 	      T_INT(UE_template->mcs_UL[harq_pid]),
-	      T_INT(first_rb[CC_id]),
+	      T_INT(first_rb_slice[CC_id]),
 	      T_INT(rb_table[rb_table_index]), T_INT(round));
 
 	    // Add UL_config PDUs

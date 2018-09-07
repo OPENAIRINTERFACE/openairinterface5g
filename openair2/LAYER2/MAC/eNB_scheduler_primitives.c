@@ -62,8 +62,6 @@ extern uint16_t frame_cnt;
 
 extern RAN_CONTEXT_t RC;
 
-extern int n_active_slices;
-
 int choose(int n, int k)
 {
   int res = 1;
@@ -1853,7 +1851,7 @@ rnti_t UE_RNTI(module_id_t mod_idP, int ue_idP)
     return (rnti);
   }
 
-  LOG_D(MAC, "[eNB %d] Couldn't find RNTI for UE %d\n", mod_idP, ue_idP);
+  //LOG_D(MAC, "[eNB %d] Couldn't find RNTI for UE %d\n", mod_idP, ue_idP);
   //display_backtrace();
   return (NOT_A_RNTI);
 }
@@ -1963,6 +1961,9 @@ int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP, int harq_pidP
 	   sizeof(eNB_UE_STATS));
     UE_list->UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 0;
 
+    /* default slice in case there was something different */
+    UE_list->assoc_dl_slice_idx[UE_id] = 0;
+    UE_list->assoc_ul_slice_idx[UE_id] = 0;
 
     UE_list->UE_sched_ctrl[UE_id].ta_update = 31;
 
@@ -4536,19 +4537,31 @@ harq_indication(module_id_t mod_idP, int CC_idP, frame_t frameP,
 
 // Flexran Slicing functions
 
-uint16_t flexran_nb_rbs_allowed_slice(float rb_percentage, int total_rbs)
+uint16_t nb_rbs_allowed_slice(float rb_percentage, int total_rbs)
 {
     return (uint16_t) floor(rb_percentage * total_rbs);
 }
 
-int ue_slice_membership(int UE_id, int slice_id)
+int ue_dl_slice_membership(module_id_t mod_id, int UE_id, int slice_idx)
 {
-  if ((slice_id < 0) || (slice_id > n_active_slices))
-    LOG_W(MAC, "out of range slice id %d\n", slice_id);
-
-
-  if ((UE_id % n_active_slices) == slice_id) {
-    return 1;	// this ue is a member of this slice
+  if ((slice_idx < 0)
+      || (slice_idx >= RC.mac[mod_id]->slice_info.n_dl)) {
+    LOG_W(MAC, "out of range slice index %d (slice ID %d)\n",
+          slice_idx, RC.mac[mod_id]->slice_info.dl[slice_idx].id);
+    return 0;
   }
-  return 0;
+  return RC.mac[mod_id]->UE_list.active[UE_id] == TRUE
+         && RC.mac[mod_id]->UE_list.assoc_dl_slice_idx[UE_id] == slice_idx;
+}
+
+int ue_ul_slice_membership(module_id_t mod_id, int UE_id, int slice_idx)
+{
+  if ((slice_idx < 0)
+      || (slice_idx >= RC.mac[mod_id]->slice_info.n_ul)) {
+    LOG_W(MAC, "out of range slice index %d (slice ID %d)\n",
+          slice_idx, RC.mac[mod_id]->slice_info.dl[slice_idx].id);
+    return 0;
+  }
+  return RC.mac[mod_id]->UE_list.active[UE_id] == TRUE
+         && RC.mac[mod_id]->UE_list.assoc_ul_slice_idx[UE_id] == slice_idx;
 }

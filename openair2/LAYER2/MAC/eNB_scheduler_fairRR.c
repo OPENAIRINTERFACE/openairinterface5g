@@ -542,8 +542,9 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
   uint16_t                temp_total_rbs_count;
   unsigned char           temp_total_ue_count;
   unsigned char MIMO_mode_indicator[MAX_NUM_CCs][N_RBG_MAX];
+  uint8_t slice_allocation[MAX_NUM_CCs][N_RBG_MAX];
   int                     UE_id, i; 
-  uint16_t                j;
+  uint16_t                j,c;
   uint16_t                nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
   uint16_t                nb_rbs_required_remaining[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
 //  uint16_t                nb_rbs_required_remaining_1[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
@@ -554,8 +555,6 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
   uint8_t CC_id;
   UE_list_t *UE_list = &RC.mac[Mod_id]->UE_list;
 
-  int N_RB_DL;
-  int transmission_mode = 0;
   UE_sched_ctrl *ue_sched_ctl;
   //  int rrc_status           = RRC_IDLE;
   COMMON_channels_t *cc;
@@ -590,14 +589,14 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
 
 
 	    dlsch_scheduler_pre_processor_reset(Mod_id,
-						UE_id,
-						CC_id,
+                                                0,
 						frameP,
 						subframeP,
-						N_RBG[CC_id],
+                                                min_rb_unit,
 						(uint16_t (*)[NUMBER_OF_UE_MAX])nb_rbs_required,
 						rballoc_sub,
-						MIMO_mode_indicator);
+						MIMO_mode_indicator,
+                                                mbsfn_flag);
 
 	}
     }
@@ -621,7 +620,6 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
     average_rbs_per_user[CC_id] = 0;
     cc = &RC.mac[Mod_id]->common_channels[CC_id];
     // Get total available RBS count and total UE count
-    N_RB_DL = to_prb(cc->mib->message.dl_Bandwidth);
     temp_total_rbs_count = RC.mac[Mod_id]->eNB_stats[CC_id].available_prbs;
     temp_total_ue_count = dlsch_ue_select[CC_id].ue_num;
 
@@ -658,19 +656,22 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
         nb_rbs_required_remaining[CC_id][UE_id] = cmin(average_rbs_per_user[CC_id], dlsch_ue_select[CC_id].list[i].nb_rb);
       }
 
-      transmission_mode = get_tmode(Mod_id,CC_id,UE_id);
+      /* slicing support has been introduced into the scheduler. Provide dummy
+       * data so that the preprocessor "simply works" */
+      for (c = 0; c < MAX_NUM_CCs; ++c)
+        for (j = 0; j < N_RBG_MAX; ++j)
+          slice_allocation[c][j] = 1;
 
       LOG_T(MAC,"calling dlsch_scheduler_pre_processor_allocate .. \n ");
       dlsch_scheduler_pre_processor_allocate (Mod_id,
                                               UE_id,
                                               CC_id,
                                               N_RBG[CC_id],
-                                              transmission_mode,
                                               min_rb_unit[CC_id],
-                                              N_RB_DL,
                                               (uint16_t (*)[NUMBER_OF_UE_MAX])nb_rbs_required,
                                               (uint16_t (*)[NUMBER_OF_UE_MAX])nb_rbs_required_remaining,
                                               rballoc_sub,
+                                              slice_allocation,
                                               MIMO_mode_indicator);
       temp_total_rbs_count -= ue_sched_ctl->pre_nb_available_rbs[CC_id];
       temp_total_ue_count--;

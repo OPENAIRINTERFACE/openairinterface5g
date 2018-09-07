@@ -19,23 +19,19 @@
  *      contact@openairinterface.org
  */
 
-/*
-                                enb_app.h
-                             -------------------
-  AUTHOR  : Laurent Winckel, Sebastien ROUX, Lionel GAUTHIER, Navid Nikaein
-  COMPANY : EURECOM
-  EMAIL   : Lionel.Gauthier@eurecom.fr
-*/
+/*! \file flexran_agent_mac_slice_verification.h
+ * \brief MAC Agent slice verification helper functions
+ * \author Robert Schmidt
+ * \date 2018
+ * \version 0.1
+ */
 
-#ifndef ENB_APP_H_
-#define ENB_APP_H_
+#include "flexran_agent_common_internal.h"
+#include "flexran_agent_mac_internal.h"
 
-#include <stdint.h>
-#include "platform_types.h"
-
-
-void *eNB_app_task(void *args_p);
-
-void handle_reconfiguration(module_id_t mod_id);
-
-#endif /* ENB_APP_H_ */
+int flexran_verify_dl_slice(mid_t mod_id, Protocol__FlexDlSlice *dls);
+int flexran_verify_group_dl_slices(mid_t mod_id, Protocol__FlexDlSlice **existing,
+    int n_ex, Protocol__FlexDlSlice **update, int n_up);
+int flexran_verify_ul_slice(mid_t mod_id, Protocol__FlexUlSlice *uls);
+int flexran_verify_group_ul_slices(mid_t mod_id, Protocol__FlexUlSlice **existing,
+    int n_ex, Protocol__FlexUlSlice **update, int n_up);

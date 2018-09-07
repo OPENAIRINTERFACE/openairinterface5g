@@ -252,7 +252,7 @@ extern void init_RU(const char*);
 extern void stop_ru(RU_t *ru);
 extern void init_RU_proc(RU_t *ru);
 extern void stop_RU(int nb_ru);
-extern void kill_RU_proc(int inst);
+extern void kill_RU_proc(RU_t *ru);
 extern void set_function_spec_param(RU_t *ru);
 
 // In lte-ue.c
