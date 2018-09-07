@@ -19,26 +19,15 @@
  *      contact@openairinterface.org
  */
 
-#include <stdio.h>
-#include <stdint.h>
+#ifndef X2AP_ENB_HANDLERS_H_
+#define X2AP_ENB_HANDLERS_H_
 
-/** @defgroup _x2ap_impl_ X2AP Layer Reference Implementation
- * @ingroup _ref_implementation_
- * @{
- */
+#include "x2ap_eNB_defs.h"
 
-#ifndef X2AP_H_
-#define X2AP_H_
+void x2ap_handle_x2_setup_message(x2ap_eNB_data_t *mme_desc_p, int sctp_shutdown);
 
-typedef struct x2ap_config_s {
-} x2ap_config_t;
+//int x2ap_eNB_handle_message(uint32_t assoc_id, int32_t stream,
+  //                          const uint8_t * const data, const uint32_t data_length);
 
-extern x2ap_config_t x2ap_config;
+#endif /* X2AP_ENB_HANDLERS_H_ */
 
-void *x2ap_task(void *arg);
-
-#endif /* X2AP_H_ */
-
-/**
- * @}
- */

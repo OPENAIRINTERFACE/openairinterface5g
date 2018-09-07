@@ -19,22 +19,28 @@
  *      contact@openairinterface.org
  */
 
-#ifndef SCTP_ITTI_MESSAGING_H_
-#define SCTP_ITTI_MESSAGING_H_
+#ifndef X2AP_ENB_MANAGEMENT_PROCEDURES_H_
+#define X2AP_ENB_MANAGEMENT_PROCEDURES_H
 
-int sctp_itti_send_init_msg_multi_cnf(task_id_t task_id, instance_t instance, int multi_sd);
+void x2ap_eNB_prepare_internal_data(void);
 
-int sctp_itti_send_new_message_ind(task_id_t task_id, uint32_t assoc_id, uint8_t *buffer,
-                                   uint32_t buffer_length, uint16_t stream);
+void dump_trees(void);
 
-int sctp_itti_send_association_resp(task_id_t task_id, instance_t instance,
-                                    int32_t assoc_id,
-                                    uint16_t cnx_id, enum sctp_state_e state,
-                                    uint16_t out_streams, uint16_t in_streams);
+void x2ap_eNB_insert_new_instance(x2ap_eNB_instance_t *new_instance_p);
 
-int sctp_itti_send_association_ind(task_id_t task_id, instance_t instance,
-                                   int32_t assoc_id, uint16_t port,
-                                   uint16_t out_streams, uint16_t in_streams);
+x2ap_eNB_instance_t *x2ap_eNB_get_instance(uint8_t mod_id);
 
+uint16_t x2ap_eNB_fetch_add_global_cnx_id(void);
 
-#endif /* SCTP_ITTI_MESSAGING_H_ */
+void x2ap_eNB_prepare_internal_data(void);
+
+x2ap_eNB_data_t* x2ap_is_eNB_id_in_list(uint32_t eNB_id);
+
+x2ap_eNB_data_t* x2ap_is_eNB_assoc_id_in_list(uint32_t sctp_assoc_id);
+
+struct x2ap_eNB_data_s *x2ap_get_eNB(x2ap_eNB_instance_t *instance_p,
+                                     int32_t assoc_id,
+                                     uint16_t cnx_id);
+
+#endif /* X2AP_ENB_MANAGEMENT_PROCEDURES_H_ */
+
