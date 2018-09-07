@@ -1157,11 +1157,11 @@ program_dlsch_acknak(module_id_t module_idP, int CC_idP, int UE_idP,
       }
       break;
     case NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE:
-      AssertFatal(use_simultaneous_pucch_pusch == 1,
+      AssertFatal(use_simultaneous_pucch_pusch == 0,
 		  "Cannot be NFAPI_UL_CONFIG_ULSCH_HARQ_PDU_TYPE, simultaneous_pucch_pusch is active");
       break;
     case NFAPI_UL_CONFIG_ULSCH_UCI_HARQ_PDU_TYPE:
-      AssertFatal(use_simultaneous_pucch_pusch == 0,
+      AssertFatal(use_simultaneous_pucch_pusch == 1,
 		  "Cannot be NFAPI_UL_CONFIG_ULSCH_UCI_PDU_TYPE, simultaneous_pucch_pusch is inactive\n");
       break;
 
