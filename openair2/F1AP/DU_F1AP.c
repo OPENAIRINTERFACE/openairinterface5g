@@ -45,6 +45,9 @@
 #define F1AP_UE_IDENTIFIER_NUMBER 3
 #define NUMBER_OF_eNB_MAX 3
 
+// #include "common/ran_context.h"
+// extern RAN_CONTEXT_t RC;
+
 /* This structure describes association of a DU to a CU */
 typedef struct f1ap_info {
 
@@ -169,11 +172,11 @@ void *F1AP_DU_task(void *arg) {
 
 // ==============================================================================
 
-static void du_f1ap_register(du_f1ap_instance_t *instance_p,
-                             char               *cu_ip_address,
-                             int                cu_port,
-                             uint16_t           in_streams,
-                             uint16_t           out_streams)
+static void du_f1ap_register(du_f1ap_instance_t      *instance_p,
+                             f1ap_net_ip_address_t   *remote_address,  // CU
+                             f1ap_net_ip_address_t   *local_address,   // DU
+                             uint16_t                in_streams,
+                             uint16_t                out_streams)
 {
   
   MessageDef                 *message_p                   = NULL;
@@ -182,12 +185,20 @@ static void du_f1ap_register(du_f1ap_instance_t *instance_p,
   message_p = itti_alloc_new_message(TASK_S1AP, SCTP_NEW_ASSOCIATION_REQ);
 
   sctp_new_association_req_p = &message_p->ittiMsg.sctp_new_association_req;
-
-  sctp_new_association_req_p->port = cu_port;
+  sctp_new_association_req_p->ulp_cnx_id = instance_p->instance;
+  sctp_new_association_req_p->port = F1AP_PORT_NUMBER;
   sctp_new_association_req_p->ppid = F1AP_SCTP_PPID;
 
   sctp_new_association_req_p->in_streams  = in_streams;
   sctp_new_association_req_p->out_streams = out_streams;
+
+  memcpy(&sctp_new_association_req_p->remote_address,
+         remote_address,
+         sizeof(*remote_address));
+
+  memcpy(&sctp_new_association_req_p->local_address,
+         local_address,
+         sizeof(*local_address));
 
   itti_send_msg_to_task(TASK_SCTP, instance_p->instance, message_p);
 }
@@ -227,8 +238,8 @@ void DU_send_sctp_association_req(instance_t instance, f1ap_setup_req_t *f1ap_se
   //}
 
     du_f1ap_register(new_instance,
-                     &f1ap_setup_req->CU_ipv4_address,
-                     &f1ap_setup_req->CU_port,
+                     &f1ap_setup_req->CU_f1_ip_address,  // remote
+                     &f1ap_setup_req->DU_f1_ip_address,  // local
                      f1ap_setup_req->sctp_in_streams,
                      f1ap_setup_req->sctp_out_streams);
 

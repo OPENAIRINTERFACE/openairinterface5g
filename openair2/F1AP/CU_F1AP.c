@@ -113,7 +113,7 @@ void CU_send_sctp_init_req(instance_t enb_id) {
   MessageDef  *message_p = NULL;
 
   message_p = itti_alloc_new_message (TASK_CU_F1, SCTP_INIT_MSG);
-  message_p->ittiMsg.sctp_init.port = RC.rrc[enb_id]->eth_params_s.my_portc;
+  message_p->ittiMsg.sctp_init.port = F1AP_PORT_NUMBER;
   message_p->ittiMsg.sctp_init.ppid = F1AP_SCTP_PPID;
   message_p->ittiMsg.sctp_init.ipv4 = 1;
   message_p->ittiMsg.sctp_init.ipv6 = 0;

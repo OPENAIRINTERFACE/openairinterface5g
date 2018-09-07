@@ -2375,104 +2375,115 @@ int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
     // Output a list of all eNBs.
     config_getlist( &ENBParamList,ENBParams,sizeof(ENBParams)/sizeof(paramdef_t),NULL); 
     AssertFatal(ENBParamList.paramarray[i][ENB_ENB_ID_IDX].uptr != NULL,
-		"eNB id %d is not defined in configuration file\n",i);
+    "eNB id %d is not defined in configuration file\n",i);
     for (k=0; k <num_enbs ; k++) {
       if (strcmp(ENBSParams[ENB_ACTIVE_ENBS_IDX].strlistptr[k], *(ENBParamList.paramarray[i][ENB_ENB_NAME_IDX].strptr) )== 0) {
 
-	paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
-	paramdef_t NETParams[]  =  NETPARAMS_DESC;
-	char aprefix[MAX_OPTNAME_SIZE*2 + 8];
+        paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
+        paramdef_t NETParams[]  =  NETPARAMS_DESC;
+        char aprefix[MAX_OPTNAME_SIZE*2 + 8];
 	
         F1AP_SETUP_REQ (msg_p).gNB_DU_id        = *(ENBParamList.paramarray[0][ENB_ENB_ID_IDX].uptr);
-	LOG_I(ENB_APP,"F1AP: gNB_DU_id[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).gNB_DU_id);
+        LOG_I(ENB_APP,"F1AP: gNB_DU_id[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).gNB_DU_id);
 
-	F1AP_SETUP_REQ (msg_p).gNB_DU_name      = strdup(*(ENBParamList.paramarray[0][ENB_ENB_NAME_IDX].strptr));
-	LOG_I(ENB_APP,"F1AP: gNB_DU_name[%d] %s\n",k,F1AP_SETUP_REQ (msg_p).gNB_DU_name);
+        F1AP_SETUP_REQ (msg_p).gNB_DU_name      = strdup(*(ENBParamList.paramarray[0][ENB_ENB_NAME_IDX].strptr));
+        LOG_I(ENB_APP,"F1AP: gNB_DU_name[%d] %s\n",k,F1AP_SETUP_REQ (msg_p).gNB_DU_name);
 
-	F1AP_SETUP_REQ (msg_p).tac[k]              = (uint16_t)atoi(*(ENBParamList.paramarray[i][ENB_TRACKING_AREA_CODE_IDX].strptr));
-	LOG_I(ENB_APP,"F1AP: tac[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).tac[k]);
+        F1AP_SETUP_REQ (msg_p).tac[k]              = (uint16_t)atoi(*(ENBParamList.paramarray[i][ENB_TRACKING_AREA_CODE_IDX].strptr));
+        LOG_I(ENB_APP,"F1AP: tac[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).tac[k]);
 
-	F1AP_SETUP_REQ (msg_p).mcc[k]              = (uint16_t)atoi(*(ENBParamList.paramarray[i][ENB_MOBILE_COUNTRY_CODE_IDX].strptr));
-	LOG_I(ENB_APP,"F1AP: mcc[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).mcc[k]);
+        F1AP_SETUP_REQ (msg_p).mcc[k]              = (uint16_t)atoi(*(ENBParamList.paramarray[i][ENB_MOBILE_COUNTRY_CODE_IDX].strptr));
+        LOG_I(ENB_APP,"F1AP: mcc[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).mcc[k]);
 
-	F1AP_SETUP_REQ (msg_p).mnc[k]              = (uint16_t)atoi(*(ENBParamList.paramarray[i][ENB_MOBILE_NETWORK_CODE_IDX].strptr));
-	LOG_I(ENB_APP,"F1AP: mnc[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).mnc[k]);
+        F1AP_SETUP_REQ (msg_p).mnc[k]              = (uint16_t)atoi(*(ENBParamList.paramarray[i][ENB_MOBILE_NETWORK_CODE_IDX].strptr));
+        LOG_I(ENB_APP,"F1AP: mnc[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).mnc[k]);
 
-	F1AP_SETUP_REQ (msg_p).mnc_digit_length[k] = strlen(*(ENBParamList.paramarray[i][ENB_MOBILE_NETWORK_CODE_IDX].strptr));
-	LOG_I(ENB_APP,"F1AP: mnc_digit_length[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).mnc_digit_length[k]);
+        F1AP_SETUP_REQ (msg_p).mnc_digit_length[k] = strlen(*(ENBParamList.paramarray[i][ENB_MOBILE_NETWORK_CODE_IDX].strptr));
+        LOG_I(ENB_APP,"F1AP: mnc_digit_length[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).mnc_digit_length[k]);
 	
-	AssertFatal((F1AP_SETUP_REQ (msg_p).mnc_digit_length[k] == 2) ||
-		    (F1AP_SETUP_REQ (msg_p).mnc_digit_length[k] == 3),
-		    "BAD MNC DIGIT LENGTH %d",
-		    F1AP_SETUP_REQ (msg_p).mnc_digit_length[k]);
+        AssertFatal((F1AP_SETUP_REQ (msg_p).mnc_digit_length[k] == 2) ||
+                    (F1AP_SETUP_REQ (msg_p).mnc_digit_length[k] == 3),
+                    "BAD MNC DIGIT LENGTH %d",
+                    F1AP_SETUP_REQ (msg_p).mnc_digit_length[k]);
 	
-	LOG_I(ENB_APP,"F1AP: CU_ip4_address %s\n",RC.mac[k]->eth_params_n.remote_addr);
-	LOG_I(ENB_APP,"FIAP: CU_ip4_address %p, strlen %d\n",F1AP_SETUP_REQ (msg_p).CU_ipv4_address,(int)strlen(RC.mac[k]->eth_params_n.remote_addr));
+        LOG_I(ENB_APP,"F1AP: CU_ip4_address %s\n",RC.mac[k]->eth_params_n.remote_addr);
+        LOG_I(ENB_APP,"FIAP: CU_ip4_address %p, strlen %d\n",F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv4_address,(int)strlen(RC.mac[k]->eth_params_n.remote_addr));
  	
-	strcpy(F1AP_SETUP_REQ (msg_p).CU_ipv4_address,
-	       RC.mac[k]->eth_params_n.remote_addr);
-	//strcpy(F1AP_SETUP_REQ (msg_p).CU_ip_address[l].ipv6_address,*(F1ParamList.paramarray[l][ENB_CU_IPV6_ADDRESS_IDX].strptr));
-	F1AP_SETUP_REQ (msg_p).CU_port = RC.mac[k]->eth_params_n.remote_portc;
-      
-	sprintf(aprefix,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,k,ENB_CONFIG_STRING_SCTP_CONFIG);
-	config_get( SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix); 
-	F1AP_SETUP_REQ (msg_p).sctp_in_streams = (uint16_t)*(SCTPParams[ENB_SCTP_INSTREAMS_IDX].uptr);
-	F1AP_SETUP_REQ (msg_p).sctp_out_streams = (uint16_t)*(SCTPParams[ENB_SCTP_OUTSTREAMS_IDX].uptr);
+        F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv6 = 0;
+        F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv4 = 1;
+        //strcpy(F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv6_address, "");
+        strcpy(F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv4_address, RC.mac[k]->eth_params_n.my_addr);
 
-	eNB_RRC_INST *rrc = RC.rrc[k];
-	// wait until RRC cell information is configured
-	int cell_info_configured=0;
-	do {
-	  LOG_I(ENB_APP,"ngran_eNB_DU: Waiting for basic cell configuration\n");
-	  usleep(100000);
-	  pthread_mutex_lock(&rrc->cell_info_mutex);
-	  cell_info_configured = rrc->cell_info_configured;
-	  pthread_mutex_unlock(&rrc->cell_info_mutex);
-	} while (cell_info_configured ==0);
+        LOG_I(ENB_APP,"F1AP: DU_ip4_address %s\n",RC.mac[k]->eth_params_n.my_addr);
+        LOG_I(ENB_APP,"FIAP: DU_ip4_address %p, strlen %d\n",F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv4_address,(int)strlen(RC.mac[k]->eth_params_n.my_addr));
+  
+        F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv6 = 0;
+        F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv4 = 1;
+        //strcpy(F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv6_address, "");
+        strcpy(F1AP_SETUP_REQ (msg_p).DU_f1_ip_address.ipv4_address, RC.mac[k]->eth_params_n.remote_addr);
+
+        //strcpy(F1AP_SETUP_REQ (msg_p).CU_ip_address[l].ipv6_address,*(F1ParamList.paramarray[l][ENB_CU_IPV6_ADDRESS_IDX].strptr));
+        //F1AP_SETUP_REQ (msg_p).CU_port = RC.mac[k]->eth_params_n.remote_portc; // maybe we dont need it
+      
+        sprintf(aprefix,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,k,ENB_CONFIG_STRING_SCTP_CONFIG);
+        config_get( SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix); 
+        F1AP_SETUP_REQ (msg_p).sctp_in_streams = (uint16_t)*(SCTPParams[ENB_SCTP_INSTREAMS_IDX].uptr);
+        F1AP_SETUP_REQ (msg_p).sctp_out_streams = (uint16_t)*(SCTPParams[ENB_SCTP_OUTSTREAMS_IDX].uptr);
+
+        eNB_RRC_INST *rrc = RC.rrc[k];
+        // wait until RRC cell information is configured
+        int cell_info_configured=0;
+        do {
+          LOG_I(ENB_APP,"ngran_eNB_DU: Waiting for basic cell configuration\n");
+          usleep(100000);
+          pthread_mutex_lock(&rrc->cell_info_mutex);
+          cell_info_configured = rrc->cell_info_configured;
+          pthread_mutex_unlock(&rrc->cell_info_mutex);
+        } while (cell_info_configured ==0);
 
       	
-	F1AP_SETUP_REQ (msg_p).nr_pci[k]    = rrc->carrier[0].physCellId;
-	F1AP_SETUP_REQ (msg_p).nr_cellid[k] = 0;
-	F1AP_SETUP_REQ (msg_p).num_ssi[k] = 0;
-	if (rrc->carrier[0].sib1->tdd_Config) {
+        F1AP_SETUP_REQ (msg_p).nr_pci[k]    = rrc->carrier[0].physCellId;
+        F1AP_SETUP_REQ (msg_p).nr_cellid[k] = 0;
+        F1AP_SETUP_REQ (msg_p).num_ssi[k] = 0;
+        if (rrc->carrier[0].sib1->tdd_Config) {
 
-	  LOG_I(ENB_APP,"ngran_DU: Configuring Cell %d for TDD\n",k);
-	  F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nr_arfcn            = freq_to_arfcn10(rrc->carrier[0].sib1->freqBandIndicator,
-											   rrc->carrier[0].dl_CarrierFreq);
-	  // For LTE use scs field to carry prefix type and number of antennas
-	  F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.scs                 = (rrc->carrier[0].Ncp<<2)+rrc->carrier[0].p_eNB;;
-	  // use nrb field to hold LTE N_RB_DL (0...5)
-	  F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nrb                 = rrc->carrier[0].mib.message.dl_Bandwidth;
-	  F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nrb                 = rrc->carrier[0].mib.message.dl_Bandwidth;
-	  F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.num_frequency_bands = 1;
-	  F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nr_band[0]          = rrc->carrier[0].sib1->freqBandIndicator;
-	  F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.sul_active              = 0;
-	}
-	else {
-	  LOG_I(ENB_APP,"ngran_DU: Configuring Cell %d for FDD\n",k);
-	  
-	  F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_nr_arfcn             = freq_to_arfcn10(rrc->carrier[0].sib1->freqBandIndicator,
-											       rrc->carrier[0].dl_CarrierFreq);
-	  F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_nr_arfcn             = F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_nr_arfcn;
-	  // For LTE use scs field to carry prefix type and number of antennas
-	  F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_scs                  = (rrc->carrier[0].Ncp<<2)+rrc->carrier[0].p_eNB;;
-	  F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_scs                  = rrc->carrier[0].Ncp;
-	  // use nrb field to hold LTE N_RB_DL (0...5)
-	  F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_nrb                  = rrc->carrier[0].mib.message.dl_Bandwidth;
-	  F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_nrb                  = rrc->carrier[0].mib.message.dl_Bandwidth;
-	  F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.num_frequency_bands     = 1;
-	  F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.nr_band[0]              = rrc->carrier[0].sib1->freqBandIndicator;
-	  F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.sul_active              = 0;
-	}
-	F1AP_SETUP_REQ (msg_p).measurement_timing_information[k]             = NULL;
-	F1AP_SETUP_REQ (msg_p).ranac[k]                                      = 0;
-	F1AP_SETUP_REQ (msg_p).mib[k]                                        = rrc->carrier[0].MIB;
-	F1AP_SETUP_REQ (msg_p).sib1[k]                                       = rrc->carrier[0].SIB1;
+          LOG_I(ENB_APP,"ngran_DU: Configuring Cell %d for TDD\n",k);
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nr_arfcn            = freq_to_arfcn10(rrc->carrier[0].sib1->freqBandIndicator,
+        										   rrc->carrier[0].dl_CarrierFreq);
+          // For LTE use scs field to carry prefix type and number of antennas
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.scs                 = (rrc->carrier[0].Ncp<<2)+rrc->carrier[0].p_eNB;;
+          // use nrb field to hold LTE N_RB_DL (0...5)
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nrb                 = rrc->carrier[0].mib.message.dl_Bandwidth;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nrb                 = rrc->carrier[0].mib.message.dl_Bandwidth;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.num_frequency_bands = 1;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nr_band[0]          = rrc->carrier[0].sib1->freqBandIndicator;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.sul_active          = 0;
+        }
+        else {
+          LOG_I(ENB_APP,"ngran_DU: Configuring Cell %d for FDD\n",k);
+          
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_nr_arfcn             = freq_to_arfcn10(rrc->carrier[0].sib1->freqBandIndicator,
+        										       rrc->carrier[0].dl_CarrierFreq);
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_nr_arfcn             = F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_nr_arfcn;
+          // For LTE use scs field to carry prefix type and number of antennas
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_scs                  = (rrc->carrier[0].Ncp<<2)+rrc->carrier[0].p_eNB;;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_scs                  = rrc->carrier[0].Ncp;
+          // use nrb field to hold LTE N_RB_DL (0...5)
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_nrb                  = rrc->carrier[0].mib.message.dl_Bandwidth;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_nrb                  = rrc->carrier[0].mib.message.dl_Bandwidth;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.num_frequency_bands     = 1;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.nr_band[0]              = rrc->carrier[0].sib1->freqBandIndicator;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.sul_active              = 0;
+        }
+        F1AP_SETUP_REQ (msg_p).measurement_timing_information[k]             = NULL;
+        F1AP_SETUP_REQ (msg_p).ranac[k]                                      = 0;
+        F1AP_SETUP_REQ (msg_p).mib[k]                                        = rrc->carrier[0].MIB;
+        F1AP_SETUP_REQ (msg_p).sib1[k]                                       = rrc->carrier[0].SIB1;
 
-	break;
-      }
-    }
-  }
+        break;
+      } // if
+    } // for
+  } // if
 
   return 0;
 

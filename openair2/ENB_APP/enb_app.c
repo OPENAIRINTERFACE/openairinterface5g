@@ -130,34 +130,30 @@ static uint32_t eNB_app_register(ngran_node_t node_type,uint32_t enb_id_start, u
   for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
     {
       if (node_type == ngran_eNB_DU) { // F1AP registration
+        // configure F1AP here for F1C
+        LOG_I(ENB_APP,"ngran_eNB_DU: Allocating ITTI message for F1AP_SETUP_REQ\n");
+        msg_p = itti_alloc_new_message (TASK_ENB_APP, F1AP_SETUP_REQ);
+        RCconfig_DU_F1(msg_p, enb_id);
 
-	// configure F1AP here for F1C
-	LOG_I(ENB_APP,"ngran_eNB_DU: Allocating ITTI message for F1AP_SETUP_REQ\n");
-	msg_p = itti_alloc_new_message (TASK_ENB_APP, F1AP_SETUP_REQ);
-	RCconfig_DU_F1(msg_p, enb_id);
-
-	LOG_I(ENB_APP,"[eNB %d] eNB_app_register via F1AP for instance %d\n", enb_id, ENB_MODULE_ID_TO_INSTANCE(enb_id));
-	itti_send_msg_to_task (TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
-	// configure GTPu here for F1U
+        LOG_I(ENB_APP,"[eNB %d] eNB_app_register via F1AP for instance %d\n", enb_id, ENB_MODULE_ID_TO_INSTANCE(enb_id));
+        itti_send_msg_to_task (TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
+        // configure GTPu here for F1U
       }
       else { // S1AP registration
-	/* note:  there is an implicit relationship between the data structure and the message name */
-	msg_p = itti_alloc_new_message (TASK_ENB_APP, S1AP_REGISTER_ENB_REQ);
-	
-	RCconfig_S1(msg_p, enb_id);
+        /* note:  there is an implicit relationship between the data structure and the message name */
+        msg_p = itti_alloc_new_message (TASK_ENB_APP, S1AP_REGISTER_ENB_REQ);
 
-	if (enb_id == 0) RCconfig_gtpu();
-	
-	LOG_I(ENB_APP,"default drx %d\n",((S1AP_REGISTER_ENB_REQ(msg_p)).default_drx));
-	
-	LOG_I(ENB_APP,"[eNB %d] eNB_app_register via S1AP for instance %d\n", enb_id, ENB_MODULE_ID_TO_INSTANCE(enb_id));
-	itti_send_msg_to_task (TASK_S1AP, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
+        RCconfig_S1(msg_p, enb_id);
+
+        if (enb_id == 0) RCconfig_gtpu();
+
+        LOG_I(ENB_APP,"default drx %d\n",((S1AP_REGISTER_ENB_REQ(msg_p)).default_drx));
+
+        LOG_I(ENB_APP,"[eNB %d] eNB_app_register via S1AP for instance %d\n", enb_id, ENB_MODULE_ID_TO_INSTANCE(enb_id));
+        itti_send_msg_to_task (TASK_S1AP, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
       }
 
-
-      
       register_enb_pending++;
-    
     }
   }
 

@@ -51,6 +51,13 @@
 // Note this should be 512 from maxval in 38.473
 #define F1AP_MAX_NB_CELLS 2
 
+typedef struct f1ap_net_ip_address_s {
+  unsigned ipv4:1;
+  unsigned ipv6:1;
+  char ipv4_address[16];
+  char ipv6_address[46];
+} f1ap_net_ip_address_t;
+
 typedef struct f1ap_cu_setup_req_s {
    //
 } f1ap_cu_setup_req_t;
@@ -60,8 +67,8 @@ typedef struct f1ap_setup_req_s {
   // Midhaul networking parameters
 
   /* The eNB IP address to bind */
-  char CU_ipv4_address[16];
-  int CU_port;
+  f1ap_net_ip_address_t CU_f1_ip_address;
+  f1ap_net_ip_address_t DU_f1_ip_address;
 
   /* Number of SCTP streams used for a mme association */
   uint16_t sctp_in_streams;

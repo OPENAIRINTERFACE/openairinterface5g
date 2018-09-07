@@ -394,23 +394,6 @@ extern int asn1_xer_print;
 //Forward declaration
 //struct f1ap_message_s;
 
-typedef struct f1ap_net_ip_address_s {
-  unsigned ipv4:1;
-  unsigned ipv6:1;
-  char ipv4_address[16];
-  char ipv6_address[46];
-} f1ap_net_ip_address_t;
-
-
-/*typedef struct f1ap_message_s {
-    F1AP_ProtocolIE_ID_t id;
-    F1AP_Criticality_t   criticality;
-    uint8_t            direction;
-    union {
-        F1AP_F1SetupRequestIEs_t f1ap_F1SetupRequestIEs;
-    } msg;
-} f1ap_message;*/
-
 /** \brief Function callback prototype.
  **/
 typedef int (*f1ap_message_decoded_callback)(
@@ -418,74 +401,5 @@ typedef int (*f1ap_message_decoded_callback)(
   uint32_t               stream,
   F1AP_F1AP_PDU_t       *message_p
 );
-
-/** \brief Encode a successfull outcome message
- \param buffer pointer to buffer in which data will be encoded
- \param length pointer to the length of buffer
- \param procedureCode Procedure code for the message
- \param criticality Criticality of the message
- \param td ASN1C type descriptor of the sptr
- \param sptr Deferenced pointer to the structure to encode
- @returns size in bytes encded on success or 0 on failure
- **/
-/*ssize_t f1ap_generate_successfull_outcome(
-  uint8_t               **buffer,
-  uint32_t               *length,
-  e_F1ap_ProcedureCode    procedureCode,
-  F1ap_Criticality_t      criticality,
-  asn_TYPE_descriptor_t  *td,
-  void                   *sptr);
-*/
-/** \brief Encode an initiating message
- \param buffer pointer to buffer in which data will be encoded
- \param length pointer to the length of buffer
- \param procedureCode Procedure code for the message
- \param criticality Criticality of the message
- \param td ASN1C type descriptor of the sptr
- \param sptr Deferenced pointer to the structure to encode
- @returns size in bytes encded on success or 0 on failure
- **/
-/*ssize_t f1ap_generate_initiating_message(
-  uint8_t               **buffer,
-  uint32_t               *length,
-  e_F1ap_ProcedureCode    procedureCode,
-  F1ap_Criticality_t      criticality,
-  asn_TYPE_descriptor_t  *td,
-  void                   *sptr);
-*/
-/** \brief Encode an unsuccessfull outcome message
- \param buffer pointer to buffer in which data will be encoded
- \param length pointer to the length of buffer
- \param procedureCode Procedure code for the message
- \param criticality Criticality of the message
- \param td ASN1C type descriptor of the sptr
- \param sptr Deferenced pointer to the structure to encode
- @returns size in bytes encded on success or 0 on failure
- **/
-/*ssize_t f1ap_generate_unsuccessfull_outcome(
-  uint8_t               **buffer,
-  uint32_t               *length,
-  e_F1ap_ProcedureCode    procedureCode,
-  F1ap_Criticality_t      criticality,
-  asn_TYPE_descriptor_t  *td,
-  void                   *sptr);
-*/
-/** \brief Generate a new IE
- \param id Protocol ie id of the IE
- \param criticality Criticality of the IE
- \param type ASN1 type descriptor of the IE value
- \param sptr Structure to be encoded in the value field
- @returns a pointer to the newly created IE structure or NULL in case of failure
- **/
-/*F1ap_IE_t *f1ap_new_ie(F1ap_ProtocolIE_ID_t   id,
-                       F1ap_Criticality_t     criticality,
-                       asn_TYPE_descriptor_t *type,
-                       void                  *sptr);
-*/
-/** \brief Handle criticality
- \param criticality Criticality of the IE
- @returns void
- **/
-//void f1ap_handle_criticality(F1ap_Criticality_t criticality);
 
 #endif /* F1AP_COMMON_H_ */
