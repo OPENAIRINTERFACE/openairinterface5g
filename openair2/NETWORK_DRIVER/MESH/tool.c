@@ -679,11 +679,11 @@ void print_TOOL_pk_all(struct sk_buff *skb)
 
   switch (ntohs(skb->protocol)) {
   case ETH_P_IPV6:
-    print_TOOL_pk_ipv6((struct ipv6hdr *)skb->network_header);
+    print_TOOL_pk_ipv6((struct ipv6hdr *)skb_network_header(skb));
     break;
 
   case ETH_P_IP:
-    print_TOOL_pk_ipv4((struct iphdr *)skb->network_header);
+    print_TOOL_pk_ipv4((struct iphdr *)skb_network_header(skb));
     break;
   }
 }

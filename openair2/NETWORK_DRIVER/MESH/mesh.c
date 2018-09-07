@@ -30,7 +30,7 @@
 
 ***************************************************************************/
 
-
+#include <linux/version.h>
 #include "local.h"
 #include "proto_extern.h"
 
@@ -155,10 +155,18 @@ void nas_mesh_start_default_sclassifier(struct cx_entity *cx,struct rb_entity *r
 }
 
 //---------------------------------------------------------------------------
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
+void nas_mesh_timer(struct timer_list *t)
+#else
 void nas_mesh_timer(unsigned long data)
+#endif
 {
   //---------------------------------------------------------------------------
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
+  struct nas_priv *gpriv=from_timer(gpriv, t, timer);
+  #else
   struct nas_priv *gpriv=(struct nas_priv *) data;
+  #endif
   uint8_t cxi;
   struct cx_entity *cx;
   struct rb_entity *rb;
@@ -166,10 +174,14 @@ void nas_mesh_timer(unsigned long data)
 #ifdef NAS_DEBUG_TIMER
   printk("NAS_MESH_TIMER - begin \n");
 #endif
-
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
+timer_setup(&gpriv->timer, nas_mesh_timer, 0);
+  mod_timer(&gpriv->timer, jiffies+NAS_TIMER_TICK);
+  #else
   (gpriv->timer).function=nas_mesh_timer;
   (gpriv->timer).expires=jiffies+NAS_TIMER_TICK;
   (gpriv->timer).data=data;
+  #endif
 
   return;
 
