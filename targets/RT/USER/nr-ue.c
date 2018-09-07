@@ -64,8 +64,8 @@
 #include "T.h"
 
 extern double cpuf;
-static  nfapi_nr_config_request_t config_t;
-static  nfapi_nr_config_request_t* config =&config_t;
+//static  nfapi_nr_config_request_t config_t;
+//static  nfapi_nr_config_request_t* config =&config_t;
 
 /*
  *  NR SLOT PROCESSING SEQUENCE
@@ -810,7 +810,7 @@ void *UE_thread(void *arg) {
     PHY_VARS_NR_UE *UE = (PHY_VARS_NR_UE *) arg;
     //  int tx_enabled = 0;
     int dummy_rx[UE->frame_parms.nb_antennas_rx][UE->frame_parms.samples_per_tti] __attribute__((aligned(32)));
-    openair0_timestamp timestamp,timestamp1;
+    openair0_timestamp timestamp;
     void* rxp[NB_ANTENNAS_RX], *txp[NB_ANTENNAS_TX];
     int start_rx_stream = 0;
     int i;

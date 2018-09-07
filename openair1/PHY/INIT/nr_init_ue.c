@@ -327,6 +327,7 @@ void phy_config_sib13_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,int mbsfn_Area_
   }
 }
 
+
 void phy_config_meas_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index,uint8_t n_adj_cells,unsigned int *adj_cell_id)
 {
 
@@ -344,6 +345,7 @@ void phy_config_meas_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index,uint8_t n
   memcpy((void*)phy_meas->adj_cell_id,(void *)adj_cell_id,n_adj_cells*sizeof(unsigned int));
 
 }
+*/
 
 #if defined(Rel10) || defined(Rel14)
 void phy_config_dedicated_scell_ue(uint8_t Mod_id,
@@ -355,17 +357,17 @@ void phy_config_dedicated_scell_ue(uint8_t Mod_id,
 }
 #endif
 
-
 void phy_config_harq_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
                         uint16_t max_harq_tx )
 {
 
-  PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id][CC_id];
+  PHY_VARS_NR_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id][CC_id];
   phy_vars_ue->ulsch[eNB_id]->Mlimit = max_harq_tx;
 }
 
 extern uint16_t beta_cqi[16];
 
+/*
 void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
                              struct PhysicalConfigDedicated *physicalConfigDedicated )
 {
@@ -908,8 +910,9 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   return 0;
 
 }
+
 /*
-void nr_lte_ue_transport(PHY_VARS_UE *ue,int abstraction_flag) {
+void init_nr_ue_transport(PHY_VARS_NR_UE *ue,int abstraction_flag) {
 
   int i,j,k;
 
@@ -930,7 +933,7 @@ void nr_lte_ue_transport(PHY_VARS_UE *ue,int abstraction_flag) {
     ue->transmission_mode[i] = ue->frame_parms.nb_antenna_ports_eNB==1 ? 1 : 2;
   }
 
-  ue->frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
+  //ue->frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
 
   ue->dlsch_MCH[0]  = new_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_TURBO_ITERATIONS_MBSFN,ue->frame_parms.N_RB_DL,0);
 

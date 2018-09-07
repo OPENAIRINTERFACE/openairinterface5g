@@ -150,12 +150,12 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   int ret=-1;
-  int aarx,rx_power=0;
+  int rx_power=0; //aarx,
   //nfapi_nr_config_request_t* config;
 
   /*offset parameters to be updated from higher layer */
-  k_ssb =0;
-  N_ssb_crb = 0;
+  //k_ssb =0;
+  //N_ssb_crb = 0;
 
   /*#ifdef OAI_USRP
   __m128i *rxdata128;
@@ -226,9 +226,12 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
     ret = nr_pbch_detection(ue,mode);
     
     nr_gold_pdcch(ue,0, 2);
-    nr_slot_fep(ue,0, 0, ue->rx_offset, 1, 1, NR_PDCCH_EST);
-    nr_slot_fep(ue,1, 0, ue->rx_offset, 1, 1, NR_PDCCH_EST);
-	
+    int nb_prefix_samples0 = frame_parms->nb_prefix_samples0;
+	frame_parms->nb_prefix_samples0 = 0;
+  
+    nr_slot_fep(ue,0, 0, ue->rx_offset, 0, 1, NR_PDCCH_EST);
+    nr_slot_fep(ue,1, 0, ue->rx_offset, 0, 1, NR_PDCCH_EST);
+    frame_parms->nb_prefix_samples0 = nb_prefix_samples0;	
 
 LOG_I(PHY,"[UE  %d] AUTOTEST Cell Sync : frame = %d, rx_offset %d, freq_offset %d \n",
               ue->Mod_id,

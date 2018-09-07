@@ -1169,13 +1169,13 @@ int main( int argc, char **argv ) {
 
   if (do_forms==1) {
     fl_initialize (&argc, argv, NULL, 0, 0);
-
-         //form_stats = create_form_stats_form();
-         //fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
-       UE_id = 0;
-            form_ue[UE_id] = create_lte_phy_scope_ue();
-            sprintf (title, "LTE DL SCOPE UE");
-            fl_show_form (form_ue[UE_id]->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
+	
+	form_stats = create_form_stats_form();
+    fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
+    UE_id = 0;
+    form_ue[UE_id] = create_lte_phy_scope_ue();
+    sprintf (title, "NR DL SCOPE UE");
+    fl_show_form (form_ue[UE_id]->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
 
             /*
             if (openair_daq_vars.use_ia_receiver) {

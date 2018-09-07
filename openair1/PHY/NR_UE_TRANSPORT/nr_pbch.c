@@ -394,7 +394,6 @@ void nr_pbch_unscrambling(NR_UE_PBCH *pbch,
 					   uint16_t length,
 					   uint8_t bitwise)
 {
-  int i;
   uint8_t reset, offset;
   uint32_t x1, x2, s=0;
   double *demod_pbch_e = pbch->demod_pbch_e;
