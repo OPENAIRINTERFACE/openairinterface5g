@@ -517,19 +517,10 @@ if (NOT ${ret} STREQUAL 0)
 endif (NOT ${ret} STREQUAL 0)
 file(GLOB F1AP_source ${F1AP_C_DIR}/*.c)
 
-#set(F1AP_OAI_generated
-#  ${F1AP_C_DIR}/per_decoder.c
-#  ${F1AP_C_DIR}/per_encoder.c
-  #${F1AP_C_DIR}/f1ap_xer_print.c
-#  ${F1AP_C_DIR}/F1AP_ProtocolIE-Field.h
-#  )
-
 file(GLOB f1ap_h ${F1AP_C_DIR}/*.h)
 set(f1ap_h ${f1ap_h} )
 
 add_library(F1AP_LIB
-  #${F1AP_OAI_generated}
-  #${f1ap_h}
   ${F1AP_source}
   )
 
@@ -538,9 +529,7 @@ include_directories ("${F1AP_DIR}")
 message(${F1AP_C_DIR})
 message(${F1AP_DIR})
 
-
 add_library(F1AP
-  #${F1AP_DIR}/test.c
   ${F1AP_DIR}/DU_F1AP.c
   ${F1AP_DIR}/CU_F1AP.c
   ${F1AP_DIR}/f1ap_itti_messaging.c
@@ -548,33 +537,8 @@ add_library(F1AP
   ${F1AP_DIR}/f1ap_decoder.c
   ${F1AP_DIR}/f1ap_handlers.c
   ${F1AP_DIR}/f1ap_common.c
-  ${F1AP_DIR}/sctp_du.c
-  ${F1AP_DIR}/sctp_cu.c
   )
 
-add_executable(test_f1ap_du
-  ${F1AP_DIR}/test_f1ap_du.c
-  ${F1AP_DIR}/DU_F1AP.c
-  ${F1AP_DIR}/f1ap_decoder.c
-  ${F1AP_DIR}/f1ap_handlers.c
-  ${F1AP_DIR}/sctp_du.c
-  )
-
-target_link_libraries(test_f1ap_du
-  -Wl,--start-group F1AP_LIB ${T_LIB} sctp pthread -Wl,--end-group
-  )
-
-add_executable(test_f1ap_cu
-  ${F1AP_DIR}/test_f1ap_cu.c
-  ${F1AP_DIR}/CU_F1AP.c
-  ${F1AP_DIR}/f1ap_decoder.c
-  ${F1AP_DIR}/f1ap_handlers.c
-  ${F1AP_DIR}/sctp_cu.c
-  )
-
-target_link_libraries(test_f1ap_cu
-  -Wl,--start-group F1AP_LIB ${T_LIB} sctp pthread -Wl,--end-group
-  )
 
 # Hardware dependant options
 ###################################

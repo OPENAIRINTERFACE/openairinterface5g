@@ -36,7 +36,6 @@
 #include "f1ap_encoder.h"
 #include "f1ap_decoder.h"
 #include "cu_f1ap_task.h"
-#include "sctp_cu.h"
 #include "platform_types.h"
 #include "common/utils/LOG/log.h"
 #include "intertask_interface.h"
@@ -351,60 +350,6 @@ void CU_send_F1_SETUP_RESPONSE(instance_t instance, sctp_new_association_ind_t *
   //f1ap_send_sctp_data_req(instance_p->instance, f1ap_mme_data_p->assoc_id, buffer, len, 0);
 
 }
-
-// int f1ap_decode_pdu(F1AP_F1AP_PDU_t *message, uint8_t *buffer, uint32_t length) {
-
-//   //LOG_I(F1AP,"Entering main loop of DU F1AP pdu receiver\n");
-//   F1AP_F1AP_PDU_t pdu;
-//   F1AP_F1AP_PDU_t *pdu_p = &pdu;
-//   asn_dec_rval_t dec_ret;
-  
-//   DevAssert(buffer != NULL);
-
-//   printf("buffer = \n");
-//   int i_ret;
-//   for (i_ret = 0; i_ret < length; i_ret++) {
-//       printf("%x ", *(buffer+i_ret));
-//   }
-//   printf("\n");
-
-//   memset((void *)pdu_p, 0, sizeof(F1AP_F1AP_PDU_t));
-  
-
-//   dec_ret = aper_decode(NULL,
-//                         &asn_DEF_F1AP_F1AP_PDU,
-//                         (void **)&pdu_p,
-//                         buffer,
-//                         length,
-//                         0,
-//                         0);
-
-//   xer_fprint(stdout, &asn_DEF_F1AP_F1AP_PDU, pdu_p);
-
-//   printf("\n");
-
-//   printf("dec_ret.code = %d \n", dec_ret.code);
-
-//   AssertFatal(dec_ret.code == RC_OK,"Failed to decode pdu\n");
-
-//   // switch(pdu_p->present) {
-//   //   case F1AP_F1AP_PDU_PR_initiatingpdu:
-//   //     return F1AP_DU_decode_initiating_pdu(&pdu_p->choice.initiatingpdu);
-      
-//   //   case F1AP_F1AP_PDU_PR_successfulOutcome:
-//   //     return F1AP_DU_decode_successful_outcome(&pdu_p->choice.successfulOutcome);
-      
-//   //   case F1AP_F1AP_PDU_PR_unsuccessfulOutcome:
-//   //     return F1AP_DU_decode_unsuccessful_outcome(&pdu_p->choice.unsuccessfulOutcome);
-      
-//   //   default:
-//   //     /*AssertFatal(1==0,"Unknown presence (%d) or not implemented\n", (int)pdu_p->present);*/
-//   //     break;
-//   // }
-  
-//   //AssertFatal(1==0,"Shouldn't get here\n");
-//   return -1;
-// }
 
 void CU_send_F1_SETUP_FAILURE(F1AP_F1SetupFailure_t *F1SetupFailure) {
   AssertFatal(1==0,"Not implemented yet\n");

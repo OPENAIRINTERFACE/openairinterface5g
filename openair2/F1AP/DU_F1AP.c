@@ -38,7 +38,6 @@
 #include "du_f1ap_task.h"
 #include "platform_types.h"
 #include "common/utils/LOG/log.h"
-#include "sctp_du.h"
 #include "intertask_interface.h"
 #include "f1ap_itti_messaging.h"
 
@@ -477,144 +476,13 @@ void DU_send_F1_SETUP_REQUEST(instance_t instance, sctp_new_association_resp_t *
   }
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
-  //printf("F1 setup request present = %d\n", ie.value.present);
-
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     printf("Failed to encode F1 setup request\n");
   }
 
   du_f1ap_itti_send_sctp_data_req(instance, f1ap_setup_req->assoc_id, buffer, len, 0);
-  // printf("\n");
-
-  /* decode */
-  // if (f1ap_decode_pdu(&pdu, buffer, len) > 0) {
-  //   printf("Failed to decode F1 setup request\n");
-  // }
-  // int req;
-  // req = s1ap_eNB_encode_s1_setup_request(&ie, &buffer, &len);
-
-  //printf("encode F1 setup request, req = %d \n", req); 
-
-  //f1ap_eNB_itti_send_sctp_data_req(instance_p->instance, f1ap_mme_data_p->assoc_id, buffer, len, 0);
-  /* send Not Use ITTI */
-  //f1ap_send_sctp_data_req(instance_p->instance, f1ap_mme_data_p->assoc_id, buffer, len, 0);
-
 }
-
-// int f1ap_decode_pdu(F1AP_F1AP_PDU_t *message, uint8_t *buffer, uint32_t length) {
-
-//   //LOG_I(F1AP,"Entering main loop of DU F1AP pdu receiver\n");
-//   F1AP_F1AP_PDU_t pdu;
-//   F1AP_F1AP_PDU_t *pdu_p = &pdu;
-//   asn_dec_rval_t dec_ret;
-  
-//   DevAssert(buffer != NULL);
-
-//   printf("buffer = \n");
-//   int i_ret;
-//   for (i_ret = 0; i_ret < length; i_ret++) {
-//       printf("%x ", *(buffer+i_ret));
-//   }
-//   printf("\n");
-
-//   memset((void *)pdu_p, 0, sizeof(F1AP_F1AP_PDU_t));
-  
-
-//   dec_ret = aper_decode(NULL,
-//                         &asn_DEF_F1AP_F1AP_PDU,
-//                         (void **)&pdu_p,
-//                         buffer,
-//                         length,
-//                         0,
-//                         0);
-
-//   xer_fprint(stdout, &asn_DEF_F1AP_F1AP_PDU, pdu_p);
-
-//   printf("\n");
-
-//   printf("dec_ret.code = %d \n", dec_ret.code);
-
-//   AssertFatal(dec_ret.code == RC_OK,"Failed to decode pdu\n");
-
-//   // switch(pdu_p->present) {
-//   //   case F1AP_F1AP_PDU_PR_initiatingpdu:
-//   //     return F1AP_DU_decode_initiating_pdu(&pdu_p->choice.initiatingpdu);
-      
-//   //   case F1AP_F1AP_PDU_PR_successfulOutcome:
-//   //     return F1AP_DU_decode_successful_outcome(&pdu_p->choice.successfulOutcome);
-      
-//   //   case F1AP_F1AP_PDU_PR_unsuccessfulOutcome:
-//   //     return F1AP_DU_decode_unsuccessful_outcome(&pdu_p->choice.unsuccessfulOutcome);
-      
-//   //   default:
-//   //     /*AssertFatal(1==0,"Unknown presence (%d) or not implemented\n", (int)pdu_p->present);*/
-//   //     break;
-//   // }
-  
-//   //AssertFatal(1==0,"Shouldn't get here\n");
-//   return -1;
-// }
-
-
-// ssize_t s1ap_generate_initiating_pdu(
-//   uint8_t               **buffer,
-//   uint32_t               *length,
-//   F1AP_ProcedureCode_t    procedureCode,
-//   F1AP_Criticality_t      criticality,
-//   asn_TYPE_descriptor_t  *td,
-//   void                   *sptr)
-// {
-//   F1AP_F1AP_PDU_t pdu;
-//   ssize_t    encoded;
-
-//   memset(&pdu, 0, sizeof(F1AP_F1AP_PDU_t));
-  
-//   pdu.present = F1AP_F1AP_PDU_PR_initiatingpdu;
-//   pdu.choice.initiatingpdu = (F1AP_Initiatingpdu_t *)calloc(1, sizeof(F1AP_Initiatingpdu_t));
-//   pdu.choice.initiatingpdu->procedureCode = procedureCode;
-//   pdu.choice.initiatingpdu->criticality   = criticality;
-//   //ANY_fromType_aper(&pdu.choice.initiatingpdu->value, td, sptr);
-
-//   //if (asn1_xer_print) {
-//      xer_fprint(stdout, &asn_DEF_F1AP_F1AP_PDU, (void *)&pdu);
-//   //}
-
-//   /* We can safely free list of IE from sptr */
-//   ASN_STRUCT_FREE_CONTENTS_ONLY(*td, sptr);
-
-//   if ((encoded = aper_encode_to_new_buffer(&asn_DEF_F1AP_F1AP_PDU, 0, &pdu,
-//                  (void **)buffer)) < 0) {
-//     return -1;
-//   }
-
-//   *length = encoded;
-//   return encoded;
-// }
-
-// int s1ap_eNB_encode_s1_setup_request(
-//   F1AP_F1SetupRequestIEs_t *s1SetupRequestIEs,
-//   uint8_t                 **buffer,
-//   uint32_t                 *length)
-// {
-//   F1AP_F1SetupRequestIEs_t  s1SetupRequest;
-//   F1AP_F1SetupRequestIEs_t *s1SetupRequest_p = &s1SetupRequest;
-
-//   memset((void *)s1SetupRequest_p, 0, sizeof(s1SetupRequest));
-
-//   if (s1ap_encode_s1ap_s1setuprequesties(s1SetupRequest_p, s1SetupRequestIEs) < 0) {
-//     return -1;
-//   }
-
-//   return s1ap_generate_initiating_pdu(buffer,
-//                                           length,
-//                                           F1AP_ProcedureCode_id_F1Setup,
-//                                           F1AP_Criticality_reject,
-//                                           &asn_DEF_F1AP_F1SetupRequest,
-//                                           s1SetupRequest_p);
-// }
-
-
 
 
 // SETUP SUCCESSFUL
@@ -633,7 +501,7 @@ void DU_handle_F1_SETUP_RESPONSE() {
 
 // SETUP FAILURE
 void DU_handle_F1_SETUP_FAILURE(struct F1AP_F1AP_PDU_t *pdu_p) {
-  //AssertFatal(1==0,"Not implemented yet\n");
+  AssertFatal(1==0,"Not implemented yet\n");
 
   //F1AP_F1SetupFailureIEs_t *f1_setup_failure_p;
   //f1_setup_failure_p = &pdu_p.choice.unsuccessfulOutcome.value.choice.F1SetupFailureIEs.protocolIEs;
@@ -643,7 +511,7 @@ void DU_handle_F1_SETUP_FAILURE(struct F1AP_F1AP_PDU_t *pdu_p) {
 
 
 void DU_send_ERROR_INDICATION(struct F1AP_F1AP_PDU_t *pdu_p) {
-  //AssertFatal(1==0,"Not implemented yet\n");
+  AssertFatal(1==0,"Not implemented yet\n");
   
   //F1AP_F1ErrorIndicationIEs_t *f1_error_indication_p;
   //f1_error_indication_p = &pdu_p.choice.successfulOutcome.value.choice.F1ErrorIndicationIEs.protocolIEs;
@@ -770,7 +638,7 @@ void DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(
 
   printf("\n");
 
-  f1ap_du_send_message(buffer, len);
+  //du_f1ap_itti_send_sctp_data_req(instance, f1ap_setup_req->assoc_id, buffer, len, 0);
   /* decode */
   // if (f1ap_decode_pdu(&pdu, buffer, len) > 0) {
   //   printf("Failed to decode F1 setup request\n");
@@ -842,7 +710,7 @@ void DU_send_UL_RRC_MESSAGE_TRANSFER(void) {
 
   printf("\n");
 
-  f1ap_du_send_message(buffer, len);
+  //du_f1ap_itti_send_sctp_data_req(instance, f1ap_setup_req->assoc_id, buffer, len, 0);
   /* decode */
   // if (f1ap_decode_pdu(&pdu, buffer, len) > 0) {
   //   printf("Failed to decode F1 setup request\n");
@@ -1304,7 +1172,7 @@ void DU_send_gNB_DU_CONFIGURATION_UPDATE(module_id_t enb_mod_idP, module_id_t du
 
   printf("\n");
 
-  //f1ap_du_send_message(buffer, len);
+  //du_f1ap_itti_send_sctp_data_req(instance, f1ap_setup_req->assoc_id, buffer, len, 0);
 
   /* decode */
   if (f1ap_decode_pdu(&pdu, buffer, len) > 0) {
@@ -1617,7 +1485,7 @@ void DU_send_UE_CONTEXT_SETUP_RESPONSE(void) {
   // if (f1ap_decode_pdu(&pdu, buffer, len) > 0) {
   //   printf("Failed to decode F1 setup request\n");
   // }
-  f1ap_du_send_message(buffer, len);
+  //du_f1ap_itti_send_sctp_data_req(instance, f1ap_setup_req->assoc_id, buffer, len, 0);
 }
 
 void DU_send_UE_CONTEXT_SETUP_FAILURE(F1AP_UEContextSetupFailure_t UEContextSetupFailure) {
@@ -2005,7 +1873,7 @@ void DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(void) {
   // if (f1ap_decode_pdu(&pdu, buffer, len) > 0) {
   //   printf("Failed to decode F1 setup request\n");
   // }
-  f1ap_du_send_message(buffer, len);
+  //du_f1ap_itti_send_sctp_data_req(instance, f1ap_setup_req->assoc_id, buffer, len, 0);
 
 }
 
