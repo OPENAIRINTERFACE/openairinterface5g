@@ -41,9 +41,9 @@
 #include "intertask_interface.h"
 
 #include "f1ap_common.h"
-#include "f1ap_ies_defs.h"
 #include "f1ap_encoder.h"
 
+/*
 static inline int f1ap_encode_initiating(f1ap_message *message,
     uint8_t **buffer,
     uint32_t *len);
@@ -77,32 +77,29 @@ int f1ap_encode_ue_context_release_request(
   F1ap_UEContextReleaseRequestIEs_t *f1ap_UEContextReleaseRequestIEs,
   uint8_t                              **buffer,
   uint32_t                              *length);
+  */
 
-int f1ap_encode_pdu(f1ap_message *message, uint8_t **buffer, uint32_t *len)
+int f1ap_encode_pdu(F1AP_F1AP_PDU_t *pdu, uint8_t **buffer, uint32_t *length)
 {
-  DevAssert(message != NULL);
+  ssize_t    encoded;
+  DevAssert(pdu != NULL);
   DevAssert(buffer != NULL);
-  DevAssert(len != NULL);
+  DevAssert(length != NULL);
 
-  switch(message->direction) { // Need Check (present)?
-  case F1AP_F1AP_PDU_PR_initiatingMessage:
-    return f1ap_encode_initiating(message, buffer, len);
+  //xer_fprint(stdout, &asn_DEF_F1AP_F1AP_PDU, pdu);
+  encoded = aper_encode_to_new_buffer(&asn_DEF_F1AP_F1AP_PDU, 0, pdu, (void **)buffer);
 
-  case F1AP_F1AP_PDU_PR_successfulOutcome:
-    return f1ap_encode_successfull_outcome(message, buffer, len);
-
-  case F1AP_F1AP_PDU_PR_unsuccessfulOutcome:
-    return f1ap_encode_unsuccessfull_outcome(message, buffer, len);
-
-  default:
-    F1AP_DEBUG("Unknown message outcome (%d) or not implemented",
-               (int)message->direction);
-    break;
+  if (encoded < 0) {
+    LOG_E(F1AP, "Failed to encode F1AP message\n");
+    return -1;
   }
-
-  return -1;
+  *length = encoded;
+  /* Is the following needed? I moved the code here from CU_F1AP.c/DU_F1AP.c */
+  // ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_F1AP_F1AP_PDU, pdu);
+  return encoded;
 }
 
+/*
 static inline
 int f1ap_encode_initiating(f1ap_message *f1ap_message_p,
                                uint8_t **buffer, uint32_t *len)
@@ -379,4 +376,4 @@ int f1ap_encode_ue_context_release_request(
                                           &asn_DEF_F1ap_UEContextReleaseRequest,
                                           ue_context_release_request_p);
 }
-
+*/

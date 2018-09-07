@@ -334,46 +334,6 @@ void CU_send_F1_SETUP_RESPONSE(void) {
 
 }
 
-int f1ap_encode_pdu(F1AP_F1AP_PDU_t *pdu, uint8_t **buffer, uint32_t *length) {
-  DevAssert(pdu != NULL);
-  DevAssert(buffer != NULL);
-  DevAssert(length != NULL);
-
-
-  xer_fprint(stdout, &asn_DEF_F1AP_F1AP_PDU, pdu);
-
-
-  ssize_t    encoded;
-  
-  // asn_DEF_F1AP_F1SetupRequest
-  // asn_DEF_F1AP_F1AP_PDU
-
-  /* We can safely free list of IE from sptr */
-  //ASN_STRUCT_FREE_CONTENTS_ONLY(&asn_DEF_F1AP_F1SetupRequest, pdu);
-
-
-  if ((encoded = aper_encode_to_new_buffer(&asn_DEF_F1AP_F1AP_PDU, 0, 
-                 pdu,
-  
-                 (void **)buffer)) < 0) {
-    printf("\nencoded len = %ld\n", encoded);
-    return -1;
-  }
-
-  printf("encoded len = %ld\n", encoded);
-  printf("buffer = \n");
-  
-  int i_ret;
-  for (i_ret = 0; i_ret < encoded; i_ret++) {
-      printf("%x ", *((*buffer)+i_ret));
-  }
-  printf("\n");
-  *length = encoded;
-  // ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_F1AP_F1AP_PDU, pdu);
-  return encoded;
-}
-
-
 // int f1ap_decode_pdu(F1AP_F1AP_PDU_t *message, uint8_t *buffer, uint32_t length) {
 
 //   //LOG_I(F1AP,"Entering main loop of DU F1AP pdu receiver\n");
