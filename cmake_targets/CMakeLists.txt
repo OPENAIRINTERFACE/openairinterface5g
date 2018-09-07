@@ -1116,6 +1116,7 @@ set(PHY_SRC
   # actual source
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pss.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/sss.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/sss_gen.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pilots.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pilots_mbsfn.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dlsch_coding.c
@@ -1156,6 +1157,7 @@ set(PHY_SRC_RU
 set(PHY_SRC_UE
   # actual source
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/sss_ue.c
+  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/sss_gen.c
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_demodulation.c
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation.c
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/linear_preprocessing_rec.c

@@ -27,6 +27,8 @@
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 #include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 
+void init_sss(void);
+
 void generate_64qam_table(void) {
   int a,b,c,index;
 
@@ -75,6 +77,7 @@ void init_lte_top(LTE_DL_FRAME_PARMS *frame_parms) {
   init_scrambling_lut();
   //set_taus_seed(1328);
   init_7_5KHz();
+  init_sss();
 }
 
 void free_lte_top(void) {
