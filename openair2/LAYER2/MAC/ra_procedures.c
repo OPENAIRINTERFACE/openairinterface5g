@@ -248,7 +248,7 @@ Msg1_transmitted(module_id_t module_idP, uint8_t CC_id,
     UE_mac_inst[module_idP].RA_attempt_number++;
 
     if (opt_enabled) {
-	trace_pdu(0, NULL, 0, module_idP, 0,
+	trace_pdu(DIRECTION_UPLINK, NULL, 0, module_idP, WS_NO_RNTI,
 		  UE_mac_inst[module_idP].RA_prach_resources.
 		  ra_PreambleIndex, UE_mac_inst[module_idP].txFrame,
 		  UE_mac_inst[module_idP].txSubframe, 0,
@@ -277,8 +277,8 @@ Msg3_transmitted(module_id_t module_idP, uint8_t CC_id,
     UE_mac_inst[module_idP].RA_contention_resolution_timer_active = 1;
 
     if (opt_enabled) {		// msg3
-	trace_pdu(0, &UE_mac_inst[module_idP].CCCH_pdu.payload[0],
-		  UE_mac_inst[module_idP].RA_Msg3_size, module_idP, 3,
+      trace_pdu(DIRECTION_UPLINK , &UE_mac_inst[module_idP].CCCH_pdu.payload[0],
+		  UE_mac_inst[module_idP].RA_Msg3_size, module_idP, WS_C_RNTI,
 		  UE_mac_inst[module_idP].crnti,
 		  UE_mac_inst[module_idP].txFrame,
 		  UE_mac_inst[module_idP].txSubframe, 0, 0);

@@ -20,7 +20,7 @@
  */
 
 #include "phy_init.h"
-#include "log.h"
+#include "common/utils/LOG/log.h"
 
 uint16_t dl_S_table_normal[10]={3,9,10,11,12,3,9,10,11,6};
 uint16_t dl_S_table_extended[10]={3,8,9,10,3,8,9,5,0,0};

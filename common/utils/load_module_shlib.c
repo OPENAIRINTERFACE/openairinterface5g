@@ -70,8 +70,8 @@ char *tmpstr;
 char *shlibpath   =NULL;
 char *shlibversion=NULL;
 char *cfgprefix;
-paramdef_t LoaderParams[] ={{"shlibpath", NULL, 0, strptr:&shlibpath, defstrval:NULL, TYPE_STRING, 0},
-                            {"shlibversion", NULL, 0, strptr:&shlibversion, defstrval:"", TYPE_STRING, 0}};
+paramdef_t LoaderParams[] ={{"shlibpath", NULL, 0, strptr:&shlibpath, defstrval:NULL, TYPE_STRING, 0, NULL},
+                            {"shlibversion", NULL, 0, strptr:&shlibversion, defstrval:"", TYPE_STRING, 0, NULL}};
 
 int ret;
 
@@ -118,7 +118,7 @@ int ret;
    return tmpstr; 
 }
 
-int load_module_shlib(char *modname,loader_shlibfunc_t *farray, int numf)
+int load_module_shlib(char *modname,loader_shlibfunc_t *farray, int numf, void *autoinit_arg)
 {
    void *lib_handle;
    initfunc_t fpi;
@@ -155,7 +155,7 @@ int load_module_shlib(char *modname,loader_shlibfunc_t *farray, int numf)
       fpi = dlsym(lib_handle,afname);
 
       if (fpi != NULL ) {
-	 fpi();
+	 fpi(autoinit_arg);
       }
 
       if (farray != NULL) {

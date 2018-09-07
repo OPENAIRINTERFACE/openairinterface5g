@@ -32,7 +32,7 @@
 #include "assertions.h"
 #include "intertask_interface.h"
 #include "timer.h"
-#include "log.h"
+#include "common/utils/LOG/log.h"
 #include "queue.h"
 
 #if defined (LOG_D) && defined (LOG_E)
