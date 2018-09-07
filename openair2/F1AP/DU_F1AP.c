@@ -117,6 +117,8 @@ void *F1AP_DU_task(void *arg) {
 
   // SCTP
   while (1) {
+    itti_receive_msg(TASK_DU_F1, &received_msg);
+    
     switch (ITTI_MSG_ID(received_msg)) {
 
       // case TERMINATE_MESSAGE:

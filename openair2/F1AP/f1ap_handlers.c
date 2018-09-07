@@ -54,7 +54,7 @@ int f1ap_handle_f1_setup_request(uint32_t               assoc_id,
 
 
 /* Handlers matrix. Only f1 related procedure present here */
-f1ap_message_decoded_callback messages_callback[][3] = {
+f1ap_message_decoded_callback f1ap_messages_callback[][3] = {
   
 
   { 0, 0, 0 }, /* Reset */
@@ -110,7 +110,7 @@ int f1ap_handle_message(uint32_t assoc_id, int32_t stream,
   }
 
   /* Checking procedure Code and direction of message */
-  if (pdu.choice.initiatingMessage->procedureCode > sizeof(messages_callback) / (3 * sizeof(
+  if (pdu.choice.initiatingMessage->procedureCode > sizeof(f1ap_messages_callback) / (3 * sizeof(
         f1ap_message_decoded_callback))
       || (pdu.present > F1AP_F1AP_PDU_PR_unsuccessfulOutcome)) {
     //F1AP_ERROR("[SCTP %d] Either procedureCode %ld or direction %d exceed expected\n",
@@ -124,7 +124,7 @@ int f1ap_handle_message(uint32_t assoc_id, int32_t stream,
   /* No handler present.
    * This can mean not implemented or no procedure for eNB (wrong direction).
    */
-  if (messages_callback[pdu.choice.initiatingMessage->procedureCode][pdu.present - 1] == NULL) {
+  if (f1ap_messages_callback[pdu.choice.initiatingMessage->procedureCode][pdu.present - 1] == NULL) {
     // F1AP_ERROR("[SCTP %d] No handler for procedureCode %ld in %s\n",
     //            assoc_id, pdu.choice.initiatingMessage->procedureCode,
     //            f1ap_direction2String(pdu.present - 1));
@@ -136,7 +136,7 @@ int f1ap_handle_message(uint32_t assoc_id, int32_t stream,
   }
 
   /* Calling the right handler */
-  ret = (*messages_callback[pdu.choice.initiatingMessage->procedureCode][pdu.present - 1])
+  ret = (*f1ap_messages_callback[pdu.choice.initiatingMessage->procedureCode][pdu.present - 1])
         (assoc_id, stream, &pdu);
   ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_F1AP_F1AP_PDU, &pdu);
   return ret;
