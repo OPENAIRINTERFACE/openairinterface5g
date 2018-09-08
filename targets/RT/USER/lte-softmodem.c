@@ -84,6 +84,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #if defined(ENABLE_ITTI)
 #include "intertask_interface_init.h"
+#include "create_tasks.h"
 #endif
 
 #include "PHY/INIT/phy_init.h"
@@ -1074,6 +1075,7 @@ int main( int argc, char **argv )
       LOG_E(RRC, "Create task for RRC eNB failed\n");
       return -1;
     }
+    printf("ITTI tasks created\n");
     have_rrc=1;
     if (itti_create_task(TASK_SCTP, sctp_eNB_task, NULL) < 0) {
       LOG_E(SCTP, "Create task for SCTP failed\n");

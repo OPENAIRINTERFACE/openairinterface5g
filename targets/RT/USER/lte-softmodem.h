@@ -289,7 +289,4 @@ extern PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
                           uint8_t UE_id,
                           uint8_t abstraction_flag);
 
-extern void *eNB_app_task(void* args);
-extern void *sctp_eNB_task(void *args);
-
 #endif
