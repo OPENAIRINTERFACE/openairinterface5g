@@ -5923,8 +5923,7 @@ void setup_ngran_CU(eNB_RRC_INST *rrc) {
 //-----------------------------------------------------------------------------
 char
 openair_rrc_eNB_configuration(
-  const module_id_t enb_mod_idP,
-  RrcConfigurationReq* configuration
+  const module_id_t enb_mod_idP
 )
 #else
 char
@@ -5950,9 +5949,6 @@ openair_rrc_eNB_init(
 #endif 
   AssertFatal(RC.rrc[enb_mod_idP] != NULL, "RC.rrc not initialized!");
   AssertFatal(MAX_MOBILES_PER_ENB < (module_id_t)0xFFFFFFFFFFFFFFFF, " variable overflow");
-#ifdef ENABLE_ITTI
-  AssertFatal(configuration!=NULL,"configuration input is null\n");
-#endif
   //    for (j = 0; j < MAX_MOBILES_PER_ENB; j++)
   //        RC.rrc[ctxt.module_id].Info.UE[j].Status = RRC_IDLE;  //CH_READY;
   //
@@ -5986,8 +5982,6 @@ openair_rrc_eNB_init(
 
   RC.rrc[ctxt.module_id]->initial_id2_s1ap_ids = hashtable_create (MAX_MOBILES_PER_ENB * 2, NULL, NULL);
   RC.rrc[ctxt.module_id]->s1ap_id2_s1ap_ids    = hashtable_create (MAX_MOBILES_PER_ENB * 2, NULL, NULL);
-
-  memcpy(&RC.rrc[ctxt.module_id]->configuration,configuration,sizeof(RrcConfigurationReq));
 
   /// System Information INIT
 
@@ -6038,7 +6032,7 @@ openair_rrc_eNB_init(
     init_SI(&ctxt,
             CC_id
 #if defined(ENABLE_ITTI)
-            , configuration
+            , &RC.rrc[enb_mod_idP]->configuration
 #endif
            );
     for (int ue_id = 0; ue_id < MAX_MOBILES_PER_ENB; ue_id++) {
@@ -7616,8 +7610,8 @@ rrc_enb_task(
 
       /* Messages from eNB app */
     case RRC_CONFIGURATION_REQ:
-      LOG_I(RRC, "[eNB %d] Received %s : %p\n", instance, msg_name_p,&RRC_CONFIGURATION_REQ(msg_p));
-      openair_rrc_eNB_configuration(ENB_INSTANCE_TO_MODULE_ID(instance), &RRC_CONFIGURATION_REQ(msg_p));
+      LOG_I(RRC, "[eNB %d] Received %s : %p\n", instance, msg_name_p, &RRC_CONFIGURATION_REQ(msg_p));
+      openair_rrc_eNB_configuration(ENB_INSTANCE_TO_MODULE_ID(instance));
       break;
 
     default:

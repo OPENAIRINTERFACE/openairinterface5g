@@ -135,7 +135,7 @@ typedef struct ru_config_s {
 extern void RCconfig_RU(void);
 extern void RCconfig_flexran(void);
 extern void RCconfig_L1(void);
-extern void RCconfig_macrlc(int*);
+extern void RCconfig_macrlc(int macrlc_has_f1[MAX_MAC_INST]);
 extern void UE_config_stub_pnf(void);
 extern int  RCconfig_gtpu(void );
 extern void RCConfig(void);
@@ -143,13 +143,14 @@ extern void RCConfig(void);
 void                          enb_config_display(void);
 void                          ru_config_display(void);
 
-int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc);
+int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc);
 int RCconfig_S1(MessageDef *msg_p, uint32_t i);
 int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i);
 int RCconfig_CU_F1(uint32_t i);
 
 void RCconfig_cudu(void);
 cudu_params_t *get_cudu_config(void);
+void read_config_and_init(void);
 
 #endif /* ENB_CONFIG_H_ */
 /** @} */

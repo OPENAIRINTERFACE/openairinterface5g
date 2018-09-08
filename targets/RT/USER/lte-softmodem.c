@@ -1058,69 +1058,33 @@ int main( int argc, char **argv )
   LOG_I(HW, "CPU Affinity of main() function is... %s\n", cpu_affinity);
 #endif
   
+  /* Start the agent. If it is turned off in the configuration, it won't start */
+  RCconfig_flexran();
+  for (i = 0; i < RC.nb_inst; i++) {
+    flexran_agent_start(i);
+  }
     
-
-    
-  int have_rrc=0;
-
   if (RC.nb_inst > 0)  {
-    itti_wait_ready(1);
-    LOG_I(ENB_APP, "Creating ENB_APP eNB Task\n");
-    if (itti_create_task (TASK_ENB_APP, eNB_app_task, NULL) < 0) {
-      LOG_E(ENB_APP, "Create task for eNB APP failed\n");
-      return -1;
+    read_config_and_init();
+
+    if (create_tasks(1) < 0) {
+      printf("cannot create ITTI tasks\n");
+      exit(-1);
     }
-    LOG_I(RRC,"Creating RRC eNB Task\n");
-    if (itti_create_task (TASK_RRC_ENB, rrc_enb_task, NULL) < 0) {
-      LOG_E(RRC, "Create task for RRC eNB failed\n");
-      return -1;
+
+    for (int enb_id = 0; enb_id < RC.nb_inst; enb_id++) {
+      MessageDef *msg_p = itti_alloc_new_message (TASK_ENB_APP, RRC_CONFIGURATION_REQ);
+      itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
     }
-    printf("ITTI tasks created\n");
-    have_rrc=1;
-    if (itti_create_task(TASK_SCTP, sctp_eNB_task, NULL) < 0) {
-      LOG_E(SCTP, "Create task for SCTP failed\n");
-      return -1;
-    }
-    itti_wait_ready(0);
   }
   else {
     printf("No ITTI, Initializing L1\n");
     RCconfig_L1();
   }
 
-
-  /* Start the agent. If it is turned off in the configuration, it won't start */
-  RCconfig_flexran();
-  for (i = 0; i < RC.nb_L1_inst; i++) {
-    flexran_agent_start(i);
-  }
-
-  int cu_flag =0;
-
-  if (have_rrc == 1) {
-
-    // wait for RRC to be initialized
-    
-
-    int rrc_allocated;
-    do {
-      rrc_allocated=1;
-      for (int i=0;i<RC.nb_inst;i++) 
-	if (RC.rrc == NULL || RC.rrc[i]==NULL) rrc_allocated=0;
-      if (rrc_allocated==0) { printf("Waiting for RRC allocation ...\n"); usleep(10000); }
-    } while (rrc_allocated==0);
-
-    int cell_info_configured;
-    do {
-      pthread_mutex_lock(&RC.rrc[0]->cell_info_mutex);
-      cell_info_configured = RC.rrc[0]->cell_info_configured;
-      pthread_mutex_unlock(&RC.rrc[0]->cell_info_mutex);
-      if (cell_info_configured == 0) {printf ("Waiting for RRC cell configuration\n"); usleep(10000);}
-    } while(cell_info_configured == 0);
-    if (RC.rrc[0]->node_type == ngran_eNB_CU || RC.rrc[0]->node_type == ngran_ng_eNB_CU) cu_flag=1;  
-   }
- 
-  if (cu_flag == 0) {
+  /* start threads if only L1 or not a CU */
+  if (RC.nb_inst == 0 ||
+      !(RC.rrc[0]->node_type == ngran_eNB_CU || RC.rrc[0]->node_type == ngran_ng_eNB_CU)) {
       // init UE_PF_PO and mutex lock
     pthread_mutex_init(&ue_pf_po_mutex, NULL);
     memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*MAX_MOBILES_PER_ENB*MAX_NUM_CCs);
@@ -1285,7 +1249,8 @@ int main( int argc, char **argv )
   // stop threads
 
 
-  if (cu_flag == 0) {
+  if (RC.nb_inst == 0 ||
+      !(RC.rrc[0]->node_type == ngran_eNB_CU || RC.rrc[0]->node_type == ngran_ng_eNB_CU)) {
     int UE_id;
 #ifdef XFORMS
     printf("waiting for XFORMS thread\n");

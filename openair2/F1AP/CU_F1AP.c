@@ -135,7 +135,7 @@ void *F1AP_CU_task(void *arg) {
 
   itti_mark_task_ready(TASK_CU_F1);
 
-  CU_send_sctp_init_req(arg);
+  CU_send_sctp_init_req(0);
 
   while (1) {
     itti_receive_msg(TASK_CU_F1, &received_msg);

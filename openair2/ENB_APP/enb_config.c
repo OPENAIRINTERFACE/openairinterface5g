@@ -333,7 +333,7 @@ void RCconfig_L1(void) {
   }
 }
 
-void RCconfig_macrlc(int *mac_has_f1) {
+void RCconfig_macrlc(int macrlc_has_f1[MAX_MAC_INST]) {
 
   int               j;
 
@@ -371,7 +371,7 @@ void RCconfig_macrlc(int *mac_has_f1) {
 	RC.mac[j]->eth_params_n.my_portd                 = *(MacRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_PORTD_IDX].iptr);
 	RC.mac[j]->eth_params_n.remote_portd             = *(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_N_PORTD_IDX].iptr);;
 	RC.mac[j]->eth_params_n.transp_preference        = ETH_UDP_MODE;
-	mac_has_f1[j]                                    = 1;
+        macrlc_has_f1[j]                                 = 1;
       } else { // other midhaul
 	AssertFatal(1==0,"MACRLC %d: %s unknown northbound midhaul\n",j, *(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr));
       }	
@@ -541,7 +541,7 @@ cudu_params_t *get_cudu_config()
     return &(RC.cudu);
 }
 	       
-int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
+int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc) {
 
   int               num_enbs                      = 0;
  
@@ -708,6 +708,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   char* 	    osa_log_verbosity		  = NULL;
 */  
 
+  MessageDef *msg_p = itti_alloc_new_message(TASK_RRC_ENB, RRC_CONFIGURATION_REQ);
   
   // for no gcc warnings 
   (void)my_int;
@@ -786,7 +787,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
       else if (strcmp(*(ENBParamList.paramarray[i][ENB_TRANSPORT_S_PREFERENCE_IDX].strptr), "f1") == 0) {
 
 	paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
-	paramdef_t NETParams[]  =  NETPARAMS_DESC;
 	char aprefix[MAX_OPTNAME_SIZE*2 + 8];
 
 	sprintf(aprefix,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,i,ENB_CONFIG_STRING_SCTP_CONFIG);
@@ -2308,6 +2308,12 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 	  }
 	}
       }
+
+#if defined (ENABLE_ITTI)
+      memcpy(&RC.rrc[i]->configuration, &RRC_CONFIGURATION_REQ(msg_p),
+             sizeof(RRC_CONFIGURATION_REQ(msg_p)));
+#endif
+
   }
 return 0;
 }
@@ -2380,7 +2386,6 @@ int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
       if (strcmp(ENBSParams[ENB_ACTIVE_ENBS_IDX].strlistptr[k], *(ENBParamList.paramarray[i][ENB_ENB_NAME_IDX].strptr) )== 0) {
 
         paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
-        paramdef_t NETParams[]  =  NETPARAMS_DESC;
         char aprefix[MAX_OPTNAME_SIZE*2 + 8];
 	
         F1AP_SETUP_REQ (msg_p).gNB_DU_id        = *(ENBParamList.paramarray[0][ENB_ENB_ID_IDX].uptr);
@@ -2958,4 +2963,37 @@ void handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
       }
     }
   }
+}
+
+void read_config_and_init()
+{
+  int macrlc_has_f1[MAX_MAC_INST];
+  memset(macrlc_has_f1, 0 , MAX_MAC_INST*sizeof(int));
+
+  if (RC.nb_macrlc_inst > 0)
+    AssertFatal(RC.nb_macrlc_inst == RC.nb_inst,
+                "Number of MACRLC instances %d != number of RRC instances %d\n",
+                RC.nb_macrlc_inst, RC.nb_inst);
+
+  RCconfig_L1();
+  LOG_I(PHY, "%s() RC.nb_L1_inst: %d\n", __FUNCTION__, RC.nb_L1_inst);
+
+  RCconfig_macrlc(macrlc_has_f1);
+  LOG_I(MAC, "%s() RC.nb_macrlc_inst: %d\n", __FUNCTION__, RC.nb_macrlc_inst);
+
+  if (RC.nb_L1_inst > 0)
+    AssertFatal(l1_north_init_eNB() == 0, "could not initialize L1 north interface\n");
+
+  RC.rrc = malloc(RC.nb_inst * sizeof(eNB_RRC_INST *));
+  AssertFatal(RC.rrc, "could not allocate memory for RC.rrc\n");
+  for (uint32_t enb_id = 0; enb_id < RC.nb_inst; enb_id++) {
+    RC.rrc[enb_id] = malloc(sizeof(eNB_RRC_INST));
+    AssertFatal(RC.rrc[enb_id], "RRC context for eNB %d not allocated\n", enb_id);
+    memset((void *)RC.rrc[enb_id], 0, sizeof(eNB_RRC_INST));
+    RCconfig_RRC(enb_id, RC.rrc[enb_id]);
+    if (macrlc_has_f1[enb_id]) RC.rrc[enb_id]->node_type = ngran_eNB_DU;
+  }
+
+  if (RC.nb_macrlc_inst == 0)
+    pdcp_layer_init();
 }
