@@ -986,16 +986,6 @@ int main( int argc, char **argv )
       LOG_E(OPT,"failed to run OPT \n");
   }
 
-  if (RC.rrc[0]->node_type != ngran_eNB_DU) {
-#ifdef PDCP_USE_NETLINK
-    printf("PDCP netlink\n");
-    netlink_init();
-#if defined(PDCP_USE_NETLINK_QUEUES)
-    pdcp_netlink_init();
-#endif
-#endif
-  }
-
 #if !defined(ENABLE_ITTI)
   // to make a graceful exit when ctrl-c is pressed
   signal(SIGSEGV, signal_handler);
@@ -1075,6 +1065,16 @@ int main( int argc, char **argv )
     for (int enb_id = 0; enb_id < RC.nb_inst; enb_id++) {
       MessageDef *msg_p = itti_alloc_new_message (TASK_ENB_APP, RRC_CONFIGURATION_REQ);
       itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
+    }
+
+    if (RC.rrc[0]->node_type != ngran_eNB_DU) {
+#ifdef PDCP_USE_NETLINK
+      printf("PDCP netlink\n");
+      netlink_init();
+#if defined(PDCP_USE_NETLINK_QUEUES)
+      pdcp_netlink_init();
+#endif
+#endif
     }
   }
   else {
