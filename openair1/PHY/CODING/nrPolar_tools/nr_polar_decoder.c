@@ -106,6 +106,8 @@ int8_t polar_decoder(
 	uint8_t listIndex[2*listSize], copyIndex;
 
 	for (uint16_t currentBit=0; currentBit<polarParams->N; currentBit++){
+	  printf("***************** BIT %d\n",currentBit);
+
 		updateLLR(llr, llrUpdated, bit, bitUpdated, currentListSize, currentBit, 0, polarParams->N, (polarParams->n+1), pathMetricAppr);
 		if (polarParams->information_bit_pattern[currentBit]==0) { //Frozen bit.
 			updatePathMetric(pathMetric, llr, currentListSize, 0, currentBit, pathMetricAppr); //approximation=0 --> 11b, approximation=1 --> 12
@@ -128,6 +130,7 @@ int8_t polar_decoder(
 						for (int k = 0; k < (polarParams->n+1); k++) {
 							bit[j][k][i+currentListSize]=bit[j][k][i];
 							llr[j][k][i+currentListSize]=llr[j][k][i];}}}
+
 				for (int i = 0; i < currentListSize; i++) {
 					bit[currentBit][0][i]=0;
 					crcState[i+currentListSize]=crcState[i];

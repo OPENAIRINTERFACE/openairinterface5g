@@ -20,6 +20,7 @@
  */
 
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
+#define SHOWCOMP 1
 
 void updateLLR(double ***llr, uint8_t **llrU, uint8_t ***bit, uint8_t **bitU,
 		uint8_t listSize, uint16_t row, uint16_t col, uint16_t xlen, uint8_t ylen, uint8_t approximation) {
@@ -29,6 +30,10 @@ void updateLLR(double ***llr, uint8_t **llrU, uint8_t ***bit, uint8_t **bitU,
 			if(bitU[row-offset][col]==0) updateBit(bit, bitU, listSize, (row-offset), col, xlen, ylen);
 			if(llrU[row-offset][col+1]==0) updateLLR(llr, llrU, bit, bitU, listSize, (row-offset), (col+1), xlen, ylen, approximation);
 			if(llrU[row][col+1]==0) updateLLR(llr, llrU, bit, bitU, listSize, row, (col+1), xlen, ylen, approximation);
+#ifdef SHOWCOMP
+			printf("updating LLR (%d,%d,%d) (bit %d,%d,%d, llr0 %d,%d,%d, llr1 %d,%d,%d \n",row,col,i,
+		    row-offset,col,i,row-offset,col+1,i,row,col+1,i);
+#endif
 			llr[row][col][i] = (pow((-1),bit[row-offset][col][i])*llr[row-offset][col+1][i]) + llr[row][col+1][i];
 		} else {
 			if(llrU[row][col+1]==0) updateLLR(llr, llrU, bit, bitU, listSize, row, (col+1), xlen, ylen, approximation);
@@ -48,10 +53,18 @@ void updateBit(uint8_t ***bit, uint8_t **bitU, uint8_t listSize, uint16_t row,
 		if (( (row) % (2*offset) ) >= offset ) {
 			if (bitU[row][col-1]==0) updateBit(bit, bitU, listSize, row, (col-1), xlen, ylen);
 			bit[row][col][i] = bit[row][col-1][i];
+#ifdef SHOWCOMP
+			printf("updating bit (%d,%d,%d) from (%d,%d,%d)\n",
+			       row,col,i,row,col-1,i);
+#endif
 		} else {
 			if (bitU[row][col-1]==0) updateBit(bit, bitU, listSize, row, (col-1), xlen, ylen);
 			if (bitU[row+offset][col-1]==0) updateBit(bit, bitU, listSize, (row+offset), (col-1), xlen, ylen);
 			bit[row][col][i] = ( (bit[row][col-1][i]+bit[row+offset][col-1][i]) % 2);
+#ifdef SHOWCOMP
+			printf("updating bit (%d,%d,%d) from (%d,%d,%d)+(%d,%d,%d)\n",
+			       row,col,i,row,col-1,i,row+offset,col-1,i);
+#endif
 		}
 	}
 
@@ -60,6 +73,11 @@ void updateBit(uint8_t ***bit, uint8_t **bitU, uint8_t listSize, uint16_t row,
 
 void updatePathMetric(double *pathMetric, double ***llr, uint8_t listSize, uint8_t bitValue,
 		uint16_t row, uint8_t approximation) {
+
+#ifdef SHOWCOMP
+  printf("updating path_metric from Frozen bit (%d,%d) \n",
+	 row,0);
+#endif
 
 	if (approximation) { //eq. (12)
 		for (uint8_t i=0; i<listSize; i++) {
@@ -72,6 +90,7 @@ void updatePathMetric(double *pathMetric, double ***llr, uint8_t listSize, uint8
 
 }
 
+/*
 void updatePathMetric2(double *pathMetric, double ***llr, uint8_t listSize, uint16_t row, uint8_t appr) {
 
 	double *tempPM = malloc(sizeof(double) * listSize);
@@ -100,6 +119,35 @@ void updatePathMetric2(double *pathMetric, double ***llr, uint8_t listSize, uint
 	free(tempPM);
 
 }
+*/
+
+void updatePathMetric2(double *pathMetric, double ***llr, uint8_t listSize, uint16_t row, uint8_t appr) {
+
+  double *pm2=&pathMetric[listSize];
+  memcpy((void*)pm2,(void*)pathMetric,listSize*sizeof(double*));
+
+  int i;
+
+#ifdef SHOWCOMP
+  printf("updating path_metric from information bit (%d,%d) \n",
+	 row,0);
+#endif  
+  if (appr) { //eq. (12)
+    for (i = 0; i < listSize; i++) {
+      // bitValue=0
+      if (llr[row][0][i]<0) pathMetric[i] -= llr[row][0][i];
+      // bitValue=1
+      else                  pm2[i] += llr[row][0][i];
+    }
+  } else { //eq. (11b)
+    for (i = 0; i < listSize; i++) {
+      // bitValue=0
+       pathMetric[i] += log(1 + exp(-llr[row][0][i]));
+      // bitValue=1
+       pm2[i] += log(1 + exp(llr[row][0][i]));
+    }
+  }
+}
 
 void computeLLR(double ***llr, uint16_t row, uint16_t col, uint8_t i,
 		uint16_t offset, uint8_t approximation) {
@@ -108,7 +156,9 @@ void computeLLR(double ***llr, uint16_t row, uint16_t col, uint8_t i,
 	double absA = fabs(a);
 	double b = llr[row + offset][col + 1][i];
 	double absB = fabs(b);
-
+#ifdef SHOWCOMP
+	printf("computeLLR (%d,%d,%d,%d)\n",row,col,offset,i);
+#endif
 	if (approximation || isinf(absA) || isinf(absB)) { //eq. (9)
 		llr[row][col][i] = copysign(1.0, a) * copysign(1.0, b) * fmin(absA, absB);
 	} else { //eq. (8a)
