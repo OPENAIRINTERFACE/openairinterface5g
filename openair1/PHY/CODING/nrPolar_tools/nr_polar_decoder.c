@@ -105,8 +105,9 @@ int8_t polar_decoder(
 	int16_t checkCrcBits=-1;
 	uint8_t listIndex[2*listSize], copyIndex;
 
+	//	for (uint8_t i = 0; i < 2*listSize; i++) listIndex[i]=i;
 	for (uint16_t currentBit=0; currentBit<polarParams->N; currentBit++){
-	  printf("***************** BIT %d\n",currentBit);
+	  // printf("***************** BIT %d\n",currentBit);
 
 		updateLLR(llr, llrUpdated, bit, bitUpdated, currentListSize, currentBit, 0, polarParams->N, (polarParams->n+1), pathMetricAppr);
 		if (polarParams->information_bit_pattern[currentBit]==0) { //Frozen bit.

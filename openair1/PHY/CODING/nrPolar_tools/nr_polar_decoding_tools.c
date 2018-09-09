@@ -20,29 +20,33 @@
  */
 
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
-#define SHOWCOMP 1
+//#define SHOWCOMP 1
 
 void updateLLR(double ***llr, uint8_t **llrU, uint8_t ***bit, uint8_t **bitU,
-		uint8_t listSize, uint16_t row, uint16_t col, uint16_t xlen, uint8_t ylen, uint8_t approximation) {
-	uint16_t offset = (xlen/(pow(2,(ylen-col-1))));
-	for (uint8_t i=0; i<listSize; i++) {
-		if (( (row) % (2*offset) ) >= offset ) {
-			if(bitU[row-offset][col]==0) updateBit(bit, bitU, listSize, (row-offset), col, xlen, ylen);
-			if(llrU[row-offset][col+1]==0) updateLLR(llr, llrU, bit, bitU, listSize, (row-offset), (col+1), xlen, ylen, approximation);
-			if(llrU[row][col+1]==0) updateLLR(llr, llrU, bit, bitU, listSize, row, (col+1), xlen, ylen, approximation);
-#ifdef SHOWCOMP
-			printf("updating LLR (%d,%d,%d) (bit %d,%d,%d, llr0 %d,%d,%d, llr1 %d,%d,%d \n",row,col,i,
-		    row-offset,col,i,row-offset,col+1,i,row,col+1,i);
-#endif
-			llr[row][col][i] = (pow((-1),bit[row-offset][col][i])*llr[row-offset][col+1][i]) + llr[row][col+1][i];
-		} else {
-			if(llrU[row][col+1]==0) updateLLR(llr, llrU, bit, bitU, listSize, row, (col+1), xlen, ylen, approximation);
-			if(llrU[row+offset][col+1]==0) updateLLR(llr, llrU, bit, bitU, listSize, (row+offset), (col+1), xlen, ylen, approximation);
-			computeLLR(llr, row, col, i, offset, approximation);
-		}
-	}
+	       uint8_t listSize, uint16_t row, uint16_t col, uint16_t xlen, uint8_t ylen, uint8_t approximation) {
+  uint16_t offset = (xlen/(1<<(ylen-col-1)));
+  if (( (row) % (2*offset) ) >= offset ) {
+    if (bitU[row-offset][col]==0) updateBit(bit, bitU, listSize, (row-offset), col, xlen, ylen);
+    if (llrU[row-offset][col+1]==0) updateLLR(llr, llrU, bit, bitU, listSize, (row-offset), (col+1), xlen, ylen, approximation);
+    if (llrU[row][col+1]==0) updateLLR(llr, llrU, bit, bitU, listSize, row, (col+1), xlen, ylen, approximation);
+    for (uint8_t i=0; i<listSize; i++) {
+      
 
-	llrU[row][col]=1;
+#ifdef SHOWCOMP
+      printf("updating LLR (%d,%d,%d) (bit %d,%d,%d, llr0 %d,%d,%d, llr1 %d,%d,%d \n",row,col,i,
+      	      row-offset,col,i,row-offset,col+1,i,row,col+1,i);
+#endif
+      llr[row][col][i] = (pow((-1),bit[row-offset][col][i])*llr[row-offset][col+1][i]) + llr[row][col+1][i];
+    }
+  } else {
+      if (llrU[row][col+1]==0) updateLLR(llr, llrU, bit, bitU, listSize, row, (col+1), xlen, ylen, approximation);
+      if (llrU[row+offset][col+1]==0) updateLLR(llr, llrU, bit, bitU, listSize, (row+offset), (col+1), xlen, ylen, approximation);
+      for (uint8_t i=0; i<listSize; i++) {
+	computeLLR(llr, row, col, i, offset, approximation);
+      }
+  }
+      
+  llrU[row][col]=1;
 }
 
 void updateBit(uint8_t ***bit, uint8_t **bitU, uint8_t listSize, uint16_t row,
