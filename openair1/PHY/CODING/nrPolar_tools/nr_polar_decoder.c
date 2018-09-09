@@ -40,7 +40,7 @@ int8_t polar_decoder(
 	uint8_t ***bit = nr_alloc_uint8_t_3D_array(polarParams->N, (polarParams->n+1), 2*listSize);
 	uint8_t **bitUpdated = nr_alloc_uint8_t_2D_array(polarParams->N, (polarParams->n+1)); //0=False, 1=True
 	uint8_t **llrUpdated = nr_alloc_uint8_t_2D_array(polarParams->N, (polarParams->n+1)); //0=False, 1=True
-	double ***llr = nr_alloc_double_3D_array(polarParams->N, (polarParams->n+1), 2*listSize);
+	double ***llr = nr_alloc_double_3D_array(2*listSize,(polarParams->n+1), polarParams->N);
 	uint8_t **crcChecksum = nr_alloc_uint8_t_2D_array(polarParams->crcParityBits, 2*listSize);
 	double *pathMetric = malloc(sizeof(double)*(2*listSize));
 	uint8_t *crcState = malloc(sizeof(uint8_t)*(2*listSize)); //0=False, 1=True
@@ -92,7 +92,7 @@ int8_t polar_decoder(
 
 	double *d_tilde = malloc(sizeof(double) * polarParams->N);
 	nr_polar_rate_matching(input, d_tilde, polarParams->rate_matching_pattern, polarParams->K, polarParams->N, polarParams->encoderLength);
-	for (int j = 0; j < polarParams->N; j++) llr[j][polarParams->n][0]=d_tilde[j];
+	for (int j = 0; j < polarParams->N; j++) llr[0][polarParams->n][j]=d_tilde[j];
 
 
 	/*
@@ -130,7 +130,7 @@ int8_t polar_decoder(
 					for (int j = 0; j < polarParams->N; j++) {
 						for (int k = 0; k < (polarParams->n+1); k++) {
 							bit[j][k][i+currentListSize]=bit[j][k][i];
-							llr[j][k][i+currentListSize]=llr[j][k][i];}}}
+							llr[i+currentListSize][k][j]=llr[i][k][j];}}}
 
 				for (int i = 0; i < currentListSize; i++) {
 					bit[currentBit][0][i]=0;
@@ -167,7 +167,7 @@ int8_t polar_decoder(
 						for (int i=0; i<polarParams->N; i++) {
 							for (int j=0; j<(polarParams->n+1); j++) {
 								bit[i][j][listIndex[(2*listSize-1)-k]]=bit[i][j][listIndex[k]];
-								llr[i][j][listIndex[(2*listSize-1)-k]]=llr[i][j][listIndex[k]];
+								llr[listIndex[(2*listSize-1)-k]][j][i]=llr[listIndex[k]][j][i];
 							}
 						}
 					}
@@ -188,7 +188,7 @@ int8_t polar_decoder(
 						for (int i = 0; i < polarParams->N; i++) {
 							for (int j = 0; j < (polarParams->n + 1); j++) {
 								bit[i][j][k] = bit[i][j][copyIndex];
-								llr[i][j][k] = llr[i][j][copyIndex];
+								llr[k][j][i] = llr[copyIndex][j][i];
 							}
 						}
 					}
@@ -236,7 +236,7 @@ int8_t polar_decoder(
 				free(pathMetric);
 				free(crcState);
 				nr_free_uint8_t_3D_array(bit, polarParams->N, (polarParams->n+1));
-				nr_free_double_3D_array(llr, polarParams->N, (polarParams->n+1));
+				nr_free_double_3D_array(llr, 2*listSize, (polarParams->n+1));
 				nr_free_uint8_t_2D_array(crcChecksum, polarParams->crcParityBits);
 				return(-1);
 			}
@@ -271,7 +271,7 @@ int8_t polar_decoder(
 	free(pathMetric);
 	free(crcState);
 	nr_free_uint8_t_3D_array(bit, polarParams->N, (polarParams->n+1));
-	nr_free_double_3D_array(llr, polarParams->N, (polarParams->n+1));
+	nr_free_double_3D_array(llr, 2*listSize, (polarParams->n+1));
 	nr_free_uint8_t_2D_array(crcChecksum, polarParams->crcParityBits);
 	nr_free_uint8_t_2D_array(extended_crc_generator_matrix, polarParams->K);
 	nr_free_uint8_t_2D_array(tempECGM, polarParams->K);

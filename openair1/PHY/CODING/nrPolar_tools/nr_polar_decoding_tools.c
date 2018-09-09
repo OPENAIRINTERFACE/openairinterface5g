@@ -36,7 +36,7 @@ void updateLLR(double ***llr, uint8_t **llrU, uint8_t ***bit, uint8_t **bitU,
       printf("updating LLR (%d,%d,%d) (bit %d,%d,%d, llr0 %d,%d,%d, llr1 %d,%d,%d \n",row,col,i,
       	      row-offset,col,i,row-offset,col+1,i,row,col+1,i);
 #endif
-      llr[row][col][i] = (pow((-1),bit[row-offset][col][i])*llr[row-offset][col+1][i]) + llr[row][col+1][i];
+      llr[i][col][row] = (pow((-1),bit[row-offset][col][i])*llr[i][col+1][row-offset]) + llr[i][col+1][row];
     }
   } else {
       if (llrU[row][col+1]==0) updateLLR(llr, llrU, bit, bitU, listSize, row, (col+1), xlen, ylen, approximation);
@@ -84,11 +84,11 @@ void updatePathMetric(double *pathMetric, double ***llr, uint8_t listSize, uint8
 
 	if (approximation) { //eq. (12)
 		for (uint8_t i=0; i<listSize; i++) {
-			if ((2*bitValue) != ( 1 - copysign(1.0,llr[row][0][i]) )) pathMetric[i] += fabs(llr[row][0][i]);
+			if ((2*bitValue) != ( 1 - copysign(1.0,llr[i][0][row]) )) pathMetric[i] += fabs(llr[i][0][row]);
 		}
 	} else { //eq. (11b)
 		int8_t multiplier = (2*bitValue) - 1;
-		for (uint8_t i=0; i<listSize; i++) pathMetric[i] += log ( 1 + exp(multiplier*llr[row][0][i]) ) ;
+		for (uint8_t i=0; i<listSize; i++) pathMetric[i] += log ( 1 + exp(multiplier*llr[i][0][row]) ) ;
 	}
 
 }
@@ -138,25 +138,27 @@ void updatePathMetric2(double *pathMetric, double ***llr, uint8_t listSize, uint
   if (appr) { //eq. (12)
     for (i = 0; i < listSize; i++) {
       // bitValue=0
-      if (llr[row][0][i]<0) pathMetric[i] -= llr[row][0][i];
+      if (llr[i][0][row]<0) pathMetric[i] -= llr[i][0][row];
        // bitValue=1
-      else                  pm2[i] += llr[row][0][i];
+      else                  pm2[i] += llr[i][0][row];
     }
   } else { //eq. (11b)
     for (i = 0; i < listSize; i++) {
       // bitValue=0
-       pathMetric[i] += log(1 + exp(-llr[row][0][i]));
+       pathMetric[i] += log(1 + exp(-llr[i][0][row]));
       // bitValue=1
-       pm2[i] += log(1 + exp(llr[row][0][i]));
+       pm2[i] += log(1 + exp(llr[i][0][row]));
     }
   }
 }
 
 inline void computeLLR(double ***llr, uint16_t row, uint16_t col, uint8_t listSize,
-    uint16_t offset, uint8_t approximation) __attribute__((always_inline)) {
+		       uint16_t offset, uint8_t approximation) __attribute__((always_inline));
+inline void computeLLR(double ***llr, uint16_t row, uint16_t col, uint8_t listSize,
+		       uint16_t offset, uint8_t approximation) {
 
-	double *a = llr[row][col + 1];
-	double *b = llr[row + offset][col + 1];
+        double a;
+        double b;
 	double absA,absB;
 
 
@@ -164,14 +166,19 @@ inline void computeLLR(double ***llr, uint16_t row, uint16_t col, uint8_t listSi
            printf("computeLLR (%d,%d,%d,%d)\n",row,col,offset,i);
 #endif
 	if (approximation) { //eq. (9)
-	   for (int i=0;i<listSize;i++) {           
-                absA = fabs(a[i]);
-	        absB = fabs(b[i]);
-		llr[row][col][i] = copysign(1.0, a[i]) * copysign(1.0, b[i]) * fmin(absA, absB);
+	   for (int i=0;i<listSize;i++) {
+	     a = llr[i][col + 1][row];   
+	     b = llr[i][col+1][row + offset];
+	     absA = fabs(a);
+	     absB = fabs(b);
+	     llr[i][col][row] = copysign(1.0, a) * copysign(1.0, b) * fmin(absA, absB);
            }
 	} else { //eq. (8a)
-	   for (int i=0;i<listSize;i++)          
-		llr[row][col][i] = log((exp(a[i] + b[i]) + 1) / (exp(a[i]) + exp(b[i])));
+	  for (int i=0;i<listSize;i++) {
+	    a = llr[i][col + 1][row];   
+	    b = llr[i][col+1][row + offset];         
+	    llr[i][col][row] = log((exp(a + b) + 1) / (exp(a) + exp(b)));
+	  }
 	}
 
 }
