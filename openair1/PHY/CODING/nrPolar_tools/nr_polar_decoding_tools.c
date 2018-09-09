@@ -41,9 +41,8 @@ void updateLLR(double ***llr, uint8_t **llrU, uint8_t ***bit, uint8_t **bitU,
   } else {
       if (llrU[row][col+1]==0) updateLLR(llr, llrU, bit, bitU, listSize, row, (col+1), xlen, ylen, approximation);
       if (llrU[row+offset][col+1]==0) updateLLR(llr, llrU, bit, bitU, listSize, (row+offset), (col+1), xlen, ylen, approximation);
-      for (uint8_t i=0; i<listSize; i++) {
-	computeLLR(llr, row, col, i, offset, approximation);
-      }
+      computeLLR(llr, row, col, listSize, offset, approximation);
+      
   }
       
   llrU[row][col]=1;
@@ -140,7 +139,7 @@ void updatePathMetric2(double *pathMetric, double ***llr, uint8_t listSize, uint
     for (i = 0; i < listSize; i++) {
       // bitValue=0
       if (llr[row][0][i]<0) pathMetric[i] -= llr[row][0][i];
-      // bitValue=1
+       // bitValue=1
       else                  pm2[i] += llr[row][0][i];
     }
   } else { //eq. (11b)
@@ -153,20 +152,26 @@ void updatePathMetric2(double *pathMetric, double ***llr, uint8_t listSize, uint
   }
 }
 
-void computeLLR(double ***llr, uint16_t row, uint16_t col, uint8_t i,
-		uint16_t offset, uint8_t approximation) {
+inline void computeLLR(double ***llr, uint16_t row, uint16_t col, uint8_t listSize,
+    uint16_t offset, uint8_t approximation) __attribute__((always_inline)) {
 
-	double a = llr[row][col + 1][i];
-	double absA = fabs(a);
-	double b = llr[row + offset][col + 1][i];
-	double absB = fabs(b);
+	double *a = llr[row][col + 1];
+	double *b = llr[row + offset][col + 1];
+	double absA,absB;
+
+
 #ifdef SHOWCOMP
-	printf("computeLLR (%d,%d,%d,%d)\n",row,col,offset,i);
+           printf("computeLLR (%d,%d,%d,%d)\n",row,col,offset,i);
 #endif
-	if (approximation || isinf(absA) || isinf(absB)) { //eq. (9)
-		llr[row][col][i] = copysign(1.0, a) * copysign(1.0, b) * fmin(absA, absB);
+	if (approximation) { //eq. (9)
+	   for (int i=0;i<listSize;i++) {           
+                absA = fabs(a[i]);
+	        absB = fabs(b[i]);
+		llr[row][col][i] = copysign(1.0, a[i]) * copysign(1.0, b[i]) * fmin(absA, absB);
+           }
 	} else { //eq. (8a)
-		llr[row][col][i] = log((exp(a + b) + 1) / (exp(a) + exp(b)));
+	   for (int i=0;i<listSize;i++)          
+		llr[row][col][i] = log((exp(a[i] + b[i]) + 1) / (exp(a[i]) + exp(b[i])));
 	}
 
 }
