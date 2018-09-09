@@ -148,6 +148,11 @@ void *F1AP_DU_task(void *arg) {
         DU_handle_sctp_data_ind(&received_msg->ittiMsg.sctp_data_ind);
         break;
 
+      case TERMINATE_MESSAGE:
+        LOG_W(DU_F1AP, " *** Exiting DU_F1AP thread\n");
+        itti_exit_task();
+        break;
+
       default:
         LOG_E(DU_F1AP, "DU Received unhandled message: %d:%s\n",
                   ITTI_MSG_ID(received_msg), ITTI_MSG_NAME(received_msg));
