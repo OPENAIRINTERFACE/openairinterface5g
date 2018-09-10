@@ -205,3 +205,9 @@ void nr_get_rbg_list(uint32_t bitmap, uint8_t n_rbg, uint8_t* rbg_list) {
 
     // DL alloc type 1
 
+static inline uint16_t get_RIV(uint16_t rb_start, uint16_t L, uint16_t N_RB) {
+  if ((L-1)<=(N_RB>>1))
+    return (N_RB*(L-1)+rb_start);
+  else
+    return (N_RB*(N_RB-L+1) + (N_RB-1-rb_start));
+}
