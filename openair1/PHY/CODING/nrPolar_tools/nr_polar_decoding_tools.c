@@ -36,7 +36,7 @@ void updateLLR(double ***llr, uint8_t **llrU, uint8_t ***bit, uint8_t **bitU,
       printf("updating LLR (%d,%d,%d) (bit %d,%d,%d, llr0 %d,%d,%d, llr1 %d,%d,%d \n",row,col,i,
       	      row-offset,col,i,row-offset,col+1,i,row,col+1,i);
 #endif
-      llr[i][col][row] = (pow((-1),bit[row-offset][col][i])*llr[i][col+1][row-offset]) + llr[i][col+1][row];
+      llr[i][col][row] = (pow((-1),bit[i][col][row-offset])*llr[i][col+1][row-offset]) + llr[i][col+1][row];
     }
   } else {
       if (llrU[row][col+1]==0) updateLLR(llr, llrU, bit, bitU, listSize, row, (col+1), xlen, ylen, approximation);
@@ -55,7 +55,7 @@ void updateBit(uint8_t ***bit, uint8_t **bitU, uint8_t listSize, uint16_t row,
 	for (uint8_t i=0; i<listSize; i++) {
 		if (( (row) % (2*offset) ) >= offset ) {
 			if (bitU[row][col-1]==0) updateBit(bit, bitU, listSize, row, (col-1), xlen, ylen);
-			bit[row][col][i] = bit[row][col-1][i];
+			bit[i][col][row] = bit[i][col-1][row];
 #ifdef SHOWCOMP
 			printf("updating bit (%d,%d,%d) from (%d,%d,%d)\n",
 			       row,col,i,row,col-1,i);
@@ -63,7 +63,7 @@ void updateBit(uint8_t ***bit, uint8_t **bitU, uint8_t listSize, uint16_t row,
 		} else {
 			if (bitU[row][col-1]==0) updateBit(bit, bitU, listSize, row, (col-1), xlen, ylen);
 			if (bitU[row+offset][col-1]==0) updateBit(bit, bitU, listSize, (row+offset), (col-1), xlen, ylen);
-			bit[row][col][i] = ( (bit[row][col-1][i]+bit[row+offset][col-1][i]) % 2);
+			bit[i][col][row] = ( (bit[i][col-1][row]+bit[i][col-1][row+offset]) % 2);
 #ifdef SHOWCOMP
 			printf("updating bit (%d,%d,%d) from (%d,%d,%d)+(%d,%d,%d)\n",
 			       row,col,i,row,col-1,i,row+offset,col-1,i);
