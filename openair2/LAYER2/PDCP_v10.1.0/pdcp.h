@@ -106,8 +106,6 @@ typedef struct pdcp_enb_s {
   uint16_t uid[MAX_MOBILES_PER_ENB];
   rnti_t rnti[MAX_MOBILES_PER_ENB];
   uint16_t num_ues;
-#define TM_SKIP_FULL_BUF_MS (500)
-  uint64_t time_buf_full[MAX_MOBILES_PER_ENB];
   
   uint64_t sfn;
   frame_t  frame;
