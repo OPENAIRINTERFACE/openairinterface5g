@@ -760,10 +760,10 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                                     0,
                                     MSC_AS_TIME_FMT" DATA-REQ inst %u rb %u rab %u size %u",
                                     MSC_AS_TIME_ARGS(ctxt_pP),
-                                    pc5s_header.inst,
-                                    pc5s_header.rb_id,
+                                    pc5s_header->inst,
+                                    pc5s_header->rb_id,
                                     rab_id,
-                                    pc5s_header.data_size);
+                                    pc5s_header->data_size);
 
                   pdcp_data_req(
                         &ctxt,
@@ -787,10 +787,10 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                                     0,
                                     MSC_AS_TIME_FMT" DATA-REQ inst %u rb %u rab %u size %u",
                                     MSC_AS_TIME_ARGS(ctxt_pP),
-                                    pc5s_header.inst,
-                                    pc5s_header.rb_id,
+                                    pc5s_header->inst,
+                                    pc5s_header->rb_id,
                                     rab_id,
-                                    pc5s_header.data_size);
+                                    pc5s_header->data_size);
                   LOG_D(PDCP,
                         "[FRAME %5u][UE][IP][INSTANCE %u][RB %u][--- PDCP_DATA_REQ / %d Bytes ---X][PDCP][MOD %u][UE %u][RB %u] NON INSTANCIATED INSTANCE key 0x%"PRIx64", DROPPED\n",
                         ctxt.frame,

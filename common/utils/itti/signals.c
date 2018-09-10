@@ -39,7 +39,7 @@
 #include "assertions.h"
 
 #include "signals.h"
-#include "log.h"
+#include "common/utils/LOG/log.h"
 
 #if defined (LOG_D) && defined (LOG_E)
 # define SIG_DEBUG(x, args...)  LOG_D(RRC, x, ##args)

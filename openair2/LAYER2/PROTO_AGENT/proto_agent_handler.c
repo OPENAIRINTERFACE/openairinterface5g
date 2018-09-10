@@ -36,7 +36,7 @@
 
 
 #include "proto_agent_common.h"
-#include "log.h"
+#include "common/utils/LOG/log.h"
 #include "assertions.h"
 
 proto_agent_message_decoded_callback proto_agent_messages_callback[][3] = {

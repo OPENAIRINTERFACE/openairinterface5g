@@ -35,7 +35,7 @@
  */
 #include "ENB_APP/flexran_agent_defs.h"
 #include "proto_agent_common.h"
-#include "log.h"
+#include "common/utils/LOG/log.h"
 #include "proto_agent.h"
 #include "assertions.h"
 #include "proto_agent_net_comm.h"

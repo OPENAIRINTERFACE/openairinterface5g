@@ -1359,9 +1359,9 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 	  }
 
 	  if (opt_enabled == 1) {
-	    trace_pdu(1, (uint8_t *)
-		      UE_list->DLSCH_pdu[CC_id][0][UE_id].
-		      payload[0], TBS, module_idP, 3,
+	    trace_pdu(DIRECTION_DOWNLINK,
+		      (uint8_t *) UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],
+		      TBS, module_idP, WS_C_RNTI,
 		      UE_RNTI(module_idP, UE_id), eNB->frame,
 		      eNB->subframe, 0, 0);
 	    LOG_D(OPT,
@@ -2085,7 +2085,7 @@ void schedule_PCH(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP)
 	}
 
 	if (opt_enabled == 1) {
-	  trace_pdu(1,
+	  trace_pdu(DIRECTION_DOWNLINK,
 		    &eNB->common_channels[CC_id].PCCH_pdu.payload[0],
 		    pcch_sdu_length,
 		    0xffff,

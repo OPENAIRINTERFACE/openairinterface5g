@@ -253,7 +253,7 @@ int tcp_bridge_ue_first_read(openair0_device *device, openair0_timestamp *timest
   tcp_bridge_state_t *t = device->priv;
 
   uint32_t b[t->samples_per_subframe * 12];
-  memset(b, 0, nsamps * 4);
+  memset(b, 0, t->samples_per_subframe * 12 * 4);
   int n = fullwrite(t->sock, b, t->samples_per_subframe * 12 * 4);
   if (n != t->samples_per_subframe * 12 * 4) {
     printf("tcp_bridge: write error ret %d error %s\n", n, strerror(errno));

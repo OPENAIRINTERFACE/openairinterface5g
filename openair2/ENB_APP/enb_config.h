@@ -151,6 +151,7 @@ int RCconfig_CU_F1(uint32_t i);
 void RCconfig_cudu(void);
 cudu_params_t *get_cudu_config(void);
 void read_config_and_init(void);
+int RCconfig_X2(MessageDef *msg_p, uint32_t i);
 
 #endif /* ENB_CONFIG_H_ */
 /** @} */

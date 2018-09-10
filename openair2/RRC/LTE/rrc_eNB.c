@@ -85,6 +85,8 @@
 #   else
 #      include "../../S1AP/s1ap_eNB.h"
 #   endif
+#else
+# define EPC_MODE_ENABLED 0
 #endif
 
 #include "pdcp.h"
@@ -100,7 +102,6 @@
 
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
-//#define XER_PRINT
 
 extern RAN_CONTEXT_t RC;
 
@@ -904,11 +905,6 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
 
 
   protocol_ctxt_t                     ctxt;
-#if !defined(ENABLE_USE_MME)
-  module_id_t                         ue_module_id;
-  /* avoid gcc warnings */
-  (void)ue_module_id;
-#endif
   rnti_t rnti = ue_context_pP->ue_context.rnti;
   if (enb_mod_idP >= NB_eNB_INST) {
       LOG_I(RRC, "eNB inst invalid (%d/%d) for UE %x!\n",enb_mod_idP, NB_eNB_INST,rnti);
@@ -923,20 +919,21 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
     PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, enb_mod_idP, ENB_FLAG_YES, rnti, 0, 0,enb_mod_idP);
     LOG_W(RRC, "[eNB %d] Removing UE RNTI %x\n", enb_mod_idP, rnti);
 
-#if defined(ENABLE_USE_MME)
-   if((ue_context_pP->ue_context.ul_failure_timer >= 20000) &&
-      (mac_eNB_get_rrc_status(enb_mod_idP,rnti) >= RRC_CONNECTED)) {
-    LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ RNTI %x\n", enb_mod_idP, rnti);
-    rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(enb_mod_idP, ue_context_pP, S1AP_CAUSE_RADIO_NETWORK, 21); // send cause 21: connection with ue lost
-    /* From 3GPP 36300v10 p129 : 19.2.2.2.2 S1 UE Context Release Request (eNB triggered)
-     * If the E-UTRAN internal reason is a radio link failure detected in the eNB, the eNB shall wait a sufficient time before
-     *  triggering the S1 UE Context Release Request procedure
-     *  in order to allow the UE to perform the NAS recovery
-     *  procedure, see TS 23.401 [17].
-     */
-     return;
+   if(EPC_MODE_ENABLED) {
+
+     if((ue_context_pP->ue_context.ul_failure_timer >= 20000) &&
+  	(mac_eNB_get_rrc_status(enb_mod_idP,rnti) >= RRC_CONNECTED)) {
+      LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ RNTI %x\n", enb_mod_idP, rnti);
+      rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(enb_mod_idP, ue_context_pP, S1AP_CAUSE_RADIO_NETWORK, 21); // send cause 21: connection with ue lost
+      /* From 3GPP 36300v10 p129 : 19.2.2.2.2 S1 UE Context Release Request (eNB triggered)
+       * If the E-UTRAN internal reason is a radio link failure detected in the eNB, the eNB shall wait a sufficient time before
+       *  triggering the S1 UE Context Release Request procedure
+       *  in order to allow the UE to perform the NAS recovery
+       *  procedure, see TS 23.401 [17].
+       */
+       return;
     }
-#endif
+  }
     // add UE info to freeList
     LOG_I(RRC, "put UE %x into freeList\n", rnti);
     put_UE_in_freelist(enb_mod_idP, rnti, 1);
@@ -1083,17 +1080,13 @@ rrc_eNB_process_RRCConnectionSetupComplete(
   T(T_ENB_RRC_CONNECTION_SETUP_COMPLETE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
-#if defined(ENABLE_USE_MME)
-
   if (EPC_MODE_ENABLED == 1) {
     // Forward message to S1AP layer
     rrc_eNB_send_S1AP_NAS_FIRST_REQ(
       ctxt_pP,
       ue_context_pP,
       rrcConnectionSetupComplete);
-  } else
-#endif
-  {
+  } else {
     // RRC loop back (no S1AP), send SecurityModeCommand to UE
     rrc_eNB_generate_SecurityModeCommand(
       ctxt_pP,
@@ -1123,16 +1116,8 @@ rrc_eNB_generate_SecurityModeCommand(
            ue_context_pP->ue_context.ciphering_algorithm,
            ue_context_pP->ue_context.integrity_algorithm);
 
-#ifdef RRC_MSG_PRINT
-  uint16_t i=0;
-  LOG_F(RRC,"[MSG] RRC Security Mode Command\n");
 
-  for (i = 0; i < size; i++) {
-    LOG_F(RRC,"%02x ", ((uint8_t*)buffer)[i]);
-  }
-
-  LOG_F(RRC,"\n");
-#endif
+  LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)buffer,size,"[MSG] RRC Security Mode Command\n");
 
   LOG_I(RRC,
         PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate SecurityModeCommand (bytes %d)\n",
@@ -1231,9 +1216,6 @@ rrc_eNB_generate_RRCConnectionReject(
 )
 //-----------------------------------------------------------------------------
 {
-#ifdef RRC_MSG_PRINT
-  int                                 cnt;
-#endif
 
   T(T_ENB_RRC_CONNECTION_REJECT, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
@@ -1242,15 +1224,10 @@ rrc_eNB_generate_RRCConnectionReject(
     do_RRCConnectionReject(ctxt_pP->module_id,
                           (uint8_t*) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload);
 
-#ifdef RRC_MSG_PRINT
-  LOG_F(RRC,"[MSG] RRCConnectionReject\n");
-
-  for (cnt = 0; cnt < RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size; cnt++) {
-    LOG_F(RRC,"%02x ", ((uint8_t*)RC.rrc[ctxt_pP->module_id]->Srb0.Tx_buffer.Payload)[cnt]);
-  }
-
-  LOG_F(RRC,"\n");
-#endif
+  LOG_DUMPMSG(RRC,DEBUG_RRC,
+              (char *)(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload),
+              RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size,
+              "[MSG] RRCConnectionReject\n");
 
   MSC_LOG_TX_MESSAGE(
     MSC_RRC_ENB,
@@ -1295,17 +1272,11 @@ rrc_eNB_generate_RRCConnectionReestablishment(
                                     rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
                                     SRB_configList,
                                     &ue_context_pP->ue_context.physicalConfigDedicated);
-
-#ifdef RRC_MSG_PRINT
-  LOG_F(RRC,"[MSG] RRCConnectionReestablishment\n");
-
-  for (cnt = 0; cnt < RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size; cnt++) {
-    LOG_F(RRC,"%02x ", ((uint8_t*)RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload)[cnt]);
-  }
-
-  LOG_F(RRC,"\n");
-#endif
-
+  LOG_DUMPMSG(RRC,DEBUG_RRC,
+              (char *)(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload),
+              RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size,
+              "[MSG] RRCConnectionReestablishment\n"
+              );
   // configure SRB1 for UE
 
   if (*SRB_configList != NULL) {
@@ -1421,10 +1392,6 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   struct SRB_ToAddMod                *SRB2_config = NULL;
   struct DRB_ToAddMod                *DRB_config = NULL;
   int i = 0;
-# if defined(ENABLE_USE_MME)
-  int j = 0;
-  hashtable_rc_t                      h_rc;
-#endif
   uint8_t                             buffer[RRC_BUF_SIZE];
   uint16_t                            size;
   MeasObjectToAddModList_t           *MeasObj_list                     = NULL;
@@ -1515,59 +1482,61 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   ue_context_pP->ue_context.Srb1.Active = 1;
   //ue_context_pP->ue_context.Srb2.Srb_info.Srb_id = 2;
 
-# if defined(ENABLE_USE_MME)
-  rrc_ue_s1ap_ids_t* rrc_ue_s1ap_ids_p = NULL;
-  uint16_t ue_initial_id = ue_context_pP->ue_context.ue_initial_id;
-  uint32_t eNB_ue_s1ap_id = ue_context_pP->ue_context.eNB_ue_s1ap_id;
-  eNB_RRC_INST *rrc_instance_p = RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)];
-  if (eNB_ue_s1ap_id > 0) {
-    h_rc = hashtable_get(rrc_instance_p->s1ap_id2_s1ap_ids, (hash_key_t)eNB_ue_s1ap_id, (void**)&rrc_ue_s1ap_ids_p);
-    if  (h_rc == HASH_TABLE_OK) {
-      rrc_ue_s1ap_ids_p->ue_rnti = ctxt_pP->rnti;
+#if defined(ENABLE_USE_MME) 
+    hashtable_rc_t    h_rc;
+    int               j;
+    rrc_ue_s1ap_ids_t* rrc_ue_s1ap_ids_p = NULL;
+    uint16_t ue_initial_id = ue_context_pP->ue_context.ue_initial_id;
+    uint32_t eNB_ue_s1ap_id = ue_context_pP->ue_context.eNB_ue_s1ap_id;
+    eNB_RRC_INST *rrc_instance_p = RC.rrc[ENB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)];
+    if (eNB_ue_s1ap_id > 0) {
+      h_rc = hashtable_get(rrc_instance_p->s1ap_id2_s1ap_ids, (hash_key_t)eNB_ue_s1ap_id, (void**)&rrc_ue_s1ap_ids_p);
+      if  (h_rc == HASH_TABLE_OK) {
+  	rrc_ue_s1ap_ids_p->ue_rnti = ctxt_pP->rnti;
+      }
     }
-  }
-  if (ue_initial_id != 0) {
-    h_rc = hashtable_get(rrc_instance_p->initial_id2_s1ap_ids, (hash_key_t)ue_initial_id, (void**)&rrc_ue_s1ap_ids_p);
-    if  (h_rc == HASH_TABLE_OK) {
-      rrc_ue_s1ap_ids_p->ue_rnti = ctxt_pP->rnti;
+    if (ue_initial_id != 0) {
+      h_rc = hashtable_get(rrc_instance_p->initial_id2_s1ap_ids, (hash_key_t)ue_initial_id, (void**)&rrc_ue_s1ap_ids_p);
+      if  (h_rc == HASH_TABLE_OK) {
+  	rrc_ue_s1ap_ids_p->ue_rnti = ctxt_pP->rnti;
+      }
     }
-  }
 
-  gtpv1u_enb_create_tunnel_req_t  create_tunnel_req;
+    gtpv1u_enb_create_tunnel_req_t  create_tunnel_req;
 
-  /* Save e RAB information for later */
-  memset(&create_tunnel_req, 0 , sizeof(create_tunnel_req));
+    /* Save e RAB information for later */
+    memset(&create_tunnel_req, 0 , sizeof(create_tunnel_req));
 
-  for (j = 0, i = 0; i < NB_RB_MAX; i++) {
-    if (ue_context_pP->ue_context.e_rab[i].status == E_RAB_STATUS_ESTABLISHED || ue_context_pP->ue_context.e_rab[i].status == E_RAB_STATUS_DONE) {
-      create_tunnel_req.eps_bearer_id[j]       = ue_context_pP->ue_context.e_rab[i].param.e_rab_id;
-      create_tunnel_req.sgw_S1u_teid[j]        = ue_context_pP->ue_context.e_rab[i].param.gtp_teid;
+    for ( j = 0, i = 0; i < NB_RB_MAX; i++) {
+      if (ue_context_pP->ue_context.e_rab[i].status == E_RAB_STATUS_ESTABLISHED || ue_context_pP->ue_context.e_rab[i].status == E_RAB_STATUS_DONE) {
+  	create_tunnel_req.eps_bearer_id[j]	 = ue_context_pP->ue_context.e_rab[i].param.e_rab_id;
+  	create_tunnel_req.sgw_S1u_teid[j]	 = ue_context_pP->ue_context.e_rab[i].param.gtp_teid;
 
-      memcpy(&create_tunnel_req.sgw_addr[j],
-             &ue_context_pP->ue_context.e_rab[i].param.sgw_addr,
-             sizeof(transport_layer_addr_t));
-      j++;
+  	memcpy(&create_tunnel_req.sgw_addr[j],
+  	       &ue_context_pP->ue_context.e_rab[i].param.sgw_addr,
+  	       sizeof(transport_layer_addr_t));
+  	j++;
+      }
     }
-  }
 
-  create_tunnel_req.rnti       = ctxt_pP->rnti; // warning put zero above
-  create_tunnel_req.num_tunnels    = j;
+    create_tunnel_req.rnti       = ctxt_pP->rnti; // warning put zero above
+    create_tunnel_req.num_tunnels    = j;
 
-  gtpv1u_update_s1u_tunnel(
-            ctxt_pP->instance,
-            &create_tunnel_req,
-            reestablish_rnti);
+    gtpv1u_update_s1u_tunnel(
+              ctxt_pP->instance,
+              &create_tunnel_req,
+              reestablish_rnti);
 #endif
   /* Update RNTI in ue_context */
   ue_context_pP->ue_id_rnti                    = ctxt_pP->rnti; // here ue_id_rnti is just a key, may be something else
   ue_context_pP->ue_context.rnti               = ctxt_pP->rnti;
-# if defined(ENABLE_USE_MME)
-  uint8_t send_security_mode_command = FALSE;
-  rrc_pdcp_config_security(
-      ctxt_pP,
-      ue_context_pP,
-      send_security_mode_command);
-  LOG_D(RRC, "set security successfully \n");
+#if defined(ENABLE_USE_MME)
+    uint8_t send_security_mode_command = FALSE;
+    rrc_pdcp_config_security(
+        ctxt_pP,
+        ue_context_pP,
+        send_security_mode_command);
+    LOG_D(RRC, "set security successfully \n");
 #endif
   // Measurement ID list
   MeasId_list = CALLOC(1, sizeof(*MeasId_list));
@@ -1934,15 +1903,9 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
                                          , (SCellToAddMod_r10_t*)NULL
 #endif
                                         );
+  LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)buffer,size,
+              "[MSG] RRC Connection Reconfiguration\n");
 
-#ifdef RRC_MSG_PRINT
-  LOG_F(RRC,"[MSG] RRC Connection Reconfiguration\n");
-  for (i = 0; i < size; i++) {
-    LOG_F(RRC,"%02x ", ((uint8_t*)buffer)[i]);
-  }
-  LOG_F(RRC,"\n");
-  ////////////////////////////////////////
-#endif
 
 #if defined(ENABLE_ITTI)
 
@@ -2042,9 +2005,6 @@ rrc_eNB_generate_RRCConnectionReestablishmentReject(
 )
 //-----------------------------------------------------------------------------
 {
-#ifdef RRC_MSG_PRINT
-  int                                 cnt;
-#endif
   int UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
   if(UE_id != -1){
     RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1;
@@ -2062,15 +2022,11 @@ rrc_eNB_generate_RRCConnectionReestablishmentReject(
     do_RRCConnectionReestablishmentReject(ctxt_pP->module_id,
                           (uint8_t*) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload);
 
-#ifdef RRC_MSG_PRINT
-  LOG_F(RRC,"[MSG] RRCConnectionReestablishmentReject\n");
+  LOG_DUMPMSG(RRC,DEBUG_RRC,
+              (char *)(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload),
+              RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size,
+              "[MSG] RRCConnectionReestablishmentReject\n");
 
-  for (cnt = 0; cnt < RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size; cnt++) {
-    LOG_F(RRC,"%02x ", ((uint8_t*)RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload)[cnt]);
-  }
-
-  LOG_F(RRC,"\n");
-#endif
 
   MSC_LOG_TX_MESSAGE(
     MSC_RRC_ENB,
@@ -2401,15 +2357,8 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* co
 #endif
                                         );
  
+  LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)buffer,size,"[MSG] RRC Connection Reconfiguration\n");
 
-#ifdef RRC_MSG_PRINT
-  LOG_F(RRC,"[MSG] RRC Connection Reconfiguration\n");
-  for (i = 0; i < size; i++) {
-    LOG_F(RRC,"%02x ", ((uint8_t*)buffer)[i]);
-  }
-  LOG_F(RRC,"\n");
-  ////////////////////////////////////////
-#endif
 
 #if defined(ENABLE_ITTI)
 
@@ -2671,15 +2620,8 @@ rrc_eNB_modify_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* cons
 #endif
    	   	   	   	   	  );
 
-
-#ifdef RRC_MSG_PRINT
-  LOG_F(RRC,"[MSG] RRC Connection Reconfiguration\n");
-  for (i = 0; i < size; i++) {
-    LOG_F(RRC,"%02x ", ((uint8_t*)buffer)[i]);
-  }
-  LOG_F(RRC,"\n");
-  ////////////////////////////////////////
-#endif
+  LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)buffer,size,
+              "[MSG] RRC Connection Reconfiguration\n");
 
 #if defined(ENABLE_ITTI)
 
@@ -2796,15 +2738,8 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration_release(  const protocol_
 #endif
                                    );
     ue_context_pP->ue_context.e_rab_release_command_flag = 1;
-
-#ifdef RRC_MSG_PRINT
-  LOG_F(RRC,"[MSG] RRC Connection Reconfiguration\n");
-  for (i = 0; i < size; i++) {
-    LOG_F(RRC,"%02x ", ((uint8_t*)buffer)[i]);
-  }
-  LOG_F(RRC,"\n");
-  ////////////////////////////////////////
-#endif
+    LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)buffer,size,
+                "[MSG] RRC Connection Reconfiguration\n");
 
 #if defined(ENABLE_ITTI)
   /* Free all NAS PDUs */
@@ -3525,15 +3460,8 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
                                          , (SCellToAddMod_r10_t*)NULL
 #endif
                                         );
-
-#ifdef RRC_MSG_PRINT
-  LOG_F(RRC,"[MSG] RRC Connection Reconfiguration\n");
-  for (i = 0; i < size; i++) {
-    LOG_F(RRC,"%02x ", ((uint8_t*)buffer)[i]);
-  }
-  LOG_F(RRC,"\n");
-  ////////////////////////////////////////
-#endif
+  LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)buffer,size,
+              "[MSG] RRC Connection Reconfiguration\n");
 
 #if defined(ENABLE_ITTI)
 
@@ -4117,15 +4045,8 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
                                          , (SCellToAddMod_r10_t*)NULL
 #endif
                                         );
-
-#ifdef RRC_MSG_PRINT
-  LOG_F(RRC,"[MSG] RRC Connection Reconfiguration\n");
-  for (i = 0; i < size; i++) {
-    LOG_F(RRC,"%02x ", ((uint8_t*)buffer)[i]);
-  }
-  LOG_F(RRC,"\n");
-  ////////////////////////////////////////
-#endif
+  LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)buffer,size,
+              "[MSG] RRC Connection Reconfiguration\n");
 
 #if defined(ENABLE_ITTI)
 
@@ -5503,11 +5424,9 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
 #ifdef PDCP_USE_NETLINK
   int                                 oip_ifup = 0;
   int                                 dest_ip_offset = 0;
-  module_id_t                         ue_module_id   = -1;
   /* avoid gcc warnings */
   (void)oip_ifup;
   (void)dest_ip_offset;
-  (void)ue_module_id;
 #endif
 
   uint8_t                            *kRRCenc = NULL;
@@ -5650,6 +5569,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                        ctxt_pP->module_id + 1);  // fourth octet
 
           if (oip_ifup == 0) {    // interface is up --> send a config the DRB
+            module_id_t ue_module_id; 
             dest_ip_offset = 8;
             LOG_I(OIP,
                   "[eNB %d] Config the oai%d to send/receive pkt on DRB %ld to/from the protocol stack\n",
@@ -5819,16 +5739,10 @@ rrc_eNB_generate_RRCConnectionSetup(
                           SRB_configList,
                           &ue_context_pP->ue_context.physicalConfigDedicated);
 
-#ifdef RRC_MSG_PRINT
-  LOG_F(RRC,"[MSG] RRC Connection Setup\n");
-
-  for (cnt = 0; cnt < RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size; cnt++) {
-    LOG_F(RRC,"%02x ", ((uint8_t*)RC.rrc[ctxt_pP->module_id]->Srb0.Tx_buffer.Payload)[cnt]);
-  }
-
-  LOG_F(RRC,"\n");
-  //////////////////////////////////
-#endif
+  LOG_DUMPMSG(RRC,DEBUG_RRC,
+              (char *)(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload),
+              RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size,
+              "[MSG] RRC Connection Setup\n");
 
   // configure SRB1/SRB2, PhysicalConfigDedicated, MAC_MainConfig for UE
 
@@ -6183,15 +6097,10 @@ rrc_eNB_decode_ccch(
       T(T_ENB_RRC_CONNECTION_REESTABLISHMENT_REQUEST, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
         T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
-#ifdef RRC_MSG_PRINT
-      LOG_F(RRC,"[MSG] RRC Connection Reestablishment Request\n");
+      LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)(Srb_info->Rx_buffer.Payload),
+                  Srb_info->Rx_buffer.payload_size,
+                  "[MSG] RRC Connection Reestablishment Request\n");
 
-      for (i = 0; i < Srb_info->Rx_buffer.payload_size; i++) {
-        LOG_F(RRC,"%02x ", ((uint8_t*)Srb_info->Rx_buffer.Payload)[i]);
-      }
-
-      LOG_F(RRC,"\n");
-#endif
       LOG_D(RRC,
             PROTOCOL_RRC_CTXT_UE_FMT"MAC_eNB--- MAC_DATA_IND (rrcConnectionReestablishmentRequest on SRB0) --> RRC_eNB\n",
             PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
@@ -6408,15 +6317,10 @@ rrc_eNB_decode_ccch(
       T(T_ENB_RRC_CONNECTION_REQUEST, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
         T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
-#ifdef RRC_MSG_PRINT
-      LOG_F(RRC,"[MSG] RRC Connection Request\n");
+      LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)(Srb_info->Rx_buffer.Payload),
+                  Srb_info->Rx_buffer.payload_size,
+                  "[MSG] RRC Connection Request\n");
 
-      for (i = 0; i < Srb_info->Rx_buffer.payload_size; i++) {
-        LOG_F(RRC,"%02x ", ((uint8_t*)Srb_info->Rx_buffer.Payload)[i]);
-      }
-
-      LOG_F(RRC,"\n");
-#endif
       LOG_D(RRC,
             PROTOCOL_RRC_CTXT_UE_FMT"MAC_eNB --- MAC_DATA_IND  (rrcConnectionRequest on SRB0) --> RRC_eNB\n",
             PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
@@ -6704,36 +6608,7 @@ rrc_eNB_decode_dcch(
                sdu_sizeP,
                0,
                0);
-  /*
-#if defined(ENABLE_ITTI)
-#   if defined(DISABLE_ITTI_XER_PRINT)
-  {
-    MessageDef                         *message_p;
 
-    message_p = itti_alloc_new_message(TASK_RRC_ENB, RRC_UL_DCCH_MESSAGE);
-    memcpy(&message_p->ittiMsg, (void *)ul_dcch_msg, sizeof(RrcUlDcchMessage));
-
-    itti_send_msg_to_task(TASK_UNKNOWN, ctxt_pP->instance, message_p);
-  }
-#   else
-  {
-    char                                message_string[10000];
-    size_t                              message_string_size;
-
-    if ((message_string_size =
-           xer_sprint(message_string, sizeof(message_string), &asn_DEF_UL_DCCH_Message, (void *)ul_dcch_msg)) >= 0) {
-      MessageDef                         *msg_p;
-
-      msg_p = itti_alloc_new_message_sized(TASK_RRC_ENB, RRC_UL_DCCH, message_string_size + sizeof(IttiMsgText));
-      msg_p->ittiMsg.rrc_ul_dcch.size = message_string_size;
-      memcpy(&msg_p->ittiMsg.rrc_ul_dcch.text, message_string, message_string_size);
-
-      itti_send_msg_to_task(TASK_UNKNOWN, ctxt_pP->instance, msg_p);
-    }
-  }
-#   endif
-#endif
-  */
   {
     for (i = 0; i < sdu_sizeP; i++) {
       LOG_T(RRC, "%x.", Rx_sdu[i]);
@@ -6787,15 +6662,9 @@ rrc_eNB_decode_dcch(
         LOG_I(RRC, "Processing RRCConnectionReconfigurationComplete UE %x, ue_context_p is NULL\n", ctxt_pP->rnti);
         break;
       }
-#ifdef RRC_MSG_PRINT
-      LOG_F(RRC,"[MSG] RRC Connection Reconfiguration Complete\n");
+      LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)(Rx_sdu),sdu_sizeP,
+                  "[MSG] RRC Connection Reconfiguration Complete\n");
 
-      for (i = 0; i < sdu_sizeP; i++) {
-        LOG_F(RRC,"%02x ", ((uint8_t*)Rx_sdu)[i]);
-      }
-
-      LOG_F(RRC,"\n");
-#endif
       MSC_LOG_RX_MESSAGE(
         MSC_RRC_ENB,
         MSC_RRC_UE,
@@ -6818,42 +6687,42 @@ rrc_eNB_decode_dcch(
           RRCConnectionReconfigurationComplete__criticalExtensions_PR_rrcConnectionReconfigurationComplete_r8) {
 	/*NN: revise the condition */
 	/*FK: left the condition as is for the case MME is used (S1 mode) but setting  dedicated_DRB = 1 otherwise (noS1 mode) so that no second RRCReconfiguration message activationg more DRB is sent as this causes problems with the nasmesh driver.*/
-#if defined(ENABLE_USE_MME)
-        if (ue_context_p->ue_context.Status == RRC_RECONFIGURED){
-	  dedicated_DRB = 1;
-	  LOG_I(RRC,
-		PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (dedicated DRB, xid %ld)\n",
-		PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
-          //clear
-          int16_t UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
-          if(UE_id == -1){
-            LOG_E(RRC,
-                  PROTOCOL_RRC_CTXT_UE_FMT" RRCConnectionReconfigurationComplete without rnti %x, fault\n",
-                  PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ctxt_pP->rnti);
-            break;
-          }
-          if(RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag == 1){
-            LOG_I(RRC,
-                  PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (dedicated DRB, xid %ld) C-RNTI Complete\n",
-                  PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
-            dedicated_DRB = 2;
-            RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag = 0;
-          }
-	} else {
-	  dedicated_DRB = 0;
-	  ue_context_p->ue_context.Status = RRC_RECONFIGURED;
-          LOG_I(RRC,
-                PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (default DRB, xid %ld)\n",
-                PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
-	}
-        ue_context_p->ue_context.reestablishment_xid = -1;
-#else
-	dedicated_DRB = 1;
-	ue_context_p->ue_context.Status = RRC_RECONFIGURED;
-	LOG_I(RRC,
-	    PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (dedicated DRB, xid %ld)\n",
-	    PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
-#endif
+        if (EPC_MODE_ENABLED) {
+  	  if (ue_context_p->ue_context.Status == RRC_RECONFIGURED){
+  	    dedicated_DRB = 1;
+  	    LOG_I(RRC,
+  		  PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (dedicated DRB, xid %ld)\n",
+  		  PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
+  	    //clear
+  	    int16_t UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
+  	    if(UE_id == -1){
+  	      LOG_E(RRC,
+  		    PROTOCOL_RRC_CTXT_UE_FMT" RRCConnectionReconfigurationComplete without rnti %x, fault\n",
+  		    PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ctxt_pP->rnti);
+  	      break;
+  	    }
+  	    if(RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag == 1){
+  	      LOG_I(RRC,
+  		    PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (dedicated DRB, xid %ld) C-RNTI Complete\n",
+  		    PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
+  	      dedicated_DRB = 2;
+  	      RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag = 0;
+  	    }
+  	  } else {
+  	    dedicated_DRB = 0;
+  	    ue_context_p->ue_context.Status = RRC_RECONFIGURED;
+  	    LOG_I(RRC,
+  		  PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (default DRB, xid %ld)\n",
+  		  PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
+  	  }
+  	  ue_context_p->ue_context.reestablishment_xid = -1;
+        } else {
+  	  dedicated_DRB = 1;
+  	  ue_context_p->ue_context.Status = RRC_RECONFIGURED;
+  	  LOG_I(RRC,
+  	      PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (dedicated DRB, xid %ld)\n",
+  	      PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
+  	}
 	
 	rrc_eNB_process_RRCConnectionReconfigurationComplete(
           ctxt_pP,
@@ -6868,8 +6737,7 @@ rrc_eNB_decode_dcch(
 	}
       }
 #if defined(ENABLE_ITTI)
-#   if defined(ENABLE_USE_MME)
-      if (EPC_MODE_ENABLED == 1) {
+#if defined(ENABLE_USE_MME)
 	if (dedicated_DRB == 1){
 //	  rrc_eNB_send_S1AP_E_RAB_SETUP_RESP(ctxt_pP,
 //					     ue_context_p,
@@ -6934,14 +6802,12 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
                }
              }
          }
-      }    
+#endif   
 #else  // establish a dedicated bearer 
       if (dedicated_DRB == 0 ) {
 	//	ue_context_p->ue_context.e_rab[0].status = E_RAB_STATUS_ESTABLISHED;
 	rrc_eNB_reconfigure_DRBs(ctxt_pP,ue_context_p);
       }
-      
-#endif
 #endif 
       break;
 
@@ -6949,15 +6815,8 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
       T(T_ENB_RRC_CONNECTION_REESTABLISHMENT_COMPLETE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
         T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
-#ifdef RRC_MSG_PRINT
-      LOG_F(RRC,"[MSG] RRC Connection Reestablishment Complete\n");
-
-      for (i = 0; i < sdu_sizeP; i++) {
-        LOG_F(RRC,"%02x ", ((uint8_t*)Rx_sdu)[i]);
-      }
-
-      LOG_F(RRC,"\n");
-#endif
+      LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)Rx_sdu,sdu_sizeP,
+                  "[MSG] RRC Connection Reestablishment Complete\n");
 
       MSC_LOG_RX_MESSAGE(
         MSC_RRC_ENB,
@@ -7036,15 +6895,8 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
         LOG_I(RRC, "Processing RRCConnectionSetupComplete UE %x, ue_context_p is NULL\n", ctxt_pP->rnti);
         break;
       }
-#ifdef RRC_MSG_PRINT
-      LOG_F(RRC,"[MSG] RRC Connection SetupComplete\n");
-
-      for (i = 0; i < sdu_sizeP; i++) {
-        LOG_F(RRC,"%02x ", ((uint8_t*)Rx_sdu)[i]);
-      }
-
-      LOG_F(RRC,"\n");
-#endif
+      LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)Rx_sdu,sdu_sizeP,
+                  "[MSG] RRC Connection SetupComplete\n");
 
       MSC_LOG_RX_MESSAGE(
         MSC_RRC_ENB,
@@ -7096,15 +6948,9 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
         LOG_I(RRC, "Processing securityModeComplete UE %x, ue_context_p is NULL\n", ctxt_pP->rnti);
         break;
       }
-#ifdef RRC_MSG_PRINT
-      LOG_F(RRC,"[MSG] RRC Security Mode Complete\n");
+      LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)Rx_sdu,sdu_sizeP,
+                  "[MSG] RRC Security Mode Complete\n");
 
-      for (i = 0; i < sdu_sizeP; i++) eNB->pusch_vars[UE_id]{
-        LOG_F(RRC,"%02x ", ((uint8_t*)Rx_sdu)[i]);
-      }
-
-      LOG_F(RRC,"\n");
-#endif
 
       MSC_LOG_RX_MESSAGE(
         MSC_RRC_ENB,
@@ -7126,9 +6972,9 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
             PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
             DCCH,
             sdu_sizeP);
-#ifdef XER_PRINT
-      xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void *)ul_dcch_msg);
-#endif
+      if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+         xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void *)ul_dcch_msg);
+      }
       // confirm with PDCP about the security mode for DCCH
       //rrc_pdcp_config_req (enb_mod_idP, frameP, 1,CONFIG_ACTION_SET_SECURITY_MODE, (ue_mod_idP * NB_RB_MAX) + DCCH, 0x77);
       // continue the procedure
@@ -7141,15 +6987,8 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
       T(T_ENB_RRC_SECURITY_MODE_FAILURE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
         T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
-#ifdef RRC_MSG_PRINT
-      LOG_F(RRC,"[MSG] RRC Security Mode Failure\n");
-
-      for (i = 0; i < sdu_sizeP; i++) {
-        LOG_F(RRC,"%02x ", ((uint8_t*)Rx_sdu)[i]);
-      }
-
-      LOG_F(RRC,"\n");
-#endif
+      LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)Rx_sdu,sdu_sizeP,
+                  "[MSG] RRC Security Mode Failure\n");
 
       MSC_LOG_RX_MESSAGE(
         MSC_RRC_ENB,
@@ -7167,9 +7006,9 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
             PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
             DCCH,
             sdu_sizeP);
-#ifdef XER_PRINT
-      xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void *)ul_dcch_msg);
-#endif
+      if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+         xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void *)ul_dcch_msg);
+      }
       // cancel the security mode in PDCP
 
       // followup with the remaining procedure
@@ -7185,15 +7024,9 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
           LOG_I(RRC, "Processing ueCapabilityInformation UE %x, ue_context_p is NULL\n", ctxt_pP->rnti);
           break;
       }
-#ifdef RRC_MSG_PRINT
-      LOG_F(RRC,"[MSG] RRC UECapablility Information \n");
 
-      for (i = 0; i < sdu_sizeP; i++) {
-        LOG_F(RRC,"%02x ", ((uint8_t*)Rx_sdu)[i]);
-      }
-
-      LOG_F(RRC,"\n");
-#endif
+      LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)Rx_sdu,sdu_sizeP,
+                  "[MSG] RRC UECapablility Information\n");
 
       MSC_LOG_RX_MESSAGE(
         MSC_RRC_ENB,
@@ -7215,9 +7048,9 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
             PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
             DCCH,
             sdu_sizeP);
-#ifdef XER_PRINT
-      xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void *)ul_dcch_msg);
-#endif
+      if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+          xer_fprint(stdout, &asn_DEF_UL_DCCH_Message, (void *)ul_dcch_msg);
+      }
       LOG_I(RRC, "got UE capabilities for UE %x\n", ctxt_pP->rnti);
       if (ue_context_p->ue_context.UE_Capability) {
         LOG_I(RRC, "freeing old UE capabilities for UE %x\n", ctxt_pP->rnti);
@@ -7234,9 +7067,9 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
                              ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.
                              choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.
                              array[0]->ueCapabilityRAT_Container.size, 0, 0);
-#ifdef XER_PRINT
-      xer_fprint(stdout, &asn_DEF_UE_EUTRA_Capability, ue_context_p->ue_context.UE_Capability);
-#endif
+      if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+         xer_fprint(stdout, &asn_DEF_UE_EUTRA_Capability, ue_context_p->ue_context.UE_Capability);
+      }
 
       if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
         LOG_E(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Failed to decode UE capabilities (%zu bytes)\n",
@@ -7247,22 +7080,22 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
         ue_context_p->ue_context.UE_Capability = 0;
       }
 
-#if defined(ENABLE_USE_MME)
+      if (EPC_MODE_ENABLED) {
 
-      if (EPC_MODE_ENABLED == 1) {
-        rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(ctxt_pP,
-                                              ue_context_p,
-                                              ul_dcch_msg);
+        if (EPC_MODE_ENABLED == 1) {
+  	  rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(ctxt_pP,
+  						ue_context_p,
+  						ul_dcch_msg);
+  	}
+      } else {
+  	ue_context_p->ue_context.nb_of_e_rabs = 1;
+  	for (i = 0; i < ue_context_p->ue_context.nb_of_e_rabs; i++){
+  	  ue_context_p->ue_context.e_rab[i].status = E_RAB_STATUS_NEW;
+  	  ue_context_p->ue_context.e_rab[i].param.e_rab_id = 1+i;
+  	  ue_context_p->ue_context.e_rab[i].param.qos.qci=9;
+  	}
+  	ue_context_p->ue_context.setup_e_rabs =ue_context_p->ue_context.nb_of_e_rabs;
       }
-#else 
-      ue_context_p->ue_context.nb_of_e_rabs = 1;
-      for (i = 0; i < ue_context_p->ue_context.nb_of_e_rabs; i++){
-	ue_context_p->ue_context.e_rab[i].status = E_RAB_STATUS_NEW;
-	ue_context_p->ue_context.e_rab[i].param.e_rab_id = 1+i;
-	ue_context_p->ue_context.e_rab[i].param.qos.qci=9;
-      }
-      ue_context_p->ue_context.setup_e_rabs =ue_context_p->ue_context.nb_of_e_rabs;
-#endif
 
       rrc_eNB_generate_defaultRRCConnectionReconfiguration(ctxt_pP,
           ue_context_p,
@@ -7285,16 +7118,8 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
       }
 
       LOG_D(RRC,"[MSG] RRC UL Information Transfer \n");
-#ifdef RRC_MSG_PRINT
-      LOG_F(RRC,"[MSG] RRC UL Information Transfer \n");
-
-      for (i = 0; i < sdu_sizeP; i++) {
-        LOG_F(RRC,"%02x ", ((uint8_t*)Rx_sdu)[i]);
-      }
-
-      LOG_F(RRC,"\n");
-#endif
-
+      LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)Rx_sdu,sdu_sizeP,
+                  "[MSG] RRC UL Information Transfer \n");
 
       MSC_LOG_RX_MESSAGE(
         MSC_RRC_ENB,
@@ -7306,15 +7131,11 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
         ue_context_p->ue_context.rnti,
         sdu_sizeP);
 
-#if defined(ENABLE_USE_MME)
-
       if (EPC_MODE_ENABLED == 1) {
         rrc_eNB_send_S1AP_UPLINK_NAS(ctxt_pP,
                                      ue_context_p,
                                      ul_dcch_msg);
       }
-
-#endif
       break;
 
     case UL_DCCH_MessageType__c1_PR_counterCheckResponse:
@@ -7380,15 +7201,8 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
      //case UL_DCCH_MessageType__messageClassExtension__c2_PR_sidelinkUEInformation_r12: //SidelinkUEInformation
         LOG_I(RRC,"THINH [UL_DCCH_MessageType__messageClassExtension_PR_c2]\n");
 
-#ifdef RRC_MSG_PRINT
-        LOG_F(RRC,"[MSG] SidelinkUEInformation\n");
-
-        for (i = 0; i < sdu_sizeP; i++) {
-           LOG_F(RRC,"%02x ", ((uint8_t*)Rx_sdu)[i]);
-        }
-
-        LOG_F(RRC,"\n");
-#endif
+        LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)Rx_sdu,sdu_sizeP,
+                    "[MSG] RRC SidelinkUEInformation \n");
 
         MSC_LOG_RX_MESSAGE(
               MSC_RRC_ENB,

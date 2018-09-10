@@ -40,7 +40,7 @@
 
 #include "proto_agent_common.h"
 #include "PHY/phy_extern.h"
-#include "log.h"
+#include "common/utils/LOG/log.h"
 
 #include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"

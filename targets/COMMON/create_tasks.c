@@ -22,7 +22,7 @@
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
 # include "create_tasks.h"
-# include "log.h"
+# include "common/utils/LOG/log.h"
 # include "common/ran_context.h"
 
 # ifdef OPENAIR2
@@ -31,6 +31,8 @@
 #     include "nas_ue_task.h"
 #     include "udp_eNB_task.h"
 #     include "gtpv1u_eNB_task.h"
+#   else
+#     define EPC_MODE_ENABLED 0
 #   endif
 #   include "RRC/LTE/rrc_defs.h"
 # endif
@@ -74,6 +76,7 @@ int create_tasks(uint32_t enb_nb)
       return -1;
     }
   }
+
 
   switch (type) {
   case ngran_eNB_CU:

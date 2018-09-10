@@ -443,7 +443,7 @@ typedef struct {
 /*!\brief LCID of MCCH for DL */
 #define MCCH_LCHANID 0
 /*!\brief LCID of MCH scheduling info for DL */
-#define MCH_SCHDL_INFO 3
+#define MCH_SCHDL_INFO 30
 /*!\brief LCID of Carrier component activation/deactivation */
 #define CC_ACT_DEACT 27
 //TTN (for D2D)
@@ -1503,7 +1503,16 @@ typedef struct {
     /// MCCH status
     uint8_t mcch_status;
     /// MSI status
-    uint8_t msi_status;		// could be an array if there are >1 MCH in one MBSFN area
+    uint8_t msi_status_v[28];
+    uint8_t msi_current_alloc;
+    uint8_t msi_pmch;
+
+    struct MBSFN_SubframeConfig *commonSF_Alloc_r9_mbsfn_SubframeConfig[8]; // FIXME replace 8 by MAX_MBSFN_AREA?
+    uint8_t commonSF_AllocPeriod_r9;
+    int common_num_sf_alloc;
+
+    uint8_t pmch_lcids[28];
+    uint16_t pmch_stop_mtch[28];
 #endif
   //#ifdef CBA
   /// CBA RNTI for each group
