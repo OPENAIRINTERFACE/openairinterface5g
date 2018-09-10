@@ -170,8 +170,9 @@ void *eNB_app_task(void *args_p)
 
   /* Try to register each eNB with each other */
  // x2_registered_enb = 0;
-  x2_register_enb_pending = eNB_app_register_x2 (enb_id_start, enb_id_end);
-
+  if (RC.rrc[0]->node_type == ngran_eNB) { // CU or DU do not need
+    x2_register_enb_pending = eNB_app_register_x2 (enb_id_start, enb_id_end);
+  }
   do {
     // Wait for a message
     itti_receive_msg (TASK_ENB_APP, &msg_p);
