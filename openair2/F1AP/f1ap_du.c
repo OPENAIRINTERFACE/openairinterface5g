@@ -32,10 +32,10 @@
 
 #include "conversions.h"
 #include "f1ap_common.h"
-#include "du_f1ap_defs.h"
+#include "f1ap_du_defs.h"
 #include "f1ap_encoder.h"
 #include "f1ap_decoder.h"
-#include "du_f1ap_task.h"
+#include "f1ap_du_task.h"
 #include "platform_types.h"
 #include "common/utils/LOG/log.h"
 #include "intertask_interface.h"
@@ -130,6 +130,7 @@ void *F1AP_DU_task(void *arg) {
         // 2. store the message in f1ap context, that is also stored in RC
         // 2. send a sctp_association req
         LOG_I(DU_F1AP, "F1AP_SETUP_REQ\n");
+        LOG_I(DU_F1AP, "--------------0--------------\n");
         DU_send_sctp_association_req(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                               &F1AP_SETUP_REQ(received_msg));
         break;
@@ -138,6 +139,7 @@ void *F1AP_DU_task(void *arg) {
         // 1. store the respon
         // 2. send the f1setup_req
         LOG_I(DU_F1AP, "SCTP_NEW_ASSOCIATION_RESP\n");
+        LOG_I(DU_F1AP, "--------------1--------------\n");
         DU_handle_sctp_association_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                         &received_msg->ittiMsg.sctp_new_association_resp);
         break;
@@ -145,6 +147,7 @@ void *F1AP_DU_task(void *arg) {
       case SCTP_DATA_IND: 
         // ex: any F1 incoming message for DU ends here
         LOG_I(DU_F1AP, "SCTP_DATA_IND\n");
+        LOG_I(DU_F1AP, "--------------2--------------\n");
         DU_handle_sctp_data_ind(&received_msg->ittiMsg.sctp_data_ind);
         break;
 
@@ -464,7 +467,7 @@ void DU_send_F1_SETUP_REQUEST(instance_t instance, sctp_new_association_resp_t *
         F1AP_GNB_DU_System_Information_t *gNB_DU_System_Information = (F1AP_GNB_DU_System_Information_t *)calloc(1, sizeof(F1AP_GNB_DU_System_Information_t));
 
         OCTET_STRING_fromBuf(&gNB_DU_System_Information->mIB_message,  // sept. 2018
-                             "1",
+                             "1",//f1ap_setup_req->mib,
                              sizeof("1"));
 
         OCTET_STRING_fromBuf(&gNB_DU_System_Information->sIB1_message,  // sept. 2018

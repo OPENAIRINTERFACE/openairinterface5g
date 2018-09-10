@@ -52,13 +52,17 @@ int f1ap_handle_f1_setup_request(uint32_t               assoc_id,
                                  uint32_t               stream,
                                  F1AP_F1AP_PDU_t        *pdu);
 
+static
+int f1ap_handle_f1_setup_response(uint32_t               assoc_id,
+                                 uint32_t               stream,
+                                 F1AP_F1AP_PDU_t        *pdu);
 
 /* Handlers matrix. Only f1 related procedure present here */
 f1ap_message_decoded_callback f1ap_messages_callback[][3] = {
   
 
   { 0, 0, 0 }, /* Reset */
-  { f1ap_handle_f1_setup_request, 0, 0 }, /* F1Setup */
+  { f1ap_handle_f1_setup_request, f1ap_handle_f1_setup_response, 0 }, /* F1Setup */
   { 0, 0, 0 }, /* ErrorIndication */
   { f1ap_handle_f1_setup_request, 0, 0 }, /* gNBDUConfigurationUpdate */
   { f1ap_handle_f1_setup_request, 0, 0 }, /* gNBCUConfigurationUpdate */
@@ -144,6 +148,16 @@ int f1ap_handle_message(uint32_t assoc_id, int32_t stream,
 
 static
 int f1ap_handle_f1_setup_request(uint32_t               assoc_id,
+                                 uint32_t               stream,
+                                 F1AP_F1AP_PDU_t       *pdu)
+{
+   printf("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n");
+
+   return 0;
+}
+
+static
+int f1ap_handle_f1_setup_response(uint32_t               assoc_id,
                                  uint32_t               stream,
                                  F1AP_F1AP_PDU_t       *pdu)
 {

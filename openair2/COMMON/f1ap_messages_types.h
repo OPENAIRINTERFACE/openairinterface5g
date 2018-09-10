@@ -103,6 +103,8 @@ typedef struct f1ap_setup_req_s {
   uint16_t num_ssi[F1AP_MAX_NB_CELLS];
   uint8_t sst[F1AP_MAX_NB_CELLS][16];
   uint8_t sd[F1AP_MAX_NB_CELLS][16];
+  // tdd_flag = 0 means FDD, 1 means TDD
+  int  tdd_flag;
 
   union {
     struct {

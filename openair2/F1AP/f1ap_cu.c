@@ -32,10 +32,10 @@
 
 #include "conversions.h"
 #include "f1ap_common.h"
-#include "cu_f1ap_defs.h"
+#include "f1ap_cu_defs.h"
 #include "f1ap_encoder.h"
 #include "f1ap_decoder.h"
-#include "cu_f1ap_task.h"
+#include "f1ap_cu_task.h"
 #include "platform_types.h"
 #include "common/utils/LOG/log.h"
 #include "intertask_interface.h"
@@ -148,18 +148,21 @@ void *F1AP_CU_task(void *arg) {
 
       case SCTP_NEW_ASSOCIATION_IND:
         LOG_I(CU_F1AP, "SCTP_NEW_ASSOCIATION_IND\n");
+        LOG_I(DU_F1AP, "--------------3--------------\n");
         CU_handle_sctp_association_ind(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                          &received_msg->ittiMsg.sctp_new_association_ind);
         break;
 
       case SCTP_NEW_ASSOCIATION_RESP:
         LOG_I(CU_F1AP, "SCTP_NEW_ASSOCIATION_RESP\n");
+        LOG_I(DU_F1AP, "--------------4--------------\n");
         CU_handle_sctp_association_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                          &received_msg->ittiMsg.sctp_new_association_resp);
         break;
 
       case SCTP_DATA_IND:
         LOG_I(CU_F1AP, "SCTP_DATA_IND\n");
+        LOG_I(DU_F1AP, "--------------5--------------\n");
         CU_handle_sctp_data_ind(&received_msg->ittiMsg.sctp_data_ind);
         break;
 

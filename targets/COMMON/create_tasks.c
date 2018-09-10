@@ -35,8 +35,8 @@
 #   include "RRC/LTE/rrc_defs.h"
 # endif
 # include "sctp_eNB_task.h"
-# include "cu_f1ap_task.h"
-# include "du_f1ap_task.h"
+# include "f1ap_cu_task.h"
+# include "f1ap_du_task.h"
 # include "enb_app.h"
 
 extern RAN_CONTEXT_t RC;

@@ -3,5 +3,5 @@
 
 # log and exec file
 log/
-lte_build_oai/
+*build_oai/
 targets/bin/

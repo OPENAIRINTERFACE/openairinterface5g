@@ -195,7 +195,7 @@ void *eNB_app_task(void *args_p)
       break;
 
     case F1AP_SETUP_RESP:
-      AssertFatal(RC.rrc[0]->node_type == ngran_eNB_DU, "Should not have received F1AP_REGISTER_ENB_CNF\n");
+      AssertFatal(RC.rrc[0]->node_type == ngran_eNB_DU, "Should not have received F1AP_REGISTER_ENB_CNF in CU/eNB\n");
 
       LOG_I(ENB_APP, "[eNB %d] Received %s: associated ngran_eNB_CU %s with %d cells to activate\n", instance, ITTI_MSG_NAME (msg_p),
 	    F1AP_SETUP_RESP(msg_p).gNB_CU_name,F1AP_SETUP_RESP(msg_p).num_cells_to_activate);

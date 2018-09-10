@@ -530,8 +530,8 @@ message(${F1AP_C_DIR})
 message(${F1AP_DIR})
 
 add_library(F1AP
-  ${F1AP_DIR}/DU_F1AP.c
-  ${F1AP_DIR}/CU_F1AP.c
+  ${F1AP_DIR}/f1ap_du.c
+  ${F1AP_DIR}/f1ap_cu.c
   ${F1AP_DIR}/f1ap_itti_messaging.c
   ${F1AP_DIR}/f1ap_encoder.c
   ${F1AP_DIR}/f1ap_decoder.c
