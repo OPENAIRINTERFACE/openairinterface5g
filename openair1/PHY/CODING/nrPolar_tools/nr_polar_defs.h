@@ -30,6 +30,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "PHY/TOOLS/time_meas.h"
+
 static const uint8_t nr_polar_subblock_interleaver_pattern[32] = { 0, 1, 2, 4, 3, 5, 6, 7, 8, 16, 9, 17, 10, 18, 11, 19, 12, 20, 13, 21, 14, 22, 15, 23, 24, 25, 26, 28, 27, 29, 30, 31 };
 
 struct nrPolar_params {
@@ -75,7 +77,15 @@ void polar_encoder(uint8_t *input, uint8_t *output, t_nrPolar_params* polarParam
 void nr_polar_kernal_operation(uint8_t *u, uint8_t *d, uint16_t N);
 
 int8_t polar_decoder(double *input, uint8_t *output, t_nrPolar_params *polarParams,
-		uint8_t listSize, double *aPrioriPayload, uint8_t pathMetricAppr);
+		       uint8_t listSize, double *aPrioriPayload, uint8_t pathMetricAppr,
+		       time_stats_t *init,
+		       time_stats_t *polar_rate_matching,
+		       time_stats_t *decoding,
+		       time_stats_t *bit_extraction,
+		       time_stats_t *deinterleaving,
+		       time_stats_t *sorting,
+		       time_stats_t *path_metric,
+		       time_stats_t *update_LLR);
 
 void nr_polar_init(t_nrPolar_params* polarParams, int messageType);
 

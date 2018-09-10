@@ -15,10 +15,20 @@ int main(int argc, char *argv[]) {
 
 	//Initiate timing. (Results depend on CPU Frequency. Therefore, might change due to performance variances during simulation.)
 	time_stats_t timeEncoder,timeDecoder;
+	time_stats_t polar_decoder_init,polar_rate_matching,decoding,bit_extraction,deinterleaving;
+	time_stats_t path_metric,sorting,update_LLR;
 	opp_enabled=1;
 	cpu_freq_GHz = get_cpu_freq_GHz();
 	reset_meas(&timeEncoder);
 	reset_meas(&timeDecoder);
+	reset_meas(&polar_decoder_init);
+	reset_meas(&polar_rate_matching);
+	reset_meas(&decoding);
+	reset_meas(&bit_extraction);
+	reset_meas(&deinterleaving);
+	reset_meas(&sorting);
+	reset_meas(&path_metric);
+	reset_meas(&update_LLR);
 
 	randominit(0);
 	//Default simulation values (Aim for iterations = 1000000.)
@@ -128,7 +138,7 @@ int main(int argc, char *argv[]) {
 
 	// We assume no a priori knowledge available about the payload.
 	double aPrioriArray[nrPolar_params.payloadBits];
-	for (int i=0; i<nrPolar_params.payloadBits; i++) aPrioriArray[i] = NAN;
+	for (int i=0; i<=nrPolar_params.payloadBits; i++) aPrioriArray[i] = NAN;
 
 	for (SNR = SNRstart; SNR <= SNRstop; SNR += SNRinc) {
 		SNR_lin = pow(10, SNR/10);
@@ -153,8 +163,8 @@ int main(int argc, char *argv[]) {
 
 
 		start_meas(&timeDecoder);
-		decoderState = polar_decoder(channelOutput, estimatedOutput, &nrPolar_params, decoderListSize, aPrioriArray, pathMetricAppr);
-		stop_meas(&timeDecoder);
+		decoderState = polar_decoder(channelOutput, estimatedOutput, &nrPolar_params, decoderListSize, aPrioriArray, pathMetricAppr,&polar_decoder_init,&polar_rate_matching,&decoding,&bit_extraction,&deinterleaving,&sorting,&path_metric,&update_LLR);
+																	       stop_meas(&timeDecoder);
 
 		//calculate errors
 		if (decoderState==-1) {
@@ -191,7 +201,15 @@ int main(int argc, char *argv[]) {
 				decoderListSize, pathMetricAppr, SNR, ((double)blockErrorCumulative/iterations),
 				((double)bitErrorCumulative / (iterations*testLength)),
 				(timeEncoderCumulative/iterations),timeDecoderCumulative/iterations);
+		printf("decoding init %9.3fus\n",polar_decoder_init.diff/(cpu_freq_GHz*1000.0*polar_decoder_init.trials));
 
+		printf("decoding polar_rate_matching %9.3fus\n",polar_rate_matching.diff/(cpu_freq_GHz*1000.0*polar_rate_matching.trials));
+		printf("decoding decoding %9.3fus\n",decoding.diff/(cpu_freq_GHz*1000.0*decoding.trials));
+		printf("decoding bit_extraction %9.3fus\n",bit_extraction.diff/(cpu_freq_GHz*1000.0*bit_extraction.trials));
+		printf("decoding deinterleaving %9.3fus\n",deinterleaving.diff/(cpu_freq_GHz*1000.0*deinterleaving.trials));
+		printf("decoding path_metric %9.3fus\n",path_metric.diff/(cpu_freq_GHz*1000.0*deinterleaving.trials));
+		printf("decoding sorting %9.3fus\n",sorting.diff/(cpu_freq_GHz*1000.0*deinterleaving.trials));
+		printf("decoding updateLLR %9.3fus\n",update_LLR.diff/(cpu_freq_GHz*1000.0*deinterleaving.trials));
 		blockErrorCumulative = 0; bitErrorCumulative = 0;
 		timeEncoderCumulative = 0; timeDecoderCumulative = 0;
 	}
