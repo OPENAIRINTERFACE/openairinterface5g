@@ -361,7 +361,7 @@ short *choose_generator_matrix(short BG,short Zc)
   return Gen_shift_values;
 }
 
-int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,short block_length,short BG,unsigned char gen_code)
+int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,short block_length, short BG,unsigned char gen_code)
 {
   unsigned char c[22*384]; //padded input, unpacked, max size
   unsigned char d[68*384]; //coded output, unpacked, max size
@@ -378,26 +378,30 @@ int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,sho
   int indlist2[1000];
 
   //determine number of bits in codeword
-  if (BG==1)
-  {
-    Kb = 22;
-    nrows=46; //parity check bits
-    ncols=22; //info bits
-  }
-  else if (BG==2)
-  {
-    nrows=42;  //parity check bits
-    ncols=10;  // info bits
+  //if (block_length>3840)
+     if (BG==1)
+       {
+         //BG=1;
+         Kb = 22;
+         nrows=46; //parity check bits
+         ncols=22; //info bits
+       }
+       //else if (block_length<=3840)
+      else if	(BG==2)
+       {
+         //BG=2;
+         nrows=42; //parity check bits
+         ncols=10; // info bits
 
-    if (block_length>640)
-      Kb = 10;
-    else if (block_length>560)
-      Kb = 9;
-    else if (block_length>192)
-      Kb = 8;
-    else
-      Kb = 6;
-  }
+         if (block_length>640)
+   	Kb = 10;
+         else if (block_length>560)
+   	Kb = 9;
+         else if (block_length>192)
+         Kb = 8;
+       else
+         Kb = 6;
+         }
 
   //find minimum value in all sets of lifting size
   Zc=0;
@@ -414,8 +418,6 @@ int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,sho
     printf("ldpc_encoder_orig: could not determine lifting size\n");
     return(-1);
   }
-
-  int K = ncols*Zc;
 
   Gen_shift_values=choose_generator_matrix(BG,Zc);
   if (Gen_shift_values==NULL) {
@@ -438,15 +440,9 @@ int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,sho
   }
   
   no_punctured_columns=(int)((nrows-2)*Zc+block_length-block_length*3)/Zc;
-  //nrows - no_punctured_columns = 2 +2*block_length/Zc
   removed_bit=(nrows-no_punctured_columns-2) * Zc+block_length-(block_length*3);
-  // ((nrows-no_punctured_columns) * Zc-removed_bit) =
-  // 2Zc + 2*block_length
   //printf("%d\n",no_punctured_columns);
   //printf("%d\n",removed_bit);
-  //printf("%d\n",nrows-no_punctured_columns);
-  //printf("%d\n",((nrows-no_punctured_columns) * Zc-removed_bit));
-  
   // unpack input
   memset(c,0,sizeof(unsigned char) * ncols * Zc);
   memset(d,0,sizeof(unsigned char) * nrows * Zc);
@@ -614,8 +610,8 @@ int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,sho
   }
 
   // information part and puncture columns
-  memcpy(&channel_input[0], &c[2*Zc], (block_length-2*Zc)*sizeof(unsigned char)); //systematic bits
-  memcpy(&channel_input[block_length-2*Zc], &d[0], ((nrows-no_punctured_columns) * Zc-removed_bit)*sizeof(unsigned char)); //systematic bits 2Zc + 2*block_length 
+  memcpy(&channel_input[0], &c[2*Zc], (block_length-2*Zc)*sizeof(unsigned char));
+  memcpy(&channel_input[block_length-2*Zc], &d[0], ((nrows-no_punctured_columns) * Zc-removed_bit)*sizeof(unsigned char));
   //memcpy(channel_input,c,Kb*Zc*sizeof(unsigned char));
   return 0;
 }
