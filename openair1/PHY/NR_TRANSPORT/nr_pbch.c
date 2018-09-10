@@ -283,16 +283,16 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
     printf("pbch_a_prime[%d]: 0x%02x\n", i, pbch->pbch_a_prime[i]);
 #endif
 
-for (int m=0;m<32;m++){
+/*for (int m=0;m<32;m++){
 pbch_a_b[m] = ((pbch->pbch_a_prime[m>>3]>>(m&7))&1);
 //printf("pbch_a_b[%d] %d\n", m, pbch_a_b[m] );
-}
+}*/
 
   /// CRC, coding and rate matching
   polar_encoder (pbch->pbch_a_prime, pbch->pbch_e, polar_params);
 #ifdef DEBUG_PBCH_ENCODING
   printf("Channel coding:\n");
-  for (int i=0; i<(uint16_t)ceil((NR_POLAR_PBCH_E>>3)/32); i++)
+  for (int i=0; i<NR_POLAR_PBCH_E>>5; i++)
     printf("pbch_e[%d]: 0x%08x\t", i, pbch->pbch_e[i]);
   printf("\n");
 #endif
@@ -303,7 +303,7 @@ pbch_a_b[m] = ((pbch->pbch_a_prime[m>>3]>>(m&7))&1);
   nr_pbch_scrambling(pbch, (uint32_t)config->sch_config.physical_cell_id.value, nushift, M, NR_POLAR_PBCH_E, 1);
 #ifdef DEBUG_PBCH_ENCODING
   printf("Scrambling:\n");
-  for (int i=0; i<(uint16_t)ceil((NR_POLAR_PBCH_E>>3)/32); i++)
+  for (int i=0; i<NR_POLAR_PBCH_E>>5; i++)
     printf("pbch_e[%d]: 0x%08x\t", i, pbch->pbch_e[i]);
   printf("\n");
 #endif
