@@ -125,7 +125,7 @@ int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 static char                    *itti_dump_file = NULL;
 #endif
 
-int UE_scan = 1;
+int UE_scan = 0;
 int UE_scan_carrier = 0;
 runmode_t mode = normal_txrx;
 
@@ -502,7 +502,6 @@ static void get_options (int argc, char **argv) {
 	  paramdef_t cmdline_logparams[] = CMDLINE_LOGPARAMS_DESC ;
 
 	  //set_default_frame_parms(config,frame_parms);
-	  CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
 	  config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
 
 	  if (strlen(in_path) > 0) {
@@ -608,7 +607,8 @@ void set_default_frame_parms(NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
 
         ///frame_parms[CC_id]->phich_config_common.phich_resource = oneSixth;
         //frame_parms[CC_id]->phich_config_common.phich_duration = normal;
-    // UL RS Config
+
+	// UL RS Config
         /*frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 1;//n_DMRS1 set to 0
         frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1;
         frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
@@ -629,12 +629,6 @@ void set_default_frame_parms(NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
         frame_parms[CC_id]->numerology_index	= 0;
         frame_parms[CC_id]->ttis_per_subframe	= 1;
         frame_parms[CC_id]->slots_per_tti		= 2;
-
-        downlink_frequency[CC_id][0] = 2680000000; // Use float to avoid issue with frequency over 2^31.
-        downlink_frequency[CC_id][1] = downlink_frequency[CC_id][0];
-        downlink_frequency[CC_id][2] = downlink_frequency[CC_id][0];
-        downlink_frequency[CC_id][3] = downlink_frequency[CC_id][0];
-        //printf("Downlink for CC_id %d frequency set to %u\n", CC_id, downlink_frequency[CC_id][0]);
 
     }
 
@@ -674,7 +668,8 @@ void set_default_frame_parms_single(nfapi_nr_config_request_t *config, NR_DL_FRA
 
         ///frame_parms[CC_id]->phich_config_common.phich_resource = oneSixth;
         //frame_parms[CC_id]->phich_config_common.phich_duration = normal;
-    // UL RS Config
+	
+	// UL RS Config
         /*frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 1;//n_DMRS1 set to 0
         frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1;
         frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
@@ -695,12 +690,6 @@ void set_default_frame_parms_single(nfapi_nr_config_request_t *config, NR_DL_FRA
         frame_parms->numerology_index	= 0;
         frame_parms->ttis_per_subframe	= 1;
         frame_parms->slots_per_tti		= 2;
-
-        downlink_frequency[0][0] = 2680000000; // Use float to avoid issue with frequency over 2^31.
-        //downlink_frequency[CC_id][1] = downlink_frequency[CC_id][0];
-        //downlink_frequency[CC_id][2] = downlink_frequency[CC_id][0];
-        //downlink_frequency[CC_id][3] = downlink_frequency[CC_id][0];
-        //printf("Downlink for CC_id %d frequency set to %u\n", CC_id, downlink_frequency[CC_id][0]);
 
     //}
 
@@ -824,8 +813,9 @@ int main( int argc, char **argv ) {
     start_background_system();
     if ( load_configmodule(argc,argv) == NULL) {
       exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
-    } 
-
+    }
+    CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
+ 
 #ifdef DEBUG_CONSOLE
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
@@ -853,10 +843,10 @@ int main( int argc, char **argv ) {
 #endif
 
     // initialize the log (see log.h for details)
-    set_glog(LOG_INFO);
+    set_glog(LOG_DEBUG);
 
     set_log(HW,      OAILOG_DEBUG,   1);
-    set_log(PHY,     OAILOG_INFO,    1);
+    set_log(PHY,     OAILOG_DEBUG,    1);
     set_log(MAC,     OAILOG_INFO,    1);
     set_log(RLC,     OAILOG_INFO,    1);
     set_log(PDCP,    OAILOG_INFO,    1);
