@@ -124,27 +124,41 @@ void nr_matrix_multiplication_uint8_t_1D_uint8_t_2D(uint8_t *matrix1, uint8_t **
 uint8_t ***nr_alloc_uint8_t_3D_array(uint16_t xlen, uint16_t ylen,
 		uint16_t zlen);
 uint8_t **nr_alloc_uint8_t_2D_array(uint16_t xlen, uint16_t ylen);
-double ***nr_alloc_double_3D_array(uint16_t xlen, uint16_t ylen, uint16_t zlen);
+double **nr_alloc_double_2D_array(uint16_t xlen, uint16_t ylen);
 
 void nr_free_uint8_t_3D_array(uint8_t ***input, uint16_t xlen, uint16_t ylen);
 void nr_free_uint8_t_2D_array(uint8_t **input, uint16_t xlen);
-void nr_free_double_3D_array(double ***input, uint16_t xlen, uint16_t ylen);
+void nr_free_double_2D_array(double **input, uint16_t xlen);
 
-void updateLLR(double ***llr, uint8_t **llrU, uint8_t ***bit, uint8_t **bitU,
-		uint8_t listSize, uint16_t row, uint16_t col, uint16_t xlen,
-		uint8_t ylen, uint8_t approximation);
-void updateBit(uint8_t ***bit, uint8_t **bitU, uint8_t listSize, uint16_t row,
-		uint16_t col, uint16_t xlen, uint8_t ylen);
-void updatePathMetric(double *pathMetric, double ***llr, uint8_t listSize,
-		uint8_t bitValue, uint16_t row, uint8_t approximation);
-void updatePathMetric2(double *pathMetric, double ***llr, uint8_t listSize,
-		uint16_t row, uint8_t approximation);
-void computeLLR(double ***llr, uint16_t row, uint16_t col, uint8_t i,
-		uint16_t offset, uint8_t approximation);
-void updateCrcChecksum(uint8_t **crcChecksum, uint8_t **crcGen,
-		uint8_t listSize, uint32_t i2, uint8_t len);
-void updateCrcChecksum2(uint8_t **crcChecksum, uint8_t **crcGen,
-		uint8_t listSize, uint32_t i2, uint8_t len);
+
+typedef struct decoder_list_s {
+  
+  uint8_t **bit;
+  double **llr; 
+  uint8_t *crcChecksum; 
+  uint8_t crcState; 
+  double pathMetric; 
+
+} decoder_list_t;
+
+void updateLLR(decoder_list_t **dlist,uint8_t **llrU, uint8_t **bitU,
+	       uint8_t listSize, uint16_t row, uint16_t col, uint16_t xlen, uint8_t ylen, uint8_t approximation);
+
+void updateBit(decoder_list_t **dlist, uint8_t **bitU, uint8_t listSize, uint16_t row,
+	       uint16_t col, uint16_t xlen, uint8_t ylen);
+
+void updatePathMetric(decoder_list_t **dlist,uint8_t listSize, uint8_t bitValue,
+		      uint16_t row, uint8_t approximation);
+
+void updatePathMetric2(decoder_list_t **dlist, uint8_t listSize, uint16_t row, uint8_t appr);
+
+void updateCrcChecksum(decoder_list_t **dlist, uint8_t **crcGen,
+		       uint8_t listSize, uint32_t i2, uint8_t len);
+
+void updateCrcChecksum2(decoder_list_t **dlist, uint8_t **crcGen,
+			uint8_t listSize, uint32_t i2, uint8_t len);
+
+
 void nr_sort_asc_double_1D_array_ind(double *matrix, uint8_t *ind, uint8_t len);
 
 uint8_t **crc24c_generator_matrix(uint16_t payloadSizeBits);
