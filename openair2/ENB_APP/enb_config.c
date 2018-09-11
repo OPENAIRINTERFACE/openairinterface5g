@@ -777,7 +777,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc) {
         rrc->node_id        = *(ENBParamList.paramarray[0][ENB_ENB_ID_IDX].uptr);
 	LOG_I(ENB_APP,"F1AP: gNB_CU_id[%d] %d\n",k,rrc->node_id);
 
-	rrc->node_name = strdup(*(ENBParamList.paramarray[0][ENB_ENB_NAME_IDX].strptr);
+	rrc->node_name = strdup(*(ENBParamList.paramarray[0][ENB_ENB_NAME_IDX].strptr));
 	LOG_I(ENB_APP,"F1AP: gNB_CU_name[%d] %s\n",k,rrc->node_name);
 
 	rrc->eth_params_s.local_if_name            = strdup(*(ENBParamList.paramarray[i][ENB_LOCAL_S_IF_NAME_IDX].strptr));
@@ -2365,7 +2365,7 @@ int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
     AssertFatal(ENBParamList.paramarray[i][ENB_ENB_ID_IDX].uptr != NULL,
 		"eNB id %d is not defined in configuration file\n",i);
 
-    F1AP_SETUP_REQ (msg_p).num_available_cells = 0;
+    F1AP_SETUP_REQ (msg_p).num_cells_available = 0;
 
     for (k=0; k <num_enbs ; k++) {
       if (strcmp(ENBSParams[ENB_ACTIVE_ENBS_IDX].strlistptr[k], *(ENBParamList.paramarray[i][ENB_ENB_NAME_IDX].strptr) )== 0) {
@@ -2373,7 +2373,7 @@ int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
         paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
         char aprefix[MAX_OPTNAME_SIZE*2 + 8];
 	
-	F1AP_SETUP_REQ (msg_p).num_available_cells++;
+	F1AP_SETUP_REQ (msg_p).num_cells_available++;
 
         F1AP_SETUP_REQ (msg_p).gNB_DU_id        = *(ENBParamList.paramarray[0][ENB_ENB_ID_IDX].uptr);
         LOG_I(ENB_APP,"F1AP: gNB_DU_id[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).gNB_DU_id);
