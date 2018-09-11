@@ -22,10 +22,10 @@
 /* F1AP -> SCTP */
 MESSAGE_DEF(F1AP_CU_SCTP_REQ        , MESSAGE_PRIORITY_MED, f1ap_cu_setup_req_t       , f1ap_cu_setup_req)
 
-/* eNB application layer -> F1AP messages */
+/* eNB_DU application layer -> F1AP messages or CU F1AP -> RRC*/
 MESSAGE_DEF(F1AP_SETUP_REQ          , MESSAGE_PRIORITY_MED, f1ap_setup_req_t          , f1ap_setup_req)
 
-/* F1AP -> eNB application layer messages */
+/* F1AP -> eNB_DU or eNB_CU_RRC -> F1AP application layer messages */
 MESSAGE_DEF(F1AP_SETUP_RESP         , MESSAGE_PRIORITY_MED, f1ap_setup_resp_t          , f1ap_setup_resp)
 MESSAGE_DEF(F1AP_SETUP_FAILURE         , MESSAGE_PRIORITY_MED, f1ap_setup_failure_t          , f1ap_setup_failure)
 
@@ -39,5 +39,7 @@ MESSAGE_DEF(F1AP_UL_RRC_MESSAGE                , MESSAGE_PRIORITY_MED, f1ap_ul_r
 /* RRC -> F1AP  messages */
 MESSAGE_DEF(F1AP_DL_RRC_MESSAGE              , MESSAGE_PRIORITY_MED, f1ap_dl_rrc_message_t              , f1ap_downlink_rrc_message )
 //MESSAGE_DEF(F1AP_INITIAL_CONTEXT_SETUP_REQ , MESSAGE_PRIORITY_MED, f1ap_initial_context_setup_req_t , f1ap_initial_context_setup_req )
+
+
 
 

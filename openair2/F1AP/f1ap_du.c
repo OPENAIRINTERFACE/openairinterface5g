@@ -64,7 +64,7 @@ typedef struct f1ap_info {
   uint16_t in_streams;
   uint16_t out_streams;
 
-  /* Connexion id used between SCTP/S1AP */
+  /* Connexion id used between SCTP/F1AP */
   uint16_t cnx_id;
 
   /* SCTP association id */

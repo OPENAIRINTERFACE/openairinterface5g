@@ -642,7 +642,9 @@ typedef struct {
   uint32_t                          ul_CarrierFreq;
   uint32_t                          pbch_repetition;
   BCCH_BCH_Message_t                mib;
+  BCCH_BCH_Message_t                *mib_DU;
   BCCH_DL_SCH_Message_t             siblock1;
+  BCCH_DL_SCH_Message_t             *siblock1_DU;
   BCCH_DL_SCH_Message_t             systemInformation;
   //  SystemInformation_t               systemInformation;
   SystemInformationBlockType1_t     *sib1;
@@ -679,6 +681,8 @@ typedef struct eNB_RRC_INST_s {
   /// southbound midhaul configuration
   ngran_node_t                    node_type;
   eth_params_t                    eth_params_s;
+  char                            *node_name;
+  uint32_t                        node_id;
   rrc_eNB_carrier_data_t          carrier[MAX_NUM_CCs];
   uid_allocator_t                    uid_allocator; // for rrc_ue_head
   RB_HEAD(rrc_ue_tree_s, rrc_eNB_ue_context_s)     rrc_ue_head; // ue_context tree key search by rnti

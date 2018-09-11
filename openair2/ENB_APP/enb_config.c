@@ -774,11 +774,11 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc) {
 	sprintf(aprefix,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,i,ENB_CONFIG_STRING_SCTP_CONFIG);
 	config_get( SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix); 
 
-        int gNB_CU_id        = *(ENBParamList.paramarray[0][ENB_ENB_ID_IDX].uptr);
-	LOG_I(ENB_APP,"F1AP: gNB_CU_id[%d] %d\n",k,gNB_CU_id);
+        rrc->node_id        = *(ENBParamList.paramarray[0][ENB_ENB_ID_IDX].uptr);
+	LOG_I(ENB_APP,"F1AP: gNB_CU_id[%d] %d\n",k,rrc->node_id);
 
-	char *gNB_CU_name = *(ENBParamList.paramarray[0][ENB_ENB_NAME_IDX].strptr);
-	LOG_I(ENB_APP,"F1AP: gNB_CU_name[%d] %s\n",k,gNB_CU_name);
+	rrc->node_name = strdup(*(ENBParamList.paramarray[0][ENB_ENB_NAME_IDX].strptr);
+	LOG_I(ENB_APP,"F1AP: gNB_CU_name[%d] %s\n",k,rrc->node_name);
 
 	rrc->eth_params_s.local_if_name            = strdup(*(ENBParamList.paramarray[i][ENB_LOCAL_S_IF_NAME_IDX].strptr));
 	LOG_I(RRC,"Configuring CU-DU interfaces for MACRLC on %s\n",rrc->eth_params_s.local_if_name);
@@ -2363,13 +2363,18 @@ int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
     // Output a list of all eNBs.
     config_getlist( &ENBParamList,ENBParams,sizeof(ENBParams)/sizeof(paramdef_t),NULL); 
     AssertFatal(ENBParamList.paramarray[i][ENB_ENB_ID_IDX].uptr != NULL,
-    "eNB id %d is not defined in configuration file\n",i);
+		"eNB id %d is not defined in configuration file\n",i);
+
+    F1AP_SETUP_REQ (msg_p).num_available_cells = 0;
+
     for (k=0; k <num_enbs ; k++) {
       if (strcmp(ENBSParams[ENB_ACTIVE_ENBS_IDX].strlistptr[k], *(ENBParamList.paramarray[i][ENB_ENB_NAME_IDX].strptr) )== 0) {
 
         paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
         char aprefix[MAX_OPTNAME_SIZE*2 + 8];
 	
+	F1AP_SETUP_REQ (msg_p).num_available_cells++;
+
         F1AP_SETUP_REQ (msg_p).gNB_DU_id        = *(ENBParamList.paramarray[0][ENB_ENB_ID_IDX].uptr);
         LOG_I(ENB_APP,"F1AP: gNB_DU_id[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).gNB_DU_id);
 
