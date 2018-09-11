@@ -19,4 +19,11 @@
  *      contact@openairinterface.org
  */
 
-MESSAGE_DEF(TIMER_HAS_EXPIRED, MESSAGE_PRIORITY_MED_PLUS, timer_has_expired_t, timer_has_expired)
+/*
+ * flexran_messages_def.h
+ *
+ *  Created on: Apr 26, 2018
+ *      Author: R. Schmidt
+ */
+
+MESSAGE_DEF(SOFT_RESTART_MESSAGE, MESSAGE_PRIORITY_MED_PLUS, IttiMsgEmpty, soft_restart_message)

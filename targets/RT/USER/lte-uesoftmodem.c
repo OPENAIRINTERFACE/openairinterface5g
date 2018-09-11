@@ -84,7 +84,6 @@
 #endif
 
 #if defined(ENABLE_ITTI)
-#include "intertask_interface_init.h"
 #include "create_tasks.h"
 #endif
 
@@ -323,13 +322,13 @@ void signal_handler(int sig) {
 
 
 
-void exit_fun(const char* s)
+void exit_function(const char* file, const char* function, const int line, const char* s)
 {
   int CC_id;
 
   logClean();
   if (s != NULL) {
-    printf("%s %s() Exiting OAI softmodem: %s\n",__FILE__, __FUNCTION__, s);
+    printf("%s:%d %s() Exiting OAI softmodem: %s\n",file,line, function, s);
   }
 
   oai_exit = 1;
@@ -342,10 +341,11 @@ void exit_fun(const char* s)
 	        PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][CC_id]->rfdevice);
     }
 
-#if defined(ENABLE_ITTI)
     sleep(1); //allow lte-softmodem threads to exit first
+#if defined(ENABLE_ITTI)
     itti_terminate_tasks (TASK_UNKNOWN);
 #endif
+  exit(1);
 }
 
 #ifdef XFORMS
@@ -470,7 +470,7 @@ void *l2l1_task(void *arg) {
 
 extern int16_t dlsch_demod_shift;
 
-static void get_options(void) {
+static void get_options(unsigned int *start_msc) {
   int CC_id;
   int tddflag, nonbiotflag;
   char *loopfile=NULL;
@@ -505,7 +505,7 @@ static void get_options(void) {
       set_glog(glog_level);
   }
   if (start_telnetsrv) {
-     load_module_shlib("telnetsrv",NULL,0);
+     load_module_shlib("telnetsrv",NULL,0,NULL);
   }
 
   paramdef_t cmdline_uemodeparams[] =CMDLINE_UEMODEPARAMS_DESC;
@@ -770,6 +770,7 @@ int main( int argc, char **argv )
 
   int CC_id;
   uint8_t  abstraction_flag=0;
+  unsigned int start_msc=0;
 
   // Default value for the number of UEs. It will hold,
   // if not changed from the command line option --num-ues
@@ -797,7 +798,7 @@ int main( int argc, char **argv )
   printf("Reading in command-line options\n");
 
   for (int i=0;i<MAX_NUM_CCs;i++) tx_max_power[i]=23; 
-  get_options ();
+  get_options (&start_msc);
 
 
   printf("Running with %d UE instances\n",NB_UE_INST);
@@ -830,21 +831,6 @@ int main( int argc, char **argv )
   //randominit (0);
   set_taus_seed (0);
 
-
-    set_log(HW,      OAILOG_DEBUG,   1);
-    set_log(PHY,     OAILOG_INFO,    1);
-    set_log(MAC,     OAILOG_INFO,    1);
-    set_log(RLC,     OAILOG_INFO,    1);
-    set_log(PDCP,    OAILOG_INFO,    1);
-    set_log(OTG,     OAILOG_INFO,    1);
-    set_log(RRC,     OAILOG_INFO,    1);
-#if defined(ENABLE_ITTI)
-    set_log(SIM,     OAILOG_INFO,   1);
-# if defined(ENABLE_USE_MME)
-    set_log(NAS,     OAILOG_INFO,    1);
-# endif
-#endif
-
   cpuf=get_cpu_freq_GHz();
 
   pthread_cond_init(&sync_cond,NULL);
@@ -858,18 +844,14 @@ int main( int argc, char **argv )
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
   // initialize mscgen log after ITTI
+  if (start_msc) {
+     load_module_shlib("msc",NULL,0,&msc_interface);
+  }
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
 #endif
 
   if (opt_type != OPT_NONE) {
-    radio_type_t radio_type;
-
-    if (frame_parms[0]->frame_type == FDD)
-      radio_type = RADIO_TYPE_FDD;
-    else
-      radio_type = RADIO_TYPE_TDD;
-
-    if (init_opt(in_path, in_ip, NULL, radio_type) == -1)
+    if (init_opt(in_path, in_ip) == -1)
       LOG_E(OPT,"failed to run OPT \n");
   }
 

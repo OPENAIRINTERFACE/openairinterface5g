@@ -43,7 +43,6 @@
 #include "rrc_eNB_UE_context.h"
 #include "common/ran_context.h"
 
-#define DEBUG_RRC 1
 extern RAN_CONTEXT_t RC;
 extern UE_MAC_INST *UE_mac_inst;
 

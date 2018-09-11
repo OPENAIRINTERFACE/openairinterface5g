@@ -40,9 +40,7 @@
 
 #include "UTIL/LOG/log_extern.h"
 #include "assertions.h"
-#include "intertask_interface_init.h"
 #include "intertask_interface.h"
-#include "timer.h"
 #include "sctp_eNB_task.h"
 #include "s1ap_eNB.h"
 #include "enb_config.h"

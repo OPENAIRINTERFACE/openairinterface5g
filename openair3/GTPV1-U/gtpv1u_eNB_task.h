@@ -29,7 +29,6 @@
 #ifndef GTPV1U_ENB_TASK_H_
 #define GTPV1U_ENB_TASK_H_
 
-#include "messages_types.h"
 
 /*
 int

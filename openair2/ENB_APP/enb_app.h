@@ -31,11 +31,11 @@
 #define ENB_APP_H_
 
 #include <stdint.h>
+#include "platform_types.h"
 
 
 void *eNB_app_task(void *args_p);
 
-/* needed for flexran: start PHY and RRC when restarting */
-void enb_app_start_phy_rrc(uint32_t enb_id_start, uint32_t enb_id_end);
+void handle_reconfiguration(module_id_t mod_id);
 
 #endif /* ENB_APP_H_ */

@@ -37,10 +37,12 @@
 #include "UTIL/OTG/otg_externs.h"
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
-# if defined(ENABLE_USE_MME)
+# if defined(ENABLE_USE_MME) 
 #   include "s1ap_eNB.h"
 #   include "sctp_eNB_task.h"
-# endif
+# else
+#  define EPC_MODE_ENABLED 0
+# endif 
 #endif
 #include "sctp_default_values.h"
 #include "SystemInformationBlockType2.h"
@@ -99,54 +101,51 @@ void RCconfig_flexran()
     ue_TimersAndConstants_t300, ue_TimersAndConstants_t301,
     ue_TimersAndConstants_t310, ue_TimersAndConstants_t311,
     ue_TimersAndConstants_n310, ue_TimersAndConstants_n311,
-    ue_TransmissionMode;
+    ue_TransmissionMode, ue_multiple_max;
 
-    int32_t     ue_multiple_max               = 0;
+  const char*       rxPool_sc_CP_Len;
+  const char*       rxPool_sc_Period;
+  const char*       rxPool_data_CP_Len;
+  libconfig_int     rxPool_ResourceConfig_prb_Num;
+  libconfig_int     rxPool_ResourceConfig_prb_Start;
+  libconfig_int     rxPool_ResourceConfig_prb_End;
+  const char*       rxPool_ResourceConfig_offsetIndicator_present;
+  libconfig_int     rxPool_ResourceConfig_offsetIndicator_choice;
+  const char*       rxPool_ResourceConfig_subframeBitmap_present;
+  char*             rxPool_ResourceConfig_subframeBitmap_choice_bs_buf;
+  libconfig_int     rxPool_ResourceConfig_subframeBitmap_choice_bs_size;
+  libconfig_int     rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
 
-    e_SL_CP_Len_r12                rxPool_sc_CP_Len;
-    e_SL_PeriodComm_r12            rxPool_sc_Period;
-    e_SL_CP_Len_r12                rxPool_data_CP_Len;
-    long                           rxPool_ResourceConfig_prb_Num;
-    long                           rxPool_ResourceConfig_prb_Start;
-    long                           rxPool_ResourceConfig_prb_End;
-    SL_OffsetIndicator_r12_PR      rxPool_ResourceConfig_offsetIndicator_present;
-    long                           rxPool_ResourceConfig_offsetIndicator_choice;
-    SubframeBitmapSL_r12_PR        rxPool_ResourceConfig_subframeBitmap_present;
-    char*                          rxPool_ResourceConfig_subframeBitmap_choice_bs_buf;
-    long                           rxPool_ResourceConfig_subframeBitmap_choice_bs_size;
-    long                           rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
+  //SIB19
+  //for discRxPool
+  const char*       discRxPool_cp_Len;
+  const char*       discRxPool_discPeriod;
+  libconfig_int     discRxPool_numRetx;
+  libconfig_int     discRxPool_numRepetition;
+  libconfig_int     discRxPool_ResourceConfig_prb_Num;
+  libconfig_int     discRxPool_ResourceConfig_prb_Start;
+  libconfig_int     discRxPool_ResourceConfig_prb_End;
+  const char*       discRxPool_ResourceConfig_offsetIndicator_present;
+  libconfig_int     discRxPool_ResourceConfig_offsetIndicator_choice;
+  const char*       discRxPool_ResourceConfig_subframeBitmap_present;
+  char*             discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf;
+  libconfig_int     discRxPool_ResourceConfig_subframeBitmap_choice_bs_size;
+  libconfig_int     discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
 
-    //SIB19
-    //for discRxPool
-    SL_CP_Len_r12_t                discRxPool_cp_Len;
-    e_SL_DiscResourcePool_r12__discPeriod_r12                   discRxPool_discPeriod;
-    long                           discRxPool_numRetx;
-    long                           discRxPool_numRepetition;
-    long                           discRxPool_ResourceConfig_prb_Num;
-    long                           discRxPool_ResourceConfig_prb_Start;
-    long                           discRxPool_ResourceConfig_prb_End;
-    SL_OffsetIndicator_r12_PR      discRxPool_ResourceConfig_offsetIndicator_present;
-    long                           discRxPool_ResourceConfig_offsetIndicator_choice;
-    SubframeBitmapSL_r12_PR        discRxPool_ResourceConfig_subframeBitmap_present;
-    char*                          discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf;
-    long                           discRxPool_ResourceConfig_subframeBitmap_choice_bs_size;
-    long                           discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
-    //for discRxPoolPS
-    SL_CP_Len_r12_t                discRxPoolPS_cp_Len;
-    e_SL_DiscResourcePool_r12__discPeriod_r12                   discRxPoolPS_discPeriod;
-    long                           discRxPoolPS_numRetx;
-    long                           discRxPoolPS_numRepetition;
-    long                           discRxPoolPS_ResourceConfig_prb_Num;
-    long                           discRxPoolPS_ResourceConfig_prb_Start;
-    long                           discRxPoolPS_ResourceConfig_prb_End;
-    SL_OffsetIndicator_r12_PR      discRxPoolPS_ResourceConfig_offsetIndicator_present;
-    long                           discRxPoolPS_ResourceConfig_offsetIndicator_choice;
-    SubframeBitmapSL_r12_PR        discRxPoolPS_ResourceConfig_subframeBitmap_present;
-    char*                          discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf;
-    long                           discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size;
-    long                           discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
-
-
+  //for discRxPoolPS
+  const char*       discRxPoolPS_cp_Len;
+  const char*       discRxPoolPS_discPeriod;
+  libconfig_int     discRxPoolPS_numRetx;
+  libconfig_int     discRxPoolPS_numRepetition;
+  libconfig_int     discRxPoolPS_ResourceConfig_prb_Num;
+  libconfig_int     discRxPoolPS_ResourceConfig_prb_Start;
+  libconfig_int     discRxPoolPS_ResourceConfig_prb_End;
+  const char*       discRxPoolPS_ResourceConfig_offsetIndicator_present;
+  libconfig_int     discRxPoolPS_ResourceConfig_offsetIndicator_choice;
+  const char*       discRxPoolPS_ResourceConfig_subframeBitmap_present;
+  char*             discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf;
+  libconfig_int     discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size;
+  libconfig_int     discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
 
   /* get number of eNBs */
   paramdef_t ENBSParams[] = ENBSPARAMS_DESC;
@@ -198,11 +197,10 @@ void RCconfig_flexran()
     /* eNB ID from configuration, as read in by RCconfig_RRC() */
     if (!ENBParamList.paramarray[i][ENB_ENB_ID_IDX].uptr) {
       // Calculate a default eNB ID
-# if defined(ENABLE_USE_MME)
-      enb_id = i + (s1ap_generate_eNB_id () & 0xFFFF8);
-# else
-      enb_id = i;
-# endif
+      if (EPC_MODE_ENABLED)
+         enb_id = i + (s1ap_generate_eNB_id () & 0xFFFF8);
+      else
+         enb_id = i;
     } else {
         enb_id = *(ENBParamList.paramarray[i][ENB_ENB_ID_IDX].uptr);
     }
@@ -291,7 +289,7 @@ void RCconfig_L1(void) {
         LOG_I(PHY,"%s() NFAPI PNF mode - RC.nb_CC[0]=%d for init_eNB_afterRU()\n", __FUNCTION__, RC.nb_CC[0]);
         LOG_I(PHY,"%s() NFAPI PNF mode - RC.nb_macrlc_inst:%d because used by mac_top_init_eNB()\n", __FUNCTION__, RC.nb_macrlc_inst);
 
-        mac_top_init_eNB();
+        //mac_top_init_eNB();
 
         configure_nfapi_pnf(RC.eNB[j][0]->eth_params_n.remote_addr, RC.eNB[j][0]->eth_params_n.remote_portc, RC.eNB[j][0]->eth_params_n.my_addr, RC.eNB[j][0]->eth_params_n.my_portd, RC.eNB[j][0]->eth_params_n     .remote_portd);
       }
@@ -546,32 +544,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   int32_t     srb1_max_retx_threshold       = 0;
 
   int32_t     my_int;
-
-
-  
-/* 
-  int32_t     otg_ue_id                     = 0;
-  char*             otg_app_type                  = NULL;
-  char*             otg_bg_traffic                = NULL;
-  char*             glog_level                    = NULL;
-  char*             glog_verbosity                = NULL;
-  char*             hw_log_level                  = NULL;
-  char*             hw_log_verbosity              = NULL;
-  char*             phy_log_level                 = NULL;
-  char*             phy_log_verbosity             = NULL;
-  char*             mac_log_level                 = NULL;
-  char*             mac_log_verbosity             = NULL;
-  char* 	    rlc_log_level		  = NULL;
-  char* 	    rlc_log_verbosity		  = NULL;
-  char* 	    pdcp_log_level		  = NULL;
-  char* 	    pdcp_log_verbosity  	  = NULL;
-  char* 	    rrc_log_level		  = NULL;
-  char* 	    rrc_log_verbosity		  = NULL;
-  char* 	    udp_log_verbosity		  = NULL;
-  char* 	    osa_log_level		  = NULL;
-  char* 	    osa_log_verbosity		  = NULL;
-*/  
-
   
   // for no gcc warnings 
   (void)my_int;
@@ -591,31 +563,12 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
      CCsParams[I].chkPptr = &(config_check_CCparams[I]);  
   }
 /* get global parameters, defined outside any section in the config file */
-  
+
   config_get( ENBSParams,sizeof(ENBSParams)/sizeof(paramdef_t),NULL); 
+
   num_enbs = ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt;
   AssertFatal (i<num_enbs,
    	       "Failed to parse config file no %ith element in %s \n",i, ENB_CONFIG_STRING_ACTIVE_ENBS);
-  
-#if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
-
-
-    if (strcasecmp( *(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr), ENB_CONFIG_STRING_ASN1_VERBOSITY_NONE) == 0) {
-      asn_debug      = 0;
-      asn1_xer_print = 0;
-    } else if (strcasecmp( *(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr), ENB_CONFIG_STRING_ASN1_VERBOSITY_INFO) == 0) {
-      asn_debug      = 1;
-      asn1_xer_print = 1;
-    } else if (strcasecmp(*(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr) , ENB_CONFIG_STRING_ASN1_VERBOSITY_ANNOYING) == 0) {
-      asn_debug      = 1;
-      asn1_xer_print = 2;
-    } else {
-      asn_debug      = 0;
-      asn1_xer_print = 0;
-    }
-
-
-#endif
   
 
   
@@ -628,14 +581,14 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
       
       if (ENBParamList.paramarray[i][ENB_ENB_ID_IDX].uptr == NULL) {
 	// Calculate a default eNB ID
-# if defined(ENABLE_USE_MME)
-	uint32_t hash;
-	
-	hash = s1ap_generate_eNB_id ();
-	enb_id = i + (hash & 0xFFFF8);
-# else
-	enb_id = i;
-# endif
+        if (EPC_MODE_ENABLED) {
+  	  uint32_t hash;
+  	  
+  	  hash = s1ap_generate_eNB_id ();
+  	  enb_id = i + (hash & 0xFFFF8);
+  	  } else {
+  	  enb_id = i;
+        }
       } else {
           enb_id = *(ENBParamList.paramarray[i][ENB_ENB_ID_IDX].uptr);
       }
@@ -2255,23 +2208,9 @@ int RCconfig_S1(MessageDef *msg_p, uint32_t i) {
 
 /* get global parameters, defined outside any section in the config file */
   
-  config_get( ENBSParams,sizeof(ENBSParams)/sizeof(paramdef_t),NULL); 
-#if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
-    if (strcasecmp( *(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr), ENB_CONFIG_STRING_ASN1_VERBOSITY_NONE) == 0) {
-      asn_debug      = 0;
-      asn1_xer_print = 0;
-    } else if (strcasecmp( *(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr), ENB_CONFIG_STRING_ASN1_VERBOSITY_INFO) == 0) {
-      asn_debug      = 1;
-      asn1_xer_print = 1;
-    } else if (strcasecmp(*(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr) , ENB_CONFIG_STRING_ASN1_VERBOSITY_ANNOYING) == 0) {
-      asn_debug      = 1;
-      asn1_xer_print = 2;
-    } else {
-      asn_debug      = 0;
-      asn1_xer_print = 0;
-    }
+  config_get( ENBSParams,sizeof(ENBSParams)/sizeof(paramdef_t),NULL);
+  
 
-#endif
 
     AssertFatal (i<ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt,
 		 "Failed to parse config file %s, %uth attribute %s \n",
@@ -2291,17 +2230,17 @@ int RCconfig_S1(MessageDef *msg_p, uint32_t i) {
 	if (ENBParamList.paramarray[k][ENB_ENB_ID_IDX].uptr == NULL) {
 	  // Calculate a default eNB ID
 
-# if defined(ENABLE_USE_MME)
-	  uint32_t hash;
-	  
-	  hash = s1ap_generate_eNB_id ();
-	  enb_id = k + (hash & 0xFFFF8);
-# else
-	  enb_id = k;
-# endif
-	} else {
-          enb_id = *(ENBParamList.paramarray[k][ENB_ENB_ID_IDX].uptr);
-        }
+  	  if (EPC_MODE_ENABLED) {
+  		uint32_t hash;
+  		
+  		hash = s1ap_generate_eNB_id ();
+  		enb_id = k + (hash & 0xFFFF8);
+  	  } else {
+  		enb_id = k;
+  	  }
+  	} else {
+  	    enb_id = *(ENBParamList.paramarray[k][ENB_ENB_ID_IDX].uptr);
+  	}
 	
 	
 	// search if in active list
@@ -2349,11 +2288,7 @@ int RCconfig_S1(MessageDef *msg_p, uint32_t i) {
 	      strcpy(S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[l].ipv4_address,*(S1ParamList.paramarray[l][ENB_MME_IPV4_ADDRESS_IDX].strptr));
 	      strcpy(S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[l].ipv6_address,*(S1ParamList.paramarray[l][ENB_MME_IPV6_ADDRESS_IDX].strptr));
 
-	      if (strcmp(*(S1ParamList.paramarray[l][ENB_MME_IP_ADDRESS_ACTIVE_IDX].strptr), "yes") == 0) {
-#if defined(ENABLE_USE_MME)
-		EPC_MODE_ENABLED = 1;
-#endif
-	      } 
+
 	      if (strcmp(*(S1ParamList.paramarray[l][ENB_MME_IP_ADDRESS_PREFERENCE_IDX].strptr), "ipv4") == 0) {
 		S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[l].ipv4 = 1;
 	      } else if (strcmp(*(S1ParamList.paramarray[l][ENB_MME_IP_ADDRESS_PREFERENCE_IDX].strptr), "ipv6") == 0) {
@@ -2368,12 +2303,12 @@ int RCconfig_S1(MessageDef *msg_p, uint32_t i) {
 	    // SCTP SETTING
 	    S1AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = SCTP_OUT_STREAMS;
 	    S1AP_REGISTER_ENB_REQ (msg_p).sctp_in_streams  = SCTP_IN_STREAMS;
-# if defined(ENABLE_USE_MME)
-	    sprintf(aprefix,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,k,ENB_CONFIG_STRING_SCTP_CONFIG);
-            config_get( SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix); 
-            S1AP_REGISTER_ENB_REQ (msg_p).sctp_in_streams = (uint16_t)*(SCTPParams[ENB_SCTP_INSTREAMS_IDX].uptr);
-            S1AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = (uint16_t)*(SCTPParams[ENB_SCTP_OUTSTREAMS_IDX].uptr);
-#endif
+            if (EPC_MODE_ENABLED) {
+	      sprintf(aprefix,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,k,ENB_CONFIG_STRING_SCTP_CONFIG);
+              config_get( SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix); 
+              S1AP_REGISTER_ENB_REQ (msg_p).sctp_in_streams = (uint16_t)*(SCTPParams[ENB_SCTP_INSTREAMS_IDX].uptr);
+              S1AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = (uint16_t)*(SCTPParams[ENB_SCTP_OUTSTREAMS_IDX].uptr);
+              }
 
             sprintf(aprefix,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,k,ENB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
 	    // NETWORK_INTERFACES
@@ -2388,31 +2323,161 @@ int RCconfig_S1(MessageDef *msg_p, uint32_t i) {
 
 		strcpy(S1AP_REGISTER_ENB_REQ (msg_p).enb_ip_address.ipv4_address, address);
 
-		/*
-		in_addr_t  ipv4_address;
-
-				if (address) {
-		  IPV4_STR_ADDR_TO_INT_NWBO ( address, ipv4_address, "BAD IP ADDRESS FORMAT FOR eNB S1_U !\n" );
-		}
-		strcpy(S1AP_REGISTER_ENB_REQ (msg_p).enb_ip_address.ipv4_address, inet_ntoa(ipv4_address));
-		//		S1AP_REGISTER_ENB_REQ (msg_p).enb_port_for_S1U = enb_port_for_S1U;
-
-
-		S1AP_REGISTER_ENB_REQ (msg_p).enb_interface_name_for_S1_MME = strdup(enb_interface_name_for_S1_MME);
-		cidr = enb_ipv4_address_for_S1_MME;
-		address = strtok(cidr, "/");
-		
-		if (address) {
-		  IPV4_STR_ADDR_TO_INT_NWBO ( address, S1AP_REGISTER_ENB_REQ(msg_p).enb_ipv4_address_for_S1_MME, "BAD IP ADDRESS FORMAT FOR eNB S1_MME !\n" );
-		}
-*/
-	  
-
-
-
 	    break;
 	  }
 	}
+      }
+    }
+  }
+return 0;
+}
+
+int RCconfig_X2(MessageDef *msg_p, uint32_t i)
+{
+  int   j, k, l;
+
+  int   enb_id;
+
+  char *address = NULL;
+  char *cidr    = NULL;
+
+  paramdef_t ENBSParams[] = ENBSPARAMS_DESC;
+  paramdef_t ENBParams[]  = ENBPARAMS_DESC;
+  paramlist_def_t ENBParamList = {ENB_CONFIG_STRING_ENB_LIST,NULL,0};
+
+  /* get global parameters, defined outside any section in the config file */
+  config_get( ENBSParams,sizeof(ENBSParams)/sizeof(paramdef_t),NULL);
+/*#if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
+    if (strcasecmp( *(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr), ENB_CONFIG_STRING_ASN1_VERBOSITY_NONE) == 0) {
+      asn_debug      = 0;
+      asn1_xer_print = 0;
+    } else if (strcasecmp( *(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr), ENB_CONFIG_STRING_ASN1_VERBOSITY_INFO) == 0) {
+      asn_debug      = 1;
+      asn1_xer_print = 1;
+    } else if (strcasecmp(*(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr) , ENB_CONFIG_STRING_ASN1_VERBOSITY_ANNOYING) == 0) {
+      asn_debug      = 1;
+      asn1_xer_print = 2;
+    } else {
+      asn_debug      = 0;
+      asn1_xer_print = 0;
+    }
+#endif */
+
+  AssertFatal(i < ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt,
+              "Failed to parse config file %s, %uth attribute %s \n",
+              RC.config_file_name, i, ENB_CONFIG_STRING_ACTIVE_ENBS);
+
+  if (ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt > 0) {
+    // Output a list of all eNBs.
+    config_getlist( &ENBParamList,ENBParams,sizeof(ENBParams)/sizeof(paramdef_t),NULL);
+    if (ENBParamList.numelt > 0) {
+      for (k = 0; k < ENBParamList.numelt; k++) {
+        if (ENBParamList.paramarray[k][ENB_ENB_ID_IDX].uptr == NULL) {
+          // Calculate a default eNB ID
+# if defined(ENABLE_USE_MME)
+          uint32_t hash;
+
+          hash = s1ap_generate_eNB_id ();
+          enb_id = k + (hash & 0xFFFF8);
+# else
+          enb_id = k;
+# endif
+        } else {
+          enb_id = *(ENBParamList.paramarray[k][ENB_ENB_ID_IDX].uptr);
+        }
+
+        // search if in active list
+        for (j = 0; j < ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt; j++) {
+          if (strcmp(ENBSParams[ENB_ACTIVE_ENBS_IDX].strlistptr[j], *(ENBParamList.paramarray[k][ENB_ENB_NAME_IDX].strptr)) == 0) {
+
+            paramdef_t X2Params[]  = X2PARAMS_DESC;
+            paramlist_def_t X2ParamList = {ENB_CONFIG_STRING_TARGET_ENB_X2_IP_ADDRESS,NULL,0};
+
+            paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
+            paramdef_t NETParams[]  =  NETPARAMS_DESC;
+            char aprefix[MAX_OPTNAME_SIZE*2 + 8];
+
+            /* Some default/random parameters */
+
+            X2AP_REGISTER_ENB_REQ (msg_p).eNB_id = enb_id;
+
+            if (strcmp(*(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr), "CELL_MACRO_ENB") == 0) {
+              X2AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_MACRO_ENB;
+            } else  if (strcmp(*(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr), "CELL_HOME_ENB") == 0) {
+              X2AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_HOME_ENB;
+            } else {
+              AssertFatal (0,
+                  "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for cell_type choice: CELL_MACRO_ENB or CELL_HOME_ENB !\n",
+                  RC.config_file_name, i, *(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr));
+            }
+
+            X2AP_REGISTER_ENB_REQ (msg_p).eNB_name         = strdup(*(ENBParamList.paramarray[k][ENB_ENB_NAME_IDX].strptr));
+            X2AP_REGISTER_ENB_REQ (msg_p).tac              = (uint16_t)atoi(*(ENBParamList.paramarray[k][ENB_TRACKING_AREA_CODE_IDX].strptr));
+            X2AP_REGISTER_ENB_REQ (msg_p).mcc              = (uint16_t)atoi(*(ENBParamList.paramarray[k][ENB_MOBILE_COUNTRY_CODE_IDX].strptr));
+            X2AP_REGISTER_ENB_REQ (msg_p).mnc              = (uint16_t)atoi(*(ENBParamList.paramarray[k][ENB_MOBILE_NETWORK_CODE_IDX].strptr));
+            X2AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length = strlen(*(ENBParamList.paramarray[k][ENB_MOBILE_NETWORK_CODE_IDX].strptr));
+
+            AssertFatal((X2AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length == 2) ||
+                        (X2AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length == 3),
+                        "BAD MNC DIGIT LENGTH %d",
+                        X2AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length);
+
+            sprintf(aprefix,"%s.[%i]",ENB_CONFIG_STRING_ENB_LIST,k);
+            config_getlist( &X2ParamList,X2Params,sizeof(X2Params)/sizeof(paramdef_t),aprefix);
+
+            if(X2ParamList.numelt>X2AP_MAX_NB_ENB_IP_ADDRESS){
+		 LOG_E(RRC,"value of X2ParamList.numelt %d must be lower than X2AP_MAX_NB_ENB_IP_ADDRESS %d value: reconsider to increase X2AP_MAX_NB_ENB_IP_ADDRESS\n",X2ParamList.numelt,X2AP_MAX_NB_ENB_IP_ADDRESS);
+		 exit(1);
+	    }
+
+            X2AP_REGISTER_ENB_REQ (msg_p).nb_x2 = 0;
+            for (l = 0; l < X2ParamList.numelt; l++) {
+              X2AP_REGISTER_ENB_REQ (msg_p).nb_x2 += 1;
+
+              strcpy(X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4_address,*(X2ParamList.paramarray[l][ENB_X2_IPV4_ADDRESS_IDX].strptr));
+              strcpy(X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6_address,*(X2ParamList.paramarray[l][ENB_X2_IPV6_ADDRESS_IDX].strptr));
+
+              if (strcmp(*(X2ParamList.paramarray[l][ENB_X2_IP_ADDRESS_PREFERENCE_IDX].strptr), "ipv4") == 0) {
+                X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4 = 1;
+              } else if (strcmp(*(X2ParamList.paramarray[l][ENB_X2_IP_ADDRESS_PREFERENCE_IDX].strptr), "ipv6") == 0) {
+                X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6 = 1;
+              } else if (strcmp(*(X2ParamList.paramarray[l][ENB_X2_IP_ADDRESS_PREFERENCE_IDX].strptr), "no") == 0) {
+                X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4 = 1;
+                X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6 = 1;
+              }
+            }
+
+            // SCTP SETTING
+            X2AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = SCTP_OUT_STREAMS;
+            X2AP_REGISTER_ENB_REQ (msg_p).sctp_in_streams  = SCTP_IN_STREAMS;
+# if defined(ENABLE_USE_MME)
+            sprintf(aprefix,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,k,ENB_CONFIG_STRING_SCTP_CONFIG);
+            config_get( SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix);
+            X2AP_REGISTER_ENB_REQ (msg_p).sctp_in_streams = (uint16_t)*(SCTPParams[ENB_SCTP_INSTREAMS_IDX].uptr);
+            X2AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = (uint16_t)*(SCTPParams[ENB_SCTP_OUTSTREAMS_IDX].uptr);
+#endif
+
+            sprintf(aprefix,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,k,ENB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
+
+            // NETWORK_INTERFACES
+            config_get( NETParams,sizeof(NETParams)/sizeof(paramdef_t),aprefix);
+
+            X2AP_REGISTER_ENB_REQ (msg_p).enb_port_for_X2C = (uint32_t)*(NETParams[ENB_PORT_FOR_X2C_IDX].uptr);
+
+            if ((NETParams[ENB_IPV4_ADDR_FOR_X2C_IDX].strptr == NULL) || (X2AP_REGISTER_ENB_REQ (msg_p).enb_port_for_X2C == 0)) {
+              LOG_E(RRC,"Add eNB IPv4 address and/or port for X2C in the CONF file!\n");
+              exit(1);
+            }
+
+            cidr = *(NETParams[ENB_IPV4_ADDR_FOR_X2C_IDX].strptr);
+            address = strtok(cidr, "/");
+
+            X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv6 = 0;
+            X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv4 = 1;
+
+            strcpy(X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv4_address, address);
+          }
+        }
       }
     }
   }
@@ -2436,8 +2501,11 @@ void RCConfig(void) {
   printf("Getting ENBSParams\n");
  
   config_get( ENBSParams,sizeof(ENBSParams)/sizeof(paramdef_t),NULL); 
+# if defined(ENABLE_USE_MME)
+  EPC_MODE_ENABLED = ((*ENBSParams[ENB_NOS1_IDX].uptr) == 0);
+#endif
   RC.nb_inst = ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt;
- 
+
   if (RC.nb_inst > 0) {
     RC.nb_CC = (int *)malloc((1+RC.nb_inst)*sizeof(int));
     for (int i=0;i<RC.nb_inst;i++) {

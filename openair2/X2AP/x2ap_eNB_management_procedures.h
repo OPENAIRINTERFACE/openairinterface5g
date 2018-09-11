@@ -19,25 +19,28 @@
  *      contact@openairinterface.org
  */
 
-#if HAVE_CONFIG_H
-# include "config.h"
-#endif
+#ifndef X2AP_ENB_MANAGEMENT_PROCEDURES_H_
+#define X2AP_ENB_MANAGEMENT_PROCEDURES_H
 
-#include "log.h"
+void x2ap_eNB_prepare_internal_data(void);
 
-/* mme log */
-int log_enabled = 0;
+void dump_trees(void);
 
-int log_init(const mme_config_t *mme_config_p,
-             log_specific_init_t specific_init)
-{
-  if (mme_config_p->verbosity_level == 1) {
-    log_enabled = 1;
-  } else if (mme_config_p->verbosity_level == 2) {
-    log_enabled = 1;
-  } else {
-    log_enabled = 0;
-  }
+void x2ap_eNB_insert_new_instance(x2ap_eNB_instance_t *new_instance_p);
 
-  return specific_init(mme_config_p->verbosity_level);
-}
+x2ap_eNB_instance_t *x2ap_eNB_get_instance(uint8_t mod_id);
+
+uint16_t x2ap_eNB_fetch_add_global_cnx_id(void);
+
+void x2ap_eNB_prepare_internal_data(void);
+
+x2ap_eNB_data_t* x2ap_is_eNB_id_in_list(uint32_t eNB_id);
+
+x2ap_eNB_data_t* x2ap_is_eNB_assoc_id_in_list(uint32_t sctp_assoc_id);
+
+struct x2ap_eNB_data_s *x2ap_get_eNB(x2ap_eNB_instance_t *instance_p,
+                                     int32_t assoc_id,
+                                     uint16_t cnx_id);
+
+#endif /* X2AP_ENB_MANAGEMENT_PROCEDURES_H_ */
+

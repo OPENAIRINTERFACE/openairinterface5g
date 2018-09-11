@@ -54,9 +54,9 @@ void lte_gold_mbsfn(LTE_DL_FRAME_PARMS *frame_parms,uint32_t lte_gold_mbsfn_tabl
     for (l=0; l<3; l++) {
 
       if (l==0)
-        x2 = (Nid_mbsfn) + (((1+(Nid_mbsfn<<1))*(1 + 2 + (7*(1+(sfn>>1)))))<<9); //cinit
+        x2 = (Nid_mbsfn) + (((1+(Nid_mbsfn<<1))*(1 + 2 + (7*(1+(sfn<<1)))))<<9); //cinit
       else
-        x2 = (Nid_mbsfn) + (((1+(Nid_mbsfn<<1))*(1 + ((l-1)<<2) + (7*(2+(sfn>>1)))))<<9); //cinit
+        x2 = (Nid_mbsfn) + (((1+(Nid_mbsfn<<1))*(1 + ((l-1)<<2) + (7*(2+(sfn<<1)))))<<9); //cinit
 
       //x2 = frame_parms->Ncp + (Nid_cell<<1) + (1+(Nid_cell<<1))*(1 + (3*l) + (7*(1+ns))); //cinit
       //n = 0

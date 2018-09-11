@@ -86,6 +86,12 @@ int sctp_get_sockinfo(int sock, uint16_t *instream, uint16_t *outstream,
   memset(&status, 0, sizeof(struct sctp_status));
   i = sizeof(struct sctp_status);
 
+  /* if sock refers to a multi SCTP endpoint, *assoc_id gives us
+   * the association ID that we want
+   */
+  if (assoc_id != NULL)
+    status.sstat_assoc_id = *assoc_id;
+
   if (getsockopt(sock, IPPROTO_SCTP, SCTP_STATUS, &status, &i) < 0) {
     SCTP_ERROR("Getsockopt SCTP_STATUS failed: %s\n", strerror(errno));
     return -1;
