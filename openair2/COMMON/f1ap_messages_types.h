@@ -66,6 +66,12 @@ typedef struct f1ap_setup_req_s {
 
   // Midhaul networking parameters
 
+  /* Connexion id used between SCTP/F1AP */
+  uint16_t cnx_id;
+
+  /* SCTP association id */
+  int32_t  assoc_id;
+
   /* The eNB IP address to bind */
   f1ap_net_ip_address_t CU_f1_ip_address;
   f1ap_net_ip_address_t DU_f1_ip_address;
@@ -91,20 +97,20 @@ typedef struct f1ap_setup_req_s {
   /* Mobile Country Codes
    * Mobile Network Codes
    */
-  uint16_t mcc[F1AP_MAX_NB_CELLS];
-  uint16_t mnc[F1AP_MAX_NB_CELLS];
-  uint8_t  mnc_digit_length[F1AP_MAX_NB_CELLS];
+  uint16_t mcc[F1AP_MAX_NB_CELLS];//[6];
+  uint16_t mnc[F1AP_MAX_NB_CELLS];//[6];
+  uint8_t  mnc_digit_length[F1AP_MAX_NB_CELLS];//[6];
 
   // NR Physical Cell Ids
   uint16_t nr_pci[F1AP_MAX_NB_CELLS];
   // NR Cell Ids
   uint8_t nr_cellid[F1AP_MAX_NB_CELLS];
   // Number of slide support items (max 16, could be increased to as much as 1024)
-  uint16_t num_ssi[F1AP_MAX_NB_CELLS];
-  uint8_t sst[F1AP_MAX_NB_CELLS][16];
-  uint8_t sd[F1AP_MAX_NB_CELLS][16];
-  // tdd_flag = 0 means FDD, 1 means TDD
-  int  tdd_flag;
+  uint16_t num_ssi[F1AP_MAX_NB_CELLS];//[6];
+  uint8_t sst[F1AP_MAX_NB_CELLS];//[16][6];
+  uint8_t sd[F1AP_MAX_NB_CELLS];//[16][6];
+  // fdd_flag = 1 means FDD, 0 means TDD
+  int  fdd_flag;
 
   union {
     struct {

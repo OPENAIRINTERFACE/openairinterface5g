@@ -2432,10 +2432,12 @@ int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
         F1AP_SETUP_REQ (msg_p).nr_pci[k]    = rrc->carrier[0].physCellId;
         F1AP_SETUP_REQ (msg_p).nr_cellid[k] = 0;
         F1AP_SETUP_REQ (msg_p).num_ssi[k] = 0;
+
+
         if (rrc->carrier[0].sib1->tdd_Config) {
 
           LOG_I(ENB_APP,"ngran_DU: Configuring Cell %d for TDD\n",k);
-          F1AP_SETUP_REQ (msg_p).tdd_flag = 1;
+          F1AP_SETUP_REQ (msg_p).fdd_flag = 0;
           F1AP_SETUP_REQ (msg_p).nr_mode_info[k].tdd.nr_arfcn            = freq_to_arfcn10(rrc->carrier[0].sib1->freqBandIndicator,
         										   rrc->carrier[0].dl_CarrierFreq);
           // For LTE use scs field to carry prefix type and number of antennas
@@ -2449,8 +2451,7 @@ int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
         }
         else {
           LOG_I(ENB_APP,"ngran_DU: Configuring Cell %d for FDD\n",k);
-          F1AP_SETUP_REQ (msg_p).tdd_flag = 0;
-          
+          F1AP_SETUP_REQ (msg_p).fdd_flag = 1;
           F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_nr_arfcn             = freq_to_arfcn10(rrc->carrier[0].sib1->freqBandIndicator,
         										       rrc->carrier[0].dl_CarrierFreq);
           F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_nr_arfcn             = F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_nr_arfcn;

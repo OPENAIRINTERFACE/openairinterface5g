@@ -86,7 +86,7 @@ int f1ap_encode_pdu(F1AP_F1AP_PDU_t *pdu, uint8_t **buffer, uint32_t *length)
   DevAssert(buffer != NULL);
   DevAssert(length != NULL);
 
-  //xer_fprint(stdout, &asn_DEF_F1AP_F1AP_PDU, pdu);
+  xer_fprint(stdout, &asn_DEF_F1AP_F1AP_PDU, pdu);
   encoded = aper_encode_to_new_buffer(&asn_DEF_F1AP_F1AP_PDU, 0, pdu, (void **)buffer);
 
   if (encoded < 0) {

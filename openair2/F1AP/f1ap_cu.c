@@ -49,6 +49,8 @@
 #include "common/ran_context.h"
 extern RAN_CONTEXT_t RC;
 
+static f1ap_setup_resp_t *f1ap_cu_data;
+
 /* This structure describes association of a DU to a CU */
 typedef struct f1ap_info {
 
@@ -166,6 +168,14 @@ void *F1AP_CU_task(void *arg) {
         CU_handle_sctp_data_ind(&received_msg->ittiMsg.sctp_data_ind);
         break;
 
+//    case F1AP_SETUP_RESPONSE: // This is from RRC
+//    CU_send_F1_SETUP_RESPONSE(instance, *f1ap_setup_ind, &(F1AP_SETUP_RESP) f1ap_setup_resp)   
+//        break;
+        
+//    case F1AP_SETUP_FAILURE: // This is from RRC
+//    CU_send_F1_SETUP_FAILURE(instance, *f1ap_setup_ind, &(F1AP_SETUP_FAILURE) f1ap_setup_failure)   
+//       break;
+
       case TERMINATE_MESSAGE:
         LOG_W(CU_F1AP, " *** Exiting CU_F1AP thread\n");
         itti_exit_task();
@@ -211,6 +221,11 @@ void CU_handle_F1_SETUP_REQUEST(F1AP_F1SetupRequest_t *message_p) {
 
   /* handle */
 
+  
+  // fill f1ap_setup_req_t 
+  // send ITTI F1AP_SETUP_REQ to RRC
+  // return
+
   // send successful callback
   //CU_send_F1_SETUP_RESPONSE();
   // or failure callback
@@ -218,7 +233,7 @@ void CU_handle_F1_SETUP_REQUEST(F1AP_F1SetupRequest_t *message_p) {
 
 }
 
-void CU_send_F1_SETUP_RESPONSE(instance_t instance, sctp_new_association_ind_t *f1ap_setup_ind) {
+void CU_send_F1_SETUP_RESPONSE(instance_t instance, sctp_new_association_ind_t *f1ap_setup_ind, f1ap_setup_resp_t *f1ap_setup_resp) {
 //void CU_send_F1_SETUP_RESPONSE(F1AP_F1SetupResponse_t *F1SetupResponse) {
   //AssertFatal(1==0,"Not implemented yet\n");
   
