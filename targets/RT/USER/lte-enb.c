@@ -151,8 +151,8 @@ void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe);
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 void wakeup_prach_eNB_br(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe);
 #endif
-extern uint8_t get_thread_paralle_stage(void);
-extern uint8_t get_thread_worker_stage(void);
+extern uint8_t get_thread_paralle_conf(void);
+extern uint8_t get_thread_worker_conf(void);
 
 extern uint8_t nfapi_mode;
 extern void oai_subframe_ind(uint16_t sfn, uint16_t sf);
@@ -224,7 +224,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER , 1 );
 
-  if(get_thread_paralle_stage() == 2){
+  if(get_thread_paralle_conf() == PARALLEL_RU_L1_TRX_SPLIT){
     if(wait_on_condition(&proc[1].mutex_rxtx,&proc[1].cond_rxtx,&proc[1].pipe_ready,"wakeup_tx")<0) {
       LOG_E(PHY,"Frame %d, subframe %d: TX1 not ready\n",proc[1].frame_rx,proc[1].subframe_rx);
       return(-1);
@@ -246,7 +246,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   /* CONFLICT RESOLUTION: BEGIN */
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER , 0 );
   if(oai_exit) return(-1);
-  if(get_thread_paralle_stage() == 0){
+  if(get_thread_paralle_conf() == PARALLEL_SINGLE_THREAD){
 #ifndef PHY_TX_THREAD
     phy_procedures_eNB_TX(eNB, proc, 1);
 #endif
@@ -422,8 +422,8 @@ static void* eNB_thread_rxtx( void* param ) {
     }
     pthread_mutex_unlock( &proc->mutex_rxtx );
     if (nfapi_mode!=2){
-    	if(get_thread_paralle_stage() == 2)      wakeup_tx(eNB,eNB->proc.ru_proc);
-    	else if(get_thread_paralle_stage() == 1)
+    	if(get_thread_paralle_conf() == PARALLEL_RU_L1_TRX_SPLIT)      wakeup_tx(eNB,eNB->proc.ru_proc);
+    	else if(get_thread_paralle_conf() == PARALLEL_RU_L1_SPLIT)
     	{
     		phy_procedures_eNB_TX(eNB, proc, 1);
     		wakeup_txfh(proc,eNB->proc.ru_proc);
@@ -954,7 +954,7 @@ void init_eNB_proc(int inst) {
     //    attr_te     = &proc->attr_te; 
 #endif
 
-    if(get_thread_worker_stage())
+    if(get_thread_worker_conf() == WORKER_ENABLE)
     {
       init_te_thread(eNB);
       init_td_thread(eNB);
@@ -963,7 +963,7 @@ void init_eNB_proc(int inst) {
 
     LOG_I(PHY,"eNB->single_thread_flag:%d\n", eNB->single_thread_flag);
 
-    if (get_thread_paralle_stage()!=0 && nfapi_mode!=2) {
+    if ((get_thread_paralle_conf() == PARALLEL_RU_L1_SPLIT || get_thread_paralle_conf() == PARALLEL_RU_L1_TRX_SPLIT) && nfapi_mode!=2) {
       pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, proc );
       pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, tx_thread, proc);
     }
@@ -1030,7 +1030,7 @@ void kill_eNB_proc(int inst) {
     proc = &eNB->proc;
     proc_rxtx = &proc->proc_rxtx[0];
 
-    if(get_nprocs() > 2 && codingw) {
+    if(get_thread_worker_conf == WORKER_ENABLE) {
       kill_td_thread(eNB);
       kill_te_thread(eNB);
     }

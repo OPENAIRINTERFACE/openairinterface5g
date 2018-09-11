@@ -57,6 +57,7 @@
 		     uint64_t runtime,
 		     uint64_t deadline,
 		     uint64_t period);*/
+extern uint8_t get_thread_worker_conf(void);
 
 
 void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch)
@@ -614,7 +615,7 @@ int dlsch_encoding_all(PHY_VARS_eNB *eNB,
 		}
 	}
 
-    if(get_thread_worker_stage())
+    if(get_thread_worker_conf() == WORKER_ENABLE)
     {
       if(C >= 8)//one main three worker
       {

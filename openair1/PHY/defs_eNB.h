@@ -270,7 +270,6 @@ typedef enum {
   REMOTE_IF4p5    =3,
   REMOTE_IF1pp    =4,
   MAX_RU_IF_TYPES =5
-  //EMULATE_RF      =6
 } RU_if_south_t;
 
 typedef struct RU_t_s{
@@ -888,10 +887,20 @@ typedef struct {
   int            prach_I0;
 } PHY_MEASUREMENTS_eNB;
 
+typedef enum {
+  PARALLEL_SINGLE_THREAD    =0,
+  PARALLEL_RU_L1_SPLIT      =1,
+  PARALLEL_RU_L1_TRX_SPLIT  =2
+}PARALLEL_CONF_t;
+
+typedef enum {
+  WORKER_DISABLE            =0,
+  WORKER_ENABLE             =1
+}WORKER_CONF_t;
+
 typedef struct THREAD_STRUCT_s {
-  uint8_t  paralle_stage;
-  uint8_t  worker_stage;
-  int      core_number;
+  PARALLEL_CONF_t  parallel_conf;
+  WORKER_CONF_t    worker_conf;
 } THREAD_STRUCT;
 
 

@@ -61,6 +61,8 @@
 #include "enb_paramdef.h"
 
 extern uint16_t sf_ahead;
+extern void set_parallel_conf(int parallel_conf);
+extern void set_parallel_worker_conf(int worker_conf);
 
 void RCconfig_flexran()
 {
@@ -2484,6 +2486,26 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i)
 return 0;
 }
 
+int RCconfig_parallel(void)
+{
+  char *parallel_conf;
+  char *worker_conf;
+
+  paramdef_t ThreadParams[]  = THREAD_CONF_DESC;
+  paramlist_def_t THREADParamList = {THREAD_CONFIG_STRING_THREAD_STRUCT,NULL,0};
+
+  config_getlist( &THREADParamList,ThreadParams,sizeof(ThreadParams)/sizeof(paramdef_t),NULL);
+  parallel_conf = strdup(*(THREADParamList.paramarray[0][THREAD_PARALLEL_IDX].strptr));
+  worker_conf   = strdup(*(THREADParamList.paramarray[0][THREAD_PARALLEL_IDX].strptr));
+
+  if(strcmp(parallel_conf,"PARALLEL_SINGLE_THREAD")==0)           set_parallel_conf(0);
+  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_SPLIT")==0)        set_parallel_conf(1);
+  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_TRX_SPLIT")==0)    set_parallel_conf(2);
+  if(strcmp(worker_conf,"WORKER_DISABLE")==0)                     set_parallel_worker_conf(0);
+  else if(strcmp(worker_conf,"WORKER_ENABLE")==0)                 set_parallel_worker_conf(1);
+  return 0;
+}
+
 void RCConfig(void) {
 
   paramlist_def_t MACRLCParamList = {CONFIG_STRING_MACRLC_LIST,NULL,0};
@@ -2528,5 +2550,6 @@ void RCConfig(void) {
     config_getlist( &RUParamList,NULL,0, NULL);  
     RC.nb_RU     = RUParamList.numelt; 
  
+    RCconfig_parallel();
 
 }
