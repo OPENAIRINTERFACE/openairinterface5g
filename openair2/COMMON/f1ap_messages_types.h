@@ -88,7 +88,7 @@ typedef struct f1ap_setup_req_s {
   enum cell_type_e cell_type;
   
   /// number of DU cells available
-  uint16_t num_cells_available; //0< num_cells_to_available <= 512;
+  uint16_t num_cells_available; //0< num_cells_available <= 512;
 
   // Served Cell Information
   /* Tracking area code */

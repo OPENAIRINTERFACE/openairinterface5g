@@ -218,7 +218,9 @@ void CU_handle_F1_SETUP_REQUEST(F1AP_F1SetupRequest_t *message_p) {
   }
   /* decode  */
   //CU_F1AP_decode(args_p);
-
+  // fill in f1ap_setup_req message for RRC task
+  
+  
   /* handle */
 
   
