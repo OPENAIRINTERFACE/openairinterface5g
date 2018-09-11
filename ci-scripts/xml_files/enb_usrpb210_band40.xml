@@ -32,13 +32,13 @@
 
 	<testCase id="030104">
 		<class>Initialize_eNB</class>
-		<desc>Initialize eNB (FDD/Band40/10MHz)</desc>
+		<desc>Initialize eNB (FDD/Band40/5MHz)</desc>
 		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band40.tm1.25PRB.FairScheduler.usrpb210.conf --codingw --fepw</Initialize_eNB_args>
 	</testCase>
 	
 	<testCase id="030105">
                 <class>Initialize_eNB</class>
-                <desc>Initialize eNB (TDD/Band40/5MHz/info)</desc>
+                <desc>Initialize eNB (TDD/Band40/10MHz/info)</desc>
                 <Initialize_eNB_args>-O ci-scripts/conf_files/enb.band40.tm1.50PRB.FairScheduler.usrpb210.conf --codingw --fepw</Initialize_eNB_args>
         </testCase>
 
