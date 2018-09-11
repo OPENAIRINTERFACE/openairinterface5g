@@ -178,7 +178,7 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   frame_parms->frame_type=TDD;
   set_default_frame_parms_single(config,frame_parms);
   nr_init_frame_parms_ue(frame_parms);
-  printf("nr_initial sync ue RB_DL %d\n", ue->frame_parms.N_RB_DL);
+  LOG_D(PHY,"nr_initial sync ue RB_DL %d\n", ue->frame_parms.N_RB_DL);
   /*
   write_output("rxdata0.m","rxd0",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
   exit(-1);
@@ -215,7 +215,7 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
     else
       ue->rx_offset = FRAME_LENGTH_COMPLEX_SAMPLES + sync_pos2 - sync_pos_slot;
 
-  printf("sync_pos %d sync_pos_slot %d rx_offset %d\n",sync_pos,sync_pos_slot, ue->rx_offset);
+  LOG_D(PHY,"sync_pos %d sync_pos_slot %d rx_offset %d\n",sync_pos,sync_pos_slot, ue->rx_offset);
 
 
   //  write_output("rxdata1.m","rxd1",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
@@ -244,7 +244,7 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
     nr_slot_fep(ue,1, 0, ue->rx_offset, 1, 1, NR_PDCCH_EST);
 	
 
-LOG_I(PHY,"[UE  %d] AUTOTEST Cell Sync : frame = %d, rx_offset %d, freq_offset %d \n",
+    LOG_I(PHY,"[UE  %d] AUTOTEST Cell Sync : frame = %d, rx_offset %d, freq_offset %d \n",
               ue->Mod_id,
               ue->proc.proc_rxtx[0].frame_rx,
               ue->rx_offset,
