@@ -181,7 +181,7 @@ int32_t generate_srs(LTE_DL_FRAME_PARMS *frame_parms,
     return(-1);
   }
 
-  Msc_idx_ptr = (uint16_t*) bsearch((uint16_t*) &Msc_RS, (uint16_t*) dftsizes, 33, sizeof(uint16_t), compareints);
+  Msc_idx_ptr = (uint16_t*) bsearch((uint16_t*) &Msc_RS, (uint16_t*) dftsizes, 34, sizeof(uint16_t), compareints);
 
   if (Msc_idx_ptr)
     Msc_RS_idx = Msc_idx_ptr - dftsizes;

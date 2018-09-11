@@ -19,11 +19,19 @@
  *      contact@openairinterface.org
  */
 
-#ifndef SIGNALS_H_
-#define SIGNALS_H_
+/*! \file flexran_agent_mac_slice_verification.h
+ * \brief MAC Agent slice verification helper functions
+ * \author Robert Schmidt
+ * \date 2018
+ * \version 0.1
+ */
 
-int signal_mask(void);
+#include "flexran_agent_common_internal.h"
+#include "flexran_agent_mac_internal.h"
 
-int signal_handle(int *end);
-
-#endif /* SIGNALS_H_ */
+int flexran_verify_dl_slice(mid_t mod_id, Protocol__FlexDlSlice *dls);
+int flexran_verify_group_dl_slices(mid_t mod_id, Protocol__FlexDlSlice **existing,
+    int n_ex, Protocol__FlexDlSlice **update, int n_up);
+int flexran_verify_ul_slice(mid_t mod_id, Protocol__FlexUlSlice *uls);
+int flexran_verify_group_ul_slices(mid_t mod_id, Protocol__FlexUlSlice **existing,
+    int n_ex, Protocol__FlexUlSlice **update, int n_up);

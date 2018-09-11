@@ -38,8 +38,6 @@
 extern "C"
 {
 #endif
-/* get rid of "exit_fun undeclared" warning */
-extern void exit_fun(const char* s);
 
 #define CONFIG_GETSOURCE    ( (config_get_if()==NULL) ? NULL : config_get_if()->cfgmode       )
 #define CONFIG_GETNUMP      ( (config_get_if()==NULL) ? 0    : config_get_if()->num_cfgP      )

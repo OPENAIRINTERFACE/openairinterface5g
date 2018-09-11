@@ -19,17 +19,28 @@
  *      contact@openairinterface.org
  */
 
-#ifndef TIMER_MESSAGES_TYPES_H_
-#define TIMER_MESSAGES_TYPES_H_
+#include <stdio.h>
+#include <stdint.h>
 
-//-------------------------------------------------------------------------------------------//
-// Defines to access message fields.
-#define TIMER_HAS_EXPIRED(mSGpTR)   (mSGpTR)->ittiMsg.timer_has_expired
+/** @defgroup _x2ap_impl_ X2AP Layer Reference Implementation
+ * @ingroup _ref_implementation_
+ * @{
+ */
 
-//-------------------------------------------------------------------------------------------//
-typedef struct {
-  void *arg;
-  long  timer_id;
-} timer_has_expired_t;
+#ifndef X2AP_H_
+#define X2AP_H_
 
-#endif /* TIMER_MESSAGES_TYPES_H_ */
+#define X2AP_SCTP_PPID   (27)    ///< X2AP SCTP Payload Protocol Identifier (PPID)
+#include "x2ap_eNB_defs.h"
+
+int x2ap_eNB_init_sctp (x2ap_eNB_instance_t *instance_p,
+                        net_ip_address_t    *local_ip_addr,
+                        uint32_t enb_port_for_X2C);
+
+void *x2ap_task(void *arg);
+
+#endif /* X2AP_H_ */
+
+/**
+ * @}
+ */

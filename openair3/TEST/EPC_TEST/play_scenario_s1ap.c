@@ -38,7 +38,6 @@
 
 
 #include "intertask_interface.h"
-#include "timer.h"
 #include "platform_types.h"
 #include "assertions.h"
 #include "conversions.h"

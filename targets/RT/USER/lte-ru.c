@@ -1080,8 +1080,8 @@ static void* ru_thread_prach( void* param ) {
 
   while (!oai_exit) {
     
-    if (oai_exit) break;
     if (wait_on_condition(&proc->mutex_prach,&proc->cond_prach,&proc->instance_cnt_prach,"ru_prach_thread") < 0) break;
+    if (oai_exit) break;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_RU_PRACH_RX, 1 );      
     if (ru->eNB_list[0]){
       prach_procedures(
@@ -1130,8 +1130,8 @@ static void* ru_thread_prach_br( void* param ) {
 
   while (!oai_exit) {
     
-    if (oai_exit) break;
     if (wait_on_condition(&proc->mutex_prach_br,&proc->cond_prach_br,&proc->instance_cnt_prach_br,"ru_prach_thread_br") < 0) break;
+    if (oai_exit) break;
     rx_prach(NULL,
 	     ru,
 	     NULL,
@@ -2230,10 +2230,35 @@ void init_RU_proc(RU_t *ru) {
   
 }
 
-void kill_RU_proc(int inst)
+void kill_RU_proc(RU_t *ru)
 {
-  RU_t *ru = RC.ru[inst];
   RU_proc_t *proc = &ru->proc;
+
+#if defined(PRE_SCD_THREAD)
+  pthread_mutex_lock(&proc->mutex_pre_scd);
+  ru->proc.instance_pre_scd = 0;
+  pthread_cond_signal(&proc->cond_pre_scd);
+  pthread_mutex_unlock(&proc->mutex_pre_scd);
+  pthread_join(proc->pthread_pre_scd, NULL);
+  pthread_mutex_destroy(&proc->mutex_pre_scd);
+  pthread_cond_destroy(&proc->cond_pre_scd);
+#endif
+#ifdef PHY_TX_THREAD
+  pthread_mutex_lock(&proc->mutex_phy_tx);
+  proc->instance_cnt_phy_tx = 0;
+  pthread_cond_signal(&proc->cond_phy_tx);
+  pthread_mutex_unlock(&proc->mutex_phy_tx);
+  pthread_join(ru->proc.pthread_phy_tx, NULL);
+  pthread_mutex_destroy( &proc->mutex_phy_tx);
+  pthread_cond_destroy( &proc->cond_phy_tx);
+  pthread_mutex_lock(&proc->mutex_rf_tx);
+  proc->instance_cnt_rf_tx = 0;
+  pthread_cond_signal(&proc->cond_rf_tx);
+  pthread_mutex_unlock(&proc->mutex_rf_tx);
+  pthread_join(proc->pthread_rf_tx, NULL);
+  pthread_mutex_destroy( &proc->mutex_rf_tx);
+  pthread_cond_destroy( &proc->cond_rf_tx);
+#endif
 
   if (get_nprocs() > 2 && fepw) {
       LOG_D(PHY, "killing FEP thread\n"); 
@@ -2271,8 +2296,10 @@ void kill_RU_proc(int inst)
 
   pthread_mutex_lock(&proc->mutex_eNBs);
   proc->ru_tx_ready = 0;
-  proc->instance_cnt_eNBs = 0;
-  pthread_cond_signal(&proc->cond_eNBs);
+  proc->instance_cnt_eNBs = 1;
+  // cond_eNBs is used by both ru_thread and ru_thread_tx, so we need to send
+  // a broadcast to wake up both threads
+  pthread_cond_broadcast(&proc->cond_eNBs);
   pthread_mutex_unlock(&proc->mutex_eNBs);
 
   pthread_mutex_lock(&proc->mutex_asynch_rxtx);
@@ -2280,10 +2307,12 @@ void kill_RU_proc(int inst)
   pthread_cond_signal(&proc->cond_asynch_rxtx);
   pthread_mutex_unlock(&proc->mutex_asynch_rxtx);
 
-  /*LOG_D(PHY, "Joining pthread_FH\n");
+  LOG_D(PHY, "Joining pthread_FH\n");
   pthread_join(proc->pthread_FH, NULL);
-  LOG_D(PHY, "Joining pthread_FHTX\n");
-  pthread_join(proc->pthread_FH1, NULL);*/
+  if (!single_thread_flag && get_nprocs() > 4) {
+    LOG_D(PHY, "Joining pthread_FHTX\n");
+    pthread_join(proc->pthread_FH1, NULL);
+  }
   if (ru->function == NGFI_RRU_IF4p5) {
     LOG_D(PHY, "Joining pthread_prach\n");
     pthread_join(proc->pthread_prach, NULL);
@@ -2755,45 +2784,11 @@ void init_RU(char *rf_config_file) {
 
 }
 
-
-
-
-void stop_ru(RU_t *ru) {
-
-#if defined(PRE_SCD_THREAD) || defined(PHY_TX_THREAD)
-  int *status;
-#endif
-  printf("Stopping RU %p processing threads\n",(void*)ru);
-#if defined(PRE_SCD_THREAD)
-  if(ru){
-    ru->proc.instance_pre_scd = 0;
-    pthread_cond_signal( &ru->proc.cond_pre_scd );
-    pthread_join(ru->proc.pthread_pre_scd, (void**)&status );
-    pthread_mutex_destroy(&ru->proc.mutex_pre_scd );
-    pthread_cond_destroy(&ru->proc.cond_pre_scd );
-  }
-#endif
-#ifdef PHY_TX_THREAD
-  if(ru){
-      ru->proc.instance_cnt_phy_tx = 0;
-      pthread_cond_signal(&ru->proc.cond_phy_tx);
-      pthread_join( ru->proc.pthread_phy_tx, (void**)&status );
-      pthread_mutex_destroy( &ru->proc.mutex_phy_tx );
-      pthread_cond_destroy( &ru->proc.cond_phy_tx );
-      ru->proc.instance_cnt_rf_tx = 0;
-      pthread_cond_signal(&ru->proc.cond_rf_tx);
-      pthread_join( ru->proc.pthread_rf_tx, (void**)&status );
-      pthread_mutex_destroy( &ru->proc.mutex_rf_tx );
-      pthread_cond_destroy( &ru->proc.cond_rf_tx );
-  }
-#endif
-}
-
 void stop_RU(int nb_ru)
 {
   for (int inst = 0; inst < nb_ru; inst++) {
     LOG_I(PHY, "Stopping RU %d processing threads\n", inst);
-    kill_RU_proc(inst);
+    kill_RU_proc(RC.ru[inst]);
   }
 }
 
