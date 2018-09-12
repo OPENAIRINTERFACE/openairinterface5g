@@ -675,7 +675,12 @@ add_boolean_option(UE_EXPANSION             False         "enable UE_EXPANSION w
 add_boolean_option(PHY_TX_THREAD            False         "enable UE_EXPANSION with max 256 UE")
 add_boolean_option(PRE_SCD_THREAD           False         "enable UE_EXPANSION with max 256 UE")
 
-########################
+#############################################################################
+# Flag for UE compilation to avoid issues in common eNB/UE PDCP/RLC functions
+#############################################################################
+
+add_boolean_option(UETARGET                 False         "set UE as target for compiler")
+
 # Include order
 ##########################
 add_boolean_option(ENB_MODE True "Swap the include directories between openair2 and openair3" )

@@ -54,6 +54,7 @@ extern boolean_t pdcp_data_ind(
 
 #include "rlc_proto_agent_primitives.h"
 // PROTO AGENT
+#ifndef UETARGET
 void
 async_server_thread_init (void)
 {
@@ -111,7 +112,7 @@ async_server_thread_finalize (void)
   return err;
 }
 
-
+#endif /*UETARGET*/
 
 //-----------------------------------------------------------------------------
 void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char* dataP, const signed long sizeP)
@@ -675,7 +676,7 @@ void rlc_data_ind     (
   if (ctxt_pP->enb_flag)
     T(T_ENB_RLC_UL, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->rnti), T_INT(rb_idP), T_INT(sdu_sizeP));
 #endif
-
+#ifndef UETARGET
    if ((!srb_flagP)  && (ctxt_pP->enb_flag == 1))
    {
     proto_agent_send_pdcp_data_ind(ctxt_pP,
@@ -686,6 +687,7 @@ void rlc_data_ind     (
      sdu_pP);
    }
    else
+#endif /*UETARGET*/
    {
      pdcp_data_ind (
      ctxt_pP,
@@ -765,6 +767,8 @@ rlc_module_init (void)
 
   pool_buffer_init();
 
+
+#ifndef UETARGET
   /* Launch the RLC listening server
    * as a separate thread
    */
@@ -774,7 +778,7 @@ rlc_module_init (void)
     async_server_thread_init();
     started = 1;
   }
-  
+#endif /*UETARGET*/ 
 
   return(0);
 }
