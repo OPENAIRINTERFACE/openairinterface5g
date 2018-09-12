@@ -16,7 +16,7 @@
  * limitations under the License.
  *-------------------------------------------------------------------------------
  * For more information about the OpenAirInterface (OAI) Software Alliance:
- *      contact@openairinterface.org
+ *      conmnc_digit_lengtht@openairinterface.org
  */
 
 /*! \file RRC/LTE/defs.h
@@ -713,6 +713,8 @@ typedef struct eNB_RRC_INST_s {
   int mnc;
   /// number of mnc digits
   int mnc_digit_length;
+  /// tac
+  int tac;
 
   // other RAN parameters
   int srb1_timer_poll_retransmit;

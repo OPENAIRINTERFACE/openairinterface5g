@@ -390,7 +390,20 @@ inline void ASN_DEBUG(const char *fmt, ...);
 #endif
 
 //Forward declaration
-//struct f1ap_message_s;
+#define F1AP_FIND_PROTOCOLIE_BY_ID(IE_TYPE, ie, container, IE_ID, mandatory) \
+  do {\
+    IE_TYPE **ptr; \
+    ie = NULL; \
+    for (ptr = container->protocolIEs.list.array; \
+         ptr < &container->protocolIEs.list.array[container->protocolIEs.list.count]; \
+         ptr++) { \
+      if((*ptr)->id == IE_ID) { \
+        ie = *ptr; \
+        break; \
+      } \
+    } \
+    if (mandatory) DevAssert(ie != NULL); \
+  } while(0)
 
 /** \brief Function callback prototype.
  **/

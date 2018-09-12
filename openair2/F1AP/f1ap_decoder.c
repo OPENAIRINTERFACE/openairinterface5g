@@ -127,8 +127,8 @@ int f1ap_decode_pdu(F1AP_F1AP_PDU_t *pdu, const uint8_t *const buffer, uint32_t 
                         length,
                         0,
                         0);
-
-  //xer_fprint(stdout, &asn_DEF_F1AP_F1AP_PDU, pdu);
+  
+  xer_fprint(stdout, &asn_DEF_F1AP_F1AP_PDU, pdu);
   //LOG_I(F1AP, "f1ap_decode_pdu.dec_ret.code = %d\n", dec_ret.code);
 
   if (dec_ret.code != RC_OK) {

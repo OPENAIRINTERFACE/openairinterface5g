@@ -45,9 +45,6 @@
 
 static f1ap_setup_req_t *f1ap_du_data;
 
-void DU_handle_sctp_association_resp(instance_t instance,sctp_new_association_resp_t *sctp_new_association_resp);
-
-
 uint8_t F1AP_get_UE_identifier(module_id_t enb_mod_idP, int CC_idP, int UE_id) {  
   static uint8_t      UE_identifier[NUMBER_OF_eNB_MAX];
   UE_identifier[enb_mod_idP+CC_idP+UE_id] = (UE_identifier[enb_mod_idP+CC_idP+UE_id] + 1) % F1AP_UE_IDENTIFIER_NUMBER;
@@ -98,7 +95,6 @@ void *F1AP_DU_task(void *arg) {
         // 2. store the message in f1ap context, that is also stored in RC
         // 2. send a sctp_association req
         LOG_I(DU_F1AP, "F1AP_SETUP_REQ\n");
-        LOG_I(DU_F1AP, "--------------0--------------\n");
         DU_send_sctp_association_req(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                               &F1AP_SETUP_REQ(received_msg));
         break;
@@ -107,7 +103,6 @@ void *F1AP_DU_task(void *arg) {
         // 1. store the respon
         // 2. send the f1setup_req
         LOG_I(DU_F1AP, "SCTP_NEW_ASSOCIATION_RESP\n");
-        LOG_I(DU_F1AP, "--------------1--------------\n");
         DU_handle_sctp_association_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                       &received_msg->ittiMsg.sctp_new_association_resp);
         break;
@@ -115,7 +110,6 @@ void *F1AP_DU_task(void *arg) {
       case SCTP_DATA_IND: 
         // ex: any F1 incoming message for DU ends here
         LOG_I(DU_F1AP, "SCTP_DATA_IND\n");
-        LOG_I(DU_F1AP, "--------------2--------------\n");
         DU_handle_sctp_data_ind(&received_msg->ittiMsg.sctp_data_ind);
         break;
 
@@ -170,7 +164,9 @@ void DU_send_sctp_association_req(instance_t instance, f1ap_setup_req_t *f1ap_se
   // store data
   f1ap_du_data = (f1ap_setup_req_t *)calloc(1, sizeof(f1ap_setup_req_t));
   *f1ap_du_data = *f1ap_setup_req;
-
+  //printf("sib itti message %s\n", f1ap_setup_req_t->sib1[0]);
+  printf("sib f1ap context %s\n", f1ap_du_data->sib1[0]);
+  
   //du_f1ap_register_to_sctp
   itti_send_msg_to_task(TASK_SCTP, instance, message_p);
 }
@@ -285,10 +281,12 @@ void DU_send_F1_SETUP_REQUEST(instance_t instance) {
         F1AP_Served_Cell_Information_t served_cell_information;
 
         memset((void *)&served_cell_information, 0, sizeof(F1AP_Served_Cell_Information_t));
+
         /* - nRCGI */
         F1AP_NRCGI_t nRCGI;
         MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i], &nRCGI.pLMN_Identity);
         //MCC_MNC_TO_PLMNID(208, 95, 2, &nRCGI.pLMN_Identity);
+
         NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[i], &nRCGI.nRCellIdentity);
         served_cell_information.nRCGI = nRCGI;
 
@@ -297,12 +295,8 @@ void DU_send_F1_SETUP_REQUEST(instance_t instance) {
 
         /* - fiveGS_TAC */
         OCTET_STRING_fromBuf(&served_cell_information.fiveGS_TAC,
-                             f1ap_du_data->tac[i],
-                             sizeof(f1ap_du_data->tac[i]));
-        
-        // OCTET_STRING_fromBuf(&served_cell_information.fiveGS_TAC,
-        //                      "10",
-        //                      3);
+                             &f1ap_du_data->tac[i],
+                             3);
 
         /* - Configured_EPS_TAC */
         if(0){
@@ -321,7 +315,6 @@ void DU_send_F1_SETUP_REQUEST(instance_t instance) {
             j++) {
             /* > PLMN BroadcastPLMNs Item */
             F1AP_BroadcastPLMNs_Item_t *broadcastPLMNs_Item = (F1AP_BroadcastPLMNs_Item_t *)calloc(1, sizeof(F1AP_BroadcastPLMNs_Item_t));
-            //memset((void *)&broadcastPLMNs_Item, 0, sizeof(F1AP_BroadcastPLMNs_Item_t));
             //MCC_MNC_TO_PLMNID(208, 95, 2, &broadcastPLMNs_Item->pLMN_Identity);
             MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i], &broadcastPLMNs_Item->pLMN_Identity);
             ASN_SEQUENCE_ADD(&served_cell_information.servedPLMNs.list, broadcastPLMNs_Item);
@@ -398,7 +391,7 @@ void DU_send_F1_SETUP_REQUEST(instance_t instance) {
         served_cell_information.nR_Mode_Info = nR_Mode_Info;
 
         /* - measurementTimingConfiguration */
-        char *measurementTimingConfiguration = "0"; // sept. 2018
+        char *measurementTimingConfiguration = "0"; //&f1ap_du_data->measurement_timing_information[i]; // sept. 2018
 
         OCTET_STRING_fromBuf(&served_cell_information.measurementTimingConfiguration,
                              measurementTimingConfiguration,
@@ -415,13 +408,6 @@ void DU_send_F1_SETUP_REQUEST(instance_t instance) {
         OCTET_STRING_fromBuf(&gNB_DU_System_Information->sIB1_message,  // sept. 2018
                              f1ap_du_data->sib1[i],
                              f1ap_du_data->sib1_length[i]);
-        // OCTET_STRING_fromBuf(&gNB_DU_System_Information->mIB_message,  // sept. 2018
-        //                      "1",//f1ap_setup_req->mib,
-        //                      sizeof("1"));
-
-        // OCTET_STRING_fromBuf(&gNB_DU_System_Information->sIB1_message,  // sept. 2018
-        //                      "1",
-        //                      sizeof("1"));
 
         gnb_du_served_cells_item.gNB_DU_System_Information = gNB_DU_System_Information; //
 

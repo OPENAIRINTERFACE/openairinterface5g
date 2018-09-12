@@ -49,7 +49,7 @@
 #include "common/ran_context.h"
 extern RAN_CONTEXT_t RC;
 
-static f1ap_setup_resp_t *f1ap_cu_data;
+f1ap_setup_req_t *f1ap_du_data_from_du;
 
 /* This structure describes association of a DU to a CU */
 typedef struct f1ap_info {
@@ -84,6 +84,7 @@ typedef struct f1ap_info {
   
 } f1ap_info_t;
 
+
 // ==============================================================================
 static
 void CU_handle_sctp_data_ind(sctp_data_ind_t *sctp_data_ind) {
@@ -103,7 +104,7 @@ void CU_send_sctp_init_req(instance_t enb_id) {
   // 2. use RC.rrc[enb_id] to fill the sctp_init_t with the ip, port
   // 3. creat an itti message to init
 
-  LOG_I(CU_F1AP, "F1AP_CU_SCTP_REQ\n");
+  LOG_I(CU_F1AP, "F1AP_CU_SCTP_REQ(create socket)\n");
   MessageDef  *message_p = NULL;
 
   message_p = itti_alloc_new_message (TASK_CU_F1, SCTP_INIT_MSG);
@@ -120,8 +121,6 @@ void CU_send_sctp_init_req(instance_t enb_id) {
   message_p->ittiMsg.sctp_init.nb_ipv6_addr = 0;
   message_p->ittiMsg.sctp_init.ipv6_address[0] = "0:0:0:0:0:0:0:1";
 
-  LOG_I(CU_F1AP,"CU.my_addr = %s \n", RC.rrc[enb_id]->eth_params_s.my_addr);
-  LOG_I(CU_F1AP,"CU.enb_id = %d \n", enb_id);
   itti_send_msg_to_task(TASK_SCTP, enb_id, message_p);
 }
 
@@ -150,23 +149,29 @@ void *F1AP_CU_task(void *arg) {
 
       case SCTP_NEW_ASSOCIATION_IND:
         LOG_I(CU_F1AP, "SCTP_NEW_ASSOCIATION_IND\n");
-        LOG_I(DU_F1AP, "--------------3--------------\n");
         CU_handle_sctp_association_ind(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                          &received_msg->ittiMsg.sctp_new_association_ind);
         break;
 
       case SCTP_NEW_ASSOCIATION_RESP:
         LOG_I(CU_F1AP, "SCTP_NEW_ASSOCIATION_RESP\n");
-        LOG_I(DU_F1AP, "--------------4--------------\n");
         CU_handle_sctp_association_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                          &received_msg->ittiMsg.sctp_new_association_resp);
         break;
 
       case SCTP_DATA_IND:
         LOG_I(CU_F1AP, "SCTP_DATA_IND\n");
-        LOG_I(DU_F1AP, "--------------5--------------\n");
         CU_handle_sctp_data_ind(&received_msg->ittiMsg.sctp_data_ind);
         break;
+
+      case F1AP_SETUP_RESP: // from rrc
+        LOG_W(CU_F1AP, "F1AP_SETUP_RESP\n");
+        // CU_send_f1setup_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        //                                       &F1AP_SETUP_RESP(received_msg));
+        CU_send_F1_SETUP_RESPONSE(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                               &F1AP_SETUP_RESP(received_msg));
+        break;
+
 
 //    case F1AP_SETUP_RESPONSE: // This is from RRC
 //    CU_send_F1_SETUP_RESPONSE(instance, *f1ap_setup_ind, &(F1AP_SETUP_RESP) f1ap_setup_resp)   
@@ -197,12 +202,32 @@ void *F1AP_CU_task(void *arg) {
 
 
 void CU_handle_sctp_association_ind(instance_t instance, sctp_new_association_ind_t *sctp_new_association_ind) {
-  CU_send_F1_SETUP_RESPONSE(instance, sctp_new_association_ind);
+  //CU_send_F1_SETUP_RESPONSE(instance, sctp_new_association_ind);
 }
 
-void CU_handle_sctp_association_resp(instance_t instance, sctp_new_association_ind_t *sctp_new_association_resp) {
+void CU_handle_sctp_association_resp(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp) {
   //CU_send_F1_SETUP_RESPONSE(instance, sctp_new_association_resp);
+
+  DevAssert(sctp_new_association_resp != NULL);
+
+  if (sctp_new_association_resp->sctp_state != SCTP_STATE_ESTABLISHED) {
+    LOG_W(F1AP, "Received unsuccessful result for SCTP association (%u), instance %d, cnx_id %u\n",
+              sctp_new_association_resp->sctp_state,
+              instance,
+              sctp_new_association_resp->ulp_cnx_id);
+
+      //f1ap_handle_setup_message(instance, sctp_new_association_resp->sctp_state == SCTP_STATE_SHUTDOWN);
+    return; // exit -1 for debugging 
+  }
+
+  // go to an init func
+  f1ap_du_data_from_du = (f1ap_setup_req_t *)calloc(1, sizeof(f1ap_setup_req_t));
+  // save the assoc id 
+  f1ap_du_data_from_du->assoc_id         = sctp_new_association_resp->assoc_id;
+  f1ap_du_data_from_du->sctp_in_streams  = sctp_new_association_resp->in_streams;
+  f1ap_du_data_from_du->sctp_out_streams = sctp_new_association_resp->out_streams;
 }
+
 
 // ==============================================================================
 void CU_handle_F1_SETUP_REQUEST(F1AP_F1SetupRequest_t *message_p) {
@@ -235,7 +260,7 @@ void CU_handle_F1_SETUP_REQUEST(F1AP_F1SetupRequest_t *message_p) {
 
 }
 
-void CU_send_F1_SETUP_RESPONSE(instance_t instance, sctp_new_association_ind_t *f1ap_setup_ind, f1ap_setup_resp_t *f1ap_setup_resp) {
+void CU_send_F1_SETUP_RESPONSE(instance_t instance, f1ap_setup_resp_t *f1ap_setup_resp) {
 //void CU_send_F1_SETUP_RESPONSE(F1AP_F1SetupResponse_t *F1SetupResponse) {
   //AssertFatal(1==0,"Not implemented yet\n");
   
@@ -366,7 +391,7 @@ void CU_send_F1_SETUP_RESPONSE(instance_t instance, sctp_new_association_ind_t *
   }
 
   // printf("\n");
-  cu_f1ap_itti_send_sctp_data_req(instance, f1ap_setup_ind->assoc_id, buffer, len, 0);
+  cu_f1ap_itti_send_sctp_data_req(instance, f1ap_du_data_from_du->assoc_id, buffer, len, 0);
   /* decode */
   // if (f1ap_decode_pdu(&pdu, buffer, len) > 0) {
   //    printf("Failed to decode F1 setup request\n");

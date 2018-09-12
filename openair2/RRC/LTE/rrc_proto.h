@@ -42,7 +42,7 @@ void openair_rrc_top_init(int eMBMS_active, char *uecap_xer, uint8_t cba_group_a
 #if defined(ENABLE_ITTI)
 char
 openair_rrc_eNB_configuration(
-  const module_id_t enb_mod_idP
+  const module_id_t enb_mod_idP, RrcConfigurationReq *rrc_configuration_req
 );
 #endif
 char openair_rrc_eNB_init(

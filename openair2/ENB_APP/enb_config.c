@@ -798,6 +798,13 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc) {
 	rrc->node_type                             = ngran_eNB_CU;
 	rrc->sctp_in_streams                       = (uint16_t)*(SCTPParams[ENB_SCTP_INSTREAMS_IDX].uptr);
 	rrc->sctp_out_streams                      = (uint16_t)*(SCTPParams[ENB_SCTP_OUTSTREAMS_IDX].uptr);
+
+  // MCC and MNC
+  rrc->mcc= (uint16_t)atoi( *(ENBParamList.paramarray[i][ENB_MOBILE_COUNTRY_CODE_IDX].strptr) );
+  rrc->mnc= (uint16_t)atoi( *(ENBParamList.paramarray[i][ENB_MOBILE_NETWORK_CODE_IDX].strptr) );
+  rrc->mnc_digit_length= strlen(*(ENBParamList.paramarray[i][ENB_MOBILE_NETWORK_CODE_IDX].strptr));
+  rrc->tac= (uint16_t)atoi( *(ENBParamList.paramarray[i][ENB_TRACKING_AREA_CODE_IDX].strptr) );
+
       }
       
       else { // no F1
@@ -2373,7 +2380,7 @@ int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
         paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
         char aprefix[MAX_OPTNAME_SIZE*2 + 8];
 	
-	F1AP_SETUP_REQ (msg_p).num_cells_available++;
+	      F1AP_SETUP_REQ (msg_p).num_cells_available++;
 
         F1AP_SETUP_REQ (msg_p).gNB_DU_id        = *(ENBParamList.paramarray[0][ENB_ENB_ID_IDX].uptr);
         LOG_I(ENB_APP,"F1AP: gNB_DU_id[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).gNB_DU_id);
@@ -2474,6 +2481,8 @@ int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
         F1AP_SETUP_REQ (msg_p).ranac[k]                                      = 0;
         F1AP_SETUP_REQ (msg_p).mib[k]                                        = rrc->carrier[0].MIB;
         F1AP_SETUP_REQ (msg_p).sib1[k]                                       = rrc->carrier[0].SIB1;
+        F1AP_SETUP_REQ (msg_p).mib_length[k]                                 = rrc->carrier[0].sizeof_MIB;
+        F1AP_SETUP_REQ (msg_p).sib1_length[k]                                = rrc->carrier[0].sizeof_SIB1;
 
         break;
       } // if
