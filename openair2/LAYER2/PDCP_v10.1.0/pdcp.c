@@ -374,6 +374,7 @@ boolean_t pdcp_data_req(
                 "[MSG] PDCP DL %s PDU on rb_id %d\n",(srb_flagP)? "CONTROL" : "DATA", rb_idP);
 
     LOG_F(PDCP,"\n");
+#ifndef UETARGET
     static cudu_params_t *cudu = NULL;
     if (ctxt_pP->enb_flag == 1)
     {
@@ -439,7 +440,7 @@ boolean_t pdcp_data_req(
       #endif
                               );
     }
-        
+#endif /*UETARGET*/ 
   }
 
   switch (rlc_status) {
