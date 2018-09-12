@@ -1030,7 +1030,7 @@ void kill_eNB_proc(int inst) {
     proc = &eNB->proc;
     proc_rxtx = &proc->proc_rxtx[0];
 
-    if(get_thread_worker_conf == WORKER_ENABLE) {
+    if(get_thread_worker_conf() == WORKER_ENABLE) {
       kill_td_thread(eNB);
       kill_te_thread(eNB);
     }

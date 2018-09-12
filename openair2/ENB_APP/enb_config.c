@@ -2493,10 +2493,20 @@ int RCconfig_parallel(void)
 
   paramdef_t ThreadParams[]  = THREAD_CONF_DESC;
   paramlist_def_t THREADParamList = {THREAD_CONFIG_STRING_THREAD_STRUCT,NULL,0};
+  
+  config_getlist( &THREADParamList,NULL,0,NULL);
 
-  config_getlist( &THREADParamList,ThreadParams,sizeof(ThreadParams)/sizeof(paramdef_t),NULL);
-  parallel_conf = strdup(*(THREADParamList.paramarray[0][THREAD_PARALLEL_IDX].strptr));
-  worker_conf   = strdup(*(THREADParamList.paramarray[0][THREAD_PARALLEL_IDX].strptr));
+  if(THREADParamList.numelt>0)
+  {
+    config_getlist( &THREADParamList,ThreadParams,sizeof(ThreadParams)/sizeof(paramdef_t),NULL);
+    parallel_conf = strdup(*(THREADParamList.paramarray[0][THREAD_PARALLEL_IDX].strptr));
+    worker_conf   = strdup(*(THREADParamList.paramarray[0][THREAD_PARALLEL_IDX].strptr));
+  }
+  else
+  {
+    parallel_conf = "PARALLEL_RU_L1_TRX_SPLIT";
+    worker_conf   = "WORKER_ENABLE";
+  }
 
   if(strcmp(parallel_conf,"PARALLEL_SINGLE_THREAD")==0)           set_parallel_conf(0);
   else if(strcmp(parallel_conf,"PARALLEL_RU_L1_SPLIT")==0)        set_parallel_conf(1);
