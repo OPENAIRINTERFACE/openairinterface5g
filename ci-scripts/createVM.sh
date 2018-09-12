@@ -84,6 +84,7 @@ JOB_NAME=XX
 BUILD_ID=XX
 VM_NAME=ci-enb-usrp
 VM_MEMORY=2048
+VM_CPU=4
 
 while [[ $# -gt 0 ]]
 do
@@ -111,6 +112,7 @@ case $key in
     ;;
     -v2)
     VM_NAME=ci-basic-sim
+    VM_MEMORY=8192
     shift
     ;;
     -v3)
@@ -146,6 +148,7 @@ case $key in
         ;;
         basic-sim)
         VM_NAME=ci-basic-sim
+        VM_MEMORY=8192
         ;;
         phy-sim)
         VM_NAME=ci-phy-sim
@@ -196,11 +199,12 @@ VM_CMDS=${VM_NAME}_cmds.txt
 
 echo "VM_NAME             = $VM_NAME"
 echo "VM_MEMORY           = $VM_MEMORY MBytes"
+echo "VM_CPU              = $VM_CPU"
 
 echo "############################################################"
 echo "Creating VM ($VM_NAME) on Ubuntu Cloud Image base"
 echo "############################################################"
-uvt-kvm create $VM_NAME release=xenial --memory $VM_MEMORY --cpu 4 --unsafe-caching --template ci-scripts/template-host.xml
+uvt-kvm create $VM_NAME release=xenial --memory $VM_MEMORY --cpu $VM_CPU --unsafe-caching --template ci-scripts/template-host.xml
 echo "Waiting for VM to be started"
 uvt-kvm wait $VM_NAME --insecure
 

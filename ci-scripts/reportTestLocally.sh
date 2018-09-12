@@ -317,58 +317,123 @@ then
     echo "        <th>Statistics</th>" >> ./test_simulator_results.html
     echo "      </tr>" >> ./test_simulator_results.html
 
-    PING_TESTS=`ls $ARCHIVES_LOC/ping*txt`
-    for PING_CASE in $PING_TESTS
+    BW_CASES=(05 10 20)
+    for BW in ${BW_CASES[@]}
     do
-        echo "      <tr>" >> ./test_simulator_results.html
-        NAME=`echo $PING_CASE | sed -e "s#$ARCHIVES_LOC/##"`
-        echo "        <td>$NAME</td>" >> ./test_simulator_results.html
-        CMD=`egrep "COMMAND IS" $PING_CASE | sed -e "s#COMMAND IS: ##"`
-        echo "        <td>$CMD</td>" >> ./test_simulator_results.html
-        FILE_COMPLETE=`egrep -c "ping statistics" $PING_CASE`
-        if [ $FILE_COMPLETE -eq 0 ]
+        ENB_LOG=$ARCHIVES_LOC/enb_${BW}MHz.log
+        UE_LOG=`echo $ENB_LOG | sed -e "s#enb#ue#"`
+        if [ -f $ENB_LOG ] && [ -f $UE_LOG ]
         then
-            echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
+            NAME_ENB=`echo $ENB_LOG | sed -e "s#$ARCHIVES_LOC/##"`
+            NAME_UE=`echo $UE_LOG | sed -e "s#$ARCHIVES_LOC/##"`
+            echo "      <tr>" >> ./test_simulator_results.html
+            echo "        <td>$NAME_ENB --- $NAME_UE</td>" >> ./test_simulator_results.html
             echo "        <td>N/A</td>" >> ./test_simulator_results.html
-        else
-            NB_TR_PACKETS=`egrep "packets transmitted" $PING_CASE | sed -e "s# packets transmitted.*##"`
-            NB_RC_PACKETS=`egrep "packets transmitted" $PING_CASE | sed -e "s#^.*packets transmitted, ##" -e "s# received,.*##"`
-            if [ $NB_TR_PACKETS -eq $NB_RC_PACKETS ]
+            NB_ENB_GOT_SYNC=`egrep -c "got sync" $ENB_LOG`
+            NB_UE_GOT_SYNC=`egrep -c "got sync" $UE_LOG`
+            NB_ENB_SYNCED_WITH_UE=`egrep -c "got UE capabilities for UE" $ENB_LOG`
+            if [ $NB_ENB_GOT_SYNC -eq 1 ] && [ $NB_UE_GOT_SYNC -eq 2 ] && [ $NB_ENB_SYNCED_WITH_UE -eq 1 ]
             then
                 echo "        <td bgcolor = \"green\" >OK</td>" >> ./test_simulator_results.html
             else
-                echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
+                echo "        <td bgcolor = \"red\" >OK</td>" >> ./test_simulator_results.html
             fi
-            echo "        <td>" >> ./test_simulator_results.html
-            echo "            <pre>" >> ./test_simulator_results.html
-            STATS=`egrep "packets transmitted" $PING_CASE | sed -e "s#^.*received, ##" -e "s#, time.*##" -e "s# packet loss##"`
-            echo "Packet Loss : $STATS" >> ./test_simulator_results.html
-            RTTMIN=`egrep "rtt min" $PING_CASE | awk '{split($4,a,"/"); print a[1] " " $5}'`
-            echo "RTT Minimal : $RTTMIN" >> ./test_simulator_results.html
-            RTTAVG=`egrep "rtt min" $PING_CASE | awk '{split($4,a,"/"); print a[2] " " $5}'`
-            echo "RTT Average : $RTTAVG" >> ./test_simulator_results.html
-            RTTMAX=`egrep "rtt min" $PING_CASE | awk '{split($4,a,"/"); print a[3] " " $5}'`
-            echo "RTT Maximal : $RTTMAX" >> ./test_simulator_results.html
-            echo "            </pre>" >> ./test_simulator_results.html
-            echo "        </td>" >> ./test_simulator_results.html
+            echo "        <td><pre>" >> ./test_simulator_results.html
+            if [ $NB_ENB_GOT_SYNC -eq 1 ]
+            then
+                echo "<font color = \"blue\">- eNB --> got sync</font>" >> ./test_simulator_results.html
+            else
+                echo "<font color = \"red\"><b>- eNB NEVER got sync</b></font>" >> ./test_simulator_results.html
+            fi
+            if [ $NB_UE_GOT_SYNC -eq 2 ]
+            then
+                echo "<font color = \"blue\">- UE --> got sync</font>" >> ./test_simulator_results.html
+            else
+                echo "<font color = \"red\"><b>- UE NEVER got sync</b></font>" >> ./test_simulator_results.html
+            fi
+            if [ $NB_ENB_SYNCED_WITH_UE -eq 1 ]
+            then
+                echo "<font color = \"blue\">- UE attached to eNB</font>" >> ./test_simulator_results.html
+            else
+                echo "<font color = \"red\"><b>- UE NEVER attached to eNB</b></font>" >> ./test_simulator_results.html
+            fi
+            NB_SEGFAULT_ENB=`egrep -i -c "Segmentation Fault" $ENB_LOG`
+            if [ $NB_SEGFAULT_ENB -ne 0 ]
+            then
+                echo "<font color = \"red\"><b>- eNB --> Segmentation Fault</b></font>" >> ./test_simulator_results.html
+            fi
+            NB_SEGFAULT_UE=`egrep -i -c "Segmentation Fault" $UE_LOG`
+            if [ $NB_SEGFAULT_UE -ne 0 ]
+            then
+                echo "<font color = \"red\"><b>- UE --> Segmentation Fault</b></font>" >> ./test_simulator_results.html
+            fi
+            NB_ASSERTION_ENB=`egrep -i -c "Assertion" $ENB_LOG`
+            if [ $NB_ASSERTION_ENB -ne 0 ]
+            then
+                echo "<font color = \"red\"><b>- eNB --> Assertion</b></font>" >> ./test_simulator_results.html
+                awk 'BEGIN{assertion=10}{if(assertion < 3){print "    " $0; assertion++};if ($0 ~/Assertion/){print "    " $0;assertion=1}}END{}' $ENB_LOG >> ./test_simulator_results.html
+            fi
+            NB_ASSERTION_UE=`egrep -i -c "Assertion" $UE_LOG`
+            if [ $NB_ASSERTION_UE -ne 0 ]
+            then
+                echo "<font color = \"red\"><b>- eNB --> Assertion</b></font>" >> ./test_simulator_results.html
+                awk 'BEGIN{assertion=10}{if(assertion < 3){print "    " $0; assertion++};if ($0 ~/Assertion/){print "    " $0;assertion=1}}END{}' $UE_LOG >> ./test_simulator_results.html
+            fi
+            echo "        </pre></td>" >> ./test_simulator_results.html
+            echo "      </tr>" >> ./test_simulator_results.html
         fi
-        echo "      </tr>" >> ./test_simulator_results.html
-    done
-
-    IPERF_TESTS=`ls $ARCHIVES_LOC/iperf*client*txt`
-    for IPERF_CASE in $IPERF_TESTS
-    do
-        echo "      <tr>" >> ./test_simulator_results.html
-        NAME=`echo $IPERF_CASE | sed -e "s#$ARCHIVES_LOC/##"`
-        echo "        <td>$NAME</td>" >> ./test_simulator_results.html
-        CMD=`egrep "COMMAND IS" $IPERF_CASE | sed -e "s#COMMAND IS: ##"`
-        echo "        <td>$CMD</td>" >> ./test_simulator_results.html
-        FILE_COMPLETE=`egrep -c "Server Report" $IPERF_CASE`
-        if [ $FILE_COMPLETE -eq 0 ]
+        PING_CASE=$ARCHIVES_LOC/${BW}MHz_ping_ue.txt
+        if [ -f $PING_CASE ]
         then
-            echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
-            echo "        <td>N/A</td>" >> ./test_simulator_results.html
+            echo "      <tr>" >> ./test_simulator_results.html
+            NAME=`echo $PING_CASE | sed -e "s#$ARCHIVES_LOC/##"`
+            echo "        <td>$NAME</td>" >> ./test_simulator_results.html
+            CMD=`egrep "COMMAND IS" $PING_CASE | sed -e "s#COMMAND IS: ##"`
+            echo "        <td>$CMD</td>" >> ./test_simulator_results.html
+            FILE_COMPLETE=`egrep -c "ping statistics" $PING_CASE`
+            if [ $FILE_COMPLETE -eq 0 ]
+            then
+                echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
+                echo "        <td>N/A</td>" >> ./test_simulator_results.html
+            else
+                NB_TR_PACKETS=`egrep "packets transmitted" $PING_CASE | sed -e "s# packets transmitted.*##"`
+                NB_RC_PACKETS=`egrep "packets transmitted" $PING_CASE | sed -e "s#^.*packets transmitted, ##" -e "s# received,.*##"`
+                if [ $NB_TR_PACKETS -eq $NB_RC_PACKETS ]
+                then
+                    echo "        <td bgcolor = \"green\" >OK</td>" >> ./test_simulator_results.html
+                else
+                    echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
+                fi
+                echo "        <td>" >> ./test_simulator_results.html
+                echo "            <pre>" >> ./test_simulator_results.html
+                STATS=`egrep "packets transmitted" $PING_CASE | sed -e "s#^.*received, ##" -e "s#, time.*##" -e "s# packet loss##"`
+                echo "Packet Loss : $STATS" >> ./test_simulator_results.html
+                RTTMIN=`egrep "rtt min" $PING_CASE | awk '{split($4,a,"/"); print a[1] " " $5}'`
+                echo "RTT Minimal : $RTTMIN" >> ./test_simulator_results.html
+                RTTAVG=`egrep "rtt min" $PING_CASE | awk '{split($4,a,"/"); print a[2] " " $5}'`
+                echo "RTT Average : $RTTAVG" >> ./test_simulator_results.html
+                RTTMAX=`egrep "rtt min" $PING_CASE | awk '{split($4,a,"/"); print a[3] " " $5}'`
+                echo "RTT Maximal : $RTTMAX" >> ./test_simulator_results.html
+                echo "            </pre>" >> ./test_simulator_results.html
+                echo "        </td>" >> ./test_simulator_results.html
+            fi
+            echo "      </tr>" >> ./test_simulator_results.html
+        fi
+
+        if [ -f $ARCHIVES_LOC/${BW}*iperf*dl*client*txt ]
+        then
+            IPERF_TESTS=`ls $ARCHIVES_LOC/${BW}*iperf*client*txt`
         else
+            echo "There are no iperf files"
+            IPERF_TESTS=""
+        fi
+        for IPERF_CASE in $IPERF_TESTS
+        do
+            echo "      <tr>" >> ./test_simulator_results.html
+            NAME=`echo $IPERF_CASE | sed -e "s#$ARCHIVES_LOC/##"`
+            echo "        <td>$NAME</td>" >> ./test_simulator_results.html
+            CMD=`egrep "COMMAND IS" $IPERF_CASE | sed -e "s#COMMAND IS: ##"`
+            echo "        <td>$CMD</td>" >> ./test_simulator_results.html
             REQ_BITRATE=`echo $CMD | sed -e "s#^.*-b ##" -e "s#-i 1.*##"`
             if [[ $REQ_BITRATE =~ .*K.* ]]
             then
@@ -385,43 +450,56 @@ then
                 REQ_BITRATE=`echo $REQ_BITRATE | sed -e "s#G##"`
                 FLOAT_REQ_BITRATE=`echo "$REQ_BITRATE * 1000000000.0" | bc -l`
             fi
-            EFFECTIVE_BITRATE=`tail -n3 $IPERF_CASE | egrep "Mbits/sec" | sed -e "s#^.*MBytes *##" -e "s#sec.*#sec#"`
-            if [[ $EFFECTIVE_BITRATE =~ .*Kbits/sec.* ]]
-            then
-                EFFECTIVE_BITRATE=`echo $EFFECTIVE_BITRATE | sed -e "s# *Kbits/sec.*##"`
-                FLOAT_EFF_BITRATE=`echo "$EFFECTIVE_BITRATE * 1000" | bc -l`
-            fi
-            if [[ $EFFECTIVE_BITRATE =~ .*Mbits/sec.* ]]
-            then
-                EFFECTIVE_BITRATE=`echo $EFFECTIVE_BITRATE | sed -e "s# *Mbits/sec.*##"`
-                FLOAT_EFF_BITRATE=`echo "$EFFECTIVE_BITRATE * 1000000" | bc -l`
-            fi
-            if [[ $EFFECTIVE_BITRATE =~ .*Gbits/sec.* ]]
-            then
-                EFFECTIVE_BITRATE=`echo $EFFECTIVE_BITRATE | sed -e "s# *Gbits/sec.*##"`
-                FLOAT_EFF_BITRATE=`echo "$EFFECTIVE_BITRATE * 1000000000" | bc -l`
-            fi
-            PERF=`echo "100 * $FLOAT_EFF_BITRATE / $FLOAT_REQ_BITRATE" | bc -l | awk '{printf "%.2f", $0}'`
-            PERF_INT=`echo "100 * $FLOAT_EFF_BITRATE / $FLOAT_REQ_BITRATE" | bc -l | awk '{printf "%.0f", $0}'`
-            if [[ $PERF_INT -lt 90 ]]
+            FILE_COMPLETE=`egrep -c "Server Report" $IPERF_CASE`
+            if [ $FILE_COMPLETE -eq 0 ]
             then
                 echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
+                SERVER_FILE=`echo $IPERF_CASE | sed -e "s#client#server#"`
+                FLOAT_EFF_BITRATE=`grep --color=never sec $SERVER_FILE | sed -e "s#^.*Bytes *##" -e "s#sec *.*#sec#" | awk 'BEGIN{s=0;n=0}{n++;if ($2 ~/Mbits/){a = $1 * 1000000};if ($2 ~/Kbits/){a = $1 * 1000};s=s+a}END{br=s/n; printf "%.0f", br}'`
+                EFFECTIVE_BITRATE=`grep --color=never sec $SERVER_FILE | sed -e "s#^.*Bytes *##" -e "s#sec *.*#sec#" | awk 'BEGIN{s=0;n=0}{n++;if ($2 ~/Mbits/){a = $1 * 1000000};if ($2 ~/Kbits/){a = $1 * 1000};s=s+a}END{br=s/n; if(br>1000000){printf "%.2f MBits/sec", br/1000000}}'`
+                PERF=`echo "100 * $FLOAT_EFF_BITRATE / $FLOAT_REQ_BITRATE" | bc -l | awk '{printf "%.2f", $0}'`
+                JITTER=`grep --color=never sec $SERVER_FILE | sed -e "s#^.*/sec *##" -e "s# *ms.*##" | awk 'BEGIN{s=0;n=0}{n++;s+=$1}END{jitter=s/n; printf "%.3f ms", jitter}'`
+                PACKETLOSS_NOSIGN=`grep --color=never sec $SERVER_FILE | sed -e "s#^.*(##" -e "s#%.*##" | awk 'BEGIN{s=0;n=0}{n++;s+=$1}END{per=s/n; printf "%.1f", per}'`
+                PACKETLOSS=`echo "${PACKETLOSS_NOSIGN}%"`
             else
-                echo "        <td bgcolor = \"green\" >OK</td>" >> ./test_simulator_results.html
+                EFFECTIVE_BITRATE=`tail -n3 $IPERF_CASE | egrep "Mbits/sec" | sed -e "s#^.*MBytes *##" -e "s#sec.*#sec#"`
+                if [[ $EFFECTIVE_BITRATE =~ .*Kbits/sec.* ]]
+                then
+                    EFFECTIVE_BITRATE=`echo $EFFECTIVE_BITRATE | sed -e "s# *Kbits/sec.*##"`
+                    FLOAT_EFF_BITRATE=`echo "$EFFECTIVE_BITRATE * 1000" | bc -l`
+                fi
+                if [[ $EFFECTIVE_BITRATE =~ .*Mbits/sec.* ]]
+                then
+                    EFFECTIVE_BITRATE=`echo $EFFECTIVE_BITRATE | sed -e "s# *Mbits/sec.*##"`
+                    FLOAT_EFF_BITRATE=`echo "$EFFECTIVE_BITRATE * 1000000" | bc -l`
+                fi
+                if [[ $EFFECTIVE_BITRATE =~ .*Gbits/sec.* ]]
+                then
+                    EFFECTIVE_BITRATE=`echo $EFFECTIVE_BITRATE | sed -e "s# *Gbits/sec.*##"`
+                    FLOAT_EFF_BITRATE=`echo "$EFFECTIVE_BITRATE * 1000000000" | bc -l`
+                fi
+                PERF=`echo "100 * $FLOAT_EFF_BITRATE / $FLOAT_REQ_BITRATE" | bc -l | awk '{printf "%.2f", $0}'`
+                PERF_INT=`echo "100 * $FLOAT_EFF_BITRATE / $FLOAT_REQ_BITRATE" | bc -l | awk '{printf "%.0f", $0}'`
+                if [[ $PERF_INT -lt 90 ]]
+                then
+                    echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
+                else
+                    echo "        <td bgcolor = \"green\" >OK</td>" >> ./test_simulator_results.html
+                fi
+                EFFECTIVE_BITRATE=`tail -n3 $IPERF_CASE | egrep "Mbits/sec" | sed -e "s#^.*MBytes *##" -e "s#sec.*#sec#"`
+                JITTER=`tail -n3 $IPERF_CASE | egrep "Mbits/sec" | sed -e "s#^.*Mbits/sec *##" -e "s#ms.*#ms#"`
+                PACKETLOSS=`tail -n3 $IPERF_CASE | egrep "Mbits/sec" | sed -e "s#^.*(##" -e "s#).*##"`
             fi
             echo "        <td>" >> ./test_simulator_results.html
             echo "            <pre>" >> ./test_simulator_results.html
-            EFFECTIVE_BITRATE=`tail -n3 $IPERF_CASE | egrep "Mbits/sec" | sed -e "s#^.*MBytes *##" -e "s#sec.*#sec#"`
             echo "Bitrate      : $EFFECTIVE_BITRATE" >> ./test_simulator_results.html
             echo "Bitrate Perf : $PERF %" >> ./test_simulator_results.html
-            JITTER=`tail -n3 $IPERF_CASE | egrep "Mbits/sec" | sed -e "s#^.*Mbits/sec *##" -e "s#ms.*#ms#"`
             echo "Jitter       : $JITTER" >> ./test_simulator_results.html
-            PACKETLOSS=`tail -n3 $IPERF_CASE | egrep "Mbits/sec" | sed -e "s#^.*(##" -e "s#).*##"`
             echo "Packet Loss  : $PACKETLOSS" >> ./test_simulator_results.html
             echo "            </pre>" >> ./test_simulator_results.html
             echo "        </td>" >> ./test_simulator_results.html
-        fi
-        echo "      </tr>" >> ./test_simulator_results.html
+            echo "      </tr>" >> ./test_simulator_results.html
+        done
     done
 
     echo "   </table>" >> ./test_simulator_results.html
