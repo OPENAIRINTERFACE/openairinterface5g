@@ -78,7 +78,7 @@ static const char *f1ap_direction_String[] = {
 return(f1ap_direction_String[f1ap_dir]);
 }
 
-int f1ap_handle_message(uint32_t assoc_id, int32_t stream,
+int f1ap_handle_message(instance_t instance, uint32_t assoc_id, int32_t stream,
                             const uint8_t * const data, const uint32_t data_length)
 {
   F1AP_F1AP_PDU_t pdu;
@@ -116,7 +116,7 @@ int f1ap_handle_message(uint32_t assoc_id, int32_t stream,
 
   /* Calling the right handler */
   ret = (*f1ap_messages_callback[pdu.choice.initiatingMessage->procedureCode][pdu.present - 1])
-        (assoc_id, stream, &pdu);
+        (instance, assoc_id, stream, &pdu);
   ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_F1AP_F1AP_PDU, &pdu);
   return ret;
 }

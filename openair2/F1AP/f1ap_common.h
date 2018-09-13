@@ -419,6 +419,7 @@ inline void ASN_DEBUG(const char *fmt, ...);
 /** \brief Function callback prototype.
  **/
 typedef int (*f1ap_message_decoded_callback)(
+  instance_t             instance,
   uint32_t               assoc_id,
   uint32_t               stream,
   F1AP_F1AP_PDU_t       *message_p

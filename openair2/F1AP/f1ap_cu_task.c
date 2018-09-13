@@ -65,12 +65,12 @@ void cu_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
   f1ap_du_data_from_du->sctp_out_streams = sctp_new_association_resp->out_streams;
 }
 
-void cu_task_handle_sctp_data_ind(sctp_data_ind_t *sctp_data_ind) {
+void cu_task_handle_sctp_data_ind(instance_t instance, sctp_data_ind_t *sctp_data_ind) {
   int result;
 
   DevAssert(sctp_data_ind != NULL);
 
-  f1ap_handle_message(sctp_data_ind->assoc_id, sctp_data_ind->stream,
+  f1ap_handle_message(instance, sctp_data_ind->assoc_id, sctp_data_ind->stream,
                           sctp_data_ind->buffer, sctp_data_ind->buffer_length);
 
   result = itti_free(TASK_UNKNOWN, sctp_data_ind->buffer);
@@ -132,7 +132,8 @@ void *F1AP_CU_task(void *arg) {
 
       case SCTP_DATA_IND:
         LOG_I(CU_F1AP, "SCTP_DATA_IND\n");
-        cu_task_handle_sctp_data_ind(&received_msg->ittiMsg.sctp_data_ind);
+        cu_task_handle_sctp_data_ind(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                        &received_msg->ittiMsg.sctp_data_ind);
         break;
 
       case F1AP_SETUP_RESP: // from rrc
