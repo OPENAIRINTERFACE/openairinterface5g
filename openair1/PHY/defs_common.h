@@ -862,7 +862,22 @@ typedef enum {
   RESYNCH=4
 } UE_MODE_t;
 
+/// Threading Parameter
+typedef enum {
+  PARALLEL_SINGLE_THREAD    =0,
+  PARALLEL_RU_L1_SPLIT      =1,
+  PARALLEL_RU_L1_TRX_SPLIT  =2
+}PARALLEL_CONF_t;
 
+typedef enum {
+  WORKER_DISABLE            =0,
+  WORKER_ENABLE             =1
+}WORKER_CONF_t;
+
+typedef struct THREAD_STRUCT_s {
+  PARALLEL_CONF_t  parallel_conf;
+  WORKER_CONF_t    worker_conf;
+} THREAD_STRUCT;
 
 typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;
 

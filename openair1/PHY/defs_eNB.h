@@ -887,22 +887,6 @@ typedef struct {
   int            prach_I0;
 } PHY_MEASUREMENTS_eNB;
 
-typedef enum {
-  PARALLEL_SINGLE_THREAD    =0,
-  PARALLEL_RU_L1_SPLIT      =1,
-  PARALLEL_RU_L1_TRX_SPLIT  =2
-}PARALLEL_CONF_t;
-
-typedef enum {
-  WORKER_DISABLE            =0,
-  WORKER_ENABLE             =1
-}WORKER_CONF_t;
-
-typedef struct THREAD_STRUCT_s {
-  PARALLEL_CONF_t  parallel_conf;
-  WORKER_CONF_t    worker_conf;
-} THREAD_STRUCT;
-
 
 /// Top-level PHY Data Structure for eNB
 typedef struct PHY_VARS_eNB_s {

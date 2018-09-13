@@ -220,8 +220,24 @@ int transmission_mode=1;
 
 int emulate_rf = 0;
 int numerology = 0;
-int codingw = 0;
-int fepw = 0;
+
+static THREAD_STRUCT thread_struct;
+void set_parallel_conf(int parallel_conf)
+{
+   thread_struct.parallel_conf = (PARALLEL_CONF_t)parallel_conf;
+} 
+void set_parallel_worker_conf(int worker_conf)
+{
+  thread_struct.worker_conf = (WORKER_CONF_t)worker_conf;
+} 
+PARALLEL_CONF_t get_thread_paralle_conf(void)
+{
+  return thread_struct.parallel_conf;
+} 
+WORKER_CONF_t get_thread_worker_conf(void)
+{
+  return thread_struct.worker_conf;
+} 
 
 /* struct for ethernet specific parameters given in eNB conf file */
 eth_params_t *eth_params;
