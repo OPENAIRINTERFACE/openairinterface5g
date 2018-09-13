@@ -447,4 +447,37 @@ uint32_t nr_compute_tbs(uint8_t mcs,
 						uint16_t length_dmrs,
 						uint8_t Nl);
 
+void nr_interleaving_ldpc(uint32_t E, uint8_t Qm, uint8_t *e,uint8_t *f);
+
+void nr_deinterleaving_ldpc(uint32_t E, uint8_t Qm, uint8_t *e,uint8_t *f);
+
+uint32_t nr_rate_matching_ldpc(uint8_t Ilbrm,
+							   uint32_t Tbslbrm,
+							   uint8_t BG,
+							   uint16_t Z,
+                               uint32_t G,
+                               uint8_t *w,
+                               uint8_t *e,
+                               uint8_t C,
+                               uint8_t rvidx,
+                               uint8_t Qm,
+                               uint8_t Nl,
+                               uint8_t r);
+
+int nr_rate_matching_ldpc_rx(uint8_t Ilbrm,
+		 	 	 	 	 	 uint32_t Tbslbrm,
+							 uint8_t BG,
+							 uint16_t Z,
+							 uint32_t G,
+                             int16_t *w,
+                             int16_t *soft_input,
+                             uint8_t C,
+                             uint8_t rvidx,
+                             uint8_t clear,
+                             uint8_t Qm,
+                             uint8_t Nl,
+                             uint8_t r,
+                             uint32_t *E_out);
+
+
 #endif
