@@ -188,14 +188,15 @@ int8_t polar_decoder(
 	      
 	      //Keep only the best "listSize" number of entries.
 	      if (currentListSize > listSize) {
-		for (int i = 0; i < 2*listSize; i++) { 
+		for (int i = 0; i < currentListSize; i++) { 
 		  listIndex[i]=i;
 		  pathMetric[i] = dlist[i].pathMetric;
 		}
-
 		nr_sort_asc_double_1D_array_ind(pathMetric, listIndex, currentListSize);
-		for (int i = 0; i < 2*listSize; i++) sorted_dlist[i]=&dlist[listIndex[i]];
+		currentListSize = listSize;
 	      }
+	      stop_meas(sorting);
+
 	      /*
 	      //sort listIndex[listSize, ..., 2*listSize-1] in descending order.
 	      uint8_t swaps, tempInd;
@@ -275,7 +276,7 @@ int8_t polar_decoder(
 					}
 					currentListSize = listSize;
 					}*/
-				stop_meas(sorting);
+	
 			}
 
 			for (int i=0; i<polarParams->crcParityBits; i++) {
@@ -298,7 +299,9 @@ int8_t polar_decoder(
 				//perror("[SCL polar decoder] All list entries have failed the CRC checks.");
 				free(d_tilde);
 				for (int i=0;i<2*listSize;i++) {
+				  //				  printf("error: Freeing dlist[%d].bit %p\n",i,dlist[i].bit);
 				  nr_free_uint8_t_2D_array(dlist[i].bit, (polarParams->n+1));
+				  //				  printf("error: Freeing dlist[%d].llr %p\n",i,dlist[i].bit);
 				  nr_free_double_2D_array(dlist[i].llr, (polarParams->n+1));
 				  free(dlist[i].crcChecksum);
 				}
@@ -336,6 +339,7 @@ int8_t polar_decoder(
 	
 	free(d_tilde);
 	for (int i=0;i<2*listSize;i++) {
+	  //	  printf("correct: Freeing dlist[%d].bit %p\n",i,dlist[i].bit);
 	  nr_free_uint8_t_2D_array(dlist[i].bit, (polarParams->n+1));
 	  nr_free_double_2D_array(dlist[i].llr, (polarParams->n+1));
 	  free(dlist[i].crcChecksum);

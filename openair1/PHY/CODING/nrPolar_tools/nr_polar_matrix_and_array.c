@@ -130,8 +130,8 @@ void nr_free_uint8_t_3D_array(uint8_t ***input, uint16_t xlen, uint16_t ylen) {
 }
 
 void nr_free_uint8_t_2D_array(uint8_t **input, uint16_t xlen) {
-	for (int i = 0; i < xlen; i++) free(input[i]);
-	free(input);
+  for (int i = 0; i < xlen; i++) free(input[i]);
+  free(input);
 }
 
 void nr_free_double_2D_array(double **input, uint16_t xlen) {
@@ -144,14 +144,14 @@ void nr_free_double_2D_array(double **input, uint16_t xlen) {
 }
 
 // Modified Bubble Sort.
-void nr_sort_asc_double_1D_array_ind(double *matrix, uint8_t *ind, uint8_t len) {
-	uint8_t swaps;
+void nr_sort_asc_double_1D_array_ind(double *matrix, int *ind, int len) {
+	int swaps;
 	double temp;
-	uint8_t tempInd;
+	int tempInd;
 
-	for (uint8_t i = 0; i < len; i++) {
+	for (int i = 0; i < len; i++) {
 		swaps = 0;
-		for (uint8_t j = 0; j < (len - i) - 1; j++) {
+		for (int j = 0; j < (len - i) - 1; j++) {
 			if (matrix[j] > matrix[j + 1]) {
 				temp = matrix[j];
 				matrix[j] = matrix[j + 1];

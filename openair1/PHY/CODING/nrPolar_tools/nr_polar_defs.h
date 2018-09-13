@@ -159,7 +159,7 @@ void updateCrcChecksum2(decoder_list_t **dlist, uint8_t **crcGen,
 			uint8_t listSize, uint32_t i2, uint8_t len);
 
 
-void nr_sort_asc_double_1D_array_ind(double *matrix, uint8_t *ind, uint8_t len);
+void nr_sort_asc_double_1D_array_ind(double *matrix, int *ind, int len);
 
 uint8_t **crc24c_generator_matrix(uint16_t payloadSizeBits);
 uint8_t **crc11_generator_matrix(uint16_t payloadSizeBits);
