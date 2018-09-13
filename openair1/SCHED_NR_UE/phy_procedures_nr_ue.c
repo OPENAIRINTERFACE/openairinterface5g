@@ -4018,7 +4018,7 @@ void copy_harq_proc_struct(NR_DL_UE_HARQ_t *harq_processes_dest, NR_DL_UE_HARQ_t
     memcpy(harq_ack_dest, current_harq_ack, sizeof(nr_harq_status_t));
 }*/
 
-void ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_id, PDSCH_t pdsch, NR_UE_DLSCH_t *dlsch0, NR_UE_DLSCH_t *dlsch1, int s0, int s1, int abstraction_flag) {
+void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_id, PDSCH_t pdsch, NR_UE_DLSCH_t *dlsch0, NR_UE_DLSCH_t *dlsch1, int s0, int s1, int abstraction_flag) {
 
   int nr_tti_rx = proc->nr_tti_rx;
   int m;
@@ -4078,7 +4078,7 @@ void ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_id
       start_meas(&ue->dlsch_llr_stats_parallelization[ue->current_thread_id[nr_tti_rx]][slot]);
 #endif
       // process DLSCH received in first slot
-      rx_pdsch(ue,
+      nr_rx_pdsch(ue,
 	       pdsch,
 	       eNB_id,
 	       eNB_id_i,
@@ -5597,7 +5597,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 #endif
 
 #endif
-#if 0
+//#if 0
   LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
   //to update from pdsch config
   nr_gold_pdsch(ue,0,0, 1);
@@ -5616,7 +5616,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   // do procedures for C-RNTI
   if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active == 1) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
-    ue_pdsch_procedures(ue,
+    nr_ue_pdsch_procedures(ue,
 			proc,
 			eNB_id,
 			PDSCH,
@@ -5633,7 +5633,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   // do procedures for SI-RNTI
   if ((ue->dlsch_SI[eNB_id]) && (ue->dlsch_SI[eNB_id]->active == 1)) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_SI, VCD_FUNCTION_IN);
-    ue_pdsch_procedures(ue,
+    nr_ue_pdsch_procedures(ue,
 			proc,
 			eNB_id,
 			SI_PDSCH,
@@ -5648,7 +5648,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   // do procedures for SI-RNTI
   if ((ue->dlsch_p[eNB_id]) && (ue->dlsch_p[eNB_id]->active == 1)) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_P, VCD_FUNCTION_IN);
-    ue_pdsch_procedures(ue,
+    nr_ue_pdsch_procedures(ue,
 			proc,
 			eNB_id,
 			P_PDSCH,
@@ -5663,7 +5663,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   // do procedures for RA-RNTI
   if ((ue->dlsch_ra[eNB_id]) && (ue->dlsch_ra[eNB_id]->active == 1)) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_RA, VCD_FUNCTION_IN);
-    ue_pdsch_procedures(ue,
+    nr_ue_pdsch_procedures(ue,
 			proc,
 			eNB_id,
 			RA_PDSCH,
@@ -5740,7 +5740,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 #if UE_TIMING_TRACE
     start_meas(&ue->pdsch_procedures_stat[ue->current_thread_id[nr_tti_rx]]);
 #endif
-    ue_pdsch_procedures(ue,
+    nr_ue_pdsch_procedures(ue,
 			proc,
 			eNB_id,
 			PDSCH,
@@ -5805,7 +5805,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 
   // do procedures for SI-RNTI
   if ((ue->dlsch_SI[eNB_id]) && (ue->dlsch_SI[eNB_id]->active == 1)) {
-    ue_pdsch_procedures(ue,
+    nr_ue_pdsch_procedures(ue,
       proc,
       eNB_id,
       SI_PDSCH,
@@ -5829,7 +5829,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 
   // do procedures for P-RNTI
   if ((ue->dlsch_p[eNB_id]) && (ue->dlsch_p[eNB_id]->active == 1)) {
-    ue_pdsch_procedures(ue,
+    nr_ue_pdsch_procedures(ue,
       proc,
       eNB_id,
       P_PDSCH,
@@ -5852,7 +5852,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   }
   // do procedures for RA-RNTI
   if ((ue->dlsch_ra[eNB_id]) && (ue->dlsch_ra[eNB_id]->active == 1)) {
-    ue_pdsch_procedures(ue,
+    nr_ue_pdsch_procedures(ue,
       proc,
       eNB_id,
       RA_PDSCH,
@@ -5936,7 +5936,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 #endif
 #endif
 
-#endif //pdsch
+//#endif //pdsch
 
   LOG_D(PHY," ****** end RX-Chain  for AbsSubframe %d.%d ******  \n", frame_rx%1024, nr_tti_rx);
   return (0);

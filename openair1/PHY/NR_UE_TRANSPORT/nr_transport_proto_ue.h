@@ -708,7 +708,7 @@ void dlsch_detection_mrc_TM34(NR_DL_FRAME_PARMS *frame_parms,
     @param high_speed_flag
     @param frame_parms Pointer to frame descriptor
 */
-uint16_t dlsch_extract_rbs_single(int32_t **rxdataF,
+/*uint16_t nr_dlsch_extract_rbs_single(int32_t **rxdataF,
                                   int32_t **dl_ch_estimates,
                                   int32_t **rxdataF_ext,
                                   int32_t **dl_ch_estimates_ext,
@@ -718,7 +718,21 @@ uint16_t dlsch_extract_rbs_single(int32_t **rxdataF,
                                   uint8_t symbol,
                                   uint8_t subframe,
                                   uint32_t high_speed_flag,
-                                  NR_DL_FRAME_PARMS *frame_parms);
+                                  NR_DL_FRAME_PARMS *frame_parms);*/
+
+unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
+                                        int **dl_ch_estimates,
+                                        int **rxdataF_ext,
+                                        int **dl_ch_estimates_ext,
+                                        unsigned short pmi,
+                                        unsigned char *pmi_ext,
+                                        unsigned int *rb_alloc,
+                                        unsigned char symbol,
+										unsigned short start_rb,
+										unsigned short nb_pdsch_rb,
+                                        unsigned char nr_tti_rx,
+                                        uint32_t high_speed_flag,
+                                        NR_DL_FRAME_PARMS *frame_parms);
 
 /** \fn dlsch_extract_rbs_dual(int32_t **rxdataF,
     int32_t **dl_ch_estimates,
@@ -953,7 +967,7 @@ void dlsch_channel_level_TM7(int32_t **dl_bf_ch_estimates_ext,
                          uint8_t pilots_flag,
                          uint16_t nb_rb);
 
-void dlsch_scale_channel(int32_t **dl_ch_estimates_ext,
+void nr_dlsch_scale_channel(int32_t **dl_ch_estimates_ext,
                          NR_DL_FRAME_PARMS *frame_parms,
                          NR_UE_DLSCH_t **dlsch_ue,
                          uint8_t symbol_mod,
@@ -1384,37 +1398,6 @@ uint32_t ulsch_encoding(uint8_t *a,
                         uint8_t tmode,
                         uint8_t control_only_flag,
                         uint8_t Nbundled);
-
-
-
-
-/* \brief  This routine demodulates the PHICH and updates PUSCH/ULSCH parameters.
-   @param phy_vars_ue Pointer to UE variables
-   @param proc Pointer to RXN_TXNp4 proc
-   @param subframe Subframe of received PDCCH/PHICH
-   @param eNB_id Index of eNB
-*/
-
-void rx_phich(PHY_VARS_NR_UE *phy_vars_ue,
-              UE_nr_rxtx_proc_t *proc,
-              uint8_t subframe,
-              uint8_t eNB_id);
-
-
-/** \brief  This routine provides the relationship between a PHICH TXOp and its corresponding PUSCH subframe (Table 8.3.-1 from 36.213).
-    @param frame_parms Pointer to DL frame configuration parameters
-    @param subframe Subframe of received/transmitted PHICH
-    @returns subframe of PUSCH transmission
-*/
-uint8_t phich_subframe2_pusch_subframe(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
-
-/** \brief  This routine provides the relationship between a PHICH TXOp and its corresponding PUSCH frame (Table 8.3.-1 from 36.213).
-    @param frame_parms Pointer to DL frame configuration parameters
-    @param frame Frame of received/transmitted PHICH
-    @param subframe Subframe of received/transmitted PHICH
-    @returns frame of PUSCH transmission
-*/
-int phich_frame2_pusch_frame(NR_DL_FRAME_PARMS *frame_parms, int frame, int subframe);
 
 void print_CQI(void *o,UCI_format_t uci_format,uint8_t eNB_id,int N_RB_DL);
 
