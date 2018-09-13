@@ -49,7 +49,7 @@
 #define DEFAULT_PROTO_AGENT_PORT          2210
 #define DEFAULT_PROTO_AGENT_CACHE        "/mnt/oai_agent_cache"
 
-/*typedef enum {
+typedef enum {
   
   PROTO_AGENT_DEFAULT=0,
   
@@ -64,7 +64,7 @@
 
   ENB_AGENT_MAX=9,
     
-} agent_id_t;*/
+} proto_agent_id_t;
 
 /*
 typedef enum {

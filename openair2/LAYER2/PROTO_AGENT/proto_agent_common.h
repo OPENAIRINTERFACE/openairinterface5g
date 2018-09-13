@@ -78,11 +78,10 @@ uint32_t ack_result;
  * functions and generic handlers
  **********************************/
 
-int proto_agent_serialize_message(Protocol__FlexsplitMessage *msg, void **buf, int *size);
+int proto_agent_serialize_message(Protocol__FlexsplitMessage *msg, uint8_t **buf, int *size);
 int proto_agent_deserialize_message(void *data, int size, Protocol__FlexsplitMessage **msg);
 
-void * proto_agent_pack_message(Protocol__FlexsplitMessage *msg, 
-			      uint32_t * size);
+uint8_t *proto_agent_pack_message(Protocol__FlexsplitMessage *msg, int *size);
 
 err_code_t proto_agent_destroy_flexsplit_message(Protocol__FlexsplitMessage *msg);
 
@@ -112,7 +111,7 @@ int proto_agent_get_ack_result(mod_id_t mod_id, const void *params, Protocol__Fl
 
 Protocol__FlexsplitMessage* proto_agent_handle_message (mod_id_t mod_id, 
 						    uint8_t *data, 
-						    uint32_t size);
+						    int size);
 
 Protocol__FlexsplitMessage *proto_agent_handle_timed_task(void *args);
 

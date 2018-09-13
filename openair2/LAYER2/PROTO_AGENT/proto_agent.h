@@ -42,7 +42,7 @@
 
 
 void * proto_server_init(void *args);
-void * proto_server_receive(void);
+void * proto_server_receive(void *args);
 void * proto_client_receive(void *args);
 
 int proto_agent_start(uint8_t enb_id, mod_id_t mod_id, uint8_t type_id, cudu_params_t *cudu);
@@ -58,5 +58,14 @@ typedef struct
   mod_id_t mod_id;
   uint8_t type_id;
 }proto_recv_t;
+
+void proto_agent_send_rlc_data_req(uint8_t mod_id, uint8_t type_id,
+    const protocol_ctxt_t* const ctxt_pP, const srb_flag_t srb_flagP,
+    const MBMS_flag_t MBMS_flagP, const rb_id_t rb_idP, const mui_t muiP,
+    confirm_t confirmP, sdu_size_t sdu_sizeP, mem_block_t *sdu_pP);
+
+void proto_agent_send_pdcp_data_ind(const protocol_ctxt_t* const ctxt_pP,
+    const srb_flag_t srb_flagP, const MBMS_flag_t MBMS_flagP,
+    const rb_id_t rb_idP, sdu_size_t sdu_sizeP, mem_block_t *sdu_pP);
 
 #endif

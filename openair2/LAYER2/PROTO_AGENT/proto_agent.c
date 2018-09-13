@@ -33,7 +33,6 @@
  * \date 2016
  * \version 0.1
  */
-#include "ENB_APP/flexran_agent_defs.h"
 #include "proto_agent_common.h"
 #include "common/utils/LOG/log.h"
 #include "proto_agent.h"
@@ -57,7 +56,7 @@ pthread_t cu_thread[MAX_DU], du_thread;
 Protocol__FlexsplitMessage *proto_agent_timeout_fsp(void* args);
 
 mod_id_t client_mod[MAX_DU], server_mod;
-proto_agent_instance_t *client_channel[MAX_DU], *server_channel;
+proto_agent_async_channel_t *client_channel[MAX_DU], *server_channel;
 proto_recv_t client_info[MAX_DU];
 
 #define TEST_MOD 0
@@ -161,7 +160,7 @@ void * proto_server_init(void *args)
 int proto_server_start(mod_id_t mod_id, const cudu_params_t* cudu){
   
   int channel_id;
-  char *peer_address;
+  char *peer_address = NULL;
   
   proto_server[mod_id].enb_id = mod_id;
   
@@ -230,7 +229,7 @@ int proto_server_start(mod_id_t mod_id, const cudu_params_t* cudu){
   proto_agent_init_channel_container();
 
   /*Create the async channel info*/
-  proto_agent_instance_t *channel_info = proto_server_async_channel_info(mod_id, in_ip, in_port, link_type, peer_address);
+  proto_agent_async_channel_t *channel_info = proto_server_async_channel_info(mod_id, in_ip, in_port, link_type, peer_address);
   
   server_channel = channel_info;
 
@@ -260,13 +259,9 @@ int proto_server_start(mod_id_t mod_id, const cudu_params_t* cudu){
   proto_agent_register_channel(mod_id, channel, ENB_AGENT_MAX);
 
   // Code for sending the HELLO/ECHO_REQ message once a connection is established
-  Protocol__FlexsplitMessage *msg = NULL;
+  uint8_t *msg = NULL;
   Protocol__FlexsplitMessage *init_msg=NULL;
-  Protocol__FlexsplitMessage *rep_msg=NULL;
-  Protocol__FlexsplitMessage *ser_msg=NULL;
   int msg_flag = 0;
-  int priority;
-  int size;
 
   if (udp == 0)
   {
@@ -277,7 +272,6 @@ int proto_server_start(mod_id_t mod_id, const cudu_params_t* cudu){
     goto error;
   
     int msgsize = 0;
-    int err_code;
     if (init_msg != NULL)
       msg = proto_agent_pack_message(init_msg, &msgsize);
 
@@ -295,7 +289,7 @@ int proto_server_start(mod_id_t mod_id, const cudu_params_t* cudu){
 
   
   du_thread=new_thread(proto_server_receive, &proto_server[mod_id]);
-  LOG_D(PROTO_AGENT, "server ends with thread_id %u\n",du_thread);
+  LOG_D(PROTO_AGENT, "server ends with thread_id %lu\n",du_thread);
   return 0;
 
 error:
@@ -383,7 +377,7 @@ int proto_agent_start(uint8_t enb_id, mod_id_t cu_id, uint8_t type_id, cudu_para
 
   /*Create the async channel info*/
   
-  proto_agent_instance_t *channel_info = proto_agent_async_channel_info(cu_id, in_ip, in_port, link_type, peer_address);
+  proto_agent_async_channel_t *channel_info = proto_agent_async_channel_info(cu_id, in_ip, in_port, link_type, peer_address);
   client_channel[cu_id] = channel_info;
   /*Create a channel using the async channel info*/
   channel_id = proto_agent_create_channel((void *) channel_info, 
@@ -408,14 +402,8 @@ int proto_agent_start(uint8_t enb_id, mod_id_t cu_id, uint8_t type_id, cudu_para
   /*Register the channel for all underlying agents (use ENB_AGENT_MAX)*/
   proto_agent_register_channel(cu_id, channel, ENB_AGENT_MAX);
 
-  void                  *data;
-  int                   size;
-  int                   priority;
-   err_code_t             err_code;
-  Protocol__FlexsplitMessage *msg = NULL;
+  uint8_t *msg = NULL;
   Protocol__FlexsplitMessage *init_msg=NULL;
-  Protocol__FlexsplitMessage *rep_msg=NULL;
-  Protocol__FlexsplitMessage *ser_msg=NULL;
   int msg_flag;
   
   // In the case of UDP comm, start the echo request from the client side; the server thread should be blocked until it reads the SRC port of the 1st packet
@@ -429,7 +417,6 @@ int proto_agent_start(uint8_t enb_id, mod_id_t cu_id, uint8_t type_id, cudu_para
       goto error;
     
     int msgsize = 0;
-    int err_code;
     if (init_msg != NULL)
       msg = proto_agent_pack_message(init_msg, &msgsize);
 
@@ -447,7 +434,7 @@ int proto_agent_start(uint8_t enb_id, mod_id_t cu_id, uint8_t type_id, cudu_para
   return 0;
 
 error:
-  LOG_E(PROTO_AGENT, "there was an error %u\n", err_code);
+  LOG_E(PROTO_AGENT, "there was an error in proto_agent_start()\n");
   return 1;
 
 }
@@ -455,7 +442,7 @@ error:
 void 
 proto_agent_send_hello(void)
 {
-  Protocol__FlexsplitMessage *msg = NULL;
+  uint8_t *msg = NULL;
   Protocol__FlexsplitMessage *init_msg=NULL;
   int msg_flag = 0;
 
@@ -481,17 +468,10 @@ proto_agent_send_rlc_data_req(uint8_t mod_id, uint8_t type_id, const protocol_ct
   
   //LOG_D(PROTO_AGENT, "PROTOPDCP: sending the data req over the async channel\n");
   
-  Protocol__FlexsplitMessage *msg = NULL;
+  uint8_t *msg = NULL;
   Protocol__FlexsplitMessage *init_msg=NULL;
-  Protocol__FlexsplitMessage *rep = NULL;
-  Protocol__FlexsplitMessage *srep = NULL;
 
   int msg_flag = 0;
-  void *data=NULL;
-  int priority;
-  int size;
-  int ret;
-  int err_code;
   
   //printf( "PDCP agent: Calling the PDCP DATA REQ constructor\n");
  
@@ -544,18 +524,11 @@ proto_agent_send_pdcp_data_ind(const protocol_ctxt_t* const ctxt_pP, const srb_f
 {
   //LOG_D(PROTO_AGENT, "PROTOPDCP: Sending Data Indication over the async channel\n");
   
-  Protocol__FlexsplitMessage *msg = NULL;
+  uint8_t *msg = NULL;
   Protocol__FlexsplitMessage *init_msg = NULL;
-  Protocol__FlexsplitMessage *rep = NULL;
-  Protocol__FlexsplitMessage *srep = NULL;
 
   
   int msg_flag = 0;
-  void *data=NULL;
-  int priority;
-  int size;
-  int ret;
-  int err_code;
   
   //printf( "PDCP agent: Calling the PDCP_DATA_IND constructor\n");
  
@@ -602,16 +575,16 @@ error:
 
 
 void *
-proto_server_receive(void)
+proto_server_receive(void *args)
 {
-  proto_agent_instance_t         *d = &proto_server[server_mod];
+  proto_agent_instance_t *d = args;
   void                  *data = NULL;
   int                   size;
   int                   priority;
   err_code_t             err_code;
 
   Protocol__FlexsplitMessage *msg;
-  Protocol__FlexsplitMessage *ser_msg;
+  uint8_t *ser_msg;
   
   while (1) {
    
@@ -661,7 +634,6 @@ proto_client_receive(void *args)
   
   proto_recv_t*         recv = args;
   mod_id_t 	      recv_mod = recv->mod_id;
-  uint8_t 	      type = recv->type_id;
 
   LOG_D(PROTO_AGENT, "\n\nrecv mod is %u\n\n",recv_mod);  
   //proto_agent_instance_t         *d = &proto_agent[TEST_MOD];
@@ -671,7 +643,7 @@ proto_client_receive(void *args)
   err_code_t             err_code;
 
   Protocol__FlexsplitMessage *msg;
-  Protocol__FlexsplitMessage *ser_msg;
+  uint8_t *ser_msg;
 
 
   while (1) {
