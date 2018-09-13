@@ -31,29 +31,26 @@
  */
 
 #include "f1ap_common.h"
+#include "f1ap_encoder.h"
+#include "f1ap_decoder.h"
 #include "f1ap_du_interface_management.h"
 
 extern f1ap_setup_req_t *f1ap_du_data;
 
 
-/*
-    Reset
-*/
-
-
-void DU_handle_RESET(F1AP_Reset_t *Reset) {
+void DU_handle_RESET(instance_t instance, F1AP_Reset_t *Reset) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void DU_send_RESET_ACKKNOWLEDGE(F1AP_ResetAcknowledge_t *ResetAcknowledge) {
+void DU_send_RESET_ACKKNOWLEDGE(instance_t instance, F1AP_ResetAcknowledge_t *ResetAcknowledge) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void DU_send_RESET(F1AP_Reset_t *Reset) {
+void DU_send_RESET(instance_t instance, F1AP_Reset_t *Reset) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void DU_handle_RESET_ACKKNOWLEDGE(F1AP_ResetAcknowledge_t *ResetAcknowledge) {
+void DU_handle_RESET_ACKNOWLEDGE(instance_t instance, F1AP_ResetAcknowledge_t *ResetAcknowledge) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -62,11 +59,11 @@ void DU_handle_RESET_ACKKNOWLEDGE(F1AP_ResetAcknowledge_t *ResetAcknowledge) {
     Error Indication
 */
 
-void DU_send_ERROR_INDICATION(struct F1AP_F1AP_PDU_t *pdu_p) {
+void DU_send_ERROR_INDICATION(instance_t instance, F1AP_F1AP_PDU_t *pdu_p) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void DU_handle_ERROR_INDICATION(F1AP_ErrorIndication_t *ErrorIndication) {
+void DU_handle_ERROR_INDICATION(instance_t instance, F1AP_ErrorIndication_t *ErrorIndication) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -305,9 +302,10 @@ void DU_send_F1_SETUP_REQUEST(instance_t instance) {
   du_f1ap_itti_send_sctp_data_req(instance, f1ap_du_data->assoc_id, buffer, len, 0);
 }
 
-int DU_handle_F1_SETUP_RESPONSE(uint32_t               assoc_id,
-                                 uint32_t               stream,
-                                 F1AP_F1AP_PDU_t       *pdu)
+int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
+                                uint32_t assoc_id,
+                                uint32_t stream,
+                                F1AP_F1AP_PDU_t *pdu)
 {
    printf("DU_handle_F1_SETUP_RESPONSE\n");
 
@@ -315,7 +313,7 @@ int DU_handle_F1_SETUP_RESPONSE(uint32_t               assoc_id,
 }
 
 // SETUP FAILURE
-void DU_handle_F1_SETUP_FAILURE(F1AP_F1AP_PDU_t *pdu_p) {
+void DU_handle_F1_SETUP_FAILURE(instance_t instance, F1AP_F1AP_PDU_t *pdu_p) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -325,7 +323,9 @@ void DU_handle_F1_SETUP_FAILURE(F1AP_F1AP_PDU_t *pdu_p) {
 */
 
 //void DU_send_gNB_DU_CONFIGURATION_UPDATE(F1AP_GNBDUConfigurationUpdate_t *GNBDUConfigurationUpdate) {
-void DU_send_gNB_DU_CONFIGURATION_UPDATE(module_id_t enb_mod_idP, module_id_t du_mod_idP, f1ap_setup_req_t *f1ap_du_data) {
+void DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
+                                         instance_t du_mod_idP,
+                                         f1ap_setup_req_t *f1ap_du_data) {
   F1AP_F1AP_PDU_t                     pdu;
   F1AP_GNBDUConfigurationUpdate_t     *out;
   F1AP_GNBDUConfigurationUpdateIEs_t  *ie;
@@ -351,7 +351,7 @@ void DU_send_gNB_DU_CONFIGURATION_UPDATE(module_id_t enb_mod_idP, module_id_t du
   ie->id                        = F1AP_ProtocolIE_ID_id_TransactionID;
   ie->criticality               = F1AP_Criticality_reject;
   ie->value.present             = F1AP_GNBDUConfigurationUpdateIEs__value_PR_TransactionID;
-  ie->value.choice.TransactionID = F1AP_get_next_transaction_identifier(enb_mod_idP, du_mod_idP);
+  ie->value.choice.TransactionID = F1AP_get_next_transaction_identifier(instance, du_mod_idP);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
 
@@ -766,27 +766,39 @@ void DU_send_gNB_DU_CONFIGURATION_UPDATE(module_id_t enb_mod_idP, module_id_t du
 
 
 
-void DU_handle_gNB_DU_CONFIGURATION_FAILURE(F1AP_GNBDUConfigurationUpdateFailure_t GNBDUConfigurationUpdateFailure) {
+void DU_handle_gNB_DU_CONFIGURATION_FAILURE(instance_t instance,
+                    F1AP_GNBDUConfigurationUpdateFailure_t GNBDUConfigurationUpdateFailure) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void DU_handle_gNB_DU_CONFIGURATION_UPDATE_ACKNOWLEDGE(F1AP_GNBDUConfigurationUpdateAcknowledge_t GNBDUConfigurationUpdateAcknowledge) {
+void DU_handle_gNB_DU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
+                    F1AP_GNBDUConfigurationUpdateAcknowledge_t GNBDUConfigurationUpdateAcknowledge) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
 
-/*
-    gNB-CU Configuration Update
-*/
-
-void DU_handle_gNB_CU_CONFIGURATION_UPDATE(F1AP_GNBCUConfigurationUpdate_t *GNBCUConfigurationUpdate) {
+void DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
+                    F1AP_GNBCUConfigurationUpdate_t *GNBCUConfigurationUpdate) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void DU_send_gNB_CU_CONFIGURATION_UPDATE_FALIURE(F1AP_GNBCUConfigurationUpdateFailure_t *GNBCUConfigurationUpdateFailure) {
+void DU_send_gNB_CU_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
+                    F1AP_GNBCUConfigurationUpdateFailure_t *GNBCUConfigurationUpdateFailure) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(F1AP_GNBCUConfigurationUpdateAcknowledge_t *GNBCUConfigurationUpdateAcknowledge) {
+void DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
+                    F1AP_GNBCUConfigurationUpdateAcknowledge_t *GNBCUConfigurationUpdateAcknowledge) {
   AssertFatal(1==0,"Not implemented yet\n");
+}
+
+
+void DU_send_gNB_DU_RESOURCE_COORDINATION_REQUEST(instance_t instance,
+                    F1AP_GNBDUResourceCoordinationRequest_t *GNBDUResourceCoordinationRequest) {
+  AssertFatal(0, "Not implemented yet\n");
+}
+
+void DU_handle_gNB_DU_RESOURCE_COORDINATION_RESPONSE(instance_t instance,
+                    F1AP_GNBDUResourceCoordinationResponse_t *GNBDUResourceCoordinationResponse) {
+  AssertFatal(0, "Not implemented yet\n");
 }
