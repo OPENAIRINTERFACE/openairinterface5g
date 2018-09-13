@@ -163,7 +163,7 @@ void DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(
   F1AP_NRCGI_t nRCGI;
   MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[0], f1ap_du_data->mnc[0], f1ap_du_data->mnc_digit_length[0],
                                          &nRCGI.pLMN_Identity);
-  NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+  NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[0], &nRCGI.nRCellIdentity);
   ie->value.choice.NRCGI = nRCGI;
 
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
@@ -206,7 +206,7 @@ void DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(
 
   printf("\n");
 
-  //du_f1ap_itti_send_sctp_data_req(instance, f1ap_setup_req->assoc_id, buffer, len, 0);
+  du_f1ap_itti_send_sctp_data_req(0, f1ap_du_data->assoc_id, buffer, len, 0);
   /* decode */
   // if (f1ap_decode_pdu(&pdu, buffer, len) > 0) {
   //   printf("Failed to decode F1 setup request\n");

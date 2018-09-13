@@ -32,18 +32,112 @@
 
 #include "f1ap_common.h"
 #include "f1ap_cu_rrc_message_transfer.h"
+// undefine C_RNTI from
+// openair1/PHY/LTE_TRANSPORT/transport_common.h which
+// replaces in ie->value.choice.C_RNTI, causing
+// a compile error
+#undef C_RNTI 
 
 /*
     Initial UL RRC Message Transfer
 */
 
-void CU_handle_UL_INITIAL_RRC_MESSAGE_TRANSFER(void) {
+int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(int32_t               assoc_id,
+                                              uint32_t               stream,
+                                              F1AP_F1AP_PDU_t       *pdu) {
 
-  printf("CU_handle_UL_INITIAL_RRC_MESSAGE_TRANSFER\n");
+  printf("CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER\n");
   // decode the F1 message
   // get the rrc message from the contauiner 
   // call func rrc_eNB_decode_ccch: <-- needs some update here
+  MessageDef                            *message_p;
+  F1AP_InitialULRRCMessageTransfer_t    *container;
+  F1AP_InitialULRRCMessageTransferIEs_t *ie;
+  
+  SRB_INFO*        Srb_info;
+  protocol_ctxt_t ctxt;
+  rnti_t          rnti;
+  uint8_t        *ccch_sdu;
+  sdu_size_t      ccch_sdu_len;
+  int             CC_id =0;
+  int             instance=0;
+  uint64_t        du_ue_f1ap_id;
 
+  DevAssert(pdu != NULL);
+  
+  if (stream != 0) {
+    LOG_E(F1AP, "[SCTP %d] Received F1 on stream != 0 (%d)\n",
+               assoc_id, stream);
+    return -1;
+  }
+
+  container = &pdu->choice.initiatingMessage->value.choice.InitialULRRCMessageTransfer;
+
+  /* GNB_DU_UE_F1AP_ID */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
+  du_ue_f1ap_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
+  printf("du_ue_f1ap_id %lu \n", du_ue_f1ap_id);
+
+  /* NRCGI */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_NRCGI, true);
+  instance = 0; ///ie->value.choice. ?? //@Todo
+
+  /* RNTI */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_C_RNTI, true);
+  BIT_STRING_TO_CELL_IDENTITY(&ie->value.choice.C_RNTI, rnti);
+
+  /* RRC Container */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_RRCContainer, true);
+
+  ccch_sdu = calloc(ie->value.choice.RRCContainer.size + 1, sizeof(char));
+  memcpy(ccch_sdu, ie->value.choice.RRCContainer.buf,
+         ie->value.choice.RRCContainer.size);
+  /* Convert the mme name to a printable string */
+  ccch_sdu[ie->value.choice.RRCContainer.size] = '\0';
+  printf ("RRCContainer %s \n", ccch_sdu);
+
+  ccch_sdu_len = ie->value.choice.RRCContainer.size;
+
+  // create an ITTI message 
+  message_p = itti_alloc_new_message (TASK_CU_F1, RRC_MAC_CCCH_DATA_IND);
+  memset (RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
+  memcpy (RRC_MAC_CCCH_DATA_IND (message_p).sdu, ccch_sdu, ccch_sdu_len);
+  RRC_MAC_CCCH_DATA_IND (message_p).frame     = 0; 
+  RRC_MAC_CCCH_DATA_IND (message_p).sub_frame = 0;
+  RRC_MAC_CCCH_DATA_IND (message_p).sdu_size  = ccch_sdu_len;
+  RRC_MAC_CCCH_DATA_IND (message_p).enb_index = instance; // CU instance 
+  RRC_MAC_CCCH_DATA_IND (message_p).rnti      = rnti;
+  RRC_MAC_CCCH_DATA_IND (message_p).CC_id      = CC_id; 
+  itti_send_msg_to_task (TASK_RRC_ENB, instance, message_p);
+
+
+ // OR  creat the ctxt and srb_info struct required by rrc_eNB_decode_ccch
+/*
+ PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
+                                instance, // to fix
+                                ENB_FLAG_YES,
+                                rnti,
+                                0, // frame 
+                                0); // slot 
+
+  CC_id = RRC_MAC_CCCH_DATA_IND(msg_p).CC_id;
+  srb_info_p = &RC.rrc[instance]->carrier[CC_id].Srb0;
+
+  if (ccch_sdu_len >= RRC_BUFFER_SIZE_MAX) {
+      LOG_E(RRC, "CCCH message has size %d > %d\n",ccch_sdu_len,RRC_BUFFER_SIZE_MAX);
+      break;
+  }
+  memcpy(srb_info_p->Rx_buffer.Payload,
+         ccch_sdu,
+         ccch_sdu_len);
+  srb_info->Rx_buffer.payload_size = ccch_sdu_len;
+
+  rrc_eNB_decode_ccch(&ctxt, srb_info, CC_id);
+  */ 
   // if size > 0 
   // CU_send_DL_RRC_MESSAGE_TRANSFER(C.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload, RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size)
 }

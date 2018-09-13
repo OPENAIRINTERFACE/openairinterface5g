@@ -310,7 +310,6 @@ int DU_handle_F1_SETUP_RESPONSE(uint32_t               assoc_id,
                                  F1AP_F1AP_PDU_t       *pdu)
 {
    printf("DU_handle_F1_SETUP_RESPONSE\n");
-
    return 0;
 }
 
@@ -382,7 +381,7 @@ void DU_send_gNB_DU_CONFIGURATION_UPDATE(module_id_t enb_mod_idP, module_id_t du
         /* - nRCGI */
         F1AP_NRCGI_t nRCGI;
         MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i], &nRCGI.pLMN_Identity);
-        NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+        NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[i], &nRCGI.nRCellIdentity);
         served_cell_information.nRCGI = nRCGI;
 
         /* - nRPCI */
@@ -536,7 +535,7 @@ void DU_send_gNB_DU_CONFIGURATION_UPDATE(module_id_t enb_mod_idP, module_id_t du
         F1AP_NRCGI_t oldNRCGI;
         MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i],
                                          &oldNRCGI.pLMN_Identity);
-        NR_CELL_ID_TO_BIT_STRING(123456, &oldNRCGI.nRCellIdentity);
+        NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[i], &oldNRCGI.nRCellIdentity);
         served_cells_to_modify_item.oldNRCGI = oldNRCGI;
 
 
@@ -548,7 +547,7 @@ void DU_send_gNB_DU_CONFIGURATION_UPDATE(module_id_t enb_mod_idP, module_id_t du
         F1AP_NRCGI_t nRCGI;
         MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i],
                                          &nRCGI.pLMN_Identity);
-        NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+        NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[i], &nRCGI.nRCellIdentity);
         served_cell_information.nRCGI = nRCGI;
 
         /* - nRPCI */

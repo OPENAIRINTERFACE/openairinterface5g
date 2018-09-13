@@ -226,31 +226,31 @@ mac_rrc_data_req(
 }
 
 //--------------------------------------------------------------------------
-int8_t
-mac_du_data_ind(
-  const module_id_t     module_idP,
-  const int             CC_idP,
-  const int             UE_id,
-  const rnti_t          rntiP,
-  const uint8_t        *sduP,
-  const sdu_size_t      sdu_lenP
-)
-//--------------------------------------------------------------------------
-{
-  printf(
-      "[F1 %d][RAPROC] CC_id %d current_rnti %x Received Msg3 from already registered UE %d: length %d, offset %ld\n",
-      module_idP, CC_idP, rntiP,
-      UE_id, sdu_lenP, sduP);
+// int8_t
+// mac_du_data_ind(
+//   const module_id_t     module_idP,
+//   const int             CC_idP,
+//   const int             UE_id,
+//   const rnti_t          rntiP,
+//   const uint8_t        *sduP,
+//   const sdu_size_t      sdu_lenP
+// )
+// //--------------------------------------------------------------------------
+// {
+//   printf(
+//       "[F1 %d][RAPROC] CC_id %d current_rnti %x Received Msg3 from already registered UE %d: length %d, offset %ld\n",
+//       module_idP, CC_idP, rntiP,
+//       UE_id, sdu_lenP, sduP);
 
-  DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(
-      module_idP,
-      CC_idP,
-      UE_id,
-      rntiP,  
-      sduP,
-      sdu_lenP
-  );
-}
+//   DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(
+//       module_idP,
+//       CC_idP,
+//       UE_id,
+//       rntiP,  
+//       sduP,
+//       sdu_lenP
+//   );
+// }
 
 //------------------------------------------------------------------------------
 int8_t
@@ -265,21 +265,25 @@ mac_rrc_data_ind(
   const uint8_t*        sduP,
   const sdu_size_t      sdu_lenP,
   const uint8_t         mbsfn_sync_areaP,
-  const int             du_flag
+  const int             node_type
 )
 //--------------------------------------------------------------------------
 {
-
-  // navid update / Bing-Kai modify
-  if (du_flag) {
-    mac_du_data_ind(
-       module_idP,
-       CC_id,
-       UE_id,
-       rntiP,
-       sduP,
-       sdu_lenP);
-  }
+  LOG_E(RRC, "node_type == %d \n" , node_type);
+  if (node_type == ngran_eNB_DU) {
+    LOG_W(RRC,"[DU %d][RAPROC] Received SDU for CCCH on SRB %d length %d for UE id %d RNTI %x \n",
+            module_idP, srb_idP, sdu_lenP, UE_id, rntiP);
+  
+    DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(
+      module_idP,
+      CC_id,
+      UE_id,
+      rntiP,  
+      sduP,
+      sdu_lenP
+    );
+    return(0);
+  } 
 
   SRB_INFO *Srb_info;
   protocol_ctxt_t ctxt;
