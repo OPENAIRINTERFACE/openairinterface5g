@@ -41,7 +41,7 @@ proto_agent_channel_t *agent_channel[NUM_MAX_ENB][ENB_AGENT_MAX];
 proto_agent_channel_instance_t channel_instance;
 int proto_agent_channel_id = 0;
 
-int proto_agent_msg_send(mod_id_t mod_id, agent_id_t agent_id, void *data, int size, int priority) {
+int proto_agent_msg_send(mod_id_t mod_id, proto_agent_id_t agent_id, void *data, int size, int priority) {
   /*Check if agent id is valid*/
   if (agent_id >= ENB_AGENT_MAX || agent_id < 0) {
     goto error;
@@ -61,7 +61,7 @@ int proto_agent_msg_send(mod_id_t mod_id, agent_id_t agent_id, void *data, int s
   return -1;
 }
 
-int proto_agent_msg_recv(mod_id_t mod_id, agent_id_t agent_id, void **data, int *size, int *priority) {
+int proto_agent_msg_recv(mod_id_t mod_id, proto_agent_id_t agent_id, void **data, int *size, int *priority) {
   /*Check if agent id is valid*/
   if (agent_id >= ENB_AGENT_MAX || agent_id < 0) {
     goto error;
@@ -81,7 +81,7 @@ int proto_agent_msg_recv(mod_id_t mod_id, agent_id_t agent_id, void **data, int 
   return -1;
 }
 
-int proto_agent_register_channel(mod_id_t mod_id, proto_agent_channel_t *channel, agent_id_t agent_id) {
+int proto_agent_register_channel(mod_id_t mod_id, proto_agent_channel_t *channel, proto_agent_id_t agent_id) {
   int i;
 
   if (channel == NULL) {
@@ -98,7 +98,7 @@ int proto_agent_register_channel(mod_id_t mod_id, proto_agent_channel_t *channel
   return 0;
 }
 
-void proto_agent_unregister_channel(mod_id_t mod_id, agent_id_t agent_id) {
+void proto_agent_unregister_channel(mod_id_t mod_id, proto_agent_id_t agent_id) {
   int i;
 
   if (agent_id == ENB_AGENT_MAX) {
@@ -126,7 +126,7 @@ int proto_agent_create_channel(void *channel_info,
   /*element should be a real pointer*/
   RB_INSERT(proto_agent_channel_map, &channel_instance.proto_agent_head, channel); 
   
-  LOG_D(PROTO_AGENT,"Created a new channel with id 0x%lx\n", channel->channel_id);
+  LOG_D(PROTO_AGENT, "Created a new channel with id 0x%x\n", channel->channel_id);
  
   return channel_id; 
 }
@@ -150,7 +150,7 @@ int proto_agent_destroy_channel(int channel_id) {
     for (j = 0; j < ENB_AGENT_MAX; j++) {
       if (agent_channel[i][j] != NULL) {
 	if (agent_channel[i][j]->channel_id == e->channel_id) {
-	  agent_channel[i][j] == NULL;
+	  agent_channel[i][j] = NULL;
 	}
       }
     }
@@ -172,7 +172,7 @@ err_code_t proto_agent_init_channel_container(void) {
 
   for (i = 0; i < NUM_MAX_ENB; i++) {
     for (j = 0; j < ENB_AGENT_MAX; j++) {
-    agent_channel[i][j] == NULL;
+    agent_channel[i][j] = NULL;
     }
   }
 

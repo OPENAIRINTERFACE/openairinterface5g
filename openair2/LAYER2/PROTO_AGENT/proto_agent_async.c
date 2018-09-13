@@ -95,7 +95,7 @@ proto_agent_async_channel_t * proto_server_async_channel_info(mod_id_t mod_id, c
 
  error:
   LOG_E(PROTO_AGENT,"there was an error\n");
-  return 1;
+  return NULL;
 }
 
 
@@ -154,12 +154,11 @@ proto_agent_async_channel_t * proto_agent_async_channel_info(mod_id_t mod_id, ch
 
  error:
   LOG_E(PROTO_AGENT,"there was an error\n");
-  return 1;
+  return NULL;
 }
 
 int proto_agent_async_msg_send(void *data, int size, int priority, void *channel_info) {
-  proto_agent_async_channel_t *channel;
-  channel = (proto_agent_channel_t *)channel_info;
+  proto_agent_async_channel_t *channel = channel_info;
 
   return message_put(channel->send_queue, data, size, priority);
 }

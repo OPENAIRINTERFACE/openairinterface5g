@@ -60,17 +60,17 @@ proto_agent_message_destruction_callback proto_message_destruction_callback[] = 
 
 };
 
-static const char *proto_agent_direction2String[] = {
-  "", /* not_set  */
-  "originating message", /* originating message */
-  "successfull outcome", /* successfull outcome */
-  "unsuccessfull outcome", /* unsuccessfull outcome */
-};
+//static const char *proto_agent_direction2String[] = {
+//  "", /* not_set  */
+//  "originating message", /* originating message */
+//  "successfull outcome", /* successfull outcome */
+//  "unsuccessfull outcome", /* unsuccessfull outcome */
+//};
 
 
 Protocol__FlexsplitMessage* proto_agent_handle_message (mod_id_t mod_id,
 						    uint8_t *data, 
-						    uint32_t size){
+						    int size){
   
   Protocol__FlexsplitMessage *decoded_message = NULL;
   Protocol__FlexsplitMessage *reply_message = NULL;
@@ -117,9 +117,9 @@ Protocol__FlexsplitMessage* proto_agent_handle_message (mod_id_t mod_id,
 
 
 
-void * proto_agent_pack_message(Protocol__FlexsplitMessage *msg, 
-			      uint32_t * size){
-  void * buffer;
+uint8_t *proto_agent_pack_message(Protocol__FlexsplitMessage *msg, int *size)
+{
+  uint8_t *buffer;
   err_code_t err_code = PROTOCOL__FLEXSPLIT_ERR__NO_ERR;
   
   if (proto_agent_serialize_message(msg, &buffer, size) < 0 ) {

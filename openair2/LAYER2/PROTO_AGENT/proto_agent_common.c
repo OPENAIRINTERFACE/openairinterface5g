@@ -121,7 +121,7 @@ int f1u_dl_data_create_header(uint32_t pdu_type, uint32_t f1u_sn, Protocol__DlDa
   protocol__dl_data_header__init(*header);
   LOG_D(F1U, "Initialized the DL Data User header\n");
 
-  fill_dl_data_header(pdu_type, 0, f1u_sn, (*header)->fields);
+  fill_dl_data_header(pdu_type, 0, f1u_sn, &(*header)->fields);
   return 0;
 
  error:
@@ -149,7 +149,9 @@ int f1u_dl_data(const void *params, Protocol__F1uMessage **msg)
     goto error;
 
 
-  dl_data = *msg;
+  // FIXME: Is the following used? It seems to be overwritten by the function
+  // protocol__dl_user_data__init() anyway
+  //dl_data = *msg;
 
   protocol__dl_user_data__init(dl_data);
 
@@ -177,7 +179,7 @@ int f1u_dl_data(const void *params, Protocol__F1uMessage **msg)
   
 }
 
-int proto_agent_serialize_message(Protocol__FlexsplitMessage *msg, void **buf, int *size) {
+int proto_agent_serialize_message(Protocol__FlexsplitMessage *msg, uint8_t **buf, int *size) {
 
   *size = protocol__flexsplit_message__get_packed_size(msg);
 
@@ -238,7 +240,11 @@ int just_print(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage *
 
 int proto_agent_pdcp_data_req(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg)
 {
-  
+  Protocol__FspCtxt *ctxt = NULL;
+  Protocol__FspRlcPdu *pdu = NULL;
+  Protocol__FspRlcData *rlc_data = NULL;
+  Protocol__FspRlcDataReq *data_req = NULL;
+
   // Initialize the PDCP params
   data_req_args *args = (data_req_args *)params;
  
@@ -255,11 +261,6 @@ int proto_agent_pdcp_data_req(mod_id_t mod_id, const void *params, Protocol__Fle
   *  2) Message fspRlcData is packing the packet + the context of the PDCP (separate message)
   *  3) Messge fspRlcDataReq is packing the header, enb_id and fspRlcData
   */
-  Protocol__FspCtxt *ctxt = NULL;
-  Protocol__FspRlcPdu *pdu = NULL;
-  Protocol__FspRlcData *rlc_data = NULL;
-  Protocol__FspRlcDataReq *data_req = NULL;
-  
 
   ctxt = malloc(sizeof(Protocol__FspCtxt));
   pdu = malloc(sizeof(Protocol__FspRlcPdu));
@@ -369,8 +370,6 @@ int proto_agent_destroy_pdcp_data_req(Protocol__FlexsplitMessage *msg) {
 
 int proto_agent_get_ack_result(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg)
 {
-  Protocol__FspHeader *header;
-  xid_t xid;
   rlc_op_status_t result = 0;
   //printf("PROTO_AGENT: handling the data_req_ack message\n");
   Protocol__FlexsplitMessage *input = (Protocol__FlexsplitMessage *)params;
@@ -395,14 +394,11 @@ int proto_agent_pdcp_data_req_ack(mod_id_t mod_id, const void *params, Protocol_
   Protocol__FspRlcDataReq *data_req = input->data_req_msg;
   
   xid = data_req->header->xid;
-  Protocol__FspRlcPdu *pdu = NULL;
   Protocol__FspCtxt *ctxt = NULL;
   Protocol__FspRlcData *rlc_data = NULL;
   
   
   rlc_data = data_req->pdcp_data;
-  
-  pdu = rlc_data->fsp_pdu;
   
   ctxt = rlc_data->fsp_ctxt;
   
@@ -451,11 +447,12 @@ int proto_agent_pdcp_data_req_ack(mod_id_t mod_id, const void *params, Protocol_
                         ,NULL
   #endif                      
                         );
+
+  Protocol__FspRlcDataReqAck *ack = NULL;
  
   if (fsp_create_header(xid, PROTOCOL__FSP_TYPE__FSPT_RLC_DATA_REQ_ACK, &header) != 0)
     goto error;
 
-  Protocol__FspRlcDataReqAck *ack = NULL;
   ack = malloc(sizeof(Protocol__FspRlcDataReqAck));
   protocol__fsp_rlc_data_req_ack__init(ack);
   
@@ -519,7 +516,11 @@ int proto_agent_destroy_pdcp_data_ind(Protocol__FlexsplitMessage *msg) {
 
 int proto_agent_pdcp_data_ind(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg)
 {
-  
+  Protocol__FspCtxt *ctxt = NULL;
+  Protocol__FspRlcPdu *pdu = NULL;
+  Protocol__FspRlcData *rlc_data = NULL;
+  Protocol__FspPdcpDataInd *data_ind = NULL;
+
   // Initialize the PDCP params
   data_req_args *args = (data_req_args *)params;
  
@@ -536,12 +537,6 @@ int proto_agent_pdcp_data_ind(mod_id_t mod_id, const void *params, Protocol__Fle
   *  2) Message fspRlcData is packing the packet + the context of the PDCP (separate message)
   *  3) Messge fspRlcDataReq is packing the header, enb_id and fspRlcData
   */
-  
-  Protocol__FspCtxt *ctxt = NULL;
-  Protocol__FspRlcPdu *pdu = NULL;
-  Protocol__FspRlcData *rlc_data = NULL;
-  Protocol__FspPdcpDataInd *data_ind = NULL;
-  
 
   ctxt = malloc(sizeof(Protocol__FspCtxt));
   pdu = malloc(sizeof(Protocol__FspRlcPdu));
@@ -633,6 +628,8 @@ int proto_agent_pdcp_data_ind(mod_id_t mod_id, const void *params, Protocol__Fle
 int proto_agent_pdcp_data_ind_ack(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg)
 {
   Protocol__FspHeader *header;
+  Protocol__FspPdcpDataIndAck *ack = NULL;
+
   xid_t xid;
   rlc_op_status_t result = 0;
   
@@ -642,14 +639,11 @@ int proto_agent_pdcp_data_ind_ack(mod_id_t mod_id, const void *params, Protocol_
   Protocol__FspPdcpDataInd *data_ind = input->data_ind_msg;
   
   xid = data_ind->header->xid;
-  Protocol__FspRlcPdu *pdu = NULL;
   Protocol__FspCtxt *ctxt = NULL;
   Protocol__FspRlcData *rlc_data = NULL;
   
   
   rlc_data = data_ind->rlc_data;
-  
-  pdu = rlc_data->fsp_pdu;
   
   ctxt = rlc_data->fsp_ctxt;
   
@@ -687,11 +681,9 @@ int proto_agent_pdcp_data_ind_ack(mod_id_t mod_id, const void *params, Protocol_
 //   else if (xid == 0)   // FIXME: USE a preprocessed definition
     pdcp_data_ind((const protocol_ctxt_t*) ctxt_pP, (const srb_flag_t) srb_flagP, (const MBMS_flag_t) flag_MBMS, (const rb_id_t) rb_idP, pdcp_pdu_size, pdcp_pdu_p);
 
-
   if (fsp_create_header(xid, PROTOCOL__FSP_TYPE__FSPT_PDCP_DATA_IND_ACK, &header) != 0)
     goto error;
 
-  Protocol__FspPdcpDataIndAck *ack = NULL;
   ack = malloc(sizeof(Protocol__FspPdcpDataIndAck));
   protocol__fsp_pdcp_data_ind_ack__init(ack);
   
@@ -707,7 +699,9 @@ int proto_agent_pdcp_data_ind_ack(mod_id_t mod_id, const void *params, Protocol_
   (*msg)->msg_case = PROTOCOL__FLEXSPLIT_MESSAGE__MSG_DATA_IND_ACK;
   (*msg)->msg_dir = PROTOCOL__FLEXSPLIT_DIRECTION__SUCCESSFUL_OUTCOME;
   (*msg)->has_msg_dir = 1;
-  (*msg)->data_req_ack = ack;
+  // FIXME: the following was (*msg)->data_req_ack = ack;
+  // but this throws compiler warning. Probably we want the following instead
+  (*msg)->data_ind_ack = ack;
   
   return 0;
   
@@ -744,13 +738,14 @@ int proto_agent_destroy_pdcp_data_ind_ack(Protocol__FlexsplitMessage *msg) {
 int proto_agent_hello(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg) {
  
   Protocol__FspHeader *header;
+  Protocol__FspHello *hello_msg = NULL;
+
   /*TODO: Need to set random xid or xid from received hello message*/
   xid_t xid = mod_id;
   if (fsp_create_header(xid, PROTOCOL__FSP_TYPE__FSPT_HELLO, &header) != 0)
     goto error;
 
   LOG_D(PROTO_AGENT, "creating the HELLO message\n");
-  Protocol__FspHello *hello_msg = NULL;
   hello_msg = malloc(sizeof(Protocol__FspHello));
   if(hello_msg == NULL)
     goto error;
@@ -797,13 +792,13 @@ int proto_agent_destroy_hello(Protocol__FlexsplitMessage *msg) {
 
 int proto_agent_echo_request(mod_id_t mod_id, const void* params, Protocol__FlexsplitMessage **msg) {
   Protocol__FspHeader *header;
+  Protocol__FspEchoRequest *echo_request_msg = NULL;
 
   xid_t xid = mod_id;
   if (fsp_create_header(xid, PROTOCOL__FSP_TYPE__FSPT_ECHO_REQUEST, &header) != 0)
     goto error;
   LOG_D(PROTO_AGENT, "creating the echo request message\n");
   
-  Protocol__FspEchoRequest *echo_request_msg = NULL;
   echo_request_msg = malloc(sizeof(Protocol__FspEchoRequest));
   if(echo_request_msg == NULL)
     goto error;
@@ -852,6 +847,7 @@ int proto_agent_echo_reply(mod_id_t mod_id, const void *params, Protocol__Flexsp
   xid_t xid;
   Protocol__FlexsplitMessage *input = (Protocol__FlexsplitMessage *)params;
   Protocol__FspEchoRequest *echo_req = input->echo_request_msg;
+  Protocol__FspEchoReply *echo_reply_msg = NULL;
   xid = (echo_req->header)->xid;
 
   
@@ -861,7 +857,6 @@ int proto_agent_echo_reply(mod_id_t mod_id, const void *params, Protocol__Flexsp
   if (fsp_create_header(xid, PROTOCOL__FSP_TYPE__FSPT_ECHO_REPLY, &header) != 0)
     goto error;
 
-  Protocol__FspEchoReply *echo_reply_msg;
   echo_reply_msg = malloc(sizeof(Protocol__FspEchoReply));
   if(echo_reply_msg == NULL)
     goto error;
