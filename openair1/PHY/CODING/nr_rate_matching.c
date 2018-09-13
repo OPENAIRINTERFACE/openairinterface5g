@@ -54,7 +54,7 @@ void nr_deinterleaving_ldpc(uint32_t E, uint8_t Qm, uint8_t *e,uint8_t *f)
   uint32_t EQm;
 
   EQm = E/Qm;
-  memset(f,0,E*sizeof(uint8_t));
+  memset(e,0,E*sizeof(uint8_t));
 
   for (int j = 0; j< EQm; j++){
 	  for (int i = 0; i< Qm; i++){
@@ -99,8 +99,6 @@ uint32_t nr_rate_matching_ldpc(uint8_t Ilbrm,
 #endif
 
   Cprime = C; //assume CBGTI not present
-
-  printf("comp r %d\n", Cprime - ((G/(Nl*Qm))%Cprime) - 1);
 
   if (r <= Cprime - ((G/(Nl*Qm))%Cprime) - 1)
       E = Nl*Qm*(G/(Nl*Qm*Cprime));
