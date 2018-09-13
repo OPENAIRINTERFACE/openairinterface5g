@@ -32,7 +32,7 @@
 #include <math.h>
 #include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
-#include "PHY/LTE_REFSIG/lte_refsig.h"
+//#include "PHY/LTE_REFSIG/lte_refsig.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 
 //uint8_t dmrs1_tab_ue[8] = {0,2,3,4,6,8,9,10};
@@ -905,33 +905,33 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   return 0;
 
 }
-/*
-void nr_lte_ue_transport(PHY_VARS_UE *ue,int abstraction_flag) {
+
+void init_nr_ue_transport(PHY_VARS_NR_UE *ue,int abstraction_flag) {
 
   int i,j,k;
 
   for (i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
     for (j=0; j<2; j++) {
       for (k=0; k<2; k++) {
-	AssertFatal((ue->dlsch[k][i][j]  = new_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_TURBO_ITERATIONS,ue->frame_parms.N_RB_DL, abstraction_flag))!=NULL,"Can't get ue dlsch structures\n");
+	AssertFatal((ue->dlsch[k][i][j]  = new_nr_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_LDPC_ITERATIONS,ue->frame_parms.N_RB_DL, abstraction_flag))!=NULL,"Can't get ue dlsch structures\n");
 
 	LOG_D(PHY,"dlsch[%d][%d][%d] => %p\n",k,i,j,ue->dlsch[i][j]);
       }
     }
 
-    AssertFatal((ue->ulsch[i]  = new_ue_ulsch(ue->frame_parms.N_RB_UL, abstraction_flag))!=NULL,"Can't get ue ulsch structures\n");
+    //AssertFatal((ue->ulsch[i]  = new_ue_ulsch(ue->frame_parms.N_RB_UL, abstraction_flag))!=NULL,"Can't get ue ulsch structures\n");
 
-    ue->dlsch_SI[i]  = new_ue_dlsch(1,1,NSOFT,MAX_TURBO_ITERATIONS,ue->frame_parms.N_RB_DL, abstraction_flag);
-    ue->dlsch_ra[i]  = new_ue_dlsch(1,1,NSOFT,MAX_TURBO_ITERATIONS,ue->frame_parms.N_RB_DL, abstraction_flag);
+    ue->dlsch_SI[i]  = new_nr_ue_dlsch(1,1,NSOFT,MAX_LDPC_ITERATIONS,ue->frame_parms.N_RB_DL, abstraction_flag);
+    ue->dlsch_ra[i]  = new_nr_ue_dlsch(1,1,NSOFT,MAX_LDPC_ITERATIONS,ue->frame_parms.N_RB_DL, abstraction_flag);
 
     ue->transmission_mode[i] = ue->frame_parms.nb_antenna_ports_eNB==1 ? 1 : 2;
   }
 
-  ue->frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
+  //ue->frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
 
-  ue->dlsch_MCH[0]  = new_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_TURBO_ITERATIONS_MBSFN,ue->frame_parms.N_RB_DL,0);
+  ue->dlsch_MCH[0]  = new_nr_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_LDPC_ITERATIONS_MBSFN,ue->frame_parms.N_RB_DL,0);
 
-}*/
+}
 
 void phy_init_nr_top(PHY_VARS_NR_UE *ue)
 {

@@ -46,7 +46,7 @@
     \brief This function frees memory allocated for a particular DLSCH at UE
     @param dlsch Pointer to DLSCH to be removed
 */
-void free_ue_dlsch(NR_UE_DLSCH_t *dlsch);
+void free_nr_ue_dlsch(NR_UE_DLSCH_t *dlsch);
 
 /** \fn new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t abstraction_flag)
     \brief This function allocates structures for a particular DLSCH at UE
@@ -57,7 +57,7 @@ void free_ue_dlsch(NR_UE_DLSCH_t *dlsch);
     @params N_RB_DL total number of resource blocks (determine the operating BW)
     @param abstraction_flag Flag to indicate abstracted interface
 */
-NR_UE_DLSCH_t *new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t max_turbo_iterations,uint8_t N_RB_DL, uint8_t abstraction_flag);
+NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t max_turbo_iterations,uint8_t N_RB_DL, uint8_t abstraction_flag);
 
 
 void free_ue_ulsch(NR_UE_ULSCH_t *ulsch);
@@ -1025,7 +1025,7 @@ uint32_t dlsch_decoding_emul(PHY_VARS_NR_UE *phy_vars_ue,
     @param rx_type. rx_type=RX_IC_single_stream will enable interference cancellation of a second stream when decoding the first stream. In case of TM1, 2, 5, and this can cancel interference from a neighbouring cell given by eNB_id_i. In case of TM5, eNB_id_i should be set to n_connected_eNB to perform multi-user interference cancellation. In case of TM3, eNB_id_i should be set to eNB_id to perform co-channel interference cancellation; this option should be used together with an interference cancellation step [...]. In case of TM3, if rx_type=RX_IC_dual_stream, both streams will be decoded by applying the IC single stream receiver twice.
     @param i_mod Modulation order of the interfering stream
 */
-int32_t rx_pdsch(PHY_VARS_NR_UE *phy_vars_ue,
+int32_t nr_rx_pdsch(PHY_VARS_NR_UE *phy_vars_ue,
                  PDSCH_t type,
                  uint8_t eNB_id,
                  uint8_t eNB_id_i,

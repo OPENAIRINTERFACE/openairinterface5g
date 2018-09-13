@@ -33,6 +33,9 @@
 #ifndef __NR_TRANSPORT_COMMON_PROTO__H__
 #define __NR_TRANSPORT_COMMON_PROTO__H__
 
+#define MAX_NUM_NR_DLSCH_SEGMENTS 30
+#define MAX_NUM_NR_ULSCH_SEGMENTS MAX_NUM_NR_DLSCH_SEGMENTS
+
 // Functions below implement minor procedures from 38-214
 
 /** \brief Computes Q based on I_MCS PDSCH and when 'MCS-Table-PDSCH' is set to "256QAM". Implements Table 5.1.3.1-2 from 38.214.

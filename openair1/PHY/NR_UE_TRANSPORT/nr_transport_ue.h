@@ -274,6 +274,8 @@ typedef struct {
   uint32_t Kplus;
   /// Number of "Filler" bits (for definition see 36-212 V8.6 2009-03, p.10)
   uint32_t F;
+  /// LDPC lifting factor
+  uint32_t Z;
   /// Number of MIMO layers (streams) (for definition see 36-212 V8.6 2009-03, p.17)
   uint8_t Nl;
   /// current delta_pucch
@@ -348,8 +350,8 @@ typedef struct {
   uint8_t Kmimo;
   /// Nsoft parameter related to UE Category
   uint32_t Nsoft;
-  /// Maximum number of Turbo iterations
-  uint8_t max_turbo_iterations;
+  /// Maximum number of LDPC iterations
+  uint8_t max_ldpc_iterations;
   /// number of iterations used in last turbo decoding
   uint8_t last_iteration_cnt;
   /// accumulated tx power adjustment for PUCCH

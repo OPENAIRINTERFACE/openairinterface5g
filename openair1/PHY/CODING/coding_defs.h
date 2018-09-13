@@ -39,6 +39,9 @@
 #define MAX_TURBO_ITERATIONS_MBSFN 8
 #define MAX_TURBO_ITERATIONS max_turbo_iterations
 
+#define MAX_LDPC_ITERATIONS 4
+#define MAX_LDPC_ITERATIONS_MBSFN 4
+
 #define LTE_NULL 2
 #define NR_NULL  2
 
