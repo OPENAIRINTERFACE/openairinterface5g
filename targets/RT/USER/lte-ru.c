@@ -121,8 +121,8 @@ extern int emulate_rf;
 extern int numerology;
 extern clock_source_t clock_source;
 
-extern uint8_t get_thread_paralle_conf(void);
-extern uint8_t get_thread_worker_conf(void);
+extern PARALLEL_CONF_t get_thread_parallel_conf(void);
+extern WORKER_CONF_t   get_thread_worker_conf(void);
 extern void  phy_init_RU(RU_t*);
 extern void  phy_free_RU(RU_t*);
 
@@ -1257,7 +1257,7 @@ void wakeup_eNBs(RU_t *ru) {
   LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
 
 
-  if (ru->num_eNB==1 && ru->eNB_top!=0 && get_thread_paralle_conf() == PARALLEL_SINGLE_THREAD) {
+  if (ru->num_eNB==1 && ru->eNB_top!=0 && get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD) {
     // call eNB function directly
   
     char string[20];
@@ -1782,7 +1782,7 @@ static void* ru_thread( void* param ) {
     if (ru->num_eNB>0) wakeup_eNBs(ru);
     
 #ifndef PHY_TX_THREAD
-    if(get_thread_paralle_conf() == PARALLEL_SINGLE_THREAD || ru->num_eNB==0){
+    if(get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD || ru->num_eNB==0){
       // do TX front-end processing if needed (precoding and/or IDFTs)
       if (ru->feptx_prec) ru->feptx_prec(ru);
       
@@ -2195,7 +2195,7 @@ void init_RU_proc(RU_t *ru) {
   if(emulate_rf)
     pthread_create( &proc->pthread_emulateRF, attr_emulateRF, emulatedRF_thread, (void*)proc );
 
-  if (get_thread_paralle_conf() == PARALLEL_RU_L1_SPLIT || get_thread_paralle_conf() == PARALLEL_RU_L1_TRX_SPLIT)
+  if (get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)
     pthread_create( &proc->pthread_FH1, attr_FH1, ru_thread_tx, (void*)ru );
 
   if (ru->function == NGFI_RRU_IF4p5) {
@@ -2309,7 +2309,7 @@ void kill_RU_proc(RU_t *ru)
 
   LOG_D(PHY, "Joining pthread_FH\n");
   pthread_join(proc->pthread_FH, NULL);
-  if (get_thread_paralle_conf() == PARALLEL_RU_L1_SPLIT || get_thread_paralle_conf() == PARALLEL_RU_L1_TRX_SPLIT) {
+  if (get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) {
     LOG_D(PHY, "Joining pthread_FHTX\n");
     pthread_join(proc->pthread_FH1, NULL);
   }

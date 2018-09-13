@@ -82,7 +82,23 @@ double t_rx_min = 1000000000; /*!< \brief initial min process time for rx */
 int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
 
-int codingw = 0;
+static THREAD_STRUCT thread_struct;
+void set_parallel_conf(int parallel_conf)
+{
+   thread_struct.parallel_conf = (PARALLEL_CONF_t)parallel_conf;
+} 
+void set_parallel_worker_conf(int worker_conf)
+{
+  thread_struct.worker_conf = (WORKER_CONF_t)worker_conf;
+} 
+PARALLEL_CONF_t get_thread_parallel_conf(void)
+{
+  return thread_struct.parallel_conf;
+} 
+WORKER_CONF_t get_thread_worker_conf(void)
+{
+  return thread_struct.worker_conf;
+} 
 
 int emulate_rf = 0;
 

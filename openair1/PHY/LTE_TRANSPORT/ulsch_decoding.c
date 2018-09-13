@@ -45,7 +45,7 @@
 #include "targets/RT/USER/rt_wrapper.h"
 #include "transport_proto.h"
 
-extern uint8_t get_thread_worker_conf(void);
+extern WORKER_CONF_t get_thread_worker_conf(void);
 
 void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch)
 {

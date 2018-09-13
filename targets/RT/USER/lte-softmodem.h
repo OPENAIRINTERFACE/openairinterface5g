@@ -276,7 +276,7 @@ PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
                           uint8_t abstraction_flag);
 void init_eNB_afterRU(void);
 void thread_structure_init(void);
-PARALLEL_CONF_t get_thread_paralle_conf(void);
+PARALLEL_CONF_t get_thread_parallel_conf(void);
 WORKER_CONF_t   get_thread_worker_conf(void);
 void set_parallel_conf(int parallel_conf);
 void set_parallel_worker_conf(int worker_conf);

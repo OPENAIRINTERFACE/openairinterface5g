@@ -57,7 +57,7 @@
 		     uint64_t runtime,
 		     uint64_t deadline,
 		     uint64_t period);*/
-extern uint8_t get_thread_worker_conf(void);
+extern WORKER_CONF_t get_thread_worker_conf(void);
 
 
 void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch)

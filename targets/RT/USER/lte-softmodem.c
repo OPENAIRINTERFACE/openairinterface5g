@@ -229,7 +229,7 @@ void set_parallel_worker_conf(int worker_conf)
 {
   thread_struct.worker_conf = (WORKER_CONF_t)worker_conf;
 } 
-PARALLEL_CONF_t get_thread_paralle_conf(void)
+PARALLEL_CONF_t get_thread_parallel_conf(void)
 {
   return thread_struct.parallel_conf;
 } 
