@@ -41,7 +41,7 @@
 
 #include "refsig_defs_ue.h"
 #include "PHY/defs_nr_UE.h"
-#include "nr_mod_table.h"
+//#include "nr_mod_table.h"
 #include "log.h"
 
 /*Table 7.4.1.1.2-1/2 from 38.211 */
@@ -51,7 +51,7 @@ int wf2[12][2] = {{1,1},{1,-1},{1,1},{1,-1},{1,1},{1,-1},{1,1},{1,1},{1,1},{1,-1
 int wt2[12][2] = {{1,1},{1,1},{1,1},{1,1},{1,1},{1,1},{1,-1},{1,-1},{1,-1},{1,-1},{1,-1},{1,-1}};
 
 
-short nr_rx_mod_table[NR_MOD_TABLE_SIZE_SHORT] = {0,0,23170,-23170,-23170,23170,23170,-23170,23170,23170,-23170,-23170,-23170,23170};
+short nr_rx_mod_table[14] = {0,0,23170,-23170,-23170,23170,23170,-23170,23170,23170,-23170,-23170,-23170,23170};
 
 /*int nr_pdcch_dmrs_rx(PHY_VARS_NR_UE *ue,
 						uint8_t eNB_offset,

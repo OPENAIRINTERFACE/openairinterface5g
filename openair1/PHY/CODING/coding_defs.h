@@ -40,6 +40,7 @@
 #define MAX_TURBO_ITERATIONS max_turbo_iterations
 
 #define LTE_NULL 2
+#define NR_NULL  2
 
 /** @addtogroup _PHY_CODING_BLOCKS_
  * @{

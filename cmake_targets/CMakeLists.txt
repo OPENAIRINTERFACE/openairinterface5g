@@ -1179,6 +1179,7 @@ set(PHY_SRC_COMMON
   ${OPENAIR1_DIR}/PHY/CODING/lte_segmentation.c
   ${OPENAIR1_DIR}/PHY/CODING/nr_segmentation.c
   ${OPENAIR1_DIR}/PHY/CODING/nr_compute_tbs.c
+  ${OPENAIR1_DIR}/PHY/CODING/nr_rate_matching.c
   ${OPENAIR1_DIR}/PHY/CODING/ccoding_byte.c
   ${OPENAIR1_DIR}/PHY/CODING/ccoding_byte_lte.c
   ${OPENAIR1_DIR}/PHY/CODING/3gpplte_sse.c
