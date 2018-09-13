@@ -19,8 +19,19 @@
  *      contact@openairinterface.org
  */
 
-#ifndef DU_F1AP_DEFS_H_
-#define DU_F1AP_DEFS_H_
+/*! \file f1ap_du_rrc_message_transfer.h
+ * \brief f1ap rrc message transfer for DU
+ * \author EURECOM/NTUST
+ * \date 2018
+ * \version 0.1
+ * \company Eurecom
+ * \email: navid.nikaein@eurecom.fr, bing-kai.hong@eurecom.fr
+ * \note
+ * \warning
+ */
 
 
-#endif /* DU_F1AP_DEFS_H_ */
+#ifndef F1AP_DU_RRC_MESSAGE_TRANSFER_H_
+#define F1AP_DU_RRC_MESSAGE_TRANSFER_H_
+
+#endif /* F1AP_DU_RRC_MESSAGE_TRANSFER_H_ */

@@ -30,16 +30,6 @@
  * \warning
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdint.h>
-
-#include "assertions.h"
-
-#include "conversions.h"
-
-#include "intertask_interface.h"
-
 #include "f1ap_common.h"
 #include "f1ap_encoder.h"
 

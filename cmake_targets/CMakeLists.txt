@@ -281,7 +281,7 @@ endif (${ENABLE_ITTI})
 # (so creating new asn.1 objects instead of modifying the object attributes)
 # New C code source file, cmake must be re-run (instead of re-running make only)
 #############
-set(asn1c_call "${OPENAIR_CMAKE}/tools/generate_asn1")
+# set(asn1c_call "${OPENAIR_CMAKE}/tools/generate_asn1")
 # set(fix_asn1c_call "${OPENAIR_CMAKE}/tools/fix_asn1")
 set(asn1_generated_dir ${OPENAIR_BIN_DIR})
 
@@ -504,40 +504,30 @@ set(F1AP_ASN_FILES
   ${F1AP_ASN_DIR}/F1AP-Containers.asn
   )
 
-set(F1AP_C_DIR ${asn1_generated_dir}/F1AP_${ASN1RELDIR})
-message("calling ASN1C_PREFIX=F1AP_ asn1c -gen-PER -fcompound-names -no-gen-example -findirect-choice -fno-include-deps -D ${F1AP_C_DIR} ${F1AP_ASN_FILES}")
-execute_process(COMMAND mkdir -p ${F1AP_C_DIR}
-                COMMAND env "ASN1C_PREFIX=F1AP_" asn1c -gen-PER -fcompound-names -no-gen-example -findirect-choice -fno-include-deps -D ${F1AP_C_DIR} ${F1AP_ASN_FILES}
+set(F1AP_ASN_GENERATED_C_DIR ${asn1_generated_dir}/F1AP_${ASN1RELDIR})
+message("calling ASN1C_PREFIX=F1AP_ asn1c -gen-PER -fcompound-names -no-gen-example -findirect-choice -fno-include-deps -D ${F1AP_ASN_GENERATED_C_DIR} ${F1AP_ASN_FILES}")
+execute_process(COMMAND mkdir -p ${F1AP_ASN_GENERATED_C_DIR}
+                COMMAND env "ASN1C_PREFIX=F1AP_" asn1c -gen-PER -fcompound-names -no-gen-example -findirect-choice -fno-include-deps -D ${F1AP_ASN_GENERATED_C_DIR} ${F1AP_ASN_FILES}
                 RESULT_VARIABLE ret
                 OUTPUT_QUIET
                 ERROR_QUIET)
 
 if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "${asn1c_call}: error")
+  message(FATAL_ERROR "asn1c: error")
 endif (NOT ${ret} STREQUAL 0)
-file(GLOB F1AP_source ${F1AP_C_DIR}/*.c)
 
-file(GLOB f1ap_h ${F1AP_C_DIR}/*.h)
-set(f1ap_h ${f1ap_h} )
-
+file(GLOB F1AP_ASN_GENERATED_C_FILES ${F1AP_ASN_GENERATED_C_DIR}/*.c)
 add_library(F1AP_LIB
-  ${F1AP_source}
-  )
+  ${F1AP_ASN_GENERATED_C_FILES}
+)
 
-include_directories ("${F1AP_C_DIR}")
+include_directories ("${F1AP_ASN_GENERATED_C_DIR}")
 include_directories ("${F1AP_DIR}")
-message(${F1AP_C_DIR})
-message(${F1AP_DIR})
 
+file(GLOB F1AP_C_FILES ${F1AP_DIR}/*.c)
 add_library(F1AP
-  ${F1AP_DIR}/f1ap_du.c
-  ${F1AP_DIR}/f1ap_cu.c
-  ${F1AP_DIR}/f1ap_itti_messaging.c
-  ${F1AP_DIR}/f1ap_encoder.c
-  ${F1AP_DIR}/f1ap_decoder.c
-  ${F1AP_DIR}/f1ap_handlers.c
-  ${F1AP_DIR}/f1ap_common.c
-  )
+  ${F1AP_C_FILES}
+)
 
 
 # Hardware dependant options

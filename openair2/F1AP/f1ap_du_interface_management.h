@@ -19,9 +19,26 @@
  *      contact@openairinterface.org
  */
 
+/*! \file f1ap_du_interface_management.h
+ * \brief f1ap interface management for DU
+ * \author EURECOM/NTUST
+ * \date 2018
+ * \version 0.1
+ * \company Eurecom
+ * \email: navid.nikaein@eurecom.fr, bing-kai.hong@eurecom.fr
+ * \note
+ * \warning
+ */
 
-#ifndef DU_F1AP_DEFS_H_
-#define DU_F1AP_DEFS_H_
+#ifndef F1AP_DU_INTERFACE_MANAGEMENT_H_
+#define F1AP_DU_INTERFACE_MANAGEMENT_H_
 
+void DU_send_F1_SETUP_REQUEST(instance_t instance);
 
-#endif /* DU_F1AP_DEFS_H_ */
+int DU_handle_F1_SETUP_RESPONSE(uint32_t               assoc_id,
+                                 uint32_t               stream,
+                                 F1AP_F1AP_PDU_t       *pdu);
+
+void DU_handle_F1_SETUP_FAILURE(F1AP_F1AP_PDU_t *pdu_p);
+
+#endif /* F1AP_DU_INTERFACE_MANAGEMENT_H_ */

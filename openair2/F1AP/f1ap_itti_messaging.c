@@ -19,8 +19,7 @@
  *      contact@openairinterface.org
  */
 
-#include "intertask_interface.h"
-
+#include "f1ap_common.h"
 #include "f1ap_itti_messaging.h"
 
 void cu_f1ap_itti_send_sctp_data_req(instance_t instance, int32_t assoc_id, uint8_t *buffer,

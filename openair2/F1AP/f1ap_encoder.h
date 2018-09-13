@@ -33,9 +33,7 @@
 #ifndef F1AP_ENCODER_H_
 #define F1AP_ENCODER_H_
 
-#include "f1ap_common.h"
-
-int f1ap_encode_pdu(F1AP_F1AP_PDU_t *message, uint8_t **buffer, uint32_t *len)
+int f1ap_encode_pdu(F1AP_F1AP_PDU_t *pdu, uint8_t **buffer, uint32_t *length)
 __attribute__ ((warn_unused_result));
 
 #endif /* F1AP_ENCODER_H_ */

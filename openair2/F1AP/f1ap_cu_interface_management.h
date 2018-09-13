@@ -19,8 +19,8 @@
  *      contact@openairinterface.org
  */
 
-/*! \file f1ap_decoder.h
- * \brief f1ap pdu decode procedures
+/*! \file f1ap_cu_interface_management.h
+ * \brief f1ap interface management for CU
  * \author EURECOM/NTUST
  * \date 2018
  * \version 0.1
@@ -30,10 +30,15 @@
  * \warning
  */
 
-#ifndef F1AP_ENB_ENCODER_H_
-#define F1AP_ENB_ENCODER_H_
+#ifndef F1AP_CU_INTERFACE_MANAGEMENT_H_
+#define F1AP_CU_INTERFACE_MANAGEMENT_H_
 
-int f1ap_decode_pdu(F1AP_F1AP_PDU_t *pdu, const uint8_t *const buffer, uint32_t length)
-__attribute__ ((warn_unused_result));
+int CU_handle_F1_SETUP_REQUEST(uint32_t               assoc_id,
+                                 uint32_t               stream,
+                                 F1AP_F1AP_PDU_t       *pdu);
 
-#endif /* F1AP_ENB_ENCODER_H_ */
+void CU_send_F1_SETUP_RESPONSE(instance_t instance, f1ap_setup_resp_t *f1ap_setup_resp);
+
+void CU_send_F1_SETUP_FAILURE(F1AP_F1SetupFailure_t *F1SetupFailure);
+
+#endif /* F1AP_CU_INTERFACE_MANAGEMENT_H_ */

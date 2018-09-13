@@ -30,10 +30,7 @@
  * \warning
  */
 
-#include <stdint.h>
-
 #include "f1ap_common.h"
-//#include "S1AP-PDU.h"
 
 #if defined(EMIT_ASN_DEBUG_EXTERN)
 int asn_debug = 0;
@@ -210,4 +207,11 @@ uint8_t F1AP_get_next_transaction_identifier(module_id_t enb_mod_idP, module_id_
       (transaction_identifier[enb_mod_idP+cu_mod_idP] + 1) % F1AP_TRANSACTION_IDENTIFIER_NUMBER;
   //LOG_T(F1AP,"generated xid is %d\n",transaction_identifier[enb_mod_idP+cu_mod_idP]);
   return transaction_identifier[enb_mod_idP+cu_mod_idP];
+}
+
+uint8_t F1AP_get_UE_identifier(module_id_t enb_mod_idP, int CC_idP, int UE_id) {  
+  static uint8_t      UE_identifier[NUMBER_OF_eNB_MAX];
+  UE_identifier[enb_mod_idP+CC_idP+UE_id] = (UE_identifier[enb_mod_idP+CC_idP+UE_id] + 1) % F1AP_UE_IDENTIFIER_NUMBER;
+  //LOG_T(F1AP,"generated xid is %d\n",transaction_identifier[enb_mod_idP+du_mod_idP]);
+  return UE_identifier[enb_mod_idP+CC_idP+UE_id];
 }

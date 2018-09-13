@@ -356,6 +356,17 @@ inline void ASN_DEBUG(const char *fmt, ...);
 #include "F1AP_Cells-To-Be-Broadcast-Item.h"
 #include "F1AP_QCI.h"
 
+#include "conversions.h"
+#include "platform_types.h"
+#include "common/utils/LOG/log.h"
+#include "intertask_interface.h"
+#include "sctp_messages_types.h"
+#include "f1ap_messages_types.h"
+#include <arpa/inet.h>
+#include "T.h"
+#include "common/ran_context.h"
+#include "msc.h"
+
 /* Checking version of ASN1C compiler */
 #if (ASN1C_ENVIRONMENT_VERSION < ASN1C_MINIMUM_VERSION)
 # error "You are compiling f1ap with the wrong version of ASN1C"
@@ -415,5 +426,6 @@ typedef int (*f1ap_message_decoded_callback)(
 
 
 uint8_t F1AP_get_next_transaction_identifier(module_id_t enb_mod_idP, module_id_t cu_mod_idP);
+uint8_t F1AP_get_UE_identifier(module_id_t enb_mod_idP, int CC_idP, int UE_id);
 
 #endif /* F1AP_COMMON_H_ */
