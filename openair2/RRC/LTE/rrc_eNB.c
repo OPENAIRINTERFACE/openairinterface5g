@@ -183,7 +183,7 @@ init_SI(
 	  (int)configuration->N_RB_DL[CC_id],
 	  (int)configuration->phich_resource[CC_id],
 	  (int)configuration->phich_duration[CC_id]);
-    
+
     carrier->sizeof_MIB= do_MIB(&rrc->carrier[CC_id],
 #ifdef ENABLE_ITTI
 	   configuration->N_RB_DL[CC_id],
@@ -7285,12 +7285,10 @@ void rrc_eNB_reconfigure_DRBs (const protocol_ctxt_t* const ctxt_pP,
 
 void handle_f1_setup_req(f1ap_setup_req_t *f1_setup_req) { 
 
-
-  f1ap_setup_resp_t *f1_setup_resp=NULL;
   
   LOG_I(RRC,"Received F1 Setup Request from gNB_DU %d (%s)\n",f1_setup_req->gNB_DU_id,f1_setup_req->gNB_DU_name);
   
-  uint16_t num_cells_to_activate = 0;
+  //uint16_t num_cells_to_activate = 0;
   
   int cu_cell_ind=0;
 
@@ -7362,10 +7360,13 @@ void handle_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
           num_SI++;
         }
         F1AP_SETUP_RESP (msg_p).num_SI[cu_cell_ind] = num_SI;
-        // send ITTI message to F1AP-CU task
-        itti_send_msg_to_task (TASK_CU_F1, ENB_MODULE_ID_TO_INSTANCE(j), msg_p);
+
         cu_cell_ind++;
         found_cell=1;
+
+        F1AP_SETUP_RESP (msg_p).num_cells_to_activate = cu_cell_ind;
+        // send ITTI message to F1AP-CU task
+        itti_send_msg_to_task (TASK_CU_F1, ENB_MODULE_ID_TO_INSTANCE(j), msg_p);
         break;
       } else {// setup_req mcc/mnc match rrc internal list element
         

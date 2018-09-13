@@ -51,40 +51,6 @@ extern RAN_CONTEXT_t RC;
 
 f1ap_setup_req_t *f1ap_du_data_from_du;
 
-/* This structure describes association of a DU to a CU */
-typedef struct f1ap_info {
-
-  module_id_t enb_mod_idP;
-  module_id_t cu_mod_idP;
-
-  /* Unique eNB_id to identify the eNB within EPC.
-   * In our case the eNB is a macro eNB so the id will be 20 bits long.
-   * For Home eNB id, this field should be 28 bits long.
-   */
-  uint32_t GNB_DU_ID;
-  
-  /* This is the optional name provided by the MME */
-  char *GNB_CU_Name;
-  f1ap_net_ip_address_t    mme_net_ip_address; // useful for joining assoc_id and ip address of packets
-
-  
-  /* Number of input/ouput streams */
-  uint16_t in_streams;
-  uint16_t out_streams;
-
-  /* Connexion id used between SCTP/S1AP */
-  uint16_t cnx_id;
-
-  /* SCTP association id */
-  int32_t  assoc_id;
-
-  uint16_t  mcc;
-  uint16_t  mnc;
-  uint8_t   mnc_digit_length;
-  
-} f1ap_info_t;
-
-
 // ==============================================================================
 static
 void CU_handle_sctp_data_ind(sctp_data_ind_t *sctp_data_ind) {
@@ -278,12 +244,6 @@ void CU_send_F1_SETUP_RESPONSE(instance_t instance, f1ap_setup_resp_t *f1ap_setu
   uint32_t  len;
   int       i = 0;
 
-  f1ap_info_t f1ap_info;
-  f1ap_info.GNB_CU_Name = "ABC";
-  f1ap_info.mcc = 208;
-  f1ap_info.mnc = 93;
-  f1ap_info.mnc_digit_length = 8;
-
   /* Create */
   /* 0. Message Type */
   memset(&pdu, 0, sizeof(pdu));
@@ -302,16 +262,16 @@ void CU_send_F1_SETUP_RESPONSE(instance_t instance, f1ap_setup_resp_t *f1ap_setu
   ie->value.present             = F1AP_F1SetupResponseIEs__value_PR_TransactionID;
   ie->value.choice.TransactionID = F1AP_get_next_transaction_identifier(enb_mod_idP, cu_mod_idP);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-
+ 
   /* optional */
   /* c2. GNB_CU_Name */
-  if (f1ap_info.GNB_CU_Name != NULL) {
+  if (f1ap_setup_resp->gNB_CU_name != NULL) {
     ie = (F1AP_F1SetupResponseIEs_t *)calloc(1, sizeof(F1AP_F1SetupResponseIEs_t));
     ie->id                        = F1AP_ProtocolIE_ID_id_gNB_CU_Name;
     ie->criticality               = F1AP_Criticality_ignore;
     ie->value.present             = F1AP_F1SetupResponseIEs__value_PR_GNB_CU_Name;
-    OCTET_STRING_fromBuf(&ie->value.choice.GNB_CU_Name, f1ap_info.GNB_CU_Name,
-                         strlen(f1ap_info.GNB_CU_Name));
+    OCTET_STRING_fromBuf(&ie->value.choice.GNB_CU_Name, f1ap_setup_resp->gNB_CU_name,
+                         strlen(f1ap_setup_resp->gNB_CU_name));
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
 
@@ -322,69 +282,70 @@ void CU_send_F1_SETUP_RESPONSE(instance_t instance, f1ap_setup_resp_t *f1ap_setu
   ie->criticality               = F1AP_Criticality_reject;
   ie->value.present             = F1AP_F1SetupResponseIEs__value_PR_Cells_to_be_Activated_List;
 
-
+  int num_cells_to_activate = f1ap_setup_resp->num_cells_to_activate;
+  printf("num_cells_to_activate = %d \n", num_cells_to_activate);
   for (i=0;
-       i<1;
+       i<num_cells_to_activate;
        i++) {
 
-       F1AP_Cells_to_be_Activated_List_ItemIEs_t *cells_to_be_activated_list_item_ies;
-       cells_to_be_activated_list_item_ies = (F1AP_Cells_to_be_Activated_List_ItemIEs_t *)calloc(1, sizeof(F1AP_Cells_to_be_Activated_List_ItemIEs_t));
-       cells_to_be_activated_list_item_ies->id = F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List_Item;
-       cells_to_be_activated_list_item_ies->criticality = F1AP_Criticality_reject;
-       cells_to_be_activated_list_item_ies->value.present = F1AP_Cells_to_be_Activated_List_ItemIEs__value_PR_Cells_to_be_Activated_List_Item;
+    F1AP_Cells_to_be_Activated_List_ItemIEs_t *cells_to_be_activated_list_item_ies;
+    cells_to_be_activated_list_item_ies = (F1AP_Cells_to_be_Activated_List_ItemIEs_t *)calloc(1, sizeof(F1AP_Cells_to_be_Activated_List_ItemIEs_t));
+    cells_to_be_activated_list_item_ies->id = F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List_Item;
+    cells_to_be_activated_list_item_ies->criticality = F1AP_Criticality_reject;
+    cells_to_be_activated_list_item_ies->value.present = F1AP_Cells_to_be_Activated_List_ItemIEs__value_PR_Cells_to_be_Activated_List_Item;
 
-     /* 3.1 cells to be Activated list item */
-     F1AP_Cells_to_be_Activated_List_Item_t cells_to_be_activated_list_item;
-     memset((void *)&cells_to_be_activated_list_item, 0, sizeof(F1AP_Cells_to_be_Activated_List_Item_t));
+    /* 3.1 cells to be Activated list item */
+    F1AP_Cells_to_be_Activated_List_Item_t cells_to_be_activated_list_item;
+    memset((void *)&cells_to_be_activated_list_item, 0, sizeof(F1AP_Cells_to_be_Activated_List_Item_t));
 
-     /* - nRCGI */
-     F1AP_NRCGI_t nRCGI;
-     MCC_MNC_TO_PLMNID(f1ap_info.mcc, f1ap_info.mnc, f1ap_info.mnc_digit_length,
-                                         &nRCGI.pLMN_Identity);
-     NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
-     cells_to_be_activated_list_item.nRCGI = nRCGI;
+    /* - nRCGI */
+    F1AP_NRCGI_t nRCGI;
+    MCC_MNC_TO_PLMNID(f1ap_setup_resp->mcc[i], f1ap_setup_resp->mnc[i], f1ap_setup_resp->mnc_digit_length[i],
+                                     &nRCGI.pLMN_Identity);
+    NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+    cells_to_be_activated_list_item.nRCGI = nRCGI;
 
-     /* optional */
-     /* - nRPCI */
-     if (1) {
-       cells_to_be_activated_list_item.nRPCI = (F1AP_NRPCI_t *)calloc(1, sizeof(F1AP_NRPCI_t));
-       *cells_to_be_activated_list_item.nRPCI = 321L;  // int 0..1007
-     }
+    /* optional */
+    /* - nRPCI */
+    if (1) {
+      cells_to_be_activated_list_item.nRPCI = (F1AP_NRPCI_t *)calloc(1, sizeof(F1AP_NRPCI_t));
+      *cells_to_be_activated_list_item.nRPCI = 321L;  // int 0..1007
+    }
 
-     /* optional */
-     /* - gNB-CU System Information */
-     if (1) {
-       /* 3.1.2 gNB-CUSystem Information */
-       F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *cells_to_be_activated_list_itemExtIEs;
-       cells_to_be_activated_list_itemExtIEs = (F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *)calloc(1, sizeof(F1AP_Cells_to_be_Activated_List_ItemExtIEs_t));
-       cells_to_be_activated_list_itemExtIEs->id                     = F1AP_ProtocolIE_ID_id_gNB_CUSystemInformation;
-       cells_to_be_activated_list_itemExtIEs->criticality            = F1AP_Criticality_reject;
-       cells_to_be_activated_list_itemExtIEs->extensionValue.present = F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_GNB_CUSystemInformation;
-       
-       
-       F1AP_GNB_CUSystemInformation_t gNB_CUSystemInformation;
-       memset((void *)&gNB_CUSystemInformation, 0, sizeof(F1AP_GNB_CUSystemInformation_t));
+    /* optional */
+    /* - gNB-CU System Information */
+    if (1) {
+      /* 3.1.2 gNB-CUSystem Information */
+      F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *cells_to_be_activated_list_itemExtIEs;
+      cells_to_be_activated_list_itemExtIEs = (F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *)calloc(1, sizeof(F1AP_Cells_to_be_Activated_List_ItemExtIEs_t));
+      cells_to_be_activated_list_itemExtIEs->id                     = F1AP_ProtocolIE_ID_id_gNB_CUSystemInformation;
+      cells_to_be_activated_list_itemExtIEs->criticality            = F1AP_Criticality_reject;
+      cells_to_be_activated_list_itemExtIEs->extensionValue.present = F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_GNB_CUSystemInformation;
 
-       OCTET_STRING_fromBuf(&gNB_CUSystemInformation.sImessage,
-                             "123456", strlen("123456"));
+      F1AP_GNB_CUSystemInformation_t *gNB_CUSystemInformation = (F1AP_GNB_CUSystemInformation_t *)calloc(1, sizeof(F1AP_GNB_CUSystemInformation_t));
 
-       cells_to_be_activated_list_itemExtIEs->extensionValue.choice.GNB_CUSystemInformation = gNB_CUSystemInformation;
+      OCTET_STRING_fromBuf(&gNB_CUSystemInformation->sImessage,
+                           f1ap_setup_resp->SI_container[i][0], f1ap_setup_resp->SI_container_length[i][0]);
+
+      printf("f1ap_setup_resp->SI_container_length = %d \n" , f1ap_setup_resp->SI_container_length[0][0]);
+      cells_to_be_activated_list_itemExtIEs->extensionValue.choice.GNB_CUSystemInformation = *gNB_CUSystemInformation;
 
 
-       F1AP_ProtocolExtensionContainer_160P9_t p_160P9_t;
-       memset((void *)&p_160P9_t, 0, sizeof(F1AP_ProtocolExtensionContainer_160P9_t));
+      F1AP_ProtocolExtensionContainer_160P9_t p_160P9_t;
+      memset((void *)&p_160P9_t, 0, sizeof(F1AP_ProtocolExtensionContainer_160P9_t));
 
-       ASN_SEQUENCE_ADD(&p_160P9_t.list,
-                        cells_to_be_activated_list_itemExtIEs);
-       cells_to_be_activated_list_item.iE_Extensions = &p_160P9_t;
+      ASN_SEQUENCE_ADD(&p_160P9_t.list,
+                      cells_to_be_activated_list_itemExtIEs);
+      cells_to_be_activated_list_item.iE_Extensions = &p_160P9_t;
 
-     }
-     /* ADD */
-     cells_to_be_activated_list_item_ies->value.choice.Cells_to_be_Activated_List_Item = cells_to_be_activated_list_item;
-     ASN_SEQUENCE_ADD(&ie->value.choice.Cells_to_be_Activated_List.list,
-                      cells_to_be_activated_list_item_ies);
+    }
+    /* ADD */
+    cells_to_be_activated_list_item_ies->value.choice.Cells_to_be_Activated_List_Item = cells_to_be_activated_list_item;
+    ASN_SEQUENCE_ADD(&ie->value.choice.Cells_to_be_Activated_List.list,
+                  cells_to_be_activated_list_item_ies);
   }
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     printf("Failed to encode F1 setup request\n");
@@ -580,11 +541,10 @@ void CU_send_gNB_CU_CONFIGURATION_UPDATE(module_id_t enb_mod_idP, module_id_t du
   uint32_t  len;
   int       i = 0;
 
-  f1ap_info_t f1ap_info;
-  f1ap_info.GNB_CU_Name = "ABC";
-  f1ap_info.mcc = 208;
-  f1ap_info.mnc = 93;
-  f1ap_info.mnc_digit_length = 8;
+  // for test
+  int mcc = 208;
+  int mnc = 93;
+  int mnc_digit_length = 8;
 
   /* Create */
   /* 0. Message Type */
@@ -630,7 +590,7 @@ void CU_send_gNB_CU_CONFIGURATION_UPDATE(module_id_t enb_mod_idP, module_id_t du
 
      /* - nRCGI */
      F1AP_NRCGI_t nRCGI;
-     MCC_MNC_TO_PLMNID(f1ap_info.mcc, f1ap_info.mnc, f1ap_info.mnc_digit_length,
+     MCC_MNC_TO_PLMNID(mcc, mnc, mnc_digit_length,
                                          &nRCGI.pLMN_Identity);
      NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
      cells_to_be_activated_list_item.nRCGI = nRCGI;
@@ -679,7 +639,7 @@ void CU_send_gNB_CU_CONFIGURATION_UPDATE(module_id_t enb_mod_idP, module_id_t du
 
        /* - nRCGI */
        F1AP_NRCGI_t nRCGI;
-       MCC_MNC_TO_PLMNID(f1ap_info.mcc, f1ap_info.mnc, f1ap_info.mnc_digit_length,
+       MCC_MNC_TO_PLMNID(mcc, mnc, mnc_digit_length,
                                            &nRCGI.pLMN_Identity);
        NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
        cells_to_be_deactivated_list_item.nRCGI = nRCGI;
@@ -855,7 +815,7 @@ void CU_send_gNB_CU_CONFIGURATION_UPDATE(module_id_t enb_mod_idP, module_id_t du
 
        /* - nRCGI */
        F1AP_NRCGI_t nRCGI;
-       MCC_MNC_TO_PLMNID(f1ap_info.mcc, f1ap_info.mnc, f1ap_info.mnc_digit_length,
+       MCC_MNC_TO_PLMNID(mcc, mnc, mnc_digit_length,
                                            &nRCGI.pLMN_Identity);
        NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
        cells_to_be_barred_item.nRCGI = nRCGI;
@@ -968,11 +928,10 @@ void CU_send_UE_CONTEXT_SETUP_REQUEST(void) {
   uint32_t  len;
   int       i = 0;
 
-  f1ap_info_t f1ap_info;
-  f1ap_info.GNB_CU_Name = "ABC";
-  f1ap_info.mcc = 208;
-  f1ap_info.mnc = 93;
-  f1ap_info.mnc_digit_length = 8;
+  // for test
+  int mcc = 208;
+  int mnc = 93;
+  int mnc_digit_length = 8;
 
   /* Create */
   /* 0. Message Type */
@@ -1012,7 +971,7 @@ void CU_send_UE_CONTEXT_SETUP_REQUEST(void) {
   ie->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_NRCGI;
   /* - nRCGI */
   F1AP_NRCGI_t nRCGI;
-  MCC_MNC_TO_PLMNID(f1ap_info.mcc, f1ap_info.mnc, f1ap_info.mnc_digit_length,
+  MCC_MNC_TO_PLMNID(mcc, mnc, mnc_digit_length,
                                        &nRCGI.pLMN_Identity);
   NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
 
@@ -1079,7 +1038,7 @@ void CU_send_UE_CONTEXT_SETUP_REQUEST(void) {
 
     /* - candidate_SpCell_ID */
     F1AP_NRCGI_t nRCGI;
-    MCC_MNC_TO_PLMNID(f1ap_info.mcc, f1ap_info.mnc, f1ap_info.mnc_digit_length,
+    MCC_MNC_TO_PLMNID(mcc, mnc, mnc_digit_length,
                                        &nRCGI.pLMN_Identity);
     NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
 
@@ -1153,7 +1112,7 @@ void CU_send_UE_CONTEXT_SETUP_REQUEST(void) {
 
      //   /* - sCell_ID */
      F1AP_NRCGI_t nRCGI;
-     MCC_MNC_TO_PLMNID(f1ap_info.mcc, f1ap_info.mnc, f1ap_info.mnc_digit_length,
+     MCC_MNC_TO_PLMNID(mcc, mnc, mnc_digit_length,
                                         &nRCGI.pLMN_Identity);
      NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
 
@@ -1325,11 +1284,10 @@ void CU_send_UE_CONTEXT_MODIFICATION_REQUEST(void) {
   uint32_t  len;
   int       i = 0;
 
-  f1ap_info_t f1ap_info;
-  f1ap_info.GNB_CU_Name = "ABC";
-  f1ap_info.mcc = 208;
-  f1ap_info.mnc = 93;
-  f1ap_info.mnc_digit_length = 8;
+  // for test
+  int mcc = 208;
+  int mnc = 93;
+  int mnc_digit_length = 8;
 
   /* Create */
   /* 0. Message Type */
@@ -1368,7 +1326,7 @@ void CU_send_UE_CONTEXT_MODIFICATION_REQUEST(void) {
     ie->value.present                  = F1AP_UEContextModificationRequestIEs__value_PR_NRCGI;
     /* - nRCGI */
     F1AP_NRCGI_t nRCGI;
-    MCC_MNC_TO_PLMNID(f1ap_info.mcc, f1ap_info.mnc, f1ap_info.mnc_digit_length,
+    MCC_MNC_TO_PLMNID(mcc, mnc, mnc_digit_length,
                                          &nRCGI.pLMN_Identity);
     NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
     ie->value.choice.NRCGI = nRCGI;
@@ -1492,7 +1450,7 @@ void CU_send_UE_CONTEXT_MODIFICATION_REQUEST(void) {
 
   //   /* - sCell_ID */
      F1AP_NRCGI_t nRCGI;
-     MCC_MNC_TO_PLMNID(f1ap_info.mcc, f1ap_info.mnc, f1ap_info.mnc_digit_length,
+     MCC_MNC_TO_PLMNID(mcc, mnc, mnc_digit_length,
                                         &nRCGI.pLMN_Identity);
      NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
      scell_toBeSetupMod_item.sCell_ID = nRCGI;
@@ -1531,7 +1489,7 @@ void CU_send_UE_CONTEXT_MODIFICATION_REQUEST(void) {
 
      /* - sCell_ID */
      F1AP_NRCGI_t nRCGI;
-     MCC_MNC_TO_PLMNID(f1ap_info.mcc, f1ap_info.mnc, f1ap_info.mnc_digit_length,
+     MCC_MNC_TO_PLMNID(mcc, mnc, mnc_digit_length,
                                         &nRCGI.pLMN_Identity);
      NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
      scell_toBeRemoved_item.sCell_ID = nRCGI;
