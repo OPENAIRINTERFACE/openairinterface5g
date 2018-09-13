@@ -167,9 +167,8 @@ socket_link_t *new_link_udp_server(int port){
 
   socket_link_t  *ret = NULL;
 
-  struct sockaddr_in si_me, si_other;
-  int socket_server, i, slen = sizeof(si_other) , recv_bytes;
-  char buf[1500];
+  struct sockaddr_in si_me;
+  int socket_server = -1;
 
   ret = calloc(1, sizeof(socket_link_t));
   if (ret == NULL) {
@@ -201,7 +200,7 @@ socket_link_t *new_link_udp_server(int port){
   return ret;
   
 error:
-  close(socket_server);
+  if (socket_server != -1) close(socket_server);
   if (ret != NULL) close(ret->socket_fd);
   free(ret);
   //printf("\n\n\nERROR PROTO_AGENT: ERROR in new_link_udp_server (see above), returning NULL\n");
@@ -219,10 +218,9 @@ socket_link_t *new_link_udp_client(char *server, int port){
   }
   ret->socket_fd = -1;
 
-  struct sockaddr_in si_other, server_info;
-  int s, i, slen=sizeof(si_other);
-  char buf[1500];
-  char message[1500];
+  struct sockaddr_in si_other;
+  int s;
+  socklen_t slen;
  
   if ( (s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1){
         goto error;
@@ -258,14 +256,8 @@ socket_link_t *new_link_sctp_server(int port)
 {
 
   socket_link_t  *ret = NULL;
-  ret = calloc(1, sizeof(socket_link_t));
-  if (ret == NULL) {
-    LOG_D(PROTO_AGENT, "%s:%d: out of memory\n", __FILE__, __LINE__);
-    goto error;
-  }
-  ret->socket_fd = -1;
 
-  int listenSock, temp;
+  int listenSock = -1, temp;
   struct sockaddr_in servaddr;
  
   listenSock = socket (AF_INET, SOCK_STREAM, IPPROTO_SCTP);
@@ -296,13 +288,19 @@ socket_link_t *new_link_sctp_server(int port)
       close(listenSock);
       exit(1);
   }
+  ret = calloc(1, sizeof(socket_link_t));
+  if (ret == NULL) {
+    LOG_D(PROTO_AGENT, "%s:%d: out of memory\n", __FILE__, __LINE__);
+    goto error;
+  }
+  ret->socket_fd = -1;
 
-  ret->socket_fd = accept (listenSock, (struct sockaddr *) NULL, (int *) NULL);
+  ret->socket_fd = accept (listenSock, NULL, NULL);
   
   return ret;
 
 error:
-  close(listenSock);
+  if (listenSock != -1) close(listenSock);
   if (ret != NULL) close(ret->socket_fd);
   free(ret);
   LOG_E(MAC,"ERROR in new_link_sctp_server (see above), returning NULL\n");
@@ -399,13 +397,13 @@ static int socket_udp_receive(int socket_fd, void *buf, int size)
   LOG_D(PROTO_AGENT,"UDP RECEIVE\n");
 
   struct sockaddr_in client;
-  int slen = sizeof(client);
+  socklen_t slen;
   char *s = buf;
   int   l;
 
   while (size) {
     l = recvfrom(socket_fd, s, size, 0, (struct sockaddr *) &client, &slen);
-    getsockname(s, (struct sockaddr *)&client, &slen);
+    getsockname(socket_fd, (struct sockaddr *)&client, &slen);
     LOG_D(PROTO_AGENT, "Got message from src port: %u\n", ntohs(client.sin_port));
     if (l == -1) goto error;
     if (l == 0) goto socket_closed;
@@ -511,7 +509,7 @@ int link_send_packet(socket_link_t *link, void *data, int size, uint16_t proto_t
     if (socket_udp_send(link->socket_fd, sizebuf, 4, peer_addr, link->peer_port) == -1)
       goto error;
     
-    LOG_I(PROTO_AGENT,"sent %d bytes over the channel\n", (int32_t *)sizebuf);
+    LOG_I(PROTO_AGENT,"sent 4 bytes over the channel\n");
     link->bytes_sent += 4;
 
     if (socket_udp_send(link->socket_fd, data, size, peer_addr, link->peer_port) == -1)
