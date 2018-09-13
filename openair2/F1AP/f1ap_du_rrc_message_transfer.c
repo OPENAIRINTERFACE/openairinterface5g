@@ -31,6 +31,8 @@
  */
 
 #include "f1ap_common.h"
+#include "f1ap_encoder.h"
+#include "f1ap_decoder.h"
 #include "f1ap_du_rrc_message_transfer.h"
 // undefine C_RNTI from
 // openair1/PHY/LTE_TRANSPORT/transport_common.h which

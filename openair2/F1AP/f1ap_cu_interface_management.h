@@ -33,12 +33,62 @@
 #ifndef F1AP_CU_INTERFACE_MANAGEMENT_H_
 #define F1AP_CU_INTERFACE_MANAGEMENT_H_
 
-int CU_handle_F1_SETUP_REQUEST(uint32_t               assoc_id,
-                                 uint32_t               stream,
-                                 F1AP_F1AP_PDU_t       *pdu);
+/*
+ * Reset
+ */
+void CU_send_RESET(instance_t instance, F1AP_Reset_t *Reset);
+void CU_handle_RESET_ACKKNOWLEDGE(instance_t instance, F1AP_ResetAcknowledge_t *ResetAcknowledge);
+void CU_handle_RESET(instance_t instance, F1AP_Reset_t *Reset);
+void CU_send_RESET_ACKNOWLEDGE(instance_t instance, F1AP_ResetAcknowledge_t *ResetAcknowledge);
+
+/*
+ * Error Indication
+ */
+void CU_handle_ERROR_INDICATION(instance_t instance, F1AP_ErrorIndication_t *ErrorIndication);
+void CU_send_ERROR_INDICATION(instance_t instance, F1AP_ErrorIndication_t *ErrorIndication);
+
+/*
+ * F1 Setup
+ */
+void CU_handle_F1_SETUP_REQUEST(instance_t instance,
+                                uint32_t assoc_id,
+                                uint32_t stream,
+                                F1AP_F1AP_PDU_t *pdu);
 
 void CU_send_F1_SETUP_RESPONSE(instance_t instance, f1ap_setup_resp_t *f1ap_setup_resp);
 
-void CU_send_F1_SETUP_FAILURE(F1AP_F1SetupFailure_t *F1SetupFailure);
+void CU_send_F1_SETUP_FAILURE(instance_t instance, F1AP_F1SetupFailure_t *F1SetupFailure);
+
+/*
+ * gNB-DU Configuration Update
+ */
+void CU_handle_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
+                    F1AP_GNBDUConfigurationUpdate_t *GNBDUConfigurationUpdate);
+
+void CU_send_gNB_DU_CONFIGURATION_FAILURE(instance_t instance,
+                    F1AP_GNBDUConfigurationUpdateFailure_t *GNBDUConfigurationUpdateFailure);
+
+void CU_send_gNB_DU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
+                    F1AP_GNBDUConfigurationUpdateAcknowledge_t *GNBDUConfigurationUpdateAcknowledge);
+
+/*
+ * gNB-CU Configuration Update
+ */
+void CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, module_id_t du_mod_idP);
+
+void CU_handle_gNB_CU_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
+                    F1AP_GNBCUConfigurationUpdateFailure_t *GNBCUConfigurationUpdateFailure);
+
+void CU_handle_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
+                    F1AP_GNBCUConfigurationUpdateAcknowledge_t *GNBCUConfigurationUpdateAcknowledge);
+
+/*
+ * gNB-DU Resource Coordination
+ */
+void CU_handle_gNB_DU_RESOURCE_COORDINATION_REQUEST(instance_t instance,
+                    F1AP_GNBDUResourceCoordinationRequest_t *GNBDUResourceCoordinationRequest);
+
+void CU_send_gNB_DU_RESOURCE_COORDINATION_RESPONSE(instance_t instance,
+                    F1AP_GNBDUResourceCoordinationResponse_t *GNBDUResourceCoordinationResponse);
 
 #endif /* F1AP_CU_INTERFACE_MANAGEMENT_H_ */
