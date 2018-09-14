@@ -265,7 +265,7 @@ void DU_send_F1_SETUP_REQUEST(instance_t instance) {
         served_cell_information.nR_Mode_Info = nR_Mode_Info;
 
         /* - measurementTimingConfiguration */
-        char *measurementTimingConfiguration = "0"; //&f1ap_du_data->measurement_timing_information[i]; // sept. 2018
+        char *measurementTimingConfiguration = f1ap_du_data->measurement_timing_information[i]; // sept. 2018
 
         OCTET_STRING_fromBuf(&served_cell_information.measurementTimingConfiguration,
                              measurementTimingConfiguration,
@@ -390,11 +390,11 @@ void DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
         served_cell_information.nRCGI = nRCGI;
 
         /* - nRPCI */
-        served_cell_information.nRPCI = 321L;  // int 0..1007
+        served_cell_information.nRPCI = f1ap_du_data->nr_pci[i];  // int 0..1007
 
         /* - fiveGS_TAC */
         OCTET_STRING_fromBuf(&served_cell_information.fiveGS_TAC,
-                             "10",
+                             &f1ap_du_data->tac[i],
                              3);
 
         /* - Configured_EPS_TAC */
@@ -556,11 +556,11 @@ void DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
         served_cell_information.nRCGI = nRCGI;
 
         /* - nRPCI */
-        served_cell_information.nRPCI = 321L;  // int 0..1007
+        served_cell_information.nRPCI = f1ap_du_data->nr_pci[i];  // int 0..1007
 
         /* - fiveGS_TAC */
         OCTET_STRING_fromBuf(&served_cell_information.fiveGS_TAC,
-                             "10",
+                             &f1ap_du_data->tac[i],
                              3);
 
         /* - Configured_EPS_TAC */
@@ -706,7 +706,7 @@ void DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
         F1AP_NRCGI_t oldNRCGI;
         MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i],
                                          &oldNRCGI.pLMN_Identity);
-        NR_CELL_ID_TO_BIT_STRING(123456, &oldNRCGI.nRCellIdentity);
+        NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[i], &oldNRCGI.nRCellIdentity);
         served_cells_to_delete_item.oldNRCGI = oldNRCGI;
 
         /* ADD */
@@ -742,7 +742,7 @@ void DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
         F1AP_NRCGI_t nRCGI;
         MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i],
                                          &nRCGI.pLMN_Identity);
-        NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+        NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[i], &nRCGI.nRCellIdentity);
         active_cells_item.nRCGI = nRCGI;
         
         /* ADD */

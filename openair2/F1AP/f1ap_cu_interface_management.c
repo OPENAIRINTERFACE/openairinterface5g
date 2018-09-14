@@ -212,7 +212,7 @@ void CU_handle_F1_SETUP_REQUEST(instance_t instance,
 
   //   } tdd;
   // } nr_mode_info[F1AP_MAX_NB_CELLS];
-  if (num_cells_available < 1) {
+  if (num_cells_available > 0) {
     itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(instance), message_p);
   } else {
     CU_send_F1_SETUP_FAILURE(instance);

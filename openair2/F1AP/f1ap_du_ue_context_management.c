@@ -259,18 +259,8 @@ void DU_send_UE_CONTEXT_SETUP_RESPONSE(void) {
      /* - nRCGI */
      F1AP_NRCGI_t nRCGI;  // issue here
      MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i], &nRCGI.pLMN_Identity);
-//
-     // INT32_TO_BIT_STRING(123, &nRCGI.nRCellIdentity);
-     // nRCGI.nRCellIdentity.buf = malloc((36+7)/8);
 
-     // nRCGI.nRCellIdentity.size = (36+7)/8;
-     // nRCGI.nRCellIdentity.bits_unused = 4;
-
-     // nRCGI.nRCellIdentity.buf[0] = 123;
-
-     //nRCGI.nRCellIdentity = 15;
-
-     NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+     NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[0], &nRCGI.nRCellIdentity);
 
      sCell_FailedtoSetup_item.sCell_ID = nRCGI;
 
@@ -625,7 +615,7 @@ void DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(void) {
      MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i],
                                         &nRCGI.pLMN_Identity);
 
-     NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+     NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[0], &nRCGI.nRCellIdentity);
 
      scell_failedtoSetupMod_item.sCell_ID = nRCGI;
 
