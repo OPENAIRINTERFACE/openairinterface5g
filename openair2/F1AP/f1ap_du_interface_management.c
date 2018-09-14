@@ -32,6 +32,7 @@
 
 #include "f1ap_common.h"
 #include "f1ap_du_interface_management.h"
+#include "assertions.h"
 
 extern f1ap_setup_req_t *f1ap_du_data;
 
@@ -309,7 +310,104 @@ int DU_handle_F1_SETUP_RESPONSE(uint32_t               assoc_id,
                                  uint32_t               stream,
                                  F1AP_F1AP_PDU_t       *pdu)
 {
+
    printf("DU_handle_F1_SETUP_RESPONSE\n");
+
+   AssertFatal(pdu->present == F1AP_F1AP_PDU_PR_successfulOutcome,
+	       "pdu->present != F1AP_F1AP_PDU_PR_successfulOutcome\n");
+   AssertFatal(pdu->choice.successfulOutcome->procedureCode  == F1AP_ProcedureCode_id_F1Setup,
+	       "pdu->choice.successfulOutcome->procedureCode != F1AP_ProcedureCode_id_F1Setup\n");
+   AssertFatal(pdu->choice.successfulOutcome->criticality  == F1AP_Criticality_reject,
+	       "pdu->choice.successfulOutcome->criticality != F1AP_Criticality_reject\n");
+   AssertFatal(pdu->choice.successfulOutcome->value.present  == F1AP_SuccessfulOutcome__value_PR_F1SetupResponse,
+	       "pdu->choice.successfulOutcome->value.present != F1AP_SuccessfulOutcome__value_PR_F1SetupResponse\n");
+
+   F1AP_F1SetupResponse_t    *in = &pdu->choice.successfulOutcome->value.choice.F1SetupResponse;
+
+
+   F1AP_F1SetupResponseIEs_t *ie;
+   int TransactionId = -1;
+   int num_cells_to_activate = 0;
+   F1AP_Cells_to_be_Activated_List_Item_t *cell;
+
+   MessageDef *msg_p = itti_alloc_new_message (TASK_ENB_APP, F1AP_SETUP_RESP);
+
+   printf("F1AP: F1Setup-Resp: protocolIEs.list.count %d\n",
+	  in->protocolIEs.list.count);
+   for (int i=0;i < in->protocolIEs.list.count; i++) {
+     ie = in->protocolIEs.list.array[i];
+     switch (ie->id) {
+     case F1AP_ProtocolIE_ID_id_TransactionID:
+       AssertFatal(ie->criticality == F1AP_Criticality_reject,
+		   "ie->criticality != F1AP_Criticality_reject\n");
+       AssertFatal(ie->value.present == F1AP_F1SetupResponseIEs__value_PR_TransactionID,
+		   "ie->value.present != F1AP_F1SetupResponseIEs__value_PR_TransactionID\n");
+       TransactionId=ie->value.choice.TransactionID;
+       printf("F1AP: F1Setup-Resp: TransactionId %d\n",
+	     TransactionId);
+       break;
+     case F1AP_ProtocolIE_ID_id_gNB_CU_Name:
+       AssertFatal(ie->criticality == F1AP_Criticality_ignore,
+		   "ie->criticality != F1AP_Criticality_ignore\n");
+       AssertFatal(ie->value.present == F1AP_F1SetupResponseIEs__value_PR_GNB_CU_Name,
+		   "ie->value.present != F1AP_F1SetupResponseIEs__value_PR_TransactionID\n");
+       F1AP_SETUP_RESP (msg_p).gNB_CU_name = malloc(ie->value.choice.GNB_CU_Name.size+1);
+       memcpy(F1AP_SETUP_RESP (msg_p).gNB_CU_name,ie->value.choice.GNB_CU_Name.buf,ie->value.choice.GNB_CU_Name.size);
+       F1AP_SETUP_RESP (msg_p).gNB_CU_name[ie->value.choice.GNB_CU_Name.size]='\0';
+       printf("F1AP: F1Setup-Resp: gNB_CU_name %s\n",
+	      F1AP_SETUP_RESP (msg_p).gNB_CU_name);
+       break;
+     case F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List:
+       AssertFatal(ie->criticality == F1AP_Criticality_reject,
+		   "ie->criticality != F1AP_Criticality_reject\n");
+       AssertFatal(ie->value.present == F1AP_F1SetupResponseIEs__value_PR_Cells_to_be_Activated_List,
+		   "ie->value.present != F1AP_F1SetupResponseIEs__value_PR_Cells_to_be_Activated_List\n");
+       num_cells_to_activate = ie->value.choice.Cells_to_be_Activated_List.list.count;
+       printf("F1AP: Activating %d cells\n",num_cells_to_activate);
+       for (int i=0;i<num_cells_to_activate;i++) {
+	 
+	 F1AP_Cells_to_be_Activated_List_ItemIEs_t *cells_to_be_activated_list_item_ies = ie->value.choice.Cells_to_be_Activated_List.list.array[i];
+
+	 AssertFatal(cells_to_be_activated_list_item_ies->id == F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List_Item,
+		   "cells_to_be_activated_list_item_ies->id != F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List_Item");
+	 AssertFatal(cells_to_be_activated_list_item_ies->criticality == F1AP_Criticality_reject,
+		     "cells_to_be_activated_list_item_ies->criticality == F1AP_Criticality_reject");
+	 AssertFatal(cells_to_be_activated_list_item_ies->value.present == F1AP_Cells_to_be_Activated_List_ItemIEs__value_PR_Cells_to_be_Activated_List_Item,
+		     "cells_to_be_activated_list_item_ies->value.present == F1AP_Cells_to_be_Activated_List_ItemIEs__value_PR_Cells_to_be_Activated_List_Item");
+
+	 cell = &cells_to_be_activated_list_item_ies->value.choice.Cells_to_be_Activated_List_Item;
+
+	 TBCD_TO_MCC_MNC(&cell->nRCGI.pLMN_Identity, F1AP_SETUP_RESP (msg_p).mcc[i], F1AP_SETUP_RESP (msg_p).mnc[i], F1AP_SETUP_RESP (msg_p).mnc_digit_length[i]);
+	 AssertFatal(cell->nRPCI != NULL, "nRPCI is null\n");
+
+	 F1AP_SETUP_RESP (msg_p).nrpci[i] = *cell->nRPCI;
+
+	 F1AP_ProtocolExtensionContainer_160P9_t *ext = cell->iE_Extensions;
+	 AssertFatal(ext!=NULL,"Extension for SI is null\n");
+	 F1AP_SETUP_RESP (msg_p).num_SI[i] = ext->list.count;
+	 AssertFatal(ext->list.count==1,"At least one SI message should be there, and only 1 for now!\n");
+	 printf("F1AP: F1Setup-Resp Cell %d MCC %d MNC %d NRPCI %d\n",i,F1AP_SETUP_RESP (msg_p).mcc[i],F1AP_SETUP_RESP (msg_p).mnc[i],F1AP_SETUP_RESP (msg_p).nrpci[i],F1AP_SETUP_RESP (msg_p).num_SI[i]);
+	 for (int si =0;si < ext->list.count;si++) {
+	   size_t size = ext->list.array[si]->extensionValue.choice.GNB_CUSystemInformation.sImessage.size;
+	   F1AP_SETUP_RESP (msg_p).SI_container_length[i][si] = size;
+           printf("F1AP: F1Setup-Resp SI_container_length[%d][%d] %d bytes\n",i,si,size);
+	   F1AP_SETUP_RESP (msg_p).SI_container[i][si] = ext->list.array[si]->extensionValue.choice.GNB_CUSystemInformation.sImessage.buf;
+	 }
+       }
+       break;
+     }
+   }
+   AssertFatal(TransactionId!=-1,"TransactionId was not sent\n");
+   AssertFatal(num_cells_to_activate>0,"No cells activated\n");
+   F1AP_SETUP_RESP (msg_p).num_cells_to_activate = num_cells_to_activate;
+
+   for (int i=0;i<num_cells_to_activate;i++)  
+     AssertFatal(F1AP_SETUP_RESP (msg_p).num_SI[i] > 0, "System Information %d is missing",i);
+
+
+   printf("Sending F1AP_SETUP_RESP ITTI message to ENB_APP with assoc_id (%d->%d)\n",
+	  assoc_id,ENB_MODULE_ID_TO_INSTANCE(assoc_id));
+   itti_send_msg_to_task(TASK_ENB_APP, ENB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
 
    return 0;
 }

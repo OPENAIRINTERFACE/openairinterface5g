@@ -77,6 +77,7 @@ static int f1ap_decode_successful_outcome(F1AP_F1AP_PDU_t *pdu)
   switch(pdu->choice.successfulOutcome->procedureCode) {
     case F1AP_ProcedureCode_id_F1Setup:
       LOG_I(F1AP, "get F1AP_ProcedureCode_id_F1Setup\n");
+      
       break;
 
     default:

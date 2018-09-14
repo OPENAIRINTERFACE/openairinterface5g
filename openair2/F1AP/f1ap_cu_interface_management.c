@@ -297,7 +297,7 @@ void CU_send_F1_SETUP_RESPONSE(instance_t instance, f1ap_setup_resp_t *f1ap_setu
     /* - nRPCI */
     if (1) {
       cells_to_be_activated_list_item.nRPCI = (F1AP_NRPCI_t *)calloc(1, sizeof(F1AP_NRPCI_t));
-      *cells_to_be_activated_list_item.nRPCI = 321L;  // int 0..1007
+      *cells_to_be_activated_list_item.nRPCI = f1ap_setup_resp->nrpci[i];  // int 0..1007
     }
 
     /* optional */
