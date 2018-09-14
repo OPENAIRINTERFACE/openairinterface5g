@@ -199,68 +199,152 @@ void DU_send_F1_SETUP_REQUEST(instance_t instance) {
         //f1ap_du_data->fdd_flag = 1;
         if (f1ap_du_data->fdd_flag) { // FDD
           nR_Mode_Info.present = F1AP_NR_Mode_Info_PR_fDD;
-          /* > FDD >> FDD Info */
           F1AP_FDD_Info_t *fDD_Info = (F1AP_FDD_Info_t *)calloc(1, sizeof(F1AP_FDD_Info_t));
-          /* >>> UL NRFreqInfo */
-          fDD_Info->uL_NRFreqInfo.nRARFCN = f1ap_du_data->nr_mode_info[i].fdd.ul_nr_arfcn;
 
-          F1AP_FreqBandNrItem_t ul_freqBandNrItem;
-          memset((void *)&ul_freqBandNrItem, 0, sizeof(F1AP_FreqBandNrItem_t));
-          ul_freqBandNrItem.freqBandIndicatorNr = 777L;
+          /* FDD.1 UL NRFreqInfo */
+            /* FDD.1.1 UL NRFreqInfo ARFCN */
+            fDD_Info->uL_NRFreqInfo.nRARFCN = f1ap_du_data->nr_mode_info[i].fdd.ul_nr_arfcn; // Integer
 
-            F1AP_SupportedSULFreqBandItem_t ul_supportedSULFreqBandItem;
-            memset((void *)&ul_supportedSULFreqBandItem, 0, sizeof(F1AP_SupportedSULFreqBandItem_t));
-            ul_supportedSULFreqBandItem.freqBandIndicatorNr = 777L;
-            ASN_SEQUENCE_ADD(&ul_freqBandNrItem.supportedSULBandList.list, &ul_supportedSULFreqBandItem);
+            /* FDD.1.2 F1AP_SUL_Information */
+            if(0) { // Optional
+              F1AP_SUL_Information_t *fdd_sul_info = (F1AP_SUL_Information_t *)calloc(1, sizeof(F1AP_SUL_Information_t));
+              fdd_sul_info->sUL_NRARFCN = 0;
+              fdd_sul_info->sUL_transmission_Bandwidth.nRSCS = 0;
+              fdd_sul_info->sUL_transmission_Bandwidth.nRNRB = 0;
+              fDD_Info->uL_NRFreqInfo.sul_Information = fdd_sul_info;
+            }
 
-          ASN_SEQUENCE_ADD(&fDD_Info->uL_NRFreqInfo.freqBandListNr.list, &ul_freqBandNrItem);
+            /* FDD.1.3 freqBandListNr */
+            int fdd_ul_num_available_freq_Bands = f1ap_du_data->nr_mode_info[i].fdd.ul_num_frequency_bands;
+            printf("fdd_ul_num_available_freq_Bands = %d \n", fdd_ul_num_available_freq_Bands);
+            int fdd_ul_j;
+            for (fdd_ul_j=0;
+                 fdd_ul_j<fdd_ul_num_available_freq_Bands;
+                 fdd_ul_j++) {
 
-          /* >>> DL NRFreqInfo */
-          fDD_Info->dL_NRFreqInfo.nRARFCN = f1ap_du_data->nr_mode_info[i].fdd.dl_nr_arfcn;
+                  F1AP_FreqBandNrItem_t nr_freqBandNrItem;
+                  memset((void *)&nr_freqBandNrItem, 0, sizeof(F1AP_FreqBandNrItem_t));
+                  /* FDD.1.3.1 freqBandIndicatorNr*/
+                  nr_freqBandNrItem.freqBandIndicatorNr = f1ap_du_data->nr_mode_info[i].fdd.ul_nr_band[fdd_ul_j]; //
 
-          F1AP_FreqBandNrItem_t dl_freqBandNrItem;
-          memset((void *)&dl_freqBandNrItem, 0, sizeof(F1AP_FreqBandNrItem_t));
-          dl_freqBandNrItem.freqBandIndicatorNr = 777L;
+                  /* FDD.1.3.2 supportedSULBandList*/
+                  int num_available_supported_SULBands = f1ap_du_data->nr_mode_info[i].fdd.ul_num_sul_frequency_bands;
+                  printf("num_available_supported_SULBands = %d \n", num_available_supported_SULBands);
+                  int fdd_ul_k;
+                  for (fdd_ul_k=0;
+                       fdd_ul_k<num_available_supported_SULBands;
+                       fdd_ul_k++) {
+                        F1AP_SupportedSULFreqBandItem_t nr_supportedSULFreqBandItem;
+                        memset((void *)&nr_supportedSULFreqBandItem, 0, sizeof(F1AP_SupportedSULFreqBandItem_t));
+                          /* FDD.1.3.2.1 freqBandIndicatorNr */
+                          nr_supportedSULFreqBandItem.freqBandIndicatorNr = f1ap_du_data->nr_mode_info[i].fdd.ul_nr_sul_band[fdd_ul_k]; //
+                        ASN_SEQUENCE_ADD(&nr_freqBandNrItem.supportedSULBandList.list, &nr_supportedSULFreqBandItem);
+                  } // for FDD : UL supported_SULBands
+                  ASN_SEQUENCE_ADD(&fDD_Info->uL_NRFreqInfo.freqBandListNr.list, &nr_freqBandNrItem);
+            } // for FDD : UL freq_Bands
+           
+          /* FDD.2 DL NRFreqInfo */
+            /* FDD.2.1 DL NRFreqInfo ARFCN */
+            fDD_Info->dL_NRFreqInfo.nRARFCN = f1ap_du_data->nr_mode_info[i].fdd.dl_nr_arfcn; // Integer
 
-            F1AP_SupportedSULFreqBandItem_t dl_supportedSULFreqBandItem;
-            memset((void *)&dl_supportedSULFreqBandItem, 0, sizeof(F1AP_SupportedSULFreqBandItem_t));
-            dl_supportedSULFreqBandItem.freqBandIndicatorNr = 777L;
-            ASN_SEQUENCE_ADD(&dl_freqBandNrItem.supportedSULBandList.list, &dl_supportedSULFreqBandItem);
+            /* FDD.2.2 F1AP_SUL_Information */
+            if(0) { // Optional
+              F1AP_SUL_Information_t *fdd_sul_info = (F1AP_SUL_Information_t *)calloc(1, sizeof(F1AP_SUL_Information_t));
+              fdd_sul_info->sUL_NRARFCN = 0;
+              fdd_sul_info->sUL_transmission_Bandwidth.nRSCS = 0;
+              fdd_sul_info->sUL_transmission_Bandwidth.nRNRB = 0;
+              fDD_Info->dL_NRFreqInfo.sul_Information = fdd_sul_info;
+            }
 
-          ASN_SEQUENCE_ADD(&fDD_Info->dL_NRFreqInfo.freqBandListNr.list, &dl_freqBandNrItem);
+            /* FDD.2.3 freqBandListNr */
+            int fdd_dl_num_available_freq_Bands = f1ap_du_data->nr_mode_info[i].fdd.dl_num_frequency_bands;
+            printf("fdd_dl_num_available_freq_Bands = %d \n", fdd_dl_num_available_freq_Bands);
+            int fdd_dl_j;
+            for (fdd_dl_j=0;
+                 fdd_dl_j<fdd_dl_num_available_freq_Bands;
+                 fdd_dl_j++) {
 
-          /* >>> UL Transmission Bandwidth */
+                  F1AP_FreqBandNrItem_t nr_freqBandNrItem;
+                  memset((void *)&nr_freqBandNrItem, 0, sizeof(F1AP_FreqBandNrItem_t));
+                  /* FDD.2.3.1 freqBandIndicatorNr*/
+                  nr_freqBandNrItem.freqBandIndicatorNr = f1ap_du_data->nr_mode_info[i].fdd.dl_nr_band[fdd_dl_j]; //
+
+                  /* FDD.2.3.2 supportedSULBandList*/
+                  int num_available_supported_SULBands = f1ap_du_data->nr_mode_info[i].fdd.dl_num_sul_frequency_bands;
+                  printf("num_available_supported_SULBands = %d \n", num_available_supported_SULBands);
+                  int fdd_dl_k;
+                  for (fdd_dl_k=0;
+                       fdd_dl_k<num_available_supported_SULBands;
+                       fdd_dl_k++) {
+                        F1AP_SupportedSULFreqBandItem_t nr_supportedSULFreqBandItem;
+                        memset((void *)&nr_supportedSULFreqBandItem, 0, sizeof(F1AP_SupportedSULFreqBandItem_t));
+                          /* FDD.2.3.2.1 freqBandIndicatorNr */
+                          nr_supportedSULFreqBandItem.freqBandIndicatorNr = f1ap_du_data->nr_mode_info[i].fdd.dl_nr_sul_band[fdd_dl_k]; //
+                        ASN_SEQUENCE_ADD(&nr_freqBandNrItem.supportedSULBandList.list, &nr_supportedSULFreqBandItem);
+                  } // for FDD : DL supported_SULBands
+                  ASN_SEQUENCE_ADD(&fDD_Info->dL_NRFreqInfo.freqBandListNr.list, &nr_freqBandNrItem);
+            } // for FDD : DL freq_Bands
+
+          /* FDD.3 UL Transmission Bandwidth */
           fDD_Info->uL_Transmission_Bandwidth.nRSCS = f1ap_du_data->nr_mode_info[i].fdd.ul_scs;
           fDD_Info->uL_Transmission_Bandwidth.nRNRB = f1ap_du_data->nr_mode_info[i].fdd.ul_nrb;
-          /* >>> DL Transmission Bandwidth */
+          /* FDD.4 DL Transmission Bandwidth */
           fDD_Info->dL_Transmission_Bandwidth.nRSCS = f1ap_du_data->nr_mode_info[i].fdd.dl_scs;
           fDD_Info->dL_Transmission_Bandwidth.nRNRB = f1ap_du_data->nr_mode_info[i].fdd.dl_nrb;
           
           nR_Mode_Info.choice.fDD = fDD_Info;
         } else { // TDD
           nR_Mode_Info.present = F1AP_NR_Mode_Info_PR_tDD;
-
-          /* > TDD >> TDD Info */
           F1AP_TDD_Info_t *tDD_Info = (F1AP_TDD_Info_t *)calloc(1, sizeof(F1AP_TDD_Info_t));
-          /* >>> ARFCN */
-          tDD_Info->nRFreqInfo.nRARFCN = f1ap_du_data->nr_mode_info[i].tdd.nr_arfcn; // Integer
-          F1AP_FreqBandNrItem_t nr_freqBandNrItem;
-          memset((void *)&nr_freqBandNrItem, 0, sizeof(F1AP_FreqBandNrItem_t));
-          // RK: missing params
-          nr_freqBandNrItem.freqBandIndicatorNr = 555L;
 
-            F1AP_SupportedSULFreqBandItem_t nr_supportedSULFreqBandItem;
-            memset((void *)&nr_supportedSULFreqBandItem, 0, sizeof(F1AP_SupportedSULFreqBandItem_t));
-            nr_supportedSULFreqBandItem.freqBandIndicatorNr = 444L;
-            ASN_SEQUENCE_ADD(&nr_freqBandNrItem.supportedSULBandList.list, &nr_supportedSULFreqBandItem);
+          /* TDD.1 nRFreqInfo */
+            /* TDD.1.1 nRFreqInfo ARFCN */
+            tDD_Info->nRFreqInfo.nRARFCN = f1ap_du_data->nr_mode_info[i].tdd.nr_arfcn; // Integer
 
-          ASN_SEQUENCE_ADD(&tDD_Info->nRFreqInfo.freqBandListNr.list, &nr_freqBandNrItem);
+            /* TDD.1.2 F1AP_SUL_Information */
+            if(0) { // Optional
+              F1AP_SUL_Information_t *tdd_sul_info = (F1AP_SUL_Information_t *)calloc(1, sizeof(F1AP_SUL_Information_t));
+              tdd_sul_info->sUL_NRARFCN = 0;
+              tdd_sul_info->sUL_transmission_Bandwidth.nRSCS = 0;
+              tdd_sul_info->sUL_transmission_Bandwidth.nRNRB = 0;
+              tDD_Info->nRFreqInfo.sul_Information = tdd_sul_info;
+            }
 
-          tDD_Info->transmission_Bandwidth.nRSCS= f1ap_du_data->nr_mode_info[i].tdd.scs;
-          tDD_Info->transmission_Bandwidth.nRNRB= f1ap_du_data->nr_mode_info[i].tdd.nrb;
+            /* TDD.1.3 freqBandListNr */
+            int tdd_num_available_freq_Bands = f1ap_du_data->nr_mode_info[i].tdd.num_frequency_bands;
+            printf("tdd_num_available_freq_Bands = %d \n", tdd_num_available_freq_Bands);
+            int j;
+            for (j=0;
+                 j<tdd_num_available_freq_Bands;
+                 j++) {
+
+                  F1AP_FreqBandNrItem_t nr_freqBandNrItem;
+                  memset((void *)&nr_freqBandNrItem, 0, sizeof(F1AP_FreqBandNrItem_t));
+                  /* TDD.1.3.1 freqBandIndicatorNr*/
+                  nr_freqBandNrItem.freqBandIndicatorNr = *f1ap_du_data->nr_mode_info[i].tdd.nr_band; //
+
+                  /* TDD.1.3.2 supportedSULBandList*/
+                  int num_available_supported_SULBands = f1ap_du_data->nr_mode_info[i].tdd.num_sul_frequency_bands;
+                  printf("num_available_supported_SULBands = %d \n", num_available_supported_SULBands);
+                  int k;
+                  for (k=0;
+                       k<num_available_supported_SULBands;
+                       k++) {
+                        F1AP_SupportedSULFreqBandItem_t nr_supportedSULFreqBandItem;
+                        memset((void *)&nr_supportedSULFreqBandItem, 0, sizeof(F1AP_SupportedSULFreqBandItem_t));
+                          /* TDD.1.3.2.1 freqBandIndicatorNr */
+                          nr_supportedSULFreqBandItem.freqBandIndicatorNr = *f1ap_du_data->nr_mode_info[i].tdd.nr_sul_band; //
+                        ASN_SEQUENCE_ADD(&nr_freqBandNrItem.supportedSULBandList.list, &nr_supportedSULFreqBandItem);
+                  } // for TDD : supported_SULBands
+                  ASN_SEQUENCE_ADD(&tDD_Info->nRFreqInfo.freqBandListNr.list, &nr_freqBandNrItem);
+            } // for TDD : freq_Bands
+
+          /* TDD.2 transmission_Bandwidth */
+          tDD_Info->transmission_Bandwidth.nRSCS = f1ap_du_data->nr_mode_info[i].tdd.scs;
+          tDD_Info->transmission_Bandwidth.nRNRB = f1ap_du_data->nr_mode_info[i].tdd.nrb;
      
           nR_Mode_Info.choice.tDD = tDD_Info;
-        } 
+        } // if nR_Mode_Info
         
         served_cell_information.nR_Mode_Info = nR_Mode_Info;
 
