@@ -518,10 +518,10 @@ int ldpc_encoder_optim_8seg(unsigned char **test_input,unsigned char **channel_i
   return 0;
 }
 
-int ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **channel_input,short block_length,int nom_rate,int denom_rate,int n_segments,unsigned int macro_num, time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput)
+int ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **channel_input,short block_length, short BG, int n_segments,unsigned int macro_num, time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput)
 {
 
-  short BG,Zc,Kb,nrows,ncols;
+  short Zc,Kb,nrows,ncols;
   int i,i1,j;
   int no_punctured_columns,removed_bit;
   //Table of possible lifting sizes
@@ -555,14 +555,14 @@ int ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **cha
   ///AssertFatal(n_segments>0&&n_segments<=8,"0 < n_segments %d <= 8\n",n_segments);
 
   //determine number of bits in codeword
-  if (block_length>3840)
+  if (BG==1)
     {
       BG=1;
       Kb = 22;
       nrows=46; //parity check bits
       ncols=22; //info bits
     }
-    else if (block_length<=3840)
+    else if (BG==2)
     {
       BG=2;
       nrows=42; //parity check bits

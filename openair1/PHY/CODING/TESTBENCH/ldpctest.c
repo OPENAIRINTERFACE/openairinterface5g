@@ -310,12 +310,18 @@ int test_ldpc(short No_iteration,
     }
     stop_meas(&time);
 
-    start_meas(time_optim);
+/*    start_meas(time_optim);
     ldpc_encoder_optim_8seg(test_input,channel_input_optim,block_length,BG,n_segments,&tinput,&tprep,&tparity,&toutput);
-    /*for(j=0;j<n_segments;j++) {
+    for(j=0;j<n_segments;j++) {
       ldpc_encoder_optim(test_input[j],channel_input_optim[j],block_length,BG,&tinput,&tprep,&tparity,&toutput);
-      }*/
-    stop_meas(time_optim);
+      }
+    stop_meas(time_optim);*/
+
+    for(j=0;j<(n_segments%8+1);j++) {
+    	start_meas(time_optim);
+    	ldpc_encoder_optim_8seg_multi(test_input,channel_input_optim,block_length, BG, n_segments,j,&tinput,&tprep,&tparity,&toutput);
+    	stop_meas(time_optim);
+    }
     
     if (ntrials==1)    
       for (j=0;j<n_segments;j++)
@@ -398,15 +404,18 @@ int test_ldpc(short No_iteration,
       decParams.outMode = nrLDPC_outMode_BIT;
       //decParams.outMode =nrLDPC_outMode_LLRINT8;
 
-      start_meas(time_decoder);
+
       for(j=0;j<n_segments;j++) {
+    	  start_meas(time_decoder);
       // decode the sequence
       // decoder supports BG2, Z=128 & 256
       //esimated_output=ldpc_decoder(channel_output_fixed, block_length, No_iteration, (double)((float)nom_rate/(float)denom_rate));
       ///nrLDPC_decoder(&decParams, channel_output_fixed, estimated_output, NULL);
 	n_iter = nrLDPC_decoder(&decParams, (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], p_decoder_profiler);
+      
+	stop_meas(time_decoder);
       }
-      stop_meas(time_decoder);
+
 
       //for (i=(Kb+nrows) * Zc-5;i<(Kb+nrows) * Zc;i++)
       //  printf("esimated_output[%d]=%d\n",i,esimated_output[i]);
@@ -527,8 +536,6 @@ int main(int argc, char *argv[])
 
   time_stats_t time_optim[10], time_decoder[10];
   n_iter_stats_t dec_iter[3];
-
-
 
   short BG,Zc,Kb;
 
