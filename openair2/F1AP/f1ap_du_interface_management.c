@@ -33,24 +33,31 @@
 #include "f1ap_common.h"
 #include "f1ap_encoder.h"
 #include "f1ap_decoder.h"
+#include "f1ap_itti_messaging.h"
 #include "f1ap_du_interface_management.h"
 
 extern f1ap_setup_req_t *f1ap_du_data;
 
 
-void DU_handle_RESET(instance_t instance, F1AP_Reset_t *Reset) {
+int DU_handle_RESET(instance_t instance,
+                                uint32_t assoc_id,
+                                uint32_t stream,
+                                F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void DU_send_RESET_ACKKNOWLEDGE(instance_t instance, F1AP_ResetAcknowledge_t *ResetAcknowledge) {
+int DU_send_RESET_ACKKNOWLEDGE(instance_t instance, F1AP_ResetAcknowledge_t *ResetAcknowledge) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void DU_send_RESET(instance_t instance, F1AP_Reset_t *Reset) {
+int DU_send_RESET(instance_t instance, F1AP_Reset_t *Reset) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void DU_handle_RESET_ACKNOWLEDGE(instance_t instance, F1AP_ResetAcknowledge_t *ResetAcknowledge) {
+int DU_handle_RESET_ACKNOWLEDGE(instance_t instance,
+                                uint32_t assoc_id,
+                                uint32_t stream,
+                                F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -59,11 +66,14 @@ void DU_handle_RESET_ACKNOWLEDGE(instance_t instance, F1AP_ResetAcknowledge_t *R
     Error Indication
 */
 
-void DU_send_ERROR_INDICATION(instance_t instance, F1AP_F1AP_PDU_t *pdu_p) {
+int DU_send_ERROR_INDICATION(instance_t instance, F1AP_F1AP_PDU_t *pdu_p) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void DU_handle_ERROR_INDICATION(instance_t instance, F1AP_ErrorIndication_t *ErrorIndication) {
+int DU_handle_ERROR_INDICATION(instance_t instance,
+                                uint32_t assoc_id,
+                                uint32_t stream,
+                                F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -73,7 +83,7 @@ void DU_handle_ERROR_INDICATION(instance_t instance, F1AP_ErrorIndication_t *Err
 */
 
 // SETUP REQUEST
-void DU_send_F1_SETUP_REQUEST(instance_t instance) {
+int DU_send_F1_SETUP_REQUEST(instance_t instance) {
   module_id_t enb_mod_idP;
   module_id_t du_mod_idP;
 
@@ -381,16 +391,18 @@ void DU_send_F1_SETUP_REQUEST(instance_t instance) {
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     printf("Failed to encode F1 setup request\n");
+    return -1;
   }
 
   du_f1ap_itti_send_sctp_data_req(instance, f1ap_du_data->assoc_id, buffer, len, 0);
+
+  return 0;
 }
 
 int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
                                 uint32_t assoc_id,
                                 uint32_t stream,
-                                F1AP_F1AP_PDU_t *pdu)
-{
+                                F1AP_F1AP_PDU_t *pdu) {
    printf("DU_handle_F1_SETUP_RESPONSE\n");
    return 0;
 }
@@ -399,8 +411,7 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
 int DU_handle_F1_SETUP_FAILURE(instance_t instance,
                                uint32_t assoc_id,
                                uint32_t stream,
-                               F1AP_F1AP_PDU_t *pdu) 
-{
+                               F1AP_F1AP_PDU_t *pdu) {
   LOG_E(DU_F1AP, "DU_handle_F1_SETUP_FAILURE\n");
   return 0;
 }
@@ -411,7 +422,7 @@ int DU_handle_F1_SETUP_FAILURE(instance_t instance,
 */
 
 //void DU_send_gNB_DU_CONFIGURATION_UPDATE(F1AP_GNBDUConfigurationUpdate_t *GNBDUConfigurationUpdate) {
-void DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
+int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
                                          instance_t du_mod_idP,
                                          f1ap_setup_req_t *f1ap_du_data) {
   F1AP_F1AP_PDU_t                     pdu;
@@ -840,6 +851,7 @@ void DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
 
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     printf("Failed to encode F1 setup request\n");
+    return -1;
   }
 
   printf("\n");
@@ -849,44 +861,55 @@ void DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
   /* decode */
   if (f1ap_decode_pdu(&pdu, buffer, len) > 0) {
     printf("Failed to decode F1 setup request\n");
+    return -1;
   }
+
+  return 0;
 }
 
 
 
-void DU_handle_gNB_DU_CONFIGURATION_FAILURE(instance_t instance,
-                    F1AP_GNBDUConfigurationUpdateFailure_t GNBDUConfigurationUpdateFailure) {
+int DU_handle_gNB_DU_CONFIGURATION_FAILURE(instance_t instance,
+                                uint32_t assoc_id,
+                                uint32_t stream,
+                                F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void DU_handle_gNB_DU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
-                    F1AP_GNBDUConfigurationUpdateAcknowledge_t GNBDUConfigurationUpdateAcknowledge) {
+int DU_handle_gNB_DU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
+                                uint32_t assoc_id,
+                                uint32_t stream,
+                                F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
 
-void DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
-                    F1AP_GNBCUConfigurationUpdate_t *GNBCUConfigurationUpdate) {
+int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
+                                uint32_t assoc_id,
+                                uint32_t stream,
+                                F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void DU_send_gNB_CU_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
+int DU_send_gNB_CU_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
                     F1AP_GNBCUConfigurationUpdateFailure_t *GNBCUConfigurationUpdateFailure) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
+int DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
                     F1AP_GNBCUConfigurationUpdateAcknowledge_t *GNBCUConfigurationUpdateAcknowledge) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
 
-void DU_send_gNB_DU_RESOURCE_COORDINATION_REQUEST(instance_t instance,
+int DU_send_gNB_DU_RESOURCE_COORDINATION_REQUEST(instance_t instance,
                     F1AP_GNBDUResourceCoordinationRequest_t *GNBDUResourceCoordinationRequest) {
   AssertFatal(0, "Not implemented yet\n");
 }
 
-void DU_handle_gNB_DU_RESOURCE_COORDINATION_RESPONSE(instance_t instance,
-                    F1AP_GNBDUResourceCoordinationResponse_t *GNBDUResourceCoordinationResponse) {
+int DU_handle_gNB_DU_RESOURCE_COORDINATION_RESPONSE(instance_t instance,
+                                uint32_t assoc_id,
+                                uint32_t stream,
+                                F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(0, "Not implemented yet\n");
 }

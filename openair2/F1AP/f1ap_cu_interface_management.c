@@ -33,23 +33,30 @@
 #include "f1ap_common.h"
 #include "f1ap_encoder.h"
 #include "f1ap_decoder.h"
-#include "f1ap_du_interface_management.h"
+#include "f1ap_itti_messaging.h"
+#include "f1ap_cu_interface_management.h"
 
 extern f1ap_setup_req_t *f1ap_du_data_from_du;
 
-void CU_send_RESET(instance_t instance, F1AP_Reset_t *Reset) {
+int CU_send_RESET(instance_t instance, F1AP_Reset_t *Reset) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void CU_handle_RESET_ACKKNOWLEDGE(instance_t instance, F1AP_ResetAcknowledge_t *ResetAcknowledge) {
+int CU_handle_RESET_ACKKNOWLEDGE(instance_t instance,
+                                  uint32_t assoc_id,
+                                  uint32_t stream,
+                                  F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void CU_handle_RESET(instance_t instance, F1AP_Reset_t *Reset) {
+int CU_handle_RESET(instance_t instance,
+                     uint32_t assoc_id,
+                     uint32_t stream,
+                     F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void CU_send_RESET_ACKNOWLEDGE(instance_t instance, F1AP_ResetAcknowledge_t *ResetAcknowledge) {
+int CU_send_RESET_ACKNOWLEDGE(instance_t instance, F1AP_ResetAcknowledge_t *ResetAcknowledge) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -57,11 +64,14 @@ void CU_send_RESET_ACKNOWLEDGE(instance_t instance, F1AP_ResetAcknowledge_t *Res
 /*
     Error Indication
 */
-void CU_handle_ERROR_INDICATION(instance_t instance, F1AP_ErrorIndication_t *ErrorIndication) {
+int CU_handle_ERROR_INDICATION(instance_t instance,
+                                uint32_t assoc_id,
+                                uint32_t stream,
+                                F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void CU_send_ERROR_INDICATION(instance_t instance, F1AP_ErrorIndication_t *ErrorIndication) {
+int CU_send_ERROR_INDICATION(instance_t instance, F1AP_ErrorIndication_t *ErrorIndication) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -69,7 +79,7 @@ void CU_send_ERROR_INDICATION(instance_t instance, F1AP_ErrorIndication_t *Error
 /*
     F1 Setup
 */
-void CU_handle_F1_SETUP_REQUEST(instance_t instance,
+int CU_handle_F1_SETUP_REQUEST(instance_t instance,
                                uint32_t assoc_id,
                                uint32_t stream,
                                F1AP_F1AP_PDU_t *pdu)
@@ -216,10 +226,12 @@ void CU_handle_F1_SETUP_REQUEST(instance_t instance,
     itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(instance), message_p);
   } else {
     CU_send_F1_SETUP_FAILURE(instance);
+    return -1;
   }
+  return 0;
 }
 
-void CU_send_F1_SETUP_RESPONSE(instance_t instance,
+int CU_send_F1_SETUP_RESPONSE(instance_t instance,
                                f1ap_setup_resp_t *f1ap_setup_resp) {
   
   module_id_t enb_mod_idP;
@@ -341,6 +353,7 @@ void CU_send_F1_SETUP_RESPONSE(instance_t instance,
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     printf("Failed to encode F1 setup request\n");
+    return -1;
   }
 
   // printf("\n");
@@ -352,9 +365,10 @@ void CU_send_F1_SETUP_RESPONSE(instance_t instance,
   //printf("F1 setup response present = %d\n", out->value.present);
   //f1ap_send_sctp_data_req(instance_p->instance, f1ap_mme_data_p->assoc_id, buffer, len, 0);
 
+  return 0;
 }
 
-void CU_send_F1_SETUP_FAILURE(instance_t instance) {
+int CU_send_F1_SETUP_FAILURE(instance_t instance) {
   printf("CU_send_F1_SETUP_FAILURE\n");
   
   module_id_t enb_mod_idP;
@@ -431,9 +445,12 @@ void CU_send_F1_SETUP_FAILURE(instance_t instance) {
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     printf("Failed to encode F1 setup request\n");
+    return -1;
   }
 
   cu_f1ap_itti_send_sctp_data_req(instance, f1ap_du_data_from_du->assoc_id, buffer, len, 0);
+
+  return 0;
 }
 
 
@@ -442,17 +459,19 @@ void CU_send_F1_SETUP_FAILURE(instance_t instance) {
     gNB-DU Configuration Update
 */
 
-void CU_handle_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
-                    F1AP_GNBDUConfigurationUpdate_t *GNBDUConfigurationUpdate) {
+int CU_handle_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
+                                           uint32_t assoc_id,
+                                           uint32_t stream,
+                                           F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void CU_send_gNB_DU_CONFIGURATION_FAILURE(instance_t instance,
+int CU_send_gNB_DU_CONFIGURATION_FAILURE(instance_t instance,
                     F1AP_GNBDUConfigurationUpdateFailure_t *GNBDUConfigurationUpdateFailure) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void CU_send_gNB_DU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
+int CU_send_gNB_DU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
                     F1AP_GNBDUConfigurationUpdateAcknowledge_t *GNBDUConfigurationUpdateAcknowledge) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
@@ -464,7 +483,7 @@ void CU_send_gNB_DU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
 */
 
 //void CU_send_gNB_CU_CONFIGURATION_UPDATE(F1AP_GNBCUConfigurationUpdate_t *GNBCUConfigurationUpdate) {
-void CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, module_id_t du_mod_idP) {
+int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, module_id_t du_mod_idP) {
   F1AP_F1AP_PDU_t                    pdu;
   F1AP_GNBCUConfigurationUpdate_t    *out;
   F1AP_GNBCUConfigurationUpdateIEs_t *ie;
@@ -830,28 +849,35 @@ void CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, module_id_t du_mod
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     printf("Failed to encode F1 setup request\n");
-    return;
+    return -1;
   }
 
   cu_f1ap_itti_send_sctp_data_req(instance, f1ap_du_data_from_du->assoc_id, buffer, len, 0);
+  return 0;
 }
 
-void CU_handle_gNB_CU_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
-                    F1AP_GNBCUConfigurationUpdateFailure_t *GNBCUConfigurationUpdateFailure) {
+int CU_handle_gNB_CU_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
+                                                   uint32_t assoc_id,
+                                                   uint32_t stream,
+                                                   F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void CU_handle_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
-                    F1AP_GNBCUConfigurationUpdateAcknowledge_t *GNBCUConfigurationUpdateAcknowledge) {
+int CU_handle_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
+                                                       uint32_t assoc_id,
+                                                       uint32_t stream,
+                                                       F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void CU_handle_gNB_DU_RESOURCE_COORDINATION_REQUEST(instance_t instance,
-                    F1AP_GNBDUResourceCoordinationRequest_t *GNBDUResourceCoordinationRequest) {
+int CU_handle_gNB_DU_RESOURCE_COORDINATION_REQUEST(instance_t instance,
+                                                    uint32_t assoc_id,
+                                                    uint32_t stream,
+                                                    F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(0, "Not implemented yet\n");
 }
 
-void CU_send_gNB_DU_RESOURCE_COORDINATION_RESPONSE(instance_t instance,
+int CU_send_gNB_DU_RESOURCE_COORDINATION_RESPONSE(instance_t instance,
                     F1AP_GNBDUResourceCoordinationResponse_t *GNBDUResourceCoordinationResponse) {
   AssertFatal(0, "Not implemented yet\n");
 }
