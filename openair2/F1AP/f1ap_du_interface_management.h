@@ -58,7 +58,10 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
                                 uint32_t stream,
                                 F1AP_F1AP_PDU_t *pdu);
 
-void DU_handle_F1_SETUP_FAILURE(instance_t instance, F1AP_F1AP_PDU_t *pdu_p);
+int DU_handle_F1_SETUP_FAILURE(instance_t instance,
+                                uint32_t assoc_id,
+                                uint32_t stream,
+                                F1AP_F1AP_PDU_t *pdu);
 
 /*
  * gNB-DU Configuration Update

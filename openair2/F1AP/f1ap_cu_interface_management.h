@@ -57,7 +57,7 @@ void CU_handle_F1_SETUP_REQUEST(instance_t instance,
 
 void CU_send_F1_SETUP_RESPONSE(instance_t instance, f1ap_setup_resp_t *f1ap_setup_resp);
 
-void CU_send_F1_SETUP_FAILURE(instance_t instance, F1AP_F1SetupFailure_t *F1SetupFailure);
+void CU_send_F1_SETUP_FAILURE(instance_t instance);
 
 /*
  * gNB-DU Configuration Update

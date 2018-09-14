@@ -43,19 +43,19 @@ f1ap_message_decoded_callback f1ap_messages_callback[][3] = {
   
 
   { 0, 0, 0 }, /* Reset */
-  { CU_handle_F1_SETUP_REQUEST, DU_handle_F1_SETUP_RESPONSE, 0 }, /* F1Setup */
+  { CU_handle_F1_SETUP_REQUEST, DU_handle_F1_SETUP_RESPONSE, DU_handle_F1_SETUP_FAILURE }, /* F1Setup */
   { 0, 0, 0 }, /* ErrorIndication */
-  { CU_handle_F1_SETUP_REQUEST, 0, 0 }, /* gNBDUConfigurationUpdate */
-  { CU_handle_F1_SETUP_REQUEST, 0, 0 }, /* gNBCUConfigurationUpdate */
-  { CU_handle_F1_SETUP_REQUEST, 0, 0 }, /* UEContextSetup */
+  { 0, 0, 0 }, /* gNBDUConfigurationUpdate */
+  { 0, 0, 0 }, /* gNBCUConfigurationUpdate */
+  { 0, 0, 0 }, /* UEContextSetup */
   { 0, 0, 0 }, /* UEContextRelease */
-  { CU_handle_F1_SETUP_REQUEST, 0, 0 }, /* UEContextModification */
+  { 0, 0, 0 }, /* UEContextModification */
   { 0, 0, 0 }, /* UEContextModificationRequired */
   { 0, 0, 0 }, /* UEMobilityCommand */
   { 0, 0, 0 }, /* UEContextReleaseRequest */
   { CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER, 0, 0 }, /* InitialULRRCMessageTransfer */
-  { CU_handle_F1_SETUP_REQUEST, 0, 0 }, /* DLRRCMessageTransfer */
-  { CU_handle_F1_SETUP_REQUEST, 0, 0 }, /* ULRRCMessageTransfer */
+  { 0, 0, 0 }, /* DLRRCMessageTransfer */
+  { 0, 0, 0 }, /* ULRRCMessageTransfer */
   { 0, 0, 0 }, /* privateMessage */
   { 0, 0, 0 }, /* UEInactivityNotification */
   { 0, 0, 0 }, /* GNBDUResourceCoordination */

@@ -312,8 +312,13 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
 }
 
 // SETUP FAILURE
-void DU_handle_F1_SETUP_FAILURE(instance_t instance, F1AP_F1AP_PDU_t *pdu_p) {
-  AssertFatal(1==0,"Not implemented yet\n");
+int DU_handle_F1_SETUP_FAILURE(instance_t instance,
+                               uint32_t assoc_id,
+                               uint32_t stream,
+                               F1AP_F1AP_PDU_t *pdu) 
+{
+  LOG_E(DU_F1AP, "DU_handle_F1_SETUP_FAILURE\n");
+  return 0;
 }
 
 
