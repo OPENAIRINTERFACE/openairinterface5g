@@ -4024,8 +4024,10 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
  * then we will do a right-shit of dci_length-13 positions -> (1 1010 1000 1001). And this is the content of the freq_dom_resource_assignment_DL field
  *
  *
- * At the moment we have implemented:
+ * At the moment we have implemented the following formats:
+ *
  * Format 0_0, that contains the following fields according to Specification 38.212 V15.1.1 Section 7.3.1
+ *  with CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI
  *    0  IDENTIFIER_DCI_FORMATS:
  *    10 FREQ_DOM_RESOURCE_ASSIGNMENT_UL: PUSCH hopping with resource allocation type 1 not considered
  *    12 TIME_DOM_RESOURCE_ASSIGNMENT: 0, 1, 2, 3, or 4 bits as defined in Subclause 6.1.2.1 of [6, TS 38.214]. The bitwidth for this field is determined as log2(I) bits,
@@ -4038,10 +4040,37 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
  *    49 PADDING_NR_DCI: (Note 2) If DCI format 0_0 is monitored in common search space
  *    50 SUL_IND_0_0:
  *
- * Format 1_0, that contains the following fields
+ * Format 0_1, that contains the following fields
+ *  with CRC scrambled by C-RNTI or CS-RNTI or SP-CSI-RNTI or new-RNTI
  *    0  IDENTIFIER_DCI_FORMATS:
- *    8  SHORT_MESSAGE_IND
- *    9  SHORT_MESSAGES
+ *    1  CARRIER_IND
+ *    2  SUL_IND_0_1
+ *    7  BANDWIDTH_PART_IND
+ *    10 FREQ_DOM_RESOURCE_ASSIGNMENT_UL: PUSCH hopping with resource allocation type 1 not considered
+ *    12 TIME_DOM_RESOURCE_ASSIGNMENT: 0, 1, 2, 3, or 4 bits as defined in Subclause 6.1.2.1 of [6, TS 38.214]. The bitwidth for this field is determined as log2(I) bits,
+ *    17 FREQ_HOPPING_FLAG: 0 bit if only resource allocation type 0
+ *    24 MCS:
+ *    25 NDI:
+ *    26 RV:
+ *    27 HARQ_PROCESS_NUMBER:
+ *    29 FIRST_DAI
+ *    30 SECOND_DAI
+ *    32 TPC_PUSCH:
+ *    36 SRS_RESOURCE_IND:
+ *    37 PRECOD_NBR_LAYERS:
+ *    38 ANTENNA_PORTS:
+ *    40 SRS_REQUEST:
+ *    42 CSI_REQUEST:
+ *    43 CBGTI
+ *    45 PTRS_DMRS
+ *    46 BETA_OFFSET_IND
+ *    47 DMRS_SEQ_INI
+ *    48 UL_SCH_IND
+ *    49 PADDING_NR_DCI: (Note 2) If DCI format 0_0 is monitored in common search space
+ *
+ * Format 1_0, that contains the following fields
+ *  with CRC scrambled by C-RNTI or CS-RNTI or new-RNTI
+ *    0  IDENTIFIER_DCI_FORMATS:
  *    11 FREQ_DOM_RESOURCE_ASSIGNMENT_DL:
  *    12 TIME_DOM_RESOURCE_ASSIGNMENT: 0, 1, 2, 3, or 4 bits as defined in Subclause 5.1.2.1 of [6, TS 38.214]. The bitwidth for this field is determined as log2(I) bits,
  *    13 VRB_TO_PRB_MAPPING: 0 bit if only resource allocation type 0
@@ -4050,18 +4079,102 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
  *    26 RV:
  *    27 HARQ_PROCESS_NUMBER:
  *    28 DAI_: For format1_1: 4 if more than one serving cell are configured in the DL and the higher layer parameter HARQ-ACK-codebook=dynamic, where the 2 MSB bits are the counter DAI and the 2 LSB bits are the total DAI
- *    31 TB_SCALING
  *    33 TPC_PUCCH:
  *    34 PUCCH_RESOURCE_IND:
  *    35 PDSCH_TO_HARQ_FEEDBACK_TIME_IND:
- *    51 RA_PREAMBLE_INDEX:
- *    52 SUL_IND_1_0:
- *    53 SS_PBCH_INDEX:
- *    54 PRACH_MASK_INDEX:
  *    55 RESERVED_NR_DCI
  *
+ *    If the CRC of the DCI format 1_0 is scrambled by C-RNTI and the "Frequency domain resource assignment" field are of all ones,
+ *    the DCI format 1_0 is for random access procedure initiated by a PDCCH order.
+ *    This is not implemented, but the fields are already included: FIXME!!!
+ *
+ *  with CRC scrambled by P-RNTI
+ *    8  SHORT_MESSAGE_IND
+ *    9  SHORT_MESSAGES
+ *    11 FREQ_DOM_RESOURCE_ASSIGNMENT_DL:
+ *    12 TIME_DOM_RESOURCE_ASSIGNMENT: 0, 1, 2, 3, or 4 bits as defined in Subclause 5.1.2.1 of [6, TS 38.214]. The bitwidth for this field is determined as log2(I) bits,
+ *    13 VRB_TO_PRB_MAPPING: 0 bit if only resource allocation type 0
+ *    24 MCS:
+ *    31 TB_SCALING
+ *    55 RESERVED_NR_DCI
+ *
+ *  with CRC scrambled by SI-RNTI
+ *    11 FREQ_DOM_RESOURCE_ASSIGNMENT_DL:
+ *    12 TIME_DOM_RESOURCE_ASSIGNMENT: 0, 1, 2, 3, or 4 bits as defined in Subclause 5.1.2.1 of [6, TS 38.214]. The bitwidth for this field is determined as log2(I) bits,
+ *    13 VRB_TO_PRB_MAPPING: 0 bit if only resource allocation type 0
+ *    24 MCS:
+ *    26 RV:
+ *    55 RESERVED_NR_DCI
+ *
+ *  with CRC scrambled by RA-RNTI
+ *    11 FREQ_DOM_RESOURCE_ASSIGNMENT_DL:
+ *    12 TIME_DOM_RESOURCE_ASSIGNMENT: 0, 1, 2, 3, or 4 bits as defined in Subclause 5.1.2.1 of [6, TS 38.214]. The bitwidth for this field is determined as log2(I) bits,
+ *    13 VRB_TO_PRB_MAPPING: 0 bit if only resource allocation type 0
+ *    24 MCS:
+ *    31 TB_SCALING
+ *    55 RESERVED_NR_DCI
+ *
+ *  with CRC scrambled by TC-RNTI
+ *    0  IDENTIFIER_DCI_FORMATS:
+ *    11 FREQ_DOM_RESOURCE_ASSIGNMENT_DL:
+ *    12 TIME_DOM_RESOURCE_ASSIGNMENT: 0, 1, 2, 3, or 4 bits as defined in Subclause 5.1.2.1 of [6, TS 38.214]. The bitwidth for this field is determined as log2(I) bits,
+ *    13 VRB_TO_PRB_MAPPING: 0 bit if only resource allocation type 0
+ *    24 MCS:
+ *    25 NDI:
+ *    26 RV:
+ *    27 HARQ_PROCESS_NUMBER:
+ *    28 DAI_: For format1_1: 4 if more than one serving cell are configured in the DL and the higher layer parameter HARQ-ACK-codebook=dynamic, where the 2 MSB bits are the counter DAI and the 2 LSB bits are the total DAI
+ *    33 TPC_PUCCH:
+ *
+ * Format 1_1, that contains the following fields
+ *  with CRC scrambled by C-RNTI or CS-RNTI or new-RNTI
+ *    0  IDENTIFIER_DCI_FORMATS:
+ *    1  CARRIER_IND:
+ *    7  BANDWIDTH_PART_IND:
+ *    11 FREQ_DOM_RESOURCE_ASSIGNMENT_DL:
+ *    12 TIME_DOM_RESOURCE_ASSIGNMENT: 0, 1, 2, 3, or 4 bits as defined in Subclause 5.1.2.1 of [6, TS 38.214]. The bitwidth for this field is determined as log2(I) bits,
+ *    13 VRB_TO_PRB_MAPPING: 0 bit if only resource allocation type 0
+ *    14 PRB_BUNDLING_SIZE_IND:
+ *    15 RATE_MATCHING_IND:
+ *    16 ZP_CSI_RS_TRIGGER:
+ *    18 TB1_MCS:
+ *    19 TB1_NDI:
+ *    20 TB1_RV:
+ *    21 TB2_MCS:
+ *    22 TB2_NDI:
+ *    23 TB2_RV:
+ *    27 HARQ_PROCESS_NUMBER:
+ *    28 DAI_: For format1_1: 4 if more than one serving cell are configured in the DL and the higher layer parameter HARQ-ACK-codebook=dynamic, where the 2 MSB bits are the counter DAI and the 2 LSB bits are the total DAI
+ *    33 TPC_PUCCH:
+ *    34 PUCCH_RESOURCE_IND:
+ *    35 PDSCH_TO_HARQ_FEEDBACK_TIME_IND:
+ *    38 ANTENNA_PORTS:
+ *    39 TCI:
+ *    40 SRS_REQUEST:
+ *    43 CBGTI:
+ *    44 CBGFI:
+ *    47 DMRS_SEQ_INI:
+ *
+ * We have not implemented the following formats:
+ *
+ * Format 2_0
+ * Used for notifying the slot format
+ *
+ * Format 2_1
+ * Used for notifying the PRB(s) and OFDM symbol(s) where UE may assume no transmission is intended for the UE
+ *
+ * Format 2_2
+ * This format supports power control commands for semi-persistent scheduling.
+ * As we can already support power control commands dynamically with formats 0_0/0_1 (TPC PUSCH) and 1_0/1_1 (TPC PUCCH)
+ * This format will be implemented in the future FIXME!!!
+ *
+ * Format 2_3
+ * This format is used for power control of uplink sounding reference signals for devices which have not coupled SRS power control to the PUSCH power control
+ * either because independent control is desirable or because the device is configured without PUCCH and PUSCH
+ * This format will be implemented in the future FIXME!!!
+ *
  */
-  uint8_t dci_fields_sizes_format[NBR_NR_DCI_FIELDS] ={0};
+  uint8_t dci_fields_sizes_format[NBR_NR_DCI_FIELDS] = {0};
   for (int m=0; m<NBR_NR_DCI_FIELDS; m++) dci_fields_sizes_format[m]=dci_fields_sizes[m][dci_format];
 
 
@@ -4081,7 +4194,7 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
   #endif
 
   uint8_t  prev_ndi = pdlsch0_harq->DCINdi;
-  uint16_t l_RB;
+  /*uint16_t l_RB;
   uint16_t start_RB;
   uint16_t tmp_RIV;
   uint16_t l_symbol;
@@ -4202,7 +4315,7 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
   {j,  8,4},  // row index 14
   {j+3,0,8},  // row index 15
   {j+3,0,10}  // row index 16
-  };
+  };*/
 
 
  /*
@@ -4292,20 +4405,20 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
         printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->pre_emption_ind=%x\n",nr_pdci_info_extracted->pre_emption_ind);
 #endif
         break;
-      case TPC_CMD_NUMBER: // 5  TPC_CMD_NUMBER: (field defined for -,-,-,-,-,-,format2_2,-)
-              // The parameter xxx provided by higher layers determines the index to the TPC command number for an UL of a cell. Each TPC command number is 2 bits
-        nr_pdci_info_extracted->tpc_cmd_number                   = (uint8_t)nr_dci_field(dci_pdu,dci_fields_sizes_format,dci_field);
-        //(((((*(uint128_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format]));
-#ifdef NR_PDCCH_DCI_TOOLS_DEBUG
-        printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->tpc_cmd_number=%x\n",nr_pdci_info_extracted->tpc_cmd_number);
-#endif
-        break;
-      case BLOCK_NUMBER: // 6  BLOCK_NUMBER: (field defined for -,-,-,-,-,-,-,format2_3)
+      case BLOCK_NUMBER: // 5  BLOCK_NUMBER: (field defined for -,-,-,-,-,-,-,format2_3)
               // starting position of a block is determined by the parameter startingBitOfFormat2_3
         nr_pdci_info_extracted->block_number                     = (uint8_t)nr_dci_field(dci_pdu,dci_fields_sizes_format,dci_field);
         //(((((*(uint128_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format]));
 #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
         printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->block_number=%x\n",nr_pdci_info_extracted->block_number);
+#endif
+        break;
+      case CLOSE_LOOP_IND: // 6  CLOSE_LOOP_IND: (field defined for -,-,-,-,-,-,format2_2,-)
+              // The parameter xxx provided by higher layers determines the index to the TPC command number for an UL of a cell. Each TPC command number is 2 bits
+        nr_pdci_info_extracted->close_loop_ind                   = (uint8_t)nr_dci_field(dci_pdu,dci_fields_sizes_format,dci_field);
+        //(((((*(uint128_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format]));
+#ifdef NR_PDCCH_DCI_TOOLS_DEBUG
+        printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->close_loop_ind=%x\n",nr_pdci_info_extracted->close_loop_ind);
 #endif
         break;
       case BANDWIDTH_PART_IND: // 7  BANDWIDTH_PART_IND: (field defined for -,format0_1,-,format1_1,-,-,-,-)
@@ -4338,7 +4451,7 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
               // The UE shall assume that when the scheduling PDCCH is received with DCI format 0_0, then uplink resource allocation type 1 is used.
         nr_pdci_info_extracted->freq_dom_resource_assignment_UL  = (uint16_t)nr_dci_field(dci_pdu,dci_fields_sizes_format,dci_field);
         //(((((*(uint128_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format]));
-        if (dci_format == format0_1){ // uplink resource allocation type 0 or 1 can be used
+        /*if (dci_format == format0_1){ // uplink resource allocation type 0 or 1 can be used
         }
         if (dci_format == format0_0){ // only uplink resource allocation type 1
               // At the moment we are supporting only format 1_0 (and not format 1_1), so we only support resource allocation type 1 (and not type 0).
@@ -4356,10 +4469,10 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
           }
           ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->first_rb = start_RB;
           ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->nb_rb    = l_RB;
-        }
+        }*/
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->freq_dom_resource_assignment_UL=%x\n",nr_pdci_info_extracted->freq_dom_resource_assignment_UL);
-          printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> l_RB=%d, start_RB=%d, n_RB_DLBWP=%d\n",l_RB,start_RB,n_RB_ULBWP);
+          //printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> l_RB=%d, start_RB=%d, n_RB_DLBWP=%d\n",l_RB,start_RB,n_RB_ULBWP);
         #endif
         break;
 
@@ -4368,7 +4481,7 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
               // The UE shall assume that when the scheduling grant is received with DCI format 1_0, then downlink resource allocation type 1 is used.
         nr_pdci_info_extracted->freq_dom_resource_assignment_DL  = (uint16_t)nr_dci_field(dci_pdu,dci_fields_sizes_format,dci_field);
         //(((((*(uint128_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format]));
-        if (dci_format == format1_1){ // uplink resource allocation type 0 or 1 can be used
+        /*if (dci_format == format1_1){ // uplink resource allocation type 0 or 1 can be used
         }
         if (dci_format == format1_0){ // only uplink resource allocation type 1
               // At the moment we are supporting only format 0_0 (and not format 0_1), so we only support resource allocation type 1 (and not type 0).
@@ -4388,10 +4501,10 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
           pdlsch0->current_harq_pid = nr_pdci_info_extracted->harq_process_number;
           pdlsch0->active           = 1;
           pdlsch0->rnti             = rnti;
-        }
+        }*/
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->freq_dom_resource_assignment_DL=%x, RIV = %d\n",nr_pdci_info_extracted->freq_dom_resource_assignment_DL,nr_pdci_info_extracted->freq_dom_resource_assignment_DL);
-          printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> l_RB=%d, start_RB=%d, n_RB_DLBWP=%d\n",l_RB,start_RB,n_RB_DLBWP);
+          //printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> l_RB=%d, start_RB=%d, n_RB_DLBWP=%d\n",l_RB,start_RB,n_RB_DLBWP);
          /*
           * According to TC 38.212 Subclause 7.3.1.2.1 (V15.2.0) (not implemented FIXME!!!)
           * If the CRC of the DCI format 1_0 is scrambled by C-RNTI
@@ -4443,7 +4556,7 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
                // where I the number of entries in the higher layer parameter pusch-AllocationList
         nr_pdci_info_extracted->time_dom_resource_assignment     = (uint8_t)nr_dci_field(dci_pdu,dci_fields_sizes_format,dci_field);
         //(((((*(uint128_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format]));
-        if (dci_format == format0_0 || dci_format == format0_1){ // Subclause 6.1.2.1 of [6, TS 38.214]
+        /*if (dci_format == format0_0 || dci_format == format0_1){ // Subclause 6.1.2.1 of [6, TS 38.214]
           k_offset = table_6_1_2_1_1_2_time_dom_res_alloc_A[nr_pdci_info_extracted->time_dom_resource_assignment][0];
           sliv_S   = table_6_1_2_1_1_2_time_dom_res_alloc_A[nr_pdci_info_extracted->time_dom_resource_assignment][1];
           sliv_L   = table_6_1_2_1_1_2_time_dom_res_alloc_A[nr_pdci_info_extracted->time_dom_resource_assignment][2];
@@ -4467,7 +4580,7 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
           // k_offset = table_5_1_2_1_1_5_time_dom_res_alloc_C[nr_pdci_info_extracted->time_dom_resource_assignment][0];
           // sliv_S   = table_5_1_2_1_1_5_time_dom_res_alloc_C[nr_pdci_info_extracted->time_dom_resource_assignment][1];
           // sliv_L   = table_5_1_2_1_1_5_time_dom_res_alloc_C[nr_pdci_info_extracted->time_dom_resource_assignment][2];
-        }
+        }*/
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->time_dom_resource_assignment=%x\n",nr_pdci_info_extracted->time_dom_resource_assignment);
         #endif
@@ -4788,11 +4901,11 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
         printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->srs_request=%x\n",nr_pdci_info_extracted->srs_request);
 #endif
         break;
-      case TPC_CMD_NUMBER_FORMAT2_3: // 41 TPC_CMD_NUMBER_FORMAT2_3: (field defined for -,-,-,-,-,-,-,format2_3)
-        nr_pdci_info_extracted->tpc_cmd_number_format2_3         = (uint8_t)nr_dci_field(dci_pdu,dci_fields_sizes_format,dci_field);
+      case TPC_CMD: // 41 TPC_CMD: (field defined for -,-,-,-,-,-,-,format2_3)
+        nr_pdci_info_extracted->tpc_cmd         = (uint8_t)nr_dci_field(dci_pdu,dci_fields_sizes_format,dci_field);
         //(((((*(uint128_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format]));
 #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
-        printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->tpc_cmd_number_format2_3=%x\n",nr_pdci_info_extracted->tpc_cmd_number_format2_3);
+        printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->tpc_cmd=%x\n",nr_pdci_info_extracted->tpc_cmd);
 #endif
         break;
       case CSI_REQUEST: // 42 CSI_REQUEST: (field defined for -,format0_1,-,-,-,-,-,-)

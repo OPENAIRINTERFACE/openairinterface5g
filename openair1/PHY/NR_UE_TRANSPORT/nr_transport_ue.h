@@ -145,6 +145,10 @@ typedef struct {
   //  int calibration_flag;
   /// Number of soft channel bits
   uint32_t G;
+  // number of symbols
+  uint8_t nb_symbols;
+  // first symbol in the slot
+  uint8_t start_symbol;
 
   // decode phich
   uint8_t decode_phich;

@@ -49,6 +49,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
     if(scheduled_response != NULL){
         NR_UE_PDCCH *pdcch_vars2 = PHY_vars_UE_g[module_id][cc_id]->pdcch_vars[0][0];
+        NR_UE_DLSCH_t *dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch[0][0];
+        NR_UE_ULSCH_t *ulsch0 = PHY_vars_UE_g[module_id][cc_id]->ulsch[0];
         
         if(scheduled_response->dl_config != NULL){
             fapi_nr_dl_config_request_t *dl_config = scheduled_response->dl_config;
@@ -86,16 +88,47 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
                     //pdcch_vars2->coreset[i].tciStatesPDCCH;
                     //pdcch_vars2->coreset[i].tciPresentInDCI;
                     pdcch_vars2->coreset[i].pdcchDMRSScramblingID = dci_config->coreset.pdcch_dmrs_scrambling_id;
+
                 }else{  //FAPI_NR_DL_CONFIG_TYPE_DLSCH
                     //  dlsch config pdu
-                }
+                    fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_list[i].dlsch_config_pdu.dlsch_config_rel15;
+                    uint8_t current_harq_pid = dlsch_config_pdu->harq_process_nbr;
+                    dlsch0->current_harq_pid = current_harq_pid;
+                    dlsch0->active = 1;
+                    dlsch0->harq_processes[current_harq_pid]->nb_rb = dlsch_config_pdu->number_rbs;
+                    dlsch0->harq_processes[current_harq_pid]->start_rb = dlsch_config_pdu->start_rb;
+                    dlsch0->harq_processes[current_harq_pid]->nb_symbols = dlsch_config_pdu->number_symbols;
+                    dlsch0->harq_processes[current_harq_pid]->start_symbol = dlsch_config_pdu->start_symbol;
+                    dlsch0->harq_processes[current_harq_pid]->mcs = dlsch_config_pdu->mcs;
+                    dlsch0->harq_processes[current_harq_pid]->DCINdi = dlsch_config_pdu->ndi;
+                    dlsch0->harq_processes[current_harq_pid]->rvidx = dlsch_config_pdu->rv;
+                    dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
+                    dlsch0->harq_processes[current_harq_pid]->harq_ack.pucch_resource_indicator = dlsch_config_pdu->pucch_resource_id;
+                    dlsch0->harq_processes[current_harq_pid]->harq_ack.slot_for_feedback_ack = dlsch_config_pdu->pdsch_to_harq_feedback_time_ind;
+                    //pdlsch0->rnti             = rnti;
+                 }
             }
         }else{
             pdcch_vars2->nb_search_space = 0;
         }
 
         if(scheduled_response->ul_config != NULL){
-
+            fapi_nr_ul_config_request_t *ul_config = scheduled_response->ul_config;
+            for(i=0; i<ul_config->number_pdus; ++i){
+                 if(ul_config->ul_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_PUSCH){
+                     // pusch config pdu
+                     fapi_nr_ul_config_pusch_pdu_rel15_t *pusch_config_pdu = &ul_config->ul_config_list[i].ulsch_config_pdu.ulsch_pdu_rel15;
+                     uint8_t current_harq_pid = pusch_config_pdu->harq_process_nbr;
+                     ulsch0->harq_processes[current_harq_pid]->nb_rb = pusch_config_pdu->number_rbs;
+                     ulsch0->harq_processes[current_harq_pid]->first_rb = pusch_config_pdu->start_rb;
+                     ulsch0->harq_processes[current_harq_pid]->nb_symbols = pusch_config_pdu->number_symbols;
+                     ulsch0->harq_processes[current_harq_pid]->start_symbol = pusch_config_pdu->start_symbol;
+                     ulsch0->harq_processes[current_harq_pid]->mcs = pusch_config_pdu->mcs;
+                     ulsch0->harq_processes[current_harq_pid]->DCINdi = pusch_config_pdu->ndi;
+                     ulsch0->harq_processes[current_harq_pid]->rvidx = pusch_config_pdu->rv;
+                     ulsch0->f_pusch = pusch_config_pdu->absolute_delta_PUSCH;
+                 }
+             }
         }else{
             
         }
