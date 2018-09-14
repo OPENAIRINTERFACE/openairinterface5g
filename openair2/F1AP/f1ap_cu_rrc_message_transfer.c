@@ -31,6 +31,9 @@
  */
 
 #include "f1ap_common.h"
+#include "f1ap_encoder.h"
+#include "f1ap_decoder.h"
+#include "f1ap_itti_messaging.h"
 #include "f1ap_cu_rrc_message_transfer.h"
 // undefine C_RNTI from
 // openair1/PHY/LTE_TRANSPORT/transport_common.h which
@@ -42,7 +45,8 @@
     Initial UL RRC Message Transfer
 */
 
-int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(int32_t               assoc_id,
+int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
+                                              uint32_t               assoc_id,
                                               uint32_t               stream,
                                               F1AP_F1AP_PDU_t       *pdu) {
 
@@ -54,13 +58,10 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(int32_t               assoc_id,
   F1AP_InitialULRRCMessageTransfer_t    *container;
   F1AP_InitialULRRCMessageTransferIEs_t *ie;
   
-  SRB_INFO*        Srb_info;
-  protocol_ctxt_t ctxt;
   rnti_t          rnti;
   uint8_t        *ccch_sdu;
   sdu_size_t      ccch_sdu_len;
   int             CC_id =0;
-  int             instance=0;
   uint64_t        du_ue_f1ap_id;
 
   DevAssert(pdu != NULL);
@@ -82,7 +83,6 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(int32_t               assoc_id,
   /* NRCGI */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_NRCGI, true);
-  instance = 0; ///ie->value.choice. ?? //@Todo
 
   /* RNTI */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
@@ -140,6 +140,8 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(int32_t               assoc_id,
   */ 
   // if size > 0 
   // CU_send_DL_RRC_MESSAGE_TRANSFER(C.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload, RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size)
+
+  return 0;
 }
 
 
@@ -148,7 +150,7 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(int32_t               assoc_id,
 */
 
 //void CU_send_DL_RRC_MESSAGE_TRANSFER(F1AP_DLRRCMessageTransfer_t *DLRRCMessageTransfer) {
-void CU_send_DL_RRC_MESSAGE_TRANSFER(void) {
+int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t instance) {
   F1AP_F1AP_PDU_t                pdu;
   F1AP_DLRRCMessageTransfer_t    *out;
   F1AP_DLRRCMessageTransferIEs_t *ie;
@@ -244,6 +246,7 @@ void CU_send_DL_RRC_MESSAGE_TRANSFER(void) {
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     printf("Failed to encode F1 setup request\n");
+    return -1;
   }
 
   printf("\n");
@@ -251,14 +254,19 @@ void CU_send_DL_RRC_MESSAGE_TRANSFER(void) {
   /* decode */
   if (f1ap_decode_pdu(&pdu, buffer, len) > 0) {
     printf("Failed to decode F1 setup request\n");
+    return -1;
   }
-  //AssertFatal(1==0,"Not implemented yet\n");
+
+  return 0;
 }
 
 /*
     UL RRC Message Transfer
 */
 
-void CU_handle_UL_RRC_MESSAGE_TRANSFER(F1AP_ULRRCMessageTransfer_t *ULRRCMessageTransfer) {
+int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
+                                      uint32_t         assoc_id,
+                                      uint32_t         stream,
+                                      F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }

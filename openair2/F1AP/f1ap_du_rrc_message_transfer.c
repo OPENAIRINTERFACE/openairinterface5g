@@ -33,6 +33,7 @@
 #include "f1ap_common.h"
 #include "f1ap_encoder.h"
 #include "f1ap_decoder.h"
+#include "f1ap_itti_messaging.h"
 #include "f1ap_du_rrc_message_transfer.h"
 // undefine C_RNTI from
 // openair1/PHY/LTE_TRANSPORT/transport_common.h which
@@ -43,12 +44,15 @@
 extern f1ap_setup_req_t *f1ap_du_data;
 
 /*  DL RRC Message Transfer */
-void DU_handle_DL_RRC_MESSAGE_TRANSFER(F1AP_DLRRCMessageTransfer_t *DLRRCMessageTransfer) {
+int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
+                                      uint32_t         assoc_id,
+                                      uint32_t         stream,
+                                      F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
 //void DU_send_UL_RRC_MESSAGE_TRANSFER(F1AP_ULRRCMessageTransfer_t *ULRRCMessageTransfer) {
-void DU_send_UL_RRC_MESSAGE_TRANSFER(void) {
+int DU_send_UL_RRC_MESSAGE_TRANSFER(void) {
   F1AP_F1AP_PDU_t                pdu;
   F1AP_ULRRCMessageTransfer_t    *out;
   F1AP_ULRRCMessageTransferIEs_t *ie;
@@ -107,6 +111,7 @@ void DU_send_UL_RRC_MESSAGE_TRANSFER(void) {
     /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     printf("Failed to encode F1 setup request\n");
+    return -1;
   }
 
   printf("\n");
@@ -117,10 +122,12 @@ void DU_send_UL_RRC_MESSAGE_TRANSFER(void) {
   //   printf("Failed to decode F1 setup request\n");
   // }
   //AssertFatal(1==0,"Not implemented yet\n");
+
+  return 0;
 }
 
 /*  UL RRC Message Transfer */
-void DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(
+int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(
   module_id_t     module_idP,
   int             CC_idP,
   int             UE_id,
@@ -204,11 +211,13 @@ void DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(
     /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     printf("Failed to encode F1 setup request\n");
+    return -1;
   }
 
   printf("\n");
 
   du_f1ap_itti_send_sctp_data_req(0, f1ap_du_data->assoc_id, buffer, len, 0);
+  return 0;
   /* decode */
   // if (f1ap_decode_pdu(&pdu, buffer, len) > 0) {
   //   printf("Failed to decode F1 setup request\n");
