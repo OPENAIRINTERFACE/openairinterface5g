@@ -1456,6 +1456,12 @@ int setup_RU_buffers(RU_t *ru) {
     if      (frame_parms->N_RB_DL == 100) ru->N_TA_offset = 624;
     else if (frame_parms->N_RB_DL == 50)  ru->N_TA_offset = 624/2;
     else if (frame_parms->N_RB_DL == 25)  ru->N_TA_offset = 624/4;
+#if BASIC_SIMULATOR
+    /* this is required for the basic simulator in TDD mode
+     * TODO: find a proper cleaner solution
+     */
+    ru->N_TA_offset = 0;
+#endif
   } 
   if (ru->openair0_cfg.mmapped_dma == 1) {
     // replace RX signal buffers with mmaped HW versions
