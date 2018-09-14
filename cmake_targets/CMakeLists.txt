@@ -1453,6 +1453,9 @@ set(L2_SRC
   ${RRC_DIR}/L2_interface.c
   ${RRC_DIR}/L2_interface_common.c
   ${RRC_DIR}/L2_interface_ue.c
+  )
+
+set(NR_L2_SRC
   ${NR_RRC_DIR}/rrc_gNB.c
   ${NR_RRC_DIR}/nr_rrc_common.c
   ${NR_RRC_DIR}/L2_nr_interface.c
@@ -1529,7 +1532,10 @@ set (MAC_SRC
   ${MAC_DIR}/eNB_scheduler_phytest.c
   ${MAC_DIR}/pre_processor.c
   ${MAC_DIR}/config.c
-  #${MAC_DIR}/config_ue.c
+  ${MAC_DIR}/config_ue.c
+  )
+
+set (NR_MAC_SRC
   ${NR_PHY_INTERFACE_DIR}/NR_IF_Module.c
   ${NR_MAC_DIR}/main.c
   ${NR_MAC_DIR}/config.c
@@ -1573,8 +1579,13 @@ add_library(L2
   ${L2_SRC}
   ${MAC_SRC}
   ${ENB_APP_SRC}
-  ${GNB_APP_SRC})
-#  ${OPENAIR2_DIR}/RRC/L2_INTERFACE/openair_rrc_L2_interface.c)
+)
+
+add_library(NR_L2
+  ${NR_L2_SRC}
+  ${NR_MAC_SRC}
+  ${GNB_APP_SRC}
+  )
 
 add_library(L2_UE
   ${L2_SRC_UE}
@@ -1590,7 +1601,7 @@ add_library( NR_L2_UE
 )
 
 set ( NR_LTE_UE_REUSE_SRC
-    ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_sync_timefreq.c
+  ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_sync_timefreq.c
   ${OPENAIR1_DIR}/SCHED/phy_procedures_lte_common.c
   #${OPENAIR1_DIR}/SCHED_UE/phy_procedures_lte_ue.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/lte_mcs.c
@@ -2345,7 +2356,7 @@ target_link_libraries (nr-softmodem
   -Wl,--start-group
   UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_RU LFDS GTPV1U SECU_CN SECU_OSA
   ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ATLAS_LIBRARIES}
-  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB L2
+  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB L2 NR_L2
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
 
@@ -2385,7 +2396,7 @@ target_link_libraries (nr-softmodem-nos1
   -Wl,--start-group
   UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_RU LFDS GTPV1U SECU_CN SECU_OSA
   ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${MIH_LIB}
-  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB L2
+  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB L2 NR_L2
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
 

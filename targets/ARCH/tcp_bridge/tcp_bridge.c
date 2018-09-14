@@ -250,10 +250,11 @@ int device_init(openair0_device* device, openair0_config_t *openair0_cfg)
   memset(tcp_bridge, 0, sizeof(tcp_bridge_state_t));
 
   /* only 25 or 50 PRBs handled for the moment */
-  if (openair0_cfg[0].sample_rate != 30720000 &&
+  if (openair0_cfg[0].sample_rate != 61440000 &&
+      openair0_cfg[0].sample_rate != 30720000 &&
       openair0_cfg[0].sample_rate != 15360000 &&
       openair0_cfg[0].sample_rate !=  7680000) {
-    printf("tcp_bridge: ERROR: only 25, 50 or 100 PRBs supported\n");
+    printf("tcp_bridge: ERROR: only sample rate 61.44, 30.72, 15.36, and 7.68 Msps supported\n");
     exit(1);
   }
 
@@ -270,6 +271,7 @@ int device_init(openair0_device* device, openair0_config_t *openair0_cfg)
   device->priv = tcp_bridge;
 
   switch ((int)openair0_cfg[0].sample_rate) {
+  case 61440000: tcp_bridge->samples_per_subframe = 61440; break;
   case 30720000: tcp_bridge->samples_per_subframe = 30720; break;
   case 15360000: tcp_bridge->samples_per_subframe = 15360; break;
   case 7680000:  tcp_bridge->samples_per_subframe = 7680; break;
