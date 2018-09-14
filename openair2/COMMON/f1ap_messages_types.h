@@ -127,10 +127,15 @@ typedef struct f1ap_setup_req_s {
       uint8_t sul_scs;
       uint8_t sul_nrb;
 
-      uint8_t num_frequency_bands;
-      uint16_t nr_band[32];
-      uint8_t num_sul_frequency_bands;
-      uint16_t nr_sul_band[32];
+      uint8_t ul_num_frequency_bands;
+      uint16_t ul_nr_band[32];
+      uint8_t ul_num_sul_frequency_bands;
+      uint16_t ul_nr_sul_band[32];
+
+      uint8_t dl_num_frequency_bands;
+      uint16_t dl_nr_band[32];
+      uint8_t dl_num_sul_frequency_bands;
+      uint16_t dl_nr_sul_band[32];
     } fdd;
     struct {
 

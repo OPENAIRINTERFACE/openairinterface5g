@@ -2473,11 +2473,21 @@ int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
           // use nrb field to hold LTE N_RB_DL (0...5)
           F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_nrb                  = rrc->carrier[0].mib.message.dl_Bandwidth;
           F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_nrb                  = rrc->carrier[0].mib.message.dl_Bandwidth;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.num_frequency_bands     = 1;
-          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.nr_band[0]              = rrc->carrier[0].sib1->freqBandIndicator;
+
+          // RK: we need to check there value for FDD's frequency_bands DL/UL
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_num_frequency_bands  = 1;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_nr_band[0]           = rrc->carrier[0].sib1->freqBandIndicator;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_num_frequency_bands  = 1;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_nr_band[0]           = rrc->carrier[0].sib1->freqBandIndicator;
+
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_num_sul_frequency_bands  = 0;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.ul_nr_sul_band[0]           = rrc->carrier[0].sib1->freqBandIndicator;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_num_sul_frequency_bands  = 0;
+          F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.dl_nr_sul_band[0]           = rrc->carrier[0].sib1->freqBandIndicator;
+
           F1AP_SETUP_REQ (msg_p).nr_mode_info[k].fdd.sul_active              = 0;
         }
-        F1AP_SETUP_REQ (msg_p).measurement_timing_information[k]             = NULL;
+        F1AP_SETUP_REQ (msg_p).measurement_timing_information[k]             = "0";
         F1AP_SETUP_REQ (msg_p).ranac[k]                                      = 0;
         F1AP_SETUP_REQ (msg_p).mib[k]                                        = rrc->carrier[0].MIB;
         F1AP_SETUP_REQ (msg_p).sib1[k]                                       = rrc->carrier[0].SIB1;

@@ -31,30 +31,34 @@
  */
 
 #include "f1ap_common.h"
+#include "f1ap_encoder.h"
+#include "f1ap_decoder.h"
+#include "f1ap_itti_messaging.h"
 #include "f1ap_du_interface_management.h"
 #include "assertions.h"
 
 extern f1ap_setup_req_t *f1ap_du_data;
 
 
-/*
-    Reset
-*/
-
-
-void DU_handle_RESET(F1AP_Reset_t *Reset) {
+int DU_handle_RESET(instance_t instance,
+                                uint32_t assoc_id,
+                                uint32_t stream,
+                                F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void DU_send_RESET_ACKKNOWLEDGE(F1AP_ResetAcknowledge_t *ResetAcknowledge) {
+int DU_send_RESET_ACKKNOWLEDGE(instance_t instance, F1AP_ResetAcknowledge_t *ResetAcknowledge) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void DU_send_RESET(F1AP_Reset_t *Reset) {
+int DU_send_RESET(instance_t instance, F1AP_Reset_t *Reset) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void DU_handle_RESET_ACKKNOWLEDGE(F1AP_ResetAcknowledge_t *ResetAcknowledge) {
+int DU_handle_RESET_ACKNOWLEDGE(instance_t instance,
+                                uint32_t assoc_id,
+                                uint32_t stream,
+                                F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -63,11 +67,14 @@ void DU_handle_RESET_ACKKNOWLEDGE(F1AP_ResetAcknowledge_t *ResetAcknowledge) {
     Error Indication
 */
 
-void DU_send_ERROR_INDICATION(struct F1AP_F1AP_PDU_t *pdu_p) {
+int DU_send_ERROR_INDICATION(instance_t instance, F1AP_F1AP_PDU_t *pdu_p) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void DU_handle_ERROR_INDICATION(F1AP_ErrorIndication_t *ErrorIndication) {
+int DU_handle_ERROR_INDICATION(instance_t instance,
+                                uint32_t assoc_id,
+                                uint32_t stream,
+                                F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -77,7 +84,7 @@ void DU_handle_ERROR_INDICATION(F1AP_ErrorIndication_t *ErrorIndication) {
 */
 
 // SETUP REQUEST
-void DU_send_F1_SETUP_REQUEST(instance_t instance) {
+int DU_send_F1_SETUP_REQUEST(instance_t instance) {
   module_id_t enb_mod_idP;
   module_id_t du_mod_idP;
 
@@ -203,73 +210,157 @@ void DU_send_F1_SETUP_REQUEST(instance_t instance) {
         //f1ap_du_data->fdd_flag = 1;
         if (f1ap_du_data->fdd_flag) { // FDD
           nR_Mode_Info.present = F1AP_NR_Mode_Info_PR_fDD;
-          /* > FDD >> FDD Info */
           F1AP_FDD_Info_t *fDD_Info = (F1AP_FDD_Info_t *)calloc(1, sizeof(F1AP_FDD_Info_t));
-          /* >>> UL NRFreqInfo */
-          fDD_Info->uL_NRFreqInfo.nRARFCN = f1ap_du_data->nr_mode_info[i].fdd.ul_nr_arfcn;
 
-          F1AP_FreqBandNrItem_t ul_freqBandNrItem;
-          memset((void *)&ul_freqBandNrItem, 0, sizeof(F1AP_FreqBandNrItem_t));
-          ul_freqBandNrItem.freqBandIndicatorNr = 777L;
+          /* FDD.1 UL NRFreqInfo */
+            /* FDD.1.1 UL NRFreqInfo ARFCN */
+            fDD_Info->uL_NRFreqInfo.nRARFCN = f1ap_du_data->nr_mode_info[i].fdd.ul_nr_arfcn; // Integer
 
-            F1AP_SupportedSULFreqBandItem_t ul_supportedSULFreqBandItem;
-            memset((void *)&ul_supportedSULFreqBandItem, 0, sizeof(F1AP_SupportedSULFreqBandItem_t));
-            ul_supportedSULFreqBandItem.freqBandIndicatorNr = 777L;
-            ASN_SEQUENCE_ADD(&ul_freqBandNrItem.supportedSULBandList.list, &ul_supportedSULFreqBandItem);
+            /* FDD.1.2 F1AP_SUL_Information */
+            if(0) { // Optional
+              F1AP_SUL_Information_t *fdd_sul_info = (F1AP_SUL_Information_t *)calloc(1, sizeof(F1AP_SUL_Information_t));
+              fdd_sul_info->sUL_NRARFCN = 0;
+              fdd_sul_info->sUL_transmission_Bandwidth.nRSCS = 0;
+              fdd_sul_info->sUL_transmission_Bandwidth.nRNRB = 0;
+              fDD_Info->uL_NRFreqInfo.sul_Information = fdd_sul_info;
+            }
 
-          ASN_SEQUENCE_ADD(&fDD_Info->uL_NRFreqInfo.freqBandListNr.list, &ul_freqBandNrItem);
+            /* FDD.1.3 freqBandListNr */
+            int fdd_ul_num_available_freq_Bands = f1ap_du_data->nr_mode_info[i].fdd.ul_num_frequency_bands;
+            printf("fdd_ul_num_available_freq_Bands = %d \n", fdd_ul_num_available_freq_Bands);
+            int fdd_ul_j;
+            for (fdd_ul_j=0;
+                 fdd_ul_j<fdd_ul_num_available_freq_Bands;
+                 fdd_ul_j++) {
 
-          /* >>> DL NRFreqInfo */
-          fDD_Info->dL_NRFreqInfo.nRARFCN = f1ap_du_data->nr_mode_info[i].fdd.dl_nr_arfcn;
+                  F1AP_FreqBandNrItem_t nr_freqBandNrItem;
+                  memset((void *)&nr_freqBandNrItem, 0, sizeof(F1AP_FreqBandNrItem_t));
+                  /* FDD.1.3.1 freqBandIndicatorNr*/
+                  nr_freqBandNrItem.freqBandIndicatorNr = f1ap_du_data->nr_mode_info[i].fdd.ul_nr_band[fdd_ul_j]; //
 
-          F1AP_FreqBandNrItem_t dl_freqBandNrItem;
-          memset((void *)&dl_freqBandNrItem, 0, sizeof(F1AP_FreqBandNrItem_t));
-          dl_freqBandNrItem.freqBandIndicatorNr = 777L;
+                  /* FDD.1.3.2 supportedSULBandList*/
+                  int num_available_supported_SULBands = f1ap_du_data->nr_mode_info[i].fdd.ul_num_sul_frequency_bands;
+                  printf("num_available_supported_SULBands = %d \n", num_available_supported_SULBands);
+                  int fdd_ul_k;
+                  for (fdd_ul_k=0;
+                       fdd_ul_k<num_available_supported_SULBands;
+                       fdd_ul_k++) {
+                        F1AP_SupportedSULFreqBandItem_t nr_supportedSULFreqBandItem;
+                        memset((void *)&nr_supportedSULFreqBandItem, 0, sizeof(F1AP_SupportedSULFreqBandItem_t));
+                          /* FDD.1.3.2.1 freqBandIndicatorNr */
+                          nr_supportedSULFreqBandItem.freqBandIndicatorNr = f1ap_du_data->nr_mode_info[i].fdd.ul_nr_sul_band[fdd_ul_k]; //
+                        ASN_SEQUENCE_ADD(&nr_freqBandNrItem.supportedSULBandList.list, &nr_supportedSULFreqBandItem);
+                  } // for FDD : UL supported_SULBands
+                  ASN_SEQUENCE_ADD(&fDD_Info->uL_NRFreqInfo.freqBandListNr.list, &nr_freqBandNrItem);
+            } // for FDD : UL freq_Bands
+           
+          /* FDD.2 DL NRFreqInfo */
+            /* FDD.2.1 DL NRFreqInfo ARFCN */
+            fDD_Info->dL_NRFreqInfo.nRARFCN = f1ap_du_data->nr_mode_info[i].fdd.dl_nr_arfcn; // Integer
 
-            F1AP_SupportedSULFreqBandItem_t dl_supportedSULFreqBandItem;
-            memset((void *)&dl_supportedSULFreqBandItem, 0, sizeof(F1AP_SupportedSULFreqBandItem_t));
-            dl_supportedSULFreqBandItem.freqBandIndicatorNr = 777L;
-            ASN_SEQUENCE_ADD(&dl_freqBandNrItem.supportedSULBandList.list, &dl_supportedSULFreqBandItem);
+            /* FDD.2.2 F1AP_SUL_Information */
+            if(0) { // Optional
+              F1AP_SUL_Information_t *fdd_sul_info = (F1AP_SUL_Information_t *)calloc(1, sizeof(F1AP_SUL_Information_t));
+              fdd_sul_info->sUL_NRARFCN = 0;
+              fdd_sul_info->sUL_transmission_Bandwidth.nRSCS = 0;
+              fdd_sul_info->sUL_transmission_Bandwidth.nRNRB = 0;
+              fDD_Info->dL_NRFreqInfo.sul_Information = fdd_sul_info;
+            }
 
-          ASN_SEQUENCE_ADD(&fDD_Info->dL_NRFreqInfo.freqBandListNr.list, &dl_freqBandNrItem);
+            /* FDD.2.3 freqBandListNr */
+            int fdd_dl_num_available_freq_Bands = f1ap_du_data->nr_mode_info[i].fdd.dl_num_frequency_bands;
+            printf("fdd_dl_num_available_freq_Bands = %d \n", fdd_dl_num_available_freq_Bands);
+            int fdd_dl_j;
+            for (fdd_dl_j=0;
+                 fdd_dl_j<fdd_dl_num_available_freq_Bands;
+                 fdd_dl_j++) {
 
-          /* >>> UL Transmission Bandwidth */
+                  F1AP_FreqBandNrItem_t nr_freqBandNrItem;
+                  memset((void *)&nr_freqBandNrItem, 0, sizeof(F1AP_FreqBandNrItem_t));
+                  /* FDD.2.3.1 freqBandIndicatorNr*/
+                  nr_freqBandNrItem.freqBandIndicatorNr = f1ap_du_data->nr_mode_info[i].fdd.dl_nr_band[fdd_dl_j]; //
+
+                  /* FDD.2.3.2 supportedSULBandList*/
+                  int num_available_supported_SULBands = f1ap_du_data->nr_mode_info[i].fdd.dl_num_sul_frequency_bands;
+                  printf("num_available_supported_SULBands = %d \n", num_available_supported_SULBands);
+                  int fdd_dl_k;
+                  for (fdd_dl_k=0;
+                       fdd_dl_k<num_available_supported_SULBands;
+                       fdd_dl_k++) {
+                        F1AP_SupportedSULFreqBandItem_t nr_supportedSULFreqBandItem;
+                        memset((void *)&nr_supportedSULFreqBandItem, 0, sizeof(F1AP_SupportedSULFreqBandItem_t));
+                          /* FDD.2.3.2.1 freqBandIndicatorNr */
+                          nr_supportedSULFreqBandItem.freqBandIndicatorNr = f1ap_du_data->nr_mode_info[i].fdd.dl_nr_sul_band[fdd_dl_k]; //
+                        ASN_SEQUENCE_ADD(&nr_freqBandNrItem.supportedSULBandList.list, &nr_supportedSULFreqBandItem);
+                  } // for FDD : DL supported_SULBands
+                  ASN_SEQUENCE_ADD(&fDD_Info->dL_NRFreqInfo.freqBandListNr.list, &nr_freqBandNrItem);
+            } // for FDD : DL freq_Bands
+
+          /* FDD.3 UL Transmission Bandwidth */
           fDD_Info->uL_Transmission_Bandwidth.nRSCS = f1ap_du_data->nr_mode_info[i].fdd.ul_scs;
           fDD_Info->uL_Transmission_Bandwidth.nRNRB = f1ap_du_data->nr_mode_info[i].fdd.ul_nrb;
-          /* >>> DL Transmission Bandwidth */
+          /* FDD.4 DL Transmission Bandwidth */
           fDD_Info->dL_Transmission_Bandwidth.nRSCS = f1ap_du_data->nr_mode_info[i].fdd.dl_scs;
           fDD_Info->dL_Transmission_Bandwidth.nRNRB = f1ap_du_data->nr_mode_info[i].fdd.dl_nrb;
           
           nR_Mode_Info.choice.fDD = fDD_Info;
         } else { // TDD
           nR_Mode_Info.present = F1AP_NR_Mode_Info_PR_tDD;
-
-          /* > TDD >> TDD Info */
           F1AP_TDD_Info_t *tDD_Info = (F1AP_TDD_Info_t *)calloc(1, sizeof(F1AP_TDD_Info_t));
-          /* >>> ARFCN */
-          tDD_Info->nRFreqInfo.nRARFCN = f1ap_du_data->nr_mode_info[i].tdd.nr_arfcn; // Integer
-          F1AP_FreqBandNrItem_t nr_freqBandNrItem;
-          memset((void *)&nr_freqBandNrItem, 0, sizeof(F1AP_FreqBandNrItem_t));
-          // RK: missing params
-          nr_freqBandNrItem.freqBandIndicatorNr = 555L;
 
-            F1AP_SupportedSULFreqBandItem_t nr_supportedSULFreqBandItem;
-            memset((void *)&nr_supportedSULFreqBandItem, 0, sizeof(F1AP_SupportedSULFreqBandItem_t));
-            nr_supportedSULFreqBandItem.freqBandIndicatorNr = 444L;
-            ASN_SEQUENCE_ADD(&nr_freqBandNrItem.supportedSULBandList.list, &nr_supportedSULFreqBandItem);
+          /* TDD.1 nRFreqInfo */
+            /* TDD.1.1 nRFreqInfo ARFCN */
+            tDD_Info->nRFreqInfo.nRARFCN = f1ap_du_data->nr_mode_info[i].tdd.nr_arfcn; // Integer
 
-          ASN_SEQUENCE_ADD(&tDD_Info->nRFreqInfo.freqBandListNr.list, &nr_freqBandNrItem);
+            /* TDD.1.2 F1AP_SUL_Information */
+            if(0) { // Optional
+              F1AP_SUL_Information_t *tdd_sul_info = (F1AP_SUL_Information_t *)calloc(1, sizeof(F1AP_SUL_Information_t));
+              tdd_sul_info->sUL_NRARFCN = 0;
+              tdd_sul_info->sUL_transmission_Bandwidth.nRSCS = 0;
+              tdd_sul_info->sUL_transmission_Bandwidth.nRNRB = 0;
+              tDD_Info->nRFreqInfo.sul_Information = tdd_sul_info;
+            }
 
-          tDD_Info->transmission_Bandwidth.nRSCS= f1ap_du_data->nr_mode_info[i].tdd.scs;
-          tDD_Info->transmission_Bandwidth.nRNRB= f1ap_du_data->nr_mode_info[i].tdd.nrb;
+            /* TDD.1.3 freqBandListNr */
+            int tdd_num_available_freq_Bands = f1ap_du_data->nr_mode_info[i].tdd.num_frequency_bands;
+            printf("tdd_num_available_freq_Bands = %d \n", tdd_num_available_freq_Bands);
+            int j;
+            for (j=0;
+                 j<tdd_num_available_freq_Bands;
+                 j++) {
+
+                  F1AP_FreqBandNrItem_t nr_freqBandNrItem;
+                  memset((void *)&nr_freqBandNrItem, 0, sizeof(F1AP_FreqBandNrItem_t));
+                  /* TDD.1.3.1 freqBandIndicatorNr*/
+                  nr_freqBandNrItem.freqBandIndicatorNr = *f1ap_du_data->nr_mode_info[i].tdd.nr_band; //
+
+                  /* TDD.1.3.2 supportedSULBandList*/
+                  int num_available_supported_SULBands = f1ap_du_data->nr_mode_info[i].tdd.num_sul_frequency_bands;
+                  printf("num_available_supported_SULBands = %d \n", num_available_supported_SULBands);
+                  int k;
+                  for (k=0;
+                       k<num_available_supported_SULBands;
+                       k++) {
+                        F1AP_SupportedSULFreqBandItem_t nr_supportedSULFreqBandItem;
+                        memset((void *)&nr_supportedSULFreqBandItem, 0, sizeof(F1AP_SupportedSULFreqBandItem_t));
+                          /* TDD.1.3.2.1 freqBandIndicatorNr */
+                          nr_supportedSULFreqBandItem.freqBandIndicatorNr = *f1ap_du_data->nr_mode_info[i].tdd.nr_sul_band; //
+                        ASN_SEQUENCE_ADD(&nr_freqBandNrItem.supportedSULBandList.list, &nr_supportedSULFreqBandItem);
+                  } // for TDD : supported_SULBands
+                  ASN_SEQUENCE_ADD(&tDD_Info->nRFreqInfo.freqBandListNr.list, &nr_freqBandNrItem);
+            } // for TDD : freq_Bands
+
+          /* TDD.2 transmission_Bandwidth */
+          tDD_Info->transmission_Bandwidth.nRSCS = f1ap_du_data->nr_mode_info[i].tdd.scs;
+          tDD_Info->transmission_Bandwidth.nRNRB = f1ap_du_data->nr_mode_info[i].tdd.nrb;
      
           nR_Mode_Info.choice.tDD = tDD_Info;
-        } 
+        } // if nR_Mode_Info
         
         served_cell_information.nR_Mode_Info = nR_Mode_Info;
 
         /* - measurementTimingConfiguration */
-        char *measurementTimingConfiguration = "0"; //&f1ap_du_data->measurement_timing_information[i]; // sept. 2018
+        char *measurementTimingConfiguration = f1ap_du_data->measurement_timing_information[i]; // sept. 2018
 
         OCTET_STRING_fromBuf(&served_cell_information.measurementTimingConfiguration,
                              measurementTimingConfiguration,
@@ -301,14 +392,18 @@ void DU_send_F1_SETUP_REQUEST(instance_t instance) {
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     printf("Failed to encode F1 setup request\n");
+    return -1;
   }
 
   du_f1ap_itti_send_sctp_data_req(instance, f1ap_du_data->assoc_id, buffer, len, 0);
+
+  return 0;
 }
 
-int DU_handle_F1_SETUP_RESPONSE(uint32_t               assoc_id,
-                                 uint32_t               stream,
-                                 F1AP_F1AP_PDU_t       *pdu)
+int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
+				uint32_t               assoc_id,
+				uint32_t               stream,
+				F1AP_F1AP_PDU_t       *pdu)
 {
 
    printf("DU_handle_F1_SETUP_RESPONSE\n");
@@ -413,8 +508,12 @@ int DU_handle_F1_SETUP_RESPONSE(uint32_t               assoc_id,
 }
 
 // SETUP FAILURE
-void DU_handle_F1_SETUP_FAILURE(F1AP_F1AP_PDU_t *pdu_p) {
-  AssertFatal(1==0,"Not implemented yet\n");
+int DU_handle_F1_SETUP_FAILURE(instance_t instance,
+                               uint32_t assoc_id,
+                               uint32_t stream,
+                               F1AP_F1AP_PDU_t *pdu) {
+  LOG_E(DU_F1AP, "DU_handle_F1_SETUP_FAILURE\n");
+  return 0;
 }
 
 
@@ -423,7 +522,9 @@ void DU_handle_F1_SETUP_FAILURE(F1AP_F1AP_PDU_t *pdu_p) {
 */
 
 //void DU_send_gNB_DU_CONFIGURATION_UPDATE(F1AP_GNBDUConfigurationUpdate_t *GNBDUConfigurationUpdate) {
-void DU_send_gNB_DU_CONFIGURATION_UPDATE(module_id_t enb_mod_idP, module_id_t du_mod_idP, f1ap_setup_req_t *f1ap_du_data) {
+int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
+                                         instance_t du_mod_idP,
+                                         f1ap_setup_req_t *f1ap_du_data) {
   F1AP_F1AP_PDU_t                     pdu;
   F1AP_GNBDUConfigurationUpdate_t     *out;
   F1AP_GNBDUConfigurationUpdateIEs_t  *ie;
@@ -449,7 +550,7 @@ void DU_send_gNB_DU_CONFIGURATION_UPDATE(module_id_t enb_mod_idP, module_id_t du
   ie->id                        = F1AP_ProtocolIE_ID_id_TransactionID;
   ie->criticality               = F1AP_Criticality_reject;
   ie->value.present             = F1AP_GNBDUConfigurationUpdateIEs__value_PR_TransactionID;
-  ie->value.choice.TransactionID = F1AP_get_next_transaction_identifier(enb_mod_idP, du_mod_idP);
+  ie->value.choice.TransactionID = F1AP_get_next_transaction_identifier(instance, du_mod_idP);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
 
@@ -480,15 +581,15 @@ void DU_send_gNB_DU_CONFIGURATION_UPDATE(module_id_t enb_mod_idP, module_id_t du
         /* - nRCGI */
         F1AP_NRCGI_t nRCGI;
         MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i], &nRCGI.pLMN_Identity);
-        NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+        NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[i], &nRCGI.nRCellIdentity);
         served_cell_information.nRCGI = nRCGI;
 
         /* - nRPCI */
-        served_cell_information.nRPCI = 321L;  // int 0..1007
+        served_cell_information.nRPCI = f1ap_du_data->nr_pci[i];  // int 0..1007
 
         /* - fiveGS_TAC */
         OCTET_STRING_fromBuf(&served_cell_information.fiveGS_TAC,
-                             "10",
+                             &f1ap_du_data->tac[i],
                              3);
 
         /* - Configured_EPS_TAC */
@@ -634,7 +735,7 @@ void DU_send_gNB_DU_CONFIGURATION_UPDATE(module_id_t enb_mod_idP, module_id_t du
         F1AP_NRCGI_t oldNRCGI;
         MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i],
                                          &oldNRCGI.pLMN_Identity);
-        NR_CELL_ID_TO_BIT_STRING(123456, &oldNRCGI.nRCellIdentity);
+        NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[i], &oldNRCGI.nRCellIdentity);
         served_cells_to_modify_item.oldNRCGI = oldNRCGI;
 
 
@@ -646,15 +747,15 @@ void DU_send_gNB_DU_CONFIGURATION_UPDATE(module_id_t enb_mod_idP, module_id_t du
         F1AP_NRCGI_t nRCGI;
         MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i],
                                          &nRCGI.pLMN_Identity);
-        NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+        NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[i], &nRCGI.nRCellIdentity);
         served_cell_information.nRCGI = nRCGI;
 
         /* - nRPCI */
-        served_cell_information.nRPCI = 321L;  // int 0..1007
+        served_cell_information.nRPCI = f1ap_du_data->nr_pci[i];  // int 0..1007
 
         /* - fiveGS_TAC */
         OCTET_STRING_fromBuf(&served_cell_information.fiveGS_TAC,
-                             "10",
+                             &f1ap_du_data->tac[i],
                              3);
 
         /* - Configured_EPS_TAC */
@@ -800,7 +901,7 @@ void DU_send_gNB_DU_CONFIGURATION_UPDATE(module_id_t enb_mod_idP, module_id_t du
         F1AP_NRCGI_t oldNRCGI;
         MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i],
                                          &oldNRCGI.pLMN_Identity);
-        NR_CELL_ID_TO_BIT_STRING(123456, &oldNRCGI.nRCellIdentity);
+        NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[i], &oldNRCGI.nRCellIdentity);
         served_cells_to_delete_item.oldNRCGI = oldNRCGI;
 
         /* ADD */
@@ -836,7 +937,7 @@ void DU_send_gNB_DU_CONFIGURATION_UPDATE(module_id_t enb_mod_idP, module_id_t du
         F1AP_NRCGI_t nRCGI;
         MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i],
                                          &nRCGI.pLMN_Identity);
-        NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+        NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[i], &nRCGI.nRCellIdentity);
         active_cells_item.nRCGI = nRCGI;
         
         /* ADD */
@@ -850,6 +951,7 @@ void DU_send_gNB_DU_CONFIGURATION_UPDATE(module_id_t enb_mod_idP, module_id_t du
 
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     printf("Failed to encode F1 setup request\n");
+    return -1;
   }
 
   printf("\n");
@@ -859,32 +961,55 @@ void DU_send_gNB_DU_CONFIGURATION_UPDATE(module_id_t enb_mod_idP, module_id_t du
   /* decode */
   if (f1ap_decode_pdu(&pdu, buffer, len) > 0) {
     printf("Failed to decode F1 setup request\n");
+    return -1;
   }
+
+  return 0;
 }
 
 
 
-void DU_handle_gNB_DU_CONFIGURATION_FAILURE(F1AP_GNBDUConfigurationUpdateFailure_t GNBDUConfigurationUpdateFailure) {
+int DU_handle_gNB_DU_CONFIGURATION_FAILURE(instance_t instance,
+                                uint32_t assoc_id,
+                                uint32_t stream,
+                                F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void DU_handle_gNB_DU_CONFIGURATION_UPDATE_ACKNOWLEDGE(F1AP_GNBDUConfigurationUpdateAcknowledge_t GNBDUConfigurationUpdateAcknowledge) {
+int DU_handle_gNB_DU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
+                                uint32_t assoc_id,
+                                uint32_t stream,
+                                F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
 
-/*
-    gNB-CU Configuration Update
-*/
-
-void DU_handle_gNB_CU_CONFIGURATION_UPDATE(F1AP_GNBCUConfigurationUpdate_t *GNBCUConfigurationUpdate) {
+int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
+                                uint32_t assoc_id,
+                                uint32_t stream,
+                                F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void DU_send_gNB_CU_CONFIGURATION_UPDATE_FALIURE(F1AP_GNBCUConfigurationUpdateFailure_t *GNBCUConfigurationUpdateFailure) {
+int DU_send_gNB_CU_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
+                    F1AP_GNBCUConfigurationUpdateFailure_t *GNBCUConfigurationUpdateFailure) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(F1AP_GNBCUConfigurationUpdateAcknowledge_t *GNBCUConfigurationUpdateAcknowledge) {
+int DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
+                    F1AP_GNBCUConfigurationUpdateAcknowledge_t *GNBCUConfigurationUpdateAcknowledge) {
   AssertFatal(1==0,"Not implemented yet\n");
+}
+
+
+int DU_send_gNB_DU_RESOURCE_COORDINATION_REQUEST(instance_t instance,
+                    F1AP_GNBDUResourceCoordinationRequest_t *GNBDUResourceCoordinationRequest) {
+  AssertFatal(0, "Not implemented yet\n");
+}
+
+int DU_handle_gNB_DU_RESOURCE_COORDINATION_RESPONSE(instance_t instance,
+                                uint32_t assoc_id,
+                                uint32_t stream,
+                                F1AP_F1AP_PDU_t *pdu) {
+  AssertFatal(0, "Not implemented yet\n");
 }

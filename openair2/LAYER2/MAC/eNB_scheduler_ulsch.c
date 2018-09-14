@@ -367,7 +367,7 @@ rx_sdu(const module_id_t enb_mod_idP,
             ra = &mac->common_channels[CC_idP].ra[ii];
             if ((ra->rnti == current_rnti) && (ra->state != IDLE)) {
               //int RC.cudu.du_flag = 1;
-              int du_flag = 1;
+              //int du_flag = 1;
               mac_rrc_data_ind(
                    enb_mod_idP,
                    CC_idP,
@@ -377,7 +377,7 @@ rx_sdu(const module_id_t enb_mod_idP,
                    (uint8_t *) payload_ptr,
                    rx_lengths[i],
                    0,
-                   du_flag
+                   RC.rrc[enb_mod_idP]->node_type
               );
               // prepare transmission of Msg4(RRCConnectionReconfiguration)
               ra->state = MSGCRNTI;
@@ -619,7 +619,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 	  }
     
     //int RC.cudu.du_flag = 1;
-    int du_flag = 1;
+    //int du_flag = 1;
 	  mac_rrc_data_ind(
          enb_mod_idP,
 			   CC_idP,
@@ -629,7 +629,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 			   (uint8_t *) payload_ptr,
 			   rx_lengths[i],
 			   0,
-         du_flag
+         RC.rrc[enb_mod_idP]->node_type
     );
 
 

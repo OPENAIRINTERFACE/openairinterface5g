@@ -19,8 +19,8 @@
  *      contact@openairinterface.org
  */
 
-/*! \file f1ap_du_interface_management.h
- * \brief f1ap interface management for DU
+/*! \file f1ap_du_ue_context_management.c
+ * \brief F1AP UE Context Management, DU side
  * \author EURECOM/NTUST
  * \date 2018
  * \version 0.1
@@ -31,20 +31,22 @@
  */
 
 #include "f1ap_common.h"
+#include "f1ap_encoder.h"
+#include "f1ap_decoder.h"
+#include "f1ap_itti_messaging.h"
 #include "f1ap_du_ue_context_management.h"
 
 extern f1ap_setup_req_t *f1ap_du_data;
 
-/*
-    UE Context Setup
-*/
-
-void DU_handle_UE_CONTEXT_SETUP_REQUEST(F1AP_UEContextSetupRequest_t *UEContextSetupRequest) {
+int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
+                                       uint32_t         assoc_id,
+                                       uint32_t         stream,
+                                       F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
 //void DU_send_UE_CONTEXT_SETUP_RESPONSE(F1AP_UEContextSetupResponse_t *UEContextSetupResponse) {
-void DU_send_UE_CONTEXT_SETUP_RESPONSE(void) {
+int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance) {
   F1AP_F1AP_PDU_t                  pdu;
   F1AP_UEContextSetupResponse_t    *out;
   F1AP_UEContextSetupResponseIEs_t *ie;
@@ -259,18 +261,8 @@ void DU_send_UE_CONTEXT_SETUP_RESPONSE(void) {
      /* - nRCGI */
      F1AP_NRCGI_t nRCGI;  // issue here
      MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i], &nRCGI.pLMN_Identity);
-//
-     // INT32_TO_BIT_STRING(123, &nRCGI.nRCellIdentity);
-     // nRCGI.nRCellIdentity.buf = malloc((36+7)/8);
 
-     // nRCGI.nRCellIdentity.size = (36+7)/8;
-     // nRCGI.nRCellIdentity.bits_unused = 4;
-
-     // nRCGI.nRCellIdentity.buf[0] = 123;
-
-     //nRCGI.nRCellIdentity = 15;
-
-     NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+     NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[0], &nRCGI.nRCellIdentity);
 
      sCell_FailedtoSetup_item.sCell_ID = nRCGI;
 
@@ -307,7 +299,7 @@ void DU_send_UE_CONTEXT_SETUP_RESPONSE(void) {
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     printf("Failed to encode F1 setup request\n");
-    return;
+    return -1;
   }
 
   printf("\n");
@@ -317,41 +309,41 @@ void DU_send_UE_CONTEXT_SETUP_RESPONSE(void) {
   //   printf("Failed to decode F1 setup request\n");
   // }
   //du_f1ap_itti_send_sctp_data_req(instance, f1ap_setup_req->assoc_id, buffer, len, 0);
+  return 0;
 }
 
-void DU_send_UE_CONTEXT_SETUP_FAILURE(F1AP_UEContextSetupFailure_t UEContextSetupFailure) {
-  AssertFatal(1==0,"Not implemented yet\n");
-}
-
-/*
-    UE Context Release Request (gNB-DU initiated).
-*/
-
-void DU_send_UE_CONTEXT_RELEASE_REQUEST(F1AP_UEContextReleaseRequest_t *UEContextReleaseRequest) {
+int DU_send_UE_CONTEXT_SETUP_FAILURE(instance_t instance) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
 
-void DU_handle_UE_CONTEXT_RELEASE_COMMAND(F1AP_UEContextReleaseCommand_t *UEContextReleaseCommand) {
+int DU_send_UE_CONTEXT_RELEASE_REQUEST(instance_t instance) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
 
-void DU_send_UE_CONTEXT_RELEASE_COMPLETE(F1AP_UEContextReleaseComplete_t *UEContextReleaseComplete) {
+int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
+                                         uint32_t         assoc_id,
+                                         uint32_t         stream,
+                                         F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
 
-/*
-    UE Context Modification (gNB-CU initiated)
-*/
+int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance) {
+  AssertFatal(1==0,"Not implemented yet\n");
+}
 
-void DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(F1AP_UEContextModificationRequest_t *UEContextModificationRequest) {
+
+int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t       instance,
+                                              uint32_t         assoc_id,
+                                              uint32_t         stream,
+                                              F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
 //void DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(F1AP_UEContextModificationResponse_t *UEContextModificationResponse) {
-void DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(void) {
+int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance) {
   F1AP_F1AP_PDU_t                        pdu;
   F1AP_UEContextModificationResponse_t    *out;
   F1AP_UEContextModificationResponseIEs_t *ie;
@@ -625,7 +617,7 @@ void DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(void) {
      MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i],
                                         &nRCGI.pLMN_Identity);
 
-     NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+     NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[0], &nRCGI.nRCellIdentity);
 
      scell_failedtoSetupMod_item.sCell_ID = nRCGI;
 
@@ -697,7 +689,7 @@ void DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(void) {
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     printf("Failed to encode F1 setup request\n");
-    return;
+    return -1;
   }
 
   printf("\n");
@@ -707,17 +699,21 @@ void DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(void) {
   //   printf("Failed to decode F1 setup request\n");
   // }
   //du_f1ap_itti_send_sctp_data_req(instance, f1ap_setup_req->assoc_id, buffer, len, 0);
+  return 0;
 
 }
 
-void DU_send_UE_CONTEXT_MODIFICATION_FAILURE(F1AP_UEContextModificationFailure_t UEContextModificationFailure) {
+int DU_send_UE_CONTEXT_MODIFICATION_FAILURE(instance_t instance) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void DU_send_UE_CONTEXT_MODIFICATION_REQUIRED(F1AP_UEContextModificationRequired_t *UEContextModificationRequired) {
+int DU_send_UE_CONTEXT_MODIFICATION_REQUIRED(instance_t instance) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void DU_handle_UE_CONTEXT_MODIFICATION_CONFIRM(F1AP_UEContextModificationConfirm_t UEContextModificationConfirm_t) {
+int DU_handle_UE_CONTEXT_MODIFICATION_CONFIRM(instance_t       instance,
+                                              uint32_t         assoc_id,
+                                              uint32_t         stream,
+                                              F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }

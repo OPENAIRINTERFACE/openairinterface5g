@@ -31,25 +31,32 @@
  */
 
 #include "f1ap_common.h"
-#include "f1ap_du_interface_management.h"
+#include "f1ap_encoder.h"
+#include "f1ap_decoder.h"
+#include "f1ap_itti_messaging.h"
+#include "f1ap_cu_interface_management.h"
 
 extern f1ap_setup_req_t *f1ap_du_data_from_du;
-/*
-    Reset
-*/
-void CU_send_RESET(F1AP_Reset_t *Reset) {
+
+int CU_send_RESET(instance_t instance, F1AP_Reset_t *Reset) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void CU_handle_RESET_ACKKNOWLEDGE(F1AP_ResetAcknowledge_t *ResetAcknowledge) {
+int CU_handle_RESET_ACKKNOWLEDGE(instance_t instance,
+                                  uint32_t assoc_id,
+                                  uint32_t stream,
+                                  F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void CU_handle_RESET(F1AP_Reset_t *Reset) {
+int CU_handle_RESET(instance_t instance,
+                     uint32_t assoc_id,
+                     uint32_t stream,
+                     F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void CU_send_RESET_ACKKNOWLEDGE(F1AP_ResetAcknowledge_t *ResetAcknowledge) {
+int CU_send_RESET_ACKNOWLEDGE(instance_t instance, F1AP_ResetAcknowledge_t *ResetAcknowledge) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -57,11 +64,14 @@ void CU_send_RESET_ACKKNOWLEDGE(F1AP_ResetAcknowledge_t *ResetAcknowledge) {
 /*
     Error Indication
 */
-void CU_handle_ERROR_INDICATION(F1AP_ErrorIndication_t *ErrorIndication) {
+int CU_handle_ERROR_INDICATION(instance_t instance,
+                                uint32_t assoc_id,
+                                uint32_t stream,
+                                F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void CU_send_ERROR_INDICATION(F1AP_ErrorIndication_t *ErrorIndication) {
+int CU_send_ERROR_INDICATION(instance_t instance, F1AP_ErrorIndication_t *ErrorIndication) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -69,9 +79,10 @@ void CU_send_ERROR_INDICATION(F1AP_ErrorIndication_t *ErrorIndication) {
 /*
     F1 Setup
 */
-int CU_handle_F1_SETUP_REQUEST(uint32_t               assoc_id,
-                                 uint32_t               stream,
-                                 F1AP_F1AP_PDU_t       *pdu)
+int CU_handle_F1_SETUP_REQUEST(instance_t instance,
+                               uint32_t assoc_id,
+                               uint32_t stream,
+                               F1AP_F1AP_PDU_t *pdu)
 {
   printf("CU_handle_F1_SETUP_REQUEST\n");
   
@@ -127,7 +138,6 @@ int CU_handle_F1_SETUP_REQUEST(uint32_t               assoc_id,
     served_celles_item_p = &(((F1AP_GNB_DU_Served_Cells_ItemIEs_t *)ie->value.choice.GNB_DU_Served_Cells_List.list.array[i])->value.choice.GNB_DU_Served_Cells_Item);
     
     /* tac */
-    // @issue in here
     OCTET_STRING_TO_INT16(&(served_celles_item_p->served_Cell_Information.fiveGS_TAC), F1AP_SETUP_REQ(message_p).tac[i]);
     printf ("F1AP_SETUP_REQ(message_p).tac[%d] %d \n", i, F1AP_SETUP_REQ(message_p).tac[i]);
 
@@ -212,11 +222,17 @@ int CU_handle_F1_SETUP_REQUEST(uint32_t               assoc_id,
 
   //   } tdd;
   // } nr_mode_info[F1AP_MAX_NB_CELLS];
-
-  return itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(assoc_id), message_p);
+  if (num_cells_available > 0) {
+    itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(instance), message_p);
+  } else {
+    CU_send_F1_SETUP_FAILURE(instance);
+    return -1;
+  }
+  return 0;
 }
 
-void CU_send_F1_SETUP_RESPONSE(instance_t instance, f1ap_setup_resp_t *f1ap_setup_resp) {
+int CU_send_F1_SETUP_RESPONSE(instance_t instance,
+                               f1ap_setup_resp_t *f1ap_setup_resp) {
   
   module_id_t enb_mod_idP;
   module_id_t cu_mod_idP;
@@ -337,6 +353,7 @@ void CU_send_F1_SETUP_RESPONSE(instance_t instance, f1ap_setup_resp_t *f1ap_setu
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     printf("Failed to encode F1 setup request\n");
+    return -1;
   }
 
   // printf("\n");
@@ -348,12 +365,92 @@ void CU_send_F1_SETUP_RESPONSE(instance_t instance, f1ap_setup_resp_t *f1ap_setu
   //printf("F1 setup response present = %d\n", out->value.present);
   //f1ap_send_sctp_data_req(instance_p->instance, f1ap_mme_data_p->assoc_id, buffer, len, 0);
 
+  return 0;
 }
 
-void CU_send_F1_SETUP_FAILURE(F1AP_F1SetupFailure_t *F1SetupFailure) {
-  AssertFatal(1==0,"Not implemented yet\n");
-  //AssertFatal(1==0,"Not implemented yet\n");
-  //f1ap_send_sctp_data_req(instance_p->instance, f1ap_mme_data_p->assoc_id, buffer, len, 0);
+int CU_send_F1_SETUP_FAILURE(instance_t instance) {
+  printf("CU_send_F1_SETUP_FAILURE\n");
+  
+  module_id_t enb_mod_idP;
+  module_id_t cu_mod_idP;
+
+  enb_mod_idP = (module_id_t)12;
+  cu_mod_idP  = (module_id_t)34;
+
+  F1AP_F1AP_PDU_t           pdu;
+  F1AP_F1SetupFailure_t    *out;
+  F1AP_F1SetupFailureIEs_t *ie;
+
+  uint8_t  *buffer;
+  uint32_t  len;
+
+  /* Create */
+  /* 0. Message Type */
+  memset(&pdu, 0, sizeof(pdu));
+  pdu.present = F1AP_F1AP_PDU_PR_unsuccessfulOutcome;
+  pdu.choice.unsuccessfulOutcome = (F1AP_UnsuccessfulOutcome_t *)calloc(1, sizeof(F1AP_UnsuccessfulOutcome_t));
+  pdu.choice.unsuccessfulOutcome->procedureCode = F1AP_ProcedureCode_id_F1Setup;
+  pdu.choice.unsuccessfulOutcome->criticality   = F1AP_Criticality_reject;
+  pdu.choice.unsuccessfulOutcome->value.present = F1AP_UnsuccessfulOutcome__value_PR_F1SetupFailure;
+  out = &pdu.choice.unsuccessfulOutcome->value.choice.F1SetupFailure;
+
+  /* mandatory */
+  /* c1. Transaction ID (integer value)*/
+  ie = (F1AP_F1SetupFailureIEs_t *)calloc(1, sizeof(F1AP_F1SetupFailureIEs_t));
+  ie->id                        = F1AP_ProtocolIE_ID_id_TransactionID;
+  ie->criticality               = F1AP_Criticality_reject;
+  ie->value.present             = F1AP_F1SetupFailureIEs__value_PR_TransactionID;
+  ie->value.choice.TransactionID = F1AP_get_next_transaction_identifier(enb_mod_idP, cu_mod_idP);
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* mandatory */
+  /* c2. Cause */
+  ie = (F1AP_F1SetupFailureIEs_t *)calloc(1, sizeof(F1AP_F1SetupFailureIEs_t));
+  ie->id                        = F1AP_ProtocolIE_ID_id_Cause;
+  ie->criticality               = F1AP_Criticality_ignore;
+  ie->value.present             = F1AP_F1SetupFailureIEs__value_PR_Cause;
+  ie->value.choice.Cause.present = F1AP_Cause_PR_radioNetwork;
+  ie->value.choice.Cause.choice.radioNetwork = F1AP_CauseRadioNetwork_unspecified;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* optional */
+  /* c3. TimeToWait */
+  if (0) {
+    ie = (F1AP_F1SetupFailureIEs_t *)calloc(1, sizeof(F1AP_F1SetupFailureIEs_t));
+    ie->id                        = F1AP_ProtocolIE_ID_id_TimeToWait;
+    ie->criticality               = F1AP_Criticality_ignore;
+    ie->value.present             = F1AP_F1SetupFailureIEs__value_PR_TimeToWait;
+    ie->value.choice.TimeToWait = F1AP_TimeToWait_v10s;
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  }
+
+  /* optional */
+  /* c4. CriticalityDiagnostics*/
+  if (0) {
+    ie = (F1AP_F1SetupFailureIEs_t *)calloc(1, sizeof(F1AP_F1SetupFailureIEs_t));
+    ie->id                        = F1AP_ProtocolIE_ID_id_CriticalityDiagnostics;
+    ie->criticality               = F1AP_Criticality_ignore;
+    ie->value.present             = F1AP_F1SetupFailureIEs__value_PR_CriticalityDiagnostics;
+    ie->value.choice.CriticalityDiagnostics.procedureCode = (F1AP_ProcedureCode_t *)calloc(1, sizeof(F1AP_ProcedureCode_t));
+    *ie->value.choice.CriticalityDiagnostics.procedureCode = F1AP_ProcedureCode_id_UEContextSetup;
+    ie->value.choice.CriticalityDiagnostics.triggeringMessage = (F1AP_TriggeringMessage_t *)calloc(1, sizeof(F1AP_TriggeringMessage_t));
+    *ie->value.choice.CriticalityDiagnostics.triggeringMessage = F1AP_TriggeringMessage_initiating_message;
+    ie->value.choice.CriticalityDiagnostics.procedureCriticality = (F1AP_Criticality_t *)calloc(1, sizeof(F1AP_Criticality_t));
+    *ie->value.choice.CriticalityDiagnostics.procedureCriticality = F1AP_Criticality_reject;
+    ie->value.choice.CriticalityDiagnostics.transactionID = (F1AP_TransactionID_t *)calloc(1, sizeof(F1AP_TransactionID_t));
+    *ie->value.choice.CriticalityDiagnostics.transactionID = 0;
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  }
+
+  /* encode */
+  if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
+    printf("Failed to encode F1 setup request\n");
+    return -1;
+  }
+
+  cu_f1ap_itti_send_sctp_data_req(instance, f1ap_du_data_from_du->assoc_id, buffer, len, 0);
+
+  return 0;
 }
 
 
@@ -362,15 +459,20 @@ void CU_send_F1_SETUP_FAILURE(F1AP_F1SetupFailure_t *F1SetupFailure) {
     gNB-DU Configuration Update
 */
 
-void CU_handle_gNB_DU_CONFIGURATION_UPDATE(F1AP_GNBDUConfigurationUpdate_t *GNBDUConfigurationUpdate) {
+int CU_handle_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
+                                           uint32_t assoc_id,
+                                           uint32_t stream,
+                                           F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void CU_send_gNB_DU_CONFIGURATION_FAILURE(F1AP_GNBDUConfigurationUpdateFailure_t *GNBDUConfigurationUpdateFailure) {
+int CU_send_gNB_DU_CONFIGURATION_FAILURE(instance_t instance,
+                    F1AP_GNBDUConfigurationUpdateFailure_t *GNBDUConfigurationUpdateFailure) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void CU_send_gNB_DU_CONFIGURATION_UPDATE_ACKNOWLEDGE(F1AP_GNBDUConfigurationUpdateAcknowledge_t *GNBDUConfigurationUpdateAcknowledge) {
+int CU_send_gNB_DU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
+                    F1AP_GNBDUConfigurationUpdateAcknowledge_t *GNBDUConfigurationUpdateAcknowledge) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -381,7 +483,7 @@ void CU_send_gNB_DU_CONFIGURATION_UPDATE_ACKNOWLEDGE(F1AP_GNBDUConfigurationUpda
 */
 
 //void CU_send_gNB_CU_CONFIGURATION_UPDATE(F1AP_GNBCUConfigurationUpdate_t *GNBCUConfigurationUpdate) {
-void CU_send_gNB_CU_CONFIGURATION_UPDATE(module_id_t enb_mod_idP, module_id_t du_mod_idP) {
+int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, module_id_t du_mod_idP) {
   F1AP_F1AP_PDU_t                    pdu;
   F1AP_GNBCUConfigurationUpdate_t    *out;
   F1AP_GNBCUConfigurationUpdateIEs_t *ie;
@@ -411,7 +513,7 @@ void CU_send_gNB_CU_CONFIGURATION_UPDATE(module_id_t enb_mod_idP, module_id_t du
   ie->id                        = F1AP_ProtocolIE_ID_id_TransactionID;
   ie->criticality               = F1AP_Criticality_reject;
   ie->value.present             = F1AP_GNBCUConfigurationUpdateIEs__value_PR_TransactionID;
-  ie->value.choice.TransactionID = F1AP_get_next_transaction_identifier(enb_mod_idP, du_mod_idP);
+  ie->value.choice.TransactionID = F1AP_get_next_transaction_identifier(instance, du_mod_idP);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
 
@@ -747,21 +849,36 @@ void CU_send_gNB_CU_CONFIGURATION_UPDATE(module_id_t enb_mod_idP, module_id_t du
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     printf("Failed to encode F1 setup request\n");
-    return;
+    return -1;
   }
 
-  printf("\n");
-
-  /* decode */
-  if (f1ap_decode_pdu(&pdu, buffer, len) > 0) {
-    printf("Failed to decode F1 setup request\n");
-  }
+  cu_f1ap_itti_send_sctp_data_req(instance, f1ap_du_data_from_du->assoc_id, buffer, len, 0);
+  return 0;
 }
 
-void CU_handle_gNB_CU_CONFIGURATION_UPDATE_FALIURE(F1AP_GNBCUConfigurationUpdateFailure_t *GNBCUConfigurationUpdateFailure) {
+int CU_handle_gNB_CU_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
+                                                   uint32_t assoc_id,
+                                                   uint32_t stream,
+                                                   F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void CU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(F1AP_GNBCUConfigurationUpdateAcknowledge_t *GNBCUConfigurationUpdateAcknowledge) {
+int CU_handle_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
+                                                       uint32_t assoc_id,
+                                                       uint32_t stream,
+                                                       F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
+}
+
+
+int CU_handle_gNB_DU_RESOURCE_COORDINATION_REQUEST(instance_t instance,
+                                                    uint32_t assoc_id,
+                                                    uint32_t stream,
+                                                    F1AP_F1AP_PDU_t *pdu) {
+  AssertFatal(0, "Not implemented yet\n");
+}
+
+int CU_send_gNB_DU_RESOURCE_COORDINATION_RESPONSE(instance_t instance,
+                    F1AP_GNBDUResourceCoordinationResponse_t *GNBDUResourceCoordinationResponse) {
+  AssertFatal(0, "Not implemented yet\n");
 }

@@ -19,8 +19,8 @@
  *      contact@openairinterface.org
  */
 
-/*! \file f1ap_du_interface_management.h
- * \brief f1ap interface management for DU
+/*! \file f1ap_cu_ue_context_management.c
+ * \brief F1AP UE Context Management, CU side
  * \author EURECOM/NTUST
  * \date 2018
  * \version 0.1
@@ -30,14 +30,14 @@
  * \warning
  */
 
-/*
-    UE Context Setup
-*/
-
 #include "f1ap_common.h"
+#include "f1ap_encoder.h"
+#include "f1ap_decoder.h"
+#include "f1ap_itti_messaging.h"
+#include "f1ap_cu_ue_context_management.h"
 
 //void CU_send_UE_CONTEXT_SETUP_REQUEST(F1AP_UEContextSetupRequest_t *UEContextSetupRequest) {
-void CU_send_UE_CONTEXT_SETUP_REQUEST(void) {
+int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance) {
   F1AP_F1AP_PDU_t                 pdu;
   F1AP_UEContextSetupRequest_t    *out;
   F1AP_UEContextSetupRequestIEs_t *ie;
@@ -357,7 +357,7 @@ void CU_send_UE_CONTEXT_SETUP_REQUEST(void) {
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     printf("Failed to encode F1 setup request\n");
-    return;
+    return -1;
   }
 
   printf("\n");
@@ -365,44 +365,51 @@ void CU_send_UE_CONTEXT_SETUP_REQUEST(void) {
   /* decode */
   if (f1ap_decode_pdu(&pdu, buffer, len) > 0) {
     printf("Failed to decode F1 setup request\n");
+    return -1;
   }
   //AssertFatal(1==0,"Not implemented yet\n");
+  return 0;
 }
 
-void CU_handle_UE_CONTEXT_SETUP_RESPONSE(F1AP_UEContextSetupResponse_t *UEContextSetupResponse) {
+int CU_handle_UE_CONTEXT_SETUP_RESPONSE(instance_t       instance,
+                                        uint32_t         assoc_id,
+                                        uint32_t         stream,
+                                        F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void CU_handle_UE_CONTEXT_SETUP_FAILURE(F1AP_UEContextSetupFailure_t UEContextSetupFailure) {
-  AssertFatal(1==0,"Not implemented yet\n");
-}
-
-
-/*
-    UE Context Release (gNB-CU initiated)
-*/
-
-void CU_handle_UE_CONTEXT_RELEASE_REQUEST(F1AP_UEContextReleaseRequest_t *UEContextReleaseRequest) {
-  AssertFatal(1==0,"Not implemented yet\n");
-}
-
-
-void CU_send_UE_CONTEXT_RELEASE_COMMAND(F1AP_UEContextReleaseCommand_t *UEContextReleaseCommand) {
+int CU_handle_UE_CONTEXT_SETUP_FAILURE(instance_t       instance,
+                                       uint32_t         assoc_id,
+                                       uint32_t         stream,
+                                       F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
 
-void CU_handle_UE_CONTEXT_RELEASE_COMPLETE(F1AP_UEContextReleaseComplete_t *UEContextReleaseComplete) {
+int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t       instance,
+                                         uint32_t         assoc_id,
+                                         uint32_t         stream,
+                                         F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
 
-/*
-    UE Context Modification Required (gNB-DU initiated)
-*/
+int CU_send_UE_CONTEXT_RELEASE_COMMAND(instance_t instance,
+                                       F1AP_UEContextReleaseCommand_t *UEContextReleaseCommand) {
+  AssertFatal(1==0,"Not implemented yet\n");
+}
+
+
+int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
+                                         uint32_t         assoc_id,
+                                         uint32_t         stream,
+                                         F1AP_F1AP_PDU_t *pdu) {
+  AssertFatal(1==0,"Not implemented yet\n");
+}
+
 
 //void CU_send_UE_CONTEXT_MODIFICATION_REQUEST(F1AP_UEContextModificationRequest_t *UEContextModificationRequest) {
-void CU_send_UE_CONTEXT_MODIFICATION_REQUEST(void) {
+int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
   F1AP_F1AP_PDU_t                        pdu;
   F1AP_UEContextModificationRequest_t    *out;
   F1AP_UEContextModificationRequestIEs_t *ie;
@@ -863,7 +870,7 @@ void CU_send_UE_CONTEXT_MODIFICATION_REQUEST(void) {
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     printf("Failed to encode F1 setup request\n");
-    return;
+    return -1;
   }
 
   printf("\n");
@@ -871,22 +878,34 @@ void CU_send_UE_CONTEXT_MODIFICATION_REQUEST(void) {
   /* decode */
   if (f1ap_decode_pdu(&pdu, buffer, len) > 0) {
     printf("Failed to decode F1 setup request\n");
+    return -1;
   }
 
+  return 0;
 }
 
-void CU_handle_UE_CONTEXT_MODIFICATION_RESPONSE(F1AP_UEContextModificationResponse_t *UEContextModificationResponse) {
+int CU_handle_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t       instance,
+                                               uint32_t         assoc_id,
+                                               uint32_t         stream,
+                                               F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void CU_handle_UE_CONTEXT_MODIFICATION_FAILURE(F1AP_UEContextModificationFailure_t EContextModificationFailure) {
+int CU_handle_UE_CONTEXT_MODIFICATION_FAILURE(instance_t       instance,
+                                              uint32_t         assoc_id,
+                                              uint32_t         stream,
+                                              F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void CU_handle_UE_CONTEXT_MODIFICATION_REQUIRED(F1AP_UEContextModificationRequired_t *UEContextModificationRequired) {
+int CU_handle_UE_CONTEXT_MODIFICATION_REQUIRED(instance_t       instance,
+                                               uint32_t         assoc_id,
+                                               uint32_t         stream,
+                                               F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-void CU_send_UE_CONTEXT_MODIFICATION_CONFIRM(F1AP_UEContextModificationConfirm_t UEContextModificationConfirm_t) {
+int CU_send_UE_CONTEXT_MODIFICATION_CONFIRM(instance_t instance,
+                                            F1AP_UEContextModificationConfirm_t UEContextModificationConfirm_t) {
   AssertFatal(1==0,"Not implemented yet\n");
 }

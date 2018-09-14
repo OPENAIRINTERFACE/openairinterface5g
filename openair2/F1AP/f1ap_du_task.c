@@ -97,13 +97,13 @@ void du_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
   DU_send_F1_SETUP_REQUEST(instance);
 }
 
-void du_task_handle_sctp_data_ind(sctp_data_ind_t *sctp_data_ind)
+void du_task_handle_sctp_data_ind(instance_t instance, sctp_data_ind_t *sctp_data_ind)
 {
   int result;
 
   DevAssert(sctp_data_ind != NULL);
 
-  f1ap_handle_message(sctp_data_ind->assoc_id, sctp_data_ind->stream,
+  f1ap_handle_message(instance, sctp_data_ind->assoc_id, sctp_data_ind->stream,
                           sctp_data_ind->buffer, sctp_data_ind->buffer_length);
 
   result = itti_free(TASK_UNKNOWN, sctp_data_ind->buffer);
@@ -154,7 +154,8 @@ void *F1AP_DU_task(void *arg) {
       case SCTP_DATA_IND: 
         // ex: any F1 incoming message for DU ends here
         LOG_I(DU_F1AP, "SCTP_DATA_IND\n");
-        du_task_handle_sctp_data_ind(&received_msg->ittiMsg.sctp_data_ind);
+        du_task_handle_sctp_data_ind(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                    &received_msg->ittiMsg.sctp_data_ind);
         break;
 
       case TERMINATE_MESSAGE:

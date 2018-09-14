@@ -32,8 +32,10 @@
 
 #include "f1ap_common.h"
 #include "f1ap_handlers.h"
+#include "f1ap_decoder.h"
 #include "f1ap_cu_interface_management.h"
 #include "f1ap_du_interface_management.h"
+#include "f1ap_cu_rrc_message_transfer.h"
 
 extern f1ap_setup_req_t *f1ap_du_data_from_du;
 
@@ -42,19 +44,19 @@ f1ap_message_decoded_callback f1ap_messages_callback[][3] = {
   
 
   { 0, 0, 0 }, /* Reset */
-  { CU_handle_F1_SETUP_REQUEST, DU_handle_F1_SETUP_RESPONSE, 0 }, /* F1Setup */
+  { CU_handle_F1_SETUP_REQUEST, DU_handle_F1_SETUP_RESPONSE, DU_handle_F1_SETUP_FAILURE }, /* F1Setup */
   { 0, 0, 0 }, /* ErrorIndication */
-  { CU_handle_F1_SETUP_REQUEST, 0, 0 }, /* gNBDUConfigurationUpdate */
-  { CU_handle_F1_SETUP_REQUEST, 0, 0 }, /* gNBCUConfigurationUpdate */
-  { CU_handle_F1_SETUP_REQUEST, 0, 0 }, /* UEContextSetup */
+  { 0, 0, 0 }, /* gNBDUConfigurationUpdate */
+  { 0, 0, 0 }, /* gNBCUConfigurationUpdate */
+  { 0, 0, 0 }, /* UEContextSetup */
   { 0, 0, 0 }, /* UEContextRelease */
-  { CU_handle_F1_SETUP_REQUEST, 0, 0 }, /* UEContextModification */
+  { 0, 0, 0 }, /* UEContextModification */
   { 0, 0, 0 }, /* UEContextModificationRequired */
   { 0, 0, 0 }, /* UEMobilityCommand */
   { 0, 0, 0 }, /* UEContextReleaseRequest */
-  { CU_handle_F1_SETUP_REQUEST, 0, 0 }, /* InitialULRRCMessageTransfer */
-  { CU_handle_F1_SETUP_REQUEST, 0, 0 }, /* DLRRCMessageTransfer */
-  { CU_handle_F1_SETUP_REQUEST, 0, 0 }, /* ULRRCMessageTransfer */
+  { CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER, 0, 0 }, /* InitialULRRCMessageTransfer */
+  { 0, 0, 0 }, /* DLRRCMessageTransfer */
+  { 0, 0, 0 }, /* ULRRCMessageTransfer */
   { 0, 0, 0 }, /* privateMessage */
   { 0, 0, 0 }, /* UEInactivityNotification */
   { 0, 0, 0 }, /* GNBDUResourceCoordination */
@@ -77,7 +79,7 @@ static const char *f1ap_direction_String[] = {
 return(f1ap_direction_String[f1ap_dir]);
 }
 
-int f1ap_handle_message(uint32_t assoc_id, int32_t stream,
+int f1ap_handle_message(instance_t instance, uint32_t assoc_id, int32_t stream,
                             const uint8_t * const data, const uint32_t data_length)
 {
   F1AP_F1AP_PDU_t pdu;
@@ -115,7 +117,7 @@ int f1ap_handle_message(uint32_t assoc_id, int32_t stream,
 
   /* Calling the right handler */
   ret = (*f1ap_messages_callback[pdu.choice.initiatingMessage->procedureCode][pdu.present - 1])
-        (assoc_id, stream, &pdu);
+        (instance, assoc_id, stream, &pdu);
   ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_F1AP_F1AP_PDU, &pdu);
   return ret;
 }
