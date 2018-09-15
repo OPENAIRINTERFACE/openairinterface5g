@@ -328,6 +328,9 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
 
       F1AP_GNB_CUSystemInformation_t *gNB_CUSystemInformation = (F1AP_GNB_CUSystemInformation_t *)calloc(1, sizeof(F1AP_GNB_CUSystemInformation_t));
 
+      printf("SI %d: ");
+      for (int n=0;n<f1ap_setup_resp->SI_container_length[i][0];n++) printf("%2x ",f1ap_setup_resp->SI_container[i][0][n]);
+      printf("\n");
       OCTET_STRING_fromBuf(&gNB_CUSystemInformation->sImessage,
                            f1ap_setup_resp->SI_container[i][0], f1ap_setup_resp->SI_container_length[i][0]);
 

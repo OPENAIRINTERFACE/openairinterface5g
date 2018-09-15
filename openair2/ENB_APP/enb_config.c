@@ -2923,8 +2923,10 @@ void extract_and_decode_SI(int inst,int si_ind,uint8_t *si_container,int si_cont
     case BCCH_DL_SCH_MessageType__c1_PR_systemInformation:
       {
 	SystemInformation_t *si = &bcch_message->message.choice.c1.choice.systemInformation;
-	
+
+
 	for (int i=0; i<si->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.count; i++) {
+	  LOG_I(ENB_APP,"Extracting SI %d/%d\n",i,si->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.count);
 	  struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member *typeandinfo;
 	  typeandinfo = si->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.array[i];
 	  
@@ -3019,6 +3021,8 @@ void configure_du_mac(int inst) {
   eNB_RRC_INST *rrc = RC.rrc[inst];
   rrc_eNB_carrier_data_t *carrier = &rrc->carrier[0];
 
+  LOG_I(ENB_APP,"Configuring MAC/L1 %d, carrier->sib2 %p\n",inst,&carrier->sib2->radioResourceConfigCommon);
+
   rrc_mac_config_req_eNB(inst, 0,
 			 carrier->physCellId,
 			 carrier->p_eNB,
@@ -3030,9 +3034,8 @@ void configure_du_mac(int inst) {
 #endif
 			 0, // rnti
 			 (BCCH_BCH_Message_t *)
-			 NULL,
-			 (RadioResourceConfigCommonSIB_t *) &
-			 carrier->sib2->radioResourceConfigCommon,
+			 &carrier->mib,
+			 (RadioResourceConfigCommonSIB_t *) &carrier->sib2->radioResourceConfigCommon,
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 			 (RadioResourceConfigCommonSIB_t *) 
 			 NULL,
@@ -3079,10 +3082,15 @@ void handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
       if (check_plmn_identity(carrier, resp->mcc[j], resp->mnc[j], resp->mnc_digit_length[j])>0 &&
           resp->nrpci[j] == carrier->physCellId) {
 	// copy system information and decode it 
-	for (si_ind=0;si_ind<resp->num_SI[j];si_ind++)  extract_and_decode_SI(i,
-									      si_ind,
-									      resp->SI_container[j][si_ind],
-									      resp->SI_container_length[j][si_ind]);
+	for (si_ind=0;si_ind<resp->num_SI[j];si_ind++)  {
+	  printf("SI %d: ",si_ind);
+	  for (int n=0;n<resp->SI_container_length[j][si_ind];n++) printf("%2x ",resp->SI_container[j][si_ind][n]);
+	  printf("\n");
+	  extract_and_decode_SI(i,
+				si_ind,
+				resp->SI_container[j][si_ind],
+				resp->SI_container_length[j][si_ind]);
+	}
 	// perform MAC/L1 common configuration
 	configure_du_mac(i);
       }

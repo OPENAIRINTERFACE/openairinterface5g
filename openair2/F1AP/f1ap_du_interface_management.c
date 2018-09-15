@@ -486,7 +486,11 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
 	   size_t size = ext->list.array[si]->extensionValue.choice.GNB_CUSystemInformation.sImessage.size;
 	   F1AP_SETUP_RESP (msg_p).SI_container_length[i][si] = size;
            printf("F1AP: F1Setup-Resp SI_container_length[%d][%d] %d bytes\n",i,si,size);
-	   F1AP_SETUP_RESP (msg_p).SI_container[i][si] = ext->list.array[si]->extensionValue.choice.GNB_CUSystemInformation.sImessage.buf;
+	   F1AP_SETUP_RESP (msg_p).SI_container[i][si] = malloc(F1AP_SETUP_RESP (msg_p).SI_container_length[i][si]);
+
+	   memcpy((void*)F1AP_SETUP_RESP (msg_p).SI_container[i][si],
+		  (void*)ext->list.array[si]->extensionValue.choice.GNB_CUSystemInformation.sImessage.buf,
+		  F1AP_SETUP_RESP (msg_p).SI_container_length[i][si]);
 	 }
        }
        break;
