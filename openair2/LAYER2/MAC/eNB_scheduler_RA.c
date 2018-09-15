@@ -831,21 +831,22 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
 	        // Get RRCConnectionSetup for Piggyback
 	        /*rrc_sdu_length = mac_rrc_data_req(module_idP, CC_idP, frameP, CCCH, 1,	// 1 transport block
 	    				      &cc[CC_idP].CCCH_pdu.payload[0], ENB_FLAG_YES, module_idP, 0);	// not used in this case*/
-
-	    	rrc_sdu_length = mac_rrc_data_req(module_idP, CC_idP, frameP, CCCH, 1,	// 1 transport block
-	    					      &cc[CC_idP].CCCH_pdu.payload[0], 0);	// not used in this case
-
-	        LOG_D(MAC,
-	        	  "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: UE_id %d, rrc_sdu_length %d\n",
-	        	  module_idP, CC_idP, frameP, subframeP, UE_id, rrc_sdu_length);
-
-	        AssertFatal(rrc_sdu_length > 0,
-	    		"[MAC][eNB Scheduler] CCCH not allocated\n");
-
-		LOG_D(MAC,
-		      "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating Msg4 BR with RRC Piggyback (ce_level %d RNTI %x)\n",
-		      module_idP, CC_idP, frameP, subframeP,
-		      ra->rach_resource_type - 1, ra->rnti);
+	      
+	      rrc_sdu_length = mac_rrc_data_req(module_idP, CC_idP, frameP, CCCH, 
+						UE_RNTI(module_idP,UE_id),1,	// 1 transport block
+						&cc[CC_idP].CCCH_pdu.payload[0], 0);	// not used in this case
+	      
+	      LOG_D(MAC,
+		    "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: UE_id %d, rrc_sdu_length %d\n",
+		    module_idP, CC_idP, frameP, subframeP, UE_id, rrc_sdu_length);
+	      
+	      AssertFatal(rrc_sdu_length > 0,
+			  "[MAC][eNB Scheduler] CCCH not allocated\n");
+	      
+	      LOG_D(MAC,
+		    "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating Msg4 BR with RRC Piggyback (ce_level %d RNTI %x)\n",
+		    module_idP, CC_idP, frameP, subframeP,
+		    ra->rach_resource_type - 1, ra->rnti);
 
 		AssertFatal(1 == 0,
 			    "Msg4 generation not finished for BL/CE UE\n");
@@ -1017,7 +1018,8 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
     					      &cc[CC_idP].CCCH_pdu.payload[0], ENB_FLAG_YES, module_idP, 0);	// not used in this case*/
 
 	  // check if there's data on the CCCH to send with Msg4
-	  rrc_sdu_length = mac_rrc_data_req(module_idP, CC_idP, frameP, CCCH, 1,	// 1 transport block
+	  rrc_sdu_length = mac_rrc_data_req(module_idP, CC_idP, frameP, CCCH, 
+					    UE_RNTI(module_idP,UE_id),1,	// 1 transport block
 					    &cc[CC_idP].CCCH_pdu.payload[0], 0);	// not used in this case
 	  
 	  LOG_D(MAC,

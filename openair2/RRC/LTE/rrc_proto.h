@@ -219,13 +219,15 @@ uint8_t rrc_eNB_get_next_transaction_identifier(module_id_t module_idP);
 
 /**\brief Entry routine to decode a UL-CCCH-Message.  Invokes PER decoder and parses message.
    \param ctxt_pP Running context
-   \param Srb_info Pointer to SRB0 information structure (buffer, etc.)*/
-int
-rrc_eNB_decode_ccch(
-  protocol_ctxt_t* const ctxt_pP,
-  const SRB_INFO*        const Srb_info,
-  const int              CC_id
-);
+   \param buffer Pointer to SDU
+   \param buffer_length length of SDU in bytes
+   \param CC_id component carrier index*/
+
+int rrc_eNB_decode_ccch(protocol_ctxt_t* const ctxt_pP,
+			uint8_t                *buffer,
+			int                    buffer_length,
+			const int              CC_id
+			);
 
 /**\brief Entry routine to decode a UL-DCCH-Message.  Invokes PER decoder and parses message.
    \param ctxt_pP Context
@@ -411,6 +413,7 @@ mac_rrc_data_req(
   const int         CC_id,
   const frame_t     frameP,
   const rb_id_t     Srb_id,
+  const rnti_t      rnti,
   const uint8_t     Nb_tb,
   uint8_t*    const buffer_pP,
   const uint8_t     mbsfn_sync_area

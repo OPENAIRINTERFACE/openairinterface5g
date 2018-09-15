@@ -53,6 +53,7 @@ mac_rrc_data_req(
   const int         CC_id,
   const frame_t     frameP,
   const rb_id_t     Srb_id,
+  const rnti_t      rnti,
   const uint8_t     Nb_tb,
   uint8_t*    const buffer_pP,
   const uint8_t     mbsfn_sync_area
@@ -105,9 +106,6 @@ mac_rrc_data_req(
         return (RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1);
       } // All RFN mod 8 transmit SIB2-3 in SF 5
       else if ((frameP%8) == 1) {
-	LOG_I(RRC,"Copying SIB23 @ %p to mac %d bytes\n",
-	      RC.rrc[Mod_idP]->carrier[CC_id].SIB23,
-	      RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB23);
         memcpy(&buffer_pP[0],
                RC.rrc[Mod_idP]->carrier[CC_id].SIB23,
                RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB23);
@@ -144,14 +142,19 @@ mac_rrc_data_req(
     }
 
     if( (Srb_id & RAB_OFFSET ) == CCCH) {
-      LOG_T(RRC,"[eNB %d] Frame %d CCCH request (Srb_id %d)\n",Mod_idP,frameP, Srb_id);
 
-      if(RC.rrc[Mod_idP]->carrier[CC_id].Srb0.Active==0) {
+      struct rrc_eNB_ue_context_s *ue_context_p = rrc_eNB_get_ue_context(RC.rrc[Mod_idP],rnti);
+      
+      if (ue_context_p == NULL) return(0);
+      eNB_RRC_UE_t *ue_p = &ue_context_p->ue_context; 
+      LOG_T(RRC,"[eNB %d] Frame %d CCCH request (Srb_id %d, rnti %x)\n",Mod_idP,frameP, Srb_id,rnti);
+
+      if(ue_p->Srb0.Active==0) {
         LOG_E(RRC,"[eNB %d] CCCH Not active\n",Mod_idP);
-        return -1;
+        return(0);
       }
 
-      Srb_info=&RC.rrc[Mod_idP]->carrier[CC_id].Srb0;
+      Srb_info=&ue_p->Srb0;
 
       // check if data is there for MAC
       if(Srb_info->Tx_buffer.payload_size>0) { //Fill buffer
@@ -300,18 +303,14 @@ mac_rrc_data_ind(
    */
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, rntiP, frameP, sub_frameP,0);
 
-    if((srb_idP & RAB_OFFSET) == CCCH) {
-    Srb_info = &RC.rrc[module_idP]->carrier[CC_id].Srb0;
-    LOG_D(RRC,"[eNB %d] Received SDU for CCCH on SRB %d\n",module_idP,Srb_info->Srb_id);
+  if((srb_idP & RAB_OFFSET) == CCCH) {
+    LOG_D(RRC,"[eNB %d] Received SDU for CCCH on SRB 0\n",module_idP);
     
     //    msg("\n******INST %d Srb_info %p, Srb_id=%d****\n\n",Mod_id,Srb_info,Srb_info->Srb_id);
-    if (sdu_lenP > 0) {
-      memcpy(Srb_info->Rx_buffer.Payload,sduP,sdu_lenP);
-      Srb_info->Rx_buffer.payload_size = sdu_lenP;
-      rrc_eNB_decode_ccch(&ctxt, Srb_info, CC_id);
-    }
-    }
-    if((srb_idP & RAB_OFFSET) == DCCH) {
+    if (sdu_lenP > 0)  rrc_eNB_decode_ccch(&ctxt, sduP, sdu_lenP, CC_id);
+    
+  }
+  if((srb_idP & RAB_OFFSET) == DCCH) {
       struct rrc_eNB_ue_context_s*    ue_context_p = NULL;
       ue_context_p = rrc_eNB_get_ue_context(RC.rrc[ctxt.module_id],rntiP);
       if(ue_context_p){

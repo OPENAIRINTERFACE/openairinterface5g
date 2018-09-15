@@ -131,8 +131,8 @@ openair_rrc_on(
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
       rrc_config_buffer (&RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SI, BCCH, 1);
       RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SI.Active = 1;
-      rrc_config_buffer (&RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0, CCCH, 1);
-      RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Active = 1;
+      //      rrc_config_buffer (&RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0, CCCH, 1);
+      //      RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Active = 1;
     }
 }
 
@@ -1224,29 +1224,30 @@ rrc_eNB_generate_RRCConnectionReject(
   T(T_ENB_RRC_CONNECTION_REJECT, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size =
+  eNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context; 
+  ue_p->Srb0.Tx_buffer.payload_size =
     do_RRCConnectionReject(ctxt_pP->module_id,
-                          (uint8_t*) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload);
+                          (uint8_t*) ue_p->Srb0.Tx_buffer.Payload);
 
   LOG_DUMPMSG(RRC,DEBUG_RRC,
-              (char *)(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload),
-              RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size,
+              (char *)(ue_p->Srb0.Tx_buffer.Payload),
+	      ue_p->Srb0.Tx_buffer.payload_size,
               "[MSG] RRCConnectionReject\n");
 
   MSC_LOG_TX_MESSAGE(
     MSC_RRC_ENB,
     MSC_RRC_UE,
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Header,
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size,
+    ue_p->Srb0.Tx_buffer.Header,
+    ue_p->Srb0.Tx_buffer.payload_size,
     MSC_AS_TIME_FMT" RRCConnectionReject UE %x size %u",
     MSC_AS_TIME_ARGS(ctxt_pP),
     ue_context_pP == NULL ? -1 : ue_context_pP->ue_context.rnti,
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size);
+    ue_p->Srb0.Tx_buffer.payload_size);
 
   LOG_I(RRC,
         PROTOCOL_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating RRCConnectionReject (bytes %d)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
-        RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size);
+        ue_p->Srb0.Tx_buffer.payload_size);
 }
 
 //-----------------------------------------------------------------------------
@@ -1266,19 +1267,22 @@ rrc_eNB_generate_RRCConnectionReestablishment(
   T(T_ENB_RRC_CONNECTION_REESTABLISHMENT, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
-  SRB_configList = &ue_context_pP->ue_context.SRB_configList;
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size =
+  eNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context; 
+
+  SRB_configList = &ue_p->SRB_configList;
+
+  ue_p->Srb0.Tx_buffer.payload_size =
     do_RRCConnectionReestablishment(ctxt_pP,
                                     ue_context_pP,
                                     CC_id,
-                                    (uint8_t*) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload,
+                                    (uint8_t*) ue_p->Srb0.Tx_buffer.Payload,
                                     (uint8_t) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
                                     rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
                                     SRB_configList,
                                     &ue_context_pP->ue_context.physicalConfigDedicated);
   LOG_DUMPMSG(RRC,DEBUG_RRC,
-              (char *)(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload),
-              RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size,
+              (char *)(ue_p->Srb0.Tx_buffer.Payload),
+              ue_p->Srb0.Tx_buffer.payload_size,
               "[MSG] RRCConnectionReestablishment\n"
               );
   // configure SRB1 for UE
@@ -1342,17 +1346,17 @@ rrc_eNB_generate_RRCConnectionReestablishment(
 
   MSC_LOG_TX_MESSAGE(MSC_RRC_ENB,
                      MSC_RRC_UE,
-                     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Header,
-                     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size,
+                     ue_p->Srb0.Tx_buffer.Header,
+                     ue_p->Srb0.Tx_buffer.payload_size,
                      MSC_AS_TIME_FMT" RRCConnectionReestablishment UE %x size %u",
                      MSC_AS_TIME_ARGS(ctxt_pP),
                      ue_context_pP->ue_context.rnti,
-                     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size);
+                     ue_p->Srb0.Tx_buffer.payload_size);
 
   LOG_I(RRC,
         PROTOCOL_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating RRCConnectionReestablishment (bytes %d)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
-        RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size);
+        ue_p->Srb0.Tx_buffer.payload_size);
 
   int UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
   if(UE_id != -1){
@@ -2022,30 +2026,32 @@ rrc_eNB_generate_RRCConnectionReestablishmentReject(
   T(T_ENB_RRC_CONNECTION_REESTABLISHMENT_REJECT, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size =
+  eNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context; 
+
+  ue_p->Srb0.Tx_buffer.payload_size =
     do_RRCConnectionReestablishmentReject(ctxt_pP->module_id,
-                          (uint8_t*) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload);
+                          (uint8_t*) ue_p->Srb0.Tx_buffer.Payload);
 
   LOG_DUMPMSG(RRC,DEBUG_RRC,
-              (char *)(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload),
-              RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size,
+              (char *)(ue_p->Srb0.Tx_buffer.Payload),
+              ue_p->Srb0.Tx_buffer.payload_size,
               "[MSG] RRCConnectionReestablishmentReject\n");
 
 
   MSC_LOG_TX_MESSAGE(
     MSC_RRC_ENB,
     MSC_RRC_UE,
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Header,
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size,
+    ue_p->Srb0.Tx_buffer.Header,
+    ue_p->Srb0.Tx_buffer.payload_size,
     MSC_AS_TIME_FMT" RRCConnectionReestablishmentReject UE %x size %u",
     MSC_AS_TIME_ARGS(ctxt_pP),
     ue_context_pP == NULL ? -1 : ue_context_pP->ue_context.rnti,
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size);
+    ue_p->Srb0.Tx_buffer.payload_size);
 
   LOG_I(RRC,
         PROTOCOL_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating RRCConnectionReestablishmentReject (bytes %d)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
-        RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size);
+        ue_p->Srb0.Tx_buffer.payload_size);
 }
 
 //-----------------------------------------------------------------------------
@@ -5732,20 +5738,22 @@ rrc_eNB_generate_RRCConnectionSetup(
   T(T_ENB_RRC_CONNECTION_SETUP, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
-  SRB_configList = &ue_context_pP->ue_context.SRB_configList;
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size =
+  eNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context; 
+
+  SRB_configList = &ue_p->SRB_configList;
+  ue_p->Srb0.Tx_buffer.payload_size =
     do_RRCConnectionSetup(ctxt_pP,
                           ue_context_pP,
                           CC_id,
-                          (uint8_t*) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload,
+                          (uint8_t*) ue_p->Srb0.Tx_buffer.Payload,
 			  (uint8_t) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
                           rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
                           SRB_configList,
                           &ue_context_pP->ue_context.physicalConfigDedicated);
 
   LOG_DUMPMSG(RRC,DEBUG_RRC,
-              (char *)(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload),
-              RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size,
+              (char *)(ue_p->Srb0.Tx_buffer.Payload),
+              ue_p->Srb0.Tx_buffer.payload_size,
               "[MSG] RRC Connection Setup\n");
 
   // configure SRB1/SRB2, PhysicalConfigDedicated, MAC_MainConfig for UE
@@ -5812,18 +5820,18 @@ rrc_eNB_generate_RRCConnectionSetup(
   MSC_LOG_TX_MESSAGE(
     MSC_RRC_ENB,
     MSC_RRC_UE,
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Header, // LG WARNING
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size,
+    ue_p->Srb0.Tx_buffer.Header, // LG WARNING
+    ue_p->Srb0.Tx_buffer.payload_size,
     MSC_AS_TIME_FMT" RRCConnectionSetup UE %x size %u",
     MSC_AS_TIME_ARGS(ctxt_pP),
     ue_context_pP->ue_context.rnti,
-    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size);
+    ue_p->Srb0.Tx_buffer.payload_size);
 
 
   LOG_I(RRC,
         PROTOCOL_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating RRCConnectionSetup (bytes %d)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
-        RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size);
+        ue_p->Srb0.Tx_buffer.payload_size);
 
   //ue_context_pP->ue_context.ue_release_timer_thres=100;
      // activate release timer, if RRCSetupComplete not received after 100 frames, remove UE
@@ -5886,10 +5894,6 @@ openair_rrc_eNB_init(
 
   pthread_mutex_init(&RC.rrc[ctxt.module_id]->cell_info_mutex,NULL);
   RC.rrc[ctxt.module_id]->cell_info_configured = 0;
-
-  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-    RC.rrc[ctxt.module_id]->carrier[CC_id].Srb0.Active = 0;
-  }
 
   uid_linear_allocator_init(&RC.rrc[ctxt.module_id]->uid_allocator);
   RB_INIT(&RC.rrc[ctxt.module_id]->rrc_ue_head);
@@ -6016,7 +6020,8 @@ openair_rrc_eNB_init(
 int
 rrc_eNB_decode_ccch(
   protocol_ctxt_t* const ctxt_pP,
-  const SRB_INFO*        const Srb_info,
+  uint8_t                *buffer,
+  int                    buffer_length,
   const int              CC_id
 )
 //-----------------------------------------------------------------------------
@@ -6038,17 +6043,17 @@ rrc_eNB_decode_ccch(
 
   LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Decoding UL CCCH %x.%x.%x.%x.%x.%x (%p)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
-        ((uint8_t*) Srb_info->Rx_buffer.Payload)[0],
-        ((uint8_t *) Srb_info->Rx_buffer.Payload)[1],
-        ((uint8_t *) Srb_info->Rx_buffer.Payload)[2],
-        ((uint8_t *) Srb_info->Rx_buffer.Payload)[3],
-        ((uint8_t *) Srb_info->Rx_buffer.Payload)[4],
-        ((uint8_t *) Srb_info->Rx_buffer.Payload)[5], (uint8_t *) Srb_info->Rx_buffer.Payload);
+        ((uint8_t*) buffer)[0],
+        ((uint8_t *) buffer)[1],
+        ((uint8_t *) buffer)[2],
+        ((uint8_t *) buffer)[3],
+        ((uint8_t *) buffer)[4],
+        ((uint8_t *) buffer)[5], (uint8_t *) buffer);
   dec_rval = uper_decode(
                NULL,
                &asn_DEF_UL_CCCH_Message,
                (void**)&ul_ccch_msg,
-               (uint8_t*) Srb_info->Rx_buffer.Payload,
+               (uint8_t*) buffer,
                100,
                0,
                0);
@@ -6109,8 +6114,8 @@ rrc_eNB_decode_ccch(
       T(T_ENB_RRC_CONNECTION_REESTABLISHMENT_REQUEST, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
         T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
-      LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)(Srb_info->Rx_buffer.Payload),
-                  Srb_info->Rx_buffer.payload_size,
+      LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)(buffer),
+                  buffer_length,
                   "[MSG] RRC Connection Reestablishment Request\n");
 
       LOG_D(RRC,
@@ -6329,8 +6334,8 @@ rrc_eNB_decode_ccch(
       T(T_ENB_RRC_CONNECTION_REQUEST, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
         T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
-      LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)(Srb_info->Rx_buffer.Payload),
-                  Srb_info->Rx_buffer.payload_size,
+      LOG_DUMPMSG(RRC,DEBUG_RRC,(char *)buffer,
+                  buffer_length,
                   "[MSG] RRC Connection Request\n");
 
       LOG_D(RRC,
@@ -6347,7 +6352,7 @@ rrc_eNB_decode_ccch(
         MSC_LOG_RX_DISCARDED_MESSAGE(
           MSC_RRC_ENB,
           MSC_RRC_UE,
-          Srb_info->Rx_buffer.Payload,
+          buffer,
           dec_rval.consumed,
           MSC_AS_TIME_FMT" RRCConnectionRequest UE %x size %u (UE already in context)",
           MSC_AS_TIME_ARGS(ctxt_pP),
@@ -6418,7 +6423,7 @@ rrc_eNB_decode_ccch(
             MSC_LOG_RX_MESSAGE(
               MSC_RRC_ENB,
               MSC_RRC_UE,
-              Srb_info->Rx_buffer.Payload,
+              buffer,
               dec_rval.consumed,
               MSC_AS_TIME_FMT" RRCConnectionRequest UE %x size %u (s-TMSI mmec %u m_TMSI %u random UE id (0x%" PRIx64 ")",
               MSC_AS_TIME_ARGS(ctxt_pP),
@@ -7445,8 +7450,12 @@ rrc_enb_task(
             PROTOCOL_RRC_CTXT_UE_ARGS(&ctxt),
             msg_name_p);
 
+      struct rrc_eNB_ue_context_s *ue_context_p = rrc_eNB_get_ue_context(RC.rrc[instance],
+									 RRC_MAC_CCCH_DATA_IND(msg_p).rnti);
+
       CC_id = RRC_MAC_CCCH_DATA_IND(msg_p).CC_id;
-      srb_info_p = &RC.rrc[instance]->carrier[CC_id].Srb0;
+      eNB_RRC_UE_t *ue_p = &ue_context_p->ue_context; 
+      srb_info_p = &ue_p->Srb0;
 
       LOG_I(RRC,"Decoding CCCH : inst %d, CC_id %d, ctxt %p, sib_info_p->Rx_buffer.payload_size %d\n",
 	    instance,CC_id,&ctxt, RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
@@ -7459,7 +7468,7 @@ rrc_enb_task(
              RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
       srb_info_p->Rx_buffer.payload_size = RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size;
 
-      rrc_eNB_decode_ccch(&ctxt, srb_info_p, CC_id);
+      rrc_eNB_decode_ccch(&ctxt, srb_info_p->Rx_buffer.Payload,srb_info_p->Rx_buffer.payload_size, CC_id);
       break;
 	    
       /* Messages from PDCP */

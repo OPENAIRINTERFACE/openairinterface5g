@@ -731,10 +731,14 @@ schedule_ue_spec(module_id_t module_idP,slice_id_t slice_idP,
 	  aggregation = 2;
 	}
       }
+      int ccecond = CCE_allocation_infeasible(module_idP, CC_id, 1, subframeP,
+					      aggregation, rnti);
+      if (!ccecond) {
+	// check for CCCH
+      }
       /* if (continue_flag != 1 */
       if ((ue_sched_ctl->pre_nb_available_rbs[CC_id] == 0) ||	// no RBs allocated
-	  CCE_allocation_infeasible(module_idP, CC_id, 1, subframeP,
-				    aggregation, rnti)) {
+	  ccecond) {
 	LOG_D(MAC,
 	      "[eNB %d] Frame %d : no RB allocated for UE %d on CC_id %d: continue \n",
 	      module_idP, frameP, UE_id, CC_id);
@@ -1836,7 +1840,7 @@ void schedule_PCH(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP)
 	pcch_sdu_length = mac_rrc_data_req(module_idP,
                                            CC_id,
                                            frameP,
-                                           PCCH,1,
+                                           PCCH,0xFFFE,1,
                                            &cc->PCCH_pdu.payload[0],
                                            i); // used for ue index
 	if (pcch_sdu_length == 0) {
