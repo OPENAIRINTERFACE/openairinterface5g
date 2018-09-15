@@ -2933,6 +2933,9 @@ void extract_and_decode_SI(int inst,int si_ind,uint8_t *si_container,int si_cont
 	  switch(typeandinfo->present) {
 	  case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2:
 	    carrier->sib2 = &typeandinfo->choice.sib2;
+	    carrier->SIB23 = (uint8_t*)malloc(64);
+	    memcpy((void*)carrier->SIB23,(void*)si_container,si_container_length);
+	    carrier->sizeof_SIB23 = si_container_length;
 	    LOG_I( ENB_APP, "[RRC %"PRIu8"] Found SIB2 in CU F1AP_SETUP_RESP message\n", inst);
 	    break;
 	  case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib3:
