@@ -1009,50 +1009,54 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
 #endif
     {
     // This is normal LTE case
-	LOG_D(MAC, "generate_Msg4 1 ra->Msg4_frame SFN/SF: %d.%d,  frameP SFN/SF: %d.%d FOR eNB_Mod: %d \n", ra->Msg4_frame, ra->Msg4_subframe, frameP, subframeP, module_idP);
+	LOG_I(MAC, "generate_Msg4 ra->Msg4_frame SFN/SF: %d.%d,  frameP SFN/SF: %d.%d FOR eNB_Mod: %d \n", ra->Msg4_frame, ra->Msg4_subframe, frameP, subframeP, module_idP);
     	if ((ra->Msg4_frame == frameP) && (ra->Msg4_subframe == subframeP)) {
 
     	    // Get RRCConnectionSetup for Piggyback
     	    /*rrc_sdu_length = mac_rrc_data_req(module_idP, CC_idP, frameP, CCCH, 1,	// 1 transport block
     					      &cc[CC_idP].CCCH_pdu.payload[0], ENB_FLAG_YES, module_idP, 0);	// not used in this case*/
 
-    		rrc_sdu_length = mac_rrc_data_req(module_idP, CC_idP, frameP, CCCH, 1,	// 1 transport block
-    						      &cc[CC_idP].CCCH_pdu.payload[0], 0);	// not used in this case
-
-    	    LOG_D(MAC,
+	  // check if there's data on the CCCH to send with Msg4
+	  rrc_sdu_length = mac_rrc_data_req(module_idP, CC_idP, frameP, CCCH, 1,	// 1 transport block
+					    &cc[CC_idP].CCCH_pdu.payload[0], 0);	// not used in this case
+	  
+	  LOG_D(MAC,
     	    	  "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: UE_id %d, rrc_sdu_length %d\n",
     	    	  module_idP, CC_idP, frameP, subframeP, UE_id, rrc_sdu_length);
 
-    	    AssertFatal(rrc_sdu_length > 0,
-    			"[MAC][eNB Scheduler] CCCH not allocated, rrc_sdu_length: %d\n", rrc_sdu_length);
+	  //    	    AssertFatal(rrc_sdu_length > 0,
+	  //    			"[MAC][eNB Scheduler] CCCH not allocated, rrc_sdu_length: %d\n", rrc_sdu_length);
 
 
 
-	    LOG_D(MAC,
-		  "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating Msg4 with RRC Piggyback (RNTI %x)\n",
-		  module_idP, CC_idP, frameP, subframeP, ra->rnti);
-
-	    /// Choose first 4 RBs for Msg4, should really check that these are free!
-	    first_rb = 0;
-
-	    vrb_map[first_rb] = 1;
-	    vrb_map[first_rb + 1] = 1;
-	    vrb_map[first_rb + 2] = 1;
-	    vrb_map[first_rb + 3] = 1;
-
-
-	    // Compute MCS/TBS for 3 PRB (coded on 4 vrb)
-	    msg4_header = 1 + 6 + 1;	// CR header, CR CE, SDU header
-
-	    if ((rrc_sdu_length + msg4_header) <= 22) {
-		ra->msg4_mcs = 4;
-		ra->msg4_TBsize = 22;
-	    } else if ((rrc_sdu_length + msg4_header) <= 28) {
-		ra->msg4_mcs = 5;
-		ra->msg4_TBsize = 28;
-	    } else if ((rrc_sdu_length + msg4_header) <= 32) {
-		ra->msg4_mcs = 6;
-		ra->msg4_TBsize = 32;
+	  if (rrc_sdu_length > 0) LOG_I(MAC,
+					"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating Msg4 with RRC Piggyback (RNTI %x)\n",
+					module_idP, CC_idP, frameP, subframeP, ra->rnti);
+	  else LOG_I(MAC,
+		     "eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating Msg4 without RRC Piggyback (RNTI %x)\n",
+		     module_idP, CC_idP, frameP, subframeP, ra->rnti);
+	  
+	  /// Choose first 4 RBs for Msg4, should really check that these are free!
+	  first_rb = 0;
+	  
+	  vrb_map[first_rb] = 1;
+	  vrb_map[first_rb + 1] = 1;
+	  vrb_map[first_rb + 2] = 1;
+	  vrb_map[first_rb + 3] = 1;
+	  
+	  
+	  // Compute MCS/TBS for 3 PRB (coded on 4 vrb)
+	  msg4_header = 1 + 6 + 1;	// CR header, CR CE, SDU header
+	  
+	  if ((rrc_sdu_length + msg4_header) <= 22) {
+	    ra->msg4_mcs = 4;
+	    ra->msg4_TBsize = 22;
+	  } else if ((rrc_sdu_length + msg4_header) <= 28) {
+	    ra->msg4_mcs = 5;
+	    ra->msg4_TBsize = 28;
+	  } else if ((rrc_sdu_length + msg4_header) <= 32) {
+	  ra->msg4_mcs = 6;
+	  ra->msg4_TBsize = 32;
 	    } else if ((rrc_sdu_length + msg4_header) <= 41) {
 		ra->msg4_mcs = 7;
 		ra->msg4_TBsize = 41;
@@ -1128,7 +1132,9 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
 		      msg4_padding, msg4_post_padding);
 		DevAssert(UE_id != UE_INDEX_INVALID);	// FIXME not sure how to gracefully return
 		// CHECK THIS: &cc[CC_idP].CCCH_pdu.payload[0]
-		offset = generate_dlsch_header((unsigned char *) mac->UE_list.DLSCH_pdu[CC_idP][0][(unsigned char) UE_id].payload[0], 1,	//num_sdus
+		int num_sdus = rrc_sdu_length > 0 ? 1 : 0;							       
+		offset = generate_dlsch_header((unsigned char *) mac->UE_list.DLSCH_pdu[CC_idP][0][(unsigned char) UE_id].payload[0], 
+							       num_sdus,	//num_sdus
 					       (unsigned short *) &rrc_sdu_length,	//
 					       &lcid,	// sdu_lcid
 					       255,	// no drx
