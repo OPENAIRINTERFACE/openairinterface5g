@@ -246,16 +246,7 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t instance) {
     printf("Failed to encode F1 setup request\n");
     return -1;
   }
-
-  printf("\n");
-
-  /* decode */
-  if (f1ap_decode_pdu(&pdu, buffer, len) > 0) {
-    printf("Failed to decode F1 setup request\n");
-    return -1;
-  }
-
-  return 0;
+  
 }
 
 /*
@@ -266,5 +257,71 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                                       uint32_t         assoc_id,
                                       uint32_t         stream,
                                       F1AP_F1AP_PDU_t *pdu) {
-  AssertFatal(1==0,"Not implemented yet\n");
+
+  printf("CU_handle_UL_RRC_MESSAGE_TRANSFER \n");
+  
+  MessageDef                     *message_p;
+  F1AP_ULRRCMessageTransfer_t    *container;
+  F1AP_ULRRCMessageTransferIEs_t *ie;
+
+  uint8_t  *buffer;
+  uint32_t  len;
+  
+  uint64_t        cu_ue_f1ap_id;
+  uint64_t        du_ue_f1ap_id;
+  uint64_t        srb_id;
+  int             executeDuplication;
+  sdu_size_t      ccch_sdu_len;
+  uint64_t        subscriberProfileIDforRFP;
+  uint64_t        rAT_FrequencySelectionPriority;
+
+  DevAssert(pdu != NULL);
+  
+  if (stream != 0) {
+    LOG_E(F1AP, "[SCTP %d] Received F1 on stream != 0 (%d)\n",
+               assoc_id, stream);
+    return -1;
+  }
+
+  container = &pdu->choice.initiatingMessage->value.choice.ULRRCMessageTransfer;
+
+
+  /* GNB_CU_UE_F1AP_ID */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ULRRCMessageTransferIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
+  cu_ue_f1ap_id = ie->value.choice.GNB_CU_UE_F1AP_ID;
+  printf("cu_ue_f1ap_id %lu \n", cu_ue_f1ap_id);
+
+
+  /* GNB_DU_UE_F1AP_ID */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ULRRCMessageTransferIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
+  du_ue_f1ap_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
+  printf("du_ue_f1ap_id %lu \n", du_ue_f1ap_id);
+
+
+  /* mandatory */
+  /* SRBID */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ULRRCMessageTransferIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_SRBID, true);
+  srb_id = ie->value.choice.SRBID;
+  printf("srb_id %lu \n", srb_id);
+
+
+  // issue in here
+  /* mandatory */
+  /* RRC Container */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ULRRCMessageTransferIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_RRCContainer, true);
+  // BK: need check
+  // create an ITTI message and copy SDU
+  message_p = itti_alloc_new_message (TASK_CU_F1, RRC_MAC_CCCH_DATA_IND);
+  memset (RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
+  ccch_sdu_len = ie->value.choice.RRCContainer.size;
+  memcpy(RRC_MAC_CCCH_DATA_IND (message_p).sdu, ie->value.choice.RRCContainer.buf,
+         ccch_sdu_len);
+  printf ("RRCContainer(CCCH) :");
+  for (int i=0;i<ie->value.choice.RRCContainer.size;i++) printf("%2x ",RRC_MAC_CCCH_DATA_IND (message_p).sdu[i]);
+
+  return 0;
 }

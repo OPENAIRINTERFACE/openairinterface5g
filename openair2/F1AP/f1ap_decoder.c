@@ -42,14 +42,25 @@ static int f1ap_decode_initiating_message(F1AP_F1AP_PDU_t *pdu)
 
   switch(pdu->choice.initiatingMessage->procedureCode) {
     
-  case F1AP_ProcedureCode_id_F1Setup:
-    res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
-    printf("f1ap_eNB_decode_initiating_message!\n");
-    break;
-  case F1AP_ProcedureCode_id_InitialULRRCMessageTransfer:
-    res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
-    printf("f1ap_eNB_decode_initiating_message!\n");
-    break;
+    case F1AP_ProcedureCode_id_F1Setup:
+      res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
+      printf("f1ap_eNB_decode_initiating_message!\n");
+      break;
+
+    case F1AP_ProcedureCode_id_InitialULRRCMessageTransfer:
+      res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
+      printf("f1ap_eNB_decode_initiating_message!\n");
+      break;
+
+    case F1AP_ProcedureCode_id_DLRRCMessageTransfer:
+      res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
+      printf("f1ap_eNB_decode_initiating_message!\n");
+      break;
+
+    case F1AP_ProcedureCode_id_ULRRCMessageTransfer:
+      res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
+      printf("f1ap_eNB_decode_initiating_message!\n");
+      break;
     // case F1AP_ProcedureCode_id_InitialContextSetup:
     //   res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
     //   message_id = F1AP_INITIAL_CONTEXT_SETUP_LOG;

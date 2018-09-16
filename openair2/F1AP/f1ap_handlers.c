@@ -36,6 +36,7 @@
 #include "f1ap_cu_interface_management.h"
 #include "f1ap_du_interface_management.h"
 #include "f1ap_cu_rrc_message_transfer.h"
+#include "f1ap_du_rrc_message_transfer.h"
 
 extern f1ap_setup_req_t *f1ap_du_data_from_du;
 
@@ -55,8 +56,8 @@ f1ap_message_decoded_callback f1ap_messages_callback[][3] = {
   { 0, 0, 0 }, /* UEMobilityCommand */
   { 0, 0, 0 }, /* UEContextReleaseRequest */
   { CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER, 0, 0 }, /* InitialULRRCMessageTransfer */
-  { 0, 0, 0 }, /* DLRRCMessageTransfer */
-  { 0, 0, 0 }, /* ULRRCMessageTransfer */
+  { DU_handle_DL_RRC_MESSAGE_TRANSFER, 0, 0 }, /* DLRRCMessageTransfer */
+  { CU_handle_UL_RRC_MESSAGE_TRANSFER, 0, 0 }, /* ULRRCMessageTransfer */
   { 0, 0, 0 }, /* privateMessage */
   { 0, 0, 0 }, /* UEInactivityNotification */
   { 0, 0, 0 }, /* GNBDUResourceCoordination */
