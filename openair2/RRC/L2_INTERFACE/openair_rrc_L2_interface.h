@@ -56,8 +56,7 @@ mac_rrc_data_ind(
   const rb_id_t         srb_idP,
   const uint8_t*        sduP,
   const sdu_size_t      sdu_lenP,
-  const uint8_t         mbsfn_sync_areaP,
-  const int             du_flag
+  const uint8_t         mbsfn_sync_areaP
 );
 
 int8_t
