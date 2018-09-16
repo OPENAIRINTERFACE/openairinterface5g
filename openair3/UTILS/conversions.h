@@ -258,8 +258,8 @@ do {                                                                    \
 #define C_RNTI_TO_BIT_STRING(mACRO, bITsTRING)          \
 do {                                                    \
     (bITsTRING)->buf = calloc(2, sizeof(uint8_t));      \
-    (bITsTRING)->buf[0] = (mACRO) >> 4;                 \
-    (bITsTRING)->buf[1] = ((mACRO) & 0x0f) << 4;        \
+    (bITsTRING)->buf[0] = (mACRO) >> 8;                 \
+    (bITsTRING)->buf[1] = ((mACRO) & 0x0ff);            \
     (bITsTRING)->size = 2;                              \
     (bITsTRING)->bits_unused = 0;                       \
 } while(0)

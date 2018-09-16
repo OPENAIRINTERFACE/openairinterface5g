@@ -119,19 +119,19 @@ void *F1AP_CU_task(void *arg) {
     switch (ITTI_MSG_ID(received_msg)) {
 
       case SCTP_NEW_ASSOCIATION_IND:
-        LOG_I(CU_F1AP, "SCTP_NEW_ASSOCIATION_IND\n");
+        LOG_I(CU_F1AP, "SCTP_NEW_ASSOCIATION_IND for instance %d\n",ITTI_MESSAGE_GET_INSTANCE(received_msg));
         cu_task_handle_sctp_association_ind(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                          &received_msg->ittiMsg.sctp_new_association_ind);
         break;
 
       case SCTP_NEW_ASSOCIATION_RESP:
-        LOG_I(CU_F1AP, "SCTP_NEW_ASSOCIATION_RESP\n");
+        LOG_I(CU_F1AP, "SCTP_NEW_ASSOCIATION_RESP for instance %d\n",ITTI_MESSAGE_GET_INSTANCE(received_msg));
         cu_task_handle_sctp_association_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                          &received_msg->ittiMsg.sctp_new_association_resp);
         break;
 
       case SCTP_DATA_IND:
-        LOG_I(CU_F1AP, "SCTP_DATA_IND\n");
+        LOG_I(CU_F1AP, "SCTP_DATA_IND for Instance %d\n",ITTI_MESSAGE_GET_INSTANCE(received_msg));
         cu_task_handle_sctp_data_ind(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                         &received_msg->ittiMsg.sctp_data_ind);
         break;

@@ -838,7 +838,6 @@ void *sctp_eNB_task(void *arg)
       break;
 
       case SCTP_DATA_REQ: {
-	printf("SCTP: Sending message via SCTP\n");
         sctp_send_data(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                        ITTI_MSG_ORIGIN_ID(received_msg),
                        &received_msg->ittiMsg.sctp_data_req);
