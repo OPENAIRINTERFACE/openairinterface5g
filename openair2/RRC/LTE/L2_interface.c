@@ -270,13 +270,13 @@ mac_rrc_data_ind(
   const rb_id_t         srb_idP,
   const uint8_t*        sduP,
   const sdu_size_t      sdu_lenP,
-  const uint8_t         mbsfn_sync_areaP,
-  const int             node_type
+  const uint8_t         mbsfn_sync_areaP
 )
 //--------------------------------------------------------------------------
 {
-  LOG_E(RRC, "node_type == %d \n" , node_type);
-  if (node_type == ngran_eNB_DU) {
+
+
+  if ( RC.rrc[module_idP]->node_type  == ngran_eNB_DU) {
     LOG_W(RRC,"[DU %d][RAPROC] Received SDU for CCCH on SRB %d length %d for UE id %d RNTI %x \n",
             module_idP, srb_idP, sdu_lenP, UE_id, rntiP);
   

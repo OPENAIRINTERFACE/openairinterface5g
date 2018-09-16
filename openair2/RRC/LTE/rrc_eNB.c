@@ -5734,7 +5734,8 @@ rrc_eNB_generate_RRCConnectionSetup(
   SRB_ToAddModList_t                **SRB_configList;
   SRB_ToAddMod_t                     *SRB1_config;
   int                                 cnt;
-
+  MessageDef                            *message_p;
+     
   T(T_ENB_RRC_CONNECTION_SETUP, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
@@ -5757,8 +5758,34 @@ rrc_eNB_generate_RRCConnectionSetup(
               "[MSG] RRC Connection Setup\n");
 
   // configure SRB1/SRB2, PhysicalConfigDedicated, MAC_MainConfig for UE
+   switch (RC.rrc[ctxt_pP->module_id]->node_type){
+    case ngran_eNB_CU    :
+    case ngran_ng_eNB_CU :
+    case ngran_gNB_CU    :
+      // nothing to do  for CU 
+      break;
+    case ngran_eNB_DU    :
+    case ngran_gNB_DU  :
+      // create an ITTI message
+      message_p = itti_alloc_new_message (TASK_CU_F1, F1AP_DL_RRC_MESSAGE);
+      memset (F1AP_DL_RRC_MESSAGE (message_p).rrc_container, 0, F1AP_DL_RRC_MESSAGE);
+      memcpy (F1AP_DL_RRC_MESSAGE (message_p).rrc_container, 
+  			  (uint8_t*) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload, 
+  			  ue_p->Srb0.Tx_buffer.payload_size);
+      F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = ue_p->Srb0.Tx_buffer.payload_size;
+      F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id     = 0; 
+      F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id = 0;
+      F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id  = 0xFFFFFFFF; // unknown 
+      F1AP_DL_RRC_MESSAGE (message_p).srb_id = CCCH;  
+      F1AP_DL_RRC_MESSAGE (message_p).execute_duplication      = 1;
+      F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc      = 0; 
+      itti_send_msg_to_task (TASK_RRC_ENB, UE_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id), message_p);
 
-  if (*SRB_configList != NULL) {
+    case ngran_eNB:   
+    case ngran_ng_eNB :
+    case ngran_gNB  :  
+  
+    if (*SRB_configList != NULL) {
     for (cnt = 0; cnt < (*SRB_configList)->list.count; cnt++) {
       if ((*SRB_configList)->list.array[cnt]->srb_Identity == 1) {
         SRB1_config = (*SRB_configList)->list.array[cnt];
@@ -5812,11 +5839,14 @@ rrc_eNB_generate_RRCConnectionSetup(
 			       (SystemInformationBlockType1_v1310_IEs_t *)NULL
 #endif
 			       );
-        break;
       }
     }
   }
-
+  break;
+ default : 
+    LOG_W(RRC, "Unknown node type %d\n", RC.rrc[ctxt_pP->module_id]->node_type);		
+  }
+  
   MSC_LOG_TX_MESSAGE(
     MSC_RRC_ENB,
     MSC_RRC_UE,
@@ -6058,36 +6088,6 @@ rrc_eNB_decode_ccch(
                0,
                0);
 
-  /*
-#if defined(ENABLE_ITTI)
-#   if defined(DISABLE_ITTI_XER_PRINT)
-  {
-    MessageDef                         *message_p;
-
-    message_p = itti_alloc_new_message(TASK_RRC_ENB, RRC_UL_CCCH_MESSAGE);
-    memcpy(&message_p->ittiMsg, (void *)ul_ccch_msg, sizeof(RrcUlCcchMessage));
-
-    itti_send_msg_to_task(TASK_UNKNOWN, ctxt_pP->instance, message_p);
-  }
-#   else
-  {
-    char                                message_string[10000];
-    size_t                              message_string_size;
-
-    if ((message_string_size =
-           xer_sprint(message_string, sizeof(message_string), &asn_DEF_UL_CCCH_Message, (void *)ul_ccch_msg)) > 0) {
-      MessageDef                         *msg_p;
-
-      msg_p = itti_alloc_new_message_sized(TASK_RRC_ENB, RRC_UL_CCCH, message_string_size + sizeof(IttiMsgText));
-      msg_p->ittiMsg.rrc_ul_ccch.size = message_string_size;
-      memcpy(&msg_p->ittiMsg.rrc_ul_ccch.text, message_string, message_string_size);
-
-      itti_send_msg_to_task(TASK_UNKNOWN, ctxt_pP->instance, msg_p);
-    }
-  }
-#   endif
-#endif
-  */
 
   for (i = 0; i < 8; i++) {
     LOG_T(RRC, "%x.", ((uint8_t *) & ul_ccch_msg)[i]);
@@ -6317,18 +6317,19 @@ rrc_eNB_decode_ccch(
 #endif
                                ,NULL);
 
+
       rrc_rlc_config_asn1_req(ctxt_pP,
-                              ue_context_p->ue_context.SRB_configList,
-                              (DRB_ToAddModList_t*) NULL,
-                              (DRB_ToReleaseList_t*) NULL
+			      ue_context_p->ue_context.SRB_configList,
+			      (DRB_ToAddModList_t*) NULL,
+			      (DRB_ToReleaseList_t*) NULL
 #if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-                              , (PMCH_InfoList_r9_t *) NULL,
-                              0,0
+			      , (PMCH_InfoList_r9_t *) NULL,
+			      0,0
 #   endif
-                             );
+			      );
 #endif //NO_RRM
-      }
-      break;
+	}
+    break;
 
     case UL_CCCH_MessageType__c1_PR_rrcConnectionRequest:
       T(T_ENB_RRC_CONNECTION_REQUEST, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
@@ -6362,12 +6363,12 @@ rrc_eNB_decode_ccch(
         rrcConnectionRequest = &ul_ccch_msg->message.choice.c1.choice.rrcConnectionRequest.criticalExtensions.choice.rrcConnectionRequest_r8;
         {
           if (InitialUE_Identity_PR_randomValue == rrcConnectionRequest->ue_Identity.present) {
-          if(rrcConnectionRequest->ue_Identity.choice.randomValue.size != 5)
-          {
-            LOG_I(RRC, "wrong InitialUE-Identity randomValue size, expected 5, provided %lu",
-                         (long unsigned int)rrcConnectionRequest->ue_Identity.choice.randomValue.size);
-            return -1;
-          }
+	    if(rrcConnectionRequest->ue_Identity.choice.randomValue.size != 5)
+	      {
+		LOG_I(RRC, "wrong InitialUE-Identity randomValue size, expected 5, provided %lu",
+		      (long unsigned int)rrcConnectionRequest->ue_Identity.choice.randomValue.size);
+		return -1;
+	      }
             memcpy(((uint8_t*) & random_value) + 3,
                    rrcConnectionRequest->ue_Identity.choice.randomValue.buf,
                    rrcConnectionRequest->ue_Identity.choice.randomValue.size);
@@ -6437,8 +6438,8 @@ rrc_eNB_decode_ccch(
                   PROTOCOL_RRC_CTXT_UE_FMT" RRCConnectionRequest without random UE identity or S-TMSI not supported, let's reject the UE\n",
                   PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
             rrc_eNB_generate_RRCConnectionReject(ctxt_pP,
-                             rrc_eNB_get_ue_context(RC.rrc[ctxt_pP->module_id], ctxt_pP->rnti),
-                             CC_id);
+						 rrc_eNB_get_ue_context(RC.rrc[ctxt_pP->module_id], ctxt_pP->rnti),
+						 CC_id);
             // navid:
             break;
           }
@@ -6546,17 +6547,21 @@ rrc_eNB_decode_ccch(
 #endif
                                ,NULL);
 
-      rrc_rlc_config_asn1_req(ctxt_pP,
-                              ue_context_p->ue_context.SRB_configList,
-                              (DRB_ToAddModList_t*) NULL,
-                              (DRB_ToReleaseList_t*) NULL
+	if ( (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) ||
+	     (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU) ||
+	     (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_CU)   ) {
+	 
+	 	 rrc_rlc_config_asn1_req(ctxt_pP,
+	 	 	ue_context_p->ue_context.SRB_configList,
+	 	 	(DRB_ToAddModList_t*) NULL,
+	 	 	(DRB_ToReleaseList_t*) NULL
 #if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-                              , (PMCH_InfoList_r9_t *) NULL
-                              , 0, 0
+            , (PMCH_InfoList_r9_t *) NULL
+            , 0, 0
 #endif
-                             );
+            );
 #endif //NO_RRM
-
+	}
       break;
 
     default:

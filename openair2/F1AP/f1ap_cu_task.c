@@ -33,6 +33,7 @@
 #include "f1ap_common.h"
 #include "f1ap_handlers.h"
 #include "f1ap_cu_interface_management.h"
+#include "f1ap_cu_rrc_message_transfer.h"
 #include "f1ap_cu_task.h"
 
 extern RAN_CONTEXT_t RC;
@@ -144,6 +145,13 @@ void *F1AP_CU_task(void *arg) {
                                                &F1AP_SETUP_RESP(received_msg));
         break;
 
+     case F1AP_DL_RRC_MESSAGE: // from rrc
+        LOG_W(CU_F1AP, "F1AP_DL_RRC_MESSAGE\n");
+        // CU_send_f1setup_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        //                                       &F1AP_SETUP_RESP(received_msg));
+        CU_send_DL_RRC_MESSAGE_TRANSFER(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                               &F1AP_SETUP_RESP(received_msg));
+        break;
 
 //    case F1AP_SETUP_RESPONSE: // This is from RRC
 //    CU_send_F1_SETUP_RESPONSE(instance, *f1ap_setup_ind, &(F1AP_SETUP_RESP) f1ap_setup_resp)   
