@@ -5767,13 +5767,14 @@ rrc_eNB_generate_RRCConnectionSetup(
     case ngran_eNB_DU    :
     case ngran_gNB_DU  :
       // create an ITTI message
+    	/* TODO: F1 IDs ar missing in RRC */
       message_p = itti_alloc_new_message (TASK_CU_F1, F1AP_DL_RRC_MESSAGE);
       memset (F1AP_DL_RRC_MESSAGE (message_p).rrc_container, 0, F1AP_DL_RRC_MESSAGE);
       memcpy (F1AP_DL_RRC_MESSAGE (message_p).rrc_container, 
-  			  (uint8_t*) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload, 
+  			  (uint8_t*) ue_p->Srb0.Tx_buffer.Payload, 
   			  ue_p->Srb0.Tx_buffer.payload_size);
       F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = ue_p->Srb0.Tx_buffer.payload_size;
-      F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id     = 0; 
+      F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id     = 0;  
       F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id = 0;
       F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id  = 0xFFFFFFFF; // unknown 
       F1AP_DL_RRC_MESSAGE (message_p).srb_id = CCCH;  
