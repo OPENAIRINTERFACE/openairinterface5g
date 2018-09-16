@@ -170,9 +170,17 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
         /* - nRCGI */
         F1AP_NRCGI_t nRCGI;
         MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i], &nRCGI.pLMN_Identity);
+	printf("plmn: (%d,%d)\n",f1ap_du_data->mcc[i],f1ap_du_data->mnc[i]);
         //MCC_MNC_TO_PLMNID(208, 95, 2, &nRCGI.pLMN_Identity);
 
         NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[i], &nRCGI.nRCellIdentity);
+	printf("nRCellIdentity (%llx): %x.%x.%x.%x.%x\n",f1ap_du_data->nr_cellid[i],
+	       nRCGI.nRCellIdentity.buf[0],
+	       nRCGI.nRCellIdentity.buf[1],
+	       nRCGI.nRCellIdentity.buf[2],
+	       nRCGI.nRCellIdentity.buf[3],
+	       nRCGI.nRCellIdentity.buf[4]);
+
         served_cell_information.nRCGI = nRCGI;
 
         /* - nRPCI */
@@ -474,14 +482,21 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
 
 	 TBCD_TO_MCC_MNC(&cell->nRCGI.pLMN_Identity, F1AP_SETUP_RESP (msg_p).mcc[i], F1AP_SETUP_RESP (msg_p).mnc[i], F1AP_SETUP_RESP (msg_p).mnc_digit_length[i]);
 	 AssertFatal(cell->nRPCI != NULL, "nRPCI is null\n");
-
+	 printf("nr_cellId : %x %x %x %x %x\n",
+		cell->nRCGI.nRCellIdentity.buf[0],
+		cell->nRCGI.nRCellIdentity.buf[1],
+		cell->nRCGI.nRCellIdentity.buf[2],
+		cell->nRCGI.nRCellIdentity.buf[3],
+		cell->nRCGI.nRCellIdentity.buf[4]);
+	 BIT_STRING_TO_NR_CELL_IDENTITY(&cell->nRCGI.nRCellIdentity,
+					F1AP_SETUP_RESP (msg_p).nr_cellid[i]);
 	 F1AP_SETUP_RESP (msg_p).nrpci[i] = *cell->nRPCI;
 
 	 F1AP_ProtocolExtensionContainer_160P9_t *ext = cell->iE_Extensions;
 	 AssertFatal(ext!=NULL,"Extension for SI is null\n");
 	 F1AP_SETUP_RESP (msg_p).num_SI[i] = ext->list.count;
 	 AssertFatal(ext->list.count==1,"At least one SI message should be there, and only 1 for now!\n");
-	 printf("F1AP: F1Setup-Resp Cell %d MCC %d MNC %d NRPCI %d\n",i,F1AP_SETUP_RESP (msg_p).mcc[i],F1AP_SETUP_RESP (msg_p).mnc[i],F1AP_SETUP_RESP (msg_p).nrpci[i],F1AP_SETUP_RESP (msg_p).num_SI[i]);
+	 printf("F1AP: F1Setup-Resp Cell %d MCC %d MNC %d NRCellid %x num_si %d\n",i,F1AP_SETUP_RESP (msg_p).mcc[i],F1AP_SETUP_RESP (msg_p).mnc[i],F1AP_SETUP_RESP (msg_p).nr_cellid[i],F1AP_SETUP_RESP (msg_p).num_SI[i]);
 	 for (int si =0;si < ext->list.count;si++) {
 	   size_t size = ext->list.array[si]->extensionValue.choice.GNB_CUSystemInformation.sImessage.size;
 	   F1AP_SETUP_RESP (msg_p).SI_container_length[i][si] = size;
@@ -585,6 +600,12 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
         /* - nRCGI */
         F1AP_NRCGI_t nRCGI;
         MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i], &nRCGI.pLMN_Identity);
+	printf("nr_cellId : %x %x %x %x %x\n",
+	       nRCGI.nRCellIdentity.buf[0],
+	       nRCGI.nRCellIdentity.buf[1],
+	       nRCGI.nRCellIdentity.buf[2],
+	       nRCGI.nRCellIdentity.buf[3],
+	       nRCGI.nRCellIdentity.buf[4]);
         NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[i], &nRCGI.nRCellIdentity);
         served_cell_information.nRCGI = nRCGI;
 

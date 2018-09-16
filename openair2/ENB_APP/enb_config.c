@@ -799,18 +799,19 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc) {
 	rrc->sctp_in_streams                       = (uint16_t)*(SCTPParams[ENB_SCTP_INSTREAMS_IDX].uptr);
 	rrc->sctp_out_streams                      = (uint16_t)*(SCTPParams[ENB_SCTP_OUTSTREAMS_IDX].uptr);
 
-  // MCC and MNC
-	rrc->mcc= (uint16_t)atoi( *(ENBParamList.paramarray[i][ENB_MOBILE_COUNTRY_CODE_IDX].strptr) );
-	rrc->mnc= (uint16_t)atoi( *(ENBParamList.paramarray[i][ENB_MOBILE_NETWORK_CODE_IDX].strptr) );
-	rrc->mnc_digit_length= strlen(*(ENBParamList.paramarray[i][ENB_MOBILE_NETWORK_CODE_IDX].strptr));
-	rrc->tac= (uint16_t)atoi( *(ENBParamList.paramarray[i][ENB_TRACKING_AREA_CODE_IDX].strptr) );
-
       }
       
       else { // no F1
 	// set to ngran_eNB for now, it will get set to ngran_DU if macrlc entity which uses F1 is present
 	rrc->node_type                             = ngran_eNB;
       }	      
+
+      // MCC and MNC
+      rrc->mcc              = (uint16_t)atoi( *(ENBParamList.paramarray[i][ENB_MOBILE_COUNTRY_CODE_IDX].strptr) );
+      rrc->mnc              = (uint16_t)atoi( *(ENBParamList.paramarray[i][ENB_MOBILE_NETWORK_CODE_IDX].strptr) );
+      rrc->mnc_digit_length = strlen(*(ENBParamList.paramarray[i][ENB_MOBILE_NETWORK_CODE_IDX].strptr));
+      rrc->tac              = (uint16_t)atoi( *(ENBParamList.paramarray[i][ENB_TRACKING_AREA_CODE_IDX].strptr) );
+      rrc->nr_cellid        = (uint64_t)*(ENBParamList.paramarray[i][ENB_NRCELLID_IDX].u64ptr);
 
       // search if in active list
 
@@ -2404,7 +2405,10 @@ int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
                     (F1AP_SETUP_REQ (msg_p).mnc_digit_length[k] == 3),
                     "BAD MNC DIGIT LENGTH %d",
                     F1AP_SETUP_REQ (msg_p).mnc_digit_length[k]);
-	
+
+	F1AP_SETUP_REQ (msg_p).nr_cellid[k] = (uint64_t)*(ENBParamList.paramarray[i][ENB_NRCELLID_IDX].u64ptr);
+        LOG_I(ENB_APP,"F1AP: nr_cellid[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).nr_cellid[k]);
+
         LOG_I(ENB_APP,"F1AP: CU_ip4_address in DU %s\n",RC.mac[k]->eth_params_n.remote_addr);
         LOG_I(ENB_APP,"FIAP: CU_ip4_address in DU %p, strlen %d\n",F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv4_address,(int)strlen(RC.mac[k]->eth_params_n.remote_addr));
  	
@@ -2440,9 +2444,13 @@ int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
           pthread_mutex_unlock(&rrc->cell_info_mutex);
         } while (cell_info_configured ==0);
 
-      	
+
+	rrc->mcc       = F1AP_SETUP_REQ (msg_p).mcc[k];
+	rrc->mnc       = F1AP_SETUP_REQ (msg_p).mnc[k];
+	rrc->tac       = F1AP_SETUP_REQ (msg_p).tac[k];
+	rrc->nr_cellid = F1AP_SETUP_REQ (msg_p).nr_cellid[k];
+
         F1AP_SETUP_REQ (msg_p).nr_pci[k]    = rrc->carrier[0].physCellId;
-        F1AP_SETUP_REQ (msg_p).nr_cellid[k] = 0;
         F1AP_SETUP_REQ (msg_p).num_ssi[k] = 0;
 
 
@@ -3077,13 +3085,17 @@ void handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
 
 
   int i,j,si_ind;
-  
+  printf("cells_to_activated %d, RRC instances %d\n",
+	 resp->num_cells_to_activate,RC.nb_inst);
   for (j=0;j<resp->num_cells_to_activate;j++) {
     for (i=0;i<RC.nb_inst;i++) {
       rrc_eNB_carrier_data_t *carrier =  &RC.rrc[i]->carrier[0];
-      // identify local index of cell j by plmn identity
-      if (check_plmn_identity(carrier, resp->mcc[j], resp->mnc[j], resp->mnc_digit_length[j])>0 &&
-          resp->nrpci[j] == carrier->physCellId) {
+      // identify local index of cell j by nr_cellid, plmn identity and physical cell ID
+      printf("Checking cell %d, rrc inst %d : rrc->nr_cellid %x, resp->nr_cellid %x\n",
+	     j,i,RC.rrc[i]->nr_cellid,resp->nr_cellid[j]);
+      if (RC.rrc[i]->nr_cellid == resp->nr_cellid[j] && 
+	  (check_plmn_identity(carrier, resp->mcc[j], resp->mnc[j], resp->mnc_digit_length[j])>0 &&
+	   resp->nrpci[j] == carrier->physCellId)) {
 	// copy system information and decode it 
 	for (si_ind=0;si_ind<resp->num_SI[j];si_ind++)  {
 	  printf("SI %d: ",si_ind);

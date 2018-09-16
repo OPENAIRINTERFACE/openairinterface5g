@@ -68,7 +68,8 @@ void du_task_send_sctp_association_req(instance_t instance, f1ap_setup_req_t *f1
   f1ap_du_data = (f1ap_setup_req_t *)calloc(1, sizeof(f1ap_setup_req_t));
   *f1ap_du_data = *f1ap_setup_req;
   //printf("sib itti message %s\n", f1ap_setup_req_t->sib1[0]);
-  printf("sib f1ap context %s\n", f1ap_du_data->sib1[0]);
+
+  printf("nr_cellid : %llx (%lld)",f1ap_setup_req->nr_cellid[0],f1ap_setup_req->nr_cellid[0]);
   
   //du_f1ap_register_to_sctp
   itti_send_msg_to_task(TASK_SCTP, instance, message_p);

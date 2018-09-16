@@ -146,13 +146,20 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
                     F1AP_SETUP_REQ(message_p).mnc[i],
                     F1AP_SETUP_REQ(message_p).mnc_digit_length[i]);
     
-    // @issue in here cellID
-    F1AP_SETUP_REQ(message_p).nr_cellid[i] = 1;
+    
+    // NR cellID
+    BIT_STRING_TO_NR_CELL_IDENTITY(&served_celles_item_p->served_Cell_Information.nRCGI.nRCellIdentity,
+				   F1AP_SETUP_REQ(message_p).nr_cellid[i]);
     printf("[SCTP %d] Received nRCGI: MCC %d, MNC %d, CELL_ID %d\n", assoc_id,
                F1AP_SETUP_REQ(message_p).mcc[i],
                F1AP_SETUP_REQ(message_p).mnc[i],
                F1AP_SETUP_REQ(message_p).nr_cellid[i]);
-    
+    printf("nr_cellId : %x %x %x %x %x\n",
+	   served_celles_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[0],
+	   served_celles_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[1],
+	   served_celles_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[2],
+	   served_celles_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[3],
+	   served_celles_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[4]);    
     /* - nRPCI */
     F1AP_SETUP_REQ(message_p).nr_pci[i] = served_celles_item_p->served_Cell_Information.nRPCI;
     printf ("F1AP_SETUP_REQ(message_p).nr_pci[%d] %d \n", i, F1AP_SETUP_REQ(message_p).nr_pci[i]);
@@ -306,7 +313,7 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
     F1AP_NRCGI_t nRCGI;
     MCC_MNC_TO_PLMNID(f1ap_setup_resp->mcc[i], f1ap_setup_resp->mnc[i], f1ap_setup_resp->mnc_digit_length[i],
                                      &nRCGI.pLMN_Identity);
-    NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+    NR_CELL_ID_TO_BIT_STRING(f1ap_setup_resp->nr_cellid[i], &nRCGI.nRCellIdentity);
     cells_to_be_activated_list_item.nRCGI = nRCGI;
 
     /* optional */

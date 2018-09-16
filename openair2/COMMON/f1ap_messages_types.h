@@ -101,10 +101,10 @@ typedef struct f1ap_setup_req_s {
   uint16_t mnc[F1AP_MAX_NB_CELLS];//[6];
   uint8_t  mnc_digit_length[F1AP_MAX_NB_CELLS];//[6];
 
+  // NR Global Cell Id
+  uint64_t nr_cellid[F1AP_MAX_NB_CELLS];
   // NR Physical Cell Ids
   uint16_t nr_pci[F1AP_MAX_NB_CELLS];
-  // NR Cell Ids
-  uint8_t nr_cellid[F1AP_MAX_NB_CELLS];
   // Number of slide support items (max 16, could be increased to as much as 1024)
   uint16_t num_ssi[F1AP_MAX_NB_CELLS];//[6];
   uint8_t sst[F1AP_MAX_NB_CELLS];//[16][6];
@@ -189,6 +189,8 @@ typedef struct f1ap_setup_resp_s {
   uint16_t mnc[F1AP_MAX_NB_CELLS];
   /// mnc digit length of DU cells
   uint8_t mnc_digit_length[F1AP_MAX_NB_CELLS];
+  // NR Global Cell Id
+  uint64_t nr_cellid[F1AP_MAX_NB_CELLS];
   /// NRPCI
   uint16_t nrpci[F1AP_MAX_NB_CELLS];
   /// num SI messages per DU cell
@@ -228,6 +230,9 @@ typedef struct f1ap_initial_ul_rrc_message_s {
   uint16_t mnc;
   /// mnc digit length of DU cells
   uint8_t mnc_digit_length;
+  /// nr cell id
+  uint64_t nr_cellid;
+  /// crnti
   uint16_t crnti;
   uint8_t *rrc_container;
   int      rrc_container_length;

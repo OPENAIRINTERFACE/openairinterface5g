@@ -714,7 +714,8 @@ typedef struct eNB_RRC_INST_s {
   int mnc_digit_length;
   /// tac
   int tac;
-
+  /// NR cell id
+  uint64_t nr_cellid;
   // other RAN parameters
   int srb1_timer_poll_retransmit;
   int srb1_poll_pdu;

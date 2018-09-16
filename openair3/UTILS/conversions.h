@@ -162,6 +162,13 @@ do {                                                                \
         ((aSN)->buf[2] << 4) | (aSN)->buf[3];                       \
 } while(0)
 
+#define BIT_STRING_TO_NR_CELL_IDENTITY(aSN, vALUE)                     \
+do {                                                                   \
+    DevCheck((aSN)->bits_unused == 4, (aSN)->bits_unused, 4, 0);       \
+    vALUE = ((aSN)->buf[0] << 28) | ((aSN)->buf[1] << 20) |            \
+        ((aSN)->buf[2] << 12) | ((aSN)->buf[3]<<4) | ((aSN)->buf[4]>>4);  \
+} while(0)
+
 #define MCC_HUNDREDS(vALUE) \
     ((vALUE) / 100)
 /* When MNC is only composed of 2 digits, set the hundreds unit to 0xf */

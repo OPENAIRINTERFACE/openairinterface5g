@@ -7308,8 +7308,11 @@ void handle_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
     int found_cell=0;
     for (int j=0;j<RC.nb_inst;j++) {
       eNB_RRC_INST *rrc = RC.rrc[j];
-      if (rrc->mcc == f1_setup_req->mcc[i] && rrc->mnc == f1_setup_req->mnc[i]) {
-        // RK: cu_cell_ind is the index for cu_cell_ind, could you confirm? 
+      if (rrc->mcc == f1_setup_req->mcc[i] && 
+	  rrc->mnc == f1_setup_req->mnc[i] && 
+	  rrc->nr_cellid == f1_setup_req->nr_cellid[i]) {
+        // check that CU rrc instance corresponds to mcc/mnc/cgi (normally cgi should be enough, but just in case)
+
         rrc->carrier[0].MIB = malloc(f1_setup_req->mib_length[i]);
         rrc->carrier[0].sizeof_MIB = f1_setup_req->mib_length[i];
         LOG_W(RRC, "instance %d mib length %d\n", i, f1_setup_req->mib_length[i]);
@@ -7360,6 +7363,7 @@ void handle_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
         F1AP_SETUP_RESP (msg_p).mcc[cu_cell_ind]                           = rrc->mcc;
         F1AP_SETUP_RESP (msg_p).mnc[cu_cell_ind]                           = rrc->mnc;
         F1AP_SETUP_RESP (msg_p).mnc_digit_length[cu_cell_ind]              = rrc->mnc_digit_length;
+	F1AP_SETUP_RESP (msg_p).nr_cellid[cu_cell_ind]                     = rrc->nr_cellid;
         F1AP_SETUP_RESP (msg_p).nrpci[cu_cell_ind]                         = f1_setup_req->nr_pci[i];
         int num_SI= 0;
         if (rrc->carrier[0].SIB23) {
@@ -7409,6 +7413,7 @@ rrc_enb_task(
   MessageDef                         *msg_p;
   const char                         *msg_name_p;
   instance_t                          instance;
+  int                                rrc_inst;
   int                                 result;
   SRB_INFO                           *srb_info_p;
   int                                 CC_id;
@@ -7426,6 +7431,7 @@ rrc_enb_task(
 
     msg_name_p = ITTI_MSG_NAME(msg_p);
     instance = ITTI_MSG_INSTANCE(msg_p);
+    
     LOG_I(RRC,"Received message %s\n",msg_name_p);
 
     switch (ITTI_MSG_ID(msg_p)) {
@@ -7440,8 +7446,11 @@ rrc_enb_task(
 
       /* Messages from MAC */
     case RRC_MAC_CCCH_DATA_IND:
+
+      rrc_inst = RRC_MAC_CCCH_DATA_IND(msg_p).enb_index;
+
       PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
-                                    instance,
+                                    rrc_inst,
                                     ENB_FLAG_YES,
                                     RRC_MAC_CCCH_DATA_IND(msg_p).rnti,
                                     msg_p->ittiMsgHeader.lte_time.frame,
@@ -7450,15 +7459,23 @@ rrc_enb_task(
             PROTOCOL_RRC_CTXT_UE_ARGS(&ctxt),
             msg_name_p);
 
-      struct rrc_eNB_ue_context_s *ue_context_p = rrc_eNB_get_ue_context(RC.rrc[instance],
+      struct rrc_eNB_ue_context_s *ue_context_p = rrc_eNB_get_ue_context(RC.rrc[rrc_inst],
 									 RRC_MAC_CCCH_DATA_IND(msg_p).rnti);
+
+      if (ue_context_p == NULL) {
+
+	// create a ue_context with rnti as random value, will be updated when Attach Request is received
+	ue_context_p = rrc_eNB_get_next_free_ue_context(&ctxt,
+							RRC_MAC_CCCH_DATA_IND(msg_p).rnti
+							);
+      }
 
       CC_id = RRC_MAC_CCCH_DATA_IND(msg_p).CC_id;
       eNB_RRC_UE_t *ue_p = &ue_context_p->ue_context; 
       srb_info_p = &ue_p->Srb0;
 
       LOG_I(RRC,"Decoding CCCH : inst %d, CC_id %d, ctxt %p, sib_info_p->Rx_buffer.payload_size %d\n",
-	    instance,CC_id,&ctxt, RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
+	    rrc_inst,CC_id,&ctxt, RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
       if (RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size >= RRC_BUFFER_SIZE_MAX) {
           LOG_I(RRC, "CCCH message has size %d > %d\n",RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,RRC_BUFFER_SIZE_MAX);
           break;

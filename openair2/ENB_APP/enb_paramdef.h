@@ -195,7 +195,7 @@ typedef enum {
 #define ENB_CONFIG_STRING_REMOTE_S_PORTC                "remote_s_portc"
 #define ENB_CONFIG_STRING_LOCAL_S_PORTD                 "local_s_portd"
 #define ENB_CONFIG_STRING_REMOTE_S_PORTD                "remote_s_portd"
-
+#define ENB_CONFIG_STRING_NR_CELLID                     "nr_cellid"
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            cell configuration parameters                                                                */
 /*   optname                                   helpstr   paramflags    XXXptr        defXXXval                   type           numelt     */
@@ -215,6 +215,7 @@ typedef enum {
 {ENB_CONFIG_STRING_REMOTE_S_PORTC,               NULL,   0,            uptr:NULL,   defuintval:50000,            TYPE_UINT,      0},  \
 {ENB_CONFIG_STRING_LOCAL_S_PORTD,                NULL,   0,            uptr:NULL,   defuintval:50001,            TYPE_UINT,      0},  \
 {ENB_CONFIG_STRING_REMOTE_S_PORTD,               NULL,   0,            uptr:NULL,   defuintval:50001,            TYPE_UINT,      0},  \
+{ENB_CONFIG_STRING_NR_CELLID,                    NULL,   0,            u64ptr:NULL,   defint64val:0,                TYPE_UINT64,    0},  \
 }															     	
 #define ENB_ENB_ID_IDX                  0
 #define ENB_CELL_TYPE_IDX               1
@@ -230,6 +231,7 @@ typedef enum {
 #define ENB_REMOTE_S_PORTC_IDX          11
 #define ENB_LOCAL_S_PORTD_IDX           12
 #define ENB_REMOTE_S_PORTD_IDX          13
+#define ENB_NRCELLID_IDX                14
 /*-------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*-------------------------------------------------------------------------------------------------------------------------------------------------*/		  
 

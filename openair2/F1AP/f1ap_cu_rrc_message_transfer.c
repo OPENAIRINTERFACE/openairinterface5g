@@ -35,6 +35,9 @@
 #include "f1ap_decoder.h"
 #include "f1ap_itti_messaging.h"
 #include "f1ap_cu_rrc_message_transfer.h"
+#include "common/ran_context.h"
+#include "openair3/UTILS/conversions.h"
+
 // undefine C_RNTI from
 // openair1/PHY/LTE_TRANSPORT/transport_common.h which
 // replaces in ie->value.choice.C_RNTI, causing
@@ -44,6 +47,8 @@
 /*
     Initial UL RRC Message Transfer
 */
+
+extern RAN_CONTEXT_t RC;
 
 int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
                                               uint32_t               assoc_id,
@@ -84,6 +89,9 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_NRCGI, true);
 
+  uint64_t nr_cellid;
+  BIT_STRING_TO_NR_CELL_IDENTITY(&ie->value.choice.NRCGI.nRCellIdentity,nr_cellid);
+					       
   /* RNTI */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_C_RNTI, true);
@@ -102,14 +110,24 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   printf ("RRCContainer(CCCH) :");
   for (int i=0;i<ie->value.choice.RRCContainer.size;i++) printf("%2x ",RRC_MAC_CCCH_DATA_IND (message_p).sdu[i]);
 
+  // Find instance from nr_cellid
+  int rrc_inst = -1;
+  for (int i=0;i<RC.nb_inst;i++) {
+          // first get RRC instance (note, no the ITTI instance)
+    eNB_RRC_INST *rrc = RC.rrc[i];
+    if (rrc->nr_cellid == nr_cellid) {
+      rrc_inst = i; 
+      break;
+    }
+  }
+  AssertFatal(rrc_inst>=0,"couldn't find an RRC instance for nr_cell %ll\n",nr_cellid);
 
   RRC_MAC_CCCH_DATA_IND (message_p).frame     = 0; 
   RRC_MAC_CCCH_DATA_IND (message_p).sub_frame = 0;
   RRC_MAC_CCCH_DATA_IND (message_p).sdu_size  = ccch_sdu_len;
-  RRC_MAC_CCCH_DATA_IND (message_p).enb_index = instance; // CU instance 
+  RRC_MAC_CCCH_DATA_IND (message_p).enb_index = rrc_inst; // CU instance 
   RRC_MAC_CCCH_DATA_IND (message_p).rnti      = rnti;
   RRC_MAC_CCCH_DATA_IND (message_p).CC_id      = CC_id; 
-  printf("Sending ITTI message to instance %d, rnti %x\n",instance,rnti);
   itti_send_msg_to_task (TASK_RRC_ENB, instance, message_p);
 
 
