@@ -5765,10 +5765,8 @@ rrc_eNB_generate_RRCConnectionSetup(
       // create an ITTI message
       /* TODO: F1 IDs ar missing in RRC */
       message_p = itti_alloc_new_message (TASK_RRC_ENB, F1AP_DL_RRC_MESSAGE);
-      memset (F1AP_DL_RRC_MESSAGE (message_p).rrc_container, 0, F1AP_DL_RRC_MESSAGE);
-      memcpy (F1AP_DL_RRC_MESSAGE (message_p).rrc_container, 
-  			  (uint8_t*) ue_p->Srb0.Tx_buffer.Payload, 
-  			  ue_p->Srb0.Tx_buffer.payload_size);
+      F1AP_DL_RRC_MESSAGE (message_p).rrc_container =  ue_p->Srb0.Tx_buffer.Payload;
+
       F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = ue_p->Srb0.Tx_buffer.payload_size;
       F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id     = 0;  
       F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id = 0;
@@ -5777,17 +5775,13 @@ rrc_eNB_generate_RRCConnectionSetup(
       F1AP_DL_RRC_MESSAGE (message_p).execute_duplication      = 1;
       F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc      = 0; 
       itti_send_msg_to_task (TASK_CU_F1, UE_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id), message_p);
-<<<<<<< HEAD
-
-=======
       LOG_E(RRC, "F1AP_DL_RRC_MESSAGE\n");
       break;
     case ngran_eNB_DU    :
     case ngran_gNB_DU  :
       // nothing to do for DU 
-      LOG_E(RRC, "nothing to do for DU\n");
+      AssertFatal(1==0,"nothing to do for DU\n");
       break;
->>>>>>> a45d496c8cb20a4d28628cbfae54ce906678d0cb
     case ngran_eNB:   
     case ngran_ng_eNB :
     case ngran_gNB  :  
