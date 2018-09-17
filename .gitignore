@@ -5,3 +5,4 @@
 log/
 lte_build_oai/
 targets/bin/
+cmake_targets/nas_sim_tools/build/
