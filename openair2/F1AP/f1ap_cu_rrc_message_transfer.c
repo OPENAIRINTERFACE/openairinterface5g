@@ -187,15 +187,6 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
   uint8_t  *buffer;
   uint32_t  len;
 
-  if (f1ap_stream == 0) {
-    LOG_E(CU_F1AP, "[CU  %d] Received DL RRC message transfer on stream == %d\n",
-	  f1ap_assoc_id, f1ap_stream);
-    return -1;
-  }
-
-  out = &pdu.choice.initiatingMessage->value.choice.DLRRCMessageTransfer; 
-
-  
   /* Create */
   /* 0. Message Type */ 
   memset(&pdu, 0, sizeof(pdu));
