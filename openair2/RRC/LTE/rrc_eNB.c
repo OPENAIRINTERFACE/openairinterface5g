@@ -5780,7 +5780,7 @@ rrc_eNB_generate_RRCConnectionSetup(
       F1AP_DL_RRC_MESSAGE (message_p).srb_id = CCCH;  
       F1AP_DL_RRC_MESSAGE (message_p).execute_duplication      = 1;
       F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc      = 0; 
-      itti_send_msg_to_task (TASK_RRC_ENB, UE_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id), message_p);
+      itti_send_msg_to_task (TASK_CU_F1, UE_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id), message_p);
 
     case ngran_eNB:   
     case ngran_ng_eNB :
