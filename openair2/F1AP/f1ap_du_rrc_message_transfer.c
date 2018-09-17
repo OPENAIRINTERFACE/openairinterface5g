@@ -34,11 +34,17 @@
 #include "f1ap_encoder.h"
 #include "f1ap_decoder.h"
 #include "f1ap_itti_messaging.h"
+
 #include "f1ap_du_rrc_message_transfer.h"
+
+#include "DL-CCCH-Message.h"
+#include "DL-DCCH-Message.h"
+
 // undefine C_RNTI from
 // openair1/PHY/LTE_TRANSPORT/transport_common.h which
 // replaces in ie->value.choice.C_RNTI, causing
 // a compile error
+
 #undef C_RNTI 
 
 extern f1ap_setup_req_t *f1ap_du_data;
@@ -62,7 +68,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   uint64_t        du_ue_f1ap_id;
   uint64_t        srb_id;
   int             executeDuplication;
-  sdu_size_t      ccch_sdu_len;
+  sdu_size_t      rrc_dl_sdu_len;
   uint64_t        subscriberProfileIDforRFP;
   uint64_t        rAT_FrequencySelectionPriority;
 
@@ -122,14 +128,14 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                              F1AP_ProtocolIE_ID_id_RRCContainer, true);
   // BK: need check
   // create an ITTI message and copy SDU
-  message_p = itti_alloc_new_message (TASK_CU_F1, RRC_MAC_CCCH_DATA_IND);
-  memset (RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
-  ccch_sdu_len = ie->value.choice.RRCContainer.size;
-  memcpy(RRC_MAC_CCCH_DATA_IND (message_p).sdu, ie->value.choice.RRCContainer.buf,
-         ccch_sdu_len);
-  printf ("RRCContainer(CCCH) :");
-  for (int i=0;i<ie->value.choice.RRCContainer.size;i++) printf("%2x ",RRC_MAC_CCCH_DATA_IND (message_p).sdu[i]);
-
+  //  message_p = itti_alloc_new_message (TASK_CU_F1, RRC_MAC_CCCH_DATA_IND);
+  //  memset (RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
+  rrc_dl_sdu_len = ie->value.choice.RRCContainer.size;
+  //  memcpy(RRC_MAC_CCCH_DATA_IND (message_p).sdu, ie->value.choice.RRCContainer.buf,
+  //         ccch_sdu_len);
+  printf ("RRCContainer :");
+  for (int i=0;i<ie->value.choice.RRCContainer.size;i++) printf("%2x ",ie->value.choice.RRCContainer.buf[i]);
+  printf("\n");
 
   /* optional */
   /* RAT_FrequencyPriorityInformation */
@@ -147,6 +153,59 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
     }
   }
 
+  // decode RRC Container and act on the message type
+  AssertFatal(srb_id<3,"illegal srb_id\n");
+
+  if (srb_id == 0) {
+    DL_CCCH_Message_t* dl_ccch_msg=NULL;
+    asn_dec_rval_t dec_rval;
+    dec_rval = uper_decode(NULL,
+			   &asn_DEF_DL_CCCH_Message,
+			   (void**)&dl_ccch_msg,
+			   ie->value.choice.RRCContainer.buf,
+			   ie->value.choice.RRCContainer.size,0,0);
+    switch (dl_ccch_msg->message.choice.c1.present) {
+      
+    case DL_CCCH_MessageType__c1_PR_NOTHING:
+      LOG_I(RRC, "Received PR_NOTHING on DL-CCCH-Message\n");
+      break;
+      
+    case DL_CCCH_MessageType__c1_PR_rrcConnectionReestablishment:
+      LOG_I(RRC,
+	    "Logical Channel DL-CCCH (SRB0), Received RRCConnectionReestablishment\n");
+      break;
+      
+    case DL_CCCH_MessageType__c1_PR_rrcConnectionReestablishmentReject:
+      LOG_I(RRC,
+	    "Logical Channel DL-CCCH (SRB0), Received RRCConnectionReestablishmentReject\n");
+      break;
+
+    case DL_CCCH_MessageType__c1_PR_rrcConnectionReject:
+      LOG_I(RRC,
+	    "Logical Channel DL-CCCH (SRB0), Received RRCConnectionReject \n");
+      break;
+
+    case DL_CCCH_MessageType__c1_PR_rrcConnectionSetup:
+      LOG_I(RRC,
+	    "Logical Channel DL-CCCH (SRB0), Received RRCConnectionSetup RNTI %x\n");
+      // Get configuration
+
+      break;
+
+    default:
+      AssertFatal(1==0,
+		  "Unknown message\n");
+      break;
+    }
+
+  }
+  else if (srb_id == 1){ 
+
+  }
+
+  else if (srb_id == 2){
+
+  }
   return 0;
   
 }
