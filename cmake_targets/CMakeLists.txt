@@ -543,7 +543,9 @@ set (CONFIG_SOURCES
    )
 set (CONFIG_LIBCONFIG_SOURCES
     ${CONFIG_ROOTDIR}/libconfig/config_libconfig.c
-   )
+    )
+add_library(CONFIG_LIB ${CONFIG_SOURCES})
+set(CONFIG_LIBRARIES CONFIG_LIB)  
 add_library(params_libconfig MODULE ${CONFIG_LIBCONFIG_SOURCES} )
 target_link_libraries(params_libconfig config)
 # shared library loader
@@ -2517,10 +2519,14 @@ target_link_libraries (dlsim_tm4
   )
 
 add_executable(polartest ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/polartest.c)
-target_link_libraries(polartest m SIMU PHY PHY_NR PHY_COMMON -lm ${ATLAS_LIBRARIES})
+target_link_libraries(polartest SIMU PHY PHY_NR PHY_COMMON m ${ATLAS_LIBRARIES})
 
 add_executable(ldpctest  ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c)
-target_link_libraries(ldpctest m SIMU PHY PHY_NR ${ATLAS_LIBRARIES})
+target_link_libraries(ldpctest SIMU PHY PHY_NR m ${ATLAS_LIBRARIES})
+
+add_executable(nr_pbchsim  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pbchsim.c )
+target_link_libraries(nr_pbchsim  -Wl,--start-group UTIL SIMU PHY PHY_COMMON PHY_NR SCHED_NR_LIB ${CONFIG_LIBRARIES} -Wl,--end-group m pthread dl ${ATLAS_LIBRARIES})
+
 
 foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)
 

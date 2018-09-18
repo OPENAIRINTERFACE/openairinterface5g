@@ -19,9 +19,10 @@
  *      contact@openairinterface.org
  */
 
-/*#ifndef __INIT_DEFS_NR__H__
+#ifndef __INIT_DEFS_NR__H__
 #define __INIT_DEFS_NR__H__
 
+/*
 #define _GNU_SOURCE
 #include <sched.h>
 #include <stdio.h>
@@ -44,6 +45,7 @@
 #include "defs.h"
 #include "assertions.h"*/
 #include "impl_defs_nr.h"
+#include "defs_nr_common.h"
 
 #define MAX_NUM_SUBCARRIER_SPACING 5
 
@@ -58,6 +60,7 @@
 #define MOD_TABLE_SIZE_SHORT 6
 #define MOD_TABLE_BPSK_OFFSET 1
 
+ /*
 typedef enum {
   NR_MU_0=0,
   NR_MU_1,
@@ -93,6 +96,7 @@ typedef struct {
   uint32_t samples_per_frame_wCP;
 
 } NR_DL_FRAME_PARMS;
+ */
 
 /// Top-level PHY Data Structure for gNB
 typedef struct PHY_VARS_gNB_s {

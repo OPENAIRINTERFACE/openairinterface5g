@@ -39,7 +39,8 @@
 //#define DEBUG_PBCH_ENCODING
 //#define DEBUG_PBCH_DMRS
 
-extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
+//extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
+#include "PHY/NR_REFSIG/nr_mod_table.h"
 
 int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
                           int32_t **txdataF,
