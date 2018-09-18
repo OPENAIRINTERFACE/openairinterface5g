@@ -298,17 +298,10 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance) {
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    printf("Failed to encode F1 setup request\n");
+    LOG_E(DU_F1AP, "Failed to encode F1 setup request\n");
     return -1;
   }
 
-  printf("\n");
-
-  /* decode */
-  // if (f1ap_decode_pdu(&pdu, buffer, len) > 0) {
-  //   printf("Failed to decode F1 setup request\n");
-  // }
-  //du_f1ap_itti_send_sctp_data_req(instance, f1ap_setup_req->assoc_id, buffer, len, 0);
   return 0;
 }
 
@@ -688,16 +681,10 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance) {
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    printf("Failed to encode F1 setup request\n");
+    LOG_E(DU_F1AP, "Failed to encode F1 setup request\n");
     return -1;
   }
 
-  printf("\n");
-
-  /* decode */
-  // if (f1ap_decode_pdu(&pdu, buffer, len) > 0) {
-  //   printf("Failed to decode F1 setup request\n");
-  // }
   //du_f1ap_itti_send_sctp_data_req(instance, f1ap_setup_req->assoc_id, buffer, len, 0);
   return 0;
 

@@ -49,7 +49,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                                       uint32_t         stream,
                                       F1AP_F1AP_PDU_t *pdu) {
 
-  printf("DU_handle_DL_RRC_MESSAGE_TRANSFER \n");
+  LOG_D(DU_F1AP, "DU_handle_DL_RRC_MESSAGE_TRANSFER \n");
   
   MessageDef                     *message_p;
   F1AP_DLRRCMessageTransfer_t    *container;
@@ -81,14 +81,14 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_DLRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
   cu_ue_f1ap_id = ie->value.choice.GNB_CU_UE_F1AP_ID;
-  printf("cu_ue_f1ap_id %lu \n", cu_ue_f1ap_id);
+  LOG_D(DU_F1AP, "cu_ue_f1ap_id %lu \n", cu_ue_f1ap_id);
 
 
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_DLRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
   du_ue_f1ap_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
-  printf("du_ue_f1ap_id %lu \n", du_ue_f1ap_id);
+  LOG_D(DU_F1AP, "du_ue_f1ap_id %lu \n", du_ue_f1ap_id);
 
 
   /* optional */
@@ -103,7 +103,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_DLRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_SRBID, true);
   srb_id = ie->value.choice.SRBID;
-  printf("srb_id %lu \n", srb_id);
+  LOG_D(DU_F1AP, "srb_id %lu \n", srb_id);
 
 
   /* optional */
@@ -112,7 +112,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
     F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_DLRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_ExecuteDuplication, true);
     executeDuplication = ie->value.choice.ExecuteDuplication;
-    printf("ExecuteDuplication %d \n", executeDuplication);
+    LOG_D(DU_F1AP, "ExecuteDuplication %d \n", executeDuplication);
   }
 
   // issue in here
@@ -127,9 +127,9 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   ccch_sdu_len = ie->value.choice.RRCContainer.size;
   memcpy(RRC_MAC_CCCH_DATA_IND (message_p).sdu, ie->value.choice.RRCContainer.buf,
          ccch_sdu_len);
-  printf ("RRCContainer(CCCH) :");
-  for (int i=0;i<ie->value.choice.RRCContainer.size;i++) printf("%2x ",RRC_MAC_CCCH_DATA_IND (message_p).sdu[i]);
-
+  LOG_D(DU_F1AP, "RRCContainer(CCCH) :");
+  for (int i=0;i<ie->value.choice.RRCContainer.size;i++) LOG_D(DU_F1AP, "%2x ",RRC_MAC_CCCH_DATA_IND (message_p).sdu[i]);
+  LOG_D(DU_F1AP, "\n");
 
   /* optional */
   /* RAT_FrequencyPriorityInformation */
@@ -157,7 +157,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
                                     uint8_t        *sduP,
                                     sdu_size_t      sdu_lenP) {
 
-  printf("DU_send_UL_RRC_MESSAGE_TRANSFER \n");
+  LOG_D(DU_F1AP, "DU_send_UL_RRC_MESSAGE_TRANSFER \n");
 
   F1AP_F1AP_PDU_t                pdu;
   F1AP_ULRRCMessageTransfer_t    *out;
@@ -215,18 +215,9 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
 
     /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    printf("Failed to encode F1 setup request\n");
+    LOG_E(DU_F1AP, "Failed to encode F1 setup request\n");
     return -1;
   }
-
-  printf("\n");
-
-  //du_f1ap_itti_send_sctp_data_req(instance, f1ap_setup_req->assoc_id, buffer, len, 0);
-  /* decode */
-  // if (f1ap_decode_pdu(&pdu, buffer, len) > 0) {
-  //   printf("Failed to decode F1 setup request\n");
-  // }
-  //AssertFatal(1==0,"Not implemented yet\n");
 
   return 0;
 }
@@ -238,7 +229,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
                                             rnti_t          rntiP,
                                             uint8_t        *sduP,
                                             sdu_size_t      sdu_lenP) {
-  
+
   F1AP_F1AP_PDU_t                       pdu;
   F1AP_InitialULRRCMessageTransfer_t    *out;
   F1AP_InitialULRRCMessageTransferIEs_t *ie;
@@ -313,7 +304,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
 
     /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    printf("Failed to encode F1 setup request\n");
+    LOG_E(DU_F1AP, "Failed to encode F1 setup request\n");
     return -1;
   }
 

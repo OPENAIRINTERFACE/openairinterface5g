@@ -5775,7 +5775,7 @@ rrc_eNB_generate_RRCConnectionSetup(
       F1AP_DL_RRC_MESSAGE (message_p).execute_duplication      = 1;
       F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc      = 0; 
       itti_send_msg_to_task (TASK_CU_F1, UE_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id), message_p);
-      LOG_E(RRC, "F1AP_DL_RRC_MESSAGE\n");
+      LOG_D(RRC, "Send F1AP_DL_RRC_MESSAGE with ITTI\n");
       break;
     case ngran_eNB_DU    :
     case ngran_gNB_DU  :

@@ -356,18 +356,10 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance) {
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    printf("Failed to encode F1 setup request\n");
+    LOG_E(CU_F1AP, "Failed to encode F1 setup request\n");
     return -1;
   }
 
-  printf("\n");
-
-  /* decode */
-  if (f1ap_decode_pdu(&pdu, buffer, len) > 0) {
-    printf("Failed to decode F1 setup request\n");
-    return -1;
-  }
-  //AssertFatal(1==0,"Not implemented yet\n");
   return 0;
 }
 
@@ -869,15 +861,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    printf("Failed to encode F1 setup request\n");
-    return -1;
-  }
-
-  printf("\n");
-
-  /* decode */
-  if (f1ap_decode_pdu(&pdu, buffer, len) > 0) {
-    printf("Failed to decode F1 setup request\n");
+    LOG_E(CU_F1AP, "Failed to encode F1 setup request\n");
     return -1;
   }
 

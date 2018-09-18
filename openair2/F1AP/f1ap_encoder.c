@@ -33,6 +33,8 @@
 #include "f1ap_common.h"
 #include "f1ap_encoder.h"
 
+int asn1_encoder_xer_print = 1;
+
 /*
 static inline int f1ap_encode_initiating(f1ap_message *message,
     uint8_t **buffer,
@@ -76,14 +78,21 @@ int f1ap_encode_pdu(F1AP_F1AP_PDU_t *pdu, uint8_t **buffer, uint32_t *length)
   DevAssert(buffer != NULL);
   DevAssert(length != NULL);
 
-  xer_fprint(stdout, &asn_DEF_F1AP_F1AP_PDU, pdu);
+  if (asn1_encoder_xer_print) {
+    LOG_E(F1AP, "----------------- ASN1 ENCODER PRINT START ----------------- \n");
+    xer_fprint(stdout, &asn_DEF_F1AP_F1AP_PDU, pdu);
+    LOG_E(F1AP, "----------------- ASN1 ENCODER PRINT END----------------- \n");
+  }
+
   encoded = aper_encode_to_new_buffer(&asn_DEF_F1AP_F1AP_PDU, 0, pdu, (void **)buffer);
 
   if (encoded < 0) {
     LOG_E(F1AP, "Failed to encode F1AP message\n");
     return -1;
   }
+
   *length = encoded;
+
   /* Is the following needed? I moved the code here from CU_F1AP.c/DU_F1AP.c */
   // ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_F1AP_F1AP_PDU, pdu);
   return encoded;

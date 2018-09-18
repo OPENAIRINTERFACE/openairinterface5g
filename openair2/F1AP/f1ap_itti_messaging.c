@@ -55,7 +55,7 @@ void du_f1ap_itti_send_sctp_data_req(instance_t instance, int32_t assoc_id, uint
   sctp_data_req->buffer_length = buffer_length;
   sctp_data_req->stream        = stream;
 
-  printf("Sending ITTI message to SCTP Task\n");
+  LOG_I(F1AP, "Sending ITTI message to SCTP Task\n");
   itti_send_msg_to_task(TASK_SCTP, instance, message_p);
 }
 

@@ -59,7 +59,7 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
                                               uint32_t               stream,
                                               F1AP_F1AP_PDU_t       *pdu) {
 
-  printf("CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER\n");
+  LOG_D(CU_F1AP, "CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER\n");
   // decode the F1 message
   // get the rrc message from the contauiner 
   // call func rrc_eNB_decode_ccch: <-- needs some update here
@@ -90,7 +90,7 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
   du_ue_f1ap_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
-  printf("du_ue_f1ap_id %lu \n", du_ue_f1ap_id);
+  LOG_D(CU_F1AP, "du_ue_f1ap_id %lu \n", du_ue_f1ap_id);
 
   /* NRCGI 
   * TODO: process NRCGI
@@ -117,9 +117,9 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   ccch_sdu_len = ie->value.choice.RRCContainer.size;
   memcpy(RRC_MAC_CCCH_DATA_IND (message_p).sdu, ie->value.choice.RRCContainer.buf,
          ccch_sdu_len);
-  printf ("RRCContainer(CCCH) :");
-  for (int i=0;i<ie->value.choice.RRCContainer.size;i++) printf("%2x ",RRC_MAC_CCCH_DATA_IND (message_p).sdu[i]);
-
+  LOG_D(CU_F1AP, "RRCContainer(CCCH) :");
+  for (int i=0;i<ie->value.choice.RRCContainer.size;i++) LOG_D(CU_F1AP, "%2x ",RRC_MAC_CCCH_DATA_IND (message_p).sdu[i]);
+  LOG_D(CU_F1AP, "\n");
   // Find instance from nr_cellid
   int rrc_inst = -1;
   for (int i=0;i<RC.nb_inst;i++) {
@@ -276,21 +276,11 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    printf("Failed to encode F1 setup request\n");
+    LOG_E(CU_F1AP, "Failed to encode F1 setup request\n");
     return -1;
   }
-
-#ifdef F1AP_TEST
-  printf("\n");
-  /* decode */
-  if (f1ap_decode_pdu(&pdu, buffer, len) > 0) {
-    printf("Failed to decode F1 setup request\n");
-    return -1;
-  }
-#endif 
 
   cu_f1ap_itti_send_sctp_data_req(instance, f1ap_assoc_id, buffer, len, 0);
-
 
   return 0;
 }
@@ -304,7 +294,7 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                                       uint32_t         stream,
                                       F1AP_F1AP_PDU_t *pdu) {
 
-  printf("CU_handle_UL_RRC_MESSAGE_TRANSFER \n");
+  LOG_D(CU_F1AP, "CU_handle_UL_RRC_MESSAGE_TRANSFER \n");
   
   MessageDef                     *message_p;
   F1AP_ULRRCMessageTransfer_t    *container;
@@ -336,14 +326,14 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
   cu_ue_f1ap_id = ie->value.choice.GNB_CU_UE_F1AP_ID;
-  printf("cu_ue_f1ap_id %lu \n", cu_ue_f1ap_id);
+  LOG_D(CU_F1AP, "cu_ue_f1ap_id %lu \n", cu_ue_f1ap_id);
 
 
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
   du_ue_f1ap_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
-  printf("du_ue_f1ap_id %lu \n", du_ue_f1ap_id);
+  LOG_D(CU_F1AP, "du_ue_f1ap_id %lu \n", du_ue_f1ap_id);
 
 
   /* mandatory */
@@ -351,7 +341,7 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_SRBID, true);
   srb_id = ie->value.choice.SRBID;
-  printf("srb_id %lu \n", srb_id);
+  LOG_D(CU_F1AP, "srb_id %lu \n", srb_id);
 
 
   // issue in here
@@ -366,8 +356,9 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   ccch_sdu_len = ie->value.choice.RRCContainer.size;
   memcpy(RRC_MAC_CCCH_DATA_IND (message_p).sdu, ie->value.choice.RRCContainer.buf,
          ccch_sdu_len);
-  printf ("RRCContainer(CCCH) :");
-  for (int i=0;i<ie->value.choice.RRCContainer.size;i++) printf("%2x ",RRC_MAC_CCCH_DATA_IND (message_p).sdu[i]);
+  LOG_D(CU_F1AP, "RRCContainer(CCCH) :");
+  for (int i=0;i<ie->value.choice.RRCContainer.size;i++) LOG_D(CU_F1AP, "%2x ",RRC_MAC_CCCH_DATA_IND (message_p).sdu[i]);
+  LOG_D(CU_F1AP, "\n");
 
   return 0;
 }
