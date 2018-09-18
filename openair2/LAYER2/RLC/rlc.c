@@ -37,6 +37,8 @@
 
 #include "assertions.h"
 
+#include "common/ran_context.h"
+extern RAN_CONTEXT_t RC;
 
 extern boolean_t pdcp_data_ind(
   const protocol_ctxt_t* const ctxt_pP,
@@ -689,13 +691,40 @@ void rlc_data_ind     (
    else
 #endif /*UETARGET*/
    {
-     pdcp_data_ind (
-     ctxt_pP,
-     srb_flagP,
-     MBMS_flagP,
-     rb_idP,
-     sdu_sizeP,
-     sdu_pP);
+
+     switch (RC.rrc[ctxt_pP->module_id]->node_type){
+       case ngran_eNB_CU    :
+       case ngran_ng_eNB_CU :
+       case ngran_gNB_CU    :
+         pdcp_data_ind (
+           ctxt_pP,
+           1, // srb_flagP,
+           0, // MBMS_flagP,
+           rb_idP,
+           sdu_sizeP,
+           sdu_pP);
+         break;
+       case ngran_eNB_DU    :
+       case ngran_gNB_DU    :
+         DU_send_UL_RRC_MESSAGE_TRANSFER(
+            ctxt_pP->module_id,
+            rb_idP,
+            sdu_pP,
+            sdu_sizeP
+          );
+         break;
+
+       default:
+         pdcp_data_ind (
+           ctxt_pP,
+           srb_flagP,
+           MBMS_flagP,
+           rb_idP,
+           sdu_sizeP,
+           sdu_pP);
+         break;
+     }
+
    }
 }
 //-----------------------------------------------------------------------------

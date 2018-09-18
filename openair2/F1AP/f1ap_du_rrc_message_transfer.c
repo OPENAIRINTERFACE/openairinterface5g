@@ -152,7 +152,13 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 }
 
 //void DU_send_UL_RRC_MESSAGE_TRANSFER(F1AP_ULRRCMessageTransfer_t *ULRRCMessageTransfer) {
-int DU_send_UL_RRC_MESSAGE_TRANSFER(void) {
+int DU_send_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
+                                    int             CC_idP,
+                                    uint8_t        *sduP,
+                                    sdu_size_t      sdu_lenP) {
+
+  printf("DU_send_UL_RRC_MESSAGE_TRANSFER \n");
+
   F1AP_F1AP_PDU_t                pdu;
   F1AP_ULRRCMessageTransfer_t    *out;
   F1AP_ULRRCMessageTransferIEs_t *ie;
@@ -185,7 +191,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(void) {
   ie->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_ULRRCMessageTransferIEs__value_PR_GNB_DU_UE_F1AP_ID;
-  ie->value.choice.GNB_DU_UE_F1AP_ID = 651L;
+  ie->value.choice.GNB_DU_UE_F1AP_ID = F1AP_get_UE_identifier(module_idP, CC_idP, 0);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* mandatory */
@@ -204,8 +210,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(void) {
   ie->id                            = F1AP_ProtocolIE_ID_id_RRCContainer;
   ie->criticality                   = F1AP_Criticality_reject;
   ie->value.present                 = F1AP_ULRRCMessageTransferIEs__value_PR_RRCContainer;
-  OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, "asdsa1d32sa1d31asd31as",
-                       strlen("asdsa1d32sa1d31asd31as"));
+  OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, sduP, sdu_lenP);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
     /* encode */
@@ -227,14 +232,13 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(void) {
 }
 
 /*  UL RRC Message Transfer */
-int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(
-  module_id_t     module_idP,
-  int             CC_idP,
-  int             UE_id,
-  rnti_t          rntiP,
-  uint8_t        *sduP,
-  sdu_size_t      sdu_lenP
-) {
+int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
+                                            int             CC_idP,
+                                            int             UE_id,
+                                            rnti_t          rntiP,
+                                            uint8_t        *sduP,
+                                            sdu_size_t      sdu_lenP) {
+  
   F1AP_F1AP_PDU_t                       pdu;
   F1AP_InitialULRRCMessageTransfer_t    *out;
   F1AP_InitialULRRCMessageTransferIEs_t *ie;
