@@ -110,21 +110,20 @@ proto_agent_async_channel_info(mod_id_t mod_id, const char *dst_ip, uint16_t dst
   return NULL;
 }
 
-int proto_agent_async_msg_send(void *data, int size, int priority, void *channel_info) {
+int proto_agent_async_msg_send(void *data, int size, int priority, void *channel_info)
+{
   proto_agent_async_channel_t *channel = channel_info;
-
   return message_put(channel->send_queue, data, size, priority);
 }
 
 int proto_agent_async_msg_recv(void **data, int *size, int *priority, void *channel_info)
 {
-  proto_agent_async_channel_t *channel;
-  channel = (proto_agent_async_channel_t *)channel_info;
-
+  proto_agent_async_channel_t *channel = channel_info;
   return message_get(channel->receive_queue, data, size, priority);
 }
 
-void proto_agent_async_release(proto_agent_channel_t *channel) {
+void proto_agent_async_release(proto_agent_channel_t *channel)
+{
   proto_agent_async_channel_t *channel_info;
   channel_info = (proto_agent_async_channel_t *) channel->channel_info;
 

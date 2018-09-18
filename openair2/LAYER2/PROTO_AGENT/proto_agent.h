@@ -52,10 +52,10 @@ int proto_agent_stop(mod_id_t mod_id);
 
 void *proto_agent_task(void *args);
 
-void proto_agent_send_rlc_data_req(uint8_t mod_id, uint8_t type_id,
-    const protocol_ctxt_t* const ctxt_pP, const srb_flag_t srb_flagP,
-    const MBMS_flag_t MBMS_flagP, const rb_id_t rb_idP, const mui_t muiP,
-    confirm_t confirmP, sdu_size_t sdu_sizeP, mem_block_t *sdu_pP);
+void proto_agent_send_rlc_data_req( const protocol_ctxt_t* const ctxt_pP,
+    const srb_flag_t srb_flagP, const MBMS_flag_t MBMS_flagP,
+    const rb_id_t rb_idP, const mui_t muiP, confirm_t confirmP,
+    sdu_size_t sdu_sizeP, mem_block_t *sdu_pP);
 
 void proto_agent_send_pdcp_data_ind(const protocol_ctxt_t* const ctxt_pP,
     const srb_flag_t srb_flagP, const MBMS_flag_t MBMS_flagP,
