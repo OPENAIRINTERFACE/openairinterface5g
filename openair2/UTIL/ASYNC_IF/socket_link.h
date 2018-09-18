@@ -47,11 +47,11 @@ typedef struct {
 } socket_link_t;
 
 socket_link_t *new_link_server(int port);
-socket_link_t *new_link_client(char *server, int port);
+socket_link_t *new_link_client(const char *server, int port);
 socket_link_t *new_link_udp_server(int port);
-socket_link_t *new_link_udp_client(char *server, int port);
+socket_link_t *new_link_udp_client(const char *server, int port);
 socket_link_t *new_link_sctp_server(int port);
-socket_link_t *new_link_sctp_client(char *server, int port);
+socket_link_t *new_link_sctp_client(const char *server, int port);
 int link_send_packet(socket_link_t *link, void *data, int size, uint16_t proto_type, char *peer_addr, int port);
 int link_receive_packet(socket_link_t *link, void **data, int *size, uint16_t proto_type, char *peer_addr, int port);
 int close_link(socket_link_t *link);
