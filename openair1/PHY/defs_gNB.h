@@ -37,7 +37,7 @@
 #include "defs_nr_common.h"
 #include "CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 #include "openair2/NR_PHY_INTERFACE/NR_IF_Module.h"
-
+#include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 
 typedef struct {
   uint8_t pbch_a[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
@@ -66,7 +66,7 @@ typedef struct {
 
 
 typedef struct {
-/*  /// Status Flag indicating for this DLSCH (idle,active,disabled)
+  /// Status Flag indicating for this DLSCH (idle,active,disabled)
   //SCH_status_t status;
   /// Transport block size
   uint32_t TBS;
@@ -77,9 +77,7 @@ typedef struct {
   /// Pointer to the payload
   uint8_t *b;
   /// Pointers to transport block segments
-  uint8_t *c[MAX_NUM_DLSCH_SEGMENTS];
-  /// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)
-  uint32_t RTC[MAX_NUM_DLSCH_SEGMENTS];
+  uint8_t *c[MAX_NUM_NR_DLSCH_SEGMENTS];
   /// Frame where current HARQ round was sent
   uint32_t frame;
   /// Subframe where current HARQ round was sent
@@ -114,49 +112,41 @@ typedef struct {
   uint8_t dl_power_off;
   /// start symbold of pdsch
   uint8_t pdsch_start;
-  /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18)
-  uint8_t e[MAX_NUM_CHANNEL_BITS] __attribute__((aligned(32)));
-  /// Turbo-code outputs (36-212 V8.6 2009-03, p.12
-  uint8_t *d[MAX_NUM_DLSCH_SEGMENTS];//[(96+3+(3*6144))];
-  /// Sub-block interleaver outputs (36-212 V8.6 2009-03, p.16-17)
-  uint8_t w[MAX_NUM_DLSCH_SEGMENTS][3*6144];
-  /// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)
+  /// Concatenated sequences
+  uint8_t e[MAX_NUM_NR_CHANNEL_BITS] __attribute__((aligned(32)));
+  /// LDPC-code outputs
+  uint8_t *d[MAX_NUM_NR_DLSCH_SEGMENTS];
+  /// Interleaver outputs
+  uint8_t f[MAX_NUM_NR_CHANNEL_BITS] __attribute__((aligned(32)));
+  /// Number of code segments
   uint32_t C;
-  /// Number of "small" code segments (for definition see 36-212 V8.6 2009-03, p.10)
-  uint32_t Cminus;
-  /// Number of "large" code segments (for definition see 36-212 V8.6 2009-03, p.10)
-  uint32_t Cplus;
-  /// Number of bits in "small" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10)
-  uint32_t Kminus;
-  /// Number of bits in "large" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10)
-  uint32_t Kplus;
-  /// Number of "Filler" bits (for definition see 36-212 V8.6 2009-03, p.10)
+  /// Number of bits in "small" code segments
+  uint32_t K;
+  /// Number of "Filler" bits
   uint32_t F;
-  /// Number of MIMO layers (streams) (for definition see 36-212 V8.6 2009-03, p.17, TM3-4)
+  /// Number of MIMO layers (streams)
   uint8_t Nl;
   /// Number of layers for this PDSCH transmission (TM8-10)
   uint8_t Nlayers;
   /// First layer for this PSCH transmission
   uint8_t first_layer;
   /// codeword this transport block is mapped to
-  uint8_t codeword;*/
+  uint8_t codeword;
 } NR_DL_gNB_HARQ_t;
 
 
 typedef struct {
 
   /// Pointers to 8 HARQ processes for the DLSCH
-  LTE_DL_eNB_HARQ_t *harq_processes[8];
+  NR_DL_gNB_HARQ_t *harq_processes[8];
   nfapi_nr_pdsch_time_domain_alloc_type_e time_alloc_type;
   uint8_t time_alloc_list_flag;
   uint8_t rbg_list[NR_MAX_NB_RBG];
 
-
-//LTE remainders to be removed
-/*  /// TX buffers for UE-spec transmission (antenna ports 5 or 7..14, prior to precoding)
+  /// TX buffers for UE-spec transmission (antenna ports 5 or 7..14, prior to precoding)
   int32_t *txdataF[8];
   /// beamforming weights for UE-spec transmission (antenna ports 5 or 7..14), for each codeword, maximum 4 layers?
-  int32_t **ue_spec_bf_weights[4]; 
+  int32_t **ue_spec_bf_weights[4];
   /// dl channel estimates (estimated from ul channel estimates)
   int32_t **calib_dl_ch_estimates;
   /// Allocated RNTI (0 means DLSCH_t is not currently used)
@@ -175,16 +165,15 @@ typedef struct {
   uint8_t ra_window_size;
   /// First-round error threshold for fine-grain rate adaptation
   uint8_t error_threshold;
-
   /// Number of soft channel bits
   uint32_t G;
   /// Codebook index for this dlsch (0,1,2,3)
   uint8_t codebook_index;
-  /// Maximum number of HARQ processes (for definition see 36-212 V8.6 2009-03, p.17)
+  /// Maximum number of HARQ processes
   uint8_t Mdlharq;
   /// Maximum number of HARQ rounds
   uint8_t Mlimit;
-  /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
+  /// MIMO transmission mode indicator for this sub-frame
   uint8_t Kmimo;
   /// Nsoft parameter related to UE Category
   uint32_t Nsoft;
@@ -192,13 +181,6 @@ typedef struct {
   int16_t sqrt_rho_a;
   /// amplitude of PDSCH (compared to RS) in symbols containing pilots
   int16_t sqrt_rho_b;
-#ifdef Rel14
-  /// indicator that this DLSCH corresponds to SIB1-BR, needed for c_init for scrambling
-  uint8_t sib1_br_flag;
-  /// initial absolute subframe (see 36.211 Section 6.3.1), needed for c_init for scrambling
-  uint16_t i0;
-  CEmode_t CEmode;
-#endif*/
 } NR_gNB_DLSCH_t;
 
 

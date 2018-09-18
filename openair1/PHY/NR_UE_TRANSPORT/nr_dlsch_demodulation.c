@@ -105,8 +105,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   NR_UE_DLSCH_t   **dlsch;
 
   int avg[4];
-  int avg_0[2];
-  int avg_1[2];
+//  int avg_0[2];
+//  int avg_1[2];
 
 #if UE_TIMING_TRACE
   uint8_t slot = 0;
@@ -115,7 +115,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   unsigned char aatx,aarx;
 
   unsigned short nb_rb = 0, round;
-  int avgs = 0, rb;
+  int avgs = 0;// rb;
   NR_DL_UE_HARQ_t *dlsch0_harq,*dlsch1_harq = 0;
 
   uint8_t beamforming_mode;

@@ -816,7 +816,7 @@ uint16_t dlsch_extract_rbs_TM7(int32_t **rxdataF,
     @param output_shift Rescaling for compensated output (should be energy-normalizing)
     @param phy_measurements Pointer to UE PHY measurements
 */
-void dlsch_channel_compensation(int32_t **rxdataF_ext,
+void nr_dlsch_channel_compensation(int32_t **rxdataF_ext,
                                 int32_t **dl_ch_estimates_ext,
                                 int32_t **dl_ch_mag,
                                 int32_t **dl_ch_magb,
@@ -937,7 +937,7 @@ void dlsch_channel_compensation_TM34(NR_DL_FRAME_PARMS *frame_parms,
     @param pilots_flag Flag to indicate pilots in symbol
     @param nb_rb Number of allocated RBs
 */
-void dlsch_channel_level(int32_t **dl_ch_estimates_ext,
+void nr_dlsch_channel_level(int32_t **dl_ch_estimates_ext,
                          NR_DL_FRAME_PARMS *frame_parms,
                          int32_t *avg,
                          uint8_t pilots_flag,

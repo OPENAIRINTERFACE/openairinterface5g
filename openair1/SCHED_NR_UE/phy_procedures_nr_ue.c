@@ -3980,13 +3980,10 @@ void copy_harq_proc_struct(NR_DL_UE_HARQ_t *harq_processes_dest, NR_DL_UE_HARQ_t
 {
       harq_processes_dest->B              = current_harq_processes->B              ;
       harq_processes_dest->C              = current_harq_processes->C              ;
-      harq_processes_dest->Cminus         = current_harq_processes->Cminus         ;
-      harq_processes_dest->Cplus          = current_harq_processes->Cplus          ;
       harq_processes_dest->DCINdi         = current_harq_processes->DCINdi         ;
       harq_processes_dest->F              = current_harq_processes->F              ;
       harq_processes_dest->G              = current_harq_processes->G              ;
-      harq_processes_dest->Kminus         = current_harq_processes->Kminus         ;
-      harq_processes_dest->Kplus          = current_harq_processes->Kplus          ;
+      harq_processes_dest->K              = current_harq_processes->K          ;
       harq_processes_dest->Nl             = current_harq_processes->Nl             ;
       harq_processes_dest->Qm             = current_harq_processes->Qm             ;
       harq_processes_dest->TBS            = current_harq_processes->TBS            ;
