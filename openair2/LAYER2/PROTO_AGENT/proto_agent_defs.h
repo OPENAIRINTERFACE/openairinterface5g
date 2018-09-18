@@ -98,9 +98,9 @@ typedef enum {
 typedef uint8_t xid_t;  
 typedef uint8_t mod_id_t;  // module or enb id 
 typedef uint8_t lcid_t;
-typedef int32_t  err_code_t; 
+typedef int32_t err_code_t;
 
-
+#define CHANNEL_UDP 1
 
 typedef struct {
   /* general info */ 
@@ -113,12 +113,16 @@ typedef struct {
   uint32_t rx_msg[NUM_MAX_ENB];
   uint32_t tx_msg[NUM_MAX_ENB];
 
-}proto_agent_info_t;
+} proto_agent_info_t;
 
-typedef struct {
-  mod_id_t enb_id;
+/* forward declaration */
+struct proto_agent_channel_s;
+
+typedef struct proto_agent_instance_s {
+  mod_id_t    mod_id;
   proto_agent_info_t agent_info;
-  
-}proto_agent_instance_t;
+  struct proto_agent_channel_s *channel;
+  pthread_t   recv_thread;
+} proto_agent_instance_t;
 
 #endif 

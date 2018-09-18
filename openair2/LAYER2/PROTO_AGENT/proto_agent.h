@@ -45,19 +45,12 @@ void * proto_server_init(void *args);
 void * proto_server_receive(void *args);
 void * proto_client_receive(void *args);
 
-int proto_agent_start(uint8_t enb_id, mod_id_t mod_id, uint8_t type_id, cudu_params_t *cudu);
-int proto_server_start(mod_id_t mod_id, const cudu_params_t* cudu);
+int proto_agent_start(mod_id_t mod_id, const du_params_t *du);
+int proto_server_start(mod_id_t mod_id, const cu_params_t* cu);
 
 int proto_agent_stop(mod_id_t mod_id);
 
 void *proto_agent_task(void *args);
-
-uint8_t select_du(uint8_t max_dus);
-typedef struct 
-{
-  mod_id_t mod_id;
-  uint8_t type_id;
-}proto_recv_t;
 
 void proto_agent_send_rlc_data_req(uint8_t mod_id, uint8_t type_id,
     const protocol_ctxt_t* const ctxt_pP, const srb_flag_t srb_flagP,
