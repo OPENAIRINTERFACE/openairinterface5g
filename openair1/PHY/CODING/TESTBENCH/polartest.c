@@ -10,8 +10,8 @@
 #include "PHY/CODING/coding_defs.h"
 #include "SIMULATION/TOOLS/sim.h"
 
-//#define DEBUG_POLAR_PARAMS
 //#define DEBUG_DCI_POLAR_PARAMS
+//#define DEBUG_POLAR_TIMING
 
 int main(int argc, char *argv[]) {
 
@@ -24,7 +24,6 @@ int main(int argc, char *argv[]) {
 
 	randominit(0);
 	crcTableInit();
-	uint32_t crc;
 	//Default simulation values (Aim for iterations = 1000000.)
 	int itr, iterations = 1000, arguments, polarMessageType = 0; //0=PBCH, 1=DCI, -1=UCI
 	double SNRstart = -20.0, SNRstop = 0.0, SNRinc= 0.5; //dB
@@ -34,14 +33,13 @@ int main(int argc, char *argv[]) {
 	int8_t decoderState=0, blockErrorState=0; //0 = Success, -1 = Decoding failed, 1 = Block Error.
 	uint16_t testLength = 0, coderLength = 0, blockErrorCumulative=0, bitErrorCumulative=0;
 	double timeEncoderCumulative = 0, timeDecoderCumulative = 0;
-	uint8_t aggregation_level, decoderListSize, pathMetricAppr;
+	uint8_t aggregation_level = 8, decoderListSize = 8, pathMetricAppr = 0;
 
 	while ((arguments = getopt (argc, argv, "s:d:f:m:i:l:a:")) != -1)
 	switch (arguments)
 	{
 		case 's':
 			SNRstart = atof(optarg);
-			printf("SNRstart = %f\n", SNRstart);
 			break;
 
 		case 'd':
@@ -93,7 +91,12 @@ int main(int argc, char *argv[]) {
 
 	folderName=getenv("HOME");
 	strcat(folderName,"/Desktop/polartestResults");
+
+	#ifdef DEBUG_POLAR_TIMING
+	sprintf(fileName,"%s/TIMING_ListSize_%d_pmAppr_%d_Payload_%d_Itr_%d",folderName,decoderListSize,pathMetricAppr,testLength,iterations);
+	#else
 	sprintf(fileName,"%s/_ListSize_%d_pmAppr_%d_Payload_%d_Itr_%d",folderName,decoderListSize,pathMetricAppr,testLength,iterations);
+	#endif
 	strftime(currentTimeInfo, 25, "_%Y-%m-%d-%H-%M-%S.csv", localtime(&currentTime));
 	strcat(fileName,currentTimeInfo);
 
@@ -107,65 +110,45 @@ int main(int argc, char *argv[]) {
         fprintf(stderr,"[polartest.c] Problem creating file %s with fopen\n",fileName);
         exit(-1);
       }
+
+#ifdef DEBUG_POLAR_TIMING
+    fprintf(logFile,",timeEncoderCRCByte[us],timeEncoderCRCBit[us],timeEncoderInterleaver[us],timeEncoderBitInsertion[us],timeEncoder1[us],timeEncoder2[us],timeEncoderRateMatching[us],timeEncoderByte2Bit[us]\n");
+#else
     fprintf(logFile,",SNR,nBitError,blockErrorState,t_encoder[us],t_decoder[us]\n");
+#endif
 
-	//uint8_t *testInput = malloc(sizeof(uint8_t) * testLength); //generate randomly
-	//uint8_t *encoderOutput = malloc(sizeof(uint8_t) * coderLength);
-	uint32_t testInput[4], encoderOutput[4];
-	memset(testInput,0,sizeof(testInput));
-	memset(encoderOutput,0,sizeof(encoderOutput));
+    uint8_t testArrayLength = ceil(testLength / 32.0);
+    uint8_t coderArrayLength = ceil(coderLength / 32.0);
 
+	uint32_t *testInput = malloc(sizeof(uint32_t) * testArrayLength); //generate randomly
+	uint32_t *encoderOutput = malloc(sizeof(uint32_t) * coderArrayLength);
+	uint32_t *estimatedOutput = malloc(sizeof(uint32_t) * testArrayLength); //decoder output
+	memset(testInput,0,sizeof(uint32_t) * testArrayLength);
+	memset(encoderOutput,0,sizeof(uint32_t) * coderArrayLength);
+	memset(estimatedOutput,0,sizeof(uint32_t) * testArrayLength);
+
+	uint8_t *encoderOutputByte = malloc(sizeof(uint8_t) * coderLength);
 	double *modulatedInput = malloc (sizeof(double) * coderLength); //channel input
-
 	double *channelOutput  = malloc (sizeof(double) * coderLength); //add noise
-	uint32_t *estimatedOutput = malloc(sizeof(uint8_t) * testLength); //decoder output
 
 	t_nrPolar_paramsPtr nrPolar_params = NULL, currentPtr = NULL;
 	nr_polar_init(&nrPolar_params, polarMessageType, testLength, aggregation_level);
+	currentPtr = nr_polar_params(nrPolar_params, polarMessageType, testLength, aggregation_level);
+
 #ifdef DEBUG_DCI_POLAR_PARAMS
+	uint32_t crc;
 	unsigned int poly24c = 0xb2b11700;
+	testInput[0]=0x01189400;
 	printf("testInput: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
 			testInput[0], testInput[1], testInput[2], testInput[3]);
-	printf("encOutput: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
-			  encoderOutput[0], encoderOutput[1], encoderOutput[2], encoderOutput[3]);
-	testInput[0]=0x01189400;
 	uint8_t testInput2[8];
 	nr_crc_bit2bit_uint32_8_t(testInput, 32, testInput2);
-	printf("testInput2: [0]->%x \t [1]->%x \t [2]->%x \t [3]->%x\n            [4]->%x \t [5]->%x \t [6]->%x \t [7]->%x \t\n",
+	printf("testInput2: [0]->%x \t [1]->%x \t [2]->%x \t [3]->%x\n"
+		   "            [4]->%x \t [5]->%x \t [6]->%x \t [7]->%x\n",
 				testInput2[0], testInput2[1], testInput2[2], testInput2[3],
 				testInput2[4], testInput2[5], testInput2[6], testInput2[7]);
 	printf("crc32: [0]->0x%08x\n",crc24c(testInput2, 32));
 	printf("crc56: [0]->0x%08x\n",crc24c(testInput2, 56));
-	return 0;
-	uint8_t testInput8[4];
-	/*testInput8[0]=0x00;
-	testInput8[1]=0x49;
-	testInput8[2]=0x81;
-	testInput8[3]=0x10;
-	testInput8[4]=0x00;*/
-	testInput8[0]=0xff;
-	testInput8[1]=0xd0;
-	testInput8[2]=0xff;
-	testInput8[3]=0x82;
-	crc = crc24c(testInput8, 31);
-	for (int i=0;i<24;i++) printf("[i]=%d\n",(crc>>i)&1);
-	printf("crc: [0]->0x%08x\n",crc);
-	printf("crcbit: %x\n",crcbit(testInput8, 3, poly24c));
-	return 0;
-	unsigned char test[] = "Thebigredfox";
-
-	for (int i=0;i<8;i++) printf("[i]=%d\n",(test[0]>>i)&1);
-	printf("test[0]=%x\n",test[0]);
-	printf("%s -- sizeof=%d\n",test,sizeof(test));
-	printf("%x\n", crcbit(test, sizeof(test) - 1, poly24c));
-	printf("%x\n", crc24c(test, (sizeof(test) - 1)*8));
-	polarMessageType = 1;
-	testLength = 41;
-	aggregation_level=1;
-	coderLength = 108;
-	nr_polar_init(&nrPolar_params, polarMessageType, testLength, aggregation_level);
-	nr_polar_print_polarParams(nrPolar_params);
-
     crc = crc24c(testInput, testLength)>>8;
     for (int i=0;i<24;i++) printf("[i]=%d\n",(crc>>i)&1);
     printf("crc: [0]->0x%08x\n",crc);
@@ -174,18 +157,30 @@ int main(int argc, char *argv[]) {
     testInput[2+(testLength>>3)] = ((uint8_t*)&crc)[0];
     printf("testInput: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
     			testInput[0], testInput[1], testInput[2], testInput[3]);
-	return (0);
-	currentPtr = nr_polar_params(nrPolar_params, polarMessageType, testLength, aggregation_level);
-	polar_encoder(testInput, encoderOutput, currentPtr);
-	printf("AFTER POLAR ENCODING\n");
-	printf("testInput: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
-			testInput[0], testInput[1], testInput[2], testInput[3]);
-	printf("encOutput: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
-			encoderOutput[0], encoderOutput[1], encoderOutput[2], encoderOutput[3]);
-	return (0);
 #endif
 
-	currentPtr = nr_polar_params(nrPolar_params, polarMessageType, testLength, aggregation_level);
+#ifdef DEBUG_POLAR_TIMING
+	for (SNR = SNRstart; SNR <= SNRstop; SNR += SNRinc) {
+		SNR_lin = pow(10, SNR / 10);
+		for (itr = 1; itr <= iterations; itr++) {
+			for (int j=0; j<ceil(testLength / 32.0); j++) {
+				for(int i=0; i<32; i++) {
+					testInput[j] |= ( ((uint32_t) (rand()%2)) &1);
+					testInput[j]<<=1;
+				}
+			}
+			printf("testInput: [0]->0x%08x \n", testInput[0]);
+			polar_encoder_timing(testInput, encoderOutput, currentPtr, cpu_freq_GHz, logFile);
+		}
+	}
+	fclose(logFile);
+	free(testInput);
+	free(encoderOutput);
+	free(modulatedInput);
+	free(channelOutput);
+	free(estimatedOutput);
+	return (0);
+#endif
 
 	// We assume no a priori knowledge available about the payload.
 	double aPrioriArray[currentPtr->payloadBits];
@@ -195,68 +190,87 @@ int main(int argc, char *argv[]) {
 		SNR_lin = pow(10, SNR/10);
 		for (itr = 1; itr <= iterations; itr++) {
 
-		for(int i=0; i<testLength; i++) testInput[i]=(uint8_t) (rand() % 2);
-
-		start_meas(&timeEncoder);
-		polar_encoder(testInput, encoderOutput, currentPtr);
-		stop_meas(&timeEncoder);
-
-		//BPSK modulation
-		for(int i=0; i<coderLength; i++) {
-			if (encoderOutput[i] == 0)
-				modulatedInput[i]=1/sqrt(2);
-			else
-				modulatedInput[i]=(-1)/sqrt(2);
-
-			channelOutput[i] = modulatedInput[i] + (gaussdouble(0.0,1.0) * (1/sqrt(2*SNR_lin)));
-			//printf("%f\n",channelOutput[i]);
-		}
-
-
-
-		start_meas(&timeDecoder);
-		/*decoderState = polar_decoder(channelOutput,
-									 estimatedOutput,
-									 currentPtr,
-									 NR_POLAR_DECODER_LISTSIZE,
-									 aPrioriArray,
-									 NR_POLAR_DECODER_PATH_METRIC_APPROXIMATION);*/
-		decoderState = polar_decoder_aPriori(channelOutput,
-											 estimatedOutput,
-											 currentPtr,
-											 NR_POLAR_DECODER_LISTSIZE,
-											 NR_POLAR_DECODER_PATH_METRIC_APPROXIMATION,
-											 aPrioriArray);
-		stop_meas(&timeDecoder);
-
-		//calculate errors
-		if (decoderState==-1) {
-			blockErrorState=-1;
-			nBitError=-1;
-		} else {
-			for(int i=0; i<testLength; i++){
-				if (estimatedOutput[i]!=testInput[i]) nBitError++;
+			for (int i = 0; i < testArrayLength; i++) {
+				for (int j = 0; j < (sizeof(testInput[0])*8)-1; j++) {
+					testInput[i] |= ( ((uint32_t) (rand()%2)) &1);
+					testInput[i]<<=1;
+				}
+				testInput[i] |= ( ((uint32_t) (rand()%2)) &1);
 			}
-			if (nBitError>0) blockErrorState=1;
-		}
 
-		//Iteration times are in microseconds.
-		timeEncoderCumulative+=(timeEncoder.diff_now/(cpu_freq_GHz*1000.0));
-		timeDecoderCumulative+=(timeDecoder.diff_now/(cpu_freq_GHz*1000.0));
-		fprintf(logFile,",%f,%d,%d,%f,%f\n", SNR, nBitError, blockErrorState,
-				(timeEncoder.diff_now/(cpu_freq_GHz*1000.0)), (timeDecoder.diff_now/(cpu_freq_GHz*1000.0)));
+			/*printf("testInput: [0]->0x%08x\n", testInput[0]);
+			for (int i=0; i<32; i++)
+				printf("%d\n",(testInput[0]>>i)&1);*/
 
-		if (nBitError<0) {
-			blockErrorCumulative++;
-			bitErrorCumulative+=testLength;
-		} else {
-			blockErrorCumulative+=blockErrorState;
-			bitErrorCumulative+=nBitError;
-		}
+			start_meas(&timeEncoder);
+			polar_encoder(testInput, encoderOutput, currentPtr);
+			stop_meas(&timeEncoder);
 
-		decoderState=0;
-		nBitError=0;
-		blockErrorState=0;
+			/*printf("encoderOutput: [0]->0x%08x\n", encoderOutput[0]);
+			printf("encoderOutput: [1]->0x%08x\n", encoderOutput[1]);
+*/
+			//Bit-to-byte:
+			nr_bit2byte_uint32_8_t(encoderOutput, coderLength, encoderOutputByte);
+
+			//BPSK modulation
+			for(int i=0; i<coderLength; i++) {
+				if (encoderOutputByte[i] == 0)
+					modulatedInput[i]=1/sqrt(2);
+				else
+					modulatedInput[i]=(-1)/sqrt(2);
+
+				channelOutput[i] = modulatedInput[i] + (gaussdouble(0.0,1.0) * (1/sqrt(2*SNR_lin)));
+			}
+
+			start_meas(&timeDecoder);
+			/*decoderState = polar_decoder(channelOutput,
+									 	 estimatedOutput,
+									 	 currentPtr,
+									 	 NR_POLAR_DECODER_LISTSIZE,
+									 	 aPrioriArray,
+									 	 NR_POLAR_DECODER_PATH_METRIC_APPROXIMATION);*/
+			decoderState = polar_decoder_aPriori(channelOutput,
+											 	 estimatedOutput,
+												 currentPtr,
+												 NR_POLAR_DECODER_LISTSIZE,
+												 NR_POLAR_DECODER_PATH_METRIC_APPROXIMATION,
+												 aPrioriArray);
+			stop_meas(&timeDecoder);
+			/*printf("testInput: [0]->0x%08x\n", testInput[0]);
+			printf("estimatedOutput: [0]->0x%08x\n", estimatedOutput[0]);
+*/
+
+			//calculate errors
+			if (decoderState==-1) {
+				blockErrorState=-1;
+				nBitError=-1;
+			} else {
+				for (int i = 0; i < testArrayLength; i++) {
+					for (int j = 0; j < (sizeof(testInput[0])*8); j++) {
+						if (((estimatedOutput[i]>>j) & 1) != ((testInput[i]>>j) & 1)) nBitError++;
+					}
+				}
+
+				if (nBitError>0) blockErrorState=1;
+			}
+
+			//Iteration times are in microseconds.
+			timeEncoderCumulative+=(timeEncoder.diff_now/(cpu_freq_GHz*1000.0));
+			timeDecoderCumulative+=(timeDecoder.diff_now/(cpu_freq_GHz*1000.0));
+			fprintf(logFile,",%f,%d,%d,%f,%f\n", SNR, nBitError, blockErrorState,
+					(timeEncoder.diff_now/(cpu_freq_GHz*1000.0)), (timeDecoder.diff_now/(cpu_freq_GHz*1000.0)));
+
+			if (nBitError<0) {
+				blockErrorCumulative++;
+				bitErrorCumulative+=testLength;
+			} else {
+				blockErrorCumulative+=blockErrorState;
+				bitErrorCumulative+=nBitError;
+			}
+
+			decoderState=0;
+			nBitError=0;
+			blockErrorState=0;
 
 		}
 		//Calculate error statistics for the SNR.
@@ -273,11 +287,14 @@ int main(int argc, char *argv[]) {
 	print_meas(&timeDecoder,"polar_decoder",NULL,NULL);
 
 	fclose(logFile);
-	//free(testInput);
-	//free(encoderOutput);
+	//Bit
+	free(testInput);
+	free(encoderOutput);
+	free(estimatedOutput);
+	//Byte
+	free(encoderOutputByte);
 	free(modulatedInput);
 	free(channelOutput);
-	free(estimatedOutput);
 
 	return (0);
 }
