@@ -24,7 +24,7 @@
 #ifndef BACKTRACE_H_
 #define BACKTRACE_H_
 
-void display_backtrace(void);
+void display_backtrace();
 
 void backtrace_handle_signal(siginfo_t *info);
 
