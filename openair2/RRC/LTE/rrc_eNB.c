@@ -6981,8 +6981,7 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
       		F1AP_UL_RRC_MESSAGE (message_p).srb_id = DCCH;  
       		itti_send_msg_to_task (TASK_DU_F1, ctxt_pP->module_id, message_p);
       		LOG_D(RRC, "Send F1AP_UL_RRC_MESSAGE with ITTI\n");
-		  } else { //if ((RC.rrc[ctxt_pP->module_id]->node_type  == ngran_eNB) ||
-	                // (RC.rrc[ctxt_pP->module_id]->node_type  == ngran_ng_eNB) ) {
+		  } else { // eNB or CU node type 
           		rrc_eNB_process_RRCConnectionSetupComplete(
            		  ctxt_pP,
                   ue_context_p,
