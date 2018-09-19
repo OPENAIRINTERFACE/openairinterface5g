@@ -37,6 +37,8 @@
 #include "f1ap_du_interface_management.h"
 #include "f1ap_cu_rrc_message_transfer.h"
 #include "f1ap_du_rrc_message_transfer.h"
+#include "f1ap_cu_ue_context_management.h"
+#include "f1ap_du_ue_context_management.h"
 
 extern f1ap_setup_req_t *f1ap_du_data_from_du;
 
@@ -49,7 +51,7 @@ f1ap_message_decoded_callback f1ap_messages_callback[][3] = {
   { 0, 0, 0 }, /* ErrorIndication */
   { 0, 0, 0 }, /* gNBDUConfigurationUpdate */
   { 0, 0, 0 }, /* gNBCUConfigurationUpdate */
-  { 0, 0, 0 }, /* UEContextSetup */
+  { DU_handle_UE_CONTEXT_SETUP_REQUEST, CU_handle_UE_CONTEXT_SETUP_RESPONSE, 0 }, /* UEContextSetup */
   { 0, 0, 0 }, /* UEContextRelease */
   { 0, 0, 0 }, /* UEContextModification */
   { 0, 0, 0 }, /* UEContextModificationRequired */

@@ -147,10 +147,8 @@ void *F1AP_CU_task(void *arg) {
 
      case F1AP_DL_RRC_MESSAGE: // from rrc
         LOG_I(CU_F1AP, "CU Task Received F1AP_DL_RRC_MESSAGE\n");
-        // CU_send_f1setup_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
-        //                                       &F1AP_SETUP_RESP(received_msg));
         CU_send_DL_RRC_MESSAGE_TRANSFER(ITTI_MESSAGE_GET_INSTANCE(received_msg),
-                                               &F1AP_SETUP_RESP(received_msg));
+                                               &F1AP_DL_RRC_MESSAGE(received_msg));
         break;
 
 //    case F1AP_SETUP_RESPONSE: // This is from RRC

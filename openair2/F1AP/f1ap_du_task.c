@@ -93,6 +93,7 @@ void du_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
   f1ap_du_data->assoc_id         = sctp_new_association_resp->assoc_id;
   f1ap_du_data->sctp_in_streams  = sctp_new_association_resp->in_streams;
   f1ap_du_data->sctp_out_streams = sctp_new_association_resp->out_streams;
+  f1ap_du_data->default_sctp_stream_id = 0;
 
 
   DU_send_F1_SETUP_REQUEST(instance);
@@ -157,6 +158,12 @@ void *F1AP_DU_task(void *arg) {
         LOG_I(DU_F1AP, "DU Task Received SCTP_DATA_IND\n");
         du_task_handle_sctp_data_ind(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                     &received_msg->ittiMsg.sctp_data_ind);
+        break;
+
+     case F1AP_UL_RRC_MESSAGE: // from rrc
+        LOG_I(DU_F1AP, "DU Task Received F1AP_UL_RRC_MESSAGE\n");
+        DU_send_UL_RRC_MESSAGE_TRANSFER(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                        &F1AP_UL_RRC_MESSAGE(received_msg));
         break;
 
       case TERMINATE_MESSAGE:

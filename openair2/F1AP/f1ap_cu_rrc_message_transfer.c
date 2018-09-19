@@ -271,7 +271,7 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
     return -1;
   }
 
-  cu_f1ap_itti_send_sctp_data_req(instance, f1ap_assoc_id, buffer, len, 0);
+  cu_f1ap_itti_send_sctp_data_req(instance, f1ap_assoc_id /* BK: fix me*/ , buffer, len, 0 /* BK: fix me*/);
 
   return 0;
 }
@@ -332,7 +332,10 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_SRBID, true);
   srb_id = ie->value.choice.SRBID;
-  LOG_D(CU_F1AP, "srb_id %lu \n", srb_id);
+  if (srb_id < 1 ) 
+    LOG_E(CU_F1AP, "Unexpected UL RRC MESSAGE for srb_id %lu (CCCH)\n", srb_id);
+  else  
+    LOG_D(CU_F1AP, "UL RRC MESSAGE for srb_id %lu in DCCH \n", srb_id);
 
 
   // issue in here
@@ -340,16 +343,25 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   /* RRC Container */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_RRCContainer, true);
-  // BK: need check
-  // create an ITTI message and copy SDU
-  message_p = itti_alloc_new_message (TASK_CU_F1, RRC_MAC_CCCH_DATA_IND);
-  memset (RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
-  ccch_sdu_len = ie->value.choice.RRCContainer.size;
-  memcpy(RRC_MAC_CCCH_DATA_IND (message_p).sdu, ie->value.choice.RRCContainer.buf,
-         ccch_sdu_len);
+  // print message in debug mode 
   LOG_D(CU_F1AP, "RRCContainer(CCCH) :");
   for (int i=0;i<ie->value.choice.RRCContainer.size;i++) LOG_D(CU_F1AP, "%2x ",RRC_MAC_CCCH_DATA_IND (message_p).sdu[i]);
   LOG_D(CU_F1AP, "\n");
+
+  // create an ITTI message and copy SDU
+  message_p = itti_alloc_new_message (TASK_CU_F1, RRC_DCCH_DATA_IND);
+  memset (RRC_DCCH_DATA_IND (message_p).sdu_p, 0, CCCH_SDU_SIZE);
+
+  RRC_DCCH_DATA_IND (message_p).sdu_size = ie->value.choice.RRCContainer.size;
+  memcpy(RRC_DCCH_DATA_IND (message_p).sdu_p, ie->value.choice.RRCContainer.buf,
+         ie->value.choice.RRCContainer.size);
+
+  RRC_DCCH_DATA_IND (message_p).dcch_index = srb_id;
+  RRC_DCCH_DATA_IND (message_p).rnti = f1ap_get_rnti_by_cu_id(&f1ap_cu_ue[instance],cu_ue_f1ap_id);
+  RRC_DCCH_DATA_IND (message_p).module_id = instance;
+  RRC_DCCH_DATA_IND (message_p).eNB_index = instance; // not needed for CU
+
+  itti_send_msg_to_task(TASK_RRC_ENB, instance, message_p);
 
   return 0;
 }

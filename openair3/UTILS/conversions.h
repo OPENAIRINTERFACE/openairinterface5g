@@ -283,7 +283,7 @@ do {                                                    \
 } while(0)
 
 
-/* TS 38.473 v15.1.1 section 9.3.2.3:
+/* TS 38.473 v15.2.1 section 9.3.2.3:
  * TRANSPORT LAYER ADDRESS for IPv4 is 32bit (TS 38.414)
  */
 #define TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(mACRO, bITsTRING)    \
@@ -322,6 +322,38 @@ do {                                                    \
     (bITsTRING)->size = 5;                              \
     (bITsTRING)->bits_unused = 4;                       \
 } while(0)
+
+/* TS 38.473 v15.2.1 section 9.3.1.55:
+ * MaskedIMEISV is BIT_STRING(64)
+ */
+#define MaskedIMEISV_TO_BIT_STRING(mACRO, bITsTRING)    \
+do {                                                    \
+    (bITsTRING)->buf = calloc(8, sizeof(uint8_t));      \
+    (bITsTRING)->buf[0] = (mACRO) >> 56 & 0xFF;         \
+    (bITsTRING)->buf[1] = (mACRO) >> 48 & 0xFF;         \
+    (bITsTRING)->buf[2] = (mACRO) >> 40 & 0xFF;         \
+    (bITsTRING)->buf[3] = (mACRO) >> 32 & 0xFF;         \
+    (bITsTRING)->buf[4] = (mACRO) >> 24 & 0xFF;         \
+    (bITsTRING)->buf[5] = (mACRO) >> 16 & 0xFF;         \
+    (bITsTRING)->buf[6] = (mACRO) >> 8 & 0xFF;          \
+    (bITsTRING)->buf[7] = (mACRO) >> 4 & 0xFF;          \
+    (bITsTRING)->size = 8;                              \
+    (bITsTRING)->bits_unused = 0;                       \
+} while(0)
+
+#define BIT_STRING_TO_MaskedIMEISV(bITsTRING, mACRO)    \
+do {                                                                    \
+    DevCheck((bITsTRING)->size == 8, (bITsTRING)->size, 8, 0);          \
+    DevCheck((bITsTRING)->bits_unused == 0, (bITsTRING)->bits_unused, 0, 0); \
+    mACRO = ((bITsTRING)->buf[0] << 56) +                               \
+            ((bITsTRING)->buf[1] << 48) +                               \
+            ((bITsTRING)->buf[2] << 40) +                               \
+            ((bITsTRING)->buf[3] << 32) +                               \
+            ((bITsTRING)->buf[4] << 24) +                               \
+            ((bITsTRING)->buf[5] << 16) +                               \
+            ((bITsTRING)->buf[6] << 8) +                                \
+            ((bITsTRING)->buf[7]);                                      \
+} while (0)
 
 /* TS 36.413 v10.9.0 section 9.2.1.37:
  * Macro eNB ID:
