@@ -375,50 +375,23 @@ boolean_t pdcp_data_req(
 
     LOG_F(PDCP,"\n");
 #ifndef UETARGET
-    static cudu_params_t *cudu = NULL;
-    if (ctxt_pP->enb_flag == 1)
-    {
-	if (cudu == NULL) 
-	{
-	  cudu = get_cudu_config();
-	}
-	static int agent_started = 1;
-	if (agent_started == 1)
-	{
-	    for (int k =0; k<cudu->serving_dus; k++)
-	    { 
-	      proto_agent_start(0, cudu->cu[k].cu_id, cudu->cu[k].du_type, cudu);
-	    }
-	    agent_started = 0;
-	}
-    }
     if ((pdcp_pdu_p!=NULL) && (srb_flagP == 0) && (ctxt_pP->enb_flag == 1))
     {
 
-      if (cudu->cu_balancing == CU_BALANCING_ALL)
       {
-	for (int j =0; j<cudu->serving_dus; j++)
-	{
-	  proto_agent_send_rlc_data_req(0,cudu->cu[j].du_type, ctxt_pP, srb_flagP, MBMS_FLAG_NO,rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
-	}
-    rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p
+        LOG_E(PDCP, "proto_agent_send_rlc_data_req()\n");
+        {
+          //proto_agent_send_rlc_data_req(0,cudu->cu[j].du_type, ctxt_pP, srb_flagP,
+              //MBMS_FLAG_NO,rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
+        }
+    //rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                             ,sourceL2Id
-                             ,destinationL2Id
+                             //,sourceL2Id
+                             //,destinationL2Id
 #endif
-                             );
+                             //);
 
       }
-      else if (cudu->cu_balancing == CU_BALANCING_ROUND_ROBIN)
-      {
-	int selected_du = select_du(cudu->serving_dus);
-	proto_agent_send_rlc_data_req(cudu->cu[selected_du].cu_id,cudu->cu[selected_du].du_type,ctxt_pP, srb_flagP, MBMS_FLAG_NO,rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
-      }
-	else
-	{
-	    int index = cudu->cu_balancing;
-	    proto_agent_send_rlc_data_req(cudu->cu[index].cu_id,cudu->cu[index].du_type,ctxt_pP, srb_flagP, MBMS_FLAG_NO,rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
-	}
     
     free_mem_block(pdcp_pdu_p, __FUNCTION__);
     rlc_status = ack_result;
