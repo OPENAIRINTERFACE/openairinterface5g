@@ -382,7 +382,7 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 #endif
     nr_deinterleaving_ldpc(E,
     					   harq_process->Qm,
-                           &harq_process->d[r],
+                           harq_process->d[r],
                            harq_process->w[r]);
 
 #if UE_TIMING_TRACE
@@ -445,16 +445,20 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
             }
       printf(" \n");*/
 
-		memset(pv,0,2*p_decParams->Z*sizeof(int16_t));
+		memset(pv,0,harq_process->K*sizeof(int16_t));
         //memset(pl,0,2*p_decParams->Z*sizeof(int8_t));
 
-
-      	for (i=2*p_decParams->Z/8, j = 0; i < (kc*p_decParams->Z/8+1); i++, j++)
+      	for (i=((2*p_decParams->Z)>>3), j = 0; i < (Kr_bytes-(harq_process->F>>3)); i++, j++)
       	{
       		pv[i]= _mm_loadu_si128((__m128i*)(&inv_d[8*j]));
       	}
+
+		for (i=Kr_bytes, j = (Kr_bytes-(harq_process->F>>3)); i < ((kc*p_decParams->Z)>>3); i++, j++)
+		      	{
+		      		pv[i]= _mm_loadu_si128((__m128i*)(&inv_d[8*j]));
+		      	}
       	
-		for (i=0, j=0; j < (kc*p_decParams->Z/16);  i+=2, j++)
+		for (i=0, j=0; j < ((kc*p_decParams->Z)>>4);  i+=2, j++)
       	      	{
       				
       	      		pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
