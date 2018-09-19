@@ -36,7 +36,7 @@
 #include "PHY/sse_intrin.h"
 
 //#define DEBUG_PBCH
-//#define DEBUG_PBCH_ENCODING
+#define DEBUG_PBCH_ENCODING
 //#define DEBUG_PBCH_DMRS
 
 extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
@@ -140,9 +140,9 @@ void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
 {
   uint8_t reset, offset;
   uint32_t x1, x2, s=0;
-  uint8_t *pbch_e = pbch->pbch_e;
-  uint32_t *pbch_a_prime = (uint32_t*)pbch->pbch_a_prime;
-  uint32_t *pbch_a_interleaved = (uint32_t*)pbch->pbch_a_interleaved;
+  uint32_t *pbch_e = pbch->pbch_e;
+  uint32_t pbch_a_prime = pbch->pbch_a_prime;
+  uint32_t pbch_a_interleaved = pbch->pbch_a_interleaved;
   uint32_t unscrambling_mask = 0x100006D;
 
   reset = 1;
@@ -157,7 +157,7 @@ void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
   // Scrambling is now done with offset (nushift*M)%32
   offset = (nushift*M)&0x1f;
 #ifdef DEBUG_PBCH_ENCODING
-  printf("Scrambling params: nushift %d M %d length %d bitwise %d offset %d\n", nushift, M, length, bitwise, offset);
+  printf("Scrambling params: nushift %d M %d length %d encoded %d offset %d\n", nushift, M, length, encoded, offset);
 #endif
 
   for (int i=0; i<length; i++) {
@@ -169,7 +169,7 @@ void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
   printf("s: %04x\t", s);
 #endif
     if (!encoded) {
-      (*pbch_a_prime) ^= ((unscrambling_mask>>i)&1)? (((*pbch_a_interleaved)>>i)&1)<<i : ((((*pbch_a_interleaved)>>i)&1) ^ ((s>>((i+offset)&0x1f))&1))<<i;      
+      pbch_a_prime ^= ((unscrambling_mask>>i)&1)? ((pbch_a_interleaved>>i)&1)<<i : (((pbch_a_interleaved>>i)&1) ^ ((s>>((i+offset)&0x1f))&1))<<i;      
     }
 
     else
@@ -246,11 +246,11 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
       (*xbyte) ^= ((ssb_index>>(3+i))&1)<<(5+i); // resp. 4th, 5th and 6th bits of ssb_index
   else
     (*xbyte) ^= ((config->sch_config.ssb_subcarrier_offset.value>>5)&1)<<5; //MSB of k_SSB
-#ifdef DEBUG_PBCH_ENCODING
+//#ifdef DEBUG_PBCH_ENCODING
   printf("Extra byte:\n");
   for (int i=0; i<4; i++)
     printf("pbch_a[%d]: 0x%02x\n", i, pbch->pbch_a[i]);
-#endif
+//#endif
 
     // Payload interleaving
   uint32_t in=0, out=0;
@@ -258,19 +258,18 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
     in |= (uint32_t)(pbch->pbch_a[i]<<((3-i)<<3));
 
   for (int i=0; i<32; i++) {
-    out |= ((in>>i)&1)<<(nr_pbch_payload_interleaver(i));//nr_pbch_payload_interleaving_pattern[i]
+    pbch->pbch_a_interleaved |= ((in>>i)&1)<<(nr_pbch_payload_interleaver(i));//nr_pbch_payload_interleaving_pattern[i]
 #ifdef DEBUG_PBCH_ENCODING
   printf("i %d in 0x%08x out 0x%08x ilv %d (in>>i)&1) %d\n", i, in, out, nr_pbch_payload_interleaver(i), (in>>i)&1);
 #endif
   }
 
-  for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS>>3; i++)
-    pbch->pbch_a_interleaved[i] = (uint8_t)((out>>(i<<3))&0xff);
+  /*for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS>>3; i++)
+    pbch->pbch_a_interleaved[i] = (uint8_t)((out>>(i<<3))&0xff);*/
 
 #ifdef DEBUG_PBCH_ENCODING
   printf("Interleaving:\n");
-  for (int i=0; i<4; i++)
-    printf("pbch_a_interleaved[%d]: 0x%02x\n", i, pbch->pbch_a_interleaved[i]);
+	printf("pbch_a_interleaved: 0x%08x\n", pbch->pbch_a_interleaved);
 #endif
 
     // Scrambling
@@ -279,20 +278,14 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   nr_pbch_scrambling(pbch, (uint32_t)config->sch_config.physical_cell_id.value, nushift, M, NR_POLAR_PBCH_PAYLOAD_BITS, 0);
 #ifdef DEBUG_PBCH_ENCODING
   printf("Payload scrambling:\n");
-  for (int i=0; i<4; i++)
-    printf("pbch_a_prime[%d]: 0x%02x\n", i, pbch->pbch_a_prime[i]);
+    printf("pbch_a_prime[%d]: 0x%08x\n", pbch->pbch_a_prime);
 #endif
-
-for (int m=0;m<32;m++){
-pbch_a_b[m] = ((pbch->pbch_a_prime[m>>3]>>(m&7))&1);
-//printf("pbch_a_b[%d] %d\n", m, pbch_a_b[m] );
-}
 
   /// CRC, coding and rate matching
   polar_encoder (pbch->pbch_a_prime, pbch->pbch_e, polar_params);
 #ifdef DEBUG_PBCH_ENCODING
   printf("Channel coding:\n");
-  for (int i=0; i<(uint16_t)ceil((NR_POLAR_PBCH_E>>3)/32); i++)
+  for (int i=0; i<NR_POLAR_PBCH_E_DWORD; i++)
     printf("pbch_e[%d]: 0x%08x\t", i, pbch->pbch_e[i]);
   printf("\n");
 #endif
@@ -303,7 +296,7 @@ pbch_a_b[m] = ((pbch->pbch_a_prime[m>>3]>>(m&7))&1);
   nr_pbch_scrambling(pbch, (uint32_t)config->sch_config.physical_cell_id.value, nushift, M, NR_POLAR_PBCH_E, 1);
 #ifdef DEBUG_PBCH_ENCODING
   printf("Scrambling:\n");
-  for (int i=0; i<(uint16_t)ceil((NR_POLAR_PBCH_E>>3)/32); i++)
+  for (int i=0; i<NR_POLAR_PBCH_E_DWORD; i++)
     printf("pbch_e[%d]: 0x%08x\t", i, pbch->pbch_e[i]);
   printf("\n");
 #endif
