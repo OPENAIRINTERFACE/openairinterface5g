@@ -46,6 +46,7 @@
 
 //#define DEBUG_DCI
 
+
 #include "../LTE_TRANSPORT/dci_tools_common_extern.h"
 #include "../LTE_TRANSPORT/transport_proto.h"
 #include "transport_proto_ue.h"
@@ -3326,7 +3327,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
       harq_pid = subframe2harq_pid(frame_parms,
                                    pdcch_alloc2ul_frame(frame_parms,proc->frame_rx,subframe),
                                    pdcch_alloc2ul_subframe(frame_parms,subframe));
-    LOG_D(PHY,"Frame %d, Subframe %d: Programming ULSCH for (%d.%d) => harq_pid %d\n",
+    LOG_I(PHY,"Frame %d, Subframe %d: Programming ULSCH for (%d.%d) => harq_pid %d\n",
 	  proc->frame_rx,subframe,
 	  pdcch_alloc2ul_frame(frame_parms,proc->frame_rx,subframe),
 	  pdcch_alloc2ul_subframe(frame_parms,subframe), harq_pid);

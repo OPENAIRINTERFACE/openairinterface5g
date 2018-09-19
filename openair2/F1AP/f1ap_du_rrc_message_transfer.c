@@ -67,7 +67,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                                       uint32_t         assoc_id,
                                       uint32_t         stream,
                                       F1AP_F1AP_PDU_t *pdu) {
-
+#ifndef UETARGET 
   LOG_D(DU_F1AP, "DU_handle_DL_RRC_MESSAGE_TRANSFER \n");
   
   MessageDef                     *message_p;
@@ -308,6 +308,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   else if (srb_id == 2){
 
   }
+#endif
   return 0;
   
 }
@@ -390,7 +391,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
                                             rnti_t          rntiP,
                                             uint8_t        *sduP,
                                             sdu_size_t      sdu_lenP) {
-
+#ifndef UETARGET
   F1AP_F1AP_PDU_t                       pdu;
   F1AP_InitialULRRCMessageTransfer_t    *out;
   F1AP_InitialULRRCMessageTransferIEs_t *ie;
@@ -482,6 +483,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
   ue_context_p->ue_context.Srb0.Active        = 1;
   RB_INSERT(rrc_ue_tree_s, &RC.rrc[module_idP]->rrc_ue_head, ue_context_p);
   du_f1ap_itti_send_sctp_data_req(0, f1ap_du_data->assoc_id, buffer, len, 0);
+#endif
   return 0;
 }
 

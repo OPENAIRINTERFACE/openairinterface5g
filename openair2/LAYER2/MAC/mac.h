@@ -1009,6 +1009,8 @@ typedef struct {
     sub_frame_t Msg3_subframe;
     /// Frame where Msg3 is to be sent
     frame_t Msg3_frame;
+    /// Delay cnt for Msg4 transmission (waiting for RRC message piggyback)
+    int Msg4_delay_cnt;
     /// Subframe where Msg4 is to be sent
     sub_frame_t Msg4_subframe;
     /// Frame where Msg4 is to be sent

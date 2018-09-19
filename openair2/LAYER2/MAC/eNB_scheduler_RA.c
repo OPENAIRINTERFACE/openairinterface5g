@@ -1221,6 +1221,9 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
 		     "eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Delaying Msg4 for RRC Piggyback (RNTI %x)\n",
 		     module_idP, CC_idP, frameP, subframeP, ra->rnti);
 	    ra->Msg4_subframe ++;
+	    ra->Msg4_delay_cnt++;
+	    if (ra->Msg4_delay_cnt==10) cancel_ra_proc(module_idP, CC_idP, frameP, ra->rnti);
+
 	    if (ra->Msg4_subframe == 10) {
 	      ra->Msg4_frame++;
 	      ra->Msg4_frame&=1023;
@@ -1520,6 +1523,7 @@ initiate_ra_proc(module_id_t module_idP,
 	    LOG_D(MAC, "Frame %d, Subframe %d: Activating RA process %d\n",
 		  frameP, subframeP, i);
 	    ra[i].state = MSG2;
+	    ra[i].Msg4_delay_cnt=0;
 	    ra[i].timing_offset = timing_offset;
 	    ra[i].preamble_subframe = subframeP;
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
@@ -1632,7 +1636,7 @@ cancel_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP,
 	  ra[i].RRC_timer = 20;
 	  ra[i].rnti = 0;
 	  ra[i].msg3_round = 0;
-    LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Canceled RA procedure for UE rnti %x\n", module_idP, CC_id, frameP, rnti);
+	  LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Canceled RA procedure for UE rnti %x\n", module_idP, CC_id, frameP, rnti);
 	}
     }
 }

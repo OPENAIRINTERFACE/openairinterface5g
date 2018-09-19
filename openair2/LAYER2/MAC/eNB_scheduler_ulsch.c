@@ -191,7 +191,7 @@ rx_sdu(const module_id_t enb_mod_idP,
       if (UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes < 0)
         UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes = 0;
     } else {		// we've got an error
-      LOG_I(MAC,
+      LOG_D(MAC,
 	    "[eNB %d][PUSCH %d] CC_id %d %d.%d ULSCH in error in round %d, ul_cqi %d\n",
 	    enb_mod_idP, harq_pid, CC_idP,frameP,subframeP,
 	    UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid],
@@ -378,7 +378,7 @@ rx_sdu(const module_id_t enb_mod_idP,
               );
               // prepare transmission of Msg4(RRCConnectionReconfiguration)
               ra->state = MSGCRNTI;
-              LOG_I(MAC,
+              LOG_D(MAC,
                     "[eNB %d] Frame %d, Subframe %d CC_id %d : (rnti %x UE_id %d) RRCConnectionReconfiguration(Msg4)\n",
                     enb_mod_idP, frameP, subframeP, CC_idP, old_rnti, old_UE_id);
 
