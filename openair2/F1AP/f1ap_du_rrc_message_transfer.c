@@ -37,12 +37,14 @@
 
 #include "f1ap_du_rrc_message_transfer.h"
 
+
 #include "DL-CCCH-Message.h"
 #include "DL-DCCH-Message.h"
 
 // for SRB1_logicalChannelConfig_defaultValue
 #include "rrc_extern.h"
 #include "common/ran_context.h"
+
 
 // undefine C_RNTI from
 // openair1/PHY/LTE_TRANSPORT/transport_common.h which
@@ -54,13 +56,18 @@
 extern f1ap_setup_req_t *f1ap_du_data;
 extern RAN_CONTEXT_t RC;
 
+
+f1ap_cudu_ue_inst_t f1ap_du_ue[MAX_eNB];
+
+
+
 /*  DL RRC Message Transfer */
 int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                                       uint32_t         assoc_id,
                                       uint32_t         stream,
                                       F1AP_F1AP_PDU_t *pdu) {
 
-  printf("DU_handle_DL_RRC_MESSAGE_TRANSFER \n");
+  LOG_D(DU_F1AP, "DU_handle_DL_RRC_MESSAGE_TRANSFER \n");
   
   MessageDef                     *message_p;
   F1AP_DLRRCMessageTransfer_t    *container;
@@ -92,16 +99,20 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_DLRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
   cu_ue_f1ap_id = ie->value.choice.GNB_CU_UE_F1AP_ID;
-  printf("cu_ue_f1ap_id %lu \n", cu_ue_f1ap_id);
+  LOG_D(DU_F1AP, "cu_ue_f1ap_id %lu \n", cu_ue_f1ap_id);
 
 
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_DLRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
   du_ue_f1ap_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
-  printf("du_ue_f1ap_id %lu \n", du_ue_f1ap_id);
+  LOG_D(DU_F1AP, "du_ue_f1ap_id %lu \n", du_ue_f1ap_id); // this should be the one transmitted via initial ul rrc message transfer 
 
-
+  if (f1ap_du_add_cu_ue_id(&f1ap_du_ue[instance],du_ue_f1ap_id,cu_ue_f1ap_id) < 0 ) {
+    LOG_E(DU_F1AP, "Failed to find the F1AP UID \n");
+    //return -1;
+  }
+  
   /* optional */
   /* oldgNB_DU_UE_F1AP_ID */
   if (0) {
@@ -114,8 +125,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_DLRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_SRBID, true);
   srb_id = ie->value.choice.SRBID;
-  printf("srb_id %lu \n", srb_id);
-
+  LOG_D(DU_F1AP, "srb_id %lu \n", srb_id);
 
   /* optional */
   /* ExecuteDuplication */
@@ -123,7 +133,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
     F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_DLRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_ExecuteDuplication, true);
     executeDuplication = ie->value.choice.ExecuteDuplication;
-    printf("ExecuteDuplication %d \n", executeDuplication);
+    LOG_D(DU_F1AP, "ExecuteDuplication %d \n", executeDuplication);
   }
 
   // issue in here
@@ -133,6 +143,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                              F1AP_ProtocolIE_ID_id_RRCContainer, true);
   // BK: need check
   // create an ITTI message and copy SDU
+
   //  message_p = itti_alloc_new_message (TASK_CU_F1, RRC_MAC_CCCH_DATA_IND);
   //  memset (RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
   rrc_dl_sdu_len = ie->value.choice.RRCContainer.size;
@@ -193,29 +204,10 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
     case DL_CCCH_MessageType__c1_PR_rrcConnectionSetup:
       {
 	LOG_I(RRC,
-	      "Logical Channel DL-CCCH (SRB0), Received RRCConnectionSetup RNTI %x\n",  (rnti_t)du_ue_f1ap_id);
+	      "Logical Channel DL-CCCH (SRB0), Received RRCConnectionSetup DU_ID %x/RNTI %x\n",  
+	      du_ue_f1ap_id,
+	      f1ap_get_rnti_by_du_id(&f1ap_du_ue[0],du_ue_f1ap_id));
 	// Get configuration
-
-	// find rrc instance and ue_context for this UE
-	/*
-	eNB_RRC_INST *rrc;
-	rrc_eNB_ue_context_t *ue_context_pP = NULL;
-	for (int i = 0; i<RC.nb_inst; i++) {
-	  rrc = RC.rrc[i];
-	  // note this requires that du_ue_f1ap_id == RNTI!
-	  ue_context_pP = rrc_eNB_get_ue_context(rrc,(rnti_t)du_ue_f1ap_id);
-	  if (ue_context_pP != NULL) break;
-	}
-	AssertFatal(ue_context_pP != NULL, "no UE context found!\n");
-	*/
-
-	// find MACRLC instance based on RNTI/UE_DU_ID
-	int macrlc_instance=-1;
-
-	for (macrlc_instance=0;macrlc_instance<RC.nb_macrlc_inst;macrlc_instance++)
-	  if (find_UE_id(macrlc_instance,du_ue_f1ap_id)>=0) break;
-	
-	AssertFatal(macrlc_instance>=0,"cannot find macrlc instance for ue\n");
 
 	RRCConnectionSetup_t* rrcConnectionSetup = &dl_ccch_msg->message.choice.c1.choice.rrcConnectionSetup;
 	//	eNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
@@ -248,6 +240,9 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 	  }
 	}
 
+	// This should be somewhere in the f1ap_cudu_ue_inst_t
+	int macrlc_instance = 0; 
+	
         rrc_mac_config_req_eNB(
 			       macrlc_instance,
 			       0, //primaryCC_id,
@@ -255,7 +250,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 			       0,
 #endif
-			       (rnti_t) du_ue_f1ap_id, //rnti
+			       f1ap_get_rnti_by_du_id(&f1ap_du_ue[0],du_ue_f1ap_id), //rnti
 			       (BCCH_BCH_Message_t *) NULL,
 			       (RadioResourceConfigCommonSIB_t *) NULL,
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
@@ -305,7 +300,13 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 }
 
 //void DU_send_UL_RRC_MESSAGE_TRANSFER(F1AP_ULRRCMessageTransfer_t *ULRRCMessageTransfer) {
-int DU_send_UL_RRC_MESSAGE_TRANSFER(void) {
+int DU_send_UL_RRC_MESSAGE_TRANSFER(protocol_ctxt_t* ctxt_pP,
+                                    rb_id_t          srb_idP,
+                                    uint8_t          *sduP,
+                                    sdu_size_t       sdu_lenP) {
+
+  LOG_D(DU_F1AP, "DU_send_UL_RRC_MESSAGE_TRANSFER \n");
+
   F1AP_F1AP_PDU_t                pdu;
   F1AP_ULRRCMessageTransfer_t    *out;
   F1AP_ULRRCMessageTransferIEs_t *ie;
@@ -329,7 +330,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(void) {
   ie->id                             = F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID;
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_ULRRCMessageTransferIEs__value_PR_GNB_CU_UE_F1AP_ID;
-  ie->value.choice.GNB_CU_UE_F1AP_ID = 126L;
+  ie->value.choice.GNB_CU_UE_F1AP_ID = f1ap_du_ue[ctxt_pP->module_id].cu_ue_f1ap_id[f1ap_get_uid_by_rnti(&f1ap_du_ue[ctxt_pP->module_id], ctxt_pP->rnti)];
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* mandatory */
@@ -338,7 +339,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(void) {
   ie->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_ULRRCMessageTransferIEs__value_PR_GNB_DU_UE_F1AP_ID;
-  ie->value.choice.GNB_DU_UE_F1AP_ID = 651L;
+  ie->value.choice.GNB_DU_UE_F1AP_ID = f1ap_du_ue[ctxt_pP->module_id].du_ue_f1ap_id[f1ap_get_uid_by_rnti(&f1ap_du_ue[ctxt_pP->module_id], ctxt_pP->rnti)];
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* mandatory */
@@ -347,7 +348,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(void) {
   ie->id                            = F1AP_ProtocolIE_ID_id_SRBID;
   ie->criticality                   = F1AP_Criticality_reject;
   ie->value.present                 = F1AP_ULRRCMessageTransferIEs__value_PR_SRBID;
-  ie->value.choice.SRBID            = 1;
+  ie->value.choice.SRBID            = srb_idP;
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   // issue in here
@@ -357,43 +358,38 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(void) {
   ie->id                            = F1AP_ProtocolIE_ID_id_RRCContainer;
   ie->criticality                   = F1AP_Criticality_reject;
   ie->value.present                 = F1AP_ULRRCMessageTransferIEs__value_PR_RRCContainer;
-  OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, "asdsa1d32sa1d31asd31as",
-                       strlen("asdsa1d32sa1d31asd31as"));
+  OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, sduP, sdu_lenP);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
     /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    printf("Failed to encode F1 setup request\n");
+    LOG_E(DU_F1AP, "Failed to encode F1 setup request\n");
     return -1;
   }
-
-  printf("\n");
-
-  //du_f1ap_itti_send_sctp_data_req(instance, f1ap_setup_req->assoc_id, buffer, len, 0);
-  /* decode */
-  // if (f1ap_decode_pdu(&pdu, buffer, len) > 0) {
-  //   printf("Failed to decode F1 setup request\n");
-  // }
-  //AssertFatal(1==0,"Not implemented yet\n");
 
   return 0;
 }
 
 /*  UL RRC Message Transfer */
-int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(
-  module_id_t     module_idP,
-  int             CC_idP,
-  int             UE_id,
-  rnti_t          rntiP,
-  uint8_t        *sduP,
-  sdu_size_t      sdu_lenP
-) {
+int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
+                                            int             CC_idP,
+                                            int             UE_id,
+                                            rnti_t          rntiP,
+                                            uint8_t        *sduP,
+                                            sdu_size_t      sdu_lenP) {
+
   F1AP_F1AP_PDU_t                       pdu;
   F1AP_InitialULRRCMessageTransfer_t    *out;
   F1AP_InitialULRRCMessageTransferIEs_t *ie;
 
   uint8_t  *buffer;
   uint32_t  len;
+  int f1ap_uid = f1ap_add_ue (&f1ap_du_ue[module_idP], module_idP, CC_idP,UE_id, rntiP);
+
+  if (f1ap_uid  < 0 ) {
+    LOG_E(DU_F1AP, "Failed to add UE \n");
+    return -1;
+  }
 
   /* Create */
   /* 0. Message Type */
@@ -412,7 +408,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(
   ie->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_InitialULRRCMessageTransferIEs__value_PR_GNB_DU_UE_F1AP_ID;
-  ie->value.choice.GNB_DU_UE_F1AP_ID = F1AP_get_UE_identifier(module_idP, CC_idP, UE_id);
+  ie->value.choice.GNB_DU_UE_F1AP_ID = f1ap_du_ue[module_idP].du_ue_f1ap_id[f1ap_uid]; 
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* mandatory */
@@ -462,10 +458,18 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(
 
     /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    printf("Failed to encode F1 setup request\n");
+    LOG_E(DU_F1AP, "Failed to encode F1 setup request\n");
     return -1;
   }
 
   du_f1ap_itti_send_sctp_data_req(0, f1ap_du_data->assoc_id, buffer, len, 0);
   return 0;
 }
+
+
+void init_f1ap_du_ue_inst (void) {
+
+   memset(f1ap_du_ue, 0, sizeof(f1ap_du_ue));
+}
+
+

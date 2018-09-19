@@ -69,7 +69,7 @@ void du_task_send_sctp_association_req(instance_t instance, f1ap_setup_req_t *f1
   *f1ap_du_data = *f1ap_setup_req;
   //printf("sib itti message %s\n", f1ap_setup_req_t->sib1[0]);
 
-  printf("nr_cellid : %llx (%lld)",f1ap_setup_req->nr_cellid[0],f1ap_setup_req->nr_cellid[0]);
+  //printf("nr_cellid : %llx (%lld)",f1ap_setup_req->nr_cellid[0],f1ap_setup_req->nr_cellid[0]);
   
   //du_f1ap_register_to_sctp
   itti_send_msg_to_task(TASK_SCTP, instance, message_p);
@@ -139,7 +139,7 @@ void *F1AP_DU_task(void *arg) {
         // 1. save the itti msg so that you can use it to sen f1ap_setup_req, fill the f1ap_setup_req message, 
         // 2. store the message in f1ap context, that is also stored in RC
         // 2. send a sctp_association req
-        LOG_I(DU_F1AP, "F1AP_SETUP_REQ\n");
+        LOG_I(DU_F1AP, "DU Task Received F1AP_SETUP_REQ\n");
         du_task_send_sctp_association_req(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                               &F1AP_SETUP_REQ(received_msg));
         break;
@@ -147,14 +147,14 @@ void *F1AP_DU_task(void *arg) {
       case SCTP_NEW_ASSOCIATION_RESP:
         // 1. store the respon
         // 2. send the f1setup_req
-        LOG_I(DU_F1AP, "SCTP_NEW_ASSOCIATION_RESP\n");
+        LOG_I(DU_F1AP, "DU Task Received SCTP_NEW_ASSOCIATION_RESP\n");
         du_task_handle_sctp_association_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                       &received_msg->ittiMsg.sctp_new_association_resp);
         break;
 
       case SCTP_DATA_IND: 
         // ex: any F1 incoming message for DU ends here
-        LOG_I(DU_F1AP, "SCTP_DATA_IND\n");
+        LOG_I(DU_F1AP, "DU Task Received SCTP_DATA_IND\n");
         du_task_handle_sctp_data_ind(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                     &received_msg->ittiMsg.sctp_data_ind);
         break;

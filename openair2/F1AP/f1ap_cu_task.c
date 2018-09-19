@@ -120,25 +120,25 @@ void *F1AP_CU_task(void *arg) {
     switch (ITTI_MSG_ID(received_msg)) {
 
       case SCTP_NEW_ASSOCIATION_IND:
-        LOG_I(CU_F1AP, "SCTP_NEW_ASSOCIATION_IND for instance %d\n",ITTI_MESSAGE_GET_INSTANCE(received_msg));
+        LOG_I(CU_F1AP, "CU Task Received SCTP_NEW_ASSOCIATION_IND for instance %d\n",ITTI_MESSAGE_GET_INSTANCE(received_msg));
         cu_task_handle_sctp_association_ind(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                          &received_msg->ittiMsg.sctp_new_association_ind);
         break;
 
       case SCTP_NEW_ASSOCIATION_RESP:
-        LOG_I(CU_F1AP, "SCTP_NEW_ASSOCIATION_RESP for instance %d\n",ITTI_MESSAGE_GET_INSTANCE(received_msg));
+        LOG_I(CU_F1AP, "CU Task Received SCTP_NEW_ASSOCIATION_RESP for instance %d\n",ITTI_MESSAGE_GET_INSTANCE(received_msg));
         cu_task_handle_sctp_association_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                          &received_msg->ittiMsg.sctp_new_association_resp);
         break;
 
       case SCTP_DATA_IND:
-        LOG_I(CU_F1AP, "SCTP_DATA_IND for Instance %d\n",ITTI_MESSAGE_GET_INSTANCE(received_msg));
+        LOG_I(CU_F1AP, "CU Task Received SCTP_DATA_IND for Instance %d\n",ITTI_MESSAGE_GET_INSTANCE(received_msg));
         cu_task_handle_sctp_data_ind(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                         &received_msg->ittiMsg.sctp_data_ind);
         break;
 
       case F1AP_SETUP_RESP: // from rrc
-        LOG_W(CU_F1AP, "F1AP_SETUP_RESP\n");
+        LOG_I(CU_F1AP, "CU Task Received F1AP_SETUP_RESP\n");
         // CU_send_f1setup_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
         //                                       &F1AP_SETUP_RESP(received_msg));
         CU_send_F1_SETUP_RESPONSE(ITTI_MESSAGE_GET_INSTANCE(received_msg),
@@ -146,7 +146,7 @@ void *F1AP_CU_task(void *arg) {
         break;
 
      case F1AP_DL_RRC_MESSAGE: // from rrc
-        LOG_W(CU_F1AP, "F1AP_DL_RRC_MESSAGE\n");
+        LOG_I(CU_F1AP, "CU Task Received F1AP_DL_RRC_MESSAGE\n");
         // CU_send_f1setup_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
         //                                       &F1AP_SETUP_RESP(received_msg));
         CU_send_DL_RRC_MESSAGE_TRANSFER(ITTI_MESSAGE_GET_INSTANCE(received_msg),

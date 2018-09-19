@@ -33,33 +33,35 @@
 #include "f1ap_common.h"
 #include "f1ap_decoder.h"
 
+int asn1_decoder_xer_print = 1;
+
 static int f1ap_decode_initiating_message(F1AP_F1AP_PDU_t *pdu)
 {
-  MessageDef *message_p;
-  MessagesIds message_id;
-  asn_encode_to_new_buffer_result_t res = { NULL, {0, NULL, NULL} };
+  //MessageDef *message_p;
+  //MessagesIds message_id;
+  //asn_encode_to_new_buffer_result_t res = { NULL, {0, NULL, NULL} };
   DevAssert(pdu != NULL);
 
   switch(pdu->choice.initiatingMessage->procedureCode) {
     
     case F1AP_ProcedureCode_id_F1Setup:
-      res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
-      printf("f1ap_eNB_decode_initiating_message!\n");
+      //res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
+      LOG_I(F1AP, "f1ap_eNB_decode_initiating_message!\n");
       break;
 
     case F1AP_ProcedureCode_id_InitialULRRCMessageTransfer:
-      res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
-      printf("f1ap_eNB_decode_initiating_message!\n");
+      //res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
+      LOG_I(F1AP, "f1ap_eNB_decode_initiating_message!\n");
       break;
 
     case F1AP_ProcedureCode_id_DLRRCMessageTransfer:
-      res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
-      printf("f1ap_eNB_decode_initiating_message!\n");
+      //res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
+      LOG_I(F1AP, "f1ap_eNB_decode_initiating_message!\n");
       break;
 
     case F1AP_ProcedureCode_id_ULRRCMessageTransfer:
-      res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
-      printf("f1ap_eNB_decode_initiating_message!\n");
+      //res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
+      LOG_I(F1AP, "f1ap_eNB_decode_initiating_message!\n");
       break;
     // case F1AP_ProcedureCode_id_InitialContextSetup:
     //   res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_F1AP_F1AP_PDU, pdu);
@@ -75,7 +77,7 @@ static int f1ap_decode_initiating_message(F1AP_F1AP_PDU_t *pdu)
     default:
       // F1AP_ERROR("Unknown procedure ID (%d) for initiating message\n",
       //            (int)pdu->choice.initiatingMessage->procedureCode);
-      printf("Unknown procedure ID (%d) for initiating message\n",
+      LOG_E(F1AP, "Unknown procedure ID (%d) for initiating message\n",
                   (int)pdu->choice.initiatingMessage->procedureCode);
       AssertFatal( 0, "Unknown procedure ID (%d) for initiating message\n",
                    (int)pdu->choice.initiatingMessage->procedureCode);
@@ -137,8 +139,12 @@ int f1ap_decode_pdu(F1AP_F1AP_PDU_t *pdu, const uint8_t *const buffer, uint32_t 
                         length,
                         0,
                         0);
-  
-  xer_fprint(stdout, &asn_DEF_F1AP_F1AP_PDU, pdu);
+
+  if (asn1_decoder_xer_print) {
+    LOG_E(F1AP, "----------------- ASN1 DECODER PRINT START----------------- \n");
+    xer_fprint(stdout, &asn_DEF_F1AP_F1AP_PDU, pdu);
+    LOG_E(F1AP, "----------------- ASN1 DECODER PRINT END ----------------- \n");
+  }
   //LOG_I(F1AP, "f1ap_decode_pdu.dec_ret.code = %d\n", dec_ret.code);
 
   if (dec_ret.code != RC_OK) {
@@ -157,7 +163,7 @@ int f1ap_decode_pdu(F1AP_F1AP_PDU_t *pdu, const uint8_t *const buffer, uint32_t 
       return f1ap_decode_unsuccessful_outcome(pdu);
 
     default:
-      LOG_D(F1AP, "Unknown presence (%d) or not implemented\n", (int)pdu->present);
+      LOG_E(F1AP, "Unknown presence (%d) or not implemented\n", (int)pdu->present);
       break;
   }
 
