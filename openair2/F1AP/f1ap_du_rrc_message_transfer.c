@@ -209,7 +209,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 	LOG_I(RRC,
 	      "Logical Channel DL-CCCH (SRB0), Received RRCConnectionSetup DU_ID %x/RNTI %x\n",  
 	      du_ue_f1ap_id,
-	      f1ap_get_rnti_by_du_id(&f1ap_du_ue[0],du_ue_f1ap_id));
+	      f1ap_get_rnti_by_du_id(&f1ap_du_ue[instance],du_ue_f1ap_id));
 	// Get configuration
 
 	RRCConnectionSetup_t* rrcConnectionSetup = &dl_ccch_msg->message.choice.c1.choice.rrcConnectionSetup;
@@ -243,6 +243,20 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 	  }
 	}
 
+	protocol_ctxt_t ctxt;
+	ctxt.rnti      = f1ap_get_rnti_by_du_id(&f1ap_du_ue[instance],du_ue_f1ap_id);
+        ctxt.module_id = instance;
+	ctxt.enb_flag  = 1;
+	rrc_rlc_config_asn1_req(&ctxt,
+				SRB_configList,
+				(DRB_ToAddModList_t*) NULL,
+				(DRB_ToReleaseList_t*) NULL
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+				, (PMCH_InfoList_r9_t *) NULL,
+				0,0
+#   endif
+				);
+	
 	// This should be somewhere in the f1ap_cudu_ue_inst_t
 	int macrlc_instance = 0; 
 
@@ -318,7 +332,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t                instance,
                                     f1ap_ul_rrc_message_t    *f1ap_ul_rrc) {
 
-  LOG_D(DU_F1AP, "DU_send_UL_RRC_MESSAGE_TRANSFER \n");
+  LOG_I(DU_F1AP, "DU_send_UL_RRC_MESSAGE_TRANSFER \n");
 
   F1AP_F1AP_PDU_t                pdu;
   F1AP_ULRRCMessageTransfer_t    *out;

@@ -42,7 +42,7 @@
 #include "UL-AM-RLC.h"
 #include "DL-AM-RLC.h"
 
-
+#define TRACE_RLC_AM_PDU 1
 //-----------------------------------------------------------------------------
 uint32_t
 rlc_am_get_status_pdu_buffer_occupancy(
@@ -936,6 +936,7 @@ rlc_am_mac_data_indication (
 
   (void)l_rlc_p; /* avoid gcc warning "unused variable" */
 
+  LOG_I(RLC, "In rlc_am_mac_indication: size %d\n",tb_size_in_bytes);
 #if TRACE_RLC_AM_PDU || MESSAGE_CHART_GENERATOR
 
   if (data_indP.data.nb_elements > 0) {
