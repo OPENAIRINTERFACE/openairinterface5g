@@ -247,6 +247,7 @@ typedef struct f1ap_initial_ul_rrc_message_s {
 typedef struct f1ap_ul_rrc_message_s {
   uint32_t gNB_CU_ue_id;
   uint32_t gNB_DU_ue_id;
+  uint16_t rnti;
   uint8_t srb_id;
   uint8_t *rrc_container;
   int      rrc_container_length;
@@ -265,18 +266,25 @@ typedef struct f1ap_drb_to_be_setup_s {
 } f1ap_drb_to_be_setup_t;
 
 typedef struct f1ap_ue_context_setup_req_s {
-  uint32_t gNB_CU_ue_id;
+  uint32_t gNB_CU_ue_id;    // BK: need to replace by use from rnti
   uint32_t *gNB_DU_ue_id;
+  uint16_t rnti; 
   // SpCell Info
   uint16_t mcc;
   uint16_t mnc;
   uint8_t  mnc_digit_length;
   uint64_t nr_cellid;
+  uint8_t servCellIndex;
+  uint8_t cellULConfigured;
   uint32_t servCellId;
   uint8_t *cu_to_du_rrc_information;
   uint8_t  cu_to_du_rrc_information_length;
-  f1ap_drb_to_be_setup_t *drbs_to_be_setup;
-  uint8_t  drbs_to_be_setup_length;
+  f1ap_drb_to_be_setup_t *drbs_to_be_setup; // BK: need to replace by s1ap_initial_context_setup_req
+  uint8_t  drbs_to_be_setup_length;       // BK: need to replace by s1ap_initial_context_setup_req
+  s1ap_initial_context_setup_req_t *s1ap_initial_context_setup_req;
+   // coniatner for the rrc_eNB_generate_SecurityModeCommand message
+  uint8_t *rrc_container;
+  int      rrc_container_length;
 } f1ap_ue_context_setup_req_t;
 
 #endif /* F1AP_MESSAGES_TYPES_H_ */

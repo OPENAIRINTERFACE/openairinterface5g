@@ -56,10 +56,13 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
 
   container = &pdu->choice.initiatingMessage->value.choice.UEContextSetupRequest;
 
+  /* GNB_CU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
   f1ap_ue_context_setup_req->gNB_CU_ue_id = ie->value.choice.GNB_CU_UE_F1AP_ID;
 
+  /* optional */
+  /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, false);
   if (ie) {
@@ -70,6 +73,7 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
     f1ap_ue_context_setup_req->gNB_DU_ue_id = NULL;
   }
 
+  /* SpCell_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_SpCell_ID, true);
   PLMNID_TO_MCC_MNC(&ie->value.choice.NRCGI.pLMN_Identity,
@@ -78,15 +82,42 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
                     f1ap_ue_context_setup_req->mnc_digit_length);
   BIT_STRING_TO_NR_CELL_IDENTITY(&ie->value.choice.NRCGI.nRCellIdentity, f1ap_ue_context_setup_req->nr_cellid);
 
-  /* TODO: decode candidate SpCell */
 
-  /* TODO: decode CUtoDURRCInformation */
+  /* ServCellIndex */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_ServCellndex, true);
+  f1ap_ue_context_setup_req->servCellIndex = ie->value.choice.ServCellIndex;
 
-  /* TODO: Candidate_SpCell_List */
+  /* optional */
+  /* CellULConfigured */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_SpCellULConfigured, false);  // SpCellULConfigured
+  if (ie) {
+    f1ap_ue_context_setup_req->cellULConfigured = malloc(sizeof(uint32_t));
+    if (f1ap_ue_context_setup_req->cellULConfigured)
+       f1ap_ue_context_setup_req->cellULConfigured = ie->value.choice.CellULConfigured;
+  } else {
+    f1ap_ue_context_setup_req->cellULConfigured = NULL;
+  }
 
-  /* TODO: SCell_ToBeSetup_List */
+  /* CUtoDURRCInformation */
 
-  /* TODO: SRBs_ToBeSetup_List */
+
+  /* Candidate_SpCell_List */
+
+
+  /* optional */
+  /* DRXCycle */
+
+  /* optional */
+  /* ResourceCoordinationTransferContainer */
+
+
+  /* SCell_ToBeSetup_List */
+
+  /* SRBs_ToBeSetup_List */
+
+  /* DRBs_ToBeSetup_List */
 
   /* Decode DRBs_ToBeSetup_List */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ie, container,
