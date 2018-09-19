@@ -103,8 +103,6 @@ typedef struct {
   pthread_mutex_t ru_mutex;
   /// condition variable for signaling setup completion of an RU
   pthread_cond_t ru_cond;
-  
-  struct cudu_params_s cudu;
 } RAN_CONTEXT_t;
 
 

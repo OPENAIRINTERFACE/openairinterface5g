@@ -97,7 +97,7 @@ link_manager_t *create_link_manager(
         message_queue_t *receive_queue,
         socket_link_t   *link,
 	uint16_t        type,
-        char            *peer_addr,
+        const char      *peer_addr,
         int             port      )
 {
   link_manager_t *ret = NULL;

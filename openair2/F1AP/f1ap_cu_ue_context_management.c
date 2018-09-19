@@ -36,20 +36,17 @@
 #include "f1ap_itti_messaging.h"
 #include "f1ap_cu_ue_context_management.h"
 
-//void CU_send_UE_CONTEXT_SETUP_REQUEST(F1AP_UEContextSetupRequest_t *UEContextSetupRequest) {
-int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance) {
+extern f1ap_setup_req_t *f1ap_du_data_from_du;
+
+int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
+                                     f1ap_ue_context_setup_req_t *f1ap_ue_context_setup_req) {
   F1AP_F1AP_PDU_t                 pdu;
   F1AP_UEContextSetupRequest_t    *out;
   F1AP_UEContextSetupRequestIEs_t *ie;
 
   uint8_t  *buffer;
   uint32_t  len;
-  int       i = 0;
-
-  // for test
-  int mcc = 208;
-  int mnc = 93;
-  int mnc_digit_length = 8;
+  int       i = 0, j = 0;
 
   /* Create */
   /* 0. Message Type */
@@ -67,17 +64,17 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance) {
   ie->id                             = F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID;
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_GNB_CU_UE_F1AP_ID;
-  ie->value.choice.GNB_CU_UE_F1AP_ID = 126L;
+  ie->value.choice.GNB_CU_UE_F1AP_ID = f1ap_ue_context_setup_req->gNB_CU_ue_id;
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* optional */
   /* c2. GNB_DU_UE_F1AP_ID */
-  if (0) {
+  if (f1ap_ue_context_setup_req->gNB_DU_ue_id) {
     ie = (F1AP_UEContextSetupRequestIEs_t *)calloc(1, sizeof(F1AP_UEContextSetupRequestIEs_t));
     ie->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
     ie->criticality                    = F1AP_Criticality_ignore;
     ie->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_GNB_DU_UE_F1AP_ID;
-    ie->value.choice.GNB_DU_UE_F1AP_ID = 651L;
+    ie->value.choice.GNB_DU_UE_F1AP_ID = *f1ap_ue_context_setup_req->gNB_DU_ue_id;
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
 
@@ -89,9 +86,11 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance) {
   ie->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_NRCGI;
   /* - nRCGI */
   F1AP_NRCGI_t nRCGI;
-  MCC_MNC_TO_PLMNID(mcc, mnc, mnc_digit_length,
-                                       &nRCGI.pLMN_Identity);
-  NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+  MCC_MNC_TO_PLMNID(f1ap_ue_context_setup_req->mcc,
+                    f1ap_ue_context_setup_req->mnc,
+                    f1ap_ue_context_setup_req->mnc_digit_length,
+                    &nRCGI.pLMN_Identity);
+  NR_CELL_ID_TO_BIT_STRING(f1ap_ue_context_setup_req->nr_cellid, &nRCGI.nRCellIdentity);
 
   ie->value.choice.NRCGI = nRCGI;
 
@@ -141,7 +140,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance) {
   ie->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_Candidate_SpCell_List;
 
   for (i=0;
-       i<1;
+       i<0;
        i++) {
 
     F1AP_Candidate_SpCell_ItemIEs_t *candidate_spCell_item_ies;
@@ -156,9 +155,12 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance) {
 
     /* - candidate_SpCell_ID */
     F1AP_NRCGI_t nRCGI;
-    MCC_MNC_TO_PLMNID(mcc, mnc, mnc_digit_length,
-                                       &nRCGI.pLMN_Identity);
-    NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
+    /* TODO add correct mcc/mnc */
+    MCC_MNC_TO_PLMNID(f1ap_ue_context_setup_req->mcc,
+                      f1ap_ue_context_setup_req->mnc,
+                      f1ap_ue_context_setup_req->mnc_digit_length,
+                      &nRCGI.pLMN_Identity);
+    NR_CELL_ID_TO_BIT_STRING(f1ap_ue_context_setup_req->nr_cellid, &nRCGI.nRCellIdentity);
 
     candidate_spCell_item.candidate_SpCell_ID = nRCGI;
 
@@ -198,7 +200,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance) {
     
     ie->value.choice.ResourceCoordinationTransferContainer.buf = malloc(4);
     ie->value.choice.ResourceCoordinationTransferContainer.size = 4;
-    *ie->value.choice.ResourceCoordinationTransferContainer.buf = "123";
+    strncpy(ie->value.choice.ResourceCoordinationTransferContainer.buf, "123", 3);
 
 
     OCTET_STRING_fromBuf(&ie->value.choice.ResourceCoordinationTransferContainer, "asdsa1d32sa1d31asd31as",
@@ -215,7 +217,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance) {
   ie->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_SCell_ToBeSetup_List;
 
   for (i=0;
-       i<1;
+       i<0;
        i++) {
      //
      F1AP_SCell_ToBeSetup_ItemIEs_t *scell_toBeSetup_item_ies;
@@ -230,8 +232,11 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance) {
 
      //   /* - sCell_ID */
      F1AP_NRCGI_t nRCGI;
-     MCC_MNC_TO_PLMNID(mcc, mnc, mnc_digit_length,
-                                        &nRCGI.pLMN_Identity);
+     /* TODO correct MCC/MNC */
+     MCC_MNC_TO_PLMNID(f1ap_ue_context_setup_req->mcc,
+                       f1ap_ue_context_setup_req->mnc,
+                       f1ap_ue_context_setup_req->mnc_digit_length,
+                       &nRCGI.pLMN_Identity);
      NR_CELL_ID_TO_BIT_STRING(123456, &nRCGI.nRCellIdentity);
 
      scell_toBeSetup_item.sCell_ID = nRCGI;
@@ -254,7 +259,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance) {
   ie->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_SRBs_ToBeSetup_List;
 
   for (i=0;
-       i<1;
+       i<0;
        i++) {
     //
     F1AP_SRBs_ToBeSetup_ItemIEs_t *srbs_toBeSetup_item_ies;
@@ -284,9 +289,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance) {
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_DRBs_ToBeSetup_List;
 
-  for (i=0;
-       i<1;
-       i++) {
+  for (i = 0; i < f1ap_ue_context_setup_req->drbs_to_be_setup_length; i++) {
     //
     F1AP_DRBs_ToBeSetup_ItemIEs_t *drbs_toBeSetup_item_ies;
     drbs_toBeSetup_item_ies = (F1AP_DRBs_ToBeSetup_ItemIEs_t *)calloc(1, sizeof(F1AP_DRBs_ToBeSetup_ItemIEs_t));
@@ -299,7 +302,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance) {
     memset((void *)&drbs_toBeSetup_item, 0, sizeof(F1AP_DRBs_ToBeSetup_Item_t));
 
     /* dRBID */
-    drbs_toBeSetup_item.dRBID = 30L;
+    drbs_toBeSetup_item.dRBID = f1ap_ue_context_setup_req->drbs_to_be_setup[i].drb_id;
 
     /* qoSInformation */
     drbs_toBeSetup_item.qoSInformation.present = F1AP_QoSInformation_PR_eUTRANQoS;
@@ -307,30 +310,35 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance) {
     drbs_toBeSetup_item.qoSInformation.choice.eUTRANQoS->qCI = 254L;
 
     /* ULTunnels_ToBeSetup_List */
-    int maxnoofULTunnels = 1; // 2;
-    for (i=0;
-            i<maxnoofULTunnels;
-            i++) {
-            /*  ULTunnels_ToBeSetup_Item */
-            F1AP_ULUPTNLInformation_ToBeSetup_Item_t *uLUPTNLInformation_ToBeSetup_Item;
+    for (j = 0; j < f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_ul_tnl_length; j++) {
+      f1ap_up_tnl_t *up_tnl = &f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_ul_tnl[j];
+      /*  ULTunnels_ToBeSetup_Item */
+      F1AP_ULUPTNLInformation_ToBeSetup_Item_t *uLUPTNLInformation_ToBeSetup_Item;
 
-            // gTPTunnel
-            uLUPTNLInformation_ToBeSetup_Item = (F1AP_ULUPTNLInformation_ToBeSetup_Item_t *)calloc(1, sizeof(F1AP_ULUPTNLInformation_ToBeSetup_Item_t));
-            uLUPTNLInformation_ToBeSetup_Item->uLUPTNLInformation.present = F1AP_UPTransportLayerInformation_PR_gTPTunnel;
-            F1AP_GTPTunnel_t *gTPTunnel = (F1AP_GTPTunnel_t *)calloc(1, sizeof(F1AP_GTPTunnel_t));
+      // gTPTunnel
+      uLUPTNLInformation_ToBeSetup_Item = calloc(1, sizeof(F1AP_ULUPTNLInformation_ToBeSetup_Item_t));
+      uLUPTNLInformation_ToBeSetup_Item->uLUPTNLInformation.present =
+          F1AP_UPTransportLayerInformation_PR_gTPTunnel;
+      F1AP_GTPTunnel_t *gTPTunnel = (F1AP_GTPTunnel_t *)calloc(1, sizeof(F1AP_GTPTunnel_t));
 
-            TRANSPORT_LAYER_ADDRESS_TO_BIT_STRING(1234, &gTPTunnel->transportLayerAddress);
+      TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(up_tnl->tl_address, &gTPTunnel->transportLayerAddress);
 
-            OCTET_STRING_fromBuf(&gTPTunnel->gTP_TEID, "1234",
-                           strlen("1234"));
-            
-            uLUPTNLInformation_ToBeSetup_Item->uLUPTNLInformation.choice.gTPTunnel = gTPTunnel;
+      INT32_TO_OCTET_STRING(up_tnl->gtp_teid, &gTPTunnel->gTP_TEID);
 
-            ASN_SEQUENCE_ADD(&drbs_toBeSetup_item.uLUPTNLInformation_ToBeSetup_List.list, uLUPTNLInformation_ToBeSetup_Item);
+      uLUPTNLInformation_ToBeSetup_Item->uLUPTNLInformation.choice.gTPTunnel = gTPTunnel;
+
+      ASN_SEQUENCE_ADD(&drbs_toBeSetup_item.uLUPTNLInformation_ToBeSetup_List.list, uLUPTNLInformation_ToBeSetup_Item);
     }
 
     /* rLCMode */
-    drbs_toBeSetup_item.rLCMode = F1AP_RLCMode_rlc_um; // enum
+    /* TODO use rlc_mode from f1ap_drb_to_be_setup */
+    switch (f1ap_ue_context_setup_req->drbs_to_be_setup[i].rlc_mode) {
+    case RLC_MODE_AM:
+      drbs_toBeSetup_item.rLCMode = F1AP_RLCMode_rlc_am;
+      break;
+    default:
+      drbs_toBeSetup_item.rLCMode = F1AP_RLCMode_rlc_um;
+    }
 
     /* OPTIONAL */
     /* ULConfiguration */
@@ -445,7 +453,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
 
   /* optional */
   /* c3. NRCGI */
-  if (1) {
+  if (0) {
     ie = (F1AP_UEContextModificationRequestIEs_t *)calloc(1, sizeof(F1AP_UEContextModificationRequestIEs_t));
     ie->id                             = F1AP_ProtocolIE_ID_id_SpCell_ID;
     ie->criticality                    = F1AP_Criticality_ignore;
@@ -703,7 +711,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
             uLUPTNLInformation_ToBeSetup_Item->uLUPTNLInformation.present = F1AP_UPTransportLayerInformation_PR_gTPTunnel;
             F1AP_GTPTunnel_t *gTPTunnel = (F1AP_GTPTunnel_t *)calloc(1, sizeof(F1AP_GTPTunnel_t));
 
-            TRANSPORT_LAYER_ADDRESS_TO_BIT_STRING(1234, &gTPTunnel->transportLayerAddress);
+            TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &gTPTunnel->transportLayerAddress);
 
             OCTET_STRING_fromBuf(&gTPTunnel->gTP_TEID, "4567",
                              strlen("4567"));
@@ -771,7 +779,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
             uLUPTNLInformation_ToBeSetup_Item->uLUPTNLInformation.present = F1AP_UPTransportLayerInformation_PR_gTPTunnel;
             F1AP_GTPTunnel_t *gTPTunnel = (F1AP_GTPTunnel_t *)calloc(1, sizeof(F1AP_GTPTunnel_t));
 
-            TRANSPORT_LAYER_ADDRESS_TO_BIT_STRING(1234, &gTPTunnel->transportLayerAddress);
+            TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &gTPTunnel->transportLayerAddress);
 
             OCTET_STRING_fromBuf(&gTPTunnel->gTP_TEID, "1204",
                                  strlen("1204"));

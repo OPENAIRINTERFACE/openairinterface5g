@@ -196,6 +196,17 @@ do {                                                                           \
     (oCTETsTRING)->size = 3;                                                   \
 } while(0)
 
+#define PLMNID_TO_MCC_MNC(oCTETsTRING, mCC, mNC, mNCdIGITlENGTH)                  \
+do {                                                                              \
+    mCC = ((oCTETsTRING)->buf[0] & 0x0F) * 100 +                                  \
+          ((oCTETsTRING)->buf[0] >> 4 & 0x0F) * 10 +                              \
+          ((oCTETsTRING)->buf[1] & 0x0F);                                         \
+    mNCdIGITlENGTH = ((oCTETsTRING)->buf[1] >> 4 & 0x0F) == 0xF ? 2 : 3;          \
+    mNC = (mNCdIGITlENGTH == 2 ? 0 : ((oCTETsTRING)->buf[1] >> 4 & 0x0F) * 100) + \
+          ((oCTETsTRING)->buf[2] & 0x0F) * 10 +                                   \
+          ((oCTETsTRING)->buf[2] >> 4 & 0x0F);                                    \
+} while (0)
+
 #define MCC_MNC_TO_TBCD(mCC, mNC, mNCdIGITlENGTH, tBCDsTRING)        \
 do {                                                                 \
     char _buf[3];                                                    \
@@ -260,7 +271,7 @@ do {                                                                    \
 
 
 /* TS 38.473 v15.2.1 section 9.3.1.32:
- * C RNTI
+ * C RNTI is BIT_STRING(16)
  */
 #define C_RNTI_TO_BIT_STRING(mACRO, bITsTRING)          \
 do {                                                    \
@@ -272,20 +283,30 @@ do {                                                    \
 } while(0)
 
 
-/* TS 38.473 v15.1.1 section 9.3.2.1:
- * TRANSPORT LAYER ADDRESS
+/* TS 38.473 v15.1.1 section 9.3.2.3:
+ * TRANSPORT LAYER ADDRESS for IPv4 is 32bit (TS 38.414)
  */
-#define TRANSPORT_LAYER_ADDRESS_TO_BIT_STRING(mACRO, bITsTRING)    \
+#define TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(mACRO, bITsTRING)    \
 do {                                                    \
-    (bITsTRING)->buf = calloc(5, sizeof(uint8_t));      \
-    (bITsTRING)->buf[0] = (mACRO) >> 28;                \
-    (bITsTRING)->buf[1] = (mACRO) >> 20;                \
-    (bITsTRING)->buf[2] = (mACRO) >> 12;                \
-    (bITsTRING)->buf[3] = (mACRO) >> 4;                 \
-    (bITsTRING)->buf[4] = ((mACRO) & 0x0f) << 4;        \
-    (bITsTRING)->size = 5;                              \
-    (bITsTRING)->bits_unused = 4;                       \
+    (bITsTRING)->buf = calloc(4, sizeof(uint8_t));      \
+    (bITsTRING)->buf[0] = (mACRO) >> 24 & 0xFF;         \
+    (bITsTRING)->buf[1] = (mACRO) >> 16 & 0xFF;         \
+    (bITsTRING)->buf[2] = (mACRO) >> 8 & 0xFF;          \
+    (bITsTRING)->buf[3] = (mACRO) >> 4 & 0xFF;          \
+    (bITsTRING)->size = 4;                              \
+    (bITsTRING)->bits_unused = 0;                       \
 } while(0)
+
+#define BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(bITsTRING, mACRO)    \
+do {                                                                    \
+    DevCheck((bITsTRING)->size == 4, (bITsTRING)->size, 4, 0);          \
+    DevCheck((bITsTRING)->bits_unused == 0, (bITsTRING)->bits_unused, 0, 0); \
+    mACRO = ((bITsTRING)->buf[0] << 24) +                               \
+            ((bITsTRING)->buf[1] << 16) +                               \
+            ((bITsTRING)->buf[2] << 8) +                                \
+            ((bITsTRING)->buf[3]);                                      \
+} while (0)
+
 
 /* TS 38.473 v15.1.1 section 9.3.1.12:
  * NR CELL ID

@@ -39,10 +39,9 @@
 
 #include "proto_agent_net_comm.h"
 
-typedef struct {
-  mod_id_t            enb_id;
-  uint16_t         type; // 0-> TCP, 1-> UDP, 2->SCTP
-  char 		  *peer_addr;
+typedef struct proto_agent_async_channel_s {
+  mod_id_t         enb_id;
+  const char      *peer_addr;
   int		   port;
   socket_link_t   *link;
   message_queue_t *send_queue;
@@ -50,8 +49,8 @@ typedef struct {
   link_manager_t  *manager;
 } proto_agent_async_channel_t;
 
-proto_agent_async_channel_t * proto_agent_async_channel_info(mod_id_t mod_id, char *dst_ip, uint16_t dst_port, const char* type, const char *peer_addr);
-proto_agent_async_channel_t * proto_server_async_channel_info(mod_id_t mod_id, char *dst_ip, uint16_t dst_port, const char* type, const char *peer_addr);
+proto_agent_async_channel_t * proto_agent_async_channel_info(mod_id_t mod_id, const char *dst_ip, uint16_t dst_port);
+proto_agent_async_channel_t * proto_server_async_channel_info(mod_id_t mod_id, const char *ip, uint16_t _port);
 
 int proto_agent_async_msg_send(void *data, int size, int priority, void *channel_info);
 

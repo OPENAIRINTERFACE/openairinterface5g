@@ -82,37 +82,16 @@ typedef struct mme_ip_address_s {
 
 
 
-typedef struct du_interfaces {
-  char *du_interface;
-  char *du_ipv4_address;
-  uint16_t du_port;
+typedef struct du_params {
+  const char   *remote_ipv4_address;
+  const int16_t remote_port;
+} du_params_t;
 
-  
-  unsigned tcp:1;
-  unsigned udp:1;
-  unsigned sctp:1;
-  
-}du_interfaces_t;
-
-typedef struct cu_interfaces {
-  char *cu_interface;
-  char *cu_ipv4_address;
-  uint16_t cu_port;
-  uint8_t  du_type;
-  uint8_t  cu_id;
-  
-  unsigned tcp:1;
-  unsigned udp:1;
-  unsigned sctp:1;
-  
-}cu_interfaces_t;
-
-typedef struct cudu_params_s {
-  du_interfaces_t local_du;
-  cu_interfaces_t cu[MAX_DU];
-  uint8_t 	  serving_dus;
-  uint8_t 	  cu_balancing;
-}cudu_params_t;
+typedef struct cu_params {
+  const char    *local_interface;
+  const char    *local_ipv4_address;
+  const uint16_t local_port;
+} cu_params_t;
 
 typedef struct ru_config_s {
   // indicates if local or remote rf is used (1 == LOCAL)
@@ -145,11 +124,7 @@ void                          ru_config_display(void);
 
 int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc);
 int RCconfig_S1(MessageDef *msg_p, uint32_t i);
-int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i);
-int RCconfig_CU_F1(uint32_t i);
 
-void RCconfig_cudu(void);
-cudu_params_t *get_cudu_config(void);
 void read_config_and_init(void);
 int RCconfig_X2(MessageDef *msg_p, uint32_t i);
 

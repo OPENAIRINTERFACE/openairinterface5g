@@ -45,11 +45,6 @@
 #include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "rrc_eNB_UE_context.h"
-//#include "LAYER2/PDCP_v10.1.0/pdcp_primitives.h"
-
-void * enb[NUM_MAX_ENB];
-void * enb_ue[NUM_MAX_ENB];
-void * enb_rrc[NUM_MAX_ENB];
 
 /*
  * message primitives

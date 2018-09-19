@@ -63,17 +63,18 @@ async_server_thread_init (void)
   //create log_list
   //log_list_init(&log_list);
 
+  AssertFatal(0, "this should not be reached!\n");
   async_server_shutdown = 0;
 
   if ((pthread_mutex_init (&async_server_lock, NULL) != 0)
       || (pthread_cond_init (&async_server_notify, NULL) != 0)) {
     return;
   }
-  if (pthread_create (&async_server_thread, NULL, proto_server_init, (void*) NULL)
-      != 0) {
-    async_server_thread_finalize();
-    return;
-  }
+  //if (pthread_create (&async_server_thread, NULL, proto_server_init, (void*) NULL)
+  //    != 0) {
+  //  async_server_thread_finalize();
+  //  return;
+  //}
 
 
 }

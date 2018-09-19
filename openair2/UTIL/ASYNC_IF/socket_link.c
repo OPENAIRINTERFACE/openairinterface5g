@@ -115,7 +115,7 @@ error:
   return NULL;
 }
 
-socket_link_t *new_link_client(char *server, int port)
+socket_link_t *new_link_client(const char *server, int port)
 {
   socket_link_t      *ret = NULL;
   struct sockaddr_in addr;
@@ -208,7 +208,7 @@ error:
 }
 
 
-socket_link_t *new_link_udp_client(char *server, int port){
+socket_link_t *new_link_udp_client(const char *server, int port){
 
   socket_link_t      *ret = NULL;
   ret = calloc(1, sizeof(socket_link_t));
@@ -307,7 +307,7 @@ error:
   return NULL;
 }
 
-socket_link_t *new_link_sctp_client(char *server, int port)
+socket_link_t *new_link_sctp_client(const char *server, int port)
 {
 
   socket_link_t      *ret = NULL;

@@ -41,8 +41,91 @@ extern f1ap_setup_req_t *f1ap_du_data;
 int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
                                        uint32_t         assoc_id,
                                        uint32_t         stream,
-                                       F1AP_F1AP_PDU_t *pdu) {
-  AssertFatal(1==0,"Not implemented yet\n");
+                                       F1AP_F1AP_PDU_t *pdu)
+{
+  MessageDef                      *msg_p; // message to RRC
+  F1AP_UEContextSetupRequest_t    *container;
+  F1AP_UEContextSetupRequestIEs_t *ie;
+  int i;
+
+  DevAssert(pdu);
+
+  msg_p = itti_alloc_new_message(TASK_DU_F1, F1AP_UE_CONTEXT_SETUP_REQ);
+	f1ap_ue_context_setup_req_t *f1ap_ue_context_setup_req;
+	f1ap_ue_context_setup_req = &F1AP_UE_CONTEXT_SETUP_REQ(msg_p);
+
+  container = &pdu->choice.initiatingMessage->value.choice.UEContextSetupRequest;
+
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
+  f1ap_ue_context_setup_req->gNB_CU_ue_id = ie->value.choice.GNB_CU_UE_F1AP_ID;
+
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, false);
+  if (ie) {
+    f1ap_ue_context_setup_req->gNB_DU_ue_id = malloc(sizeof(uint32_t));
+    if (f1ap_ue_context_setup_req->gNB_DU_ue_id)
+      *f1ap_ue_context_setup_req->gNB_DU_ue_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
+  } else {
+    f1ap_ue_context_setup_req->gNB_DU_ue_id = NULL;
+  }
+
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_SpCell_ID, true);
+  PLMNID_TO_MCC_MNC(&ie->value.choice.NRCGI.pLMN_Identity,
+										f1ap_ue_context_setup_req->mcc,
+										f1ap_ue_context_setup_req->mnc,
+                    f1ap_ue_context_setup_req->mnc_digit_length);
+  BIT_STRING_TO_NR_CELL_IDENTITY(&ie->value.choice.NRCGI.nRCellIdentity, f1ap_ue_context_setup_req->nr_cellid);
+
+  /* TODO: decode candidate SpCell */
+
+  /* TODO: decode CUtoDURRCInformation */
+
+  /* TODO: Candidate_SpCell_List */
+
+  /* TODO: SCell_ToBeSetup_List */
+
+  /* TODO: SRBs_ToBeSetup_List */
+
+  /* Decode DRBs_ToBeSetup_List */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_DRBs_ToBeSetup_List, true);
+  f1ap_ue_context_setup_req->drbs_to_be_setup_length = ie->value.choice.DRBs_ToBeSetup_List.list.count;
+  f1ap_ue_context_setup_req->drbs_to_be_setup = calloc(f1ap_ue_context_setup_req->drbs_to_be_setup_length,
+                                                       sizeof(f1ap_drb_to_be_setup_t));
+  AssertFatal(f1ap_ue_context_setup_req->drbs_to_be_setup,
+              "could not allocate memory for f1ap_ue_context_setup_req->drbs_to_be_setup\n");
+  for (i = 0; i < f1ap_ue_context_setup_req->drbs_to_be_setup_length; ++i) {
+    f1ap_drb_to_be_setup_t *drb_p = &f1ap_ue_context_setup_req->drbs_to_be_setup[i];
+    F1AP_DRBs_ToBeSetup_Item_t *drbs_tobesetup_item_p;
+    drbs_tobesetup_item_p = &((F1AP_DRBs_ToBeSetup_ItemIEs_t *)ie->value.choice.DRBs_ToBeSetup_List.list.array[i])->value.choice.DRBs_ToBeSetup_Item;
+
+    drb_p->drb_id = drbs_tobesetup_item_p->dRBID;
+
+    /* TODO in the following, assume only one UP UL TNL is present.
+     * this matches/assumes OAI CU implementation, can be up to 2! */
+    drb_p->up_ul_tnl_length = 1;
+    AssertFatal(drbs_tobesetup_item_p->uLUPTNLInformation_ToBeSetup_List.list.count > 0,
+                "no UL UP TNL Information in DRBs to be Setup list\n");
+    F1AP_ULUPTNLInformation_ToBeSetup_Item_t *ul_up_tnl_info_p = (F1AP_ULUPTNLInformation_ToBeSetup_Item_t *)drbs_tobesetup_item_p->uLUPTNLInformation_ToBeSetup_List.list.array[0];
+    F1AP_GTPTunnel_t *ul_up_tnl0 = ul_up_tnl_info_p->uLUPTNLInformation.choice.gTPTunnel;
+    BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&ul_up_tnl0->transportLayerAddress, drb_p->up_ul_tnl[0].tl_address);
+    OCTET_STRING_TO_INT32(&ul_up_tnl0->gTP_TEID, drb_p->up_ul_tnl[0].gtp_teid);
+
+    switch (drbs_tobesetup_item_p->rLCMode) {
+    case F1AP_RLCMode_rlc_am:
+      drb_p->rlc_mode = RLC_MODE_AM;
+      break;
+    default:
+      drb_p->rlc_mode = RLC_MODE_TM;
+      break;
+    }
+  }
+
+  AssertFatal(0, "check configuration, send to appropriate handler\n");
+
+  return 0;
 }
 
 //void DU_send_UE_CONTEXT_SETUP_RESPONSE(F1AP_UEContextSetupResponse_t *UEContextSetupResponse) {
@@ -153,7 +236,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance) {
        // *transportLayerAddress.buf = 123;
        // dLUPTNLInformation_ToBeSetup_Item.dL_GTP_Tunnel_EndPoint.transportLayerAddress = transportLayerAddress;
 
-       TRANSPORT_LAYER_ADDRESS_TO_BIT_STRING(1234, &gTPTunnel->transportLayerAddress);
+       TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &gTPTunnel->transportLayerAddress);
 
        OCTET_STRING_fromBuf(&gTPTunnel->gTP_TEID, "1204",
                              strlen("1204"));
@@ -441,7 +524,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance) {
         dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.present = F1AP_UPTransportLayerInformation_PR_gTPTunnel;
         F1AP_GTPTunnel_t *gTPTunnel = (F1AP_GTPTunnel_t *)calloc(1, sizeof(F1AP_GTPTunnel_t));
 
-        TRANSPORT_LAYER_ADDRESS_TO_BIT_STRING(1234, &gTPTunnel->transportLayerAddress);
+        TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &gTPTunnel->transportLayerAddress);
 
         OCTET_STRING_fromBuf(&gTPTunnel->gTP_TEID, "1204",
                              strlen("1204"));
@@ -495,7 +578,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance) {
         dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.present = F1AP_UPTransportLayerInformation_PR_gTPTunnel;
         F1AP_GTPTunnel_t *gTPTunnel = (F1AP_GTPTunnel_t *)calloc(1, sizeof(F1AP_GTPTunnel_t));
 
-        TRANSPORT_LAYER_ADDRESS_TO_BIT_STRING(1234, &gTPTunnel->transportLayerAddress);
+        TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &gTPTunnel->transportLayerAddress);
 
         OCTET_STRING_fromBuf(&gTPTunnel->gTP_TEID, "1204",
                               strlen("1204"));

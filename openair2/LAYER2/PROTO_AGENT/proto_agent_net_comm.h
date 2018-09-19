@@ -41,16 +41,18 @@
 #include "tree.h"
 #define ENB_AGENT_MAX 9
 
+/* forward declaration */
+struct proto_agent_async_channel_s;
+
 /*Channel related information used for Tx/Rx of protocol messages*/
 typedef struct proto_agent_channel_s {
   RB_ENTRY(proto_agent_channel_s) entry;
-int channel_id;
-void *channel_info;
-uint16_t type; // 0-> TCP, 1-> UDP, 2->SCTP
-/*Callbacks for channel message Tx and Rx*/
-int (*msg_send)(void *data, int size, int priority, void *channel_info);
-int (*msg_recv)(void **data, int *size, int *priority, void *channel_info);
-void (*release)(struct proto_agent_channel_s *channel);
+  int channel_id;
+  struct proto_agent_async_channel_s *channel_info;
+  /*Callbacks for channel message Tx and Rx*/
+  int (*msg_send)(void *data, int size, int priority, void *channel_info);
+  int (*msg_recv)(void **data, int *size, int *priority, void *channel_info);
+  void (*release)(struct proto_agent_channel_s *channel);
 } proto_agent_channel_t;
 
 typedef struct proto_agent_channel_instance_s{
