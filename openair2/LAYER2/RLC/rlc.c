@@ -707,7 +707,7 @@ void rlc_data_ind     (
        case ngran_eNB_DU    :
        case ngran_gNB_DU    :
          DU_send_UL_RRC_MESSAGE_TRANSFER(
-            ctxt_pP->module_id,
+            ctxt_pP,
             rb_idP,
             sdu_pP,
             sdu_sizeP
