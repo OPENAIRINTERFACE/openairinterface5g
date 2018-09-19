@@ -690,7 +690,7 @@ void rlc_data_ind     (
      sdu_pP);
    }
    else
-#endif /*UETARGET*/
+
    {
 
      switch (RC.rrc[ctxt_pP->module_id]->node_type){
@@ -727,6 +727,15 @@ void rlc_data_ind     (
      }
 
    }
+#else
+   pdcp_data_ind (
+		  ctxt_pP,
+		  srb_flagP,
+		  MBMS_flagP,
+		  rb_idP,
+		  sdu_sizeP,
+		  sdu_pP);
+#endif
 }
 //-----------------------------------------------------------------------------
 void rlc_data_conf     (const protocol_ctxt_t* const ctxt_pP,
@@ -797,19 +806,19 @@ rlc_module_init (void)
 
   pool_buffer_init();
 
-
+/*
 #ifndef UETARGET
-  /* Launch the RLC listening server
-   * as a separate thread
-   */
+  // Launch the RLC listening server
+  // as a separate thread
+   
   static int started = 0;
   if (started == 0)
   {
     async_server_thread_init();
     started = 1;
   }
-#endif /*UETARGET*/ 
-
+#endif  
+*/
   return(0);
 }
 //-----------------------------------------------------------------------------

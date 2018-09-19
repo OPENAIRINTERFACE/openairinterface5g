@@ -608,13 +608,13 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
 {
 
 
-    eNB_MAC_INST *mac = RC.mac[module_idP];
-    COMMON_channels_t *cc = mac->common_channels;
-    int16_t rrc_sdu_length;
-    int UE_id = -1;
-    uint16_t msg4_padding;
-    uint16_t msg4_post_padding;
-    uint16_t msg4_header;
+  eNB_MAC_INST *mac = RC.mac[module_idP];
+  COMMON_channels_t *cc = mac->common_channels;
+  int16_t rrc_sdu_length;
+  int UE_id = -1;
+  uint16_t msg4_padding;
+  uint16_t msg4_post_padding;
+  uint16_t msg4_header;
 
   uint8_t                         *vrb_map;
   int                             first_rb;
@@ -1021,55 +1021,52 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
 	  rrc_sdu_length = mac_rrc_data_req(module_idP, CC_idP, frameP, CCCH, 
 					    UE_RNTI(module_idP,UE_id),1,	// 1 transport block
 					    &cc[CC_idP].CCCH_pdu.payload[0], 0);	// not used in this case
-	  
-	  LOG_D(MAC,
+
+	  if (rrc_sdu_length > 0) { 
+	    LOG_D(MAC,
     	    	  "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: UE_id %d, rrc_sdu_length %d\n",
     	    	  module_idP, CC_idP, frameP, subframeP, UE_id, rrc_sdu_length);
-
-	  //    	    AssertFatal(rrc_sdu_length > 0,
-	  //    			"[MAC][eNB Scheduler] CCCH not allocated, rrc_sdu_length: %d\n", rrc_sdu_length);
-
-
-
-	  if (rrc_sdu_length > 0) LOG_I(MAC,
-					"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating Msg4 with RRC Piggyback (RNTI %x)\n",
-					module_idP, CC_idP, frameP, subframeP, ra->rnti);
-	  else LOG_I(MAC,
-		     "eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating Msg4 without RRC Piggyback (RNTI %x)\n",
-		     module_idP, CC_idP, frameP, subframeP, ra->rnti);
+	    
+	    //    	    AssertFatal(rrc_sdu_length > 0,
+	    //    			"[MAC][eNB Scheduler] CCCH not allocated, rrc_sdu_length: %d\n", rrc_sdu_length);
+	    
+	    
+	    
+	    LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating Msg4 with RRC Piggyback (RNTI %x)\n",
+		  module_idP, CC_idP, frameP, subframeP, ra->rnti);
 	  
-	  /// Choose first 4 RBs for Msg4, should really check that these are free!
-	  first_rb = 0;
-	  
-	  vrb_map[first_rb] = 1;
-	  vrb_map[first_rb + 1] = 1;
-	  vrb_map[first_rb + 2] = 1;
-	  vrb_map[first_rb + 3] = 1;
-	  
-	  
-	  // Compute MCS/TBS for 3 PRB (coded on 4 vrb)
-	  msg4_header = 1 + 6 + 1;	// CR header, CR CE, SDU header
-	  
-	  if ((rrc_sdu_length + msg4_header) <= 22) {
-	    ra->msg4_mcs = 4;
-	    ra->msg4_TBsize = 22;
-	  } else if ((rrc_sdu_length + msg4_header) <= 28) {
-	    ra->msg4_mcs = 5;
-	    ra->msg4_TBsize = 28;
-	  } else if ((rrc_sdu_length + msg4_header) <= 32) {
-	  ra->msg4_mcs = 6;
-	  ra->msg4_TBsize = 32;
+	    /// Choose first 4 RBs for Msg4, should really check that these are free!
+	    first_rb = 0;
+	    
+	    vrb_map[first_rb] = 1;
+	    vrb_map[first_rb + 1] = 1;
+	    vrb_map[first_rb + 2] = 1;
+	    vrb_map[first_rb + 3] = 1;
+	    
+	    
+	    // Compute MCS/TBS for 3 PRB (coded on 4 vrb)
+	    msg4_header = 1 + 6 + 1;	// CR header, CR CE, SDU header
+	    
+	    if ((rrc_sdu_length + msg4_header) <= 22) {
+	      ra->msg4_mcs = 4;
+	      ra->msg4_TBsize = 22;
+	    } else if ((rrc_sdu_length + msg4_header) <= 28) {
+	      ra->msg4_mcs = 5;
+	      ra->msg4_TBsize = 28;
+	    } else if ((rrc_sdu_length + msg4_header) <= 32) {
+	      ra->msg4_mcs = 6;
+	      ra->msg4_TBsize = 32;
 	    } else if ((rrc_sdu_length + msg4_header) <= 41) {
-		ra->msg4_mcs = 7;
-		ra->msg4_TBsize = 41;
+	      ra->msg4_mcs = 7;
+	      ra->msg4_TBsize = 41;
 	    } else if ((rrc_sdu_length + msg4_header) <= 49) {
-		ra->msg4_mcs = 8;
-		ra->msg4_TBsize = 49;
+	      ra->msg4_mcs = 8;
+	      ra->msg4_TBsize = 49;
 	    } else if ((rrc_sdu_length + msg4_header) <= 57) {
-		ra->msg4_mcs = 9;
-		ra->msg4_TBsize = 57;
+	      ra->msg4_mcs = 9;
+	      ra->msg4_TBsize = 57;
 	    }
-
+	    
 	    fill_nfapi_dl_dci_1A(dl_config_pdu, 4,	// aggregation_level
 				 ra->rnti,	// rnti
 				 1,	// rnti_type, CRNTI
@@ -1080,7 +1077,7 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
 				 1,	// ndi
 				 0,	// rv
 				 0);	// vrb_flag
-
+	    
 	    LOG_D(MAC,
 		  "Frame %d, subframe %d: Msg4 DCI pdu_num %d (rnti %x,rnti_type %d,harq_pid %d, resource_block_coding (%p) %d\n",
 		  frameP, subframeP, dl_req_body->number_pdu,
@@ -1218,6 +1215,18 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
         	  set_dl_ue_select_msg4(CC_idP, 4, UE_id, ra->rnti);
 		}
 	    }			// CCE Allocation feasible
+	  }
+	  else {
+	    LOG_I(MAC,
+		     "eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Delaying Msg4 for RRC Piggyback (RNTI %x)\n",
+		     module_idP, CC_idP, frameP, subframeP, ra->rnti);
+	    ra->Msg4_subframe ++;
+	    if (ra->Msg4_subframe == 10) {
+	      ra->Msg4_frame++;
+	      ra->Msg4_frame&=1023;
+	      ra->Msg4_subframe = 0;
+	    }
+	  }
 	}			// msg4 frame/subframe
     }				// else rach_resource_type
 }

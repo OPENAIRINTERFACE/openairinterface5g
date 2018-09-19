@@ -396,7 +396,9 @@ boolean_t pdcp_data_req(
     free_mem_block(pdcp_pdu_p, __FUNCTION__);
     rlc_status = ack_result;
     }
+
     else
+#endif /*UETARGET*/ 
     {
       //It should never get here
       rlc_status = rlc_data_req(ctxt_pP
@@ -413,7 +415,7 @@ boolean_t pdcp_data_req(
       #endif
                               );
     }
-#endif /*UETARGET*/ 
+
   }
 
   switch (rlc_status) {

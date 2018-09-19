@@ -45,6 +45,7 @@
 #include "rrc_extern.h"
 #include "common/ran_context.h"
 
+#include "rrc_eNB_UE_context.h"
 
 // undefine C_RNTI from
 // openair1/PHY/LTE_TRANSPORT/transport_common.h which
@@ -179,7 +180,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 			   &asn_DEF_DL_CCCH_Message,
 			   (void**)&dl_ccch_msg,
 			   ie->value.choice.RRCContainer.buf,
-			   ie->value.choice.RRCContainer.size,0,0);
+			   rrc_dl_sdu_len,0,0);
     switch (dl_ccch_msg->message.choice.c1.present) {
       
     case DL_CCCH_MessageType__c1_PR_NOTHING:
@@ -242,7 +243,19 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 
 	// This should be somewhere in the f1ap_cudu_ue_inst_t
 	int macrlc_instance = 0; 
-	
+
+	rnti_t rnti = f1ap_get_rnti_by_du_id(&f1ap_du_ue[0],du_ue_f1ap_id);
+	struct rrc_eNB_ue_context_s *ue_context_p = rrc_eNB_get_ue_context(RC.rrc[macrlc_instance],rnti);
+      
+	eNB_RRC_UE_t *ue_p = &ue_context_p->ue_context; 
+	AssertFatal(ue_p->Srb0.Active == 1,"SRB0 is not active\n");
+
+	memcpy((void*)ue_p->Srb0.Tx_buffer.Payload,
+	       (void*)ie->value.choice.RRCContainer.buf,
+	       rrc_dl_sdu_len);
+
+	ue_p->Srb0.Tx_buffer.payload_size = rrc_dl_sdu_len;
+
         rrc_mac_config_req_eNB(
 			       macrlc_instance,
 			       0, //primaryCC_id,
@@ -250,7 +263,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 			       0,
 #endif
-			       f1ap_get_rnti_by_du_id(&f1ap_du_ue[0],du_ue_f1ap_id), //rnti
+			       rnti,
 			       (BCCH_BCH_Message_t *) NULL,
 			       (RadioResourceConfigCommonSIB_t *) NULL,
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
@@ -462,6 +475,12 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
     return -1;
   }
 
+  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_allocate_new_UE_context(RC.rrc[module_idP]);
+  ue_context_p->ue_id_rnti                    = rntiP; 
+  ue_context_p->ue_context.rnti               = rntiP;
+  ue_context_p->ue_context.random_ue_identity = rntiP;
+  ue_context_p->ue_context.Srb0.Active        = 1;
+  RB_INSERT(rrc_ue_tree_s, &RC.rrc[module_idP]->rrc_ue_head, ue_context_p);
   du_f1ap_itti_send_sctp_data_req(0, f1ap_du_data->assoc_id, buffer, len, 0);
   return 0;
 }
