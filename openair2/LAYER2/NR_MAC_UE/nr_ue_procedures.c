@@ -538,6 +538,233 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
 	return CONNECTION_OK;
 }
 
+//////////////
+/*
+ * This code contains all the functions needed to process all dci fields.
+ * These functions are going to be called by function nr_ue_process_dci
+ */
+
+int8_t nr_ue_process_dci_freq_dom_resource_assignment(
+  fapi_nr_ul_config_pusch_pdu_rel15_t *ulsch_config_pdu,
+  fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
+  uint16_t n_RB_ULBWP,
+  uint16_t n_RB_DLBWP,
+  uint16_t riv
+){
+  uint16_t l_RB;
+  uint16_t start_RB;
+  uint16_t tmp_RIV;
+
+/*
+ * TS 38.214 subclause 5.1.2.2 Resource allocation in frequency domain (downlink)
+ * when the scheduling grant is received with DCI format 1_0, then downlink resource allocation type 1 is used
+ */
+  if(dlsch_config_pdu != NULL){
+  /*
+   * TS 38.214 subclause 5.1.2.2.1 Downlink resource allocation type 0
+   */
+  /*
+   * TS 38.214 subclause 5.1.2.2.2 Downlink resource allocation type 1
+   */
+    // For resource allocation type 1, the resource allocation field consists of a resource indication value (RIV):
+    // RIV = n_RB_DLBWP * (l_RB - 1) + start_RB                                  if (l_RB - 1) <= floor (n_RB_DLBWP/2)
+    // RIV = n_RB_DLBWP * (n_RB_DLBWP - l_RB + 1) + (n_RB_DLBWP - 1 - start_RB)  if (l_RB - 1)  > floor (n_RB_DLBWP/2)
+    // the following two expressions apply only if (l_RB - 1) <= floor (n_RB_DLBWP/2)
+    l_RB = floor(riv/n_RB_DLBWP) + 1;
+    start_RB = riv%n_RB_DLBWP;
+    // if (l_RB - 1)  > floor (n_RB_DLBWP/2) we need to recalculate them using the following lines
+    tmp_RIV = n_RB_DLBWP * (l_RB - 1) + start_RB;
+    if (tmp_RIV != riv) { // then (l_RB - 1)  > floor (n_RB_DLBWP/2) and we need to recalculate l_RB and start_RB
+      l_RB = n_RB_DLBWP - l_RB + 2;
+      start_RB = n_RB_DLBWP - start_RB - 1;
+    }
+    dlsch_config_pdu->number_rbs = l_RB;
+    dlsch_config_pdu->start_rb = start_RB;
+  }
+  if(ulsch_config_pdu != NULL){
+/*
+ * TS 38.214 subclause 6.1.2.2 Resource allocation in frequency domain (uplink)
+ */
+  /*
+   * TS 38.214 subclause 6.1.2.2.1 Uplink resource allocation type 0
+   */
+  /*
+   * TS 38.214 subclause 6.1.2.2.2 Uplink resource allocation type 1
+   */
+    // For resource allocation type 1, the resource allocation field consists of a resource indication value (RIV):
+    // RIV = n_RB_ULBWP * (l_RB - 1) + start_RB                                  if (l_RB - 1) <= floor (n_RB_ULBWP/2)
+    // RIV = n_RB_ULBWP * (n_RB_ULBWP - l_RB + 1) + (n_RB_ULBWP - 1 - start_RB)  if (l_RB - 1)  > floor (n_RB_ULBWP/2)
+    // the following two expressions apply only if (l_RB - 1) <= floor (n_RB_ULBWP/2)
+    l_RB = floor(riv/n_RB_ULBWP) + 1;
+    start_RB = riv%n_RB_ULBWP;
+    // if (l_RB - 1)  > floor (n_RB_ULBWP/2) we need to recalculate them using the following lines
+    tmp_RIV = n_RB_ULBWP * (l_RB - 1) + start_RB;
+    if (tmp_RIV != riv) { // then (l_RB - 1)  > floor (n_RB_ULBWP/2) and we need to recalculate l_RB and start_RB
+        l_RB = n_RB_ULBWP - l_RB + 2;
+        start_RB = n_RB_ULBWP - start_RB - 1;
+    }
+    ulsch_config_pdu->number_rbs = l_RB;
+    ulsch_config_pdu->start_rb = start_RB;
+  }
+  return 0;
+}
+
+int8_t nr_ue_process_dci_time_dom_resource_assignment(
+  fapi_nr_ul_config_pusch_pdu_rel15_t *ulsch_config_pdu,
+  fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
+  uint8_t time_domain_ind,
+  long dmrs_typeA_pos
+){
+  uint8_t k_offset;
+  uint8_t sliv_S;
+  uint8_t sliv_L;
+  uint8_t table_5_1_2_1_1_2_time_dom_res_alloc_A[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
+  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?12:11}, // row index 1
+  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?10:9},  // row index 2
+  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?9:8},   // row index 3
+  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?7:6},   // row index 4
+  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?5:4},   // row index 5
+  {0,(dmrs_typeA_pos == 2)?9:10,(dmrs_typeA_pos == 2)?4:4},   // row index 6
+  {0,(dmrs_typeA_pos == 2)?4:6, (dmrs_typeA_pos == 2)?4:4},   // row index 7
+  {0,5,7},  // row index 8
+  {0,5,2},  // row index 9
+  {0,9,2},  // row index 10
+  {0,12,2}, // row index 11
+  {0,1,13}, // row index 12
+  {0,1,6},  // row index 13
+  {0,2,4},  // row index 14
+  {0,4,7},  // row index 15
+  {0,8,4}   // row index 16
+  };
+  uint8_t table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
+  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?6:5},   // row index 1
+  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?10:9},  // row index 2
+  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?9:8},   // row index 3
+  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?7:6},   // row index 4
+  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?5:4},   // row index 5
+  {0,(dmrs_typeA_pos == 2)?6:8, (dmrs_typeA_pos == 2)?4:2},   // row index 6
+  {0,(dmrs_typeA_pos == 2)?4:6, (dmrs_typeA_pos == 2)?4:4},   // row index 7
+  {0,5,6},  // row index 8
+  {0,5,2},  // row index 9
+  {0,9,2},  // row index 10
+  {0,10,2}, // row index 11
+  {0,1,11}, // row index 12
+  {0,1,6},  // row index 13
+  {0,2,4},  // row index 14
+  {0,4,6},  // row index 15
+  {0,8,4}   // row index 16
+  };
+  uint8_t table_5_1_2_1_1_4_time_dom_res_alloc_B[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
+  {0,2,2},  // row index 1
+  {0,4,2},  // row index 2
+  {0,6,2},  // row index 3
+  {0,8,2},  // row index 4
+  {0,10,2}, // row index 5
+  {1,2,2},  // row index 6
+  {1,4,2},  // row index 7
+  {0,2,4},  // row index 8
+  {0,4,4},  // row index 9
+  {0,6,4},  // row index 10
+  {0,8,4},  // row index 11
+  {0,10,4}, // row index 12
+  {0,2,7},  // row index 13
+  {0,(dmrs_typeA_pos == 2)?2:3,(dmrs_typeA_pos == 2)?12:11},  // row index 14
+  {1,2,4},  // row index 15
+  {0,0,0}   // row index 16
+  };
+  uint8_t table_5_1_2_1_1_5_time_dom_res_alloc_C[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
+  {0,2,2},  // row index 1
+  {0,4,2},  // row index 2
+  {0,6,2},  // row index 3
+  {0,8,2},  // row index 4
+  {0,10,2}, // row index 5
+  {0,0,0},  // row index 6
+  {0,0,0},  // row index 7
+  {0,2,4},  // row index 8
+  {0,4,4},  // row index 9
+  {0,6,4},  // row index 10
+  {0,8,4},  // row index 11
+  {0,10,4}, // row index 12
+  {0,2,7},  // row index 13
+  {0,(dmrs_typeA_pos == 2)?2:3,(dmrs_typeA_pos == 2)?12:11},  // row index 14
+  {0,0,6},  // row index 15
+  {0,2,6}   // row index 16
+  };
+  uint8_t mu_pusch = 1;
+  // definition table j Table 6.1.2.1.1-4
+  uint8_t j = (mu_pusch==3)?3:(mu_pusch==2)?2:1;
+  uint8_t table_6_1_2_1_1_2_time_dom_res_alloc_A[16][3]={ // for PUSCH from TS 38.214 subclause 6.1.2.1.1
+  {j,  0,14}, // row index 1
+  {j,  0,12}, // row index 2
+  {j,  0,10}, // row index 3
+  {j,  2,10}, // row index 4
+  {j,  4,10}, // row index 5
+  {j,  4,8},  // row index 6
+  {j,  4,6},  // row index 7
+  {j+1,0,14}, // row index 8
+  {j+1,0,12}, // row index 9
+  {j+1,0,10}, // row index 10
+  {j+2,0,14}, // row index 11
+  {j+2,0,12}, // row index 12
+  {j+2,0,10}, // row index 13
+  {j,  8,6},  // row index 14
+  {j+3,0,14}, // row index 15
+  {j+3,0,10}  // row index 16
+  };
+  uint8_t table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[16][3]={ // for PUSCH from TS 38.214 subclause 6.1.2.1.1
+  {j,  0,8},  // row index 1
+  {j,  0,12}, // row index 2
+  {j,  0,10}, // row index 3
+  {j,  2,10}, // row index 4
+  {j,  4,4},  // row index 5
+  {j,  4,8},  // row index 6
+  {j,  4,6},  // row index 7
+  {j+1,0,8},  // row index 8
+  {j+1,0,12}, // row index 9
+  {j+1,0,10}, // row index 10
+  {j+2,0,6},  // row index 11
+  {j+2,0,12}, // row index 12
+  {j+2,0,10}, // row index 13
+  {j,  8,4},  // row index 14
+  {j+3,0,8},  // row index 15
+  {j+3,0,10}  // row index 16
+  };
+
+/*
+ * TS 38.214 subclause 5.1.2.1 Resource allocation in time domain (downlink)
+ */
+  if(dlsch_config_pdu != NULL){
+      k_offset = table_5_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind][0];
+      sliv_S   = table_5_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind][1];
+      sliv_L   = table_5_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind][2];
+      // k_offset = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][0];
+      // sliv_S   = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][1];
+      // sliv_L   = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][2];
+      // k_offset = table_5_1_2_1_1_4_time_dom_res_alloc_B[nr_pdci_info_extracted->time_dom_resource_assignment][0];
+      // sliv_S   = table_5_1_2_1_1_4_time_dom_res_alloc_B[nr_pdci_info_extracted->time_dom_resource_assignment][1];
+      // sliv_L   = table_5_1_2_1_1_4_time_dom_res_alloc_B[nr_pdci_info_extracted->time_dom_resource_assignment][2];
+      // k_offset = table_5_1_2_1_1_5_time_dom_res_alloc_C[nr_pdci_info_extracted->time_dom_resource_assignment][0];
+      // sliv_S   = table_5_1_2_1_1_5_time_dom_res_alloc_C[nr_pdci_info_extracted->time_dom_resource_assignment][1];
+      // sliv_L   = table_5_1_2_1_1_5_time_dom_res_alloc_C[nr_pdci_info_extracted->time_dom_resource_assignment][2];
+      dlsch_config_pdu->number_symbols = sliv_L;
+      dlsch_config_pdu->start_symbol = sliv_S;
+  }	/*
+ * TS 38.214 subclause 6.1.2.1 Resource allocation in time domain (uplink)
+ */
+  if(ulsch_config_pdu != NULL){
+      k_offset = table_6_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind][0];
+      sliv_S   = table_6_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind][1];
+      sliv_L   = table_6_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind][2];
+      // k_offset = table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][0];
+      // sliv_S   = table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][1];
+      // sliv_L   = table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][2];
+      ulsch_config_pdu->number_symbols = sliv_L;
+      ulsch_config_pdu->start_symbol = sliv_S;
+  }
+  return 0;
+}
+//////////////
+
 int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_format){
 
     NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
@@ -546,50 +773,63 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fa
     const uint16_t n_RB_ULBWP = 106;
     const uint16_t n_RB_DLBWP = 106;
 
-    uint32_t k_offset;
-    uint32_t sliv_S;
-    uint32_t sliv_L;
-
-    uint32_t l_RB;
-    uint32_t start_RB;
-    uint32_t tmp_RIV;
 
     switch(dci_format){
         case format0_0:
-            /* TIME_DOM_RESOURCE_ASSIGNMENT */
-            // 0, 1, 2, 3, or 4 bits as defined in:
-            //         Subclause 6.1.2.1 of [6, TS 38.214] for formats format0_0,format0_1
-            //         Subclause 5.1.2.1 of [6, TS 38.214] for formats format1_0,format1_1
-            // The bitwidth for this field is determined as log2(I) bits,
-            // where I the number of entries in the higher layer parameter pusch-AllocationList
-            k_offset = table_6_1_2_1_1_2_time_dom_res_alloc_A[dci->time_dom_resource_assignment][0];
-            sliv_S   = table_6_1_2_1_1_2_time_dom_res_alloc_A[dci->time_dom_resource_assignment][1];
-            sliv_L   = table_6_1_2_1_1_2_time_dom_res_alloc_A[dci->time_dom_resource_assignment][2];
-
-            /* FREQ_DOM_RESOURCE_ASSIGNMENT_UL */
-            // At the moment we are supporting only format 1_0 (and not format 1_1), so we only support resource allocation type 1 (and not type 0).
-            // For resource allocation type 1, the resource allocation field consists of a resource indication value (RIV):
-            // RIV = n_RB_ULBWP * (l_RB - 1) + start_RB                                  if (l_RB - 1) <= floor (n_RB_ULBWP/2)
-            // RIV = n_RB_ULBWP * (n_RB_ULBWP - l_RB + 1) + (n_RB_ULBWP - 1 - start_RB)  if (l_RB - 1)  > floor (n_RB_ULBWP/2)
-            // the following two expressions apply only if (l_RB - 1) <= floor (n_RB_ULBWP/2)
-            l_RB = floor(dci->freq_dom_resource_assignment_DL/n_RB_ULBWP) + 1;
-            start_RB = dci->freq_dom_resource_assignment_DL%n_RB_ULBWP;
-            // if (l_RB - 1)  > floor (n_RB_ULBWP/2) we need to recalculate them using the following lines
-            tmp_RIV = n_RB_ULBWP * (l_RB - 1) + start_RB;
-            if (tmp_RIV != dci->freq_dom_resource_assignment_DL) { // then (l_RB - 1)  > floor (n_RB_ULBWP/2) and we need to recalculate l_RB and start_RB
-                l_RB = n_RB_ULBWP - l_RB + 2;
-                start_RB = n_RB_ULBWP - start_RB - 1;
-            }
-
-            //  UL_CONFIG_REQ
+/*
+ *  with CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI
+ *    0  IDENTIFIER_DCI_FORMATS:
+ *    10 FREQ_DOM_RESOURCE_ASSIGNMENT_UL: PUSCH hopping with resource allocation type 1 not considered
+ *    12 TIME_DOM_RESOURCE_ASSIGNMENT: 0, 1, 2, 3, or 4 bits as defined in Subclause 6.1.2.1 of [6, TS 38.214]. The bitwidth for this field is determined as log2(I) bits,
+ *    17 FREQ_HOPPING_FLAG: 0 bit if only resource allocation type 0
+ *    24 MCS:
+ *    25 NDI:
+ *    26 RV:
+ *    27 HARQ_PROCESS_NUMBER:
+ *    32 TPC_PUSCH:
+ *    49 PADDING_NR_DCI: (Note 2) If DCI format 0_0 is monitored in common search space
+ *    50 SUL_IND_0_0:
+ */
             ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_PUSCH;
             ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.rnti = rnti;
-            fapi_nr_ul_config_pusch_pdu_rel15_t *ulsch_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15;
-            ulsch_config_pdu->number_rbs = l_RB;
-            ulsch_config_pdu->start_rb = start_RB;
-            ulsch_config_pdu->number_symbols = sliv_L;
-            ulsch_config_pdu->start_symbol = sliv_S;
-            ulsch_config_pdu->mcs = dci->mcs;
+            fapi_nr_ul_config_pusch_pdu_rel15_t *ulsch_config_pdu_0_0 = &ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15;
+            /* IDENTIFIER_DCI_FORMATS */
+            /* FREQ_DOM_RESOURCE_ASSIGNMENT_UL */
+            nr_ue_process_dci_freq_dom_resource_assignment(&ulsch_config_pdu_0_0,NULL,n_RB_ULBWP,0,dci->freq_dom_resource_assignment_UL);
+            /* TIME_DOM_RESOURCE_ASSIGNMENT */
+            nr_ue_process_dci_time_dom_resource_assignment(&ulsch_config_pdu_0_0,NULL,dci->time_dom_resource_assignment,mac->mib->dmrs_TypeA_Position);
+            /* FREQ_HOPPING_FLAG */
+            if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.resource_allocation != 0) &&
+                (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.frequency_hopping !=0))
+              ulsch_config_pdu_0_0->pusch_freq_hopping = (dci->freq_hopping_flag == 0)? pusch_freq_hopping_disabled:pusch_freq_hopping_enabled;
+            /* MCS */
+            ulsch_config_pdu_0_0->mcs = dci->mcs;
+            /* NDI */
+            ulsch_config_pdu_0_0->ndi = dci->ndi;
+            /* RV */
+            ulsch_config_pdu_0_0->rv = dci->rv;
+            /* HARQ_PROCESS_NUMBER */
+            ulsch_config_pdu_0_0->harq_process_nbr = dci->harq_process_number;
+            /* TPC_PUSCH */
+            // according to TS 38.213 Table Table 7.1.1-1
+            if (dci->tpc_pusch == 0) {
+              ulsch_config_pdu_0_0->accumulated_delta_PUSCH = -1;
+              ulsch_config_pdu_0_0->absolute_delta_PUSCH = -4;
+            }
+            if (dci->tpc_pusch == 1) {
+              ulsch_config_pdu_0_0->accumulated_delta_PUSCH = 0;
+              ulsch_config_pdu_0_0->absolute_delta_PUSCH = -1;
+            }
+            if (dci->tpc_pusch == 2) {
+              ulsch_config_pdu_0_0->accumulated_delta_PUSCH = 1;
+              ulsch_config_pdu_0_0->absolute_delta_PUSCH = 1;
+            }
+            if (dci->tpc_pusch == 3) {
+              ulsch_config_pdu_0_0->accumulated_delta_PUSCH = 3;
+              ulsch_config_pdu_0_0->absolute_delta_PUSCH = 4;
+            }
+            /* SUL_IND_0_0 */ // To be implemented, FIXME!!!
+            //  UL_CONFIG_REQ
             //ulsch0->harq_processes[dci->harq_process_number]->first_rb = start_RB;
             //ulsch0->harq_processes[dci->harq_process_number]->nb_rb    = l_RB;
             //ulsch0->harq_processes[dci->harq_process_number]->mcs = dci->mcs;
@@ -597,48 +837,170 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fa
             break;
 
         case format0_1:
+/*
+ *  with CRC scrambled by C-RNTI or CS-RNTI or SP-CSI-RNTI or new-RNTI
+ *    0  IDENTIFIER_DCI_FORMATS:
+ *    1  CARRIER_IND
+ *    2  SUL_IND_0_1
+ *    7  BANDWIDTH_PART_IND
+ *    10 FREQ_DOM_RESOURCE_ASSIGNMENT_UL: PUSCH hopping with resource allocation type 1 not considered
+ *    12 TIME_DOM_RESOURCE_ASSIGNMENT: 0, 1, 2, 3, or 4 bits as defined in Subclause 6.1.2.1 of [6, TS 38.214]. The bitwidth for this field is determined as log2(I) bits,
+ *    17 FREQ_HOPPING_FLAG: 0 bit if only resource allocation type 0
+ *    24 MCS:
+ *    25 NDI:
+ *    26 RV:
+ *    27 HARQ_PROCESS_NUMBER:
+ *    29 FIRST_DAI
+ *    30 SECOND_DAI
+ *    32 TPC_PUSCH:
+ *    36 SRS_RESOURCE_IND:
+ *    37 PRECOD_NBR_LAYERS:
+ *    38 ANTENNA_PORTS:
+ *    40 SRS_REQUEST:
+ *    42 CSI_REQUEST:
+ *    43 CBGTI
+ *    45 PTRS_DMRS
+ *    46 BETA_OFFSET_IND
+ *    47 DMRS_SEQ_INI
+ *    48 UL_SCH_IND
+ *    49 PADDING_NR_DCI: (Note 2) If DCI format 0_0 is monitored in common search space
+ */
+            ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_PUSCH;
+            ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.rnti = rnti;
+            fapi_nr_ul_config_pusch_pdu_rel15_t *ulsch_config_pdu_0_1 = &ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15;
+            /* FREQ_DOM_RESOURCE_ASSIGNMENT_UL */
+            nr_ue_process_dci_freq_dom_resource_assignment(&ulsch_config_pdu_0_1,NULL,n_RB_ULBWP,0,dci->freq_dom_resource_assignment_UL);
+            /* TIME_DOM_RESOURCE_ASSIGNMENT */
+            nr_ue_process_dci_time_dom_resource_assignment(&ulsch_config_pdu_0_1,NULL,dci->time_dom_resource_assignment,mac->mib->dmrs_TypeA_Position);
+            /* FREQ_HOPPING_FLAG */
+            if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.resource_allocation != 0) &&
+                (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.frequency_hopping !=0))
+              ulsch_config_pdu_0_1->pusch_freq_hopping = (dci->freq_hopping_flag == 0)? pusch_freq_hopping_disabled:pusch_freq_hopping_enabled;
+            /* MCS */
+            ulsch_config_pdu_0_1->mcs = dci->mcs;
+            /* NDI */
+            ulsch_config_pdu_0_1->ndi = dci->ndi;
+            /* RV */
+            ulsch_config_pdu_0_1->rv = dci->rv;
+            /* HARQ_PROCESS_NUMBER */
+            ulsch_config_pdu_0_1->harq_process_nbr = dci->harq_process_number;
+            /* FIRST_DAI */ //To be implemented, FIXME!!!
+            /* SECOND_DAI */ //To be implemented, FIXME!!!
+            /* TPC_PUSCH */
+            // according to TS 38.213 Table Table 7.1.1-1
+            if (dci->tpc_pusch == 0) {
+              ulsch_config_pdu_0_0->accumulated_delta_PUSCH = -1;
+              ulsch_config_pdu_0_0->absolute_delta_PUSCH = -4;
+            }
+            if (dci->tpc_pusch == 1) {
+              ulsch_config_pdu_0_0->accumulated_delta_PUSCH = 0;
+              ulsch_config_pdu_0_0->absolute_delta_PUSCH = -1;
+            }
+            if (dci->tpc_pusch == 2) {
+              ulsch_config_pdu_0_0->accumulated_delta_PUSCH = 1;
+              ulsch_config_pdu_0_0->absolute_delta_PUSCH = 1;
+            }
+            if (dci->tpc_pusch == 3) {
+              ulsch_config_pdu_0_0->accumulated_delta_PUSCH = 3;
+              ulsch_config_pdu_0_0->absolute_delta_PUSCH = 4;
+            }
             break;
 
         case format1_0: 
-
-            /* TIME_DOM_RESOURCE_ASSIGNMENT */
-            // Subclause 5.1.2.1 of [6, TS 38.214]
-            // the Time domain resource assignment field of the DCI provides a row index of a higher layer configured table pdsch-symbolAllocation
-            // FIXME! To clarify which parameters to update after reception of row index
-            k_offset = table_5_1_2_1_1_2_time_dom_res_alloc_A[dci->time_dom_resource_assignment][0];
-            sliv_S   = table_5_1_2_1_1_2_time_dom_res_alloc_A[dci->time_dom_resource_assignment][1];
-            sliv_L   = table_5_1_2_1_1_2_time_dom_res_alloc_A[dci->time_dom_resource_assignment][2];
-
-
-            /* FREQ_DOM_RESOURCE_ASSIGNMENT_DL */
-            // only uplink resource allocation type 1
-            // At the moment we are supporting only format 0_0 (and not format 0_1), so we only support resource allocation type 1 (and not type 0).
-            // For resource allocation type 1, the resource allocation field consists of a resource indication value (RIV):
-            // RIV = n_RB_DLBWP * (l_RB - 1) + start_RB                                  if (l_RB - 1) <= floor (n_RB_DLBWP/2)
-            // RIV = n_RB_DLBWP * (n_RB_DLBWP - l_RB + 1) + (n_RB_DLBWP - 1 - start_RB)  if (l_RB - 1)  > floor (n_RB_DLBWP/2)
-            // the following two expressions apply only if (l_RB - 1) <= floor (n_RB_DLBWP/2)
-            
-            l_RB = floor(dci->freq_dom_resource_assignment_DL/n_RB_DLBWP) + 1;
-            start_RB = dci->freq_dom_resource_assignment_DL%n_RB_DLBWP;
-            // if (l_RB - 1)  > floor (n_RB_DLBWP/2) we need to recalculate them using the following lines
-            tmp_RIV = n_RB_DLBWP * (l_RB - 1) + start_RB;
-            if (tmp_RIV != dci->freq_dom_resource_assignment_DL) { // then (l_RB - 1)  > floor (n_RB_DLBWP/2) and we need to recalculate l_RB and start_RB
-                l_RB = n_RB_DLBWP - l_RB + 2;
-                start_RB = n_RB_DLBWP - start_RB - 1;
-            }
-            
-
-            //  DL_CONFIG_REQ
+/*
+ *  with CRC scrambled by C-RNTI or CS-RNTI or new-RNTI
+ *    0  IDENTIFIER_DCI_FORMATS:
+ *    11 FREQ_DOM_RESOURCE_ASSIGNMENT_DL:
+ *    12 TIME_DOM_RESOURCE_ASSIGNMENT: 0, 1, 2, 3, or 4 bits as defined in Subclause 5.1.2.1 of [6, TS 38.214]. The bitwidth for this field is determined as log2(I) bits,
+ *    13 VRB_TO_PRB_MAPPING: 0 bit if only resource allocation type 0
+ *    24 MCS:
+ *    25 NDI:
+ *    26 RV:
+ *    27 HARQ_PROCESS_NUMBER:
+ *    28 DAI_: For format1_1: 4 if more than one serving cell are configured in the DL and the higher layer parameter HARQ-ACK-codebook=dynamic, where the 2 MSB bits are the counter DAI and the 2 LSB bits are the total DAI
+ *    33 TPC_PUCCH:
+ *    34 PUCCH_RESOURCE_IND:
+ *    35 PDSCH_TO_HARQ_FEEDBACK_TIME_IND:
+ *    55 RESERVED_NR_DCI
+ *  with CRC scrambled by P-RNTI
+ *    8  SHORT_MESSAGE_IND
+ *    9  SHORT_MESSAGES
+ *    11 FREQ_DOM_RESOURCE_ASSIGNMENT_DL:
+ *    12 TIME_DOM_RESOURCE_ASSIGNMENT: 0, 1, 2, 3, or 4 bits as defined in Subclause 5.1.2.1 of [6, TS 38.214]. The bitwidth for this field is determined as log2(I) bits,
+ *    13 VRB_TO_PRB_MAPPING: 0 bit if only resource allocation type 0
+ *    24 MCS:
+ *    31 TB_SCALING
+ *    55 RESERVED_NR_DCI
+ *  with CRC scrambled by SI-RNTI
+ *    11 FREQ_DOM_RESOURCE_ASSIGNMENT_DL:
+ *    12 TIME_DOM_RESOURCE_ASSIGNMENT: 0, 1, 2, 3, or 4 bits as defined in Subclause 5.1.2.1 of [6, TS 38.214]. The bitwidth for this field is determined as log2(I) bits,
+ *    13 VRB_TO_PRB_MAPPING: 0 bit if only resource allocation type 0
+ *    24 MCS:
+ *    26 RV:
+ *    55 RESERVED_NR_DCI
+ *  with CRC scrambled by RA-RNTI
+ *    11 FREQ_DOM_RESOURCE_ASSIGNMENT_DL:
+ *    12 TIME_DOM_RESOURCE_ASSIGNMENT: 0, 1, 2, 3, or 4 bits as defined in Subclause 5.1.2.1 of [6, TS 38.214]. The bitwidth for this field is determined as log2(I) bits,
+ *    13 VRB_TO_PRB_MAPPING: 0 bit if only resource allocation type 0
+ *    24 MCS:
+ *    31 TB_SCALING
+ *    55 RESERVED_NR_DCI
+ *  with CRC scrambled by TC-RNTI
+ *    0  IDENTIFIER_DCI_FORMATS:
+ *    11 FREQ_DOM_RESOURCE_ASSIGNMENT_DL:
+ *    12 TIME_DOM_RESOURCE_ASSIGNMENT: 0, 1, 2, 3, or 4 bits as defined in Subclause 5.1.2.1 of [6, TS 38.214]. The bitwidth for this field is determined as log2(I) bits,
+ *    13 VRB_TO_PRB_MAPPING: 0 bit if only resource allocation type 0
+ *    24 MCS:
+ *    25 NDI:
+ *    26 RV:
+ *    27 HARQ_PROCESS_NUMBER:
+ *    28 DAI_: For format1_1: 4 if more than one serving cell are configured in the DL and the higher layer parameter HARQ-ACK-codebook=dynamic, where the 2 MSB bits are the counter DAI and the 2 LSB bits are the total DAI
+ *    33 TPC_PUCCH:
+ */
             dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
             dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.rnti = rnti;
-            fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
-            dlsch_config_pdu->number_rbs = l_RB;
-            dlsch_config_pdu->start_rb = start_RB;
-            dlsch_config_pdu->number_symbols = sliv_L;
-            dlsch_config_pdu->start_symbol = sliv_S;
-            dlsch_config_pdu->mcs = dci->mcs;
+            fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu_1_0 = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
+            /* FREQ_DOM_RESOURCE_ASSIGNMENT_DL */
+            nr_ue_process_dci_freq_dom_resource_assignment(NULL,&dlsch_config_pdu_1_0,0,n_RB_DLBWP,dci->freq_dom_resource_assignment_DL);
+            /* TIME_DOM_RESOURCE_ASSIGNMENT */
+            nr_ue_process_dci_time_dom_resource_assignment(NULL,&dlsch_config_pdu_1_0,dci->time_dom_resource_assignment,mac->mib->dmrs_TypeA_Position);
+            /* VRB_TO_PRB_MAPPING */
+            dlsch_config_pdu_1_0->vrb_to_prb_mapping = (dci->vrb_to_prb_mapping == 0) ? vrb_to_prb_mapping_non_interleaved:vrb_to_prb_mapping_interleaved;
+            /* MCS */
+            dlsch_config_pdu_1_0->mcs = dci->mcs;
+            /* NDI (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
+            dlsch_config_pdu_1_0->ndi = dci->ndi;
+            /* RV (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
+            dlsch_config_pdu_1_0->rv = dci->rv;
+            /* HARQ_PROCESS_NUMBER (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
+            dlsch_config_pdu_1_0->harq_process_nbr = dci->harq_process_number;
+            /* DAI (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
+            dlsch_config_pdu_1_0->dai = dci ->dai;
+            /* TB_SCALING (only if CRC scrambled by P-RNTI or RA-RNTI) */
+            // according to TS 38.214 Table 5.1.3.2-3
+            if (dci->tb_scaling == 0) dlsch_config_pdu_1_0->scaling_factor_S = 1;
+            if (dci->tb_scaling == 1) dlsch_config_pdu_1_0->scaling_factor_S = 0.5;
+            if (dci->tb_scaling == 2) dlsch_config_pdu_1_0->scaling_factor_S = 0.25;
+            if (dci->tb_scaling == 3) dlsch_config_pdu_1_0->scaling_factor_S = 0; // value not defined in table
+            /* TPC_PUCCH (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
+            // according to TS 38.213 Table 7.2.1-1
+            if (dci->tpc_pucch == 0) dlsch_config_pdu_1_0->accumulated_delta_PUCCH = -1;
+            if (dci->tpc_pucch == 1) dlsch_config_pdu_1_0->accumulated_delta_PUCCH = 0;
+            if (dci->tpc_pucch == 2) dlsch_config_pdu_1_0->accumulated_delta_PUCCH = 1;
+            if (dci->tpc_pucch == 3) dlsch_config_pdu_1_0->accumulated_delta_PUCCH = 3;
+            /* PUCCH_RESOURCE_IND (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI)*/
+            if (dci->pucch_resource_ind == 0) dlsch_config_pdu_1_0->pucch_resource_id = 0; //pucch-ResourceId obtained from the 1st value of resourceList FIXME!!!
+            if (dci->pucch_resource_ind == 1) dlsch_config_pdu_1_0->pucch_resource_id = 0; //pucch-ResourceId obtained from the 2nd value of resourceList FIXME!!
+            if (dci->pucch_resource_ind == 2) dlsch_config_pdu_1_0->pucch_resource_id = 0; //pucch-ResourceId obtained from the 3rd value of resourceList FIXME!!
+            if (dci->pucch_resource_ind == 3) dlsch_config_pdu_1_0->pucch_resource_id = 0; //pucch-ResourceId obtained from the 4th value of resourceList FIXME!!
+            if (dci->pucch_resource_ind == 4) dlsch_config_pdu_1_0->pucch_resource_id = 0; //pucch-ResourceId obtained from the 5th value of resourceList FIXME!!
+            if (dci->pucch_resource_ind == 5) dlsch_config_pdu_1_0->pucch_resource_id = 0; //pucch-ResourceId obtained from the 6th value of resourceList FIXME!!
+            if (dci->pucch_resource_ind == 6) dlsch_config_pdu_1_0->pucch_resource_id = 0; //pucch-ResourceId obtained from the 7th value of resourceList FIXME!!
+            if (dci->pucch_resource_ind == 7) dlsch_config_pdu_1_0->pucch_resource_id = 0; //pucch-ResourceId obtained from the 8th value of resourceList FIXME!!
+            /* PDSCH_TO_HARQ_FEEDBACK_TIME_IND (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI)*/
+            dlsch_config_pdu_1_0-> pdsch_to_harq_feedback_time_ind = dci->pdsch_to_harq_feedback_time_ind;
 
-
+            //  DL_CONFIG_REQ
             //pdlsch0_harq->nb_rb = l_RB;
             //pdlsch0->current_harq_pid = dci->harq_process_number;
             //pdlsch0->active           = 1;
@@ -650,6 +1012,81 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fa
             break;
 
         case format1_1:        
+/*
+ *  with CRC scrambled by C-RNTI or CS-RNTI or new-RNTI
+ *    0  IDENTIFIER_DCI_FORMATS:
+ *    1  CARRIER_IND:
+ *    7  BANDWIDTH_PART_IND:
+ *    11 FREQ_DOM_RESOURCE_ASSIGNMENT_DL:
+ *    12 TIME_DOM_RESOURCE_ASSIGNMENT: 0, 1, 2, 3, or 4 bits as defined in Subclause 5.1.2.1 of [6, TS 38.214]. The bitwidth for this field is determined as log2(I) bits,
+ *    13 VRB_TO_PRB_MAPPING: 0 bit if only resource allocation type 0
+ *    14 PRB_BUNDLING_SIZE_IND:
+ *    15 RATE_MATCHING_IND:
+ *    16 ZP_CSI_RS_TRIGGER:
+ *    18 TB1_MCS:
+ *    19 TB1_NDI:
+ *    20 TB1_RV:
+ *    21 TB2_MCS:
+ *    22 TB2_NDI:
+ *    23 TB2_RV:
+ *    27 HARQ_PROCESS_NUMBER:
+ *    28 DAI_: For format1_1: 4 if more than one serving cell are configured in the DL and the higher layer parameter HARQ-ACK-codebook=dynamic, where the 2 MSB bits are the counter DAI and the 2 LSB bits are the total DAI
+ *    33 TPC_PUCCH:
+ *    34 PUCCH_RESOURCE_IND:
+ *    35 PDSCH_TO_HARQ_FEEDBACK_TIME_IND:
+ *    38 ANTENNA_PORTS:
+ *    39 TCI:
+ *    40 SRS_REQUEST:
+ *    43 CBGTI:
+ *    44 CBGFI:
+ *    47 DMRS_SEQ_INI:
+ */
+            dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
+            dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.rnti = rnti;
+            fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu_1_1 = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
+            /* FREQ_DOM_RESOURCE_ASSIGNMENT_DL */
+            nr_ue_process_dci_freq_dom_resource_assignment(NULL,&dlsch_config_pdu_1_1,0,n_RB_DLBWP,dci->freq_dom_resource_assignment_DL);
+            /* TIME_DOM_RESOURCE_ASSIGNMENT */
+            nr_ue_process_dci_time_dom_resource_assignment(NULL,&dlsch_config_pdu_1_1,dci->time_dom_resource_assignment,mac->mib->dmrs_TypeA_Position);
+            /* VRB_TO_PRB_MAPPING */
+            if (mac->phy_config.config_req.dl_bwp_dedicated.pdsch_config_dedicated.resource_allocation != 0)
+              dlsch_config_pdu_1_1->vrb_to_prb_mapping = (dci->vrb_to_prb_mapping == 0) ? vrb_to_prb_mapping_non_interleaved:vrb_to_prb_mapping_interleaved;
+            /* MCS (for transport block 1)*/
+            dlsch_config_pdu_1_1->mcs = dci->tb1_mcs;
+            /* NDI (for transport block 1)*/
+            dlsch_config_pdu_1_1->ndi = dci->tb1_ndi;
+            /* RV (for transport block 1)*/
+            dlsch_config_pdu_1_1->rv = dci->tb1_rv;
+            /* MCS (for transport block 2)*/
+            dlsch_config_pdu_1_1->tb2_mcs = dci->tb2_mcs;
+            /* NDI (for transport block 2)*/
+            dlsch_config_pdu_1_1->tb2_ndi = dci->tb2_ndi;
+            /* RV (for transport block 2)*/
+            dlsch_config_pdu_1_1->tb2_rv = dci->tb2_rv;
+            /* HARQ_PROCESS_NUMBER */
+            dlsch_config_pdu_1_1->harq_process_nbr = dci->harq_process_number;
+            /* DAI */
+            dlsch_config_pdu_1_0->dai = dci ->dai;
+            /* TPC_PUCCH */
+            // according to TS 38.213 Table 7.2.1-1
+            if (dci->tpc_pucch == 0) dlsch_config_pdu_1_1->accumulated_delta_PUCCH = -1;
+            if (dci->tpc_pucch == 1) dlsch_config_pdu_1_1->accumulated_delta_PUCCH = 0;
+            if (dci->tpc_pucch == 2) dlsch_config_pdu_1_1->accumulated_delta_PUCCH = 1;
+            if (dci->tpc_pucch == 3) dlsch_config_pdu_1_1->accumulated_delta_PUCCH = 3;
+            /* PUCCH_RESOURCE_IND */
+            if (dci->pucch_resource_ind == 0) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 1st value of resourceList FIXME!!!
+            if (dci->pucch_resource_ind == 1) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 2nd value of resourceList FIXME!!
+            if (dci->pucch_resource_ind == 2) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 3rd value of resourceList FIXME!!
+            if (dci->pucch_resource_ind == 3) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 4th value of resourceList FIXME!!
+            if (dci->pucch_resource_ind == 4) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 5th value of resourceList FIXME!!
+            if (dci->pucch_resource_ind == 5) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 6th value of resourceList FIXME!!
+            if (dci->pucch_resource_ind == 6) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 7th value of resourceList FIXME!!
+            if (dci->pucch_resource_ind == 7) dlsch_config_pdu_1_1->pucch_resource_id = 0; //pucch-ResourceId obtained from the 8th value of resourceList FIXME!!
+            /* PDSCH_TO_HARQ_FEEDBACK_TIME_IND */
+            // according to TS 38.213 Table 9.2.3-1
+            dlsch_config_pdu_1_1-> pdsch_to_harq_feedback_time_ind =
+              mac->phy_config.config_req.ul_bwp_dedicated.pucch_config_dedicated.dl_data_to_ul_ack[dci->pdsch_to_harq_feedback_time_ind];
+
             break;
 
         case format2_0:        
@@ -685,6 +1122,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fa
 
         ///  else normal DL-SCH grant
     }
+    return 0;
 }
 
 int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe){

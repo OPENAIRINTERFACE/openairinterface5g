@@ -30,9 +30,14 @@
  * \warning
 */
 
+//#define DEBUG_POLAR_ENCODER
 //#define DEBUG_POLAR_ENCODER_DCI
+//#define DEBUG_POLAR_ENCODER_TIMING
 
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
+
+//input  [a_31 a_30 ... a_0]
+//output [f_31 f_30 ... f_0] [f_63 f_62 ... f_32] ...
 
 void polar_encoder(uint32_t *in,
 				   uint32_t *out,
@@ -95,6 +100,10 @@ void polar_encoder(uint32_t *in,
 	/*
 	 * Return bits.
 	 */
+#ifdef DEBUG_POLAR_ENCODER
+	for (int i=0; i< polarParams->encoderLength;i++) printf("f[%d]=%d\n", i, polarParams->nr_polar_E[i]);
+#endif
+
 	nr_byte2bit_uint8_32_t(polarParams->nr_polar_E, polarParams->encoderLength, out);
 }
 
@@ -186,4 +195,77 @@ void polar_encoder_dci(uint32_t *in,
 		printf("[%d]->0x%08x\t", i, out[i]);
 	}
 #endif
+}
+
+void polar_encoder_timing(uint32_t *in,
+						  uint32_t *out,
+						  t_nrPolar_paramsPtr polarParams,
+						  double cpuFreqGHz,
+						  FILE* logFile)
+{
+	//Initiate timing.
+	time_stats_t timeEncoderCRCByte, timeEncoderCRCBit, timeEncoderInterleaver, timeEncoderBitInsertion, timeEncoder1, timeEncoder2, timeEncoderRateMatching, timeEncoderByte2Bit;
+	reset_meas(&timeEncoderCRCByte); reset_meas(&timeEncoderCRCBit); reset_meas(&timeEncoderInterleaver); reset_meas(&timeEncoderBitInsertion); reset_meas(&timeEncoder1); reset_meas(&timeEncoder2); reset_meas(&timeEncoderRateMatching); reset_meas(&timeEncoderByte2Bit);
+	uint16_t n_RNTI=0x0000;
+
+	start_meas(&timeEncoderCRCByte);
+	nr_crc_bit2bit_uint32_8_t(in, polarParams->payloadBits, polarParams->nr_polar_aPrime); //(a to a')
+	polarParams->crcBit = crc24c(polarParams->nr_polar_aPrime, (polarParams->payloadBits+polarParams->crcParityBits)); //Parity bits computation (p)
+	uint8_t arrayInd = ceil(polarParams->payloadBits / 8.0); //(a to b)
+	for (int i=0; i<arrayInd-1; i++)
+		for (int j=0; j<8; j++)
+			polarParams->nr_polar_B[j+(i*8)] = ((polarParams->nr_polar_aPrime[3+i]>>(7-j)) & 1);
+	for (int i=0; i<((polarParams->payloadBits)%8); i++) polarParams->nr_polar_B[i+(arrayInd-1)*8] = ((polarParams->nr_polar_aPrime[3+(arrayInd-1)]>>(7-i)) & 1);
+	for (int i=0; i<8; i++) polarParams->nr_polar_B[polarParams->payloadBits+i] = ((polarParams->crcBit)>>(31-i))&1;
+	for (int i=0; i<16; i++) polarParams->nr_polar_B[polarParams->payloadBits+8+i] =	( (((polarParams->crcBit)>>(23-i))&1) + ((n_RNTI>>(15-i))&1) ) % 2; //Scrambling (b to c)
+	stop_meas(&timeEncoderCRCByte);
+
+
+	start_meas(&timeEncoderCRCBit);
+	nr_bit2byte_uint32_8_t(in, polarParams->payloadBits, polarParams->nr_polar_A);
+	nr_matrix_multiplication_uint8_t_1D_uint8_t_2D(polarParams->nr_polar_A, polarParams->crc_generator_matrix, polarParams->nr_polar_crc, polarParams->payloadBits, polarParams->crcParityBits); //Calculate CRC.
+	for (uint8_t i = 0; i < polarParams->crcParityBits; i++) polarParams->nr_polar_crc[i] = (polarParams->nr_polar_crc[i] % 2);
+	for (uint16_t i = 0; i < polarParams->payloadBits; i++) polarParams->nr_polar_B[i] = polarParams->nr_polar_A[i]; //Attach CRC to the Transport Block. (a to b)
+	for (uint16_t i = polarParams->payloadBits; i < polarParams->K; i++) polarParams->nr_polar_B[i]= polarParams->nr_polar_crc[i-(polarParams->payloadBits)];
+	stop_meas(&timeEncoderCRCBit);
+
+
+	start_meas(&timeEncoderInterleaver); //Interleaving (c to c')
+	nr_polar_interleaver(polarParams->nr_polar_B, polarParams->nr_polar_CPrime, polarParams->interleaving_pattern, polarParams->K);
+	stop_meas(&timeEncoderInterleaver);
+
+
+	start_meas(&timeEncoderBitInsertion); //Bit insertion (c' to u)
+	nr_polar_bit_insertion(polarParams->nr_polar_CPrime, polarParams->nr_polar_U, polarParams->N, polarParams->K, polarParams->Q_I_N, polarParams->Q_PC_N, polarParams->n_pc);
+	stop_meas(&timeEncoderBitInsertion);
+
+
+	start_meas(&timeEncoder1); //Encoding (u to d)
+	nr_matrix_multiplication_uint8_t_1D_uint8_t_2D(polarParams->nr_polar_U, polarParams->G_N, polarParams->nr_polar_D, polarParams->N, polarParams->N);
+	stop_meas(&timeEncoder1);
+
+
+	start_meas(&timeEncoder2);
+	for (uint16_t i = 0; i < polarParams->N; i++) polarParams->nr_polar_D[i] = (polarParams->nr_polar_D[i] % 2);
+	stop_meas(&timeEncoder2);
+
+
+	start_meas(&timeEncoderRateMatching);//Rate matching //Sub-block interleaving (d to y) and Bit selection (y to e)
+	nr_polar_interleaver(polarParams->nr_polar_D, polarParams->nr_polar_E, polarParams->rate_matching_pattern, polarParams->encoderLength);
+	stop_meas(&timeEncoderRateMatching);
+
+
+	start_meas(&timeEncoderByte2Bit); //Return bits.
+	nr_byte2bit_uint8_32_t(polarParams->nr_polar_E, polarParams->encoderLength, out);
+	stop_meas(&timeEncoderByte2Bit);
+
+	fprintf(logFile,",%f,%f,%f,%f,%f,%f,%f,%f\n",
+			(timeEncoderCRCByte.diff_now/(cpuFreqGHz*1000.0)),
+			(timeEncoderCRCBit.diff_now/(cpuFreqGHz*1000.0)),
+			(timeEncoderInterleaver.diff_now/(cpuFreqGHz*1000.0)),
+			(timeEncoderBitInsertion.diff_now/(cpuFreqGHz*1000.0)),
+			(timeEncoder1.diff_now/(cpuFreqGHz*1000.0)),
+			(timeEncoder2.diff_now/(cpuFreqGHz*1000.0)),
+			(timeEncoderRateMatching.diff_now/(cpuFreqGHz*1000.0)),
+			(timeEncoderByte2Bit.diff_now/(cpuFreqGHz*1000.0)));
 }

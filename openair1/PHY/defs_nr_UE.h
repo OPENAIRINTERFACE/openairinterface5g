@@ -624,8 +624,8 @@ typedef struct {
 #define SUL_IND_0_1                      2
 #define SLOT_FORMAT_IND                  3
 #define PRE_EMPTION_IND                  4
-#define TPC_CMD_NUMBER                   5
-#define BLOCK_NUMBER                     6
+#define BLOCK_NUMBER                     5
+#define CLOSE_LOOP_IND                   6
 #define BANDWIDTH_PART_IND               7
 #define SHORT_MESSAGE_IND                8
 #define SHORT_MESSAGES                   9
@@ -660,7 +660,7 @@ typedef struct {
 #define ANTENNA_PORTS                   38
 #define TCI                             39
 #define SRS_REQUEST                     40
-#define TPC_CMD_NUMBER_FORMAT2_3        41
+#define TPC_CMD                         41
 #define CSI_REQUEST                     42
 #define CBGTI                           43
 #define CBGFI                           44
@@ -732,7 +732,7 @@ typedef struct {
 } NR_UE_CORESET_CCE_REG_MAPPING_t;
 
 typedef enum {allContiguousRBs=0,sameAsREGbundle=1} NR_UE_CORESET_precoder_granularity_t;
-
+typedef enum {tciPresentInDCI_enabled = 1} tciPresentInDCI_t;
 typedef struct {
   /*
    * define CORESET structure according to 38.331
@@ -771,7 +771,7 @@ typedef struct {
   NR_UE_CORESET_CCE_REG_MAPPING_t cce_reg_mappingType;
   NR_UE_CORESET_precoder_granularity_t precoderGranularity;
   int tciStatesPDCCH;
-  int tciPresentInDCI;
+  tciPresentInDCI_t tciPresentInDCI;
   uint16_t pdcchDMRSScramblingID;
   uint16_t rb_offset;
 } NR_UE_PDCCH_CORESET;
@@ -1214,6 +1214,14 @@ typedef struct {
   PUCCH_Config_t             pucch_config_dedicated_nr[NUMBER_OF_CONNECTED_eNB_MAX];
 
   PUSCH_Config_t             pusch_config;
+  SRS_NR                     srs;
+
+  crossCarrierSchedulingConfig_t crossCarrierSchedulingConfig;
+  supplementaryUplink_t supplementaryUplink;
+  dmrs_UplinkConfig_t dmrs_UplinkConfig;
+  dmrs_DownlinkConfig_t dmrs_DownlinkConfig;
+  csi_MeasConfig_t csi_MeasConfig;
+  PUSCH_ServingCellConfig_t PUSCH_ServingCellConfig;
 
 #endif
 

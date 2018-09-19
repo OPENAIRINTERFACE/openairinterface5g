@@ -37,8 +37,8 @@ typedef struct {
     uint8_t sul_ind_0_1                     ; // 2  SUL_IND_0_1:
     uint8_t slot_format_ind                 ; // 3  SLOT_FORMAT_IND: size of DCI format 2_0 is configurable by higher layers up to 128 bits, according to Subclause 11.1.1 of [5, TS 38.213]
     uint8_t pre_emption_ind                 ; // 4  PRE_EMPTION_IND: size of DCI format 2_1 is configurable by higher layers up to 126 bits, according to Subclause 11.2 of [5, TS 38.213]. Each pre-emption indication is 14 bits
-    uint8_t tpc_cmd_number                  ; // 5  TPC_CMD_NUMBER: The parameter xxx provided by higher layers determines the index to the TPC command number for an UL of a cell. Each TPC command number is 2 bits
-    uint8_t block_number                    ; // 6  BLOCK_NUMBER: starting position of a block is determined by the parameter startingBitOfFormat2_3
+    uint8_t block_number                    ; // 5  BLOCK_NUMBER: starting position of a block is determined by the parameter startingBitOfFormat2_3
+    uint8_t close_loop_ind                  ; // 6  CLOSE_LOOP_IND:
     uint8_t bandwidth_part_ind              ; // 7  BANDWIDTH_PART_IND:
     uint8_t short_message_ind               ; // 8  SHORT_MESSAGE_IND:
     uint8_t short_messages                  ; // 9  SHORT_MESSAGES:
@@ -81,7 +81,7 @@ typedef struct {
     uint8_t antenna_ports                   ; // 38 ANTENNA_PORTS:
     uint8_t tci                             ; // 39 TCI: 0 bit if higher layer parameter tci-PresentInDCI is not enabled; otherwise 3 bits
     uint8_t srs_request                     ; // 40 SRS_REQUEST:
-    uint8_t tpc_cmd_number_format2_3        ; // 41 TPC_CMD_NUMBER_FORMAT2_3:
+    uint8_t tpc_cmd                         ; // 41 TPC_CMD:
     uint8_t csi_request                     ; // 42 CSI_REQUEST:
     uint8_t cbgti                           ; // 43 CBGTI: 0, 2, 4, 6, or 8 bits determined by higher layer parameter maxCodeBlockGroupsPerTransportBlock for the PDSCH
     uint8_t cbgfi                           ; // 44 CBGFI: 0 or 1 bit determined by higher layer parameter codeBlockGroupFlushIndicator
@@ -225,13 +225,19 @@ typedef struct {
     typedef struct {
 
     } fapi_nr_ul_config_pucch_pdu;
-
+    typedef enum {pusch_freq_hopping_disabled = 0 , pusch_freq_hopping_enabled = 1}pusch_freq_hopping_t;
     typedef struct {
         uint16_t number_rbs;
         uint16_t start_rb;
         uint16_t number_symbols;
         uint16_t start_symbol;
+        pusch_freq_hopping_t pusch_freq_hopping;
         uint8_t mcs;
+        uint8_t ndi;
+        uint8_t rv;
+        uint8_t harq_process_nbr;
+        int8_t accumulated_delta_PUSCH;
+        int8_t absolute_delta_PUSCH;
     } fapi_nr_ul_config_pusch_pdu_rel15_t;
 
     typedef struct {
@@ -273,6 +279,7 @@ typedef struct {
         fapi_nr_dl_config_dci_dl_pdu_rel15_t dci_config_rel15;
     } fapi_nr_dl_config_dci_pdu;
 
+    typedef enum{vrb_to_prb_mapping_non_interleaved = 0, vrb_to_prb_mapping_interleaved = 1} vrb_to_prb_mapping_t;
     //typedef fapi_nr_dci_pdu_rel15_t fapi_nr_dl_config_dlsch_pdu_rel15_t;
     typedef struct {
         uint16_t number_rbs;
@@ -280,7 +287,18 @@ typedef struct {
         uint16_t number_symbols;
         uint16_t start_symbol;
         uint8_t mcs;
+        uint8_t ndi;
         uint8_t rv;
+        uint8_t tb2_mcs;
+        uint8_t tb2_ndi;
+        uint8_t tb2_rv;
+        uint8_t harq_process_nbr;
+        vrb_to_prb_mapping_t vrb_to_prb_mapping;
+        uint8_t dai;
+        double scaling_factor_S;
+        int8_t accumulated_delta_PUCCH;
+        uint8_t pucch_resource_id;
+        uint8_t pdsch_to_harq_feedback_time_ind;
         //  to be check the fields needed to L1 with NR_DL_UE_HARQ_t and NR_UE_DLSCH_t
     } fapi_nr_dl_config_dlsch_pdu_rel15_t;
 

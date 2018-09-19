@@ -246,11 +246,11 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
       (*xbyte) ^= ((ssb_index>>(3+i))&1)<<(5+i); // resp. 4th, 5th and 6th bits of ssb_index
   else
     (*xbyte) ^= ((config->sch_config.ssb_subcarrier_offset.value>>5)&1)<<5; //MSB of k_SSB
-//#ifdef DEBUG_PBCH_ENCODING
+#ifdef DEBUG_PBCH_ENCODING
   printf("Extra byte:\n");
   for (int i=0; i<4; i++)
     printf("pbch_a[%d]: 0x%02x\n", i, pbch->pbch_a[i]);
-//#endif
+#endif
 
     // Payload interleaving
   uint32_t in=0, out=0;
