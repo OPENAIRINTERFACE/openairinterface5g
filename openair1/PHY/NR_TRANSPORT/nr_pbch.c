@@ -36,7 +36,7 @@
 #include "PHY/sse_intrin.h"
 
 //#define DEBUG_PBCH
-#define DEBUG_PBCH_ENCODING
+//#define DEBUG_PBCH_ENCODING
 //#define DEBUG_PBCH_DMRS
 
 extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
@@ -278,11 +278,11 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   nr_pbch_scrambling(pbch, (uint32_t)config->sch_config.physical_cell_id.value, nushift, M, NR_POLAR_PBCH_PAYLOAD_BITS, 0);
 #ifdef DEBUG_PBCH_ENCODING
   printf("Payload scrambling:\n");
-    printf("pbch_a_prime[%d]: 0x%08x\n", pbch->pbch_a_prime);
+    printf("pbch_a_prime: 0x%08x\n", pbch->pbch_a_prime);
 #endif
 
   /// CRC, coding and rate matching
-  polar_encoder (pbch->pbch_a_prime, pbch->pbch_e, polar_params);
+  polar_encoder (&pbch->pbch_a_prime, pbch->pbch_e, polar_params);
 #ifdef DEBUG_PBCH_ENCODING
   printf("Channel coding:\n");
   for (int i=0; i<NR_POLAR_PBCH_E_DWORD; i++)
