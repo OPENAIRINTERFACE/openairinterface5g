@@ -40,6 +40,10 @@
 #include "DL-CCCH-Message.h"
 #include "DL-DCCH-Message.h"
 
+// for SRB1_logicalChannelConfig_defaultValue
+#include "rrc_extern.h"
+#include "common/ran_context.h"
+
 // undefine C_RNTI from
 // openair1/PHY/LTE_TRANSPORT/transport_common.h which
 // replaces in ie->value.choice.C_RNTI, causing
@@ -48,6 +52,7 @@
 #undef C_RNTI 
 
 extern f1ap_setup_req_t *f1ap_du_data;
+extern RAN_CONTEXT_t RC;
 
 /*  DL RRC Message Transfer */
 int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
@@ -73,7 +78,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   uint64_t        rAT_FrequencySelectionPriority;
 
   DevAssert(pdu != NULL);
-  
+
   if (stream != 0) {
     LOG_E(F1AP, "[SCTP %d] Received F1 on stream != 0 (%d)\n",
                assoc_id, stream);
@@ -186,18 +191,107 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
       break;
 
     case DL_CCCH_MessageType__c1_PR_rrcConnectionSetup:
-      LOG_I(RRC,
-	    "Logical Channel DL-CCCH (SRB0), Received RRCConnectionSetup RNTI %x\n");
-      // Get configuration
+      {
+	LOG_I(RRC,
+	      "Logical Channel DL-CCCH (SRB0), Received RRCConnectionSetup RNTI %x\n",  (rnti_t)du_ue_f1ap_id);
+	// Get configuration
 
-      break;
+	// find rrc instance and ue_context for this UE
+	/*
+	eNB_RRC_INST *rrc;
+	rrc_eNB_ue_context_t *ue_context_pP = NULL;
+	for (int i = 0; i<RC.nb_inst; i++) {
+	  rrc = RC.rrc[i];
+	  // note this requires that du_ue_f1ap_id == RNTI!
+	  ue_context_pP = rrc_eNB_get_ue_context(rrc,(rnti_t)du_ue_f1ap_id);
+	  if (ue_context_pP != NULL) break;
+	}
+	AssertFatal(ue_context_pP != NULL, "no UE context found!\n");
+	*/
+
+	// find MACRLC instance based on RNTI/UE_DU_ID
+	int macrlc_instance=-1;
+
+	for (macrlc_instance=0;macrlc_instance<RC.nb_macrlc_inst;macrlc_instance++)
+	  if (find_UE_id(macrlc_instance,du_ue_f1ap_id)>=0) break;
+	
+	AssertFatal(macrlc_instance>=0,"cannot find macrlc instance for ue\n");
+
+	RRCConnectionSetup_t* rrcConnectionSetup = &dl_ccch_msg->message.choice.c1.choice.rrcConnectionSetup;
+	//	eNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
+	AssertFatal(rrcConnectionSetup!=NULL,"rrcConnectionSetup is null\n");
+	RadioResourceConfigDedicated_t* radioResourceConfigDedicated = &rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated;
+	
+	// get SRB logical channel information
+	SRB_ToAddModList_t *SRB_configList;
+	SRB_ToAddMod_t *SRB1_config;
+	LogicalChannelConfig_t *SRB1_logicalChannelConfig;  //,*SRB2_logicalChannelConfig;
+	SRB_configList                 = radioResourceConfigDedicated->srb_ToAddModList;
+
+	AssertFatal(SRB_configList!=NULL,"SRB_configList is null\n");
+	for (int cnt = 0; cnt < (SRB_configList)->list.count; cnt++) {
+	  if ((SRB_configList)->list.array[cnt]->srb_Identity == 1) {
+	    SRB1_config = (SRB_configList)->list.array[cnt];
+	    
+	    if (SRB1_config->logicalChannelConfig) {
+	      if (SRB1_config->logicalChannelConfig->present ==
+		  SRB_ToAddMod__logicalChannelConfig_PR_explicitValue) {
+		SRB1_logicalChannelConfig = &SRB1_config->logicalChannelConfig->choice.explicitValue;
+	      } else {
+		SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
+	      }
+	    } else {
+	      SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
+	    }
+	    
+	    
+	  }
+	}
+
+        rrc_mac_config_req_eNB(
+			       macrlc_instance,
+			       0, //primaryCC_id,
+			       0,0,0,0,0,
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+			       0,
+#endif
+			       (rnti_t) du_ue_f1ap_id, //rnti
+			       (BCCH_BCH_Message_t *) NULL,
+			       (RadioResourceConfigCommonSIB_t *) NULL,
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+			       (RadioResourceConfigCommonSIB_t *) NULL,
+#endif
+			       radioResourceConfigDedicated->physicalConfigDedicated,
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+			       (SCellToAddMod_r10_t *)NULL,
+			       //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
+#endif
+			       (MeasObjectToAddMod_t **) NULL,
+			       radioResourceConfigDedicated->mac_MainConfig,
+			       1,
+			       SRB1_logicalChannelConfig,
+			       NULL, // measGapConfig,
+			       (TDD_Config_t *) NULL,
+			       NULL,
+			       (SchedulingInfoList_t *) NULL,
+			       0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+			       , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
+#endif
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
+			       ,
+			       (SystemInformationBlockType1_v1310_IEs_t *)NULL
+#endif
+			       );
+	  break;
 
     default:
       AssertFatal(1==0,
 		  "Unknown message\n");
       break;
-    }
+      }
 
+    }
   }
   else if (srb_id == 1){ 
 
