@@ -271,7 +271,7 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
     return -1;
   }
 
-  cu_f1ap_itti_send_sctp_data_req(instance, f1ap_assoc_id, buffer, len, 0);
+  cu_f1ap_itti_send_sctp_data_req(instance, f1ap_assoc_id /* BK: fix me*/ , buffer, len, 0 /* BK: fix me*/);
 
   return 0;
 }

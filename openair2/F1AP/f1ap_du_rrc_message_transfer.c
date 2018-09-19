@@ -94,13 +94,15 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_DLRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
   du_ue_f1ap_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
-  LOG_D(DU_F1AP, "du_ue_f1ap_id %lu \n", du_ue_f1ap_id); // this should be the one transmitted via initial ul rrc message transfer 
+  LOG_D(DU_F1AP, "du_ue_f1ap_id %lu associated with UE RNTI %x \n", 
+                  du_ue_f1ap_id,   
+                  f1ap_get_rnti_by_du_id(&f1ap_du_ue[instance],du_ue_f1ap_id)); // this should be the one transmitted via initial ul rrc message transfer 
 
   if (f1ap_du_add_cu_ue_id(&f1ap_du_ue[instance],du_ue_f1ap_id,cu_ue_f1ap_id) < 0 ) {
     LOG_E(DU_F1AP, "Failed to find the F1AP UID \n");
     //return -1;
   }
-  
+
   /* optional */
   /* oldgNB_DU_UE_F1AP_ID */
   if (0) {
@@ -160,11 +162,8 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   
 }
 
-//void DU_send_UL_RRC_MESSAGE_TRANSFER(F1AP_ULRRCMessageTransfer_t *ULRRCMessageTransfer) {
-int DU_send_UL_RRC_MESSAGE_TRANSFER(protocol_ctxt_t* ctxt_pP,
-                                    rb_id_t          srb_idP,
-                                    uint8_t          *sduP,
-                                    sdu_size_t       sdu_lenP) {
+int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t                instance,
+                                    f1ap_ul_rrc_message_t    *f1ap_ul_rrc) {
 
   LOG_D(DU_F1AP, "DU_send_UL_RRC_MESSAGE_TRANSFER \n");
 
@@ -191,7 +190,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(protocol_ctxt_t* ctxt_pP,
   ie->id                             = F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID;
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_ULRRCMessageTransferIEs__value_PR_GNB_CU_UE_F1AP_ID;
-  ie->value.choice.GNB_CU_UE_F1AP_ID = f1ap_du_ue[ctxt_pP->module_id].cu_ue_f1ap_id[f1ap_get_uid_by_rnti(&f1ap_du_ue[ctxt_pP->module_id], ctxt_pP->rnti)];
+  ie->value.choice.GNB_CU_UE_F1AP_ID = f1ap_du_ue[instance].cu_ue_f1ap_id[f1ap_get_uid_by_rnti(&f1ap_du_ue[instance], f1ap_ul_rrc->rnti)];
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* mandatory */
@@ -200,7 +199,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(protocol_ctxt_t* ctxt_pP,
   ie->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_ULRRCMessageTransferIEs__value_PR_GNB_DU_UE_F1AP_ID;
-  ie->value.choice.GNB_DU_UE_F1AP_ID = f1ap_du_ue[ctxt_pP->module_id].du_ue_f1ap_id[f1ap_get_uid_by_rnti(&f1ap_du_ue[ctxt_pP->module_id], ctxt_pP->rnti)];
+  ie->value.choice.GNB_DU_UE_F1AP_ID = f1ap_du_ue[instance].du_ue_f1ap_id[f1ap_get_uid_by_rnti(&f1ap_du_ue[instance], f1ap_ul_rrc->rnti)];
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* mandatory */
@@ -209,7 +208,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(protocol_ctxt_t* ctxt_pP,
   ie->id                            = F1AP_ProtocolIE_ID_id_SRBID;
   ie->criticality                   = F1AP_Criticality_reject;
   ie->value.present                 = F1AP_ULRRCMessageTransferIEs__value_PR_SRBID;
-  ie->value.choice.SRBID            = srb_idP;
+  ie->value.choice.SRBID            = f1ap_ul_rrc->srb_id;
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   // issue in here
@@ -219,7 +218,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(protocol_ctxt_t* ctxt_pP,
   ie->id                            = F1AP_ProtocolIE_ID_id_RRCContainer;
   ie->criticality                   = F1AP_Criticality_reject;
   ie->value.present                 = F1AP_ULRRCMessageTransferIEs__value_PR_RRCContainer;
-  OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, sduP, sdu_lenP);
+  OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, f1ap_ul_rrc->rrc_container, f1ap_ul_rrc->rrc_container_length);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
     /* encode */
@@ -228,8 +227,10 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(protocol_ctxt_t* ctxt_pP,
     return -1;
   }
 
+  du_f1ap_itti_send_sctp_data_req(instance, f1ap_du_data->assoc_id, buffer, len, f1ap_du_data->default_sctp_stream_id);
   return 0;
 }
+
 
 /*  UL RRC Message Transfer */
 int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
@@ -323,7 +324,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
     return -1;
   }
 
-  du_f1ap_itti_send_sctp_data_req(0, f1ap_du_data->assoc_id, buffer, len, 0);
+  du_f1ap_itti_send_sctp_data_req(module_idP, f1ap_du_data->assoc_id, buffer, len, f1ap_du_data->default_sctp_stream_id);
   return 0;
 }
 

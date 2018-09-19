@@ -512,6 +512,11 @@ typedef struct HANDOVER_INFO_UE_s {
   uint8_t measFlag;
 } HANDOVER_INFO_UE;
 
+typedef struct RRC_CONTAINER_s{
+  char        *buffer;
+  uint8_t      size;
+} RRC_CONTAINER_t;
+
 typedef struct eNB_RRC_UE_s {
   uint8_t                            primaryCC_id;
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
@@ -539,6 +544,7 @@ typedef struct eNB_RRC_UE_s {
   HANDOVER_INFO*                     handover_info;
   MeasResults_t*                     measResults;
 
+  RRC_CONTAINER_t                    *security_mode_cmd;
   UE_EUTRA_Capability_t*             UE_Capability;
   ImsiMobileIdentity_t               imsi;
 

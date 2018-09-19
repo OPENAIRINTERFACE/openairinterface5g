@@ -1095,7 +1095,28 @@ rrc_eNB_process_RRCConnectionSetupComplete(
     rrc_eNB_generate_SecurityModeCommand(
       ctxt_pP,
       ue_context_pP);
+/*
+	 if ((RC.rrc[ctxt_pP->module_id]->node_type  == ngran_eNB_CU) ||
+		 (RC.rrc[ctxt_pP->module_id]->node_type  == ngran_gNB_CU)   ||
+		 (RC.rrc[ctxt_pP->module_id]->node_type  == ngran_ng_eNB_CU)) {
+
+message_p = itti_alloc_new_message (TASK_RRC_ENB, F1AP_UE_CONTEXT_SETUP_REQ);
+      F1AP_UE_CONTEXT_SETUP_REQ (message_p).rrc_container =  ue_p->Srb0.Tx_buffer.Payload;
+
+      F1AP_UE_CONTEXT_SETUP_REQ (message_p).rrc_container_length = ue_p->Srb0.Tx_buffer.payload_size;
+      F1AP_UE_CONTEXT_SETUP_REQ (message_p).gNB_CU_ue_id     = 0;  
+      F1AP_UE_CONTEXT_SETUP_REQ (message_p).gNB_DU_ue_id = 0;
+      F1AP_UE_CONTEXT_SETUP_REQ (message_p).old_gNB_DU_ue_id  = 0xFFFFFFFF; // unknown 
+      F1AP_UE_CONTEXT_SETUP_REQ (message_p).rnti = ue_p->rnti; 
+      F1AP_UE_CONTEXT_SETUP_REQ (message_p).srb_id = CCCH;  
+      F1AP_UE_CONTEXT_SETUP_REQ (message_p).execute_duplication      = 1;
+      F1AP_UE_CONTEXT_SETUP_REQ (message_p).RAT_frequency_priority_information.en_dc      = 0; 
+      itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
+      LOG_D(RRC, "Send F1AP_UE_CONTEXT_SETUP_REQ with ITTI\n");
+  }
+*/ 
     // rrc_eNB_generate_UECapabilityEnquiry(enb_mod_idP,frameP,ue_mod_idP);
+
   }
 }
 
@@ -1146,7 +1167,9 @@ rrc_eNB_generate_SecurityModeCommand(
     rrc_eNB_mui,
     size);
 
-  rrc_data_req(
+ if ((RC.rrc[ctxt_pP->module_id]->node_type  == ngran_eNB) ||
+	(RC.rrc[ctxt_pP->module_id]->node_type  == ngran_ng_eNB)) {
+    rrc_data_req(
 	       ctxt_pP,
 	       DCCH,
 	       rrc_eNB_mui++,
@@ -1154,6 +1177,7 @@ rrc_eNB_generate_SecurityModeCommand(
 	       size,
 	       buffer,
 	       PDCP_TRANSMISSION_MODE_CONTROL);
+ }
 
 }
 
@@ -6944,14 +6968,29 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
         if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.choice.c1.
             present ==
             RRCConnectionSetupComplete__criticalExtensions__c1_PR_rrcConnectionSetupComplete_r8) {
-          rrc_eNB_process_RRCConnectionSetupComplete(
-            ctxt_pP,
-            ue_context_p,
-            &ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8);
-          ue_context_p->ue_context.Status = RRC_CONNECTED;
-          LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_CONNECTED \n",
+          
+          if ((RC.rrc[ctxt_pP->module_id]->node_type  == ngran_eNB_DU) ||
+	          (RC.rrc[ctxt_pP->module_id]->node_type  == ngran_gNB_DU)  ) {
+            MessageDef                            *message_p;
+          	message_p = itti_alloc_new_message (TASK_RRC_ENB, F1AP_UL_RRC_MESSAGE);
+      		F1AP_UL_RRC_MESSAGE (message_p).rrc_container =  &ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8;
+            F1AP_UL_RRC_MESSAGE (message_p).rrc_container_length = strlen(&ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8);
+      	    F1AP_UL_RRC_MESSAGE (message_p).gNB_CU_ue_id     = 0;  
+      		F1AP_UL_RRC_MESSAGE (message_p).gNB_DU_ue_id = 0;
+      		F1AP_UL_RRC_MESSAGE (message_p).rnti = ue_context_p->ue_context.rnti; 
+      		F1AP_UL_RRC_MESSAGE (message_p).srb_id = DCCH;  
+      		itti_send_msg_to_task (TASK_DU_F1, ctxt_pP->module_id, message_p);
+      		LOG_D(RRC, "Send F1AP_UL_RRC_MESSAGE with ITTI\n");
+		  } else { //if ((RC.rrc[ctxt_pP->module_id]->node_type  == ngran_eNB) ||
+	                // (RC.rrc[ctxt_pP->module_id]->node_type  == ngran_ng_eNB) ) {
+          		rrc_eNB_process_RRCConnectionSetupComplete(
+           		  ctxt_pP,
+                  ue_context_p,
+                  &ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8);
+                ue_context_p->ue_context.Status = RRC_CONNECTED;
+                LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_CONNECTED \n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
-	  
+	     }
 	  //WARNING:Inform the controller about the UE activation. Should be moved to RRC agent in the future
 	  if (rrc_agent_registered[ctxt_pP->module_id]) {
 	    agent_rrc_xface[ctxt_pP->eNB_index]->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
