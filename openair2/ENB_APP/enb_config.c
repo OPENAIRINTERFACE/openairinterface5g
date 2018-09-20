@@ -63,6 +63,8 @@
 extern uint16_t sf_ahead;
 extern void set_parallel_conf(int parallel_conf);
 extern void set_parallel_worker_conf(int worker_conf);
+extern PARALLEL_CONF_t get_thread_parallel_conf(void);
+extern WORKER_CONF_t   get_thread_worker_conf(void);
 
 void RCconfig_flexran()
 {
@@ -2488,8 +2490,10 @@ return 0;
 
 int RCconfig_parallel(void)
 {
-  char *parallel_conf;
-  char *worker_conf;
+  char *parallel_conf = NULL;
+  char *worker_conf   = NULL;
+  extern char *parallel_config;
+  extern char *worker_config;
 
   paramdef_t ThreadParams[]  = THREAD_CONF_DESC;
   paramlist_def_t THREADParamList = {THREAD_CONFIG_STRING_THREAD_STRUCT,NULL,0};
@@ -2500,19 +2504,25 @@ int RCconfig_parallel(void)
   {
     config_getlist( &THREADParamList,ThreadParams,sizeof(ThreadParams)/sizeof(paramdef_t),NULL);
     parallel_conf = strdup(*(THREADParamList.paramarray[0][THREAD_PARALLEL_IDX].strptr));
-    worker_conf   = strdup(*(THREADParamList.paramarray[0][THREAD_PARALLEL_IDX].strptr));
   }
   else
   {
-    parallel_conf = "PARALLEL_RU_L1_TRX_SPLIT";
-    worker_conf   = "WORKER_ENABLE";
+    parallel_conf = strdup("PARALLEL_RU_L1_TRX_SPLIT");
+  }
+  if(THREADParamList.numelt>0)
+  {
+    config_getlist( &THREADParamList,ThreadParams,sizeof(ThreadParams)/sizeof(paramdef_t),NULL);
+    worker_conf   = strdup(*(THREADParamList.paramarray[0][THREAD_WORKER_IDX].strptr));
+  }
+  else
+  {
+    worker_conf   = strdup("WORKER_ENABLE");
   }
 
-  if(strcmp(parallel_conf,"PARALLEL_SINGLE_THREAD")==0)           set_parallel_conf(0);
-  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_SPLIT")==0)        set_parallel_conf(1);
-  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_TRX_SPLIT")==0)    set_parallel_conf(2);
-  if(strcmp(worker_conf,"WORKER_DISABLE")==0)                     set_parallel_worker_conf(0);
-  else if(strcmp(worker_conf,"WORKER_ENABLE")==0)                 set_parallel_worker_conf(1);
+
+  if(parallel_config == NULL) set_parallel_conf(parallel_conf);
+  if(worker_config == NULL)   set_worker_conf(worker_conf);
+
   return 0;
 }
 
