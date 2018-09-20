@@ -321,7 +321,15 @@ void signal_handler(int sig) {
 #define KBLU  "\x1B[34m"
 #define RESET "\033[0m"
 
-
+#if defined(ENABLE_ITTI)
+void signal_handler_itti(int sig) {
+  // Call exit function
+  char msg[256];
+  memset(msg, 0, 256);
+  sprintf(msg, "caught signal %s\n", strsignal(sig));
+  exit_function(__FILE__, __FUNCTION__, __LINE__, msg);
+}
+#endif
 
 void exit_function(const char* file, const char* function, const int line, const char* s)
 {
@@ -963,6 +971,11 @@ int main( int argc, char **argv )
   signal(SIGINT, signal_handler);
 #endif
 
+#if defined(ENABLE_ITTI)
+  signal(SIGINT, signal_handler_itti);
+  signal(SIGTERM, signal_handler_itti);
+  signal(SIGABRT, signal_handler_itti);
+#endif
 
   check_clock();
 
