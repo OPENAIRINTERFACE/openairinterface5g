@@ -397,8 +397,6 @@ void nr_pbch_unscrambling(NR_UE_PBCH *pbch,
   uint8_t reset, offset;
   uint32_t x1, x2, s=0;
   double *demod_pbch_e = pbch->demod_pbch_e;
-  uint32_t *pbch_a_prime = (uint32_t*)pbch->pbch_a_prime;
-  uint32_t *pbch_a_interleaved = (uint32_t*)pbch->pbch_a_interleaved;
   uint32_t unscrambling_mask = 0x100006D;
 
   printf("unscramb nid_cell %d\n",Nid);
@@ -408,7 +406,7 @@ void nr_pbch_unscrambling(NR_UE_PBCH *pbch,
   x2 = Nid; //this is c_init
 
   // The Gold sequence is shifted by nushift* M, so we skip (nushift*M /32) double words
-  for (int i=0; i<(uint16_t)ceil((nushift*M)/32); i++) {
+  for (int i=0; i<(uint16_t)ceil(((float)nushift*M)/32); i++) {
     s = lte_gold_generic(&x1, &x2, reset);
     reset = 0;
   }
@@ -423,9 +421,11 @@ void nr_pbch_unscrambling(NR_UE_PBCH *pbch,
   #ifdef DEBUG_PBCH_ENCODING
       if (i<8)
     printf("s: %04x\t", s);
+    printf("pbch_a_interleaved 0x%08x\n", pbch->pbch_a_interleaved);
   #endif
       if (bitwise) {
-        (*pbch_a_interleaved) ^= ((unscrambling_mask>>i)&1)? (((*pbch_a_prime)>>i)&1)<<i : ((((*pbch_a_prime)>>i)&1) ^ ((s>>((i+offset)&0x1f))&1))<<i;
+	
+        (pbch->pbch_a_interleaved) ^= ((unscrambling_mask>>i)&1)? ((pbch->pbch_a_prime>>i)&1)<<i : (((pbch->pbch_a_prime>>i)&1) ^ ((s>>((i+offset)&0x1f))&1))<<i;
       }
 
       else {
@@ -519,8 +519,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   int symbol,i;
   //uint8_t pbch_a[64];
   uint8_t *pbch_a = malloc(sizeof(uint8_t) * 32);
-  uint8_t *pbch_a_prime;
-  uint8_t *pbch_a_b = malloc(sizeof(uint8_t) *NR_POLAR_PBCH_PAYLOAD_BITS);
+  uint32_t pbch_a_prime;
   int8_t *pbch_e_rx;
   uint8_t *decoded_output = nr_ue_pbch_vars->decoded_output;
   uint8_t nushift;
@@ -619,15 +618,14 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   pbch_e_rx = nr_ue_pbch_vars->llr;
   demod_pbch_e = nr_ue_pbch_vars->demod_pbch_e;
   pbch_a = nr_ue_pbch_vars->pbch_a;
-  pbch_a_prime = nr_ue_pbch_vars->pbch_a_prime;
 
-//#ifdef DEBUG_PBCH
+#ifdef DEBUG_PBCH
   //pbch_e_rx = &nr_ue_pbch_vars->llr[0];
 
   short *p = (short *)&(nr_ue_pbch_vars->rxdataF_comp[0][5*20*12]);
-  for (int cnt = 0; cnt < 8 ; cnt++)
+  for (int cnt = 0; cnt < 32 ; cnt++)
     printf("pbch rx llr %d rxdata_comp %d addr %p\n",*(pbch_e_rx+cnt), p[cnt], &p[0]);
-//#endif
+#endif
 
   for (i=0; i<NR_POLAR_PBCH_E/2; i++){
     idx_demod = (sign(pbch_e_rx[i<<1])&1) ^ ((sign(pbch_e_rx[(i<<1)+1])&1)<<1);
@@ -650,7 +648,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
     for (i=0; i<16; i++){
     printf("unscrambling demod_pbch_e[%d] r = %2.3f i = %2.3f\n", i<<1 , demod_pbch_e[i<<1], demod_pbch_e[(i<<1)+1]);}
 //#endif
-		
+		uint32_t pbch_out;
   //polar decoding de-rate matching
   t_nrPolar_paramsPtr nrPolar_params = NULL, currentPtr = NULL;
    nr_polar_init(&nrPolar_params,
@@ -658,39 +656,29 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 					NR_POLAR_PBCH_PAYLOAD_BITS,
 					NR_POLAR_PBCH_AGGREGATION_LEVEL);
   currentPtr = nr_polar_params(nrPolar_params, NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL);
-  decoderState = polar_decoder(demod_pbch_e, pbch_a_b, currentPtr, decoderListSize, pathMetricAppr);
+  double aPrioriArray[currentPtr->payloadBits];
+  for (int i=0; i<currentPtr->payloadBits; i++) aPrioriArray[i] = NAN;
+  decoderState = polar_decoder_aPriori(demod_pbch_e,&nr_ue_pbch_vars->pbch_a_prime, currentPtr, decoderListSize, pathMetricAppr,aPrioriArray);
   printf("polar decoder state %d\n", decoderState);
   if(decoderState == -1)
   	return(decoderState);
-
-  memset(&pbch_a_prime[0], 0, sizeof(uint8_t) * NR_POLAR_PBCH_PAYLOAD_BITS>>3);
-  for (i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++)
-    {
-      pbch_a_prime[i/8] ^= (pbch_a_b[i]&1)<<(i&7);
-      //printf("pbch_a_b[%d] = %u pbch_a_prime[i/8] 0x%02x \n", i,pbch_a_b[i],pbch_a_prime[i/8]);
-    }
-
-//#ifdef DEBUG_PBCH
-  for (i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS>>3; i++)
-     printf("pbch_a_prime[%d] = 0x%02x\n", i,pbch_a_prime[i]);
-//#endif
+  	
+  	//printf("polar decoder output 0x%08x\n",nr_ue_pbch_vars->pbch_a_prime);
   
   //payload un-scrambling
-  memset(nr_ue_pbch_vars->pbch_a_interleaved, 0, sizeof(uint8_t) * NR_POLAR_PBCH_PAYLOAD_BITS>>3);
+  memset(&nr_ue_pbch_vars->pbch_a_interleaved, 0, sizeof(uint32_t) );
   M = (Lmax == 64)? (NR_POLAR_PBCH_PAYLOAD_BITS - 6) : (NR_POLAR_PBCH_PAYLOAD_BITS - 3);
-  nushift = ((pbch_a_prime[0]>>6)&1) ^ (((pbch_a_prime[3])&1)<<1);
-  //printf("payload unscrambling nushift %d sfn3 %d sfn2 %d M %d\n",nushift, ((pbch_a_prime[0]>>6)&1),((pbch_a_prime[3])&1),M);
+  nushift = ((nr_ue_pbch_vars->pbch_a_prime>>6)&1) ^ (((nr_ue_pbch_vars->pbch_a_prime>>24)&1)<<1);
+  printf("payload unscrambling nushift %d sfn3 %d sfn2 %d M %d\n",nushift, ((nr_ue_pbch_vars->pbch_a_prime>>6)&1),((nr_ue_pbch_vars->pbch_a_prime>>24)&1),M);
   nr_pbch_unscrambling(nr_ue_pbch_vars,frame_parms->Nid_cell,nushift,M,NR_POLAR_PBCH_PAYLOAD_BITS,1);
 
   //payload deinterleaving
   uint32_t in=0, out=0;
-  for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS>>3; i++)
-    in |= (uint32_t)(nr_ue_pbch_vars->pbch_a_interleaved[i]<<(i<<3));
 
   for (int i=0; i<32; i++) {
-    out |= ((in>>i)&1)<<(pbch_deinterleaving_pattern[i]);
+    out |= ((nr_ue_pbch_vars->pbch_a_interleaved>>i)&1)<<(pbch_deinterleaving_pattern[i]);
 #ifdef DEBUG_PBCH
-  printf("i %d in 0x%08x out 0x%08x ilv %d (in>>i)&1) 0x%08x\n", i, in, out, pbch_deinterleaving_pattern[i], (in>>i)&1);
+  printf("i %d in 0x%08x out 0x%08x ilv %d (in>>i)&1) 0x%08x\n", i, nr_ue_pbch_vars->pbch_a_interleaved, out, pbch_deinterleaving_pattern[i], (in>>i)&1);
 #endif
   }
 
@@ -701,11 +689,6 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   for (i=0; i<(NR_POLAR_PBCH_PAYLOAD_BITS>>3); i++)
      decoded_output[(NR_POLAR_PBCH_PAYLOAD_BITS>>3)-i-1] = pbch_a[i];
      
-    decoded_output[0] = 0x0a;
-	decoded_output[1] = 0x63;
-	decoded_output[2] = 0x00;
-	decoded_output[3] = 0x06;
-
   //#ifdef DEBUG_PBCH
   for (i=0; i<(NR_POLAR_PBCH_PAYLOAD_BITS>>3); i++){
   	  //printf("unscrambling pbch_a[%d] = %x \n", i,pbch_a[i]);
