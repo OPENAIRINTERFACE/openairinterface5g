@@ -2062,6 +2062,34 @@ target_link_libraries (lte-softmodem
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
 
+add_executable(cu_test
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/cu_test.c
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent_handler.c
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent_common.c
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent.c
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent_net_comm.c
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent_async.c
+  ${T_SOURCE}
+)
+target_link_libraries(cu_test
+  ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FSPT_MSG_LIB} ${PROTOBUF_LIB}
+  ${PROTO_AGENT_LIB} pthread UTIL ${T_LIB} dl
+)
+
+add_executable(du_test
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/du_test.c
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent_handler.c
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent_common.c
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent.c
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent_net_comm.c
+  ${OPENAIR2_DIR}/LAYER2/PROTO_AGENT/proto_agent_async.c
+  ${T_SOURCE}
+)
+target_link_libraries(du_test
+  ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FSPT_MSG_LIB} ${PROTOBUF_LIB}
+  ${PROTO_AGENT_LIB} pthread UTIL ${T_LIB} dl
+)
+
 target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
 target_link_libraries (lte-softmodem pthread m ${CONFIG_LIBRARIES} rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${NETTLE_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
 target_link_libraries (lte-softmodem ${LIB_LMS_LIBRARIES})
@@ -2310,7 +2338,7 @@ if (${T_TRACER})
         #all "add_executable" definitions (except tests, rb_tool, updatefw)
         lte-softmodem lte-softmodem-nos1 lte-uesoftmodem lte-uesoftmodem-nos1
         dlsim_tm4 dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim
-        pdcchsim pucchsim prachsim syncsim ulsim
+        pdcchsim pucchsim prachsim syncsim ulsim cu_test du_test
         #all "add_library" definitions
         ITTI RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB F1AP_LIB F1AP
         oai_exmimodevif oai_usrpdevif oai_bladerfdevif oai_lmssdrdevif
