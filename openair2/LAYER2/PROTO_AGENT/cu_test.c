@@ -35,10 +35,17 @@ pdcp_data_ind(
 )
 {
   fwrite(sdu_buffer_pP->data, sdu_buffer_sizeP, 1, stdout);
-  free_mem_block(sdu_buffer_pP, __func__);
   fflush(stdout);
+  free_mem_block(sdu_buffer_pP, __func__);
+  /* cannot free because of const */
+  free(ctxt_pP);
   recv_client = 1;
   return 0;
+}
+
+void close_proto_agent(void)
+{
+  proto_agent_stop(0);
 }
 
 int main(int argc, char *argv[])
@@ -79,6 +86,7 @@ int main(int argc, char *argv[])
     fprintf(stderr, "error on proto_agent_start()\n");
     return 3;
   }
+  atexit(close_proto_agent);
 
   /* wait for first packet of client */
   while (!recv_client) sleep(1);
@@ -87,7 +95,7 @@ int main(int argc, char *argv[])
   /* now send back at the same time */
   gettimeofday(&t_start, NULL);
   while ((size = fread(s, 1, BUF_MAX, f)) > 0) {
-    usleep(100);
+    usleep(10);
     totsize += size;
     mem.data = &s[0];
     proto_agent_send_rlc_data_req(&p, 0, 0, 0, 0, 0, size, &mem);
@@ -101,7 +109,7 @@ int main(int argc, char *argv[])
   fprintf(stderr, "check files using 'diff afile bfile'\n");
 
   /* give some time in case the other direction is slower */
-  sleep(60);
+  sleep(5);
   return 0;
 }
 
