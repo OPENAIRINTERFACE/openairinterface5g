@@ -945,8 +945,8 @@ typedef struct {
   /// - second index: ? [0..287] (hard coded)
   int32_t **dl_ch_estimates_ext;
   uint8_t pbch_a[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
-  uint8_t pbch_a_interleaved[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
-  uint8_t pbch_a_prime[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
+  uint32_t pbch_a_interleaved;
+  uint32_t pbch_a_prime;
   uint8_t pbch_e[NR_POLAR_PBCH_E];
   double  demod_pbch_e[NR_POLAR_PBCH_E];
   /// \brief Pointer to PBCH llrs.
