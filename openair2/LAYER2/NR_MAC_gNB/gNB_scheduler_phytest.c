@@ -71,10 +71,32 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     memcpy((void*)params_rel15, (void*)&gNB->pdcch_type0_params, sizeof(nfapi_nr_dl_config_pdcch_parameters_rel15_t));
 
     pdu_rel15->frequency_domain_assignment = 5;
-    pdu_rel15->time_domain_assignment = 2;
-    pdu_rel15->vrb_to_prb_mapping = 0;
+    pdu_rel15->time_domain_assignment = 3;
+    pdu_rel15->vrb_to_prb_mapping = 1;
     pdu_rel15->mcs = 12;
     pdu_rel15->tb_scaling = 1;
+    
+    pdu_rel15->ra_preamble_index = 25;
+    pdu_rel15->format_indicator = 1;
+    pdu_rel15->ul_sul_indicator = 1;
+
+    pdu_rel15->ss_pbch_index = 21;
+    pdu_rel15->prach_mask_index = 3;
+    pdu_rel15->ndi = 1;
+    pdu_rel15->rv = 2;
+    pdu_rel15->harq_pid = 7;
+    pdu_rel15->dai = 2;
+    pdu_rel15->tpc = 2;
+    pdu_rel15->pucch_resource_indicator = 7;
+    pdu_rel15->pdsch_to_harq_feedback_timing_indicator = 7;
+    
+    
+    pdu_rel15->tb_scaling = 1;
+    pdu_rel15->tb_scaling = 1;
+    pdu_rel15->tb_scaling = 1;
+    pdu_rel15->tb_scaling = 1;
+
+
     LOG_I(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d, time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d\n",
                 pdu_rel15->frequency_domain_assignment,
                 pdu_rel15->time_domain_assignment,
@@ -83,7 +105,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                 pdu_rel15->tb_scaling);
 
     params_rel15->rnti = 0x03;
-    params_rel15->rnti_type = NFAPI_NR_RNTI_RA;
+    params_rel15->rnti_type = NFAPI_NR_RNTI_C;
     params_rel15->dci_format = NFAPI_NR_DL_DCI_FORMAT_1_0;
     //params_rel15->aggregation_level = 1;
     LOG_I(MAC, "DCI type 1 params: rmsi_pdcch_config %d, rnti %d, rnti_type %d, dci_format %d\n \
