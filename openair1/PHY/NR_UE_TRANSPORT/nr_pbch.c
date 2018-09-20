@@ -650,7 +650,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
     for (i=0; i<16; i++){
     printf("unscrambling demod_pbch_e[%d] r = %2.3f i = %2.3f\n", i<<1 , demod_pbch_e[i<<1], demod_pbch_e[(i<<1)+1]);}
 //#endif
-		
+		uint32_t pbch_out;
   //polar decoding de-rate matching
   t_nrPolar_paramsPtr nrPolar_params = NULL, currentPtr = NULL;
    nr_polar_init(&nrPolar_params,
@@ -658,10 +658,14 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 					NR_POLAR_PBCH_PAYLOAD_BITS,
 					NR_POLAR_PBCH_AGGREGATION_LEVEL);
   currentPtr = nr_polar_params(nrPolar_params, NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL);
-  decoderState = polar_decoder(demod_pbch_e, pbch_a_b, currentPtr, decoderListSize, pathMetricAppr);
+  double aPrioriArray[currentPtr->payloadBits];
+  for (int i=0; i<currentPtr->payloadBits; i++) aPrioriArray[i] = NAN;
+  decoderState = polar_decoder_aPriori(demod_pbch_e, pbch_out, currentPtr, decoderListSize, pathMetricAppr,aPrioriArray);
   printf("polar decoder state %d\n", decoderState);
   if(decoderState == -1)
   	return(decoderState);
+  	
+  	printf("polar decoder output 0x%08x\n",pbch_out);
 
   memset(&pbch_a_prime[0], 0, sizeof(uint8_t) * NR_POLAR_PBCH_PAYLOAD_BITS>>3);
   for (i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++)
