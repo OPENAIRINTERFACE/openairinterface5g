@@ -705,14 +705,12 @@ void rlc_data_ind     (
            sdu_sizeP,
            sdu_pP);
          break;
-       case ngran_eNB_DU    :
+       case ngran_eNB_DU    : 
        case ngran_gNB_DU    :
-         DU_send_UL_RRC_MESSAGE_TRANSFER(
-            ctxt_pP,
-            rb_idP,
-            sdu_pP,
-            sdu_sizeP
-          );
+         DU_send_UL_RRC_MESSAGE_TRANSFER(ctxt_pP,
+					 rb_idP,
+					 sdu_sizeP,
+					 sdu_pP->data);
          break;
 
        default:
