@@ -49,9 +49,7 @@
 #include "platform_constants.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "msc.h"
-
-
-
+#include "common/ngran_types.h"
 
 #if defined(ENABLE_SECURITY)
 # include "UTIL/OSA/osa_defs.h"
@@ -411,53 +409,75 @@ boolean_t pdcp_data_req(
       free_mem_block(pdcp_pdu_p, __FUNCTION__);
       rlc_status = ack_result;
     }
-
-    else
+    else // SRB
 #endif /*UETARGET*/ 
     {
+     LOG_I(PDCP, "Sending F1AP_DL_RRC_MESSAGE with ITTI\n");
+
       //It should never get here
-      rlc_status = rlc_data_req(ctxt_pP
-                              , srb_flagP
-                              , MBMS_FLAG_NO
-                              , rb_idP
-                              , muiP
-                              , confirmP
-                              , pdcp_pdu_size
-                              , pdcp_pdu_p
-      #ifdef Rel14
-                              ,NULL
-                              ,NULL
-      #endif
-                              );
+      if ((RC.rrc[ctxt_pP->module_id]->node_type  == ngran_eNB_CU)   ||
+        (RC.rrc[ctxt_pP->module_id]->node_type   == ngran_ng_eNB_CU)||
+        (RC.rrc[ctxt_pP->module_id]->node_type   == ngran_gNB_CU)  ) {
+        // DL transfer
+        MessageDef                            *message_p;
+        // Note: the acyual task must be TASK_PDCP_ENB, but this task is not created
+        message_p = itti_alloc_new_message (TASK_PDCP_ENB, F1AP_DL_RRC_MESSAGE);
+        F1AP_DL_RRC_MESSAGE (message_p).rrc_container =  &pdcp_pdu_p->data[0] ;
+        F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = pdcp_pdu_size;
+        F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id  = 0;  
+        F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id  = 0;
+        F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id  = 0xFFFFFFFF; // unknown
+        F1AP_DL_RRC_MESSAGE (message_p).rnti = ctxt_pP->rnti;
+        F1AP_DL_RRC_MESSAGE (message_p).srb_id = rb_idP;
+        F1AP_DL_RRC_MESSAGE (message_p).execute_duplication      = 1;
+        F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc      = 0;
+        itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
+        //CU_send_DL_RRC_MESSAGE_TRANSFER(ctxt_pP->module_id, message_p);
+        LOG_I(PDCP, "Send F1AP_DL_RRC_MESSAGE with ITTI\n");
+        ret=TRUE;
+
+      } else{
+        rlc_status = rlc_data_req(ctxt_pP
+                                  , srb_flagP
+                                  , MBMS_FLAG_NO
+                                  , rb_idP
+                                  , muiP
+                                  , confirmP
+                                  , pdcp_pdu_size
+                                  , pdcp_pdu_p
+#ifdef Rel14
+                                  ,NULL
+                                  ,NULL
+#endif
+                                  );
+        switch (rlc_status) {
+          case RLC_OP_STATUS_OK:
+            LOG_D(PDCP, "Data sending request over RLC succeeded!\n");
+            ret=TRUE;
+            break;
+
+          case RLC_OP_STATUS_BAD_PARAMETER:
+            LOG_W(PDCP, "Data sending request over RLC failed with 'Bad Parameter' reason!\n");
+            ret= FALSE;
+            break;
+
+          case RLC_OP_STATUS_INTERNAL_ERROR:
+            LOG_W(PDCP, "Data sending request over RLC failed with 'Internal Error' reason!\n");
+            ret= FALSE;
+            break;
+
+          case RLC_OP_STATUS_OUT_OF_RESSOURCES:
+            LOG_W(PDCP, "Data sending request over RLC failed with 'Out of Resources' reason!\n");
+            ret= FALSE;
+            break;
+
+          default:
+            LOG_W(PDCP, "RLC returned an unknown status code after PDCP placed the order to send some data (Status Code:%d)\n", rlc_status);
+            ret= FALSE;
+            break;
+        } // switch case
+      }
     }
-
-  }
-
-  switch (rlc_status) {
-  case RLC_OP_STATUS_OK:
-    LOG_D(PDCP, "Data sending request over RLC succeeded!\n");
-    ret=TRUE;
-    break;
-
-  case RLC_OP_STATUS_BAD_PARAMETER:
-    LOG_W(PDCP, "Data sending request over RLC failed with 'Bad Parameter' reason!\n");
-    ret= FALSE;
-    break;
-
-  case RLC_OP_STATUS_INTERNAL_ERROR:
-    LOG_W(PDCP, "Data sending request over RLC failed with 'Internal Error' reason!\n");
-    ret= FALSE;
-    break;
-
-  case RLC_OP_STATUS_OUT_OF_RESSOURCES:
-    LOG_W(PDCP, "Data sending request over RLC failed with 'Out of Resources' reason!\n");
-    ret= FALSE;
-    break;
-
-  default:
-    LOG_W(PDCP, "RLC returned an unknown status code after PDCP placed the order to send some data (Status Code:%d)\n", rlc_status);
-    ret= FALSE;
-    break;
   }
 
   if (ctxt_pP->enb_flag == ENB_FLAG_YES) {
@@ -978,6 +998,8 @@ void pdcp_update_stats(const protocol_ctxt_t* const  ctxt_pP){
     
   }
 }
+
+
 //-----------------------------------------------------------------------------
 void
 pdcp_run (
@@ -1020,6 +1042,7 @@ pdcp_run (
           RRC_DCCH_DATA_REQ (msg_p).frame, 
 	  0,
 	  RRC_DCCH_DATA_REQ (msg_p).eNB_index);
+
         LOG_I(PDCP, PROTOCOL_CTXT_FMT"Received %s from %s: instance %d, rb_id %d, muiP %d, confirmP %d, mode %d\n",
               PROTOCOL_CTXT_ARGS(&ctxt),
               ITTI_MSG_NAME (msg_p),
@@ -1029,6 +1052,8 @@ pdcp_run (
               RRC_DCCH_DATA_REQ (msg_p).muip,
               RRC_DCCH_DATA_REQ (msg_p).confirmp,
               RRC_DCCH_DATA_REQ (msg_p).mode);
+
+        log_dump(PDCP, RRC_DCCH_DATA_REQ (msg_p).sdu_p, RRC_DCCH_DATA_REQ (msg_p).sdu_size, LOG_DUMP_CHAR,"[MSG] pdcp run\n");
 
         result = pdcp_data_req (&ctxt,
                                 SRB_FLAG_YES,

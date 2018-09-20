@@ -100,7 +100,6 @@ void du_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
 
   /* setup parameters for F1U and start the server */
   const cudu_params_t params = {
-    .local_interface     = NULL, /* is not used */
     .local_ipv4_address  = RC.mac[instance]->eth_params_n.my_addr,
     .local_port          = RC.mac[instance]->eth_params_n.my_portd,
     .remote_ipv4_address = RC.mac[instance]->eth_params_n.remote_addr,
@@ -175,8 +174,9 @@ void *F1AP_DU_task(void *arg) {
 
      case F1AP_UL_RRC_MESSAGE: // from rrc
         LOG_I(DU_F1AP, "DU Task Received F1AP_UL_RRC_MESSAGE\n");
-        DU_send_UL_RRC_MESSAGE_TRANSFER(ITTI_MESSAGE_GET_INSTANCE(received_msg),
-                                        &F1AP_UL_RRC_MESSAGE(received_msg));
+        AssertFatal (1 == 0, "Should not be here!\n" );
+        //DU_send_UL_RRC_MESSAGE_TRANSFER(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+         //                               &F1AP_UL_RRC_MESSAGE(received_msg));
         break;
 
       case TERMINATE_MESSAGE:

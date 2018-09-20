@@ -52,7 +52,6 @@ void close_proto_agent(void)
 int main(int argc, char *argv[])
 {
   const cudu_params_t params = {
-    .local_interface = "lo",
     .local_ipv4_address = "192.168.12.45",
     .local_port = 6465,
     .remote_ipv4_address = "192.168.12.45",
