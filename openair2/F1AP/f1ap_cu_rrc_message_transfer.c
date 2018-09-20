@@ -346,7 +346,7 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   // print message in debug mode 
 
   // create an ITTI message and copy SDU
-
+  /*
   
   message_p = itti_alloc_new_message (TASK_CU_F1, RRC_DCCH_DATA_IND);
 
@@ -362,6 +362,18 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   RRC_DCCH_DATA_IND (message_p).eNB_index = instance; // not needed for CU
 
   itti_send_msg_to_task(TASK_RRC_ENB, instance, message_p);
-
+  */
+  protocol_ctxt_t ctxt;
+  ctxt.module_id = instance;
+  ctxt.rnti = f1ap_get_rnti_by_cu_id(&f1ap_cu_ue[instance],cu_ue_f1ap_id);
+  ctxt.enb_flag = 1;
+  mem_block_t *mb = get_free_mem_block(ie->value.choice.RRCContainer.size,__func__);
+  memcpy((void*)mb->data,(void*)ie->value.choice.RRCContainer.buf,ie->value.choice.RRCContainer.size);
+  pdcp_data_ind (&ctxt,
+		 1,
+		 0,
+		 srb_id,
+		 ie->value.choice.RRCContainer.size,
+		 mb);
   return 0;
 }
