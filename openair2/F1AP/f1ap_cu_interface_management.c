@@ -150,10 +150,10 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     // NR cellID
     BIT_STRING_TO_NR_CELL_IDENTITY(&served_celles_item_p->served_Cell_Information.nRCGI.nRCellIdentity,
 				   F1AP_SETUP_REQ(message_p).nr_cellid[i]);
-    LOG_D(CU_F1AP, "[SCTP %d] Received nRCGI: MCC %d, MNC %d, CELL_ID %d\n", assoc_id,
+    LOG_D(CU_F1AP, "[SCTP %d] Received nRCGI: MCC %d, MNC %d, CELL_ID %llu\n", assoc_id,
                F1AP_SETUP_REQ(message_p).mcc[i],
                F1AP_SETUP_REQ(message_p).mnc[i],
-               F1AP_SETUP_REQ(message_p).nr_cellid[i]);
+               (long long unsigned int)F1AP_SETUP_REQ(message_p).nr_cellid[i]);
     LOG_D(CU_F1AP, "nr_cellId : %x %x %x %x %x\n",
 	   served_celles_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[0],
 	   served_celles_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[1],
@@ -335,11 +335,12 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
 
       F1AP_GNB_CUSystemInformation_t *gNB_CUSystemInformation = (F1AP_GNB_CUSystemInformation_t *)calloc(1, sizeof(F1AP_GNB_CUSystemInformation_t));
 
-      LOG_D(CU_F1AP, "SI %d: ");
+      LOG_D(CU_F1AP, "SI %d: ",i);
       for (int n=0;n<f1ap_setup_resp->SI_container_length[i][0];n++) LOG_D(CU_F1AP, "%2x ",f1ap_setup_resp->SI_container[i][0][n]);
       LOG_D(CU_F1AP, "\n");
       OCTET_STRING_fromBuf(&gNB_CUSystemInformation->sImessage,
-                           f1ap_setup_resp->SI_container[i][0], f1ap_setup_resp->SI_container_length[i][0]);
+                           (const char*)f1ap_setup_resp->SI_container[i][0], 
+                           f1ap_setup_resp->SI_container_length[i][0]);
 
       LOG_D(CU_F1AP, "f1ap_setup_resp->SI_container_length = %d \n" , f1ap_setup_resp->SI_container_length[0][0]);
       cells_to_be_activated_list_itemExtIEs->extensionValue.choice.GNB_CUSystemInformation = *gNB_CUSystemInformation;
@@ -350,7 +351,7 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
 
       ASN_SEQUENCE_ADD(&p_160P9_t.list,
                       cells_to_be_activated_list_itemExtIEs);
-      cells_to_be_activated_list_item.iE_Extensions = &p_160P9_t;
+      cells_to_be_activated_list_item.iE_Extensions = (struct F1AP_ProtocolExtensionContainer*)&p_160P9_t;
 
     }
     /* ADD */

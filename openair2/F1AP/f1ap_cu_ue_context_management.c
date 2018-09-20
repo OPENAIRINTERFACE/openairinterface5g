@@ -35,6 +35,7 @@
 #include "f1ap_decoder.h"
 #include "f1ap_itti_messaging.h"
 #include "f1ap_cu_ue_context_management.h"
+#include <string.h>
 
 extern f1ap_setup_req_t *f1ap_du_data_from_du;
 
@@ -217,7 +218,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
     
     ie->value.choice.ResourceCoordinationTransferContainer.buf = malloc(4);
     ie->value.choice.ResourceCoordinationTransferContainer.size = 4;
-    strncpy(ie->value.choice.ResourceCoordinationTransferContainer.buf, "123", 3);
+    strncpy((char *)ie->value.choice.ResourceCoordinationTransferContainer.buf, "123", 3);
 
 
     OCTET_STRING_fromBuf(&ie->value.choice.ResourceCoordinationTransferContainer, "asdsa1d32sa1d31asd31as",
@@ -264,7 +265,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
      /* 10.1.3 sCellULConfigured*/
      if (0) {
        scell_toBeSetup_item.sCellULConfigured = (F1AP_CellULConfigured_t *)calloc(1, sizeof(F1AP_CellULConfigured_t));
-       scell_toBeSetup_item.sCellULConfigured = F1AP_CellULConfigured_ul_and_sul; // enum
+       *scell_toBeSetup_item.sCellULConfigured = F1AP_CellULConfigured_ul_and_sul; // enum
      }
 
      /* ADD */
@@ -390,21 +391,21 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
             /* qoSPriorityLevel */
             if (0) {
               drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI->qoSPriorityLevel = (long *)calloc(1, sizeof(long));
-              drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI->qoSPriorityLevel = 1L;
+              *drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI->qoSPriorityLevel = 1L;
             }
 
             /* OPTIONAL */
             /* averagingWindow */
             if (0) {
               drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI->averagingWindow = (F1AP_AveragingWindow_t *)calloc(1, sizeof(F1AP_AveragingWindow_t));
-              drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI->averagingWindow = 1L;
+              *drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI->averagingWindow = 1L;
             }
 
             /* OPTIONAL */
             /* maxDataBurstVolume */
             if (0) {
               drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI->maxDataBurstVolume = (F1AP_MaxDataBurstVolume_t *)calloc(1, sizeof(F1AP_MaxDataBurstVolume_t));
-              drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI->maxDataBurstVolume = 1L;
+              *drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.non_Dynamic_5QI->maxDataBurstVolume = 1L;
             }
 
           } else {
@@ -424,21 +425,21 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
             /* delayCritical */
             if (0) {
               drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->delayCritical = (long *)calloc(1, sizeof(long));
-              drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->delayCritical = 1L;
+              *drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->delayCritical = 1L;
             }
 
             /* OPTIONAL */
             /* averagingWindow */
             if (0) {
               drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->averagingWindow = (F1AP_AveragingWindow_t *)calloc(1, sizeof(F1AP_AveragingWindow_t));
-              drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->averagingWindow = 1L;
+              *drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->averagingWindow = 1L;
             }
 
             /* OPTIONAL */
             /* maxDataBurstVolume */
             if (0) {
               drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->maxDataBurstVolume = (F1AP_MaxDataBurstVolume_t *)calloc(1, sizeof(F1AP_MaxDataBurstVolume_t));
-              drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->maxDataBurstVolume = 1L;
+              *drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.qoS_Characteristics.choice.dynamic_5QI->maxDataBurstVolume = 1L;
             }
 
           } // if some_decide_qoS_characteristics
@@ -465,14 +466,14 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
           /* maxPacketLossRateDownlink */
           if (0) {
             drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateDownlink = (F1AP_MaxPacketLossRate_t *)calloc(1, sizeof(F1AP_MaxPacketLossRate_t)); 
-            drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateDownlink = 1L;
+            *drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateDownlink = 1L;
           }
 
           /* OPTIONAL */
           /* maxPacketLossRateUplink */
           if (0) {
             drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateUplink = (F1AP_MaxPacketLossRate_t *)calloc(1, sizeof(F1AP_MaxPacketLossRate_t)); 
-            drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateUplink = 1L;
+            *drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.gBR_QoS_Flow_Information->maxPacketLossRateUplink = 1L;
           }
 
         }
@@ -481,7 +482,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
         /* reflective_QoS_Attribute */
         if (0) {
           drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.reflective_QoS_Attribute = (long *)calloc(1, sizeof(long)); 
-          drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.reflective_QoS_Attribute = 1L;
+          *drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->dRB_QoS.reflective_QoS_Attribute = 1L;
         }
 
       } // dRB_QoS
@@ -503,7 +504,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
       /* 12.1.2.3 notificationControl */
       if (0) {
         drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->notificationControl = (F1AP_NotificationControl_t *)calloc(1, sizeof(F1AP_NotificationControl_t));
-        drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->notificationControl = F1AP_NotificationControl_active; // enum
+        *drbs_toBeSetup_item.qoSInformation.choice.dRB_Information->notificationControl = F1AP_NotificationControl_active; // enum
       }
 
       /* 12.1.2.4 flows_Mapped_To_DRB_List */  // BK: need verifiy
@@ -532,21 +533,21 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
               /* qoSPriorityLevel */
               if (0) {
                 flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.non_Dynamic_5QI->qoSPriorityLevel = (long *)calloc(1, sizeof(long));
-                flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.non_Dynamic_5QI->qoSPriorityLevel = 1L;
+                *flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.non_Dynamic_5QI->qoSPriorityLevel = 1L;
               }
 
               /* OPTIONAL */
               /* averagingWindow */
               if (0) {
                 flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.non_Dynamic_5QI->averagingWindow = (F1AP_AveragingWindow_t *)calloc(1, sizeof(F1AP_AveragingWindow_t));
-                flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.non_Dynamic_5QI->averagingWindow = 1L;
+                *flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.non_Dynamic_5QI->averagingWindow = 1L;
               }
 
               /* OPTIONAL */
               /* maxDataBurstVolume */
               if (0) {
                 flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.non_Dynamic_5QI->maxDataBurstVolume = (F1AP_MaxDataBurstVolume_t *)calloc(1, sizeof(F1AP_MaxDataBurstVolume_t));
-                flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.non_Dynamic_5QI->maxDataBurstVolume = 1L;
+                *flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.non_Dynamic_5QI->maxDataBurstVolume = 1L;
               }
 
             } else {
@@ -566,21 +567,21 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
               /* delayCritical */
               if (0) {
                 flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.dynamic_5QI->delayCritical = (long *)calloc(1, sizeof(long));
-                flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.dynamic_5QI->delayCritical = 1L;
+                *flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.dynamic_5QI->delayCritical = 1L;
               }
 
               /* OPTIONAL */
               /* averagingWindow */
               if (0) {
                 flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.dynamic_5QI->averagingWindow = (F1AP_AveragingWindow_t *)calloc(1, sizeof(F1AP_AveragingWindow_t));
-                flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.dynamic_5QI->averagingWindow = 1L;
+                *flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.dynamic_5QI->averagingWindow = 1L;
               }
 
               /* OPTIONAL */
               /* maxDataBurstVolume */
               if (0) {
                 flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.dynamic_5QI->maxDataBurstVolume = (F1AP_MaxDataBurstVolume_t *)calloc(1, sizeof(F1AP_MaxDataBurstVolume_t));
-                flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.dynamic_5QI->maxDataBurstVolume = 1L;
+                *flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.qoS_Characteristics.choice.dynamic_5QI->maxDataBurstVolume = 1L;
               }
 
             } // if some_decide_qoS_characteristics
@@ -607,14 +608,14 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
             /* maxPacketLossRateDownlink */
             if (0) {
               flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.gBR_QoS_Flow_Information->maxPacketLossRateDownlink = (F1AP_MaxPacketLossRate_t *)calloc(1, sizeof(F1AP_MaxPacketLossRate_t)); 
-              flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.gBR_QoS_Flow_Information->maxPacketLossRateDownlink = 1L;
+              *flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.gBR_QoS_Flow_Information->maxPacketLossRateDownlink = 1L;
             }
 
             /* OPTIONAL */
             /* maxPacketLossRateUplink */
             if (0) {
               flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.gBR_QoS_Flow_Information->maxPacketLossRateUplink = (F1AP_MaxPacketLossRate_t *)calloc(1, sizeof(F1AP_MaxPacketLossRate_t)); 
-              flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.gBR_QoS_Flow_Information->maxPacketLossRateUplink = 1L;
+              *flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.gBR_QoS_Flow_Information->maxPacketLossRateUplink = 1L;
             }
 
           }
@@ -623,7 +624,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
           /* reflective_QoS_Attribute */
           if (0) {
             flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.reflective_QoS_Attribute = (long *)calloc(1, sizeof(long)); 
-            flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.reflective_QoS_Attribute = 1L;
+            *flows_mapped_to_drb_item.qoSFlowLevelQoSParameters.reflective_QoS_Attribute = 1L;
           }
 
         } // qoSFlowLevelQoSParameters

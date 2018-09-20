@@ -68,7 +68,6 @@ void cu_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
 
   /* setup parameters for F1U and start the server */
   const cudu_params_t params = {
-    .local_interface     = NULL, /* is not used */
     .local_ipv4_address  = RC.rrc[instance]->eth_params_s.my_addr,
     .local_port          = RC.rrc[instance]->eth_params_s.my_portd,
     .remote_ipv4_address = RC.rrc[instance]->eth_params_s.remote_addr,

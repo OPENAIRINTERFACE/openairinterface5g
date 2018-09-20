@@ -100,7 +100,6 @@ void du_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
 
   /* setup parameters for F1U and start the server */
   const cudu_params_t params = {
-    .local_interface     = NULL, /* is not used */
     .local_ipv4_address  = RC.mac[instance]->eth_params_n.my_addr,
     .local_port          = RC.mac[instance]->eth_params_n.my_portd,
     .remote_ipv4_address = RC.mac[instance]->eth_params_n.remote_addr,
