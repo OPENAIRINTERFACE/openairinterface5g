@@ -333,7 +333,7 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                              F1AP_ProtocolIE_ID_id_SRBID, true);
   srb_id = ie->value.choice.SRBID;
   if (srb_id < 1 ) 
-    LOG_E(CU_F1AP, "Unexpected UL RRC MESSAGE for srb_id %lu (CCCH)\n", srb_id);
+    LOG_E(CU_F1AP, "Unexpected UL RRC MESSAGE for srb_id %lu \n", srb_id);
   else  
     LOG_D(CU_F1AP, "UL RRC MESSAGE for srb_id %lu in DCCH \n", srb_id);
 
@@ -344,13 +344,13 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_RRCContainer, true);
   // print message in debug mode 
-  LOG_D(CU_F1AP, "RRCContainer(CCCH) :");
-  for (int i=0;i<ie->value.choice.RRCContainer.size;i++) LOG_D(CU_F1AP, "%2x ",RRC_MAC_CCCH_DATA_IND (message_p).sdu[i]);
-  LOG_D(CU_F1AP, "\n");
 
   // create an ITTI message and copy SDU
+
+  
   message_p = itti_alloc_new_message (TASK_CU_F1, RRC_DCCH_DATA_IND);
-  memset (RRC_DCCH_DATA_IND (message_p).sdu_p, 0, CCCH_SDU_SIZE);
+
+  RRC_DCCH_DATA_IND (message_p).sdu_p = malloc(ie->value.choice.RRCContainer.size);
 
   RRC_DCCH_DATA_IND (message_p).sdu_size = ie->value.choice.RRCContainer.size;
   memcpy(RRC_DCCH_DATA_IND (message_p).sdu_p, ie->value.choice.RRCContainer.buf,
