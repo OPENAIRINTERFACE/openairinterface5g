@@ -102,6 +102,7 @@ check_supported_distribution() {
         "ubuntu14.04") return 0 ;;
         "fedora24")    return 0 ;;
         "rhel7")       return 0 ;;
+        "rhel7.5")       return 0 ;;
         "centos7")     return 0 ;;
     esac
     return 1
@@ -560,8 +561,6 @@ check_install_oai_software() {
 	libidn2-0-dev  \
 	libidn11-dev \
 	libmysqlclient-dev  \
-	liboctave-dev \
-	libpgm-dev \
 	libpython2.7-dev \
 	libsctp1  \
 	libsctp-dev  \
@@ -572,7 +571,6 @@ check_install_oai_software() {
 	libxml2-dev  \
 	libxslt1-dev \
 	mscgen  \
-	octave \
 	octave-signal \
 	openssh-client \
 	openssh-server \
@@ -633,8 +631,6 @@ check_install_oai_software() {
       libidn2-devel  \
       libidn-devel \
       mariadb-devel \
-      octave-devel \
-      openpgm-devel \
       lksctp-tools \
       lksctp-tools-devel \
       openssl-devel \
@@ -644,8 +640,6 @@ check_install_oai_software() {
       libxml2 \
       libxml2-devel \
       libxslt-devel \
-      octave \
-      octave-signal \
       openssh-clients \
       openssh-server \
       openssl \
