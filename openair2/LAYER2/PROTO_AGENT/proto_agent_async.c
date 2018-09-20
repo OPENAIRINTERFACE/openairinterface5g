@@ -35,20 +35,20 @@
 #include "common/utils/LOG/log.h"
 
 proto_agent_async_channel_t *
-proto_server_async_channel_info(mod_id_t mod_id, const char *ip, uint16_t port)
+proto_agent_async_channel_info(mod_id_t mod_id, const char *bind_ip, uint16_t bind_port,
+                               const char* peer_ip, uint16_t peer_port)
 {
-  LOG_E(PROTO_AGENT, "does not bind to specific address at the moment, ignoring %s\n", ip);
   proto_agent_async_channel_t *channel;
   channel = malloc(sizeof(proto_agent_channel_t));
   
   if (channel == NULL)
     goto error;
 
-  channel->port = port;
-  channel->peer_addr = NULL;
+  channel->peer_port = peer_port;
+  channel->peer_addr = peer_ip;
 
   channel->enb_id = mod_id;
-  channel->link = new_link_udp_server(port);
+  channel->link = new_link_udp_server(bind_ip, bind_port);
   
   if (channel->link == NULL) goto error;
   
@@ -62,51 +62,14 @@ proto_server_async_channel_info(mod_id_t mod_id, const char *ip, uint16_t port)
                                          channel->link,
                                          CHANNEL_UDP,
                                          channel->peer_addr,
-                                         channel->port);
+                                         channel->peer_port);
   if (channel->manager == NULL) goto error;
   
   return channel;
 
  error:
   LOG_E(PROTO_AGENT,"there was an error\n");
-  return NULL;
-}
-
-
-proto_agent_async_channel_t *
-proto_agent_async_channel_info(mod_id_t mod_id, const char *dst_ip, uint16_t dst_port)
-{
-  proto_agent_async_channel_t *channel;
-  channel = (proto_agent_async_channel_t *) malloc(sizeof(proto_agent_channel_t));
-
-  if (channel == NULL)
-    goto error;
-
-  channel->port = dst_port;
-  channel->peer_addr = dst_ip;
-
-  channel->enb_id = mod_id;
-  channel->link = new_link_udp_client(channel->peer_addr, channel->port);
- 
-  if (channel->link == NULL) goto error;
-  
-  channel->send_queue = new_message_queue();
-  if (channel->send_queue == NULL) goto error;
-  channel->receive_queue = new_message_queue();
-  if (channel->receive_queue == NULL) goto error;
-  
-  channel->manager = create_link_manager(channel->send_queue,
-                                         channel->receive_queue,
-                                         channel->link,
-                                         CHANNEL_UDP,
-                                         channel->peer_addr,
-                                         channel->port);
-  if (channel->manager == NULL) goto error;
-  
-  return channel;
-
- error:
-  LOG_E(PROTO_AGENT,"there was an error\n");
+  fprintf(stderr, "error creating proto_agent_async_channel_t\n");
   return NULL;
 }
 

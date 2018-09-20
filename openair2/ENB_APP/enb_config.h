@@ -79,19 +79,13 @@ typedef struct mme_ip_address_s {
   char     *ipv6_address;
 } mme_ip_address_t;
 
-
-
-
-typedef struct du_params {
-  const char   *remote_ipv4_address;
-  const int16_t remote_port;
-} du_params_t;
-
 typedef struct cu_params {
   const char    *local_interface;
   const char    *local_ipv4_address;
   const uint16_t local_port;
-} cu_params_t;
+  const char    *remote_ipv4_address;
+  const int16_t  remote_port;
+} cudu_params_t;
 
 typedef struct ru_config_s {
   // indicates if local or remote rf is used (1 == LOCAL)

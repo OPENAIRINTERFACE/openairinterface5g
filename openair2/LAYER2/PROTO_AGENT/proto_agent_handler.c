@@ -82,6 +82,8 @@ Protocol__FlexsplitMessage* proto_agent_handle_message (mod_id_t mod_id,
     err_code= PROTOCOL__FLEXSPLIT_ERR__MSG_DECODING;
     goto error; 
   }
+  /* after deserialization, we don't need the original data memory anymore */
+  free(data);
   Protocol__FspHeader *header = (Protocol__FspHeader*) decoded_message;
   if (header->has_type)
    {
