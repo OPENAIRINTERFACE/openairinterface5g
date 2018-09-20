@@ -82,14 +82,21 @@ double t_rx_min = 1000000000; /*!< \brief initial min process time for rx */
 int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
 
+char *parallel_config = NULL;
+char *worker_config = NULL;
 static THREAD_STRUCT thread_struct;
-void set_parallel_conf(int parallel_conf)
+void set_parallel_conf(char *parallel_conf)
 {
-   thread_struct.parallel_conf = (PARALLEL_CONF_t)parallel_conf;
+  if(strcmp(parallel_conf,"PARALLEL_SINGLE_THREAD")==0)           thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
+  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_SPLIT")==0)        thread_struct.parallel_conf = PARALLEL_RU_L1_SPLIT;
+  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_TRX_SPLIT")==0)    thread_struct.parallel_conf = PARALLEL_RU_L1_TRX_SPLIT;
+  printf("[CONFIG] parallel conf is set to %d\n",thread_struct.parallel_conf);
 } 
-void set_parallel_worker_conf(int worker_conf)
+void set_worker_conf(char *worker_conf)
 {
-  thread_struct.worker_conf = (WORKER_CONF_t)worker_conf;
+  if(strcmp(worker_conf,"WORKER_DISABLE")==0)                     thread_struct.worker_conf = WORKER_DISABLE;
+  else if(strcmp(worker_conf,"WORKER_ENABLE")==0)                 thread_struct.worker_conf = WORKER_ENABLE;
+  printf("[CONFIG] worker conf is set to %d\n",thread_struct.worker_conf);
 } 
 PARALLEL_CONF_t get_thread_parallel_conf(void)
 {
@@ -1057,6 +1064,9 @@ int main(int argc, char **argv)
       break;
     }
   }
+  if()
+  set_parallel_conf("PARALLEL_RU_L1_TRX_SPLIT");
+  set_worker_conf("WORKER_ENABLE");
 
   if (transmission_mode>1) pa=dBm3;
   printf("dlsim: tmode %d, pa %d\n",transmission_mode,pa);

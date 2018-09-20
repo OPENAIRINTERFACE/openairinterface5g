@@ -61,8 +61,8 @@
 #include "enb_paramdef.h"
 
 extern uint16_t sf_ahead;
-extern void set_parallel_conf(int parallel_conf);
-extern void set_parallel_worker_conf(int worker_conf);
+extern void set_parallel_conf(char* parallel_conf);
+extern void set_worker_conf(char* worker_conf);
 extern PARALLEL_CONF_t get_thread_parallel_conf(void);
 extern WORKER_CONF_t   get_thread_worker_conf(void);
 
