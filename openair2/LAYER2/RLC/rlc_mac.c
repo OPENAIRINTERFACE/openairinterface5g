@@ -260,12 +260,12 @@ void mac_rlc_data_ind     (
 #ifdef DEBUG_MAC_INTERFACE
 
   if (num_tbP) {
-    LOG_I(RLC, PROTOCOL_CTXT_FMT" MAC_RLC_DATA_IND on channel %d (%d), rb max %d, Num_tb %d\n",
+    LOG_I(RLC, PROTOCOL_CTXT_FMT" MAC_RLC_DATA_IND on channel %d (%d), rb max %d, tb_sizeP %d\n",
           PROTOCOL_CTXT_ARGS(&ctxt),
           channel_idP,
           RLC_MAX_LC,
           NB_RB_MAX,
-          num_tbP);
+          tb_sizeP);
   }
 
 #endif // DEBUG_MAC_INTERFACE

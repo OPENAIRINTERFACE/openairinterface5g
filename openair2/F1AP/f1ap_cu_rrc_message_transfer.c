@@ -264,7 +264,7 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
     //ie->value.choice.RAT_FrequencyPriorityInformation.choice.rAT_FrequencySelectionPriority = 123L;
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
-
+ 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     LOG_E(CU_F1AP, "Failed to encode F1 setup request\n");
@@ -365,15 +365,17 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   */
   protocol_ctxt_t ctxt;
   ctxt.module_id = instance;
+  ctxt.instance = instance;
   ctxt.rnti = f1ap_get_rnti_by_cu_id(&f1ap_cu_ue[instance],cu_ue_f1ap_id);
   ctxt.enb_flag = 1;
   mem_block_t *mb = get_free_mem_block(ie->value.choice.RRCContainer.size,__func__);
   memcpy((void*)mb->data,(void*)ie->value.choice.RRCContainer.buf,ie->value.choice.RRCContainer.size);
+  LOG_I(CU_F1AP, "Calling pdcp_data_ind for UE RNTI %x srb_id %lu with size %d (DCCH) \n", ctxt.rnti, srb_id, ie->value.choice.RRCContainer.size);
   pdcp_data_ind (&ctxt,
-		 1,
-		 0,
-		 srb_id,
-		 ie->value.choice.RRCContainer.size,
-		 mb);
+     1, // srb_flag
+     0, // embms_flag
+     srb_id,
+     ie->value.choice.RRCContainer.size,
+     mb);
   return 0;
 }
