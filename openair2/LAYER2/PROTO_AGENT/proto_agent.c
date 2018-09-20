@@ -131,6 +131,11 @@ error:
 
 }
 
+void proto_agent_stop(mod_id_t mod_id)
+{
+  proto_agent_destroy_channel(proto_agent[mod_id].channel->channel_id);
+}
+
 //void
 //proto_agent_send_hello(void)
 //{
@@ -164,24 +169,21 @@ proto_agent_send_rlc_data_req(const protocol_ctxt_t* const ctxt_pP,
   int msg_flag = 0;
   int msgsize = 0;
   mod_id_t mod_id = ctxt_pP->module_id;
+  data_req_args args;
   
   DevAssert(proto_agent[mod_id].channel);
   DevAssert(proto_agent[mod_id].channel->channel_info);
  
-  data_req_args *args = malloc(sizeof(data_req_args));
-  
-  args->ctxt = malloc(sizeof(protocol_ctxt_t));
-  memcpy(args->ctxt, ctxt_pP, sizeof(protocol_ctxt_t));
-  args->srb_flag = srb_flagP;
-  args->MBMS_flag = MBMS_flagP;
-  args->rb_id = rb_idP;
-  args->mui = muiP;
-  args->confirm = confirmP;
-  args->sdu_size = sdu_sizeP;
-  args->sdu_p = malloc(sdu_sizeP);
-  memcpy(args->sdu_p, sdu_pP->data, sdu_sizeP);
+  args.ctxt = ctxt_pP;
+  args.srb_flag = srb_flagP;
+  args.MBMS_flag = MBMS_flagP;
+  args.rb_id = rb_idP;
+  args.mui = muiP;
+  args.confirm = confirmP;
+  args.sdu_size = sdu_sizeP;
+  args.sdu_p = sdu_pP;
 
-  msg_flag = proto_agent_pdcp_data_req(mod_id, (void *) args, &init_msg);
+  msg_flag = proto_agent_pdcp_data_req(mod_id, (void *) &args, &init_msg);
   if (msg_flag != 0 || !init_msg) goto error;
   
   msg = proto_agent_pack_message(init_msg, &msgsize);
@@ -206,22 +208,19 @@ proto_agent_send_pdcp_data_ind(const protocol_ctxt_t* const ctxt_pP, const srb_f
   int msg_flag = 0;
   int msgsize = 0;
   mod_id_t mod_id = ctxt_pP->module_id;
+  data_req_args args;
   
   DevAssert(proto_agent[mod_id].channel);
   DevAssert(proto_agent[mod_id].channel->channel_info);
  
-  data_req_args *args = malloc(sizeof(data_req_args));
-  
-  args->ctxt = malloc(sizeof(protocol_ctxt_t));
-  memcpy(args->ctxt, ctxt_pP, sizeof(protocol_ctxt_t));
-  args->srb_flag = srb_flagP;
-  args->MBMS_flag = MBMS_flagP;
-  args->rb_id = rb_idP;
-  args->sdu_size = sdu_sizeP;
-  args->sdu_p = malloc(sdu_sizeP);
-  memcpy(args->sdu_p, sdu_pP->data, sdu_sizeP);
+  args.ctxt = ctxt_pP;
+  args.srb_flag = srb_flagP;
+  args.MBMS_flag = MBMS_flagP;
+  args.rb_id = rb_idP;
+  args.sdu_size = sdu_sizeP;
+  args.sdu_p = sdu_pP;
 
-  msg_flag = proto_agent_pdcp_data_ind(mod_id, (void *) args, &init_msg);
+  msg_flag = proto_agent_pdcp_data_ind(mod_id, (void *) &args, &init_msg);
   if (msg_flag != 0 || !init_msg) goto error;
 
   msg = proto_agent_pack_message(init_msg, &msgsize);
@@ -232,7 +231,7 @@ proto_agent_send_pdcp_data_ind(const protocol_ctxt_t* const ctxt_pP, const srb_f
   return;
 
 error:
-  LOG_E(PROTO_AGENT, "there was an error\n");
+  LOG_E(PROTO_AGENT, "there was an error in %s\n", __func__);
   return;
   
 }

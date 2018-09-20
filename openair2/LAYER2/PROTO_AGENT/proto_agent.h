@@ -46,6 +46,7 @@
 void * proto_agent_receive(void *args);
 
 int proto_agent_start(mod_id_t mod_id, const cudu_params_t *p);
+void proto_agent_stop(mod_id_t mod_id);
 
 void proto_agent_send_rlc_data_req( const protocol_ctxt_t* const ctxt_pP,
     const srb_flag_t srb_flagP, const MBMS_flag_t MBMS_flagP,

@@ -104,10 +104,8 @@ Protocol__FlexsplitMessage* proto_agent_handle_message (mod_id_t mod_id,
     LOG_I(PROTO_AGENT, "decoded_message case : %d, direction : %d \n", decoded_message->msg_case-1, decoded_message->msg_dir-1);
     goto error;
   }
-  else if (err_code == 1) 
-  {
-    protocol__flexsplit_message__free_unpacked(decoded_message, NULL);
-  }
+
+  protocol__flexsplit_message__free_unpacked(decoded_message, NULL);
   LOG_D(PROTO_AGENT,"Returning REPLY message after the callback\n");
   return reply_message;
   

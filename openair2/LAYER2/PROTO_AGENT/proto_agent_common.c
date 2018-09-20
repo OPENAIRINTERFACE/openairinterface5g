@@ -453,8 +453,12 @@ int proto_agent_destroy_pdcp_data_ind(Protocol__FlexsplitMessage *msg)
   if(msg->msg_case != PROTOCOL__FLEXSPLIT_MESSAGE__MSG_DATA_IND_MSG)
     goto error;
 
-  free(msg->data_req_ack->header);
-  free(msg->data_req_ack);
+  free(msg->data_ind_msg->header);
+  free(msg->data_ind_msg->rlc_data->fsp_pdu->fsp_pdu_data.data);
+  free(msg->data_ind_msg->rlc_data->fsp_pdu);
+  free(msg->data_ind_msg->rlc_data->fsp_ctxt);
+  free(msg->data_ind_msg->rlc_data);
+  free(msg->data_ind_msg);
   free(msg);
   return 0;
 

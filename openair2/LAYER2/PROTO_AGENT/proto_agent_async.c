@@ -68,7 +68,8 @@ proto_agent_async_channel_info(mod_id_t mod_id, const char *bind_ip, uint16_t bi
   return channel;
 
  error:
-  LOG_E(PROTO_AGENT,"there was an error\n");
+  if (channel)
+    free(channel);
   fprintf(stderr, "error creating proto_agent_async_channel_t\n");
   return NULL;
 }
@@ -87,8 +88,7 @@ int proto_agent_async_msg_recv(void **data, int *size, int *priority, void *chan
 
 void proto_agent_async_release(proto_agent_channel_t *channel)
 {
-  proto_agent_async_channel_t *channel_info;
-  channel_info = (proto_agent_async_channel_t *) channel->channel_info;
+  proto_agent_async_channel_t *channel_info = channel->channel_info;
 
   destroy_link_manager(channel_info->manager);
   
