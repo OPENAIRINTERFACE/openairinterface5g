@@ -159,7 +159,8 @@ void destroy_link_manager(link_manager_t *manager)
 {
   LOG_D(MAC, "destroying link manager\n");
   manager->run = 0;
-  /* todo: force threads to stop (using a dummy message?) */
+  pthread_join(manager->sender, NULL);
+  pthread_join(manager->receiver, NULL);
 }
 
 #ifdef SERVER_TEST
