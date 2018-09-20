@@ -37,8 +37,10 @@
 
 #ifndef PROTO_AGENT_H_
 #define PROTO_AGENT_H_
-#include "proto_agent_common.h"
 #include "ENB_APP/enb_config.h" // for enb properties
+/* avoid warnings */
+#undef NUM_MAX_ENB
+#include "proto_agent_common.h"
 
 
 void * proto_agent_receive(void *args);

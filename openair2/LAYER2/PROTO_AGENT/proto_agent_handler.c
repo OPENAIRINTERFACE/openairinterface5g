@@ -40,13 +40,13 @@
 #include "assertions.h"
 
 proto_agent_message_decoded_callback proto_agent_messages_callback[][3] = {
-  {proto_agent_hello, 0, 0},
-  {proto_agent_echo_reply, 0, 0},
-  {0, just_print, 0},
-  {proto_agent_pdcp_data_req_ack, 0, 0},
-  {0, proto_agent_get_ack_result, 0},
-  {proto_agent_pdcp_data_ind_ack, 0, 0},
-  {0, just_print, 0},
+  {proto_agent_hello, 0, 0},                 /* agent hello */
+  {proto_agent_echo_reply, 0, 0},            /* echo */
+  {0, just_print, 0},                        /* just print */
+  {proto_agent_pdcp_data_req_process, 0, 0}, /* PDCP data REQ */
+  {0, proto_agent_get_ack_result, 0},        /* get ACK result */
+  {proto_agent_pdcp_data_ind_process, 0, 0}, /* PDCP data IND */
+  {0, just_print, 0},                        /* just print */
 };
 
 proto_agent_message_destruction_callback proto_message_destruction_callback[] = {
@@ -54,10 +54,9 @@ proto_agent_message_destruction_callback proto_message_destruction_callback[] = 
   proto_agent_destroy_echo_request,
   proto_agent_destroy_echo_reply,
   proto_agent_destroy_pdcp_data_req,
-  proto_agent_destroy_pdcp_data_req_ack,
+  0,
   proto_agent_destroy_pdcp_data_ind,
-  proto_agent_destroy_pdcp_data_ind_ack,
-
+  0,
 };
 
 //static const char *proto_agent_direction2String[] = {
@@ -129,9 +128,8 @@ uint8_t *proto_agent_pack_message(Protocol__FlexsplitMessage *msg, int *size)
     goto error;
   }
   
-  //TODO call proper destroy function
-  
-  err_code = ((*proto_message_destruction_callback[msg->msg_case-1])(msg));
+  if (proto_message_destruction_callback[msg->msg_case-1])
+    err_code = ((*proto_message_destruction_callback[msg->msg_case-1])(msg));
   
   DevAssert(buffer !=NULL);
   

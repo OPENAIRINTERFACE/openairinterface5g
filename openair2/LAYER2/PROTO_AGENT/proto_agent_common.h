@@ -95,13 +95,11 @@ int proto_agent_echo_reply(mod_id_t mod_id, const void *params, Protocol__Flexsp
 int proto_agent_destroy_echo_reply(Protocol__FlexsplitMessage *msg);
 
 int proto_agent_pdcp_data_req(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
-int proto_agent_pdcp_data_req_ack(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
+int proto_agent_pdcp_data_req_process(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
 int proto_agent_destroy_pdcp_data_req(Protocol__FlexsplitMessage *msg);
-int proto_agent_destroy_pdcp_data_req_ack(Protocol__FlexsplitMessage *msg);
 int proto_agent_pdcp_data_ind(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
 int proto_agent_destroy_pdcp_data_ind(Protocol__FlexsplitMessage *msg);
-int proto_agent_pdcp_data_ind_ack(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
-int proto_agent_destroy_pdcp_data_ind_ack(Protocol__FlexsplitMessage *msg);
+int proto_agent_pdcp_data_ind_process(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
 
 int just_print(mod_id_t mod_id, const void *params, Protocol__FlexsplitMessage **msg);
 
@@ -119,7 +117,7 @@ typedef struct _data_req_args data_req_args;
 typedef struct _dl_data_args dl_data_args;
 
 struct _data_req_args{
-  protocol_ctxt_t* ctxt;
+  const protocol_ctxt_t* ctxt;
   srb_flag_t srb_flag;
   MBMS_flag_t MBMS_flag;
   rb_id_t rb_id; 
