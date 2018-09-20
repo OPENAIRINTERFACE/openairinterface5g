@@ -116,15 +116,14 @@ extern "C" {
     pthread_mutex_lock (&t->queue_cond_lock);
     int ret=itti_send_msg_to_task_locked(destination_task_id, instance, message);
 
-    //    while ( t->message_queue.size()>0 && t->admin.func != NULL )
-    if ( t->message_queue.size()>0 && t->admin.func != NULL ) {
+    while ( t->message_queue.size()>0 && t->admin.func != NULL ) {
       if (t->message_queue.size()>1)
 	LOG_W(TMR,"queue in no thread mode is %ld\n", t->message_queue.size());
       pthread_mutex_unlock (&t->queue_cond_lock);
       t->admin.func(NULL);
-    } else {
-      pthread_mutex_unlock (&t->queue_cond_lock);
-    }
+      pthread_mutex_lock (&t->queue_cond_lock);
+    } 
+    pthread_mutex_unlock (&t->queue_cond_lock);
     return ret;
   }
 
@@ -198,6 +197,8 @@ extern "C" {
       pthread_mutex_unlock(&t->queue_cond_lock);
       LOG_D(TMR,"enter blocking wait for %s\n", itti_get_task_name(task_id));
       t->nb_events = epoll_wait(t->epoll_fd,t->events,t->nb_fd_epoll, epoll_timeout);
+      if ( t->nb_events  < 0 && (errno == EINTR || errno == EAGAIN ) )
+	pthread_mutex_lock(&t->queue_cond_lock);
     } while (t->nb_events  < 0 && (errno == EINTR || errno == EAGAIN ) );
 
     AssertFatal (t->nb_events >=0,
