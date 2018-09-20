@@ -92,7 +92,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 
   int i, UE_id; 
 
-  LOG_I(PHY,"[gNB %d] %s() About to wait for gNB to be configured", gNB->Mod_id, __FUNCTION__);
+  LOG_I(PHY,"[gNB %d] %s() About to wait for gNB to be configured\n", gNB->Mod_id, __FUNCTION__);
 
   gNB->total_dlsch_bitrate = 0;
   gNB->total_transmitted_bits = 0;
