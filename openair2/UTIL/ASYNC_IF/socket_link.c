@@ -163,8 +163,8 @@ error:
   return NULL;
 }
 
-socket_link_t *new_link_udp_server(int port){
-
+socket_link_t *new_link_udp_server(const char *bind_addr, int bind_port)
+{
   socket_link_t  *ret = NULL;
 
   struct sockaddr_in si_me;
@@ -181,19 +181,25 @@ socket_link_t *new_link_udp_server(int port){
 
   //create a UDP socket
   if ((socket_server=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
-        goto error;
+    goto error;
   }
 
   // zero out the structure
   memset((char *) &si_me, 0, sizeof(si_me));
 
   si_me.sin_family = AF_INET;
-  si_me.sin_port = htons(port);
-  si_me.sin_addr.s_addr = INADDR_ANY;
+  si_me.sin_port = htons(bind_port);
+  if (bind_addr) {
+    if (!inet_aton(bind_addr, &si_me.sin_addr))
+      goto error;
+  } else {
+    si_me.sin_addr.s_addr = INADDR_ANY;
+  }
 
   //bind socket to port
   if( bind(socket_server , (struct sockaddr*)&si_me, sizeof(si_me) ) == -1) {
-        goto error;
+    fprintf(stderr, "could not bind to address %s: %s\n", bind_addr, strerror(errno));
+    goto error;
   }
   ret->socket_fd = socket_server;
   ret->peer_port = 0;
@@ -356,13 +362,11 @@ error:
   return NULL;
 }
 
-static int socket_udp_send(int socket_fd, void *buf, int size, char *peer_addr, int port)
+static int socket_udp_send(int socket_fd, void *buf, int size, const char *peer_addr, int port)
 {
-  
   struct sockaddr_in si_other;
   int slen = sizeof(si_other);
-  char *s = buf;
-  int   l;
+  int l;
   int my_socket;
   
   LOG_D(PROTO_AGENT,"UDP send\n");
@@ -378,15 +382,10 @@ static int socket_udp_send(int socket_fd, void *buf, int size, char *peer_addr, 
       exit(1);
   }
 
-  while (size) {
-    l = sendto(my_socket, s, size, 0, (struct sockaddr *) &si_other, slen);
-    if (l == -1) goto error;
-    if (l == 0) { printf("\n\n\nERROR PROTO_AGENT: %s:%d: this cannot happen, normally...\n", __FILE__, __LINE__); abort(); }
-    size -= l;
-    s += l;
-  }
+  l = sendto(my_socket, buf, size, 0, (struct sockaddr *) &si_other, slen);
+  if (l == -1) goto error;
   
-  return 0;
+  return l;
 error:
   LOG_E(MAC,"socket_udp_send: ERROR: %s\n", strerror(errno));
   return -1;
@@ -398,20 +397,14 @@ static int socket_udp_receive(int socket_fd, void *buf, int size)
 
   struct sockaddr_in client;
   socklen_t slen;
-  char *s = buf;
   int   l;
 
-  while (size) {
-    l = recvfrom(socket_fd, s, size, 0, (struct sockaddr *) &client, &slen);
-    getsockname(socket_fd, (struct sockaddr *)&client, &slen);
-    LOG_D(PROTO_AGENT, "Got message from src port: %u\n", ntohs(client.sin_port));
-    if (l == -1) goto error;
-    if (l == 0) goto socket_closed;
-    size -= l;
-    s += l;
-  }
+  l = recvfrom(socket_fd, buf, size, 0, (struct sockaddr *) &client, &slen);
+  //getsockname(socket_fd, (struct sockaddr *)&client, &slen);
+  if (l == -1) goto error;
+  if (l == 0) goto socket_closed;
 
-  return ntohs(client.sin_port);
+  return l;
 
 error:
   LOG_E(MAC, "socket_udp_receive: ERROR: %s\n", strerror(errno));
@@ -476,18 +469,18 @@ socket_closed:
 /*
  * return -1 on error and 0 if the sending was fine
  */
-int link_send_packet(socket_link_t *link, void *data, int size, uint16_t proto_type, char *peer_addr, int port)
+int link_send_packet(socket_link_t *link, void *data, int size, uint16_t proto_type, const char *peer_addr, int peer_port)
 {
   char sizebuf[4];
   int32_t s = size;
 
-  /* send the size first, maximum is 2^31 bytes */
-  sizebuf[0] = (s >> 24) & 255;
-  sizebuf[1] = (s >> 16) & 255;
-  sizebuf[2] = (s >> 8) & 255;
-  sizebuf[3] = s & 255;
   if ((proto_type == 0) || (proto_type == 2))
   {
+    /* send the size first, maximum is 2^31 bytes */
+    sizebuf[0] = (s >> 24) & 255;
+    sizebuf[1] = (s >> 16) & 255;
+    sizebuf[2] = (s >> 8) & 255;
+    sizebuf[3] = s & 255;
     if (socket_send(link->socket_fd, sizebuf, 4) == -1)
       goto error;
 
@@ -496,28 +489,17 @@ int link_send_packet(socket_link_t *link, void *data, int size, uint16_t proto_t
     if (socket_send(link->socket_fd, data, size) == -1)
       goto error;
 
-    link->bytes_sent += size;
-    link->packets_sent++;
   }
   else if (proto_type == 1 )
   {
-    while (link->peer_port == 0)
-    {
-      sleep(0.1);
-    }
-    LOG_D(PROTO_AGENT, "peer port is %d", link->peer_port);
-    if (socket_udp_send(link->socket_fd, sizebuf, 4, peer_addr, link->peer_port) == -1)
-      goto error;
-    
-    LOG_I(PROTO_AGENT,"sent 4 bytes over the channel\n");
-    link->bytes_sent += 4;
-
-    if (socket_udp_send(link->socket_fd, data, size, peer_addr, link->peer_port) == -1)
+    /* UDP is connectionless -> only send the data */
+    if (socket_udp_send(link->socket_fd, data, size, peer_addr, peer_port) == -1)
       goto error;
 
-    link->bytes_sent += size;
-    link->packets_sent++;
   }
+
+  link->bytes_sent += size;
+  link->packets_sent++;
 
   return 0;
 
@@ -529,50 +511,47 @@ error:
  * return -1 on error and 0 if the sending was fine
  */
 
-int link_receive_packet(socket_link_t *link, void **ret_data, int *ret_size, uint16_t proto_type, char *peer_addr, int port)
+int link_receive_packet(socket_link_t *link, void **ret_data, int *ret_size, uint16_t proto_type)
 {
   unsigned char sizebuf[4];
-  int32_t       size;
+  int32_t       size = 0;
   void          *data = NULL;
   
-  int peer_port = 0;
   /* received the size first, maximum is 2^31 bytes */
   if ((proto_type == 0) || (proto_type == 2))
   {
     if (socket_receive(link->socket_fd, sizebuf, 4) == -1)
       goto error;
-  }
-  else if (proto_type == 1)
-  {
-      /* received the size first, maximum is 2^31 bytes */
-    peer_port = socket_udp_receive(link->socket_fd, sizebuf, 4);
-      if ( peer_port == -1)
-        goto error;
-    if (peer_port == 0) link->peer_port = peer_port;
-  }
-  
-  size = (sizebuf[0] << 24) |
-         (sizebuf[1] << 16) |
-         (sizebuf[2] << 8)  |
-          sizebuf[3];
 
-  link->bytes_received += 4;
+    size = (sizebuf[0] << 24) |
+           (sizebuf[1] << 16) |
+           (sizebuf[2] << 8)  |
+            sizebuf[3];
 
+    link->bytes_received += 4;
 
-  data = malloc(size);
-  if (data == NULL) {
-    LOG_E(MAC, "%s:%d: out of memory\n", __FILE__, __LINE__);
-    goto error;
-  }
-  if ((proto_type == 0) || (proto_type == 2))
-  {
-  
+    data = malloc(size);
+    if (data == NULL) {
+      LOG_E(MAC, "%s:%d: out of memory\n", __FILE__, __LINE__);
+      goto error;
+    }
+
     if (socket_receive(link->socket_fd, data, size) == -1)
       goto error;
   }
   else if (proto_type == 1)
-  { 
-    if (socket_udp_receive(link->socket_fd, data, size) == -1)
+  {
+    /* we get a single packet (no size, UDP could lose it). Therefore, prepare
+     * for the maximum UDP packet size */
+    size = 65535;
+    data = malloc(size);
+    if (data == NULL) {
+      LOG_E(MAC, "%s:%d: out of memory\n", __FILE__, __LINE__);
+      goto error;
+    }
+
+    size = socket_udp_receive(link->socket_fd, data, size);
+    if (size < 0)
       goto error;
   }
 

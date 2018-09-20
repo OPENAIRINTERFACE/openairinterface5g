@@ -48,12 +48,13 @@ typedef struct {
 
 socket_link_t *new_link_server(int port);
 socket_link_t *new_link_client(const char *server, int port);
-socket_link_t *new_link_udp_server(int port);
+/* setting bind_addr to NULL binds server to INADDR_ANY */
+socket_link_t *new_link_udp_server(const char *bind_addr, int bind_port);
 socket_link_t *new_link_udp_client(const char *server, int port);
 socket_link_t *new_link_sctp_server(int port);
 socket_link_t *new_link_sctp_client(const char *server, int port);
-int link_send_packet(socket_link_t *link, void *data, int size, uint16_t proto_type, char *peer_addr, int port);
-int link_receive_packet(socket_link_t *link, void **data, int *size, uint16_t proto_type, char *peer_addr, int port);
+int link_send_packet(socket_link_t *link, void *data, int size, uint16_t proto_type, const char *peer_addr, int port);
+int link_receive_packet(socket_link_t *link, void **data, int *size, uint16_t proto_type);
 int close_link(socket_link_t *link);
 
 

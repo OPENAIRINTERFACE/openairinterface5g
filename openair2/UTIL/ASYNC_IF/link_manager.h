@@ -46,7 +46,7 @@ typedef struct {
   message_queue_t *receive_queue;
   socket_link_t   *socket_link;
   uint16_t        type;
-  char            *peer_addr;
+  const char      *peer_addr;
   int             port;
   pthread_t       sender;
   pthread_t       receiver;

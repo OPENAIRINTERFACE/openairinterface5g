@@ -76,7 +76,7 @@ static void *link_manager_receiver_thread(void *_manager)
   LOG_D(MAC, "starting link manager receiver thread\n");
 
   while (manager->run) {
-    if (link_receive_packet(manager->socket_link, &data, &size, manager->type, manager->peer_addr, manager->port))
+    if (link_receive_packet(manager->socket_link, &data, &size, manager->type))
       goto error;
     /* todo: priority */
     if (message_put(manager->receive_queue, data, size, 0))
