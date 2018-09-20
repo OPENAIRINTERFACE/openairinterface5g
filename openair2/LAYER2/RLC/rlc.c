@@ -54,68 +54,7 @@ extern boolean_t pdcp_data_ind(
 
 
 
-#include "rlc_proto_agent_primitives.h"
-// PROTO AGENT
-#ifndef UETARGET
-void
-async_server_thread_init (void)
-{
-  //create log_list
-  //log_list_init(&log_list);
-
-  //AssertFatal(0, "this should not be reached!\n");
-  async_server_shutdown = 0;
-
-  if ((pthread_mutex_init (&async_server_lock, NULL) != 0)
-      || (pthread_cond_init (&async_server_notify, NULL) != 0)) {
-    return;
-  }
-  //if (pthread_create (&async_server_thread, NULL, proto_server_init, (void*) NULL)
-  //    != 0) {
-  //  async_server_thread_finalize();
-  //  return;
-  //}
-
-
-}
-
-int
-async_server_thread_finalize (void)
-{
-  int err = 0;
-
-
-  if (pthread_mutex_lock (&async_server_lock) != 0) {
-    return -1;
-  }
-
-  async_server_shutdown = 1;
-
-  /* Wake up LOG thread */
-  if ((pthread_cond_broadcast (&async_server_notify) != 0)
-      || (pthread_mutex_unlock (&async_server_lock) != 0)) {
-    err = -1;
-  }
-
-  if (pthread_join (async_server_thread, NULL) != 0) {
-    err = -1;
-  }
-
-  if (pthread_mutex_unlock (&async_server_lock) != 0) {
-    err = -1;
-  }
-
-  if (!err) {
-    //log_list_free(&log_list);
-    pthread_mutex_lock (&async_server_lock);
-    pthread_mutex_destroy (&async_server_lock);
-    pthread_cond_destroy (&async_server_notify);
-  }
-
-  return err;
-}
-
-#endif /*UETARGET*/
+#include "proto_agent.h"
 
 //-----------------------------------------------------------------------------
 void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char* dataP, const signed long sizeP)
@@ -680,24 +619,13 @@ void rlc_data_ind     (
     T(T_ENB_RLC_UL, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->rnti), T_INT(rb_idP), T_INT(sdu_sizeP));
 #endif
 #ifndef UETARGET
-   if ((!srb_flagP)  && (ctxt_pP->enb_flag == 1))
+   if (ctxt_pP->enb_flag == 1)
    {
-    proto_agent_send_pdcp_data_ind(ctxt_pP,
-     srb_flagP,
-     MBMS_flagP,
-     rb_idP,
-     sdu_sizeP,
-     sdu_pP);
-   }
-   else
-
-   {
-
      switch (RC.rrc[ctxt_pP->module_id]->node_type){
        case ngran_eNB_CU    :
        case ngran_ng_eNB_CU :
        case ngran_gNB_CU    :
-         pdcp_data_ind (
+         proto_agent_send_pdcp_data_ind (
            ctxt_pP,
            1, // srb_flagP,
            0, // MBMS_flagP,
@@ -804,19 +732,6 @@ rlc_module_init (void)
 
   pool_buffer_init();
 
-/*
-#ifndef UETARGET
-  // Launch the RLC listening server
-  // as a separate thread
-   
-  static int started = 0;
-  if (started == 0)
-  {
-    async_server_thread_init();
-    started = 1;
-  }
-#endif  
-*/
   return(0);
 }
 //-----------------------------------------------------------------------------

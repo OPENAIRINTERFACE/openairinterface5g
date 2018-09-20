@@ -34,6 +34,9 @@
 #include "f1ap_handlers.h"
 #include "f1ap_du_interface_management.h"
 #include "f1ap_du_task.h"
+#include "proto_agent.h"
+
+extern RAN_CONTEXT_t RC;
 
 f1ap_setup_req_t *f1ap_du_data;
 
@@ -95,6 +98,16 @@ void du_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
   f1ap_du_data->sctp_out_streams = sctp_new_association_resp->out_streams;
   f1ap_du_data->default_sctp_stream_id = 0;
 
+  /* setup parameters for F1U and start the server */
+  const cudu_params_t params = {
+    .local_interface     = NULL, /* is not used */
+    .local_ipv4_address  = RC.mac[instance]->eth_params_n.my_addr,
+    .local_port          = RC.mac[instance]->eth_params_n.my_portd,
+    .remote_ipv4_address = RC.mac[instance]->eth_params_n.remote_addr,
+    .remote_port         = RC.mac[instance]->eth_params_n.remote_portd
+  };
+  AssertFatal(proto_agent_start(instance, &params) == 0,
+              "could not start PROTO_AGENT for F1U on instance %d!\n", instance);
 
   DU_send_F1_SETUP_REQUEST(instance);
 }

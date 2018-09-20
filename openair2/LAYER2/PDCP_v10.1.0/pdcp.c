@@ -189,11 +189,23 @@ boolean_t pdcp_data_req(
                                 (unsigned char*)&pdcp_pdu_p->data[0],
                                 sdu_buffer_sizeP);
 #endif
-      rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_YES, rb_idP, muiP, confirmP, sdu_buffer_sizeP, pdcp_pdu_p
+      if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB_CU
+          || RC.rrc[ctxt_pP->module_id]->node_type == ngran_ng_eNB_CU
+          || RC.rrc[ctxt_pP->module_id]->node_type == ngran_gNB_CU) {
+        /* currently, there is no support to send also the source/destinationL2Id */
+        proto_agent_send_rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP,
+                                      confirmP, sdu_buffer_sizeP, pdcp_pdu_p);
+        /* assume good status */
+        rlc_status = RLC_OP_STATUS_OK;
+
+      } else {
+        rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_YES, rb_idP, muiP,
+                                  confirmP, sdu_buffer_sizeP, pdcp_pdu_p
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                ,NULL, NULL
+                                  ,NULL, NULL
 #endif
-                                );
+                                  );
+      }
     } else {
       rlc_status = RLC_OP_STATUS_OUT_OF_RESSOURCES;
       LOG_W(PDCP,PROTOCOL_CTXT_FMT" PDCP_DATA_REQ SDU DROPPED, OUT OF MEMORY \n",
@@ -377,24 +389,27 @@ boolean_t pdcp_data_req(
 #ifndef UETARGET
     if ((pdcp_pdu_p!=NULL) && (srb_flagP == 0) && (ctxt_pP->enb_flag == 1))
     {
+      if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB_CU
+          || RC.rrc[ctxt_pP->module_id]->node_type == ngran_ng_eNB_CU
+          || RC.rrc[ctxt_pP->module_id]->node_type == ngran_gNB_CU) {
+        /* currently, there is no support to send also the source/destinationL2Id */
+        proto_agent_send_rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP,
+                                      confirmP, pdcp_pdu_size, pdcp_pdu_p);
+        /* assume good status */
+        rlc_status = RLC_OP_STATUS_OK;
+      } else {
 
-      {
-        LOG_E(PDCP, "proto_agent_send_rlc_data_req()\n");
-        {
-          //proto_agent_send_rlc_data_req(0,cudu->cu[j].du_type, ctxt_pP, srb_flagP,
-              //MBMS_FLAG_NO,rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p);
-        }
-    //rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p
+        rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP,
+            confirmP, pdcp_pdu_size, pdcp_pdu_p
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                             //,sourceL2Id
-                             //,destinationL2Id
+                             ,sourceL2Id
+                             ,destinationL2Id
 #endif
-                             //);
-
-      }
+                             );
+      } /* end if node_type is CU */
     
-    free_mem_block(pdcp_pdu_p, __FUNCTION__);
-    rlc_status = ack_result;
+      free_mem_block(pdcp_pdu_p, __FUNCTION__);
+      rlc_status = ack_result;
     }
 
     else
