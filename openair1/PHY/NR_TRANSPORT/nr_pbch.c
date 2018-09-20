@@ -141,17 +141,13 @@ void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
   uint8_t reset, offset;
   uint32_t x1, x2, s=0;
   uint32_t *pbch_e = pbch->pbch_e;
-  uint32_t pbch_a_prime = pbch->pbch_a_prime;
-  uint32_t pbch_a_interleaved = pbch->pbch_a_interleaved;
   uint32_t unscrambling_mask = 0x100006D;
-
   reset = 1;
   // x1 is set in lte_gold_generic
   x2 = Nid;
-
   // The Gold sequence is shifted by nushift* M, so we skip (nushift*M /32) double words
-  for (int i=0; i<(uint16_t)ceil((nushift*M)/32); i++) {
-    s = lte_gold_generic(&x1, &x2, reset);
+  for (int i=0; i<(uint16_t)ceil(((float)nushift*M)/32); i++) {
+s = lte_gold_generic(&x1, &x2, reset);
     reset = 0;
   }
   // Scrambling is now done with offset (nushift*M)%32
@@ -168,9 +164,8 @@ void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
 #ifdef DEBUG_PBCH_ENCODING
   printf("s: %04x\t", s);
 #endif
-    if (!encoded) {
-      pbch_a_prime ^= ((unscrambling_mask>>i)&1)? ((pbch_a_interleaved>>i)&1)<<i : (((pbch_a_interleaved>>i)&1) ^ ((s>>((i+offset)&0x1f))&1))<<i;      
-    }
+    if (!encoded)
+      pbch->pbch_a_prime ^= ((unscrambling_mask>>i)&1)? ((pbch->pbch_a_interleaved>>i)&1)<<i : (((pbch->pbch_a_interleaved>>i)&1) ^ ((s>>((i+offset)&0x1f))&1))<<i;      
 
     else
       pbch_e[i>>5] ^= (((s>>((i+offset)&0x1f))&1)<<(i&0x1f));
@@ -224,6 +219,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 
   LOG_I(PHY, "PBCH generation started\n");
 
+  memset((void*)pbch, 0, sizeof(NR_gNB_PBCH));
   ///Payload generation
     // Fix byte endian
   if (!(sfn&7))
@@ -260,25 +256,23 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   for (int i=0; i<32; i++) {
     pbch->pbch_a_interleaved |= ((in>>i)&1)<<(nr_pbch_payload_interleaver(i));//nr_pbch_payload_interleaving_pattern[i]
 #ifdef DEBUG_PBCH_ENCODING
-  printf("i %d in 0x%08x out 0x%08x ilv %d (in>>i)&1) %d\n", i, in, out, nr_pbch_payload_interleaver(i), (in>>i)&1);
+  printf("i %d in 0x%08x out 0x%08x ilv %d (in>>i)&1) %d\n", i, in, pbch->pbch_a_interleaved, nr_pbch_payload_interleaver(i), (in>>i)&1);
 #endif
   }
 
-  /*for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS>>3; i++)
-    pbch->pbch_a_interleaved[i] = (uint8_t)((out>>(i<<3))&0xff);*/
-
 #ifdef DEBUG_PBCH_ENCODING
   printf("Interleaving:\n");
-	printf("pbch_a_interleaved: 0x%08x\n", pbch->pbch_a_interleaved);
+  printf("pbch_a_interleaved: 0x%08x\n", pbch->pbch_a_interleaved);
 #endif
 
     // Scrambling
   M = (Lmax == 64)? (NR_POLAR_PBCH_PAYLOAD_BITS - 6) : (NR_POLAR_PBCH_PAYLOAD_BITS - 3);
   nushift = (((sfn>>2)&1)<<1) ^ ((sfn>>1)&1);
+  pbch->pbch_a_prime = 0;
   nr_pbch_scrambling(pbch, (uint32_t)config->sch_config.physical_cell_id.value, nushift, M, NR_POLAR_PBCH_PAYLOAD_BITS, 0);
 #ifdef DEBUG_PBCH_ENCODING
-  printf("Payload scrambling:\n");
-    printf("pbch_a_prime: 0x%08x\n", pbch->pbch_a_prime);
+  printf("Payload scrambling: nushift %d M %d sfn3 %d sfn2 %d\n", nushift, M, (sfn>>2)&1, (sfn>>1)&1);
+  printf("pbch_a_prime: 0x%08x\n", pbch->pbch_a_prime);
 #endif
 
   /// CRC, coding and rate matching
