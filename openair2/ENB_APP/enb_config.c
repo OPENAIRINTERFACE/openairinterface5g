@@ -416,7 +416,7 @@ void RCconfig_macrlc(int macrlc_has_f1[MAX_MAC_INST]) {
 }
 
 
-int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc) {
+int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
 
   int               num_enbs                      = 0;
  
@@ -637,10 +637,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc) {
       
       LOG_I(RRC,"Instance %d: Southbound Transport %s\n",i,*(ENBParamList.paramarray[i][ENB_TRANSPORT_S_PREFERENCE_IDX].strptr));
 	    
-      if (strcmp(*(ENBParamList.paramarray[i][ENB_TRANSPORT_S_PREFERENCE_IDX].strptr), "local_mac") == 0) {
-	rrc->node_type                             = ngran_eNB;
-      }
-      else if (strcmp(*(ENBParamList.paramarray[i][ENB_TRANSPORT_S_PREFERENCE_IDX].strptr), "f1") == 0) {
+      if (strcmp(*(ENBParamList.paramarray[i][ENB_TRANSPORT_S_PREFERENCE_IDX].strptr), "f1") == 0) {
 
 	paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
 	char aprefix[MAX_OPTNAME_SIZE*2 + 8];
@@ -675,9 +672,11 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc) {
 
       }
       
-      else { // no F1
-	// set to ngran_eNB for now, it will get set to ngran_DU if macrlc entity which uses F1 is present
-	rrc->node_type                             = ngran_eNB;
+      else { 
+	// set to ngran_eNB for now, it will get set to ngran_eNB_DU if macrlc entity which uses F1 is present
+	// Note: we will have to handle the case of ngran_ng_eNB_DU
+	if (macrlc_has_f1 == 0) rrc->node_type                             = ngran_eNB;
+	else                    rrc->node_type                             = ngran_eNB_DU;
       }	      
 
       // MCC and MNC
@@ -744,7 +743,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc) {
 
 	      nb_cc++;
 
-	      if (rrc->node_type != ngran_eNB_CU && rrc->node_type != ngran_ng_eNB_CU) {
+	      if ( (rrc->node_type != ngran_eNB_CU) || (rrc->node_type != ngran_ng_eNB_CU) || (rrc->node_type != ngran_gNB_CU) ) {
 		// Cell params, MIB/SIB1 in DU
 		RRC_CONFIGURATION_REQ (msg_p).tdd_config[j] = tdd_config;
 	      
@@ -822,7 +821,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc) {
 		RRC_CONFIGURATION_REQ (msg_p).nb_antenna_ports[j] = nb_antenna_ports;
 		
 	      }
-	      else {//this is CU, SIB2-20 in CU
+	      if (rrc->node_type != ngran_eNB_DU) {//this is CU or eNB, SIB2-20 in CU
 	      
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 		if (!pbch_repetition)
@@ -1825,9 +1824,9 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc) {
 		RRC_CONFIGURATION_REQ (msg_p).discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused[j] = discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
 		
 		
-	      }
+	      } // node_type!=ngran_eNB_DU
 	    }
-	    if (rrc->node_type == ngran_eNB_CU || rrc->node_type == ngran_ng_eNB_CU) {
+	    if ( (rrc->node_type == ngran_eNB_CU) || (rrc->node_type == ngran_ng_eNB_CU) || (rrc->node_type == ngran_gNB_CU) ) {
 	      char srb1path[MAX_OPTNAME_SIZE*2 + 8];
 	      sprintf(srb1path,"%s.%s",enbpath,ENB_CONFIG_STRING_SRB1);
 	      int npar = config_get( SRB1Params,sizeof(SRB1Params)/sizeof(paramdef_t), srb1path);
@@ -2179,6 +2178,8 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc) {
 #endif
 
   }
+  LOG_I(RRC,"Node type %d \n ", rrc->node_type);
+
 return 0;
 }
 
@@ -3010,10 +3011,9 @@ void read_config_and_init()
     RC.rrc[enb_id] = malloc(sizeof(eNB_RRC_INST));
     AssertFatal(RC.rrc[enb_id], "RRC context for eNB %d not allocated\n", enb_id);
     memset((void *)RC.rrc[enb_id], 0, sizeof(eNB_RRC_INST));
-    RCconfig_RRC(enb_id, RC.rrc[enb_id]);
-    if (macrlc_has_f1[enb_id]) RC.rrc[enb_id]->node_type = ngran_eNB_DU;
+    RCconfig_RRC(enb_id, RC.rrc[enb_id],macrlc_has_f1[enb_id]);
   }
 
-  if (RC.nb_macrlc_inst == 0)
+  if (RC.rrc[0]->node_type != ngran_eNB_DU)
     pdcp_layer_init();
 }

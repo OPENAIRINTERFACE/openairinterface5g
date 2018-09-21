@@ -168,7 +168,10 @@ init_SI(
   AssertFatal(carrier->SIB1!=NULL,PROTOCOL_RRC_CTXT_FMT" init_SI: FATAL, no memory for SIB1 allocated\n",
 	      PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
 
-  if (rrc->node_type != ngran_eNB_CU && rrc->node_type != ngran_ng_eNB_CU) {
+  LOG_I(RRC,"[eNB %d] Node type %d \n ", ctxt_pP->module_id, rrc->node_type);
+  if ((rrc->node_type != ngran_eNB_CU)    || 
+  	  (rrc->node_type != ngran_ng_eNB_CU) || 
+  	  (rrc->node_type != ngran_gNB_CU)       ) {
     // copy basic Cell parameters
     carrier->physCellId      = configuration->Nid_cell[CC_id];
     carrier->p_eNB           = configuration->nb_antenna_ports[CC_id];
@@ -204,8 +207,8 @@ init_SI(
     AssertFatal(carrier->sizeof_SIB1 != 255,"FATAL, RC.rrc[enb_mod_idP].carrier[CC_id].sizeof_SIB1 == 255");
 
   }
-  else if (rrc->node_type != ngran_eNB_DU) {
-    
+  if ((rrc->node_type != ngran_eNB_DU)  || 
+      (rrc->node_type != ngran_gNB_DU)) {
     carrier->SIB23 = (uint8_t*) malloc16(64);
     AssertFatal(carrier->SIB23!=NULL,"cannot allocate memory for SIB");
     carrier->sizeof_SIB23 = do_SIB23(
@@ -216,6 +219,8 @@ init_SI(
 				     , configuration
 #endif
 				     );
+    
+    LOG_I(RRC,"do_SIB23, size %d \n ", carrier->sizeof_SIB23);
     
     AssertFatal(carrier->sizeof_SIB23 != 255,"FATAL, RC.rrc[mod].carrier[CC_id].sizeof_SIB23 == 255");
     
@@ -507,6 +512,8 @@ init_MCCH(
 
   int                                 sync_area = 0;
   // initialize RRC_eNB_INST MCCH entry
+  eNB_RRC_INST *rrc = RC.rrc[enb_mod_idP];
+
   RC.rrc[enb_mod_idP]->carrier[CC_id].MCCH_MESSAGE =
     malloc(RC.rrc[enb_mod_idP]->carrier[CC_id].num_mbsfn_sync_area * sizeof(uint8_t*));
 
@@ -551,43 +558,44 @@ init_MCCH(
 
   //  LOG_I(RRC, "DUY: serviceID is %d\n",RC.rrc[enb_mod_idP]->mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->tmgi_r9.serviceId_r9.buf[2]);
   //  LOG_I(RRC, "DUY: session ID is %d\n",RC.rrc[enb_mod_idP]->mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->sessionId_r9->buf[0]);
-  rrc_mac_config_req_eNB(enb_mod_idP, CC_id,
-			 0,0,0,0,0,
+  if (rrc->node_type == ngran_eNB) {
+    rrc_mac_config_req_eNB(enb_mod_idP, CC_id,
+			   0,0,0,0,0,
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-			 0,
+			   0,
 #endif
-			 0,//rnti
-			 (BCCH_BCH_Message_t *)NULL,
-			 (RadioResourceConfigCommonSIB_t *) NULL,
+			   0,//rnti
+			   (BCCH_BCH_Message_t *)NULL,
+			   (RadioResourceConfigCommonSIB_t *) NULL,
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-			 (RadioResourceConfigCommonSIB_t *) NULL,
+			   (RadioResourceConfigCommonSIB_t *) NULL,
 #endif
-			 (struct PhysicalConfigDedicated *)NULL,
+			   (struct PhysicalConfigDedicated *)NULL,
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-			 (SCellToAddMod_r10_t *)NULL,
-			 //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
+			   (SCellToAddMod_r10_t *)NULL,
+			   //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
-			 (MeasObjectToAddMod_t **) NULL,
-			 (MAC_MainConfig_t *) NULL,
-			 0,
-			 (struct LogicalChannelConfig *)NULL,
-			 (MeasGapConfig_t *) NULL,
-			 (TDD_Config_t *) NULL,
-			 (MobilityControlInfo_t *)NULL, 
-			 (SchedulingInfoList_t *) NULL, 
-			 0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
+			   (MeasObjectToAddMod_t **) NULL,
+			   (MAC_MainConfig_t *) NULL,
+			   0,
+			   (struct LogicalChannelConfig *)NULL,
+			   (MeasGapConfig_t *) NULL,
+			   (TDD_Config_t *) NULL,
+			   (MobilityControlInfo_t *)NULL, 
+			   (SchedulingInfoList_t *) NULL, 
+			   0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
 #if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-			 ,
-			 0,
-			 (MBSFN_AreaInfoList_r9_t *) NULL,
-			 (PMCH_InfoList_r9_t *) & (RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->pmch_InfoList_r9)
+			   ,
+			   0,
+			   (MBSFN_AreaInfoList_r9_t *) NULL,
+			   (PMCH_InfoList_r9_t *) & (RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->pmch_InfoList_r9)
 #endif
 #if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-			 ,
-			 (SystemInformationBlockType1_v1310_IEs_t *)NULL
+			   ,
+			   (SystemInformationBlockType1_v1310_IEs_t *)NULL
 #endif
-			 );
-  
+			   );
+  }
   //LOG_I(RRC,"DUY: lcid after rrc_mac_config_req is %02d\n",RC.rrc[enb_mod_idP]->mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->logicalChannelIdentity_r9);
 
 }
@@ -621,18 +629,21 @@ static void init_MBMS(
                              , &(RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->pmch_InfoList_r9)
 #endif
                              ,NULL);
-
-    rrc_rlc_config_asn1_req(&ctxt,
-                            NULL, // SRB_ToAddModList
-                            NULL,   // DRB_ToAddModList
-                            NULL,   // DRB_ToReleaseList
-                            &(RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->pmch_InfoList_r9)
+    
+    if ( (RC.rrc[enb_mod_idP]->node_type  != ngran_eNB_CU) ||
+	 (RC.rrc[enb_mod_idP]->node_type  != ngran_ng_eNB_CU) ||
+	 (RC.rrc[enb_mod_idP]->node_type  != ngran_gNB_CU)   ) {
+      rrc_rlc_config_asn1_req(&ctxt,
+			      NULL, // SRB_ToAddModList
+			      NULL,   // DRB_ToAddModList
+			      NULL,   // DRB_ToReleaseList
+			      &(RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->pmch_InfoList_r9)
 
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                            ,0, 0
+			      ,0, 0
 #endif
-                            );
-
+			      );
+    }
     //rrc_mac_config_req();
   }
 }
@@ -731,7 +742,7 @@ rrc_eNB_ue_context_stmsi_exist(
 
 //-----------------------------------------------------------------------------
 // return a new ue context structure if ue_identityP, ctxt_pP->rnti not found in collection
-static struct rrc_eNB_ue_context_s*
+struct rrc_eNB_ue_context_s*
 rrc_eNB_get_next_free_ue_context(
   const protocol_ctxt_t* const ctxt_pP,
   const uint64_t               ue_identityP
@@ -769,6 +780,7 @@ rrc_eNB_get_next_free_ue_context(
           PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
     return NULL;
   }
+  return(ue_context_p);
 }
 
 //-----------------------------------------------------------------------------
@@ -1332,39 +1344,41 @@ rrc_eNB_generate_RRCConnectionReestablishment(
         LOG_D(RRC,
               PROTOCOL_RRC_CTXT_UE_FMT" RRC_eNB --- MAC_CONFIG_REQ  (SRB1) ---> MAC_eNB\n",
               PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
-        rrc_mac_config_req_eNB(ctxt_pP->module_id,
-                           ue_context_pP->ue_context.primaryCC_id,
-                           0,0,0,0,0,
+	if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB) {
+	  rrc_mac_config_req_eNB(ctxt_pP->module_id,
+				 ue_context_pP->ue_context.primaryCC_id,
+				 0,0,0,0,0,
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-			 0,
+				 0,
 #endif
-                           ctxt_pP->rnti,
-                           (BCCH_BCH_Message_t *) NULL, 
-                           (RadioResourceConfigCommonSIB_t *) NULL,
+				 ctxt_pP->rnti,
+				 (BCCH_BCH_Message_t *) NULL, 
+				 (RadioResourceConfigCommonSIB_t *) NULL,
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                           (RadioResourceConfigCommonSIB_t *) NULL,
+				 (RadioResourceConfigCommonSIB_t *) NULL,
 #endif
-                           (struct PhysicalConfigDedicated* ) ue_context_pP->ue_context.physicalConfigDedicated,
+				 (struct PhysicalConfigDedicated* ) ue_context_pP->ue_context.physicalConfigDedicated,
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-                           (SCellToAddMod_r10_t *)NULL,
-                           //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
+				 (SCellToAddMod_r10_t *)NULL,
+				 //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
-                           (MeasObjectToAddMod_t **) NULL,
-                           ue_context_pP->ue_context.mac_MainConfig,
-                           1,
-                           SRB1_logicalChannelConfig,
-                           ue_context_pP->ue_context.measGapConfig,
-                           (TDD_Config_t *) NULL,
-                           NULL,
-                           (SchedulingInfoList_t *) NULL,
-                           0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
+				 (MeasObjectToAddMod_t **) NULL,
+				 ue_context_pP->ue_context.mac_MainConfig,
+				 1,
+				 SRB1_logicalChannelConfig,
+				 ue_context_pP->ue_context.measGapConfig,
+				 (TDD_Config_t *) NULL,
+				 NULL,
+				 (SchedulingInfoList_t *) NULL,
+				 0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-                           , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
+				 , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
 #endif
 #if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-                           ,(SystemInformationBlockType1_v1310_IEs_t *)NULL 
+				 ,(SystemInformationBlockType1_v1310_IEs_t *)NULL 
 #endif
-        );
+				 );
+	}
         break;
       }
     }
@@ -4774,45 +4788,46 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   LOG_D(RRC,
         "handover_config [FRAME %05d][RRC_eNB][MOD %02d][][--- MAC_CONFIG_REQ  (SRB1 UE %x) --->][MAC_eNB][MOD %02d][]\n",
         ctxt_pP->frame, ctxt_pP->module_id, ue_context_pP->ue_context.rnti, ctxt_pP->module_id);
-  rrc_mac_config_req_eNB(
-			 ctxt_pP->module_id,
-			 ue_context_pP->ue_context.primaryCC_id,
-			 0,0,0,0,0,
+  if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB) {
+    rrc_mac_config_req_eNB(
+			   ctxt_pP->module_id,
+			   ue_context_pP->ue_context.primaryCC_id,
+			   0,0,0,0,0,
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-0,
+			   0,
 #endif 
-			 ue_context_pP->ue_context.rnti,
-			 (BCCH_BCH_Message_t *) NULL,
-			 (RadioResourceConfigCommonSIB_t*) NULL,
+			   ue_context_pP->ue_context.rnti,
+			   (BCCH_BCH_Message_t *) NULL,
+			   (RadioResourceConfigCommonSIB_t*) NULL,
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-			 (RadioResourceConfigCommonSIB_t*) NULL,
+			   (RadioResourceConfigCommonSIB_t*) NULL,
 #endif
-			 ue_context_pP->ue_context.physicalConfigDedicated,
+			   ue_context_pP->ue_context.physicalConfigDedicated,
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-			 (SCellToAddMod_r10_t *)NULL,
-			 //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
+			   (SCellToAddMod_r10_t *)NULL,
+			   //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
-			 (MeasObjectToAddMod_t **) NULL,
-			 ue_context_pP->ue_context.mac_MainConfig,
-			 1,
-			 SRB1_logicalChannelConfig,
-			 ue_context_pP->ue_context.measGapConfig,
-			 (TDD_Config_t*) NULL,
-			 (MobilityControlInfo_t*) NULL,
-			 (SchedulingInfoList_t*) NULL,
-			 0,
-			 NULL,
-			 NULL,
-			 (MBSFN_SubframeConfigList_t *) NULL
+			   (MeasObjectToAddMod_t **) NULL,
+			   ue_context_pP->ue_context.mac_MainConfig,
+			   1,
+			   SRB1_logicalChannelConfig,
+			   ue_context_pP->ue_context.measGapConfig,
+			   (TDD_Config_t*) NULL,
+			   (MobilityControlInfo_t*) NULL,
+			   (SchedulingInfoList_t*) NULL,
+			   0,
+			   NULL,
+			   NULL,
+			   (MBSFN_SubframeConfigList_t *) NULL
 #if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-			 , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
+			   , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
 #endif
 #if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-			 ,
-			 (SystemInformationBlockType1_v1310_IEs_t *)NULL
+			   ,
+			   (SystemInformationBlockType1_v1310_IEs_t *)NULL
 #endif
-			 );
-  
+			   );
+  }
   // Configure target eNB SRB2
   /// SRB2
   SRB2_config = CALLOC(1, sizeof(*SRB2_config));
@@ -5292,16 +5307,18 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
                            , (PMCH_InfoList_r9_t *) NULL
 #endif
                            ,NULL);
-
-  rrc_rlc_config_asn1_req(&ctxt,
-                          ue_context_pP->ue_context.SRB_configList,
-                          (DRB_ToAddModList_t *) NULL, (DRB_ToReleaseList_t *) NULL
+  if ( (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) ||
+       (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU) ||
+       (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_CU)   ) {
+    rrc_rlc_config_asn1_req(&ctxt,
+			    ue_context_pP->ue_context.SRB_configList,
+			    (DRB_ToAddModList_t *) NULL, (DRB_ToReleaseList_t *) NULL
 #if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-                          , (PMCH_InfoList_r9_t *) NULL
-                          , 0, 0
+			    , (PMCH_InfoList_r9_t *) NULL
+			    , 0, 0
 #endif
-                         );
-
+			    );
+  }
   /* Initialize NAS list */
   dedicatedInfoNASList = NULL;
 
@@ -5362,41 +5379,42 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   //rrc_rlc_data_req(ctxt_pP->module_id,frameP, 1,(ue_mod_idP*NB_RB_MAX)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
   //pdcp_data_req (ctxt_pP->module_id, frameP, 1, (ue_mod_idP * NB_RB_MAX) + DCCH,rrc_eNB_mui++, 0, size, (char *) buffer, 1);
 
-  rrc_mac_config_req_eNB(
-			 ctxt_pP->module_id,
-			 ue_context_pP->ue_context.primaryCC_id,
-			 0,0,0,0,0,
+  if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB) {
+    rrc_mac_config_req_eNB(
+			   ctxt_pP->module_id,
+			   ue_context_pP->ue_context.primaryCC_id,
+			   0,0,0,0,0,
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-			 0,
+			   0,
 #endif
-			 ue_context_pP->ue_context.rnti,
-			 (BCCH_BCH_Message_t *) NULL,
-			 (RadioResourceConfigCommonSIB_t *) NULL,
+			   ue_context_pP->ue_context.rnti,
+			   (BCCH_BCH_Message_t *) NULL,
+			   (RadioResourceConfigCommonSIB_t *) NULL,
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-			 (RadioResourceConfigCommonSIB_t *) NULL,
+			   (RadioResourceConfigCommonSIB_t *) NULL,
 #endif
-			 ue_context_pP->ue_context.physicalConfigDedicated,
+			   ue_context_pP->ue_context.physicalConfigDedicated,
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-			 (SCellToAddMod_r10_t *)NULL,
-			 //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
+			   (SCellToAddMod_r10_t *)NULL,
+			   //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
-			 (MeasObjectToAddMod_t **) NULL,
-			 ue_context_pP->ue_context.mac_MainConfig,
-			 1,
-			 SRB1_logicalChannelConfig,
-			 ue_context_pP->ue_context.measGapConfig,
-			 (TDD_Config_t *) NULL,
-			 (MobilityControlInfo_t *) mobilityInfo,
-			 (SchedulingInfoList_t *) NULL, 0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
+			   (MeasObjectToAddMod_t **) NULL,
+			   ue_context_pP->ue_context.mac_MainConfig,
+			   1,
+			   SRB1_logicalChannelConfig,
+			   ue_context_pP->ue_context.measGapConfig,
+			   (TDD_Config_t *) NULL,
+			   (MobilityControlInfo_t *) mobilityInfo,
+			   (SchedulingInfoList_t *) NULL, 0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
 #if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-			 , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
+			   , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
 #endif
 #if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-			 ,
-			 (SystemInformationBlockType1_v1310_IEs_t *)NULL
+			   ,
+			   (SystemInformationBlockType1_v1310_IEs_t *)NULL
 #endif
-			 );
-  
+			   );
+  }
   /*
      handoverCommand.criticalExtensions.present = HandoverCommand__criticalExtensions_PR_c1;
      handoverCommand.criticalExtensions.choice.c1.present = HandoverCommand__criticalExtensions__c1_PR_handoverCommand_r8;
@@ -5520,19 +5538,22 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
     , (PMCH_InfoList_r9_t *) NULL
 #endif
     ,NULL);
-  // Refresh SRBs/DRBs
-  rrc_rlc_config_asn1_req(
-    ctxt_pP,
-    SRB_configList, // NULL,  //LG-RK 14/05/2014 SRB_configList,
-    DRB_configList,
-//    (DRB_ToReleaseList_t *) NULL
-    DRB_Release_configList2
+  if ( (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) ||
+       (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU) ||
+       (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_CU)   ) {
+    // Refresh SRBs/DRBs
+    rrc_rlc_config_asn1_req(
+			    ctxt_pP,
+			    SRB_configList, // NULL,  //LG-RK 14/05/2014 SRB_configList,
+			    DRB_configList,
+			    //    (DRB_ToReleaseList_t *) NULL
+			    DRB_Release_configList2
 #if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-    , (PMCH_InfoList_r9_t *) NULL
-    , 0, 0
+			    , (PMCH_InfoList_r9_t *) NULL
+			    , 0, 0
 #endif
-  );
-  
+			    );
+  }
   // set the SRB active in Ue context
   if (SRB_configList != NULL) {
     for (i = 0; (i < SRB_configList->list.count) && (i < 3); i++) {
@@ -5634,100 +5655,107 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
             DRB2LCHAN[i] = (uint8_t) * DRB_configList->list.array[i]->logicalChannelIdentity;
           }
 
-          rrc_mac_config_req_eNB(
-				 ctxt_pP->module_id,
-				 ue_context_pP->ue_context.primaryCC_id,
-				 0,0,0,0,0,
+	  if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB) {
+	    rrc_mac_config_req_eNB(
+				   ctxt_pP->module_id,
+				   ue_context_pP->ue_context.primaryCC_id,
+				   0,0,0,0,0,
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-				 0,
+				   0,
 #endif
-				 ue_context_pP->ue_context.rnti,
-				 (BCCH_BCH_Message_t *) NULL,
-				 (RadioResourceConfigCommonSIB_t *) NULL,
+				   ue_context_pP->ue_context.rnti,
+				   (BCCH_BCH_Message_t *) NULL,
+				   (RadioResourceConfigCommonSIB_t *) NULL,
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-				 (RadioResourceConfigCommonSIB_t *) NULL,
+				   (RadioResourceConfigCommonSIB_t *) NULL,
 #endif
-				 ue_context_pP->ue_context.physicalConfigDedicated,
+				   ue_context_pP->ue_context.physicalConfigDedicated,
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-				 (SCellToAddMod_r10_t *)NULL,
-				 //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
+				   (SCellToAddMod_r10_t *)NULL,
+				   //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
-				 (MeasObjectToAddMod_t **) NULL,
-				 ue_context_pP->ue_context.mac_MainConfig,
-				 DRB2LCHAN[i],
-				 DRB_configList->list.array[i]->logicalChannelConfig,
-				 ue_context_pP->ue_context.measGapConfig,
-				 (TDD_Config_t *) NULL,
-				 NULL,
-				 (SchedulingInfoList_t *) NULL,
-				 0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
+				   (MeasObjectToAddMod_t **) NULL,
+				   ue_context_pP->ue_context.mac_MainConfig,
+				   DRB2LCHAN[i],
+				   DRB_configList->list.array[i]->logicalChannelConfig,
+				   ue_context_pP->ue_context.measGapConfig,
+				   (TDD_Config_t *) NULL,
+				   NULL,
+				   (SchedulingInfoList_t *) NULL,
+				   0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
 #if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-				 , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
+				   , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
 #endif
 #if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-				 ,
-				 (SystemInformationBlockType1_v1310_IEs_t *)NULL
+				   ,
+				   (SystemInformationBlockType1_v1310_IEs_t *)NULL
 #endif
-				 );
-	  
-        } else {        // remove LCHAN from MAC/PHY
+				   );
+	  }
+	} else {        // remove LCHAN from MAC/PHY
 
           if (ue_context_pP->ue_context.DRB_active[drb_id] == 1) {
             // DRB has just been removed so remove RLC + PDCP for DRB
             /*      rrc_pdcp_config_req (ctxt_pP->module_id, frameP, 1, CONFIG_ACTION_REMOVE,
                (ue_mod_idP * NB_RB_MAX) + DRB2LCHAN[i],UNDEF_SECURITY_MODE);
              */
-            rrc_rlc_config_req(
-              ctxt_pP,
-              SRB_FLAG_NO,
-              MBMS_FLAG_NO,
-              CONFIG_ACTION_REMOVE,
-              DRB2LCHAN[i],
-              Rlc_info_um);
+	    if ( (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) ||
+		 (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU) ||
+		 (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_CU)   ) {
+	      rrc_rlc_config_req(
+				 ctxt_pP,
+				 SRB_FLAG_NO,
+				 MBMS_FLAG_NO,
+				 CONFIG_ACTION_REMOVE,
+				 DRB2LCHAN[i],
+				 Rlc_info_um);
+	    }
           }
 
           ue_context_pP->ue_context.DRB_active[drb_id] = 0;
           LOG_D(RRC,
                 PROTOCOL_RRC_CTXT_UE_FMT" RRC_eNB --- MAC_CONFIG_REQ  (DRB) ---> MAC_eNB\n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
-          rrc_mac_config_req_eNB(ctxt_pP->module_id,
-				 ue_context_pP->ue_context.primaryCC_id,
-				 0,0,0,0,0,
+	  if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB) {
+	    rrc_mac_config_req_eNB(ctxt_pP->module_id,
+				   ue_context_pP->ue_context.primaryCC_id,
+				   0,0,0,0,0,
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-				 0,
+				   0,
 #endif
-				 ue_context_pP->ue_context.rnti,
-				 (BCCH_BCH_Message_t *) NULL,
-				 (RadioResourceConfigCommonSIB_t *) NULL,
+				   ue_context_pP->ue_context.rnti,
+				   (BCCH_BCH_Message_t *) NULL,
+				   (RadioResourceConfigCommonSIB_t *) NULL,
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-				 (RadioResourceConfigCommonSIB_t *) NULL,
+				   (RadioResourceConfigCommonSIB_t *) NULL,
 #endif
-				 ue_context_pP->ue_context.physicalConfigDedicated,
+				   ue_context_pP->ue_context.physicalConfigDedicated,
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-				 (SCellToAddMod_r10_t *)NULL,
-				 //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
+				   (SCellToAddMod_r10_t *)NULL,
+				   //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
-				 (MeasObjectToAddMod_t **) NULL,
-				 ue_context_pP->ue_context.mac_MainConfig,
-				 DRB2LCHAN[i],
-				 (LogicalChannelConfig_t *) NULL,
-				 (MeasGapConfig_t *) NULL,
-				 (TDD_Config_t *) NULL,
-				 NULL, 
-				 (SchedulingInfoList_t *) NULL,
-				 0, NULL, NULL, NULL
+				   (MeasObjectToAddMod_t **) NULL,
+				   ue_context_pP->ue_context.mac_MainConfig,
+				   DRB2LCHAN[i],
+				   (LogicalChannelConfig_t *) NULL,
+				   (MeasGapConfig_t *) NULL,
+				   (TDD_Config_t *) NULL,
+				   NULL, 
+				   (SchedulingInfoList_t *) NULL,
+				   0, NULL, NULL, NULL
 #if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-				 , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
+				   , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
 #endif
 #if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-				 ,
-				 (SystemInformationBlockType1_v1310_IEs_t *)NULL
+				   ,
+				   (SystemInformationBlockType1_v1310_IEs_t *)NULL
 #endif
-				 );
+				   );
+	  }
         }
       }
     }
-   free(DRB_configList);
+    free(DRB_configList);
     ue_context_pP->ue_context.DRB_configList2[xid] = NULL;
   }
 
@@ -5832,41 +5860,43 @@ rrc_eNB_generate_RRCConnectionSetup(
         LOG_D(RRC,
               PROTOCOL_RRC_CTXT_UE_FMT" RRC_eNB --- MAC_CONFIG_REQ  (SRB1) ---> MAC_eNB\n",
               PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
-        rrc_mac_config_req_eNB(
-			       ctxt_pP->module_id,
-			       ue_context_pP->ue_context.primaryCC_id,
-			       0,0,0,0,0,
+	if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB) {
+	  rrc_mac_config_req_eNB(
+				 ctxt_pP->module_id,
+				 ue_context_pP->ue_context.primaryCC_id,
+				 0,0,0,0,0,
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-			       0,
+				 0,
 #endif
-			       ue_context_pP->ue_context.rnti,
-			       (BCCH_BCH_Message_t *) NULL,
-			       (RadioResourceConfigCommonSIB_t *) NULL,
+				 ue_context_pP->ue_context.rnti,
+				 (BCCH_BCH_Message_t *) NULL,
+				 (RadioResourceConfigCommonSIB_t *) NULL,
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-			       (RadioResourceConfigCommonSIB_t *) NULL,
+				 (RadioResourceConfigCommonSIB_t *) NULL,
 #endif
-			       ue_context_pP->ue_context.physicalConfigDedicated,
+				 ue_context_pP->ue_context.physicalConfigDedicated,
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-			       (SCellToAddMod_r10_t *)NULL,
-			       //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
+				 (SCellToAddMod_r10_t *)NULL,
+				 //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
-			       (MeasObjectToAddMod_t **) NULL,
-			       ue_context_pP->ue_context.mac_MainConfig,
-			       1,
-			       SRB1_logicalChannelConfig,
-			       ue_context_pP->ue_context.measGapConfig,
-			       (TDD_Config_t *) NULL,
-			       NULL,
-			       (SchedulingInfoList_t *) NULL,
-			       0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
+				 (MeasObjectToAddMod_t **) NULL,
+				 ue_context_pP->ue_context.mac_MainConfig,
+				 1,
+				 SRB1_logicalChannelConfig,
+				 ue_context_pP->ue_context.measGapConfig,
+				 (TDD_Config_t *) NULL,
+				 NULL,
+				 (SchedulingInfoList_t *) NULL,
+				 0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
 #if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-			       , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
+				 , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
 #endif
 #if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-			       ,
-			       (SystemInformationBlockType1_v1310_IEs_t *)NULL
+				 ,
+				 (SystemInformationBlockType1_v1310_IEs_t *)NULL
 #endif
-			       );
+				 );
+	}
       }
     }
   }
@@ -6345,16 +6375,20 @@ rrc_eNB_decode_ccch(
 #endif
                                ,NULL);
 
-
-      rrc_rlc_config_asn1_req(ctxt_pP,
-			      ue_context_p->ue_context.SRB_configList,
-			      (DRB_ToAddModList_t*) NULL,
-			      (DRB_ToReleaseList_t*) NULL
+      if ( (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) ||
+	   (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU) ||
+	   (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_CU)   ) {
+	rrc_rlc_config_asn1_req(ctxt_pP,
+				ue_context_p->ue_context.SRB_configList,
+				(DRB_ToAddModList_t*) NULL,
+				(DRB_ToReleaseList_t*) NULL
 #if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-			      , (PMCH_InfoList_r9_t *) NULL,
-			      0,0
+				, (PMCH_InfoList_r9_t *) NULL,
+				0,0
 #   endif
-			      );
+				);
+      }
+
 #endif //NO_RRM
 	}
     break;
@@ -6409,6 +6443,7 @@ rrc_eNB_decode_ccch(
               ue_context_p->ue_context.ul_failure_timer = 20000;
             }
             ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, random_value);
+	    ue_context_p->ue_context.Srb0.Active=1;
           } else if (InitialUE_Identity_PR_s_TMSI == rrcConnectionRequest->ue_Identity.present) {
             /* Save s-TMSI */
             S_TMSI_t   s_TMSI = rrcConnectionRequest->ue_Identity.choice.s_TMSI;
@@ -6417,7 +6452,16 @@ rrc_eNB_decode_ccch(
             random_value = (((uint64_t)mme_code) << 32) | m_tmsi;
             if ((ue_context_p = rrc_eNB_ue_context_stmsi_exist(ctxt_pP, mme_code, m_tmsi))) {
 	      LOG_I(RRC," S-TMSI exists, ue_context_p %p, old rnti %x => %x\n",ue_context_p,ue_context_p->ue_context.rnti,ctxt_pP->rnti);
-	      rrc_mac_remove_ue(ctxt_pP->module_id, ue_context_p->ue_context.rnti);
+
+	      if ( (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) ||
+		   (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU) ||
+		   (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_CU)   ) {
+		rrc_mac_remove_ue(ctxt_pP->module_id, ue_context_p->ue_context.rnti);
+	      }
+	      else {
+		// send message to DU to remove context
+		AssertFatal(1==0,"Need to added context removal\n");
+	      }
 	      stmsi_received=1;
               /* replace rnti in the context */
               /* for that, remove the context from the RB tree */
@@ -7521,8 +7565,8 @@ rrc_enb_task(
       eNB_RRC_UE_t *ue_p = &ue_context_p->ue_context; 
       srb_info_p = &ue_p->Srb0;
 
-      LOG_I(RRC,"Decoding CCCH : inst %d, CC_id %d, ctxt %p, sib_info_p->Rx_buffer.payload_size %d\n",
-	    rrc_inst,CC_id,&ctxt, RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
+      LOG_I(RRC,"Decoding CCCH : inst %d, CC_id %d, ue_context %p (rnti %x), sib_info_p->Rx_buffer.payload_size %d\n",
+	    rrc_inst,CC_id,ue_p, ue_p->rnti,RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
       if (RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size >= RRC_BUFFER_SIZE_MAX) {
           LOG_I(RRC, "CCCH message has size %d > %d\n",RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,RRC_BUFFER_SIZE_MAX);
           break;
@@ -7531,6 +7575,7 @@ rrc_enb_task(
              RRC_MAC_CCCH_DATA_IND(msg_p).sdu,
              RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
       srb_info_p->Rx_buffer.payload_size = RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size;
+      srb_info_p->Active = 1;
 
       rrc_eNB_decode_ccch(&ctxt, srb_info_p->Rx_buffer.Payload,srb_info_p->Rx_buffer.payload_size, CC_id);
       break;
