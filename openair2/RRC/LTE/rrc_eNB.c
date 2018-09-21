@@ -168,7 +168,10 @@ init_SI(
   AssertFatal(carrier->SIB1!=NULL,PROTOCOL_RRC_CTXT_FMT" init_SI: FATAL, no memory for SIB1 allocated\n",
 	      PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
 
-  if (rrc->node_type != ngran_eNB_CU && rrc->node_type != ngran_ng_eNB_CU) {
+  LOG_I(RRC,"[eNB %d] Node type %d \n ", ctxt_pP->module_id, rrc->node_type);
+  if ((rrc->node_type != ngran_eNB_CU)    || 
+  	  (rrc->node_type != ngran_ng_eNB_CU) || 
+  	  (rrc->node_type != ngran_gNB_CU)       ) {
     // copy basic Cell parameters
     carrier->physCellId      = configuration->Nid_cell[CC_id];
     carrier->p_eNB           = configuration->nb_antenna_ports[CC_id];
@@ -204,8 +207,8 @@ init_SI(
     AssertFatal(carrier->sizeof_SIB1 != 255,"FATAL, RC.rrc[enb_mod_idP].carrier[CC_id].sizeof_SIB1 == 255");
 
   }
-  if (rrc->node_type != ngran_eNB_DU) {
-    
+  if ((rrc->node_type != ngran_eNB_DU)  || 
+      (rrc->node_type != ngran_gNB_DU)) {
     carrier->SIB23 = (uint8_t*) malloc16(64);
     AssertFatal(carrier->SIB23!=NULL,"cannot allocate memory for SIB");
     carrier->sizeof_SIB23 = do_SIB23(
@@ -216,6 +219,8 @@ init_SI(
 				     , configuration
 #endif
 				     );
+    
+    LOG_I(RRC,"do_SIB23, size %d \n ", carrier->sizeof_SIB23);
     
     AssertFatal(carrier->sizeof_SIB23 != 255,"FATAL, RC.rrc[mod].carrier[CC_id].sizeof_SIB23 == 255");
     
