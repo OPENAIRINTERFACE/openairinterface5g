@@ -59,12 +59,13 @@ int proto_agent_start(mod_id_t mod_id, const cudu_params_t *p)
 {
   int channel_id;
 
-/*
-  DevAssert(p->local_ipv4_address);
-  DevAssert(p->local_port > 1024); // "unprivileged" port
-  DevAssert(p->remote_ipv4_address);
-  DevAssert(p->remote_port > 1024); // "unprivileged" port
-  */
+  // RS: CUDU does not work!
+  //DevAssert(p->local_interface);
+  //DevAssert(p->local_ipv4_address);
+  //DevAssert(p->local_port > 1024); // "unprivileged" port
+  //DevAssert(p->remote_ipv4_address);
+  //DevAssert(p->remote_port > 1024); // "unprivileged" port
+  
   proto_agent[mod_id].mod_id = mod_id;
 
   /* Initialize the channel container */
