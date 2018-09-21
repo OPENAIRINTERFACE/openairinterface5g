@@ -115,7 +115,7 @@ extern void RCConfig(void);
 void                          enb_config_display(void);
 void                          ru_config_display(void);
 
-int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc);
+int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1);
 int RCconfig_S1(MessageDef *msg_p, uint32_t i);
 
 void read_config_and_init(void);
