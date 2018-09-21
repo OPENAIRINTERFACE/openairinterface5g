@@ -63,17 +63,21 @@ typedef struct x2ap_register_enb_req_s {
   uint8_t  mnc_digit_length;
 
   /*
-   * EARFCN
+   * CC Params
    */
-  uint16_t fdd_uL_EARFCN;
-  uint16_t fdd_dL_EARFCN;
-  uint16_t tdd_EARFCN;
+  int16_t                 eutra_band[MAX_NUM_CCs];
+  uint32_t                downlink_frequency[MAX_NUM_CCs];
+  int32_t                 uplink_frequency_offset[MAX_NUM_CCs];
+  uint32_t                Nid_cell[MAX_NUM_CCs];
+  int16_t                 N_RB_DL[MAX_NUM_CCs];
+  lte_frame_type_t        frame_type[MAX_NUM_CCs];
+  uint32_t                fdd_earfcn_DL[MAX_NUM_CCs];
+  uint32_t                fdd_earfcn_UL[MAX_NUM_CCs];
+  int                     num_cc;
 
-
-  uint16_t fdd_uL_Transmission_Bandwidth;
-  uint16_t fdd_dL_Transmission_Bandwidth;
-  uint16_t tdd_Transmission_Bandwidth;
-
+  /* To be considered for TDD */
+  //uint16_t tdd_EARFCN;
+  //uint16_t tdd_Transmission_Bandwidth;
 
   /* The local eNB IP address to bind */
   net_ip_address_t enb_x2_ip_address;

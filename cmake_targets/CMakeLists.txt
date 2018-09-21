@@ -476,12 +476,12 @@ include_directories ("${X2AP_DIR}")
 
 add_library(X2AP_ENB
   ${X2AP_DIR}/x2ap_eNB.c
- # ${X2AP_DIR}/x2ap_eNB_decoder.c
- # ${X2AP_DIR}/x2ap_eNB_encoder.c
+  ${X2AP_DIR}/x2ap_eNB_decoder.c
+  ${X2AP_DIR}/x2ap_eNB_encoder.c
   ${X2AP_DIR}/x2ap_eNB_handler.c
- # ${X2AP_DIR}/x2ap_eNB_itti_messaging.c
+  ${X2AP_DIR}/x2ap_eNB_itti_messaging.c
   ${X2AP_DIR}/x2ap_eNB_management_procedures.c
- # ${X2AP_DIR}/x2ap_eNB_generate_messages.c
+  ${X2AP_DIR}/x2ap_eNB_generate_messages.c
  )
 
 # Hardware dependant options
