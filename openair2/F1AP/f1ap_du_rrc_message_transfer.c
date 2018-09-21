@@ -314,6 +314,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
         "Unknown message\n");
         break;
     }// switch case
+    return(0);
   } else if (srb_id == 1) { 
 //     rrc_rlc_config_asn1_req(&ctxt,
 //         SRB_configList,
@@ -325,13 +326,96 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 // #   endif
 //         );
 
-    LOG_I(DU_F1AP, "Received DL RRC Transfer on srb_id 1\n");
-    rlc_op_status_t    rlc_status;
-    boolean_t          ret             = TRUE;
-    mem_block_t       *pdcp_pdu_p      = NULL; 
-    pdcp_pdu_p = get_free_mem_block(rrc_dl_sdu_len, __func__);
-    memset(&pdcp_pdu_p->data[0], 0, rrc_dl_sdu_len);
-    memcpy(&pdcp_pdu_p->data[0], ie->value.choice.RRCContainer.buf, rrc_dl_sdu_len);
+    DL_DCCH_Message_t* dl_dcch_msg=NULL;
+    asn_dec_rval_t dec_rval;
+    dec_rval = uper_decode(NULL,
+         &asn_DEF_DL_DCCH_Message,
+         (void**)&dl_dcch_msg,
+         ie->value.choice.RRCContainer.buf,
+         rrc_dl_sdu_len,0,0);
+
+    if (dl_dcch_msg->message.present == DL_DCCH_MessageType_PR_c1) {
+     
+      switch (dl_dcch_msg->message.choice.c1.present) {
+	
+      case DL_DCCH_MessageType__c1_PR_NOTHING:
+        LOG_I(RRC, "Received PR_NOTHING on DL-DCCH-Message\n");
+        return;
+	
+      case DL_DCCH_MessageType__c1_PR_csfbParametersResponseCDMA2000:
+      case DL_DCCH_MessageType__c1_PR_dlInformationTransfer:
+      case DL_DCCH_MessageType__c1_PR_handoverFromEUTRAPreparationRequest:
+      case DL_DCCH_MessageType__c1_PR_mobilityFromEUTRACommand:
+        break;
+      case DL_DCCH_MessageType__c1_PR_rrcConnectionReconfiguration:
+	// handle RRCConnectionReconfiguration
+        LOG_I(RRC,
+	      "Logical Channel DL-DCCH (SRB1), Received RRCConnectionReconfiguration DU_ID %x/RNTI %x\n",  
+	      du_ue_f1ap_id,
+	      f1ap_get_rnti_by_du_id(&f1ap_du_ue[instance],du_ue_f1ap_id));
+	
+        RRCConnectionReconfiguration_t* rrcConnectionReconfiguration = &dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration;
+	
+	if (rrcConnectionReconfiguration->criticalExtensions.present == RRCConnectionReconfiguration__criticalExtensions_PR_c1) {
+	  if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.present ==
+	      RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8) {
+	    RRCConnectionReconfiguration_r8_IEs_t* rrcConnectionReconfiguration_r8 =
+	      &rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8;
+	    
+	    if (rrcConnectionReconfiguration_r8->mobilityControlInfo) {
+	      LOG_I(RRC,"Mobility Control Information is present\n");
+	      AssertFatal(1==0,"Can't handle this yet in DU\n");
+	    }
+	    if (rrcConnectionReconfiguration_r8->measConfig != NULL) {
+	      LOG_I(RRC,"Measurement Configuration is present\n");
+	      
+	    }
+	    
+	    if (rrcConnectionReconfiguration_r8->radioResourceConfigDedicated) {
+	      LOG_I(RRC,"Radio Resource Configuration is present\n");
+	      RadioResourceConfigDedicated_t* radioResourceConfigDedicated = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated;
+	      long SRB_id,DRB_id;
+	      int i,cnt;
+	      LogicalChannelConfig_t *SRB1_logicalChannelConfig,*SRB2_logicalChannelConfig;
+	      
+	      //	radioResourceConfigDedicated->physicalConfigDedicated;
+	      
+	    }
+	    break;
+	  case DL_DCCH_MessageType__c1_PR_rrcConnectionRelease:
+	    // handle RRCConnectionRelease
+	    break;
+	  case DL_DCCH_MessageType__c1_PR_securityModeCommand:
+	  case DL_DCCH_MessageType__c1_PR_ueCapabilityEnquiry:
+	  case DL_DCCH_MessageType__c1_PR_counterCheck:
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+	  case DL_DCCH_MessageType__c1_PR_loggedMeasurementConfiguration_r10:
+	  case DL_DCCH_MessageType__c1_PR_rnReconfiguration_r10:
+#endif
+	  case DL_DCCH_MessageType__c1_PR_spare1:
+	  case DL_DCCH_MessageType__c1_PR_spare2:
+	  case DL_DCCH_MessageType__c1_PR_spare3:
+#if (RRC_VERSION < MAKE_VERSION(14, 0, 0))
+	  case DL_DCCH_MessageType__c1_PR_spare4:
+#endif
+	    break;
+	  }
+	  
+	}	
+      }
+    }
+  }
+  else if (srb_id == 2) {
+    
+  }
+
+  LOG_I(DU_F1AP, "Received DL RRC Transfer on srb_id %d\n",srb_id);
+  rlc_op_status_t    rlc_status;
+  boolean_t          ret             = TRUE;
+  mem_block_t       *pdcp_pdu_p      = NULL; 
+  pdcp_pdu_p = get_free_mem_block(rrc_dl_sdu_len, __func__);
+  memset(&pdcp_pdu_p->data[0], 0, rrc_dl_sdu_len);
+  memcpy(&pdcp_pdu_p->data[0], ie->value.choice.RRCContainer.buf, rrc_dl_sdu_len);
 
     if (pdcp_pdu_p != NULL) {
       rlc_status = rlc_data_req(&ctxt
@@ -376,9 +460,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
       return ret; 
     } // if pdcp_pdu_p
   
-  } else if (srb_id == 2) {
 
-  }
 #endif
   return 0;
   
@@ -567,7 +649,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
 
   return 0;
 }
-
+    
 
 void init_f1ap_du_ue_inst (void) {
 

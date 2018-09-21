@@ -204,7 +204,7 @@ init_SI(
     AssertFatal(carrier->sizeof_SIB1 != 255,"FATAL, RC.rrc[enb_mod_idP].carrier[CC_id].sizeof_SIB1 == 255");
 
   }
-  else if (rrc->node_type != ngran_eNB_DU) {
+  if (rrc->node_type != ngran_eNB_DU) {
     
     carrier->SIB23 = (uint8_t*) malloc16(64);
     AssertFatal(carrier->SIB23!=NULL,"cannot allocate memory for SIB");
@@ -625,9 +625,9 @@ static void init_MBMS(
 #endif
                              ,NULL);
     
-    if ( (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) ||
-	 (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU) ||
-	 (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_CU)   ) {
+    if ( (RC.rrc[enb_mod_idP]->node_type  != ngran_eNB_CU) ||
+	 (RC.rrc[enb_mod_idP]->node_type  != ngran_ng_eNB_CU) ||
+	 (RC.rrc[enb_mod_idP]->node_type  != ngran_gNB_CU)   ) {
       rrc_rlc_config_asn1_req(&ctxt,
 			      NULL, // SRB_ToAddModList
 			      NULL,   // DRB_ToAddModList
@@ -737,7 +737,7 @@ rrc_eNB_ue_context_stmsi_exist(
 
 //-----------------------------------------------------------------------------
 // return a new ue context structure if ue_identityP, ctxt_pP->rnti not found in collection
-static struct rrc_eNB_ue_context_s*
+struct rrc_eNB_ue_context_s*
 rrc_eNB_get_next_free_ue_context(
   const protocol_ctxt_t* const ctxt_pP,
   const uint64_t               ue_identityP
@@ -775,6 +775,7 @@ rrc_eNB_get_next_free_ue_context(
           PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
     return NULL;
   }
+  return(ue_context_p);
 }
 
 //-----------------------------------------------------------------------------
@@ -1338,7 +1339,7 @@ rrc_eNB_generate_RRCConnectionReestablishment(
         LOG_D(RRC,
               PROTOCOL_RRC_CTXT_UE_FMT" RRC_eNB --- MAC_CONFIG_REQ  (SRB1) ---> MAC_eNB\n",
               PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
-	if (rrc->node_type == ngran_eNB) {
+	if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB) {
 	  rrc_mac_config_req_eNB(ctxt_pP->module_id,
 				 ue_context_pP->ue_context.primaryCC_id,
 				 0,0,0,0,0,
@@ -4782,7 +4783,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   LOG_D(RRC,
         "handover_config [FRAME %05d][RRC_eNB][MOD %02d][][--- MAC_CONFIG_REQ  (SRB1 UE %x) --->][MAC_eNB][MOD %02d][]\n",
         ctxt_pP->frame, ctxt_pP->module_id, ue_context_pP->ue_context.rnti, ctxt_pP->module_id);
-  if (rrc->node_type == ngran_eNB) {
+  if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB) {
     rrc_mac_config_req_eNB(
 			   ctxt_pP->module_id,
 			   ue_context_pP->ue_context.primaryCC_id,
@@ -5373,7 +5374,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
   //rrc_rlc_data_req(ctxt_pP->module_id,frameP, 1,(ue_mod_idP*NB_RB_MAX)+DCCH,rrc_eNB_mui++,0,size,(char*)buffer);
   //pdcp_data_req (ctxt_pP->module_id, frameP, 1, (ue_mod_idP * NB_RB_MAX) + DCCH,rrc_eNB_mui++, 0, size, (char *) buffer, 1);
 
-  if (rrc->node_type == ngran_eNB) {
+  if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB) {
     rrc_mac_config_req_eNB(
 			   ctxt_pP->module_id,
 			   ue_context_pP->ue_context.primaryCC_id,
@@ -5649,7 +5650,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
             DRB2LCHAN[i] = (uint8_t) * DRB_configList->list.array[i]->logicalChannelIdentity;
           }
 
-	  if (rrc->node_type == ngran_eNB) {
+	  if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB) {
 	    rrc_mac_config_req_eNB(
 				   ctxt_pP->module_id,
 				   ue_context_pP->ue_context.primaryCC_id,
@@ -5710,7 +5711,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
           LOG_D(RRC,
                 PROTOCOL_RRC_CTXT_UE_FMT" RRC_eNB --- MAC_CONFIG_REQ  (DRB) ---> MAC_eNB\n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
-	  if (rrc->node_type == ngran_eNB) {
+	  if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB) {
 	    rrc_mac_config_req_eNB(ctxt_pP->module_id,
 				   ue_context_pP->ue_context.primaryCC_id,
 				   0,0,0,0,0,
@@ -5854,7 +5855,7 @@ rrc_eNB_generate_RRCConnectionSetup(
         LOG_D(RRC,
               PROTOCOL_RRC_CTXT_UE_FMT" RRC_eNB --- MAC_CONFIG_REQ  (SRB1) ---> MAC_eNB\n",
               PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
-	if (rrc->node_type == ngran_eNB) {
+	if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB) {
 	  rrc_mac_config_req_eNB(
 				 ctxt_pP->module_id,
 				 ue_context_pP->ue_context.primaryCC_id,
@@ -7558,8 +7559,8 @@ rrc_enb_task(
       eNB_RRC_UE_t *ue_p = &ue_context_p->ue_context; 
       srb_info_p = &ue_p->Srb0;
 
-      LOG_I(RRC,"Decoding CCCH : inst %d, CC_id %d, ctxt %p, sib_info_p->Rx_buffer.payload_size %d\n",
-	    rrc_inst,CC_id,&ctxt, RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
+      LOG_I(RRC,"Decoding CCCH : inst %d, CC_id %d, ue_context %p (rnti %x), sib_info_p->Rx_buffer.payload_size %d\n",
+	    rrc_inst,CC_id,ue_p, ue_p->rnti,RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
       if (RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size >= RRC_BUFFER_SIZE_MAX) {
           LOG_I(RRC, "CCCH message has size %d > %d\n",RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,RRC_BUFFER_SIZE_MAX);
           break;
@@ -7568,6 +7569,7 @@ rrc_enb_task(
              RRC_MAC_CCCH_DATA_IND(msg_p).sdu,
              RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
       srb_info_p->Rx_buffer.payload_size = RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size;
+      srb_info_p->Active = 1;
 
       rrc_eNB_decode_ccch(&ctxt, srb_info_p->Rx_buffer.Payload,srb_info_p->Rx_buffer.payload_size, CC_id);
       break;

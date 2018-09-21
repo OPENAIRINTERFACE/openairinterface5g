@@ -822,7 +822,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc) {
 		RRC_CONFIGURATION_REQ (msg_p).nb_antenna_ports[j] = nb_antenna_ports;
 		
 	      }
-	      else {//this is CU, SIB2-20 in CU
+	      if (rrc->node_type != ngran_eNB_DU) {//this is CU or eNB, SIB2-20 in CU
 	      
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 		if (!pbch_repetition)

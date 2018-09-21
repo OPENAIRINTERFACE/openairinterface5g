@@ -150,7 +150,7 @@ mac_rrc_data_req(
       LOG_T(RRC,"[eNB %d] Frame %d CCCH request (Srb_id %d, rnti %x)\n",Mod_idP,frameP, Srb_id,rnti);
 
       if(ue_p->Srb0.Active==0) {
-        LOG_E(RRC,"[eNB %d] CCCH Not active\n",Mod_idP);
+        LOG_E(RRC,"[eNB %d] CCCH Not active (%p, rnti %x)\n",Mod_idP,ue_p,ue_p->rnti);
         return(0);
       }
 
@@ -304,7 +304,29 @@ mac_rrc_data_ind(
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, rntiP, frameP, sub_frameP,0);
 
   if((srb_idP & RAB_OFFSET) == CCCH) {
-    LOG_D(RRC,"[eNB %d] Received SDU for CCCH on SRB 0\n",module_idP);
+    LOG_I(RRC,"[eNB %d] Received SDU for CCCH on SRB 0 (%d,%x)\n",module_idP,
+	  ctxt.module_id,ctxt.rnti);
+
+
+      // create a ue_context with rnti as random value, will be updated when Attach Request is received
+    struct rrc_eNB_ue_context_s  *ue_context_p = rrc_eNB_get_next_free_ue_context(&ctxt,
+										  rntiP
+										  );
+    
+    eNB_RRC_UE_t *ue_p = &ue_context_p->ue_context; 
+    SRB_INFO *srb_info_p = &ue_p->Srb0;
+
+      LOG_I(RRC,"Decoding CCCH : inst %d, CC_id %d, ue_context %p (rnti %x), sib_info_p->Rx_buffer.payload_size %d\n",
+	    module_idP,CC_id,ue_p, ue_p->rnti,sdu_lenP);
+      AssertFatal(sdu_lenP <= RRC_BUFFER_SIZE_MAX,
+		  "CCCH message has size %d > %d\n",sdu_lenP,RRC_BUFFER_SIZE_MAX);
+        
+     
+      memcpy(srb_info_p->Rx_buffer.Payload,
+             sduP,
+             sdu_lenP);
+      srb_info_p->Rx_buffer.payload_size = sdu_lenP;
+      srb_info_p->Active = 1;
     
     //    msg("\n******INST %d Srb_info %p, Srb_id=%d****\n\n",Mod_id,Srb_info,Srb_info->Srb_id);
     if (sdu_lenP > 0)  rrc_eNB_decode_ccch(&ctxt, sduP, sdu_lenP, CC_id);
