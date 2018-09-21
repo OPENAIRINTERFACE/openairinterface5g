@@ -3012,6 +3012,6 @@ void read_config_and_init()
     RCconfig_RRC(enb_id, RC.rrc[enb_id],macrlc_has_f1[enb_id]);
   }
 
-  if (RC.nb_macrlc_inst == 0)
+  if (RC.rrc[0]->node_type != ngran_eNB_DU)
     pdcp_layer_init();
 }
