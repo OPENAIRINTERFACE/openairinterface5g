@@ -174,7 +174,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
         //MCC_MNC_TO_PLMNID(208, 95, 2, &nRCGI.pLMN_Identity);
 
         NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[i], &nRCGI.nRCellIdentity);
-	LOG_D(DU_F1AP, "nRCellIdentity (%llx): %x.%x.%x.%x.%x\n",f1ap_du_data->nr_cellid[i],
+	LOG_D(DU_F1AP, "nRCellIdentity (%llx): %x.%x.%x.%x.%x\n",(long long unsigned int)f1ap_du_data->nr_cellid[i],
 	       nRCGI.nRCellIdentity.buf[0],
 	       nRCGI.nRCellIdentity.buf[1],
 	       nRCGI.nRCellIdentity.buf[2],
@@ -188,7 +188,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
 
         /* - fiveGS_TAC */
         OCTET_STRING_fromBuf(&served_cell_information.fiveGS_TAC,
-                             &f1ap_du_data->tac[i],
+                             (const char*)&f1ap_du_data->tac[i],
                              3);
 
         /* - Configured_EPS_TAC */
@@ -379,11 +379,11 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
         F1AP_GNB_DU_System_Information_t *gNB_DU_System_Information = (F1AP_GNB_DU_System_Information_t *)calloc(1, sizeof(F1AP_GNB_DU_System_Information_t));
 
         OCTET_STRING_fromBuf(&gNB_DU_System_Information->mIB_message,  // sept. 2018
-                             f1ap_du_data->mib[i],//f1ap_du_data->mib,
+                             (const char*)f1ap_du_data->mib[i],//f1ap_du_data->mib,
                              f1ap_du_data->mib_length[i]);
 
         OCTET_STRING_fromBuf(&gNB_DU_System_Information->sIB1_message,  // sept. 2018
-                             f1ap_du_data->sib1[i],
+                             (const char*)f1ap_du_data->sib1[i],
                              f1ap_du_data->sib1_length[i]);
 
         gnb_du_served_cells_item.gNB_DU_System_Information = gNB_DU_System_Information; //

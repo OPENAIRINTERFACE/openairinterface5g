@@ -80,7 +80,6 @@ typedef struct mme_ip_address_s {
 } mme_ip_address_t;
 
 typedef struct cu_params {
-  const char    *local_interface;
   const char    *local_ipv4_address;
   const uint16_t local_port;
   const char    *remote_ipv4_address;

@@ -35,6 +35,7 @@
 #include "f1ap_cu_interface_management.h"
 #include "f1ap_cu_rrc_message_transfer.h"
 #include "f1ap_cu_task.h"
+#include "proto_agent.h"
 
 extern RAN_CONTEXT_t RC;
 
@@ -64,6 +65,16 @@ void cu_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
   f1ap_du_data_from_du->assoc_id         = sctp_new_association_resp->assoc_id;
   f1ap_du_data_from_du->sctp_in_streams  = sctp_new_association_resp->in_streams;
   f1ap_du_data_from_du->sctp_out_streams = sctp_new_association_resp->out_streams;
+
+  /* setup parameters for F1U and start the server */
+  const cudu_params_t params = {
+    .local_ipv4_address  = RC.rrc[instance]->eth_params_s.my_addr,
+    .local_port          = RC.rrc[instance]->eth_params_s.my_portd,
+    .remote_ipv4_address = RC.rrc[instance]->eth_params_s.remote_addr,
+    .remote_port         = RC.rrc[instance]->eth_params_s.remote_portd
+  };
+  AssertFatal(proto_agent_start(instance, &params) == 0,
+              "could not start PROTO_AGENT for F1U on instance %d!\n", instance);
 }
 
 void cu_task_handle_sctp_data_ind(instance_t instance, sctp_data_ind_t *sctp_data_ind) {

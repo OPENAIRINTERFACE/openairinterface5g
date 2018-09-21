@@ -175,153 +175,208 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   // decode RRC Container and act on the message type
   AssertFatal(srb_id<3,"illegal srb_id\n");
 
+  protocol_ctxt_t ctxt;
+  ctxt.rnti      = f1ap_get_rnti_by_du_id(&f1ap_du_ue[instance],du_ue_f1ap_id);
+  ctxt.module_id = instance;
+  ctxt.instance  = instance;
+  ctxt.enb_flag  = 1;
+
   if (srb_id == 0) {
     DL_CCCH_Message_t* dl_ccch_msg=NULL;
     asn_dec_rval_t dec_rval;
     dec_rval = uper_decode(NULL,
-			   &asn_DEF_DL_CCCH_Message,
-			   (void**)&dl_ccch_msg,
-			   ie->value.choice.RRCContainer.buf,
-			   rrc_dl_sdu_len,0,0);
+         &asn_DEF_DL_CCCH_Message,
+         (void**)&dl_ccch_msg,
+         ie->value.choice.RRCContainer.buf,
+         rrc_dl_sdu_len,0,0);
     switch (dl_ccch_msg->message.choice.c1.present) {
-      
-    case DL_CCCH_MessageType__c1_PR_NOTHING:
-      LOG_I(RRC, "Received PR_NOTHING on DL-CCCH-Message\n");
-      break;
-      
-    case DL_CCCH_MessageType__c1_PR_rrcConnectionReestablishment:
-      LOG_I(RRC,
-	    "Logical Channel DL-CCCH (SRB0), Received RRCConnectionReestablishment\n");
-      break;
-      
-    case DL_CCCH_MessageType__c1_PR_rrcConnectionReestablishmentReject:
-      LOG_I(RRC,
-	    "Logical Channel DL-CCCH (SRB0), Received RRCConnectionReestablishmentReject\n");
-      break;
 
-    case DL_CCCH_MessageType__c1_PR_rrcConnectionReject:
-      LOG_I(RRC,
-	    "Logical Channel DL-CCCH (SRB0), Received RRCConnectionReject \n");
-      break;
+      case DL_CCCH_MessageType__c1_PR_NOTHING:
+        LOG_I(RRC, "Received PR_NOTHING on DL-CCCH-Message\n");
+        break;
 
-    case DL_CCCH_MessageType__c1_PR_rrcConnectionSetup:
+      case DL_CCCH_MessageType__c1_PR_rrcConnectionReestablishment:
+        LOG_I(RRC,
+        "Logical Channel DL-CCCH (SRB0), Received RRCConnectionReestablishment\n");
+        break;
+
+      case DL_CCCH_MessageType__c1_PR_rrcConnectionReestablishmentReject:
+        LOG_I(RRC,
+        "Logical Channel DL-CCCH (SRB0), Received RRCConnectionReestablishmentReject\n");
+        break;
+
+      case DL_CCCH_MessageType__c1_PR_rrcConnectionReject:
+        LOG_I(RRC,
+        "Logical Channel DL-CCCH (SRB0), Received RRCConnectionReject \n");
+        break;
+
+      case DL_CCCH_MessageType__c1_PR_rrcConnectionSetup:
       {
-	LOG_I(RRC,
-	      "Logical Channel DL-CCCH (SRB0), Received RRCConnectionSetup DU_ID %x/RNTI %x\n",  
-	      du_ue_f1ap_id,
-	      f1ap_get_rnti_by_du_id(&f1ap_du_ue[instance],du_ue_f1ap_id));
-	// Get configuration
+        LOG_I(RRC,
+          "Logical Channel DL-CCCH (SRB0), Received RRCConnectionSetup DU_ID %x/RNTI %x\n",  
+          du_ue_f1ap_id,
+          f1ap_get_rnti_by_du_id(&f1ap_du_ue[instance],du_ue_f1ap_id));
+          // Get configuration
 
-	RRCConnectionSetup_t* rrcConnectionSetup = &dl_ccch_msg->message.choice.c1.choice.rrcConnectionSetup;
-	//	eNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
-	AssertFatal(rrcConnectionSetup!=NULL,"rrcConnectionSetup is null\n");
-	RadioResourceConfigDedicated_t* radioResourceConfigDedicated = &rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated;
-	
-	// get SRB logical channel information
-	SRB_ToAddModList_t *SRB_configList;
-	SRB_ToAddMod_t *SRB1_config;
-	LogicalChannelConfig_t *SRB1_logicalChannelConfig;  //,*SRB2_logicalChannelConfig;
-	SRB_configList                 = radioResourceConfigDedicated->srb_ToAddModList;
+        RRCConnectionSetup_t* rrcConnectionSetup = &dl_ccch_msg->message.choice.c1.choice.rrcConnectionSetup;
+        //	eNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
+        AssertFatal(rrcConnectionSetup!=NULL,"rrcConnectionSetup is null\n");
+        RadioResourceConfigDedicated_t* radioResourceConfigDedicated = &rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated;
 
-	AssertFatal(SRB_configList!=NULL,"SRB_configList is null\n");
-	for (int cnt = 0; cnt < (SRB_configList)->list.count; cnt++) {
-	  if ((SRB_configList)->list.array[cnt]->srb_Identity == 1) {
-	    SRB1_config = (SRB_configList)->list.array[cnt];
-	    
-	    if (SRB1_config->logicalChannelConfig) {
-	      if (SRB1_config->logicalChannelConfig->present ==
-		  SRB_ToAddMod__logicalChannelConfig_PR_explicitValue) {
-		SRB1_logicalChannelConfig = &SRB1_config->logicalChannelConfig->choice.explicitValue;
-	      } else {
-		SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
-	      }
-	    } else {
-	      SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
-	    }
-	    
-	    
-	  }
-	}
+        // get SRB logical channel information
+        SRB_ToAddModList_t *SRB_configList;
+        SRB_ToAddMod_t *SRB1_config;
+        LogicalChannelConfig_t *SRB1_logicalChannelConfig;  //,*SRB2_logicalChannelConfig;
+        SRB_configList                 = radioResourceConfigDedicated->srb_ToAddModList;
 
-	protocol_ctxt_t ctxt;
-	ctxt.rnti      = f1ap_get_rnti_by_du_id(&f1ap_du_ue[instance],du_ue_f1ap_id);
-        ctxt.module_id = instance;
-	ctxt.enb_flag  = 1;
-	rrc_rlc_config_asn1_req(&ctxt,
-				SRB_configList,
-				(DRB_ToAddModList_t*) NULL,
-				(DRB_ToReleaseList_t*) NULL
+        AssertFatal(SRB_configList!=NULL,"SRB_configList is null\n");
+        for (int cnt = 0; cnt < (SRB_configList)->list.count; cnt++) {
+          if ((SRB_configList)->list.array[cnt]->srb_Identity == 1) {
+            SRB1_config = (SRB_configList)->list.array[cnt];
+
+            if (SRB1_config->logicalChannelConfig) {
+              if (SRB1_config->logicalChannelConfig->present ==
+                SRB_ToAddMod__logicalChannelConfig_PR_explicitValue) {
+                SRB1_logicalChannelConfig = &SRB1_config->logicalChannelConfig->choice.explicitValue;
+              } else {
+                SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
+              }
+            } else {
+              SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
+            }
+          }
+        } // for
+        rrc_rlc_config_asn1_req(&ctxt,
+          SRB_configList,
+          (DRB_ToAddModList_t*) NULL,
+          (DRB_ToReleaseList_t*) NULL
 #if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-				, (PMCH_InfoList_r9_t *) NULL,
-				0,0
+          , (PMCH_InfoList_r9_t *) NULL,
+          0,0
 #   endif
-				);
-	
-	// This should be somewhere in the f1ap_cudu_ue_inst_t
-	int macrlc_instance = 0; 
+          );
 
-	rnti_t rnti = f1ap_get_rnti_by_du_id(&f1ap_du_ue[0],du_ue_f1ap_id);
-	struct rrc_eNB_ue_context_s *ue_context_p = rrc_eNB_get_ue_context(RC.rrc[macrlc_instance],rnti);
-      
-	eNB_RRC_UE_t *ue_p = &ue_context_p->ue_context; 
-	AssertFatal(ue_p->Srb0.Active == 1,"SRB0 is not active\n");
+      // This should be somewhere in the f1ap_cudu_ue_inst_t
+      int macrlc_instance = 0; 
 
-	memcpy((void*)ue_p->Srb0.Tx_buffer.Payload,
-	       (void*)ie->value.choice.RRCContainer.buf,
-	       rrc_dl_sdu_len);
+      rnti_t rnti = f1ap_get_rnti_by_du_id(&f1ap_du_ue[0],du_ue_f1ap_id);
+      struct rrc_eNB_ue_context_s *ue_context_p = rrc_eNB_get_ue_context(RC.rrc[macrlc_instance],rnti);
+        
+      eNB_RRC_UE_t *ue_p = &ue_context_p->ue_context; 
+      AssertFatal(ue_p->Srb0.Active == 1,"SRB0 is not active\n");
 
-	ue_p->Srb0.Tx_buffer.payload_size = rrc_dl_sdu_len;
+      memcpy((void*)ue_p->Srb0.Tx_buffer.Payload,
+             (void*)ie->value.choice.RRCContainer.buf,
+             rrc_dl_sdu_len);
 
-        rrc_mac_config_req_eNB(
-			       macrlc_instance,
-			       0, //primaryCC_id,
-			       0,0,0,0,0,
+      ue_p->Srb0.Tx_buffer.payload_size = rrc_dl_sdu_len;
+
+      rrc_mac_config_req_eNB(
+          macrlc_instance,
+          0, //primaryCC_id,
+          0,0,0,0,0,
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-			       0,
+          0,
 #endif
-			       rnti,
-			       (BCCH_BCH_Message_t *) NULL,
-			       (RadioResourceConfigCommonSIB_t *) NULL,
+          rnti,
+          (BCCH_BCH_Message_t *) NULL,
+          (RadioResourceConfigCommonSIB_t *) NULL,
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-			       (RadioResourceConfigCommonSIB_t *) NULL,
+          (RadioResourceConfigCommonSIB_t *) NULL,
 #endif
-			       radioResourceConfigDedicated->physicalConfigDedicated,
+          radioResourceConfigDedicated->physicalConfigDedicated,
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-			       (SCellToAddMod_r10_t *)NULL,
-			       //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
+          (SCellToAddMod_r10_t *)NULL,
+          //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
-			       (MeasObjectToAddMod_t **) NULL,
-			       radioResourceConfigDedicated->mac_MainConfig,
-			       1,
-			       SRB1_logicalChannelConfig,
-			       NULL, // measGapConfig,
-			       (TDD_Config_t *) NULL,
-			       NULL,
-			       (SchedulingInfoList_t *) NULL,
-			       0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
+          (MeasObjectToAddMod_t **) NULL,
+          radioResourceConfigDedicated->mac_MainConfig,
+          1,
+          SRB1_logicalChannelConfig,
+          NULL, // measGapConfig,
+          (TDD_Config_t *) NULL,
+          NULL,
+          (SchedulingInfoList_t *) NULL,
+          0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
 #if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-			       , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
+          , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
 #endif
 #if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-			       ,
-			       (SystemInformationBlockType1_v1310_IEs_t *)NULL
+          ,
+          (SystemInformationBlockType1_v1310_IEs_t *)NULL
 #endif
-			       );
-	  break;
+          );
+          break;
+      } // case
 
-    default:
-      AssertFatal(1==0,
-		  "Unknown message\n");
-      break;
-      }
+      default:
+        AssertFatal(1==0,
+        "Unknown message\n");
+        break;
+    }// switch case
+  } else if (srb_id == 1) { 
+//     rrc_rlc_config_asn1_req(&ctxt,
+//         SRB_configList,
+//         (DRB_ToAddModList_t*) NULL,
+//         (DRB_ToReleaseList_t*) NULL
+// #if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+//         , (PMCH_InfoList_r9_t *) NULL,
+//         0,0
+// #   endif
+//         );
 
-    }
-  }
-  else if (srb_id == 1){ 
+    LOG_I(DU_F1AP, "Received DL RRC Transfer on srb_id 1\n");
+    rlc_op_status_t    rlc_status;
+    boolean_t          ret             = TRUE;
+    mem_block_t       *pdcp_pdu_p      = NULL; 
+    pdcp_pdu_p = get_free_mem_block(rrc_dl_sdu_len, __func__);
+    memset(&pdcp_pdu_p->data[0], 0, rrc_dl_sdu_len);
+    memcpy(&pdcp_pdu_p->data[0], ie->value.choice.RRCContainer.buf, rrc_dl_sdu_len);
 
-  }
+    if (pdcp_pdu_p != NULL) {
+      rlc_status = rlc_data_req(&ctxt
+                                , 1
+                                , MBMS_FLAG_NO
+                                , srb_id
+                                , 0
+                                , 0
+                                , rrc_dl_sdu_len
+                                , pdcp_pdu_p
+#ifdef Rel14
+                                ,NULL
+                                ,NULL
+#endif
+                                );
+      switch (rlc_status) {
+        case RLC_OP_STATUS_OK:
+          LOG_D(PDCP, "Data sending request over RLC succeeded!\n");
+          ret=TRUE;
+          break;
 
-  else if (srb_id == 2){
+        case RLC_OP_STATUS_BAD_PARAMETER:
+          LOG_W(PDCP, "Data sending request over RLC failed with 'Bad Parameter' reason!\n");
+          ret= FALSE;
+          break;
+
+        case RLC_OP_STATUS_INTERNAL_ERROR:
+          LOG_W(PDCP, "Data sending request over RLC failed with 'Internal Error' reason!\n");
+          ret= FALSE;
+          break;
+
+        case RLC_OP_STATUS_OUT_OF_RESSOURCES:
+          LOG_W(PDCP, "Data sending request over RLC failed with 'Out of Resources' reason!\n");
+          ret= FALSE;
+          break;
+
+        default:
+          LOG_W(PDCP, "RLC returned an unknown status code after PDCP placed the order to send some data (Status Code:%d)\n", rlc_status);
+          ret= FALSE;
+          break;
+      } // switch case
+      return ret; 
+    } // if pdcp_pdu_p
+  
+  } else if (srb_id == 2) {
 
   }
 #endif
@@ -334,7 +389,6 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(const protocol_ctxt_t* const ctxt_pP,
 				    const sdu_size_t  sdu_sizeP,
 				    const uint8_t     *sdu_pP
                                     ) {
-
 
 
   rnti_t     rnti      = ctxt_pP->rnti;
@@ -402,6 +456,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(const protocol_ctxt_t* const ctxt_pP,
     LOG_E(DU_F1AP, "Failed to encode F1 setup request\n");
     return -1;
   }
+  LOG_W(DU_F1AP, "DU_send_UL_RRC_MESSAGE_TRANSFER on SRB %d for UE %x \n", rb_idP, rnti);
 
   du_f1ap_itti_send_sctp_data_req(instance, f1ap_du_data->assoc_id, buffer, len, f1ap_du_data->default_sctp_stream_id);
   return 0;

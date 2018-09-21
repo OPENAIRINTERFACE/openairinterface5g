@@ -85,6 +85,10 @@ int create_tasks(uint32_t enb_nb)
     if (enb_nb > 0) {
       rc = itti_create_task(TASK_CU_F1, F1AP_CU_task, NULL);
       AssertFatal(rc >= 0, "Create task for CU F1AP failed\n");
+      //RS/BK: Fix me!
+      rc = itti_create_task (TASK_L2L1, l2l1_task, NULL);
+      AssertFatal(rc >= 0, "Create task for L2L1 failed\n");
+
     }
     /* fall through */
   case ngran_eNB:

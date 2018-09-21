@@ -524,11 +524,6 @@ static inline void updateTimes(uint64_t start, Meas *M, int period, char * txt) 
 }
 #endif
 
-
-pthread_mutex_t async_server_lock;
-pthread_cond_t async_server_notify;
-int async_server_shutdown;
-
 #endif
 
 

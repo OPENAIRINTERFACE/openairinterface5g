@@ -73,7 +73,6 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   F1AP_InitialULRRCMessageTransferIEs_t *ie;
   
   rnti_t          rnti;
-  uint8_t        *ccch_sdu;
   sdu_size_t      ccch_sdu_len;
   int             CC_id =0;
   
@@ -135,7 +134,7 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
       break;
     }
   }
-  AssertFatal(rrc_inst>=0,"couldn't find an RRC instance for nr_cell %ll\n",nr_cellid);
+  AssertFatal(rrc_inst>=0,"couldn't find an RRC instance for nr_cell %llu\n",(unsigned long long int)nr_cellid);
 
   int f1ap_uid = f1ap_add_ue(&f1ap_cu_ue[rrc_inst], rrc_inst, CC_id, 0, rnti);
   if (f1ap_uid  < 0 ) {
@@ -193,8 +192,8 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
   ie->value.present                  = F1AP_DLRRCMessageTransferIEs__value_PR_GNB_CU_UE_F1AP_ID;
   ie->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(&f1ap_cu_ue[instance],f1ap_dl_rrc->rnti);  
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-  LOG_I(CU_F1AP, "Setting GNB_CU_UE_F1AP_ID %d associated with UE RNTI %x (instance %d)\n", 
-                  ie->value.choice.GNB_CU_UE_F1AP_ID, f1ap_dl_rrc->rnti, instance);
+  LOG_I(CU_F1AP, "Setting GNB_CU_UE_F1AP_ID %llu associated with UE RNTI %x (instance %d)\n", 
+                  (unsigned long long int)ie->value.choice.GNB_CU_UE_F1AP_ID, f1ap_dl_rrc->rnti, instance);
 
 
   /* mandatory */
@@ -205,7 +204,7 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
   ie->value.present                  = F1AP_DLRRCMessageTransferIEs__value_PR_GNB_DU_UE_F1AP_ID;
   ie->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(&f1ap_cu_ue[instance],f1ap_dl_rrc->rnti); //f1ap_dl_rrc->gNB_DU_ue_id; // TODO: f1ap_dl_rrc->gNB_DU_ue_id  
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-  LOG_I(CU_F1AP, "GNB_DU_UE_F1AP_ID %d associated with UE RNTI %x \n", ie->value.choice.GNB_DU_UE_F1AP_ID, f1ap_dl_rrc->rnti);
+  LOG_I(CU_F1AP, "GNB_DU_UE_F1AP_ID %llu associated with UE RNTI %x \n", (unsigned long long int)ie->value.choice.GNB_DU_UE_F1AP_ID, f1ap_dl_rrc->rnti);
 
   /* optional */
   /* c3. oldgNB_DU_UE_F1AP_ID */
@@ -245,7 +244,7 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
   ie->id                            = F1AP_ProtocolIE_ID_id_RRCContainer;
   ie->criticality                   = F1AP_Criticality_reject;
   ie->value.present                 = F1AP_DLRRCMessageTransferIEs__value_PR_RRCContainer;
-  OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, f1ap_dl_rrc->rrc_container, f1ap_dl_rrc->rrc_container_length);
+  OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, (const char*)f1ap_dl_rrc->rrc_container, f1ap_dl_rrc->rrc_container_length);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* optional */
@@ -264,7 +263,7 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
     //ie->value.choice.RAT_FrequencyPriorityInformation.choice.rAT_FrequencySelectionPriority = 123L;
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
-
+ 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     LOG_E(CU_F1AP, "Failed to encode F1 setup request\n");
@@ -287,20 +286,13 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 
   LOG_D(CU_F1AP, "CU_handle_UL_RRC_MESSAGE_TRANSFER \n");
   
-  MessageDef                     *message_p;
   F1AP_ULRRCMessageTransfer_t    *container;
   F1AP_ULRRCMessageTransferIEs_t *ie;
 
-  uint8_t  *buffer;
-  uint32_t  len;
   
   uint64_t        cu_ue_f1ap_id;
   uint64_t        du_ue_f1ap_id;
   uint64_t        srb_id;
-  int             executeDuplication;
-  sdu_size_t      ccch_sdu_len;
-  uint64_t        subscriberProfileIDforRFP;
-  uint64_t        rAT_FrequencySelectionPriority;
 
   DevAssert(pdu != NULL);
   
@@ -365,15 +357,17 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   */
   protocol_ctxt_t ctxt;
   ctxt.module_id = instance;
+  ctxt.instance = instance;
   ctxt.rnti = f1ap_get_rnti_by_cu_id(&f1ap_cu_ue[instance],cu_ue_f1ap_id);
   ctxt.enb_flag = 1;
   mem_block_t *mb = get_free_mem_block(ie->value.choice.RRCContainer.size,__func__);
   memcpy((void*)mb->data,(void*)ie->value.choice.RRCContainer.buf,ie->value.choice.RRCContainer.size);
+  LOG_I(CU_F1AP, "Calling pdcp_data_ind for UE RNTI %x srb_id %lu with size %d (DCCH) \n", ctxt.rnti, srb_id, ie->value.choice.RRCContainer.size);
   pdcp_data_ind (&ctxt,
-		 1,
-		 0,
-		 srb_id,
-		 ie->value.choice.RRCContainer.size,
-		 mb);
+     1, // srb_flag
+     0, // embms_flag
+     srb_id,
+     ie->value.choice.RRCContainer.size,
+     mb);
   return 0;
 }

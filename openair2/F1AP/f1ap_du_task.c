@@ -34,6 +34,9 @@
 #include "f1ap_handlers.h"
 #include "f1ap_du_interface_management.h"
 #include "f1ap_du_task.h"
+#include "proto_agent.h"
+
+extern RAN_CONTEXT_t RC;
 
 f1ap_setup_req_t *f1ap_du_data;
 
@@ -95,6 +98,15 @@ void du_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
   f1ap_du_data->sctp_out_streams = sctp_new_association_resp->out_streams;
   f1ap_du_data->default_sctp_stream_id = 0;
 
+  /* setup parameters for F1U and start the server */
+  const cudu_params_t params = {
+    .local_ipv4_address  = RC.mac[instance]->eth_params_n.my_addr,
+    .local_port          = RC.mac[instance]->eth_params_n.my_portd,
+    .remote_ipv4_address = RC.mac[instance]->eth_params_n.remote_addr,
+    .remote_port         = RC.mac[instance]->eth_params_n.remote_portd
+  };
+  AssertFatal(proto_agent_start(instance, &params) == 0,
+              "could not start PROTO_AGENT for F1U on instance %d!\n", instance);
 
   DU_send_F1_SETUP_REQUEST(instance);
 }
@@ -162,8 +174,9 @@ void *F1AP_DU_task(void *arg) {
 
      case F1AP_UL_RRC_MESSAGE: // from rrc
         LOG_I(DU_F1AP, "DU Task Received F1AP_UL_RRC_MESSAGE\n");
-        DU_send_UL_RRC_MESSAGE_TRANSFER(ITTI_MESSAGE_GET_INSTANCE(received_msg),
-                                        &F1AP_UL_RRC_MESSAGE(received_msg));
+        AssertFatal (1 == 0, "Should not be here!\n" );
+        //DU_send_UL_RRC_MESSAGE_TRANSFER(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+         //                               &F1AP_UL_RRC_MESSAGE(received_msg));
         break;
 
       case TERMINATE_MESSAGE:

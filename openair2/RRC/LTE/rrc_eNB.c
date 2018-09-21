@@ -1173,8 +1173,10 @@ rrc_eNB_generate_SecurityModeCommand(
     rrc_eNB_mui,
     size);
 
- if ((RC.rrc[ctxt_pP->module_id]->node_type  == ngran_eNB) ||
-	(RC.rrc[ctxt_pP->module_id]->node_type  == ngran_ng_eNB)) {
+ if ((RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_DU) ||
+	   (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_DU)) {
+  LOG_I(RRC,"calling rrc_data_req :securityModeCommand\n");
+
     rrc_data_req(
 	       ctxt_pP,
 	       DCCH,

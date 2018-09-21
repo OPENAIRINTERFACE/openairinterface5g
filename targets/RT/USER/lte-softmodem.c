@@ -1082,6 +1082,16 @@ int main( int argc, char **argv )
     RCconfig_L1();
   }
 
+
+  if (RC.rrc[0]->node_type == ngran_eNB_CU || RC.rrc[0]->node_type == ngran_ng_eNB_CU) {
+    protocol_ctxt_t ctxt;
+    ctxt.module_id = 0 ;
+    ctxt.instance = 0;
+    ctxt.rnti = 0;
+    ctxt.enb_flag = 1;
+    pdcp_run(&ctxt);
+  }
+
   /* start threads if only L1 or not a CU */
   if (RC.nb_inst == 0 ||
       !(RC.rrc[0]->node_type == ngran_eNB_CU || RC.rrc[0]->node_type == ngran_ng_eNB_CU)) {
