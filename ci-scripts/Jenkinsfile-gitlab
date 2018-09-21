@@ -237,7 +237,7 @@ pipeline {
                             sh "./ci-scripts/reportBuildLocally.sh --git-url ${GIT_URL} --job-name ${JOB_NAME} --build-id ${BUILD_ID} --trigger push --branch ${GIT_BRANCH} --commit ${GIT_COMMIT}"
                         }
                         if(fileExists('build_results.html')) {
-                            sh "sed -i -e 's#Build-ID: ${BUILD_ID}#Build-ID: <a href=\"{BUILD_URL}\">${BUILD_ID}</a>#' build_results.html"
+                            sh "sed -i -e 's#Build-ID: ${BUILD_ID}#Build-ID: <a href=\"${BUILD_URL}\">${BUILD_ID}</a>#' build_results.html"
                             archiveArtifacts artifacts: 'build_results.html'
                         }
                     }
@@ -376,7 +376,7 @@ pipeline {
                                 sh "./ci-scripts/reportTestLocally.sh --git-url ${GIT_URL} --job-name ${JOB_NAME} --build-id ${BUILD_ID} --trigger push --branch ${GIT_BRANCH} --commit ${GIT_COMMIT}"
                             }
                             if(fileExists('test_simulator_results.html')) {
-                                sh "sed -i -e 's#Build-ID: ${BUILD_ID}#Build-ID: <a href=\"{BUILD_URL}\">${BUILD_ID}</a>#' test_simulator_results.html"
+                                sh "sed -i -e 's#Build-ID: ${BUILD_ID}#Build-ID: <a href=\"${BUILD_URL}\">${BUILD_ID}</a>#' test_simulator_results.html"
                                 archiveArtifacts artifacts: 'test_simulator_results.html'
                             }
                         }

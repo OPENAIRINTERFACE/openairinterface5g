@@ -32,6 +32,7 @@
 #include <yaml.h>
 
 #include "flexran_agent_defs.h"
+#include "flexran.pb-c.h"
 
 int apply_reconfiguration_policy(mid_t mod_id, const char *policy, size_t policy_length);
 
@@ -56,5 +57,8 @@ int skip_subsystem_parameters_config(yaml_parser_t *parser);
 // This can be used when configuring the parameters of a specific subsystem 
 //that is not yet implmeneted in order to skip its configuration, without affecting the rest
 int skip_parameter_modification(yaml_parser_t *parser);
+
+// applies reconfiguration parameters and notifies ENB APP
+void initiate_soft_restart(mid_t mod_id, Protocol__FlexCellConfig *c);
 
 #endif

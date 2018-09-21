@@ -20,21 +20,10 @@
  */
 
 /*
- * intertask_messages_types.h
+ * flexran_messages_def.h
  *
- *  Created on: Jan 14, 2014
- *      Author: laurent winckel
+ *  Created on: Apr 26, 2018
+ *      Author: R. Schmidt
  */
 
-#ifndef INTERTASK_MESSAGES_TYPES_H_
-#define INTERTASK_MESSAGES_TYPES_H_
-
-typedef struct IttiMsgEmpty_s {
-} IttiMsgEmpty;
-
-typedef struct IttiMsgText_s {
-  uint32_t  size;
-  char      text[];
-} IttiMsgText;
-
-#endif /* INTERTASK_MESSAGES_TYPES_H_ */
+MESSAGE_DEF(SOFT_RESTART_MESSAGE, MESSAGE_PRIORITY_MED_PLUS, IttiMsgEmpty, soft_restart_message)

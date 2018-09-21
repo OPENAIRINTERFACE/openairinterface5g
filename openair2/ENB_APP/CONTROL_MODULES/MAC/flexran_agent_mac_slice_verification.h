@@ -19,17 +19,19 @@
  *      contact@openairinterface.org
  */
 
-#ifndef TIMER_MESSAGES_TYPES_H_
-#define TIMER_MESSAGES_TYPES_H_
+/*! \file flexran_agent_mac_slice_verification.h
+ * \brief MAC Agent slice verification helper functions
+ * \author Robert Schmidt
+ * \date 2018
+ * \version 0.1
+ */
 
-//-------------------------------------------------------------------------------------------//
-// Defines to access message fields.
-#define TIMER_HAS_EXPIRED(mSGpTR)   (mSGpTR)->ittiMsg.timer_has_expired
+#include "flexran_agent_common_internal.h"
+#include "flexran_agent_mac_internal.h"
 
-//-------------------------------------------------------------------------------------------//
-typedef struct {
-  void *arg;
-  long  timer_id;
-} timer_has_expired_t;
-
-#endif /* TIMER_MESSAGES_TYPES_H_ */
+int flexran_verify_dl_slice(mid_t mod_id, Protocol__FlexDlSlice *dls);
+int flexran_verify_group_dl_slices(mid_t mod_id, Protocol__FlexDlSlice **existing,
+    int n_ex, Protocol__FlexDlSlice **update, int n_up);
+int flexran_verify_ul_slice(mid_t mod_id, Protocol__FlexUlSlice *uls);
+int flexran_verify_group_ul_slices(mid_t mod_id, Protocol__FlexUlSlice **existing,
+    int n_ex, Protocol__FlexUlSlice **update, int n_up);

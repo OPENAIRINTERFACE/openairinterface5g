@@ -242,7 +242,6 @@ extern volatile int             start_UE;
 #include "threads_t.h"
 extern threads_t threads;
 
-extern void exit_fun(const char* s);
 // In lte-enb.c
 extern void init_eNB(int single_thread_flag,int wait_for_sync);
 extern void stop_eNB(int);
@@ -253,7 +252,7 @@ extern void init_RU(const char*);
 extern void stop_ru(RU_t *ru);
 extern void init_RU_proc(RU_t *ru);
 extern void stop_RU(int nb_ru);
-extern void kill_RU_proc(int inst);
+extern void kill_RU_proc(RU_t *ru);
 extern void set_function_spec_param(RU_t *ru);
 
 // In lte-ue.c
