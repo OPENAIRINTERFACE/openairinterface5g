@@ -89,13 +89,13 @@ function start_basic_sim_enb {
     echo "grep N_RB_DL ci-lte-basic-sim.conf | sed -e 's#N_RB_DL.*=#N_RB_DL =#'" >> $1
     echo "echo \"cd /home/ubuntu/tmp/cmake_targets/basic_simulator/enb/\"" >> $1
     echo "cd /home/ubuntu/tmp/cmake_targets/basic_simulator/enb/" >> $1
-    echo "echo \"./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-lte-basic-sim.conf\" > ./my-lte-softmodem-run.sh " >> $1
+    echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-lte-basic-sim.conf\" > ./my-lte-softmodem-run.sh " >> $1
     echo "chmod 775 ./my-lte-softmodem-run.sh" >> $1
     echo "cat ./my-lte-softmodem-run.sh" >> $1
     echo "sudo -E daemon --inherit --unsafe --name=enb_daemon --chdir=/home/ubuntu/tmp/cmake_targets/basic_simulator/enb -o /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ./my-lte-softmodem-run.sh" >> $1
 
     ssh -o StrictHostKeyChecking=no ubuntu@$LOC_VM_IP_ADDR < $1
-    sleep 60
+    sleep 10
     rm $1
 }
 
@@ -114,7 +114,7 @@ function start_basic_sim_ue {
 
     local i="0"
     echo "ifconfig oip1 | egrep -c \"inet addr\"" > $1
-    while [ $i -lt 40 ]
+    while [ $i -lt 10 ]
     do
         sleep 5
         CONNECTED=`ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1`
@@ -237,14 +237,49 @@ function check_iperf {
 }
 
 function terminate_enb_ue_basic_sim {
-    echo "echo \"sudo daemon --name=enb_daemon --stop\"" > $1
-    echo "sudo daemon --name=enb_daemon --stop" >> $1
-    echo "echo \"sudo daemon --name=ue_daemon --stop\"" >> $1
-    echo "sudo daemon --name=ue_daemon --stop" >> $1
-    echo "echo \"sudo killall --signal SIGKILL lte-softmodem\"" >> $1
-    echo "sudo killall --signal SIGKILL lte-softmodem" >> $1
+    echo "NB_OAI_PROCESSES=\`ps -aux | grep modem | grep -v grep | grep -c softmodem\`" > $1
+    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then echo \"sudo daemon --name=enb_daemon --stop\"; fi" >> $1
+    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sudo daemon --name=enb_daemon --stop; fi" >> $1
+    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then echo \"sudo daemon --name=ue_daemon --stop\"; fi" >> $1
+    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sudo daemon --name=ue_daemon --stop; fi" >> $1
+    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sleep 5; fi" >> $1
+    echo "echo \"ps -aux | grep softmodem\"" >> $1
+    echo "ps -aux | grep softmodem | grep -v grep" >> $1
+    echo "NB_OAI_PROCESSES=\`ps -aux | grep modem | grep -v grep | grep -c softmodem\`" >> $1
+    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then echo \"sudo killall --signal SIGINT lte-softmodem\"; fi" >> $1
+    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sudo killall --signal SIGINT lte-softmodem; fi" >> $1
+    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sleep 5; fi" >> $1
+    echo "echo \"ps -aux | grep softmodem\"" >> $1
+    echo "ps -aux | grep softmodem | grep -v grep" >> $1
+    echo "NB_OAI_PROCESSES=\`ps -aux | grep modem | grep -v grep | grep -c softmodem\`" >> $1
+    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then echo \"sudo killall --signal SIGKILL lte-softmodem\"; fi" >> $1
+    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sudo killall --signal SIGKILL lte-softmodem; fi" >> $1
+    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then echo \"sudo killall --signal SIGKILL lte-uesoftmodem\"; fi" >> $1
+    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sudo killall --signal SIGKILL lte-uesoftmodem; fi" >> $1
+    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sleep 5; fi" >> $1
+    echo "echo \"ps -aux | grep softmodem\"" >> $1
+    echo "ps -aux | grep softmodem | grep -v grep" >> $1
     ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
     rm -f $1
+}
+
+function recover_core_dump {
+    local IS_SEG_FAULT=`egrep -ic "segmentation fault" $3`
+    if [ $IS_SEG_FAULT -ne 0 ]
+    then
+        local TC=`echo $3 | sed -e "s#^.*enb_##" -e "s#Hz.*#Hz#"`
+        echo "Segmentation fault detected on enb -> recovering core dump"
+        echo "cd /home/ubuntu/tmp/cmake_targets/basic_simulator/enb" > $1
+        echo "cp /home/ubuntu/tmp/ci-scripts/conf_files/ci-lte-basic-sim.conf ." >> $1
+        echo "sync" >> $1
+        echo "sudo tar -cjhf basic-simulator-enb-core-${TC}.bz2 core lte-softmodem *.so ci-lte-basic-sim.conf my-lte-softmodem-run.sh" >> $1
+        echo "sudo rm core" >> $1
+        echo "rm ci-lte-basic-sim.conf" >> $1
+        echo "sync" >> $1
+        ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/basic_simulator/enb/basic-simulator-enb-core-${TC}.bz2 $4
+        rm -f $1
+    fi
 }
 
 function terminate_ltebox_epc {
@@ -675,6 +710,7 @@ then
         terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
         scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
         scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+        recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
         terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
         exit -1
     fi
@@ -711,6 +747,7 @@ then
     terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
     scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
     scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+    recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
 
     echo "############################################################"
     echo "Starting the eNB at 10MHz"
@@ -729,6 +766,7 @@ then
         terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
         scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
         scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+        recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
         terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
         exit -1
     fi
@@ -765,6 +803,7 @@ then
     terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
     scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
     scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+    recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
 
     echo "############################################################"
     echo "Starting the eNB at 20MHz"
@@ -783,6 +822,7 @@ then
         terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
         scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
         scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+        recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
         terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
         exit -1
     fi
@@ -819,6 +859,7 @@ then
     terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
     scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
     scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+    recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
 
     echo "############################################################"
     echo "Terminate EPC"

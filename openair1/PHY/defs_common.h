@@ -1006,7 +1006,11 @@ static inline void wait_sync(char *thread_name) {
   pthread_mutex_unlock(&sync_mutex);
   
   printf( "got sync (%s)\n", thread_name);
-
+  /*
+   * Raphael Defosseux: added for CI to get faster the got sync message.
+   */
+  fflush(stdout);
+  fflush(stderr);
 }
 
 static inline int wakeup_thread(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {

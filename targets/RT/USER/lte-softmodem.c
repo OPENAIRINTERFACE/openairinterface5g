@@ -891,16 +891,7 @@ static  void wait_nfapi_init(char *thread_name) {
   
   pthread_mutex_unlock(&nfapi_sync_mutex);
   
-  /*
-   * Raphael Defosseux: temporary workaround for CI
-   * -- Repeating the message thrice to make sure
-   * -- it is present during flush.
-   */
   printf( "NFAPI: got sync (%s)\n", thread_name);
-  printf( "NFAPI: got sync (%s)\n", thread_name);
-  printf( "NFAPI: got sync (%s)\n", thread_name);
-  fflush(stdout);
-  fflush(stderr);
 }
 
 int main( int argc, char **argv )
