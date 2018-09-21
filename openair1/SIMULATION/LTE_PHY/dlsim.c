@@ -1064,7 +1064,6 @@ int main(int argc, char **argv)
       break;
     }
   }
-  if()
   set_parallel_conf("PARALLEL_RU_L1_TRX_SPLIT");
   set_worker_conf("WORKER_ENABLE");
 
