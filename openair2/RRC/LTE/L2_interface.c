@@ -307,7 +307,7 @@ mac_rrc_data_ind(
     LOG_I(RRC,"[eNB %d] Received SDU for CCCH on SRB 0 (%d,%x)\n",module_idP,
 	  ctxt.module_id,ctxt.rnti);
 
-
+    /*
       // create a ue_context with rnti as random value, will be updated when Attach Request is received
     struct rrc_eNB_ue_context_s  *ue_context_p = rrc_eNB_get_next_free_ue_context(&ctxt,
 										  rntiP
@@ -327,8 +327,8 @@ mac_rrc_data_ind(
              sdu_lenP);
       srb_info_p->Rx_buffer.payload_size = sdu_lenP;
       srb_info_p->Active = 1;
-    
-    //    msg("\n******INST %d Srb_info %p, Srb_id=%d****\n\n",Mod_id,Srb_info,Srb_info->Srb_id);
+    */    
+
     if (sdu_lenP > 0)  rrc_eNB_decode_ccch(&ctxt, sduP, sdu_lenP, CC_id);
     
   }

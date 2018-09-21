@@ -6438,6 +6438,7 @@ rrc_eNB_decode_ccch(
               ue_context_p->ue_context.ul_failure_timer = 20000;
             }
             ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, random_value);
+	    ue_context_p->ue_context.Srb0.Active=1;
           } else if (InitialUE_Identity_PR_s_TMSI == rrcConnectionRequest->ue_Identity.present) {
             /* Save s-TMSI */
             S_TMSI_t   s_TMSI = rrcConnectionRequest->ue_Identity.choice.s_TMSI;
