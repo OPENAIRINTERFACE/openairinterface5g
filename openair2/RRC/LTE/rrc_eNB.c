@@ -206,9 +206,11 @@ init_SI(
     AssertFatal(carrier->sizeof_SIB1 != 255,"FATAL, RC.rrc[enb_mod_idP].carrier[CC_id].sizeof_SIB1 == 255");
 
   }
-  if ((rrc->node_type == ngran_eNB_CU)  || 
+  if (rrc->node_type != ngran_eNB_DU) { 
+
+  	/*if ((rrc->node_type == ngran_eNB_CU)  || 
       (rrc->node_type == ngran_ng_eNB_CU) ||
-      (rrc->node_type == ngran_eNB)) {
+      (rrc->node_type == ngran_eNB)) { */ 
     carrier->SIB23 = (uint8_t*) malloc16(64);
     AssertFatal(carrier->SIB23!=NULL,"cannot allocate memory for SIB");
     carrier->sizeof_SIB23 = do_SIB23(
@@ -630,8 +632,9 @@ static void init_MBMS(
 #endif
                              ,NULL);
     
-    if ((RC.rrc[enb_mod_idP]->node_type  != ngran_eNB_CU) &&
-        (RC.rrc[enb_mod_idP]->node_type  != ngran_ng_eNB_CU)) {
+    if ( (RC.rrc[enb_mod_idP]->node_type  != ngran_eNB_CU) ||
+	 (RC.rrc[enb_mod_idP]->node_type  != ngran_ng_eNB_CU) ||
+	 (RC.rrc[enb_mod_idP]->node_type  != ngran_gNB_CU)   ) {
       rrc_rlc_config_asn1_req(&ctxt,
 			      NULL, // SRB_ToAddModList
 			      NULL,   // DRB_ToAddModList
