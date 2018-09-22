@@ -646,7 +646,7 @@ static void init_MBMS(
 #endif
 			      );
     }
-    //rrc_mac_config_req();
+	    //rrc_mac_config_req();
   }
 }
 #endif
@@ -1399,18 +1399,21 @@ rrc_eNB_generate_RRCConnectionReestablishment(
         PROTOCOL_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating RRCConnectionReestablishment (bytes %d)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
         ue_p->Srb0.Tx_buffer.payload_size);
-
-  int UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
-  if(UE_id != -1){
-    // activate release timer, if RRCComplete not received after 100 frames, remove UE
-    RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1;
-    // remove UE after 100 frames after RRCConnectionReestablishmentRelease is triggered
-    RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer_thres = 1000;
-  }else{
-    LOG_E(RRC,
-             PROTOCOL_RRC_CTXT_UE_FMT" Generating RRCConnectionReestablishment without UE_id(MAC) rnti %x\n",
-            PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ctxt_pP->rnti);
-  }
+  	if ( (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) &&
+       (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU)&& 
+       (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_CU)   ) { 	
+	  int UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
+	  if(UE_id != -1){
+	    // activate release timer, if RRCComplete not received after 100 frames, remove UE
+	    RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1;
+	    // remove UE after 100 frames after RRCConnectionReestablishmentRelease is triggered
+	    RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer_thres = 1000;
+	  }else{
+	    LOG_E(RRC,
+	             PROTOCOL_RRC_CTXT_UE_FMT" Generating RRCConnectionReestablishment without UE_id(MAC) rnti %x\n",
+	            PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ctxt_pP->rnti);
+	  }
+	}	
   // activate release timer, if RRCComplete not received after 100 frames, remove UE
   ue_context_pP->ue_context.ue_reestablishment_timer = 1;
   // remove UE after 100 frames after RRCConnectionReestablishmentRelease is triggered
@@ -2055,6 +2058,9 @@ rrc_eNB_generate_RRCConnectionReestablishmentReject(
 )
 //-----------------------------------------------------------------------------
 {
+ if ( (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) &&
+       (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU)&& 
+       (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_CU)   ) {
   int UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
   if(UE_id != -1){
     RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1;
@@ -2064,7 +2070,7 @@ rrc_eNB_generate_RRCConnectionReestablishmentReject(
             PROTOCOL_RRC_CTXT_UE_FMT" Generating RRCConnectionReestablishmentReject without UE_id(MAC) rnti %x\n",
             PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ctxt_pP->rnti);
   }
-
+ }
   T(T_ENB_RRC_CONNECTION_REESTABLISHMENT_REJECT, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
@@ -6248,24 +6254,26 @@ rrc_eNB_decode_ccch(
         rrc_eNB_generate_RRCConnectionReestablishmentReject(ctxt_pP, ue_context_p, CC_id);
         break;
       }
-      int UE_id = find_UE_id(ctxt_pP->module_id, c_rnti);
-      if(UE_id == -1){
+      if ( (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) &&
+       (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU)&& 
+       (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_CU)   ) {
+  		int UE_id = find_UE_id(ctxt_pP->module_id, c_rnti);
+      	if(UE_id == -1){
           LOG_E(RRC,
                 PROTOCOL_RRC_CTXT_UE_FMT" RRCConnectionReestablishmentRequest without UE_id(MAC) rnti %x, let's reject the UE\n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),c_rnti);
           rrc_eNB_generate_RRCConnectionReestablishmentReject(ctxt_pP, ue_context_p, CC_id);
           break;
-      }
-
-      if((RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer > 0) &&
-         (RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer_thres > 20)){
-    	  LOG_E(RRC,
-                PROTOCOL_RRC_CTXT_UE_FMT" RCConnectionReestablishmentComplete(Previous) don't receive, delete the Previous UE\n",
-                PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
-          RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1000;
-          ue_context_p->ue_context.ue_reestablishment_timer = 0;
-      }
-
+      	}
+	    if((RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer > 0) &&
+	         (RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer_thres > 20)){
+	      LOG_E(RRC,
+	             PROTOCOL_RRC_CTXT_UE_FMT" RCConnectionReestablishmentComplete(Previous) don't receive, delete the Previous UE\n",
+	             PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
+	      RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1000;
+	      ue_context_p->ue_context.ue_reestablishment_timer = 0;
+	    }
+  	 }	
       if(ue_context_p->ue_context.ue_reestablishment_timer > 0){
     	  LOG_E(RRC,
                 PROTOCOL_RRC_CTXT_UE_FMT" RRRCConnectionReconfigurationComplete(Previous) don't receive, delete the Previous UE\n",
@@ -6790,28 +6798,40 @@ rrc_eNB_decode_dcch(
   		  PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (dedicated DRB, xid %ld)\n",
   		  PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
   	    //clear
-  	    int16_t UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
-  	    if(UE_id == -1){
-  	      LOG_E(RRC,
-  		    PROTOCOL_RRC_CTXT_UE_FMT" RRCConnectionReconfigurationComplete without rnti %x, fault\n",
-  		    PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ctxt_pP->rnti);
-  	      break;
-  	    }
-  	    if(RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag == 1){
-  	      LOG_I(RRC,
-  		    PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (dedicated DRB, xid %ld) C-RNTI Complete\n",
-  		    PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
-  	      dedicated_DRB = 2;
-  	      RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag = 0;
-  	    }
-  	  } else {
-  	    dedicated_DRB = 0;
-  	    ue_context_p->ue_context.Status = RRC_RECONFIGURED;
-  	    LOG_I(RRC,
-  		  PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (default DRB, xid %ld)\n",
-  		  PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
-  	  }
-  	  ue_context_p->ue_context.reestablishment_xid = -1;
+  	    // FIX ME: MAC context does not exist in CU
+  	    if ((RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) &&
+       		(RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU)&& 
+       		(RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_CU)   ) {
+  		    int16_t UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
+	  	    if(UE_id == -1){
+	  	      LOG_E(RRC,
+	  		    PROTOCOL_RRC_CTXT_UE_FMT" RRCConnectionReconfigurationComplete without rnti %x, fault\n",
+	  		    PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ctxt_pP->rnti);
+	  	      break;
+	  	    }
+  		
+	  	    if(RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag == 1){
+	  	      LOG_I(RRC,
+	  		    PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (dedicated DRB, xid %ld) C-RNTI Complete\n",
+	  		    PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
+	  	      dedicated_DRB = 2;
+	  	      RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag = 0;
+	  	    }
+	  	  	else {
+	  	    dedicated_DRB = 0;
+	  	    ue_context_p->ue_context.Status = RRC_RECONFIGURED;
+	  	    LOG_I(RRC,
+	  		  PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (default DRB, xid %ld)\n",
+	  		  PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
+	  	  	}
+	  	} else{
+			dedicated_DRB = 0;
+	  	    ue_context_p->ue_context.Status = RRC_RECONFIGURED;
+	  	    LOG_I(RRC,
+	  		  PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (default DRB, xid %ld)\n",
+	  		  PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
+	  		}
+  	  		ue_context_p->ue_context.reestablishment_xid = -1;
         } else {
   	  dedicated_DRB = 1;
   	  ue_context_p->ue_context.Status = RRC_RECONFIGURED;
@@ -6819,6 +6839,7 @@ rrc_eNB_decode_dcch(
   	      PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (dedicated DRB, xid %ld)\n",
   	      PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
   	}
+  }
 	
 	rrc_eNB_process_RRCConnectionReconfigurationComplete(
           ctxt_pP,
@@ -6955,16 +6976,20 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
           break;
         }
         //clear
-        int UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
-        if(UE_id == -1){
-          LOG_E(RRC,
-                PROTOCOL_RRC_CTXT_UE_FMT" RRCConnectionReestablishmentComplete without UE_id(MAC) rnti %x, fault\n",
-                PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ctxt_pP->rnti);
-          break;
-        }
-        RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 0;
-        ue_context_p->ue_context.ue_reestablishment_timer = 0;
-
+        if ((RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) &&
+       		(RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU)&& 
+       		(RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_CU)   ) {
+    		int UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
+	        if(UE_id == -1){
+	          LOG_E(RRC,
+	                PROTOCOL_RRC_CTXT_UE_FMT" RRCConnectionReestablishmentComplete without UE_id(MAC) rnti %x, fault\n",
+	                PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ctxt_pP->rnti);
+	          break;
+	        }
+	    
+       		 RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 0;
+       		 ue_context_p->ue_context.ue_reestablishment_timer = 0;
+		}
         if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionReestablishmentComplete.criticalExtensions.present ==
             RRCConnectionReestablishmentComplete__criticalExtensions_PR_rrcConnectionReestablishmentComplete_r8) {
           rrc_eNB_process_RRCConnectionReestablishmentComplete(ctxt_pP, reestablish_rnti, ue_context_p,
