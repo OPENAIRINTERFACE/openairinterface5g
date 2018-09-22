@@ -571,6 +571,7 @@ check_install_oai_software() {
 	libxml2-dev  \
 	libxslt1-dev \
 	mscgen  \
+	octave-signal \
 	openssh-client \
 	openssh-server \
 	openssl \

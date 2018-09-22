@@ -630,9 +630,8 @@ static void init_MBMS(
 #endif
                              ,NULL);
     
-    if ( (RC.rrc[enb_mod_idP]->node_type  != ngran_eNB_CU) ||
-	 (RC.rrc[enb_mod_idP]->node_type  != ngran_ng_eNB_CU) ||
-	 (RC.rrc[enb_mod_idP]->node_type  != ngran_gNB_CU)   ) {
+    if ((RC.rrc[enb_mod_idP]->node_type  != ngran_eNB_CU) &&
+        (RC.rrc[enb_mod_idP]->node_type  != ngran_ng_eNB_CU)) {
       rrc_rlc_config_asn1_req(&ctxt,
 			      NULL, // SRB_ToAddModList
 			      NULL,   // DRB_ToAddModList
@@ -5307,8 +5306,8 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
                            , (PMCH_InfoList_r9_t *) NULL
 #endif
                            ,NULL);
-  if ( (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) ||
-       (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU) ||
+  if ( (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) &&
+       (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU)&& 
        (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_CU)   ) {
     rrc_rlc_config_asn1_req(&ctxt,
 			    ue_context_pP->ue_context.SRB_configList,
@@ -5538,8 +5537,8 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
     , (PMCH_InfoList_r9_t *) NULL
 #endif
     ,NULL);
-  if ( (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) ||
-       (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU) ||
+  if ( (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) && 
+       (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU)&& 
        (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_CU)   ) {
     // Refresh SRBs/DRBs
     rrc_rlc_config_asn1_req(
@@ -6375,8 +6374,8 @@ rrc_eNB_decode_ccch(
 #endif
                                ,NULL);
 
-      if ( (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) ||
-	   (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU) ||
+      if ( (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) &&
+	   (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU)&& 
 	   (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_CU)   ) {
 	rrc_rlc_config_asn1_req(ctxt_pP,
 				ue_context_p->ue_context.SRB_configList,
@@ -6619,8 +6618,8 @@ rrc_eNB_decode_ccch(
 #endif
                                ,NULL);
 
-	if ( (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) ||
-	     (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU) ||
+	if ( (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) &&
+	     (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU) &&
 	     (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_CU)   ) {
 	 
 	 	 rrc_rlc_config_asn1_req(ctxt_pP,
