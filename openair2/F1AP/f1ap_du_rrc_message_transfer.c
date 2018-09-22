@@ -341,9 +341,11 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
       case DL_DCCH_MessageType__c1_PR_NOTHING:
         LOG_I(RRC, "Received PR_NOTHING on DL-DCCH-Message\n");
         return;
-	
-      case DL_DCCH_MessageType__c1_PR_csfbParametersResponseCDMA2000:
+        break;
       case DL_DCCH_MessageType__c1_PR_dlInformationTransfer:
+        LOG_I(RRC,"Received DL Information Transfer\n");
+        break;	
+      case DL_DCCH_MessageType__c1_PR_csfbParametersResponseCDMA2000:
       case DL_DCCH_MessageType__c1_PR_handoverFromEUTRAPreparationRequest:
       case DL_DCCH_MessageType__c1_PR_mobilityFromEUTRACommand:
         break;
