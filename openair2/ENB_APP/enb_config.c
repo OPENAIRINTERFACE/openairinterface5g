@@ -675,8 +675,14 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
       else { 
 	// set to ngran_eNB for now, it will get set to ngran_eNB_DU if macrlc entity which uses F1 is present
 	// Note: we will have to handle the case of ngran_ng_eNB_DU
-	if (macrlc_has_f1 == 0) rrc->node_type                             = ngran_eNB;
-	else                    rrc->node_type                             = ngran_eNB_DU;
+	if (macrlc_has_f1 == 0) {
+            rrc->node_type = ngran_eNB;
+            LOG_I(RRC,"Setting node_type to ngran_eNB\n");
+        }
+	else {
+            rrc->node_type = ngran_eNB_DU;
+            LOG_I(RRC,"Setting node_type to ngran_eNB_DU\n");
+        }
       }	      
 
       // MCC and MNC
