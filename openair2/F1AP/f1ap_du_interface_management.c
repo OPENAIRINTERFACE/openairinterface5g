@@ -85,8 +85,8 @@ int DU_handle_ERROR_INDICATION(instance_t instance,
 
 // SETUP REQUEST
 int DU_send_F1_SETUP_REQUEST(instance_t instance) {
-  module_id_t enb_mod_idP;
-  module_id_t du_mod_idP;
+  module_id_t enb_mod_idP=0;
+  module_id_t du_mod_idP=0;
 
   F1AP_F1AP_PDU_t          pdu; 
   F1AP_F1SetupRequest_t    *out;
