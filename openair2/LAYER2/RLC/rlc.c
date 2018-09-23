@@ -604,15 +604,15 @@ void rlc_data_ind     (
   //-----------------------------------------------------------------------------
 
 
-  //#if defined(TRACE_RLC_PAYLOAD)
-  LOG_I(RLC, PROTOCOL_CTXT_FMT"[%s %u] Display of rlc_data_ind: size %u\n",
+#if defined(TRACE_RLC_PAYLOAD)
+  LOG_D(RLC, PROTOCOL_CTXT_FMT"[%s %u] Display of rlc_data_ind: size %u\n",
         PROTOCOL_CTXT_ARGS(ctxt_pP),
         (srb_flagP) ? "SRB" : "DRB",
         rb_idP,
         sdu_sizeP);
 
   //  rlc_util_print_hex_octets(RLC, (unsigned char*)sdu_pP->data, sdu_sizeP);
-  //#endif
+#endif
 
 #if T_TRACER
   if (ctxt_pP->enb_flag)

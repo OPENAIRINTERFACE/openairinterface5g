@@ -482,12 +482,13 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 	    break;
   	  case DL_DCCH_MessageType__c1_PR_rrcConnectionRelease:
   	    // handle RRCConnectionRelease
+            LOG_I(DU_F1AP,"Received RRCConnectionRelease\n");
   	    break;
   	  case DL_DCCH_MessageType__c1_PR_securityModeCommand:
          LOG_I(DU_F1AP,"Received securityModeCommand\n");
           break; 
   	  case DL_DCCH_MessageType__c1_PR_ueCapabilityEnquiry:
-        LOG_I(DU_F1AP,"Received sueCapabilityEnquiry\n");
+        LOG_I(DU_F1AP,"Received ueCapabilityEnquiry\n");
           break;
   	  case DL_DCCH_MessageType__c1_PR_counterCheck:
   #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))

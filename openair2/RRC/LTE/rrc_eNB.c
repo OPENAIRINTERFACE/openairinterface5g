@@ -1063,8 +1063,14 @@ void release_UE_in_freeList(module_id_t mod_id)
                 }
               }
             }
-            rrc_mac_remove_ue(mod_id,rnti);
-            rrc_rlc_remove_ue(&ctxt);
+            if (RC.rrc[mod_id]->node_type == ngran_eNB) {
+              rrc_mac_remove_ue(mod_id,rnti);
+              rrc_rlc_remove_ue(&ctxt);
+            }
+            else if (RC.rrc[mod_id]->node_type == ngran_eNB_CU || RC.rrc[mod_id]->node_type == ngran_ng_eNB_CU) {
+              // send UE_CONTEXT_RELEASE
+                AssertFatal(1==0,"Need to added context removal\n");
+            }
             pdcp_remove_UE(&ctxt);
 
             if(remove_UEContext){
@@ -6571,7 +6577,13 @@ rrc_eNB_decode_ccch(
           LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Can't create new context for UE random UE identity (0x%" PRIx64 ")\n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
                 random_value);
-	  rrc_mac_remove_ue(ctxt_pP->module_id,ctxt_pP->rnti);
+
+          if (RC.rrc[ctxt_pP->module_id] == ngran_eNB)
+	     rrc_mac_remove_ue(ctxt_pP->module_id,ctxt_pP->rnti);
+          else if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB_CU || 
+                   RC.rrc[ctxt_pP->module_id]->node_type == ngran_ng_eNB_CU)
+             AssertFatal(1==0,"Need to added context removal\n");
+
           return -1;
         }
       }
@@ -8107,7 +8119,8 @@ rrc_rx_tx(
 //          ue_context_p->ue_context.ue_release_timer_s1 = 0;
 #if defined(ENABLE_USE_MME)
 #if defined(ENABLE_ITTI)
-          rrc_eNB_generate_RRCConnectionRelease(ctxt_pP, ue_context_p);
+          if (RC.rrc[ctxt_pP->module_id]->node_type != ngran_eNB_DU)
+            rrc_eNB_generate_RRCConnectionRelease(ctxt_pP, ue_context_p);
 #endif
 #else
           ue_to_be_removed = ue_context_p;
@@ -8141,44 +8154,46 @@ rrc_rx_tx(
            ue_context_p->ue_context.ue_release_timer_thres_rrc = 100;
 #if defined(ENABLE_USE_MME)
 #if defined(ENABLE_ITTI)
-           int      e_rab;
-           MessageDef *msg_complete_p = NULL;
-           MessageDef *msg_delete_tunnels_p = NULL;
-           uint32_t eNB_ue_s1ap_id = ue_context_p->ue_context.eNB_ue_s1ap_id;
-           if(rrc_release_info.RRC_release_ctrl[release_num].flag == 4){
-             MSC_LOG_TX_MESSAGE(
-                    MSC_RRC_ENB,
-                    MSC_S1AP_ENB,
-                     NULL,0,
-                    "0 S1AP_UE_CONTEXT_RELEASE_COMPLETE eNB_ue_s1ap_id 0x%06"PRIX32" ",
-                     eNB_ue_s1ap_id);
-             msg_complete_p = itti_alloc_new_message(TASK_RRC_ENB, S1AP_UE_CONTEXT_RELEASE_COMPLETE);
-             S1AP_UE_CONTEXT_RELEASE_COMPLETE(msg_complete_p).eNB_ue_s1ap_id = eNB_ue_s1ap_id;
-             itti_send_msg_to_task(TASK_S1AP, ctxt_pP->module_id, msg_complete_p);
-           }
-           MSC_LOG_TX_MESSAGE(MSC_RRC_ENB, MSC_GTPU_ENB, NULL,0, "0 GTPV1U_ENB_DELETE_TUNNEL_REQ rnti %x ", eNB_ue_s1ap_id);
-           msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
-           memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
+           if (RC.rrc[ctxt_pP->module_id]->node_type != ngran_eNB_DU) {
+              int      e_rab;
+              MessageDef *msg_complete_p = NULL;
+              MessageDef *msg_delete_tunnels_p = NULL;
+              uint32_t eNB_ue_s1ap_id = ue_context_p->ue_context.eNB_ue_s1ap_id;
+              if(rrc_release_info.RRC_release_ctrl[release_num].flag == 4){
+                MSC_LOG_TX_MESSAGE(
+                       MSC_RRC_ENB,
+                       MSC_S1AP_ENB,
+                       NULL,0,
+                       "0 S1AP_UE_CONTEXT_RELEASE_COMPLETE eNB_ue_s1ap_id 0x%06"PRIX32" ",
+                       eNB_ue_s1ap_id);
+                msg_complete_p = itti_alloc_new_message(TASK_RRC_ENB, S1AP_UE_CONTEXT_RELEASE_COMPLETE);
+                S1AP_UE_CONTEXT_RELEASE_COMPLETE(msg_complete_p).eNB_ue_s1ap_id = eNB_ue_s1ap_id;
+                itti_send_msg_to_task(TASK_S1AP, ctxt_pP->module_id, msg_complete_p);
+              }
+              MSC_LOG_TX_MESSAGE(MSC_RRC_ENB, MSC_GTPU_ENB, NULL,0, "0 GTPV1U_ENB_DELETE_TUNNEL_REQ rnti %x ", eNB_ue_s1ap_id);
+              msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
+              memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
            // do not wait response
-           GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
-           for (e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
-             GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).eps_bearer_id[GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_erab++] =
-               ue_context_p->ue_context.enb_gtp_ebi[e_rab];
-             // erase data
-             ue_context_p->ue_context.enb_gtp_teid[e_rab] = 0;
-             memset(&ue_context_p->ue_context.enb_gtp_addrs[e_rab], 0, sizeof(ue_context_p->ue_context.enb_gtp_addrs[e_rab]));
-             ue_context_p->ue_context.enb_gtp_ebi[e_rab]  = 0;
-           }
-           itti_send_msg_to_task(TASK_GTPV1_U, ctxt_pP->module_id, msg_delete_tunnels_p);
-           struct rrc_ue_s1ap_ids_s    *rrc_ue_s1ap_ids = NULL;
-           rrc_ue_s1ap_ids = rrc_eNB_S1AP_get_ue_ids(
-                  RC.rrc[ctxt_pP->module_id],
-                  0,
-                  eNB_ue_s1ap_id);
-           if (NULL != rrc_ue_s1ap_ids) {
-             rrc_eNB_S1AP_remove_ue_ids(
-                        RC.rrc[ctxt_pP->module_id],
-                        rrc_ue_s1ap_ids);
+              GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
+              for (e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
+                GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).eps_bearer_id[GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_erab++] =
+                  ue_context_p->ue_context.enb_gtp_ebi[e_rab];
+                // erase data
+                ue_context_p->ue_context.enb_gtp_teid[e_rab] = 0;
+                memset(&ue_context_p->ue_context.enb_gtp_addrs[e_rab], 0, sizeof(ue_context_p->ue_context.enb_gtp_addrs[e_rab]));
+                ue_context_p->ue_context.enb_gtp_ebi[e_rab]  = 0;
+              }
+              itti_send_msg_to_task(TASK_GTPV1_U, ctxt_pP->module_id, msg_delete_tunnels_p);
+              struct rrc_ue_s1ap_ids_s    *rrc_ue_s1ap_ids = NULL;
+              rrc_ue_s1ap_ids = rrc_eNB_S1AP_get_ue_ids(
+                     RC.rrc[ctxt_pP->module_id],
+                     0,
+                     eNB_ue_s1ap_id);
+              if (NULL != rrc_ue_s1ap_ids) {
+                rrc_eNB_S1AP_remove_ue_ids(
+                           RC.rrc[ctxt_pP->module_id],
+                           rrc_ue_s1ap_ids);
+              }
            }
 #endif
 #endif

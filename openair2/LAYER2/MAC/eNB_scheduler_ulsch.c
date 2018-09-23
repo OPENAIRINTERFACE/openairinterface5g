@@ -686,7 +686,7 @@ rx_sdu(const module_id_t enb_mod_idP,
           //UE_list->UE_template[CC_idP][UE_id].estimated_ul_buffer += UE_list->UE_template[CC_idP][UE_id].estimated_ul_buffer / 4;
         }
 
-	LOG_I(MAC,
+	LOG_D(MAC,
 	      "[eNB %d] CC_id %d Frame %d : ULSCH -> UL-DCCH, received %d bytes form UE %d on LCID %d \n",
 	      enb_mod_idP, CC_idP, frameP, rx_lengths[i], UE_id,
 	      rx_lcids[i]);

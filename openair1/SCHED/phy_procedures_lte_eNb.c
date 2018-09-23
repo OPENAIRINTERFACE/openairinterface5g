@@ -1843,7 +1843,7 @@ void fill_uci_harq_indication(PHY_VARS_eNB *eNB,
   pdu->ul_cqi_information.tl.tag = NFAPI_UL_CQI_INFORMATION_TAG;
   int SNRtimes10 = dB_fixed_times10(uci->stat) - 300;//(10*eNB->measurements.n0_power_dB[0]);
 
-  if (SNRtimes10 < -100) LOG_I(PHY,"uci->stat %d \n",uci->stat);
+  if (SNRtimes10 < -100) LOG_D(PHY,"uci->stat %d \n",uci->stat);
 
   if      (SNRtimes10 < -640) pdu->ul_cqi_information.ul_cqi=0;
   else if (SNRtimes10 >  635) pdu->ul_cqi_information.ul_cqi=255;
