@@ -1912,6 +1912,7 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
 
     /* TODO should test if e RAB are Ok before! */
     ue_context_pP->ue_context.e_rab[i].status = E_RAB_STATUS_DONE;
+    ue_context_pP->ue_context.e_rab[i].xid    = xid;
     LOG_D(RRC, "setting the status for the default DRB (index %d) to (%d,%s)\n",
     i, ue_context_pP->ue_context.e_rab[i].status, "E_RAB_STATUS_DONE");
   }
@@ -5512,6 +5513,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                       ue_context_pP->ue_context.kenb, &kUPenc);
   }
 
+  LOG_I(RRC,"Deriving keys for UE RNTI %x\n",ctxt_pP->rnti);
   derive_key_rrc_enc(ue_context_pP->ue_context.ciphering_algorithm,
                      ue_context_pP->ue_context.kenb, &kRRCenc);
   derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
@@ -5827,7 +5829,7 @@ rrc_eNB_generate_RRCConnectionSetup(
       // create an ITTI message
       /* TODO: F1 IDs ar missing in RRC */
       message_p = itti_alloc_new_message (TASK_RRC_ENB, F1AP_DL_RRC_MESSAGE);
-      F1AP_DL_RRC_MESSAGE (message_p).rrc_container =  ue_p->Srb0.Tx_buffer.Payload;
+      F1AP_DL_RRC_MESSAGE (message_p).rrc_container =  (uint8_t*)ue_p->Srb0.Tx_buffer.Payload;
 
       F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = ue_p->Srb0.Tx_buffer.payload_size;
       F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id     = 0;  
@@ -7044,16 +7046,17 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
           
           if ((RC.rrc[ctxt_pP->module_id]->node_type  == ngran_eNB_DU) ||
 	          (RC.rrc[ctxt_pP->module_id]->node_type  == ngran_gNB_DU)  ) {
+/*
             MessageDef                            *message_p;
           	message_p = itti_alloc_new_message (TASK_RRC_ENB, F1AP_UL_RRC_MESSAGE);
-      		F1AP_UL_RRC_MESSAGE (message_p).rrc_container =  &ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8;
+      		F1AP_UL_RRC_MESSAGE (message_p).rrc_container =  (uint8_t*)&ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8;
             F1AP_UL_RRC_MESSAGE (message_p).rrc_container_length = strlen(&ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8);
       	    F1AP_UL_RRC_MESSAGE (message_p).gNB_CU_ue_id     = 0;  
       		F1AP_UL_RRC_MESSAGE (message_p).gNB_DU_ue_id = 0;
       		F1AP_UL_RRC_MESSAGE (message_p).rnti = ue_context_p->ue_context.rnti; 
       		F1AP_UL_RRC_MESSAGE (message_p).srb_id = DCCH;  
       		itti_send_msg_to_task (TASK_DU_F1, ctxt_pP->module_id, message_p);
-      		LOG_D(RRC, "Send F1AP_UL_RRC_MESSAGE with ITTI\n");
+      		LOG_D(RRC, "Send F1AP_UL_RRC_MESSAGE with ITTI\n");*/
 		  } else { // eNB or CU node type 
           		rrc_eNB_process_RRCConnectionSetupComplete(
            		  ctxt_pP,
@@ -7412,7 +7415,7 @@ void rrc_eNB_reconfigure_DRBs (const protocol_ctxt_t* const ctxt_pP,
 void handle_f1_setup_req(f1ap_setup_req_t *f1_setup_req) { 
 
   
-  LOG_I(RRC,"Received F1 Setup Request from gNB_DU %d (%s)\n",f1_setup_req->gNB_DU_id,f1_setup_req->gNB_DU_name);
+  LOG_I(RRC,"Received F1 Setup Request from gNB_DU %llu (%s)\n",(unsigned long long int)f1_setup_req->gNB_DU_id,f1_setup_req->gNB_DU_name);
   
   //uint16_t num_cells_to_activate = 0;
   
@@ -7604,7 +7607,7 @@ rrc_enb_task(
       srb_info_p->Rx_buffer.payload_size = RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size;
       srb_info_p->Active = 1;
 
-      rrc_eNB_decode_ccch(&ctxt, srb_info_p->Rx_buffer.Payload,srb_info_p->Rx_buffer.payload_size, CC_id);
+      rrc_eNB_decode_ccch(&ctxt, (uint8_t*)srb_info_p->Rx_buffer.Payload,srb_info_p->Rx_buffer.payload_size, CC_id);
       break;
 	    
       /* Messages from PDCP */
