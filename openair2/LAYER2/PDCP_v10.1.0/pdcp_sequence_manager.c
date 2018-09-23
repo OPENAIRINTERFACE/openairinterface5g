@@ -188,7 +188,7 @@ boolean_t pdcp_is_rx_seq_number_valid(uint16_t seq_num, pdcp_t* pdcp_entity,srb_
     pdcp_entity->next_pdcp_rx_sn_before_integrity = pdcp_entity->next_pdcp_rx_sn;
 
     if (seq_num != pdcp_entity->next_pdcp_rx_sn) {
-      LOG_D(PDCP,"Re-adjusting the sequence number to %d\n", seq_num);
+      LOG_D(PDCP,"Re-adjusting the sequence number to %d from %d\n", seq_num,pdcp_entity->next_pdcp_rx_sn);
     }
 
     //set Next_PDCP_RX_SN to the received PDCP SN +1 ;
