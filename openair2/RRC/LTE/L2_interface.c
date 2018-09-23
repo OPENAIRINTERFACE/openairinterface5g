@@ -132,7 +132,7 @@ mac_rrc_data_req(
 					 (void*)mib,
 					 carrier->MIB,
 					 24);
-	LOG_D(RRC,"Encoded MIB for frame %d (%p), bits %lu\n",sfn,carrier->MIB,enc_rval.encoded);
+//	LOG_D(RRC,"Encoded MIB for frame %d (%p), bits %lu\n",sfn,carrier->MIB,enc_rval.encoded);
 	buffer_pP[0]=carrier->MIB[0];
 	buffer_pP[1]=carrier->MIB[1];
 	buffer_pP[2]=carrier->MIB[2];
@@ -149,10 +149,10 @@ mac_rrc_data_req(
       eNB_RRC_UE_t *ue_p = &ue_context_p->ue_context; 
       LOG_T(RRC,"[eNB %d] Frame %d CCCH request (Srb_id %d, rnti %x)\n",Mod_idP,frameP, Srb_id,rnti);
 
-      if(ue_p->Srb0.Active==0) {
+/*      if(ue_p->Srb0.Active==0) {
         LOG_E(RRC,"[eNB %d] CCCH Not active (%p, rnti %x)\n",Mod_idP,ue_p,ue_p->rnti);
         return(0);
-      }
+      } */
 
       Srb_info=&ue_p->Srb0;
 

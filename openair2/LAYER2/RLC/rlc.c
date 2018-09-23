@@ -635,10 +635,11 @@ void rlc_data_ind     (
          break;
        case ngran_eNB_DU    : 
        case ngran_gNB_DU    :
-         DU_send_UL_RRC_MESSAGE_TRANSFER(ctxt_pP,
-					 rb_idP,
-					 sdu_sizeP,
-					 sdu_pP->data);
+         if (srb_flagP == 1)
+           DU_send_UL_RRC_MESSAGE_TRANSFER(ctxt_pP,
+	  				   rb_idP,
+					   sdu_sizeP,
+					   sdu_pP->data);
          break;
 
        default:

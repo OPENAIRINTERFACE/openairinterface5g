@@ -150,7 +150,7 @@ boolean_t pdcp_is_rx_seq_number_valid(uint16_t seq_num, pdcp_t* pdcp_entity,srb_
 
   uint16_t  reordering_window = 0;
 
-  LOG_D(PDCP, "Incoming RX Sequence number is %04d\n", seq_num);
+  LOG_D(PDCP, "Incoming RX Sequence number is %04d (next %04d\n", seq_num, pdcp_entity->next_pdcp_rx_sn);
 
   if (pdcp_is_seq_num_size_valid(pdcp_entity) == FALSE || pdcp_is_seq_num_valid(seq_num, pdcp_entity->seq_num_size) == FALSE) {
     return FALSE;
