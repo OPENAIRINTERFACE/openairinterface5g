@@ -86,6 +86,8 @@
 #define CONFIG_HLP_TNOFORK       "to ease debugging with gdb\n"
 #define CONFIG_HLP_DISABLNBIOT   "disable nb-iot, even if defined in config\n"
 
+#define CONFIG_HLP_EMULATE_RF    "Emulated RF enabled(disable by defult)\n"
+
 /***************************************************************************************************************************************/
 /* command line options definitions, CMDLINE_XXXX_DESC macros are used to initialize paramdef_t arrays which are then used as argument 
    when calling config_get or config_getlist functions                                                                                 */
@@ -167,6 +169,7 @@
 {"q" ,  		  	 CONFIG_HLP_STMON,	PARAMFLAG_BOOL,   iptr:&opp_enabled,			defintval:0,			   TYPE_INT,	  0},			   \
 {"S" ,  		  	 CONFIG_HLP_MSLOTS,	PARAMFLAG_BOOL,   u8ptr:&exit_missed_slots,		defintval:1,			   TYPE_UINT8,    0},			   \
 {"T" ,  		  	 CONFIG_HLP_TDD,	PARAMFLAG_BOOL,   iptr:&tddflag,			defintval:0,			   TYPE_INT,	  0},			   \
+{"emulate-rf" ,                  CONFIG_HLP_EMULATE_RF, PARAMFLAG_BOOL,   iptr:&emulate_rf,                     defintval:0,                       TYPE_INT,      0},                      \
 {"nbiot-disable",        	 CONFIG_HLP_DISABLNBIOT,PARAMFLAG_BOOL,   iptr:&nonbiotflag,			defintval:0,			   TYPE_INT,	  0}                       \
 }
 

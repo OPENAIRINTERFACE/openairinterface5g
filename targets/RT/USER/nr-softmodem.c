@@ -208,7 +208,7 @@ extern void init_eNB_afterRU(void);
 
 int transmission_mode=1;
 int emulate_rf = 0;
-//int numerology = 0;
+int numerology = 0;
 int codingw = 0;
 //int fepw = 0;
 
