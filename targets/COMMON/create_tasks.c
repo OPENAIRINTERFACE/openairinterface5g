@@ -102,7 +102,7 @@ int create_tasks(uint32_t enb_nb)
         rc = itti_create_task(TASK_UDP, udp_eNB_task, NULL);
         AssertFatal(rc >= 0, "Create task for UDP failed\n");
       }
-      rc = itti_create_task(TASK_GTPV1_U, &gtpv1u_eNB_task, NULL);
+      rc = itti_create_task(TASK_GTPV1_U, gtpv1u_eNB_task, NULL);
       AssertFatal(rc >= 0, "Create task for GTPV1U failed\n");
     }
 #endif

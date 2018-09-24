@@ -43,7 +43,7 @@ proto_agent_message_decoded_callback proto_agent_messages_callback[][3] = {
   {proto_agent_hello, 0, 0},                 /* agent hello */
   {proto_agent_echo_reply, 0, 0},            /* echo */
   {0, just_print, 0},                        /* just print */
-  {proto_agent_pdcp_data_req_process, 0, 0}, /* PDCP data REQ */
+  {proto_agent_pdcp_data_req_process, proto_agent_pdcp_data_req_process, 0}, /* PDCP data REQ */
   {0, proto_agent_get_ack_result, 0},        /* get ACK result */
   {proto_agent_pdcp_data_ind_process, proto_agent_pdcp_data_ind_process, 0}, /* PDCP data IND */
   {0, just_print, 0},                        /* just print */

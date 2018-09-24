@@ -126,6 +126,12 @@ boolean_t pdcp_data_req(
   CHECK_CTXT_ARGS(ctxt_pP);
 
 
+  if (srb_flagP == 0) 
+  LOG_I(PDCP, "pdcp data req on drb %d, size %d, rnti %x, node_type %d \n", 
+              rb_idP, pdcp_pdu_size, ctxt_pP->rnti, RC.rrc[ctxt_pP->module_id]->node_type);
+
+
+
 #if T_TRACER
   if (ctxt_pP->enb_flag != ENB_FLAG_NO)
     T(T_ENB_PDCP_DL, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->rnti), T_INT(rb_idP), T_INT(sdu_buffer_sizeP));
@@ -385,8 +391,14 @@ boolean_t pdcp_data_req(
 
     LOG_F(PDCP,"\n");
 #ifndef UETARGET
+
+   
     if ((pdcp_pdu_p!=NULL) && (srb_flagP == 0) && (ctxt_pP->enb_flag == 1))
     {
+
+       LOG_I(PDCP, "pdcp data req on drb %d, size %d, rnti %x, node_type %d \n", 
+            rb_idP, pdcp_pdu_size, ctxt_pP->rnti, RC.rrc[ctxt_pP->module_id]->node_type);
+
       if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB_CU
           || RC.rrc[ctxt_pP->module_id]->node_type == ngran_ng_eNB_CU
           || RC.rrc[ctxt_pP->module_id]->node_type == ngran_gNB_CU) {
@@ -396,6 +408,9 @@ boolean_t pdcp_data_req(
         /* assume good status */
         rlc_status = RLC_OP_STATUS_OK;
         ret = TRUE;
+        LOG_I(PDCP, "proto_agent_send_rlc_data_req for UE RNTI %x, rb %d, pdu size %d \n", 
+            ctxt_pP->rnti, rb_idP, pdcp_pdu_size);
+
       } else if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB_DU
           || RC.rrc[ctxt_pP->module_id]->node_type == ngran_gNB_DU){
         LOG_E(PDCP, "Can't be DU, bad node type %d \n", RC.rrc[ctxt_pP->module_id]->node_type);
@@ -838,11 +853,16 @@ pdcp_data_ind(
 #if defined(LINK_ENB_PDCP_TO_GTPV1U)
 
   if ((TRUE == ctxt_pP->enb_flag) && (FALSE == srb_flagP)) {
+    LOG_I(PDCP, "Sending packet to GTP, Calling GTPV1U_ENB_TUNNEL_DATA_REQ  ue %x rab %u len %u\n",
+            ctxt_pP->rnti,
+            rb_id + 4,
+            sdu_buffer_sizeP - payload_offset );
+
     MSC_LOG_TX_MESSAGE(
     		MSC_PDCP_ENB,
     		MSC_GTPU_ENB,
     		NULL,0,
-    		"0 GTPV1U_ENB_TUNNEL_DATA_REQ  ue %x rab %u len %u",
+    		"0 GTPV1U_ENB_TUNNEL_DATA_REQ  ue %x rab %u len %u\n",
     		ctxt_pP->rnti,
     		rb_id + 4,
     		sdu_buffer_sizeP - payload_offset);

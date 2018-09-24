@@ -396,6 +396,7 @@ int logInit (void)
   register_log_component("mRAL","",RAL_UE); 
   register_log_component("ENB_APP","log",ENB_APP); 
   register_log_component("FLEXRAN_AGENT","log",FLEXRAN_AGENT); 
+  register_log_component("PROTO_AGENT","log",PROTO_AGENT);
   register_log_component("TMR","",TMR); 
   register_log_component("USIM","txt",USIM);   
   register_log_component("SIM","txt",SIM);  
