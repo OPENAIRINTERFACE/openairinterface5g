@@ -45,7 +45,7 @@ proto_agent_message_decoded_callback proto_agent_messages_callback[][3] = {
   {0, just_print, 0},                        /* just print */
   {proto_agent_pdcp_data_req_process, 0, 0}, /* PDCP data REQ */
   {0, proto_agent_get_ack_result, 0},        /* get ACK result */
-  {proto_agent_pdcp_data_ind_process, 0, 0}, /* PDCP data IND */
+  {proto_agent_pdcp_data_ind_process, proto_agent_pdcp_data_ind_process, 0}, /* PDCP data IND */
   {0, just_print, 0},                        /* just print */
 };
 
@@ -96,6 +96,7 @@ Protocol__FlexsplitMessage* proto_agent_handle_message (mod_id_t mod_id,
       LOG_D(PROTO_AGENT,"Handling message: MSG NOT handled, going to error\n");
       goto error;
   }
+
   
   err_code = ((*proto_agent_messages_callback[decoded_message->msg_case-1][decoded_message->msg_dir-1])(mod_id, (void *) decoded_message, &reply_message));
 
