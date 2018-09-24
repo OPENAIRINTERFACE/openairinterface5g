@@ -625,22 +625,25 @@ void rlc_data_ind     (
        case ngran_eNB_CU    :
        case ngran_ng_eNB_CU :
        case ngran_gNB_CU    :
-         proto_agent_send_pdcp_data_ind (
-           ctxt_pP,
-           1, // srb_flagP,
-           0, // MBMS_flagP,
-           rb_idP,
-           sdu_sizeP,
-           sdu_pP);
-         break;
+        LOG_E(RLC, "Can't be CU, Bad Node type %d\n",RC.rrc[ctxt_pP->module_id]->node_type);
+        break ;
        case ngran_eNB_DU    : 
        case ngran_gNB_DU    :
          if (srb_flagP == 1)
            DU_send_UL_RRC_MESSAGE_TRANSFER(ctxt_pP,
 	  				   rb_idP,
-					   sdu_sizeP,
-					   sdu_pP->data);
-         break;
+					     sdu_sizeP,
+					     sdu_pP->data);
+         else
+             proto_agent_send_pdcp_data_ind (
+              ctxt_pP,
+              srb_flagP,
+              MBMS_flagP,
+              rb_idP,
+              sdu_sizeP,
+              sdu_pP);
+     
+       break;
 
        default:
          pdcp_data_ind (

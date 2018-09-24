@@ -395,7 +395,13 @@ boolean_t pdcp_data_req(
                                       confirmP, pdcp_pdu_size, pdcp_pdu_p);
         /* assume good status */
         rlc_status = RLC_OP_STATUS_OK;
-      } else {
+        ret = TRUE;
+      } else if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB_DU
+          || RC.rrc[ctxt_pP->module_id]->node_type == ngran_gNB_DU){
+        LOG_E(PDCP, "Can't be DU, bad node type %d \n", RC.rrc[ctxt_pP->module_id]->node_type);
+        ret=FALSE;
+      } 
+      else {
 
         rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP,
             confirmP, pdcp_pdu_size, pdcp_pdu_p
@@ -404,6 +410,32 @@ boolean_t pdcp_data_req(
                              ,destinationL2Id
 #endif
                              );
+          switch (rlc_status) {
+            case RLC_OP_STATUS_OK:
+              LOG_D(PDCP, "Data sending request over RLC succeeded!\n");
+              ret=TRUE;
+              break;
+
+            case RLC_OP_STATUS_BAD_PARAMETER:
+              LOG_W(PDCP, "Data sending request over RLC failed with 'Bad Parameter' reason!\n");
+              ret= FALSE;
+              break;
+
+            case RLC_OP_STATUS_INTERNAL_ERROR:
+              LOG_W(PDCP, "Data sending request over RLC failed with 'Internal Error' reason!\n");
+              ret= FALSE;
+              break;
+
+            case RLC_OP_STATUS_OUT_OF_RESSOURCES:
+              LOG_W(PDCP, "Data sending request over RLC failed with 'Out of Resources' reason!\n");
+              ret= FALSE;
+              break;
+
+            default:
+              LOG_W(PDCP, "RLC returned an unknown status code after PDCP placed the order to send some data (Status Code:%d)\n", rlc_status);
+              ret= FALSE;
+              break;
+          } // switch case 
       } /* end if node_type is CU */
     
       free_mem_block(pdcp_pdu_p, __FUNCTION__);
