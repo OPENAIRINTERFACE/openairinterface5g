@@ -1058,6 +1058,14 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
         rrc_eNB_generate_UECapabilityEnquiry (&ctxt, ue_context_p);
       }
     }
+
+    // in case, we did not send the response with the attach complete message
+    if (ue_context_p->ue_context.Status == RRC_RECONFIGURED) {
+       LOG_I(RRC, "Sending rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP, cause %ld\n", ue_context_p->ue_context.reestablishment_cause);
+    //if(ue_context_p->ue_context.reestablishment_cause == ReestablishmentCause_spare1){}
+
+       rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP(&ctxt,ue_context_p);
+    } 
 /*
     if ((RC.rrc[ctxt.module_id]->node_type == ngran_eNB_CU) ||
         (RC.rrc[ctxt.module_id]->node_type == ngran_ng_eNB_CU) ||
