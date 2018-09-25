@@ -117,6 +117,8 @@ int main(int argc, char **argv)
   int frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
   nfapi_nr_config_request_t *gNB_config;
+
+  int ret;
   
   cpuf = get_cpu_freq_GHz();
 
@@ -309,6 +311,9 @@ int main(int argc, char **argv)
     }
   }
 
+  if (snr1set==0)
+    snr1 = snr0+10;
+
   gNB2UE = new_channel_desc_scm(n_tx,
                                 n_rx,
                                 channel_model,
@@ -443,6 +448,9 @@ int main(int argc, char **argv)
 	if (gNB->frame_parms.nb_antennas_tx>1)
 	  LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1],frame_length_complex_samples,1,1);
       }
+
+      ret = nr_initial_sync(UE, normal_txrx);
+      printf("nr_initial_sync1 returns %d\n",ret);
       
     } //noise trials
 

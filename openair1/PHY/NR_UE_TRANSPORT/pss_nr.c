@@ -57,6 +57,8 @@
 *
 *********************************************************************/
 
+#define DBG_PSS_NR
+
 void *get_idft(int ofdm_symbol_size)
 {
   void (*idft)(int16_t *,int16_t *, int);
@@ -790,18 +792,6 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
   /* This is required by SIMD (single instruction Multiple Data) Extensions of Intel processors. */
   /* Correlation computation is based on a a dot product which is realized thank to SIMS extensions */
   for (n=0; n < length; n+=4) {
-
-#ifdef RTAI_ENABLED
-
-    // This is necessary since the sync takes a long time and it seems to block all other threads thus screwing up RTAI. If we pause it for a little while during its execution we give RTAI a chance to catch up with its other tasks.
-    if ((n%frame_parms->samples_per_subframe == 0) && (n>0) && (openair_daq_vars.sync_state==0)) {
-#ifdef DEBUG_PHY
-      msg("[SYNC TIME] pausing for 1000ns, n=%d\n",n);
-#endif
-      rt_sleep(nano2count(1000));
-    }
-
-#endif
 
     for (int pss_index = 0; pss_index < NUMBER_PSS_SEQUENCE; pss_index++) {
 
