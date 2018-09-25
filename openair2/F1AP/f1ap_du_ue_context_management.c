@@ -36,6 +36,13 @@
 #include "f1ap_itti_messaging.h"
 #include "f1ap_du_ue_context_management.h"
 
+// undefine C_RNTI from
+// openair1/PHY/LTE_TRANSPORT/transport_common.h which
+// replaces in ie->value.choice.C_RNTI, causing
+// a compile error
+
+#undef C_RNTI 
+
 extern f1ap_setup_req_t *f1ap_du_data;
 
 int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
@@ -167,7 +174,9 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance) {
 
   uint8_t  *buffer;
   uint32_t  len;
-  int       i = 0;
+  int       i = 0, j = 0;
+
+  rnti_t    rntiP;  // note: need get value
 
   /* Create */
   /* 0. Message Type */
@@ -203,19 +212,42 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance) {
   ie->id                             = F1AP_ProtocolIE_ID_id_DUtoCURRCInformation;
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_UEContextSetupResponseIEs__value_PR_DUtoCURRCInformation;
-
-  OCTET_STRING_fromBuf(&ie->value.choice.DUtoCURRCInformation.cellGroupConfig, "asdsa",
-                       strlen("asdsa"));
-  /* OPTIONAL */
-  if (0) {
-    ie->value.choice.DUtoCURRCInformation.measGapConfig = (F1AP_MeasGapConfig_t *)calloc(1, sizeof(F1AP_MeasGapConfig_t));
-    OCTET_STRING_fromBuf( ie->value.choice.DUtoCURRCInformation.measGapConfig, "asdsa",
+  {
+    /* cellGroupConfig */
+    OCTET_STRING_fromBuf(&ie->value.choice.DUtoCURRCInformation.cellGroupConfig, "asdsa",
                          strlen("asdsa"));
+    /* OPTIONAL */
+    /* measGapConfig */
+    if (0) {
+      ie->value.choice.DUtoCURRCInformation.measGapConfig = (F1AP_MeasGapConfig_t *)calloc(1, sizeof(F1AP_MeasGapConfig_t));
+      OCTET_STRING_fromBuf( ie->value.choice.DUtoCURRCInformation.measGapConfig, "asdsa",
+                           strlen("asdsa"));
+    }
+
+    /* OPTIONAL */
+    /* requestedP_MaxFR1 */
+    if (0) {
+      ie->value.choice.DUtoCURRCInformation.requestedP_MaxFR1 = (OCTET_STRING_t *)calloc(1, sizeof(OCTET_STRING_t));
+      OCTET_STRING_fromBuf( ie->value.choice.DUtoCURRCInformation.requestedP_MaxFR1, "asdsa",
+                           strlen("asdsa"));
+    }
+
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
 
   /* optional */
-  /* c4. ResourceCoordinationTransferContainer */
+  /* c4. C_RNTI */
+  if (0) {
+    ie = (F1AP_UEContextSetupResponseIEs_t *)calloc(1, sizeof(F1AP_UEContextSetupResponseIEs_t));
+    ie->id                             = F1AP_ProtocolIE_ID_id_C_RNTI;
+    ie->criticality                    = F1AP_Criticality_ignore;
+    ie->value.present                  = F1AP_UEContextSetupResponseIEs__value_PR_C_RNTI;
+    C_RNTI_TO_BIT_STRING(rntiP, &ie->value.choice.C_RNTI);
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  }
+
+  /* optional */
+  /* c5. ResourceCoordinationTransferContainer */
   if (0) {
     ie = (F1AP_UEContextSetupResponseIEs_t *)calloc(1, sizeof(F1AP_UEContextSetupResponseIEs_t));
     ie->id                             = F1AP_ProtocolIE_ID_id_ResourceCoordinationTransferContainer;
@@ -226,8 +258,19 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance) {
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
 
-  // /*  */
-  /* c5. DRBs_Setup_List */
+  /* optional */
+  /* c6. FullConfiguration */
+  if (0) {
+    ie = (F1AP_UEContextSetupResponseIEs_t *)calloc(1, sizeof(F1AP_UEContextSetupResponseIEs_t));
+    ie->id                             = F1AP_ProtocolIE_ID_id_FullConfiguration;
+    ie->criticality                    = F1AP_Criticality_ignore;
+    ie->value.present                  = F1AP_UEContextSetupResponseIEs__value_PR_FullConfiguration;
+    ie->value.choice.FullConfiguration = F1AP_FullConfiguration_full;   //enum
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  }
+
+  /* mandatory */
+  /* c7. DRBs_Setup_List */
   ie = (F1AP_UEContextSetupResponseIEs_t *)calloc(1, sizeof(F1AP_UEContextSetupResponseIEs_t));
   ie->id                             = F1AP_ProtocolIE_ID_id_DRBs_Setup_List;
   ie->criticality                    = F1AP_Criticality_ignore;
@@ -243,13 +286,18 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance) {
      drbs_setup_item_ies->criticality   = F1AP_Criticality_ignore;
      drbs_setup_item_ies->value.present = F1AP_SRBs_FailedToBeSetup_ItemIEs__value_PR_SRBs_FailedToBeSetup_Item;
 
-     /* 5.1 DRBs_Setup_Item */
+     /* 7.1 DRBs_Setup_Item */
      F1AP_DRBs_Setup_Item_t drbs_setup_item;
      memset((void *)&drbs_setup_item, 0, sizeof(F1AP_DRBs_Setup_Item_t));
 
+     /* dRBID */
      drbs_setup_item.dRBID = 12;
      
-     int j;
+     /* OPTIONAL */
+     /* lCID */
+     drbs_setup_item.lCID = (F1AP_LCID_t *)calloc(1, sizeof(F1AP_LCID_t));
+     drbs_setup_item.lCID = 0L;
+
      for (j=0;
        j<1;
        j++) {
@@ -258,35 +306,31 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance) {
        dLUPTNLInformation_ToBeSetup_Item = (F1AP_DLUPTNLInformation_ToBeSetup_Item_t *)calloc(1, sizeof(F1AP_DLUPTNLInformation_ToBeSetup_Item_t));
        dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.present = F1AP_UPTransportLayerInformation_PR_gTPTunnel;
        
+       /* gTPTunnel */
        F1AP_GTPTunnel_t *gTPTunnel = (F1AP_GTPTunnel_t *)calloc(1, sizeof(F1AP_GTPTunnel_t));
+       {
+         /* transportLayerAddress */
+         TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &gTPTunnel->transportLayerAddress);
 
-       // F1AP_TransportLayerAddress_t transportLayerAddress;
-       // transportLayerAddress.buf = malloc((36+7)/8);
-       // transportLayerAddress.size = (36+7)/8;
-       // transportLayerAddress.bits_unused = 4;
-       // *transportLayerAddress.buf = 123;
-       // dLUPTNLInformation_ToBeSetup_Item.dL_GTP_Tunnel_EndPoint.transportLayerAddress = transportLayerAddress;
-
-       TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &gTPTunnel->transportLayerAddress);
-
-       OCTET_STRING_fromBuf(&gTPTunnel->gTP_TEID, "1204",
-                             strlen("1204"));
-
-       dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.choice.gTPTunnel = gTPTunnel;
-
+         /* gTP_TEID */
+         OCTET_STRING_fromBuf(&gTPTunnel->gTP_TEID, "1204",
+                               strlen("1204"));
+         dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.choice.gTPTunnel = gTPTunnel;
+       }
+       /* ADD */
        ASN_SEQUENCE_ADD(&drbs_setup_item.dLUPTNLInformation_ToBeSetup_List.list,
                         dLUPTNLInformation_ToBeSetup_Item);
-     }
+     } // for j
 
-     //   /* ADD */
+     /* ADD */
      drbs_setup_item_ies->value.choice.DRBs_Setup_Item = drbs_setup_item;
      ASN_SEQUENCE_ADD(&ie->value.choice.DRBs_Setup_List.list,
                      drbs_setup_item_ies);
-  }
+  } // for i
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
-  // /*  */
-  /* c6. SRBs_FailedToBeSetup_List */
+  /* mandatory */
+  /* c8. SRBs_FailedToBeSetup_List */
   ie = (F1AP_UEContextSetupResponseIEs_t *)calloc(1, sizeof(F1AP_UEContextSetupResponseIEs_t));
   ie->id                             = F1AP_ProtocolIE_ID_id_SRBs_FailedToBeSetup_List;
   ie->criticality                    = F1AP_Criticality_ignore;
@@ -295,31 +339,54 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance) {
   for (i=0;
        i<1;
        i++) {
-     //
-     F1AP_SRBs_FailedToBeSetup_ItemIEs_t *srbs_failedToBeSetup_item_ies;
-     srbs_failedToBeSetup_item_ies = (F1AP_SRBs_FailedToBeSetup_ItemIEs_t *)calloc(1, sizeof(F1AP_SRBs_FailedToBeSetup_ItemIEs_t));
-     srbs_failedToBeSetup_item_ies->id            = F1AP_ProtocolIE_ID_id_SRBs_FailedToBeSetup_Item;
-     srbs_failedToBeSetup_item_ies->criticality   = F1AP_Criticality_ignore;
-     srbs_failedToBeSetup_item_ies->value.present = F1AP_SRBs_FailedToBeSetup_ItemIEs__value_PR_SRBs_FailedToBeSetup_Item;
+      //
+      F1AP_SRBs_FailedToBeSetup_ItemIEs_t *srbs_failedToBeSetup_item_ies;
+      srbs_failedToBeSetup_item_ies = (F1AP_SRBs_FailedToBeSetup_ItemIEs_t *)calloc(1, sizeof(F1AP_SRBs_FailedToBeSetup_ItemIEs_t));
+      srbs_failedToBeSetup_item_ies->id            = F1AP_ProtocolIE_ID_id_SRBs_FailedToBeSetup_Item;
+      srbs_failedToBeSetup_item_ies->criticality   = F1AP_Criticality_ignore;
+      srbs_failedToBeSetup_item_ies->value.present = F1AP_SRBs_FailedToBeSetup_ItemIEs__value_PR_SRBs_FailedToBeSetup_Item;
 
-     /* 6.1 SRBs_Setup_Item */
-     F1AP_SRBs_FailedToBeSetup_Item_t srbs_failedToBeSetup_item;
-     memset((void *)&srbs_failedToBeSetup_item, 0, sizeof(F1AP_SRBs_FailedToBeSetup_Item_t));
+      /* 8.1 SRBs_Setup_Item */
+      F1AP_SRBs_FailedToBeSetup_Item_t srbs_failedToBeSetup_item;
+      memset((void *)&srbs_failedToBeSetup_item, 0, sizeof(F1AP_SRBs_FailedToBeSetup_Item_t));
 
-     srbs_failedToBeSetup_item.sRBID = 13;
-     srbs_failedToBeSetup_item.cause = (F1AP_Cause_t *)calloc(1, sizeof(F1AP_Cause_t));
-     srbs_failedToBeSetup_item.cause->present = F1AP_Cause_PR_radioNetwork;
-     srbs_failedToBeSetup_item.cause->choice.radioNetwork = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnb_cu_ue_f1ap_id;
+      /* sRBID */
+      srbs_failedToBeSetup_item.sRBID = 13L;
 
-     //   /* ADD */
-     srbs_failedToBeSetup_item_ies->value.choice.SRBs_FailedToBeSetup_Item = srbs_failedToBeSetup_item;
-     ASN_SEQUENCE_ADD(&ie->value.choice.SRBs_FailedToBeSetup_List.list,
-                     srbs_failedToBeSetup_item_ies);
-  }
+      /* cause */
+      srbs_failedToBeSetup_item.cause = (F1AP_Cause_t *)calloc(1, sizeof(F1AP_Cause_t));
+
+      // dummy value
+      srbs_failedToBeSetup_item.cause->present = F1AP_Cause_PR_radioNetwork;
+
+      switch(srbs_failedToBeSetup_item.cause->present)
+      {
+        case F1AP_Cause_PR_radioNetwork:
+          srbs_failedToBeSetup_item.cause->choice.radioNetwork = F1AP_CauseRadioNetwork_unspecified;
+          break;
+        case F1AP_Cause_PR_transport:
+          srbs_failedToBeSetup_item.cause->choice.transport = F1AP_CauseTransport_unspecified;
+          break;
+        case F1AP_Cause_PR_protocol:
+          srbs_failedToBeSetup_item.cause->choice.protocol = F1AP_CauseProtocol_unspecified;
+          break;
+        case F1AP_Cause_PR_misc:
+          srbs_failedToBeSetup_item.cause->choice.misc = F1AP_CauseMisc_unspecified;
+          break;
+        case F1AP_Cause_PR_NOTHING:
+        default:
+          break;
+      } // switch
+
+      /* ADD */
+      srbs_failedToBeSetup_item_ies->value.choice.SRBs_FailedToBeSetup_Item = srbs_failedToBeSetup_item;
+      ASN_SEQUENCE_ADD(&ie->value.choice.SRBs_FailedToBeSetup_List.list,
+                       srbs_failedToBeSetup_item_ies);
+  } // for i
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
-  // /*  */
-  /* c7. DRBs_FailedToBeSetup_List */
+  /*  */
+  /* c9. DRBs_FailedToBeSetup_List */
   ie = (F1AP_UEContextSetupResponseIEs_t *)calloc(1, sizeof(F1AP_UEContextSetupResponseIEs_t));
   ie->id                             = F1AP_ProtocolIE_ID_id_DRBs_FailedToBeSetup_List;
   ie->criticality                    = F1AP_Criticality_ignore;
@@ -328,31 +395,54 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance) {
   for (i=0;
        i<1;
        i++) {
-     //
-     F1AP_DRBs_FailedToBeSetup_ItemIEs_t *drbs_failedToBeSetup_item_ies;
-     drbs_failedToBeSetup_item_ies = (F1AP_DRBs_FailedToBeSetup_ItemIEs_t *)calloc(1, sizeof(F1AP_DRBs_FailedToBeSetup_ItemIEs_t));
-     drbs_failedToBeSetup_item_ies->id            = F1AP_ProtocolIE_ID_id_DRBs_FailedToBeSetup_Item;
-     drbs_failedToBeSetup_item_ies->criticality   = F1AP_Criticality_ignore;
-     drbs_failedToBeSetup_item_ies->value.present = F1AP_DRBs_FailedToBeSetup_ItemIEs__value_PR_DRBs_FailedToBeSetup_Item;
+      //
+      F1AP_DRBs_FailedToBeSetup_ItemIEs_t *drbs_failedToBeSetup_item_ies;
+      drbs_failedToBeSetup_item_ies = (F1AP_DRBs_FailedToBeSetup_ItemIEs_t *)calloc(1, sizeof(F1AP_DRBs_FailedToBeSetup_ItemIEs_t));
+      drbs_failedToBeSetup_item_ies->id            = F1AP_ProtocolIE_ID_id_DRBs_FailedToBeSetup_Item;
+      drbs_failedToBeSetup_item_ies->criticality   = F1AP_Criticality_ignore;
+      drbs_failedToBeSetup_item_ies->value.present = F1AP_DRBs_FailedToBeSetup_ItemIEs__value_PR_DRBs_FailedToBeSetup_Item;
 
-     /* 7.1 DRBs_Setup_Item */
-     F1AP_DRBs_FailedToBeSetup_Item_t drbs_failedToBeSetup_item;
-     memset((void *)&drbs_failedToBeSetup_item, 0, sizeof(F1AP_DRBs_FailedToBeSetup_Item_t));
+      /* 9.1 DRBs_Setup_Item */
+      F1AP_DRBs_FailedToBeSetup_Item_t drbs_failedToBeSetup_item;
+      memset((void *)&drbs_failedToBeSetup_item, 0, sizeof(F1AP_DRBs_FailedToBeSetup_Item_t));
 
-     drbs_failedToBeSetup_item.dRBID = 14;
-     drbs_failedToBeSetup_item.cause = (F1AP_Cause_t *)calloc(1, sizeof(F1AP_Cause_t));
-     drbs_failedToBeSetup_item.cause->present = F1AP_Cause_PR_radioNetwork;
-     drbs_failedToBeSetup_item.cause->choice.radioNetwork = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnb_cu_ue_f1ap_id;
+      /* dRBID */
+      drbs_failedToBeSetup_item.dRBID = 14;
 
-     //   /* ADD */
-     drbs_failedToBeSetup_item_ies->value.choice.DRBs_FailedToBeSetup_Item = drbs_failedToBeSetup_item;
-     ASN_SEQUENCE_ADD(&ie->value.choice.DRBs_FailedToBeSetup_List.list,
+      /* cause */
+      drbs_failedToBeSetup_item.cause = (F1AP_Cause_t *)calloc(1, sizeof(F1AP_Cause_t));
+
+      // dummy value
+      drbs_failedToBeSetup_item.cause->present = F1AP_Cause_PR_radioNetwork;
+
+      switch(drbs_failedToBeSetup_item.cause->present)
+      {
+        case F1AP_Cause_PR_radioNetwork:
+          drbs_failedToBeSetup_item.cause->choice.radioNetwork = F1AP_CauseRadioNetwork_unspecified;
+          break;
+        case F1AP_Cause_PR_transport:
+          drbs_failedToBeSetup_item.cause->choice.transport = F1AP_CauseTransport_unspecified;
+          break;
+        case F1AP_Cause_PR_protocol:
+          drbs_failedToBeSetup_item.cause->choice.protocol = F1AP_CauseProtocol_unspecified;
+          break;
+        case F1AP_Cause_PR_misc:
+          drbs_failedToBeSetup_item.cause->choice.misc = F1AP_CauseMisc_unspecified;
+          break;
+        case F1AP_Cause_PR_NOTHING:
+        default:
+          break;
+      } // switch
+
+      /* ADD */
+      drbs_failedToBeSetup_item_ies->value.choice.DRBs_FailedToBeSetup_Item = drbs_failedToBeSetup_item;
+      ASN_SEQUENCE_ADD(&ie->value.choice.DRBs_FailedToBeSetup_List.list,
                      drbs_failedToBeSetup_item_ies);
-  }
+  } // for i
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   // /*  */
-  /* c8. SCell_FailedtoSetup_List */
+  /* c10. SCell_FailedtoSetup_List */
   ie = (F1AP_UEContextSetupResponseIEs_t *)calloc(1, sizeof(F1AP_UEContextSetupResponseIEs_t));
   ie->id                             = F1AP_ProtocolIE_ID_id_SCell_FailedtoSetup_List;
   ie->criticality                    = F1AP_Criticality_ignore;
@@ -361,51 +451,90 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance) {
   for (i=0;
        i<1;
        i++) {
-     //
-     F1AP_SCell_FailedtoSetup_ItemIEs_t *sCell_FailedtoSetup_item_ies;
-     sCell_FailedtoSetup_item_ies = (F1AP_SCell_FailedtoSetup_ItemIEs_t *)calloc(1, sizeof(F1AP_SCell_FailedtoSetup_ItemIEs_t));
-     sCell_FailedtoSetup_item_ies->id            = F1AP_ProtocolIE_ID_id_SCell_FailedtoSetup_Item;
-     sCell_FailedtoSetup_item_ies->criticality   = F1AP_Criticality_ignore;
-     sCell_FailedtoSetup_item_ies->value.present = F1AP_SCell_FailedtoSetup_ItemIEs__value_PR_SCell_FailedtoSetup_Item;
+      //
+      F1AP_SCell_FailedtoSetup_ItemIEs_t *sCell_FailedtoSetup_item_ies;
+      sCell_FailedtoSetup_item_ies = (F1AP_SCell_FailedtoSetup_ItemIEs_t *)calloc(1, sizeof(F1AP_SCell_FailedtoSetup_ItemIEs_t));
+      sCell_FailedtoSetup_item_ies->id            = F1AP_ProtocolIE_ID_id_SCell_FailedtoSetup_Item;
+      sCell_FailedtoSetup_item_ies->criticality   = F1AP_Criticality_ignore;
+      sCell_FailedtoSetup_item_ies->value.present = F1AP_SCell_FailedtoSetup_ItemIEs__value_PR_SCell_FailedtoSetup_Item;
 
-     /* 8.1 DRBs_Setup_Item */
-     F1AP_SCell_FailedtoSetup_Item_t sCell_FailedtoSetup_item;
-     memset((void *)&sCell_FailedtoSetup_item, 0, sizeof(F1AP_SCell_FailedtoSetup_Item_t));
+      /* 10.1 DRBs_Setup_Item */
+      F1AP_SCell_FailedtoSetup_Item_t sCell_FailedtoSetup_item;
+      memset((void *)&sCell_FailedtoSetup_item, 0, sizeof(F1AP_SCell_FailedtoSetup_Item_t));
 
-     /* - nRCGI */
-     F1AP_NRCGI_t nRCGI;  // issue here
-     MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i], &nRCGI.pLMN_Identity);
+      /* sCell_ID */
+      F1AP_NRCGI_t nRCGI;  // issue here
+      MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i], &nRCGI.pLMN_Identity);
 
-     NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[0], &nRCGI.nRCellIdentity);
+      NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[0], &nRCGI.nRCellIdentity);
 
-     sCell_FailedtoSetup_item.sCell_ID = nRCGI;
+      sCell_FailedtoSetup_item.sCell_ID = nRCGI;
 
-     sCell_FailedtoSetup_item.cause = (F1AP_Cause_t *)calloc(1, sizeof(F1AP_Cause_t));
-     sCell_FailedtoSetup_item.cause->present = F1AP_Cause_PR_radioNetwork;
-     sCell_FailedtoSetup_item.cause->choice.radioNetwork = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnb_cu_ue_f1ap_id;
+      /* cause */
+      sCell_FailedtoSetup_item.cause = (F1AP_Cause_t *)calloc(1, sizeof(F1AP_Cause_t));
 
-     //   /* ADD */
-     sCell_FailedtoSetup_item_ies->value.choice.SCell_FailedtoSetup_Item = sCell_FailedtoSetup_item;
-     ASN_SEQUENCE_ADD(&ie->value.choice.SCell_FailedtoSetup_List.list,
+      // dummy value
+      sCell_FailedtoSetup_item.cause->present = F1AP_Cause_PR_radioNetwork;
+
+      switch(sCell_FailedtoSetup_item.cause->present)
+      {
+        case F1AP_Cause_PR_radioNetwork:
+          sCell_FailedtoSetup_item.cause->choice.radioNetwork = F1AP_CauseRadioNetwork_unspecified;
+          break;
+        case F1AP_Cause_PR_transport:
+          sCell_FailedtoSetup_item.cause->choice.transport = F1AP_CauseTransport_unspecified;
+          break;
+        case F1AP_Cause_PR_protocol:
+          sCell_FailedtoSetup_item.cause->choice.protocol = F1AP_CauseProtocol_unspecified;
+          break;
+        case F1AP_Cause_PR_misc:
+          sCell_FailedtoSetup_item.cause->choice.misc = F1AP_CauseMisc_unspecified;
+          break;
+        case F1AP_Cause_PR_NOTHING:
+        default:
+          break;
+      } // switch
+
+      /* ADD */
+      sCell_FailedtoSetup_item_ies->value.choice.SCell_FailedtoSetup_Item = sCell_FailedtoSetup_item;
+      ASN_SEQUENCE_ADD(&ie->value.choice.SCell_FailedtoSetup_List.list,
                       sCell_FailedtoSetup_item_ies);
-  }
+  } // for i
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
  
-  // /*  */
-  /* c9. CriticalityDiagnostics */
+
+  /* Optional */
+  /* c11. InactivityMonitoringResponse */
+  if (0) {
+    ie = (F1AP_UEContextSetupResponseIEs_t *)calloc(1, sizeof(F1AP_UEContextSetupResponseIEs_t));
+    ie->id                                        = F1AP_ProtocolIE_ID_id_InactivityMonitoringResponse;
+    ie->criticality                               = F1AP_Criticality_ignore;
+    ie->value.present                             = F1AP_UEContextSetupResponseIEs__value_PR_InactivityMonitoringResponse;
+    ie->value.choice.InactivityMonitoringResponse = F1AP_InactivityMonitoringResponse_not_supported;
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  }
+
+
+  /* Optional */
+  /* c12. CriticalityDiagnostics */
   if (0) {
     ie = (F1AP_UEContextSetupResponseIEs_t *)calloc(1, sizeof(F1AP_UEContextSetupResponseIEs_t));
     ie->id                             = F1AP_ProtocolIE_ID_id_CriticalityDiagnostics;
     ie->criticality                    = F1AP_Criticality_ignore;
     ie->value.present                  = F1AP_UEContextSetupResponseIEs__value_PR_CriticalityDiagnostics;
+    
     ie->value.choice.CriticalityDiagnostics.procedureCode = (F1AP_ProcedureCode_t *)calloc(1, sizeof(F1AP_ProcedureCode_t));
     *ie->value.choice.CriticalityDiagnostics.procedureCode = F1AP_ProcedureCode_id_UEContextSetup;
+    
     ie->value.choice.CriticalityDiagnostics.triggeringMessage = (F1AP_TriggeringMessage_t *)calloc(1, sizeof(F1AP_TriggeringMessage_t));
     *ie->value.choice.CriticalityDiagnostics.triggeringMessage = F1AP_TriggeringMessage_initiating_message;
+    
     ie->value.choice.CriticalityDiagnostics.procedureCriticality = (F1AP_Criticality_t *)calloc(1, sizeof(F1AP_Criticality_t));
     *ie->value.choice.CriticalityDiagnostics.procedureCriticality = F1AP_Criticality_reject;
+    
     ie->value.choice.CriticalityDiagnostics.transactionID = (F1AP_TransactionID_t *)calloc(1, sizeof(F1AP_TransactionID_t));
     *ie->value.choice.CriticalityDiagnostics.transactionID = 0;
+    
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
 
@@ -960,14 +1089,52 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance) {
     ie->id                             = F1AP_ProtocolIE_ID_id_CriticalityDiagnostics;
     ie->criticality                    = F1AP_Criticality_ignore;
     ie->value.present                  = F1AP_UEContextModificationResponseIEs__value_PR_CriticalityDiagnostics;
-    ie->value.choice.CriticalityDiagnostics.procedureCode = (F1AP_ProcedureCode_t *)calloc(1, sizeof(F1AP_ProcedureCode_t));
-    *ie->value.choice.CriticalityDiagnostics.procedureCode = F1AP_ProcedureCode_id_UEContextModification;
-    ie->value.choice.CriticalityDiagnostics.triggeringMessage = (F1AP_TriggeringMessage_t *)calloc(1, sizeof(F1AP_TriggeringMessage_t));
-    *ie->value.choice.CriticalityDiagnostics.triggeringMessage = F1AP_TriggeringMessage_initiating_message;
-    ie->value.choice.CriticalityDiagnostics.procedureCriticality = (F1AP_Criticality_t *)calloc(1, sizeof(F1AP_Criticality_t));
-    *ie->value.choice.CriticalityDiagnostics.procedureCriticality = F1AP_Criticality_reject;
-    ie->value.choice.CriticalityDiagnostics.transactionID = (F1AP_TransactionID_t *)calloc(1, sizeof(F1AP_TransactionID_t));
-    *ie->value.choice.CriticalityDiagnostics.transactionID = 0;
+
+    // dummy value
+    /* optional */
+    /* procedureCode */
+    if (0) {
+      ie->value.choice.CriticalityDiagnostics.procedureCode = (F1AP_ProcedureCode_t *)calloc(1, sizeof(F1AP_ProcedureCode_t));
+      ie->value.choice.CriticalityDiagnostics.procedureCode = 0L;
+    }
+
+    /* optional */
+    /* triggeringMessage */
+    if (0) {
+      ie->value.choice.CriticalityDiagnostics.triggeringMessage = (F1AP_TriggeringMessage_t *)calloc(1, sizeof(F1AP_TriggeringMessage_t));
+      ie->value.choice.CriticalityDiagnostics.triggeringMessage = (F1AP_TriggeringMessage_t *)F1AP_TriggeringMessage_successful_outcome;
+    }
+
+    /* optional */
+    /* procedureCriticality */
+    if (0) {
+      ie->value.choice.CriticalityDiagnostics.procedureCriticality = (F1AP_Criticality_t *)calloc(1, sizeof(F1AP_Criticality_t));
+      ie->value.choice.CriticalityDiagnostics.procedureCriticality = F1AP_Criticality_reject;
+    }
+
+    /* optional */
+    /* transactionID */
+    if (0) {
+      ie->value.choice.CriticalityDiagnostics.transactionID = (F1AP_TransactionID_t *)calloc(1, sizeof(F1AP_TransactionID_t));
+      ie->value.choice.CriticalityDiagnostics.transactionID = 0L;
+    }
+
+    /* optional */
+    /* F1AP_CriticalityDiagnostics_IE_List */
+    if (0) {
+      for (i=0;
+           i<0;
+           i++) {
+
+          F1AP_CriticalityDiagnostics_IE_Item_t *criticalityDiagnostics_ie_item = (F1AP_CriticalityDiagnostics_IE_Item_t *)calloc(1, sizeof(F1AP_CriticalityDiagnostics_IE_Item_t));;
+          criticalityDiagnostics_ie_item->iECriticality = F1AP_Criticality_reject;
+          criticalityDiagnostics_ie_item->iE_ID         = 0L;
+          criticalityDiagnostics_ie_item->typeOfError   = F1AP_TypeOfError_not_understood;
+
+          ASN_SEQUENCE_ADD(&ie->value.choice.CriticalityDiagnostics.iEsCriticalityDiagnostics->list,
+                      criticalityDiagnostics_ie_item);
+      }
+    }
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
 

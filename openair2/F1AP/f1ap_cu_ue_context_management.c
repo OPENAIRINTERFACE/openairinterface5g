@@ -819,7 +819,7 @@ int CU_send_UE_CONTEXT_RELEASE_COMMAND(instance_t instance,
   ie->criticality                    = F1AP_Criticality_ignore;
   ie->value.present                  = F1AP_UEContextReleaseCommandIEs__value_PR_Cause;
 
-   // dummy value
+  // dummy value
   ie->value.choice.Cause.present = F1AP_Cause_PR_radioNetwork;
 
   switch(ie->value.choice.Cause.present)
