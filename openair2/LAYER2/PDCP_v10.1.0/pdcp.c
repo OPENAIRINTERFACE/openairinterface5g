@@ -127,7 +127,7 @@ boolean_t pdcp_data_req(
 
 
   if (srb_flagP == 0) 
-  LOG_I(PDCP, "pdcp data req on drb %d, size %d, rnti %x, node_type %d \n", 
+  LOG_D(PDCP, "pdcp data req on drb %d, size %d, rnti %x, node_type %d \n", 
               rb_idP, pdcp_pdu_size, ctxt_pP->rnti, RC.rrc[ctxt_pP->module_id]->node_type);
 
 
@@ -396,7 +396,7 @@ boolean_t pdcp_data_req(
     if ((pdcp_pdu_p!=NULL) && (srb_flagP == 0) && (ctxt_pP->enb_flag == 1))
     {
 
-       LOG_I(PDCP, "pdcp data req on drb %d, size %d, rnti %x, node_type %d \n", 
+       LOG_D(PDCP, "pdcp data req on drb %d, size %d, rnti %x, node_type %d \n", 
             rb_idP, pdcp_pdu_size, ctxt_pP->rnti, RC.rrc[ctxt_pP->module_id]->node_type);
 
       if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB_CU
@@ -408,7 +408,7 @@ boolean_t pdcp_data_req(
         /* assume good status */
         rlc_status = RLC_OP_STATUS_OK;
         ret = TRUE;
-        LOG_I(PDCP, "proto_agent_send_rlc_data_req for UE RNTI %x, rb %d, pdu size %d \n", 
+        LOG_D(PDCP, "proto_agent_send_rlc_data_req for UE RNTI %x, rb %d, pdu size %d \n", 
             ctxt_pP->rnti, rb_idP, pdcp_pdu_size);
 
       } else if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB_DU
@@ -853,7 +853,7 @@ pdcp_data_ind(
 #if defined(LINK_ENB_PDCP_TO_GTPV1U)
 
   if ((TRUE == ctxt_pP->enb_flag) && (FALSE == srb_flagP)) {
-    LOG_I(PDCP, "Sending packet to GTP, Calling GTPV1U_ENB_TUNNEL_DATA_REQ  ue %x rab %u len %u\n",
+    LOG_D(PDCP, "Sending packet to GTP, Calling GTPV1U_ENB_TUNNEL_DATA_REQ  ue %x rab %u len %u\n",
             ctxt_pP->rnti,
             rb_id + 4,
             sdu_buffer_sizeP - payload_offset );
