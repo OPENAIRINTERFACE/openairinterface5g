@@ -775,8 +775,93 @@ int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t       instance,
 
 
 int CU_send_UE_CONTEXT_RELEASE_COMMAND(instance_t instance,
-                                       F1AP_UEContextReleaseCommand_t *UEContextReleaseCommand) {
-  AssertFatal(1==0,"Not implemented yet\n");
+                                       f1ap_ue_context_setup_req_t *f1ap_ue_context_setup_req) {
+  F1AP_F1AP_PDU_t                   pdu;
+  F1AP_UEContextReleaseCommand_t    *out;
+  F1AP_UEContextReleaseCommandIEs_t *ie;
+
+  uint8_t  *buffer;
+  uint32_t  len;
+  //int       i = 0, j = 0;
+
+  /* Create */
+  /* 0. Message Type */
+  memset(&pdu, 0, sizeof(pdu));
+  pdu.present = F1AP_F1AP_PDU_PR_initiatingMessage;
+  pdu.choice.initiatingMessage = (F1AP_InitiatingMessage_t *)calloc(1, sizeof(F1AP_InitiatingMessage_t));
+  pdu.choice.initiatingMessage->procedureCode = F1AP_ProcedureCode_id_UEContextRelease;
+  pdu.choice.initiatingMessage->criticality   = F1AP_Criticality_reject;
+  pdu.choice.initiatingMessage->value.present = F1AP_InitiatingMessage__value_PR_UEContextReleaseCommand;
+  out = &pdu.choice.initiatingMessage->value.choice.UEContextReleaseCommand;
+  
+  /* mandatory */
+  /* c1. GNB_CU_UE_F1AP_ID */
+  ie = (F1AP_UEContextReleaseCommandIEs_t *)calloc(1, sizeof(F1AP_UEContextReleaseCommandIEs_t));
+  ie->id                             = F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID;
+  ie->criticality                    = F1AP_Criticality_reject;
+  ie->value.present                  = F1AP_UEContextReleaseCommandIEs__value_PR_GNB_CU_UE_F1AP_ID;
+  ie->value.choice.GNB_CU_UE_F1AP_ID = f1ap_ue_context_setup_req->gNB_CU_ue_id;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* mandatory */
+  /* c2. GNB_DU_UE_F1AP_ID */
+  ie = (F1AP_UEContextReleaseCommandIEs_t *)calloc(1, sizeof(F1AP_UEContextReleaseCommandIEs_t));
+  ie->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
+  ie->criticality                    = F1AP_Criticality_reject;
+  ie->value.present                  = F1AP_UEContextReleaseCommandIEs__value_PR_GNB_DU_UE_F1AP_ID;
+  ie->value.choice.GNB_DU_UE_F1AP_ID = *f1ap_ue_context_setup_req->gNB_DU_ue_id;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* mandatory */
+  /* c3. Cause */
+  ie = (F1AP_UEContextReleaseCommandIEs_t *)calloc(1, sizeof(F1AP_UEContextReleaseCommandIEs_t));
+  ie->id                             = F1AP_ProtocolIE_ID_id_Cause;
+  ie->criticality                    = F1AP_Criticality_ignore;
+  ie->value.present                  = F1AP_UEContextReleaseCommandIEs__value_PR_Cause;
+
+   // dummy value
+  ie->value.choice.Cause.present = F1AP_Cause_PR_radioNetwork;
+
+  switch(ie->value.choice.Cause.present)
+  {
+    case F1AP_Cause_PR_radioNetwork:
+      ie->value.choice.Cause.choice.radioNetwork = F1AP_CauseRadioNetwork_unspecified;
+      break;
+    case F1AP_Cause_PR_transport:
+      ie->value.choice.Cause.choice.transport = F1AP_CauseTransport_unspecified;
+      break;
+    case F1AP_Cause_PR_protocol:
+      ie->value.choice.Cause.choice.protocol = F1AP_CauseProtocol_unspecified;
+      break;
+    case F1AP_Cause_PR_misc:
+      ie->value.choice.Cause.choice.misc = F1AP_CauseMisc_unspecified;
+      break;
+    case F1AP_Cause_PR_NOTHING:
+    default:
+      break;
+  }
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* optional */
+  /* c4. RRCContainer */
+  ie = (F1AP_UEContextReleaseCommandIEs_t *)calloc(1, sizeof(F1AP_UEContextReleaseCommandIEs_t));
+  ie->id                             = F1AP_ProtocolIE_ID_id_RRCContainer;
+  ie->criticality                    = F1AP_Criticality_ignore;
+  ie->value.present                  = F1AP_UEContextReleaseCommandIEs__value_PR_RRCContainer;
+
+  OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, "asdsa1d32sa1d31asd31as",
+                         strlen("asdsa1d32sa1d31asd31as"));
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* encode */
+  if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
+    LOG_E(DU_F1AP, "Failed to encode F1 context release command\n");
+    return -1;
+  }
+
+  // send
+
+  return 0;
 }
 
 

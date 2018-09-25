@@ -61,8 +61,10 @@ int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t       instance,
 /*
  * UE Context Release (gNB-CU initiated)
  */
+// note: is temporary with f1ap_ue_context_setup_req_t
 int CU_send_UE_CONTEXT_RELEASE_COMMAND(instance_t instance,
-                                       F1AP_UEContextReleaseCommand_t *UEContextReleaseCommand);
+                                       f1ap_ue_context_setup_req_t *f1ap_ue_context_setup_req);
+
 int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
                                          uint32_t         assoc_id,
                                          uint32_t         stream,

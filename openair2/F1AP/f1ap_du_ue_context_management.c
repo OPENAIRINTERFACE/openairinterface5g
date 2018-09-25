@@ -424,8 +424,84 @@ int DU_send_UE_CONTEXT_SETUP_FAILURE(instance_t instance) {
 }
 
 
-int DU_send_UE_CONTEXT_RELEASE_REQUEST(instance_t instance) {
-  AssertFatal(1==0,"Not implemented yet\n");
+// note: is temporary with f1ap_ue_context_setup_req_t
+int DU_send_UE_CONTEXT_RELEASE_REQUEST(instance_t instance,
+                                       f1ap_ue_context_setup_req_t *f1ap_ue_context_setup_req) {
+  F1AP_F1AP_PDU_t                   pdu;
+  F1AP_UEContextReleaseRequest_t    *out;
+  F1AP_UEContextReleaseRequestIEs_t *ie;
+
+  uint8_t  *buffer;
+  uint32_t  len;
+  //int       i = 0, j = 0;
+
+  /* Create */
+  /* 0. Message Type */
+  memset(&pdu, 0, sizeof(pdu));
+  pdu.present = F1AP_F1AP_PDU_PR_initiatingMessage;
+  pdu.choice.initiatingMessage = (F1AP_InitiatingMessage_t *)calloc(1, sizeof(F1AP_InitiatingMessage_t));
+  pdu.choice.initiatingMessage->procedureCode = F1AP_ProcedureCode_id_UEContextRelease;
+  pdu.choice.initiatingMessage->criticality   = F1AP_Criticality_reject;
+  pdu.choice.initiatingMessage->value.present = F1AP_InitiatingMessage__value_PR_UEContextReleaseRequest;
+  out = &pdu.choice.initiatingMessage->value.choice.UEContextReleaseRequest;
+  
+  /* mandatory */
+  /* c1. GNB_CU_UE_F1AP_ID */
+  ie = (F1AP_UEContextReleaseRequestIEs_t *)calloc(1, sizeof(F1AP_UEContextReleaseRequestIEs_t));
+  ie->id                             = F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID;
+  ie->criticality                    = F1AP_Criticality_reject;
+  ie->value.present                  = F1AP_UEContextReleaseRequestIEs__value_PR_GNB_CU_UE_F1AP_ID;
+  ie->value.choice.GNB_CU_UE_F1AP_ID = f1ap_ue_context_setup_req->gNB_CU_ue_id;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* mandatory */
+  /* c2. GNB_DU_UE_F1AP_ID */
+  ie = (F1AP_UEContextReleaseRequestIEs_t *)calloc(1, sizeof(F1AP_UEContextReleaseRequestIEs_t));
+  ie->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
+  ie->criticality                    = F1AP_Criticality_reject;
+  ie->value.present                  = F1AP_UEContextReleaseRequestIEs__value_PR_GNB_DU_UE_F1AP_ID;
+  ie->value.choice.GNB_DU_UE_F1AP_ID = *f1ap_ue_context_setup_req->gNB_DU_ue_id;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* mandatory */
+  /* c3. Cause */
+  ie = (F1AP_UEContextReleaseRequestIEs_t *)calloc(1, sizeof(F1AP_UEContextReleaseRequestIEs_t));
+  ie->id                             = F1AP_ProtocolIE_ID_id_Cause;
+  ie->criticality                    = F1AP_Criticality_ignore;
+  ie->value.present                  = F1AP_UEContextReleaseRequestIEs__value_PR_Cause;
+
+   // dummy value
+  ie->value.choice.Cause.present = F1AP_Cause_PR_radioNetwork;
+
+  switch(ie->value.choice.Cause.present)
+  {
+    case F1AP_Cause_PR_radioNetwork:
+      ie->value.choice.Cause.choice.radioNetwork = F1AP_CauseRadioNetwork_unspecified;
+      break;
+    case F1AP_Cause_PR_transport:
+      ie->value.choice.Cause.choice.transport = F1AP_CauseTransport_unspecified;
+      break;
+    case F1AP_Cause_PR_protocol:
+      ie->value.choice.Cause.choice.protocol = F1AP_CauseProtocol_unspecified;
+      break;
+    case F1AP_Cause_PR_misc:
+      ie->value.choice.Cause.choice.misc = F1AP_CauseMisc_unspecified;
+      break;
+    case F1AP_Cause_PR_NOTHING:
+    default:
+      break;
+  }
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* encode */
+  if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
+    LOG_E(DU_F1AP, "Failed to encode F1 context release request\n");
+    return -1;
+  }
+
+  // send
+
+  return 0;
 }
 
 
@@ -437,8 +513,110 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
 }
 
 
-int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance) {
-  AssertFatal(1==0,"Not implemented yet\n");
+// note: is temporary with f1ap_ue_context_setup_req_t
+int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance,
+                                        f1ap_ue_context_setup_req_t *f1ap_ue_context_setup_req) {
+  F1AP_F1AP_PDU_t                   pdu;
+  F1AP_UEContextReleaseComplete_t    *out;
+  F1AP_UEContextReleaseCompleteIEs_t *ie;
+
+  uint8_t  *buffer;
+  uint32_t  len;
+  int       i = 0;//, j = 0;
+
+  /* Create */
+  /* 0. Message Type */
+  memset(&pdu, 0, sizeof(pdu));
+  pdu.present = F1AP_F1AP_PDU_PR_successfulOutcome;
+  pdu.choice.successfulOutcome = (F1AP_SuccessfulOutcome_t *)calloc(1, sizeof(F1AP_SuccessfulOutcome_t));
+  pdu.choice.successfulOutcome->procedureCode = F1AP_ProcedureCode_id_UEContextRelease;
+  pdu.choice.successfulOutcome->criticality   = F1AP_Criticality_reject;
+  pdu.choice.successfulOutcome->value.present = F1AP_SuccessfulOutcome__value_PR_UEContextReleaseComplete;
+  out = &pdu.choice.successfulOutcome->value.choice.UEContextReleaseComplete;
+  
+  /* mandatory */
+  /* c1. GNB_CU_UE_F1AP_ID */
+  ie = (F1AP_UEContextReleaseCompleteIEs_t *)calloc(1, sizeof(F1AP_UEContextReleaseCompleteIEs_t));
+  ie->id                             = F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID;
+  ie->criticality                    = F1AP_Criticality_reject;
+  ie->value.present                  = F1AP_UEContextReleaseCompleteIEs__value_PR_GNB_CU_UE_F1AP_ID;
+  ie->value.choice.GNB_CU_UE_F1AP_ID = f1ap_ue_context_setup_req->gNB_CU_ue_id;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* mandatory */
+  /* c2. GNB_DU_UE_F1AP_ID */
+  ie = (F1AP_UEContextReleaseCompleteIEs_t *)calloc(1, sizeof(F1AP_UEContextReleaseCompleteIEs_t));
+  ie->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
+  ie->criticality                    = F1AP_Criticality_reject;
+  ie->value.present                  = F1AP_UEContextReleaseCompleteIEs__value_PR_GNB_DU_UE_F1AP_ID;
+  ie->value.choice.GNB_DU_UE_F1AP_ID = *f1ap_ue_context_setup_req->gNB_DU_ue_id;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* optional */
+  /* c3. CriticalityDiagnostics */
+  if (0) {
+    ie = (F1AP_UEContextReleaseCompleteIEs_t *)calloc(1, sizeof(F1AP_UEContextReleaseCompleteIEs_t));
+    ie->id                             = F1AP_ProtocolIE_ID_id_CriticalityDiagnostics;
+    ie->criticality                    = F1AP_Criticality_ignore;
+    ie->value.present                  = F1AP_UEContextReleaseCompleteIEs__value_PR_CriticalityDiagnostics;
+
+    // dummy value
+    /* optional */
+    /* procedureCode */
+    if (0) {
+      ie->value.choice.CriticalityDiagnostics.procedureCode = (F1AP_ProcedureCode_t *)calloc(1, sizeof(F1AP_ProcedureCode_t));
+      ie->value.choice.CriticalityDiagnostics.procedureCode = 0L;
+    }
+
+    /* optional */
+    /* triggeringMessage */
+    if (0) {
+      ie->value.choice.CriticalityDiagnostics.triggeringMessage = (F1AP_TriggeringMessage_t *)calloc(1, sizeof(F1AP_TriggeringMessage_t));
+      ie->value.choice.CriticalityDiagnostics.triggeringMessage = (F1AP_TriggeringMessage_t *)F1AP_TriggeringMessage_successful_outcome;
+    }
+
+    /* optional */
+    /* procedureCriticality */
+    if (0) {
+      ie->value.choice.CriticalityDiagnostics.procedureCriticality = (F1AP_Criticality_t *)calloc(1, sizeof(F1AP_Criticality_t));
+      ie->value.choice.CriticalityDiagnostics.procedureCriticality = F1AP_Criticality_reject;
+    }
+
+    /* optional */
+    /* transactionID */
+    if (0) {
+      ie->value.choice.CriticalityDiagnostics.transactionID = (F1AP_TransactionID_t *)calloc(1, sizeof(F1AP_TransactionID_t));
+      ie->value.choice.CriticalityDiagnostics.transactionID = 0L;
+    }
+
+    /* optional */
+    /* F1AP_CriticalityDiagnostics_IE_List */
+    if (0) {
+      for (i=0;
+           i<0;
+           i++) {
+
+          F1AP_CriticalityDiagnostics_IE_Item_t *criticalityDiagnostics_ie_item = (F1AP_CriticalityDiagnostics_IE_Item_t *)calloc(1, sizeof(F1AP_CriticalityDiagnostics_IE_Item_t));;
+          criticalityDiagnostics_ie_item->iECriticality = F1AP_Criticality_reject;
+          criticalityDiagnostics_ie_item->iE_ID         = 0L;
+          criticalityDiagnostics_ie_item->typeOfError   = F1AP_TypeOfError_not_understood;
+
+          ASN_SEQUENCE_ADD(&ie->value.choice.CriticalityDiagnostics.iEsCriticalityDiagnostics->list,
+                      criticalityDiagnostics_ie_item);
+      }
+    }
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  }
+
+  /* encode */
+  if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
+    LOG_E(DU_F1AP, "Failed to encode F1 context release complete\n");
+    return -1;
+  }
+
+  // send
+
+  return 0;
 }
 
 
