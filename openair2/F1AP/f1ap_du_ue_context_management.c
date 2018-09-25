@@ -634,11 +634,74 @@ int DU_send_UE_CONTEXT_RELEASE_REQUEST(instance_t instance,
 }
 
 
+// note: is temporary with F1AP_UE_CONTEXT_SETUP_REQ
 int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
                                          uint32_t         assoc_id,
                                          uint32_t         stream,
                                          F1AP_F1AP_PDU_t *pdu) {
-  AssertFatal(1==0,"Not implemented yet\n");
+
+  MessageDef                      *msg_p; // message to RRC
+  F1AP_UEContextReleaseRequest_t    *container;
+  F1AP_UEContextReleaseRequestIEs_t *ie;
+  int i;
+
+  DevAssert(pdu);
+
+  msg_p = itti_alloc_new_message(TASK_DU_F1, F1AP_UE_CONTEXT_SETUP_REQ);
+  f1ap_ue_context_setup_req_t *f1ap_ue_context_setup_req;
+  f1ap_ue_context_setup_req = &F1AP_UE_CONTEXT_SETUP_REQ(msg_p);
+
+  container = &pdu->choice.initiatingMessage->value.choice.UEContextReleaseRequest;
+
+  /* GNB_CU_UE_F1AP_ID */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseRequestIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
+  f1ap_ue_context_setup_req->gNB_CU_ue_id = ie->value.choice.GNB_CU_UE_F1AP_ID;
+
+  /* GNB_DU_UE_F1AP_ID */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseRequestIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
+  f1ap_ue_context_setup_req->gNB_DU_ue_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
+
+  /* Cause */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseRequestIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_Cause, true);
+
+  switch(ie->value.choice.Cause.present)
+  {
+    case F1AP_Cause_PR_radioNetwork:
+      //ie->value.choice.Cause.choice.radioNetwork
+      break;
+    case F1AP_Cause_PR_transport:
+      //ie->value.choice.Cause.choice.transport
+      break;
+    case F1AP_Cause_PR_protocol:
+      //ie->value.choice.Cause.choice.protocol
+      break;
+    case F1AP_Cause_PR_misc:
+      //ie->value.choice.Cause.choice.misc
+      break;
+    case F1AP_Cause_PR_NOTHING:
+    default:
+      break;
+  }
+
+  /* Optional */
+  /* RRC Container */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_RRCContainer, false);
+  if (ie) {
+  // message_p = itti_alloc_new_message (TASK_CU_F1, RRC_MAC_CCCH_DATA_IND);
+  // memset (RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
+  // ccch_sdu_len = ie->value.choice.RRCContainer.size;
+  // memcpy(RRC_MAC_CCCH_DATA_IND (message_p).sdu, ie->value.choice.RRCContainer.buf,
+  //        ccch_sdu_len);
+  // LOG_D(CU_F1AP, "RRCContainer(CCCH) :");
+  // for (int i=0;i<ie->value.choice.RRCContainer.size;i++) LOG_D(CU_F1AP, "%2x ",RRC_MAC_CCCH_DATA_IND (message_p).sdu[i]);
+  }
+  
+  AssertFatal(0, "check configuration, send to appropriate handler\n");
+
 }
 
 
