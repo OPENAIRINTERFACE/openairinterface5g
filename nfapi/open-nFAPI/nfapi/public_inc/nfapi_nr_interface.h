@@ -323,6 +323,17 @@ typedef enum {
   NFAPI_NR_PDSCH_RBG_CONFIG_TYPE2
 } nfapi_nr_pdsch_rbg_config_type_e;
 
+typedef enum {
+  NFAPI_NR_PRG_GRANULARITY_2=2,
+  NFAPI_NR_PRG_GRANULARITY_4=4,
+  NFAPI_NR_PRG_GRANULARITY_WIDEBAND
+} nfapi_nr_prg_granularity_e;
+
+typedef enum {
+  NFAPI_NR_PRB_BUNDLING_TYPE_STATIC=0,
+  NFAPI_NR_PRB_BUNDLING_TYPE_DYNAMIC
+} nfapi_nr_prb_bundling_type_e;
+
 // P7 Sub Structures
 
 typedef struct {

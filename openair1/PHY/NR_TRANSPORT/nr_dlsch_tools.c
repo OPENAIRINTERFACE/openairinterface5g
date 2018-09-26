@@ -191,7 +191,7 @@ void nr_get_rbg_parms(NR_BWP_PARMS* bwp, uint8_t config_type) {
   rbg_parms->P = get_RBG_size_P(bwp->N_RB, config_type);
   rbg_parms->start_size = rbg_parms->P - bwp->location%rbg_parms->P;
   rbg_parms->end_size = ((bwp->location + bwp->N_RB)%rbg_parms->P)? ((bwp->location + bwp->N_RB)%rbg_parms->P) : rbg_parms->P;
-  rbg_parms->N_RBG = (uint8_t)ceil( (bwp->N_RB + (bwp->location%rbg_parms->P))/rbg_parms->P);
+  rbg_parms->N_RBG = (uint8_t)ceil( (bwp->N_RB + (bwp->location%rbg_parms->P))/(float)rbg_parms->P);
   LOG_I(PHY, "RBG parameters for BWP %d location %d N_RB %d:\n", bwp->bwp_id, bwp->location, bwp->N_RB);
   LOG_I(PHY, "P %d\t start size %d\t endsize %d\t N_RBG %d\n", rbg_parms->P, rbg_parms->start_size, rbg_parms->end_size, rbg_parms->N_RBG);
 }
@@ -210,4 +210,27 @@ static inline uint16_t get_RIV(uint16_t rb_start, uint16_t L, uint16_t N_RB) {
     return (N_RB*(L-1)+rb_start);
   else
     return (N_RB*(N_RB-L+1) + (N_RB-1-rb_start));
+}
+
+  /// PRB bundling routines
+
+// Precoding granularity
+static inline uint8_t nr_get_P_prime(uint8_t rnti_type, uint8_t dci_format, uint8_t prb_bundling_type) {
+  if (dci_format == NFAPI_NR_DL_DCI_FORMAT_1_0)
+    return (NFAPI_NR_PRG_GRANULARITY_2);
+  else // NFAPI_NR_DL_DCI_FORMAT_1_1
+    return ((prb_bundling_type)?0:2);// incomplete for 1_1
+}
+
+void nr_get_PRG_parms(NR_BWP_PARMS* bwp, NR_gNB_DCI_ALLOC_t dci_alloc, uint8_t prb_bundling_type) {
+  nr_prg_parms_t* prg_parms = &bwp->prg_parms;
+
+  prg_parms->P_prime = nr_get_P_prime(dci_alloc.pdcch_params.rnti_type, dci_alloc.pdcch_params.dci_format, prb_bundling_type);
+  prg_parms->start_size = prg_parms->P_prime - bwp->location%prg_parms->P_prime;
+  prg_parms->end_size = (bwp->location + bwp->N_RB)%prg_parms->P_prime;
+  if (!prg_parms->end_size)
+    prg_parms->end_size = prg_parms->P_prime;
+  prg_parms->N_PRG = ceil((float)bwp->N_RB/prg_parms->P_prime);
+  LOG_I(PHY, "PRG parameters for BWP %d location %d N_RB %d:\n", bwp->bwp_id, bwp->location, bwp->N_RB);
+  LOG_I(PHY, "P_prime %d\t start size %d\t endsize %d\t N_PRG %d\n", prg_parms->P_prime, prg_parms->start_size, prg_parms->end_size, prg_parms->N_PRG);
 }

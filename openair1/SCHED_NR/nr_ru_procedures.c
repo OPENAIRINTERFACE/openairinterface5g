@@ -100,9 +100,8 @@ void nr_feptx_ofdm_2thread(RU_t *ru) {
 
   // this copy should be done in the precoding thread (currently inactive)
   for (int aa=0;aa<ru->nb_tx;aa++)
-  memcpy((void*)ru->common.txdataF_BF[aa],
-   (void*)&ru->gNB_list[0]->common_vars.txdataF[aa][subframe*fp->samples_per_subframe_wCP],
-   fp->samples_per_subframe_wCP*sizeof(int32_t));
+    memcpy((void*)ru->common.txdataF_BF[aa],
+   (void*)ru->gNB_list[0]->common_vars.txdataF[aa],fp->samples_per_subframe_wCP*sizeof(int32_t));
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM , 1 );
 
