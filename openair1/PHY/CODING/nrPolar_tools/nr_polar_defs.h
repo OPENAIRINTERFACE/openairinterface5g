@@ -130,12 +130,14 @@ void nr_free_uint8_t_3D_array(uint8_t ***input, uint16_t xlen, uint16_t ylen);
 void nr_free_uint8_t_2D_array(uint8_t **input, uint16_t xlen);
 void nr_free_double_2D_array(double **input, uint16_t xlen);
 
+#define Nmax 1024
+#define nmax 10
 
 typedef struct decoder_list_s {
   
-  uint8_t **bit;
-  double **llr; 
-  uint8_t *crcChecksum; 
+  uint8_t bit[1+nmax][Nmax];
+  double llr[1+nmax][Nmax]; 
+  uint8_t crcChecksum[24]; 
   uint8_t crcState; 
   double pathMetric; 
 

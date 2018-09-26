@@ -22,9 +22,9 @@
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 //#define SHOWCOMP 1
 
-inline void computeLLR(double **llr, uint16_t row, uint16_t col, 
+inline void computeLLR(double llr[1+nmax][Nmax], uint16_t row, uint16_t col, 
 		       uint16_t offset, uint8_t approximation) __attribute__((always_inline));
-inline void computeLLR(double **llr, uint16_t row, uint16_t col, 
+inline void computeLLR(double llr[1+nmax][Nmax], uint16_t row, uint16_t col, 
 		       uint16_t offset, uint8_t approximation) {
 
         double a;
