@@ -188,7 +188,7 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   uint32_t ret,offset;
   int32_t no_iteration_ldpc;
   //short dummy_w[MAX_NUM_DLSCH_SEGMENTS][3*(8448+64)];
-  uint32_t r,r_offset=0,Kr,Kr_bytes,err_flag=0;
+  uint32_t r,r_offset=0,Kr,Kr_bytes,K_bytes_F,err_flag=0;
   uint8_t crc_type;
   t_nrLDPC_dec_params decParams;
   t_nrLDPC_dec_params* p_decParams = &decParams;
@@ -324,6 +324,8 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   Kr = harq_process->K;
   Kr_bytes = Kr>>3;
 
+  K_bytes_F = Kr_bytes-(harq_process->F>>3);
+
   Tbslbrm = nr_compute_tbs(harq_process->mcs,nb_prb,frame_parms->symbols_per_slot,0,0, harq_process->Nl);
 
   for (r=0; r<harq_process->C; r++) {
@@ -445,15 +447,16 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
             }
       printf(" \n");*/
 
-		memset(pv,0,harq_process->K*sizeof(int16_t));
+		memset(pv,0,2*harq_process->Z*sizeof(int16_t));
         //memset(pl,0,2*p_decParams->Z*sizeof(int8_t));
+    	memset((pv+K_bytes_F),127,harq_process->F*sizeof(int16_t));
 
-      	for (i=((2*p_decParams->Z)>>3), j = 0; i < (Kr_bytes-(harq_process->F>>3)); i++, j++)
+      	for (i=((2*p_decParams->Z)>>3), j = 0; i < K_bytes_F; i++, j++)
       	{
       		pv[i]= _mm_loadu_si128((__m128i*)(&inv_d[8*j]));
       	}
 
-		for (i=Kr_bytes, j = (Kr_bytes-(harq_process->F>>3)); i < ((kc*p_decParams->Z)>>3); i++, j++)
+		for (i=Kr_bytes, j = K_bytes_F; i < ((kc*p_decParams->Z)>>3); i++, j++)
 		      	{
 		      		pv[i]= _mm_loadu_si128((__m128i*)(&inv_d[8*j]));
 		      	}
