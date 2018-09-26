@@ -856,12 +856,17 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   // -> // compute @pointer where llrs should filled for this ofdm-symbol
   int8_t  *pllr_symbol_cw0;
   int8_t  *pllr_symbol_cw1;
+  int8_t  *pllr_symbol_cw0_deint;
+  int8_t  *pllr_symbol_cw1_deint;
   uint32_t llr_offset_symbol;
+  uint32_t nb_rb_pdsch = 106;
+  uint16_t bundle_L = 2;
   llr_offset_symbol = pdsch_vars[eNB_id]->llr_offset[symbol];
-  pllr_symbol_cw0  = (int8_t*)pdsch_vars[eNB_id]->llr[0];
-  pllr_symbol_cw1  = (int8_t*)pdsch_vars[eNB_id]->llr[1];
+  pllr_symbol_cw0_deint  = (int8_t*)pdsch_vars[eNB_id]->llr[0];
+  pllr_symbol_cw1_deint  = (int8_t*)pdsch_vars[eNB_id]->llr[1];
   pllr_symbol_cw0 += llr_offset_symbol;
   pllr_symbol_cw1 += llr_offset_symbol;
+
 
   /*LOG_I(PHY,"compute LLRs [AbsSubframe %d.%d-%d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %x @LLR Buff(symb) %x\n",
              proc->frame_rx, proc->subframe_rx,symbol,
@@ -1198,6 +1203,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   }
   }
 
+  nr_dlsch_deinterleaving(symbol,bundle_L,(int16_t*)pllr_symbol_cw0,(int16_t*)pllr_symbol_cw0_deint, nb_rb_pdsch);
+
 #if UE_TIMING_TRACE
     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #if DISABLE_LOG_X
@@ -1256,6 +1263,51 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
 }
 
+void nr_dlsch_deinterleaving(uint8_t symbol,
+							uint16_t L,
+							uint16_t *llr,
+							uint16_t *llr_deint,
+							uint32_t nb_rb_pdsch)
+{
+
+  uint32_t bundle_idx, N_bundle, R, C, r,c;
+  int32_t m,k;
+  uint8_t nb_re;
+
+  R=2;
+  N_bundle = nb_rb_pdsch/L;
+  C=N_bundle/R;
+
+  uint32_t *bundle_deint = malloc(N_bundle*sizeof(uint32_t));
+
+  printf("N_bundle %d L %d nb_rb_pdsch %d\n",N_bundle, L,nb_rb_pdsch);
+
+  if (symbol==2)
+	  nb_re = 6;
+  else
+	  nb_re = 12;
+
+
+  AssertFatal(llr!=NULL,"nr_dlsch_deinterleaving: FATAL llr is Null\n");
+
+
+  for (c =0; c< C; c++){
+	  for (r=0; r<R;r++){
+		  bundle_idx = r*C+c;
+		  bundle_deint[bundle_idx] = c*R+r;
+		  //printf("c %u r %u bundle_idx %u bundle_deinter %u\n", c, r, bundle_idx, bundle_deint[bundle_idx]);
+	  }
+  }
+
+  for (k=0; k<N_bundle;k++)
+  {
+	  for (m=0; m<nb_re*L;m++){
+		  llr_deint[bundle_deint[k]*nb_re*L+m]= llr[k*nb_re*L+m];
+		  //printf("k %d m %d bundle_deint %d llr_deint %d\n", k, m, bundle_deint[k], llr_deint[bundle_deint[k]*nb_re*L+m]);
+	  }
+  }
+}
+
 //==============================================================================================
 // Pre-processing for LLR computation
 //==============================================================================================
@@ -1302,11 +1354,11 @@ void nr_dlsch_channel_compensation(int **rxdataF_ext,
 
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
-      dl_ch128          = (__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*frame_parms->N_RB_DL*12];
-      dl_ch_mag128      = (__m128i *)&dl_ch_mag[(aatx<<1)+aarx][symbol*frame_parms->N_RB_DL*12];
-      dl_ch_mag128b     = (__m128i *)&dl_ch_magb[(aatx<<1)+aarx][symbol*frame_parms->N_RB_DL*12];
-      rxdataF128        = (__m128i *)&rxdataF_ext[aarx][symbol*frame_parms->N_RB_DL*12];
-      rxdataF_comp128   = (__m128i *)&rxdataF_comp[(aatx<<1)+aarx][symbol*frame_parms->N_RB_DL*12];
+      dl_ch128          = (__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*nb_rb*12];
+      dl_ch_mag128      = (__m128i *)&dl_ch_mag[(aatx<<1)+aarx][symbol*nb_rb*12];
+      dl_ch_mag128b     = (__m128i *)&dl_ch_magb[(aatx<<1)+aarx][symbol*nb_rb*12];
+      rxdataF128        = (__m128i *)&rxdataF_ext[aarx][symbol*nb_rb*12];
+      rxdataF_comp128   = (__m128i *)&rxdataF_comp[(aatx<<1)+aarx][symbol*nb_rb*12];
 
 
       for (rb=0; rb<nb_rb; rb++) {
@@ -1515,7 +1567,7 @@ void nr_dlsch_channel_compensation(int **rxdataF_ext,
       }
 
       if (first_symbol_flag==1) {
-        measurements->rx_correlation[0][aarx] = signal_energy(&rho[aarx][symbol*frame_parms->N_RB_DL*12],rb*12);
+        measurements->rx_correlation[0][aarx] = signal_energy(&rho[aarx][symbol*nb_rb*12],rb*12);
       }
     }
   }
@@ -1945,7 +1997,7 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
   unsigned char symbol_mod,pilots=0,j=0,poffset=0;
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
-  pilots = ((symbol_mod==0)||(symbol_mod==(4-frame_parms->Ncp))) ? 1 : 0;
+  pilots = (symbol==2) ? 1 : 0; //to updated from config
   l=symbol;
   nsymb = (frame_parms->Ncp==NORMAL) ? 14:12;
 
