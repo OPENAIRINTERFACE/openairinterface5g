@@ -217,7 +217,7 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   nr_polar_init(nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
   t_nrPolar_paramsPtr currentPtr = nr_polar_params(*nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
 #endif
-  polar_encoder_dci(dci_alloc.dci_pdu, encoder_output, currentPtr, n_RNTI);
+  polar_encoder_dci(dci_alloc.dci_pdu, encoder_output, currentPtr, pdcch_params.rnti);
 
 #ifdef DEBUG_CHANNEL_CODING
   printf("DCI PDU: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
