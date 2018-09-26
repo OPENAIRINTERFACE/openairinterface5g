@@ -43,7 +43,7 @@
 #include "PHY/CODING/nrPolar_tools/nr_polar_uci_defs.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 #include "PHY/CODING/coding_defs.h"
-#include "SIMULATION/TOOLS/sim.h"
+//#include "SIMULATION/TOOLS/sim.h"
 
 #define NR_POLAR_DECODER_LISTSIZE 8 //uint8_t
 #define NR_POLAR_DECODER_PATH_METRIC_APPROXIMATION 0 //uint8_t; 0 --> eq. (8a) and (11b), 1 --> eq. (9) and (12)
