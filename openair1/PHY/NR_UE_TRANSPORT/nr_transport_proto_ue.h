@@ -830,6 +830,12 @@ void nr_dlsch_channel_compensation(int32_t **rxdataF_ext,
                                 uint8_t output_shift,
                                 PHY_NR_MEASUREMENTS *phy_measurements);
 
+void nr_dlsch_deinterleaving(uint8_t symbol,
+							uint16_t L,
+							uint16_t *llr,
+							uint16_t *llr_deint,
+							uint32_t nb_rb_pdsch);
+
 void dlsch_dual_stream_correlation(NR_DL_FRAME_PARMS *frame_parms,
                                    unsigned char symbol,
                                    unsigned short nb_rb,
@@ -991,16 +997,17 @@ void nr_dlsch_scale_channel(int32_t **dl_ch_estimates_ext,
     @param llr8_flag If 1, indicate that the 8-bit turbo decoder should be used
     @returns 0 on success, 1 on unsuccessful decoding
 */
-uint32_t dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
-                        int16_t *dlsch_llr,
-                        NR_DL_FRAME_PARMS *lte_frame_parms,
-                        NR_UE_DLSCH_t *dlsch,
-                        NR_DL_UE_HARQ_t *harq_process,
-                        uint32_t frame,
-                        uint8_t subframe,
-                        uint8_t harq_pid,
-                        uint8_t is_crnti,
-                        uint8_t llr8_flag);
+
+uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
+                         short *dlsch_llr,
+                         NR_DL_FRAME_PARMS *frame_parms,
+                         NR_UE_DLSCH_t *dlsch,
+                         NR_DL_UE_HARQ_t *harq_process,
+                         uint32_t frame,
+                         uint8_t nr_tti_rx,
+                         uint8_t harq_pid,
+                         uint8_t is_crnti,
+                         uint8_t llr8_flag);
 
 
 uint32_t dlsch_decoding_emul(PHY_VARS_NR_UE *phy_vars_ue,
