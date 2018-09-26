@@ -69,6 +69,7 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 			newPolarInitNode->payloadBits = NR_POLAR_PBCH_PAYLOAD_BITS;
 			newPolarInitNode->encoderLength = NR_POLAR_PBCH_E;
 			newPolarInitNode->crcCorrectionBits = NR_POLAR_PBCH_CRC_ERROR_CORRECTION_BITS;
+			newPolarInitNode->crc_generator_matrix = crc24c_generator_matrix(newPolarInitNode->payloadBits);//G_P
 		} else if (messageType == 1) { //DCI
 			newPolarInitNode->n_max = NR_POLAR_DCI_N_MAX;
 			newPolarInitNode->i_il = NR_POLAR_DCI_I_IL;
@@ -80,6 +81,7 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 			newPolarInitNode->payloadBits = messageLength;
 			newPolarInitNode->encoderLength = aggregation_level*108;
 			newPolarInitNode->crcCorrectionBits = NR_POLAR_DCI_CRC_ERROR_CORRECTION_BITS;
+			newPolarInitNode->crc_generator_matrix=crc24c_generator_matrix(newPolarInitNode->payloadBits+newPolarInitNode->crcParityBits);//G_P
 		} else if (messageType == -1) { //UCI
 
 		} else {
@@ -89,13 +91,12 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 		newPolarInitNode->K = newPolarInitNode->payloadBits + newPolarInitNode->crcParityBits; // Number of bits to encode.
 		newPolarInitNode->N = nr_polar_output_length(newPolarInitNode->K, newPolarInitNode->encoderLength, newPolarInitNode->n_max);
 		newPolarInitNode->n = log2(newPolarInitNode->N);
-
-		newPolarInitNode->crc_generator_matrix = crc24c_generator_matrix(newPolarInitNode->payloadBits);
 		newPolarInitNode->G_N = nr_polar_kronecker_power_matrices(newPolarInitNode->n);
 
 		//polar_encoder vectors:
 		newPolarInitNode->nr_polar_crc = malloc(sizeof(uint8_t) * newPolarInitNode->crcParityBits);
 		newPolarInitNode->nr_polar_aPrime = malloc(sizeof(uint8_t) * ((ceil((newPolarInitNode->payloadBits)/32.0)*4)+3));
+		newPolarInitNode->nr_polar_APrime = malloc(sizeof(uint8_t) * newPolarInitNode->K);
 		newPolarInitNode->nr_polar_D = malloc(sizeof(uint8_t) * newPolarInitNode->N);
 		newPolarInitNode->nr_polar_E = malloc(sizeof(uint8_t) * newPolarInitNode->encoderLength);
 

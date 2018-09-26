@@ -23,11 +23,13 @@
 
 void nr_bit2byte_uint32_8_t(uint32_t *in, uint16_t arraySize, uint8_t *out) {
 	uint8_t arrayInd = ceil(arraySize / 32.0);
-	for (int i = 0; i < arrayInd; i++) {
+	for (int i = 0; i < (arrayInd-1); i++) {
 		for (int j = 0; j < 32; j++) {
 			out[j+(i*32)] = (in[i] >> j) & 1;
 		}
 	}
+
+	for (int j = 0; j < arraySize - ((arrayInd-1) * 32); j++) out[j + ((arrayInd-1) * 32)] = (in[(arrayInd-1)] >> j) & 1;
 }
 
 void nr_byte2bit_uint8_32_t(uint8_t *in, uint16_t arraySize, uint32_t *out) {

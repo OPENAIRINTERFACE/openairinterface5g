@@ -10,8 +10,9 @@
 #include "PHY/CODING/coding_defs.h"
 #include "SIMULATION/TOOLS/sim.h"
 
-//#define DEBUG_DCI_POLAR_PARAMS
+#define DEBUG_DCI_POLAR_PARAMS
 //#define DEBUG_POLAR_TIMING
+//#define DEBUG_CRC
 
 int main(int argc, char *argv[]) {
 
@@ -136,27 +137,119 @@ int main(int argc, char *argv[]) {
 	currentPtr = nr_polar_params(nrPolar_params, polarMessageType, testLength, aggregation_level);
 
 #ifdef DEBUG_DCI_POLAR_PARAMS
+	uint32_t dci_pdu[4];
+	memset(dci_pdu,0,sizeof(uint32_t)*4);
+	dci_pdu[0]=0x01189400;
+	printf("dci_pdu: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
+			dci_pdu[0], dci_pdu[1], dci_pdu[2], dci_pdu[3]);
+	uint32_t encoder_output[54];
+	memset(encoder_output,0,sizeof(uint32_t)*54);
+	uint16_t size=41;
+	uint16_t rnti=3;
+	aggregation_level=8;
+	nr_polar_init(&nrPolar_params, 1, size, aggregation_level);
+	t_nrPolar_paramsPtr currentPtrDCI=nr_polar_params(nrPolar_params, 1, size, aggregation_level);
+
+	polar_encoder_dci(dci_pdu, encoder_output, currentPtrDCI, rnti);
+	for (int i=0;i<54;i++)
+		printf("encoder_output: [%2d]->0x%08x \n",i, encoder_output[i]);
+
+	uint8_t *encoder_outputByte = malloc(sizeof(uint8_t) * currentPtrDCI->encoderLength);
+	double *channel_output  = malloc (sizeof(double) * currentPtrDCI->encoderLength);
+	uint32_t dci_estimation[4];
+	memset(dci_estimation,0,sizeof(uint32_t)*4);
+	printf("dci_estimation: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
+			dci_estimation[0], dci_estimation[1], dci_estimation[2], dci_estimation[3]);
+	nr_bit2byte_uint32_8_t(encoder_output, currentPtrDCI->encoderLength, encoder_outputByte);
+	printf("[polartest] encoder_outputByte: ");
+	for (int i = 0; i < currentPtrDCI->encoderLength; i++) printf("%d-", encoder_outputByte[i]);
+	printf("\n");
+	for(int i=0; i<currentPtrDCI->encoderLength; i++) {
+		if (encoder_outputByte[i] == 0) {
+			channel_output[i]=1/sqrt(2);
+		}
+		else {
+			channel_output[i]=(-1)/sqrt(2);
+		}
+	}
+
+	decoderState = polar_decoder_dci(channel_output,
+									 dci_estimation,
+									 currentPtrDCI,
+									 NR_POLAR_DECODER_LISTSIZE,
+									 NR_POLAR_DECODER_PATH_METRIC_APPROXIMATION,
+									 rnti);
+	printf("dci_estimation: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
+			dci_estimation[0], dci_estimation[1], dci_estimation[2], dci_estimation[3]);
+	return 0;
+#endif
+
+#ifdef DEBUG_CRC
 	uint32_t crc;
 	unsigned int poly24c = 0xb2b11700;
-	testInput[0]=0x01189400;
-	printf("testInput: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
-			testInput[0], testInput[1], testInput[2], testInput[3]);
-	uint8_t testInput2[8];
-	nr_crc_bit2bit_uint32_8_t(testInput, 32, testInput2);
-	printf("testInput2: [0]->%x \t [1]->%x \t [2]->%x \t [3]->%x\n"
+	uint32_t testInputCRC[4];
+	testInputCRC[0]=0x00291880;
+	//testInputCRC[0]=0x01189400;
+	testInputCRC[1]=0x00000000;
+	testInputCRC[2]=0x00000000;
+	testInputCRC[3]=0x00000000;
+
+	uint32_t testInputcrc=0x01189400;
+	uint32_t testInputcrc2=0x00291880;
+
+	uint8_t testInputCRC2[8];
+	nr_crc_bit2bit_uint32_8_t(testInputCRC, 32, testInputCRC2);
+	printf("testInputCRC2: [0]->%x \t [1]->%x \t [2]->%x \t [3]->%x\n"
 		   "            [4]->%x \t [5]->%x \t [6]->%x \t [7]->%x\n",
-				testInput2[0], testInput2[1], testInput2[2], testInput2[3],
-				testInput2[4], testInput2[5], testInput2[6], testInput2[7]);
-	printf("crc32: [0]->0x%08x\n",crc24c(testInput2, 32));
-	printf("crc56: [0]->0x%08x\n",crc24c(testInput2, 56));
-    crc = crc24c(testInput, testLength)>>8;
+				testInputCRC2[0], testInputCRC2[1], testInputCRC2[2], testInputCRC2[3],
+				testInputCRC2[4], testInputCRC2[5], testInputCRC2[6], testInputCRC2[7]);
+	unsigned int crc41 = crc24c(testInputCRC, 32);
+	unsigned int crc65 = crc24c(testInputCRC, 56);
+	printf("crc41: [0]->0x%08x\tcrc65: [0]->0x%08x\n",crc41, crc65);
+	for (int i=0;i<32;i++) printf("crc41[%d]=%d\tcrc65[%d]=%d\n",i,(crc41>>i)&1,i,(crc65>>i)&1);
+
+    crc = crc24c(testInputCRC, testLength)>>8;
     for (int i=0;i<24;i++) printf("[i]=%d\n",(crc>>i)&1);
     printf("crc: [0]->0x%08x\n",crc);
-    testInput[testLength>>3] = ((uint8_t*)&crc)[2];
-    testInput[1+(testLength>>3)] = ((uint8_t*)&crc)[1];
-    testInput[2+(testLength>>3)] = ((uint8_t*)&crc)[0];
-    printf("testInput: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
-    			testInput[0], testInput[1], testInput[2], testInput[3]);
+    //crcbit(testInputCRC, sizeof(test) - 1, poly24c));
+
+    testInputCRC[testLength>>3] = ((uint8_t*)&crc)[2];
+    testInputCRC[1+(testLength>>3)] = ((uint8_t*)&crc)[1];
+    testInputCRC[2+(testLength>>3)] = ((uint8_t*)&crc)[0];
+    printf("testInputCRC: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
+    			testInputCRC[0], testInputCRC[1], testInputCRC[2], testInputCRC[3]);
+
+
+    //uint32_t trial32 = 0xffffffff;
+    uint32_t trial32 = 0xf10fffff;
+    uint8_t a[4];
+	//memcpy(a, &trial32, sizeof(trial32));
+	*(uint32_t *)a = trial32;
+    unsigned char trial[4];
+    trial[0]=0xff; trial[1]=0xff;  trial[2]=0x0f; trial[3]=0xf1;
+    uint32_t trialcrc = crc24c(trial, 32);
+    uint32_t trialcrc32 = crc24c((uint8_t *)&trial32, 32);
+    //uint32_t trialcrc32 = crc24c(a, 32);
+    printf("crcbit(trial = %x\n", crcbit(trial, 4, poly24c));
+    printf("trialcrc = %x\n", trialcrc);
+    printf("trialcrc32 = %x\n", trialcrc32);
+    for (int i=0;i<32;i++) printf("trialcrc[%2d]=%d\ttrialcrc32[%2d]=%d\n",i,(trialcrc>>i)&1,i,(trialcrc32>>i)&1);
+
+
+    //uint8_t nr_polar_A[32] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+    uint8_t nr_polar_A[32] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1};
+    uint8_t nr_polar_crc[24];
+    uint8_t **crc_generator_matrix = crc24c_generator_matrix(32);
+	nr_matrix_multiplication_uint8_t_1D_uint8_t_2D(nr_polar_A,
+												   crc_generator_matrix,
+												   nr_polar_crc,
+												   32,
+												   24);
+	for (uint8_t i = 0; i < 24; i++){
+		nr_polar_crc[i] = (nr_polar_crc[i] % 2);
+		printf("nr_polar_crc[%d]=%d\n",i,nr_polar_crc[i]);
+	}
+    return 0;
 #endif
 
 #ifdef DEBUG_POLAR_TIMING
@@ -207,8 +300,8 @@ int main(int argc, char *argv[]) {
 			stop_meas(&timeEncoder);
 
 			/*printf("encoderOutput: [0]->0x%08x\n", encoderOutput[0]);
-			printf("encoderOutput: [1]->0x%08x\n", encoderOutput[1]);
-*/
+			printf("encoderOutput: [1]->0x%08x\n", encoderOutput[1]);*/
+
 			//Bit-to-byte:
 			nr_bit2byte_uint32_8_t(encoderOutput, coderLength, encoderOutputByte);
 
@@ -237,8 +330,8 @@ int main(int argc, char *argv[]) {
 												 aPrioriArray);
 			stop_meas(&timeDecoder);
 			/*printf("testInput: [0]->0x%08x\n", testInput[0]);
-			printf("estimatedOutput: [0]->0x%08x\n", estimatedOutput[0]);
-*/
+			printf("estimatedOutput: [0]->0x%08x\n", estimatedOutput[0]);*/
+
 
 			//calculate errors
 			if (decoderState==-1) {

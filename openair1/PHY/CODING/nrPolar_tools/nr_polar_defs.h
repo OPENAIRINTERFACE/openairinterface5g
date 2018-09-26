@@ -43,7 +43,7 @@
 #include "PHY/CODING/nrPolar_tools/nr_polar_uci_defs.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 #include "PHY/CODING/coding_defs.h"
-//#include "SIMULATION/TOOLS/sim.h"
+#include "SIMULATION/TOOLS/sim.h"
 
 #define NR_POLAR_DECODER_LISTSIZE 8 //uint8_t
 #define NR_POLAR_DECODER_PATH_METRIC_APPROXIMATION 0 //uint8_t; 0 --> eq. (8a) and (11b), 1 --> eq. (9) and (12)
@@ -92,6 +92,7 @@ struct nrPolar_params {
 	//polar_encoder vectors
 	uint8_t *nr_polar_crc;
 	uint8_t *nr_polar_aPrime;
+	uint8_t *nr_polar_APrime;
 	uint8_t *nr_polar_D;
 	uint8_t *nr_polar_E;
 
@@ -140,6 +141,13 @@ int8_t polar_decoder_aPriori_timing(double *input,
 									double *aPrioriPayload,
 									double cpuFreqGHz,
 									FILE* logFile);
+
+int8_t polar_decoder_dci(double *input,
+						 uint32_t *out,
+						 t_nrPolar_paramsPtr polarParams,
+						 uint8_t listSize,
+						 uint8_t pathMetricAppr,
+						 uint16_t n_RNTI);
 
 void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 				   int8_t messageType,
