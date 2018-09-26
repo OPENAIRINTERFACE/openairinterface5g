@@ -123,6 +123,17 @@ typedef struct {
   uint8_t N_RBG;
 }nr_rbg_parms_t;
 
+typedef struct {
+  /// Size of first PRG
+  uint8_t start_size;
+  /// Nominal size
+  uint8_t P_prime;
+  /// Size of last PRG
+  uint8_t end_size;
+  /// Number of PRG
+  uint8_t N_PRG;
+} nr_prg_parms_t;
+
 typedef struct NR_BWP_PARMS {
   /// BWP ID
   uint8_t bwp_id;
@@ -138,6 +149,8 @@ typedef struct NR_BWP_PARMS {
   uint8_t cyclic_prefix;
   /// RBG params
   nr_rbg_parms_t rbg_parms;
+  /// PRG params
+  nr_prg_parms_t prg_parms;
 } NR_BWP_PARMS;
 
 typedef struct {
