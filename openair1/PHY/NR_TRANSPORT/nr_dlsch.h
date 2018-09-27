@@ -46,3 +46,7 @@ void nr_get_rbg_parms(NR_BWP_PARMS* bwp, uint8_t config_type);
 void nr_get_rbg_list(uint32_t bitmap, uint8_t n_rbg, uint8_t* rbg_list);
 
 void nr_get_PRG_parms(NR_BWP_PARMS* bwp, NR_gNB_DCI_ALLOC_t dci_alloc, uint8_t prb_bundling_type);
+
+uint8_t nr_get_Qm(uint8_t Imcs, uint8_t table_idx);
+
+uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx);
