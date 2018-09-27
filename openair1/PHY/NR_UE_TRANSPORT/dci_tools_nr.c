@@ -7157,8 +7157,8 @@ int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
   NR_UE_ULSCH_t *ulsch0=NULL,*ulsch1=NULL;
   //NR_DCI_INFO_EXTRACTED_t nr_dci_info_extracted;
   uint8_t status=0;//left_shift=0;
-  uint64_t pdu_bitmap = 0xFFFFFFFFFFFFFFFF;
-  pdu_bitmap = (pdu_bitmap << (64 - dci_length)) >> (64 - dci_length); // this variable will help to remove the bits of other fields when left-switching
+  //uint64_t pdu_bitmap = 0xFFFFFFFFFFFFFFFF;
+  //pdu_bitmap = (pdu_bitmap << (64 - dci_length)) >> (64 - dci_length); // this variable will help to remove the bits of other fields when left-switching
 
   uint8_t dci_fields_sizes_format[NBR_NR_DCI_FIELDS] ={0};
   for (int m=0; m<NBR_NR_DCI_FIELDS; m++) dci_fields_sizes_format[m]=dci_fields_sizes[m][dci_format];
@@ -7187,116 +7187,35 @@ int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
 
   memset(&nr_dci_info_extracted,0,sizeof(nr_dci_info_extracted));
 //  printf("we reach this point\n");
-//  switch (dci_format) {
-
-//    case format0_0:
-      #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
-        printf("\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> Entering function nr_extract_dci_info(dci_format=%d) \n",dci_format);
-      #endif
-      status = nr_extract_dci_info(ue,
-                                   eNB_id,
-                                   frame_type,
-                                   dci_length,
-                                   rnti,
-                                   dci_pdu,
-                                   &nr_dci_info_extracted,
-                                   dci_fields_sizes,
-                                   dlsch0_harq,
-                                   dlsch0,
-                                   ulsch0,
-                                   dci_format,
-                                   nr_tti_rx,
-                                   n_RB_ULBWP,
-                                   n_RB_DLBWP,
-                                   crc_scrambled_values);
-      //status = check_dci_format1_1a_coherency(format1_1, frame_parms->N_RB_DL, rnti, tc_rnti, si_rnti, ra_rnti, p_rnti,frame,nr_tti_rx, &nr_dci_info_extracted, dlsch0_harq);
-      #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
-      if(status == 0)
-      {
-        printf("\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> bad DCI %d !!! \n",dci_format);
-        return(-1);
-      }
-      #endif
-//      break;
-/*
-    case format0_1:
-      #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
-      printf("\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> format %d not implemented yet\n",dci_format);
-      #endif
-      break;
-
-    case format1_0:
-      #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
-        printf("\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> Entering function nr_extract_dci_info(dci_format=%d)for PDSCH allocation\n",dci_format);
-      #endif
-      status = nr_extract_dci_info(ue,
-                                   eNB_id,
-                                   frame_type,
-                                   dci_length,
-                                   dci_pdu,rnti,
-                                   &nr_dci_info_extracted,
-                                   dci_fields_sizes,
-                                   dlsch0_harq,
-                                   dlsch0,
-                                   ulsch0,
-                                   dci_format,
-                                   nr_tti_rx,
-                                   n_RB_ULBWP,
-                                   n_RB_DLBWP,crc_scrambled_values);
-      //status = check_dci_format1_1a_coherency(format1_1, frame_parms->N_RB_DL, rnti, tc_rnti, si_rnti, ra_rnti, p_rnti,frame,nr_tti_rx, &nr_dci_info_extracted, dlsch0_harq);
-      #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
-      if(status == 0)
-      {
-        printf("\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> bad DCI %d !!! \n",dci_format);
-        return(-1);
-      }
-      #endif
-      break;
-
-    case format1_1:
-      #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
-      printf("\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> format %d not implemented yet\n",dci_format);
-      #endif
-      break;
-
-    case format2_0:
-      #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
-      printf("\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> format %d not implemented yet\n",dci_format);
-      #endif
-      break;
-
-    case format2_1:
-      #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
-      printf("\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> format %d not implemented yet\n",dci_format);
-      #endif
-      break;
-
-    case format2_2:
-      #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
-      printf("\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> format %d not implemented yet\n",dci_format);
-      #endif
-      break;
-
-    case format2_3:
-      #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
-      printf("\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> format %d not implemented yet\n",dci_format);
-      #endif
-      break;
-
-    default:
-      printf("\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> we go to the default in switch\n");
-      //LOG_E(PHY,"format %d not yet implemented\n",dci_format);
-      return(-1);
-      break;
-  }*/
   #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
+    printf("\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> Entering function nr_extract_dci_info(dci_format=%d) \n",dci_format);
+  #endif
+  status = nr_extract_dci_info(ue,
+                               eNB_id,
+                               frame_type,
+                               dci_length,
+                               rnti,
+                               dci_pdu,
+                               &nr_dci_info_extracted,
+                               dci_fields_sizes,
+                               dlsch0_harq,
+                               dlsch0,
+                               ulsch0,
+                               dci_format,
+                               nr_tti_rx,
+                               n_RB_ULBWP,
+                               n_RB_DLBWP,
+                               crc_scrambled_values);
+  //status = check_dci_format1_1a_coherency(format1_1, frame_parms->N_RB_DL, rnti, tc_rnti, si_rnti, ra_rnti, p_rnti,frame,nr_tti_rx, &nr_dci_info_extracted, dlsch0_harq);
+  #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
+    if(status == 0) {
+      printf("\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> bad DCI %d !!! \n",dci_format);
+      return(-1);
+    }
     printf("\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> Ending function nr_extract_dci_info()\n");
   #endif
   return(0);
 }
-
-
-
 
 #endif
 #if 0
