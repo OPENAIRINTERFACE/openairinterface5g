@@ -40,7 +40,6 @@ typedef struct {
 
   long long in;
   long long diff;
-  long long diff_now;
   long long p_time; /*!< \brief absolute process duration */
   long long diff_square; /*!< \brief process duration square */
   long long max;
@@ -50,7 +49,6 @@ typedef struct {
 #elif defined(__arm__)
 typedef struct {
   uint32_t in;
-  uint32_t diff_now;
   uint32_t diff;
   uint32_t p_time; /*!< \brief absolute process duration */
   uint32_t diff_square; /*!< \brief process duration square */
@@ -116,9 +114,6 @@ static inline void stop_meas(time_stats_t *ts)
   if (opp_enabled) {
     long long out = rdtsc_oai();
     
-    ts->diff_now = (out-ts->in);
-    
-    ts->diff_now = (out-ts->in);
     ts->diff += (out-ts->in);
     /// process duration is the difference between two clock points
     ts->p_time = (out-ts->in);
@@ -135,7 +130,6 @@ static inline void reset_meas(time_stats_t *ts) {
 
   ts->trials=0;
   ts->diff=0;
-  ts->diff_now=0;
   ts->p_time=0;
   ts->diff_square=0;
   ts->max=0;

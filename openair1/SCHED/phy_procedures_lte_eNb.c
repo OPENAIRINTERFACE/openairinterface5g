@@ -412,7 +412,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
       &eNB->dlsch_turbo_encoding_wakeup_stats1,
 	  &eNB->dlsch_interleaving_stats);
     stop_meas(&eNB->dlsch_encoding_stats);
-  if(eNB->dlsch_encoding_stats.diff_now>500*3000 && opp_enabled == 1)
+  if(eNB->dlsch_encoding_stats.p_time>500*3000 && opp_enabled == 1)
   {
     print_meas_now(&eNB->dlsch_encoding_stats,"total coding",stderr);
   }
@@ -1337,7 +1337,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
             ret,
             ulsch_harq->cqi_crc_status,
             ulsch_harq->O_ACK,
-            eNB->ulsch_decoding_stats.diff_now, eNB->ulsch_decoding_stats.max);
+            eNB->ulsch_decoding_stats.p_time, eNB->ulsch_decoding_stats.max);
       
       //compute the expected ULSCH RX power (for the stats)
       ulsch_harq->delta_TF = get_hundred_times_delta_IF_eNB(eNB,i,harq_pid, 0); // 0 means bw_factor is not considered
