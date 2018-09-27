@@ -3367,7 +3367,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
 
        
       
-        nr_dci_decoding_procedure(nb_searchspace_active,
+        dci_cnt += nr_dci_decoding_procedure(nb_searchspace_active,
                                              nb_coreset_active,
                                              ue,
                                              &dci_alloc_rx[dci_cnt],
@@ -3382,7 +3382,6 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
         #ifdef NR_PDCCH_SCHED_DEBUG
           printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Ending function nr_dci_decoding_procedure() -> dci_cnt=%d\n",dci_cnt);
         #endif
-        
 
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DCI_DECODING, VCD_FUNCTION_OUT);
         //LOG_D(PHY,"[UE  %d][PUSCH] Frame %d nr_tti_rx %d PHICH RX\n",ue->Mod_id,frame_rx,nr_tti_rx);
@@ -3466,6 +3465,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
       ue->dl_indication.dci_ind = &ue->dci_ind; //  hang on rx_ind instance
 
       for (int i=0; i<dci_cnt; i++) {
+
         /*
          * This is the NR part
          */
@@ -3473,7 +3473,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
         uint16_t cs_rnti,new_rnti,tc_rnti;
         uint16_t p_rnti=P_RNTI;
         uint16_t si_rnti=SI_RNTI;
-        uint16_t ra_rnti=99;
+        uint16_t ra_rnti=3;
         uint16_t sp_csi_rnti,sfi_rnti,int_rnti,tpc_pusch_rnti,tpc_pucch_rnti,tpc_srs_rnti; //FIXME
         uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES] =
         {c_rnti,cs_rnti,new_rnti,tc_rnti,p_rnti,si_rnti,ra_rnti,sp_csi_rnti,sfi_rnti,int_rnti,tpc_pusch_rnti,tpc_pucch_rnti,tpc_srs_rnti};
@@ -3500,10 +3500,13 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
         }
         NR_DCI_INFO_EXTRACTED_t nr_dci_info_extracted;
         #ifdef NR_PDCCH_SCHED_DEBUG
-            printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Entering function nr_generate_ue_ul_dlsch_params_from_dci with eNB_id=%d dci_cnt=%d\n",
+            printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Entering function nr_generate_ue_ul_dlsch_params_from_dci with eNB_id=%d dci_cnt=%d format=%d, rnti=%d\n",
                     eNB_id,
-                    dci_cnt);
+                    dci_cnt,
+                    dci_alloc_rx[i].format,
+                    dci_alloc_rx[i].rnti);
        #endif
+ 
        nr_generate_ue_ul_dlsch_params_from_dci(ue,
                                                 eNB_id,
                                                 frame_rx,

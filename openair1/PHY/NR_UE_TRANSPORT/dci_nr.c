@@ -411,17 +411,18 @@ symbol 0    |   ...                           bundle 3         bundle 6
       bundle_j = (c*coreset_interleaver_size_R)+r;
       f_bundle_j = ((r*coreset_C)+c+n_shift)%((coreset_nbr_rb*coreset_time_dur)/reg_bundle_size_L);
       if (coreset_interleaved==0) f_bundle_j=bundle_j;
-      #ifdef NR_PDCCH_DCI_DEBUG
+      #ifndef NR_PDCCH_DCI_DEBUG
         printf("\n\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_demapping_deinterleaving)-> [r=%d,c=%d] bundle_j(%d) interleaved at f_bundle_j(%d)\n",r,c,bundle_j,f_bundle_j);
       #endif
     }
     f_reg = (f_bundle_j*reg_bundle_size_L)+(reg%reg_bundle_size_L);
-    index_z   = 9*reg;
+    //index_z   = 9*reg;
+    index_z   = 9*(uint16_t)floor(reg/coreset_time_dur) + (9*coreset_nbr_rb)*(reg%coreset_time_dur);
     //index_llr = 9*(((uint16_t)floor(f_reg/reg_bundle_size_L)+(f_reg)%coreset_time_dur))*(coreset_nbr_rb);
     index_llr = 9*((uint16_t)floor(f_reg/coreset_time_dur)+((f_reg%coreset_time_dur)*(coreset_nbr_rb)));
     for (int i=0; i<9; i++){
       z[index_z + i] = llr[index_llr + i];
-        #ifdef NR_PDCCH_DCI_DEBUG
+        #ifndef NR_PDCCH_DCI_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_demapping_deinterleaving)-> [reg=%d,bundle_j=%d] z[%d]=(%d,%d) <-> \t[f_reg=%d,fbundle_j=%d] llr[%d]=(%d,%d) \n",
                   reg,bundle_j,(index_z + i),*(char*) &z[index_z + i],*(1 + (char*) &z[index_z + i]),
                   f_reg,f_bundle_j,(index_llr + i),*(char*) &llr[index_llr + i], *(1 + (char*) &llr[index_llr + i]));
@@ -431,10 +432,7 @@ symbol 0    |   ...                           bundle 3         bundle 6
   }
 }
 
-
-
-
-
+#if 0
 void nr_pdcch_demapping(uint16_t *llr, uint16_t *wbar,
            NR_DL_FRAME_PARMS *frame_parms,
            uint8_t coreset_time_dur, uint32_t coreset_nbr_rb) {
@@ -503,6 +501,7 @@ void nr_pdcch_demapping(uint16_t *llr, uint16_t *wbar,
     }
   }
 }
+#endif //0
 #endif
 
 
@@ -614,7 +613,7 @@ void pdcch_demapping(uint16_t *llr,uint16_t *wbar,NR_DL_FRAME_PARMS *frame_parms
 
 static uint16_t wtemp_rx[Msymb];
 
-
+#if 0
 #ifdef NR_PDCCH_DCI_RUN
 void nr_pdcch_deinterleaving(NR_DL_FRAME_PARMS *frame_parms, uint16_t *z,
           uint16_t *wbar, uint8_t coreset_time_dur, uint8_t reg_bundle_size_L,
@@ -686,6 +685,7 @@ void nr_pdcch_deinterleaving(NR_DL_FRAME_PARMS *frame_parms, uint16_t *z,
   }
 }
 #endif
+#endif //0
 
 
 
@@ -851,7 +851,7 @@ int32_t pdcch_qpsk_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
 int32_t nr_pdcch_llr(NR_DL_FRAME_PARMS *frame_parms, int32_t **rxdataF_comp,
 		char *pdcch_llr, uint8_t symbol,uint32_t coreset_nbr_rb) {
 
-	int16_t *rxF = (int16_t*) &rxdataF_comp[0][(symbol * coreset_nbr_rb * 9)];
+	int16_t *rxF = (int16_t*) &rxdataF_comp[0][(symbol * coreset_nbr_rb * 12)];
 	int32_t i;
 	char *pdcch_llr8;
 
@@ -873,8 +873,8 @@ int32_t nr_pdcch_llr(NR_DL_FRAME_PARMS *frame_parms, int32_t **rxdataF_comp,
 			*pdcch_llr8 = -32;
 		else
 			*pdcch_llr8 = (char) (*rxF);
-#ifdef NR_PDCCH_DCI_DEBUG
-		    printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_llr)-> llr logs: i=%d *rxF:%d => *pdcch_llr8:%d\n",i/18,i,*rxF,*pdcch_llr8);
+#ifndef NR_PDCCH_DCI_DEBUG
+		    printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_llr)-> llr logs: rb=%d i=%d *rxF:%d => *pdcch_llr8:%d\n",i/18,i,*rxF,*pdcch_llr8);
 #endif
 		rxF++;
 		pdcch_llr8++;
@@ -1249,15 +1249,15 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
       #endif
     }
 
-    dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol * (coreset_nbr_rb * NBR_RE_PER_RB_WITHOUT_DMRS)];
+    dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol * (coreset_nbr_rb * NBR_RE_PER_RB_WITH_DMRS)];
     #ifdef NR_PDCCH_DCI_DEBUG
       printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> dl_ch0_ext = &dl_ch_estimates_ext[aarx = (%d)][symbol * (frame_parms->N_RB_DL * 9) = (%d)]\n",
-             aarx,symbol * (coreset_nbr_rb * NBR_RE_PER_RB_WITHOUT_DMRS));
+             aarx,symbol * (coreset_nbr_rb * NBR_RE_PER_RB_WITH_DMRS));
     #endif
-    rxF_ext = &rxdataF_ext[aarx][symbol * (coreset_nbr_rb * NBR_RE_PER_RB_WITHOUT_DMRS)];
+    rxF_ext = &rxdataF_ext[aarx][symbol * (coreset_nbr_rb * NBR_RE_PER_RB_WITH_DMRS)];
     #ifdef NR_PDCCH_DCI_DEBUG
       printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> rxF_ext = &rxdataF_ext[aarx = (%d)][symbol * (frame_parms->N_RB_DL * 9) = (%d)]\n",
-             aarx,symbol * (coreset_nbr_rb * NBR_RE_PER_RB_WITHOUT_DMRS));
+             aarx,symbol * (coreset_nbr_rb * NBR_RE_PER_RB_WITH_DMRS));
       printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> (for symbol=%d, aarx=%d), symbol_mod=%d, nushiftmod3=%d \n",symbol,aarx,symbol_mod,nushiftmod3);
     #endif
 
@@ -1307,7 +1307,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
       if ((c_rb < (frame_parms->N_RB_DL >> 1)) && ((frame_parms->N_RB_DL & 1) == 0)) {
         //if RB to be treated is lower than middle system bandwidth then rxdataF pointed at (offset + c_br + symbol * ofdm_symbol_size): even case
         rxF = &rxdataF[aarx][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size)))];
-        #ifdef NR_PDCCH_DCI_DEBUG
+        #ifndef NR_PDCCH_DCI_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> in even case c_rb (%d) is lower than half N_RB_DL -> rxF = &rxdataF[aarx = (%d)][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
                   c_rb,aarx,(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))));
         #endif
@@ -1316,7 +1316,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
         // number of RBs is even  and c_rb is higher than half system bandwidth (we don't skip DC)
         // if these conditions are true the pointer has to be situated at the 1st part of the rxdataF
         rxF = &rxdataF[aarx][(12*(c_rb - (frame_parms->N_RB_DL>>1)) + (symbol * (frame_parms->ofdm_symbol_size)))]; // we point at the 1st part of the rxdataF in symbol
-        #ifdef NR_PDCCH_DCI_DEBUG
+        #ifndef NR_PDCCH_DCI_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> in even case c_rb (%d) is higher than half N_RB_DL (not DC) -> rxF = &rxdataF[aarx = (%d)][(12*(c_rb - (frame_parms->N_RB_DL>>1)) + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
                c_rb,aarx,(12*(c_rb - (frame_parms->N_RB_DL>>1)) + (symbol * (frame_parms->ofdm_symbol_size))));
         #endif
@@ -1329,7 +1329,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
       if ((c_rb < (frame_parms->N_RB_DL >> 1)) && ((frame_parms->N_RB_DL & 1) != 0)){
         //if RB to be treated is lower than middle system bandwidth then rxdataF pointed at (offset + c_br + symbol * ofdm_symbol_size): odd case
         rxF = &rxdataF[aarx][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size)))];
-        #ifdef NR_PDCCH_DCI_DEBUG
+        #ifndef NR_PDCCH_DCI_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> in odd case c_rb (%d) is lower or equal than half N_RB_DL -> rxF = &rxdataF[aarx = (%d)][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
                  c_rb,aarx,(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))));
         #endif
@@ -1338,7 +1338,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
         // number of RBs is odd  and   c_rb is higher than half system bandwidth + 1
         // if these conditions are true the pointer has to be situated at the 1st part of the rxdataF just after the first IQ symbols of the RB containing DC
         rxF = &rxdataF[aarx][(12*(c_rb - (frame_parms->N_RB_DL>>1)) - 6 + (symbol * (frame_parms->ofdm_symbol_size)))]; // we point at the 1st part of the rxdataF in symbol
-        #ifdef NR_PDCCH_DCI_DEBUG
+        #ifndef NR_PDCCH_DCI_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> in odd case c_rb (%d) is higher than half N_RB_DL (not DC) -> rxF = &rxdataF[aarx = (%d)][(12*(c_rb - frame_parms->N_RB_DL) - 5 + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
                  c_rb,aarx,(12*(c_rb - (frame_parms->N_RB_DL>>1)) - 6 + (symbol * (frame_parms->ofdm_symbol_size))));
         #endif
@@ -1347,7 +1347,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
         // if odd number RBs in system bandwidth and first RB to be treated is higher than middle system bandwidth (around DC)
         // we have to treat the RB in two parts: first part from i=0 to 5, the data is at the end of rxdataF (pointing at the end of the table)
         rxF = &rxdataF[aarx][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size)))];
-        #ifdef NR_PDCCH_DCI_DEBUG
+        #ifndef NR_PDCCH_DCI_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> in odd case c_rb (%d) is half N_RB_DL + 1 we treat DC case -> rxF = &rxdataF[aarx = (%d)][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
                  c_rb,aarx,(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))));
         #endif
@@ -1382,7 +1382,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
         }
         // then we point at the begining of the symbol part of rxdataF do process second part of RB
         rxF = &rxdataF[aarx][((symbol * (frame_parms->ofdm_symbol_size)))]; // we point at the 1st part of the rxdataF in symbol
-        #ifdef NR_PDCCH_DCI_DEBUG
+        #ifndef NR_PDCCH_DCI_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> in odd case c_rb (%d) is half N_RB_DL +1 we treat DC case -> rxF = &rxdataF[aarx = (%d)][(symbol * (frame_parms->ofdm_symbol_size)) = (%d)]\n",
                  c_rb,aarx,(symbol * (frame_parms->ofdm_symbol_size)));
         #endif
@@ -1417,17 +1417,17 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
         for (i = 0; i < 12; i++) {
           if ((i != 1) && (i != 5) && (i != 9)) {
             rxF_ext[j] = rxF[i];
-            #ifdef NR_PDCCH_DCI_DEBUG
+            #ifndef NR_PDCCH_DCI_DEBUG
               printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> RB[c_rb %d] \t RE[re %d] => rxF_ext[%d]=(%d,%d)\t rxF[%d]=(%d,%d)",
                      c_rb, i, j, *(short *) &rxF_ext[j],*(1 + (short*) &rxF_ext[j]), i,
                      *(short *) &rxF[i], *(1 + (short*) &rxF[i]));
             #endif
             dl_ch0_ext[j] = dl_ch0[i];
             //printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> ch %d => dl_ch0(%d,%d)\n", i, *(short *) &dl_ch0[i], *(1 + (short*) &dl_ch0[i]));
-            printf("\t-> dl_ch0[%d] => dl_ch0_ext[%d](%d,%d)\n", i,j, *(short *) &dl_ch0[i], *(1 + (short*) &dl_ch0[i]));
+            //printf("\t-> dl_ch0[%d] => dl_ch0_ext[%d](%d,%d)\n", i,j, *(short *) &dl_ch0[i], *(1 + (short*) &dl_ch0[i]));
             j++;
           } else {
-            #ifdef NR_PDCCH_DCI_DEBUG
+            #ifndef NR_PDCCH_DCI_DEBUG
               printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> RB[c_rb %d] \t RE[re %d] => rxF_ext[%d]=(%d,%d)\t rxF[%d]=(%d,%d) \t\t <==> DM-RS PDCCH, this is a pilot symbol\n",
                      c_rb, i, j, *(short *) &rxF_ext[j], *(1 + (short*) &rxF_ext[j]), i,
                      *(short *) &rxF[i], *(1 + (short*) &rxF[i]));
@@ -2187,9 +2187,9 @@ void nr_pdcch_channel_compensation(int32_t **rxdataF_ext,
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
 #if defined(__x86_64__) || defined(__i386__)
-      dl_ch128          = (__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*20*12];
-      rxdataF128        = (__m128i *)&rxdataF_ext[aarx][symbol*20*12];
-      rxdataF_comp128   = (__m128i *)&rxdataF_comp[(aatx<<1)+aarx][symbol*20*12];
+      dl_ch128          = (__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*coreset_nbr_rb*12];
+      rxdataF128        = (__m128i *)&rxdataF_ext[aarx][symbol*coreset_nbr_rb*12];
+      rxdataF_comp128   = (__m128i *)&rxdataF_comp[(aatx<<1)+aarx][symbol*coreset_nbr_rb*12];
       //printf("ch compensation dl_ch ext addr %p \n", &dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*20*12]);
       //printf("rxdataf ext addr %p symbol %d\n", &rxdataF_ext[aarx][symbol*20*12], symbol);
       //printf("rxdataf_comp addr %p\n",&rxdataF_comp[(aatx<<1)+aarx][symbol*20*12]); 
@@ -2220,9 +2220,9 @@ void nr_pdcch_channel_compensation(int32_t **rxdataF_ext,
         //      print_ints("c0",&mmtmpP2);
         //  print_ints("c1",&mmtmpP3);
         rxdataF_comp128[0] = _mm_packs_epi32(mmtmpP2,mmtmpP3);
-        //  print_shorts("rx:",rxdataF128);
-        //  print_shorts("ch:",dl_ch128);
-        //  print_shorts("pack:",rxdataF_comp128);
+          //print_shorts("rx:",rxdataF128);
+          //print_shorts("ch:",dl_ch128);
+          //print_shorts("pack:",rxdataF_comp128);
 
         // multiply by conjugated channel
         mmtmpP0 = _mm_madd_epi16(dl_ch128[1],rxdataF128[1]);
@@ -2237,9 +2237,9 @@ void nr_pdcch_channel_compensation(int32_t **rxdataF_ext,
         mmtmpP2 = _mm_unpacklo_epi32(mmtmpP0,mmtmpP1);
         mmtmpP3 = _mm_unpackhi_epi32(mmtmpP0,mmtmpP1);
         rxdataF_comp128[1] = _mm_packs_epi32(mmtmpP2,mmtmpP3);
-        //  print_shorts("rx:",rxdataF128+1);
-        //  print_shorts("ch:",dl_ch128+1);
-        //  print_shorts("pack:",rxdataF_comp128+1);
+          //print_shorts("rx:",rxdataF128+1);
+          //print_shorts("ch:",dl_ch128+1);
+          //print_shorts("pack:",rxdataF_comp128+1);
 
           // multiply by conjugated channel
           mmtmpP0 = _mm_madd_epi16(dl_ch128[2],rxdataF128[2]);
@@ -2254,9 +2254,18 @@ void nr_pdcch_channel_compensation(int32_t **rxdataF_ext,
           mmtmpP2 = _mm_unpacklo_epi32(mmtmpP0,mmtmpP1);
           mmtmpP3 = _mm_unpackhi_epi32(mmtmpP0,mmtmpP1);
           rxdataF_comp128[2] = _mm_packs_epi32(mmtmpP2,mmtmpP3);
-          //  print_shorts("rx:",rxdataF128+2);
-          //  print_shorts("ch:",dl_ch128+2);
-          //      print_shorts("pack:",rxdataF_comp128+2);
+          ///////////////////////////////////////////////////////////////////////////////////////////////
+            //print_shorts("rx:",rxdataF128+2);
+            //print_shorts("ch:",dl_ch128+2);
+            //print_shorts("pack:",rxdataF_comp128+2);
+
+#ifndef NR_PDCCH_DCI_DEBUG
+ for (int i=0; i<20 ; i++)
+	printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_channel_compensation)-> rb=%d rxdataF128[%d]=(%d,%d) rxdataF_comp128[%d]=(%d,%d)\n",
+                     rb, i, *(short *) &rxdataF128[i],*(1 + (short*) &rxdataF128[i]),
+                     i,*(short *) &rxdataF_comp128[i], *(1 + (short*) &rxdataF_comp128[i]));
+
+#endif
 
           dl_ch128+=3;
           rxdataF128+=3;
@@ -3007,23 +3016,33 @@ nr_pdcch_demapping_deinterleaving(pdcch_vars[eNB_id]->llr,
 	}
 	printf("\n");
   #endif
+#endif
+
+//#if 0
+   #ifdef NR_PDCCH_DCI_DEBUG
+//    printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> we end nr_pdcch_unscrambling()\n");
+//    for (int i=0; i<(coreset_time_dur*coreset_nbr_rb*9); i++){
+//		printf("\t before unscrambling : e_rx[%d]=(%d,%d)\n",i,*(char*) &pdcch_vars[eNB_id]->e_rx[i],*(1 + (char*) &pdcch_vars[eNB_id]->e_rx[i]));
+//	}
+//	printf("\n");
+  #endif
+
   nr_pdcch_unscrambling(pdcch_vars[eNB_id]->crnti,
                         frame_parms,
                         nr_tti_rx,
-                        pdcch_vars[eNB_id]->e_rx,
+                        (uint16_t*) pdcch_vars[eNB_id]->e_rx,
                         coreset_time_dur*coreset_nbr_rb*9*2,
                         // get_nCCE(n_pdcch_symbols, frame_parms, mi) * 72,
                         pdcch_DMRS_scrambling_id,
                         do_common);
    #ifdef NR_PDCCH_DCI_DEBUG
     printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> we end nr_pdcch_unscrambling()\n");
-    for (int i=0; i<(coreset_time_dur*coreset_nbr_rb*9); i++){
-		printf("\te_rx[%d]=(%d,%d)",i,*(char*) &pdcch_vars[eNB_id]->e_rx[i],*(1 + (char*) &pdcch_vars[eNB_id]->e_rx[i]));
-		if (i%10 == 0) printf("\n");
-	}
-	printf("\n");
+//    for (int i=0; i<(coreset_time_dur*coreset_nbr_rb*9); i++){
+//		printf("\t after unscrambling : e_rx[%d]=(%d,%d)\n",i,*(char*) &pdcch_vars[eNB_id]->e_rx[i],*(1 + (char*) &pdcch_vars[eNB_id]->e_rx[i]));
+//	}
+//	printf("\n");
   #endif
-#endif
+//#endif //0
 /*
 	printf("\t### in nr_rx_pdcch() function we enter pdcch_demapping()\n");
 
@@ -3091,6 +3110,84 @@ void pdcch_scrambling(NR_DL_FRAME_PARMS *frame_parms,
 #ifdef NR_PDCCH_DCI_RUN
 
 void nr_pdcch_unscrambling(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8_t nr_tti_rx,
+		uint16_t *z, uint32_t length, uint16_t pdcch_DMRS_scrambling_id, int do_common) {
+
+	int i;
+	uint8_t reset;
+	uint32_t x1, x2, s = 0;
+  uint16_t n_id; //{0,1,...,65535}
+  uint32_t n_rnti;
+
+	reset = 1;
+	// x1 is set in first call to lte_gold_generic
+	//do_common=1;
+if (do_common){
+  n_id = frame_parms->Nid_cell;
+  n_rnti = 0;
+} else {
+  n_id = pdcch_DMRS_scrambling_id;
+  n_rnti = (uint32_t)crnti;
+}
+//x2 = ((n_rnti * (1 << 16)) + n_id)%(1 << 31);
+//uint32_t puissance_2_16 = ((1<<16)*n_rnti)+n_id;
+//uint32_t puissance_2_31= (1<<30)*2;
+//uint32_t calc_x2=puissance_2_16%puissance_2_31;
+    x2 = (((1<<16)*n_rnti)+n_id)%((1<<30)*2); //this is c_init in 38.211 v15.1.0 Section 7.3.2.3
+//	x2 = (nr_tti_rx << 9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.8.2
+#ifndef NR_PDCCH_DCI_DEBUG
+printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_unscrambling)->  (c_init=%d, n_id=%d, n_rnti=%d, length=%d)\n",x2,n_id,n_rnti,length);
+#endif
+	for (i = 0; i < length; i++) {
+		if ((i & 0x1f) == 0) {
+			s = lte_gold_generic(&x1, &x2, reset);
+			      //printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_unscrambling)-> lte_gold[%d]=%x\n",i,s);
+			reset = 0;
+		}
+
+        #ifndef NR_PDCCH_DCI_DEBUG
+		if (i%2 == 0) printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_unscrambling)->  unscrambling %d : scrambled_z=%d, => ",
+		i,*(char*) &z[(int)floor(i/2)]);
+		if (i%2 == 1) printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_unscrambling)->  unscrambling %d : scrambled_z=%d, => ",
+		i,*(1 + (char*) &z[(int)floor(i/2)]));
+        #endif
+		if (((s >> (i % 32)) & 1) == 1){
+		    if (i%2 == 0) *(char*) &z[(int)floor(i/2)] = -(*(char*) &z[(int)floor(i/2)]);
+		    if (i%2 == 1) *(1 + (char*) &z[(int)floor(i/2)]) = -(*(1 + (char*) &z[(int)floor(i/2)]));
+		}
+			//llr[i] = -llr[i];
+			//llr[i] = (-1)*llr[i];
+        #ifndef NR_PDCCH_DCI_DEBUG
+		if (i%2 == 0) printf("unscrambled_z=%d\n",*(char*) &z[(int)floor(i/2)]);
+		if (i%2 == 1) printf("unscrambled_z=%d\n",*(1 + (char*) &z[(int)floor(i/2)]));
+        #endif
+
+	}
+	
+#ifdef NR_PDCCH_DCI_DEBUG
+//k = 0;
+//for (int j = 0; j < length; j++){
+//	if ((j%32==0) && (j!=0)) k++;
+//	if ((j%2 == 0) && ((*(char*) &z[(int)floor(i/2)]) > 0)) {
+//		unscrambled[k] = (unscrambled[k]<<1) + 1;
+//	}
+//	if ((j%2 == 0) && ((*(char*) &z[(int)floor(i/2)]) <= 0)) {
+//		unscrambled[k] = (unscrambled[k]<<1) + 0;
+//	}
+//	if ((j%2 == 1) && ((*(1 + (char*) &z[(int)floor(i/2)])) > 0)) {
+//		unscrambled[k] = (unscrambled[k]<<1) + 1;
+//	}
+//	if ((j%2 == 1) && ((*(1 + (char*) &z[(int)floor(i/2)])) <= 0)) {
+//		unscrambled[k] = (unscrambled[k]<<1) + 0;
+//	}
+//}
+//for (int p=0; p<k; p++)
+//printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_unscrambling)->  after scrambling, unscrambled[%d]=%x\n",p,unscrambled[p]);
+#endif
+	
+	
+}
+
+void nr_pdcch_unscrambling_tmp(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8_t nr_tti_rx,
 		double llr[], uint32_t length, uint16_t pdcch_DMRS_scrambling_id, int do_common) {
 
 	int i;
@@ -3116,19 +3213,21 @@ if (do_common){
     x2 = (((1<<16)*n_rnti)+n_id)%((1<<30)*2); //this is c_init in 38.211 v15.1.0 Section 7.3.2.3
 //	x2 = (nr_tti_rx << 9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.8.2
 #ifdef NR_PDCCH_DCI_DEBUG
-printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_unscrambling)->  (c_init=%d, n_id=%d, n_rnti=%d)\n",x2,n_id,n_rnti);
+printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_unscrambling)->  (c_init=%d, n_id=%d, n_rnti=%d, length=%d)\n",x2,n_id,n_rnti,length);
 #endif
 	for (i = 0; i < length; i++) {
 		if ((i & 0x1f) == 0) {
 			s = lte_gold_generic(&x1, &x2, reset);
-			//      printf("lte_gold[%d]=%x\n",i,s);
+			      printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_unscrambling)-> lte_gold[%d]=%x\n",i,s);
 			reset = 0;
 		}
 
-		//    printf("unscrambling %d : e %d, c %d => ",i,llr[i],((s>>(i&0x1f))&1));
-		if (((s >> (i % 32)) & 1) == 0)
+		printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_unscrambling)->  unscrambling %d : scrambled_llr=%d, c %d => ",i,llr[i],((s>>(i&0x1f))&1));
+		if (((s >> (i % 32)) & 1) == 1)
 			llr[i] = -llr[i];
-		//    printf("%d\n",llr[i]);
+			//llr[i] = (-1)*llr[i];
+		printf("unscrambled_llr=%d\n",llr[i]);
+
 
 	}
 }
@@ -4072,18 +4171,15 @@ void nr_dci_decoding_procedure0(int s,                                          
           LOG_I(PHY,"[DCI search nPdcch %d - ue spec] Attempting candidate %d Aggregation Level %d DCI length %d at CCE %d/%d (CCEmap %x,CCEmap_cand %x) format %d\n",
                     pdcch_vars[eNB_id]->num_pdcch_symbols,m,L2,sizeof_bits,CCEind,nCCE,*CCEmap,CCEmap_mask,format_c);
       #endif
-      #ifdef NR_PDCCH_DCI_DEBUG
+      #ifndef NR_PDCCH_DCI_DEBUG
         printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> ... we enter function dci_decoding(sizeof_bits=%d L=%d) -----\n",sizeof_bits,L);
         printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> ... we have to replace this part of the code by polar decoding\n");
       #endif
 
-// The polar_input has to be taken from the e_rx table but in the proper order
-// e_rx contains the bits grouped by bundle
-// polar_input has to contain the bits ordered by b_tilde_0, b_tilde_1, ....
 
 //      for (int m=0; m < (nCCE[p]*6*9*2); m++)
       #ifdef NR_PDCCH_DCI_DEBUG
-        printf("polar intput (with coreset_time_dur=%d, coreset_nbr_rb=%d, p=%d, CCEind=%d): \n",
+        printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0: polar decoding)-> polar intput (with coreset_time_dur=%d, coreset_nbr_rb=%d, p=%d, CCEind=%d): \n",
                 coreset_time_dur,coreset_nbr_rb,p,CCEind);
       #endif
       int reg_p,reg_e;
@@ -4091,60 +4187,55 @@ void nr_dci_decoding_procedure0(int s,                                          
         reg_p = (((int)floor(m/coreset_time_dur))+((m%coreset_time_dur)*(L2*6/coreset_time_dur)))*9*2;
         reg_e = m*9*2;
         for (int i=0; i<9*2; i++){
-          polar_input[reg_p+i] = (pdcch_vars[eNB_id]->e_rx[((CCEind*9*6*2) + reg_e + i)]>0) ? (1.0):(-1.0);
-          printf("\t m=%d \tpolar_input[%d]=%lf <-> e_rx[%d]=%d\n",m,reg_p+i,polar_input[reg_p+i],
-                  ((CCEind*9*6*2) + reg_e + i),pdcch_vars[eNB_id]->e_rx[((CCEind*9*6*2) + reg_e + i)]);
+          //polar_input[reg_p+i] = (pdcch_vars[eNB_id]->e_rx[((CCEind*9*6*2) + reg_e + i)]>0) ? (1.0):(-1.0);
+          polar_input[reg_e+i] = (pdcch_vars[eNB_id]->e_rx[((CCEind*9*6*2) + reg_e + i)]>0) ? (1/sqrt(2)):((-1)/sqrt(2));
+          //printf("\t m=%d \tpolar_input[%d]=%lf <-> e_rx[%d]=%d\n",m,reg_e+i,polar_input[reg_e+i],
+          //        ((CCEind*9*6*2) + reg_e + i),pdcch_vars[eNB_id]->e_rx[((CCEind*9*6*2) + reg_e + i)]);
+          //printf("\t m=%d \tpolar_input[%d]=%lf <-> e_rx[%d]=%d\n",m,reg_p+i,polar_input[reg_p+i],
+          //        ((CCEind*9*6*2) + reg_e + i),pdcch_vars[eNB_id]->e_rx[((CCEind*9*6*2) + reg_e + i)]);
 	    }
 	  }
 
-      #ifdef NR_PDCCH_DCI_DEBUG
+      #ifndef NR_PDCCH_DCI_DEBUG
 	    printf("\n");
 	    int j=0;
 	    uint32_t polar_hex[27] = {0};
 	    for (int i=0; i<L2*9*6*2; i++){
 			if ((i%32 == 0) && (i!=0)) j++;
-			polar_hex[j] = (polar_hex[j]<<1) + ((polar_input[i]==-1)? 0:1);
+			//polar_hex[j] = (polar_hex[j]<<1) + ((polar_input[i]==-1)? 1:0);
+			polar_hex[j] = polar_hex[j] + (((polar_input[i]==((-1)/sqrt(2)))?1:0)<<(i%32));
 		}
-		for (j=0;j<27;j++) printf("polar_hex[%d]=%x",j,polar_hex[j]);
+		for (j=0;j<27;j++) printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0: polar decoding input)-> polar_hex[%d]=%x\n",j,polar_hex[j]);
       #endif
-/*      nr_pdcch_unscrambling(pdcch_vars[eNB_id]->crnti,
-                        frame_parms,
-                        nr_tti_rx,
-                        polar_input,
-                        L2*6*9*2,
-                        pdcch_DMRS_scrambling_id,
-                        do_common);*/
      
+uint32_t dci_estimation[4]={0};
+uint16_t rnti=3;
       #ifdef PDCCH_TEST_POLAR_TEMP_FIX
-      	  t_nrPolar_paramsPtr currentPtr = NULL;
-      	  nr_polar_init(&currentPtr, NR_POLAR_DCI_MESSAGE_TYPE, 41, 8);
+      	  t_nrPolar_paramsPtr nrPolar_params = NULL;
+      	  nr_polar_init(&nrPolar_params, 1, 41, 8);
+      	  t_nrPolar_paramsPtr currentPtrDCI=nr_polar_params(nrPolar_params, 1, 41, 8);
+	  decoderState = polar_decoder_dci(polar_input,
+									 dci_estimation,
+									 currentPtrDCI,//nrPolar_params,
+									 8,//NR_POLAR_DECODER_LISTSIZE,
+									 0,//NR_POLAR_DECODER_PATH_METRIC_APPROXIMATION,
+									 rnti); //rnti
+ 	  printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0: \t\tpolar decoding)-> decoderState %d\n", decoderState);				   
+     #endif
+    //dci_estimation[0] = 0x01189400;
+	printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0: \t\tdci_estimation: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
+			dci_estimation[0], dci_estimation[1], dci_estimation[2], dci_estimation[3]);
 
-	  //#else
-		//  nr_polar_init(nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, (uint16_t)sizeof_bits, L2);
-		//  t_nrPolar_paramsPtr currentPtr = nr_polar_params(*nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, (uint16_t)sizeof_bits,L2);
-      #endif
-  
-      decoderState = polar_decoder(polar_input,
-							   &dci_decoded_output[current_thread_id][0],
-							   currentPtr,
-							   8,
-							   0);
-			printf("decoderState %d\n", decoderState);				   
-							   
-      //dci_decoding(sizeof_bits, 2, currentPtr, polar_input, &dci_decoded_output[current_thread_id][0]);
-      /*
-      for (i=0;i<3+(sizeof_bits>>3);i++)
-      printf("dci_decoded_output[%d] => %x\n",i,dci_decoded_output[i]);
-      */
-      crc = (crc16(&dci_decoded_output[current_thread_id][0], sizeof_bits) >> 16) ^ extract_crc(&dci_decoded_output[current_thread_id][0], sizeof_bits);
-      #ifdef NR_PDCCH_DCI_DEBUG
-        printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> ... we end function dci_decoding() with crc=%x\n",crc);
-        printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> ... we have to replace this part of the code by polar decoding\n");
-      #endif
-      #ifdef DEBUG_DCI_DECODING
-        printf("crc =>%x\n",crc);
-      #endif //uint16_t tc_rnti, uint16_t int_rnti, uint16_t sfi_rnti, uint16_t tpc_pusch_rnti, uint16_t tpc_pucch_rnti, uint16_t tpc_srs__rnti
-     #ifdef NR_PDCCH_DCI_DEBUG
+	crc = rnti;						   
+    //crc = (crc16(&dci_decoded_output[current_thread_id][0], sizeof_bits) >> 16) ^ extract_crc(&dci_decoded_output[current_thread_id][0], sizeof_bits);
+    #ifndef NR_PDCCH_DCI_DEBUG
+       printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> ... we end function dci_decoding() with crc=%x\n",crc);
+       printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> ... we have to replace this part of the code by polar decoding\n");
+    #endif
+    #ifdef DEBUG_DCI_DECODING
+       printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0: crc =>%d\n",crc);
+    #endif //uint16_t tc_rnti, uint16_t int_rnti, uint16_t sfi_rnti, uint16_t tpc_pusch_rnti, uint16_t tpc_pucch_rnti, uint16_t tpc_srs__rnti
+    #ifdef NR_PDCCH_DCI_DEBUG
        printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> format_found=%d\n",*format_found);
        printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> crc_scrambled=%d\n",*crc_scrambled);
      #endif
@@ -4176,6 +4267,7 @@ void nr_dci_decoding_procedure0(int s,                                          
       if (crc == crc_scrambled_values[_RA_RNTI_])  {
         *crc_scrambled =_ra_rnti;
         *format_found=_format_1_0_found;
+        printf("");
       }
       if (crc == crc_scrambled_values[_SP_CSI_RNTI_])  {
         *crc_scrambled =_sp_csi_rnti;
@@ -4206,57 +4298,39 @@ void nr_dci_decoding_procedure0(int s,                                          
   printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> crc_scrambled=%d\n",*crc_scrambled);
 #endif
       if (*format_found!=255) {
-        #ifdef NR_PDCCH_DCI_DEBUG
-          printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> rnti matches -> DCI FOUND !!! crc =>%x, sizeof_bits %d, sizeof_bytes %d \n",crc, sizeof_bits, sizeof_bytes);
-        #endif
         dci_alloc[*dci_cnt].dci_length = sizeof_bits;
         dci_alloc[*dci_cnt].rnti = crc;
         dci_alloc[*dci_cnt].L = L;
         dci_alloc[*dci_cnt].firstCCE = CCEind;
-        if (sizeof_bytes <= 4) {
-          dci_alloc[*dci_cnt].dci_pdu[3] = dci_decoded_output[current_thread_id][0];
-          dci_alloc[*dci_cnt].dci_pdu[2] = dci_decoded_output[current_thread_id][1];
-          dci_alloc[*dci_cnt].dci_pdu[1] = dci_decoded_output[current_thread_id][2];
-          dci_alloc[*dci_cnt].dci_pdu[0] = dci_decoded_output[current_thread_id][3];
-#ifdef DEBUG_DCI_DECODING
-					printf("DCI => %x,%x,%x,%x\n",dci_decoded_output[current_thread_id][0],
-							dci_decoded_output[current_thread_id][1],
-							dci_decoded_output[current_thread_id][2],
-							dci_decoded_output[current_thread_id][3]);
-#endif
-        } else {
-/*        dci_alloc[*dci_cnt].dci_pdu[7] = dci_decoded_output[current_thread_id][0];
-          dci_alloc[*dci_cnt].dci_pdu[6] = dci_decoded_output[current_thread_id][1];
-          dci_alloc[*dci_cnt].dci_pdu[5] = dci_decoded_output[current_thread_id][2];
-          dci_alloc[*dci_cnt].dci_pdu[4] = dci_decoded_output[current_thread_id][3];*/
-          dci_alloc[*dci_cnt].dci_pdu[3] = dci_decoded_output[current_thread_id][0];
-          dci_alloc[*dci_cnt].dci_pdu[2] = dci_decoded_output[current_thread_id][1];
-          dci_alloc[*dci_cnt].dci_pdu[1] = dci_decoded_output[current_thread_id][2];
-          dci_alloc[*dci_cnt].dci_pdu[0] = dci_decoded_output[current_thread_id][3];
-          // MAX_DCI_SIZE_BITS has to be redefined for dci_decoded_output FIXME
-          // format2_0, format2_1 can be longer than 8 bytes. FIXME
-#ifdef DEBUG_DCI_DECODING
-					printf("DCI => %x,%x,%x,%x,%x,%x,%x,%x\n",
-							dci_decoded_output[current_thread_id][0],dci_decoded_output[current_thread_id][1],dci_decoded_output[current_thread_id][2],dci_decoded_output[current_thread_id][3],
-							dci_decoded_output[current_thread_id][4],dci_decoded_output[current_thread_id][5],dci_decoded_output[current_thread_id][6],dci_decoded_output[current_thread_id][7]);
-#endif
-        }
+        dci_alloc[*dci_cnt].dci_pdu[0] = dci_estimation[0];
+        dci_alloc[*dci_cnt].dci_pdu[1] = dci_estimation[1];
+        dci_alloc[*dci_cnt].dci_pdu[2] = dci_estimation[2];
+        dci_alloc[*dci_cnt].dci_pdu[3] = dci_estimation[3];
+        #ifdef NR_PDCCH_DCI_DEBUG
+          printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> rnti matches -> DCI FOUND !!! crc =>%x, sizeof_bits %d, sizeof_bytes %d \n",
+                   dci_alloc[*dci_cnt].rnti, dci_alloc[*dci_cnt].dci_length, sizeof_bytes);
+          printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> dci_cnt %d (format_css %d crc_scrambled %d) L %d, firstCCE %d pdu[0] %x pdu[1] %x pdu[2] %x pdu[3] %x \n",
+                   *dci_cnt, format_css,*crc_scrambled,dci_alloc[*dci_cnt].L, dci_alloc[*dci_cnt].firstCCE,dci_alloc[*dci_cnt].dci_pdu[0],dci_alloc[*dci_cnt].dci_pdu[1],dci_alloc[*dci_cnt].dci_pdu[2],dci_alloc[*dci_cnt].dci_pdu[3]);
+        #endif
         if ((format_css == cformat0_0_and_1_0) || (format_uss == uformat0_0_and_1_0)){
-          if ((crc_scrambled == _p_rnti) || (crc_scrambled == _si_rnti) || (crc_scrambled == _ra_rnti)){
+          if ((*crc_scrambled == _p_rnti) || (*crc_scrambled == _si_rnti) || (*crc_scrambled == _ra_rnti)){
             dci_alloc[*dci_cnt].format = format1_0;
             *dci_cnt = *dci_cnt + 1;
             format_found=_format_1_0_found;
-          } else {
-            if (dci_decoded_output[current_thread_id][0]&1 == 0){
+            printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> a format1_0=%d and dci_cnt=%d\n",format_found,*dci_cnt);
+         } else {
+            if (dci_estimation[0]&1 == 0){
               dci_alloc[*dci_cnt].format = format0_0;
               *dci_cnt = *dci_cnt + 1;
               format_found=_format_0_0_found;
+              printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> b format0_0=%d and dci_cnt=%d\n",format_found,*dci_cnt);
             }
-            if (dci_decoded_output[current_thread_id][0]&1 == 1){
+            if (dci_estimation[0]&1 == 1){
               dci_alloc[*dci_cnt].format = format1_0;
               *dci_cnt = *dci_cnt + 1;
               format_found=_format_1_0_found;
-            }
+              printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> c format1_0=%d and dci_cnt=%d\n",format_found,*dci_cnt);
+           }
           }
         }
         if (format_css == cformat2_0){
@@ -4276,12 +4350,12 @@ void nr_dci_decoding_procedure0(int s,                                          
           *dci_cnt = *dci_cnt + 1;
         }
         if (format_uss == uformat0_1_and_1_1){
-          if (dci_decoded_output[current_thread_id][0]&1 == 0){
+          if (dci_estimation[0]&1 == 0){
             dci_alloc[*dci_cnt].format = format0_1;
             *dci_cnt = *dci_cnt + 1;
             format_found=_format_0_1_found;
           }
-          if (dci_decoded_output[current_thread_id][0]&1 == 1){
+          if (dci_estimation[0]&1 == 1){
             dci_alloc[*dci_cnt].format = format1_1;
             *dci_cnt = *dci_cnt + 1;
             format_found=_format_1_1_found;
@@ -5243,7 +5317,7 @@ uint8_t dci_size [8] = {0,0,0,0,0,0,0,0}; // will contain size for each format
              i,dci_size[i],n_RB_ULBWP);
     #endif
   }
-#ifdef NR_PDCCH_DCI_DEBUG
+#ifndef NR_PDCCH_DCI_DEBUG
   printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_format_size) dci_fields_sizes[][] = { \n");
   for (int j=0; j<NBR_NR_DCI_FIELDS; j++){
     printf("\t\t");
@@ -5251,7 +5325,9 @@ uint8_t dci_size [8] = {0,0,0,0,0,0,0,0}; // will contain size for each format
     printf("\n");
   }
   printf(" }\n");
-  printf("\n\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_format_size) dci_size[0_0]=%d, dci_size[0_1]=%d, dci_size[1_0]=%d, dci_size[1_1]=%d,\n",dci_size[0],dci_size[1],dci_size[2],dci_size[3]);
+#endif
+#ifdef NR_PDCCH_DCI_DEBUG
+ printf("\n\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_format_size) dci_size[0_0]=%d, dci_size[0_1]=%d, dci_size[1_0]=%d, dci_size[1_1]=%d,\n",dci_size[0],dci_size[1],dci_size[2],dci_size[3]);
 #endif
 
 //UL/SUL indicator format0_0 (TS 38.212 subclause 7.3.1.1.1)
@@ -5303,7 +5379,7 @@ uint8_t dci_size [8] = {0,0,0,0,0,0,0,0}; // will contain size for each format
    */
 
 //  }
-  #ifdef NR_PDCCH_DCI_DEBUG
+  #ifndef NR_PDCCH_DCI_DEBUG
     printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_format_size) dci_fields_sizes[][] = { \n");
     for (int j=0; j<NBR_NR_DCI_FIELDS; j++){
       printf("\t\t");
@@ -5368,8 +5444,8 @@ uint8_t nr_dci_decoding_procedure(int s,
   uint16_t cs_rnti,new_rnti,tc_rnti;
   uint16_t p_rnti=P_RNTI;
   uint16_t si_rnti=SI_RNTI;
-  uint16_t ra_rnti=99;
-  uint16_t sp_csi_rnti,sfi_rnti,int_rnti,tpc_pusch_rnti,tpc_pucch_rnti,tpc_srs_rnti; //FIXME
+  uint16_t ra_rnti=3; //at the moment this value is hardcoded FIXME!!!
+  uint16_t sp_csi_rnti,sfi_rnti,int_rnti,tpc_pusch_rnti,tpc_pucch_rnti,tpc_srs_rnti; //FIXME !!!
   uint16_t crc_scrambled_values[13] = {c_rnti,cs_rnti,new_rnti,tc_rnti,p_rnti,si_rnti,ra_rnti,sp_csi_rnti,sfi_rnti,int_rnti,tpc_pusch_rnti,tpc_pucch_rnti,tpc_srs_rnti};
 
   //uint8_t format0_found = 0, format_c_found = 0;

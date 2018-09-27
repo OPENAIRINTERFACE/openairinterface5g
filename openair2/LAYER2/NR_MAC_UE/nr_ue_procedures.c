@@ -108,7 +108,7 @@ int8_t nr_ue_decode_mib(
         }else{  //NR_MIB__subCarrierSpacingCommon_scs30or120
             scs_pdcch = scs_30kHz;
         }
-
+        scs_pdcch = 2;
 
 	    channel_bandwidth_t min_channel_bw = bw_40MHz;  //  deafult for testing
 	    
@@ -119,6 +119,8 @@ int8_t nr_ue_decode_mib(
         int32_t num_rbs = -1;
         int32_t num_symbols = -1;
         int32_t rb_offset = -1;
+        printf("<<<<<<<<<configSIB1 %d index_4msb %d index_4lsb %d scs_ssb %d scs_pdcch %d switch %d ",
+        mac->mib->pdcch_ConfigSIB1,index_4msb,index_4lsb,scs_ssb,scs_pdcch, (scs_ssb << 5)|scs_pdcch);
 
         //  type0-pdcch coreset
 	    switch( (scs_ssb << 5)|scs_pdcch ){
@@ -161,6 +163,7 @@ int8_t nr_ue_decode_mib(
                     num_rbs     = table_38213_13_4_c2[index_4msb];
                     num_symbols = table_38213_13_4_c3[index_4msb];
                     rb_offset   = table_38213_13_4_c4[index_4msb];
+                    printf("<<<<<<<<<index_4msb %d num_rbs %d num_symb %d rb_offset %d\n",index_4msb,num_rbs,num_symbols,rb_offset );
                 }else if(min_channel_bw & bw_40MHz){
                     AssertFatal(index_4msb < 10, "38.213 Table 13-6 4 MSB out of range\n");
                     mac->type0_pdcch_ss_mux_pattern = 1;
@@ -247,6 +250,7 @@ int8_t nr_ue_decode_mib(
             mask = mask >> 1;
             mask = mask | 0x100000000000;
         }
+        printf(">>>>>>>>mask 0x%16x num_rbs %d rb_offset %d\n", mask, num_rbs, rb_offset);
         mac->type0_pdcch_dci_config.coreset.frequency_domain_resource = mask;
         mac->type0_pdcch_dci_config.coreset.rb_offset = rb_offset;  //  additional parameter other than coreset
 
