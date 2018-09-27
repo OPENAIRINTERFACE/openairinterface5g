@@ -4294,7 +4294,7 @@ uint16_t rnti=3;
         *format_found=_format_2_3_found;
       }
 #ifdef NR_PDCCH_DCI_DEBUG
-  printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> format_found=%d %d %d\n",*format_found, format_found, &format_found);
+  printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> format_found=%d\n",*format_found);
   printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> crc_scrambled=%d\n",*crc_scrambled);
 #endif
       if (*format_found!=255) {

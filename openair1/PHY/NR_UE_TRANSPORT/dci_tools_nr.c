@@ -4193,129 +4193,7 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
     printf("}\n");
   #endif
 
-  uint8_t  prev_ndi = pdlsch0_harq->DCINdi;
-  /*uint16_t l_RB;
-  uint16_t start_RB;
-  uint16_t tmp_RIV;
-  uint16_t l_symbol;
-  uint16_t start_symbol;
-  uint16_t tmp_symbol;
-  // dmrs_typeA_pos provided by higher layers. FIXME !!!
-  uint8_t dmrs_typeA_pos = 2;
-  uint8_t sliv_S;
-  uint8_t sliv_L;
-  uint8_t k_offset; 
-  uint8_t table_5_1_2_1_1_2_time_dom_res_alloc_A[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
-  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?12:11}, // row index 1
-  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?10:9},  // row index 2
-  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?9:8},   // row index 3
-  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?7:6},   // row index 4
-  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?5:4},   // row index 5
-  {0,(dmrs_typeA_pos == 2)?9:10,(dmrs_typeA_pos == 2)?4:4},   // row index 6
-  {0,(dmrs_typeA_pos == 2)?4:6, (dmrs_typeA_pos == 2)?4:4},   // row index 7
-  {0,5,7},  // row index 8
-  {0,5,2},  // row index 9
-  {0,9,2},  // row index 10
-  {0,12,2}, // row index 11
-  {0,1,13}, // row index 12
-  {0,1,6},  // row index 13
-  {0,2,4},  // row index 14
-  {0,4,7},  // row index 15
-  {0,8,4}   // row index 16
-  };
-  uint8_t table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
-  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?6:5},   // row index 1
-  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?10:9},  // row index 2
-  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?9:8},   // row index 3
-  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?7:6},   // row index 4
-  {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?5:4},   // row index 5
-  {0,(dmrs_typeA_pos == 2)?6:8, (dmrs_typeA_pos == 2)?4:2},   // row index 6
-  {0,(dmrs_typeA_pos == 2)?4:6, (dmrs_typeA_pos == 2)?4:4},   // row index 7
-  {0,5,6},  // row index 8
-  {0,5,2},  // row index 9
-  {0,9,2},  // row index 10
-  {0,10,2}, // row index 11
-  {0,1,11}, // row index 12
-  {0,1,6},  // row index 13
-  {0,2,4},  // row index 14
-  {0,4,6},  // row index 15
-  {0,8,4}   // row index 16
-  };
-  uint8_t table_5_1_2_1_1_4_time_dom_res_alloc_B[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
-  {0,2,2},  // row index 1
-  {0,4,2},  // row index 2
-  {0,6,2},  // row index 3
-  {0,8,2},  // row index 4
-  {0,10,2}, // row index 5
-  {1,2,2},  // row index 6
-  {1,4,2},  // row index 7
-  {0,2,4},  // row index 8
-  {0,4,4},  // row index 9
-  {0,6,4},  // row index 10
-  {0,8,4},  // row index 11
-  {0,10,4}, // row index 12
-  {0,2,7},  // row index 13
-  {0,(dmrs_typeA_pos == 2)?2:3,(dmrs_typeA_pos == 2)?12:11},  // row index 14
-  {1,2,4},  // row index 15
-  {0,0,0}   // row index 16
-  };
-  uint8_t table_5_1_2_1_1_5_time_dom_res_alloc_C[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
-  {0,2,2},  // row index 1
-  {0,4,2},  // row index 2
-  {0,6,2},  // row index 3
-  {0,8,2},  // row index 4
-  {0,10,2}, // row index 5
-  {0,0,0},  // row index 6
-  {0,0,0},  // row index 7
-  {0,2,4},  // row index 8
-  {0,4,4},  // row index 9
-  {0,6,4},  // row index 10
-  {0,8,4},  // row index 11
-  {0,10,4}, // row index 12
-  {0,2,7},  // row index 13
-  {0,(dmrs_typeA_pos == 2)?2:3,(dmrs_typeA_pos == 2)?12:11},  // row index 14
-  {0,0,6},  // row index 15
-  {0,2,6}   // row index 16
-  };
-  uint8_t mu_pusch = 1;
-  // definition table j Table 6.1.2.1.1-4
-  uint8_t j = (mu_pusch==3)?3:(mu_pusch==2)?2:1;
-  uint8_t table_6_1_2_1_1_2_time_dom_res_alloc_A[16][3]={ // for PUSCH from TS 38.214 subclause 6.1.2.1.1
-  {j,  0,14}, // row index 1
-  {j,  0,12}, // row index 2
-  {j,  0,10}, // row index 3
-  {j,  2,10}, // row index 4
-  {j,  4,10}, // row index 5
-  {j,  4,8},  // row index 6
-  {j,  4,6},  // row index 7
-  {j+1,0,14}, // row index 8
-  {j+1,0,12}, // row index 9
-  {j+1,0,10}, // row index 10
-  {j+2,0,14}, // row index 11
-  {j+2,0,12}, // row index 12
-  {j+2,0,10}, // row index 13
-  {j,  8,6},  // row index 14
-  {j+3,0,14}, // row index 15
-  {j+3,0,10}  // row index 16
-  };
-  uint8_t table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[16][3]={ // for PUSCH from TS 38.214 subclause 6.1.2.1.1
-  {j,  0,8},  // row index 1
-  {j,  0,12}, // row index 2
-  {j,  0,10}, // row index 3
-  {j,  2,10}, // row index 4
-  {j,  4,4},  // row index 5
-  {j,  4,8},  // row index 6
-  {j,  4,6},  // row index 7
-  {j+1,0,8},  // row index 8
-  {j+1,0,12}, // row index 9
-  {j+1,0,10}, // row index 10
-  {j+2,0,6},  // row index 11
-  {j+2,0,12}, // row index 12
-  {j+2,0,10}, // row index 13
-  {j,  8,4},  // row index 14
-  {j+3,0,8},  // row index 15
-  {j+3,0,10}  // row index 16
-  };*/
+//  uint8_t  prev_ndi = pdlsch0_harq->DCINdi;
 
 
  /*
@@ -4330,7 +4208,7 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
       printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->harq_process_number=%x\n",nr_pdci_info_extracted->harq_process_number);
     #endif
   }
-
+/*
   if ((dci_format == format1_0) || (dci_format == format1_1)) {
     if (rnti==crc_scrambled_values[_SI_RNTI_]) {
       ue->dlsch_SI[eNB_id]->active = 1;
@@ -4353,7 +4231,7 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
     } else {
     }
   }
-
+*/
   for (dci_field=0; dci_field<NBR_NR_DCI_FIELDS; dci_field++) {
     //left_shift = left_shift + dci_fields_sizes[dci_field][dci_format];
     if (dci_fields_sizes[dci_field][dci_format] != 0){
@@ -4594,11 +4472,11 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
                             // 1  Interleaved
         nr_pdci_info_extracted->vrb_to_prb_mapping               = (uint8_t)nr_dci_field(dci_pdu,dci_fields_sizes_format,dci_field);
         //(((((*(uint128_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format]));
-        if (nr_pdci_info_extracted->vrb_to_prb_mapping == 0) { // Non-interleaved
-        } else { // Interleaved
+        //if (nr_pdci_info_extracted->vrb_to_prb_mapping == 0) { // Non-interleaved
+        //} else { // Interleaved
                  // format 0_1 defined in TS 38.211 Section 6.3.1.7
                  // formats 1_0 and 1_1 not defined yet
-        }
+        //}
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->vrb_to_prb_mapping=%x\n",nr_pdci_info_extracted->vrb_to_prb_mapping);
         #endif
@@ -4633,11 +4511,11 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
                // 1 bit otherwise, only applicable to resource allocation type 1, as defined in Subclause 6.3 of [6, TS 38.214]
         nr_pdci_info_extracted->freq_hopping_flag                = (uint8_t)nr_dci_field(dci_pdu,dci_fields_sizes_format,dci_field);
         //(((((*(uint128_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format]));
-        if (nr_pdci_info_extracted->freq_hopping_flag != 0) { // PUSCH frequency hopping is performed     (only resource allocation type 1)
+        //if (nr_pdci_info_extracted->freq_hopping_flag != 0) { // PUSCH frequency hopping is performed     (only resource allocation type 1)
 
-        } else {                                              // PUSCH frequency hopping is not performed (only resource allocation type 1)
+        //} else {                                              // PUSCH frequency hopping is not performed (only resource allocation type 1)
           // At the moment PUSCH hopping is not implemented. We are considering that the bit is present and the value is '0'
-        }
+        //}
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->freq_hopping_flag=%x\n",nr_pdci_info_extracted->freq_hopping_flag);
         #endif
@@ -4654,7 +4532,7 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
       case TB1_NDI: // 19 TB1_NDI: (field defined for -,-,-,format1_1,-,-,-,-)
         nr_pdci_info_extracted->tb1_ndi                          = (uint8_t)nr_dci_field(dci_pdu,dci_fields_sizes_format,dci_field);
         //(((((*(uint128_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format]));
-        pdlsch0_harq->DCINdi = nr_pdci_info_extracted->tb1_ndi;
+        //pdlsch0_harq->DCINdi = nr_pdci_info_extracted->tb1_ndi;
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->tb1_ndi=%x\n",nr_pdci_info_extracted->tb1_ndi);
         #endif
@@ -4662,7 +4540,7 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
       case TB1_RV: // 20 TB1_RV: (field defined for -,-,-,format1_1,-,-,-,-)
         nr_pdci_info_extracted->tb1_rv                           = (uint8_t)nr_dci_field(dci_pdu,dci_fields_sizes_format,dci_field);
         //(((((*(uint128_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format]));
-        pdlsch0_harq->rvidx  = nr_pdci_info_extracted->tb1_rv;
+        //pdlsch0_harq->rvidx  = nr_pdci_info_extracted->tb1_rv;
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->tb1_rv=%x\n",nr_pdci_info_extracted->tb1_rv);
         #endif
@@ -4670,7 +4548,7 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
       case TB2_MCS: // 21 TB2_MCS: (field defined for -,-,-,format1_1,-,-,-,-)
         nr_pdci_info_extracted->tb2_mcs                          = (uint8_t)nr_dci_field(dci_pdu,dci_fields_sizes_format,dci_field);
         //(((((*(uint128_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format]));
-        if (nr_pdci_info_extracted->mcs < 29) pdlsch0_harq->mcs  = nr_pdci_info_extracted->tb2_mcs;
+        //if (nr_pdci_info_extracted->mcs < 29) pdlsch0_harq->mcs  = nr_pdci_info_extracted->tb2_mcs;
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->tb2_mcs=%x\n",nr_pdci_info_extracted->tb2_mcs);
         #endif
@@ -4678,7 +4556,7 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
       case TB2_NDI: // 22 TB2_NDI: (field defined for -,-,-,format1_1,-,-,-,-)
         nr_pdci_info_extracted->tb2_ndi                          = (uint8_t)nr_dci_field(dci_pdu,dci_fields_sizes_format,dci_field);
         //(((((*(uint128_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format]));
-        pdlsch0_harq->DCINdi = nr_pdci_info_extracted->tb2_ndi;
+        //pdlsch0_harq->DCINdi = nr_pdci_info_extracted->tb2_ndi;
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->tb2_ndi=%x\n",nr_pdci_info_extracted->tb2_ndi);
         #endif
@@ -4686,7 +4564,7 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
       case TB2_RV: // 23 TB2_RV: (field defined for -,-,-,format1_1,-,-,-,-)
         nr_pdci_info_extracted->tb2_rv                           = (uint8_t)nr_dci_field(dci_pdu,dci_fields_sizes_format,dci_field);
         //(((((*(uint128_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format]));
-        pdlsch0_harq->rvidx  = nr_pdci_info_extracted->tb2_rv;
+        //pdlsch0_harq->rvidx  = nr_pdci_info_extracted->tb2_rv;
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->tb2_rv=%x\n",nr_pdci_info_extracted->tb2_rv);
         #endif
@@ -4695,14 +4573,14 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
       case MCS: // 24 MCS: (field defined for format0_0,format0_1,format1_0,-,-,-,-,-)
         nr_pdci_info_extracted->mcs                              = (uint8_t)nr_dci_field(dci_pdu,dci_fields_sizes_format,dci_field);
         //(((((*(uint128_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format]));
-        if (nr_pdci_info_extracted->mcs < 29) {
-          if (dci_format == format0_0 || dci_format == format0_1)
-            ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->mcs = nr_pdci_info_extracted->mcs;
-          else
-            pdlsch0_harq->mcs = nr_pdci_info_extracted->mcs;
-        } else {
-          return(0);
-        }
+        //if (nr_pdci_info_extracted->mcs < 29) {
+        //  if (dci_format == format0_0 || dci_format == format0_1)
+        //    ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->mcs = nr_pdci_info_extracted->mcs;
+        //  else
+        //    pdlsch0_harq->mcs = nr_pdci_info_extracted->mcs;
+        //} else {
+        //  return(0);
+        //}
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->mcs=%x\n",nr_pdci_info_extracted->mcs);
         #endif
@@ -4711,30 +4589,30 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
       case NDI: // 25 NDI: (field defined for format0_0,format0_1,format1_0,-,-,-,-,-)
         nr_pdci_info_extracted->ndi                              = (uint8_t)nr_dci_field(dci_pdu,dci_fields_sizes_format,dci_field);
         //(((((*(uint128_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format]));
-        if (dci_format == format0_0 || dci_format == format0_1) {
-          ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->DCINdi = nr_pdci_info_extracted->ndi;
-          if (ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->first_tx==1) {
-            ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->first_tx=0;
-            ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->DCINdi= nr_pdci_info_extracted->ndi;
-            ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->round = 0;
-          } else {
-            if (ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->DCINdi != nr_pdci_info_extracted->ndi) { // new SDU opportunity
-              ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->DCINdi= nr_pdci_info_extracted->ndi;
-              ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->round = 0;
-            }
-          }
-        } else {
-          if (rnti == crc_scrambled_values[_TC_RNTI_]) { //fix for standalone Contention Resolution Id
-            pdlsch0_harq->DCINdi = (uint8_t)-1;
-          } else {
-            if ((prev_ndi != nr_pdci_info_extracted->ndi) || (pdlsch0_harq->first_tx==1)) {
-              pdlsch0_harq->round    = 0;
-              pdlsch0_harq->first_tx = 0;
-              pdlsch0_harq->status   = ACTIVE;
-            }
-            pdlsch0_harq->DCINdi = nr_pdci_info_extracted->ndi;
-          }
-        }
+        //if (dci_format == format0_0 || dci_format == format0_1) {
+        //  ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->DCINdi = nr_pdci_info_extracted->ndi;
+        //  if (ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->first_tx==1) {
+        //    ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->first_tx=0;
+        //    ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->DCINdi= nr_pdci_info_extracted->ndi;
+        //    ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->round = 0;
+        //  } else {
+        //    if (ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->DCINdi != nr_pdci_info_extracted->ndi) { // new SDU opportunity
+        //      ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->DCINdi= nr_pdci_info_extracted->ndi;
+        //     ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->round = 0;
+        //    }
+        //  }
+        //} else {
+        //  if (rnti == crc_scrambled_values[_TC_RNTI_]) { //fix for standalone Contention Resolution Id
+        //    pdlsch0_harq->DCINdi = (uint8_t)-1;
+        //  } else {
+        //    if ((prev_ndi != nr_pdci_info_extracted->ndi) || (pdlsch0_harq->first_tx==1)) {
+        //      pdlsch0_harq->round    = 0;
+        //      pdlsch0_harq->first_tx = 0;
+        //      pdlsch0_harq->status   = ACTIVE;
+        //    }
+        //    pdlsch0_harq->DCINdi = nr_pdci_info_extracted->ndi;
+        //  }
+        //}
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->ndi=%x\n",nr_pdci_info_extracted->ndi);
         #endif
@@ -4743,29 +4621,29 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
       case RV: // 26 RV: (field defined for format0_0,format0_1,format1_0,-,-,-,-,-)
         nr_pdci_info_extracted->rv                               = (uint8_t)nr_dci_field(dci_pdu,dci_fields_sizes_format,dci_field);
         //(((((*(uint128_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format]));
-        if (dci_format == format0_0 || dci_format == format0_1)
-          ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->rvidx = nr_pdci_info_extracted->rv;
-        else
-          pdlsch0_harq->rvidx = nr_pdci_info_extracted->rv;
-        if ((prev_ndi == nr_pdci_info_extracted->ndi) && (pdlsch0_harq->rvidx != 0)) { // NDI has not been toggled but rv was increased by eNB: retransmission
-          if (pdlsch0_harq->status == SCH_IDLE) {
+        //if (dci_format == format0_0 || dci_format == format0_1)
+        //  ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->rvidx = nr_pdci_info_extracted->rv;
+        //else
+        //  pdlsch0_harq->rvidx = nr_pdci_info_extracted->rv;
+        //if ((prev_ndi == nr_pdci_info_extracted->ndi) && (pdlsch0_harq->rvidx != 0)) { // NDI has not been toggled but rv was increased by eNB: retransmission
+        //  if (pdlsch0_harq->status == SCH_IDLE) {
                         // packet was actually decoded in previous transmission (ACK was missed by eNB)
                         // however, the round is not a good check as it might have been decoded in a retransmission prior to this one.
                         // skip pdsch decoding and report ack
             
-            pdlsch0->harq_processes[pdlsch0->current_harq_pid]->harq_ack.ack = 1;
-            pdlsch0->harq_processes[pdlsch0->current_harq_pid]->harq_ack.send_harq_status;
+        //    pdlsch0->harq_processes[pdlsch0->current_harq_pid]->harq_ack.ack = 1;
+        //    pdlsch0->harq_processes[pdlsch0->current_harq_pid]->harq_ack.send_harq_status;
 #if 0            
-            pdlsch0->active       = 0;
-            pdlsch0->harq_ack[nr_tti_rx].ack = 1;
-            pdlsch0->harq_ack[nr_tti_rx].harq_id = nr_pdci_info_extracted->harq_process_number;
-            pdlsch0->harq_ack[nr_tti_rx].send_harq_status = 1;
+        //    pdlsch0->active       = 0;
+        //    pdlsch0->harq_ack[nr_tti_rx].ack = 1;
+        //    pdlsch0->harq_ack[nr_tti_rx].harq_id = nr_pdci_info_extracted->harq_process_number;
+        //    pdlsch0->harq_ack[nr_tti_rx].send_harq_status = 1;
 #endif            
-          } else { // normal retransmission, nothing special to do
-          }
-        } else {
-          pdlsch0_harq->status   = ACTIVE;
-        }
+         // } else { // normal retransmission, nothing special to do
+         // }
+        //} else {
+        //  pdlsch0_harq->status   = ACTIVE;
+        //}
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
          printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->rv=%x\n",nr_pdci_info_extracted->rv);
         #endif
@@ -4774,7 +4652,7 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
       case HARQ_PROCESS_NUMBER: // 27 HARQ_PROCESS_NUMBER: (field defined for format0_0,format0_1,format1_0,format1_1,-,-,-,-)
         nr_pdci_info_extracted->harq_process_number              = (uint8_t)nr_dci_field(dci_pdu,dci_fields_sizes_format,dci_field);
         //(((((*(uint128_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format]));
-        pdlsch0->current_harq_pid = nr_pdci_info_extracted->harq_process_number;
+        //pdlsch0->current_harq_pid = nr_pdci_info_extracted->harq_process_number;
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->harq_process_number=%x\n",nr_pdci_info_extracted->harq_process_number);
         #endif
@@ -4787,7 +4665,7 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
                // 0 otherwise
         nr_pdci_info_extracted->dai                              = (uint8_t)nr_dci_field(dci_pdu,dci_fields_sizes_format,dci_field);
         //(((((*(uint128_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format]));
-        pdlsch0->harq_processes[pdlsch0->current_harq_pid]->harq_ack.vDAI_DL = nr_pdci_info_extracted->dai+1;
+        //pdlsch0->harq_processes[pdlsch0->current_harq_pid]->harq_ack.vDAI_DL = nr_pdci_info_extracted->dai+1;
         //pdlsch0->harq_ack[nr_tti_rx].vDAI_DL = nr_pdci_info_extracted->dai+1;
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->dai=%x\n",nr_pdci_info_extracted->dai);
@@ -4824,12 +4702,12 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
                // defined in Subclause 7.1.1 TS 38.213
         nr_pdci_info_extracted->tpc_pusch                        = (uint8_t)nr_dci_field(dci_pdu,dci_fields_sizes_format,dci_field);
         //(((((*(uint128_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format]));
-        ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->TPC = nr_pdci_info_extracted->tpc_pusch;
-        if (ue->ul_power_control_dedicated[eNB_id].accumulationEnabled == 1) {
-          ulsch0->f_pusch += nr_delta_PUSCH_acc[ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->TPC];
-        } else {
-          ulsch0->f_pusch  = nr_delta_PUSCH_abs[ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->TPC];
-        }
+        //ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->TPC = nr_pdci_info_extracted->tpc_pusch;
+        //if (ue->ul_power_control_dedicated[eNB_id].accumulationEnabled == 1) {
+        //  ulsch0->f_pusch += nr_delta_PUSCH_acc[ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->TPC];
+        //} else {
+        //  ulsch0->f_pusch  = nr_delta_PUSCH_abs[ulsch0->harq_processes[nr_pdci_info_extracted->harq_process_number]->TPC];
+        //}
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->tpc_pusch=%x\n",nr_pdci_info_extracted->tpc_pusch);
         #endif
@@ -4839,7 +4717,7 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
                // defined in Subclause 7.2.1 TS 38.213
         nr_pdci_info_extracted->tpc_pucch                        = (uint8_t)nr_dci_field(dci_pdu,dci_fields_sizes_format,dci_field);
         //(((((*(uint128_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format]));
-        pdlsch0_harq->delta_PUCCH  = nr_delta_PUCCH_lut[nr_pdci_info_extracted->tpc_pucch &3];
+        //pdlsch0_harq->delta_PUCCH  = nr_delta_PUCCH_lut[nr_pdci_info_extracted->tpc_pucch &3];
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->tpc_pucch=%x\n",nr_pdci_info_extracted->tpc_pucch);
         #endif
@@ -7156,13 +7034,17 @@ int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
   NR_DL_UE_HARQ_t *dlsch0_harq=NULL,*dlsch1_harq=NULL;
   NR_UE_ULSCH_t *ulsch0=NULL,*ulsch1=NULL;
   //NR_DCI_INFO_EXTRACTED_t nr_dci_info_extracted;
-  uint8_t status=0;//left_shift=0;
-  //uint64_t pdu_bitmap = 0xFFFFFFFFFFFFFFFF;
-  //pdu_bitmap = (pdu_bitmap << (64 - dci_length)) >> (64 - dci_length); // this variable will help to remove the bits of other fields when left-switching
+  uint8_t status=0;
+  #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
+    printf("\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> dci_format=%d, rnti=%d, dci_length=%d, dci_pdu[0]=%x, dci_pdu[2]=%x, dci_pdu[2]=%x, dci_pdu[3]=%x\n",
+             dci_format,rnti,dci_length,dci_pdu[0],dci_pdu[1],dci_pdu[2],dci_pdu[3]);
+  #endif
+
+  
 
   uint8_t dci_fields_sizes_format[NBR_NR_DCI_FIELDS] ={0};
   for (int m=0; m<NBR_NR_DCI_FIELDS; m++) dci_fields_sizes_format[m]=dci_fields_sizes[m][dci_format];
-
+/*
   dlsch0 = dlsch[0];
   dlsch0->active = 0;
   if (dci_fields_sizes[HARQ_PROCESS_NUMBER][dci_format] != 0) { // 27 HARQ_PROCESS_NUMBER (27 is the position in dci_fields_sizes array for field HARQ_PROCESS_NUMBER)
@@ -7172,19 +7054,20 @@ int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
     //left_shift = 0;
     #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
       printf("\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> nr_dci_info_extracted->harq_process_number=%x\n",nr_dci_info_extracted->harq_process_number);
-    #endif
+    for (int i=0; i<1000; i++) printf("%d",i);
+   #endif
   }
 
 
   dlsch0_harq   = dlsch[0]->harq_processes[nr_dci_info_extracted->harq_process_number];
   ulsch0 = ulsch;
-/*  printf("nr_dci_info_extracted.harq_process_number = %d\n",nr_dci_info_extracted.harq_process_number);
-  printf("dlsch0 = %d\n",dlsch0);
-  printf("dlsch0_harq = %d\n",dlsch0_harq);*/
+  //printf("nr_dci_info_extracted.harq_process_number = %d\n",nr_dci_info_extracted.harq_process_number);
+  //printf("dlsch0 = %d\n",dlsch0);
+  //printf("dlsch0_harq = %d\n",dlsch0_harq);
 
   if (!dlsch[0]) return -1;
   if (!ulsch) return -1;
-
+*/
   memset(&nr_dci_info_extracted,0,sizeof(nr_dci_info_extracted));
 //  printf("we reach this point\n");
   #ifdef NR_PDCCH_DCI_TOOLS_DEBUG

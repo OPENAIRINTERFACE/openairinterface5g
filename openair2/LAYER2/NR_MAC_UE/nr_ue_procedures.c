@@ -1135,6 +1135,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fa
     const uint16_t n_RB_ULBWP = 106;
     const uint16_t n_RB_DLBWP = 106;
 
+printf(">>> nr_ue_process_dci at MAC layer");
 
     switch(dci_format){
         case format0_0:

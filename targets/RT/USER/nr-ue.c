@@ -684,12 +684,16 @@ static void *UE_thread_rxn_txnp4(void *arg) {
             phy_procedures_slot_parallelization_UE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
             phy_procedures_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
+            printf(">>> nr_ue_pdcch_procedures ended\n");
+
 #endif
         }
 
 #if UE_TIMING_TRACE
         start_meas(&UE->generic_stat);
 #endif
+printf(">>> mac init\n");
+
         if (UE->mac_enabled==1) {
 
             //  trigger L2 to run ue_scheduler thru IF module
@@ -759,6 +763,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 #if UE_TIMING_TRACE
         stop_meas(&UE->generic_stat);
 #endif
+printf(">>> mac ended\n");
 
         // Prepare the future Tx data
 #if 0
