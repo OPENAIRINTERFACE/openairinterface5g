@@ -333,6 +333,20 @@ int msc_init(const msc_env_t envP, const int max_threadsP)
           msc_log_declare_proto(i);
         }
         break;
+      case MSC_F1AP_CU:
+        rv = snprintf(&g_msc_proto2str[i][0], MSC_MAX_PROTO_NAME_LENGTH, "F1AP_CU");
+        if (rv >= MSC_MAX_PROTO_NAME_LENGTH) {g_msc_proto2str[i][MSC_MAX_PROTO_NAME_LENGTH-1] = 0;}
+        //if ((envP == MSC_E_UTRAN) || (envP == MSC_MME_GW)  || (envP == MSC_MME)) {
+          msc_log_declare_proto(i);
+        //}
+        break;
+      case MSC_F1AP_DU:
+        rv = snprintf(&g_msc_proto2str[i][0], MSC_MAX_PROTO_NAME_LENGTH, "F1AP_DU");
+        if (rv >= MSC_MAX_PROTO_NAME_LENGTH) {g_msc_proto2str[i][MSC_MAX_PROTO_NAME_LENGTH-1] = 0;}
+        //if ((envP == MSC_E_UTRAN) || (envP == MSC_MME_GW)  || (envP == MSC_MME)) {
+          msc_log_declare_proto(i);
+        //}
+        break;
       default:
         rv = snprintf(&g_msc_proto2str[i][0], MSC_MAX_PROTO_NAME_LENGTH, "UNKNOWN");
         if (rv >= MSC_MAX_PROTO_NAME_LENGTH) {g_msc_proto2str[i][MSC_MAX_PROTO_NAME_LENGTH-1] = 0;}

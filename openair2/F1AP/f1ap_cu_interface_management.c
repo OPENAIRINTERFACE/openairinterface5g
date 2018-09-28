@@ -229,6 +229,16 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
 
   //   } tdd;
   // } nr_mode_info[F1AP_MAX_NB_CELLS];
+
+  MSC_LOG_TX_MESSAGE(
+  MSC_F1AP_CU,
+  MSC_RRC_ENB,
+  0,
+  0,
+  MSC_AS_TIME_FMT" CU_handle_F1_SETUP_REQUEST",
+  0,0//MSC_AS_TIME_ARGS(ctxt_pP),
+  );
+
   if (num_cells_available > 0) {
     itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(instance), message_p);
   } else {

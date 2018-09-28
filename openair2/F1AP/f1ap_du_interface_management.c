@@ -403,6 +403,15 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
     return -1;
   }
 
+  MSC_LOG_TX_MESSAGE(
+  MSC_F1AP_DU,
+  MSC_F1AP_CU,
+  (const char *)buffer,
+  len,
+  MSC_AS_TIME_FMT" F1_SETUP_REQUEST initiatingMessage gNB_DU_name %s",
+  0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
+  f1ap_du_data->gNB_DU_name);
+
   du_f1ap_itti_send_sctp_data_req(instance, f1ap_du_data->assoc_id, buffer, len, 0);
 
   return 0;
@@ -518,7 +527,15 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
    for (int i=0;i<num_cells_to_activate;i++)  
      AssertFatal(F1AP_SETUP_RESP (msg_p).num_SI[i] > 0, "System Information %d is missing",i);
 
-
+   MSC_LOG_RX_MESSAGE(
+    MSC_F1AP_DU,
+    MSC_F1AP_CU,
+    0,
+    0,
+    MSC_AS_TIME_FMT" DU_handle_F1_SETUP_RESPONSE successfulOutcome assoc_id %d",
+    0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
+    assoc_id);
+ 
    LOG_D(DU_F1AP, "Sending F1AP_SETUP_RESP ITTI message to ENB_APP with assoc_id (%d->%d)\n",
 	  assoc_id,ENB_MODULE_ID_TO_INSTANCE(assoc_id));
    itti_send_msg_to_task(TASK_ENB_APP, ENB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
