@@ -19,15 +19,26 @@
  *      contact@openairinterface.org
  */
 
-#ifndef X2AP_ENB_HANDLERS_H_
-#define X2AP_ENB_HANDLERS_H_
+#ifndef X2AP_ENB_GENERATE_MESSAGES_H_
+#define X2AP_ENB_GENERATE_MESSAGES_H_
 
 #include "x2ap_eNB_defs.h"
+#include "x2ap_common.h"
 
-void x2ap_handle_x2_setup_message(x2ap_eNB_data_t *eNB_desc_p, int sctp_shutdown);
+int x2ap_eNB_generate_x2_setup_request(x2ap_eNB_instance_t *instance_p,
+				       x2ap_eNB_data_t *x2ap_enb_data_p);
 
-int x2ap_eNB_handle_message(instance_t instance, uint32_t assoc_id, int32_t stream,
-                            const uint8_t * const data, const uint32_t data_length);
+int x2ap_eNB_generate_x2_setup_response(x2ap_eNB_data_t *x2ap_enb_data_p);
 
-#endif /* X2AP_ENB_HANDLERS_H_ */
+int x2ap_eNB_generate_x2_setup_failure(instance_t instance,
+                                       uint32_t assoc_id,
+                                       X2AP_Cause_PR cause_type,
+                                       long cause_value,
+                                       long time_to_wait);
+
+int x2ap_eNB_set_cause (X2AP_Cause_t * cause_p,
+                        X2AP_Cause_PR cause_type,
+                        long cause_value);
+
+#endif /*  X2AP_ENB_GENERATE_MESSAGES_H_ */
 
