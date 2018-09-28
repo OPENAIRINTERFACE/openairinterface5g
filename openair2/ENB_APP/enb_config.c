@@ -2515,10 +2515,9 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i)
 
             config_getlist( &X2ParamList,X2Params,sizeof(X2Params)/sizeof(paramdef_t),aprefix);
 
-            if(X2ParamList.numelt>X2AP_MAX_NB_ENB_IP_ADDRESS){
-		 LOG_E(RRC,"value of X2ParamList.numelt %d must be lower than X2AP_MAX_NB_ENB_IP_ADDRESS %d value: reconsider to increase X2AP_MAX_NB_ENB_IP_ADDRESS\n",X2ParamList.numelt,X2AP_MAX_NB_ENB_IP_ADDRESS);
-		 exit(1);
-	    }
+            AssertFatal(X2ParamList.numelt <= X2AP_MAX_NB_ENB_IP_ADDRESS,
+                        "value of X2ParamList.numelt %d must be lower than X2AP_MAX_NB_ENB_IP_ADDRESS %d value: reconsider to increase X2AP_MAX_NB_ENB_IP_ADDRESS\n",
+                        X2ParamList.numelt,X2AP_MAX_NB_ENB_IP_ADDRESS);
 
             X2AP_REGISTER_ENB_REQ (msg_p).nb_x2 = 0;
             for (l = 0; l < X2ParamList.numelt; l++) {
@@ -2554,10 +2553,8 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i)
 
             X2AP_REGISTER_ENB_REQ (msg_p).enb_port_for_X2C = (uint32_t)*(NETParams[ENB_PORT_FOR_X2C_IDX].uptr);
 
-            if ((NETParams[ENB_IPV4_ADDR_FOR_X2C_IDX].strptr == NULL) || (X2AP_REGISTER_ENB_REQ (msg_p).enb_port_for_X2C == 0)) {
-              LOG_E(RRC,"Add eNB IPv4 address and/or port for X2C in the CONF file!\n");
-              exit(1);
-            }
+            AssertFatal(NETParams[ENB_IPV4_ADDR_FOR_X2C_IDX].strptr != NULL && X2AP_REGISTER_ENB_REQ (msg_p).enb_port_for_X2C > 0,
+                        "Add eNB IPv4 address and/or port for X2C in the CONF file!\n");
 
             cidr = *(NETParams[ENB_IPV4_ADDR_FOR_X2C_IDX].strptr);
             address = strtok(cidr, "/");
