@@ -7201,29 +7201,24 @@ void rrc_eNB_reconfigure_DRBs (const protocol_ctxt_t* const ctxt_pP,
   rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(ctxt_pP, ue_context_pP, 0);
 }
 
-
 //-----------------------------------------------------------------------------
-void*
-rrc_enb_task(
-  void* args_p
-)
-//-----------------------------------------------------------------------------
-{
-  MessageDef                         *msg_p;
-  const char                         *msg_name_p;
-  instance_t                          instance;
-  int                                 result;
-  SRB_INFO                           *srb_info_p;
-  int                                 CC_id;
-
-  protocol_ctxt_t                     ctxt;
-
+void rrc_enb_init(void) {
   pthread_mutex_init(&lock_ue_freelist, NULL);
   pthread_mutex_init(&rrc_release_freelist, NULL);
   memset(&rrc_release_info,0,sizeof(RRC_release_list_t));
-  itti_mark_task_ready(TASK_RRC_ENB);
-  LOG_I(RRC,"Entering main loop of RRC message task\n");
-  while (1) {
+}
+
+//-----------------------------------------------------------------------------
+void *rrc_enb_process_itti_msg(void *notUsed) {
+    MessageDef                         *msg_p;
+    const char                         *msg_name_p;
+    instance_t                          instance;
+    int                                 result;
+    SRB_INFO                           *srb_info_p;
+    int                                 CC_id;
+    
+    protocol_ctxt_t                     ctxt;
+
     // Wait for a message
     itti_receive_msg(TASK_RRC_ENB, &msg_p);
 
@@ -7363,9 +7358,28 @@ rrc_enb_task(
     result = itti_free(ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
     if (result != EXIT_SUCCESS) {
         LOG_I(RRC, "Failed to free memory (%d)!\n",result);
-        continue;
     }
     msg_p = NULL;
+    return NULL;
+}
+
+//-----------------------------------------------------------------------------
+void*
+rrc_enb_task(
+  void* args_p
+)
+//-----------------------------------------------------------------------------
+{
+  rrc_enb_init();
+
+  itti_mark_task_ready(TASK_RRC_ENB);
+  LOG_I(RRC,"Entering main loop of RRC message task\n");
+
+  
+  while (1) {
+
+    (void) rrc_enb_process_itti_msg(NULL);
+
   }
 }
 #endif
