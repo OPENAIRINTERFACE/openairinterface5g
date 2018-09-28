@@ -225,10 +225,12 @@ int config_getlist(paramlist_def_t *ParamList, paramdef_t *params, int numparams
   const int ret = config_get_if()->getlist(ParamList, params, numparams, prefix);
   if (ret >= 0 && params) {
     char *newprefix;
-    if (prefix)
-      asprintf(&newprefix, "%s.%s", prefix, ParamList->listname);
-    else
+    if (prefix) {
+      int rc = asprintf(&newprefix, "%s.%s", prefix, ParamList->listname);
+      if (rc < 0) newprefix = NULL;
+    } else {
       newprefix = ParamList->listname;
+    }
     char cfgpath[MAX_OPTNAME_SIZE*2 + 6]; /* prefix.listname.[listindex] */
     for (int i = 0; i < ParamList->numelt; ++i) {
       // TODO config_process_cmdline?
