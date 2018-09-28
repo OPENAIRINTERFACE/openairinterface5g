@@ -1046,30 +1046,6 @@ extern "C" {
 
       // Initialize USRP device
       device->openair0_cfg = openair0_cfg;
-      std::string args = "type=b200";
-      char *addr_args = NULL;
-
-      // Check whether sdr_addrs is set in the config or not
-      if (openair0_cfg[0].sdr_addrs != NULL) {
-        if (strcmp(openair0_cfg[0].sdr_addrs, "0.0.0.0") != 0) {
-          // Check whether sdr_addrs contains multiple IP addresses
-          // and split and add them to addr_args
-          if (strstr(openair0_cfg[0].sdr_addrs, ",") != NULL) {
-            char *addr0 = openair0_cfg[0].sdr_addrs;
-            // Replace , with \0
-            strsep(&openair0_cfg[0].sdr_addrs, ",");
-            char *addr1 = openair0_cfg[0].sdr_addrs;
-            // Allocate memory for ",addr0=,addr1=\0" and the addresses
-            size_t addr_args_len = sizeof(char)*(15 + strlen(addr0) + strlen(addr1));
-            addr_args = (char *)malloc(addr_args_len);
-            snprintf(addr_args, addr_args_len, ",addr0=%s,addr1=%s", addr0, addr1);
-            args += addr_args;
-            LOG_D(PHY, "addr_args == '%s'\n", addr_args);
-          }
-        }
-      }
-
-      uhd::device_addrs_t device_adds = uhd::device::find(args);
       int vers=0,subvers=0,subsubvers=0;
       int bw_gain_adjust=0;
 #if defined(USRP_REC_PLAY)
@@ -1083,44 +1059,59 @@ extern "C" {
       LOG_I(PHY,"Checking for USRPs : UHD %s (%d.%d.%d)\n",
             uhd::get_version_string().c_str(),vers,subvers,subsubvers);
 
-      if(device_adds.size() == 0)  {
-        double usrp_master_clock = 184.32e6;
-        std::string args = "type=x300";
+      std::string args;
+      if (openair0_cfg[0].sdr_addrs == NULL) {
+        args = "type=b200";
+      } else {
+        args = openair0_cfg[0].sdr_addrs;
+      }
 
-        if (addr_args) {
-          args += addr_args;
-        }
+      uhd::device_addrs_t device_adds = uhd::device::find(args);
 
-        // workaround for an api problem, master clock has to be set with the constructor not via set_master_clock_rate
+      if (device_adds.size() == 0) {
+        std::cerr<<"No USRP Device Found. " << std::endl;
+        free(s);
+        return -1;
+      } else if (device_adds.size() > 1) {
+        std::cerr<<"More than one USRP Device Found. Please specify device more precisely in config file." << std::endl;
+	free(s);
+	return -1;
+      }
+
+      std::cerr << "Found USRP " << device_adds[0].get("type") << "\n";
+      double usrp_master_clock;
+
+      if (device_adds[0].get("type") == "b200") {
+        printf("Found USRP b200\n");
+        device->type = USRP_B200_DEV;
+        usrp_master_clock = 30.72e6;
         args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
-        //    args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=4096, recv_frame_size=4096";
-        uhd::device_addrs_t device_adds = uhd::device::find(args);
+        args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=15360, recv_frame_size=15360" ;
+      }
 
-        if(device_adds.size() == 0) {
-          args += ",addr=192.168.30.2";
-          uhd::device_addrs_t device_adds = uhd::device::find(args);
+      if (device_adds[0].get("type") == "n3xx") {
+        printf("Found USRP n300\n");
+        device->type=USRP_X300_DEV; //treat it as X300 for now
+        usrp_master_clock = 122.88e6;
+        args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
+      }
 
-          if(device_adds.size() == 0) {
-            std::cerr<<"No USRP Device Found. " << std::endl;
-            free(s);
-            return -1;
-          }
-        }
-
-        LOG_I(PHY,"Found USRP X300\n");
-        s->usrp = uhd::usrp::multi_usrp::make(args);
-
-        // lock mboard clocks
-        if (openair0_cfg[0].clock_source == internal)
-          s->usrp->set_clock_source("internal");
-        else
-          s->usrp->set_clock_source("external");
-
-        //Setting device type to USRP X300/X310
+      if (device_adds[0].get("type") == "x300") {
+        printf("Found USRP x300\n");
         device->type=USRP_X300_DEV;
-        // this is not working yet, master clock has to be set via constructor
-        // set master clock rate and sample rate for tx & rx for streaming
-        //s->usrp->set_master_clock_rate(usrp_master_clock);
+        usrp_master_clock = 184.32e6;
+        args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
+      }
+
+      s->usrp = uhd::usrp::multi_usrp::make(args);
+
+      // lock mboard clocks
+      if (openair0_cfg[0].clock_source == internal)
+        s->usrp->set_clock_source("internal");
+      else
+        s->usrp->set_clock_source("external");
+
+      if (device->type==USRP_X300_DEV) {
         openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
 #if defined(USRP_REC_PLAY)
         std::cerr << "-- Using calibration table: calib_table_x310" << std::endl; // Bell Labs info
@@ -1178,29 +1169,9 @@ extern "C" {
             exit(-1);
             break;
         }
-      } else {
-        LOG_I(PHY,"Found USRP B200\n");
-        args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=15360, recv_frame_size=15360" ;
-        s->usrp = uhd::usrp::multi_usrp::make(args);
+      }
 
-        //  s->usrp->set_rx_subdev_spec(rx_subdev);
-        //  s->usrp->set_tx_subdev_spec(tx_subdev);
-
-        // do not explicitly set the clock to "internal", because this will disable the gpsdo
-        //    // lock mboard clocks
-        //    s->usrp->set_clock_source("internal");
-        // set master clock rate and sample rate for tx & rx for streaming
-
-        // lock mboard clocks
-        if (openair0_cfg[0].clock_source == internal) {
-          s->usrp->set_clock_source("internal");
-        } else {
-          s->usrp->set_clock_source("external");
-          s->usrp->set_time_source("external");
-        }
-
-        device->type = USRP_B200_DEV;
-
+      if (device->type == USRP_B200_DEV) {
         if ((vers == 3) && (subvers == 9) && (subsubvers>=2)) {
           openair0_cfg[0].rx_gain_calib_table = calib_table_b210;
           bw_gain_adjust=0;
