@@ -126,6 +126,9 @@ class SSHConnection():
 				# debug output
 				logging.debug(str(self.ssh.before))
 				logging.debug('self.sshresponse = ' + str(self.sshresponse))
+			# adding a tempo when failure
+			if not connect_status:
+				time.sleep(1)
 			count += 1
 		if connect_status:
 			pass
