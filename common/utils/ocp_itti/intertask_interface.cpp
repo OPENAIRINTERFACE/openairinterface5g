@@ -115,11 +115,15 @@ extern "C" {
     task_list_t *t=&tasks[destination_task_id];
     pthread_mutex_lock (&t->queue_cond_lock);
     int ret=itti_send_msg_to_task_locked(destination_task_id, instance, message);
-    pthread_mutex_unlock (&t->queue_cond_lock);
 
-    while ( t->message_queue.size()>0 && t->admin.func != NULL )
+    while ( t->message_queue.size()>0 && t->admin.func != NULL ) {
+      if (t->message_queue.size()>1)
+	LOG_W(TMR,"queue in no thread mode is %ld\n", t->message_queue.size());
+      pthread_mutex_unlock (&t->queue_cond_lock);
       t->admin.func(NULL);
-
+      pthread_mutex_lock (&t->queue_cond_lock);
+    } 
+    pthread_mutex_unlock (&t->queue_cond_lock);
     return ret;
   }
 
@@ -193,6 +197,8 @@ extern "C" {
       pthread_mutex_unlock(&t->queue_cond_lock);
       LOG_D(TMR,"enter blocking wait for %s\n", itti_get_task_name(task_id));
       t->nb_events = epoll_wait(t->epoll_fd,t->events,t->nb_fd_epoll, epoll_timeout);
+      if ( t->nb_events  < 0 && (errno == EINTR || errno == EAGAIN ) )
+	pthread_mutex_lock(&t->queue_cond_lock);
     } while (t->nb_events  < 0 && (errno == EINTR || errno == EAGAIN ) );
 
     AssertFatal (t->nb_events >=0,
@@ -278,6 +284,18 @@ extern "C" {
                   "Thread creation for task %d failed!\n", task_id);
     pthread_setname_np( t->thread, itti_get_task_name(task_id) );
     LOG_I(TMR,"Created Posix thread %s\n",  itti_get_task_name(task_id) );
+#if 1 // BMC test RT prio
+    {
+      int policy;
+      struct sched_param sparam;
+      memset(&sparam, 0, sizeof(sparam));
+      sparam.sched_priority = sched_get_priority_max(SCHED_FIFO)-10;
+      policy = SCHED_FIFO ; 
+      if (pthread_setschedparam(t->thread, policy, &sparam) != 0) {
+	LOG_E(TMR,"task %s : Failed to set pthread priority\n",  itti_get_task_name(task_id) );
+      }
+    }
+#endif    
     return 0;
   }
 

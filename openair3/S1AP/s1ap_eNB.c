@@ -286,19 +286,20 @@ void s1ap_eNB_handle_sctp_data_ind(sctp_data_ind_t *sctp_data_ind)
   AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
 }
 
-void *s1ap_eNB_task(void *arg)
+void s1ap_eNB_init(void)
 {
-  MessageDef *received_msg = NULL;
-  int         result;
-
   S1AP_DEBUG("Starting S1AP layer\n");
 
   s1ap_eNB_prepare_internal_data();
 
   itti_mark_task_ready(TASK_S1AP);
   MSC_START_USE();
+}
 
-  while (1) {
+void *s1ap_eNB_process_itti_msg(void* notUsed)
+{
+  MessageDef *received_msg = NULL;
+  int         result;
     itti_receive_msg(TASK_S1AP, &received_msg);
 
     switch (ITTI_MSG_ID(received_msg)) {
@@ -413,6 +414,16 @@ void *s1ap_eNB_task(void *arg)
     AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
 
     received_msg = NULL;
+    return NULL;
+}
+
+
+void *s1ap_eNB_task(void *arg)
+{
+  s1ap_eNB_init();
+  
+  while (1) {
+    (void) s1ap_eNB_process_itti_msg(NULL);
   }
 
   return NULL;

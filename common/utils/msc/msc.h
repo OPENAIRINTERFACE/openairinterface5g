@@ -63,6 +63,8 @@ typedef enum {
     MSC_S6A_MME,
     MSC_HSS,
     MAX_MSC_PROTOS,
+    MSC_X2AP_SRC_ENB,
+    MSC_X2AP_TARGET_ENB,
 } msc_proto_t;
 
 

@@ -19,15 +19,36 @@
  *      contact@openairinterface.org
  */
 
-#ifndef X2AP_ENB_HANDLERS_H_
-#define X2AP_ENB_HANDLERS_H_
+#include <stdio.h>
+#include <string.h>
+#include <stdint.h>
 
-#include "x2ap_eNB_defs.h"
+#include "assertions.h"
+#include "conversions.h"
+#include "intertask_interface.h"
+#include "x2ap_common.h"
+#include "x2ap_eNB_encoder.h"
 
-void x2ap_handle_x2_setup_message(x2ap_eNB_data_t *eNB_desc_p, int sctp_shutdown);
+int x2ap_eNB_encode_pdu(X2AP_X2AP_PDU_t *pdu, uint8_t **buffer, uint32_t *len)
+{
+  ssize_t    encoded;
 
-int x2ap_eNB_handle_message(instance_t instance, uint32_t assoc_id, int32_t stream,
-                            const uint8_t * const data, const uint32_t data_length);
+  DevAssert(pdu != NULL);
+  DevAssert(buffer != NULL);
+  DevAssert(len != NULL);
 
-#endif /* X2AP_ENB_HANDLERS_H_ */
+  if (asn1_xer_print) {
+    xer_fprint(stdout, &asn_DEF_X2AP_X2AP_PDU, (void *)pdu);
+  }
 
+  encoded = aper_encode_to_new_buffer(&asn_DEF_X2AP_X2AP_PDU, 0, pdu, (void **)buffer);
+
+  if (encoded < 0) {
+    return -1;
+  }
+
+  *len = encoded;
+
+  ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_X2AP_X2AP_PDU, pdu);
+  return encoded;
+}

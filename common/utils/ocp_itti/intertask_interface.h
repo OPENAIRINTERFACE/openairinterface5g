@@ -233,6 +233,11 @@ typedef struct IttiMsgText_s {
 #include <openair3/S1AP/s1ap_eNB.h>
 //#include <proto.h>
 
+#include <openair3/GTPV1-U/gtpv1u_eNB_task.h>
+void *rrc_enb_process_itti_msg(void *);
+#include <openair3/SCTP/sctp_eNB_task.h>
+#include <openair3/S1AP/s1ap_eNB.h>
+
 /*
   static const char *const messages_definition_xml = {
   #include <messages_xml.h>
