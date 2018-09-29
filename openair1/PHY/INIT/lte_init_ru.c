@@ -31,6 +31,8 @@
 #include "assertions.h"
 #include <math.h>
 
+void init_7_5KHz();
+
 int phy_init_RU(RU_t *ru) {
 
   LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
@@ -65,6 +67,7 @@ int phy_init_RU(RU_t *ru) {
 
   }
   if (ru->function != NGFI_RRU_IF5) { // we need to do RX/TX RU processing
+    init_7_5KHz();
     LOG_I(PHY,"nb_tx %d\n",ru->nb_tx);
     ru->common.rxdata_7_5kHz = (int32_t**)malloc16(ru->nb_rx*sizeof(int32_t*) );
     for (i=0;i<ru->nb_rx;i++) {
