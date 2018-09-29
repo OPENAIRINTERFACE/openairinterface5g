@@ -28,12 +28,12 @@
 #include "X2AP_InitiatingMessage.h"
 #include "X2AP_SuccessfulOutcome.h"
 #include "X2AP_UnsuccessfulOutcome.h"
-#include "X2AP_ProtocolIE-Field.h"
 #include "X2AP_ProtocolIE-FieldPair.h"
 #include "X2AP_ProtocolIE-ContainerPair.h"
 #include "X2AP_ProtocolExtensionField.h"
 #include "X2AP_ProtocolExtensionContainer.h"
 #include "X2AP_asn_constant.h"
+#include "intertask_interface.h"
 
 #ifndef X2AP_COMMON_H_
 #define X2AP_COMMON_H_
@@ -87,15 +87,13 @@ extern int asn1_xer_print;
     if (mandatory) DevAssert(ie != NULL); \
   } while(0)
 
-//Forward declaration
-struct x2ap_message_s;
-
 /** \brief Function callback prototype.
  **/
 typedef int (*x2ap_message_decoded_callback)(
+  instance_t instance,
   uint32_t assocId,
   uint32_t stream,
-  struct x2ap_message_s *message);
+  X2AP_X2AP_PDU_t *pdu);
 
 /** \brief Encode a successfull outcome message
  \param buffer pointer to buffer in which data will be encoded

@@ -336,6 +336,10 @@ rrc_eNB_reconfigure_DRBs (const protocol_ctxt_t* const ctxt_pP,
 			  rrc_eNB_ue_context_t*  ue_context_pP);
 
 #if defined(ENABLE_ITTI)
+
+void  rrc_enb_init(void);
+void *rrc_enb_process_itti_msg(void *);
+
 /**\brief RRC eNB task.
    \param void *args_p Pointer on arguments to start the task. */
 void *rrc_enb_task(void *args_p);

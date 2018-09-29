@@ -160,6 +160,58 @@ uint32_t to_earfcn(int eutra_bandP, uint32_t dl_CarrierFreq, uint32_t bw)
 	  (eutra_bandtable[i].N_OFFs_DL / 10));
 }
 
+uint32_t to_earfcn_DL(int eutra_bandP, long long int dl_CarrierFreq, uint32_t bw)
+{
+
+  uint32_t dl_CarrierFreq_by_100k = dl_CarrierFreq / 100000;
+  int bw_by_100 = bw / 100;
+
+  int i;
+
+  AssertFatal(eutra_bandP < 69, "eutra_band %d > 68\n", eutra_bandP);
+  for (i = 0; i < 69 && eutra_bandtable[i].band != eutra_bandP; i++);
+
+  AssertFatal(dl_CarrierFreq_by_100k >= eutra_bandtable[i].dl_min,
+              "Band %d, bw %u : DL carrier frequency %lld Hz < %u\n",
+              eutra_bandP, bw, dl_CarrierFreq,
+              eutra_bandtable[i].dl_min);
+  AssertFatal(dl_CarrierFreq_by_100k <=
+              (eutra_bandtable[i].dl_max - bw_by_100),
+              "Band %d, bw %u : DL carrier frequency %lld Hz > %d\n",
+              eutra_bandP, bw, dl_CarrierFreq,
+              eutra_bandtable[i].dl_max - bw_by_100);
+
+
+  return (dl_CarrierFreq_by_100k - eutra_bandtable[i].dl_min +
+          (eutra_bandtable[i].N_OFFs_DL / 10));
+}
+
+uint32_t to_earfcn_UL(int eutra_bandP, long long int ul_CarrierFreq, uint32_t bw)
+{
+
+  uint32_t ul_CarrierFreq_by_100k = ul_CarrierFreq / 100000;
+  int bw_by_100 = bw / 100;
+
+  int i;
+
+  AssertFatal(eutra_bandP < 69, "eutra_band %d > 68\n", eutra_bandP);
+  for (i = 0; i < 69 && eutra_bandtable[i].band != eutra_bandP; i++);
+
+  AssertFatal(ul_CarrierFreq_by_100k >= eutra_bandtable[i].ul_min,
+              "Band %d, bw %u : UL carrier frequency %lld Hz < %u\n",
+              eutra_bandP, bw, ul_CarrierFreq,
+              eutra_bandtable[i].ul_min);
+  AssertFatal(ul_CarrierFreq_by_100k <=
+              (eutra_bandtable[i].ul_max - bw_by_100),
+              "Band %d, bw %u : UL carrier frequency %lld Hz > %d\n",
+              eutra_bandP, bw, ul_CarrierFreq,
+              eutra_bandtable[i].ul_max - bw_by_100);
+
+
+  return (ul_CarrierFreq_by_100k - eutra_bandtable[i].ul_min +
+          ((eutra_bandtable[i].N_OFFs_DL + 180000) / 10));
+}
+
 uint32_t from_earfcn(int eutra_bandP, uint32_t dl_earfcn)
 {
 

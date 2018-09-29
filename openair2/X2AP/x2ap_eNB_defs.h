@@ -151,6 +151,17 @@ typedef struct x2ap_eNB_instance_s {
   uint16_t  mnc;
   uint8_t   mnc_digit_length;
 
+  /* CC params */
+  int16_t                 eutra_band[MAX_NUM_CCs];
+  uint32_t                downlink_frequency[MAX_NUM_CCs];
+  int32_t                 uplink_frequency_offset[MAX_NUM_CCs];
+  uint32_t                Nid_cell[MAX_NUM_CCs];
+  int16_t                 N_RB_DL[MAX_NUM_CCs];
+  lte_frame_type_t        frame_type[MAX_NUM_CCs];
+  uint32_t                fdd_earfcn_DL[MAX_NUM_CCs];
+  uint32_t                fdd_earfcn_UL[MAX_NUM_CCs];
+  int                     num_cc;
+
   net_ip_address_t target_enb_x2_ip_address[X2AP_MAX_NB_ENB_IP_ADDRESS];
   uint8_t          nb_x2;
   net_ip_address_t enb_x2_ip_address;

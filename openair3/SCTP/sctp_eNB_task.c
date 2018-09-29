@@ -1039,15 +1039,9 @@ sctp_eNB_flush_sockets(
   }
 }
 
-
 //------------------------------------------------------------------------------
-void *sctp_eNB_task(void *arg)
+void sctp_eNB_init(void)
 {
-  int                 nb_events;
-  struct epoll_event *events;
-  MessageDef         *received_msg = NULL;
-  int                 result;
-
   SCTP_DEBUG("Starting SCTP layer\n");
 
   STAILQ_INIT(&sctp_cnx_list);
@@ -1055,7 +1049,16 @@ void *sctp_eNB_task(void *arg)
   itti_mark_task_ready(TASK_SCTP);
   MSC_START_USE();
 
-  while (1) {
+}
+ 
+//------------------------------------------------------------------------------
+void *sctp_eNB_process_itti_msg(void *notUsed)
+{
+    int                 nb_events;
+    struct epoll_event *events;
+    MessageDef         *received_msg = NULL;
+    int                 result;
+    
     itti_receive_msg(TASK_SCTP, &received_msg);
 
     /* Check if there is a packet to handle */
@@ -1142,6 +1145,17 @@ void *sctp_eNB_task(void *arg)
     nb_events = itti_get_events(TASK_SCTP, &events);
     /* Now handle notifications for other sockets */
     sctp_eNB_flush_sockets(events, nb_events);
+
+    return NULL;
+}
+ 
+//------------------------------------------------------------------------------
+void *sctp_eNB_task(void *arg)
+{
+  sctp_eNB_init();
+
+  while (1) {
+    (void) sctp_eNB_process_itti_msg(NULL);
   }
 
   return NULL;
