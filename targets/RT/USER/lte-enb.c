@@ -111,8 +111,6 @@ extern volatile int             start_UE;
 #endif
 extern volatile int                    oai_exit;
 
-extern openair0_config_t openair0_cfg[MAX_CARDS];
-
 extern int transmission_mode;
 
 extern int oaisim_flag;
