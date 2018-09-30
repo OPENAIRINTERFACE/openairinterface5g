@@ -104,6 +104,9 @@ void nr_polar_rate_matching_pattern(uint16_t *rmp, uint16_t *J, const uint8_t *P
 void nr_polar_rate_matching(double *input, double *output, uint16_t *rmp,
 		uint16_t K, uint16_t N, uint16_t E);
 
+void nr_polar_rate_matching_int8(int16_t *input, int16_t *output, uint16_t *rmp, 
+				 uint16_t K, uint16_t N, uint16_t E);
+
 void nr_polar_interleaving_pattern(uint16_t K, uint8_t I_IL, uint16_t *PI_k_);
 
 void nr_polar_info_bit_pattern(uint8_t *ibp, int16_t *Q_I_N, int16_t *Q_F_N,
@@ -138,30 +141,56 @@ typedef struct decoder_list_s {
   uint8_t bit[1+nmax][Nmax];
   double llr[1+nmax][Nmax]; 
   uint8_t crcChecksum[24]; 
-  uint8_t crcState; 
   double pathMetric; 
 
 } decoder_list_t;
 
+typedef struct decoder_list_int8_s {
+  
+  uint8_t bit[1+nmax][Nmax];
+  int16_t llr[1+nmax][Nmax]; 
+  uint8_t crcChecksum[24]; 
+  int32_t pathMetric; 
+
+} decoder_list_int8_t;
+
 void updateLLR(decoder_list_t **dlist,uint8_t **llrU, uint8_t **bitU,
 	       uint8_t listSize, uint16_t row, uint16_t col, uint16_t xlen, uint8_t ylen, uint8_t approximation);
+
+void updateLLR_int8(decoder_list_int8_t **dlist,uint8_t **llrU, uint8_t **bitU,
+	       uint8_t listSize, uint16_t row, uint16_t col, uint16_t xlen, uint8_t ylen);
 
 void updateBit(decoder_list_t **dlist, uint8_t **bitU, uint8_t listSize, uint16_t row,
 	       uint16_t col, uint16_t xlen, uint8_t ylen);
 
+void updateBit_int8(decoder_list_int8_t **dlist, uint8_t **bitU, uint8_t listSize, uint16_t row,
+		    uint16_t col, uint16_t xlen, uint8_t ylen);
+
 void updatePathMetric(decoder_list_t **dlist,uint8_t listSize, uint8_t bitValue,
-		      uint16_t row, uint8_t approximation);
+		       uint16_t row, uint8_t approximation);
+
+void updatePathMetric0_int8(decoder_list_int8_t **dlist,uint8_t listSize, uint16_t row);
 
 void updatePathMetric2(decoder_list_t **dlist, uint8_t listSize, uint16_t row, uint8_t appr);
+
+void updatePathMetric2_int8(decoder_list_int8_t **dlist, uint8_t listSize, uint16_t row);
 
 void updateCrcChecksum(decoder_list_t **dlist, uint8_t **crcGen,
 		       uint8_t listSize, uint32_t i2, uint8_t len);
 
+void updateCrcChecksum_int8(decoder_list_int8_t **dlist, uint8_t **crcGen,
+			    uint8_t listSize, uint32_t i2, uint8_t len);
+
 void updateCrcChecksum2(decoder_list_t **dlist, uint8_t **crcGen,
 			uint8_t listSize, uint32_t i2, uint8_t len);
 
+void updateCrcChecksum2_int8(decoder_list_int8_t **dlist, uint8_t **crcGen,
+			     uint8_t listSize, uint32_t i2, uint8_t len);
+
 
 void nr_sort_asc_double_1D_array_ind(double *matrix, int *ind, int len);
+
+void nr_sort_asc_int16_1D_array_ind(int32_t *matrix, int *ind, int len);
 
 uint8_t **crc24c_generator_matrix(uint16_t payloadSizeBits);
 uint8_t **crc11_generator_matrix(uint16_t payloadSizeBits);

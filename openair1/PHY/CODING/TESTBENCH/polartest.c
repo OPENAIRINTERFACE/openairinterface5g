@@ -18,6 +18,7 @@ int main(int argc, char *argv[]) {
 	time_stats_t polar_decoder_init,polar_rate_matching,decoding,bit_extraction,deinterleaving;
 	time_stats_t path_metric,sorting,update_LLR;
 	opp_enabled=1;
+	int decoder_int8=0;
 	cpu_freq_GHz = get_cpu_freq_GHz();
 	reset_meas(&timeEncoder);
 	reset_meas(&timeDecoder);
@@ -30,7 +31,7 @@ int main(int argc, char *argv[]) {
 	reset_meas(&path_metric);
 	reset_meas(&update_LLR);
 
-	randominit(0);
+	randominit(1234);
 	//Default simulation values (Aim for iterations = 1000000.)
 	int itr, iterations = 1000, arguments, polarMessageType = 1; //0=DCI, 1=PBCH, 2=UCI
 	double SNRstart = -20.0, SNRstop = 0.0, SNRinc= 0.5; //dB
@@ -43,7 +44,7 @@ int main(int argc, char *argv[]) {
 
 	uint8_t decoderListSize = 8, pathMetricAppr = 0; //0 --> eq. (8a) and (11b), 1 --> eq. (9) and (12)
 
-	while ((arguments = getopt (argc, argv, "s:d:f:m:i:l:a:h")) != -1)
+	while ((arguments = getopt (argc, argv, "s:d:f:m:i:l:a:h:q")) != -1)
 	switch (arguments)
 	{
 		case 's':
@@ -74,6 +75,10 @@ int main(int argc, char *argv[]) {
 		case 'a':
 			pathMetricAppr = (uint8_t) atoi(optarg);
 			break;
+
+  	        case 'q':
+		        decoder_int8=1;
+		        break;
 
 	        case 'h':
 		  printf("./polartest -s SNRstart -d SNRinc -f SNRstop -m [0=DCI|1=PBCH|2=UCI] -i iterations -l decoderListSize -a pathMetricAppr\n");
@@ -131,6 +136,7 @@ int main(int argc, char *argv[]) {
 	double *modulatedInput = malloc (sizeof(double) * coderLength); //channel input
 
 	double *channelOutput  = malloc (sizeof(double) * coderLength); //add noise
+	int16_t *channelOutput_int8  = malloc (sizeof(int16_t) * coderLength); //add noise
 	uint8_t *estimatedOutput = malloc(sizeof(uint8_t) * testLength); //decoder output
 
 	t_nrPolar_params nrPolar_params;
@@ -159,12 +165,19 @@ int main(int argc, char *argv[]) {
 				modulatedInput[i]=(-1)/sqrt(2);
 
 			channelOutput[i] = modulatedInput[i] + (gaussdouble(0.0,1.0) * (1/sqrt(2*SNR_lin)));
+			if (decoder_int8==1) {
+			  if (channelOutput[i] > 1024) channelOutput_int8[i] = 32768;
+			  else if (channelOutput[i] < -1023) channelOutput_int8[i] = -32767;
+			  else channelOutput_int8[i] = (int16_t) (32*channelOutput[i]);
+			}
 		}
 
 
 		start_meas(&timeDecoder);
-		decoderState = polar_decoder(channelOutput, estimatedOutput, &nrPolar_params, decoderListSize, aPrioriArray, pathMetricAppr,&polar_decoder_init,&polar_rate_matching,&decoding,&bit_extraction,&deinterleaving,&sorting,&path_metric,&update_LLR);
-																	       stop_meas(&timeDecoder);
+		if (decoder_int8==0) decoderState = polar_decoder(channelOutput, estimatedOutput, &nrPolar_params, decoderListSize, aPrioriArray, pathMetricAppr,&polar_decoder_init,&polar_rate_matching,&decoding,&bit_extraction,&deinterleaving,&sorting,&path_metric,&update_LLR);
+		else
+		  decoderState = polar_decoder_int8(channelOutput_int8, estimatedOutput, &nrPolar_params, decoderListSize, &polar_decoder_init,&polar_rate_matching,&decoding,&bit_extraction,&deinterleaving,&sorting,&path_metric,&update_LLR);	
+		stop_meas(&timeDecoder); 
 
 		//calculate errors
 		if (decoderState==-1) {
@@ -207,9 +220,9 @@ int main(int argc, char *argv[]) {
 		printf("decoding decoding %9.3fus\n",decoding.diff/(cpu_freq_GHz*1000.0*decoding.trials));
 		printf("decoding bit_extraction %9.3fus\n",bit_extraction.diff/(cpu_freq_GHz*1000.0*bit_extraction.trials));
 		printf("decoding deinterleaving %9.3fus\n",deinterleaving.diff/(cpu_freq_GHz*1000.0*deinterleaving.trials));
-		printf("decoding path_metric %9.3fus\n",path_metric.diff/(cpu_freq_GHz*1000.0*deinterleaving.trials));
-		printf("decoding sorting %9.3fus\n",sorting.diff/(cpu_freq_GHz*1000.0*deinterleaving.trials));
-		printf("decoding updateLLR %9.3fus\n",update_LLR.diff/(cpu_freq_GHz*1000.0*deinterleaving.trials));
+		printf("decoding path_metric %9.3fus\n",path_metric.diff/(cpu_freq_GHz*1000.0*decoding.trials));
+		printf("decoding sorting %9.3fus\n",sorting.diff/(cpu_freq_GHz*1000.0*decoding.trials));
+		printf("decoding updateLLR %9.3fus\n",update_LLR.diff/(cpu_freq_GHz*1000.0*decoding.trials));
 		blockErrorCumulative = 0; bitErrorCumulative = 0;
 		timeEncoderCumulative = 0; timeDecoderCumulative = 0;
 	}

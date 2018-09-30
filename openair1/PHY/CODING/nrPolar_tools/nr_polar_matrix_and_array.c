@@ -168,3 +168,28 @@ void nr_sort_asc_double_1D_array_ind(double *matrix, int *ind, int len) {
 			break;
 	}
 }
+
+void nr_sort_asc_int16_1D_array_ind(int32_t *matrix, int *ind, int len) {
+  int swaps;
+  int16_t temp;
+  int tempInd;
+  
+  for (int i = 0; i < len; i++) {
+    swaps = 0;
+    for (int j = 0; j < (len - i) - 1; j++) {
+      if (matrix[j] > matrix[j + 1]) {
+	temp = matrix[j];
+	matrix[j] = matrix[j + 1];
+	matrix[j + 1] = temp;
+	
+	tempInd = ind[j];
+	ind[j] = ind[j + 1];
+	ind[j + 1] = tempInd;
+	
+	swaps++;
+      }
+    }
+    if (swaps == 0)
+      break;
+  }
+}
