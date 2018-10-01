@@ -147,8 +147,8 @@ typedef struct decoder_list_s {
 
 typedef struct decoder_list_int8_s {
   
-  uint8_t bit[1+nmax][Nmax];
-  int16_t llr[1+nmax][Nmax]; 
+  uint8_t bit[1+nmax][Nmax] __attribute__((aligned(32)));
+  int16_t llr[1+nmax][Nmax]__attribute__((aligned(32))); 
   uint8_t crcChecksum[24]; 
   int32_t pathMetric; 
 
