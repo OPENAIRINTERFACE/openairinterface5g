@@ -44,7 +44,7 @@ void remove_7_5_kHz(RU_t *ru,uint8_t slot)
   uint32_t slot_offset,slot_offset2;
   uint8_t aa;
   uint32_t i;
-  LTE_DL_FRAME_PARMS *frame_parms=&ru->frame_parms;
+  LTE_DL_FRAME_PARMS *frame_parms=ru->frame_parms;
 
   switch (frame_parms->N_RB_UL) {
 

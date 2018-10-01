@@ -15,4 +15,5 @@ tracer/to_vcd
 tracer/extract_input_subframe
 tracer/extract_output_subframe
 tracer/extract
+tracer/multi
 tracee/tracee

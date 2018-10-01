@@ -57,17 +57,17 @@
 #include "RRC/LTE/rrc_vars.h"
 #include "PHY_INTERFACE/phy_interface_vars.h"
 #include "gnb_config.h"
+
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"
 unsigned short config_frames[4] = {2,9,11,13};
 #endif
-#include "UTIL/LOG/log_extern.h"
-#include "UTIL/OTG/otg_tx.h"
-#include "UTIL/OTG/otg_externs.h"
-#include "UTIL/MATH/oml.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
+
 #include "UTIL/OPT/opt.h"
-#include "enb_config.h"
+
 //#include "PHY/TOOLS/time_meas.h"
 
 #ifndef OPENAIR2
@@ -531,11 +531,9 @@ static void get_options(void) {
       set_glog_onlinelog(online_log_messages);
   }
   if(config_isparamset(cmdline_logparams,CMDLINE_GLOGLEVEL_IDX)) {
-      set_glog(glog_level, -1);
+      set_glog(glog_level);
   }
-  if(config_isparamset(cmdline_logparams,CMDLINE_GLOGVERBO_IDX)) {
-      set_glog(-1, glog_verbosity);
-  }
+
   if (start_telnetsrv) {
      load_module_shlib("telnetsrv",NULL,0);
   }
@@ -574,8 +572,8 @@ void set_default_frame_parms(nfapi_nr_config_request_t *config[MAX_NUM_CCs], NR_
     config[CC_id]->subframe_config.numerology_index_mu.value =1;
     config[CC_id]->subframe_config.duplex_mode.value = 1; //FDD
     config[CC_id]->subframe_config.dl_cyclic_prefix_type.value = 0; //NORMAL
-    config[CC_id]->rf_config.dl_channel_bandwidth.value = 106;
-    config[CC_id]->rf_config.ul_channel_bandwidth.value = 106;
+    config[CC_id]->rf_config.dl_carrier_bandwidth.value = 106;
+    config[CC_id]->rf_config.ul_carrier_bandwidth.value = 106;
     config[CC_id]->rf_config.tx_antenna_ports.value = 1;
     config[CC_id]->rf_config.rx_antenna_ports.value = 1;
     config[CC_id]->sch_config.physical_cell_id.value = 0;
@@ -633,7 +631,7 @@ void init_openair0(void) {
     openair0_cfg[card].mmapped_dma=mmapped_dma;
     openair0_cfg[card].configFilename = NULL;
 
-    if(config[0]->rf_config.dl_channel_bandwidth.value == 100) {
+    if(config[0]->rf_config.dl_carrier_bandwidth.value == 100) {
       if (frame_parms[0]->threequarter_fs) {
 	openair0_cfg[card].sample_rate=23.04e6;
 	openair0_cfg[card].samples_per_frame = 230400;
@@ -645,17 +643,17 @@ void init_openair0(void) {
 	openair0_cfg[card].tx_bw = 10e6;
 	openair0_cfg[card].rx_bw = 10e6;
       }
-    } else if(config[0]->rf_config.dl_channel_bandwidth.value == 50) {
+    } else if(config[0]->rf_config.dl_carrier_bandwidth.value == 50) {
       openair0_cfg[card].sample_rate=15.36e6;
       openair0_cfg[card].samples_per_frame = 153600;
       openair0_cfg[card].tx_bw = 5e6;
       openair0_cfg[card].rx_bw = 5e6;
-    } else if (config[0]->rf_config.dl_channel_bandwidth.value == 25) {
+    } else if (config[0]->rf_config.dl_carrier_bandwidth.value == 25) {
       openair0_cfg[card].sample_rate=7.68e6;
       openair0_cfg[card].samples_per_frame = 76800;
       openair0_cfg[card].tx_bw = 2.5e6;
       openair0_cfg[card].rx_bw = 2.5e6;
-    } else if (config[0]->rf_config.dl_channel_bandwidth.value == 6) {
+    } else if (config[0]->rf_config.dl_carrier_bandwidth.value == 6) {
       openair0_cfg[card].sample_rate=1.92e6;
       openair0_cfg[card].samples_per_frame = 19200;
       openair0_cfg[card].tx_bw = 1.5e6;
@@ -673,7 +671,7 @@ void init_openair0(void) {
 	   RC.gNB[0][0]->gNB_config.rf_config.tx_antenna_ports.value );
     openair0_cfg[card].Mod_id = 0;
 
-    openair0_cfg[card].num_rb_dl=config[0]->rf_config.dl_channel_bandwidth.value;
+    openair0_cfg[card].num_rb_dl=config[0]->rf_config.dl_carrier_bandwidth.value;
 
     openair0_cfg[card].clock_source = clock_source;
 
@@ -930,7 +928,7 @@ int main( int argc, char **argv )
 
 
 #if T_TRACER
-  T_init(T_port, 1-T_nowait, T_dont_fork);
+  T_Config_Init();
 #endif
 
 
@@ -940,22 +938,16 @@ int main( int argc, char **argv )
 
   printf("configuring for RAU/RRU\n");
 
-
-  if (ouput_vcd) {
-      VCD_SIGNAL_DUMPER_INIT("/tmp/openair_dump_gNB.vcd");
-  }
-
   if (opp_enabled ==1) {
     reset_opp_meas();
   }
   cpuf=get_cpu_freq_GHz();
 
 #if defined(ENABLE_ITTI)
-  log_set_instance_type (LOG_INSTANCE_ENB);
 
   printf("ITTI init\n");
-  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, itti_dump_file);
-
+  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
+  
   // initialize mscgen log after ITTI
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
 #endif
@@ -1286,8 +1278,6 @@ int main( int argc, char **argv )
 	RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);  
 
     }
-  if (ouput_vcd)
-    VCD_SIGNAL_DUMPER_CLOSE();
   
   if (opt_enabled == 1)
     terminate_opt();

@@ -107,9 +107,7 @@ int netlink_init(void)
 
     if (nas_sock_fd[i] == -1) {
       printf("[NETLINK] Error opening socket %d (%d:%s)\n",nas_sock_fd[i],errno, strerror(errno));
-#if defined(LINK_ENB_PDCP_TO_IP_DRIVER)
       exit(1);
-#endif
     }
 
     printf("[NETLINK]Opened socket with fd %d\n",nas_sock_fd[i]);

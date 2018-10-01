@@ -56,7 +56,7 @@ int test_harq_uplink(PHY_VARS_NR_UE *phy_vars_ue)
   int gNB_id = 0;
   int harq_pid = 0;
   int ndi = 1;
-  nr_rnti_type_t rnti_type = C_RNTI_NR;
+  uint8_t rnti_type = _C_RNTI_;
   int number_steps = 5;
 
   printf("\nHARQ Uplink \n");
@@ -113,7 +113,7 @@ int test_harq_downlink(PHY_VARS_NR_UE *phy_vars_ue)
   int gNB_id = 0;
   int harq_pid = 0;
   int ndi = 1;
-  nr_rnti_type_t rnti_type = C_RNTI_NR;
+  uint8_t rnti_type = _C_RNTI_;
   int number_steps = 5;
   int thread_number = 0;
   int TB_identifier = 0;

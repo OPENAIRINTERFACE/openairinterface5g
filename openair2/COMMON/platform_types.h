@@ -69,7 +69,7 @@ typedef uint32_t              frame_t;
 typedef int32_t               sframe_t;
 typedef uint32_t              sub_frame_t;
 typedef uint32_t              slot_t;
-typedef uint8_t               module_id_t;
+typedef uint16_t              module_id_t;
 typedef uint8_t               slice_id_t;
 typedef uint8_t               eNB_index_t;
 typedef uint16_t              ue_id_t;
@@ -92,6 +92,10 @@ typedef boolean_t             gNB_flag_t;
 typedef boolean_t             srb_flag_t;
 #define  SRB_FLAG_NO          FALSE
 #define  SRB_FLAG_YES         TRUE
+
+typedef boolean_t             sl_discovery_flag_t;
+#define  SL_DISCOVERY_FLAG_NO          FALSE
+#define  SL_DISCOVERY_FLAG_YES         TRUE
 
 typedef enum link_direction_e {
   UNKNOWN_DIR          = 0,
@@ -169,7 +173,9 @@ typedef enum  ip_traffic_type_e {
   TRAFFIC_IPV4_TYPE_UNICAST    =  5,
   TRAFFIC_IPV4_TYPE_MULTICAST  =  6,
   TRAFFIC_IPV4_TYPE_BROADCAST  =  7,
-  TRAFFIC_IPV4_TYPE_UNKNOWN    =  8
+  TRAFFIC_IPV4_TYPE_UNKNOWN    =  8,
+  TRAFFIC_PC5S_SIGNALLING      =  9,
+  TRAFFIC_PC5S_SESSION_INIT    =  10
 } ip_traffic_type_t;
 
 //-----------------------------------------------------------------------------

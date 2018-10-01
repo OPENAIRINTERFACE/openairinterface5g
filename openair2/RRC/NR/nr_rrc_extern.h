@@ -19,13 +19,13 @@
  *      contact@openairinterface.org
  */
 
-/*! \file vars.h
+/*! \file nr_rrc_extern.h
 * \brief rrc external vars
-* \author Navid Nikaein and Raymond Knopp
-* \date 2011
+* \author Navid Nikaein and Raymond Knopp, WEI-TAI CHEN
+* \date 2011, 2018
 * \version 1.0
-* \company Eurecom
-* \email: navid.nikaein@eurecom.fr
+* \company Eurecom, NTUST
+* \email: navid.nikaein@eurecom.fr, kroempa@gmail.com
 */
 
 #ifndef __OPENAIR_RRC_EXTERN_H__

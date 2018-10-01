@@ -14,21 +14,21 @@ int cmp(const void *p1, const void *p2)
 }
 
 /* return 1 if s was not already known, 0 if it was */
-int new_unique_id(char *s)
+int new_unique_id(char *s, char *input_file)
 {
   if (unique_ids_size)
   if (bsearch(&s, unique_ids, unique_ids_size, sizeof(char *), cmp) != NULL) {
-    printf("FATAL: ID %s is not unique\n", s);
+    printf("error: ID %s is not unique in %s\n", s, input_file);
     return 0;
   }
   if (unique_ids_size == unique_ids_maxsize) {
     unique_ids_maxsize += 256;
     unique_ids = realloc(unique_ids, unique_ids_maxsize * sizeof(char *));
-    if (unique_ids == NULL) { printf("out of memory\n"); abort(); }
+    if (unique_ids == NULL) { printf("erorr: out of memory\n"); abort(); }
   }
   unique_ids[unique_ids_size] = strdup(s);
   if (unique_ids[unique_ids_size] == NULL)
-    { printf("out of memory\n"); abort(); }
+    { printf("erorr: out of memory\n"); abort(); }
   unique_ids_size++;
   qsort(unique_ids, unique_ids_size, sizeof(char *), cmp);
   return 1;
@@ -43,7 +43,8 @@ void putname(int c)
   if (bufname_size == bufname_maxsize) {
     bufname_maxsize += 256;
     bufname = realloc(bufname, bufname_maxsize);
-    if (bufname == NULL) { printf("memory allocation error\n"); exit(1); }
+    if (bufname == NULL)
+      { printf("erorr: memory allocation error\n"); exit(1); }
   }
   bufname[bufname_size] = c;
   bufname_size++;
@@ -58,7 +59,8 @@ void putvalue(int c)
   if (bufvalue_size == bufvalue_maxsize) {
     bufvalue_maxsize += 256;
     bufvalue = realloc(bufvalue, bufvalue_maxsize);
-    if (bufvalue == NULL) { printf("memory allocation error\n"); exit(1); }
+    if (bufvalue == NULL)
+      { printf("error: memory allocation error\n"); exit(1); }
   }
   bufvalue[bufvalue_size] = c;
   bufvalue_size++;
@@ -119,7 +121,7 @@ int main(int n, char **v)
   char *in_name;
   char *out_name;
 
-  if (n != 3) { printf("gimme <source> <dest>\n"); exit(1); }
+  if (n != 3) { printf("error: gimme <source> <dest>\n"); exit(1); }
 
   n = 0;
 
@@ -134,14 +136,13 @@ int main(int n, char **v)
   while (1) {
     get_line(in, &name, &value);
     if (name == NULL) break;
-    printf("name '%s' value '%s'\n", name, value);
     if (isspace(value[strlen(value)-1])) {
-      printf("bad value '%s' (no space at the end please!)\n", value);
+      printf("error: bad value '%s' (no space at the end please!)\n", value);
       unlink(out_name);
       exit(1);
     }
     if (!strcmp(name, "ID")) {
-      if (!new_unique_id(value)) { unlink(out_name); exit(1); }
+      if (!new_unique_id(value, in_name)) { unlink(out_name); exit(1); }
       fprintf(out, "#define T_%s T_ID(%d)\n", value, n);
       n++;
     }

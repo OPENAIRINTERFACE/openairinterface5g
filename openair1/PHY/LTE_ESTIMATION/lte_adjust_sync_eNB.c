@@ -23,7 +23,7 @@
 #include "PHY/defs_eNB.h"
 #include "PHY/phy_extern.h"
 
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 #define DEBUG_PHY
 
@@ -79,7 +79,7 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 #ifdef DEBUG_PHY
       sprintf(fname,"srs_ch_estimates_time_%d%d.m",ind,aa);
       sprintf(vname,"srs_time_%d%d",ind,aa);
-      write_output(fname,vname,lte_eNB_srs->srs_ch_estimates_time[aa],frame_parms->ofdm_symbol_size*2,2,1);
+      LOG_M(fname,vname,lte_eNB_srs->srs_ch_estimates_time[aa],frame_parms->ofdm_symbol_size*2,2,1);
 #endif
     }
 
@@ -112,7 +112,7 @@ int lte_est_timing_advance(LTE_DL_FRAME_PARMS *frame_parms,
 }
 
 
-int lte_est_timing_advance_pusch(PHY_VARS_eNB* eNB,uint8_t UE_id)
+int lte_est_timing_advance_pusch(PHY_VARS_eNB* eNB,module_id_t UE_id)
 {
   int temp, i, aa, max_pos=0, max_val=0;
   short Re,Im;

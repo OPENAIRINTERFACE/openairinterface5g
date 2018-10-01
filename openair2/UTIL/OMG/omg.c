@@ -121,7 +121,7 @@ init_mobility_generator (omg_global_param omg_param_list[])
       break;
 
     default:
-      LOG_N (OMG, "Unsupported generator\n");
+      LOG_W (OMG, "Unsupported generator\n");
     }
 
 
@@ -161,7 +161,7 @@ stop_mobility_generator (omg_global_param * omg_param_list)
       break;
 #endif 
     default:
-      LOG_N (OMG, "Unsupported generator\n");
+      LOG_W (OMG, "Unsupported generator\n");
     }
   }
 
@@ -211,8 +211,7 @@ update_node_vector (int mobility_type, double cur_time)
     break;
 
   default:
-    //printf("STATIC or Unsupported generator %d \n", omg_param_list.mobility_type);
-    LOG_N (OMG, "STATIC or Unsupported generator\n");
+    LOG_W (OMG, "STATIC or Unsupported generator\n");
   }
 }
 

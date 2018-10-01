@@ -296,7 +296,7 @@ void free_tdd_configuration_nr(NR_DL_FRAME_PARMS *frame_parms)
     free(p_tdd_UL_DL_Configuration);
   }
 
-  for (int number_of_slot = 0; number_of_slot < MAX_NR_OF_SLOTS; number_of_slot++) {
+  for (int number_of_slot = 0; number_of_slot < NR_MAX_SLOTS_PER_FRAME; number_of_slot++) {
     frame_parms->tdd_uplink_nr[number_of_slot] = NR_TDD_DOWNLINK_SLOT;
   }
 }

@@ -43,7 +43,7 @@
 #include "SystemInformationBlockType2.h"
 #include "rrc_messages_types.h"
 #else
-#include "RRC/LITE/MESSAGES/SystemInformationBlockType2.h"
+#include "RRC/LTE/MESSAGES/SystemInformationBlockType2.h"
 #endif
 #include "intertask_interface_types.h"
 #include "RRC/LTE/rrc_defs.h"
@@ -96,6 +96,7 @@ extern void RCconfig_RU(void);
 extern void RCconfig_flexran(void);
 extern void RCconfig_L1(void);
 extern void RCconfig_macrlc(void);
+extern void UE_config_stub_pnf(void);
 extern int  RCconfig_gtpu(void );
 extern void RCConfig(void);
 

@@ -19,13 +19,13 @@
  *      contact@openairinterface.org
  */
 
-/*! \file rrc_common.c
- * \brief rrc common procedures for eNB and UE
- * \author Navid Nikaein and Raymond Knopp
- * \date 2011 - 2014
+/*! \file nr_ rrc_common.c
+ * \brief rrc common procedures for gNB
+ * \author Navid Nikaein and Raymond Knopp, WEI-TAI CHEN
+ * \date 2011 - 2014, 2018
  * \version 1.0
- * \company Eurecom
- * \email:  navid.nikaein@eurecom.fr and raymond.knopp@eurecom.fr
+ * \company Eurecom, NTUST
+ * \email:  navid.nikaein@eurecom.fr and raymond.knopp@eurecom.fr, kroempa@gmail.com
  */
 
 #include "nr_rrc_extern.h"
@@ -35,10 +35,10 @@
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "LAYER2/RLC/rlc.h"
 #include "COMMON/mac_rrc_primitives.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "asn1_msg.h"
 #include "pdcp.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "rrc_eNB_UE_context.h"
 #include "common/ran_context.h"
 
@@ -81,18 +81,13 @@ int rrc_init_nr_global_param(void){
 }
 
 //-----------------------------------------------------------------------------
-void
-rrc_config_nr_buffer(
-  NR_SRB_INFO* Srb_info,
-  uint8_t Lchan_type,
-  uint8_t Role
-)
-//-----------------------------------------------------------------------------
-{
+void rrc_config_nr_buffer(NR_SRB_INFO* Srb_info,
+                          uint8_t Lchan_type,
+                          uint8_t Role
+                         ){
 
   Srb_info->Rx_buffer.payload_size = 0;
   Srb_info->Tx_buffer.payload_size = 0;
 }
-
 
 //-----------------------------------------------------------------------------

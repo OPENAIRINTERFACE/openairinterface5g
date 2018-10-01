@@ -38,7 +38,7 @@ int16_t *primary_synch1_time;
 int16_t *primary_synch2_time;
 
 
-#include "PHY/CODING/coding_vars.h"
+//#include "PHY/CODING/coding_vars.h"
 
 //PHY_VARS *PHY_vars;
 #ifndef OCP_FRAMEWORK

@@ -35,8 +35,14 @@
 #ifdef CMAKER
 #include "SystemInformationBlockType2.h"
 #else
-#include "RRC/LITE/MESSAGES/SystemInformationBlockType2.h"
+#include "RRC/LTE/MESSAGES/SystemInformationBlockType2.h"
 #endif
+#include "SL-OffsetIndicator-r12.h"
+#include "SubframeBitmapSL-r12.h"
+#include "SL-CP-Len-r12.h"
+#include "SL-PeriodComm-r12.h"
+#include "SL-DiscResourcePool-r12.h"
+
 
 //-------------------------------------------------------------------------------------------//
 // Messages for RRC logging
@@ -119,9 +125,9 @@ typedef struct RrcConfigurationReq_s {
   long                    pucch_delta_shift[MAX_NUM_CCs];
   long                    pucch_nRB_CQI[MAX_NUM_CCs];
   long                    pucch_nCS_AN[MAX_NUM_CCs];
-#if !defined(Rel10) && !defined(Rel14)
+//#if (RRC_VERSION < MAKE_VERSION(10, 0, 0))
   long                    pucch_n1_AN[MAX_NUM_CCs];
-#endif
+//#endif
   long                    pdsch_referenceSignalPower[MAX_NUM_CCs];
   long                    pdsch_p_b[MAX_NUM_CCs];
   long                    pusch_n_SB[MAX_NUM_CCs];
@@ -170,8 +176,56 @@ typedef struct RrcConfigurationReq_s {
   long                    ue_TimersAndConstants_n310[MAX_NUM_CCs];
   long                    ue_TimersAndConstants_n311[MAX_NUM_CCs];
   long                    ue_TransmissionMode[MAX_NUM_CCs];
+  long                    ue_multiple_max[MAX_NUM_CCs];
+
+  //TTN - for D2D
+  //SIB18
+  e_SL_CP_Len_r12                rxPool_sc_CP_Len[MAX_NUM_CCs];
+  e_SL_PeriodComm_r12            rxPool_sc_Period[MAX_NUM_CCs];
+  e_SL_CP_Len_r12                rxPool_data_CP_Len[MAX_NUM_CCs];
+  long                           rxPool_ResourceConfig_prb_Num[MAX_NUM_CCs];
+  long                           rxPool_ResourceConfig_prb_Start[MAX_NUM_CCs];
+  long                           rxPool_ResourceConfig_prb_End[MAX_NUM_CCs];
+  SL_OffsetIndicator_r12_PR      rxPool_ResourceConfig_offsetIndicator_present[MAX_NUM_CCs];
+  long                           rxPool_ResourceConfig_offsetIndicator_choice[MAX_NUM_CCs];
+  SubframeBitmapSL_r12_PR        rxPool_ResourceConfig_subframeBitmap_present[MAX_NUM_CCs];
+  char*                          rxPool_ResourceConfig_subframeBitmap_choice_bs_buf[MAX_NUM_CCs];
+  long                           rxPool_ResourceConfig_subframeBitmap_choice_bs_size[MAX_NUM_CCs];
+  long                           rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[MAX_NUM_CCs];
+
+  //SIB19
+  //for discRxPool
+  SL_CP_Len_r12_t                discRxPool_cp_Len[MAX_NUM_CCs];
+  e_SL_DiscResourcePool_r12__discPeriod_r12                   discRxPool_discPeriod[MAX_NUM_CCs];
+  long                           discRxPool_numRetx[MAX_NUM_CCs];
+  long                           discRxPool_numRepetition[MAX_NUM_CCs];
+  long                           discRxPool_ResourceConfig_prb_Num[MAX_NUM_CCs];
+  long                           discRxPool_ResourceConfig_prb_Start[MAX_NUM_CCs];
+  long                           discRxPool_ResourceConfig_prb_End[MAX_NUM_CCs];
+  SL_OffsetIndicator_r12_PR      discRxPool_ResourceConfig_offsetIndicator_present[MAX_NUM_CCs];
+  long                           discRxPool_ResourceConfig_offsetIndicator_choice[MAX_NUM_CCs];
+  SubframeBitmapSL_r12_PR        discRxPool_ResourceConfig_subframeBitmap_present[MAX_NUM_CCs];
+  char*                          discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf[MAX_NUM_CCs];
+  long                           discRxPool_ResourceConfig_subframeBitmap_choice_bs_size[MAX_NUM_CCs];
+  long                           discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[MAX_NUM_CCs];
+  //for discRxPoolPS
+  SL_CP_Len_r12_t                discRxPoolPS_cp_Len[MAX_NUM_CCs];
+  e_SL_DiscResourcePool_r12__discPeriod_r12                   discRxPoolPS_discPeriod[MAX_NUM_CCs];
+  long                           discRxPoolPS_numRetx[MAX_NUM_CCs];
+  long                           discRxPoolPS_numRepetition[MAX_NUM_CCs];
+  long                           discRxPoolPS_ResourceConfig_prb_Num[MAX_NUM_CCs];
+  long                           discRxPoolPS_ResourceConfig_prb_Start[MAX_NUM_CCs];
+  long                           discRxPoolPS_ResourceConfig_prb_End[MAX_NUM_CCs];
+  SL_OffsetIndicator_r12_PR      discRxPoolPS_ResourceConfig_offsetIndicator_present[MAX_NUM_CCs];
+  long                           discRxPoolPS_ResourceConfig_offsetIndicator_choice[MAX_NUM_CCs];
+  SubframeBitmapSL_r12_PR        discRxPoolPS_ResourceConfig_subframeBitmap_present[MAX_NUM_CCs];
+  char*                          discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf[MAX_NUM_CCs];
+  long                           discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size[MAX_NUM_CCs];
+  long                           discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused[MAX_NUM_CCs];
 } RrcConfigurationReq;
+
 #define MAX_NUM_NBIOT_CELEVELS    3
+
 typedef struct NbIoTRrcConfigurationReq_s {
   uint32_t                cell_identity;
 
@@ -275,14 +329,12 @@ typedef struct NRRrcConfigurationReq_s {
   long                    SIB1_ss_PBCH_BlockPower[MAX_NUM_CCs];
   //NR FrequencyInfoDL
   long                    absoluteFrequencySSB[MAX_NUM_CCs];
-  uint32_t                ssb_SubcarrierOffset[MAX_NUM_CCs];
   long                    DL_FreqBandIndicatorNR[MAX_NUM_CCs];
   long                    DL_absoluteFrequencyPointA[MAX_NUM_CCs];
 
   //NR DL SCS-SpecificCarrier
   uint32_t                DL_offsetToCarrier[MAX_NUM_CCs];
   long                    DL_SCS_SubcarrierSpacing[MAX_NUM_CCs];
-  long                    DL_SCS_SpecificCarrier_k0[MAX_NUM_CCs];
   uint32_t                DL_carrierBandwidth[MAX_NUM_CCs];
 
   //NR BWP-DownlinkCommon
@@ -300,14 +352,14 @@ typedef struct NRRrcConfigurationReq_s {
   //NR UL SCS-SpecificCarrier
   uint32_t                UL_offsetToCarrier[MAX_NUM_CCs];
   long                    UL_SCS_SubcarrierSpacing[MAX_NUM_CCs];
-  long                    UL_SCS_SpecificCarrier_k0[MAX_NUM_CCs];
   uint32_t                UL_carrierBandwidth[MAX_NUM_CCs];
 
   // NR BWP-UplinkCommon
   uint32_t                UL_locationAndBandwidth[MAX_NUM_CCs];
   long                    UL_BWP_SubcarrierSpacing[MAX_NUM_CCs];
   lte_prefix_type_t       UL_BWP_prefix_type[MAX_NUM_CCs];
-
+  long                    UL_timeAlignmentTimerCommon[MAX_NUM_CCs];
+  long                    ServingCellConfigCommon_n_TimingAdvanceOffset[MAX_NUM_CCs];
   long                    ServingCellConfigCommon_ssb_PositionsInBurst_PR[MAX_NUM_CCs];
   long                    ServingCellConfigCommon_ssb_periodicityServingCell[MAX_NUM_CCs]; //ServingCellConfigCommon
   long                    ServingCellConfigCommon_dmrs_TypeA_Position[MAX_NUM_CCs];        //ServingCellConfigCommon
@@ -367,16 +419,19 @@ typedef struct NRRrcConfigurationReq_s {
   ///NR PUSCH-TimeDomainResourceAllocation
   uint32_t                PUSCH_TimeDomainResourceAllocation_k2[MAX_NUM_CCs];
   long                    PUSCH_TimeDomainResourceAllocation_mappingType[MAX_NUM_CCs];
+  uint32_t                PUSCH_TimeDomainResourceAllocation_startSymbolAndLength[MAX_NUM_CCs];
 
   //NR PUCCH-ConfigCommon
+  uint32_t                pucch_ResourceCommon[MAX_NUM_CCs];
   long                    pucch_GroupHopping[MAX_NUM_CCs];
+  uint32_t                hoppingId[MAX_NUM_CCs];
   long                    p0_nominal[MAX_NUM_CCs];
 
   //NR PDSCH-ConfigCOmmon
   //NR PDSCH-TimeDomainResourceAllocation
   uint32_t                PDSCH_TimeDomainResourceAllocation_k0[MAX_NUM_CCs];
   long                    PDSCH_TimeDomainResourceAllocation_mappingType[MAX_NUM_CCs];
-
+  long                    PDSCH_TimeDomainResourceAllocation_startSymbolAndLength[MAX_NUM_CCs];
 
   //NR RateMatchPattern  is used to configure one rate matching pattern for PDSCH
   long                    rateMatchPatternId[MAX_NUM_CCs];
@@ -388,11 +443,12 @@ typedef struct NRRrcConfigurationReq_s {
   long                    RateMatchPattern_mode[MAX_NUM_CCs];
 
   //NR PDCCH-ConfigCommon
+  uint32_t                controlResourceSetZero[MAX_NUM_CCs];
+  uint32_t                searchSpaceZero[MAX_NUM_CCs];
   long                    searchSpaceSIB1[MAX_NUM_CCs];
   long                    searchSpaceOtherSystemInformation[MAX_NUM_CCs];
   long                    pagingSearchSpace[MAX_NUM_CCs];
   long                    ra_SearchSpace[MAX_NUM_CCs];
-  long                    rach_ra_ControlResourceSet[MAX_NUM_CCs];  
   //NR PDCCH-ConfigCommon commonControlResourcesSets
   long                    PDCCH_common_controlResourceSetId[MAX_NUM_CCs];
   long                    PDCCH_common_ControlResourceSet_duration[MAX_NUM_CCs];
@@ -403,19 +459,14 @@ typedef struct NRRrcConfigurationReq_s {
   long                    PDCCH_precoderGranularity[MAX_NUM_CCs]; //Corresponds to L1 parameter 'CORESET-precoder-granuality'
   long                    PDCCH_TCI_StateId[MAX_NUM_CCs];
   BOOLEAN_t               tci_PresentInDCI[MAX_NUM_CCs];
+  uint32_t                PDCCH_DMRS_ScramblingID[MAX_NUM_CCs];
 
   //NR PDCCH-ConfigCommon commonSearchSpaces
   long                    SearchSpaceId[MAX_NUM_CCs];
   long                    commonSearchSpaces_controlResourceSetId[MAX_NUM_CCs];
   long                    SearchSpace_monitoringSlotPeriodicityAndOffset_choice[MAX_NUM_CCs];
-  long                    SearchSpace_monitoringSlotPeriodicityAndOffset_sl1[MAX_NUM_CCs];
-  long                    SearchSpace_monitoringSlotPeriodicityAndOffset_sl2[MAX_NUM_CCs];
-  long                    SearchSpace_monitoringSlotPeriodicityAndOffset_sl4[MAX_NUM_CCs];
-  long                    SearchSpace_monitoringSlotPeriodicityAndOffset_sl5[MAX_NUM_CCs];
-  long                    SearchSpace_monitoringSlotPeriodicityAndOffset_sl8[MAX_NUM_CCs];
-  long                    SearchSpace_monitoringSlotPeriodicityAndOffset_sl10[MAX_NUM_CCs];
-  long                    SearchSpace_monitoringSlotPeriodicityAndOffset_sl16[MAX_NUM_CCs];
-  long                    SearchSpace_monitoringSlotPeriodicityAndOffset_sl20[MAX_NUM_CCs];
+  uint32_t                SearchSpace_monitoringSlotPeriodicityAndOffset_value[MAX_NUM_CCs];
+  uint32_t                SearchSpace_duration[MAX_NUM_CCs];
   long                    SearchSpace_nrofCandidates_aggregationLevel1[MAX_NUM_CCs];
   long                    SearchSpace_nrofCandidates_aggregationLevel2[MAX_NUM_CCs];
   long                    SearchSpace_nrofCandidates_aggregationLevel4[MAX_NUM_CCs];

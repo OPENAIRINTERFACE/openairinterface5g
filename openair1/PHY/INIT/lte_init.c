@@ -31,7 +31,7 @@
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
 #include "MBSFN-SubframeConfigList.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "assertions.h"
 #include <math.h>
 
@@ -182,7 +182,7 @@ void phy_config_request(PHY_Config_t *phy_config) {
 		    fp->frame_type,
                     RC.eNB[Mod_id][CC_id]->X_u);
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   fp->prach_emtc_config_common.prach_Config_enabled=1;
 
   fp->prach_emtc_config_common.rootSequenceIndex                                         = cfg->emtc_config.prach_catm_root_sequence_index.value;
@@ -255,12 +255,7 @@ void phy_config_request(PHY_Config_t *phy_config) {
 	      "prach_starting_subframe_periodicity[0] %d < prach_numPetitionPerPreambleAttempt[0] %d\n",
 	      fp->prach_emtc_config_common.prach_ConfigInfo.prach_starting_subframe_periodicity[0],
 	      fp->prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[0]);
-#if 0
-  AssertFatal(fp->prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[0] > 0,
-	      "prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[0]==0\n");
-#else
-  LOG_E(PHY,"***DJP*** removed assert on preamble fp->prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[0]:%d expecting >0 %s:%d\n\n\n", fp->prach_emtc_config_common.prach_ConfigInfo.prach_numRepetitionPerPreambleAttempt[0], __FILE__, __LINE__);
-#endif
+
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[0]                     = cfg->emtc_config.prach_ce_level_0_configuration_index.value;
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[0]                      = cfg->emtc_config.prach_ce_level_0_frequency_offset.value;
   fp->prach_emtc_config_common.prach_ConfigInfo.prach_hopping_enable[0]                = cfg->emtc_config.prach_ce_level_0_hopping_enable.value;
@@ -471,7 +466,7 @@ void phy_config_sib2_eNB(uint8_t Mod_id,
 }
 */
 
-void phy_config_sib13_eNB(uint8_t Mod_id,int CC_id,int mbsfn_Area_idx,
+void phy_config_sib13_eNB(module_id_t Mod_id,int CC_id,int mbsfn_Area_idx,
                           long mbsfn_AreaId_r9)
 {
 
@@ -482,7 +477,7 @@ void phy_config_sib13_eNB(uint8_t Mod_id,int CC_id,int mbsfn_Area_idx,
 
   if (mbsfn_Area_idx == 0) {
     fp->Nid_cell_mbsfn = (uint16_t)mbsfn_AreaId_r9;
-    LOG_N(PHY,"Fix me: only called when mbsfn_Area_idx == 0)\n");
+    LOG_I(PHY,"Fix me: only called when mbsfn_Area_idx == 0)\n");
   }
 
   lte_gold_mbsfn(fp,RC.eNB[Mod_id][CC_id]->lte_gold_mbsfn_table,fp->Nid_cell_mbsfn);
@@ -491,8 +486,7 @@ void phy_config_sib13_eNB(uint8_t Mod_id,int CC_id,int mbsfn_Area_idx,
 
 void phy_config_dedicated_eNB_step2(PHY_VARS_eNB *eNB)
 {
-
-  uint8_t UE_id;
+  uint16_t UE_id;
   struct PhysicalConfigDedicated *physicalConfigDedicated;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
 
@@ -735,7 +729,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
   LTE_eNB_PUSCH** const pusch_vars   = eNB->pusch_vars;
   LTE_eNB_SRS* const srs_vars        = eNB->srs_vars;
   LTE_eNB_PRACH* const prach_vars    = &eNB->prach_vars;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   LTE_eNB_PRACH* const prach_vars_br = &eNB->prach_vars_br;
 #endif
   int i, UE_id; 
@@ -831,7 +825,7 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
 
   prach_vars->rxsigF[0]        = (int16_t**)malloc16_clear(64*sizeof(int16_t*));
   // PRACH BR
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   prach_vars_br->prachF = (int16_t*)malloc16_clear( 1024*2*sizeof(int32_t) );
 
   // assume maximum of 64 RX antennas for PRACH receiver
@@ -899,7 +893,7 @@ void phy_free_lte_eNB(PHY_VARS_eNB *eNB)
   LTE_eNB_PUSCH** const pusch_vars   = eNB->pusch_vars;
   LTE_eNB_SRS* const srs_vars        = eNB->srs_vars;
   LTE_eNB_PRACH* const prach_vars    = &eNB->prach_vars;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   LTE_eNB_PRACH* const prach_vars_br = &eNB->prach_vars_br;
 #endif
   int i, UE_id;
@@ -932,7 +926,7 @@ void phy_free_lte_eNB(PHY_VARS_eNB *eNB)
   for (i = 0; i < 64; i++) free_and_zero(prach_vars->prach_ifft[0][i]);
   free_and_zero(prach_vars->prach_ifft[0]);
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   for (int ce_level = 0; ce_level < 4; ce_level++) {
     for (i = 0; i < 64; i++) free_and_zero(prach_vars_br->prach_ifft[ce_level][i]);
     free_and_zero(prach_vars_br->prach_ifft[ce_level]);

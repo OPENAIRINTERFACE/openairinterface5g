@@ -27,7 +27,7 @@
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
 #include "MBSFN-SubframeConfigList.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "assertions.h"
 #include <math.h>
 #include "PHY/LTE_TRANSPORT/transport_common_proto.h"
@@ -35,8 +35,9 @@
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 
 uint8_t dmrs1_tab_ue[8] = {0,2,3,4,6,8,9,10};
+extern uint8_t nfapi_mode;
 
-void phy_config_sib1_ue(uint8_t Mod_id,int CC_id,
+void phy_config_sib1_ue(module_id_t Mod_id,int CC_id,
                         uint8_t eNB_id,
                         TDD_Config_t *tdd_Config,
                         uint8_t SIwindowsize,
@@ -54,7 +55,7 @@ void phy_config_sib1_ue(uint8_t Mod_id,int CC_id,
   fp->SIPeriod      = SIperiod;
 }
 
-void phy_config_sib2_ue(uint8_t Mod_id,int CC_id,
+void phy_config_sib2_ue(module_id_t Mod_id,int CC_id,
                         uint8_t eNB_id,
                         RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
                         ARFCN_ValueEUTRA_t *ul_CarrierFreq,
@@ -178,7 +179,7 @@ void phy_config_sib2_ue(uint8_t Mod_id,int CC_id,
 
 }
 
-void phy_config_sib13_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,int mbsfn_Area_idx,
+void phy_config_sib13_ue(module_id_t Mod_id,int CC_id,uint8_t eNB_id,int mbsfn_Area_idx,
                          long mbsfn_AreaId_r9)
 {
 
@@ -189,7 +190,7 @@ void phy_config_sib13_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,int mbsfn_Area_
 
   if (mbsfn_Area_idx == 0) {
     fp->Nid_cell_mbsfn = (uint16_t)mbsfn_AreaId_r9;
-    LOG_N(PHY,"Fix me: only called when mbsfn_Area_idx == 0)\n");
+    LOG_I(PHY,"Fix me: only called when mbsfn_Area_idx == 0)\n");
   }
 
   lte_gold_mbsfn(fp,PHY_vars_UE_g[Mod_id][CC_id]->lte_gold_mbsfn_table,fp->Nid_cell_mbsfn);
@@ -200,7 +201,7 @@ void phy_config_sib13_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,int mbsfn_Area_
 /*
  * Configures UE MAC and PHY with radioResourceCommon received in mobilityControlInfo IE during Handover
  */
-void phy_config_afterHO_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_id, MobilityControlInfo_t *mobilityControlInfo, uint8_t ho_failed)
+void phy_config_afterHO_ue(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_id, MobilityControlInfo_t *mobilityControlInfo, uint8_t ho_failed)
 {
 
   if(mobilityControlInfo!=NULL) {
@@ -323,7 +324,7 @@ void phy_config_afterHO_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_id, Mobility
   }
 }
 
-void phy_config_meas_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index,uint8_t n_adj_cells,unsigned int *adj_cell_id)
+void phy_config_meas_ue(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index,uint8_t n_adj_cells,unsigned int *adj_cell_id)
 {
 
   PHY_MEASUREMENTS *phy_meas = &PHY_vars_UE_g[Mod_id][CC_id]->measurements;
@@ -341,7 +342,7 @@ void phy_config_meas_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index,uint8_t n
 
 }
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 void phy_config_dedicated_scell_ue(uint8_t Mod_id,
                                    uint8_t eNB_index,
                                    SCellToAddMod_r10_t *sCellToAddMod_r10,
@@ -352,7 +353,7 @@ void phy_config_dedicated_scell_ue(uint8_t Mod_id,
 #endif
 
 
-void phy_config_harq_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
+void phy_config_harq_ue(module_id_t Mod_id,int CC_id,uint8_t eNB_id,
                         uint16_t max_harq_tx )
 {
 
@@ -362,7 +363,7 @@ void phy_config_harq_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
 
 extern uint16_t beta_cqi[16];
 
-void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
+void phy_config_dedicated_ue(module_id_t Mod_id,int CC_id,uint8_t eNB_id,
                              struct PhysicalConfigDedicated *physicalConfigDedicated )
 {
 
@@ -564,14 +565,17 @@ void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
   	phy_vars_ue->decode_SIB = 0;
   	phy_vars_ue->decode_MIB = 0;
   }
-  //phy_vars_ue->pdcch_vars[1][eNB_id]->crnti = phy_vars_ue->pdcch_vars[0][eNB_id]->crnti;
-  if(phy_vars_ue->pdcch_vars[0][eNB_id]->crnti == 0x1234)
-      phy_vars_ue->pdcch_vars[0][eNB_id]->crnti = phy_vars_ue->pdcch_vars[1][eNB_id]->crnti;
-  else
-      phy_vars_ue->pdcch_vars[1][eNB_id]->crnti = phy_vars_ue->pdcch_vars[0][eNB_id]->crnti;
 
-  LOG_I(PHY,"C-RNTI %x %x \n", phy_vars_ue->pdcch_vars[0][eNB_id]->crnti,
-                               phy_vars_ue->pdcch_vars[1][eNB_id]->crnti);
+  if(nfapi_mode!=3){
+    //phy_vars_ue->pdcch_vars[1][eNB_id]->crnti = phy_vars_ue->pdcch_vars[0][eNB_id]->crnti;
+    if(phy_vars_ue->pdcch_vars[0][eNB_id]->crnti == 0x1234)
+        phy_vars_ue->pdcch_vars[0][eNB_id]->crnti = phy_vars_ue->pdcch_vars[1][eNB_id]->crnti;
+    else
+        phy_vars_ue->pdcch_vars[1][eNB_id]->crnti = phy_vars_ue->pdcch_vars[0][eNB_id]->crnti;
+
+    LOG_I(PHY,"C-RNTI %x %x \n", phy_vars_ue->pdcch_vars[0][eNB_id]->crnti,
+                                 phy_vars_ue->pdcch_vars[1][eNB_id]->crnti);
+  }
 
 
 }
@@ -705,6 +709,7 @@ int init_lte_ue_signal(PHY_VARS_UE *ue,
   
   for (i=0; i<fp->nb_antennas_rx; i++) {
     common_vars->rxdata[i] = (int32_t*) malloc16_clear( (fp->samples_per_tti*10+2048)*sizeof(int32_t) );
+    LOG_I(PHY,"common_vars->rxdata[%d] %p\n",i,common_vars->rxdata[i]);
     common_vars->common_vars_rx_data_per_thread[0].rxdataF[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*(fp->ofdm_symbol_size*14) );
     common_vars->common_vars_rx_data_per_thread[1].rxdataF[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*(fp->ofdm_symbol_size*14) );
   }
@@ -854,6 +859,9 @@ int init_lte_ue_signal(PHY_VARS_UE *ue,
       (*pdcch_vars_th)[th_id][eNB_id]->rho                 = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
       (*pdcch_vars_th)[th_id][eNB_id]->rxdataF_ext         = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
       (*pdcch_vars_th)[th_id][eNB_id]->dl_ch_estimates_ext = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
+
+      (*pdcch_vars_th)[th_id][eNB_id]->dciFormat = 0;
+      (*pdcch_vars_th)[th_id][eNB_id]->agregationLevel = 0xFF;
     }
     
     for (i=0; i<fp->nb_antennas_rx; i++) {

@@ -31,7 +31,7 @@
 #include "list.h"
 #include "rlc_um.h"
 #include "rlc_primitives.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 
 //-----------------------------------------------------------------------------
 void
@@ -411,7 +411,11 @@ rlc_um_segment_10 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP
 #if TRACE_RLC_PAYLOAD
     rlc_util_print_hex_octets(RLC, pdu_mem_p->data, data_pdu_size);
 #endif
-    AssertFatal( pdu_tb_req_p->tb_size > 0 , "SEGMENT10: FINAL RLC UM PDU LENGTH %d", pdu_tb_req_p->tb_size);
+    //AssertFatal( pdu_tb_req_p->tb_size > 0 , "SEGMENT10: FINAL RLC UM PDU LENGTH %d", pdu_tb_req_p->tb_size);
+    if(pdu_tb_req_p->tb_size <= 0) {
+      LOG_E(RLC, "SEGMENT10: FINAL RLC UM PDU LENGTH %d\n", pdu_tb_req_p->tb_size);
+      break;
+    }
     pdu_p = NULL;
     pdu_mem_p = NULL;
 
@@ -744,13 +748,11 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
         sdu_mngt_p    = NULL;
 
       } else {
-#if TRACE_RLC_UM_SEGMENT
-        LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT" Filling  PDU with %d all remaining bytes of SDU and reduce TB size by %d bytes\n",
+        LOG_E(RLC, PROTOCOL_RLC_UM_CTXT_FMT" Filling  PDU with %d all remaining bytes of SDU and reduce TB size by %d bytes\n",
               PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,rlc_pP),
               sdu_mngt_p->sdu_remaining_size,
               pdu_remaining_size - sdu_mngt_p->sdu_remaining_size);
-#endif
-        assert(1!=1);
+        //assert(1!=1);
         memcpy(data, data_sdu_p, sdu_mngt_p->sdu_remaining_size);
         // reduce the size of the PDU
         continue_fill_pdu_with_sdu = 0;
@@ -792,7 +794,11 @@ rlc_um_segment_5 (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t *rlc_pP)
 #if TRACE_RLC_PAYLOAD
     rlc_util_print_hex_octets(RLC, (unsigned char*)pdu_mem_p->data, data_pdu_size);
 #endif
-    AssertFatal( pdu_tb_req_p->tb_size > 0 , "SEGMENT5: FINAL RLC UM PDU LENGTH %d", pdu_tb_req_p->tb_size);
+    //AssertFatal( pdu_tb_req_p->tb_size > 0 , "SEGMENT5: FINAL RLC UM PDU LENGTH %d", pdu_tb_req_p->tb_size);
+    if(pdu_tb_req_p->tb_size <= 0) {
+      LOG_E(RLC, "SEGMENT5: FINAL RLC UM PDU LENGTH %d\n", pdu_tb_req_p->tb_size);
+      break;
+    }
 
     pdu_p = NULL;
     pdu_mem_p = NULL;

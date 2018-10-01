@@ -625,9 +625,9 @@ int main(int argc, char **argv)
     char fname[64], vname[64];
     sprintf(fname, "txsig%d.m", frame);
     sprintf(vname, "txs%d", frame);
-    write_output(fname, vname, PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][0], FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+    LOG_M(fname, vname, PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdata[0][0], FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 
     if (frame == 0)
-      write_output("txsigF0.m", "txsF0", PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][0], frame_parms->ofdm_symbol_size*14*10, 1, 1);
+      LOG_M("txsigF0.m", "txsF0", PHY_vars_eNB_g[0]->lte_eNB_common_vars.txdataF[0][0], frame_parms->ofdm_symbol_size*14*10, 1, 1);
   }//frame
 }

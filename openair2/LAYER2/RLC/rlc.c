@@ -30,9 +30,10 @@
 #include "rlc.h"
 #include "mem_block.h"
 #include "../MAC/mac_extern.h"
-#include "UTIL/LOG/log.h"
+#include "LAYER2/RLC/UM_v9.3.0/rlc_um.h"
+#include "common/utils/LOG/log.h"
 #include "UTIL/OCG/OCG_vars.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "assertions.h"
 
@@ -135,7 +136,12 @@ rlc_op_status_t rlc_stat_req     (
   hash_key_t             key             = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t         h_rc;
 
-  AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+  //AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+	if(rb_idP >= NB_RB_MAX){
+		LOG_E(RLC, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+		return RLC_OP_STATUS_BAD_PARAMETER;
+	}
+	
   key = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
   h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
 
@@ -221,8 +227,7 @@ rlc_op_status_t rlc_stat_req     (
     *stat_rx_data_bytes_out_of_window     = 0;
     *stat_timer_poll_retransmit_timed_out = 0;
     *stat_timer_status_prohibit_timed_out = 0;
-    rlc_um_stat_req (ctxt_pP,
-                     &rlc_union_p->rlc.um,
+    rlc_um_stat_req (&rlc_union_p->rlc.um,
                      stat_tx_pdcp_sdu,
                      stat_tx_pdcp_bytes,
                      stat_tx_pdcp_sdu_discarded,
@@ -314,7 +319,12 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
                                   const mui_t        muiP,
                                   confirm_t    confirmP,
                                   sdu_size_t   sdu_sizeP,
-                                  mem_block_t *sdu_pP)
+                                  mem_block_t *sdu_pP
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                                  ,const uint32_t * const sourceL2Id
+                                  ,const uint32_t * const destinationL2Id
+#endif
+                                  )
 {
   //-----------------------------------------------------------------------------
   mem_block_t           *new_sdu_p    = NULL;
@@ -323,7 +333,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
   hash_key_t             key         = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t         h_rc;
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   rlc_mbms_id_t         *mbms_id_p  = NULL;
   logical_chan_id_t      log_ch_id  = 0;
 #endif
@@ -337,7 +347,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
         sdu_sizeP,
         sdu_pP);
 #endif
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 #else
   AssertFatal(MBMS_flagP == 0, "MBMS_flagP %u", MBMS_flagP);
 #endif
@@ -348,21 +358,38 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
 #endif
 
   if (MBMS_flagP) {
-    AssertFatal (rb_idP < NB_RB_MBMS_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MBMS_MAX);
+    //AssertFatal (rb_idP < NB_RB_MBMS_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MBMS_MAX);
+  	if(rb_idP >= NB_RB_MBMS_MAX){
+  		LOG_E(RLC, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MBMS_MAX);
+  		return RLC_OP_STATUS_BAD_PARAMETER;
+  	}
   } else {
-    AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+    //AssertFatal (rb_idP < NB_RB_MAX, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+  	if(rb_idP >= NB_RB_MAX){
+  		LOG_E(RLC, "RB id is too high (%u/%d)!\n", rb_idP, NB_RB_MAX);
+  		return RLC_OP_STATUS_BAD_PARAMETER;
+  	}
   }
 
-  DevAssert(sdu_pP != NULL);
-  DevCheck(sdu_sizeP > 0, sdu_sizeP, 0, 0);
+  //DevAssert(sdu_pP != NULL);
+	if(sdu_pP == NULL){
+		LOG_E(RLC, "sdu_pP == NULL\n");
+		return RLC_OP_STATUS_BAD_PARAMETER;
+	}
+	
+  //DevCheck(sdu_sizeP > 0, sdu_sizeP, 0, 0);
+  if(sdu_sizeP <= 0) {
+    LOG_E(RLC, "sdu_sizeP %d, file %s, line %d\n", sdu_sizeP, __FILE__ ,__LINE__);
+    return RLC_OP_STATUS_BAD_PARAMETER;
+  }
 
-#if !defined(Rel10) && !defined(Rel14)
+#if (RRC_VERSION < MAKE_VERSION(10, 0, 0))
   DevCheck(MBMS_flagP == 0, MBMS_flagP, 0, 0);
 #endif
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_DATA_REQ,VCD_FUNCTION_IN);
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   if (MBMS_flagP == TRUE) {
     if (ctxt_pP->enb_flag) {
@@ -374,6 +401,10 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
     }
 
     key = RLC_COLL_KEY_MBMS_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, mbms_id_p->service_id, mbms_id_p->session_id);
+  }
+  if (sourceL2Id && destinationL2Id){
+     key = RLC_COLL_KEY_SOURCE_DEST_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, *sourceL2Id, *destinationL2Id, srb_flagP);
+     //key_lcid = RLC_COLL_KEY_LCID_SOURCE_DEST_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, chan_idP, *sourceL2Id, *destinationL2Id, srb_flagP);
   } else
 #endif
   {
@@ -386,7 +417,9 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
     rlc_mode = rlc_union_p->mode;
   } else {
     rlc_mode = RLC_MODE_NONE;
-    AssertFatal (0 , "RLC not configured key %ju\n", key);
+    //AssertFatal (0 , "RLC not configured key %ju\n", key);
+  	LOG_E(RLC, "not configured key %lu\n", key);
+  	return RLC_OP_STATUS_OUT_OF_RESSOURCES;
   }
 
   if (MBMS_flagP == 0) {
@@ -431,6 +464,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
         return RLC_OP_STATUS_OK;
       } else {
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_DATA_REQ,VCD_FUNCTION_OUT);
+        free_mem_block(sdu_pP, __func__);
         return RLC_OP_STATUS_INTERNAL_ERROR;
       }
 
@@ -464,6 +498,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
         return RLC_OP_STATUS_OK;
       } else {
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_DATA_REQ,VCD_FUNCTION_OUT);
+        free_mem_block(sdu_pP, __func__);
         return RLC_OP_STATUS_INTERNAL_ERROR;
       }
 
@@ -486,6 +521,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
       } else {
         //handle_event(ERROR,"FILE %s FONCTION rlc_data_req() LINE %s : out of memory\n", __FILE__, __LINE__);
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_DATA_REQ,VCD_FUNCTION_OUT);
+        free_mem_block(sdu_pP, __func__);
         return RLC_OP_STATUS_INTERNAL_ERROR;
       }
 
@@ -498,7 +534,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
 
     }
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   } else { /* MBMS_flag != 0 */
     //  LOG_I(RLC,"DUY rlc_data_req: mbms_rb_id in RLC instant is: %d\n", mbms_rb_id);
     if (sdu_pP != NULL) {
@@ -520,6 +556,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
           return RLC_OP_STATUS_OK;
         } else {
           VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RLC_DATA_REQ,VCD_FUNCTION_OUT);
+          free_mem_block(sdu_pP, __func__);
           return RLC_OP_STATUS_BAD_PARAMETER;
         }
       } else {
@@ -613,10 +650,14 @@ rlc_module_init (void)
   rlc_rrc_data_conf = NULL;
 
   rlc_coll_p = hashtable_create ((maxDRB + 2) * 16, NULL, rb_free_rlc_union);
-  AssertFatal(rlc_coll_p != NULL, "UNRECOVERABLE error, RLC hashtable_create failed");
+  //AssertFatal(rlc_coll_p != NULL, "UNRECOVERABLE error, RLC hashtable_create failed");
+  if(rlc_coll_p == NULL) {
+    LOG_E(RLC, "UNRECOVERABLE error, RLC hashtable_create failed\n");
+    return -1;
+  }
 
   for (module_id1=0; module_id1 < MAX_MOBILES_PER_ENB; module_id1++) {
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
     for (k=0; k < RLC_MAX_MBMS_LC; k++) {
       rlc_mbms_lcid2service_session_id_ue[module_id1][k].service_id = 0;
@@ -631,7 +672,7 @@ rlc_module_init (void)
   }
 
   for (module_id1=0; module_id1 < NUMBER_OF_eNB_MAX; module_id1++) {
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
     for (k=0; k < RLC_MAX_MBMS_LC; k++) {
       rlc_mbms_lcid2service_session_id_eNB[module_id1][k].service_id = 0;

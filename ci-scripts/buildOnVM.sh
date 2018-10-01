@@ -1,4 +1,24 @@
 #!/bin/bash
+#/*
+# * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+# * contributor license agreements.  See the NOTICE file distributed with
+# * this work for additional information regarding copyright ownership.
+# * The OpenAirInterface Software Alliance licenses this file to You under
+# * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+# * except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *      http://www.openairinterface.org/?page_id=698
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *-------------------------------------------------------------------------------
+# * For more information about the OpenAirInterface (OAI) Software Alliance:
+# *      contact@openairinterface.org
+# */
 
 function usage {
     echo "OAI VM Build Check script"
@@ -70,8 +90,9 @@ JOB_NAME=XX
 BUILD_ID=XX
 VM_NAME=ci-enb-usrp
 VM_MEMORY=2048
+VM_CPU=4
 ARCHIVES_LOC=enb_usrp
-LOG_PATTERN=.Rel14.txt
+LOG_PATTERN=.Rel15.txt
 NB_PATTERN_FILES=4
 BUILD_OPTIONS="--eNB -w USRP"
 KEEP_VM_ALIVE=0
@@ -108,7 +129,7 @@ case $key in
     -v1)
     VM_NAME=ci-enb-usrp
     ARCHIVES_LOC=enb_usrp
-    LOG_PATTERN=.Rel14.txt
+    LOG_PATTERN=.Rel15.txt
     NB_PATTERN_FILES=4
     BUILD_OPTIONS="--eNB -w USRP"
     shift
@@ -119,13 +140,15 @@ case $key in
     LOG_PATTERN=basic_simulator
     NB_PATTERN_FILES=2
     BUILD_OPTIONS="--basic-simulator"
+    VM_MEMORY=8192
+    VM_CPU=4
     shift
     ;;
     -v3)
     VM_NAME=ci-phy-sim
     ARCHIVES_LOC=phy_sim
-    LOG_PATTERN=.Rel14.txt
-    NB_PATTERN_FILES=3
+    LOG_PATTERN=.Rel15.txt
+    NB_PATTERN_FILES=5
     BUILD_OPTIONS="--phy_simulators"
     shift
     ;;
@@ -141,7 +164,7 @@ case $key in
     -v5)
     VM_NAME=ci-gnb-usrp
     ARCHIVES_LOC=gnb_usrp
-    LOG_PATTERN=.Rel14.txt
+    LOG_PATTERN=.Rel15.txt
     NB_PATTERN_FILES=4
     BUILD_OPTIONS="--gNB -w USRP"
     shift
@@ -149,7 +172,7 @@ case $key in
     -v6)
     VM_NAME=ci-ue-nr-usrp
     ARCHIVES_LOC=nrue_usrp
-    LOG_PATTERN=.Rel14.txt
+    LOG_PATTERN=.Rel15.txt
     NB_PATTERN_FILES=4
     BUILD_OPTIONS="--nrUE -w USRP"
     shift
@@ -157,7 +180,7 @@ case $key in
     -v7)
     VM_NAME=ci-enb-ethernet
     ARCHIVES_LOC=enb_eth
-    LOG_PATTERN=.Rel14.txt
+    LOG_PATTERN=.Rel15.txt
     NB_PATTERN_FILES=6
     BUILD_OPTIONS="--eNB -t ETHERNET --noS1"
     shift
@@ -165,7 +188,7 @@ case $key in
     -v8)
     VM_NAME=ci-ue-ethernet
     ARCHIVES_LOC=ue_eth
-    LOG_PATTERN=.Rel14.txt
+    LOG_PATTERN=.Rel15.txt
     NB_PATTERN_FILES=6
     BUILD_OPTIONS="--UE -t ETHERNET --noS1"
     shift
@@ -176,7 +199,7 @@ case $key in
         enb-usrp)
         VM_NAME=ci-enb-usrp
         ARCHIVES_LOC=enb_usrp
-        LOG_PATTERN=.Rel14.txt
+        LOG_PATTERN=.Rel15.txt
         NB_PATTERN_FILES=4
         BUILD_OPTIONS="--eNB -w USRP"
         ;;
@@ -186,12 +209,14 @@ case $key in
         LOG_PATTERN=basic_simulator
         NB_PATTERN_FILES=2
         BUILD_OPTIONS="--basic-simulator"
+        VM_MEMORY=8192
+        VM_CPU=4
         ;;
         phy-sim)
         VM_NAME=ci-phy-sim
         ARCHIVES_LOC=phy_sim
-        LOG_PATTERN=.Rel14.txt
-        NB_PATTERN_FILES=3
+        LOG_PATTERN=.Rel15.txt
+        NB_PATTERN_FILES=5
         BUILD_OPTIONS="--phy_simulators"
         ;;
         cppcheck)
@@ -205,28 +230,28 @@ case $key in
         gnb-usrp)
         VM_NAME=ci-gnb-usrp
         ARCHIVES_LOC=gnb_usrp
-        LOG_PATTERN=.Rel14.txt
+        LOG_PATTERN=.Rel15.txt
         NB_PATTERN_FILES=4
         BUILD_OPTIONS="--gNB -w USRP"
         ;;
         nu-ue-usrp)
         VM_NAME=ci-ue-nr-usrp
         ARCHIVES_LOC=nrue_usrp
-        LOG_PATTERN=.Rel14.txt
+        LOG_PATTERN=.Rel15.txt
         NB_PATTERN_FILES=4
         BUILD_OPTIONS="--nrUE -w USRP"
         ;;
         enb-ethernet)
         VM_NAME=ci-enb-ethernet
         ARCHIVES_LOC=enb_eth
-        LOG_PATTERN=.Rel14.txt
+        LOG_PATTERN=.Rel15.txt
         NB_PATTERN_FILES=6
         BUILD_OPTIONS="--eNB -t ETHERNET --noS1"
         ;;
         ue-ethernet)
         VM_NAME=ci-ue-ethernet
         ARCHIVES_LOC=ue_eth
-        LOG_PATTERN=.Rel14.txt
+        LOG_PATTERN=.Rel15.txt
         NB_PATTERN_FILES=6
         BUILD_OPTIONS="--UE -t ETHERNET --noS1"
         ;;
@@ -284,7 +309,7 @@ then
     echo "############################################################"
     echo "Creating VM ($VM_NAME) on Ubuntu Cloud Image base"
     echo "############################################################"
-    uvt-kvm create $VM_NAME release=xenial --memory $VM_MEMORY --cpu 4 --unsafe-caching --template ci-scripts/template-host.xml
+    uvt-kvm create $VM_NAME release=xenial --memory $VM_MEMORY --cpu $VM_CPU --unsafe-caching --template ci-scripts/template-host.xml
 fi
 
 echo "Waiting for VM to be started"
@@ -303,6 +328,7 @@ echo "############################################################"
 echo "Running install and build script on VM ($VM_NAME)"
 echo "############################################################"
 echo "sudo cp 01proxy /etc/apt/apt.conf.d/" > $VM_CMDS
+echo "touch /home/ubuntu/.hushlogin" >> $VM_CMDS
 if [[ "$VM_NAME" == *"-cppcheck"* ]]
 then
     echo "echo \"sudo apt-get --yes --quiet install zip cppcheck \"" >> $VM_CMDS
@@ -376,7 +402,7 @@ do
     if [[ $FULLFILE == *"$LOG_PATTERN"* ]]
     then
         filename=$(basename -- "$FULLFILE")
-        if [ "$LOG_PATTERN" == ".Rel14.txt" ]
+        if [ "$LOG_PATTERN" == ".Rel15.txt" ]
         then
             PASS_PATTERN=`echo $filename | sed -e "s#$LOG_PATTERN##"`
         fi

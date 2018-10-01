@@ -44,10 +44,10 @@
 #include "gtpv1u_eNB_defs.h"
 #include "gtpv1_u_messages_types.h"
 #include "udp_eNB_task.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "COMMON/platform_types.h"
 #include "COMMON/platform_constants.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "common/ran_context.h"
 #include "gtpv1u_eNB_defs.h"
 
@@ -62,6 +62,13 @@ extern boolean_t pdcp_data_req(
   const confirm_t      confirmP,
   const sdu_size_t     sdu_buffer_sizeP,
   unsigned char *const sdu_buffer_pP,
+  const pdcp_transmission_mode_t modeP
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+    ,const uint32_t * const sourceL2Id
+    ,const uint32_t * const destinationL2Id
+#endif
+    );
+
   const pdcp_transmission_mode_t modeP);
 */
 extern unsigned char NB_eNB_INST;
@@ -355,7 +362,11 @@ NwGtpv1uRcT gtpv1u_eNB_process_stack_req(
 			     SDU_CONFIRM_NO, // confirm
 			     buffer_len,
 			     buffer,
-			     PDCP_TRANSMISSION_MODE_DATA);
+			     PDCP_TRANSMISSION_MODE_DATA
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+              ,NULL, NULL
+#endif
+              );
       
       
       if ( result == FALSE ) {

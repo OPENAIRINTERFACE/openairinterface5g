@@ -158,13 +158,19 @@ void polar_encoder_dci(uint32_t *in,
 						   polarParams->n_pc);
 
 	//Encoding (u to d)
-	nr_matrix_multiplication_uint8_t_1D_uint8_t_2D(polarParams->nr_polar_U,
-												   polarParams->G_N,
-												   polarParams->nr_polar_D,
-												   polarParams->N,
-												   polarParams->N);
-	for (uint16_t i = 0; i < polarParams->N; i++)
-		polarParams->nr_polar_D[i] = (polarParams->nr_polar_D[i] % 2);
+	// --- OLD ---
+	//nr_matrix_multiplication_uint8_t_1D_uint8_t_2D(polarParams->nr_polar_u, polarParams->G_N, polarParams->nr_polar_d, polarParams->N, polarParams->N);
+	//for (uint16_t i = 0; i < polarParams->N; i++) polarParams->nr_polar_d[i] = (polarParams->nr_polar_d[i] % 2);
+	//printf("\nd old: ");
+	//for (uint16_t i = 0; i < polarParams->N; i++) 
+	//printf("%i ", polarParams->nr_polar_d[i]); 
+
+	// --- NEW ---
+	nr_polar_kernal_operation(polarParams->nr_polar_U, polarParams->nr_polar_D, polarParams->N);
+	//printf("\nd new: ");
+	//for (uint16_t i = 0; i < polarParams->N; i++) 
+	//	printf("%i ", polarParams->nr_polar_d[i]); 
+	//for (uint16_t i = 0; i < polarParams->N; i++) polarParams->nr_polar_d[i] = (polarParams->nr_polar_d[i] % 2);
 
 	//Rate matching
 	//Sub-block interleaving (d to y) and Bit selection (y to e)

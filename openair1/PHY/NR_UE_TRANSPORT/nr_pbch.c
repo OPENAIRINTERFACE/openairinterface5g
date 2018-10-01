@@ -33,7 +33,7 @@
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/sse_intrin.h"
-#include "SIMULATION/TOOLS/sim.h"
+//#include "SIMULATION/TOOLS/sim.h"
 
 //#define DEBUG_PBCH 1
 //#define DEBUG_PBCH_ENCODING

@@ -19,13 +19,13 @@
  *      contact@openairinterface.org
  */
 
-/*! \file fapi_l1.c
+/*! \file fapi_nr_l1.c
  * \brief functions for FAPI L1 interface
- * \author R. Knopp
- * \date 2017
+ * \author R. Knopp, WEI-TAI CHEN
+ * \date 2017, 2018
  * \version 0.1
- * \company Eurecom
- * \email: knopp@eurecom.fr
+ * \company Eurecom, NTUST
+ * \email: knopp@eurecom.fr, kroempa@gmail.com
  * \note
  * \warning
  */
@@ -42,8 +42,8 @@ void handle_nr_nfapi_bch_pdu(PHY_VARS_gNB *gNB,
                              uint8_t *sdu)
 {
 
-  AssertFatal(dl_config_pdu->bch_pdu_rel15.length == 3, "BCH PDU has length %d != 3\n",
-              dl_config_pdu->bch_pdu_rel15.length);
+  AssertFatal(dl_config_pdu->bch_pdu.bch_pdu_rel15.length == 3, "BCH PDU has length %d != 3\n",
+              dl_config_pdu->bch_pdu.bch_pdu_rel15.length);
 
   LOG_I(PHY,"pbch_pdu[0]: %x,pbch_pdu[1]: %x,gNB->pbch_pdu[2]: %x\n",sdu[0],sdu[1],sdu[2]);
   gNB->pbch_pdu[0] = sdu[2];
@@ -108,9 +108,9 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
     //LOG_D(PHY,"NFAPI: dl_pdu %d : type %d\n",i,dl_config_pdu->pdu_type);
     switch (dl_config_pdu->pdu_type) {
       case NFAPI_NR_DL_CONFIG_BCH_PDU_TYPE:
-        AssertFatal(dl_config_pdu->bch_pdu_rel15.pdu_index < TX_req->tx_request_body.number_of_pdus,
+        AssertFatal(dl_config_pdu->bch_pdu.bch_pdu_rel15.pdu_index < TX_req->tx_request_body.number_of_pdus,
                     "bch_pdu_rel8.pdu_index>=TX_req->number_of_pdus (%d>%d)\n",
-                    dl_config_pdu->bch_pdu_rel15.pdu_index,
+                    dl_config_pdu->bch_pdu.bch_pdu_rel15.pdu_index,
                     TX_req->tx_request_body.number_of_pdus);
         gNB->pbch_configured=1;
         do_oai=1;
@@ -118,7 +118,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
         handle_nr_nfapi_bch_pdu(gNB,
                                 proc,
                                 dl_config_pdu,
-                                TX_req->tx_request_body.tx_pdu_list[dl_config_pdu->bch_pdu_rel15.pdu_index].segments[0].segment_data);
+                                TX_req->tx_request_body.tx_pdu_list[dl_config_pdu->bch_pdu.bch_pdu_rel15.pdu_index].segments[0].segment_data);
       break;
 
       case NFAPI_NR_DL_CONFIG_DCI_DL_PDU_TYPE:
