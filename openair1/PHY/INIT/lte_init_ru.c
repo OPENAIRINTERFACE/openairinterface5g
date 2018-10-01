@@ -31,7 +31,7 @@
 #include "assertions.h"
 #include <math.h>
 
-void init_7_5KHz();
+void init_7_5KHz(void);
 
 int phy_init_RU(RU_t *ru) {
 
