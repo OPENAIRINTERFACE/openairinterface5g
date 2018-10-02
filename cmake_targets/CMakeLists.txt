@@ -1326,6 +1326,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/nr_pbch.c
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/nr_dlsch_demodulation.c
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/nr_dlsch_decoding.c
+  ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/nr_dlsch_llr_computation.c
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/srs_modulation_nr.c
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/dci_nr.c
