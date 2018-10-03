@@ -29,6 +29,7 @@
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 #include "PHY/TOOLS/time_meas.h"
 
+#define SHOWCOMP 1
 
 int8_t polar_decoder(
 		double *input,
@@ -125,8 +126,8 @@ int8_t polar_decoder(
   for (uint8_t i = 0; i < 2*listSize; i++) sorted_dlist[i] = &dlist[i];
   
   for (uint16_t currentBit=0; currentBit<polarParams->N; currentBit++){
-    printf("***************** BIT %d (currentListSize %d, information_bit_pattern %d)\n",
-	   currentBit,currentListSize,polarParams->information_bit_pattern[currentBit]);
+    //    printf("***************** BIT %d (currentListSize %d, information_bit_pattern %d)\n",
+    //	   currentBit,currentListSize,polarParams->information_bit_pattern[currentBit]);
     
     start_meas(update_LLR);
     updateLLR(sorted_dlist, llrUpdated, bitUpdated, currentListSize, currentBit, 0, polarParams->N, (polarParams->n+1), pathMetricAppr);
@@ -154,9 +155,6 @@ int8_t polar_decoder(
 	
 	start_meas(sorting); 
 
-	for (int i=0;i<currentListSize;i++) {
-	  printf("sorted_dlist[%d] pathmetric %f\n",i,32*sorted_dlist[i]->pathMetric);
-	}	
 	if (currentListSize <= listSize/2) {
 	  // until listsize is full we need to copy bit and LLR arrays to new entries
 	  // below we only copy the ones we need to keep for sure
@@ -195,7 +193,6 @@ int8_t polar_decoder(
 	  
 	  // copy the llr/bit arrays that are needed
 	  for (int i = 0; i < listSize; i++) {
-	    printf("listIndex[%d] %d\n",i,listIndex[i]);
 	    if ((listIndex2[i+listSize]<listSize) && (listIndex2[i]<listSize)) { // both '0' and '1' path metrics are to be kept
 	      // do memcpy of LLR and Bit arrays
 	      
@@ -512,6 +509,9 @@ int8_t polar_decoder_int8(int16_t *input,
 		       currentBit,
 		       currentListSize,
 		       listSize);
+#ifdef SHOWCOMP
+	printf("decoder_int8_C(sorted_dlist,polarParams,%d,%d,%d);\n",currentBit,currentListSize,listSize);
+#endif
 	currentListSize = listSize;
       }
 

@@ -20,7 +20,7 @@
  */
 
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
-//#define SHOWCOMP 1
+#define SHOWCOMP 1
 
 inline void computeLLR(double llr[1+nmax][Nmax], uint16_t row, uint16_t col, 
 		       uint16_t offset, uint8_t approximation) __attribute__((always_inline));
@@ -45,9 +45,9 @@ inline void computeLLR(double llr[1+nmax][Nmax], uint16_t row, uint16_t col,
 	//	printf("LLR (a %f, b %f): llr[%d][%d] %f\n",32*a,32*b,col,row,32*llr[col][row]);
 }
 
-inline void computeLLR_int8(int16_t llr[1+nmax][Nmax], uint16_t row, uint16_t col, 
+inline void computeLLR_int8(decoder_list_int8_t **dlist,int i, uint16_t row, uint16_t col, 
 		       uint16_t offset) __attribute__((always_inline));
-inline void computeLLR_int8(int16_t llr[1+nmax][Nmax], uint16_t row, uint16_t col, 
+inline void computeLLR_int8(decoder_list_int8_t **dlist,int i, uint16_t row, uint16_t col, 
 		       uint16_t offset) {
 
         int16_t a;
@@ -55,12 +55,13 @@ inline void computeLLR_int8(int16_t llr[1+nmax][Nmax], uint16_t row, uint16_t co
 	int16_t absA,absB;
 	int16_t maska,maskb;
 	int16_t minabs;
+	//	int16_t **llr=dlist[i]->llr;
 
 #ifdef SHOWCOMP
-	printf("computeLLR_int8(llr,%d,%d,%d);\n",row,col,offset);
+	printf("computeLLR_int8(sorted_dlist,%d,%d,%d);\n",i,row,col,offset);
 #endif
-	a = llr[col + 1][row];   
-	b = llr[col+1][row + offset];
+	a = dlist[i]->llr[col + 1][row];   
+	b = dlist[i]->llr[col+1][row + offset];
 	//	printf("LLR: a %d, b %d\n",a,b);
 	maska = a>>15;
 	maskb = b>>15;
@@ -69,9 +70,9 @@ inline void computeLLR_int8(int16_t llr[1+nmax][Nmax], uint16_t row, uint16_t co
 	//	printf("LLR: absA %d, absB %d\n",absA,absB);
 	minabs = absA<absB ? absA : absB;
 	if ((maska^maskb) == 0)
-	  llr[col][row] = minabs;
+	  dlist[i]->llr[col][row] = minabs;
 	else 
-	  llr[col][row] = -minabs;
+	  dlist[i]->llr[col][row] = -minabs;
 	//	printf("LLR (a %d, b %d): llr[%d][%d] %d\n",a,b,col,row,llr[col][row]);
 }
 
@@ -109,7 +110,7 @@ void updateLLR_int8(decoder_list_int8_t **dlist,uint8_t **llrU, uint8_t **bitU,
       
     for (uint8_t i=0; i<listSize; i++) {
 #ifdef SHOWCOMP
-      printf("updateLLR_int8_A(dlist,%d,%d,%d,%d);\n",i,row,col,offset);
+      printf("updateLLR_int8_A(sorted_dlist,%d,%d,%d,%d);\n",i,row,col,offset);
 #endif
       updateLLR_int8_A(dlist,i,col,row,offset);
       /*
@@ -121,7 +122,7 @@ void updateLLR_int8(decoder_list_int8_t **dlist,uint8_t **llrU, uint8_t **bitU,
   } else {
     if (llrU[row][col+1]==0) updateLLR_int8(dlist, llrU, bitU, listSize, row, (col+1), xlen, ylen);
     if (llrU[row+offset][col+1]==0) updateLLR_int8(dlist, llrU, bitU, listSize, (row+offset), (col+1), xlen, ylen);
-    for (int i=0;i<listSize;i++) computeLLR_int8(dlist[i]->llr, row, col, offset);
+    for (int i=0;i<listSize;i++) computeLLR_int8(dlist,i, row, col, offset);
   }
   
   llrU[row][col]=1;
@@ -157,7 +158,7 @@ void updateBit_int8(decoder_list_int8_t **dlist, uint8_t **bitU, uint8_t listSiz
       if (bitU[row][col-1]==0) updateBit_int8(dlist, bitU, listSize, row, (col-1), xlen, ylen);
       //      dlist[i]->bit[col][row] = dlist[i]->bit[col-1][row];
 #ifdef SHOWCOMP
-      printf("updateBit_int8_A(dlist,%d,%d,%d);\n",i,col,row);
+      printf("updateBit_int8_A(sorted_dlist,%d,%d,%d);\n",i,col,row);
 #endif
       updateBit_int8_A(dlist,i,col,row);
 
@@ -167,7 +168,7 @@ void updateBit_int8(decoder_list_int8_t **dlist, uint8_t **bitU, uint8_t listSiz
       //      dlist[i]->bit[col][row] = dlist[i]->bit[col-1][row]^dlist[i]->bit[col-1][row+offset];
       //      printf("updating dlist[%d]->bit[%d][%d] => %d\n",i,col,row,dlist[i]->bit[col][row]);
 #ifdef SHOWCOMP
-      printf("updateBit_int8_B(dlist,%d,%d,%d,%d);\n",i,col,row,offset);
+      printf("updateBit_int8_B(sorted_dlist,%d,%d,%d,%d);\n",i,col,row,offset);
 #endif
       updateBit_int8_B(dlist,i,col,row,offset);
     }
@@ -201,7 +202,7 @@ void updatePathMetric0_int8(decoder_list_int8_t **dlist,uint8_t listSize, uint16
 
     updatePathMetric0_int8_A(dlist,i,row,mask,absllr);
 #ifdef SHOWCOMP
-    printf("updatePathMetric0_int8_A(dlist,i,%d,%d);\n",listSize,row);
+    printf("updatePathMetric0_int8_A(sorted_dlist,i,%d,%d);\n",listSize,row);
 #endif
 
 
@@ -253,7 +254,7 @@ void updatePathMetric2_int8(decoder_list_int8_t **dlist, uint8_t listSize, uint1
 
   for (i = 0; i < listSize; i++) {
 #ifdef SHOWCOMP
-    printf("updatePathMetric2_int8_A(dlist,%d,%d,%d);\n",
+    printf("updatePathMetric2_int8_A(sorted_dlist,%d,%d,%d);\n",
 	   i,listSize,row);
 #endif  
     updatePathMetric2_int8_A(dlist,i,listSize,row);
@@ -288,7 +289,7 @@ void updateCrcChecksum_int8(decoder_list_int8_t **dlist, uint8_t **crcGen,
 		       uint8_t listSize, uint32_t i2, uint8_t len) {
   for (uint8_t i = 0; i < listSize; i++) {
 #ifdef SHOWCOMP
-    printf("updateCrcChecksum_int8_A(dlist,%d,crcGen,%d,%d);\n",i,i2,len);
+    printf("updateCrcChecksum_int8_A(sorted_dlist,%d,crcGen,%d,%d);\n",i,i2,len);
 #endif
     updateCrcChecksum_int8_A(dlist,i,crcGen,i2,len);
     //    for (uint8_t j = 0; j < len; j++) {
@@ -303,7 +304,7 @@ void updateCrcChecksum2_int8(decoder_list_int8_t **dlist, uint8_t **crcGen,
 			uint8_t listSize, uint32_t i2, uint8_t len) {
   for (uint8_t i = 0; i < listSize; i++) {
 #ifdef SHOWCOMP
-    printf("updateCrcChecksum2_int8_A(dlist,%d,%d,crcGen,%d,%d);\n",i,listSize,i2,len);
+    printf("updateCrcChecksum2_int8_A(sorted_dlist,%d,%d,crcGen,%d,%d);\n",i,listSize,i2,len);
 #endif
     updateCrcChecksum2_int8_A(dlist,i,listSize,crcGen,i2,len);
     //    for (uint8_t j = 0; j < len; j++) {
