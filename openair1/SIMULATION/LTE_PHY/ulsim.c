@@ -487,7 +487,7 @@ int main(int argc, char **argv) {
     { "mcs", "The MCS to use", 0, iptr:&mcs,  defintval:10, TYPE_INT, 0 },
     { "nb_frame", "number of frame in a test",0, iptr:&n_frames,  defintval:1, TYPE_INT, 0 },
     { "snr", "starting snr", 0, dblptr:&snr0,  defdblval:-2.9, TYPE_DOUBLE, 0 },
-    { "w_snr_int", "snr int ?", 0, dblptr:&snr_int,  defdblval:30, TYPE_DOUBLE, 0 },
+    { "wsnrInterrupt", "snr int ?", 0, dblptr:&snr_int,  defdblval:30, TYPE_DOUBLE, 0 },
     { "e_snr_step", "step increasint snr",0, dblptr:&input_snr_step,  defdblval:0.2, TYPE_DOUBLE, 0 },
     { "rb_dynamic", "number of rb in dynamic allocation",0, iptr:NULL,  defintval:0, TYPE_INT, 0 },
     { "first_rb", "first rb used in dynamic allocation",0, iptr:&first_rb,  defintval:0, TYPE_INT, 0 },
@@ -608,10 +608,11 @@ int main(int argc, char **argv) {
         };
         struct tmp *ptr;
 
-        for (ptr=tmp; tmp->opt!=0; ptr++)
+        for (ptr=tmp; ptr->opt!=0; ptr++)
           if ( ptr->opt == optarg[0] ) {
             channel_model=ptr->m;
             chMod=ptr->M;
+            break;
           }
 
         AssertFatal(ptr->opt != 0, "Unsupported channel model: %s !\n", optarg );
