@@ -118,9 +118,9 @@ int main(int argc, char *argv[]) {
 	}
 	fprintf(logFile,",SNR,nBitError,blockErrorState,t_encoder[us],t_decoder[us]\n");
 
-	//uint8_t *testInput = malloc(sizeof(uint8_t) * testLength); //generate randomly
-	//uint8_t *encoderOutput = malloc(sizeof(uint8_t) * coderLength);
-	uint32_t testInput[4], encoderOutput[4];
+	uint8_t *testInput = malloc(sizeof(uint8_t) * testLength); //generate randomly
+	uint8_t *encoderOutput = malloc(sizeof(uint8_t) * coderLength);
+	//uint32_t testInput[4], encoderOutput[4];
 	memset(testInput,0,sizeof(testInput));
 	memset(encoderOutput,0,sizeof(encoderOutput));
 
