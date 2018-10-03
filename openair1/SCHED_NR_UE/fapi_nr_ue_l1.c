@@ -95,17 +95,31 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
                     uint8_t current_harq_pid = dlsch_config_pdu->harq_process_nbr;
                     dlsch0->current_harq_pid = current_harq_pid;
                     dlsch0->active = 1;
-                    dlsch0->harq_processes[current_harq_pid]->nb_rb = dlsch_config_pdu->number_rbs;
-                    dlsch0->harq_processes[current_harq_pid]->start_rb = dlsch_config_pdu->start_rb;
-                    dlsch0->harq_processes[current_harq_pid]->nb_symbols = dlsch_config_pdu->number_symbols;
-                    dlsch0->harq_processes[current_harq_pid]->start_symbol = dlsch_config_pdu->start_symbol;
-                    dlsch0->harq_processes[current_harq_pid]->mcs = dlsch_config_pdu->mcs;
-                    dlsch0->harq_processes[current_harq_pid]->DCINdi = dlsch_config_pdu->ndi;
-                    dlsch0->harq_processes[current_harq_pid]->rvidx = dlsch_config_pdu->rv;
+                    
+                    //dlsch0->harq_processes[0]->mcs = &dlsch_config_pdu->mcs;
+                    
+                    NR_DL_UE_HARQ_t dlsch0_harq = dlsch0->harq_processes[current_harq_pid];
+                    
+                    //dlsch0->harq_processes[current_harq_pid]->nb_rb = dlsch_config_pdu->number_rbs;
+                    
+                    dlsch0_harq.nb_rb = dlsch_config_pdu->number_rbs;
+                    dlsch0_harq.start_rb = dlsch_config_pdu->start_rb;
+                    dlsch0_harq.nb_symbols = dlsch_config_pdu->number_symbols;
+                    dlsch0_harq.start_symbol = dlsch_config_pdu->start_symbol;
+                    dlsch0_harq.mcs = dlsch_config_pdu->mcs;
+                    dlsch0_harq.DCINdi = dlsch_config_pdu->ndi;
+                    dlsch0_harq.rvidx = dlsch_config_pdu->rv;
                     dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
-                    dlsch0->harq_processes[current_harq_pid]->harq_ack.pucch_resource_indicator = dlsch_config_pdu->pucch_resource_id;
-                    dlsch0->harq_processes[current_harq_pid]->harq_ack.slot_for_feedback_ack = dlsch_config_pdu->pdsch_to_harq_feedback_time_ind;
+                    dlsch0_harq.harq_ack.pucch_resource_indicator = dlsch_config_pdu->pucch_resource_id;
+                    dlsch0_harq.harq_ack.slot_for_feedback_ack = dlsch_config_pdu->pdsch_to_harq_feedback_time_ind;
+                    printf(">>>> \tdlsch0->g_pucch=%d\tdlsch0_harq.mcs=%d\n",dlsch0->g_pucch,dlsch0_harq.mcs);
+                    //for (int j = 0 ; j<1000; j++) printf("\nk = %d",j);
+
+                    #if 0
+                    dlsch0->harq_processes[current_harq_pid]->mcs = dlsch_config_pdu->mcs;
+                    dlsch0->g_pucch = dlsch_config_pdu->accumulated_delta_PUCCH;
                     //pdlsch0->rnti             = rnti;
+                    #endif
                  }
             }
         }else{

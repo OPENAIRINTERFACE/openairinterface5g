@@ -337,7 +337,7 @@ void config_downlink_harq_process(PHY_VARS_NR_UE *ue, int gNB_id, int TB_id, int
 {
   NR_UE_DLSCH_t *dlsch;
 
-  dlsch = (NR_UE_DLSCH_t *)malloc16(sizeof(NR_UE_DLSCH_t));
+  //dlsch = (NR_UE_DLSCH_t *)malloc16(sizeof(NR_UE_DLSCH_t));
 
   if (dlsch != NULL) {
 
@@ -356,18 +356,18 @@ void config_downlink_harq_process(PHY_VARS_NR_UE *ue, int gNB_id, int TB_id, int
   /* allocation of HARQ process context */
   for (int harq_pid = 0; harq_pid < number_harq_processes_for_pdsch; harq_pid++) {
 
-    dlsch->harq_processes[harq_pid] = (NR_DL_UE_HARQ_t *)malloc16(sizeof(NR_DL_UE_HARQ_t));
+    //dlsch->harq_processes[harq_pid] = (NR_DL_UE_HARQ_t *)malloc16(sizeof(NR_DL_UE_HARQ_t));
 
-    if (dlsch->harq_processes[harq_pid] == NULL) {
+    /*if (dlsch->harq_processes[harq_pid] == NULL) {
       LOG_E(PHY, "Fatal memory allocation problem at line %d in function %s of file %s \n", __LINE__ , __func__, __FILE__);
       assert(0);
-    }
+    }*/
 
-    memset(dlsch->harq_processes[harq_pid],0,sizeof(NR_DL_UE_HARQ_t));
+    memset(&dlsch->harq_processes[harq_pid],0,sizeof(NR_DL_UE_HARQ_t));
 
-    NR_DL_UE_HARQ_t *dl_harq = dlsch->harq_processes[harq_pid];
+    NR_DL_UE_HARQ_t dl_harq = dlsch->harq_processes[harq_pid];
 
-    init_downlink_harq_status(dl_harq);
+    init_downlink_harq_status(&dl_harq);
   }
 }
 
@@ -389,12 +389,12 @@ void release_downlink_harq_process(PHY_VARS_NR_UE *ue, int gNB_id, int TB_id, in
 {
   NR_UE_DLSCH_t *dlsch = ue->dlsch[execution_thread_number][gNB_id][TB_id];
 
-  for (int process_id = 0; process_id < dlsch->Mdlharq; process_id++) {
+  /*for (int process_id = 0; process_id < dlsch->Mdlharq; process_id++) {
 
     free16(dlsch->harq_processes[process_id],sizeof(NR_DL_UE_HARQ_t));
 
     dlsch->harq_processes[process_id] = NULL;
-  }
+  }*/
 
   free16(dlsch,sizeof(NR_UE_DLSCH_t));
 

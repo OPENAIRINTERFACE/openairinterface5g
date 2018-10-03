@@ -3129,15 +3129,19 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
   // table dci_fields_sizes_cnt[dci_cnt-1][i][j] will then be used in function nr_extract_dci_info
   uint8_t dci_fields_sizes_cnt[MAX_NR_DCI_DECODED_SLOT][NBR_NR_DCI_FIELDS][NBR_NR_FORMATS] = {0};
 
-  uint16_t tc_rnti = 1; // FIXME
-  uint16_t int_rnti = 1; // FIXME
-  uint16_t sfi_rnti = 1; // FIXME
-  uint16_t tpc_pusch_rnti =1; // FIXME
-  uint16_t tpc_pucch_rnti = 1; // FIXME
-  uint16_t tpc_srs_rnti = 1; // FIXME
   int nb_searchspace_active=0;
   NR_UE_PDCCH **pdcch_vars = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]];
   NR_UE_PDCCH *pdcch_vars2 = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id];
+
+  uint16_t c_rnti=pdcch_vars[eNB_id]->crnti;
+  uint16_t cs_rnti=1,new_rnti=1,tc_rnti=1;
+  uint16_t p_rnti=P_RNTI;
+  uint16_t si_rnti=SI_RNTI;
+  uint16_t ra_rnti=3;
+  uint16_t sp_csi_rnti=1,sfi_rnti=1,int_rnti=1,tpc_pusch_rnti=1,tpc_pucch_rnti=1,tpc_srs_rnti=1; //FIXME
+  uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES] =
+        {c_rnti,cs_rnti,new_rnti,tc_rnti,p_rnti,si_rnti,ra_rnti,sp_csi_rnti,sfi_rnti,int_rnti,tpc_pusch_rnti,tpc_pucch_rnti,tpc_srs_rnti};
+  
   // s in TS 38.212 Subclause 10.1, for each active BWP the UE can deal with 10 different search spaces
   // Higher layers have updated the number of searchSpaces with are active in the current slot and this value is stored in variable nb_searchspace_total
   int nb_searchspace_total = pdcch_vars2->nb_search_space;
@@ -3366,7 +3370,6 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
         #endif
 
        
-      
         dci_cnt += nr_dci_decoding_procedure(nb_searchspace_active,
                                              nb_coreset_active,
                                              ue,
@@ -3378,7 +3381,8 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
                                              n_RB_ULBWP,
                                              n_RB_DLBWP,
                                              &crc_scrambled,
-                                             &format_found);
+                                             &format_found,
+                                             crc_scrambled_values);
         #ifdef NR_PDCCH_SCHED_DEBUG
           printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Ending function nr_dci_decoding_procedure() -> dci_cnt=%d\n",dci_cnt);
         #endif
@@ -3469,14 +3473,6 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
         /*
          * This is the NR part
          */
-        uint16_t c_rnti=pdcch_vars[eNB_id]->crnti;
-        uint16_t cs_rnti,new_rnti,tc_rnti;
-        uint16_t p_rnti=P_RNTI;
-        uint16_t si_rnti=SI_RNTI;
-        uint16_t ra_rnti=3;
-        uint16_t sp_csi_rnti,sfi_rnti,int_rnti,tpc_pusch_rnti,tpc_pucch_rnti,tpc_srs_rnti; //FIXME
-        uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES] =
-        {c_rnti,cs_rnti,new_rnti,tc_rnti,p_rnti,si_rnti,ra_rnti,sp_csi_rnti,sfi_rnti,int_rnti,tpc_pusch_rnti,tpc_pucch_rnti,tpc_srs_rnti};
 
         if ((dci_alloc_rx[i].format == format0_0))
         if ((dci_alloc_rx[i].format == format1_0) &&
@@ -3499,6 +3495,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
         if ((dci_alloc_rx[i].format == format1_1)){ // This format not implemented at a first time. FIXME
         }
         NR_DCI_INFO_EXTRACTED_t nr_dci_info_extracted;
+        NR_DCI_INFO_EXTRACTED_t *ptr_nr_dci_info_extracted = &nr_dci_info_extracted;
         #ifdef NR_PDCCH_SCHED_DEBUG
             printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Entering function nr_generate_ue_ul_dlsch_params_from_dci with eNB_id=%d dci_cnt=%d format=%d, rnti=%d\n",
                     eNB_id,
@@ -3526,15 +3523,19 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
                                                 n_RB_ULBWP,
                                                 n_RB_DLBWP,
                                                 crc_scrambled_values,
-                                                &nr_dci_info_extracted);
+                                                ptr_nr_dci_info_extracted);//&nr_dci_info_extracted);
 
         ue->dci_ind.dci_list[i].rnti = dci_alloc_rx[i].rnti;
         ue->dci_ind.dci_list[i].dci_format = dci_alloc_rx[i].format;
         memcpy(&ue->dci_ind.dci_list[i].dci, &nr_dci_info_extracted, sizeof(fapi_nr_dci_pdu_rel15_t) );
-        
-        //  TODO: check where should we send up this message.
-        //ue->if_inst->dl_indication(&ue->dl_indication);
+ 
+        //printf(">>> example mcs=%d\n",nr_dci_info_extracted.mcs);
+        //printf(">>> calling MAC with dl_indication DCI_IND\n");
 
+       
+        //  TODO: check where should we send up this message.
+        ue->dl_indication.dci_ind=&ue->dci_ind;
+        ue->if_inst->dl_indication(&ue->dl_indication);
         
 	/*
 	 * This is the LTE part to be removed
@@ -4040,11 +4041,11 @@ void ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB_id
 
       if ((pdsch==PDSCH) &&
           (ue->transmission_mode[eNB_id] == 5) &&
-          (dlsch0->harq_processes[harq_pid]->dl_power_off==0) &&
+          (dlsch0->harq_processes[harq_pid].dl_power_off==0) &&
           (ue->use_ia_receiver ==1)) {
         dual_stream_UE = 1;
         eNB_id_i = ue->n_connected_eNB;
-        i_mod =  dlsch0->harq_processes[harq_pid]->Qm;
+        i_mod =  dlsch0->harq_processes[harq_pid].Qm;
 
       }
       else if((pdsch==PDSCH) && (ue->transmission_mode[eNB_id]==3))
@@ -5473,6 +5474,10 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 #endif
 
   pmch_flag = is_pmch_subframe(frame_rx,nr_tti_rx,&ue->frame_parms) ? 1 : 0;
+  
+  
+        
+  
 
   if (do_pdcch_flag) {
   // deactivate reception until we scan pdcch
@@ -5557,10 +5562,30 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 //	LOG_D(PHY,"[UE  %d] Frame %d: Calling pdcch procedures (eNB %d)\n",ue->Mod_id,frame_rx,eNB_id);
 
 	//start_meas(&ue->rx_pdcch_stats[ue->current_thread_id[nr_tti_rx]]);
+	
+//printf(">>> at phy_procedures_nrUE_RX, nr_ue_pdcch_procedures init, dlsch->active=%d\n",
+//        ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active); 
 	if (nr_ue_pdcch_procedures(eNB_id,ue,proc,abstraction_flag) == -1) {
 	  LOG_E(PHY,"[UE  %d] Frame %d, nr_tti_rx %d: Error in pdcch procedures\n",ue->Mod_id,frame_rx,nr_tti_rx);
 	  return(-1);
 	}
+//for (int m=0;m<1000;m++) printf("%d",m); 
+//printf("\n>>> at phy_procedures_nrUE_RX, nr_ue_pdcch_procedures end, dlsch->active=%d\n",
+//        ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active); 
+
+  // preparing for PDSCH procedures
+//  if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active == 1) {
+//    ue_pdsch_procedures(ue,
+//			proc,
+//			eNB_id,
+//			PDSCH,
+//			ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0],
+//			NULL,
+//			ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->num_pdcch_symbols,
+//			ue->frame_parms.symbols_per_tti>>1,
+//			abstraction_flag);
+//  }
+#if 0
 	//stop_meas(&ue->rx_pdcch_stats[ue->current_thread_id[nr_tti_rx]]);
     //printf("nr_tti_rx %d n_pdcch_sym %d pdcch procedures  %5.3f \n",
     //        nr_tti_rx, ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->num_pdcch_symbols,
@@ -5571,7 +5596,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 
 //  } // for l=1..l2
 
-#if 0
+
   ue_measurement_procedures(l-1,ue,proc,eNB_id,(nr_tti_rx<<1),abstraction_flag,mode);
 
   LOG_D(PHY," ------  end FFT/ChannelEst/PDCCH slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);

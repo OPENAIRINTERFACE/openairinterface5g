@@ -142,7 +142,8 @@ int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
 
     if(dl_info->dci_ind != NULL){
         printf("[L2][IF MODULE][DL INDICATION][DCI_IND]\n");
-        for(i=0; dl_info->dci_ind->number_of_dcis; ++i){
+        for(i=0; i<dl_info->dci_ind->number_of_dcis; ++i){
+			//printf(">>>NR_IF_Module i=%d, dl_info->dci_ind->number_of_dcis=%d\n",i,dl_info->dci_ind->number_of_dcis);
             fapi_nr_dci_pdu_rel15_t *dci = &dl_info->dci_ind->dci_list[i].dci;
 
             ret_mask |= (handle_dci(
@@ -192,7 +193,6 @@ int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
                 default:
                     break;
             }*/
-
 
             //(dl_info->dci_list+i)->rnti
             

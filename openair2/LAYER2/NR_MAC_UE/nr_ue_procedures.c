@@ -119,8 +119,8 @@ int8_t nr_ue_decode_mib(
         int32_t num_rbs = -1;
         int32_t num_symbols = -1;
         int32_t rb_offset = -1;
-        printf("<<<<<<<<<configSIB1 %d index_4msb %d index_4lsb %d scs_ssb %d scs_pdcch %d switch %d ",
-        mac->mib->pdcch_ConfigSIB1,index_4msb,index_4lsb,scs_ssb,scs_pdcch, (scs_ssb << 5)|scs_pdcch);
+        //printf("<<<<<<<<<configSIB1 %d index_4msb %d index_4lsb %d scs_ssb %d scs_pdcch %d switch %d ",
+        //mac->mib->pdcch_ConfigSIB1,index_4msb,index_4lsb,scs_ssb,scs_pdcch, (scs_ssb << 5)|scs_pdcch);
 
         //  type0-pdcch coreset
 	    switch( (scs_ssb << 5)|scs_pdcch ){
@@ -250,7 +250,7 @@ int8_t nr_ue_decode_mib(
             mask = mask >> 1;
             mask = mask | 0x100000000000;
         }
-        printf(">>>>>>>>mask 0x%16x num_rbs %d rb_offset %d\n", mask, num_rbs, rb_offset);
+        //printf(">>>>>>>>mask %x num_rbs %d rb_offset %d\n", mask, num_rbs, rb_offset);
         mac->type0_pdcch_dci_config.coreset.frequency_domain_resource = mask;
         mac->type0_pdcch_dci_config.coreset.rb_offset = rb_offset;  //  additional parameter other than coreset
 
@@ -545,14 +545,14 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
 //////////////
 /*
  * This code contains all the functions needed to process all dci fields.
- * These functions are going to be called by function nr_ue_process_dci
+ * These tables and functions are going to be called by function nr_ue_process_dci
  */
 // table_7_3_1_1_2_2_3_4_5 contains values for number of layers and precoding information for tables 7.3.1.1.2-2/3/4/5 from TS 38.212 subclause 7.3.1.1.2
 // the first 6 columns contain table 7.3.1.1.2-2: Precoding information and number of layers, for 4 antenna ports, if transformPrecoder=disabled and maxRank = 2 or 3 or 4
 // next six columns contain table 7.3.1.1.2-3: Precoding information and number of layers for 4 antenna ports, if transformPrecoder= enabled, or if transformPrecoder=disabled and maxRank = 1
 // next four columns contain table 7.3.1.1.2-4: Precoding information and number of layers, for 2 antenna ports, if transformPrecoder=disabled and maxRank = 2
 // next four columns contain table 7.3.1.1.2-5: Precoding information and number of layers, for 2 antenna ports, if transformPrecoder= enabled, or if transformPrecoder= disabled and maxRank = 1
-uint8_t table_7_3_1_1_2_2_3_4_5[63][20] = {
+uint8_t table_7_3_1_1_2_2_3_4_5[64][20] = {
 {1,  0,  1,  0,  1,  0,  1,  0,  1,  0,  1,  0,  1,  0,  1,  0,  1,  0,  1,  0},
 {1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1},
 {1,  2,  1,  2,  1,  2,  1,  2,  1,  2,  1,  2,  2,  0,  2,  0,  1,  2,  0,  0},
@@ -1135,7 +1135,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fa
     const uint16_t n_RB_ULBWP = 106;
     const uint16_t n_RB_DLBWP = 106;
 
-printf(">>> nr_ue_process_dci at MAC layer");
+printf("\n>>> nr_ue_process_dci at MAC layer with dci_format=%d\n",dci_format);
 
     switch(dci_format){
         case format0_0:
@@ -1547,19 +1547,19 @@ printf(">>> nr_ue_process_dci at MAC layer");
  *    28 DAI_: For format1_1: 4 if more than one serving cell are configured in the DL and the higher layer parameter HARQ-ACK-codebook=dynamic, where the 2 MSB bits are the counter DAI and the 2 LSB bits are the total DAI
  *    33 TPC_PUCCH:
  */
-            dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
             dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.rnti = rnti;
+            //fapi_nr_dl_config_dlsch_pdu_rel15_t dlsch_config_pdu_1_0 = dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
             fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu_1_0 = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
         /* IDENTIFIER_DCI_FORMATS */
         /* FREQ_DOM_RESOURCE_ASSIGNMENT_DL */
-            nr_ue_process_dci_freq_dom_resource_assignment(NULL,&dlsch_config_pdu_1_0,0,n_RB_DLBWP,dci->freq_dom_resource_assignment_DL);
+           nr_ue_process_dci_freq_dom_resource_assignment(NULL,dlsch_config_pdu_1_0,0,n_RB_DLBWP,dci->freq_dom_resource_assignment_DL);
         /* TIME_DOM_RESOURCE_ASSIGNMENT */
-            nr_ue_process_dci_time_dom_resource_assignment(NULL,&dlsch_config_pdu_1_0,dci->time_dom_resource_assignment,mac->mib->dmrs_TypeA_Position);
+            nr_ue_process_dci_time_dom_resource_assignment(NULL,dlsch_config_pdu_1_0,dci->time_dom_resource_assignment,mac->mib->dmrs_TypeA_Position);
         /* VRB_TO_PRB_MAPPING */
             dlsch_config_pdu_1_0->vrb_to_prb_mapping = (dci->vrb_to_prb_mapping == 0) ? vrb_to_prb_mapping_non_interleaved:vrb_to_prb_mapping_interleaved;
         /* MCS */
             dlsch_config_pdu_1_0->mcs = dci->mcs;
-        /* NDI (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
+       /* NDI (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
             dlsch_config_pdu_1_0->ndi = dci->ndi;
         /* RV (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI or TC-RNTI)*/
             dlsch_config_pdu_1_0->rv = dci->rv;
@@ -1590,9 +1590,45 @@ printf(">>> nr_ue_process_dci at MAC layer");
             //if (dci->pucch_resource_ind == 7) dlsch_config_pdu_1_0->pucch_resource_id = 8; //pucch-ResourceId obtained from the 8th value of resourceList FIXME!!
             dlsch_config_pdu_1_0->pucch_resource_id = dci->pucch_resource_ind;
         /* PDSCH_TO_HARQ_FEEDBACK_TIME_IND (only if CRC scrambled by C-RNTI or CS-RNTI or new-RNTI)*/
-            dlsch_config_pdu_1_0-> pdsch_to_harq_feedback_time_ind = dci->pdsch_to_harq_feedback_time_ind;
+            dlsch_config_pdu_1_0->pdsch_to_harq_feedback_time_ind = dci->pdsch_to_harq_feedback_time_ind;
 
             dl_config->number_pdus = dl_config->number_pdus + 1;
+            
+            printf("\n>>> (nr_ue_procedures.c) rnti=%d dl_config->number_pdus=%d\n",
+                    dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.rnti,
+                    dl_config->number_pdus);
+            printf(">>> (nr_ue_procedures.c) frequency_domain_resource_assignment=%d \t number_rbs=%d \t start_rb=%d\n",
+                    dci->freq_dom_resource_assignment_DL,
+                    dlsch_config_pdu_1_0->number_rbs,
+                    dlsch_config_pdu_1_0->start_rb);
+            printf(">>> (nr_ue_procedures.c) time_domain_resource_assignment=%d \t number_symbols=%d \t start_symbol=%d\n",
+                    dci->time_dom_resource_assignment,
+                    dlsch_config_pdu_1_0->number_symbols,
+                    dlsch_config_pdu_1_0->start_symbol);
+            printf(">>> (nr_ue_procedures.c) vrb_to_prb_mapping=%d \n>>> mcs=%d\n>>> ndi=%d\n>>> rv=%d\n>>> harq_process_nbr=%d\n>>> dai=%d\n>>> scaling_factor_S=%d\n>>> tpc_pucch=%d\n>>> pucch_res_ind=%d\n>>> pdsch_to_harq_feedback_time_ind=%d\n",
+                  dlsch_config_pdu_1_0->vrb_to_prb_mapping,
+                  dlsch_config_pdu_1_0->mcs,
+                  dlsch_config_pdu_1_0->ndi,
+                  dlsch_config_pdu_1_0->rv,
+                  dlsch_config_pdu_1_0->harq_process_nbr,
+                  dlsch_config_pdu_1_0->dai,
+                  dlsch_config_pdu_1_0->scaling_factor_S,
+                  dlsch_config_pdu_1_0->accumulated_delta_PUCCH,
+                  dlsch_config_pdu_1_0->pucch_resource_id,
+                  dlsch_config_pdu_1_0->pdsch_to_harq_feedback_time_ind);
+
+            dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
+            printf(">>> (nr_ue_procedures.c) pdu_type=%d\n\n",dl_config->dl_config_list[dl_config->number_pdus].pdu_type);
+            
+            if(mac->if_module != NULL && mac->if_module->dl_indication != NULL)
+              //printf(">>> mac->if_module->dl_indication(&mac->phy_config); \n");
+              //for (int k=0;k<1000;k++) printf(">>> %d ",k); 
+              //mac->if_module->dl_indication(&mac->dl_info);       
+              //mac->if_module->dl_indication(&mac->dl_config_request);       
+		      mac->if_module->dl_indication(&mac->phy_config);
+
+            
+
             break;
 
         case format1_1:        
@@ -1633,9 +1669,9 @@ printf(">>> nr_ue_process_dci at MAC layer");
         /* BANDWIDTH_PART_IND */
             dlsch_config_pdu_1_1->bandwidth_part_ind = dci->bandwidth_part_ind;
         /* FREQ_DOM_RESOURCE_ASSIGNMENT_DL */
-            nr_ue_process_dci_freq_dom_resource_assignment(NULL,&dlsch_config_pdu_1_1,0,n_RB_DLBWP,dci->freq_dom_resource_assignment_DL);
+            nr_ue_process_dci_freq_dom_resource_assignment(NULL,dlsch_config_pdu_1_1,0,n_RB_DLBWP,dci->freq_dom_resource_assignment_DL);
         /* TIME_DOM_RESOURCE_ASSIGNMENT */
-            nr_ue_process_dci_time_dom_resource_assignment(NULL,&dlsch_config_pdu_1_1,dci->time_dom_resource_assignment,mac->mib->dmrs_TypeA_Position);
+            nr_ue_process_dci_time_dom_resource_assignment(NULL,dlsch_config_pdu_1_1,dci->time_dom_resource_assignment,mac->mib->dmrs_TypeA_Position);
         /* VRB_TO_PRB_MAPPING */
             if (mac->phy_config.config_req.dl_bwp_dedicated.pdsch_config_dedicated.resource_allocation != 0)
               dlsch_config_pdu_1_1->vrb_to_prb_mapping = (dci->vrb_to_prb_mapping == 0) ? vrb_to_prb_mapping_non_interleaved:vrb_to_prb_mapping_interleaved;
@@ -1660,7 +1696,7 @@ printf(">>> nr_ue_process_dci at MAC layer");
         /* HARQ_PROCESS_NUMBER */
             dlsch_config_pdu_1_1->harq_process_nbr = dci->harq_process_number;
         /* DAI */
-            dlsch_config_pdu_1_0->dai = dci ->dai;
+            dlsch_config_pdu_1_1->dai = dci ->dai;
         /* TPC_PUCCH */
             // according to TS 38.213 Table 7.2.1-1
             if (dci->tpc_pucch == 0) dlsch_config_pdu_1_1->accumulated_delta_PUCCH = -1;
@@ -1775,6 +1811,13 @@ printf(">>> nr_ue_process_dci at MAC layer");
             //FIXME!!!
 
             dl_config->number_pdus = dl_config->number_pdus + 1;
+            
+            dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
+            printf(">>> (nr_ue_procedures.c) pdu_type=%d\n\n",dl_config->dl_config_list[dl_config->number_pdus].pdu_type);
+            
+            if(mac->if_module != NULL && mac->if_module->dl_indication != NULL)
+		      mac->if_module->dl_indication(&mac->phy_config);
+		      
             break;
 
         case format2_0:        
