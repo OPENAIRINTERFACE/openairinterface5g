@@ -292,6 +292,8 @@ set(protobuf_generated_dir ${OPENAIR_BIN_DIR})
 
 add_list2_option(RRC_ASN1_VERSION "Rel15" "ASN.1 version of RRC interface" "Rel8" "Rel10" "Rel14" "CBA")
 
+Message("RRC_ASN1_VERSION is ${RRC_ASN1_VERSION}")
+
 if (${RRC_ASN1_VERSION} STREQUAL "Rel8")
   make_version(RRC_VERSION 8 6 0)
   set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-86.asn)
@@ -321,14 +323,14 @@ endif  (${RRC_ASN1_VERSION} STREQUAL "Rel8")
 add_definitions(-DRRC_VERSION=${RRC_VERSION})
 set (RRC_FULL_DIR ${asn1_generated_dir}/RRC_${RRC_ASN1_VERSION})
 message("calling asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}")
-execute_process(COMMAND mkdir -p ${RRC_FULL_DIR}
-                COMMAND env asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}
-                RESULT_VARIABLE ret
-		OUTPUT_QUIET
-                ERROR_QUIET)
-if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "${ret}: error")
-endif (NOT ${ret} STREQUAL 0)
+#execute_process(COMMAND mkdir -p ${RRC_FULL_DIR}
+#                COMMAND env asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}
+#                RESULT_VARIABLE ret
+#		OUTPUT_QUIET
+#                ERROR_QUIET)
+#if (NOT ${ret} STREQUAL 0)
+#  message(FATAL_ERROR "${ret}: error")
+#endif (NOT ${ret} STREQUAL 0)
 
 file(GLOB rrc_source ${RRC_FULL_DIR}/*.c)
 file(GLOB rrc_h ${RRC_FULL_DIR}/*.h)
@@ -362,15 +364,15 @@ add_definitions(-DNR_RRC_VERSION=${NR_RRC_VERSION})
 set (NR_RRC_FULL_DIR ${asn1_generated_dir}/${NR_RRC_ASN1_VERSION})
 
 message("calling ASN1C_PREFIX=NR_ asn1c -pdu=all -fcompound-names -findirect-choice -gen-PER -no-gen-OER -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}")
-execute_process(COMMAND mkdir -p ${NR_RRC_FULL_DIR}
-                COMMAND env "ASN1C_PREFIX=NR_" asn1c -fcompound-names -findirect-choice -gen-PER -no-gen-OER -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}
-                RESULT_VARIABLE ret
-		OUTPUT_QUIET
-		ERROR_QUIET)
+#execute_process(COMMAND mkdir -p ${NR_RRC_FULL_DIR}
+#                COMMAND env "ASN1C_PREFIX=NR_" asn1c -fcompound-names -findirect-choice -gen-PER -no-gen-OER -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}
+#                RESULT_VARIABLE ret
+#		OUTPUT_QUIET
+#		ERROR_QUIET)
 
-if (NOT ${ret} STREQUAL 0)
-   message(FATAL_ERROR "${ret}: error")
-endif (NOT ${ret} STREQUAL 0)
+#if (NOT ${ret} STREQUAL 0)
+#   message(FATAL_ERROR "${ret}: error")
+#endif (NOT ${ret} STREQUAL 0)
 
 file(GLOB nr_rrc_source ${NR_RRC_FULL_DIR}/*.c)
 file(GLOB nr_rrc_h ${NR_RRC_FULL_DIR}/*.h)
@@ -426,14 +428,14 @@ add_definitions(-DS1AP_VERSION=${S1AP_VERSION})
 set(S1AP_ASN_DIR ${S1AP_DIR}/MESSAGES/ASN1/${S1AP_RELEASE})
 set(S1AP_C_DIR ${asn1_generated_dir}/S1AP_${S1AP_RELEASE})
 message("calling ASN1C_PREFIX=S1AP_ asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${S1AP_C_DIR} ${S1AP_ASN_DIR}/${S1AP_ASN_FILES}")
-execute_process(COMMAND mkdir -p ${S1AP_C_DIR}
-                COMMAND env "ASN1C_PREFIX=S1AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${S1AP_C_DIR} ${S1AP_ASN_DIR}/${S1AP_ASN_FILES}
-                RESULT_VARIABLE ret
-		OUTPUT_QUIET
-                ERROR_QUIET)
-if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "${ret}: error")
-endif (NOT ${ret} STREQUAL 0)
+#execute_process(COMMAND mkdir -p ${S1AP_C_DIR}
+#                COMMAND env "ASN1C_PREFIX=S1AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${S1AP_C_DIR} ${S1AP_ASN_DIR}/${S1AP_ASN_FILES}
+#                RESULT_VARIABLE ret
+#		OUTPUT_QUIET
+#                ERROR_QUIET)
+#if (NOT ${ret} STREQUAL 0)
+#  message(FATAL_ERROR "${ret}: error")
+#endif (NOT ${ret} STREQUAL 0)
 file(GLOB S1AP_source ${S1AP_C_DIR}/*.c)
 
 file(GLOB s1ap_h ${S1AP_C_DIR}/*.h)
@@ -495,14 +497,14 @@ add_definitions(-DX2AP_VERSION=${X2AP_VERSION})
 set(X2AP_ASN_DIR ${X2AP_DIR}/MESSAGES/ASN1/${X2AP_RELEASE})
 set(X2AP_C_DIR ${asn1_generated_dir}/X2AP_${X2AP_RELEASE})
 message("calling ASN1C_PREFIX=X2AP_ asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}")
-execute_process(COMMAND mkdir -p ${X2AP_C_DIR}
-                COMMAND env "ASN1C_PREFIX=X2AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
-                RESULT_VARIABLE ret
-                OUTPUT_QUIET
-                ERROR_QUIET)
-if (NOT ${ret} STREQUAL 0)
-  message(FATAL_ERROR "${ret}: error")
-endif (NOT ${ret} STREQUAL 0)
+#execute_process(COMMAND mkdir -p ${X2AP_C_DIR}
+#                COMMAND env "ASN1C_PREFIX=X2AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
+#                RESULT_VARIABLE ret
+#                OUTPUT_QUIET
+#                ERROR_QUIET)
+#if (NOT ${ret} STREQUAL 0)
+#  message(FATAL_ERROR "${ret}: error")
+#endif (NOT ${ret} STREQUAL 0)
 file(GLOB X2AP_source ${X2AP_C_DIR}/*.c)
 
 file(GLOB x2ap_h ${X2AP_C_DIR}/*.h)
@@ -543,7 +545,9 @@ set (CONFIG_SOURCES
    )
 set (CONFIG_LIBCONFIG_SOURCES
     ${CONFIG_ROOTDIR}/libconfig/config_libconfig.c
-   )
+    )
+add_library(CONFIG_LIB ${CONFIG_SOURCES})
+set(CONFIG_LIBRARIES CONFIG_LIB)  
 add_library(params_libconfig MODULE ${CONFIG_LIBCONFIG_SOURCES} )
 target_link_libraries(params_libconfig config)
 # shared library loader
@@ -1461,7 +1465,7 @@ set(L2_SRC
   ${RRC_DIR}/L2_interface_ue.c
   )
 
-set(L2_NR_SRC
+set(NR_L2_SRC
   ${NR_RRC_DIR}/rrc_gNB.c
   ${NR_RRC_DIR}/nr_rrc_common.c
   ${NR_RRC_DIR}/L2_nr_interface.c
@@ -1513,14 +1517,6 @@ set(NR_L2_SRC_UE
   ${NR_UE_RRC_DIR}/L2_interface_ue.c
   ${NR_UE_RRC_DIR}/main_ue.c
   ${NR_UE_RRC_DIR}/rrc_UE.c
-#  ${NR_UE_RRC_DIR}/mac_vars.c
-#${RRC_DIR}/rrc_UE.c
-  )
-
-set(L2_NR_SRC_UE
-  ${NR_UE_RRC_DIR}/L2_interface_ue.c
-  ${NR_UE_RRC_DIR}/main_ue.c
-  ${NR_UE_RRC_DIR}/rrc_UE.c
   )
 
 set (MAC_SRC
@@ -1547,7 +1543,7 @@ set (MAC_SRC
   ${MAC_DIR}/config_ue.c
  )
 
-set (MAC_NR_SRC
+set (NR_MAC_SRC
   ${NR_PHY_INTERFACE_DIR}/NR_IF_Module.c
   ${NR_MAC_DIR}/main.c
   ${NR_MAC_DIR}/config.c
@@ -2530,10 +2526,14 @@ target_link_libraries (dlsim_tm4
   )
 
 add_executable(polartest ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/polartest.c)
-target_link_libraries(polartest m SIMU PHY PHY_NR PHY_COMMON -lm ${ATLAS_LIBRARIES})
+target_link_libraries(polartest SIMU PHY PHY_NR PHY_COMMON m ${ATLAS_LIBRARIES})
 
 add_executable(ldpctest  ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c)
-target_link_libraries(ldpctest m SIMU PHY PHY_NR ${ATLAS_LIBRARIES})
+target_link_libraries(ldpctest SIMU PHY PHY_NR m ${ATLAS_LIBRARIES})
+
+add_executable(nr_pbchsim  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pbchsim.c )
+target_link_libraries(nr_pbchsim  -Wl,--start-group UTIL SIMU PHY PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB ${CONFIG_LIBRARIES} -Wl,--end-group m pthread dl ${ATLAS_LIBRARIES})
+
 
 foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)
 

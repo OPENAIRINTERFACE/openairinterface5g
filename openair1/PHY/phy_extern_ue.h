@@ -36,6 +36,7 @@ extern unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
 
 extern int number_of_cards;
 
+extern short conjugate[8],conjugate2[8];
 
 #ifndef OCP_FRAMEWORK
 extern PHY_VARS_UE ***PHY_vars_UE_g;

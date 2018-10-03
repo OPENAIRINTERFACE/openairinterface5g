@@ -197,12 +197,14 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   *          sync_pos            SS/PBCH block
   */
   cnt++;
-  if (cnt >100){
-	  cnt =0;
+  if (1){
+    cnt =0;
   /* process pss search on received buffer */
   sync_pos = pss_synchro_nr(ue, NO_RATE_CHANGE);
 
   sync_pos_slot = (frame_parms->samples_per_tti>>1) - 3*(frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
+
+  sync_pos = sync_pos_slot+frame_parms->nb_prefix_samples;
 
   if (sync_pos >= frame_parms->nb_prefix_samples)
       sync_pos2 = sync_pos - frame_parms->nb_prefix_samples;

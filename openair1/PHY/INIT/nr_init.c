@@ -92,7 +92,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 
   int i, UE_id; 
 
-  LOG_I(PHY,"[gNB %d] %s() About to wait for gNB to be configured", gNB->Mod_id, __FUNCTION__);
+  LOG_I(PHY,"[gNB %d] %s() About to wait for gNB to be configured\n", gNB->Mod_id, __FUNCTION__);
 
   gNB->total_dlsch_bitrate = 0;
   gNB->total_transmitted_bits = 0;
@@ -335,7 +335,7 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
     free_and_zero(srs_vars[UE_id].srs_ch_estimates_time);
   } //UE_id
 
-  free_ul_ref_sigs();
+  //free_ul_ref_sigs();
 
   for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) free_and_zero(srs_vars[UE_id].srs);
 
@@ -378,7 +378,7 @@ void install_schedule_handlers(IF_Module_t *if_inst)
 
 /// this function is a temporary addition for NR configuration
 
-/*void nr_phy_config_request(PHY_VARS_gNB *gNB)
+void nr_phy_config_request_sim(PHY_VARS_gNB *gNB)
 {
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   nfapi_nr_config_request_t *gNB_config = &gNB->gNB_config;
@@ -407,7 +407,7 @@ void install_schedule_handlers(IF_Module_t *if_inst)
 
   gNB->configured                                   = 1;
   LOG_I(PHY,"gNB configured\n");
-}*/
+}
 
 
 void nr_phy_config_request(NR_PHY_Config_t *phy_config)

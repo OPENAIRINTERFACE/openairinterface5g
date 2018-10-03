@@ -67,7 +67,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     nr_configure_css_dci_from_mib(&gNB->pdcch_type0_params,
                                kHz30, kHz30, nr_FR1, 0, 0,
                                fp->slots_per_frame,
-                               cfg->rf_config.dl_channel_bandwidth.value);
+                               cfg->rf_config.dl_carrier_bandwidth.value);
     memcpy((void*)params_rel15, (void*)&gNB->pdcch_type0_params, sizeof(nfapi_nr_dl_config_pdcch_parameters_rel15_t));
 
     pdu_rel15->frequency_domain_assignment = 5;

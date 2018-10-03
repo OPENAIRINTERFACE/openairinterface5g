@@ -1335,6 +1335,7 @@ void nr_dlsch_channel_compensation(int **rxdataF_ext,
   __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128,QAM_amp128b;
 
 
+  
   //if (frame_parms->mode1_flag==1) // 10 out of 12 so don't reduce size
   if (symbol == 2){
       pilots=1;

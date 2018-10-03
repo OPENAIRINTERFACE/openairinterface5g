@@ -22,7 +22,7 @@
 
 #include "PHY/NR_TRANSPORT/nr_transport.h"
 
-//#define NR_PSS_DEBUG
+#define NR_PSS_DEBUG
 
 int nr_generate_pss(  int16_t *d_pss,
                       int32_t **txdataF,
@@ -52,7 +52,7 @@ int nr_generate_pss(  int16_t *d_pss,
   }
 
 #ifdef NR_PSS_DEBUG
-  write_output("d_pss.m", "d_pss", (void*)d_pss, NR_PSS_LENGTH, 1, 1);
+  write_output("d_pss.m", "d_pss", (void*)d_pss, NR_PSS_LENGTH, 1, 0);
 #endif
 
   /// Resource mapping
@@ -75,7 +75,7 @@ int nr_generate_pss(  int16_t *d_pss,
   }
 
 #ifdef NR_PSS_DEBUG
-  write_output("pss_0.m", "pss_0", (void*)txdataF[0][2*l*frame_parms->ofdm_symbol_size], frame_parms->ofdm_symbol_size, 1, 1);
+  write_output("pss_0.m", "pss_0", (void*)&txdataF[0][2*l*frame_parms->ofdm_symbol_size], frame_parms->ofdm_symbol_size, 1, 1);
 #endif
 
   return 0;
