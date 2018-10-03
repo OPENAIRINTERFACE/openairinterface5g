@@ -3162,31 +3162,9 @@ printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_unscrambling)->  (c_init=%d, n_id=%d,
         #endif
 
 	}
-	
-#ifdef NR_PDCCH_DCI_DEBUG
-//k = 0;
-//for (int j = 0; j < length; j++){
-//	if ((j%32==0) && (j!=0)) k++;
-//	if ((j%2 == 0) && ((*(char*) &z[(int)floor(i/2)]) > 0)) {
-//		unscrambled[k] = (unscrambled[k]<<1) + 1;
-//	}
-//	if ((j%2 == 0) && ((*(char*) &z[(int)floor(i/2)]) <= 0)) {
-//		unscrambled[k] = (unscrambled[k]<<1) + 0;
-//	}
-//	if ((j%2 == 1) && ((*(1 + (char*) &z[(int)floor(i/2)])) > 0)) {
-//		unscrambled[k] = (unscrambled[k]<<1) + 1;
-//	}
-//	if ((j%2 == 1) && ((*(1 + (char*) &z[(int)floor(i/2)])) <= 0)) {
-//		unscrambled[k] = (unscrambled[k]<<1) + 0;
-//	}
-//}
-//for (int p=0; p<k; p++)
-//printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_unscrambling)->  after scrambling, unscrambled[%d]=%x\n",p,unscrambled[p]);
-#endif
-	
-	
 }
 
+#if 0
 void nr_pdcch_unscrambling_tmp(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8_t nr_tti_rx,
 		double llr[], uint32_t length, uint16_t pdcch_DMRS_scrambling_id, int do_common) {
 
@@ -3233,7 +3211,6 @@ printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_unscrambling)->  (c_init=%d, n_id=%d,
 }
 
 
-#if 0
 
 void nr_pdcch_unscrambling_old(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8_t nr_tti_rx,
 		int8_t* llr, uint32_t length, uint16_t pdcch_DMRS_scrambling_id, int do_common) {
@@ -3939,21 +3916,20 @@ int get_nCCE_offset_l1(int *CCE_table,
 
 
 #ifdef NR_PDCCH_DCI_RUN
-void nr_dci_decoding_procedure0(int s,                                                                        //x
+void nr_dci_decoding_procedure0(int s,                                                                        
                                 int p,
                                 int coreset_time_dur,
-                                uint16_t coreset_nbr_rb,                                                                        //x
-                                NR_UE_PDCCH **pdcch_vars,                                                    //x
-                                int do_common,                                                                //x
-                                //dci_detect_mode_t mode,                                                       //not sure if necessary
-                                uint8_t nr_tti_rx,                                                            //x
-                                NR_DCI_ALLOC_t *dci_alloc,                                                       //x
-                                int16_t eNB_id,                                                               //x
-                                uint8_t current_thread_id,                                                    //x
+                                uint16_t coreset_nbr_rb,                                                     
+                                NR_UE_PDCCH **pdcch_vars,                                                    
+                                int do_common,                                                                
+                                uint8_t nr_tti_rx,                                                            
+                                NR_DCI_ALLOC_t *dci_alloc,                                                    
+                                int16_t eNB_id,                                                               
+                                uint8_t current_thread_id,                                                    
                                 NR_DL_FRAME_PARMS *frame_parms,
-                                t_nrPolar_paramsPtr *nrPolar_params,                                              //x
+                                t_nrPolar_paramsPtr *nrPolar_params,                                          
                                 uint8_t mi,
-                                uint16_t crc_scrambled_values[13],                                            //x
+                                uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES],                                            
                                 uint8_t L,
                                 NR_UE_SEARCHSPACE_CSS_DCI_FORMAT_t format_css,
                                 NR_UE_SEARCHSPACE_USS_DCI_FORMAT_t format_uss,
@@ -5407,8 +5383,10 @@ uint8_t nr_dci_decoding_procedure(int s,
                                   uint16_t n_RB_ULBWP,
                                   uint16_t n_RB_DLBWP,
                                   crc_scrambled_t *crc_scrambled,
-                                  format_found_t *format_found) {
+                                  format_found_t *format_found,
+                                  uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES]) {
 //                                  uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS],
+  for (int n=0; n<13; n++) printf("################ 2 crc_scrambled_values[%d]=%d\n",n,crc_scrambled_values[n]);    
 
   #ifdef NR_PDCCH_DCI_DEBUG
     printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure) nr_tti_rx=%d n_RB_ULBWP=%d n_RB_DLBWP=%d format_found=%d\n",
@@ -5437,18 +5415,7 @@ uint8_t nr_dci_decoding_procedure(int s,
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   t_nrPolar_paramsPtr *nrPolar_params = &ue->nrPolar_params;
   uint8_t mi;// = get_mi(&ue->frame_parms, nr_tti_rx);
-  // we need to initialize this values as crc is going to be compared with them
-  //uint16_t c_rnti=pdcch_vars[eNB_id]->crnti;
-  uint16_t c_rnti=pdcch_vars2->crnti; //to be removed FIXME!!!
-  printf("c_rnti=%d\n",c_rnti);
-  uint16_t cs_rnti,new_rnti,tc_rnti;
-  uint16_t p_rnti=P_RNTI;
-  uint16_t si_rnti=SI_RNTI;
-  uint16_t ra_rnti=3; //at the moment this value is hardcoded FIXME!!!
-  uint16_t sp_csi_rnti,sfi_rnti,int_rnti,tpc_pusch_rnti,tpc_pucch_rnti,tpc_srs_rnti; //FIXME !!!
-  uint16_t crc_scrambled_values[13] = {c_rnti,cs_rnti,new_rnti,tc_rnti,p_rnti,si_rnti,ra_rnti,sp_csi_rnti,sfi_rnti,int_rnti,tpc_pusch_rnti,tpc_pucch_rnti,tpc_srs_rnti};
-
-  //uint8_t format0_found = 0, format_c_found = 0;
+ 
   uint8_t tmode = ue->transmission_mode[eNB_id];
   uint8_t frame_type = frame_parms->frame_type;
 
@@ -5458,6 +5425,7 @@ uint8_t nr_dci_decoding_procedure(int s,
   uint8_t format_2_1_size_bits = 0, format_2_1_size_bytes = 0; //FIXME
   uint8_t format_2_2_size_bits = 0, format_2_2_size_bytes = 0; //FIXME
   uint8_t format_2_3_size_bits = 0, format_2_3_size_bytes = 0; //FIXME
+  
   /*
    *
    * The implementation of this function will depend on the information given by the searchSpace IE
