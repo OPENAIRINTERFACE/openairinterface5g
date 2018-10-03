@@ -75,6 +75,7 @@ function start_basic_sim_enb {
     local LOC_EPC_IP_ADDR=$3
     local LOC_LOG_FILE=$4
     local LOC_NB_RBS=$5
+    local LOC_CONF_FILE=$6
     echo "cd /home/ubuntu/tmp" > $1
     echo "echo \"sudo apt-get --yes --quiet install daemon \"" >> $1
     echo "sudo apt-get --yes install daemon >> /home/ubuntu/tmp/cmake_targets/log/daemon-install.txt 2>&1" >> $1
@@ -83,13 +84,13 @@ function start_basic_sim_enb {
     echo "echo \"source oaienv\"" >> $1
     echo "source oaienv" >> $1
     echo "cd ci-scripts/conf_files/" >> $1
-    echo "cp lte-basic-sim.conf ci-lte-basic-sim.conf" >> $1
-    echo "sed -i -e 's#N_RB_DL.*=.*;#N_RB_DL                                         = $LOC_NB_RBS;#' -e 's#CI_MME_IP_ADDR#$LOC_EPC_IP_ADDR#' -e 's#CI_ENB_IP_ADDR#$LOC_VM_IP_ADDR#' ci-lte-basic-sim.conf" >> $1
-    echo "echo \"grep N_RB_DL ci-lte-basic-sim.conf\"" >> $1
-    echo "grep N_RB_DL ci-lte-basic-sim.conf | sed -e 's#N_RB_DL.*=#N_RB_DL =#'" >> $1
+    echo "cp $LOC_CONF_FILE ci-$LOC_CONF_FILE" >> $1
+    echo "sed -i -e 's#N_RB_DL.*=.*;#N_RB_DL                                         = $LOC_NB_RBS;#' -e 's#CI_MME_IP_ADDR#$LOC_EPC_IP_ADDR#' -e 's#CI_ENB_IP_ADDR#$LOC_VM_IP_ADDR#' ci-$LOC_CONF_FILE" >> $1
+    echo "echo \"grep N_RB_DL ci-$LOC_CONF_FILE\"" >> $1
+    echo "grep N_RB_DL ci-$LOC_CONF_FILE | sed -e 's#N_RB_DL.*=#N_RB_DL =#'" >> $1
     echo "echo \"cd /home/ubuntu/tmp/cmake_targets/basic_simulator/enb/\"" >> $1
     echo "cd /home/ubuntu/tmp/cmake_targets/basic_simulator/enb/" >> $1
-    echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-lte-basic-sim.conf\" > ./my-lte-softmodem-run.sh " >> $1
+    echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE\" > ./my-lte-softmodem-run.sh " >> $1
     echo "chmod 775 ./my-lte-softmodem-run.sh" >> $1
     echo "cat ./my-lte-softmodem-run.sh" >> $1
     echo "sudo -E daemon --inherit --unsafe --name=enb_daemon --chdir=/home/ubuntu/tmp/cmake_targets/basic_simulator/enb -o /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ./my-lte-softmodem-run.sh" >> $1
@@ -102,9 +103,10 @@ function start_basic_sim_enb {
 function start_basic_sim_ue {
     local LOC_UE_LOG_FILE=$3
     local LOC_NB_RBS=$4
+    local LOC_FREQUENCY=$5
     echo "echo \"cd /home/ubuntu/tmp/cmake_targets/basic_simulator/ue\"" > $1
     echo "cd /home/ubuntu/tmp/cmake_targets/basic_simulator/ue" > $1
-    echo "echo \"./lte-uesoftmodem -C 2680000000 -r $LOC_NB_RBS --ue-rxgain 140\" > ./my-lte-uesoftmodem-run.sh" >> $1
+    echo "echo \"./lte-uesoftmodem -C ${LOC_FREQUENCY}000000 -r $LOC_NB_RBS --ue-rxgain 140\" > ./my-lte-uesoftmodem-run.sh" >> $1
     echo "chmod 775 ./my-lte-uesoftmodem-run.sh" >> $1
     echo "cat ./my-lte-uesoftmodem-run.sh" >> $1
     echo "sudo -E daemon --inherit --unsafe --name=ue_daemon --chdir=/home/ubuntu/tmp/cmake_targets/basic_simulator/ue -o /home/ubuntu/tmp/cmake_targets/log/$LOC_UE_LOG_FILE ./my-lte-uesoftmodem-run.sh" >> $1
@@ -270,7 +272,6 @@ function recover_core_dump {
         local TC=`echo $3 | sed -e "s#^.*enb_##" -e "s#Hz.*#Hz#"`
         echo "Segmentation fault detected on enb -> recovering core dump"
         echo "cd /home/ubuntu/tmp/cmake_targets/basic_simulator/enb" > $1
-        echo "cp /home/ubuntu/tmp/ci-scripts/conf_files/ci-lte-basic-sim.conf ." >> $1
         echo "sync" >> $1
         echo "sudo tar -cjhf basic-simulator-enb-core-${TC}.bz2 core lte-softmodem *.so ci-lte-basic-sim.conf my-lte-softmodem-run.sh" >> $1
         echo "sudo rm core" >> $1
@@ -694,16 +695,16 @@ then
     fi
 
     echo "############################################################"
-    echo "Starting the eNB at 5MHz"
+    echo "Starting the eNB in FDD-5MHz mode"
     echo "############################################################"
-    CURRENT_ENB_LOG_FILE=enb_05MHz.log
-    start_basic_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 25
+    CURRENT_ENB_LOG_FILE=fdd_05MHz_enb.log
+    start_basic_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 25 lte-fdd-basic-sim.conf
 
     echo "############################################################"
-    echo "Starting the UE at 5MHz"
+    echo "Starting the UE in FDD-5MHz mode"
     echo "############################################################"
-    CURRENT_UE_LOG_FILE=ue_05MHz.log
-    start_basic_sim_ue $VM_CMDS $VM_IP_ADDR $CURRENT_UE_LOG_FILE 25
+    CURRENT_UE_LOG_FILE=fdd_05MHz_ue.log
+    start_basic_sim_ue $VM_CMDS $VM_IP_ADDR $CURRENT_UE_LOG_FILE 25 2680
     if [ $UE_SYNC -eq 0 ]
     then
         echo "Problem w/ eNB and UE not syncing"
@@ -719,14 +720,15 @@ then
     echo "############################################################"
     echo "Pinging the UE"
     echo "############################################################"
-    ping_ue_ip_addr $EPC_VM_CMDS $EPC_VM_IP_ADDR $UE_IP_ADDR 05MHz_ping_ue.txt
-    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/05MHz_ping_ue.txt $ARCHIVES_LOC
-    check_ping_result $ARCHIVES_LOC/05MHz_ping_ue.txt 20
+    PING_LOG_FILE=fdd_05MHz_ping_ue.txt
+    ping_ue_ip_addr $EPC_VM_CMDS $EPC_VM_IP_ADDR $UE_IP_ADDR $PING_LOG_FILE
+    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
+    check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
 
     echo "############################################################"
     echo "Iperf DL"
     echo "############################################################"
-    CURR_IPERF_LOG_BASE=05MHz_iperf_dl
+    CURR_IPERF_LOG_BASE=fdd_05MHz_iperf_dl
     iperf_dl $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 15 $CURR_IPERF_LOG_BASE
     scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_client.txt $ARCHIVES_LOC
     scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/${CURR_IPERF_LOG_BASE}_server.txt $ARCHIVES_LOC
@@ -735,7 +737,7 @@ then
     echo "############################################################"
     echo "Iperf UL"
     echo "############################################################"
-    CURR_IPERF_LOG_BASE=05MHz_iperf_ul
+    CURR_IPERF_LOG_BASE=fdd_05MHz_iperf_ul
     iperf_ul $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 2 $CURR_IPERF_LOG_BASE
     scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_server.txt $ARCHIVES_LOC
     scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/${CURR_IPERF_LOG_BASE}_client.txt $ARCHIVES_LOC
@@ -750,16 +752,16 @@ then
     recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
 
     echo "############################################################"
-    echo "Starting the eNB at 10MHz"
+    echo "Starting the eNB in FDD-10MHz mode"
     echo "############################################################"
-    CURRENT_ENB_LOG_FILE=enb_10MHz.log
-    start_basic_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 50
+    CURRENT_ENB_LOG_FILE=fdd_10MHz_enb.log
+    start_basic_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 50 lte-fdd-basic-sim.conf
 
     echo "############################################################"
-    echo "Starting the UE at 10MHz"
+    echo "Starting the UE in FDD-10MHz mode"
     echo "############################################################"
-    CURRENT_UE_LOG_FILE=ue_10MHz.log
-    start_basic_sim_ue $VM_CMDS $VM_IP_ADDR $CURRENT_UE_LOG_FILE 50
+    CURRENT_UE_LOG_FILE=fdd_10MHz_ue.log
+    start_basic_sim_ue $VM_CMDS $VM_IP_ADDR $CURRENT_UE_LOG_FILE 50 2680
     if [ $UE_SYNC -eq 0 ]
     then
         echo "Problem w/ eNB and UE not syncing"
@@ -775,14 +777,15 @@ then
     echo "############################################################"
     echo "Pinging the UE"
     echo "############################################################"
-    ping_ue_ip_addr $EPC_VM_CMDS $EPC_VM_IP_ADDR $UE_IP_ADDR 10MHz_ping_ue.txt
-    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/10MHz_ping_ue.txt $ARCHIVES_LOC
-    check_ping_result $ARCHIVES_LOC/10MHz_ping_ue.txt 20
+    PING_LOG_FILE=fdd_10MHz_ping_ue.txt
+    ping_ue_ip_addr $EPC_VM_CMDS $EPC_VM_IP_ADDR $UE_IP_ADDR $PING_LOG_FILE
+    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
+    check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
 
     echo "############################################################"
     echo "Iperf DL"
     echo "############################################################"
-    CURR_IPERF_LOG_BASE=10MHz_iperf_dl
+    CURR_IPERF_LOG_BASE=fdd_10MHz_iperf_dl
     iperf_dl $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 15 $CURR_IPERF_LOG_BASE
     scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_client.txt $ARCHIVES_LOC
     scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/${CURR_IPERF_LOG_BASE}_server.txt $ARCHIVES_LOC
@@ -791,7 +794,7 @@ then
     echo "############################################################"
     echo "Iperf UL"
     echo "############################################################"
-    CURR_IPERF_LOG_BASE=10MHz_iperf_ul
+    CURR_IPERF_LOG_BASE=fdd_10MHz_iperf_ul
     iperf_ul $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 2 $CURR_IPERF_LOG_BASE
     scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_server.txt $ARCHIVES_LOC
     scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/${CURR_IPERF_LOG_BASE}_client.txt $ARCHIVES_LOC
@@ -806,16 +809,16 @@ then
     recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
 
     echo "############################################################"
-    echo "Starting the eNB at 20MHz"
+    echo "Starting the eNB in FDD-20MHz mode"
     echo "############################################################"
-    CURRENT_ENB_LOG_FILE=enb_20MHz.log
-    start_basic_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 100
+    CURRENT_ENB_LOG_FILE=fdd_20MHz_enb.log
+    start_basic_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 100 lte-fdd-basic-sim.conf
 
     echo "############################################################"
-    echo "Starting the UE at 20MHz"
+    echo "Starting the UE in FDD-20MHz mode"
     echo "############################################################"
-    CURRENT_UE_LOG_FILE=ue_20MHz.log
-    start_basic_sim_ue $VM_CMDS $VM_IP_ADDR $CURRENT_UE_LOG_FILE 100
+    CURRENT_UE_LOG_FILE=fdd_20MHz_ue.log
+    start_basic_sim_ue $VM_CMDS $VM_IP_ADDR $CURRENT_UE_LOG_FILE 100 2680
     if [ $UE_SYNC -eq 0 ]
     then
         echo "Problem w/ eNB and UE not syncing"
@@ -831,27 +834,154 @@ then
     echo "############################################################"
     echo "Pinging the UE"
     echo "############################################################"
-    ping_ue_ip_addr $EPC_VM_CMDS $EPC_VM_IP_ADDR $UE_IP_ADDR 20MHz_ping_ue.txt
-    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/20MHz_ping_ue.txt $ARCHIVES_LOC
-    check_ping_result $ARCHIVES_LOC/20MHz_ping_ue.txt 20
+    PING_LOG_FILE=fdd_20MHz_ping_ue.txt
+    ping_ue_ip_addr $EPC_VM_CMDS $EPC_VM_IP_ADDR $UE_IP_ADDR $PING_LOG_FILE
+    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
+    check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
 
     echo "############################################################"
     echo "Iperf DL"
     echo "############################################################"
-    CURR_IPERF_LOG_BASE=20MHz_iperf_dl
+    CURR_IPERF_LOG_BASE=fdd_20MHz_iperf_dl
     iperf_dl $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 15 $CURR_IPERF_LOG_BASE
     scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_client.txt $ARCHIVES_LOC
     scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/${CURR_IPERF_LOG_BASE}_server.txt $ARCHIVES_LOC
     check_iperf $ARCHIVES_LOC/$CURR_IPERF_LOG_BASE 15
 
     echo "############################################################"
-    echo "Iperf UL"
+    echo "Terminate enb/ue simulators"
     echo "############################################################"
-#    CURR_IPERF_LOG_BASE=20MHz_iperf_ul
-#    iperf_ul $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 1 $CURR_IPERF_LOG_BASE
-#    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_server.txt $ARCHIVES_LOC
-#    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/${CURR_IPERF_LOG_BASE}_client.txt $ARCHIVES_LOC
-#    check_iperf $ARCHIVES_LOC/$CURR_IPERF_LOG_BASE 1
+    terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+    recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+
+    echo "############################################################"
+    echo "Starting the eNB in TDD-5MHz mode"
+    echo "############################################################"
+    CURRENT_ENB_LOG_FILE=tdd_05MHz_enb.log
+    start_basic_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 25 lte-tdd-basic-sim.conf
+
+    echo "############################################################"
+    echo "Starting the UE in TDD-5MHz mode"
+    echo "############################################################"
+    CURRENT_UE_LOG_FILE=tdd_05MHz_ue.log
+    start_basic_sim_ue $VM_CMDS $VM_IP_ADDR $CURRENT_UE_LOG_FILE 25 2350
+    if [ $UE_SYNC -eq 0 ]
+    then
+        echo "Problem w/ eNB and UE not syncing"
+        terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+        recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+        terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+        exit -1
+    fi
+    get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
+
+    echo "############################################################"
+    echo "Pinging the UE"
+    echo "############################################################"
+    PING_LOG_FILE=tdd_05MHz_ping_ue.txt
+    ping_ue_ip_addr $EPC_VM_CMDS $EPC_VM_IP_ADDR $UE_IP_ADDR $PING_LOG_FILE
+    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
+    check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
+
+    echo "############################################################"
+    echo "Terminate enb/ue simulators"
+    echo "############################################################"
+    terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+    recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+
+    echo "############################################################"
+    echo "Starting the eNB in TDD-10MHz mode"
+    echo "############################################################"
+    CURRENT_ENB_LOG_FILE=tdd_10MHz_enb.log
+    start_basic_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 50 lte-tdd-basic-sim.conf
+
+    echo "############################################################"
+    echo "Starting the UE in TDD-10MHz mode"
+    echo "############################################################"
+    CURRENT_UE_LOG_FILE=tdd_10MHz_ue.log
+    start_basic_sim_ue $VM_CMDS $VM_IP_ADDR $CURRENT_UE_LOG_FILE 50 2350
+    if [ $UE_SYNC -eq 0 ]
+    then
+        echo "Problem w/ eNB and UE not syncing"
+        terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+        recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+        terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+        exit -1
+    fi
+    get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
+
+    echo "############################################################"
+    echo "Pinging the UE"
+    echo "############################################################"
+    PING_LOG_FILE=tdd_10MHz_ping_ue.txt
+    ping_ue_ip_addr $EPC_VM_CMDS $EPC_VM_IP_ADDR $UE_IP_ADDR $PING_LOG_FILE
+    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
+    check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
+
+    echo "############################################################"
+    echo "Iperf DL"
+    echo "############################################################"
+    CURR_IPERF_LOG_BASE=tdd_10MHz_iperf_dl
+    iperf_dl $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 6 $CURR_IPERF_LOG_BASE
+    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_client.txt $ARCHIVES_LOC
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/${CURR_IPERF_LOG_BASE}_server.txt $ARCHIVES_LOC
+    check_iperf $ARCHIVES_LOC/$CURR_IPERF_LOG_BASE 6
+
+    echo "############################################################"
+    echo "Terminate enb/ue simulators"
+    echo "############################################################"
+    terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+    recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+
+    echo "############################################################"
+    echo "Starting the eNB in TDD-20MHz mode"
+    echo "############################################################"
+    CURRENT_ENB_LOG_FILE=tdd_20MHz_enb.log
+    start_basic_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 100 lte-tdd-basic-sim.conf
+
+    echo "############################################################"
+    echo "Starting the UE in TDD-20MHz mode"
+    echo "############################################################"
+    CURRENT_UE_LOG_FILE=tdd_20MHz_ue.log
+    start_basic_sim_ue $VM_CMDS $VM_IP_ADDR $CURRENT_UE_LOG_FILE 100 2350
+    if [ $UE_SYNC -eq 0 ]
+    then
+        echo "Problem w/ eNB and UE not syncing"
+        terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+        recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+        terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+        exit -1
+    fi
+    get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
+
+    echo "############################################################"
+    echo "Pinging the UE"
+    echo "############################################################"
+    PING_LOG_FILE=tdd_20MHz_ping_ue.txt
+    ping_ue_ip_addr $EPC_VM_CMDS $EPC_VM_IP_ADDR $UE_IP_ADDR $PING_LOG_FILE
+    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
+    check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
+
+    echo "############################################################"
+    echo "Iperf DL"
+    echo "############################################################"
+    CURR_IPERF_LOG_BASE=tdd_20MHz_iperf_dl
+    iperf_dl $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 6 $CURR_IPERF_LOG_BASE
+    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_client.txt $ARCHIVES_LOC
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/${CURR_IPERF_LOG_BASE}_server.txt $ARCHIVES_LOC
+    check_iperf $ARCHIVES_LOC/$CURR_IPERF_LOG_BASE 6
 
     echo "############################################################"
     echo "Terminate enb/ue simulators"

@@ -90,38 +90,50 @@ class SSHConnection():
 		self.htmlUEConnected = 0
 
 	def open(self, ipaddress, username, password):
-		self.ssh = pexpect.spawn('ssh', [username + '@' + ipaddress], timeout = 5)
-		self.sshresponse = self.ssh.expect(['Are you sure you want to continue connecting (yes/no)?', 'password:', 'Last login', pexpect.EOF, pexpect.TIMEOUT])
-		if self.sshresponse == 0:
-			self.ssh.sendline('yes')
-			self.ssh.expect('password:')
-			self.ssh.sendline(password)
-			self.sshresponse = self.ssh.expect(['\$', 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
+		count = 0
+		connect_status = False
+		while count < 4:
+			self.ssh = pexpect.spawn('ssh', [username + '@' + ipaddress], timeout = 5)
+			self.sshresponse = self.ssh.expect(['Are you sure you want to continue connecting (yes/no)?', 'password:', 'Last login', pexpect.EOF, pexpect.TIMEOUT])
 			if self.sshresponse == 0:
-				pass
+				self.ssh.sendline('yes')
+				self.ssh.expect('password:')
+				self.ssh.sendline(password)
+				self.sshresponse = self.ssh.expect(['\$', 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
+				if self.sshresponse == 0:
+					count = 10
+					connect_status = True
+				else:
+					logging.debug('self.sshresponse = ' + str(self.sshresponse))
+			elif self.sshresponse == 1:
+				self.ssh.sendline(password)
+				self.sshresponse = self.ssh.expect(['\$', 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
+				if self.sshresponse == 0:
+					count = 10
+					connect_status = True
+				else:
+					logging.debug('self.sshresponse = ' + str(self.sshresponse))
+			elif self.sshresponse == 2:
+				# Checking if we are really on the remote client defined by its IP address
+				self.command('stdbuf -o0 ifconfig | egrep --color=never "inet addr:"', '\$', 5)
+				result = re.search(str(ipaddress), str(self.ssh.before))
+				if result is None:
+					self.close()
+				else:
+					count = 10
+					connect_status = True
 			else:
+				# debug output
+				logging.debug(str(self.ssh.before))
 				logging.debug('self.sshresponse = ' + str(self.sshresponse))
-				sys.exit('SSH Connection Failed')
-		elif self.sshresponse == 1:
-			self.ssh.sendline(password)
-			self.sshresponse = self.ssh.expect(['\$', 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
-			if self.sshresponse == 0:
-				pass
-			else:
-				logging.debug('self.sshresponse = ' + str(self.sshresponse))
-				sys.exit('SSH Connection Failed')
-		elif self.sshresponse == 2:
-			# Checking if we are really on the remote client defined by its IP address
-			self.command('stdbuf -o0 ifconfig | egrep --color=never "inet addr:"', '\$', 5)
-			result = re.search(str(ipaddress), str(self.ssh.before))
-			if result is None:
-				sys.exit('SSH Connection Failed: TIMEOUT !!!')
+			# adding a tempo when failure
+			if not connect_status:
+				time.sleep(1)
+			count += 1
+		if connect_status:
 			pass
 		else:
-			# debug output
-			logging.debug(str(self.ssh.before))
-			logging.debug('self.sshresponse = ' + str(self.sshresponse))
-			sys.exit('SSH Connection Failed!!!')
+			sys.exit('SSH Connection Failed')
 
 	def command(self, commandline, expectedline, timeout):
 		logging.debug(commandline)

@@ -121,7 +121,30 @@ nfapi_tx_request_pdu_t tx_pdu_list[MAX_NUM_TX_REQUEST_PDU];
 nfapi_tx_request_t TX_req;
 Sched_Rsp_t sched_resp;
 
-int codingw = 0;
+char *parallel_config = NULL;
+char *worker_config = NULL;
+static THREAD_STRUCT thread_struct;
+void set_parallel_conf(char *parallel_conf)
+{
+  if(strcmp(parallel_conf,"PARALLEL_SINGLE_THREAD")==0)           thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
+  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_SPLIT")==0)        thread_struct.parallel_conf = PARALLEL_RU_L1_SPLIT;
+  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_TRX_SPLIT")==0)    thread_struct.parallel_conf = PARALLEL_RU_L1_TRX_SPLIT;
+  printf("[CONFIG] parallel conf is set to %d\n",thread_struct.parallel_conf);
+} 
+void set_worker_conf(char *worker_conf)
+{
+  if(strcmp(worker_conf,"WORKER_DISABLE")==0)                     thread_struct.worker_conf = WORKER_DISABLE;
+  else if(strcmp(worker_conf,"WORKER_ENABLE")==0)                 thread_struct.worker_conf = WORKER_ENABLE;
+  printf("[CONFIG] worker conf is set to %d\n",thread_struct.worker_conf);
+} 
+PARALLEL_CONF_t get_thread_parallel_conf(void)
+{
+  return thread_struct.parallel_conf;
+} 
+WORKER_CONF_t get_thread_worker_conf(void)
+{
+  return thread_struct.worker_conf;
+} 
 
 void
 fill_nfapi_ulsch_config_request(nfapi_ul_config_request_pdu_t *ul_config_pdu,
@@ -699,7 +722,8 @@ int main(int argc, char **argv) {
     if (verbose)
       printf("%s\n",ptr->helpstr);
   }
-
+  set_parallel_conf("PARALLEL_RU_L1_TRX_SPLIT");
+  set_worker_conf("WORKER_ENABLE");
   RC.nb_L1_inst = 1;
   RC.nb_RU = 1;
   lte_param_init(&eNB,&UE,&ru,

@@ -31,6 +31,7 @@
 #include "x2ap_eNB_defs.h"
 #include "x2ap_eNB_management_procedures.h"
 #include "x2ap_eNB_handler.h"
+#include "x2ap_eNB_generate_messages.h"
 #include "x2ap_common.h"
 
 #include "queue.h"
@@ -42,9 +43,9 @@ struct x2ap_eNB_data_s;
 
 RB_PROTOTYPE(x2ap_enb_map, x2ap_eNB_data_s, entry, x2ap_eNB_compare_assoc_id);
 
-//static
-//void x2ap_eNB_handle_sctp_data_ind(instance_t instance,
-  //                                 sctp_data_ind_t *sctp_data_ind);
+static
+void x2ap_eNB_handle_sctp_data_ind(instance_t instance, sctp_data_ind_t *sctp_data_ind);
+
 static
 void x2ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp);
 
@@ -63,22 +64,21 @@ void x2ap_eNB_register_eNB(x2ap_eNB_instance_t *instance_p,
                            uint32_t             enb_port_for_X2C,
                            int                  multi_sd);
 
-/*
+
 static
-void x2ap_eNB_handle_sctp_data_ind(instance_t instance,
-				   sctp_data_ind_t *sctp_data_ind) {
+void x2ap_eNB_handle_sctp_data_ind(instance_t instance, sctp_data_ind_t *sctp_data_ind) {
 
   int result;
 
   DevAssert(sctp_data_ind != NULL);
 
-  x2ap_eNB_handle_message(sctp_data_ind->assoc_id, sctp_data_ind->stream,
+  x2ap_eNB_handle_message(instance, sctp_data_ind->assoc_id, sctp_data_ind->stream,
                           sctp_data_ind->buffer, sctp_data_ind->buffer_length);
 
   result = itti_free(TASK_UNKNOWN, sctp_data_ind->buffer);
   AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
 
-}*/
+}
 
 static
 void x2ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp)
@@ -143,7 +143,7 @@ printf("x2ap_eNB_handle_sctp_association_resp at 4\n");
 dump_trees();
 
   /* Prepare new x2 Setup Request */
-  //x2ap_eNB_generate_x2_setup_request(instance_p, x2ap_enb_data_p);
+  x2ap_eNB_generate_x2_setup_request(instance_p, x2ap_enb_data_p);
 }
 
 static
@@ -325,6 +325,19 @@ void x2ap_eNB_handle_register_eNB(instance_t instance,
     new_instance->mnc              = x2ap_register_eNB->mnc;
     new_instance->mnc_digit_length = x2ap_register_eNB->mnc_digit_length;
 
+    new_instance->num_cc           = x2ap_register_eNB->num_cc;
+
+    for (int i = 0; i< x2ap_register_eNB->num_cc; i++){
+      new_instance->eutra_band[i]              = x2ap_register_eNB->eutra_band[i];
+      new_instance->downlink_frequency[i]      = x2ap_register_eNB->downlink_frequency[i];
+      new_instance->uplink_frequency_offset[i] = x2ap_register_eNB->uplink_frequency_offset[i];
+      new_instance->Nid_cell[i]                = x2ap_register_eNB->Nid_cell[i];
+      new_instance->N_RB_DL[i]                 = x2ap_register_eNB->N_RB_DL[i];
+      new_instance->frame_type[i]              = x2ap_register_eNB->frame_type[i];
+      new_instance->fdd_earfcn_DL[i]           = x2ap_register_eNB->fdd_earfcn_DL[i];
+      new_instance->fdd_earfcn_UL[i]           = x2ap_register_eNB->fdd_earfcn_UL[i];
+    }
+
     DevCheck(x2ap_register_eNB->nb_x2 <= X2AP_MAX_NB_ENB_IP_ADDRESS,
              X2AP_MAX_NB_ENB_IP_ADDRESS, x2ap_register_eNB->nb_x2, 0);
     memcpy(new_instance->target_enb_x2_ip_address,
@@ -432,8 +445,8 @@ void *x2ap_task(void *arg)
       break;
 
     case SCTP_DATA_IND:
-      //x2ap_eNB_handle_sctp_data_ind(ITTI_MESSAGE_GET_INSTANCE(received_msg),
-	//			    &received_msg->ittiMsg.sctp_data_ind);
+      x2ap_eNB_handle_sctp_data_ind(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                           &received_msg->ittiMsg.sctp_data_ind);
       break;
 
     default:
