@@ -76,7 +76,7 @@ void init_lte_top(LTE_DL_FRAME_PARMS *frame_parms) {
   init_unscrambling_lut();
   init_scrambling_lut();
   //set_taus_seed(1328);
-  init_7_5KHz();
+//  init_7_5KHz();
   init_sss();
 }
 
