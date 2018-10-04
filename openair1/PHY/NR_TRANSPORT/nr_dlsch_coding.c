@@ -286,7 +286,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   //printf("Encoder: A: %d frame.subframe %d.%d \n",A, frame,subframe);
   mod_order = get_nr_Qm(dlsch->harq_processes[harq_pid]->mcs);
 
-  G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs);
+  G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order);
 
   Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0, dlsch->harq_processes[harq_pid]->Nl);
 
