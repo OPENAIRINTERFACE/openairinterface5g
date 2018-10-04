@@ -34,6 +34,8 @@
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 
+void init_7_5KHz(void);
+
 uint8_t dmrs1_tab_ue[8] = {0,2,3,4,6,8,9,10};
 extern uint8_t nfapi_mode;
 
@@ -662,6 +664,7 @@ int init_lte_ue_signal(PHY_VARS_UE *ue,
 
   init_frame_parms(&ue->frame_parms,1);
   init_lte_top(&ue->frame_parms);
+  init_7_5KHz();
   init_ul_hopping(&ue->frame_parms);
 
 

@@ -171,8 +171,6 @@ double rx_gain_off = 0.0;
 double sample_rate=30.72e6;
 double bw = 10.0e6;
 
-static int                      tx_max_power[MAX_NUM_CCs]; /* =  {0,0}*/;
-
 char   rf_config_file[1024];
 
 int chain_offset=0;
@@ -199,7 +197,6 @@ int                             otg_enabled;
 //int                             number_of_cards =   1;
 
 
-static LTE_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
 uint32_t target_dl_mcs = 28; //maximum allowed mcs
 uint32_t target_ul_mcs = 20;
 uint32_t timing_advance = 0;
@@ -249,8 +246,6 @@ WORKER_CONF_t get_thread_worker_conf(void)
 
 /* struct for ethernet specific parameters given in eNB conf file */
 eth_params_t *eth_params;
-
-openair0_config_t openair0_cfg[MAX_CARDS];
 
 double cpuf;
 
@@ -632,112 +627,6 @@ void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
 
 }
 
-
-void init_openair0(void) {
-
-  int card;
-  int i;
-  
-
-  for (card=0; card<MAX_CARDS; card++) {
-
-    openair0_cfg[card].mmapped_dma=mmapped_dma;
-    openair0_cfg[card].configFilename = NULL;
-
-    if(frame_parms[0]->N_RB_DL == 100) {
-	  if(numerology == 0)
-	  {
-      if (frame_parms[0]->threequarter_fs) {
-	openair0_cfg[card].sample_rate=23.04e6;
-	openair0_cfg[card].samples_per_frame = 230400;
-	openair0_cfg[card].tx_bw = 10e6;
-	openair0_cfg[card].rx_bw = 10e6;
-      } else {
-	openair0_cfg[card].sample_rate=30.72e6;
-	openair0_cfg[card].samples_per_frame = 307200;
-	openair0_cfg[card].tx_bw = 10e6;
-	openair0_cfg[card].rx_bw = 10e6;
-      }
-	  }else if(numerology == 1)
-	  {
-		openair0_cfg[card].sample_rate=61.44e6;
-		openair0_cfg[card].samples_per_frame = 307200;
-		openair0_cfg[card].tx_bw = 20e6;
-		openair0_cfg[card].rx_bw = 20e6;
-	  }else if(numerology == 2)
-	  {
-		openair0_cfg[card].sample_rate=122.88e6;
-		openair0_cfg[card].samples_per_frame = 307200;
-		openair0_cfg[card].tx_bw = 20e6;
-		openair0_cfg[card].rx_bw = 20e6;
-	  }else
-	  {
-	    printf("Un supported numerology\n");
-	  }
-    } else if(frame_parms[0]->N_RB_DL == 50) {
-      openair0_cfg[card].sample_rate=15.36e6;
-      openair0_cfg[card].samples_per_frame = 153600;
-      openair0_cfg[card].tx_bw = 5e6;
-      openair0_cfg[card].rx_bw = 5e6;
-    } else if (frame_parms[0]->N_RB_DL == 25) {
-      openair0_cfg[card].sample_rate=7.68e6;
-      openair0_cfg[card].samples_per_frame = 76800;
-      openair0_cfg[card].tx_bw = 2.5e6;
-      openair0_cfg[card].rx_bw = 2.5e6;
-    } else if (frame_parms[0]->N_RB_DL == 6) {
-      openair0_cfg[card].sample_rate=1.92e6;
-      openair0_cfg[card].samples_per_frame = 19200;
-      openair0_cfg[card].tx_bw = 1.5e6;
-      openair0_cfg[card].rx_bw = 1.5e6;
-    }
-
-
-    if (frame_parms[0]->frame_type==TDD)
-      openair0_cfg[card].duplex_mode = duplex_mode_TDD;
-    else //FDD
-      openair0_cfg[card].duplex_mode = duplex_mode_FDD;
-
-    printf("HW: Configuring card %d, nb_antennas_tx/rx %d/%d\n",card,
-	   RC.eNB[0][0]->frame_parms.nb_antennas_tx ,
-	   RC.eNB[0][0]->frame_parms.nb_antennas_rx );
-    openair0_cfg[card].Mod_id = 0;
-
-    openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
-
-    openair0_cfg[card].clock_source = clock_source;
-
-
-    openair0_cfg[card].tx_num_channels=min(2,RC.eNB[0][0]->frame_parms.nb_antennas_tx );
-    openair0_cfg[card].rx_num_channels=min(2,RC.eNB[0][0]->frame_parms.nb_antennas_rx );
-
-    for (i=0; i<4; i++) {
-
-      if (i<openair0_cfg[card].tx_num_channels)
-	openair0_cfg[card].tx_freq[i] = downlink_frequency[0][i] ;
-      else
-	openair0_cfg[card].tx_freq[i]=0.0;
-
-      if (i<openair0_cfg[card].rx_num_channels)
-	openair0_cfg[card].rx_freq[i] =downlink_frequency[0][i] + uplink_frequency_offset[0][i] ;
-      else
-	openair0_cfg[card].rx_freq[i]=0.0;
-
-      openair0_cfg[card].autocal[i] = 1;
-      openair0_cfg[card].tx_gain[i] = tx_gain[0][i];
-      openair0_cfg[card].rx_gain[i] = RC.eNB[0][0]->rx_total_gain_dB;
-
-
-      openair0_cfg[card].configFilename = rf_config_file;
-      printf("Card %d, channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f\n",
-	     card,i, openair0_cfg[card].tx_gain[i],
-	     openair0_cfg[card].rx_gain[i],
-	     openair0_cfg[card].tx_freq[i],
-	     openair0_cfg[card].rx_freq[i]);
-    }
-  } /* for loop on cards */
-}
-
-
 void wait_RUs(void) {
 
   LOG_I(PHY,"Waiting for RUs to be configured ... RC.ru_mask:%02lx\n", RC.ru_mask);
@@ -922,9 +811,6 @@ int main( int argc, char **argv )
       
 
   mode = normal_txrx;
-  memset(&openair0_cfg[0],0,sizeof(openair0_config_t)*MAX_CARDS);
-
-  memset(tx_max_power,0,sizeof(int)*MAX_NUM_CCs);
 
   set_latency_target();
 
@@ -1282,8 +1168,6 @@ int main( int argc, char **argv )
   pthread_mutex_destroy(&nfapi_sync_mutex);
 
   pthread_mutex_destroy(&ue_pf_po_mutex);
-
-  // *** Handle per CC_id openair0
 
 
     for(ru_id=0; ru_id<RC.nb_RU; ru_id++) {
