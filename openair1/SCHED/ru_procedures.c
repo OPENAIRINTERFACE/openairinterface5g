@@ -50,10 +50,6 @@
 
 #include "targets/RT/USER/rt_wrapper.h"
 
-// RU OFDM Modulator, used in IF4p5 RRU, RCC/RAU with IF5, eNodeB
-
-extern openair0_config_t openair0_cfg[MAX_CARDS];
-
 extern int oai_exit;
 
 
