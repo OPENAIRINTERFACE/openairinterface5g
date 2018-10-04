@@ -977,9 +977,9 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(
   uint8_t time_domain_ind,
   long dmrs_typeA_pos
 ){
-  uint8_t k_offset;
-  uint8_t sliv_S;
-  uint8_t sliv_L;
+  uint8_t k_offset=0;
+  uint8_t sliv_S=0;
+  uint8_t sliv_L=0;
   uint8_t table_5_1_2_1_1_2_time_dom_res_alloc_A[16][3]={ // for PDSCH from TS 38.214 subclause 5.1.2.1.1
   {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?12:11}, // row index 1
   {0,(dmrs_typeA_pos == 2)?2:3, (dmrs_typeA_pos == 2)?10:9},  // row index 2
@@ -1108,6 +1108,7 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(
       // k_offset = table_5_1_2_1_1_5_time_dom_res_alloc_C[nr_pdci_info_extracted->time_dom_resource_assignment][0];
       // sliv_S   = table_5_1_2_1_1_5_time_dom_res_alloc_C[nr_pdci_info_extracted->time_dom_resource_assignment][1];
       // sliv_L   = table_5_1_2_1_1_5_time_dom_res_alloc_C[nr_pdci_info_extracted->time_dom_resource_assignment][2];
+      dlsch_config_pdu->frame_offset = k_offset;
       dlsch_config_pdu->number_symbols = sliv_L;
       dlsch_config_pdu->start_symbol = sliv_S;
   }	/*
@@ -1120,6 +1121,7 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(
       // k_offset = table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][0];
       // sliv_S   = table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][1];
       // sliv_L   = table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][2];
+      ulsch_config_pdu->frame_offset = k_offset;
       ulsch_config_pdu->number_symbols = sliv_L;
       ulsch_config_pdu->start_symbol = sliv_S;
   }

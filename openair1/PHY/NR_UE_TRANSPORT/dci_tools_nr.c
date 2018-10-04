@@ -7027,12 +7027,12 @@ int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
    * Note only format0_0 and format1_0 are implemented
    */
 
-  uint8_t harq_pid=0;
+  //uint8_t harq_pid=0;
   uint8_t frame_type=frame_parms->frame_type;
-  uint8_t tpmi=0;
-  NR_UE_DLSCH_t *dlsch0=NULL,*dlsch1=NULL;
-  NR_DL_UE_HARQ_t *dlsch0_harq=NULL,*dlsch1_harq=NULL;
-  NR_UE_ULSCH_t *ulsch0=NULL,*ulsch1=NULL;
+  //uint8_t tpmi=0;
+  NR_UE_DLSCH_t *dlsch0=NULL;//*dlsch1=NULL;
+  NR_DL_UE_HARQ_t *dlsch0_harq=NULL;//*dlsch1_harq=NULL;
+  NR_UE_ULSCH_t *ulsch0=NULL;//*ulsch1=NULL;
   
   
   NR_DCI_INFO_EXTRACTED_t *ptr_nr_dci_info_extracted = nr_dci_info_extracted;
@@ -7046,8 +7046,8 @@ int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
 
   
 
-  uint8_t dci_fields_sizes_format[NBR_NR_DCI_FIELDS] ={0};
-  for (int m=0; m<NBR_NR_DCI_FIELDS; m++) dci_fields_sizes_format[m]=dci_fields_sizes[m][dci_format];
+//  uint8_t dci_fields_sizes_format[NBR_NR_DCI_FIELDS] ={0};
+//  for (int m=0; m<NBR_NR_DCI_FIELDS; m++) dci_fields_sizes_format[m]=dci_fields_sizes[m][dci_format];
 /*
   dlsch0 = dlsch[0];
   dlsch0->active = 0;

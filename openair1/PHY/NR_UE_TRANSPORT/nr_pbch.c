@@ -648,7 +648,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
     for (i=0; i<16; i++){
     printf("unscrambling demod_pbch_e[%d] r = %2.3f i = %2.3f\n", i<<1 , demod_pbch_e[i<<1], demod_pbch_e[(i<<1)+1]);}
 //#endif
-		uint32_t pbch_out;
+//		uint32_t pbch_out;
   //polar decoding de-rate matching
   t_nrPolar_paramsPtr nrPolar_params = NULL, currentPtr = NULL;
    nr_polar_init(&nrPolar_params,
@@ -673,7 +673,8 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   nr_pbch_unscrambling(nr_ue_pbch_vars,frame_parms->Nid_cell,nushift,M,NR_POLAR_PBCH_PAYLOAD_BITS,1);
 
   //payload deinterleaving
-  uint32_t in=0, out=0;
+  //uint32_t in=0;
+  uint32_t out=0;
 
   for (int i=0; i<32; i++) {
     out |= ((nr_ue_pbch_vars->pbch_a_interleaved>>i)&1)<<(pbch_deinterleaving_pattern[i]);

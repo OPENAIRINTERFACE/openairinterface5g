@@ -233,6 +233,7 @@ typedef struct {
         uint8_t bandwidth_part_ind;
         uint16_t number_rbs;
         uint16_t start_rb;
+        uint8_t frame_offset;
         uint16_t number_symbols;
         uint16_t start_symbol;
         pusch_freq_hopping_t pusch_freq_hopping;
@@ -302,6 +303,7 @@ typedef struct {
         uint8_t bandwidth_part_ind;
         uint16_t number_rbs;
         uint16_t start_rb;
+        uint8_t frame_offset;
         uint16_t number_symbols;
         uint16_t start_symbol;
         uint8_t prb_bundling_size_ind;

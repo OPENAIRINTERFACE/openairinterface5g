@@ -123,7 +123,7 @@ uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
 
-static char                    *conf_config_file_name = NULL;
+//static char                    *conf_config_file_name = NULL;
 #if defined(ENABLE_ITTI)
 static char                    *itti_dump_file = NULL;
 #endif
@@ -171,7 +171,7 @@ int codingw = 0;
 int fepw = 0;
 
 int                      		rx_input_level_dBm;
-static int                      online_log_messages=0;
+//static int                      online_log_messages=0;
 #ifdef XFORMS
 extern int                      otg_enabled;
 static char                     do_forms=0;
@@ -410,7 +410,7 @@ void exit_fun(const char* s) {
 
 
 void reset_stats(FL_OBJECT *button, long arg) {
-    int i,j,k;
+    //int i,j,k;
     /*PHY_VARS_eNB *phy_vars_eNB = PHY_vars_eNB_g[0][0];
 
     for (i=0; i<NUMBER_OF_UE_MAX; i++) {
@@ -444,10 +444,10 @@ static void *scope_thread(void *arg) {
 # ifdef ENABLE_XFORMS_WRITE_STATS
     FILE *UE_stats, *eNB_stats;
 # endif
-    int len = 0;
+    //int len = 0;
     struct sched_param sched_param;
-    int UE_id, CC_id;
-    int ue_cnt=0;
+    //int UE_id, CC_id;
+    //int ue_cnt=0;
 
     sched_param.sched_priority = sched_get_priority_min(SCHED_FIFO)+1;
     sched_setscheduler(0, SCHED_FIFO,&sched_param);
@@ -846,14 +846,14 @@ void init_openair0() {
 }
 
 int main( int argc, char **argv ) {
-    int i,j,k,aa,re;
+    int i;//j,k,aa,re;
 #if defined (XFORMS)
     void *status;
 #endif
 
     int CC_id;
     uint8_t  abstraction_flag=0;
-    uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
+    //uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
 
 #if defined (XFORMS)
     int ret;

@@ -115,7 +115,8 @@ int nr_pdsch_dmrs_rx(PHY_VARS_NR_UE *ue,
 						unsigned short nb_rb_pdsch)
 {
   int32_t qpsk[4],nqpsk[4],*qpsk_p, n;
-  int w,mprime,ind,l,ind_dword,ind_qpsk_symb,kp,lp, config_type, k;
+  //int w,mprime,ind,l,ind_dword,ind_qpsk_symb,kp,lp, config_type, k;
+  int w,ind,ind_dword,ind_qpsk_symb,kp,lp, config_type, k=0;
   short pamp;
 
   typedef int array_of_w[2];
@@ -196,7 +197,7 @@ int nr_pdcch_dmrs_rx(PHY_VARS_NR_UE *ue,
 {
 
 	uint8_t idx=0;
-	uint8_t pdcch_rb_offset =0;
+	//uint8_t pdcch_rb_offset =0;
 	//nr_gold_pdcch += ((int)floor(ue->frame_parms.ssb_start_subcarrier/12)+pdcch_rb_offset)*3/32;
 
 	if (p==2000) {
