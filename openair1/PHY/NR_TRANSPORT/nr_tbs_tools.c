@@ -79,3 +79,9 @@ uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx) {
       AssertFatal(0, "Invalid MCS table index %d (expected in range [1,3])\n", table_idx);
   }
 }
+
+uint32_t nr_get_G(uint16_t nb_rb, uint16_t nb_symb_sch,uint8_t nb_re_dmrs,uint16_t length_dmrs) {
+	uint32_t G;
+	G = ((12*nb_symb_sch)-(nb_re_dmrs*length_dmrs))*nb_rb;
+	return(G);
+}

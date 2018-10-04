@@ -1294,6 +1294,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_dci_tools.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_dlsch.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_dlsch_tools.c
+  ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_dlsch_coding.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_tbs_tools.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_gold.c
   ${OPENAIR1_DIR}/PHY/TOOLS/file_output.c
@@ -1327,6 +1328,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/nr_dlsch_demodulation.c
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/nr_dlsch_decoding.c
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/nr_dlsch_llr_computation.c
+  ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_tbs_tools.c
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/srs_modulation_nr.c
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/dci_nr.c

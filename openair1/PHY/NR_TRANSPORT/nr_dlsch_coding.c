@@ -37,6 +37,7 @@
 #include "PHY/CODING/lte_interleaver_inline.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
+#include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "SCHED_NR/sched_nr.h"
 #include "defs.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
@@ -85,11 +86,11 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
 #endif
 
           if (dlsch->harq_processes[i]->c[r]) {
-            free16(dlsch->harq_processes[i]->c[r],((r==0)?8:0) + 3+1056);
+            free16(dlsch->harq_processes[i]->c[r],1056);
             dlsch->harq_processes[i]->c[r] = NULL;
           }
           if (dlsch->harq_processes[i]->d[r]) {
-            free16(dlsch->harq_processes[i]->d[r],(96+12+3+(3*8448)));
+            free16(dlsch->harq_processes[i]->d[r],3*8448);
             dlsch->harq_processes[i]->d[r] = NULL;
           }
 
@@ -109,7 +110,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_t
 {
 
   NR_gNB_DLSCH_t *dlsch;
-  unsigned char exit_flag = 0,i,j,r,aa,layer;
+  unsigned char exit_flag = 0,i,r,aa,layer;
   int re;
   unsigned char bw_scaling =1;
 
@@ -229,7 +230,7 @@ void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
     for (i=0; i<Mdlharq; i++) {
       if (dlsch->harq_processes[i]) {
         //  dlsch->harq_processes[i]->Ndi    = 0;
-        dlsch->harq_processes[i]->status = 0;
+        //dlsch->harq_processes[i]->status = 0;
         dlsch->harq_processes[i]->round  = 0;
 
 	for (j=0; j<96; j++)
@@ -242,7 +243,7 @@ void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
   }
 }
 
-int dlsch_encoding(PHY_VARS_gNB *gNB,
+int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
 		   	   	   unsigned char *a,
                    uint8_t num_pdcch_symbols,
                    NR_gNB_DLSCH_t *dlsch,
@@ -255,31 +256,39 @@ int dlsch_encoding(PHY_VARS_gNB *gNB,
 
   unsigned int G;
   unsigned int crc=1;
-  unsigned short iind;
 
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
-  unsigned char harq_pid = dlsch->current_harq_pid;
+  unsigned char harq_pid = dlsch->harq_ids[subframe];
   unsigned short nb_rb = dlsch->harq_processes[harq_pid]->nb_rb;
   unsigned int A, Z;
   unsigned *pz = &Z;
   unsigned char mod_order;
-  unsigned int Kr=0,Kr_bytes,r,r_offset=0,Kr_int=0;
-  unsigned short m=dlsch->harq_processes[harq_pid]->mcs;
-  uint8_t beamforming_mode=0;
+  unsigned int Kr=0,r,r_offset=0;//Kr_bytes
+  //unsigned short m=dlsch->harq_processes[harq_pid]->mcs;
+  //uint8_t beamforming_mode=0;
   uint8_t *d_tmp[MAX_NUM_DLSCH_SEGMENTS];
-  double rate = 0.33;
-  uint8_t kb,BG;
+  //double rate = 0.33;
+  uint8_t kb,BG=1;
   uint32_t E;
   uint8_t Ilbrm = 0;
-  uint32_t Tbslbrm = 950984; //to compute tbs
+  uint32_t Tbslbrm = 950984; //max tbs
+  uint16_t nb_symb_sch =2;
+  uint8_t nb_re_dmrs = 6;
+  uint16_t length_dmrs = 1;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
+
+  dlsch->harq_processes[harq_pid]->TBS= nr_compute_tbs(dlsch->harq_processes[harq_pid]->mcs,
+		  	  	  	  	  	  	  	  nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs,
+									  dlsch->harq_processes[harq_pid]->Nl);
 
   A = dlsch->harq_processes[harq_pid]->TBS;
   //printf("Encoder: A: %d frame.subframe %d.%d \n",A, frame,subframe);
   mod_order = get_nr_Qm(dlsch->harq_processes[harq_pid]->mcs);
 
-  G = get_G(frame_parms,nb_rb,dlsch->harq_processes[harq_pid]->rb_alloc,mod_order,dlsch->harq_processes[harq_pid]->Nl,num_pdcch_symbols,frame,subframe,beamforming_mode);
+  G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs);
+
+  Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0, dlsch->harq_processes[harq_pid]->Nl);
 
   //  if (dlsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
   if (dlsch->harq_processes[harq_pid]->round == 0) {  // this is a new packet
@@ -324,7 +333,7 @@ int dlsch_encoding(PHY_VARS_gNB *gNB,
     //printf("Encoder: B %d F %d \n",dlsch->harq_processes[harq_pid]->B, dlsch->harq_processes[harq_pid]->F);
 
     Kr = dlsch->harq_processes[harq_pid]->K;
-    Kr_bytes = Kr>>3;
+    //Kr_bytes = Kr>>3;
 
     start_meas(te_stats);
     for (r=0; r<dlsch->harq_processes[harq_pid]->C; r++) {
@@ -394,7 +403,7 @@ int dlsch_encoding(PHY_VARS_gNB *gNB,
 
     start_meas(i_stats);
 	nr_interleaving_ldpc(E,
-						&dlsch->harq_processes[harq_pid]->Qm,
+						dlsch->harq_processes[harq_pid]->Qm,
 						dlsch->harq_processes[harq_pid]->e+r_offset,
 						dlsch->harq_processes[harq_pid]->f+r_offset);
     stop_meas(i_stats);
