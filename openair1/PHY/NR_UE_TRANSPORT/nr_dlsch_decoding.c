@@ -35,6 +35,7 @@
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/CODING/coding_defs.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
+#include "PHY/NR_TRANSPORT/nr_dlsch.h"
 //#include "SCHED/extern.h"
 #include "SIMULATION/TOOLS/sim.h"
 #include "targets/RT/USER/nr-uesoftmodem.h"
@@ -65,13 +66,13 @@ void free_nr_ue_dlsch(NR_UE_DLSCH_t *dlsch)
         }
 
         for (r=0; r<MAX_NUM_NR_DLSCH_SEGMENTS; r++) {
-          free16(dlsch->harq_processes[i]->c[r],((r==0)?8:0) + 3+1056);
+          free16(dlsch->harq_processes[i]->c[r],1056);
           dlsch->harq_processes[i]->c[r] = NULL;
         }
 
         for (r=0; r<MAX_NUM_NR_DLSCH_SEGMENTS; r++)
           if (dlsch->harq_processes[i]->d[r]) {
-            free16(dlsch->harq_processes[i]->d[r],((3*8*8448)+12+96)*sizeof(short));
+            free16(dlsch->harq_processes[i]->d[r],(3*8448)*sizeof(short));
             dlsch->harq_processes[i]->d[r] = NULL;
           }
 
@@ -201,8 +202,11 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 //  int16_t *p_invd =&inv_d;
   uint8_t kb, kc;
   uint8_t Ilbrm = 0;
-  uint32_t Tbslbrm = 950984; //to compute tbs
-  uint16_t nb_prb = 106; //to update
+  uint32_t Tbslbrm = 950984;
+  uint16_t nb_rb = 106; //to update
+  uint16_t nb_symb_sch = 2;
+  uint8_t nb_re_dmrs = 6;
+  uint16_t length_dmrs = 1;
 
   uint32_t i,j;
 //  uint32_t k;
@@ -252,10 +256,12 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   harq_process->trials[harq_process->round]++;
 
+  harq_process->TBS = nr_compute_tbs(harq_process->mcs,nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs, harq_process->Nl);
+
   A = harq_process->TBS;
   ret = dlsch->max_ldpc_iterations;
 
-
+  harq_process->G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, harq_process->Qm);
   G = harq_process->G;
   //get_G(frame_parms,nb_rb,dlsch->rb_alloc,mod_order,num_pdcch_symbols,phy_vars_ue->frame,subframe);
 
@@ -326,7 +332,7 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   K_bytes_F = Kr_bytes-(harq_process->F>>3);
 
-  Tbslbrm = nr_compute_tbs(harq_process->mcs,nb_prb,frame_parms->symbols_per_slot,0,0, harq_process->Nl);
+  Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0, harq_process->Nl);
 
   for (r=0; r<harq_process->C; r++) {
 

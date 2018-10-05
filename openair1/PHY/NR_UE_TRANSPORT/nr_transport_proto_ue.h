@@ -106,7 +106,7 @@ void qpsk_qpsk(int16_t *stream0_in,
     @param nb_rb number of RBs for this allocation
     @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
     @param llr128p pointer to pointer to symbol in dlsch_llr*/
-int32_t dlsch_qpsk_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
+int32_t nr_dlsch_qpsk_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
                             int32_t **rxdataF_comp,
                             int32_t **rxdataF_comp_i,
                             int32_t **rho_i,
@@ -142,7 +142,7 @@ void qpsk_qam16(int16_t *stream0_in,
     @param nb_rb number of RBs for this allocation
     @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
     @param llr128p pointer to pointer to symbol in dlsch_llr*/
-int32_t dlsch_qpsk_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
+int32_t nr_dlsch_qpsk_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                              int32_t **rxdataF_comp,
                              int32_t **rxdataF_comp_i,
                              int **dl_ch_mag_i, //|h_1|^2*(2/sqrt{10})
@@ -153,6 +153,7 @@ int32_t dlsch_qpsk_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                              uint16_t nb_rb,
                              uint16_t pbch_pss_sss_adj,
                              int16_t **llr128p);
+
 
 /** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream QPSK/64QAM reception.
     @param stream0_in Input from channel compensated (MR combined) stream 0
@@ -179,7 +180,7 @@ void qpsk_qam64(int16_t *stream0_in,
     @param nb_rb number of RBs for this allocation
     @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
     @param llr128p pointer to pointer to symbol in dlsch_llr*/
-int32_t dlsch_qpsk_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
+int32_t nr_dlsch_qpsk_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                              int32_t **rxdataF_comp,
                              int32_t **rxdataF_comp_i,
                              int **dl_ch_mag_i, //|h_1|^2*(2/sqrt{10})
@@ -217,7 +218,7 @@ void qam16_qpsk(short *stream0_in,
     @param nb_rb number of RBs for this allocation
     @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
     @param llr16p pointer to pointer to symbol in dlsch_llr*/
-int dlsch_16qam_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
+int nr_dlsch_16qam_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
                          int **rxdataF_comp,
                          int **rxdataF_comp_i,
                          int **dl_ch_mag,   //|h_0|^2*(2/sqrt{10})
@@ -258,7 +259,7 @@ void qam16_qam16(short *stream0_in,
     @param nb_rb number of RBs for this allocation
     @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
     @param llr16p pointer to pointer to symbol in dlsch_llr*/
-int dlsch_16qam_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
+int nr_dlsch_16qam_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                           int **rxdataF_comp,
                           int **rxdataF_comp_i,
                           int **dl_ch_mag,   //|h_0|^2*(2/sqrt{10})
@@ -300,7 +301,7 @@ void qam16_qam64(short *stream0_in,
     @param nb_rb number of RBs for this allocation
     @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
     @param llr16p pointer to pointer to symbol in dlsch_llr*/
-int dlsch_16qam_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
+int nr_dlsch_16qam_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                           int **rxdataF_comp,
                           int **rxdataF_comp_i,
                           int **dl_ch_mag,   //|h_0|^2*(2/sqrt{10})
@@ -480,15 +481,13 @@ int dlsch_64qam_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
     @param llr128p pointer to pointer to symbol in dlsch_llr
     @param beamforming_mode beamforming mode
 */
-int32_t dlsch_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
-                       int32_t **rxdataF_comp,
-                       int16_t *dlsch_llr,
-                       uint8_t symbol,
-                       uint8_t first_symbol_flag,
-                       uint16_t nb_rb,
-                       uint16_t pbch_pss_sss_adj,
-                       //int16_t **llr128p,
-                       uint8_t beamforming_mode);
+int32_t nr_dlsch_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
+                   int32_t **rxdataF_comp,
+                   int16_t *dlsch_llr,
+                   uint8_t symbol,
+				   uint8_t first_symbol_flag,
+                   uint16_t nb_rb,
+                   uint8_t beamforming_mode);
 
 /**
    \brief This function generates log-likelihood ratios (decoder input) for single-stream 16QAM received waveforms
@@ -504,7 +503,7 @@ int32_t dlsch_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
    @param beamforming_mode beamforming mode
 */
 
-int32_t dlsch_qpsk_llr_SIC(NR_DL_FRAME_PARMS *frame_parms,
+int32_t nr_dlsch_qpsk_llr_SIC(NR_DL_FRAME_PARMS *frame_parms,
                            int **rxdataF_comp,
                            int32_t **sic_buffer,
                            int **rho_i,
@@ -515,15 +514,14 @@ int32_t dlsch_qpsk_llr_SIC(NR_DL_FRAME_PARMS *frame_parms,
                            uint16_t mod_order_0,
                            uint32_t rb_alloc);
 
-void dlsch_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
+void nr_dlsch_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                      int32_t **rxdataF_comp,
                      int16_t *dlsch_llr,
                      int32_t **dl_ch_mag,
                      uint8_t symbol,
                      uint8_t first_symbol_flag,
                      uint16_t nb_rb,
-                     uint16_t pbch_pss_sss_adjust,
-                     int16_t **llr128p,
+                     int16_t **llr32p,
                      uint8_t beamforming_mode);
 /**
    \brief This function generates log-likelihood ratios (decoder input) for single-stream 16QAM received waveforms
@@ -538,7 +536,7 @@ void dlsch_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
    @param pbch_pss_sss_adjust PBCH/PSS/SSS RE adjustment (in REs)
    @param beamforming_mode beamforming mode
 */
-void dlsch_16qam_llr_SIC (NR_DL_FRAME_PARMS *frame_parms,
+void nr_dlsch_16qam_llr_SIC (NR_DL_FRAME_PARMS *frame_parms,
                           int32_t **rxdataF_comp,
                           int32_t **sic_buffer,  //Q15
                           int32_t **rho_i,
@@ -563,8 +561,7 @@ void dlsch_64qam_llr_SIC(NR_DL_FRAME_PARMS *frame_parms,
                          uint16_t mod_order_0,
                          uint32_t rb_alloc);
 
-
-void dlsch_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
+void nr_dlsch_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                      int32_t **rxdataF_comp,
                      int16_t *dlsch_llr,
                      int32_t **dl_ch_mag,
@@ -572,8 +569,6 @@ void dlsch_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                      uint8_t symbol,
                      uint8_t first_symbol_flag,
                      uint16_t nb_rb,
-                     uint16_t pbch_pss_sss_adjust,
-                     //int16_t **llr_save,
                      uint32_t llr_offset,
                      uint8_t beamforming_mode);
 
@@ -1044,7 +1039,7 @@ int32_t nr_rx_pdsch(PHY_VARS_NR_UE *phy_vars_ue,
                  uint8_t i_mod,
                  uint8_t harq_pid);
 
-int32_t rx_pdcch(PHY_VARS_NR_UE *ue,
+int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                  uint32_t frame,
                  uint8_t subframe,
                  uint8_t eNB_id,

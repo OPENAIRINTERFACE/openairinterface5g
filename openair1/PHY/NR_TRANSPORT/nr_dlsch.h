@@ -50,3 +50,8 @@ void nr_get_PRG_parms(NR_BWP_PARMS* bwp, NR_gNB_DCI_ALLOC_t dci_alloc, uint8_t p
 uint8_t nr_get_Qm(uint8_t Imcs, uint8_t table_idx);
 
 uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx);
+
+/** \brief Computes available bits G.
+    @param nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs */
+uint32_t nr_get_G(uint16_t nb_rb, uint16_t nb_symb_sch,uint8_t nb_re_dmrs,uint16_t length_dmrs,uint8_t Qm);
+
