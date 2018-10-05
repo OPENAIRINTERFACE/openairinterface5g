@@ -983,6 +983,7 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
       memset(&create_tunnel_req, 0 , sizeof(create_tunnel_req));
       ue_context_p->ue_context.nb_of_e_rabs = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).nb_of_e_rabs;
      
+      LOG_E(RRC, "rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ: ue_context_p->ue_context.nb_of_e_rabs = %d \n", ue_context_p->ue_context.nb_of_e_rabs);
       for (i = 0; i < ue_context_p->ue_context.nb_of_e_rabs; i++) {
         ue_context_p->ue_context.e_rab[i].status = E_RAB_STATUS_NEW;
         ue_context_p->ue_context.e_rab[i].param = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).e_rab_param[i];

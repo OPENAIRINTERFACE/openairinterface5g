@@ -33,7 +33,7 @@
 #include "f1ap_common.h"
 #include "f1ap_encoder.h"
 
-int asn1_encoder_xer_print = 1;
+int asn1_encoder_xer_print = 0;
 
 /*
 static inline int f1ap_encode_initiating(f1ap_message *message,

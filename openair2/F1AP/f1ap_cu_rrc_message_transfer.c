@@ -121,9 +121,11 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   ccch_sdu_len = ie->value.choice.RRCContainer.size;
   memcpy(RRC_MAC_CCCH_DATA_IND (message_p).sdu, ie->value.choice.RRCContainer.buf,
          ccch_sdu_len);
-  LOG_D(CU_F1AP, "RRCContainer(CCCH) :");
-  for (int i=0;i<ie->value.choice.RRCContainer.size;i++) LOG_D(CU_F1AP, "%2x ",RRC_MAC_CCCH_DATA_IND (message_p).sdu[i]);
-  LOG_D(CU_F1AP, "\n");
+  #ifdef F1AP_DEBUG
+  LOG_I(CU_F1AP, "RRCContainer(CCCH) :");
+  for (int i=0;i<ie->value.choice.RRCContainer.size;i++) printf("%2x ",RRC_MAC_CCCH_DATA_IND (message_p).sdu[i]);
+  LOG_I(CU_F1AP, "\n");
+#endif 
   // Find instance from nr_cellid
   int rrc_inst = -1;
   for (int i=0;i<RC.nb_inst;i++) {

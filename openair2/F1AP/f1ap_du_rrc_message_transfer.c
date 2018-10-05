@@ -197,27 +197,27 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
     switch (dl_ccch_msg->message.choice.c1.present) {
 
       case DL_CCCH_MessageType__c1_PR_NOTHING:
-        LOG_I(RRC, "Received PR_NOTHING on DL-CCCH-Message\n");
+        LOG_I(DU_F1AP, "Received PR_NOTHING on DL-CCCH-Message\n");
         break;
 
       case DL_CCCH_MessageType__c1_PR_rrcConnectionReestablishment:
-        LOG_I(RRC,
+        LOG_I(DU_F1AP,
         "Logical Channel DL-CCCH (SRB0), Received RRCConnectionReestablishment\n");
         break;
 
       case DL_CCCH_MessageType__c1_PR_rrcConnectionReestablishmentReject:
-        LOG_I(RRC,
+        LOG_I(DU_F1AP,
         "Logical Channel DL-CCCH (SRB0), Received RRCConnectionReestablishmentReject\n");
         break;
 
       case DL_CCCH_MessageType__c1_PR_rrcConnectionReject:
-        LOG_I(RRC,
+        LOG_I(DU_F1AP,
         "Logical Channel DL-CCCH (SRB0), Received RRCConnectionReject \n");
         break;
 
       case DL_CCCH_MessageType__c1_PR_rrcConnectionSetup:
       {
-        LOG_I(RRC,
+        LOG_I(DU_F1AP,
           "Logical Channel DL-CCCH (SRB0), Received RRCConnectionSetup DU_ID %x/RNTI %x\n",  
           du_ue_f1ap_id,
           f1ap_get_rnti_by_du_id(&f1ap_du_ue[instance],du_ue_f1ap_id));
@@ -409,9 +409,9 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                   else if (SRB_configList->list.array[i]->srb_Identity == 2 )  {
                     ue_context_p->ue_context.Srb2.Active=1;
                     ue_context_p->ue_context.Srb2.Srb_info.Srb_id=2;
-                    LOG_I(RRC,"[DU %d] SRB2 is now active\n",ctxt.module_id);
+                    LOG_I(DU_F1AP,"[DU %d] SRB2 is now active\n",ctxt.module_id);
                   } else {
-                    LOG_W(RRC,"[DU %d] invalide SRB identity %ld\n",ctxt.module_id,
+                    LOG_W(DU_F1AP,"[DU %d] invalide SRB identity %ld\n",ctxt.module_id,
                    SRB_configList->list.array[i]->srb_Identity);
                   }
                 }
@@ -421,7 +421,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                 for (i = 0; i < DRB_configList->list.count; i++) {  // num max DRB (11-3-8)
                   if (DRB_configList->list.array[i]) {
                     drb_id = (int)DRB_configList->list.array[i]->drb_Identity;
-                    LOG_I(RRC,
+                    LOG_I(DU_F1AP,
                       "[DU %d] Logical Channel UL-DCCH, Received RRCConnectionReconfiguration for UE rnti %x, reconfiguring DRB %d/LCID %d\n",
                       ctxt.module_id,
                       ctxt.rnti,
@@ -542,27 +542,27 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                                 );
       switch (rlc_status) {
         case RLC_OP_STATUS_OK:
-          LOG_D(PDCP, "Data sending request over RLC succeeded!\n");
+          LOG_I(DU_F1AP, "Data sending request over RLC succeeded!\n");
           ret=TRUE;
           break;
 
         case RLC_OP_STATUS_BAD_PARAMETER:
-          LOG_W(PDCP, "Data sending request over RLC failed with 'Bad Parameter' reason!\n");
+          LOG_W(DU_F1AP, "Data sending request over RLC failed with 'Bad Parameter' reason!\n");
           ret= FALSE;
           break;
 
         case RLC_OP_STATUS_INTERNAL_ERROR:
-          LOG_W(PDCP, "Data sending request over RLC failed with 'Internal Error' reason!\n");
+          LOG_W(DU_F1AP, "Data sending request over RLC failed with 'Internal Error' reason!\n");
           ret= FALSE;
           break;
 
         case RLC_OP_STATUS_OUT_OF_RESSOURCES:
-          LOG_W(PDCP, "Data sending request over RLC failed with 'Out of Resources' reason!\n");
+          LOG_W(DU_F1AP, "Data sending request over RLC failed with 'Out of Resources' reason!\n");
           ret= FALSE;
           break;
 
         default:
-          LOG_W(PDCP, "RLC returned an unknown status code after PDCP placed the order to send some data (Status Code:%d)\n", rlc_status);
+          LOG_W(DU_F1AP, "RLC returned an unknown status code after PDCP placed the order to send some data (Status Code:%d)\n", rlc_status);
           ret= FALSE;
           break;
       } // switch case
@@ -591,7 +591,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(const protocol_ctxt_t* const ctxt_pP,
   uint32_t  len;
 
 
- LOG_I(RRC,"[DU %d] Received UL_RRC_MESSAGE_TRANSFER : size %d UE RNTI %x in SRB %d\n", 
+ LOG_I(DU_F1AP,"[DU %d] Received UL_RRC_MESSAGE_TRANSFER : size %d UE RNTI %x in SRB %d\n", 
         ctxt_pP->module_id, sdu_sizeP, rnti, rb_idP);
 
  struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(
@@ -666,7 +666,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(const protocol_ctxt_t* const ctxt_pP,
     if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) 
       LOG_E(DU_F1AP," Failed to decode UL-DCCH (%zu bytes)\n",dec_rval.consumed);
     else
-      LOG_D(RRC, "Received message: present %d and c1 present %d\n", 
+      LOG_I(DU_F1AP, "Received message: present %d and c1 present %d\n", 
         ul_dcch_msg->message.present, ul_dcch_msg->message.choice.c1.present);
 
     if (ul_dcch_msg->message.present == UL_DCCH_MessageType_PR_c1) {
@@ -688,7 +688,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(const protocol_ctxt_t* const ctxt_pP,
         break;
 
       case UL_DCCH_MessageType__c1_PR_rrcConnectionSetupComplete:
-        LOG_I(RRC,"[MSG] RRC UL rrcConnectionSetupComplete \n");
+        LOG_I(DU_F1AP,"[MSG] RRC UL rrcConnectionSetupComplete \n");
        if(!ue_context_p){
           LOG_E(DU_F1AP, "Did not find the UE context associated with UE RNTOI %x, ue_context_p is NULL\n", ctxt_pP->rnti);
         }else {
@@ -698,21 +698,21 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(const protocol_ctxt_t* const ctxt_pP,
 
         break;
       case UL_DCCH_MessageType__c1_PR_securityModeComplete:
-         LOG_I(RRC,"[MSG] RRC securityModeComplete \n");
+         LOG_I(DU_F1AP,"[MSG] RRC securityModeComplete \n");
         break;
 
       case UL_DCCH_MessageType__c1_PR_securityModeFailure:
         break;
 
       case UL_DCCH_MessageType__c1_PR_ueCapabilityInformation:
-           LOG_I(RRC,"[MSG] RRC ueCapabilityInformation \n");
+           LOG_I(DU_F1AP,"[MSG] RRC ueCapabilityInformation \n");
         break;
 
       case UL_DCCH_MessageType__c1_PR_ulHandoverPreparationTransfer:
         break;
 
       case UL_DCCH_MessageType__c1_PR_ulInformationTransfer:
-        LOG_I(RRC,"[MSG] RRC UL Information Transfer \n");
+        LOG_I(DU_F1AP,"[MSG] RRC UL Information Transfer \n");
         break;
 
       case UL_DCCH_MessageType__c1_PR_counterCheckResponse:

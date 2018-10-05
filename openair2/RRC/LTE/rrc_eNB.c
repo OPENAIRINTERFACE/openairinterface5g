@@ -5570,6 +5570,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
 #endif
 			    );
   }
+
   // set the SRB active in Ue context
   if (SRB_configList != NULL) {
     for (i = 0; (i < SRB_configList->list.count) && (i < 3); i++) {
@@ -5626,7 +5627,6 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
              RADIO_ACCESS_BEARER,Rlc_info_um);
            */
           ue_context_pP->ue_context.DRB_active[drb_id] = 1;
-
           LOG_D(RRC,
                 "[eNB %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n",
                 ctxt_pP->module_id, ctxt_pP->frame, (int)DRB_configList->list.array[i]->drb_Identity);
@@ -5710,7 +5710,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
 	  }
 	} else {        // remove LCHAN from MAC/PHY
 
-          if (ue_context_pP->ue_context.DRB_active[drb_id] == 1) {
+        if (ue_context_pP->ue_context.DRB_active[drb_id] == 1) {
             // DRB has just been removed so remove RLC + PDCP for DRB
             /*      rrc_pdcp_config_req (ctxt_pP->module_id, frameP, 1, CONFIG_ACTION_REMOVE,
                (ue_mod_idP * NB_RB_MAX) + DRB2LCHAN[i],UNDEF_SECURITY_MODE);
@@ -6297,7 +6297,9 @@ rrc_eNB_decode_ccch(
           rrc_eNB_process_RRCConnectionReconfigurationComplete(&ctxt_old_p,
                                                                 ue_context_p,
                                                                 ue_context_p->ue_context.reestablishment_xid);
+          LOG_E(RRC, "RRRCConnectionReconfigurationComplete: ue_context_p->ue_context.nb_of_e_rabs = %d \n", ue_context_p->ue_context.nb_of_e_rabs);
           for (uint8_t e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
+            LOG_E(RRC, "RRRCConnectionReconfigurationComplete: ue_context_p->ue_context.e_rab[e_rab].status = %d \n", ue_context_p->ue_context.e_rab[e_rab].status);
             if (ue_context_p->ue_context.e_rab[e_rab].status == E_RAB_STATUS_DONE) {
               ue_context_p->ue_context.e_rab[e_rab].status = E_RAB_STATUS_ESTABLISHED;
             } else {
@@ -6427,6 +6429,7 @@ rrc_eNB_decode_ccch(
                        ctxt_pP->rnti);
 
       if (ue_context_p != NULL) {
+      	LOG_D(RRC,"ue_context_p already exist %p %d %x \n", ue_context_p, ctxt_pP->module_id, ctxt_pP->rnti);
         // erase content
         rrc_eNB_free_mem_UE_context(ctxt_pP, ue_context_p);
 
@@ -6461,7 +6464,14 @@ rrc_eNB_decode_ccch(
               ue_context_p->ue_context.ul_failure_timer = 20000;
             }
             ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, random_value);
-	    ue_context_p->ue_context.Srb0.Active=1;
+	    	ue_context_p->ue_context.Srb0.Srb_id=0;
+	    	ue_context_p->ue_context.Srb0.Active=1;
+	    	memcpy(ue_context_p->ue_context.Srb0.Rx_buffer.Payload,
+	    		   buffer,
+	    		   buffer_length);
+
+	    	ue_context_p->ue_context.Srb0.Rx_buffer.payload_size=buffer_length;
+
           } else if (InitialUE_Identity_PR_s_TMSI == rrcConnectionRequest->ue_Identity.present) {
             /* Save s-TMSI */
             S_TMSI_t   s_TMSI = rrcConnectionRequest->ue_Identity.choice.s_TMSI;
@@ -6541,7 +6551,6 @@ rrc_eNB_decode_ccch(
               ue_context_p);
 
         if (ue_context_p != NULL) {
-
 
 #if defined(ENABLE_ITTI)
           ue_context_p->ue_context.establishment_cause = rrcConnectionRequest->establishmentCause;
@@ -6807,9 +6816,9 @@ rrc_eNB_decode_dcch(
 	/*FK: left the condition as is for the case MME is used (S1 mode) but setting  dedicated_DRB = 1 otherwise (noS1 mode) so that no second RRCReconfiguration message activationg more DRB is sent as this causes problems with the nasmesh driver.*/
         if (EPC_MODE_ENABLED) {
   	  if (ue_context_p->ue_context.Status == RRC_RECONFIGURED){
-  	    //dedicated_DRB = 1;
+  	    dedicated_DRB = 1;
   	    LOG_I(RRC,
-  		  PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (dedicated DRB, xid %ld)\n",
+  		  PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (reconfigure default DRB /dedicated DRB, xid %ld)\n",
   		  PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
   	    //clear
   	    // FIX ME: MAC context does not exist in CU
@@ -6847,10 +6856,9 @@ rrc_eNB_decode_dcch(
 	  		}
   	  		ue_context_p->ue_context.reestablishment_xid = -1;
         } else {
-  	  //dedicated_DRB = 1;
   	  ue_context_p->ue_context.Status = RRC_RECONFIGURED;
   	  LOG_I(RRC,
-  	      PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (dedicated DRB, xid %ld)\n",
+  	      PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_RECONFIGURED (default DRB, xid %ld)\n",
   	      PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
   	}
   }
@@ -6911,11 +6919,14 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
                              ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
           }
   }else if(dedicated_DRB == 0){
-          if(ue_context_p->ue_context.reestablishment_cause == ReestablishmentCause_spare1){
-          	LOG_I(RRC, "Sending rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP\n");
-	    rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP(ctxt_pP,
+  		LOG_D(RRC, "Sending rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP, establishment cause %d\n", 
+  		ue_context_p->ue_context.reestablishment_cause );
+  		// NN: not sure what we need to send S1AP_INITIAL_CONTEXT_SETUP_RESP only with this cause?
+        //if(ue_context_p->ue_context.reestablishment_cause == ReestablishmentCause_spare1){
+	    	rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP(ctxt_pP,
 						       ue_context_p);
-          } else {
+        // } else 
+           {
             ue_context_p->ue_context.reestablishment_cause = ReestablishmentCause_spare1;
             for (uint8_t e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
               if (ue_context_p->ue_context.e_rab[e_rab].status == E_RAB_STATUS_DONE) {
@@ -7593,6 +7604,8 @@ rrc_enb_task(
             PROTOCOL_RRC_CTXT_UE_ARGS(&ctxt),
             msg_name_p);
 
+      // this part will be done in rrc_eNB_decode_ccch
+      /*
       struct rrc_eNB_ue_context_s *ue_context_p = rrc_eNB_get_ue_context(RC.rrc[rrc_inst],
 									 RRC_MAC_CCCH_DATA_IND(msg_p).rnti);
 
@@ -7604,16 +7617,13 @@ rrc_enb_task(
 							);
       }
 
-      CC_id = RRC_MAC_CCCH_DATA_IND(msg_p).CC_id;
       eNB_RRC_UE_t *ue_p = &ue_context_p->ue_context; 
       srb_info_p = &ue_p->Srb0;
 
       LOG_I(RRC,"Decoding CCCH : inst %d, CC_id %d, ue_context %p (rnti %x), sib_info_p->Rx_buffer.payload_size %d\n",
 	    rrc_inst,CC_id,ue_p, ue_p->rnti,RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
-      if (RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size >= RRC_BUFFER_SIZE_MAX) {
-          LOG_I(RRC, "CCCH message has size %d > %d\n",RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,RRC_BUFFER_SIZE_MAX);
-          break;
-      }
+       
+      CC_id = RRC_MAC_CCCH_DATA_IND(msg_p).CC_id;
       memcpy(srb_info_p->Rx_buffer.Payload,
              RRC_MAC_CCCH_DATA_IND(msg_p).sdu,
              RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
@@ -7621,6 +7631,14 @@ rrc_enb_task(
       srb_info_p->Active = 1;
 
       rrc_eNB_decode_ccch(&ctxt, (uint8_t*)srb_info_p->Rx_buffer.Payload,srb_info_p->Rx_buffer.payload_size, CC_id);
+      */
+      if (RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size >= RRC_BUFFER_SIZE_MAX) {
+          LOG_W(RRC, "CCCH message has size %d > %d\n",RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,RRC_BUFFER_SIZE_MAX);
+      }
+      rrc_eNB_decode_ccch(&ctxt, 
+      					  (uint8_t*)RRC_MAC_CCCH_DATA_IND(msg_p).sdu,
+             			  RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size,
+             			  RRC_MAC_CCCH_DATA_IND(msg_p).CC_id);
       break;
 	    
       /* Messages from PDCP */
