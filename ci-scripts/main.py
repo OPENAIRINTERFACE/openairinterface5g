@@ -166,9 +166,37 @@ class SSHConnection():
 		else:
 			logging.debug('\u001B[1;37;41m Unexpected Others \u001B[0m')
 
-	def copy(self, ipaddress, username, password, source, destination):
+	def copyin(self, ipaddress, username, password, source, destination):
 		logging.debug('scp '+ username + '@' + ipaddress + ':' + source + ' ' + destination)
 		scp_spawn = pexpect.spawn('scp '+ username + '@' + ipaddress + ':' + source + ' ' + destination, timeout = 5)
+		scp_response = scp_spawn.expect(['Are you sure you want to continue connecting (yes/no)?', 'password:', pexpect.EOF, pexpect.TIMEOUT])
+		if scp_response == 0:
+			scp_spawn.sendline('yes')
+			scp_spawn.expect('password:')
+			scp_spawn.sendline(password)
+			scp_response = scp_spawn.expect(['\$', 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
+			if scp_response == 0:
+				pass
+			else:
+				logging.debug('1 - scp_response = ' + str(scp_response))
+				sys.exit('SCP failed')
+		elif scp_response == 1:
+			scp_spawn.sendline(password)
+			scp_response = scp_spawn.expect(['\$', 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
+			if scp_response == 0 or scp_response == 3:
+				pass
+			else:
+				logging.debug('2 - scp_response = ' + str(scp_response))
+				sys.exit('SCP failed')
+		elif scp_response == 2:
+			pass
+		else:
+			logging.debug('3 - scp_response = ' + str(scp_response))
+			sys.exit('SCP failed')
+
+	def copyout(self, ipaddress, username, password, source, destination):
+		logging.debug('scp ' + source + ' ' + username + '@' + ipaddress + ':' + destination)
+		scp_spawn = pexpect.spawn('scp ' + source + ' ' + username + '@' + ipaddress + ':' + destination, timeout = 5)
 		scp_response = scp_spawn.expect(['Are you sure you want to continue connecting (yes/no)?', 'password:', pexpect.EOF, pexpect.TIMEOUT])
 		if scp_response == 0:
 			scp_spawn.sendline('yes')
@@ -739,7 +767,37 @@ class SSHConnection():
 			sys.exit(1)
 		return result
 
+	def Iperf_analyzeV2TCPOutput(self, lock, UE_IPAddress, device_id, statusQueue, iperf_real_options):
+		self.command('awk -f /tmp/tcp_iperf_stats.awk /tmp/CI-eNB/scripts/iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', 5)
+		result = re.search('Avg Bitrate : (?P<average>[0-9\.]+ Mbits\/sec) Max Bitrate : (?P<maximum>[0-9\.]+ Mbits\/sec) Min Bitrate : (?P<minimum>[0-9\.]+ Mbits\/sec)', str(self.ssh.before))
+		if result is not None:
+			avgbitrate = result.group('average')
+			maxbitrate = result.group('maximum')
+			minbitrate = result.group('minimum')
+			lock.acquire()
+			logging.debug('\u001B[1;37;44m TCP iperf result (' + UE_IPAddress + ') \u001B[0m')
+			msg = 'TCP Stats   :\n'
+			if avgbitrate is not None:
+				logging.debug('\u001B[1;34m    Avg Bitrate : ' + avgbitrate + '\u001B[0m')
+				msg += 'Avg Bitrate : ' + avgbitrate + '\n'
+			if maxbitrate is not None:
+				logging.debug('\u001B[1;34m    Max Bitrate : ' + maxbitrate + '\u001B[0m')
+				msg += 'Max Bitrate : ' + maxbitrate + '\n'
+			if minbitrate is not None:
+				logging.debug('\u001B[1;34m    Min Bitrate : ' + minbitrate + '\u001B[0m')
+				msg += 'Min Bitrate : ' + minbitrate + '\n'
+			statusQueue.put(0)
+			statusQueue.put(device_id)
+			statusQueue.put(UE_IPAddress)
+			statusQueue.put(msg)
+			lock.release()
+		return 0
+
 	def Iperf_analyzeV2Output(self, lock, UE_IPAddress, device_id, statusQueue, iperf_real_options):
+		result = re.search('-u', str(iperf_real_options))
+		if result is None:
+			return self.Iperf_analyzeV2TCPOutput(lock, UE_IPAddress, device_id, statusQueue, iperf_real_options)
+
 		result = re.search('Server Report:', str(self.ssh.before))
 		if result is None:
 			result = re.search('read failed: Connection refused', str(self.ssh.before))
@@ -968,6 +1026,10 @@ class SSHConnection():
 		lock.release()
 
 	def Iperf_UL_common(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue):
+		udpIperf = True
+		result = re.search('-u', str(self.iperf_args))
+		if result is None:
+			udpIperf = False
 		ipnumbers = UE_IPAddress.split('.')
 		if (len(ipnumbers) == 4):
 			ipnumbers[3] = '1'
@@ -978,7 +1040,10 @@ class SSHConnection():
 		self.command('cd ' + self.EPCSourceCodePath + '/scripts', '\$', 5)
 		self.command('rm -f iperf_server_' + SSH.testCase_id + '_' + device_id + '.log', '\$', 5)
 		port = 5001 + idx
-		self.command('echo $USER; nohup iperf -u -s -i 1 -p ' + str(port) + ' > iperf_server_' + SSH.testCase_id + '_' + device_id + '.log &', self.EPCUserName, 5)
+		if udpIperf:
+			self.command('echo $USER; nohup iperf -u -s -i 1 -p ' + str(port) + ' > iperf_server_' + SSH.testCase_id + '_' + device_id + '.log &', self.EPCUserName, 5)
+		else:
+			self.command('echo $USER; nohup iperf -s -i 1 -p ' + str(port) + ' > iperf_server_' + SSH.testCase_id + '_' + device_id + '.log &', self.EPCUserName, 5)
 		time.sleep(0.5)
 		self.close()
 
@@ -988,7 +1053,10 @@ class SSHConnection():
 		iperf_time = self.Iperf_ComputeTime()
 		time.sleep(0.5)
 
-		modified_options = self.Iperf_ComputeModifiedBW(idx, ue_num)
+		if udpIperf:
+			modified_options = self.Iperf_ComputeModifiedBW(idx, ue_num)
+		else:
+			modified_options = str(self.iperf_args)
 		modified_options = modified_options.replace('-R','')
 		time.sleep(0.5)
 
@@ -1004,7 +1072,7 @@ class SSHConnection():
 			time.sleep(1)
 			if (os.path.isfile('iperf_server_' + SSH.testCase_id + '_' + device_id + '.log')):
 				os.remove('iperf_server_' + SSH.testCase_id + '_' + device_id + '.log')
-			self.copy(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, self.EPCSourceCodePath + '/scripts/iperf_server_' + SSH.testCase_id + '_' + device_id + '.log', '.')
+			self.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, self.EPCSourceCodePath + '/scripts/iperf_server_' + SSH.testCase_id + '_' + device_id + '.log', '.')
 			self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, modified_options)
 
 	def Iperf_common(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue):
@@ -1013,6 +1081,7 @@ class SSHConnection():
 			if SSH.iperf_profile == 'single-ue' and idx != 0:
 				return
 			useIperf3 = False
+			udpIperf = True
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 			# if by chance ADB server and EPC are on the same remote host, at least log collection will take care of it
 			self.command('if [ ! -d ' + self.EPCSourceCodePath + '/scripts ]; then mkdir -p ' + self.EPCSourceCodePath + '/scripts ; fi', '\$', 5)
@@ -1047,7 +1116,12 @@ class SSHConnection():
 				self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/iperf3 -s &', '\$', 5)
 			else:
 				self.command('rm -f iperf_server_' + SSH.testCase_id + '_' + device_id + '.log', '\$', 5)
-				self.command('echo $USER; nohup adb -s ' + device_id + ' shell "/data/local/tmp/iperf -u -s -i 1" > iperf_server_' + SSH.testCase_id + '_' + device_id + '.log &', self.ADBUserName, 5)
+				result = re.search('-u', str(self.iperf_args))
+				if result is None:
+					self.command('echo $USER; nohup adb -s ' + device_id + ' shell "/data/local/tmp/iperf -s -i 1" > iperf_server_' + SSH.testCase_id + '_' + device_id + '.log &', self.ADBUserName, 5)
+					udpIperf = False
+				else:
+					self.command('echo $USER; nohup adb -s ' + device_id + ' shell "/data/local/tmp/iperf -u -s -i 1" > iperf_server_' + SSH.testCase_id + '_' + device_id + '.log &', self.ADBUserName, 5)
 			time.sleep(0.5)
 			self.close()
 
@@ -1056,7 +1130,10 @@ class SSHConnection():
 			iperf_time = self.Iperf_ComputeTime()
 			time.sleep(0.5)
 
-			modified_options = self.Iperf_ComputeModifiedBW(idx, ue_num)
+			if udpIperf:
+				modified_options = self.Iperf_ComputeModifiedBW(idx, ue_num)
+			else:
+				modified_options = str(self.iperf_args)
 			time.sleep(0.5)
 
 			self.command('rm -f iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', 5)
@@ -1082,7 +1159,7 @@ class SSHConnection():
 				time.sleep(1)
 				if (os.path.isfile('iperf_server_' + SSH.testCase_id + '_' + device_id + '.log')):
 					os.remove('iperf_server_' + SSH.testCase_id + '_' + device_id + '.log')
-				self.copy(self.ADBIPAddress, self.ADBUserName, self.ADBPassword, self.EPCSourceCodePath + '/scripts/iperf_server_' + SSH.testCase_id + '_' + device_id + '.log', '.')
+				self.copyin(self.ADBIPAddress, self.ADBUserName, self.ADBPassword, self.EPCSourceCodePath + '/scripts/iperf_server_' + SSH.testCase_id + '_' + device_id + '.log', '.')
 				self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, modified_options)
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
@@ -1784,6 +1861,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE):
 		Usage()
 		sys.exit('Insufficient Parameter')
 
+	SSH.copyout(SSH.EPCIPAddress, SSH.EPCUserName, SSH.EPCPassword, sys.path[0] + "/tcp_iperf_stats.awk", "/tmp")
 	SSH.CreateHtmlHeader()
 
 	#read test_case_list.xml file
