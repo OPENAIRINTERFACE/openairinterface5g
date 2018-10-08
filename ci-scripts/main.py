@@ -95,6 +95,7 @@ class SSHConnection():
 		self.Build_eNB_args = ''
 		self.Initialize_eNB_args = ''
 		self.eNBLogFile = ''
+		self.eNB_instance = ''
 		self.ping_args = ''
 		self.ping_packetloss_threshold = ''
 		self.iperf_args = ''
@@ -357,6 +358,10 @@ class SSHConnection():
 		else:
 			sys.exit('Insufficient Parameter')
 		ci_full_config_file = config_path + '/ci-' + config_file
+		rruCheck = False
+		result = re.search('rru', str(config_file))
+		if result is not None:
+			rruCheck = True
 		# Make a copy and adapt to EPC / eNB IP addresses
 		self.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
 		self.command('sed -i -e \'s/mme_ip_address.*$/mme_ip_address      = ( { ipv4       = "' + self.EPCIPAddress + '";/\' ' + ci_full_config_file, '\$', 2);
@@ -366,11 +371,12 @@ class SSHConnection():
 		# Launch eNB with the modified config file
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
-		self.command('echo "ulimit -c unlimited && ./lte_build_oai/build/lte-softmodem -O ' + self.eNBSourceCodePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run.sh ', '\$', 5)
-		self.command('chmod 775 ./my-lte-softmodem-run.sh ', '\$', 5)
+		self.command('echo "ulimit -c unlimited && ./lte_build_oai/build/lte-softmodem -O ' + self.eNBSourceCodePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(SSH.eNB_instance) + '.sh ', '\$', 5)
+		self.command('chmod 775 ./my-lte-softmodem-run' + str(SSH.eNB_instance) + '.sh ', '\$', 5)
 		self.command('echo ' + self.eNBPassword + ' | sudo -S rm -Rf enb_' + SSH.testCase_id + '.log', '\$', 5)
-		self.command('echo ' + self.eNBPassword + ' | sudo -S -E daemon --inherit --unsafe --name=enb_daemon --chdir=' + self.eNBSourceCodePath + '/cmake_targets -o ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + SSH.testCase_id + '.log ./my-lte-softmodem-run.sh', '\$', 5)
-		self.eNBLogFile = 'enb_' + SSH.testCase_id + '.log'
+		self.command('echo ' + self.eNBPassword + ' | sudo -S -E daemon --inherit --unsafe --name=enb' + str(SSH.eNB_instance) + '_daemon --chdir=' + self.eNBSourceCodePath + '/cmake_targets -o ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + SSH.testCase_id + '.log ./my-lte-softmodem-run' + str(SSH.eNB_instance) + '.sh', '\$', 5)
+		if not rruCheck:
+			self.eNBLogFile = 'enb_' + SSH.testCase_id + '.log'
 		time.sleep(6)
 		doLoop = True
 		loopCounter = 10
@@ -384,8 +390,11 @@ class SSHConnection():
 				self.close()
 				sys.exit(1)
 			else:
-				self.command('stdbuf -o0 cat enb_' + SSH.testCase_id + '.log | grep --color=never -i sync', '\$', 4)
-				result = re.search('got sync', str(self.ssh.before))
+				self.command('stdbuf -o0 cat enb_' + SSH.testCase_id + '.log | egrep --color=never -i "wait|sync"', '\$', 4)
+				if rruCheck:
+					result = re.search('wait RUs', str(self.ssh.before))
+				else:
+					result = re.search('got sync', str(self.ssh.before))
 				if result is None:
 					time.sleep(6)
 				else:
@@ -1474,8 +1483,8 @@ class SSHConnection():
 	def TerminateeNB(self):
 		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 		self.command('cd ' + self.eNBSourceCodePath + '/cmake_targets', '\$', 5)
-		self.command('echo ' + self.eNBPassword + ' | sudo -S daemon --name=enb_daemon --stop', '\$', 5)
-		self.command('rm -f my-lte-softmodem-run.sh', '\$', 5)
+		self.command('echo ' + self.eNBPassword + ' | sudo -S daemon --name=enb' + str(SSH.eNB_instance) + '_daemon --stop', '\$', 5)
+		self.command('rm -f my-lte-softmodem-run' + str(SSH.eNB_instance) + '.sh', '\$', 5)
 		self.command('echo ' + self.eNBPassword + ' | sudo -S killall --signal SIGINT lte-softmodem || true', '\$', 5)
 		time.sleep(5)
 		self.command('stdbuf -o0  ps -aux | grep -v grep | grep lte-softmodem', '\$', 5)
@@ -1493,9 +1502,9 @@ class SSHConnection():
 				sys.exit(1)
 			else:
 				self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+			self.eNBLogFile = ''
 		else:
 			self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
-		self.eNBLogFile = ''
 
 	def TerminateHSS(self):
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
@@ -1865,6 +1874,14 @@ def GetParametersFromXML(action):
 
 	if action == 'Initialize_eNB':
 		SSH.Initialize_eNB_args = test.findtext('Initialize_eNB_args')
+		SSH.eNB_instance = test.findtext('eNB_instance')
+		if (SSH.eNB_instance is None):
+			SSH.eNB_instance = '0'
+
+	if action == 'Terminate_eNB':
+		SSH.eNB_instance = test.findtext('eNB_instance')
+		if (SSH.eNB_instance is None):
+			SSH.eNB_instance = '0'
 
 	if action == 'Ping':
 		SSH.ping_args = test.findtext('ping_args')

@@ -1070,6 +1070,8 @@ int main( int argc, char **argv )
     }
 
     printf("wait RUs\n");
+    fflush(stdout);
+    fflush(stderr);
     wait_RUs();
     printf("ALL RUs READY!\n");
     printf("RC.nb_RU:%d\n", RC.nb_RU);
