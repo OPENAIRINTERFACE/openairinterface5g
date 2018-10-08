@@ -127,7 +127,7 @@ case $key in
     ARCHIVES_LOC=enb_usrp
     LOG_PATTERN=.Rel14.txt
     NB_PATTERN_FILES=4
-    BUILD_OPTIONS="--eNB -w USRP"
+    BUILD_OPTIONS="--eNB -w USRP --mu"
     shift
     ;;
     -v2)
@@ -181,7 +181,7 @@ case $key in
         ARCHIVES_LOC=enb_usrp
         LOG_PATTERN=.Rel14.txt
         NB_PATTERN_FILES=4
-        BUILD_OPTIONS="--eNB -w USRP"
+        BUILD_OPTIONS="--eNB -w USRP --mu"
         ;;
         basic-sim)
         VM_NAME=ci-basic-sim
