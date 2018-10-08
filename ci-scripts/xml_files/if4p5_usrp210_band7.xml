@@ -21,7 +21,11 @@
 
 -->
 <testCaseList>
-	<TestCaseRequestedList>010101 050101 060101 070101 040101 030101 030102 040301 040501 040604 040642 040401 040201 030201 030202 050201 060201 070201</TestCaseRequestedList>
+	<TestCaseRequestedList>010101 050101 060101 070101 040101
+ 030101 030102 040301 040501 040604 040642 040401 040201 030202 030201
+ 030111 030112 040301 040511 040614 040652 040401 040201 030202 030201
+ 030101 030102 040301 040521 040624 040662 040401 040201 030202 030201
+ 050201 060201 070201</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
 	<testCase id="010101">
@@ -44,15 +48,43 @@
 		<eNB_instance>0</eNB_instance>
 	</testCase>
 
+	<testCase id="030111">
+		<class>Initialize_eNB</class>
+		<desc>Initialize RRU (FDD/Band7)</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/rru.fdd.band7.conf --codingw --fepw</Initialize_eNB_args>
+		<eNB_instance>1</eNB_instance>
+	</testCase>
+
+	<testCase id="030112">
+		<class>Initialize_eNB</class>
+		<desc>Initialize RCC (FDD/Band7/10MHz)</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/rcc.band7.tm1.if4p5.lo.50PRB.usrpb210.conf --codingw --fepw</Initialize_eNB_args>
+		<eNB_instance>0</eNB_instance>
+	</testCase>
+
+	<testCase id="030121">
+		<class>Initialize_eNB</class>
+		<desc>Initialize RRU (FDD/Band7)</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/rru.fdd.band7.conf --codingw --fepw</Initialize_eNB_args>
+		<eNB_instance>1</eNB_instance>
+	</testCase>
+
+	<testCase id="030122">
+		<class>Initialize_eNB</class>
+		<desc>Initialize RCC (FDD/Band7/20MHz)</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/rcc.band7.tm1.if4p5.lo.100PRB.usrpb210.conf --codingw --fepw</Initialize_eNB_args>
+		<eNB_instance>0</eNB_instance>
+	</testCase>
+
 	<testCase id="030201">
 		<class>Terminate_eNB</class>
-		<desc>Terminate eNB</desc>
+		<desc>Terminate RCC</desc>
 		<eNB_instance>0</eNB_instance>
 	</testCase>
 
 	<testCase id="030202">
 		<class>Terminate_eNB</class>
-		<desc>Terminate eNB</desc>
+		<desc>Terminate RRU</desc>
 		<eNB_instance>1</eNB_instance>
 	</testCase>
 
@@ -95,6 +127,52 @@
 		<class>Iperf</class>
 		<desc>iperf (5MHz - UL/9Mbps/UDP)(30 sec)(single-ue profile)</desc>
 		<iperf_args>-u -b 9M -t 30 -i 1 -R</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
+        <testCase id="040511">
+                <class>Ping</class>
+                <desc>ping (10MHz - 20 sec)</desc>
+                <ping_args>-c 20</ping_args>
+                <ping_packetloss_threshold>5</ping_packetloss_threshold>
+        </testCase>
+
+        <testCase id="040614">
+		<class>Iperf</class>
+		<desc>iperf (10MHz - DL/32Mbps/UDP)(30 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 32M -t 30 -i 1</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+        </testCase>
+
+	<testCase id="040652">
+		<class>Iperf</class>
+		<desc>iperf (10MHz - UL/20Mbps/UDP)(30 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 20M -t 30 -i 1 -R</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
+        <testCase id="040521">
+                <class>Ping</class>
+                <desc>ping (20MHz - 20 sec)</desc>
+                <ping_args>-c 20</ping_args>
+                <ping_packetloss_threshold>5</ping_packetloss_threshold>
+        </testCase>
+
+        <testCase id="040624">
+		<class>Iperf</class>
+		<desc>iperf (20MHz - DL/70Mbps/UDP)(30 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 70M -t 30 -i 1</iperf_args>
+		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+        </testCase>
+
+	<testCase id="040662">
+		<class>Iperf</class>
+		<desc>iperf (20MHz - UL/20Mbps/UDP)(30 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 20M -t 30 -i 1 -R</iperf_args>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
