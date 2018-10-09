@@ -263,6 +263,10 @@ echo "  </table>" >> ./test_simulator_results.html
 echo "  <br>" >> ./test_simulator_results.html
 echo "   <table border = \"1\">" >> ./test_simulator_results.html
 echo "      <tr>" >> ./test_simulator_results.html
+echo "        <td bgcolor = \"lightcyan\" >Build Start Time (UTC)</td>" >> ./test_simulator_results.html
+echo "        <td>TEMPLATE_BUILD_TIME</td>" >> ./test_simulator_results.html
+echo "      </tr>" >> ./test_simulator_results.html
+echo "      <tr>" >> ./test_simulator_results.html
 echo "        <td bgcolor = \"lightcyan\" >GIT Repository</td>" >> ./test_simulator_results.html
 echo "        <td><a href=\"$GIT_URL\">$GIT_URL</a></td>" >> ./test_simulator_results.html
 echo "      </tr>" >> ./test_simulator_results.html

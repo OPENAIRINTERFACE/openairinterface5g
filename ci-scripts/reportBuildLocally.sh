@@ -438,6 +438,10 @@ echo "  </table>" >> ./build_results.html
 echo "  <br>" >> ./build_results.html
 echo "   <table border = \"1\">" >> ./build_results.html
 echo "      <tr>" >> ./build_results.html
+echo "        <td bgcolor = \"lightcyan\" >Build Start Time (UTC)</td>" >> ./build_results.html
+echo "        <td>TEMPLATE_BUILD_TIME</td>" >> ./build_results.html
+echo "      </tr>" >> ./build_results.html
+echo "      <tr>" >> ./build_results.html
 echo "        <td bgcolor = \"lightcyan\" >GIT Repository</td>" >> ./build_results.html
 echo "        <td>$GIT_URL</td>" >> ./build_results.html
 echo "      </tr>" >> ./build_results.html
