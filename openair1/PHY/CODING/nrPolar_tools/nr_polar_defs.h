@@ -67,7 +67,7 @@ typedef struct decoder_node_t_s {
   int first_leaf_index;
   int all_frozen;
   int16_t *alpha;
-  int8_t *beta;
+  int16_t *beta;
 } decoder_node_t;
 
 typedef struct decoder_tree_t_s {
