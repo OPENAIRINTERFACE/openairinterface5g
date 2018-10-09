@@ -474,6 +474,11 @@ void applyGtoright(t_nrPolar_params *pp,decoder_node_t *node) {
   }
 }
 
+int16_t minus1[16] = {-1,-1,-1,-1,
+		      -1,-1,-1,-1,
+		      -1,-1,-1,-1,
+		      -1,-1,-1,-1};
+
 void computeBeta(t_nrPolar_params *pp,decoder_node_t *node) {
 
   int16_t *betav = node->beta;
@@ -483,7 +488,7 @@ void computeBeta(t_nrPolar_params *pp,decoder_node_t *node) {
   printf("Computing beta @ level %d first_leaf_index %d (all_frozen %d)\n",node->level,node->first_leaf_index,node->left->all_frozen);
 #endif
   if (node->left->all_frozen==0) { // if left node is not aggregation of frozen bits
-    /*#if defined(__AVX2__) 
+#if defined(__AVX2__) 
     int avx2mod = (node->Nv/2)&15;
     if (avx2mod == 0) {
       int avx2len = node->Nv/2/16;
@@ -491,18 +496,24 @@ void computeBeta(t_nrPolar_params *pp,decoder_node_t *node) {
       for (int i=0;i<avx2len;i++) {
 	((__m256i*)betav)[i] = _mm256_sign_epi16(((__m256i*)betar)[i],
 						  ((__m256i*)betal)[i]);
+	((__m256i*)betav)[i] = _mm256_sign_epi16(((__m256i*)betav)[i],
+						  ((__m256i*)minus1)[0]);
       }
     }
     else if (avx2mod == 8) {
       ((__m128i*)betav)[0] = _mm_sign_epi16(((__m128i*)betar)[0],
 					    ((__m128i*)betal)[0]);
+      ((__m128i*)betav)[0] = _mm_sign_epi16(((__m128i*)betav)[0],
+					    ((__m128i*)minus1)[0]);
     }
     else if (avx2mod == 4) {
       ((__m64*)betav)[0] = _mm_sign_pi16(((__m64*)betar)[0],
 					 ((__m64*)betal)[0]);
+      ((__m64*)betav)[0] = _mm_sign_pi16(((__m64*)betav)[0],
+					 ((__m64*)minus1)[0]);
     }
     else
-    #endif*/
+#endif
       {
 	for (int i=0;i<node->Nv/2;i++) {
 	  betav[i] = (betal[i] != betar[i]) ? 1 : -1;
