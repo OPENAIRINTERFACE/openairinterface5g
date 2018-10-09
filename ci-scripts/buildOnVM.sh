@@ -90,6 +90,7 @@ JOB_NAME=XX
 BUILD_ID=XX
 VM_NAME=ci-enb-usrp
 VM_MEMORY=2048
+VM_CPU=4
 ARCHIVES_LOC=enb_usrp
 LOG_PATTERN=.Rel15.txt
 NB_PATTERN_FILES=4
@@ -139,6 +140,8 @@ case $key in
     LOG_PATTERN=basic_simulator
     NB_PATTERN_FILES=2
     BUILD_OPTIONS="--basic-simulator"
+    VM_MEMORY=8192
+    VM_CPU=4
     shift
     ;;
     -v3)
@@ -206,6 +209,8 @@ case $key in
         LOG_PATTERN=basic_simulator
         NB_PATTERN_FILES=2
         BUILD_OPTIONS="--basic-simulator"
+        VM_MEMORY=8192
+        VM_CPU=4
         ;;
         phy-sim)
         VM_NAME=ci-phy-sim
@@ -304,7 +309,7 @@ then
     echo "############################################################"
     echo "Creating VM ($VM_NAME) on Ubuntu Cloud Image base"
     echo "############################################################"
-    uvt-kvm create $VM_NAME release=xenial --memory $VM_MEMORY --cpu 4 --unsafe-caching --template ci-scripts/template-host.xml
+    uvt-kvm create $VM_NAME release=xenial --memory $VM_MEMORY --cpu $VM_CPU --unsafe-caching --template ci-scripts/template-host.xml
 fi
 
 echo "Waiting for VM to be started"
@@ -323,6 +328,7 @@ echo "############################################################"
 echo "Running install and build script on VM ($VM_NAME)"
 echo "############################################################"
 echo "sudo cp 01proxy /etc/apt/apt.conf.d/" > $VM_CMDS
+echo "touch /home/ubuntu/.hushlogin" >> $VM_CMDS
 if [[ "$VM_NAME" == *"-cppcheck"* ]]
 then
     echo "echo \"sudo apt-get --yes --quiet install zip cppcheck \"" >> $VM_CMDS

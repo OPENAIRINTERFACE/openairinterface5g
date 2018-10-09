@@ -101,7 +101,7 @@ int test_synchro_pss_sss_nr(PHY_VARS_NR_UE *PHY_vars_UE, int position_symbol, in
   int rate_change = SYNCHRO_RATE_CHANGE_FACTOR;
   int decoded_pbch = -1;
 
-  set_sequence_pss(PHY_vars_UE, position_symbol, pss_sequence_number, INVALID_PSS_SEQUENCE);
+  set_sequence_pss(PHY_vars_UE, position_symbol, pss_sequence_number);
 
   synchro_position = pss_synchro_nr(PHY_vars_UE, rate_change);
 
@@ -311,7 +311,7 @@ int test_synchro_pss_sss(PHY_VARS_NR_UE *PHY_vars_UE, int position_symbol, int s
     exit(0);
   }
 
-  set_sequence_pss(PHY_vars_UE, position_symbol, sequence_number, sequence_number);
+  set_sequence_pss(PHY_vars_UE, position_symbol, sequence_number);
 
   synchro_position = pss_synchro_nr(PHY_vars_UE, rate_change);
 

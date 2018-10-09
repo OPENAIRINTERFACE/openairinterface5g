@@ -443,16 +443,16 @@ static void *UE_thread_synch(void *arg) {
                     for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
                         openair0_cfg[UE->rf_map.card].rx_gain[UE->rf_map.chain+i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
 			if (UE->UE_scan_carrier == 1) {
-                        if (freq_offset >= 0)
+			  if (freq_offset >= 0)
                             openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] += abs(UE->common_vars.freq_offset);
-                        else
+			  else
                             openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] -= abs(UE->common_vars.freq_offset);
-                        openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] =
+			  openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] =
                             openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i]+uplink_frequency_offset[CC_id][i];
-                        downlink_frequency[CC_id][i] = openair0_cfg[CC_id].rx_freq[i];
-                        freq_offset=0;
-                    }
-	  }
+			  downlink_frequency[CC_id][i] = openair0_cfg[CC_id].rx_freq[i];
+			  freq_offset=0;
+			}
+		    }
 
                     // reconfigure for potentially different bandwidth
                     switch(UE->frame_parms.N_RB_DL) {
@@ -755,6 +755,9 @@ static void *UE_thread_rxn_txnp4(void *arg) {
           exit_fun("noting to add");
         }
         proc->instance_cnt_rxtx--;
+#if BASIC_SIMULATOR
+    if (pthread_cond_signal(&proc->cond_rxtx) != 0) abort();
+#endif
         if (pthread_mutex_unlock(&proc->mutex_rxtx) != 0) {
           LOG_E( PHY, "[SCHED][UE] error unlocking mutex for UE RXTX\n" );
           exit_fun("noting to add");
@@ -822,6 +825,12 @@ void *UE_thread(void *arg) {
         AssertFatal ( 0== pthread_mutex_unlock(&UE->proc.mutex_synch), "");
 
         if (is_synchronized == 0) {
+#if BASIC_SIMULATOR
+      while (!((instance_cnt_synch = UE->proc.instance_cnt_synch) < 0)) {
+        printf("ue sync not ready\n");
+        usleep(500*1000);
+      }
+#endif
             if (instance_cnt_synch < 0) {  // we can invoke the synch
                 // grab 10 ms of signal and wakeup synch thread
                 for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
@@ -834,6 +843,7 @@ void *UE_thread(void *arg) {
                                                             rxp,
                                                             UE->frame_parms.samples_per_subframe*10,
                                                             UE->frame_parms.nb_antennas_rx), "");
+
 		AssertFatal ( 0== pthread_mutex_lock(&UE->proc.mutex_synch), "");
                 instance_cnt_synch = ++UE->proc.instance_cnt_synch;
                 if (instance_cnt_synch == 0) {
@@ -869,28 +879,13 @@ void *UE_thread(void *arg) {
                 start_rx_stream=1;
                 if (UE->mode != loop_through_memory) {
                     if (UE->no_timing_correction==0) {
-						printf("before resync\n");
-						//nr_slot_fep(UE,0, 0, UE->rx_offset, 1, 1, NR_PDCCH_EST);
-						//nr_slot_fep(UE,1, 0, UE->rx_offset, 1, 1, NR_PDCCH_EST);
-						
-						//write_output("txdata_pre.m", "txdata_pre", UE->common_vars.rxdata[0], UE->frame_parms.samples_per_subframe*10, 1, 1);
-						
-                        /*LOG_I(PHY,"Resynchronizing RX by %d samples (mode = %d)\n",UE->rx_offset,UE->mode);
+                        LOG_I(PHY,"Resynchronizing RX by %d samples (mode = %d)\n",UE->rx_offset,UE->mode);
                         AssertFatal(UE->rx_offset ==
                                     UE->rfdevice.trx_read_func(&UE->rfdevice,
                                                                &timestamp,
                                                                (void**)UE->common_vars.rxdata,
                                                                UE->rx_offset,
                                                                UE->frame_parms.nb_antennas_rx),"");
-                                                               
-                         AssertFatal(UE->frame_parms.samples_per_subframe*10 ==
-                                    UE->rfdevice.trx_read_func(&UE->rfdevice,
-                                                               &timestamp,
-                                                               (void**)UE->common_vars.rxdata,
-                                                               UE->frame_parms.samples_per_subframe*10,
-                                                               UE->frame_parms.nb_antennas_rx),"");*/
-                                                               
-                      //write_output("txdataF_ue.m", "txdataF_ue", UE->common_vars.rxdata[0], UE->frame_parms.samples_per_subframe*10, 1, 1);
                     }
                     UE->rx_offset=0;
                     UE->time_sync_cell=0;
@@ -923,6 +918,17 @@ void *UE_thread(void *arg) {
                 // update thread index for received subframe
                 UE->current_thread_id[tti_nr] = thread_idx;
 
+#if BASIC_SIMULATOR
+                {
+                  int t;
+                  for (t = 0; t < 2; t++) {
+                        UE_rxtx_proc_t *proc = &UE->proc.proc_rxtx[t];
+                        pthread_mutex_lock(&proc->mutex_rxtx);
+                        while (proc->instance_cnt_rxtx >= 0) pthread_cond_wait( &proc->cond_rxtx, &proc->mutex_rxtx );
+                        pthread_mutex_unlock(&proc->mutex_rxtx);
+                  }
+                }
+#endif
                 LOG_D(PHY,"Process TTI %d thread Idx %d \n", tti_nr, UE->current_thread_id[tti_nr]);
 
                 thread_idx++;
@@ -962,7 +968,7 @@ void *UE_thread(void *arg) {
                                        UE->rx_offset_diff;
                     }
 
-                    /*AssertFatal(readBlockSize ==
+                    AssertFatal(readBlockSize ==
                                 UE->rfdevice.trx_read_func(&UE->rfdevice,
                                                            &timestamp,
                                                            rxp,
@@ -977,17 +983,18 @@ void *UE_thread(void *arg) {
                                          txp,
                                          writeBlockSize,
                                          UE->frame_parms.nb_antennas_tx,
-                                         1),"");*/
+                                         1),"");
+		    
                     if( tti_nr==(ttis_per_frame-1)) {
                         // read in first symbol of next frame and adjust for timing drift
                         int first_symbols=writeBlockSize-readBlockSize;
                         if ( first_symbols > 0 )
-                            /*AssertFatal(first_symbols ==
+                            AssertFatal(first_symbols ==
                                         UE->rfdevice.trx_read_func(&UE->rfdevice,
                                                                    &timestamp1,
                                                                    (void**)UE->common_vars.rxdata,
                                                                    first_symbols,
-                                                                   UE->frame_parms.nb_antennas_rx),"");*/
+                                                                   UE->frame_parms.nb_antennas_rx),"");
                         if ( first_symbols <0 )
                             LOG_E(PHY,"can't compensate: diff =%d\n", first_symbols);
                     }

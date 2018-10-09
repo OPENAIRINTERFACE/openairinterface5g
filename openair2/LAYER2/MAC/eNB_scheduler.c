@@ -667,7 +667,8 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
   /*
   if((subframeP == 0) && (frameP & 7) == 0){
     schedule_nr_mib(module_idP, frameP, subframeP);
-    }*/
+    }
+  */
 
   if (phy_test == 0){
     // This schedules SI for legacy LTE and eMTC starting in subframeP

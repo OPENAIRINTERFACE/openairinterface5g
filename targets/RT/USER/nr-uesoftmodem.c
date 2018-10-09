@@ -121,12 +121,11 @@ uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
 
-static char                    *conf_config_file_name = NULL;
 #if defined(ENABLE_ITTI)
 static char                    *itti_dump_file = NULL;
 #endif
 
-int UE_scan = 1;
+int UE_scan = 0;
 int UE_scan_carrier = 0;
 runmode_t mode = normal_txrx;
 
@@ -169,7 +168,6 @@ int codingw = 0;
 int fepw = 0;
 
 int                      		rx_input_level_dBm;
-static int                      online_log_messages=0;
 #ifdef XFORMS
 extern int                      otg_enabled;
 static char                     do_forms=0;
@@ -329,60 +327,6 @@ void signal_handler(int sig) {
 #define KBLU  "\x1B[34m"
 #define RESET "\033[0m"
 
-void help (void) {
-  printf (KGRN "Usage:\n");
-  printf("  sudo -E lte-softmodem [options]\n");
-  printf("  sudo -E ./lte-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.openEPC.conf -S -V -m 26 -t 16 -x 1 --ulsch-max-errors 100 -W\n\n");
-  printf("Options:\n");
-  printf("  --rf-config-file Configuration file for front-end (e.g. LMS7002M)\n");
-  printf("  --ulsch-max-errors set the max ULSCH erros\n");
-  printf("  --calib-ue-rx set UE RX calibration\n");
-  printf("  --calib-ue-rx-med \n");
-  printf("  --calib-ue-rxbyp\n");
-  printf("  --debug-ue-prach run normal prach power ramping, but don't continue random-access\n");
-  printf("  --calib-prach-tx run normal prach with maximum power, but don't continue random-access\n");
-  printf("  --no-L2-connect bypass L2 and upper layers\n");
-  printf("  --ue-rxgain set UE RX gain\n");
-  printf("  --ue-rxgain-off external UE amplifier offset\n");
-  printf("  --ue-txgain set UE TX gain\n");
-  printf("  --ue-nb-ant-rx  set UE number of rx antennas\n");
-  printf("  --ue-scan-carrier set UE to scan around carrier\n");
-  printf("  --dlsch-demod-shift dynamic shift for LLR compuation for TM3/4 (default 0)\n");
-  printf("  --loop-memory get softmodem (UE) to loop through memory instead of acquiring from HW\n");
-  printf("  --mmapped-dma sets flag for improved EXMIMO UE performance\n");  
-  printf("  --external-clock tells hardware to use an external clock reference\n");
-  printf("  --usim-test use XOR autentication algo in case of test usim mode\n"); 
-  printf("  --single-thread-disable. Disables single-thread mode in lte-softmodem\n"); 
-  printf("  --AgregationLevel Choose the agregation level used by tghe eNB for the OAI use 1, it will save some time of processing the pdcch\n");
-  printf("  --DCIformat choose the DCI format, be careful when using this option(for the moment only valid for SISO DCI format 1)\n");
-  printf("  -A Set timing_advance\n");
-  printf("  -C Set the downlink frequency for all component carriers\n");
-  printf("  -d Enable soft scope and L1 and L2 stats (Xforms)\n");
-  printf("  -F Calibrate the EXMIMO borad, available files: exmimo2_2arxg.lime exmimo2_2brxg.lime \n");
-  printf("  -g Set the global log level, valide options: (9:trace, 8/7:debug, 6:info, 4:warn, 3:error)\n");
-  printf("  -G Set the global log verbosity \n");
-  printf("  -h provides this help message!\n");
-  printf("  -K Generate ITTI analyzser logs (similar to wireshark logs but with more details)\n");
-  printf("  -m Set the maximum downlink MCS\n");
-  printf("  -O eNB configuration file (located in targets/PROJECTS/GENERIC-LTE-EPC/CONF\n");
-  printf("  -q Enable processing timing measurement of lte softmodem on per subframe basis \n");
-  printf("  -r Set the PRB, valid values: 6, 25, 50, 100  \n");    
-  printf("  -S Skip the missed slots/subframes \n");    
-  printf("  -t Set the maximum uplink MCS\n");
-  printf("  -T Set hardware to TDD mode (default: FDD). Used only with -U (otherwise set in config file).\n");
-  printf("  -U Set the lte softmodem as a UE\n");
-  printf("  -W Enable L2 wireshark messages on localhost \n");
-  printf("  -V Enable VCD (generated file will be located atopenair_dump_eNB.vcd, read it with target/RT/USER/eNB.gtkw\n");
-  printf("  -x Set the transmission mode, valid options: 1 \n");
-  printf("  -E Apply three-quarter of sampling frequency, 23.04 Msps to reduce the data rate on USB/PCIe transfers (only valid for 20 MHz)\n");
-#if 0 //T_TRACER
-    printf("  --T_port [port]    use given port\n");
-    printf("  --T_nowait         don't wait for tracer, start immediately\n");
-    printf("  --T_dont_fork      to ease debugging with gdb\n");
-#endif
-    printf(RESET);
-    fflush(stdout);
-}
 
 void exit_fun(const char* s) {
     int CC_id;
@@ -393,10 +337,11 @@ void exit_fun(const char* s) {
 
     oai_exit = 1;
 
-    for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-
-            if (PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func)
-                PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][CC_id]->rfdevice);
+    if (PHY_vars_UE_g && PHY_vars_UE_g[0]) {
+      for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+	if (PHY_vars_UE_g[0][CC_id] && PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func)
+	  PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][CC_id]->rfdevice);
+      }
     }
 
 #if defined(ENABLE_ITTI)
@@ -581,11 +526,17 @@ static void get_options (int argc, char **argv) {
 	     load_module_shlib("telnetsrv",NULL,0);
 	  }
 
-	  paramdef_t cmdline_uemodeparams[] =CMDLINE_UEMODEPARAMS_DESC;
-	  paramdef_t cmdline_ueparams[] =CMDLINE_UEPARAMS_DESC;
+#if T_TRACER
+	  paramdef_t cmdline_ttraceparams[] = CMDLINE_TTRACEPARAMS_DESC ;
+	  config_process_cmdline( cmdline_ttraceparams,sizeof(cmdline_ttraceparams)/sizeof(paramdef_t),NULL);   
+#endif
+
+	  paramdef_t cmdline_uemodeparams[] = CMDLINE_UEMODEPARAMS_DESC;
+	  paramdef_t cmdline_ueparams[] = CMDLINE_UEPARAMS_DESC;
 
 
 	  config_process_cmdline( cmdline_uemodeparams,sizeof(cmdline_uemodeparams)/sizeof(paramdef_t),NULL);
+	  CONFIG_CLEARRTFLAG(CONFIG_NOEXITONHELP);
 	  config_process_cmdline( cmdline_ueparams,sizeof(cmdline_ueparams)/sizeof(paramdef_t),NULL);
 	  if (loopfile != NULL) {
 	      printf("Input file for hardware emulation: %s",loopfile);
@@ -612,15 +563,11 @@ static void get_options (int argc, char **argv) {
 	      uecap_xer_in=1;
 	    } /* UE with config file  */
 
-
-#if defined(OAI_USRP) || defined(CPRIGW) || defined(OAI_ADRV9371_ZC706)
-    int clock_src;
-#endif
-
+	  
 }
 
-#if 0 //T_TRACER
-int T_wait = 1;       /* by default we wait for the tracer */
+#if T_TRACER
+int T_nowait = 0;       /* by default we wait for the tracer */
 int T_port = 2021;    /* default port to listen to to wait for the tracer */
 int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
 #endif
@@ -660,7 +607,8 @@ void set_default_frame_parms(NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
 
         ///frame_parms[CC_id]->phich_config_common.phich_resource = oneSixth;
         //frame_parms[CC_id]->phich_config_common.phich_duration = normal;
-    // UL RS Config
+
+	// UL RS Config
         /*frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 1;//n_DMRS1 set to 0
         frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1;
         frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
@@ -681,12 +629,6 @@ void set_default_frame_parms(NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
         frame_parms[CC_id]->numerology_index	= 0;
         frame_parms[CC_id]->ttis_per_subframe	= 1;
         frame_parms[CC_id]->slots_per_tti		= 2;
-
-        downlink_frequency[CC_id][0] = 2680000000; // Use float to avoid issue with frequency over 2^31.
-        downlink_frequency[CC_id][1] = downlink_frequency[CC_id][0];
-        downlink_frequency[CC_id][2] = downlink_frequency[CC_id][0];
-        downlink_frequency[CC_id][3] = downlink_frequency[CC_id][0];
-        //printf("Downlink for CC_id %d frequency set to %u\n", CC_id, downlink_frequency[CC_id][0]);
 
     }
 
@@ -726,7 +668,8 @@ void set_default_frame_parms_single(nfapi_nr_config_request_t *config, NR_DL_FRA
 
         ///frame_parms[CC_id]->phich_config_common.phich_resource = oneSixth;
         //frame_parms[CC_id]->phich_config_common.phich_duration = normal;
-    // UL RS Config
+	
+	// UL RS Config
         /*frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 1;//n_DMRS1 set to 0
         frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1;
         frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
@@ -747,12 +690,6 @@ void set_default_frame_parms_single(nfapi_nr_config_request_t *config, NR_DL_FRA
         frame_parms->numerology_index	= 0;
         frame_parms->ttis_per_subframe	= 1;
         frame_parms->slots_per_tti		= 2;
-
-        downlink_frequency[0][0] = 2680000000; // Use float to avoid issue with frequency over 2^31.
-        //downlink_frequency[CC_id][1] = downlink_frequency[CC_id][0];
-        //downlink_frequency[CC_id][2] = downlink_frequency[CC_id][0];
-        //downlink_frequency[CC_id][3] = downlink_frequency[CC_id][0];
-        //printf("Downlink for CC_id %d frequency set to %u\n", CC_id, downlink_frequency[CC_id][0]);
 
     //}
 
@@ -876,8 +813,9 @@ int main( int argc, char **argv ) {
     start_background_system();
     if ( load_configmodule(argc,argv) == NULL) {
       exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
-    } 
-
+    }
+    CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
+ 
 #ifdef DEBUG_CONSOLE
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
@@ -900,15 +838,26 @@ int main( int argc, char **argv ) {
     // initialize logging
     logInit();
 
-    // get options and fill parameters from configuration file
-    get_options (argc, argv); //Command-line options, enb_properties
-
-#if 0 //T_TRACER
-    T_init(T_port, T_wait, T_dont_fork);
+#if T_TRACER
+    T_Config_Init();
 #endif
 
     // initialize the log (see log.h for details)
-    //set_glog(glog_level, glog_verbosity);
+    set_glog(LOG_DEBUG);
+
+    set_log(HW,      OAILOG_DEBUG,   1);
+    set_log(PHY,     OAILOG_DEBUG,    1);
+    set_log(MAC,     OAILOG_INFO,    1);
+    set_log(RLC,     OAILOG_INFO,    1);
+    set_log(PDCP,    OAILOG_INFO,    1);
+    set_log(OTG,     OAILOG_INFO,    1);
+    set_log(RRC,     OAILOG_INFO,    1);
+#if defined(ENABLE_ITTI)
+    set_log(SIM,     OAILOG_INFO,   1);
+# if defined(ENABLE_USE_MME)
+    set_log(NAS,     OAILOG_INFO,    1);
+# endif
+#endif
 
     //randominit (0);
     set_taus_seed (0);
@@ -931,6 +880,9 @@ int main( int argc, char **argv ) {
     // initialize mscgen log after ITTI
     MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
 #endif
+
+    // get options and fill parameters from configuration file
+    get_options (argc, argv); //Command-line options, enb_properties
 
     if (opt_type != OPT_NONE) {
         radio_type_t radio_type;
