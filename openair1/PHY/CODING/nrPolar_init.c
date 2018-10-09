@@ -62,6 +62,11 @@ uint32_t poly24c = 0xB2B11700; //101100101011000100010111 -> D^24...
 		polarParams->nr_polar_u = malloc(sizeof(uint8_t) * polarParams->N); //Decoder: nr_polar_uHat
 		polarParams->nr_polar_cPrime = malloc(sizeof(uint8_t) * polarParams->K); //Decoder: nr_polar_cHat
 		polarParams->nr_polar_b = malloc(sizeof(uint8_t) * polarParams->K); //Decoder: nr_polar_bHat
+
+		polarParams->decoder_kernel = NULL;//polar_decoder_K56_N512_E864;
+
+
+
 	} else if (messageType == 2) { //UCI
 		polarParams->payloadBits = NR_POLAR_PUCCH_PAYLOAD_BITS;	//A depends on what they carry...
 		polarParams->encoderLength = NR_POLAR_PUCCH_E ; //E depends on other standards 6.3.1.4
@@ -131,6 +136,7 @@ uint32_t poly24c = 0xB2B11700; //101100101011000100010111 -> D^24...
                 polarParams->nr_polar_u = malloc(sizeof(uint8_t) * polarParams->N); //Decoder: nr_polar_uHat
                 polarParams->nr_polar_cPrime = malloc(sizeof(uint8_t) * polarParams->K); //Decoder: nr_polar_cHat
                 polarParams->nr_polar_b = malloc(sizeof(uint8_t) * polarParams->K); //Decoder: nr_polar_bHat
+
 	}
 
 	polarParams->crcCorrectionBits = NR_POLAR_CRC_ERROR_CORRECTION_BITS;
@@ -161,5 +167,38 @@ uint32_t poly24c = 0xB2B11700; //101100101011000100010111 -> D^24...
 	nr_polar_channel_interleaver_pattern(polarParams->channel_interleaver_pattern,
 			polarParams->i_bil, polarParams->encoderLength);
 
+	polarParams->extended_crc_generator_matrix = malloc(polarParams->K * sizeof(uint8_t *)); //G_P3
+	uint8_t tempECGM[polarParams->K][polarParams->crcParityBits];
+	for (int i = 0; i < polarParams->K; i++){
+	  polarParams->extended_crc_generator_matrix[i] = malloc(polarParams->crcParityBits * sizeof(uint8_t));
+	}
+	
+	for (int i=0; i<polarParams->payloadBits; i++) {
+	  for (int j=0; j<polarParams->crcParityBits; j++) {
+	    tempECGM[i][j]=polarParams->crc_generator_matrix[i][j];
+	  }
+	}
+	for (int i=polarParams->payloadBits; i<polarParams->K; i++) {
+	  for (int j=0; j<polarParams->crcParityBits; j++) {
+	    if( (i-polarParams->payloadBits) == j ){
+	      tempECGM[i][j]=1;
+	    } else {
+	      tempECGM[i][j]=0;
+	    }
+	  }
+	}
+	
+	for (int i=0; i<polarParams->K; i++) {
+	  for (int j=0; j<polarParams->crcParityBits; j++) {
+	    polarParams->extended_crc_generator_matrix[i][j]=tempECGM[polarParams->interleaving_pattern[i]][j];
+	  }
+	}
+
+
+	build_decoder_tree(polarParams);
+	printf("decoder tree nodes %d\n",polarParams->tree.num_nodes);
+	
+
+	
 	free(J);
 }

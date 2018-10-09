@@ -43,8 +43,9 @@ int main(int argc, char *argv[]) {
 	double timeEncoderCumulative = 0, timeDecoderCumulative = 0;
 
 	uint8_t decoderListSize = 8, pathMetricAppr = 0; //0 --> eq. (8a) and (11b), 1 --> eq. (9) and (12)
+	int generate_optim_code=0;
 
-	while ((arguments = getopt (argc, argv, "s:d:f:m:i:l:a:h:q")) != -1)
+	while ((arguments = getopt (argc, argv, "s:d:f:m:i:l:a:h:qg")) != -1)
 	switch (arguments)
 	{
 		case 's':
@@ -80,6 +81,13 @@ int main(int argc, char *argv[]) {
 		        decoder_int8=1;
 		        break;
 
+    	        case 'g':
+		  generate_optim_code=1;
+                  iterations=1;
+		  SNRstart=-6.0;
+		  SNRstop =-6.0;
+		  decoder_int8=1;
+                  break;
 	        case 'h':
 		  printf("./polartest -s SNRstart -d SNRinc -f SNRstop -m [0=DCI|1=PBCH|2=UCI] -i iterations -l decoderListSize -a pathMetricAppr\n");
 		  exit(-1);
@@ -141,12 +149,18 @@ int main(int argc, char *argv[]) {
 
 	t_nrPolar_params nrPolar_params;
 	nr_polar_init(&nrPolar_params, polarMessageType);
+	nr_polar_llrtableinit();
+
+	if (generate_optim_code==1) nrPolar_params.decoder_kernel = NULL;
 
 	// We assume no a priori knowledge available about the payload.
 	double aPrioriArray[nrPolar_params.payloadBits];
 	for (int i=0; i<=nrPolar_params.payloadBits; i++) aPrioriArray[i] = NAN;
 
+	printf("SNRstart %f, SNRstop %f,, SNRinc %f\n",SNRstart,SNRstop,SNRinc);
+
 	for (SNR = SNRstart; SNR <= SNRstop; SNR += SNRinc) {
+	  printf("SNR %f\n",SNR);
 		SNR_lin = pow(10, SNR/10);
 		for (itr = 1; itr <= iterations; itr++) {
 
@@ -165,20 +179,29 @@ int main(int argc, char *argv[]) {
 				modulatedInput[i]=(-1)/sqrt(2);
 
 			channelOutput[i] = modulatedInput[i] + (gaussdouble(0.0,1.0) * (1/sqrt(2*SNR_lin)));
+
 			if (decoder_int8==1) {
-			  if (channelOutput[i] > 1024) channelOutput_int8[i] = 32768;
-			  else if (channelOutput[i] < -1023) channelOutput_int8[i] = -32767;
-			  else channelOutput_int8[i] = (int16_t) (32*channelOutput[i]);
+			  if (channelOutput[i] > 15) channelOutput_int8[i] = 127;
+			  else if (channelOutput[i] < -16) channelOutput_int8[i] = -128;
+			  else channelOutput_int8[i] = (int16_t) (8*channelOutput[i]);
 			}
 		}
 
 
 		start_meas(&timeDecoder);
-		if (decoder_int8==0) decoderState = polar_decoder(channelOutput, estimatedOutput, &nrPolar_params, decoderListSize, aPrioriArray, pathMetricAppr,&polar_decoder_init,&polar_rate_matching,&decoding,&bit_extraction,&deinterleaving,&sorting,&path_metric,&update_LLR);
+		if (decoder_int8==0) 
+		  decoderState = polar_decoder(channelOutput, estimatedOutput, &nrPolar_params, 
+					       decoderListSize, aPrioriArray, pathMetricAppr,
+					       &polar_decoder_init,&polar_rate_matching,&decoding,
+					       &bit_extraction,&deinterleaving,&sorting,&path_metric,&update_LLR);
 		else
-		  decoderState = polar_decoder_int8(channelOutput_int8, estimatedOutput, &nrPolar_params, decoderListSize, &polar_decoder_init,&polar_rate_matching,&decoding,&bit_extraction,&deinterleaving,&sorting,&path_metric,&update_LLR);	
+		  decoderState = polar_decoder_int8_new(channelOutput_int8, estimatedOutput, &nrPolar_params, 
+							decoderListSize, &polar_decoder_init,&polar_rate_matching,
+							&decoding,&bit_extraction,&deinterleaving,
+							&sorting,&path_metric,&update_LLR,
+							generate_optim_code);	
 		stop_meas(&timeDecoder); 
-
+		
 		//calculate errors
 		if (decoderState==-1) {
 			blockErrorState=-1;
