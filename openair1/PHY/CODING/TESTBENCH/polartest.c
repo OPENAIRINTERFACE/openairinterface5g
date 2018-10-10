@@ -15,12 +15,23 @@ int main(int argc, char *argv[]) {
 
 	//Initiate timing. (Results depend on CPU Frequency. Therefore, might change due to performance variances during simulation.)
 	time_stats_t timeEncoder,timeDecoder;
+	time_stats_t polar_decoder_init,polar_rate_matching,decoding,bit_extraction,deinterleaving;
+	time_stats_t path_metric,sorting,update_LLR;
 	opp_enabled=1;
+	int decoder_int8=0;
 	cpu_freq_GHz = get_cpu_freq_GHz();
 	reset_meas(&timeEncoder);
 	reset_meas(&timeDecoder);
+	reset_meas(&polar_decoder_init);
+	reset_meas(&polar_rate_matching);
+	reset_meas(&decoding);
+	reset_meas(&bit_extraction);
+	reset_meas(&deinterleaving);
+	reset_meas(&sorting);
+	reset_meas(&path_metric);
+	reset_meas(&update_LLR);
 
-	randominit(0);
+	randominit(1234);
 	//Default simulation values (Aim for iterations = 1000000.)
 	int itr, iterations = 1000, arguments, polarMessageType = 1; //0=DCI, 1=PBCH, 2=UCI
 	double SNRstart = -20.0, SNRstop = 0.0, SNRinc= 0.5; //dB
@@ -32,8 +43,9 @@ int main(int argc, char *argv[]) {
 	double timeEncoderCumulative = 0, timeDecoderCumulative = 0;
 
 	uint8_t decoderListSize = 8, pathMetricAppr = 0; //0 --> eq. (8a) and (11b), 1 --> eq. (9) and (12)
+	int generate_optim_code=0;
 
-	while ((arguments = getopt (argc, argv, "s:d:f:m:i:l:a:h")) != -1)
+	while ((arguments = getopt (argc, argv, "s:d:f:m:i:l:a:h:qg")) != -1)
 	switch (arguments)
 	{
 		case 's':
@@ -65,6 +77,17 @@ int main(int argc, char *argv[]) {
 			pathMetricAppr = (uint8_t) atoi(optarg);
 			break;
 
+  	        case 'q':
+		        decoder_int8=1;
+		        break;
+
+    	        case 'g':
+		  generate_optim_code=1;
+                  iterations=1;
+		  SNRstart=-6.0;
+		  SNRstop =-6.0;
+		  decoder_int8=1;
+                  break;
 	        case 'h':
 		  printf("./polartest -s SNRstart -d SNRinc -f SNRstop -m [0=DCI|1=PBCH|2=UCI] -i iterations -l decoderListSize -a pathMetricAppr\n");
 		  exit(-1);
@@ -121,16 +144,23 @@ int main(int argc, char *argv[]) {
 	double *modulatedInput = malloc (sizeof(double) * coderLength); //channel input
 
 	double *channelOutput  = malloc (sizeof(double) * coderLength); //add noise
+	int16_t *channelOutput_int8  = malloc (sizeof(int16_t) * coderLength); //add noise
 	uint8_t *estimatedOutput = malloc(sizeof(uint8_t) * testLength); //decoder output
 
 	t_nrPolar_params nrPolar_params;
 	nr_polar_init(&nrPolar_params, polarMessageType);
+	nr_polar_llrtableinit();
+
+	if (generate_optim_code==1) nrPolar_params.decoder_kernel = NULL;
 
 	// We assume no a priori knowledge available about the payload.
 	double aPrioriArray[nrPolar_params.payloadBits];
-	for (int i=0; i<nrPolar_params.payloadBits; i++) aPrioriArray[i] = NAN;
+	for (int i=0; i<=nrPolar_params.payloadBits; i++) aPrioriArray[i] = NAN;
+
+	printf("SNRstart %f, SNRstop %f,, SNRinc %f\n",SNRstart,SNRstop,SNRinc);
 
 	for (SNR = SNRstart; SNR <= SNRstop; SNR += SNRinc) {
+	  printf("SNR %f\n",SNR);
 		SNR_lin = pow(10, SNR/10);
 		for (itr = 1; itr <= iterations; itr++) {
 
@@ -149,13 +179,29 @@ int main(int argc, char *argv[]) {
 				modulatedInput[i]=(-1)/sqrt(2);
 
 			channelOutput[i] = modulatedInput[i] + (gaussdouble(0.0,1.0) * (1/sqrt(2*SNR_lin)));
+
+			if (decoder_int8==1) {
+			  if (channelOutput[i] > 15) channelOutput_int8[i] = 127;
+			  else if (channelOutput[i] < -16) channelOutput_int8[i] = -128;
+			  else channelOutput_int8[i] = (int16_t) (8*channelOutput[i]);
+			}
 		}
 
 
 		start_meas(&timeDecoder);
-		decoderState = polar_decoder(channelOutput, estimatedOutput, &nrPolar_params, decoderListSize, aPrioriArray, pathMetricAppr);
-		stop_meas(&timeDecoder);
-
+		if (decoder_int8==0) 
+		  decoderState = polar_decoder(channelOutput, estimatedOutput, &nrPolar_params, 
+					       decoderListSize, aPrioriArray, pathMetricAppr,
+					       &polar_decoder_init,&polar_rate_matching,&decoding,
+					       &bit_extraction,&deinterleaving,&sorting,&path_metric,&update_LLR);
+		else
+		  decoderState = polar_decoder_int8_new(channelOutput_int8, estimatedOutput, &nrPolar_params, 
+							decoderListSize, &polar_decoder_init,&polar_rate_matching,
+							&decoding,&bit_extraction,&deinterleaving,
+							&sorting,&path_metric,&update_LLR,
+							generate_optim_code);	
+		stop_meas(&timeDecoder); 
+		
 		//calculate errors
 		if (decoderState==-1) {
 			blockErrorState=-1;
@@ -191,7 +237,15 @@ int main(int argc, char *argv[]) {
 				decoderListSize, pathMetricAppr, SNR, ((double)blockErrorCumulative/iterations),
 				((double)bitErrorCumulative / (iterations*testLength)),
 				(timeEncoderCumulative/iterations),timeDecoderCumulative/iterations);
+		printf("decoding init %9.3fus\n",polar_decoder_init.diff/(cpu_freq_GHz*1000.0*polar_decoder_init.trials));
 
+		printf("decoding polar_rate_matching %9.3fus\n",polar_rate_matching.diff/(cpu_freq_GHz*1000.0*polar_rate_matching.trials));
+		printf("decoding decoding %9.3fus\n",decoding.diff/(cpu_freq_GHz*1000.0*decoding.trials));
+		printf("decoding bit_extraction %9.3fus\n",bit_extraction.diff/(cpu_freq_GHz*1000.0*bit_extraction.trials));
+		printf("decoding deinterleaving %9.3fus\n",deinterleaving.diff/(cpu_freq_GHz*1000.0*deinterleaving.trials));
+		printf("decoding path_metric %9.3fus\n",path_metric.diff/(cpu_freq_GHz*1000.0*decoding.trials));
+		printf("decoding sorting %9.3fus\n",sorting.diff/(cpu_freq_GHz*1000.0*decoding.trials));
+		printf("decoding updateLLR %9.3fus\n",update_LLR.diff/(cpu_freq_GHz*1000.0*decoding.trials));
 		blockErrorCumulative = 0; bitErrorCumulative = 0;
 		timeEncoderCumulative = 0; timeDecoderCumulative = 0;
 	}

@@ -170,8 +170,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
   // clear the transmit data array for the current subframe
   for (aa=0; aa<cfg->rf_config.tx_antenna_ports.value; aa++) {      
-    memset(&gNB->common_vars.txdataF[aa][subframe*fp->samples_per_subframe_wCP],
-	   0,fp->samples_per_subframe_wCP*sizeof(int32_t));
+    memset(gNB->common_vars.txdataF[aa],0,fp->samples_per_subframe_wCP*sizeof(int32_t));
   }
 
   if (nfapi_mode == 0 || nfapi_mode == 1) {
