@@ -219,7 +219,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   uint8_t nushift;
   uint8_t *xbyte = pbch->pbch_a;
   memset((void*) xbyte, 0, 1);
-  uint8_t pbch_a_b[32];
+  //uint8_t pbch_a_b[32];
 
   LOG_I(PHY, "PBCH generation started\n");
 
@@ -282,10 +282,10 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
     printf("pbch_a_prime[%d]: 0x%02x\n", i, pbch->pbch_a_prime[i]);
 #endif
 
-for (int m=0;m<32;m++){
-pbch_a_b[m] = ((pbch->pbch_a_prime[m/8]>>(m&7))&01);
+//for (int m=0;m<32;m++){
+//pbch_a_b[m] = ((pbch->pbch_a_prime[m/8]>>(m&7))&01);
 //printf("pbch_a_b[%d] %d\n", m, pbch_a_b[m] );
-}
+//}
 
   /// CRC, coding and rate matching
   polar_encoder (pbch->pbch_a_prime, pbch->pbch_e, &frame_parms->pbch_polar_params);

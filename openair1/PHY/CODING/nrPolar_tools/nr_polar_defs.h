@@ -125,6 +125,8 @@ void polar_encoder(uint8_t *input, uint8_t *output, t_nrPolar_params* polarParam
 
 void nr_polar_kernal_operation(uint8_t *u, uint8_t *d, uint16_t N);
 
+void generic_polar_decoder(t_nrPolar_params *,decoder_node_t *);
+
 int8_t polar_decoder(double *input, uint8_t *output, t_nrPolar_params *polarParams,
 		     uint8_t listSize, double *aPrioriPayload, uint8_t pathMetricAppr,
 		     time_stats_t *init,
@@ -150,6 +152,19 @@ int8_t polar_decoder_int8(int16_t *input,
 			  time_stats_t *update_LLR,
 			  int generate_optim_code);
 
+int8_t polar_decoder_int8_new(int16_t *input,
+                          uint8_t *output,
+                          t_nrPolar_params *polarParams,
+                          uint8_t listSize,
+                          time_stats_t *init,
+                          time_stats_t *polar_rate_matching,
+                          time_stats_t *decoding,
+                          time_stats_t *bit_extraction,
+                          time_stats_t *deinterleaving,
+                          time_stats_t *sorting,
+                          time_stats_t *path_metric,
+                          time_stats_t *update_LLR,
+                          int generate_optim_code);
 
 
 void nr_polar_llrtableinit(void);
