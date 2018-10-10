@@ -40,8 +40,8 @@
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "SCHED_NR/sched_nr.h"
 #include "defs.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
 #include <syscall.h>
 
 //#define DEBUG_DLSCH_CODING
