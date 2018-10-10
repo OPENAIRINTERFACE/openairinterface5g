@@ -924,10 +924,10 @@ typedef struct {
   uint8_t pbch_a_interleaved[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
   uint8_t pbch_a_prime[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
   uint8_t pbch_e[NR_POLAR_PBCH_E];
-  double  demod_pbch_e[NR_POLAR_PBCH_E];
+  int16_t  demod_pbch_e[NR_POLAR_PBCH_E];
   /// \brief Pointer to PBCH llrs.
   /// - first index: ? [0..1919] (hard coded)
-  int8_t *llr;
+  int16_t *llr;
   /// \brief Pointer to PBCH decoded output.
   /// - first index: ? [0..63] (hard coded)
   uint8_t *decoded_output;

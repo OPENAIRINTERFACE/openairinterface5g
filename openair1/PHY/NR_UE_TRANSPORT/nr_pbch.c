@@ -399,7 +399,7 @@ void nr_pbch_unscrambling(NR_UE_PBCH *pbch,
   int i;
   uint8_t reset, offset;
   uint32_t x1, x2, s=0;
-  double *demod_pbch_e = pbch->demod_pbch_e;
+  int16_t *demod_pbch_e = pbch->llr;
   uint32_t *pbch_a_prime = (uint32_t*)pbch->pbch_a_prime;
   uint32_t *pbch_a_interleaved = (uint32_t*)pbch->pbch_a_interleaved;
   uint32_t unscrambling_mask = 0x100006D;
@@ -481,9 +481,9 @@ void nr_pbch_alamouti(NR_DL_FRAME_PARMS *frame_parms,
 
 }
 
-void nr_pbch_quantize(int8_t *pbch_llr8,
-                   int16_t *pbch_llr,
-                   uint16_t len)
+void nr_pbch_quantize(int16_t *pbch_llr8,
+                      int16_t *pbch_llr,
+                      uint16_t len)
 {
 
   uint16_t i;
@@ -498,10 +498,11 @@ void nr_pbch_quantize(int8_t *pbch_llr8,
 
   }
 }
-
+/*
 unsigned char sign(int8_t x) {
   return (unsigned char)x >> 7;
 }
+*/
 
 uint8_t pbch_deinterleaving_pattern[32] = {28,0,31,30,1,29,25,27,22,2,24,3,4,5,6,7,18,21,20,8,9,10,11,19,26,12,13,14,15,16,23,17};
 
@@ -533,18 +534,27 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   uint8_t ssb_index=0;
   //uint16_t crc;
   //short nr_demod_table[8] = {0,0,0,1,1,0,1,1};
-  double nr_demod_table[8] = {0.707,0.707,-0.707,0.707,0.707,-0.707,-0.707,-0.707};
-  double *demod_pbch_e  = malloc (sizeof(double) * 864); 
+  //double nr_demod_table[8] = {0.707,0.707,-0.707,0.707,0.707,-0.707,-0.707,-0.707};
+  //int16_t *demod_pbch_e; // = malloc (sizeof(int16_t) * 864); 
   unsigned short idx_demod =0;
   int8_t decoderState=0;
   uint8_t decoderListSize = 8, pathMetricAppr = 0;
-  double aPrioriArray[frame_parms->pbch_polar_params.payloadBits];  // assume no a priori knowledge available about the payload.
 
+  time_stats_t polar_decoder_init,polar_rate_matching,decoding,bit_extraction,deinterleaving;
+  time_stats_t path_metric,sorting,update_LLR;
   memset(&pbch_a[0], 0, sizeof(uint8_t) * NR_POLAR_PBCH_PAYLOAD_BITS);
 
   //printf("nr_pbch_ue nid_cell %d\n",frame_parms->Nid_cell);
 
-  for (int i=0; i<frame_parms->pbch_polar_params.payloadBits; i++) aPrioriArray[i] = NAN;
+  reset_meas(&polar_decoder_init);
+  reset_meas(&polar_rate_matching);
+  reset_meas(&decoding);
+  reset_meas(&bit_extraction);
+  reset_meas(&deinterleaving);
+  reset_meas(&sorting);
+  reset_meas(&path_metric);
+  reset_meas(&update_LLR);
+
 
   int subframe_rx = proc->subframe_rx;
 
@@ -597,14 +607,14 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
                          nr_ue_pbch_vars->rxdataF_comp,
                          symbol);*/
 
-
+/*
     if (mimo_mode == ALAMOUTI) {
       nr_pbch_alamouti(frame_parms,nr_ue_pbch_vars->rxdataF_comp,symbol);
     } else if (mimo_mode != SISO) {
       msg("[PBCH][RX] Unsupported MIMO mode\n");
       return(-1);
     }
-
+*/
     if (symbol==6) {
       nr_pbch_quantize(pbch_e_rx,
                     (short*)&(nr_ue_pbch_vars->rxdataF_comp[0][symbol*240]),
@@ -623,7 +633,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   }
 
   pbch_e_rx = nr_ue_pbch_vars->llr;
-  demod_pbch_e = nr_ue_pbch_vars->demod_pbch_e;
+  //demod_pbch_e = nr_ue_pbch_vars->demod_pbch_e;
   pbch_a = nr_ue_pbch_vars->pbch_a;
   pbch_a_prime = nr_ue_pbch_vars->pbch_a_prime;
 
@@ -634,7 +644,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   for (int cnt = 0; cnt < 8 ; cnt++)
     printf("pbch rx llr %d rxdata_comp %d addr %p\n",*(pbch_e_rx+cnt), p[cnt], &p[0]);
 //#endif
-
+/*
   for (i=0; i<NR_POLAR_PBCH_E/2; i++){
     idx_demod = (sign(pbch_e_rx[i<<1])&1) ^ ((sign(pbch_e_rx[(i<<1)+1])&1)<<1);
     demod_pbch_e[i<<1] = nr_demod_table[(idx_demod)<<1];
@@ -646,19 +656,20 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
     printf("demod_pbch_e[%d] r = %2.3f i = %2.3f\n", i<<1 , demod_pbch_e[i<<1], demod_pbch_e[(i<<1)+1]);}
 #endif
   }
-
+*/
   //un-scrambling
   M =  NR_POLAR_PBCH_E;
   nushift = (Lmax==4)? ssb_index&3 : ssb_index&7;
   nr_pbch_unscrambling(nr_ue_pbch_vars,frame_parms->Nid_cell,nushift,M,NR_POLAR_PBCH_E,0);
 
+/*
 //#ifdef DEBUG_PBCH
     for (i=0; i<16; i++){
     printf("unscrambling demod_pbch_e[%d] r = %2.3f i = %2.3f\n", i<<1 , demod_pbch_e[i<<1], demod_pbch_e[(i<<1)+1]);}
 //#endif
-		
+*/		
   //polar decoding de-rate matching
-  decoderState = polar_decoder(demod_pbch_e, pbch_a_b, &frame_parms->pbch_polar_params, decoderListSize, aPrioriArray, pathMetricAppr);
+  decoderState = polar_decoder_int8_new(pbch_e_rx, pbch_a_b, &frame_parms->pbch_polar_params, decoderListSize, &polar_decoder_init,&polar_rate_matching, &decoding,&bit_extraction,&deinterleaving, &sorting,&path_metric,&update_LLR,0);
   printf("polar decoder state %d\n", decoderState);
   if(decoderState == -1)
   	return(decoderState);
