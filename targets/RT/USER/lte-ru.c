@@ -352,12 +352,13 @@ void fh_if4p5_north_in(RU_t *ru,int *frame,int *subframe) {
   symbol_number = 0;
   symbol_mask = 0;
   symbol_mask_full = (1<<ru->frame_parms.symbols_per_tti)-1;
-  
+  LOG_I(PHY,"fh_if4p5_north_in: frame %d, subframe %d\n",*frame,*subframe);
   do { 
     recv_IF4p5(ru, frame, subframe, &packet_type, &symbol_number);
     symbol_mask = symbol_mask | (1<<symbol_number);
   } while (symbol_mask != symbol_mask_full); 
 
+  ru->north_in_cnt++;
   // dump VCD output for first RU in list
   if (ru == RC.ru[0]) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, *frame );
@@ -392,6 +393,7 @@ void fh_if5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
     AssertFatal(frame_tx == *frame, 
                 "frame_tx %d is not what we expect %d\n",frame_tx,*frame);
   }
+  ru->north_in_cnt++;
 }
 
 void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
@@ -406,6 +408,7 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
   symbol_number = 0;
   symbol_mask = 0;
   symbol_mask_full = ((subframe_select(fp,*subframe) == SF_S) ? (1<<fp->dl_symbols_in_S_subframe) : (1<<fp->symbols_per_tti))-1;
+  LOG_I(PHY,"fh_if4p5_north_asynch_in: RU %d, frame %d, subframe %d\n",ru->idx,*frame,*subframe);
   do {   
     recv_IF4p5(ru, &frame_tx, &subframe_tx, &packet_type, &symbol_number);
     if (ru->cmd == STOP_RU){
@@ -438,6 +441,8 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
   } while (symbol_mask != symbol_mask_full);    
 
   if (subframe_select(fp,subframe_tx) == SF_DL) stop_meas(&ru->rx_fhaul);
+
+  ru->north_in_cnt++;
 
   proc->subframe_tx  = subframe_tx;
   proc->frame_tx     = frame_tx;
@@ -483,11 +488,13 @@ void fh_if4p5_north_out(RU_t *ru) {
   if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_UL)) {
     /// **** in TDD during DL send_IF4 of ULTICK to RCC **** ///
     send_IF4p5(ru, proc->frame_rx, proc->subframe_rx, IF4p5_PULTICK);
+    ru->north_out_cnt++;
     return;
   }
 
   start_meas(&ru->tx_fhaul);
   send_IF4p5(ru, proc->frame_rx, proc->subframe_rx, IF4p5_PULFFT);
+  ru->north_out_cnt++;
   stop_meas(&ru->tx_fhaul);
 
 }
@@ -574,6 +581,8 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
 
+  ru->south_in_cnt++;
+
   if (ru->cmd==RU_FRAME_RESYNCH) {
     LOG_I(PHY,"Applying frame resynch %d => %d\n",*frame,ru->cmdval);
     if (proc->frame_rx>ru->cmdval) ru->ts_offset += (proc->frame_rx - ru->cmdval)*fp->samples_per_tti*10;
@@ -603,14 +612,6 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   }
 
 
-
-
-
-
-
-
-
-
   proc->frame_rx     = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
   proc->subframe_rx  = (proc->timestamp_rx / fp->samples_per_tti)%10;
   // synchronize first reception to frame 0 subframe 0
@@ -628,7 +629,7 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
 #endif
   }
 
-  LOG_D(PHY,"RU %d/%d TS %llu (off %d), frame %d, subframe %d\n",
+  LOG_I(PHY,"RU %d/%d TS %llu (off %d), frame %d, subframe %d\n",
 	ru->idx, 
 	0, 
 	(unsigned long long int)proc->timestamp_rx,
@@ -774,6 +775,7 @@ void tx_rf(RU_t *ru) {
 				      siglen+sf_extension,
 				      ru->nb_tx,
 				      flags);
+    ru->south_out_cnt++;
     
     LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx,
 	  (long long unsigned int)proc->timestamp_tx,proc->frame_tx,proc->frame_tx_unwrap,proc->subframe_tx);
@@ -1061,7 +1063,7 @@ void do_ru_synch(RU_t *ru) {
     while ((ic>=0)&&(!oai_exit)) {
       // continuously read in frames, 1ms at a time, 
       // until we are done with the synchronization procedure
-      
+      LOG_I(PHY,"ic %d\n",ic);
       for (i=0; i<ru->nb_rx; i++)
 	rxp2[i] = (void*)&dummy_rx[i][0];
       for (i=0;i<10;i++)
@@ -1439,8 +1441,11 @@ static void* ru_stats_thread(void* param) {
           print_meas(&ru->tx_fhaul,"tx_fhaul",NULL,NULL);
           print_meas(&ru->compression,"compression",NULL,NULL);
           print_meas(&ru->transport,"transport",NULL,NULL);
+          LOG_I(PHY,"ru->north_out_cnt = %d\n",ru->north_out_cnt);
        }
-       LOG_I(PHY,"ru->south_out_cnt = %d\n",ru->south_out_cnt);
+       if (ru->fh_south_out) LOG_I(PHY,"ru->south_out_cnt = %d\n",ru->south_out_cnt);
+       if (ru->fh_north_asynch_in) LOG_I(PHY,"ru->north_in_cnt = %d\n",ru->north_in_cnt);
+       
      }
   }
   return(NULL);
@@ -1849,15 +1854,21 @@ void *ru_thread_synch(void *arg) {
       ru->rx_offset = ru_sync_time(ru,
 				   &peak_val,
 				   &avg);
-      LOG_I(PHY,"RU synch cnt %d: %d, val %d\n",cnt,sync_pos,peak_val);
+      LOG_I(PHY,"RU synch cnt %d: %d, val %d\n",cnt,ru->rx_offset,peak_val);
       cnt++;
-      if (sync_pos >= 0) {
+      if (ru->rx_offset >= 0) {
 
-	LOG_I(PHY,"Estimated peak_val %d dB, avg %d => timing offset %d\n",ru->rx_offset,dB_fixed(peak_val),dB_fixed(ru->rx_offset));
+	LOG_I(PHY,"Estimated peak_val %d dB, avg %d => timing offset %d\n",ru->rx_offset,dB_fixed(peak_val),ru->rx_offset);
 	ru->in_synch = 1;
 
       } // symc_pos > 0
-      else AssertFatal(cnt<1000,"Cannot find synch reference\n");
+      else //AssertFatal(cnt<1000,"Cannot find synch reference\n");
+          { 
+              if (cnt>200) {
+                 LOG_M("ru_sync_rx.m","rurx",&ru->common.rxdata[0][0],LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti,1,1);
+                 exit(-1);
+              }
+          }
     } // ru->in_synch==0
     if (release_thread(&ru->proc.mutex_synch,&ru->proc.instance_cnt_synch,"ru_synch_thread") < 0) break;
   } // oai_exit
