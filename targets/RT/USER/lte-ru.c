@@ -159,6 +159,13 @@ static inline void fh_if4p5_south_out(RU_t *ru) {
     send_IF4p5(ru,ru->proc.frame_tx, ru->proc.subframe_tx, IF4p5_PDLFFT);
     ru->south_out_cnt++;
   }
+/*if (ru == RC.ru[0] || ru == RC.ru[1]) {
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU+ru->idx, ru->proc.frame_tx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU+ru->idx, ru->proc.subframe_tx );
+  }*/
+VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_IF4P5_SOUTH_OUT,ru->proc.frame_tx);
+VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_IF4P5_SOUTH_OUT,ru->proc.subframe_tx);
+
 }
 
 /*************************************************************/
@@ -211,7 +218,7 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
     symbol_mask_full = (1<<fp->ul_symbols_in_S_subframe)-1;   
   else     
     symbol_mask_full = (1<<fp->symbols_per_tti)-1; 
-
+  LOG_D(PHY,"fh_if4p5_south_in: RU %d, frame %d, subframe %d\n",ru->idx,*frame,*subframe);
   AssertFatal(proc->symbol_mask[*subframe]==0,"rx_fh_if4p5: proc->symbol_mask[%d] = %x\n",*subframe,proc->symbol_mask[*subframe]);
   do {
     recv_IF4p5(ru, &f, &sf, &packet_type, &symbol_number);
@@ -224,11 +231,11 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
       
     } else if (packet_type == IF4p5_PRACH) {
       // nothing in RU for RAU
-    }
+    }ru->south_out_cnt= 0;
     LOG_D(PHY,"rx_fh_if4p5: subframe %d symbol mask %x\n",*subframe,proc->symbol_mask[*subframe]);
   } while(proc->symbol_mask[*subframe] != symbol_mask_full);    
 
-  //caculate timestamp_rx, timestamp_tx based on frame and subframe
+  //calculate timestamp_rx, timestamp_tx based on frame and subframe
   proc->subframe_rx  = sf;
   proc->frame_rx     = f;
   proc->timestamp_rx = ((proc->frame_rx * 10)  + proc->subframe_rx ) * fp->samples_per_tti ;
@@ -238,7 +245,7 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
   }
 
   if (proc->first_rx == 0) {
-    if (proc->subframe_rx != *subframe){
+   if (proc->subframe_rx != *subframe){
       LOG_E(PHY,"Received Timestamp (IF4p5) doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,*subframe);
       exit_fun("Exiting");
     }
@@ -256,12 +263,14 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
     *subframe = proc->subframe_rx;        
   }
 
-  if (ru == RC.ru[0] || ru == RC.ru[1]) {
+  /*if (ru == RC.ru[0] || ru == RC.ru[1]) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_RU+ru->idx, f );
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_RU+ru->idx, sf );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU+ru->idx, proc->frame_tx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU+ru->idx, proc->subframe_tx );
-  }
+    
+  }*/
+
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_IF4P5_SOUTH_IN,f);
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_IF4P5_SOUTH_IN,sf);
 
   proc->symbol_mask[sf] = 0;  
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
@@ -352,11 +361,13 @@ void fh_if4p5_north_in(RU_t *ru,int *frame,int *subframe) {
   symbol_number = 0;
   symbol_mask = 0;
   symbol_mask_full = (1<<ru->frame_parms.symbols_per_tti)-1;
-  LOG_I(PHY,"fh_if4p5_north_in: frame %d, subframe %d\n",*frame,*subframe);
+  LOG_D(PHY,"fh_if4p5_north_in: frame %d, subframe %d\n",*frame,*subframe);
+
   do { 
     recv_IF4p5(ru, frame, subframe, &packet_type, &symbol_number);
     symbol_mask = symbol_mask | (1<<symbol_number);
   } while (symbol_mask != symbol_mask_full); 
+  
 
   ru->north_in_cnt++;
   // dump VCD output for first RU in list
@@ -408,7 +419,7 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
   symbol_number = 0;
   symbol_mask = 0;
   symbol_mask_full = ((subframe_select(fp,*subframe) == SF_S) ? (1<<fp->dl_symbols_in_S_subframe) : (1<<fp->symbols_per_tti))-1;
-  LOG_I(PHY,"fh_if4p5_north_asynch_in: RU %d, frame %d, subframe %d\n",ru->idx,*frame,*subframe);
+  LOG_D(PHY,"fh_if4p5_north_asynch_in: RU %d, frame %d, subframe %d\n",ru->idx,*frame,*subframe);
   do {   
     recv_IF4p5(ru, &frame_tx, &subframe_tx, &packet_type, &symbol_number);
     if (ru->cmd == STOP_RU){
@@ -454,8 +465,11 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
   LOG_D(PHY,"RU %d/%d TST %llu, frame %d, subframe %d\n",ru->idx,0,(long long unsigned int)proc->timestamp_tx,frame_tx,subframe_tx);
   // dump VCD output for first RU in list
   if (ru == RC.ru[0]) {
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame_tx );
+    /*VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame_tx );
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, subframe_tx );
+    */
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_IF4P5_NORTH_ASYNCH_IN,frame_tx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_IF4P5_NORTH_ASYNCH_IN,subframe_tx);
   }
 
 
@@ -482,9 +496,11 @@ void fh_if4p5_north_out(RU_t *ru) {
   RU_proc_t *proc=&ru->proc;
   LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
   const int subframe     = proc->subframe_rx;
-  if (ru->idx==0) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_RU, proc->subframe_rx );
-
-  LOG_D(PHY,"Sending IF4p5_PULFFT SFN.SF %d.%d\n",proc->frame_rx,proc->subframe_rx);
+  if (ru->idx==0){
+ 	 VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_IF4P5_NORTH_OUT, proc->subframe_rx );
+         VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_IF4P5_NORTH_OUT, proc->frame_rx );
+  }
+  LOG_D(PHY,"fh_if4p5_north_out: Sending IF4p5_PULFFT SFN.SF %d.%d\n",proc->frame_rx,proc->subframe_rx);
   if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_UL)) {
     /// **** in TDD during DL send_IF4 of ULTICK to RCC **** ///
     send_IF4p5(ru, proc->frame_rx, proc->subframe_rx, IF4p5_PULTICK);
@@ -629,7 +645,7 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
 #endif
   }
 
-  LOG_I(PHY,"RU %d/%d TS %llu (off %d), frame %d, subframe %d\n",
+  LOG_D(PHY,"south_in/rx_rf: RU %d/%d TS %llu (off %d), frame %d, subframe %d\n",
 	ru->idx, 
 	0, 
 	(unsigned long long int)proc->timestamp_rx,
@@ -692,6 +708,8 @@ void tx_rf(RU_t *ru) {
   lte_subframe_t prevSF_type = subframe_select(fp,(proc->subframe_tx+9)%10);
   lte_subframe_t nextSF_type = subframe_select(fp,(proc->subframe_tx+1)%10);
   int sf_extension = 0;
+  
+  LOG_D(PHY,"south_out/tx_rf: frame %d, subframe %d\n",proc->frame_tx,proc->subframe_tx);
 
   if ((SF_type == SF_DL) ||
       (SF_type == SF_S)) {
@@ -768,7 +786,8 @@ void tx_rf(RU_t *ru) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_tx-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
     // prepare tx buffer pointers
-    
+
+
     txs = ru->rfdevice.trx_write_func(&ru->rfdevice,
 				      proc->timestamp_tx+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension,
 				      txp,
@@ -1469,9 +1488,9 @@ static void* ru_thread_tx( void* param ) {
   //CPU_SET(5, &cpuset);
   //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
   //wait_sync("ru_thread_tx");
-
+  //printf("Entering ru_thread_tx, ru_proc->cond_FH1, ru_proc->instance_cnt_FH1\n");
   wait_on_condition(&proc->mutex_FH1,&proc->cond_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
-  
+  //printf("Passed ru_thread_tx ru_proc->cond_FH1\n");
 
   printf( "ru_thread_tx ready\n");
   while (!oai_exit) { 
@@ -1480,11 +1499,13 @@ static void* ru_thread_tx( void* param ) {
     if (oai_exit) break;   
 
 
-    LOG_D(PHY,"ru_thread_tx: Waiting for TX processing\n");
-	// wait until eNBs are finished subframe RX n and TX n+4
+    LOG_D(PHY,"ru_thread_tx (ru %d): Waiting for TX processing\n",ru->idx);
+    // wait until eNBs are finished subframe RX n and TX n+4
+    //printf("ru_thread_tx, ru_proc->cond_eNBs, ru_proc->instance_cnt_eNBs\n");
     wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
-    LOG_D(PHY,"ru_thread_tx: Woken from condition\n");
-    if (oai_exit) break;
+    //printf("Passed ru_thread_tx ru_proc->cond_eNBs\n");
+    LOG_D(PHY,"ru_thread_tx (ru %d): Woken from condition\n",ru->idx);
+if (oai_exit) break;
   	       
     // do TX front-end processing if needed (precoding and/or IDFTs)
     if (ru->feptx_prec) ru->feptx_prec(ru);
@@ -1501,11 +1522,13 @@ static void* ru_thread_tx( void* param ) {
     
     pthread_mutex_lock( &proc->mutex_eNBs );
     proc->ru_tx_ready++;
+//printf("~~~~~~~~~~~~~~~~~~proc->ru_tx_ready = %d\n", proc->ru_tx_ready);
     // the thread can now be woken up
     if (pthread_cond_signal(&proc->cond_eNBs) != 0) {
       LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
       exit_fun( "ERROR pthread_cond_signal" );
     }
+    //printf("Sent ru_thread_tx, ru_proc->cond_eNBs to tx_thread\n");
     pthread_mutex_unlock( &proc->mutex_eNBs );
   }
   release_thread(&proc->mutex_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
@@ -1701,7 +1724,7 @@ static void* ru_thread( void* param ) {
 
         ru->wait_cnt--;
 
-        LOG_I(PHY,"RU thread %d, frame %d, subframe %d, wait_cnt %d \n",ru->idx, frame, subframe, ru->wait_cnt);
+        LOG_D(PHY,"RU thread %d, frame %d, subframe %d, wait_cnt %d \n",ru->idx, frame, subframe, ru->wait_cnt);
 
         if (ru->if_south!=LOCAL_RF && ru->wait_cnt <=20 && subframe == 5 && frame != RC.ru[0]->proc.frame_rx && resynch_done == 0) {
         // Send RRU_frame adjust
@@ -2595,7 +2618,7 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
     // NOTE: multiple CC_id are not handled here yet!
     ru->openair0_cfg.clock_source  = clock_source;
     ru->openair0_cfg.time_source = time_source;
-    ;
+    ru->generate_dmrs_sync = (ru->is_slave == 0) ? 1 : 0;
     
     eNB0             = ru->eNB_list[0];
     LOG_D(PHY, "RU FUnction:%d ru->if_south:%d\n", ru->function, ru->if_south);

@@ -215,7 +215,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
   } else if (packet_type >= IF4p5_PRACH && 
 	     packet_type <= IF4p5_PRACH+4) {
     // FIX: hard coded prach samples length
-    LOG_D(PHY,"IF4p5_PRACH: frame %d, subframe %d,packet type %x\n",frame,subframe,packet_type);
+    if (frame < 10) LOG_D(PHY,"IF4p5_PRACH: frame %d, subframe %d,packet type %x\n",frame,subframe,packet_type);
     db_fulllength = PRACH_NUM_SAMPLES;
     
     if (eth->flags == ETH_RAW_IF4p5_MODE) {
@@ -249,6 +249,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
                (void *)rxF,
                PRACH_BLOCK_SIZE_BYTES);
       }
+      if (frame == 0) LOG_I(PHY,"signal energy prach %d\n",dB_fixed(signal_energy(rxF,839)));
     }
     if (ru->idx<=1) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0+ru->idx, 1 );
     if ((ru->ifdevice.trx_write_func(&ru->ifdevice,

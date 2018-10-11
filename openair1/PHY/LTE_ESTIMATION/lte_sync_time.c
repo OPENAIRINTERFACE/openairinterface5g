@@ -477,13 +477,20 @@ LOG_M_END
 int ru_sync_time_init(RU_t *ru)   // LTE_UE_COMMON *common_vars
 {
 
+  /*
   int16_t dmrs[2048];
   int16_t *dmrsp[2] = {dmrs,NULL};
+  */
 
+  int32_t dmrs[ru->frame_parms.ofdm_symbol_size*14] __attribute__((aligned(32)));
+  int32_t *dmrsp[2] = {&dmrs[(3-ru->frame_parms.Ncp)*ru->frame_parms.ofdm_symbol_size],NULL};
+
+  generate_ul_ref_sigs();
+ 
   ru->dmrssync = (int16_t*)malloc16_clear(ru->frame_parms.N_RB_DL*2*sizeof(int16_t)); 
   generate_drs_pusch(NULL,NULL,
 		     &ru->frame_parms,
-		     (int32_t**)dmrsp,
+		     dmrsp,/*(int32_t**)dmrsp,*/
 		     0,
 		     AMP,
 		     0,
@@ -503,7 +510,7 @@ int ru_sync_time_init(RU_t *ru)   // LTE_UE_COMMON *common_vars
 	    1);
     break;
   case 50:
-    idft1024(dmrs,
+    idft1024((int16_t*)dmrsp,/*dmrs,*/
 	    ru->dmrssync, /// complex output
 	    1);
     break;

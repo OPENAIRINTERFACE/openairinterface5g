@@ -97,28 +97,44 @@ void feptx0(RU_t *ru,int slot) {
 					                      fp->nb_prefix_samples,
 					                      CYCLIC_PREFIX);
     else {
-      AssertFatal(ru->generate_dmrs_sync == 0 ||
-                  ru->generate_dmrs_sync==1 && (fp->frame_type != TDD || ru->is_slave == 1),
-		  "ru->generate_dmrs_sync should not be set (%d), frame_type %s, is_slave %d\n",
-		  ru->generate_dmrs_sync,(fp->frame_type==1)?"TDD":"FDD",ru->is_slave);
-
+     /* AssertFatal(ru->generate_dmrs_sync==1 && (fp->frame_type != TDD || ru->is_slave == 1),
+		  "ru->generate_dmrs_sync should not be set, frame_type %d, is_slave %d\n",
+		  fp->frame_type,ru->is_slave);
+*/
       if (ru->generate_dmrs_sync == 1 && slot == 0 && subframe == 1 && aa==0) {
+	int32_t dmrs[ru->frame_parms.ofdm_symbol_size*14] __attribute__((aligned(32)));
+        int32_t *dmrsp[2] = {&dmrs[(3-ru->frame_parms.Ncp)*ru->frame_parms.ofdm_symbol_size],NULL};
+  
+        generate_ul_ref_sigs();
+
+        ru->dmrssync = (int16_t*)malloc16_clear(ru->frame_parms.ofdm_symbol_size*2*sizeof(int16_t)); 
 	generate_drs_pusch((PHY_VARS_UE *)NULL,
 			   (UE_rxtx_proc_t*)NULL,
 			   fp,
-			   ru->common.txdataF_BF,
+			   dmrsp,//ru->common.txdataF_BF,
 			   0,
 			   AMP,
 			   1,
 			   0,
 			   fp->N_RB_DL,
 			   aa);
-      }
+
+       idft1024((int16_t*)dmrsp[0],
+                (int16_t*)&ru->common.txdata[aa][slot_offset], 
+                1);
+         
+       /*normal_prefix_mod((int16_t*)dmrsp[0],
+                        (int*)&ru->common.txdata[aa][slot_offset],
+                        1,
+                        fp);
+      */
+      } else {
       normal_prefix_mod(&ru->common.txdataF_BF[aa][slot*slot_sizeF],
 			(int*)&ru->common.txdata[aa][slot_offset],
 			7,
 			fp);
-    }
+     }  
+  }
    /* 
     len = fp->samples_per_tti>>1;
 
