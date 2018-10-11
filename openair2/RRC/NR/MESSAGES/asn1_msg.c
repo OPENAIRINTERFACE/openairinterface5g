@@ -241,7 +241,7 @@ uint8_t do_MIB_NR(rrc_gNB_carrier_data_t *carrier,
     default:
     AssertFatal(1==0,"Unknown subCarrierSpacingCommon %d\n",subCarrierSpacingCommon);
   }
-
+mib->message.choice.mib->subCarrierSpacingCommon = 1;
     switch (dmrs_TypeA_Position) {
     case 2:
       mib->message.choice.mib->dmrs_TypeA_Position = NR_MIB__dmrs_TypeA_Position_pos2;
