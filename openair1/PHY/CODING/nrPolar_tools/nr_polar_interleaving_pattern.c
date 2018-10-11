@@ -19,6 +19,17 @@
  *      contact@openairinterface.org
  */
 
+/*!\file PHY/CODING/nrPolar_tools/nr_polar_interleaving_pattern.c
+ * \brief
+ * \author Turker Yilmaz
+ * \date 2018
+ * \version 0.1
+ * \company EURECOM
+ * \email turker.yilmaz@eurecom.fr
+ * \note
+ * \warning
+*/
+
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 
 void nr_polar_interleaving_pattern(uint16_t K, uint8_t I_IL, uint16_t *PI_k_){

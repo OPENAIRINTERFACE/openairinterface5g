@@ -56,6 +56,8 @@ int l1_north_init_eNB(void);
  */
 int phy_init_top(LTE_DL_FRAME_PARMS *frame_parms);
 
+void phy_init_nr_top(PHY_VARS_NR_UE *ue);
+
 
 /*!
 \brief Allocate and Initialize the PHY variables relevant to the LTE ue signal buffers.

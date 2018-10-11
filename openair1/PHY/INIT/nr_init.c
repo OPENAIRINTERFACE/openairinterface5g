@@ -20,8 +20,8 @@
  */
 
 #include "PHY/defs_gNB.h"
-#include "SCHED/sched_eNB.h"
 #include "PHY/phy_extern.h"
+#include "PHY/NR_REFSIG/nr_refsig.h"
 #include "PHY/INIT/phy_init.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 #include "RadioResourceConfigCommonSIB.h"
@@ -32,7 +32,7 @@
 #include "assertions.h"
 #include <math.h>
 
-#include "PHY/NR_REFSIG/defs.h" 
+#include "PHY/NR_REFSIG/nr_refsig.h" 
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 #include "SCHED_NR/fapi_nr_l1.h"
 
@@ -118,7 +118,25 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   // PBCH DMRS gold sequences generation
   nr_init_pbch_dmrs(gNB);
   // Polar encoder init for PBCH
-  nr_polar_init(&fp->pbch_polar_params, 1);
+  nr_polar_init(&gNB->nrPolar_params,
+        NR_POLAR_PBCH_MESSAGE_TYPE,
+				NR_POLAR_PBCH_PAYLOAD_BITS,
+				NR_POLAR_PBCH_AGGREGATION_LEVEL);
+
+  //PDCCH DMRS init
+  gNB->nr_gold_pdcch_dmrs = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t**));
+  uint32_t ***pdcch_dmrs             = gNB->nr_gold_pdcch_dmrs;
+  AssertFatal(pdcch_dmrs!=NULL, "NR init: pdcch_dmrs malloc failed\n");
+  for (int slot=0; slot<fp->slots_per_frame; slot++) {
+    pdcch_dmrs[slot] = (uint32_t **)malloc16(fp->symbols_per_slot*sizeof(uint32_t*));
+    AssertFatal(pdcch_dmrs[slot]!=NULL, "NR init: pdcch_dmrs for slot %d - malloc failed\n", slot);
+    for (int symb=0; symb<fp->symbols_per_slot; symb++){
+      pdcch_dmrs[slot][symb] = (uint32_t *)malloc16(NR_MAX_PDCCH_DMRS_INIT_LENGTH_DWORD*sizeof(uint32_t));
+      AssertFatal(pdcch_dmrs[slot][symb]!=NULL, "NR init: pdcch_dmrs for slot %d symbol %d - malloc failed\n", slot, symb);
+    }
+  }
+
+  nr_init_pdcch_dmrs(gNB, cfg->sch_config.physical_cell_id.value);
 
 /*
   lte_gold(fp,gNB->lte_gold_table,fp->Nid_cell);
@@ -276,6 +294,7 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   LTE_eNB_PUSCH** const pusch_vars   = gNB->pusch_vars;
   LTE_eNB_SRS* const srs_vars        = gNB->srs_vars;
   LTE_eNB_PRACH* const prach_vars    = &gNB->prach_vars;
+  uint32_t ***pdcch_dmrs             = gNB->nr_gold_pdcch_dmrs;
 
   int i, UE_id;
 
@@ -287,6 +306,9 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   }
   free_and_zero(common_vars->txdataF);
   free_and_zero(common_vars->rxdataF);
+
+  // PDCCH DMRS sequences
+  free_and_zero(pdcch_dmrs);
 
   // Channel estimates for SRS
   for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++) {

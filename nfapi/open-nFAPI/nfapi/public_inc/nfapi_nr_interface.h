@@ -11,6 +11,30 @@
 
 #include "nfapi_interface.h"
 
+
+#define NFAPI_NR_MAX_NB_CCE_AGGREGATION_LEVELS 5
+
+// Extension to the generic structures for single tlv values
+typedef struct {
+	nfapi_tl_t tl;
+	int32_t value;
+} nfapi_int32_tlv_t;
+
+typedef struct {
+	nfapi_tl_t tl;
+	uint32_t value;
+} nfapi_uint32_tlv_t;
+
+/*typedef struct {
+	nfapi_tl_t tl;
+	int64_t value;
+} nfapi_int64_tlv_t;
+
+typedef struct {
+	nfapi_tl_t tl;
+	uint64_t value;
+} nfapi_uint64_tlv_t;*/
+
 // nFAPI enums
 typedef enum {
   NFAPI_NR_DL_CONFIG_DCI_DL_PDU_TYPE = 0,
@@ -159,6 +183,7 @@ typedef struct {
   nfapi_uint16_tlv_t  ssb_periodicity;
   nfapi_uint16_tlv_t  ss_pbch_block_power;
   nfapi_uint16_tlv_t  n_ssb_crb;
+  nfapi_uint16_tlv_t  rmsi_pdcch_config;
 } nfapi_nr_sch_config_t;
 
 #define NFAPI_NR_SCH_CONFIG_PHYSICAL_CELL_ID_TAG 0x501E
@@ -268,13 +293,10 @@ typedef enum {
   NFAPI_NR_DL_DCI_FORMAT_2_0,
   NFAPI_NR_DL_DCI_FORMAT_2_1,
   NFAPI_NR_DL_DCI_FORMAT_2_2,
-  NFAPI_NR_DL_DCI_FORMAT_2_3
-} nfapi_nr_dl_dci_format_e;
-
-typedef enum {
-  NFAPI_NR_UL_DCI_FORMAT_0_0 = 0,
-  NFAPI_NR_UL_DCI_FORMAT_1_0,
-} nfapi_nr_ul_dci_format_e;
+  NFAPI_NR_DL_DCI_FORMAT_2_3,
+  NFAPI_NR_UL_DCI_FORMAT_0_0,
+  NFAPI_NR_UL_DCI_FORMAT_0_1
+} nfapi_nr_dci_format_e;
 
 typedef enum {
 	NFAPI_NR_RNTI_new = 0,
@@ -290,73 +312,62 @@ typedef enum {
 	NFAPI_NR_RNTI_TPC_PUSCH,
 	NFAPI_NR_RNTI_TPC_PUCCH,
 	NFAPI_NR_RNTI_TPC_SRS
-} nfapi_nr_rnti_type_e ;
+} nfapi_nr_rnti_type_e;
+
+typedef enum {
+  NFAPI_NR_USS_FORMAT_0_0_AND_1_0,
+  NFAPI_NR_USS_FORMAT_0_1_AND_1_1,
+} nfapi_nr_uss_dci_formats_e;
+
+typedef enum {
+  NFAPI_NR_SEARCH_SPACE_TYPE_COMMON=0,
+  NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC
+} nfapi_nr_search_space_type_e;
+
+typedef enum {
+  NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE1=0,
+  NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE2,
+  NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE3
+} nfapi_nr_ssb_and_cset_mux_pattern_type_e;
+
+typedef enum {
+  NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED=0,
+  NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED
+} nfapi_nr_cce_reg_mapping_type_e;
+
+typedef enum {
+  NFAPI_NR_CSET_CONFIG_MIB_SIB1=0,
+  NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG
+} nfapi_nr_coreset_config_type_e;
+
+typedef enum {
+  NFAPI_NR_CSET_SAME_AS_REG_BUNDLE=0,
+  NFAPI_NR_CSET_ALL_CONTIGUOUS_RBS
+} nfapi_nr_coreset_precoder_granularity_type_e;
 
 // P7 Sub Structures
-//formats 0_0 and 0_1
+
 typedef struct {
 
 nfapi_tl_t tl;
 
-uint8_t cce_idx;
-uint8_t aggregation_level;
-uint16_t rnti;
-
-uint8_t dci_format; //1 bit
-uint16_t frequency_domain_resource_assignment; //up to 9 bits
-uint8_t time_domain_resource_assignment; //0, 1, 2, 3 or 4 bits
+uint8_t format_indicator; //1 bit
+uint16_t frequency_domain_assignment; //up to 16 bits
+uint8_t time_domain_assignment; // 4 bits
 uint8_t frequency_hopping_flag; //1 bit
-uint8_t mcs; //5 bits
-uint8_t new_data_indicator; //1 bit
-uint8_t redundancy_version; //2 bits
-uint8_t harq_process; //4 bits
-uint8_t tpc; //2 bits
-uint16_t padding;
-uint8_t ul_sul_indicator; //0 or 1 bit
-
-uint8_t carrier_indicator; //0 or 3 bits
-uint8_t bwp_indicator; //0, 1 or 2 bits
-uint8_t downlink_assignment_index1; //1 or 2 bits
-uint8_t downlink_assignment_index2; //0 or 2 bits
-uint8_t srs_resource_indicator;
-uint8_t precoding_information;
-uint8_t antenna_ports;
-uint8_t srs_request;
-uint8_t csi_request;
-uint8_t cbgti; //CBG Transmission Information: 0, 2, 4, 6 or 8 bits
-uint8_t ptrs_dmrs_association;
-uint8_t beta_offset_indicator; //0 or 2 bits
-uint8_t dmrs_sequence_initialization; //0 or 1 bit
-uint8_t ul_sch_indicator; //1 bit
-
-} nfapi_nr_ul_config_dci_ul_pdu_rel15_t;
-//#define NFAPI_NR_UL_CONFIG_REQUEST_DCI_UL_PDU_REL15_TAG 0x????
-
-//formats 1_0, 1_1, 2_0, 2_1, 2_2 and 2_3
-typedef struct {
-
-nfapi_tl_t tl;
-
-uint8_t cce_idx;
-uint8_t aggregation_level;
-uint16_t rnti;
-
-uint8_t dci_format; //1 bit
-uint16_t frequency_domain_resource_assignment; //up to 9 bits
 
 uint8_t ra_preamble_index; //6 bits
-uint8_t ul_sul_indicator; //1 bit
 uint8_t ss_pbch_index; //6 bits
 uint8_t prach_mask_index; //4 bits
-uint16_t reserved; //1_0/C-RNTI:10 bits, 1_0/P-RNTI: 6 bits, 1_0/SI-&RA-RNTI: 16 bits
 
-uint8_t time_domain_resource_assignment; //0, 1, 2, 3 or 4 bits
 uint8_t vrb_to_prb_mapping; //0 or 1 bit
 uint8_t mcs; //5 bits
-uint8_t new_data_indicator; //1 bit
-uint8_t redundancy_version; //2 bits
-uint8_t harq_process; //4 bits
-uint8_t downlink_assignment_index; //0, 2 or 4 bits
+uint8_t ndi; //1 bit
+uint8_t rv; //2 bits
+uint8_t harq_pid; //4 bits
+uint8_t dai; //0, 2 or 4 bits
+uint8_t dai1; //1 or 2 bits
+uint8_t dai2; //0 or 2 bits
 uint8_t tpc; //2 bits
 uint8_t pucch_resource_indicator; //3 bits
 uint8_t pdsch_to_harq_feedback_timing_indicator; //0, 1, 2 or 3 bits
@@ -370,12 +381,17 @@ uint8_t bwp_indicator; //0, 1 or 2 bits
 uint8_t prb_bundling_size_indicator; //0 or 1 bits
 uint8_t rate_matching_indicator; //0, 1 or 2 bits
 uint8_t zp_csi_rs_trigger; //0, 1 or 2 bits
-uint8_t antenna_ports; //4, 5 or 6 bits
 uint8_t transmission_configuration_indication; //0 or 3 bits
 uint8_t srs_request; //2 bits
 uint8_t cbgti; //CBG Transmission Information: 0, 2, 4, 6 or 8 bits
 uint8_t cbgfi; //CBG Flushing Out Information: 0 or 1 bit
 uint8_t dmrs_sequence_initialization; //0 or 1 bit
+
+uint8_t srs_resource_indicator;
+uint8_t precoding_information;
+uint8_t csi_request;
+uint8_t ptrs_dmrs_association;
+uint8_t beta_offset_indicator; //0 or 2 bits
 
 uint8_t slot_format_indicator_count;
 uint8_t *slot_format_indicators;
@@ -386,17 +402,75 @@ uint16_t *pre_emption_indications; //14 bit
 uint8_t block_number_count;
 uint8_t *block_numbers;
 
+uint8_t ul_sul_indicator; //0 or 1 bit
+uint8_t antenna_ports;
+
+uint16_t reserved; //1_0/C-RNTI:10 bits, 1_0/P-RNTI: 6 bits, 1_0/SI-&RA-RNTI: 16 bits
+uint16_t padding;
+
 } nfapi_nr_dl_config_dci_dl_pdu_rel15_t;
 
 //#define NFAPI_NR_DL_CONFIG_REQUEST_DCI_DL_PDU_REL15_TAG 0x????
 
-typedef struct {
-  nfapi_nr_dl_config_dci_dl_pdu_rel15_t   dci_dl_pdu_rel15;
-} nfapi_nr_dl_config_dci_dl_pdu;
+typedef struct{
+  nfapi_tl_t tl;
+  uint8_t  coreset_id;
+  uint64_t  frequency_domain_resources;
+  uint8_t  duration;
+  uint8_t  cce_reg_mapping_type;
+  uint8_t  reg_bundle_size;
+  uint8_t  interleaver_size;
+  uint8_t  shift_index;
+  uint8_t  precoder_granularity;
+  uint8_t  tci_state_id;
+  uint8_t  tci_present_in_dci;
+  uint32_t dmrs_scrambling_id;
+} nfapi_nr_coreset_t;
+
+typedef struct{
+  nfapi_tl_t tl;
+  uint8_t   search_space_id;
+  uint8_t   coreset_id;
+  uint8_t   search_space_type;
+  uint8_t   duration;
+  uint8_t   css_formats_0_0_and_1_0;
+  uint8_t   css_format_2_0;
+  uint8_t   css_format_2_1;
+  uint8_t   css_format_2_2;
+  uint8_t   css_format_2_3;
+  uint8_t   uss_dci_formats;
+  uint8_t   srs_monitoring_periodicity;
+  uint8_t   slot_monitoring_periodicity;
+  uint8_t   slot_monitoring_offset;
+  uint16_t  monitoring_symbols_in_slot;
+  uint16_t  number_of_candidates[NFAPI_NR_MAX_NB_CCE_AGGREGATION_LEVELS];
+} nfapi_nr_search_space_t;
 
 typedef struct {
-  nfapi_nr_ul_config_dci_ul_pdu_rel15_t   dci_ul_pdu_rel15;
-} nfapi_nr_ul_config_dci_ul_pdu;
+  nfapi_tl_t tl;
+  uint8_t rnti;
+  uint8_t rnti_type;
+  uint8_t dci_format;
+  uint8_t config_type;
+  uint8_t search_space_type;  
+  uint8_t aggregation_level;
+  uint8_t n_rb;
+  uint8_t n_symb;
+  uint8_t rb_offset;
+  uint8_t cr_mapping_type;
+  uint8_t reg_bundle_size;
+  uint8_t interleaver_size;
+  uint8_t shift_index;
+  uint8_t mux_pattern;
+  uint8_t precoder_granularity;
+  uint8_t first_slot;
+  uint8_t first_symbol;
+  uint8_t nb_ss_sets_per_slot;
+  uint8_t nb_slots;
+  uint8_t sfn_mod2;
+  uint16_t scrambling_id;
+  nfapi_bf_vector_t   bf_vector;
+} nfapi_nr_dl_config_pdcch_parameters_rel15_t;
 
 typedef struct {
   nfapi_tl_t tl;
@@ -411,13 +485,20 @@ typedef struct {
 } nfapi_nr_dl_config_bch_pdu;
 
 typedef struct {
-
-} nfapi_nr_dl_config_dlsch_pdu;
+  nfapi_tl_t tl;
+  nfapi_nr_search_space_t           sib1searchSpace;
+  nfapi_nr_coreset_t   sib1ControlResourceSets;
+  nfapi_nr_search_space_t           sibssearchSpace;
+  nfapi_nr_coreset_t   sibsControlResourceSets; 
+  nfapi_nr_search_space_t           ra_SearchSpace;
+  nfapi_nr_coreset_t   ra_ControlResourceSets;
+}nfapi_nr_dl_config_dlsch_pdu_rel15_t;
 
 typedef struct {
   nfapi_tl_t tl;
-  nfapi_nr_SearchSpace_t           pagingSearchSpace;
-} nfapi_nr_dl_config_pch_pdu;
+  nfapi_nr_search_space_t           pagingSearchSpace;
+  nfapi_nr_coreset_t   pagingControlResourceSets;
+}nfapi_nr_dl_config_pch_pdu_rel15_t;
 
 typedef struct {
   
@@ -432,25 +513,30 @@ typedef struct {
 } nfapi_nr_dl_config_ndlsch_pdu;
 
 typedef struct {
+  nfapi_nr_dl_config_dci_dl_pdu_rel15_t     dci_dl_pdu_rel15;
+  nfapi_nr_dl_config_pdcch_parameters_rel15_t pdcch_params_rel15;
+} nfapi_nr_dl_config_dci_dl_pdu;
+
+
+typedef struct {
   uint8_t pdu_type;
   uint8_t pdu_size;
+
   union {
-    nfapi_nr_dl_config_dci_dl_pdu     dci_dl_pdu;
-    nfapi_nr_ul_config_dci_ul_pdu     dci_ul_pdu;
-    nfapi_nr_dl_config_bch_pdu        bch_pdu;
-    nfapi_nr_dl_config_dlsch_pdu      dlsch_pdu;
-    nfapi_nr_dl_config_pch_pdu        pch_pdu;
-    nfapi_nr_dl_config_nbch_pdu       nbch_pdu;
-    nfapi_nr_dl_config_npdcch_pdu     npdcch_pdu;
-    nfapi_nr_dl_config_ndlsch_pdu     ndlsch_pdu;
+  nfapi_nr_dl_config_dci_dl_pdu             dci_dl_pdu;
+  nfapi_nr_dl_config_bch_pdu_rel15_t        bch_pdu_rel15;
+  nfapi_nr_dl_config_dlsch_pdu_rel15_t      dlsch_pdu_rel15;
+  nfapi_nr_dl_config_pch_pdu_rel15_t        pch_pdu_rel15;
+  //nfapi_nr_dl_config_nbch_pdu_rel15_t       nbch_pdu_rel15;
+  //nfapi_nr_dl_config_npdcch_pdu_rel15_t     npdcch_pdu_rel15;
+  //nfapi_nr_dl_config_ndlsch_pdu_rel15_t     ndlsch_pdu_rel15;
   };
 } nfapi_nr_dl_config_request_pdu_t;
  
 typedef struct {
   nfapi_tl_t tl;
-  uint8_t number_pdcch_ofdm_symbols;
   uint8_t   number_dci;
-  uint16_t  number_pdu;
+  uint8_t   number_pdu;
   uint8_t   number_pdsch_rnti;
   nfapi_nr_dl_config_request_pdu_t *dl_config_pdu_list;
 } nfapi_nr_dl_config_request_body_t;

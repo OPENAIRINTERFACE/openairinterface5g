@@ -355,8 +355,16 @@ based on 3GPP UMTS/LTE specifications.
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits
 */
-unsigned int crc24b (unsigned char * inptr, int bitlen);
-    
+uint32_t crc24b (uint8_t *inPtr, int32_t bitlen);
+
+/*!\fn uint32_t crc24c(uint8_t *inPtr, int32_t bitlen)
+\brief This computes a 24-bit crc ('c' variant for transport-block segments)
+based on 3GPP Rel 15 specifications.
+@param inPtr Pointer to input byte stream
+@param bitlen length of inputs in bits
+*/
+uint32_t crc24c (uint8_t *inPtr, int32_t bitlen);
+
 /*!\fn uint32_t crc16(uint8_t *inPtr, int32_t bitlen)
 \brief This computes a 16-bit crc based on 3GPP UMTS specifications.
 @param inPtr Pointer to input byte stream
@@ -439,5 +447,21 @@ void phy_viterbi_dot11(int8_t *,uint8_t *,uint16_t);
 decoder_if_t phy_threegpplte_turbo_decoder;
 decoder_if_t phy_threegpplte_turbo_decoder8;
 decoder_if_t phy_threegpplte_turbo_decoder16;
+
+int32_t nr_segmentation(unsigned char *input_buffer,
+                     unsigned char **output_buffers,
+                     unsigned int B,
+                     unsigned int *C,
+                     unsigned int *Kplus,
+                     unsigned int *Kminus,
+					 unsigned int *Zout,
+                     unsigned int *F);
+
+uint32_t nr_compute_tbs(uint8_t mcs,
+						uint16_t nb_rb,
+						uint16_t nb_symb_sch,
+						uint8_t nb_re_dmrs,
+						uint16_t length_dmrs,
+						uint8_t Nl);
 
 #endif

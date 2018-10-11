@@ -31,6 +31,7 @@
 #include "PHY/defs_gNB.h"
 #include "PHY_INTERFACE/phy_interface.h"
 #include "SCHED/sched_eNB.h"
+#include "PHY/NR_TRANSPORT/nr_dci.h"
 
 
 lte_subframe_t nr_subframe_select (nfapi_nr_config_request_t *cfg, unsigned char subframe);
@@ -40,5 +41,14 @@ void nr_init_feptx_thread(RU_t *ru,pthread_attr_t *attr_feptx);
 void nr_feptx_ofdm(RU_t *ru);
 void nr_feptx_ofdm_2thread(RU_t *ru);
 void nr_feptx0(RU_t *ru,int slot);
+
+void nr_configure_css_dci_from_mib(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
+                               nr_scs_e scs_common,
+                               nr_scs_e pdcch_scs,
+                               nr_frequency_range_e freq_range,
+                               uint8_t rmsi_pdcch_config,
+                               uint8_t ssb_idx,
+                               uint16_t nb_slots_per_frame,
+                               uint16_t N_RB);
 
 #endif
