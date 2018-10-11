@@ -323,14 +323,14 @@ endif  (${RRC_ASN1_VERSION} STREQUAL "Rel8")
 add_definitions(-DRRC_VERSION=${RRC_VERSION})
 set (RRC_FULL_DIR ${asn1_generated_dir}/RRC_${RRC_ASN1_VERSION})
 message("calling asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}")
-#execute_process(COMMAND mkdir -p ${RRC_FULL_DIR}
-#                COMMAND env asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}
-#                RESULT_VARIABLE ret
-#		OUTPUT_QUIET
-#                ERROR_QUIET)
-#if (NOT ${ret} STREQUAL 0)
-#  message(FATAL_ERROR "${ret}: error")
-#endif (NOT ${ret} STREQUAL 0)
+execute_process(COMMAND mkdir -p ${RRC_FULL_DIR}
+                COMMAND env asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}
+                RESULT_VARIABLE ret
+		OUTPUT_QUIET
+                ERROR_QUIET)
+if (NOT ${ret} STREQUAL 0)
+  message(FATAL_ERROR "${ret}: error")
+endif (NOT ${ret} STREQUAL 0)
 
 file(GLOB rrc_source ${RRC_FULL_DIR}/*.c)
 file(GLOB rrc_h ${RRC_FULL_DIR}/*.h)
@@ -364,11 +364,11 @@ add_definitions(-DNR_RRC_VERSION=${NR_RRC_VERSION})
 set (NR_RRC_FULL_DIR ${asn1_generated_dir}/${NR_RRC_ASN1_VERSION})
 
 message("calling ASN1C_PREFIX=NR_ asn1c -pdu=all -fcompound-names -findirect-choice -gen-PER -no-gen-OER -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}")
-#execute_process(COMMAND mkdir -p ${NR_RRC_FULL_DIR}
-#                COMMAND env "ASN1C_PREFIX=NR_" asn1c -fcompound-names -findirect-choice -gen-PER -no-gen-OER -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}
-#                RESULT_VARIABLE ret
-#		OUTPUT_QUIET
-#		ERROR_QUIET)
+execute_process(COMMAND mkdir -p ${NR_RRC_FULL_DIR}
+                COMMAND env "ASN1C_PREFIX=NR_" asn1c -fcompound-names -findirect-choice -gen-PER -no-gen-OER -no-gen-example -D ${NR_RRC_FULL_DIR} ${NR_RRC_GRAMMAR}
+                RESULT_VARIABLE ret
+		OUTPUT_QUIET
+		ERROR_QUIET)
 
 #if (NOT ${ret} STREQUAL 0)
 #   message(FATAL_ERROR "${ret}: error")
@@ -428,14 +428,14 @@ add_definitions(-DS1AP_VERSION=${S1AP_VERSION})
 set(S1AP_ASN_DIR ${S1AP_DIR}/MESSAGES/ASN1/${S1AP_RELEASE})
 set(S1AP_C_DIR ${asn1_generated_dir}/S1AP_${S1AP_RELEASE})
 message("calling ASN1C_PREFIX=S1AP_ asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${S1AP_C_DIR} ${S1AP_ASN_DIR}/${S1AP_ASN_FILES}")
-#execute_process(COMMAND mkdir -p ${S1AP_C_DIR}
-#                COMMAND env "ASN1C_PREFIX=S1AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${S1AP_C_DIR} ${S1AP_ASN_DIR}/${S1AP_ASN_FILES}
-#                RESULT_VARIABLE ret
-#		OUTPUT_QUIET
-#                ERROR_QUIET)
-#if (NOT ${ret} STREQUAL 0)
-#  message(FATAL_ERROR "${ret}: error")
-#endif (NOT ${ret} STREQUAL 0)
+execute_process(COMMAND mkdir -p ${S1AP_C_DIR}
+                COMMAND env "ASN1C_PREFIX=S1AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${S1AP_C_DIR} ${S1AP_ASN_DIR}/${S1AP_ASN_FILES}
+                RESULT_VARIABLE ret
+		OUTPUT_QUIET
+                ERROR_QUIET)
+if (NOT ${ret} STREQUAL 0)
+  message(FATAL_ERROR "${ret}: error")
+endif (NOT ${ret} STREQUAL 0)
 file(GLOB S1AP_source ${S1AP_C_DIR}/*.c)
 
 file(GLOB s1ap_h ${S1AP_C_DIR}/*.h)
@@ -497,14 +497,14 @@ add_definitions(-DX2AP_VERSION=${X2AP_VERSION})
 set(X2AP_ASN_DIR ${X2AP_DIR}/MESSAGES/ASN1/${X2AP_RELEASE})
 set(X2AP_C_DIR ${asn1_generated_dir}/X2AP_${X2AP_RELEASE})
 message("calling ASN1C_PREFIX=X2AP_ asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}")
-#execute_process(COMMAND mkdir -p ${X2AP_C_DIR}
-#                COMMAND env "ASN1C_PREFIX=X2AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
-#                RESULT_VARIABLE ret
-#                OUTPUT_QUIET
-#                ERROR_QUIET)
-#if (NOT ${ret} STREQUAL 0)
-#  message(FATAL_ERROR "${ret}: error")
-#endif (NOT ${ret} STREQUAL 0)
+execute_process(COMMAND mkdir -p ${X2AP_C_DIR}
+                COMMAND env "ASN1C_PREFIX=X2AP_" asn1c -pdu=all -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example -D ${X2AP_C_DIR} ${X2AP_ASN_DIR}/${X2AP_ASN_FILES}
+                RESULT_VARIABLE ret
+                OUTPUT_QUIET
+                ERROR_QUIET)
+if (NOT ${ret} STREQUAL 0)
+  message(FATAL_ERROR "${ret}: error")
+endif (NOT ${ret} STREQUAL 0)
 file(GLOB X2AP_source ${X2AP_C_DIR}/*.c)
 
 file(GLOB x2ap_h ${X2AP_C_DIR}/*.h)
