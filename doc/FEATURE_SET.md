@@ -7,7 +7,7 @@
    4. [eNB PDCP Layer](#enb-pdcp-layer)
    5. [eNB RRC Layer](#enb-rrc-layer)
    6. [eNB X2AP](#enb-x2ap)
-   7. [eNB Advanced](#enb-advanced)
+   7. [eNB Advanced Features](#enb-advanced-features)
 2. [OpenAirInterface UE Feature Set](#openairinterface-ue-feature-set)
 
 # OpenAirInterface Block diagram #
@@ -102,6 +102,7 @@ The current PDCP layer is header compliant with **3GPP 36.323** Rel 10.1.0 and i
 The RRC layer is based on **3GPP 36.331** v14.3.0 and implements the following functions:
 
 - System Information broadcast (SIB 1, 2, 3, and 13)
+  * SIB1: Up to 6 PLMN IDs broadcast
 - RRC connection establishment
 - RRC connection reconfiguration (addition and removal of radio bearers, connection release)
 - RRC connection release
@@ -115,7 +116,7 @@ The RRC layer is based on **3GPP 36.331** v14.3.0 and implements the following f
 
 **To be completed**
 
-## Advanced Features ##
+## eNB Advanced Features ##
 
 **To be completed**
 
