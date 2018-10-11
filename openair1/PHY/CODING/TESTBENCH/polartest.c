@@ -10,7 +10,7 @@
 #include "PHY/CODING/coding_defs.h"
 #include "SIMULATION/TOOLS/sim.h"
 
-#define DEBUG_DCI_POLAR_PARAMS
+//#define DEBUG_DCI_POLAR_PARAMS
 //#define DEBUG_POLAR_TIMING
 //#define DEBUG_CRC
 
@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
 			break;
 
 	        case 'h':
-		  printf("./polartest -s SNRstart -d SNRinc -f SNRstop -m [0=DCI|1=PBCH|2=UCI] -i iterations -l decoderListSize -a pathMetricAppr\n");
+		  printf("./polartest -s SNRstart -d SNRinc -f SNRstop -m [0=PBCH|1=DCI|2=UCI] -i iterations -l decoderListSize -a pathMetricAppr\n");
 		  exit(-1);
 
 		default:

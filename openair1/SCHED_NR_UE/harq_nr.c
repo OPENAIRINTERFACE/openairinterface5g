@@ -120,7 +120,7 @@ void get_dci_info_for_harq(PHY_VARS_NR_UE *ue, NR_DCI_INFO_EXTRACTED_t *nr_dci_i
 
 	dlsch[0]->current_harq_pid = nr_dci_info_extracted->harq_process_number;
 
-	NR_DL_UE_HARQ_t *dl_harq = dlsch[0]->harq_processes[dlsch[0]->current_harq_pid];
+	NR_DL_UE_HARQ_t *dl_harq = &dlsch[0]->harq_processes[dlsch[0]->current_harq_pid];
 
     dl_harq->harq_ack.vDAI_DL = nr_dci_info_extracted->dai+1;
     dl_harq->harq_ack.pucch_resource_indicator = nr_dci_info_extracted->pucch_resource_ind;

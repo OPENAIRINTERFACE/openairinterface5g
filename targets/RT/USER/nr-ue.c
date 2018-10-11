@@ -1002,7 +1002,7 @@ void *UE_thread(void *arg) {
                         if ( first_symbols > 0 )
                             AssertFatal(first_symbols ==
                                         UE->rfdevice.trx_read_func(&UE->rfdevice,
-                                                                   &timestamp1,
+                                                                   &timestamp,
                                                                    (void**)UE->common_vars.rxdata,
                                                                    first_symbols,
                                                                    UE->frame_parms.nb_antennas_rx),"");

@@ -1140,7 +1140,7 @@ printf("\n>>> nr_ue_process_dci at MAC layer with dci_format=%d\n",dci_format);
  *    49 PADDING_NR_DCI: (Note 2) If DCI format 0_0 is monitored in common search space
  *    50 SUL_IND_0_0:
  */
-            ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_PUSCH;
+            ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
             ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.rnti = rnti;
             fapi_nr_ul_config_pusch_pdu_rel15_t *ulsch_config_pdu_0_0 = &ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15;
         /* IDENTIFIER_DCI_FORMATS */
@@ -1212,7 +1212,7 @@ printf("\n>>> nr_ue_process_dci at MAC layer with dci_format=%d\n",dci_format);
  *    48 UL_SCH_IND
  *    49 PADDING_NR_DCI: (Note 2) If DCI format 0_0 is monitored in common search space
  */
-            ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_PUSCH;
+            ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
             ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.rnti = rnti;
             fapi_nr_ul_config_pusch_pdu_rel15_t *ulsch_config_pdu_0_1 = &ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15;
         /* IDENTIFIER_DCI_FORMATS */

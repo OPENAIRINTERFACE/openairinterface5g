@@ -130,7 +130,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
         if(scheduled_response->ul_config != NULL){
             fapi_nr_ul_config_request_t *ul_config = scheduled_response->ul_config;
             for(i=0; i<ul_config->number_pdus; ++i){
-                 if(ul_config->ul_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_PUSCH){
+                 if(ul_config->ul_config_list[i].pdu_type == FAPI_NR_UL_CONFIG_TYPE_PUSCH){
                      // pusch config pdu
                      fapi_nr_ul_config_pusch_pdu_rel15_t *pusch_config_pdu = &ul_config->ul_config_list[i].ulsch_config_pdu.ulsch_pdu_rel15;
                      uint8_t current_harq_pid = pusch_config_pdu->harq_process_nbr;

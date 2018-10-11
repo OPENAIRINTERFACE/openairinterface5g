@@ -215,7 +215,6 @@ int16_t           rrc_log_level      = LOG_INFO;
 int16_t           rrc_log_verbosity  = LOG_MED;
 int16_t           opt_log_level      = LOG_INFO;
 int16_t           opt_log_verbosity  = LOG_MED;
-*/
 
 # if defined(ENABLE_USE_MME)
 int16_t           gtpu_log_level     = LOG_DEBUG;
@@ -525,11 +524,9 @@ static void get_options(void) {
       set_glog_onlinelog(online_log_messages);
   }
   if(config_isparamset(cmdline_logparams,CMDLINE_GLOGLEVEL_IDX)) {
-      set_glog(glog_level, -1);
+      set_glog(glog_level);
   }
-  if(config_isparamset(cmdline_logparams,CMDLINE_GLOGVERBO_IDX)) {
-      set_glog(-1, glog_verbosity);
-  }
+
   if (start_telnetsrv) {
      load_module_shlib("telnetsrv",NULL,0);
   }
@@ -877,7 +874,7 @@ int main( int argc, char **argv ) {
 #endif
 
     // get options and fill parameters from configuration file
-    get_options (argc, argv); //Command-line options, enb_properties
+    get_options (); //Command-line options, enb_properties
 
     if (opt_type != OPT_NONE) {
         radio_type_t radio_type;

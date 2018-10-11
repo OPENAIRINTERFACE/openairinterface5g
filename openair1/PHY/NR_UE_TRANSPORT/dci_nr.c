@@ -1816,9 +1816,11 @@ T(T_UE_PHY_PDCCH_ENERGY, T_INT(eNB_id), T_INT(0), T_INT(frame%1024), T_INT(nr_tt
 }
 #endif //MU_RECEIVER
 #if T_TRACER
-T(T_UE_PHY_PDCCH_IQ, T_INT(frame_parms->N_RB_DL), T_INT(frame_parms->N_RB_DL),
+/*
+  T(T_UE_PHY_PDCCH_IQ, T_INT(frame_parms->N_RB_DL), T_INT(frame_parms->N_RB_DL),
   T_INT(n_pdcch_symbols),
   T_BUFFER(pdcch_vars[eNB_id]->rxdataF_comp, frame_parms->N_RB_DL*12*n_pdcch_symbols* 4));
+*/
 #endif
 #ifdef DEBUG_DCI_DECODING
 	printf("demapping: nr_tti_rx %d, mi %d, tdd_config %d\n",nr_tti_rx,get_mi(frame_parms,nr_tti_rx),frame_parms->tdd_config);
