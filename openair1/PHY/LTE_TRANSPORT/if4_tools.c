@@ -215,7 +215,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
   } else if (packet_type >= IF4p5_PRACH && 
 	     packet_type <= IF4p5_PRACH+4) {
     // FIX: hard coded prach samples length
-    if (frame < 10) LOG_I(PHY,"IF4p5_PRACH: frame %d, subframe %d,packet type %x\n",frame,subframe,packet_type);
+    if (frame < 10) LOG_D(PHY,"IF4p5_PRACH: frame %d, subframe %d,packet type %x\n",frame,subframe,packet_type);
     db_fulllength = PRACH_NUM_SAMPLES;
     
     if (eth->flags == ETH_RAW_IF4p5_MODE) {
