@@ -655,6 +655,8 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   fp->nb_antennas_tx = 1;
   fp->nb_antennas_rx=1;
 
+  init_dfts();
+
   printf("Initializing UE vars (abstraction %"PRIu8") for eNB TXant %"PRIu8", UE RXant %"PRIu8"\n",abstraction_flag,fp->nb_antennas_tx,fp->nb_antennas_rx);
   //LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_UE][MOD %02u][]\n", ue->Mod_id+NB_eNB_INST);
   

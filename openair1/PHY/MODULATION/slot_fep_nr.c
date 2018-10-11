@@ -25,17 +25,17 @@
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 
-//#define DEBUG_FEP
+#define DEBUG_FEP
 
 #define SOFFSET 0
 
 int nr_slot_fep(PHY_VARS_NR_UE *ue,
-             unsigned char l,
-             unsigned char Ns,
-             int sample_offset,
-             int no_prefix,
-			 int reset_freq_est,
-			 NR_CHANNEL_EST_t channel)
+		unsigned char l,
+		unsigned char Ns,
+		int sample_offset,
+		int no_prefix,
+		int reset_freq_est,
+		NR_CHANNEL_EST_t channel)
 {
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   NR_UE_COMMON *common_vars   = &ue->common_vars;
@@ -143,7 +143,6 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
         stop_meas(&ue->rx_dft_stats);
 #endif
-
       }
     } else {
       rx_offset += (frame_parms->ofdm_symbol_size+nb_prefix_samples)*l;// +

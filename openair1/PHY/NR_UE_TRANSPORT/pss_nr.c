@@ -269,6 +269,8 @@ void generate_pss_nr(int N_ID_2, int ofdm_symbol_size)
 #ifdef DBG_PSS_NR
 
   if (N_ID_2 == 0) {
+    for (int i=0;i<16;i++) printf("f %d: %d,%d\n",i,synchroF_tmp[i<<1],synchroF_tmp[1+(i<<1)]);
+    for (int i=0;i<16;i++) printf("t %d: %d,%d\n",i,primary_synchro_time[i<<1],primary_synchro_time[1+(i<<1)]);
     char output_file[255];
     char sequence_name[255];
     sprintf(output_file, "%s%d_%d%s","pss_seq_t_", N_ID_2, length, ".m");
@@ -277,6 +279,9 @@ void generate_pss_nr(int N_ID_2, int ofdm_symbol_size)
     printf("file %s sequence %s\n", output_file, sequence_name);
 
     write_output(output_file, sequence_name, primary_synchro_time, length, 1, 1);
+    sprintf(output_file, "%s%d_%d%s","pss_seq_f_", N_ID_2, length, ".m");
+    sprintf(sequence_name, "%s%d_%d","pss_seq_f_", N_ID_2, length);
+    write_output(output_file, sequence_name, synchroF_tmp, length, 1, 1);
   }
 
 #endif

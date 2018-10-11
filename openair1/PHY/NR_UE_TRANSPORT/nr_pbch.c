@@ -567,7 +567,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
 #ifdef DEBUG_PBCH
     //printf("address dataf %p",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF);
-    write_output("rxdataF0_pbch.m","rxF0pbch",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF,frame_parms->ofdm_symbol_size*4,2,1);
+    write_output("rxdataF0_pbch.m","rxF0pbch",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF,frame_parms->ofdm_symbol_size*4,1,1);
 #endif
   
     nr_pbch_extract(nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF,
@@ -718,6 +718,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   	  printf("[PBCH] decoder payload[%d] = %x\n",i,decoded_output[i]);
   }
 	  //#endif
+
     ue->dl_indication.rx_ind = &ue->rx_ind; //  hang on rx_ind instance
     //ue->rx_ind.sfn_slot = 0;  //should be set by higher-1-layer, i.e. clean_and_set_if_instance()
     ue->rx_ind.number_pdus = ue->rx_ind.number_pdus + 1;
@@ -729,7 +730,8 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
     ue->rx_ind.rx_indication_body->mib_pdu.ssb_length = Lmax;                //  confirm with TCL
     ue->rx_ind.rx_indication_body->mib_pdu.cell_id = frame_parms->Nid_cell;  //  confirm with TCL
 
-    ue->if_inst->dl_indication(&ue->dl_indication);
+    if (ue->if_inst && ue->if_inst->dl_indication)
+      ue->if_inst->dl_indication(&ue->dl_indication);
 
     return 0;    
 }

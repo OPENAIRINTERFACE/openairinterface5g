@@ -21,7 +21,7 @@
 
 #include "PHY/NR_TRANSPORT/nr_transport.h"
 
-//#define NR_SSS_DEBUG
+#define NR_SSS_DEBUG
 
 int nr_generate_sss(  int16_t *d_sss,
                       int32_t **txdataF,
@@ -76,6 +76,7 @@ int nr_generate_sss(  int16_t *d_sss,
 
     for (int m = 0; m < NR_SSS_LENGTH; m++) {
       ((int16_t*)txdataF[aa])[2*(l*frame_parms->ofdm_symbol_size + k)] = (a * d_sss[m]) >> 15;
+      printf("sss %d: %d\n",m,((int16_t*)txdataF[aa])[2*(l*frame_parms->ofdm_symbol_size + k)]);
       k++;
 
       if (k >= frame_parms->ofdm_symbol_size)
@@ -83,7 +84,7 @@ int nr_generate_sss(  int16_t *d_sss,
     }
   }
 #ifdef NR_SSS_DEBUG
-  write_output("sss_0.m", "sss_0", (void*)txdataF[0][2*l*frame_parms->ofdm_symbol_size], frame_parms->ofdm_symbol_size, 1, 1);
+  //  write_output("sss_0.m", "sss_0", (void*)txdataF[0][l*frame_parms->ofdm_symbol_size], frame_parms->ofdm_symbol_size, 1, 1);
 #endif
 
   return 0;

@@ -74,7 +74,7 @@ static inline void cmac(__m128i a,__m128i b, __m128i *re32, __m128i *im32)
   cmac_tmp    = _mm_sign_epi16(b,*(__m128i*)reflip);
   cmac_tmp_re32  = _mm_madd_epi16(a,cmac_tmp);
 
-
+ 
   //  cmac_tmp    = _mm_shufflelo_epi16(b,_MM_SHUFFLE(2,3,0,1));
   //  cmac_tmp    = _mm_shufflehi_epi16(cmac_tmp,_MM_SHUFFLE(2,3,0,1));
   cmac_tmp = _mm_shuffle_epi8(b,_mm_set_epi8(13,12,15,14,9,8,11,10,5,4,7,6,1,0,3,2));
@@ -4464,6 +4464,7 @@ void dft2048(int16_t *x,int16_t *y,int scale)
   _mm_empty();
   _m_empty();
 
+
 }
 
 void idft2048(int16_t *x,int16_t *y,int scale)
@@ -4567,6 +4568,8 @@ void dft2048(int16_t *x,int16_t *y,int scale)
   int i;
   simd256_q15_t ONE_OVER_SQRT2_Q15_128 = set1_int16_simd256(ONE_OVER_SQRT2_Q15);
 
+  write_output("dftin.m","dftin",x,2048,1,1);
+
   xtmpp = xtmp;
 
   for (i=0; i<4; i++) {
@@ -4645,7 +4648,7 @@ void dft2048(int16_t *x,int16_t *y,int scale)
 
   _mm_empty();
   _m_empty();
-
+  write_output("dftout.m","dftout",y,2048,1,1);
 }
 
 void idft2048(int16_t *x,int16_t *y,int scale)
@@ -4658,7 +4661,7 @@ void idft2048(int16_t *x,int16_t *y,int scale)
   simd256_q15_t ONE_OVER_SQRT2_Q15_128 = set1_int16_simd256(ONE_OVER_SQRT2_Q15);
 
   xtmpp = xtmp;
-
+  
   for (i=0; i<4; i++) {
     transpose4_ooff_simd256(x256  ,xtmpp,128);
     transpose4_ooff_simd256(x256+2,xtmpp+1,128);

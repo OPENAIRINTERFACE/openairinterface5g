@@ -96,7 +96,8 @@ void init_context_sss_nr(int amp)
 
       /* Modulation of SSS is a BPSK TS 36.211 chapter 5.1.2 BPSK */
 #if 1
-        d_sss[N_ID_2][N_ID_1][n]   = dss_current * amp;
+        d_sss[N_ID_2][N_ID_1][n]   = dss_current;// * amp;
+	(void) amp;
 #else
         (void) amp;
         d_sss[N_ID_2][N_ID_1][n]   = (dss_current * SHRT_MAX)>>SCALING_PSS_NR;
@@ -126,6 +127,8 @@ void init_context_sss_nr(int amp)
 *
 *********************************************************************/
 
+#define DEBUG_SSS_NR
+#define DEBUG_PLOT_SSS
 void insert_sss_nr(int16_t *sss_time,
                    NR_DL_FRAME_PARMS *frame_parms)
 {
@@ -425,21 +428,21 @@ int rx_sss_nr(PHY_VARS_NR_UE *ue, int32_t *tot_metric,uint8_t *phase_max)
   // Do FFTs for SSS/PSS
   // SSS
   nr_slot_fep(ue,
-           SSS_SYMBOL_NB,      // symbol number
-           0,                  // Ns slot number
-           ue->rx_offset,      // sample_offset of int16_t
-           0,                  // no_prefix
-           1,                  // reset frequency estimation
-		   NR_SSS_EST);
+	      SSS_SYMBOL_NB,      // symbol number
+	      0,                  // Ns slot number
+	      ue->rx_offset,      // sample_offset of int16_t
+	      0,                  // no_prefix
+	      1,                  // reset frequency estimation
+	      NR_SSS_EST);
 
   // PSS
   nr_slot_fep(ue,
-           PSS_SYMBOL_NB,
-           0,
-           ue->rx_offset,
-           0,
-           1,
-		   NR_SSS_EST);
+	      PSS_SYMBOL_NB,
+	      0,
+	      ue->rx_offset,
+	      0,
+	      1,
+	      NR_SSS_EST);
 
   frame_parms->nb_prefix_samples0 = nb_prefix_samples0;
 
@@ -452,17 +455,11 @@ int rx_sss_nr(PHY_VARS_NR_UE *ue, int32_t *tot_metric,uint8_t *phase_max)
 #ifdef DEBUG_PLOT_SSS
 
   write_output("rxsig0.m","rxs0",&ue->common_vars.rxdata[0][0],ue->frame_parms.samples_per_tti,1,1);
-  write_output("rxdataF0.m","rxF0",&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[0]].rxdataF[0],frame_parms->ofdm_symbol_size,2,1);
+  write_output("rxdataF0.m","rxF0",&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[0]].rxdataF[0][frame_parms->ofdm_symbol_size*SSS_SYMBOL_NB],frame_parms->ofdm_symbol_size,2,1);
   write_output("pss_ext.m","pss_ext",pss_ext,LENGTH_PSS_NR,1,1);
 
 #endif
 
-#if 0
-
-  write_output("sss_ext.m","sss_ext",sss_ext,LENGTH_SSS_NR,1,1);
-  write_output("sss_ref.m","sss_ref", d_sss,LENGTH_SSS_NR,1,1);
-
-#endif
 
 #if 0
   int16_t *p = (int16_t *)sss_ext[0];
@@ -489,6 +486,14 @@ int rx_sss_nr(PHY_VARS_NR_UE *ue, int32_t *tot_metric,uint8_t *phase_max)
 
   sss = (int16_t*)&sss_ext[0][0];
 
+#ifdef DEBUG_PLOT_SSS
+
+  write_output("sss_ext.m","sss_ext",sss_ext[0],LENGTH_SSS_NR,1,1);
+  write_output("sss_ref.m","sss_ref", d_sss,LENGTH_SSS_NR,1,1);
+
+#endif
+
+
 #if 0
 
   /* simulate of a phase shift on the signal */
@@ -499,11 +504,11 @@ int rx_sss_nr(PHY_VARS_NR_UE *ue, int32_t *tot_metric,uint8_t *phase_max)
 
 #endif
 
-#if 0
+#if 1
         int16_t *ps = (int16_t *)pss_ext;
 
         for (int i = 0; i < LENGTH_SSS_NR; i++) {
-          printf("sss ref  [%i] : %d %d \n", i, d_sss[0][0][i], d_sss[0][0][i]);
+          printf("sss ref  [%i] : %d \n", i, d_sss[0][0][i]);
           printf("sss ext  [%i] : %d %d \n", i, sss[2*i], sss[2*i+1]);
 
           printf("pss ref [%i] : %d %d \n", i, primary_synchro_nr[0][2*i], primary_synchro_nr[0][2*i+1]);
@@ -528,8 +533,11 @@ int rx_sss_nr(PHY_VARS_NR_UE *ue, int32_t *tot_metric,uint8_t *phase_max)
       // This is the inner product using one particular value of each unknown parameter
       for (i=0; i < LENGTH_SSS_NR; i++) {
 
+	
         metric_re += d[i]*(((phase_re_nr[phase]*sss[2*i])>>SCALING_METRIC_SSS_NR) - ((phase_im_nr[phase]*sss[2*i+1])>>SCALING_METRIC_SSS_NR))
                    + d[i]*(((phase_im_nr[phase]*sss[2*i])>>SCALING_METRIC_SSS_NR) + ((phase_re_nr[phase]*sss[2*i+1])>>SCALING_METRIC_SSS_NR));
+	if (Nid1 ==0 && phase==3)
+	  printf("i %d, phase %d/%d: metric %d, phase (%d,%d) sss (%d,%d) d %d\n",i,phase,PHASE_HYPOTHESIS_NUMBER,metric_re,phase_re_nr[phase],phase_im_nr[phase],sss[2*i],sss[1+(2*i)],d[i]);
       }
 
       metric = metric_re;
@@ -550,14 +558,14 @@ int rx_sss_nr(PHY_VARS_NR_UE *ue, int32_t *tot_metric,uint8_t *phase_max)
   }
 
 //#ifdef DEBUG_SSS_NR
-
+  
 #define SSS_METRIC_FLOOR_NR   (30000)
-if (*tot_metric > SSS_METRIC_FLOOR_NR) {	
+  if (*tot_metric > SSS_METRIC_FLOOR_NR) {	
     Nid2 = GET_NID2(frame_parms->Nid_cell);
     Nid1 = GET_NID1(frame_parms->Nid_cell);
     printf("Nid2 %d Nid1 %d tot_metric %d, phase_max %d \n", Nid2, Nid1, *tot_metric, *phase_max);
-}
-//#endif
-
+  }
+  //#endif
+  
   return(0);
 }
