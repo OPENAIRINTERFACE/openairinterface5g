@@ -40,7 +40,10 @@ uint16_t nr_target_code_rate_table2[28] = {120, 193, 308, 449, 602, 378, 434, 49
                                             616, 666, 719, 772, 822, 873, -1, 711, 754, 797, 841, 885, -1, 948};
 uint16_t nr_target_code_rate_table3[29] = {30, 40, 50, 64, 78, 99, 120, 157, 193, 251, 308, 379, 449, 526, 602, 340, \
                                             378, 434, 490, 553, 616, 438, 466, 517, 567, 616, 666, 719, 772};
-
+uint16_t nr_tbs_table[93] = {24, 32, 40, 48, 56, 64, 72, 80, 88, 96, 104, 112, 120, 128, 136, 144, 152, 160, 168, 176, 184, 192, 208, 224, 240, 256, 272, 288, 304, 320, \
+                              336, 352, 368, 384, 408, 432, 456, 480, 504, 528, 552, 576, 608, 640, 672, 704, 736, 768, 808, 848, 888, 928, 984, 1032, 1064, 1128, 1160, 1192, 1224, 1256, \
+                              1288, 1320, 1352, 1416, 1480, 1544, 1608, 1672, 1736, 1800, 1864, 1928, 2024, 2088, 2152, 2216, 2280, 2408, 2472, 2536, 2600, 2664, 2728, 2792, 2856, 2976, \
+                              3104, 3240, 3368, 3496, 3624, 3752, 3824};
 
 uint8_t nr_get_Qm(uint8_t Imcs, uint8_t table_idx) {
   switch(table_idx) {
@@ -68,7 +71,7 @@ uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx) {
     break;
 
     case 2:
-      return ((Imcs==20)?0xaaa00 : (Imcs==26)?0xe5200 : nr_target_code_rate_table3[Imcs]<<10);
+      return ((Imcs==20)?0xaaa00 : (Imcs==26)?0xe5200 : nr_target_code_rate_table2[Imcs]<<10);
     break;
 
     case 3:
@@ -79,3 +82,18 @@ uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx) {
       AssertFatal(0, "Invalid MCS table index %d (expected in range [1,3])\n", table_idx);
   }
 }
+
+static inline uint8_t is_codeword_disabled(uint8_t format, uint8_t Imcs, uint8_t rv) {
+  return ((format==NFAPI_NR_DL_DCI_FORMAT_1_1)&&(Imcs==26)&&(rv==1));
+}
+
+/*uint16_t nr_get_tbs(NR_gNB_DCI_ALLOC_t dci_alloc, nfapi_nr_config_request_t config) {
+
+  uint8_t rnti_type = dci_alloc.pdcch_params.rnti_type;
+  uint8_t N_PRB_oh = ((rnti_type==NFAPI_NR_RNTI_SI)||(rnti_type==NFAPI_NR_RNTI_RA)||(rnti_type==NFAPI_NR_RNTI_P))? 0 : \
+  (config.pdsch_config.);
+  uint16_t N_prime_RE = NR_NB_SC_PER_RB*N_sh_symb - N_PRB_DMRS - N_PRB_oh;
+  LOG_I(MAC, "N_prime_RE %d for %d symbols %d DMRS per PRB and %d overhead\n", N_prime_RE, N_sh_symb, N_PRB_DMRS, N_PRB_oh);
+
+  
+}*/

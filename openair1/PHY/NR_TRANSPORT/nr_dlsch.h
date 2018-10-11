@@ -32,6 +32,7 @@
 
 #include "PHY/defs_gNB.h"
 
+extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
 
 void nr_get_time_domain_allocation_type(nfapi_nr_config_request_t config,
                                         NR_gNB_DCI_ALLOC_t dci_alloc,
@@ -50,3 +51,21 @@ void nr_get_PRG_parms(NR_BWP_PARMS* bwp, NR_gNB_DCI_ALLOC_t dci_alloc, uint8_t p
 uint8_t nr_get_Qm(uint8_t Imcs, uint8_t table_idx);
 
 uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx);
+
+void nr_pdsch_codeword_scrambling(uint32_t *in,
+                         uint8_t size,
+                         uint8_t q,
+                         uint32_t Nid,
+                         uint32_t n_RNTI,
+                         uint32_t* out);
+
+void nr_pdsch_codeword_modulation(uint32_t *in,
+                         uint8_t  Qm,
+                         uint32_t length,
+                         uint16_t *out);
+
+void nr_pdsch_layer_mapping(uint16_t **mod_symbs,
+                         uint8_t n_codewords,
+                         uint8_t n_layers,
+                         uint16_t *n_symbs,
+                         uint16_t **tx_layers);

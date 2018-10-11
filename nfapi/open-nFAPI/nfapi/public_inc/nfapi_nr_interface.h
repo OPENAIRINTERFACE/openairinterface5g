@@ -156,6 +156,21 @@ typedef struct {
 #define NFAPI_NR_SCH_CONFIG_SS_PBCH_BLOCK_POWER 0x5023
 #define NFAPI_NR_SCH_CONFIG_N_SSB_CRB 0x5024
 
+typedef struct {
+  nfapi_uint16_tlv_t  data_scrambling_id;
+  nfapi_uint16_tlv_t  mcs_table;
+  nfapi_uint16_tlv_t  aggregation_factor;
+  nfapi_uint16_tlv_t  prb_bundling_type;
+  nfapi_uint16_tlv_t  rbg_size;
+  nfapi_uint16_tlv_t  resource_allocation_config;
+  nfapi_uint16_tlv_t  vrb_to_prb_interleaver;
+  nfapi_uint16_tlv_t  code_block_groug_transmission;
+  nfapi_uint16_tlv_t  x_overhead;
+  nfapi_uint16_tlv_t  max_dci_codewords;
+  
+} nfapi_nr_pdsch_config_t;
+#define NFAPI_NR_PDSCH_CONFIG_TAG
+
 
 typedef struct {
   nfapi_uint16_tlv_t  prach_RootSequenceIndex;                                        ///// L1 parameter 'PRACHRootSequenceIndex'
@@ -169,12 +184,6 @@ typedef struct {
   nfapi_uint16_tlv_t  zeroCorrelationZoneConfig;
   nfapi_uint16_tlv_t  preambleReceivedTargetPower;
 } nfapi_nr_rach_config_t;
-
-typedef struct {
-  nfapi_uint16_tlv_t  dmrs_typeA_position;                                            ///// Position of (first) DL DM-RS
-  nfapi_uint16_tlv_t  time_domain_alloc_k0;                                ///// L1 parameter 'K0'
-  nfapi_uint16_tlv_t  time_domain_alloc_mapping_type;                       ///// L1 parameter 'Mapping-type'
-} nfapi_nr_pdsch_config_t;
 
 typedef struct {
   nfapi_uint16_tlv_t  groupHoppingEnabledTransformPrecoding;                          ///// L1 parameter 'Group-hopping-enabled-Transform-precoding'
@@ -229,8 +238,8 @@ typedef struct {
   nfapi_nr_subframe_config_t                subframe_config;
   nfapi_nr_rf_config_t                      rf_config;
   nfapi_nr_sch_config_t                     sch_config;
+  nfapi_nr_pdsch_config_t                   dlsch_config;
   nfapi_nr_rach_config_t                    rach_config;
-  nfapi_nr_pdsch_config_t                   pdsch_config;
   nfapi_nr_pusch_config_t                   pusch_config;
   nfapi_nr_pucch_config_t                   pucch_config;
   nfapi_nr_tdd_ul_dl_config_t               tdd_ul_dl_config;
@@ -472,14 +481,36 @@ typedef struct {
 
 
 typedef struct {
-  nfapi_tl_t tl;
-  nfapi_nr_search_space_t           sib1searchSpace;
-  nfapi_nr_coreset_t   sib1ControlResourceSets;
-  nfapi_nr_search_space_t           sibssearchSpace;
-  nfapi_nr_coreset_t   sibsControlResourceSets; 
-  nfapi_nr_search_space_t           ra_SearchSpace;
-  nfapi_nr_coreset_t   ra_ControlResourceSets;
+	nfapi_tl_t tl;
+	uint16_t length;
+	uint8_t pdu_index;
+	uint16_t rnti;
+	uint8_t resource_allocation_type;
+	uint8_t virtual_resource_block_assignment_flag;
+	uint32_t resource_block_coding;
+	uint8_t modulation;
+	uint8_t redundancy_version;
+	uint8_t transport_blocks;
+	uint8_t transport_block_to_codeword_swap_flag;
+	uint8_t transmission_scheme;
+	uint8_t number_of_layers;
+	uint8_t number_of_subbands;
+	uint8_t codebook_index[NFAPI_MAX_NUM_SUBBANDS];
+	uint8_t ue_category_capacity;
+	uint8_t pa;
+	uint8_t delta_power_offset_index;
+	uint8_t ngap;
+	uint8_t nprb;
+	uint8_t transmission_mode;
+	uint8_t num_bf_prb_per_subband;
+	uint8_t num_bf_vector;
+	nfapi_bf_vector_t bf_vector[NFAPI_MAX_BF_VECTORS];
 }nfapi_nr_dl_config_dlsch_pdu_rel15_t;
+#define NFAPI_NR_DL_CONFIG_REQUEST_DLSCH_PDU_REL15_TAG
+
+typedef struct {
+	nfapi_nr_dl_config_dlsch_pdu_rel15_t dlsch_pdu_rel15;
+} nfapi_nr_dl_config_dlsch_pdu;
 
 typedef struct {
   nfapi_tl_t tl;
@@ -512,7 +543,7 @@ typedef struct {
   union {
   nfapi_nr_dl_config_dci_dl_pdu             dci_dl_pdu;
   nfapi_nr_dl_config_bch_pdu_rel15_t        bch_pdu_rel15;
-  nfapi_nr_dl_config_dlsch_pdu_rel15_t      dlsch_pdu_rel15;
+  nfapi_nr_dl_config_dlsch_pdu              dlsch_pdu;
   nfapi_nr_dl_config_pch_pdu_rel15_t        pch_pdu_rel15;
   nfapi_nr_dl_config_nbch_pdu_rel15_t       nbch_pdu_rel15;
   nfapi_nr_dl_config_npdcch_pdu_rel15_t     npdcch_pdu_rel15;
