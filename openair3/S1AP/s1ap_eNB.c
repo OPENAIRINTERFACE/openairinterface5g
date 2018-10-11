@@ -97,7 +97,9 @@ static void s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
                                   net_ip_address_t    *mme_ip_address,
                                   net_ip_address_t    *local_ip_addr,
                                   uint16_t             in_streams,
-                                  uint16_t             out_streams)
+                                  uint16_t             out_streams,
+                                  uint8_t              broadcast_plmn_num,
+                                  uint8_t              broadcast_plmn_index[PLMN_LIST_MAX_SIZE])
 {
   MessageDef                 *message_p                   = NULL;
   sctp_new_association_req_t *sctp_new_association_req_p  = NULL;
@@ -126,8 +128,8 @@ static void s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
          sizeof(*local_ip_addr));
 
   S1AP_INFO("[eNB %d] check the mme registration state\n",instance_p->instance);
-
-  mme = s1ap_eNB_get_MME_from_instance(instance_p);
+	      
+  mme = NULL;
 
   if ( mme == NULL ) {
 
@@ -139,6 +141,9 @@ static void s1ap_eNB_register_mme(s1ap_eNB_instance_t *instance_p,
     sctp_new_association_req_p->ulp_cnx_id = s1ap_mme_data_p->cnx_id;
 
     s1ap_mme_data_p->assoc_id          = -1;
+    s1ap_mme_data_p->broadcast_plmn_num = broadcast_plmn_num;
+    for (int i = 0; i < broadcast_plmn_num; ++i)
+      s1ap_mme_data_p->broadcast_plmn_index[i] = broadcast_plmn_index[i];
     s1ap_mme_data_p->s1ap_eNB_instance = instance_p;
 
     STAILQ_INIT(&s1ap_mme_data_p->served_gummei);
@@ -190,10 +195,14 @@ void s1ap_eNB_handle_register_eNB(instance_t instance, s1ap_register_enb_req_t *
     /* Checks if it is a retry on the same eNB */
     DevCheck(new_instance->eNB_id == s1ap_register_eNB->eNB_id, new_instance->eNB_id, s1ap_register_eNB->eNB_id, 0);
     DevCheck(new_instance->cell_type == s1ap_register_eNB->cell_type, new_instance->cell_type, s1ap_register_eNB->cell_type, 0);
+    DevCheck(new_instance->num_plmn == s1ap_register_eNB->num_plmn, new_instance->num_plmn, s1ap_register_eNB->num_plmn, 0);
     DevCheck(new_instance->tac == s1ap_register_eNB->tac, new_instance->tac, s1ap_register_eNB->tac, 0);
-    DevCheck(new_instance->mcc == s1ap_register_eNB->mcc, new_instance->mcc, s1ap_register_eNB->mcc, 0);
-    DevCheck(new_instance->mnc == s1ap_register_eNB->mnc, new_instance->mnc, s1ap_register_eNB->mnc, 0);
-    DevCheck(new_instance->mnc_digit_length == s1ap_register_eNB->mnc_digit_length, new_instance->mnc_digit_length, s1ap_register_eNB->mnc_digit_length, 0);
+    for (int i = 0; i < new_instance->num_plmn; i++)
+    {
+      DevCheck(new_instance->mcc[i] == s1ap_register_eNB->mcc[i], new_instance->mcc[i], s1ap_register_eNB->mcc[i], 0);
+      DevCheck(new_instance->mnc[i] == s1ap_register_eNB->mnc[i], new_instance->mnc[i], s1ap_register_eNB->mnc[i], 0);
+      DevCheck(new_instance->mnc_digit_length[i] == s1ap_register_eNB->mnc_digit_length[i], new_instance->mnc_digit_length[i], s1ap_register_eNB->mnc_digit_length[i], 0);
+    }
     DevCheck(new_instance->default_drx == s1ap_register_eNB->default_drx, new_instance->default_drx, s1ap_register_eNB->default_drx, 0);
   } else {
     new_instance = calloc(1, sizeof(s1ap_eNB_instance_t));
@@ -208,9 +217,13 @@ void s1ap_eNB_handle_register_eNB(instance_t instance, s1ap_register_enb_req_t *
     new_instance->eNB_id           = s1ap_register_eNB->eNB_id;
     new_instance->cell_type        = s1ap_register_eNB->cell_type;
     new_instance->tac              = s1ap_register_eNB->tac;
-    new_instance->mcc              = s1ap_register_eNB->mcc;
-    new_instance->mnc              = s1ap_register_eNB->mnc;
-    new_instance->mnc_digit_length = s1ap_register_eNB->mnc_digit_length;
+    for (int i = 0; i < s1ap_register_eNB->num_plmn; i++)
+    {
+      new_instance->mcc[i]              = s1ap_register_eNB->mcc[i];
+      new_instance->mnc[i]              = s1ap_register_eNB->mnc[i];
+      new_instance->mnc_digit_length[i] = s1ap_register_eNB->mnc_digit_length[i];
+    }
+    new_instance->num_plmn         = s1ap_register_eNB->num_plmn;
     new_instance->default_drx      = s1ap_register_eNB->default_drx;
 
     /* Add the new instance to the list of eNB (meaningfull in virtual mode) */
@@ -231,7 +244,9 @@ void s1ap_eNB_handle_register_eNB(instance_t instance, s1ap_register_enb_req_t *
                           &s1ap_register_eNB->mme_ip_address[index],
                           &s1ap_register_eNB->enb_ip_address,
                           s1ap_register_eNB->sctp_in_streams,
-                          s1ap_register_eNB->sctp_out_streams);
+                          s1ap_register_eNB->sctp_out_streams,
+                          s1ap_register_eNB->broadcast_plmn_num[index],
+                          s1ap_register_eNB->broadcast_plmn_index[index]);
   }
 }
 
@@ -459,7 +474,9 @@ static int s1ap_eNB_generate_s1_setup_request(
   ie->id = S1AP_ProtocolIE_ID_id_Global_ENB_ID;
   ie->criticality = S1AP_Criticality_reject;
   ie->value.present = S1AP_S1SetupRequestIEs__value_PR_Global_ENB_ID;
-  MCC_MNC_TO_PLMNID(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length,
+  MCC_MNC_TO_PLMNID(instance_p->mcc[s1ap_mme_data_p->broadcast_plmn_index[0]],
+                    instance_p->mnc[s1ap_mme_data_p->broadcast_plmn_index[0]],
+                    instance_p->mnc_digit_length[s1ap_mme_data_p->broadcast_plmn_index[0]],
                     &ie->value.choice.Global_ENB_ID.pLMNidentity);
   ie->value.choice.Global_ENB_ID.eNB_ID.present = S1AP_ENB_ID_PR_macroENB_ID;
   MACRO_ENB_ID_TO_BIT_STRING(instance_p->eNB_id,
@@ -490,9 +507,14 @@ static int s1ap_eNB_generate_s1_setup_request(
     ta = (S1AP_SupportedTAs_Item_t *)calloc(1, sizeof(S1AP_SupportedTAs_Item_t));
     INT16_TO_OCTET_STRING(instance_p->tac, &ta->tAC);
     {
-      plmn = (S1AP_PLMNidentity_t *)calloc(1, sizeof(S1AP_PLMNidentity_t));
-      MCC_MNC_TO_TBCD(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length, plmn);
-      ASN_SEQUENCE_ADD(&ta->broadcastPLMNs.list, plmn);
+      for (int i = 0; i < s1ap_mme_data_p->broadcast_plmn_num; ++i) {
+        plmn = (S1AP_PLMNidentity_t *)calloc(1, sizeof(S1AP_PLMNidentity_t));
+        MCC_MNC_TO_TBCD(instance_p->mcc[s1ap_mme_data_p->broadcast_plmn_index[i]],
+                        instance_p->mnc[s1ap_mme_data_p->broadcast_plmn_index[i]],
+                        instance_p->mnc_digit_length[s1ap_mme_data_p->broadcast_plmn_index[i]],
+                        plmn);
+        ASN_SEQUENCE_ADD(&ta->broadcastPLMNs.list, plmn);
+      }
     }
     ASN_SEQUENCE_ADD(&ie->value.choice.SupportedTAs.list, ta);
   }

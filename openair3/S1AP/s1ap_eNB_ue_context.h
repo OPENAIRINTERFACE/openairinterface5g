@@ -67,6 +67,11 @@ typedef struct s1ap_eNB_ue_context_s {
   /* Reference to MME data this UE is attached to */
   struct s1ap_eNB_mme_data_s *mme_ref;
 
+  /* Signaled by the UE in RRC Connection Setup Complete and used in NAS Uplink
+   * to route NAS messages correctly. 0-based, not 1-based as in TS 36.331
+   * 6.2.2 RRC Connection Setup Complete! */
+  int selected_plmn_identity;
+
   /* Reference to eNB data this UE is attached to */
   s1ap_eNB_instance_t *eNB_instance;
 } s1ap_eNB_ue_context_t;
