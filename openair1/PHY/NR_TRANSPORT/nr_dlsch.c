@@ -158,6 +158,42 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
                           NR_DL_FRAME_PARMS frame_parms,
                           nfapi_nr_config_request_t config) {
 
+  NR_DL_gNB_HARQ_t *harq = dlsch.harq_processes[0];
+  uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH]={0};
+  uint16_t mod_symbs[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>1] = {0};
+  uint16_t tx_layers[NR_MAX_NB_LAYERS][NR_MAX_PDSCH_ENCODED_LENGTH>>1];
+
+  /// CRC, coding, interleaving and rate matching
+
+  /// scrambling
+  uint16_t n_RNTI = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? ((pdcch_params.scrambling_id)?pdcch_params.rnti:0) : 0;
+  uint16_t Nid = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? pdcch_params.scrambling_id : config.sch_config.physical_cell_id.value;
+  for (int q=0; q<harq->n_codewords; q++)
+    nr_pdsch_codeword_scrambling(harq->f,
+                         harq->TBS,
+                         q,
+                         Nid,
+                         n_RNTI,
+                         scrambled_output[q]);
+ 
+  /// Modulation
+  for (int q=0; q<harq->n_codewords; q++)
+    nr_pdsch_codeword_modulation(scrambled_output[q],
+                         harq->Qm,
+                         harq->TBS,
+                         mod_symbs[q]);
+
+  /// Layer mapping
+  nr_pdsch_layer_mapping(mod_symbs,
+                         harq->n_codewords,
+                         harq->Nl,
+                         n_symbs,
+                         tx_layers);
+
+  /// Antenna port mapping -- Not yet necessary
+
+  /// Resource mapping
+  
   
   return 0;
 }

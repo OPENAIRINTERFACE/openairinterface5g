@@ -132,16 +132,26 @@ typedef struct {
   uint8_t first_layer;
   /// codeword this transport block is mapped to
   uint8_t codeword;
+  /// Number of codewords
+  uint8_t n_codewords;
 } NR_DL_gNB_HARQ_t;
 
 
 typedef struct {
 
-  /// Pointers to 8 HARQ processes for the DLSCH
-  NR_DL_gNB_HARQ_t *harq_processes[8];
+  /// Pointers to 16 HARQ processes for the DLSCH
+  NR_DL_gNB_HARQ_t *harq_processes[16];
   nfapi_nr_pdsch_time_domain_alloc_type_e time_alloc_type;
   uint8_t time_alloc_list_flag;
   uint8_t rbg_list[NR_MAX_NB_RBG];
+  /// Time domain allocation
+  uint8_t S;
+  uint8_t L;
+  /// Freq domain allocation
+  uint16_t rb_start;
+  uint16_t n_rb;
+  /// BWP index
+  uint8_t bwp_idx;
 
   /// TX buffers for UE-spec transmission (antenna ports 5 or 7..14, prior to precoding)
   int32_t *txdataF[8];

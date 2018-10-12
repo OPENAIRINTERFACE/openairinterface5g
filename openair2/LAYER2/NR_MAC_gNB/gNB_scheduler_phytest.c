@@ -70,8 +70,8 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                cfg->rf_config.dl_channel_bandwidth.value);
     memcpy((void*)params_rel15, (void*)&gNB->pdcch_type0_params, sizeof(nfapi_nr_dl_config_pdcch_parameters_rel15_t));
 
-    pdu_rel15->frequency_domain_assignment = 5;
-    pdu_rel15->time_domain_assignment = 3;
+    pdu_rel15->frequency_domain_assignment = get_RIV(0, 40, 106);
+    pdu_rel15->time_domain_assignment = get_SLIV(8, 14);
     pdu_rel15->vrb_to_prb_mapping = 1;
     pdu_rel15->mcs = 12;
     pdu_rel15->tb_scaling = 1;

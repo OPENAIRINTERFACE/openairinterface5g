@@ -119,6 +119,8 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
 	nfapi_nr_dl_config_dci_dl_pdu_rel15_t *pdu_rel15 = &pdu->dci_dl_pdu.dci_dl_pdu_rel15;
   nfapi_nr_dl_config_pdcch_parameters_rel15_t *params_rel15 = &pdu->dci_dl_pdu.pdcch_params_rel15;
 	nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
+  NR_gNB_DLSCH_t *dlsch = &gNB->dlsch;
+  NR_DL_gNB_HARQ_t **harq = dlsch->harq_processes;
 
   uint16_t N_RB = fp->initial_bwp_dl.N_RB;
   uint16_t N_RB_UL = fp->initial_bwp_ul.N_RB;

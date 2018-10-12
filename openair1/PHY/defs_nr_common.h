@@ -85,6 +85,7 @@
 #define NR_MAX_CSET_DURATION 3
 
 #define NR_MAX_NB_RBG 18
+#define NR_MAX_NB_LAYERS 8
 
 typedef enum {
   NR_MU_0=0,
