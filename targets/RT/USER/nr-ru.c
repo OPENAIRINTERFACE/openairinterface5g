@@ -852,13 +852,24 @@ void tx_rf(RU_t *ru) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_tx-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
     // prepare tx buffer pointers
-    
-    txs = ru->rfdevice.trx_write_func(&ru->rfdevice,
+    if(emulate_rf)
+    {
+      if(proc->frame_tx < 2)
+      {
+        LOG_M("txdataF_frame.m","txdataF_frame",&ru->common.txdataF_BF[i],fp->samples_per_subframe_wCP, 1, 1);
+        LOG_M("txdata_frame.m","txdata_frame",&ru->common.txdata[i],fp->samples_per_subframe, 1, 1);
+      }
+      else  oai_exit = 1;
+    }
+    else
+    {
+      txs = ru->rfdevice.trx_write_func(&ru->rfdevice,
 				      proc->timestamp_tx+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension,
 				      txp,
 				      siglen+sf_extension,
 				      ru->nb_tx,
 				      flags);
+    }
     
     LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx,
 	  (long long unsigned int)proc->timestamp_tx,proc->frame_tx,proc->frame_tx_unwrap,proc->subframe_tx);
@@ -1521,11 +1532,8 @@ static void* ru_thread( void* param ) {
    
     // do OFDM if needed
     if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
-    if (!emulate_rf)
-    {
-      // do outgoing fronthaul (south) if needed
-      if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
-    } 
+    // do outgoing fronthaul (south) if needed
+    if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
 
     if (ru->fh_north_out) ru->fh_north_out(ru);
   }
