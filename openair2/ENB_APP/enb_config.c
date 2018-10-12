@@ -2390,10 +2390,6 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
                         || X2AP_REGISTER_ENB_REQ(msg_p).mnc < 100,
                         "MNC %d cannot be encoded in two digits as requested (change mnc_digit_length to 3)\n",
                         X2AP_REGISTER_ENB_REQ(msg_p).mnc);
-            config_getlist( &X2ParamList,X2Params,sizeof(X2Params)/sizeof(paramdef_t),aprefix);
-            AssertFatal(X2ParamList.numelt <= X2AP_MAX_NB_ENB_IP_ADDRESS,
-                        "value of X2ParamList.numelt %d must be lower than X2AP_MAX_NB_ENB_IP_ADDRESS %d value: reconsider to increase X2AP_MAX_NB_ENB_IP_ADDRESS\n",
-                        X2ParamList.numelt,X2AP_MAX_NB_ENB_IP_ADDRESS);
 
             /* CC params */
             config_getlist(&CCsParamList, NULL, 0, aprefix);
@@ -2441,6 +2437,9 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
 
             sprintf(aprefix,"%s.[%i]",ENB_CONFIG_STRING_ENB_LIST,k);
             config_getlist( &X2ParamList,X2Params,sizeof(X2Params)/sizeof(paramdef_t),aprefix);
+            AssertFatal(X2ParamList.numelt <= X2AP_MAX_NB_ENB_IP_ADDRESS,
+                        "value of X2ParamList.numelt %d must be lower than X2AP_MAX_NB_ENB_IP_ADDRESS %d value: reconsider to increase X2AP_MAX_NB_ENB_IP_ADDRESS\n",
+                        X2ParamList.numelt,X2AP_MAX_NB_ENB_IP_ADDRESS);
 
             X2AP_REGISTER_ENB_REQ (msg_p).nb_x2 = 0;
 
