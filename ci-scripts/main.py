@@ -34,6 +34,23 @@
 Version = '0.1'
 
 #-----------------------------------------------------------
+# Constants
+#-----------------------------------------------------------
+ALL_PROCESSES_OK = 0
+ENB_PROCESS_FAILED = -1
+ENB_PROCESS_OK = +1
+ENB_PROCESS_SEG_FAULT = -11
+ENB_PROCESS_ASSERTION = -12
+ENB_PROCESS_REALTIME_ISSUE = -13
+HSS_PROCESS_FAILED = -2
+HSS_PROCESS_OK = +2
+MME_PROCESS_FAILED = -3
+MME_PROCESS_OK = +3
+SPGW_PROCESS_FAILED = -4
+SPGW_PROCESS_OK = +4
+UE_IP_ADDRESS_ISSUE = -5
+
+#-----------------------------------------------------------
 # Import
 #-----------------------------------------------------------
 import sys		# arg
@@ -77,6 +94,7 @@ class SSHConnection():
 		self.desc = ''
 		self.Build_eNB_args = ''
 		self.Initialize_eNB_args = ''
+		self.eNBLogFile = ''
 		self.ping_args = ''
 		self.ping_packetloss_threshold = ''
 		self.iperf_args = ''
@@ -88,6 +106,7 @@ class SSHConnection():
 		self.htmlHeaderCreated = False
 		self.htmlFooterCreated = False
 		self.htmlUEConnected = 0
+		self.htmleNBFailureMsg = ''
 
 	def open(self, ipaddress, username, password):
 		count = 0
@@ -251,7 +270,7 @@ class SSHConnection():
 		self.command('echo ' + self.eNBPassword + ' | sudo -S mv log/* ' + 'build_log_' + SSH.testCase_id, '\$', 5)
 		self.command('echo ' + self.eNBPassword + ' | sudo -S mv compile_oai_enb.log ' + 'build_log_' + SSH.testCase_id, '\$', 5)
 		self.close()
-		self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', 0)
+		self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
 
 	def InitializeHSS(self):
 		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '' or self.EPCSourceCodePath == '' or self.EPCType == '':
@@ -272,7 +291,7 @@ class SSHConnection():
 			self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f hss.log daemon.log', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S echo "Starting sudo session" && sudo daemon --unsafe --name=simulated_hss --chdir=/opt/hss_sim0609 ./starthss_real  ', '\$', 5)
 		self.close()
-		self.CreateHtmlTestRow(self.EPCType, 'OK', 0)
+		self.CreateHtmlTestRow(self.EPCType, 'OK', ALL_PROCESSES_OK)
 
 	def InitializeMME(self):
 		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '' or self.EPCSourceCodePath == '' or self.EPCType == '':
@@ -294,7 +313,7 @@ class SSHConnection():
 			self.command('cd /opt/ltebox/tools', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S ./start_mme', '\$', 5)
 		self.close()
-		self.CreateHtmlTestRow(self.EPCType, 'OK', 0)
+		self.CreateHtmlTestRow(self.EPCType, 'OK', ALL_PROCESSES_OK)
 
 	def InitializeSPGW(self):
 		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '' or self.EPCSourceCodePath == '' or self.EPCType == '':
@@ -310,7 +329,7 @@ class SSHConnection():
 			self.command('cd /opt/ltebox/tools', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S ./start_xGw', '\$', 5)
 		self.close()
-		self.CreateHtmlTestRow(self.EPCType, 'OK', 0)
+		self.CreateHtmlTestRow(self.EPCType, 'OK', ALL_PROCESSES_OK)
 
 	def InitializeeNB(self):
 		if self.eNBIPAddress == '' or self.eNBUserName == '' or self.eNBPassword == '' or self.eNBSourceCodePath == '':
@@ -343,10 +362,11 @@ class SSHConnection():
 		# Launch eNB with the modified config file
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
-		self.command('echo "./lte_build_oai/build/lte-softmodem -O ' + self.eNBSourceCodePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run.sh ', '\$', 5)
+		self.command('echo "ulimit -c unlimited && ./lte_build_oai/build/lte-softmodem -O ' + self.eNBSourceCodePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run.sh ', '\$', 5)
 		self.command('chmod 775 ./my-lte-softmodem-run.sh ', '\$', 5)
 		self.command('echo ' + self.eNBPassword + ' | sudo -S rm -Rf enb_' + SSH.testCase_id + '.log', '\$', 5)
 		self.command('echo ' + self.eNBPassword + ' | sudo -S -E daemon --inherit --unsafe --name=enb_daemon --chdir=' + self.eNBSourceCodePath + '/cmake_targets -o ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + SSH.testCase_id + '.log ./my-lte-softmodem-run.sh', '\$', 5)
+		self.eNBLogFile = 'enb_' + SSH.testCase_id + '.log'
 		time.sleep(6)
 		doLoop = True
 		loopCounter = 10
@@ -355,7 +375,7 @@ class SSHConnection():
 			if (loopCounter == 0):
 				doLoop = False
 				logging.error('\u001B[1;37;41m eNB logging system did not show got sync! See with attach later \u001B[0m')
-				self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'KO', 0)
+				self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'KO', ALL_PROCESSES_OK)
 				self.CreateHtmlFooter()
 				self.close()
 				sys.exit(1)
@@ -366,7 +386,7 @@ class SSHConnection():
 					time.sleep(6)
 				else:
 					doLoop = False
-					self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'OK', 0)
+					self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'OK', ALL_PROCESSES_OK)
 					logging.debug('\u001B[1m Initialize eNB Completed\u001B[0m')
 
 		self.close()
@@ -399,7 +419,7 @@ class SSHConnection():
 			multi_jobs.append(p)
 		for job in multi_jobs:
 			job.join()
-		self.CreateHtmlTestRow('N/A', 'OK', 0)
+		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
 	def AttachUE_common(self, device_id, statusQueue, lock):
 		try:
@@ -470,7 +490,8 @@ class SSHConnection():
 			job.join()
 
 		if (status_queue.empty()):
-			self.CreateHtmlTestRow('N/A', 'KO', 0)
+			self.CreateHtmlTestRow('N/A', 'KO', ALL_PROCESSES_OK)
+			self.CreateHtmlFooter()
 			sys.exit(1)
 		else:
 			attach_status = True
@@ -520,7 +541,7 @@ class SSHConnection():
 			multi_jobs.append(p)
 		for job in multi_jobs:
 			job.join()
-		self.CreateHtmlTestRow('N/A', 'OK', 0)
+		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
 	def RebootUE_common(self, device_id):
 		try:
@@ -579,7 +600,7 @@ class SSHConnection():
 			multi_jobs.append(p)
 		for job in multi_jobs:
 			job.join()
-		self.CreateHtmlTestRow('N/A', 'OK', 0)
+		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
 	def GetAllUEDevices(self, terminate_ue_flag):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
@@ -598,22 +619,32 @@ class SSHConnection():
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			Usage()
 			sys.exit('Insufficient Parameter')
+		ue_ip_status = 0
 		self.UEIPAddresses = []
 		self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
 		for device_id in self.UEDevices:
-			self.command('stdbuf -o0 adb -s ' + device_id + ' shell ip addr show | grep rmnet', '\$', 15)
-			result = re.search('inet (?P<ueipaddress>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\/[0-9]+[0-9a-zA-Z\.\s]+', str(self.ssh.before))
-			if result is None:
-				logging.debug('\u001B[1;37;41m UE IP Address Not Found! \u001B[0m')
-				sys.exit(1)
+			count = 0
+			while count < 4:
+				self.command('stdbuf -o0 adb -s ' + device_id + ' shell ip addr show | grep rmnet', '\$', 15)
+				result = re.search('inet (?P<ueipaddress>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\/[0-9]+[0-9a-zA-Z\.\s]+', str(self.ssh.before))
+				if result is None:
+					logging.debug('\u001B[1;37;41m UE IP Address Not Found! \u001B[0m')
+					count += 1
+				else:
+					count = 10
+			if count < 9:
+				ue_ip_status -= 1
+				continue
 			UE_IPAddress = result.group('ueipaddress')
 			logging.debug('\u001B[1mUE (' + device_id + ') IP Address is ' + UE_IPAddress + '\u001B[0m')
 			for ueipaddress in self.UEIPAddresses:
 				if ueipaddress == UE_IPAddress:
 					logging.debug('\u001B[1mUE (' + device_id + ') IP Address ' + UE_IPAddress + 'has been existed!' + '\u001B[0m')
-					sys.exit(1)
+					ue_ip_status -= 1
+					continue
 			self.UEIPAddresses.append(UE_IPAddress)
 		self.close()
+		return ue_ip_status
 
 	def Ping_common(self, lock, UE_IPAddress, device_id,statusQueue):
 		try:
@@ -697,7 +728,11 @@ class SSHConnection():
 			self.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
 			self.CreateHtmlFooter()
 			sys.exit(1)
-		self.GetAllUEIPAddresses()
+		ueIpStatus = self.GetAllUEIPAddresses()
+		if (ueIpStatus < 0):
+			self.CreateHtmlTestRow(self.ping_args, 'KO', UE_IP_ADDRESS_ISSUE)
+			self.CreateHtmlFooter()
+			sys.exit(1)
 		multi_jobs = []
 		i = 0
 		lock = Lock()
@@ -713,7 +748,7 @@ class SSHConnection():
 			job.join()
 
 		if (status_queue.empty()):
-			self.CreateHtmlTestRow(self.ping_args, 'KO', 0)
+			self.CreateHtmlTestRow(self.ping_args, 'KO', ALL_PROCESSES_OK)
 			self.CreateHtmlFooter()
 			sys.exit(1)
 		else:
@@ -1174,7 +1209,11 @@ class SSHConnection():
 			self.CreateHtmlTestRow(self.iperf_args, 'KO', pStatus)
 			self.CreateHtmlFooter()
 			sys.exit(1)
-		self.GetAllUEIPAddresses()
+		ueIpStatus = self.GetAllUEIPAddresses()
+		if (ueIpStatus < 0):
+			self.CreateHtmlTestRow(self.ping_args, 'KO', UE_IP_ADDRESS_ISSUE)
+			self.CreateHtmlFooter()
+			sys.exit(1)
 		multi_jobs = []
 		i = 0
 		ue_num = len(self.UEIPAddresses)
@@ -1191,7 +1230,7 @@ class SSHConnection():
 			job.join()
 
 		if (status_queue.empty()):
-			self.CreateHtmlTestRow(self.iperf_args, 'KO', 0)
+			self.CreateHtmlTestRow(self.iperf_args, 'KO', ALL_PROCESSES_OK)
 			self.CreateHtmlFooter()
 			sys.exit(1)
 		else:
@@ -1249,6 +1288,13 @@ class SSHConnection():
 				status = status_queue.get()
 				if (status < 0):
 					result = status
+			if result == ENB_PROCESS_FAILED:
+				fileCheck = re.search('enb_', str(self.eNBLogFile))
+				if fileCheck is not None:
+					self.copyin(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, self.eNBSourceCodePath + '/cmake_targets/' + self.eNBLogFile, '.')
+					logStatus = self.AnalyzeLogFile_eNB()
+					if logStatus < 0:
+						result = logStatus
 			return result
 
 	def CheckeNBProcess(self, status_queue):
@@ -1258,10 +1304,9 @@ class SSHConnection():
 			result = re.search('lte-softmodem', str(self.ssh.before))
 			if result is None:
 				logging.debug('\u001B[1;37;41m eNB Process Not Found! \u001B[0m')
-				#sys.exit(1)
-				status_queue.put(-1)
+				status_queue.put(ENB_PROCESS_FAILED)
 			else:
-				status_queue.put(1)
+				status_queue.put(ENB_PROCESS_OK)
 			self.close()
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
@@ -1276,10 +1321,9 @@ class SSHConnection():
 				result = re.search('hss_sim s6as diam_hss', str(self.ssh.before))
 			if result is None:
 				logging.debug('\u001B[1;37;41m HSS Process Not Found! \u001B[0m')
-				status_queue.put(-2)
-				#sys.exit(1)
+				status_queue.put(HSS_PROCESS_FAILED)
 			else:
-				status_queue.put(2)
+				status_queue.put(HSS_PROCESS_OK)
 			self.close()
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
@@ -1294,10 +1338,9 @@ class SSHConnection():
 				result = re.search('mme', str(self.ssh.before))
 			if result is None:
 				logging.debug('\u001B[1;37;41m MME Process Not Found! \u001B[0m')
-				status_queue.put(-3)
-				#sys.exit(1)
+				status_queue.put(MME_PROCESS_FAILED)
 			else:
-				status_queue.put(3)
+				status_queue.put(MME_PROCESS_OK)
 			self.close()
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
@@ -1313,13 +1356,52 @@ class SSHConnection():
 				result = re.search('xGw', str(self.ssh.before))
 			if result is None:
 				logging.debug('\u001B[1;37;41m SPGW Process Not Found! \u001B[0m')
-				status_queue.put(-4)
-				#sys.exit(1)
+				status_queue.put(SPGW_PROCESS_FAILED)
 			else:
-				status_queue.put(4)
+				status_queue.put(SPGW_PROCESS_OK)
 			self.close()
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
+
+	def AnalyzeLogFile_eNB(self):
+		if (not os.path.isfile('./' + SSH.eNBLogFile)):
+			return -1
+		enb_log_file = open('./' + SSH.eNBLogFile, 'r')
+		foundAssertion = False
+		msgAssertion = ''
+		msgLine = 0
+		foundSegFault = False
+		foundRealTimeIssue = False
+		for line in enb_log_file.readlines():
+			result = re.search('[Ss]egmentation [Ff]ault', str(line))
+			if result is not None:
+				foundSegFault = True
+			result = re.search('[Cc]ore [dD]ump', str(line))
+			if result is not None:
+				foundSegFault = True
+			result = re.search('[Aa]ssertion', str(line))
+			if result is not None:
+				foundAssertion = True
+			result = re.search('LLL', str(line))
+			if result is not None:
+				foundRealTimeIssue = True
+			if foundAssertion and (msgLine < 3):
+				msgLine += 1
+				msgAssertion += str(line)
+		enb_log_file.close()
+		if foundSegFault:
+			logging.debug('\u001B[1;37;41m eNB ended with a Segmentation Fault! \u001B[0m')
+			self.htmleNBFailureMsg = 'eNB ended with a Segmentation Fault!'
+			return ENB_PROCESS_SEG_FAULT
+		if foundAssertion:
+			logging.debug('\u001B[1;37;41m eNB ended with an assertion! \u001B[0m')
+			self.htmleNBFailureMsg = msgAssertion
+			return ENB_PROCESS_ASSERTION
+		if foundRealTimeIssue:
+			logging.debug('\u001B[1;37;41m eNB faced real time issues! \u001B[0m')
+			self.htmleNBFailureMsg = 'eNB faced real time issues'
+			return ENB_PROCESS_REALTIME_ISSUE
+		return 0
 
 	def TerminateeNB(self):
 		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
@@ -1333,7 +1415,19 @@ class SSHConnection():
 		if result is not None:
 			self.command('echo ' + self.eNBPassword + ' | sudo -S killall --signal SIGKILL lte-softmodem || true', '\$', 5)
 		self.close()
-		self.CreateHtmlTestRow('N/A', 'OK', 0)
+		result = re.search('enb_', str(self.eNBLogFile))
+		if result is not None:
+			self.copyin(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, self.eNBSourceCodePath + '/cmake_targets/' + self.eNBLogFile, '.')
+			logStatus = self.AnalyzeLogFile_eNB()
+			if (logStatus < 0):
+				self.CreateHtmlTestRow('N/A', 'KO', logStatus)
+				self.CreateHtmlFooter()
+				sys.exit(1)
+			else:
+				self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+		else:
+			self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+		self.eNBLogFile = ''
 
 	def TerminateHSS(self):
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
@@ -1355,7 +1449,7 @@ class SSHConnection():
 			self.command('echo ' + self.EPCPassword + ' | sudo -S ./kill_hss.sh', '\$', 5)
 			self.command('rm ./kill_hss.sh', '\$', 5)
 		self.close()
-		self.CreateHtmlTestRow('N/A', 'OK', 0)
+		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
 	def TerminateMME(self):
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
@@ -1370,7 +1464,7 @@ class SSHConnection():
 			self.command('cd /opt/ltebox/tools', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S ./stop_mme', '\$', 5)
 		self.close()
-		self.CreateHtmlTestRow('N/A', 'OK', 0)
+		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
 	def TerminateSPGW(self):
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
@@ -1385,7 +1479,7 @@ class SSHConnection():
 			self.command('cd /opt/ltebox/tools', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S ./stop_xGw', '\$', 5)
 		self.close()
-		self.CreateHtmlTestRow('N/A', 'OK', 0)
+		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
 	def TerminateUE_common(self, device_id):
 		try:
@@ -1413,7 +1507,7 @@ class SSHConnection():
 			multi_jobs.append(p)
 		for job in multi_jobs:
 			job.join()
-		self.CreateHtmlTestRow('N/A', 'OK', 0)
+		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
 	def LogCollectBuild(self):
 		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
@@ -1428,9 +1522,9 @@ class SSHConnection():
 		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
-		self.command('rm -f enb.log.zip', '\$', 5)
-		self.command('zip enb.log.zip enb*.log', '\$', 60)
-		self.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log', '\$', 5)
+		self.command('echo ' + self.eNBPassword + ' | sudo -S rm -f enb.log.zip', '\$', 5)
+		self.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core*', '\$', 60)
+		self.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core*', '\$', 5)
 		self.close()
 
 	def LogCollectPing(self):
@@ -1592,22 +1686,33 @@ class SSHConnection():
 			elif (str(status) == 'KO'):
 				if (processesStatus == 0):
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >' + str(status)  + '</td>\n')
-				elif (processesStatus == -1):
+				elif (processesStatus == ENB_PROCESS_FAILED):
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - eNB process not found</td>\n')
-				elif (processesStatus == -2):
+				elif (processesStatus == ENB_PROCESS_SEG_FAULT):
+					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - eNB process ended in Segmentation Fault</td>\n')
+				elif (processesStatus == ENB_PROCESS_ASSERTION):
+					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - eNB process ended in Assertion</td>\n')
+				elif (processesStatus == ENB_PROCESS_REALTIME_ISSUE):
+					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - eNB process faced Real Time issue(s)/td>\n')
+				elif (processesStatus == HSS_PROCESS_FAILED):
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - HSS process not found</td>\n')
-				elif (processesStatus == -3):
+				elif (processesStatus == MME_PROCESS_FAILED):
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - MME process not found</td>\n')
-				elif (processesStatus == -4):
+				elif (processesStatus == SPGW_PROCESS_FAILED):
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - SPGW process not found</td>\n')
+				elif (processesStatus == UE_IP_ADDRESS_ISSUE):
+					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - Could not retrieve UE IP address</td>\n')
 				else:
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >' + str(status)  + '</td>\n')
 			else:
 				self.htmlFile.write('        <td bgcolor = "orange" >' + str(status)  + '</td>\n')
-			i = 0
-			while (i < self.htmlUEConnected):
-				self.htmlFile.write('        <td>-</td>\n')
-				i += 1
+			if (processesStatus == ENB_PROCESS_ASSERTION):
+				self.htmlFile.write('        <td colspan=' + str(self.htmlUEConnected) + '><pre>' + self.htmleNBFailureMsg + '</pre></td>\n')
+			else:
+				i = 0
+				while (i < self.htmlUEConnected):
+					self.htmlFile.write('        <td>-</td>\n')
+					i += 1
 			self.htmlFile.write('      </tr>\n')
 
 	def CreateHtmlTestRowQueue(self, options, status, ue_status, ue_queue):
