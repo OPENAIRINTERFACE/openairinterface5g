@@ -191,15 +191,9 @@ int main(int argc, char *argv[]) {
 		start_meas(&timeDecoder);
 		if (decoder_int8==0) 
 		  decoderState = polar_decoder(channelOutput, estimatedOutput, &nrPolar_params, 
-					       decoderListSize, aPrioriArray, pathMetricAppr,
-					       &polar_decoder_init,&polar_rate_matching,&decoding,
-					       &bit_extraction,&deinterleaving,&sorting,&path_metric,&update_LLR);
+					       decoderListSize, aPrioriArray, pathMetricAppr);
 		else
-		  decoderState = polar_decoder_int8_new(channelOutput_int8, estimatedOutput, &nrPolar_params, 
-							decoderListSize, &polar_decoder_init,&polar_rate_matching,
-							&decoding,&bit_extraction,&deinterleaving,
-							&sorting,&path_metric,&update_LLR,
-							generate_optim_code);	
+		  decoderState = polar_decoder_int8_new(channelOutput_int8, estimatedOutput, &nrPolar_params); 
 		stop_meas(&timeDecoder); 
 		
 		//calculate errors
@@ -237,15 +231,7 @@ int main(int argc, char *argv[]) {
 				decoderListSize, pathMetricAppr, SNR, ((double)blockErrorCumulative/iterations),
 				((double)bitErrorCumulative / (iterations*testLength)),
 				(timeEncoderCumulative/iterations),timeDecoderCumulative/iterations);
-		printf("decoding init %9.3fus\n",polar_decoder_init.diff/(cpu_freq_GHz*1000.0*polar_decoder_init.trials));
 
-		printf("decoding polar_rate_matching %9.3fus\n",polar_rate_matching.diff/(cpu_freq_GHz*1000.0*polar_rate_matching.trials));
-		printf("decoding decoding %9.3fus\n",decoding.diff/(cpu_freq_GHz*1000.0*decoding.trials));
-		printf("decoding bit_extraction %9.3fus\n",bit_extraction.diff/(cpu_freq_GHz*1000.0*bit_extraction.trials));
-		printf("decoding deinterleaving %9.3fus\n",deinterleaving.diff/(cpu_freq_GHz*1000.0*deinterleaving.trials));
-		printf("decoding path_metric %9.3fus\n",path_metric.diff/(cpu_freq_GHz*1000.0*decoding.trials));
-		printf("decoding sorting %9.3fus\n",sorting.diff/(cpu_freq_GHz*1000.0*decoding.trials));
-		printf("decoding updateLLR %9.3fus\n",update_LLR.diff/(cpu_freq_GHz*1000.0*decoding.trials));
 		blockErrorCumulative = 0; bitErrorCumulative = 0;
 		timeEncoderCumulative = 0; timeDecoderCumulative = 0;
 	}

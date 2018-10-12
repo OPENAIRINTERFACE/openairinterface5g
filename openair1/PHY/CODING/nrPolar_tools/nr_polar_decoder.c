@@ -27,7 +27,6 @@
 
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
-#include "PHY/TOOLS/time_meas.h"
 
 
 int8_t polar_decoder(
@@ -36,19 +35,7 @@ int8_t polar_decoder(
 		t_nrPolar_params *polarParams,
 		uint8_t listSize,
 		double *aPrioriPayload,
-		uint8_t pathMetricAppr,
-		time_stats_t *init,
-                time_stats_t *polar_rate_matching,
-                time_stats_t *decoding,
-                time_stats_t *bit_extraction,
-                time_stats_t *deinterleaving,
-		time_stats_t *sorting,
-		time_stats_t *path_metric,
-		time_stats_t *update_LLR)
-{
-
-  start_meas(init);
-  
+		uint8_t pathMetricAppr) {
   uint8_t **extended_crc_generator_matrix = malloc(polarParams->K * sizeof(uint8_t *)); //G_P3
   uint8_t **tempECGM = malloc(polarParams->K * sizeof(uint8_t *)); //G_P2
   for (int i = 0; i < polarParams->K; i++){
@@ -102,18 +89,14 @@ int8_t polar_decoder(
   }
   
   
-  stop_meas(init);
-  start_meas(polar_rate_matching);
   
   double d_tilde[polarParams->N];// = malloc(sizeof(double) * polarParams->N);
   nr_polar_rate_matching(input, d_tilde, polarParams->rate_matching_pattern, polarParams->K, polarParams->N, polarParams->encoderLength);
   memcpy((void*)&dlist[0].llr[polarParams->n][0],(void*)&d_tilde[0],sizeof(double)*polarParams->N);
-  stop_meas(polar_rate_matching);
   
   /*
    * SCL polar decoder.
    */
-  start_meas(decoding);
   uint32_t nonFrozenBit=0;
   uint8_t currentListSize=1;
   
@@ -128,9 +111,7 @@ int8_t polar_decoder(
     //    printf("***************** BIT %d (currentListSize %d, information_bit_pattern %d)\n",
     //	   currentBit,currentListSize,polarParams->information_bit_pattern[currentBit]);
     
-    start_meas(update_LLR);
     updateLLR(sorted_dlist, llrUpdated, bitUpdated, currentListSize, currentBit, 0, polarParams->N, (polarParams->n+1), pathMetricAppr);
-    stop_meas(update_LLR);
     
     if (polarParams->information_bit_pattern[currentBit]==0) { //Frozen bit.
       updatePathMetric(sorted_dlist,currentListSize, 0, currentBit, pathMetricAppr); //approximation=0 --> 11b, approximation=1 --> 12
@@ -148,11 +129,9 @@ int8_t polar_decoder(
 	updateCrcChecksum(sorted_dlist, extended_crc_generator_matrix, currentListSize, nonFrozenBit, polarParams->crcParityBits);
       } else {
 	
-	start_meas(path_metric);
+
 	updatePathMetric2(sorted_dlist, currentListSize, currentBit, pathMetricAppr);
-	stop_meas(path_metric);
-	
-	start_meas(sorting); 
+
 
 
 	if (currentListSize <= listSize/2) {
@@ -243,7 +222,6 @@ int8_t polar_decoder(
 	    sorted_dlist[i] = temp_dlist[listIndex[i]];
 	  }
 	}
-	stop_meas(sorting);
 	
       }
       nonFrozenBit++;
@@ -260,14 +238,10 @@ int8_t polar_decoder(
     if (crcState == 1) {
       for (int j = 0; j < polarParams->N; j++) polarParams->nr_polar_u[j]=sorted_dlist[i]->bit[0][j];
       
-      start_meas(bit_extraction);
       //Extract the information bits (û to ĉ)
       nr_polar_info_bit_extraction(polarParams->nr_polar_u, polarParams->nr_polar_cPrime, polarParams->information_bit_pattern, polarParams->N);
-      stop_meas(bit_extraction);
       //Deinterleaving (ĉ to b)
-      start_meas(deinterleaving);
       nr_polar_deinterleaver(polarParams->nr_polar_cPrime, polarParams->nr_polar_b, polarParams->interleaving_pattern, polarParams->K);
-      stop_meas(deinterleaving);
       //Remove the CRC (â)
       for (int j = 0; j < polarParams->payloadBits; j++) output[j]=polarParams->nr_polar_b[j];
       
@@ -285,7 +259,7 @@ int8_t polar_decoder(
     }*/
   nr_free_uint8_t_2D_array(extended_crc_generator_matrix, polarParams->K);
   nr_free_uint8_t_2D_array(tempECGM, polarParams->K);
-  stop_meas(decoding);
+
   return(0);
 }
 
@@ -296,15 +270,8 @@ int8_t polar_decoder_int8(int16_t *input,
 			  uint8_t *output,
 			  t_nrPolar_params *polarParams,
 			  uint8_t listSize,
-			  time_stats_t *init,
-			  time_stats_t *polar_rate_matching,
-			  time_stats_t *decoding,
-			  time_stats_t *bit_extraction,
-			  time_stats_t *deinterleaving,
-			  time_stats_t *sorting,
-			  time_stats_t *path_metric,
-			  time_stats_t *update_LLR,
 			  int generate_optim_code)
+
 {
 
 
@@ -318,7 +285,6 @@ int8_t polar_decoder_int8(int16_t *input,
   decoder_list_int8_t dlist[2*listSize];
 
 
-  start_meas(init);
   
   for ( int i=0;i<2*listSize;i++) {
     //	  dlist[i].bit         = nr_alloc_uint8_t_2D_array((polarParams->n+1), polarParams->N);
@@ -332,7 +298,6 @@ int8_t polar_decoder_int8(int16_t *input,
     dlist[i].pathMetric  = 0;
   }
 
-  stop_meas(init);
   
   if (generate_optim_code == 1 || polarParams->decoder_kernel==NULL) {
     for (int i=0; i<polarParams->N; i++) { 
@@ -345,7 +310,6 @@ int8_t polar_decoder_int8(int16_t *input,
   
   
 
-  start_meas(polar_rate_matching);
   
   int16_t d_tilde[polarParams->N];// = malloc(sizeof(double) * polarParams->N);
   nr_polar_rate_matching_int8(input, d_tilde, polarParams->rate_matching_pattern, polarParams->K, polarParams->N, polarParams->encoderLength);
@@ -354,12 +318,11 @@ int8_t polar_decoder_int8(int16_t *input,
     else if (d_tilde[i]>127) d_tilde[i]=128;
   }
   memcpy((void*)&dlist[0].llr[polarParams->n][0],(void*)&d_tilde[0],sizeof(int16_t)*polarParams->N);
-  stop_meas(polar_rate_matching); 
   
   /*
    * SCL polar decoder.
    */
-  start_meas(decoding);
+
   uint32_t nonFrozenBit=0;
   uint8_t currentListSize=1;
   
@@ -383,18 +346,16 @@ int8_t polar_decoder_int8(int16_t *input,
       printf("***************** BIT %d (currentListSize %d, information_bit_pattern %d)\n",
 	     currentBit,currentListSize,polarParams->information_bit_pattern[currentBit]);
       
-      start_meas(update_LLR);
+
       updateLLR_int8(sorted_dlist, llrUpdated, bitUpdated, currentListSize, currentBit, 0, polarParams->N, (polarParams->n+1),generate_optim_code,fd);
-      stop_meas(update_LLR);
       
       if (polarParams->information_bit_pattern[currentBit]==0) { //Frozen bit.
 	updatePathMetric0_int8(sorted_dlist,currentListSize, currentBit,generate_optim_code,fd); //approximation=0 --> 11b, approximation=1 --> 12
       } else { //Information or CRC bit.
-	start_meas(path_metric);
+
 	updatePathMetric2_int8(sorted_dlist, currentListSize, currentBit,generate_optim_code,fd);
-	stop_meas(path_metric);
+
 	
-	start_meas(sorting); 
 	
 	if (currentListSize <= listSize/2) {
 	  // until listsize is full we need to copy bit and LLR arrays to new entries
@@ -426,7 +387,6 @@ int8_t polar_decoder_int8(int16_t *input,
 	  currentListSize = listSize;
 	}
 	
-	stop_meas(sorting);
 	
 	nonFrozenBit++;      
       }
@@ -446,14 +406,11 @@ int8_t polar_decoder_int8(int16_t *input,
     if (crcState == 1) {
       for (int j = 0; j < polarParams->N; j++) polarParams->nr_polar_u[j]=sorted_dlist[i]->bit[0][j];
       
-      start_meas(bit_extraction);
+
       //Extract the information bits (û to ĉ)
       nr_polar_info_bit_extraction(polarParams->nr_polar_u, polarParams->nr_polar_cPrime, polarParams->information_bit_pattern, polarParams->N);
-      stop_meas(bit_extraction);
       //Deinterleaving (ĉ to b)
-      start_meas(deinterleaving);
       nr_polar_deinterleaver(polarParams->nr_polar_cPrime, polarParams->nr_polar_b, polarParams->interleaving_pattern, polarParams->K);
-      stop_meas(deinterleaving);
       //Remove the CRC (â)
       for (int j = 0; j < polarParams->payloadBits; j++) output[j]=polarParams->nr_polar_b[j];
       
@@ -469,31 +426,16 @@ int8_t polar_decoder_int8(int16_t *input,
     nr_free_double_2D_array(dlist[i].llr, (polarParams->n+1));
     free(dlist[i].crcChecksum);
     }*/
-  stop_meas(decoding);
   return(0);
 }
 
 
 int8_t polar_decoder_int8_new(int16_t *input,
 			      uint8_t *output,
-			      t_nrPolar_params *polarParams,
-			      uint8_t listSize,
-			      time_stats_t *init,
-			      time_stats_t *polar_rate_matching,
-			      time_stats_t *decoding,
-			      time_stats_t *bit_extraction,
-			      time_stats_t *deinterleaving,
-			      time_stats_t *sorting,
-			      time_stats_t *path_metric,
-			      time_stats_t *update_LLR,
-			      int generate_optim_code)
+			      t_nrPolar_params *polarParams)
 {
   
 
-  start_meas(init);
-  stop_meas(init);
-
-  start_meas(polar_rate_matching);
   
   int16_t d_tilde[polarParams->N];// = malloc(sizeof(double) * polarParams->N);
   nr_polar_rate_matching_int8(input, d_tilde, polarParams->rate_matching_pattern, polarParams->K, polarParams->N, polarParams->encoderLength);
@@ -502,23 +444,22 @@ int8_t polar_decoder_int8_new(int16_t *input,
     else if (d_tilde[i]>127) d_tilde[i]=128;
   }
   memcpy((void*)&polarParams->tree.root->alpha[0],(void*)&d_tilde[0],sizeof(int16_t)*polarParams->N);
-  stop_meas(polar_rate_matching); 
   
   /*
    * SCL polar decoder.
    */
-  start_meas(decoding);
+
 
   generic_polar_decoder(polarParams,polarParams->tree.root);
 
-  start_meas(bit_extraction);
+
   //Extract the information bits (û to ĉ)
   nr_polar_info_bit_extraction(polarParams->nr_polar_u, polarParams->nr_polar_cPrime, polarParams->information_bit_pattern, polarParams->N);
-  stop_meas(bit_extraction);
+
   //Deinterleaving (ĉ to b)
-  start_meas(deinterleaving);
+
   nr_polar_deinterleaver(polarParams->nr_polar_cPrime, polarParams->nr_polar_b, polarParams->interleaving_pattern, polarParams->K);
-  stop_meas(deinterleaving);
+
   //Remove the CRC (â)
   for (int j = 0; j < polarParams->payloadBits; j++) output[j]=polarParams->nr_polar_b[j];
   
@@ -532,6 +473,6 @@ int8_t polar_decoder_int8_new(int16_t *input,
     nr_free_double_2D_array(dlist[i].llr, (polarParams->n+1));
     free(dlist[i].crcChecksum);
     }*/
-  stop_meas(decoding);
+
   return(0);
 }
