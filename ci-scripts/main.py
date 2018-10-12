@@ -629,6 +629,7 @@ class SSHConnection():
 				result = re.search('inet (?P<ueipaddress>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\/[0-9]+[0-9a-zA-Z\.\s]+', str(self.ssh.before))
 				if result is None:
 					logging.debug('\u001B[1;37;41m UE IP Address Not Found! \u001B[0m')
+					time.sleep(1)
 					count += 1
 				else:
 					count = 10
