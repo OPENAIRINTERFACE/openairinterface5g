@@ -1074,12 +1074,12 @@ typedef struct PHY_VARS_eNB_s {
 
   int hw_timing_advance;
 
-  time_stats_t phy_proc;
   time_stats_t phy_proc_tx;
   time_stats_t phy_proc_rx;
   time_stats_t rx_prach;
 
   time_stats_t ofdm_mod_stats;
+  time_stats_t dlsch_common_and_dci;
   time_stats_t dlsch_encoding_stats;
   time_stats_t dlsch_modulation_stats;
   time_stats_t dlsch_scrambling_stats;

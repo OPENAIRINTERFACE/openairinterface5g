@@ -484,6 +484,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+(eNB->CC_id),1);
   if (do_meas==1) start_meas(&eNB->phy_proc_tx);
+  if (do_meas==1) start_meas(&eNB->dlsch_common_and_dci);
 
   // clear the transmit data array for the current subframe
   for (aa=0; aa<fp->nb_antenna_ports_eNB; aa++) {      
@@ -578,6 +579,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
         subframe);
   }
 
+  if (do_meas==1) stop_meas(&eNB->dlsch_common_and_dci);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,0);
 
