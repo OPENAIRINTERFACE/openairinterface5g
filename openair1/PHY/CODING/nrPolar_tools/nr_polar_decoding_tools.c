@@ -50,7 +50,6 @@ int16_t llrtab[256][256];
 
 void nr_polar_llrtableinit() {
   int16_t absA,absB;
-  int16_t maska,maskb;
   int16_t minabs;
 
   for (int a=-128;a<128;a++) {
@@ -229,7 +228,6 @@ void updatePathMetric2(decoder_list_t **dlist, uint8_t listSize, uint16_t row, u
 
 void updatePathMetric2_int8(decoder_list_int8_t **dlist, uint8_t listSize, uint16_t row,int generate_optim_code,FILE *fd) {
 
-  int i;
 
 
 
@@ -303,7 +301,7 @@ decoder_node_t *new_decoder_node(int first_leaf_index,int level) {
   node->right=(decoder_node_t *)NULL;
   node->all_frozen=0;
   node->alpha  = (int16_t*)malloc16(node->Nv*sizeof(int16_t));
-  node->beta   = (int8_t*)malloc16(node->Nv*sizeof(int16_t));
+  node->beta   = (int16_t*)malloc16(node->Nv*sizeof(int16_t));
   memset((void*)node->beta,-1,node->Nv*sizeof(int16_t));
   
 
@@ -434,9 +432,7 @@ void applyGtoright(t_nrPolar_params *pp,decoder_node_t *node) {
   int16_t *alpha_r=node->right->alpha;
   int16_t *betal = node->left->beta;
   int16_t *betar = node->right->beta;
-  int8_t frozen_mask=-1;
 
-  if (node->Nv == 2) frozen_mask=-pp->information_bit_pattern[node->first_leaf_index+1];
 #ifdef DEBUG_NEW_IMPL
   printf("applyGtoright %d, Nv %d (level %d), (leaf %d, AF %d)\n",node->first_leaf_index,node->Nv,node->level,node->right->leaf,node->right->all_frozen);
 #endif
