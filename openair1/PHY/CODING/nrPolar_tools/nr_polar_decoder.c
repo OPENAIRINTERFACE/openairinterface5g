@@ -1039,7 +1039,7 @@ int8_t polar_decoder_dci(double *input,
 
 
 int8_t polar_decoder_int16(int16_t *input,
-			   uint8_t *output,
+			   uint8_t *out,
 			   t_nrPolar_params *polarParams)
 {
   
@@ -1069,9 +1069,9 @@ int8_t polar_decoder_int16(int16_t *input,
   nr_polar_deinterleaver(polarParams->nr_polar_CPrime, polarParams->nr_polar_B, polarParams->interleaving_pattern, polarParams->K);
 
   //Remove the CRC (â)
-  for (int j = 0; j < polarParams->payloadBits; j++) output[j]=polarParams->nr_polar_B[j];
-  
+  for (int j = 0; j < polarParams->payloadBits; j++) polarParams->nr_polar_A[j]=polarParams->nr_polar_B[j];  
 
+  nr_byte2bit_uint8_32_t(polarParams->nr_polar_A, polarParams->payloadBits, out);
   
   return(0);
 }

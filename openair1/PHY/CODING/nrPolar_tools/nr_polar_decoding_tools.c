@@ -34,6 +34,7 @@
 #include "PHY/sse_intrin.h"
 #include "PHY/impl_defs_top.h"
 
+//#define DEBUG_NEW_IMPL
 
 void updateLLR(double ***llr,
 			   uint8_t **llrU,
@@ -266,7 +267,7 @@ void applyFtoleft(t_nrPolar_params *pp,decoder_node_t *node) {
   for (int i=0;i<node->Nv;i++) printf("i%d (frozen %d): alpha_v[i] = %d\n",i,1-pp->information_bit_pattern[node->first_leaf_index+i],alpha_v[i]);
 #endif
 
-
+ 
 
   if (node->left->all_frozen == 0) {
 
@@ -275,7 +276,8 @@ void applyFtoleft(t_nrPolar_params *pp,decoder_node_t *node) {
     if (avx2mod == 0) {
       __m256i a256,b256,absa256,absb256,minabs256;
       int avx2len = node->Nv/2/16;
-      
+
+      //      printf("avx2len %d\n",avx2len);
       for (int i=0;i<avx2len;i++) {
 	a256       =((__m256i*)alpha_v)[i];
 	b256       =((__m256i*)alpha_v)[i+avx2len];
@@ -283,6 +285,13 @@ void applyFtoleft(t_nrPolar_params *pp,decoder_node_t *node) {
 	absb256    =_mm256_abs_epi16(b256);
 	minabs256  =_mm256_min_epi16(absa256,absb256);
 	((__m256i*)alpha_l)[i] =_mm256_sign_epi16(minabs256,_mm256_xor_si256(a256,b256));
+	/*	for (int j=0;j<16;j++) printf("alphal[%d] %d (%d,%d,%d)\n",
+				      (16*i) + j,
+				      alpha_l[(16*i)+j],
+				      ((int16_t*)&minabs256)[j],
+				      alpha_v[(16*i)+j],
+				      alpha_v[(16*i)+j+(node->Nv/2)]);
+	*/
       }
     }
     else if (avx2mod == 8) {
@@ -315,6 +324,7 @@ void applyFtoleft(t_nrPolar_params *pp,decoder_node_t *node) {
 	absb=(b+maskb)^maskb;
 	minabs = absa<absb ? absa : absb;
 	alpha_l[i] = (maska^maskb)==0 ? minabs : -minabs;
+	//	printf("alphal[%d] %d (%d,%d)\n",i,alpha_l[i],a,b);
       }
     }
     if (node->Nv == 2) { // apply hard decision on left node
@@ -368,7 +378,7 @@ void applyGtoright(t_nrPolar_params *pp,decoder_node_t *node) {
       betar[0] = (alpha_r[0]>0) ? -1 : 1;
       pp->nr_polar_U[node->first_leaf_index+1] = (1+betar[0])>>1;
 #ifdef DEBUG_NEW_IMPL
-      printf("Setting bit %d to %d (LLR %d frozen_mask %d)\n",node->first_leaf_index+1,(betar[0]+1)>>1,alpha_r[0],frozen_mask);
+      printf("Setting bit %d to %d (LLR %d)\n",node->first_leaf_index+1,(betar[0]+1)>>1,alpha_r[0]);
 #endif
     } 
   }

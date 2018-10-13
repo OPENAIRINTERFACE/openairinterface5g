@@ -151,7 +151,9 @@ int main(int argc, char *argv[]) {
 	uint8_t *encoderOutputByte = malloc(sizeof(uint8_t) * coderLength);
 	double *modulatedInput = malloc (sizeof(double) * coderLength); //channel input
 	double *channelOutput  = malloc (sizeof(double) * coderLength); //add noise
-
+	int16_t *channelOutput_int16;
+	if (decoder_int16 == 1) channelOutput_int16 = (int16_t*)malloc (sizeof(int16_t) * coderLength);
+ 
 	t_nrPolar_paramsPtr nrPolar_params = NULL, currentPtr = NULL;
 	nr_polar_init(&nrPolar_params, polarMessageType, testLength, aggregation_level);
 	currentPtr = nr_polar_params(nrPolar_params, polarMessageType, testLength, aggregation_level);
@@ -323,13 +325,6 @@ int main(int argc, char *argv[]) {
 			/*printf("encoderOutput: [0]->0x%08x\n", encoderOutput[0]);
 			printf("encoderOutput: [1]->0x%08x\n", encoderOutput[1]);*/
 
-/*
-			if (decoder_int16==1) {
-			  if (channelOutput[i] > 15) channelOutput_int8[i] = 127;
-			  else if (channelOutput[i] < -16) channelOutput_int8[i] = -128;
-			  else channelOutput_int8[i] = (int16_t) (8*channelOutput[i]);
-			}
-*/
 			//Bit-to-byte:
 			nr_bit2byte_uint32_8_t(encoderOutput, coderLength, encoderOutputByte);
 
@@ -341,6 +336,15 @@ int main(int argc, char *argv[]) {
 					modulatedInput[i]=(-1)/sqrt(2);
 
 				channelOutput[i] = modulatedInput[i] + (gaussdouble(0.0,1.0) * (1/sqrt(2*SNR_lin)));
+
+				
+				if (decoder_int16==1) {
+				  if (channelOutput[i] > 15) channelOutput_int16[i] = 127;
+				  else if (channelOutput[i] < -16) channelOutput_int16[i] = -128;
+				  else channelOutput_int16[i] = (int16_t) (8*channelOutput[i]);
+				}
+
+
 			}
 
 			start_meas(&timeDecoder);
@@ -350,12 +354,19 @@ int main(int argc, char *argv[]) {
 									 	 NR_POLAR_DECODER_LISTSIZE,
 									 	 aPrioriArray,
 									 	 NR_POLAR_DECODER_PATH_METRIC_APPROXIMATION);*/
-			decoderState = polar_decoder_aPriori(channelOutput,
-											 	 estimatedOutput,
-												 currentPtr,
-												 NR_POLAR_DECODER_LISTSIZE,
-												 NR_POLAR_DECODER_PATH_METRIC_APPROXIMATION,
-												 aPrioriArray);
+			if (decoder_int16==0)
+			  decoderState = polar_decoder_aPriori(channelOutput,
+							       estimatedOutput,
+							       currentPtr,
+							       NR_POLAR_DECODER_LISTSIZE,
+							       NR_POLAR_DECODER_PATH_METRIC_APPROXIMATION,
+							       aPrioriArray);
+			else 
+			  decoderState = polar_decoder_int16(channelOutput_int16,
+							     estimatedOutput,
+							     currentPtr);
+
+			  
 			stop_meas(&timeDecoder);
 			/*printf("testInput: [0]->0x%08x\n", testInput[0]);
 			printf("estimatedOutput: [0]->0x%08x\n", estimatedOutput[0]);*/
