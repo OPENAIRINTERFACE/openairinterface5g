@@ -19,274 +19,177 @@
  *      contact@openairinterface.org
  */
 
-#include "PHY/impl_defs_top.h"
+/*!\file PHY/CODING/nrPolar_tools/nr_polar_decoding_tools.c
+ * \brief
+ * \author Turker Yilmaz
+ * \date 2018
+ * \version 0.1
+ * \company EURECOM
+ * \email turker.yilmaz@eurecom.fr
+ * \note
+ * \warning
+*/
+
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 #include "PHY/sse_intrin.h"
-
-inline void computeLLR(double llr[1+nmax][Nmax], uint16_t row, uint16_t col, 
-		       uint16_t offset, uint8_t approximation) __attribute__((always_inline));
-inline void computeLLR(double llr[1+nmax][Nmax], uint16_t row, uint16_t col, 
-		       uint16_t offset, uint8_t approximation) {
-
-        double a;
-        double b;
-	double absA,absB;
+#include "PHY/impl_defs_top.h"
 
 
-	a = llr[col + 1][row];   
-	b = llr[col+1][row + offset];
-	
-	if (approximation) { //eq. (9)
-	  absA = fabs(a);
-	  absB = fabs(b);
-	  llr[col][row] = copysign(1.0, a) * copysign(1.0, b) * fmin(absA, absB);
-	} else { //eq. (8a)
-	  llr[col][row] = log((exp(a + b) + 1) / (exp(a) + exp(b)));
+void updateLLR(double ***llr,
+			   uint8_t **llrU,
+			   uint8_t ***bit,
+			   uint8_t **bitU,
+			   uint8_t listSize,
+			   uint16_t row,
+			   uint16_t col,
+			   uint16_t xlen,
+			   uint8_t ylen,
+			   uint8_t approximation)
+{
+	uint16_t offset = (xlen/(pow(2,(ylen-col-1))));
+	for (uint8_t i=0; i<listSize; i++) {
+		if (( (row) % (2*offset) ) >= offset ) {
+			if(bitU[row-offset][col]==0) updateBit(bit, bitU, listSize, (row-offset), col, xlen, ylen);
+			if(llrU[row-offset][col+1]==0) updateLLR(llr, llrU, bit, bitU, listSize, (row-offset), (col+1), xlen, ylen, approximation);
+			if(llrU[row][col+1]==0) updateLLR(llr, llrU, bit, bitU, listSize, row, (col+1), xlen, ylen, approximation);
+			llr[row][col][i] = (pow((-1),bit[row-offset][col][i])*llr[row-offset][col+1][i]) + llr[row][col+1][i];
+		} else {
+			if(llrU[row][col+1]==0) updateLLR(llr, llrU, bit, bitU, listSize, row, (col+1), xlen, ylen, approximation);
+			if(llrU[row+offset][col+1]==0) updateLLR(llr, llrU, bit, bitU, listSize, (row+offset), (col+1), xlen, ylen, approximation);
+			computeLLR(llr, row, col, i, offset, approximation);
+		}
 	}
+	llrU[row][col]=1;
+
 	//	printf("LLR (a %f, b %f): llr[%d][%d] %f\n",32*a,32*b,col,row,32*llr[col][row]);
 }
 
-int16_t llrtab[256][256];
+void updateBit(uint8_t ***bit,
+			   uint8_t **bitU,
+			   uint8_t listSize,
+			   uint16_t row,
+			   uint16_t col,
+			   uint16_t xlen,
+			   uint8_t ylen)
+{
 
-void nr_polar_llrtableinit() {
-  int16_t absA,absB;
-  int16_t minabs;
+	uint16_t offset = ( xlen/(pow(2,(ylen-col))) );
 
-  for (int a=-128;a<128;a++) {
-    for (int b=-128;b<128;b++) {
-	absA=abs(a);
-	absB=abs(b);
-	minabs = absA<absB ? absA:absB;
-	if ((a<0 && b<0) || (a>=0 && b>=0)) llrtab[a+128][b+128] = minabs;
-	else                                llrtab[a+128][b+128] = -minabs;
-      }
-  }
+	for (uint8_t i=0; i<listSize; i++) {
+		if (( (row) % (2*offset) ) >= offset ) {
+			if (bitU[row][col-1]==0) updateBit(bit, bitU, listSize, row, (col-1), xlen, ylen);
+			bit[row][col][i] = bit[row][col-1][i];
+		} else {
+			if (bitU[row][col-1]==0) updateBit(bit, bitU, listSize, row, (col-1), xlen, ylen);
+			if (bitU[row+offset][col-1]==0) updateBit(bit, bitU, listSize, (row+offset), (col-1), xlen, ylen);
+			bit[row][col][i] = ( (bit[row][col-1][i]+bit[row+offset][col-1][i]) % 2);
+		}
+	}
+
+	bitU[row][col]=1;
+}
+
+void updatePathMetric(double *pathMetric,
+					  double ***llr,
+					  uint8_t listSize,
+					  uint8_t bitValue,
+					  uint16_t row,
+					  uint8_t approximation)
+{
+	if (approximation) { //eq. (12)
+		for (uint8_t i=0; i<listSize; i++) {
+			if ((2*bitValue) != ( 1 - copysign(1.0,llr[row][0][i]) )) pathMetric[i] += fabs(llr[row][0][i]);
+		}
+	} else { //eq. (11b)
+		int8_t multiplier = (2*bitValue) - 1;
+		for (uint8_t i=0; i<listSize; i++) pathMetric[i] += log ( 1 + exp(multiplier*llr[row][0][i]) ) ;
+	}
 }
 
 
-void updateLLR(decoder_list_t **dlist,uint8_t **llrU, uint8_t **bitU,
-	       uint8_t listSize, uint16_t row, uint16_t col, uint16_t xlen, uint8_t ylen, uint8_t approximation) {
+void updatePathMetric2(double *pathMetric,
+					   double ***llr,
+					   uint8_t listSize,
+					   uint16_t row,
+					   uint8_t appr)
+{
+	double *tempPM = malloc(sizeof(double) * listSize);
+	for (int i=0; i < listSize; i++) tempPM[i]=pathMetric[i];
 
-  uint16_t offset = (xlen/(1<<(ylen-col-1)));
-  if (( (row) % (2*offset) ) >= offset ) {
-    if (bitU[row-offset][col]==0) updateBit(dlist, bitU, listSize, (row-offset), col, xlen, ylen);
-    if (llrU[row-offset][col+1]==0) updateLLR(dlist, llrU, bitU, listSize, (row-offset), (col+1), xlen, ylen, approximation);
-    if (llrU[row][col+1]==0) updateLLR(dlist, llrU, bitU, listSize, row, (col+1), xlen, ylen, approximation);
-    for (uint8_t i=0; i<listSize; i++) {
-      dlist[i]->llr[col][row] = (pow((-1),dlist[i]->bit[col][row-offset])*dlist[i]->llr[col+1][row-offset]) + dlist[i]->llr[col+1][row];
-    }
-  } else {
-    if (llrU[row][col+1]==0) updateLLR(dlist, llrU, bitU, listSize, row, (col+1), xlen, ylen, approximation);
-    if (llrU[row+offset][col+1]==0) updateLLR(dlist, llrU, bitU, listSize, (row+offset), (col+1), xlen, ylen, approximation);
-    for (int i=0;i<listSize;i++) computeLLR(dlist[i]->llr, row, col, offset, approximation);
-  }
-  
-  llrU[row][col]=1;
-}
 
-void updateLLR_int8(decoder_list_int8_t **dlist,uint8_t **llrU, uint8_t **bitU,
-		    uint8_t listSize, uint16_t row, uint16_t col, uint16_t xlen, uint8_t ylen,
-		    int generate_optim_code,FILE *fd) {
-  uint16_t offset = (xlen/(1<<(ylen-col-1)));
-  if (( (row) % (2*offset) ) >= offset ) {
-    if (bitU[row-offset][col]==0) updateBit_int8(dlist, bitU, listSize, (row-offset), col, xlen, ylen,generate_optim_code,fd);
-    if (llrU[row-offset][col+1]==0) updateLLR_int8(dlist, llrU, bitU, listSize, (row-offset), (col+1), xlen, ylen,generate_optim_code,fd);
-    if (llrU[row][col+1]==0) updateLLR_int8(dlist, llrU, bitU, listSize, row, (col+1), xlen, ylen,generate_optim_code,fd);
+	uint8_t bitValue = 0;
+	if (appr) { //eq. (12)
+		for (uint8_t i = 0; i < listSize; i++) {
+			if ((2 * bitValue) != (1 - copysign(1.0, llr[row][0][i]))) pathMetric[i] += fabs(llr[row][0][i]);
+		}
+	} else { //eq. (11b)
+		int8_t multiplier = (2 * bitValue) - 1;
+		for (uint8_t i = 0; i < listSize; i++) pathMetric[i] += log(1 + exp(multiplier * llr[row][0][i]));
+	}
 
-      
-    if (generate_optim_code==1) fprintf(fd,"updateLLR_int8_A(sorted_dlist,%d,%d,%d,%d);\n",listSize,col,row,offset);
+	bitValue = 1;
+	if (appr) { //eq. (12)
+		for (uint8_t i = listSize; i < 2*listSize; i++) {
+			if ((2 * bitValue) != (1 - copysign(1.0, llr[row][0][(i-listSize)]))) pathMetric[i] = tempPM[(i-listSize)] + fabs(llr[row][0][(i-listSize)]);
+		}
+	} else { //eq. (11b)
+		int8_t multiplier = (2 * bitValue) - 1;
+		for (uint8_t i = listSize; i < 2*listSize; i++) pathMetric[i] = tempPM[(i-listSize)] + log(1 + exp(multiplier * llr[row][0][(i-listSize)]));
+	}
 
-    updateLLR_int8_A(dlist,listSize,col,row,offset);
-      
-  } else {
-    if (llrU[row][col+1]==0) updateLLR_int8(dlist, llrU, bitU, listSize, row, (col+1), xlen, ylen,generate_optim_code,fd);
-    if (llrU[row+offset][col+1]==0) updateLLR_int8(dlist, llrU, bitU, listSize, (row+offset), (col+1), xlen, ylen,generate_optim_code,fd);
-    if (generate_optim_code==1) fprintf(fd,"computeLLR_int8(sorted_dlist,%d,%d,%d,%d);\n",listSize,row,col,offset);
-    computeLLR_int8(dlist,listSize, row, col, offset);
-  }
-  
-  llrU[row][col]=1;
-}
-
-void updateBit(decoder_list_t **dlist, uint8_t **bitU, uint8_t listSize, uint16_t row,
-	       uint16_t col, uint16_t xlen, uint8_t ylen) {
-  uint16_t offset = ( xlen/(pow(2,(ylen-col))) );
-  
-  for (uint8_t i=0; i<listSize; i++) {
-    if (( (row) % (2*offset) ) >= offset ) {
-      if (bitU[row][col-1]==0) updateBit(dlist, bitU, listSize, row, (col-1), xlen, ylen);
-      dlist[i]->bit[col][row] = dlist[i]->bit[col-1][row];
-    } else {
-      if (bitU[row][col-1]==0) updateBit(dlist, bitU, listSize, row, (col-1), xlen, ylen);
-      if (bitU[row+offset][col-1]==0) updateBit(dlist, bitU, listSize, (row+offset), (col-1), xlen, ylen);
-      dlist[i]->bit[col][row] = ( (dlist[i]->bit[col-1][row]+dlist[i]->bit[col-1][row+offset]) % 2);
-    }
-  }
-  
-  bitU[row][col]=1;
-}
+	free(tempPM);
 
 
 
-void updateBit_int8(decoder_list_int8_t **dlist, uint8_t **bitU, 
-		    uint8_t listSize, uint16_t row,
-		    uint16_t col, uint16_t xlen, uint8_t ylen,
-		    int generate_optim_code,FILE *fd) {
-
-  uint16_t offset = ( xlen/(pow(2,(ylen-col))) );
-  
-  if (( (row) % (2*offset) ) >= offset ) {
-
-    if (bitU[row][col-1]==0) updateBit_int8(dlist, bitU, listSize, row, (col-1), xlen, ylen,generate_optim_code,fd);
-    //      dlist[i]->bit[col][row] = dlist[i]->bit[col-1][row];
-
-    if (generate_optim_code==1) fprintf(fd,"updateBit_int8_A(sorted_dlist,%d,%d,%d);\n",listSize,col,row);
-
-    updateBit_int8_A(dlist,listSize,col,row);
-
-  } else {
-    if (bitU[row][col-1]==0) updateBit_int8(dlist, bitU, listSize, row, (col-1), xlen, ylen,generate_optim_code,fd);
-    if (bitU[row+offset][col-1]==0) updateBit_int8(dlist, bitU, listSize, (row+offset), (col-1), xlen, ylen,generate_optim_code,fd);
-      //      dlist[i]->bit[col][row] = dlist[i]->bit[col-1][row]^dlist[i]->bit[col-1][row+offset];
-      //      printf("updating dlist[%d]->bit[%d][%d] => %d\n",i,col,row,dlist[i]->bit[col][row]);
-
-    if (generate_optim_code==1) fprintf(fd,"updateBit_int8_B(sorted_dlist,%d,%d,%d,%d);\n",listSize,col,row,offset);
-
-    updateBit_int8_B(dlist,listSize,col,row,offset);
   }
 
-  
-  bitU[row][col]=1;
-}
- 
-void updatePathMetric(decoder_list_t **dlist,uint8_t listSize, uint8_t bitValue,
-		       uint16_t row, uint8_t approximation) {
-   
-  if (approximation) { //eq. (12)
-    for (uint8_t i=0; i<listSize; i++) {
-      if ((2*bitValue) != ( 1 - copysign(1.0,dlist[i]->llr[0][row]) )) dlist[i]->pathMetric += fabs(dlist[i]->llr[0][row]);
-     }
-  } else { //eq. (11b)
-    int8_t multiplier = (2*bitValue) - 1;
-    for (uint8_t i=0; i<listSize; i++) {
-      dlist[i]->pathMetric += log ( 1 + exp(multiplier*dlist[i]->llr[0][row]) ) ;
-    }  
-  }
-  
-}
- 
+void computeLLR(double ***llr,
+				uint16_t row,
+				uint16_t col,
+				uint8_t i,
+				uint16_t offset,
+				uint8_t approximation)
+{
+	double a = llr[row][col + 1][i];
+	double absA = fabs(a);
+	double b = llr[row + offset][col + 1][i];
+	double absB = fabs(b);
 
-
-void updatePathMetric0_int8(decoder_list_int8_t **dlist,uint8_t listSize, uint16_t row,int generate_optim_code,FILE *fd) {
-
-  int16_t mask,absllr;
-  updatePathMetric0_int8_A(dlist,listSize,row,mask,absllr);
-  
-  if (generate_optim_code == 1) fprintf(fd,"updatePathMetric0_int8_A(sorted_dlist,%d,%d,mask,absllr);\n",listSize,row);
-
-
-
-    /*
-      mask = dlist[i]->llr[0][row]>>15;
-      
-      if (mask != 0) {
-        int16_t absllr = (dlist[i]->llr[0][row]+mask)^mask; 
-        dlist[i]->pathMetric += absllr;
-	}*/
-
+	if (approximation || isinf(absA) || isinf(absB)) { //eq. (9)
+		llr[row][col][i] = copysign(1.0, a) * copysign(1.0, b) * fmin(absA, absB);
+	} else { //eq. (8a)
+		llr[row][col][i] = log((exp(a + b) + 1) / (exp(a) + exp(b)));
+	}
 
 
 }
 
-void updatePathMetric2(decoder_list_t **dlist, uint8_t listSize, uint16_t row, uint8_t appr) {
-
-  int i;
-
-  for (i=0;i<listSize;i++) dlist[i+listSize]->pathMetric = dlist[i]->pathMetric;
-  decoder_list_t **dlist2 = &dlist[listSize];
-
-  if (appr) { //eq. (12)
-    for (i = 0; i < listSize; i++) {
-      // bitValue=0
-      if (dlist[i]->llr[0][row]<0) dlist[i]->pathMetric  -= dlist[i]->llr[0][row];
-       // bitValue=1
-      else                         dlist2[i]->pathMetric += dlist[i]->llr[0][row];
-    }
-  } else { //eq. (11b)
-    for (i = 0; i < listSize; i++) {
-      // bitValue=0
-       dlist[i]->pathMetric += log(1 + exp(-dlist[i]->llr[0][row]));
-      // bitValue=1
-       dlist2[i]->pathMetric += log(1 + exp(dlist[i]->llr[0][row]));
-
-    }
-  }
+void updateCrcChecksum(uint8_t **crcChecksum,
+					   uint8_t **crcGen,
+					   uint8_t listSize,
+					   uint32_t i2,
+					   uint8_t len)
+{
+	for (uint8_t i = 0; i < listSize; i++) {
+		for (uint8_t j = 0; j < len; j++) {
+			crcChecksum[j][i] = ( (crcChecksum[j][i] + crcGen[i2][j]) % 2 );
+		}
+	}
 }
 
-
-
-
-void updatePathMetric2_int8(decoder_list_int8_t **dlist, uint8_t listSize, uint16_t row,int generate_optim_code,FILE *fd) {
-
-
-
-
-  if (generate_optim_code == 1) fprintf(fd,"updatePathMetric2_int8_A(sorted_dlist,%d,%d);\n",
-					listSize,row);
-  
-  updatePathMetric2_int8_A(dlist,listSize,row);
-  //    dlist[i+listSize]->pathMetric = dlist[i]->pathMetric;
-  //if (dlist[i]->llr[0][row]<0) dlist[i]->pathMetric  -= dlist[i]->llr[0][row];
-  //else                         dlist[i+listSize]->pathMetric += dlist[i]->llr[0][row];
-  
+void updateCrcChecksum2(uint8_t **crcChecksum,
+						uint8_t **crcGen,
+						uint8_t listSize,
+						uint32_t i2,
+						uint8_t len)
+{
+	for (uint8_t i = 0; i < listSize; i++) {
+		for (uint8_t j = 0; j < len; j++) {
+			crcChecksum[j][i+listSize] = ( (crcChecksum[j][i] + crcGen[i2][j]) % 2 );
+		}
+	}
 }
 
-
-void updateCrcChecksum(decoder_list_t **dlist, uint8_t **crcGen,
-		       uint8_t listSize, uint32_t i2, uint8_t len) {
-  for (uint8_t i = 0; i < listSize; i++) {
-    for (uint8_t j = 0; j < len; j++) {
-      dlist[i]->crcChecksum[j] = ( (dlist[i]->crcChecksum[j] + crcGen[i2][j]) % 2 );
-    }
-  }
-}
-
-void updateCrcChecksum2(decoder_list_t **dlist, uint8_t **crcGen,
-			uint8_t listSize, uint32_t i2, uint8_t len) {
-  for (uint8_t i = 0; i < listSize; i++) {
-    for (uint8_t j = 0; j < len; j++) {
-      dlist[i+listSize]->crcChecksum[j] = ( (dlist[i]->crcChecksum[j] + crcGen[i2][j]) % 2 );
-    }
-  }
-}
-
-
-    
-void updateCrcChecksum_int8(decoder_list_int8_t **dlist, uint8_t **crcGen,
-			    uint8_t listSize, uint32_t i2, uint8_t len,int generate_optim_code,FILE *fd) {
-
-  if (generate_optim_code == 1) fprintf(fd,"updateCrcChecksum_int8_A(sorted_dlist,%d,crcGen,%d,%d);\n",listSize,i2,len);
-  
-  updateCrcChecksum_int8_A(dlist,listSize,crcGen,i2,len);
-  //    for (uint8_t j = 0; j < len; j++) {
-  //      dlist[i]->crcChecksum[j] = ( (dlist[i]->crcChecksum[j] + crcGen[i2][j]) % 2 );
-  //    }
-
-}
-
-
-
-void updateCrcChecksum2_int8(decoder_list_int8_t **dlist, uint8_t **crcGen,
-			     uint8_t listSize, uint32_t i2, uint8_t len,int generate_optim_code,FILE *fd) {
-
-  if (generate_optim_code == 1) fprintf(fd,"updateCrcChecksum2_int8_A(sorted_dlist,%d,polarParams->extended_crc_generator_matrix,%d,%d);\n",listSize,i2,len);
-  
-  updateCrcChecksum2_int8_A(dlist,listSize,crcGen,i2,len);
-  //    for (uint8_t j = 0; j < len; j++) {
-    //      dlist[i+listSize]->crcChecksum[j] = ( (dlist[i]->crcChecksum[j] + crcGen[i2][j]) % 2 );
-    //    }
-
-}
 
 
 decoder_node_t *new_decoder_node(int first_leaf_index,int level) {
@@ -341,6 +244,7 @@ if (all_frozen_below==0) new_node->left=add_nodes(level-1,first_leaf_index,pp);
 
   return(new_node);
 }
+
 
 void build_decoder_tree(t_nrPolar_params *pp) {
 
@@ -418,7 +322,7 @@ void applyFtoleft(t_nrPolar_params *pp,decoder_node_t *node) {
 #ifdef DEBUG_NEW_IMPL
       printf("betal[0] %d (%p)\n",betal[0],&betal[0]);
 #endif
-      pp->nr_polar_u[node->first_leaf_index] = (1+betal[0])>>1; 
+      pp->nr_polar_U[node->first_leaf_index] = (1+betal[0])>>1; 
 #ifdef DEBUG_NEW_IMPL
       printf("Setting bit %d to %d (LLR %d)\n",node->first_leaf_index,(betal[0]+1)>>1,alpha_l[0]);
 #endif
@@ -462,13 +366,14 @@ void applyGtoright(t_nrPolar_params *pp,decoder_node_t *node) {
       }
     if (node->Nv == 2) { // apply hard decision on right node
       betar[0] = (alpha_r[0]>0) ? -1 : 1;
-      pp->nr_polar_u[node->first_leaf_index+1] = (1+betar[0])>>1;
+      pp->nr_polar_U[node->first_leaf_index+1] = (1+betar[0])>>1;
 #ifdef DEBUG_NEW_IMPL
       printf("Setting bit %d to %d (LLR %d frozen_mask %d)\n",node->first_leaf_index+1,(betar[0]+1)>>1,alpha_r[0],frozen_mask);
 #endif
     } 
   }
 }
+
 
 int16_t minus1[16] = {-1,-1,-1,-1,
 		      -1,-1,-1,-1,

@@ -24,8 +24,8 @@
    author: Hongzhi WANG (TCL)
    date: 12.09.2017
 */
-#include "PHY/defs.h"
-#include "SCHED/extern.h"
+#include "PHY/defs_nr_UE.h"
+//#include "SCHED/extern.h"
 
 //#define DEBUG_SEGMENTATION
 

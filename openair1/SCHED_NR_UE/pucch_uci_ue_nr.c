@@ -48,6 +48,60 @@
 
 #endif
 
+int8_t nr_ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP, uint8_t eNB_id, uint16_t rnti, sub_frame_t subframe);
+uint8_t is_cqi_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id);
+uint8_t is_ri_TXOp(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t gNB_id);
+/*
+void nr_generate_pucch0(int32_t **txdataF,
+                        NR_DL_FRAME_PARMS *frame_parms,
+                        PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
+                        int16_t amp,
+                        int nr_tti_tx,
+                        uint8_t mcs,
+                        uint8_t nrofSymbols,
+                        uint8_t startingSymbolIndex,
+                        uint16_t startingPRB);
+
+void nr_generate_pucch1(int32_t **txdataF,
+                        NR_DL_FRAME_PARMS *frame_parms,
+                        PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
+                        uint64_t payload,
+                        int16_t amp,
+                        int nr_tti_tx,
+                        uint8_t nrofSymbols,
+                        uint8_t startingSymbolIndex,
+                        uint16_t startingPRB,
+                        uint16_t startingPRB_intraSlotHopping,
+                        uint8_t timeDomainOCC,
+                        uint8_t nr_bit);
+
+void nr_generate_pucch2(int32_t **txdataF,
+                        NR_DL_FRAME_PARMS *frame_parms,
+                        PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
+                        uint64_t payload,
+                        int16_t amp,
+                        int nr_tti_tx,
+                        uint8_t nrofSymbols,
+                        uint8_t startingSymbolIndex,
+                        uint8_t nrofPRB,
+                        uint16_t startingPRB,
+                        uint8_t nr_bit);
+
+void nr_generate_pucch3_4(int32_t **txdataF,
+                         NR_DL_FRAME_PARMS *frame_parms,
+                         pucch_format_nr_t fmt,
+                         PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
+                         uint64_t payload,
+                         int16_t amp,
+                         int nr_tti_tx,
+                         uint8_t nrofSymbols,
+                         uint8_t startingSymbolIndex,
+                         uint8_t nrofPRB,
+                         uint16_t startingPRB,
+                         uint8_t nr_bit,
+                         uint8_t occ_length_format4,
+                         uint8_t occ_index_format4);
+*/
 /**************** variables **************************************/
 
 
@@ -139,7 +193,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
 
   if (dl_harq_pid < ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->number_harq_processes_for_pdsch) {
     /* pucch indicator can be reseted in function get_downlink_ack so it should be get now */
-    pucch_resource_indicator = ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[dl_harq_pid]->harq_ack.pucch_resource_indicator;
+    pucch_resource_indicator = ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[dl_harq_pid].harq_ack.pucch_resource_indicator;
   }
 
   /* Part - I
@@ -238,7 +292,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   int occ_length = 0;
   int occ_Index = 0;
 
-  NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[dl_harq_pid]->harq_ack;
+  NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[dl_harq_pid].harq_ack;
 
   if (select_pucch_resource(ue, gNB_id, N_UCI, pucch_resource_indicator, &initial_pucch_id, &pucch_resource_set,
                             &pucch_resource_id, harq_status) == TRUE) {
@@ -633,7 +687,7 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
 
     for (int dl_harq_pid = 0; dl_harq_pid < number_pid_dl; dl_harq_pid++) {
 
-      harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][code_word]->harq_processes[dl_harq_pid]->harq_ack;
+      harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][code_word]->harq_processes[dl_harq_pid].harq_ack;
 
       /* check if current tx slot should transmit downlink acknowlegment */
       if (harq_status->slot_for_feedback_ack == proc->nr_tti_tx) {
@@ -671,7 +725,7 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
         }
       }
       if (do_reset == TRUE) {
-        init_downlink_harq_status(ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][code_word]->harq_processes[dl_harq_pid]);
+        init_downlink_harq_status(&ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][code_word]->harq_processes[dl_harq_pid]);
       }
     }
   }

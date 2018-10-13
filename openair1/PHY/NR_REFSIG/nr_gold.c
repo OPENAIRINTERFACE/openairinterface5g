@@ -19,16 +19,16 @@
  *      contact@openairinterface.org
  */
 
-#include "defs.h"
+#include "nr_refsig.h"
 
 void nr_init_pbch_dmrs(PHY_VARS_gNB* gNB)
 {
-
-  unsigned int n, x1, x2;
+  unsigned int x1, x2;
   unsigned char Nid, i_ssb, i_ssb2;
   unsigned char Lmax, l, n_hf, N_hf;
   nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
+  uint8_t reset;
 
   Nid = cfg->sch_config.physical_cell_id.value;
 
@@ -36,32 +36,42 @@ void nr_init_pbch_dmrs(PHY_VARS_gNB* gNB)
   N_hf = (Lmax == 4)? 2:1;
 
   for (n_hf = 0; n_hf < N_hf; n_hf++) {
-
     for (l = 0; l < Lmax ; l++) {
       i_ssb = l & (Lmax-1);
       i_ssb2 = (i_ssb<<2) + n_hf;
 
-      x1 = 1 + (1<<31);
+      reset = 1;
       x2 = (1<<11) * (i_ssb2 + 1) * ((Nid>>2) + 1) + (1<<6) * (i_ssb2 + 1) + (Nid&3);
-      x2 = x2 ^ ((x2 ^ (x2>>1) ^ (x2>>2) ^ (x2>>3))<<31);
 
-      // skip first 50 double words (1600 bits)
-      for (n = 1; n < 50; n++) {
-        x1 = (x1>>1) ^ (x1>>4);
-        x1 = x1 ^ (x1<<31) ^ (x1<<28);
-        x2 = (x2>>1) ^ (x2>>2) ^ (x2>>3) ^ (x2>>4);
-        x2 = x2 ^ (x2<<31) ^ (x2<<30) ^ (x2<<29) ^ (x2<<28);
-      }
-
-      for (n=0; n<NR_PBCH_DMRS_LENGTH_DWORD; n++) {
-        x1 = (x1>>1) ^ (x1>>4);
-        x1 = x1 ^ (x1<<31) ^ (x1<<28);
-        x2 = (x2>>1) ^ (x2>>2) ^ (x2>>3) ^ (x2>>4);
-        x2 = x2 ^ (x2<<31) ^ (x2<<30) ^ (x2<<29) ^ (x2<<28);
-        gNB->nr_gold_pbch_dmrs[n_hf][l][n] = x1 ^ x2;
+      for (uint8_t n=0; n<NR_PBCH_DMRS_LENGTH_DWORD; n++) {
+        gNB->nr_gold_pbch_dmrs[n_hf][l][n] = lte_gold_generic(&x1, &x2, reset);
+        reset = 0;
       }
 
     }
+  }
+
+}
+
+void nr_init_pdcch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid)
+{
+
+  uint32_t x1, x2;
+  uint8_t reset;
+  NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
+  uint32_t ***pdcch_dmrs = gNB->nr_gold_pdcch_dmrs;
+
+  for (uint8_t slot=0; slot<fp->slots_per_frame; slot++) {
+    for (uint8_t symb=0; symb<fp->symbols_per_slot; symb++) {
+
+      reset = 1;
+      x2 = ((1<<17) * (14*slot+symb+1) * ((Nid<<1)+1) + (Nid<<1))&(((uint32_t)1<<31)-1);
+
+      for (uint32_t n=0; n<NR_MAX_PDCCH_DMRS_INIT_LENGTH_DWORD; n++) {
+        pdcch_dmrs[slot][symb][n] = lte_gold_generic(&x1, &x2, reset);
+        reset = 0;
+      }
+    }  
   }
 
 }

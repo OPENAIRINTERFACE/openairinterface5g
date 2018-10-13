@@ -43,6 +43,11 @@
 
 #define MAX_NUM_SUBCARRIER_SPACING 5
 
+#define NR_MAX_NB_RB 275
+
+#define NR_NB_SC_PER_RB 12
+#define NR_NB_REG_PER_CCE 6
+
 #define NR_SYMBOLS_PER_SLOT 14
 
 #define ONE_OVER_SQRT2_Q15 23170
@@ -56,9 +61,23 @@
 #define NR_SSS_LENGTH 127
 
 #define NR_PBCH_DMRS_LENGTH 144 // in mod symbols
-#define NR_PBCH_DMRS_LENGTH_DWORD 10 // roundup(2(QPSK)*NR_PBCH_DMRS_LENGTH/32)
+#define NR_PBCH_DMRS_LENGTH_DWORD 10 // ceil(2(QPSK)*NR_PBCH_DMRS_LENGTH/32)
+
+/*These max values are for the gold sequences which are generated at init for the
+ * full carrier bandwidth*/
+#define NR_MAX_PDCCH_DMRS_INIT_LENGTH ((NR_MAX_NB_RB<<1)*3) // 3 symbols *2(QPSK)
+#define NR_MAX_PDCCH_DMRS_INIT_LENGTH_DWORD 52 // ceil(NR_MAX_PDCCH_DMRS_LENGTH/32)
+/*used for the resource mapping*/
+#define NR_MAX_PDCCH_DMRS_LENGTH 576 // 16(L)*2(QPSK)*3(3 DMRS symbs per REG)*6(REG per CCE)
+
+#define NR_MAX_DCI_PAYLOAD_SIZE 64
+#define NR_MAX_DCI_SIZE 1728 //16(L)*2(QPSK)*9(12 RE per REG - 3(DMRS))*6(REG per CCE)
+#define NR_MAX_DCI_SIZE_DWORD 54 // ceil(NR_MAX_DCI_SIZE/32)
 
 #define NR_MAX_NUM_BWP 4
+
+#define NR_MAX_PDCCH_AGG_LEVEL 16
+#define NR_MAX_CSET_DURATION 3
 
 typedef enum {
   NR_MU_0=0,
@@ -68,6 +87,13 @@ typedef enum {
   NR_MU_4,
 } nr_numerology_index_e;
 
+typedef enum {
+  kHz15=0,
+  kHz30,
+  kHz60,
+  kHz120,
+  kHz240
+} nr_scs_e;
 
 typedef enum{
   nr_ssb_type_A = 0,
@@ -83,15 +109,30 @@ typedef enum {
 } nr_frequency_range_e;
 
 typedef struct NR_BWP_PARMS {
-  /// Associated numerology index
-  uint8_t numerology_index;
-  /// Freq domain location
+  /// BWP ID
+  uint8_t bwp_id;
+  /// Subcarrier spacing
+  nr_scs_e scs;
+  /// Freq domain location -- 1st CRB index
   uint8_t location;
   /// Bandwidth in PRB
   uint16_t N_RB;
   /// Size of FFT/IFFT
   uint16_t ofdm_symbol_size;
+  /// Cyclic prefix
+  uint8_t cyclic_prefix;
 } NR_BWP_PARMS;
+
+typedef struct {
+  uint8_t reg_idx;
+  uint16_t start_sc_idx;
+  uint8_t symb_idx;
+} nr_reg_t;
+
+typedef struct {
+  uint8_t cce_idx;
+  nr_reg_t reg_list[NR_NB_REG_PER_CCE];
+} nr_cce_t;
 
 typedef struct NR_DL_FRAME_PARMS {
   /// frequency range
@@ -137,6 +178,8 @@ typedef struct NR_DL_FRAME_PARMS {
   uint16_t symbols_per_slot;
   /// Number of slots per subframe
   uint16_t slots_per_subframe;
+    /// Number of slots per frame
+  uint16_t slots_per_frame;
   /// Number of samples in a subframe
   uint32_t samples_per_subframe;
   /// Number of OFDM/SC-FDMA symbols in one subframe (to be modified to account for potential different in UL/DL)
@@ -155,7 +198,6 @@ typedef struct NR_DL_FRAME_PARMS {
   uint8_t ttis_per_subframe;
   /// NR number of slots per tti . Assumption only 2 Slot per TTI is supported (Slot Config 1 in 38.211)
   uint8_t slots_per_tti;
-//#endif
   /// Number of Physical transmit antennas in node
   uint8_t nb_antennas_tx;
   /// Number of Receive antennas in node
@@ -188,8 +230,8 @@ typedef struct NR_DL_FRAME_PARMS {
   t_nrPolar_params pbch_polar_params;
 
    //BWP params
-  NR_BWP_PARMS initial_bwp_params_dl;
-  NR_BWP_PARMS initial_bwp_params_ul;
+  NR_BWP_PARMS initial_bwp_dl;
+  NR_BWP_PARMS initial_bwp_ul;
 
 } NR_DL_FRAME_PARMS;
 

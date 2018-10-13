@@ -46,7 +46,7 @@ extern uint8_t nfapi_mode;
 int return_ssb_type(nfapi_config_request_t *cfg)
 {
   int mu = cfg->subframe_config.numerology_index_mu.value;
-  nr_numerology_index_e ssb_type;
+  nr_ssb_type_e ssb_type;
 
   switch(mu) {
 
@@ -140,23 +140,24 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int subframe) {
     nr_generate_pss(gNB->d_pss, txdataF, AMP, ssb_start_symbol, cfg, fp);
     nr_generate_sss(gNB->d_sss, txdataF, AMP_OVER_2, ssb_start_symbol, cfg, fp);
 
-    /*if ((frame_mod8) == 0){
+    if (!(frame&7)){
       if (gNB->pbch_configured != 1)return;
       gNB->pbch_configured = 0;
-    }*/
+    }
     nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index],txdataF, AMP_OVER_2, ssb_start_symbol, cfg, fp);
-    nr_generate_pbch(&gNB->pbch, pbch_pdu, txdataF, AMP_OVER_2, ssb_start_symbol, n_hf, Lmax, ssb_index, frame, cfg, fp);
+    nr_generate_pbch(&gNB->pbch, gNB->nrPolar_params, pbch_pdu, txdataF, AMP_OVER_2, ssb_start_symbol, n_hf, Lmax, ssb_index, frame, cfg, fp);
   }
 
 }
 
 void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
-			   gNB_rxtx_proc_t *proc,
-			   int do_meas)
+						   gNB_rxtx_proc_t *proc,
+						   int do_meas)
 {
   int aa;
   int frame=proc->frame_tx;
   int subframe=proc->subframe_tx;
+  uint8_t num_dci=0;
 
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
   nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
@@ -178,4 +179,20 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
     //if (frame == 9)
       //write_output("txdataF.m","txdataF",gNB->common_vars.txdataF[aa],fp->samples_per_frame_wCP, 1, 1);
   }
+
+  num_dci = gNB->pdcch_vars.num_dci;
+  if (num_dci) {
+    LOG_I(PHY, "[gNB %d] Frame %d subframe %d \
+    Calling nr_generate_dci_top (number of DCI %d)\n", gNB->Mod_id, frame, subframe, num_dci);
+
+    uint8_t slot_idx = gNB->pdcch_vars.dci_alloc[0].pdcch_params.first_slot;
+
+    if (nfapi_mode == 0 || nfapi_mode == 1)
+      nr_generate_dci_top(gNB->pdcch_vars,
+                          gNB->nrPolar_params,
+                          gNB->nr_gold_pdcch_dmrs[slot_idx],
+                          gNB->common_vars.txdataF,
+                          AMP, *fp, *cfg);
+  }
+
 }

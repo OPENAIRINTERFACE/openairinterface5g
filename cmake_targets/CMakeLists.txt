@@ -1117,24 +1117,19 @@ set(PHY_TURBOSRC
   ${OPENAIR1_DIR}/PHY/CODING/3gpplte_turbo_decoder.c
 )
 set(PHY_POLARSRC
-  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_init.c
+  ${OPENAIR1_DIR}/PHY/CODING/nr_polar_init.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_bitwise_operations.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_crc_byte.c
-  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_bit_insertion.c
-  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_channel_interleaver_pattern.c
- # ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_crc.c
-#  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/decoder_K56_N512_E864.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_crc.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_decoder.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_decoding_tools.c
-  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_info_bit_pattern.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_encoder.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_interleaving_pattern.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_kernal_operation.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_kronecker_power_matrices.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_matrix_and_array.c
-  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_output_length.c
-  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_rate_match.c
+  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_procedures.c
   ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_sequence_pattern.c
-  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_encoder.c
-  ${OPENAIR1_DIR}/PHY/CODING/nrPolar_tools/nr_polar_decoder.c
 )
 set(PHY_TURBOIF
   ${OPENAIR1_DIR}/PHY/CODING/coding_load.c
@@ -1177,6 +1172,8 @@ set(PHY_SRC_COMMON
   ${OPENAIR1_DIR}/PHY/LTE_REFSIG/lte_dl_mbsfn.c
   ${OPENAIR1_DIR}/PHY/LTE_REFSIG/lte_ul_ref.c
   ${OPENAIR1_DIR}/PHY/CODING/lte_segmentation.c
+  ${OPENAIR1_DIR}/PHY/CODING/nr_segmentation.c
+  ${OPENAIR1_DIR}/PHY/CODING/nr_compute_tbs.c
   ${OPENAIR1_DIR}/PHY/CODING/ccoding_byte.c
   ${OPENAIR1_DIR}/PHY/CODING/ccoding_byte_lte.c
   ${OPENAIR1_DIR}/PHY/CODING/3gpplte_sse.c
@@ -1292,6 +1289,8 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_pss.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_sss.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_pbch.c
+  ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_dci.c
+  ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_dci_tools.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_gold.c
   ${OPENAIR1_DIR}/PHY/TOOLS/file_output.c
   ${OPENAIR1_DIR}/PHY/TOOLS/cadd_vv.c
@@ -1456,7 +1455,7 @@ set(L2_SRC
   ${RRC_DIR}/L2_interface_ue.c
   )
 
-set(NR_L2_SRC
+set(L2_NR_SRC
   ${NR_RRC_DIR}/rrc_gNB.c
   ${NR_RRC_DIR}/nr_rrc_common.c
   ${NR_RRC_DIR}/L2_nr_interface.c
@@ -1512,6 +1511,12 @@ set(NR_L2_SRC_UE
 #${RRC_DIR}/rrc_UE.c
   )
 
+set(L2_NR_SRC_UE
+  ${NR_UE_RRC_DIR}/L2_interface_ue.c
+  ${NR_UE_RRC_DIR}/main_ue.c
+  ${NR_UE_RRC_DIR}/rrc_UE.c
+  )
+
 set (MAC_SRC
   #${PHY_INTERFACE_DIR}/phy_stub_UE.c
   ${PHY_INTERFACE_DIR}/IF_Module.c
@@ -1534,15 +1539,16 @@ set (MAC_SRC
   ${MAC_DIR}/pre_processor.c
   ${MAC_DIR}/config.c
   ${MAC_DIR}/config_ue.c
-  )
+ )
 
-set (NR_MAC_SRC
+set (MAC_NR_SRC
   ${NR_PHY_INTERFACE_DIR}/NR_IF_Module.c
   ${NR_MAC_DIR}/main.c
   ${NR_MAC_DIR}/config.c
   ${NR_MAC_DIR}/gNB_scheduler.c
   ${NR_MAC_DIR}/gNB_scheduler_bch.c
   ${NR_MAC_DIR}/gNB_scheduler_primitives.c
+  ${NR_MAC_DIR}/gNB_scheduler_phytest.c
  )
 
 
@@ -1580,11 +1586,12 @@ add_library(L2
   ${L2_SRC}
   ${MAC_SRC}
   ${ENB_APP_SRC}
-)
+  )
+#  ${OPENAIR2_DIR}/RRC/L2_INTERFACE/openair_rrc_L2_interface.c)
 
-add_library(NR_L2
-  ${NR_L2_SRC}
-  ${NR_MAC_SRC}
+add_library(L2_NR
+  ${L2_NR_SRC}
+  ${MAC_NR_SRC}
   ${GNB_APP_SRC}
   )
 
@@ -2202,7 +2209,7 @@ add_executable(lte-softmodem
 
 target_link_libraries (lte-softmodem
   -Wl,--start-group
-  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB PHY_COMMON PHY PHY_RU LFDS L2 
+  RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB PHY_COMMON PHY PHY_RU LFDS L2
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
@@ -2356,8 +2363,8 @@ add_executable(nr-softmodem
 target_link_libraries (nr-softmodem
   -Wl,--start-group
   UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_RU LFDS GTPV1U SECU_CN SECU_OSA
-  ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ATLAS_LIBRARIES}
-  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB L2 NR_L2
+  ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB}
+  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB L2 L2_NR
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
 
@@ -2378,6 +2385,7 @@ add_executable(nr-softmodem-nos1
   ${OPENAIR_TARGETS}/RT/USER/nr-ru.c
   ${OPENAIR_TARGETS}/RT/USER/nr-softmodem.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
+  ${OPENAIR_TARGETS}/COMMON/create_tasks.c
   ${OPENAIR_TARGETS}/COMMON/create_nr_tasks.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
@@ -2397,7 +2405,7 @@ target_link_libraries (nr-softmodem-nos1
   -Wl,--start-group
   UTIL HASHTABLE SCTP_CLIENT UDP SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_RU LFDS GTPV1U SECU_CN SECU_OSA
   ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FLEXRAN_AGENT_LIB} LFDS7 ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${MIH_LIB}
-  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB L2 NR_L2
+  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB L2 L2_NR
   NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
   -Wl,--end-group z dl)
 

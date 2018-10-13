@@ -32,11 +32,11 @@
 #include "PHY/types.h"
 #include "PHY/defs_nr_UE.h"
 #include "PHY/phy_extern_nr_ue.h"
+#include "PHY/INIT/phy_init.h"
+#include "PHY/MODULATION/modulation_UE.h"
+#include "nr_transport_proto_ue.h"
 //#include "SCHED/defs.h"
 //#include "SCHED/extern.h"
-//#include "defs.h"
-//#include "extern.h"
-
 
 #include "common_lib.h"
 
@@ -45,20 +45,16 @@
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
 
 extern openair0_config_t openair0_cfg[];
-static  nfapi_nr_config_request_t config_t;
-static  nfapi_nr_config_request_t* config =&config_t;
+//static  nfapi_nr_config_request_t config_t;
+//static  nfapi_nr_config_request_t* config =&config_t;
 int cnt=0;
-/* forward declarations */
-void set_default_frame_parms_single(nfapi_nr_config_request_t *config, NR_DL_FRAME_PARMS *frame_parms);
 
 //#define DEBUG_INITIAL_SYNCH
 
 int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
 {
   printf("nr pbch detec RB_DL %d\n", ue->frame_parms.N_RB_DL);
-  uint8_t l,pbch_decoded,frame_mod4,pbch_tx_ant,dummy;
   NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
-  char phich_resource[6];
   int ret =-1;
 
 #ifdef DEBUG_INITIAL_SYNCH
@@ -98,23 +94,15 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
 
   frame_parms->nb_prefix_samples0 = nb_prefix_samples0;
 
-  pbch_decoded = 0;
-
   printf("pbch_detection nid_cell %d\n",frame_parms->Nid_cell);
   
-  //for (frame_mod4=0; frame_mod4<4; frame_mod4++) {
     ret = nr_rx_pbch(ue,
 						  &ue->proc.proc_rxtx[0],
                           ue->pbch_vars[0],
                           frame_parms,
                           0,
                           SISO,
-                          ue->high_speed_flag,
-                          frame_mod4);
-
-    pbch_decoded = 0; //to be updated
-//      break;
-  //}
+                          ue->high_speed_flag);
 
 
   if (ret==0) {
@@ -156,18 +144,18 @@ char prefix_string[2][9] = {"NORMAL","EXTENDED"};
 int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 {
 
-  int32_t sync_pos, sync_pos2, k_ssb, N_ssb_crb, sync_pos_slot;
+  int32_t sync_pos, sync_pos2, sync_pos_slot; // k_ssb, N_ssb_crb,
   int32_t metric_fdd_ncp=0;
   uint8_t phase_fdd_ncp;
 
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   int ret=-1;
-  int aarx,rx_power=0;
+  int rx_power=0; //aarx,
   //nfapi_nr_config_request_t* config;
 
   /*offset parameters to be updated from higher layer */
-  k_ssb =0;
-  N_ssb_crb = 0;
+  //k_ssb =0;
+  //N_ssb_crb = 0;
 
   /*#ifdef OAI_USRP
   __m128i *rxdata128;
@@ -176,7 +164,6 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   // First try FDD normal prefix
   frame_parms->Ncp=NORMAL;
   frame_parms->frame_type=TDD;
-  set_default_frame_parms_single(config,frame_parms);
   nr_init_frame_parms_ue(frame_parms);
   LOG_D(PHY,"nr_initial sync ue RB_DL %d\n", ue->frame_parms.N_RB_DL);
   /*
@@ -198,7 +185,7 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   */
   cnt++;
   if (cnt >100){
-	  cnt =0;
+  	  cnt =0;
   /* process pss search on received buffer */
   sync_pos = pss_synchro_nr(ue, NO_RATE_CHANGE);
 
@@ -233,16 +220,18 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 
     rx_sss_nr(ue,&metric_fdd_ncp,&phase_fdd_ncp);
 
-    //set_default_frame_parms_single(config,&ue->frame_parms);
-    nr_init_frame_parms_ue(config,&ue->frame_parms);
+    nr_init_frame_parms_ue(&ue->frame_parms);
 
     nr_gold_pbch(ue);
     ret = nr_pbch_detection(ue,mode);
     
     nr_gold_pdcch(ue,0, 2);
-    nr_slot_fep(ue,0, 0, ue->rx_offset, 1, 1, NR_PDCCH_EST);
-    nr_slot_fep(ue,1, 0, ue->rx_offset, 1, 1, NR_PDCCH_EST);
-	
+    int nb_prefix_samples0 = frame_parms->nb_prefix_samples0;
+	frame_parms->nb_prefix_samples0 = 0;
+  
+    nr_slot_fep(ue,0, 0, ue->rx_offset, 0, 1, NR_PDCCH_EST);
+    nr_slot_fep(ue,1, 0, ue->rx_offset, 0, 1, NR_PDCCH_EST);
+    frame_parms->nb_prefix_samples0 = nb_prefix_samples0;	
 
     LOG_I(PHY,"[UE  %d] AUTOTEST Cell Sync : frame = %d, rx_offset %d, freq_offset %d \n",
               ue->Mod_id,
