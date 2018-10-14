@@ -22,19 +22,38 @@
 #ifndef __PHY_NR_TRANSPORT_DCI__H
 #define __PHY_NR_TRANSPORT_DCI__H
 
-#include "defs_gNB.h"
+#include "PHY/defs_gNB.h"
+#include "PHY/NR_REFSIG/nr_refsig.h"
 
 typedef unsigned __int128 uint128_t;
 
-uint8_t nr_get_dci_size(nr_dci_format_e format,
-                        nr_rnti_type_e rnti,
-                        NR_BWP_PARMS bwp,
+uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
+                        nfapi_nr_rnti_type_e rnti_type,
+                        NR_BWP_PARMS* bwp,
                         nfapi_nr_config_request_t* config);
 
-uint8_t nr_generate_dci_top(NR_DCI_ALLOC_t dci_alloc,
+uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
+                            t_nrPolar_paramsPtr *nrPolar_params,
+                            uint32_t **gold_pdcch_dmrs,
                             int32_t** txdataF,
                             int16_t amp,
-                            NR_DL_FRAME_PARMS* frame_parms,
-                            nfapi_nr_config_request_t* config)
+                            NR_DL_FRAME_PARMS frame_parms,
+                            nfapi_nr_config_request_t config);
+
+void nr_pdcch_scrambling(uint32_t *in,
+                         uint8_t size,
+                         uint32_t Nid,
+                         uint32_t n_RNTI,
+                         uint32_t* out);
+
+void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
+                           int frame,
+                           int subframe,
+                           gNB_rxtx_proc_t *proc,
+                           NR_gNB_DCI_ALLOC_t *dci_alloc,
+                           nfapi_nr_dl_config_request_pdu_t *pdu);
+
+void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t* dci_alloc, uint16_t n_shift, uint8_t m);
+
 
 #endif //__PHY_NR_TRANSPORT_DCI__H

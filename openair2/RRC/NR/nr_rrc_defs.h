@@ -18,7 +18,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file nr_rrc_defs.h
+/*! \file RRC/NR/nr_rrc_defs.h
 * \brief NR RRC struct definitions and function prototypes
 * \author Navid Nikaein, Raymond Knopp, WEI-TAI CHEN
 * \date 2010 - 2014, 2018

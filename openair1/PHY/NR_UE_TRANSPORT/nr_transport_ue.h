@@ -155,6 +155,11 @@ typedef struct {
   //  int calibration_flag;
   /// Number of soft channel bits
   uint32_t G;
+  // number of symbols
+  uint8_t nb_symbols;
+  // first symbol in the slot
+  uint8_t start_symbol;
+
   // decode phich
   uint8_t decode_phich;
 } NR_UL_UE_HARQ_t;
@@ -326,6 +331,8 @@ typedef struct {
   uint8_t rnti_type;
   /// Active flag for DLSCH demodulation
   uint8_t active;
+  /// accumulated tx power adjustment for PUCCH
+  int8_t g_pucch;
   /// Transmission mode
   uint8_t mode1_flag;
   /// amplitude of PDSCH (compared to RS) in symbols without pilots
@@ -347,7 +354,7 @@ typedef struct {
 //#if defined(UPGRADE_RAT_NR)
 #if 1
   /// Pointers to up to HARQ processes
-  NR_DL_UE_HARQ_t *harq_processes[NR_MAX_DLSCH_HARQ_PROCESSES];
+  NR_DL_UE_HARQ_t harq_processes[NR_MAX_DLSCH_HARQ_PROCESSES];
   // DL number of harq processes
   uint8_t number_harq_processes_for_pdsch;
   /* higher layer parameter for reception of two transport blocks TS 38.213 9.1.3.1 Type-2 HARQ-ACK codebook dtermination */
@@ -365,8 +372,8 @@ typedef struct {
   uint8_t max_turbo_iterations;
   /// number of iterations used in last turbo decoding
   uint8_t last_iteration_cnt;
-  /// accumulated tx power adjustment for PUCCH
-  int8_t               g_pucch;
+  
+
 } NR_UE_DLSCH_t;
 
 typedef enum {format0_0,

@@ -34,6 +34,9 @@
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
+#include "PHY/INIT/phy_init.h"
+#include "PHY/NR_REFSIG/pss_nr.h"
+#include "openair1/PHY/NR_REFSIG/ul_ref_seq_nr.h"
 
 //uint8_t dmrs1_tab_ue[8] = {0,2,3,4,6,8,9,10};
 
@@ -324,6 +327,7 @@ void phy_config_sib13_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,int mbsfn_Area_
   }
 }
 
+
 void phy_config_meas_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index,uint8_t n_adj_cells,unsigned int *adj_cell_id)
 {
 
@@ -341,6 +345,7 @@ void phy_config_meas_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index,uint8_t n
   memcpy((void*)phy_meas->adj_cell_id,(void *)adj_cell_id,n_adj_cells*sizeof(unsigned int));
 
 }
+*/
 
 #if defined(Rel10) || defined(Rel14)
 void phy_config_dedicated_scell_ue(uint8_t Mod_id,
@@ -352,17 +357,17 @@ void phy_config_dedicated_scell_ue(uint8_t Mod_id,
 }
 #endif
 
-
-void phy_config_harq_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
+void phy_config_harq_ue(module_id_t Mod_id,int CC_id,uint8_t eNB_id,
                         uint16_t max_harq_tx )
 {
 
-  PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id][CC_id];
+  PHY_VARS_NR_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id][CC_id];
   phy_vars_ue->ulsch[eNB_id]->Mlimit = max_harq_tx;
 }
 
 extern uint16_t beta_cqi[16];
 
+/*
 void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
                              struct PhysicalConfigDedicated *physicalConfigDedicated )
 {
@@ -660,8 +665,8 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   printf("Initializing UE vars (abstraction %"PRIu8") for eNB TXant %"PRIu8", UE RXant %"PRIu8"\n",abstraction_flag,fp->nb_antennas_tx,fp->nb_antennas_rx);
   //LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_UE][MOD %02u][]\n", ue->Mod_id+NB_eNB_INST);
   
-  //phy_init_nr_top(&ue->frame_parms);
-  //nr_init_frame_parms_ue(&ue->frame_parms);
+  nr_init_frame_parms_ue(&ue->frame_parms);
+  phy_init_nr_top(ue);
 
   // many memory allocation sizes are hard coded
   AssertFatal( fp->nb_antennas_rx <= 2, "hard coded allocation for ue_common_vars->dl_ch_estimates[eNB_id]" );
@@ -907,8 +912,9 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   return 0;
 
 }
+
 /*
-void nr_lte_ue_transport(PHY_VARS_UE *ue,int abstraction_flag) {
+void init_nr_ue_transport(PHY_VARS_NR_UE *ue,int abstraction_flag) {
 
   int i,j,k;
 
@@ -929,14 +935,17 @@ void nr_lte_ue_transport(PHY_VARS_UE *ue,int abstraction_flag) {
     ue->transmission_mode[i] = ue->frame_parms.nb_antenna_ports_eNB==1 ? 1 : 2;
   }
 
-  ue->frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
+  //ue->frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
 
   ue->dlsch_MCH[0]  = new_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_TURBO_ITERATIONS_MBSFN,ue->frame_parms.N_RB_DL,0);
 
 }*/
 
-void phy_init_nr_top(NR_DL_FRAME_PARMS *frame_parms)
+void phy_init_nr_top(PHY_VARS_NR_UE *ue)
 {
+	NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
+	NR_UE_DLSCH_t *dlsch0 = ue->dlsch[0][0][0];
+	dlsch0 =(NR_UE_DLSCH_t *)malloc16(sizeof(NR_UE_DLSCH_t));
 
   crcTableInit();
 
@@ -962,7 +971,12 @@ void phy_init_nr_top(NR_DL_FRAME_PARMS *frame_parms)
   generate_ul_reference_signal_sequences(SHRT_MAX);
 
   // Polar encoder init for PBCH
-  nr_polar_init(&frame_parms->pbch_polar_params, 1);
+  //nr_polar_init(&frame_parms->pbch_polar_params, 1);
+  /*t_nrPolar_paramsPtr nrPolar_params = NULL, currentPtr = NULL;
+  nr_polar_init(&ue->nrPolar_params,
+    		  	  	NR_POLAR_PBCH_MESSAGE_TYPE,
+					NR_POLAR_PBCH_PAYLOAD_BITS,
+					NR_POLAR_PBCH_AGGREGATION_LEVEL);*/
 
   //lte_sync_time_init(frame_parms);
 

@@ -326,10 +326,17 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
                                          ch,
                                          dl_ch,
                                          16);
+                                         
+#ifdef DEBUG_CH       
+      for (int m =0; m<12; m++)
+      printf("data :  dl_ch -> (%d,%d)\n",dl_ch[0+2*m],dl_ch[1+2*m]);
+#endif      
       pil+=2;
       rxF+=8;
       dl_ch+=24;
       k+=12;
+      
+      
 
       for (pilot_cnt=3; pilot_cnt<(3*nb_rb_coreset); pilot_cnt+=3) {
 

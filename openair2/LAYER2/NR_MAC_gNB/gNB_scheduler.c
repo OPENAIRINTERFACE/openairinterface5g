@@ -82,7 +82,6 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
 
   if (nfapi_mode==0 || nfapi_mode == 1) { // monolithic or PNF
 
-    DL_req[CC_idP].dl_config_request_body.number_pdcch_ofdm_symbols           = 1;
     DL_req[CC_idP].dl_config_request_body.number_dci                          = 0;
     DL_req[CC_idP].dl_config_request_body.number_pdu                          = 0;
     DL_req[CC_idP].dl_config_request_body.number_pdsch_rnti                   = 0;
@@ -418,36 +417,11 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   if((subframeP == 0) && (frameP & 7) == 0){
     schedule_nr_mib(module_idP, frameP, subframeP);
   }
-  /*
-  if (phy_test == 0){
-    // This schedules SI for legacy LTE and eMTC starting in subframeP
-    schedule_SI(module_idP, frameP, subframeP);
-    // This schedules Paging in subframeP
-    schedule_PCH(module_idP,frameP,subframeP);
-    // This schedules Random-Access for legacy LTE and eMTC starting in subframeP
-    schedule_RA(module_idP, frameP, subframeP);
-    // copy previously scheduled UL resources (ULSCH + HARQ)
-    copy_nr_ulreq(module_idP, frameP, subframeP);
-    // This schedules SRS in subframeP
-    schedule_nr_SRS(module_idP, frameP, subframeP);
-    // This schedules ULSCH in subframeP (dci0)
-    schedule_ulsch(module_idP, frameP, subframeP);
-    // This schedules UCI_SR in subframeP
-    schedule_nr_SR(module_idP, frameP, subframeP);
-    // This schedules UCI_CSI in subframeP
-    schedule_nr_CSI(module_idP, frameP, subframeP);
-    // This schedules DLSCH in subframeP
-    schedule_dlsch(module_idP, frameP, subframeP, mbsfn_status);
-  }
-  else{
-    schedule_ulsch_phy_test(module_idP,frameP,subframeP);
-    schedule_ue_spec_phy_test(module_idP,frameP,subframeP,mbsfn_status);
-  }
-  */
 
-  if (RC.flexran[module_idP]->enabled)
-    flexran_agent_send_update_stats(module_idP);
-  
+  // Phytest scheduling/ option not activated because of pending bug
+  nr_schedule_css_dlsch_phytest(module_idP, frameP, subframeP);
+
+
   /*
   // Allocate CCEs for good after scheduling is done
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++)

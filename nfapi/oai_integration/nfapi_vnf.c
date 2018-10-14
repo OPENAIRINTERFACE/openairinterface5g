@@ -1134,7 +1134,6 @@ int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req)
 
   int retval = nfapi_vnf_p7_dl_config_req(p7_config, dl_config_req);
 
-  dl_config_req->dl_config_request_body.number_pdcch_ofdm_symbols           = 1;
   dl_config_req->dl_config_request_body.number_dci                          = 0;
   dl_config_req->dl_config_request_body.number_pdu                          = 0;
   dl_config_req->dl_config_request_body.number_pdsch_rnti                   = 0;

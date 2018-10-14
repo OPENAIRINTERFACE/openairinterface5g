@@ -4568,7 +4568,6 @@ void dft2048(int16_t *x,int16_t *y,int scale)
   int i;
   simd256_q15_t ONE_OVER_SQRT2_Q15_128 = set1_int16_simd256(ONE_OVER_SQRT2_Q15);
 
-  write_output("dftin.m","dftin",x,2048,1,1);
 
   xtmpp = xtmp;
 
@@ -4648,7 +4647,7 @@ void dft2048(int16_t *x,int16_t *y,int scale)
 
   _mm_empty();
   _m_empty();
-  write_output("dftout.m","dftout",y,2048,1,1);
+
 }
 
 void idft2048(int16_t *x,int16_t *y,int scale)
