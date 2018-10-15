@@ -36,13 +36,13 @@
 #include "UTIL/OTG/otg.h"
 #include "UTIL/OTG/otg_externs.h"
 #if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-  #if defined(ENABLE_USE_MME)
-    #include "s1ap_eNB.h"
-    #include "sctp_eNB_task.h"
-  #else
-    #define EPC_MODE_ENABLED 0
-  #endif
+#include "intertask_interface.h"
+#if defined(ENABLE_USE_MME)
+#include "s1ap_eNB.h"
+#include "sctp_eNB_task.h"
+#else
+#define EPC_MODE_ENABLED 0
+#endif
 #endif
 #include "sctp_default_values.h"
 #include "SystemInformationBlockType2.h"
@@ -61,8 +61,8 @@
 #include "enb_paramdef.h"
 
 extern uint16_t sf_ahead;
-extern void set_parallel_conf(char* parallel_conf);
-extern void set_worker_conf(char* worker_conf);
+extern void set_parallel_conf(char *parallel_conf);
+extern void set_worker_conf(char *worker_conf);
 extern PARALLEL_CONF_t get_thread_parallel_conf(void);
 extern WORKER_CONF_t   get_thread_worker_conf(void);
 extern uint32_t to_earfcn_DL(int eutra_bandP, uint32_t dl_CarrierFreq, uint32_t bw);
@@ -234,7 +234,7 @@ void RCconfig_L1(void) {
   paramlist_def_t L1_ParamList = {CONFIG_STRING_L1_LIST,NULL,0};
 
   if (RC.eNB == NULL) {
-    RC.eNB                       = (PHY_VARS_eNB ***)malloc((1+NUMBER_OF_eNB_MAX)*sizeof(PHY_VARS_eNB **));
+    RC.eNB                       = (PHY_VARS_eNB ** *)malloc((1+NUMBER_OF_eNB_MAX)*sizeof(PHY_VARS_eNB **));
     LOG_I(PHY,"RC.eNB = %p\n",RC.eNB);
     memset(RC.eNB,0,(1+NUMBER_OF_eNB_MAX)*sizeof(PHY_VARS_eNB **));
     RC.nb_L1_CC = malloc((1+RC.nb_L1_inst)*sizeof(int));
@@ -283,7 +283,8 @@ void RCconfig_L1(void) {
         LOG_I(PHY,"%s() NFAPI PNF mode - RC.nb_CC[0]=%d for init_eNB_afterRU()\n", __FUNCTION__, RC.nb_CC[0]);
         LOG_I(PHY,"%s() NFAPI PNF mode - RC.nb_macrlc_inst:%d because used by mac_top_init_eNB()\n", __FUNCTION__, RC.nb_macrlc_inst);
         //mac_top_init_eNB();
-        configure_nfapi_pnf(RC.eNB[j][0]->eth_params_n.remote_addr, RC.eNB[j][0]->eth_params_n.remote_portc, RC.eNB[j][0]->eth_params_n.my_addr, RC.eNB[j][0]->eth_params_n.my_portd, RC.eNB[j][0]->eth_params_n     .remote_portd);
+        configure_nfapi_pnf(RC.eNB[j][0]->eth_params_n.remote_addr, RC.eNB[j][0]->eth_params_n.remote_portc, RC.eNB[j][0]->eth_params_n.my_addr, RC.eNB[j][0]->eth_params_n.my_portd,
+                            RC.eNB[j][0]->eth_params_n     .remote_portd);
       } else { // other midhaul
       }
     }// j=0..num_inst
@@ -300,7 +301,7 @@ void RCconfig_L1(void) {
     if (RC.eNB[j] == NULL) {
       RC.eNB[j]                       = (PHY_VARS_eNB **)malloc((1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB **));
       LOG_I(PHY,"RC.eNB[%d] = %p\n",j,RC.eNB[j]);
-      memset(RC.eNB[j],0,(1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB ***));
+      memset(RC.eNB[j],0,(1+MAX_NUM_CCs)*sizeof(PHY_VARS_eNB ** *));
     }
 
     for (i=0; i<RC.nb_L1_CC[j]; i++) {
@@ -569,31 +570,46 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
     for (k=0; k <num_enbs ; k++) {
       if (strcmp(ENBSParams[ENB_ACTIVE_ENBS_IDX].strlistptr[k], *(ENBParamList.paramarray[i][ENB_ENB_NAME_IDX].strptr) )== 0) {
         char enbpath[MAX_OPTNAME_SIZE + 8];
-        RRC_CONFIGURATION_REQ (msg_p).cell_identity = enb_id;
-        /*
-          if (strcmp(*(ENBParamList.paramarray[i][ENB_CELL_TYPE_IDX].strptr), "CELL_MACRO_ENB") == 0) {
-          enb_properties_loc.properties[enb_properties_loc_index]->cell_type = CELL_MACRO_ENB;
-          } else  if (strcmp(cell_type, "CELL_HOME_ENB") == 0) {
-          enb_properties_loc.properties[enb_properties_loc_index]->cell_type = CELL_HOME_ENB;
-          } else {
-          AssertFatal (0,
-          "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for cell_type choice: CELL_MACRO_ENB or CELL_HOME_ENB !\n",
-          lib_config_file_name_pP, i, cell_type);
-          }
+        sprintf(enbpath,"%s.[%i]",ENB_CONFIG_STRING_ENB_LIST,k);
+        paramdef_t PLMNParams[] = PLMNPARAMS_DESC;
+        paramlist_def_t PLMNParamList = {ENB_CONFIG_STRING_PLMN_LIST, NULL, 0};
+        /* map parameter checking array instances to parameter definition array instances */
+        checkedparam_t config_check_PLMNParams [] = PLMNPARAMS_CHECK;
 
-          enb_properties_loc.properties[enb_properties_loc_index]->eNB_name         = strdup(enb_name);
-        */
-        RRC_CONFIGURATION_REQ (msg_p).tac              = (uint16_t)atoi( *(ENBParamList.paramarray[i][ENB_TRACKING_AREA_CODE_IDX].strptr) );
-        RRC_CONFIGURATION_REQ (msg_p).mcc              = (uint16_t)atoi( *(ENBParamList.paramarray[i][ENB_MOBILE_COUNTRY_CODE_IDX].strptr) );
-        RRC_CONFIGURATION_REQ (msg_p).mnc              = (uint16_t)atoi( *(ENBParamList.paramarray[i][ENB_MOBILE_NETWORK_CODE_IDX].strptr) );
-        RRC_CONFIGURATION_REQ (msg_p).mnc_digit_length = strlen(*(ENBParamList.paramarray[i][ENB_MOBILE_NETWORK_CODE_IDX].strptr));
-        AssertFatal((RRC_CONFIGURATION_REQ (msg_p).mnc_digit_length == 2) ||
-                    (RRC_CONFIGURATION_REQ (msg_p).mnc_digit_length == 3),
-                    "BAD MNC DIGIT LENGTH %d",
-                    RRC_CONFIGURATION_REQ (msg_p).mnc_digit_length);
+        for (int I = 0; I < sizeof(PLMNParams) / sizeof(paramdef_t); ++I)
+          PLMNParams[I].chkPptr = &(config_check_PLMNParams[I]);
+
+        RRC_CONFIGURATION_REQ (msg_p).cell_identity = enb_id;
+        RRC_CONFIGURATION_REQ(msg_p).tac = *ENBParamList.paramarray[i][ENB_TRACKING_AREA_CODE_IDX].uptr;
+        AssertFatal(!ENBParamList.paramarray[i][ENB_MOBILE_COUNTRY_CODE_IDX_OLD].strptr
+                    && !ENBParamList.paramarray[i][ENB_MOBILE_NETWORK_CODE_IDX_OLD].strptr,
+                    "It seems that you use an old configuration file. Please change the existing\n"
+                    "    tracking_area_code  =  \"1\";\n"
+                    "    mobile_country_code =  \"208\";\n"
+                    "    mobile_network_code =  \"93\";\n"
+                    "to\n"
+                    "    tracking_area_code  =  1; // no string!!\n"
+                    "    plmn_list = ( { mcc = 208; mnc = 93; mnc_length = 2; } )\n");
+        config_getlist(&PLMNParamList, PLMNParams, sizeof(PLMNParams)/sizeof(paramdef_t), enbpath);
+
+        if (PLMNParamList.numelt < 1 || PLMNParamList.numelt > 6)
+          AssertFatal(0, "The number of PLMN IDs must be in [1,6], but is %d\n",
+                      PLMNParamList.numelt);
+
+        RRC_CONFIGURATION_REQ(msg_p).num_plmn = PLMNParamList.numelt;
+
+        for (int l = 0; l < PLMNParamList.numelt; ++l) {
+          RRC_CONFIGURATION_REQ(msg_p).mcc[l] = *PLMNParamList.paramarray[l][ENB_MOBILE_COUNTRY_CODE_IDX].uptr;
+          RRC_CONFIGURATION_REQ(msg_p).mnc[l] = *PLMNParamList.paramarray[l][ENB_MOBILE_NETWORK_CODE_IDX].uptr;
+          RRC_CONFIGURATION_REQ(msg_p).mnc_digit_length[l] = *PLMNParamList.paramarray[l][ENB_MNC_DIGIT_LENGTH].u8ptr;
+          AssertFatal(RRC_CONFIGURATION_REQ(msg_p).mnc_digit_length[l] == 3
+                      || RRC_CONFIGURATION_REQ(msg_p).mnc[l] < 100,
+                      "MNC %d cannot be encoded in two digits as requested (change mnc_digit_length to 3)\n",
+                      RRC_CONFIGURATION_REQ(msg_p).mnc[l]);
+        }
+
         // Parse optional physical parameters
-        sprintf(enbpath,"%s.[%i]",ENB_CONFIG_STRING_ENB_LIST,k),
-                config_getlist( &CCsParamList,NULL,0,enbpath);
+        config_getlist( &CCsParamList,NULL,0,enbpath);
         LOG_I(RRC,"num component carriers %d \n",CCsParamList.numelt);
 
         if ( CCsParamList.numelt> 0) {
@@ -1983,35 +1999,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
           rrc->srb1_max_retx_threshold    = UL_AM_RLC__maxRetxThreshold_t8;
         }
 
-        /*
-          // Network Controller
-          subsetting = config_setting_get_member (setting_enb, ENB_CONFIG_STRING_NETWORK_CONTROLLER_CONFIG);
-
-          if (subsetting != NULL) {
-          if (  (
-           config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_FLEXRAN_AGENT_INTERFACE_NAME,
-                 (const char **)&flexran_agent_interface_name)
-           && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_FLEXRAN_AGENT_IPV4_ADDRESS,
-                    (const char **)&flexran_agent_ipv4_address)
-           && config_setting_lookup_int(subsetting, ENB_CONFIG_STRING_FLEXRAN_AGENT_PORT,
-                &flexran_agent_port)
-           && config_setting_lookup_string( subsetting, ENB_CONFIG_STRING_FLEXRAN_AGENT_CACHE,
-                    (const char **)&flexran_agent_cache)
-           )
-          ) {
-          enb_properties_loc.properties[enb_properties_loc_index]->flexran_agent_interface_name = strdup(flexran_agent_interface_name);
-          cidr = flexran_agent_ipv4_address;
-          address = strtok(cidr, "/");
-          //enb_properties_loc.properties[enb_properties_loc_index]->flexran_agent_ipv4_address = strdup(address);
-          if (address) {
-          IPV4_STR_ADDR_TO_INT_NWBO (address, enb_properties_loc.properties[enb_properties_loc_index]->flexran_agent_ipv4_address, "BAD IP ADDRESS FORMAT FOR eNB Agent !\n" );
-          }
-
-          enb_properties_loc.properties[enb_properties_loc_index]->flexran_agent_port = flexran_agent_port;
-          enb_properties_loc.properties[enb_properties_loc_index]->flexran_agent_cache = strdup(flexran_agent_cache);
-          }
-          }
-        */
         break;
       }
     }
@@ -2031,7 +2018,6 @@ int RCconfig_gtpu(void ) {
   paramdef_t ENBSParams[] = ENBSPARAMS_DESC;
   paramdef_t GTPUParams[]  = GTPUPARAMS_DESC;
   LOG_I(GTPU,"Configuring GTPu\n");
-
   /* get number of active eNodeBs */
   config_get( ENBSParams,sizeof(ENBSParams)/sizeof(paramdef_t),NULL);
   num_enbs = ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt;
@@ -2097,11 +2083,20 @@ int RCconfig_S1(MessageDef *msg_p, uint32_t i) {
         // search if in active list
         for (j=0; j < ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt; j++) {
           if (strcmp(ENBSParams[ENB_ACTIVE_ENBS_IDX].strlistptr[j], *(ENBParamList.paramarray[k][ENB_ENB_NAME_IDX].strptr)) == 0) {
+            paramdef_t PLMNParams[] = PLMNPARAMS_DESC;
+            paramlist_def_t PLMNParamList = {ENB_CONFIG_STRING_PLMN_LIST, NULL, 0};
+            /* map parameter checking array instances to parameter definition array instances */
+            checkedparam_t config_check_PLMNParams [] = PLMNPARAMS_CHECK;
+
+            for (int I = 0; I < sizeof(PLMNParams) / sizeof(paramdef_t); ++I)
+              PLMNParams[I].chkPptr = &(config_check_PLMNParams[I]);
+
             paramdef_t S1Params[]  = S1PARAMS_DESC;
             paramlist_def_t S1ParamList = {ENB_CONFIG_STRING_MME_IP_ADDRESS,NULL,0};
             paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
             paramdef_t NETParams[]  =  NETPARAMS_DESC;
             char aprefix[MAX_OPTNAME_SIZE*2 + 8];
+            sprintf(aprefix,"%s.[%i]",ENB_CONFIG_STRING_ENB_LIST,k);
             S1AP_REGISTER_ENB_REQ (msg_p).eNB_id = enb_id;
 
             if (strcmp(*(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr), "CELL_MACRO_ENB") == 0) {
@@ -2115,16 +2110,35 @@ int RCconfig_S1(MessageDef *msg_p, uint32_t i) {
             }
 
             S1AP_REGISTER_ENB_REQ (msg_p).eNB_name         = strdup(*(ENBParamList.paramarray[k][ENB_ENB_NAME_IDX].strptr));
-            S1AP_REGISTER_ENB_REQ (msg_p).tac              = (uint16_t)atoi(*(ENBParamList.paramarray[k][ENB_TRACKING_AREA_CODE_IDX].strptr));
-            S1AP_REGISTER_ENB_REQ (msg_p).mcc              = (uint16_t)atoi(*(ENBParamList.paramarray[k][ENB_MOBILE_COUNTRY_CODE_IDX].strptr));
-            S1AP_REGISTER_ENB_REQ (msg_p).mnc              = (uint16_t)atoi(*(ENBParamList.paramarray[k][ENB_MOBILE_NETWORK_CODE_IDX].strptr));
-            S1AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length = strlen(*(ENBParamList.paramarray[k][ENB_MOBILE_NETWORK_CODE_IDX].strptr));
-            S1AP_REGISTER_ENB_REQ (msg_p).default_drx      = 0;
-            AssertFatal((S1AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length == 2) ||
-                        (S1AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length == 3),
-                        "BAD MNC DIGIT LENGTH %d",
-                        S1AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length);
-            sprintf(aprefix,"%s.[%i]",ENB_CONFIG_STRING_ENB_LIST,k);
+            S1AP_REGISTER_ENB_REQ(msg_p).tac               = *ENBParamList.paramarray[k][ENB_TRACKING_AREA_CODE_IDX].uptr;
+            AssertFatal(!ENBParamList.paramarray[k][ENB_MOBILE_COUNTRY_CODE_IDX_OLD].strptr
+                        && !ENBParamList.paramarray[k][ENB_MOBILE_NETWORK_CODE_IDX_OLD].strptr,
+                        "It seems that you use an old configuration file. Please change the existing\n"
+                        "    tracking_area_code  =  \"1\";\n"
+                        "    mobile_country_code =  \"208\";\n"
+                        "    mobile_network_code =  \"93\";\n"
+                        "to\n"
+                        "    tracking_area_code  =  1; // no string!!\n"
+                        "    plmn_list = ( { mcc = 208; mnc = 93; mnc_length = 2; } )\n");
+            config_getlist(&PLMNParamList, PLMNParams, sizeof(PLMNParams)/sizeof(paramdef_t), aprefix);
+
+            if (PLMNParamList.numelt < 1 || PLMNParamList.numelt > 6)
+              AssertFatal(0, "The number of PLMN IDs must be in [1,6], but is %d\n",
+                          PLMNParamList.numelt);
+
+            S1AP_REGISTER_ENB_REQ(msg_p).num_plmn = PLMNParamList.numelt;
+
+            for (int l = 0; l < PLMNParamList.numelt; ++l) {
+              S1AP_REGISTER_ENB_REQ(msg_p).mcc[l] = *PLMNParamList.paramarray[l][ENB_MOBILE_COUNTRY_CODE_IDX].uptr;
+              S1AP_REGISTER_ENB_REQ(msg_p).mnc[l] = *PLMNParamList.paramarray[l][ENB_MOBILE_NETWORK_CODE_IDX].uptr;
+              S1AP_REGISTER_ENB_REQ(msg_p).mnc_digit_length[l] = *PLMNParamList.paramarray[l][ENB_MNC_DIGIT_LENGTH].u8ptr;
+              AssertFatal(S1AP_REGISTER_ENB_REQ(msg_p).mnc_digit_length[l] == 3
+                          || S1AP_REGISTER_ENB_REQ(msg_p).mnc[l] < 100,
+                          "MNC %d cannot be encoded in two digits as requested (change mnc_digit_length to 3)\n",
+                          S1AP_REGISTER_ENB_REQ(msg_p).mnc[l]);
+            }
+
+            S1AP_REGISTER_ENB_REQ(msg_p).default_drx = 0;
             config_getlist( &S1ParamList,S1Params,sizeof(S1Params)/sizeof(paramdef_t),aprefix);
             S1AP_REGISTER_ENB_REQ (msg_p).nb_mme = 0;
 
@@ -2140,6 +2154,35 @@ int RCconfig_S1(MessageDef *msg_p, uint32_t i) {
               } else if (strcmp(*(S1ParamList.paramarray[l][ENB_MME_IP_ADDRESS_PREFERENCE_IDX].strptr), "no") == 0) {
                 S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[l].ipv4 = 1;
                 S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[l].ipv6 = 1;
+              }
+
+              if (S1ParamList.paramarray[l][ENB_MME_BROADCAST_PLMN_INDEX].iptr)
+                S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l] = S1ParamList.paramarray[l][ENB_MME_BROADCAST_PLMN_INDEX].numelt;
+              else
+                S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l] = 0;
+
+              AssertFatal(S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l] <= S1AP_REGISTER_ENB_REQ(msg_p).num_plmn,
+                          "List of broadcast PLMN to be sent to MME can not be longer than actual "
+                          "PLMN list (max %d, but is %d)\n",
+                          S1AP_REGISTER_ENB_REQ(msg_p).num_plmn,
+                          S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l]);
+
+              for (int el = 0; el < S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l]; ++el) {
+                /* UINTARRAY gets mapped to int, see config_libconfig.c:223 */
+                S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_index[l][el] = S1ParamList.paramarray[l][ENB_MME_BROADCAST_PLMN_INDEX].iptr[el];
+                AssertFatal(S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_index[l][el] >= 0
+                            && S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_index[l][el] < S1AP_REGISTER_ENB_REQ(msg_p).num_plmn,
+                            "index for MME's MCC/MNC (%d) is an invalid index for the registered PLMN IDs (%d)\n",
+                            S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_index[l][el],
+                            S1AP_REGISTER_ENB_REQ(msg_p).num_plmn);
+              }
+
+              /* if no broadcasst_plmn array is defined, fill default values */
+              if (S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l] == 0) {
+                S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l] = S1AP_REGISTER_ENB_REQ(msg_p).num_plmn;
+
+                for (int el = 0; el < S1AP_REGISTER_ENB_REQ(msg_p).num_plmn; ++el)
+                  S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_index[l][el] = el;
               }
             }
 
@@ -2183,80 +2226,73 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
   paramlist_def_t ENBParamList = {ENB_CONFIG_STRING_ENB_LIST,NULL,0};
   /* get global parameters, defined outside any section in the config file */
   config_get( ENBSParams,sizeof(ENBSParams)/sizeof(paramdef_t),NULL);
-
   /* define CC params */
-
   int32_t Nid_cell = 0;
-
   char *frame_type, *prefix_type, *pbch_repetition, *prach_high_speed,
-    *pusch_hoppingMode, *pusch_enable64QAM, *pusch_groupHoppingEnabled,
-    *pusch_sequenceHoppingEnabled, *phich_duration, *phich_resource,
-    *srs_enable, *srs_ackNackST, *srs_MaxUpPts, *pusch_alpha,
-    *pucch_deltaF_Format1, *pucch_deltaF_Format1b, *pucch_deltaF_Format2,
-    *pucch_deltaF_Format2a, *pucch_deltaF_Format2b,
-    *rach_preamblesGroupAConfig, *rach_messagePowerOffsetGroupB, *pcch_nB;
+       *pusch_hoppingMode, *pusch_enable64QAM, *pusch_groupHoppingEnabled,
+       *pusch_sequenceHoppingEnabled, *phich_duration, *phich_resource,
+       *srs_enable, *srs_ackNackST, *srs_MaxUpPts, *pusch_alpha,
+       *pucch_deltaF_Format1, *pucch_deltaF_Format1b, *pucch_deltaF_Format2,
+       *pucch_deltaF_Format2a, *pucch_deltaF_Format2b,
+       *rach_preamblesGroupAConfig, *rach_messagePowerOffsetGroupB, *pcch_nB;
   long long int     downlink_frequency;
   int32_t tdd_config, tdd_config_s, eutra_band, uplink_frequency_offset,
-    Nid_cell_mbsfn, N_RB_DL, nb_antenna_ports, prach_root, prach_config_index,
-    prach_zero_correlation, prach_freq_offset, pucch_delta_shift,
-    pucch_nRB_CQI, pucch_nCS_AN, pucch_n1_AN, pdsch_referenceSignalPower,
-    pdsch_p_b, pusch_n_SB, pusch_hoppingOffset, pusch_groupAssignment,
-    pusch_nDMRS1, srs_BandwidthConfig, srs_SubframeConfig, pusch_p0_Nominal,
-    pucch_p0_Nominal, msg3_delta_Preamble, rach_numberOfRA_Preambles,
-    rach_sizeOfRA_PreamblesGroupA, rach_messageSizeGroupA,
-    rach_powerRampingStep, rach_preambleInitialReceivedTargetPower,
-    rach_preambleTransMax, rach_raResponseWindowSize,
-    rach_macContentionResolutionTimer, rach_maxHARQ_Msg3Tx,
-    pcch_defaultPagingCycle, bcch_modificationPeriodCoeff,
-    ue_TimersAndConstants_t300, ue_TimersAndConstants_t301,
-    ue_TimersAndConstants_t310, ue_TimersAndConstants_t311,
-    ue_TimersAndConstants_n310, ue_TimersAndConstants_n311,
-    ue_TransmissionMode, ue_multiple_max;
-
-  const char*       rxPool_sc_CP_Len;
-  const char*       rxPool_sc_Period;
-  const char*       rxPool_data_CP_Len;
+          Nid_cell_mbsfn, N_RB_DL, nb_antenna_ports, prach_root, prach_config_index,
+          prach_zero_correlation, prach_freq_offset, pucch_delta_shift,
+          pucch_nRB_CQI, pucch_nCS_AN, pucch_n1_AN, pdsch_referenceSignalPower,
+          pdsch_p_b, pusch_n_SB, pusch_hoppingOffset, pusch_groupAssignment,
+          pusch_nDMRS1, srs_BandwidthConfig, srs_SubframeConfig, pusch_p0_Nominal,
+          pucch_p0_Nominal, msg3_delta_Preamble, rach_numberOfRA_Preambles,
+          rach_sizeOfRA_PreamblesGroupA, rach_messageSizeGroupA,
+          rach_powerRampingStep, rach_preambleInitialReceivedTargetPower,
+          rach_preambleTransMax, rach_raResponseWindowSize,
+          rach_macContentionResolutionTimer, rach_maxHARQ_Msg3Tx,
+          pcch_defaultPagingCycle, bcch_modificationPeriodCoeff,
+          ue_TimersAndConstants_t300, ue_TimersAndConstants_t301,
+          ue_TimersAndConstants_t310, ue_TimersAndConstants_t311,
+          ue_TimersAndConstants_n310, ue_TimersAndConstants_n311,
+          ue_TransmissionMode, ue_multiple_max;
+  const char       *rxPool_sc_CP_Len;
+  const char       *rxPool_sc_Period;
+  const char       *rxPool_data_CP_Len;
   libconfig_int     rxPool_ResourceConfig_prb_Num;
   libconfig_int     rxPool_ResourceConfig_prb_Start;
   libconfig_int     rxPool_ResourceConfig_prb_End;
-  const char*       rxPool_ResourceConfig_offsetIndicator_present;
+  const char       *rxPool_ResourceConfig_offsetIndicator_present;
   libconfig_int     rxPool_ResourceConfig_offsetIndicator_choice;
-  const char*       rxPool_ResourceConfig_subframeBitmap_present;
-  char*             rxPool_ResourceConfig_subframeBitmap_choice_bs_buf;
+  const char       *rxPool_ResourceConfig_subframeBitmap_present;
+  char             *rxPool_ResourceConfig_subframeBitmap_choice_bs_buf;
   libconfig_int     rxPool_ResourceConfig_subframeBitmap_choice_bs_size;
   libconfig_int     rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
-
   //SIB19
   //for discRxPool
-  const char*       discRxPool_cp_Len;
-  const char*       discRxPool_discPeriod;
+  const char       *discRxPool_cp_Len;
+  const char       *discRxPool_discPeriod;
   libconfig_int     discRxPool_numRetx;
   libconfig_int     discRxPool_numRepetition;
   libconfig_int     discRxPool_ResourceConfig_prb_Num;
   libconfig_int     discRxPool_ResourceConfig_prb_Start;
   libconfig_int     discRxPool_ResourceConfig_prb_End;
-  const char*       discRxPool_ResourceConfig_offsetIndicator_present;
+  const char       *discRxPool_ResourceConfig_offsetIndicator_present;
   libconfig_int     discRxPool_ResourceConfig_offsetIndicator_choice;
-  const char*       discRxPool_ResourceConfig_subframeBitmap_present;
-  char*             discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf;
+  const char       *discRxPool_ResourceConfig_subframeBitmap_present;
+  char             *discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf;
   libconfig_int     discRxPool_ResourceConfig_subframeBitmap_choice_bs_size;
   libconfig_int     discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
-
   //for discRxPoolPS
-  const char*       discRxPoolPS_cp_Len;
-  const char*       discRxPoolPS_discPeriod;
+  const char       *discRxPoolPS_cp_Len;
+  const char       *discRxPoolPS_discPeriod;
   libconfig_int     discRxPoolPS_numRetx;
   libconfig_int     discRxPoolPS_numRepetition;
   libconfig_int     discRxPoolPS_ResourceConfig_prb_Num;
   libconfig_int     discRxPoolPS_ResourceConfig_prb_Start;
   libconfig_int     discRxPoolPS_ResourceConfig_prb_End;
-  const char*       discRxPoolPS_ResourceConfig_offsetIndicator_present;
+  const char       *discRxPoolPS_ResourceConfig_offsetIndicator_present;
   libconfig_int     discRxPoolPS_ResourceConfig_offsetIndicator_choice;
-  const char*       discRxPoolPS_ResourceConfig_subframeBitmap_present;
-  char*             discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf;
+  const char       *discRxPoolPS_ResourceConfig_subframeBitmap_present;
+  char             *discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf;
   libconfig_int     discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size;
   libconfig_int     discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
-
   checkedparam_t config_check_CCparams[] = CCPARAMS_CHECK;
   paramdef_t CCsParams[] = CCPARAMS_DESC;
   paramlist_def_t CCsParamList = {ENB_CONFIG_STRING_COMPONENT_CARRIERS, NULL, 0};
@@ -2265,22 +2301,22 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
   for (I = 0; I < (sizeof(CCsParams) / sizeof(paramdef_t)); I++) {
     CCsParams[I].chkPptr = &(config_check_CCparams[I]);
   }
-/*#if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
-    if (strcasecmp( *(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr), ENB_CONFIG_STRING_ASN1_VERBOSITY_NONE) == 0) {
-      asn_debug      = 0;
-      asn1_xer_print = 0;
-    } else if (strcasecmp( *(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr), ENB_CONFIG_STRING_ASN1_VERBOSITY_INFO) == 0) {
-      asn_debug      = 1;
-      asn1_xer_print = 1;
-    } else if (strcasecmp(*(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr) , ENB_CONFIG_STRING_ASN1_VERBOSITY_ANNOYING) == 0) {
-      asn_debug      = 1;
-      asn1_xer_print = 2;
-    } else {
-      asn_debug      = 0;
-      asn1_xer_print = 0;
-    }
-#endif */
 
+  /*#if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
+      if (strcasecmp( *(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr), ENB_CONFIG_STRING_ASN1_VERBOSITY_NONE) == 0) {
+        asn_debug      = 0;
+        asn1_xer_print = 0;
+      } else if (strcasecmp( *(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr), ENB_CONFIG_STRING_ASN1_VERBOSITY_INFO) == 0) {
+        asn_debug      = 1;
+        asn1_xer_print = 1;
+      } else if (strcasecmp(*(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr) , ENB_CONFIG_STRING_ASN1_VERBOSITY_ANNOYING) == 0) {
+        asn_debug      = 1;
+        asn1_xer_print = 2;
+      } else {
+        asn_debug      = 0;
+        asn1_xer_print = 0;
+      }
+  #endif */
   AssertFatal(i < ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt,
               "Failed to parse config file %s, %uth attribute %s \n",
               RC.config_file_name, i, ENB_CONFIG_STRING_ACTIVE_ENBS);
@@ -2307,6 +2343,14 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
         // search if in active list
         for (j = 0; j < ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt; j++) {
           if (strcmp(ENBSParams[ENB_ACTIVE_ENBS_IDX].strlistptr[j], *(ENBParamList.paramarray[k][ENB_ENB_NAME_IDX].strptr)) == 0) {
+            paramdef_t PLMNParams[] = PLMNPARAMS_DESC;
+            paramlist_def_t PLMNParamList = {ENB_CONFIG_STRING_PLMN_LIST, NULL, 0};
+            /* map parameter checking array instances to parameter definition array instances */
+            checkedparam_t config_check_PLMNParams [] = PLMNPARAMS_CHECK;
+
+            for (int I = 0; I < sizeof(PLMNParams) / sizeof(paramdef_t); ++I)
+              PLMNParams[I].chkPptr = &(config_check_PLMNParams[I]);
+
             paramdef_t X2Params[]  = X2PARAMS_DESC;
             paramlist_def_t X2ParamList = {ENB_CONFIG_STRING_TARGET_ENB_X2_IP_ADDRESS,NULL,0};
             paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
@@ -2314,6 +2358,7 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
             /* TODO: fix the size - if set lower we have a crash (MAX_OPTNAME_SIZE was 64 when this code was written) */
             /* this is most probably a problem with the config module */
             char aprefix[MAX_OPTNAME_SIZE*80 + 8];
+            sprintf(aprefix,"%s.[%i]",ENB_CONFIG_STRING_ENB_LIST,k);
             /* Some default/random parameters */
             X2AP_REGISTER_ENB_REQ (msg_p).eNB_id = enb_id;
 
@@ -2328,58 +2373,62 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
             }
 
             X2AP_REGISTER_ENB_REQ (msg_p).eNB_name         = strdup(*(ENBParamList.paramarray[k][ENB_ENB_NAME_IDX].strptr));
-            X2AP_REGISTER_ENB_REQ (msg_p).tac              = (uint16_t)atoi(*(ENBParamList.paramarray[k][ENB_TRACKING_AREA_CODE_IDX].strptr));
-            X2AP_REGISTER_ENB_REQ (msg_p).mcc              = (uint16_t)atoi(*(ENBParamList.paramarray[k][ENB_MOBILE_COUNTRY_CODE_IDX].strptr));
-            X2AP_REGISTER_ENB_REQ (msg_p).mnc              = (uint16_t)atoi(*(ENBParamList.paramarray[k][ENB_MOBILE_NETWORK_CODE_IDX].strptr));
-            X2AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length = strlen(*(ENBParamList.paramarray[k][ENB_MOBILE_NETWORK_CODE_IDX].strptr));
-            AssertFatal((X2AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length == 2) ||
-                        (X2AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length == 3),
-                        "BAD MNC DIGIT LENGTH %d",
-                        X2AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length);
+            X2AP_REGISTER_ENB_REQ (msg_p).tac              = *ENBParamList.paramarray[k][ENB_TRACKING_AREA_CODE_IDX].uptr;
+            config_getlist(&PLMNParamList, PLMNParams, sizeof(PLMNParams)/sizeof(paramdef_t), aprefix);
+
+            if (PLMNParamList.numelt < 1 || PLMNParamList.numelt > 6)
+              AssertFatal(0, "The number of PLMN IDs must be in [1,6], but is %d\n",
+                          PLMNParamList.numelt);
+
+            if (PLMNParamList.numelt > 1)
+              LOG_W(X2AP, "X2AP currently handles only one PLMN, ignoring the others!\n");
+
+            X2AP_REGISTER_ENB_REQ (msg_p).mcc = *PLMNParamList.paramarray[0][ENB_MOBILE_COUNTRY_CODE_IDX].uptr;
+            X2AP_REGISTER_ENB_REQ (msg_p).mnc = *PLMNParamList.paramarray[0][ENB_MOBILE_NETWORK_CODE_IDX].uptr;
+            X2AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length = *PLMNParamList.paramarray[0][ENB_MNC_DIGIT_LENGTH].u8ptr;
+            AssertFatal(X2AP_REGISTER_ENB_REQ(msg_p).mnc_digit_length == 3
+                        || X2AP_REGISTER_ENB_REQ(msg_p).mnc < 100,
+                        "MNC %d cannot be encoded in two digits as requested (change mnc_digit_length to 3)\n",
+                        X2AP_REGISTER_ENB_REQ(msg_p).mnc);
 
             /* CC params */
-            sprintf(aprefix, "%s.[%i]", ENB_CONFIG_STRING_ENB_LIST, k);
             config_getlist(&CCsParamList, NULL, 0, aprefix);
 
             X2AP_REGISTER_ENB_REQ (msg_p).num_cc = CCsParamList.numelt;
 
             if (CCsParamList.numelt > 0) {
-
               //char ccspath[MAX_OPTNAME_SIZE*2 + 16];
-
               for (J = 0; J < CCsParamList.numelt ; J++) {
-
                 sprintf(aprefix, "%s.[%i].%s.[%i]", ENB_CONFIG_STRING_ENB_LIST, k, ENB_CONFIG_STRING_COMPONENT_CARRIERS, J);
                 config_get(CCsParams, sizeof(CCsParams)/sizeof(paramdef_t), aprefix);
-
                 X2AP_REGISTER_ENB_REQ (msg_p).eutra_band[J] = eutra_band;
-	        X2AP_REGISTER_ENB_REQ (msg_p).downlink_frequency[J] = (uint32_t) downlink_frequency;
-	        X2AP_REGISTER_ENB_REQ (msg_p).uplink_frequency_offset[J] = (unsigned int) uplink_frequency_offset;
-	        X2AP_REGISTER_ENB_REQ (msg_p).Nid_cell[J]= Nid_cell;
+                X2AP_REGISTER_ENB_REQ (msg_p).downlink_frequency[J] = (uint32_t) downlink_frequency;
+                X2AP_REGISTER_ENB_REQ (msg_p).uplink_frequency_offset[J] = (unsigned int) uplink_frequency_offset;
+                X2AP_REGISTER_ENB_REQ (msg_p).Nid_cell[J]= Nid_cell;
 
-	        if (Nid_cell>503) {
-	          AssertFatal (0,
-	            "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for Nid_cell choice: 0...503 !\n",
-                         RC.config_file_name, k, Nid_cell);
-	        }
+                if (Nid_cell>503) {
+                  AssertFatal (0,
+                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for Nid_cell choice: 0...503 !\n",
+                               RC.config_file_name, k, Nid_cell);
+                }
 
-	        X2AP_REGISTER_ENB_REQ (msg_p).N_RB_DL[J]= N_RB_DL;
+                X2AP_REGISTER_ENB_REQ (msg_p).N_RB_DL[J]= N_RB_DL;
 
-	        if ((N_RB_DL!=6) && (N_RB_DL!=15) && (N_RB_DL!=25) && (N_RB_DL!=50) && (N_RB_DL!=75) && (N_RB_DL!=100)) {
-	          AssertFatal (0,
-                    "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for N_RB_DL choice: 6,15,25,50,75,100 !\n",
-                         RC.config_file_name, k, N_RB_DL);
-	        }
+                if ((N_RB_DL!=6) && (N_RB_DL!=15) && (N_RB_DL!=25) && (N_RB_DL!=50) && (N_RB_DL!=75) && (N_RB_DL!=100)) {
+                  AssertFatal (0,
+                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for N_RB_DL choice: 6,15,25,50,75,100 !\n",
+                               RC.config_file_name, k, N_RB_DL);
+                }
 
-	        if (strcmp(frame_type, "FDD") == 0) {
+                if (strcmp(frame_type, "FDD") == 0) {
                   X2AP_REGISTER_ENB_REQ (msg_p).frame_type[J] = FDD;
-	        } else  if (strcmp(frame_type, "TDD") == 0) {
+                } else  if (strcmp(frame_type, "TDD") == 0) {
                   X2AP_REGISTER_ENB_REQ (msg_p).frame_type[J] = TDD;
                 } else {
-	          AssertFatal (0,
-                    "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for frame_type choice: FDD or TDD !\n",
-		         RC.config_file_name, k, frame_type);
-	        }
+                  AssertFatal (0,
+                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for frame_type choice: FDD or TDD !\n",
+                               RC.config_file_name, k, frame_type);
+                }
 
                 X2AP_REGISTER_ENB_REQ (msg_p).fdd_earfcn_DL[J] = to_earfcn_DL(eutra_band, downlink_frequency, N_RB_DL);
                 X2AP_REGISTER_ENB_REQ (msg_p).fdd_earfcn_UL[J] = to_earfcn_UL(eutra_band, downlink_frequency + uplink_frequency_offset, N_RB_DL);
@@ -2388,11 +2437,9 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
 
             sprintf(aprefix,"%s.[%i]",ENB_CONFIG_STRING_ENB_LIST,k);
             config_getlist( &X2ParamList,X2Params,sizeof(X2Params)/sizeof(paramdef_t),aprefix);
-
-            if(X2ParamList.numelt>X2AP_MAX_NB_ENB_IP_ADDRESS) {
-              LOG_E(RRC,"value of X2ParamList.numelt %d must be lower than X2AP_MAX_NB_ENB_IP_ADDRESS %d value: reconsider to increase X2AP_MAX_NB_ENB_IP_ADDRESS\n",X2ParamList.numelt,X2AP_MAX_NB_ENB_IP_ADDRESS);
-              exit(1);
-            }
+            AssertFatal(X2ParamList.numelt <= X2AP_MAX_NB_ENB_IP_ADDRESS,
+                        "value of X2ParamList.numelt %d must be lower than X2AP_MAX_NB_ENB_IP_ADDRESS %d value: reconsider to increase X2AP_MAX_NB_ENB_IP_ADDRESS\n",
+                        X2ParamList.numelt,X2AP_MAX_NB_ENB_IP_ADDRESS);
 
             X2AP_REGISTER_ENB_REQ (msg_p).nb_x2 = 0;
 
@@ -2444,39 +2491,31 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
   return 0;
 }
 
-int RCconfig_parallel(void)
-{
+int RCconfig_parallel(void) {
   char *parallel_conf = NULL;
   char *worker_conf   = NULL;
   extern char *parallel_config;
   extern char *worker_config;
-
   paramdef_t ThreadParams[]  = THREAD_CONF_DESC;
   paramlist_def_t THREADParamList = {THREAD_CONFIG_STRING_THREAD_STRUCT,NULL,0};
-  
   config_getlist( &THREADParamList,NULL,0,NULL);
 
-  if(THREADParamList.numelt>0)
-  {
+  if(THREADParamList.numelt>0) {
     config_getlist( &THREADParamList,ThreadParams,sizeof(ThreadParams)/sizeof(paramdef_t),NULL);
     parallel_conf = strdup(*(THREADParamList.paramarray[0][THREAD_PARALLEL_IDX].strptr));
-  }
-  else
-  {
+  } else {
     parallel_conf = strdup("PARALLEL_RU_L1_TRX_SPLIT");
   }
-  if(THREADParamList.numelt>0)
-  {
+
+  if(THREADParamList.numelt>0) {
     config_getlist( &THREADParamList,ThreadParams,sizeof(ThreadParams)/sizeof(paramdef_t),NULL);
     worker_conf   = strdup(*(THREADParamList.paramarray[0][THREAD_WORKER_IDX].strptr));
-  }
-  else
-  {
+  } else {
     worker_conf   = strdup("WORKER_ENABLE");
   }
 
-
   if(parallel_config == NULL) set_parallel_conf(parallel_conf);
+
   if(worker_config == NULL)   set_worker_conf(worker_conf);
 
   return 0;

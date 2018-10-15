@@ -178,7 +178,8 @@ typedef struct {
 
 } mem_pool;
 
-mem_pool  mem_block_var;
+mem_pool  *memBlockVar;
+#define mem_block_var (*memBlockVar)
 
 #ifdef __cplusplus
 }
