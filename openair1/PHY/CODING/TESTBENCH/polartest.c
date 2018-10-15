@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
 	double timeEncoderCumulative = 0, timeDecoderCumulative = 0;
 	uint8_t aggregation_level = 8, decoderListSize = 8, pathMetricAppr = 0;
 
-	while ((arguments = getopt (argc, argv, "s:d:f:m:i:l:a:h:qg")) != -1)
+	while ((arguments = getopt (argc, argv, "s:d:f:m:i:l:a:hqg")) != -1)
 	switch (arguments)
 	{
 		case 's':
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
 		  decoder_int16=1;
                   break;
 	        case 'h':
-		  printf("./polartest -s SNRstart -d SNRinc -f SNRstop -m [0=PBCH|1=DCI|2=UCI] -i iterations -l decoderListSize -a pathMetricAppr\n");
+		  printf("./polartest -s SNRstart -d SNRinc -f SNRstop -m [0=PBCH|1=DCI|2=UCI] -i iterations -l decoderListSize -a pathMetricAppr -q (use fixed point decoder)\n");
 		  exit(-1);
 
 		default:
@@ -410,6 +410,9 @@ int main(int argc, char *argv[]) {
 				decoderListSize, pathMetricAppr, SNR, ((double)blockErrorCumulative/iterations),
 				((double)bitErrorCumulative / (iterations*testLength)),
 				(timeEncoderCumulative/iterations),timeDecoderCumulative/iterations);
+
+		if (blockErrorCumulative==0 && bitErrorCumulative==0)
+		  break;
 
 		blockErrorCumulative = 0; bitErrorCumulative = 0;
 		timeEncoderCumulative = 0; timeDecoderCumulative = 0;
