@@ -114,7 +114,10 @@ The RRC layer is based on **3GPP 36.331** v14.3.0 and implements the following f
 
 ## eNB X2AP ##
 
-**To be completed**
+The X2AP layer is based on **3GPP 36.423** v14.6.0 and implements the following functions:
+
+ - X2 Setup Request
+ - X2 Setup Response 
 
 ## eNB Advanced Features ##
 
