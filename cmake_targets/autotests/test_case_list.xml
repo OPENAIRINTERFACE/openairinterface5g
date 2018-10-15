@@ -956,20 +956,20 @@
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec> $OPENAIR_DIR/targets/bin/dlsim.Rel14</main_exec>
-      <main_exec_args> -m5 -gF -s-1 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O60
-                       -m4 -gF -s0 -w1.0 -f.2 -n500 -B6 -c4 -z2 -O60
-                       -m15 -gF -s6.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O60
-                       -m15 -gF -s6.7 -w1.0 -f.2 -n500 -B25 -c2 -z2 -O60
-                       -m15 -gG -s1.4 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O25
-                       -m15 -gG -s1.4 -w1.0 -f.2 -n500 -B25 -c2 -z2 -O25
-                       -m25 -gF -s17.4 -w1.0 -f.2 -n500 -B25 -c3 -z2 -O60
-                       -m25 -gF -s17.5 -w1.0 -f.2 -n500 -B25 -c3 -z2 -r1022 -O60
-                       -m26 -gF -s17.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O60
-                       -m26 -gF -s17.6 -w1.0 -f.2 -n500 -B100 -c2 -z2 -O60
-                       -m26 -gF -s17.3 -w1.0 -f.2 -n500 -B100 -c2 -z2 -r1600 -O60
-                       -m26 -gF -s16.6 -w1.0 -f.2 -n500 -B100 -c2 -z2 -r1899 -O60
-		       -m14 -gF -s6.8  -w1.0 -f.2 -n500 -B50 -c2 -x2 -y2 -z2 -O60
-                       -m13 -gF -s5.9  -w1.0 -f.2 -n500 -B25 -c3 -x2 -y2 -z2 -O60</main_exec_args>
+      <main_exec_args> -m=5 -g=F -s=-1= -w=1.0 -f=.2 -n=500 -B=50 -c=2 -z=2 -O=60
+                        -m=4 -g=F -s=0 -w=1.0 -f=.2 -n=500 -B=6 -c=4 -z=2 -O=60
+                        -m=15 -g=F -s=6.7 -w=1.0 -f=.2 -n=500 -B=50 -c=2 -z=2 -O=60
+                        -m=15 -g=F -s=6.7 -w=1.0 -f=.2 -n=500 -B=25 -c=2 -z=2 -O=60
+                        -m=15 -g=G -s=1.4 -w=1.0 -f=.2 -n=500 -B=50 -c=2 -z=2 -O=25
+                        -m=15 -g=G -s=1.4 -w=1.0 -f=.2 -n=500 -B=25 -c=2 -z=2 -O=25
+                        -m=25 -g=F -s=17.4 -w=1.0 -f=.2 -n=500 -B=25 -c=3 -z=2 -O=60
+                        -m=25 -g=F -s=17.5 -w=1.0 -f=.2 -n=500 -B=25 -c=3 -z=2 -r=1022 -O=60
+                        -m=26 -g=F -s=17.7 -w=1.0 -f=.2 -n=500 -B=50 -c=2 -z=2 -O=60
+                        -m=26 -g=F -s=17.6 -w=1.0 -f=.2 -n=500 -B=100 -c=2 -z=2 -O=60
+                        -m=26 -g=F -s=17.3 -w=1.0 -f=.2 -n=500 -B=100 -c=2 -z=2 -r=1600 -O=60
+                        -m=26 -g=F -s=16.6 -w=1.0 -f=.2 -n=500 -B=100 -c=2 -z=2 -r=1899 -O=60
+                        -m=14 -g=F -s=6.8  -w=1.0 -f=.2 -n=500 -B=50 -c=2 -x=2 -y=2 -z=2 -O=60
+                        -m=13 -g=F -s=5.9  -w=1.0 -f=.2 -n=500 -B=25 -c=3 -x=2 -y=2 -z=2 -O=60</main_exec_args>
       <tags>dlsim.test1 dlsim.test5 dlsim.test6 dlsim.test6b dlsim.test7 dlsim.test7b dlsim.test10 dlsim.test10b dlsim.test11 dlsim.TM2_test1 dlsim.TM2_test1b</tags>
       <search_expr_true>"passed"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
