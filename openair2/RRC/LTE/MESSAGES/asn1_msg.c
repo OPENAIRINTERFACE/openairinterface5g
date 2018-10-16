@@ -345,8 +345,13 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 {
 
   //  SystemInformation_t systemInformation;
-  PLMN_IdentityInfo_t PLMN_identity_info;
-  MCC_MNC_Digit_t dummy_mcc[3],dummy_mnc[3];
+#if defined(ENABLE_ITTI)
+  int num_plmn = configuration->num_plmn;
+#else
+  int num_plmn = 1;
+#endif
+  PLMN_IdentityInfo_t PLMN_identity_info[num_plmn];
+  MCC_MNC_Digit_t dummy_mcc[num_plmn][3], dummy_mnc[num_plmn][3];
   asn_enc_rval_t enc_rval;
   SchedulingInfo_t schedulingInfo;
   SIB_Type_t sib_type;
@@ -354,6 +359,7 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
   uint8_t *buffer                      = carrier->SIB1;
   BCCH_DL_SCH_Message_t *bcch_message  = &carrier->siblock1;
   SystemInformationBlockType1_t **sib1 = &carrier->sib1;
+  int i;
 
   
   memset(bcch_message,0,sizeof(BCCH_DL_SCH_Message_t));
@@ -363,66 +369,67 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 
   *sib1 = &bcch_message->message.choice.c1.choice.systemInformationBlockType1;
 
-  memset(&PLMN_identity_info,0,sizeof(PLMN_IdentityInfo_t));
+  memset(PLMN_identity_info,0,num_plmn * sizeof(PLMN_IdentityInfo_t));
   memset(&schedulingInfo,0,sizeof(SchedulingInfo_t));
   memset(&sib_type,0,sizeof(SIB_Type_t));
 
+  /* as per TS 36.311, up to 6 PLMN_identity_info are allowed in list -> add one by one */
+  for (i = 0; i < configuration->num_plmn; ++i) {
+    PLMN_identity_info[i].plmn_Identity.mcc = CALLOC(1,sizeof(*PLMN_identity_info[i].plmn_Identity.mcc));
+    memset(PLMN_identity_info[i].plmn_Identity.mcc,0,sizeof(*PLMN_identity_info[i].plmn_Identity.mcc));
 
-
-  PLMN_identity_info.plmn_Identity.mcc = CALLOC(1,sizeof(*PLMN_identity_info.plmn_Identity.mcc));
-  memset(PLMN_identity_info.plmn_Identity.mcc,0,sizeof(*PLMN_identity_info.plmn_Identity.mcc));
-
-  asn_set_empty(&PLMN_identity_info.plmn_Identity.mcc->list);//.size=0;
+    asn_set_empty(&PLMN_identity_info[i].plmn_Identity.mcc->list);//.size=0;
 
 #if defined(ENABLE_ITTI)
-  dummy_mcc[0] = (configuration->mcc / 100) % 10;
-  dummy_mcc[1] = (configuration->mcc / 10) % 10;
-  dummy_mcc[2] = (configuration->mcc / 1) % 10;
+    dummy_mcc[i][0] = (configuration->mcc[i] / 100) % 10;
+    dummy_mcc[i][1] = (configuration->mcc[i] / 10) % 10;
+    dummy_mcc[i][2] = (configuration->mcc[i] / 1) % 10;
 #else
-  dummy_mcc[0] = 0;
-  dummy_mcc[1] = 0;
-  dummy_mcc[2] = 1;
+    dummy_mcc[i][0] = 0;
+    dummy_mcc[i][1] = 0;
+    dummy_mcc[i][2] = 1;
 #endif
-  ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mcc->list,&dummy_mcc[0]);
-  ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mcc->list,&dummy_mcc[1]);
-  ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mcc->list,&dummy_mcc[2]);
+    ASN_SEQUENCE_ADD(&PLMN_identity_info[i].plmn_Identity.mcc->list,&dummy_mcc[i][0]);
+    ASN_SEQUENCE_ADD(&PLMN_identity_info[i].plmn_Identity.mcc->list,&dummy_mcc[i][1]);
+    ASN_SEQUENCE_ADD(&PLMN_identity_info[i].plmn_Identity.mcc->list,&dummy_mcc[i][2]);
 
-  PLMN_identity_info.plmn_Identity.mnc.list.size=0;
-  PLMN_identity_info.plmn_Identity.mnc.list.count=0;
+    PLMN_identity_info[i].plmn_Identity.mnc.list.size=0;
+    PLMN_identity_info[i].plmn_Identity.mnc.list.count=0;
 #if defined(ENABLE_ITTI)
 
-  if (configuration->mnc >= 100) {
-    dummy_mnc[0] = (configuration->mnc / 100) % 10;
-    dummy_mnc[1] = (configuration->mnc / 10) % 10;
-    dummy_mnc[2] = (configuration->mnc / 1) % 10;
-  } else {
-    if (configuration->mnc_digit_length == 2) {
-      dummy_mnc[0] = (configuration->mnc / 10) % 10;
-      dummy_mnc[1] = (configuration->mnc / 1) % 10;
-      dummy_mnc[2] = 0xf;
+    if (configuration->mnc[i] >= 100) {
+      dummy_mnc[i][0] = (configuration->mnc[i] / 100) % 10;
+      dummy_mnc[i][1] = (configuration->mnc[i] / 10) % 10;
+      dummy_mnc[i][2] = (configuration->mnc[i] / 1) % 10;
     } else {
-      dummy_mnc[0] = (configuration->mnc / 100) % 100;
-      dummy_mnc[1] = (configuration->mnc / 10) % 10;
-      dummy_mnc[2] = (configuration->mnc / 1) % 10;
+      if (configuration->mnc_digit_length[i] == 2) {
+        dummy_mnc[i][0] = (configuration->mnc[i] / 10) % 10;
+        dummy_mnc[i][1] = (configuration->mnc[i] / 1) % 10;
+        dummy_mnc[i][2] = 0xf;
+      } else {
+        dummy_mnc[i][0] = (configuration->mnc[i] / 100) % 100;
+        dummy_mnc[i][1] = (configuration->mnc[i] / 10) % 10;
+        dummy_mnc[i][2] = (configuration->mnc[i] / 1) % 10;
+      }
     }
-  }
 
 #else
-  dummy_mnc[0] = 0;
-  dummy_mnc[1] = 1;
-  dummy_mnc[2] = 0xf;
+    dummy_mnc[i][0] = 0;
+    dummy_mnc[i][1] = 1;
+    dummy_mnc[i][2] = 0xf;
 #endif
-  ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mnc.list,&dummy_mnc[0]);
-  ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mnc.list,&dummy_mnc[1]);
+    ASN_SEQUENCE_ADD(&PLMN_identity_info[i].plmn_Identity.mnc.list,&dummy_mnc[i][0]);
+    ASN_SEQUENCE_ADD(&PLMN_identity_info[i].plmn_Identity.mnc.list,&dummy_mnc[i][1]);
 
-  if (dummy_mnc[2] != 0xf) {
-    ASN_SEQUENCE_ADD(&PLMN_identity_info.plmn_Identity.mnc.list,&dummy_mnc[2]);
+    if (dummy_mnc[i][2] != 0xf) {
+      ASN_SEQUENCE_ADD(&PLMN_identity_info[i].plmn_Identity.mnc.list,&dummy_mnc[i][2]);
+    }
+
+    //assign_enum(&PLMN_identity_info.cellReservedForOperatorUse,PLMN_IdentityInfo__cellReservedForOperatorUse_notReserved);
+    PLMN_identity_info[i].cellReservedForOperatorUse=PLMN_IdentityInfo__cellReservedForOperatorUse_notReserved;
+
+    ASN_SEQUENCE_ADD(&(*sib1)->cellAccessRelatedInfo.plmn_IdentityList.list,&PLMN_identity_info[i]);
   }
-
-  //assign_enum(&PLMN_identity_info.cellReservedForOperatorUse,PLMN_IdentityInfo__cellReservedForOperatorUse_notReserved);
-  PLMN_identity_info.cellReservedForOperatorUse=PLMN_IdentityInfo__cellReservedForOperatorUse_notReserved;
-
-  ASN_SEQUENCE_ADD(&(*sib1)->cellAccessRelatedInfo.plmn_IdentityList.list,&PLMN_identity_info);
 
 
   // 16 bits
@@ -1670,10 +1677,7 @@ uint8_t do_RRCConnectionSetupComplete(uint8_t Mod_id, uint8_t *buffer, const uin
   rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.nonCriticalExtension=CALLOC(1,
       sizeof(*rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.nonCriticalExtension));
 
-  if(usim_test == 0)
-      rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.selectedPLMN_Identity= 2;
-  else
-      rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.selectedPLMN_Identity= 1;
+  rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.selectedPLMN_Identity= 1;
 
   rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.registeredMME =
     NULL;//calloc(1,sizeof(*rrcConnectionSetupComplete->criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8.registeredMME));
