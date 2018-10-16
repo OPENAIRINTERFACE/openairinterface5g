@@ -2246,7 +2246,9 @@ void init_RU_proc(RU_t *ru) {
 	(ru->function == NGFI_RRU_IF4p5)) {
         LOG_I(PHY,"Starting ru_thread_asynch_rxtx, ru->is_slave %d, ru->generate_dmrs_sync %d\n",
               ru->is_slave,ru->generate_dmrs_sync);
-	pthread_create( &proc->pthread_asynch_rxtx, attr_asynch, ru_thread_asynch_rxtx, (void*)ru );
+	//generate_ul_ref_sigs();
+        //ru->dmrssync = (int16_t*)malloc16_clear(ru->frame_parms.ofdm_symbol_size*2*sizeof(int16_t)); 
+        pthread_create( &proc->pthread_asynch_rxtx, attr_asynch, ru_thread_asynch_rxtx, (void*)ru );
     }
     
     
@@ -2619,7 +2621,10 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
     ru->openair0_cfg.clock_source  = clock_source;
     ru->openair0_cfg.time_source = time_source;
     ru->generate_dmrs_sync = (ru->is_slave == 0) ? 1 : 0;
-    
+    if (ru->generate_dmrs_sync == 1) {
+    	generate_ul_ref_sigs();
+        ru->dmrssync = (int16_t*)malloc16_clear(ru->frame_parms.ofdm_symbol_size*2*sizeof(int16_t)); 	
+    }
     eNB0             = ru->eNB_list[0];
     LOG_D(PHY, "RU FUnction:%d ru->if_south:%d\n", ru->function, ru->if_south);
     LOG_D(PHY, "eNB0:%p\n", eNB0);

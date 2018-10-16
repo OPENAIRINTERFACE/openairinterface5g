@@ -487,7 +487,7 @@ int ru_sync_time_init(RU_t *ru)   // LTE_UE_COMMON *common_vars
 
   generate_ul_ref_sigs();
  
-  ru->dmrssync = (int16_t*)malloc16_clear(ru->frame_parms.N_RB_DL*2*sizeof(int16_t)); 
+  ru->dmrssync = (int16_t*)malloc16_clear(ru->frame_parms.ofdm_symbol_size*2*sizeof(int16_t)); 
   generate_drs_pusch(NULL,NULL,
 		     &ru->frame_parms,
 		     dmrsp,/*(int32_t**)dmrsp,*/
