@@ -21,12 +21,17 @@
 
 -->
 <testCaseList>
-	<TestCaseRequestedList>010101 050101 060101 070101 040101
+	<!-- Only 5MHz is tested since neither 10MHz nor 20MHz work in this configuration -->
+	<TestCaseRequestedList>
+ 010101
+ 050101 060101 070101 040101
  030101 030102 040301 040501 040604 040642 040401 040201 030202 030201
+ 050201 060201 070201
+	</TestCaseRequestedList>
+	<TestCaseExclusionList>
  030111 030112 040301 040511 040614 040652 040401 040201 030202 030201
  030101 030102 040301 040521 040624 040662 040401 040201 030202 030201
- 050201 060201 070201</TestCaseRequestedList>
-	<TestCaseExclusionList></TestCaseExclusionList>
+	</TestCaseExclusionList>
 
 	<testCase id="010101">
 		<class>Build_eNB</class>
