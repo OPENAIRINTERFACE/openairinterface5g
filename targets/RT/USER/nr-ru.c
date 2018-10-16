@@ -854,12 +854,16 @@ void tx_rf(RU_t *ru) {
     // prepare tx buffer pointers
     if(emulate_rf)
     {
-      if(proc->frame_tx < 2)
+      for (i=0; i<ru->nb_tx; i++)
       {
-        LOG_M("txdataF_frame.m","txdataF_frame",&ru->common.txdataF_BF[i],fp->samples_per_subframe_wCP, 1, 1);
-        LOG_M("txdata_frame.m","txdata_frame",&ru->common.txdata[i],fp->samples_per_subframe, 1, 1);
+        if(proc->frame_tx > 0 && proc->frame_tx < 2)
+        {
+          LOG_M("txdataF_frame.m","txdataF_frame",&ru->common.txdataF_BF[i][0],fp->samples_per_subframe_wCP, 1, 1);
+          LOG_M("txdata_frame.m","txdata_frame",&ru->common.txdata[i][(proc->subframe_tx*fp->samples_per_subframe)-sf_extension],fp->samples_per_subframe, 1, 1);
+        }
+        else if (proc->frame_tx >= 2) oai_exit = 1;
       }
-      else  oai_exit = 1;
+      txs =  siglen+sf_extension;
     }
     else
     {

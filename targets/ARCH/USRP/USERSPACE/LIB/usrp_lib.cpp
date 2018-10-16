@@ -1039,7 +1039,7 @@ extern "C" {
 
         if(device_adds.size() == 0)  {
             double usrp_master_clock = 184.32e6;
-            std::string args = "type=x300, addr=192.168.30.2";
+            std::string args = "type=x300";
 
             // workaround for an api problem, master clock has to be set with the constructor not via set_master_clock_rate
             args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
