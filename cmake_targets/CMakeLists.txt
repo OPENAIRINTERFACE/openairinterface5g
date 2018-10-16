@@ -2611,16 +2611,68 @@ if (${T_TRACER})
   foreach(i
         #all "add_executable" definitions (except tests, rb_tool, updatefw)
         lte-softmodem lte-softmodem-nos1 lte-uesoftmodem lte-uesoftmodem-nos1
+        nr-softmodem nr-softmodem-nos1 nr-uesoftmodem nr-uesoftmodem-nos1
         dlsim_tm4 dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim
         pdcchsim pucchsim prachsim syncsim ulsim
+	ldpctest polartest
         #all "add_library" definitions
-        ITTI RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB
-        oai_exmimodevif oai_usrpdevif oai_bladerfdevif oai_lmssdrdevif
-        oai_eth_transpro
-        FLPT_MSG ASYNC_IF FLEXRAN_AGENT HASHTABLE MSC UTIL OMG_SUMO SECU_OSA
-        SECU_CN SCHED_LIB PHY L2 default_sched remote_sched RAL CN_UTILS
-        GTPV1U SCTP_CLIENT UDP LIB_NAS_UE LFDS LFDS7 SIMU OPENAIR0_LIB PHY_MEX
-        coding)
+ITTI
+RRC_LIB
+NR_RRC_LIB 
+S1AP_LIB
+S1AP_ENB
+X2AP_LIB
+params_libconfig
+oai_exmimodevif
+oai_usrpdevif
+oai_bladerfdevif
+oai_lmssdrdevif
+oai_eth_transpro
+oai_mobipass
+tcp_bridge
+tcp_bridge_oai
+coding
+FLPT_MSG
+ASYNC_IF
+FLEXRAN_AGENT
+HASHTABLE
+MSC
+UTIL
+SECU_OSA
+SECU_CN
+SCHED_LIB
+SCHED_NR_LIB
+SCHED_RU_LIB
+SCHED_UE_LIB
+SCHED_NR_UE_LIB
+NFAPI_COMMON_LIB
+NFAPI_LIB
+NFAPI_PNF_LIB
+NFAPI_VNF_LIB
+NFAPI_USER_LIB
+PHY_COMMON
+PHY
+PHY_UE
+PHY_NR
+PHY_NR_UE
+PHY_RU
+PHY_MEX
+L2
+L2_NR
+L2_UE
+NR_L2_UE
+NR_LTE_UE_REUSE_LIB
+CN_UTILS
+GTPV1U
+SCTP_CLIENT
+UDP
+LIB_NAS_UE
+NB_IoT
+LFDS
+LFDS7
+SIMU
+SIMU_ETH
+OPENAIR0_LIB)
     if (TARGET ${i})
       add_dependencies(${i} generate_T)
     endif()
