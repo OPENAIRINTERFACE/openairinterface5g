@@ -888,6 +888,15 @@ then
     check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
 
     echo "############################################################"
+    echo "Iperf DL"
+    echo "############################################################"
+    CURR_IPERF_LOG_BASE=tdd_05MHz_iperf_dl
+    iperf_dl $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 6 $CURR_IPERF_LOG_BASE
+    scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_client.txt $ARCHIVES_LOC
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/${CURR_IPERF_LOG_BASE}_server.txt $ARCHIVES_LOC
+    check_iperf $ARCHIVES_LOC/$CURR_IPERF_LOG_BASE 6
+
+    echo "############################################################"
     echo "Terminate enb/ue simulators"
     echo "############################################################"
     terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR

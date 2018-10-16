@@ -160,7 +160,7 @@ class SSHConnection():
 		self.ssh.sendline(commandline)
 		self.sshresponse = self.ssh.expect([expectedline, pexpect.EOF, pexpect.TIMEOUT])
 		if self.sshresponse == 0:
-			pass
+			return 0
 		elif self.sshresponse == 1:
 			logging.debug('\u001B[1;37;41m Unexpected EOF \u001B[0m')
 			logging.debug('Expected Line : ' + expectedline)
@@ -168,7 +168,11 @@ class SSHConnection():
 		elif self.sshresponse == 2:
 			logging.debug('\u001B[1;37;41m Unexpected TIMEOUT \u001B[0m')
 			logging.debug('Expected Line : ' + expectedline)
-			sys.exit(self.sshresponse)
+			result = re.search('ping |iperf ', str(commandline))
+			if result is None:
+				sys.exit(self.sshresponse)
+			else:
+				return -1
 		else:
 			logging.debug('\u001B[1;37;41m Unexpected Others \u001B[0m')
 			logging.debug('Expected Line : ' + expectedline)
@@ -450,7 +454,7 @@ class SSHConnection():
 					break
 				count = count - 1
 				if count == 15 or count == 30:
-					logging.debug('\u001B[1;37;43m Retry UE (' + device_id + ') Flight Mode Off \u001B[0m')
+					logging.debug('\u001B[1;30;43m Retry UE (' + device_id + ') Flight Mode Off \u001B[0m')
 					self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/off', '\$', 60)
 					time.sleep(0.5)
 					self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/on', '\$', 60)
@@ -647,42 +651,44 @@ class SSHConnection():
 		self.close()
 		return ue_ip_status
 
-	def Ping_common(self, lock, UE_IPAddress, device_id,statusQueue):
+	def ping_iperf_wrong_exit(self, lock, UE_IPAddress, device_id, statusQueue, message):
+		lock.acquire()
+		statusQueue.put(-1)
+		statusQueue.put(device_id)
+		statusQueue.put(UE_IPAddress)
+		statusQueue.put(message)
+		lock.release()
+
+	def Ping_common(self, lock, UE_IPAddress, device_id, statusQueue):
 		try:
 			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 			self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
 			self.command('cd scripts', '\$', 5)
 			ping_time = re.findall("-c (\d+)",str(self.ping_args))
-			self.command('stdbuf -o0 ping ' + self.ping_args + ' ' + UE_IPAddress + ' 2>&1 | stdbuf -o0 tee -a ping_' + SSH.testCase_id + '_' + device_id + '.log', '\$', int(ping_time[0])*1.5)
+			ping_status = self.command('stdbuf -o0 ping ' + self.ping_args + ' ' + UE_IPAddress + ' 2>&1 | stdbuf -o0 tee -a ping_' + SSH.testCase_id + '_' + device_id + '.log', '\$', int(ping_time[0])*1.5)
+			# TIMEOUT CASE
+			if ping_status < 0:
+				message = 'Ping with UE (' + str(UE_IPAddress) + ') crashed due to TIMEOUT!'
+				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
+				return
 			result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', str(self.ssh.before))
 			if result is None:
 				message = 'Packet Loss Not Found!'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
-				lock.acquire()
-				statusQueue.put(-1)
-				statusQueue.put(device_id)
-				statusQueue.put(message)
-				lock.release()
+				self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
 				return
 			packetloss = result.group('packetloss')
 			if float(packetloss) == 100:
 				message = 'Packet Loss is 100%'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
-				lock.acquire()
-				statusQueue.put(-1)
-				statusQueue.put(device_id)
-				statusQueue.put(message)
-				lock.release()
+				self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
 				return
 			result = re.search('rtt min\/avg\/max\/mdev = (?P<rtt_min>[0-9\.]+)\/(?P<rtt_avg>[0-9\.]+)\/(?P<rtt_max>[0-9\.]+)\/[0-9\.]+ ms', str(self.ssh.before))
 			if result is None:
 				message = 'Ping RTT_Min RTT_Avg RTT_Max Not Found!'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
-				lock.acquire()
-				statusQueue.put(-1)
-				statusQueue.put(device_id)
-				statusQueue.put(message)
-				lock.release()
+				self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
 				return
 			rtt_min = result.group('rtt_min')
 			rtt_avg = result.group('rtt_avg')
@@ -706,7 +712,7 @@ class SSHConnection():
 					packetLossOK = False
 				elif float(packetloss) > 0:
 					qMsg += '\nPacket Loss is not 0%'
-					logging.debug('\u001B[1;37;43m Packet Loss is not 0% \u001B[0m')
+					logging.debug('\u001B[1;30;43m Packet Loss is not 0% \u001B[0m')
 			if (packetLossOK):
 				statusQueue.put(0)
 			else:
@@ -911,23 +917,13 @@ class SSHConnection():
 
 	def Iperf_analyzeV2Server(self, lock, UE_IPAddress, device_id, statusQueue, iperf_real_options):
 		if (not os.path.isfile('iperf_server_' + SSH.testCase_id + '_' + device_id + '.log')):
-			lock.acquire()
-			statusQueue.put(-1)
-			statusQueue.put(device_id)
-			statusQueue.put(UE_IPAddress)
-			statusQueue.put('Could not analyze from server log')
-			lock.release()
+			self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, 'Could not analyze from server log')
 			return
 		# Computing the requested bandwidth in float
 		result = re.search('-b (?P<iperf_bandwidth>[0-9\.]+)[KMG]', str(iperf_real_options))
 		if result is None:
 			logging.debug('Iperf bandwidth Not Found!')
-			lock.acquire()
-			statusQueue.put(-1)
-			statusQueue.put(device_id)
-			statusQueue.put(UE_IPAddress)
-			statusQueue.put('Could not compute Iperf bandwidth!')
-			lock.release()
+			self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, 'Could not compute Iperf bandwidth!')
 			return
 		else:
 			req_bandwidth = result.group('iperf_bandwidth')
@@ -1013,12 +1009,7 @@ class SSHConnection():
 			logging.debug('\u001B[1;35m    ' + pal_msg + '\u001B[0m')
 			lock.release()
 		else:
-			lock.acquire()
-			statusQueue.put(-1)
-			statusQueue.put(device_id)
-			statusQueue.put(UE_IPAddress)
-			statusQueue.put('Could not analyze from server log')
-			lock.release()
+			self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, 'Could not analyze from server log')
 
 		server_file.close()
 
@@ -1059,6 +1050,7 @@ class SSHConnection():
 			statusQueue.put(-1)
 		statusQueue.put(device_id)
 		statusQueue.put(UE_IPAddress)
+		statusQueue.put(msg)
 		lock.release()
 
 	def Iperf_UL_common(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue):
@@ -1097,13 +1089,22 @@ class SSHConnection():
 		time.sleep(0.5)
 
 		self.command('rm -f iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', 5)
-		self.command('stdbuf -o0 adb -s ' + device_id + ' shell "/data/local/tmp/iperf -c ' + EPC_Iperf_UE_IPAddress + ' ' + modified_options + ' -p ' + str(port) + '" 2>&1 | stdbuf -o0 tee -a iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
+		iperf_status = self.command('stdbuf -o0 adb -s ' + device_id + ' shell "/data/local/tmp/iperf -c ' + EPC_Iperf_UE_IPAddress + ' ' + modified_options + ' -p ' + str(port) + '" 2>&1 | stdbuf -o0 tee -a iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
+		# TIMEOUT Case
+		if iperf_status < 0:
+			self.close()
+			message = 'iperf on UE (' + str(UE_IPAddress) + ') crashed due to TIMEOUT !'
+			logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+			self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
+			return
 		clientStatus = self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue, modified_options)
+		self.close()
 
-		# Launch iperf server on EPC side
+		# Kill iperf server on EPC side
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 		self.command('killall --signal SIGKILL iperf', self.EPCUserName, 5)
 		self.close()
+		# in case of failure, retrieve server log
 		if (clientStatus == -1):
 			time.sleep(1)
 			if (os.path.isfile('iperf_server_' + SSH.testCase_id + '_' + device_id + '.log')):
@@ -1129,15 +1130,9 @@ class SSHConnection():
 				result = re.search('iperf', str(self.ssh.before))
 				if result is None:
 					message = 'Neither iperf nor iperf3 installed on UE!'
-					lock.acquire()
 					logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
-					statusQueue.put(-1)
-					statusQueue.put(device_id)
-					statusQueue.put(UE_IPAddress)
-					statusQueue.put(message)
-					lock.release()
+					self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
 					return
-					#sys.exit(1)
 			else:
 				useIperf3 = True
 			# in case of iperf, UL has its own function
@@ -1179,8 +1174,13 @@ class SSHConnection():
 				clientStatus = 0
 				self.Iperf_analyzeV3Output(lock, UE_IPAddress, device_id, statusQueue)
 			else:
-				self.command('stdbuf -o0 iperf -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee -a iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
-
+				iperf_status = self.command('stdbuf -o0 iperf -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee -a iperf_' + SSH.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
+				if iperf_status < 0:
+					self.close()
+					message = 'iperf on UE (' + str(UE_IPAddress) + ') crashed due to TIMEOUT !'
+					logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+					self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
+					return
 				clientStatus = self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue, modified_options)
 			self.close()
 
@@ -1212,7 +1212,7 @@ class SSHConnection():
 			sys.exit(1)
 		ueIpStatus = self.GetAllUEIPAddresses()
 		if (ueIpStatus < 0):
-			self.CreateHtmlTestRow(self.ping_args, 'KO', UE_IP_ADDRESS_ISSUE)
+			self.CreateHtmlTestRow(self.iperf_args, 'KO', UE_IP_ADDRESS_ISSUE)
 			self.CreateHtmlFooter()
 			sys.exit(1)
 		multi_jobs = []
@@ -1373,6 +1373,15 @@ class SSHConnection():
 		msgLine = 0
 		foundSegFault = False
 		foundRealTimeIssue = False
+		rrcSetupRequest = 0
+		rrcSetupComplete = 0
+		rrcReleaseRequest = 0
+		rrcReconfigRequest = 0
+		rrcReconfigComplete = 0
+		rrcReestablishRequest = 0
+		rrcReestablishComplete = 0
+		rrcReestablishReject = 0
+		uciStatMsgCount = 0
 		for line in enb_log_file.readlines():
 			result = re.search('[Ss]egmentation [Ff]ault', str(line))
 			if result is not None:
@@ -1389,18 +1398,76 @@ class SSHConnection():
 			if foundAssertion and (msgLine < 3):
 				msgLine += 1
 				msgAssertion += str(line)
+			result = re.search('Generating RRCConnectionSetup', str(line))
+			if result is not None:
+				rrcSetupRequest += 1
+			result = re.search('RRCConnectionSetupComplete from UE', str(line))
+			if result is not None:
+				rrcSetupComplete += 1
+			result = re.search('Generate RRCConnectionRelease', str(line))
+			if result is not None:
+				rrcReleaseRequest += 1
+			result = re.search('Generate RRCConnectionReconfiguration', str(line))
+			if result is not None:
+				rrcReconfigRequest += 1
+			result = re.search('RRCConnectionReconfigurationComplete from UE rnti', str(line))
+			if result is not None:
+				rrcReconfigComplete += 1
+			result = re.search('RRCConnectionReestablishmentRequest', str(line))
+			if result is not None:
+				rrcReestablishRequest += 1
+			result = re.search('RRCConnectionReestablishmentComplete', str(line))
+			if result is not None:
+				rrcReestablishComplete += 1
+			result = re.search('RRCConnectionReestablishmentReject', str(line))
+			if result is not None:
+				rrcReestablishReject += 1
+			result = re.search('uci->stat', str(line))
+			if result is not None:
+				uciStatMsgCount += 1
 		enb_log_file.close()
+		self.htmleNBFailureMsg = ''
+		if uciStatMsgCount > 0:
+			statMsg = 'eNB showed ' + str(uciStatMsgCount) + ' uci->stat message(s)'
+			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += statMsg + '\n'
+		if rrcSetupRequest > 0 or rrcSetupComplete > 0:
+			rrcMsg = 'eNB requested ' + str(rrcSetupRequest) + ' RRC Connection Setup(s)'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += rrcMsg + '\n'
+			rrcMsg = ' -- ' + str(rrcSetupComplete) + ' were completed'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += rrcMsg + '\n'
+		if rrcReleaseRequest > 0:
+			rrcMsg = 'eNB requested ' + str(rrcReleaseRequest) + ' RRC Connection Release(s)'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += rrcMsg + '\n'
+		if rrcReconfigRequest > 0 or rrcReconfigComplete > 0:
+			rrcMsg = 'eNB requested ' + str(rrcReconfigRequest) + ' RRC Connection Reconfiguration(s)'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += rrcMsg + '\n'
+			rrcMsg = ' -- ' + str(rrcReconfigComplete) + ' were completed'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += rrcMsg + '\n'
+		if rrcReestablishRequest > 0 or rrcReestablishComplete > 0 or rrcReestablishReject > 0:
+			rrcMsg = 'eNB requested ' + str(rrcReestablishRequest) + ' RRC Connection Reestablishment(s)'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += rrcMsg + '\n'
+			rrcMsg = ' -- ' + str(rrcReestablishComplete) + ' were completed'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += rrcMsg + '\n'
+			rrcMsg = ' -- ' + str(rrcReestablishReject) + ' were rejected'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += rrcMsg + '\n'
 		if foundSegFault:
 			logging.debug('\u001B[1;37;41m eNB ended with a Segmentation Fault! \u001B[0m')
-			self.htmleNBFailureMsg = 'eNB ended with a Segmentation Fault!'
 			return ENB_PROCESS_SEG_FAULT
 		if foundAssertion:
 			logging.debug('\u001B[1;37;41m eNB ended with an assertion! \u001B[0m')
-			self.htmleNBFailureMsg = msgAssertion
+			self.htmleNBFailureMsg += msgAssertion
 			return ENB_PROCESS_ASSERTION
 		if foundRealTimeIssue:
 			logging.debug('\u001B[1;37;41m eNB faced real time issues! \u001B[0m')
-			self.htmleNBFailureMsg = 'eNB faced real time issues'
 			return ENB_PROCESS_REALTIME_ISSUE
 		return 0
 
@@ -1707,8 +1774,9 @@ class SSHConnection():
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >' + str(status)  + '</td>\n')
 			else:
 				self.htmlFile.write('        <td bgcolor = "orange" >' + str(status)  + '</td>\n')
-			if (processesStatus == ENB_PROCESS_ASSERTION):
+			if (len(str(self.htmleNBFailureMsg)) > 2):
 				self.htmlFile.write('        <td colspan=' + str(self.htmlUEConnected) + '><pre>' + self.htmleNBFailureMsg + '</pre></td>\n')
+				self.htmleNBFailureMsg = ''
 			else:
 				i = 0
 				while (i < self.htmlUEConnected):
