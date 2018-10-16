@@ -82,6 +82,7 @@ int main(int argc, char *argv[]) {
 		  SNRstop =-6.0;
 		  decoder_int16=1;
                   break;
+
 	        case 'h':
 		  printf("./polartest -s SNRstart -d SNRinc -f SNRstop -m [0=PBCH|1=DCI|2=UCI] -i iterations -l decoderListSize -a pathMetricAppr -q (use fixed point decoder)\n");
 		  exit(-1);
@@ -108,11 +109,14 @@ int main(int argc, char *argv[]) {
 	//Logging
 	time_t currentTime;
 	time (&currentTime);
-	char *folderName, fileName[512], currentTimeInfo[25];
+	char fileName[512], currentTimeInfo[25];
+	char folderName[] = ".";
 
+	/*
 	folderName=getenv("HOME");
 	strcat(folderName,"/Desktop/polartestResults");
-
+	*/
+	
 	#ifdef DEBUG_POLAR_TIMING
 	sprintf(fileName,"%s/TIMING_ListSize_%d_pmAppr_%d_Payload_%d_Itr_%d",folderName,decoderListSize,pathMetricAppr,testLength,iterations);
 	#else
@@ -122,15 +126,17 @@ int main(int argc, char *argv[]) {
 	strcat(fileName,currentTimeInfo);
 
 	//Create "~/Desktop/polartestResults" folder if it doesn't already exist.
+	/*
 	struct stat folder = {0};
 	if (stat(folderName, &folder) == -1) mkdir(folderName, S_IRWXU | S_IRWXG | S_IRWXO);
-
+	*/
+	
 	FILE* logFile;
-    logFile = fopen(fileName, "w");
-    if (logFile==NULL) {
-        fprintf(stderr,"[polartest.c] Problem creating file %s with fopen\n",fileName);
-        exit(-1);
-      }
+	logFile = fopen(fileName, "w");
+	if (logFile==NULL) {
+	  fprintf(stderr,"[polartest.c] Problem creating file %s with fopen\n",fileName);
+	  exit(-1);
+	}
 
 #ifdef DEBUG_POLAR_TIMING
     fprintf(logFile,",timeEncoderCRCByte[us],timeEncoderCRCBit[us],timeEncoderInterleaver[us],timeEncoderBitInsertion[us],timeEncoder1[us],timeEncoder2[us],timeEncoderRateMatching[us],timeEncoderByte2Bit[us]\n");
