@@ -422,6 +422,7 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
   LOG_D(PHY,"fh_if4p5_north_asynch_in: RU %d, frame %d, subframe %d\n",ru->idx,*frame,*subframe);
   do {   
     recv_IF4p5(ru, &frame_tx, &subframe_tx, &packet_type, &symbol_number);
+    //printf("income frame.subframe %d.%d, our frame.subframe %d.%d\n",frame_tx,subframe_tx,*frame,*subframe);
     if (ru->cmd == STOP_RU){
       LOG_E(PHY,"Got STOP_RU\n");
       pthread_mutex_lock(&proc->mutex_ru);
@@ -1082,7 +1083,7 @@ void do_ru_synch(RU_t *ru) {
     while ((ic>=0)&&(!oai_exit)) {
       // continuously read in frames, 1ms at a time, 
       // until we are done with the synchronization procedure
-      LOG_I(PHY,"ic %d\n",ic);
+      LOG_D(PHY,"ic %d\n",ic);
       for (i=0; i<ru->nb_rx; i++)
 	rxp2[i] = (void*)&dummy_rx[i][0];
       for (i=0;i<10;i++)
@@ -1879,12 +1880,14 @@ void *ru_thread_synch(void *arg) {
 				   &avg);
       LOG_I(PHY,"RU synch cnt %d: %d, val %d\n",cnt,ru->rx_offset,peak_val);
       cnt++;
-      if (ru->rx_offset >= 0) {
+      if (ru->rx_offset >= 0 && cnt>100) {
 
-	LOG_I(PHY,"Estimated peak_val %d dB, avg %d => timing offset %d\n",ru->rx_offset,dB_fixed(peak_val),ru->rx_offset);
+	LOG_I(PHY,"Estimated peak_val %d dB, avg %d => timing offset %d\n",dB_fixed(peak_val),dB_fixed(avg),ru->rx_offset);
 	ru->in_synch = 1;
+        LOG_M("ru_sync_rx.m","rurx",&ru->common.rxdata[0][0],LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti,1,1);
+        exit(-1);
 
-      } // symc_pos > 0
+      } // sync_pos > 0
       else //AssertFatal(cnt<1000,"Cannot find synch reference\n");
           { 
               if (cnt>200) {
