@@ -521,7 +521,7 @@ int wakeup_txfh(eNB_rxtx_proc_t *proc,PHY_VARS_eNB *eNB) {
       exit_fun( "error locking mutex_eNB" );
       return(-1);
     }
-
+printf("waking up for frame %d subframe %d for RU TX \n", proc->frame_tx, proc->subframe_tx);
       ++ru_proc->instance_cnt_eNBs;
       ru_proc->timestamp_tx = proc->timestamp_tx;
       ru_proc->subframe_tx  = proc->subframe_tx;

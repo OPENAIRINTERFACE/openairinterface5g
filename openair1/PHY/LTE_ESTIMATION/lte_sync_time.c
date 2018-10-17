@@ -682,7 +682,7 @@ int ru_sync_time(RU_t *ru,
   }
   avg0/=(length/4);
 
-  int dmrsoffset = 2*(frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples) + frame_parms->nb_prefix_samples0;
+  int dmrsoffset = 3*(frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples) + frame_parms->nb_prefix_samples0;
   
   if ((int64_t)maxlev0 > (5*avg0)) {*lev = maxlev0; *avg=avg0; return((length+maxpos0-dmrsoffset)%length);}
 

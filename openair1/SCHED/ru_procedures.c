@@ -101,6 +101,7 @@ void feptx0(RU_t *ru,int slot) {
 		  "ru->generate_dmrs_sync should not be set, frame_type %d, is_slave %d\n",
 		  fp->frame_type,ru->is_slave);
 */
+
       if (ru->generate_dmrs_sync == 1 && slot == 0 && subframe == 1 && aa==0) {
 	int32_t dmrs[ru->frame_parms.ofdm_symbol_size*14] __attribute__((aligned(32)));
         int32_t *dmrsp[2] = {&dmrs[(3-ru->frame_parms.Ncp)*ru->frame_parms.ofdm_symbol_size],NULL};
@@ -128,12 +129,18 @@ void feptx0(RU_t *ru,int slot) {
                         1,
                         fp);
       */
-      } else {
-      normal_prefix_mod(&ru->common.txdataF_BF[aa][slot*slot_sizeF],
-			(int*)&ru->common.txdata[aa][slot_offset],
-			7,
-			fp);
-     }  
+       normal_prefix_mod(&ru->common.txdataF_BF[aa][slot*slot_sizeF],
+                        (int*)&ru->common.txdata[aa][slot_offset],
+                        3,
+                        fp);
+      }
+      else {
+       normal_prefix_mod(&ru->common.txdataF_BF[aa][slot*slot_sizeF],
+                        (int*)&ru->common.txdata[aa][slot_offset],
+                        7,
+                        fp);
+
+      } 
   }
    /* 
     len = fp->samples_per_tti>>1;
