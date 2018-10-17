@@ -43,26 +43,26 @@
 
 
 //#include for NB-IoT-------------------
-#include "RRCConnectionRequest-NB.h"
-#include "BCCH-DL-SCH-Message-NB.h"
-#include "UL-CCCH-Message-NB.h"
-#include "UL-DCCH-Message-NB.h"
-#include "DL-CCCH-Message-NB.h"
-#include "DL-DCCH-Message-NB.h"
-#include "EstablishmentCause-NB-r13.h"
-#include "RRCConnectionSetup-NB.h"
-#include "SRB-ToAddModList-NB-r13.h"
-#include "DRB-ToAddModList-NB-r13.h"
+#include "LTE_RRCConnectionRequest-NB.h"
+#include "LTE_BCCH-DL-SCH-Message-NB.h"
+#include "LTE_UL-CCCH-Message-NB.h"
+#include "LTE_UL-DCCH-Message-NB.h"
+#include "LTE_DL-CCCH-Message-NB.h"
+#include "LTE_DL-DCCH-Message-NB.h"
+#include "LTE_EstablishmentCause-NB-r13.h"
+#include "LTE_RRCConnectionSetup-NB.h"
+#include "LTE_SRB-ToAddModList-NB-r13.h"
+#include "LTE_DRB-ToAddModList-NB-r13.h"
 #include "RRC/LTE/defs_NB_IoT.h"
-#include "RRCConnectionSetupComplete-NB.h"
-#include "RRCConnectionReconfigurationComplete-NB.h"
-#include "RRCConnectionReconfiguration-NB.h"
-#include "MasterInformationBlock-NB.h"
-#include "SystemInformation-NB.h"
-#include "SystemInformationBlockType1.h"
-#include "SIB-Type-NB-r13.h"
-#include "RRCConnectionResume-NB.h"
-#include "RRCConnectionReestablishment-NB.h"
+#include "LTE_RRCConnectionSetupComplete-NB.h"
+#include "LTE_RRCConnectionReconfigurationComplete-NB.h"
+#include "LTE_RRCConnectionReconfiguration-NB.h"
+#include "LTE_MasterInformationBlock-NB.h"
+#include "LTE_SystemInformation-NB.h"
+#include "LTE_SystemInformationBlockType1.h"
+#include "LTE_SIB-Type-NB-r13.h"
+#include "LTE_RRCConnectionResume-NB.h"
+#include "LTE_RRCConnectionReestablishment-NB.h"
 #include "../defs_NB_IoT.h"
 //----------------------------------------
 
@@ -84,7 +84,7 @@ uint8_t do_MIB_NB_IoT(
     uint32_t hyper_frame)
 {
   asn_enc_rval_t enc_rval;
-  BCCH_BCH_Message_NB_t *mib_NB_IoT = &(carrier->mib_NB_IoT);
+  LTE_BCCH_BCH_Message_NB_t *mib_NB_IoT = &(carrier->mib_NB_IoT);
 
   /*
    * systemFrameNumber-MSB: (TS 36.331 pag 576)
@@ -123,14 +123,14 @@ uint8_t do_MIB_NB_IoT(
   mib_NB_IoT->message.ab_Enabled_r13 = 0;
 
   //to be decided
-  mib_NB_IoT->message.operationModeInfo_r13.present = MasterInformationBlock_NB__operationModeInfo_r13_PR_inband_SamePCI_r13;
+  mib_NB_IoT->message.operationModeInfo_r13.present = LTE_MasterInformationBlock_NB__operationModeInfo_r13_PR_inband_SamePCI_r13;
   mib_NB_IoT->message.operationModeInfo_r13.choice.inband_SamePCI_r13.eutra_CRS_SequenceInfo_r13 = 0;
 
   printf("[MIB] Initialization of frame information,sfn_MSB %x, hsfn_LSB %x\n",
          (uint32_t)sfn_MSB,
 		 (uint32_t)hsfn_LSB);
 
-  enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_BCH_Message_NB,
+  enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_BCCH_BCH_Message_NB,
                                    NULL,
                                    (void*)mib_NB_IoT,
                                    carrier->MIB_NB_IoT,
@@ -155,16 +155,16 @@ uint8_t do_SIB1_NB_IoT(uint8_t Mod_id, int CC_id,
 				uint32_t frame
                )
 {
-  BCCH_DL_SCH_Message_NB_t *bcch_message= &(carrier->siblock1_NB_IoT);
-  SystemInformationBlockType1_NB_t **sib1_NB_IoT= &(carrier->sib1_NB_IoT);
+  LTE_BCCH_DL_SCH_Message_NB_t *bcch_message= &(carrier->siblock1_NB_IoT);
+  LTE_SystemInformationBlockType1_NB_t **sib1_NB_IoT= &(carrier->sib1_NB_IoT);
   
 
   asn_enc_rval_t enc_rval;
 
-  PLMN_IdentityInfo_NB_r13_t PLMN_identity_info_NB_IoT;
-  MCC_MNC_Digit_t dummy_mcc[3],dummy_mnc[3];
-  SchedulingInfo_NB_r13_t *schedulingInfo_NB_IoT;
-  SIB_Type_NB_r13_t *sib_type_NB_IoT;
+  LTE_PLMN_IdentityInfo_NB_r13_t PLMN_identity_info_NB_IoT;
+  LTE_MCC_MNC_Digit_t dummy_mcc[3],dummy_mnc[3];
+  LTE_SchedulingInfo_NB_r13_t *schedulingInfo_NB_IoT;
+  LTE_SIB_Type_NB_r13_t *sib_type_NB_IoT;
 
 
   long* attachWithoutPDN_Connectivity = NULL;
@@ -175,9 +175,9 @@ uint8_t do_SIB1_NB_IoT(uint8_t Mod_id, int CC_id,
    eutraControlRegionSize = CALLOC(1,sizeof(long));
   long systemInfoValueTagSI = 0;
 
-  memset(bcch_message,0,sizeof(BCCH_DL_SCH_Message_NB_t));
-  bcch_message->message.present = BCCH_DL_SCH_MessageType_NB_PR_c1;
-  bcch_message->message.choice.c1.present = BCCH_DL_SCH_MessageType_NB__c1_PR_systemInformationBlockType1_r13;
+  memset(bcch_message,0,sizeof(LTE_BCCH_DL_SCH_Message_NB_t));
+  bcch_message->message.present = LTE_BCCH_DL_SCH_MessageType_NB_PR_c1;
+  bcch_message->message.choice.c1.present = LTE_BCCH_DL_SCH_MessageType_NB__c1_PR_systemInformationBlockType1_r13;
 
   //allocation
   *sib1_NB_IoT = &bcch_message->message.choice.c1.choice.systemInformationBlockType1_r13;
@@ -195,7 +195,7 @@ uint8_t do_SIB1_NB_IoT(uint8_t Mod_id, int CC_id,
   (*sib1_NB_IoT)->hyperSFN_MSB_r13.size = 1;
   (*sib1_NB_IoT)->hyperSFN_MSB_r13.bits_unused = 0;
 
-  memset(&PLMN_identity_info_NB_IoT,0,sizeof(PLMN_IdentityInfo_NB_r13_t));
+  memset(&PLMN_identity_info_NB_IoT,0,sizeof(LTE_PLMN_IdentityInfo_NB_r13_t));
 
   PLMN_identity_info_NB_IoT.plmn_Identity_r13.mcc = CALLOC(1,sizeof(*PLMN_identity_info_NB_IoT.plmn_Identity_r13.mcc));
   memset(PLMN_identity_info_NB_IoT.plmn_Identity_r13.mcc,0,sizeof(*PLMN_identity_info_NB_IoT.plmn_Identity_r13.mcc));
@@ -251,7 +251,7 @@ uint8_t do_SIB1_NB_IoT(uint8_t Mod_id, int CC_id,
   }
 
   //still set to "notReserved" as in the previous case
-  PLMN_identity_info_NB_IoT.cellReservedForOperatorUse_r13=PLMN_IdentityInfo_NB_r13__cellReservedForOperatorUse_r13_notReserved;
+  PLMN_identity_info_NB_IoT.cellReservedForOperatorUse_r13=LTE_PLMN_IdentityInfo_NB_r13__cellReservedForOperatorUse_r13_notReserved;
 
   *attachWithoutPDN_Connectivity = 0;
   PLMN_identity_info_NB_IoT.attachWithoutPDN_Connectivity_r13 = attachWithoutPDN_Connectivity;
@@ -289,16 +289,16 @@ uint8_t do_SIB1_NB_IoT(uint8_t Mod_id, int CC_id,
   (*sib1_NB_IoT)->cellAccessRelatedInfo_r13.cellIdentity_r13.bits_unused=4;
 
   //Still set to "notBarred" as in the previous case
-  (*sib1_NB_IoT)->cellAccessRelatedInfo_r13.cellBarred_r13=SystemInformationBlockType1_NB__cellAccessRelatedInfo_r13__cellBarred_r13_notBarred;
+  (*sib1_NB_IoT)->cellAccessRelatedInfo_r13.cellBarred_r13=LTE_SystemInformationBlockType1_NB__cellAccessRelatedInfo_r13__cellBarred_r13_notBarred;
 
   //Still Set to "notAllowed" like in the previous case
-  (*sib1_NB_IoT)->cellAccessRelatedInfo_r13.intraFreqReselection_r13=SystemInformationBlockType1_NB__cellAccessRelatedInfo_r13__intraFreqReselection_r13_notAllowed;
+  (*sib1_NB_IoT)->cellAccessRelatedInfo_r13.intraFreqReselection_r13=LTE_SystemInformationBlockType1_NB__cellAccessRelatedInfo_r13__intraFreqReselection_r13_notAllowed;
 
 
   (*sib1_NB_IoT)->cellSelectionInfo_r13.q_RxLevMin_r13=-65; //which value?? TS 36.331 V14.2.1 pag. 589
   (*sib1_NB_IoT)->cellSelectionInfo_r13.q_QualMin_r13 = 0; //FIXME new parameter for SIB1-NB, not present in SIB1 (for cell reselection but if not used the UE should apply the default value)
 
-  (*sib1_NB_IoT)->p_Max_r13 = CALLOC(1, sizeof(P_Max_t));
+  (*sib1_NB_IoT)->p_Max_r13 = CALLOC(1, sizeof(LTE_P_Max_t));
   *((*sib1_NB_IoT)->p_Max_r13) = 23;
 
   //FIXME
@@ -318,8 +318,8 @@ uint8_t do_SIB1_NB_IoT(uint8_t Mod_id, int CC_id,
        */
 
 
-   (*sib1_NB_IoT)->downlinkBitmap_r13 = CALLOC(1, sizeof(struct DL_Bitmap_NB_r13));
-   ((*sib1_NB_IoT)->downlinkBitmap_r13)->present= DL_Bitmap_NB_r13_PR_NOTHING;
+   (*sib1_NB_IoT)->downlinkBitmap_r13 = CALLOC(1, sizeof(struct LTE_DL_Bitmap_NB_r13));
+   ((*sib1_NB_IoT)->downlinkBitmap_r13)->present= LTE_DL_Bitmap_NB_r13_PR_NOTHING;
 
    *eutraControlRegionSize = 1;
    (*sib1_NB_IoT)->eutraControlRegionSize_r13 = eutraControlRegionSize;
@@ -328,22 +328,22 @@ uint8_t do_SIB1_NB_IoT(uint8_t Mod_id, int CC_id,
    *nrs_CRS_PowerOffset= 0;
    (*sib1_NB_IoT)->nrs_CRS_PowerOffset_r13 = nrs_CRS_PowerOffset;
 
-   schedulingInfo_NB_IoT = (SchedulingInfo_NB_r13_t*) malloc (3*sizeof(SchedulingInfo_NB_r13_t));
-   sib_type_NB_IoT = (SIB_Type_NB_r13_t *) malloc (3*sizeof(SIB_Type_NB_r13_t));
+   schedulingInfo_NB_IoT = (LTE_SchedulingInfo_NB_r13_t*) malloc (3*sizeof(LTE_SchedulingInfo_NB_r13_t));
+   sib_type_NB_IoT = (LTE_SIB_Type_NB_r13_t *) malloc (3*sizeof(LTE_SIB_Type_NB_r13_t));
 
-  memset(&schedulingInfo_NB_IoT[0],0,sizeof(SchedulingInfo_NB_r13_t));
-  memset(&schedulingInfo_NB_IoT[1],0,sizeof(SchedulingInfo_NB_r13_t));
-  memset(&schedulingInfo_NB_IoT[2],0,sizeof(SchedulingInfo_NB_r13_t));    
-  memset(&sib_type_NB_IoT[0],0,sizeof(SIB_Type_NB_r13_t));
-  memset(&sib_type_NB_IoT[1],0,sizeof(SIB_Type_NB_r13_t));
-  memset(&sib_type_NB_IoT[2],0,sizeof(SIB_Type_NB_r13_t));
+  memset(&schedulingInfo_NB_IoT[0],0,sizeof(LTE_SchedulingInfo_NB_r13_t));
+  memset(&schedulingInfo_NB_IoT[1],0,sizeof(LTE_SchedulingInfo_NB_r13_t));
+  memset(&schedulingInfo_NB_IoT[2],0,sizeof(LTE_SchedulingInfo_NB_r13_t));    
+  memset(&sib_type_NB_IoT[0],0,sizeof(LTE_SIB_Type_NB_r13_t));
+  memset(&sib_type_NB_IoT[1],0,sizeof(LTE_SIB_Type_NB_r13_t));
+  memset(&sib_type_NB_IoT[2],0,sizeof(LTE_SIB_Type_NB_r13_t));
 
 
   // Now, follow the scheduler SIB configuration
   // There is only one sib2+sib3 common setting
-  schedulingInfo_NB_IoT[0].si_Periodicity_r13=SchedulingInfo_NB_r13__si_Periodicity_r13_rf4096;
-  schedulingInfo_NB_IoT[0].si_RepetitionPattern_r13=SchedulingInfo_NB_r13__si_RepetitionPattern_r13_every2ndRF; //This Indicates the starting radio frames within the SI window used for SI message transmission.
-  schedulingInfo_NB_IoT[0].si_TB_r13= SchedulingInfo_NB_r13__si_TB_r13_b680;//208 bits
+  schedulingInfo_NB_IoT[0].si_Periodicity_r13=LTE_SchedulingInfo_NB_r13__si_Periodicity_r13_rf4096;
+  schedulingInfo_NB_IoT[0].si_RepetitionPattern_r13=LTE_SchedulingInfo_NB_r13__si_RepetitionPattern_r13_every2ndRF; //This Indicates the starting radio frames within the SI window used for SI message transmission.
+  schedulingInfo_NB_IoT[0].si_TB_r13= LTE_SchedulingInfo_NB_r13__si_TB_r13_b680;//208 bits
   
 
   // This is for SIB2/3
@@ -351,7 +351,7 @@ uint8_t do_SIB1_NB_IoT(uint8_t Mod_id, int CC_id,
     *  in the first SystemInformation message
     * listed in the schedulingInfoList list.
     * */
-  sib_type_NB_IoT[0]=SIB_Type_NB_r13_sibType3_NB_r13;
+  sib_type_NB_IoT[0]=LTE_SIB_Type_NB_r13_sibType3_NB_r13;
 
   ASN_SEQUENCE_ADD(&schedulingInfo_NB_IoT[0].sib_MappingInfo_r13.list,&sib_type_NB_IoT[0]);
   ASN_SEQUENCE_ADD(&(*sib1_NB_IoT)->schedulingInfoList_r13.list,&schedulingInfo_NB_IoT[0]);
@@ -369,7 +369,7 @@ uint8_t do_SIB1_NB_IoT(uint8_t Mod_id, int CC_id,
   }
 
   //FIXME which value chose for the following parameter
-  (*sib1_NB_IoT)->si_WindowLength_r13=SystemInformationBlockType1_NB__si_WindowLength_r13_ms160;
+  (*sib1_NB_IoT)->si_WindowLength_r13=LTE_SystemInformationBlockType1_NB__si_WindowLength_r13_ms160;
   (*sib1_NB_IoT)->si_RadioFrameOffset_r13= 0;
 
   /*In Nb-IoT change/update of specific SI message can additionally be indicated by a SI message specific value tag
@@ -377,17 +377,17 @@ uint8_t do_SIB1_NB_IoT(uint8_t Mod_id, int CC_id,
    *contained in systemInfoValueTagList_r13
    **/
   //FIXME correct?
-  (*sib1_NB_IoT)->systemInfoValueTagList_r13 = CALLOC(1, sizeof(struct SystemInfoValueTagList_NB_r13));
+  (*sib1_NB_IoT)->systemInfoValueTagList_r13 = CALLOC(1, sizeof(struct LTE_SystemInfoValueTagList_NB_r13));
   asn_set_empty(&(*sib1_NB_IoT)->systemInfoValueTagList_r13->list);
   ASN_SEQUENCE_ADD(&(*sib1_NB_IoT)->systemInfoValueTagList_r13->list,&systemInfoValueTagSI);
 
 
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-     xer_fprint(stdout, &asn_DEF_BCCH_DL_SCH_Message_NB, (void*)bcch_message);
+     xer_fprint(stdout, &asn_DEF_LTE_BCCH_DL_SCH_Message_NB, (void*)bcch_message);
   }
 
 
-  enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_DL_SCH_Message_NB,
+  enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_BCCH_DL_SCH_Message_NB,
                                    NULL,
                                    (void*)bcch_message,
                                    carrier->SIB1_NB_IoT,
@@ -417,16 +417,16 @@ uint8_t do_SIB23_NB_IoT(uint8_t Mod_id,
                         rrc_eNB_carrier_data_NB_IoT_t *carrier,//MP: this is already a carrier[CC_id]
                         NbIoTRrcConfigurationReq *configuration ) //openair2/COMMON/rrc_messages_types.h
 {
-  struct SystemInformation_NB_r13_IEs__sib_TypeAndInfo_r13__Member *sib2_NB_part;
-  struct SystemInformation_NB_r13_IEs__sib_TypeAndInfo_r13__Member *sib3_NB_part;
+  struct LTE_SystemInformation_NB_r13_IEs__sib_TypeAndInfo_r13__Member *sib2_NB_part;
+  struct LTE_SystemInformation_NB_r13_IEs__sib_TypeAndInfo_r13__Member *sib3_NB_part;
 
-  BCCH_DL_SCH_Message_NB_t *bcch_message = &(carrier->systemInformation_NB_IoT); //is the systeminformation-->BCCH_DL_SCH_Message_NB
-  SystemInformationBlockType2_NB_r13_t *sib2_NB_IoT;
-  SystemInformationBlockType3_NB_r13_t *sib3_NB_IoT;
+  LTE_BCCH_DL_SCH_Message_NB_t *bcch_message = &(carrier->systemInformation_NB_IoT); //is the systeminformation-->BCCH_DL_SCH_Message_NB
+  LTE_SystemInformationBlockType2_NB_r13_t *sib2_NB_IoT;
+  LTE_SystemInformationBlockType3_NB_r13_t *sib3_NB_IoT;
 
   asn_enc_rval_t enc_rval;
-  RACH_Info_NB_r13_t rach_Info_NB_IoT;
-  NPRACH_Parameters_NB_r13_t *nprach_parameters;
+  LTE_RACH_Info_NB_r13_t rach_Info_NB_IoT;
+  LTE_NPRACH_Parameters_NB_r13_t *nprach_parameters;
 
   //optional
   long *connEstFailOffset = NULL;
@@ -435,16 +435,16 @@ uint8_t do_SIB23_NB_IoT(uint8_t Mod_id,
 //  RSRP_ThresholdsNPRACH_InfoList_NB_r13_t *rsrp_ThresholdsPrachInfoList;
 //  RSRP_Range_t rsrp_range;
 
-  ACK_NACK_NumRepetitions_NB_r13_t ack_nack_repetition;
-  struct NPUSCH_ConfigCommon_NB_r13__dmrs_Config_r13 *dmrs_config;
-  struct DL_GapConfig_NB_r13	*dl_Gap;
+  LTE_ACK_NACK_NumRepetitions_NB_r13_t ack_nack_repetition;
+  struct LTE_NPUSCH_ConfigCommon_NB_r13__dmrs_Config_r13 *dmrs_config;
+  struct LTE_DL_GapConfig_NB_r13	*dl_Gap;
 
   long *srs_SubframeConfig;
   srs_SubframeConfig= CALLOC(1, sizeof(long));
 
 
   if (bcch_message) {
-    memset(bcch_message,0,sizeof(BCCH_DL_SCH_Message_NB_t));
+    memset(bcch_message,0,sizeof(LTE_BCCH_DL_SCH_Message_NB_t));
   } else {
     LOG_E(RRC,"[NB-IoT %d] BCCH_MESSAGE_NB is null, exiting\n", Mod_id);
     exit(-1);
@@ -464,13 +464,13 @@ uint8_t do_SIB23_NB_IoT(uint8_t Mod_id,
 
   LOG_I(RRC,"[NB-IoT %d] Configuration SIB2/3\n", Mod_id);
 
-  sib2_NB_part = CALLOC(1,sizeof(struct SystemInformation_NB_r13_IEs__sib_TypeAndInfo_r13__Member));
-  sib3_NB_part = CALLOC(1,sizeof(struct SystemInformation_NB_r13_IEs__sib_TypeAndInfo_r13__Member));
-  memset(sib2_NB_part,0,sizeof(struct SystemInformation_NB_r13_IEs__sib_TypeAndInfo_r13__Member));
-  memset(sib3_NB_part,0,sizeof(struct SystemInformation_NB_r13_IEs__sib_TypeAndInfo_r13__Member));
+  sib2_NB_part = CALLOC(1,sizeof(struct LTE_SystemInformation_NB_r13_IEs__sib_TypeAndInfo_r13__Member));
+  sib3_NB_part = CALLOC(1,sizeof(struct LTE_SystemInformation_NB_r13_IEs__sib_TypeAndInfo_r13__Member));
+  memset(sib2_NB_part,0,sizeof(struct LTE_SystemInformation_NB_r13_IEs__sib_TypeAndInfo_r13__Member));
+  memset(sib3_NB_part,0,sizeof(struct LTE_SystemInformation_NB_r13_IEs__sib_TypeAndInfo_r13__Member));
 
-  sib2_NB_part->present = SystemInformation_NB_r13_IEs__sib_TypeAndInfo_r13__Member_PR_sib2_r13;
-  sib3_NB_part->present = SystemInformation_NB_r13_IEs__sib_TypeAndInfo_r13__Member_PR_sib3_r13;
+  sib2_NB_part->present = LTE_SystemInformation_NB_r13_IEs__sib_TypeAndInfo_r13__Member_PR_sib2_r13;
+  sib3_NB_part->present = LTE_SystemInformation_NB_r13_IEs__sib_TypeAndInfo_r13__Member_PR_sib3_r13;
 
   //may bug if not correct allocation of memory
   carrier->sib2_NB_IoT = &sib2_NB_part->choice.sib2_r13;
@@ -478,11 +478,11 @@ uint8_t do_SIB23_NB_IoT(uint8_t Mod_id,
   sib2_NB_IoT = carrier->sib2_NB_IoT;
   sib3_NB_IoT = carrier->sib3_NB_IoT;
 
-  nprach_parameters = (NPRACH_Parameters_NB_r13_t *) malloc (3*sizeof(NPRACH_Parameters_NB_r13_t));
+  nprach_parameters = (LTE_NPRACH_Parameters_NB_r13_t *) malloc (3*sizeof(LTE_NPRACH_Parameters_NB_r13_t));
 
-  memset(&nprach_parameters[0],0,sizeof(NPRACH_Parameters_NB_r13_t));
-  memset(&nprach_parameters[1],0,sizeof(NPRACH_Parameters_NB_r13_t));
-  memset(&nprach_parameters[2],0,sizeof(NPRACH_Parameters_NB_r13_t));
+  memset(&nprach_parameters[0],0,sizeof(LTE_NPRACH_Parameters_NB_r13_t));
+  memset(&nprach_parameters[1],0,sizeof(LTE_NPRACH_Parameters_NB_r13_t));
+  memset(&nprach_parameters[2],0,sizeof(LTE_NPRACH_Parameters_NB_r13_t));
 
 /// SIB2-NB-----------------------------------------
 
@@ -582,7 +582,7 @@ uint8_t do_SIB23_NB_IoT(uint8_t Mod_id,
 
 
   /*OPTIONAL*/
-  dmrs_config = CALLOC(1,sizeof(struct NPUSCH_ConfigCommon_NB_r13__dmrs_Config_r13));
+  dmrs_config = CALLOC(1,sizeof(struct LTE_NPUSCH_ConfigCommon_NB_r13__dmrs_Config_r13));
   dmrs_config->threeTone_CyclicShift_r13 = configuration->npusch_threeTone_CyclicShift_r13;
   dmrs_config->sixTone_CyclicShift_r13 = configuration->npusch_sixTone_CyclicShift_r13;
 
@@ -606,7 +606,7 @@ uint8_t do_SIB23_NB_IoT(uint8_t Mod_id,
 
 
   //dl_GAP---------------------------------------------------------------------------------/*OPTIONAL*/
-  dl_Gap = CALLOC(1,sizeof(struct DL_GapConfig_NB_r13));
+  dl_Gap = CALLOC(1,sizeof(struct LTE_DL_GapConfig_NB_r13));
   dl_Gap->dl_GapDurationCoeff_r13= configuration-> dl_GapDurationCoeff_NB;
   dl_Gap->dl_GapPeriodicity_r13= configuration->dl_GapPeriodicity_NB;
   dl_Gap->dl_GapThreshold_r13= configuration->dl_GapThreshold_NB;
@@ -631,14 +631,14 @@ uint8_t do_SIB23_NB_IoT(uint8_t Mod_id,
   sib2_NB_IoT->freqInfo_r13.additionalSpectrumEmission_r13 = 1;
   sib2_NB_IoT->freqInfo_r13.ul_CarrierFreq_r13 = NULL; /*OPTIONAL*/
 
-  sib2_NB_IoT->timeAlignmentTimerCommon_r13=TimeAlignmentTimer_infinity;//TimeAlignmentTimer_sf5120;
+  sib2_NB_IoT->timeAlignmentTimerCommon_r13=LTE_TimeAlignmentTimer_infinity;//TimeAlignmentTimer_sf5120;
 
   /*OPTIONAL*/
   sib2_NB_IoT->multiBandInfoList_r13 = NULL;
 
 /// SIB3-NB-------------------------------------------------------
 
-  sib3_NB_IoT->cellReselectionInfoCommon_r13.q_Hyst_r13=SystemInformationBlockType3_NB_r13__cellReselectionInfoCommon_r13__q_Hyst_r13_dB4;
+  sib3_NB_IoT->cellReselectionInfoCommon_r13.q_Hyst_r13=LTE_SystemInformationBlockType3_NB_r13__cellReselectionInfoCommon_r13__q_Hyst_r13_dB4;
   sib3_NB_IoT->cellReselectionServingFreqInfo_r13.s_NonIntraSearch_r13=0; //or define in configuration?
 
   sib3_NB_IoT->intraFreqCellReselectionInfo_r13.q_RxLevMin_r13 = -70;
@@ -656,10 +656,10 @@ uint8_t do_SIB23_NB_IoT(uint8_t Mod_id,
 
 
 ///BCCH message (generate the SI message)
-  bcch_message->message.present = BCCH_DL_SCH_MessageType_NB_PR_c1;
-  bcch_message->message.choice.c1.present = BCCH_DL_SCH_MessageType_NB__c1_PR_systemInformation_r13;
+  bcch_message->message.present = LTE_BCCH_DL_SCH_MessageType_NB_PR_c1;
+  bcch_message->message.choice.c1.present = LTE_BCCH_DL_SCH_MessageType_NB__c1_PR_systemInformation_r13;
 
-  bcch_message->message.choice.c1.choice.systemInformation_r13.criticalExtensions.present = SystemInformation_NB__criticalExtensions_PR_systemInformation_r13;
+  bcch_message->message.choice.c1.choice.systemInformation_r13.criticalExtensions.present = LTE_SystemInformation_NB__criticalExtensions_PR_systemInformation_r13;
   bcch_message->message.choice.c1.choice.systemInformation_r13.criticalExtensions.choice.systemInformation_r13.sib_TypeAndInfo_r13.list.count=0;
 
   ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation_r13.criticalExtensions.choice.systemInformation_r13.sib_TypeAndInfo_r13.list,
@@ -668,9 +668,9 @@ uint8_t do_SIB23_NB_IoT(uint8_t Mod_id,
                    sib3_NB_part);
 
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-     xer_fprint(stdout, &asn_DEF_BCCH_DL_SCH_Message_NB, (void*)bcch_message);
+     xer_fprint(stdout, &asn_DEF_LTE_BCCH_DL_SCH_Message_NB, (void*)bcch_message);
   }
-  enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_DL_SCH_Message_NB,
+  enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_BCCH_DL_SCH_Message_NB,
                                    NULL,
                                    (void*)bcch_message,
                                    carrier->SIB23_NB_IoT,
@@ -704,8 +704,8 @@ uint8_t do_RRCConnectionSetup_NB_IoT(
   uint8_t*                   const buffer, //Srb0.Tx_buffer.Payload
   const uint8_t                    Transaction_id,
   const NB_IoT_DL_FRAME_PARMS* const frame_parms, // maybe not used
-  SRB_ToAddModList_NB_r13_t**             SRB_configList_NB_IoT, //for both SRB1bis and SRB1
-  struct PhysicalConfigDedicated_NB_r13** physicalConfigDedicated_NB_IoT
+  LTE_SRB_ToAddModList_NB_r13_t**             SRB_configList_NB_IoT, //for both SRB1bis and SRB1
+  struct LTE_PhysicalConfigDedicated_NB_r13** physicalConfigDedicated_NB_IoT
 )
 
 {
@@ -725,26 +725,26 @@ uint8_t do_RRCConnectionSetup_NB_IoT(
 // struct SRB_ToAddMod_NB_r13__rlc_Config_r13* SRB1_rlc_config_NB = NULL;
 // struct SRB_ToAddMod_NB_r13__logicalChannelConfig_r13* SRB1_lchan_config_NB = NULL;
 
- struct SRB_ToAddMod_NB_r13* SRB1bis_config_NB_IoT = NULL;
- struct SRB_ToAddMod_NB_r13__rlc_Config_r13* SRB1bis_rlc_config_NB_IoT = NULL;
- struct SRB_ToAddMod_NB_r13__logicalChannelConfig_r13* SRB1bis_lchan_config_NB_IoT = NULL;
+ struct LTE_SRB_ToAddMod_NB_r13* SRB1bis_config_NB_IoT = NULL;
+ struct LTE_SRB_ToAddMod_NB_r13__rlc_Config_r13* SRB1bis_rlc_config_NB_IoT = NULL;
+ struct LTE_SRB_ToAddMod_NB_r13__logicalChannelConfig_r13* SRB1bis_lchan_config_NB_IoT = NULL;
 
  //No UL_specific parameters for NB-IoT in LogicalChanelConfig-NB
 
- PhysicalConfigDedicated_NB_r13_t* physicalConfigDedicated2_NB_IoT = NULL;
- DL_CCCH_Message_NB_t dl_ccch_msg_NB_IoT;
- RRCConnectionSetup_NB_t* rrcConnectionSetup_NB_IoT = NULL;
+ LTE_PhysicalConfigDedicated_NB_r13_t* physicalConfigDedicated2_NB_IoT = NULL;
+ LTE_DL_CCCH_Message_NB_t dl_ccch_msg_NB_IoT;
+ LTE_RRCConnectionSetup_NB_t* rrcConnectionSetup_NB_IoT = NULL;
 
- memset((void *)&dl_ccch_msg_NB_IoT,0,sizeof(DL_CCCH_Message_NB_t));
- dl_ccch_msg_NB_IoT.message.present = DL_CCCH_MessageType_NB_PR_c1;
- dl_ccch_msg_NB_IoT.message.choice.c1.present = DL_CCCH_MessageType_NB__c1_PR_rrcConnectionSetup_r13;
+ memset((void *)&dl_ccch_msg_NB_IoT,0,sizeof(LTE_DL_CCCH_Message_NB_t));
+ dl_ccch_msg_NB_IoT.message.present = LTE_DL_CCCH_MessageType_NB_PR_c1;
+ dl_ccch_msg_NB_IoT.message.choice.c1.present = LTE_DL_CCCH_MessageType_NB__c1_PR_rrcConnectionSetup_r13;
  rrcConnectionSetup_NB_IoT = &dl_ccch_msg_NB_IoT.message.choice.c1.choice.rrcConnectionSetup_r13;
 
 
  if (*SRB_configList_NB_IoT) {
    free(*SRB_configList_NB_IoT);
  }
- *SRB_configList_NB_IoT = CALLOC(1,sizeof(SRB_ToAddModList_NB_r13_t));
+ *SRB_configList_NB_IoT = CALLOC(1,sizeof(LTE_SRB_ToAddModList_NB_r13_t));
 
 /// SRB1--------------------
  {
@@ -796,18 +796,18 @@ uint8_t do_RRCConnectionSetup_NB_IoT(
 		 SRB1bis_rlc_config_NB_IoT = CALLOC(1,sizeof(*SRB1bis_rlc_config_NB_IoT));
 		 SRB1bis_config_NB_IoT->rlc_Config_r13   = SRB1bis_rlc_config_NB_IoT;
 
-		 SRB1bis_rlc_config_NB_IoT->present = SRB_ToAddMod_NB_r13__rlc_Config_r13_PR_explicitValue;
-		 SRB1bis_rlc_config_NB_IoT->choice.explicitValue.present=RLC_Config_NB_r13_PR_am;//MP: the only possible RLC config in NB_IoT
+		 SRB1bis_rlc_config_NB_IoT->present = LTE_SRB_ToAddMod_NB_r13__rlc_Config_r13_PR_explicitValue;
+		 SRB1bis_rlc_config_NB_IoT->choice.explicitValue.present=LTE_RLC_Config_NB_r13_PR_am;//MP: the only possible RLC config in NB_IoT
 
-		 SRB1bis_rlc_config_NB_IoT->choice.explicitValue.choice.am.ul_AM_RLC_r13.t_PollRetransmit_r13 = T_PollRetransmit_NB_r13_ms25000;
-		 SRB1bis_rlc_config_NB_IoT->choice.explicitValue.choice.am.ul_AM_RLC_r13.maxRetxThreshold_r13 = UL_AM_RLC_NB_r13__maxRetxThreshold_r13_t8;
+		 SRB1bis_rlc_config_NB_IoT->choice.explicitValue.choice.am.ul_AM_RLC_r13.t_PollRetransmit_r13 = LTE_T_PollRetransmit_NB_r13_ms25000;
+		 SRB1bis_rlc_config_NB_IoT->choice.explicitValue.choice.am.ul_AM_RLC_r13.maxRetxThreshold_r13 = LTE_UL_AM_RLC_NB_r13__maxRetxThreshold_r13_t8;
 		 //(musT be disabled--> SRB1 config pag 640 specs )
 		 SRB1bis_rlc_config_NB_IoT->choice.explicitValue.choice.am.dl_AM_RLC_r13.enableStatusReportSN_Gap_r13 =NULL;
 
 		 SRB1bis_lchan_config_NB_IoT = CALLOC(1,sizeof(*SRB1bis_lchan_config_NB_IoT));
 		 SRB1bis_config_NB_IoT->logicalChannelConfig_r13  = SRB1bis_lchan_config_NB_IoT;
 
-		 SRB1bis_lchan_config_NB_IoT->present = SRB_ToAddMod_NB_r13__logicalChannelConfig_r13_PR_explicitValue;
+		 SRB1bis_lchan_config_NB_IoT->present = LTE_SRB_ToAddMod_NB_r13__logicalChannelConfig_r13_PR_explicitValue;
 
 		 prioritySRB1bis = CALLOC(1, sizeof(long));
 		 *prioritySRB1bis = 1; //same as SRB1?
@@ -846,13 +846,13 @@ uint8_t do_RRCConnectionSetup_NB_IoT(
   //DL
 
  physicalConfigDedicated2_NB_IoT->carrierConfigDedicated_r13->dl_CarrierConfig_r13.dl_CarrierFreq_r13.carrierFreq_r13=0;//random value set
- physicalConfigDedicated2_NB_IoT->carrierConfigDedicated_r13->dl_CarrierConfig_r13.downlinkBitmapNonAnchor_r13= CALLOC(1,sizeof(struct DL_CarrierConfigDedicated_NB_r13__downlinkBitmapNonAnchor_r13));
+ physicalConfigDedicated2_NB_IoT->carrierConfigDedicated_r13->dl_CarrierConfig_r13.downlinkBitmapNonAnchor_r13= CALLOC(1,sizeof(struct LTE_DL_CarrierConfigDedicated_NB_r13__downlinkBitmapNonAnchor_r13));
 		 physicalConfigDedicated2_NB_IoT->carrierConfigDedicated_r13->dl_CarrierConfig_r13.downlinkBitmapNonAnchor_r13->present=
-				 	 	 	 	 	 	 	 	 DL_CarrierConfigDedicated_NB_r13__downlinkBitmapNonAnchor_r13_PR_useNoBitmap_r13;
+				 	 	 	 	 	 	 	 	 LTE_DL_CarrierConfigDedicated_NB_r13__downlinkBitmapNonAnchor_r13_PR_useNoBitmap_r13;
 
- physicalConfigDedicated2_NB_IoT->carrierConfigDedicated_r13->dl_CarrierConfig_r13.dl_GapNonAnchor_r13 = CALLOC(1,sizeof(struct DL_CarrierConfigDedicated_NB_r13__dl_GapNonAnchor_r13));
+ physicalConfigDedicated2_NB_IoT->carrierConfigDedicated_r13->dl_CarrierConfig_r13.dl_GapNonAnchor_r13 = CALLOC(1,sizeof(struct LTE_DL_CarrierConfigDedicated_NB_r13__dl_GapNonAnchor_r13));
  physicalConfigDedicated2_NB_IoT->carrierConfigDedicated_r13->dl_CarrierConfig_r13.dl_GapNonAnchor_r13->present =
-		  	  	  	  	  	  	  	  	  	  	  DL_CarrierConfigDedicated_NB_r13__dl_GapNonAnchor_r13_PR_useNoGap_r13;
+		  	  	  	  	  	  	  	  	  	  	  LTE_DL_CarrierConfigDedicated_NB_r13__dl_GapNonAnchor_r13_PR_useNoGap_r13;
 
  physicalConfigDedicated2_NB_IoT->carrierConfigDedicated_r13->dl_CarrierConfig_r13.inbandCarrierInfo_r13= NULL;
 
@@ -877,8 +877,8 @@ uint8_t do_RRCConnectionSetup_NB_IoT(
 
  //Fill the rrcConnectionSetup-NB message
  rrcConnectionSetup_NB_IoT->rrc_TransactionIdentifier = Transaction_id; //input value
- rrcConnectionSetup_NB_IoT->criticalExtensions.present = RRCConnectionSetup_NB__criticalExtensions_PR_c1;
- rrcConnectionSetup_NB_IoT->criticalExtensions.choice.c1.present =RRCConnectionSetup_NB__criticalExtensions__c1_PR_rrcConnectionSetup_r13 ;
+ rrcConnectionSetup_NB_IoT->criticalExtensions.present = LTE_RRCConnectionSetup_NB__criticalExtensions_PR_c1;
+ rrcConnectionSetup_NB_IoT->criticalExtensions.choice.c1.present =LTE_RRCConnectionSetup_NB__criticalExtensions__c1_PR_rrcConnectionSetup_r13 ;
  //MP: carry only SRB1bis at the moment and phyConfigDedicated
  rrcConnectionSetup_NB_IoT->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r13.radioResourceConfigDedicated_r13.srb_ToAddModList_r13 = *SRB_configList_NB_IoT;
  rrcConnectionSetup_NB_IoT->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r13.radioResourceConfigDedicated_r13.drb_ToAddModList_r13 = NULL;
@@ -888,9 +888,9 @@ uint8_t do_RRCConnectionSetup_NB_IoT(
  rrcConnectionSetup_NB_IoT->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r13.radioResourceConfigDedicated_r13.mac_MainConfig_r13 = NULL;
 
  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-    xer_fprint(stdout, &asn_DEF_DL_CCCH_Message_NB, (void*)&dl_ccch_msg_NB_IoT);
+    xer_fprint(stdout, &asn_DEF_LTE_DL_CCCH_Message_NB, (void*)&dl_ccch_msg_NB_IoT);
  }
- enc_rval = uper_encode_to_buffer(&asn_DEF_DL_CCCH_Message_NB,
+ enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_DL_CCCH_Message_NB,
                                   NULL,
                                   (void*)&dl_ccch_msg_NB_IoT,
                                   buffer,
@@ -917,32 +917,32 @@ uint8_t do_SecurityModeCommand_NB_IoT(
   const uint8_t cipheringAlgorithm,
   const uint8_t integrityProtAlgorithm)
 {
-  DL_DCCH_Message_NB_t dl_dcch_msg_NB_IoT;
+  LTE_DL_DCCH_Message_NB_t dl_dcch_msg_NB_IoT;
   asn_enc_rval_t enc_rval;
 
-  memset(&dl_dcch_msg_NB_IoT,0,sizeof(DL_DCCH_Message_NB_t));
+  memset(&dl_dcch_msg_NB_IoT,0,sizeof(LTE_DL_DCCH_Message_NB_t));
 
-  dl_dcch_msg_NB_IoT.message.present = DL_DCCH_MessageType_NB_PR_c1;
-  dl_dcch_msg_NB_IoT.message.choice.c1.present = DL_DCCH_MessageType_NB__c1_PR_securityModeCommand_r13;
+  dl_dcch_msg_NB_IoT.message.present = LTE_DL_DCCH_MessageType_NB_PR_c1;
+  dl_dcch_msg_NB_IoT.message.choice.c1.present = LTE_DL_DCCH_MessageType_NB__c1_PR_securityModeCommand_r13;
 
   dl_dcch_msg_NB_IoT.message.choice.c1.choice.securityModeCommand_r13.rrc_TransactionIdentifier = Transaction_id;
-  dl_dcch_msg_NB_IoT.message.choice.c1.choice.securityModeCommand_r13.criticalExtensions.present = SecurityModeCommand__criticalExtensions_PR_c1;
+  dl_dcch_msg_NB_IoT.message.choice.c1.choice.securityModeCommand_r13.criticalExtensions.present = LTE_SecurityModeCommand__criticalExtensions_PR_c1;
 
   dl_dcch_msg_NB_IoT.message.choice.c1.choice.securityModeCommand_r13.criticalExtensions.choice.c1.present =
-		  SecurityModeCommand__criticalExtensions__c1_PR_securityModeCommand_r8;
+		  LTE_SecurityModeCommand__criticalExtensions__c1_PR_securityModeCommand_r8;
 
   // the two following information could be based on the mod_id
   dl_dcch_msg_NB_IoT.message.choice.c1.choice.securityModeCommand_r13.criticalExtensions.choice.c1.choice.securityModeCommand_r8.securityConfigSMC.securityAlgorithmConfig.cipheringAlgorithm
-    = (CipheringAlgorithm_r12_t)cipheringAlgorithm; //bug solved
+    = (LTE_CipheringAlgorithm_r12_t)cipheringAlgorithm; //bug solved
 
   dl_dcch_msg_NB_IoT.message.choice.c1.choice.securityModeCommand_r13.criticalExtensions.choice.c1.choice.securityModeCommand_r8.securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm
-    = (e_SecurityAlgorithmConfig__integrityProtAlgorithm)integrityProtAlgorithm;
+    = (e_LTE_SecurityAlgorithmConfig__integrityProtAlgorithm)integrityProtAlgorithm;
 
 //only changed "asn_DEF_DL_DCCH_Message_NB"
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-     xer_fprint(stdout, &asn_DEF_DL_DCCH_Message_NB, (void*)&dl_dcch_msg_NB_IoT);
+     xer_fprint(stdout, &asn_DEF_LTE_DL_DCCH_Message_NB, (void*)&dl_dcch_msg_NB_IoT);
   }
-  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message_NB,
+  enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_DL_DCCH_Message_NB,
                                    NULL,
                                    (void*)&dl_dcch_msg_NB_IoT,
                                    buffer,
@@ -983,28 +983,28 @@ uint8_t do_UECapabilityEnquiry_NB_IoT(
 
 {
 
-  DL_DCCH_Message_NB_t dl_dcch_msg_NB_IoT;
+  LTE_DL_DCCH_Message_NB_t dl_dcch_msg_NB_IoT;
   //no RAT type in NB-IoT
   asn_enc_rval_t enc_rval;
 
-  memset(&dl_dcch_msg_NB_IoT,0,sizeof(DL_DCCH_Message_NB_t));
+  memset(&dl_dcch_msg_NB_IoT,0,sizeof(LTE_DL_DCCH_Message_NB_t));
 
-  dl_dcch_msg_NB_IoT.message.present           = DL_DCCH_MessageType_NB_PR_c1;
-  dl_dcch_msg_NB_IoT.message.choice.c1.present = DL_DCCH_MessageType_NB__c1_PR_ueCapabilityEnquiry_r13;
+  dl_dcch_msg_NB_IoT.message.present           = LTE_DL_DCCH_MessageType_NB_PR_c1;
+  dl_dcch_msg_NB_IoT.message.choice.c1.present = LTE_DL_DCCH_MessageType_NB__c1_PR_ueCapabilityEnquiry_r13;
 
   dl_dcch_msg_NB_IoT.message.choice.c1.choice.ueCapabilityEnquiry_r13.rrc_TransactionIdentifier = Transaction_id;
 
-  dl_dcch_msg_NB_IoT.message.choice.c1.choice.ueCapabilityEnquiry_r13.criticalExtensions.present = UECapabilityEnquiry_NB__criticalExtensions_PR_c1;
+  dl_dcch_msg_NB_IoT.message.choice.c1.choice.ueCapabilityEnquiry_r13.criticalExtensions.present = LTE_UECapabilityEnquiry_NB__criticalExtensions_PR_c1;
   dl_dcch_msg_NB_IoT.message.choice.c1.choice.ueCapabilityEnquiry_r13.criticalExtensions.choice.c1.present =
-		  UECapabilityEnquiry_NB__criticalExtensions__c1_PR_ueCapabilityEnquiry_r13;
+		  LTE_UECapabilityEnquiry_NB__criticalExtensions__c1_PR_ueCapabilityEnquiry_r13;
 
   //no ue_CapabilityRequest (list of RAT_Type)
 
 //only changed "asn_DEF_DL_DCCH_Message_NB"
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-     xer_fprint(stdout, &asn_DEF_DL_DCCH_Message_NB, (void*)&dl_dcch_msg_NB_IoT);
+     xer_fprint(stdout, &asn_DEF_LTE_DL_DCCH_Message_NB, (void*)&dl_dcch_msg_NB_IoT);
   }
-  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message_NB,
+  enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_DL_DCCH_Message_NB,
                                    NULL,
                                    (void*)&dl_dcch_msg_NB_IoT,
                                    buffer,
@@ -1042,32 +1042,32 @@ uint16_t do_RRCConnectionReconfiguration_NB_IoT(
   const protocol_ctxt_t*        const ctxt_pP,
     uint8_t                            *buffer,
     uint8_t                             Transaction_id,
-    SRB_ToAddModList_NB_r13_t          *SRB1_list_NB, //SRB_ConfigList2 (default)--> only SRB1
-    DRB_ToAddModList_NB_r13_t          *DRB_list_NB_IoT, //DRB_ConfigList (default)
-    DRB_ToReleaseList_NB_r13_t         *DRB_list2_NB_IoT, //is NULL when passed
-    struct PhysicalConfigDedicated_NB_r13     *physicalConfigDedicated_NB_IoT,
-	MAC_MainConfig_NB_r13_t                   *mac_MainConfig_NB_IoT,
-  struct RRCConnectionReconfiguration_NB_r13_IEs__dedicatedInfoNASList_r13* dedicatedInfoNASList_NB_IoT)
+    LTE_SRB_ToAddModList_NB_r13_t          *SRB1_list_NB, //SRB_ConfigList2 (default)--> only SRB1
+    LTE_DRB_ToAddModList_NB_r13_t          *DRB_list_NB_IoT, //DRB_ConfigList (default)
+    LTE_DRB_ToReleaseList_NB_r13_t         *DRB_list2_NB_IoT, //is NULL when passed
+    struct LTE_PhysicalConfigDedicated_NB_r13     *physicalConfigDedicated_NB_IoT,
+	LTE_MAC_MainConfig_NB_r13_t                   *mac_MainConfig_NB_IoT,
+  struct LTE_RRCConnectionReconfiguration_NB_r13_IEs__dedicatedInfoNASList_r13* dedicatedInfoNASList_NB_IoT)
 
 {
 
  //check on DRB_list if contains more than 2 DRB?
 
   asn_enc_rval_t enc_rval;
-  DL_DCCH_Message_NB_t dl_dcch_msg_NB_IoT;
-  RRCConnectionReconfiguration_NB_t *rrcConnectionReconfiguration_NB;
+  LTE_DL_DCCH_Message_NB_t dl_dcch_msg_NB_IoT;
+  LTE_RRCConnectionReconfiguration_NB_t *rrcConnectionReconfiguration_NB;
 
 
-  memset(&dl_dcch_msg_NB_IoT,0,sizeof(DL_DCCH_Message_NB_t));
+  memset(&dl_dcch_msg_NB_IoT,0,sizeof(LTE_DL_DCCH_Message_NB_t));
 
-  dl_dcch_msg_NB_IoT.message.present           = DL_DCCH_MessageType_NB_PR_c1;
-  dl_dcch_msg_NB_IoT.message.choice.c1.present = DL_DCCH_MessageType_NB__c1_PR_rrcConnectionReconfiguration_r13;
+  dl_dcch_msg_NB_IoT.message.present           = LTE_DL_DCCH_MessageType_NB_PR_c1;
+  dl_dcch_msg_NB_IoT.message.choice.c1.present = LTE_DL_DCCH_MessageType_NB__c1_PR_rrcConnectionReconfiguration_r13;
   rrcConnectionReconfiguration_NB          = &dl_dcch_msg_NB_IoT.message.choice.c1.choice.rrcConnectionReconfiguration_r13;
 
   // RRCConnectionReconfiguration
   rrcConnectionReconfiguration_NB->rrc_TransactionIdentifier = Transaction_id;
-  rrcConnectionReconfiguration_NB->criticalExtensions.present = RRCConnectionReconfiguration_NB__criticalExtensions_PR_c1;
-  rrcConnectionReconfiguration_NB->criticalExtensions.choice.c1.present =RRCConnectionReconfiguration_NB__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r13 ;
+  rrcConnectionReconfiguration_NB->criticalExtensions.present = LTE_RRCConnectionReconfiguration_NB__criticalExtensions_PR_c1;
+  rrcConnectionReconfiguration_NB->criticalExtensions.choice.c1.present =LTE_RRCConnectionReconfiguration_NB__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r13 ;
 
   //RAdioResourceconfigDedicated
   rrcConnectionReconfiguration_NB->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r13.radioResourceConfigDedicated_r13 =
@@ -1083,7 +1083,7 @@ uint16_t do_RRCConnectionReconfiguration_NB_IoT(
     rrcConnectionReconfiguration_NB->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r13.radioResourceConfigDedicated_r13->mac_MainConfig_r13 =
     		CALLOC(1, sizeof(*rrcConnectionReconfiguration_NB->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r13.radioResourceConfigDedicated_r13->mac_MainConfig_r13));
     rrcConnectionReconfiguration_NB->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r13.radioResourceConfigDedicated_r13->mac_MainConfig_r13->present
-      =RadioResourceConfigDedicated_NB_r13__mac_MainConfig_r13_PR_explicitValue_r13;
+      =LTE_RadioResourceConfigDedicated_NB_r13__mac_MainConfig_r13_PR_explicitValue_r13;
    //why memcopy only this one?
     memcpy(&rrcConnectionReconfiguration_NB->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r13.radioResourceConfigDedicated_r13->mac_MainConfig_r13->choice.explicitValue_r13,
            mac_MainConfig_NB_IoT, sizeof(*mac_MainConfig_NB_IoT));
@@ -1099,7 +1099,7 @@ uint16_t do_RRCConnectionReconfiguration_NB_IoT(
   //mainly used for cell-reselection/handover purposes??
   rrcConnectionReconfiguration_NB->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r13.fullConfig_r13 = NULL;
 
-  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message_NB,
+  enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_DL_DCCH_Message_NB,
                                    NULL,
                                    (void*)&dl_dcch_msg_NB_IoT,
                                    buffer,
@@ -1111,7 +1111,7 @@ uint16_t do_RRCConnectionReconfiguration_NB_IoT(
 
   //changed only asn_DEF_DL_DCCH_Message_NB
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-     xer_fprint(stdout,&asn_DEF_DL_DCCH_Message_NB,(void*)&dl_dcch_msg_NB_IoT);
+     xer_fprint(stdout,&asn_DEF_LTE_DL_DCCH_Message_NB,(void*)&dl_dcch_msg_NB_IoT);
   }
 
 //#if defined(ENABLE_ITTI)
@@ -1131,22 +1131,22 @@ uint8_t do_RRCConnectionReestablishmentReject_NB_IoT(
 
   asn_enc_rval_t enc_rval;
 
-  DL_CCCH_Message_NB_t dl_ccch_msg_NB_IoT;
-  RRCConnectionReestablishmentReject_t *rrcConnectionReestablishmentReject;
+  LTE_DL_CCCH_Message_NB_t dl_ccch_msg_NB_IoT;
+  LTE_RRCConnectionReestablishmentReject_t *rrcConnectionReestablishmentReject;
 
-  memset((void *)&dl_ccch_msg_NB_IoT,0,sizeof(DL_CCCH_Message_NB_t));
-  dl_ccch_msg_NB_IoT.message.present = DL_CCCH_MessageType_NB_PR_c1;
-  dl_ccch_msg_NB_IoT.message.choice.c1.present = DL_CCCH_MessageType_NB__c1_PR_rrcConnectionReestablishmentReject_r13;
+  memset((void *)&dl_ccch_msg_NB_IoT,0,sizeof(LTE_DL_CCCH_Message_NB_t));
+  dl_ccch_msg_NB_IoT.message.present = LTE_DL_CCCH_MessageType_NB_PR_c1;
+  dl_ccch_msg_NB_IoT.message.choice.c1.present = LTE_DL_CCCH_MessageType_NB__c1_PR_rrcConnectionReestablishmentReject_r13;
   rrcConnectionReestablishmentReject    = &dl_ccch_msg_NB_IoT.message.choice.c1.choice.rrcConnectionReestablishmentReject_r13;
 
   // RRCConnectionReestablishmentReject //exactly the same as LTE
-  rrcConnectionReestablishmentReject->criticalExtensions.present = RRCConnectionReestablishmentReject__criticalExtensions_PR_rrcConnectionReestablishmentReject_r8;
+  rrcConnectionReestablishmentReject->criticalExtensions.present = LTE_RRCConnectionReestablishmentReject__criticalExtensions_PR_rrcConnectionReestablishmentReject_r8;
 
   //Only change in "asn_DEF_DL_CCCH_Message_NB"
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-     xer_fprint(stdout, &asn_DEF_DL_CCCH_Message_NB, (void*)&dl_ccch_msg_NB_IoT);
+     xer_fprint(stdout, &asn_DEF_LTE_DL_CCCH_Message_NB, (void*)&dl_ccch_msg_NB_IoT);
   }
-  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_CCCH_Message_NB,
+  enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_DL_CCCH_Message_NB,
                                    NULL,
                                    (void*)&dl_ccch_msg_NB_IoT,
                                    buffer,
@@ -1163,7 +1163,7 @@ uint8_t do_RRCConnectionReestablishmentReject_NB_IoT(
     char        message_string[20000];
     size_t      message_string_size;
 
-    if ((message_string_size = xer_sprint(message_string, sizeof(message_string), &asn_DEF_DL_CCCH_Message_NB, (void *) &dl_ccch_msg_NB_IoT)) > 0) {
+    if ((message_string_size = xer_sprint(message_string, sizeof(message_string), &asn_DEF_LTE_DL_CCCH_Message_NB, (void *) &dl_ccch_msg_NB_IoT)) > 0) {
       MessageDef *msg_p;
 
       msg_p = itti_alloc_new_message_sized (TASK_RRC_ENB_NB_IoT, RRC_DL_CCCH, message_string_size + sizeof (IttiMsgText));
@@ -1193,17 +1193,17 @@ uint8_t do_RRCConnectionReject_NB_IoT(
 
   asn_enc_rval_t enc_rval;
 
-  DL_CCCH_Message_NB_t          dl_ccch_msg_NB_IoT;
-  RRCConnectionReject_NB_t      *rrcConnectionReject_NB_IoT;
+  LTE_DL_CCCH_Message_NB_t          dl_ccch_msg_NB_IoT;
+  LTE_RRCConnectionReject_NB_t      *rrcConnectionReject_NB_IoT;
 
-  memset((void *)&dl_ccch_msg_NB_IoT,0,sizeof(DL_CCCH_Message_NB_t));
-  dl_ccch_msg_NB_IoT.message.present           = DL_CCCH_MessageType_NB_PR_c1;
-  dl_ccch_msg_NB_IoT.message.choice.c1.present = DL_CCCH_MessageType_NB__c1_PR_rrcConnectionReject_r13;
+  memset((void *)&dl_ccch_msg_NB_IoT,0,sizeof(LTE_DL_CCCH_Message_NB_t));
+  dl_ccch_msg_NB_IoT.message.present           = LTE_DL_CCCH_MessageType_NB_PR_c1;
+  dl_ccch_msg_NB_IoT.message.choice.c1.present = LTE_DL_CCCH_MessageType_NB__c1_PR_rrcConnectionReject_r13;
   rrcConnectionReject_NB_IoT = &dl_ccch_msg_NB_IoT.message.choice.c1.choice.rrcConnectionReject_r13;
 
   // RRCConnectionReject-NB_IoT
-  rrcConnectionReject_NB_IoT->criticalExtensions.present = RRCConnectionReject_NB__criticalExtensions_PR_c1;
-  rrcConnectionReject_NB_IoT->criticalExtensions.choice.c1.present = RRCConnectionReject_NB__criticalExtensions__c1_PR_rrcConnectionReject_r13;
+  rrcConnectionReject_NB_IoT->criticalExtensions.present = LTE_RRCConnectionReject_NB__criticalExtensions_PR_c1;
+  rrcConnectionReject_NB_IoT->criticalExtensions.choice.c1.present = LTE_RRCConnectionReject_NB__criticalExtensions__c1_PR_rrcConnectionReject_r13;
   /* let's put an extended wait time of 1s for the moment */
   rrcConnectionReject_NB_IoT->criticalExtensions.choice.c1.choice.rrcConnectionReject_r13.extendedWaitTime_r13 = 1;
   //new-use of suspend indication
@@ -1211,13 +1211,13 @@ uint8_t do_RRCConnectionReject_NB_IoT(
   rrcConnectionReject_NB_IoT->criticalExtensions.choice.c1.choice.rrcConnectionReject_r13.rrc_SuspendIndication_r13=
 		  CALLOC(1, sizeof(long));
   *(rrcConnectionReject_NB_IoT->criticalExtensions.choice.c1.choice.rrcConnectionReject_r13.rrc_SuspendIndication_r13)=
-		  RRCConnectionReject_NB_r13_IEs__rrc_SuspendIndication_r13_true;
+		  LTE_RRCConnectionReject_NB_r13_IEs__rrc_SuspendIndication_r13_true;
 
   //Only Modified "asn_DEF_DL_CCCH_Message_NB"
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-     xer_fprint(stdout, &asn_DEF_DL_CCCH_Message_NB, (void*)&dl_ccch_msg_NB_IoT);
+     xer_fprint(stdout, &asn_DEF_LTE_DL_CCCH_Message_NB, (void*)&dl_ccch_msg_NB_IoT);
   }
-  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_CCCH_Message_NB,
+  enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_DL_CCCH_Message_NB,
                                    NULL,
                                    (void*)&dl_ccch_msg_NB_IoT,
                                    buffer,
@@ -1233,7 +1233,7 @@ uint8_t do_RRCConnectionReject_NB_IoT(
     char        message_string[20000];
     size_t      message_string_size;
 
-    if ((message_string_size = xer_sprint(message_string, sizeof(message_string), &asn_DEF_DL_CCCH_Message_NB, (void *) &dl_ccch_msg_NB_IoT)) > 0) {
+    if ((message_string_size = xer_sprint(message_string, sizeof(message_string), &asn_DEF_LTE_DL_CCCH_Message_NB, (void *) &dl_ccch_msg_NB_IoT)) > 0) {
       MessageDef *msg_p;
 
       msg_p = itti_alloc_new_message_sized (TASK_RRC_ENB_NB_IoT, RRC_DL_CCCH, message_string_size + sizeof (IttiMsgText));
@@ -1269,19 +1269,19 @@ uint8_t do_DLInformationTransfer_NB_IoT(
 {
   ssize_t encoded;
 
-  DL_DCCH_Message_NB_t dl_dcch_msg_NB_IoT;
+  LTE_DL_DCCH_Message_NB_t dl_dcch_msg_NB_IoT;
 
-  memset(&dl_dcch_msg_NB_IoT, 0, sizeof(DL_DCCH_Message_NB_t));
+  memset(&dl_dcch_msg_NB_IoT, 0, sizeof(LTE_DL_DCCH_Message_NB_t));
 
-  dl_dcch_msg_NB_IoT.message.present           = DL_DCCH_MessageType_NB_PR_c1;
-  dl_dcch_msg_NB_IoT.message.choice.c1.present = DL_DCCH_MessageType_NB__c1_PR_dlInformationTransfer_r13;
+  dl_dcch_msg_NB_IoT.message.present           = LTE_DL_DCCH_MessageType_NB_PR_c1;
+  dl_dcch_msg_NB_IoT.message.choice.c1.present = LTE_DL_DCCH_MessageType_NB__c1_PR_dlInformationTransfer_r13;
   dl_dcch_msg_NB_IoT.message.choice.c1.choice.dlInformationTransfer_r13.rrc_TransactionIdentifier = transaction_id;
-  dl_dcch_msg_NB_IoT.message.choice.c1.choice.dlInformationTransfer_r13.criticalExtensions.present = DLInformationTransfer_NB__criticalExtensions_PR_c1;
-  dl_dcch_msg_NB_IoT.message.choice.c1.choice.dlInformationTransfer_r13.criticalExtensions.choice.c1.present = DLInformationTransfer_NB__criticalExtensions__c1_PR_dlInformationTransfer_r13;
+  dl_dcch_msg_NB_IoT.message.choice.c1.choice.dlInformationTransfer_r13.criticalExtensions.present = LTE_DLInformationTransfer_NB__criticalExtensions_PR_c1;
+  dl_dcch_msg_NB_IoT.message.choice.c1.choice.dlInformationTransfer_r13.criticalExtensions.choice.c1.present = LTE_DLInformationTransfer_NB__criticalExtensions__c1_PR_dlInformationTransfer_r13;
   dl_dcch_msg_NB_IoT.message.choice.c1.choice.dlInformationTransfer_r13.criticalExtensions.choice.c1.choice.dlInformationTransfer_r13.dedicatedInfoNAS_r13.size = pdu_length;
   dl_dcch_msg_NB_IoT.message.choice.c1.choice.dlInformationTransfer_r13.criticalExtensions.choice.c1.choice.dlInformationTransfer_r13.dedicatedInfoNAS_r13.buf = pdu_buffer;
 
-  encoded = uper_encode_to_new_buffer (&asn_DEF_DL_DCCH_Message_NB, NULL, (void*) &dl_dcch_msg_NB_IoT, (void **) buffer);
+  encoded = uper_encode_to_new_buffer (&asn_DEF_LTE_DL_DCCH_Message_NB, NULL, (void*) &dl_dcch_msg_NB_IoT, (void **) buffer);
 
   //only change in "asn_DEF_DL_DCCH_Message_NB"
 #if defined(ENABLE_ITTI)
@@ -1290,7 +1290,7 @@ uint8_t do_DLInformationTransfer_NB_IoT(
     char        message_string[10000];
     size_t      message_string_size;
 
-    if ((message_string_size = xer_sprint(message_string, sizeof(message_string), &asn_DEF_DL_DCCH_Message_NB, (void *)&dl_dcch_msg_NB_IoT)) > 0) {
+    if ((message_string_size = xer_sprint(message_string, sizeof(message_string), &asn_DEF_LTE_DL_DCCH_Message_NB, (void *)&dl_dcch_msg_NB_IoT)) > 0) {
       MessageDef *msg_p;
 
       msg_p = itti_alloc_new_message_sized (TASK_RRC_ENB_NB_IoT, RRC_DL_DCCH, message_string_size + sizeof (IttiMsgText));
@@ -1317,23 +1317,23 @@ uint8_t do_RRCConnectionReestablishment_NB_IoT(
 		uint8_t* const buffer,
 		const uint8_t     Transaction_id,
 		const NB_IoT_DL_FRAME_PARMS* const frame_parms, //to be changed
-		SRB_ToAddModList_NB_r13_t*      SRB_list_NB_IoT) //should contain SRB1 already configured?
+		LTE_SRB_ToAddModList_NB_r13_t*      SRB_list_NB_IoT) //should contain SRB1 already configured?
 {
 
 	asn_enc_rval_t enc_rval;
-	DL_CCCH_Message_NB_t dl_ccch_msg_NB_IoT;
-	RRCConnectionReestablishment_NB_t* rrcConnectionReestablishment_NB_IoT;
+	LTE_DL_CCCH_Message_NB_t dl_ccch_msg_NB_IoT;
+	LTE_RRCConnectionReestablishment_NB_t* rrcConnectionReestablishment_NB_IoT;
 
-	memset(&dl_ccch_msg_NB_IoT, 0, sizeof(DL_CCCH_Message_NB_t));
+	memset(&dl_ccch_msg_NB_IoT, 0, sizeof(LTE_DL_CCCH_Message_NB_t));
 
-	dl_ccch_msg_NB_IoT.message.present = DL_CCCH_MessageType_NB_PR_c1;
-	dl_ccch_msg_NB_IoT.message.choice.c1.present = DL_CCCH_MessageType_NB__c1_PR_rrcConnectionReestablishment_r13;
+	dl_ccch_msg_NB_IoT.message.present = LTE_DL_CCCH_MessageType_NB_PR_c1;
+	dl_ccch_msg_NB_IoT.message.choice.c1.present = LTE_DL_CCCH_MessageType_NB__c1_PR_rrcConnectionReestablishment_r13;
 	rrcConnectionReestablishment_NB_IoT = &dl_ccch_msg_NB_IoT.message.choice.c1.choice.rrcConnectionReestablishment_r13;
 
 	//rrcConnectionReestablishment_NB
 	rrcConnectionReestablishment_NB_IoT->rrc_TransactionIdentifier = Transaction_id;
-	rrcConnectionReestablishment_NB_IoT->criticalExtensions.present = RRCConnectionReestablishment_NB__criticalExtensions_PR_c1;
-	rrcConnectionReestablishment_NB_IoT->criticalExtensions.choice.c1.present = RRCConnectionReestablishment_NB__criticalExtensions__c1_PR_rrcConnectionReestablishment_r13;
+	rrcConnectionReestablishment_NB_IoT->criticalExtensions.present = LTE_RRCConnectionReestablishment_NB__criticalExtensions_PR_c1;
+	rrcConnectionReestablishment_NB_IoT->criticalExtensions.choice.c1.present = LTE_RRCConnectionReestablishment_NB__criticalExtensions__c1_PR_rrcConnectionReestablishment_r13;
 
 	rrcConnectionReestablishment_NB_IoT->criticalExtensions.choice.c1.choice.rrcConnectionReestablishment_r13.radioResourceConfigDedicated_r13.srb_ToAddModList_r13 = SRB_list_NB_IoT;
 	rrcConnectionReestablishment_NB_IoT->criticalExtensions.choice.c1.choice.rrcConnectionReestablishment_r13.radioResourceConfigDedicated_r13.drb_ToAddModList_r13 = NULL;
@@ -1344,7 +1344,7 @@ uint8_t do_RRCConnectionReestablishment_NB_IoT(
 
 	rrcConnectionReestablishment_NB_IoT->criticalExtensions.choice.c1.choice.rrcConnectionReestablishment_r13.nextHopChainingCount_r13=0;
 
-	enc_rval = uper_encode_to_buffer(&asn_DEF_DL_CCCH_Message_NB,
+	enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_DL_CCCH_Message_NB,
                                            NULL,
 	                                   (void*)&dl_ccch_msg_NB_IoT,
 	                                   buffer,
@@ -1356,7 +1356,7 @@ uint8_t do_RRCConnectionReestablishment_NB_IoT(
         }
 
         if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-           xer_fprint(stdout,&asn_DEF_DL_CCCH_Message_NB,(void*)&dl_ccch_msg_NB_IoT);
+           xer_fprint(stdout,&asn_DEF_LTE_DL_CCCH_Message_NB,(void*)&dl_ccch_msg_NB_IoT);
         }
 
 #if defined(ENABLE_ITTI)
@@ -1365,7 +1365,7 @@ uint8_t do_RRCConnectionReestablishment_NB_IoT(
     char        message_string[30000];
     size_t      message_string_size;
 
-    if ((message_string_size = xer_sprint(message_string, sizeof(message_string), &asn_DEF_DL_CCCH_Message_NB, (void *) &dl_ccch_msg_NB_IoT)) > 0) {
+    if ((message_string_size = xer_sprint(message_string, sizeof(message_string), &asn_DEF_LTE_DL_CCCH_Message_NB, (void *) &dl_ccch_msg_NB_IoT)) > 0) {
       MessageDef *msg_p;
 
       msg_p = itti_alloc_new_message_sized (TASK_RRC_ENB_NB_IoT, RRC_DL_CCCH, message_string_size + sizeof (IttiMsgText));
@@ -1391,22 +1391,22 @@ uint8_t do_RRCConnectionRelease_NB_IoT(
 
   asn_enc_rval_t enc_rval;
 
-  DL_DCCH_Message_NB_t dl_dcch_msg_NB_IoT;
-  RRCConnectionRelease_NB_t *rrcConnectionRelease_NB_IoT;
+  LTE_DL_DCCH_Message_NB_t dl_dcch_msg_NB_IoT;
+  LTE_RRCConnectionRelease_NB_t *rrcConnectionRelease_NB_IoT;
 
 
-  memset(&dl_dcch_msg_NB_IoT,0,sizeof(DL_DCCH_Message_NB_t));
+  memset(&dl_dcch_msg_NB_IoT,0,sizeof(LTE_DL_DCCH_Message_NB_t));
 
-  dl_dcch_msg_NB_IoT.message.present           = DL_DCCH_MessageType_NB_PR_c1;
-  dl_dcch_msg_NB_IoT.message.choice.c1.present = DL_DCCH_MessageType_NB__c1_PR_rrcConnectionRelease_r13;
+  dl_dcch_msg_NB_IoT.message.present           = LTE_DL_DCCH_MessageType_NB_PR_c1;
+  dl_dcch_msg_NB_IoT.message.choice.c1.present = LTE_DL_DCCH_MessageType_NB__c1_PR_rrcConnectionRelease_r13;
   rrcConnectionRelease_NB_IoT                  = &dl_dcch_msg_NB_IoT.message.choice.c1.choice.rrcConnectionRelease_r13;
 
   // RRCConnectionRelease
   rrcConnectionRelease_NB_IoT->rrc_TransactionIdentifier = Transaction_id;
-  rrcConnectionRelease_NB_IoT->criticalExtensions.present = RRCConnectionRelease_NB__criticalExtensions_PR_c1;
-  rrcConnectionRelease_NB_IoT->criticalExtensions.choice.c1.present =RRCConnectionRelease_NB__criticalExtensions__c1_PR_rrcConnectionRelease_r13 ;
+  rrcConnectionRelease_NB_IoT->criticalExtensions.present = LTE_RRCConnectionRelease_NB__criticalExtensions_PR_c1;
+  rrcConnectionRelease_NB_IoT->criticalExtensions.choice.c1.present = LTE_RRCConnectionRelease_NB__criticalExtensions__c1_PR_rrcConnectionRelease_r13 ;
 
-  rrcConnectionRelease_NB_IoT->criticalExtensions.choice.c1.choice.rrcConnectionRelease_r13.releaseCause_r13 = ReleaseCause_NB_r13_other;
+  rrcConnectionRelease_NB_IoT->criticalExtensions.choice.c1.choice.rrcConnectionRelease_r13.releaseCause_r13 = LTE_ReleaseCause_NB_r13_other;
   rrcConnectionRelease_NB_IoT->criticalExtensions.choice.c1.choice.rrcConnectionRelease_r13.redirectedCarrierInfo_r13 = NULL;
   rrcConnectionRelease_NB_IoT->criticalExtensions.choice.c1.choice.rrcConnectionRelease_r13.extendedWaitTime_r13 = NULL;
 
@@ -1414,7 +1414,7 @@ uint8_t do_RRCConnectionRelease_NB_IoT(
   rrcConnectionRelease_NB_IoT->criticalExtensions.choice.c1.choice.rrcConnectionRelease_r13.nonCriticalExtension=CALLOC(1,
       sizeof(*rrcConnectionRelease_NB_IoT->criticalExtensions.choice.c1.choice.rrcConnectionRelease_r13.nonCriticalExtension));
 
-  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message_NB,
+  enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_DL_DCCH_Message_NB,
                                    NULL,
                                    (void*)&dl_dcch_msg_NB_IoT,
                                    buffer,

@@ -526,7 +526,7 @@ void fh_if4p5_south_asynch_in(RU_t *ru,int *frame,int *subframe) {
     }
     if      (packet_type == IF4p5_PULFFT)       symbol_mask &= (~(1<<symbol_number));
     else if (packet_type == IF4p5_PRACH)        prach_rx    &= (~0x1);
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     else if (packet_type == IF4p5_PRACH_BR_CE0) prach_rx    &= (~0x2);
     else if (packet_type == IF4p5_PRACH_BR_CE1) prach_rx    &= (~0x4);
     else if (packet_type == IF4p5_PRACH_BR_CE2) prach_rx    &= (~0x8);
@@ -1086,7 +1086,7 @@ static void* ru_thread_prach( void* param ) {
     if (ru->eNB_list[0]){
       prach_procedures(
         ru->eNB_list[0]
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
         ,0
 #endif
         );
@@ -1099,7 +1099,7 @@ static void* ru_thread_prach( void* param ) {
                 NULL,
                 proc->frame_prach,
                 0
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	        ,0
 #endif
 	        );
@@ -1114,7 +1114,7 @@ static void* ru_thread_prach( void* param ) {
   return &ru_thread_prach_status;
 }
 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 static void* ru_thread_prach_br( void* param ) {
 
   static int ru_thread_prach_status;
@@ -1315,7 +1315,7 @@ static inline int wakeup_prach_ru(RU_t *ru) {
   return(0);
 }
 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 static inline int wakeup_prach_ru_br(RU_t *ru) {
 
   struct timespec wait;
@@ -1739,7 +1739,7 @@ static void* ru_thread( void* param ) {
     if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)==1)) {
       wakeup_prach_ru(ru);
     }
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     else if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)>1)) {
       wakeup_prach_ru_br(ru);
     }
@@ -2101,7 +2101,7 @@ void init_RU_proc(RU_t *ru) {
   RU_proc_t *proc;
   pthread_attr_t *attr_FH=NULL,*attr_FH1=NULL,*attr_prach=NULL,*attr_asynch=NULL,*attr_synch=NULL,*attr_emulateRF=NULL;
   //pthread_attr_t *attr_fep=NULL;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   pthread_attr_t *attr_prach_br=NULL;
 #endif
   char name[100];
@@ -2154,7 +2154,7 @@ void init_RU_proc(RU_t *ru) {
   pthread_attr_init( &proc->attr_asynch_rxtx);
   pthread_attr_init( &proc->attr_fep);
 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   proc->instance_cnt_prach_br       = -1;
   pthread_mutex_init( &proc->mutex_prach_br, NULL);
   pthread_cond_init( &proc->cond_prach_br, NULL);
@@ -2177,7 +2177,7 @@ void init_RU_proc(RU_t *ru) {
   attr_synch     = &proc->attr_synch;
   attr_asynch    = &proc->attr_asynch_rxtx;
   attr_emulateRF = &proc->attr_emulateRF;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   attr_prach_br  = &proc->attr_prach_br;
 #endif
 #endif
@@ -2206,7 +2206,7 @@ void init_RU_proc(RU_t *ru) {
 
   if (ru->function == NGFI_RRU_IF4p5) {
     pthread_create( &proc->pthread_prach, attr_prach, ru_thread_prach, (void*)ru );
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))  
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))  
     pthread_create( &proc->pthread_prach_br, attr_prach_br, ru_thread_prach_br, (void*)ru );
 #endif
     if (ru->is_slave == 1) pthread_create( &proc->pthread_synch, attr_synch, ru_thread_synch, (void*)ru);
@@ -2288,7 +2288,7 @@ void kill_RU_proc(RU_t *ru)
   pthread_cond_signal(&proc->cond_prach);
   pthread_mutex_unlock(&proc->mutex_prach);
 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   pthread_mutex_lock(&proc->mutex_prach_br);
   proc->instance_cnt_prach_br = 0;
   pthread_cond_signal(&proc->cond_prach_br);
@@ -2322,7 +2322,7 @@ void kill_RU_proc(RU_t *ru)
   if (ru->function == NGFI_RRU_IF4p5) {
     LOG_D(PHY, "Joining pthread_prach\n");
     pthread_join(proc->pthread_prach, NULL);
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     LOG_D(PHY, "Joining pthread_prach_br\n");
     pthread_join(proc->pthread_prach_br, NULL);
 #endif
@@ -2364,7 +2364,7 @@ void kill_RU_proc(RU_t *ru)
   pthread_attr_destroy(&proc->attr_asynch_rxtx);
   pthread_attr_destroy(&proc->attr_fep);
 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   pthread_mutex_destroy(&proc->mutex_prach_br);
   pthread_cond_destroy(&proc->cond_prach_br);
   pthread_attr_destroy(&proc->attr_prach_br);
@@ -2460,7 +2460,7 @@ void configure_ru(int idx,
     LOG_I(PHY,"REMOTE_IF4p5: prach_FrequOffset %d, prach_ConfigIndex %d\n",
 	  config->prach_FreqOffset[0],config->prach_ConfigIndex[0]);
     
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     int i;
     for (i=0;i<4;i++) {
       config->emtc_prach_CElevel_enable[0][i]  = ru->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[i];
@@ -2504,7 +2504,7 @@ void configure_rru(int idx,
 	  config->prach_FreqOffset[0],config->prach_ConfigIndex[0],ru->att_tx,ru->att_rx);
     ru->frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset  = config->prach_FreqOffset[0]; 
     ru->frame_parms.prach_config_common.prach_ConfigInfo.prach_ConfigIndex = config->prach_ConfigIndex[0]; 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     for (int i=0;i<4;i++) {
       ru->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[i] = config->emtc_prach_CElevel_enable[0][i];
       ru->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[i]     = config->emtc_prach_FreqOffset[0][i];

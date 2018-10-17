@@ -263,7 +263,7 @@ NwGtpv1uRcT gtpv1u_eNB_process_stack_req(
 			     buffer_len,
 			     buffer,
 			     PDCP_TRANSMISSION_MODE_DATA
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
               ,NULL, NULL
 #endif
               );
@@ -1052,7 +1052,7 @@ void *gtpv1u_eNB_process_itti_msg(void *notUsed) {
       if (hash_rc == HASH_TABLE_KEY_NOT_EXISTS) {
         LOG_E(GTPU, "nwGtpv1uProcessUlpReq failed: while getting ue rnti %x in hashtable ue_mapping\n", data_req_p->rnti);
       } else {
-        if ((data_req_p->rab_id >= GTPV1U_BEARER_OFFSET) && (data_req_p->rab_id <= max_val_DRB_Identity)) {
+        if ((data_req_p->rab_id >= GTPV1U_BEARER_OFFSET) && (data_req_p->rab_id <= max_val_LTE_DRB_Identity)) {
           enb_s1u_teid                        = gtpv1u_ue_data_p->bearers[data_req_p->rab_id - GTPV1U_BEARER_OFFSET].teid_eNB;
           sgw_s1u_teid                        = gtpv1u_ue_data_p->bearers[data_req_p->rab_id - GTPV1U_BEARER_OFFSET].teid_sgw;
           stack_req.apiType                   = NW_GTPV1U_ULP_API_SEND_TPDU;
