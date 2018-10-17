@@ -394,7 +394,7 @@ add_custom_command (OUTPUT ${NR_RRC_FULL_DIR}/NR_asn_constant.h
 # Same limitation as described in RRC: unknown generated file list
 # so we generate it at cmake time
 ##############
-add_list1_option(S1AP_RELEASE R14 "S1AP ASN.1 grammar version" R8 R9 R10 R14 R15)
+add_list1_option(S1AP_RELEASE R15 "S1AP ASN.1 grammar version" R8 R9 R10 R14 R15)
 
 set(S1AP_DIR ${OPENAIR3_DIR}/S1AP)
 if (${S1AP_RELEASE} STREQUAL "R8")
@@ -416,11 +416,11 @@ elseif (${S1AP_RELEASE} STREQUAL "R13")
   make_version(S1AP_VERSION 13 6 0)
   set(S1AP_ASN_FILES "s1ap-13.6.0.asn1")
 elseif (${S1AP_RELEASE} STREQUAL "R14")
-  make_version(S1AP_VERSION 14 5 0)
-  set(S1AP_ASN_FILES "s1ap-14.5.0.asn1")
+  make_version(S1AP_VERSION 14 7 0)
+  set(S1AP_ASN_FILES "s1ap-14.7.0.asn1")
 else (${S1AP_RELEASE} STREQUAL "R15")
-  make_version(S1AP_VERSION 15 1 0)
-  set(S1AP_ASN_FILES "s1ap-15.1.0.asn1")
+  make_version(S1AP_VERSION 15 3 0)
+  set(S1AP_ASN_FILES "s1ap-15.3.0.asn1")
 endif(${S1AP_RELEASE} STREQUAL "R8")
 add_definitions(-DS1AP_VERSION=${S1AP_VERSION})
 set(S1AP_ASN_DIR ${S1AP_DIR}/MESSAGES/ASN1/${S1AP_RELEASE})
@@ -472,7 +472,7 @@ add_library(S1AP_ENB
 # Same limitation as described in RRC/S1AP: unknown generated file list
 # so we generate it at cmake time
 ##############
-add_list1_option(X2AP_RELEASE R14 "X2AP ASN.1 grammar version" R8 R11 R12 R14 R15)
+add_list1_option(X2AP_RELEASE R15 "X2AP ASN.1 grammar version" R8 R11 R12 R14 R15)
 
 set(X2AP_DIR ${OPENAIR2_DIR}/X2AP)
 if (${X2AP_RELEASE} STREQUAL "R8")
@@ -488,8 +488,8 @@ elseif (${X2AP_RELEASE} STREQUAL "R14")
   make_version(X2AP_VERSION 14 6 0)
   set(X2AP_ASN_FILES x2ap-14.6.0.asn1)
 elseif (${X2AP_RELEASE} STREQUAL "R15")
-  make_version(X2AP_VERSION 15 1 0)
-  set(X2AP_ASN_FILES x2ap-15.1.0.asn1)
+  make_version(X2AP_VERSION 15 3 0)
+  set(X2AP_ASN_FILES x2ap-15.3.0.asn1)
 endif(${X2AP_RELEASE} STREQUAL "R8")
 add_definitions(-DX2AP_VERSION=${X2AP_VERSION})
 set(X2AP_ASN_DIR ${X2AP_DIR}/MESSAGES/ASN1/${X2AP_RELEASE})
