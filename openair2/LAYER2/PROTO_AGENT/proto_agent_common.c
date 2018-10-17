@@ -443,7 +443,7 @@ int proto_agent_pdcp_data_req_process(mod_id_t mod_id, const void *params, Proto
       free(ctxt_pP);
     if (pdcp_pdu_p)
       free_mem_block(pdcp_pdu_p, __func__);
-    LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
+    LOG_E(PROTO_AGENT, "%s: an error occured\n", __FUNCTION__);
     return -1;
 
 }
@@ -619,7 +619,7 @@ int proto_agent_pdcp_data_ind_process(mod_id_t mod_id, const void *params, Proto
 //   if (xid == 1)
 //     pdcp_data_ind_wifi((const protocol_ctxt_t*) ctxt_pP, (const srb_flag_t) srb_flagP, (const MBMS_flag_t) flag_MBMS, (const rb_id_t) rb_idP, pdcp_pdu_size, pdcp_pdu_p);
 //   else if (xid == 0)   // FIXME: USE a preprocessed definition
-  LOG_I(PROTO_AGENT, "[inst %d] Received PDCP PDU with size %d for UE RNTI %x RB %d, Calling pdcp_data_ind\n", ctxt_pP->instance, pdcp_pdu_size,ctxt_pP->rnti,rb_idP);
+  LOG_D(PROTO_AGENT, "[inst %d] Received PDCP PDU with size %d for UE RNTI %x RB %d, Calling pdcp_data_ind\n", ctxt_pP->instance, pdcp_pdu_size,ctxt_pP->rnti,rb_idP);
   result = pdcp_data_ind(ctxt_pP,
                          srb_flagP,
                          flag_MBMS,

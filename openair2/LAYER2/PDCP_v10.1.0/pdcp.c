@@ -389,7 +389,6 @@ boolean_t pdcp_data_req(
     LOG_DUMPMSG(PDCP,DEBUG_PDCP,(char *)pdcp_pdu_p->data,pdcp_pdu_size,
                 "[MSG] PDCP DL %s PDU on rb_id %d\n",(srb_flagP)? "CONTROL" : "DATA", rb_idP);
 
-    LOG_F(PDCP,"\n");
 #ifndef UETARGET
 
    

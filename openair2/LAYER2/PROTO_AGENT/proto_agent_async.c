@@ -70,7 +70,7 @@ proto_agent_async_channel_info(mod_id_t mod_id, const char *bind_ip, uint16_t bi
  error:
   if (channel)
     free(channel);
-  fprintf(stderr, "error creating proto_agent_async_channel_t\n");
+  LOG_E(PROTO_AGENT, "error creating proto_agent_async_channel_t\n");
   return NULL;
 }
 
