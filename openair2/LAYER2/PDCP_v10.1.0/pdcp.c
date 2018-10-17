@@ -67,6 +67,7 @@ extern int otg_enabled;
 
 #include "common/ran_context.h"
 extern RAN_CONTEXT_t RC;
+hash_table_t  *pdcp_coll_p = NULL;
 
 #ifdef MBMS_MULTICAST_OUT
 # include <sys/types.h>

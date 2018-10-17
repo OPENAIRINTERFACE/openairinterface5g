@@ -38,7 +38,7 @@
 
 UE_PF_PO_t UE_PF_PO[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
 pthread_mutex_t ue_pf_po_mutex;
-UE_RRC_INST *UE_rrc_inst;
+UE_RRC_INST *UE_rrc_inst = NULL;
 #include "LAYER2/MAC/mac_extern.h"
 #define MAX_U32 0xFFFFFFFF
 
