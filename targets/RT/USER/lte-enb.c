@@ -165,6 +165,8 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
 
   // *******************************************************************
 
+    RU_t *ru = RC.ru[0];
+
   if (nfapi_mode == 1) {
 
     // I am a PNF and I need to let nFAPI know that we have a (sub)frame tick
@@ -229,6 +231,36 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
     }
     if (release_thread(&proc[1].mutex_rxtx,&proc[1].pipe_ready,"wakeup_tx")<0)  return(-1);
   }
+
+#if defined(PRE_SCD_THREAD)
+    if (nfapi_mode == 2){
+      new_dlsch_ue_select_tbl_in_use = dlsch_ue_select_tbl_in_use;
+      dlsch_ue_select_tbl_in_use = !dlsch_ue_select_tbl_in_use;
+      memcpy(&pre_scd_eNB_UE_stats,&RC.mac[ru->eNB_list[0]->Mod_id]->UE_list.eNB_UE_stats, sizeof(eNB_UE_STATS)*MAX_NUM_CCs*NUMBER_OF_UE_MAX);
+      memcpy(&pre_scd_activeUE, &RC.mac[ru->eNB_list[0]->Mod_id]->UE_list.active, sizeof(boolean_t)*NUMBER_OF_UE_MAX);
+      if (pthread_mutex_lock(&ru->proc.mutex_pre_scd)!= 0) {
+          LOG_E( PHY, "[eNB] error locking proc mutex for eNB pre scd\n");
+          exit_fun("error locking mutex_time");
+      }
+
+      ru->proc.instance_pre_scd++;
+
+      if (ru->proc.instance_pre_scd == 0) {
+          if (pthread_cond_signal(&ru->proc.cond_pre_scd) != 0) {
+              LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB pre scd\n" );
+              exit_fun( "ERROR pthread_cond_signal cond_pre_scd" );
+          }
+      }else{
+          LOG_E( PHY, "[eNB] frame %d subframe %d rxtx busy instance_pre_scd %d\n",
+                 proc->frame_rx,proc->subframe_rx,ru->proc.instance_pre_scd );
+      }
+
+      if (pthread_mutex_unlock(&ru->proc.mutex_pre_scd)!= 0) {
+          LOG_E( PHY, "[eNB] error unlocking mutex_pre_scd mutex for eNB pre scd\n");
+          exit_fun("error unlocking mutex_pre_scd");
+      }
+    }
+#endif
 
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
 

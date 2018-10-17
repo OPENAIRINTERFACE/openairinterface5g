@@ -1063,6 +1063,13 @@ int main( int argc, char **argv )
       }
     }
 
+
+#if defined(PRE_SCD_THREAD)
+    if (nfapi_mode==2) { // ru pointer is necessary for pre_scd.
+      init_ru_vnf();
+    }
+#endif
+
     config_sync_var=0;
 
     if (nfapi_mode==1) { // PNF
