@@ -392,7 +392,7 @@ int proto_agent_pdcp_data_req_process(mod_id_t mod_id, const void *params, Proto
   rlc_data = data_req->pdcp_data;
   ctxt = rlc_data->fsp_ctxt;
 
-  protocol_ctxt_t *ctxt_pP;
+  protocol_ctxt_t  ctxt_pP;
   srb_flag_t       srb_flagP = 0;
   rb_id_t          rb_idP = 0;
   mui_t            muiP = 0;
@@ -402,15 +402,13 @@ int proto_agent_pdcp_data_req_process(mod_id_t mod_id, const void *params, Proto
   mem_block_t     *pdcp_pdu_p = NULL;
 
   // Create a new protocol context for handling the packet
-  ctxt_pP = malloc(sizeof(protocol_ctxt_t));
-  if (!ctxt_pP) goto error;
-  ctxt_pP->module_id = ctxt->fsp_mod_id;
-  ctxt_pP->enb_flag = ctxt->fsp_enb_flag;
-  ctxt_pP->instance = ctxt->fsp_instance;
-  ctxt_pP->rnti = ctxt->fsp_rnti;
-  ctxt_pP->frame = ctxt->fsp_frame;
-  ctxt_pP->subframe = ctxt->fsp_subframe;
-  ctxt_pP->eNB_index = ctxt->fsp_enb_index;
+  ctxt_pP.module_id = ctxt->fsp_mod_id;
+  ctxt_pP.enb_flag = ctxt->fsp_enb_flag;
+  ctxt_pP.instance = ctxt->fsp_instance;
+  ctxt_pP.rnti = ctxt->fsp_rnti;
+  ctxt_pP.frame = ctxt->fsp_frame;
+  ctxt_pP.subframe = ctxt->fsp_subframe;
+  ctxt_pP.eNB_index = ctxt->fsp_enb_index;
 
   srb_flagP = rlc_data->fsp_srb_flag;
   flag_MBMS = rlc_data->fsp_mbms_flag;
@@ -422,11 +420,11 @@ int proto_agent_pdcp_data_req_process(mod_id_t mod_id, const void *params, Proto
   if (!pdcp_pdu_p) goto error;
   memcpy(pdcp_pdu_p->data, rlc_data->fsp_pdu->fsp_pdu_data.data, pdcp_pdu_size);
 
-  result = rlc_data_req((const protocol_ctxt_t*) ctxt_pP
-                        ,(const srb_flag_t) srb_flagP
-                        ,(const MBMS_flag_t) flag_MBMS
-                        ,(const rb_id_t) rb_idP
-                        ,(const mui_t) muiP
+  result = rlc_data_req(&ctxt_pP
+                        ,srb_flagP
+                        ,flag_MBMS
+                        ,rb_idP
+                        ,muiP
                         ,confirmP
                         ,pdcp_pdu_size
                         ,pdcp_pdu_p
@@ -439,8 +437,6 @@ int proto_agent_pdcp_data_req_process(mod_id_t mod_id, const void *params, Proto
   return result;
 
   error:
-    if (ctxt_pP)
-      free(ctxt_pP);
     if (pdcp_pdu_p)
       free_mem_block(pdcp_pdu_p, __func__);
     LOG_E(PROTO_AGENT, "%s: an error occured\n", __FUNCTION__);
@@ -589,7 +585,7 @@ int proto_agent_pdcp_data_ind_process(mod_id_t mod_id, const void *params, Proto
   rlc_data = data_ind->rlc_data;
   ctxt = rlc_data->fsp_ctxt;
 
-  protocol_ctxt_t *ctxt_pP;
+  protocol_ctxt_t  ctxt_pP;
   srb_flag_t       srb_flagP = 0;
   rb_id_t          rb_idP = 0;
   sdu_size_t       pdcp_pdu_size = 0;
@@ -597,15 +593,13 @@ int proto_agent_pdcp_data_ind_process(mod_id_t mod_id, const void *params, Proto
   mem_block_t     *pdcp_pdu_p = NULL;
 
   // Create a new protocol context for handling the packet
-  ctxt_pP = malloc(sizeof(protocol_ctxt_t));
-  if (!ctxt_pP) goto error;
-  ctxt_pP->module_id = ctxt->fsp_mod_id;
-  ctxt_pP->enb_flag = ctxt->fsp_enb_flag;
-  ctxt_pP->instance = ctxt->fsp_instance;
-  ctxt_pP->rnti = ctxt->fsp_rnti;
-  ctxt_pP->frame = ctxt->fsp_frame;
-  ctxt_pP->subframe = ctxt->fsp_subframe;
-  ctxt_pP->eNB_index = ctxt->fsp_enb_index;
+  ctxt_pP.module_id = ctxt->fsp_mod_id;
+  ctxt_pP.enb_flag = ctxt->fsp_enb_flag;
+  ctxt_pP.instance = ctxt->fsp_instance;
+  ctxt_pP.rnti = ctxt->fsp_rnti;
+  ctxt_pP.frame = ctxt->fsp_frame;
+  ctxt_pP.subframe = ctxt->fsp_subframe;
+  ctxt_pP.eNB_index = ctxt->fsp_enb_index;
 
   srb_flagP = rlc_data->fsp_srb_flag;
   flag_MBMS = rlc_data->fsp_mbms_flag;
@@ -619,8 +613,8 @@ int proto_agent_pdcp_data_ind_process(mod_id_t mod_id, const void *params, Proto
 //   if (xid == 1)
 //     pdcp_data_ind_wifi((const protocol_ctxt_t*) ctxt_pP, (const srb_flag_t) srb_flagP, (const MBMS_flag_t) flag_MBMS, (const rb_id_t) rb_idP, pdcp_pdu_size, pdcp_pdu_p);
 //   else if (xid == 0)   // FIXME: USE a preprocessed definition
-  LOG_D(PROTO_AGENT, "[inst %d] Received PDCP PDU with size %d for UE RNTI %x RB %d, Calling pdcp_data_ind\n", ctxt_pP->instance, pdcp_pdu_size,ctxt_pP->rnti,rb_idP);
-  result = pdcp_data_ind(ctxt_pP,
+  LOG_D(PROTO_AGENT, "[inst %d] Received PDCP PDU with size %d for UE RNTI %x RB %d, Calling pdcp_data_ind\n", ctxt_pP.instance, pdcp_pdu_size,ctxt_pP.rnti,rb_idP);
+  result = pdcp_data_ind(&ctxt_pP,
                          srb_flagP,
                          flag_MBMS,
                          rb_idP,
@@ -630,8 +624,6 @@ int proto_agent_pdcp_data_ind_process(mod_id_t mod_id, const void *params, Proto
   return result;
 
   error:
-    if (ctxt_pP)
-      free(ctxt_pP);
     if (pdcp_pdu_p)
       free_mem_block(pdcp_pdu_p, __func__);
     LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
