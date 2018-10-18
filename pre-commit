@@ -4,7 +4,7 @@
 #   cp pre-commit .git/hooks
 #   chmod +x .git/hooks/pre-commit
 
-OPTIONS="--convert-tabs --indent=spaces=2 --indent-switches --indent-col1-comments --break-blocks --delete-empty-lines --align-pointer=name --keep-one-line-blocks --keep-one-line-statements --lineend=linux"
+OPTIONS="--options=ci-scripts/astyle-options.txt"
 
 RETURN=0
 ASTYLE=$(which astyle)
