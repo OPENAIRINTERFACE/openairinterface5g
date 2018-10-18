@@ -36,7 +36,7 @@ This section deals with basic functions for OFDM Modulation.
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "modulation_common.h"
 #include "PHY/LTE_TRANSPORT/transport_common_proto.h"
-//#define DEBUG_OFDM_MOD
+#define DEBUG_OFDM_MOD
 
 
 void normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,LTE_DL_FRAME_PARMS *frame_parms)
@@ -122,10 +122,10 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 
   case 3072:
     idft = idft3072;
-
+    break;
   case 4096:
     idft = idft4096;
-
+    break;
   default:
     idft = idft512;
     break;

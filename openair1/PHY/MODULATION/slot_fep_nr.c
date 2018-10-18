@@ -61,7 +61,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   int uespec_pilot[9][1200];*/
 
   void (*dft)(int16_t *,int16_t *, int);
-  int tmp_dft_in[2048] __attribute__ ((aligned (32)));  // This is for misalignment issues for 6 and 15 PRBs
+  int tmp_dft_in[8192] __attribute__ ((aligned (32)));  // This is for misalignment issues for 6 and 15 PRBs
 
   switch (frame_parms->ofdm_symbol_size) {
   case 128:
@@ -86,6 +86,14 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 
   case 2048:
     dft = dft2048;
+    break;
+
+  case 4096:
+    dft = dft4096;
+    break;
+
+  case 8192:
+    dft = dft8192;
     break;
 
   default:

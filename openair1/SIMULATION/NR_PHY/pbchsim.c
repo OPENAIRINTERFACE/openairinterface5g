@@ -101,13 +101,12 @@ int main(int argc, char **argv)
   char input_val_str[50],input_val_str2[50];
 
   uint8_t frame_mod4,num_pdcch_symbols = 0;
-  uint16_t NB_RB=25;
 
   SCM_t channel_model=AWGN;//Rayleigh1_anticorr;
 
   double pbch_sinr;
   int pbch_tx_ant;
-  uint8_t N_RB_DL=106,mu=1;
+  int N_RB_DL=273,mu=1;
 
   unsigned char frame_type = 0;
   unsigned char pbch_phase = 0;
@@ -314,19 +313,8 @@ int main(int argc, char **argv)
   if (snr1set==0)
     snr1 = snr0+10;
 
-  gNB2UE = new_channel_desc_scm(n_tx,
-                                n_rx,
-                                channel_model,
- 				61.44e6, //N_RB2sampling_rate(N_RB_DL),
-				40e6, //N_RB2channel_bandwidth(N_RB_DL),
-                                0,
-                                0,
-                                0);
 
-  if (gNB2UE==NULL) {
-    msg("Problem generating channel model. Exiting.\n");
-    exit(-1);
-  }
+  printf("Initializing gNodeB for mu %d, N_RB_DL %d\n",mu,N_RB_DL);
 
   RC.gNB = (PHY_VARS_gNB***) malloc(sizeof(PHY_VARS_gNB **));
   RC.gNB[0] = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
@@ -337,9 +325,44 @@ int main(int argc, char **argv)
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;
   frame_parms->N_RB_DL = N_RB_DL;
+  frame_parms->N_RB_UL = N_RB_DL;
 
-  nr_phy_config_request_sim(gNB);
+  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu);
   phy_init_nr_gNB(gNB,0,0);
+
+  double fs,bw;
+
+  if (mu == 1 && N_RB_DL == 217) { 
+    fs = 122.88e6;
+    bw = 80e6;
+  }					       
+  else if (mu == 1 && N_RB_DL == 245) {
+    fs = 122.88e6;
+    bw = 90e6;
+  }
+  else if (mu == 1 && N_RB_DL == 273) {
+    fs = 122.88e6;
+    bw = 100e6;
+  }
+  else if (mu == 1 && N_RB_DL == 106) { 
+    fs = 61.44e6;
+    bw = 40e6;
+  }
+  else AssertFatal(1==0,"Unsupported numerology for mu %d, N_RB %d\n",mu, N_RB_DL);
+
+  gNB2UE = new_channel_desc_scm(n_tx,
+                                n_rx,
+                                channel_model,
+ 				fs, 
+				bw, 
+                                0,
+                                0,
+                                0);
+
+  if (gNB2UE==NULL) {
+    msg("Problem generating channel model. Exiting.\n");
+    exit(-1);
+  }
 
   frame_length_complex_samples = frame_parms->samples_per_subframe;
   frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP;
@@ -362,6 +385,7 @@ int main(int argc, char **argv)
     r_im[i] = malloc(frame_length_complex_samples*sizeof(double));
     bzero(r_im[i],frame_length_complex_samples*sizeof(double));
 
+    printf("Allocating %d samples for txdata\n",frame_length_complex_samples);
     txdata[i] = malloc(frame_length_complex_samples*sizeof(int));
     bzero(r_re[i],frame_length_complex_samples*sizeof(int));
   
@@ -375,7 +399,7 @@ int main(int argc, char **argv)
   //configure UE
   UE = malloc(sizeof(PHY_VARS_NR_UE));
   memcpy(&UE->frame_parms,frame_parms,sizeof(NR_DL_FRAME_PARMS));
-  phy_init_nr_top(frame_parms);
+  phy_init_nr_top(UE);
   if (init_nr_ue_signal(UE, 1, 0) != 0)
   {
     printf("Error at UE NR initialisation\n");
@@ -385,9 +409,11 @@ int main(int argc, char **argv)
 
   // generate signal
   if (input_fd==NULL) {
+    gNB->pbch_configured = 1;
     nr_common_signal_procedures (gNB,frame,subframe);
   }
 
+  
   LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],frame_length_complex_samples_no_prefix,1,1);
   if (gNB->frame_parms.nb_antennas_tx>1)
     LOG_M("txsigF1.m","txsF1", gNB->common_vars.txdataF[1],frame_length_complex_samples_no_prefix,1,1);
@@ -418,8 +444,8 @@ int main(int argc, char **argv)
     for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
       r_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
       r_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
-      }
     }
+  }
   
   for (SNR=snr0; SNR<snr1; SNR+=.2) {
 

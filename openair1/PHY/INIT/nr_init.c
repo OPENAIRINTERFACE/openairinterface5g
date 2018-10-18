@@ -365,7 +365,7 @@ void install_schedule_handlers(IF_Module_t *if_inst)
 
 /// this function is a temporary addition for NR configuration
 
-void nr_phy_config_request_sim(PHY_VARS_gNB *gNB)
+void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu)
 {
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   nfapi_nr_config_request_t *gNB_config = &gNB->gNB_config;
@@ -373,14 +373,14 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB)
   //overwrite for new NR parameters
   gNB_config->nfapi_config.rf_bands.rf_band[0] = 22;
   gNB_config->nfapi_config.earfcn.value = 6600;
-  gNB_config->subframe_config.numerology_index_mu.value = 1;
-  gNB_config->subframe_config.duplex_mode.value = FDD;
+  gNB_config->subframe_config.numerology_index_mu.value = mu;
+  gNB_config->subframe_config.duplex_mode.value = TDD;
   gNB_config->rf_config.tx_antenna_ports.value = 1;
-  gNB_config->rf_config.dl_carrier_bandwidth.value = 106;
-  gNB_config->rf_config.ul_carrier_bandwidth.value = 106;
+  gNB_config->rf_config.dl_carrier_bandwidth.value = N_RB_DL;
+  gNB_config->rf_config.ul_carrier_bandwidth.value = N_RB_UL;
   gNB_config->sch_config.half_frame_index.value = 0;
   gNB_config->sch_config.ssb_subcarrier_offset.value = 0;
-  gNB_config->sch_config.n_ssb_crb.value = 86;
+  gNB_config->sch_config.n_ssb_crb.value = N_RB_DL-20;
   gNB_config->sch_config.ssb_subcarrier_offset.value = 0;
 
 

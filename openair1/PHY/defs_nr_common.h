@@ -138,9 +138,9 @@ typedef struct NR_DL_FRAME_PARMS {
   /// frequency range
   nr_frequency_range_e freq_range;
   /// Number of resource blocks (RB) in DL
-  uint8_t N_RB_DL;
+  int N_RB_DL;
   /// Number of resource blocks (RB) in UL
-  uint8_t N_RB_UL;
+  int N_RB_UL;
   ///  total Number of Resource Block Groups: this is ceil(N_PRB/P)
   uint8_t N_RBG;
   /// Total Number of Resource Block Groups SubSets: this is P

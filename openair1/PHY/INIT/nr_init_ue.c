@@ -660,12 +660,11 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   fp->nb_antennas_tx = 1;
   fp->nb_antennas_rx=1;
 
-  init_dfts();
 
   printf("Initializing UE vars (abstraction %"PRIu8") for eNB TXant %"PRIu8", UE RXant %"PRIu8"\n",abstraction_flag,fp->nb_antennas_tx,fp->nb_antennas_rx);
   //LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_UE][MOD %02u][]\n", ue->Mod_id+NB_eNB_INST);
   
-  nr_init_frame_parms_ue(&ue->frame_parms);
+  nr_init_frame_parms_ue(&ue->frame_parms,NR_MU_1,NORMAL);
   phy_init_nr_top(ue);
 
   // many memory allocation sizes are hard coded
@@ -943,28 +942,13 @@ void init_nr_ue_transport(PHY_VARS_NR_UE *ue,int abstraction_flag) {
 
 void phy_init_nr_top(PHY_VARS_NR_UE *ue)
 {
-	NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
-	NR_UE_DLSCH_t *dlsch0 = ue->dlsch[0][0][0];
-	dlsch0 =(NR_UE_DLSCH_t *)malloc16(sizeof(NR_UE_DLSCH_t));
-
+  NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
+  NR_UE_DLSCH_t *dlsch0 = ue->dlsch[0][0][0];
+  dlsch0 =(NR_UE_DLSCH_t *)malloc16(sizeof(NR_UE_DLSCH_t));
+  
   crcTableInit();
 
-  ccodedot11_init();
-  ccodedot11_init_inv();
-
-  ccodelte_init();
-  ccodelte_init_inv();
-
-  //treillis_table_init();
-
-  phy_generate_viterbi_tables();
-  phy_generate_viterbi_tables_lte();
-
-  //init_td8();
-  //init_td16();
-#ifdef __AVX2__
-  //init_td16avx2();
-#endif
+  init_dfts();
 
   init_context_synchro_nr(frame_parms);
 

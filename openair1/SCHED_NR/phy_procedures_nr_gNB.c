@@ -113,7 +113,7 @@ void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_t *cfg, NR_DL_FRAME_PAR
 {
   int start_rb = cfg->sch_config.n_ssb_crb.value / pow(2,cfg->subframe_config.numerology_index_mu.value);
   fp->ssb_start_subcarrier = 12 * start_rb + cfg->sch_config.ssb_subcarrier_offset.value;
-  LOG_D(PHY, "SSB first subcarrier %d\n", fp->ssb_start_subcarrier);
+  LOG_I(PHY, "SSB first subcarrier %d (%d,%d)\n", fp->ssb_start_subcarrier,start_rb,cfg->sch_config.ssb_subcarrier_offset.value);
 }
 
 void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int subframe) {
@@ -141,6 +141,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int subframe) {
     nr_generate_sss(gNB->d_sss, txdataF, AMP_OVER_2, ssb_start_symbol, cfg, fp);
 
     if (!(frame&7)){
+      LOG_I(PHY,"%d.%d : pbch_configured %d\n",frame,subframe,gNB->pbch_configured);
       if (gNB->pbch_configured != 1)return;
       gNB->pbch_configured = 0;
     }

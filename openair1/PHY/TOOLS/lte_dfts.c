@@ -4803,7 +4803,7 @@ void dft4096(int16_t *x,int16_t *y,int scale)
 
 }
 
-
+ 
 
 void idft4096(int16_t *x,int16_t *y,int scale)
 {
@@ -4853,7 +4853,7 @@ void idft4096(int16_t *x,int16_t *y,int scale)
 
       y128+=16;
     }
-
+ 
   }
 
   _mm_empty();
