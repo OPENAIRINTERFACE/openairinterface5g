@@ -343,7 +343,7 @@ then
                 then
                     echo "        <td bgcolor = \"green\" >OK</td>" >> ./test_simulator_results.html
                 else
-                    echo "        <td bgcolor = \"red\" >OK</td>" >> ./test_simulator_results.html
+                    echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
                 fi
                 echo "        <td><pre>" >> ./test_simulator_results.html
                 if [ $NB_ENB_GOT_SYNC -eq 1 ]
