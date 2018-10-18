@@ -191,6 +191,8 @@ proto_agent_send_rlc_data_req(const protocol_ctxt_t* const ctxt_pP,
   if (!msg) goto error;
     
   proto_agent_async_msg_send((void *)msg, (int) msgsize, 1, proto_agent[mod_id].channel->channel_info);
+
+  free_mem_block(sdu_pP, __func__);
   
   return;
 error:
@@ -228,6 +230,8 @@ proto_agent_send_pdcp_data_ind(const protocol_ctxt_t* const ctxt_pP, const srb_f
   if (!msg) goto error;
 
   proto_agent_async_msg_send((void *)msg, (int) msgsize, 1, proto_agent[mod_id].channel->channel_info);
+
+  free_mem_block(sdu_pP, __func__);
 
   return;
 
