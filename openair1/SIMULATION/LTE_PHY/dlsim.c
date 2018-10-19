@@ -82,7 +82,30 @@ double t_rx_min = 1000000000; /*!< \brief initial min process time for rx */
 int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
 
-int codingw = 0;
+char *parallel_config = NULL;
+char *worker_config = NULL;
+static THREAD_STRUCT thread_struct;
+void set_parallel_conf(char *parallel_conf)
+{
+  if(strcmp(parallel_conf,"PARALLEL_SINGLE_THREAD")==0)           thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
+  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_SPLIT")==0)        thread_struct.parallel_conf = PARALLEL_RU_L1_SPLIT;
+  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_TRX_SPLIT")==0)    thread_struct.parallel_conf = PARALLEL_RU_L1_TRX_SPLIT;
+  printf("[CONFIG] parallel conf is set to %d\n",thread_struct.parallel_conf);
+} 
+void set_worker_conf(char *worker_conf)
+{
+  if(strcmp(worker_conf,"WORKER_DISABLE")==0)                     thread_struct.worker_conf = WORKER_DISABLE;
+  else if(strcmp(worker_conf,"WORKER_ENABLE")==0)                 thread_struct.worker_conf = WORKER_ENABLE;
+  printf("[CONFIG] worker conf is set to %d\n",thread_struct.worker_conf);
+} 
+PARALLEL_CONF_t get_thread_parallel_conf(void)
+{
+  return thread_struct.parallel_conf;
+} 
+WORKER_CONF_t get_thread_worker_conf(void)
+{
+  return thread_struct.worker_conf;
+} 
 
 int emulate_rf = 0;
 
@@ -523,7 +546,7 @@ int main(int argc, char **argv)
   int c;
   int k,i,j,aa;
   int re;
-
+  int loglvl=OAILOG_DEBUG;
 
   int s,Kr,Kr_bytes;
 
@@ -1001,7 +1024,7 @@ int main(int argc, char **argv)
       break;
 
     case 'L':
-      set_glog(atoi(optarg));
+      loglvl = atoi(optarg);
       break;
 
     case 'h':
@@ -1041,6 +1064,8 @@ int main(int argc, char **argv)
       break;
     }
   }
+  set_parallel_conf("PARALLEL_RU_L1_TRX_SPLIT");
+  set_worker_conf("WORKER_ENABLE");
 
   if (transmission_mode>1) pa=dBm3;
   printf("dlsim: tmode %d, pa %d\n",transmission_mode,pa);
@@ -1049,7 +1074,7 @@ int main(int argc, char **argv)
 	      "cannot load configuration module, exiting\n");
   logInit();
   // enable these lines if you need debug info
-  set_glog(LOG_DEBUG);
+  set_glog(loglvl);
   // moreover you need to init itti with the following line
   // however itti will catch all signals, so ctrl-c won't work anymore
   // alternatively you can disable ITTI completely in CMakeLists.txt
@@ -2046,24 +2071,9 @@ int main(int argc, char **argv)
       qsort (table_rx, time_vector_rx.size, sizeof(double), &compare);
 
       if (dump_table == 1 ) {
-        set_component_filelog(USIM);  // file located in /tmp/usim.txt
-        int n;
-        LOG_F(USIM,"The transmitter raw data: \n");
-
-        for (n=0; n< time_vector_tx.size; n++) {
-          printf("%f ", table_tx[n]);
-          LOG_F(USIM,"%f ", table_tx[n]);
-        }
-
-        LOG_F(USIM,"\n");
-        LOG_F(USIM,"The receiver raw data: \n");
-
-        for (n=0; n< time_vector_rx.size; n++) {
-          // printf("%f ", table_rx[n]);
-          LOG_F(USIM,"%f ", table_rx[n]);
-        }
-
-        LOG_F(USIM,"\n");
+        set_component_filelog(SIM);  // file located in /tmp/usim.txt
+        LOG_UDUMPMSG(SIM,table_tx,time_vector_tx.size,LOG_DUMP_DOUBLE,"The transmitter raw data: \n");
+        LOG_UDUMPMSG(SIM,table_rx,time_vector_rx.size,LOG_DUMP_DOUBLE,"Thereceiver raw data: \n");
       }
 
       double tx_median = table_tx[time_vector_tx.size/2];

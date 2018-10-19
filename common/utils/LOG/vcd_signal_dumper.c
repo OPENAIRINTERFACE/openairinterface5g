@@ -44,7 +44,6 @@
 #include <unistd.h>
 
 #include "assertions.h"
-#include "signals.h"
 
 #include "vcd_signal_dumper.h"
 

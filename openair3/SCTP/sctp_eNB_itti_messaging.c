@@ -24,6 +24,20 @@
 #include "sctp_common.h"
 #include "sctp_eNB_itti_messaging.h"
 
+int sctp_itti_send_init_msg_multi_cnf(task_id_t task_id, instance_t instance, int multi_sd)
+{
+  MessageDef      *message_p;
+  sctp_init_msg_multi_cnf_t *sctp_init_msg_multi_cnf_p;
+
+  message_p = itti_alloc_new_message(TASK_SCTP, SCTP_INIT_MSG_MULTI_CNF);
+
+  sctp_init_msg_multi_cnf_p = &message_p->ittiMsg.sctp_init_msg_multi_cnf;
+
+  sctp_init_msg_multi_cnf_p->multi_sd = multi_sd;
+
+  return itti_send_msg_to_task(task_id, instance, message_p);
+}
+
 int sctp_itti_send_new_message_ind(task_id_t task_id, uint32_t assoc_id, uint8_t *buffer,
                                    uint32_t buffer_length, uint16_t stream)
 {

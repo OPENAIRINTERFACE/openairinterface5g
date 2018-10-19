@@ -38,8 +38,6 @@
 extern "C"
 {
 #endif
-/* get rid of "exit_fun undeclared" warning */
-extern void exit_fun(const char* s);
 
 #define CONFIG_GETSOURCE    ( (config_get_if()==NULL) ? NULL : config_get_if()->cfgmode       )
 #define CONFIG_GETNUMP      ( (config_get_if()==NULL) ? 0    : config_get_if()->num_cfgP      )
@@ -59,7 +57,7 @@ extern int config_assign_ipv4addr(paramdef_t *cfgoptions, char *ipv4addr);
 
 /* apis to get parameters, to be used by oai modules, at configuration time */
 extern int config_get(paramdef_t *params,int numparams, char *prefix);
-#define config_getlist config_get_if()->getlist
+extern int config_getlist(paramlist_def_t *ParamList, paramdef_t *params, int numparams, char *prefix);
 
 /* apis to retrieve parameters info after calling get or getlist functions */
 extern int config_isparamset(paramdef_t *params,int paramidx);

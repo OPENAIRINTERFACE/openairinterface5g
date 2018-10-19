@@ -125,7 +125,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
     slotoffsetF = 0;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength; 
 
-    LOG_D(PHY,"send UL_IF4p5: RU %d frame %d, subframe %d\n",ru->idx,frame,subframe);
+    LOG_I(PHY,"send UL_IF4p5: RU %d frame %d, subframe %d\n",ru->idx,frame,subframe);
 
     if (subframe_select(fp,subframe)==SF_S) {
       nsym=fp->ul_symbols_in_S_subframe;

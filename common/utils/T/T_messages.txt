@@ -750,6 +750,27 @@ ID = LEGACY_OSA_TRACE
     GROUP = ALL:LEGACY_OSA:LEGACY_GROUP_TRACE:LEGACY
     FORMAT = string,log
 
+ID = LEGACY_ASN_INFO
+    DESC = ASN legacy logs - info level
+    GROUP = ALL:LEGACY_ASN:LEGACY_GROUP_INFO:LEGACY
+    FORMAT = string,log
+ID = LEGACY_ASN_ERROR
+    DESC = ASN legacy logs - error level
+    GROUP = ALL:LEGACY_ASN:LEGACY_GROUP_ERROR:LEGACY
+    FORMAT = string,log
+ID = LEGACY_ASN_WARNING
+    DESC = ASN legacy logs - warning level
+    GROUP = ALL:LEGACY_ASN:LEGACY_GROUP_WARNING:LEGACY
+    FORMAT = string,log
+ID = LEGACY_ASN_DEBUG
+    DESC = ASN legacy logs - debug level
+    GROUP = ALL:LEGACY_ASN:LEGACY_GROUP_DEBUG:LEGACY
+    FORMAT = string,log
+ID = LEGACY_ASN_TRACE
+    DESC = ASN legacy logs - trace level
+    GROUP = ALL:LEGACY_ASN:LEGACY_GROUP_TRACE:LEGACY
+    FORMAT = string,log
+
 ID = LEGACY_SIM_INFO
     DESC = SIM legacy logs - info level
     GROUP = ALL:LEGACY_SIM:LEGACY_GROUP_INFO:LEGACY

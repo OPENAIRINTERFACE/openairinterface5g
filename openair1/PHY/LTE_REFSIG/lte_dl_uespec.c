@@ -36,7 +36,7 @@
 #include "lte_refsig.h"
 #include "PHY/defs_eNB.h"
 #include "PHY/defs_UE.h"
-#include "log.h"
+#include "common/utils/LOG/log.h"
 #include "PHY/impl_defs_top.h"
 
 //extern unsigned int lte_gold_table[3][20][2][14];
