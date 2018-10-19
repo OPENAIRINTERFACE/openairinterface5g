@@ -87,13 +87,72 @@ static inline uint8_t is_codeword_disabled(uint8_t format, uint8_t Imcs, uint8_t
   return ((format==NFAPI_NR_DL_DCI_FORMAT_1_1)&&(Imcs==26)&&(rv==1));
 }
 
-/*uint16_t nr_get_tbs(NR_gNB_DCI_ALLOC_t dci_alloc, nfapi_nr_config_request_t config) {
+void nr_get_tbs(NR_gNB_DLSCH_t *dlsch,
+                nfapi_nr_dl_config_dci_dl_pdu dci_pdu,
+                nfapi_nr_config_request_t config) {
+uint8_t N_PRB_DMRS=2; // tmp hardcoding
 
-  uint8_t rnti_type = dci_alloc.pdcch_params.rnti_type;
+  nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_rel15 = &dlsch->dlsch_pdu.dlsch_pdu_rel15;
+  nfapi_nr_dl_config_pdcch_parameters_rel15_t params_rel15 = dci_pdu.pdcch_params_rel15;
+  NR_DL_gNB_HARQ_t *harq = dlsch->harq_processes[dlsch_rel15->harq_pid];
+  uint8_t rnti_type = params_rel15.rnti_type;
+  uint8_t dci_format = params_rel15.dci_format;
+  uint8_t ss_type = params_rel15.search_space_type;
   uint8_t N_PRB_oh = ((rnti_type==NFAPI_NR_RNTI_SI)||(rnti_type==NFAPI_NR_RNTI_RA)||(rnti_type==NFAPI_NR_RNTI_P))? 0 : \
-  (config.pdsch_config.);
+  (config.pdsch_config.x_overhead.value);
+  uint8_t mcs_table = config.pdsch_config.mcs_table.value;
+  uint8_t N_sh_symb = dlsch_rel15->L;
+  uint8_t Imcs = dlsch_rel15->Imcs;
   uint16_t N_prime_RE = NR_NB_SC_PER_RB*N_sh_symb - N_PRB_DMRS - N_PRB_oh;
   LOG_I(MAC, "N_prime_RE %d for %d symbols %d DMRS per PRB and %d overhead\n", N_prime_RE, N_sh_symb, N_PRB_DMRS, N_PRB_oh);
 
-  
-}*/
+  uint16_t N_RE, N_info, N_info_prime;
+  uint8_t table_idx, R, Qm, n;
+  float tmp, C; // temporary N_info_prime in float to avoid back and forth casting to int
+
+  N_RE = min(156, N_RE)*dlsch_rel15->n_prb;
+  if ((mcs_table == NFAPI_NR_MCS_TABLE_QAM256) && (dci_format == NFAPI_NR_DL_DCI_FORMAT_1_1) && ((rnti_type==NFAPI_NR_RNTI_C)||(rnti_type==NFAPI_NR_RNTI_CS)))
+    table_idx = 2;
+  else if ((mcs_table == NFAPI_NR_MCS_TABLE_QAM64_LOW_SE) && (rnti_type!=NFAPI_NR_RNTI_new) && (rnti_type==NFAPI_NR_RNTI_C) && (ss_type==NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC))
+    table_idx = 3;
+  else if (rnti_type==NFAPI_NR_RNTI_new)
+    table_idx = 3;
+  else if ((mcs_table == NFAPI_NR_MCS_TABLE_QAM256) && (rnti_type==NFAPI_NR_RNTI_CS) && (dci_format == NFAPI_NR_DL_DCI_FORMAT_1_1))
+    table_idx = 2; // Condition mcs_table not configured in sps_config necessary here but not yet implemented
+  /*else if((mcs_table == NFAPI_NR_MCS_TABLE_QAM64_LOW_SE) &&  (rnti_type==NFAPI_NR_RNTI_CS))
+   *  table_idx = 3;
+   * Note: the commented block refers to the case where the mcs_table is from sps_config*/
+  else
+    table_idx = 1;
+
+  R = nr_get_code_rate(Imcs, table_idx);
+  Qm = nr_get_Qm(Imcs, table_idx);
+  N_info = N_RE*R*Qm*harq->Nl;
+
+  if (N_info <= 3824) {
+    n = max(3, (uint8_t)(floor(log2(N_info)-6)));
+    N_info_prime = max(24, (N_info>>n)<<n);
+    for (int i=0; i<93; i++)
+      if (nr_tbs_table[i] >= N_info_prime) {
+        harq->TBS = nr_tbs_table[i];
+        break;
+      }
+  }
+  else {
+    n = (uint8_t)floor(log2(N_info)-24) - 5;
+    tmp = max(3840, ((uint16_t)round(((float)N_info-24)/(1<<n)))<<n);
+
+    if (R<0.25) {
+      C = ceil((tmp+24)/3816);
+      harq->TBS = ((uint16_t)(C*ceil((tmp+24)/(8*C))))<<3;
+    }
+    else {
+      if (tmp>8424) {
+        C = ceil((tmp+24)/8424);
+        harq->TBS = ((uint16_t)(C*ceil((tmp+24)/(8*C))))<<3;
+      }
+      else
+        harq->TBS = ((uint16_t)ceil((tmp+24)/8) - 24)<<3;
+    }    
+  }
+}

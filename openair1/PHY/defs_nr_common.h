@@ -86,6 +86,8 @@
 
 #define NR_MAX_NB_RBG 18
 #define NR_MAX_NB_LAYERS 8
+#define NR_MAX_NB_CODEWORDS 2
+#define NR_MAX_PDSCH_ENCODED_LENGTH 1000 //random
 
 typedef enum {
   NR_MU_0=0,
@@ -115,6 +117,14 @@ typedef enum {
   nr_FR1 = 0,
   nr_FR2
 } nr_frequency_range_e;
+
+typedef enum {
+  BPSK=0,
+  QPSK,
+  QAM16,
+  QAM64,
+  QAM256
+}nr_mod_t;
 
 typedef struct {
   /// Size of first RBG

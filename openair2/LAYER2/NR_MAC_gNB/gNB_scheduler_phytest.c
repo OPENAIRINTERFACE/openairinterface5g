@@ -30,11 +30,13 @@
 
 #include "nr_mac_gNB.h"
 #include "SCHED_NR/sched_nr.h"
+#include "PHY/NR_TRANSPORT/nr_dlsch.h"
+#include "PHY/NR_TRANSPORT/nr_dci.h"
 
 extern RAN_CONTEXT_t RC;
 
 /*Scheduling of DLSCH with associated DCI in common search space
- * current version has only a DCI for type 1 PDCCH for RA-RNTI*/
+ * current version has only a DCI for type 1 PDCCH for C_RNTI*/
 void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
                                    sub_frame_t   subframeP)
@@ -63,6 +65,12 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 
     nfapi_nr_dl_config_dci_dl_pdu_rel15_t *pdu_rel15 = &dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel15;
     nfapi_nr_dl_config_pdcch_parameters_rel15_t *params_rel15 = &dl_config_pdu->dci_dl_pdu.pdcch_params_rel15;
+    nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_pdu_rel15 = &dl_config_pdu->dlsch_pdu.dlsch_pdu_rel15;
+
+    dlsch_pdu_rel15->start_prb = 0;
+    dlsch_pdu_rel15->n_prb = 40;
+    dlsch_pdu_rel15->S = 8;
+    dlsch_pdu_rel15->L = 6;
 
     nr_configure_css_dci_from_mib(&gNB->pdcch_type0_params,
                                kHz30, kHz30, nr_FR1, 0, 0,
@@ -70,8 +78,8 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                cfg->rf_config.dl_channel_bandwidth.value);
     memcpy((void*)params_rel15, (void*)&gNB->pdcch_type0_params, sizeof(nfapi_nr_dl_config_pdcch_parameters_rel15_t));
 
-    pdu_rel15->frequency_domain_assignment = get_RIV(0, 40, 106);
-    pdu_rel15->time_domain_assignment = get_SLIV(8, 14);
+    pdu_rel15->frequency_domain_assignment = get_RIV(dlsch_pdu_rel15->start_prb, dlsch_pdu_rel15->n_prb, cfg->rf_config.dl_channel_bandwidth.value);
+    pdu_rel15->time_domain_assignment = get_SLIV(dlsch_pdu_rel15->S, dlsch_pdu_rel15->L);
     pdu_rel15->vrb_to_prb_mapping = 1;
     pdu_rel15->mcs = 12;
     pdu_rel15->tb_scaling = 1;
@@ -92,10 +100,6 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     
     
     pdu_rel15->tb_scaling = 1;
-    pdu_rel15->tb_scaling = 1;
-    pdu_rel15->tb_scaling = 1;
-    pdu_rel15->tb_scaling = 1;
-
 
     LOG_I(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d, time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d\n",
                 pdu_rel15->frequency_domain_assignment,

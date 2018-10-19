@@ -158,11 +158,17 @@ typedef struct {
 
 typedef struct {
   nfapi_uint16_tlv_t  data_scrambling_id;
+  nfapi_uint16_tlv_t  dmrs_typeA_position;
+  nfapi_uint16_tlv_t  dmrs_additional_position;
+  nfapi_uint16_tlv_t  dmrs_type;
+  nfapi_uint16_tlv_t  dmrs_max_length;
+  nfapi_uint16_tlv_t  mapping_type;
+  nfapi_uint16_tlv_t  resource_allocation;
+  nfapi_uint16_tlv_t  time_allocation_list;
   nfapi_uint16_tlv_t  mcs_table;
   nfapi_uint16_tlv_t  aggregation_factor;
   nfapi_uint16_tlv_t  prb_bundling_type;
   nfapi_uint16_tlv_t  rbg_size;
-  nfapi_uint16_tlv_t  resource_allocation_config;
   nfapi_uint16_tlv_t  vrb_to_prb_interleaver;
   nfapi_uint16_tlv_t  code_block_groug_transmission;
   nfapi_uint16_tlv_t  x_overhead;
@@ -238,7 +244,7 @@ typedef struct {
   nfapi_nr_subframe_config_t                subframe_config;
   nfapi_nr_rf_config_t                      rf_config;
   nfapi_nr_sch_config_t                     sch_config;
-  nfapi_nr_pdsch_config_t                   dlsch_config;
+  nfapi_nr_pdsch_config_t                   pdsch_config;
   nfapi_nr_rach_config_t                    rach_config;
   nfapi_nr_pusch_config_t                   pusch_config;
   nfapi_nr_pucch_config_t                   pucch_config;
@@ -342,6 +348,16 @@ typedef enum {
   NFAPI_NR_PRB_BUNDLING_TYPE_STATIC=0,
   NFAPI_NR_PRB_BUNDLING_TYPE_DYNAMIC
 } nfapi_nr_prb_bundling_type_e;
+
+typedef enum {
+  NFAPI_NR_MCS_TABLE_QAM64_LOW_SE=0,
+  NFAPI_NR_MCS_TABLE_QAM256
+} nfapi_nr_pdsch_mcs_table_e;
+
+typedef enum {
+  NFAPI_NR_DMRS_TYPE1=0,
+  NFAPI_NR_DMRS_TYPE2
+} nfapi_nr_dmrs_type_e;
 
 // P7 Sub Structures
 
@@ -485,13 +501,28 @@ typedef struct {
 	uint16_t length;
 	uint8_t pdu_index;
 	uint16_t rnti;
-	uint8_t resource_allocation_type;
+  uint8_t time_allocation_type;
+	uint8_t freq_allocation_type;
+  uint8_t start_prb;
+  uint8_t n_prb;
+  uint8_t S;
+  uint8_t L;
+  uint8_t Imcs;
+  uint8_t n_codewords;
+  uint8_t n_layers;
+  /*uint8_t R;
+  uint8_t Qm;
+  uint16_t TBS;
+  uint8_t nb_layers;*/
+  uint8_t time_alloc_list_flag;
+  uint8_t time_alloc_list;
+  uint8_t rbg_list;
 	uint8_t virtual_resource_block_assignment_flag;
 	uint32_t resource_block_coding;
 	uint8_t modulation;
 	uint8_t redundancy_version;
 	uint8_t transport_blocks;
-	uint8_t transport_block_to_codeword_swap_flag;
+	//uint8_t transport_block_to_codeword_swap_flag;
 	uint8_t transmission_scheme;
 	uint8_t number_of_layers;
 	uint8_t number_of_subbands;
@@ -500,7 +531,6 @@ typedef struct {
 	uint8_t pa;
 	uint8_t delta_power_offset_index;
 	uint8_t ngap;
-	uint8_t nprb;
 	uint8_t transmission_mode;
 	uint8_t num_bf_prb_per_subband;
 	uint8_t num_bf_vector;

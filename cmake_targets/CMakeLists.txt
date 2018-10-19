@@ -1293,8 +1293,8 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_dci.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_dci_tools.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_dlsch.c
-  #${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_dlsch_tools.c
-  #${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_tbs_tools.c
+  ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_dlsch_tools.c
+  ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_tbs_tools.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_gold.c
   ${OPENAIR1_DIR}/PHY/TOOLS/file_output.c
   ${OPENAIR1_DIR}/PHY/TOOLS/cadd_vv.c

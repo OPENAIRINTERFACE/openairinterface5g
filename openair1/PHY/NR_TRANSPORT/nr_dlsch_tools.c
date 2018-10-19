@@ -45,23 +45,26 @@ uint8_t nr_pdsch_default_time_alloc_C_L[15] = {2,2,2,2,2,4,4,4,4,4,7,12,11,6,6};
   /// Time domain allocation routines
 
 void nr_get_time_domain_allocation_type(nfapi_nr_config_request_t config,
-                                        NR_gNB_DCI_ALLOC_t dci_alloc,
-                                        NR_gNB_DLSCH_t* dlsch) {
+                                        nfapi_nr_dl_config_dci_dl_pdu dci_pdu,
+                                        nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu) {
 
-  nfapi_nr_ssb_and_cset_mux_pattern_type_e mux_pattern = dci_alloc.pdcch_params.mux_pattern;
+  nfapi_nr_dl_config_pdcch_parameters_rel15_t params_rel15 = dci_pdu.pdcch_params_rel15;
+  uint8_t *alloc_type = &dlsch_pdu->dlsch_pdu_rel15.time_allocation_type;
+  uint8_t mux_pattern = params_rel15.mux_pattern;
+  uint8_t alloc_list_flag = dlsch_pdu->dlsch_pdu_rel15.time_alloc_list_flag;
 
-  switch(dci_alloc.pdcch_params.rnti_type) {
+  switch(params_rel15.rnti_type) {
 
     case NFAPI_NR_RNTI_SI:
-      AssertFatal(dci_alloc.pdcch_params.common_search_space_type == NFAPI_NR_COMMON_SEARCH_SPACE_TYPE_0,
+      AssertFatal(params_rel15.common_search_space_type == NFAPI_NR_COMMON_SEARCH_SPACE_TYPE_0,
       "Invalid common search space type %d for SI RNTI, expected %d\n",
-      dci_alloc.pdcch_params.common_search_space_type, NFAPI_NR_COMMON_SEARCH_SPACE_TYPE_0);
+      params_rel15.common_search_space_type, NFAPI_NR_COMMON_SEARCH_SPACE_TYPE_0);
 
       if (mux_pattern == NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE1)
         AssertFatal(config.subframe_config.dl_cyclic_prefix_type.value == NFAPI_CP_NORMAL,
         "Invalid configuration CP extended for SI RNTI type 0 search space\n");
 
-      dlsch->time_alloc_type = (mux_pattern == NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE1)?NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_A :
+      *alloc_type = (mux_pattern == NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE1)?NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_A :
                                (mux_pattern == NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE2)?NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_B :
                                NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_C;
       break;
@@ -71,7 +74,7 @@ void nr_get_time_domain_allocation_type(nfapi_nr_config_request_t config,
       /*AssertFatal(dci_alloc.pdcch_params.common_search_space_type == NFAPI_NR_COMMON_SEARCH_SPACE_TYPE_1,
       "Invalid common search space type %d for RNTI %d, expected %d\n",dci_alloc.pdcch_params.common_search_space_type,
       NFAPI_NR_COMMON_SEARCH_SPACE_TYPE_1, dci_alloc.rnti_type);*/
-      dlsch->time_alloc_type = (dlsch->time_alloc_list_flag) ? NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_ALLOC_LIST : NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_A;
+      *alloc_type = (alloc_list_flag) ? NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_ALLOC_LIST : NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_A;
       break;
 
     case NFAPI_NR_RNTI_P:
@@ -79,17 +82,17 @@ void nr_get_time_domain_allocation_type(nfapi_nr_config_request_t config,
 
     case NFAPI_NR_RNTI_C:
     case NFAPI_NR_RNTI_CS:
-      if (dci_alloc.pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_COMMON)
-        dlsch->time_alloc_type = (dlsch->time_alloc_list_flag)? NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_ALLOC_LIST : NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_A;
+      if (params_rel15.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_COMMON)
+        *alloc_type = (alloc_list_flag)? NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_ALLOC_LIST : NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_A;
       else
-        dlsch->time_alloc_type = NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_ALLOC_LIST;
+        *alloc_type = NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_ALLOC_LIST;
 
       break;
 
   }
 }
 
-static inline uint16_t get_SLIV(uint8_t S, uint8_t L) {
+uint16_t get_SLIV(uint8_t S, uint8_t L) {
   return ( (uint16_t)(((L-1)<=7)? (14*(L-1)+S) : (14*(15-L)+(13-S))) );
 }
 
@@ -129,11 +132,11 @@ void nr_check_time_alloc(uint8_t S, uint8_t L, nfapi_nr_config_request_t config)
 
   switch (config.subframe_config.dl_cyclic_prefix_type.value) {
     case NFAPI_CP_NORMAL:
-      if (config.pdsch_config.time_domain_alloc_mapping_type.value == NFAPI_NR_PDSCH_MAPPING_TYPE_A) {
+      if (config.pdsch_config.mapping_type.value == NFAPI_NR_PDSCH_MAPPING_TYPE_A) {
         AssertFatal(S<4, "Invalid value of S(%d) for mapping type A and normal CP\n", S);
 
         if (S==3)
-          AssertFatal(config.pdsch_config.dmrs_typeA_position.value == 3, "Invalid S %d for dmrs_typeA_position %d\n",
+          AssertFatal(config.pdsch_config.mapping_type.value == 3, "Invalid S %d for dmrs_typeA_position %d\n",
           S, config.pdsch_config.dmrs_typeA_position.value);
 
         AssertFatal((L>2)&&(L<15), "Invalid L %d for mapping type A and normal CP\n", L);
@@ -150,7 +153,7 @@ void nr_check_time_alloc(uint8_t S, uint8_t L, nfapi_nr_config_request_t config)
       break;
 
     case NFAPI_CP_EXTENDED:
-      if (config.pdsch_config.time_domain_alloc_mapping_type.value == NFAPI_NR_PDSCH_MAPPING_TYPE_A) {
+      if (config.pdsch_config.mapping_type.value == NFAPI_NR_PDSCH_MAPPING_TYPE_A) {
         AssertFatal(S<4, "Invalid value of S(%d) for mapping type A and extended CP\n", S);
 
         if (S==3)
@@ -205,7 +208,7 @@ void nr_get_rbg_list(uint32_t bitmap, uint8_t n_rbg, uint8_t* rbg_list) {
 
     // DL alloc type 1
 
-static inline uint16_t get_RIV(uint16_t rb_start, uint16_t L, uint16_t N_RB) {
+uint16_t get_RIV(uint16_t rb_start, uint16_t L, uint16_t N_RB) {
   if ((L-1)<=(N_RB>>1))
     return (N_RB*(L-1)+rb_start);
   else

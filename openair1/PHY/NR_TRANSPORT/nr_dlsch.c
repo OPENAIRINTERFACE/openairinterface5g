@@ -33,6 +33,8 @@
 #include "nr_dlsch.h"
 #include "nr_dci.h"
 
+#define DEBUG_DLSCH
+
 void nr_pdsch_codeword_scrambling(uint32_t *in,
                          uint8_t size,
                          uint8_t q,
@@ -56,6 +58,31 @@ void nr_pdsch_codeword_scrambling(uint32_t *in,
 
 }
 
+void nr_modulation(uint32_t *in,
+                   uint16_t length,
+                   nr_mod_t modulation_type,
+                   int16_t *out) {
+
+  uint16_t offset;
+	uint16_t order;
+	order = mod_order[modulation_type];
+	offset = mod_offset[modulation_type];
+   
+  for (int i=0; i<length/order; i++) {
+    uint8_t idx = 0, b_idx;
+
+    for (int j=0; j<order; j++) {
+      b_idx = (i*order+j)&0x1f;
+      if (i && (!b_idx))
+        in++;
+      idx ^= (((*in)>>b_idx)&1)<<(order-j-1);
+    }
+
+    out[i<<1] = nr_mod_table[(offset+idx)<<1];
+    out[(i<<1)+1] = nr_mod_table[((offset+idx)<<1)+1];
+  }
+}
+
 void nr_pdsch_codeword_modulation(uint32_t *in,
                          uint8_t  Qm,
                          uint32_t length,
@@ -72,7 +99,7 @@ void nr_pdsch_codeword_modulation(uint32_t *in,
       b_idx = (i*Qm+j)&0x1f;
       if (i && (!b_idx))
         in++;
-      idx ^= (((*in)>>b_idx)&1)<<(Qm-j);
+      idx ^= (((*in)>>b_idx)&1)<<(Qm-j-1);
     }
 
     out[i<<1] = nr_mod_table[(offset+idx)<<1];
@@ -153,22 +180,29 @@ void nr_pdsch_layer_mapping(uint16_t **mod_symbs,
 
 uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
                           NR_gNB_DCI_ALLOC_t dci_alloc,
+                          uint32_t *pdsch_dmrs,
                           int32_t** txdataF,
                           int16_t amp,
                           NR_DL_FRAME_PARMS frame_parms,
                           nfapi_nr_config_request_t config) {
 
-  NR_DL_gNB_HARQ_t *harq = dlsch.harq_processes[0];
+  NR_DL_gNB_HARQ_t *harq = dlsch.harq_processes[dci_alloc.harq_pid];
+  nfapi_nr_dl_config_dlsch_pdu_rel15_t *rel15 = &harq->dlsch_pdu.dlsch_pdu_rel15;
+  nfapi_nr_dl_config_pdcch_parameters_rel15_t pdcch_params = dci_alloc.pdcch_params;
   uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH]={0};
   uint16_t mod_symbs[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>1] = {0};
   uint16_t tx_layers[NR_MAX_NB_LAYERS][NR_MAX_PDSCH_ENCODED_LENGTH>>1];
+  uint16_t n_symbs[NR_MAX_NB_CODEWORDS] = {0};
+  int8_t Wf[2], Wt[2], l0[2], delta;
 
   /// CRC, coding, interleaving and rate matching
 
   /// scrambling
-  uint16_t n_RNTI = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? ((pdcch_params.scrambling_id)?pdcch_params.rnti:0) : 0;
-  uint16_t Nid = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? pdcch_params.scrambling_id : config.sch_config.physical_cell_id.value;
-  for (int q=0; q<harq->n_codewords; q++)
+  uint16_t n_RNTI = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? \
+  ((pdcch_params.scrambling_id)?pdcch_params.rnti:0) : 0;
+  uint16_t Nid = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? \
+  pdcch_params.scrambling_id : config.sch_config.physical_cell_id.value;
+  for (int q=0; q<rel15->nb_codewords; q++)
     nr_pdsch_codeword_scrambling(harq->f,
                          harq->TBS,
                          q,
@@ -177,7 +211,7 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
                          scrambled_output[q]);
  
   /// Modulation
-  for (int q=0; q<harq->n_codewords; q++)
+  for (int q=0; q<rel15->nb_codewords; q++)
     nr_pdsch_codeword_modulation(scrambled_output[q],
                          harq->Qm,
                          harq->TBS,
@@ -185,15 +219,61 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
 
   /// Layer mapping
   nr_pdsch_layer_mapping(mod_symbs,
-                         harq->n_codewords,
-                         harq->Nl,
+                         rel15->nb_codewords,
+                         rel15->nb_layers,
                          n_symbs,
                          tx_layers);
 
-  /// Antenna port mapping -- Not yet necessary
+  /// Antenna port mapping
+    //to be moved to init phase potentially, for now tx_layers 1-8 are mapped on antenna ports 1000-1007
+
+  /// DMRS QPSK modulation
+  uint16_t n_dmrs = rel15->n_prb<<1;
+  uint16_t mod_dmrs[n_dmrs<<1] = {0};
+  uint8_t dmrs_type = config.pdsch_config.dmrs_type.value;
+  nr_modulation(pdsch_dmrs, n_dmrs, QPSK, mod_dmrs);
 
   /// Resource mapping
-  
-  
+  AssertFatal(harq->Nl<=config.rf_config.tx_antenna_ports.value, "Not enough Tx antennas (%d) for %d layers\n",\
+   config.rf_config.tx_antenna_ports.value, harq->Nl);
+
+    // Non interleaved VRB to PRB mapping
+  uint8_t start_sc = frame_parms.first_carrier_offset + rel15->start_prb*NR_NB_SC_PER_RB +\
+  ((pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_COMMON) && (pdcch_params.dci_format == NFAPI_NR_DL_DCI_FORMAT_1_0))?\
+       (((int)floor(frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB) + pdcch_params.rb_offset)*NR_NB_SC_PER_RB) : 0;
+
+  for (int ap=0; ap<rel15->nb_layers; ap++) {
+
+    // DMRS params for this ap
+    Wt = get_Wt(ap, dmrs_type);
+    Wf = get_Wf(ap, dmrs_type);
+    l0 = get_l0(0, config.pdsch_config.dmrs_typeA_position.value);
+    delta = get_delta(ap, dmrs_type);
+    uint8_t k_prime=0, n=0, dmrs_idx=0;
+    uint16_t m = 0;
+
+    for (int l=rel15->S; l<rel15->L; l++)
+      for (int k=start_sc; k<rel15->n_prb*NR_NB_SC_PER_RB; k++) {
+        if (k >= frame_parms.ofdm_symbol_size)
+          k -= frame_parms.ofdm_symbol_size;
+
+        if ((l==l0) && (k == ((dmrs_type)? (6*n+k_prime+delta):((n<<2)+(k_prime<<1)+delta)))) {
+          ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (Wt*Wf*amp*mod_dmrs[dmrs_idx<<1]) >> 15;
+          ((int16_t*)txdataF[ap])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (Wt*Wf*amp*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
+          mod_dmrs++;
+          n++;
+          k_prime = (++k_prime)&1;
+        }
+
+        ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (amp * tx_layers[ap][m<<1]) >> 15;
+        ((int16_t*)txdataF[ap])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (amp * tx_layers[ap][(m<<1) + 1]) >> 15;
+        m++;
+      }
+  }
+
+#ifdef DEBUG_DLSCH
+  write_output("txdataF_dlsch.m", "txdataF_dlsch", txdataF[0], frame_parms.samples_per_frame_wCP>>1, 1, 1);
+#endif
+
   return 0;
 }
