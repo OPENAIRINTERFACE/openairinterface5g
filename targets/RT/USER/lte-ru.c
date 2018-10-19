@@ -1525,6 +1525,7 @@ volatile int16_t phy_tx_end;
 static void* ru_thread_tx( void* param ) {
   RU_t *ru         = (RU_t*)param;
   RU_proc_t *proc  = &ru->proc;
+  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
 
@@ -1560,7 +1561,23 @@ static void* ru_thread_tx( void* param ) {
       if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
   	      
       if (ru->fh_north_out) ru->fh_north_out(ru);
+    }
+    else {
+      {
+	for (int i=0; i<ru->nb_tx; i++)
+        {
+	  if(proc->frame_tx == 2) {
+	    sprintf(filename,"txdataF%d_frame%d_sf%d",i,proc->frame_tx,proc->subframe_tx);
+	    LOG_M(filename,"txdata_frame",ru->common.txdataF_BF[i],fp->samples_per_tti_wCP, 1, 1);
+	  }
+	  if(proc->frame_tx == 2 && proc->subframe_tx==0){
+	    sprintf(filename,"txdata%d_frame%d",i,proc->frame_tx);
+	    LOG_M(filename,"txdata_frame",ru->common.txdata[i],fp->samples_per_tti*10, 1, 1);
+	  }
 	}
+      }
+    }
+
     release_thread(&proc->mutex_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
     
     pthread_mutex_lock( &proc->mutex_eNBs );
