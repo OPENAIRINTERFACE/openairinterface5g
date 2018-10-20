@@ -322,16 +322,16 @@ static void* tx_thread(void* param) {
   //PHY_VARS_eNB *eNB = RC.eNB[0][proc->CC_id];
   
   char thread_name[100];
-  sprintf(thread_name,"TXnp4_%d\n",&eNB->proc.proc_rxtx[0] == proc ? 0 : 1);
+  sprintf(thread_name,"TXnp4_%d",&eNB->proc.proc_rxtx[0] == proc ? 0 : 1);
   thread_top_init(thread_name,1,470000,500000,500000);
   
   //wait_sync("tx_thread");
   
   while (!oai_exit) {
-    //printf("Entering tx_thread, proc1->cond_rxtx, proc1->instance_cnt_rxtx, frame_rx %d, subframe_rx %d, frame_tx %d, subframe_tx %d\n", proc->frame_rx,proc->subframe_rx,proc->frame_tx,proc->subframe_tx);  
+    //printf("Entering tx_thread, proc1->cond_rxtx, proc1->instance_cnt_rxtx %d, frame_rx %d, subframe_rx %d, frame_tx %d, subframe_tx %d\n", proc->instance_cnt_rxtx,proc->frame_rx,proc->subframe_rx,proc->frame_tx,proc->subframe_tx);  
     if (wait_on_condition(&proc->mutex_rxtx,&proc->cond_rxtx,&proc->instance_cnt_rxtx,thread_name)<0) break;
     //printf("Passed tx_thread proc1->cond_rxtx, frame_rx %d, subframe_rx %d, frame_tx %d, subframe_tx %d\n", proc->frame_rx,proc->subframe_rx,proc->frame_tx,proc->subframe_tx);
-if (oai_exit) break;    
+    if (oai_exit) break;    
     // *****************************************
     // TX processing for subframe n+4
     // run PHY TX procedures the one after the other for all CCs to avoid race conditions
@@ -395,7 +395,7 @@ static void* eNB_thread_rxtx( void* param ) {
   eNB_thread_rxtx_status = 0;
 
 
-  sprintf(thread_name,"RXn_TXnp4_%d\n",&eNB->proc.proc_rxtx[0] == proc ? 0 : 1);
+  sprintf(thread_name,"RXn_TXnp4_%d",&eNB->proc.proc_rxtx[0] == proc ? 0 : 1);
   thread_top_init(thread_name,1,470000,500000,500000);
   pthread_setname_np( pthread_self(),"rxtx processing");
   LOG_I(PHY,"thread rxtx created id=%ld\n", syscall(__NR_gettid));
@@ -407,9 +407,10 @@ static void* eNB_thread_rxtx( void* param ) {
     
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RXTX0+(proc->subframe_rx&1), 0 );
     T(T_ENB_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx), T_INT(proc->subframe_rx));
-    printf("Entering eNB_thread_rxtx, proc0->cond_rxtx, instance_cnt_rxtx, frame_rx %d, subframe_rx %d, frame_tx %d, subframe_tx %d\n", proc->frame_rx,proc->subframe_rx,proc->frame_tx,proc->subframe_tx);
+    //printf("Entering eNB_thread_rxtx, proc0->cond_rxtx, instance_cnt_rxtx %d, frame_rx %d, subframe_rx %d, frame_tx %d, subframe_tx %d\n", 
+    //	   proc->instance_cnt_rxtx,proc->frame_rx,proc->subframe_rx,proc->frame_tx,proc->subframe_tx);
     if (wait_on_condition(&proc->mutex_rxtx,&proc->cond_rxtx,&proc->instance_cnt_rxtx,thread_name)<0) break;
-    printf("Passed eNB_thread_rxtx proc0->cond_rxtx , frame_rx %d, subframe_rx %d, frame_tx %d, subframe_tx %d\n", proc->frame_rx,proc->subframe_rx,proc->frame_tx,proc->subframe_tx);
+    //printf("Passed eNB_thread_rxtx proc0->cond_rxtx , frame_rx %d, subframe_rx %d, frame_tx %d, subframe_tx %d\n", proc->frame_rx,proc->subframe_rx,proc->frame_tx,proc->subframe_tx);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_CPUID_ENB_THREAD_RXTX,sched_getcpu());
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_eNB_PROC_RXTX0+(proc->subframe_rx&1), 1 );
    
@@ -517,7 +518,7 @@ int wakeup_txfh(eNB_rxtx_proc_t *proc,PHY_VARS_eNB *eNB) {
       exit_fun( "error locking mutex_eNB" );
       return(-1);
     }
-printf("waking up for frame %d subframe %d for RU TX \n", proc->frame_tx, proc->subframe_tx);
+    //printf("waking up for frame %d subframe %d for RU TX \n", proc->frame_tx, proc->subframe_tx);
       ++ru_proc->instance_cnt_eNBs;
       ru_proc->timestamp_tx = proc->timestamp_tx;
       ru_proc->subframe_tx  = proc->subframe_tx;
@@ -576,7 +577,7 @@ if ((fp->frame_type == TDD) && (subframe_select(fp,proc_rxtx0->subframe_tx)==SF_
     exit_fun( "ERROR pthread_cond_signal" );
     return(-1);
   }
-  printf("Sent wakeup_tx proc1->cond_rxtx to tx_thread, frame_rx %d, subframe_rx %d, frame_tx %d, subframe_tx %d\n", proc_rxtx1->frame_rx,proc_rxtx1->subframe_rx,proc_rxtx1->frame_tx,proc_rxtx1->subframe_tx);
+  //printf("Sent wakeup_tx proc1->cond_rxtx to tx_thread, frame_rx %d, subframe_rx %d, frame_tx %d, subframe_tx %d\n", proc_rxtx1->frame_rx,proc_rxtx1->subframe_rx,proc_rxtx1->frame_tx,proc_rxtx1->subframe_tx);
   pthread_mutex_unlock( &proc_rxtx1->mutex_rxtx );
 
   return(0);
@@ -622,12 +623,12 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,RU_t *ru) {
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
 
-  printf("Entering wakeup_rxtx, cond_rxtx, proc0->pipe_ready, frame %d, subframe %d\n", proc_rxtx0->frame_rx,proc_rxtx0->subframe_rx,proc_rxtx0->frame_tx,proc_rxtx0->subframe_tx);
+  //printf("Entering wakeup_rxtx, cond_rxtx, proc0->pipe_ready %d, frame %d, subframe %d\n", proc_rxtx0->pipe_ready,proc_rxtx0->frame_rx,proc_rxtx0->subframe_rx);
   if(wait_on_condition(&proc_rxtx0->mutex_rxtx,&proc_rxtx0->cond_rxtx,&proc_rxtx0->pipe_ready,"wakeup_rxtx")<0) {
     LOG_E(PHY,"Frame %d, subframe %d: RXTX0 not ready\n",proc_rxtx0->frame_rx,proc_rxtx0->subframe_rx);
     return(-1);
   }
-  printf("Passed wakeup_rxtx proc0->cond_rxtx, frame %d, subframe %d\n", proc_rxtx0->frame_rx,proc_rxtx0->subframe_rx,proc_rxtx0->frame_tx,proc_rxtx0->subframe_tx);
+  //printf("Passed wakeup_rxtx proc0->cond_rxtx, frame %d, subframe %d\n", proc_rxtx0->frame_rx,proc_rxtx0->subframe_rx);
   if (release_thread(&proc_rxtx0->mutex_rxtx,&proc_rxtx0->pipe_ready,"wakeup_rxtx")<0) return(-1);
   
   if (proc_rxtx0->instance_cnt_rxtx == 0) {
@@ -664,7 +665,7 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,RU_t *ru) {
     exit_fun( "ERROR pthread_cond_signal" );
     return(-1);
   }
-  printf("Sent wakeup_rxtx proc0->cond_rxtx to eNB_thread_rxtx, frame %d, subframe %d\n", proc_rxtx0->frame_rx,proc_rxtx0->subframe_rx,proc_rxtx0->frame_tx,proc_rxtx0->subframe_tx);
+  //printf("Sent wakeup_rxtx proc0->cond_rxtx to eNB_thread_rxtx, frame %d, subframe %d\n", proc_rxtx0->frame_rx,proc_rxtx0->subframe_rx);
   pthread_mutex_unlock( &proc_rxtx0->mutex_rxtx );
 
   return(0);
@@ -997,10 +998,12 @@ void init_eNB_proc(int inst) {
 
 
     LOG_I(PHY,"eNB->single_thread_flag:%d\n", eNB->single_thread_flag);
+    LOG_I(PHY,"proc_rxtx[0]->instance_cnt_rxtx %d,proc_rxtx[1]->instance_cnt_rxtx %d\n",
+	  proc_rxtx[0].instance_cnt_rxtx,proc_rxtx[1].instance_cnt_rxtx);
 
     if ((get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) && nfapi_mode!=2) {
-      pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, proc );
-      pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, tx_thread, proc);
+      pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, eNB );
+      pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, tx_thread, eNB);
     }
     pthread_create( &proc->pthread_prach, attr_prach, eNB_thread_prach, eNB );
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))

@@ -1140,7 +1140,7 @@ void wakeup_eNBs(RU_t *ru) {
   RU_proc_t  *ruproc    = &ru->proc;
   struct timespec t;
 
-  LOG_I(PHY,"wakeup_eNBs (num %d) for RU %d (state %s)ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru_states[ru->state],ru->eNB_top);
+  LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d (state %s)ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru_states[ru->state],ru->eNB_top);
 
   if (ru->num_eNB==1 && ru->eNB_top!=0 && get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD) {
     // call eNB function directly
@@ -1745,7 +1745,7 @@ static void* ru_thread( void* param ) {
       }
       else {
 
-        LOG_I(PHY,"RU thread %d, frame %d, subframe %d \n",
+        LOG_D(PHY,"RU thread %d, frame %d, subframe %d \n",
               ru->idx,frame,subframe);
 
         if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)==1)) {
@@ -1880,7 +1880,7 @@ void *ru_thread_synch(void *arg) {
       ru->rx_offset = ru_sync_time(ru,
 				   &peak_val,
 				   &avg);
-      LOG_I(PHY,"RU synch cnt %d: %d, val %d\n",cnt,ru->rx_offset,peak_val);
+      LOG_I(PHY,"RU synch cnt %d: %d, val %llu\n",cnt,ru->rx_offset,(unsigned long long)peak_val);
       cnt++;
       if (ru->rx_offset >= 0 && cnt>100) {
 
@@ -2680,7 +2680,7 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
     //    LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",ru_id,ru_if_types[ru->if_south],eNB_timing[ru->if_timing],ru->function);
 
     set_function_spec_param(ru);
-    LOG_I(PHY,"Starting ru_thread %d, is_slave %d, send_dmrs %d\n",ru_id,ru->is_slave,ru->dmrssync);
+    LOG_I(PHY,"Starting ru_thread %d, is_slave %d, send_dmrs %d\n",ru_id,ru->is_slave,ru->generate_dmrs_sync);
 
     init_RU_proc(ru);
 
