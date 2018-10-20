@@ -3603,6 +3603,8 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
        }
       }
       break;
+    case 1:             // Channel Selection
+      break;
     case 2:		// Format 2
       AssertFatal(1==0,"Can't do Format 2 yet in TDD\n");
       break;
@@ -3620,7 +3622,7 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 
     harq_pid = ((10 * frameP) + subframeP + 10236) & 7;
 
-    LOG_I(MAC,"frame %d subframe %d harq_pid %d mode %d tmode[0] %d num_ack_nak %d round %d\n",frameP,subframeP,harq_pid,harq_indication_fdd->mode,tmode[0],num_ack_nak,sched_ctl->round[CC_idP][harq_pid]);
+    LOG_D(MAC,"frame %d subframe %d harq_pid %d mode %d tmode[0] %d num_ack_nak %d round %d\n",frameP,subframeP,harq_pid,harq_indication_fdd->mode,tmode[0],num_ack_nak,sched_ctl->round[CC_idP][harq_pid]);
 
     switch (harq_indication_fdd->mode) {
     case 0:		// Format 1a/b (10.1.2.1)
