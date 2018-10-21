@@ -703,7 +703,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
         NFAPI_SFNSF2SFN(HI_DCI0_req->sfn_sf),NFAPI_SFNSF2SF(HI_DCI0_req->sfn_sf),number_hi_dci0_pdu
        );
   if(UL_req!=NULL)
-    LOG_I(PHY,"NFAPI: ul_cfg:SFN/SF:%04d%d:pdus:%d num_pdcch_symbols:%d\n",
+    LOG_D(PHY,"NFAPI: ul_cfg:SFN/SF:%04d%d:pdus:%d num_pdcch_symbols:%d\n",
           NFAPI_SFNSF2SFN(UL_req->sfn_sf),NFAPI_SFNSF2SF(UL_req->sfn_sf),number_ul_pdu,
           eNB->pdcch_vars[subframe&1].num_pdcch_symbols);
 

@@ -1140,7 +1140,7 @@ void wakeup_eNBs(RU_t *ru) {
   RU_proc_t  *ruproc    = &ru->proc;
   struct timespec t;
 
-  LOG_I(PHY,"wakeup_eNBs (num %d) for RU %d (state %s)ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru_states[ru->state],ru->eNB_top);
+  LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d (state %s)ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru_states[ru->state],ru->eNB_top);
 
   if (ru->num_eNB==1 && ru->eNB_top!=0 && get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD) {
     // call eNB function directly
@@ -1224,7 +1224,7 @@ void wakeup_eNBs(RU_t *ru) {
 
 
     {
-      LOG_D(PHY,"ru->wakeup_rxtx:%p\n", ru->wakeup_rxtx);
+      LOG_I(PHY,"ru->wakeup_rxtx:%p\n", ru->wakeup_rxtx);
       eNB_list[i]->proc.ru_proc = &ru->proc;
       if (ru->wakeup_rxtx!=0 && ru->wakeup_rxtx(eNB_list[i],ru) < 0)
       {
@@ -1745,7 +1745,7 @@ static void* ru_thread( void* param ) {
       }
       else {
 
-        LOG_I(PHY,"RU thread %d, frame %d, subframe %d \n",
+        LOG_D(PHY,"RU thread %d, frame %d, subframe %d \n",
               ru->idx,frame,subframe);
 
         if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)==1)) {
