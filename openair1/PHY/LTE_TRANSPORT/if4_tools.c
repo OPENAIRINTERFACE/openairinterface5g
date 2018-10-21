@@ -125,7 +125,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
     slotoffsetF = 0;
     blockoffsetF = slotoffsetF + fp->ofdm_symbol_size - db_halflength; 
 
-    LOG_I(PHY,"send UL_IF4p5: RU %d frame %d, subframe %d\n",ru->idx,frame,subframe);
+    LOG_D(PHY,"send UL_IF4p5: RU %d frame %d, subframe %d\n",ru->idx,frame,subframe);
 
     if (subframe_select(fp,subframe)==SF_S) {
       nsym=fp->ul_symbols_in_S_subframe;
@@ -249,7 +249,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
                (void *)rxF,
                PRACH_BLOCK_SIZE_BYTES);
       }
-      if (frame == 0) LOG_I(PHY,"signal energy prach %d\n",dB_fixed(signal_energy(rxF,839)));
+      if (frame == 0) LOG_D(PHY,"signal energy prach %d\n",dB_fixed(signal_energy(rxF,839)));
     }
     if (ru->idx<=1) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0+ru->idx, 1 );
     if ((ru->ifdevice.trx_write_func(&ru->ifdevice,
@@ -410,7 +410,7 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
                PRACH_BLOCK_SIZE_BYTES);
       }
     }
-    if (frame == 0) LOG_I(PHY,"PRACH_IF4p5: CC_id %d : frame %d, subframe %d => %d dB\n",ru->idx,*frame,*subframe,
+    if (frame == 0) LOG_D(PHY,"PRACH_IF4p5: CC_id %d : frame %d, subframe %d => %d dB\n",ru->idx,*frame,*subframe,
 	  dB_fixed(signal_energy((int*)&prach_rxsigF[0][0],839)));
       for (idx=0;idx<ru->num_eNB;idx++) ru->wakeup_prach_eNB(ru->eNB_list[idx],ru,*frame,*subframe);
 

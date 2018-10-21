@@ -197,7 +197,7 @@ add_msg3(module_id_t module_idP, int CC_id, RA_t * ra, frame_t frameP,
 	ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.frequency_hopping_bits         = 0;
 	ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.new_data_indication            = 0;
 	ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.redundancy_version             = rvseq[ra->msg3_round];
-	ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.harq_process_number            = ((ra->Msg3_frame*10)+ra->Msg3_subframe)&7;//subframe2harqpid(cc, ra->Msg3_frame, ra->Msg3_subframe);
+	ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.harq_process_number            = subframe2harqpid(cc, ra->Msg3_frame, ra->Msg3_subframe);
 	ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.ul_tx_mode                     = 0;
 	ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.current_tx_nb                  = 0;
 	ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.n_srs                          = 1;
@@ -475,7 +475,7 @@ generate_Msg2(module_id_t module_idP, int CC_idP, frame_t frameP,
 		// Program UL processing for Msg3, same as regular LTE
 		get_Msg3alloc(&cc[CC_idP], subframeP, frameP,
 			      &ra->Msg3_frame, &ra->Msg3_subframe);
-		//add_msg3(module_idP, CC_idP, ra, frameP, subframeP);
+		add_msg3(module_idP, CC_idP, ra, frameP, subframeP);
 		fill_rar_br(mac, CC_idP, ra, frameP, subframeP,
 			    cc[CC_idP].RAR_pdu.payload,
 			    ra->rach_resource_type - 1);
@@ -580,7 +580,7 @@ generate_Msg2(module_id_t module_idP, int CC_idP, frame_t frameP,
 		      ra->Msg3_subframe);
 
 		fill_rar(module_idP, CC_idP, ra, frameP, cc[CC_idP].RAR_pdu.payload, N_RB_DL, 7);
-		//add_msg3(module_idP, CC_idP, ra, frameP, subframeP);
+		add_msg3(module_idP, CC_idP, ra, frameP, subframeP);
 		ra->state = WAITMSG3;
                 LOG_D(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d: state:WAITMSG3\n", module_idP, frameP, subframeP);
 
@@ -1430,12 +1430,13 @@ schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 		check_Msg4_retransmission(module_idP, CC_id, frameP,
 					  subframeP, ra);
 
+	    /*
            int absSF = (frameP*10)+subframeP;
            int msg3_absSF = (ra->Msg3_frame*10) + ra->Msg3_subframe;
 
            // This is done here to account for delay in TDD programming of Msg3
            if (ra->state == WAITMSG3 && ((absSF+4)%10240) == msg3_absSF) add_msg3(module_idP, CC_id, ra, frameP, subframeP);
-
+	    */
 
 	}			// for i=0 .. N_RA_PROC-1 
     }				// CC_id
