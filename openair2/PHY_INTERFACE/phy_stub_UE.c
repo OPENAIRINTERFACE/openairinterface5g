@@ -51,7 +51,9 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,int frame,int subframe, UL_IND
 	  int timing_advance_update;
 
 
-	  pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+	  // pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+	  // change for mutiple UE's simulation.
+	  pthread_mutex_lock(&fill_ul_mutex.rx_mutex);
 
 
 	  UL_INFO->rx_ind.sfn_sf                    = frame<<4| subframe;
@@ -88,7 +90,9 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,int frame,int subframe, UL_IND
 
 	  UL_INFO->rx_ind.rx_indication_body.number_of_pdus++;
 	  UL_INFO->rx_ind.sfn_sf = frame<<4 | subframe;
-	  pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+	  // pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+	  // change for mutiple UE's simulation.
+	  pthread_mutex_unlock(&fill_ul_mutex.rx_mutex);
 
 
 }
@@ -96,7 +100,9 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,int frame,int subframe, UL_IND
 void fill_sr_indication_UE_MAC(int Mod_id,int frame,int subframe, UL_IND_t *UL_INFO, uint16_t rnti) {
 
 
-  pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  // change for mutiple UE's simulation.
+  //pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  pthread_mutex_lock(&fill_ul_mutex.sr_mutex);
 
   nfapi_sr_indication_t       *sr_ind = &UL_INFO->sr_ind;
   nfapi_sr_indication_body_t  *sr_ind_body =    &sr_ind->sr_indication_body;
@@ -130,13 +136,17 @@ void fill_sr_indication_UE_MAC(int Mod_id,int frame,int subframe, UL_IND_t *UL_I
 
   //UL_INFO->rx_ind.rx_indication_body.number_of_pdus++;
   sr_ind_body->number_of_srs++;
-  pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  // change for mutiple UE's simulation.
+  // pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  pthread_mutex_unlock(&fill_ul_mutex.sr_mutex);
 }
 
 
 void fill_crc_indication_UE_MAC(int Mod_id,int frame,int subframe, UL_IND_t *UL_INFO, uint8_t crc_flag, int index, uint16_t rnti) {
 
-  pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  // change for mutiple UE's simulation.
+  //pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  pthread_mutex_lock(&fill_ul_mutex.crc_mutex);
 
   // REMEMBER HAVE EXCHANGED THE FOLLOWING TWO LINES HERE!
   nfapi_crc_indication_pdu_t *pdu =   &UL_INFO->crc_ind.crc_indication_body.crc_pdu_list[UL_INFO->crc_ind.crc_indication_body.number_of_crcs];
@@ -159,14 +169,21 @@ void fill_crc_indication_UE_MAC(int Mod_id,int frame,int subframe, UL_IND_t *UL_
 
   LOG_D(PHY, "%s() rnti:%04x pdus:%d\n", __FUNCTION__, pdu->rx_ue_information.rnti, UL_INFO->crc_ind.crc_indication_body.number_of_crcs);
 
-  pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  // change for mutiple UE's simulation.
+  // pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  pthread_mutex_unlock(&fill_ul_mutex.crc_mutex);
 }
 
 void fill_rach_indication_UE_MAC(int Mod_id,int frame,int subframe, UL_IND_t *UL_INFO, uint8_t ra_PreambleIndex, uint16_t ra_RNTI) {
 
 	LOG_D(MAC, "fill_rach_indication_UE_MAC 1 \n");
-	pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
-	UL_INFO = (UL_IND_t*)malloc(sizeof(UL_IND_t));
+
+	// change for mutiple UE's simulation.
+	// pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+	pthread_mutex_lock(&fill_ul_mutex.rach_mutex);
+	
+	// memory allocation and free memory of UL_INFO are done in UE_phy_stub_single_thread_rxn_txnp4.
+	// UL_INFO = (UL_IND_t*)malloc(sizeof(UL_IND_t));
 
 	    UL_INFO->rach_ind.rach_indication_body.number_of_preambles                 = 1;
 
@@ -203,16 +220,22 @@ void fill_rach_indication_UE_MAC(int Mod_id,int frame,int subframe, UL_IND_t *UL
 	          // with that branch.
 	          oai_nfapi_rach_ind(&UL_INFO->rach_ind);
 	          free(UL_INFO->rach_ind.rach_indication_body.preamble_list);
-	          free(UL_INFO);
+
+	         // memory allocation and free memory of UL_INFO are done in UE_phy_stub_single_thread_rxn_txnp4.
+	          //free(UL_INFO);
 
 	        //}
-	      pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+	      // change for mutiple UE's simulation.
+	      // pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+	      pthread_mutex_unlock(&fill_ul_mutex.rach_mutex);
 
 }
 
 void fill_ulsch_cqi_indication_UE_MAC(int Mod_id, uint16_t frame,uint8_t subframe, UL_IND_t *UL_INFO, uint16_t rnti) {
 
-	pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+	// change for mutiple UE's simulation.
+	//pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+	pthread_mutex_lock(&fill_ul_mutex.cqi_mutex);
 	nfapi_cqi_indication_pdu_t *pdu         = &UL_INFO->cqi_ind.cqi_pdu_list[UL_INFO->cqi_ind.number_of_cqis];
 	nfapi_cqi_indication_raw_pdu_t *raw_pdu = &UL_INFO->cqi_ind.cqi_raw_pdu_list[UL_INFO->cqi_ind.number_of_cqis];
 
@@ -241,14 +264,18 @@ void fill_ulsch_cqi_indication_UE_MAC(int Mod_id, uint16_t frame,uint8_t subfram
 
 
   UL_INFO->cqi_ind.number_of_cqis++;
-  pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
-
+  // change for mutiple UE's simulation.
+  //pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  pthread_mutex_unlock(&fill_ul_mutex.cqi_mutex);
 }
 
 void fill_ulsch_harq_indication_UE_MAC(int Mod_id, int frame,int subframe, UL_IND_t *UL_INFO, nfapi_ul_config_ulsch_harq_information *harq_information, uint16_t rnti)
 {
 
-  pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  // change for mutiple UE's simulation.
+  //pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  pthread_mutex_lock(&fill_ul_mutex.harq_mutex);
+
   nfapi_harq_indication_pdu_t *pdu =   &UL_INFO->harq_ind.harq_indication_body.harq_pdu_list[UL_INFO->harq_ind.harq_indication_body.number_of_harqs];
   int i;
 
@@ -279,8 +306,9 @@ void fill_ulsch_harq_indication_UE_MAC(int Mod_id, int frame,int subframe, UL_IN
     }
 
   UL_INFO->harq_ind.harq_indication_body.number_of_harqs++;
-  pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
-}
+  // change for mutiple UE's simulation.
+  //pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  pthread_mutex_unlock(&fill_ul_mutex.harq_mutex);}
 
 
 void fill_uci_harq_indication_UE_MAC(int Mod_id,
@@ -293,7 +321,10 @@ void fill_uci_harq_indication_UE_MAC(int Mod_id,
 			      uint16_t tdd_multiplexing_mask*/) {
 
 
-  pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  // change for mutiple UE's simulation.
+  //pthread_mutex_lock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  pthread_mutex_lock(&fill_ul_mutex.harq_mutex);
+
   nfapi_harq_indication_t *ind       = &UL_INFO->harq_ind;
   nfapi_harq_indication_body_t *body = &ind->harq_indication_body;
   nfapi_harq_indication_pdu_t *pdu =   &body->harq_pdu_list[UL_INFO->harq_ind.harq_indication_body.number_of_harqs];
@@ -363,7 +394,9 @@ void fill_uci_harq_indication_UE_MAC(int Mod_id,
 
   UL_INFO->harq_ind.harq_indication_body.number_of_harqs++;
   LOG_D(PHY,"Incremented eNB->UL_INFO.harq_ind.number_of_harqs:%d\n", UL_INFO->harq_ind.harq_indication_body.number_of_harqs);
-  pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  // change for mutiple UE's simulation.
+  //pthread_mutex_unlock(&UE_mac_inst[Mod_id].UL_INFO_mutex);
+  pthread_mutex_unlock(&fill_ul_mutex.harq_mutex);
 
 }
 
