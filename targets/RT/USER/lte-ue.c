@@ -1771,6 +1771,13 @@ void init_UE_single_thread_stub(int nb_inst) {
 	  AssertFatal(PHY_vars_UE_g!=NULL,"PHY_vars_UE_g is NULL\n");
 	  AssertFatal(PHY_vars_UE_g[i]!=NULL,"PHY_vars_UE_g[inst] is NULL\n");
 	  AssertFatal(PHY_vars_UE_g[i][0]!=NULL,"PHY_vars_UE_g[inst][0] is NULL\n");
+	  if(nfapi_mode == 3){
+#ifdef NAS_UE
+          MessageDef *message_p;
+          message_p = itti_alloc_new_message(TASK_NAS_UE, INITIALIZE_MESSAGE);
+         itti_send_msg_to_task (TASK_NAS_UE, i + NB_eNB_INST, message_p);
+#endif
+	  }
   }
   UE = PHY_vars_UE_g[0][0];
 
