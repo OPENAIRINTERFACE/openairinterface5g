@@ -1880,19 +1880,25 @@ void *ru_thread_synch(void *arg) {
       ru->rx_offset = ru_sync_time(ru,
 				   &peak_val,
 				   &avg);
-      LOG_I(PHY,"RU synch cnt %d: %d, val %llu\n",cnt,ru->rx_offset,(unsigned long long)peak_val);
+      LOG_I(PHY,"RU synch cnt %d: %d, val %llu (%d dB,%d dB)\n",cnt,ru->rx_offset,(unsigned long long)peak_val,dB_fixed64(peak_val),dB_fixed64(avg));
       cnt++;
-      if (ru->rx_offset >= 0 && cnt>100) {
+      if (ru->rx_offset >= 0 && cnt>50) {
 
 	LOG_I(PHY,"Estimated peak_val %d dB, avg %d => timing offset %llu\n",dB_fixed(peak_val),dB_fixed(avg),(unsigned long long int)ru->rx_offset);
 	ru->in_synch = 1;
+/*
         LOG_M("ru_sync_rx.m","rurx",&ru->common.rxdata[0][0],LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti,1,1);
-        exit(-1);
+        LOG_M("ru_sync_corr.m","sync_corr",ru->dmrs_corr,LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti,1,6);
+        LOG_M("ru_dmrs.m","rudmrs",&ru->dmrssync[0],fp->ofdm_symbol_size,1,1);
+        exit(-1);*/
       } // sync_pos > 0
       else //AssertFatal(cnt<1000,"Cannot find synch reference\n");
           { 
               if (cnt>200) {
                  LOG_M("ru_sync_rx.m","rurx",&ru->common.rxdata[0][0],LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti,1,1);
+                 LOG_M("ru_sync_corr.m","sync_corr",ru->dmrs_corr,LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti,1,6);
+                 LOG_M("ru_dmrs.m","rudmrs",&ru->dmrssync[0],fp->ofdm_symbol_size,1,1);
+
                  exit(-1);
               }
           }
