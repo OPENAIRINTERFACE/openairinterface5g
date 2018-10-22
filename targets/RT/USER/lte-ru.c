@@ -1664,7 +1664,7 @@ static void* ru_thread( void* param ) {
     if ((ru->is_slave == 1) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
 
 
-    LOG_I(PHY,"Starting steady-state operation\n");
+    LOG_D(PHY,"Starting steady-state operation\n");
     // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
     while (ru->state == RU_RUN) {
 
