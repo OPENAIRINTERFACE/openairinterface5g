@@ -25,7 +25,11 @@ extern int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
 void configure_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_addr, int pnf_p7_port, int vnf_p7_port);
 
 
-
+UL_IND_t *UL_INFO = NULL;
+nfapi_tx_request_pdu_t* tx_request_pdu_list = NULL;
+nfapi_dl_config_request_t* dl_config_req = NULL;
+nfapi_ul_config_request_t* ul_config_req = NULL;
+nfapi_hi_dci0_request_t* hi_dci0_req = NULL;
 
 //extern uint8_t nfapi_pnf;
 //UL_IND_t *UL_INFO;
