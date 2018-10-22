@@ -5761,7 +5761,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
     stop_meas(&ue->pdsch_procedures_stat[ue->current_thread_id[nr_tti_rx]]);
     start_meas(&ue->dlsch_procedures_stat[ue->current_thread_id[nr_tti_rx]]);
 #endif
-    /*ue_dlsch_procedures(ue,
+    nr_ue_dlsch_procedures(ue,
 			proc,
 			eNB_id,
 			PDSCH,
@@ -5769,7 +5769,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 			ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][1],
 			&ue->dlsch_errors[eNB_id],
 			mode,
-			abstraction_flag);*/
+			abstraction_flag);
 #if UE_TIMING_TRACE
     stop_meas(&ue->dlsch_procedures_stat[ue->current_thread_id[nr_tti_rx]]);
 #if DISABLE_LOG_X

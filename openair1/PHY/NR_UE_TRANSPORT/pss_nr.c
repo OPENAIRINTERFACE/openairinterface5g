@@ -57,7 +57,7 @@
 *
 *********************************************************************/
 
-#define DBG_PSS_NR
+//#define DBG_PSS_NR
 
 void *get_idft(int ofdm_symbol_size)
 {

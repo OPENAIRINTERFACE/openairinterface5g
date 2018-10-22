@@ -173,6 +173,7 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                          NR_UE_DLSCH_t *dlsch,
                          NR_DL_UE_HARQ_t *harq_process,
                          uint32_t frame,
+						 uint16_t nb_symb_sch,
                          uint8_t nr_tti_rx,
                          uint8_t harq_pid,
                          uint8_t is_crnti,
@@ -189,7 +190,7 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   uint32_t ret,offset;
   int32_t no_iteration_ldpc;
   //short dummy_w[MAX_NUM_DLSCH_SEGMENTS][3*(8448+64)];
-  uint32_t r,r_offset=0,Kr,Kr_bytes,K_bytes_F,err_flag=0;
+  uint32_t r,r_offset=0,Kr=8424,Kr_bytes,K_bytes_F,err_flag=0;
   uint8_t crc_type;
   t_nrLDPC_dec_params decParams;
   t_nrLDPC_dec_params* p_decParams = &decParams;
@@ -203,8 +204,8 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   uint8_t kb, kc;
   uint8_t Ilbrm = 0;
   uint32_t Tbslbrm = 950984;
-  uint16_t nb_rb = 106; //to update
-  uint16_t nb_symb_sch = 2;
+  uint16_t nb_rb = 30; //to update
+  //uint16_t nb_symb_sch = 12;
   uint8_t nb_re_dmrs = 6;
   uint16_t length_dmrs = 1;
 
@@ -213,6 +214,8 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   __m128i *pv = (__m128i*)&z;
   __m128i *pl = (__m128i*)&l;
+
+  //NR_DL_UE_HARQ_t *harq_process = dlsch->harq_processes[0];
 
    if (!dlsch_llr) {
     printf("dlsch_decoding.c: NULL dlsch_llr pointer\n");
@@ -229,15 +232,15 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     return(dlsch->max_ldpc_iterations);
   }
 
-  if (nr_tti_rx> (10*frame_parms->ttis_per_subframe-1)) {
+  /*if (nr_tti_rx> (10*frame_parms->ttis_per_subframe-1)) {
     printf("dlsch_decoding.c: Illegal subframe index %d\n",nr_tti_rx);
     return(dlsch->max_ldpc_iterations);
-  }
+  }*/
 
-  if (harq_process->harq_ack.ack != 2) {
+  /*if (harq_process->harq_ack.ack != 2) {
     LOG_D(PHY, "[UE %d] DLSCH @ SF%d : ACK bit is %d instead of DTX even before PDSCH is decoded!\n",
         phy_vars_ue->Mod_id, nr_tti_rx, harq_process->harq_ack.ack);
-  }
+  }*/
 
   //  nb_rb = dlsch->nb_rb;
 
@@ -254,6 +257,8 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   }
   */
 
+  nb_rb = harq_process->nb_rb;
+
   harq_process->trials[harq_process->round]++;
 
   harq_process->TBS = nr_compute_tbs(harq_process->mcs,nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs, harq_process->Nl);
@@ -261,11 +266,10 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   A = harq_process->TBS;
   ret = dlsch->max_ldpc_iterations;
 
-  harq_process->G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, harq_process->Qm);
+  harq_process->G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, harq_process->Qm,harq_process->Nl);
   G = harq_process->G;
-  //get_G(frame_parms,nb_rb,dlsch->rb_alloc,mod_order,num_pdcch_symbols,phy_vars_ue->frame,subframe);
 
-  //  printf("DLSCH Decoding, harq_pid %d Ndi %d\n",harq_pid,harq_process->Ndi);
+  //printf("DLSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d \n",harq_pid,A,G, harq_process->mcs, harq_process->Nl, nb_symb_sch);
 
   if (harq_process->round == 0) {
     // This is a new packet, so compute quantities regarding segmentation
@@ -278,10 +282,12 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
      						&harq_process->Z,
     	                    &harq_process->F);
     						p_decParams->Z = harq_process->Z;
-    	//printf("dlsch decoding nr segmentation Z %d\n", p_decParams->Z);
-	//if (!frame%100)
-    	//printf("K %d C %d Z %d nl %d \n", harq_process->K, harq_process->C, p_decParams->Z, harq_process->Nl);
 
+#ifdef DEBUG_DLSCH_DECODING
+    printf("dlsch decoding nr segmentation Z %d\n", p_decParams->Z);
+	if (!frame%100)
+    	printf("K %d C %d Z %d nl %d \n", harq_process->K, harq_process->C, p_decParams->Z, harq_process->Nl);
+#endif
   }
 
       kb = harq_process->K/harq_process->Z;
@@ -322,7 +328,7 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     return((1+dlsch->max_ldpc_iterations));
   }
 #ifdef DEBUG_DLSCH_DECODING
-  printf("Segmentation: C %d, Cminus %d, Kminus %d, K %d\n",harq_process->C,harq_process->Cminus,harq_process->Kminus,harq_process->K);
+  printf("Segmentation: C %d, K %d\n",harq_process->C,harq_process->K);
 #endif
 
   opp_enabled=1;
@@ -335,6 +341,8 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0, harq_process->Nl);
 
   for (r=0; r<harq_process->C; r++) {
+
+	  printf("start rx segment %d\n",r);
 
 #if UE_TIMING_TRACE
     start_meas(dlsch_rate_unmatching_stats);
@@ -380,11 +388,9 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     }
     r_offset += E;
 
-    /*
-    printf("Subblock deinterleaving, d %p w %p\n",
-     harq_process->d[r],
-     harq_process->w);
-    */
+    //for (int i =0; i<16; i++)
+    //    	printf("rx output ratematching w[%d]= %d r_offset %d\n", i,harq_process->w[r][i], r_offset);
+
 #if UE_TIMING_TRACE
     start_meas(dlsch_deinterleaving_stats);
 #endif
@@ -392,6 +398,9 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     					   harq_process->Qm,
                            harq_process->d[r],
                            harq_process->w[r]);
+
+    //for (int i =0; i<16; i++)
+    //        	printf("rx output interleaving d[%d]= %d r_offset %d\n", i,harq_process->d[r][i], r_offset);
 
 #if UE_TIMING_TRACE
     stop_meas(dlsch_deinterleaving_stats);
@@ -433,23 +442,20 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
       //LOG_E(PHY,"AbsSubframe %d.%d Start turbo segment %d/%d A %d ",frame%1024,nr_tti_rx,r,harq_process->C-1, A);
 
       //printf("harq process dr iteration %d\n", p_decParams->numMaxIter);
-      //66*p_decParams->Z
 
-      //if (A < 1000){
       for (int cnt =0; cnt < (kc-2)*p_decParams->Z; cnt++){
-            inv_d[cnt] = (-1)*harq_process->d[r][cnt];
+            inv_d[cnt] = (1)*harq_process->d[r][cnt];
             }
-      //}
 
-      /*for (int cnt =0; cnt < 8; cnt++){
-      printf("dr %d inv_d %d \n", harq_process->d[r][96+cnt], inv_d[cnt]);
+      /*for (int cnt =0; cnt < 16; cnt++){
+      printf("dr %d inv_d %d \n", harq_process->d[r][cnt], inv_d[cnt]);
       }
 
-      printf(" \n");*/
+      printf(" \n");
 
-      /*printf("end dr \n");
+      printf("end dr \n");
       for (int cnt =(50*p_decParams->Z-16) ; cnt < 50*p_decParams->Z; cnt++){
-            printf("%d ", harq_process->d[r][96+cnt]);
+            printf("%d ", harq_process->d[r][cnt]);
             }
       printf(" \n");*/
 
@@ -457,12 +463,12 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
         //memset(pl,0,2*p_decParams->Z*sizeof(int8_t));
     	memset((pv+K_bytes_F),127,harq_process->F*sizeof(int16_t));
 
-      	for (i=((2*p_decParams->Z)>>3), j = 0; i < K_bytes_F; i++, j++)
+      	for (i=((2*p_decParams->Z)>>3), j = 0; i < K_bytes_F+((2*p_decParams->Z)>>3); i++, j++)
       	{
       		pv[i]= _mm_loadu_si128((__m128i*)(&inv_d[8*j]));
       	}
 
-		for (i=Kr_bytes, j = K_bytes_F; i < ((kc*p_decParams->Z)>>3); i++, j++)
+		for (i=Kr_bytes+((2*p_decParams->Z)>>3),j=Kr_bytes; i < ((kc*p_decParams->Z)>>3); i++, j++)
 		      	{
 		      		pv[i]= _mm_loadu_si128((__m128i*)(&inv_d[8*j]));
 		      	}
@@ -497,9 +503,9 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 		else {
 		  ret=2;
 		}
-		if (!nb_total_decod%10000){
+		//if (!nb_total_decod%10000){
 				printf("Error number of iteration LPDC %d %ld/%ld \n", no_iteration_ldpc, nb_error_decod,nb_total_decod);fflush(stdout);
-		}
+		//}
 
 		//else
 			//printf("OK number of iteration LPDC %d\n", no_iteration_ldpc);
@@ -512,7 +518,7 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 #ifdef DEBUG_DLSCH_DECODING
       printf("output decoder %d %d %d %d %d \n", harq_process->c[r][0], harq_process->c[r][1], harq_process->c[r][2],harq_process->c[r][3], harq_process->c[r][4]);
       printf("no_iterations_ldpc %d (ret %d)\n",no_iteration_ldpc,ret);
-      write_output("dec_output.m","dec0",harq_process->c[0],Kr_bytes,1,4);
+      //write_output("dec_output.m","dec0",harq_process->c[0],Kr_bytes,1,4);
 #endif
 
 

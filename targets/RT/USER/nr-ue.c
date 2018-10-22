@@ -219,7 +219,7 @@ PHY_VARS_NR_UE* init_nr_ue_vars(NR_DL_FRAME_PARMS *frame_parms,
   // initialize all signal buffers
   init_nr_ue_signal(ue,1,abstraction_flag);
   // intialize transport
-  //init_nr_ue_transport(ue,abstraction_flag);
+  init_nr_ue_transport(ue,abstraction_flag);
 
   return(ue);
 }

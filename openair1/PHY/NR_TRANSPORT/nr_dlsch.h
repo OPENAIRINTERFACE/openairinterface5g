@@ -53,5 +53,15 @@ uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx);
 
 /** \brief Computes available bits G.
     @param nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs */
-uint32_t nr_get_G(uint16_t nb_rb, uint16_t nb_symb_sch,uint8_t nb_re_dmrs,uint16_t length_dmrs,uint8_t Qm);
+uint32_t nr_get_G(uint16_t nb_rb, uint16_t nb_symb_sch,uint8_t nb_re_dmrs,uint16_t length_dmrs,uint8_t Qm, uint8_t Nl);
+
+int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
+		   	   	   unsigned char *a,
+				   uint16_t nb_symb_sch,
+                   NR_gNB_DLSCH_t *dlsch,
+                   int frame,
+                   uint8_t subframe,
+                   time_stats_t *rm_stats,
+                   time_stats_t *te_stats,
+                   time_stats_t *i_stats);
 

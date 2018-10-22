@@ -726,7 +726,7 @@ void print_opp_meas(void) {
     print_meas(&softmodem_stats_rx_sf,"[gNB][total_phy_proc_rx]",NULL,NULL);
   }
 }
-/*
+
 void free_transport(PHY_VARS_gNB *gNB)
 {
   int i;
@@ -736,20 +736,20 @@ void free_transport(PHY_VARS_gNB *gNB)
     LOG_I(PHY, "Freeing Transport Channel Buffers for DLSCH, UE %d\n",i);
     for (j=0; j<2; j++) free_gNB_dlsch(gNB->dlsch[i][j]);
 
-    LOG_I(PHY, "Freeing Transport Channel Buffer for ULSCH, UE %d\n",i);
-    free_gNB_ulsch(gNB->ulsch[1+i]);
+    //LOG_I(PHY, "Freeing Transport Channel Buffer for ULSCH, UE %d\n",i);
+    //free_gNB_ulsch(gNB->ulsch[1+i]);
   }
-  free_gNB_ulsch(gNB->ulsch[0]);
-}*/
+  //free_gNB_ulsch(gNB->ulsch[0]);
+}
 
-/*
-void init_transport(PHY_VARS_gNB *gNB) {
+
+void init_nr_transport(PHY_VARS_gNB *gNB) {
 
   int i;
   int j;
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
 
-  LOG_I(PHY, "Initialise transport\n");
+  LOG_I(PHY, "Initialise nr transport\n");
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     LOG_I(PHY,"Allocating Transport Channel Buffers for DLSCH, UE %d\n",i);
@@ -764,8 +764,8 @@ void init_transport(PHY_VARS_gNB *gNB) {
       }
     }
     
-    LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH, UE %d\n",i);
-    gNB->ulsch[1+i] = new_gNB_ulsch(MAX_TURBO_ITERATIONS,fp->N_RB_UL, 0);
+    //LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH, UE %d\n",i);
+    //gNB->ulsch[1+i] = new_gNB_ulsch(MAX_TURBO_ITERATIONS,fp->N_RB_UL, 0);
     
     if (!gNB->ulsch[1+i]) {
       LOG_E(PHY,"Can't get gNB ulsch structures\n");
@@ -774,10 +774,10 @@ void init_transport(PHY_VARS_gNB *gNB) {
     
     // this is the transmission mode for the signalling channels
     // this will be overwritten with the real transmission mode by the RRC once the UE is connected
-    gNB->transmission_mode[i] = fp->nb_antenna_ports_gNB==1 ? 1 : 2;
+    //gNB->transmission_mode[i] = fp->nb_antenna_ports_gNB==1 ? 1 : 2;
   }
   // ULSCH for RA
-  gNB->ulsch[0] = new_gNB_ulsch(MAX_TURBO_ITERATIONS, fp->N_RB_UL, 0);
+  //gNB->ulsch[0] = new_gNB_ulsch(MAX_TURBO_ITERATIONS, fp->N_RB_UL, 0);
   
   if (!gNB->ulsch[0]) {
     LOG_E(PHY,"Can't get gNB ulsch structures\n");
@@ -804,9 +804,9 @@ void init_transport(PHY_VARS_gNB *gNB) {
   
   gNB->check_for_SUMIMO_transmissions = 0;
   
-  fp->pucch_config_common.deltaPUCCH_Shift = 1;
+  //fp->pucch_config_common.deltaPUCCH_Shift = 1;
     
-} */
+}
 
 /// eNB kept in function name for nffapi calls, TO FIX
 void init_eNB_afterRU(void) {
@@ -883,7 +883,7 @@ void init_eNB_afterRU(void) {
 		  "inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,gNB->gNB_config.rf_config.tx_antenna_ports.value);
       LOG_I(PHY,"inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,gNB->gNB_config.rf_config.tx_antenna_ports.value);
 /// Transport init necessary for NR synchro
-      //init_transport(gNB);
+      init_nr_transport(gNB);
       //init_precoding_weights(RC.gNB[inst][CC_id]);
     }
     init_gNB_proc(inst);
