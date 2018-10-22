@@ -1427,7 +1427,7 @@ schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 		generate_Msg2(module_idP, CC_id, frameP, subframeP, ra);
 		// In case of nFAPI, sometimes timing of eNB and UE become different.
 		// So if nfapi_mode == 2(VNF) , this function don't check timing to avoid Attach failure.
-		else if ((ra->state == MSG4 && ra->Msg4_frame == frameP && ra->Msg4_subframe == subframeP ) || (nfapi_mode == 2))
+		else if ((ra->state == MSG4 && ra->Msg4_frame == frameP && ra->Msg4_subframe == subframeP ) || (nfapi_mode == 2 && ra->state == MSG4))
 		generate_Msg4(module_idP, CC_id, frameP, subframeP, ra);
 	    else if (ra->state == WAITMSG4ACK)
 		check_Msg4_retransmission(module_idP, CC_id, frameP,
