@@ -1388,7 +1388,7 @@ static void* ru_thread( void* param ) {
   int                subframe =9;
   int                frame    =1023; 
   char               filename[40];
-  int                print_frame = 1;
+  int                print_frame = 2;
   int                i = 0;
 
   // set default return value
@@ -1540,7 +1540,7 @@ static void* ru_thread( void* param ) {
           LOG_M(filename,"txdataF_frame",&ru->common.txdataF_BF[i][0],fp->samples_per_subframe_wCP, 1, 1);
           if(proc->subframe_tx == 9)
           {
-            sprintf(filename,"tx%ddataF_frame%d.m", i, print_frame);
+            sprintf(filename,"tx%ddata_frame%d.m", i, print_frame);
             LOG_M(filename,"txdata_frame",&ru->common.txdata[i][0],fp->samples_per_frame, 1, 1);
           }
         }
