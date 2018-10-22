@@ -1566,7 +1566,7 @@ static void* ru_thread_tx( void* param ) {
       for (int i=0; i<ru->nb_tx; i++) {
 	if(proc->frame_tx == 2) {
 	  sprintf(filename,"txdataF%d_frame%d_sf%d.m",i,proc->frame_tx,proc->subframe_tx);
-	  LOG_M(filename,"txdata_frame",ru->common.txdataF_BF[i],fp->symbols_per_tti*fp->ofdm_symbol_size, 1, 1);
+	  LOG_M(filename,"txdataF_frame",ru->common.txdataF_BF[i],fp->symbols_per_tti*fp->ofdm_symbol_size, 1, 1);
 	}
 	if(proc->frame_tx == 2 && proc->subframe_tx==0){
 	  sprintf(filename,"txdata%d_frame%d.m",i,proc->frame_tx);
@@ -1602,7 +1602,7 @@ static void* ru_thread( void* param ) {
   int                frame    =1023; 
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
-
+  char filename[256];
 
   // set default return value
   ru_thread_status = 0;
@@ -1808,6 +1808,19 @@ static void* ru_thread( void* param ) {
         
         if (ru->fh_north_out) ru->fh_north_out(ru);
       }
+      else {
+	for (int i=0; i<ru->nb_tx; i++) {
+	  if(proc->frame_tx == 2) {
+	    sprintf(filename,"txdataF%d_frame%d_sf%d.m",i,proc->frame_tx,proc->subframe_tx);
+	    LOG_M(filename,"txdataF_frame",ru->common.txdataF_BF[i],fp->symbols_per_tti*fp->ofdm_symbol_size, 1, 1);
+	  }
+	  if(proc->frame_tx == 2 && proc->subframe_tx==0){
+	    sprintf(filename,"txdata%d_frame%d.m",i,proc->frame_tx);
+	    LOG_M(filename,"txdata_frame",ru->common.txdata[i],fp->samples_per_tti*10, 1, 1);
+	  }
+	}
+      }
+
       proc->emulate_rf_busy = 0;
     }
 #else
