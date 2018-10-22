@@ -1286,6 +1286,7 @@ fill_nfapi_ulsch_harq_information(module_id_t                            module_
   */
 #endif
   harq_information->harq_information_rel10.delta_offset_harq = puschConfigDedicated->betaOffset_ACK_Index;
+  harq_information->harq_information_rel10.tl.tag = NFAPI_UL_CONFIG_REQUEST_ULSCH_HARQ_INFORMATION_REL10_TAG;
   AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pucch_ConfigDedicated != NULL,
 	      "pucch_ConfigDedicated is null!\n");
   if ((UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode != NULL)
