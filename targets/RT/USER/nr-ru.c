@@ -852,28 +852,12 @@ void tx_rf(RU_t *ru) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_tx-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
     // prepare tx buffer pointers
-    if(emulate_rf)
-    {
-      for (i=0; i<ru->nb_tx; i++)
-      {
-        if(proc->frame_tx > 0 && proc->frame_tx < 2)
-        {
-          LOG_M("txdataF_frame.m","txdataF_frame",&ru->common.txdataF_BF[i][0],fp->samples_per_subframe_wCP, 1, 1);
-          LOG_M("txdata_frame.m","txdata_frame",&ru->common.txdata[i][(proc->subframe_tx*fp->samples_per_subframe)-sf_extension],fp->samples_per_subframe, 1, 1);
-        }
-        else if (proc->frame_tx >= 2) oai_exit = 1;
-      }
-      txs =  siglen+sf_extension;
-    }
-    else
-    {
-      txs = ru->rfdevice.trx_write_func(&ru->rfdevice,
+    txs = ru->rfdevice.trx_write_func(&ru->rfdevice,
 				      proc->timestamp_tx+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension,
 				      txp,
 				      siglen+sf_extension,
 				      ru->nb_tx,
 				      flags);
-    }
     
     LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx,
 	  (long long unsigned int)proc->timestamp_tx,proc->frame_tx,proc->frame_tx_unwrap,proc->subframe_tx);
@@ -1403,6 +1387,9 @@ static void* ru_thread( void* param ) {
   int                ret;
   int                subframe =9;
   int                frame    =1023; 
+  char               filename[40];
+  int                print_frame = 2;
+  int                i = 0;
 
   // set default return value
   ru_thread_status = 0;
@@ -1536,10 +1523,30 @@ static void* ru_thread( void* param ) {
    
     // do OFDM if needed
     if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
-    // do outgoing fronthaul (south) if needed
-    if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
-
-    if (ru->fh_north_out) ru->fh_north_out(ru);
+    if(!emulate_rf)
+    {
+      // do outgoing fronthaul (south) if needed
+      if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
+  
+      if (ru->fh_north_out) ru->fh_north_out(ru);
+    }
+    else
+    {
+      if(proc->frame_tx == print_frame)
+      {
+        for (i=0; i<ru->nb_tx; i++)
+        {
+          sprintf(filename,"tx%ddataF_frame%d_sf%d.m", i, print_frame, proc->subframe_tx);
+          LOG_M(filename,"txdataF_frame",&ru->common.txdataF_BF[i][0],fp->samples_per_subframe_wCP, 1, 1);
+          if(proc->subframe_tx == 9)
+          {
+            sprintf(filename,"tx%ddata_frame%d.m", i, print_frame);
+            LOG_M(filename,"txdata_frame",&ru->common.txdata[i][0],fp->samples_per_frame, 1, 1);
+          }
+        }
+      }
+      //else if (proc->frame_tx > print_frame) oai_exit = 1;
+    }
   }
   
 
