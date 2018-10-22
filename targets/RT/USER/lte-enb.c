@@ -506,7 +506,7 @@ int wakeup_txfh(eNB_rxtx_proc_t *proc,PHY_VARS_eNB *eNB) {
     fp = &eNB->RU_list[ru_id]->frame_parms;
     if ((fp->frame_type == TDD) && (subframe_select(fp,proc->subframe_tx)==SF_UL)) continue;
     // skip the RUs that are not synced
-    if (eNB->RU_list[ru_id]->state == RU_SYNC) { LOG_I(PHY,"wakeup_txfh: eNB %d : Skipping ru %d\n",eNB->Mod_id,ru_id); continue; }
+    if (eNB->RU_list[ru_id]->state == RU_SYNC) { LOG_D(PHY,"wakeup_txfh: eNB %d : Skipping ru %d\n",eNB->Mod_id,ru_id); continue; }
 
     if(ru_proc == NULL)
 		return(0);
