@@ -315,8 +315,8 @@ elseif (${RRC_ASN1_VERSION} STREQUAL "Rel14")
   make_version(RRC_VERSION 14 7 0)
   set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/lte-rrc-14.7.0.asn1)
 elseif (${RRC_ASN1_VERSION} STREQUAL "Rel15")
-  make_version(RRC_VERSION 15 2 2)
-  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/RRC-36331-f22.asn)
+  make_version(RRC_VERSION 15 3 0)
+  set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/lte-rrc-15.3.0.asn1)
 endif  (${RRC_ASN1_VERSION} STREQUAL "Rel8")
 add_definitions(-DRRC_VERSION=${RRC_VERSION})
 set (RRC_FULL_DIR ${asn1_generated_dir}/RRC_${RRC_ASN1_VERSION})
@@ -355,8 +355,8 @@ add_custom_command (
 add_list2_option(NR_RRC_ASN1_VERSION "NR_Rel15" "ASN.1 version of NR_RRC interface")
 
 if (${NR_RRC_ASN1_VERSION} STREQUAL "NR_Rel15")
-  make_version(NR_RRC_VERSION 15 2 1)
-  set (NR_RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1c/ASN1_files/nr-rrc-15.2.1.asn1)
+  make_version(NR_RRC_VERSION 15 3 0)
+  set (NR_RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1c/ASN1_files/nr-rrc-15.3.0.asn1)
 endif  (${NR_RRC_ASN1_VERSION} STREQUAL "NR_Rel15")
 add_definitions(-DNR_RRC_VERSION=${NR_RRC_VERSION})
 set (NR_RRC_FULL_DIR ${asn1_generated_dir}/${NR_RRC_ASN1_VERSION})
@@ -394,7 +394,7 @@ add_custom_command (OUTPUT ${NR_RRC_FULL_DIR}/NR_asn_constant.h
 # Same limitation as described in RRC: unknown generated file list
 # so we generate it at cmake time
 ##############
-add_list1_option(S1AP_RELEASE R14 "S1AP ASN.1 grammar version" R8 R9 R10 R14 R15)
+add_list1_option(S1AP_RELEASE R15 "S1AP ASN.1 grammar version" R8 R9 R10 R14 R15)
 
 set(S1AP_DIR ${OPENAIR3_DIR}/S1AP)
 if (${S1AP_RELEASE} STREQUAL "R8")
@@ -416,11 +416,11 @@ elseif (${S1AP_RELEASE} STREQUAL "R13")
   make_version(S1AP_VERSION 13 6 0)
   set(S1AP_ASN_FILES "s1ap-13.6.0.asn1")
 elseif (${S1AP_RELEASE} STREQUAL "R14")
-  make_version(S1AP_VERSION 14 5 0)
-  set(S1AP_ASN_FILES "s1ap-14.5.0.asn1")
+  make_version(S1AP_VERSION 14 7 0)
+  set(S1AP_ASN_FILES "s1ap-14.7.0.asn1")
 else (${S1AP_RELEASE} STREQUAL "R15")
-  make_version(S1AP_VERSION 15 1 0)
-  set(S1AP_ASN_FILES "s1ap-15.1.0.asn1")
+  make_version(S1AP_VERSION 15 3 0)
+  set(S1AP_ASN_FILES "s1ap-15.3.0.asn1")
 endif(${S1AP_RELEASE} STREQUAL "R8")
 add_definitions(-DS1AP_VERSION=${S1AP_VERSION})
 set(S1AP_ASN_DIR ${S1AP_DIR}/MESSAGES/ASN1/${S1AP_RELEASE})
@@ -472,7 +472,7 @@ add_library(S1AP_ENB
 # Same limitation as described in RRC/S1AP: unknown generated file list
 # so we generate it at cmake time
 ##############
-add_list1_option(X2AP_RELEASE R14 "X2AP ASN.1 grammar version" R8 R11 R12 R14 R15)
+add_list1_option(X2AP_RELEASE R15 "X2AP ASN.1 grammar version" R8 R11 R12 R14 R15)
 
 set(X2AP_DIR ${OPENAIR2_DIR}/X2AP)
 if (${X2AP_RELEASE} STREQUAL "R8")
@@ -488,8 +488,8 @@ elseif (${X2AP_RELEASE} STREQUAL "R14")
   make_version(X2AP_VERSION 14 6 0)
   set(X2AP_ASN_FILES x2ap-14.6.0.asn1)
 elseif (${X2AP_RELEASE} STREQUAL "R15")
-  make_version(X2AP_VERSION 15 1 0)
-  set(X2AP_ASN_FILES x2ap-15.1.0.asn1)
+  make_version(X2AP_VERSION 15 3 0)
+  set(X2AP_ASN_FILES x2ap-15.3.0.asn1)
 endif(${X2AP_RELEASE} STREQUAL "R8")
 add_definitions(-DX2AP_VERSION=${X2AP_VERSION})
 set(X2AP_ASN_DIR ${X2AP_DIR}/MESSAGES/ASN1/${X2AP_RELEASE})
@@ -2611,16 +2611,68 @@ if (${T_TRACER})
   foreach(i
         #all "add_executable" definitions (except tests, rb_tool, updatefw)
         lte-softmodem lte-softmodem-nos1 lte-uesoftmodem lte-uesoftmodem-nos1
+        nr-softmodem nr-softmodem-nos1 nr-uesoftmodem nr-uesoftmodem-nos1
         dlsim_tm4 dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim
         pdcchsim pucchsim prachsim syncsim ulsim
+	ldpctest polartest
         #all "add_library" definitions
-        ITTI RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB
-        oai_exmimodevif oai_usrpdevif oai_bladerfdevif oai_lmssdrdevif
-        oai_eth_transpro
-        FLPT_MSG ASYNC_IF FLEXRAN_AGENT HASHTABLE MSC UTIL OMG_SUMO SECU_OSA
-        SECU_CN SCHED_LIB PHY L2 default_sched remote_sched RAL CN_UTILS
-        GTPV1U SCTP_CLIENT UDP LIB_NAS_UE LFDS LFDS7 SIMU OPENAIR0_LIB PHY_MEX
-        coding)
+ITTI
+RRC_LIB
+NR_RRC_LIB 
+S1AP_LIB
+S1AP_ENB
+X2AP_LIB
+params_libconfig
+oai_exmimodevif
+oai_usrpdevif
+oai_bladerfdevif
+oai_lmssdrdevif
+oai_eth_transpro
+oai_mobipass
+tcp_bridge
+tcp_bridge_oai
+coding
+FLPT_MSG
+ASYNC_IF
+FLEXRAN_AGENT
+HASHTABLE
+MSC
+UTIL
+SECU_OSA
+SECU_CN
+SCHED_LIB
+SCHED_NR_LIB
+SCHED_RU_LIB
+SCHED_UE_LIB
+SCHED_NR_UE_LIB
+NFAPI_COMMON_LIB
+NFAPI_LIB
+NFAPI_PNF_LIB
+NFAPI_VNF_LIB
+NFAPI_USER_LIB
+PHY_COMMON
+PHY
+PHY_UE
+PHY_NR
+PHY_NR_UE
+PHY_RU
+PHY_MEX
+L2
+L2_NR
+L2_UE
+NR_L2_UE
+NR_LTE_UE_REUSE_LIB
+CN_UTILS
+GTPV1U
+SCTP_CLIENT
+UDP
+LIB_NAS_UE
+NB_IoT
+LFDS
+LFDS7
+SIMU
+SIMU_ETH
+OPENAIR0_LIB)
     if (TARGET ${i})
       add_dependencies(${i} generate_T)
     endif()

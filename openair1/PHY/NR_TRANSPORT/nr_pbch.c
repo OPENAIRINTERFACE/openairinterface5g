@@ -215,7 +215,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   uint8_t nushift;
   uint8_t *xbyte = pbch->pbch_a;
   memset((void*) xbyte, 0, 1);
-  uint8_t pbch_a_b[32];
+  //uint8_t pbch_a_b[32];
 
   LOG_I(PHY, "PBCH generation started\n");
 

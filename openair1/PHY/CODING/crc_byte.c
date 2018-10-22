@@ -255,48 +255,6 @@ unsigned int crcPayload(unsigned char * inptr, int bitlen, uint32_t* crc256Table
         return crc;
 }
 
-void nr_crc_computation(uint8_t* input, uint8_t* output, uint16_t payloadBits, uint16_t crcParityBits, uint32_t* crc256Table)
-{
-        //Create payload in bit
-        uint8_t* input2 = (uint8_t*)malloc(payloadBits); //divided by 8 (in bits) 
-        uint8_t mask = 128; // 10000000
-        
-        for(uint8_t ind=0; ind<(payloadBits/8); ind++)
-        {
-                input2[ind]=0;
-                for(uint8_t ind2=0; ind2<8; ind2++)
-                { 
-                        if(input[8*ind+ind2])
-                        {
-                                input2[ind] = input2[ind] | mask;
-                        }
-                        mask= mask >> 1;
-                }
-                mask=128;
-        }
-
-        //crcTable256Init(poly);
-
-        unsigned int crcBits;   
-        crcBits = crcPayload(input2, payloadBits, crc256Table);
-	
-        //create crc in byte
-        unsigned int mask2=0x80000000; //100...
-        
-        for(uint8_t ind=0; ind<crcParityBits; ind++)
-        {
-                if(crcBits & mask2)
-                        output[ind]=1;
-                else
-                        output[ind]=0;
-
-		mask2 = mask2 >> 1;
-        }
-      
-}
-
-
-
 
 
 #ifdef DEBUG_CRC
