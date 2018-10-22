@@ -49,7 +49,7 @@
 #include "platform_constants.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "msc.h"
-
+#include "targets/COMMON/openairinterface5g_limits.h"
 #if defined(ENABLE_SECURITY)
 # include "UTIL/OSA/osa_defs.h"
 #endif
@@ -2015,7 +2015,7 @@ void pdcp_layer_init(void)
    * Initialize SDU list
    */
   list_init(&pdcp_sdu_list, NULL);
-  pdcp_coll_p = hashtable_create ((maxDRB + 2) * 16, NULL, pdcp_free);
+  pdcp_coll_p = hashtable_create ((maxDRB + 2) * NUMBER_OF_UE_MAX, NULL, pdcp_free);
   AssertFatal(pdcp_coll_p != NULL, "UNRECOVERABLE error, PDCP hashtable_create failed");
 
   for (instance = 0; instance < MAX_MOBILES_PER_ENB; instance++) {

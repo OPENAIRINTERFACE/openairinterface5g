@@ -34,7 +34,7 @@
 #include "common/utils/LOG/log.h"
 #include "UTIL/OCG/OCG_vars.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
-
+#include "targets/COMMON/openairinterface5g_limits.h"
 #include "assertions.h"
 
 extern boolean_t pdcp_data_ind(
@@ -649,7 +649,7 @@ rlc_module_init (void)
   rlc_rrc_data_ind  = NULL;
   rlc_rrc_data_conf = NULL;
 
-  rlc_coll_p = hashtable_create ((maxDRB + 2) * 16, NULL, rb_free_rlc_union);
+  rlc_coll_p = hashtable_create ((maxDRB + 2) * NUMBER_OF_UE_MAX, NULL, rb_free_rlc_union);
   //AssertFatal(rlc_coll_p != NULL, "UNRECOVERABLE error, RLC hashtable_create failed");
   if(rlc_coll_p == NULL) {
     LOG_E(RLC, "UNRECOVERABLE error, RLC hashtable_create failed\n");
