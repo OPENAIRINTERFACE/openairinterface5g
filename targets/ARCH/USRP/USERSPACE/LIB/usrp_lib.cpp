@@ -966,8 +966,6 @@ extern "C" {
 #endif
 
 extern "C" {
-   * \param openair0_cfg RF frontend parameters set by application
-   */
   int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
     LOG_D(PHY, "openair0_cfg[0].sdr_addrs == '%s'\n", openair0_cfg[0].sdr_addrs);
     LOG_D(PHY, "openair0_cfg[0].clock_source == '%d'\n", openair0_cfg[0].clock_source);
@@ -1103,11 +1101,14 @@ extern "C" {
       s->usrp = uhd::usrp::multi_usrp::make(args);
 
       // lock mboard clocks
-      if (openair0_cfg[0].clock_source == internal)
+      if (openair0_cfg[0].clock_source == internal) {
         s->usrp->set_clock_source("internal");
-      else
+        printf("Setting clock source to internal\n");
+      }
+      else {
         s->usrp->set_clock_source("external");
-
+        printf("Setting clock source to external\n");
+      }
       if (device->type==USRP_X300_DEV) {
         openair0_cfg[0].rx_gain_calib_table = calib_table_x310;
 #if defined(USRP_REC_PLAY)
