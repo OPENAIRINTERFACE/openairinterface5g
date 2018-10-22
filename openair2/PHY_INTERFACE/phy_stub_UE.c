@@ -311,6 +311,7 @@ void fill_uci_harq_indication_UE_MAC(int Mod_id,
   else if (SNRtimes10 >  635) pdu->ul_cqi_information.ul_cqi=255;
   else                        pdu->ul_cqi_information.ul_cqi=(640+SNRtimes10)/5;
   pdu->ul_cqi_information.channel = 0;
+  if(harq_information->harq_information_rel9_fdd.tl.tag == NFAPI_UL_CONFIG_REQUEST_HARQ_INFORMATION_REL9_FDD_TAG){
       if ((harq_information->harq_information_rel9_fdd.ack_nack_mode == 0) &&
           (harq_information->harq_information_rel9_fdd.harq_size == 1)) {
 
@@ -332,7 +333,24 @@ void fill_uci_harq_indication_UE_MAC(int Mod_id,
       pdu->harq_indication_fdd_rel13.harq_tb_n[1] = 1; // Assuming always an ACK (No NACK or DTX)
 
     }
-    else AssertFatal(1==0,"only format 1a/b for now, received \n");
+  }else if(harq_information->harq_information_rel10_tdd.tl.tag == NFAPI_UL_CONFIG_REQUEST_HARQ_INFORMATION_REL10_TDD_TAG ){
+      if ((harq_information->harq_information_rel10_tdd.ack_nack_mode == 0) &&
+          (harq_information->harq_information_rel10_tdd.harq_size == 1)) {
+        pdu->harq_indication_tdd_rel13.tl.tag = NFAPI_HARQ_INDICATION_TDD_REL13_TAG;
+        pdu->harq_indication_tdd_rel13.mode = 0;
+        pdu->harq_indication_tdd_rel13.number_of_ack_nack = 1;
+        pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 1;
+
+      }  else if ((harq_information->harq_information_rel10_tdd.ack_nack_mode == 1) &&
+                  (harq_information->harq_information_rel10_tdd.harq_size == 2)) {
+        pdu->harq_indication_tdd_rel13.tl.tag = NFAPI_HARQ_INDICATION_TDD_REL13_TAG;
+        pdu->harq_indication_tdd_rel13.mode = 0;
+        pdu->harq_indication_tdd_rel13.number_of_ack_nack = 1;
+        pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 1;
+        pdu->harq_indication_tdd_rel13.harq_data[1].bundling.value_0 = 1;
+
+      }
+  } else AssertFatal(1==0,"only format 1a/b for now, received \n");
 
 
   UL_INFO->harq_ind.harq_indication_body.number_of_harqs++;
