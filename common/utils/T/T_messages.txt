@@ -77,6 +77,10 @@ ID = ENB_PHY_INITIATE_RA_PROCEDURE
     DESC = eNodeB initiates a random access procedure after detecting enough energy for one of the preambles
     GROUP = ALL:PHY:ENB
     FORMAT = int,eNB_ID : int,frame : int,subframe : int,preamble : int,energy : int,delay
+ID = ENB_PHY_MIB
+    DESC = MIB data
+    GROUP = ALL:PHY:ENB
+    FORMAT = int,eNB_ID : int,frame : int,subframe : buffer,data
 
 #MAC logs
 ID = ENB_MAC_UE_DL_SDU

@@ -28,6 +28,10 @@ typedef struct {
   int dl_frame;
   int dl_subframe;
   int dl_data;
+  /* mib */
+  int mib_frame;
+  int mib_subframe;
+  int mib_data;
 } ev_data;
 
 void ul(void *_d, event e)
@@ -100,20 +104,55 @@ void dl(void *_d, event e)
   if (ret != d->buf.osize) abort();
 }
 
-void setup_data(ev_data *d, void *database, int ul_id, int dl_id)
+void mib(void *_d, event e)
+{
+  ev_data *d = _d;
+  ssize_t ret;
+  int fsf;
+  int i;
+
+  d->buf.osize = 0;
+
+  PUTS(&d->buf, MAC_LTE_START_STRING);
+  PUTC(&d->buf, FDD_RADIO);
+  PUTC(&d->buf, DIRECTION_DOWNLINK);
+  PUTC(&d->buf, NO_RNTI);
+
+  /* for newer version of wireshark? */
+  fsf = (e.e[d->mib_frame].i << 4) + e.e[d->mib_subframe].i;
+  /* for older version? */
+  //fsf = e.e[d->mib_subframe].i;
+  PUTC(&d->buf, MAC_LTE_FRAME_SUBFRAME_TAG);
+  PUTC(&d->buf, (fsf>>8) & 255);
+  PUTC(&d->buf, fsf & 255);
+
+  PUTC(&d->buf, MAC_LTE_PAYLOAD_TAG);
+  for (i = 0; i < e.e[d->mib_data].bsize; i++)
+    PUTC(&d->buf, ((char*)e.e[d->mib_data].b)[i]);
+
+  ret = sendto(d->socket, d->buf.obuf, d->buf.osize, 0,
+      (struct sockaddr *)&d->to, sizeof(struct sockaddr_in));
+  if (ret != d->buf.osize) abort();
+}
+
+void setup_data(ev_data *d, void *database, int ul_id, int dl_id, int mib_id)
 {
   database_event_format f;
   int i;
 
-  d->ul_rnti     = -1;
-  d->ul_frame    = -1;
-  d->ul_subframe = -1;
-  d->ul_data     = -1;
+  d->ul_rnti      = -1;
+  d->ul_frame     = -1;
+  d->ul_subframe  = -1;
+  d->ul_data      = -1;
 
-  d->dl_rnti     = -1;
-  d->dl_frame    = -1;
-  d->dl_subframe = -1;
-  d->dl_data     = -1;
+  d->dl_rnti      = -1;
+  d->dl_frame     = -1;
+  d->dl_subframe  = -1;
+  d->dl_data      = -1;
+
+  d->mib_frame    = -1;
+  d->mib_subframe = -1;
+  d->mib_data     = -1;
 
 #define G(var_name, var_type, var) \
   if (!strcmp(f.name[i], var_name)) { \
@@ -143,6 +182,18 @@ void setup_data(ev_data *d, void *database, int ul_id, int dl_id)
   }
   if (d->dl_rnti == -1 || d->dl_frame == -1 || d->dl_subframe == -1 ||
       d->dl_data == -1) goto error;
+
+  if (mib_id != -1) {
+    /* MIB: frame, subframe, data */
+    f = get_format(database, mib_id);
+    for (i = 0; i < f.count; i++) {
+      G("frame",    "int",    d->mib_frame);
+      G("subframe", "int",    d->mib_subframe);
+      G("data",     "buffer", d->mib_data);
+    }
+    if (d->mib_frame == -1 || d->mib_subframe == -1 || d->mib_data == -1)
+      goto error;
+  }
 
 #undef G
 
@@ -179,7 +230,8 @@ void usage(void)
 "    -d <database file>        this option is mandatory\n"
 "    -i <dump file>            read events from this dump file\n"
 "    -ip <IP address>          send packets to this IP address (default %s)\n"
-"    -p <port>                 send packets to this port (default %d)\n",
+"    -p <port>                 send packets to this port (default %d)\n"
+"    -no-mib                   do not report MIB\n",
   DEFAULT_IP,
   DEFAULT_PORT
   );
@@ -194,10 +246,11 @@ int main(int n, char **v)
   event_handler *h;
   int in;
   int i;
-  int ul_id, dl_id;
+  int ul_id, dl_id, mib_id = -1;
   ev_data d;
   char *ip = DEFAULT_IP;
   int port = DEFAULT_PORT;
+  int do_mib = 1;
 
   memset(&d, 0, sizeof(ev_data));
 
@@ -209,6 +262,7 @@ int main(int n, char **v)
       { if (i > n-2) usage(); input_filename = v[++i]; continue; }
     if (!strcmp(v[i], "-ip")) { if (i > n-2) usage(); ip = v[++i]; continue; }
     if (!strcmp(v[i], "-p")) {if(i>n-2)usage(); port=atoi(v[++i]); continue; }
+    if (!strcmp(v[i], "-no-mib")) { do_mib = 0; continue; }
     usage();
   }
 
@@ -232,10 +286,12 @@ int main(int n, char **v)
 
   ul_id = event_id_from_name(database, "ENB_MAC_UE_UL_PDU_WITH_DATA");
   dl_id = event_id_from_name(database, "ENB_MAC_UE_DL_PDU_WITH_DATA");
-  setup_data(&d, database, ul_id, dl_id);
+  if (do_mib) mib_id = event_id_from_name(database, "ENB_PHY_MIB");
+  setup_data(&d, database, ul_id, dl_id, mib_id);
 
   register_handler_function(h, ul_id, ul, &d);
   register_handler_function(h, dl_id, dl, &d);
+  if (do_mib) register_handler_function(h, mib_id, mib, &d);
 
   d.socket = socket(AF_INET, SOCK_DGRAM, 0);
   if (d.socket == -1) { perror("socket"); exit(1); }
@@ -253,7 +309,7 @@ int main(int n, char **v)
     event e;
     e = get_event(in, &ebuf, database);
     if (e.type == -1) break;
-    if (!(e.type == ul_id || e.type == dl_id)) continue;
+    if (!(e.type == ul_id || e.type == dl_id || e.type == mib_id)) continue;
     handle_event(h, e);
   }
 
