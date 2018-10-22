@@ -947,6 +947,8 @@ void phy_init_nr_top(PHY_VARS_NR_UE *ue)
 
   crcTableInit();
 
+  init_dfts();
+  
   ccodedot11_init();
   ccodedot11_init_inv();
 

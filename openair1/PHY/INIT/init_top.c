@@ -72,6 +72,7 @@ void init_lte_top(LTE_DL_FRAME_PARMS *frame_parms)
 
   init_dfts();
 
+  crcTableInit();
 
   phy_generate_viterbi_tables_lte();
 
