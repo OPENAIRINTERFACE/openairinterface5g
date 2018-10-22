@@ -65,7 +65,11 @@ void fill_rx_indication_UE_MAC(module_id_t Mod_id,int frame,int subframe, UL_IND
 	  //pdu->rx_indication_rel8.length         = eNB->ulsch[UE_id]->harq_processes[harq_pid]->TBS>>3;
 	  pdu->rx_indication_rel8.length         = buflen;
 	  pdu->rx_indication_rel8.offset         = 1;   // DJP - I dont understand - but broken unless 1 ????  0;  // filled in at the end of the UL_INFO formation
-	  pdu->data                              = ulsch_buffer;
+
+	  // ulsch_buffer is necessary to keep its value. 
+	  //pdu->data                              = ulsch_buffer;
+	  pdu->data = malloc(buflen);
+	  memcpy(pdu->data,ulsch_buffer,buflen);
 	  // estimate timing advance for MAC
 	  //sync_pos                               = lte_est_timing_advance_pusch(eNB,UE_id);
 	  timing_advance_update                  = 0;  // Don't know what to put here
