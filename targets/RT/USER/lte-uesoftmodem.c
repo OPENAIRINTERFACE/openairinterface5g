@@ -823,7 +823,7 @@ int main( int argc, char **argv )
   // Default value for the number of UEs. It will hold,
   // if not changed from the command line option --num-ues
   NB_UE_INST=1;
-
+  NB_THREAD_INST=1;
 #if defined (XFORMS)
   int ret;
 #endif
@@ -859,6 +859,16 @@ printf("~~~~~~~~~~~~~~~~~~~~successfully get the parallel config[%d], worker con
 
   printf("NFAPI_MODE value: %d \n", nfapi_mode);
 
+  // Checking option of nums_ue_thread.
+  if(NB_THREAD_INST < 1){
+    printf("Running with 0 UE rxtx thread, exiting.\n");
+    abort();
+  }
+  // Checking option's relation between nums_ue_thread and num-ues
+  if(NB_UE_INST <NB_THREAD_INST ){
+    printf("Number of UEs < number of UE rxtx threads, exiting.\n");
+    abort();
+  }
   // Not sure if the following is needed here
   /*if (CONFIG_ISFLAGSET(CONFIG_ABORT)) {
       if (UE_flag == 0) {
@@ -1051,7 +1061,7 @@ printf("~~~~~~~~~~~~~~~~~~~~successfully get the parallel config[%d], worker con
   
   
 #if defined(ENABLE_ITTI)
-    if (create_tasks_ue(1) < 0) {
+    if (create_tasks_ue(NB_UE_INST) < 0) {
       printf("cannot create ITTI tasks\n");
       exit(-1); // need a softer mode
     }

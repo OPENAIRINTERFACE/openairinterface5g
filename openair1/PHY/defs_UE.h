@@ -889,6 +889,7 @@ typedef struct {
 struct rx_tx_thread_data {
   PHY_VARS_UE    *UE;
   UE_rxtx_proc_t *proc;
+  uint16_t       ue_thread_id;
 };
 
 
