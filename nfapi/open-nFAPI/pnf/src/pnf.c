@@ -1260,7 +1260,7 @@ int pnf_connect(pnf_t* pnf)
 			address = inet_ntoa(addr->sin_addr);
 		}
 
-		NFAPI_TRACE(NFAPI_TRACE_NOTE, "Host address info  %d Family:%s Address:%s\n", i++, family, address);
+//		NFAPI_TRACE(NFAPI_TRACE_NOTE, "Host address info  %d Family:%s Address:%s\n", i++, family, address);
 
 		if (pnf->sctp)
 		{
