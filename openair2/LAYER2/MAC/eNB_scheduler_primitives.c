@@ -61,6 +61,7 @@ extern uint16_t frame_cnt;
 #include "SCHED/sched_common.h"
 
 extern RAN_CONTEXT_t RC;
+extern uint8_t nfapi_mode;
 
 int choose(int n, int k)
 {
@@ -3631,9 +3632,19 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
 	AssertFatal(num_ack_nak == 1,
 		    "num_ack_nak %d > 1 for 1 CC and single-layer transmission frame:%d subframe:%d\n",
 		    num_ack_nak,frameP,subframeP);
-	AssertFatal(sched_ctl->round[CC_idP][harq_pid] < 8,
-		    "Got ACK/NAK for inactive harq_pid %d for UE %d/%x\n",
-		    harq_pid, UE_id, rnti);
+
+	// In case of nFAPI, sometimes timing of eNB and UE become different.
+	// So if nfapi_mode == 2(VNF) , this function don't check assertion to avoid process exit.
+	if (nfapi_mode != 2){
+		AssertFatal(sched_ctl->round[CC_idP][harq_pid] < 8,
+			    "Got ACK/NAK for inactive harq_pid %d for UE %d/%x\n",
+			    harq_pid, UE_id, rnti);
+	} else {
+		if(sched_ctl->round[CC_idP][harq_pid] == 8){
+			LOG_E(MAC,"Got ACK/NAK for inactive harq_pid %d for UE %d/%x\n",harq_pid, UE_id, rnti);
+			return;
+		}
+	 }		
 	AssertFatal(pdu[0] == 1 || pdu[0] == 2
 		    || pdu[0] == 4,
 		    "Received ACK/NAK %d which is not 1 or 2 for harq_pid %d from UE %d/%x\n",
