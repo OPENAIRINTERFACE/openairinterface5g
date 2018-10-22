@@ -121,7 +121,7 @@ extern int emulate_rf;
 extern int numerology;
 extern clock_source_t clock_source;
 extern uint8_t dlsch_ue_select_tbl_in_use;
-
+extern uint8_t nfapi_mode;
 extern PARALLEL_CONF_t get_thread_parallel_conf(void);
 extern WORKER_CONF_t   get_thread_worker_conf(void);
 extern void  phy_init_RU(RU_t*);
@@ -1923,7 +1923,12 @@ void* pre_scd_thread( void* param ){
     int                     CC_id;
     int                     Mod_id;
     RU_t               *ru      = (RU_t*)param;
-    Mod_id = ru->eNB_list[0]->Mod_id;
+
+    // L2-emulator can work only one eNB
+    if( nfapi_mode == 2)
+       Mod_id = 0;
+    else 
+       Mod_id = ru->eNB_list[0]->Mod_id;
 
     frame = 0;
     subframe = 4;
