@@ -1034,8 +1034,14 @@ int main( int argc, char **argv )
   }
   printf("NFAPI MODE:%s\n", nfapi_mode_str);
 
-  if (nfapi_mode==2) // VNF
+
+if (nfapi_mode==2) {// VNF
+#if defined(PRE_SCD_THREAD)
+    init_ru_vnf();  // ru pointer is necessary for pre_scd.
+#endif
     wait_nfapi_init("main?");
+  }
+
 
   printf("START MAIN THREADS\n");
   
@@ -1063,12 +1069,6 @@ int main( int argc, char **argv )
       }
     }
 
-
-#if defined(PRE_SCD_THREAD)
-    if (nfapi_mode==2) { // ru pointer is necessary for pre_scd.
-      init_ru_vnf();
-    }
-#endif
 
     config_sync_var=0;
 
