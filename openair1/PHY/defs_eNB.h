@@ -464,6 +464,8 @@ typedef struct RU_t_s{
   pthread_t            ru_stats_thread;
   /// OTA synchronization signal
   int16_t *dmrssync;
+  /// OTA synchronization correlator output
+  uint64_t *dmrs_corr;
 } RU_t;
 
 

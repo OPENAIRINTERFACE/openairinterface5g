@@ -720,7 +720,10 @@ void tx_rf(RU_t *ru) {
     int siglen=fp->samples_per_tti,flags=1;
     
     if (SF_type == SF_S) {
-      siglen = fp->dl_symbols_in_S_subframe*(fp->ofdm_symbol_size+fp->nb_prefix_samples0);
+      int txsymb = fp->dl_symbols_in_S_subframe+(ru->is_slave==0 ? 1 : 0);
+      AssertFatal(txsymb>0,"illegal txsymb %d\n",txsymb);
+      siglen = fp->nb_prefix_samples0 + (txsymb*fp->ofdm_symbol_size) + (txsymb-1)*fp->nb_prefix_samples;
+      //siglen = fp->dl_symbols_in_S_subframe*(fp->ofdm_symbol_size+fp->nb_prefix_samples0);
       flags=3; // end of burst
     }
     if ((fp->frame_type == TDD) &&
@@ -797,10 +800,10 @@ void tx_rf(RU_t *ru) {
 				      ru->nb_tx,
 				      flags);
     ru->south_out_cnt++;
-    //int se = dB_fixed(signal_energy(txp[0],siglen+sf_extension));
+    int se = dB_fixed(signal_energy(txp[0],siglen+sf_extension));
 
-    //LOG_D(PHY,"[TXPATH] RU %d tx_rf (en %d,len %d), writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx,se,siglen+sf_extension,
-//	  (long long unsigned int)proc->timestamp_tx,proc->frame_tx,proc->frame_tx_unwrap,proc->subframe_tx);
+    if (SF_type == SF_S) LOG_D(PHY,"[TXPATH] RU %d tx_rf (en %d,len %d), writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx,se,siglen+sf_extension,
+	  (long long unsigned int)proc->timestamp_tx,proc->frame_tx,proc->frame_tx_unwrap,proc->subframe_tx);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
     
     
@@ -1880,19 +1883,25 @@ void *ru_thread_synch(void *arg) {
       ru->rx_offset = ru_sync_time(ru,
 				   &peak_val,
 				   &avg);
-      LOG_I(PHY,"RU synch cnt %d: %d, val %llu\n",cnt,ru->rx_offset,(unsigned long long)peak_val);
+      LOG_I(PHY,"RU synch cnt %d: %d, val %llu (%d dB,%d dB)\n",cnt,ru->rx_offset,(unsigned long long)peak_val,dB_fixed64(peak_val),dB_fixed64(avg));
       cnt++;
-      if (ru->rx_offset >= 0 && cnt>100) {
+      if (ru->rx_offset >= 0 && cnt>50) {
 
 	LOG_I(PHY,"Estimated peak_val %d dB, avg %d => timing offset %llu\n",dB_fixed(peak_val),dB_fixed(avg),(unsigned long long int)ru->rx_offset);
 	ru->in_synch = 1;
+/*
         LOG_M("ru_sync_rx.m","rurx",&ru->common.rxdata[0][0],LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti,1,1);
-        exit(-1);
+        LOG_M("ru_sync_corr.m","sync_corr",ru->dmrs_corr,LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti,1,6);
+        LOG_M("ru_dmrs.m","rudmrs",&ru->dmrssync[0],fp->ofdm_symbol_size,1,1);
+        exit(-1);*/
       } // sync_pos > 0
       else //AssertFatal(cnt<1000,"Cannot find synch reference\n");
           { 
               if (cnt>200) {
                  LOG_M("ru_sync_rx.m","rurx",&ru->common.rxdata[0][0],LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti,1,1);
+                 LOG_M("ru_sync_corr.m","sync_corr",ru->dmrs_corr,LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti,1,6);
+                 LOG_M("ru_dmrs.m","rudmrs",&ru->dmrssync[0],fp->ofdm_symbol_size,1,1);
+
                  exit(-1);
               }
           }
@@ -2639,11 +2648,9 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
     ru->ts_offset    = 0;
     if (ru->is_slave == 1) {
        ru->in_synch    = 0;
-       ru->dmrssync   = 0;
     }
     else {
        ru->in_synch    = 1;
-       ru->dmrssync    = 0;
        ru->generate_dmrs_sync=send_dmrssync;
     }
     ru->cmd	     = EMPTY;
