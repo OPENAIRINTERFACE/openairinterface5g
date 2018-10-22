@@ -1525,7 +1525,7 @@ volatile int16_t phy_tx_end;
 static void* ru_thread_tx( void* param ) {
   RU_t *ru         = (RU_t*)param;
   RU_proc_t *proc  = &ru->proc;
-  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
   char filename[256];
