@@ -7890,7 +7890,7 @@ rrc_rx_tx(
 #endif
 
            rrc_release_info.RRC_release_ctrl[release_num].flag = 0;
-           rrc_release_info.num_UEs--; 
+           rrc_release_info.num_UEs--;
            break; // break for (release_num)
           } // end if ((rrc_release_info.RRC_release_ctrl[release_num].flag > 2) && ...
 

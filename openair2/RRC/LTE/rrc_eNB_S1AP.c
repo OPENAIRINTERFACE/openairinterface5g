@@ -1172,30 +1172,34 @@ int rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_REQ (MessageDef *msg_p, const char *
 }
 
 //------------------------------------------------------------------------------
-void rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ (
-  const module_id_t                        enb_mod_idP,
-  const rrc_eNB_ue_context_t*        const ue_context_pP,
-  const s1ap_Cause_t                       causeP,
-  const long                               cause_valueP
-)
+/*
+* Send the S1 command UE_CONTEXT_RELEASE_REQUEST to the MME.
+*/
+void 
+rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(
+  const module_id_t enb_mod_idP,
+  const rrc_eNB_ue_context_t *const ue_context_pP,
+  const s1ap_Cause_t causeP,
+  const long cause_valueP)
 //------------------------------------------------------------------------------
 {
   if (ue_context_pP == NULL) {
-    LOG_W(RRC,
-          "[eNB] In S1AP_UE_CONTEXT_RELEASE_COMMAND: invalid  UE\n");
+    LOG_W(RRC, "[eNB] In S1AP_UE_CONTEXT_RELEASE_REQ: invalid UE\n");
   } else {
-	  MSC_LOG_TX_MESSAGE(
-			  MSC_RRC_ENB,
-	  		  MSC_S1AP_ENB,
-	  		  NULL,0,
-	  		  "0 S1AP_UE_CONTEXT_RELEASE_REQ eNB_ue_s1ap_id 0x%06"PRIX32" ",
-	  		  ue_context_pP->ue_context.eNB_ue_s1ap_id);
+	  MSC_LOG_TX_MESSAGE(MSC_RRC_ENB,
+      MSC_S1AP_ENB,
+      NULL,
+      0,
+      "0 S1AP_UE_CONTEXT_RELEASE_REQ eNB_ue_s1ap_id 0x%06"PRIX32" ",
+      ue_context_pP->ue_context.eNB_ue_s1ap_id);
 
     MessageDef *msg_context_release_req_p = NULL;
     msg_context_release_req_p = itti_alloc_new_message(TASK_RRC_ENB, S1AP_UE_CONTEXT_RELEASE_REQ);
+    
     S1AP_UE_CONTEXT_RELEASE_REQ(msg_context_release_req_p).eNB_ue_s1ap_id = ue_context_pP->ue_context.eNB_ue_s1ap_id;
     S1AP_UE_CONTEXT_RELEASE_REQ(msg_context_release_req_p).cause          = causeP;
     S1AP_UE_CONTEXT_RELEASE_REQ(msg_context_release_req_p).cause_value    = cause_valueP;
+    
     itti_send_msg_to_task(TASK_S1AP, ENB_MODULE_ID_TO_INSTANCE(enb_mod_idP), msg_context_release_req_p);
   }
 }
@@ -1207,13 +1211,13 @@ void rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ (
 * The eNB should remove all e-rab, S1 context, and other context of the UE.
 */
 int 
-rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_COMMAND (
+rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_COMMAND(
   MessageDef *msg_p, 
   const char *msg_name, 
   instance_t instance)
 {
 //-----------------------------------------------------------------------------
-  uint32_t eNB_ue_s1ap_id;
+  uint32_t eNB_ue_s1ap_id = 0;
   protocol_ctxt_t ctxt;
   struct rrc_eNB_ue_context_s *ue_context_p = NULL;
   struct rrc_ue_s1ap_ids_s *rrc_ue_s1ap_ids = NULL;
