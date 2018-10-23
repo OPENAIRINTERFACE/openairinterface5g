@@ -508,8 +508,8 @@ typedef struct {
   uint8_t S;
   uint8_t L;
   uint8_t Imcs;
-  uint8_t n_codewords;
-  uint8_t n_layers;
+  uint8_t nb_codewords;
+  uint8_t nb_layers;
   /*uint8_t R;
   uint8_t Qm;
   uint16_t TBS;

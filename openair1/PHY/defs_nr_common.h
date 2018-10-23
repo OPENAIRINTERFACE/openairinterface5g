@@ -119,11 +119,11 @@ typedef enum {
 } nr_frequency_range_e;
 
 typedef enum {
-  BPSK=0,
-  QPSK,
-  QAM16,
-  QAM64,
-  QAM256
+  MOD_BPSK=0,
+  MOD_QPSK,
+  MOD_QAM16,
+  MOD_QAM64,
+  MOD_QAM256
 }nr_mod_t;
 
 typedef struct {

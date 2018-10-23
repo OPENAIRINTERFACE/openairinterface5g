@@ -35,10 +35,10 @@
 #define NR_PDSCH_DMRS_ANTENNA_PORT0 1000
 #define NR_PDSCH_DMRS_NB_ANTENNA_PORTS 12
 
-int8_t *get_Wt(uint8_t ap, uint8_t config);
+void get_Wt(int8_t *Wt, uint8_t ap, uint8_t config);
 
-int8_t *get_Wf(uint8_t ap, uint8_t config);
+void get_Wf(int8_t *Wf, uint8_t ap, uint8_t config);
 
 uint8_t get_delta(uint8_t ap, uint8_t config);
 
-uint8_t *get_l0(uint8_t config, uint8_t dmrs_typeA_position);
+uint8_t get_l0(uint8_t config, uint8_t dmrs_typeA_position);

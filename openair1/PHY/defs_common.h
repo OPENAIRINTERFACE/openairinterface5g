@@ -102,6 +102,10 @@
 #ifdef OCP_FRAMEWORK
 #include "enums.h"
 #else
+
+#define CEILIDIV(a,b) ((a+b-1)/b)
+#define ROUNDIDIV(a,b) (((a<<1)+b)/(b<<1))
+
 typedef enum {TDD=1,FDD=0} lte_frame_type_t;
 
 typedef enum {EXTENDED=1,NORMAL=0} lte_prefix_type_t;

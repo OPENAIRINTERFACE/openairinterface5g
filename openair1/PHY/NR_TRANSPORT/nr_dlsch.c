@@ -35,6 +35,9 @@
 
 #define DEBUG_DLSCH
 
+uint8_t mod_order[5] = {1, 2, 4, 6, 8};
+uint16_t mod_offset[5] = {1,3,7,23,87};
+
 void nr_pdsch_codeword_scrambling(uint32_t *in,
                          uint8_t size,
                          uint8_t q,
@@ -189,11 +192,11 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
   NR_DL_gNB_HARQ_t *harq = dlsch.harq_processes[dci_alloc.harq_pid];
   nfapi_nr_dl_config_dlsch_pdu_rel15_t *rel15 = &harq->dlsch_pdu.dlsch_pdu_rel15;
   nfapi_nr_dl_config_pdcch_parameters_rel15_t pdcch_params = dci_alloc.pdcch_params;
-  uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH]={0};
-  uint16_t mod_symbs[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>1] = {0};
+  uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH];
+  int16_t mod_symbs[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>1];
   uint16_t tx_layers[NR_MAX_NB_LAYERS][NR_MAX_PDSCH_ENCODED_LENGTH>>1];
-  uint16_t n_symbs[NR_MAX_NB_CODEWORDS] = {0};
-  int8_t Wf[2], Wt[2], l0[2], delta;
+  uint16_t n_symbs[NR_MAX_NB_CODEWORDS];
+  int8_t Wf[2], Wt[2], l0, delta;
 
   /// CRC, coding, interleaving and rate matching
 
@@ -229,9 +232,9 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
 
   /// DMRS QPSK modulation
   uint16_t n_dmrs = rel15->n_prb<<1;
-  uint16_t mod_dmrs[n_dmrs<<1] = {0};
+  int16_t mod_dmrs[n_dmrs<<1];
   uint8_t dmrs_type = config.pdsch_config.dmrs_type.value;
-  nr_modulation(pdsch_dmrs, n_dmrs, QPSK, mod_dmrs);
+  nr_modulation(pdsch_dmrs, n_dmrs, MOD_QPSK, mod_dmrs);
 
   /// Resource mapping
   AssertFatal(harq->Nl<=config.rf_config.tx_antenna_ports.value, "Not enough Tx antennas (%d) for %d layers\n",\
@@ -245,8 +248,8 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
   for (int ap=0; ap<rel15->nb_layers; ap++) {
 
     // DMRS params for this ap
-    Wt = get_Wt(ap, dmrs_type);
-    Wf = get_Wf(ap, dmrs_type);
+    get_Wt(Wt, ap, dmrs_type);
+    get_Wf(Wf, ap, dmrs_type);
     l0 = get_l0(0, config.pdsch_config.dmrs_typeA_position.value);
     delta = get_delta(ap, dmrs_type);
     uint8_t k_prime=0, n=0, dmrs_idx=0;
@@ -258,11 +261,12 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
           k -= frame_parms.ofdm_symbol_size;
 
         if ((l==l0) && (k == ((dmrs_type)? (6*n+k_prime+delta):((n<<2)+(k_prime<<1)+delta)))) {
-          ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (Wt*Wf*amp*mod_dmrs[dmrs_idx<<1]) >> 15;
-          ((int16_t*)txdataF[ap])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (Wt*Wf*amp*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
-          mod_dmrs++;
+          ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (Wt[k_prime]*Wf[k_prime]*amp*mod_dmrs[dmrs_idx<<1]) >> 15;
+          ((int16_t*)txdataF[ap])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (Wt[k_prime]*Wf[k_prime]*amp*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
+          dmrs_idx++;
           n++;
-          k_prime = (++k_prime)&1;
+          k_prime++;
+          k_prime&=1;
         }
 
         ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (amp * tx_layers[ap][m<<1]) >> 15;

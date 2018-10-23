@@ -33,8 +33,6 @@
 #include "nr_sch_dmrs.h"
 
 
-
-
 /*Table 7.4.1.1.2-1 and 7.4.1.1.2-2 38211 Columns: ap - CDM group - Delta - Wf(0) - Wf(1) - Wt(0) - Wt(1)*/
 int8_t pdsch_dmrs_1[8][7] = {{0,0,0,1,1,1,1},
                              {1,0,0,1,-1,1,1},
@@ -76,24 +74,20 @@ static inline void *get_antenna_ports(uint8_t n_symbs, uint8_t config) {
   return ap;
 }
 
-int8_t *get_Wt(uint8_t ap, uint8_t config) {
-  int8_t *Wt;
+void get_Wt(int8_t *Wt, uint8_t ap, uint8_t config) {
   for (int i=0; i<2; i++)
     *(Wt+i)=(config==NFAPI_NR_DMRS_TYPE1)?(pdsch_dmrs_1[ap][3+i]):(pdsch_dmrs_2[ap][3+i]);
-  return Wt;
 }
 
-int8_t *get_Wf(uint8_t ap, uint8_t config) {
-  int8_t *Wf;
+void *get_Wf(int8_t *Wf, uint8_t ap, uint8_t config) {
   for (int i=0; i<2; i++)
     *(Wf+i)=(config==NFAPI_NR_DMRS_TYPE1)?(pdsch_dmrs_1[ap][5+i]):(pdsch_dmrs_2[ap][5+i]);
-  return Wf;
 }
 
 uint8_t get_delta(uint8_t ap, uint8_t config) {
   return ((config==NFAPI_NR_DMRS_TYPE1)?(pdsch_dmrs_1[ap][2]):(pdsch_dmrs_2[ap][2]));
 }
 
-uint8_t *get_l0(uint8_t config, uint8_t dmrs_typeA_position) {
+uint8_t get_l0(uint8_t config, uint8_t dmrs_typeA_position) {
   return ((config==NFAPI_NR_DMRS_TYPE1)?dmrs_typeA_position:0);
 }
