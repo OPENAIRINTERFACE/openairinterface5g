@@ -12,6 +12,7 @@ enum flex_type {
      FLPT_HELLO = 0;
      FLPT_ECHO_REQUEST = 1;
      FLPT_ECHO_REPLY = 2;
+     FLPT_DISCONNECT = 20;
 
      // Statistics and measurement messages
      FLPT_STATS_REQUEST = 3;

@@ -31,6 +31,7 @@ message flexran_message {
 	      flex_agent_reconfiguration agent_reconfiguration_msg = 17;
 	      flex_rrc_triggering rrc_triggering = 18;
 	      flex_ul_mac_config ul_mac_config_msg = 19;
+              flex_disconnect disconnect_msg = 20;
 	}
 }
 
@@ -223,4 +224,6 @@ message flex_echo_reply_latency {
 	}
 }
 
-
+message flex_disconnect {
+        optional flex_header header = 1;
+}
