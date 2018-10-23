@@ -7705,7 +7705,6 @@ SL_CommConfig_r12_t rrc_eNB_get_sidelink_commTXPool( const protocol_ctxt_t* cons
    return *sl_CommConfig;
 }
 
-
 SL_DiscConfig_r12_t rrc_eNB_get_sidelink_discTXPool( const protocol_ctxt_t* const ctxt_pP, rrc_eNB_ue_context_t* const ue_context_pP,  int n_discoveryMessages ){
    //TODO
    SL_DiscConfig_r12_t  sl_DiscConfig;
@@ -7717,178 +7716,213 @@ SL_DiscConfig_r12_t rrc_eNB_get_sidelink_discTXPool( const protocol_ctxt_t* cons
    //sl_DiscConfig.discTxResources_r12->choice.setup.choice.scheduled_r12.discTxConfig_r12;
    return sl_DiscConfig;
 }
+
 RRC_status_t
 rrc_rx_tx(
   protocol_ctxt_t* const ctxt_pP,
-  const int          CC_id
+  const int        CC_id
 )
 //-----------------------------------------------------------------------------
 {
-  //uint8_t        UE_id;
-  int32_t        current_timestamp_ms, ref_timestamp_ms;
+  int32_t current_timestamp_ms = 0;
+  int32_t ref_timestamp_ms = 0;
   struct timeval ts;
-  struct rrc_eNB_ue_context_s   *ue_context_p = NULL,*ue_to_be_removed = NULL;
+  struct rrc_eNB_ue_context_s *ue_context_p = NULL;
+  struct rrc_eNB_ue_context_s *ue_to_be_removed = NULL;
 
 #ifdef LOCALIZATION
-  double                         estimated_distance;
-  protocol_ctxt_t                ctxt;
+
+  double estimated_distance = 0;
+  protocol_ctxt_t ctxt;
+
 #endif
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_IN);
 
-    check_handovers(ctxt_pP);
-    // counetr, and get the value and aggregate
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX, VCD_FUNCTION_IN);
 
-    // check for UL failure
+    check_handovers(ctxt_pP); // counter, get the value and aggregate
+
+    // check for UL failure or for UE to be released
     RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[ctxt_pP->module_id]->rrc_ue_head)) {
       ctxt_pP->rnti = ue_context_p->ue_id_rnti;
-      if ((ctxt_pP->frame == 0) && (ctxt_pP->subframe==0)) {
-	if (ue_context_p->ue_context.Initialue_identity_s_TMSI.presence == TRUE) {
-	  LOG_I(RRC,"UE rnti %x:S-TMSI %x failure timer %d/8\n",
-		ue_context_p->ue_context.rnti,
-		ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi,
-		ue_context_p->ue_context.ul_failure_timer);
-	}
-	else {
-	  LOG_I(RRC,"UE rnti %x failure timer %d/8\n",
-		ue_context_p->ue_context.rnti,
-		ue_context_p->ue_context.ul_failure_timer);
-	}
+
+      if ((ctxt_pP->frame == 0) && (ctxt_pP->subframe == 0)) {
+      	if (ue_context_p->ue_context.Initialue_identity_s_TMSI.presence == TRUE) {
+      	  LOG_I(RRC, "UE rnti %x: S-TMSI %x failure timer %d/8\n",
+	      	  ue_context_p->ue_context.rnti,
+		        ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi,
+		        ue_context_p->ue_context.ul_failure_timer);
+	      }	else {
+	        LOG_I(RRC, "UE rnti %x failure timer %d/8\n",
+		        ue_context_p->ue_context.rnti,
+		        ue_context_p->ue_context.ul_failure_timer);
+	      }
       }
-      if (ue_context_p->ue_context.ul_failure_timer>0) {
-	ue_context_p->ue_context.ul_failure_timer++;
-	if (ue_context_p->ue_context.ul_failure_timer >= 20000) {
-	  // remove UE after 20 seconds after MAC has indicated UL failure
-	  LOG_I(RRC,"Removing UE %x instance\n",ue_context_p->ue_context.rnti);
-	  ue_to_be_removed = ue_context_p;
-	  break;
-	}
+
+      if (ue_context_p->ue_context.ul_failure_timer > 0) {
+      	ue_context_p->ue_context.ul_failure_timer++;
+	      
+        if (ue_context_p->ue_context.ul_failure_timer >= 20000) {
+    	  // remove UE after 20 seconds after MAC (or else) has indicated UL failure
+	      LOG_I(RRC, "Removing UE %x instance, because of uplink failure timer timeout\n", 
+          ue_context_p->ue_context.rnti);
+
+	      ue_to_be_removed = ue_context_p;
+	      break; // break RB_FOREACH
+	      }
       }
-      if (ue_context_p->ue_context.ue_release_timer_s1>0) {
+
+      if (ue_context_p->ue_context.ue_release_timer_s1 > 0) {
         ue_context_p->ue_context.ue_release_timer_s1++;
-        if (ue_context_p->ue_context.ue_release_timer_s1 >=
-            ue_context_p->ue_context.ue_release_timer_thres_s1) {
-          LOG_I(RRC,"Removing UE %x instance Because of UE_CONTEXT_RELEASE_COMMAND not received after %d ms from sending request\n",
-                         ue_context_p->ue_context.rnti, ue_context_p->ue_context.ue_release_timer_thres_s1);
-//          ue_context_p->ue_context.ue_release_timer_s1 = 0;
+        
+        if (ue_context_p->ue_context.ue_release_timer_s1 >= ue_context_p->ue_context.ue_release_timer_thres_s1) {
+          LOG_I(RRC, "Removing UE %x instance, because of UE_CONTEXT_RELEASE_COMMAND not received after %d ms from sending request\n",
+            ue_context_p->ue_context.rnti, 
+            ue_context_p->ue_context.ue_release_timer_thres_s1);
+
 #if defined(ENABLE_USE_MME)
 #if defined(ENABLE_ITTI)
+
           rrc_eNB_generate_RRCConnectionRelease(ctxt_pP, ue_context_p);
+
 #endif
 #else
+
           ue_to_be_removed = ue_context_p;
+
 #endif
           ue_context_p->ue_context.ue_release_timer_s1 = 0;
-          break;
+          break; // break RB_FOREACH
+        } // end if timer_s1 timeout
+      } // end if timer_s1 > 0 (S1 UE_CONTEXT_RELEASE_REQ ongoing)
+
+      if (ue_context_p->ue_context.ue_release_timer_rrc > 0) {
+        ue_context_p->ue_context.ue_release_timer_rrc++;
+        
+        if (ue_context_p->ue_context.ue_release_timer_rrc >= ue_context_p->ue_context.ue_release_timer_thres_rrc) {
+          LOG_I(RRC, "Removing UE %x instance after UE_CONTEXT_RELEASE_Complete (ue_release_timer_rrc timeout)\n", 
+            ue_context_p->ue_context.rnti);
+          
+          ue_context_p->ue_context.ue_release_timer_rrc = 0;
+          ue_to_be_removed = ue_context_p;
+          break; // break RB_FOREACH
         }
       }
 
-      if (ue_context_p->ue_context.ue_release_timer_rrc>0) {
-        ue_context_p->ue_context.ue_release_timer_rrc++;
-        if (ue_context_p->ue_context.ue_release_timer_rrc >=
-          ue_context_p->ue_context.ue_release_timer_thres_rrc) {
-          LOG_I(RRC,"Removing UE %x instance After UE_CONTEXT_RELEASE_Complete\n", ue_context_p->ue_context.rnti);
-          ue_context_p->ue_context.ue_release_timer_rrc = 0;
-          ue_to_be_removed = ue_context_p;
-          ue_context_p->ue_context.ue_release_timer_rrc = 0;
-          break;
-        }
-      }
-       pthread_mutex_lock(&rrc_release_freelist);
-      if(rrc_release_info.num_UEs > 0){
+      pthread_mutex_lock(&rrc_release_freelist);
+      if (rrc_release_info.num_UEs > 0) {
         uint16_t release_total = 0;
-        for(uint16_t release_num = 0;release_num < NUMBER_OF_UE_MAX;release_num++){
-          if(rrc_release_info.RRC_release_ctrl[release_num].flag > 0){
+
+        for (uint16_t release_num = 0; release_num < NUMBER_OF_UE_MAX; release_num++) {
+          if (rrc_release_info.RRC_release_ctrl[release_num].flag > 0) {
             release_total++;
           }
-          if( (rrc_release_info.RRC_release_ctrl[release_num].flag > 2) &&
-            (rrc_release_info.RRC_release_ctrl[release_num].rnti == ue_context_p->ue_context.rnti)){
-           ue_context_p->ue_context.ue_release_timer_rrc = 1;
-           ue_context_p->ue_context.ue_release_timer_thres_rrc = 100;
+
+          if ((rrc_release_info.RRC_release_ctrl[release_num].flag > 2) &&
+            (rrc_release_info.RRC_release_ctrl[release_num].rnti == ue_context_p->ue_context.rnti)) {
+            
+            ue_context_p->ue_context.ue_release_timer_rrc = 1;
+            ue_context_p->ue_context.ue_release_timer_thres_rrc = 100;
+
 #if defined(ENABLE_USE_MME)
 #if defined(ENABLE_ITTI)
-           int      e_rab;
-           MessageDef *msg_complete_p = NULL;
-           MessageDef *msg_delete_tunnels_p = NULL;
-           uint32_t eNB_ue_s1ap_id = ue_context_p->ue_context.eNB_ue_s1ap_id;
-           if(rrc_release_info.RRC_release_ctrl[release_num].flag == 4){
-             MSC_LOG_TX_MESSAGE(
-                    MSC_RRC_ENB,
-                    MSC_S1AP_ENB,
-                     NULL,0,
-                    "0 S1AP_UE_CONTEXT_RELEASE_COMPLETE eNB_ue_s1ap_id 0x%06"PRIX32" ",
-                     eNB_ue_s1ap_id);
-             msg_complete_p = itti_alloc_new_message(TASK_RRC_ENB, S1AP_UE_CONTEXT_RELEASE_COMPLETE);
-             S1AP_UE_CONTEXT_RELEASE_COMPLETE(msg_complete_p).eNB_ue_s1ap_id = eNB_ue_s1ap_id;
-             itti_send_msg_to_task(TASK_S1AP, ctxt_pP->module_id, msg_complete_p);
-           }
-           MSC_LOG_TX_MESSAGE(MSC_RRC_ENB, MSC_GTPU_ENB, NULL,0, "0 GTPV1U_ENB_DELETE_TUNNEL_REQ rnti %x ", eNB_ue_s1ap_id);
-           msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
-           memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
-           // do not wait response
-           GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
-           for (e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
-             GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).eps_bearer_id[GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_erab++] =
-               ue_context_p->ue_context.enb_gtp_ebi[e_rab];
-             // erase data
-             ue_context_p->ue_context.enb_gtp_teid[e_rab] = 0;
-             memset(&ue_context_p->ue_context.enb_gtp_addrs[e_rab], 0, sizeof(ue_context_p->ue_context.enb_gtp_addrs[e_rab]));
-             ue_context_p->ue_context.enb_gtp_ebi[e_rab]  = 0;
-           }
-           itti_send_msg_to_task(TASK_GTPV1_U, ctxt_pP->module_id, msg_delete_tunnels_p);
-           struct rrc_ue_s1ap_ids_s    *rrc_ue_s1ap_ids = NULL;
-           rrc_ue_s1ap_ids = rrc_eNB_S1AP_get_ue_ids(
-                  RC.rrc[ctxt_pP->module_id],
-                  0,
-                  eNB_ue_s1ap_id);
-           if (NULL != rrc_ue_s1ap_ids) {
-             rrc_eNB_S1AP_remove_ue_ids(
-                        RC.rrc[ctxt_pP->module_id],
-                        rrc_ue_s1ap_ids);
-           }
-#endif
-#endif
-           rrc_release_info.RRC_release_ctrl[release_num].flag = 0;
-           rrc_release_info.num_UEs--;
-           break;
-         }
-         if(release_total >= rrc_release_info.num_UEs)
-           break;
-         }
-       }
-       pthread_mutex_unlock(&rrc_release_freelist);
 
-      if (ue_context_p->ue_context.ue_reestablishment_timer>0) {
+            int e_rab = 0;
+            MessageDef *msg_complete_p = NULL;
+            MessageDef *msg_delete_tunnels_p = NULL;
+            uint32_t eNB_ue_s1ap_id = ue_context_p->ue_context.eNB_ue_s1ap_id;
+
+            if (rrc_release_info.RRC_release_ctrl[release_num].flag == 4) { // if timer_s1 == 0
+              MSC_LOG_TX_MESSAGE(MSC_RRC_ENB, MSC_S1AP_ENB, NULL, 0, 
+                "0 S1AP_UE_CONTEXT_RELEASE_COMPLETE eNB_ue_s1ap_id 0x%06"PRIX32" ",
+                eNB_ue_s1ap_id);
+
+              msg_complete_p = itti_alloc_new_message(TASK_RRC_ENB, S1AP_UE_CONTEXT_RELEASE_COMPLETE);
+              S1AP_UE_CONTEXT_RELEASE_COMPLETE(msg_complete_p).eNB_ue_s1ap_id = eNB_ue_s1ap_id;
+              itti_send_msg_to_task(TASK_S1AP, ctxt_pP->module_id, msg_complete_p);
+            }
+
+            MSC_LOG_TX_MESSAGE(MSC_RRC_ENB, MSC_GTPU_ENB, NULL,0, "0 GTPV1U_ENB_DELETE_TUNNEL_REQ rnti %x ", eNB_ue_s1ap_id);
+            
+            msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
+            memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
+            
+            // do not wait response
+            GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
+            
+            for (e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
+              GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).eps_bearer_id[GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_erab++] =
+                ue_context_p->ue_context.enb_gtp_ebi[e_rab];
+              
+              // erase data
+              ue_context_p->ue_context.enb_gtp_teid[e_rab] = 0;
+              memset(&ue_context_p->ue_context.enb_gtp_addrs[e_rab], 0, sizeof(ue_context_p->ue_context.enb_gtp_addrs[e_rab]));
+              ue_context_p->ue_context.enb_gtp_ebi[e_rab] = 0;
+            }
+
+            itti_send_msg_to_task(TASK_GTPV1_U, ctxt_pP->module_id, msg_delete_tunnels_p);
+
+            struct rrc_ue_s1ap_ids_s *rrc_ue_s1ap_ids = NULL;
+
+            rrc_ue_s1ap_ids = rrc_eNB_S1AP_get_ue_ids(RC.rrc[ctxt_pP->module_id], 0, eNB_ue_s1ap_id);
+
+            if (rrc_ue_s1ap_ids != NULL) {
+              rrc_eNB_S1AP_remove_ue_ids(RC.rrc[ctxt_pP->module_id], rrc_ue_s1ap_ids);
+            }
+
+#endif
+#endif
+
+           rrc_release_info.RRC_release_ctrl[release_num].flag = 0;
+           rrc_release_info.num_UEs--; 
+           break; // break for (release_num)
+          } // end if ((rrc_release_info.RRC_release_ctrl[release_num].flag > 2) && ...
+
+          if (release_total >= rrc_release_info.num_UEs) {
+            break; // break for (release_num)
+          }
+        } // end for (release_num)
+      } // end if (rrc_release_info.num_UEs > 0)
+      pthread_mutex_unlock(&rrc_release_freelist);
+
+      if (ue_context_p->ue_context.ue_reestablishment_timer > 0) {
         ue_context_p->ue_context.ue_reestablishment_timer++;
-        if (ue_context_p->ue_context.ue_reestablishment_timer >=
-            ue_context_p->ue_context.ue_reestablishment_timer_thres) {
-          LOG_I(RRC,"UE %d reestablishment_timer max\n",ue_context_p->ue_context.rnti);
-          ue_context_p->ue_context.ul_failure_timer = 20000;
+
+        if (ue_context_p->ue_context.ue_reestablishment_timer >= ue_context_p->ue_context.ue_reestablishment_timer_thres) {
+          LOG_I(RRC, "Removing UE %x instance because of reestablishment_timer timeout\n", 
+            ue_context_p->ue_context.rnti);
+          
+          ue_context_p->ue_context.ul_failure_timer = 20000; // lead to send S1 UE_CONTEXT_RELEASE_REQ
           ue_to_be_removed = ue_context_p;
           ue_context_p->ue_context.ue_reestablishment_timer = 0;
-          break;
+          break; // break RB_FOREACH
         }
       }
 
-      if (ue_context_p->ue_context.ue_release_timer>0) {
-	ue_context_p->ue_context.ue_release_timer++;
-	if (ue_context_p->ue_context.ue_release_timer >= 
-	    ue_context_p->ue_context.ue_release_timer_thres) {
-          LOG_I(RRC,"Removing UE %x instance\n",ue_context_p->ue_context.rnti);
-	  ue_to_be_removed = ue_context_p;
+      if (ue_context_p->ue_context.ue_release_timer > 0) {
+      	ue_context_p->ue_context.ue_release_timer++;
+	      
+        if (ue_context_p->ue_context.ue_release_timer >= ue_context_p->ue_context.ue_release_timer_thres) {
+          LOG_I(RRC, "Removing UE %x instance because of RRC Connection Setup timer timeout\n",
+            ue_context_p->ue_context.rnti);
+	        
+          ue_to_be_removed = ue_context_p;
           ue_context_p->ue_context.ue_release_timer = 0;
-	  break;
-	}
+	        break; // break RB_FOREACH
+	      }
       }
-    }
+    } // end RB_FOREACH
+
     if (ue_to_be_removed) {
-      if(ue_to_be_removed->ue_context.ul_failure_timer >= 20000) {
-          ue_to_be_removed->ue_context.ue_release_timer_s1 = 1;
-          ue_to_be_removed->ue_context.ue_release_timer_thres_s1 = 100;
-          ue_to_be_removed->ue_context.ue_release_timer = 0;
-          ue_to_be_removed->ue_context.ue_reestablishment_timer = 0;
+      if (ue_to_be_removed->ue_context.ul_failure_timer >= 20000) {
+        ue_to_be_removed->ue_context.ue_release_timer_s1 = 1;
+        ue_to_be_removed->ue_context.ue_release_timer_thres_s1 = 100;
+        ue_to_be_removed->ue_context.ue_release_timer = 0;
+        ue_to_be_removed->ue_context.ue_reestablishment_timer = 0;
       }
-      rrc_eNB_free_UE(ctxt_pP->module_id,ue_to_be_removed);
-      if(ue_to_be_removed->ue_context.ul_failure_timer >= 20000){
+
+      rrc_eNB_free_UE(ctxt_pP->module_id, ue_to_be_removed);
+
+      if (ue_to_be_removed->ue_context.ul_failure_timer >= 20000) {
         ue_to_be_removed->ue_context.ul_failure_timer = 0;
       }
     }
@@ -7897,37 +7931,43 @@ rrc_rx_tx(
 
     /* for the localization, only primary CC_id might be relevant*/
     gettimeofday(&ts, NULL);
+
     current_timestamp_ms = ts.tv_sec * 1000 + ts.tv_usec / 1000;
     ref_timestamp_ms = RC.rrc[ctxt_pP->module_id]->reference_timestamp_ms;
+
     RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[ctxt_pP->module_id]->rrc_ue_head)) {
       ctxt = *ctxt_pP;
       ctxt.rnti = ue_context_p->ue_context.rnti;
-      estimated_distance = rrc_get_estimated_ue_distance(
-                             &ctxt,
-                             CC_id,
-                             RC.rrc[ctxt_pP->module_id]->loc_type);
+
+      estimated_distance = rrc_get_estimated_ue_distance(&ctxt, CC_id, RC.rrc[ctxt_pP->module_id]->loc_type);
 
       if ((current_timestamp_ms - ref_timestamp_ms > RC.rrc[ctxt_pP->module_id]->aggregation_period_ms) &&
           estimated_distance != -1) {
-        LOG_D(LOCALIZE, " RRC [UE/id %d -> eNB/id %d] timestamp %d frame %d estimated r = %f\n",
+
+        LOG_D(LOCALIZE, "RRC [UE/id %d -> eNB/id %d] timestamp %d frame %d estimated r = %f\n",
               ctxt.rnti,
               ctxt_pP->module_id,
               current_timestamp_ms,
               ctxt_pP->frame,
               estimated_distance);
-        LOG_D(LOCALIZE, " RRC status %d\n", ue_context_p->ue_context.Status);
-        push_front(&RC.rrc[ctxt_pP->module_id]->loc_list,
-                   estimated_distance);
+
+        LOG_D(LOCALIZE, "RRC status %d\n",
+          ue_context_p->ue_context.Status);
+
+        push_front(&RC.rrc[ctxt_pP->module_id]->loc_list, estimated_distance);
+
         RC.rrc[ctxt_pP->module_id]->reference_timestamp_ms = current_timestamp_ms;
-      }
-    }
+      } // end if 
+    } // end RB_FOREACH
 
 #endif
+
     (void)ts; /* remove gcc warning "unused variable" */
     (void)ref_timestamp_ms; /* remove gcc warning "unused variable" */
     (void)current_timestamp_ms; /* remove gcc warning "unused variable" */
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_OUT);
-  return (RRC_OK);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX, VCD_FUNCTION_OUT);
+
+  return RRC_OK;
 }
 
