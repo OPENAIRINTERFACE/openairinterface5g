@@ -1112,7 +1112,7 @@ int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req)
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
 
   dl_config_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
-
+  dl_config_req->header.message_id = NFAPI_DL_CONFIG_REQUEST;
   int retval = nfapi_vnf_p7_dl_config_req(p7_config, dl_config_req);
 
   dl_config_req->dl_config_request_body.number_pdcch_ofdm_symbols           = 1;
@@ -1131,7 +1131,7 @@ int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req)
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
 
   tx_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
-
+  tx_req->header.message_id = NFAPI_TX_REQUEST;
   //LOG_D(PHY, "[VNF] %s() TX_REQ sfn_sf:%d number_of_pdus:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(tx_req->sfn_sf), tx_req->tx_request_body.number_of_pdus);
 
   int retval = nfapi_vnf_p7_tx_req(p7_config, tx_req);
@@ -1149,7 +1149,7 @@ int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) {
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
 
   hi_dci0_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
-
+  hi_dci0_req->header.message_id = NFAPI_HI_DCI0_REQUEST;
   //LOG_D(PHY, "[VNF] %s() HI_DCI0_REQ sfn_sf:%d dci:%d hi:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(hi_dci0_req->sfn_sf), hi_dci0_req->hi_dci0_request_body.number_of_dci, hi_dci0_req->hi_dci0_request_body.number_of_hi);
 
   int retval = nfapi_vnf_p7_hi_dci0_req(p7_config, hi_dci0_req);
@@ -1168,7 +1168,7 @@ int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) {
   nfapi_vnf_p7_config_t *p7_config = vnf.p7_vnfs[0].config;
 
   ul_config_req->header.phy_id = 1; // DJP HACK TODO FIXME - need to pass this around!!!!
-
+  ul_config_req->header.message_id = NFAPI_UL_CONFIG_REQUEST;
   //LOG_D(PHY, "[VNF] %s() header message_id:%02x\n", __FUNCTION__, ul_config_req->header.message_id);
 
   //LOG_D(PHY, "[VNF] %s() UL_CONFIG sfn_sf:%d PDUs:%d rach_prach_frequency_resources:%d srs_present:%d\n", __FUNCTION__, NFAPI_SFNSF2DEC(ul_config_req->sfn_sf), ul_config_req->ul_config_request_body.number_of_pdus, ul_config_req->ul_config_request_body.rach_prach_frequency_resources, ul_config_req->ul_config_request_body.srs_present);
