@@ -6919,7 +6919,7 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
                              ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
           }
   }else if(dedicated_DRB == 0){
-  		LOG_D(RRC, "Sending rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP, establishment cause %d\n", 
+                LOG_D(RRC, "Sending rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP, establishment cause %ld\n",
   		ue_context_p->ue_context.reestablishment_cause );
   		// NN: not sure what we need to send S1AP_INITIAL_CONTEXT_SETUP_RESP only with this cause?
         //if(ue_context_p->ue_context.reestablishment_cause == ReestablishmentCause_spare1){
@@ -7560,8 +7560,6 @@ rrc_enb_task(
   instance_t                          instance;
   int                                rrc_inst;
   int                                 result;
-  SRB_INFO                           *srb_info_p;
-  int                                 CC_id;
 
   protocol_ctxt_t                     ctxt;
 

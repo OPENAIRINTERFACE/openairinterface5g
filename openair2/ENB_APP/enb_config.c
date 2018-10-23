@@ -2137,7 +2137,7 @@ int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
 	      F1AP_SETUP_REQ (msg_p).num_cells_available++;
 
         F1AP_SETUP_REQ (msg_p).gNB_DU_id        = *(ENBParamList.paramarray[0][ENB_ENB_ID_IDX].uptr);
-        LOG_I(ENB_APP,"F1AP: gNB_DU_id[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).gNB_DU_id);
+        LOG_I(ENB_APP,"F1AP: gNB_DU_id[%d] %ld\n",k,F1AP_SETUP_REQ (msg_p).gNB_DU_id);
 
         F1AP_SETUP_REQ (msg_p).gNB_DU_name      = strdup(*(ENBParamList.paramarray[0][ENB_ENB_NAME_IDX].strptr));
         LOG_I(ENB_APP,"F1AP: gNB_DU_name[%d] %s\n",k,F1AP_SETUP_REQ (msg_p).gNB_DU_name);
@@ -2160,7 +2160,7 @@ int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
                     F1AP_SETUP_REQ (msg_p).mnc_digit_length[k]);
 
 	F1AP_SETUP_REQ (msg_p).nr_cellid[k] = (uint64_t)*(ENBParamList.paramarray[i][ENB_NRCELLID_IDX].u64ptr);
-        LOG_I(ENB_APP,"F1AP: nr_cellid[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).nr_cellid[k]);
+        LOG_I(ENB_APP,"F1AP: nr_cellid[%d] %ld\n",k,F1AP_SETUP_REQ (msg_p).nr_cellid[k]);
 
         LOG_I(ENB_APP,"F1AP: CU_ip4_address in DU %s\n",RC.mac[k]->eth_params_n.remote_addr);
         LOG_I(ENB_APP,"FIAP: CU_ip4_address in DU %p, strlen %d\n",F1AP_SETUP_REQ (msg_p).CU_f1_ip_address.ipv4_address,(int)strlen(RC.mac[k]->eth_params_n.remote_addr));
@@ -2770,6 +2770,9 @@ void extract_and_decode_SI(int inst,int si_ind,uint8_t *si_container,int si_cont
 	}
 	break;
       }
+      case BCCH_DL_SCH_MessageType__c1_PR_NOTHING:
+        AssertFatal(0, "Should have received SIB1 from CU\n");
+        break;
     }
   }
     
@@ -2842,7 +2845,7 @@ void handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
     for (i=0;i<RC.nb_inst;i++) {
       rrc_eNB_carrier_data_t *carrier =  &RC.rrc[i]->carrier[0];
       // identify local index of cell j by nr_cellid, plmn identity and physical cell ID
-      printf("Checking cell %d, rrc inst %d : rrc->nr_cellid %x, resp->nr_cellid %x\n",
+      printf("Checking cell %d, rrc inst %d : rrc->nr_cellid %lx, resp->nr_cellid %lx\n",
 	     j,i,RC.rrc[i]->nr_cellid,resp->nr_cellid[j]);
       if (RC.rrc[i]->nr_cellid == resp->nr_cellid[j] && 
 	  (check_plmn_identity(carrier, resp->mcc[j], resp->mnc[j], resp->mnc_digit_length[j])>0 &&
