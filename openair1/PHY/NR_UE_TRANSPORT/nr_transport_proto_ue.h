@@ -1072,13 +1072,13 @@ int rx_sss(PHY_VARS_NR_UE *phy_vars_ue,int32_t *tot_metric,uint8_t *flip_max,uin
 /*! \brief receiver for the PBCH
   \returns number of tx antennas or -1 if error
 */
-uint16_t rx_pbch(NR_UE_COMMON *lte_ue_common_vars,
-                 NR_UE_PBCH *lte_ue_pbch_vars,
-                 NR_DL_FRAME_PARMS *frame_parms,
-                 uint8_t eNB_id,
-                 MIMO_mode_t mimo_mode,
-                 uint32_t high_speed_flag,
-                 uint8_t frame_mod4);
+int nr_rx_pbch( PHY_VARS_NR_UE *ue,
+		     UE_nr_rxtx_proc_t *proc,
+		     NR_UE_PBCH *nr_ue_pbch_vars,
+		     NR_DL_FRAME_PARMS *frame_parms,
+		     uint8_t eNB_id,
+		     MIMO_mode_t mimo_mode,
+		     uint32_t high_speed_flag);
 
 uint16_t rx_pbch_emul(PHY_VARS_NR_UE *phy_vars_ue,
                       uint8_t eNB_id,

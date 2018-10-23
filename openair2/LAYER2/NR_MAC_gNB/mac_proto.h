@@ -31,8 +31,8 @@
 #ifndef __LAYER2_NR_MAC_PROTO_H__
 #define __LAYER2_NR_MAC_PROTO_H__
 
-#include "mac.h"
-#include "PHY/defs_nr_common.h"
+#include "nr_mac_gNB.h"
+#include "PHY/defs_gNB.h"
 
 void mac_top_init_gNB(void);
 

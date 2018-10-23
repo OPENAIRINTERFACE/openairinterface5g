@@ -134,6 +134,9 @@ int connect_rau(RU_t *ru);
 
 extern uint16_t sf_ahead;
 
+extern int emulate_rf;
+extern int numerology;
+
 /*************************************************************/
 /* Functions to attach and configure RRU                     */
 
@@ -587,7 +590,7 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
   RU_proc_t *proc        = &ru->proc;
 
   uint16_t packet_type;
-  uint32_t symbol_number,symbol_mask,symbol_mask_full;
+  uint32_t symbol_number,symbol_mask,symbol_mask_full=0;
   int subframe_tx,frame_tx;
 
   LOG_D(PHY, "%s(ru:%p frame, subframe)\n", __FUNCTION__, ru);
@@ -669,6 +672,34 @@ void fh_if4p5_north_out(RU_t *ru) {
 
 }
 
+static void* emulatedRF_thread(void* param) {
+  RU_proc_t *proc = (RU_proc_t *) param;
+  int microsec = 500; // length of time to sleep, in miliseconds
+  struct timespec req = {0};
+  req.tv_sec = 0;
+  req.tv_nsec = (numerology>0)? ((microsec * 1000L)/numerology):(microsec * 1000L)*2;
+  cpu_set_t cpuset;
+  CPU_SET(1,&cpuset);
+  pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  
+  int policy;
+  struct sched_param sparam;
+  memset(&sparam, 0, sizeof(sparam));
+  sparam.sched_priority = sched_get_priority_max(SCHED_FIFO);
+  policy = SCHED_FIFO ; 
+  pthread_setschedparam(pthread_self(), policy, &sparam);
+  
+  wait_sync("emulatedRF_thread");
+  while(!oai_exit){
+    nanosleep(&req, (struct timespec *)NULL);
+    pthread_mutex_lock(&proc->mutex_emulateRF);
+    ++proc->instance_cnt_emulateRF;
+    pthread_mutex_unlock(&proc->mutex_emulateRF);
+    pthread_cond_signal(&proc->cond_emulateRF);
+  }
+  return 0;
+}
+
 void rx_rf(RU_t *ru,int *frame,int *subframe) {
 
   RU_proc_t *proc = &ru->proc;
@@ -685,11 +716,18 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
 
   old_ts = proc->timestamp_rx;
 
-  rxs = ru->rfdevice.trx_read_func(&ru->rfdevice,
+  if(emulate_rf){
+    wait_on_condition(&proc->mutex_emulateRF,&proc->cond_emulateRF,&proc->instance_cnt_emulateRF,"emulatedRF_thread");
+    release_thread(&proc->mutex_emulateRF,&proc->instance_cnt_emulateRF,"emulatedRF_thread");
+    rxs = fp->samples_per_tti;
+  }
+  else{
+    rxs = ru->rfdevice.trx_read_func(&ru->rfdevice,
 				   &ts,
 				   rxp,
 				   fp->samples_per_subframe,
 				   ru->nb_rx);
+  }
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
  
@@ -814,7 +852,6 @@ void tx_rf(RU_t *ru) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_tx-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
     // prepare tx buffer pointers
-    
     txs = ru->rfdevice.trx_write_func(&ru->rfdevice,
 				      proc->timestamp_tx+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension,
 				      txp,
@@ -1350,6 +1387,9 @@ static void* ru_thread( void* param ) {
   int                ret;
   int                subframe =9;
   int                frame    =1023; 
+  char               filename[40];
+  int                print_frame = 2;
+  int                i = 0;
 
   // set default return value
   ru_thread_status = 0;
@@ -1360,26 +1400,37 @@ static void* ru_thread( void* param ) {
 
   LOG_I(PHY,"Starting RU %d (%s,%s),\n",ru->idx,NB_functions[ru->function],NB_timing[ru->if_timing]);
 
-
-  // Start IF device if any
-  if (ru->start_if) {
-    LOG_I(PHY,"Starting IF interface for RU %d\n",ru->idx);
-    AssertFatal(ru->start_if(ru,NULL) == 0, "Could not start the IF device\n");
-    if (ru->if_south == LOCAL_RF) ret = connect_rau(ru);
-    else ret = attach_rru(ru);
-    AssertFatal(ret==0,"Cannot connect to radio\n");
-  }
-  if (ru->if_south == LOCAL_RF) { // configure RF parameters only
+  if(emulate_rf){
     fill_rf_config(ru,ru->rf_config_file);
     nr_init_frame_parms(&ru->gNB_list[0]->gNB_config, fp);
     nr_dump_frame_parms(fp);
     nr_phy_init_RU(ru);
-
-    ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+    if (setup_RU_buffers(ru)!=0) {
+          printf("Exiting, cannot initialize RU Buffers\n");
+          exit(-1);
+    }
   }
-  if (setup_RU_buffers(ru)!=0) {
-        printf("Exiting, cannot initialize RU Buffers\n");
-        exit(-1);
+  else{
+    // Start IF device if any
+    if (ru->start_if) {
+      LOG_I(PHY,"Starting IF interface for RU %d\n",ru->idx);
+      AssertFatal(ru->start_if(ru,NULL) == 0, "Could not start the IF device\n");
+      if (ru->if_south == LOCAL_RF) ret = connect_rau(ru);
+      else ret = attach_rru(ru);
+      AssertFatal(ret==0,"Cannot connect to radio\n");
+    }
+    if (ru->if_south == LOCAL_RF) { // configure RF parameters only
+      fill_rf_config(ru,ru->rf_config_file);
+      nr_init_frame_parms(&ru->gNB_list[0]->gNB_config, fp);
+      nr_dump_frame_parms(fp);
+      nr_phy_init_RU(ru);
+  
+      ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+    }
+    if (setup_RU_buffers(ru)!=0) {
+          printf("Exiting, cannot initialize RU Buffers\n");
+          exit(-1);
+    }
   }
 
   LOG_I(PHY, "Signaling main thread that RU %d is ready\n",ru->idx);
@@ -1390,28 +1441,30 @@ static void* ru_thread( void* param ) {
   
   wait_sync("ru_thread");
 
-  // Start RF device if any
-  if (ru->start_rf) {
-    if (ru->start_rf(ru) != 0)
-      LOG_E(HW,"Could not start the RF device\n");
-    else LOG_I(PHY,"RU %d rf device ready\n",ru->idx);
-  }
-  else LOG_I(PHY,"RU %d no rf device\n",ru->idx);
+  if(!emulate_rf){
+    // Start RF device if any
+    if (ru->start_rf) {
+      if (ru->start_rf(ru) != 0)
+        LOG_E(HW,"Could not start the RF device\n");
+      else LOG_I(PHY,"RU %d rf device ready\n",ru->idx);
+    }
+    else LOG_I(PHY,"RU %d no rf device\n",ru->idx);
 
 
-  // if an asnych_rxtx thread exists
-  // wakeup the thread because the devices are ready at this point
+    // if an asnych_rxtx thread exists
+    // wakeup the thread because the devices are ready at this point
  
-  if ((ru->fh_south_asynch_in)||(ru->fh_north_asynch_in)) {
-    pthread_mutex_lock(&proc->mutex_asynch_rxtx);
-    proc->instance_cnt_asynch_rxtx=0;
-    pthread_mutex_unlock(&proc->mutex_asynch_rxtx);
-    pthread_cond_signal(&proc->cond_asynch_rxtx);
-  }
-  else LOG_I(PHY,"RU %d no asynch_south interface\n",ru->idx);
+    if ((ru->fh_south_asynch_in)||(ru->fh_north_asynch_in)) {
+      pthread_mutex_lock(&proc->mutex_asynch_rxtx);
+      proc->instance_cnt_asynch_rxtx=0;
+      pthread_mutex_unlock(&proc->mutex_asynch_rxtx);
+      pthread_cond_signal(&proc->cond_asynch_rxtx);
+    }
+    else LOG_I(PHY,"RU %d no asynch_south interface\n",ru->idx);
 
-  // if this is a slave RRU, try to synchronize on the DL frequency
-  if ((ru->is_slave) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
+    // if this is a slave RRU, try to synchronize on the DL frequency
+    if ((ru->is_slave) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
+  }
 
 
   // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
@@ -1470,10 +1523,30 @@ static void* ru_thread( void* param ) {
    
     // do OFDM if needed
     if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
-    // do outgoing fronthaul (south) if needed
-    if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
- 
-    if (ru->fh_north_out) ru->fh_north_out(ru);
+    if(!emulate_rf)
+    {
+      // do outgoing fronthaul (south) if needed
+      if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
+  
+      if (ru->fh_north_out) ru->fh_north_out(ru);
+    }
+    else
+    {
+      if(proc->frame_tx == print_frame)
+      {
+        for (i=0; i<ru->nb_tx; i++)
+        {
+          sprintf(filename,"tx%ddataF_frame%d_sf%d.m", i, print_frame, proc->subframe_tx);
+          LOG_M(filename,"txdataF_frame",&ru->common.txdataF_BF[i][0],fp->samples_per_subframe_wCP, 1, 1);
+          if(proc->subframe_tx == 9)
+          {
+            sprintf(filename,"tx%ddata_frame%d.m", i, print_frame);
+            LOG_M(filename,"txdata_frame",&ru->common.txdata[i][0],fp->samples_per_frame, 1, 1);
+          }
+        }
+      }
+      //else if (proc->frame_tx > print_frame) oai_exit = 1;
+    }
   }
   
 
@@ -1593,7 +1666,7 @@ void init_RU_proc(RU_t *ru) {
    
   int i=0;
   RU_proc_t *proc;
-  pthread_attr_t *attr_FH=NULL,*attr_prach=NULL,*attr_asynch=NULL;// *attr_synch=NULL;
+  pthread_attr_t *attr_FH=NULL,*attr_prach=NULL,*attr_asynch=NULL, *attr_emulateRF=NULL;// *attr_synch=NULL;
   //pthread_attr_t *attr_fep=NULL;
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   //pthread_attr_t *attr_prach_br=NULL;
@@ -1611,6 +1684,7 @@ void init_RU_proc(RU_t *ru) {
   proc->instance_cnt_synch       = -1;     ;
   proc->instance_cnt_FH          = -1;
   proc->instance_cnt_asynch_rxtx = -1;
+  proc->instance_cnt_emulateRF   = -1;
   proc->first_rx                 = 1;
   proc->first_tx                 = 1;
   proc->frame_offset             = 0;
@@ -1623,15 +1697,18 @@ void init_RU_proc(RU_t *ru) {
   pthread_mutex_init( &proc->mutex_asynch_rxtx, NULL);
   pthread_mutex_init( &proc->mutex_synch,NULL);
   pthread_mutex_init( &proc->mutex_FH,NULL);
+  pthread_mutex_init( &proc->mutex_emulateRF,NULL);
   pthread_mutex_init( &proc->mutex_gNBs, NULL);
   
   pthread_cond_init( &proc->cond_prach, NULL);
   pthread_cond_init( &proc->cond_FH, NULL);
+  pthread_cond_init( &proc->cond_emulateRF, NULL);
   pthread_cond_init( &proc->cond_asynch_rxtx, NULL);
   pthread_cond_init( &proc->cond_synch,NULL);
   pthread_cond_init( &proc->cond_gNBs, NULL);
   
   pthread_attr_init( &proc->attr_FH);
+  pthread_attr_init( &proc->attr_emulateRF);
   pthread_attr_init( &proc->attr_prach);
   pthread_attr_init( &proc->attr_synch);
   pthread_attr_init( &proc->attr_asynch_rxtx);
@@ -1640,13 +1717,15 @@ void init_RU_proc(RU_t *ru) {
   
 #ifndef DEADLINE_SCHEDULER
   attr_FH        = &proc->attr_FH;
+  attr_emulateRF = &proc->attr_emulateRF;
   attr_prach     = &proc->attr_prach;
   //attr_synch     = &proc->attr_synch;
   attr_asynch    = &proc->attr_asynch_rxtx;
 #endif
   
   pthread_create( &proc->pthread_FH, attr_FH, ru_thread, (void*)ru );
-
+  if(emulate_rf)
+    pthread_create( &proc->pthread_emulateRF, attr_emulateRF, emulatedRF_thread, (void*)proc );
   if (ru->function == NGFI_RRU_IF4p5) {
     pthread_create( &proc->pthread_prach, attr_prach, ru_thread_prach, (void*)ru );
     ///tmp deactivation of synch thread

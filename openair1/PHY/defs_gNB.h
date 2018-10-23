@@ -29,6 +29,7 @@
  \note
  \warning
 */
+
 #ifndef __PHY_DEFS_GNB__H__
 #define __PHY_DEFS_GNB__H__
 
@@ -37,12 +38,32 @@
 #include "CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 #include "openair2/NR_PHY_INTERFACE/NR_IF_Module.h"
 
+#define MAX_NUM_RU_PER_gNB MAX_NUM_RU_PER_eNB
+
 typedef struct {
   uint8_t pbch_a[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
-  uint8_t pbch_a_interleaved[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
-  uint8_t pbch_a_prime[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
-  uint8_t pbch_e[NR_POLAR_PBCH_E];
+  uint32_t pbch_a_interleaved;
+  uint32_t pbch_a_prime;
+  uint32_t pbch_e[NR_POLAR_PBCH_E_DWORD];
 } NR_gNB_PBCH;
+
+typedef struct {
+  /// Length of DCI payload in bits
+  uint16_t size;
+  /// Aggregation level
+  uint8_t L;
+  /// PDCCH parameters
+  nfapi_nr_dl_config_pdcch_parameters_rel15_t pdcch_params;
+  /// CCE list
+  nr_cce_t cce_list[NR_MAX_PDCCH_AGG_LEVEL];
+  /// DCI pdu
+  uint32_t dci_pdu[4];
+} NR_gNB_DCI_ALLOC_t;
+
+typedef struct {
+  uint8_t     num_dci;
+  NR_gNB_DCI_ALLOC_t dci_alloc[256];
+} NR_gNB_PDCCH;
 
 typedef struct {
   /// \brief Pointers (dynamic) to the received data in the time domain.
@@ -263,14 +284,16 @@ typedef struct PHY_VARS_gNB_s {
   /// NFAPI PRACH information
   nfapi_preamble_pdu_t preamble_list[MAX_NUM_RX_PRACH_PREAMBLES];
 
-  Sched_Rsp_t          Sched_INFO;
-  LTE_eNB_PDCCH        pdcch_vars[2];
-  LTE_eNB_PHICH        phich_vars[2];
+  Sched_Rsp_t         Sched_INFO;
+  NR_gNB_PDCCH        pdcch_vars;
+  NR_gNB_PBCH         pbch;
+  t_nrPolar_paramsPtr nrPolar_params;
+  nfapi_nr_dl_config_pdcch_parameters_rel15_t pdcch_type0_params;
+  LTE_eNB_PHICH       phich_vars[2];
 
   NR_gNB_COMMON       common_vars;
   LTE_eNB_UCI          uci_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_SRS          srs_vars[NUMBER_OF_UE_MAX];
-  NR_gNB_PBCH         pbch;
   LTE_eNB_PUSCH       *pusch_vars[NUMBER_OF_UE_MAX];
   LTE_eNB_PRACH        prach_vars;
   LTE_eNB_DLSCH_t     *dlsch[NUMBER_OF_UE_MAX][2];   // Nusers times two spatial streams
@@ -292,6 +315,9 @@ typedef struct PHY_VARS_gNB_s {
   /// PBCH DMRS sequence
   uint32_t nr_gold_pbch_dmrs[2][64][NR_PBCH_DMRS_LENGTH_DWORD];
 
+  /// PDCCH DMRS sequence
+  uint32_t ***nr_gold_pdcch_dmrs;
+
   /// Indicator set to 0 after first SR
   uint8_t first_sr[NUMBER_OF_UE_MAX];
 
@@ -307,7 +333,7 @@ typedef struct PHY_VARS_gNB_s {
   unsigned char first_run_timing_advance[NUMBER_OF_UE_MAX];
   unsigned char first_run_I0_measurements;
 
-  
+
   unsigned char    is_secondary_gNB; // primary by default
   unsigned char    is_init_sync;     /// Flag to tell if initial synchronization is performed. This affects how often the secondary eNB will listen to the PSS from the primary system.
   unsigned char    has_valid_precoder; /// Flag to tell if secondary eNB has channel estimates to create NULL-beams from, and this B/F vector is created.
@@ -439,7 +465,5 @@ typedef struct PHY_VARS_gNB_s {
   int32_t pusch_stats_bsr[NUMBER_OF_UE_MAX][10240];
   int32_t pusch_stats_BO[NUMBER_OF_UE_MAX][10240];
 } PHY_VARS_gNB;
-
-
 
 #endif

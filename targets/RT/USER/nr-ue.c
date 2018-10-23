@@ -60,8 +60,8 @@
 #include "T.h"
 
 extern double cpuf;
-static  nfapi_nr_config_request_t config_t;
-static  nfapi_nr_config_request_t* config =&config_t;
+//static  nfapi_nr_config_request_t config_t;
+//static  nfapi_nr_config_request_t* config =&config_t;
 
 /*
  *  NR SLOT PROCESSING SEQUENCE
@@ -279,9 +279,10 @@ void init_UE(int nb_inst)
     NR_UE_MAC_INST_t *mac_inst;
     for (inst=0; inst < nb_inst; inst++) {
         //    UE->rfdevice.type      = NONE_DEV;
-        PHY_VARS_NR_UE *UE = PHY_vars_UE_g[inst][0];
+        //PHY_VARS_NR_UE *UE = PHY_vars_UE_g[inst][0];
         LOG_I(PHY,"Initializing memory for UE instance %d (%p)\n",inst,PHY_vars_UE_g[inst]);
             PHY_vars_UE_g[inst][0] = init_nr_ue_vars(NULL,inst,0);
+        PHY_VARS_NR_UE *UE = PHY_vars_UE_g[inst][0];
 
         AssertFatal((UE->if_inst = nr_ue_if_module_init(inst)) != NULL, "can not initial IF module\n");
         nr_l3_init_ue();
@@ -291,6 +292,11 @@ void init_UE(int nb_inst)
         mac_inst->if_module = UE->if_inst;
         UE->if_inst->scheduled_response = nr_ue_scheduled_response;
         UE->if_inst->phy_config_request = nr_ue_phy_config_request;
+        
+        LOG_I(PHY,"Intializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
+		//init_UE_threads(inst);
+		//UE = PHY_vars_UE_g[inst][0];
+		
 
         AssertFatal(0 == pthread_create(&UE->proc.pthread_ue,
                                         &UE->proc.attr_ue,
@@ -655,12 +661,16 @@ static void *UE_thread_rxn_txnp4(void *arg) {
             phy_procedures_slot_parallelization_UE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
             phy_procedures_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
+            printf(">>> nr_ue_pdcch_procedures ended\n");
+
 #endif
         }
 
 #if UE_TIMING_TRACE
         start_meas(&UE->generic_stat);
 #endif
+printf(">>> mac init\n");
+
         if (UE->mac_enabled==1) {
 
             //  trigger L2 to run ue_scheduler thru IF module
@@ -673,8 +683,8 @@ static void *UE_thread_rxn_txnp4(void *arg) {
                 UE->ul_indication.slot = 0;     //  to be fill
                 UE->ul_indication.frame = 0;    //  to be fill
                 //  [TODO] mapping right after NR initial sync
-                //UE->ul_indication.frame = ; 
-                //UE->ul_indication.slot = ;
+                UE->ul_indication.frame = proc->frame_rx; 
+                UE->ul_indication.slot = proc->nr_tti_rx;
                 
                 UE->if_inst->ul_indication(&UE->ul_indication);
             }
@@ -730,6 +740,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 #if UE_TIMING_TRACE
         stop_meas(&UE->generic_stat);
 #endif
+printf(">>> mac ended\n");
 
         // Prepare the future Tx data
 #if 0
@@ -740,7 +751,8 @@ static void *UE_thread_rxn_txnp4(void *arg) {
                 (UE->frame_parms.frame_type == FDD) )
 #endif
             if (UE->mode != loop_through_memory)
-                phy_procedures_UE_TX(UE,proc,0,0,UE->mode,no_relay);
+                phy_procedures_nrUE_TX(UE,proc,0,0,UE->mode,no_relay);
+                //phy_procedures_UE_TX(UE,proc,0,0,UE->mode,no_relay);
 #endif
 #if 0
         if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_S) &&
@@ -784,7 +796,7 @@ void *UE_thread(void *arg) {
     PHY_VARS_NR_UE *UE = (PHY_VARS_NR_UE *) arg;
     //  int tx_enabled = 0;
     int dummy_rx[UE->frame_parms.nb_antennas_rx][UE->frame_parms.samples_per_tti] __attribute__((aligned(32)));
-    openair0_timestamp timestamp,timestamp1;
+    openair0_timestamp timestamp;
     void* rxp[NB_ANTENNAS_RX], *txp[NB_ANTENNAS_TX];
     int start_rx_stream = 0;
     int i;
@@ -991,7 +1003,7 @@ void *UE_thread(void *arg) {
                         if ( first_symbols > 0 )
                             AssertFatal(first_symbols ==
                                         UE->rfdevice.trx_read_func(&UE->rfdevice,
-                                                                   &timestamp1,
+                                                                   &timestamp,
                                                                    (void**)UE->common_vars.rxdata,
                                                                    first_symbols,
                                                                    UE->frame_parms.nb_antennas_rx),"");

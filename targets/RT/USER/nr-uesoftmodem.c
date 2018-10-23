@@ -121,6 +121,8 @@ uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
 
+//static char                    *conf_config_file_name = NULL;
+
 #if defined(ENABLE_ITTI)
 static char                    *itti_dump_file = NULL;
 #endif
@@ -168,6 +170,9 @@ int codingw = 0;
 int fepw = 0;
 
 int                      		rx_input_level_dBm;
+
+//static int                      online_log_messages=0;
+
 #ifdef XFORMS
 extern int                      otg_enabled;
 static char                     do_forms=0;
@@ -354,7 +359,7 @@ void exit_fun(const char* s) {
 
 
 void reset_stats(FL_OBJECT *button, long arg) {
-    int i,j,k;
+    //int i,j,k;
     /*PHY_VARS_eNB *phy_vars_eNB = PHY_vars_eNB_g[0][0];
 
     for (i=0; i<NUMBER_OF_UE_MAX; i++) {
@@ -388,10 +393,10 @@ static void *scope_thread(void *arg) {
 # ifdef ENABLE_XFORMS_WRITE_STATS
     FILE *UE_stats, *eNB_stats;
 # endif
-    int len = 0;
+    //int len = 0;
     struct sched_param sched_param;
-    int UE_id, CC_id;
-    int ue_cnt=0;
+    //int UE_id, CC_id;
+    //int ue_cnt=0;
 
     sched_param.sched_priority = sched_get_priority_min(SCHED_FIFO)+1;
     sched_setscheduler(0, SCHED_FIFO,&sched_param);
@@ -488,82 +493,128 @@ void *l2l1_task(void *arg) {
 
 extern int16_t dlsch_demod_shift;
 
-static void get_options (int argc, char **argv) {
-	  int CC_id;
-	  int tddflag, nonbiotflag;
-	  char *loopfile=NULL;
-	  int dumpframe;
-	  uint32_t online_log_messages;
-	  uint32_t glog_level, glog_verbosity;
-	  uint32_t start_telnetsrv;
-	  nfapi_nr_config_request_t *config[MAX_NUM_CCs];
+static void get_options(void) {
+  int CC_id;
+  int tddflag, nonbiotflag;
+  char *loopfile=NULL;
+  int dumpframe;
+  uint32_t online_log_messages;
+  uint32_t glog_level, glog_verbosity;
+  uint32_t start_telnetsrv;
 
-	  paramdef_t cmdline_params[] = CMDLINE_PARAMS_DESC ;
-	  paramdef_t cmdline_logparams[] = CMDLINE_LOGPARAMS_DESC ;
+  paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
+  paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
 
-	  //set_default_frame_parms(config,frame_parms);
-	  config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
+  set_default_frame_parms(frame_parms);
+  config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL); 
 
-	  if (strlen(in_path) > 0) {
-	      opt_type = OPT_PCAP;
-	      opt_enabled=1;
-	      printf("Enabling OPT for PCAP  with the following file %s \n",in_path);
-	  }
-	  if (strlen(in_ip) > 0) {
-	      opt_enabled=1;
-	      opt_type = OPT_WIRESHARK;
-	      printf("Enabling OPT for wireshark for local interface");
-	  }
+  if (strlen(in_path) > 0) {
+      opt_type = OPT_PCAP;
+      opt_enabled=1;
+      printf("Enabling OPT for PCAP  with the following file %s \n",in_path);
+  }
+  if (strlen(in_ip) > 0) {
+      opt_enabled=1;
+      opt_type = OPT_WIRESHARK;
+      printf("Enabling OPT for wireshark for local interface");
+  }
 
-	  config_process_cmdline( cmdline_logparams,sizeof(cmdline_logparams)/sizeof(paramdef_t),NULL);
-	  if(config_isparamset(cmdline_logparams,CMDLINE_ONLINELOG_IDX)) {
-	      set_glog_onlinelog(online_log_messages);
-	  }
-	  if(config_isparamset(cmdline_logparams,CMDLINE_GLOGLEVEL_IDX)) {
-	      set_glog(glog_level);
-	  }
-	  if (start_telnetsrv) {
-	     load_module_shlib("telnetsrv",NULL,0);
-	  }
+  config_process_cmdline( cmdline_logparams,sizeof(cmdline_logparams)/sizeof(paramdef_t),NULL);
+  if(config_isparamset(cmdline_logparams,CMDLINE_ONLINELOG_IDX)) {
+      set_glog_onlinelog(online_log_messages);
+  }
+  if(config_isparamset(cmdline_logparams,CMDLINE_GLOGLEVEL_IDX)) {
+      set_glog(glog_level);
+  }
+
+  if (start_telnetsrv) {
+     load_module_shlib("telnetsrv",NULL,0);
+  }
+
+  paramdef_t cmdline_uemodeparams[] =CMDLINE_UEMODEPARAMS_DESC;
+  paramdef_t cmdline_ueparams[] =CMDLINE_UEPARAMS_DESC;
+
+
+  config_process_cmdline( cmdline_uemodeparams,sizeof(cmdline_uemodeparams)/sizeof(paramdef_t),NULL);
+  config_process_cmdline( cmdline_ueparams,sizeof(cmdline_ueparams)/sizeof(paramdef_t),NULL);
+  if (loopfile != NULL) {
+      printf("Input file for hardware emulation: %s",loopfile);
+      mode=loop_through_memory;
+      input_fd = fopen(loopfile,"r");
+      AssertFatal(input_fd != NULL,"Please provide a valid input file\n");
+  }
+
+  if ( (cmdline_uemodeparams[CMDLINE_CALIBUERX_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue;
+  if ( (cmdline_uemodeparams[CMDLINE_CALIBUERXMED_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue_med;
+  if ( (cmdline_uemodeparams[CMDLINE_CALIBUERXBYP_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue_byp;
+  if (cmdline_uemodeparams[CMDLINE_DEBUGUEPRACH_IDX].uptr)
+      if ( *(cmdline_uemodeparams[CMDLINE_DEBUGUEPRACH_IDX].uptr) > 0) mode = debug_prach;
+  if (cmdline_uemodeparams[CMDLINE_NOL2CONNECT_IDX].uptr)
+      if ( *(cmdline_uemodeparams[CMDLINE_NOL2CONNECT_IDX].uptr) > 0)  mode = no_L2_connect;
+  if (cmdline_uemodeparams[CMDLINE_CALIBPRACHTX_IDX].uptr) 
+      if ( *(cmdline_uemodeparams[CMDLINE_CALIBPRACHTX_IDX].uptr) > 0) mode = calib_prach_tx; 
+  if (dumpframe  > 0)  mode = rx_dump_frame;
+  
+  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
+  }
+  UE_scan=0;
+   
+
+  if (tddflag > 0) {
+     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) 
+    	 frame_parms[CC_id]->frame_type = TDD;
+  }
+
+  /*if (frame_parms[0]->N_RB_DL !=0) {
+      if ( frame_parms[0]->N_RB_DL < 6 ) {
+    	 frame_parms[0]->N_RB_DL = 6;
+    	 printf ( "%i: Invalid number of ressource blocks, adjusted to 6\n",frame_parms[0]->N_RB_DL);
+      }
+      if ( frame_parms[0]->N_RB_DL > 100 ) {
+    	 frame_parms[0]->N_RB_DL = 100;
+    	 printf ( "%i: Invalid number of ressource blocks, adjusted to 100\n",frame_parms[0]->N_RB_DL);
+      }
+      if ( frame_parms[0]->N_RB_DL > 50 && frame_parms[0]->N_RB_DL < 100 ) {
+    	 frame_parms[0]->N_RB_DL = 50;
+    	 printf ( "%i: Invalid number of ressource blocks, adjusted to 50\n",frame_parms[0]->N_RB_DL);
+      }
+      if ( frame_parms[0]->N_RB_DL > 25 && frame_parms[0]->N_RB_DL < 50 ) {
+    	 frame_parms[0]->N_RB_DL = 25;
+    	 printf ( "%i: Invalid number of ressource blocks, adjusted to 25\n",frame_parms[0]->N_RB_DL);
+      }
+      UE_scan = 0;
+      frame_parms[0]->N_RB_UL=frame_parms[0]->N_RB_DL;
+      for (CC_id=1; CC_id<MAX_NUM_CCs; CC_id++) {
+    	  frame_parms[CC_id]->N_RB_DL=frame_parms[0]->N_RB_DL;
+    	  frame_parms[CC_id]->N_RB_UL=frame_parms[0]->N_RB_UL;
+      }
+  }*/
+
+
+  for (CC_id=1;CC_id<MAX_NUM_CCs;CC_id++) {
+    	tx_max_power[CC_id]=tx_max_power[0];
+    	rx_gain[0][CC_id] = rx_gain[0][0];
+    	tx_gain[0][CC_id] = tx_gain[0][0];
+  }
 
 #if T_TRACER
-	  paramdef_t cmdline_ttraceparams[] = CMDLINE_TTRACEPARAMS_DESC ;
-	  config_process_cmdline( cmdline_ttraceparams,sizeof(cmdline_ttraceparams)/sizeof(paramdef_t),NULL);   
+  paramdef_t cmdline_ttraceparams[] =CMDLINE_TTRACEPARAMS_DESC ;
+  config_process_cmdline( cmdline_ttraceparams,sizeof(cmdline_ttraceparams)/sizeof(paramdef_t),NULL);   
 #endif
 
-	  paramdef_t cmdline_uemodeparams[] = CMDLINE_UEMODEPARAMS_DESC;
-	  paramdef_t cmdline_ueparams[] = CMDLINE_UEPARAMS_DESC;
+  if ( !(CONFIG_ISFLAGSET(CONFIG_ABORT))  && (!(CONFIG_ISFLAGSET(CONFIG_NOOOPT))) ) {
+    // Here the configuration file is the XER encoded UE capabilities
+    // Read it in and store in asn1c data structures
+    sprintf(uecap_xer,"%stargets/PROJECTS/GENERIC-LTE-EPC/CONF/UE_config.xml",getenv("OPENAIR_HOME"));
+    printf("%s\n",uecap_xer);
+    uecap_xer_in=1;
+  } /* UE with config file  */
 
+#if defined(OAI_USRP) || defined(CPRIGW) || defined(OAI_ADRV9371_ZC706)
+    int clock_src;
+#endif
 
-	  config_process_cmdline( cmdline_uemodeparams,sizeof(cmdline_uemodeparams)/sizeof(paramdef_t),NULL);
-	  CONFIG_CLEARRTFLAG(CONFIG_NOEXITONHELP);
-	  config_process_cmdline( cmdline_ueparams,sizeof(cmdline_ueparams)/sizeof(paramdef_t),NULL);
-	  if (loopfile != NULL) {
-	      printf("Input file for hardware emulation: %s",loopfile);
-	      mode=loop_through_memory;
-	      input_fd = fopen(loopfile,"r");
-	      AssertFatal(input_fd != NULL,"Please provide a valid input file\n");
-	  }
-
-	  if ( (cmdline_uemodeparams[CMDLINE_CALIBUERX_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue;
-	  if ( (cmdline_uemodeparams[CMDLINE_CALIBUERXMED_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue_med;
-	  if ( (cmdline_uemodeparams[CMDLINE_CALIBUERXBYP_IDX].paramflags &  PARAMFLAG_PARAMSET) != 0) mode = rx_calib_ue_byp;
-	  if (cmdline_uemodeparams[CMDLINE_DEBUGUEPRACH_IDX].uptr)
-	      if ( *(cmdline_uemodeparams[CMDLINE_DEBUGUEPRACH_IDX].uptr) > 0) mode = debug_prach;
-	  if (cmdline_uemodeparams[CMDLINE_NOL2CONNECT_IDX].uptr)
-	      if ( *(cmdline_uemodeparams[CMDLINE_NOL2CONNECT_IDX].uptr) > 0)  mode = no_L2_connect;
-	  if (cmdline_uemodeparams[CMDLINE_CALIBPRACHTX_IDX].uptr)
-	      if ( *(cmdline_uemodeparams[CMDLINE_CALIBPRACHTX_IDX].uptr) > 0) mode = calib_prach_tx;
-
-	  if ( !(CONFIG_ISFLAGSET(CONFIG_ABORT))  && (!(CONFIG_ISFLAGSET(CONFIG_NOOOPT))) ) {
-	      // Here the configuration file is the XER encoded UE capabilities
-	      // Read it in and store in asn1c data structures
-	      sprintf(uecap_xer,"%stargets/PROJECTS/GENERIC-LTE-EPC/CONF/UE_config.xml",getenv("OPENAIR_HOME"));
-	      printf("%s\n",uecap_xer);
-	      uecap_xer_in=1;
-	    } /* UE with config file  */
-
-	  
 }
 
 #if T_TRACER
@@ -593,8 +644,8 @@ void set_default_frame_parms(NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
         frame_parms[CC_id]->frame_type          = FDD;
         frame_parms[CC_id]->tdd_config          = 3;
         //frame_parms[CC_id]->tdd_config_S        = 0;
-        frame_parms[CC_id]->N_RB_DL             = 100;
-        frame_parms[CC_id]->N_RB_UL             = 100;
+        frame_parms[CC_id]->N_RB_DL             = 106;
+        frame_parms[CC_id]->N_RB_UL             = 106;
         frame_parms[CC_id]->Ncp                 = NORMAL;
         //frame_parms[CC_id]->Ncp_UL              = NORMAL;
         frame_parms[CC_id]->Nid_cell            = 0;
@@ -645,7 +696,7 @@ void init_openair0() {
         openair0_cfg[card].mmapped_dma=mmapped_dma;
         openair0_cfg[card].configFilename = NULL;
 
-        if(frame_parms[0]->N_RB_DL == 100) {
+        if(frame_parms[0]->N_RB_DL == 106) {
 	  if (numerology==0) {
             if (frame_parms[0]->threequarter_fs) {
                 openair0_cfg[card].sample_rate=23.04e6;
@@ -737,14 +788,14 @@ void init_openair0() {
 }
 
 int main( int argc, char **argv ) {
-    int i,j,k,aa,re;
+    int i;//j,k,aa,re;
 #if defined (XFORMS)
     void *status;
 #endif
 
     int CC_id;
     uint8_t  abstraction_flag=0;
-    uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
+    //uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
 
 #if defined (XFORMS)
     int ret;
@@ -772,11 +823,12 @@ int main( int argc, char **argv ) {
 
     set_latency_target();
 
-    // set default parameters
-    set_default_frame_parms(frame_parms);
-
     // initialize logging
     logInit();
+
+
+    // get options and fill parameters from configuration file
+    get_options (); //Command-line options, enb_properties
 
 #if T_TRACER
     T_Config_Init();
@@ -822,7 +874,7 @@ int main( int argc, char **argv ) {
 #endif
 
     // get options and fill parameters from configuration file
-    get_options (argc, argv); //Command-line options, enb_properties
+    get_options (); //Command-line options, enb_properties
 
     if (opt_type != OPT_NONE) {
         radio_type_t radio_type;
@@ -858,7 +910,6 @@ int main( int argc, char **argv ) {
 
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
 
-   // set_default_frame_parms(frame_parms);//
   // init the parameters
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
 
@@ -868,14 +919,9 @@ int main( int argc, char **argv ) {
       frame_parms[CC_id]->nb_antenna_ports_eNB = 1; //initial value overwritten by initial sync later
 
       LOG_I(PHY,"Set nb_rx_antenna %d , nb_tx_antenna %d \n",frame_parms[CC_id]->nb_antennas_rx, frame_parms[CC_id]->nb_antennas_tx);
-
-      //set_default_frame_parms(config[CC_id],frame_parms[CC_id]);
-      
+  
     //init_ul_hopping(frame_parms[CC_id]);
-    nr_init_frame_parms_ue(frame_parms[CC_id]);
-    printf("after init frame_parms %d\n",frame_parms[CC_id]->ofdm_symbol_size);
-    //   phy_init_top(frame_parms[CC_id]);
-    phy_init_nr_top(frame_parms[CC_id]);
+    //phy_init_nr_top(frame_parms[CC_id]);
   }
 
 
@@ -941,13 +987,13 @@ int main( int argc, char **argv ) {
 
             if (UE[CC_id]->mac_enabled == 1)
             {
-                //UE[CC_id]->pdcch_vars[0][0]->crnti = 0x1234;
-                //UE[CC_id]->pdcch_vars[1][0]->crnti = 0x1234;
+                UE[CC_id]->pdcch_vars[0][0]->crnti = 0x1234;
+                UE[CC_id]->pdcch_vars[1][0]->crnti = 0x1234;
             }
             else
             {
-                //UE[CC_id]->pdcch_vars[0][0]->crnti = 0x1235;
-                //UE[CC_id]->pdcch_vars[1][0]->crnti = 0x1235;
+                UE[CC_id]->pdcch_vars[0][0]->crnti = 0x1235;
+                UE[CC_id]->pdcch_vars[1][0]->crnti = 0x1235;
             }
 
 	    rx_gain[CC_id][0] = 81;
@@ -1019,6 +1065,9 @@ int main( int argc, char **argv ) {
   LOG_I(HW, "CPU Affinity of main() function is... %s\n", cpu_affinity);
 #endif
 
+
+    //openair0_cfg[0].log_level = glog_level;
+
     /*int eMBMS_active=0;
     if (node_function[0] <= NGFI_RAU_IF4p5) { // don't initialize L2 for RRU
         LOG_I(PHY,"Intializing L2\n");
@@ -1053,6 +1102,9 @@ int main( int argc, char **argv ) {
             mac_xface->mrbch_phy_sync_failure (0, 0, 0);
     }*/
 
+	// init UE_PF_PO and mutex lock
+	pthread_mutex_init(&ue_pf_po_mutex, NULL);
+	memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
 
 
     mlockall(MCL_CURRENT | MCL_FUTURE);
@@ -1065,13 +1117,13 @@ int main( int argc, char **argv ) {
 
   if (do_forms==1) {
     fl_initialize (&argc, argv, NULL, 0, 0);
-
-         //form_stats = create_form_stats_form();
-         //fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
-       UE_id = 0;
-            form_ue[UE_id] = create_lte_phy_scope_ue();
-            sprintf (title, "LTE DL SCOPE UE");
-            fl_show_form (form_ue[UE_id]->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
+	
+	form_stats = create_form_stats_form();
+    fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
+    UE_id = 0;
+    form_ue[UE_id] = create_lte_phy_scope_ue();
+    sprintf (title, "NR DL SCOPE UE");
+    fl_show_form (form_ue[UE_id]->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
 
             /*
             if (openair_daq_vars.use_ia_receiver) {

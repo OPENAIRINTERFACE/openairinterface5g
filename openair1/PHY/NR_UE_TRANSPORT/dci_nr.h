@@ -49,8 +49,8 @@ struct NR_DCI_INFO_EXTRACTED {
   uint8_t sul_ind_0_1                     ; // 2  SUL_IND_0_1:
   uint8_t slot_format_ind                 ; // 3  SLOT_FORMAT_IND: size of DCI format 2_0 is configurable by higher layers up to 128 bits, according to Subclause 11.1.1 of [5, TS 38.213]
   uint8_t pre_emption_ind                 ; // 4  PRE_EMPTION_IND: size of DCI format 2_1 is configurable by higher layers up to 126 bits, according to Subclause 11.2 of [5, TS 38.213]. Each pre-emption indication is 14 bits
-  uint8_t tpc_cmd_number                  ; // 5  TPC_CMD_NUMBER: The parameter xxx provided by higher layers determines the index to the TPC command number for an UL of a cell. Each TPC command number is 2 bits
-  uint8_t block_number                    ; // 6  BLOCK_NUMBER: starting position of a block is determined by the parameter startingBitOfFormat2_3
+  uint8_t block_number                    ; // 5  BLOCK_NUMBER: starting position of a block is determined by the parameter startingBitOfFormat2_3
+  uint8_t close_loop_ind                  ; // 6  CLOSE_LOOP_IND:
   uint8_t bandwidth_part_ind              ; // 7  BANDWIDTH_PART_IND:
   uint8_t short_message_ind               ; // 8  SHORT_MESSAGE_IND:
   uint8_t short_messages                  ; // 9  SHORT_MESSAGES:
@@ -93,7 +93,7 @@ struct NR_DCI_INFO_EXTRACTED {
   uint8_t antenna_ports                   ; // 38 ANTENNA_PORTS:
   uint8_t tci                             ; // 39 TCI: 0 bit if higher layer parameter tci-PresentInDCI is not enabled; otherwise 3 bits
   uint8_t srs_request                     ; // 40 SRS_REQUEST:
-  uint8_t tpc_cmd_number_format2_3        ; // 41 TPC_CMD_NUMBER_FORMAT2_3:
+  uint8_t tpc_cmd                         ; // 41 TPC_CMD:
   uint8_t csi_request                     ; // 42 CSI_REQUEST:
   uint8_t cbgti                           ; // 43 CBGTI: 0, 2, 4, 6, or 8 bits determined by higher layer parameter maxCodeBlockGroupsPerTransportBlock for the PDSCH
   uint8_t cbgfi                           ; // 44 CBGFI: 0 or 1 bit determined by higher layer parameter codeBlockGroupFlushIndicator

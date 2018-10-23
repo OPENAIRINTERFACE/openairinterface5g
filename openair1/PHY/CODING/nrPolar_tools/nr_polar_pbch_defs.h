@@ -19,21 +19,23 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/CODING/nrPolar_tools/nr_polar_dci_defs.h
-* \brief Defines the constant variables for polar coding of the PBCH from 38-212, V15.1.1 2018-04.
-* \author
-* \date 2018
-* \version 0.1
-* \company Eurecom
-* \email:
-* \note
-* \warning
+/*!\file PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h
+ * \brief Defines the constant variables for polar coding of the PBCH from 38-212, V15.1.1 2018-04.
+ * \author Turker Yilmaz
+ * \date 2018
+ * \version 0.1
+ * \company EURECOM
+ * \email turker.yilmaz@eurecom.fr
+ * \note
+ * \warning
 */
 
 #ifndef __NR_POLAR_PBCH_DEFS__H__
 #define __NR_POLAR_PBCH_DEFS__H__
 
-#define NR_POLAR_PBCH_PAYLOAD_BITS 32 //uint16_t
+#define NR_POLAR_PBCH_AGGREGATION_LEVEL 0 //uint8_t
+#define NR_POLAR_PBCH_MESSAGE_TYPE 0      //int8_t
+#define NR_POLAR_PBCH_PAYLOAD_BITS 32     //uint16_t
 #define NR_POLAR_PBCH_CRC_PARITY_BITS 24
 #define NR_POLAR_PBCH_CRC_ERROR_CORRECTION_BITS 3
 //Assumed 3 by 3GPP when NR_POLAR_PBCH_L>8 to meet false alarm rate requirements.
@@ -49,9 +51,7 @@
 //Sec. 7.1.5: Rate Matching
 #define NR_POLAR_PBCH_I_BIL 0 //uint8_t
 #define NR_POLAR_PBCH_E 864   //uint16_t
-
-//#define NR_POLAR_PBCH_L 5 //uint8_t
-#define NR_POLAR_PBCH_PATH_METRIC_APPROXIMATION 0 //uint8_t; 0 --> eq. (8a) and (11b), 1 --> eq. (9) and (12)
+#define NR_POLAR_PBCH_E_DWORD 27 // NR_POLAR_PBCH_E/32
 
 /*
  * TEST CODE

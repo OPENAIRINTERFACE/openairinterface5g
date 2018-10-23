@@ -77,11 +77,6 @@
 
 #include "targets/ARCH/COMMON/common_lib.h"
 
-//solve implicit declaration
-#include "PHY/LTE_ESTIMATION/lte_estimation.h"
-#include "PHY/LTE_TRANSPORT/transport_proto.h"
-#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
-
 /** @defgroup _mac  MAC
  * @ingroup _oai2
  * @{

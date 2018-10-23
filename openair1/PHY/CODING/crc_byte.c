@@ -35,9 +35,12 @@
 
 /*ref 36-212 v8.6.0 , pp 8-9 */
 /* the highest degree is set by default */
-unsigned int             poly24a = 0x864cfb00;   //1000 0110 0100 1100 1111 1011  D^24 + D^23 + D^18 + D^17 + D^14 + D^11 + D^10 + D^7 + D^6 + D^5 + D^4 + D^3 + D + 1
-unsigned int             poly24b = 0x80006300;    // 1000 0000 0000 0000 0110 0011  D^24 + D^23 + D^6 + D^5 + D + 1
-uint32_t poly24c = 0xB2B11700; //101100101011000100010111
+unsigned int             poly24a = 0x864cfb00;   // 1000 0110 0100 1100 1111 1011
+												 // D^24 + D^23 + D^18 + D^17 + D^14 + D^11 + D^10 + D^7 + D^6 + D^5 + D^4 + D^3 + D + 1
+unsigned int             poly24b = 0x80006300;   // 1000 0000 0000 0000 0110 0011
+											     // D^24 + D^23 + D^6 + D^5 + D + 1
+unsigned int             poly24c = 0xb2b11700;   // 1011 0010 1011 0001 0001 0111
+												 // D^24+D^23+D^21+D^20+D^17+D^15+D^13+D^12+D^8+D^4+D^2+D+1
 unsigned int             poly16 = 0x10210000;    // 0001 0000 0010 0001            D^16 + D^12 + D^5 + 1
 unsigned int             poly12 = 0x80F00000;    // 1000 0000 1111                 D^12 + D^11 + D^3 + D^2 + D + 1
 unsigned int             poly8 = 0x9B000000;     // 1001 1011                      D^8  + D^7  + D^4 + D^3 + D + 1
@@ -52,10 +55,11 @@ For initialization && verification purposes,
 The first bit is in the MSB of each byte
 
 *********************************************************/
-unsigned int
-crcbit (unsigned char * inputptr, int octetlen, unsigned int poly)
+unsigned int crcbit (unsigned char * inputptr,
+					 int octetlen,
+					 unsigned int poly)
 {
-  unsigned int             i, crc = 0, c;
+  unsigned int i, crc = 0, c;
 
   while (octetlen-- > 0) {
     c = (*inputptr++) << 24;
@@ -78,19 +82,21 @@ crcbit (unsigned char * inputptr, int octetlen, unsigned int poly)
 crc table initialization
 
 *********************************************************/
-static unsigned int      crc24aTable[256];
-static unsigned int      crc24bTable[256];
+static unsigned int        crc24aTable[256];
+static unsigned int        crc24bTable[256];
+static unsigned int        crc24cTable[256];
 static unsigned short      crc16Table[256];
 static unsigned short      crc12Table[256];
 static unsigned char       crc8Table[256];
 
 void crcTableInit (void)
 {
-  unsigned char              c = 0;
+  unsigned char c = 0;
 
   do {
     crc24aTable[c] = crcbit (&c, 1, poly24a);
     crc24bTable[c] = crcbit (&c, 1, poly24b);
+    crc24cTable[c] = crcbit (&c, 1, poly24c);
     crc16Table[c] = (unsigned short) (crcbit (&c, 1, poly16) >> 16);
     crc12Table[c] = (unsigned short) (crcbit (&c, 1, poly12) >> 16);
     crc8Table[c] = (unsigned char) (crcbit (&c, 1, poly8) >> 24);
@@ -114,8 +120,8 @@ Byte by byte implementations,
 assuming initial byte is 0 padded (in MSB) if necessary
 
 *********************************************************/
-unsigned int
-crc24a (unsigned char * inptr, int bitlen)
+unsigned int crc24a (unsigned char * inptr,
+					 int bitlen)
 {
 
   int             octetlen, resbit;
@@ -134,11 +140,11 @@ crc24a (unsigned char * inptr, int bitlen)
   return crc;
 }
 
-unsigned int crc24b (unsigned char * inptr, int bitlen)
+unsigned int crc24b (unsigned char * inptr,
+					 int bitlen)
 {
-
-  int             octetlen, resbit;
-  unsigned int             crc = 0;
+  int octetlen, resbit;
+  unsigned int crc = 0;
   octetlen = bitlen / 8;        /* Change in octets */
   resbit = (bitlen % 8);
 
@@ -149,6 +155,27 @@ unsigned int crc24b (unsigned char * inptr, int bitlen)
 
   if (resbit > 0)
     crc = (crc << resbit) ^ crc24bTable[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))];
+
+  return crc;
+}
+
+unsigned int crc24c (unsigned char * inptr,
+					 int bitlen)
+{
+  int octetlen, resbit;
+  unsigned int crc = 0;
+  octetlen = bitlen / 8;        /* Change in octets */
+  resbit = (bitlen % 8);
+
+  while (octetlen-- > 0) {
+/*#ifdef DEBUG_CRC24C
+	  printf("crc24c: in %x => crc %x (%x)\n",crc,*inptr,crc24cTable[(*inptr) ^ (crc >> 24)]);
+#endif*/
+    crc = (crc << 8) ^ crc24cTable[(*inptr++) ^ (crc >> 24)];
+  }
+
+  if (resbit > 0)
+    crc = (crc << resbit) ^ crc24cTable[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))];
 
   return crc;
 }
@@ -227,48 +254,6 @@ unsigned int crcPayload(unsigned char * inptr, int bitlen, uint32_t* crc256Table
         }
         return crc;
 }
-
-void nr_crc_computation(uint8_t* input, uint8_t* output, uint16_t payloadBits, uint16_t crcParityBits, uint32_t* crc256Table)
-{
-        //Create payload in bit
-        uint8_t* input2 = (uint8_t*)malloc(payloadBits); //divided by 8 (in bits) 
-        uint8_t mask = 128; // 10000000
-        
-        for(uint8_t ind=0; ind<(payloadBits/8); ind++)
-        {
-                input2[ind]=0;
-                for(uint8_t ind2=0; ind2<8; ind2++)
-                { 
-                        if(input[8*ind+ind2])
-                        {
-                                input2[ind] = input2[ind] | mask;
-                        }
-                        mask= mask >> 1;
-                }
-                mask=128;
-        }
-
-        //crcTable256Init(poly);
-
-        unsigned int crcBits;   
-        crcBits = crcPayload(input2, payloadBits, crc256Table);
-	
-        //create crc in byte
-        unsigned int mask2=0x80000000; //100...
-        
-        for(uint8_t ind=0; ind<crcParityBits; ind++)
-        {
-                if(crcBits & mask2)
-                        output[ind]=1;
-                else
-                        output[ind]=0;
-
-		mask2 = mask2 >> 1;
-        }
-      
-}
-
-
 
 
 
