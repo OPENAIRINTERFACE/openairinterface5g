@@ -32,26 +32,9 @@
 #include "s1ap_common.h"
 #include "S1AP_S1AP-PDU.h"
 
-int asn_debug = 0;
+
 int asn1_xer_print = 0;
 
-#if defined(EMIT_ASN_DEBUG_EXTERN)
-inline void ASN_DEBUG(const char *fmt, ...)
-{
-  if (asn_debug) {
-    int adi = asn_debug_indent;
-    va_list ap;
-    va_start(ap, fmt);
-    fprintf(stderr, "[ASN1]");
-
-    while(adi--) fprintf(stderr, " ");
-
-    vfprintf(stderr, fmt, ap);
-    fprintf(stderr, "\n");
-    va_end(ap);
-  }
-}
-#endif
 
 void s1ap_handle_criticality(S1AP_Criticality_t criticality)
 {

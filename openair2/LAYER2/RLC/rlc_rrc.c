@@ -414,9 +414,13 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
 
       for (j=0; j<mbms_SessionInfoList_r9_p->list.count; j++) {
         MBMS_SessionInfo_p = mbms_SessionInfoList_r9_p->list.array[j];
-        mbms_session_id    = MBMS_SessionInfo_p->sessionId_r9->buf[0];
+        if (MBMS_SessionInfo_p->sessionId_r9)
+          mbms_session_id  = MBMS_SessionInfo_p->sessionId_r9->buf[0];
+        else
+          mbms_session_id  = MBMS_SessionInfo_p->logicalChannelIdentity_r9;
         lc_id              = mbms_session_id;
         mbms_service_id    = MBMS_SessionInfo_p->tmgi_r9.serviceId_r9.buf[2]; //serviceId is 3-octet string
+//        mbms_service_id    = j;
 
         // can set the mch_id = i
         if (ctxt_pP->enb_flag) {

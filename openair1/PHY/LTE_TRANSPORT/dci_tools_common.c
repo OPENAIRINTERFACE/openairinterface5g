@@ -357,28 +357,36 @@ void conv_rballoc(uint8_t ra_header,uint32_t rb_alloc,uint32_t N_RB_DL,uint32_t 
     break;
 
   case 50:
-    AssertFatal(ra_header==0,"resource type 1 not supported for  N_RB_DL=50\n");
+    if (ra_header==0) {
 
-    for (i=16; i>0; i--) {
-      if ((rb_alloc&(1<<i)) != 0)
-	rb_alloc2[(3*(16-i))>>5] |= (7<<((3*(16-i))%32));
+      for (i=16; i>0; i--) {
+	if ((rb_alloc&(1<<i)) != 0)
+	  rb_alloc2[(3*(16-i))>>5] |= (7<<((3*(16-i))%32));
+      }
+      
+      // bit mask across
+      if ((rb_alloc2[0]>>31)==1)
+	rb_alloc2[1] |= 1;
+      
+      if ((rb_alloc&1) != 0)
+	rb_alloc2[1] |= (3<<16);
     }
-
-    // bit mask across
-    if ((rb_alloc2[0]>>31)==1)
-      rb_alloc2[1] |= 1;
-
-    if ((rb_alloc&1) != 0)
-      rb_alloc2[1] |= (3<<16);
+    else {
+      LOG_W(PHY,"resource type 1 not supported for  N_RB_DL=50\n");
+    }
     break;
 
   case 100:
-    AssertFatal(ra_header==0,"resource type 1 not supported for  N_RB_DL=100\n");
-    for (i=0; i<25; i++) {
-      if ((rb_alloc&(1<<(24-i))) != 0)
-	rb_alloc2[(4*i)>>5] |= (0xf<<((4*i)%32));
-
-      //  printf("rb_alloc2[%d] (type 0) %x (%d)\n",(4*i)>>5,rb_alloc2[(4*i)>>5],rb_alloc&(1<<i));
+    if (ra_header==0) {
+      for (i=0; i<25; i++) {
+	if ((rb_alloc&(1<<(24-i))) != 0)
+	  rb_alloc2[(4*i)>>5] |= (0xf<<((4*i)%32));
+	
+	//  printf("rb_alloc2[%d] (type 0) %x (%d)\n",(4*i)>>5,rb_alloc2[(4*i)>>5],rb_alloc&(1<<i));
+      }
+    }
+    else {
+      LOG_W(PHY,"resource type 1 not supported for  N_RB_DL=100\n");
     }
 
     break;

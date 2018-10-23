@@ -31,6 +31,9 @@ def testXMLFile = params.pythonTestXmlFile
 // Name of the test stage
 def testStageName = params.pipelineTestStageName
 
+// Name of the phone resource
+def ciSmartPhoneResource = params.smartphonesResource
+
 // Terminate Status
 def termUE = 0
 def termENB = 1
@@ -57,7 +60,6 @@ pipeline {
     }
     options {
         disableConcurrentBuilds()
-        timestamps()
         ansiColor('xterm')
     }
     // the following parameter options are commented out so it shows the ones
@@ -70,6 +72,7 @@ pipeline {
         string(name: 'pythonTestXmlFile', defaultValue: 'enb_usrpB210_band7_50PRB.xml', description: 'Location of the Test XML to be run')
         string(name: 'pipelineTestStageName', defaultValue: 'Test COTS-UE - OAI eNB - LTEBOX EPC', description: 'Naming of the Test Stage')
         booleanParam(name: 'pipelineZipsConsoleLog', defaultValue: 'True', description: 'If true, the pipeline script retrieves the job console log, zips it and archives it as artifact')
+        string(name: 'smartphonesResource', defaultValue: 'CI-Bench-1-Phones', description: 'Lockeable Resource to prevent multiple jobs to run simultaneously with the same resource')
 
         //eNB parameters
         string(name: 'eNB_IPAddress', defaultValue: '192.168.XX.XX', description: 'IP Address of eNB')
@@ -112,6 +115,9 @@ pipeline {
                         testStageName = 'Template Test Stage'
                     }
 
+                    if (params.smartphonesResource == null) {
+                        allParametersPresent = false
+                    }
                     if (params.eNB_IPAddress == null) {
                         allParametersPresent = false
                     }
@@ -178,6 +184,7 @@ pipeline {
             steps {
                 script {
                     dir ('ci-scripts') {
+                      lock (ciSmartPhoneResource) {
                         try {
                             echo "\u2705 \u001B[32m${testStageName}\u001B[0m"
                             withCredentials([
@@ -190,6 +197,7 @@ pipeline {
                         } catch (Exception e) {
                             currentBuild.result = 'FAILURE'
                         }
+                      }
                     }
                 }
             }
@@ -320,7 +328,7 @@ pipeline {
                             }
                             if(fileExists("ci-scripts/test_results.html")) {
                                 sh "mv ci-scripts/test_results.html test_results-${JOB_NAME}.html"
-                                sh "sed -i -e 's#TEMPLATE_JOB_NAME#${JOB_NAME}#' -e 's#TEMPLATE_BUILD_ID#${BUILD_ID}#' test_results-${JOB_NAME}.html"
+                                sh "sed -i -e 's#TEMPLATE_JOB_NAME#${JOB_NAME}#' -e 's@build #TEMPLATE_BUILD_ID@build #${BUILD_ID}@' -e 's#Build-ID: TEMPLATE_BUILD_ID#Build-ID: <a href=\"${BUILD_URL}\">${BUILD_ID}</a>#' test_results-${JOB_NAME}.html"
                                 archiveArtifacts "test_results-${JOB_NAME}.html"
                             }
                         }

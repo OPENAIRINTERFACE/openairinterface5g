@@ -38,4 +38,4 @@
 #include "sctp_messages_def.h"
 #include "udp_messages_def.h"
 #include "gtpv1_u_messages_def.h"
-
+#include "flexran_messages_def.h"

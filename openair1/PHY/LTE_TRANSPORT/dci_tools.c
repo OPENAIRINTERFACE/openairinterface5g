@@ -220,7 +220,7 @@ void fill_pdcch_order(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_a
     break;
   }
 
-  LOG_I(PHY,"%d.%d: DCI 1A: rnti %x, PDCCH order to do PRACH\n",
+  LOG_T(PHY,"%d.%d: DCI 1A: rnti %x, PDCCH order to do PRACH\n",
         proc->frame_tx, proc->subframe_tx, rel8->rnti);
 }
 
@@ -1791,7 +1791,7 @@ void fill_dci0(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t *proc,
 
 #ifdef T_TRACER
   T(T_ENB_PHY_ULSCH_UE_DCI, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe),
-    T_INT(pdu->dci_pdu_rel8.rnti), T_INT(((frame*10+subframe+4) % 8) /* TODO: correct harq pid */),
+    T_INT(pdu->dci_pdu_rel8.rnti), T_INT(pdu->dci_pdu_rel8.harq_pid),
     T_INT(mcs), T_INT(-1 /* TODO: remove round? */),
     T_INT(pdu->dci_pdu_rel8.resource_block_start),
     T_INT(pdu->dci_pdu_rel8.number_of_resource_block),

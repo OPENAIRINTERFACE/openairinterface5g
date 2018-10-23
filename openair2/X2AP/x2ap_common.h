@@ -28,12 +28,12 @@
 #include "X2AP_InitiatingMessage.h"
 #include "X2AP_SuccessfulOutcome.h"
 #include "X2AP_UnsuccessfulOutcome.h"
-#include "X2AP_ProtocolIE-Field.h"
 #include "X2AP_ProtocolIE-FieldPair.h"
 #include "X2AP_ProtocolIE-ContainerPair.h"
 #include "X2AP_ProtocolExtensionField.h"
 #include "X2AP_ProtocolExtensionContainer.h"
 #include "X2AP_asn_constant.h"
+#include "intertask_interface.h"
 
 #ifndef X2AP_COMMON_H_
 #define X2AP_COMMON_H_
@@ -57,15 +57,16 @@
 #define FALSE 0
 #endif
 
-extern int asn_debug;
 extern int asn1_xer_print;
 
 #if defined(ENB_MODE)
-# include "log.h"
+# include "common/utils/LOG/log.h"
+# define X2AP_INFO(x, args...) LOG_I(X2AP, x, ##args)
 # define X2AP_ERROR(x, args...) LOG_E(X2AP, x, ##args)
 # define X2AP_WARN(x, args...)  LOG_W(X2AP, x, ##args)
 # define X2AP_DEBUG(x, args...) LOG_D(X2AP, x, ##args)
 #else
+# define X2AP_INFO(x, args...) do { fprintf(stdout, "[X2AP][I]"x, ##args); } while(0)
 # define X2AP_ERROR(x, args...) do { fprintf(stdout, "[X2AP][E]"x, ##args); } while(0)
 # define X2AP_WARN(x, args...)  do { fprintf(stdout, "[X2AP][W]"x, ##args); } while(0)
 # define X2AP_DEBUG(x, args...) do { fprintf(stdout, "[X2AP][D]"x, ##args); } while(0)
@@ -86,15 +87,13 @@ extern int asn1_xer_print;
     if (mandatory) DevAssert(ie != NULL); \
   } while(0)
 
-//Forward declaration
-struct x2ap_message_s;
-
 /** \brief Function callback prototype.
  **/
 typedef int (*x2ap_message_decoded_callback)(
+  instance_t instance,
   uint32_t assocId,
   uint32_t stream,
-  struct x2ap_message_s *message);
+  X2AP_X2AP_PDU_t *pdu);
 
 /** \brief Encode a successfull outcome message
  \param buffer pointer to buffer in which data will be encoded

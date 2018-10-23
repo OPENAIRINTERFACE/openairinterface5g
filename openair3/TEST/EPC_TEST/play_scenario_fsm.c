@@ -36,7 +36,6 @@
 #include "play_scenario.h"
 #include "s1ap_ies_defs.h"
 #include "play_scenario_s1ap_eNB_defs.h"
-#include "timer.h"
 
 //------------------------------------------------------------------------------
 extern int                    g_max_speed;

@@ -35,7 +35,6 @@
 
 #include "assertions.h"
 #include "intertask_interface.h"
-#include "timer.h"
 
 #include "gtpv1u.h"
 #include "NwGtpv1u.h"

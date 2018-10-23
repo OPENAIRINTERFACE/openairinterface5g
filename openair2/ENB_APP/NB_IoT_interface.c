@@ -43,7 +43,7 @@ int load_NB_IoT(void) {
  RCConfig_NbIoT_f_t RCConfig;
  loader_shlibfunc_t shlib_fdesc[]=NBIOT_INTERFACE_FLIST; 
 
-     ret=load_module_shlib(NBIOT_MODULENAME,shlib_fdesc,sizeof(shlib_fdesc)/sizeof(loader_shlibfunc_t));
+     ret=load_module_shlib(NBIOT_MODULENAME,shlib_fdesc,sizeof(shlib_fdesc)/sizeof(loader_shlibfunc_t),NULL);
      if (ret) {
         return ret;
      }
