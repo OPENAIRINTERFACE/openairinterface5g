@@ -34,6 +34,15 @@ typedef struct {
   int mib_frame;
   int mib_subframe;
   int mib_data;
+  /* RA preamble */
+  int preamble_frame;
+  int preamble_subframe;
+  int preamble_preamble;
+  /* RAR */
+  int rar_rnti;
+  int rar_frame;
+  int rar_subframe;
+  int rar_data;
 } ev_data;
 
 void ul(void *_d, event e)
@@ -143,24 +152,105 @@ void mib(void *_d, event e)
   if (ret != d->buf.osize) abort();
 }
 
-void setup_data(ev_data *d, void *database, int ul_id, int dl_id, int mib_id)
+void preamble(void *_d, event e)
+{
+  ev_data *d = _d;
+  ssize_t ret;
+  int fsf;
+
+  d->buf.osize = 0;
+
+  PUTS(&d->buf, MAC_LTE_START_STRING);
+  PUTC(&d->buf, FDD_RADIO);
+  PUTC(&d->buf, DIRECTION_UPLINK);
+
+  PUTC(&d->buf, NO_RNTI);
+
+  /* for newer version of wireshark? */
+  fsf = (e.e[d->preamble_frame].i << 4) + e.e[d->preamble_subframe].i;
+  /* for older version? */
+  //fsf = e.e[d->preamble_subframe].i;
+  PUTC(&d->buf, MAC_LTE_FRAME_SUBFRAME_TAG);
+  PUTC(&d->buf, (fsf>>8) & 255);
+  PUTC(&d->buf, fsf & 255);
+
+  PUTC(&d->buf, MAC_LTE_SEND_PREAMBLE_TAG);
+  PUTC(&d->buf, e.e[d->preamble_preamble].i);
+  PUTC(&d->buf, 0); /* rach attempt - always 0 for us (not sure of this) */
+
+  /* if we don't put this (even with no data) wireshark (2.4.5) is not happy */
+  PUTC(&d->buf, MAC_LTE_PAYLOAD_TAG);
+
+  ret = sendto(d->socket, d->buf.obuf, d->buf.osize, 0,
+      (struct sockaddr *)&d->to, sizeof(struct sockaddr_in));
+  if (ret != d->buf.osize) abort();
+}
+
+void rar(void *_d, event e)
+{
+  ev_data *d = _d;
+  ssize_t ret;
+  int fsf;
+  int i;
+
+  if (e.e[d->rar_rnti].i == 0xffff && no_sib) return;
+
+  d->buf.osize = 0;
+
+  PUTS(&d->buf, MAC_LTE_START_STRING);
+  PUTC(&d->buf, FDD_RADIO);
+  PUTC(&d->buf, DIRECTION_DOWNLINK);
+  PUTC(&d->buf, RA_RNTI);
+
+  PUTC(&d->buf, MAC_LTE_RNTI_TAG);
+  PUTC(&d->buf, (e.e[d->rar_rnti].i>>8) & 255);
+  PUTC(&d->buf, e.e[d->rar_rnti].i & 255);
+
+  /* for newer version of wireshark? */
+  fsf = (e.e[d->rar_frame].i << 4) + e.e[d->rar_subframe].i;
+  /* for older version? */
+  //fsf = e.e[d->rar_subframe].i;
+  PUTC(&d->buf, MAC_LTE_FRAME_SUBFRAME_TAG);
+  PUTC(&d->buf, (fsf>>8) & 255);
+  PUTC(&d->buf, fsf & 255);
+
+  PUTC(&d->buf, MAC_LTE_PAYLOAD_TAG);
+  for (i = 0; i < e.e[d->rar_data].bsize; i++)
+    PUTC(&d->buf, ((char*)e.e[d->rar_data].b)[i]);
+
+  ret = sendto(d->socket, d->buf.obuf, d->buf.osize, 0,
+      (struct sockaddr *)&d->to, sizeof(struct sockaddr_in));
+  if (ret != d->buf.osize) abort();
+}
+
+void setup_data(ev_data *d, void *database, int ul_id, int dl_id, int mib_id,
+    int preamble_id, int rar_id)
 {
   database_event_format f;
   int i;
 
-  d->ul_rnti      = -1;
-  d->ul_frame     = -1;
-  d->ul_subframe  = -1;
-  d->ul_data      = -1;
+  d->ul_rnti           = -1;
+  d->ul_frame          = -1;
+  d->ul_subframe       = -1;
+  d->ul_data           = -1;
 
-  d->dl_rnti      = -1;
-  d->dl_frame     = -1;
-  d->dl_subframe  = -1;
-  d->dl_data      = -1;
+  d->dl_rnti           = -1;
+  d->dl_frame          = -1;
+  d->dl_subframe       = -1;
+  d->dl_data           = -1;
 
-  d->mib_frame    = -1;
-  d->mib_subframe = -1;
-  d->mib_data     = -1;
+  d->mib_frame         = -1;
+  d->mib_subframe      = -1;
+  d->mib_data          = -1;
+
+  d->preamble_frame    = -1;
+  d->preamble_subframe = -1;
+  d->preamble_preamble = -1;
+
+  d->rar_rnti           = -1;
+  d->rar_frame          = -1;
+  d->rar_subframe       = -1;
+  d->rar_data           = -1;
 
 #define G(var_name, var_type, var) \
   if (!strcmp(f.name[i], var_name)) { \
@@ -202,6 +292,27 @@ void setup_data(ev_data *d, void *database, int ul_id, int dl_id, int mib_id)
     if (d->mib_frame == -1 || d->mib_subframe == -1 || d->mib_data == -1)
       goto error;
   }
+
+  /* preamble: frame, subframe, preamble */
+  f = get_format(database, preamble_id);
+  for (i = 0; i < f.count; i++) {
+    G("frame",    "int", d->preamble_frame);
+    G("subframe", "int", d->preamble_subframe);
+    G("preamble", "int", d->preamble_preamble);
+  }
+  if (d->preamble_frame == -1 || d->preamble_subframe == -1 ||
+      d->preamble_preamble == -1) goto error;
+
+  /* rar: rnti, frame, subframe, data */
+  f = get_format(database, rar_id);
+  for (i = 0; i < f.count; i++) {
+    G("rnti",     "int",    d->rar_rnti);
+    G("frame",    "int",    d->rar_frame);
+    G("subframe", "int",    d->rar_subframe);
+    G("data",     "buffer", d->rar_data);
+  }
+  if (d->rar_rnti == -1 || d->rar_frame == -1 || d->rar_subframe == -1 ||
+      d->rar_data == -1) goto error;
 
 #undef G
 
@@ -255,7 +366,7 @@ int main(int n, char **v)
   event_handler *h;
   int in;
   int i;
-  int ul_id, dl_id, mib_id = -1;
+  int ul_id, dl_id, mib_id = -1, preamble_id, rar_id;
   ev_data d;
   char *ip = DEFAULT_IP;
   int port = DEFAULT_PORT;
@@ -297,11 +408,15 @@ int main(int n, char **v)
   ul_id = event_id_from_name(database, "ENB_MAC_UE_UL_PDU_WITH_DATA");
   dl_id = event_id_from_name(database, "ENB_MAC_UE_DL_PDU_WITH_DATA");
   if (do_mib) mib_id = event_id_from_name(database, "ENB_PHY_MIB");
-  setup_data(&d, database, ul_id, dl_id, mib_id);
+  preamble_id=event_id_from_name(database, "ENB_PHY_INITIATE_RA_PROCEDURE");
+  rar_id = event_id_from_name(database, "ENB_MAC_UE_DL_RAR_PDU_WITH_DATA");
+  setup_data(&d, database, ul_id, dl_id, mib_id, preamble_id, rar_id);
 
   register_handler_function(h, ul_id, ul, &d);
   register_handler_function(h, dl_id, dl, &d);
   if (do_mib) register_handler_function(h, mib_id, mib, &d);
+  register_handler_function(h, preamble_id, preamble, &d);
+  register_handler_function(h, rar_id, rar, &d);
 
   d.socket = socket(AF_INET, SOCK_DGRAM, 0);
   if (d.socket == -1) { perror("socket"); exit(1); }
@@ -319,7 +434,8 @@ int main(int n, char **v)
     event e;
     e = get_event(in, &ebuf, database);
     if (e.type == -1) break;
-    if (!(e.type == ul_id || e.type == dl_id || e.type == mib_id)) continue;
+    if (!(e.type == ul_id || e.type == dl_id || e.type == mib_id ||
+          e.type == preamble_id || e.type == rar_id)) continue;
     handle_event(h, e);
   }
 

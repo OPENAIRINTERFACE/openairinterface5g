@@ -584,6 +584,11 @@ generate_Msg2(module_id_t module_idP, int CC_idP, frame_t frameP,
 		ra->state = WAITMSG3;
                 LOG_D(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d: state:WAITMSG3\n", module_idP, frameP, subframeP);
 
+                T(T_ENB_MAC_UE_DL_RAR_PDU_WITH_DATA, T_INT(module_idP),
+                  T_INT(CC_idP), T_INT(ra->RA_rnti), T_INT(frameP),
+                  T_INT(subframeP), T_INT(0 /*harq_pid always 0? */ ),
+                  T_BUFFER(cc[CC_idP].RAR_pdu.payload, 7));
+
 		// DL request
 		mac->TX_req[CC_idP].sfn_sf = (frameP << 4) + subframeP;
 		TX_req =
