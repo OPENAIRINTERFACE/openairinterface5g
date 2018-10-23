@@ -14,6 +14,8 @@
 #define DEFAULT_IP   "127.0.0.1"
 #define DEFAULT_PORT 9999
 
+int no_sib = 0;
+
 typedef struct {
   int socket;
   struct sockaddr_in to;
@@ -76,21 +78,27 @@ void dl(void *_d, event e)
   int fsf;
   int i;
 
+  if (e.e[d->dl_rnti].i == 0xffff && no_sib) return;
+
   d->buf.osize = 0;
 
   PUTS(&d->buf, MAC_LTE_START_STRING);
   PUTC(&d->buf, FDD_RADIO);
   PUTC(&d->buf, DIRECTION_DOWNLINK);
-  PUTC(&d->buf, C_RNTI);
+  if (e.e[d->dl_rnti].i != 0xffff) {
+    PUTC(&d->buf, C_RNTI);
 
-  PUTC(&d->buf, MAC_LTE_RNTI_TAG);
-  PUTC(&d->buf, (e.e[d->dl_rnti].i>>8) & 255);
-  PUTC(&d->buf, e.e[d->dl_rnti].i & 255);
+    PUTC(&d->buf, MAC_LTE_RNTI_TAG);
+    PUTC(&d->buf, (e.e[d->dl_rnti].i>>8) & 255);
+    PUTC(&d->buf, e.e[d->dl_rnti].i & 255);
+  } else {
+    PUTC(&d->buf, SI_RNTI);
+  }
 
   /* for newer version of wireshark? */
   fsf = (e.e[d->dl_frame].i << 4) + e.e[d->dl_subframe].i;
   /* for older version? */
-  fsf = e.e[d->dl_subframe].i;
+  //fsf = e.e[d->dl_subframe].i;
   PUTC(&d->buf, MAC_LTE_FRAME_SUBFRAME_TAG);
   PUTC(&d->buf, (fsf>>8) & 255);
   PUTC(&d->buf, fsf & 255);
@@ -231,7 +239,8 @@ void usage(void)
 "    -i <dump file>            read events from this dump file\n"
 "    -ip <IP address>          send packets to this IP address (default %s)\n"
 "    -p <port>                 send packets to this port (default %d)\n"
-"    -no-mib                   do not report MIB\n",
+"    -no-mib                   do not report MIB\n"
+"    -no-sib                   do not report SIBs\n",
   DEFAULT_IP,
   DEFAULT_PORT
   );
@@ -263,6 +272,7 @@ int main(int n, char **v)
     if (!strcmp(v[i], "-ip")) { if (i > n-2) usage(); ip = v[++i]; continue; }
     if (!strcmp(v[i], "-p")) {if(i>n-2)usage(); port=atoi(v[++i]); continue; }
     if (!strcmp(v[i], "-no-mib")) { do_mib = 0; continue; }
+    if (!strcmp(v[i], "-no-sib")) { no_sib = 1; continue; }
     usage();
   }
 

@@ -758,6 +758,9 @@ schedule_SI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 			  module_idP, CC_id, frameP, subframeP);
 		}
 
+                T(T_ENB_MAC_UE_DL_PDU_WITH_DATA, T_INT(module_idP), T_INT(CC_id), T_INT(0xffff),
+                  T_INT(frameP), T_INT(subframeP), T_INT(0), T_BUFFER(cc->BCCH_pdu.payload, bcch_sdu_length));
+
 		if (opt_enabled == 1) {
 		    trace_pdu(DIRECTION_DOWNLINK,
 			      &cc->BCCH_pdu.payload[0],
