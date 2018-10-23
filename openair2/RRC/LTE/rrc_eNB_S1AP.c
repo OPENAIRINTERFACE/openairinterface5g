@@ -1201,66 +1201,64 @@ void rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ (
 }
 
 
-/*------------------------------------------------------------------------------*/
-int rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_COMMAND (MessageDef *msg_p, const char *msg_name, instance_t instance)
+//-----------------------------------------------------------------------------
+/*
+* Process the S1 command UE_CONTEXT_RELEASE_COMMAND, sent by MME.
+* The eNB should remove all e-rab, S1 context, and other context of the UE.
+*/
+int 
+rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_COMMAND (
+  MessageDef *msg_p, 
+  const char *msg_name, 
+  instance_t instance)
 {
+//-----------------------------------------------------------------------------
   uint32_t eNB_ue_s1ap_id;
-  protocol_ctxt_t              ctxt;
+  protocol_ctxt_t ctxt;
   struct rrc_eNB_ue_context_s *ue_context_p = NULL;
-  struct rrc_ue_s1ap_ids_s    *rrc_ue_s1ap_ids = NULL;
+  struct rrc_ue_s1ap_ids_s *rrc_ue_s1ap_ids = NULL;
 
   eNB_ue_s1ap_id = S1AP_UE_CONTEXT_RELEASE_COMMAND(msg_p).eNB_ue_s1ap_id;
 
-
-  ue_context_p   = rrc_eNB_get_ue_context_from_s1ap_ids(instance, UE_INITIAL_ID_INVALID, eNB_ue_s1ap_id);
+  ue_context_p = rrc_eNB_get_ue_context_from_s1ap_ids(instance, UE_INITIAL_ID_INVALID, eNB_ue_s1ap_id);
 
   if (ue_context_p == NULL) {
     /* Can not associate this message to an UE index */
-    MessageDef *msg_complete_p;
+    MessageDef *msg_complete_p = NULL;
 
-    LOG_W(RRC,
-          "[eNB %d] In S1AP_UE_CONTEXT_RELEASE_COMMAND: unknown UE from eNB_ue_s1ap_id (%d)\n",
-          instance,
-          eNB_ue_s1ap_id);
+    LOG_W(RRC, "[eNB %d] In S1AP_UE_CONTEXT_RELEASE_COMMAND: unknown UE from eNB_ue_s1ap_id (%d)\n",
+      instance,
+      eNB_ue_s1ap_id);
 
-    MSC_LOG_EVENT(
-          MSC_RRC_ENB,
-  		  "0 S1AP_UE_CONTEXT_RELEASE_COMPLETE eNB_ue_s1ap_id 0x%06"PRIX32" context not found",
+    MSC_LOG_EVENT(MSC_RRC_ENB, "0 S1AP_UE_CONTEXT_RELEASE_COMPLETE eNB_ue_s1ap_id 0x%06"PRIX32" context not found",
   		eNB_ue_s1ap_id);
 
-    MSC_LOG_TX_MESSAGE(
-          MSC_RRC_ENB,
-  		  MSC_S1AP_ENB,
-  		  NULL,0,
-  		  "0 S1AP_UE_CONTEXT_RELEASE_COMPLETE eNB_ue_s1ap_id 0x%06"PRIX32" ",
+    MSC_LOG_TX_MESSAGE(MSC_RRC_ENB,
+      MSC_S1AP_ENB,
+      NULL,
+      0,
+      "0 S1AP_UE_CONTEXT_RELEASE_COMPLETE eNB_ue_s1ap_id 0x%06"PRIX32" ",
   		eNB_ue_s1ap_id);
 
     msg_complete_p = itti_alloc_new_message(TASK_RRC_ENB, S1AP_UE_CONTEXT_RELEASE_COMPLETE);
     S1AP_UE_CONTEXT_RELEASE_COMPLETE(msg_complete_p).eNB_ue_s1ap_id = eNB_ue_s1ap_id;
     itti_send_msg_to_task(TASK_S1AP, instance, msg_complete_p);
 
-    rrc_ue_s1ap_ids = rrc_eNB_S1AP_get_ue_ids(
-    		RC.rrc[instance],
-    		UE_INITIAL_ID_INVALID,
-    		eNB_ue_s1ap_id);
+    rrc_ue_s1ap_ids = rrc_eNB_S1AP_get_ue_ids(RC.rrc[instance], UE_INITIAL_ID_INVALID, eNB_ue_s1ap_id);
 
     if (NULL != rrc_ue_s1ap_ids) {
-      rrc_eNB_S1AP_remove_ue_ids(
-    		  RC.rrc[instance],
-    		  rrc_ue_s1ap_ids);
+      rrc_eNB_S1AP_remove_ue_ids(RC.rrc[instance], rrc_ue_s1ap_ids);
     }
-    return (-1);
+
+    return -1;
   } else {
     ue_context_p->ue_context.ue_release_timer_s1 = 0;
+
     PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, ENB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0);
+    
     rrc_eNB_generate_RRCConnectionRelease(&ctxt, ue_context_p);
-    /*
-          LOG_W(RRC,
-                  "[eNB %d] In S1AP_UE_CONTEXT_RELEASE_COMMAND: TODO call rrc_eNB_connection_release for eNB %d\n",
-                  instance,
-                  eNB_ue_s1ap_id);
-    */
-    return (0);
+    
+    return 0;
   }
 }
 

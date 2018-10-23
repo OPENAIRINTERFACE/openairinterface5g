@@ -832,45 +832,58 @@ rrc_eNB_free_mem_UE_context(
 }
 
 //-----------------------------------------------------------------------------
-// should be called when UE is lost by eNB
+/*
+* Should be called when UE context in eNB should be released 
+* or when S1 command UE_CONTEXT_RELEASE_REQ should be sent
+*/ 
 void
-rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*        const ue_context_pP)
+rrc_eNB_free_UE(
+  const module_id_t enb_mod_idP,
+  const struct rrc_eNB_ue_context_s *const ue_context_pP)
 //-----------------------------------------------------------------------------
 {
-
-
-  protocol_ctxt_t                     ctxt;
+  protocol_ctxt_t ctxt;
   rnti_t rnti = ue_context_pP->ue_context.rnti;
+
   if (enb_mod_idP >= NB_eNB_INST) {
-      LOG_I(RRC, "eNB inst invalid (%d/%d) for UE %x!\n",enb_mod_idP, NB_eNB_INST,rnti);
-      return;
+    LOG_I(RRC, "eNB instance invalid (%d/%d) for UE %x!\n",
+      enb_mod_idP, 
+      NB_eNB_INST,
+      rnti);
+    
+    return;
   }
-  /*  ue_context_p = rrc_eNB_get_ue_context(
-                   &RC.rrc[enb_mod_idP],
-                   rntiP
-                 );
-  */
+ 
   if (NULL != ue_context_pP) {
-    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, enb_mod_idP, ENB_FLAG_YES, rnti, 0, 0,enb_mod_idP);
-    LOG_W(RRC, "[eNB %d] Removing UE RNTI %x\n", enb_mod_idP, rnti);
+    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, enb_mod_idP, ENB_FLAG_YES, rnti, 0, 0, enb_mod_idP);
 
-   if(EPC_MODE_ENABLED) {
+    LOG_W(RRC, "[eNB %d] Removing UE RNTI %x\n", 
+      enb_mod_idP, 
+      rnti);
 
-     if((ue_context_pP->ue_context.ul_failure_timer >= 20000) &&
-  	(mac_eNB_get_rrc_status(enb_mod_idP,rnti) >= RRC_CONNECTED)) {
-      LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ RNTI %x\n", enb_mod_idP, rnti);
-      rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(enb_mod_idP, ue_context_pP, S1AP_CAUSE_RADIO_NETWORK, 21); // send cause 21: connection with ue lost
-      /* From 3GPP 36300v10 p129 : 19.2.2.2.2 S1 UE Context Release Request (eNB triggered)
-       * If the E-UTRAN internal reason is a radio link failure detected in the eNB, the eNB shall wait a sufficient time before
-       *  triggering the S1 UE Context Release Request procedure
-       *  in order to allow the UE to perform the NAS recovery
-       *  procedure, see TS 23.401 [17].
-       */
-       return;
+    if (EPC_MODE_ENABLED) {
+      if((ue_context_pP->ue_context.ul_failure_timer >= 20000) && (mac_eNB_get_rrc_status(enb_mod_idP,rnti) >= RRC_CONNECTED)) {
+        LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ sent for RNTI %x\n", 
+          enb_mod_idP, 
+          rnti);
+        
+        rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(enb_mod_idP, ue_context_pP, S1AP_CAUSE_RADIO_NETWORK, 21); 
+        // send cause 21: connection with ue lost
+        /* From 3GPP 36300v10 p129 : 19.2.2.2.2 S1 UE Context Release Request (eNB triggered)
+         * If the E-UTRAN internal reason is a radio link failure detected in the eNB, the eNB shall wait a sufficient time before
+         *  triggering the S1 UE Context Release Request procedure in order to allow the UE to perform the NAS recovery
+         *  procedure, see TS 23.401 [17].
+         */
+         
+        return;
+      }
+      // TODO : add here cause ul inactivity
     }
-  }
+
     // add UE info to freeList
-    LOG_I(RRC, "put UE %x into freeList\n", rnti);
+    LOG_I(RRC, "Put UE %x into freeList\n",
+      rnti);
+
     put_UE_in_freelist(enb_mod_idP, rnti, 1);
   }
 }
@@ -1980,44 +1993,40 @@ rrc_eNB_generate_RRCConnectionReestablishmentReject(
 }
 
 //-----------------------------------------------------------------------------
+/*
+* Generate the RRC Connection Release to UE.
+* If received, UE should switch to RRC_IDLE mode.
+*/
 void
 rrc_eNB_generate_RRCConnectionRelease(
   const protocol_ctxt_t* const ctxt_pP,
-  rrc_eNB_ue_context_t*          const ue_context_pP
+  rrc_eNB_ue_context_t* const ue_context_pP
 )
 //-----------------------------------------------------------------------------
 {
-
-  uint8_t                             buffer[RRC_BUF_SIZE];
-  uint16_t                            size;
+  uint8_t buffer[RRC_BUF_SIZE] = 0;
+  uint16_t size = 0;
 
   T(T_ENB_RRC_CONNECTION_RELEASE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
   memset(buffer, 0, RRC_BUF_SIZE);
   size = do_RRCConnectionRelease(ctxt_pP->module_id, buffer,rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id));
-  // set release timer
-  //ue_context_pP->ue_context.ue_release_timer=1;
-  // remove UE after 10 frames after RRCConnectionRelease is triggered
-  //ue_context_pP->ue_context.ue_release_timer_thres=100;
-    // set release timer
-//  ue_context_pP->ue_context.ue_release_timer_rrc = 1;
-  // remove UE after 10 frames after RRCConnectionRelease is triggered
-//  ue_context_pP->ue_context.ue_release_timer_thres_rrc = 100;
+
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
   ue_context_pP->ue_context.ue_release_timer = 0;
-  //ue_context_pP->ue_context.ue_release_timer_s1 = 0;
+
   LOG_I(RRC,
-        PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate RRCConnectionRelease (bytes %d)\n",
-        PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
-        size);
+    PROTOCOL_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate RRCConnectionRelease (bytes %d)\n",
+    PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+    size);
 
   LOG_D(RRC,
-        PROTOCOL_RRC_CTXT_UE_FMT" --- PDCP_DATA_REQ/%d Bytes (rrcConnectionRelease MUI %d) --->[PDCP][RB %u]\n",
-        PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
-        size,
-        rrc_eNB_mui,
-        DCCH);
+    PROTOCOL_RRC_CTXT_UE_FMT" --- PDCP_DATA_REQ/%d Bytes (rrcConnectionRelease MUI %d) --->[PDCP][RB %u]\n",
+    PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
+    size,
+    rrc_eNB_mui,
+    DCCH);
 
   MSC_LOG_TX_MESSAGE(
     MSC_RRC_ENB,
@@ -2029,31 +2038,39 @@ rrc_eNB_generate_RRCConnectionRelease(
     ue_context_pP->ue_context.rnti,
     rrc_eNB_mui,
     size);
+
   pthread_mutex_lock(&rrc_release_freelist);
-  for(uint16_t release_num = 0;release_num < NUMBER_OF_UE_MAX;release_num++){
-    if(rrc_release_info.RRC_release_ctrl[release_num].flag == 0){
-      if(ue_context_pP->ue_context.ue_release_timer_s1 > 0){
+  for (uint16_t release_num = 0; release_num < NUMBER_OF_UE_MAX; release_num++) {
+    if (rrc_release_info.RRC_release_ctrl[release_num].flag == 0) {
+      
+      if (ue_context_pP->ue_context.ue_release_timer_s1 > 0) {
         rrc_release_info.RRC_release_ctrl[release_num].flag = 1;
-      }else{
+      } else {
         rrc_release_info.RRC_release_ctrl[release_num].flag = 2;
       }
+
       rrc_release_info.RRC_release_ctrl[release_num].rnti = ctxt_pP->rnti;
       rrc_release_info.RRC_release_ctrl[release_num].rrc_eNB_mui = rrc_eNB_mui;
       rrc_release_info.num_UEs++;
-      LOG_D(RRC,"Generate DLSCH Release send: index %d rnti %x mui %d flag %d \n",release_num,
-             ctxt_pP->rnti, rrc_eNB_mui,rrc_release_info.RRC_release_ctrl[release_num].flag);
+
+      LOG_D(RRC, "Generate DLSCH Release send: index %d rnti %x mui %d flag %d \n",
+        release_num,
+        ctxt_pP->rnti, 
+        rrc_eNB_mui, 
+        rrc_release_info.RRC_release_ctrl[release_num].flag);
+
       break;
     }
   }
   pthread_mutex_unlock(&rrc_release_freelist);
-  rrc_data_req(
-	       ctxt_pP,
-	       DCCH,
-	       rrc_eNB_mui++,
-	       SDU_CONFIRM_NO,
-	       size,
-	       buffer,
-	       PDCP_TRANSMISSION_MODE_CONTROL);
+
+  rrc_data_req(ctxt_pP,
+    DCCH,
+    rrc_eNB_mui++,
+    SDU_CONFIRM_NO,
+    size,
+    buffer,
+    PDCP_TRANSMISSION_MODE_CONTROL);
 }
 
 uint8_t qci_to_priority[9]={2,4,3,5,1,6,7,8,9};
@@ -7904,6 +7921,11 @@ rrc_rx_tx(
         if (ue_context_p->ue_context.ue_release_timer >= ue_context_p->ue_context.ue_release_timer_thres) {
           LOG_I(RRC, "Removing UE %x instance because of RRC Connection Setup timer timeout\n",
             ue_context_p->ue_context.rnti);
+          /*
+          * TODO: Naming problem here: ue_release_timer seems to have been used when RRC Connection Release was sent.
+          * It is no more the case.
+          * The timer should be renamed.
+          */
 	        
           ue_to_be_removed = ue_context_p;
           ue_context_p->ue_context.ue_release_timer = 0;
