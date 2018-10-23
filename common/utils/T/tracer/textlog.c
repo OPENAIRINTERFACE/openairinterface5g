@@ -187,7 +187,7 @@ int main(int n, char **v)
   while (1) {
     event e;
     e = get_event(textlog_data.socket, &ebuf, database);
-    if (e.type == -1) abort();
+    if (e.type == -1) break;
     handle_event(h, e);
   }
 
