@@ -120,6 +120,9 @@ int flexran_agent_hello(mid_t mod_id, const void *params, Protocol__FlexranMessa
     goto error;
 
   hello_msg->header = header;
+  hello_msg->bs_id  = flexran_get_bs_id(mod_id);
+  hello_msg->has_bs_id = 1;
+  hello_msg->n_capabilities = flexran_get_capabilities(mod_id, &hello_msg->capabilities);
 
   *msg = malloc(sizeof(Protocol__FlexranMessage));
   if(*msg == NULL)
@@ -150,6 +153,7 @@ int flexran_agent_destroy_hello(Protocol__FlexranMessage *msg) {
     goto error;
   
   free(msg->hello_msg->header);
+  free(msg->hello_msg->capabilities);
   free(msg->hello_msg);
   free(msg);
   return 0;
@@ -815,9 +819,6 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
     goto error;
   
   enb_config_reply_msg->header = header;
-
-  enb_config_reply_msg->enb_id = RC.flexran[mod_id]->agent_id;
-  enb_config_reply_msg->has_enb_id = 1;
 
   enb_config_reply_msg->n_cell_config = MAX_NUM_CCs;
   

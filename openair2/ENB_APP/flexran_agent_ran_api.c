@@ -1393,3 +1393,94 @@ float flexran_get_rrc_neigh_rsrq(mid_t mod_id, mid_t ue_id, int cell_id)
   if (!ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[cell_id]->measResult.rsrqResult) return 0;
   return RSRQ_meas_mapping[*(ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[cell_id]->measResult.rsrqResult)];
 }
+
+uint64_t flexran_get_bs_id(mid_t mod_id)
+{
+  if (!rrc_is_present(mod_id)) return 0;
+  return RC.rrc[mod_id]->nr_cellid;
+}
+
+size_t flexran_get_capabilities(mid_t mod_id, Protocol__FlexBsCapability **caps)
+{
+  if (!caps) return 0;
+  if (!rrc_is_present(mod_id)) return 0;
+  size_t n_caps = 0;
+  switch (RC.rrc[mod_id]->node_type) {
+  case ngran_eNB_CU:
+  case ngran_ng_eNB_CU:
+  case ngran_gNB_CU:
+    n_caps = 3;
+    *caps = calloc(n_caps, sizeof(Protocol__FlexBsCapability));
+    AssertFatal(*caps, "could not allocate %zu bytes for Protocol__FlexBsCapability array\n",
+                n_caps * sizeof(Protocol__FlexBsCapability));
+    (*caps)[0] = PROTOCOL__FLEX_BS_CAPABILITY__PDCP;
+    (*caps)[1] = PROTOCOL__FLEX_BS_CAPABILITY__SDAP;
+    (*caps)[2] = PROTOCOL__FLEX_BS_CAPABILITY__RRC;
+    break;
+  case ngran_eNB_DU:
+  case ngran_gNB_DU:
+    n_caps = 5;
+    *caps = calloc(n_caps, sizeof(Protocol__FlexBsCapability));
+    AssertFatal(*caps, "could not allocate %zu bytes for Protocol__FlexBsCapability array\n",
+                n_caps * sizeof(Protocol__FlexBsCapability));
+    (*caps)[0] = PROTOCOL__FLEX_BS_CAPABILITY__LOPHY;
+    (*caps)[1] = PROTOCOL__FLEX_BS_CAPABILITY__HIPHY;
+    (*caps)[2] = PROTOCOL__FLEX_BS_CAPABILITY__LOMAC;
+    (*caps)[3] = PROTOCOL__FLEX_BS_CAPABILITY__HIMAC;
+    (*caps)[4] = PROTOCOL__FLEX_BS_CAPABILITY__RLC;
+    break;
+  case ngran_eNB:
+  case ngran_ng_eNB:
+  case ngran_gNB:
+    n_caps = 8;
+    *caps = calloc(n_caps, sizeof(Protocol__FlexBsCapability));
+    AssertFatal(*caps, "could not allocate %zu bytes for Protocol__FlexBsCapability array\n",
+                n_caps * sizeof(Protocol__FlexBsCapability));
+    (*caps)[0] = PROTOCOL__FLEX_BS_CAPABILITY__LOPHY;
+    (*caps)[1] = PROTOCOL__FLEX_BS_CAPABILITY__HIPHY;
+    (*caps)[2] = PROTOCOL__FLEX_BS_CAPABILITY__LOMAC;
+    (*caps)[3] = PROTOCOL__FLEX_BS_CAPABILITY__HIMAC;
+    (*caps)[4] = PROTOCOL__FLEX_BS_CAPABILITY__RLC;
+    (*caps)[5] = PROTOCOL__FLEX_BS_CAPABILITY__PDCP;
+    (*caps)[6] = PROTOCOL__FLEX_BS_CAPABILITY__SDAP;
+    (*caps)[7] = PROTOCOL__FLEX_BS_CAPABILITY__RRC;
+    break;
+  }
+  return n_caps;
+}
+
+uint16_t flexran_get_capabilities_mask(mid_t mod_id)
+{
+  if (!rrc_is_present(mod_id)) return 0;
+  uint16_t mask = 0;
+  switch (RC.rrc[mod_id]->node_type) {
+  case ngran_eNB_CU:
+  case ngran_ng_eNB_CU:
+  case ngran_gNB_CU:
+    mask = (1 << PROTOCOL__FLEX_BS_CAPABILITY__PDCP)
+         | (1 << PROTOCOL__FLEX_BS_CAPABILITY__SDAP)
+         | (1 << PROTOCOL__FLEX_BS_CAPABILITY__RRC);
+    break;
+  case ngran_eNB_DU:
+  case ngran_gNB_DU:
+    mask = (1 << PROTOCOL__FLEX_BS_CAPABILITY__LOPHY)
+         | (1 << PROTOCOL__FLEX_BS_CAPABILITY__HIPHY)
+         | (1 << PROTOCOL__FLEX_BS_CAPABILITY__LOMAC)
+         | (1 << PROTOCOL__FLEX_BS_CAPABILITY__HIMAC)
+         | (1 << PROTOCOL__FLEX_BS_CAPABILITY__RLC);
+    break;
+  case ngran_eNB:
+  case ngran_ng_eNB:
+  case ngran_gNB:
+    mask = (1 << PROTOCOL__FLEX_BS_CAPABILITY__LOPHY)
+         | (1 << PROTOCOL__FLEX_BS_CAPABILITY__HIPHY)
+         | (1 << PROTOCOL__FLEX_BS_CAPABILITY__LOMAC)
+         | (1 << PROTOCOL__FLEX_BS_CAPABILITY__HIMAC)
+         | (1 << PROTOCOL__FLEX_BS_CAPABILITY__RLC)
+         | (1 << PROTOCOL__FLEX_BS_CAPABILITY__PDCP)
+         | (1 << PROTOCOL__FLEX_BS_CAPABILITY__SDAP)
+         | (1 << PROTOCOL__FLEX_BS_CAPABILITY__RRC);
+    break;
+  }
+  return mask;
+}

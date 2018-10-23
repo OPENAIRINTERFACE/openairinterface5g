@@ -504,3 +504,16 @@ int flexran_get_rrc_neigh_plmn_mcc(mid_t mod_id, mid_t ue_id, int cell_id); */
 /*Get MNC PLMN identity neighbouring Cell*/
 /* currently not implemented
 int flexran_get_rrc_neigh_plmn_mnc(mid_t mod_id, mid_t ue_id, int cell_id); */
+
+/********************* general information *****************/
+/* get an ID for this BS (or part of a BS) */
+uint64_t flexran_get_bs_id(mid_t mod_id);
+
+/* get the capabilities supported by the underlying network function,
+ * returns the number and stores list of this length in caps. If there are zero
+ * capabilities, *caps will be NULL */
+size_t flexran_get_capabilities(mid_t mod_id, Protocol__FlexBsCapability **caps);
+
+/* get the capabilities supported by the underlying network function as a bit
+ * mask. */
+uint16_t flexran_get_capabilities_mask(mid_t mod_id);
