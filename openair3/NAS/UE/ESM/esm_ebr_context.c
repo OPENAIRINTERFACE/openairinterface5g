@@ -58,6 +58,7 @@ Description Defines functions used to handle EPS bearer contexts.
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+extern uint8_t  nfapi_mode;
 
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
@@ -272,7 +273,21 @@ int esm_ebr_context_create(
                strcpy(broadcast, ipv4_addr);
              }
 
-             res = sprintf(command_line,
+             if(nfapi_mode ==3){
+                // this is for L2 FAPI simulator.
+                // change for multiple UE's like 256UEs.
+                // if it's made too many tables , OS may crush so we use one table.
+                res = sprintf(command_line,
+                           "ifconfig oip%d %s netmask %s broadcast %s up && "
+                           "ip rule add from %s/24 table %d && "
+                           "ip rule add to %s/24 table %d && "
+                           "ip route add default dev oip%d table %d && "
+                           ueid+1, ipv4_addr, netmask, broadcast,
+                           ipv4_addr, 201,
+                           ipv4_addr, 201,
+                           ueid+1, 201,  ueid+1);
+             } else {
+               res = sprintf(command_line,
                            "ifconfig oip%d %s netmask %s broadcast %s up && "
                            "ip rule add from %s/32 table %d && "
                            "ip rule add to %s/32 table %d && "
@@ -281,6 +296,7 @@ int esm_ebr_context_create(
                            ipv4_addr, ueid + 201,
                            ipv4_addr, ueid + 201,
                            ueid + 1, ueid + 201);
+             }
              if ( res<0 ) {
                 LOG_TRACE(WARNING, "ESM-PROC  - Failed to system command string");
              }
