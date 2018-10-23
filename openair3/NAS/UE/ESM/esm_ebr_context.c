@@ -281,11 +281,11 @@ int esm_ebr_context_create(
                            "ifconfig oip%d %s netmask %s broadcast %s up && "
                            "ip rule add from %s/24 table %d && "
                            "ip rule add to %s/24 table %d && "
-                           "ip route add default dev oip%d table %d && "
+                           "ip route add default dev oip%d table %d",
                            ueid+1, ipv4_addr, netmask, broadcast,
                            ipv4_addr, 201,
                            ipv4_addr, 201,
-                           ueid+1, 201,  ueid+1);
+                           ueid+1, 201);
              } else {
                res = sprintf(command_line,
                            "ifconfig oip%d %s netmask %s broadcast %s up && "
