@@ -68,109 +68,10 @@ extern uint16_t sf_ahead;
 
 void RCconfig_flexran()
 {
-  uint16_t i;
-  uint16_t num_enbs;
-  char aprefix[MAX_OPTNAME_SIZE*2 + 8];
-  /* this will possibly truncate the cell id (RRC assumes int32_t).
-   * Both Nid_cell and enb_id are signed in RRC case, but we use unsigned for
-   * the bitshifting to work properly */
-  int32_t Nid_cell = 0;
-  uint16_t Nid_cell_tr = 0;
-  uint32_t enb_id = 0;
-
-  /*
-   * the only reason for all these variables is, that they are "hard-encoded"
-   * into the CCPARAMS_DESC macro and we need it for the Nid_cell variable ...
-   */
-  char *frame_type, *prefix_type, *pbch_repetition, *prach_high_speed,
-    *pusch_hoppingMode, *pusch_enable64QAM, *pusch_groupHoppingEnabled,
-    *pusch_sequenceHoppingEnabled, *phich_duration, *phich_resource,
-    *srs_enable, *srs_ackNackST, *srs_MaxUpPts, *pusch_alpha,
-    *pucch_deltaF_Format1, *pucch_deltaF_Format1b, *pucch_deltaF_Format2,
-    *pucch_deltaF_Format2a, *pucch_deltaF_Format2b,
-    *rach_preamblesGroupAConfig, *rach_messagePowerOffsetGroupB, *pcch_nB;
-  long long int     downlink_frequency;
-  int32_t tdd_config, tdd_config_s, eutra_band, uplink_frequency_offset,
-    Nid_cell_mbsfn, N_RB_DL, nb_antenna_ports, prach_root, prach_config_index,
-    prach_zero_correlation, prach_freq_offset, pucch_delta_shift,
-    pucch_nRB_CQI, pucch_nCS_AN, pucch_n1_AN, pdsch_referenceSignalPower,
-    pdsch_p_b, pusch_n_SB, pusch_hoppingOffset, pusch_groupAssignment,
-    pusch_nDMRS1, srs_BandwidthConfig, srs_SubframeConfig, pusch_p0_Nominal,
-    pucch_p0_Nominal, msg3_delta_Preamble, rach_numberOfRA_Preambles,
-    rach_sizeOfRA_PreamblesGroupA, rach_messageSizeGroupA,
-    rach_powerRampingStep, rach_preambleInitialReceivedTargetPower,
-    rach_preambleTransMax, rach_raResponseWindowSize,
-    rach_macContentionResolutionTimer, rach_maxHARQ_Msg3Tx,
-    pcch_defaultPagingCycle, bcch_modificationPeriodCoeff,
-    ue_TimersAndConstants_t300, ue_TimersAndConstants_t301,
-    ue_TimersAndConstants_t310, ue_TimersAndConstants_t311,
-    ue_TimersAndConstants_n310, ue_TimersAndConstants_n311,
-    ue_TransmissionMode;
-
-    int32_t     ue_multiple_max               = 0;
-
-    e_SL_CP_Len_r12                rxPool_sc_CP_Len;
-    e_SL_PeriodComm_r12            rxPool_sc_Period;
-    e_SL_CP_Len_r12                rxPool_data_CP_Len;
-    long                           rxPool_ResourceConfig_prb_Num;
-    long                           rxPool_ResourceConfig_prb_Start;
-    long                           rxPool_ResourceConfig_prb_End;
-    SL_OffsetIndicator_r12_PR      rxPool_ResourceConfig_offsetIndicator_present;
-    long                           rxPool_ResourceConfig_offsetIndicator_choice;
-    SubframeBitmapSL_r12_PR        rxPool_ResourceConfig_subframeBitmap_present;
-    char*                          rxPool_ResourceConfig_subframeBitmap_choice_bs_buf;
-    long                           rxPool_ResourceConfig_subframeBitmap_choice_bs_size;
-    long                           rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
-
-    //SIB19
-    //for discRxPool
-    SL_CP_Len_r12_t                discRxPool_cp_Len;
-    e_SL_DiscResourcePool_r12__discPeriod_r12                   discRxPool_discPeriod;
-    long                           discRxPool_numRetx;
-    long                           discRxPool_numRepetition;
-    long                           discRxPool_ResourceConfig_prb_Num;
-    long                           discRxPool_ResourceConfig_prb_Start;
-    long                           discRxPool_ResourceConfig_prb_End;
-    SL_OffsetIndicator_r12_PR      discRxPool_ResourceConfig_offsetIndicator_present;
-    long                           discRxPool_ResourceConfig_offsetIndicator_choice;
-    SubframeBitmapSL_r12_PR        discRxPool_ResourceConfig_subframeBitmap_present;
-    char*                          discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf;
-    long                           discRxPool_ResourceConfig_subframeBitmap_choice_bs_size;
-    long                           discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
-    //for discRxPoolPS
-    SL_CP_Len_r12_t                discRxPoolPS_cp_Len;
-    e_SL_DiscResourcePool_r12__discPeriod_r12                   discRxPoolPS_discPeriod;
-    long                           discRxPoolPS_numRetx;
-    long                           discRxPoolPS_numRepetition;
-    long                           discRxPoolPS_ResourceConfig_prb_Num;
-    long                           discRxPoolPS_ResourceConfig_prb_Start;
-    long                           discRxPoolPS_ResourceConfig_prb_End;
-    SL_OffsetIndicator_r12_PR      discRxPoolPS_ResourceConfig_offsetIndicator_present;
-    long                           discRxPoolPS_ResourceConfig_offsetIndicator_choice;
-    SubframeBitmapSL_r12_PR        discRxPoolPS_ResourceConfig_subframeBitmap_present;
-    char*                          discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf;
-    long                           discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size;
-    long                           discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
-
-
-
   /* get number of eNBs */
   paramdef_t ENBSParams[] = ENBSPARAMS_DESC;
   config_get(ENBSParams, sizeof(ENBSParams)/sizeof(paramdef_t), NULL);
-  num_enbs = ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt;
-
-  /* for eNB ID */
-  paramdef_t ENBParams[]  = ENBPARAMS_DESC;
-  paramlist_def_t ENBParamList = {ENB_CONFIG_STRING_ENB_LIST, NULL, 0};
-
-  /* for Nid_cell */
-  checkedparam_t config_check_CCparams[] = CCPARAMS_CHECK;
-  paramdef_t CCsParams[] = CCPARAMS_DESC;
-  paramlist_def_t CCsParamList = {ENB_CONFIG_STRING_COMPONENT_CARRIERS, NULL, 0};
-  /* map parameter checking array instances to parameter definition array instances */
-  for (int I = 0; I < (sizeof(CCsParams) / sizeof(paramdef_t)); I++) {
-    CCsParams[I].chkPptr = &(config_check_CCparams[I]);
-  }
+  uint16_t num_enbs = ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt;
 
   paramdef_t flexranParams[] = FLEXRANPARAMS_DESC;
   config_get(flexranParams, sizeof(flexranParams)/sizeof(paramdef_t), CONFIG_STRING_NETWORK_CONTROLLER_CONFIG);
@@ -183,7 +84,7 @@ void RCconfig_flexran()
                 num_enbs, sizeof(flexran_agent_info_t*));
   }
 
-  for (i = 0; i < num_enbs; i++) {
+  for (uint16_t i = 0; i < num_enbs; i++) {
     RC.flexran[i] = calloc(1, sizeof(flexran_agent_info_t));
     AssertFatal(RC.flexran[i],
                 "can't ALLOCATE %zu Bytes for flexran agent info (iteration %d/%d)\n",
@@ -200,36 +101,7 @@ void RCconfig_flexran()
     RC.flexran[i]->cache_name       = strdup(*(flexranParams[FLEXRAN_CACHE_IDX].strptr));
     RC.flexran[i]->node_ctrl_state  = strcasecmp(*(flexranParams[FLEXRAN_AWAIT_RECONF_IDX].strptr), "yes") == 0 ? ENB_WAIT : ENB_NORMAL_OPERATION;
 
-    config_getlist(&ENBParamList, ENBParams, sizeof(ENBParams)/sizeof(paramdef_t),NULL);
-    /* eNB ID from configuration, as read in by RCconfig_RRC() */
-    if (!ENBParamList.paramarray[i][ENB_ENB_ID_IDX].uptr) {
-      // Calculate a default eNB ID
-      if (EPC_MODE_ENABLED)
-         enb_id = i + (s1ap_generate_eNB_id () & 0xFFFF8);
-      else
-         enb_id = i;
-    } else {
-        enb_id = *(ENBParamList.paramarray[i][ENB_ENB_ID_IDX].uptr);
-    }
-
-    /* cell ID */
-    sprintf(aprefix, "%s.[%i]", ENB_CONFIG_STRING_ENB_LIST, i);
-    config_getlist(&CCsParamList, NULL, 0, aprefix);
-    if (CCsParamList.numelt > 0) {
-      sprintf(aprefix, "%s.[%i].%s.[%i]", ENB_CONFIG_STRING_ENB_LIST, i, ENB_CONFIG_STRING_COMPONENT_CARRIERS, 0);
-      config_get(CCsParams, sizeof(CCsParams)/sizeof(paramdef_t), aprefix);
-      Nid_cell_tr = (uint16_t) Nid_cell;
-    }
-
-    RC.flexran[i]->mod_id   = i;
-    RC.flexran[i]->agent_id = (((uint64_t)i) << 48) | (((uint64_t)enb_id) << 16) | ((uint64_t)Nid_cell_tr);
-
-    /* assume for the moment the monolithic case, i.e. agent can provide
-     * information for all layers */
-    RC.flexran[i]->capability_mask = FLEXRAN_CAP_LOPHY | FLEXRAN_CAP_HIPHY
-                                   | FLEXRAN_CAP_LOMAC | FLEXRAN_CAP_HIMAC
-                                   | FLEXRAN_CAP_RLC   | FLEXRAN_CAP_PDCP
-                                   | FLEXRAN_CAP_SDAP  | FLEXRAN_CAP_RRC;
+    RC.flexran[i]->mod_id  = i;
   }
 }
 
