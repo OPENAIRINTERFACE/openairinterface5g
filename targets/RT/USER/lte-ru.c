@@ -1974,7 +1974,7 @@ static void* eNB_thread_phy_tx( void* param ) {
   RU_proc_t *proc = &ru->proc;
   PHY_VARS_eNB **eNB_list = ru->eNB_list;
 
-  eNB_rxtx_proc_t proc_rxtx;
+  eNB_rxtx_proc_t L1_proc;
 
   // set default return value
   eNB_thread_phy_tx_status = 0;
@@ -1991,9 +1991,9 @@ static void* eNB_thread_phy_tx( void* param ) {
 
     LOG_D(PHY,"Running eNB phy tx procedures\n");
     if(ru->num_eNB == 1){
-       proc_rxtx.subframe_tx = proc->subframe_phy_tx;
-       proc_rxtx.frame_tx = proc->frame_phy_tx;
-       phy_procedures_eNB_TX(eNB_list[0], &proc_rxtx, 1);
+       L1_proc.subframe_tx = proc->subframe_phy_tx;
+       L1_proc.frame_tx = proc->frame_phy_tx;
+       phy_procedures_eNB_TX(eNB_list[0], &L1_proc, 1);
        phy_tx_txdataF_end = 1;
        if(pthread_mutex_lock(&ru->proc.mutex_rf_tx) != 0){
           LOG_E( PHY, "[RU] ERROR pthread_mutex_lock for rf tx thread (IC %d)\n", ru->proc.instance_cnt_rf_tx);

@@ -648,19 +648,24 @@ typedef struct {
   int frame_rx;
   /// \brief Instance count for RXn-TXnp4 processing thread.
   /// \internal This variable is protected by \ref mutex_rxtx.
-  int instance_cnt_rxtx;
+  int instance_cnt;
   /// pthread structure for RXn-TXnp4 processing thread
-  pthread_t pthread_rxtx;
+  pthread_t pthread;
   /// pthread attributes for RXn-TXnp4 processing thread
-  pthread_attr_t attr_rxtx;
+  pthread_attr_t attr;
   /// condition variable for tx processing thread
-  pthread_cond_t cond_rxtx;
+  pthread_cond_t cond;
   /// mutex for RXn-TXnp4 processing thread
-  pthread_mutex_t mutex_rxtx;
+  pthread_mutex_t mutex;
   /// scheduling parameters for RXn-TXnp4 thread
   struct sched_param sched_param_rxtx;
-  /// pipeline ready state
-  int pipe_ready;
+
+  /// \internal This variable is protected by \ref mutex_RUs.
+  int instance_cnt_RUs;
+  /// condition variable for tx processing thread
+  pthread_cond_t cond_RUs;
+  /// mutex for RXn-TXnp4 processing thread
+  pthread_mutex_t mutex_RUs;
 } eNB_rxtx_proc_t;
 
 typedef struct {
@@ -821,7 +826,7 @@ typedef struct eNB_proc_t_s {
   /// parameters for turbo-encoding worker thread
   te_params tep[3];
   /// set of scheduling variables RXn-TXnp4 threads
-  eNB_rxtx_proc_t proc_rxtx[2];
+  eNB_rxtx_proc_t L1_proc,L1_proc_tx;
   /// stats thread pthread descriptor
   pthread_t process_stats_thread;
   /// for waking up tx procedure
