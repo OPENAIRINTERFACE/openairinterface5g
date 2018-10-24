@@ -230,15 +230,41 @@ int flexran_agent_start(mid_t mod_id)
   
   new_thread(receive_thread, flexran);
 
-  /* Register and initialize the control modules */
-  flexran_agent_register_phy_xface(mod_id);
+  /* Register and initialize the control modules depending on capabilities.
+   * After registering, calling flexran_agent_get_*_xface() tells whether a
+   * control module is operational */
+  uint16_t caps = flexran_get_capabilities_mask(mod_id);
+  LOG_I(FLEXRAN_AGENT, "Agent handles BS ID %ld, capabilities=0x%x => handling%s%s%s%s%s%s%s%s\n",
+        flexran_get_bs_id(mod_id), caps,
+        FLEXRAN_CAP_LOPHY(caps) ? " LOPHY" : "",
+        FLEXRAN_CAP_HIPHY(caps) ? " HIPHY" : "",
+        FLEXRAN_CAP_LOMAC(caps) ? " LOMAC" : "",
+        FLEXRAN_CAP_HIMAC(caps) ? " HIMAC" : "",
+        FLEXRAN_CAP_RLC(caps)   ? " RLC"   : "",
+        FLEXRAN_CAP_PDCP(caps)  ? " PDCP"  : "",
+        FLEXRAN_CAP_SDAP(caps)  ? " SDAP"  : "",
+        FLEXRAN_CAP_RRC(caps)   ? " RRC"   : "");
 
-  flexran_agent_register_mac_xface(mod_id);
-  flexran_agent_init_mac_agent(mod_id);
+  if (FLEXRAN_CAP_LOPHY(caps) || FLEXRAN_CAP_HIPHY(caps)) {
+    flexran_agent_register_phy_xface(mod_id);
+    LOG_I(FLEXRAN_AGENT, "registered PHY interface/CM for eNB %d\n", mod_id);
+  }
 
-  flexran_agent_register_rrc_xface(mod_id);
+  if (FLEXRAN_CAP_LOMAC(caps) || FLEXRAN_CAP_HIMAC(caps)) {
+    flexran_agent_register_mac_xface(mod_id);
+    flexran_agent_init_mac_agent(mod_id);
+    LOG_I(FLEXRAN_AGENT, "registered MAC interface/CM for eNB %d\n", mod_id);
+  }
 
-  flexran_agent_register_pdcp_xface(mod_id);
+  if (FLEXRAN_CAP_RRC(caps)) {
+    flexran_agent_register_rrc_xface(mod_id);
+    LOG_I(FLEXRAN_AGENT, "registered RRC interface/CM for eNB %d\n", mod_id);
+  }
+
+  if (FLEXRAN_CAP_PDCP(caps)) {
+    flexran_agent_register_pdcp_xface(mod_id);
+    LOG_I(FLEXRAN_AGENT, "registered PDCP interface/CM for eNB %d\n", mod_id);
+  }
 
   /* 
    * initilize a timer 
