@@ -26,15 +26,17 @@ xUnit_start() {
 # \param $3 testcase result
 # \param $4 run result
 # \param $5 XML file local to test case for storing its own results
+# \param $6 proper description
 xUnit_fail() {
   class=$1
   test_case=$2
   result=$3
   run_result=$4
   xmlfile_testcase=$5
+  desc=$6
   currtime=$(date +%s.%N)
   time=$(echo "$currtime - $XUNIT_START" | bc -l)
-  xml="<testcase classname='$class' name='$test_case' Run_result='$run_result' time='$time s' RESULT='$result'></testcase>"
+  xml="<testcase classname='$class' name='$test_case' description='$desc' Run_result='$run_result' time='$time s' RESULT='$result'></testcase>"
   echo  -e "$xml" >> "$xmlfile_testcase"
   XUNIT_TESTCASES_XML="$XUNIT_TESTCASES_XML \n$xml"
   XUNIT_FAILED=$((XUNIT_FAILED+1))
@@ -48,15 +50,17 @@ xUnit_fail() {
 # \param $3 testcase result
 # \param $4 run result
 # \param $5 XML file local to test case for storing its own results
+# \param $6 proper description
 xUnit_success() {
   class=$1
   test_case=$2
   result=$3
   run_result=$4
   xmlfile_testcase=$5
+  desc=$6
   currtime=$(date +%s.%N)
   time=$(echo "$currtime - $XUNIT_START" | bc -l)
-  xml="<testcase classname='$class' name='$test_case' Run_result='$run_result' time='$time s' RESULT='$result'></testcase>"
+  xml="<testcase classname='$class' name='$test_case' description='$desc' Run_result='$run_result' time='$time s' RESULT='$result'></testcase>"
   echo  -e $xml >> $xmlfile_testcase
   XUNIT_TESTCASES_XML="$XUNIT_TESTCASES_XML \n$xml"
   XUNIT_SUCCESS=$((XUNIT_SUCCESS+1))

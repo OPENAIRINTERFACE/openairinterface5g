@@ -7,7 +7,8 @@
 #include <time.h>
 
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
-#include "PHY/CODING/coding_defs.h"
+#include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
+#include "PHY/CODING/nrPolar_tools/nr_polar_uci_defs.h"
 #include "SIMULATION/TOOLS/sim.h"
 
 //#define DEBUG_POLAR_PARAMS
@@ -36,7 +37,7 @@ int main(int argc, char *argv[]) {
 	double timeEncoderCumulative = 0, timeDecoderCumulative = 0;
 	uint8_t aggregation_level, decoderListSize, pathMetricAppr;
 
-	while ((arguments = getopt (argc, argv, "s:d:f:m:i:l:a:")) != -1)
+	while ((arguments = getopt (argc, argv, "s:d:f:m:i:l:a:h")) != -1)
 	switch (arguments)
 	{
 		case 's':
@@ -68,23 +69,31 @@ int main(int argc, char *argv[]) {
 			pathMetricAppr = (uint8_t) atoi(optarg);
 			break;
 
+	        case 'h':
+		  printf("./polartest -s SNRstart -d SNRinc -f SNRstop -m [0=DCI|1=PBCH|2=UCI] -i iterations -l decoderListSize -a pathMetricAppr\n");
+		  exit(-1);
+
 		default:
 			perror("[polartest.c] Problem at argument parsing with getopt");
-			abort ();
+			exit(-1);
 	}
 
 	if (polarMessageType == 0) { //PBCH
-		testLength = NR_POLAR_PBCH_PAYLOAD_BITS;
-		coderLength = NR_POLAR_PBCH_E;
-		aggregation_level = NR_POLAR_PBCH_AGGREGATION_LEVEL;
+	  testLength = NR_POLAR_PBCH_PAYLOAD_BITS;
+	  coderLength = NR_POLAR_PBCH_E;
+	  aggregation_level = NR_POLAR_PBCH_AGGREGATION_LEVEL;
 	} else if (polarMessageType == 1) { //DCI
-		//testLength = nr_get_dci_size(params_rel15->dci_format, params_rel15->rnti_type, &fp->initial_bwp_dl, cfg);
-		testLength = 20;
-		coderLength = 108; //to be changed by aggregate level function.
+	  //testLength = nr_get_dci_size(params_rel15->dci_format, params_rel15->rnti_type, &fp->initial_bwp_dl, cfg);
+	  testLength = 20;
+	  coderLength = 108; //to be changed by aggregate level function.
 	} else if (polarMessageType == -1) { //UCI
-		//testLength = ;
-		//coderLength = ;
+	  testLength = NR_POLAR_PUCCH_PAYLOAD_BITS;
+	  coderLength = NR_POLAR_PUCCH_E;
+	} else {
+	  printf("unsupported polarMessageType %d (0=DCI, 1=PBCH, 2=UCI)\n",polarMessageType);
+	  exit(-1);
 	}
+	
 
 	//Logging
 	time_t currentTime;
@@ -102,16 +111,16 @@ int main(int argc, char *argv[]) {
 	if (stat(folderName, &folder) == -1) mkdir(folderName, S_IRWXU | S_IRWXG | S_IRWXO);
 
 	FILE* logFile;
-    logFile = fopen(fileName, "w");
-    if (logFile==NULL) {
-        fprintf(stderr,"[polartest.c] Problem creating file %s with fopen\n",fileName);
-        exit(-1);
-      }
-    fprintf(logFile,",SNR,nBitError,blockErrorState,t_encoder[us],t_decoder[us]\n");
+	logFile = fopen(fileName, "w");
+	if (logFile==NULL) {
+	  fprintf(stderr,"[polartest.c] Problem creating file %s with fopen\n",fileName);
+	  exit(-1);
+	}
+	fprintf(logFile,",SNR,nBitError,blockErrorState,t_encoder[us],t_decoder[us]\n");
 
-	//uint8_t *testInput = malloc(sizeof(uint8_t) * testLength); //generate randomly
-	//uint8_t *encoderOutput = malloc(sizeof(uint8_t) * coderLength);
-	uint32_t testInput[4], encoderOutput[4];
+	uint8_t *testInput = malloc(sizeof(uint8_t) * testLength); //generate randomly
+	uint8_t *encoderOutput = malloc(sizeof(uint8_t) * coderLength);
+	//uint32_t testInput[4], encoderOutput[4];
 	memset(testInput,0,sizeof(testInput));
 	memset(encoderOutput,0,sizeof(encoderOutput));
 
@@ -195,7 +204,8 @@ int main(int argc, char *argv[]) {
 		SNR_lin = pow(10, SNR/10);
 		for (itr = 1; itr <= iterations; itr++) {
 
-		for(int i=0; i<testLength; i++) testInput[i]=(uint8_t) (rand() % 2);
+		for(int i=0; i<testLength; i++) 
+			testInput[i]=(uint8_t) (rand() % 2);
 
 		start_meas(&timeEncoder);
 		polar_encoder(testInput, encoderOutput, currentPtr);

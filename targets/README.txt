@@ -19,7 +19,7 @@ First, you must have all four openair SW directories, openair1, openair2, openai
         - libconfig++8-dev
         - libgtk-3-dev
         - libpgm-5.1 and libpgm-5.1-dev for distributed simulation with reliable multicast transmport
-        - libxml2 and libxml2-dev and gccxml
+        - libxml2 and libxml2-dev
         - libforms-bin libforms-dev
         - nettle-dev nettle-bin openssl libssl-dev
         - libatlas-base-dev and libatlas-headers (for Ubuntu 11.04, libatlas-dev instead of libatlas-headers)
@@ -113,4 +113,3 @@ Please choose the web server that should be automatically configured to run phpM
 Web server to reconfigure automatically:
         [*] apache2 
         [ ] lighttpd 
-    

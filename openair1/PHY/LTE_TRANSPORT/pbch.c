@@ -281,7 +281,7 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
       #endif
 
       #ifdef DEBUG_PBCH
-      write_output("pbch_encoded_output2.m","pbch_encoded_out2",
+      LOG_M"pbch_encoded_output2.m","pbch_encoded_out2",
       pbch_coded_data2,
       pbch_coded_bits,
       1,
@@ -308,7 +308,7 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
 
 #ifdef DEBUG_PBCH
     if (frame_mod4==0) {
-      write_output("pbch_e.m","pbch_e",
+      LOG_M"pbch_e.m","pbch_e",
                    eNB_pbch->pbch_e,
                    pbch_E,
                    1,
@@ -325,7 +325,7 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
                     pbch_E);
 #ifdef DEBUG_PBCH
     if (frame_mod4==0) {
-      write_output("pbch_e_s.m","pbch_e_s",
+      LOG_M"pbch_e_s.m","pbch_e_s",
                    eNB_pbch->pbch_e,
                    pbch_E,
                    1,

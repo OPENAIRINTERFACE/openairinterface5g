@@ -1,0 +1,479 @@
+#!/bin/groovy
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
+
+// Template Jenkins Declarative Pipeline script to run Test w/ RF HW
+
+// Location of the python executor node shall be in the same subnet as the others servers
+def pythonExecutor = params.pythonExecutor
+
+// Location of the test XML file to be run
+def testXMLFile = params.pythonTestXmlFile
+
+// Name of the test stage
+def testStageName = params.pipelineTestStageName
+
+// Terminate Status
+def termUE = 0
+def termENB = 1
+def termSPGW = 2
+def termMME = 3
+def termHSS = 4
+def termStatusArray = new Boolean[termHSS + 1]
+termStatusArray[termUE] = false
+termStatusArray[termENB] = false
+termStatusArray[termSPGW] = false
+termStatusArray[termMME] = false
+termStatusArray[termHSS] = false
+
+// Global Parameters. Normally they should be populated when the master job
+// triggers the slave job with parameters
+def eNB_Repository
+def eNB_Branch
+def eNB_CommitID
+def eNB_AllowMergeRequestProcess = false
+
+pipeline {
+    agent {
+        label pythonExecutor
+    }
+    options {
+        disableConcurrentBuilds()
+        timestamps()
+        ansiColor('xterm')
+    }
+    // the following parameter options are commented out so it shows the ones
+    // that you SHALL have to run the job.
+    // You can use them as template
+    /*
+    parameters {
+        //node-test parameters
+        string(name: 'pythonExecutor', defaultValue: 'nodea', description: 'Node where the pipeline - python scripts will be executed')
+        string(name: 'pythonTestXmlFile', defaultValue: 'enb_usrpB210_band7_50PRB.xml', description: 'Location of the Test XML to be run')
+        string(name: 'pipelineTestStageName', defaultValue: 'Test COTS-UE - OAI eNB - LTEBOX EPC', description: 'Naming of the Test Stage')
+        booleanParam(name: 'pipelineZipsConsoleLog', defaultValue: 'True', description: 'If true, the pipeline script retrieves the job console log, zips it and archives it as artifact')
+
+        //eNB parameters
+        string(name: 'eNB_IPAddress', defaultValue: '192.168.XX.XX', description: 'IP Address of eNB')
+        credentials(name: 'eNB_Credentials', defaultValue: 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX', credentialType: "Username with password", required: true, description: 'Credentials for eNB')
+        string(name: 'eNB_SourceCodePath', defaultValue: '/tmp/CI-enb', description: 'Full path of eNB source code')
+
+        //EPC parameters
+        string(name: 'EPC_IPAddress', defaultValue: '192.168.XX.XX', description: 'IP Address of EPC')
+        string(name: 'EPC_Type', defaultValue: 'ltebox', description: 'EPC type: OAI or ltebox')
+        credentials(name: 'EPC_Credentials', defaultValue: 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX', credentialType: "Username with password", required: true, description: 'Credentials for EPC')
+        string(name: 'EPC_SourceCodePath', defaultValue: '/tmp/CI-enb', description: 'Full path of EPC source code')
+
+        //ADB server parameters
+        string(name: 'ADB_IPAddress', defaultValue: '192.168.XX.XX', description: 'IP Address of ADB server')
+        credentials(name: 'ADB_Credentials', defaultValue: 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX', credentialType: "Username with password", required: true, description: 'Credentials for ADB')
+    }
+    */
+
+    stages {
+        stage ("Verify Parameters") {
+            steps {
+                script {
+                    echo '\u2705 \u001B[32mVerify Parameters\u001B[0m'
+                    def allParametersPresent = true
+
+                    // It is already to late to check it
+                    if (params.pythonExecutor != null) {
+                        echo "eNB CI executor node  :   ${pythonExecutor}"
+                    }
+                    // If not present picking a default XML file
+                    if (params.pythonTestXmlFile == null) {
+                        // picking default
+                        testXMLFile = 'xml_files/enb_usrpB210_band7_50PRB.xml'
+                    } else {
+                        echo "Test XML file         :   ${testXMLFile}"
+                    }
+                    // If not present picking a default Stage Name
+                    if (params.pipelineTestStageName == null) {
+                        // picking default
+                        testStageName = 'Template Test Stage'
+                    }
+
+                    if (params.eNB_IPAddress == null) {
+                        allParametersPresent = false
+                    }
+                    if (params.eNB_SourceCodePath == null) {
+                        allParametersPresent = false
+                    }
+                    if (params.eNB_Credentials == null) {
+                        allParametersPresent = false
+                    }
+                    // the following 4 parameters should be pushed by the master trigger
+                    // if not present, take the job GIT variables (used for developing)
+                    if (params.eNB_Repository == null) {
+                        eNB_Repository = env.GIT_URL
+                    } else {
+                        eNB_Repository = params.eNB_Repository
+                    }
+                    echo "eNB_Repository        :   ${eNB_Repository}"
+                    if (params.eNB_Branch == null) {
+                        eNB_Branch = env.GIT_BRANCH
+                    } else {
+                        eNB_Branch = params.eNB_Branch
+                    }
+                    echo "eNB_Branch            :   ${eNB_Branch}"
+                    if (params.eNB_CommitID == null) {
+                        eNB_CommitID = env.GIT_COMMIT
+                    } else {
+                        eNB_CommitID = params.eNB_CommitID
+                    }
+                    echo "eNB_CommitID          :   ${eNB_CommitID}"
+                    if (params.eNB_mergeRequest != null) {
+                        eNB_AllowMergeRequestProcess = params.eNB_mergeRequest
+                    }
+
+                    if (params.EPC_IPAddress == null) {
+                        allParametersPresent = false
+                    }
+                    if (params.EPC_Type == null) {
+                        allParametersPresent = false
+                    }
+                    if (params.EPC_SourceCodePath == null) {
+                        allParametersPresent = false
+                    }
+                    if (params.EPC_Credentials == null) {
+                        allParametersPresent = false
+                    }
+
+                    if (params.ADB_IPAddress == null) {
+                        allParametersPresent = false
+                    }
+                    if (params.ADB_Credentials == null) {
+                        allParametersPresent = false
+                    }
+
+                    if (allParametersPresent) {
+                        echo "All parameters are present"
+                    } else {
+                        echo "Some parameters are missing"
+                        sh "./ci-scripts/fail.sh"
+                    }
+                }
+            }
+        }
+        stage ("Build and Test") {
+            steps {
+                script {
+                    dir ('ci-scripts') {
+                        try {
+                            echo "\u2705 \u001B[32m${testStageName}\u001B[0m"
+                            withCredentials([
+                                [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password'],
+                                [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password'],
+                                [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.ADB_Credentials}", usernameVariable: 'ADB_Username', passwordVariable: 'ADB_Password']
+                            ]) {
+                                sh "python3 main.py --mode=TesteNB --eNBIPAddress=${params.eNB_IPAddress} --eNBRepository=${eNB_Repository} --eNBBranch=${eNB_Branch} --eNBCommitID=${eNB_CommitID} --eNB_AllowMerge=${eNB_AllowMergeRequestProcess} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --EPCIPAddress=${params.EPC_IPAddress} --EPCType=${params.EPC_Type} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --XMLTestFile=${testXMLFile}"
+                            }
+                        } catch (Exception e) {
+                            currentBuild.result = 'FAILURE'
+                        }
+                    }
+                }
+            }
+        }
+        stage ("Terminate") {
+            parallel {
+                stage('Terminate UE') {
+                    steps {
+                        echo '\u2705 \u001B[32mTerminate UE\u001B[0m'
+                        withCredentials([
+                            [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.ADB_Credentials}", usernameVariable: 'ADB_Username', passwordVariable: 'ADB_Password']
+                        ]) {
+                            sh "python3 ci-scripts/main.py --mode=TerminateUE --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password}"
+                        }
+                    }
+                    post {
+                        success {
+                            script {
+                                termStatusArray[termUE] = true
+                            }
+                        }
+                    }
+                }
+                stage('Terminate eNB') {
+                    steps {
+                        echo '\u2705 \u001B[32mTerminate eNB\u001B[0m'
+                        withCredentials([
+                            [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password']
+                        ]) {
+                            sh "python3 ci-scripts/main.py --mode=TerminateeNB --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password}"
+                        }
+                    }
+                    post {
+                        success {
+                            script {
+                                termStatusArray[termENB] = true
+                            }
+                        }
+                    }
+                }
+                stage('Terminate SPGW') {
+                    steps {
+                        echo '\u2705 \u001B[32mTerminate SPGW\u001B[0m'
+                        withCredentials([
+                            [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
+                        ]) {
+                            sh "python3 ci-scripts/main.py --mode=TerminateSPGW --EPCIPAddress=${params.EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCType=${params.EPC_Type} --EPCSourceCodePath=${params.EPC_SourceCodePath}"
+                        }
+                    }
+                    post {
+                        success {
+                            script {
+                                termStatusArray[termSPGW] = true
+                            }
+                        }
+                    }
+                }
+                stage('Terminate MME') {
+                    steps {
+                        echo '\u2705 \u001B[32mTerminate MME\u001B[0m'
+                        withCredentials([
+                            [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
+                        ]) {
+                            sh "python3 ci-scripts/main.py --mode=TerminateMME --EPCIPAddress=${params.EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCType=${params.EPC_Type} --EPCSourceCodePath=${params.EPC_SourceCodePath}"
+                        }
+                    }
+                    post {
+                        success {
+                            script {
+                                termStatusArray[termMME] = true
+                            }
+                        }
+                    }
+                }
+                stage('Terminate HSS') {
+                    steps {
+                        echo '\u2705 \u001B[32mTerminate HSS\u001B[0m'
+                        withCredentials([
+                            [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
+                        ]) {
+                            sh "python3 ci-scripts/main.py --mode=TerminateHSS --EPCIPAddress=${params.EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCType=${params.EPC_Type} --EPCSourceCodePath=${params.EPC_SourceCodePath}"
+                        }
+                    }
+                    post {
+                        success {
+                            script {
+                                termStatusArray[termHSS] = true
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        stage('Log Collection') {
+            parallel {
+                stage('Log Collection (eNB - Build)') {
+                    steps {
+                        withCredentials([
+                             [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password']
+                        ]) {
+                            echo '\u2705 \u001B[32mLog Collection (eNB - Build)\u001B[0m'
+                            sh "python3 ci-scripts/main.py --mode=LogCollectBuild --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath}"
+
+                            echo '\u2705 \u001B[32mLog Transfer (eNB - Build)\u001B[0m'
+                            sh "sshpass -p \'${eNB_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${eNB_Username}@${params.eNB_IPAddress}:${eNB_SourceCodePath}/cmake_targets/build.log.zip ./build.log.${env.BUILD_ID}.zip || true"
+                        }
+                        script {
+                            if(fileExists("build.log.${env.BUILD_ID}.zip")) {
+                                archiveArtifacts "build.log.${env.BUILD_ID}.zip"
+                            }
+                        }
+                    }
+                }
+                stage('Log Collection (eNB - Run)') {
+                    steps {
+                        withCredentials([
+                             [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password']
+                        ]) {
+                            echo '\u2705 \u001B[32mLog Collection (eNB - Run)\u001B[0m'
+                            sh "python3 ci-scripts/main.py --mode=LogCollecteNB --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath}"
+
+                            echo '\u2705 \u001B[32mLog Transfer (eNB - Run)\u001B[0m'
+                            sh "sshpass -p \'${eNB_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${eNB_Username}@${params.eNB_IPAddress}:${eNB_SourceCodePath}/cmake_targets/enb.log.zip ./enb.log.${env.BUILD_ID}.zip || true"
+                        }
+                        script {
+                            if(fileExists("enb.log.${env.BUILD_ID}.zip")) {
+                                archiveArtifacts "enb.log.${env.BUILD_ID}.zip"
+                            }
+                            if(fileExists("ci-scripts/test_results.html")) {
+                                sh "mv ci-scripts/test_results.html test_results-${JOB_NAME}.html"
+                                sh "sed -i -e 's#TEMPLATE_JOB_NAME#${JOB_NAME}#' -e 's#TEMPLATE_BUILD_ID#${BUILD_ID}#' test_results-${JOB_NAME}.html"
+                                archiveArtifacts "test_results-${JOB_NAME}.html"
+                            }
+                        }
+                    }
+                }
+                stage('Log Collection (SPGW)') {
+                    steps {
+                        withCredentials([
+                             [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
+                        ]) {
+                            echo '\u2705 \u001B[32mLog Collection (SPGW)\u001B[0m'
+                            sh "python3 ci-scripts/main.py --mode=LogCollectSPGW --EPCIPAddress=${params.EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --EPCType=${params.EPC_Type}"
+
+                            echo '\u2705 \u001B[32mLog Transfer (SPGW)\u001B[0m'
+                            sh "sshpass -p \'${EPC_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress}:${EPC_SourceCodePath}/scripts/spgw.log.zip ./spgw.log.${env.BUILD_ID}.zip || true"
+                        }
+                        script {
+                            if(fileExists("spgw.log.${env.BUILD_ID}.zip")) {
+                                archiveArtifacts "spgw.log.${env.BUILD_ID}.zip"
+                            }
+                        }
+                    }
+                }
+                stage('Log Collection (MME)') {
+                    steps {
+                        withCredentials([
+                             [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
+                        ]) {
+                            echo '\u2705 \u001B[32mLog Collection (MME)\u001B[0m'
+                            sh "python3 ci-scripts/main.py --mode=LogCollectMME --EPCIPAddress=${params.EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --EPCType=${params.EPC_Type}"
+
+                            echo '\u2705 \u001B[32mLog Transfer (MME)\u001B[0m'
+                            sh "sshpass -p \'${EPC_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress}:${EPC_SourceCodePath}/scripts/mme.log.zip ./mme.log.${env.BUILD_ID}.zip || true"
+                        }
+                        script {
+                            if(fileExists("mme.log.${env.BUILD_ID}.zip")) {
+                                archiveArtifacts "mme.log.${env.BUILD_ID}.zip"
+                            }
+                        }
+                    }
+                }
+                stage('Log Collection (HSS)') {
+                    steps {
+                        withCredentials([
+                             [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
+                        ]) {
+                            echo '\u2705 \u001B[32mLog Collection (HSS)\u001B[0m'
+                            sh "python3 ci-scripts/main.py --mode=LogCollectHSS --EPCIPAddress=${params.EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --EPCType=${params.EPC_Type}"
+
+                            echo '\u2705 \u001B[32mLog Transfer (HSS)\u001B[0m'
+                            sh "sshpass -p \'${EPC_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress}:${EPC_SourceCodePath}/scripts/hss.log.zip ./hss.log.${env.BUILD_ID}.zip || true"
+                        }
+                        script {
+                            if(fileExists("hss.log.${env.BUILD_ID}.zip")) {
+                                archiveArtifacts "hss.log.${env.BUILD_ID}.zip"
+                            }
+                        }
+                    }
+                }
+                stage('Log Collection (Ping)') {
+                    steps {
+                        withCredentials([
+                             [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
+                        ]) {
+                            echo '\u2705 \u001B[32mLog Collection (Ping)\u001B[0m'
+                            sh "python3 ci-scripts/main.py --mode=LogCollectPing --EPCIPAddress=${params.EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --EPCType=${params.EPC_Type}"
+
+                            echo '\u2705 \u001B[32mLog Transfer (Ping)\u001B[0m'
+                            sh "sshpass -p \'${EPC_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress}:${EPC_SourceCodePath}/scripts/ping.log.zip ./ping.log.${env.BUILD_ID}.zip || true"
+                        }
+                        script {
+                            if(fileExists("ping.log.${env.BUILD_ID}.zip")) {
+                                archiveArtifacts "ping.log.${env.BUILD_ID}.zip"
+                            }
+                        }
+                    }
+                }
+                stage('Log Collection (Iperf)') {
+                    steps {
+                        withCredentials([
+                             [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
+                        ]) {
+                            echo '\u2705 \u001B[32mLog Collection (Iperf)\u001B[0m'
+                            sh "python3 ci-scripts/main.py --mode=LogCollectIperf --EPCIPAddress=${params.EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --EPCType=${params.EPC_Type}"
+
+                            echo '\u2705 \u001B[32mLog Transfer (Iperf)\u001B[0m'
+                            sh "sshpass -p \'${EPC_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${EPC_Username}@${params.EPC_IPAddress}:${EPC_SourceCodePath}/scripts/iperf.log.zip ./iperf.log.${env.BUILD_ID}.zip || true"
+                        }
+                        script {
+                            if(fileExists("iperf.log.${env.BUILD_ID}.zip")) {
+                                archiveArtifacts "iperf.log.${env.BUILD_ID}.zip"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            script {
+                if (params.pipelineZipsConsoleLog != null) {
+                    if (params.pipelineZipsConsoleLog) {
+                        echo "Archiving Jenkins console log"
+                        sh "wget --no-check-certificate --no-proxy ${env.JENKINS_URL}/job/${env.JOB_NAME}/${env.BUILD_ID}/consoleText -O consoleText.log || true"
+                        sh "zip -m consoleText.log.${env.BUILD_ID}.zip consoleText.log || true"
+                        if(fileExists("consoleText.log.${env.BUILD_ID}.zip")) {
+                            archiveArtifacts "consoleText.log.${env.BUILD_ID}.zip"
+                        }
+                    }
+                }
+            }
+        }
+        // Making sure that we really shutdown every thing before leaving
+        failure {
+            script {
+                if (!termStatusArray[termUE]) {
+                    withCredentials([
+                        [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.ADB_Credentials}", usernameVariable: 'ADB_Username', passwordVariable: 'ADB_Password']
+                    ]) {
+                        sh "python3 ci-scripts/main.py --mode=TerminateUE --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password}"
+                    }
+                }
+                if (!termStatusArray[termENB]) {
+                    withCredentials([
+                        [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password']
+                    ]) {
+                        sh "python3 ci-scripts/main.py --mode=TerminateeNB --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password}"
+                    }
+                }
+                if (!termStatusArray[termSPGW]) {
+                    withCredentials([
+                        [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
+                    ]) {
+                        sh "python3 ci-scripts/main.py --mode=TerminateSPGW --EPCIPAddress=${params.EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCType=${params.EPC_Type} --EPCSourceCodePath=${params.EPC_SourceCodePath}"
+                    }
+                }
+                if (!termStatusArray[termMME]) {
+                    withCredentials([
+                        [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
+                    ]) {
+                        sh "python3 ci-scripts/main.py --mode=TerminateMME --EPCIPAddress=${params.EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCType=${params.EPC_Type} --EPCSourceCodePath=${params.EPC_SourceCodePath}"
+                    }
+                }
+                if (!termStatusArray[termHSS]) {
+                    withCredentials([
+                        [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password']
+                    ]) {
+                        sh "python3 ci-scripts/main.py --mode=TerminateHSS --EPCIPAddress=${params.EPC_IPAddress} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCType=${params.EPC_Type} --EPCSourceCodePath=${params.EPC_SourceCodePath}"
+                    }
+                }
+            }
+        }
+    }
+}

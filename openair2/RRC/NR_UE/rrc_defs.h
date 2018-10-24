@@ -45,8 +45,9 @@
 #include "NR_MeasConfig.h"
 #include "NR_CellGroupConfig.h"
 #include "NR_RadioBearerConfig.h"
-#include "NR_RLC-Bearer-Config.h"
-#include "asn1_constants.h"
+#include "NR_RLC-BearerConfig.h"
+#include "NR_TAG.h"
+#include "NR_asn_constant.h"
 #include "NR_SchedulingRequestToAddMod.h"
 #include "NR_MIB.h"
 #include "NR_BCCH-BCH-Message.h"
@@ -66,11 +67,11 @@ typedef struct NR_UE_RRC_INST_s {
   
     //  lists
     //  CellGroupConfig.rlc-BearerToAddModList
-    RRC_LIST_TYPE(NR_RLC_Bearer_Config_t, NR_maxLC_ID) RLC_Bearer_Config_list;
+    RRC_LIST_TYPE(NR_RLC_BearerConfig_t, NR_maxLC_ID) RLC_Bearer_Config_list;
     //  CellGroupConfig.mac-CellGroupConfig.schedulingrequest
     RRC_LIST_TYPE(NR_SchedulingRequestToAddMod_t, NR_maxNrofSR_ConfigPerCellGroup) SchedulingRequest_list;
     //  CellGroupConfig.mac-CellGroupConfig.TAG
-    RRC_LIST_TYPE(NR_TAG_ToAddMod_t, NR_maxNrofTAGs) TAG_list;
+    RRC_LIST_TYPE(NR_TAG_t, NR_maxNrofTAGs) TAG_list;
     //  CellGroupConfig.spCellConfig.spCellConfigDedicated.tdduldlslotconfig
     RRC_LIST_TYPE(NR_TDD_UL_DL_SlotConfig_t, NR_maxNrofSlots) TDD_UL_DL_SlotConfig_list;
    
@@ -90,9 +91,9 @@ typedef struct NR_UE_RRC_INST_s {
     //  CellGroupConfig.spCellConfig.spCellConfigDedicated.initialdlbwp.pdschconfig
     RRC_LIST_TYPE(NR_ZP_CSI_RS_Resource_t, NR_maxNrofZP_CSI_RS_Resources) ZP_CSI_RS_Resource_list[5];
     //  CellGroupConfig.spCellConfig.spCellConfigDedicated.initialdlbwp.pdschconfig
-    RRC_LIST_TYPE(NR_ZP_CSI_RS_ResourceSet_t, NR_maxNrofZP_CSI_RS_Sets) Aperidic_ZP_CSI_RS_ResourceSet_list[5];
+    RRC_LIST_TYPE(NR_ZP_CSI_RS_ResourceSet_t, NR_maxNrofZP_CSI_RS_ResourceSets) Aperidic_ZP_CSI_RS_ResourceSet_list[5];
     //  CellGroupConfig.spCellConfig.spCellConfigDedicated.initialdlbwp.pdschconfig
-    RRC_LIST_TYPE(NR_ZP_CSI_RS_ResourceSet_t, NR_maxNrofZP_CSI_RS_Sets) SP_ZP_CSI_RS_ResourceSet_list[5];
+    RRC_LIST_TYPE(NR_ZP_CSI_RS_ResourceSet_t, NR_maxNrofZP_CSI_RS_ResourceSets) SP_ZP_CSI_RS_ResourceSet_list[5];
 
     //  TODO check the way to implement mutiple list inside bwps
     //  uplink bwp also

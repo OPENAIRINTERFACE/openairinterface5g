@@ -63,13 +63,13 @@
 #endif
 
 #include "LAYER2/NR_MAC_UE/mac_defs.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 
 #ifdef EMOS
 fifo_dump_emos_UE emos_dump_UE;
 #endif
 
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 
 #if defined(ENABLE_ITTI)
@@ -1538,6 +1538,8 @@ void ue_prach_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_OUT);
 }
 
+#endif
+
 void ue_ulsch_uespec_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag) {
 
   int harq_pid;
@@ -1561,11 +1563,13 @@ void ue_ulsch_uespec_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8
   uint8_t ri_status  = 0;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_ULSCH_UESPEC,VCD_FUNCTION_IN);
 
-  // get harq_pid from nr_tti_rx relationship
-  harq_pid = nr_subframe2harq_pid(&ue->frame_parms,
-             frame_tx,
-             nr_tti_tx);
+  /* reset harq for tx of current rx slot because it is sure that transmission has already been achieved for this slot */
+  set_tx_harq_id(ue->ulsch[eNB_id], NR_MAX_HARQ_PROCESSES, proc->nr_tti_rx);
 
+  /* get harq pid related to this next tx slot */
+  harq_pid = get_tx_harq_id(ue->ulsch[eNB_id], nr_tti_tx);
+
+#if 0
 
   if (ue->mac_enabled == 1) {
     if ((ue->ulsch_Msg3_active[eNB_id] == 1) &&
@@ -1575,7 +1579,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8
       ue->ulsch[eNB_id]->harq_processes[harq_pid]->subframe_scheduling_flag = 1;
 
       if (ue->ulsch[eNB_id]->harq_processes[harq_pid]->round==0)
-  generate_ue_ulsch_params_from_rar(ue,
+            generate_ue_ulsch_params_from_rar(ue,
             proc,
             eNB_id);
 
@@ -1588,8 +1592,9 @@ void ue_ulsch_uespec_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8
       Msg3_flag = 1;
     } else {
 
-      if (harq_pid==255) {
-	LOG_E(PHY,"[UE%d] Frame %d nr_tti_rx %d ulsch_decoding.c: FATAL ERROR: illegal harq_pid, returning\n",
+    /* no pusch has been scheduled on this transmit slot */
+      if (harq_pid == NR_MAX_HARQ_PROCESSES) {
+	    LOG_E(PHY,"[UE%d] Frame %d nr_tti_rx %d ulsch_decoding.c: FATAL ERROR: illegal harq_pid, returning\n",
 	      Mod_id,frame_tx, nr_tti_tx);
 	//mac_xface->macphy_exit("Error in ulsch_decoding");
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_OUT);
@@ -1953,7 +1958,11 @@ void ue_ulsch_uespec_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_ULSCH_UESPEC,VCD_FUNCTION_OUT);
 
+#endif
+
 }
+
+#if 0
 
 void ue_srs_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag)
 {
@@ -5752,7 +5761,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
     stop_meas(&ue->pdsch_procedures_stat[ue->current_thread_id[nr_tti_rx]]);
     start_meas(&ue->dlsch_procedures_stat[ue->current_thread_id[nr_tti_rx]]);
 #endif
-    /*ue_dlsch_procedures(ue,
+    nr_ue_dlsch_procedures(ue,
 			proc,
 			eNB_id,
 			PDSCH,
@@ -5760,7 +5769,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 			ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][1],
 			&ue->dlsch_errors[eNB_id],
 			mode,
-			abstraction_flag);*/
+			abstraction_flag);
 #if UE_TIMING_TRACE
     stop_meas(&ue->dlsch_procedures_stat[ue->current_thread_id[nr_tti_rx]]);
 #if DISABLE_LOG_X

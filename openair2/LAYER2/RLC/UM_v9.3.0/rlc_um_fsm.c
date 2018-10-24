@@ -25,7 +25,7 @@
 //-----------------------------------------------------------------------------
 #include "rlc_um.h"
 #include "LAYER2/MAC/mac_extern.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 
 
 //-----------------------------------------------------------------------------
@@ -52,7 +52,7 @@ rlc_um_fsm_notify_event (
       LOG_E(RLC, PROTOCOL_RLC_UM_CTXT_FMT" FSM WARNING PROTOCOL ERROR - EVENT %02X hex NOT EXPECTED FROM NULL_STATE\n",
             PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP),
             eventP);
-      AssertFatal(1==0,"RLC-UM FSM WARNING PROTOCOL ERROR - EVENT NOT EXPECTED FROM NULL_STATE");
+      //AssertFatal(1==0,"RLC-UM FSM WARNING PROTOCOL ERROR - EVENT NOT EXPECTED FROM NULL_STATE");
       return 0;
     }
 
@@ -72,7 +72,7 @@ rlc_um_fsm_notify_event (
 
     case RLC_UM_RECEIVE_CRLC_SUSPEND_REQ_EVENT:
     case RLC_UM_TRANSMIT_CRLC_SUSPEND_CNF_EVENT:
-      LOG_N(RLC, PROTOCOL_RLC_UM_CTXT_FMT" FSM RLC_DATA_TRANSFER_READY_STATE -> RLC_LOCAL_SUSPEND_STATE\n",
+      LOG_I(RLC, PROTOCOL_RLC_UM_CTXT_FMT" FSM RLC_DATA_TRANSFER_READY_STATE -> RLC_LOCAL_SUSPEND_STATE\n",
             PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP));
       rlc_pP->protocol_state = RLC_LOCAL_SUSPEND_STATE;
       return 1;
@@ -93,14 +93,14 @@ rlc_um_fsm_notify_event (
   case RLC_LOCAL_SUSPEND_STATE:
     switch (eventP) {
     case RLC_UM_RECEIVE_CRLC_CONFIG_REQ_ENTER_NULL_STATE_EVENT:
-      LOG_N(RLC, PROTOCOL_RLC_UM_CTXT_FMT" FSM RLC_LOCAL_SUSPEND_STATE -> RLC_NULL_STATE\n",
+      LOG_I(RLC, PROTOCOL_RLC_UM_CTXT_FMT" FSM RLC_LOCAL_SUSPEND_STATE -> RLC_NULL_STATE\n",
             PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP));
       rlc_pP->protocol_state = RLC_NULL_STATE;
       return 1;
       break;
 
     case RLC_UM_RECEIVE_CRLC_RESUME_REQ_EVENT:
-      LOG_N(RLC, PROTOCOL_RLC_UM_CTXT_FMT" FSM RLC_LOCAL_SUSPEND_STATE -> RLC_DATA_TRANSFER_READY_STATE\n",
+      LOG_I(RLC, PROTOCOL_RLC_UM_CTXT_FMT" FSM RLC_LOCAL_SUSPEND_STATE -> RLC_DATA_TRANSFER_READY_STATE\n",
             PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP, rlc_pP));
       rlc_pP->protocol_state = RLC_DATA_TRANSFER_READY_STATE;
       return 1;

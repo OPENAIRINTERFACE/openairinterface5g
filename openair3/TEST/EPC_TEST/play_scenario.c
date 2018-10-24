@@ -1206,7 +1206,7 @@ int main( int argc, char **argv )
   logInit();
   set_glog(LOG_TRACE, LOG_MED);
 
-  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, NULL);
+  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
   set_comp_log(ENB_APP, LOG_TRACE, LOG_MED, 1);
   set_comp_log(S1AP, LOG_TRACE, LOG_MED, 1);

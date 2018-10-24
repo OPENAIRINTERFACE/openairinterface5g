@@ -19,16 +19,17 @@
  *      contact@openairinterface.org
  */
 
-/*! \file openair2/PHY_INTERFACE/IF_Module.h
+/*! \file openair2/NR_PHY_INTERFACE/NR_IF_Module.h
 * \brief data structures for PHY/MAC interface modules
 * \author EURECOM/NTUST
-* \date 2017
+* \date 2018
 * \version 0.1
-* \company Eurecom
-* \email: raymond.knopp@eurecom.fr
+* \company Eurecom, NTUST
+* \email: raymond.knopp@eurecom.fr, kroempa@gmail.com
 * \note
 * \warning
 */
+
 #ifndef __NR_IF_MODULE__H__
 #define __NR_IF_MODULE__H__
 
@@ -74,7 +75,7 @@ typedef struct{
   /// RACH indication list
   nfapi_rach_indication_t rach_ind;
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// RACH indication list for BR UEs
   nfapi_rach_indication_t rach_ind_br;
 #endif

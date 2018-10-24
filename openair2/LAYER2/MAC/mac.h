@@ -54,22 +54,26 @@
 #include "RACH-ConfigCommon.h"
 #include "MeasObjectToAddModList.h"
 #include "MobilityControlInfo.h"
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 #include "MBSFN-AreaInfoList-r9.h"
 #include "MBSFN-SubframeConfigList.h"
 #include "PMCH-InfoList-r9.h"
+#endif
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 #include "SCellToAddMod-r10.h"
 #endif
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 #include "SystemInformationBlockType1-v1310-IEs.h"
+#include "SystemInformationBlockType18-r12.h"
 #endif
-
+#include "RadioResourceConfigCommonSIB.h"
 #include "nfapi_interface.h"
 #include "PHY_INTERFACE/IF_Module.h"
 
 #include "PHY/TOOLS/time_meas.h"
 
 #include "PHY/defs_common.h" // for PRACH_RESOURCES_t
+#include "PHY/LTE_TRANSPORT/transport_common.h"
 
 #include "targets/ARCH/COMMON/common_lib.h"
 
@@ -88,10 +92,11 @@
 #define PCCH_PAYLOAD_SIZE_MAX 128
 #define RAR_PAYLOAD_SIZE_MAX 128
 
-#define SCH_PAYLOAD_SIZE_MAX 4096
+#define SCH_PAYLOAD_SIZE_MAX 8192
+#define DCH_PAYLOAD_SIZE_MAX 4096
 /// Logical channel ids from 36-311 (Note BCCH is not specified in 36-311, uses the same as first DRB)
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
 // Mask for identifying subframe for MBMS
 #define MBSFN_TDD_SF3 0x80	// for TDD
@@ -130,11 +135,7 @@
 /*!\brief Maximum number od control elemenets */
 #define MAX_NUM_CE 5
 /*!\brief Maximum number of random access process */
-#if defined(USRP_REC_PLAY)
-#define NB_RA_PROC_MAX 1
-#else
 #define NB_RA_PROC_MAX 4
-#endif
 /*!\brief size of buffer status report table */
 #define BSR_TABLE_SIZE 64
 /*!\brief The power headroom reporting range is from -23 ...+40 dB and beyond, with step 1 */
@@ -164,6 +165,7 @@
 
 /*!\brief maximum number of slices / groups */
 #define MAX_NUM_SLICES 4
+
 
 #define U_PLANE_INACTIVITY_VALUE 6000
 
@@ -243,6 +245,75 @@ typedef struct {
     uint8_t R:2;
 } __attribute__ ((__packed__)) SCH_SUBHEADER_FIXED;
 
+
+
+/*!\brief  MAC subheader long  with 24bit DST field */
+typedef struct {
+  uint8_t   R0:4;
+  uint8_t   V:4;//Version number: Possible values "0001", "0010", "0011" based on TS36.321 section 6.2.3.
+  uint8_t  SRC07; //Prose UE source ID. Size 24 bits.
+  uint8_t  SRC815; //Prose UE source ID. Size 24 bits.
+  uint8_t  SRC1623; //Prose UE source ID. Size 24 bits.
+  uint8_t  DST07; //Prose UE destination ID. Size 24 bits.
+  uint8_t  DST815; //Prose UE destination ID. Size 24 bits.
+  uint8_t  DST1623; //Prose UE destination ID. Size 24 bits.
+  uint8_t  LCID:5;
+  uint8_t  E:1;
+  uint8_t  R1:2;
+  uint8_t  L:7;	// Length field indicating the size of the corresponding SDU in bytes.
+  uint8_t  F:1;
+}__attribute__((__packed__))SLSCH_SUBHEADER_24_Bit_DST_SHORT;
+
+/*!\brief  MAC subheader long  with 24bit DST field */
+typedef struct {
+  uint8_t   R0:4;
+  uint8_t   V:4;//Version number: Possible values "0001", "0010", "0011" based on TS36.321 section 6.2.3.
+  uint8_t  SRC07; //Prose UE source ID. Size 24 bits.
+  uint8_t  SRC815; //Prose UE source ID. Size 24 bits.
+  uint8_t  SRC1623; //Prose UE source ID. Size 24 bits.
+  uint8_t  DST07; //Prose UE destination ID. Size 24 bits.
+  uint8_t  DST815; //Prose UE destination ID. Size 24 bits.
+  uint8_t  DST1623; //Prose UE destination ID. Size 24 bits.
+  uint8_t  LCID:5;
+  uint8_t  E:1;
+  uint8_t  R1:2;
+  uint8_t  L_MSB:7;	// Length field indicating the size of the corresponding SDU in bytes.
+  uint8_t  F:1;
+  uint8_t  L_LSB:8;
+}__attribute__((__packed__))SLSCH_SUBHEADER_24_Bit_DST_LONG;
+
+/*!\brief  MAC subheader long  with 24bit DST field */
+typedef struct {
+  uint8_t   R0:4;
+  uint8_t   V:4;//Version number: Possible values "0001", "0010", "0011" based on TS36.321 section 6.2.3.
+  uint8_t  SRC07; //Prose UE source ID. Size 24 bits.
+  uint8_t  SRC815; //Prose UE source ID. Size 24 bits.
+  uint8_t  DST07; //Prose UE destination ID. Size 16 bits.
+  uint8_t  DST815; //Prose UE destination ID. Size 16 bits.
+  uint8_t  LCID:5;
+  uint8_t  E:1;
+  uint8_t  R1:2;
+  uint8_t  L:7;	// Length field indicating the size of the corresponding SDU in bytes.
+  uint8_t  F:1;
+}__attribute__((__packed__))SLSCH_SUBHEADER_16_Bit_DST_SHORT;
+
+/*!\brief  MAC subheader long  with 24bit DST field */
+typedef struct {
+  uint8_t   R0:4;
+  uint8_t   V:4;//Version number: Possible values "0001", "0010", "0011" based on TS36.321 section 6.2.3.
+  uint8_t  SRC07; //Prose UE source ID. Size 24 bits.
+  uint8_t  SRC815; //Prose UE source ID. Size 24 bits.
+  uint8_t  SRC1623; //Prose UE source ID. Size 24 bits.
+  uint8_t  DST07; //Prose UE destination ID. Size 16 bits.
+  uint8_t  DST815; //Prose UE destination ID. Size 16 bits.
+  uint8_t  LCID:5;
+  uint8_t  E:1;
+  uint8_t  R1:2;
+  uint8_t  L_MSB:7;	// Length field indicating the size of the corresponding SDU in bytes.
+  uint8_t  F:1;
+  uint8_t  L_LSB:8;
+}__attribute__((__packed__))SLSCH_SUBHEADER_16_Bit_DST_LONG;
+
 /*!\brief  mac control element: short buffer status report for a specific logical channel group ID*/
 typedef struct {
     uint8_t Buffer_size:6;	// octet 1 LSB
@@ -257,6 +328,29 @@ typedef struct {
     uint8_t Buffer_size1:6;
     uint8_t Buffer_size0:6;
 } __attribute__ ((__packed__)) BSR_LONG;
+
+/*!\brief  mac control element: sidelink buffer status report */
+typedef struct {
+	uint8_t DST_1:4;
+	uint8_t LCGID_1: 2;
+	uint8_t Buffer_size_1:6;
+	uint8_t DST_2:4;
+	uint8_t LCGID_2: 2;
+	uint8_t Buffer_size_2:6;
+}__attribute__((__packed__))SL_BSR;
+
+/*!\brief  mac control element: truncated sidelink buffer status report */
+typedef struct {
+	uint8_t DST:4;
+	uint8_t LCGID: 2;
+	uint8_t Buffer_size:6;
+	uint8_t R1:1;
+	uint8_t R2:1;
+	uint8_t R3:1;
+	uint8_t R4:1;
+}__attribute__((__packed__))SL_BSR_Truncated;
+
+
 
 #define BSR_LONG_SIZE  (sizeof(BSR_LONG))
 /*!\brief  mac control element: timing advance  */
@@ -291,7 +385,7 @@ typedef struct {
     uint8_t payload[PCCH_PAYLOAD_SIZE_MAX];
 } __attribute__ ((__packed__)) PCCH_PDU;
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 /*! \brief MCCH payload */
 typedef struct {
     uint8_t payload[MCCH_PAYLOAD_SIZE_MAX];
@@ -348,7 +442,7 @@ typedef struct {
 /*!\brief LCID of padding LCID for DLSCH */
 #define SHORT_PADDING 31
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 // MCH LCHAN IDs (table6.2.1-4 TS36.321)
 /*!\brief LCID of MCCH for DL */
 #define MCCH_LCHANID 0
@@ -356,6 +450,9 @@ typedef struct {
 #define MCH_SCHDL_INFO 3
 /*!\brief LCID of Carrier component activation/deactivation */
 #define CC_ACT_DEACT 27
+//TTN (for D2D)
+#define SL_DISCOVERY 8 //LCID (fake)
+#define MAX_NUM_DEST 10
 #endif
 
 // ULSCH LCHAN IDs
@@ -402,6 +499,11 @@ typedef struct {
     uint16_t Pdu_size;
 } __attribute__ ((__packed__)) ULSCH_PDU;
 
+/*! \brief Uplink SCH PDU Structure */
+typedef struct {
+  int8_t payload[DCH_PAYLOAD_SIZE_MAX];         /*!< \brief SACH payload */
+  uint16_t Pdu_size;
+} __attribute__ ((__packed__)) ULDCH_PDU;
 
 /*!\brief RA process state*/
 typedef enum {
@@ -409,7 +511,9 @@ typedef enum {
     MSG2,
     WAITMSG3,
     MSG4,
-    WAITMSG4ACK
+    WAITMSG4ACK,
+    MSGCRNTI,
+    MSGCRNTI_ACK
 } RA_state;
 
 /*!\brief  UE ULSCH scheduling states*/
@@ -438,6 +542,12 @@ typedef enum {
     CBA_PF_S,			/// proportional fair (kind of) with small RB allocation
     CBA_RS			/// random allocation
 } CBA_POLICY;
+
+/*!\brief  scheduler mode */
+typedef enum {
+    SCHED_MODE_DEFAULT = 0,			/// default cheduler
+    SCHED_MODE_FAIR_RR			/// fair raund robin
+} SCHEDULER_MODES;
 
 
 /*! \brief temporary struct for ULSCH sched */
@@ -531,7 +641,6 @@ typedef struct {
 } eNB_STATS;
 /*! \brief eNB statistics for the connected UEs*/
 typedef struct {
-
     /// CRNTI of UE
     rnti_t crnti;		///user id (rnti) of connected UEs
     // rrc status
@@ -793,7 +902,7 @@ typedef struct {
     eNB_UE_estimated_distances distance;
 #endif
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     uint8_t rach_resource_type;
     uint16_t mpdcch_repetition_cnt;
     frame_t Msg2_frame;
@@ -847,7 +956,10 @@ typedef struct {
     int16_t ta_update;
     uint16_t ul_consecutive_errors;
     int32_t context_active_timer;
+    /// timer for regular CQI request on PUSCH
     int32_t cqi_req_timer;
+    /// indicator that CQI was received on PUSCH when requested
+    int32_t cqi_received;
     int32_t ul_inactivity_timer;
     int32_t ul_failure_timer;
     uint32_t ue_reestablishment_reject_timer;
@@ -883,7 +995,9 @@ typedef struct {
     uint8_t aperiodic_wideband_cqi1[NFAPI_CC_MAX];
     uint8_t aperiodic_wideband_pmi1[NFAPI_CC_MAX];
     uint8_t dl_cqi[NFAPI_CC_MAX];
-    int32_t       uplane_inactivity_timer;
+    int32_t uplane_inactivity_timer;
+    uint8_t crnti_reconfigurationcomplete_flag;
+    uint8_t cqi_req_flag;
 } UE_sched_ctrl;
 /*! \brief eNB template for the Random access information */
 typedef struct {
@@ -935,13 +1049,15 @@ typedef struct {
     int msg4_TBsize;
     /// MCS used for Msg4
     int msg4_mcs;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     uint8_t rach_resource_type;
     uint8_t msg2_mpdcch_repetition_cnt;
     uint8_t msg4_mpdcch_repetition_cnt;
     uint8_t msg2_narrowband;
     uint8_t msg34_narrowband;
 #endif
+    int32_t  crnti_rrc_mui;
+    int8_t   crnti_harq_pid;
 } RA_t;
 
 
@@ -991,6 +1107,22 @@ typedef struct {
 
 } UE_list_t;
 
+/*! \brief deleting control information*/
+typedef struct {
+    ///rnti of UE
+    rnti_t rnti;
+    ///remove UE context flag
+    boolean_t removeContextFlg;
+} UE_free_ctrl;
+/*! \brief REMOVE UE list used by eNB to order UEs/CC for deleting*/
+typedef struct {
+    /// deleting control info
+    UE_free_ctrl UE_free_ctrl[NUMBER_OF_UE_MAX+1];
+    int num_UEs;
+    int head_freelist; ///the head position of the delete list
+    int tail_freelist; ///the tail position of the delete list
+} UE_free_list_t;
+
 /*! \brief eNB common channels */
 typedef struct {
     int physCellId;
@@ -1000,7 +1132,7 @@ typedef struct {
     uint32_t dl_CarrierFreq;
     BCCH_BCH_Message_t *mib;
     RadioResourceConfigCommonSIB_t *radioResourceConfigCommon;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     RadioResourceConfigCommonSIB_t *radioResourceConfigCommon_BR;
 #endif
     TDD_Config_t *tdd_Config;
@@ -1031,7 +1163,7 @@ typedef struct {
     struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];
     /// number of subframe allocation pattern available for MBSFN sync area
     uint8_t num_sf_allocation_pattern;
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     /// MBMS Flag
     uint8_t MBMS_flag;
     /// Outgoing MCCH pdu for PHY
@@ -1053,7 +1185,7 @@ typedef struct {
     /// Outgoing MCH pdu for PHY
     MCH_PDU MCH_pdu;
 #endif
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
     /// Rel13 parameters from SIB1
     SystemInformationBlockType1_v1310_IEs_t *sib1_v13ext;
     /// Counter for SIB1-BR scheduling
@@ -1079,7 +1211,7 @@ typedef struct eNB_MAC_INST_s {
   /// Common cell resources
   COMMON_channels_t common_channels[NFAPI_CC_MAX];
   /// current PDU index (BCH,MCH,DLSCH)
-  uint16_t pdu_index[NFAPI_CC_MAX];
+  int16_t pdu_index[NFAPI_CC_MAX];
   
   /// NFAPI Config Request Structure
   nfapi_config_request_t config[NFAPI_CC_MAX];
@@ -1100,9 +1232,9 @@ typedef struct eNB_MAC_INST_s {
   nfapi_ul_config_request_t UL_req_tmp[NFAPI_CC_MAX][10];
   /// Preallocated HI_DCI0 pdu list
   nfapi_hi_dci0_request_pdu_t
-  hi_dci0_pdu_list[NFAPI_CC_MAX][MAX_NUM_HI_DCI0_PDU];
+  hi_dci0_pdu_list[NFAPI_CC_MAX][10][MAX_NUM_HI_DCI0_PDU];
   /// NFAPI HI/DCI0 Config Request Structure
-  nfapi_hi_dci0_request_t HI_DCI0_req[NFAPI_CC_MAX];
+  nfapi_hi_dci0_request_t HI_DCI0_req[NFAPI_CC_MAX][10];
   /// Prealocated TX pdu list
   nfapi_tx_request_pdu_t
   tx_request_pdu[NFAPI_CC_MAX][MAX_NUM_TX_REQUEST_PDU];
@@ -1141,6 +1273,13 @@ typedef struct eNB_MAC_INST_s {
   time_stats_t rx_ulsch_sdu;	// include rlc_data_ind
   /// processing time of eNB PCH scheduler
   time_stats_t schedule_pch;
+
+  UE_free_list_t UE_free_list;
+  /// for scheduling selection
+  SCHEDULER_MODES scheduler_mode;
+
+  int32_t puSch10xSnr;
+  int32_t puCch10xSnr;
 } eNB_MAC_INST;
 
 /*
@@ -1248,10 +1387,36 @@ typedef struct {
     struct RACH_ConfigDedicated *rach_ConfigDedicated;
     /// pointer to RRC PHY configuration
     struct PhysicalConfigDedicated *physicalConfigDedicated;
-#if defined(Rel10) || defined(Rel14)
-    /// pointer to RRC PHY configuration SCEll
-    struct PhysicalConfigDedicatedSCell_r10
-	*physicalConfigDedicatedSCell_r10;
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+  /// pointer to RRC PHY configuration SCEll
+  struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10;
+  /// Preconfiguration for Sidelink
+  struct SL_Preconfiguration_r12 *SL_Preconfiguration;
+  /// RX Pool for Sidelink from SIB18
+  SL_CommRxPoolList_r12_t	 commRxPool_r12;
+  /// TX Pool Normal for Sidelink from SIB18
+  struct SL_CommTxPoolList_r12	*commTxPoolNormalCommon_r12;
+  /// TX Pool Exceptional for Sidelink from SIB18
+  struct SL_CommTxPoolList_r12	*commTxPoolExceptional_r12;
+  /// Common Sync Config for Sidelink from SIB18
+  struct SL_SyncConfigList_r12	*commSyncConfig_r12;
+  /// Dedicated Sync TX control for Sidelink
+  struct SL_SyncTxControl_r12 *sl_SyncTxControl_r12;
+  /// Dedicated Discovery TX control for Sidelink
+  struct SL_DiscConfig_r12	*sl_DiscConfig_r12;
+  /// Dedicated TX config for Sidelink
+  struct SL_CommConfig_r12	*sl_CommConfig_r12;
+  //SL sourceL2ID
+  uint32_t sourceL2Id;
+  //SL groupL2Id
+  uint32_t groupL2Id;
+  //SL destinationL2Id
+  uint32_t destinationL2Id;
+  //List of destinations
+  uint32_t destinationList[MAX_NUM_DEST];
+  uint8_t numCommFlows;
+  uint32_t  SL_LCID[MAX_NUM_LCID];
+
 #endif
     /// pointer to TDD Configuration (NULL for FDD)
     TDD_Config_t *tdd_Config;
@@ -1273,6 +1438,13 @@ typedef struct {
     RAR_PDU RAR_pdu;
     /// Incoming DLSCH pdu for PHY
     DLSCH_PDU DLSCH_pdu[MAX_MOBILES_PER_ENB][2];
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+    int sltx_active;
+    SLSCH_t slsch;
+    SLDCH_t sldch;
+    ULSCH_PDU slsch_pdu;
+    int slsch_lcid;
+#endif
     /// number of attempt for rach
     uint8_t RA_attempt_number;
     /// Random-access procedure flag
@@ -1325,7 +1497,7 @@ typedef struct {
     struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];	// FIXME replace 8 by MAX_MBSFN_AREA?
     /// number of subframe allocation pattern available for MBSFN sync area
     uint8_t num_sf_allocation_pattern;
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
     /// number of active MBSFN area
     uint8_t num_active_mbsfn_area;
     /// MBSFN Area Info
@@ -1337,26 +1509,41 @@ typedef struct {
     /// MSI status
     uint8_t msi_status;		// could be an array if there are >1 MCH in one MBSFN area
 #endif
-    //#ifdef CBA
-    /// CBA RNTI for each group
-    uint16_t cba_rnti[NUM_MAX_CBA_GROUP];
-    /// last SFN for CBA channel access
-    uint8_t cba_last_access[NUM_MAX_CBA_GROUP];
-    //#endif
-    /// total UE scheduler processing time
-    time_stats_t ue_scheduler;	// total
-    /// UE ULSCH tx  processing time inlcuding RLC interface (rlc_data_req) and mac header generation
-    time_stats_t tx_ulsch_sdu;
-    /// UE DLSCH rx  processing time inlcuding RLC interface (mac_rrc_data_ind or mac_rlc_status_ind+mac_rlc_data_ind) and mac header parser
-    time_stats_t rx_dlsch_sdu;
-    /// UE query for MCH subframe processing time
-    time_stats_t ue_query_mch;
-    /// UE MCH rx processing time
-    time_stats_t rx_mch_sdu;
-    /// UE BCCH rx processing time including RLC interface (mac_rrc_data_ind)
-    time_stats_t rx_si;
-    /// UE PCCH rx processing time including RLC interface (mac_rrc_data_ind)
-    time_stats_t rx_p;
+  //#ifdef CBA
+  /// CBA RNTI for each group
+  uint16_t cba_rnti[NUM_MAX_CBA_GROUP];
+  /// last SFN for CBA channel access
+  uint8_t cba_last_access[NUM_MAX_CBA_GROUP];
+  //#endif
+  /// total UE scheduler processing time
+  time_stats_t ue_scheduler; // total
+  /// UE ULSCH tx  processing time inlcuding RLC interface (rlc_data_req) and mac header generation
+  time_stats_t tx_ulsch_sdu;
+  /// UE DLSCH rx  processing time inlcuding RLC interface (mac_rrc_data_ind or mac_rlc_status_ind+mac_rlc_data_ind) and mac header parser
+  time_stats_t rx_dlsch_sdu ;
+  /// UE query for MCH subframe processing time
+  time_stats_t ue_query_mch;
+  /// UE MCH rx processing time
+  time_stats_t rx_mch_sdu;
+  /// UE BCCH rx processing time including RLC interface (mac_rrc_data_ind)
+  time_stats_t rx_si;
+  /// UE PCCH rx processing time including RLC interface (mac_rrc_data_ind)
+  time_stats_t rx_p;
+  /// Mutex for nfapi UL_INFO
+  pthread_mutex_t      UL_INFO_mutex;
+  /// UE_Mode variable should be used in the case of Phy_stub operation since we won't have access to PHY_VARS_UE
+  /// where the UE_mode originally is for the full stack operation mode. The transitions between the states of the UE_Mode
+  /// will be triggered within phy_stub_ue.c in this case
+  UE_MODE_t        UE_mode[NUMBER_OF_CONNECTED_eNB_MAX];
+  /// Phy_stub mode: Boolean variable to distinguish whether a Msg3 or a regular ULSCH data pdu should be generated
+  /// after the reception of NFAPI_UL_CONFIG_ULSCH_PDU_TYPE.
+  uint8_t first_ULSCH_Tx;
+  uint8_t SI_Decoded;
+  int ra_frame; 	// This variable keeps the frame in which the RA started for the specific UE. It is used in order
+                    // to make sure that different UEs RA starts within a number of frames difference.
+
+  eth_params_t         eth_params_n;
+
 } UE_MAC_INST;
 /*! \brief ID of the neighboring cells used for HO*/
 typedef struct {
@@ -1364,6 +1551,23 @@ typedef struct {
     uint8_t n_adj_cells;
 } neigh_cell_id_t;
 
+typedef struct {
+  volatile uint8_t flag;
+  rnti_t rnti;
+  mui_t  rrc_eNB_mui;
+}RRC_release_ctrl;
+ 
+typedef struct {
+    uint16_t num_UEs;
+    RRC_release_ctrl RRC_release_ctrl[NUMBER_OF_UE_MAX];
+} RRC_release_list_t;
+
+typedef  struct {
+  uint8_t                      rrc_mui_num;
+  mui_t                        rrc_mui[128];
+}mac_rlc_am_muilist_t;
+
 #include "mac_proto.h"
+
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */

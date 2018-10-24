@@ -52,14 +52,10 @@
 #include "SCHED_NR/phy_frame_config_nr.h"
 //#endif
 
-#include "../../../openair1/PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
+#include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 
-#include "UTIL/LOG/log_extern.h"
-#include "UTIL/OTG/otg_tx.h"
-#include "UTIL/OTG/otg_externs.h"
-#include "UTIL/MATH/oml.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
-#include "UTIL/OPT/opt.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "T.h"
 
@@ -223,7 +219,7 @@ PHY_VARS_NR_UE* init_nr_ue_vars(NR_DL_FRAME_PARMS *frame_parms,
   // initialize all signal buffers
   init_nr_ue_signal(ue,1,abstraction_flag);
   // intialize transport
-  //init_nr_ue_transport(ue,abstraction_flag);
+  init_nr_ue_transport(ue,abstraction_flag);
 
   return(ue);
 }
@@ -447,16 +443,16 @@ static void *UE_thread_synch(void *arg) {
                     for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
                         openair0_cfg[UE->rf_map.card].rx_gain[UE->rf_map.chain+i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
 			if (UE->UE_scan_carrier == 1) {
-                        if (freq_offset >= 0)
+			  if (freq_offset >= 0)
                             openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] += abs(UE->common_vars.freq_offset);
-                        else
+			  else
                             openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] -= abs(UE->common_vars.freq_offset);
-                        openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] =
+			  openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] =
                             openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i]+uplink_frequency_offset[CC_id][i];
-                        downlink_frequency[CC_id][i] = openair0_cfg[CC_id].rx_freq[i];
-                        freq_offset=0;
-                    }
-	  }
+			  downlink_frequency[CC_id][i] = openair0_cfg[CC_id].rx_freq[i];
+			  freq_offset=0;
+			}
+		    }
 
                     // reconfigure for potentially different bandwidth
                     switch(UE->frame_parms.N_RB_DL) {
@@ -647,33 +643,14 @@ static void *UE_thread_rxn_txnp4(void *arg) {
         pickTime(current);
 //        updateTimes(proc->gotIQs, &t2, 10000, "Delay to wake up UE_Thread_Rx (case 2)");
 
-#ifndef NO_RAT_NR
         // Process Rx data for one sub-frame
         if (slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx) & NR_DOWNLINK_SLOT) {
-#else
-        // Process Rx data for one sub-frame
-        lte_subframe_t sf_type = subframe_select( &UE->frame_parms, proc->subframe_rx);
-        if ((sf_type == SF_DL) ||
-                (UE->frame_parms.frame_type == FDD) ||
-                (sf_type == SF_S)) {
 
-            if (UE->frame_parms.frame_type == TDD) {
-                LOG_D(PHY, "%s,TDD%d,%s: calling UE_RX\n",
-                      threadname,
-                      UE->frame_parms.tdd_config,
-                      (sf_type==SF_DL? "SF_DL" :
-                       (sf_type==SF_UL? "SF_UL" :
-                        (sf_type==SF_S ? "SF_S"  : "UNKNOWN_SF_TYPE"))));
-            } else {
-                LOG_D(PHY, "%s,%s,%s: calling UE_RX\n",
-                      threadname,
-                      (UE->frame_parms.frame_type==FDD? "FDD":
-                       (UE->frame_parms.frame_type==TDD? "TDD":"UNKNOWN_DUPLEX_MODE")),
-                      (sf_type==SF_DL? "SF_DL" :
-                       (sf_type==SF_UL? "SF_UL" :
-                        (sf_type==SF_S ? "SF_S"  : "UNKNOWN_SF_TYPE"))));
-            }
-#endif
+            //clean previous FAPI MESSAGE
+            UE->rx_ind.number_pdus = 0;
+            UE->dci_ind.number_of_dcis = 0;
+            //clean previous FAPI MESSAGE
+
 #ifdef UE_SLOT_PARALLELISATION
             phy_procedures_slot_parallelization_UE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
@@ -761,9 +738,9 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 #else
         if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_UL) ||
                 (UE->frame_parms.frame_type == FDD) )
+#endif
             if (UE->mode != loop_through_memory)
                 phy_procedures_UE_TX(UE,proc,0,0,UE->mode,no_relay);
-#endif
 #endif
 #if 0
         if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_S) &&
@@ -778,6 +755,9 @@ static void *UE_thread_rxn_txnp4(void *arg) {
           exit_fun("noting to add");
         }
         proc->instance_cnt_rxtx--;
+#if BASIC_SIMULATOR
+    if (pthread_cond_signal(&proc->cond_rxtx) != 0) abort();
+#endif
         if (pthread_mutex_unlock(&proc->mutex_rxtx) != 0) {
           LOG_E( PHY, "[SCHED][UE] error unlocking mutex for UE RXTX\n" );
           exit_fun("noting to add");
@@ -845,6 +825,12 @@ void *UE_thread(void *arg) {
         AssertFatal ( 0== pthread_mutex_unlock(&UE->proc.mutex_synch), "");
 
         if (is_synchronized == 0) {
+#if BASIC_SIMULATOR
+      while (!((instance_cnt_synch = UE->proc.instance_cnt_synch) < 0)) {
+        printf("ue sync not ready\n");
+        usleep(500*1000);
+      }
+#endif
             if (instance_cnt_synch < 0) {  // we can invoke the synch
                 // grab 10 ms of signal and wakeup synch thread
                 for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
@@ -857,6 +843,7 @@ void *UE_thread(void *arg) {
                                                             rxp,
                                                             UE->frame_parms.samples_per_subframe*10,
                                                             UE->frame_parms.nb_antennas_rx), "");
+
 		AssertFatal ( 0== pthread_mutex_lock(&UE->proc.mutex_synch), "");
                 instance_cnt_synch = ++UE->proc.instance_cnt_synch;
                 if (instance_cnt_synch == 0) {
@@ -892,28 +879,13 @@ void *UE_thread(void *arg) {
                 start_rx_stream=1;
                 if (UE->mode != loop_through_memory) {
                     if (UE->no_timing_correction==0) {
-						printf("before resync\n");
-						//nr_slot_fep(UE,0, 0, UE->rx_offset, 1, 1, NR_PDCCH_EST);
-						//nr_slot_fep(UE,1, 0, UE->rx_offset, 1, 1, NR_PDCCH_EST);
-						
-						//write_output("txdata_pre.m", "txdata_pre", UE->common_vars.rxdata[0], UE->frame_parms.samples_per_subframe*10, 1, 1);
-						
-                        /*LOG_I(PHY,"Resynchronizing RX by %d samples (mode = %d)\n",UE->rx_offset,UE->mode);
+                        LOG_I(PHY,"Resynchronizing RX by %d samples (mode = %d)\n",UE->rx_offset,UE->mode);
                         AssertFatal(UE->rx_offset ==
                                     UE->rfdevice.trx_read_func(&UE->rfdevice,
                                                                &timestamp,
                                                                (void**)UE->common_vars.rxdata,
                                                                UE->rx_offset,
                                                                UE->frame_parms.nb_antennas_rx),"");
-                                                               
-                         AssertFatal(UE->frame_parms.samples_per_subframe*10 ==
-                                    UE->rfdevice.trx_read_func(&UE->rfdevice,
-                                                               &timestamp,
-                                                               (void**)UE->common_vars.rxdata,
-                                                               UE->frame_parms.samples_per_subframe*10,
-                                                               UE->frame_parms.nb_antennas_rx),"");*/
-                                                               
-                      //write_output("txdataF_ue.m", "txdataF_ue", UE->common_vars.rxdata[0], UE->frame_parms.samples_per_subframe*10, 1, 1);
                     }
                     UE->rx_offset=0;
                     UE->time_sync_cell=0;
@@ -946,6 +918,17 @@ void *UE_thread(void *arg) {
                 // update thread index for received subframe
                 UE->current_thread_id[tti_nr] = thread_idx;
 
+#if BASIC_SIMULATOR
+                {
+                  int t;
+                  for (t = 0; t < 2; t++) {
+                        UE_rxtx_proc_t *proc = &UE->proc.proc_rxtx[t];
+                        pthread_mutex_lock(&proc->mutex_rxtx);
+                        while (proc->instance_cnt_rxtx >= 0) pthread_cond_wait( &proc->cond_rxtx, &proc->mutex_rxtx );
+                        pthread_mutex_unlock(&proc->mutex_rxtx);
+                  }
+                }
+#endif
                 LOG_D(PHY,"Process TTI %d thread Idx %d \n", tti_nr, UE->current_thread_id[tti_nr]);
 
                 thread_idx++;
@@ -985,7 +968,7 @@ void *UE_thread(void *arg) {
                                        UE->rx_offset_diff;
                     }
 
-                    /*AssertFatal(readBlockSize ==
+                    AssertFatal(readBlockSize ==
                                 UE->rfdevice.trx_read_func(&UE->rfdevice,
                                                            &timestamp,
                                                            rxp,
@@ -1000,17 +983,18 @@ void *UE_thread(void *arg) {
                                          txp,
                                          writeBlockSize,
                                          UE->frame_parms.nb_antennas_tx,
-                                         1),"");*/
+                                         1),"");
+		    
                     if( tti_nr==(ttis_per_frame-1)) {
                         // read in first symbol of next frame and adjust for timing drift
                         int first_symbols=writeBlockSize-readBlockSize;
                         if ( first_symbols > 0 )
-                            /*AssertFatal(first_symbols ==
+                            AssertFatal(first_symbols ==
                                         UE->rfdevice.trx_read_func(&UE->rfdevice,
                                                                    &timestamp1,
                                                                    (void**)UE->common_vars.rxdata,
                                                                    first_symbols,
-                                                                   UE->frame_parms.nb_antennas_rx),"");*/
+                                                                   UE->frame_parms.nb_antennas_rx),"");
                         if ( first_symbols <0 )
                             LOG_E(PHY,"can't compensate: diff =%d\n", first_symbols);
                     }

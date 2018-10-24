@@ -162,4 +162,11 @@ void nr_get_tbs(NR_gNB_DLSCH_t *dlsch,
   }
   LOG_I(MAC, "TBS %d : N_RE %d  N_PRB_DMRS %d N_sh_symb %d N_PRB_oh %d Ninfo %d Ninfo_prime %d R %d Qm %d table %d scale %d\n",
   harq->TBS, N_RE, N_PRB_DMRS, N_sh_symb, N_PRB_oh, Ninfo, Ninfo_prime, R, Qm, table_idx, scale);
+
+}
+
+uint32_t nr_get_G(uint16_t nb_rb, uint16_t nb_symb_sch,uint8_t nb_re_dmrs,uint16_t length_dmrs, uint8_t Qm, uint8_t Nl) {
+	uint32_t G;
+	G = ((12*nb_symb_sch)-(nb_re_dmrs*length_dmrs))*nb_rb*Qm*Nl;
+	return(G);
 }

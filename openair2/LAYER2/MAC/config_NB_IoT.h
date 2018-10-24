@@ -21,7 +21,7 @@ typedef enum operationModeInf{
     iNB_IoTand_DifferentPCI_r13     = 2,
     guardband_r13               = 3,
     standalone_r13              = 4
-}operationModeInf_t;
+} operationModeInf_t;
 
 ///SIB1_SchedulingInfo_NB_IoT_r13
 typedef enum si_Periodicity{
@@ -32,14 +32,14 @@ typedef enum si_Periodicity{
     si_Periodicity_rf1024=10240,
     si_Periodicity_rf2048=20480,
     si_Periodicity_rf4096=40960
-}si_Periodicity_NB_IoT;
+} si_Periodicity_NB_IoT;
 
 typedef enum si_RepetitionPattern{
     si_RepetitionPattern_every2ndRF=0,
     si_RepetitionPattern_every4thRF,
     si_RepetitionPattern_every8thRF,
     si_RepetitionPattern_every16thRF
-}si_RepetitionPattern_NB_IoT;
+} si_RepetitionPattern_NB_IoT;
 
 typedef enum sib_MappingInfo{
     sib2_v=0x1,
@@ -48,7 +48,7 @@ typedef enum sib_MappingInfo{
     sib5_v=0x8,
     sib14_v=0x10,
     sib16_v=0x20
-}sib_MappingInfo_NB_IoT;
+} sib_MappingInfo_NB_IoT;
 
 typedef enum si_TB{
     si_TB_56=2,
@@ -59,7 +59,7 @@ typedef enum si_TB{
     si_TB_440=8,
     si_TB_552=8,
     si_TB_680=8
-}si_TB_NB_IoT;
+} si_TB_NB_IoT;
 
 ///RACH_ConfigCommon configuration
 
@@ -72,7 +72,7 @@ typedef enum ra_ResponseWindowSize{
     ra_ResponseWindowSize_pp7=7,
     ra_ResponseWindowSize_pp8=8,
     ra_ResponseWindowSize_pp10=10
-}ra_ResponseWindowSize_NB_IoT;
+} ra_ResponseWindowSize_NB_IoT;
 
 typedef enum mac_ContentionResolutionTimer{
     mac_ContentionResolutionTimer_pp1=1,
@@ -83,7 +83,7 @@ typedef enum mac_ContentionResolutionTimer{
     mac_ContentionResolutionTimer_pp16=16,
     mac_ContentionResolutionTimer_pp32=32,
     mac_ContentionResolutionTimer_pp64=64
-}mac_ContentionResolutionTimer_NB_IoT;
+} mac_ContentionResolutionTimer_NB_IoT;
 
 ///NPRACH_ConfigSIB configuration
 
@@ -96,7 +96,7 @@ typedef enum nprach_Periodicity{
     nprach_Periodicity_ms640=640,
     nprach_Periodicity_ms1280=1280,
     nprach_Periodicity_ms2560=2560
-}nprach_Periodicity_NB_IoT;
+} nprach_Periodicity_NB_IoT;
 
 typedef enum nprach_StartTime{
     nprach_StartTime_ms8=8,
@@ -107,7 +107,7 @@ typedef enum nprach_StartTime{
     nprach_StartTime_ms256=256,
     nprach_StartTime_ms512=512,
     nprach_StartTime_ms1024=1024
-}nprach_StartTime_NB_IoT;
+} nprach_StartTime_NB_IoT;
 
 typedef enum nprach_SubcarrierOffset{
     nprach_SubcarrierOffset_n0=0,
@@ -117,21 +117,21 @@ typedef enum nprach_SubcarrierOffset{
     nprach_SubcarrierOffset_n2=2,
     nprach_SubcarrierOffset_n18=18,
     nprach_SubcarrierOffset_n34=34
-}nprach_SubcarrierOffset_NB_IoT;
+} nprach_SubcarrierOffset_NB_IoT;
 
 typedef enum nprach_NumSubcarriers{
     nprach_NumSubcarriers_n12=12,
     nprach_NumSubcarriers_n24=24,
     nprach_NumSubcarriers_n36=36,
     nprach_NumSubcarriers_n48=48
-}nprach_NumSubcarriers_NB_IoT;
+} nprach_NumSubcarriers_NB_IoT;
 
 typedef enum nprach_SubcarrierMSG3_RangeStart{
     nprach_SubcarrierMSG3_RangeStart_zero=0,
     nprach_SubcarrierMSG3_RangeStart_oneThird=1/3,
     nprach_SubcarrierMSG3_RangeStart_twoThird=2/3,
     nprach_SubcarrierMSG3_RangeStart_one=1
-}nprach_SubcarrierMSG3_RangeStart_NB_IoT;
+} nprach_SubcarrierMSG3_RangeStart_NB_IoT;
 
 typedef enum maxNumPreambleAttemptCE{
     maxNumPreambleAttemptCE_n3=3,
@@ -141,7 +141,7 @@ typedef enum maxNumPreambleAttemptCE{
     maxNumPreambleAttemptCE_n7=7,
     maxNumPreambleAttemptCE_n8=8,
     maxNumPreambleAttemptCE_n10=10
-}maxNumPreambleAttemptCE_NB_IoT;
+} maxNumPreambleAttemptCE_NB_IoT;
 
 typedef enum numRepetitionsPerPreambleAttempt{
     numRepetitionsPerPreambleAttempt_n1=1,
@@ -152,7 +152,7 @@ typedef enum numRepetitionsPerPreambleAttempt{
     numRepetitionsPerPreambleAttempt_n32=32,
     numRepetitionsPerPreambleAttempt_n64=64,
     numRepetitionsPerPreambleAttempt_n128=128
-}numRepetitionsPerPreambleAttempt_NB_IoT;
+} numRepetitionsPerPreambleAttempt_NB_IoT;
 
 typedef enum npdcch_NumRepetitions_RA{
     npdcch_NumRepetitions_RA_r1=1,
@@ -167,7 +167,7 @@ typedef enum npdcch_NumRepetitions_RA{
     npdcch_NumRepetitions_RA_r512=512,
     npdcch_NumRepetitions_RA_r1024=1024,
     npdcch_NumRepetitions_RA_r2048=2048
-}npdcch_NumRepetitions_RA_NB_IoT;
+} npdcch_NumRepetitions_RA_NB_IoT;
 
 typedef enum npdcch_StartSF_CSS_RA{
     npdcch_StartSF_CSS_RA_v1dot5=3/2,
@@ -178,14 +178,14 @@ typedef enum npdcch_StartSF_CSS_RA{
     npdcch_StartSF_CSS_RA_v32=32,
     npdcch_StartSF_CSS_RA_v48=48,
     npdcch_StartSF_CSS_RA_v64=64
-}npdcch_StartSF_CSS_RA_NB_IoT;
+} npdcch_StartSF_CSS_RA_NB_IoT;
 
 typedef enum npdcch_Offset_RA{
     zero=0,
     oneEighth=1/8,
     oneFourth=1/4,
     threeEighth=3/8
-}npdcch_Offset_RA_NB_IoT;
+} npdcch_Offset_RA_NB_IoT;
 
 typedef enum si_window_length_e{
     ms160=160,
@@ -195,7 +195,7 @@ typedef enum si_window_length_e{
     ms960=960,
     ms1280=1280,
     ms1600=1600
-}si_window_length_t;
+} si_window_length_t;
 
 typedef enum si_periodicity_e{
     rf64=640,
@@ -205,14 +205,14 @@ typedef enum si_periodicity_e{
 	rf1024=10240,
     rf2048=20480,
     rf4096=40960
-}si_periodicity_t;
+} si_periodicity_t;
 
 typedef enum si_repetition_pattern_e{
     every2ndRF=20,
     every4thRF=40,
 	every8thRF=80,
     every16thRF=160
-}si_repetition_pattern_t;
+} si_repetition_pattern_t;
 
 typedef enum si_tb_e{
     b56=2,
@@ -223,7 +223,7 @@ typedef enum si_tb_e{
     b440=8,
     b552=8,
     b680=8
-}si_tb_t;
+} si_tb_t;
 
 
 typedef struct sibs_NB_IoT_sched_s{
@@ -232,21 +232,21 @@ typedef struct sibs_NB_IoT_sched_s{
     sib_MappingInfo_NB_IoT sib_mapping_info;   //bit vector
     si_tb_t si_tb;
 
-}sibs_NB_IoT_sched_t;
+} sibs_NB_IoT_sched_t;
 
 
 ///-------------------------------------------------------MAC--------------------------------------------------------------------///
 typedef struct sib1_NB_IoT_sched_s{
     int repetitions;    //  4, 8, 16
     int starting_rf;
-}sib1_NB_IoT_sched_t;
+} sib1_NB_IoT_sched_t;
 
 typedef struct {
 
     uint32_t    mac_ra_ResponseWindowSize_NB_IoT;
     uint32_t    mac_ContentionResolutionTimer_NB_IoT;
 
-}mac_RACH_ConfigCommon_NB_IoT;
+} mac_RACH_ConfigCommon_NB_IoT;
 
 typedef struct {
 
@@ -262,7 +262,7 @@ typedef struct {
     uint32_t    mac_npdcch_StartSF_CSS_RA_NB_IoT;			//	G
     uint32_t    mac_npdcch_Offset_RA_NB_IoT;				//	alpha offset
 
-}mac_NPRACH_ConfigSIB_NB_IoT;
+} mac_NPRACH_ConfigSIB_NB_IoT;
 
 typedef struct{
     //npdcch-NumRepetitions-r13
@@ -271,7 +271,7 @@ typedef struct{
     double G;
     //npdcch-Offset-USS-r13
     double a_offset;
-}npdcch_ConfigDedicated_NB_IoT;
+} npdcch_ConfigDedicated_NB_IoT;
 
 typedef struct rrc_config_NB_IoT_s{
 
@@ -296,6 +296,6 @@ typedef struct rrc_config_NB_IoT_s{
     ///NPDCCH Dedicated config
     npdcch_ConfigDedicated_NB_IoT npdcch_ConfigDedicated[3];
 
-}rrc_config_NB_IoT_t;
+} rrc_config_NB_IoT_t;
 
 #endif

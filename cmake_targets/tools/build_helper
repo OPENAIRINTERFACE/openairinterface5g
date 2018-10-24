@@ -56,7 +56,7 @@ white='\E[37m'
 reset_color='\E[00m'
 COLORIZE=1
 
-cecho()  {  
+cecho()  {
     # Color-echo
     # arg1 = message
     # arg2 = color
@@ -95,6 +95,7 @@ get_distribution_release() {
 check_supported_distribution() {
     local distribution=$(get_distribution_release)
     case "$distribution" in
+        "ubuntu18.04") return 0 ;;
         "ubuntu17.10") return 0 ;;
         "ubuntu17.04") return 0 ;;
         "ubuntu16.04") return 0 ;;
@@ -146,10 +147,10 @@ clean_kernel() {
 clean_all_files() {
  set_openair_env
  dir=$OPENAIR_DIR/cmake_targets
- rm -rf $dir/log $OPENAIR_DIR/targets/bin/* 
+ rm -rf $dir/log $OPENAIR_DIR/targets/bin/*
  rm -rf $dir/lte_build_oai $dir/lte-simulators/build
  rm -rf $dir/oaisim_build_oai/build $dir/oaisim_build_oai/CMakeLists.txt
- rm -rf $dir/autotests/bin $dir/autotests/log $dir/autotests/*/build 
+ rm -rf $dir/autotests/bin $dir/autotests/log $dir/autotests/*/build
 }
 
 ###################################
@@ -267,11 +268,26 @@ check_install_usrp_uhd_driver(){
     if [[ "$OS_DISTRO" == "ubuntu" ]]; then
         #first we remove old installation
         $SUDO apt-get remove -y uhd || true
-        $SUDO apt-get remove libuhd-dev libuhd003 uhd-host -y
+        $SUDO apt-get remove libuhd-dev libuhd003 uhd-host -y || true
         v=$(lsb_release -cs)
         $SUDO apt-add-repository --remove "deb http://files.ettus.com/binaries/uhd/repo/uhd/ubuntu/$v $v main"
-        #The new USRP repository
-        $SUDO add-apt-repository ppa:ettusresearch/uhd -y
+        # The new USRP repository
+        # Raphael Defosseux: Adding a loop on adding PPA because in CI the gpg key retrieve may
+        # timeout due to proxy / network latencies in Eurecom on VM
+        echo_info "\nAdding PPA repository ettusresearch/uhd\n"
+        x=0
+        while [ $x -le 5 ]
+        do
+            if $SUDO add-apt-repository ppa:ettusresearch/uhd -y
+            then
+                echo_info "add-apt-repository successful\n"
+                break
+            else
+                echo_info "add-apt-repository failed, retrying...\n"
+                sleep 30
+            fi
+            x=$((x + 1))
+        done
         $SUDO apt-get update
         $SUDO apt-get -y --allow-unauthenticated install  python python-tk libboost-all-dev libusb-1.0-0-dev
         $SUDO apt-get -y --allow-unauthenticated install libuhd-dev libuhd003 uhd-host
@@ -336,7 +352,7 @@ check_install_bladerf_driver(){
         fi
         $SUDO apt-get install -y --allow-unauthenticated  bladerf libbladerf-dev
         $SUDO apt-get install -y --allow-unauthenticated bladerf-firmware-fx3
-        $SUDO apt-get install -y --allow-unauthenticated bladerf-fpga-hostedx40	
+        $SUDO apt-get install -y --allow-unauthenticated bladerf-fpga-hostedx40
    elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
         install_bladerf_driver_from_source
    else
@@ -357,7 +373,7 @@ check_install_lmssdr_driver(){
                 echo_error "lmssdr support implies installing lmssdr drivers and tools" \
                            " from sources. check:"
                 echo_info "https://open-cells.com/index.php/2017/05/10/limesdr-installation/"
-                echo_fatal "Cannot compile lmssdr device" 
+                echo_fatal "Cannot compile lmssdr device"
 	fi
 
 
@@ -454,7 +470,7 @@ check_install_additional_tools (){
       python2-matplotlib"
   fi
     $SUDO $INSTALLER install -y $PACKAGE_LIST
-    
+
     $SUDO rm -fr /opt/ssh
     $SUDO GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/ssh.git /opt/ssh
 
@@ -488,19 +504,24 @@ check_install_oai_software() {
     $SUDO apt install -y software-properties-common
     case "$(get_distribution_release)" in
         "ubuntu14.04")
-            specific_packages="libtasn1-3-dev gccxml libgnutls-dev libatlas-dev"
+            specific_packages="libtasn1-3-dev libgnutls-dev libatlas-dev iproute libconfig8-dev"
             # For iperf3
             $SUDO add-apt-repository "deb http://archive.ubuntu.com/ubuntu trusty-backports universe"
             $SUDO apt-get update
             ;;
         "ubuntu16.04")
-            specific_packages="libtasn1-6-dev gccxml libgnutls-dev libatlas-dev"
+            specific_packages="libtasn1-6-dev libgnutls-dev libatlas-dev iproute libconfig8-dev"
             ;;
         "ubuntu17.04")
-            specific_packages="libtasn1-6-dev castxml libgnutls28-dev libatlas-dev"
+            specific_packages="libtasn1-6-dev libgnutls28-dev libatlas-dev iproute libconfig8-dev"
             ;;
         "ubuntu17.10")
-            specific_packages="libtasn1-6-dev castxml libgnutls28-dev"
+            specific_packages="libtasn1-6-dev libgnutls28-dev iproute libconfig8-dev"
+            LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
+            LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
+            ;;
+        "ubuntu18.04")
+            specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev"
             LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
             LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
             ;;
@@ -524,12 +545,12 @@ check_install_oai_software() {
 	gtkwave \
 	guile-2.0-dev  \
 	iperf \
-	iproute \
 	iptables \
 	iptables-dev \
 	libatlas-base-dev \
 	libblas-dev \
-	libconfig8-dev \
+  liblapack-dev\
+  liblapacke-dev\
 	libffi-dev \
 	libforms-bin \
 	libforms-dev \
@@ -576,14 +597,11 @@ check_install_oai_software() {
         echo "EPEL repos not present. Installing them."
         $SUDO $INSTALLER install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
       fi
-      $SUDO $INSTALLER install -y python-epdb
-      $SUDO $INSTALLER install -y gccxml
+      $SUDO $INSTALLER install -y python-epdb vim-common
     else
       $SUDO $INSTALLER install -y mscgen pydb
-      # Fedora repos already contain gccxml's successor castxml.
-      $SUDO $INSTALLER install -y castxml
     fi
-    
+
     $SUDO $INSTALLER install -y \
       autoconf \
       automake \
@@ -659,10 +677,14 @@ install_asn1c_from_source(){
     echo_info "\nInstalling ASN1. The log file for ASN1 installation is here: $asn1_install_log "
     (
     $SUDO rm -rf /tmp/asn1c
-    git clone https://github.com/brchiu/asn1c /tmp/asn1c
+    # GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
+    git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
     cd /tmp/asn1c
-    git checkout velichkov_s1ap_plus_option_group
-    test -f configure || autoreconf -iv
+    # better to use a given commit than a branch in case the branch
+    # is updated and requires modifications in the source of OAI
+    #git checkout velichkov_s1ap_plus_option_group
+    git checkout 73d6b23dcec9ab36605b4af884143824392134c1
+    autoreconf -iv
     ./configure
     make -j`nproc`
     $SUDO make install
@@ -672,7 +694,7 @@ install_asn1c_from_source(){
 }
 
 #################################################
-# 2. compile 
+# 2. compile
 ################################################
 
 install_nas_tools() {
@@ -701,7 +723,7 @@ set_openair_env(){
     [ -f "/.$fullpath" ] || fullpath=`readlink -f $PWD/$fullpath`
     openair_path=${fullpath%/cmake_targets/*}
     openair_path=${openair_path%/targets/*}
-    openair_path=${openair_path%/openair[123]/*}    
+    openair_path=${openair_path%/openair[123]/*}
     export OPENAIR_DIR=$openair_path
     export OPENAIR1_DIR=$openair_path/openair1
     export OPENAIR2_DIR=$openair_path/openair2
@@ -718,7 +740,7 @@ ppid=$$
 arraycounter=1
 echo_info "** Trapped CTRL-C. Killing all subprocesses now..."
 echo_info "** Calling sync now..."
-sync 
+sync
 while true
 do
         FORLOOP=FALSE
@@ -736,7 +758,7 @@ do
            arraycounter=`expr $arraycounter - 1`
            ## We want to kill child process id first and then parent id's
            while [ $arraycounter -ne 0 ]
-           do  
+           do
              echo "first we send ctrl-c to program"
              $SUDO kill -INT "${procid[$arraycounter]}"
              sleep 5

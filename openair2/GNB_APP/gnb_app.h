@@ -22,9 +22,9 @@
 /*
                                 gnb_app.h
                              -------------------
-  AUTHOR  : Laurent Winckel, Sebastien ROUX, Lionel GAUTHIER, Navid Nikaein
-  COMPANY : EURECOM
-  EMAIL   : Lionel.Gauthier@eurecom.fr
+  AUTHOR  : Laurent Winckel, Sebastien ROUX, Lionel GAUTHIER, Navid Nikaein, WEI-TAI CHEN
+  COMPANY : EURECOM, NTUST
+  EMAIL   : Lionel.Gauthier@eurecom.fr, kroempa@gmail.com
 */
 
 #ifndef GNB_APP_H_

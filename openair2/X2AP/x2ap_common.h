@@ -71,6 +71,21 @@ extern int asn1_xer_print;
 # define X2AP_DEBUG(x, args...) do { fprintf(stdout, "[X2AP][D]"x, ##args); } while(0)
 #endif
 
+#define X2AP_FIND_PROTOCOLIE_BY_ID(IE_TYPE, ie, container, IE_ID, mandatory) \
+  do {\
+    IE_TYPE **ptr; \
+    ie = NULL; \
+    for (ptr = container->protocolIEs.list.array; \
+         ptr < &container->protocolIEs.list.array[container->protocolIEs.list.count]; \
+         ptr++) { \
+      if((*ptr)->id == IE_ID) { \
+        ie = *ptr; \
+        break; \
+      } \
+    } \
+    if (mandatory) DevAssert(ie != NULL); \
+  } while(0)
+
 //Forward declaration
 struct x2ap_message_s;
 

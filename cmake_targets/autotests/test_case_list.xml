@@ -955,21 +955,21 @@
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/dlsim</main_exec>
-      <main_exec_args> -m5 -gF -s-1 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70
-                       -m4 -gF -s0 -w1.0 -f.2 -n500 -B6 -c4 -z2 -O70
-                       -m15 -gF -s6.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70
-                       -m14 -gF -s6.7 -w1.0 -f.2 -n500 -B25 -c3 -z2 -O70
-                       -m15 -gG -s6.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O30
-                       -m14 -gG -s1.4 -w1.0 -f.2 -n500 -B25 -c3 -z2 -O30
-                       -m25 -gF -s17.4 -w1.0 -f.2 -n500 -B25 -c3 -z2 -O70
-                       -m25 -gF -s17.5 -w1.0 -f.2 -n500 -B25 -c3 -z2 -r1022 -O70
-                       -m26 -gF -s17.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70
-                       -m26 -gF -s17.6 -w1.0 -f.2 -n500 -B100 -c2 -z2 -O70
-                       -m26 -gF -s17.3 -w1.0 -f.2 -n500 -B100 -c2 -z2 -r1600 -O70
-                       -m26 -gF -s16.6 -w1.0 -f.2 -n500 -B100 -c2 -z2 -r1899 -O70
-		       -m14 -gF -s6.8  -w1.0 -f.2 -n500 -B50 -c2 -x2 -y2 -z2 -O70
-                       -m13 -gF -s5.9  -w1.0 -f.2 -n500 -B25 -c3 -x2 -y2 -z2 -O70</main_exec_args>
+      <main_exec> $OPENAIR_DIR/targets/bin/dlsim.Rel15</main_exec>
+      <main_exec_args> -m5 -gF -s-1 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O60
+                       -m4 -gF -s0 -w1.0 -f.2 -n500 -B6 -c4 -z2 -O60
+                       -m15 -gF -s6.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O60
+                       -m15 -gF -s6.7 -w1.0 -f.2 -n500 -B25 -c2 -z2 -O60
+                       -m15 -gG -s1.4 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O25
+                       -m15 -gG -s1.4 -w1.0 -f.2 -n500 -B25 -c2 -z2 -O25
+                       -m25 -gF -s17.4 -w1.0 -f.2 -n500 -B25 -c3 -z2 -O60
+                       -m25 -gF -s17.5 -w1.0 -f.2 -n500 -B25 -c3 -z2 -r1022 -O60
+                       -m26 -gF -s17.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O60
+                       -m26 -gF -s17.6 -w1.0 -f.2 -n500 -B100 -c2 -z2 -O60
+                       -m26 -gF -s17.3 -w1.0 -f.2 -n500 -B100 -c2 -z2 -r1600 -O60
+                       -m26 -gF -s16.6 -w1.0 -f.2 -n500 -B100 -c2 -z2 -r1899 -O60
+		       -m14 -gF -s6.8  -w1.0 -f.2 -n500 -B50 -c2 -x2 -y2 -z2 -O60
+                       -m13 -gF -s5.9  -w1.0 -f.2 -n500 -B25 -c3 -x2 -y2 -z2 -O60</main_exec_args>
       <tags>dlsim.test1 dlsim.test5 dlsim.test6 dlsim.test6b dlsim.test7 dlsim.test7b dlsim.test10 dlsim.test10b dlsim.test11 dlsim.TM2_test1 dlsim.TM2_test1b</tags>
       <search_expr_true>"passed"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -989,19 +989,44 @@
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/ulsim</main_exec>
-      <main_exec_args> -B25 -m5 -y1 -gN -x1 -s6 -w1.0 -e.1 -P -n500 -O70 -L
-                       -B25 -m16 -y1 -gN -x1 -s12 -w1.0 -e.1 -P -n500 -O70 -L
-                        -B50 -m5 -y1 -gN -x1 -s6 -w1.0 -e.1 -P -n500 -O70 -L 
-                       -B50 -m16 -y1 -gN -x1 -s12 -w1.0 -e.1 -P -n500 -O70 -L
-                        -B100 -m5 -y1 -gN -x1 -s6 -w1.0 -e.1 -P -n500 -O70 -L
-                       -B100 -m16 -y1 -gN -x1 -s12 -w1.0 -e.1 -P -n500 -O70 -L</main_exec_args>
+      <main_exec> $OPENAIR_DIR/targets/bin/ulsim.Rel15</main_exec>
+      <main_exec_args> -B25 -m5 -y1 -gN -x1 -s6 -w1.0 -e.1 -P -n500 -O70 
+                       -B25 -m16 -y1 -gN -x1 -s12 -w1.0 -e.1 -P -n500 -O70 
+                        -B50 -m5 -y1 -gN -x1 -s6 -w1.0 -e.1 -P -n500 -O70  
+                       -B50 -m16 -y1 -gN -x1 -s12 -w1.0 -e.1 -P -n500 -O70 
+                        -B100 -m5 -y1 -gN -x1 -s6 -w1.0 -e.1 -P -n500 -O70 
+                       -B100 -m16 -y1 -gN -x1 -s12 -w1.0 -e.1 -P -n500 -O70 </main_exec_args>
      <tags>ulsim.test1 ulsim.test2 ulsim.test3 ulsim.test4 ulsim.test5 ulsim.test6</tags>
       <search_expr_true>"passed"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
     </testCase>
 
+    <testCase id="015102">
+      <class>execution</class>
+      <desc>ldpctest test cases.</desc>
+      <pre_compile_prog></pre_compile_prog>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
+      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+      <pre_exec_args></pre_exec_args>
+      <main_exec> $OPENAIR_DIR/targets/bin/ldpctest.Rel15</main_exec>
+      <main_exec_args>-l3872 -s10 -n100
+                      -l4224 -s10 -n100
+		      -l4576 -s10 -n100
+		      -l4928 -s10 -n100
+		      -l5280 -s10 -n100
+		      -l5632 -s10 -n100
+		      -l6336 -s10 -n100
+		      -l7040 -s10 -n100
+		      -l7744 -s10 -n100
+		      -l8448 -s10 -n100</main_exec_args>
+      <tags>ldpctest.test1</tags>
+      <search_expr_true>BLER 0.000000</search_expr_true>
+      <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <nruns>3</nruns>
+    </testCase>
+    
     <testCase id="015110">
       <class>execution</class>
       <desc>dlsim_tm4 test cases (Test 1: 10 MHz, R2.FDD (MCS 5), EVA5, -1dB), 

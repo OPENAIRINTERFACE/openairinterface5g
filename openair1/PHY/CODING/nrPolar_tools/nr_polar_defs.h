@@ -29,6 +29,7 @@
  * \note
  * \warning
 */
+#define NR_POLAR_CRC_ERROR_CORRECTION_BITS 3
 
 #ifndef __NR_POLAR_DEFS__H__
 #define __NR_POLAR_DEFS__H__
@@ -82,9 +83,11 @@ struct nrPolar_params {
 	int16_t *Q_PC_N;
 	uint8_t *information_bit_pattern;
 	uint16_t *channel_interleaver_pattern;
+	uint32_t crc_polynomial;
 
 	uint8_t **crc_generator_matrix; //G_P
 	uint8_t **G_N;
+	uint32_t* crc256Table;
 
 	//lowercase: bits, Uppercase: Bits stored in bytes
 	//polar_encoder vectors
@@ -123,6 +126,9 @@ int8_t polar_decoder_aPriori(double *input,
 							 uint8_t listSize,
 							 uint8_t pathMetricAppr,
 							 double *aPrioriPayload);
+
+void nr_polar_kernal_operation(uint8_t *u, uint8_t *d, uint16_t N);
+
 
 void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 				   int8_t messageType,
@@ -295,7 +301,14 @@ uint8_t **crc24c_generator_matrix(uint16_t payloadSizeBits);
 
 uint8_t **crc11_generator_matrix(uint16_t payloadSizeBits);
 
-uint8_t **crc6_generator_matrix(uint16_t payloadSizeBits);
+void crcTable256Init (uint32_t poly, uint32_t* crc256Table);
+void nr_crc_computation(uint8_t* input, uint8_t* output, uint16_t payloadBits, uint16_t crcParityBits, uint32_t* crc256Table);
+unsigned int crcbit (unsigned char* inputptr, int octetlen, uint32_t poly);
+unsigned int crcPayload(unsigned char * inptr, int bitlen, uint32_t* crc256Table);
+
+static inline void nr_polar_rate_matcher(uint8_t *input, unsigned char *output, uint16_t *pattern, uint16_t size) {
+	for (int i=0; i<size; i++) output[i]=input[pattern[i]];
+}
 
 //Also nr_polar_rate_matcher
 static inline void nr_polar_interleaver(uint8_t *input,

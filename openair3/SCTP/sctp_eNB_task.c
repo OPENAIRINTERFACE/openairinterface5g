@@ -203,19 +203,6 @@ sctp_handle_new_association_req(
 
       if (s > 0 ) {
         if (((struct sockaddr_in*)ifa->ifa_addr)->sin_addr.s_addr == in.s_addr) {
-#if 0
-          memset(&ifr, 0, sizeof(ifr));
-          snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), "%s",ifa->ifa_name);
-
-          if (setsockopt(sd, SOL_SOCKET, SO_BINDTODEVICE, (void *)&ifr, sizeof(ifr)) < 0) {
-            SCTP_ERROR("Setsockopt SOL_SOCKET failed: %s\n",
-                       strerror(errno));
-          } else {
-            SCTP_DEBUG("Setsockopt SOL_SOCKET socket bound to : %s\n",
-                       ifa->ifa_name);
-          }
-
-#else
           struct sockaddr_in locaddr;
           locaddr.sin_family = AF_INET;
           locaddr.sin_port = htons(sctp_new_association_req_p->port);
@@ -228,8 +215,6 @@ sctp_handle_new_association_req(
             SCTP_DEBUG("sctp_bindx SCTP_BINDX_ADD_ADDR socket bound to : %s\n",
                        inet_ntoa(locaddr.sin_addr));
           }
-
-#endif
           break;
 
         }

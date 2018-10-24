@@ -54,7 +54,6 @@ void nr_deinterleaving_ldpc(uint32_t E, uint8_t Qm, int16_t *e,int16_t *f)
   uint32_t EQm;
 
   EQm = E/Qm;
-  memset(e,0,E*sizeof(uint8_t));
 
   for (int j = 0; j< EQm; j++){
 	  for (int i = 0; i< Qm; i++){
@@ -108,7 +107,7 @@ uint32_t nr_rate_matching_ldpc(uint8_t Ilbrm,
   ind = (index_k0[BG-1][rvidx]*Ncb/N)*Z;
 
 #ifdef RM_DEBUG
-  printf("nr_rate_matching: E %d, k0 %d \n",E,ind);
+  printf("nr_rate_matching: E %d, k0 %d Cprime %d modcprime %d\n",E,ind, Cprime,((G/(Nl*Qm))%Cprime));
 #endif
 
   e2 = e;

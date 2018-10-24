@@ -175,16 +175,6 @@ void device_close(void* id)
 ssize_t device_read(void* id, char* buffer, size_t len)
 {
   const device_id_t* devid = (device_id_t*)(id);
-#if 0
-  ssize_t rbytes = read(devid->fd, buffer, len);
-
-  if (rbytes < 0) {
-    return RETURNerror;
-  }
-
-#endif
-
-  //#if 0
   ssize_t rbytes = 0;
 
   do {
@@ -197,8 +187,6 @@ ssize_t device_read(void* id, char* buffer, size_t len)
     rbytes += size;
   } while ( (buffer[rbytes-1] != '\r') && (buffer[rbytes-1] != '\n')
             && (buffer[rbytes-1] != '\0') );
-
-  //#endif
 
   return rbytes;
 }

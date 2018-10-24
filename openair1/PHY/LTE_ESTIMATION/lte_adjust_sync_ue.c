@@ -25,7 +25,7 @@
 #include "PHY/impl_defs_top.h"
 #include "openair2/LAYER2/MAC/mac_proto.h"
 
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 #define DEBUG_PHY
 
@@ -35,7 +35,7 @@
 
 void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
                       PHY_VARS_UE *ue,
-                      unsigned char eNB_id,
+                      module_id_t eNB_id,
 					  uint8_t subframe,
                       unsigned char clear,
                       short coef)

@@ -19,8 +19,8 @@
  *      contact@openairinterface.org
  */
 
-#ifndef __PHY_EXTERN_UE__H__
-#define __PHY_EXTERN_UE__H__
+#ifndef __PHY_EXTERN_NR_UE__H__
+#define __PHY_EXTERN_NR_UE__H__
 
 #include "PHY/defs_nr_UE.h"
 //#include "common/ran_context.h"

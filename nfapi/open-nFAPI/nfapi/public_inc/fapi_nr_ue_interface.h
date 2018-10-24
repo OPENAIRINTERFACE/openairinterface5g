@@ -219,8 +219,20 @@ typedef struct {
 } fapi_nr_tx_request_t;
 
     typedef struct {
-
-    } fapi_nr_ul_config_rach_pdu;
+        uint8_t preamble_index;
+        uint8_t prach_configuration_index;
+        uint16_t preamble_length;
+        uint8_t power_ramping_step;
+        uint16_t preamble_received_target_power;
+        uint8_t msg1_fdm;
+        uint8_t msg1_frequency_start;
+        uint8_t zero_correlation_zone_config;
+        uint8_t subcarrier_spacing;
+        uint8_t restrictedset_config;
+        uint16_t root_sequence_index;
+        uint16_t rsrp_threshold_ssb;
+        uint16_t rsrp_threshold_sul;
+    } fapi_nr_ul_config_prach_pdu;
 
     typedef struct {
 
@@ -232,6 +244,8 @@ typedef struct {
         uint16_t number_symbols;
         uint16_t start_symbol;
         uint8_t mcs;
+        uint8_t tpc_command;
+        uint8_t rv;
     } fapi_nr_ul_config_pusch_pdu_rel15_t;
 
     typedef struct {
@@ -239,16 +253,20 @@ typedef struct {
         fapi_nr_ul_config_pusch_pdu_rel15_t ulsch_pdu_rel15;
     } fapi_nr_ul_config_pusch_pdu;
 
+    typedef struct {
+
+    } fapi_nr_ul_config_srs_pdu;
+
 	typedef struct {
 		uint8_t pdu_type;
 		union {
-            fapi_nr_ul_config_rach_pdu prach_config_pdu;
+            fapi_nr_ul_config_prach_pdu prach_config_pdu;
             fapi_nr_ul_config_pucch_pdu pucch_config_pdu;
             fapi_nr_ul_config_pusch_pdu ulsch_config_pdu;
+            fapi_nr_ul_config_srs_pdu srs_config_pdu;
 		};
 	} fapi_nr_ul_config_request_pdu_t;
 
-///
 typedef struct {
 	uint32_t sfn_slot;
     uint8_t number_pdus;
@@ -273,7 +291,6 @@ typedef struct {
         fapi_nr_dl_config_dci_dl_pdu_rel15_t dci_config_rel15;
     } fapi_nr_dl_config_dci_pdu;
 
-    //typedef fapi_nr_dci_pdu_rel15_t fapi_nr_dl_config_dlsch_pdu_rel15_t;
     typedef struct {
         uint16_t number_rbs;
         uint16_t start_rb;
@@ -281,7 +298,9 @@ typedef struct {
         uint16_t start_symbol;
         uint8_t mcs;
         uint8_t rv;
-        //  to be check the fields needed to L1 with NR_DL_UE_HARQ_t and NR_UE_DLSCH_t
+        uint8_t harq_pid;
+        uint8_t ndi;
+        //  TODO: check the fields needed to L1 with NR_DL_UE_HARQ_t and NR_UE_DLSCH_t
     } fapi_nr_dl_config_dlsch_pdu_rel15_t;
 
     typedef struct {

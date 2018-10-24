@@ -125,7 +125,7 @@ end
 end
 
 table = [ 0; bpsk_table(:); qpsk_table(:);qam16_table2(:); qam64_table2(:);qam256_table2(:) ];
-scatter (real(qam256_table2), imag(qam256_table2), 'x');
+%scatter (real(qam256_table2), imag(qam256_table2), 'x');
 save mod_table.mat table
 
 table2 = zeros(1,length(table)*2);
@@ -139,7 +139,7 @@ fprintf(fd,"#define NR_MOD_TABLE_QPSK_OFFSET %d\n", 3);
 fprintf(fd,"#define NR_MOD_TABLE_QAM16_OFFSET %d\n", 7);
 fprintf(fd,"#define NR_MOD_TABLE_QAM64_OFFSET %d\n", 23);
 fprintf(fd,"#define NR_MOD_TABLE_QAM256_OFFSET %d\n", 87);
-fprintf(fd,"short nr_mod_table[MOD_TABLE_SIZE_SHORT] = {");
+fprintf(fd,"short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT] = {");
 fprintf(fd,"%d,",table2(1:end-1));
 fprintf(fd,"%d};\n",table2(end));
 fclose(fd);

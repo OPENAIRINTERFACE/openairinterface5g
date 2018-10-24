@@ -27,8 +27,8 @@
 #include "SCHED/sched_common_extern.h"
 #include "nfapi_interface.h"
 #include "SCHED/fapi_l1.h"
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "T.h"
 
@@ -170,8 +170,9 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   if (do_meas==1) start_meas(&gNB->phy_proc_tx);
 
   // clear the transmit data array for the current subframe
-  for (aa=0; aa<cfg->rf_config.tx_antenna_ports.value; aa++)
-    memset(&gNB->common_vars.txdataF[aa],0,fp->samples_per_subframe_wCP*sizeof(int32_t));
+  for (aa=0; aa<cfg->rf_config.tx_antenna_ports.value; aa++) {      
+    memset(gNB->common_vars.txdataF[aa],0,fp->samples_per_subframe_wCP*sizeof(int32_t));
+  }
 
   if (nfapi_mode == 0 || nfapi_mode == 1) {
     nr_common_signal_procedures(gNB,frame, subframe);

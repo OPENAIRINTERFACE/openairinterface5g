@@ -32,10 +32,10 @@
 
 #ifdef TELNETSRV_PHYCMD_MAIN
 
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 
 
-#include "openair1/PHY/extern.h"
+#include "openair1/PHY/phy_extern.h"
 
 
 #define TELNETVAR_PHYCC0    0

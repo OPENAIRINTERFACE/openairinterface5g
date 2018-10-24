@@ -24,7 +24,7 @@
 #include "PHY/phy_extern_ue.h"
 #include "lte_estimation.h"
 
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "openair2/LAYER2/MAC/mac_proto.h"
 
 #define DEBUG_PHY
@@ -35,7 +35,7 @@
 
 void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
                       PHY_VARS_UE *ue,
-                      unsigned char eNB_id,
+                      module_id_t eNB_id,
 					  uint8_t subframe,
                       unsigned char clear,
                       short coef)
@@ -85,6 +85,11 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
   if(subframe == 6)
   {
       diff = max_pos_fil - (frame_parms->nb_prefix_samples>>3);
+
+#if BASIC_SIMULATOR
+      /* a hack without which the UE does not connect (to be fixed somehow) */
+      diff = 0;
+#endif
 
       if ( abs(diff) < SYNCH_HYST )
           ue->rx_offset = 0;

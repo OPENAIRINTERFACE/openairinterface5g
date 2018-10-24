@@ -33,9 +33,9 @@
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/sse_intrin.h"
-#include "SIMULATION/TOOLS/sim.h"
+//#include "SIMULATION/TOOLS/sim.h"
 
-//#define DEBUG_PBCH 1
+#define DEBUG_PBCH 1
 //#define DEBUG_PBCH_ENCODING
 
 #ifdef OPENAIR2
@@ -246,6 +246,9 @@ void nr_pbch_channel_compensation(int **rxdataF_ext,
                                uint8_t symbol,
                                uint8_t output_shift)
 {
+
+  short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
+  short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
 
   uint16_t rb,nb_rb=20;
   uint8_t aatx,aarx;
@@ -554,8 +557,10 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
   for (symbol=5; symbol<8; symbol++) {
 
+#ifdef DEBUG_PBCH
     //printf("address dataf %p",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF);
-    //write_output("rxdataF0_pbch.m","rxF0pbch",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF,frame_parms->ofdm_symbol_size*4,2,1);
+    write_output("rxdataF0_pbch.m","rxF0pbch",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF,frame_parms->ofdm_symbol_size*4,2,1);
+#endif
   
     nr_pbch_extract(nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF,
                  nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].dl_ch_estimates[eNB_id],
@@ -585,8 +590,10 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
                               symbol,
                               log2_maxh); // log2_maxh+I0_shift
 
-    //write_output("rxdataF_comp.m","rxFcomp",nr_ue_pbch_vars->rxdataF_comp,180,2,1);
-  
+#ifdef DEBUG_PBCH
+    write_output("rxdataF_comp.m","rxFcomp",nr_ue_pbch_vars->rxdataF_comp,180,2,1);
+#endif
+    
     /*if (frame_parms->nb_antennas_rx > 1)
       pbch_detection_mrc(frame_parms,
                          nr_ue_pbch_vars->rxdataF_comp,

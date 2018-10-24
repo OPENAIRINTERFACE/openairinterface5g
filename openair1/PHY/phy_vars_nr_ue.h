@@ -38,7 +38,7 @@ int16_t *primary_synch1_time;
 int16_t *primary_synch2_time;
 
 
-#include "PHY/CODING/coding_vars.h"
+//#include "PHY/CODING/coding_vars.h"
 
 //PHY_VARS *PHY_vars;
 #ifndef OCP_FRAMEWORK
@@ -57,6 +57,8 @@ unsigned short rev256[256],rev512[512],rev1024[1024],rev4096[4096],rev2048[2048]
 
 char mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};
 
+short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
+short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
 
 
 #include "SIMULATION/ETH_TRANSPORT/vars.h"

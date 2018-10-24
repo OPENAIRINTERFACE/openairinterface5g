@@ -48,7 +48,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
     uint32_t i;
 
     if(scheduled_response != NULL){
-        NR_UE_PDCCH *pdcch_vars2 = PHY_vars_UE_g[module_id][cc_id]->pdcch_vars[0][0];
+        PHY_VARS_NR_UE *ue = PHY_vars_UE_g[module_id][cc_id];
+        NR_UE_PDCCH *pdcch_vars2 = ue->pdcch_vars[0][0];
         
         if(scheduled_response->dl_config != NULL){
             fapi_nr_dl_config_request_t *dl_config = scheduled_response->dl_config;
@@ -88,6 +89,22 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
                     pdcch_vars2->coreset[i].pdcchDMRSScramblingID = dci_config->coreset.pdcch_dmrs_scrambling_id;
                 }else{  //FAPI_NR_DL_CONFIG_TYPE_DLSCH
                     //  dlsch config pdu
+
+                    fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_pdu = &dl_config->dl_config_list[i].dlsch_config_pdu.dlsch_config_rel15;
+                    NR_UE_DLSCH_t **dlsch = ue->dlsch[ue->current_thread_id[0]][0]; //nr_tti_rx
+                    NR_UE_DLSCH_t *dlsch0 = dlsch[0];
+                    NR_DL_UE_HARQ_t *dlsch0_harq = dlsch[0]->harq_processes[dlsch_pdu->harq_pid];
+
+                    dlsch0->rnti = dl_config->dl_config_list[i].dlsch_config_pdu.rnti; 
+                    dlsch0_harq->start_rb = dlsch_pdu->start_rb;
+                    dlsch0_harq->nb_rb = dlsch_pdu->number_rbs;    
+                    dlsch0_harq->nb_symbols = dlsch_pdu->number_symbols;
+                    dlsch0_harq->nb_symbols = dlsch_pdu->number_symbols;
+                    dlsch0_harq->start_symbol = dlsch_pdu->start_symbol;
+                    dlsch0->current_harq_pid = dlsch_pdu->harq_pid;
+                    dlsch0->active           = 1;
+                    dlsch0_harq->mcs = dlsch_pdu->mcs;
+                    dlsch0_harq->DCINdi = dlsch_pdu->ndi;
                 }
             }
         }else{

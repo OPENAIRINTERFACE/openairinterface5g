@@ -29,7 +29,7 @@
 #include "SCHED_UE/sched_UE.h"
 
 int lte_dl_channel_estimation(PHY_VARS_UE *ue,
-                              uint8_t eNB_id,
+                              module_id_t eNB_id,
                               uint8_t eNB_offset,
                               unsigned char Ns,
                               unsigned char p,

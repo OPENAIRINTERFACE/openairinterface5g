@@ -29,18 +29,50 @@
  * \note
  * \warning
  */
+#define _GNU_SOURCE
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <ctype.h>
 #include <errno.h>
 #include "config_userapi.h"
 
+
+void parse_stringlist(paramdef_t *cfgoptions, char *val)
+{
+char *atoken;
+char *tokctx;
+char *tmpval=strdup(val);
+int   numelt=0;
+
+   cfgoptions->numelt=0;
+
+   atoken=strtok_r(tmpval, ",",&tokctx);
+   while(atoken != NULL) {
+     numelt++ ;
+     atoken=strtok_r(NULL, ",",&tokctx);
+   }
+   free(tmpval);
+   config_check_valptr(cfgoptions,(char **)&(cfgoptions->strlistptr), sizeof(char *) * numelt);
+   cfgoptions->numelt=numelt;
+
+   atoken=strtok_r(val, ",",&tokctx);
+   for( int i=0; i<cfgoptions->numelt && atoken != NULL ; i++) {
+      config_check_valptr(cfgoptions,&(cfgoptions->strlistptr[i]),strlen(atoken)+1);
+      sprintf(cfgoptions->strlistptr[i],"%s",atoken);
+      printf_params("[LIBCONFIG] %s[%i]: %s\n", cfgoptions->optname,i,cfgoptions->strlistptr[i]);
+      atoken=strtok_r(NULL, ",",&tokctx);
+   }
+   cfgoptions->numelt=numelt; 
+}
+ 
 int processoption(paramdef_t *cfgoptions, char *value)
 {
 char *tmpval = value;
 int optisset=0;
 char defbool[2]="1";
 
+     
      if ( value == NULL) {
         if( (cfgoptions->paramflags &PARAMFLAG_BOOL) == 0 ) { /* not a boolean, argument required */
 	    fprintf(stderr,"[CONFIG] command line, option %s requires an argument\n",cfgoptions->optname);
@@ -63,6 +95,7 @@ char defbool[2]="1";
         break;
 	
         case TYPE_STRINGLIST:
+           parse_stringlist(cfgoptions,tmpval); 
         break;
         case TYPE_UINT32:
        	case TYPE_INT32:
@@ -103,15 +136,15 @@ char defbool[2]="1";
        if (optisset == 1) {
           cfgoptions->paramflags = cfgoptions->paramflags |  PARAMFLAG_PARAMSET;
        }
-       
     return optisset;
 }
 
 int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix)
 {
-char **p = config_get_if()->argv;
+
+
 int c = config_get_if()->argc;
-int j;
+int i,j;
 char *pp;
 char *cfgpath; 
  
@@ -122,42 +155,74 @@ char *cfgpath;
      return -1;
   }
 
-  j=0;
-  p++;
-  c--;
-    while (c > 0 && *p != NULL) {
-        if (strcmp(*p, "-h") == 0 || strcmp(*p, "--help") == 0 ) {
-            config_printhelp(cfgoptions,numoptions);
+  j = 0;
+  i = 0;
+    while (c > 0 ) {
+        char *oneargv = strdup(config_get_if()->argv[i]);          /* we use strtok_r which modifies its string paramater, and we don't want argv to be modified */
+/* first check help options, either --help, -h or --help_<section> */
+        if (strncmp(oneargv, "-h",2) == 0 || strncmp(oneargv, "--help",6) == 0 ) {
+            char *tokctx;
+            pp=strtok_r(oneargv, "_",&tokctx);
+            if (pp == NULL || strcasecmp(pp,config_get_if()->argv[i] ) == 0 ) {
+                if( prefix == NULL) {
+                  config_printhelp(cfgoptions,numoptions);
+                  if ( ! ( CONFIG_ISFLAGSET(CONFIG_NOEXITONHELP)))
+                     exit_fun("[CONFIG] Exiting after displaying help\n");
+                }
+            } else {
+                pp=strtok_r(NULL, " ",&tokctx);
+                if ( prefix != NULL && pp != NULL && strncasecmp(prefix,pp,strlen(pp)) == 0 ) { 
+                   printf ("Help for %s section:\n",prefix);               
+                   config_printhelp(cfgoptions,numoptions);
+                   if ( ! (CONFIG_ISFLAGSET(CONFIG_NOEXITONHELP))) {
+                      fprintf(stderr,"[CONFIG] %s %i section %s:", __FILE__, __LINE__, prefix);
+                      exit_fun(" Exiting after displaying help\n");
+                   }
+                }
+            } 
         }
 
-        if (*p[0] == '-') {        
-    	    for(int i=0;i<numoptions;i++) {
-    		if ( ( cfgoptions[i].paramflags & PARAMFLAG_DISABLECMDLINE) != 0) {
+/* now, check for non help options */
+        if (oneargv[0] == '-') {        
+    	    for(int n=0;n<numoptions;n++) {
+    		if ( ( cfgoptions[n].paramflags & PARAMFLAG_DISABLECMDLINE) != 0) {
     		  continue;
     		 }
     		if (prefix != NULL) {
-    		   sprintf(cfgpath,"%s.%s",prefix,cfgoptions[i].optname);
+    		   sprintf(cfgpath,"%s.%s",prefix,cfgoptions[n].optname);
     		} else {
-    		   sprintf(cfgpath,"%s",cfgoptions[i].optname);
+    		   sprintf(cfgpath,"%s",cfgoptions[n].optname);
     		}
-
-    		if ( ((strlen(*p) == 2) && (strcmp(*p + 1,cfgpath) == 0))  || 
-    		     ((strlen(*p) > 2) && (strcmp(*p + 2,cfgpath ) == 0 )) ) {
-    		   pp = *(p+1);
-    		   if ( ( pp != NULL ) && (c>1) &&  (pp[0]!= '-') ) {
-    		
-    		      j += processoption(&(cfgoptions[i]), pp);
-    		   } else {
-    		      j += processoption(&(cfgoptions[i]), NULL);
-    		   }
+    		if ( ((strlen(oneargv) == 2) && (strcmp(oneargv + 1,cfgpath) == 0))  || /* short option, one "-" */
+    		     ((strlen(oneargv) > 2) && (strcmp(oneargv + 2,cfgpath ) == 0 )) ) {
+                   char *valptr=NULL;
+                   int ret;
+                   if (c > 0) {
+    		      pp = config_get_if()->argv[i+1];
+                      if (pp != NULL ) {                      
+                         ret = strlen(pp);
+                         if (ret > 0 ) {
+                             if (pp[0] != '-')
+                                valptr=pp;
+                             else if ( ret > 1 && pp[0] == '-' && isdigit(pp[1]) )
+                                valptr=pp;
+                         }
+                     }
+                   }
+                   j += processoption(&(cfgoptions[n]), valptr);
+    		   if (  valptr != NULL ) {
+                      i++;
+                      c--;
+    		   } 
                    break;
     		}
-    	     } /* for */
-         } /* if (*p[0] == '-') */  	     
-   	 p++;
+    	     } /* for n... */
+         } /* if (oneargv[0] == '-') */  	     
+         free(oneargv);
+         i++;
          c--;  
     }   /* fin du while */
-  printf_cmdl("[CONFIG] %s %i options set from command line\n",((prefix == NULL) ? "":prefix),j);
+  printf_cmdl("[CONFIG] %s %i options set from command line\n",((prefix == NULL) ? "(root)":prefix),j);
   free(cfgpath);
   return j;            
 }  /* parse_cmdline*/
