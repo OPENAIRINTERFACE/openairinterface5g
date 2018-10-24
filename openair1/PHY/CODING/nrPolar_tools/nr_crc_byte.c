@@ -21,6 +21,8 @@
 
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 
+
+// ----- Old implementation ----
 uint8_t **crc24c_generator_matrix(uint16_t payloadSizeBits){
 
 	uint8_t crcPolynomialPattern[25] = {1,1,0,1,1,0,0,1,0,1,0,1,1,0,0,0,1,0,0,0,1,0,1,1,1};

@@ -23,9 +23,8 @@
 #include "PHY/phy_extern.h"
 #include "PHY/sse_intrin.h"
 //#define DEBUG_CH
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "PHY/LTE_TRANSPORT/transport_common_proto.h"
-#include "T.h"
 #include "lte_estimation.h"
 
 // round(exp(sqrt(-1)*(pi/2)*[0:1:N-1]/N)*pow2(15))
@@ -37,7 +36,7 @@ static int16_t ru_90c[2*128] = {32767, 0,32766, -402,32758, -804,32746, -1206,32
 
 int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
 				  eNB_rxtx_proc_t *proc,
-                                  uint8_t UE_id,
+                                  module_id_t UE_id,
                                   unsigned char l,
                                   unsigned char Ns) {
 
@@ -105,9 +104,9 @@ int32_t temp_in_ifft_0[2048*2] __attribute__((aligned(32)));
 #ifdef DEBUG_CH
 
   if (Ns==0)
-    write_output("drs_seq0.m","drsseq0",ul_ref_sigs_rx[u][v][Msc_RS_idx],2*Msc_RS,2,1);
+    LOG_M("drs_seq0.m","drsseq0",ul_ref_sigs_rx[u][v][Msc_RS_idx],2*Msc_RS,2,1);
   else
-    write_output("drs_seq1.m","drsseq1",ul_ref_sigs_rx[u][v][Msc_RS_idx],2*Msc_RS,2,1);
+    LOG_M("drs_seq1.m","drsseq1",ul_ref_sigs_rx[u][v][Msc_RS_idx],2*Msc_RS,2,1);
 
 #endif
 
@@ -228,7 +227,7 @@ int32_t temp_in_ifft_0[2048*2] __attribute__((aligned(32)));
       if((cyclic_shift != 0)) {
         // Compensating for the phase shift introduced at the transmitte
 #ifdef DEBUG_CH
-        write_output("drs_est_pre.m","drsest_pre",ul_ch_estimates[0],300*12,1,1);
+        LOG_M("drs_est_pre.m","drsest_pre",ul_ch_estimates[0],300*12,1,1);
 #endif
 
         for(i=symbol_offset; i<symbol_offset+Msc_RS; i++) {
@@ -251,7 +250,7 @@ int32_t temp_in_ifft_0[2048*2] __attribute__((aligned(32)));
         }
 
 #ifdef DEBUG_CH
-        write_output("drs_est_post.m","drsest_post",ul_ch_estimates[0],300*12,1,1);
+        LOG_M("drs_est_post.m","drsest_post",ul_ch_estimates[0],300*12,1,1);
 #endif
       }
 
@@ -294,11 +293,11 @@ int32_t temp_in_ifft_0[2048*2] __attribute__((aligned(32)));
 
       if (aa==1) {
         if (Ns == 0) {
-          write_output("rxdataF_ext.m","rxF_ext",&rxdataF_ext[aa][symbol_offset],512*2,2,1);
-          write_output("tmpin_ifft.m","drs_in",temp_in_ifft_0,512,1,1);
-          write_output("drs_est0.m","drs0",ul_ch_estimates_time[aa],512,1,1);
+          LOG_M("rxdataF_ext.m","rxF_ext",&rxdataF_ext[aa][symbol_offset],512*2,2,1);
+          LOG_M("tmpin_ifft.m","drs_in",temp_in_ifft_0,512,1,1);
+          LOG_M("drs_est0.m","drs0",ul_ch_estimates_time[aa],512,1,1);
         } else
-          write_output("drs_est1.m","drs1",ul_ch_estimates_time[aa],512,1,1);
+          LOG_M("drs_est1.m","drs1",ul_ch_estimates_time[aa],512,1,1);
       }
 
 #endif
@@ -454,7 +453,7 @@ int32_t lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
 		   &srs_vars->srs[eNB_id],
 		   0x7FFF,
 		   subframe)==-1) {
-      LOG_E(PHY,"lte_srs_channel_estimation: Error in generate_srs_rx\n");
+      LOG_E(PHY,"lte_srs_channel_estimation: Error in generate_srs\n");
       return(-1);
     }
 
@@ -466,8 +465,8 @@ int32_t lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
 	    srs_vars->srs_ch_estimates[aa]);
 #endif
       
-      //write_output("eNB_rxF.m","rxF",&common_vars->rxdataF[0][aa][2*frame_parms->ofdm_symbol_size*symbol],2*(frame_parms->ofdm_symbol_size),2,1);
-      //write_output("eNB_srs.m","srs_eNB",common_vars->srs,(frame_parms->ofdm_symbol_size),1,1);
+      //LOG_M("eNB_rxF.m","rxF",&common_vars->rxdataF[0][aa][2*frame_parms->ofdm_symbol_size*symbol],2*(frame_parms->ofdm_symbol_size),2,1);
+      //LOG_M("eNB_srs.m","srs_eNB",common_vars->srs,(frame_parms->ofdm_symbol_size),1,1);
 
 
       mult_cpx_conj_vector((int16_t*) &common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*symbol],
@@ -480,7 +479,7 @@ int32_t lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
 #ifdef DEBUG_SRS
       sprintf(fname,"srs_ch_est%d.m",aa);
       sprintf(vname,"srs_est%d",aa);
-      write_output(fname,vname,srs_vars->srs_ch_estimates[aa],frame_parms->ofdm_symbol_size,1,1);
+      LOG_M(fname,vname,srs_vars->srs_ch_estimates[aa],frame_parms->ofdm_symbol_size,1,1);
 #endif
     }
 

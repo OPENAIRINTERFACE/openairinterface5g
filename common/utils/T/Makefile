@@ -13,11 +13,20 @@ $(GENIDS): $(GENIDS_OBJS)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 T_messages.txt.h: T_messages.txt
-	xxd -i T_messages.txt > T_messages.txt.h
+	xxd -i T_messages.txt T_messages.txt.h
 
 T_IDs.h: $(GENIDS) T_messages.txt
 	./$(GENIDS) T_messages.txt T_IDs.h
 
+check_vcd:
+	gcc -Wall -I. -I.. -I../itti -Itracer -o _check_vcd check_vcd.c tracer/database.c tracer/utils.c -lm -pthread
+	./_check_vcd || (rm -f ./_check_vcd ./T_IDs.h ./T_messages.txt.h && false)
+	rm -f ./_check_vcd
+
+.PHONY: check_vcd
+
 clean:
-	rm -f *.o $(GENIDS) core T_IDs.h T_messages.txt.h
-	cd tracer && make clean
+	rm -f *.o $(GENIDS) core T_IDs.h T_messages.txt.h _check_vcd
+
+cleanall: clean
+	cd tracer && $(MAKE) clean

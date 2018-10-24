@@ -129,7 +129,7 @@ else
 
 case "$module" in
   RRC )
-  	asn1c -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example $* 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample
+  	 asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example $* 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample
   ;; 
   NR_RRC )
     	export ASN1C_PREFIX=NR_

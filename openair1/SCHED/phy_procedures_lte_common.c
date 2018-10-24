@@ -336,6 +336,29 @@ unsigned char ul_ACK_subframe2_dl_subframe(LTE_DL_FRAME_PARMS *frame_parms,unsig
   return(0);
 }
 
+int ul_ACK_subframe2_dl_frame(LTE_DL_FRAME_PARMS *frame_parms,int frame, unsigned char subframe,unsigned char subframe_tx)
+{
+
+  if (frame_parms->frame_type == FDD) {
+    return (((subframe_tx > subframe ) ? frame-1 : frame)+1024)%1024;
+  } else {
+    switch (frame_parms->tdd_config) {
+    case 1:
+      return(((subframe_tx > subframe ) ? frame-1 : frame)+1024)%1024;
+      break;
+    case 3:
+        //TODO
+      break;
+    case 4:
+        //TODO
+      break;
+    }
+  }
+
+  return(0);
+}
+
+
 unsigned char ul_ACK_subframe2_M(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe)
 {
 
@@ -343,6 +366,23 @@ unsigned char ul_ACK_subframe2_M(LTE_DL_FRAME_PARMS *frame_parms,unsigned char s
     return(1);
   } else {
     switch (frame_parms->tdd_config) {
+    case 1:
+        return 1; // don't ACK special subframe for now
+      if (subframe == 2) {  // ACK subframes 5 and 6
+        return(2);
+      } else if (subframe == 3) { // ACK subframe 9
+        return(1);  // To be updated
+      } else if (subframe == 7) { // ACK subframes 0 and 1
+        return(2);  // To be updated
+      } else if (subframe == 8) { // ACK subframe 4
+        return(1);  // To be updated
+      } else {
+        LOG_E(PHY,"phy_procedures_lte_common.c/subframe2_dl_harq_pid: illegal subframe %d for tdd_config %d\n",
+              subframe,frame_parms->tdd_config);
+        return(0);
+      }
+
+      break;
     case 3:
       if (subframe == 2) {  // ACK subframes 5 and 6
         return(2); // should be 3
@@ -381,23 +421,6 @@ unsigned char ul_ACK_subframe2_M(LTE_DL_FRAME_PARMS *frame_parms,unsigned char s
               }
 
               break;
-
-    case 1:
-      if (subframe == 2) {  // ACK subframes 5 and 6
-        return(2);
-      } else if (subframe == 3) { // ACK subframe 9
-        return(1);  // To be updated
-      } else if (subframe == 7) { // ACK subframes 0 and 1
-        return(2);  // To be updated
-      } else if (subframe == 8) { // ACK subframe 4
-        return(1);  // To be updated
-      } else {
-        LOG_E(PHY,"phy_procedures_lte_common.c/subframe2_dl_harq_pid: illegal subframe %d for tdd_config %d\n",
-              subframe,frame_parms->tdd_config);
-        return(0);
-      }
-
-      break;
     }
   }
 
@@ -428,7 +451,7 @@ uint8_t get_reset_ack(LTE_DL_FRAME_PARMS *frame_parms,
     o_ACK[cw_idx] = harq_ack[subframe_dl0].ack;
     status = harq_ack[subframe_dl0].send_harq_status;
 
-    //LOG_I(PHY,"dl subframe %d send_harq_status %d cw_idx %d, reset %d\n",subframe_dl0, status, cw_idx, do_reset);
+    LOG_D(PHY,"dl subframe %d send_harq_status %d cw_idx %d, reset %d\n",subframe_dl0, status, cw_idx, do_reset);
     if(do_reset)
     	harq_ack[subframe_dl0].send_harq_status = 0;
     //printf("get_ack: Getting ACK/NAK for PDSCH (subframe %d) => %d\n",subframe_dl,o_ACK[0]);
@@ -608,7 +631,7 @@ uint8_t get_reset_ack(LTE_DL_FRAME_PARMS *frame_parms,
           pN_bundled[0] = harq_ack[subframe_rx].vDAI_UL;
           status = harq_ack[subframe_dl0].send_harq_status + harq_ack[subframe_dl1].send_harq_status + harq_ack[subframe_dl2].send_harq_status + harq_ack[subframe_dl3].send_harq_status;
 
-          LOG_I(PHY,"TDD Config3 UL Sfn %d, dl Sfn0 %d status %d o_Ack %d, dl Sfn1 %d status %d o_Ack %d dl Sfn2 %d status %d o_Ack %d dl Sfn3 %d status %d o_Ack %d subframe_rx %d N_bundled %d status %d\n",
+          LOG_D(PHY,"TDD Config3 UL Sfn %d, dl Sfn0 %d status %d o_Ack %d, dl Sfn1 %d status %d o_Ack %d dl Sfn2 %d status %d o_Ack %d dl Sfn3 %d status %d o_Ack %d subframe_rx %d N_bundled %d status %d\n",
                 subframe_tx, subframe_dl0, harq_ack[subframe_dl0].send_harq_status,harq_ack[subframe_dl0].ack,
               subframe_dl1, harq_ack[subframe_dl1].send_harq_status,harq_ack[subframe_dl1].ack,
               subframe_dl2, harq_ack[subframe_dl2].send_harq_status,harq_ack[subframe_dl2].ack,
@@ -797,6 +820,7 @@ lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char sub
     break;
 
   default:
+
     AssertFatal(1==0,"subframe %d Unsupported TDD configuration %d\n",subframe,frame_parms->tdd_config);
     return(255);
 

@@ -4,13 +4,10 @@
 # Then in "view" menu, select normal or web layout (needed to removed page header and footers)
 # Finally save the document as a text file
 # Call the script: "perl extract_asn1_from_spec.pl 38331-xxx.txt"
-# It should generate: NR-RRC-Definitions.asn, NR-UE-Variables.asn and NR-InterNodeDefinitions
+# It should generate: NR-RRC-38331.asn
 use warnings;
 $input_file = $ARGV[0];
-$NR_def_output_file = "NR-RRC-Definitions.asn";
-$NR_var_output_file = "NR-UE-Variables.asn";
-$NR_internode_output_file = "NR-InterNodeDefinitions.asn";
-
+$NR_asn_output_file = "NR-RRC-38331.asn";
 
 sub extract_asn1;
 
@@ -20,7 +17,7 @@ while (<INPUT_FILE>) {
 
   # Process the NR-RRC-Definitions section
   if( m/NR-RRC-Definitions DEFINITIONS AUTOMATIC TAGS ::=/){
-    open(OUTPUT_FILE, "> $NR_def_output_file") or die "Can not open file $def_output_file";
+    open(OUTPUT_FILE, "> $NR_asn_output_file") or die "Can not open file $NR_asn_output_file";
     syswrite OUTPUT_FILE,"$_ \n";
     syswrite OUTPUT_FILE,"BEGIN\n\n";
 
@@ -28,33 +25,38 @@ while (<INPUT_FILE>) {
     extract_asn1();
 
     syswrite OUTPUT_FILE,"END\n\n";
+
+	while(<INPUT_FILE>) {
+  	  if( m/NR-UE-Variables DEFINITIONS AUTOMATIC TAGS ::=/){
+         
+          syswrite OUTPUT_FILE,"$_ \n";
+          syswrite OUTPUT_FILE,"BEGIN\n\n";
+
+          # Get all the text delimited by -- ASN1START and -- ASN1STOP
+          extract_asn1();
+
+          syswrite OUTPUT_FILE,"END\n\n";
+          
+          	while(<INPUT_FILE>) {
+                  if( m/NR-InterNodeDefinitions DEFINITIONS AUTOMATIC TAGS ::=/){
+		  
+          	  syswrite OUTPUT_FILE,"$_ \n";
+          	  syswrite OUTPUT_FILE,"BEGIN\n\n";
+
+          	  # Get all the text delimited by -- ASN1START and -- ASN1STOP
+          	  extract_asn1();
+
+          	  syswrite OUTPUT_FILE,"END\n\n";
+
+		  }
+                }
+
+	  }	
+	}	  
+
     close(OUTPUT_FILE);
   }
 
-  # Process the NR-UE-Variables section
-  if( m/NR-UE-Variables DEFINITIONS AUTOMATIC TAGS ::=/){
-    open(OUTPUT_FILE, "> $NR_var_output_file") or die "Can not open file $def_output_file";
-    syswrite OUTPUT_FILE,"$_ \n";
-    syswrite OUTPUT_FILE,"BEGIN\n\n";
-
-    # Get all the text delimited by -- ASN1START and -- ASN1STOP
-    extract_asn1();
-
-    syswrite OUTPUT_FILE,"END\n\n";
-    close(OUTPUT_FILE);
-  }
-  # Process the NR-InterNodeDefinitions section
-  if( m/NR-InterNodeDefinitions DEFINITIONS AUTOMATIC TAGS ::=/){
-    open(OUTPUT_FILE, "> $NR_internode_output_file") or die "Can not open file $def_output_file";
-    syswrite OUTPUT_FILE,"$_ \n";
-    syswrite OUTPUT_FILE,"BEGIN\n\n";
-
-    # Get all the text delimited by -- ASN1START and -- ASN1STOP
-    extract_asn1();
-
-    syswrite OUTPUT_FILE,"END\n\n";
-    close(OUTPUT_FILE);
-  }
 
 }
 

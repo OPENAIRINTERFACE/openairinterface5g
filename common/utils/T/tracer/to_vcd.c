@@ -12,7 +12,14 @@
 #include "logger/logger.h"
 #include "view/view.h"
 
+enum var_type {
+  DEFAULT,
+  VCD_FUNCTION,
+  VCD_VARIABLE
+};
+
 typedef struct {
+  enum var_type type;
   char *event;
   char *arg;
   char *vcd_name;
@@ -44,16 +51,39 @@ void vcd_write_header(vcd_vars *v, int n)
 "$version\n"
 "  to_vcd\n"
 "$end\n"
-"$timescale 1ns $end\n"
-"$scope module logic $end\n") <= 0) abort();
-
-  for (i = 0; i < n; i++)
-    if (fprintf(out, "$var wire %d %s %s $end\n",
-           v[i].boolean ? 1 : 64,
-           v[i].vcd_name, v[i].vcd_name) <= 0) abort();
+"$timescale 1ns $end\n") <= 0) abort();
 
   if (fprintf(out,
-"$upscope $end\n"
+"$scope module logic $end\n") <= 0) abort();
+  for (i = 0; i < n; i++)
+    if (v[i].type == DEFAULT)
+      if (fprintf(out, "$var wire %d %s %s $end\n",
+             v[i].boolean ? 1 : 64,
+             v[i].vcd_name, v[i].vcd_name) <= 0) abort();
+  if (fprintf(out,
+"$upscope $end\n") <= 0) abort();
+
+  if (fprintf(out,
+"$scope module functions $end\n") <= 0) abort();
+  for (i = 0; i < n; i++)
+    if (v[i].type == VCD_FUNCTION)
+      if (fprintf(out, "$var wire %d %s %s $end\n",
+             v[i].boolean ? 1 : 64,
+             v[i].vcd_name, v[i].vcd_name) <= 0) abort();
+  if (fprintf(out,
+"$upscope $end\n") <= 0) abort();
+
+  if (fprintf(out,
+"$scope module variables $end\n") <= 0) abort();
+  for (i = 0; i < n; i++)
+    if (v[i].type == VCD_VARIABLE)
+      if (fprintf(out, "$var wire %d %s %s $end\n",
+             v[i].boolean ? 1 : 64,
+             v[i].vcd_name, v[i].vcd_name) <= 0) abort();
+  if (fprintf(out,
+"$upscope $end\n") <= 0) abort();
+
+  if (fprintf(out,
 "$enddefinitions $end\n"
 "$dumpvars\n") <= 0) abort();
 
@@ -174,7 +204,8 @@ void usage(void)
 "    -ip <host>                   connect to given IP address (default %s)\n"
 "    -p <port>                    connect to given port (default %d)\n"
 "    -b <event> <arg> <vcd name>  trace as binary (0 off, anything else on)\n"
-"    -l <event> <arg> <vcd name>  trace as uint64_t\n",
+"    -l <event> <arg> <vcd name>  trace as uint64_t\n"
+"    -vcd                         trace all VCD variables and functions\n",
   DEFAULT_REMOTE_IP,
   DEFAULT_REMOTE_PORT
   );
@@ -192,6 +223,21 @@ void force_stop(int x)
   run = 0;
 }
 
+vcd_vars *add_var(vcd_vars *vars, int nvars,
+    char *event, char *arg, char *vcd_name, int is_boolean, enum var_type t)
+{
+  if (nvars % 64 == 0) {
+    vars = realloc(vars, (nvars+64) * sizeof(vcd_vars));
+    if (vars == NULL) abort();
+  }
+  vars[nvars].type = t;
+  vars[nvars].event = event;
+  vars[nvars].arg = arg;
+  vars[nvars].vcd_name = vcd_name;
+  vars[nvars].boolean = is_boolean;
+  return vars;
+}
+
 int main(int n, char **v)
 {
   char *output_filename = NULL;
@@ -202,11 +248,12 @@ int main(int n, char **v)
   int *is_on;
   int number_of_events;
   int i;
-  vcd_vars vars[n];
+  vcd_vars *vars = NULL;
   int nvars = 0;
   view *vcd_view;
   event_handler *h;
   logger *textlog;
+  int all_vcd = 0;
 
   /* write on a socket fails if the other end is closed and we get SIGPIPE */
   if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) abort();
@@ -221,19 +268,22 @@ int main(int n, char **v)
     if (!strcmp(v[i], "-p"))
       { if (i > n-2) usage(); port = atoi(v[++i]); continue; }
     if (!strcmp(v[i], "-b")) { if(i>n-4)usage();
-      vars[nvars].event     = v[++i];
-      vars[nvars].arg       = v[++i];
-      vars[nvars].vcd_name  = v[++i];
-      vars[nvars++].boolean = 1;
+      char *event    = v[++i];
+      char *arg      = v[++i];
+      char *vcd_name = v[++i];
+      vars = add_var(vars, nvars, event, arg, vcd_name, 1, DEFAULT);
+      nvars++;
       continue;
     }
     if (!strcmp(v[i], "-l")) { if(i>n-4)usage();
-      vars[nvars].event     = v[++i];
-      vars[nvars].arg       = v[++i];
-      vars[nvars].vcd_name  = v[++i];
-      vars[nvars++].boolean = 0;
+      char *event    = v[++i];
+      char *arg      = v[++i];
+      char *vcd_name = v[++i];
+      vars = add_var(vars, nvars, event, arg, vcd_name, 0, DEFAULT);
+      nvars++;
       continue;
     }
+    if (!strcmp(v[i], "-vcd")) { all_vcd = 1; continue; }
     usage();
   }
 
@@ -260,11 +310,42 @@ int main(int n, char **v)
   /* create the view */
   vcd_view = new_view_vcd();
 
+  if (all_vcd) {
+    /* activate all VCD traces */
+    for (i = 0; i < number_of_events; i++) {
+      int is_boolean;
+      enum var_type type;
+      int prefix_length;
+      char *name = event_name_from_id(database, i);
+      char *vcd_name;
+      char *var_prefix = "VCD_VARIABLE_";
+      char *fun_prefix = "VCD_FUNCTION_";
+      if (!strncmp(name, var_prefix, strlen(var_prefix))) {
+        prefix_length = strlen(var_prefix);
+        is_boolean = 0;
+        type = VCD_VARIABLE;
+      } else if (!strncmp(name, fun_prefix, strlen(fun_prefix))) {
+        prefix_length = strlen(fun_prefix);
+        is_boolean = 1;
+        type = VCD_FUNCTION;
+      } else
+        continue;
+      vcd_name = event_vcd_name_from_id(database, i);
+      if (vcd_name == NULL) {
+        vcd_name = name+prefix_length;
+        printf("WARNING: ID %s does not define VCD_NAME in the file %s, using %s\n",
+              name, database_filename, vcd_name);
+      }
+      vars = add_var(vars, nvars,
+          name, "value", vcd_name, is_boolean, type);
+      nvars++;
+    }
+  }
+
   /* setup traces */
   for (i = 0; i < nvars; i++) {
     char format[256];
-    if (strlen(vars[i].arg) > 256-3) abort();
-    if (strlen(vars[i].vcd_name) > 256-1) abort();
+    if (strlen(vars[i].arg) + strlen(vars[i].vcd_name) > 256-16) abort();
     sprintf(format, "%c [%s] %s",
         vars[i].boolean ? 'b' : 'l',
         vars[i].arg,
@@ -287,11 +368,12 @@ int main(int n, char **v)
   if (signal(SIGINT, force_stop) == SIG_ERR) abort();
   if (signal(SIGTSTP, force_stop) == SIG_ERR) abort();
 
+  OBUF ebuf = { osize: 0, omaxsize: 0, obuf: NULL };
+
   /* read messages */
   while (run) {
-    char v[T_BUFFER_MAX];
     event e;
-    e = get_event(socket, v, database);
+    e = get_event(socket, &ebuf, database);
     if (e.type == -1) { printf("disconnected? let's quit gently\n"); break; }
     handle_event(h, e);
   }

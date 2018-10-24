@@ -36,7 +36,7 @@
 #include "rlc_primitives.h"
 #include "mac_primitives.h"
 #include "LAYER2/MAC/mac_extern.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 
 
 #include "rlc_um_very_simple_test.h"
@@ -194,7 +194,7 @@ rlc_um_rx (const protocol_ctxt_t* const ctxt_pP, void *argP, struct mac_data_ind
     // establishment, the RLC entity:
     //   - is created; and
     //   - enters the DATA_TRANSFER_READY state.
-    LOG_N(RLC, PROTOCOL_RLC_UM_CTXT_FMT" ERROR MAC_DATA_IND IN RLC_NULL_STATE\n",
+    LOG_I(RLC, PROTOCOL_RLC_UM_CTXT_FMT" ERROR MAC_DATA_IND IN RLC_NULL_STATE\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,l_rlc_p));
 #if MESSAGE_CHART_GENERATOR
 
@@ -387,7 +387,7 @@ rlc_um_rx (const protocol_ctxt_t* const ctxt_pP, void *argP, struct mac_data_ind
     // - stays in the LOCAL_SUSPEND state;
     // - modifies only the protocol parameters and timers as indicated by
     //   upper layers.
-    LOG_N(RLC, PROTOCOL_RLC_UM_CTXT_FMT" RLC_LOCAL_SUSPEND_STATE\n",
+    LOG_I(RLC, PROTOCOL_RLC_UM_CTXT_FMT" RLC_LOCAL_SUSPEND_STATE\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,l_rlc_p));
     /*if (data_indP.data.nb_elements > 0) {
         LOG_D(RLC, "[FRAME %05d][%s][RLC_UM][MOD %02u/%02u][RB %02d] MAC_DATA_IND %d TBs\n", l_rlc_p->module_id, l_rlc_p->rb_id, ctxt_pP->frame, data_indP.data.nb_elements);
@@ -421,6 +421,7 @@ rlc_um_rx (const protocol_ctxt_t* const ctxt_pP, void *argP, struct mac_data_ind
     LOG_E(RLC, PROTOCOL_RLC_UM_CTXT_FMT" TX UNKNOWN PROTOCOL STATE %02X hex\n",
           PROTOCOL_RLC_UM_CTXT_ARGS(ctxt_pP,l_rlc_p),
           l_rlc_p->protocol_state);
+    list_free (&data_indP.data);
   }
 }
 
@@ -567,7 +568,13 @@ rlc_um_mac_data_request (const protocol_ctxt_t* const ctxt_pP, void *rlc_pP,cons
       l_rlc_p->stat_tx_data_pdu   += 1;
       l_rlc_p->stat_tx_data_bytes += tb_size_in_bytes;
 
-      AssertFatal( tb_size_in_bytes > 0 , "RLC UM PDU LENGTH %d", tb_size_in_bytes);
+      //AssertFatal( tb_size_in_bytes > 0 , "RLC UM PDU LENGTH %d", tb_size_in_bytes);
+      if(tb_size_in_bytes <= 0) {
+        LOG_E(RLC, "RLC UM PDU LENGTH %d\n", tb_size_in_bytes);
+        tb_p = tb_p->next;
+        continue;
+      }
+        
 #if TRACE_RLC_UM_PDU || MESSAGE_CHART_GENERATOR
       rlc_um_get_pdu_infos(ctxt_pP, l_rlc_p,(rlc_um_pdu_sn_10_t*) ((struct mac_tb_req*) (tb_p->data))->data_ptr, tb_size_in_bytes, &pdu_info, l_rlc_p->rx_sn_length);
 #endif

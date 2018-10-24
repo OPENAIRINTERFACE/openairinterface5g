@@ -1624,10 +1624,6 @@ void pnf_nfapi_p7_read_dispatch_message(pnf_p7_t* pnf_p7, uint32_t now_hr_time)
 
 		// need to update the time as we would only use the value from the
 		// select
-#if 0
-// DJP - why do this here and not on return from recv???
-		now_hr_time = pnf_get_current_time_hr();
-#endif
 	}
 	while(recvfrom_result > 0);
 }

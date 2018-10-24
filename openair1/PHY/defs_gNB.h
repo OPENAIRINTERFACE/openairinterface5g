@@ -38,6 +38,7 @@
 #include "CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 #include "openair2/NR_PHY_INTERFACE/NR_IF_Module.h"
 
+#define MAX_NUM_RU_PER_gNB MAX_NUM_RU_PER_eNB
 
 typedef struct {
   uint8_t pbch_a[NR_POLAR_PBCH_PAYLOAD_BITS>>3];

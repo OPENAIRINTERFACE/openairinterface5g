@@ -22,12 +22,12 @@
 #include "phy_init.h"
 #include "SCHED_UE/sched_UE.h"
 #include "PHY/phy_extern_nr_ue.h"
-#include "SIMULATION/TOOLS/sim.h"
+//#include "SIMULATION/TOOLS/sim.h"
 #include "RadioResourceConfigCommonSIB.h"
 #include "RadioResourceConfigDedicated.h"
 #include "TDD-Config.h"
 #include "MBSFN-SubframeConfigList.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "assertions.h"
 #include <math.h>
 #include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
@@ -357,7 +357,7 @@ void phy_config_dedicated_scell_ue(uint8_t Mod_id,
 }
 #endif
 
-void phy_config_harq_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
+void phy_config_harq_ue(module_id_t Mod_id,int CC_id,uint8_t eNB_id,
                         uint16_t max_harq_tx )
 {
 
@@ -947,6 +947,8 @@ void phy_init_nr_top(PHY_VARS_NR_UE *ue)
 
   crcTableInit();
 
+  init_dfts();
+  
   ccodedot11_init();
   ccodedot11_init_inv();
 

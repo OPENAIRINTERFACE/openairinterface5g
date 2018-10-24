@@ -136,8 +136,7 @@ void schedule_ulsch_rnti(module_id_t module_idP, slice_id_t slice_idP, frame_t f
 @param subframe Index of subframe
 @param mbsfn_flag Indicates that this subframe is for MCH/MCCH
 */
-void fill_DLSCH_dci(module_id_t module_idP, frame_t frameP,
-		    sub_frame_t subframe, int *mbsfn_flag);
+void fill_DLSCH_dci(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,int *mbsfn_flag);
 
 /** \brief UE specific DLSCH scheduling. Retrieves next ue to be schduled from round-robin scheduler and gets the appropriate harq_pid for the subframe from PHY. If the process is active and requires a retransmission, it schedules the retransmission with the same PRB count and MCS as the first transmission. Otherwise it consults RLC for DCCH/DTCH SDUs (status with maximum number of available PRBS), builds the MAC header (timing advance sent by default) and copies
 @param Mod_id Instance ID of eNB
@@ -268,7 +267,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame
 void initiate_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP,
 		      sub_frame_t subframeP, uint16_t preamble_index,
 		      int16_t timing_offset, uint16_t rnti
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 		      , uint8_t rach_resource_type
 #endif
     );
@@ -287,7 +286,7 @@ unsigned short fill_rar(const module_id_t module_idP,
 			const uint16_t N_RB_UL,
 			const uint8_t input_buffer_length);
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 unsigned short fill_rar_br(eNB_MAC_INST * eNB,
 			   int CC_id,
 			   RA_t * ra,
@@ -315,6 +314,9 @@ void cancel_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP,
 @param Msg3_frame    frame where scheduling takes place
 @param Msg3_subframe subframe where scheduling takes place
 */
+
+void clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP);
+
 void set_msg3_subframe(module_id_t Mod_id,
 		       int CC_id,
 		       int frame,
@@ -428,7 +430,7 @@ int get_nCCE_offset(int *CCE_table,
 		    const unsigned short rnti,
 		    const unsigned char subframe);
 
-int allocate_CCEs(int module_idP, int CC_idP, int subframe, int test_only);
+int allocate_CCEs(int module_idP, int CC_idP, frame_t frameP, sub_frame_t subframeP, int test_only);
 
 boolean_t CCE_allocation_infeasible(int module_idP,
 				    int CC_idP,
@@ -440,6 +442,7 @@ void set_ue_dai(sub_frame_t subframeP,
 		int UE_id,
 		uint8_t CC_id, uint8_t tdd_config, UE_list_t * UE_list);
 
+uint8_t frame_subframe2_dl_harq_pid(TDD_Config_t *tdd_Config, int abs_frameP, sub_frame_t subframeP);
 /** \brief First stage of PCH Scheduling. Gets a PCH SDU from RRC if available and computes the MCS required to transport it as a function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
 @param Mod_id Instance ID of eNB
 @param frame Frame index
@@ -513,8 +516,17 @@ void ue_send_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frame,
 		 sub_frame_t subframe, uint8_t * sdu, uint16_t sdu_len,
 		 uint8_t CH_index);
 
+void ue_send_sl_sdu(module_id_t module_idP,
+		    uint8_t CC_id,
+		    frame_t frameP,
+		    sub_frame_t subframeP,
+		    uint8_t* sdu,
+		    uint16_t sdu_len,
+		    uint8_t eNB_index,
+	       sl_discovery_flag_t sl_discovery_flag
+		    );
 
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 /* \brief Called by PHY to transfer MCH transport block to ue MAC.
 @param Mod_id Index of module instance
 @param frame Frame index
@@ -535,7 +547,7 @@ void ue_send_mch_sdu(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 @param[out] sync_area return the sync area
 @param[out] mcch_active flag indicating whether this MCCH is active in this SF
 */
-int ue_query_mch(uint8_t Mod_id, uint8_t CC_id, uint32_t frame,
+int ue_query_mch(module_id_t Mod_id, uint8_t CC_id, uint32_t frame,
 		 sub_frame_t subframe, uint8_t eNB_index,
 		 uint8_t * sync_area, uint8_t * mcch_active);
 
@@ -546,12 +558,35 @@ int ue_query_mch(uint8_t Mod_id, uint8_t CC_id, uint32_t frame,
 @param eNB_id Index of eNB that UE is attached to
 @param rnti C_RNTI of UE
 @param subframe subframe number
-@returns 0 for no SR, 1 for SR
 */
 void ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
 		sub_frame_t subframe, uint8_t eNB_index,
 		uint8_t * ulsch_buffer, uint16_t buflen,
 		uint8_t * access_mode);
+
+/* \brief Called by PHY to get sdu for PSBCH/SSS/PSS transmission.
+@param Mod_id Instance id of UE in machine
+@param frame_tx TX frame index
+@param subframe_tx TX subframe index
+@returns pointer to SLSS_t descriptor
+*/
+SLSS_t *ue_get_slss(module_id_t module_idP, int CC_id,frame_t frameP, sub_frame_t subframe);
+
+/* \brief Called by PHY to get sdu for PSDCH transmission.
+@param Mod_id Instance id of UE in machine
+@param frame_tx TX frame index
+@param subframe_tx TX subframe index
+@returns pointer to SLDCH_t descriptor
+*/
+SLDCH_t *ue_get_sldch(module_id_t module_idP, int CC_id,frame_t frameP, sub_frame_t subframe);
+
+/* \brief Called by PHY to get sdu for PSSCH transmission.
+@param Mod_id Instance id of UE in machine
+@param frame_tx TX frame index
+@param subframe_tx TX subframe index
+@returns pointer to SLSCH_t descriptor
+*/
+SLSCH_t *ue_get_slsch(module_id_t module_idP, int CC_id,frame_t frameP, sub_frame_t subframe);
 
 /* \brief Function called by PHY to retrieve information to be transmitted using the RA procedure.  If the UE is not in PUSCH mode for a particular eNB index, this is assumed to be an Msg3 and MAC attempts to retrieves the CCCH message from RRC. If the UE is in PUSCH mode for a particular eNB index and PUCCH format 0 (Scheduling Request) is not activated, the MAC may use this resource for random-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 from 36.321)
 @param Mod_id Index of UE instance
@@ -636,12 +671,14 @@ int to_prb(int);
 int to_rbg(int);
 int mac_init(void);
 int add_new_ue(module_id_t Mod_id, int CC_id, rnti_t rnti, int harq_pid
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	       , uint8_t rach_resource_type
 #endif
     );
 int rrc_mac_remove_ue(module_id_t Mod_id, rnti_t rntiP);
 
+void store_dlsch_buffer(module_id_t Mod_id, slice_id_t slice_id, frame_t frameP, sub_frame_t subframeP);
+void assign_rbs_required(module_id_t Mod_id, slice_id_t slice_id, frame_t frameP, sub_frame_t subframe, uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB], int min_rb_unit[NFAPI_CC_MAX]);
 
 int maxround(module_id_t Mod_id, uint16_t rnti, int frame,
 	     sub_frame_t subframe, uint8_t ul_flag);
@@ -652,9 +689,17 @@ int UE_num_active_CC(UE_list_t * listP, int ue_idP);
 int UE_PCCID(module_id_t mod_idP, int ue_idP);
 rnti_t UE_RNTI(module_id_t mod_idP, int ue_idP);
 
+uint8_t find_rb_table_index(uint8_t average_rbs);
+
+void set_ul_DAI(int module_idP,
+                int UE_idP,
+                int CC_idP,
+                int frameP,
+                int subframeP);
 
 void ulsch_scheduler_pre_processor(module_id_t module_idP, slice_id_t slice_id, int frameP,
 				   sub_frame_t subframeP,
+                                   unsigned char sched_subframeP,
 				   uint16_t * first_rb);
 void store_ulsch_buffer(module_id_t module_idP, int frameP,
 			sub_frame_t subframeP);
@@ -663,6 +708,7 @@ void assign_max_mcs_min_rb(module_id_t module_idP, int slice_id, int frameP,
 			   sub_frame_t subframeP, uint16_t * first_rb);
 void adjust_bsr_info(int buffer_occupancy, uint16_t TBS,
 		     UE_TEMPLATE * UE_template);
+
 int phy_stats_exist(module_id_t Mod_id, int rnti);
 void sort_UEs(module_id_t Mod_idP, slice_id_t slice_id, int frameP, sub_frame_t subframeP);
 
@@ -829,7 +875,7 @@ uint32_t allocate_prbs_sub(int nb_rb, int N_RB_DL, int N_RBG,
 			   uint8_t * rballoc);
 
 void update_ul_dci(module_id_t module_idP, uint8_t CC_id, rnti_t rnti,
-		   uint8_t dai);
+		   uint8_t dai, sub_frame_t subframe);
 
 int get_bw_index(module_id_t module_id, uint8_t CC_id);
 
@@ -887,20 +933,20 @@ int rrc_mac_config_req_eNB(module_id_t module_idP,
 			   int p_eNB,
 			   int Ncp,
 			   int eutra_band, uint32_t dl_CarrierFreq,
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 			   int pbch_repetition,
 #endif
 			   rnti_t rntiP,
 			   BCCH_BCH_Message_t * mib,
 			   RadioResourceConfigCommonSIB_t *
 			   radioResourceConfigCommon,
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 			   RadioResourceConfigCommonSIB_t *
 			   radioResourceConfigCommon_BR,
 #endif
 			   struct PhysicalConfigDedicated
 			   *physicalConfigDedicated,
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 			   SCellToAddMod_r10_t * sCellToAddMod_r10,
 			   //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
@@ -918,13 +964,13 @@ int rrc_mac_config_req_eNB(module_id_t module_idP,
 			   additionalSpectrumEmission,
 			   struct MBSFN_SubframeConfigList
 			   *mbsfn_SubframeConfigList
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 			   ,
 			   uint8_t MBMS_Flag,
 			   MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList,
 			   PMCH_InfoList_r9_t * pmch_InfoList
 #endif
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 			   ,
 			   SystemInformationBlockType1_v1310_IEs_t *
 			   sib1_ext_r13
@@ -958,7 +1004,7 @@ int rrc_mac_config_req_ue(module_id_t module_idP,
 			  radioResourceConfigCommon,
 			  struct PhysicalConfigDedicated
 			  *physicalConfigDedicated,
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 			  SCellToAddMod_r10_t * sCellToAddMod_r10,
 			  //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
@@ -977,7 +1023,7 @@ int rrc_mac_config_req_ue(module_id_t module_idP,
 			  additionalSpectrumEmission,
 			  struct MBSFN_SubframeConfigList
 			  *mbsfn_SubframeConfigList
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 			  ,
 			  uint8_t MBMS_Flag,
 			  MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList,
@@ -987,7 +1033,13 @@ int rrc_mac_config_req_ue(module_id_t module_idP,
 			  ,
 			  uint8_t num_active_cba_groups, uint16_t cba_rnti
 #endif
-    );
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+			  ,config_action_t config_action
+			  ,const uint32_t * const sourceL2Id
+			  ,const uint32_t * const destinationL2Id
+#endif
+			  );
+
 
 uint16_t getRIV(uint16_t N_RB_DL, uint16_t RBstart, uint16_t Lcrbs);
 
@@ -1008,6 +1060,12 @@ uint16_t mac_computeRIV(uint16_t N_RB_DL, uint16_t RBstart,
 			uint16_t Lcrbs);
 
 int get_phich_resource_times6(COMMON_channels_t * cc);
+
+uint8_t frame_subframe2_dl_harq_pid(TDD_Config_t *tdd_Config, int abs_frameP, sub_frame_t subframeP);
+
+uint8_t ul_subframe2_k_phich(COMMON_channels_t * cc, sub_frame_t ul_subframe);
+
+unsigned char ul_ACK_subframe2M(TDD_Config_t *tdd_Config,unsigned char subframe);
 
 int to_rbg(int dl_Bandwidth);
 
@@ -1054,7 +1112,7 @@ void extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
 
 uint16_t fill_nfapi_tx_req(nfapi_tx_request_body_t * tx_req_body,
 			   uint16_t absSF, uint16_t pdu_length,
-			   uint16_t pdu_index, uint8_t * pdu);
+			   int16_t pdu_index, uint8_t * pdu);
 
 void fill_nfapi_ulsch_config_request_rel8(nfapi_ul_config_request_pdu_t *
 					  ul_config_pdu, uint8_t cqi_req,
@@ -1078,7 +1136,7 @@ void fill_nfapi_ulsch_config_request_rel8(nfapi_ul_config_request_pdu_t *
 					  uint8_t current_tx_nb,
 					  uint8_t n_srs, uint16_t size);
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 void fill_nfapi_ulsch_config_request_emtc(nfapi_ul_config_request_pdu_t *
 					  ul_config_pdu, uint8_t ue_type,
 					  uint16_t
@@ -1094,7 +1152,7 @@ void program_dlsch_acknak(module_id_t module_idP, int CC_idP, int UE_idP,
 
 void fill_nfapi_dlsch_config(eNB_MAC_INST * eNB,
 			     nfapi_dl_config_request_body_t * dl_req,
-			     uint16_t length, uint16_t pdu_index,
+			     uint16_t length, int16_t pdu_index,
 			     uint16_t rnti,
 			     uint8_t resource_allocation_type,
 			     uint8_t
@@ -1128,7 +1186,8 @@ void fill_nfapi_ulsch_harq_information(module_id_t module_idP,
 				       int CC_idP,
 				       uint16_t rntiP,
 				       nfapi_ul_config_ulsch_harq_information
-				       * harq_information);
+				       * harq_information,
+				       sub_frame_t subframeP);
 
 uint16_t fill_nfapi_uci_acknak(module_id_t module_idP,
 			       int CC_idP,
@@ -1154,7 +1213,7 @@ uint8_t get_tmode(module_id_t module_idP, int CC_idP, int UE_idP);
 uint8_t get_ul_req_index(module_id_t module_idP, int CC_idP,
 			 sub_frame_t subframeP);
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 int get_numnarrowbandbits(long dl_Bandwidth);
 
 int mpdcch_sf_condition(eNB_MAC_INST * eNB, int CC_id, frame_t frameP,
@@ -1177,11 +1236,20 @@ uint32_t from_earfcn(int eutra_bandP, uint32_t dl_earfcn);
 int32_t get_uldl_offset(int eutra_bandP);
 int l2_init_ue(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active,
 	       uint8_t HO_active);
+#if defined(PRE_SCD_THREAD)
+void pre_scd_nb_rbs_required(    module_id_t     module_idP,
+                                 frame_t         frameP,
+                                 sub_frame_t     subframeP,
+                                 int             min_rb_unit[MAX_NUM_CCs],
+                                 uint16_t        nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX]);
+#endif
 
 /*Slice related functions */
 uint16_t flexran_nb_rbs_allowed_slice(float rb_percentage, int total_rbs);
 
 int ue_slice_membership(int UE_id, int slice_id);
 
+/* from here: prototypes to get rid of compilation warnings: doc to be written by function author */
+uint8_t ul_subframe2_k_phich(COMMON_channels_t * cc, sub_frame_t ul_subframe);
 #endif
 /** @}*/

@@ -19,20 +19,19 @@
  *      contact@openairinterface.org
  */
 
-/*! \file proto.h
- * \brief RRC functions prototypes for eNB and UE
- * \author Navid Nikaein and Raymond Knopp
- * \date 2010 - 2014
- * \email navid.nikaein@eurecom.fr
+/*! \file nr_rrc_proto.h
+ * \brief RRC functions prototypes for gNB
+ * \author Navid Nikaein and Raymond Knopp, WEI-TAI-CHEN
+ * \date 2010 - 2014, 2018
+ * \email navid.nikaein@eurecom.fr, kroempa@gmail.com
  * \version 1.0
- 
+ * \company Eurecom, NTUST
  */
 /** \addtogroup _rrc
  *  @{
  */
 
 #include "RRC/NR/nr_rrc_defs.h"
-
 #include "flexran_agent_extern.h"
 
 int rrc_init_nr_global_param(void);
@@ -47,6 +46,16 @@ int8_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
                            const rb_id_t     Srb_id,
                            const uint8_t     Nb_tb,
                            uint8_t *const    buffer_pP );
+
+void rrc_gNB_process_SgNBAdditionRequest( 
+     const protocol_ctxt_t  *const ctxt_pP,
+     rrc_gNB_ue_context_t   *ue_context_pP 
+     );
+
+void rrc_gNB_generate_SgNBAdditionRequestAcknowledge( 
+     const protocol_ctxt_t  *const ctxt_pP,
+     rrc_gNB_ue_context_t   *const ue_context_pP
+     );
 
 
 #if defined(ENABLE_ITTI)

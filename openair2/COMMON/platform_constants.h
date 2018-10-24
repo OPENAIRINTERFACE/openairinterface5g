@@ -29,9 +29,9 @@
  ***************************************************************************/
 
 #ifdef CMAKER
-#include "asn1_constants.h"
+#include "asn_constant.h"
 #else
-#include "RRC/LITE/MESSAGES/asn1_constants.h"
+#include "RRC/LTE/MESSAGES/asn1_constants.h"
 #endif
 
 #ifndef __PLATFORM_CONSTANTS_H__
@@ -67,19 +67,28 @@
 
 #    define MAX_MODULES                NB_MODULES_MAX
 
-#ifdef LARGE_SCALE
+#ifndef UE_EXPANSION
+# ifdef LARGE_SCALE
 #    define MAX_MOBILES_PER_ENB         128
 #    define MAX_MOBILES_PER_ENB_NB_IoT  128
 #    define MAX_MOBILES_PER_GNB         128
 #    define MAX_eNB                      2
 #    define MAX_gNB                      2
-#else
+# else
 #    define MAX_MOBILES_PER_ENB         16
 #    define MAX_MOBILES_PER_ENB_NB_IoT  16
 #    define MAX_MOBILES_PER_GNB         16
 #    define MAX_eNB                      2
 #    define MAX_gNB                      2
+# endif
+#else
+#    define MAX_MOBILES_PER_ENB         256
+#    define MAX_MOBILES_PER_ENB_NB_IoT  256
+#    define MAX_MOBILES_PER_GNB         256
+#    define MAX_eNB                      2
+#    define MAX_gNB                      2
 #endif
+
 
 #define MAX_MANAGED_ENB_PER_MOBILE  2
 #define MAX_MANAGED_GNB_PER_MOBILE  2
@@ -91,7 +100,7 @@
 #define DEFAULT_RAB_ID 1
 
 #define NB_RB_MAX      (maxDRB + 3) /* was 11, now 14, maxDRB comes from asn1_constants.h, + 3 because of 3 SRB, one invisible id 0, then id 1 and 2 */
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 #define NB_RB_MBMS_MAX (maxSessionPerPMCH*maxServiceCount)
 #else
 // Do not allocate unused memory

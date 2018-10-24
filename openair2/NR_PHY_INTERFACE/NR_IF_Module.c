@@ -1,3 +1,35 @@
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
+
+/*! \file openair2/NR_PHY_INTERFACE/NR_IF_Module.c
+* \brief data structures for PHY/MAC interface modules
+* \author EURECOM/NTUST
+* \date 2018
+* \version 0.1
+* \company Eurecom, NTUST
+* \email: raymond.knopp@eurecom.fr, kroempa@gmail.com
+* \note
+* \warning
+*/
+
 #include "openair1/PHY/defs_eNB.h"
 #include "openair1/PHY/phy_extern.h"
 #include "openair1/SCHED_NR/fapi_nr_l1.h"
@@ -35,13 +67,13 @@ void handle_nr_rach(NR_UL_IND_t *UL_info) {
          UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.preamble,
          UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.timing_advance,
          UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.rnti
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
          ,0
 #endif
          );
   }
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   if (UL_info->rach_ind_br.rach_indication_body.number_of_preambles>0) {
 
     AssertFatal(UL_info->rach_ind_br.rach_indication_body.number_of_preambles<5,"More than 4 preambles not supported\n");

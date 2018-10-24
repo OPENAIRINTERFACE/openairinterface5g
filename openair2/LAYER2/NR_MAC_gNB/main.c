@@ -21,10 +21,11 @@
 
 /*! \file main.c
  * \brief top init of Layer 2
- * \author  Navid Nikaein and Raymond Knopp
- * \date 2010 - 2014
+ * \author  Navid Nikaein and Raymond Knopp, WEI-TAI CHEN
+ * \date 2010 - 2014, 2018
  * \version 1.0
- * \email: navid.nikaein@eurecom.fr
+ * \company Eurecom, NTUST
+ * \email: navid.nikaein@eurecom.fr, kroempa@gmail.com
  * @ingroup _mac
 
  */
@@ -35,7 +36,7 @@
 
 #include "LAYER2/PDCP_v10.1.0/pdcp.h"
 #include "RRC/NR/nr_rrc_defs.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 //#include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 #include "common/ran_context.h"

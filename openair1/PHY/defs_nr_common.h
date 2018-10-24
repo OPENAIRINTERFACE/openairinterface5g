@@ -33,6 +33,7 @@
 #ifndef __PHY_DEFS_NR_COMMON__H__
 #define __PHY_DEFS_NR_COMMON__H__
 
+#include "PHY/impl_defs_top.h"
 #include "defs_common.h"
 #include "nfapi_nr_interface.h"
 #include "impl_defs_nr.h"
@@ -133,6 +134,29 @@ typedef struct {
   nr_reg_t reg_list[NR_NB_REG_PER_CCE];
 } nr_cce_t;
 
+
+/// PRACH-ConfigInfo from 36.331 RRC spec
+typedef struct {
+  /// Parameter: prach-ConfigurationIndex, see TS 36.211 (5.7.1). \vr{[0..63]}
+  uint8_t prach_ConfigIndex;
+  /// Parameter: High-speed-flag, see TS 36.211 (5.7.2). \vr{[0..1]} 1 corresponds to Restricted set and 0 to Unrestricted set.
+  uint8_t highSpeedFlag;
+  /// Parameter: \f$N_\text{CS}\f$, see TS 36.211 (5.7.2). \vr{[0..15]}\n Refer to table 5.7.2-2 for preamble format 0..3 and to table 5.7.2-3 for preamble format 4.
+  uint8_t zeroCorrelationZoneConfig;
+  /// Parameter: prach-FrequencyOffset, see TS 36.211 (5.7.1). \vr{[0..94]}\n For TDD the value range is dependent on the value of \ref prach_ConfigIndex.
+  uint8_t prach_FreqOffset;
+} NR_PRACH_CONFIG_INFO;
+
+/// PRACH-ConfigSIB or PRACH-Config
+typedef struct {
+  /// Parameter: RACH_ROOT_SEQUENCE, see TS 36.211 (5.7.1). \vr{[0..837]}
+  uint16_t rootSequenceIndex;
+  /// prach_Config_enabled=1 means enabled. \vr{[0..1]}
+  uint8_t prach_Config_enabled;
+  /// PRACH Configuration Information
+  NR_PRACH_CONFIG_INFO prach_ConfigInfo;
+} NR_PRACH_CONFIG_COMMON;
+
 typedef struct NR_DL_FRAME_PARMS {
   /// frequency range
   nr_frequency_range_e freq_range;
@@ -197,12 +221,15 @@ typedef struct NR_DL_FRAME_PARMS {
   uint8_t ttis_per_subframe;
   /// NR number of slots per tti . Assumption only 2 Slot per TTI is supported (Slot Config 1 in 38.211)
   uint8_t slots_per_tti;
+//#endif
   /// Number of Physical transmit antennas in node
   uint8_t nb_antennas_tx;
   /// Number of Receive antennas in node
   uint8_t nb_antennas_rx;
   /// Number of common transmit antenna ports in eNodeB (1 or 2)
   uint8_t nb_antenna_ports_eNB;
+  /// PRACH_CONFIG
+  NR_PRACH_CONFIG_COMMON prach_config_common;
   /// Cyclic Prefix for DL (0=Normal CP, 1=Extended CP)
   lte_prefix_type_t Ncp;
   /// shift of pilot position in one RB
@@ -218,7 +245,7 @@ typedef struct NR_DL_FRAME_PARMS {
   TDD_UL_DL_SlotConfig_t    *p_TDD_UL_DL_ConfigDedicated;
 
   /// TDD configuration
-  uint16_t tdd_uplink_nr[MAX_NR_OF_SLOTS]; /* this is a bitmap of symbol of each slot given for 2 frames */
+  uint16_t tdd_uplink_nr[2*NR_MAX_SLOTS_PER_FRAME]; /* this is a bitmap of symbol of each slot given for 2 frames */
 
    //SSB related params
   /// Start in Subcarrier index of the SSB block

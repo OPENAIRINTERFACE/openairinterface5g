@@ -21,7 +21,6 @@
 
 #include <stdint.h>
 
-
 #ifndef S1AP_ENB_DECODER_H_
 #define S1AP_ENB_DECODER_H_
 

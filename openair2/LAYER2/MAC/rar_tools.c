@@ -32,7 +32,7 @@
 #include "mac_proto.h"
 #include "mac_extern.h"
 #include "SIMULATION/TOOLS/sim.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "OCG.h"
 #include "OCG_extern.h"
 #include "UTIL/OPT/opt.h"
@@ -71,7 +71,16 @@ fill_rar(const module_id_t module_idP,
     ra->timing_offset /= 16;	//T_A = N_TA/16, where N_TA should be on a 30.72Msps
     rar[0] = (uint8_t) (ra->timing_offset >> (2 + 4));	// 7 MSBs of timing advance + divide by 4
     rar[1] = (uint8_t) (ra->timing_offset << (4 - 2)) & 0xf0;	// 4 LSBs of timing advance + divide by 4
-    ra->msg3_first_rb = 6;
+    COMMON_channels_t *cc = &RC.mac[module_idP]->common_channels[CC_id];
+    if(N_RB_UL == 25){
+      ra->msg3_first_rb = 1;
+    }else{
+      if (cc->tdd_Config && N_RB_UL == 100) {
+        ra->msg3_first_rb = 3;
+      } else {
+        ra->msg3_first_rb = 2;
+      }
+    }
     ra->msg3_nb_rb = 1;
     uint16_t rballoc = mac_computeRIV(N_RB_UL, ra->msg3_first_rb, ra->msg3_nb_rb);	// first PRB only for UL Grant
     rar[1] |= (rballoc >> 7) & 7;	// Hopping = 0 (bit 3), 3 MSBs of rballoc
@@ -80,6 +89,7 @@ fill_rar(const module_id_t module_idP,
     ra->msg3_TPC = 3;
     ra->msg3_ULdelay = 0;
     ra->msg3_cqireq = 0;
+    ra->msg3_round = 0;
     rar[2] |= ((ra->msg3_mcs & 0x8) >> 3);	// mcs 10
     rar[3] =
 	(((ra->msg3_mcs & 0x7) << 5)) | ((ra->msg3_TPC & 7) << 2) |
@@ -98,7 +108,7 @@ fill_rar(const module_id_t module_idP,
     return (ra->rnti);
 }
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 //------------------------------------------------------------------------------
 unsigned short
 fill_rar_br(eNB_MAC_INST * eNB,

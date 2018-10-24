@@ -60,11 +60,9 @@
 #include "PHY/TOOLS/smbv.h"
 unsigned short config_frames[4] = {2,9,11,13};
 #endif
-#include "UTIL/LOG/log_extern.h"
-#include "UTIL/OTG/otg_tx.h"
-#include "UTIL/OTG/otg_externs.h"
-#include "UTIL/MATH/oml.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
+
 #include "UTIL/OPT/opt.h"
 #include "enb_config.h"
 //#include "PHY/TOOLS/time_meas.h"
@@ -124,11 +122,12 @@ int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
 
 
 //static char                    *conf_config_file_name = NULL;
+
 #if defined(ENABLE_ITTI)
 static char                    *itti_dump_file = NULL;
 #endif
 
-int UE_scan = 1;
+int UE_scan = 0;
 int UE_scan_carrier = 0;
 runmode_t mode = normal_txrx;
 
@@ -171,7 +170,9 @@ int codingw = 0;
 int fepw = 0;
 
 int                      		rx_input_level_dBm;
+
 //static int                      online_log_messages=0;
+
 #ifdef XFORMS
 extern int                      otg_enabled;
 static char                     do_forms=0;
@@ -196,6 +197,7 @@ extern PHY_VARS_NR_UE* init_nr_ue_vars(NR_DL_FRAME_PARMS *frame_parms,
 
 int transmission_mode=1;
 int numerology = 0;
+
 /*
 int16_t           glog_level         = LOG_INFO;
 int16_t           glog_verbosity     = LOG_MED;
@@ -213,7 +215,6 @@ int16_t           rrc_log_level      = LOG_INFO;
 int16_t           rrc_log_verbosity  = LOG_MED;
 int16_t           opt_log_level      = LOG_INFO;
 int16_t           opt_log_verbosity  = LOG_MED;
-*/
 
 # if defined(ENABLE_USE_MME)
 int16_t           gtpu_log_level     = LOG_DEBUG;
@@ -225,6 +226,7 @@ int16_t           udp_log_verbosity  = LOG_MED;
 int16_t           osa_log_level      = LOG_INFO;
 int16_t           osa_log_verbosity  = LOG_MED;
 #endif
+*/
 
 char *rrh_UE_ip = "127.0.0.1";
 int rrh_UE_port = 51000;
@@ -330,60 +332,6 @@ void signal_handler(int sig) {
 #define KBLU  "\x1B[34m"
 #define RESET "\033[0m"
 
-void help (void) {
-  printf (KGRN "Usage:\n");
-  printf("  sudo -E lte-softmodem [options]\n");
-  printf("  sudo -E ./lte-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.exmimo2.openEPC.conf -S -V -m 26 -t 16 -x 1 --ulsch-max-errors 100 -W\n\n");
-  printf("Options:\n");
-  printf("  --rf-config-file Configuration file for front-end (e.g. LMS7002M)\n");
-  printf("  --ulsch-max-errors set the max ULSCH erros\n");
-  printf("  --calib-ue-rx set UE RX calibration\n");
-  printf("  --calib-ue-rx-med \n");
-  printf("  --calib-ue-rxbyp\n");
-  printf("  --debug-ue-prach run normal prach power ramping, but don't continue random-access\n");
-  printf("  --calib-prach-tx run normal prach with maximum power, but don't continue random-access\n");
-  printf("  --no-L2-connect bypass L2 and upper layers\n");
-  printf("  --ue-rxgain set UE RX gain\n");
-  printf("  --ue-rxgain-off external UE amplifier offset\n");
-  printf("  --ue-txgain set UE TX gain\n");
-  printf("  --ue-nb-ant-rx  set UE number of rx antennas\n");
-  printf("  --ue-scan-carrier set UE to scan around carrier\n");
-  printf("  --dlsch-demod-shift dynamic shift for LLR compuation for TM3/4 (default 0)\n");
-  printf("  --loop-memory get softmodem (UE) to loop through memory instead of acquiring from HW\n");
-  printf("  --mmapped-dma sets flag for improved EXMIMO UE performance\n");  
-  printf("  --external-clock tells hardware to use an external clock reference\n");
-  printf("  --usim-test use XOR autentication algo in case of test usim mode\n"); 
-  printf("  --single-thread-disable. Disables single-thread mode in lte-softmodem\n"); 
-  printf("  --AgregationLevel Choose the agregation level used by tghe eNB for the OAI use 1, it will save some time of processing the pdcch\n");
-  printf("  --DCIformat choose the DCI format, be careful when using this option(for the moment only valid for SISO DCI format 1)\n");
-  printf("  -A Set timing_advance\n");
-  printf("  -C Set the downlink frequency for all component carriers\n");
-  printf("  -d Enable soft scope and L1 and L2 stats (Xforms)\n");
-  printf("  -F Calibrate the EXMIMO borad, available files: exmimo2_2arxg.lime exmimo2_2brxg.lime \n");
-  printf("  -g Set the global log level, valide options: (9:trace, 8/7:debug, 6:info, 4:warn, 3:error)\n");
-  printf("  -G Set the global log verbosity \n");
-  printf("  -h provides this help message!\n");
-  printf("  -K Generate ITTI analyzser logs (similar to wireshark logs but with more details)\n");
-  printf("  -m Set the maximum downlink MCS\n");
-  printf("  -O eNB configuration file (located in targets/PROJECTS/GENERIC-LTE-EPC/CONF\n");
-  printf("  -q Enable processing timing measurement of lte softmodem on per subframe basis \n");
-  printf("  -r Set the PRB, valid values: 6, 25, 50, 100  \n");    
-  printf("  -S Skip the missed slots/subframes \n");    
-  printf("  -t Set the maximum uplink MCS\n");
-  printf("  -T Set hardware to TDD mode (default: FDD). Used only with -U (otherwise set in config file).\n");
-  printf("  -U Set the lte softmodem as a UE\n");
-  printf("  -W Enable L2 wireshark messages on localhost \n");
-  printf("  -V Enable VCD (generated file will be located atopenair_dump_eNB.vcd, read it with target/RT/USER/eNB.gtkw\n");
-  printf("  -x Set the transmission mode, valid options: 1 \n");
-  printf("  -E Apply three-quarter of sampling frequency, 23.04 Msps to reduce the data rate on USB/PCIe transfers (only valid for 20 MHz)\n");
-#if T_TRACER
-    printf("  --T_port [port]    use given port\n");
-    printf("  --T_nowait         don't wait for tracer, start immediately\n");
-    printf("  --T_dont_fork      to ease debugging with gdb\n");
-#endif
-    printf(RESET);
-    fflush(stdout);
-}
 
 void exit_fun(const char* s) {
     int CC_id;
@@ -394,10 +342,11 @@ void exit_fun(const char* s) {
 
     oai_exit = 1;
 
-    for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-
-            if (PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func)
-                PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][CC_id]->rfdevice);
+    if (PHY_vars_UE_g && PHY_vars_UE_g[0]) {
+      for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+	if (PHY_vars_UE_g[0][CC_id] && PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func)
+	  PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][CC_id]->rfdevice);
+      }
     }
 
 #if defined(ENABLE_ITTI)
@@ -575,11 +524,9 @@ static void get_options(void) {
       set_glog_onlinelog(online_log_messages);
   }
   if(config_isparamset(cmdline_logparams,CMDLINE_GLOGLEVEL_IDX)) {
-      set_glog(glog_level, -1);
+      set_glog(glog_level);
   }
-  if(config_isparamset(cmdline_logparams,CMDLINE_GLOGVERBO_IDX)) {
-      set_glog(-1, glog_verbosity);
-  }
+
   if (start_telnetsrv) {
      load_module_shlib("telnetsrv",NULL,0);
   }
@@ -671,7 +618,7 @@ static void get_options(void) {
 }
 
 #if T_TRACER
-int T_wait = 1;       /* by default we wait for the tracer */
+int T_nowait = 0;       /* by default we wait for the tracer */
 int T_port = 2021;    /* default port to listen to to wait for the tracer */
 int T_dont_fork = 0;  /* default is to fork, see 'T_init' to understand */
 #endif
@@ -688,8 +635,8 @@ void set_default_frame_parms(NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
         config[CC_id]->subframe_config.numerology_index_mu.value =1;
         config[CC_id]->subframe_config.duplex_mode.value = 1; //FDD
         config[CC_id]->subframe_config.dl_cyclic_prefix_type.value = 0; //NORMAL
-        config[CC_id]->rf_config.dl_channel_bandwidth.value = 106;
-        config[CC_id]->rf_config.ul_channel_bandwidth.value = 106;
+        config[CC_id]->rf_config.dl_carrier_bandwidth.value = 106;
+        config[CC_id]->rf_config.ul_carrier_bandwidth.value = 106;
         config[CC_id]->rf_config.tx_antenna_ports.value = 1;
         config[CC_id]->rf_config.rx_antenna_ports.value = 1;
         config[CC_id]->sch_config.physical_cell_id.value = 0;
@@ -711,7 +658,8 @@ void set_default_frame_parms(NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
 
         ///frame_parms[CC_id]->phich_config_common.phich_resource = oneSixth;
         //frame_parms[CC_id]->phich_config_common.phich_duration = normal;
-    // UL RS Config
+
+	// UL RS Config
         /*frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 1;//n_DMRS1 set to 0
         frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1;
         frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
@@ -732,12 +680,6 @@ void set_default_frame_parms(NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
         frame_parms[CC_id]->numerology_index	= 0;
         frame_parms[CC_id]->ttis_per_subframe	= 1;
         frame_parms[CC_id]->slots_per_tti		= 2;
-
-        downlink_frequency[CC_id][0] = 2680000000; // Use float to avoid issue with frequency over 2^31.
-        downlink_frequency[CC_id][1] = downlink_frequency[CC_id][0];
-        downlink_frequency[CC_id][2] = downlink_frequency[CC_id][0];
-        downlink_frequency[CC_id][3] = downlink_frequency[CC_id][0];
-        //printf("Downlink for CC_id %d frequency set to %u\n", CC_id, downlink_frequency[CC_id][0]);
 
     }
 
@@ -862,8 +804,9 @@ int main( int argc, char **argv ) {
     start_background_system();
     if ( load_configmodule(argc,argv) == NULL) {
       exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
-    } 
-
+    }
+    CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
+ 
 #ifdef DEBUG_CONSOLE
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
@@ -883,37 +826,38 @@ int main( int argc, char **argv ) {
     // initialize logging
     logInit();
 
+
     // get options and fill parameters from configuration file
     get_options (); //Command-line options, enb_properties
 
 #if T_TRACER
-    T_init(T_port, T_wait, T_dont_fork);
+    T_Config_Init();
 #endif
 
     // initialize the log (see log.h for details)
-    //set_glog(glog_level, glog_verbosity);
+    set_glog(LOG_DEBUG);
+
+    set_log(HW,      OAILOG_DEBUG,   1);
+    set_log(PHY,     OAILOG_DEBUG,    1);
+    set_log(MAC,     OAILOG_INFO,    1);
+    set_log(RLC,     OAILOG_INFO,    1);
+    set_log(PDCP,    OAILOG_INFO,    1);
+    set_log(OTG,     OAILOG_INFO,    1);
+    set_log(RRC,     OAILOG_INFO,    1);
+#if defined(ENABLE_ITTI)
+    set_log(SIM,     OAILOG_INFO,   1);
+# if defined(ENABLE_USE_MME)
+    set_log(NAS,     OAILOG_INFO,    1);
+# endif
+#endif
 
     //randominit (0);
     set_taus_seed (0);
 
-        printf("configuring for UE\n");
+    printf("configuring for UE\n");
 
-        set_comp_log(HW,      LOG_DEBUG,  LOG_HIGH, 1);
-        set_comp_log(PHY,     LOG_DEBUG,   LOG_HIGH, 1);
-        set_comp_log(MAC,     LOG_DEBUG,   LOG_HIGH, 1);
-        set_comp_log(RLC,     LOG_INFO,   LOG_HIGH | FLAG_THREAD, 1);
-        set_comp_log(PDCP,    LOG_INFO,   LOG_HIGH, 1);
-        set_comp_log(OTG,     LOG_INFO,   LOG_HIGH, 1);
-        set_comp_log(RRC,     LOG_DEBUG,   LOG_HIGH, 1);
-#if defined(ENABLE_ITTI)
-        set_comp_log(EMU,     LOG_INFO,   LOG_MED, 1);
-# if defined(ENABLE_USE_MME)
-        set_comp_log(NAS,     LOG_INFO,   LOG_HIGH, 1);
-# endif
-#endif
-
-    if (ouput_vcd)
-        VCD_SIGNAL_DUMPER_INIT("/tmp/openair_dump_UE.vcd");
+    //if (ouput_vcd)
+    //    VCD_SIGNAL_DUMPER_INIT("/tmp/openair_dump_UE.vcd");
 
     //if (opp_enabled ==1) {
     //    reset_opp_meas();
@@ -921,14 +865,16 @@ int main( int argc, char **argv ) {
     cpuf=get_cpu_freq_GHz();
 
 #if defined(ENABLE_ITTI)
+    //log_set_instance_type (LOG_INSTANCE_UE);
 
-    log_set_instance_type (LOG_INSTANCE_UE);
-
-    itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, itti_dump_file);
+    itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
     // initialize mscgen log after ITTI
     MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
 #endif
+
+    // get options and fill parameters from configuration file
+    get_options (); //Command-line options, enb_properties
 
     if (opt_type != OPT_NONE) {
         radio_type_t radio_type;
@@ -1119,7 +1065,9 @@ int main( int argc, char **argv ) {
   LOG_I(HW, "CPU Affinity of main() function is... %s\n", cpu_affinity);
 #endif
 
+
     //openair0_cfg[0].log_level = glog_level;
+
     /*int eMBMS_active=0;
     if (node_function[0] <= NGFI_RAU_IF4p5) { // don't initialize L2 for RRU
         LOG_I(PHY,"Intializing L2\n");
@@ -1288,17 +1236,17 @@ int main( int argc, char **argv ) {
   pthread_mutex_destroy(&sync_mutex);
 
 
-    // *** Handle per CC_id openair0
-        if (PHY_vars_UE_g[0][0]->rfdevice.trx_end_func)
-            PHY_vars_UE_g[0][0]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][0]->rfdevice);
+  // *** Handle per CC_id openair0
+  if (PHY_vars_UE_g[0][0]->rfdevice.trx_end_func)
+    PHY_vars_UE_g[0][0]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][0]->rfdevice);
+  
+  //if (ouput_vcd)
+  //VCD_SIGNAL_DUMPER_CLOSE();
 
-    if (ouput_vcd)
-        VCD_SIGNAL_DUMPER_CLOSE();
-
-    if (opt_enabled == 1)
-        terminate_opt();
-
-    logClean();
-
-    return 0;
+  if (opt_enabled == 1)
+    terminate_opt();
+  
+  logClean();
+  
+  return 0;
 }

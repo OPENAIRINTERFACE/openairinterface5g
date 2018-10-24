@@ -2924,7 +2924,7 @@ static uint8_t unpack_dl_config_bch_pdu_rel8_value(void *tlv, uint8_t **ppReadPa
 	nfapi_dl_config_bch_pdu_rel8_t* bch_pdu_rel8 = (nfapi_dl_config_bch_pdu_rel8_t*)tlv;
 	
 	return ( pull16(ppReadPackedMsg, &bch_pdu_rel8->length, end) &&
-			 pull16(ppReadPackedMsg, &bch_pdu_rel8->pdu_index, end) &&
+			 pull16(ppReadPackedMsg, (uint16_t *)&bch_pdu_rel8->pdu_index, end) &&
 			 pull16(ppReadPackedMsg, &bch_pdu_rel8->transmission_power, end));
 }
 
@@ -2933,7 +2933,7 @@ static uint8_t unpack_dl_config_mch_pdu_rel8_value(void *tlv, uint8_t **ppReadPa
 	nfapi_dl_config_mch_pdu_rel8_t* mch_pdu_rel8 = (nfapi_dl_config_mch_pdu_rel8_t*)tlv;
 	
 	return (pull16(ppReadPackedMsg, &mch_pdu_rel8->length, end) &&
-			pull16(ppReadPackedMsg, &mch_pdu_rel8->pdu_index, end) &&
+			pull16(ppReadPackedMsg, (uint16_t *)&mch_pdu_rel8->pdu_index, end) &&
 			pull16(ppReadPackedMsg, &mch_pdu_rel8->rnti, end) &&
 			pull8(ppReadPackedMsg, &mch_pdu_rel8->resource_allocation_type, end) &&
 			pull32(ppReadPackedMsg, &mch_pdu_rel8->resource_block_coding, end) &&
@@ -2947,7 +2947,7 @@ static uint8_t unpack_dl_config_dlsch_pdu_rel8_value(void *tlv, uint8_t **ppRead
 	nfapi_dl_config_dlsch_pdu_rel8_t* dlsch_pdu_rel8 = (nfapi_dl_config_dlsch_pdu_rel8_t*)tlv;
 	
 	if (!(pull16(ppReadPackedMsg, &dlsch_pdu_rel8->length, end) &&
-		  pull16(ppReadPackedMsg, &dlsch_pdu_rel8->pdu_index, end) &&
+		  pull16(ppReadPackedMsg, (uint16_t *)&dlsch_pdu_rel8->pdu_index, end) &&
 		  pull16(ppReadPackedMsg, &dlsch_pdu_rel8->rnti, end) &&
 		  pull8(ppReadPackedMsg, &dlsch_pdu_rel8->resource_allocation_type, end) &&
 		  pull8(ppReadPackedMsg, &dlsch_pdu_rel8->virtual_resource_block_assignment_flag, end) &&
@@ -3033,7 +3033,7 @@ static uint8_t unpack_dl_config_pch_pdu_rel8_value(void *tlv, uint8_t **ppReadPa
 	nfapi_dl_config_pch_pdu_rel8_t* pch_pdu_rel8 = (nfapi_dl_config_pch_pdu_rel8_t*)tlv;
 	
 	return ( pull16(ppReadPackedMsg, &pch_pdu_rel8->length, end) &&
-			 pull16(ppReadPackedMsg, &pch_pdu_rel8->pdu_index, end) &&
+			 pull16(ppReadPackedMsg, (uint16_t *)&pch_pdu_rel8->pdu_index, end) &&
 			 pull16(ppReadPackedMsg, &pch_pdu_rel8->p_rnti, end) &&
 			 pull8(ppReadPackedMsg, &pch_pdu_rel8->resource_allocation_type, end) &&
 			 pull8(ppReadPackedMsg, &pch_pdu_rel8->virtual_resource_block_assignment_flag, end) &&
@@ -3179,7 +3179,7 @@ static uint8_t unpack_dl_config_nbch_pdu_rel13_value(void *tlv, uint8_t **ppRead
 	nfapi_dl_config_nbch_pdu_rel13_t* nbch_params_rel13 = (nfapi_dl_config_nbch_pdu_rel13_t*)tlv;
 	
 	return ( pull16(ppReadPackedMsg, &nbch_params_rel13->length, end) &&
-			 pull16(ppReadPackedMsg, &nbch_params_rel13->pdu_index, end) &&
+			 pull16(ppReadPackedMsg, (uint16_t *)&nbch_params_rel13->pdu_index, end) &&
 			 pull16(ppReadPackedMsg, &nbch_params_rel13->transmission_power, end) &&
 			 pull16(ppReadPackedMsg, &nbch_params_rel13->hyper_sfn_2_lsbs, end));
 }
@@ -3189,7 +3189,7 @@ static uint8_t unpack_dl_config_npdcch_pdu_rel13_value(void *tlv, uint8_t **ppRe
 	nfapi_dl_config_npdcch_pdu_rel13_t* npdcch_params_rel13 = (nfapi_dl_config_npdcch_pdu_rel13_t*)tlv;
 	
 	return ( pull16(ppReadPackedMsg, &npdcch_params_rel13->length, end) &&
-			 pull16(ppReadPackedMsg, &npdcch_params_rel13->pdu_index, end) &&
+			 pull16(ppReadPackedMsg, (uint16_t *)&npdcch_params_rel13->pdu_index, end) &&
 			 pull8(ppReadPackedMsg, &npdcch_params_rel13->ncce_index, end) &&
 			 pull8(ppReadPackedMsg, &npdcch_params_rel13->aggregation_level, end) &&
 			 pull8(ppReadPackedMsg, &npdcch_params_rel13->start_symbol, end) &&
@@ -3218,7 +3218,7 @@ static uint8_t unpack_dl_config_ndlsch_pdu_rel13_value(void *tlv, uint8_t **ppRe
 	nfapi_dl_config_ndlsch_pdu_rel13_t* ndlsch_params_rel13 = (nfapi_dl_config_ndlsch_pdu_rel13_t*)tlv;
 	
 	return ( pull16(ppReadPackedMsg, &ndlsch_params_rel13->length, end) &&
-			 pull16(ppReadPackedMsg, &ndlsch_params_rel13->pdu_index, end) &&
+			 pull16(ppReadPackedMsg, (uint16_t *)&ndlsch_params_rel13->pdu_index, end) &&
 			 pull8(ppReadPackedMsg, &ndlsch_params_rel13->start_symbol, end) &&
 			 pull8(ppReadPackedMsg, &ndlsch_params_rel13->rnti_type, end) &&
 			 pull16(ppReadPackedMsg, &ndlsch_params_rel13->rnti, end) &&
@@ -3602,7 +3602,7 @@ static uint8_t unpack_ul_config_ue_info_rel8_value(void *tlv, uint8_t **ppReadPa
 	nfapi_ul_config_ue_information_rel8_t* ue_info_rel8 = (nfapi_ul_config_ue_information_rel8_t*)tlv;
 	
 	return (pull32(ppReadPackedMsg, &ue_info_rel8->handle, end) &&
-			pull16(ppReadPackedMsg, &ue_info_rel8->rnti, end));
+			pull16(ppReadPackedMsg, (uint16_t *)&ue_info_rel8->rnti, end));
 }
 static uint8_t unpack_ul_config_ue_info_rel11_value(void *tlv, uint8_t **ppReadPackedMsg, uint8_t *end)
 {

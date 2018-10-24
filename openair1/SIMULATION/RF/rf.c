@@ -31,9 +31,9 @@ extern void randominit(void);
 extern double gaussdouble(double,double);
   //free(input_data);
 
-//extern int write_output(const char *,const char *,void *,int,int,char);
+//extern int LOG_M(const char *,const char *,void *,int,int,char);
 //flag change
-extern int write_output(const char *,const char *,void *,int,int,char);
+extern int LOG_M(const char *,const char *,void *,int,int,char);
 */
 
 //double pn[1024];
@@ -337,11 +337,11 @@ int main(int argc, char* argv[])
       length,
       12);
 
-  write_output("s_im.m","s_im",s_im[0],length,1,7);
-  write_output("s_re.m","s_re",s_re[0],length,1,7);
-  write_output("r_im.m","r_im",r_im[0],length,1,7);
-  write_output("r_re.m","r_re",r_re[0],length,1,7);
-  write_output("input.m","rfin",input[0],length,1,1);
-  write_output("output.m","rfout",output[0],length,1,1);
+  LOG_M("s_im.m","s_im",s_im[0],length,1,7);
+  LOG_M("s_re.m","s_re",s_re[0],length,1,7);
+  LOG_M("r_im.m","r_im",r_im[0],length,1,7);
+  LOG_M("r_re.m","r_re",r_re[0],length,1,7);
+  LOG_M("input.m","rfin",input[0],length,1,1);
+  LOG_M("output.m","rfout",output[0],length,1,1);
 }
 #endif

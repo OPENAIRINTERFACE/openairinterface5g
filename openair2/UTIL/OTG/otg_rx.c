@@ -185,7 +185,7 @@ int otg_rx_pkt(const int dst_instanceP, const int ctime, const char * const buff
         otg_info->radio_access_delay[src_instance][dst_instance]=(float) (ctime- otg_hdr_rx->time);
         otg_multicast_info->radio_access_delay[src_instance][dst_instance]=(float) (ctime- otg_hdr_rx->time);
       } else {
-        LOG_N(OTG,"received packet has tx time %d greater than the current time %d\n",otg_hdr_rx->time,ctime );
+        LOG_I(OTG,"received packet has tx time %d greater than the current time %d\n",otg_hdr_rx->time,ctime );
         otg_info->radio_access_delay[src_instance][dst_instance] = 0;
         otg_multicast_info->radio_access_delay[src_instance][dst_instance]=0;
       }

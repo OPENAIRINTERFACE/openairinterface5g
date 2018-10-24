@@ -46,17 +46,6 @@
 #define DIRECTION_DOWNLINK 1
 
 /* SR: no need to declare following part: */
-#if 0
-/* rntiType */
-#define NO_RNTI  0
-#define P_RNTI   1
-#define RA_RNTI  2
-#define C_RNTI   3
-#define SI_RNTI  4
-#define SPS_RNTI 5
-#define M_RNTI   6
-#endif
-
 typedef enum mac_lte_oob_event {
   ltemac_send_preamble,
   ltemac_send_sr,
@@ -152,35 +141,6 @@ typedef struct mac_lte_info {
   guint16            oob_ueid[MAX_SRs];
   guint16            oob_rnti[MAX_SRs];
 } mac_lte_info;
-
-/* SR: no need to declare following part: */
-#if 0
-typedef struct mac_lte_tap_info {
-  /* Info from context */
-  guint16  rnti;
-  guint16  ueid;
-  guint8   rntiType;
-  guint8   isPredefinedData;
-  guint8   crcStatusValid;
-  mac_lte_crc_status   crcStatus;
-  guint8   direction;
-
-  guint8   isPHYRetx;
-  guint16  ueInTTI;
-
-  nstime_t time;
-
-  /* Number of bytes (which part is used depends upon context settings) */
-  guint32  single_number_of_bytes;
-  guint32  bytes_for_lcid[11];
-  guint32  sdus_for_lcid[11];
-  guint8   number_of_rars;
-
-  /* Number of padding bytes includes padding subheaders and trailing padding */
-  guint16  padding_bytes;
-  guint16  raw_length;
-} mac_lte_tap_info;
-#endif
 
 /* Accessor function to check if a frame was considered to be ReTx */
 //int is_mac_lte_frame_retx(packet_info *pinfo, guint8 direction);

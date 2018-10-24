@@ -160,27 +160,6 @@
 
 #include "NR_IF_Module.h"
 
-//#if defined(UPGRADE_RAT_NR)
-#if 1
-                        /* see 38.321  Table 7.1-2  RNTI usage */
-typedef enum {          /* Type for Radio Network Temporary Identifier */
-  C_RNTI_NR = 0,        /* Cell RNTI */
-  Temporary_C_RNTI_NR,  /* Temporary C-RNTI */
-  CS_RNTI_NR,           /* Configured Scheduling RNTI */
-  P_RNTI_NR,            /* Paging RNTI */
-  SI_RNTI_NR,           /* System information RNTI */
-  RA_RNTI_NR,           /* Random Access RNTI */
-  TPC_CS_RNTI_NR,       /* configured scheduling uplink power control */
-  TPC_PUCCH_RNTI_NR,    /* PUCCH power control */
-  TPC_PUSCH_RNTI_NR,    /* PUSCH power control */
-  TPC_SRS_RNTI_NR,      /* SRS trigger and power control */
-  INT_RNTI_NR,          /* Indication pre-emption in DL */
-  SFI_RNTI_NR,          /* Slot Format Indication on the given cell */
-  SP_CSI_RNTI_NR        /* Semipersistent CSI reporting on PUSCH */
-} nr_rnti_type_t;
-
-#endif
-
 /// Context data structure for RX/TX portion of subframe processing
 typedef struct {
   /// index of the current UE RX/TX proc
@@ -700,23 +679,20 @@ typedef enum {
 #define _TPC_PUSCH_RNTI_  10
 #define _TPC_PUCCH_RNTI_  11
 #define _TPC_SRS_RNTI_    12
-  typedef enum {
-      _c_rnti         = _C_RNTI_,
-      _cs_rnti        = _CS_RNTI_,
-      _new_rnti       = _NEW_RNTI_,
-      _tc_rnti        = _TC_RNTI_,
-      _p_rnti         = _P_RNTI_,
-      _si_rnti        = _SI_RNTI_,
-      _ra_rnti        = _RA_RNTI_,
-      _sp_csi_rnti    = _SP_CSI_RNTI_,
-      _sfi_rnti       = _SFI_RNTI_,
-      _int_rnti       = _INT_RNTI_,
-      _tpc_pusch_rnti = _TPC_PUSCH_RNTI_,
-      _tpc_pucch_rnti = _TPC_PUCCH_RNTI_,
+  typedef enum {                          /* see 38.321  Table 7.1-2  RNTI usage */
+      _c_rnti         = _C_RNTI_,         /* Cell RNTI */
+      _cs_rnti        = _CS_RNTI_,        /* Configured Scheduling RNTI */
+      _new_rnti       = _NEW_RNTI_,       /* ? */
+      _tc_rnti        = _TC_RNTI_,        /* Temporary C-RNTI */
+      _p_rnti         = _P_RNTI_,         /* Paging RNTI */
+      _si_rnti        = _SI_RNTI_,        /* System information RNTI */
+      _ra_rnti        = _RA_RNTI_,        /* Random Access RNTI */
+      _sp_csi_rnti    = _SP_CSI_RNTI_,    /* Semipersistent CSI reporting on PUSCH */
+      _sfi_rnti       = _SFI_RNTI_,       /* Slot Format Indication on the given cell */
+      _int_rnti       = _INT_RNTI_,       /* Indication pre-emption in DL */
+      _tpc_pusch_rnti = _TPC_PUSCH_RNTI_, /* PUSCH power control */
+      _tpc_pucch_rnti = _TPC_PUCCH_RNTI_, /* PUCCH power control */
       _tpc_srs_rnti   = _TPC_SRS_RNTI_} crc_scrambled_t;
-
-
-
 
 typedef enum {bundle_n2=2,bundle_n3=3,bundle_n6=6} NR_UE_CORESET_REG_bundlesize_t;
 
@@ -1020,9 +996,9 @@ typedef struct {
   /// \brief Total gains with bypassed RF gain stage (ExpressMIMO2/Lime)
   uint32_t rx_gain_byp[4];
   /// \brief Current transmit power
-  int16_t tx_power_dBm[MAX_NR_OF_SLOTS];
+  int16_t tx_power_dBm[NR_MAX_SLOTS_PER_FRAME];
   /// \brief Total number of REs in current transmission
-  int tx_total_RE[MAX_NR_OF_SLOTS];
+  int tx_total_RE[NR_MAX_SLOTS_PER_FRAME];
   /// \brief Maximum transmit power
   int8_t tx_power_max_dBm;
   /// \brief Number of eNB seen by UE

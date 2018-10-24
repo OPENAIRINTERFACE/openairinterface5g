@@ -40,6 +40,7 @@
 #endif
 #include "assertions.h"
 
+#include "SCHED_NR_UE/harq_nr.h"
 
 //#define DEBUG_HARQ
 
@@ -362,9 +363,9 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
               // 0 or 3 bits, as defined in Subclause x.x of [5, TS38.213]
         nr_pdci_info_extracted->carrier_ind                      = (uint8_t)nr_dci_field(dci_pdu,dci_fields_sizes_format,dci_field);
         //(((((*(uint128_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format]));
-        #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
+#ifdef NR_PDCCH_DCI_TOOLS_DEBUG
         printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->carrier_ind=%x\n",nr_pdci_info_extracted->carrier_ind);
-        #endif
+#endif
         break;
       case SUL_IND_0_1: // 2  SUL_IND_0_1: (field defined for -,format0_1,-,-,-,-,-,-)
         nr_pdci_info_extracted->sul_ind_0_1                      = (uint8_t)nr_dci_field(dci_pdu,dci_fields_sizes_format,dci_field);

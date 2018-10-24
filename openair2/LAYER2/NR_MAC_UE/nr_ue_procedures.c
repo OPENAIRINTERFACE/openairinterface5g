@@ -114,8 +114,13 @@ int8_t nr_ue_decode_mib(
 	    
         uint32_t is_condition_A = (ssb_subcarrier_offset == 0);   //  38.213 ch.13
         frequency_range_t frequency_range = FR1;
+#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
+        uint32_t index_4msb = (mac->mib->pdcch_ConfigSIB1.controlResourceSetZero);
+        uint32_t index_4lsb = (mac->mib->pdcch_ConfigSIB1.searchSpaceZero);
+#else
         uint32_t index_4msb = (mac->mib->pdcch_ConfigSIB1 >> 4) & 0xf;
         uint32_t index_4lsb = (mac->mib->pdcch_ConfigSIB1 & 0xf);
+#endif
         int32_t num_rbs = -1;
         int32_t num_symbols = -1;
         int32_t rb_offset = -1;
@@ -428,7 +433,11 @@ int8_t nr_ue_decode_mib(
 	    mac->phy_config.config_req.pbch_config.subcarrier_spacing_common = mac->mib->subCarrierSpacingCommon;
 	    mac->phy_config.config_req.pbch_config.ssb_subcarrier_offset = ssb_subcarrier_offset;  //  after calculation
 	    mac->phy_config.config_req.pbch_config.dmrs_type_a_position = mac->mib->dmrs_TypeA_Position;
+#if (NR_RRC_VERSION >= MAKE_VERSION(15, 3, 0))
+	    mac->phy_config.config_req.pbch_config.pdcch_config_sib1 = (mac->mib->pdcch_ConfigSIB1.controlResourceSetZero) * 16 + (mac->mib->pdcch_ConfigSIB1.searchSpaceZero);
+#else
 	    mac->phy_config.config_req.pbch_config.pdcch_config_sib1 = mac->mib->pdcch_ConfigSIB1;
+#endif
 	    mac->phy_config.config_req.pbch_config.cell_barred = mac->mib->cellBarred;
 	    mac->phy_config.config_req.pbch_config.intra_frequency_reselection = mac->mib->intraFreqReselection;
 	    mac->phy_config.config_req.pbch_config.half_frame_bit = half_frame_bit;
@@ -479,9 +488,6 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
             	search_space_mask = search_space_mask | type0_pdcch;
                 mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_dci_config.duration;
             }
-            //if((mac->type0_pdcch_ss_sfn_c == SFN_C_EQ_SFN_SSB) && ( get_ssb_frame() )){
-            //	search_space_mask = search_space_mask | type0_pdcch;
-            //}
         }
         if(mac->type0_pdcch_ss_mux_pattern == 2){
             //	38.213 Table 13-13, 13-14
@@ -499,20 +505,8 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
         }
     }
 
-#if 0
-		uint16_t rnti;
-
-        fapi_nr_coreset_t coreset;
-        uint32_t duration;
-        uint8_t aggregation_level;
-        uint8_t number_of_candidates;
-        uint16_t monitoring_symbols_within_slot;
-        //  DCI foramt-specific
-        uint8_t format_2_0_number_of_candidates[5];    //  aggregation level 1, 2, 4, 8, 16
-        uint8_t format_2_3_monitorying_periodicity;
-        uint8_t format_2_3_number_of_candidates;
-#endif
     fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
+    //  Type0 PDCCH search space
     if((search_space_mask & type0_pdcch) || ( mac->type0_pdcch_consecutive_slots != 0 )){
         mac->type0_pdcch_consecutive_slots = mac->type0_pdcch_consecutive_slots - 1;
 
@@ -1155,7 +1149,7 @@ printf("\n>>> nr_ue_process_dci at MAC layer with dci_format=%d\n",dci_format);
  *    49 PADDING_NR_DCI: (Note 2) If DCI format 0_0 is monitored in common search space
  *    50 SUL_IND_0_0:
  */
-            ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_PUSCH;
+            ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
             ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.rnti = rnti;
             fapi_nr_ul_config_pusch_pdu_rel15_t *ulsch_config_pdu_0_0 = &ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15;
         /* IDENTIFIER_DCI_FORMATS */
@@ -1227,7 +1221,7 @@ printf("\n>>> nr_ue_process_dci at MAC layer with dci_format=%d\n",dci_format);
  *    48 UL_SCH_IND
  *    49 PADDING_NR_DCI: (Note 2) If DCI format 0_0 is monitored in common search space
  */
-            ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_PUSCH;
+            ul_config->ul_config_list[ul_config->number_pdus].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
             ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.rnti = rnti;
             fapi_nr_ul_config_pusch_pdu_rel15_t *ulsch_config_pdu_0_1 = &ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15;
         /* IDENTIFIER_DCI_FORMATS */
@@ -1620,6 +1614,7 @@ printf("\n>>> nr_ue_process_dci at MAC layer with dci_format=%d\n",dci_format);
                   dlsch_config_pdu_1_0->pdsch_to_harq_feedback_time_ind);
 
             dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
+
             printf(">>> (nr_ue_procedures.c) pdu_type=%d\n\n",dl_config->dl_config_list[dl_config->number_pdus].pdu_type);
             
             if(mac->if_module != NULL && mac->if_module->dl_indication != NULL)

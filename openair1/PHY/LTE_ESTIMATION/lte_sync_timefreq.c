@@ -67,7 +67,7 @@ void lte_sync_timefreq(PHY_VARS_UE *ue,int band,unsigned int DL_freq)
 
 
   for (i=0; i<38400*4; i+=3072) { // steps of 200 us with 100 us overlap, 0 to 5s
-    //  write_output("rxsig0.m","rxs0",ue->lte_ue_common_vars.rxdata[0],30720,1,1);
+    //  LOG_M("rxsig0.m","rxs0",ue->lte_ue_common_vars.rxdata[0],30720,1,1);
 
     //for (i = 15360-3072*2; i<15360+3072+1; i+=3072)  {
 
@@ -81,16 +81,15 @@ void lte_sync_timefreq(PHY_VARS_UE *ue,int band,unsigned int DL_freq)
 
       //compute frequency-domain representation of 6144-sample chunk
       dft6144((int16_t *)rxp,
-              sp,
-              1);
+              sp,1);
 
 
       /*
       printf("i %d: sp %p\n",i,sp);
       if (i==12288) {
-        write_output("scan6144F.m","s6144F",sp,6144,1,1);
-        write_output("scan6144.m","s6144",rxp,6144,1,1);
-      write_output("pss0_6144.m","pss0",pss6144_0_0,256,1,1);
+        LOG_M("scan6144F.m","s6144F",sp,6144,1,1);
+        LOG_M("scan6144.m","s6144",rxp,6144,1,1);
+      LOG_M("pss0_6144.m","pss0",pss6144_0_0,256,1,1);
       }*/
 
       for (f = -2000; f<2000; f++) { // this is -10MHz to 10 MHz in 5 kHz steps
@@ -273,10 +272,10 @@ void lte_sync_timefreq(PHY_VARS_UE *ue,int band,unsigned int DL_freq)
               if (i==12288) {
           sprintf(fname,"corr256F_%d.m",abs(f));
           sprintf(vname,"c256F_%d",abs(f));
-                write_output(fname,vname,autocorr0,256,1,1);
+                LOG_M(fname,vname,autocorr0,256,1,1);
           sprintf(fname,"corr256_%d.m",abs(f));
           sprintf(vname,"c256_%d",abs(f));
-                write_output(fname,vname,tmp_t,256,1,1);
+                LOG_M(fname,vname,tmp_t,256,1,1);
           }*/
 
         memset((void*)autocorr0_t,0,256*4);

@@ -33,7 +33,6 @@
 
 #include "coding_defs.h"
 
-
 /*ref 36-212 v8.6.0 , pp 8-9 */
 /* the highest degree is set by default */
 unsigned int             poly24a = 0x864cfb00;   // 1000 0110 0100 1100 1111 1011
@@ -45,6 +44,9 @@ unsigned int             poly24c = 0xb2b11700;   // 1011 0010 1011 0001 0001 011
 unsigned int             poly16 = 0x10210000;    // 0001 0000 0010 0001            D^16 + D^12 + D^5 + 1
 unsigned int             poly12 = 0x80F00000;    // 1000 0000 1111                 D^12 + D^11 + D^3 + D^2 + D + 1
 unsigned int             poly8 = 0x9B000000;     // 1001 1011                      D^8  + D^7  + D^4 + D^3 + D + 1
+uint32_t poly6 = 0x84000000; // 10000100000... -> D^6+D^5+1
+uint32_t poly11 = 0xc4200000; //11000100001000... -> D^11+D^10+D^9+D^5+1
+
 /*********************************************************
 
 For initialization && verification purposes,
@@ -100,6 +102,18 @@ void crcTableInit (void)
     crc8Table[c] = (unsigned char) (crcbit (&c, 1, poly8) >> 24);
   } while (++c);
 }
+
+//Generic version
+void crcTable256Init (uint32_t poly, uint32_t* crc256Table)
+{
+        unsigned char c = 0;
+
+        do {
+                crc256Table[c] = crcbit(&c, 1, poly);
+        } while (++c);
+
+}
+
 /*********************************************************
 
 Byte by byte implementations,
@@ -221,6 +235,28 @@ crc8 (unsigned char * inptr, int bitlen)
   return crc;
 }
 
+//Generic version
+unsigned int crcPayload(unsigned char * inptr, int bitlen, uint32_t* crc256Table)
+{
+        int octetlen, resbit;
+        unsigned int crc = 0;
+        octetlen = bitlen/8; // Change in bytes
+        resbit = (bitlen % 8);
+
+        while (octetlen-- > 0)
+        {
+                crc = (crc << 8) ^ crc256Table[(*inptr++) ^ (crc >> 24)];
+        }
+
+        if (resbit > 0)
+        {
+                crc = (crc << resbit) ^ crc256Table[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))];
+        }
+        return crc;
+}
+
+
+
 #ifdef DEBUG_CRC
 /*******************************************************************/
 /**
@@ -239,4 +275,5 @@ main()
   printf("%x\n", crc8(test, (sizeof(test) - 1)*8));
 }
 #endif
+
 

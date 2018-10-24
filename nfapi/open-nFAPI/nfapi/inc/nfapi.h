@@ -25,7 +25,7 @@ extern "C" {
 // todo : move to public_inc so can be used by vendor extensions
 
 #define MAX_BAD_TAG 3
-
+int nfapitooai_level(int nfapilevel);
 uint8_t push8(uint8_t in, uint8_t **out, uint8_t *end);
 uint8_t pushs8(int8_t in, uint8_t **out, uint8_t *end);
 uint8_t push16(uint16_t in, uint8_t **out, uint8_t *end);

@@ -55,7 +55,7 @@
 #include <getopt.h>
 #include <sys/sysinfo.h>
 
-#include "UTIL/LOG/log_extern.h"
+#include "common/utils/LOG/log_extern.h"
 #include "msc.h"
 
 #define RTIME long long int

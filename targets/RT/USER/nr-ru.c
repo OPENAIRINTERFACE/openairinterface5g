@@ -58,25 +58,19 @@
 #include "assertions.h"
 #include "msc.h"
 
-#include "PHY/types.h"
-
-#include "PHY/defs_nr_common.h"
-#undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
-
-
 #include "../../ARCH/COMMON/common_lib.h"
 #include "../../ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
 
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 #include "PHY/LTE_TRANSPORT/if5_tools.h"
 
+#include "PHY/types.h"
+#include "PHY/defs_nr_common.h"
 #include "PHY/phy_extern.h"
-#include "LAYER2/MAC/mac_extern.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
+#include "PHY/INIT/phy_init.h"
 #include "SCHED/sched_eNB.h"
 #include "SCHED_NR/sched_nr.h"
-#include "PHY/LTE_ESTIMATION/lte_estimation.h"
-#include "PHY/INIT/phy_init.h"
 
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_extern.h"
@@ -84,26 +78,15 @@
 #include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_interface.h"
 
-#include "UTIL/LOG/log_extern.h"
-#include "UTIL/OTG/otg_tx.h"
-#include "UTIL/OTG/otg_externs.h"
-#include "UTIL/MATH/oml.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
-#include "UTIL/OPT/opt.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
+
 #include "enb_config.h"
 
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"
 unsigned short config_frames[4] = {2,9,11,13};
 #endif
-#include "UTIL/LOG/log_extern.h"
-#include "UTIL/OTG/otg_tx.h"
-#include "UTIL/OTG/otg_externs.h"
-#include "UTIL/MATH/oml.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
-#include "UTIL/OPT/opt.h"
-#include "enb_config.h"
-//#include "PHY/TOOLS/time_meas.h"
 
 /* these variables have to be defined before including ENB_APP/enb_paramdef.h */
 static int DEFBANDS[] = {7};
@@ -869,7 +852,6 @@ void tx_rf(RU_t *ru) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_tx-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
     // prepare tx buffer pointers
-    
     txs = ru->rfdevice.trx_write_func(&ru->rfdevice,
 				      proc->timestamp_tx+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension,
 				      txp,
@@ -1020,7 +1002,7 @@ static void* ru_thread_prach( void* param ) {
     /*if (ru->gNB_list[0]){
       prach_procedures(
         ru->gNB_list[0]
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
         ,0
 #endif
         );
@@ -1033,7 +1015,7 @@ static void* ru_thread_prach( void* param ) {
                 NULL,
                 proc->frame_prach,
                 0
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	        ,0
 #endif
 	        );
@@ -1219,7 +1201,7 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
   NR_DL_FRAME_PARMS *fp   = ru->nr_frame_parms;
   nfapi_nr_config_request_t *gNB_config = &ru->gNB_list[0]->gNB_config; //tmp index
   openair0_config_t *cfg   = &ru->openair0_cfg;
-  int N_RB = gNB_config->rf_config.dl_channel_bandwidth.value;
+  int N_RB = gNB_config->rf_config.dl_carrier_bandwidth.value;
   int mu = gNB_config->subframe_config.numerology_index_mu.value;
 
   if (mu == NR_MU_0) { //or if LTE
@@ -1405,6 +1387,9 @@ static void* ru_thread( void* param ) {
   int                ret;
   int                subframe =9;
   int                frame    =1023; 
+  char               filename[40];
+  int                print_frame = 2;
+  int                i = 0;
 
   // set default return value
   ru_thread_status = 0;
@@ -1538,13 +1523,30 @@ static void* ru_thread( void* param ) {
    
     // do OFDM if needed
     if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
-    if (!emulate_rf)
+    if(!emulate_rf)
     {
       // do outgoing fronthaul (south) if needed
       if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
-    } 
-
-    if (ru->fh_north_out) ru->fh_north_out(ru);
+  
+      if (ru->fh_north_out) ru->fh_north_out(ru);
+    }
+    else
+    {
+      if(proc->frame_tx == print_frame)
+      {
+        for (i=0; i<ru->nb_tx; i++)
+        {
+          sprintf(filename,"tx%ddataF_frame%d_sf%d.m", i, print_frame, proc->subframe_tx);
+          LOG_M(filename,"txdataF_frame",&ru->common.txdataF_BF[i][0],fp->samples_per_subframe_wCP, 1, 1);
+          if(proc->subframe_tx == 9)
+          {
+            sprintf(filename,"tx%ddata_frame%d.m", i, print_frame);
+            LOG_M(filename,"txdata_frame",&ru->common.txdata[i][0],fp->samples_per_frame, 1, 1);
+          }
+        }
+      }
+      //else if (proc->frame_tx > print_frame) oai_exit = 1;
+    }
   }
   
 
@@ -1666,7 +1668,7 @@ void init_RU_proc(RU_t *ru) {
   RU_proc_t *proc;
   pthread_attr_t *attr_FH=NULL,*attr_prach=NULL,*attr_asynch=NULL, *attr_emulateRF=NULL;// *attr_synch=NULL;
   //pthread_attr_t *attr_fep=NULL;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   //pthread_attr_t *attr_prach_br=NULL;
 #endif
   char name[100];
@@ -1927,8 +1929,8 @@ void configure_ru(int idx,
   //config->tdd_config_S[0]        = ru->nr_frame_parms->tdd_config_S;
   config->att_tx[0]              = ru->att_tx;
   config->att_rx[0]              = ru->att_rx;
-  config->N_RB_DL[0]             = gNB_config->rf_config.dl_channel_bandwidth.value;
-  config->N_RB_UL[0]             = gNB_config->rf_config.ul_channel_bandwidth.value;
+  config->N_RB_DL[0]             = gNB_config->rf_config.dl_carrier_bandwidth.value;
+  config->N_RB_UL[0]             = gNB_config->rf_config.ul_carrier_bandwidth.value;
   config->threequarter_fs[0]     = ru->nr_frame_parms->threequarter_fs;
 /*  if (ru->if_south==REMOTE_IF4p5) {
     config->prach_FreqOffset[0]  = ru->nr_frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset;
@@ -1959,8 +1961,8 @@ void configure_rru(int idx,
   gNB_config->subframe_config.duplex_mode.value                            = FDD;
   ru->att_tx                                                               = config->att_tx[0];
   ru->att_rx                                                               = config->att_rx[0];
-  gNB_config->rf_config.dl_channel_bandwidth.value                         = config->N_RB_DL[0];
-  gNB_config->rf_config.ul_channel_bandwidth.value                         = config->N_RB_UL[0];
+  gNB_config->rf_config.dl_carrier_bandwidth.value                         = config->N_RB_DL[0];
+  gNB_config->rf_config.ul_carrier_bandwidth.value                         = config->N_RB_UL[0];
   ru->nr_frame_parms->threequarter_fs                                       = config->threequarter_fs[0];
   //ru->nr_frame_parms->pdsch_config_common.referenceSignalPower                 = ru->max_pdschReferenceSignalPower-config->att_tx[0];
   if (ru->function==NGFI_RRU_IF4p5) {

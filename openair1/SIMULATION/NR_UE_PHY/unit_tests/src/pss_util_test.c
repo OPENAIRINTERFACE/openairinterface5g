@@ -59,6 +59,8 @@
 #include "../../unit_tests/src/input_buffer_test.h"
 #undef DEFINE_VARIABLES_INPUT_BUFFER_TEST_H
 
+#include "common/utils/LOG/log.h"
+
 /************** DEFINE *******************************************/
 
 /*************** LOCAL VARIABLES***********************************/
@@ -213,13 +215,13 @@ int init_test(unsigned char N_tx, unsigned char N_rx, unsigned char transmission
   (void) transmission_mode;
   NR_DL_FRAME_PARMS *frame_parms;
 
-  int log_level = LOG_TRACE;
+  int log_level = OAILOG_TRACE;
 
   logInit();
 
   // enable these lines if you need debug info
-  set_comp_log(PHY,LOG_DEBUG,LOG_HIGH,1);
-  set_glog(log_level,LOG_HIGH);
+  //set_comp_log(PHY,LOG_DEBUG,LOG_HIGH,1);
+  set_glog(log_level);
 
 #ifndef NR_UNIT_TEST
 

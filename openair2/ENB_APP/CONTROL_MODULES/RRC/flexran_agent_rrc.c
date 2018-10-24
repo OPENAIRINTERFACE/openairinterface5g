@@ -49,7 +49,7 @@ void flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_ch
   Protocol__FlexHeader *header = NULL;
   void *data;
   int priority = 0;
-  err_code_t err_code;
+  err_code_t err_code=0;
 
   int xid = 0;
 
@@ -241,7 +241,8 @@ void flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_ch
   LOG_D(FLEXRAN_AGENT,"sent message with size %d\n", size);
   return;
  error:
-  LOG_E(FLEXRAN_AGENT, "Could not send UE state message becasue of %d \n",err_code);
+  if (err_code != 0)
+     LOG_E(FLEXRAN_AGENT, "Could not send UE state message becasue of %d \n",err_code);
 }
 
 

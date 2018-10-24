@@ -219,8 +219,20 @@ typedef struct {
 } fapi_nr_tx_request_t;
 
     typedef struct {
-
-    } fapi_nr_ul_config_rach_pdu;
+        uint8_t preamble_index;
+        uint8_t prach_configuration_index;
+        uint16_t preamble_length;
+        uint8_t power_ramping_step;
+        uint16_t preamble_received_target_power;
+        uint8_t msg1_fdm;
+        uint8_t msg1_frequency_start;
+        uint8_t zero_correlation_zone_config;
+        uint8_t subcarrier_spacing;
+        uint8_t restrictedset_config;
+        uint16_t root_sequence_index;
+        uint16_t rsrp_threshold_ssb;
+        uint16_t rsrp_threshold_sul;
+    } fapi_nr_ul_config_prach_pdu;
 
     typedef struct {
 
@@ -260,16 +272,20 @@ typedef struct {
         fapi_nr_ul_config_pusch_pdu_rel15_t ulsch_pdu_rel15;
     } fapi_nr_ul_config_pusch_pdu;
 
+    typedef struct {
+
+    } fapi_nr_ul_config_srs_pdu;
+
 	typedef struct {
 		uint8_t pdu_type;
 		union {
-            fapi_nr_ul_config_rach_pdu prach_config_pdu;
+            fapi_nr_ul_config_prach_pdu prach_config_pdu;
             fapi_nr_ul_config_pucch_pdu pucch_config_pdu;
             fapi_nr_ul_config_pusch_pdu ulsch_config_pdu;
+            fapi_nr_ul_config_srs_pdu srs_config_pdu;
 		};
 	} fapi_nr_ul_config_request_pdu_t;
 
-///
 typedef struct {
 	uint32_t sfn_slot;
     uint8_t number_pdus;

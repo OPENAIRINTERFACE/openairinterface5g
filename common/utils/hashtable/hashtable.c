@@ -95,7 +95,7 @@ hash_table_t *hashtable_create(const hash_size_t sizeP, hash_size_t (*hashfuncP)
  * Cleanup
  * The hashtable_destroy() walks through the linked lists for each possible hash value, and releases the elements. It also releases the nodes array and the hash_table_t.
  */
-hashtable_rc_t hashtable_destroy(hash_table_t * const hashtblP)
+hashtable_rc_t hashtable_destroy(hash_table_t * hashtblP)
 {
     hash_size_t n;
     hash_node_t *node, *oldnode;
@@ -117,6 +117,7 @@ hashtable_rc_t hashtable_destroy(hash_table_t * const hashtblP)
     }
     free(hashtblP->nodes);
     free(hashtblP);
+    hashtblP=NULL;
     return HASH_TABLE_OK;
 }
 //-------------------------------------------------------------------------------------------------------------------------------

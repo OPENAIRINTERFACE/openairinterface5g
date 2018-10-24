@@ -43,21 +43,6 @@
 #        include "DL-UM-RLC.h"
 #        include "UL-UM-RLC.h"
 //-----------------------------------------------------------------------------
-#        ifdef RLC_UM_CONTROL_PRIMITIVES_C
-#            define private_rlc_um_control_primitives(x)    x
-#            define protected_rlc_um_control_primitives(x)  x
-#            define public_rlc_um_control_primitives(x)     x
-#        else
-#            ifdef RLC_UM_MODULE
-#                define private_rlc_um_control_primitives(x)
-#                define protected_rlc_um_control_primitives(x)  extern x
-#                define public_rlc_um_control_primitives(x)     extern x
-#            else
-#                define private_rlc_um_control_primitives(x)
-#                define protected_rlc_um_control_primitives(x)
-#                define public_rlc_um_control_primitives(x)     extern x
-#            endif
-#        endif
 
 typedef volatile struct {
   uint32_t             is_uplink_downlink;
@@ -79,12 +64,12 @@ typedef volatile struct {
 * \param[in]  rb_idP                    Radio bearer identifier.
 * \param[in]  chan_idP                  Transport channel identifier.
 */
-public_rlc_um_control_primitives(   void config_req_rlc_um (
+void config_req_rlc_um (
                                       const protocol_ctxt_t* const ctxt_pP,
                                       const srb_flag_t srb_flagP,
                                       const rlc_um_info_t * const config_umP,
                                       const rb_id_t rb_idP,
-                                      const logical_chan_id_t chan_idP);) 
+                                      const logical_chan_id_t chan_idP); 
 
 /*! \fn void config_req_rlc_um_asn1 (
  *     const protocol_ctxt_t* const ctxt_pP,
@@ -106,7 +91,7 @@ public_rlc_um_control_primitives(   void config_req_rlc_um (
 * \param[in]  rb_idP                    Radio bearer identifier.
 * \param[in]  chan_idP                  Transport channel identifier.
 */
-public_rlc_um_control_primitives(   void config_req_rlc_um_asn1 (
+void config_req_rlc_um_asn1 (
                                       const protocol_ctxt_t* const ctxt_pP,
                                       const srb_flag_t         srb_flagP,
                                       const MBMS_flag_t        mbms_flagP,
@@ -115,32 +100,37 @@ public_rlc_um_control_primitives(   void config_req_rlc_um_asn1 (
                                       const UL_UM_RLC_t       * const ul_rlc_pP,
                                       const DL_UM_RLC_t       * const dl_rlc_pP,
                                       const rb_id_t            rb_idP,
-                                      const logical_chan_id_t  chan_idP);)
+                                      const logical_chan_id_t  chan_idP
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                                      ,const uint32_t          sourceL2Id
+                                      ,const uint32_t          destinationL2Id
+#endif
+                                      );
 
 /*! \fn void rlc_um_init (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP)
 * \brief    Initialize a RLC UM protocol instance, initialize all variables, lists, allocate buffers for making this instance ready to be configured with protocol configuration parameters. After this initialization the RLC UM protocol instance will be in RLC_NULL_STATE state.
 * \param[in]  ctxtP                     Running context.
 * \param[in]  rlc_pP                    RLC UM protocol instance pointer.
 */
-protected_rlc_um_control_primitives(void rlc_um_init (
+void rlc_um_init (
                                       const protocol_ctxt_t* const ctxt_pP,
-                                      rlc_um_entity_t * const rlc_pP);)
+                                      rlc_um_entity_t * const rlc_pP);
 
 /*! \fn void rlc_um_reset_state_variables (const protocol_ctxt_t* const ctxt_pP, rlc_um_entity_t * const rlc_pP)
 * \brief    Reset protocol variables and state variables to initial values.
 * \param[in]  ctxtP                     Running context.
 * \param[in]  rlc_pP                    RLC UM protocol instance pointer.
 */
-protected_rlc_um_control_primitives(void rlc_um_reset_state_variables (
+void rlc_um_reset_state_variables (
                                       const protocol_ctxt_t* const ctxt_pP,
-                                      rlc_um_entity_t * const rlc_pP);)
+                                      rlc_um_entity_t * const rlc_pP);
 
 /*! \fn void rlc_um_cleanup(rlc_um_entity_t * const rlc_pP)
 * \brief    Free all allocated memory (lists and buffers) previously allocated by this RLC UM instance.
 * \param[in]  rlc_pP                    RLC UM protocol instance pointer.
 */
-public_rlc_um_control_primitives(   void rlc_um_cleanup(
-                                      rlc_um_entity_t * const rlc_pP);)
+void rlc_um_cleanup(
+                                      rlc_um_entity_t * const rlc_pP);
 
 /*! \fn void rlc_um_configure(
  *     const protocol_ctxt_t* const ctxt_pP,
@@ -157,13 +147,13 @@ public_rlc_um_control_primitives(   void rlc_um_cleanup(
 * \param[in]  tx_sn_field_lengthP       Length of the sequence number, 5 or 10 bits in transmission.
 * \param[in]  is_mXchP                  Is the radio bearer for MCCH, MTCH.
 */
-protected_rlc_um_control_primitives(void rlc_um_configure(
+void rlc_um_configure(
                                       const protocol_ctxt_t* const ctxt_pP,
                                       rlc_um_entity_t *const  rlc_pP,
                                       const uint32_t timer_reorderingP,
                                       const uint32_t rx_sn_field_lengthP,
                                       const uint32_t tx_sn_field_lengthP,
-                                      const uint32_t is_mXchP);)
+                                      const uint32_t is_mXchP);
 
 /*! \fn void rlc_um_set_debug_infos(
 *     const protocol_ctxt_t* const ctxt_pP,
@@ -177,11 +167,11 @@ protected_rlc_um_control_primitives(void rlc_um_configure(
 * \param[in]  rb_idP                    Radio bearer identifier.
 * \param[in]  chan_idP                  Transport channel identifier.
 */
-protected_rlc_um_control_primitives(void rlc_um_set_debug_infos(
+void rlc_um_set_debug_infos(
                                       const protocol_ctxt_t* const ctxt_pP,
                                       rlc_um_entity_t * const rlc_pP,
                                       const srb_flag_t srb_flagP,
                                       const rb_id_t rb_idP,
-                                      const logical_chan_id_t chan_idP);) 
+                                      const logical_chan_id_t chan_idP); 
 /** @} */
 #    endif

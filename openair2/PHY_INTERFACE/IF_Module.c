@@ -17,7 +17,7 @@ extern int oai_nfapi_sr_indication(nfapi_sr_indication_t *ind);
 extern int oai_nfapi_rx_ind(nfapi_rx_indication_t *ind);
 extern uint8_t nfapi_mode;
 extern uint16_t sf_ahead;
-
+uint16_t frame_cnt=0;
 void handle_rach(UL_IND_t *UL_info) {
   int i;
 
@@ -33,13 +33,13 @@ void handle_rach(UL_IND_t *UL_info) {
 		     UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.preamble,
 		     UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.timing_advance,
 		     UL_info->rach_ind.rach_indication_body.preamble_list[0].preamble_rel8.rnti
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 		     ,0
 #endif
 		     );
   }
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0)) 
   if (UL_info->rach_ind_br.rach_indication_body.number_of_preambles>0) {
 
     AssertFatal(UL_info->rach_ind_br.rach_indication_body.number_of_preambles<5,"More than 4 preambles not supported\n");
@@ -237,24 +237,6 @@ void handle_ulsch(UL_IND_t *UL_info) {
 #define C do { size = 0; put(0); } while (0)
 #define A(...) do { char t[4096]; sprintf(t, __VA_ARGS__); append_string(t); } while (0)
 
-#if 0
-
-/* eats lots of ms at startup, disrupts realtime */
-static char *s;
-static int size;
-static int maxsize;
-
-static void put(char x)
-{
-  if (size == maxsize) {
-    maxsize += 32768;
-    s = realloc(s, maxsize); if (s == NULL) abort();
-  }
-  s[size++] = x;
-}
-
-#else
-
 /* eats nothing at startup, but fixed size */
 #define SMAX 65536
 static char s[SMAX];
@@ -266,8 +248,6 @@ static void put(char x)
   if (size == maxsize) { printf("incrase SMAX\n"); exit(1); }
   s[size++] = x;
 }
-
-#endif
 
 static void append_string(char *t)
 {
@@ -546,6 +526,10 @@ void UL_indication(UL_IND_t *UL_info)
         UL_info->frame,UL_info->subframe,
         module_id,CC_id,
         UL_info->rx_ind.rx_indication_body.number_of_pdus, UL_info->harq_ind.harq_indication_body.number_of_harqs, UL_info->crc_ind.crc_indication_body.number_of_crcs, UL_info->cqi_ind.number_of_cqis, UL_info->rach_ind.rach_indication_body.number_of_preambles, UL_info->sr_ind.sr_indication_body.number_of_srs);
+  if(UL_info->frame==1023&&UL_info->subframe==6){ // dl scheduling (0,0)
+      frame_cnt= (frame_cnt + 1)%7; // to prevent frame_cnt get too big
+      LOG_D(MAC,"current (%d,%d) frame count dl is %d\n",UL_info->frame,UL_info->subframe,frame_cnt);
+  }
 
   if (nfapi_mode != 1)
   {
@@ -574,7 +558,11 @@ void UL_indication(UL_IND_t *UL_info)
   handle_harq(UL_info);
 
   // clear HI prior to handling ULSCH
-  mac->HI_DCI0_req[CC_id].hi_dci0_request_body.number_of_hi                     = 0;
+  uint8_t sf_ahead_dl = ul_subframe2_k_phich(&mac->common_channels[CC_id] , UL_info->subframe);
+  if(sf_ahead_dl!=255){
+      mac->HI_DCI0_req[CC_id][(UL_info->subframe+sf_ahead_dl)%10].hi_dci0_request_body.number_of_hi                     = 0;
+      LOG_D(MAC,"current (%d,%d) clear HI_DCI0_req[0][%d]\n",UL_info->frame,UL_info->subframe,(UL_info->subframe+sf_ahead_dl)%10);
+  }
   
   handle_ulsch(UL_info);
 
@@ -593,9 +581,9 @@ void UL_indication(UL_IND_t *UL_info)
       sched_info->frame       = (UL_info->frame + ((UL_info->subframe>(9-sf_ahead)) ? 1 : 0)) % 1024;
       sched_info->subframe    = (UL_info->subframe+sf_ahead)%10;
       sched_info->DL_req      = &mac->DL_req[CC_id];
-      sched_info->HI_DCI0_req = &mac->HI_DCI0_req[CC_id];
+      sched_info->HI_DCI0_req = &mac->HI_DCI0_req[CC_id][sched_info->subframe];
       if ((mac->common_channels[CC_id].tdd_Config==NULL) ||
-          (is_UL_sf(&mac->common_channels[CC_id],(sched_info->subframe+sf_ahead)%10)>0))
+          (is_UL_sf(&mac->common_channels[CC_id],sched_info->subframe)>0))
         sched_info->UL_req      = &mac->UL_req[CC_id];
       else
         sched_info->UL_req      = NULL;

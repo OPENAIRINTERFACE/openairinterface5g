@@ -246,11 +246,12 @@ int main(int n, char **v)
 
   new_thread(receiver, &d);
 
+  OBUF ebuf = { osize: 0, omaxsize: 0, obuf: NULL };
+
   /* read messages */
   while (1) {
-    char v[T_BUFFER_MAX];
     event e;
-    e = get_event(in, v, database);
+    e = get_event(in, &ebuf, database);
     if (e.type == -1) break;
     if (!(e.type == ul_id || e.type == dl_id)) continue;
     handle_event(h, e);

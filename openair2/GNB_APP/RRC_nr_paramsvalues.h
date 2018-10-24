@@ -19,13 +19,13 @@
  *      contact@openairinterface.org
  */
 
-/*! \file openair2/GNB_APP/RRC_paramsvalues.h
+/*! \file openair2/GNB_APP/RRC_nr_paramsvalues.h
  * \brief macro definitions for RRC authorized and asn1 parameters values, to be used in paramdef_t/chechedparam_t structure initializations 
- * \author Francois TABURET
- * \date 2017
+ * \author Francois TABURET, WEI-TAI CHEN
+ * \date 2018
  * \version 0.1
- * \company NOKIA BellLabs France
- * \email: francois.taburet@nokia-bell-labs.com
+ * \company NOKIA BellLabs France, NTUST
+ * \email: francois.taburet@nokia-bell-labs.com, kroempa@gmail.com
  * \note
  * \warning
  */

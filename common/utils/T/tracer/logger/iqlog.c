@@ -20,42 +20,6 @@ struct iqlog {
   int max_length;
 };
 
-#if 0
-/* this function passes all received IQ samples to the views */
-static void _event(void *p, event e)
-{
-  struct iqlog *l = p;
-  int i;
-  void *buffer;
-  int bsize;
-  int nsamples;
-
-  if (l->common.filter != NULL && filter_eval(l->common.filter, e) == 0)
-    return;
-
-  buffer = e.e[l->buffer_arg].b;
-  bsize = e.e[l->buffer_arg].bsize;
-
-  nsamples = bsize / (2*sizeof(int16_t));
-
-  if (nsamples > l->max_length) {
-    l->i = realloc(l->i, nsamples * sizeof(float));
-    if (l->i == NULL) abort();
-    l->q = realloc(l->q, nsamples * sizeof(float));
-    if (l->q == NULL) abort();
-    l->max_length = nsamples;
-  }
-
-  for (i = 0; i < nsamples; i++) {
-    l->i[i] = ((int16_t *)buffer)[i*2];
-    l->q[i] = ((int16_t *)buffer)[i*2+1];
-  }
-
-  for (i = 0; i < l->common.vsize; i++)
-    l->common.v[i]->append(l->common.v[i], l->i, l->q, nsamples);
-}
-#endif
-
 static void _event(void *p, event e)
 {
   struct iqlog *l = p;
