@@ -1049,7 +1049,7 @@ if (nfapi_mode==2) {// VNF
 
     number_of_cards = 1;    
     printf("RC.nb_L1_inst:%d\n", RC.nb_L1_inst);
-    if (RC.nb_L1_inst > 0 && nfapi_mode != 2) {
+    if (RC.nb_L1_inst > 0) {
       printf("Initializing eNB threads single_thread_flag:%d wait_for_sync:%d\n", single_thread_flag,wait_for_sync);
       init_eNB(single_thread_flag,wait_for_sync);
       //      for (inst=0;inst<RC.nb_L1_inst;inst++)
@@ -1060,6 +1060,9 @@ if (nfapi_mode==2) {// VNF
     wait_eNBs();
 
     printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
+    // RU thread and some L1 procedure aren't necessary in VNF or L2 FAPI simulator.
+    // but RU thread deals with pre_scd and this is necessary in VNF and simulator.
+    // some initialization is necessary and init_ru_vnf do this.
     if (RC.nb_RU >0 && nfapi_mode != 2) {
       printf("Initializing RU threads\n");
       init_RU(rf_config_file);
