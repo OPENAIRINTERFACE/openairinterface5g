@@ -508,10 +508,16 @@ uint8_t flexran_get_hopping_offset(mid_t mod_id, uint8_t cc_id)
   return RC.eNB[mod_id][cc_id]->frame_parms.pusch_config_common.pusch_HoppingOffset;
 }
 
-PUSCH_HOPPING_t flexran_get_hopping_mode(mid_t mod_id, uint8_t cc_id)
+Protocol__FlexHoppingMode flexran_get_hopping_mode(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy_is_present(mod_id, cc_id)) return 0;
-  return RC.eNB[mod_id][cc_id]->frame_parms.pusch_config_common.hoppingMode;
+  if (!phy_is_present(mod_id, cc_id)) return -1;
+  switch (RC.eNB[mod_id][cc_id]->frame_parms.pusch_config_common.hoppingMode) {
+  case interSubFrame:
+    return PROTOCOL__FLEX_HOPPING_MODE__FLHM_INTER;
+  case intraAndInterSubFrame:
+    return PROTOCOL__FLEX_HOPPING_MODE__FLHM_INTERINTRA;
+  }
+  return -1;
 }
 
 uint8_t flexran_get_n_SB(mid_t mod_id, uint8_t cc_id)
@@ -520,33 +526,41 @@ uint8_t flexran_get_n_SB(mid_t mod_id, uint8_t cc_id)
   return RC.eNB[mod_id][cc_id]->frame_parms.pusch_config_common.n_SB;
 }
 
-uint8_t flexran_get_enable64QAM(mid_t mod_id, uint8_t cc_id)
+Protocol__FlexQam flexran_get_enable64QAM(mid_t mod_id, uint8_t cc_id)
 {
   if (!phy_is_present(mod_id, cc_id)) return 0;
-  return RC.eNB[mod_id][cc_id]->frame_parms.pusch_config_common.enable64QAM;
+  if (RC.eNB[mod_id][cc_id]->frame_parms.pusch_config_common.enable64QAM == TRUE)
+    return PROTOCOL__FLEX_QAM__FLEQ_MOD_64QAM;
+  else
+    return PROTOCOL__FLEX_QAM__FLEQ_MOD_16QAM;
 }
 
-PHICH_DURATION_t flexran_get_phich_duration(mid_t mod_id, uint8_t cc_id)
+Protocol__FlexPhichDuration flexran_get_phich_duration(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy_is_present(mod_id, cc_id)) return 0;
-  return RC.eNB[mod_id][cc_id]->frame_parms.phich_config_common.phich_duration;
+  if (!phy_is_present(mod_id, cc_id)) return -1;
+  switch (RC.eNB[mod_id][cc_id]->frame_parms.phich_config_common.phich_duration) {
+  case normal:
+    return PROTOCOL__FLEX_PHICH_DURATION__FLPD_NORMAL;
+  case extended:
+    return PROTOCOL__FLEX_PHICH_DURATION__FLPD_EXTENDED;
+  }
+  return -1;
 }
 
-int flexran_get_phich_resource(mid_t mod_id, uint8_t cc_id)
+Protocol__FlexPhichResource flexran_get_phich_resource(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy_is_present(mod_id, cc_id)) return 0;
+  if (!phy_is_present(mod_id, cc_id)) return -1;
   switch (RC.eNB[mod_id][cc_id]->frame_parms.phich_config_common.phich_resource) {
   case oneSixth:
-    return 0;
+    return PROTOCOL__FLEX_PHICH_RESOURCE__FLPR_ONE_SIXTH;
   case half:
-    return 1;
+    return PROTOCOL__FLEX_PHICH_RESOURCE__FLPR_HALF;
   case one:
-    return 2;
+    return PROTOCOL__FLEX_PHICH_RESOURCE__FLPR_ONE;
   case two:
-    return 3;
-  default:
-    return -1;
+    return PROTOCOL__FLEX_PHICH_RESOURCE__FLPR_TWO;
   }
+  return -1;
 }
 
 uint16_t flexran_get_n1pucch_an(mid_t mod_id, uint8_t cc_id)
@@ -585,16 +599,28 @@ uint8_t flexran_get_maxHARQ_Msg3Tx(mid_t mod_id, uint8_t cc_id)
   return RC.eNB[mod_id][cc_id]->frame_parms.maxHARQ_Msg3Tx;
 }
 
-lte_prefix_type_t flexran_get_ul_cyclic_prefix_length(mid_t mod_id, uint8_t cc_id)
+Protocol__FlexUlCyclicPrefixLength flexran_get_ul_cyclic_prefix_length(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy_is_present(mod_id, cc_id)) return 0;
-  return RC.eNB[mod_id][cc_id]->frame_parms.Ncp_UL;
+  if (!phy_is_present(mod_id, cc_id)) return -1;
+  switch (RC.eNB[mod_id][cc_id]->frame_parms.Ncp_UL) {
+  case EXTENDED:
+    return PROTOCOL__FLEX_UL_CYCLIC_PREFIX_LENGTH__FLUCPL_EXTENDED;
+  case NORMAL:
+    return PROTOCOL__FLEX_UL_CYCLIC_PREFIX_LENGTH__FLUCPL_NORMAL;
+  }
+  return -1;
 }
 
-lte_prefix_type_t flexran_get_dl_cyclic_prefix_length(mid_t mod_id, uint8_t cc_id)
+Protocol__FlexDlCyclicPrefixLength flexran_get_dl_cyclic_prefix_length(mid_t mod_id, uint8_t cc_id)
 {
-  if (!phy_is_present(mod_id, cc_id)) return 0;
-  return RC.eNB[mod_id][cc_id]->frame_parms.Ncp;
+  if (!phy_is_present(mod_id, cc_id)) return -1;
+  switch (RC.eNB[mod_id][cc_id]->frame_parms.Ncp) {
+  case EXTENDED:
+    return PROTOCOL__FLEX_DL_CYCLIC_PREFIX_LENGTH__FLDCPL_EXTENDED;
+  case NORMAL:
+    return PROTOCOL__FLEX_DL_CYCLIC_PREFIX_LENGTH__FLDCPL_NORMAL;
+  }
+  return -1;
 }
 
 uint16_t flexran_get_cell_id(mid_t mod_id, uint8_t cc_id)

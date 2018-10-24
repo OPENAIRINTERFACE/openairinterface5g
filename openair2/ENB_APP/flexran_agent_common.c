@@ -840,33 +840,18 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
       cell_conf[i]->pusch_hopping_offset = flexran_get_hopping_offset(mod_id,i);
       cell_conf[i]->has_pusch_hopping_offset = 1;
 
-      if (flexran_get_hopping_mode(mod_id,i) == 0) {
-	cell_conf[i]->hopping_mode = PROTOCOL__FLEX_HOPPING_MODE__FLHM_INTER;
-      } else if(flexran_get_hopping_mode(mod_id,i) == 1) {
-	cell_conf[i]->hopping_mode = PROTOCOL__FLEX_HOPPING_MODE__FLHM_INTERINTRA;
-      }
+      cell_conf[i]->hopping_mode = flexran_get_hopping_mode(mod_id,i);
       cell_conf[i]->has_hopping_mode = 1;
 
       cell_conf[i]->n_sb = flexran_get_n_SB(mod_id,i);
       cell_conf[i]->has_n_sb = 1;
 
-      if (flexran_get_phich_resource(mod_id,i) == 0) {
-	cell_conf[i]->phich_resource = PROTOCOL__FLEX_PHICH_RESOURCE__FLPR_ONE_SIXTH; //0
-      } else if (flexran_get_phich_resource(mod_id,i) == 1) {
-	cell_conf[i]->phich_resource = PROTOCOL__FLEX_PHICH_RESOURCE__FLPR_HALF; //1
-      } else if (flexran_get_phich_resource(mod_id,i) == 2) {
-	cell_conf[i]->phich_resource = PROTOCOL__FLEX_PHICH_RESOURCE__FLPR_ONE; // 2
-      } else if (flexran_get_phich_resource(mod_id,i) == 3) {
-	cell_conf[i]->phich_resource = PROTOCOL__FLEX_PHICH_RESOURCE__FLPR_TWO;//3
-      }
+      cell_conf[i]->phich_resource = flexran_get_phich_resource(mod_id,i);
       cell_conf[i]->has_phich_resource = 1;
 
-      if (flexran_get_phich_duration(mod_id,i) == 0) {
-    	cell_conf[i]->phich_duration = PROTOCOL__FLEX_PHICH_DURATION__FLPD_NORMAL;
-      } else if(flexran_get_phich_duration(mod_id,i) == 1) {
-	cell_conf[i]->phich_duration = PROTOCOL__FLEX_PHICH_DURATION__FLPD_EXTENDED;
-      }
+      cell_conf[i]->phich_duration = flexran_get_phich_duration(mod_id,i);
       cell_conf[i]->has_phich_duration = 1;
+
       cell_conf[i]->init_nr_pdcch_ofdm_sym = flexran_get_num_pdcch_symb(mod_id,i);
       cell_conf[i]->has_init_nr_pdcch_ofdm_sym = 1;
       Protocol__FlexSiConfig *si_config;
@@ -914,29 +899,18 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
       cell_conf[i]->ul_bandwidth = flexran_get_N_RB_UL(mod_id,i);
       cell_conf[i]->has_ul_bandwidth = 1;
 
-      if (flexran_get_ul_cyclic_prefix_length(mod_id, i) == 0) {
-	cell_conf[i]->ul_cyclic_prefix_length = PROTOCOL__FLEX_UL_CYCLIC_PREFIX_LENGTH__FLUCPL_NORMAL;
-      } else if(flexran_get_ul_cyclic_prefix_length(mod_id, i) == 1) {
-	cell_conf[i]->ul_cyclic_prefix_length = PROTOCOL__FLEX_UL_CYCLIC_PREFIX_LENGTH__FLUCPL_EXTENDED;
-      }
+      cell_conf[i]->ul_cyclic_prefix_length = flexran_get_ul_cyclic_prefix_length(mod_id, i);
       cell_conf[i]->has_ul_cyclic_prefix_length = 1;
 
-      if (flexran_get_ul_cyclic_prefix_length(mod_id,i) == 0) {
-	cell_conf[i]->ul_cyclic_prefix_length = PROTOCOL__FLEX_DL_CYCLIC_PREFIX_LENGTH__FLDCPL_NORMAL;
-      } else if (flexran_get_ul_cyclic_prefix_length(mod_id,i) == 1) {
-	cell_conf[i]->ul_cyclic_prefix_length = PROTOCOL__FLEX_DL_CYCLIC_PREFIX_LENGTH__FLDCPL_EXTENDED;
-      }
-
+      cell_conf[i]->dl_cyclic_prefix_length = flexran_get_dl_cyclic_prefix_length(mod_id,i);
       cell_conf[i]->has_dl_cyclic_prefix_length = 1;
+
       cell_conf[i]->antenna_ports_count = flexran_get_antenna_ports(mod_id, i);
       cell_conf[i]->has_antenna_ports_count = 1;
 
-      if (flexran_get_duplex_mode(mod_id,i) == 1) {
-	cell_conf[i]->duplex_mode = PROTOCOL__FLEX_DUPLEX_MODE__FLDM_FDD;
-      } else if(flexran_get_duplex_mode(mod_id,i) == 0) {
-	cell_conf[i]->duplex_mode = PROTOCOL__FLEX_DUPLEX_MODE__FLDM_TDD;
-      }
+      cell_conf[i]->duplex_mode = flexran_get_duplex_mode(mod_id,i);
       cell_conf[i]->has_duplex_mode = 1;
+
       cell_conf[i]->subframe_assignment = flexran_get_subframe_assignment(mod_id, i);
       cell_conf[i]->has_subframe_assignment = 1;
       cell_conf[i]->special_subframe_patterns = flexran_get_special_subframe_assignment(mod_id,i);
@@ -1022,11 +996,7 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
       cell_conf[i]->ul_pusch_power = flexran_agent_get_operating_pusch_p0 (mod_id,i);
       cell_conf[i]->has_ul_pusch_power = 1;
 
-      if (flexran_get_enable64QAM(mod_id,i) == 0) {
-	cell_conf[i]->enable_64qam = PROTOCOL__FLEX_QAM__FLEQ_MOD_16QAM;
-      } else if(flexran_get_enable64QAM(mod_id,i) == 1) {
-	cell_conf[i]->enable_64qam = PROTOCOL__FLEX_QAM__FLEQ_MOD_64QAM;
-      }
+      cell_conf[i]->enable_64qam = flexran_get_enable64QAM(mod_id,i);
       cell_conf[i]->has_enable_64qam = 1;
 
       cell_conf[i]->carrier_index = i;

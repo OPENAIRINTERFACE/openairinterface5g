@@ -206,10 +206,10 @@ uint8_t flexran_get_prach_FreqOffset(mid_t mod_id, uint8_t cc_id);
 uint8_t flexran_get_maxHARQ_Msg3Tx(mid_t mod_id, uint8_t cc_id);
 
 /* Get the length of the UL cyclic prefix */
-lte_prefix_type_t flexran_get_ul_cyclic_prefix_length(mid_t mod_id, uint8_t cc_id);
+Protocol__FlexUlCyclicPrefixLength flexran_get_ul_cyclic_prefix_length(mid_t mod_id, uint8_t cc_id);
 
 /* Get the length of the DL cyclic prefix */
-lte_prefix_type_t flexran_get_dl_cyclic_prefix_length(mid_t mod_id, uint8_t cc_id);
+Protocol__FlexDlCyclicPrefixLength flexran_get_dl_cyclic_prefix_length(mid_t mod_id, uint8_t cc_id);
 
 /* Get the physical cell id of a cell */
 uint16_t flexran_get_cell_id(mid_t mod_id, uint8_t cc_id);
@@ -283,17 +283,17 @@ int flexran_update_p0_pucch(mid_t mod_id, mid_t ue_id, uint8_t cc_id);
 
 uint8_t flexran_get_threequarter_fs(mid_t mod_id, uint8_t cc_id);
 
-PUSCH_HOPPING_t flexran_get_hopping_mode(mid_t mod_id, uint8_t cc_id);
+Protocol__FlexHoppingMode flexran_get_hopping_mode(mid_t mod_id, uint8_t cc_id);
 
 uint8_t flexran_get_hopping_offset(mid_t mod_id, uint8_t cc_id);
 
 uint8_t flexran_get_n_SB(mid_t mod_id, uint8_t cc_id);
 
-int flexran_get_phich_resource(mid_t mod_id, uint8_t cc_id);
+Protocol__FlexPhichResource flexran_get_phich_resource(mid_t mod_id, uint8_t cc_id);
 
-uint8_t flexran_get_enable64QAM(mid_t mod_id, uint8_t cc_id);
+Protocol__FlexQam flexran_get_enable64QAM(mid_t mod_id, uint8_t cc_id);
 
-PHICH_DURATION_t flexran_get_phich_duration(mid_t mod_id, uint8_t cc_id);
+Protocol__FlexPhichDuration flexran_get_phich_duration(mid_t mod_id, uint8_t cc_id);
 
 /*
  * ************************************
