@@ -15,7 +15,12 @@
 #        define NUMBER_OF_eNB_MAX 7
 #        define NUMBER_OF_RU_MAX 32
 #        ifndef UE_EXPANSION
-#                define NUMBER_OF_UE_MAX 20
+/* if the value of MAX_MOBILES_PER_ENB and NUMBER_OF_UE_MAX is different,
+eNB process will exit because unexpected access happens.
+Now some parts are using NUMBER_OF_UE_MAX
+and the other are using MAX_MOBILES_PER_ENB in for-loop.
+*/
+#                define NUMBER_OF_UE_MAX 16
 #                define NUMBER_OF_CONNECTED_eNB_MAX 3
 #        else
 #                define NUMBER_OF_UE_MAX 256
