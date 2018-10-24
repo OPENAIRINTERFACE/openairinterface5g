@@ -936,7 +936,6 @@ rlc_am_mac_data_indication (
 
   (void)l_rlc_p; /* avoid gcc warning "unused variable" */
 
-  LOG_I(RLC, "In rlc_am_mac_indication: size %d\n",tb_size_in_bytes);
 #if TRACE_RLC_AM_PDU || MESSAGE_CHART_GENERATOR
 
   if (data_indP.data.nb_elements > 0) {
@@ -947,6 +946,7 @@ rlc_am_mac_data_indication (
 
       rlc_am_pdu_sn_10_p = (rlc_am_pdu_sn_10_t*)((struct mac_tb_ind *) (tb_p->data))->data_ptr;
       tb_size_in_bytes   = ((struct mac_tb_ind *) (tb_p->data))->size;
+      LOG_I(RLC, "In rlc_am_mac_indication: size %d\n",tb_size_in_bytes);
 
       if ((((struct mac_tb_ind *) (tb_p->data))->data_ptr[0] & RLC_DC_MASK) == RLC_DC_DATA_PDU ) {
         if (rlc_am_get_data_pdu_infos(ctxt_pP,l_rlc_p,rlc_am_pdu_sn_10_p, tb_size_in_bytes, &pdu_info) >= 0) {
