@@ -17,39 +17,19 @@
  *-------------------------------------------------------------------------------
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
- */ 
-
-/*! \file flexran_agent.h
- * \brief top level flexran agent  
- * \author Navid Nikaein and Xenofon Foukas
- * \date 2017
- * \version 0.1
  */
+#ifndef __FLEXRAN_AGENT_PHY_PRIMITIVES_H__
+#define __FLEXRAN_AGENT_PHY_PRIMITIVES_H__
 
-#ifndef FLEXRAN_AGENT_H_
-#define FLEXRAN_AGENT_H_
-
-#include "flexran_agent_common.h"
-#include "flexran_agent_async.h"
-#include "flexran_agent_extern.h"
-#include "flexran_agent_timer.h"
 #include "flexran_agent_defs.h"
-#include "flexran_agent_net_comm.h"
-#include "flexran_agent_ran_api.h"
-#include "flexran_agent_phy.h"
-#include "flexran_agent_mac.h"
-#include "flexran_agent_rrc.h"
-#include "flexran_agent_pdcp.h"
-#include "common/utils/LOG/log.h"
-#include "assertions.h"
+#include "flexran.pb-c.h"
+#include "header.pb-c.h"
 
-/* Initiation of the eNodeB agent */
-int flexran_agent_start(mid_t mod_id);
+/* FLEXRAN AGENT-PHY Interface */
+typedef struct {
 
-/* 
- * enb agent task mainly wakes up the tx thread for periodic and oneshot messages to the controller 
- * and can interact with other itti tasks
-*/
-void *flexran_agent_task(void *args);
+  /* currently empty, will be used to control RU */
 
-#endif
+} AGENT_PHY_xface;
+
+#endif /* __FLEXRAN_AGENT_PHY_PRIMITIVES_H__ */

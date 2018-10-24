@@ -231,6 +231,8 @@ int flexran_agent_start(mid_t mod_id)
   new_thread(receive_thread, flexran);
 
   /* Register and initialize the control modules */
+  flexran_agent_register_phy_xface(mod_id);
+
   flexran_agent_register_mac_xface(mod_id);
   flexran_agent_init_mac_agent(mod_id);
 

@@ -31,9 +31,13 @@
 #define __FLEXRAN_AGENT_EXTERN_H__
 
 #include "flexran_agent_defs.h"
+#include "flexran_agent_phy_defs.h"
 #include "flexran_agent_mac_defs.h"
 #include "flexran_agent_rrc_defs.h"
 #include "flexran_agent_pdcp_defs.h"
+
+/* Control module interface for the communication of the PHY control module with the agent */
+AGENT_PHY_xface *flexran_agent_get_phy_xface(mid_t mod_id);
 
 /* Control module interface for the communication of the MAC Control Module with the agent */
 AGENT_MAC_xface *flexran_agent_get_mac_xface(mid_t mod_id);

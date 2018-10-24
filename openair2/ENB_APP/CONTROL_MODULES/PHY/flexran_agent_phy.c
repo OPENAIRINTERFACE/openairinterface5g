@@ -17,39 +17,47 @@
  *-------------------------------------------------------------------------------
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
- */ 
-
-/*! \file flexran_agent.h
- * \brief top level flexran agent  
- * \author Navid Nikaein and Xenofon Foukas
- * \date 2017
- * \version 0.1
  */
 
-#ifndef FLEXRAN_AGENT_H_
-#define FLEXRAN_AGENT_H_
+/*! \file flexran_agent_phy.c
+ * \brief FlexRAN agent Control Module PHY
+ * \author Robert Schmidt
+ * \date Oct 2018
+ */
 
-#include "flexran_agent_common.h"
-#include "flexran_agent_async.h"
-#include "flexran_agent_extern.h"
-#include "flexran_agent_timer.h"
-#include "flexran_agent_defs.h"
-#include "flexran_agent_net_comm.h"
-#include "flexran_agent_ran_api.h"
 #include "flexran_agent_phy.h"
-#include "flexran_agent_mac.h"
-#include "flexran_agent_rrc.h"
-#include "flexran_agent_pdcp.h"
-#include "common/utils/LOG/log.h"
-#include "assertions.h"
 
-/* Initiation of the eNodeB agent */
-int flexran_agent_start(mid_t mod_id);
+/* Array containing the Agent-PHY interfaces */
+AGENT_PHY_xface *agent_phy_xface[NUM_MAX_ENB];
 
-/* 
- * enb agent task mainly wakes up the tx thread for periodic and oneshot messages to the controller 
- * and can interact with other itti tasks
-*/
-void *flexran_agent_task(void *args);
+int flexran_agent_register_phy_xface(mid_t mod_id)
+{
+  if (agent_phy_xface[mod_id]) {
+    LOG_E(PHY, "PHY agent for eNB %d is already registered\n", mod_id);
+    return -1;
+  }
+  AGENT_PHY_xface *xface = malloc(sizeof(AGENT_PHY_xface));
+  if (!xface) {
+    LOG_E(FLEXRAN_AGENT, "could not allocate memory for PHY agent xface %d\n", mod_id);
+    return -1;
+  }
 
-#endif
+  agent_phy_xface[mod_id] = xface;
+  return 0;
+}
+
+int flexran_agent_unregister_phy_xface(mid_t mod_id)
+{
+  if (!agent_phy_xface[mod_id]) {
+    LOG_E(FLEXRAN_AGENT, "PHY agent for eNB %d is not registered\n", mod_id);
+    return -1;
+  }
+  free(agent_phy_xface[mod_id]);
+  agent_phy_xface[mod_id] = NULL;
+  return 0;
+}
+
+AGENT_PHY_xface *flexran_agent_get_phy_xface(mid_t mod_id)
+{
+  return agent_phy_xface[mod_id];
+}
