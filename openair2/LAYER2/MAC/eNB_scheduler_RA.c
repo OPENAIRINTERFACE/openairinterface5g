@@ -501,9 +501,7 @@ generate_Msg2(module_id_t module_idP, int CC_idP, frame_t frameP,
 #endif
     {
 
-	// In case of nFAPI, sometimes timing of eNB and UE become different.
-	// So if nfapi_mode == 2(VNF) , this function don't check timing to avoid Attach failure.
-	if (((ra->Msg2_frame == frameP) && (ra->Msg2_subframe == subframeP)) || (nfapi_mode == 2)) {
+	if ((ra->Msg2_frame == frameP) && (ra->Msg2_subframe == subframeP)) {
 	    LOG_D(MAC,
 		  "[eNB %d] CC_id %d Frame %d, subframeP %d: Generating RAR DCI, state %d\n",
 		  module_idP, CC_idP, frameP, subframeP, ra->state);
@@ -1012,9 +1010,7 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
     {
     // This is normal LTE case
 	LOG_D(MAC, "generate_Msg4 1 ra->Msg4_frame SFN/SF: %d.%d,  frameP SFN/SF: %d.%d FOR eNB_Mod: %d \n", ra->Msg4_frame, ra->Msg4_subframe, frameP, subframeP, module_idP);
-		// In case of nFAPI, sometimes timing of eNB and UE become different.
-		// So if nfapi_mode == 2(VNF) , this function don't check timing to avoid Attach failure.
-    	if (((ra->Msg4_frame == frameP) && (ra->Msg4_subframe == subframeP))||((nfapi_mode == 2)&&(cc->tdd_Config == NULL))) {
+    	if ((ra->Msg4_frame == frameP) && (ra->Msg4_subframe == subframeP)) {
 
     	    // Get RRCConnectionSetup for Piggyback
     	    /*rrc_sdu_length = mac_rrc_data_req(module_idP, CC_idP, frameP, CCCH, 1,	// 1 transport block
@@ -1425,9 +1421,7 @@ schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 
 	    if (ra->state == MSG2)
 		generate_Msg2(module_idP, CC_id, frameP, subframeP, ra);
-		// In case of nFAPI, sometimes timing of eNB and UE become different.
-		// So if nfapi_mode == 2(VNF) , this function don't check timing to avoid Attach failure.
-		else if ((ra->state == MSG4 && ra->Msg4_frame == frameP && ra->Msg4_subframe == subframeP ) || (nfapi_mode == 2 && ra->state == MSG4))
+		else if (ra->state == MSG4 && ra->Msg4_frame == frameP && ra->Msg4_subframe == subframeP )
 		generate_Msg4(module_idP, CC_id, frameP, subframeP, ra);
 	    else if (ra->state == WAITMSG4ACK)
 		check_Msg4_retransmission(module_idP, CC_id, frameP,
