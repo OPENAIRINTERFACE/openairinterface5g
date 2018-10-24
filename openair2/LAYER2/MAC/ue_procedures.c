@@ -2563,6 +2563,10 @@ ue_scheduler(const module_id_t module_idP,
     //Rrc_xface->Frame_index=Mac_rlc_xface->frameP;
     //if (subframe%5 == 0)
     //LG#ifdef EXMIMO
+
+    // data to/from NETLINK is treated in pdcp_run.
+    // one socket is used in multiple UE's L2 FAPI simulator and
+    // only first UE need to do this.
     if(module_idP == 0){
       pdcp_run(&ctxt);
     }

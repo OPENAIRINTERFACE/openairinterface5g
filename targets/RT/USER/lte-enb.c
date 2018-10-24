@@ -1002,7 +1002,7 @@ void init_eNB_proc(int inst) {
       pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, proc );
       pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, tx_thread, proc);
     }
-    else if (nfapi_mode == 2) {
+    else if (nfapi_mode == 2) { // this is neccesary in VNF or L2 FAPI simulator.
       pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, &proc_rxtx[0] );
       pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, eNB_thread_rxtx, &proc_rxtx[1] );
     }
