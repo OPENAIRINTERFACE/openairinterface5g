@@ -37,10 +37,9 @@
 
 #include "flexran_agent_common.h"
 #include "flexran_agent_rrc_defs.h"
+// for flexran_agent_get_rrc_xface()
+#include "flexran_agent_extern.h"
 
-
-/* Initialization function for the agent structures etc */
-void flexran_agent_init_rrc_agent(mid_t mod_id);
 
 /* UE state change message constructor and destructor */
 void flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_change);
@@ -62,9 +61,9 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id, const report_config_t *report_co
 int flexran_agent_rrc_destroy_stats_reply(Protocol__FlexranMessage *msg);
 
 /*Register technology specific interface callbacks*/
-int flexran_agent_register_rrc_xface(mid_t mod_id, AGENT_RRC_xface *xface);
+int flexran_agent_register_rrc_xface(mid_t mod_id);
 
 /*Unregister technology specific callbacks*/
-int flexran_agent_unregister_rrc_xface(mid_t mod_id, AGENT_RRC_xface*xface);
+int flexran_agent_unregister_rrc_xface(mid_t mod_id);
 
 #endif

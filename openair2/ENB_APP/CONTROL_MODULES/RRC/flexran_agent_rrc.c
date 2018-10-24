@@ -36,9 +36,6 @@
 /*Trigger boolean for RRC measurement*/
 bool triggered_rrc = false;
 
-/*Flags showing if an rrc agent has already been registered*/
-unsigned int rrc_agent_registered[NUM_MAX_ENB];
-
 /*Array containing the Agent-RRC interfaces*/
 AGENT_RRC_xface *agent_rrc_xface[NUM_MAX_ENB];
 
@@ -643,9 +640,15 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
 }
 
 
-int flexran_agent_register_rrc_xface(mid_t mod_id, AGENT_RRC_xface *xface) {
-  if (rrc_agent_registered[mod_id]) {
-    LOG_E(RRC, "RRC agent for eNB %d is already registered\n", mod_id);
+int flexran_agent_register_rrc_xface(mid_t mod_id)
+{
+  if (agent_rrc_xface[mod_id]) {
+    LOG_E(FLEXRAN_AGENT, "RRC agent for eNB %d is already registered\n", mod_id);
+    return -1;
+  }
+  AGENT_RRC_xface *xface = malloc(sizeof(AGENT_RRC_xface));
+  if (!xface) {
+    LOG_E(FLEXRAN_AGENT, "could not allocate memory for RRC agent xface %d\n", mod_id);
     return -1;
   }
 
@@ -654,21 +657,29 @@ int flexran_agent_register_rrc_xface(mid_t mod_id, AGENT_RRC_xface *xface) {
   xface->flexran_agent_notify_ue_state_change = flexran_agent_ue_state_change;
   xface->flexran_trigger_rrc_measurements = flexran_trigger_rrc_measurements;
 
-  rrc_agent_registered[mod_id] = 1;
   agent_rrc_xface[mod_id] = xface;
 
   return 0;
 }
 
-int flexran_agent_unregister_rrc_xface(mid_t mod_id, AGENT_RRC_xface *xface) {
-
+int flexran_agent_unregister_rrc_xface(mid_t mod_id)
+{
+  if (!agent_rrc_xface[mod_id]) {
+    LOG_E(FLEXRAN_AGENT, "RRC agent for eNB %d is not registered\n", mod_id);
+    return -1;
+  }
   //xface->agent_ctxt = NULL;
 //  xface->flexran_agent_send_update_rrc_stats = NULL;
 
-  xface->flexran_agent_notify_ue_state_change = NULL;
-  xface->flexran_trigger_rrc_measurements = NULL;
-  rrc_agent_registered[mod_id] = 0;
+  agent_rrc_xface[mod_id]->flexran_agent_notify_ue_state_change = NULL;
+  agent_rrc_xface[mod_id]->flexran_trigger_rrc_measurements = NULL;
+  free(agent_rrc_xface[mod_id]);
   agent_rrc_xface[mod_id] = NULL;
 
   return 0;
+}
+
+AGENT_RRC_xface *flexran_agent_get_rrc_xface(mid_t mod_id)
+{
+  return agent_rrc_xface[mod_id];
 }

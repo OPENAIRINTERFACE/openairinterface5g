@@ -416,9 +416,9 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
       UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync   = 1;
 
       //Inform the controller about the UE deactivation. Should be moved to RRC agent in the future
-      if (rrc_agent_registered[module_idP]) {
+      if (flexran_agent_get_rrc_xface(module_idP)) {
         LOG_W(MAC, "notify flexran Agent of UE state change\n");
-        agent_rrc_xface[module_idP]->flexran_agent_notify_ue_state_change(module_idP,
+        flexran_agent_get_rrc_xface(module_idP)->flexran_agent_notify_ue_state_change(module_idP,
             rnti, PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
       }
     }

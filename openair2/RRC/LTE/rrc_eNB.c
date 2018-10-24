@@ -1038,8 +1038,8 @@ void release_UE_in_freeList(module_id_t mod_id)
                 }
               }
 
-              if (rrc_agent_registered[mod_id]) {
-                agent_rrc_xface[mod_id]->flexran_agent_notify_ue_state_change(mod_id,
+              if (flexran_agent_get_rrc_xface(mod_id)) {
+                flexran_agent_get_rrc_xface(mod_id)->flexran_agent_notify_ue_state_change(mod_id,
                             rnti, PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
               }
 
@@ -6578,8 +6578,8 @@ rrc_eNB_decode_ccch(
 
         } else {
           // no context available
-	  if (rrc_agent_registered[ctxt_pP->module_id]) {
-	    agent_rrc_xface[ctxt_pP->module_id]->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
+	  if (flexran_agent_get_rrc_xface(ctxt_pP->module_id)) {
+	    flexran_agent_get_rrc_xface(ctxt_pP->module_id)->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
 										      ctxt_pP->rnti,
 										      PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
 	  }
@@ -6869,8 +6869,8 @@ rrc_eNB_decode_dcch(
 	  ul_dcch_msg->message.choice.c1.choice.rrcConnectionReconfigurationComplete.rrc_TransactionIdentifier);
 
 	//WARNING:Inform the controller about the UE activation. Should be moved to RRC agent in the future
-	if (rrc_agent_registered[ctxt_pP->module_id]) {
-	  agent_rrc_xface[ctxt_pP->eNB_index]->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
+	if (flexran_agent_get_rrc_xface(ctxt_pP->module_id)) {
+	  flexran_agent_get_rrc_xface(ctxt_pP->module_id)->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
 										ue_context_p->ue_id_rnti,
 										PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_UPDATED);
 	}
@@ -7022,8 +7022,8 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
               ul_dcch_msg->message.choice.c1.choice.rrcConnectionReestablishmentComplete.rrc_TransactionIdentifier,
               &ul_dcch_msg->message.choice.c1.choice.rrcConnectionReestablishmentComplete.criticalExtensions.choice.rrcConnectionReestablishmentComplete_r8);
 
-          if (rrc_agent_registered[ctxt_pP->module_id]) {
-            agent_rrc_xface[ctxt_pP->eNB_index]->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
+          if (flexran_agent_get_rrc_xface(ctxt_pP->module_id)) {
+            flexran_agent_get_rrc_xface(ctxt_pP->module_id)->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
                                                                                       ue_context_p->ue_id_rnti,
                                                                                       PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_ACTIVATED);
           }
@@ -7090,8 +7090,8 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
 	     }
 	  //WARNING:Inform the controller about the UE activation. Should be moved to RRC agent in the future
-	  if (rrc_agent_registered[ctxt_pP->module_id]) {
-	    agent_rrc_xface[ctxt_pP->eNB_index]->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
+	  if (flexran_agent_get_rrc_xface(ctxt_pP->module_id)) {
+	    flexran_agent_get_rrc_xface(ctxt_pP->module_id)->flexran_agent_notify_ue_state_change(ctxt_pP->module_id,
 										  ue_context_p->ue_id_rnti,
 										  PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_ACTIVATED);
 	  }
