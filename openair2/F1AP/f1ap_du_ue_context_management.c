@@ -100,9 +100,10 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_SpCellULConfigured, false);  // SpCellULConfigured
   if (ie) {
+    /* correct here */
     f1ap_ue_context_setup_req->cellULConfigured = malloc(sizeof(uint32_t));
     if (f1ap_ue_context_setup_req->cellULConfigured)
-       f1ap_ue_context_setup_req->cellULConfigured = ie->value.choice.CellULConfigured;
+      *f1ap_ue_context_setup_req->cellULConfigured = ie->value.choice.CellULConfigured;
   } else {
     f1ap_ue_context_setup_req->cellULConfigured = NULL;
   }
@@ -643,7 +644,6 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
   MessageDef                      *msg_p; // message to RRC
   F1AP_UEContextReleaseRequest_t    *container;
   F1AP_UEContextReleaseRequestIEs_t *ie;
-  int i;
 
   DevAssert(pdu);
 
@@ -661,7 +661,9 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseRequestIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
-  f1ap_ue_context_setup_req->gNB_DU_ue_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
+  f1ap_ue_context_setup_req->gNB_DU_ue_id = malloc(sizeof(uint32_t));
+  if (f1ap_ue_context_setup_req->gNB_DU_ue_id)
+    *f1ap_ue_context_setup_req->gNB_DU_ue_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
 
   /* Cause */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseRequestIEs_t, ie, container,

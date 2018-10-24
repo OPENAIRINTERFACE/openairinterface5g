@@ -505,11 +505,13 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
 	 AssertFatal(ext!=NULL,"Extension for SI is null\n");
 	 F1AP_SETUP_RESP (msg_p).num_SI[i] = ext->list.count;
 	 AssertFatal(ext->list.count==1,"At least one SI message should be there, and only 1 for now!\n");
-	 LOG_D(DU_F1AP, "F1AP: F1Setup-Resp Cell %d MCC %d MNC %d NRCellid %x num_si %d\n",i,F1AP_SETUP_RESP (msg_p).mcc[i],F1AP_SETUP_RESP (msg_p).mnc[i],F1AP_SETUP_RESP (msg_p).nr_cellid[i],F1AP_SETUP_RESP (msg_p).num_SI[i]);
+         LOG_D(DU_F1AP, "F1AP: F1Setup-Resp Cell %d MCC %d MNC %d NRCellid %lx num_si %d\n",
+             i, F1AP_SETUP_RESP (msg_p).mcc[i], F1AP_SETUP_RESP (msg_p).mnc[i],
+             F1AP_SETUP_RESP (msg_p).nr_cellid[i], F1AP_SETUP_RESP (msg_p).num_SI[i]);
 	 for (int si =0;si < ext->list.count;si++) {
 	   size_t size = ext->list.array[si]->extensionValue.choice.GNB_CUSystemInformation.sImessage.size;
 	   F1AP_SETUP_RESP (msg_p).SI_container_length[i][si] = size;
-           LOG_D(DU_F1AP, "F1AP: F1Setup-Resp SI_container_length[%d][%d] %d bytes\n",i,si,size);
+           LOG_D(DU_F1AP, "F1AP: F1Setup-Resp SI_container_length[%d][%d] %ld bytes\n", i, si, size);
 	   F1AP_SETUP_RESP (msg_p).SI_container[i][si] = malloc(F1AP_SETUP_RESP (msg_p).SI_container_length[i][si]);
 
 	   memcpy((void*)F1AP_SETUP_RESP (msg_p).SI_container[i][si],

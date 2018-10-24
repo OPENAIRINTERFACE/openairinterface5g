@@ -277,7 +277,7 @@ typedef struct f1ap_ue_context_setup_req_s {
   uint8_t  mnc_digit_length;
   uint64_t nr_cellid;
   uint8_t servCellIndex;
-  uint8_t cellULConfigured;
+  uint8_t *cellULConfigured;
   uint32_t servCellId;
   uint8_t *cu_to_du_rrc_information;
   uint8_t  cu_to_du_rrc_information_length;

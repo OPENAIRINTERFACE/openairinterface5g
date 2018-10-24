@@ -71,13 +71,9 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 #ifndef UETARGET 
   LOG_D(DU_F1AP, "DU_handle_DL_RRC_MESSAGE_TRANSFER \n");
   
-  MessageDef                     *message_p;
   F1AP_DLRRCMessageTransfer_t    *container;
   F1AP_DLRRCMessageTransferIEs_t *ie;
 
-  uint8_t  *buffer;
-  uint32_t  len;
-  
   uint64_t        cu_ue_f1ap_id;
   uint64_t        du_ue_f1ap_id;
   uint64_t        srb_id;
@@ -170,6 +166,9 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
       case F1AP_RAT_FrequencyPriorityInformation_PR_rAT_FrequencySelectionPriority:
         rAT_FrequencySelectionPriority = ie->value.choice.RAT_FrequencyPriorityInformation.choice.rAT_FrequencySelectionPriority;
         break;
+      default:
+        LOG_W(DU_F1AP, "unhandled IE RAT_FrequencyPriorityInformation.present\n");
+        break;
     }
   }
 
@@ -218,9 +217,9 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
       case DL_CCCH_MessageType__c1_PR_rrcConnectionSetup:
       {
         LOG_I(DU_F1AP,
-          "Logical Channel DL-CCCH (SRB0), Received RRCConnectionSetup DU_ID %x/RNTI %x\n",  
+          "Logical Channel DL-CCCH (SRB0), Received RRCConnectionSetup DU_ID %lx/RNTI %x\n",
           du_ue_f1ap_id,
-          f1ap_get_rnti_by_du_id(&f1ap_du_ue[instance],du_ue_f1ap_id));
+          f1ap_get_rnti_by_du_id(&f1ap_du_ue[instance], du_ue_f1ap_id));
           // Get configuration
 
         RRCConnectionSetup_t* rrcConnectionSetup = &dl_ccch_msg->message.choice.c1.choice.rrcConnectionSetup;
@@ -341,7 +340,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 	
       case DL_DCCH_MessageType__c1_PR_NOTHING:
         LOG_I(DU_F1AP, "Received PR_NOTHING on DL-DCCH-Message\n");
-        return;
+        return 0;
       case DL_DCCH_MessageType__c1_PR_dlInformationTransfer:
         LOG_I(DU_F1AP,"Received NAS DL Information Transfer\n");
         break;	
@@ -357,7 +356,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
       case DL_DCCH_MessageType__c1_PR_rrcConnectionReconfiguration:
 	     // handle RRCConnectionReconfiguration
         LOG_I(DU_F1AP,
-	       "Logical Channel DL-DCCH (SRB1), Received RRCConnectionReconfiguration DU_ID %x/RNTI %x\n",  
+	       "Logical Channel DL-DCCH (SRB1), Received RRCConnectionReconfiguration DU_ID %lx/RNTI %x\n",
 	       du_ue_f1ap_id,
 	       f1ap_get_rnti_by_du_id(&f1ap_du_ue[instance],du_ue_f1ap_id));
 	
@@ -379,11 +378,9 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 	    
       	    if (rrcConnectionReconfiguration_r8->radioResourceConfigDedicated) {
       	      LOG_I(DU_F1AP,"Radio Resource Configuration is present\n");
-      	      RadioResourceConfigDedicated_t* radioResourceConfigDedicated = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated;
       	      uint8_t DRB2LCHAN[8];
-              long SRB_id,drb_id;
-      	      int i,cnt;
-      	      LogicalChannelConfig_t *SRB1_logicalChannelConfig,*SRB2_logicalChannelConfig;
+              long drb_id;
+              int i;
       	      DRB_ToAddModList_t*                 DRB_configList = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->drb_ToAddModList;
               SRB_ToAddModList_t*                 SRB_configList = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->srb_ToAddModList;
               DRB_ToReleaseList_t*                DRB_ReleaseList = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->drb_ToReleaseList;
@@ -502,6 +499,11 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   	  case DL_DCCH_MessageType__c1_PR_spare4:
   #endif
   	    break;
+      case DL_DCCH_MessageType__c1_PR_ueInformationRequest_r9:
+        LOG_I(DU_F1AP, "Received ueInformationRequest_r9\n");
+        break;
+      case DL_DCCH_MessageType__c1_PR_rrcConnectionResume_r13:
+        LOG_I(DU_F1AP, "Received rrcConnectionResume_r13\n");
 	   } 
 	 }	
   }
@@ -509,7 +511,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
     
   }
 
-  LOG_I(DU_F1AP, "Received DL RRC Transfer on srb_id %d\n",srb_id);
+  LOG_I(DU_F1AP, "Received DL RRC Transfer on srb_id %ld\n", srb_id);
   rlc_op_status_t    rlc_status;
   boolean_t          ret             = TRUE;
   mem_block_t       *pdcp_pdu_p      = NULL; 
@@ -593,10 +595,6 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(const protocol_ctxt_t* const ctxt_pP,
 
  LOG_I(DU_F1AP,"[DU %d] Received UL_RRC_MESSAGE_TRANSFER : size %d UE RNTI %x in SRB %d\n", 
         ctxt_pP->module_id, sdu_sizeP, rnti, rb_idP);
-
- struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(
-                                                RC.rrc[ctxt_pP->module_id],
-                                                rnti);
 
   /* Create */
   /* 0. Message Type */

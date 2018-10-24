@@ -738,7 +738,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
     ie->id                             = F1AP_ProtocolIE_ID_id_MaskedIMEISV;
     ie->criticality                    = F1AP_Criticality_reject;
     ie->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_MaskedIMEISV;
-    MaskedIMEISV_TO_BIT_STRING(12340000, &ie->value.choice.MaskedIMEISV); // size (64)
+    MaskedIMEISV_TO_BIT_STRING(12340000l, &ie->value.choice.MaskedIMEISV); // size (64)
     ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   }
 
@@ -792,7 +792,10 @@ int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t       instance,
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseRequestIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
-  f1ap_ue_context_setup_req->gNB_DU_ue_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
+  f1ap_ue_context_setup_req->gNB_DU_ue_id = malloc(sizeof(uint32_t));
+  AssertFatal(f1ap_ue_context_setup_req->gNB_DU_ue_id,
+              "can not allocate memory for f1ap_ue_context_setup_req->gNB_DU_ue_id\n");
+  *f1ap_ue_context_setup_req->gNB_DU_ue_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
 
   /* Cause */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseRequestIEs_t, ie, container,
@@ -938,7 +941,10 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCompleteIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
-  f1ap_ue_context_setup_req->gNB_DU_ue_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
+  f1ap_ue_context_setup_req->gNB_DU_ue_id = malloc(sizeof(uint32_t));
+  AssertFatal(f1ap_ue_context_setup_req->gNB_DU_ue_id,
+              "can not allocate memory for f1ap_ue_context_setup_req->gNB_DU_ue_id\n");
+  *f1ap_ue_context_setup_req->gNB_DU_ue_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
 
   /* Optional*/
   /* CriticalityDiagnostics */
