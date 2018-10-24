@@ -264,7 +264,33 @@ pipeline {
                 }
                 stage ("Test FDD - Band 7 - B210") {
                     steps {
-                        echo '\u2705 \u001B[32mFDD Band7 testing with COTS-UE not done in this pipeline\u001B[0m'
+                               script {
+                                    try {
+                                        if ("MERGE".equals(env.gitlabActionType)) {
+                                            gitlabCommitStatus(name: "Test-FDD-Band7") {
+                                                build job: 'eNB-CI-FDD-Band7-B210',
+                                                   parameters: [
+                                                       string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+                                                       string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
+                                                       string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
+                                                       booleanParam(name: 'eNB_mergeRequest', value: true)
+                                                   ]
+                                            }
+                                        } else {
+                                            gitlabCommitStatus(name: "Test-FDD-Band7") {
+                                                build job: 'eNB-CI-FDD-Band7-B210',
+                                                   parameters: [
+                                                       string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+                                                       string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
+                                                       string(name: 'eNB_CommitID', value: String.valueOf(GIT_COMMIT)),
+                                                       booleanParam(name: 'eNB_mergeRequest', value: false)
+                                                   ]
+                                            }
+                                        }
+                                    } catch (Exception e) {
+                                        currentBuild.result = 'FAILURE'
+                                    }
+                                }			
                     }
                 }
             }
