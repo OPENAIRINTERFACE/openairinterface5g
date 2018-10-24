@@ -27,7 +27,7 @@
  */
 
 #include "flexran_agent_rrc.h"
-
+#include "flexran_agent_ran_api.h"
 
 #include "liblfds700.h"
 
@@ -660,6 +660,59 @@ int flexran_agent_register_rrc_xface(mid_t mod_id)
   agent_rrc_xface[mod_id] = xface;
 
   return 0;
+}
+
+void flexran_agent_fill_rrc_cell_config(mid_t mod_id, uint8_t cc_id,
+    Protocol__FlexCellConfig *conf) {
+  conf->cell_id = cc_id;
+  conf->has_cell_id = 1;
+
+  if (!conf->si_config) {
+    conf->si_config = malloc(sizeof(Protocol__FlexSiConfig));
+    if (conf->si_config)
+      protocol__flex_si_config__init(conf->si_config);
+  }
+
+  if (conf->si_config) {
+    // TODO THIS IS DU RRC
+    conf->si_config->sib1_length = flexran_get_sib1_length(mod_id, cc_id);
+    conf->si_config->has_sib1_length = 1;
+
+    conf->si_config->si_window_length = (uint32_t) flexran_get_si_window_length(mod_id,  cc_id);
+    conf->si_config->has_si_window_length = 1;
+
+    conf->si_config->n_si_message = 0;
+
+    /* Protocol__FlexSiMessage **si_message; */
+    /* si_message = malloc(sizeof(Protocol__FlexSiMessage *) * si_config->n_si_message); */
+    /* if(si_message == NULL) */
+    /* 	goto error; */
+    /* for(j = 0; j < si_config->n_si_message; j++){ */
+    /* 	si_message[j] = malloc(sizeof(Protocol__FlexSiMessage)); */
+    /* 	if(si_message[j] == NULL) */
+    /* 	  goto error; */
+    /* 	protocol__flex_si_message__init(si_message[j]); */
+    /* 	//TODO: Fill in with actual value, Periodicity of SI msg in radio frames */
+    /* 	si_message[j]->periodicity = 1;				//SIPeriod */
+    /* 	si_message[j]->has_periodicity = 1; */
+    /* 	//TODO: Fill in with actual value, rhe length of the SI message in bytes */
+    /* 	si_message[j]->length = 10; */
+    /* 	si_message[j]->has_length = 1; */
+    /* } */
+    /* if(si_config->n_si_message > 0){ */
+    /* 	si_config->si_message = si_message; */
+    /* } */
+  }
+
+  conf->ra_response_window_size = flexran_get_ra_ResponseWindowSize(mod_id, cc_id);
+  conf->has_ra_response_window_size = 1;
+
+  // belongs to MAC but is read in RRC
+  conf->mac_contention_resolution_timer = flexran_get_mac_ContentionResolutionTimer(mod_id, cc_id);
+  conf->has_mac_contention_resolution_timer = 1;
+
+  conf->ul_pusch_power = flexran_agent_get_operating_pusch_p0 (mod_id, cc_id);
+  conf->has_ul_pusch_power = 1;
 }
 
 int flexran_agent_unregister_rrc_xface(mid_t mod_id)

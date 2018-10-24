@@ -45,6 +45,10 @@
  * FlexRAN agent - technology PHY API
  **********************************/
 
+/* Fill the PHY part of an cell_config message */
+void flexran_agent_fill_phy_cell_config(mid_t mod_id, uint8_t cc_id,
+    Protocol__FlexCellConfig *conf);
+
 /* Register technology specific interface callbacks */
 int flexran_agent_register_phy_xface(mid_t mod_id);
 

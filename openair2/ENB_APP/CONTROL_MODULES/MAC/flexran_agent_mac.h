@@ -83,6 +83,10 @@ void flexran_agent_send_update_mac_stats(mid_t mod_id);
 /// Provide to the scheduler a pending dl_mac_config message
 void flexran_agent_get_pending_dl_mac_config(mid_t mod_id, Protocol__FlexranMessage **msg);
 
+/* Fill the MAC part of an cell_config message */
+void flexran_agent_fill_mac_cell_config(mid_t mod_id, uint8_t cc_id,
+    Protocol__FlexCellConfig *conf);
+
 /*Register technology specific interface callbacks*/
 int flexran_agent_register_mac_xface(mid_t mod_id);
 

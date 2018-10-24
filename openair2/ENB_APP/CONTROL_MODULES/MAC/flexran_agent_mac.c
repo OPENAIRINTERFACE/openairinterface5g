@@ -1358,6 +1358,20 @@ int flexran_agent_register_mac_xface(mid_t mod_id)
   return 0;
 }
 
+void flexran_agent_fill_mac_cell_config(mid_t mod_id, uint8_t cc_id,
+    Protocol__FlexCellConfig *conf) {
+  if (!conf->si_config) {
+    conf->si_config = malloc(sizeof(Protocol__FlexSiConfig));
+    if (conf->si_config)
+      protocol__flex_si_config__init(conf->si_config);
+  }
+
+  if (conf->si_config) {
+    conf->si_config->sfn = flexran_get_current_system_frame_num(mod_id);
+    conf->si_config->has_sfn = 1;
+  }
+}
+
 int flexran_agent_unregister_mac_xface(mid_t mod_id)
 {
   if (!agent_mac_xface[mod_id]) {
