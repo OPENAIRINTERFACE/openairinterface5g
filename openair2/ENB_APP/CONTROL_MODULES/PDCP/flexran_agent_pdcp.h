@@ -39,6 +39,8 @@
 #include "flexran_agent_defs.h"
 #include "flexran_agent_pdcp_defs.h"
 #include "flexran_agent_ran_api.h"
+// for flexran_agent_get_pdcp_xface()
+#include "flexran_agent_extern.h"
 
 /**********************************
  * FlexRAN agent - technology PDCP API
@@ -56,9 +58,9 @@ void flexran_agent_pdcp_aggregate_stats(const mid_t mod_id,
 					Protocol__FlexPdcpStats *pdcp_aggr_stats);
 
 /*Register technology specific interface callbacks*/
-int flexran_agent_register_pdcp_xface(mid_t mod_id, AGENT_PDCP_xface *xface);
+int flexran_agent_register_pdcp_xface(mid_t mod_id);
 
 /*Unregister technology specific callbacks*/
-int flexran_agent_unregister_pdcp_xface(mid_t mod_id, AGENT_PDCP_xface*xface);
+int flexran_agent_unregister_pdcp_xface(mid_t mod_id);
 
 #endif

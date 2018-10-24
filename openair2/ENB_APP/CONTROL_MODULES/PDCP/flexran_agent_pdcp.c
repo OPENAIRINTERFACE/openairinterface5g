@@ -28,12 +28,6 @@
 
 #include "flexran_agent_pdcp.h"
 
-
-/*Trigger boolean for PDCP measurement*/
-bool triggered_pdcp = false;
-/*Flags showing if a pdcp agent has already been registered*/
-unsigned int pdcp_agent_registered[NUM_MAX_ENB];
-
 /*Array containing the Agent-PDCP interfaces*/
 AGENT_PDCP_xface *agent_pdcp_xface[NUM_MAX_ENB];
 
@@ -144,28 +138,41 @@ int flexran_agent_pdcp_stats_reply(mid_t mod_id,
 
 
 
-int flexran_agent_register_pdcp_xface(mid_t mod_id, AGENT_PDCP_xface *xface) {
-  if (pdcp_agent_registered[mod_id]) {
-    LOG_E(PDCP, "PDCP agent for eNB %d is already registered\n", mod_id);
+int flexran_agent_register_pdcp_xface(mid_t mod_id)
+{
+  if (agent_pdcp_xface[mod_id]) {
+    LOG_E(FLEXRAN_AGENT, "PDCP agent CM for eNB %d is already registered\n", mod_id);
+    return -1;
+  }
+  AGENT_PDCP_xface *xface = malloc(sizeof(AGENT_PDCP_xface));
+  if (!xface) {
+    LOG_E(FLEXRAN_AGENT, "could not allocate memory for PDCP agent xface %d\n", mod_id);
     return -1;
   }
 
   //xface->flexran_pdcp_stats_measurement = NULL;
 
-  pdcp_agent_registered[mod_id] = 1;
   agent_pdcp_xface[mod_id] = xface;
 
   return 0;
 }
 
-int flexran_agent_unregister_pdcp_xface(mid_t mod_id, AGENT_PDCP_xface *xface) {
-
+int flexran_agent_unregister_pdcp_xface(mid_t mod_id)
+{
+  if (!agent_pdcp_xface[mod_id]) {
+    LOG_E(FLEXRAN_AGENT, "PDCP agent CM for eNB %d is not registered\n", mod_id);
+    return -1;
+  }
   //xface->agent_ctxt = NULL;
   //xface->flexran_pdcp_stats_measurement = NULL;
 
-  
-  pdcp_agent_registered[mod_id] = 0;
+  free(agent_pdcp_xface[mod_id]);
   agent_pdcp_xface[mod_id] = NULL;
 
   return 0;
+}
+
+AGENT_PDCP_xface *flexran_agent_get_pdcp_xface(mid_t mod_id)
+{
+  return agent_pdcp_xface[mod_id];
 }

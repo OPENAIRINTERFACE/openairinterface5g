@@ -236,8 +236,7 @@ int flexran_agent_start(mid_t mod_id)
 
   flexran_agent_register_rrc_xface(mod_id);
 
-  AGENT_PDCP_xface *pdcp_agent_xface = (AGENT_PDCP_xface *) malloc(sizeof(AGENT_PDCP_xface));
-  flexran_agent_register_pdcp_xface(mod_id, pdcp_agent_xface);
+  flexran_agent_register_pdcp_xface(mod_id);
 
   /* 
    * initilize a timer 
