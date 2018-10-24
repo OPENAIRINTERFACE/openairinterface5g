@@ -40,9 +40,6 @@
 
 #include "common/utils/LOG/log.h"
 
-/*Flags showing if a mac agent has already been registered*/
-unsigned int mac_agent_registered[NUM_MAX_ENB];
-
 /*Array containing the Agent-MAC interfaces*/
 AGENT_MAC_xface *agent_mac_xface[NUM_MAX_ENB];
 
@@ -1336,9 +1333,15 @@ void flexran_agent_send_sf_trigger(mid_t mod_id) {
 
 
 
-int flexran_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
-  if (mac_agent_registered[mod_id]) {
+int flexran_agent_register_mac_xface(mid_t mod_id)
+{
+  if (agent_mac_xface[mod_id]) {
     LOG_E(MAC, "MAC agent for eNB %d is already registered\n", mod_id);
+    return -1;
+  }
+  AGENT_MAC_xface *xface = malloc(sizeof(AGENT_MAC_xface));
+  if (!xface) {
+    LOG_E(FLEXRAN_AGENT, "could not allocate memory for MAC agent xface %d\n", mod_id);
     return -1;
   }
 
@@ -1350,14 +1353,18 @@ int flexran_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
 
   xface->dl_scheduler_loaded_lib = NULL;
   xface->ul_scheduler_loaded_lib = NULL;
-  mac_agent_registered[mod_id] = 1;
   agent_mac_xface[mod_id] = xface;
 
   return 0;
 }
 
-int flexran_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
-
+int flexran_agent_unregister_mac_xface(mid_t mod_id)
+{
+  if (!agent_mac_xface[mod_id]) {
+    LOG_E(FLEXRAN_AGENT, "MAC agent CM for eNB %d is not registered\n", mod_id);
+    return -1;
+  }
+  AGENT_MAC_xface *xface = agent_mac_xface[mod_id];
   //xface->agent_ctxt = NULL;
   xface->flexran_agent_send_sr_info = NULL;
   xface->flexran_agent_send_sf_trigger = NULL;
@@ -1366,14 +1373,13 @@ int flexran_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
 
   xface->dl_scheduler_loaded_lib = NULL;
   xface->ul_scheduler_loaded_lib = NULL;
-  mac_agent_registered[mod_id] = 0;
+  free(xface);
   agent_mac_xface[mod_id] = NULL;
 
   return 0;
 }
 
-
-
-
-
-
+AGENT_MAC_xface *flexran_agent_get_mac_xface(mid_t mod_id)
+{
+  return agent_mac_xface[mod_id];
+}

@@ -769,6 +769,5 @@ err_code_t flexran_agent_destroy_cont_stats_update(mid_t mod_id) {
   flexran_agent_destroy_flexran_message(stats_context[mod_id].prev_stats_reply);
   free(stats_context[mod_id].mutex);
 
-  // mac_agent_registered[mod_id] = 0;
   return 1;
 }

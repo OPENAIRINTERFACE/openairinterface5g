@@ -36,6 +36,8 @@
 
 #include "flexran_agent_common.h"
 #include "flexran_agent_extern.h"
+// for flexran_agent_get_mac_xface()
+#include "flexran_agent_extern.h"
 
 
 /* Initialization function for the agent structures etc */
@@ -82,9 +84,9 @@ void flexran_agent_send_update_mac_stats(mid_t mod_id);
 void flexran_agent_get_pending_dl_mac_config(mid_t mod_id, Protocol__FlexranMessage **msg);
 
 /*Register technology specific interface callbacks*/
-int flexran_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface);
+int flexran_agent_register_mac_xface(mid_t mod_id);
 
 /*Unregister technology specific callbacks*/
-int flexran_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface*xface);
+int flexran_agent_unregister_mac_xface(mid_t mod_id);
 
 #endif

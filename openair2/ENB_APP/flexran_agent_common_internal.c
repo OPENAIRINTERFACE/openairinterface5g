@@ -209,7 +209,7 @@ int parse_enb_id(mid_t mod_id, yaml_parser_t *parser) {
       }
       // Check what key needs to be set
       // use eNB egistered
-      if (mac_agent_registered[mod_id]) {
+      if (flexran_agent_get_mac_xface(mod_id)) {
 	LOG_I(ENB_APP, "Setting parameter for eNB %s\n", event.data.scalar.value);
 	if (strcmp((char *) event.data.scalar.tag, YAML_INT_TAG) == 0) { // if int 
 	  if ((strtol((char *) event.data.scalar.value, &endptr, 10))== mod_id ) { // enb_id == mod_id: right enb instance to be configured

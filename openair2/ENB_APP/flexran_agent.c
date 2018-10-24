@@ -230,14 +230,11 @@ int flexran_agent_start(mid_t mod_id)
   
   new_thread(receive_thread, flexran);
 
-  /*Initialize and register the mac xface. Must be modified later
-   *for more flexibility in agent management */
+  /* Register and initialize the control modules */
+  flexran_agent_register_mac_xface(mod_id);
+  flexran_agent_init_mac_agent(mod_id);
 
-  AGENT_MAC_xface *mac_agent_xface = (AGENT_MAC_xface *) malloc(sizeof(AGENT_MAC_xface));
-  flexran_agent_register_mac_xface(mod_id, mac_agent_xface);
-  
-  AGENT_RRC_xface *rrc_agent_xface = (AGENT_RRC_xface *) malloc(sizeof(AGENT_RRC_xface));
-  flexran_agent_register_rrc_xface(mod_id, rrc_agent_xface);
+  flexran_agent_register_rrc_xface(mod_id);
 
   AGENT_PDCP_xface *pdcp_agent_xface = (AGENT_PDCP_xface *) malloc(sizeof(AGENT_PDCP_xface));
   flexran_agent_register_pdcp_xface(mod_id, pdcp_agent_xface);
@@ -248,11 +245,6 @@ int flexran_agent_start(mid_t mod_id)
   
   flexran_agent_init_timer();
 
-  /*
-   * Initialize the mac agent
-   */
-  flexran_agent_init_mac_agent(mod_id);
-  
   /* 
    * start the enb agent task for tx and interaction with the underlying network function
    */ 

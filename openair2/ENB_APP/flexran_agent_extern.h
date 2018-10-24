@@ -36,10 +36,7 @@
 #include "flexran_agent_pdcp_defs.h"
 
 /* Control module interface for the communication of the MAC Control Module with the agent */
-extern AGENT_MAC_xface *agent_mac_xface[NUM_MAX_ENB];
-
-/* Flag indicating whether the VSFs for the MAC control module have been registered */
-extern unsigned int mac_agent_registered[NUM_MAX_ENB];
+AGENT_MAC_xface *flexran_agent_get_mac_xface(mid_t mod_id);
 
 /* Control module interface for the communication of the RRC Control Module with the agent */
 extern AGENT_RRC_xface *agent_rrc_xface[NUM_MAX_ENB];
