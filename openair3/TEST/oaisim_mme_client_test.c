@@ -59,13 +59,10 @@ int s1ap_eNB_generate_initial_ue_message(uint8_t **buffer,
 {
   InitialUEMessageIEs  initialUEmessageIEs;
   InitialUEMessageIEs *initialUEmessageIEs_p = &initialUEmessageIEs;
-
   memset(initialUEmessageIEs_p, 0, sizeof(InitialUEMessageIEs));
-
   initialUEmessageIEs.eNB_UE_S1AP_ID = eNB_UE_S1AP_ID;
   initialUEmessageIEs.nas_pdu.buf = infoNAS;
   initialUEmessageIEs.nas_pdu.size = sizeof(infoNAS);
-
   initialUEmessageIEs.tai.tAC.buf = tac;
   initialUEmessageIEs.tai.tAC.size = 2;
   initialUEmessageIEs.tai.pLMNidentity.buf = identity;
@@ -75,9 +72,7 @@ int s1ap_eNB_generate_initial_ue_message(uint8_t **buffer,
   initialUEmessageIEs.eutran_cgi.cell_ID.buf = id;
   initialUEmessageIEs.eutran_cgi.cell_ID.size = 4;
   initialUEmessageIEs.eutran_cgi.cell_ID.bits_unused = 4;
-
   initialUEmessageIEs.rrC_Establishment_Cause = RRC_Establishment_Cause_mo_Data;
-
   return s1ap_eNB_encode_initial_ue_message(initialUEmessageIEs_p, buffer, length);
 }
 
@@ -94,13 +89,10 @@ int main(int argc, char *argv[])
   asn_enc_rval_t retVal;
   uint8_t *buffer;
   uint32_t len;
-
   SupportedTAs_Item_t ta;
   PLMNidentity_t plmnIdentity;
-
   asn_debug = 0;
   asn1_xer_print = 0;
-
   S1SetupRequestIEs s1SetupRequest;
   memset(&s1SetupRequest, 0, sizeof(S1SetupRequestIEs));
   s1SetupRequest.global_ENB_ID.eNB_ID.present = ENB_ID_PR_macroENB_ID;
@@ -108,32 +100,23 @@ int main(int argc, char *argv[])
   s1SetupRequest.global_ENB_ID.eNB_ID.choice.macroENB_ID.size = 3;
   s1SetupRequest.global_ENB_ID.eNB_ID.choice.macroENB_ID.bits_unused = 4;
   OCTET_STRING_fromBuf(&s1SetupRequest.global_ENB_ID.pLMNidentity, identity, 3);
-
   s1SetupRequest.presenceMask |= S1SETUPREQUESTIES_ENBNAME_PRESENT;
   OCTET_STRING_fromBuf(&s1SetupRequest.eNBname, "ENB 1 eurecom",
                        strlen("ENB 1 eurecom"));
-
   memset(&ta, 0, sizeof(SupportedTAs_Item_t));
   memset(&plmnIdentity, 0, sizeof(PLMNidentity_t));
   OCTET_STRING_fromBuf(&ta.tAC, tac, 2);
   OCTET_STRING_fromBuf(&plmnIdentity, identity, 3);
   ASN_SEQUENCE_ADD(&ta.broadcastPLMNs, &plmnIdentity);
   ASN_SEQUENCE_ADD(&s1SetupRequest.supportedTAs, &ta);
-
   s1SetupRequest.defaultPagingDRX = PagingDRX_v64;
-
   s1ap_eNB_encode_s1setuprequest(&s1SetupRequest, &buffer, &len);
-
   assoc[0] = sctp_connect_to_remote_host(ip_addr, 36412, &recv_callback);
   sctp_send_msg(0, 0, buffer, len);
-
   free(buffer);
-
   //     generateUplinkNASTransport(&buffer, &len);
   //     sctp_send_msg(assoc[0], 0, buffer, len);
   //     s1ap_mme_decode_pdu(buffer, len);
-
   pthread_join(sctp_get_receiver_thread(assoc[0]), NULL);
-
   return(0);
 }

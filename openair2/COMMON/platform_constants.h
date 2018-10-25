@@ -71,20 +71,27 @@
 # ifdef LARGE_SCALE
 #    define MAX_MOBILES_PER_ENB         128
 #    define MAX_MOBILES_PER_ENB_NB_IoT  128
+#    define MAX_MOBILES_PER_GNB         128
 #    define MAX_eNB                      2
+#    define MAX_gNB                      2
 # else
 #    define MAX_MOBILES_PER_ENB         16
 #    define MAX_MOBILES_PER_ENB_NB_IoT  16
+#    define MAX_MOBILES_PER_GNB         16
 #    define MAX_eNB                      2
+#    define MAX_gNB                      2
 # endif
 #else
-#    define MAX_MOBILES_PER_ENB 256
-#    define MAX_MOBILES_PER_ENB_NB_IoT 256
+#    define MAX_MOBILES_PER_ENB         256
+#    define MAX_MOBILES_PER_ENB_NB_IoT  256
+#    define MAX_MOBILES_PER_GNB         256
 #    define MAX_eNB                      2
+#    define MAX_gNB                      2
 #endif
 
 
 #define MAX_MANAGED_ENB_PER_MOBILE  2
+#define MAX_MANAGED_GNB_PER_MOBILE  2
 
 ///NB-IOT
 #define NB_RB_MAX_NB_IOT  (maxDRB_NB_r13 + 3) //MP: NB_IoT --> 2(DRB)+3(SRBs - 2 is not used) = 5

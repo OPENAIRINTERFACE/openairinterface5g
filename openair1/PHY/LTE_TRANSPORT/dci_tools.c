@@ -224,7 +224,12 @@ void fill_pdcch_order(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_a
         proc->frame_tx, proc->subframe_tx, rel8->rnti);
 }
 
-void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,nfapi_dl_config_dci_dl_pdu *pdu)
+void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,
+						int frame,
+						int subframe,
+						eNB_rxtx_proc_t *proc,
+						DCI_ALLOC_t *dci_alloc,
+						nfapi_dl_config_dci_dl_pdu *pdu)
 {
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   uint8_t *dci_pdu = &dci_alloc->dci_pdu[0];
@@ -2051,5 +2056,3 @@ void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu
 	ulsch->harq_processes[harq_pid]->TBS,
 	ulsch->harq_processes[harq_pid]->round);  
 }
-
-

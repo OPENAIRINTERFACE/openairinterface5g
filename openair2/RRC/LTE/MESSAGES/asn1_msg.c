@@ -1477,7 +1477,7 @@ uint8_t do_RRCConnectionRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv)
 # endif
 #endif
 
-  LOG_D(RRC,"[UE] RRCConnectionRequest Encoded %zd bits (%zd bytes) \n",enc_rval.encoded,(enc_rval.encoded+7)/8);
+  LOG_D(RRC,"[UE] RRCConnectionRequest Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
 
   return((enc_rval.encoded+7)/8);
 
@@ -2200,10 +2200,8 @@ do_RRCConnectionSetup(
   }
 # endif
 #endif
-
   LOG_D(RRC,"RRCConnectionSetup Encoded %zd bits (%zd bytes) \n",
         enc_rval.encoded,(enc_rval.encoded+7)/8);
-
   //  FREEMEM(SRB_list);
   //  free(SRB1_config);
   //  free(SRB1_rlc_config);
@@ -3428,15 +3426,15 @@ OAI_UECapability_t *fill_ue_capability(char *UE_EUTRA_Capability_xer_fname)
 
     UE_EUTRA_Capability->accessStratumRelease = 0;//AccessStratumRelease_rel8;
     UE_EUTRA_Capability->ue_Category          = 4;
-    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0001=0;
-    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0002=0;
-    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0003=0;
-    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0004=0;
-    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0006=0;
-    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0101=0;
-    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0102=0;
-    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0103=0;
-    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0104=0;
+    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0001_r15=0;
+    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0002_r15=0;
+    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0003_r15=0;
+    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0004_r15=0;
+    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0006_r15=0;
+    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0101_r15=0;
+    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0102_r15=0;
+    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0103_r15=0;
+    UE_EUTRA_Capability->pdcp_Parameters.supportedROHC_Profiles.profile0x0104_r15=0;
 
     UE_EUTRA_Capability->pdcp_Parameters.maxNumberROHC_ContextSessions = &maxNumberROHC_ContextSessions;
 

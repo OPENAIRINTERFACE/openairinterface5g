@@ -97,6 +97,10 @@ typedef enum {
   LMSSDR_DEV,
   /*!\brief device is NONE*/
   NONE_DEV,
+  /*!\brief device is ADRV9371_ZC706 */
+  ADRV9371_ZC706_DEV,
+  /*!\brief device is UEDv2 */
+  UEDv2_DEV,
   MAX_RF_DEV_TYPE
 
 } dev_type_t;
@@ -209,6 +213,14 @@ typedef struct {
   int iq_rxrescale;
   //! Configuration file for LMS7002M
   char *configFilename;
+  //! remote IP/MAC addr for Ethernet interface
+  char *remote_addr;
+  //! remote port number for Ethernet interface
+  unsigned int remote_port;
+  //! local IP/MAC addr for Ethernet interface (eNB/BBU, UE)
+  char *my_addr;
+  //! local port number for Ethernet interface (eNB/BBU, UE)
+  unsigned int my_port;
 #if defined(USRP_REC_PLAY)
   unsigned short sf_mode;           // 1=record, 2=replay
   char           sf_filename[1024]; // subframes file path
@@ -218,6 +230,14 @@ typedef struct {
   unsigned int   sf_write_delay;    // write delay in replay mode
   unsigned int   eth_mtu;           // ethernet MTU
 #endif  
+
+  //! number of samples per tti
+  unsigned int  samples_per_tti;
+  //! the sample rate for receive.
+  double rx_sample_rate;
+  //! the sample rate for transmit.
+  double tx_sample_rate;
+
 } openair0_config_t;
 
 /*! \brief RF mapping */ 

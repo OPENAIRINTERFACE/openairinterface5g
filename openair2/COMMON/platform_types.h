@@ -65,7 +65,8 @@ typedef int32_t               sdu_size_t;
 typedef uint32_t              frame_t;
 typedef int32_t               sframe_t;
 typedef uint32_t              sub_frame_t;
-typedef uint16_t               module_id_t;
+typedef uint32_t              slot_t;
+typedef uint16_t              module_id_t;
 typedef uint8_t               slice_id_t;
 typedef uint8_t               eNB_index_t;
 typedef uint16_t              ue_id_t;
@@ -80,6 +81,10 @@ typedef boolean_t             MBMS_flag_t;
 typedef boolean_t             eNB_flag_t;
 #define  ENB_FLAG_NO          FALSE
 #define  ENB_FLAG_YES         TRUE
+
+typedef boolean_t             gNB_flag_t;
+#define  GNB_FLAG_NO          FALSE
+#define  GNB_FLAG_YES         TRUE
 
 typedef boolean_t             srb_flag_t;
 #define  SRB_FLAG_NO          FALSE
@@ -245,6 +250,9 @@ typedef struct protocol_ctxt_s {
 #define UE_INSTANCE_TO_MODULE_ID( iNSTANCE ) iNSTANCE - NB_eNB_INST
 #define ENB_INSTANCE_TO_MODULE_ID( iNSTANCE )iNSTANCE
 
+//NR
+#define GNB_MODULE_ID_TO_INSTANCE( mODULE_iD ) mODULE_iD
+#define GNB_INSTANCE_TO_MODULE_ID( iNSTANCE )iNSTANCE
 
 #define MODULE_ID_TO_INSTANCE(mODULE_iD, iNSTANCE, eNB_fLAG) \
     if(eNB_fLAG == ENB_FLAG_YES) \

@@ -293,7 +293,7 @@ check_install_usrp_uhd_driver(){
         $SUDO apt-get -y --allow-unauthenticated install libuhd-dev libuhd003 uhd-host
     elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
         $SUDO $INSTALLER -y install python boost libusb-devel libusbx-devel boost-devel python-mako python-docutils cmake
-        $SUDO pip install requests
+        $SUDO -H pip install requests
         if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
             # until EPEL repo hasn't bumped UHD driver to >=3.10 in EPEL, build driver from source
             $SUDO $INSTALLER -y remove uhd uhd-devel uhd-firmware
@@ -476,8 +476,8 @@ check_install_additional_tools (){
 
   #The packages below are already installed for Redhat distros (RHEL, CentOS, Fedora)
   if [[ "$OS_DISTRO" == "ubuntu" ]]; then
-    $SUDO pip install paramiko
-    $SUDO pip install pyroute2 colorama
+    $SUDO -H pip install paramiko
+    $SUDO -H pip install pyroute2 colorama
     log_netiface=$OPENAIR_DIR/cmake_targets/log/netiface_install_log.txt
     echo_info "Installing Netinterfaces package. The logfile for installation is in $log_netiface"
     (

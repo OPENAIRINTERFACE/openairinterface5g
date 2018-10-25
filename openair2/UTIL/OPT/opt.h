@@ -52,7 +52,6 @@ This header file must be included */
 // #include "UTIL/LOG/log_extern.h"
 //#include "PHY/defs.h"
 //#include "PHY/extern.h"
-#include "PHY/impl_defs_lte.h"
 #endif
 
 #define PACKET_MAC_LTE_DEFAULT_UDP_PORT (9999)

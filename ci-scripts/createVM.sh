@@ -45,6 +45,8 @@ function usage {
     echo "    --variant basic-sim    OR -v2"
     echo "    --variant phy-sim      OR -v3"
     echo "    --variant cppcheck     OR -v4"
+    echo "    --variant gnb-usrp     OR -v5"
+    echo "    --variant nu-ue-usrp   OR -v6"
     echo "    --variant enb-ethernet OR -v7"
     echo "    --variant ue-ethernet  OR -v8"
     echo "    Specify the variant to build."
@@ -62,6 +64,8 @@ function variant_usage {
     echo "    --variant basic-sim    OR -v2"
     echo "    --variant phy-sim      OR -v3"
     echo "    --variant cppcheck     OR -v4"
+    echo "    --variant gnb-usrp     OR -v5"
+    echo "    --variant nu-ue-usrp   OR -v6"
     echo "    --variant enb-ethernet OR -v7"
     echo "    --variant ue-ethernet  OR -v8"
     echo ""
@@ -117,8 +121,15 @@ case $key in
     ;;
     -v4)
     VM_NAME=ci-cppcheck
-    VM_MEMORY=4096
-    VM_CPU=4
+    VM_MEMORY=8192
+    shift
+    ;;
+    -v5)
+    VM_NAME=ci-gnb-usrp
+    shift
+    ;;
+    -v6)
+    VM_NAME=ci-ue-nr-usrp
     shift
     ;;
     -v7)
@@ -144,8 +155,13 @@ case $key in
         ;;
         cppcheck)
         VM_NAME=ci-cppcheck
-        VM_MEMORY=4096
-        VM_CPU=4
+        VM_MEMORY=8192
+        ;;
+        gnb-usrp)
+        VM_NAME=ci-gnb-usrp
+        ;;
+        nu-ue-usrp)
+        VM_NAME=ci-ue-nr-usrp
         ;;
         enb-ethernet)
         VM_NAME=ci-enb-ethernet

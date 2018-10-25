@@ -856,6 +856,7 @@ rrc_ue_establish_srb1(
 {
   // add descriptor from RRC PDU
 
+  uint8_t lchan_id = DCCH;
 
   UE_rrc_inst[ue_mod_idP].Srb1[eNB_index].Active = 1;
   UE_rrc_inst[ue_mod_idP].Srb1[eNB_index].Status = RADIO_CONFIG_OK;//RADIO CFG
@@ -866,7 +867,7 @@ rrc_ue_establish_srb1(
   //  memcpy(&UE_rrc_inst[ue_mod_idP].Srb1[eNB_index].Srb_info.Lchan_desc[1],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
 
 
-  LOG_I(RRC,"[UE %d], CONFIG_SRB1 %d corresponding to eNB_index %d\n", ue_mod_idP,DCCH,eNB_index);
+  LOG_I(RRC,"[UE %d], CONFIG_SRB1 %d corresponding to eNB_index %d\n", ue_mod_idP,lchan_id,eNB_index);
 
   //rrc_pdcp_config_req (ue_mod_idP+NB_eNB_INST, frameP, 0, CONFIG_ACTION_ADD, lchan_id,UNDEF_SECURITY_MODE);
   //  rrc_rlc_config_req(ue_mod_idP+NB_eNB_INST,frameP,0,CONFIG_ACTION_ADD,lchan_id,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
@@ -889,6 +890,7 @@ rrc_ue_establish_srb2(
 {
   // add descriptor from RRC PDU
 
+  uint8_t lchan_id = DCCH1;
 
   UE_rrc_inst[ue_mod_idP].Srb2[eNB_index].Active = 1;
   UE_rrc_inst[ue_mod_idP].Srb2[eNB_index].Status = RADIO_CONFIG_OK;//RADIO CFG
@@ -899,7 +901,7 @@ rrc_ue_establish_srb2(
   //  memcpy(&UE_rrc_inst[ue_mod_idP].Srb2[eNB_index].Srb_info.Lchan_desc[1],&DCCH_LCHAN_DESC,LCHAN_DESC_SIZE);
 
 
-  LOG_I(RRC,"[UE %d], CONFIG_SRB2 %d corresponding to eNB_index %d\n",ue_mod_idP,DCCH1,eNB_index);
+  LOG_I(RRC,"[UE %d], CONFIG_SRB2 %d corresponding to eNB_index %d\n",ue_mod_idP,lchan_id,eNB_index);
 
   //rrc_pdcp_config_req (ue_mod_idP+NB_eNB_INST, frameP, 0, CONFIG_ACTION_ADD, lchan_id, UNDEF_SECURITY_MODE);
   //  rrc_rlc_config_req(ue_mod_idP+NB_eNB_INST,frameP,0,CONFIG_ACTION_ADD,lchan_id,SIGNALLING_RADIO_BEARER,Rlc_info_am_config);
@@ -1924,6 +1926,7 @@ rrc_ue_process_securityModeCommand(
 				     (void*)&ul_dcch_msg,
 				     buffer,
 				     100);
+
     AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
 		 enc_rval.failed_type->name, enc_rval.encoded);
     
@@ -3007,11 +3010,11 @@ int decode_BCCH_DLSCH_Message(
       }
 
       break;
-
+      
     case BCCH_DL_SCH_MessageType__c1_PR_systemInformation:
       if ((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&1) == 1) {
         // SIB1 with schedulingInfoList is available
-
+	
         SystemInformation_t* si = UE_rrc_inst[ctxt_pP->module_id].si[eNB_index];
         memcpy( si,
                 &bcch_message->message.choice.c1.choice.systemInformation,
@@ -3032,16 +3035,16 @@ int decode_BCCH_DLSCH_Message(
       break;
     }
   }
-
+  
   if ((rrc_get_sub_state(ctxt_pP->module_id) == RRC_SUB_STATE_IDLE_SIB_COMPLETE)
 #if defined(ENABLE_USE_MME)
       && (UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data != NULL)
 #endif
-     ) {
+      ) {
     rrc_ue_generate_RRCConnectionRequest(ctxt_pP, 0);
     rrc_set_sub_state( ctxt_pP->module_id, RRC_SUB_STATE_IDLE_CONNECTING );
   }
-
+  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_BCCH, VCD_FUNCTION_OUT );
 
   return 0;
@@ -3137,7 +3140,6 @@ int decode_SIB1( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_index, 
          sib1->cellAccessRelatedInfo.cellIdentity.buf[1],
          sib1->cellAccessRelatedInfo.cellIdentity.buf[2],
          sib1->cellAccessRelatedInfo.cellIdentity.buf[3] >> sib1->cellAccessRelatedInfo.cellIdentity.bits_unused);
-
   LOG_I( RRC, "cellAccessRelatedInfo.cellBarred           : raw:%ld decoded:%s\n", sib1->cellAccessRelatedInfo.cellBarred, SIBbarred(sib1->cellAccessRelatedInfo.cellBarred) );
   LOG_I( RRC, "cellAccessRelatedInfo.intraFreqReselection : raw:%ld decoded:%s\n", sib1->cellAccessRelatedInfo.intraFreqReselection, SIBallowed(sib1->cellAccessRelatedInfo.intraFreqReselection) );
   LOG_I( RRC, "cellAccessRelatedInfo.csg_Indication       : %d\n", sib1->cellAccessRelatedInfo.csg_Indication );
@@ -3769,11 +3771,9 @@ uint64_t arfcn_to_freq(long arfcn) {
 	LOG_I(RRC,"   Cell %d\n", j);
 	LOG_I(RRC,"      PhysCellId : %ld\n",ifcfInfo->interFreqNeighCellList->list.array[j]->physCellId);
 	LOG_I(RRC,"      Q_OffsetRange : %ld\n",ifcfInfo->interFreqNeighCellList->list.array[j]->q_OffsetCell);
-
       }
     }
     if (ifcfInfo->interFreqBlackCellList) {
-
       for (j=0;j<ifcfInfo->interFreqBlackCellList->list.count;j++) {
 	LOG_I(RRC,"   Cell %d\n", j);
 	LOG_I(RRC,"      PhysCellId start: %ld\n",ifcfInfo->interFreqBlackCellList->list.array[j]->start);
@@ -3792,7 +3792,6 @@ uint64_t arfcn_to_freq(long arfcn) {
     }
 #endif
   }
-
 }
 
 #if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
@@ -3866,7 +3865,11 @@ uint64_t arfcn_to_freq(long arfcn) {
 
   // Dump contents
   if ((*si)->criticalExtensions.present == SystemInformation__criticalExtensions_PR_systemInformation_r8 ||
+#if (RRC_VERSION >= MAKE_VERSION(15, 3, 0))
+		  (*si)->criticalExtensions.present == SystemInformation__criticalExtensions_PR_criticalExtensionsFuture_r15) {
+#else
 		  (*si)->criticalExtensions.present == SystemInformation__criticalExtensions_PR_criticalExtensionsFuture) {
+#endif
     LOG_D( RRC, "[UE] (*si)->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.count %d\n",
            (*si)->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.count );
   } else {
@@ -3993,18 +3996,17 @@ uint64_t arfcn_to_freq(long arfcn) {
       if ((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&16) == 0) {
 	UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus|=16;
 	new_sib=1;
-
+	
 	memcpy( UE_rrc_inst[ctxt_pP->module_id].sib5[eNB_index], &typeandinfo->choice.sib5, sizeof(SystemInformationBlockType5_t) );
 	LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB5 from eNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, eNB_index );
 	dump_sib5(UE_rrc_inst[ctxt_pP->module_id].sib5[eNB_index]);
       }
       break;
-
+      
     case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib6:
       if ((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&32) == 0) {
 	UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus|=32;
 	new_sib=1;
-
 	memcpy( UE_rrc_inst[ctxt_pP->module_id].sib6[eNB_index], &typeandinfo->choice.sib6, sizeof(SystemInformationBlockType6_t) );
 	LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB6 from eNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, eNB_index );
       }
@@ -4032,7 +4034,7 @@ uint64_t arfcn_to_freq(long arfcn) {
       if ((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&256) == 0) {
 	UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus|=256;
 	new_sib=1;
-
+	
 	memcpy( UE_rrc_inst[ctxt_pP->module_id].sib9[eNB_index], &typeandinfo->choice.sib9, sizeof(SystemInformationBlockType9_t) );
 	LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB9 from eNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, eNB_index );
       }
@@ -4058,7 +4060,7 @@ uint64_t arfcn_to_freq(long arfcn) {
       break;
 
 #if (RRC_VERSION >= MAKE_VERSION(9, 2, 0))
-
+      
     case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib12_v920:
       if ((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&2048) == 0) {
 	UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus|=2048;
@@ -4067,12 +4069,12 @@ uint64_t arfcn_to_freq(long arfcn) {
 	LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB12 from eNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, eNB_index );
       }
       break;
-
+      
     case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib13_v920:
       if ((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&4096) == 0) {
 	UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus|=4096;
 	new_sib=1;
-
+	
 	memcpy( UE_rrc_inst[ctxt_pP->module_id].sib13[eNB_index], &typeandinfo->choice.sib13_v920, sizeof(SystemInformationBlockType13_r9_t) );
 	LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB13 from eNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, eNB_index );
 	dump_sib13( UE_rrc_inst[ctxt_pP->module_id].sib13[eNB_index] );
@@ -4181,10 +4183,10 @@ uint64_t arfcn_to_freq(long arfcn) {
 
 
 #endif
+
     default:
       break;
     }
-
   }
   if (new_sib == 1) {
     UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIcnt++;
@@ -5100,7 +5102,7 @@ void *rrc_ue_task( void *args_p )
       case RRC_STATE_INACTIVE:
       case RRC_STATE_CONNECTED:
         /* should not happen */
-        LOG_E(RRC, "[UE %d] indication %s in RRC state %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p), rrc_get_state(ue_mod_id));
+        LOG_E(RRC, "[UE %d] indication %s in RRC state %d\n", ue_mod_id, msg_name, rrc_get_state(ue_mod_id));
         break;
 
       default:
@@ -5178,6 +5180,8 @@ void *rrc_ue_task( void *args_p )
 #endif
 
 
+	
+    
 
 /*------------------------------------------------------------------------------*/
 void
@@ -5244,7 +5248,6 @@ rrc_top_cleanup_ue(
 {
 
   if (NB_UE_INST > 0) free (UE_rrc_inst);
-
 
 }
 
@@ -5470,8 +5473,7 @@ rrc_ue_process_sidelink_radioResourceConfig(
 
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 //-----------------------------------------------------------
-void
-rrc_control_socket_init(){
+void rrc_control_socket_init(){
 
    struct sockaddr_in rrc_ctrl_socket_addr;
    pthread_attr_t     attr;

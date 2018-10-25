@@ -6,9 +6,11 @@ mkdir -p $1
 cd $1
 shift
 
+local module="$2"
+
 #if this script is called with only 2 arguments (so 1 here after the shift), it's for RRC
 #(there may be a better way...)
-if [ $# -eq 1 ]; then
+if [ $# -eq 2 ]; then
 
 #asn1c does not work well with extension groups, we need the following fix:
 # replace [[ by '<name> SEQUENCE {'
@@ -99,7 +101,25 @@ echo done with asnfix
 
 echo running asn1c
 
-asn1c -gen-PER -fcompound-names fixed_grammar.asn 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample
+case "$module" in
+  RRC )
+  	asn1c -gen-PER -fcompound-names -no-gen-example fixed_grammar.asn 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample	
+  ;;
+  NR_RRC )
+    	export ASN1C_PREFIX=NR_
+  	asn1c -gen-PER -fcompound-names -findirect-choice -no-gen-example fixed_grammar.asn 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample	
+  ;;
+  S1AP )
+	export ASN1C_PREFIX=S1AP_
+  	asn1c -gen-PER -fcompound-names -no-gen-example fixed_grammar.asn 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample	
+  ;;
+  X2AP )
+	export ASN1C_PREFIX=X2AP_
+  	asn1c -gen-PER -fcompound-names -no-gen-example fixed_grammar.asn 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample	
+  ;;
+esac
+
+
 
 rm -f fixed_grammar.asn
 
@@ -107,7 +127,23 @@ echo asn1c done
 
 else
 
-asn1c -gen-PER -fcompound-names $* 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample
+case "$module" in
+  RRC )
+  	 asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example $* 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample
+  ;; 
+  NR_RRC )
+    	export ASN1C_PREFIX=NR_
+  	asn1c -fcompound-names -findirect-choice -fno-include-deps -gen-PER -no-gen-OER -no-gen-example $* 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample	
+  ;;
+  S1AP )
+    	export ASN1C_PREFIX=S1AP_
+    	asn1c -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example $* 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample	
+  ;;
+  X2AP )
+    	export ASN1C_PREFIX=X2AP_
+    	asn1c -fcompound-names -fno-include-deps -gen-PER -no-gen-OER -no-gen-example $* 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample	
+  ;;
+esac
 
 fi
 

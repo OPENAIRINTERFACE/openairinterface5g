@@ -347,7 +347,7 @@ based on 3GPP UMTS/LTE specifications.
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits
 */
-uint32_t crc24a (uint8_t * inptr, uint32_t bitlen);
+unsigned int crc24a (unsigned char * inptr, int bitlen);
 
 /*!\fn uint32_t crc24b(uint8_t *inPtr, int32_t bitlen)
 \brief This computes a 24-bit crc ('b' variant for transport-block segments)
@@ -355,25 +355,33 @@ based on 3GPP UMTS/LTE specifications.
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits
 */
-uint32_t crc24b (uint8_t * inptr, uint32_t bitlen);
-    
+uint32_t crc24b (uint8_t *inPtr, int32_t bitlen);
+
+/*!\fn uint32_t crc24c(uint8_t *inPtr, int32_t bitlen)
+\brief This computes a 24-bit crc ('c' variant for transport-block segments)
+based on 3GPP Rel 15 specifications.
+@param inPtr Pointer to input byte stream
+@param bitlen length of inputs in bits
+*/
+uint32_t crc24c (uint8_t *inPtr, int32_t bitlen);
+
 /*!\fn uint32_t crc16(uint8_t *inPtr, int32_t bitlen)
 \brief This computes a 16-bit crc based on 3GPP UMTS specifications.
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits*/
-uint32_t crc16 (uint8_t * inptr, uint32_t bitlen);
+unsigned int crc16 (unsigned char * inptr, int bitlen);
 
 /*!\fn uint32_t crc12(uint8_t *inPtr, int32_t bitlen)
 \brief This computes a 12-bit crc based on 3GPP UMTS specifications.
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits*/
-uint32_t crc12 (uint8_t * inptr, uint32_t bitlen);
+unsigned int crc12 (unsigned char * inptr, int bitlen);
 
 /*!\fn uint32_t crc8(uint8_t *inPtr, int32_t bitlen)
 \brief This computes a 8-bit crc based on 3GPP UMTS specifications.
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits*/
-uint32_t crc8 (uint8_t * inptr, uint32_t bitlen);
+unsigned int crc8 (unsigned char * inptr, int bitlen);
     
 /*!\fn void phy_viterbi_dot11_sse2(int8_t *y, uint8_t *decoded_bytes, uint16_t n,int offset,int traceback)
 \brief This routine performs a SIMD optmized Viterbi decoder for the 802.11 64-state convolutional code. It can be
@@ -431,9 +439,7 @@ int32_t rate_matching_lte(uint32_t N_coded,
 
 
 
-uint32_t crcbit (uint8_t * ,
-                 int32_t,
-                 uint32_t);
+unsigned int crcbit (unsigned char * inputptr, int octetlen, unsigned int poly);
 
 int16_t reverseBits(int32_t ,int32_t);
 void phy_viterbi_dot11(int8_t *,uint8_t *,uint16_t);
@@ -441,5 +447,21 @@ void phy_viterbi_dot11(int8_t *,uint8_t *,uint16_t);
 decoder_if_t phy_threegpplte_turbo_decoder;
 decoder_if_t phy_threegpplte_turbo_decoder8;
 decoder_if_t phy_threegpplte_turbo_decoder16;
+
+int32_t nr_segmentation(unsigned char *input_buffer,
+                     unsigned char **output_buffers,
+                     unsigned int B,
+                     unsigned int *C,
+                     unsigned int *Kplus,
+                     unsigned int *Kminus,
+					 unsigned int *Zout,
+                     unsigned int *F);
+
+uint32_t nr_compute_tbs(uint8_t mcs,
+						uint16_t nb_rb,
+						uint16_t nb_symb_sch,
+						uint8_t nb_re_dmrs,
+						uint16_t length_dmrs,
+						uint8_t Nl);
 
 #endif

@@ -32,7 +32,6 @@
 #ifndef __TRANSPORT_COMMON__H__
 #define __TRANSPORT_COMMON__H__
 #include "PHY/defs_common.h"
-#include "PHY/impl_defs_lte.h"
 #include "dci.h"
 #include "mdci.h"
 //#include "uci.h"

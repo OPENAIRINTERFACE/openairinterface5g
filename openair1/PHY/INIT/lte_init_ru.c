@@ -35,7 +35,7 @@ void init_7_5KHz(void);
 
 int phy_init_RU(RU_t *ru) {
 
-  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
   int i,j;
   int p;
   int re;
@@ -157,6 +157,8 @@ void phy_free_RU(RU_t *ru)
   int p;
 
   LOG_I(PHY, "Feeing RU signal buffers (if_south %s) nb_tx %d\n", ru_if_types[ru->if_south], ru->nb_tx);
+
+  free_and_zero(ru->frame_parms);
 
   if (ru->if_south <= REMOTE_IF5) { // this means REMOTE_IF5 or LOCAL_RF, so free memory for time-domain signals
     for (i = 0; i < ru->nb_tx; i++) free_and_zero(ru->common.txdata[i]);

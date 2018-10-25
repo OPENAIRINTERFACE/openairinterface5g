@@ -64,6 +64,9 @@ void init_lte_top(LTE_DL_FRAME_PARMS *frame_parms) {
   ccodelte_init();
   ccodelte_init_inv();
   init_dfts();
+
+  crcTableInit();
+
   phy_generate_viterbi_tables_lte();
   load_codinglib();
   lte_sync_time_init(frame_parms);

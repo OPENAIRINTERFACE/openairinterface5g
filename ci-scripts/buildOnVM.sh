@@ -48,6 +48,8 @@ function usage {
     echo "    --variant basic-sim    OR -v2"
     echo "    --variant phy-sim      OR -v3"
     echo "    --variant cppcheck     OR -v4"
+    echo "    --variant gnb-usrp     OR -v5"
+    echo "    --variant nu-ue-usrp   OR -v6"
     echo "    --variant enb-ethernet OR -v7"
     echo "    --variant ue-ethernet  OR -v8"
     echo "    Specify the variant to build."
@@ -68,6 +70,8 @@ function variant_usage {
     echo "    --variant basic-sim    OR -v2"
     echo "    --variant phy-sim      OR -v3"
     echo "    --variant cppcheck     OR -v4"
+    echo "    --variant gnb-usrp     OR -v5"
+    echo "    --variant nu-ue-usrp   OR -v6"
     echo "    --variant enb-ethernet OR -v7"
     echo "    --variant ue-ethernet  OR -v8"
     echo ""
@@ -88,7 +92,7 @@ VM_NAME=ci-enb-usrp
 VM_MEMORY=2048
 VM_CPU=4
 ARCHIVES_LOC=enb_usrp
-LOG_PATTERN=.Rel14.txt
+LOG_PATTERN=.Rel15.txt
 NB_PATTERN_FILES=4
 BUILD_OPTIONS="--eNB -w USRP"
 KEEP_VM_ALIVE=0
@@ -125,7 +129,7 @@ case $key in
     -v1)
     VM_NAME=ci-enb-usrp
     ARCHIVES_LOC=enb_usrp
-    LOG_PATTERN=.Rel14.txt
+    LOG_PATTERN=.Rel15.txt
     NB_PATTERN_FILES=4
     BUILD_OPTIONS="--eNB -w USRP --mu"
     shift
@@ -143,24 +147,40 @@ case $key in
     -v3)
     VM_NAME=ci-phy-sim
     ARCHIVES_LOC=phy_sim
-    LOG_PATTERN=.Rel14.txt
-    NB_PATTERN_FILES=3
+    LOG_PATTERN=.Rel15.txt
+    NB_PATTERN_FILES=5
     BUILD_OPTIONS="--phy_simulators"
     shift
     ;;
     -v4)
     VM_NAME=ci-cppcheck
-    VM_MEMORY=4096
+    VM_MEMORY=8192
     ARCHIVES_LOC=cppcheck
     LOG_PATTERN=cppcheck.xml
     NB_PATTERN_FILES=1
-    BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2"
+    BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2 -i openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c"
+    shift
+    ;;
+    -v5)
+    VM_NAME=ci-gnb-usrp
+    ARCHIVES_LOC=gnb_usrp
+    LOG_PATTERN=.Rel15.txt
+    NB_PATTERN_FILES=4
+    BUILD_OPTIONS="--gNB -w USRP"
+    shift
+    ;;
+    -v6)
+    VM_NAME=ci-ue-nr-usrp
+    ARCHIVES_LOC=nrue_usrp
+    LOG_PATTERN=.Rel15.txt
+    NB_PATTERN_FILES=4
+    BUILD_OPTIONS="--nrUE -w USRP"
     shift
     ;;
     -v7)
     VM_NAME=ci-enb-ethernet
     ARCHIVES_LOC=enb_eth
-    LOG_PATTERN=.Rel14.txt
+    LOG_PATTERN=.Rel15.txt
     NB_PATTERN_FILES=6
     BUILD_OPTIONS="--eNB -t ETHERNET --noS1"
     shift
@@ -168,7 +188,7 @@ case $key in
     -v8)
     VM_NAME=ci-ue-ethernet
     ARCHIVES_LOC=ue_eth
-    LOG_PATTERN=.Rel14.txt
+    LOG_PATTERN=.Rel15.txt
     NB_PATTERN_FILES=6
     BUILD_OPTIONS="--UE -t ETHERNET --noS1"
     shift
@@ -179,7 +199,7 @@ case $key in
         enb-usrp)
         VM_NAME=ci-enb-usrp
         ARCHIVES_LOC=enb_usrp
-        LOG_PATTERN=.Rel14.txt
+        LOG_PATTERN=.Rel15.txt
         NB_PATTERN_FILES=4
         BUILD_OPTIONS="--eNB -w USRP --mu"
         ;;
@@ -195,29 +215,43 @@ case $key in
         phy-sim)
         VM_NAME=ci-phy-sim
         ARCHIVES_LOC=phy_sim
-        LOG_PATTERN=.Rel14.txt
-        NB_PATTERN_FILES=3
+        LOG_PATTERN=.Rel15.txt
+        NB_PATTERN_FILES=5
         BUILD_OPTIONS="--phy_simulators"
         ;;
         cppcheck)
         VM_NAME=ci-cppcheck
-        VM_MEMORY=4096
+        VM_MEMORY=8192
         ARCHIVES_LOC=cppcheck
         LOG_PATTERN=cppcheck.xml
         NB_PATTERN_FILES=1
-        BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2"
+        BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2 -i openair1/PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.c"
+        ;;
+        gnb-usrp)
+        VM_NAME=ci-gnb-usrp
+        ARCHIVES_LOC=gnb_usrp
+        LOG_PATTERN=.Rel15.txt
+        NB_PATTERN_FILES=4
+        BUILD_OPTIONS="--gNB -w USRP"
+        ;;
+        nu-ue-usrp)
+        VM_NAME=ci-ue-nr-usrp
+        ARCHIVES_LOC=nrue_usrp
+        LOG_PATTERN=.Rel15.txt
+        NB_PATTERN_FILES=4
+        BUILD_OPTIONS="--nrUE -w USRP"
         ;;
         enb-ethernet)
         VM_NAME=ci-enb-ethernet
         ARCHIVES_LOC=enb_eth
-        LOG_PATTERN=.Rel14.txt
+        LOG_PATTERN=.Rel15.txt
         NB_PATTERN_FILES=6
         BUILD_OPTIONS="--eNB -t ETHERNET --noS1"
         ;;
         ue-ethernet)
         VM_NAME=ci-ue-ethernet
         ARCHIVES_LOC=ue_eth
-        LOG_PATTERN=.Rel14.txt
+        LOG_PATTERN=.Rel15.txt
         NB_PATTERN_FILES=6
         BUILD_OPTIONS="--UE -t ETHERNET --noS1"
         ;;
@@ -368,7 +402,7 @@ do
     if [[ $FULLFILE == *"$LOG_PATTERN"* ]]
     then
         filename=$(basename -- "$FULLFILE")
-        if [ "$LOG_PATTERN" == ".Rel14.txt" ]
+        if [ "$LOG_PATTERN" == ".Rel15.txt" ]
         then
             PASS_PATTERN=`echo $filename | sed -e "s#$LOG_PATTERN##"`
         fi

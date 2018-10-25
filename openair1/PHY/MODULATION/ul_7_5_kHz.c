@@ -44,7 +44,7 @@ void remove_7_5_kHz(RU_t *ru,uint8_t slot)
   uint32_t slot_offset,slot_offset2;
   uint8_t aa;
   uint32_t i;
-  LTE_DL_FRAME_PARMS *frame_parms=&ru->frame_parms;
+  LTE_DL_FRAME_PARMS *frame_parms=ru->frame_parms;
 
   switch (frame_parms->N_RB_UL) {
 
@@ -82,9 +82,6 @@ void remove_7_5_kHz(RU_t *ru,uint8_t slot)
   slot_offset2 = (uint32_t)(slot&1) * frame_parms->samples_per_tti/2;
 
   len = frame_parms->samples_per_tti/2;
-
-  AssertFatal(slot_offset<10*frame_parms->samples_per_tti,
-	      "slot_offset %d >= %d\n",slot_offset,10*frame_parms->samples_per_tti);
 
   for (aa=0; aa<ru->nb_rx; aa++) {
 

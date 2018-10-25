@@ -887,9 +887,6 @@ printf("~~~~~~~~~~~~~~~~~~~~successfully get the parallel config[%d], worker con
   pthread_mutex_init(&sync_mutex, NULL);
 
 #if defined(ENABLE_ITTI)
-
-
-
   printf("ITTI init\n");
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 

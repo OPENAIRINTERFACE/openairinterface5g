@@ -1333,6 +1333,7 @@ int s1ap_eNB_handle_e_rab_release_command(uint32_t               assoc_id,
     return -1;
   }
 
+
   /* id-MME-UE-S1AP-ID */
   S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_E_RABReleaseCommandIEs_t, ie, container,
                              S1AP_ProtocolIE_ID_id_MME_UE_S1AP_ID, true);

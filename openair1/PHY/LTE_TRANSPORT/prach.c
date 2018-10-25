@@ -101,7 +101,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 
 
   if (ru) { 
-    fp    = &ru->frame_parms;
+    fp    = ru->frame_parms;
     nb_rx = ru->nb_rx;
   }
   else if (eNB) {
