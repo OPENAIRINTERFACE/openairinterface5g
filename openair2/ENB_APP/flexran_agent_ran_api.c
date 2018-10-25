@@ -114,6 +114,20 @@ int flexran_get_num_ues(mid_t mod_id)
   return RC.mac[mod_id]->UE_list.num_UEs;
 }
 
+int flexran_get_num_ue_lcs(mid_t mod_id, mid_t ue_id)
+{
+  if (!mac_is_present(mod_id)) return 0;
+  // Not sure whether this is needed: if (!rrc_is_present(mod_id)) return 0;
+  const rnti_t rnti = flexran_get_ue_crnti(mod_id, ue_id);
+  const int s = mac_eNB_get_rrc_status(mod_id, rnti);
+  if (s < RRC_CONNECTED)
+    return 0;
+  else if (s == RRC_CONNECTED)
+    return 1;
+  else
+    return 3;
+}
+
 rnti_t flexran_get_ue_crnti(mid_t mod_id, mid_t ue_id)
 {
   if (!mac_is_present(mod_id)) return 0;

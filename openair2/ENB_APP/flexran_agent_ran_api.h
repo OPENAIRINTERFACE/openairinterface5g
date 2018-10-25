@@ -73,6 +73,10 @@ uint16_t flexran_get_future_sfn_sf(mid_t mod_id, int ahead_of_time);
 /* Return the number of attached UEs */
 int flexran_get_num_ues(mid_t mod_id);
 
+/* Get the number of logical channels per UE. This function does not consider
+ * dedicated bearers yet */
+int flexran_get_num_ue_lcs(mid_t mod_id, mid_t ue_id);
+
 /* Get the rnti of a UE with id ue_id */
 rnti_t flexran_get_ue_crnti(mid_t mod_id, mid_t ue_id);
 
