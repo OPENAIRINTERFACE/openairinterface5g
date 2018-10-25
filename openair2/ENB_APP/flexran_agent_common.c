@@ -280,15 +280,17 @@ int flexran_agent_destroy_enb_config_reply(Protocol__FlexranMessage *msg) {
   if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_ENB_CONFIG_REPLY_MSG)
     goto error;
   free(msg->enb_config_reply_msg->header);
-  int i, j;
   Protocol__FlexEnbConfigReply *reply = msg->enb_config_reply_msg;
   
-  for(i = 0; i < reply->n_cell_config;i++) {
-    free(reply->cell_config[i]->mbsfn_subframe_config_rfoffset);
-    free(reply->cell_config[i]->mbsfn_subframe_config_rfperiod);
-    free(reply->cell_config[i]->mbsfn_subframe_config_sfalloc);
+  for (int i = 0; i < reply->n_cell_config;i++) {
+    if (reply->cell_config[i]->mbsfn_subframe_config_rfoffset)
+      free(reply->cell_config[i]->mbsfn_subframe_config_rfoffset);
+    if (reply->cell_config[i]->mbsfn_subframe_config_rfperiod)
+      free(reply->cell_config[i]->mbsfn_subframe_config_rfperiod);
+    if (reply->cell_config[i]->mbsfn_subframe_config_sfalloc)
+      free(reply->cell_config[i]->mbsfn_subframe_config_sfalloc);
     if (reply->cell_config[i]->si_config != NULL) {
-      for(j = 0; j < reply->cell_config[i]->si_config->n_si_message;j++){
+      for (int j = 0; j < reply->cell_config[i]->si_config->n_si_message;j++){
 	free(reply->cell_config[i]->si_config->si_message[j]);
       }
       free(reply->cell_config[i]->si_config->si_message);
