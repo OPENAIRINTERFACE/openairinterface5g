@@ -108,7 +108,7 @@ uint16_t flexran_get_future_sfn_sf(mid_t mod_id, int ahead_of_time)
   return sfn_sf;
 }
 
-int flexran_get_num_ues(mid_t mod_id)
+int flexran_get_mac_num_ues(mid_t mod_id)
 {
   if (!mac_is_present(mod_id)) return 0;
   return RC.mac[mod_id]->UE_list.num_UEs;

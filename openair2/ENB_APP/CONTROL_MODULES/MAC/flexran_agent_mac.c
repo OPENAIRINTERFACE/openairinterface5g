@@ -891,7 +891,7 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
   /*TODO: Fill in the number of dl HARQ related info, based on the number of currently
    *transmitting UEs
    */
-  //  sf_trigger_msg->n_dl_info = flexran_get_num_ues(mod_id);
+  //  sf_trigger_msg->n_dl_info = flexran_get_mac_num_ues(mod_id);
 
   Protocol__FlexDlInfo **dl_info = NULL;
 
@@ -945,7 +945,7 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
   /* Fill in the number of UL reception status related info, based on the number of currently
    * transmitting UEs
    */
-  sf_trigger_msg->n_ul_info = flexran_get_num_ues(mod_id);
+  sf_trigger_msg->n_ul_info = flexran_get_mac_num_ues(mod_id);
 
   Protocol__FlexUlInfo **ul_info = NULL;
 

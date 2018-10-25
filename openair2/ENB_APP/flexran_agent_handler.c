@@ -241,7 +241,7 @@ int flexran_agent_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
       //Create a list of all eNB RNTIs and cells
 
       //Set the number of UEs and create list with their RNTIs stats configs
-      report_config.nr_ue = flexran_get_num_ues(mod_id); //eNB_UE_list->num_UEs
+      report_config.nr_ue = flexran_get_mac_num_ues(mod_id);
       report_config.ue_report_type = (ue_report_type_t *) malloc(sizeof(ue_report_type_t) * report_config.nr_ue);
       if (report_config.ue_report_type == NULL) {
   // TODO: Add appropriate error code

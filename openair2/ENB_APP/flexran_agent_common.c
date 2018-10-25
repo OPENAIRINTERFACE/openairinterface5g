@@ -460,7 +460,7 @@ int flexran_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Fl
    * present and the message gets properly filled if it is or remains empty if
    * not */
   lc_config_reply_msg->n_lc_ue_config =
-      flexran_agent_get_mac_xface(mod_id) ? flexran_get_num_ues(mod_id) : 0;
+      flexran_agent_get_mac_xface(mod_id) ? flexran_get_mac_num_ues(mod_id) : 0;
 
   Protocol__FlexLcUeConfig **lc_ue_config = NULL;
   if (lc_config_reply_msg->n_lc_ue_config > 0) {
@@ -527,7 +527,7 @@ int flexran_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Fl
 
   ue_config_reply_msg->header = header;
 
-  ue_config_reply_msg->n_ue_config = flexran_get_num_ues(mod_id);
+  ue_config_reply_msg->n_ue_config = flexran_get_mac_num_ues(mod_id);
 
   Protocol__FlexUeConfig **ue_config;
   if (ue_config_reply_msg->n_ue_config > 0) {

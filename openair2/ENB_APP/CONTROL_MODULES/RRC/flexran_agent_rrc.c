@@ -269,7 +269,7 @@ void flexran_trigger_rrc_measurements (mid_t mod_id, MeasResults_t*  measResults
   triggered_rrc = true;
   int num;
 
-  num = flexran_get_num_ues (mod_id);
+  num = flexran_get_mac_num_ues (mod_id);
 
   meas_stats = malloc(sizeof(rrc_meas_stats) * num); 
 
