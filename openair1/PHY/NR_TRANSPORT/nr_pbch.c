@@ -37,7 +37,7 @@
 
 //#define DEBUG_PBCH
 //#define DEBUG_PBCH_ENCODING
-#define DEBUG_PBCH_DMRS
+//#define DEBUG_PBCH_DMRS
 
 //extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
 #include "PHY/NR_REFSIG/nr_mod_table.h"
@@ -55,7 +55,7 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
   uint8_t idx=0;
   uint8_t nushift = config->sch_config.physical_cell_id.value &3;
 
-  LOG_I(PHY, "PBCH DMRS mapping started at symbol %d shift %d\n", ssb_start_symbol+1, nushift);
+  LOG_D(PHY, "PBCH DMRS mapping started at symbol %d shift %d\n", ssb_start_symbol+1, nushift);
 
   /// QPSK modulation
   for (int m=0; m<NR_PBCH_DMRS_LENGTH; m++) {
@@ -233,7 +233,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   memset((void*) xbyte, 0, 1);
   //uint8_t pbch_a_b[32];
 
-  LOG_I(PHY, "PBCH generation started\n");
+  //  LOG_D(PHY, "PBCH generation started\n");
 
   memset((void*)pbch, 0, sizeof(NR_gNB_PBCH));
   ///Payload generation

@@ -67,7 +67,7 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
     ch_offset     = ue->frame_parms.ofdm_symbol_size*symbol;
 
   AssertFatal((symbol > 0 && symbol < 4 && ue->is_synchronized == 0) || 
-	      (symbol > 0 && symbol < 4 && ue->is_synchronized == 0),
+	      (symbol > 4 && symbol < 8 && ue->is_synchronized == 1),
 	      "symbol %d is illegal for PBCH DM-RS (is_synchronized %d)\n",
 	      symbol,ue->is_synchronized);
 

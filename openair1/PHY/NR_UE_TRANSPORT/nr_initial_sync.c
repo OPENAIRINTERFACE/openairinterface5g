@@ -53,7 +53,6 @@ int cnt=0;
 
 int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
 {
-  printf("nr pbch detec RB_DL %d\n", ue->frame_parms.N_RB_DL);
   NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   int ret =-1;
 
@@ -96,7 +95,6 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
   //put back nb_prefix_samples0
   frame_parms->nb_prefix_samples0 = nb_prefix_samples0;
   
-  printf("pbch_detection nid_cell %d\n",frame_parms->Nid_cell);
   
   ret = nr_rx_pbch(ue,
 		   &ue->proc.proc_rxtx[0],

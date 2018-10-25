@@ -118,7 +118,8 @@ int main(int argc, char **argv)
   nfapi_nr_config_request_t *gNB_config;
 
   int ret;
-  
+  int run_initial_sync=0;
+
   cpuf = get_cpu_freq_GHz();
 
   if ( load_configmodule(argc,argv) == 0) {
@@ -128,7 +129,7 @@ int main(int argc, char **argv)
   logInit();
   randominit(0);
 
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:N:F:GR:dP:")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:N:F:GR:dP:I")) != -1) {
     switch (c) {
     case 'f':
       write_output_file=1;
@@ -280,7 +281,10 @@ int main(int argc, char **argv)
         printf("Illegal PBCH phase (0-3) got %d\n",pbch_phase);
 
       break;
-
+      
+    case 'I':
+      run_initial_sync=1;
+      break;
     default:
     case 'h':
       printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
@@ -400,7 +404,9 @@ int main(int argc, char **argv)
   UE = malloc(sizeof(PHY_VARS_NR_UE));
   memcpy(&UE->frame_parms,frame_parms,sizeof(NR_DL_FRAME_PARMS));
   phy_init_nr_top(UE);
-  UE->is_synchronized = 0;
+  if (run_initial_sync==1)  UE->is_synchronized = 0;
+  else                      UE->is_synchronized = 1;
+                      
   UE->perfect_ce = 0;
 
   if (init_nr_ue_signal(UE, 1, 0) != 0)
@@ -409,19 +415,19 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-
+  nr_gold_pbch(UE);
   // generate signal
   if (input_fd==NULL) {
     gNB->pbch_configured = 1;
-    for (int i=0;i<4;i++) gNB->pbch_pdu[3-i]=i;
+    for (int i=0;i<4;i++) gNB->pbch_pdu[i]=i+1;
     nr_common_signal_procedures (gNB,frame,subframe);
   }
 
-  
+  /*  
   LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],frame_length_complex_samples_no_prefix,1,1);
   if (gNB->frame_parms.nb_antennas_tx>1)
     LOG_M("txsigF1.m","txsF1", gNB->common_vars.txdataF[1],frame_length_complex_samples_no_prefix,1,1);
-
+  */
   //TODO: loop over slots
   for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
     if (gNB_config->subframe_config.dl_cyclic_prefix_type.value == 1) {
@@ -438,20 +444,20 @@ int main(int argc, char **argv)
 			   frame_parms);
     }
   }
-
+  /*
   LOG_M("txsig0.m","txs0", txdata[0],frame_length_complex_samples,1,1);
   if (gNB->frame_parms.nb_antennas_tx>1)
     LOG_M("txsig1.m","txs1", txdata[1],frame_length_complex_samples,1,1);
-
+  */
   int txlev = signal_energy(&txdata[0][5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
 			    frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
 
-  printf("txlev %d\n",txlev);
+  //  printf("txlev %d (%f)\n",txlev,10*log10(txlev));
 
   for (i=0; i<frame_length_complex_samples; i++) {
     for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-      r_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)])/sqrt((double)txlev);
-      r_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1])/sqrt((double)txlev);
+      r_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
+      r_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
     }
   }
   
@@ -467,15 +473,15 @@ int main(int argc, char **argv)
       //multipath_channel(gNB2UE,s_re,s_im,r_re,r_im,frame_length_complex_samples,0);
       
       //AWGN
-      sigma2_dB = -SNR;
+      sigma2_dB = 10*log10((double)txlev)-SNR;
       sigma2 = pow(10,sigma2_dB/10);
-      printf("sigma2 %f\n",sigma2);
+      //      printf("sigma2 %f (%f dB)\n",sigma2,sigma2_dB);
 
       for (i=0; i<frame_length_complex_samples; i++) {
 	for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
 	  
-	  ((short*) UE->common_vars.rxdata[aa])[2*i] = (short) ((r_re[aa][i] +sqrt(sigma2/2)*gaussdouble(0.0,1.0))*512);
-	  ((short*) UE->common_vars.rxdata[aa])[2*i+1] = (short) ((r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0))*512);
+	  ((short*) UE->common_vars.rxdata[aa])[2*i]   = (short) ((r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+	  ((short*) UE->common_vars.rxdata[aa])[2*i+1] = (short) ((r_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
 	}
       }
 
@@ -484,10 +490,49 @@ int main(int argc, char **argv)
 	if (gNB->frame_parms.nb_antennas_tx>1)
 	  LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1],frame_length_complex_samples,1,1);
       }
+      if (UE->is_synchronized == 0) {
+	ret = nr_initial_sync(UE, normal_txrx);
+	printf("nr_initial_sync1 returns %d\n",ret);
+	if (ret<0) n_errors++;
+      }
+      else {
+	UE->rx_offset=0;
+	//symbol 1
+	nr_slot_fep(UE,
+		    5,
+		    0,
+		    0,
+		    0,
+		    1,
+		    NR_PBCH_EST);
+	
+	//symbol 2
+	nr_slot_fep(UE,
+		    6,
+		    0,
+		    0,
+		    0,
+		    1,
+		    NR_PBCH_EST);
+	
+	//symbol 3
+	nr_slot_fep(UE,
+		    7,
+		    0,
+		    0,
+		    0,
+		    1,
+		    NR_PBCH_EST);
+	
+	ret = nr_rx_pbch(UE,
+			 &UE->proc.proc_rxtx[0],
+			 UE->pbch_vars[0],
+			 frame_parms,
+			 0,
+			 SISO,
+			 UE->high_speed_flag);
 
-      ret = nr_initial_sync(UE, normal_txrx);
-      printf("nr_initial_sync1 returns %d\n",ret);
-      
+      }
     } //noise trials
 
     printf("SNR %f : n_errors = %d/%d\n", SNR,n_errors,n_trials);

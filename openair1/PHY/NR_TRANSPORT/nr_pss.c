@@ -22,7 +22,7 @@
 
 #include "PHY/NR_TRANSPORT/nr_transport.h"
 
-#define NR_PSS_DEBUG
+//#define NR_PSS_DEBUG
 
 int nr_generate_pss(  int16_t *d_pss,
                       int32_t **txdataF,
@@ -69,7 +69,7 @@ int nr_generate_pss(  int16_t *d_pss,
     l = ssb_start_symbol;
 
     for (m = 0; m < NR_PSS_LENGTH; m++) {
-      printf("pss: writing position k %d / %d\n",k,frame_parms->ofdm_symbol_size);
+      //      printf("pss: writing position k %d / %d\n",k,frame_parms->ofdm_symbol_size);
       ((int16_t*)txdataF[aa])[2*(l*frame_parms->ofdm_symbol_size + k)] = (a * d_pss[m]) >> 15;
       k++;
 

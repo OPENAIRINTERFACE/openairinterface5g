@@ -233,7 +233,7 @@ int nr_pbch_dmrs_rx(int symbol,unsigned int *nr_gold_pbch,int32_t *output	)
     m0=84;
     m1=144;
   }
-  printf("Generating pilots symbol %d, m0 %d, m1 %d\n",symbol,m0,m1);
+  //    printf("Generating pilots symbol %d, m0 %d, m1 %d\n",symbol,m0,m1);
   /// QPSK modulation
   for (m=m0; m<m1; m++) {
     idx = ((((nr_gold_pbch[(m<<1)>>5])>>((m<<1)&0x1f))&1)<<1) ^ (((nr_gold_pbch[((m<<1)+1)>>5])>>(((m<<1)+1)&0x1f))&1);

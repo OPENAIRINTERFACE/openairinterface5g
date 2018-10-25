@@ -199,9 +199,9 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   switch(channel){
   case NR_PBCH_EST:
 
-//#ifdef DEBUG_FEP
+#ifdef DEBUG_FEP
     printf("Channel estimation eNB %d, slot %d, symbol %d\n",eNB_id,Ns,l);
-//#endif
+#endif
 #if UE_TIMING_TRACE
     start_meas(&ue->dlsch_channel_estimation_stats);
 #endif

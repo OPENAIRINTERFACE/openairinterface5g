@@ -1069,9 +1069,17 @@ int8_t polar_decoder_int16(int16_t *input,
   nr_polar_deinterleaver(polarParams->nr_polar_CPrime, polarParams->nr_polar_B, polarParams->interleaving_pattern, polarParams->K);
 
   //Remove the CRC (â)
-  for (int j = 0; j < polarParams->payloadBits; j++) polarParams->nr_polar_A[j]=polarParams->nr_polar_B[j];  
+  //for (int j = 0; j < polarParams->payloadBits; j++) polarParams->nr_polar_A[j]=polarParams->nr_polar_B[j];  
 
-  nr_byte2bit_uint8_32_t(polarParams->nr_polar_A, polarParams->payloadBits, out);
-  
+  // Check the CRC
+  for (int j=0;j<polarParams->crcParityBits;j++) {
+    int crcbit=0;
+    for (int i=0;i<polarParams->payloadBits;i++)
+      crcbit = crcbit ^ (polarParams->crc_generator_matrix[i][j] & polarParams->nr_polar_B[i]);
+    if (crcbit != polarParams->nr_polar_B[polarParams->payloadBits+j]) return(-1); 
+  }
+  // pack into ceil(payloadBits/32) 32 bit words, lowest index in MSB
+  //  nr_byte2bit_uint8_32_t(polarParams->nr_polar_A, polarParams->payloadBits, out);
+  nr_byte2bit_uint8_32_t(polarParams->nr_polar_B, polarParams->payloadBits, out);
   return(0);
 }
