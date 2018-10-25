@@ -87,6 +87,10 @@ void flexran_agent_get_pending_dl_mac_config(mid_t mod_id, Protocol__FlexranMess
 void flexran_agent_fill_mac_cell_config(mid_t mod_id, uint8_t cc_id,
     Protocol__FlexCellConfig *conf);
 
+/* Fill the lc_ue_config->lc_config message */
+void flexran_agent_fill_mac_lc_ue_config(mid_t mod_id, mid_t ue_id,
+    Protocol__FlexLcUeConfig *lc_ue_conf);
+
 /*Register technology specific interface callbacks*/
 int flexran_agent_register_mac_xface(mid_t mod_id);
 

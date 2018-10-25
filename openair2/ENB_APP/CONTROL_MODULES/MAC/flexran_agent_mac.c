@@ -1372,6 +1372,66 @@ void flexran_agent_fill_mac_cell_config(mid_t mod_id, uint8_t cc_id,
   }
 }
 
+void flexran_agent_fill_mac_lc_ue_config(mid_t mod_id, mid_t ue_id,
+    Protocol__FlexLcUeConfig *lc_ue_conf)
+{
+  lc_ue_conf->rnti = flexran_get_ue_crnti(mod_id, ue_id);
+  lc_ue_conf->has_rnti = 1;
+
+  lc_ue_conf->n_lc_config = flexran_get_num_ue_lcs(mod_id, ue_id);
+  if (lc_ue_conf->n_lc_config == 0)
+    return;
+
+  Protocol__FlexLcConfig **lc_config =
+    calloc(lc_ue_conf->n_lc_config, sizeof(Protocol__FlexLcConfig *));
+  if (!lc_config) {
+    LOG_E(FLEXRAN_AGENT, "could not allocate memory for lc_config of UE %x\n", lc_ue_conf->rnti);
+    lc_ue_conf->n_lc_config = 0;
+    return; // can not allocate memory, skip rest
+  }
+  for (int j = 0; j < lc_ue_conf->n_lc_config; j++) {
+    lc_config[j] = malloc(sizeof(Protocol__FlexLcConfig));
+    if (!lc_config[j]) continue; // go over this error, try entry
+    protocol__flex_lc_config__init(lc_config[j]);
+
+    lc_config[j]->has_lcid = 1;
+    lc_config[j]->lcid = j+1;
+
+    const int lcg = flexran_get_lcg(mod_id, ue_id, j+1);
+    if (lcg >= 0 && lcg <= 3) {
+      lc_config[j]->has_lcg = 1;
+      lc_config[j]->lcg = flexran_get_lcg(mod_id, ue_id, j+1);
+    }
+
+    lc_config[j]->has_direction = 1;
+    lc_config[j]->direction = flexran_get_direction(ue_id, j+1);
+    //TODO: Bearer type. One of FLQBT_* values. Currently only default bearer supported
+    lc_config[j]->has_qos_bearer_type = 1;
+    lc_config[j]->qos_bearer_type = PROTOCOL__FLEX_QOS_BEARER_TYPE__FLQBT_NON_GBR;
+
+    //TODO: Set the QCI defined in TS 23.203, coded as defined in TS 36.413
+    // One less than the actual QCI value. Needs to be generalized
+    lc_config[j]->has_qci = 1;
+    lc_config[j]->qci = 1;
+    if (lc_config[j]->direction == PROTOCOL__FLEX_QOS_BEARER_TYPE__FLQBT_GBR) {
+      /* TODO all of the need to be taken from API */
+      //TODO: Set the max bitrate (UL)
+      lc_config[j]->has_e_rab_max_bitrate_ul = 0;
+      lc_config[j]->e_rab_max_bitrate_ul = 0;
+      //TODO: Set the max bitrate (DL)
+      lc_config[j]->has_e_rab_max_bitrate_dl = 0;
+      lc_config[j]->e_rab_max_bitrate_dl = 0;
+      //TODO: Set the guaranteed bitrate (UL)
+      lc_config[j]->has_e_rab_guaranteed_bitrate_ul = 0;
+      lc_config[j]->e_rab_guaranteed_bitrate_ul = 0;
+      //TODO: Set the guaranteed bitrate (DL)
+      lc_config[j]->has_e_rab_guaranteed_bitrate_dl = 0;
+      lc_config[j]->e_rab_guaranteed_bitrate_dl = 0;
+    }
+  }
+  lc_ue_conf->lc_config = lc_config;
+}
+
 int flexran_agent_unregister_mac_xface(mid_t mod_id)
 {
   if (!agent_mac_xface[mod_id]) {

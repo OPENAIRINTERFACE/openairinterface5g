@@ -443,8 +443,6 @@ int flexran_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Fl
   Protocol__FlexLcConfigRequest *lc_config_request_msg = input->lc_config_request_msg;
   xid = (lc_config_request_msg->header)->xid;
 
-  int i, j;
-
   Protocol__FlexLcConfigReply *lc_config_reply_msg;
   lc_config_reply_msg = malloc(sizeof(Protocol__FlexLcConfigReply));
   if(lc_config_reply_msg == NULL)
@@ -456,82 +454,27 @@ int flexran_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Fl
 
   lc_config_reply_msg->header = header;
 
-  lc_config_reply_msg->n_lc_ue_config = flexran_get_num_ues(mod_id);
+  /* the lc_config_reply entirely depends on MAC except for the
+   * mac_eNB_get_rrc_status() function (which in the current OAI implementation
+   * is reachable if F1 is present). Therefore we check here wether MAC CM is
+   * present and the message gets properly filled if it is or remains empty if
+   * not */
+  lc_config_reply_msg->n_lc_ue_config =
+      flexran_agent_get_mac_xface(mod_id) ? flexran_get_num_ues(mod_id) : 0;
 
-  Protocol__FlexLcUeConfig **lc_ue_config;
+  Protocol__FlexLcUeConfig **lc_ue_config = NULL;
   if (lc_config_reply_msg->n_lc_ue_config > 0) {
     lc_ue_config = malloc(sizeof(Protocol__FlexLcUeConfig *) * lc_config_reply_msg->n_lc_ue_config);
     if (lc_ue_config == NULL) {
       goto error;
     }
     // Fill the config for each UE
-    for (i = 0; i < lc_config_reply_msg->n_lc_ue_config; i++) {
+    for (int i = 0; i < lc_config_reply_msg->n_lc_ue_config; i++) {
       lc_ue_config[i] = malloc(sizeof(Protocol__FlexLcUeConfig));
+      if (!lc_ue_config[i]) goto error;
+
       protocol__flex_lc_ue_config__init(lc_ue_config[i]);
-
-      lc_ue_config[i]->has_rnti = 1;
-      lc_ue_config[i]->rnti = flexran_get_ue_crnti(mod_id,i);
-
-      //TODO: Set the number of LC configurations that will be reported for this UE
-      //Set this according to the current state of the UE. This is only a temporary fix
-      int status = 0;
-      status = mac_eNB_get_rrc_status(mod_id, flexran_get_ue_crnti(mod_id, i));
-      /* TODO needs to be revised and appropriate API to be implemented */
-      if (status < RRC_CONNECTED) {
-	lc_ue_config[i]->n_lc_config = 0;
-      } else if (status == RRC_CONNECTED) {
-	lc_ue_config[i]->n_lc_config = 1;
-      } else {
-	lc_ue_config[i]->n_lc_config = 3;
-      }
-
-      Protocol__FlexLcConfig **lc_config;
-      if (lc_ue_config[i]->n_lc_config > 0) {
-	lc_config = malloc(sizeof(Protocol__FlexLcConfig *) * lc_ue_config[i]->n_lc_config);
-	if (lc_config == NULL) {
-	  goto error;
-	}
-	for (j = 0; j < lc_ue_config[i]->n_lc_config; j++) {
-	  lc_config[j] = malloc(sizeof(Protocol__FlexLcConfig));
-	  protocol__flex_lc_config__init(lc_config[j]);
-	 
-	  lc_config[j]->has_lcid = 1;
-	  lc_config[j]->lcid = j+1;
-	 
-	  int lcg = flexran_get_lcg(mod_id, i, j+1);
-	  if (lcg >= 0 && lcg <= 3) {
-	    lc_config[j]->has_lcg = 1;
-	    lc_config[j]->lcg = flexran_get_lcg(mod_id, i,j+1);
-	  }
-	 
-	  lc_config[j]->has_direction = 1;
-	  lc_config[j]->direction = flexran_get_direction(i,j+1);
-	  //TODO: Bearer type. One of FLQBT_* values. Currently only default bearer supported
-	  lc_config[j]->has_qos_bearer_type = 1;
-	  lc_config[j]->qos_bearer_type = PROTOCOL__FLEX_QOS_BEARER_TYPE__FLQBT_NON_GBR;
-
-	  //TODO: Set the QCI defined in TS 23.203, coded as defined in TS 36.413
-	  // One less than the actual QCI value. Needs to be generalized
-	  lc_config[j]->has_qci = 1;
-	  lc_config[j]->qci = 1;
-	  if (lc_config[j]->direction == PROTOCOL__FLEX_QOS_BEARER_TYPE__FLQBT_GBR) {
-            /* TODO all of the need to be taken from API */
-	    //TODO: Set the max bitrate (UL)
-	    lc_config[j]->has_e_rab_max_bitrate_ul = 0;
-	    lc_config[j]->e_rab_max_bitrate_ul = 0;
-	    //TODO: Set the max bitrate (DL)
-	    lc_config[j]->has_e_rab_max_bitrate_dl = 0;
-	    lc_config[j]->e_rab_max_bitrate_dl = 0;
-	    //TODO: Set the guaranteed bitrate (UL)
-	    lc_config[j]->has_e_rab_guaranteed_bitrate_ul = 0;
-	    lc_config[j]->e_rab_guaranteed_bitrate_ul = 0;
-	    //TODO: Set the guaranteed bitrate (DL)
-	    lc_config[j]->has_e_rab_guaranteed_bitrate_dl = 0;
-	    lc_config[j]->e_rab_guaranteed_bitrate_dl = 0;
-	  }
-	}
-	lc_ue_config[i]->lc_config = lc_config;
-      }
+      flexran_agent_fill_mac_lc_ue_config(mod_id, i, lc_ue_config[i]);
     } // end for UE
     lc_config_reply_msg->lc_ue_config = lc_ue_config;
   } // lc_config_reply_msg->n_lc_ue_config > 0
@@ -553,7 +496,7 @@ int flexran_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Fl
     free(lc_config_reply_msg);
   if(*msg != NULL)
     free(*msg);
-  //LOG_E(FLEXRAN_AGENT, "%s: an error occured\n", __FUNCTION__);
+  LOG_E(FLEXRAN_AGENT, "%s: an error occured\n", __FUNCTION__);
   return -1;
 }
 
