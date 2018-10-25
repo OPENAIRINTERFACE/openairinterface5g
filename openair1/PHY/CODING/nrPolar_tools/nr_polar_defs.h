@@ -78,54 +78,56 @@ typedef struct decoder_tree_t_s {
 } decoder_tree_t;
 
 struct nrPolar_params {
-	//messageType: 0=PBCH, 1=DCI, -1=UCI
-	int idx; //idx = (messageType * messageLength * aggregation_prime);
-	struct nrPolar_params *nextPtr;
-
-	uint8_t n_max;
-	uint8_t i_il;
-	uint8_t i_seg;
-	uint8_t n_pc;
-	uint8_t n_pc_wm;
-	uint8_t i_bil;
-	uint16_t payloadBits;
-	uint16_t encoderLength;
-	uint8_t crcParityBits;
-	uint8_t crcCorrectionBits;
-	uint16_t K;
-	uint16_t N;
-	uint8_t n;
-	uint32_t crcBit;
-
-	uint16_t *interleaving_pattern;
-	uint16_t *rate_matching_pattern;
-	const uint16_t *Q_0_Nminus1;
-	int16_t *Q_I_N;
-	int16_t *Q_F_N;
-	int16_t *Q_PC_N;
-	uint8_t *information_bit_pattern;
-	uint16_t *channel_interleaver_pattern;
-	uint32_t crc_polynomial;
-
-	uint8_t **crc_generator_matrix; //G_P
-	uint8_t **G_N;
-	uint32_t* crc256Table;
+  //messageType: 0=PBCH, 1=DCI, -1=UCI
+  int idx; //idx = (messageType * messageLength * aggregation_prime);
+  struct nrPolar_params *nextPtr;
+  
+  uint8_t n_max;
+  uint8_t i_il;
+  uint8_t i_seg;
+  uint8_t n_pc;
+  uint8_t n_pc_wm;
+  uint8_t i_bil;
+  uint16_t payloadBits;
+  uint16_t encoderLength;
+  uint8_t crcParityBits;
+  uint8_t crcCorrectionBits;
+  uint16_t K;
+  uint16_t N;
+  uint8_t n;
+  uint32_t crcBit;
+  
+  uint16_t *interleaving_pattern;
+  uint16_t *rate_matching_pattern;
+  const uint16_t *Q_0_Nminus1;
+  int16_t *Q_I_N;
+  int16_t *Q_F_N;
+  int16_t *Q_PC_N;
+  uint8_t *information_bit_pattern;
+  uint16_t *channel_interleaver_pattern;
+  uint32_t crc_polynomial;
+  
+  uint8_t **crc_generator_matrix; //G_P
+  uint8_t **G_N;
+  uint64_t **G_N_tab;
+  uint64_t cprime_tab[8][256];
+  uint32_t* crc256Table;
   uint8_t **extended_crc_generator_matrix;
-	//lowercase: bits, Uppercase: Bits stored in bytes
-	//polar_encoder vectors
-	uint8_t *nr_polar_crc;
-	uint8_t *nr_polar_aPrime;
-	uint8_t *nr_polar_APrime;
-	uint8_t *nr_polar_D;
-	uint8_t *nr_polar_E;
-
-	//Polar Coding vectors
-	uint8_t *nr_polar_A;
-	uint8_t *nr_polar_CPrime;
-	uint8_t *nr_polar_B;
-	uint8_t *nr_polar_U;
-
-decoder_tree_t tree;
+  //lowercase: bits, Uppercase: Bits stored in bytes
+  //polar_encoder vectors
+  uint8_t *nr_polar_crc;
+  uint8_t *nr_polar_aPrime;
+  uint8_t *nr_polar_APrime;
+  uint8_t *nr_polar_D;
+  uint8_t *nr_polar_E;
+  
+  //Polar Coding vectors
+  uint8_t *nr_polar_A;
+  uint8_t *nr_polar_CPrime;
+  uint8_t *nr_polar_B;
+  uint8_t *nr_polar_U;
+  
+  decoder_tree_t tree;
 } __attribute__ ((__packed__));
 typedef struct nrPolar_params t_nrPolar_params;
 typedef t_nrPolar_params *t_nrPolar_paramsPtr;

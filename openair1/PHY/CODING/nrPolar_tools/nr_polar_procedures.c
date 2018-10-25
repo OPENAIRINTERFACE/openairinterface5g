@@ -33,15 +33,15 @@
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 
 void nr_polar_bit_insertion(uint8_t *input,
-						    uint8_t *output,
-							uint16_t N,
-							uint16_t K,
-							int16_t *Q_I_N,
-							int16_t *Q_PC_N,
-							uint8_t n_PC)
+			    uint8_t *output,
+			    uint16_t N,
+			    uint16_t K,
+			    int16_t *Q_I_N,
+			    int16_t *Q_PC_N,
+			    uint8_t n_PC)
 {
-	uint16_t k=0;
-	uint8_t flag;
+  uint16_t k=0;
+  uint8_t flag;
 
 	if (n_PC>0) {
 		/*
