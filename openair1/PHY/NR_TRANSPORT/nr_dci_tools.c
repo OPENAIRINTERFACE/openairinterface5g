@@ -31,6 +31,7 @@
  */
 
 #include "nr_dci.h"
+#include "nr_dlsch.h"
 
 
 void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t* dci_alloc, uint16_t n_shift, uint8_t m) {
@@ -110,14 +111,15 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
                            int subframe,
                            gNB_rxtx_proc_t *proc,
                            NR_gNB_DCI_ALLOC_t *dci_alloc,
-                           nfapi_nr_dl_config_request_pdu_t *pdu)
+                           nfapi_nr_dl_config_dci_dl_pdu *pdcch_pdu,
+                           nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu)
 {
 	NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   uint8_t n_shift;
 	uint32_t *dci_pdu = dci_alloc->dci_pdu;
   memset((void*)dci_pdu,0,4*sizeof(uint32_t));
-	nfapi_nr_dl_config_dci_dl_pdu_rel15_t *pdu_rel15 = &pdu->dci_dl_pdu.dci_dl_pdu_rel15;
-  nfapi_nr_dl_config_pdcch_parameters_rel15_t *params_rel15 = &pdu->dci_dl_pdu.pdcch_params_rel15;
+	nfapi_nr_dl_config_dci_dl_pdu_rel15_t *pdu_rel15 = &pdcch_pdu->dci_dl_pdu_rel15;
+  nfapi_nr_dl_config_pdcch_parameters_rel15_t *params_rel15 = &pdcch_pdu->pdcch_params_rel15;
 	nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
   NR_gNB_DLSCH_t *dlsch = &gNB->dlsch;
   NR_DL_gNB_HARQ_t **harq = dlsch->harq_processes;
@@ -531,5 +533,12 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
                       cfg->sch_config.physical_cell_id.value : dci_alloc->pdcch_params.shift_index;
   nr_fill_cce_list(dci_alloc, n_shift, cand_idx);
   LOG_I(PHY, "DCI type %d payload (size %d) generated on candidate %d\n", dci_alloc->pdcch_params.dci_format, dci_alloc->size, cand_idx);
+
+  /// DLSCH struct
+  memcpy((void*)&dlsch->harq_processes[dci_alloc->harq_pid]->dlsch_pdu, (void*)dlsch_pdu, sizeof(nfapi_nr_dl_config_dlsch_pdu));
+  nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_rel15 = &dlsch_pdu->dlsch_pdu_rel15;
+  nr_get_tbs(dlsch, *pdcch_pdu, *cfg, dci_alloc->harq_pid);
+  dlsch_rel15->nb_layers =1;
+  dlsch_rel15->nb_codewords = 1;
 
 }

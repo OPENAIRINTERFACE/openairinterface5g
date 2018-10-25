@@ -70,8 +70,6 @@ typedef struct {
 typedef struct {
   /// Nfapi DLSCH PDU
   nfapi_nr_dl_config_dlsch_pdu dlsch_pdu;
-  /// Transport block size
-  uint32_t TBS;
   /// pointer to pdu from MAC interface (this is "a" in 36.212)
   uint8_t *pdu;
   /// The payload + CRC size in bits, "B" from 36-212
@@ -86,34 +84,8 @@ typedef struct {
   uint32_t subframe;
   /// Index of current HARQ round for this DLSCH
   uint8_t round;
-  /// Modulation order
-  uint8_t Qm;
-  /// MCS
-  uint8_t mcs;
-  /// Redundancy-version of the current sub-frame
-  uint8_t rvidx;
   /// MIMO mode for this DLSCH
   MIMO_mode_t mimo_mode;
-  /// Current RB allocation
-  uint32_t rb_alloc[4];
-  /// distributed/localized flag
-  vrb_t vrb_type;
-  /// Current subband PMI allocation
-  uint16_t pmi_alloc;
-  /// Current subband RI allocation
-  uint32_t ri_alloc;
-  /// Current subband CQI1 allocation
-  uint32_t cqi_alloc1;
-  /// Current subband CQI2 allocation
-  uint32_t cqi_alloc2;
-  /// Current Number of RBs
-  uint16_t nb_rb;
-  /// Current NDI
-  uint8_t ndi;
-  /// downlink power offset field
-  uint8_t dl_power_off;
-  /// start symbold of pdsch
-  uint8_t pdsch_start;
   /// Concatenated sequences
   uint8_t e[MAX_NUM_NR_CHANNEL_BITS] __attribute__((aligned(32)));
   /// LDPC-code outputs
@@ -126,15 +98,6 @@ typedef struct {
   uint32_t K;
   /// Number of "Filler" bits
   uint32_t F;
-  /// Number of MIMO layers (streams)
-  uint8_t Nl;
-  /// Number of layers for this PDSCH transmission (TM8-10)
-  uint8_t Nlayers;
-  /// First layer for this PSCH transmission
-  uint8_t first_layer;
-  /// codeword this transport block is mapped to
-  uint8_t codeword;
-  /// Number of codewords
 } NR_DL_gNB_HARQ_t;
 
 

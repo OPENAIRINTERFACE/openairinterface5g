@@ -244,53 +244,46 @@ void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
 }
 
 int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
-		   	   	   unsigned char *a,
-				   uint16_t nb_symb_sch,
-                   NR_gNB_DLSCH_t *dlsch,
-                   int frame,
-                   uint8_t subframe,
-                   time_stats_t *rm_stats,
-                   time_stats_t *te_stats,
-                   time_stats_t *i_stats)
+                     unsigned char *a,
+                     NR_gNB_DLSCH_t *dlsch,
+                     uint16_t frame,
+                     uint8_t subframe,
+                     time_stats_t *rm_stats,
+                     time_stats_t *te_stats,
+                     time_stats_t *i_stats)
 {
 
   unsigned int G;
   unsigned int crc=1;
 
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
-  unsigned char harq_pid = dlsch->harq_ids[subframe];
-  unsigned short nb_rb = dlsch->harq_processes[harq_pid]->nb_rb;
-  unsigned int A, Z;
-  unsigned *pz = &Z;
-  unsigned char mod_order;
-  unsigned int Kr=0,r,r_offset=0;//Kr_bytes
-  //unsigned short m=dlsch->harq_processes[harq_pid]->mcs;
-  //uint8_t beamforming_mode=0;
+  uint8_t harq_pid = dlsch->harq_ids[subframe];
+  nfapi_nr_dl_config_dlsch_pdu_rel15_t rel15 = dlsch->harq_processes[harq_pid]->dlsch_pdu.dlsch_pdu_rel15;
+  uint16_t nb_rb = rel15.n_prb;
+  uint8_t nb_symb_sch = rel15.nb_symbols;
+  uint16_t A, Z;
+  uint16_t *pz = &Z;
+  uint8_t mod_order = rel15.modulation_order;
+  uint16_t Kr=0,r,r_offset=0;//Kr_bytes
   uint8_t *d_tmp[MAX_NUM_DLSCH_SEGMENTS];
   //double rate = 0.33;
   uint8_t kb,BG=1;
   uint32_t E;
   uint8_t Ilbrm = 0;
   uint32_t Tbslbrm = 950984; //max tbs
-  //uint16_t nb_symb_sch =12;
-  uint8_t nb_re_dmrs = 6;
+  uint8_t nb_re_dmrs = rel15.nb_re_dmrs;
   uint16_t length_dmrs = 1;
   uint8_t *channel_input[MAX_NUM_DLSCH_SEGMENTS]; //unsigned char
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
-  dlsch->harq_processes[harq_pid]->TBS= nr_compute_tbs(dlsch->harq_processes[harq_pid]->mcs,
-		  	  	  	  	  	  	  	  nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs,
-									  dlsch->harq_processes[harq_pid]->Nl);
-
-  A = dlsch->harq_processes[harq_pid]->TBS;
+  A = rel15.transport_block_size;
   //printf("Encoder: A: %d frame.subframe %d.%d \n",A, frame,subframe);
-  mod_order = nr_get_Qm(dlsch->harq_processes[harq_pid]->mcs,1);
 
-  G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,dlsch->harq_processes[harq_pid]->Nl);
+  G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,rel15.nb_layers);
   printf("dlsch coding A %d G %d mod_order %d\n", A,G, mod_order);
 
-  Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0, dlsch->harq_processes[harq_pid]->Nl);
+  Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0, rel15.nb_layers);
 
   //  if (dlsch->harq_processes[harq_pid]->Ndi == 1) {  // this is a new packet
   if (dlsch->harq_processes[harq_pid]->round == 0) {  // this is a new packet
@@ -400,9 +393,9 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
 									 dlsch->harq_processes[harq_pid]->d[r],
 									 dlsch->harq_processes[harq_pid]->e+r_offset,
 									 dlsch->harq_processes[harq_pid]->C,
-									 dlsch->harq_processes[harq_pid]->rvidx,
+									 rel15.redundancy_version,
 									 mod_order,
-									 dlsch->harq_processes[harq_pid]->Nl,
+									 rel15.nb_layers,
     								 r);
 
 #ifdef DEBUG_DLSCH_CODING

@@ -36,7 +36,7 @@
 /*Table 7.4.1.1.2-1 and 7.4.1.1.2-2 38211 Columns: ap - CDM group - Delta - Wf(0) - Wf(1) - Wt(0) - Wt(1)*/
 int8_t pdsch_dmrs_1[8][7] = {{0,0,0,1,1,1,1},
                              {1,0,0,1,-1,1,1},
-                             {2,1,1,1,1,,1,1},
+                             {2,1,1,1,1,1,1},
                              {3,1,1,1,-1,1,1},
                              {4,0,0,1,1,1,-1},
                              {5,0,0,1,-1,1,-1},
@@ -56,22 +56,18 @@ int8_t pdsch_dmrs_2[12][7] = {{0,0,0,1,1,1,1},
                               {10,2,4,1,1,1,-1},
                               {11,2,4,1,-1,1,-1}};
 
-static inline void *get_l_prime(uint8_t n_symbs) {
-  uint8_t *l_prime;
-  for (int i=0; i<nsymbs; i++)
+void get_l_prime(uint8_t *l_prime, uint8_t n_symbs) {
+  for (int i=0; i<n_symbs; i++)
     *(l_prime+i) = i;
-  return l_prime;  
 }
 
-static inline void *get_antenna_ports(uint8_t n_symbs, uint8_t config) {
-  uint8_t *ap;
+void get_antenna_ports(uint8_t *ap, uint8_t n_symbs, uint8_t config) {
   if (config == NFAPI_NR_DMRS_TYPE1)
-    for (int i=0; i<(4+4*(n_symbs-1); i++)
+    for (int i=0; i<(4+((n_symbs-1)<<2)); i++)
       *(ap+i) = i;
   else
-    for (int i=0; i<(7+4*(n_symbs-1); i++)
+    for (int i=0; i<(7+((n_symbs-1)<<2)); i++)
       *(ap+i) = i;
-  return ap;
 }
 
 void get_Wt(int8_t *Wt, uint8_t ap, uint8_t config) {
@@ -79,7 +75,7 @@ void get_Wt(int8_t *Wt, uint8_t ap, uint8_t config) {
     *(Wt+i)=(config==NFAPI_NR_DMRS_TYPE1)?(pdsch_dmrs_1[ap][3+i]):(pdsch_dmrs_2[ap][3+i]);
 }
 
-void *get_Wf(int8_t *Wf, uint8_t ap, uint8_t config) {
+void get_Wf(int8_t *Wf, uint8_t ap, uint8_t config) {
   for (int i=0; i<2; i++)
     *(Wf+i)=(config==NFAPI_NR_DMRS_TYPE1)?(pdsch_dmrs_1[ap][5+i]):(pdsch_dmrs_2[ap][5+i]);
 }

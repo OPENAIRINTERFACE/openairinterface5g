@@ -65,7 +65,7 @@ void handle_nfapi_nr_dci_dl_pdu(PHY_VARS_gNB *gNB,
   LOG_D(PHY,"Frame %d, Subframe %d: DCI processing - populating pdcch_vars->dci_alloc[%d] proc:subframe_tx:%d idx:%d pdcch_vars->num_dci:%d\n",frame,subframe, pdcch_vars->num_dci, proc->subframe_tx, idx, pdcch_vars->num_dci);
 
   // copy dci configuration into gNB structure
-  nr_fill_dci_and_dlsch(gNB,frame,subframe,proc,&pdcch_vars->dci_alloc[pdcch_vars->num_dci],dl_config_pdu);
+  nr_fill_dci_and_dlsch(gNB,frame,subframe,proc,&pdcch_vars->dci_alloc[pdcch_vars->num_dci],&dl_config_pdu->dci_dl_pdu, &dl_config_pdu->dlsch_pdu);
 
   LOG_D(PHY,"Frame %d, Subframe %d: DCI processing - populated pdcch_vars->dci_alloc[%d] proc:subframe_tx:%d idx:%d pdcch_vars->num_dci:%d\n",proc->frame_tx,proc->subframe_tx, pdcch_vars->num_dci, proc->subframe_tx, idx, pdcch_vars->num_dci);
 }

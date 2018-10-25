@@ -118,12 +118,12 @@ void nr_get_tbs(NR_gNB_DLSCH_t *dlsch,
   (config.pdsch_config.x_overhead.value);
   uint8_t N_PRB_DMRS = (config.pdsch_config.dmrs_type.value == NFAPI_NR_DMRS_TYPE1)?4:6; //This only works for antenna port 1000
   uint8_t mcs_table = config.pdsch_config.mcs_table.value;
-  uint8_t N_sh_symb = dlsch_rel15->L;
-  uint8_t Imcs = dlsch_rel15->Imcs;
+  uint8_t N_sh_symb = dlsch_rel15->nb_symbols;
+  uint8_t Imcs = dlsch_rel15->mcs_idx;
   uint16_t N_prime_RE = NR_NB_SC_PER_RB*N_sh_symb - N_PRB_DMRS - N_PRB_oh;
   LOG_I(MAC, "N_prime_RE %d for %d symbols %d DMRS per PRB and %d overhead\n", N_prime_RE, N_sh_symb, N_PRB_DMRS, N_PRB_oh);
 
-  uint16_t N_RE, Ninfo, Ninfo_prime, C;
+  uint16_t N_RE, Ninfo, Ninfo_prime, C, TBS;
   uint8_t table_idx, R, Qm, n, scale;
 
   table_idx = get_table_idx(mcs_table, dci_format, rnti_type, ss_type);
@@ -132,14 +132,14 @@ void nr_get_tbs(NR_gNB_DLSCH_t *dlsch,
   N_RE = min(156, N_RE)*dlsch_rel15->n_prb;
   R = nr_get_code_rate(Imcs, table_idx);
   Qm = nr_get_Qm(Imcs, table_idx);
-  Ninfo = (N_RE*R*Qm*harq->Nl)>>scale;
+  Ninfo = (N_RE*R*Qm*dlsch_rel15->nb_layers)>>scale;
 
   if (Ninfo <= 3824) {
     n = max(3, (log2(Ninfo)-6));
     Ninfo_prime = max(24, (Ninfo>>n)<<n);
     for (int i=0; i<93; i++)
       if (nr_tbs_table[i] >= Ninfo_prime) {
-        harq->TBS = nr_tbs_table[i];
+        TBS = nr_tbs_table[i];
         break;
       }
   }
@@ -149,24 +149,29 @@ void nr_get_tbs(NR_gNB_DLSCH_t *dlsch,
 
     if (R<256) {
       C = CEILIDIV((Ninfo_prime+24),3816);
-      harq->TBS = (C*CEILIDIV((Ninfo_prime+24),(C<<3)))<<3;
+      TBS = (C*CEILIDIV((Ninfo_prime+24),(C<<3)))<<3;
     }
     else {
       if (Ninfo_prime>8424) {
         C = CEILIDIV((Ninfo_prime+24),8424);
-        harq->TBS = (C*CEILIDIV((Ninfo_prime+24),(C<<3)))<<3;
+        TBS = (C*CEILIDIV((Ninfo_prime+24),(C<<3)))<<3;
       }
       else
-        harq->TBS = (CEILIDIV((Ninfo_prime+24),8) - 24)<<3;
+        TBS = (CEILIDIV((Ninfo_prime+24),8) - 24)<<3;
     }    
   }
   LOG_I(MAC, "TBS %d : N_RE %d  N_PRB_DMRS %d N_sh_symb %d N_PRB_oh %d Ninfo %d Ninfo_prime %d R %d Qm %d table %d scale %d\n",
-  harq->TBS, N_RE, N_PRB_DMRS, N_sh_symb, N_PRB_oh, Ninfo, Ninfo_prime, R, Qm, table_idx, scale);
+  TBS, N_RE, N_PRB_DMRS, N_sh_symb, N_PRB_oh, Ninfo, Ninfo_prime, R, Qm, table_idx, scale);
+
+  dlsch_rel15->coding_rate = R;
+  dlsch_rel15->modulation_order = Qm;
+  dlsch_rel15->transport_block_size = TBS;
+  dlsch_rel15->nb_re_dmrs = N_PRB_DMRS;
 
 }
 
 uint32_t nr_get_G(uint16_t nb_rb, uint16_t nb_symb_sch,uint8_t nb_re_dmrs,uint16_t length_dmrs, uint8_t Qm, uint8_t Nl) {
 	uint32_t G;
-	G = ((12*nb_symb_sch)-(nb_re_dmrs*length_dmrs))*nb_rb*Qm*Nl;
+	G = ((NR_NB_SC_PER_RB*nb_symb_sch)-(nb_re_dmrs*length_dmrs))*nb_rb*Qm*Nl;
 	return(G);
 }

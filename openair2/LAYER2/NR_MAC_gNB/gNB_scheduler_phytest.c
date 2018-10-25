@@ -49,6 +49,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   nfapi_nr_dl_config_request_pdu_t  *dl_config_pdu;
   nfapi_tx_request_pdu_t            *TX_req;
   uint16_t sfn_sf = frameP << 4 | subframeP;
+  uint16_t rnti = 0x1234;
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     LOG_I(MAC, "Scheduling common search space DCI type 1 for CC_id %d\n",CC_id);
@@ -69,8 +70,9 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 
     dlsch_pdu_rel15->start_prb = 0;
     dlsch_pdu_rel15->n_prb = 40;
-    dlsch_pdu_rel15->S = 8;
-    dlsch_pdu_rel15->L = 6;
+    dlsch_pdu_rel15->start_symbol = 8;
+    dlsch_pdu_rel15->nb_symbols = 6;
+    dlsch_pdu_rel15->rnti = rnti;
 
     nr_configure_css_dci_from_mib(&gNB->pdcch_type0_params,
                                kHz30, kHz30, nr_FR1, 0, 0,
@@ -79,36 +81,31 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     memcpy((void*)params_rel15, (void*)&gNB->pdcch_type0_params, sizeof(nfapi_nr_dl_config_pdcch_parameters_rel15_t));
 
     pdu_rel15->frequency_domain_assignment = get_RIV(dlsch_pdu_rel15->start_prb, dlsch_pdu_rel15->n_prb, cfg->rf_config.dl_carrier_bandwidth.value);
-    pdu_rel15->time_domain_assignment = get_SLIV(dlsch_pdu_rel15->S, dlsch_pdu_rel15->L);
+    pdu_rel15->time_domain_assignment = get_SLIV(dlsch_pdu_rel15->start_symbol, dlsch_pdu_rel15->nb_symbols);
     pdu_rel15->vrb_to_prb_mapping = 1;
     pdu_rel15->mcs = 12;
     pdu_rel15->tb_scaling = 1;
     
     pdu_rel15->ra_preamble_index = 25;
     pdu_rel15->format_indicator = 1;
-    pdu_rel15->ul_sul_indicator = 1;
-
-    pdu_rel15->ss_pbch_index = 21;
-    pdu_rel15->prach_mask_index = 3;
     pdu_rel15->ndi = 1;
-    pdu_rel15->rv = 2;
-    pdu_rel15->harq_pid = 7;
+    pdu_rel15->rv = 0;
+    pdu_rel15->harq_pid = 0;
     pdu_rel15->dai = 2;
     pdu_rel15->tpc = 2;
     pdu_rel15->pucch_resource_indicator = 7;
     pdu_rel15->pdsch_to_harq_feedback_timing_indicator = 7;
-    
-    
-    pdu_rel15->tb_scaling = 1;
 
-    LOG_I(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d, time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d\n",
+    LOG_I(MAC, "[gNB scheduler phytest] DCI type 1 payload: freq_alloc %d, time_alloc %d, vrb to prb %d, mcs %d tb_scaling %d ndi %d rv %d\n",
                 pdu_rel15->frequency_domain_assignment,
                 pdu_rel15->time_domain_assignment,
                 pdu_rel15->vrb_to_prb_mapping,
                 pdu_rel15->mcs,
-                pdu_rel15->tb_scaling);
+                pdu_rel15->tb_scaling,
+                pdu_rel15->ndi,
+                pdu_rel15->rv);
 
-    params_rel15->rnti = 0x03;
+    params_rel15->rnti = rnti;
     params_rel15->rnti_type = NFAPI_NR_RNTI_C;
     params_rel15->dci_format = NFAPI_NR_DL_DCI_FORMAT_1_0;
     //params_rel15->aggregation_level = 1;
@@ -129,7 +126,8 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                 params_rel15->sfn_mod2,
                 params_rel15->first_slot);
   dl_req->number_dci++;
-  dl_req->number_pdu++;
+  dl_req->number_pdsch_rnti++;
+  dl_req->number_pdu+=2;
 
   TX_req = &nr_mac->TX_req[CC_id].tx_request_body.tx_pdu_list[nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus];
   TX_req->pdu_length = 6;

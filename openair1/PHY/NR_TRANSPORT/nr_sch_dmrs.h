@@ -35,6 +35,10 @@
 #define NR_PDSCH_DMRS_ANTENNA_PORT0 1000
 #define NR_PDSCH_DMRS_NB_ANTENNA_PORTS 12
 
+void get_l_prime(uint8_t *l_prime, uint8_t n_symbs);
+
+void get_antenna_ports(uint8_t *ap, uint8_t n_symbs, uint8_t config);
+
 void get_Wt(int8_t *Wt, uint8_t ap, uint8_t config);
 
 void get_Wf(int8_t *Wf, uint8_t ap, uint8_t config);

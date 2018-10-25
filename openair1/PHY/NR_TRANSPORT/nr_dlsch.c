@@ -32,6 +32,7 @@
 
 #include "nr_dlsch.h"
 #include "nr_dci.h"
+#include "nr_sch_dmrs.h"
 
 #define DEBUG_DLSCH
 
@@ -207,7 +208,7 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
   pdcch_params.scrambling_id : config.sch_config.physical_cell_id.value;
   for (int q=0; q<rel15->nb_codewords; q++)
     nr_pdsch_codeword_scrambling(harq->f,
-                         harq->TBS,
+                         rel15->transport_block_size,
                          q,
                          Nid,
                          n_RNTI,
@@ -216,8 +217,8 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
   /// Modulation
   for (int q=0; q<rel15->nb_codewords; q++)
     nr_pdsch_codeword_modulation(scrambled_output[q],
-                         harq->Qm,
-                         harq->TBS,
+                         rel15->modulation_order,
+                         rel15->transport_block_size,
                          mod_symbs[q]);
 
   /// Layer mapping
@@ -231,14 +232,14 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
     //to be moved to init phase potentially, for now tx_layers 1-8 are mapped on antenna ports 1000-1007
 
   /// DMRS QPSK modulation
-  uint16_t n_dmrs = rel15->n_prb<<1;
+  uint16_t n_dmrs = rel15->n_prb*rel15->nb_re_dmrs;
   int16_t mod_dmrs[n_dmrs<<1];
   uint8_t dmrs_type = config.pdsch_config.dmrs_type.value;
   nr_modulation(pdsch_dmrs, n_dmrs, MOD_QPSK, mod_dmrs);
 
   /// Resource mapping
-  AssertFatal(harq->Nl<=config.rf_config.tx_antenna_ports.value, "Not enough Tx antennas (%d) for %d layers\n",\
-   config.rf_config.tx_antenna_ports.value, harq->Nl);
+  AssertFatal(rel15->nb_layers<=config.rf_config.tx_antenna_ports.value, "Not enough Tx antennas (%d) for %d layers\n",\
+   config.rf_config.tx_antenna_ports.value, rel15->nb_layers);
 
     // Non interleaved VRB to PRB mapping
   uint8_t start_sc = frame_parms.first_carrier_offset + rel15->start_prb*NR_NB_SC_PER_RB +\
@@ -255,7 +256,7 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
     uint8_t k_prime=0, n=0, dmrs_idx=0;
     uint16_t m = 0;
 
-    for (int l=rel15->S; l<rel15->L; l++)
+    for (int l=rel15->start_symbol; l<rel15->nb_symbols; l++)
       for (int k=start_sc; k<rel15->n_prb*NR_NB_SC_PER_RB; k++) {
         if (k >= frame_parms.ofdm_symbol_size)
           k -= frame_parms.ofdm_symbol_size;
