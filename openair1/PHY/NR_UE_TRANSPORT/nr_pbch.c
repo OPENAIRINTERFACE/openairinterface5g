@@ -35,7 +35,7 @@
 #include "PHY/sse_intrin.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 
-#define DEBUG_PBCH 1
+//#define DEBUG_PBCH 1
 //#define DEBUG_PBCH_ENCODING
 
 #ifdef OPENAIR2
@@ -44,27 +44,39 @@
 
 #define PBCH_A 24
 
+#define print_shorts(s,x) printf("%s : %d,%d,%d,%d,%d,%d,%d,%d\n",s,((int16_t*)x)[0],((int16_t*)x)[1],((int16_t*)x)[2],((int16_t*)x)[3],((int16_t*)x)[4],((int16_t*)x)[5],((int16_t*)x)[6],((int16_t*)x)[7])
 
 uint16_t nr_pbch_extract(int **rxdataF,
-                      int **dl_ch_estimates,
-                      int **rxdataF_ext,
-                      int **dl_ch_estimates_ext,
-                      uint32_t symbol,
-                      uint32_t high_speed_flag,
-                      NR_DL_FRAME_PARMS *frame_parms)
+			 int **dl_ch_estimates,
+			 int **rxdataF_ext,
+			 int **dl_ch_estimates_ext,
+			 uint32_t symbol,
+			 uint32_t high_speed_flag,
+			 int is_synchronized,
+			 NR_DL_FRAME_PARMS *frame_parms)
 {
 
 
   uint16_t rb;
-  uint8_t i,j,aarx,aatx;
+  uint8_t i,j,aarx;
   int32_t *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
 
-  int rx_offset = frame_parms->ofdm_symbol_size-10*12;
   int nushiftmod4 = frame_parms->nushift;
+
+  unsigned int  rx_offset = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier; //and
+  if (rx_offset>= frame_parms->ofdm_symbol_size) rx_offset-=frame_parms->ofdm_symbol_size;
+  int s_offset;
+ 
+  AssertFatal(((symbol>=1) && (symbol<5) && (is_synchronized==0)) || 
+	      ((symbol>=5) && (symbol<8) && (is_synchronized==1)),
+	      "symbol %d illegal for PBCH (is_synchronized %d)\n",
+	      symbol,is_synchronized);
+
+  if (is_synchronized==0) s_offset=4;
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
         
-    rxF        = &rxdataF[aarx][(rx_offset + (symbol*(frame_parms->ofdm_symbol_size)))];
+    rxF        = &rxdataF[aarx][symbol*frame_parms->ofdm_symbol_size];
     rxF_ext    = &rxdataF_ext[aarx][symbol*(20*12)];
 #ifdef DEBUG_PBCH
      printf("extract_rbs (nushift %d): rx_offset=%d, symbol %d\n",frame_parms->nushift,
@@ -78,89 +90,109 @@ uint16_t nr_pbch_extract(int **rxdataF,
 #endif
 
     for (rb=0; rb<20; rb++) {
-      if (rb==10) {
-        rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))];
-      }
-
       j=0;
-      if ((symbol==5) || (symbol==7)) {
+
+      if (((s_offset+symbol)==5) || ((s_offset+symbol)==7)) {
         for (i=0; i<12; i++) {
           if ((i!=nushiftmod4) &&
               (i!=(nushiftmod4+4)) &&
               (i!=(nushiftmod4+8))) {
-            rxF_ext[j]=rxF[i];
-	    //printf("rxF ext[%d] = %d rxF [%d]= %d\n",j,rxF_ext[j],i,rxF[i]);
+            rxF_ext[j]=rxF[rx_offset];
+#ifdef DEBUG_PBCH
+	    printf("rxF ext[%d] = (%d,%d) rxF [%d]= (%d,%d)\n",(9*rb) + j,
+		   ((int16_t*)&rxF_ext[j])[0],
+		   ((int16_t*)&rxF_ext[j])[1],
+		   rx_offset,
+		   ((int16_t*)&rxF[rx_offset])[0],
+		   ((int16_t*)&rxF[rx_offset])[1]);
+#endif
 	    j++;
           }
+	  rx_offset=(rx_offset+1)&(frame_parms->ofdm_symbol_size-1);
         }
-
-        rxF+=12;
         rxF_ext+=9;
       } else { //symbol 2
     	if ((rb < 4) || (rb >15)){
     	  for (i=0; i<12; i++) {
-        	if ((i!=nushiftmod4) &&
-        	    (i!=(nushiftmod4+4)) &&
-        	    (i!=(nushiftmod4+8))) {
-        	  rxF_ext[j]=rxF[i];
-		  //printf("symbol2 rxF ext[%d] = %d at %p\n",j,rxF_ext[j],&rxF[i]);
-		  j++;
-        	}
+	    if ((i!=nushiftmod4) &&
+		(i!=(nushiftmod4+4)) &&
+		(i!=(nushiftmod4+8))) {
+	      rxF_ext[j]=rxF[rx_offset];
+#ifdef DEBUG_PBCH
+	      printf("rxF ext[%d] = (%d,%d) rxF [%d]= (%d,%d)\n",(rb<4) ? (9*rb) + j : (9*(rb-12))+j,
+		     ((int16_t*)&rxF_ext[j])[0],
+		     ((int16_t*)&rxF_ext[j])[1],
+		     rx_offset,
+		     ((int16_t*)&rxF[rx_offset])[0],
+		     ((int16_t*)&rxF[rx_offset])[1]);
+#endif    
+	      j++;
+	    }
+	    rx_offset=(rx_offset+1)&(frame_parms->ofdm_symbol_size-1);
     	  }
+	  rxF_ext+=9;
 	}
-
-        rxF+=12;
-        rxF_ext+=9;
+	else rx_offset = (rx_offset+12)&(frame_parms->ofdm_symbol_size-1);
+        
       }
     }
 
-    for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB;aatx++) {
-      if (high_speed_flag == 1)
-        dl_ch0     = &dl_ch_estimates[(aatx<<1)+aarx][(symbol*(frame_parms->ofdm_symbol_size))];
-      else
-        dl_ch0     = &dl_ch_estimates[(aatx<<1)+aarx][0];
-
-      //printf("dl_ch0 addr %p\n",dl_ch0);
-
-      dl_ch0_ext = &dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*(20*12)];
-
-      for (rb=0; rb<20; rb++) {
-	j=0;
-        if ((symbol==5) || (symbol==7)) {
-              	  for (i=0; i<12; i++) {
-                    if ((i!=nushiftmod4) &&
-                        (i!=(nushiftmod4+4)) &&
-                        (i!=(nushiftmod4+8))) {
-                           dl_ch0_ext[j]=dl_ch0[i];
-			   if ((rb==0) && (i<2))
-			     printf("dl ch0 ext[%d] = %d dl_ch0 [%d]= %d\n",j,dl_ch0_ext[j],i,dl_ch0[i]);
-		           j++;
-                    }
-          	  }
-
-          dl_ch0+=12;
-          dl_ch0_ext+=9;
-        }
-        else { 
-              if ((rb < 4) || (rb >15)){
-              	  for (i=0; i<12; i++) {
-                    if ((i!=nushiftmod4) &&
-                        (i!=(nushiftmod4+4)) &&
-                        (i!=(nushiftmod4+8))) {
-		           dl_ch0_ext[j]=dl_ch0[i];
-			   //printf("symbol2 dl ch0 ext[%d] = %d dl_ch0 [%d]= %d\n",j,dl_ch0_ext[j],i,dl_ch0[i]);
-			   j++;
-                       	}
-               	  }
-              }
-
-              dl_ch0+=12;
-              dl_ch0_ext+=9;
-
-         }
+    if (high_speed_flag == 1)
+      dl_ch0     = &dl_ch_estimates[aarx][(symbol*(frame_parms->ofdm_symbol_size))];
+    else
+      dl_ch0     = &dl_ch_estimates[aarx][0];
+    
+    //printf("dl_ch0 addr %p\n",dl_ch0);
+    
+    dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol*(20*12)];
+    
+    for (rb=0; rb<20; rb++) {
+      j=0;
+      if ((s_offset+symbol==5) || (s_offset+symbol==7)) {
+	for (i=0; i<12; i++) {
+	  if ((i!=nushiftmod4) &&
+	      (i!=(nushiftmod4+4)) &&
+	      (i!=(nushiftmod4+8))) {
+	    dl_ch0_ext[j]=dl_ch0[i];
+#ifdef DEBUG_PBCH
+	    if ((rb==0) && (i<2))
+	      printf("dl ch0 ext[%d] = (%d,%d)  dl_ch0 [%d]= (%d,%d)\n",j,
+		     ((int16_t*)&dl_ch0_ext[j])[0],
+		     ((int16_t*)&dl_ch0_ext[j])[1],
+		     i,
+		     ((int16_t*)&dl_ch0[i])[0],
+		     ((int16_t*)&dl_ch0[i])[1]);
+#endif
+	    j++;
+	  }
+	}
+	
+	dl_ch0+=12;
+	dl_ch0_ext+=9;
       }
-    }  //tx antenna loop
-
+      else { 
+	if ((rb < 4) || (rb >15)){
+	  for (i=0; i<12; i++) {
+	    if ((i!=nushiftmod4) &&
+		(i!=(nushiftmod4+4)) &&
+		(i!=(nushiftmod4+8))) {
+	      dl_ch0_ext[j]=dl_ch0[i];
+#ifdef DEBUG_PBCH
+	      printf("dl ch0 ext[%d] = (%d,%d)  dl_ch0 [%d]= (%d,%d)\n",j,
+		     ((int16_t*)&dl_ch0_ext[j])[0],
+		     ((int16_t*)&dl_ch0_ext[j])[1],
+		     i,
+		     ((int16_t*)&dl_ch0[i])[0],
+		     ((int16_t*)&dl_ch0[i])[1]);
+#endif
+	      j++;
+	    }
+	  }
+	  dl_ch0_ext+=9;
+	}
+	dl_ch0+=12;
+      }
+    }
   }
 
   return(0);
@@ -170,12 +202,12 @@ uint16_t nr_pbch_extract(int **rxdataF,
 
 //compute average channel_level on each (TX,RX) antenna pair
 int nr_pbch_channel_level(int **dl_ch_estimates_ext,
-                       NR_DL_FRAME_PARMS *frame_parms,
-                       uint32_t symbol)
+			  NR_DL_FRAME_PARMS *frame_parms,
+			  uint32_t symbol)
 {
 
   int16_t rb, nb_rb=20;
-  uint8_t aatx,aarx;
+  uint8_t aarx;
 
 #if defined(__x86_64__) || defined(__i386__)
   __m128i avg128;
@@ -186,46 +218,45 @@ int nr_pbch_channel_level(int **dl_ch_estimates_ext,
 #endif
   int avg1=0,avg2=0;
 
-  for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB;aatx++)
-    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-      //clear average level
-
+  for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+    //clear average level
+    
 #if defined(__x86_64__) || defined(__i386__)
-      avg128 = _mm_setzero_si128();
-      dl_ch128=(__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*20*12];
+    avg128 = _mm_setzero_si128();
+    dl_ch128=(__m128i *)&dl_ch_estimates_ext[aarx][symbol*20*12];
 #elif defined(__arm__)
-      avg128 = vdupq_n_s32(0);
-      dl_ch128=(int16x8_t *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*20*12];
-
+    avg128 = vdupq_n_s32(0);
+    dl_ch128=(int16x8_t *)&dl_ch_estimates_ext[aarx][symbol*20*12];
+    
 #endif
-      for (rb=0; rb<nb_rb; rb++) {
+    for (rb=0; rb<nb_rb; rb++) {
 #if defined(__x86_64__) || defined(__i386__)
-        avg128 = _mm_add_epi32(avg128,_mm_madd_epi16(dl_ch128[0],dl_ch128[0]));
-        avg128 = _mm_add_epi32(avg128,_mm_madd_epi16(dl_ch128[1],dl_ch128[1]));
-        avg128 = _mm_add_epi32(avg128,_mm_madd_epi16(dl_ch128[2],dl_ch128[2]));
+      avg128 = _mm_add_epi32(avg128,_mm_madd_epi16(dl_ch128[0],dl_ch128[0]));
+      avg128 = _mm_add_epi32(avg128,_mm_madd_epi16(dl_ch128[1],dl_ch128[1]));
+      avg128 = _mm_add_epi32(avg128,_mm_madd_epi16(dl_ch128[2],dl_ch128[2]));
 #elif defined(__arm__)
 // to be filled in
 #endif
-        dl_ch128+=3;
-        /*
-          if (rb==0) {
-          print_shorts("dl_ch128",&dl_ch128[0]);
-          print_shorts("dl_ch128",&dl_ch128[1]);
-          print_shorts("dl_ch128",&dl_ch128[2]);
-          }
-        */
-      }
-
-      avg1 = (((int*)&avg128)[0] +
-              ((int*)&avg128)[1] +
-              ((int*)&avg128)[2] +
-              ((int*)&avg128)[3])/(nb_rb*12);
-
-      if (avg1>avg2)
-        avg2 = avg1;
-
-      //msg("Channel level : %d, %d\n",avg1, avg2);
+      dl_ch128+=3;
+      /*
+      if (rb==0) {
+	print_shorts("dl_ch128",&dl_ch128[0]);
+	print_shorts("dl_ch128",&dl_ch128[1]);
+	print_shorts("dl_ch128",&dl_ch128[2]);
+	}*/
+      
     }
+    
+    avg1 = (((int*)&avg128)[0] +
+	    ((int*)&avg128)[1] +
+	    ((int*)&avg128)[2] +
+	    ((int*)&avg128)[3])/(nb_rb*12);
+    
+    if (avg1>avg2)
+      avg2 = avg1;
+    
+    //LOG_I(PHY,"Channel level : %d, %d\n",avg1, avg2);
+  }
 #if defined(__x86_64__) || defined(__i386__)
   _mm_empty();
   _m_empty();
@@ -234,114 +265,123 @@ int nr_pbch_channel_level(int **dl_ch_estimates_ext,
 
 }
 
-#if defined(__x86_64__) || defined(__i386__)
-__m128i mmtmpP0,mmtmpP1,mmtmpP2,mmtmpP3;
-#elif defined(__arm__)
-int16x8_t mmtmpP0,mmtmpP1,mmtmpP2,mmtmpP3;
-#endif
 void nr_pbch_channel_compensation(int **rxdataF_ext,
-                               int **dl_ch_estimates_ext,
-                               int **rxdataF_comp,
-                               NR_DL_FRAME_PARMS *frame_parms,
-                               uint8_t symbol,
-                               uint8_t output_shift)
+				  int **dl_ch_estimates_ext,
+				  int **rxdataF_comp,
+				  NR_DL_FRAME_PARMS *frame_parms,
+				  uint8_t symbol,
+				  int is_synchronized,
+				  uint8_t output_shift)
 {
 
   short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
   short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
+#if defined(__x86_64__) || defined(__i386__)
+  __m128i mmtmpP0,mmtmpP1,mmtmpP2,mmtmpP3;
+#elif defined(__arm__)
+  int16x8_t mmtmpP0,mmtmpP1,mmtmpP2,mmtmpP3;
+#endif
 
-  uint16_t rb,nb_rb=20;
-  uint8_t aatx,aarx;
+  uint16_t nb_re=180;
+  uint8_t aarx;
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *dl_ch128,*rxdataF128,*rxdataF_comp128;
 #elif defined(__arm__)
 
 #endif
 
-  for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB;aatx++)
-    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+  AssertFatal((symbol > 0 && symbol < 4 && is_synchronized == 0) || 
+	      (symbol > 0 && symbol < 4 && is_synchronized == 0),
+	      "symbol %d is illegal for PBCH DM-RS (is_synchronized %d)\n",
+	      symbol,is_synchronized);
 
+  if (symbol == 2 || symbol == 6) nb_re = 72;
+
+  for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+    
 #if defined(__x86_64__) || defined(__i386__)
-      dl_ch128          = (__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*20*12];
-      rxdataF128        = (__m128i *)&rxdataF_ext[aarx][symbol*20*12];
-      rxdataF_comp128   = (__m128i *)&rxdataF_comp[(aatx<<1)+aarx][symbol*20*12];
-      //printf("ch compensation dl_ch ext addr %p \n", &dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*20*12]);
-      //printf("rxdataf ext addr %p symbol %d\n", &rxdataF_ext[aarx][symbol*20*12], symbol);
-      //printf("rxdataf_comp addr %p\n",&rxdataF_comp[(aatx<<1)+aarx][symbol*20*12]); 
-
+    dl_ch128          = (__m128i *)&dl_ch_estimates_ext[aarx][symbol*20*12];
+    rxdataF128        = (__m128i *)&rxdataF_ext[aarx][symbol*20*12];
+    rxdataF_comp128   = (__m128i *)&rxdataF_comp[aarx][symbol*20*12];
+    /*
+    printf("ch compensation dl_ch ext addr %p \n", &dl_ch_estimates_ext[aarx][symbol*20*12]);
+    printf("rxdataf ext addr %p symbol %d\n", &rxdataF_ext[aarx][symbol*20*12], symbol);
+    printf("rxdataf_comp addr %p\n",&rxdataF_comp[aarx][symbol*20*12]); 
+    */
 #elif defined(__arm__)
 // to be filled in
 #endif
 
-      for (rb=0; rb<nb_rb; rb++) {
-        //printf("rb %d\n",rb);
+    for (int re=0; re<nb_re; re+=12) {
+      //      printf("******re %d\n",re);
 #if defined(__x86_64__) || defined(__i386__)
-        // multiply by conjugated channel
-        mmtmpP0 = _mm_madd_epi16(dl_ch128[0],rxdataF128[0]);
-        //  print_ints("re",&mmtmpP0);
-        // mmtmpP0 contains real part of 4 consecutive outputs (32-bit)
-        mmtmpP1 = _mm_shufflelo_epi16(dl_ch128[0],_MM_SHUFFLE(2,3,0,1));
-        mmtmpP1 = _mm_shufflehi_epi16(mmtmpP1,_MM_SHUFFLE(2,3,0,1));
-        mmtmpP1 = _mm_sign_epi16(mmtmpP1,*(__m128i*)&conjugate[0]);
-        //  print_ints("im",&mmtmpP1);
-        mmtmpP1 = _mm_madd_epi16(mmtmpP1,rxdataF128[0]);
-        // mmtmpP1 contains imag part of 4 consecutive outputs (32-bit)
-        mmtmpP0 = _mm_srai_epi32(mmtmpP0,output_shift);
-        //  print_ints("re(shift)",&mmtmpP0);
-        mmtmpP1 = _mm_srai_epi32(mmtmpP1,output_shift);
-        //  print_ints("im(shift)",&mmtmpP1);
-        mmtmpP2 = _mm_unpacklo_epi32(mmtmpP0,mmtmpP1);
-        mmtmpP3 = _mm_unpackhi_epi32(mmtmpP0,mmtmpP1);
-        //      print_ints("c0",&mmtmpP2);
-        //  print_ints("c1",&mmtmpP3);
-        rxdataF_comp128[0] = _mm_packs_epi32(mmtmpP2,mmtmpP3);
-        //  print_shorts("rx:",rxdataF128);
-        //  print_shorts("ch:",dl_ch128);
-        //  print_shorts("pack:",rxdataF_comp128);
-
-        // multiply by conjugated channel
-        mmtmpP0 = _mm_madd_epi16(dl_ch128[1],rxdataF128[1]);
-        // mmtmpP0 contains real part of 4 consecutive outputs (32-bit)
-        mmtmpP1 = _mm_shufflelo_epi16(dl_ch128[1],_MM_SHUFFLE(2,3,0,1));
-        mmtmpP1 = _mm_shufflehi_epi16(mmtmpP1,_MM_SHUFFLE(2,3,0,1));
-        mmtmpP1 = _mm_sign_epi16(mmtmpP1,*(__m128i*)&conjugate[0]);
-        mmtmpP1 = _mm_madd_epi16(mmtmpP1,rxdataF128[1]);
-        // mmtmpP1 contains imag part of 4 consecutive outputs (32-bit)
-        mmtmpP0 = _mm_srai_epi32(mmtmpP0,output_shift);
-        mmtmpP1 = _mm_srai_epi32(mmtmpP1,output_shift);
-        mmtmpP2 = _mm_unpacklo_epi32(mmtmpP0,mmtmpP1);
-        mmtmpP3 = _mm_unpackhi_epi32(mmtmpP0,mmtmpP1);
-        rxdataF_comp128[1] = _mm_packs_epi32(mmtmpP2,mmtmpP3);
-        //  print_shorts("rx:",rxdataF128+1);
-        //  print_shorts("ch:",dl_ch128+1);
-        //  print_shorts("pack:",rxdataF_comp128+1);
-
-          // multiply by conjugated channel
-          mmtmpP0 = _mm_madd_epi16(dl_ch128[2],rxdataF128[2]);
-          // mmtmpP0 contains real part of 4 consecutive outputs (32-bit)
-          mmtmpP1 = _mm_shufflelo_epi16(dl_ch128[2],_MM_SHUFFLE(2,3,0,1));
-          mmtmpP1 = _mm_shufflehi_epi16(mmtmpP1,_MM_SHUFFLE(2,3,0,1));
-          mmtmpP1 = _mm_sign_epi16(mmtmpP1,*(__m128i*)&conjugate[0]);
-          mmtmpP1 = _mm_madd_epi16(mmtmpP1,rxdataF128[2]);
-          // mmtmpP1 contains imag part of 4 consecutive outputs (32-bit)
-          mmtmpP0 = _mm_srai_epi32(mmtmpP0,output_shift);
-          mmtmpP1 = _mm_srai_epi32(mmtmpP1,output_shift);
-          mmtmpP2 = _mm_unpacklo_epi32(mmtmpP0,mmtmpP1);
-          mmtmpP3 = _mm_unpackhi_epi32(mmtmpP0,mmtmpP1);
-          rxdataF_comp128[2] = _mm_packs_epi32(mmtmpP2,mmtmpP3);
-          //  print_shorts("rx:",rxdataF128+2);
-          //  print_shorts("ch:",dl_ch128+2);
-          //      print_shorts("pack:",rxdataF_comp128+2);
-
-          dl_ch128+=3;
-          rxdataF128+=3;
-          rxdataF_comp128+=3;
-        
+      // multiply by conjugated channel
+      mmtmpP0 = _mm_madd_epi16(dl_ch128[0],rxdataF128[0]);
+      //  print_ints("re",&mmtmpP0);
+      // mmtmpP0 contains real part of 4 consecutive outputs (32-bit)
+      mmtmpP1 = _mm_shufflelo_epi16(dl_ch128[0],_MM_SHUFFLE(2,3,0,1));
+      mmtmpP1 = _mm_shufflehi_epi16(mmtmpP1,_MM_SHUFFLE(2,3,0,1));
+      mmtmpP1 = _mm_sign_epi16(mmtmpP1,*(__m128i*)&conjugate[0]);
+      //  print_ints("im",&mmtmpP1);
+      mmtmpP1 = _mm_madd_epi16(mmtmpP1,rxdataF128[0]);
+      // mmtmpP1 contains imag part of 4 consecutive outputs (32-bit)
+      mmtmpP0 = _mm_srai_epi32(mmtmpP0,output_shift);
+      //  print_ints("re(shift)",&mmtmpP0);
+      mmtmpP1 = _mm_srai_epi32(mmtmpP1,output_shift);
+      //  print_ints("im(shift)",&mmtmpP1);
+      mmtmpP2 = _mm_unpacklo_epi32(mmtmpP0,mmtmpP1);
+      mmtmpP3 = _mm_unpackhi_epi32(mmtmpP0,mmtmpP1);
+      //      print_ints("c0",&mmtmpP2);
+      //  print_ints("c1",&mmtmpP3);
+      rxdataF_comp128[0] = _mm_packs_epi32(mmtmpP2,mmtmpP3);
+      /*
+        print_shorts("rx:",rxdataF128);
+        print_shorts("ch:",dl_ch128);
+        print_shorts("pack:",rxdataF_comp128);
+      */
+      // multiply by conjugated channel
+      mmtmpP0 = _mm_madd_epi16(dl_ch128[1],rxdataF128[1]);
+      // mmtmpP0 contains real part of 4 consecutive outputs (32-bit)
+      mmtmpP1 = _mm_shufflelo_epi16(dl_ch128[1],_MM_SHUFFLE(2,3,0,1));
+      mmtmpP1 = _mm_shufflehi_epi16(mmtmpP1,_MM_SHUFFLE(2,3,0,1));
+      mmtmpP1 = _mm_sign_epi16(mmtmpP1,*(__m128i*)&conjugate[0]);
+      mmtmpP1 = _mm_madd_epi16(mmtmpP1,rxdataF128[1]);
+      // mmtmpP1 contains imag part of 4 consecutive outputs (32-bit)
+      mmtmpP0 = _mm_srai_epi32(mmtmpP0,output_shift);
+      mmtmpP1 = _mm_srai_epi32(mmtmpP1,output_shift);
+      mmtmpP2 = _mm_unpacklo_epi32(mmtmpP0,mmtmpP1);
+      mmtmpP3 = _mm_unpackhi_epi32(mmtmpP0,mmtmpP1);
+      rxdataF_comp128[1] = _mm_packs_epi32(mmtmpP2,mmtmpP3);
+      //  print_shorts("rx:",rxdataF128+1);
+      //  print_shorts("ch:",dl_ch128+1);
+      //  print_shorts("pack:",rxdataF_comp128+1);
+      
+      // multiply by conjugated channel
+      mmtmpP0 = _mm_madd_epi16(dl_ch128[2],rxdataF128[2]);
+      // mmtmpP0 contains real part of 4 consecutive outputs (32-bit)
+      mmtmpP1 = _mm_shufflelo_epi16(dl_ch128[2],_MM_SHUFFLE(2,3,0,1));
+      mmtmpP1 = _mm_shufflehi_epi16(mmtmpP1,_MM_SHUFFLE(2,3,0,1));
+      mmtmpP1 = _mm_sign_epi16(mmtmpP1,*(__m128i*)&conjugate[0]);
+      mmtmpP1 = _mm_madd_epi16(mmtmpP1,rxdataF128[2]);
+      // mmtmpP1 contains imag part of 4 consecutive outputs (32-bit)
+      mmtmpP0 = _mm_srai_epi32(mmtmpP0,output_shift);
+      mmtmpP1 = _mm_srai_epi32(mmtmpP1,output_shift);
+      mmtmpP2 = _mm_unpacklo_epi32(mmtmpP0,mmtmpP1);
+      mmtmpP3 = _mm_unpackhi_epi32(mmtmpP0,mmtmpP1);
+      rxdataF_comp128[2] = _mm_packs_epi32(mmtmpP2,mmtmpP3);
+      //  print_shorts("rx:",rxdataF128+2);
+      //  print_shorts("ch:",dl_ch128+2);
+      //      print_shorts("pack:",rxdataF_comp128+2);
+      
+      dl_ch128+=3;
+      rxdataF128+=3;
+      rxdataF_comp128+=3;
+      
 #elif defined(__arm__)
-// to be filled in
+      // to be filled in
 #endif
-      }
     }
+  }
 #if defined(__x86_64__) || defined(__i386__)
   _mm_empty();
   _m_empty();
@@ -353,7 +393,7 @@ void nr_pbch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
                         uint8_t symbol)
 {
 
-  uint8_t aatx, symbol_mod;
+  uint8_t symbol_mod;
   int i, nb_rb=6;
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *rxdataF_comp128_0,*rxdataF_comp128_1;
@@ -363,13 +403,12 @@ void nr_pbch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
   if (frame_parms->nb_antennas_rx>1) {
-    for (aatx=0; aatx<4; aatx++) { //frame_parms->nb_antenna_ports_eNB;aatx++) {
 #if defined(__x86_64__) || defined(__i386__)
-      rxdataF_comp128_0   = (__m128i *)&rxdataF_comp[(aatx<<1)][symbol_mod*6*12];
-      rxdataF_comp128_1   = (__m128i *)&rxdataF_comp[(aatx<<1)+1][symbol_mod*6*12];
+      rxdataF_comp128_0   = (__m128i *)&rxdataF_comp[0][symbol_mod*6*12];
+      rxdataF_comp128_1   = (__m128i *)&rxdataF_comp[1][symbol_mod*6*12];
 #elif defined(__arm__)
-      rxdataF_comp128_0   = (int16x8_t *)&rxdataF_comp[(aatx<<1)][symbol_mod*6*12];
-      rxdataF_comp128_1   = (int16x8_t *)&rxdataF_comp[(aatx<<1)+1][symbol_mod*6*12];
+      rxdataF_comp128_0   = (int16x8_t *)&rxdataF_comp[0][symbol_mod*6*12];
+      rxdataF_comp128_1   = (int16x8_t *)&rxdataF_comp[1][symbol_mod*6*12];
 
 #endif
       // MRC on each re of rb, both on MF output and magnitude (for 16QAM/64QAM llr computation)
@@ -382,7 +421,7 @@ void nr_pbch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
 #endif
       }
     }
-  }
+
 #if defined(__x86_64__) || defined(__i386__)
   _mm_empty();
   _m_empty();
@@ -390,11 +429,11 @@ void nr_pbch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
 }
 
 void nr_pbch_unscrambling(NR_UE_PBCH *pbch,
-					   uint16_t Nid,
-					   uint8_t nushift,
-					   uint16_t M,
-					   uint16_t length,
-					   uint8_t bitwise)
+			  uint16_t Nid,
+			  uint8_t nushift,
+			  uint16_t M,
+			  uint16_t length,
+			  uint8_t bitwise)
 {
   uint8_t reset, offset;
   uint32_t x1, x2, s=0;
@@ -423,11 +462,11 @@ void nr_pbch_unscrambling(NR_UE_PBCH *pbch,
         s = lte_gold_generic(&x1, &x2, reset);
         reset = 0;
       }
-  #ifdef DEBUG_PBCH_ENCODING
+#ifdef DEBUG_PBCH_ENCODING
       if (i<8)
-    printf("s: %04x\t", s);
-    printf("pbch_a_interleaved 0x%08x\n", pbch->pbch_a_interleaved);
-  #endif
+	printf("s: %04x\t", s);
+      printf("pbch_a_interleaved 0x%08x\n", pbch->pbch_a_interleaved);
+#endif
       if (bitwise) {
 	
         (pbch->pbch_a_interleaved) ^= ((unscrambling_mask>>i)&1)? ((pbch->pbch_a_prime>>i)&1)<<i : (((pbch->pbch_a_prime>>i)&1) ^ ((s>>((i+offset)&0x1f))&1))<<i;
@@ -441,44 +480,6 @@ void nr_pbch_unscrambling(NR_UE_PBCH *pbch,
 	printf("s %d demod_pbch_e[i] %d\n", ((s>>((i+offset)&0x1f))&1), demod_pbch_e[i]);
 #endif
       }
-  }
-
-}
-
-void nr_pbch_alamouti(NR_DL_FRAME_PARMS *frame_parms,
-                   int **rxdataF_comp,
-                   uint8_t symbol)
-{
-
-
-  int16_t *rxF0,*rxF1;
-  //  __m128i *ch_mag0,*ch_mag1,*ch_mag0b,*ch_mag1b;
-  uint8_t rb,re,symbol_mod;
-  int jj;
-
-  //  printf("Doing alamouti\n");
-  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
-  jj         = (symbol_mod*6*12);
-
-  rxF0     = (int16_t*)&rxdataF_comp[0][jj];  //tx antenna 0  h0*y
-  rxF1     = (int16_t*)&rxdataF_comp[2][jj];  //tx antenna 1  h1*y
-
-  for (rb=0; rb<6; rb++) {
-
-    for (re=0; re<12; re+=2) {
-
-      // Alamouti RX combining
-
-      rxF0[0] = rxF0[0] + rxF1[2];
-      rxF0[1] = rxF0[1] - rxF1[3];
-
-      rxF0[2] = rxF0[2] - rxF1[0];
-      rxF0[3] = rxF0[3] + rxF1[1];
-
-      rxF0+=4;
-      rxF1+=4;
-    }
-
   }
 
 }
@@ -509,24 +510,23 @@ unsigned char sign(int8_t x) {
 uint8_t pbch_deinterleaving_pattern[32] = {28,0,31,30,1,29,25,27,22,2,24,3,4,5,6,7,18,21,20,8,9,10,11,19,26,12,13,14,15,16,23,17};
 
 int nr_rx_pbch( PHY_VARS_NR_UE *ue,
-		     UE_nr_rxtx_proc_t *proc,
-		     NR_UE_PBCH *nr_ue_pbch_vars,
-		     NR_DL_FRAME_PARMS *frame_parms,
-		     uint8_t eNB_id,
-		     MIMO_mode_t mimo_mode,
-		     uint32_t high_speed_flag)
+		UE_nr_rxtx_proc_t *proc,
+		NR_UE_PBCH *nr_ue_pbch_vars,
+		NR_DL_FRAME_PARMS *frame_parms,
+		uint8_t eNB_id,
+		MIMO_mode_t mimo_mode,
+		uint32_t high_speed_flag)
 {
 
   NR_UE_COMMON *nr_ue_common_vars = &ue->common_vars;
 
-  uint8_t log2_maxh;
   int max_h=0;
 
   int symbol,i;
   //uint8_t pbch_a[64];
   uint8_t *pbch_a = malloc(sizeof(uint8_t) * 32);
   uint32_t pbch_a_prime;
-  int8_t *pbch_e_rx;
+  int16_t *pbch_e_rx;
   uint8_t *decoded_output = nr_ue_pbch_vars->decoded_output;
   uint8_t nushift;
   uint16_t M;
@@ -555,45 +555,50 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   // clear LLR buffer
   memset(nr_ue_pbch_vars->llr,0,NR_POLAR_PBCH_E);
 
-  for (symbol=5; symbol<8; symbol++) {
+  int first_symbol=1;
+  if (ue->is_synchronized > 0) first_symbol+=4;
 
 #ifdef DEBUG_PBCH
     //printf("address dataf %p",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF);
-    write_output("rxdataF0_pbch.m","rxF0pbch",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF,frame_parms->ofdm_symbol_size*4,1,1);
+    write_output("rxdataF0_pbch.m","rxF0pbch",
+		 &nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF[0][first_symbol*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size*3,1,1);
 #endif
+
+  for (symbol=first_symbol; symbol<(first_symbol+3); symbol++) {
+
   
     nr_pbch_extract(nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF,
-                 nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].dl_ch_estimates[eNB_id],
-                 nr_ue_pbch_vars->rxdataF_ext,
-                 nr_ue_pbch_vars->dl_ch_estimates_ext,
-                 symbol,
-                 high_speed_flag,
-                 frame_parms);
+		    nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].dl_ch_estimates[eNB_id],
+		    nr_ue_pbch_vars->rxdataF_ext,
+		    nr_ue_pbch_vars->dl_ch_estimates_ext,
+		    symbol,
+		    high_speed_flag,
+		    ue->is_synchronized,
+		    frame_parms);
 #ifdef DEBUG_PBCH
-    msg("[PHY] PBCH Symbol %d ofdm size %d\n",symbol, frame_parms->ofdm_symbol_size );
-    msg("[PHY] PBCH starting channel_level\n");
+    LOG_I(PHY,"[PHY] PBCH Symbol %d ofdm size %d\n",symbol, frame_parms->ofdm_symbol_size );
+    LOG_I(PHY,"[PHY] PBCH starting channel_level\n");
 #endif
 
-    max_h = nr_pbch_channel_level(nr_ue_pbch_vars->dl_ch_estimates_ext,
-                               frame_parms,
-                               symbol);
-    log2_maxh = 3+(log2_approx(max_h)/2);
+    if (symbol == 1 || symbol == 5) {
+      max_h = nr_pbch_channel_level(nr_ue_pbch_vars->dl_ch_estimates_ext,
+				    frame_parms,
+				    symbol);
+      nr_ue_pbch_vars->log2_maxh = 3+(log2_approx(max_h)/2);
+    }
 
 #ifdef DEBUG_PBCH
-    msg("[PHY] PBCH log2_maxh = %d (%d)\n",log2_maxh,max_h);
+    LOG_I(PHY,"[PHY] PBCH log2_maxh = %d (%d)\n",nr_ue_pbch_vars->log2_maxh,max_h);
 #endif
 
     nr_pbch_channel_compensation(nr_ue_pbch_vars->rxdataF_ext,
-                              nr_ue_pbch_vars->dl_ch_estimates_ext,
-                              nr_ue_pbch_vars->rxdataF_comp,
-                              frame_parms,
-                              symbol,
-                              log2_maxh); // log2_maxh+I0_shift
+				 nr_ue_pbch_vars->dl_ch_estimates_ext,
+				 nr_ue_pbch_vars->rxdataF_comp,
+				 frame_parms,
+				 symbol,
+				 ue->is_synchronized,
+				 nr_ue_pbch_vars->log2_maxh); // log2_maxh+I0_shift
 
-#ifdef DEBUG_PBCH
-    write_output("rxdataF_comp.m","rxFcomp",nr_ue_pbch_vars->rxdataF_comp,180,2,1);
-#endif
-    
     /*if (frame_parms->nb_antennas_rx > 1)
       pbch_detection_mrc(frame_parms,
                          nr_ue_pbch_vars->rxdataF_comp,
@@ -603,11 +608,11 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
     if (mimo_mode == ALAMOUTI) {
       nr_pbch_alamouti(frame_parms,nr_ue_pbch_vars->rxdataF_comp,symbol);
     } else if (mimo_mode != SISO) {
-      msg("[PBCH][RX] Unsupported MIMO mode\n");
+      LOG_I(PHY,"[PBCH][RX] Unsupported MIMO mode\n");
       return(-1);
     }
 */
-    if (symbol==6) {
+    if (symbol==(first_symbol+1)) {
       nr_pbch_quantize(pbch_e_rx,
                     (short*)&(nr_ue_pbch_vars->rxdataF_comp[0][symbol*240]),
                     144);
@@ -624,6 +629,11 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
   }
 
+#ifdef DEBUG_PBCH
+  write_output("rxdataF_comp.m","rxFcomp",&nr_ue_pbch_vars->rxdataF_comp[0][240*first_symbol],240*3,1,1);
+#endif
+    
+
   pbch_e_rx = nr_ue_pbch_vars->llr;
   //demod_pbch_e = nr_ue_pbch_vars->demod_pbch_e;
   pbch_a = nr_ue_pbch_vars->pbch_a;
@@ -631,9 +641,9 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 #ifdef DEBUG_PBCH
   //pbch_e_rx = &nr_ue_pbch_vars->llr[0];
 
-  short *p = (short *)&(nr_ue_pbch_vars->rxdataF_comp[0][5*20*12]);
-  for (int cnt = 0; cnt < 32 ; cnt++)
-    printf("pbch rx llr %d rxdata_comp %d addr %p\n",*(pbch_e_rx+cnt), p[cnt], &p[0]);
+  short *p = (short *)&(nr_ue_pbch_vars->rxdataF_comp[0][first_symbol*20*12]);
+  for (int cnt = 0; cnt < 864  ; cnt++)
+    printf("pbch rx llr %d\n",*(pbch_e_rx+cnt));
 
 #endif
 
@@ -648,14 +658,9 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   //polar decoding de-rate matching
 
 
-//		uint32_t pbch_out;
-  //polar decoding de-rate matching
-  t_nrPolar_paramsPtr nrPolar_params = NULL, currentPtr = NULL;
-  nr_polar_init(&nrPolar_params,
-		NR_POLAR_PBCH_MESSAGE_TYPE,
-		NR_POLAR_PBCH_PAYLOAD_BITS,
-		NR_POLAR_PBCH_AGGREGATION_LEVEL);
-  currentPtr = nr_polar_params(nrPolar_params, NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL);
+  AssertFatal(ue->nrPolar_params != NULL,"ue->nrPolar_params is null\n");
+
+  t_nrPolar_params *currentPtr = nr_polar_params(ue->nrPolar_params, NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL);
 
   decoderState = polar_decoder_int16(pbch_e_rx,&nr_ue_pbch_vars->pbch_a_prime,currentPtr);
 

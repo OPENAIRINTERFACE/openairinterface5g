@@ -127,8 +127,8 @@ void init_context_sss_nr(int amp)
 *
 *********************************************************************/
 
-#define DEBUG_SSS_NR
-#define DEBUG_PLOT_SSS
+//#define DEBUG_SSS_NR
+//#define DEBUG_PLOT_SSS
 void insert_sss_nr(int16_t *sss_time,
                    NR_DL_FRAME_PARMS *frame_parms)
 {
@@ -328,8 +328,8 @@ int do_pss_sss_extract_nr(PHY_VARS_NR_UE *ue,
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
-    pss_symbol = PSS_SYMBOL_NB;  /* symbol position */
-    sss_symbol = SSS_SYMBOL_NB;
+  pss_symbol = 0;
+  sss_symbol = SSS_SYMBOL_NB-PSS_SYMBOL_NB;
 
     rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF;
 
@@ -341,7 +341,8 @@ int do_pss_sss_extract_nr(PHY_VARS_NR_UE *ue,
     pss_rxF_ext = &pss_ext[aarx][0];
     sss_rxF_ext = &sss_ext[aarx][0];
 
-    unsigned int k = ofdm_symbol_size - ((LENGTH_PSS_NR/2)+1);
+    unsigned int k = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier + 56; 
+    if (k>= frame_parms->ofdm_symbol_size) k-=frame_parms->ofdm_symbol_size;
 
     for (int i=0; i < LENGTH_PSS_NR; i++) {
       if (doPss) {		  
@@ -471,12 +472,12 @@ int rx_sss_nr(PHY_VARS_NR_UE *ue, int32_t *tot_metric,uint8_t *phase_max)
 
 #ifdef DEBUG_PLOT_SSS
 
-  write_output("rxsig0.m","rxs0",&ue->common_vars.rxdata[0][0],ue->frame_parms.samples_per_tti,1,1);
-  write_output("rxdataF0.m","rxF0",&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[0]].rxdataF[0][frame_parms->ofdm_symbol_size*PSS_SYMBOL_NB],frame_parms->ofdm_symbol_size,2,1);
+  write_output("rxsig0.m","rxs0",&ue->common_vars.rxdata[0][0],ue->frame_parms.samples_per_subframe,1,1);
+  write_output("rxdataF0_pss.m","rxF0_pss",&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[0]].rxdataF[0][0],frame_parms->ofdm_symbol_size,1,1);
+  write_output("rxdataF0_sss.m","rxF0_sss",&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[0]].rxdataF[0][(SSS_SYMBOL_NB-PSS_SYMBOL_NB)*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size,1,1);
   write_output("pss_ext.m","pss_ext",pss_ext,LENGTH_PSS_NR,1,1);
 
 #endif
-
 
 #if 0
   int16_t *p = (int16_t *)sss_ext[0];
@@ -585,6 +586,6 @@ int rx_sss_nr(PHY_VARS_NR_UE *ue, int32_t *tot_metric,uint8_t *phase_max)
     printf("Nid2 %d Nid1 %d tot_metric %d, phase_max %d \n", Nid2, Nid1, *tot_metric, *phase_max);
   }
   //#endif
-  
+
   return(0);
 }

@@ -106,13 +106,13 @@ short nr_rx_mod_table[NR_MOD_TABLE_SIZE_SHORT] = {0,0,23170,-23170,-23170,23170,
 }*/
 
 int nr_pdsch_dmrs_rx(PHY_VARS_NR_UE *ue,
-						uint8_t eNB_offset,
-						unsigned int Ns,
-						unsigned int nr_gold_pdsch[2][20][2][21],
-						int32_t *output,
-						unsigned short p,
-						int length_dmrs,
-						unsigned short nb_rb_pdsch)
+		     uint8_t eNB_offset,
+		     unsigned int Ns,
+		     unsigned int nr_gold_pdsch[2][20][2][21],
+		     int32_t *output,
+		     unsigned short p,
+		     int length_dmrs,
+		     unsigned short nb_rb_pdsch)
 {
   int32_t qpsk[4],nqpsk[4],*qpsk_p, n;
   //int w,mprime,ind,l,ind_dword,ind_qpsk_symb,kp,lp, config_type, k;
@@ -216,26 +216,38 @@ int nr_pdcch_dmrs_rx(PHY_VARS_NR_UE *ue,
 	return(0);
 }
 
-int nr_pbch_dmrs_rx(unsigned int *nr_gold_pbch,
-					int32_t *output	)
+int nr_pbch_dmrs_rx(int symbol,unsigned int *nr_gold_pbch,int32_t *output	)
 {
-    int m;
-    uint8_t idx=0;
-
-    /// QPSK modulation
-    for (m=0; m<NR_PBCH_DMRS_LENGTH>>1; m++) {
-      idx = ((((nr_gold_pbch[(m<<1)>>5])>>((m<<1)&0x1f))&1)<<1) ^ (((nr_gold_pbch[((m<<1)+1)>>5])>>(((m<<1)+1)&0x1f))&1);
-      ((int16_t*)output)[m<<1] = nr_rx_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
-      ((int16_t*)output)[(m<<1)+1] = nr_rx_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
-
+  int m,m0,m1;
+  uint8_t idx=0;
+  AssertFatal(symbol>=0 && symbol <3,"illegal symbol %d\n",symbol);
+  if (symbol == 0) {
+    m0=0;
+    m1=60;
+  }
+  else if (symbol == 1) {
+    m0=60;
+    m1=84;
+  }
+  else {
+    m0=84;
+    m1=144;
+  }
+  printf("Generating pilots symbol %d, m0 %d, m1 %d\n",symbol,m0,m1);
+  /// QPSK modulation
+  for (m=m0; m<m1; m++) {
+    idx = ((((nr_gold_pbch[(m<<1)>>5])>>((m<<1)&0x1f))&1)<<1) ^ (((nr_gold_pbch[((m<<1)+1)>>5])>>(((m<<1)+1)&0x1f))&1);
+    ((int16_t*)output)[(m-m0)<<1] = nr_rx_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
+    ((int16_t*)output)[((m-m0)<<1)+1] = nr_rx_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
+    
 #ifdef DEBUG_PBCH
-       if (m<16)
-        {printf("nr_gold_pbch[(m<<1)>>5] %x\n",nr_gold_pbch[(m<<1)>>5]);
+    if (m<16)
+      {printf("nr_gold_pbch[(m<<1)>>5] %x\n",nr_gold_pbch[(m<<1)>>5]);
 	printf("m %d  output %d %d addr %p\n", m, ((int16_t*)output)[m<<1], ((int16_t*)output)[(m<<1)+1],&output[0]);
-	}
+      }
 #endif
-    }
-
+  }
+  
   return(0);
 }
 

@@ -400,6 +400,9 @@ int main(int argc, char **argv)
   UE = malloc(sizeof(PHY_VARS_NR_UE));
   memcpy(&UE->frame_parms,frame_parms,sizeof(NR_DL_FRAME_PARMS));
   phy_init_nr_top(UE);
+  UE->is_synchronized = 0;
+  UE->perfect_ce = 0;
+
   if (init_nr_ue_signal(UE, 1, 0) != 0)
   {
     printf("Error at UE NR initialisation\n");
@@ -410,6 +413,7 @@ int main(int argc, char **argv)
   // generate signal
   if (input_fd==NULL) {
     gNB->pbch_configured = 1;
+    for (int i=0;i<4;i++) gNB->pbch_pdu[3-i]=i;
     nr_common_signal_procedures (gNB,frame,subframe);
   }
 
@@ -439,11 +443,15 @@ int main(int argc, char **argv)
   if (gNB->frame_parms.nb_antennas_tx>1)
     LOG_M("txsig1.m","txs1", txdata[1],frame_length_complex_samples,1,1);
 
+  int txlev = signal_energy(&txdata[0][5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
+			    frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
+
+  printf("txlev %d\n",txlev);
 
   for (i=0; i<frame_length_complex_samples; i++) {
     for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-      r_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
-      r_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
+      r_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)])/sqrt((double)txlev);
+      r_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1])/sqrt((double)txlev);
     }
   }
   
@@ -459,13 +467,15 @@ int main(int argc, char **argv)
       //multipath_channel(gNB2UE,s_re,s_im,r_re,r_im,frame_length_complex_samples,0);
       
       //AWGN
-      sigma2_dB = SNR;
+      sigma2_dB = -SNR;
       sigma2 = pow(10,sigma2_dB/10);
+      printf("sigma2 %f\n",sigma2);
+
       for (i=0; i<frame_length_complex_samples; i++) {
 	for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
 	  
-	  ((short*) UE->common_vars.rxdata[aa])[2*i] = (short) ((r_re[aa][i] +sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-	  ((short*) UE->common_vars.rxdata[aa])[2*i+1] = (short) ((r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+	  ((short*) UE->common_vars.rxdata[aa])[2*i] = (short) ((r_re[aa][i] +sqrt(sigma2/2)*gaussdouble(0.0,1.0))*512);
+	  ((short*) UE->common_vars.rxdata[aa])[2*i+1] = (short) ((r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0))*512);
 	}
       }
 

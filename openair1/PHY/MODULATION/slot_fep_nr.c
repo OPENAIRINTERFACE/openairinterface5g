@@ -25,7 +25,7 @@
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 
-#define DEBUG_FEP
+//#define DEBUG_FEP
 
 #define SOFFSET 0
 
@@ -198,20 +198,17 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 
   switch(channel){
   case NR_PBCH_EST:
-    //if ((l>4) && (l<8)) {
-      for (aa=0; aa<frame_parms->nb_antenna_ports_eNB; aa++) {
 
 //#ifdef DEBUG_FEP
-        printf("Channel estimation eNB %d, aatx %d, slot %d, symbol %d\n",eNB_id,aa,Ns,l);
+    printf("Channel estimation eNB %d, slot %d, symbol %d\n",eNB_id,Ns,l);
 //#endif
 #if UE_TIMING_TRACE
-        start_meas(&ue->dlsch_channel_estimation_stats);
+    start_meas(&ue->dlsch_channel_estimation_stats);
 #endif
-        nr_pbch_channel_estimation(ue,eNB_id,0,
-                                  Ns,
-                                  aa,
-                                  l,
-                                  symbol);
+    nr_pbch_channel_estimation(ue,eNB_id,0,
+			       Ns,
+			       l,
+			       symbol);
       //}
 #if UE_TIMING_TRACE
         stop_meas(&ue->dlsch_channel_estimation_stats);
@@ -239,53 +236,48 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 #endif
 
       }
-    }
+
   break;
 
   case NR_PDCCH_EST:
-      for (aa=0; aa<frame_parms->nb_antenna_ports_eNB; aa++) {
 
 #ifdef DEBUG_FEP
-          printf("PDCCH Channel estimation eNB %d, aatx %d, slot %d, symbol %d start_sc %d\n",eNB_id,aa,Ns,l,coreset_start_subcarrier);
+    printf("PDCCH Channel estimation eNB %d, aatx %d, slot %d, symbol %d start_sc %d\n",eNB_id,aa,Ns,l,coreset_start_subcarrier);
 #endif
 #if UE_TIMING_TRACE
-          start_meas(&ue->dlsch_channel_estimation_stats);
+    start_meas(&ue->dlsch_channel_estimation_stats);
 #endif
-          nr_pdcch_channel_estimation(ue,eNB_id,0,
-                                    Ns,
-                                    aa,
-                                    l,
-                                    symbol,
-									coreset_start_subcarrier,
-									nb_rb_coreset);
+    nr_pdcch_channel_estimation(ue,eNB_id,0,
+				Ns,
+				l,
+				symbol,
+				coreset_start_subcarrier,
+				nb_rb_coreset);
 #if UE_TIMING_TRACE
-        stop_meas(&ue->dlsch_channel_estimation_stats);
+    stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif
-      }
+    
     break;
-
+    
   case NR_PDSCH_EST:
-      for (aa=0; aa<frame_parms->nb_antenna_ports_eNB; aa++) {
-
 #ifdef DEBUG_FEP
-          printf("Channel estimation eNB %d, aatx %d, slot %d, symbol %d\n",eNB_id,aa,Ns,l);
+    printf("Channel estimation eNB %d, aatx %d, slot %d, symbol %d\n",eNB_id,aa,Ns,l);
 #endif
 #if UE_TIMING_TRACE
-          start_meas(&ue->dlsch_channel_estimation_stats);
+    start_meas(&ue->dlsch_channel_estimation_stats);
 #endif
-          nr_pdsch_channel_estimation(ue,eNB_id,0,
-                                    Ns,
-                                    aa,
-                                    l,
-                                    symbol,
-									bwp_start_subcarrier,
-									nb_rb_pdsch);
+    nr_pdsch_channel_estimation(ue,eNB_id,0,
+				Ns,
+				l,
+				symbol,
+				bwp_start_subcarrier,
+				nb_rb_pdsch);
 #if UE_TIMING_TRACE
-        stop_meas(&ue->dlsch_channel_estimation_stats);
+    stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif
-      }
+    
     break;
-
+    
   case NR_SSS_EST:
   break;
 

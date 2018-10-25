@@ -137,6 +137,10 @@ typedef struct {
 typedef struct NR_DL_FRAME_PARMS {
   /// frequency range
   nr_frequency_range_e freq_range;
+  /// Placeholder to replace overlapping fields below
+  nfapi_nr_rf_config_t rf_config;
+  /// Placeholder to replace SSB overlapping fields below
+  nfapi_nr_sch_config_t sch_config;
   /// Number of resource blocks (RB) in DL
   int N_RB_DL;
   /// Number of resource blocks (RB) in UL

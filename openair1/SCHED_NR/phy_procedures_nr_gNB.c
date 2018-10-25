@@ -111,7 +111,7 @@ int nr_get_ssb_start_symbol(nfapi_nr_config_request_t *cfg, NR_DL_FRAME_PARMS *f
 
 void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_t *cfg, NR_DL_FRAME_PARMS *fp)
 {
-  int start_rb = cfg->sch_config.n_ssb_crb.value / pow(2,cfg->subframe_config.numerology_index_mu.value);
+  int start_rb = cfg->sch_config.n_ssb_crb.value / (1<<cfg->subframe_config.numerology_index_mu.value);
   fp->ssb_start_subcarrier = 12 * start_rb + cfg->sch_config.ssb_subcarrier_offset.value;
   LOG_I(PHY, "SSB first subcarrier %d (%d,%d)\n", fp->ssb_start_subcarrier,start_rb,cfg->sch_config.ssb_subcarrier_offset.value);
 }

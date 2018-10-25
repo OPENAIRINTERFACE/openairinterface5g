@@ -380,7 +380,7 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu)
   gNB_config->rf_config.ul_carrier_bandwidth.value = N_RB_UL;
   gNB_config->sch_config.half_frame_index.value = 0;
   gNB_config->sch_config.ssb_subcarrier_offset.value = 0;
-  gNB_config->sch_config.n_ssb_crb.value = N_RB_DL-20;
+  gNB_config->sch_config.n_ssb_crb.value = (N_RB_DL-20)>>1;
   gNB_config->sch_config.ssb_subcarrier_offset.value = 0;
 
 

@@ -36,7 +36,7 @@ This section deals with basic functions for OFDM Modulation.
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "modulation_common.h"
 #include "PHY/LTE_TRANSPORT/transport_common_proto.h"
-#define DEBUG_OFDM_MOD
+//#define DEBUG_OFDM_MOD
 
 
 void normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,LTE_DL_FRAME_PARMS *frame_parms)

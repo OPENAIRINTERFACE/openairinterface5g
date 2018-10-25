@@ -37,7 +37,7 @@
 
 //#define DEBUG_PBCH
 //#define DEBUG_PBCH_ENCODING
-//#define DEBUG_PBCH_DMRS
+#define DEBUG_PBCH_DMRS
 
 //extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
 #include "PHY/NR_REFSIG/nr_mod_table.h"
@@ -85,6 +85,11 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 #endif
       ((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1] = (a * mod_dmrs[m<<1]) >> 15;
       ((int16_t*)txdataF[aa])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (a * mod_dmrs[(m<<1) + 1]) >> 15;
+#ifdef DEBUG_PBCH_DMRS
+      printf("(%d,%d)\n",
+	((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1],
+	((int16_t*)txdataF[aa])[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
+#endif
       k+=4;
 
       if (k >= frame_parms->ofdm_symbol_size)
@@ -101,6 +106,11 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 #endif
       ((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1] = (a * mod_dmrs[m<<1]) >> 15;
       ((int16_t*)txdataF[aa])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (a * mod_dmrs[(m<<1) + 1]) >> 15;
+#ifdef DEBUG_PBCH_DMRS
+      printf("(%d,%d)\n",
+	((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1],
+	((int16_t*)txdataF[aa])[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
+#endif
       k+=(m==71)?148:4; // Jump from 44+nu to 192+nu
 
       if (k >= frame_parms->ofdm_symbol_size)
@@ -117,6 +127,11 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 #endif
       ((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1] = (a * mod_dmrs[m<<1]) >> 15;
       ((int16_t*)txdataF[aa])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (a * mod_dmrs[(m<<1) + 1]) >> 15;
+#ifdef DEBUG_PBCH_DMRS
+      printf("(%d,%d)\n",
+	((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1],
+	((int16_t*)txdataF[aa])[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
+#endif
       k+=4;
 
       if (k >= frame_parms->ofdm_symbol_size)
