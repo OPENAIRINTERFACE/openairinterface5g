@@ -346,22 +346,21 @@ void build_polar_tables(t_nrPolar_paramsPtr polarParams) {
   }
 }
 
-void polar_encoder_fast(void *in,
-			void *out,
+void polar_encoder_fast(int64_t *A,
+			int64_t *D,
 			int bitlen,
-			void *crcmask,
+			int32_t crcmask,
 			t_nrPolar_paramsPtr polarParams) {
 
   AssertFatal(polarParams->K > 32, "K = %d < 33, is not supported yet\n",polarParams->K);
   AssertFatal(polarParams->K < 65, "K = %d > 64, is not supported yet\n",polarParams->K);
 
-  uint64_t A,B,Cprime;
-  uint64_t D[8] __attribute__((aligned(32)));
+  uint64_t B,Cprime;
   
   // append crc
-  B = A | (crc24c(A,bitlen)<<bitlen);
+  B = *A | ((crcmask^crc24c(A,bitlen))<<bitlen);
   uint8_t *Bbyte = (uint8_t*)&B;
-  // for each byte of B, lookup in corresponding table for 64-bit word corresponding to tha byte and its position
+  // for each byte of B, lookup in corresponding table for 64-bit word corresponding to that byte and its position
   Cprime = polarParams->cprime_tab[0][Bbyte[0]] | 
            polarParams->cprime_tab[1][Bbyte[1]] | 
            polarParams->cprime_tab[2][Bbyte[2]] | 
