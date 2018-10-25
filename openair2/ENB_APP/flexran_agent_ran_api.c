@@ -747,7 +747,35 @@ uint8_t flexran_get_num_pdcch_symb(mid_t mod_id, uint8_t cc_id)
  * Get Messages for UE Configuration Reply
  * ************************************
  */
+int flexran_get_rrc_num_ues(mid_t mod_id)
+{
+  if (!rrc_is_present(mod_id)) return 0;
+  return RC.rrc[mod_id]->Nb_ue;
+}
 
+rnti_t flexran_get_rrc_rnti_nth_ue(mid_t mod_id, int index)
+{
+  if (!rrc_is_present(mod_id)) return 0;
+  struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+  RB_FOREACH(ue_context_p, rrc_ue_tree_s, &RC.rrc[mod_id]->rrc_ue_head) {
+    if (index == 0) return ue_context_p->ue_context.rnti;
+    --index;
+  }
+  return 0;
+}
+
+int flexran_get_rrc_rnti_list(mid_t mod_id, rnti_t *list, int max_list)
+{
+  if (!rrc_is_present(mod_id)) return 0;
+  int n = 0;
+  struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+  RB_FOREACH(ue_context_p, rrc_ue_tree_s, &RC.rrc[mod_id]->rrc_ue_head) {
+    if (n >= max_list) break;
+    list[n] = ue_context_p->ue_context.rnti;
+    ++n;
+  }
+  return n;
+}
 
 TimeAlignmentTimer_t flexran_get_time_alignment_timer(mid_t mod_id, mid_t ue_id)
 {

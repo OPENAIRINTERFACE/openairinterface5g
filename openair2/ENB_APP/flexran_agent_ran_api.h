@@ -304,6 +304,16 @@ Protocol__FlexPhichDuration flexran_get_phich_duration(mid_t mod_id, uint8_t cc_
  * Get Messages for UE Configuration Reply
  * ************************************
  */
+/* Get the number of attached UEs for the RRC */
+int flexran_get_rrc_num_ues(mid_t mod_id);
+
+/* Get the RNTI of UE at index 'index' in RRC list */
+rnti_t flexran_get_rrc_rnti_nth_ue(mid_t mod_id, int index);
+
+/* Get the list of RNTIs of up to max_list entries.  When max_list >=
+ * flexran_get_rrc_num_ues(), gets a list of all UEs registered in the RRC. UE
+ * RNTIs are saved in list, returns number of saved RNTIs */
+int flexran_get_rrc_rnti_list(mid_t mod_id, rnti_t *list, int max_list);
 
 /* Get timer in subframes. Controls the synchronization
    status of the UE, not the actual timing 
