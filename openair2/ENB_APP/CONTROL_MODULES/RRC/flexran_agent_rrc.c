@@ -68,153 +68,22 @@ void flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_ch
     goto error;
   }
   protocol__flex_ue_config__init(config);
-  if (state_change == PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED) {
-    // Simply set the rnti of the UE
+  switch (state_change) {
+  case PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED:
     config->has_rnti = 1;
     config->rnti = rnti;
-  } else if (state_change == PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_UPDATED
-       || state_change == PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_ACTIVATED) {
-    // TODO this goes into the MAC CM */
-        //int i = find_UE_id(mod_id, rnti);
-      config->has_rnti = 1;
-      config->rnti = rnti;
-      /* RNTI correct */
-        if(flexran_get_time_alignment_timer(mod_id, rnti) != -1) {
-          config->time_alignment_timer = flexran_get_time_alignment_timer(mod_id, rnti);
-          config->has_time_alignment_timer = 1;
-        }
-        if(flexran_get_meas_gap_config(mod_id, rnti) != -1){
-          config->meas_gap_config_pattern = flexran_get_meas_gap_config(mod_id, rnti);
-            config->has_meas_gap_config_pattern = 1;
-        }
-        if(config->has_meas_gap_config_pattern == 1 &&
-         config->meas_gap_config_pattern != PROTOCOL__FLEX_MEAS_GAP_CONFIG_PATTERN__FLMGCP_OFF) {
-        config->meas_gap_config_sf_offset = flexran_get_meas_gap_config_offset(mod_id, rnti);
-        config->has_meas_gap_config_sf_offset = 1;
-        }
-        //TODO: Set the SPS configuration (Optional)
-        //Not supported for now, so we do not set it
+    break;
+  case PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_UPDATED:
+  case PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_ACTIVATED:
+    flexran_agent_fill_rrc_ue_config(mod_id, rnti, config);
+    /* we don't call into the MAC CM here; it will be called later through an
+     * ue_config_request */
+    break;
 
-        //TODO: Set the SR configuration (Optional)
-        //We do not set it for now
-
-        //TODO: Set the CQI configuration (Optional)
-        //We do not set it for now
-      
-      if(flexran_get_ue_transmission_mode(mod_id, rnti) != -1) {
-          config->transmission_mode = flexran_get_ue_transmission_mode(mod_id, rnti);
-          config->has_transmission_mode = 1;
-        }
-
-      /* TODO into MAC CM */
-      //config->ue_aggregated_max_bitrate_ul = flexran_get_ue_aggregated_max_bitrate_ul(mod_id,i);
-      //config->has_ue_aggregated_max_bitrate_ul = 1;
-
-      /* TODO into MAC CM */
-      //config->ue_aggregated_max_bitrate_dl = flexran_get_ue_aggregated_max_bitrate_dl(mod_id,i);
-      //config->has_ue_aggregated_max_bitrate_dl = 1;
-
-        Protocol__FlexUeCapabilities *c_capabilities;
-        c_capabilities = malloc(sizeof(Protocol__FlexUeCapabilities));
-        protocol__flex_ue_capabilities__init(c_capabilities);
-
-        c_capabilities->has_half_duplex = 1;
-        c_capabilities->half_duplex = flexran_get_half_duplex(mod_id, rnti);
-
-        c_capabilities->has_intra_sf_hopping = 1;
-        c_capabilities->intra_sf_hopping = flexran_get_intra_sf_hopping(mod_id, rnti);
-
-        c_capabilities->has_type2_sb_1 = 1;
-        c_capabilities->type2_sb_1 = flexran_get_type2_sb_1(mod_id, rnti);
-
-        c_capabilities->has_ue_category = 1;
-        c_capabilities->ue_category = flexran_get_ue_category(mod_id, rnti);
-
-        c_capabilities->has_res_alloc_type1 = 1;
-        c_capabilities->res_alloc_type1 = flexran_get_res_alloc_type1(mod_id, rnti);
-
-        config->capabilities = c_capabilities;
-      
-        if(flexran_get_ue_transmission_antenna(mod_id, rnti) != -1) {
-        config->has_ue_transmission_antenna = 1;
-          config->ue_transmission_antenna = flexran_get_ue_transmission_antenna(mod_id, rnti);
-        }
-
-        if (flexran_get_tti_bundling(mod_id, rnti) != -1) {
-        config->has_tti_bundling = 1;
-          config->tti_bundling = flexran_get_tti_bundling(mod_id, rnti);
-        }
-
-        if(flexran_get_maxHARQ_TX(mod_id, rnti) != -1){
-        config->has_max_harq_tx = 1;
-        config->max_harq_tx = flexran_get_maxHARQ_TX(mod_id, rnti);
-        }
-
-        if(flexran_get_beta_offset_ack_index(mod_id, rnti) != -1) {
-        config->has_beta_offset_ack_index = 1;
-        config->beta_offset_ack_index = flexran_get_beta_offset_ack_index(mod_id, rnti);
-        }
-
-        if(flexran_get_beta_offset_ri_index(mod_id, rnti) != -1) {
-        config->has_beta_offset_ri_index = 1;
-        config->beta_offset_ri_index = flexran_get_beta_offset_ri_index(mod_id, rnti);
-        }
-
-        if(flexran_get_beta_offset_cqi_index(mod_id, rnti) != -1) {
-        config->has_beta_offset_cqi_index = 1;
-        config->beta_offset_cqi_index = flexran_get_beta_offset_cqi_index(mod_id, rnti);
-        }
-
-        /* assume primary carrier */
-        if(flexran_get_ack_nack_simultaneous_trans(mod_id,0) != -1) {
-        config->has_ack_nack_simultaneous_trans = 1;
-        config->ack_nack_simultaneous_trans = flexran_get_ack_nack_simultaneous_trans(mod_id,0);
-        }
-
-        if(flexran_get_simultaneous_ack_nack_cqi(mod_id, rnti) != -1) {
-        config->has_simultaneous_ack_nack_cqi = 1;
-        config->simultaneous_ack_nack_cqi = flexran_get_simultaneous_ack_nack_cqi(mod_id, rnti);
-        }
-
-        if(flexran_get_aperiodic_cqi_rep_mode(mod_id, rnti) != -1) {
-        config->has_aperiodic_cqi_rep_mode = 1;
-          config->aperiodic_cqi_rep_mode = flexran_get_aperiodic_cqi_rep_mode(mod_id, rnti);
-        }
-
-        if(flexran_get_tdd_ack_nack_feedback_mode(mod_id, rnti) != -1) {
-        config->has_tdd_ack_nack_feedback = 1;
-          config->tdd_ack_nack_feedback = flexran_get_tdd_ack_nack_feedback_mode(mod_id, rnti);
-        }
-
-        if(flexran_get_ack_nack_repetition_factor(mod_id, rnti) != -1) {
-        config->has_ack_nack_repetition_factor = 1;
-          config->ack_nack_repetition_factor = flexran_get_ack_nack_repetition_factor(mod_id, rnti);
-        }
-
-        if(flexran_get_extended_bsr_size(mod_id, rnti) != -1) {
-        config->has_extended_bsr_size = 1;
-          config->extended_bsr_size = flexran_get_extended_bsr_size(mod_id, rnti);
-        }
-
-        // TODO this goes into the MAC CM
-      //config->has_pcell_carrier_index = 1;
-      //config->pcell_carrier_index = UE_PCCID(mod_id, i);
-        //TODO: Set carrier aggregation support (boolean)
-        config->has_ca_support = 0;
-        config->ca_support = 0;
-        if(config->has_ca_support){
-        //TODO: Set cross carrier scheduling support (boolean)
-        config->has_cross_carrier_sched_support = 1;
-        config->cross_carrier_sched_support = 0;
-        //TODO: Set secondary cells configuration
-        // We do not set it for now. No carrier aggregation support
-        
-        //TODO: Set deactivation timer for secondary cell
-        config->has_scell_deactivation_timer = 0;
-        config->scell_deactivation_timer = 0;
-        }
-  } else if (state_change == PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_MOVED) {
-    // TODO: Not supported for now. Leave blank
+  case PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_MOVED:
+  default:
+    LOG_E(FLEXRAN_AGENT, "state change FLUESC_MOVED or unknown state occured for RNTI %x\n",
+          rnti);
   }
 
   ue_state_change_msg->config = config;
@@ -238,16 +107,18 @@ void flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_ch
   return;
  error:
   if (err_code != 0)
-     LOG_E(FLEXRAN_AGENT, "Could not send UE state message becasue of %d \n",err_code);
+     LOG_E(FLEXRAN_AGENT, "Could not send UE state message becasue of %d for RNTI %x\n",
+           err_code, rnti);
 }
-
 
 
 int flexran_agent_destroy_ue_state_change(Protocol__FlexranMessage *msg) {
   if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_UE_STATE_CHANGE_MSG)
     goto error;
   free(msg->ue_state_change_msg->header);
-  //TODO: Free the contents of the UE config structure
+  if (msg->ue_state_change_msg->config->capabilities)
+    free(msg->ue_state_change_msg->config->capabilities);
+  free(msg->ue_state_change_msg->config);
   free(msg->ue_state_change_msg);
   free(msg);
   return 0;
@@ -637,6 +508,135 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
   return -1;
 }
 
+void flexran_agent_fill_rrc_ue_config(mid_t mod_id, rnti_t rnti,
+    Protocol__FlexUeConfig *ue_conf)
+{
+  if (ue_conf->has_rnti && ue_conf->rnti != rnti) {
+    LOG_E(FLEXRAN_AGENT, "ue_config existing RNTI %x does not match RRC RNTI %x\n",
+          ue_conf->rnti, rnti);
+    return;
+  }
+  ue_conf->has_rnti = 1;
+  ue_conf->rnti = rnti;
+  ue_conf->imsi = flexran_get_ue_imsi(mod_id, rnti);
+  ue_conf->has_imsi = 1;
+
+  //TODO: Set the DRX configuration (optional)
+  //Not supported for now, so we do not set it
+
+  if(flexran_get_time_alignment_timer(mod_id, rnti) != -1) {
+    ue_conf->time_alignment_timer = flexran_get_time_alignment_timer(mod_id, rnti);
+    ue_conf->has_time_alignment_timer = 1;
+  }
+  if(flexran_get_meas_gap_config(mod_id, rnti) != -1){
+    ue_conf->meas_gap_config_pattern = flexran_get_meas_gap_config(mod_id, rnti);
+    ue_conf->has_meas_gap_config_pattern = 1;
+  }
+  if(ue_conf->has_meas_gap_config_pattern == 1 &&
+      ue_conf->meas_gap_config_pattern != PROTOCOL__FLEX_MEAS_GAP_CONFIG_PATTERN__FLMGCP_OFF) {
+    ue_conf->meas_gap_config_sf_offset = flexran_get_meas_gap_config_offset(mod_id, rnti);
+    ue_conf->has_meas_gap_config_sf_offset = 1;
+  }
+
+  //TODO: Set the SPS configuration (Optional)
+  //Not supported for now, so we do not set it
+
+  //TODO: Set the SR configuration (Optional)
+  //We do not set it for now
+
+  //TODO: Set the CQI configuration (Optional)
+  //We do not set it for now
+
+  if(flexran_get_ue_transmission_mode(mod_id, rnti) != -1) {
+    ue_conf->transmission_mode = flexran_get_ue_transmission_mode(mod_id, rnti);
+    ue_conf->has_transmission_mode = 1;
+  }
+
+
+  Protocol__FlexUeCapabilities *c_capabilities;
+  c_capabilities = malloc(sizeof(Protocol__FlexUeCapabilities));
+  if (c_capabilities) {
+    protocol__flex_ue_capabilities__init(c_capabilities);
+
+    c_capabilities->has_half_duplex = 1;
+    c_capabilities->half_duplex = flexran_get_half_duplex(mod_id, rnti);
+
+    c_capabilities->has_intra_sf_hopping = 1;
+    c_capabilities->intra_sf_hopping = flexran_get_intra_sf_hopping(mod_id, rnti);
+
+    c_capabilities->has_type2_sb_1 = 1;
+    c_capabilities->type2_sb_1 = flexran_get_type2_sb_1(mod_id, rnti);
+
+    c_capabilities->has_ue_category = 1;
+    c_capabilities->ue_category = flexran_get_ue_category(mod_id, rnti);
+
+    c_capabilities->has_res_alloc_type1 = 1;
+    c_capabilities->res_alloc_type1 = flexran_get_res_alloc_type1(mod_id, rnti);
+
+    ue_conf->capabilities = c_capabilities;
+  }
+
+  if(flexran_get_ue_transmission_antenna(mod_id, rnti) != -1) {
+    ue_conf->has_ue_transmission_antenna = 1;
+    ue_conf->ue_transmission_antenna = flexran_get_ue_transmission_antenna(mod_id, rnti);
+  }
+
+  if (flexran_get_tti_bundling(mod_id, rnti) != -1) {
+    ue_conf->has_tti_bundling = 1;
+    ue_conf->tti_bundling = flexran_get_tti_bundling(mod_id, rnti);
+  }
+
+  if(flexran_get_maxHARQ_TX(mod_id, rnti) != -1){
+    ue_conf->has_max_harq_tx = 1;
+    ue_conf->max_harq_tx = flexran_get_maxHARQ_TX(mod_id, rnti);
+  }
+
+  if(flexran_get_beta_offset_ack_index(mod_id, rnti) != -1) {
+    ue_conf->has_beta_offset_ack_index = 1;
+    ue_conf->beta_offset_ack_index = flexran_get_beta_offset_ack_index(mod_id, rnti);
+  }
+
+  if(flexran_get_beta_offset_ri_index(mod_id, rnti) != -1) {
+    ue_conf->has_beta_offset_ri_index = 1;
+    ue_conf->beta_offset_ri_index = flexran_get_beta_offset_ri_index(mod_id, rnti);
+  }
+
+  if(flexran_get_beta_offset_cqi_index(mod_id, rnti) != -1) {
+    ue_conf->has_beta_offset_cqi_index = 1;
+    ue_conf->beta_offset_cqi_index = flexran_get_beta_offset_cqi_index(mod_id, rnti);
+  }
+
+  /* assume primary carrier */
+  if(flexran_get_ack_nack_simultaneous_trans(mod_id,0) != -1) {
+    ue_conf->has_ack_nack_simultaneous_trans = 1;
+    ue_conf->ack_nack_simultaneous_trans = flexran_get_ack_nack_simultaneous_trans(mod_id,0);
+  }
+
+  if(flexran_get_simultaneous_ack_nack_cqi(mod_id, rnti) != -1) {
+    ue_conf->has_simultaneous_ack_nack_cqi = 1;
+    ue_conf->simultaneous_ack_nack_cqi = flexran_get_simultaneous_ack_nack_cqi(mod_id, rnti);
+  }
+
+  if(flexran_get_aperiodic_cqi_rep_mode(mod_id, rnti) != -1) {
+    ue_conf->has_aperiodic_cqi_rep_mode = 1;
+    ue_conf->aperiodic_cqi_rep_mode = flexran_get_aperiodic_cqi_rep_mode(mod_id, rnti);
+  }
+
+  if(flexran_get_tdd_ack_nack_feedback_mode(mod_id, rnti) != -1) {
+    ue_conf->has_tdd_ack_nack_feedback = 1;
+    ue_conf->tdd_ack_nack_feedback = flexran_get_tdd_ack_nack_feedback_mode(mod_id, rnti);
+  }
+
+  if(flexran_get_ack_nack_repetition_factor(mod_id, rnti) != -1) {
+    ue_conf->has_ack_nack_repetition_factor = 1;
+    ue_conf->ack_nack_repetition_factor = flexran_get_ack_nack_repetition_factor(mod_id, rnti);
+  }
+
+  if(flexran_get_extended_bsr_size(mod_id, rnti) != -1) {
+    ue_conf->has_extended_bsr_size = 1;
+    ue_conf->extended_bsr_size = flexran_get_extended_bsr_size(mod_id, rnti);
+  }
+}
 
 int flexran_agent_register_rrc_xface(mid_t mod_id)
 {

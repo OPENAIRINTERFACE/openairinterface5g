@@ -1372,6 +1372,30 @@ void flexran_agent_fill_mac_cell_config(mid_t mod_id, uint8_t cc_id,
   }
 }
 
+void flexran_agent_fill_mac_ue_config(mid_t mod_id, mid_t ue_id,
+    Protocol__FlexUeConfig *ue_conf)
+{
+  if (ue_conf->has_rnti && ue_conf->rnti != flexran_get_mac_ue_crnti(mod_id, ue_id)) {
+    LOG_E(FLEXRAN_AGENT, "ue_config existing RNTI %x does not match MAC RNTI %x\n",
+          ue_conf->rnti, flexran_get_mac_ue_crnti(mod_id, ue_id));
+    return;
+  }
+  ue_conf->rnti = flexran_get_mac_ue_crnti(mod_id, ue_id);
+  ue_conf->has_rnti = 1;
+
+  ue_conf->ue_aggregated_max_bitrate_ul = flexran_get_ue_aggregated_max_bitrate_ul(mod_id, ue_id);
+  ue_conf->has_ue_aggregated_max_bitrate_ul = 1;
+
+  ue_conf->ue_aggregated_max_bitrate_dl = flexran_get_ue_aggregated_max_bitrate_dl(mod_id, ue_id);
+  ue_conf->has_ue_aggregated_max_bitrate_dl = 1;
+
+  /* TODO update through RAN API */
+  //config->has_pcell_carrier_index = 1;
+  //config->pcell_carrier_index = UE_PCCID(mod_id, i);
+
+  //TODO: Set carrier aggregation support (boolean)
+}
+
 void flexran_agent_fill_mac_lc_ue_config(mid_t mod_id, mid_t ue_id,
     Protocol__FlexLcUeConfig *lc_ue_conf)
 {
