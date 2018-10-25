@@ -779,10 +779,10 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
   // ULSCH for RA
   //gNB->ulsch[0] = new_gNB_ulsch(MAX_TURBO_ITERATIONS, fp->N_RB_UL, 0);
   
-  if (!gNB->ulsch[0]) {
+  /*if (!gNB->ulsch[0]) {
     LOG_E(PHY,"Can't get gNB ulsch structures\n");
     exit(-1);
-  }
+  }*/
   gNB->dlsch_SI  = new_gNB_dlsch(1,8,NSOFT,fp->N_RB_DL, 0, fp);
   LOG_D(PHY,"gNB %d.%d : SI %p\n",gNB->Mod_id,gNB->CC_id,gNB->dlsch_SI);
   gNB->dlsch_ra  = new_gNB_dlsch(1,8,NSOFT,fp->N_RB_DL, 0, fp);
