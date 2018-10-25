@@ -73,6 +73,7 @@ sub_frame_t flexran_get_current_subframe(mid_t mod_id)
 /* Why uint16_t, frame_t and sub_frame_t are defined as uint32_t? */
 uint16_t flexran_get_sfn_sf(mid_t mod_id)
 {
+  if (!mac_is_present(mod_id)) return 0;
   frame_t frame = flexran_get_current_system_frame_num(mod_id);
   sub_frame_t subframe = flexran_get_current_subframe(mod_id);
   uint16_t sfn_sf, frame_mask, sf_mask;
@@ -86,6 +87,7 @@ uint16_t flexran_get_sfn_sf(mid_t mod_id)
 
 uint16_t flexran_get_future_sfn_sf(mid_t mod_id, int ahead_of_time)
 {
+  if (!mac_is_present(mod_id)) return 0;
   frame_t frame = flexran_get_current_system_frame_num(mod_id);
   sub_frame_t subframe = flexran_get_current_subframe(mod_id);
   uint16_t sfn_sf, frame_mask, sf_mask;
@@ -114,6 +116,7 @@ int flexran_get_num_ues(mid_t mod_id)
 
 rnti_t flexran_get_ue_crnti(mid_t mod_id, mid_t ue_id)
 {
+  if (!mac_is_present(mod_id)) return 0;
   return UE_RNTI(mod_id, ue_id);
 }
 
@@ -137,6 +140,7 @@ uint8_t flexran_get_ue_wcqi(mid_t mod_id, mid_t ue_id)
 
 rlc_buffer_occupancy_t flexran_get_tx_queue_size(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id)
 {
+  if (!mac_is_present(mod_id)) return 0;
   rnti_t rnti = flexran_get_ue_crnti(mod_id, ue_id);
   frame_t frame = flexran_get_current_frame(mod_id);
   sub_frame_t subframe = flexran_get_current_subframe(mod_id);
@@ -150,6 +154,7 @@ rlc_buffer_occupancy_t flexran_get_tx_queue_size(mid_t mod_id, mid_t ue_id, logi
 
 rlc_buffer_occupancy_t flexran_get_num_pdus_buffer(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id)
 {
+  if (!mac_is_present(mod_id)) return 0;
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   frame_t frame = flexran_get_current_frame(mod_id);
   sub_frame_t subframe = flexran_get_current_subframe(mod_id);
@@ -163,6 +168,7 @@ rlc_buffer_occupancy_t flexran_get_num_pdus_buffer(mid_t mod_id, mid_t ue_id, lo
 
 frame_t flexran_get_hol_delay(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id)
 {
+  if (!mac_is_present(mod_id)) return 0;
   rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   frame_t frame = flexran_get_current_frame(mod_id);
   sub_frame_t subframe = flexran_get_current_subframe(mod_id);
