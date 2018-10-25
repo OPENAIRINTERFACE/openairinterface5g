@@ -91,6 +91,8 @@ typedef enum {
 #define CONFIG_STRING_RU_MAX_RXGAIN               "max_rxgain"
 #define CONFIG_STRING_RU_IF_COMPRESSION           "if_compression"
 #define CONFIG_STRING_RU_NBIOTRRC_LIST            "NbIoT_RRC_instances"
+#define CONFIG_STRING_RU_SDR_ADDRS                "sdr_addrs"
+#define CONFIG_STRING_RU_SDR_CLK_SRC              "clock_src"
 
 #define RU_LOCAL_IF_NAME_IDX          0
 #define RU_LOCAL_ADDRESS_IDX          1

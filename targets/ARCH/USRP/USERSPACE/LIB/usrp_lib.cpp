@@ -1056,7 +1056,7 @@ extern "C" {
 
 #endif
       sscanf(uhd::get_version_string().c_str(),"%d.%d.%d",&vers,&subvers,&subsubvers);
-      LOG_I(PHY,"Checking for USRPs : UHD %s (%d.%d.%d)\n",
+      LOG_I(PHY,"UHD version %s (%d.%d.%d)\n",
             uhd::get_version_string().c_str(),vers,subvers,subsubvers);
 
       std::string args;
@@ -1064,12 +1064,13 @@ extern "C" {
         args = "type=b200";
       } else {
         args = openair0_cfg[0].sdr_addrs;
+	LOG_I(PHY,"Checking for USRP with args %s\n",openair0_cfg[0].sdr_addrs);
       }
 
       uhd::device_addrs_t device_adds = uhd::device::find(args);
 
       if (device_adds.size() == 0) {
-        std::cerr<<"No USRP Device Found. " << std::endl;
+        std::cerr<<"No USRP Device Found. " << args << std::endl;
         free(s);
         return -1;
       } else if (device_adds.size() > 1) {
