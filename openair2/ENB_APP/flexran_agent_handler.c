@@ -249,7 +249,7 @@ int flexran_agent_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
   goto error;
       }
       for (i = 0; i < report_config.nr_ue; i++) {
-  report_config.ue_report_type[i].ue_rnti = flexran_get_ue_crnti(enb_id, i); //eNB_UE_list->eNB_UE_stats[UE_PCCID(enb_id,i)][i].crnti;
+  report_config.ue_report_type[i].ue_rnti = flexran_get_mac_ue_crnti(enb_id, i);
   report_config.ue_report_type[i].ue_report_flags = ue_flags;
       }
       //Set the number of CCs and create a list with the cell stats configs

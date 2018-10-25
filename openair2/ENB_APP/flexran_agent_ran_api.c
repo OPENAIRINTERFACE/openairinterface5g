@@ -118,7 +118,7 @@ int flexran_get_num_ue_lcs(mid_t mod_id, mid_t ue_id)
 {
   if (!mac_is_present(mod_id)) return 0;
   // Not sure whether this is needed: if (!rrc_is_present(mod_id)) return 0;
-  const rnti_t rnti = flexran_get_ue_crnti(mod_id, ue_id);
+  const rnti_t rnti = flexran_get_mac_ue_crnti(mod_id, ue_id);
   const int s = mac_eNB_get_rrc_status(mod_id, rnti);
   if (s < RRC_CONNECTED)
     return 0;
@@ -128,7 +128,7 @@ int flexran_get_num_ue_lcs(mid_t mod_id, mid_t ue_id)
     return 3;
 }
 
-rnti_t flexran_get_ue_crnti(mid_t mod_id, mid_t ue_id)
+rnti_t flexran_get_mac_ue_crnti(mid_t mod_id, mid_t ue_id)
 {
   if (!mac_is_present(mod_id)) return 0;
   return UE_RNTI(mod_id, ue_id);
@@ -155,7 +155,7 @@ uint8_t flexran_get_ue_wcqi(mid_t mod_id, mid_t ue_id)
 rlc_buffer_occupancy_t flexran_get_tx_queue_size(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id)
 {
   if (!mac_is_present(mod_id)) return 0;
-  rnti_t rnti = flexran_get_ue_crnti(mod_id, ue_id);
+  rnti_t rnti = flexran_get_mac_ue_crnti(mod_id, ue_id);
   frame_t frame = flexran_get_current_frame(mod_id);
   sub_frame_t subframe = flexran_get_current_subframe(mod_id);
   mac_rlc_status_resp_t rlc_status = mac_rlc_status_ind(mod_id,rnti, mod_id, frame, subframe, ENB_FLAG_YES,MBMS_FLAG_NO, channel_id, 0
@@ -169,7 +169,7 @@ rlc_buffer_occupancy_t flexran_get_tx_queue_size(mid_t mod_id, mid_t ue_id, logi
 rlc_buffer_occupancy_t flexran_get_num_pdus_buffer(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id)
 {
   if (!mac_is_present(mod_id)) return 0;
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
+  rnti_t rnti = flexran_get_mac_ue_crnti(mod_id,ue_id);
   frame_t frame = flexran_get_current_frame(mod_id);
   sub_frame_t subframe = flexran_get_current_subframe(mod_id);
   mac_rlc_status_resp_t rlc_status = mac_rlc_status_ind(mod_id,rnti, mod_id, frame, subframe, ENB_FLAG_YES,MBMS_FLAG_NO, channel_id, 0
@@ -183,7 +183,7 @@ rlc_buffer_occupancy_t flexran_get_num_pdus_buffer(mid_t mod_id, mid_t ue_id, lo
 frame_t flexran_get_hol_delay(mid_t mod_id, mid_t ue_id, logical_chan_id_t channel_id)
 {
   if (!mac_is_present(mod_id)) return 0;
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
+  rnti_t rnti = flexran_get_mac_ue_crnti(mod_id,ue_id);
   frame_t frame = flexran_get_current_frame(mod_id);
   sub_frame_t subframe = flexran_get_current_subframe(mod_id);
   mac_rlc_status_resp_t rlc_status = mac_rlc_status_ind(mod_id, rnti, mod_id, frame, subframe, ENB_FLAG_YES, MBMS_FLAG_NO, channel_id, 0
@@ -457,7 +457,7 @@ int flexran_get_harq(mid_t       mod_id,
   
   if (mac_xface_not_ready()) return 0 ;
 
-  uint16_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
+  uint16_t rnti = flexran_get_mac_ue_crnti(mod_id,ue_id);
   if (harq_flag == openair_harq_DL){
 
       mac_xface->get_ue_active_harq_pid(mod_id,CC_id,rnti,frame,subframe,&harq_pid,&harq_round,openair_harq_DL);
@@ -777,25 +777,19 @@ int flexran_get_rrc_rnti_list(mid_t mod_id, rnti_t *list, int max_list)
   return n;
 }
 
-TimeAlignmentTimer_t flexran_get_time_alignment_timer(mid_t mod_id, mid_t ue_id)
+TimeAlignmentTimer_t flexran_get_time_alignment_timer(mid_t mod_id, rnti_t rnti)
 {
   if (!rrc_is_present(mod_id)) return -1;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.mac_MainConfig) return -1;
   return ue_context_p->ue_context.mac_MainConfig->timeAlignmentTimerDedicated;
 }
 
-Protocol__FlexMeasGapConfigPattern flexran_get_meas_gap_config(mid_t mod_id, mid_t ue_id)
+Protocol__FlexMeasGapConfigPattern flexran_get_meas_gap_config(mid_t mod_id, rnti_t rnti)
 {
   if (!rrc_is_present(mod_id)) return -1;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measGapConfig) return -1;
   if (ue_context_p->ue_context.measGapConfig->present != MeasGapConfig_PR_setup) return -1;
@@ -810,13 +804,10 @@ Protocol__FlexMeasGapConfigPattern flexran_get_meas_gap_config(mid_t mod_id, mid
 }
 
 
-long flexran_get_meas_gap_config_offset(mid_t mod_id, mid_t ue_id)
+long flexran_get_meas_gap_config_offset(mid_t mod_id, rnti_t rnti)
 {
   if (!rrc_is_present(mod_id)) return -1;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measGapConfig) return -1;
   if (ue_context_p->ue_context.measGapConfig->present != MeasGapConfig_PR_setup) return -1;
@@ -830,13 +821,10 @@ long flexran_get_meas_gap_config_offset(mid_t mod_id, mid_t ue_id)
   }
 }
 
-uint8_t flexran_get_rrc_status(mid_t mod_id, mid_t ue_id)
+uint8_t flexran_get_rrc_status(mid_t mod_id, rnti_t rnti)
 {
   if (!rrc_is_present(mod_id)) return 0;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id, ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return RRC_INACTIVE;
   return ue_context_p->ue_context.Status;
 }
@@ -853,13 +841,10 @@ uint64_t flexran_get_ue_aggregated_max_bitrate_ul(mid_t mod_id, mid_t ue_id)
   return RC.mac[mod_id]->UE_list.UE_sched_ctrl[ue_id].ue_AggregatedMaximumBitrateUL;
 }
 
-int flexran_get_half_duplex(mid_t mod_id, mid_t ue_id)
+int flexran_get_half_duplex(mid_t mod_id, rnti_t rnti)
 {
   if (!rrc_is_present(mod_id)) return -1;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.UE_Capability) return -1;
   SupportedBandListEUTRA_t *bands = &ue_context_p->ue_context.UE_Capability->rf_Parameters.supportedBandListEUTRA;
@@ -869,13 +854,10 @@ int flexran_get_half_duplex(mid_t mod_id, mid_t ue_id)
   return 0;
 }
 
-int flexran_get_intra_sf_hopping(mid_t mod_id, mid_t ue_id)
+int flexran_get_intra_sf_hopping(mid_t mod_id, rnti_t rnti)
 {
   if (!rrc_is_present(mod_id)) return -1;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.UE_Capability) return -1;
   if (!ue_context_p->ue_context.UE_Capability->featureGroupIndicators) return -1;
@@ -887,13 +869,10 @@ int flexran_get_intra_sf_hopping(mid_t mod_id, mid_t ue_id)
   return (buf >> 7) & 1;
 }
 
-int flexran_get_type2_sb_1(mid_t mod_id, mid_t ue_id)
+int flexran_get_type2_sb_1(mid_t mod_id, rnti_t rnti)
 {
   if (!rrc_is_present(mod_id)) return -1;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.UE_Capability) return -1;
   if (!ue_context_p->ue_context.UE_Capability->featureGroupIndicators) return -1;
@@ -906,25 +885,19 @@ int flexran_get_type2_sb_1(mid_t mod_id, mid_t ue_id)
   return (buf >> 3) & 1;
 }
 
-long flexran_get_ue_category(mid_t mod_id, mid_t ue_id)
+long flexran_get_ue_category(mid_t mod_id, rnti_t rnti)
 {
   if (!rrc_is_present(mod_id)) return -1;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.UE_Capability) return -1;
   return ue_context_p->ue_context.UE_Capability->ue_Category;
 }
 
-int flexran_get_res_alloc_type1(mid_t mod_id, mid_t ue_id)
+int flexran_get_res_alloc_type1(mid_t mod_id, rnti_t rnti)
 {
   if (!rrc_is_present(mod_id)) return -1;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.UE_Capability) return -1;
   if (!ue_context_p->ue_context.UE_Capability->featureGroupIndicators) return -1;
@@ -936,24 +909,19 @@ int flexran_get_res_alloc_type1(mid_t mod_id, mid_t ue_id)
   return (buf >> 6) & 1;
 }
 
-long flexran_get_ue_transmission_mode(mid_t mod_id, mid_t ue_id)
+long flexran_get_ue_transmission_mode(mid_t mod_id, rnti_t rnti)
 {
   if (!rrc_is_present(mod_id)) return -1;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated->antennaInfo) return -1;
   return ue_context_p->ue_context.physicalConfigDedicated->antennaInfo->choice.explicitValue.transmissionMode;
 }
 
-BOOLEAN_t flexran_get_tti_bundling(mid_t mod_id, mid_t ue_id)
+BOOLEAN_t flexran_get_tti_bundling(mid_t mod_id, rnti_t rnti)
 {
   if (!rrc_is_present(mod_id)) return -1;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.mac_MainConfig) return -1;
@@ -961,65 +929,50 @@ BOOLEAN_t flexran_get_tti_bundling(mid_t mod_id, mid_t ue_id)
   return ue_context_p->ue_context.mac_MainConfig->ul_SCH_Config->ttiBundling;
 }
 
-long flexran_get_maxHARQ_TX(mid_t mod_id, mid_t ue_id)
+long flexran_get_maxHARQ_TX(mid_t mod_id, rnti_t rnti)
 {
   if (!rrc_is_present(mod_id)) return -1;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.mac_MainConfig) return -1;
   if (!ue_context_p->ue_context.mac_MainConfig->ul_SCH_Config) return -1;
   return *(ue_context_p->ue_context.mac_MainConfig->ul_SCH_Config->maxHARQ_Tx);
 }
 
-long flexran_get_beta_offset_ack_index(mid_t mod_id, mid_t ue_id)
+long flexran_get_beta_offset_ack_index(mid_t mod_id, rnti_t rnti)
 {
   if (!rrc_is_present(mod_id)) return -1;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated->pusch_ConfigDedicated) return -1;
   return ue_context_p->ue_context.physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_ACK_Index;
 }
 
-long flexran_get_beta_offset_ri_index(mid_t mod_id, mid_t ue_id)
+long flexran_get_beta_offset_ri_index(mid_t mod_id, rnti_t rnti)
 {
   if (!rrc_is_present(mod_id)) return -1;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated->pusch_ConfigDedicated) return -1;
   return ue_context_p->ue_context.physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_RI_Index;
 }
 
-long flexran_get_beta_offset_cqi_index(mid_t mod_id, mid_t ue_id)
+long flexran_get_beta_offset_cqi_index(mid_t mod_id, rnti_t rnti)
 {
   if (!rrc_is_present(mod_id)) return -1;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated->pusch_ConfigDedicated) return -1;
   return ue_context_p->ue_context.physicalConfigDedicated->pusch_ConfigDedicated->betaOffset_CQI_Index;
 }
 
-BOOLEAN_t flexran_get_simultaneous_ack_nack_cqi(mid_t mod_id, mid_t ue_id)
+BOOLEAN_t flexran_get_simultaneous_ack_nack_cqi(mid_t mod_id, rnti_t rnti)
 {
   if (!rrc_is_present(mod_id)) return -1;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated->cqi_ReportConfig) return -1;
@@ -1027,33 +980,46 @@ BOOLEAN_t flexran_get_simultaneous_ack_nack_cqi(mid_t mod_id, mid_t ue_id)
   return ue_context_p->ue_context.physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic->choice.setup.simultaneousAckNackAndCQI;
 }
 
-BOOLEAN_t flexran_get_ack_nack_simultaneous_trans(mid_t mod_id, mid_t ue_id, uint8_t cc_id)
+BOOLEAN_t flexran_get_ack_nack_simultaneous_trans(mid_t mod_id, uint8_t cc_id)
 {
   if (!rrc_is_present(mod_id)) return -1;
   if (!RC.rrc[mod_id]->carrier[cc_id].sib2) return -1;
   return RC.rrc[mod_id]->carrier[cc_id].sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission;
 }
 
-CQI_ReportModeAperiodic_t flexran_get_aperiodic_cqi_rep_mode(mid_t mod_id,mid_t ue_id)
+Protocol__FlexAperiodicCqiReportMode flexran_get_aperiodic_cqi_rep_mode(mid_t mod_id, rnti_t rnti)
 {
   if (!rrc_is_present(mod_id)) return -1;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated->cqi_ReportConfig) return -1;
-  return *ue_context_p->ue_context.physicalConfigDedicated->cqi_ReportConfig->cqi_ReportModeAperiodic;
+  switch (*ue_context_p->ue_context.physicalConfigDedicated->cqi_ReportConfig->cqi_ReportModeAperiodic) {
+  case CQI_ReportModeAperiodic_rm12:
+    return PROTOCOL__FLEX_APERIODIC_CQI_REPORT_MODE__FLACRM_RM12;
+  case CQI_ReportModeAperiodic_rm20:
+    return PROTOCOL__FLEX_APERIODIC_CQI_REPORT_MODE__FLACRM_RM20;
+  case CQI_ReportModeAperiodic_rm22:
+    return PROTOCOL__FLEX_APERIODIC_CQI_REPORT_MODE__FLACRM_RM22;
+  case CQI_ReportModeAperiodic_rm30:
+    return PROTOCOL__FLEX_APERIODIC_CQI_REPORT_MODE__FLACRM_RM30;
+  case CQI_ReportModeAperiodic_rm31:
+    return PROTOCOL__FLEX_APERIODIC_CQI_REPORT_MODE__FLACRM_RM31;
+  case CQI_ReportModeAperiodic_rm32_v1250:
+    return PROTOCOL__FLEX_APERIODIC_CQI_REPORT_MODE__FLACRM_RM32_v1250;
+  case CQI_ReportModeAperiodic_rm10_v1310:
+    return PROTOCOL__FLEX_APERIODIC_CQI_REPORT_MODE__FLACRM_RM10_v1310;
+  case CQI_ReportModeAperiodic_rm11_v1310:
+    return PROTOCOL__FLEX_APERIODIC_CQI_REPORT_MODE__FLACRM_RM11_v1310;
+  default:
+    return PROTOCOL__FLEX_APERIODIC_CQI_REPORT_MODE__FLACRM_NONE;
+  }
 }
 
-long flexran_get_tdd_ack_nack_feedback_mode(mid_t mod_id, mid_t ue_id)
+long flexran_get_tdd_ack_nack_feedback_mode(mid_t mod_id, rnti_t rnti)
 {
   if (!rrc_is_present(mod_id)) return -1;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated->pucch_ConfigDedicated) return -1;
@@ -1061,26 +1027,20 @@ long flexran_get_tdd_ack_nack_feedback_mode(mid_t mod_id, mid_t ue_id)
   return *(ue_context_p->ue_context.physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode);
 }
 
-long flexran_get_ack_nack_repetition_factor(mid_t mod_id, mid_t ue_id)
+long flexran_get_ack_nack_repetition_factor(mid_t mod_id, rnti_t rnti)
 {
   if (!rrc_is_present(mod_id)) return -1;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated->pucch_ConfigDedicated) return -1;
   return ue_context_p->ue_context.physicalConfigDedicated->pucch_ConfigDedicated->ackNackRepetition.choice.setup.repetitionFactor;
 }
 
-long flexran_get_extended_bsr_size(mid_t mod_id, mid_t ue_id)
+long flexran_get_extended_bsr_size(mid_t mod_id, rnti_t rnti)
 {
   if (!rrc_is_present(mod_id)) return -1;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.mac_MainConfig) return -1;
   if (!ue_context_p->ue_context.mac_MainConfig->ext2) return -1;
@@ -1088,13 +1048,10 @@ long flexran_get_extended_bsr_size(mid_t mod_id, mid_t ue_id)
   return *(ue_context_p->ue_context.mac_MainConfig->ext2->mac_MainConfig_v1020->extendedBSR_Sizes_r10);
 }
 
-int flexran_get_ue_transmission_antenna(mid_t mod_id, mid_t ue_id)
+int flexran_get_ue_transmission_antenna(mid_t mod_id, rnti_t rnti)
 {
   if (!rrc_is_present(mod_id)) return -1;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated->antennaInfo) return -1;
@@ -1108,16 +1065,12 @@ int flexran_get_ue_transmission_antenna(mid_t mod_id, mid_t ue_id)
   }
 }
 
-uint64_t flexran_get_ue_imsi(mid_t mod_id, mid_t ue_id)
+uint64_t flexran_get_ue_imsi(mid_t mod_id, rnti_t rnti)
 {
   uint64_t imsi;
   if (!rrc_is_present(mod_id)) return 0;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return 0;
-
   imsi  = ue_context_p->ue_context.imsi.digit15;
   imsi += ue_context_p->ue_context.imsi.digit14 * 10;              // pow(10, 1)
   imsi += ue_context_p->ue_context.imsi.digit13 * 100;             // pow(10, 2)
@@ -1371,50 +1324,38 @@ uint32_t flexran_get_pdcp_rx_oo(const mid_t mod_id,  const mid_t ue_id, const lc
 
 /******************** RRC *****************************/
 
-MeasId_t flexran_get_rrc_pcell_measid(mid_t mod_id, mid_t ue_id)
+MeasId_t flexran_get_rrc_pcell_measid(mid_t mod_id, rnti_t rnti)
 {
   if (!rrc_is_present(mod_id)) return -1;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measResults) return -1;
   return ue_context_p->ue_context.measResults->measId;
 }
 
-float flexran_get_rrc_pcell_rsrp(mid_t mod_id, mid_t ue_id)
+float flexran_get_rrc_pcell_rsrp(mid_t mod_id, rnti_t rnti)
 {
   if (!rrc_is_present(mod_id)) return -1;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measResults) return -1;
   return RSRP_meas_mapping[ue_context_p->ue_context.measResults->measResultPCell.rsrpResult];
 }
 
-float flexran_get_rrc_pcell_rsrq(mid_t mod_id, mid_t ue_id)
+float flexran_get_rrc_pcell_rsrq(mid_t mod_id, rnti_t rnti)
 {
   if (!rrc_is_present(mod_id)) return -1;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measResults) return -1;
   return RSRQ_meas_mapping[ue_context_p->ue_context.measResults->measResultPCell.rsrqResult];
 }
 
 /*Number of neighbouring cells for specific UE*/
-int flexran_get_rrc_num_ncell(mid_t mod_id, mid_t ue_id)
+int flexran_get_rrc_num_ncell(mid_t mod_id, rnti_t rnti)
 {
   if (!rrc_is_present(mod_id)) return 0;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return 0;
   if (!ue_context_p->ue_context.measResults) return 0;
   if (!ue_context_p->ue_context.measResults->measResultNeighCells) return 0;
@@ -1422,13 +1363,10 @@ int flexran_get_rrc_num_ncell(mid_t mod_id, mid_t ue_id)
   return ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.count;
 }
 
-PhysCellId_t flexran_get_rrc_neigh_phy_cell_id(mid_t mod_id, mid_t ue_id, int cell_id)
+long flexran_get_rrc_neigh_phy_cell_id(mid_t mod_id, rnti_t rnti, long cell_id)
 {
   if (!rrc_is_present(mod_id)) return -1;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measResults) return -1;
   if (!ue_context_p->ue_context.measResults->measResultNeighCells) return -1;
@@ -1437,13 +1375,10 @@ PhysCellId_t flexran_get_rrc_neigh_phy_cell_id(mid_t mod_id, mid_t ue_id, int ce
   return ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[cell_id]->physCellId;
 }
 
-float flexran_get_rrc_neigh_rsrp(mid_t mod_id, mid_t ue_id, int cell_id)
+float flexran_get_rrc_neigh_rsrp(mid_t mod_id, rnti_t rnti, long cell_id)
 {
   if (!rrc_is_present(mod_id)) return -1;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measResults) return -1;
   if (!ue_context_p->ue_context.measResults->measResultNeighCells) return -1;
@@ -1453,13 +1388,10 @@ float flexran_get_rrc_neigh_rsrp(mid_t mod_id, mid_t ue_id, int cell_id)
   return RSRP_meas_mapping[*(ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[cell_id]->measResult.rsrpResult)];
 }
 
-float flexran_get_rrc_neigh_rsrq(mid_t mod_id, mid_t ue_id, int cell_id)
+float flexran_get_rrc_neigh_rsrq(mid_t mod_id, rnti_t rnti, long cell_id)
 {
   if (!rrc_is_present(mod_id)) return -1;
-
-  rnti_t rnti = flexran_get_ue_crnti(mod_id,ue_id);
   struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
-
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measResults) return -1;
   if (!ue_context_p->ue_context.measResults->measResultNeighCells) return -1;

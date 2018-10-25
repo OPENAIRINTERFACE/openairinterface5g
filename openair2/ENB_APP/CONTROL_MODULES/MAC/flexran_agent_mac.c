@@ -911,7 +911,7 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
       if(dl_info[i] == NULL)
 	goto error;
       protocol__flex_dl_info__init(dl_info[i]);
-      dl_info[i]->rnti = flexran_get_ue_crnti(mod_id, UE_id);
+      dl_info[i]->rnti = flexran_get_mac_ue_crnti(mod_id, UE_id);
       dl_info[i]->has_rnti = 1;
       /*Fill in the right id of this round's HARQ process for this UE*/
       //      uint8_t harq_id;
@@ -959,7 +959,7 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
       if(ul_info[i] == NULL)
 	goto error;
       protocol__flex_ul_info__init(ul_info[i]);
-      ul_info[i]->rnti = flexran_get_ue_crnti(mod_id, i);
+      ul_info[i]->rnti = flexran_get_mac_ue_crnti(mod_id, i);
       ul_info[i]->has_rnti = 1;
       /* Fill in the Tx power control command for this UE (if available),
        * primary carrier */
@@ -1375,7 +1375,7 @@ void flexran_agent_fill_mac_cell_config(mid_t mod_id, uint8_t cc_id,
 void flexran_agent_fill_mac_lc_ue_config(mid_t mod_id, mid_t ue_id,
     Protocol__FlexLcUeConfig *lc_ue_conf)
 {
-  lc_ue_conf->rnti = flexran_get_ue_crnti(mod_id, ue_id);
+  lc_ue_conf->rnti = flexran_get_mac_ue_crnti(mod_id, ue_id);
   lc_ue_conf->has_rnti = 1;
 
   lc_ue_conf->n_lc_config = flexran_get_num_ue_lcs(mod_id, ue_id);
