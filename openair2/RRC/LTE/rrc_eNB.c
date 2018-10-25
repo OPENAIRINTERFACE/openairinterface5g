@@ -862,13 +862,13 @@ rrc_eNB_free_UE(
       rnti);
 
     if (EPC_MODE_ENABLED) {
-      if((ue_context_pP->ue_context.ul_failure_timer >= 20000) && (mac_eNB_get_rrc_status(enb_mod_idP,rnti) >= RRC_CONNECTED)) {
-        LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ sent for RNTI %x\n", 
+      if((ue_context_pP->ue_context.ul_failure_timer >= 20000) && (mac_eNB_get_rrc_status(enb_mod_idP, rnti) >= RRC_CONNECTED)) {
+        LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ sent for RNTI %x, cause 21, radio connection with ue lost\n", 
           enb_mod_idP, 
           rnti);
         
         rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(enb_mod_idP, ue_context_pP, S1AP_CAUSE_RADIO_NETWORK, 21); 
-        // send cause 21: connection with ue lost
+        // send cause 21: radio connection with ue lost
         /* From 3GPP 36300v10 p129 : 19.2.2.2.2 S1 UE Context Release Request (eNB triggered)
          * If the E-UTRAN internal reason is a radio link failure detected in the eNB, the eNB shall wait a sufficient time before
          *  triggering the S1 UE Context Release Request procedure in order to allow the UE to perform the NAS recovery
@@ -877,7 +877,18 @@ rrc_eNB_free_UE(
          
         return;
       }
-      // TODO : add here cause ul inactivity
+      
+      if((ue_context_pP->ue_context.ue_rrc_inactivity_timer >= ue_context_pP->ue_context.ue_rrc_inactivity_timer_thres) &&
+        (mac_eNB_get_rrc_status(enb_mod_idP, rnti) >= RRC_CONNECTED)) {
+        LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ sent for RNTI %x, cause 20, user inactivity\n", 
+          enb_mod_idP, 
+          rnti);
+        
+        rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(enb_mod_idP, ue_context_pP, S1AP_CAUSE_RADIO_NETWORK, 20); 
+        // send cause 20: user inactivity
+
+        return;
+      }
     }
 
     // add UE info to freeList
@@ -1012,11 +1023,14 @@ void release_UE_in_freeList(module_id_t mod_id)
 }
 
 //-----------------------------------------------------------------------------
+/*
+* Process the rrc connection setup complete message from UE (SRB1 Active)
+*/
 void
 rrc_eNB_process_RRCConnectionSetupComplete(
-  const protocol_ctxt_t* const ctxt_pP,
-  rrc_eNB_ue_context_t*         ue_context_pP,
-  RRCConnectionSetupComplete_r8_IEs_t * rrcConnectionSetupComplete
+  const protocol_ctxt_t *const ctxt_pP,
+  rrc_eNB_ue_context_t *ue_context_pP,
+  RRCConnectionSetupComplete_r8_IEs_t *rrcConnectionSetupComplete
 )
 //-----------------------------------------------------------------------------
 {
@@ -1024,22 +1038,19 @@ rrc_eNB_process_RRCConnectionSetupComplete(
         PROTOCOL_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel UL-DCCH, " "processing RRCConnectionSetupComplete from UE (SRB1 Active)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
 
-  ue_context_pP->ue_context.Srb1.Active=1;  
+  ue_context_pP->ue_context.Srb1.Active = 1;
+  ue_context_pP->ue_context.Status = RRC_CONNECTED;
+  ue_context_pP->ue_context.ue_rrc_inactivity_timer = 1; // set rrc inactivity when UE goes into RRC_CONNECTED
+
   T(T_ENB_RRC_CONNECTION_SETUP_COMPLETE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
   if (EPC_MODE_ENABLED == 1) {
     // Forward message to S1AP layer
-    rrc_eNB_send_S1AP_NAS_FIRST_REQ(
-      ctxt_pP,
-      ue_context_pP,
-      rrcConnectionSetupComplete);
+    rrc_eNB_send_S1AP_NAS_FIRST_REQ(ctxt_pP, ue_context_pP, rrcConnectionSetupComplete);
   } else {
     // RRC loop back (no S1AP), send SecurityModeCommand to UE
-    rrc_eNB_generate_SecurityModeCommand(
-      ctxt_pP,
-      ue_context_pP);
-    // rrc_eNB_generate_UECapabilityEnquiry(enb_mod_idP,frameP,ue_mod_idP);
+    rrc_eNB_generate_SecurityModeCommand(ctxt_pP, ue_context_pP);
   }
 }
 
@@ -5364,6 +5375,11 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
 */
 
 //-----------------------------------------------------------------------------
+/*
+* TODO: * add function description
+*       * add ue_rrc_inactivity_timer set
+*       * format the function correctly
+*/
 void
 rrc_eNB_process_RRCConnectionReconfigurationComplete(
   const protocol_ctxt_t* const ctxt_pP,
@@ -6868,7 +6884,6 @@ if (ue_context_p->ue_context.nb_of_modify_e_rabs > 0) {
             ctxt_pP,
             ue_context_p,
             &ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.choice.c1.choice.rrcConnectionSetupComplete_r8);
-          ue_context_p->ue_context.Status = RRC_CONNECTED;
           LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" UE State = RRC_CONNECTED \n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
 	  
@@ -7901,6 +7916,18 @@ rrc_rx_tx(
       } // end if (rrc_release_info.num_UEs > 0)
       pthread_mutex_unlock(&rrc_release_freelist);
 
+      if (ue_context_p->ue_context.ue_rrc_inactivity_timer > 0) {
+        ue_context_p->ue_context.ue_rrc_inactivity_timer++;
+
+        if (ue_context_p->ue_context.ue_rrc_inactivity_timer >= ue_context_p->ue_context.ue_rrc_inactivity_timer_thres) {
+          LOG_I(RRC, "Removing UE %x instance because of rrc_inactivity_timer timeout\n", 
+            ue_context_p->ue_context.rnti);
+          
+          ue_to_be_removed = ue_context_p;
+          break; // break RB_FOREACH
+        }
+      }
+
       if (ue_context_p->ue_context.ue_reestablishment_timer > 0) {
         ue_context_p->ue_context.ue_reestablishment_timer++;
 
@@ -7935,7 +7962,8 @@ rrc_rx_tx(
     } // end RB_FOREACH
 
     if (ue_to_be_removed) {
-      if (ue_to_be_removed->ue_context.ul_failure_timer >= 20000) {
+      if ((ue_to_be_removed->ue_context.ul_failure_timer >= 20000) || 
+        (ue_to_be_removed->ue_context.ue_rrc_inactivity_timer >= ue_to_be_removed->ue_context.ue_rrc_inactivity_timer_thres)) {
         ue_to_be_removed->ue_context.ue_release_timer_s1 = 1;
         ue_to_be_removed->ue_context.ue_release_timer_thres_s1 = 100;
         ue_to_be_removed->ue_context.ue_release_timer = 0;
@@ -7946,6 +7974,10 @@ rrc_rx_tx(
 
       if (ue_to_be_removed->ue_context.ul_failure_timer >= 20000) {
         ue_to_be_removed->ue_context.ul_failure_timer = 0;
+      }
+
+      if (ue_to_be_removed->ue_context.ue_rrc_inactivity_timer >= ue_to_be_removed->ue_context.ue_rrc_inactivity_timer_thres) {
+        ue_to_be_removed->ue_context.ue_rrc_inactivity_timer = 0; //reset timer after S1 command UE context release request is sent
       }
     }
 

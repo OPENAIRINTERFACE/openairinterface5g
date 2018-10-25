@@ -387,10 +387,10 @@ typedef enum SL_TRIGGER_e {
 #define RRC_TRANSACTION_IDENTIFIER_NUMBER  3
 
 typedef struct {
-  unsigned short transport_block_size;                  /*!< \brief Minimum PDU size in bytes provided by RLC to MAC layer interface */
-  unsigned short max_transport_blocks;                  /*!< \brief Maximum PDU size in bytes provided by RLC to MAC layer interface */
-  unsigned long  Guaranteed_bit_rate;           /*!< \brief Guaranteed Bit Rate (average) to be offered by MAC layer scheduling*/
-  unsigned long  Max_bit_rate;                  /*!< \brief Maximum Bit Rate that can be offered by MAC layer scheduling*/
+  unsigned short transport_block_size;   /*!< \brief Minimum PDU size in bytes provided by RLC to MAC layer interface */
+  unsigned short max_transport_blocks;   /*!< \brief Maximum PDU size in bytes provided by RLC to MAC layer interface */
+  unsigned long  Guaranteed_bit_rate;    /*!< \brief Guaranteed Bit Rate (average) to be offered by MAC layer scheduling*/
+  unsigned long  Max_bit_rate;           /*!< \brief Maximum Bit Rate that can be offered by MAC layer scheduling*/
   uint8_t  Delay_class;                  /*!< \brief Delay class offered by MAC layer scheduling*/
   uint8_t  Target_bler;                  /*!< \brief Target Average Transport Block Error rate*/
   uint8_t  Lchan_t;                      /*!< \brief Logical Channel Type (BCCH,CCCH,DCCH,DTCH_B,DTCH,MRBCH)*/
@@ -552,7 +552,7 @@ typedef struct eNB_RRC_UE_s {
   CipheringAlgorithm_r12_t                          ciphering_algorithm;
   e_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm;
 
-  uint8_t                            Status;
+  uint8_t                            Status; // RRC status, type enum UE_STATE_t
   rnti_t                             rnti;
   uint64_t                           random_ue_identity;
 
@@ -599,6 +599,9 @@ typedef struct eNB_RRC_UE_s {
   uint32_t                           ue_release_timer_thres_rrc;
   uint32_t                           ue_reestablishment_timer;
   uint32_t                           ue_reestablishment_timer_thres;
+  /* RRC inactivity timer: on timeout, should release RRC connection for inactivity on all E-RABs */
+  uint32_t                           ue_rrc_inactivity_timer;
+  uint32_t                           ue_rrc_inactivity_timer_thres;     
   uint8_t                            e_rab_release_command_flag;
   int8_t                             reestablishment_xid;
 } eNB_RRC_UE_t;
