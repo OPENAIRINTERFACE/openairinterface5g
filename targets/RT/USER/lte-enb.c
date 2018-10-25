@@ -162,7 +162,7 @@ extern void add_subframe(uint16_t *frameP, uint16_t *subframeP, int offset);
 
 static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_name) {
   start_meas(&softmodem_stats_rxtx_sf);
-  eNB_rxtx_proc_t *L1_proc_tx = &eNB->proc.L1_proc_tx;
+  //eNB_rxtx_proc_t *L1_proc_tx = &eNB->proc.L1_proc_tx;
 
   // *******************************************************************
 
@@ -223,14 +223,30 @@ static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_nam
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER , 1 );
 
-//#TODO
-  if(get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT){
-    if(wait_on_condition(&L1_proc_tx->mutex,&L1_proc_tx->cond,&L1_proc_tx->instance_cnt,"wakeup_tx")<0) {
-      LOG_E(PHY,"Frame %d, subframe %d: TX1 not ready\n",L1_proc_tx->frame_rx,L1_proc_tx->subframe_rx);
+/*//#TODO
+  if(get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)
+  {
+    if (pthread_mutex_lock(mutex) != 0) {
+      LOG_E(PHY, "[SCHED][eNB] ERROR locking mutex for eNB L1_thread_tx\n");
+      exit_fun("ERROR pthread_lock");
       return(-1);
     }
-    if (release_thread(&L1_proc_tx->mutex,&L1_proc_tx->instance_cnt,"wakeup_tx")<0)  return(-1);
-  }
+    while(L1_proc_tx->instance_cnt == 0){
+      pthread_cond_wait(L1_proc_tx->cond,L1_proc_tx->mutex);
+    }
+    L1_proc_tx->instance_cnt = 0;
+    if (pthread_cond_signal(&L1_proc_tx->cond) != 0) {
+      LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB L1_thread_tx\n");
+      exit_fun( "ERROR pthread_cond_signal" );
+      return(-1);
+    }
+    if (pthread_mutex_unlock(mutex) != 0) {
+      LOG_E(PHY,"[SCHED][eNB] error unlocking mutex for %s\n",name);
+      exit_fun("ERROR pthread_unlock");
+      return(-1);
+    }
+  }*/
+  
 
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
 
@@ -331,18 +347,16 @@ static void* L1_thread_tx(void* param) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX1_ENB,proc->frame_rx);
     
     phy_procedures_eNB_TX(eNB, proc, 1);
-    if (release_thread(&proc->mutex,&proc->instance_cnt,thread_name)<0) break;
-	
-//#TODO
+
     pthread_mutex_lock( &proc->mutex );
-    proc->instance_cnt++;
+    proc->instance_cnt = -1;
     // the thread can now be woken up
     if (pthread_cond_signal(&proc->cond) != 0) {
       LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
       exit_fun( "ERROR pthread_cond_signal" );
     }
     pthread_mutex_unlock( &proc->mutex );
-    wakeup_txfh(proc,eNB_proc->ru_proc);
+    wakeup_txfh(proc,eNB->proc.ru_proc);
   }
 
   return 0;
@@ -414,14 +428,6 @@ static void* L1_thread( void* param ) {
     }
 
     if (release_thread(&proc->mutex,&proc->instance_cnt,thread_name)<0) break;
-    pthread_mutex_lock( &proc->mutex);
-    proc->instance_cnt++;
-    // the thread can now be woken up
-    if (pthread_cond_signal(&proc->cond) != 0) {
-      LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
-      exit_fun( "ERROR pthread_cond_signal" );
-    }
-    pthread_mutex_unlock( &proc->mutex );
     if (nfapi_mode!=2){
     	if(get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)      wakeup_tx(eNB,eNB->proc.ru_proc);
     	else if(get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT)
@@ -474,13 +480,13 @@ int wakeup_txfh(eNB_rxtx_proc_t *proc,RU_proc_t *ru_proc) {
   struct timespec wait;
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
+printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~inside wakeup_txfh %d.%d IC_RU = %d\n", proc->frame_tx, proc->subframe_tx, proc->instance_cnt_RUs);
 
-  
-  if(wait_on_condition(&ru_proc->mutex_eNBs,&ru_proc->cond_eNBs,&ru_proc->ru_tx_ready,"wakeup_txfh")<0) {
+  if(wait_on_condition(&proc->mutex_RUs,&proc->cond_RUs,&proc->instance_cnt_RUs,"wakeup_txfh")<0) {
     LOG_E(PHY,"Frame %d, subframe %d: TX FH not ready\n", ru_proc->frame_tx, ru_proc->subframe_tx);
     return(-1);
   }
-  if (release_thread(&ru_proc->mutex_eNBs,&ru_proc->ru_tx_ready,"wakeup_txfh")<0) return(-1);
+  if (release_thread(&proc->mutex_RUs,&proc->instance_cnt_RUs,"wakeup_txfh")<0) return(-1);
   
   if (ru_proc->instance_cnt_eNBs == 0) {
     LOG_E(PHY,"Frame %d, subframe %d: TX FH thread busy, dropping Frame %d, subframe %d\n", ru_proc->frame_tx, ru_proc->subframe_tx, proc->frame_rx, proc->subframe_rx);
@@ -492,10 +498,12 @@ int wakeup_txfh(eNB_rxtx_proc_t *proc,RU_proc_t *ru_proc) {
     return(-1);
   }
 
-    ++ru_proc->instance_cnt_eNBs;
+  //for(num_RUs)
+    ru_proc->instance_cnt_eNBs = 0;
     ru_proc->timestamp_tx = proc->timestamp_tx;
     ru_proc->subframe_tx  = proc->subframe_tx;
     ru_proc->frame_tx     = proc->frame_tx;
+
   
   // the thread can now be woken up
   if (pthread_cond_signal(&ru_proc->cond_eNBs) != 0) {
@@ -522,19 +530,16 @@ int wakeup_tx(PHY_VARS_eNB *eNB,RU_proc_t *ru_proc) {
   wait.tv_nsec=5000000L;
   
   
-  
-  if (L1_proc_tx->instance_cnt == 0) {
-    LOG_E(PHY,"Frame %d, subframe %d: TX1 thread busy, dropping\n",L1_proc_tx->frame_rx,L1_proc_tx->subframe_rx);
+  if (pthread_mutex_timedlock(&L1_proc_tx->mutex,&wait) != 0) {
+    LOG_E(PHY, "[SCHED][eNB] ERROR locking mutex for eNB L1_thread_tx\n");
+    exit_fun("ERROR pthread_lock");
     return(-1);
   }
-  
-  if (pthread_mutex_timedlock(&L1_proc_tx->mutex,&wait) != 0) {
-    LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB TX1 thread %d (IC %d)\n", L1_proc_tx->subframe_rx&1,L1_proc_tx->instance_cnt );
-    exit_fun( "error locking mutex_tx" );
-    return(-1);
+  while(L1_proc_tx->instance_cnt == 0){
+    pthread_cond_wait(&L1_proc_tx->cond,&L1_proc_tx->mutex);
   }
 
-  ++L1_proc_tx->instance_cnt;
+  L1_proc_tx->instance_cnt = 0;
 
   
   L1_proc_tx->subframe_rx   = L1_proc->subframe_rx;
@@ -899,6 +904,8 @@ void init_eNB_proc(int inst) {
     L1_proc_tx                     = &proc->L1_proc_tx;
     L1_proc->instance_cnt          = -1;
     L1_proc_tx->instance_cnt       = -1;
+    L1_proc->instance_cnt_RUs      = 0;
+    L1_proc_tx->instance_cnt_RUs   = 0;
     proc->instance_cnt_prach       = -1;
     proc->instance_cnt_asynch_rxtx = -1;
     proc->instance_cnt_synch       = -1;
@@ -914,6 +921,10 @@ void init_eNB_proc(int inst) {
     pthread_mutex_init( &L1_proc_tx->mutex, NULL);
     pthread_cond_init( &L1_proc->cond, NULL);
     pthread_cond_init( &L1_proc_tx->cond, NULL);
+    pthread_mutex_init( &L1_proc->mutex_RUs, NULL);
+    pthread_mutex_init( &L1_proc_tx->mutex_RUs, NULL);
+    pthread_cond_init( &L1_proc->cond_RUs, NULL);
+    pthread_cond_init( &L1_proc_tx->cond_RUs, NULL);
 
     pthread_mutex_init( &proc->mutex_prach, NULL);
     pthread_mutex_init( &proc->mutex_asynch_rxtx, NULL);
@@ -1009,7 +1020,7 @@ void kill_eNB_proc(int inst) {
   PHY_VARS_eNB *eNB;
   eNB_proc_t *proc;
   eNB_rxtx_proc_t *L1_proc, *L1_proc_tx;
-  int i;
+
   for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     eNB=RC.eNB[inst][CC_id];
     

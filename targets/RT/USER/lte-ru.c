@@ -1249,12 +1249,12 @@ void do_ru_synch(RU_t *ru) {
 
 
 
-void wakeup_eNBs(RU_t *ru) {
+void wakeup_L1s(RU_t *ru) {
 
   int i;
   PHY_VARS_eNB **eNB_list = ru->eNB_list;
 
-  LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
+  LOG_D(PHY,"wakeup_L1s (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
 
 
   if (ru->num_eNB==1 && ru->eNB_top!=0 && get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD) {
@@ -1529,8 +1529,12 @@ volatile int16_t phy_tx_end;
 #endif
 
 static void* ru_thread_tx( void* param ) {
-  RU_t *ru         = (RU_t*)param;
-  RU_proc_t *proc  = &ru->proc;
+  RU_t *ru              = (RU_t*)param;
+  RU_proc_t *proc       = &ru->proc;
+  PHY_VARS_eNB *eNB;
+  eNB_proc_t *eNB_proc;
+  eNB_rxtx_proc_t *L1_proc;
+
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
 
@@ -1555,6 +1559,7 @@ static void* ru_thread_tx( void* param ) {
 	// wait until eNBs are finished subframe RX n and TX n+4
     wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
     if (oai_exit) break;
+printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~ru_thread_tx is waken up %d.%d having L1 %d\n", proc->frame_tx, proc->subframe_tx, ru->num_eNB);
   	       
     // do TX front-end processing if needed (precoding and/or IDFTs)
     if (ru->feptx_prec) ru->feptx_prec(ru);
@@ -1568,15 +1573,22 @@ static void* ru_thread_tx( void* param ) {
       if (ru->fh_north_out) ru->fh_north_out(ru);
 	}
     release_thread(&proc->mutex_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
-    
-    pthread_mutex_lock( &proc->mutex_eNBs );
-    proc->ru_tx_ready++;
-    // the thread can now be woken up
-    if (pthread_cond_signal(&proc->cond_eNBs) != 0) {
-      LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
-      exit_fun( "ERROR pthread_cond_signal" );
+    for(int i = 0; i<ru->num_eNB; i++)
+    {
+      eNB       = ru->eNB_list[i];
+      eNB_proc  = &eNB->proc;
+      L1_proc   = (get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)? &eNB_proc->L1_proc_tx : &eNB_proc->L1_proc;
+char *L1_proc_name = (get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)? "L1_proc_tx" : "L1_proc";
+printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~ru_thread_tx signaling to eNB_list[%d] with %s IC_RU %d\n", i, L1_proc_name, L1_proc->instance_cnt_RUs);
+      pthread_mutex_lock( &L1_proc->mutex_RUs );
+      L1_proc->instance_cnt_RUs = 0;
+      // the thread can now be woken up
+      if (pthread_cond_signal(&L1_proc->cond_RUs) != 0) {
+        LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
+        exit_fun( "ERROR pthread_cond_signal" );
+      }
+      pthread_mutex_unlock( &L1_proc->mutex_RUs );
     }
-    pthread_mutex_unlock( &proc->mutex_eNBs );
   }
   release_thread(&proc->mutex_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
   return 0;
@@ -1785,7 +1797,7 @@ static void* ru_thread( void* param ) {
 #endif
 
     // wakeup all eNB processes waiting for this RU
-    if (ru->num_eNB>0) wakeup_eNBs(ru);
+    if (ru->num_eNB>0) wakeup_L1s(ru);
     
 #ifndef PHY_TX_THREAD
     if(get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD || ru->num_eNB==0){
