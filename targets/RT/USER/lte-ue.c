@@ -94,7 +94,7 @@ extern int oai_nfapi_rx_ind(nfapi_rx_indication_t *ind);
 extern int multicast_link_write_sock(int groupP, char *dataP, uint32_t sizeP);
 
 extern int simL1flag;
-
+extern uint16_t sf_ahead;
 //extern int tx_req_UE_MAC1();
 
 void ue_stub_rx_handler(unsigned int, char *);
@@ -379,7 +379,7 @@ void init_UE_stub_single_thread(int nb_inst,int eMBMS_active, int uecap_xer_in, 
   for (inst=0;inst<nb_inst;inst++) {
 
     LOG_I(PHY,"Initializing memory for UE instance %d (%p)\n",inst,PHY_vars_UE_g[inst]);
-    PHY_vars_UE_g[inst][0] = init_ue_vars(NULL,inst,0);
+    // PHY_vars_UE_g[inst][0] = init_ue_vars(NULL,inst,0);
   }
   init_timer_thread();
   init_UE_single_thread_stub(nb_inst);
@@ -1021,12 +1021,14 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg) {
 
     proc->subframe_rx=timer_subframe;
     proc->frame_rx = timer_frame;
-    proc->subframe_tx=(timer_subframe+4)%10;
-    proc->frame_tx = proc->frame_rx + (proc->subframe_rx>5?1:0);
+    
+    // FDD and TDD tx timing settings.
+    proc->subframe_tx=(timer_subframe+sf_ahead)%10;
+    proc->frame_tx = proc->frame_rx + (proc->subframe_rx>(9-sf_ahead)?1:0);
     //oai_subframe_ind(proc->frame_rx, proc->subframe_rx);
 
 
-    oai_subframe_ind(timer_frame, timer_subframe);
+    oai_subframe_ind(proc->frame_tx,proc->subframe_tx);
 
     //Guessing that the next 4 lines are not needed for the phy_stub mode.
     /*initRefTimes(t2);

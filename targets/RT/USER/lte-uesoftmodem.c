@@ -117,7 +117,7 @@ int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 uint8_t nfapi_mode = 0;
 
 uint16_t sf_ahead=2;
-
+int tddflag;
 char *emul_iface;
 
 
@@ -498,7 +498,7 @@ extern int16_t dlsch_demod_shift;
 
 static void get_options(unsigned int *start_msc) {
   int CC_id;
-  int tddflag, nonbiotflag;
+  int nonbiotflag;
   char *loopfile=NULL;
   int dumpframe;
   uint32_t online_log_messages;
@@ -565,8 +565,10 @@ static void get_options(unsigned int *start_msc) {
   UE_scan=0;
    
     if (tddflag > 0) {
-     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) 
-    	 frame_parms[CC_id]->frame_type = TDD;
+      for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+        frame_parms[CC_id]->frame_type = TDD;
+        frame_parms[CC_id]->tdd_config = tddflag;
+      }
   }
 
   if (frame_parms[0]->N_RB_DL !=0) {
