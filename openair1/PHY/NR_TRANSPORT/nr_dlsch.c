@@ -178,15 +178,16 @@ void nr_pdsch_layer_mapping(uint16_t **mod_symbs,
     break;
 
   default:
-  AsserFatal(0, "Invalid number of layers %d\n", n_layers);
+  AssertFatal(0, "Invalid number of layers %d\n", n_layers);
   }
 }
 
 uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
                           NR_gNB_DCI_ALLOC_t dci_alloc,
-                          uint32_t *pdsch_dmrs,
+                          uint32_t **pdsch_dmrs,
                           int32_t** txdataF,
                           int16_t amp,
+                          uint8_t subframe,
                           NR_DL_FRAME_PARMS frame_parms,
                           nfapi_nr_config_request_t config) {
 
@@ -200,6 +201,7 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
   int8_t Wf[2], Wt[2], l0, delta;
 
   /// CRC, coding, interleaving and rate matching
+  nr_dlsch_encoding(0, subframe, &dlsch, &frame_parms);
 
   /// scrambling
   uint16_t n_RNTI = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? \
@@ -235,7 +237,8 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
   uint16_t n_dmrs = rel15->n_prb*rel15->nb_re_dmrs;
   int16_t mod_dmrs[n_dmrs<<1];
   uint8_t dmrs_type = config.pdsch_config.dmrs_type.value;
-  nr_modulation(pdsch_dmrs, n_dmrs, MOD_QPSK, mod_dmrs);
+  l0 = get_l0(dmrs_type, config.pdsch_config.dmrs_typeA_position.value);
+  nr_modulation(pdsch_dmrs[l0], n_dmrs, MOD_QPSK, mod_dmrs);
 
   /// Resource mapping
   AssertFatal(rel15->nb_layers<=config.rf_config.tx_antenna_ports.value, "Not enough Tx antennas (%d) for %d layers\n",\
@@ -251,7 +254,6 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
     // DMRS params for this ap
     get_Wt(Wt, ap, dmrs_type);
     get_Wf(Wf, ap, dmrs_type);
-    l0 = get_l0(0, config.pdsch_config.dmrs_typeA_position.value);
     delta = get_delta(ap, dmrs_type);
     uint8_t k_prime=0, n=0, dmrs_idx=0;
     uint16_t m = 0;

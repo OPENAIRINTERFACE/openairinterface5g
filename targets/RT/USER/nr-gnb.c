@@ -759,7 +759,7 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
 	LOG_E(PHY,"Can't get gNB dlsch structures for UE %d \n", i);
 	exit(-1);
       } else {
-	gNB->dlsch[i][j]->rnti=0;
+	gNB->dlsch[i][j]->rnti=0x1234;
 	LOG_D(PHY,"dlsch[%d][%d] => %p rnti:%d\n",i,j,gNB->dlsch[i][j], gNB->dlsch[i][j]->rnti);
       }
     }
@@ -767,10 +767,10 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
     //LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH, UE %d\n",i);
     //gNB->ulsch[1+i] = new_gNB_ulsch(MAX_TURBO_ITERATIONS,fp->N_RB_UL, 0);
     
-    if (!gNB->ulsch[1+i]) {
+    /*if (!gNB->ulsch[1+i]) {
       LOG_E(PHY,"Can't get gNB ulsch structures\n");
       exit(-1);
-    }
+    }*/
     
     // this is the transmission mode for the signalling channels
     // this will be overwritten with the real transmission mode by the RRC once the UE is connected

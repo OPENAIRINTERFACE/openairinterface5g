@@ -79,16 +79,21 @@ void nr_pdsch_layer_mapping(uint16_t **mod_symbs,
                          uint16_t *n_symbs,
                          uint16_t **tx_layers);
 
+uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
+                          NR_gNB_DCI_ALLOC_t dci_alloc,
+                          uint32_t **pdsch_dmrs,
+                          int32_t** txdataF,
+                          int16_t amp,
+                          uint8_t subframe,
+                          NR_DL_FRAME_PARMS frame_parms,
+                          nfapi_nr_config_request_t config);
+
 /** \brief Computes available bits G.
     @param nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs */
 uint32_t nr_get_G(uint16_t nb_rb, uint16_t nb_symb_sch,uint8_t nb_re_dmrs,uint16_t length_dmrs,uint8_t Qm, uint8_t Nl);
 
-int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
-                      unsigned char *a,
-                     NR_gNB_DLSCH_t *dlsch,
-                     uint16_t frame,
+int nr_dlsch_encoding(unsigned char *a,
                      uint8_t subframe,
-                     time_stats_t *rm_stats,
-                     time_stats_t *te_stats,
-                     time_stats_t *i_stats);
+                     NR_gNB_DLSCH_t *dlsch,
+                     NR_DL_FRAME_PARMS* frame_parms);
 

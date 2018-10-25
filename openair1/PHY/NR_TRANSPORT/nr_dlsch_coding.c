@@ -243,20 +243,15 @@ void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
   }
 }
 
-int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
-                     unsigned char *a,
-                     NR_gNB_DLSCH_t *dlsch,
-                     uint16_t frame,
+int nr_dlsch_encoding(unsigned char *a,
                      uint8_t subframe,
-                     time_stats_t *rm_stats,
-                     time_stats_t *te_stats,
-                     time_stats_t *i_stats)
+                     NR_gNB_DLSCH_t *dlsch,
+                     NR_DL_FRAME_PARMS* frame_parms)
 {
 
   unsigned int G;
   unsigned int crc=1;
 
-  NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   uint8_t harq_pid = dlsch->harq_ids[subframe];
   nfapi_nr_dl_config_dlsch_pdu_rel15_t rel15 = dlsch->harq_processes[harq_pid]->dlsch_pdu.dlsch_pdu_rel15;
   uint16_t nb_rb = rel15.n_prb;
@@ -266,7 +261,6 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   uint8_t mod_order = rel15.modulation_order;
   uint16_t Kr=0,r,r_offset=0;//Kr_bytes
   uint8_t *d_tmp[MAX_NUM_DLSCH_SEGMENTS];
-  //double rate = 0.33;
   uint8_t kb,BG=1;
   uint32_t E;
   uint8_t Ilbrm = 0;
@@ -278,7 +272,6 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
   A = rel15.transport_block_size;
-  //printf("Encoder: A: %d frame.subframe %d.%d \n",A, frame,subframe);
 
   G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,rel15.nb_layers);
   printf("dlsch coding A %d G %d mod_order %d\n", A,G, mod_order);
@@ -328,7 +321,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     Kr = dlsch->harq_processes[harq_pid]->K;
     //Kr_bytes = Kr>>3;
 
-    start_meas(te_stats);
+    //start_meas(te_stats);
     for (r=0; r<dlsch->harq_processes[harq_pid]->C; r++) {
       d_tmp[r] = &dlsch->harq_processes[harq_pid]->d[r][0];
       channel_input[r] = &dlsch->harq_processes[harq_pid]->d[r][0];
@@ -361,7 +354,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     	printf("\n");*/
 
     //ldpc_encoder_optim_8seg(dlsch->harq_processes[harq_pid]->c,d_tmp,Kr,1,3,dlsch->harq_processes[harq_pid]->C,NULL,NULL,NULL,NULL);
-    stop_meas(te_stats);
+    //stop_meas(te_stats);
     //printf("end ldpc encoder -- output\n");
 
 #ifdef DEBUG_DLSCH_CODING
@@ -380,7 +373,7 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
         mod_order,nb_rb);
 #endif
 
-    start_meas(rm_stats);
+    //start_meas(rm_stats);
 #ifdef DEBUG_DLSCH_CODING
   printf("rvidx in encoding = %d\n", dlsch->harq_processes[harq_pid]->rvidx);
 #endif
@@ -402,14 +395,14 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
     for (int i =0; i<16; i++)
        	printf("output ratematching e[%d]= %d r_offset %d\n", i,dlsch->harq_processes[harq_pid]->e[i], r_offset);
 #endif
-    stop_meas(rm_stats);
+    //stop_meas(rm_stats);
 
-    start_meas(i_stats);
+    //start_meas(i_stats);
 	nr_interleaving_ldpc(E,
 						mod_order,
 						dlsch->harq_processes[harq_pid]->e+r_offset,
 						dlsch->harq_processes[harq_pid]->f+r_offset);
-    stop_meas(i_stats);
+    //stop_meas(i_stats);
 
     r_offset += E;
 #ifdef DEBUG_DLSCH_CODING

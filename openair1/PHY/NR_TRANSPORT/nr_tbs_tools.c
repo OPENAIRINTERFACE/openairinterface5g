@@ -120,8 +120,8 @@ void nr_get_tbs(NR_gNB_DLSCH_t *dlsch,
   uint8_t mcs_table = config.pdsch_config.mcs_table.value;
   uint8_t N_sh_symb = dlsch_rel15->nb_symbols;
   uint8_t Imcs = dlsch_rel15->mcs_idx;
-  uint16_t N_prime_RE = NR_NB_SC_PER_RB*N_sh_symb - N_PRB_DMRS - N_PRB_oh;
-  LOG_I(MAC, "N_prime_RE %d for %d symbols %d DMRS per PRB and %d overhead\n", N_prime_RE, N_sh_symb, N_PRB_DMRS, N_PRB_oh);
+  uint16_t N_RE_prime = NR_NB_SC_PER_RB*N_sh_symb - N_PRB_DMRS - N_PRB_oh;
+  LOG_I(MAC, "N_RE_prime %d for %d symbols %d DMRS per PRB and %d overhead\n", N_RE_prime, N_sh_symb, N_PRB_DMRS, N_PRB_oh);
 
   uint16_t N_RE, Ninfo, Ninfo_prime, C, TBS;
   uint8_t table_idx, R, Qm, n, scale;
@@ -129,7 +129,7 @@ void nr_get_tbs(NR_gNB_DLSCH_t *dlsch,
   table_idx = get_table_idx(mcs_table, dci_format, rnti_type, ss_type);
   scale = 10 + (((table_idx==2)&&((Imcs==20)||(Imcs==26)))?1:0);
   
-  N_RE = min(156, N_RE)*dlsch_rel15->n_prb;
+  N_RE = min(156, N_RE_prime)*dlsch_rel15->n_prb;
   R = nr_get_code_rate(Imcs, table_idx);
   Qm = nr_get_Qm(Imcs, table_idx);
   Ninfo = (N_RE*R*Qm*dlsch_rel15->nb_layers)>>scale;
