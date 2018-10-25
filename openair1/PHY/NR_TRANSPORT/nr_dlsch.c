@@ -39,7 +39,7 @@
 uint8_t mod_order[5] = {1, 2, 4, 6, 8};
 uint16_t mod_offset[5] = {1,3,7,23,87};
 
-void nr_pdsch_codeword_scrambling(uint32_t *in,
+void nr_pdsch_codeword_scrambling(uint8_t *in,
                          uint8_t size,
                          uint8_t q,
                          uint32_t Nid,
@@ -57,7 +57,7 @@ void nr_pdsch_codeword_scrambling(uint32_t *in,
       s = lte_gold_generic(&x1, &x2, reset);
       reset = 0;
     }
-    *out ^= (((*in)>>i)&1) ^ ((s>>i)&1);
+    *out ^= ((in[i])&1) ^ ((s>>i)&1);
   }
 
 }
@@ -201,7 +201,7 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
   int8_t Wf[2], Wt[2], l0, delta;
 
   /// CRC, coding, interleaving and rate matching
-  nr_dlsch_encoding(0, subframe, &dlsch, &frame_parms);
+  nr_dlsch_encoding(harq->pdu, subframe, &dlsch, &frame_parms);
 
   /// scrambling
   uint16_t n_RNTI = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? \

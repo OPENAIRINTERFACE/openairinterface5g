@@ -62,7 +62,7 @@ void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t* dci_alloc, uint16_t n_shift, uint8_t m
   AssertFatal(cond==0, "CCE to REG interleaving: Invalid configuration leading to non integer C\n");
   C = N_reg/(bsize*R);
 
-  tmp = L * (( Y + (uint16_t)(floor((m*N_cce)/(L*M_s_max))) + n_CI ) % ((uint16_t)floor(N_cce/L)));
+  tmp = L * (( Y + (m*N_cce)/(L*M_s_max) + n_CI ) % (N_cce/L));
 
   LOG_I(PHY, "CCE list generation for candidate %d: bundle size %d ilv size %d tmp %d\n", m, bsize, R, tmp);
   for (uint8_t cce_idx=0; cce_idx<L; cce_idx++) {
@@ -162,8 +162,6 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
         for (int i=0; i<fsize; i++) 
             *dci_pdu |= ((pdu_rel15->frequency_domain_assignment>>(fsize-i-1))&1)<<pos++;
 
-        printf("fsize = %d\n",fsize);
-        printf("NFAPI_NR_RNTI_C\n");
       if ((pdu_rel15->frequency_domain_assignment+1)&1 ==0) //fsize are all 1  38.212 p86
       {
           printf("***************************\n");
@@ -536,9 +534,5 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
 
   /// DLSCH struct
   memcpy((void*)&dlsch->harq_processes[dci_alloc->harq_pid]->dlsch_pdu, (void*)dlsch_pdu, sizeof(nfapi_nr_dl_config_dlsch_pdu));
-  nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_rel15 = &dlsch_pdu->dlsch_pdu_rel15;
-  nr_get_tbs(dlsch, *pdcch_pdu, *cfg, dci_alloc->harq_pid);
-  dlsch_rel15->nb_layers =1;
-  dlsch_rel15->nb_codewords = 1;
 
 }

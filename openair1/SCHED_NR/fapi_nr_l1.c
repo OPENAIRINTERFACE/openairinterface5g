@@ -57,7 +57,8 @@ void handle_nr_nfapi_bch_pdu(PHY_VARS_gNB *gNB,
 void handle_nfapi_nr_dci_dl_pdu(PHY_VARS_gNB *gNB,
                                 int frame, int subframe,
                                 gNB_rxtx_proc_t *proc,
-                                nfapi_nr_dl_config_request_pdu_t *dl_config_pdu)
+                                nfapi_nr_dl_config_request_pdu_t *dl_config_pdu,
+                                nfapi_nr_dl_config_request_pdu_t *dl_config_dlsch_pdu)
 {
   int idx                        = subframe&1;
   NR_gNB_PDCCH *pdcch_vars       = &gNB->pdcch_vars;
@@ -65,7 +66,7 @@ void handle_nfapi_nr_dci_dl_pdu(PHY_VARS_gNB *gNB,
   LOG_D(PHY,"Frame %d, Subframe %d: DCI processing - populating pdcch_vars->dci_alloc[%d] proc:subframe_tx:%d idx:%d pdcch_vars->num_dci:%d\n",frame,subframe, pdcch_vars->num_dci, proc->subframe_tx, idx, pdcch_vars->num_dci);
 
   // copy dci configuration into gNB structure
-  nr_fill_dci_and_dlsch(gNB,frame,subframe,proc,&pdcch_vars->dci_alloc[pdcch_vars->num_dci],&dl_config_pdu->dci_dl_pdu, &dl_config_pdu->dlsch_pdu);
+  nr_fill_dci_and_dlsch(gNB,frame,subframe,proc,&pdcch_vars->dci_alloc[pdcch_vars->num_dci],&dl_config_pdu->dci_dl_pdu, &dl_config_dlsch_pdu->dlsch_pdu);
 
   LOG_D(PHY,"Frame %d, Subframe %d: DCI processing - populated pdcch_vars->dci_alloc[%d] proc:subframe_tx:%d idx:%d pdcch_vars->num_dci:%d\n",proc->frame_tx,proc->subframe_tx, pdcch_vars->num_dci, proc->subframe_tx, idx, pdcch_vars->num_dci);
 }
@@ -92,6 +93,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   uint8_t number_dl_pdu             = DL_req->dl_config_request_body.number_pdu;
 
   nfapi_nr_dl_config_request_pdu_t *dl_config_pdu;
+  nfapi_nr_dl_config_request_pdu_t *dl_config_dlsch_pdu;
  
   int i;
 
@@ -122,11 +124,14 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
       break;
 
       case NFAPI_NR_DL_CONFIG_DCI_DL_PDU_TYPE:
+        dl_config_dlsch_pdu = &DL_req->dl_config_request_body.dl_config_pdu_list[++i];
         handle_nfapi_nr_dci_dl_pdu(gNB,
                                    frame, subframe,
                                    proc,
-                                   dl_config_pdu);
+                                   dl_config_pdu,
+                                   dl_config_dlsch_pdu);
         gNB->pdcch_vars.num_dci++;
+        gNB->pdcch_vars.num_pdsch_rnti++;
         do_oai=1;
       break;
     }

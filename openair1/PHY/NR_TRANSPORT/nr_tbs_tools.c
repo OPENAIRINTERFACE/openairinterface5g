@@ -103,14 +103,12 @@ static inline uint8_t get_table_idx(uint8_t mcs_table, uint8_t dci_format, uint8
     return 1;
 }
 
-void nr_get_tbs(NR_gNB_DLSCH_t *dlsch,
+void nr_get_tbs(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
                 nfapi_nr_dl_config_dci_dl_pdu dci_pdu,
-                nfapi_nr_config_request_t config,
-                uint8_t harq_pid) {
+                nfapi_nr_config_request_t config) {
 
   nfapi_nr_dl_config_pdcch_parameters_rel15_t params_rel15 = dci_pdu.pdcch_params_rel15;
-  NR_DL_gNB_HARQ_t *harq = dlsch->harq_processes[harq_pid];
-  nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_rel15 = &harq->dlsch_pdu.dlsch_pdu_rel15;
+  nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_rel15 = &dlsch_pdu->dlsch_pdu_rel15;
   uint8_t rnti_type = params_rel15.rnti_type;
   uint8_t dci_format = params_rel15.dci_format;
   uint8_t ss_type = params_rel15.search_space_type;

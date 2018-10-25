@@ -56,12 +56,11 @@ uint8_t nr_get_Qm(uint8_t Imcs, uint8_t table_idx);
 
 uint32_t nr_get_code_rate(uint8_t Imcs, uint8_t table_idx);
 
-void nr_get_tbs(NR_gNB_DLSCH_t *dlsch,
+void nr_get_tbs(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
                 nfapi_nr_dl_config_dci_dl_pdu dci_pdu,
-                nfapi_nr_config_request_t config,
-                uint8_t harq_pid);
+                nfapi_nr_config_request_t config);
 
-void nr_pdsch_codeword_scrambling(uint32_t *in,
+void nr_pdsch_codeword_scrambling(uint8_t *in,
                          uint8_t size,
                          uint8_t q,
                          uint32_t Nid,

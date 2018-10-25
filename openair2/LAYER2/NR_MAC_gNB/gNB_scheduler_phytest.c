@@ -46,7 +46,8 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   gNB_MAC_INST                        *nr_mac      = RC.nrmac[module_idP];
   //NR_COMMON_channels_t                *cc           = nr_mac->common_channels;
   nfapi_nr_dl_config_request_body_t   *dl_req;
-  nfapi_nr_dl_config_request_pdu_t  *dl_config_pdu;
+  nfapi_nr_dl_config_request_pdu_t  *dl_config_dci_pdu;
+  nfapi_nr_dl_config_request_pdu_t  *dl_config_dlsch_pdu;
   nfapi_tx_request_pdu_t            *TX_req;
   uint16_t sfn_sf = frameP << 4 | subframeP;
   uint16_t rnti = 0x1234;
@@ -59,20 +60,27 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     NR_DL_FRAME_PARMS             *fp    = &gNB->frame_parms;
 
     dl_req = &nr_mac->DL_req[CC_id].dl_config_request_body;
-    dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
-    memset((void*)dl_config_pdu,0,sizeof(nfapi_nr_dl_config_request_pdu_t));
-    dl_config_pdu->pdu_type = NFAPI_NR_DL_CONFIG_DCI_DL_PDU_TYPE;
-    dl_config_pdu->pdu_size = (uint8_t)(2+sizeof(nfapi_nr_dl_config_dci_dl_pdu));
+    dl_config_dci_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
+    memset((void*)dl_config_dci_pdu,0,sizeof(nfapi_nr_dl_config_request_pdu_t));
+    dl_config_dci_pdu->pdu_type = NFAPI_NR_DL_CONFIG_DCI_DL_PDU_TYPE;
+    dl_config_dci_pdu->pdu_size = (uint8_t)(2+sizeof(nfapi_nr_dl_config_dci_dl_pdu));
 
-    nfapi_nr_dl_config_dci_dl_pdu_rel15_t *pdu_rel15 = &dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel15;
-    nfapi_nr_dl_config_pdcch_parameters_rel15_t *params_rel15 = &dl_config_pdu->dci_dl_pdu.pdcch_params_rel15;
-    nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_pdu_rel15 = &dl_config_pdu->dlsch_pdu.dlsch_pdu_rel15;
+    dl_config_dlsch_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu+1];
+    memset((void*)dl_config_dlsch_pdu,0,sizeof(nfapi_nr_dl_config_request_pdu_t));
+    dl_config_dlsch_pdu->pdu_type = NFAPI_NR_DL_CONFIG_DLSCH_PDU_TYPE;
+    dl_config_dlsch_pdu->pdu_size = (uint8_t)(2+sizeof(nfapi_nr_dl_config_dlsch_pdu));
+
+    nfapi_nr_dl_config_dci_dl_pdu_rel15_t *pdu_rel15 = &dl_config_dci_pdu->dci_dl_pdu.dci_dl_pdu_rel15;
+    nfapi_nr_dl_config_pdcch_parameters_rel15_t *params_rel15 = &dl_config_dci_pdu->dci_dl_pdu.pdcch_params_rel15;
+    nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_pdu_rel15 = &dl_config_dlsch_pdu->dlsch_pdu.dlsch_pdu_rel15;
 
     dlsch_pdu_rel15->start_prb = 0;
     dlsch_pdu_rel15->n_prb = 40;
     dlsch_pdu_rel15->start_symbol = 8;
     dlsch_pdu_rel15->nb_symbols = 6;
     dlsch_pdu_rel15->rnti = rnti;
+    dlsch_pdu_rel15->nb_layers =1;
+    dlsch_pdu_rel15->nb_codewords = 1;
 
     nr_configure_css_dci_from_mib(&gNB->pdcch_type0_params,
                                kHz30, kHz30, nr_FR1, 0, 0,
@@ -125,6 +133,9 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                 params_rel15->nb_slots,
                 params_rel15->sfn_mod2,
                 params_rel15->first_slot);
+  nr_get_tbs(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu, *cfg);
+  //LOG_I(MAC, "DLSCH PDU: ")
+
   dl_req->number_dci++;
   dl_req->number_pdsch_rnti++;
   dl_req->number_pdu+=2;
@@ -134,7 +145,16 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   TX_req->pdu_index = nr_mac->pdu_index[CC_id]++;
   TX_req->num_segments = 1;
   TX_req->segments[0].segment_length = 8;
-  //TX_req->segments[0].segment_data = (uint8_t*)pdu_rel15;
+  nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus++;
+  nr_mac->TX_req[CC_id].sfn_sf = sfn_sf;
+  nr_mac->TX_req[CC_id].tx_request_body.tl.tag = NFAPI_TX_REQUEST_BODY_TAG;
+  nr_mac->TX_req[CC_id].header.message_id = NFAPI_TX_REQUEST;
+
+  TX_req = &nr_mac->TX_req[CC_id].tx_request_body.tx_pdu_list[nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus+1];
+  TX_req->pdu_length = dlsch_pdu_rel15->transport_block_size;
+  TX_req->pdu_index = nr_mac->pdu_index[CC_id]++;
+  TX_req->num_segments = 1;
+  TX_req->segments[0].segment_length = 8;
   nr_mac->TX_req[CC_id].tx_request_body.number_of_pdus++;
   nr_mac->TX_req[CC_id].sfn_sf = sfn_sf;
   nr_mac->TX_req[CC_id].tx_request_body.tl.tag = NFAPI_TX_REQUEST_BODY_TAG;
