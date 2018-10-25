@@ -532,10 +532,11 @@ int main(int argc, char **argv)
 			 SISO,
 			 UE->high_speed_flag);
 
+	if (ret<0) n_errors++;
       }
     } //noise trials
 
-    printf("SNR %f : n_errors = %d/%d\n", SNR,n_errors,n_trials);
+    printf("SNR %f : n_errors (negative CRC) = %d/%d\n", SNR,n_errors,n_trials);
 
     if (n_trials==1)
       break;
