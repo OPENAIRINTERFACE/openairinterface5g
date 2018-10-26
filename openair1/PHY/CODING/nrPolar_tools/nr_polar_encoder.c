@@ -325,21 +325,35 @@ void build_polar_tables(t_nrPolar_paramsPtr polarParams) {
   AssertFatal(polarParams->K > 32, "K = %d < 33, is not supported yet\n",polarParams->K);
   AssertFatal(polarParams->K < 65, "K = %d > 64, is not supported yet\n",polarParams->K);
   
-  int bit_i;
-  for (int byte=0;byte<8;byte++) {
-    for (int val=0;val<256;val++) {
-      for (int i=0;i<8;i++) {
+  int bit_i,ip;
+  int numbytes = polarParams->K>>3;
+  int residue = polarParams->K&7;
+  int numbits;
+  if (residue>0) numbytes++;
+  for (int byte=0;byte<numbytes;byte++) {
+    if (byte<(polarParams->K>>3)) numbits=8;
+    else numbits=residue;
+    for (int i=0;i<numbits;i++) {
+      ip=polarParams->interleaving_pattern[(8*byte)+i];
+      printf("input (%d,%d) %d ip %d\n",byte,i,(8*byte)+i,ip);
+      AssertFatal(ip<64,"ip = %d\n",ip);
+      for (int val=0;val<256;val++) {
 	bit_i=(val>>i)&1;
 	polarParams->cprime_tab[byte][val] |= (bit_i<<polarParams->interleaving_pattern[(8*byte)+i]);				
       }
     }
+    for (int val=0;val<255;val++)
+      printf("cprime_tab[%d][%d] = %llx\n",byte,val,polarParams->cprime_tab[byte][val]);
+
   }
     
   AssertFatal(polarParams->N==512,"N = %d, not done yet\n",polarParams->N);
 
   // build G bit vectors for information bit positions and convert the bit as bytes tables in nr_polar_kronecker_power_matrices.c to 64 bit packed vectors.
   // keep only rows of G which correspond to information/crc bits
+  polarParams->G_N_tab = (uint64_t**)malloc(polarParams->K * sizeof(int64_t*));
   for (int i=0;i<polarParams->K;i++) {
+    polarParams->G_N_tab[i] = (uint64_t*)memalign(32,(polarParams->N/64)*sizeof(uint64_t));
     memset((void*)polarParams->G_N_tab[i],0,(polarParams->N/64)*sizeof(uint64_t));
     for (int j=0;j<polarParams->N;j++) 
       polarParams->G_N_tab[i][j/64] |= polarParams->G_N[polarParams->Q_I_N[i]][j]<<(j&63);

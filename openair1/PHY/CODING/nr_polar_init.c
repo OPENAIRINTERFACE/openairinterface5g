@@ -148,6 +148,7 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 		free(J);
 
 		build_decoder_tree(newPolarInitNode);
+		build_polar_tables(newPolarInitNode);
 		printf("decoder tree nodes %d\n",newPolarInitNode->tree.num_nodes);
 
 	} else {
