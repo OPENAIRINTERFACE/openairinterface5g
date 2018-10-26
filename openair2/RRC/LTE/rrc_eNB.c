@@ -862,7 +862,7 @@ rrc_eNB_free_UE(
       rnti);
 
     if (EPC_MODE_ENABLED) {
-      if((ue_context_pP->ue_context.ul_failure_timer >= 20000) && (mac_eNB_get_rrc_status(enb_mod_idP, rnti) >= RRC_CONNECTED)) {
+      if ((ue_context_pP->ue_context.ul_failure_timer >= 20000) && (mac_eNB_get_rrc_status(enb_mod_idP, rnti) >= RRC_CONNECTED)) {
         LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ sent for RNTI %x, cause 21, radio connection with ue lost\n", 
           enb_mod_idP, 
           rnti);
@@ -2016,13 +2016,14 @@ rrc_eNB_generate_RRCConnectionRelease(
 )
 //-----------------------------------------------------------------------------
 {
-  uint8_t buffer[RRC_BUF_SIZE] = 0;
+  uint8_t buffer[RRC_BUF_SIZE];
   uint16_t size = 0;
+
+  memset(buffer, 0, RRC_BUF_SIZE);
 
   T(T_ENB_RRC_CONNECTION_RELEASE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
-  memset(buffer, 0, RRC_BUF_SIZE);
   size = do_RRCConnectionRelease(ctxt_pP->module_id, buffer,rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id));
 
   ue_context_pP->ue_context.ue_reestablishment_timer = 0;
