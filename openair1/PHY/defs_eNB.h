@@ -809,12 +809,16 @@ typedef struct eNB_proc_t_s {
   pthread_mutex_t mutex_asynch_rxtx;
   /// mutex for RU access to eNB processing (PDSCH/PUSCH)
   pthread_mutex_t mutex_RU;
+  /// mutex for eNB processing to access RU TX (PDSCH/PUSCH)
+  pthread_mutex_t mutex_RU_tx;
   /// mutex for RU access to eNB processing (PRACH)
   pthread_mutex_t mutex_RU_PRACH;
   /// mutex for RU access to eNB processing (PRACH BR)
   pthread_mutex_t mutex_RU_PRACH_br;
   /// mask for RUs serving eNB (PDSCH/PUSCH)
   int RU_mask;
+  /// mask for RUs serving eNB (PDSCH/PUSCH)
+  int RU_mask_tx;
   /// mask for RUs serving eNB (PRACH)
   int RU_mask_prach;
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
@@ -829,8 +833,6 @@ typedef struct eNB_proc_t_s {
   eNB_rxtx_proc_t L1_proc,L1_proc_tx;
   /// stats thread pthread descriptor
   pthread_t process_stats_thread;
-  /// for waking up tx procedure
-  RU_proc_t *ru_proc;
 } eNB_proc_t;
 
 
