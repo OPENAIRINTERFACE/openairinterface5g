@@ -1362,6 +1362,7 @@ void generate_RIV_tables(void);
   N_RB_DL, PHICH_CONFIG and Nid_cell) and the UE can begin decoding PDCCH and DLSCH SI to retrieve the rest.  Once these
   parameters are know, the routine calls some basic initialization routines (cell-specific reference signals, etc.)
   @param phy_vars_ue Pointer to UE variables
+  @param mode current running mode
 */
 int nr_initial_sync(PHY_VARS_NR_UE *phy_vars_ue, runmode_t mode);
 

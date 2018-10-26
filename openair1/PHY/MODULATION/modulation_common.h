@@ -22,6 +22,7 @@
 #ifndef __MODULATION_COMMON__H__
 #define __MODULATION_COMMON__H__
 #include "PHY/defs_common.h"
+#include "PHY/defs_nr_common.h"
 /** @addtogroup _PHY_MODULATION_
  * @{
 */
@@ -48,6 +49,7 @@ void PHY_ofdm_mod(int *input,
 
 
 void normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,LTE_DL_FRAME_PARMS *frame_parms);
+void nr_normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,NR_DL_FRAME_PARMS *frame_parms);
 
 void do_OFDM_mod(int32_t **txdataF, int32_t **txdata, uint32_t frame,uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms);
 

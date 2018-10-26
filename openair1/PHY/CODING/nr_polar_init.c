@@ -185,9 +185,9 @@ void nr_polar_print_polarParams(t_nrPolar_paramsPtr polarParams)
 }
 
 t_nrPolar_paramsPtr nr_polar_params (t_nrPolar_paramsPtr polarParams,
-									 int8_t messageType,
-									 uint16_t messageLength,
-									 uint8_t aggregation_level)
+				     int8_t messageType,
+				     uint16_t messageLength,
+				     uint8_t aggregation_level)
 {
 	t_nrPolar_paramsPtr currentPtr = NULL;
 

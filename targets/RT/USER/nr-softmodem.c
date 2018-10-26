@@ -94,8 +94,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 // current status is that every UE has a DL scope for a SINGLE eNB (gnb_id=0)
 // at eNB 0, an UL scope for every UE
 
-short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT] = {0,0,23170,23170,-23170,-23170,23170,23170,23170,-23170,-23170,23170,-23170,-23170};
-
 FD_lte_phy_scope_ue  *form_ue[NUMBER_OF_UE_MAX];
 FD_lte_phy_scope_enb *form_enb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
 FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;

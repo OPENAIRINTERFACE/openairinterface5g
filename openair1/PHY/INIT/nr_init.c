@@ -92,7 +92,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 
   int i, UE_id; 
 
-  LOG_I(PHY,"[gNB %d] %s() About to wait for gNB to be configured", gNB->Mod_id, __FUNCTION__);
+  LOG_I(PHY,"[gNB %d] %s() About to wait for gNB to be configured\n", gNB->Mod_id, __FUNCTION__);
 
   gNB->total_dlsch_bitrate = 0;
   gNB->total_transmitted_bits = 0;
@@ -100,6 +100,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   gNB->check_for_MUMIMO_transmissions=0;
  
   while(gNB->configured == 0) usleep(10000);
+
+  init_dfts();
 /*
   LOG_I(PHY,"[gNB %"PRIu8"] Initializing DL_FRAME_PARMS : N_RB_DL %"PRIu8", PHICH Resource %d, PHICH Duration %d nb_antennas_tx:%u nb_antennas_rx:%u PRACH[rootSequenceIndex:%u prach_Config_enabled:%u configIndex:%u highSpeed:%u zeroCorrelationZoneConfig:%u freqOffset:%u]\n",
         gNB->Mod_id,
@@ -324,7 +326,7 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
     free_and_zero(srs_vars[UE_id].srs_ch_estimates_time);
   } //UE_id
 
-  free_ul_ref_sigs();
+  //free_ul_ref_sigs();
 
   for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) free_and_zero(srs_vars[UE_id].srs);
 
@@ -367,7 +369,7 @@ void install_schedule_handlers(IF_Module_t *if_inst)
 
 /// this function is a temporary addition for NR configuration
 
-/*void nr_phy_config_request(PHY_VARS_gNB *gNB)
+void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu)
 {
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   nfapi_nr_config_request_t *gNB_config = &gNB->gNB_config;
@@ -375,14 +377,14 @@ void install_schedule_handlers(IF_Module_t *if_inst)
   //overwrite for new NR parameters
   gNB_config->nfapi_config.rf_bands.rf_band[0] = 22;
   gNB_config->nfapi_config.earfcn.value = 6600;
-  gNB_config->subframe_config.numerology_index_mu.value = 1;
-  gNB_config->subframe_config.duplex_mode.value = FDD;
+  gNB_config->subframe_config.numerology_index_mu.value = mu;
+  gNB_config->subframe_config.duplex_mode.value = TDD;
   gNB_config->rf_config.tx_antenna_ports.value = 1;
-  gNB_config->rf_config.dl_carrier_bandwidth.value = 106;
-  gNB_config->rf_config.ul_carrier_bandwidth.value = 106;
+  gNB_config->rf_config.dl_carrier_bandwidth.value = N_RB_DL;
+  gNB_config->rf_config.ul_carrier_bandwidth.value = N_RB_UL;
   gNB_config->sch_config.half_frame_index.value = 0;
   gNB_config->sch_config.ssb_subcarrier_offset.value = 0;
-  gNB_config->sch_config.n_ssb_crb.value = 86;
+  gNB_config->sch_config.n_ssb_crb.value = (N_RB_DL-20)>>1;
   gNB_config->sch_config.ssb_subcarrier_offset.value = 0;
 
 
@@ -396,7 +398,7 @@ void install_schedule_handlers(IF_Module_t *if_inst)
 
   gNB->configured                                   = 1;
   LOG_I(PHY,"gNB configured\n");
-}*/
+}
 
 
 void nr_phy_config_request(NR_PHY_Config_t *phy_config)

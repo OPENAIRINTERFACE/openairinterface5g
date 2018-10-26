@@ -111,9 +111,9 @@ int nr_get_ssb_start_symbol(nfapi_nr_config_request_t *cfg, NR_DL_FRAME_PARMS *f
 
 void nr_set_ssb_first_subcarrier(nfapi_nr_config_request_t *cfg, NR_DL_FRAME_PARMS *fp)
 {
-  int start_rb = cfg->sch_config.n_ssb_crb.value / pow(2,cfg->subframe_config.numerology_index_mu.value);
+  int start_rb = cfg->sch_config.n_ssb_crb.value / (1<<cfg->subframe_config.numerology_index_mu.value);
   fp->ssb_start_subcarrier = 12 * start_rb + cfg->sch_config.ssb_subcarrier_offset.value;
-  LOG_D(PHY, "SSB first subcarrier %d\n", fp->ssb_start_subcarrier);
+  LOG_D(PHY, "SSB first subcarrier %d (%d,%d)\n", fp->ssb_start_subcarrier,start_rb,cfg->sch_config.ssb_subcarrier_offset.value);
 }
 
 void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int subframe) {
@@ -135,12 +135,13 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int subframe) {
   if (subframe == ss_subframe)
   {
     // Current implementation is based on SSB in first half frame, first candidate
-    LOG_I(PHY,"SS TX: frame %d, subframe %d, start_symbol %d\n",frame,subframe, ssb_start_symbol);
+    LOG_D(PHY,"SS TX: frame %d, subframe %d, start_symbol %d\n",frame,subframe, ssb_start_symbol);
 
     nr_generate_pss(gNB->d_pss, txdataF, AMP, ssb_start_symbol, cfg, fp);
     nr_generate_sss(gNB->d_sss, txdataF, AMP_OVER_2, ssb_start_symbol, cfg, fp);
 
     if (!(frame&7)){
+      LOG_D(PHY,"%d.%d : pbch_configured %d\n",frame,subframe,gNB->pbch_configured);
       if (gNB->pbch_configured != 1)return;
       gNB->pbch_configured = 0;
     }
@@ -182,7 +183,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
   num_dci = gNB->pdcch_vars.num_dci;
   if (num_dci) {
-    LOG_I(PHY, "[gNB %d] Frame %d subframe %d \
+    LOG_D(PHY, "[gNB %d] Frame %d subframe %d \
     Calling nr_generate_dci_top (number of DCI %d)\n", gNB->Mod_id, frame, subframe, num_dci);
 
     uint8_t slot_idx = gNB->pdcch_vars.dci_alloc[0].pdcch_params.first_slot;
