@@ -285,6 +285,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode)
   init_frame_parms(frame_parms,1);
   /*
   LOG_M("rxdata0.m","rxd0",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
+
   exit(-1);
   */
   sync_pos = lte_sync_time(ue->common_vars.rxdata,

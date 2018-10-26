@@ -655,15 +655,16 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   int i,j,k,l;
   int eNB_id;
   int th_id;
-
+  int n_ssb_crb=(fp->N_RB_DL-20)>>1;
   abstraction_flag = 0;
   fp->nb_antennas_tx = 1;
   fp->nb_antennas_rx=1;
 
+
   printf("Initializing UE vars (abstraction %"PRIu8") for eNB TXant %"PRIu8", UE RXant %"PRIu8"\n",abstraction_flag,fp->nb_antennas_tx,fp->nb_antennas_rx);
   //LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_UE][MOD %02u][]\n", ue->Mod_id+NB_eNB_INST);
   
-  nr_init_frame_parms_ue(&ue->frame_parms);
+  nr_init_frame_parms_ue(&ue->frame_parms,NR_MU_1,NORMAL,n_ssb_crb,0);
   phy_init_nr_top(ue);
 
   // many memory allocation sizes are hard coded
@@ -941,43 +942,25 @@ void init_nr_ue_transport(PHY_VARS_NR_UE *ue,int abstraction_flag) {
 
 void phy_init_nr_top(PHY_VARS_NR_UE *ue)
 {
-	NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
-	NR_UE_DLSCH_t *dlsch0 = ue->dlsch[0][0][0];
-	dlsch0 =(NR_UE_DLSCH_t *)malloc16(sizeof(NR_UE_DLSCH_t));
-
+  NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
+  NR_UE_DLSCH_t *dlsch0 = ue->dlsch[0][0][0];
+  dlsch0 =(NR_UE_DLSCH_t *)malloc16(sizeof(NR_UE_DLSCH_t));
+  
   crcTableInit();
 
   init_dfts();
-  
-  ccodedot11_init();
-  ccodedot11_init_inv();
-
-  ccodelte_init();
-  ccodelte_init_inv();
-
-  //treillis_table_init();
-
-  phy_generate_viterbi_tables();
-  phy_generate_viterbi_tables_lte();
-
-  //init_td8();
-  //init_td16();
-#ifdef __AVX2__
-  //init_td16avx2();
-#endif
 
   init_context_synchro_nr(frame_parms);
 
   generate_ul_reference_signal_sequences(SHRT_MAX);
 
   // Polar encoder init for PBCH
-  //nr_polar_init(&frame_parms->pbch_polar_params, 1);
-  /*t_nrPolar_paramsPtr nrPolar_params = NULL, currentPtr = NULL;
-  nr_polar_init(&ue->nrPolar_params,
-    		  	  	NR_POLAR_PBCH_MESSAGE_TYPE,
-					NR_POLAR_PBCH_PAYLOAD_BITS,
-					NR_POLAR_PBCH_AGGREGATION_LEVEL);*/
 
+  ue->nrPolar_params = NULL;
+  nr_polar_init(&ue->nrPolar_params,
+		NR_POLAR_PBCH_MESSAGE_TYPE,
+		NR_POLAR_PBCH_PAYLOAD_BITS,
+		NR_POLAR_PBCH_AGGREGATION_LEVEL);
   //lte_sync_time_init(frame_parms);
 
   //generate_ul_ref_sigs();

@@ -55,7 +55,7 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
   uint8_t idx=0;
   uint8_t nushift = config->sch_config.physical_cell_id.value &3;
 
-  LOG_I(PHY, "PBCH DMRS mapping started at symbol %d shift %d\n", ssb_start_symbol+1, nushift);
+  LOG_D(PHY, "PBCH DMRS mapping started at symbol %d shift %d\n", ssb_start_symbol+1, nushift);
 
   /// QPSK modulation
   for (int m=0; m<NR_PBCH_DMRS_LENGTH; m++) {
@@ -85,6 +85,11 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 #endif
       ((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1] = (a * mod_dmrs[m<<1]) >> 15;
       ((int16_t*)txdataF[aa])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (a * mod_dmrs[(m<<1) + 1]) >> 15;
+#ifdef DEBUG_PBCH_DMRS
+      printf("(%d,%d)\n",
+	((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1],
+	((int16_t*)txdataF[aa])[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
+#endif
       k+=4;
 
       if (k >= frame_parms->ofdm_symbol_size)
@@ -101,6 +106,11 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 #endif
       ((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1] = (a * mod_dmrs[m<<1]) >> 15;
       ((int16_t*)txdataF[aa])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (a * mod_dmrs[(m<<1) + 1]) >> 15;
+#ifdef DEBUG_PBCH_DMRS
+      printf("(%d,%d)\n",
+	((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1],
+	((int16_t*)txdataF[aa])[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
+#endif
       k+=(m==71)?148:4; // Jump from 44+nu to 192+nu
 
       if (k >= frame_parms->ofdm_symbol_size)
@@ -117,6 +127,11 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 #endif
       ((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1] = (a * mod_dmrs[m<<1]) >> 15;
       ((int16_t*)txdataF[aa])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (a * mod_dmrs[(m<<1) + 1]) >> 15;
+#ifdef DEBUG_PBCH_DMRS
+      printf("(%d,%d)\n",
+	((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1],
+	((int16_t*)txdataF[aa])[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
+#endif
       k+=4;
 
       if (k >= frame_parms->ofdm_symbol_size)
@@ -218,7 +233,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   memset((void*) xbyte, 0, 1);
   //uint8_t pbch_a_b[32];
 
-  LOG_I(PHY, "PBCH generation started\n");
+  //  LOG_D(PHY, "PBCH generation started\n");
 
   memset((void*)pbch, 0, sizeof(NR_gNB_PBCH));
   ///Payload generation

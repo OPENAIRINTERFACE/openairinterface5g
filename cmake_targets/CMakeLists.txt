@@ -1296,7 +1296,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_gold.c
   ${OPENAIR1_DIR}/PHY/TOOLS/file_output.c
   ${OPENAIR1_DIR}/PHY/TOOLS/cadd_vv.c
-  ${OPENAIR1_DIR}/PHY/TOOLS/lte_dfts.c
+  #${OPENAIR1_DIR}/PHY/TOOLS/lte_dfts.c
   ${OPENAIR1_DIR}/PHY/TOOLS/log2_approx.c
   ${OPENAIR1_DIR}/PHY/TOOLS/cmult_sv.c
   ${OPENAIR1_DIR}/PHY/TOOLS/cmult_vv.c
@@ -1334,7 +1334,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/NR_UE_ESTIMATION/nr_dl_channel_estimation.c
   ${OPENAIR1_DIR}/PHY/TOOLS/file_output.c
   ${OPENAIR1_DIR}/PHY/TOOLS/cadd_vv.c
-  ${OPENAIR1_DIR}/PHY/TOOLS/lte_dfts.c
+ # ${OPENAIR1_DIR}/PHY/TOOLS/lte_dfts.c
   ${OPENAIR1_DIR}/PHY/TOOLS/log2_approx.c
   ${OPENAIR1_DIR}/PHY/TOOLS/cmult_sv.c
   ${OPENAIR1_DIR}/PHY/TOOLS/cmult_vv.c
