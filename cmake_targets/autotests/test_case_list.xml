@@ -1055,7 +1055,7 @@
       <main_exec_args>-s-11 -S-10 -n1000
                       -s-11 -S-10 -n10 -I</main_exec_args>
       <tags>nr_pbchsim.test1</tags>
-      <search_expr_true>n_errors (negative CRC) = 0</search_expr_true>
+      <search_expr_true>n_errors \(negative CRC\) = 0</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
     </testCase> 
