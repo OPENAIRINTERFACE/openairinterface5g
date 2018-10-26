@@ -909,8 +909,8 @@ void init_eNB_proc(int inst) {
 
     proc->first_rx                 =1;
     proc->first_tx                 =1;
-    proc->RU_mask                  =0;
-    //for (int i=0;i<10;i++) proc->RU_mask[i]=0;   
+    //proc->RU_mask                  =0;
+    for (int i=0;i<10;i++) proc->RU_mask[i]=0;   
     proc->RU_mask_prach            =0;
 
     pthread_mutex_init( &eNB->UL_INFO_mutex, NULL);
@@ -963,8 +963,6 @@ void init_eNB_proc(int inst) {
 
 
     LOG_I(PHY,"eNB->single_thread_flag:%d\n", eNB->single_thread_flag);
-    LOG_I(PHY,"proc_rxtx[0]->instance_cnt_rxtx %d,proc_rxtx[1]->instance_cnt_rxtx %d\n",
-	  proc_rxtx[0].instance_cnt_rxtx,proc_rxtx[1].instance_cnt_rxtx);
 
     if ((get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) && nfapi_mode!=2) {
       pthread_create( &L1_proc->pthread, attr0, L1_thread, proc ); //!!!!!!!!!!!!!!!!!!!!! for us it is eNB !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1

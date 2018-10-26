@@ -1143,7 +1143,6 @@ void wakeup_L1s(RU_t *ru) {
   eNB_proc_t *proc      = &eNB->proc;
   RU_proc_t  *ruproc    = &ru->proc;
   struct timespec t;
-LOG_I(PHY,"ENTERED wakeup_eNBs\n");
   LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d (state %s)ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru_states[ru->state],ru->eNB_top);
 
   LOG_D(PHY,"wakeup_L1s (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
@@ -1236,7 +1235,7 @@ LOG_I(PHY,"ENTERED wakeup_eNBs\n");
   
 
 }
-
+}
 static inline int wakeup_prach_ru(RU_t *ru) {
 
   struct timespec wait;
@@ -1752,7 +1751,7 @@ static void* ru_thread( void* param ) {
           resynch_done=1;
         }
       
-        wakeup_eNBs(ru);
+        wakeup_L1s(ru);
       }
       else {
 
