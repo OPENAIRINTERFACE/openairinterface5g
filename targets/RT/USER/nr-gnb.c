@@ -748,18 +748,19 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
   int i;
   int j;
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
+  nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
 
   LOG_I(PHY, "Initialise nr transport\n");
 
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     LOG_I(PHY,"Allocating Transport Channel Buffers for DLSCH, UE %d\n",i);
     for (j=0; j<2; j++) {
-      gNB->dlsch[i][j] = new_gNB_dlsch(1,8,NSOFT,fp->N_RB_DL,0,fp);
+      gNB->dlsch[i][j] = new_gNB_dlsch(1,16,NSOFT,cfg->rf_config.dl_carrier_bandwidth.value,0,fp);
       if (!gNB->dlsch[i][j]) {
 	LOG_E(PHY,"Can't get gNB dlsch structures for UE %d \n", i);
 	exit(-1);
       } else {
-	gNB->dlsch[i][j]->rnti=0x1234;
+	gNB->dlsch[i][j]->rnti=0;
 	LOG_D(PHY,"dlsch[%d][%d] => %p rnti:%d\n",i,j,gNB->dlsch[i][j], gNB->dlsch[i][j]->rnti);
       }
     }

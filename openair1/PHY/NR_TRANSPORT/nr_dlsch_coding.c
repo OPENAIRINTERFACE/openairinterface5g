@@ -152,7 +152,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_t
      }
 
     for (i=0; i<10; i++)
-      dlsch->harq_ids[i] = Mdlharq;
+      dlsch->harq_ids[i] = i;
 
     for (i=0; i<Mdlharq; i++) {
       dlsch->harq_processes[i] = (NR_DL_gNB_HARQ_t *)malloc16(sizeof(NR_DL_gNB_HARQ_t));

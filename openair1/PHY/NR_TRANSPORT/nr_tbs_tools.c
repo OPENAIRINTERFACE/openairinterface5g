@@ -114,7 +114,7 @@ void nr_get_tbs(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
   uint8_t ss_type = params_rel15.search_space_type;
   uint8_t N_PRB_oh = ((rnti_type==NFAPI_NR_RNTI_SI)||(rnti_type==NFAPI_NR_RNTI_RA)||(rnti_type==NFAPI_NR_RNTI_P))? 0 : \
   (config.pdsch_config.x_overhead.value);
-  uint8_t N_PRB_DMRS = (config.pdsch_config.dmrs_type.value == NFAPI_NR_DMRS_TYPE1)?4:6; //This only works for antenna port 1000
+  uint8_t N_PRB_DMRS = (config.pdsch_config.dmrs_type.value == NFAPI_NR_DMRS_TYPE1)?6:4; //This only works for antenna port 1000
   uint8_t mcs_table = config.pdsch_config.mcs_table.value;
   uint8_t N_sh_symb = dlsch_rel15->nb_symbols;
   uint8_t Imcs = dlsch_rel15->mcs_idx;
