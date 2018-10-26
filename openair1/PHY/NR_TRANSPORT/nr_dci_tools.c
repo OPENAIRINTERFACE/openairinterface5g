@@ -533,6 +533,6 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
   LOG_I(PHY, "DCI type %d payload (size %d) generated on candidate %d\n", dci_alloc->pdcch_params.dci_format, dci_alloc->size, cand_idx);
 
   /// DLSCH struct
-  memcpy((void*)&dlsch->harq_processes[dci_alloc->harq_pid]->dlsch_pdu, (void*)dlsch_pdu, sizeof(nfapi_nr_dl_config_dlsch_pdu));
+  memcpy((void*)&harq[dci_alloc->harq_pid]->dlsch_pdu, (void*)dlsch_pdu, sizeof(nfapi_nr_dl_config_dlsch_pdu));
 
 }

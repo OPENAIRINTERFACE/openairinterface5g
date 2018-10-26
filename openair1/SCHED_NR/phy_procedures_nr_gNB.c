@@ -196,7 +196,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
                           AMP, *fp, *cfg);
       if (num_pdsch_rnti) {
         LOG_I(PHY, "PDSCH generation started (%d)\n", num_pdsch_rnti);
-        nr_generate_pdsch(*(gNB->dlsch[0][0]),
+        nr_generate_pdsch(*gNB->dlsch[0][0],
                           gNB->pdcch_vars,
                           gNB->nr_gold_pdsch_dmrs[slot_idx],
                           gNB->common_vars.txdataF,

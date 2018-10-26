@@ -883,8 +883,6 @@ void init_eNB_afterRU(void) {
       AssertFatal(gNB->gNB_config.rf_config.tx_antenna_ports.value >0,
 		  "inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,gNB->gNB_config.rf_config.tx_antenna_ports.value);
       LOG_I(PHY,"inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,gNB->gNB_config.rf_config.tx_antenna_ports.value);
-/// Transport init necessary for NR synchro
-      init_nr_transport(gNB);
       //init_precoding_weights(RC.gNB[inst][CC_id]);
     }
     init_gNB_proc(inst);

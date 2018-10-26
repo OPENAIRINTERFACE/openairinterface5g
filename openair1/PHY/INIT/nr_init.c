@@ -38,6 +38,7 @@
 
 extern uint32_t from_earfcn(int eutra_bandP,uint32_t dl_earfcn);
 extern int32_t get_uldl_offset(int eutra_bandP);
+extern void init_nr_transport(PHY_VARS_gNB *gNB);
 
 int l1_north_init_gNB() {
 
@@ -152,6 +153,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   }
    
    nr_init_pdsch_dmrs(gNB, cfg->sch_config.physical_cell_id.value);
+  /// Transport init necessary for NR synchro
+  init_nr_transport(gNB);
    
 /*
   lte_gold(fp,gNB->lte_gold_table,fp->Nid_cell);
