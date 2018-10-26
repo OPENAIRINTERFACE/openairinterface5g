@@ -37,9 +37,10 @@
 extern "C" {
 #endif
 
+
 typedef struct {
   int      socket_fd;
-  int      peer_port;
+  int      type;
   uint64_t bytes_sent;
   uint64_t packets_sent;
   uint64_t bytes_received;
@@ -53,8 +54,8 @@ socket_link_t *new_link_udp_server(const char *bind_addr, int bind_port);
 socket_link_t *new_link_udp_client(const char *server, int port);
 socket_link_t *new_link_sctp_server(int port);
 socket_link_t *new_link_sctp_client(const char *server, int port);
-int link_send_packet(socket_link_t *link, void *data, int size, uint16_t proto_type, const char *peer_addr, int port);
-int link_receive_packet(socket_link_t *link, void **data, int *size, uint16_t proto_type);
+int link_send_packet(socket_link_t *link, void *data, int size, const char *peer_addr, int port);
+int link_receive_packet(socket_link_t *link, void **data, int *size);
 int close_link(socket_link_t *link);
 
 

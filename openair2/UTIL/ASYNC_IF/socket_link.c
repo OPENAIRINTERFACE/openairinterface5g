@@ -68,6 +68,7 @@ socket_link_t *new_link_server(int port)
     LOG_E(MAC, "%s:%d: socket: %s\n", __FILE__, __LINE__, strerror(errno));
     goto error;
   }
+  ret->type = SOCK_STREAM;
 
   reuse = 1;
   if (setsockopt(socket_server, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse)) == -1) {
@@ -135,6 +136,7 @@ socket_link_t *new_link_client(const char *server, int port)
     LOG_E(MAC, "%s:%d: socket: %s\n", __FILE__, __LINE__, strerror(errno));
     goto error;
   }
+  ret->type = SOCK_STREAM;
 
   no_delay = 1;
   if (setsockopt(ret->socket_fd, SOL_TCP, TCP_NODELAY, &no_delay, sizeof(no_delay)) == -1) {
@@ -183,6 +185,7 @@ socket_link_t *new_link_udp_server(const char *bind_addr, int bind_port)
   if ((socket_server=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1) {
     goto error;
   }
+  ret->type = SOCK_DGRAM;
 
   // zero out the structure
   memset((char *) &si_me, 0, sizeof(si_me));
@@ -231,6 +234,7 @@ socket_link_t *new_link_udp_client(const char *server, int port){
   if ( (s=socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) == -1){
         goto error;
   }
+  ret->type = SOCK_DGRAM;
  
   memset((char *) &si_other, 0, sizeof(si_other));
   si_other.sin_family = AF_INET;
@@ -302,6 +306,7 @@ socket_link_t *new_link_sctp_server(int port)
   ret->socket_fd = -1;
 
   ret->socket_fd = accept (listenSock, NULL, NULL);
+  ret->type = SOCK_STREAM;
   
   return ret;
 
@@ -334,6 +339,7 @@ socket_link_t *new_link_sctp_client(const char *server, int port)
       perror("socket()");
       exit(1);
   }
+  ret->type = SOCK_STREAM;
  
   bzero ((void *) &servaddr, sizeof (servaddr));
   servaddr.sin_family = AF_INET;
@@ -469,57 +475,54 @@ socket_closed:
 /*
  * return -1 on error and 0 if the sending was fine
  */
-int link_send_packet(socket_link_t *link, void *data, int size, uint16_t proto_type, const char *peer_addr, int peer_port)
+int link_send_packet(socket_link_t *link, void *data, int size, const char *peer_addr, int peer_port)
 {
   char sizebuf[4];
   int32_t s = size;
-
-  if ((proto_type == 0) || (proto_type == 2))
-  {
+  switch (link->type) {
+  case SOCK_STREAM:
     /* send the size first, maximum is 2^31 bytes */
     sizebuf[0] = (s >> 24) & 255;
     sizebuf[1] = (s >> 16) & 255;
     sizebuf[2] = (s >> 8) & 255;
     sizebuf[3] = s & 255;
     if (socket_send(link->socket_fd, sizebuf, 4) == -1)
-      goto error;
+      return -1;
 
     link->bytes_sent += 4;
 
     if (socket_send(link->socket_fd, data, size) == -1)
-      goto error;
-
-  }
-  else if (proto_type == 1 )
-  {
+      return -1;
+    break;
+  case SOCK_DGRAM:
     /* UDP is connectionless -> only send the data */
     if (socket_udp_send(link->socket_fd, data, size, peer_addr, peer_port) == -1)
-      goto error;
-
+      return -1;
+    break;
+  default:
+    LOG_E(MAC, "unknown socket type %d\n", link->type);
+    return -1;
   }
 
   link->bytes_sent += size;
   link->packets_sent++;
 
   return 0;
-
-error:
-  return -1;
 }
 
 /*
  * return -1 on error and 0 if the sending was fine
  */
 
-int link_receive_packet(socket_link_t *link, void **ret_data, int *ret_size, uint16_t proto_type)
+int link_receive_packet(socket_link_t *link, void **ret_data, int *ret_size)
 {
   unsigned char sizebuf[4];
   int32_t       size = 0;
   void          *data = NULL;
   
   /* received the size first, maximum is 2^31 bytes */
-  if ((proto_type == 0) || (proto_type == 2))
-  {
+  switch (link->type) {
+  case SOCK_STREAM:
     if (socket_receive(link->socket_fd, sizebuf, 4) == -1)
       goto error;
 
@@ -538,9 +541,8 @@ int link_receive_packet(socket_link_t *link, void **ret_data, int *ret_size, uin
 
     if (socket_receive(link->socket_fd, data, size) == -1)
       goto error;
-  }
-  else if (proto_type == 1)
-  {
+    break;
+  case SOCK_DGRAM:
     /* we get a single packet (no size, UDP could lose it). Therefore, prepare
      * for the maximum UDP packet size */
     size = 65535;
@@ -553,6 +555,10 @@ int link_receive_packet(socket_link_t *link, void **ret_data, int *ret_size, uin
     size = socket_udp_receive(link->socket_fd, data, size);
     if (size < 0)
       goto error;
+    break;
+  default:
+    LOG_E(MAC, "unknown socket type %d\n", link->type);
+    goto error;
   }
 
   link->bytes_received += size;

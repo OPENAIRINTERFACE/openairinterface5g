@@ -100,8 +100,6 @@ typedef uint8_t mod_id_t;  // module or enb id
 typedef uint8_t lcid_t;
 typedef int32_t err_code_t;
 
-#define CHANNEL_UDP 1
-
 typedef struct {
   /* general info */ 
  
