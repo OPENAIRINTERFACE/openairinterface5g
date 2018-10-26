@@ -1055,12 +1055,6 @@ T(T_UE_PHY_PDCCH_ENERGY, T_INT(eNB_id), T_INT(0), T_INT(frame%1024), T_INT(nr_tt
       #endif
       pdcch_detection_mrc(frame_parms, pdcch_vars[eNB_id]->rxdataF_comp,s);
     }
-    if (mimo_mode == SISO) {
-      #ifdef NR_PDCCH_DCI_DEBUG
-       printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> we enter pdcch_siso ---> pdcch_vars[eNB_id]->rxdataF_comp Nothing to do here. TO BE REMOVED!!!\n");
-      #endif
-      //pdcch_siso(frame_parms, pdcch_vars[eNB_id]->rxdataF_comp,s);
-    } else pdcch_alamouti(frame_parms, pdcch_vars[eNB_id]->rxdataF_comp,s);
 
 #ifdef MU_RECEIVER
 
