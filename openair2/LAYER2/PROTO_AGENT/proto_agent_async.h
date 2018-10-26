@@ -41,8 +41,6 @@
 
 typedef struct proto_agent_async_channel_s {
   mod_id_t         enb_id;
-  const char      *peer_addr;
-  int              peer_port;
   socket_link_t   *link;
   message_queue_t *send_queue;
   message_queue_t *receive_queue;

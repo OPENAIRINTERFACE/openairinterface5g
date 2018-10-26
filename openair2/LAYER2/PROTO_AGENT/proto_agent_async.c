@@ -44,9 +44,6 @@ proto_agent_async_channel_info(mod_id_t mod_id, const char *bind_ip, uint16_t bi
   if (channel == NULL)
     goto error;
 
-  channel->peer_port = peer_port;
-  channel->peer_addr = peer_ip;
-
   channel->enb_id = mod_id;
   channel->link = new_link_udp_server(bind_ip, bind_port);
   
@@ -59,10 +56,11 @@ proto_agent_async_channel_info(mod_id_t mod_id, const char *bind_ip, uint16_t bi
 
   channel->manager = create_link_manager(channel->send_queue,
                                          channel->receive_queue,
-                                         channel->link,
-                                         CHANNEL_UDP,
-                                         channel->peer_addr,
-                                         channel->peer_port);
+                                         channel->link);
+  /* manually set remote IP&port for UDP server remote end */
+  channel->manager->peer_port = peer_port;
+  channel->manager->peer_addr = peer_ip;
+
   if (channel->manager == NULL) goto error;
   
   return channel;

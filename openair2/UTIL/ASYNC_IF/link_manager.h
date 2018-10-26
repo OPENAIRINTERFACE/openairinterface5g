@@ -45,9 +45,8 @@ typedef struct {
   message_queue_t *send_queue;
   message_queue_t *receive_queue;
   socket_link_t   *socket_link;
-  uint16_t        type;
-  const char      *peer_addr;
-  int             port;
+  const char      *peer_addr; /* for UDP server remote IP */
+  int             peer_port;  /* for UDP server remote address */
   pthread_t       sender;
   pthread_t       receiver;
   volatile int    run;
@@ -56,10 +55,7 @@ typedef struct {
 link_manager_t *create_link_manager(
         message_queue_t *send_queue,
         message_queue_t *receive_queue,
-        socket_link_t   *link,
-	uint16_t        type,
-        const char      *peer_addr,
-        int             port);
+        socket_link_t   *link);
 
 void destroy_link_manager(link_manager_t *);
 

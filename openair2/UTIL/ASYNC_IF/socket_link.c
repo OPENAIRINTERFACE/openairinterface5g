@@ -205,7 +205,6 @@ socket_link_t *new_link_udp_server(const char *bind_addr, int bind_port)
     goto error;
   }
   ret->socket_fd = socket_server;
-  ret->peer_port = 0;
   return ret;
   
 error:
@@ -251,7 +250,6 @@ socket_link_t *new_link_udp_client(const char *server, int port){
   getsockname(s, (struct sockaddr *)&si_other, &slen);
 
   ret->socket_fd = s;
-  ret->peer_port = port; //ntohs(si_other.sin_port);
  
   return ret;
 error:

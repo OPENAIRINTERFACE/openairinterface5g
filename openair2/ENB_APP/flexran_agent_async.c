@@ -67,26 +67,18 @@ flexran_agent_async_channel_t * flexran_agent_async_channel_info(mid_t mod_id, c
   }
   // not using the circular buffer: affects the PDCP split
   //channel->receive_queue = new_message_queue(500);
-  channel->send_queue = new_message_queue();
+  channel->receive_queue = new_message_queue();
   if (channel->receive_queue == NULL) {
     LOG_E(FLEXRAN_AGENT, "could not create send_queue\n");
     goto error;
   }
   
-   /* 
-   * create a link manager 
-   */  
-
-  // PDCP split interface ASYNC_IF link manager is using more arguments
-
-//  channel->manager = create_link_manager(channel->send_queue, channel->receive_queue, channel->link);
-
-  // Hardcoded fix: TODO: Fix this
-  uint8_t type = 1;
-  char *peer_addr = strdup("127.0.0.1");
-  uint32_t port = 10000;
-  create_link_manager(channel->send_queue, channel->receive_queue, channel->link, type, peer_addr, port);
-  if (channel->manager == NULL) goto error;
+  /* create a link manager */
+  channel->manager = create_link_manager(channel->send_queue, channel->receive_queue, channel->link);
+  if (channel->manager == NULL) {
+    LOG_E(FLEXRAN_AGENT, "could not create link_manager\n");
+    goto error;
+  }
   
   return channel;
 
