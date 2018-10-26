@@ -385,7 +385,6 @@ static void* L1_thread( void* param ) {
 
 
   PHY_VARS_eNB *eNB = RC.eNB[0][proc->CC_id];
-  //RU_proc_t *ru_proc = NULL;
 
   char thread_name[100];
 
@@ -477,7 +476,6 @@ int wakeup_txfh(eNB_rxtx_proc_t *proc,PHY_VARS_eNB *eNB) {
 
   RU_t *ru;
   RU_proc_t *ru_proc;
-  int i;
 
 
   struct timespec wait;
@@ -486,7 +484,7 @@ int wakeup_txfh(eNB_rxtx_proc_t *proc,PHY_VARS_eNB *eNB) {
 //printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~inside wakeup_txfh %d.%d IC_RU = %d\n", proc->frame_tx, proc->subframe_tx, proc->instance_cnt_RUs);
 
   if(wait_on_condition(&proc->mutex_RUs,&proc->cond_RUs,&proc->instance_cnt_RUs,"wakeup_txfh")<0) {
-    LOG_E(PHY,"Frame %d, subframe %d: TX FH not ready\n", ru_proc->frame_tx, ru_proc->subframe_tx);
+    LOG_E(PHY,"Frame %d, subframe %d: TX FH not ready\n", proc->frame_tx, proc->subframe_tx);
     return(-1);
   }
   pthread_mutex_lock(&eNB->proc.mutex_RU_tx);
@@ -924,6 +922,7 @@ void init_eNB_proc(int inst) {
     proc->first_rx                 =1;
     proc->first_tx                 =1;
     proc->RU_mask_tx               = (1<<eNB->num_RU)-1;
+printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~proc->RU_mask_tx = %d\n", proc->RU_mask_tx);
     proc->RU_mask                  =0;
     proc->RU_mask_prach            =0;
 
