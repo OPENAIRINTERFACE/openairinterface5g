@@ -1028,7 +1028,11 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg) {
     //oai_subframe_ind(proc->frame_rx, proc->subframe_rx);
 
 
+    if(UE->frame_parms.frame_type == FDD){
+    oai_subframe_ind(proc->frame_rx, proc->subframe_rx);
+    }else{
     oai_subframe_ind(proc->frame_tx,proc->subframe_tx);
+    }
 
     //Guessing that the next 4 lines are not needed for the phy_stub mode.
     /*initRefTimes(t2);
