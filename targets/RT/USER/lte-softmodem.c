@@ -1047,6 +1047,10 @@ int main( int argc, char **argv )
   }
   LOG_I(HW, "CPU Affinity of main() function is... %s\n", cpu_affinity);
 #endif
+
+  /* Read configuration */
+  if (RC.nb_inst > 0)
+    read_config_and_init();
   
   /* Start the agent. If it is turned off in the configuration, it won't start */
   RCconfig_flexran();
@@ -1055,7 +1059,6 @@ int main( int argc, char **argv )
   }
     
   if (RC.nb_inst > 0)  {
-    read_config_and_init();
 
     if (create_tasks(1) < 0) {
       printf("cannot create ITTI tasks\n");
