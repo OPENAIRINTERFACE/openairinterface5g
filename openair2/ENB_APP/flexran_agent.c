@@ -201,6 +201,11 @@ int flexran_agent_start(mid_t mod_id)
   /*Create the async channel info*/
   flexran_agent_async_channel_t *channel_info = flexran_agent_async_channel_info(mod_id, in_ip, in_port);
 
+  if (!channel_info) {
+    LOG_E(FLEXRAN_AGENT, "could not create channel_info\n");
+    exit(1);
+  }
+
   /*Create a channel using the async channel info*/
   channel_id = flexran_agent_create_channel((void *) channel_info, 
 					flexran_agent_async_msg_send, 
@@ -209,12 +214,14 @@ int flexran_agent_start(mid_t mod_id)
 
   
   if (channel_id <= 0) {
+    LOG_E(FLEXRAN_AGENT, "could not create channel\n");
     goto error;
   }
 
   flexran_agent_channel_t *channel = get_channel(channel_id);
   
   if (channel == NULL) {
+    LOG_E(FLEXRAN_AGENT, "could not get channel for channel_id %d\n", channel_id);
     goto error;
   }
 
@@ -307,7 +314,7 @@ int flexran_agent_start(mid_t mod_id)
   return 0;
 
 error:
-  LOG_I(FLEXRAN_AGENT,"there was an error\n");
+  LOG_E(FLEXRAN_AGENT, "%s(): there was an error\n", __func__);
   return 1;
 
 }
