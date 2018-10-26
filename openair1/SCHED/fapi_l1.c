@@ -670,7 +670,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
 
   eNB         = RC.eNB[Mod_id][CC_id];
   fp          = &eNB->frame_parms;
-  proc        = &eNB->proc.proc_rxtx[0];
+  proc        = &eNB->proc.L1_proc;
 
   /* TODO: check that following line is correct - in the meantime it is disabled */
   //if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)==SF_UL)) return;
