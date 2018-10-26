@@ -1041,6 +1041,7 @@ rrc_eNB_process_RRCConnectionSetupComplete(
   ue_context_pP->ue_context.Srb1.Active = 1;
   ue_context_pP->ue_context.Status = RRC_CONNECTED;
   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 1; // set rrc inactivity when UE goes into RRC_CONNECTED
+  ue_context_pP->ue_context.ue_rrc_inactivity_timer_thres = 10000; // SHOULD NOT BE DONE HERE !!!!!
 
   T(T_ENB_RRC_CONNECTION_SETUP_COMPLETE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
