@@ -39,7 +39,7 @@ proto_agent_async_channel_info(mod_id_t mod_id, const char *bind_ip, uint16_t bi
                                const char* peer_ip, uint16_t peer_port)
 {
   proto_agent_async_channel_t *channel;
-  channel = malloc(sizeof(proto_agent_channel_t));
+  channel = malloc(sizeof(proto_agent_async_channel_t));
   
   if (channel == NULL)
     goto error;
