@@ -155,10 +155,11 @@ static inline void fh_if5_south_out(RU_t *ru) {
 // southbound IF4p5 fronthaul
 static inline void fh_if4p5_south_out(RU_t *ru) {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
-  LOG_D(PHY,"Sending IF4p5 for frame %d subframe %d\n",ru->proc.frame_tx,ru->proc.subframe_tx);
+  LOG_I(PHY,"ENTERED fh_if4p5_south_out   Sending IF4p5 for frame %d subframe %d ru %d\n",ru->proc.frame_tx,ru->proc.subframe_tx,ru->idx);
   if (subframe_select(&ru->frame_parms,ru->proc.subframe_tx)!=SF_UL) {
     send_IF4p5(ru,ru->proc.frame_tx, ru->proc.subframe_tx, IF4p5_PDLFFT);
     ru->south_out_cnt++;
+    LOG_I(PHY,"south_out_cnt %d\n",ru->south_out_cnt);
   }
 /*if (ru == RC.ru[0] || ru == RC.ru[1]) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU+ru->idx, ru->proc.frame_tx );
@@ -210,7 +211,7 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
   RU_proc_t *proc = &ru->proc;
   int f,sf;
 
-
+LOG_I(PHY,"ENTERED fh_if4p5_south_in\n");
   uint16_t packet_type;
   uint32_t symbol_number=0;
   uint32_t symbol_mask_full;
@@ -219,7 +220,7 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
     symbol_mask_full = (1<<fp->ul_symbols_in_S_subframe)-1;   
   else     
     symbol_mask_full = (1<<fp->symbols_per_tti)-1; 
-  LOG_D(PHY,"fh_if4p5_south_in: RU %d, frame %d, subframe %d\n",ru->idx,*frame,*subframe);
+  LOG_I(PHY,"fh_if4p5_south_in: RU %d, frame %d, subframe %d, ru %d\n",ru->idx,*frame,*subframe,ru->idx);
   AssertFatal(proc->symbol_mask[*subframe]==0,"rx_fh_if4p5: proc->symbol_mask[%d] = %x\n",*subframe,proc->symbol_mask[*subframe]);
   do {
     recv_IF4p5(ru, &f, &sf, &packet_type, &symbol_number);
@@ -232,7 +233,7 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
       
     } else if (packet_type == IF4p5_PRACH) {
       // nothing in RU for RAU
-    }ru->south_out_cnt= 0;
+    }//ru->south_out_cnt= 0; (why??? I guess this is wrong)
     LOG_D(PHY,"rx_fh_if4p5: subframe %d symbol mask %x\n",*subframe,proc->symbol_mask[*subframe]);
   } while(proc->symbol_mask[*subframe] != symbol_mask_full);    
 
@@ -1142,12 +1143,9 @@ void wakeup_eNBs(RU_t *ru) {
   eNB_proc_t *proc      = &eNB->proc;
   RU_proc_t  *ruproc    = &ru->proc;
   struct timespec t;
-
+LOG_I(PHY,"ENTERED wakeup_eNBs\n");
   LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d (state %s)ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru_states[ru->state],ru->eNB_top);
 
-  if (ru->num_eNB==1 && ru->eNB_top!=0 && get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD) {
-    // call eNB function directly
-  
     char string[20];
     sprintf(string,"Incoming RU %d",ru->idx);
     
@@ -1174,7 +1172,7 @@ void wakeup_eNBs(RU_t *ru) {
 
       if (ru->is_slave == 0 && ( (proc->RU_mask[ru->proc.subframe_rx]&(1<<i)) == 1) && eNB->RU_list[i]->state == RU_RUN) { // This is master & the RRU has already been received
 	if (check_sync(eNB->RU_list[i],eNB->RU_list[0],ru->proc.subframe_rx)  == 0)
-		LOG_E(PHY,"RU %d is not SYNC, subframe %d, time  %f this is master\n", eNB->RU_list[i]->idx, ru->proc.subframe_rx, fabs(eNB->RU_list[i]->proc.t[ru->proc.subframe_rx].tv_nsec - eNB->RU_list[0]->proc.t[ru->proc.subframe_rx].tv_nsec));
+	LOG_E(PHY,"RU %d is not SYNC, subframe %d, time  %f this is master\n", eNB->RU_list[i]->idx, ru->proc.subframe_rx, fabs(eNB->RU_list[i]->proc.t[ru->proc.subframe_rx].tv_nsec - eNB->RU_list[0]->proc.t[ru->proc.subframe_rx].tv_nsec));
       }else if (ru->is_slave == 1 && ru->state == RU_RUN && ( (proc->RU_mask[ru->proc.subframe_rx]&(1<<0)) == 1)){ // master already received. TODO: we assume that RU0 is master.
 	if (check_sync(ru,eNB->RU_list[0],ru->proc.subframe_rx)  == 0)
 		LOG_E(PHY,"RU %d is not SYNC time, subframe %d, time  %f\n", ru->idx, ru->proc.subframe_rx, fabs(ru->proc.t[ru->proc.subframe_rx].tv_nsec - eNB->RU_list[0]->proc.t[ru->proc.subframe_rx].tv_nsec));
@@ -1183,7 +1181,6 @@ void wakeup_eNBs(RU_t *ru) {
     }
     //clock_gettime(CLOCK_MONOTONIC,&t);
     //LOG_I(PHY,"RU mask is now %x, time is %lu\n",proc->RU_mask[ru->proc.subframe_rx], t.tv_nsec - proc->t[ru->proc.subframe_rx].tv_nsec);
-
 
     if (proc->RU_mask[ru->proc.subframe_rx] == (1<<eNB->num_RU)-1) {
       LOG_D(PHY, "ru_mask is %d \n ", proc->RU_mask[ru->proc.subframe_rx]);
@@ -1202,8 +1199,19 @@ void wakeup_eNBs(RU_t *ru) {
 
       // unlock RUs that are waiting for eNB processing to be completed
       LOG_D(PHY,"RU %d wakeup eNB top for for subframe %d\n", ru->idx,ru->proc.subframe_rx);
-      if (ru->wait_cnt == 0) ru->eNB_top(eNB_list[0],proc->frame_rx,proc->subframe_rx,string,ru);
-
+      if (ru->wait_cnt == 0) {
+         if (ru->num_eNB==1 && ru->eNB_top!=0 && get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD)
+            ru->eNB_top(eNB_list[0],proc->frame_rx,proc->subframe_rx,string,ru);
+         else {
+            for (i=0;i<ru->num_eNB;i++) {
+               eNB_list[i]->proc.ru_proc = &ru->proc;
+               if (ru->wakeup_rxtx!=0 && ru->wakeup_rxtx(eNB_list[i],ru) < 0)
+               {
+                  LOG_E(PHY,"could not wakeup eNB rxtx process for subframe %d\n", ru->proc.subframe_rx);
+               }
+            }
+         }
+      }
       AssertFatal(0==pthread_mutex_lock(&ruproc->mutex_eNBs),"");
       LOG_D(PHY,"RU %d sending signal to unlock waiting ru_threads\n", ru->idx);
       AssertFatal(0==pthread_cond_broadcast(&ruproc->cond_eNBs),"");
@@ -1219,23 +1227,8 @@ void wakeup_eNBs(RU_t *ru) {
 //      ru->eNB_top(eNB_list[0],ru->proc.frame_rx,ru->proc.subframe_rx,string);
 
     ru->proc.emulate_rf_busy = 0;
-  }
-  else { 
+  
 
-
-    for (i=0;i<ru->num_eNB;i++)
-
-
-    {
-      LOG_I(PHY,"ru->wakeup_rxtx:%p\n", ru->wakeup_rxtx);
-      eNB_list[i]->proc.ru_proc = &ru->proc;
-      if (ru->wakeup_rxtx!=0 && ru->wakeup_rxtx(eNB_list[i],ru) < 0)
-      {
-        LOG_E(PHY,"could not wakeup eNB rxtx process for subframe %d\n", ru->proc.subframe_rx);
-      }
-      ru->proc.emulate_rf_busy = 0;
-    }
-  }
 }
 
 static inline int wakeup_prach_ru(RU_t *ru) {
@@ -1516,7 +1509,7 @@ static void* ru_thread_tx( void* param ) {
     //printf("ru_thread_tx, ru_proc->cond_eNBs, ru_proc->instance_cnt_eNBs\n");
     wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
     //printf("Passed ru_thread_tx ru_proc->cond_eNBs\n");
-    LOG_D(PHY,"ru_thread_tx (ru %d): Woken from condition\n",ru->idx);
+    LOG_I(PHY,"ru_thread_tx (ru %d): Woken from condition\n",ru->idx);
 if (oai_exit) break;
   	       
     // do TX front-end processing if needed (precoding and/or IDFTs)
