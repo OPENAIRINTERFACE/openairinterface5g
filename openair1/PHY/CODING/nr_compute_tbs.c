@@ -68,7 +68,7 @@ uint32_t nr_compute_tbs(uint8_t mcs,
 						uint8_t Nl)
 {
 	uint16_t nbp_re, nb_re, nb_dmrs_prb, nb_rb_oh, Ninfo,Np_info,n,Qm,R,C;
-	uint32_t nr_tbs;
+	uint32_t nr_tbs=0;
 
 	nb_rb_oh = 0; //set to 0 if not configured by higher layer
 	Qm = Mcsindextable1[mcs][0];

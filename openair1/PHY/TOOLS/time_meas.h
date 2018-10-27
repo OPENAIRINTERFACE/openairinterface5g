@@ -128,11 +128,12 @@ static inline void stop_meas(time_stats_t *ts)
 
 static inline void reset_meas(time_stats_t *ts) {
 
-  ts->trials=0;
+  ts->in=0;
   ts->diff=0;
   ts->p_time=0;
   ts->diff_square=0;
   ts->max=0;
+  ts->trials=0;
   ts->meas_flag=0;
   
 }

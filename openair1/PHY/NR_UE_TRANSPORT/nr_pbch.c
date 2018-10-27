@@ -274,7 +274,7 @@ void nr_pbch_channel_compensation(int **rxdataF_ext,
 {
 
   short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
-  short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
+  //short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
 #if defined(__x86_64__) || defined(__i386__)
   __m128i mmtmpP0,mmtmpP1,mmtmpP2,mmtmpP3;
 #elif defined(__arm__)
@@ -441,8 +441,6 @@ void nr_pbch_unscrambling(NR_UE_PBCH *pbch,
   uint8_t reset, offset;
   uint32_t x1, x2, s=0;
   int16_t *demod_pbch_e = pbch->llr;
-  uint32_t *pbch_a_prime = (uint32_t*)pbch->pbch_a_prime;
-  uint32_t *pbch_a_interleaved = (uint32_t*)pbch->pbch_a_interleaved;
 
   uint32_t unscrambling_mask = 0x100006D;
 
@@ -660,7 +658,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
   t_nrPolar_params *currentPtr = nr_polar_params(ue->nrPolar_params, NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL);
 
-  decoderState = polar_decoder_int16(pbch_e_rx,&nr_ue_pbch_vars->pbch_a_prime,currentPtr);
+  decoderState = polar_decoder_int16(pbch_e_rx,(uint8_t*)&nr_ue_pbch_vars->pbch_a_prime,currentPtr);
 
 
   if(decoderState == -1)

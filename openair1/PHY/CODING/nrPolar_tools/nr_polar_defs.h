@@ -290,6 +290,9 @@ void nr_free_double_3D_array(double ***input,
 							 uint16_t xlen,
 							 uint16_t ylen);
 
+void nr_free_double_2D_array(double **input, uint16_t xlen);
+
+
 void updateLLR(double ***llr,
 			   uint8_t **llrU,
 			   uint8_t ***bit,
@@ -370,4 +373,9 @@ static inline void nr_polar_deinterleaver(uint8_t *input,
   }
 }
 
+void build_decoder_tree(t_nrPolar_params *pp);
+
+int8_t polar_decoder_int16(int16_t *input,
+			   uint8_t *out,
+			   t_nrPolar_params *polarParams);
 #endif

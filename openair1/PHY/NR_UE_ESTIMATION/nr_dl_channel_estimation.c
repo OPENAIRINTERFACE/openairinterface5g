@@ -491,7 +491,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
 
 
   // generate pilot
-  nr_pdsch_dmrs_rx(ue,eNB_offset,Ns,ue->nr_gold_pdsch[eNB_offset][Ns][symbol], &pilot[0],1000,1,nb_rb_pdsch);
+  nr_pdsch_dmrs_rx(ue,eNB_offset,Ns,ue->nr_gold_pdsch, &pilot[0],1000,1,nb_rb_pdsch);
 
   for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
 

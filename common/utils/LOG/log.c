@@ -468,7 +468,7 @@ return  snprintf(log_buffer, buffsize , "%s%s[%s]%c %s %s%s",
 
 void logRecord_mt(const char *file, const char *func, int line, int comp, int level, const char* format, ... )
   {
-  char log_buffer[MAX_LOG_TOTAL];
+    char log_buffer[MAX_LOG_TOTAL]={0};
   va_list args;
 
   va_start(args, format);

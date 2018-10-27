@@ -1080,6 +1080,6 @@ int8_t polar_decoder_int16(int16_t *input,
   }
   // pack into ceil(payloadBits/32) 32 bit words, lowest index in MSB
   //  nr_byte2bit_uint8_32_t(polarParams->nr_polar_A, polarParams->payloadBits, out);
-  nr_byte2bit_uint8_32_t(polarParams->nr_polar_B, polarParams->payloadBits, out);
+  nr_byte2bit_uint8_32_t(polarParams->nr_polar_B, polarParams->payloadBits, (unsigned int *)out);
   return(0);
 }

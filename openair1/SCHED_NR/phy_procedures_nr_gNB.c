@@ -163,8 +163,6 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
   nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
 
-  int offset = gNB->CC_id;
-
   if ((cfg->subframe_config.duplex_mode.value == TDD) && (nr_subframe_select(cfg,subframe)==SF_UL)) return;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,1);
@@ -190,7 +188,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
     if (nfapi_mode == 0 || nfapi_mode == 1)
       nr_generate_dci_top(gNB->pdcch_vars,
-                          gNB->nrPolar_params,
+                          &gNB->nrPolar_params,
                           gNB->nr_gold_pdcch_dmrs[slot_idx],
                           gNB->common_vars.txdataF,
                           AMP, *fp, *cfg);
