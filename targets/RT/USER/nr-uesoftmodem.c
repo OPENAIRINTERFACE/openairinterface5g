@@ -247,6 +247,9 @@ int emulate_rf = 0;
 
 threads_t threads= {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
 
+char* usrp_args=NULL;
+char* usrp_clksrc=NULL;
+
 /* forward declarations */
 void set_default_frame_parms(NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
 
@@ -742,51 +745,70 @@ void init_openair0() {
             openair0_cfg[card].rx_bw = 1.5e6;
         }
 
-            if (frame_parms[0]->frame_type==TDD)
-              openair0_cfg[card].duplex_mode = duplex_mode_TDD;
-            else //FDD
-              openair0_cfg[card].duplex_mode = duplex_mode_FDD;
+	if (frame_parms[0]->frame_type==TDD)
+	  openair0_cfg[card].duplex_mode = duplex_mode_TDD;
+	else //FDD
+	  openair0_cfg[card].duplex_mode = duplex_mode_FDD;
+	
+	printf("HW: Configuring card %d, nb_antennas_tx/rx %d/%d\n",card,
+	       PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_tx,
+	       PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_rx);
+	openair0_cfg[card].Mod_id = 0;
+	
+	openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
+	
+	openair0_cfg[card].clock_source = clock_source;
+	
+	
+	openair0_cfg[card].tx_num_channels=min(2,PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_tx);
+	openair0_cfg[card].rx_num_channels=min(2,PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_rx);
 
-            printf("HW: Configuring card %d, nb_antennas_tx/rx %d/%d\n",card,
-        	   PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_tx,
-        	   PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_rx);
-            openair0_cfg[card].Mod_id = 0;
-
-            openair0_cfg[card].num_rb_dl=frame_parms[0]->N_RB_DL;
-
-            openair0_cfg[card].clock_source = clock_source;
-
-
-            openair0_cfg[card].tx_num_channels=min(2,PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_tx);
-            openair0_cfg[card].rx_num_channels=min(2,PHY_vars_UE_g[0][0]->frame_parms.nb_antennas_rx);
-
-            for (i=0; i<4; i++) {
-
-              if (i<openair0_cfg[card].tx_num_channels)
-        	openair0_cfg[card].tx_freq[i] = downlink_frequency[0][i]+uplink_frequency_offset[0][i];
-              else
-        	openair0_cfg[card].tx_freq[i]=0.0;
-
-              if (i<openair0_cfg[card].rx_num_channels)
-        	openair0_cfg[card].rx_freq[i] = downlink_frequency[0][i];
-              else
-        	openair0_cfg[card].rx_freq[i]=0.0;
-
-              openair0_cfg[card].autocal[i] = 1;
-              openair0_cfg[card].tx_gain[i] = tx_gain[0][i];
-              openair0_cfg[card].rx_gain[i] = PHY_vars_UE_g[0][0]->rx_total_gain_dB - rx_gain_off;
-
-
-              openair0_cfg[card].configFilename = rf_config_file;
-              printf("Card %d, channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f\n",
-        	     card,i, openair0_cfg[card].tx_gain[i],
-        	     openair0_cfg[card].rx_gain[i],
-        	     openair0_cfg[card].tx_freq[i],
-        	     openair0_cfg[card].rx_freq[i]);
-            }
-
-
-  }
+	for (i=0; i<4; i++) {
+	  
+	  if (i<openair0_cfg[card].tx_num_channels)
+	    openair0_cfg[card].tx_freq[i] = downlink_frequency[0][i]+uplink_frequency_offset[0][i];
+	  else
+	    openair0_cfg[card].tx_freq[i]=0.0;
+	  
+	  if (i<openair0_cfg[card].rx_num_channels)
+	    openair0_cfg[card].rx_freq[i] = downlink_frequency[0][i];
+	  else
+	    openair0_cfg[card].rx_freq[i]=0.0;
+	  
+	  openair0_cfg[card].autocal[i] = 1;
+	  openair0_cfg[card].tx_gain[i] = tx_gain[0][i];
+	  openair0_cfg[card].rx_gain[i] = PHY_vars_UE_g[0][0]->rx_total_gain_dB - rx_gain_off;
+	  
+	  
+	  openair0_cfg[card].configFilename = rf_config_file;
+	  printf("Card %d, channel %d, Setting tx_gain %f, rx_gain %f, tx_freq %f, rx_freq %f\n",
+		 card,i, openair0_cfg[card].tx_gain[i],
+		 openair0_cfg[card].rx_gain[i],
+		 openair0_cfg[card].tx_freq[i],
+		 openair0_cfg[card].rx_freq[i]);
+	}
+	
+	if (usrp_args) openair0_cfg[card].sdr_addrs = usrp_args;
+	if (usrp_clksrc) {
+	  if (strcmp(usrp_clksrc, "internal") == 0) {
+	    openair0_cfg[card].clock_source = internal;
+	    LOG_D(PHY, "USRP clock source set as internal\n");
+	  } else if (strcmp(usrp_clksrc, "external") == 0) {
+	    openair0_cfg[card].clock_source = external;
+	    LOG_D(PHY, "USRP clock source set as external\n");
+	  } else if (strcmp(usrp_clksrc, "gpsdo") == 0) {
+	    openair0_cfg[card].clock_source = gpsdo;
+	    LOG_D(PHY, "USRP clock source set as gpsdo\n");
+	  } else {
+	    openair0_cfg[card].clock_source = internal;
+	    LOG_I(PHY, "USRP clock source unknown ('%s'). defaulting to internal\n", usrp_clksrc);	
+	  }
+	} else {
+	  openair0_cfg[card].clock_source = internal;
+	  LOG_I(PHY, "USRP clock source not specified. defaulting to internal\n");	
+	}
+	
+    }
 }
 
 int main( int argc, char **argv ) {
@@ -837,7 +859,7 @@ int main( int argc, char **argv ) {
 #endif
 
     // initialize the log (see log.h for details)
-    set_glog(LOG_DEBUG);
+    set_glog(OAILOG_DEBUG);
 
     set_log(HW,      OAILOG_DEBUG);
     set_log(PHY,     OAILOG_DEBUG);
