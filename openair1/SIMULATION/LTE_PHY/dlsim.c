@@ -40,7 +40,6 @@
 #include "PHY/types.h"
 #include "PHY/defs_eNB.h"
 #include "PHY/defs_UE.h"
-#include "PHY/defs_nr_UE.h"
 #include "PHY/phy_vars.h"
 
 #include "SCHED/sched_eNB.h"
