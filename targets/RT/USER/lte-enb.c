@@ -155,7 +155,7 @@ extern double cpuf;
 void init_eNB(int,int);
 void stop_eNB(int nb_inst);
 
-int wakeup_tx(PHY_VARS_eNB *eNB,RU_proc_t *ru_proc);
+int wakeup_tx(PHY_VARS_eNB *eNB);
 int wakeup_txfh(eNB_rxtx_proc_t *proc,PHY_VARS_eNB *eNB);
 void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe);
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
@@ -395,7 +395,6 @@ LOG_I(PHY,"ENTERED L1_thread\n");
 
 
   PHY_VARS_eNB *eNB = RC.eNB[0][proc->CC_id];
-  //RU_proc_t *ru_proc = NULL;
 
   char thread_name[100];
 
@@ -441,7 +440,7 @@ LOG_I(PHY,"ENTERED L1_thread\n");
 
     if (release_thread(&proc->mutex,&proc->instance_cnt,thread_name)<0) break;
     if (nfapi_mode!=2){
-    	if(get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)      wakeup_tx(eNB,eNB->proc.ru_proc);
+    	if(get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)      wakeup_tx(eNB);
     	else if(get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT)
     	{
     		phy_procedures_eNB_TX(eNB, proc, 1);
@@ -487,52 +486,59 @@ void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string,RU_t
 
 int wakeup_txfh(eNB_rxtx_proc_t *proc,PHY_VARS_eNB *eNB) {
   RU_proc_t *ru_proc;
+
   struct timespec wait;
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
   LTE_DL_FRAME_PARMS *fp;
   LOG_I(PHY,"ENTERED wakeup_txfh\n");
-  for(int ru_id=0; ru_id<eNB->num_RU; ru_id++){
-    ru_proc = &eNB->RU_list[ru_id]->proc;
-    fp = &eNB->RU_list[ru_id]->frame_parms;
-    if ((fp->frame_type == TDD) && (subframe_select(fp,proc->subframe_tx)==SF_UL)) continue;
-    // skip the RUs that are not synced
-    if (eNB->RU_list[ru_id]->state == RU_SYNC) { LOG_D(PHY,"wakeup_txfh: eNB %d : Skipping ru %d\n",eNB->Mod_id,ru_id); continue; }
 
-    if(ru_proc == NULL) {return(0);}
-    printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~inside wakeup_txfh %d.%d IC_RU = %d\n", proc->frame_tx, proc->subframe_tx, proc->instance_cnt_RUs);
-    if(wait_on_condition(&proc->mutex_RUs,&proc->cond_RUs,&proc->instance_cnt_RUs,"wakeup_txfh")<0) {
-    	LOG_E(PHY,"Frame %d, subframe %d: TX FH not ready\n", ru_proc->frame_tx, ru_proc->subframe_tx);
+  printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~inside wakeup_txfh %d.%d IC_RU = %d\n", proc->frame_tx, proc->subframe_tx, proc->instance_cnt_RUs);
+  if(wait_on_condition(&proc->mutex_RUs,&proc->cond_RUs,&proc->instance_cnt_RUs,"wakeup_txfh")<0) {
+  	LOG_E(PHY,"Frame %d, subframe %d: TX FH not ready\n", proc->frame_tx, proc->subframe_tx);
     	return(-1);
-    }
-    if (release_thread(&proc->mutex_RUs,&proc->instance_cnt_RUs,"wakeup_txfh")<0) return(-1);
-    if (ru_proc->instance_cnt_eNBs == 0) {
-      LOG_E(PHY,"Frame %d, subframe %d: TX FH thread busy, dropping Frame %d, subframe %d\n", ru_proc->frame_tx, ru_proc->subframe_tx, proc->frame_rx, proc->subframe_rx);
-      return(-1);
-    }
-    if (pthread_mutex_timedlock(&ru_proc->mutex_eNBs,&wait) != 0) {
-      LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB TX1 thread %d (IC %d)\n", ru_proc->subframe_rx&1,ru_proc->instance_cnt_eNBs );
-      exit_fun( "error locking mutex_eNB" );
-      return(-1);
-    }
-      LOG_I(PHY,"waking up for frame %d subframe %d for RU TX \n", proc->frame_tx, proc->subframe_tx);
-      ru_proc->instance_cnt_eNBs = 0;
-      ru_proc->timestamp_tx = proc->timestamp_tx;
-      ru_proc->subframe_tx  = proc->subframe_tx;
-      ru_proc->frame_tx     = proc->frame_tx;
+  }
+  pthread_mutex_lock(&eNB->proc.mutex_RU_tx);
+  eNB->proc.RU_mask_tx = 0;
+  pthread_mutex_unlock(&eNB->proc.mutex_RU_tx);
+  if (release_thread(&proc->mutex_RUs,&proc->instance_cnt_RUs,"wakeup_txfh")<0) return(-1);
 
-    // the thread can now be woken up
-    if (pthread_cond_signal(&ru_proc->cond_eNBs) != 0) {
-      LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
-      exit_fun( "ERROR pthread_cond_signal" );
-      return(-1);
-    }
-    pthread_mutex_unlock( &ru_proc->mutex_eNBs );
+  for(int ru_id=0; ru_id<eNB->num_RU; ru_id++){
+  	ru_proc = &eNB->RU_list[ru_id]->proc;
+    	fp = &eNB->RU_list[ru_id]->frame_parms;
+    	if ((fp->frame_type == TDD) && (subframe_select(fp,proc->subframe_tx)==SF_UL)) continue;
+    	// skip the RUs that are not synced
+    	if (eNB->RU_list[ru_id]->state == RU_SYNC) { LOG_D(PHY,"wakeup_txfh: eNB %d : Skipping ru %d\n",eNB->Mod_id,ru_id); continue; }
+
+    	if(ru_proc == NULL) {return(0);}
+    
+    	if (ru_proc->instance_cnt_eNBs == 0) {
+        	LOG_E(PHY,"Frame %d, subframe %d: TX FH thread busy, dropping Frame %d, subframe %d\n", ru_proc->frame_tx, ru_proc->subframe_tx, proc->frame_rx, proc->subframe_rx);
+      		return(-1);
+    	}
+    	if (pthread_mutex_timedlock(&ru_proc->mutex_eNBs,&wait) != 0) {
+      		LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB TX1 thread %d (IC %d)\n", ru_proc->subframe_rx&1,ru_proc->instance_cnt_eNBs );
+      		exit_fun( "error locking mutex_eNB" );
+      		return(-1);
+    	}
+      	
+	ru_proc->instance_cnt_eNBs = 0;
+      	ru_proc->timestamp_tx = proc->timestamp_tx;
+      	ru_proc->subframe_tx  = proc->subframe_tx;
+      	ru_proc->frame_tx     = proc->frame_tx;
+
+    	// the thread can now be woken up
+    	if (pthread_cond_signal(&ru_proc->cond_eNBs) != 0) {
+      		LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
+      		exit_fun( "ERROR pthread_cond_signal" );
+      		return(-1);
+    	}
+    	pthread_mutex_unlock( &ru_proc->mutex_eNBs );
   }
   return(0);
 }
 
-int wakeup_tx(PHY_VARS_eNB *eNB,RU_proc_t *ru_proc) {
+int wakeup_tx(PHY_VARS_eNB *eNB) {
   eNB_proc_t *proc=&eNB->proc;
 
  /* LTE_DL_FRAME_PARMS *fp;

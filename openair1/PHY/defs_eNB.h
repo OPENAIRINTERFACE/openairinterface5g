@@ -894,13 +894,17 @@ typedef struct eNB_proc_t_s {
   pthread_mutex_t mutex_asynch_rxtx;
   /// mutex for RU access to eNB processing (PDSCH/PUSCH)
   pthread_mutex_t mutex_RU;
+  /// mutex for eNB processing to access RU TX (PDSCH/PUSCH)
+  pthread_mutex_t mutex_RU_tx;
   /// mutex for RU access to eNB processing (PRACH)
   pthread_mutex_t mutex_RU_PRACH;
   /// mutex for RU access to eNB processing (PRACH BR)
   pthread_mutex_t mutex_RU_PRACH_br;
   /// mask for RUs serving eNB (PDSCH/PUSCH)
   int RU_mask[10];
- /// time measurements for RU arrivals
+  /// mask for RUs serving eNB (PDSCH/PUSCH)
+  int RU_mask_tx;
+  /// time measurements for RU arrivals
   struct timespec t[10];
   /// Timing statistics (RU_arrivals)
   time_stats_t ru_arrival_time;
