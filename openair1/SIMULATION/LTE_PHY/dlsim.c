@@ -1443,7 +1443,7 @@ int main(int argc, char **argv)
       eNB->UE_stats[1].DL_pmi_single = 0;
   }
 
-  eNB_rxtx_proc_t *proc_eNB = &eNB->proc.L1_proc;
+  L1_rxtx_proc_t *proc_eNB = &eNB->proc.L1_proc;
 
   if (input_fd==NULL) {
 

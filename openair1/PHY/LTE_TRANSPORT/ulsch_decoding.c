@@ -762,7 +762,7 @@ static inline unsigned int lte_gold_unscram(unsigned int *x1, unsigned int *x2, 
 
 }
   
-unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
+unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
                              uint8_t UE_id,
                              uint8_t control_only_flag,
                              uint8_t Nbundled,
