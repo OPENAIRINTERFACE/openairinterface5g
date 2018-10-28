@@ -335,7 +335,7 @@ static void* L1_thread_tx(void* param) {
   eNB_proc_t *eNB_proc  = (eNB_proc_t*)param;
   eNB_rxtx_proc_t *proc = &eNB_proc->L1_proc_tx;
   PHY_VARS_eNB *eNB = RC.eNB[0][proc->CC_id];
-  
+  LOG_I(PHY,"ENTERED L1_thread_tx\n");
   char thread_name[100];
   sprintf(thread_name,"TXnp4_%d\n",&eNB->proc.L1_proc == proc ? 0 : 1);
   thread_top_init(thread_name,1,470000,500000,500000);
@@ -366,7 +366,7 @@ static void* L1_thread_tx(void* param) {
       exit_fun( "ERROR pthread_cond_signal" );
     }
     pthread_mutex_unlock( &proc->mutex );
-    wakeup_txfh(proc,eNB->proc.ru_proc);
+    wakeup_txfh(proc,eNB);
   }
 
   return 0;
@@ -383,7 +383,7 @@ static void* L1_thread( void* param ) {
   static int eNB_thread_rxtx_status;
   //eNB_proc_t *eNB_proc  = (eNB_proc_t*)param;
   eNB_rxtx_proc_t *proc;
-LOG_I(PHY,"ENTERED eNB_thread_rxtx\n");
+LOG_I(PHY,"ENTERED L1_thread\n");
   // Working
   if(nfapi_mode ==2){
 	  proc = (eNB_rxtx_proc_t*)param;
@@ -491,7 +491,7 @@ int wakeup_txfh(eNB_rxtx_proc_t *proc,PHY_VARS_eNB *eNB) {
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
   LTE_DL_FRAME_PARMS *fp;
-
+  LOG_I(PHY,"ENTERED wakeup_txfh\n");
   for(int ru_id=0; ru_id<eNB->num_RU; ru_id++){
     ru_proc = &eNB->RU_list[ru_id]->proc;
     fp = &eNB->RU_list[ru_id]->frame_parms;
@@ -515,7 +515,7 @@ int wakeup_txfh(eNB_rxtx_proc_t *proc,PHY_VARS_eNB *eNB) {
       exit_fun( "error locking mutex_eNB" );
       return(-1);
     }
-      LOG_D(PHY,"waking up for frame %d subframe %d for RU TX \n", proc->frame_tx, proc->subframe_tx);
+      LOG_I(PHY,"waking up for frame %d subframe %d for RU TX \n", proc->frame_tx, proc->subframe_tx);
       ru_proc->instance_cnt_eNBs = 0;
       ru_proc->timestamp_tx = proc->timestamp_tx;
       ru_proc->subframe_tx  = proc->subframe_tx;
@@ -553,11 +553,11 @@ if ((fp->frame_type == TDD) && (subframe_select(fp,proc_rxtx0->subframe_tx)==SF_
     exit_fun("ERROR pthread_lock");
     return(-1);
   }
-  while(L1_proc_tx->instance_cnt == 0){
+  while(L1_proc_tx->instance_cnt == 0){ //check if the previous has finished
     pthread_cond_wait(&L1_proc_tx->cond,&L1_proc_tx->mutex);
   }
 
-  L1_proc_tx->instance_cnt = 0;
+  L1_proc_tx->instance_cnt = 0; // set go for the current one
 
   
   L1_proc_tx->subframe_rx   = L1_proc->subframe_rx;
@@ -584,7 +584,9 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,RU_t *ru) {
   RU_proc_t *ru_proc=&ru->proc;
   eNB_rxtx_proc_t *L1_proc=&proc->L1_proc;
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
-
+  
+  LOG_I(PHY,"ENTERED wakeup_rxtx\n");
+  
   int i;
   struct timespec wait;
   
@@ -966,7 +968,7 @@ void init_eNB_proc(int inst) {
 
     if ((get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) && nfapi_mode!=2) {
       pthread_create( &L1_proc->pthread, attr0, L1_thread, proc ); //!!!!!!!!!!!!!!!!!!!!! for us it is eNB !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1
-      pthread_create( &L1_proc_tx->pthread, attr1, L1_thread_tx, proc);
+      pthread_create( &L1_proc_tx->pthread, attr1, L1_thread_tx, proc );
     }
     pthread_create( &proc->pthread_prach, attr_prach, eNB_thread_prach, eNB );
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))

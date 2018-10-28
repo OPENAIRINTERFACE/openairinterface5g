@@ -1145,10 +1145,9 @@ void wakeup_L1s(RU_t *ru) {
   struct timespec t;
   LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d (state %s)ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru_states[ru->state],ru->eNB_top);
 
-  LOG_D(PHY,"wakeup_L1s (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
+  LOG_I(PHY,"wakeup_L1s (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
 
 
-  if (ru->num_eNB==1 && ru->eNB_top!=0 && get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD) {
     // call eNB function directly
   
     char string[20];
@@ -1233,8 +1232,6 @@ void wakeup_L1s(RU_t *ru) {
 
     ru->proc.emulate_rf_busy = 0;
   
-
-}
 }
 static inline int wakeup_prach_ru(RU_t *ru) {
 
@@ -1502,9 +1499,7 @@ static void* ru_thread_tx( void* param ) {
   //CPU_SET(5, &cpuset);
   //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
   //wait_sync("ru_thread_tx");
-  //printf("Entering ru_thread_tx, ru_proc->cond_FH1, ru_proc->instance_cnt_FH1\n");
   wait_on_condition(&proc->mutex_FH1,&proc->cond_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
-  //printf("Passed ru_thread_tx ru_proc->cond_FH1\n");
 
   printf( "ru_thread_tx ready\n");
   while (!oai_exit) { 
