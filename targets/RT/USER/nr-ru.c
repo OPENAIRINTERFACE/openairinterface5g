@@ -719,7 +719,8 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   if(emulate_rf){
     wait_on_condition(&proc->mutex_emulateRF,&proc->cond_emulateRF,&proc->instance_cnt_emulateRF,"emulatedRF_thread");
     release_thread(&proc->mutex_emulateRF,&proc->instance_cnt_emulateRF,"emulatedRF_thread");
-    rxs = fp->samples_per_tti;
+    rxs = fp->samples_per_subframe;
+    ts = old_ts + rxs;
   }
   else{
     rxs = ru->rfdevice.trx_read_func(&ru->rfdevice,
@@ -794,7 +795,7 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   if (rxs != fp->samples_per_subframe)
   {
     //exit_fun( "problem receiving samples" );
-    LOG_E(PHY, "problem receiving samples");
+    LOG_E(PHY, "problem receiving samples\n");
   }
 }
 
@@ -1543,6 +1544,18 @@ static void* ru_thread( void* param ) {
           {
             sprintf(filename,"tx%ddata_frame%d.m", i, print_frame);
             LOG_M(filename,"txdata_frame",&ru->common.txdata[i][0],fp->samples_per_frame, 1, 1);
+            sprintf(filename,"tx%ddata_frame%d.dat", i, print_frame);
+	    FILE *output_fd = fopen(filename,"w");
+	    if (output_fd) {
+	      fwrite(&ru->common.txdata[i][0],
+		     sizeof(int32_t),
+		     fp->samples_per_frame,
+		     output_fd);
+	      fclose(output_fd);
+	    }
+	    else {
+	      LOG_E(PHY,"Cannot write to file %s\n",filename);
+	    }
           }
         }
       }
