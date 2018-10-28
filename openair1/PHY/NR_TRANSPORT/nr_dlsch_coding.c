@@ -154,6 +154,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_t
     for (i=0; i<10; i++)
       dlsch->harq_ids[i] = i;
 
+
     for (i=0; i<Mdlharq; i++) {
       dlsch->harq_processes[i] = (NR_DL_gNB_HARQ_t *)malloc16(sizeof(NR_DL_gNB_HARQ_t));
       LOG_T(PHY, "Required mem size %d (bw scaling %d), dlsch->harq_processes[%d] %p\n",
@@ -163,6 +164,13 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_t
         bzero(dlsch->harq_processes[i],sizeof(NR_DL_gNB_HARQ_t));
         //    dlsch->harq_processes[i]->first_tx=1;
         dlsch->harq_processes[i]->b = (unsigned char*)malloc16(MAX_NR_DLSCH_PAYLOAD_BYTES/bw_scaling);
+        dlsch->harq_processes[i]->pdu = (uint8_t*)malloc16(MAX_NR_DLSCH_PAYLOAD_BYTES/bw_scaling);
+        if (dlsch->harq_processes[i]->pdu) {
+          bzero(dlsch->harq_processes[i]->pdu,MAX_NR_DLSCH_PAYLOAD_BYTES/bw_scaling);
+        } else {
+          printf("Can't allocate PDU\n");
+          exit_flag=1;
+        }
 
         if (dlsch->harq_processes[i]->b) {
           bzero(dlsch->harq_processes[i]->b,MAX_NR_DLSCH_PAYLOAD_BYTES/bw_scaling);
