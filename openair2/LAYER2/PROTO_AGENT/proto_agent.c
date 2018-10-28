@@ -284,8 +284,8 @@ proto_agent_receive(void *args)
     if (proto_agent_async_msg_send((void *)ser_msg, (int) size, 1, inst->channel->channel_info)){
       err_code = PROTOCOL__FLEXSPLIT_ERR__MSG_ENQUEUING;
       goto error;
-      LOG_D(PROTO_AGENT, "sent message with size %d\n", size);
     }
+    LOG_D(PROTO_AGENT, "sent message with size %d\n", size);
 
   }
   

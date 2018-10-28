@@ -687,7 +687,7 @@ void flexran_agent_send_update_stats(mid_t mod_id) {
     return;
   }
  error:
-  LOG_D(FLEXRAN_AGENT, "Could not send sf trigger message\n");
+  LOG_W(FLEXRAN_AGENT, "Could not send update stats message\n");
 }
 
 err_code_t flexran_agent_disable_cont_stats_update(mid_t mod_id) {
