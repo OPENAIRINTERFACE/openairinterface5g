@@ -27,24 +27,26 @@ uint32_t nr_subcarrier_spacing[MAX_NUM_SUBCARRIER_SPACING] = {15e3, 30e3, 60e3, 
 uint16_t nr_slots_per_subframe[MAX_NUM_SUBCARRIER_SPACING] = {1, 2, 4, 16, 32};
 
 
-int nr_init_frame_parms0(
-			 NR_DL_FRAME_PARMS *fp,
+int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
 			 int mu,
-			 int Ncp)
+			 int Ncp,
+			 int N_RB_DL)
 
 {
 
-
-
 #if DISABLE_LOG_X
-  printf("Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, fp->N_RB_DL, Ncp);
+  printf("Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB_DL, Ncp);
 #else
-  LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, fp->N_RB_DL, Ncp);
+  LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB_DL, Ncp);
 #endif
 
   if (Ncp == NFAPI_CP_EXTENDED)
     AssertFatal(mu == NR_MU_2,"Invalid cyclic prefix %d for numerology index %d\n", Ncp, mu);
 
+  fp->numerology_index = mu;
+  fp->Ncp = Ncp;
+  fp->N_RB_DL = N_RB_DL;
+  
   switch(mu) {
 
     case NR_MU_0: //15kHz scs
@@ -56,7 +58,7 @@ int nr_init_frame_parms0(
       fp->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_1];
       fp->slots_per_subframe = nr_slots_per_subframe[NR_MU_1];
 
-      switch(fp->N_RB_DL){
+      switch(N_RB_DL){
         case 11:
         case 24:
         case 38:
@@ -99,21 +101,21 @@ int nr_init_frame_parms0(
           break;
 
         case 245:
-	  AssertFatal(fp->threequarter_fs==0,"3/4 sampling impossible for N_RB %d and MU %d\n",fp->N_RB_DL,mu); 
+	  AssertFatal(fp->threequarter_fs==0,"3/4 sampling impossible for N_RB %d and MU %d\n",N_RB_DL,mu); 
 	  fp->ofdm_symbol_size = 4096;
 	  fp->first_carrier_offset = 2626; //4096 - 1478
 	  fp->nb_prefix_samples0 = 352;
 	  fp->nb_prefix_samples = 288;
 	  break;
         case 273:
-	  AssertFatal(fp->threequarter_fs==0,"3/4 sampling impossible for N_RB %d and MU %d\n",fp->N_RB_DL,mu); 
+	  AssertFatal(fp->threequarter_fs==0,"3/4 sampling impossible for N_RB %d and MU %d\n",N_RB_DL,mu); 
 	  fp->ofdm_symbol_size = 4096;
 	  fp->first_carrier_offset = 2458; //4096 - 1638
 	  fp->nb_prefix_samples0 = 352;
 	  fp->nb_prefix_samples = 288;
 	  break;
       default:
-        AssertFatal(1==0,"Number of resource blocks %d undefined for mu %d, frame parms = %p\n", fp->N_RB_DL, mu, fp);
+        AssertFatal(1==0,"Number of resource blocks %d undefined for mu %d, frame parms = %p\n", N_RB_DL, mu, fp);
       }
       break;
 
@@ -121,7 +123,7 @@ int nr_init_frame_parms0(
       fp->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_2];
       fp->slots_per_subframe = nr_slots_per_subframe[NR_MU_2];
 
-      switch(fp->N_RB_DL){ //FR1 bands only
+      switch(N_RB_DL){ //FR1 bands only
         case 11:
         case 18:
         case 38:
@@ -135,7 +137,7 @@ int nr_init_frame_parms0(
         case 121:
         case 135:
       default:
-        AssertFatal(1==0,"Number of resource blocks %d undefined for mu %d, frame parms = %p\n", fp->N_RB_DL, mu, fp);
+        AssertFatal(1==0,"Number of resource blocks %d undefined for mu %d, frame parms = %p\n", N_RB_DL, mu, fp);
       }
       break;
 
@@ -167,7 +169,7 @@ int nr_init_frame_parms0(
   fp->initial_bwp_dl.scs = fp->subcarrier_spacing;
   fp->initial_bwp_dl.location = 0;
   fp->initial_bwp_dl.N_RB = fp->N_RB_DL;
-  fp->initial_bwp_dl.cyclic_prefix = Ncp;
+  fp->initial_bwp_dl.cyclic_prefix = fp->Ncp;
   fp->initial_bwp_dl.ofdm_symbol_size = fp->ofdm_symbol_size;
 
   return 0;
@@ -177,18 +179,20 @@ int nr_init_frame_parms(nfapi_nr_config_request_t* config,
                         NR_DL_FRAME_PARMS *fp) {
 
   return nr_init_frame_parms0(fp,
-		       config->subframe_config.numerology_index_mu.value,
-		       config->subframe_config.dl_cyclic_prefix_type.value);
+			      config->subframe_config.numerology_index_mu.value,
+			      config->subframe_config.dl_cyclic_prefix_type.value,
+			      config->rf_config.dl_carrier_bandwidth.value);
 }
 
 int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
 			   int mu, 
 			   int Ncp,
+			   int N_RB_DL,
 			   int n_ssb_crb,
 			   int ssb_subcarrier_offset) 
 {
 
-  nr_init_frame_parms0(fp,mu,Ncp);
+  nr_init_frame_parms0(fp,mu,Ncp,N_RB_DL);
   int start_rb = n_ssb_crb / (1<<mu);
   fp->ssb_start_subcarrier = 12 * start_rb + ssb_subcarrier_offset;
   return 0;

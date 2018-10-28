@@ -49,7 +49,7 @@ extern openair0_config_t openair0_cfg[];
 //static  nfapi_nr_config_request_t* config =&config_t;
 int cnt=0;
 
-//#define DEBUG_INITIAL_SYNCH
+#define DEBUG_INITIAL_SYNCH
 
 int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
 {
@@ -125,11 +125,7 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
         ue->proc.proc_rxtx[i].frame_tx = ue->proc.proc_rxtx[0].frame_rx;
     }
 #ifdef DEBUG_INITIAL_SYNCH
-    LOG_I(PHY,"[UE%d] Initial sync: pbch decoded sucessfully mode1_flag %d, tx_ant %d, frame %d\n",
-          ue->Mod_id,
-          frame_parms->mode1_flag,
-          pbch_tx_ant,
-          ue->proc.proc_rxtx[0].frame_rx,);
+    LOG_I(PHY,"[UE%d] Initial sync: pbch decoded sucessfully\n",ue->Mod_id);
 #endif
     return(0);
   } else {
@@ -157,10 +153,11 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   // First try TDD normal prefix, mu 1
   fp->Ncp=NORMAL;
   fp->frame_type=TDD;
-  nr_init_frame_parms_ue(fp,NR_MU_1,NORMAL,n_ssb_crb,0);
+  // FK: added N_RB_DL paramter here as this function shares code with the gNB where it is needed. We should rewrite this function for the UE. 
+  nr_init_frame_parms_ue(fp,NR_MU_1,NORMAL,fp->N_RB_DL,n_ssb_crb,0);
   LOG_D(PHY,"nr_initial sync ue RB_DL %d\n", fp->N_RB_DL);
   /*
-  write_output("rxdata0.m","rxd0",ue->common_vars.rxdata[0],10*fp->samples_per_tti,1,1);
+  write_output("rxdata0.m","rxd0",ue->common_vars.rxdata[0],10*fp->samples_per_subframe,1,1);
   exit(-1);
   */
 
@@ -187,21 +184,19 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 
   
   if (sync_pos >= fp->nb_prefix_samples)
-      ue->ssb_offset = sync_pos - fp->nb_prefix_samples;
+    ue->ssb_offset = sync_pos - fp->nb_prefix_samples;
   else
-    ue->ssb_offset = sync_pos + (fp->samples_per_tti * 10) - fp->nb_prefix_samples;
+    ue->ssb_offset = sync_pos + (fp->samples_per_subframe * 10) - fp->nb_prefix_samples;
   
-  LOG_D(PHY,"sync_pos %d ssb_offset %d\n",sync_pos,ue->ssb_offset);
-
-
-  //  write_output("rxdata1.m","rxd1",ue->common_vars.rxdata[0],10*fp->samples_per_tti,1,1);
+  //write_output("rxdata1.m","rxd1",ue->common_vars.rxdata[0],10*fp->samples_per_subframe,1,1);
 
 #ifdef DEBUG_INITIAL_SYNCH
   LOG_I(PHY,"[UE%d] Initial sync : Estimated PSS position %d, Nid2 %d\n", ue->Mod_id, sync_pos,ue->common_vars.eNb_id);
+  LOG_I(PHY,"sync_pos %d ssb_offset %d\n",sync_pos,ue->ssb_offset);
 #endif
 
   /* check that SSS/PBCH block is continuous inside the received buffer */
-  if (sync_pos < (10*fp->ttis_per_subframe*fp->samples_per_tti - (NB_SYMBOLS_PBCH * fp->ofdm_symbol_size))) {
+  if (sync_pos < (10*fp->slots_per_subframe*fp->samples_per_subframe - (NB_SYMBOLS_PBCH * fp->ofdm_symbol_size))) {
 
 #ifdef DEBUG_INITIAL_SYNCH
     LOG_I(PHY,"Calling sss detection (normal CP)\n");
@@ -209,7 +204,8 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 
     rx_sss_nr(ue,&metric_tdd_ncp,&phase_tdd_ncp);
 
-    nr_init_frame_parms_ue(fp,NR_MU_1,NORMAL,n_ssb_crb,0);
+    //FK: why do we need to do this again here?
+    //nr_init_frame_parms_ue(fp,NR_MU_1,NORMAL,n_ssb_crb,0);
 
     nr_gold_pbch(ue);
     ret = nr_pbch_detection(ue,mode);
@@ -231,8 +227,8 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
     */
 
 #ifdef DEBUG_INITIAL_SYNCH
-    LOG_I(PHY,"TDD Normal prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
-          frame_parms->Nid_cell,metric_tdd_ncp,phase_tdd_ncp,flip_tdd_ncp,ret);
+    LOG_I(PHY,"TDD Normal prefix: CellId %d metric %d, phase %d, pbch %d\n",
+          fp->Nid_cell,metric_tdd_ncp,phase_tdd_ncp,ret);
 #endif
   }
   else {
