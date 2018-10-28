@@ -26,11 +26,12 @@
  * \version 0.1
  */
 
+#define _GNU_SOURCE
 #include "flexran_agent.h"
 
+#include <pthread.h>
 #include <arpa/inet.h>
 
-void *send_thread(void *args);
 void *receive_thread(void *args);
 pthread_t new_thread(void *(*f)(void *), void *b);
 Protocol__FlexranMessage *flexran_agent_timeout(void* args);
@@ -110,6 +111,7 @@ void *receive_thread(void *args) {
   err_code_t             err_code=0;
 
   Protocol__FlexranMessage *msg;
+  pthread_setname_np(pthread_self(), "flexran_rx_thr");
   
   while (1) {
 

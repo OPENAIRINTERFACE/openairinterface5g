@@ -33,12 +33,15 @@
  * \date 2016
  * \version 0.1
  */
+#define _GNU_SOURCE
 #include "proto_agent_common.h"
 #include "common/utils/LOG/log.h"
 #include "proto_agent.h"
 #include "assertions.h"
 #include "proto_agent_net_comm.h"
 #include "proto_agent_async.h" 
+
+#include <pthread.h>
 
 #define  ENB_AGENT_MAX 9
 
@@ -250,6 +253,7 @@ proto_agent_receive(void *args)
   int                   priority;
   err_code_t             err_code;
 
+  pthread_setname_np(pthread_self(), "proto_rx");
   Protocol__FlexsplitMessage *msg;
   uint8_t *ser_msg;
   
