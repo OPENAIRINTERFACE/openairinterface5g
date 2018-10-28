@@ -45,35 +45,39 @@ void polar_encoder(uint32_t *in,
 		   t_nrPolar_paramsPtr polarParams)
 {
   if (polarParams->idx == 0){//PBCH
+    /*
     uint64_t B = (((uint64_t)*in)&((((uint64_t)1)<<32)-1)) | (((uint64_t)crc24c((uint8_t*)in,polarParams->payloadBits)>>8)<<polarParams->payloadBits);
 #ifdef DEBUG_POLAR_ENCODER
     printf("polar_B %llx (crc %x)\n",B,crc24c((uint8_t*)in,polarParams->payloadBits)>>8);
 #endif
-    nr_bit2byte_uint32_8_t((uint32_t*)&B, polarParams->K, polarParams->nr_polar_B);
+nr_bit2byte_uint32_8_t((uint32_t*)&B, polarParams->K, polarParams->nr_polar_B);*/
+
+    nr_bit2byte_uint32_8_t((uint32_t*)in, polarParams->payloadBits, polarParams->nr_polar_A);
     /*
      * Bytewise operations
      */
     //Calculate CRC.
-    /*
-    nr_matrix_multiplication_uint8_t_1D_uint8_t_2D(polarParams->nr_polar_A,
-						   polarParams->crc_generator_matrix,
-						   polarParams->nr_polar_crc,
-						   polarParams->payloadBits,
-						   polarParams->crcParityBits);
-    for (uint8_t i = 0; i < polarParams->crcParityBits; i++) 
-      polarParams->nr_polar_crc[i] = (polarParams->nr_polar_crc[i] % 2);
-
-
-    //Attach CRC to the Transport Block. (a to b)
-    for (uint16_t i = 0; i < polarParams->payloadBits; i++)
-      polarParams->nr_polar_B[i] = polarParams->nr_polar_A[i];
-    for (uint16_t i = polarParams->payloadBits; i < polarParams->K; i++)
-      polarParams->nr_polar_B[i]= 0;//polarParams->nr_polar_crc[i-(polarParams->payloadBits)];
-    */
-
+    
+      nr_matrix_multiplication_uint8_t_1D_uint8_t_2D(polarParams->nr_polar_A,
+						     polarParams->crc_generator_matrix,
+						     polarParams->nr_polar_crc,
+						     polarParams->payloadBits,
+						     polarParams->crcParityBits);
+      for (uint8_t i = 0; i < polarParams->crcParityBits; i++) 
+	polarParams->nr_polar_crc[i] = (polarParams->nr_polar_crc[i] % 2);
+      
+      
+      //Attach CRC to the Transport Block. (a to b)
+      for (uint16_t i = 0; i < polarParams->payloadBits; i++)
+	polarParams->nr_polar_B[i] = polarParams->nr_polar_A[i];
+      for (uint16_t i = polarParams->payloadBits; i < polarParams->K; i++)
+	polarParams->nr_polar_B[i]= polarParams->nr_polar_crc[i-(polarParams->payloadBits)];
+    
+#ifdef DEBUG_POLAR_ENCODER
     uint64_t B2=0;
     for (int i = 0;i<polarParams->K;i++) B2 = B2 | ((uint64_t)polarParams->nr_polar_B[i] << i);
     printf("polar_B %llx\n",B2);
+#endif
     /*    for (int j=0;j<polarParams->crcParityBits;j++) {
       for (int i=0;i<polarParams->payloadBits;i++) 
 	printf("%1d.%1d+",polarParams->crc_generator_matrix[i][j],polarParams->nr_polar_A[i]);
@@ -90,13 +94,13 @@ void polar_encoder(uint32_t *in,
 		       polarParams->interleaving_pattern,
 		       polarParams->K);
 
-    
+
+#ifdef DEBUG_POLAR_ENCODER    
   uint64_t Cprime=0;
   for (int i = 0;i<polarParams->K;i++) {
     Cprime = Cprime | ((uint64_t)polarParams->nr_polar_CPrime[i] << i);
     if (polarParams->nr_polar_CPrime[i] == 1) printf("pos %d : %llx\n",i,Cprime);
   }
-#ifdef DEBUG_POLAR_ENCODER
   printf("polar_Cprime %llx\n",Cprime);
 #endif  
   //Bit insertion (c' to u)

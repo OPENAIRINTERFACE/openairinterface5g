@@ -157,6 +157,10 @@ int8_t polar_decoder(double *input,
 					 uint8_t listSize,
 					 uint8_t pathMetricAppr);
 
+int8_t polar_decoder_int16(int16_t *input,
+			   uint64_t *out,
+			   t_nrPolar_params *polarParams);
+
 int8_t polar_decoder_aPriori(double *input,
 							 uint32_t *output,
 							 t_nrPolar_paramsPtr polarParams,

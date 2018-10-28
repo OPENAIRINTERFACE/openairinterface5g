@@ -369,7 +369,7 @@ int main(int argc, char *argv[]) {
 							       aPrioriArray);
 			else 
 			  decoderState = polar_decoder_int16(channelOutput_int16,
-							     estimatedOutput,
+							     (uint64_t*)estimatedOutput,
 							     currentPtr);
 
 			  
@@ -391,7 +391,7 @@ int main(int argc, char *argv[]) {
 
 			  if (nBitError>0) { 
 			    blockErrorState=1; 
-			    printf("Error: Input %x, Output %x\n",testInput[0],estimatedOutput[0]);
+			    //			    printf("Error: Input %x, Output %x\n",testInput[0],estimatedOutput[0]);
 			  }
 			}
 

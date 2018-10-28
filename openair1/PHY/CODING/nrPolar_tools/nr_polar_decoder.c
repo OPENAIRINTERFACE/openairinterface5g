@@ -256,6 +256,7 @@ int8_t polar_decoder(
 			//Deinterleaving (ĉ to b)
 			nr_polar_deinterleaver(polarParams->nr_polar_CPrime, polarParams->nr_polar_B, polarParams->interleaving_pattern, polarParams->K);
 
+			
 			//Remove the CRC (â)
 			for (int j = 0; j < polarParams->payloadBits; j++) polarParams->nr_polar_A[j]=polarParams->nr_polar_B[j];
 
@@ -280,13 +281,13 @@ int8_t polar_decoder(
 }
 
 int8_t polar_decoder_aPriori(double *input,
-							 uint32_t *out,
-							 t_nrPolar_paramsPtr polarParams,
-							 uint8_t listSize,
-							 uint8_t pathMetricAppr,
-							 double *aPrioriPayload)
+			     uint32_t *out,
+			     t_nrPolar_paramsPtr polarParams,
+			     uint8_t listSize,
+			     uint8_t pathMetricAppr,
+			     double *aPrioriPayload)
 {
-	uint8_t ***bit = nr_alloc_uint8_t_3D_array(polarParams->N, (polarParams->n+1), 2*listSize);
+  uint8_t ***bit = nr_alloc_uint8_t_3D_array(polarParams->N, (polarParams->n+1), 2*listSize);
 	uint8_t **bitUpdated = nr_alloc_uint8_t_2D_array(polarParams->N, (polarParams->n+1)); //0=False, 1=True
 	uint8_t **llrUpdated = nr_alloc_uint8_t_2D_array(polarParams->N, (polarParams->n+1)); //0=False, 1=True
 	double ***llr = nr_alloc_double_3D_array(polarParams->N, (polarParams->n+1), 2*listSize);
@@ -509,8 +510,8 @@ int8_t polar_decoder_aPriori(double *input,
 			nr_polar_deinterleaver(polarParams->nr_polar_CPrime, polarParams->nr_polar_B, polarParams->interleaving_pattern, polarParams->K);
 
 			//Remove the CRC (â)
-			for (int j = 0; j < polarParams->payloadBits; j++) polarParams->nr_polar_A[j]=polarParams->nr_polar_B[j];
-
+			for (int j = 0; j < polarParams->payloadBits; j++)
+			  polarParams->nr_polar_A[j]=polarParams->nr_polar_B[j];
 			break;
 		}
 	}
@@ -528,6 +529,7 @@ int8_t polar_decoder_aPriori(double *input,
 	 * Return bits.
 	 */
 	nr_byte2bit_uint8_32_t(polarParams->nr_polar_A, polarParams->payloadBits, out);
+
 	return(0);
 
 }
@@ -1064,7 +1066,7 @@ void init_polar_deinterleaver_table(t_nrPolar_params *polarParams) {
 }
 
 int8_t polar_decoder_int16(int16_t *input,
-			   uint8_t *out,
+			   uint64_t *out,
 			   t_nrPolar_params *polarParams)
 {
   
@@ -1103,7 +1105,7 @@ int8_t polar_decoder_int16(int16_t *input,
 #endif
   
   if ((uint64_t)(crc24c((uint8_t*)&B,polarParams->payloadBits)>>8) == (B>>polarParams->payloadBits)) {
-    *((uint64_t *)out) = B & (((uint64_t)1<<polarParams->payloadBits)-1);
+    *out = B & (((uint64_t)1<<polarParams->payloadBits)-1);
     return(0);
   }
   else  return(-1);
