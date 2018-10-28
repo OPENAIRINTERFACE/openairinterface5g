@@ -98,6 +98,7 @@ struct nrPolar_params {
   uint32_t crcBit;
   
   uint16_t *interleaving_pattern;
+  uint16_t *deinterleaving_pattern;
   uint16_t *rate_matching_pattern;
   const uint16_t *Q_0_Nminus1;
   int16_t *Q_I_N;
@@ -110,7 +111,10 @@ struct nrPolar_params {
   uint8_t **crc_generator_matrix; //G_P
   uint8_t **G_N;
   uint64_t **G_N_tab;
+  int groupsize;
+  int     *rm_tab;
   uint64_t cprime_tab[8][256];
+  uint64_t B_tab[8][256];
   uint32_t* crc256Table;
   uint8_t **extended_crc_generator_matrix;
   //lowercase: bits, Uppercase: Bits stored in bytes
@@ -355,11 +359,11 @@ uint8_t **crc6_generator_matrix(uint16_t payloadSizeBits);
 
 //Also nr_polar_rate_matcher
 static inline void nr_polar_interleaver(uint8_t *input,
-										uint8_t *output,
-										uint16_t *pattern,
-										uint16_t size)
+					uint8_t *output,
+					uint16_t *pattern,
+					uint16_t size)
 {
-	for (int i=0; i<size; i++) output[i]=input[pattern[i]];
+  for (int i=0; i<size; i++) output[i]=input[pattern[i]];
 }
 
 static inline void nr_polar_deinterleaver(uint8_t *input,

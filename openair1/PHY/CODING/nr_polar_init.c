@@ -36,6 +36,11 @@
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 
+static int intcmp(const void *p1,const void *p2) {
+
+  return(*(int16_t*)p1 > *(int16_t*)p2);
+}
+
 void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 				   int8_t messageType,
 				   uint16_t messageLength,
@@ -115,6 +120,10 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 									  newPolarInitNode->i_il,
 									  newPolarInitNode->interleaving_pattern);
 
+		newPolarInitNode->deinterleaving_pattern = malloc(sizeof(uint16_t) * newPolarInitNode->K);
+		for (int i=0;i<newPolarInitNode->K;i++)
+		  newPolarInitNode->deinterleaving_pattern[newPolarInitNode->interleaving_pattern[i]] = i;
+
 		newPolarInitNode->rate_matching_pattern = malloc(sizeof(uint16_t) * newPolarInitNode->encoderLength);
 		uint16_t *J = malloc(sizeof(uint16_t) * newPolarInitNode->N);
 		nr_polar_rate_matching_pattern(newPolarInitNode->rate_matching_pattern,
@@ -139,7 +148,9 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 								  newPolarInitNode->N,
 								  newPolarInitNode->encoderLength,
 								  newPolarInitNode->n_pc);
-
+		// sort the Q_I_N array in ascending order (first K positions)
+		qsort((void*)newPolarInitNode->Q_I_N,newPolarInitNode->K,sizeof(int16_t),intcmp);
+ 
 		newPolarInitNode->channel_interleaver_pattern = malloc(sizeof(uint16_t) * newPolarInitNode->encoderLength);
 		nr_polar_channel_interleaver_pattern(newPolarInitNode->channel_interleaver_pattern,
 											 newPolarInitNode->i_bil,
@@ -149,6 +160,8 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 
 		build_decoder_tree(newPolarInitNode);
 		build_polar_tables(newPolarInitNode);
+		init_polar_deinterleaver_table(newPolarInitNode);
+
 		printf("decoder tree nodes %d\n",newPolarInitNode->tree.num_nodes);
 
 	} else {

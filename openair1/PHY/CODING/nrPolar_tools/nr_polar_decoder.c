@@ -37,7 +37,7 @@
  */
 
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
-
+#include "assertions.h"
 
 int8_t polar_decoder(
 		double *input,
@@ -1037,6 +1037,31 @@ int8_t polar_decoder_dci(double *input,
 	return(0);
 }
 
+void init_polar_deinterleaver_table(t_nrPolar_params *polarParams) {
+
+  AssertFatal(polarParams->K > 32, "K = %d < 33, is not supported yet\n",polarParams->K);
+  AssertFatal(polarParams->K < 65, "K = %d > 64, is not supported yet\n",polarParams->K);
+  
+  int bit_i,ip;
+
+  int numbytes = polarParams->K>>3;
+  int residue = polarParams->K&7;
+  int numbits;
+  if (residue>0) numbytes++;
+  for (int byte=0;byte<numbytes;byte++) {
+    if (byte<(polarParams->K>>3)) numbits=8;
+    else numbits=residue;
+    for (int i=0;i<numbits;i++) {
+      ip=polarParams->interleaving_pattern[(8*byte)+i];
+      AssertFatal(ip<64,"ip = %d\n",ip);
+      for (int val=0;val<256;val++) {
+	bit_i=(val>>i)&1;
+	polarParams->B_tab[byte][val] |= (((uint64_t)bit_i)<<ip);				
+      }
+    }
+  }
+
+}
 
 int8_t polar_decoder_int16(int16_t *input,
 			   uint8_t *out,
@@ -1053,33 +1078,34 @@ int8_t polar_decoder_int16(int16_t *input,
   }
   memcpy((void*)&polarParams->tree.root->alpha[0],(void*)&d_tilde[0],sizeof(int16_t)*polarParams->N);
   
-  /*
-   * SCL polar decoder.
-   */
-
-
   generic_polar_decoder(polarParams,polarParams->tree.root);
 
 
   //Extract the information bits (û to ĉ)
-  nr_polar_info_bit_extraction(polarParams->nr_polar_U, polarParams->nr_polar_CPrime, polarParams->information_bit_pattern, polarParams->N);
+  uint64_t Cprime=0;
+  uint64_t B;
+  for (int i=0;i<polarParams->K;i++) Cprime = Cprime | ((uint64_t)polarParams->nr_polar_U[polarParams->Q_I_N[i]])<<i;
 
   //Deinterleaving (ĉ to b)
+  uint8_t *Cprimebyte = (uint8_t*)&Cprime;
+  B = polarParams->B_tab[0][Cprimebyte[0]] |
+      polarParams->B_tab[1][Cprimebyte[1]] |
+      polarParams->B_tab[2][Cprimebyte[2]] |
+      polarParams->B_tab[3][Cprimebyte[3]] |
+      polarParams->B_tab[4][Cprimebyte[4]] |
+      polarParams->B_tab[5][Cprimebyte[5]] |
+      polarParams->B_tab[6][Cprimebyte[6]] |
+      polarParams->B_tab[7][Cprimebyte[7]];
 
-  nr_polar_deinterleaver(polarParams->nr_polar_CPrime, polarParams->nr_polar_B, polarParams->interleaving_pattern, polarParams->K);
-
-  //Remove the CRC (â)
-  //for (int j = 0; j < polarParams->payloadBits; j++) polarParams->nr_polar_A[j]=polarParams->nr_polar_B[j];  
-
-  // Check the CRC
-  for (int j=0;j<polarParams->crcParityBits;j++) {
-    int crcbit=0;
-    for (int i=0;i<polarParams->payloadBits;i++)
-      crcbit = crcbit ^ (polarParams->crc_generator_matrix[i][j] & polarParams->nr_polar_B[i]);
-    if (crcbit != polarParams->nr_polar_B[polarParams->payloadBits+j]) return(-1); 
+#if 0
+  printf("Decoded B %llx (crc %x,B>>payloadBits %x)\n",B,crc24c((uint8_t*)&B,polarParams->payloadBits)>>8,
+   	 (uint32_t)(B>>polarParams->payloadBits));
+#endif
+  
+  if ((uint64_t)(crc24c((uint8_t*)&B,polarParams->payloadBits)>>8) == (B>>polarParams->payloadBits)) {
+    *((uint64_t *)out) = B & (((uint64_t)1<<polarParams->payloadBits)-1);
+    return(0);
   }
-  // pack into ceil(payloadBits/32) 32 bit words, lowest index in MSB
-  //  nr_byte2bit_uint8_32_t(polarParams->nr_polar_A, polarParams->payloadBits, out);
-  nr_byte2bit_uint8_32_t(polarParams->nr_polar_B, polarParams->payloadBits, out);
-  return(0);
+  else  return(-1);
+
 }

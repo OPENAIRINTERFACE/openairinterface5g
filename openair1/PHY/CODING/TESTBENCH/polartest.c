@@ -92,12 +92,12 @@ int main(int argc, char *argv[]) {
 	}
 
 	if (polarMessageType == 0) { //PBCH
-		testLength = NR_POLAR_PBCH_PAYLOAD_BITS;
+	  testLength = 64;//NR_POLAR_PBCH_PAYLOAD_BITS;
 		coderLength = NR_POLAR_PBCH_E;
 		aggregation_level = NR_POLAR_PBCH_AGGREGATION_LEVEL;
 	} else if (polarMessageType == 1) { //DCI
 		//testLength = nr_get_dci_size(params_rel15->dci_format, params_rel15->rnti_type, &fp->initial_bwp_dl, cfg);
-		testLength = 20;
+	  testLength = 64; //20;
 		coderLength = 108; //to be changed by aggregate level function.
 	} else if (polarMessageType == -1) { //UCI
 		//testLength = ;
@@ -318,10 +318,16 @@ int main(int argc, char *argv[]) {
 			for (int i=0; i<32; i++)
 				printf("%d\n",(testInput[0]>>i)&1);*/
 
-			start_meas(&timeEncoder);
-			polar_encoder(testInput, encoderOutput, currentPtr);
-			stop_meas(&timeEncoder);
 
+
+
+
+			start_meas(&timeEncoder);
+			if (decoder_int16==0)
+			  polar_encoder(testInput, encoderOutput, currentPtr);
+			else
+			  polar_encoder_fast((uint64_t*)testInput, (uint64_t*)encoderOutput,0, currentPtr);
+			stop_meas(&timeEncoder);
 			/*printf("encoderOutput: [0]->0x%08x\n", encoderOutput[0]);
 			printf("encoderOutput: [1]->0x%08x\n", encoderOutput[1]);*/
 
@@ -377,13 +383,16 @@ int main(int argc, char *argv[]) {
 				blockErrorState=-1;
 				nBitError=-1;
 			} else {
-				for (int i = 0; i < testArrayLength; i++) {
-					for (int j = 0; j < (sizeof(testInput[0])*8); j++) {
-						if (((estimatedOutput[i]>>j) & 1) != ((testInput[i]>>j) & 1)) nBitError++;
-					}
-				}
+			  for (int j = 0; j < currentPtr->payloadBits; j++) {
+			    if (((estimatedOutput[0]>>j) & 1) != ((testInput[0]>>j) & 1)) nBitError++;
+			    
+			  }
+			
 
-				if (nBitError>0) blockErrorState=1;
+			  if (nBitError>0) { 
+			    blockErrorState=1; 
+			    printf("Error: Input %x, Output %x\n",testInput[0],estimatedOutput[0]);
+			  }
 			}
 
 			//Iteration times are in microseconds.
