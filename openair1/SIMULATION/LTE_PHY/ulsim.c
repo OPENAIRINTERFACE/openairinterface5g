@@ -922,7 +922,7 @@ int main(int argc, char **argv) {
   UE->frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
   eNB->frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
   UE->mac_enabled=0;
-  eNB_rxtx_proc_t *proc_rxtx   = &eNB->proc.proc_rxtx[subframe&1];
+  eNB_rxtx_proc_t *proc_rxtx   = &eNB->proc.L1_proc;
   UE_rxtx_proc_t *proc_rxtx_ue = &UE->proc.proc_rxtx[subframe&1];
   proc_rxtx->frame_rx=1;
   proc_rxtx->subframe_rx=subframe;
