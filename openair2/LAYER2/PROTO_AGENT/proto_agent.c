@@ -137,7 +137,11 @@ error:
 
 void proto_agent_stop(mod_id_t mod_id)
 {
+  if (!proto_agent[mod_id].channel) return;
+  proto_agent_async_release(proto_agent[mod_id].channel);
   proto_agent_destroy_channel(proto_agent[mod_id].channel->channel_id);
+  free(proto_agent[mod_id].channel);
+  proto_agent[mod_id].channel = NULL;
 }
 
 //void

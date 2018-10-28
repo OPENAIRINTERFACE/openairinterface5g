@@ -73,6 +73,10 @@ void cu_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
     .remote_ipv4_address = RC.rrc[instance]->eth_params_s.remote_addr,
     .remote_port         = RC.rrc[instance]->eth_params_s.remote_portd
   };
+  /* stop, then start the PROTO_AGENT. If it is already stopped, stopping it
+   * again will do nothing, therefore it is safe to call here.
+   * TODO: call proto_agent_stop() when CU_TASK is informed about conn release */
+  proto_agent_stop(instance);
   AssertFatal(proto_agent_start(instance, &params) == 0,
               "could not start PROTO_AGENT for F1U on instance %d!\n", instance);
 }
