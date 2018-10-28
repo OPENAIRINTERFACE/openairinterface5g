@@ -124,9 +124,6 @@ link_manager_t *create_link_manager(
   pthread_attr_setschedpolicy(&attr, SCHED_RR);
   //#endif
 
-  if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED))
-    goto error;
-
   if (pthread_create(&t, &attr, link_manager_sender_thread, ret))
     goto error;
   ret->sender = t;
