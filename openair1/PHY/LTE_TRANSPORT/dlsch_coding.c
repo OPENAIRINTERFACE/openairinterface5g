@@ -393,7 +393,7 @@ int dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
   //start_meas(&eNB->dlsch_turbo_encoding_preperation_stats);
 
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
-  eNB_proc_t *proc = &eNB->proc;
+  L1_proc_t *proc = &eNB->proc;
   unsigned int G;
   unsigned int crc=1;
 

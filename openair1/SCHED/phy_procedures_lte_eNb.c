@@ -1468,7 +1468,7 @@ extern void *td_thread(void*);
 
 void init_td_thread(PHY_VARS_eNB *eNB) {
 
-  eNB_proc_t *proc = &eNB->proc;
+  L1_proc_t *proc = &eNB->proc;
 
   proc->tdp.eNB = eNB;
   proc->instance_cnt_td         = -1;
@@ -1482,7 +1482,7 @@ void init_td_thread(PHY_VARS_eNB *eNB) {
 }
 void kill_td_thread(PHY_VARS_eNB *eNB) {
 
-  eNB_proc_t *proc = &eNB->proc;
+  L1_proc_t *proc = &eNB->proc;
   proc->instance_cnt_td         = 0;
   pthread_cond_signal(&proc->cond_td);
   
@@ -1495,7 +1495,7 @@ extern void *te_thread(void*);
 
 void init_te_thread(PHY_VARS_eNB *eNB) {
 
-  eNB_proc_t *proc = &eNB->proc;
+  L1_proc_t *proc = &eNB->proc;
 
   for(int i=0; i<3 ;i++){
     proc->tep[i].eNB = eNB;
@@ -1511,7 +1511,7 @@ void init_te_thread(PHY_VARS_eNB *eNB) {
 }
 void kill_te_thread(PHY_VARS_eNB *eNB) {
 
-  eNB_proc_t *proc = &eNB->proc;
+  L1_proc_t *proc = &eNB->proc;
 
   for(int i=0; i<3 ;i++){
     proc->tep[i].instance_cnt_te         = 0;

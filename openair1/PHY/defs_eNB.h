@@ -698,7 +698,7 @@ typedef struct {
 } te_params;
 
 /// Context data structure for eNB subframe processing
-typedef struct eNB_proc_t_s {
+typedef struct L1_proc_t_s {
   /// Component Carrier index
   uint8_t              CC_id;
   /// thread index
@@ -833,7 +833,7 @@ typedef struct eNB_proc_t_s {
   eNB_rxtx_proc_t L1_proc,L1_proc_tx;
   /// stats thread pthread descriptor
   pthread_t process_stats_thread;
-} eNB_proc_t;
+} L1_proc_t;
 
 
 
@@ -901,7 +901,7 @@ typedef struct PHY_VARS_eNB_s {
   module_id_t          Mod_id;
   uint8_t              CC_id;
   uint8_t              configured;
-  eNB_proc_t           proc;
+  L1_proc_t            proc;
   int                  single_thread_flag;
   int                  abstraction_flag;
   int                  num_RU;
