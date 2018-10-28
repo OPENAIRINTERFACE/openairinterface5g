@@ -510,7 +510,6 @@ static void get_options(void) {
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
   paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
 
-  set_default_frame_parms(frame_parms);
   config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL); 
 
   if (strlen(in_path) > 0) {
@@ -543,7 +542,7 @@ static void get_options(void) {
   config_process_cmdline( cmdline_uemodeparams,sizeof(cmdline_uemodeparams)/sizeof(paramdef_t),NULL);
   config_process_cmdline( cmdline_ueparams,sizeof(cmdline_ueparams)/sizeof(paramdef_t),NULL);
   if (loopfile != NULL) {
-      printf("Input file for hardware emulation: %s",loopfile);
+      printf("Input file for hardware emulation: %s\n",loopfile);
       mode=loop_through_memory;
       input_fd = fopen(loopfile,"r");
       AssertFatal(input_fd != NULL,"Please provide a valid input file\n");
@@ -825,6 +824,8 @@ int main( int argc, char **argv ) {
     int ret;
 #endif
 
+    PHY_VARS_NR_UE *UE[MAX_NUM_CCs];
+
     start_background_system();
     if ( load_configmodule(argc,argv) == NULL) {
       exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
@@ -836,9 +837,7 @@ int main( int argc, char **argv ) {
     setvbuf(stderr, NULL, _IONBF, 0);
 #endif
 
-    PHY_VARS_NR_UE *UE[MAX_NUM_CCs];
-    UE[0] = malloc(sizeof(PHY_VARS_NR_UE*));
-    //UE[1] = (PHY_VARS_NR_UE *)malloc(sizeof(PHY_VARS_NR_UE));
+    set_default_frame_parms(frame_parms);
 
     mode = normal_txrx;
     memset(&openair0_cfg[0],0,sizeof(openair0_config_t)*MAX_CARDS);
@@ -897,9 +896,6 @@ int main( int argc, char **argv ) {
     MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
 #endif
 
-    // get options and fill parameters from configuration file
-    get_options (); //Command-line options, enb_properties
-
     if (opt_type != OPT_NONE) {
         if (init_opt(in_path, in_ip) == -1)
             LOG_E(OPT,"failed to run OPT \n");
@@ -926,10 +922,9 @@ int main( int argc, char **argv ) {
 #endif
 
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
-
+  
   // init the parameters
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-
 
       frame_parms[CC_id]->nb_antennas_tx     = nb_antenna_tx;
       frame_parms[CC_id]->nb_antennas_rx     = nb_antenna_rx;
@@ -941,108 +936,102 @@ int main( int argc, char **argv ) {
     //phy_init_nr_top(frame_parms[CC_id]);
   }
 
-
-
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
         //init prach for openair1 test
         // prach_fmt = get_prach_fmt(frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex, frame_parms->frame_type);
         // N_ZC = (prach_fmt <4)?839:139;
-    }
+  }
 
-        /*NB_UE_INST=1;
-        NB_INST=1;
-        PHY_vars_UE_g = malloc(sizeof(PHY_VARS_NR_UE**));
-        PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE*)*MAX_NUM_CCs);*/
-
-        for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-        	NB_UE_INST=1;
-        	        NB_INST=1;
-        	        PHY_vars_UE_g = malloc(sizeof(PHY_VARS_NR_UE**));
-        	        PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE*)*MAX_NUM_CCs);
-
-            printf("PHY_vars_UE_g[0][%d] = %p\n",CC_id,UE[CC_id]);
-
-            printf("frame_parms %d\n",frame_parms[CC_id]->ofdm_symbol_size);
-
-            PHY_vars_UE_g[0][CC_id] = init_nr_ue_vars(frame_parms[CC_id], 0,abstraction_flag);
-            UE[CC_id] = PHY_vars_UE_g[0][CC_id];
-
-            if (phy_test==1)
-                UE[CC_id]->mac_enabled = 0;
-            else
-                UE[CC_id]->mac_enabled = 1;
-
-            if (UE[CC_id]->mac_enabled == 0) {  //set default UL parameters for testing mode
-                for (i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
-                	//UE[CC_id]->pusch_config_dedicated[i] = malloc(sizeof(PUSCH_CONFIG_DEDICATED));
-
-                    //UE[CC_id]->scheduling_request_config[i] = malloc(sizeof(SCHEDULING_REQUEST_CONFIG));
-
-                    /*UE[CC_id]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
-                    UE[CC_id]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
-                    UE[CC_id]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
-
-                    UE[CC_id]->scheduling_request_config[i].sr_PUCCH_ResourceIndex = 0;
-                    UE[CC_id]->scheduling_request_config[i].sr_ConfigIndex = 7+(0%3);
-                    UE[CC_id]->scheduling_request_config[i].dsr_TransMax = sr_n4;*/
-                }
-            }
-
-            UE[CC_id]->UE_scan = UE_scan;
-            UE[CC_id]->UE_scan_carrier = UE_scan_carrier;
-            UE[CC_id]->mode    = mode;
-            printf("UE[%d]->mode = %d\n",CC_id,mode);
-
-            for (uint8_t i=0; i<RX_NB_TH_MAX; i++) {
-                //UE[CC_id]->pdcch_vars[i][0]->agregationLevel = agregation_Level;
-                //UE[CC_id]->pdcch_vars[i][0]->dciFormat     = dci_Format;
-            }
-
-            /*compute_prach_seq(&UE[CC_id]->frame_parms.prach_config_common,
-                              UE[CC_id]->frame_parms.frame_type,
-                              UE[CC_id]->X_u);*/
-
-            if (UE[CC_id]->mac_enabled == 1)
-            {
-                UE[CC_id]->pdcch_vars[0][0]->crnti = 0x1234;
-                UE[CC_id]->pdcch_vars[1][0]->crnti = 0x1234;
-            }
-            else
-            {
-                UE[CC_id]->pdcch_vars[0][0]->crnti = 0x1235;
-                UE[CC_id]->pdcch_vars[1][0]->crnti = 0x1235;
-            }
-
-	    rx_gain[CC_id][0] = 81;
-	    tx_max_power[CC_id] = -40;
-
-            UE[CC_id]->rx_total_gain_dB =  (int)rx_gain[CC_id][0] + rx_gain_off;
-            UE[CC_id]->tx_power_max_dBm = tx_max_power[CC_id];
-
-            if (frame_parms[CC_id]->frame_type==FDD) {
-                UE[CC_id]->N_TA_offset = 0;
-            } else {
-                if (frame_parms[CC_id]->N_RB_DL == 100)
-                    UE[CC_id]->N_TA_offset = 624;
-                else if (frame_parms[CC_id]->N_RB_DL == 50)
-                    UE[CC_id]->N_TA_offset = 624/2;
-                else if (frame_parms[CC_id]->N_RB_DL == 25)
-                    UE[CC_id]->N_TA_offset = 624/4;
-            }
-
-        }
-
-        //  printf("tx_max_power = %d -> amp %d\n",tx_max_power[0],get_tx_amp(tx_max_poHwer,tx_max_power));
+  NB_UE_INST=1;
+  NB_INST=1;
+  PHY_vars_UE_g = malloc(sizeof(PHY_VARS_NR_UE**));
+  PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE*)*MAX_NUM_CCs);
   
+  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    printf("PHY_vars_UE_g[0][%d] = %p\n",CC_id,UE[CC_id]);
+    
+    printf("frame_parms %d\n",frame_parms[CC_id]->ofdm_symbol_size);
 
-    fill_modeled_runtime_table(runtime_phy_rx,runtime_phy_tx);
-    cpuf=get_cpu_freq_GHz();
-
-
-    //dump_frame_parms(frame_parms[0]);
-
-    init_openair0();
-
+    nr_init_frame_parms_ue(frame_parms[CC_id],numerology,NORMAL,frame_parms[CC_id]->N_RB_DL,(frame_parms[CC_id]->N_RB_DL-20)>>1,0);
+    PHY_vars_UE_g[0][CC_id] = init_nr_ue_vars(frame_parms[CC_id], 0,abstraction_flag);
+    UE[CC_id] = PHY_vars_UE_g[0][CC_id];
+    
+    if (phy_test==1)
+      UE[CC_id]->mac_enabled = 0;
+    else
+      UE[CC_id]->mac_enabled = 1;
+    
+    if (UE[CC_id]->mac_enabled == 0) {  //set default UL parameters for testing mode
+      for (i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
+	//UE[CC_id]->pusch_config_dedicated[i] = malloc(sizeof(PUSCH_CONFIG_DEDICATED));
+	
+	//UE[CC_id]->scheduling_request_config[i] = malloc(sizeof(SCHEDULING_REQUEST_CONFIG));
+	
+	/*UE[CC_id]->pusch_config_dedicated[i].betaOffset_ACK_Index = beta_ACK;
+	  UE[CC_id]->pusch_config_dedicated[i].betaOffset_RI_Index  = beta_RI;
+	  UE[CC_id]->pusch_config_dedicated[i].betaOffset_CQI_Index = beta_CQI;
+	  
+	  UE[CC_id]->scheduling_request_config[i].sr_PUCCH_ResourceIndex = 0;
+	  UE[CC_id]->scheduling_request_config[i].sr_ConfigIndex = 7+(0%3);
+	  UE[CC_id]->scheduling_request_config[i].dsr_TransMax = sr_n4;*/
+      }
+    }
+    
+    UE[CC_id]->UE_scan = UE_scan;
+    UE[CC_id]->UE_scan_carrier = UE_scan_carrier;
+    UE[CC_id]->mode    = mode;
+    printf("UE[%d]->mode = %d\n",CC_id,mode);
+    
+    for (uint8_t i=0; i<RX_NB_TH_MAX; i++) {
+      //UE[CC_id]->pdcch_vars[i][0]->agregationLevel = agregation_Level;
+      //UE[CC_id]->pdcch_vars[i][0]->dciFormat     = dci_Format;
+    }
+    
+    /*compute_prach_seq(&UE[CC_id]->frame_parms.prach_config_common,
+      UE[CC_id]->frame_parms.frame_type,
+      UE[CC_id]->X_u);*/
+    
+    if (UE[CC_id]->mac_enabled == 1)
+      {
+	UE[CC_id]->pdcch_vars[0][0]->crnti = 0x1234;
+	UE[CC_id]->pdcch_vars[1][0]->crnti = 0x1234;
+      }
+    else
+      {
+	UE[CC_id]->pdcch_vars[0][0]->crnti = 0x1235;
+	UE[CC_id]->pdcch_vars[1][0]->crnti = 0x1235;
+      }
+    
+    rx_gain[CC_id][0] = 81;
+    tx_max_power[CC_id] = -40;
+    
+    UE[CC_id]->rx_total_gain_dB =  (int)rx_gain[CC_id][0] + rx_gain_off;
+    UE[CC_id]->tx_power_max_dBm = tx_max_power[CC_id];
+    
+    if (frame_parms[CC_id]->frame_type==FDD) {
+      UE[CC_id]->N_TA_offset = 0;
+    } else {
+      if (frame_parms[CC_id]->N_RB_DL == 100)
+	UE[CC_id]->N_TA_offset = 624;
+      else if (frame_parms[CC_id]->N_RB_DL == 50)
+	UE[CC_id]->N_TA_offset = 624/2;
+      else if (frame_parms[CC_id]->N_RB_DL == 25)
+	UE[CC_id]->N_TA_offset = 624/4;
+    }
+    
+  }
+  
+  //  printf("tx_max_power = %d -> amp %d\n",tx_max_power[0],get_tx_amp(tx_max_poHwer,tx_max_power));
+  
+  
+  fill_modeled_runtime_table(runtime_phy_rx,runtime_phy_tx);
+  cpuf=get_cpu_freq_GHz();
+  
+  
+  //dump_frame_parms(frame_parms[0]);
+  
+  init_openair0();
+  
 
 
 #ifndef DEADLINE_SCHEDULER
@@ -1182,11 +1171,11 @@ int main( int argc, char **argv ) {
     // connect the TX/RX buffers
     //if (UE_flag==1) {
 
-        for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-
-
+    for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      
+      
 #if defined(OAI_USRP) || defined(OAI_ADRV9371_ZC706)
-            UE[CC_id]->hw_timing_advance = timing_advance;
+      UE[CC_id]->hw_timing_advance = timing_advance;
 #else
       UE[CC_id]->hw_timing_advance = 160;
 #endif
