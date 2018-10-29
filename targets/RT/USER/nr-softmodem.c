@@ -584,6 +584,8 @@ static void get_options(void) {
       NB_RU	  = RC.nb_RU;
       printf("Configuration: nb_rrc_inst %d, nb_nr_L1_inst %d, nb_ru %d\n",NB_gNB_INST,RC.nb_nr_L1_inst,NB_RU);
    }
+  if(parallel_config != NULL) set_parallel_conf(parallel_config);
+  if(worker_config != NULL)   set_worker_conf(worker_config);
 }
 
 

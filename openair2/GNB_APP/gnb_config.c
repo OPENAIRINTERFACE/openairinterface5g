@@ -290,7 +290,7 @@ void RCconfig_NR_L1(void) {
       }
 
       if(strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_mac") == 0) {
-        sf_ahead = 4; // Need 4 subframe gap between RX and TX
+        sf_ahead = 2; // Need 4 subframe gap between RX and TX
       }else if (strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "nfapi") == 0) {
         RC.gNB[j][0]->eth_params_n.local_if_name            = strdup(*(L1_ParamList.paramarray[j][L1_LOCAL_N_IF_NAME_IDX].strptr));
         RC.gNB[j][0]->eth_params_n.my_addr                  = strdup(*(L1_ParamList.paramarray[j][L1_LOCAL_N_ADDRESS_IDX].strptr));
@@ -3016,6 +3016,7 @@ void NRRCConfig(void) {
     config_getlist( &RUParamList,NULL,0, NULL);  
     RC.nb_RU     = RUParamList.numelt; 
  
- 
+    RCconfig_parallel();
+
 
 }
