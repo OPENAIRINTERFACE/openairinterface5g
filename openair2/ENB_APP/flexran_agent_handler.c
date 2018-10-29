@@ -477,34 +477,26 @@ int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const report_config_t *re
 
   }
 
-      /*
-      MAC reply split
-     */
+  /* MAC reply split */
+  if (flexran_agent_get_mac_xface(enb_id)
+      && flexran_agent_mac_stats_reply(enb_id, report_config,  ue_report, cell_report) < 0) {
+    err_code = PROTOCOL__FLEXRAN_ERR__MSG_BUILD;
+    goto error;
+  }
 
+  /* RRC reply split */
+  if (flexran_agent_get_rrc_xface(enb_id)
+      && flexran_agent_rrc_stats_reply(enb_id, report_config,  ue_report, cell_report) < 0) {
+    err_code = PROTOCOL__FLEXRAN_ERR__MSG_BUILD;
+    goto error;
+  }
 
-    if (flexran_agent_mac_stats_reply(enb_id, report_config,  ue_report, cell_report) < 0 ) {
-        err_code = PROTOCOL__FLEXRAN_ERR__MSG_BUILD;
-        goto error;
-    }
-
-    /*
-      RRC reply split
-     */
-
-    if (flexran_agent_rrc_stats_reply(enb_id, report_config,  ue_report, cell_report) < 0 ) {
-        err_code = PROTOCOL__FLEXRAN_ERR__MSG_BUILD;
-        goto error;
-    }
-   
-
-    /*
-      PDCP reply split
-    */
-    
-    if (flexran_agent_pdcp_stats_reply(enb_id, report_config,  ue_report, cell_report) < 0 ) {
-      err_code = PROTOCOL__FLEXRAN_ERR__MSG_BUILD;
-      goto error;
-    }
+  /* PDCP reply split */
+  if (flexran_agent_get_pdcp_xface(enb_id)
+      && flexran_agent_pdcp_stats_reply(enb_id, report_config,  ue_report, cell_report) < 0) {
+    err_code = PROTOCOL__FLEXRAN_ERR__MSG_BUILD;
+    goto error;
+  }
 
        
   stats_reply_msg->cell_report = cell_report;
