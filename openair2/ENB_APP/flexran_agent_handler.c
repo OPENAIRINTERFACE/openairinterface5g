@@ -204,7 +204,7 @@ int flexran_agent_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
   // TODO: Must resolve conflicts among stats requests
 
   int i;
-  err_code_t err_code;
+  err_code_t err_code = 0;
   xid_t xid;
   uint32_t usec_interval, sec_interval;
 
@@ -241,16 +241,36 @@ int flexran_agent_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
       //Create a list of all eNB RNTIs and cells
 
       //Set the number of UEs and create list with their RNTIs stats configs
-      report_config.nr_ue = flexran_get_mac_num_ues(mod_id);
+      report_config.nr_ue = 0;
+      if (flexran_agent_get_rrc_xface(mod_id))
+        report_config.nr_ue = flexran_get_rrc_num_ues(mod_id);
+      else if (flexran_agent_get_mac_xface(mod_id))
+        report_config.nr_ue = flexran_get_mac_num_ues(mod_id);
+
+      if (flexran_agent_get_rrc_xface(mod_id) && flexran_agent_get_mac_xface(mod_id)
+          && flexran_get_rrc_num_ues(mod_id) != flexran_get_mac_num_ues(mod_id)) {
+        LOG_E(FLEXRAN_AGENT, "different numbers of UEs in RRC and MAC\n");
+        goto error;
+      }
       report_config.ue_report_type = malloc(sizeof(ue_report_type_t) * report_config.nr_ue);
       if (report_config.ue_report_type == NULL) {
         // TODO: Add appropriate error code
         err_code = -100;
         goto error;
       }
-      for (i = 0; i < report_config.nr_ue; i++) {
-        report_config.ue_report_type[i].ue_rnti = flexran_get_mac_ue_crnti(enb_id, i);
-        report_config.ue_report_type[i].ue_report_flags = ue_flags;
+      if (flexran_agent_get_rrc_xface(mod_id)) {
+        rnti_t rntis[report_config.nr_ue];
+        flexran_get_rrc_rnti_list(mod_id, rntis, report_config.nr_ue);
+        for (i = 0; i < report_config.nr_ue; i++) {
+          report_config.ue_report_type[i].ue_rnti = rntis[mod_id];
+          report_config.ue_report_type[i].ue_report_flags = ue_flags;
+        }
+      }
+      if (flexran_agent_get_mac_xface(mod_id) && !flexran_agent_get_rrc_xface(mod_id)) {
+        for (i = 0; i < report_config.nr_ue; i++) {
+          report_config.ue_report_type[i].ue_rnti = flexran_get_mac_ue_crnti(enb_id, i);
+          report_config.ue_report_type[i].ue_report_flags = ue_flags;
+        }
       }
       //Set the number of CCs and create a list with the cell stats configs
       report_config.nr_cc = MAX_NUM_CCs;
@@ -375,13 +395,15 @@ int flexran_agent_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
     goto error;
   }
 
-  free(report_config.ue_report_type);
-  free(report_config.cc_report_type);
+  if (report_config.ue_report_type)
+    free(report_config.ue_report_type);
+  if (report_config.cc_report_type)
+    free(report_config.cc_report_type);
 
   return 0;
 
  error :
-  LOG_E(FLEXRAN_AGENT, "errno %d occured\n", err_code);
+  LOG_E(FLEXRAN_AGENT, "%s(): errno %d occured\n", __func__, err_code);
   return err_code;
 }
 
