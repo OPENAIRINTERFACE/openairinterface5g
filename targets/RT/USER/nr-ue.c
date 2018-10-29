@@ -337,7 +337,7 @@ static void *UE_thread_synch(void *arg) {
     if ( threads.iq != -1 )
         CPU_SET(threads.iq, &cpuset);
     // this thread priority must be lower that the main acquisition thread
-    sprintf(threadname, "sync UE %d\n", UE->Mod_id);
+    sprintf(threadname, "sync UE %d", UE->Mod_id);
     init_thread(100000, 500000, FIFO_PRIORITY-1, &cpuset, threadname);
 
     UE->is_synchronized = 0;
@@ -840,10 +840,10 @@ void *UE_thread(void *arg) {
 
         if (is_synchronized == 0) {
 #if BASIC_SIMULATOR
-      while (!((instance_cnt_synch = UE->proc.instance_cnt_synch) < 0)) {
-        printf("ue sync not ready\n");
-        usleep(500*1000);
-      }
+	  while (!((instance_cnt_synch = UE->proc.instance_cnt_synch) < 0)) {
+	    printf("ue sync not ready\n");
+	    usleep(500*1000);
+	  }
 #endif
             if (instance_cnt_synch < 0) {  // we can invoke the synch
                 // grab 10 ms of signal and wakeup synch thread
@@ -856,7 +856,7 @@ void *UE_thread(void *arg) {
                                                             &timestamp,
                                                             rxp,
                                                             UE->frame_parms.samples_per_subframe*10,
-                                                            UE->frame_parms.nb_antennas_rx), "");
+                                                            UE->frame_parms.nb_antennas_rx), "error reading samples");
 
 		AssertFatal ( 0== pthread_mutex_lock(&UE->proc.mutex_synch), "");
                 instance_cnt_synch = ++UE->proc.instance_cnt_synch;
@@ -878,11 +878,12 @@ void *UE_thread(void *arg) {
                         rxp[i] = (void*)&dummy_rx[i][0];
                     for (int sf=0; sf<LTE_NUMBER_OF_SUBFRAMES_PER_FRAME; sf++)
                         //	    printf("Reading dummy sf %d\n",sf);
-                          UE->rfdevice.trx_read_func(&UE->rfdevice,
-                                              &timestamp,
-                                              rxp,
-                                              UE->frame_parms.samples_per_subframe,
-                                              UE->frame_parms.nb_antennas_rx);
+		      AssertFatal(UE->frame_parms.samples_per_subframe==
+				 UE->rfdevice.trx_read_func(&UE->rfdevice,
+							    &timestamp,
+							    rxp,
+							    UE->frame_parms.samples_per_subframe,
+							    UE->frame_parms.nb_antennas_rx), "error reading samples");
                 }
 #endif
             }
