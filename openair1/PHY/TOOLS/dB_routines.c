@@ -624,6 +624,14 @@ int8_t dB_fixed(uint32_t x)
   return dB_power;
 }
 
+uint8_t dB_fixed64(uint64_t x)
+{
+
+  if (x<(((uint64_t)1)<<32)) return(dB_fixed((uint32_t)x));
+  else                       return(4*dB_table[255] + dB_fixed(x>>32)); 
+ 
+}
+
 int8_t dB_fixed2(uint32_t x, uint32_t y)
 {
 

@@ -543,7 +543,9 @@ set (CONFIG_SOURCES
    )
 set (CONFIG_LIBCONFIG_SOURCES
     ${CONFIG_ROOTDIR}/libconfig/config_libconfig.c
-   )
+    )
+add_library(CONFIG_LIB ${CONFIG_SOURCES})
+set(CONFIG_LIBRARIES CONFIG_LIB)  
 add_library(params_libconfig MODULE ${CONFIG_LIBCONFIG_SOURCES} )
 target_link_libraries(params_libconfig config)
 # shared library loader
@@ -1294,7 +1296,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_gold.c
   ${OPENAIR1_DIR}/PHY/TOOLS/file_output.c
   ${OPENAIR1_DIR}/PHY/TOOLS/cadd_vv.c
-  ${OPENAIR1_DIR}/PHY/TOOLS/lte_dfts.c
+  #${OPENAIR1_DIR}/PHY/TOOLS/lte_dfts.c
   ${OPENAIR1_DIR}/PHY/TOOLS/log2_approx.c
   ${OPENAIR1_DIR}/PHY/TOOLS/cmult_sv.c
   ${OPENAIR1_DIR}/PHY/TOOLS/cmult_vv.c
@@ -1330,9 +1332,10 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_dmrs_rx.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_gold_ue.c
   ${OPENAIR1_DIR}/PHY/NR_UE_ESTIMATION/nr_dl_channel_estimation.c
+  ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_ue_measurements.c
   ${OPENAIR1_DIR}/PHY/TOOLS/file_output.c
   ${OPENAIR1_DIR}/PHY/TOOLS/cadd_vv.c
-  ${OPENAIR1_DIR}/PHY/TOOLS/lte_dfts.c
+ # ${OPENAIR1_DIR}/PHY/TOOLS/lte_dfts.c
   ${OPENAIR1_DIR}/PHY/TOOLS/log2_approx.c
   ${OPENAIR1_DIR}/PHY/TOOLS/cmult_sv.c
   ${OPENAIR1_DIR}/PHY/TOOLS/cmult_vv.c
@@ -2441,7 +2444,7 @@ add_executable(nr-uesoftmodem
 
 target_link_libraries (nr-uesoftmodem
   -Wl,--start-group
-  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB PHY_COMMON PHY_UE PHY_NR_UE PHY_RU LFDS NR_L2_UE #NR_LTE_UE_REUSE_LIB 
+  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT UDP SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB PHY_COMMON PHY_NR_UE PHY_RU LFDS NR_L2_UE #NR_LTE_UE_REUSE_LIB 
   ${MSC_LIB} ${RAL_LIB} ${NAS_UE_LIB} ${ITTI_LIB} ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} LFDS7 ${ATLAS_LIBRARIES}
   -Wl,--end-group z dl)
 
@@ -2527,10 +2530,14 @@ target_link_libraries (dlsim_tm4
   )
 
 add_executable(polartest ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/polartest.c)
-target_link_libraries(polartest m SIMU PHY PHY_NR PHY_COMMON -lm ${ATLAS_LIBRARIES})
+target_link_libraries(polartest SIMU PHY PHY_NR PHY_COMMON m ${ATLAS_LIBRARIES})
 
 add_executable(ldpctest  ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c)
-target_link_libraries(ldpctest m SIMU PHY PHY_NR ${ATLAS_LIBRARIES})
+target_link_libraries(ldpctest SIMU PHY PHY_NR m ${ATLAS_LIBRARIES})
+
+add_executable(nr_pbchsim  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pbchsim.c )
+target_link_libraries(nr_pbchsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB -Wl,--end-group m pthread ${ATLAS_LIBRARIES} dl)
+
 
 foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)
 

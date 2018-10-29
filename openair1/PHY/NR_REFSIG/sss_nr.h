@@ -51,7 +51,7 @@
 #define  NUMBER_SSS_SEQUENCE          (336)
 #define  INVALID_SSS_SEQUENCE         (NUMBER_SSS_SEQUENCE)
 #define  LENGTH_SSS_NR                (127)
-#define  SCALING_METRIC_SSS_NR        (19)
+#define  SCALING_METRIC_SSS_NR        (15)//(19)
 
 #define  N_ID_2_NUMBER                (NUMBER_PSS_SEQUENCE)
 #define  N_ID_1_NUMBER                (NUMBER_SSS_SEQUENCE)

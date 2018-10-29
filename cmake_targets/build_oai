@@ -671,7 +671,7 @@ function main() {
   fi
 
   if [ "$SIMUS_PHY" = "1" -o "$SIMUS_CORE" = "1" ] ; then
-    cd $OPENAIR_DIR/cmake_targets/lte-simulators
+    cd $OPENAIR_DIR/cmake_targets/phy_simulators
     [ "$CLEAN" = "1" ] && rm -rf build
     mkdir -p build
     cd build
@@ -684,14 +684,14 @@ function main() {
     echo_info "Compiling unitary tests simulators"
     # TODO: fix: dlsim_tm4 pucchsim prachsim pdcchsim pbchsim mbmssim
     #simlist="dlsim_tm4 dlsim ulsim pucchsim prachsim pdcchsim pbchsim mbmssim"
-    simlist="dlsim ulsim polartest ldpctest"
+    simlist="dlsim ulsim polartest ldpctest nr_pbchsim"
     for f in $simlist ; do
       compilations \
-      lte-simulators $f \
+      phy_simulators $f \
 	  $f $dbin/$f.$REL
     done
     compilations \
-          lte-simulators coding \
+          phy_simulators coding \
           libcoding.so $dbin/libcoding.so
   fi
 
@@ -703,7 +703,7 @@ function main() {
     simlist="secu_knas_encrypt_eia1 secu_kenb aes128_ctr_encrypt aes128_ctr_decrypt secu_knas_encrypt_eea2 secu_knas secu_knas_encrypt_eea1 kdf aes128_cmac_encrypt secu_knas_encrypt_eia2"
     for f in $simlist ; do
       compilations \
-	  lte-simulators test_$f \
+	  phy_simulators test_$f \
 	  test_$f $dbin/test_$f.$REL
     done
   fi

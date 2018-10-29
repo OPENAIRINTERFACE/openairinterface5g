@@ -39,9 +39,10 @@ typedef int nfapi_nr_pfcch_commonSearchSpaces_t;
 #include "../nfapi/open-nFAPI/nfapi/public_inc/nfapi_nr_interface.h"
 
 #include "PHY/defs_nr_UE.h"
-#include "PHY/INIT/init_extern.h"
 #include "PHY/phy_extern_nr_ue.h"
-#include "PHY/NR_TRANSPORT/nr_transport.h"
+#include "PHY/INIT/init_extern.h"
+#include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
+#include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 
 #include "PHY/NR_REFSIG/ss_pbch_nr.h"
 #include "PHY/NR_REFSIG/pss_nr.h"
@@ -222,7 +223,7 @@ void set_sequence_sss(PHY_VARS_NR_UE *PHY_vars_UE, int offset, int slot_offset)
   }
 #else
 
-  insert_sss_nr(&tmp, frame_parms);
+ insert_sss_nr(tmp, frame_parms);
 
 #endif
 }
@@ -393,7 +394,7 @@ int main(int argc, char *argv[])
   int size_test_position;
 
   /* this is a pointer to the function in charge of the test */
-  int (*p_test_synchro_pss_sss)(PHY_VARS_NR_UE *PHY_vars_UE, int position_symbol, int sequence_number, test_t *test) = test_synchro_pss_sss;
+  int (*p_test_synchro_pss_sss)(PHY_VARS_NR_UE *PHY_vars_UE, int position_symbol, int sequence_number) = test_synchro_pss_sss_nr;
 
 #if 0
   int Nid_cell[] = { (3*0+0), (3*71+0), (3*21+2), (3*21+2), (3*55+1), (3*111+2) };
@@ -413,21 +414,19 @@ int main(int argc, char *argv[])
   size_test_position = sizeof(test_position)/sizeof(int);
 
   printf("***********************************\n");
-  printf("    %s Test NR synchronisation \n", test.test_current);
+  printf("    %s Test NR synchroisation \n", test.test_current);
   printf("***********************************\n");
 
   for (unsigned int index = 0; index < (sizeof(Nid_cell)/sizeof(int)); index++) {
 
-    PHY_vars_eNB->frame_parms.Nid_cell = Nid_cell[index];
-
-    Nid2 = GET_NID2(PHY_vars_eNB->frame_parms.Nid_cell);
-    Nid1 = GET_NID1(PHY_vars_eNB->frame_parms.Nid_cell);
+    Nid2 = GET_NID2(Nid_cell[index]);
+    Nid1 = GET_NID1(Nid_cell[index]);
 
     for (int position = 0; position < size_test_position; position++) {
 
       PHY_vars_UE->frame_parms.Nid_cell = (3 * N_ID_1_NUMBER) + N_ID_2_NUMBER; /* set to unvalid value */
 
-      decoded_pbch = (*p_test_synchro_pss_sss)(PHY_vars_UE, test_position[position], Nid2, &test); /* return phase index which gives phase error from an array */
+      decoded_pbch = (*p_test_synchro_pss_sss)(PHY_vars_UE, test_position[position], Nid2); /* return phase index which gives phase error from an array */
 
       test.number_of_tests++;
       printf("\n%s ", test.test_current);

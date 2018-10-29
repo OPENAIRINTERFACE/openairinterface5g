@@ -350,6 +350,11 @@ int32_t dot_product(int16_t *x,
                     uint32_t N, //must be a multiple of 8
                     uint8_t output_shift);
 
+int64_t dot_product64(int16_t *x,
+		      int16_t *y,
+		      uint32_t N, //must be a multiple of 8
+		      uint8_t output_shift);
+
 void dft12(int16_t *x,int16_t *y);
 void dft24(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft36(int16_t *x,int16_t *y,uint8_t scale_flag);

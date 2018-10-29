@@ -443,7 +443,7 @@ void applyGtoright(t_nrPolar_params *pp,decoder_node_t *node) {
     }
     else 
 #endif
-      {// equvalent scalar code to above, activated only on non x86/ARM architectures
+      {// equvalent scalar code to above, activated only on non x86/ARM architectures or Nv=1,2
 	for (int i=0;i<node->Nv/2;i++) {
 	  alpha_r[i] = alpha_v[i+(node->Nv/2)] - (betal[i]*alpha_v[i]);
 	}

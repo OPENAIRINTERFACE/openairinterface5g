@@ -122,10 +122,10 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 
   case 3072:
     idft = idft3072;
-
+    break;
   case 4096:
     idft = idft4096;
-
+    break;
   default:
     idft = idft512;
     break;

@@ -54,7 +54,7 @@ void polar_encoder(uint32_t *in,
 													   polarParams->nr_polar_crc,
 													   polarParams->payloadBits,
 													   polarParams->crcParityBits);
-		for (uint8_t i = 0; i < polarParams->crcParityBits; i++)
+		for (uint8_t i = 0; i < polarParams->crcParityBits; i++) 
 			polarParams->nr_polar_crc[i] = (polarParams->nr_polar_crc[i] % 2);
 
 		//Attach CRC to the Transport Block. (a to b)
