@@ -75,7 +75,7 @@ void nr_pdsch_codeword_modulation(uint32_t *in,
 void nr_pdsch_layer_mapping(uint16_t **mod_symbs,
                          uint8_t n_codewords,
                          uint8_t n_layers,
-                         uint16_t *n_symbs,
+                         uint16_t n_symbs,
                          uint16_t **tx_layers);
 
 uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
