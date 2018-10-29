@@ -63,7 +63,7 @@ flexran_agent_message_destruction_callback message_destruction_callback[] = {
   flexran_agent_destroy_echo_request,
   flexran_agent_destroy_echo_reply,
   flexran_agent_destroy_stats_request,
-  flexran_agent_mac_destroy_stats_reply,
+  flexran_agent_destroy_stats_reply,
   flexran_agent_mac_destroy_sf_trigger,
   flexran_agent_mac_destroy_sr_info,
   flexran_agent_destroy_enb_config_request,
@@ -646,6 +646,26 @@ int flexran_agent_destroy_stats_request(Protocol__FlexranMessage *msg) {
  error:
   //LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
   return -1;
+}
+
+int flexran_agent_destroy_stats_reply(Protocol__FlexranMessage *msg)
+{
+  if (msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_STATS_REPLY_MSG) {
+    LOG_E(FLEXRAN_AGENT, "%s(): message is not a msg_stats_reply\n", __func__);
+    return -1;
+  }
+
+  flexran_agent_mac_destroy_stats_reply((Protocol__FlexranMessage *)msg->stats_reply_msg);
+  // TODO implement rrc_destroy_stats_reply()
+  //flexran_agent_rrc_destroy_stats_reply(msg->stats_reply_msg);
+  // TODO implement pdcp_destroy_stats_reply()
+  //flexran_agent_pdcp_destroy_stats_reply(msg->stats_reply_msg);
+  free(msg->stats_reply_msg->header);
+  free(msg->stats_reply_msg->cell_report);
+  free(msg->stats_reply_msg->ue_report);
+  free(msg->stats_reply_msg);
+  free(msg);
+  return 0;
 }
 
 err_code_t flexran_agent_disable_cont_stats_update(mid_t mod_id) {
