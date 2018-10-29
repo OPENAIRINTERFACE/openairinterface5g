@@ -42,31 +42,6 @@
 //#define DEBUG_HARQ
 
 
-void conv_eMTC_rballoc (uint16_t resource_block_coding, uint32_t N_RB_DL, uint32_t * rb_alloc)
-{
-
-
-  int             RIV = resource_block_coding&31;
-  int             narrowband = resource_block_coding>>5;
-  int             N_NB_DL = N_RB_DL / 6;
-  int             i0 = (N_RB_DL >> 1) - (3 * N_NB_DL);
-  int             first_rb = (6 * narrowband) + i0;
-  int             alloc = localRIV2alloc_LUT6[RIV];
-  int             ind = first_rb >> 5;
-  int             ind_mod = first_rb & 31;
-
-  AssertFatal(RIV<32,"RIV is %d > 31\n");
-
-  if (((N_RB_DL & 1) > 0) && (narrowband >= (N_NB_DL >> 1)))
-    first_rb++;
-  rb_alloc[0] = 0;
-  rb_alloc[1] = 0;
-  rb_alloc[2] = 0;
-  rb_alloc[3] = 0;
-  rb_alloc[ind] = alloc << ind_mod;
-  if (ind_mod > 26)
-    rb_alloc[ind + 1] = alloc >> (6 - (ind_mod - 26));
-}
 
 
 #include "LAYER2/MAC/mac.h"
@@ -1572,11 +1547,9 @@ fill_mdci_and_dlsch (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * 
   dlsch0_harq = dlsch0->harq_processes[rel13->harq_process];
 
   dci_alloc->ra_flag = 0;
-  dlsch0->ra_flag = 0;
 
   if (rel13->rnti_type == 2) {
     dci_alloc->ra_flag = 1;
-    dlsch0->ra_flag = 1;
   }
 
   AssertFatal (fp->frame_type == FDD, "TDD is not supported yet for eMTC\n");
@@ -1804,8 +1777,8 @@ fill_mdci_and_dlsch (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * 
   dlsch0_harq->frame    = (subframe >= 8) ? ((frame + 1) & 1023) : frame;
   dlsch0_harq->subframe = (subframe + 2) % 10;
 
-  LOG_I(PHY,"Setting DLSCH harq_ids[%d] to %d\n",dlsch0_harq->subframe,dlsch0->harq_ids[dlsch0_harq->subframe]);
-  dlsch0->harq_ids[dlsch0_harq->subframe] = rel13->harq_process;
+  LOG_I(PHY,"Setting DLSCH harq_ids[%d] to %d\n",dlsch0_harq->subframe,dlsch0->harq_ids[frame%2][dlsch0_harq->subframe]);
+  dlsch0->harq_ids[frame%2][dlsch0_harq->subframe] = rel13->harq_process;
   dlsch0_harq->pdsch_start = rel13->start_symbol;
 
   LOG_I(PHY,"Setting DLSCH harq %d round %d to active for %d.%d\n",rel13->harq_process,dlsch0_harq->round,dlsch0_harq->frame,dlsch0_harq->subframe);
@@ -1994,7 +1967,7 @@ void fill_dci0(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t *proc,
 }
 
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 int get_narrowband_index(int N_RB_UL,int rb) {
   
   switch (N_RB_UL) {
@@ -2028,8 +2001,16 @@ void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu
   //AssertFatal((UE_id=find_ulsch(ulsch_pdu->ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE))>=0,
   //        "No existing/free UE ULSCH for rnti %x\n",ulsch_pdu->ulsch_pdu_rel8.rnti);
 
+  LTE_eNB_ULSCH_t *ulsch=eNB->ulsch[UE_id];
+  LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
 
-#ifdef Rel14
+  int use_srs = 0;
+
+  harq_pid = ulsch_pdu->ulsch_pdu_rel8.harq_process_number;
+
+  ulsch->harq_mask |= 1 << harq_pid;
+
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   ulsch->ue_type = ulsch_pdu->ulsch_pdu_rel13.ue_type;
   AssertFatal(harq_pid ==0, "Harq PID is not zero for BL/CE UE\n");
 
@@ -2171,7 +2152,7 @@ fill_mpdcch_dci0 (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * dci
      T_INT (mcs), T_INT (-1 /* TODO: remove round? */ ),
      T_INT (rel13->resource_block_start),
      T_INT (rel13->number_of_resource_blocks),
-     T_INT (get_TBS_UL (mcs, rel13->number_of_resource_blocks) * 8), T_INT (rel13->aggregation_level), T_INT (rel13->cce_index));
+     T_INT (get_TBS_UL (mcs, rel13->number_of_resource_blocks) * 8), T_INT (rel13->aggreagation_level), T_INT (rel13->ecce_index));
 #endif
 
   void           *dci_pdu = (void *) dci_alloc->dci_pdu;

@@ -118,24 +118,6 @@ uint8_t *generate_dci0(uint8_t *dci,
   uint8_t dci_flip[8];
 
 
-  AssertFatal((aggregation_level==1) ||
-	      (aggregation_level==2) ||
-	      (aggregation_level==4) ||
-	      (aggregation_level==8)
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0)) // Added for EPDCCH/MPDCCH
-	      ||
-	      (aggregation_level==16) ||
-	      (aggregation_level==24) ||
-	      (aggregation_level==32)
-#endif
-	      ,
-	      "generate_dci FATAL, illegal aggregation_level %d\n",aggregation_level);
-
-
-  coded_bits = 72 * aggregation_level;
-
-
-
   #ifdef DEBUG_DCI_ENCODING
   for (int i=0;i<1+((DCI_LENGTH+16)/8);i++)
     printf("i %d : %x\n",i,dci[i]);

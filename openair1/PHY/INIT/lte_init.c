@@ -872,9 +872,6 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
     pusch_vars[UE_id]->llr = (int16_t*)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) );
   } //UE_id
 
-    pusch_vars[UE_id]->llr = (int16_t *) malloc16_clear ((8 * ((3 * 8 * 6144) + 12)) * sizeof (int16_t));
-  }                             //UE_id
-
 
   for (UE_id = 0; UE_id < NUMBER_OF_UE_MAX; UE_id++)
     eNB->UE_stats_ptr[UE_id] = &eNB->UE_stats[UE_id];

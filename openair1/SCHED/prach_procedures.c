@@ -127,7 +127,7 @@ void prach_procedures(PHY_VARS_eNB *eNB
 
     prach_mask = is_prach_subframe (&eNB->frame_parms, eNB->proc.frame_prach_br, eNB->proc.subframe_prach_br);
 
-    eNB->UL_INFO.rach_ind_br.preamble_list = eNB->preamble_list_br;
+    eNB->UL_INFO.rach_ind_br.rach_indication_body.preamble_list = eNB->preamble_list_br;
     int             ind = 0;
     int             ce_level = 0;
     /* Save for later, it doesn't work    
@@ -142,7 +142,7 @@ void prach_procedures(PHY_VARS_eNB *eNB
 
     if (eNB->frame_parms.prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[0] == 1) {
       if ((eNB->prach_energy_counter == 100) && (max_preamble_energy[0] > eNB->measurements.prach_I0 + 200)) {
-        eNB->UL_INFO.rach_ind_br.number_of_preambles++;
+        eNB->UL_INFO.rach_ind_br.rach_indication_body.number_of_preambles++;
 
         eNB->preamble_list_br[ind].preamble_rel8.timing_advance = max_preamble_delay[ind];      //
         eNB->preamble_list_br[ind].preamble_rel8.preamble = max_preamble[ind];
@@ -157,6 +157,7 @@ void prach_procedures(PHY_VARS_eNB *eNB
                eNB->preamble_list_br[ind].preamble_rel8.timing_advance,
                eNB->preamble_list_br[ind].preamble_rel8.preamble, eNB->preamble_list_br[ind].preamble_rel8.rnti, eNB->preamble_list_br[ind].preamble_rel13.rach_resource_type);
       }
+    }
       /*
 	ind++;
 	}

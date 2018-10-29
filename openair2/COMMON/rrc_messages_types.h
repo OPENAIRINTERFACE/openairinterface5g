@@ -305,68 +305,6 @@ typedef struct RrcConfigurationReq_s {
 
 #endif
 
-  long                    prach_root[MAX_NUM_CCs];
-  long                    prach_config_index[MAX_NUM_CCs];
-  BOOLEAN_t               prach_high_speed[MAX_NUM_CCs];
-  long                    prach_zero_correlation[MAX_NUM_CCs];
-  long                    prach_freq_offset[MAX_NUM_CCs];
-  long                    pucch_delta_shift[MAX_NUM_CCs];
-  long                    pucch_nRB_CQI[MAX_NUM_CCs];
-  long                    pucch_nCS_AN[MAX_NUM_CCs];
-//#if (RRC_VERSION < MAKE_VERSION(10, 0, 0))
-  long                    pucch_n1_AN[MAX_NUM_CCs];
-//#endif
-  long                    pdsch_referenceSignalPower[MAX_NUM_CCs];
-  long                    pdsch_p_b[MAX_NUM_CCs];
-  long                    pusch_n_SB[MAX_NUM_CCs];
-  long                    pusch_hoppingMode[MAX_NUM_CCs];
-  long                    pusch_hoppingOffset[MAX_NUM_CCs];
-  BOOLEAN_t               pusch_enable64QAM[MAX_NUM_CCs];
-  BOOLEAN_t               pusch_groupHoppingEnabled[MAX_NUM_CCs];
-  long                    pusch_groupAssignment[MAX_NUM_CCs];
-  BOOLEAN_t               pusch_sequenceHoppingEnabled[MAX_NUM_CCs];
-  long                    pusch_nDMRS1[MAX_NUM_CCs];
-  long                    phich_duration[MAX_NUM_CCs];
-  long                    phich_resource[MAX_NUM_CCs];
-  BOOLEAN_t               srs_enable[MAX_NUM_CCs];
-  long                    srs_BandwidthConfig[MAX_NUM_CCs];
-  long                    srs_SubframeConfig[MAX_NUM_CCs];
-  BOOLEAN_t               srs_ackNackST[MAX_NUM_CCs];
-  BOOLEAN_t               srs_MaxUpPts[MAX_NUM_CCs];
-  long                    pusch_p0_Nominal[MAX_NUM_CCs];
-  long                    pusch_alpha[MAX_NUM_CCs];
-  long                    pucch_p0_Nominal[MAX_NUM_CCs];
-  long                    msg3_delta_Preamble[MAX_NUM_CCs];
-  long                    ul_CyclicPrefixLength[MAX_NUM_CCs];
-  e_DeltaFList_PUCCH__deltaF_PUCCH_Format1                    pucch_deltaF_Format1[MAX_NUM_CCs];
-  e_DeltaFList_PUCCH__deltaF_PUCCH_Format1b                   pucch_deltaF_Format1b[MAX_NUM_CCs];
-  e_DeltaFList_PUCCH__deltaF_PUCCH_Format2                    pucch_deltaF_Format2[MAX_NUM_CCs];
-  e_DeltaFList_PUCCH__deltaF_PUCCH_Format2a                   pucch_deltaF_Format2a[MAX_NUM_CCs];
-  e_DeltaFList_PUCCH__deltaF_PUCCH_Format2b                   pucch_deltaF_Format2b[MAX_NUM_CCs];
-  long                    rach_numberOfRA_Preambles[MAX_NUM_CCs];
-  BOOLEAN_t               rach_preamblesGroupAConfig[MAX_NUM_CCs];
-  long                    rach_sizeOfRA_PreamblesGroupA[MAX_NUM_CCs];
-  long                    rach_messageSizeGroupA[MAX_NUM_CCs];
-  e_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB                    rach_messagePowerOffsetGroupB[MAX_NUM_CCs];
-  long                    rach_powerRampingStep[MAX_NUM_CCs];
-  long                    rach_preambleInitialReceivedTargetPower[MAX_NUM_CCs];
-  long                    rach_preambleTransMax[MAX_NUM_CCs];
-  long                    rach_raResponseWindowSize[MAX_NUM_CCs];
-  long                    rach_macContentionResolutionTimer[MAX_NUM_CCs];
-  long                    rach_maxHARQ_Msg3Tx[MAX_NUM_CCs];
-  long                    bcch_modificationPeriodCoeff[MAX_NUM_CCs];
-  long                    pcch_defaultPagingCycle[MAX_NUM_CCs];
-  long                    pcch_nB[MAX_NUM_CCs];
-  long                    ue_TimersAndConstants_t300[MAX_NUM_CCs];
-  long                    ue_TimersAndConstants_t301[MAX_NUM_CCs];
-  long                    ue_TimersAndConstants_t310[MAX_NUM_CCs];
-  long                    ue_TimersAndConstants_t311[MAX_NUM_CCs];
-  long                    ue_TimersAndConstants_n310[MAX_NUM_CCs];
-  long                    ue_TimersAndConstants_n311[MAX_NUM_CCs];
-  long                    ue_TransmissionMode[MAX_NUM_CCs];
-  long                    ue_multiple_max[MAX_NUM_CCs];
-
-  //TTN - for D2D
   //SIB18
   e_SL_CP_Len_r12                rxPool_sc_CP_Len[MAX_NUM_CCs];
   e_SL_PeriodComm_r12            rxPool_sc_Period[MAX_NUM_CCs];

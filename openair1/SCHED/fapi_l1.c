@@ -204,7 +204,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_pr
   // compute DL power control parameters
   eNB->pdsch_config_dedicated[UE_id].p_a = rel8->pa;
 
-#ifdef PHY_TX_THREAD
+#ifdef PHY_TX_THREAD 
   if (dlsch0->active[proc->subframe_tx]){
 # else
   if (dlsch0->active){
@@ -254,7 +254,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_pr
 #endif
 
   if ((rel13->pdsch_payload_type <2) && (rel13->ue_type>0)) { // this is a BR/CE UE and SIB1-BR/SI-BR
-    UE_id = find_dlsch(rel8->rnti,eNB,SEARCH_FREE);
+    UE_id = find_dlsch(rel8->rnti,eNB,SEARCH_EXIST_OR_FREE);
     AssertFatal(UE_id!=-1,"no free or exiting dlsch_context\n");
     AssertFatal(UE_id<NUMBER_OF_UE_MAX,"returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n",UE_id,NUMBER_OF_UE_MAX);
  
@@ -272,7 +272,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_pr
 
     dlsch0->i0               = rel13->initial_transmission_sf_io;
     dlsch0_harq->pdsch_start = rel10->pdsch_start;
-    dlsch0->harq_ids[proc->subframe_tx] = 0;
+    dlsch0->harq_ids[frame%2][proc->subframe_tx] = 0;
     dlsch0_harq->frame       = proc->frame_tx;
     dlsch0_harq->subframe    = proc->subframe_tx;
 
@@ -361,7 +361,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_pr
 #endif
 
     dlsch0->active = 1;
-    harq_pid        = dlsch0->harq_ids[proc->subframe_tx];
+    harq_pid        = dlsch0->harq_ids[frame%2][proc->subframe_tx];
     dlsch0->harq_mask |= (1<<harq_pid);
 
     AssertFatal((harq_pid>=0) && (harq_pid<8),"subframe %d: harq_pid %d not in 0...7\n",proc->subframe_tx,harq_pid);
@@ -370,15 +370,15 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_pr
     AssertFatal(dlsch0_harq!=NULL,"dlsch_harq is null\n");
 
   // compute DL power control parameters
-    eNB->pdsch_config_dedicated[UE_id].p_a = rel8->pa;
+
 
     if (dlsch0->active){
-      computeRhoA_eNB(&eNB->pdsch_config_dedicated[UE_id], dlsch0,dlsch0_harq->dl_power_off, eNB->frame_parms.nb_antenna_ports_eNB);
-      computeRhoB_eNB(&eNB->pdsch_config_dedicated[UE_id],&(eNB->frame_parms.pdsch_config_common),eNB->frame_parms.nb_antenna_ports_eNB,dlsch0,dlsch0_harq->dl_power_off);
+      computeRhoA_eNB(rel8->pa,dlsch0,dlsch0_harq->dl_power_off, eNB->frame_parms.nb_antenna_ports_eNB);
+      computeRhoB_eNB(rel8->pa,eNB->frame_parms.pdsch_config_common.p_b,eNB->frame_parms.nb_antenna_ports_eNB,dlsch0,dlsch0_harq->dl_power_off);
     }  
     if (dlsch1->active){
-      computeRhoA_eNB(&eNB->pdsch_config_dedicated[UE_id], dlsch1,dlsch1_harq->dl_power_off, eNB->frame_parms.nb_antenna_ports_eNB);
-      computeRhoB_eNB(&eNB->pdsch_config_dedicated[UE_id],&(eNB->frame_parms.pdsch_config_common),eNB->frame_parms.nb_antenna_ports_eNB,dlsch1,dlsch1_harq->dl_power_off);
+      computeRhoA_eNB(rel8->pa, dlsch1,dlsch1_harq->dl_power_off, eNB->frame_parms.nb_antenna_ports_eNB);
+      computeRhoB_eNB(rel8->pa,eNB->frame_parms.pdsch_config_common.p_b,eNB->frame_parms.nb_antenna_ports_eNB,dlsch1,dlsch1_harq->dl_power_off);
     }
 
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))

@@ -417,7 +417,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   int16_t UE_id=0;
   uint8_t num_pdcch_symbols=0;
   uint8_t num_dci=0;
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uint8_t         num_mdci = 0;
 #endif
   uint8_t ul_subframe;
@@ -468,8 +468,8 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   //    (subframe_select(fp,ul_subframe)==SF_UL)) { // This means that there is a potential UL subframe that will be scheduled here
   if (ul_subframe < 10) { // This means that there is a potential UL subframe that will be scheduled here
     for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-#ifdef Rel14
-      if (eNB->ulsch[i]->ue_type >0) harq_pid = 0;
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+      if (eNB->ulsch[i] && eNB->ulsch[i]->ue_type >0) harq_pid = 0;
       else 
 #endif
 	harq_pid = subframe2harq_pid(fp,ul_frame,ul_subframe);
@@ -526,7 +526,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 		     eNB->common_vars.txdataF,
 		     subframe);
     
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     num_mdci = eNB->mpdcch_vars[subframe &1].num_dci;
     if (num_mdci > 0) {
       LOG_I (PHY, "[eNB %" PRIu8 "] Frame %d, subframe %d: Calling generate_mdci_top (mpdcch) (num_dci %" PRIu8 ")\n", eNB->Mod_id, frame, subframe, num_mdci);
@@ -653,8 +653,6 @@ void fill_sr_indication(PHY_VARS_eNB *eNB,uint16_t rnti,int frame,int subframe,u
   int SNRtimes10 = dB_fixed_times10(stat) - 300;//(10*eNB->measurements.n0_power_dB[0]);
 
 
-  int             SNRtimes10 = dB_fixed_times10 (stat) - 10 * max (eNB->measurements.n0_subband_power_tot_dB[0],
-								   eNB->measurements.n0_subband_power_tot_dB[eNB->frame_parms.N_RB_UL - 1]);
 
   pdu->ul_cqi_information.tl.tag = NFAPI_UL_CQI_INFORMATION_TAG;
   
@@ -841,7 +839,7 @@ void uci_procedures (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc) {
 	    metric[0] = rx_pucch (eNB, pucch_format1b, i, uci->n_pucch_1_0_sr[0], 0,    //n2_pucch
 				  uci->srs_active,      // shortened format
 				  pucch_b0b1[0], frame, subframe, PUCCH1a_THRES
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 				  ,uci->ue_type
 #endif
 				  );
@@ -855,7 +853,7 @@ void uci_procedures (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc) {
 	      metric[res] = rx_pucch (eNB, uci->pucch_fmt, i, uci->n_pucch_1[res][0], 0,        // n2_pucch
 				      uci->srs_active,  // shortened format
 				      pucch_b0b1[res], frame, subframe, PUCCH1a_THRES
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 				      ,uci->ue_type
 #endif		  
 				      );
@@ -870,7 +868,7 @@ void uci_procedures (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc) {
 				     frame,
 				     subframe,
 				     PUCCH1a_THRES,
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 				     ,uci->ue_type
 #endif		  
 				     );
@@ -1473,7 +1471,7 @@ void fill_rx_indication(PHY_VARS_eNB *eNB,int UE_id,int frame,int subframe) {
   
   uint32_t        harq_pid;
   
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   if (eNB->ulsch[UE_id]->ue_type > 0) harq_pid = 0;
   else
 #endif
@@ -1669,8 +1667,7 @@ int getM(PHY_VARS_eNB *eNB,int frame,int subframe) {
       AssertFatal(dlsch0_harq!=NULL,"dlsch0_harq is null\n");
       if (dlsch0_harq->status == ACTIVE||
 	  (dlsch1_harq!=NULL && dlsch1_harq->status == ACTIVE)) Mtx ++;
-      >>>>>>> origin/develop
-		}
+    }
   }
   return (Mtx);
 }
@@ -1681,7 +1678,7 @@ void fill_ulsch_cqi_indication (PHY_VARS_eNB * eNB, uint16_t frame, uint8_t subf
   pthread_mutex_lock (&eNB->UL_INFO_mutex);
   nfapi_cqi_indication_pdu_t *pdu = &eNB->UL_INFO.cqi_ind.cqi_pdu_list[eNB->UL_INFO.cqi_ind.number_of_cqis];
   nfapi_cqi_indication_raw_pdu_t *raw_pdu = &eNB->UL_INFO.cqi_ind.cqi_raw_pdu_list[eNB->UL_INFO.cqi_ind.number_of_cqis];
-  
+
   pdu->rx_ue_information.tl.tag          = NFAPI_RX_UE_INFORMATION_TAG;
   pdu->rx_ue_information.rnti = rnti;
   if (ulsch_harq->cqi_crc_status != 1)
@@ -1709,8 +1706,8 @@ void fill_ulsch_cqi_indication (PHY_VARS_eNB * eNB, uint16_t frame, uint8_t subf
   LOG_D(PHY,"eNB->UL_INFO.cqi_ind.number_of_cqis:%d\n", eNB->UL_INFO.cqi_ind.number_of_cqis);
   
   pthread_mutex_unlock(&eNB->UL_INFO_mutex);
-
-}							}
+  
+}							
 
 void fill_ulsch_harq_indication (PHY_VARS_eNB * eNB, LTE_UL_eNB_HARQ_t * ulsch_harq, uint16_t rnti, int frame, int subframe, int bundling) {
 
@@ -1735,53 +1732,52 @@ void fill_ulsch_harq_indication (PHY_VARS_eNB * eNB, LTE_UL_eNB_HARQ_t * ulsch_h
   //  pdu->rx_ue_information.handle                       = handle;
   pdu->rx_ue_information.tl.tag                       = NFAPI_RX_UE_INFORMATION_TAG;
   pdu->rx_ue_information.rnti                         = rnti;
-  >>>>>>> origin/develop
-	    
-	    if (eNB->frame_parms.frame_type == FDD) {
-	      pdu->harq_indication_fdd_rel13.tl.tag = NFAPI_HARQ_INDICATION_FDD_REL13_TAG;
-	      pdu->harq_indication_fdd_rel13.mode = 0;
-	      pdu->harq_indication_fdd_rel13.number_of_ack_nack = ulsch_harq->O_ACK;
-	      
-	      for (i = 0; i < ulsch_harq->O_ACK; i++) {
-		AssertFatal (ulsch_harq->o_ACK[i] == 0 || ulsch_harq->o_ACK[i] == 1, "harq_ack[%d] is %d, should be 1,2 or 4\n", i, ulsch_harq->o_ACK[i]);
-		
-		pdu->harq_indication_fdd_rel13.harq_tb_n[i] = 2 - ulsch_harq->o_ACK[i];
-		// release DLSCH if needed
-
-		release_harq(eNB,UE_id,i,frame,subframe,0xffff, ulsch_harq->o_ACK[i] == 1);
-		
-	      }
-	    } else {                      // TDD
-	      M = ul_ACK_subframe2_M (&eNB->frame_parms, subframe);
-
-	      pdu->harq_indication_tdd_rel13.tl.tag = NFAPI_HARQ_INDICATION_TDD_REL13_TAG;
-	      pdu->harq_indication_tdd_rel13.mode = 1-bundling;
-	      pdu->harq_indication_tdd_rel13.number_of_ack_nack = ulsch_harq->O_ACK;
-
-	      for (i = 0; i < ulsch_harq->O_ACK; i++) {
-		AssertFatal (ulsch_harq->o_ACK[i] == 0 || ulsch_harq->o_ACK[i] == 1, "harq_ack[%d] is %d, should be 1,2 or 4\n", i, ulsch_harq->o_ACK[i]);
-		
-		pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 2-ulsch_harq->o_ACK[i];
-		// release DLSCH if needed
-		/* TODO: review this code, it's most certainly wrong.
-		 * We have to release the proper HARQ in case of ACK or NACK if max retransmission reached.
-		 * Basically, call release_harq with 1 as last argument when ACK and 0 when NACK.
-		 */
-		release_harq(eNB,UE_id,i,frame,subframe,0xffff, ulsch_harq->o_ACK[i] == 1);
-		if      (M==1 && ulsch_harq->O_ACK==1 && ulsch_harq->o_ACK[i] == 1) release_harq(eNB,UE_id,0,frame,subframe,0xffff, ulsch_harq->o_ACK[i] == 1);
-		else if (M==1 && ulsch_harq->O_ACK==2 && ulsch_harq->o_ACK[i] == 1) release_harq(eNB,UE_id,i,frame,subframe,0xffff, ulsch_harq->o_ACK[i] == 1);
-		else if (M>1 && ulsch_harq->o_ACK[i] == 1) {
-		  // spatial bundling
-		  release_harq(eNB,UE_id,0,frame,subframe,1<<i, ulsch_harq->o_ACK[i] == 1);
-		  release_harq(eNB,UE_id,1,frame,subframe,1<<i, ulsch_harq->o_ACK[i] == 1);
-		}
-	      }
-	      //LOG_E(PHY,"eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs:%d\n", eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs);
-	      eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs++;
-	      
-	      pthread_mutex_unlock(&eNB->UL_INFO_mutex);
-
-	    }
+  	    
+  if (eNB->frame_parms.frame_type == FDD) {
+    pdu->harq_indication_fdd_rel13.tl.tag = NFAPI_HARQ_INDICATION_FDD_REL13_TAG;
+    pdu->harq_indication_fdd_rel13.mode = 0;
+    pdu->harq_indication_fdd_rel13.number_of_ack_nack = ulsch_harq->O_ACK;
+    
+    for (i = 0; i < ulsch_harq->O_ACK; i++) {
+      AssertFatal (ulsch_harq->o_ACK[i] == 0 || ulsch_harq->o_ACK[i] == 1, "harq_ack[%d] is %d, should be 1,2 or 4\n", i, ulsch_harq->o_ACK[i]);
+      
+      pdu->harq_indication_fdd_rel13.harq_tb_n[i] = 2 - ulsch_harq->o_ACK[i];
+      // release DLSCH if needed
+      
+      release_harq(eNB,UE_id,i,frame,subframe,0xffff, ulsch_harq->o_ACK[i] == 1);
+      
+    }
+  } else {                      // TDD
+    M = ul_ACK_subframe2_M (&eNB->frame_parms, subframe);
+    
+    pdu->harq_indication_tdd_rel13.tl.tag = NFAPI_HARQ_INDICATION_TDD_REL13_TAG;
+    pdu->harq_indication_tdd_rel13.mode = 1-bundling;
+    pdu->harq_indication_tdd_rel13.number_of_ack_nack = ulsch_harq->O_ACK;
+    
+    for (i = 0; i < ulsch_harq->O_ACK; i++) {
+      AssertFatal (ulsch_harq->o_ACK[i] == 0 || ulsch_harq->o_ACK[i] == 1, "harq_ack[%d] is %d, should be 1,2 or 4\n", i, ulsch_harq->o_ACK[i]);
+      
+      pdu->harq_indication_tdd_rel13.harq_data[0].bundling.value_0 = 2-ulsch_harq->o_ACK[i];
+      // release DLSCH if needed
+      /* TODO: review this code, it's most certainly wrong.
+       * We have to release the proper HARQ in case of ACK or NACK if max retransmission reached.
+       * Basically, call release_harq with 1 as last argument when ACK and 0 when NACK.
+       */
+      release_harq(eNB,UE_id,i,frame,subframe,0xffff, ulsch_harq->o_ACK[i] == 1);
+      if      (M==1 && ulsch_harq->O_ACK==1 && ulsch_harq->o_ACK[i] == 1) release_harq(eNB,UE_id,0,frame,subframe,0xffff, ulsch_harq->o_ACK[i] == 1);
+      else if (M==1 && ulsch_harq->O_ACK==2 && ulsch_harq->o_ACK[i] == 1) release_harq(eNB,UE_id,i,frame,subframe,0xffff, ulsch_harq->o_ACK[i] == 1);
+      else if (M>1 && ulsch_harq->o_ACK[i] == 1) {
+	// spatial bundling
+	release_harq(eNB,UE_id,0,frame,subframe,1<<i, ulsch_harq->o_ACK[i] == 1);
+	release_harq(eNB,UE_id,1,frame,subframe,1<<i, ulsch_harq->o_ACK[i] == 1);
+      }
+    }
+    //LOG_E(PHY,"eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs:%d\n", eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs);
+    eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs++;
+    
+    pthread_mutex_unlock(&eNB->UL_INFO_mutex);
+    
+  }
 }
 
 void fill_uci_harq_indication (PHY_VARS_eNB * eNB, LTE_eNB_UCI * uci, int frame, int subframe, uint8_t * harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask) {
