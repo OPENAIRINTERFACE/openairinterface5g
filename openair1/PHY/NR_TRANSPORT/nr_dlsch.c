@@ -34,7 +34,7 @@
 #include "nr_dci.h"
 #include "nr_sch_dmrs.h"
 
-//#define DEBUG_DLSCH
+#define DEBUG_DLSCH
 
 uint8_t mod_order[5] = {1, 2, 4, 6, 8};
 uint16_t mod_offset[5] = {1,3,7,23,87};
@@ -197,8 +197,10 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
   uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH];
   int16_t mod_symbs[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>1];
   uint16_t tx_layers[NR_MAX_NB_LAYERS][NR_MAX_PDSCH_ENCODED_LENGTH>>1];
-  uint16_t n_symbs[NR_MAX_NB_CODEWORDS];
+  uint16_t n_symbs;
   int8_t Wf[2], Wt[2], l0, delta;
+  uint16_t TBS = rel15->transport_block_size;
+  uint8_t Qm = rel15->modulation_order;
 
   /// CRC, coding, interleaving and rate matching
   nr_dlsch_encoding(harq->pdu, subframe, &dlsch, &frame_parms);
@@ -210,18 +212,34 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
   pdcch_params.scrambling_id : config.sch_config.physical_cell_id.value;
   for (int q=0; q<rel15->nb_codewords; q++)
     nr_pdsch_codeword_scrambling(harq->f,
-                         rel15->transport_block_size,
+                         TBS,
                          q,
                          Nid,
                          n_RNTI,
                          scrambled_output[q]);
+#ifdef DEBUG_DLSCH
+printf("PDSCH Scrambling(TBS %d): before  \t after \n", TBS);
+for (int i=0; i<TBS; i++) {
+  printf("%d\t%d\n", harq->f[i], scrambled_output[0][i]);
+}
+#endif
+
  
   /// Modulation
+  n_symbs = TBS/Qm;
   for (int q=0; q<rel15->nb_codewords; q++)
     nr_pdsch_codeword_modulation(scrambled_output[q],
-                         rel15->modulation_order,
-                         rel15->transport_block_size,
+                         Qm,
+                         TBS,
                          mod_symbs[q]);
+#ifdef DEBUG_DLSCH
+printf("PDSCH Modulation: Qm %d()\n", Qm, n_symbs);
+for (int i=0; i<n_symbs; i++)
+  for (int j=0; j<Qm; j++) {
+    printf("%d\t%d\n", mod_symbs[0][(i*Qm+j)<<1], mod_symbs[0][((i*Qm+j)<<1)+1]);
+  }
+#endif
+
 
   /// Layer mapping
   nr_pdsch_layer_mapping(mod_symbs,
@@ -279,7 +297,7 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
   }
 
 #ifdef DEBUG_DLSCH
-  write_output("txdataF_dlsch.m", "txdataF_dlsch", txdataF[0], frame_parms.samples_per_frame_wCP>>1, 1, 1);
+  write_output("txdataF_dlsch.m", "txdataF_dlsch", txdataF[0], frame_parms.samples_per_subframe_wCP>>1, 1, 1);
 #endif
 
   return 0;
