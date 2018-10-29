@@ -633,63 +633,6 @@ int flexran_agent_destroy_stats_request(Protocol__FlexranMessage *msg) {
   return -1;
 }
 
-/*
-  Top Level Update 
- */
-
-void flexran_agent_send_update_stats(mid_t mod_id) {
-
-  Protocol__FlexranMessage *current_report = NULL;
-  void *data;
-  int size;
-  err_code_t err_code;
-  int priority = 0;
-  
-  if (pthread_mutex_lock(stats_context[mod_id].mutex)) {
-    goto error;
-  }
-
-  if (stats_context[mod_id].cont_update == 1) {
-  
-    /*Create a fresh report with the required flags*/
-    err_code = flexran_agent_handle_stats(mod_id, (void *) stats_context[mod_id].stats_req, &current_report);
-    if (err_code < 0) {
-      goto error;
-    }
-  }
-  /* /\*TODO:Check if a previous reports exists and if yes, generate a report */
-  /*  *that is the diff between the old and the new report, */
-  /*  *respecting the thresholds. Otherwise send the new report*\/ */
-  /* if (stats_context[mod_id].prev_stats_reply != NULL) { */
-
-  /*   msg = flexran_agent_generate_diff_mac_stats_report(current_report, stats_context[mod_id].prev_stats_reply); */
-
-  /*   /\*Destroy the old stats*\/ */
-  /*    flexran_agent_destroy_flexran_message(stats_context[mod_id].prev_stats_reply); */
-  /* } */
-  /* /\*Use the current report for future comparissons*\/ */
-  /* stats_context[mod_id].prev_stats_reply = current_report; */
-
-
-  if (pthread_mutex_unlock(stats_context[mod_id].mutex)) {
-    goto error;
-  }
-
-  if (current_report != NULL){
-    data=flexran_agent_pack_message(current_report, &size);
-    /*Send any stats updates using the MAC channel of the eNB*/
-    if (flexran_agent_msg_send(mod_id, FLEXRAN_AGENT_MAC, data, size, priority)) {
-      err_code = PROTOCOL__FLEXRAN_ERR__MSG_ENQUEUING;
-      goto error;
-    }
-
-    LOG_D(FLEXRAN_AGENT,"sent message with size %d\n", size);
-    return;
-  }
- error:
-  LOG_W(FLEXRAN_AGENT, "Could not send update stats message\n");
-}
-
 err_code_t flexran_agent_disable_cont_stats_update(mid_t mod_id) {
   /*Disable the continuous updates for the MAC*/
   if (pthread_mutex_lock(stats_context[mod_id].mutex)) {

@@ -162,8 +162,6 @@ int flexran_agent_destroy_stats_request(Protocol__FlexranMessage *msg);
 
 err_code_t flexran_agent_init_cont_stats_update(mid_t mod_id);
 
-void flexran_agent_send_update_stats(mid_t mod_id);
-
 err_code_t flexran_agent_enable_cont_stats_update(mid_t mod_id, xid_t xid, stats_request_config_t *stats_req) ;
 err_code_t flexran_agent_disable_cont_stats_update(mid_t mod_id);
 
