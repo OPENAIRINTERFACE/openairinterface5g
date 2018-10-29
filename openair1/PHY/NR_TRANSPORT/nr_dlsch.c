@@ -34,7 +34,7 @@
 #include "nr_dci.h"
 #include "nr_sch_dmrs.h"
 
-#define DEBUG_DLSCH
+//#define DEBUG_DLSCH
 
 uint8_t mod_order[5] = {1, 2, 4, 6, 8};
 uint16_t mod_offset[5] = {1,3,7,23,87};

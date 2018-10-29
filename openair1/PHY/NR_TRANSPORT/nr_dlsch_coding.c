@@ -152,7 +152,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_t
      }
 
     for (i=0; i<10; i++)
-      dlsch->harq_ids[i] = i;
+      dlsch->harq_ids[i] = 0;
 
 
     for (i=0; i<Mdlharq; i++) {

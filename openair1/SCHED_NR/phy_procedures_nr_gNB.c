@@ -23,6 +23,7 @@
 #include "PHY/defs_gNB.h"
 #include "sched_nr.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
+#include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "SCHED/sched_eNB.h"
 #include "SCHED/sched_common_extern.h"
 #include "nfapi_interface.h"
@@ -197,7 +198,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
       if (num_pdsch_rnti) {
         LOG_I(PHY, "PDSCH generation started (%d)\n", num_pdsch_rnti);
         nr_generate_pdsch(*gNB->dlsch[0][0],
-                          gNB->pdcch_vars,
+                          gNB->pdcch_vars.dci_alloc[0],
                           gNB->nr_gold_pdsch_dmrs[slot_idx],
                           gNB->common_vars.txdataF,
                           AMP, subframe, *fp, *cfg);
