@@ -449,8 +449,7 @@ int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const report_config_t *re
       protocol__flex_ue_stats_report__init(ue_report[i]);
       ue_report[i]->rnti = report_config->ue_report_type[i].ue_rnti;
       ue_report[i]->has_rnti = 1;
-      ue_report[i]->flags = report_config->ue_report_type[i].ue_report_flags;
-      ue_report[i]->has_flags = 1;
+      ue_report[i]->has_flags = 1; /* actual flags are filled in the CMs below */
   
   }
 
@@ -472,8 +471,7 @@ int flexran_agent_stats_reply(mid_t enb_id, xid_t xid, const report_config_t *re
       protocol__flex_cell_stats_report__init(cell_report[i]);
       cell_report[i]->carrier_index = report_config->cc_report_type[i].cc_id;
       cell_report[i]->has_carrier_index = 1;
-      cell_report[i]->flags = report_config->cc_report_type[i].cc_report_flags;
-      cell_report[i]->has_flags = 1;
+      cell_report[i]->has_flags = 1; /* actual flags are filled in the CMs below */
 
   }
 

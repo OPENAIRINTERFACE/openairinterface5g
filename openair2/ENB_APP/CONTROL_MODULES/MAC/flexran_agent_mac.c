@@ -84,12 +84,14 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                         }
 
                         ue_report[i]->bsr = elem;
+                        ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_BSR;
                 }
 
                 /* Check flag for creation of PHR report */
                 if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PHR) {
                         ue_report[i]->phr = flexran_get_ue_phr (enb_id, i); // eNB_UE_list->UE_template[UE_PCCID(enb_id,i)][i].phr_info;
                         ue_report[i]->has_phr = 1;
+                        ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PHR;
 
                 }
 
@@ -130,7 +132,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                         // Add RLC buffer status reports to the full report
                         if (ue_report[i]->n_rlc_report > 0)
                             ue_report[i]->rlc_report = rlc_reports;
-
+                        ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_RLC_BS;
 
                 }
 
@@ -143,7 +145,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                                        // found in stats_common.pb-c.h. See
                                        // flex_ce_type in FlexRAN specification
                         ue_report[i]->has_pending_mac_ces = 1;
-
+                        ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_MAC_CE_BS;
                 }
 
                 /* Check flag for creation of DL CQI report */
@@ -368,7 +370,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                     dl_report->csi_report = csi_reports;
                     //Add the DL CQI report to the stats report
                      ue_report[i]->dl_cqi_report = dl_report;
-
+                    ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_DL_CQI;
                 }
 
                 /* Check flag for creation of paging buffer status report */
@@ -413,6 +415,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                             paging_report->paging_info = p_info;
                             //Add the paging report to the UE report
                             ue_report[i]->pbr = paging_report;
+                            ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PBS;
                 }
 
                   /* Check flag for creation of UL CQI report */
@@ -484,7 +487,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                           }
                         //  Add full UL CQI report to the UE report
                         ue_report[i]->ul_cqi_report = full_ul_report;
-
+                        ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_UL_CQI;
 
                      }
                       if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_MAC_STATS) {
@@ -580,7 +583,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
 
 
                         ue_report[i]->mac_stats = macstats;
-
+                        ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_MAC_STATS;
                }
 
 
@@ -622,6 +625,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                             ni_report->p0_nominal_pucch = flexran_get_p0_nominal_pucch(enb_id, 0);
                             ni_report->has_p0_nominal_pucch = 1;
                             cell_report[i]->noise_inter_report = ni_report;
+                            cell_report[i]->flags |= PROTOCOL__FLEX_CELL_STATS_TYPE__FLCST_NOISE_INTERFERENCE;
                       }
             }
 

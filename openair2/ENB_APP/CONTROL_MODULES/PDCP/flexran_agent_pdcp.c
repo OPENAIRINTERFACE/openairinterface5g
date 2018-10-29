@@ -116,7 +116,7 @@ int flexran_agent_pdcp_stats_reply(mid_t mod_id,
 	pdcp_aggr_stats->has_sfn =1;
 
 	ue_report[i]->pdcp_stats = pdcp_aggr_stats;
-
+        ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PDCP_STATS;
       }
     }
   }  else {

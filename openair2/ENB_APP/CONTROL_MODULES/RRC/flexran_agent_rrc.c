@@ -441,6 +441,7 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
         }
 
       	 ue_report[i]->rrc_measurements = rrc_measurements;
+         ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_RRC_MEASUREMENTS;
       	
       }
 
@@ -477,6 +478,7 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
   //                           ni_report->p0_nominal_pucch = flexran_get_p0_nominal_pucch(enb_id, 0);
   //                           ni_report->has_p0_nominal_pucch = 1;
   //                           cell_report[i]->noise_inter_report = ni_report;
+  //                           cell_report[i]->flags |= PROTOCOL__FLEX_CELL_STATS_TYPE__FLCST_NOISE_INTERFERENCE;
   //                     }
   //           }
             
