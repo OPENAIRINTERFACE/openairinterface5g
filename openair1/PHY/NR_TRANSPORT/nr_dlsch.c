@@ -114,13 +114,13 @@ void nr_pdsch_codeword_modulation(uint32_t *in,
 void nr_pdsch_layer_mapping(uint16_t **mod_symbs,
                          uint8_t n_codewords,
                          uint8_t n_layers,
-                         uint16_t *n_symbs,
+                         uint16_t n_symbs,
                          uint16_t **tx_layers) {
 
   switch (n_layers) {
 
     case 1:
-      memcpy((void*)tx_layers[0], (void*)mod_symbs[0], (n_symbs[0]<<1)*sizeof(uint16_t));
+      memcpy((void*)tx_layers[0], (void*)mod_symbs[0], (n_symbs<<1)*sizeof(uint16_t));
     break;
 
     case 2:
@@ -234,10 +234,12 @@ for (int i=0; i<TBS; i++) {
                          mod_symbs[q]);
 #ifdef DEBUG_DLSCH
 printf("PDSCH Modulation: Qm %d()\n", Qm, n_symbs);
-for (int i=0; i<n_symbs; i++)
+for (int i=0; i<n_symbs; i++) {
   for (int j=0; j<Qm; j++) {
-    printf("%d\t%d\n", mod_symbs[0][(i*Qm+j)<<1], mod_symbs[0][((i*Qm+j)<<1)+1]);
+    printf("%d %d\t", mod_symbs[0][(i*Qm+j)<<1], mod_symbs[0][((i*Qm+j)<<1)+1]);
   }
+  printf("\n");
+}
 #endif
 
 
