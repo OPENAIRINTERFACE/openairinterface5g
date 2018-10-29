@@ -36,9 +36,9 @@
 #include <sys/types.h>
 
 /* name of shared library implementing the radio front end */
-#define OAI_RF_LIBNAME        "liboai_device.so"
+#define OAI_RF_LIBNAME        "oai_device"
 /* name of shared library implementing the transport */
-#define OAI_TP_LIBNAME        "liboai_transpro.so"
+#define OAI_TP_LIBNAME        "oai_transpro"
 
 /* flags for BBU to determine whether the attached radio head is local or remote */
 #define RAU_LOCAL_RADIO_HEAD  0
@@ -199,6 +199,8 @@ typedef struct {
   double tx_bw;
   //! clock source 
   clock_source_t clock_source;
+  //! Manual SDR IP address
+  char *sdr_addrs;
   //! Auto calibration flag
   int autocal[4];
   //! rf devices work with x bits iqs when oai have its own iq format
@@ -207,6 +209,15 @@ typedef struct {
   int iq_rxrescale;
   //! Configuration file for LMS7002M
   char *configFilename;
+#if defined(USRP_REC_PLAY)
+  unsigned short sf_mode;           // 1=record, 2=replay
+  char           sf_filename[1024]; // subframes file path
+  unsigned int   sf_max;            // max number of recorded subframes
+  unsigned int   sf_loops;          // number of loops in replay mode
+  unsigned int   sf_read_delay;     // read delay in replay mode
+  unsigned int   sf_write_delay;    // write delay in replay mode
+  unsigned int   eth_mtu;           // ethernet MTU
+#endif  
 } openair0_config_t;
 
 /*! \brief RF mapping */ 

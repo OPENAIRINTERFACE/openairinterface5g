@@ -26,10 +26,8 @@
    date: 09.2012
 */
 #ifndef TC_MAIN
-#include "defs.h"
-#include "extern_3GPPinterleaver.h"
+#include "coding_defs.h"
 #else
-#include "vars.h"
 #include <stdint.h>
 #endif
 #include <stdio.h>
@@ -96,7 +94,7 @@ static inline void threegpplte_rsc_termination(unsigned char *x,unsigned char *z
   *state = (*state)>>1;
 }
 
-void treillis_table_init(void)
+static void treillis_table_init(void)
 {
   //struct treillis t[][]=all_treillis;
   //t=memalign(16,sizeof(struct treillis)*8*256);
@@ -536,12 +534,10 @@ char interleave_compact_byte(short * base_interleaver,unsigned char * input, uns
   }
 */
 
-void threegpplte_turbo_encoder(unsigned char *input,
-                               unsigned short input_length_bytes,
-                               unsigned char *output,
-                               unsigned char F,
-                               unsigned short interleaver_f1,
-                               unsigned short interleaver_f2)
+void threegpplte_turbo_encoder_sse(unsigned char *input,
+                                   unsigned short input_length_bytes,
+                                   unsigned char *output,
+                                   unsigned char F)
 {
 
   int i;
@@ -641,7 +637,24 @@ void threegpplte_turbo_encoder(unsigned char *input,
 #endif
 }
 
-
+void init_encoder_sse (void) {
+    treillis_table_init(); 	   
+}
+/* function which will be called by the shared lib loader, to check shared lib version
+   against main exec version. version mismatch no considered as fatal (interfaces not supposed to change)
+*/ 
+int  coding_checkbuildver(char * mainexec_buildversion, char ** shlib_buildversion)
+{
+#ifndef PACKAGE_VERSION
+#define PACKAGE_VERSION "standalone built: " __DATE__ __TIME__
+#endif
+    *shlib_buildversion = PACKAGE_VERSION;
+    if (strcmp(mainexec_buildversion, *shlib_buildversion) != 0) {
+          fprintf(stderr,"[CODING] shared lib version %s, doesn't match main version %s, compatibility should be checked\n",
+                mainexec_buildversion,*shlib_buildversion);
+    }
+    return 0;
+}
 
 #ifdef TC_MAIN
 #define INPUT_LENGTH 20 
@@ -679,12 +692,10 @@ int main(int argc,char **argv)
     printf("Input %d : %d\n",i,input[i]);
   }
 
-  threegpplte_turbo_encoder(&input[0],
+  threegpplte_turbo_encoder_sse(&input[0],
                             INPUT_LENGTH,
                             &output[0],
-                            0,
-                            F1,
-                            F2);
+                            0);
 
 
   for (i=0;i<12+(INPUT_LENGTH*24);i++)

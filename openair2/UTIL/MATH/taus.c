@@ -29,21 +29,12 @@
 * @ingroup util
 */
 
-#ifndef RTAI_ENABLED
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
 #include <math.h>
 #include "oml.h"
-#else
-#include <asm/io.h>
-#include <asm/rtai.h>
-#include <rtai.h>
-#include <rtai_sched.h>
-#define time(x) (unsigned int)(rt_get_time_ns())
-#endif
-
 
 unsigned int s0[MAX_NUM_COMPS], s1[MAX_NUM_COMPS], s2[MAX_NUM_COMPS], b[MAX_NUM_COMPS], r[MAX_NUM_COMPS];
 

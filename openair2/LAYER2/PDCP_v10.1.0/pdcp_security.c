@@ -29,12 +29,12 @@
 
 #include "assertions.h"
 
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "UTIL/OSA/osa_defs.h"
 
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac_extern.h"
 
 #include "pdcp.h"
 #include "msc.h"
@@ -220,7 +220,7 @@ pdcp_validate_security(
   stream_decrypt(pdcp_pP->cipheringAlgorithm,
                  &decrypt_params,
                  &buffer_decrypted);
-
+#if !defined(USRP_REC_PLAY)
   if (srb_flagP) {
     /* Now check the integrity of the complete PDU */
     decrypt_params.message    = pdcp_pdu_buffer;
@@ -241,7 +241,7 @@ pdcp_validate_security(
       return -1;
     }
   }
-
+#endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_VALIDATE_SECURITY, VCD_FUNCTION_OUT);
 
   return 0;

@@ -27,7 +27,7 @@
  */
 
 #include "flexran_agent_net_comm.h"
-#include "log.h"
+#include "common/utils/LOG/log.h"
 
 flexran_agent_channel_t *agent_channel[NUM_MAX_ENB][FLEXRAN_AGENT_MAX];
 flexran_agent_channel_instance_t channel_instance;
@@ -118,7 +118,7 @@ int flexran_agent_create_channel(void *channel_info,
   /*element should be a real pointer*/
   RB_INSERT(flexran_agent_channel_map, &channel_instance.flexran_agent_head, channel); 
   
-  LOG_I(FLEXRAN_AGENT,"Created a new channel with id 0x%lx\n", channel->channel_id);
+  LOG_I(FLEXRAN_AGENT,"Created a new channel with id %d \n", channel->channel_id);
  
   return channel_id; 
 }
@@ -141,9 +141,9 @@ int flexran_agent_destroy_channel(int channel_id) {
   for (i = 0; i < NUM_MAX_ENB; i++) {
     for (j = 0; j < FLEXRAN_AGENT_MAX; j++) {
       if (agent_channel[i][j] != NULL) {
-	if (agent_channel[i][j]->channel_id == e->channel_id) {
-	  agent_channel[i][j] == NULL;
-	}
+        if (agent_channel[i][j]->channel_id == e->channel_id) {
+            free(agent_channel[i][j]);
+        }
       }
     }
   }
@@ -164,7 +164,9 @@ err_code_t flexran_agent_init_channel_container(void) {
   
   for (i = 0; i < NUM_MAX_ENB; i++) {
     for (j = 0; j < FLEXRAN_AGENT_MAX; j++) {
-    agent_channel[i][j] == NULL;
+      agent_channel[i][j] = malloc(sizeof(flexran_agent_channel_t));
+      if (!agent_channel[i][j])
+        return -1;
     }
   }
 

@@ -20,7 +20,7 @@
  */
 
 #include "PHY/sse_intrin.h"
-#include "defs.h"
+#include "tools_defs.h"
 
 #if defined(__x86_64__) || defined(__i386__)
 #define simd_q15_t __m128i

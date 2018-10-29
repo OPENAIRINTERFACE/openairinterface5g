@@ -25,10 +25,9 @@
 #define FD_lte_scope_h_
 
 #include <forms.h>
-#include "../impl_defs_lte.h"
-#include "../impl_defs_top.h"
-#include "../defs.h"
-#include "../../SCHED/defs.h" // for OPENAIR_DAQ_VARS
+#include "PHY/defs_eNB.h"
+#include "PHY/defs_UE.h"
+#include "PHY/impl_defs_top.h"
 
 
 /* Forms and Objects */

@@ -34,7 +34,7 @@
 #include "RadioResourceConfigDedicated.h"
 #include "MeasGapConfig.h"
 #include "TDD-Config.h"
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 #include "MBSFN-AreaInfoList-r9.h"
 #include "MBSFN-SubframeConfigList.h"
 #endif
@@ -244,9 +244,7 @@ typedef struct {
   LCHAN_DESC  Lchan_desc[2];  /*!< \brief Logical Channel QoS Descriptor (MAC component) */
   uint8_t L3_info_type;
   uint8_t L3_info[16];
-  //#ifndef CELLULAR
   unsigned short UE_eNB_index;
-  //#endif
 } __attribute__ ((__packed__))  MAC_CONFIG_REQ;
 #define MAC_CONFIG_REQ_SIZE sizeof(MAC_CONFIG_REQ)
 
@@ -314,18 +312,12 @@ typedef struct {
 
 #ifndef OPENAIR2_IN
 
-#ifndef CELLULAR
-//#include "L3_rrc_defs.h"
-#endif
-
 typedef struct {  //RRC_INTERFACE_FUNCTIONS
   unsigned int Frame_index;
   unsigned short UE_index[NB_MODULES_MAX][NB_SIG_CNX_UE];
   uint8_t  eNB_id[NB_MODULES_MAX][NB_CNX_UE];
-#ifndef CELLULAR
   //  L2_ID UE_id[NB_MODULES_MAX][NB_CNX_CH];
   uint8_t UE_id[NB_MODULES_MAX][NB_CNX_CH][5];
-#endif
   void (*openair_rrc_top_init)(void);
   char (*openair_rrc_eNB_init)(uint8_t );
   char (*openair_rrc_UE_init)(uint8_t, uint8_t);
@@ -364,7 +356,7 @@ typedef struct {
                             TDD_Config_t *tdd_Config,
                             uint8_t *SIwindowsize,
                             uint16_t *SIperiod
-#if defined(Rel10) || defined(Rel14)
+#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                             ,
                             MBMS_flag_t MBMS_Flag,
                             struct MBSFN_SubframeConfigList *mbsfn_SubframeConfigList,
@@ -372,10 +364,20 @@ typedef struct {
                             struct PMCH_InfoList_r9 *pmch_InfoList
 #endif
                            );
-  unsigned int (*mac_rlc_data_req)(module_id_t, unsigned int, const unsigned int,char*);
+  unsigned int (*mac_rlc_data_req)(module_id_t, unsigned int, const unsigned int,char*
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                                  ,uint32_t
+                                  ,uint32_t
+#endif
+                                   );
   void (*mac_rlc_data_ind)(module_id_t, logical_chan_id_t, char*, tb_size_t, num_tb_t, crc_t* );
   mac_rlc_status_resp_t (*mac_rlc_status_ind)     (module_id_t enb_mod_idP, module_id_t ue_mod_idP, frame_t frameP, sub_frame_t subframeP, eNB_flag_t eNB_flagP, MBMS_flag_t MBMS_flagP,
-      logical_chan_id_t channel_idP, tb_size_t tb_sizeP);
+      logical_chan_id_t channel_idP, tb_size_t tb_sizeP
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+      ,uint32_t sourceL2Id
+      ,uint32_t destinationL2Id
+#endif
+      );
   signed int (*rrc_rlc_data_req)(module_id_t, rb_id_t, mui_t, confirm_t, sdu_size_t, char *);
   void (*rrc_rlc_register_rrc) (void (*rrc_data_indP)(module_id_t , rb_id_t , sdu_size_t , char* ),
                                 void  (*rrc_data_confP) (module_id_t , rb_id_t , mui_t ) ) ;

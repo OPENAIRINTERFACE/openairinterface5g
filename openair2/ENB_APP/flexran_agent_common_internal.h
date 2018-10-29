@@ -21,8 +21,8 @@
 
 /*! \file flexran_agent_common_internal.h
  * \brief internal agent functions for common message primitves and utilities
- * \author Xenofon Foukas
- * \date 2016
+ * \author Xenofon Foukas and N. Nikaein
+ * \date 2017
  * \version 0.1
  */
 
@@ -32,10 +32,15 @@
 #include <yaml.h>
 
 #include "flexran_agent_defs.h"
+#include "flexran.pb-c.h"
 
 int apply_reconfiguration_policy(mid_t mod_id, const char *policy, size_t policy_length);
 
 int apply_parameter_modification(void *parameter, yaml_parser_t *parser);
+
+int parse_enb_id(mid_t mod_id, yaml_parser_t *parser);
+int parse_enb_config_parameters(mid_t mod_id, yaml_parser_t *parser) ;
+
 
 // This can be used when parsing for a specific system that is not yet implmeneted
 // in order to skip its configuration, without affecting the rest
@@ -52,5 +57,8 @@ int skip_subsystem_parameters_config(yaml_parser_t *parser);
 // This can be used when configuring the parameters of a specific subsystem 
 //that is not yet implmeneted in order to skip its configuration, without affecting the rest
 int skip_parameter_modification(yaml_parser_t *parser);
+
+// applies reconfiguration parameters and notifies ENB APP
+void initiate_soft_restart(mid_t mod_id, Protocol__FlexCellConfig *c);
 
 #endif

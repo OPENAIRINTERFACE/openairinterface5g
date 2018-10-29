@@ -28,7 +28,7 @@
 #ifndef PDCP_UTIL_H
 #define PDCP_UTIL_H
 
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "../../COMMON/platform_types.h"
 #include "pdcp.h"
 

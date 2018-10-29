@@ -22,20 +22,28 @@
 /*! \file flexran_agent.h
  * \brief top level flexran agent  
  * \author Navid Nikaein and Xenofon Foukas
- * \date 2016
+ * \date 2017
  * \version 0.1
  */
 
 #ifndef FLEXRAN_AGENT_H_
 #define FLEXRAN_AGENT_H_
 
-#include "enb_config.h" // for enb properties
 #include "flexran_agent_common.h"
+#include "flexran_agent_async.h"
+#include "flexran_agent_extern.h"
+#include "flexran_agent_timer.h"
+#include "flexran_agent_defs.h"
+#include "flexran_agent_net_comm.h"
+#include "flexran_agent_ran_api.h"
+#include "flexran_agent_mac.h"
+#include "flexran_agent_rrc.h"
+#include "flexran_agent_pdcp.h"
+#include "common/utils/LOG/log.h"
+#include "assertions.h"
 
-
-/* Initiation and termination of the eNodeB agent */
-int flexran_agent_start(mid_t mod_id, const Enb_properties_array_t* enb_properties);
-int flexran_agent_stop(mid_t mod_id);
+/* Initiation of the eNodeB agent */
+int flexran_agent_start(mid_t mod_id);
 
 /* 
  * enb agent task mainly wakes up the tx thread for periodic and oneshot messages to the controller 

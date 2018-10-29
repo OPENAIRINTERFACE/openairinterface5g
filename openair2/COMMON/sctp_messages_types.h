@@ -22,13 +22,16 @@
 #ifndef SCTP_MESSAGES_TYPES_H_
 #define SCTP_MESSAGES_TYPES_H_
 
-#define SCTP_NEW_ASSOCIATION_REQ(mSGpTR) (mSGpTR)->ittiMsg.sctp_new_association_req
-#define SCTP_NEW_ASSOCIATION_RESP(mSGpTR)(mSGpTR)->ittiMsg.sctp_new_association_resp
-#define SCTP_NEW_ASSOCIATION_IND(mSGpTR) (mSGpTR)->ittiMsg.sctp_new_association_ind
-#define SCTP_DATA_IND(mSGpTR)            (mSGpTR)->ittiMsg.sctp_data_ind
-#define SCTP_DATA_REQ(mSGpTR)            (mSGpTR)->ittiMsg.sctp_data_req
-#define SCTP_INIT_MSG(mSGpTR)            (mSGpTR)->ittiMsg.sctp_init
-#define SCTP_CLOSE_ASSOCIATION(mSGpTR)   (mSGpTR)->ittiMsg.sctp_close_association
+#define SCTP_NEW_ASSOCIATION_REQ(mSGpTR)       (mSGpTR)->ittiMsg.sctp_new_association_req
+#define SCTP_NEW_ASSOCIATION_REQ_MULTI(mSGpTR) (mSGpTR)->ittiMsg.sctp_new_association_req_multi
+#define SCTP_NEW_ASSOCIATION_RESP(mSGpTR)      (mSGpTR)->ittiMsg.sctp_new_association_resp
+#define SCTP_NEW_ASSOCIATION_IND(mSGpTR)       (mSGpTR)->ittiMsg.sctp_new_association_ind
+#define SCTP_DATA_IND(mSGpTR)                  (mSGpTR)->ittiMsg.sctp_data_ind
+#define SCTP_DATA_REQ(mSGpTR)                  (mSGpTR)->ittiMsg.sctp_data_req
+#define SCTP_INIT_MSG(mSGpTR)                  (mSGpTR)->ittiMsg.sctp_init
+#define SCTP_INIT_MSG_MULTI_REQ(mSGpTR)        (mSGpTR)->ittiMsg.sctp_init_multi
+#define SCTP_INIT_MSG_MULTI_CNF(mSGpTR)        (mSGpTR)->ittiMsg.sctp_init_msg_multi_cnf
+#define SCTP_CLOSE_ASSOCIATION(mSGpTR)         (mSGpTR)->ittiMsg.sctp_close_association
 
 enum sctp_state_e {
   SCTP_STATE_CLOSED,
@@ -55,6 +58,32 @@ typedef struct sctp_new_association_req_s {
   /* Remote address to connect to */
   net_ip_address_t remote_address;
 } sctp_new_association_req_t;
+
+typedef struct sctp_new_association_req_multi_s {
+  /* Upper layer connexion identifier */
+  uint16_t         ulp_cnx_id;
+
+  /* The port to connect to */
+  uint16_t         port;
+  /* Payload Protocol Identifier to use */
+  uint32_t         ppid;
+
+  /* Number of streams used for this association */
+  uint16_t in_streams;
+  uint16_t out_streams;
+
+  /* Local address to bind to */
+  net_ip_address_t local_address;
+  /* Remote address to connect to */
+  net_ip_address_t remote_address;
+
+  /* Multi-socket descriptor */
+  int multi_sd;
+} sctp_new_association_req_multi_t;
+
+typedef struct sctp_init_msg_multi_cnf_s {
+  int multi_sd;
+} sctp_init_msg_multi_cnf_t;
 
 typedef struct sctp_new_association_ind_s {
   /* Assoc id of the new association */

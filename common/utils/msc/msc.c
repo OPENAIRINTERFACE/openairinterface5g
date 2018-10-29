@@ -32,11 +32,14 @@
 #include <stdint.h>
 #include <inttypes.h>
 
+#define MSC_LIBRARY
+#include "msc.h"
+
 #include "liblfds611.h"
 #include "intertask_interface.h"
-#include "timer.h"
 
-#include "msc.h"
+
+
 #include "assertions.h"
 
 //-------------------------------
@@ -67,8 +70,8 @@ void *msc_task(void *args_p)
 //------------------------------------------------------------------------------
 {
   MessageDef         *received_message_p    = NULL;
-  const char         *msg_name = NULL;
-  instance_t          instance  = 0;
+//  const char         *msg_name = NULL;
+//  instance_t          instance  = 0;
   long                timer_id;
 
   itti_mark_task_ready(TASK_MSC);
@@ -88,9 +91,9 @@ void *msc_task(void *args_p)
     itti_receive_msg(TASK_MSC, &received_message_p);
 
     if (received_message_p != NULL) {
-      msg_name = ITTI_MSG_NAME (received_message_p);
-      instance = ITTI_MSG_INSTANCE (received_message_p);
-
+//      msg_name = ITTI_MSG_NAME (received_message_p);
+//      instance = ITTI_MSG_INSTANCE (received_message_p);
+      
       switch (ITTI_MSG_ID(received_message_p)) {
 
         case TIMER_HAS_EXPIRED: {
@@ -99,6 +102,7 @@ void *msc_task(void *args_p)
         break;
 
         case TERMINATE_MESSAGE: {
+          fprintf(stderr, " *** Exiting MSC thread\n");
           timer_remove(timer_id);
     	  msc_end();
           itti_exit_task();
@@ -570,4 +574,17 @@ error_event:
   free(new_item_p);
 }
 
+//------------------------------------------------------------------------------
+//  function called when oai loader loads the msc shared lib
+int msc_autoinit(msc_interface_t *msc_interface)
+//------------------------------------------------------------------------------
+ {
 
+  msc_interface->msc_init = msc_init;
+  msc_interface->msc_start_use = msc_start_use;
+  msc_interface->msc_end = msc_end;
+  msc_interface->msc_log_event = msc_log_event;
+  msc_interface->msc_log_message = msc_log_message;
+  msc_interface->msc_loaded = 1;
+  return 0;
+ }

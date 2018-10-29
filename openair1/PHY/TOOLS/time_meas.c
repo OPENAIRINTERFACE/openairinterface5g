@@ -52,8 +52,8 @@ void print_meas_now(time_stats_t *ts, const char* name, FILE* file_name){
 
     if (ts->trials>0) {
 
-      //fprintf(file_name,"Name %25s: Processing %15.3f ms for SF %d, diff_now %15.3f \n", name,(ts->diff_now/(cpu_freq_GHz*1000000.0)),subframe,ts->diff_now);
-      fprintf(file_name,"%15.3f ms, diff_now %15.3f \n",(ts->diff_now/(cpu_freq_GHz*1000000.0)),(double)ts->diff_now);
+      //fprintf(file_name,"Name %25s: Processing %15.3f ms for SF %d, diff_now %15.3f \n", name,(ts->p_time/(cpu_freq_GHz*1000000.0)),subframe,ts->p_time);
+      fprintf(file_name,"%15.3f us, diff_now %15.3f \n",(ts->p_time/(cpu_freq_GHz*1000.0)),(double)ts->p_time);
       
     }
   }

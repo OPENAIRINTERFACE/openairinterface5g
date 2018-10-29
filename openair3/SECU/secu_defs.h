@@ -23,6 +23,7 @@
 #define SECU_DEFS_H_
 
 #include "security_types.h"
+#include <stdbool.h>
 
 #define EIA0_ALG_ID     0x00
 #define EIA1_128_ALG_ID 0x01
@@ -43,6 +44,9 @@ void kdf(const uint8_t *key,
          uint16_t out_len);
 
 int derive_keNB(const uint8_t kasme[32], const uint32_t nas_count, uint8_t *keNB);
+
+int derive_keNB_star(const uint8_t *kenb_32, const uint16_t pci, const uint32_t earfcn_dl,
+                      const bool is_rel8_only, uint8_t * kenb_star);
 
 int derive_key_nas(algorithm_type_dist_t nas_alg_type, uint8_t nas_enc_alg_id,
                    const uint8_t kasme[32], uint8_t *knas);

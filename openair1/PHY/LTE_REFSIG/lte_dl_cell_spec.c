@@ -19,16 +19,15 @@
  *      contact@openairinterface.org
  */
 
-#ifdef USER_MODE
 #include <stdio.h>
 #include <stdlib.h>
-#endif
 
-#include "defs.h"
-#include "PHY/defs.h"
-
+#include "PHY/defs_eNB.h"
+#include "PHY/defs_UE.h"
+#include "PHY/impl_defs_top.h"
+#include "common/utils/LOG/log.h"
 //extern unsigned int lte_gold_table[3][20][2][14];
-//#define DEBUG_DL_CELL_SPEC
+
 
 
 
@@ -65,7 +64,7 @@ int lte_dl_cell_spec_SS(PHY_VARS_eNB *eNB,
   else if ((p==1) && (l>0))
     nu = 0;
   else {
-    printf("lte_dl_cell_spec: p %d, l %d -> ERROR\n",p,l);
+    LOG_E(PHY,"lte_dl_cell_spec: p %d, l %d -> ERROR\n",p,l);
     return(-1);
   }
 
@@ -86,19 +85,19 @@ int lte_dl_cell_spec_SS(PHY_VARS_eNB *eNB,
     // this is r_mprime from 3GPP 36-211 6.10.1.2
     output[k] = qpsk[(eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
     //output[k] = (lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3;
-#ifdef DEBUG_DL_CELL_SPEC
-    printf("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
-              Ns,l,m,mprime_dword,mprime_qpsk_symb);
-    printf("index = %d (k %d)\n",(eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
-#endif
+    if (LOG_DEBUGFLAG(DEBUG_DLCELLSPEC)) {
+      LOG_I(PHY,"Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
+                Ns,l,m,mprime_dword,mprime_qpsk_symb);
+      LOG_I(PHY,"index = %d (k %d)\n",(eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
+    }
 
     mprime++;
-#ifdef DEBUG_DL_CELL_SPEC
 
+    if (LOG_DEBUGFLAG(DEBUG_DLCELLSPEC)) {
     if (m<4)
-      printf("Ns %d, l %d output[%d] = (%d,%d)\n",Ns,l,k,((short *)&output[k])[0],((short *)&output[k])[1]);
+      LOG_I(PHY,"Ns %d, l %d output[%d] = (%d,%d)\n",Ns,l,k,((short *)&output[k])[0],((short *)&output[k])[1]);
 
-#endif
+    }
     k+=6;//b
 
     if (k >= eNB->frame_parms.ofdm_symbol_size) {
@@ -106,7 +105,7 @@ int lte_dl_cell_spec_SS(PHY_VARS_eNB *eNB,
       k-=eNB->frame_parms.ofdm_symbol_size;
     }
 
-    //    printf("** k %d\n",k);
+    //    LOG_I(PHY,"** k %d\n",k);
   }
 
   return(0);
@@ -144,7 +143,7 @@ int lte_dl_cell_spec(PHY_VARS_eNB *eNB,
   else if ((p==1) && (l>0))
     nu = 0;
   else {
-    printf("lte_dl_cell_spec: p %d, l %d -> ERROR\n",p,l);
+    LOG_E(PHY,"lte_dl_cell_spec: p %d, l %d -> ERROR\n",p,l);
     return(-1);
   }
 
@@ -169,27 +168,24 @@ int lte_dl_cell_spec(PHY_VARS_eNB *eNB,
     // this is r_mprime from 3GPP 36-211 6.10.1.2
     output[k] = qpsk[(eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
     //output[k] = (lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3;
-#ifdef DEBUG_DL_CELL_SPEC
-    printf("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
-        Ns,l,m,mprime_dword,mprime_qpsk_symb);
-    printf("index = %d (k %d)\n",(eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
-#endif
-
+    if (LOG_DEBUGFLAG(DEBUG_DLCELLSPEC)) {
+      LOG_I(PHY,"Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
+          Ns,l,m,mprime_dword,mprime_qpsk_symb);
+      LOG_I(PHY,"index = %d (k %d)\n",(eNB->lte_gold_table[Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
+    }
     mprime++;
-#ifdef DEBUG_DL_CELL_SPEC
+    if (LOG_DEBUGFLAG(DEBUG_DLCELLSPEC)) {
+      if (m<4)
+        LOG_I(PHY,"Ns %d, l %d output[%d] = (%d,%d)\n",Ns,l,k,((short *)&output[k])[0],((short *)&output[k])[1]);
+    }
 
-    if (m<4)
-      printf("Ns %d, l %d output[%d] = (%d,%d)\n",Ns,l,k,((short *)&output[k])[0],((short *)&output[k])[1]);
-
-#endif
     k+=6;
-
     if (k >= eNB->frame_parms.ofdm_symbol_size) {
       k++;  // skip DC carrier
       k-=eNB->frame_parms.ofdm_symbol_size;
     }
 
-    //    printf("** k %d\n",k);
+    //    LOG_I(PHY,"** k %d\n",k);
   }
 
   return(0);
@@ -232,21 +228,21 @@ int lte_dl_cell_spec_rx(PHY_VARS_UE *ue,
 
     // this is r_mprime from 3GPP 36-211 6.10.1.2
     output[k] = qpsk[(ue->lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3];
-#ifdef DEBUG_DL_CELL_SPEC
-    printf("Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
-           Ns,l,m,mprime_dword,mprime_qpsk_symb);
-    printf("index = %d (k %d)\n",(ue->lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
-#endif
+    if (LOG_DEBUGFLAG(DEBUG_DLCELLSPEC)) {
+      LOG_I(PHY,"Ns %d, l %d, m %d,mprime_dword %d, mprime_qpsk_symbol %d\n",
+             Ns,l,m,mprime_dword,mprime_qpsk_symb);
+      LOG_I(PHY,"index = %d (k %d)\n",(ue->lte_gold_table[eNB_offset][Ns][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k);
+    }
 
     mprime++;
-#ifdef DEBUG_DL_CELL_SPEC
+    if (LOG_DEBUGFLAG(DEBUG_DLCELLSPEC)) {
 
-    if (m<4)
-      printf("Ns %d l %d output[%d] = (%d,%d)\n",Ns,l,k,((short *)&output[k])[0],((short *)&output[k])[1]);
+      if (m<4)
+        LOG_I(PHY,"Ns %d l %d output[%d] = (%d,%d)\n",Ns,l,k,((short *)&output[k])[0],((short *)&output[k])[1]);
 
-#endif
-    k++;
-    //    printf("** k %d\n",k);
+      }
+      k++;
+    //    LOG_I(PHY,"** k %d\n",k);
   }
 
   return(0);
@@ -257,9 +253,9 @@ int lte_dl_cell_spec_rx(PHY_VARS_UE *ue,
 
 
 
-//extern int write_output(const char *,const char *,void *,int,int,char);
+//extern int LOG_M(const char *,const char *,void *,int,int,char);
 // flag change eren
-extern int write_output(const char *,const char *,void *,int,int,char);
+extern int LOG_M(const char *,const char *,void *,int,int,char);
 main()
 {
 
@@ -318,10 +314,10 @@ main()
                    0);
 
 
-  write_output("dl_cell_spec00.m","dl_cs00",output00,1024,1,1);
-  write_output("dl_cell_spec01.m","dl_cs01",output01,1024,1,1);
-  write_output("dl_cell_spec10.m","dl_cs10",output10,1024,1,1);
-  write_output("dl_cell_spec11.m","dl_cs11",output11,1024,1,1);
+  LOG_M("dl_cell_spec00.m","dl_cs00",output00,1024,1,1);
+  LOG_M("dl_cell_spec01.m","dl_cs01",output01,1024,1,1);
+  LOG_M("dl_cell_spec10.m","dl_cs10",output10,1024,1,1);
+  LOG_M("dl_cell_spec11.m","dl_cs11",output11,1024,1,1);
 }
 
 #endif

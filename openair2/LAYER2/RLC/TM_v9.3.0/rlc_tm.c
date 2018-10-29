@@ -29,7 +29,7 @@
 #include "mac_primitives.h"
 #include "rlc_primitives.h"
 #include "list.h"
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac_extern.h"
 //-----------------------------------------------------------------------------
 void
 rlc_tm_send_sdu (
@@ -196,11 +196,10 @@ rlc_tm_mac_data_indication (
   void * const        rlc_pP,
   struct mac_data_ind data_indP)
 {
-  rlc_tm_entity_t* rlc_p = (rlc_tm_entity_t*) rlc_pP;
 
   if (data_indP.data.nb_elements > 0) {
     LOG_D(RLC, PROTOCOL_RLC_TM_CTXT_FMT" MAC_DATA_IND %d TBs\n",
-          PROTOCOL_RLC_TM_CTXT_ARGS(ctxt_pP, rlc_p),
+          PROTOCOL_RLC_TM_CTXT_ARGS(ctxt_pP, ((rlc_tm_entity_t*) rlc_pP)),
           data_indP.data.nb_elements);
   }
 

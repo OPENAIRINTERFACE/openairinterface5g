@@ -19,13 +19,13 @@
  *      contact@openairinterface.org
  */
 
-#include "PHY/defs.h"
-#include "PHY/extern.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h"
 #include "PHY/sse_intrin.h"
 //#define DEBUG_CH
-#include "UTIL/LOG/log.h"
-
-#include "T.h"
+#include "common/utils/LOG/log.h"
+#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
+#include "lte_estimation.h"
 
 // round(exp(sqrt(-1)*(pi/2)*[0:1:N-1]/N)*pow2(15))
 static int16_t ru_90[2*128] = {32767, 0,32766, 402,32758, 804,32746, 1206,32729, 1608,32706, 2009,32679, 2411,32647, 2811,32610, 3212,32568, 3612,32522, 4011,32470, 4410,32413, 4808,32352, 5205,32286, 5602,32214, 5998,32138, 6393,32058, 6787,31972, 7180,31881, 7571,31786, 7962,31686, 8351,31581, 8740,31471, 9127,31357, 9512,31238, 9896,31114, 10279,30986, 10660,30853, 11039,30715, 11417,30572, 11793,30425, 12167,30274, 12540,30118, 12910,29957, 13279,29792, 13646,29622, 14010,29448, 14373,29269, 14733,29086, 15091,28899, 15447,28707, 15800,28511, 16151,28311, 16500,28106, 16846,27897, 17190,27684, 17531,27467, 17869,27246, 18205,27020, 18538,26791, 18868,26557, 19195,26320, 19520,26078, 19841,25833, 20160,25583, 20475,25330, 20788,25073, 21097,24812, 21403,24548, 21706,24279, 22006,24008, 22302,23732, 22595,23453, 22884,23170, 23170,22884, 23453,22595, 23732,22302, 24008,22006, 24279,21706, 24548,21403, 24812,21097, 25073,20788, 25330,20475, 25583,20160, 25833,19841, 26078,19520, 26320,19195, 26557,18868, 26791,18538, 27020,18205, 27246,17869, 27467,17531, 27684,17190, 27897,16846, 28106,16500, 28311,16151, 28511,15800, 28707,15447, 28899,15091, 29086,14733, 29269,14373, 29448,14010, 29622,13646, 29792,13279, 29957,12910, 30118,12540, 30274,12167, 30425,11793, 30572,11417, 30715,11039, 30853,10660, 30986,10279, 31114,9896, 31238,9512, 31357,9127, 31471,8740, 31581,8351, 31686,7962, 31786,7571, 31881,7180, 31972,6787, 32058,6393, 32138,5998, 32214,5602, 32286,5205, 32352,4808, 32413,4410, 32470,4011, 32522,3612, 32568,3212, 32610,2811, 32647,2411, 32679,2009, 32706,1608, 32729,1206, 32746,804, 32758,402, 32766};
@@ -36,7 +36,7 @@ static int16_t ru_90c[2*128] = {32767, 0,32766, -402,32758, -804,32746, -1206,32
 
 int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
 				  eNB_rxtx_proc_t *proc,
-                                  uint8_t UE_id,
+                                  module_id_t UE_id,
                                   unsigned char l,
                                   unsigned char Ns) {
 
@@ -103,24 +103,23 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
                   eNB->ulsch[UE_id]->harq_processes[harq_pid]->n_DMRS2 +
                   frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[(subframe<<1)+Ns]) % 12;
 
+  Msc_idx_ptr = (uint16_t*) bsearch(&Msc_RS, dftsizes, 34, sizeof(uint16_t), compareints);
 
-  Msc_idx_ptr = (uint16_t*) bsearch(&Msc_RS, dftsizes, 33, sizeof(uint16_t), compareints);
+  if (Msc_idx_ptr)
+    Msc_RS_idx = Msc_idx_ptr - dftsizes;
+  else {
+    LOG_E(PHY,"lte_ul_channel_estimation: index for Msc_RS=%d not found\n",Msc_RS);
+    return(-1);
+  }
 
-  AssertFatal(Msc_idx_ptr!=NULL,"lte_ul_channel_estimation: index for Msc_RS=%d not found\n",Msc_RS);
-
-  Msc_RS_idx = Msc_idx_ptr - dftsizes;
-
-  //  LOG_I(PHY,"subframe %d, Ns %d, l %d, Msc_RS = %d, Msc_RS_idx = %d, u %d, v %d, cyclic_shift %d\n",subframe,Ns,l,Msc_RS, Msc_RS_idx,u,v,cyclic_shift);
+  LOG_D(PHY,"subframe %d, Ns %d, l %d, Msc_RS = %d, Msc_RS_idx = %d, u %d, v %d, cyclic_shift %d\n",subframe,Ns,l,Msc_RS, Msc_RS_idx,u,v,cyclic_shift);
 #ifdef DEBUG_CH
 
-#ifdef USER_MODE
-
   if (Ns==0)
-    write_output("drs_seq0.m","drsseq0",ul_ref_sigs_rx[u][v][Msc_RS_idx],2*Msc_RS,2,1);
+    LOG_M("drs_seq0.m","drsseq0",ul_ref_sigs_rx[u][v][Msc_RS_idx],2*Msc_RS,2,1);
   else
-    write_output("drs_seq1.m","drsseq1",ul_ref_sigs_rx[u][v][Msc_RS_idx],2*Msc_RS,2,1);
+    LOG_M("drs_seq1.m","drsseq1",ul_ref_sigs_rx[u][v][Msc_RS_idx],2*Msc_RS,2,1);
 
-#endif
 #endif
 
 
@@ -240,7 +239,7 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
       if((cyclic_shift != 0)) {
         // Compensating for the phase shift introduced at the transmitte
 #ifdef DEBUG_CH
-        write_output("drs_est_pre.m","drsest_pre",ul_ch_estimates[0],300*12,1,1);
+        LOG_M("drs_est_pre.m","drsest_pre",ul_ch_estimates[0],300*12,1,1);
 #endif
 
         for(i=symbol_offset; i<symbol_offset+Msc_RS; i++) {
@@ -263,7 +262,7 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
         }
 
 #ifdef DEBUG_CH
-        write_output("drs_est_post.m","drsest_post",ul_ch_estimates[0],300*12,1,1);
+        LOG_M("drs_est_post.m","drsest_post",ul_ch_estimates[0],300*12,1,1);
 #endif
       }
 
@@ -304,13 +303,13 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
 
 #ifdef DEBUG_CH
 
-      if (aa==0) {
+      if (aa==1) {
         if (Ns == 0) {
-          write_output("rxdataF_ext.m","rxF_ext",&rxdataF_ext[aa][symbol_offset],512*2,2,1);
-          write_output("tmpin_ifft.m","drs_in",temp_in_ifft_0,512,1,1);
-          write_output("drs_est0.m","drs0",ul_ch_estimates_time[aa],512,1,1);
+          LOG_M("rxdataF_ext.m","rxF_ext",&rxdataF_ext[aa][symbol_offset],512*2,2,1);
+          LOG_M("tmpin_ifft.m","drs_in",temp_in_ifft_0,512,1,1);
+          LOG_M("drs_est0.m","drs0",ul_ch_estimates_time[aa],512,1,1);
         } else
-          write_output("drs_est1.m","drs1",ul_ch_estimates_time[aa],512,1,1);
+          LOG_M("drs_est1.m","drs1",ul_ch_estimates_time[aa],512,1,1);
       }
 
 #endif
@@ -466,7 +465,7 @@ int32_t lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
 		   &srs_vars->srs[eNB_id],
 		   0x7FFF,
 		   subframe)==-1) {
-      LOG_E(PHY,"lte_srs_channel_estimation: Error in generate_srs_rx\n");
+      LOG_E(PHY,"lte_srs_channel_estimation: Error in generate_srs\n");
       return(-1);
     }
 
@@ -478,8 +477,8 @@ int32_t lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
 	    srs_vars->srs_ch_estimates[aa]);
 #endif
       
-      //write_output("eNB_rxF.m","rxF",&common_vars->rxdataF[0][aa][2*frame_parms->ofdm_symbol_size*symbol],2*(frame_parms->ofdm_symbol_size),2,1);
-      //write_output("eNB_srs.m","srs_eNB",common_vars->srs,(frame_parms->ofdm_symbol_size),1,1);
+      //LOG_M("eNB_rxF.m","rxF",&common_vars->rxdataF[0][aa][2*frame_parms->ofdm_symbol_size*symbol],2*(frame_parms->ofdm_symbol_size),2,1);
+      //LOG_M("eNB_srs.m","srs_eNB",common_vars->srs,(frame_parms->ofdm_symbol_size),1,1);
 
 
       mult_cpx_conj_vector((int16_t*) &common_vars->rxdataF[aa][2*frame_parms->ofdm_symbol_size*symbol],
@@ -489,12 +488,10 @@ int32_t lte_srs_channel_estimation(LTE_DL_FRAME_PARMS *frame_parms,
 			   15,
 			   0);
 
-#ifdef USER_MODE
 #ifdef DEBUG_SRS
       sprintf(fname,"srs_ch_est%d.m",aa);
       sprintf(vname,"srs_est%d",aa);
-      write_output(fname,vname,srs_vars->srs_ch_estimates[aa],frame_parms->ofdm_symbol_size,1,1);
-#endif
+      LOG_M(fname,vname,srs_vars->srs_ch_estimates[aa],frame_parms->ofdm_symbol_size,1,1);
 #endif
     }
 

@@ -35,8 +35,14 @@
 #ifdef CMAKER
 #include "SystemInformationBlockType2.h"
 #else
-#include "RRC/LITE/MESSAGES/SystemInformationBlockType2.h"
+#include "RRC/LTE/MESSAGES/SystemInformationBlockType2.h"
 #endif
+#include "SL-OffsetIndicator-r12.h"
+#include "SubframeBitmapSL-r12.h"
+#include "SL-CP-Len-r12.h"
+#include "SL-PeriodComm-r12.h"
+#include "SL-DiscResourcePool-r12.h"
+
 
 //-------------------------------------------------------------------------------------------//
 // Messages for RRC logging
@@ -61,6 +67,8 @@ typedef UL_DCCH_Message_t       RrcUlDcchMessage;
 #define RRC_STATE_IND(mSGpTR)           (mSGpTR)->ittiMsg.rrc_state_ind
 
 #define RRC_CONFIGURATION_REQ(mSGpTR)   (mSGpTR)->ittiMsg.rrc_configuration_req
+
+#define NBIOTRRC_CONFIGURATION_REQ(mSGpTR)   (mSGpTR)->ittiMsg.nbiotrrc_configuration_req
 
 #define NAS_KENB_REFRESH_REQ(mSGpTR)    (mSGpTR)->ittiMsg.nas_kenb_refresh_req
 #define NAS_CELL_SELECTION_REQ(mSGpTR)  (mSGpTR)->ittiMsg.nas_cell_selection_req
@@ -159,9 +167,11 @@ typedef struct RrcConfigurationReq_s {
 
   uint16_t                tac;
 
-  uint16_t                mcc;
-  uint16_t                mnc;
-  uint8_t                 mnc_digit_length;
+
+  uint16_t            mcc[PLMN_LIST_MAX_SIZE];
+  uint16_t            mnc[PLMN_LIST_MAX_SIZE];
+  uint8_t             mnc_digit_length[PLMN_LIST_MAX_SIZE];
+  uint8_t             num_plmn;
 
   
   paging_drx_t            default_drx;
@@ -179,10 +189,12 @@ typedef struct RrcConfigurationReq_s {
   int                     nb_antenna_ports[MAX_NUM_CCs];
 
 
+
   RadioResourceConfig     radioresourceconfig[MAX_NUM_CCs];
   RadioResourceConfig     radioresourceconfig_BR[MAX_NUM_CCs];
    
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
+
 
 
   //MIB
@@ -200,7 +212,7 @@ typedef struct RrcConfigurationReq_s {
   long            si_Narrowband_r13         [MAX_NUM_CCs][32];
   long            si_TBS_r13                [MAX_NUM_CCs][32];
   int             scheduling_info_br_size   [MAX_NUM_CCs];
-//  end +kogo
+
 
   long			  si_WindowLength_BR_r13                       [MAX_NUM_CCs];
   long			  si_RepetitionPattern_r13                     [MAX_NUM_CCs];
@@ -211,10 +223,9 @@ typedef struct RrcConfigurationReq_s {
   long			  si_HoppingConfigCommon_r13                   [MAX_NUM_CCs];
   long*			  si_ValidityTime_r13                          [MAX_NUM_CCs];
 
-//  +kogo
+
   long            systemInfoValueTagSi_r13      [MAX_NUM_CCs][10];
   int             system_info_value_tag_SI_size [MAX_NUM_CCs];
-//  end +kogo
 
   BOOLEAN_t		  freqHoppingParametersDL_r13                   [MAX_NUM_CCs];
   long*			  mpdcch_pdsch_HoppingNB_r13                    [MAX_NUM_CCs];
@@ -224,23 +235,23 @@ typedef struct RrcConfigurationReq_s {
   long			  interval_DLHoppingConfigCommonModeB_r13_val   [MAX_NUM_CCs];
   long*			  mpdcch_pdsch_HoppingOffset_r13                [MAX_NUM_CCs];
 
-//  +kogo -- rach_CE_LevelInfoList_r13
+
   long firstPreamble_r13                 [MAX_NUM_CCs][4];
   long lastPreamble_r13                  [MAX_NUM_CCs][4];
   long ra_ResponseWindowSize_r13         [MAX_NUM_CCs][4];
   long mac_ContentionResolutionTimer_r13 [MAX_NUM_CCs][4];
   long rar_HoppingConfig_r13             [MAX_NUM_CCs][4];
   int  rach_CE_LevelInfoList_r13_size    [MAX_NUM_CCs];
-//  end kogo
+
 
 //  long pcch_defaultPagingCycle_br;
 
-// +kogo -- rsrp_range_list
+
   long rsrp_range           [MAX_NUM_CCs][3];
   int rsrp_range_list_size  [MAX_NUM_CCs];
-//  end kogo
 
-//   +kogo -- prach parameters ce list
+
+
   long prach_config_index                        [MAX_NUM_CCs][4];
   long prach_freq_offset                         [MAX_NUM_CCs][4];
   long *prach_StartingSubframe_r13               [MAX_NUM_CCs][4];
@@ -251,15 +262,14 @@ typedef struct RrcConfigurationReq_s {
   int  prach_parameters_list_size                [MAX_NUM_CCs];
   long max_available_narrow_band                 [MAX_NUM_CCs][4][2];
   int  max_available_narrow_band_size            [MAX_NUM_CCs][4];
-//    end kogo
 
 
-// +kogo n1PUCCH_AN_InfoList_r13 list
+
+
     long pucch_info_value       [MAX_NUM_CCs][4];
     int  pucch_info_value_size  [MAX_NUM_CCs];
-//  end kogo
 
-    // +kogo
+
     bool  pcch_config_v1310               [MAX_NUM_CCs];
     long  paging_narrowbands_r13          [MAX_NUM_CCs];
     long  mpdcch_numrepetition_paging_r13 [MAX_NUM_CCs];
@@ -294,7 +304,186 @@ typedef struct RrcConfigurationReq_s {
 
 
 #endif
+
+  long                    prach_root[MAX_NUM_CCs];
+  long                    prach_config_index[MAX_NUM_CCs];
+  BOOLEAN_t               prach_high_speed[MAX_NUM_CCs];
+  long                    prach_zero_correlation[MAX_NUM_CCs];
+  long                    prach_freq_offset[MAX_NUM_CCs];
+  long                    pucch_delta_shift[MAX_NUM_CCs];
+  long                    pucch_nRB_CQI[MAX_NUM_CCs];
+  long                    pucch_nCS_AN[MAX_NUM_CCs];
+//#if (RRC_VERSION < MAKE_VERSION(10, 0, 0))
+  long                    pucch_n1_AN[MAX_NUM_CCs];
+//#endif
+  long                    pdsch_referenceSignalPower[MAX_NUM_CCs];
+  long                    pdsch_p_b[MAX_NUM_CCs];
+  long                    pusch_n_SB[MAX_NUM_CCs];
+  long                    pusch_hoppingMode[MAX_NUM_CCs];
+  long                    pusch_hoppingOffset[MAX_NUM_CCs];
+  BOOLEAN_t               pusch_enable64QAM[MAX_NUM_CCs];
+  BOOLEAN_t               pusch_groupHoppingEnabled[MAX_NUM_CCs];
+  long                    pusch_groupAssignment[MAX_NUM_CCs];
+  BOOLEAN_t               pusch_sequenceHoppingEnabled[MAX_NUM_CCs];
+  long                    pusch_nDMRS1[MAX_NUM_CCs];
+  long                    phich_duration[MAX_NUM_CCs];
+  long                    phich_resource[MAX_NUM_CCs];
+  BOOLEAN_t               srs_enable[MAX_NUM_CCs];
+  long                    srs_BandwidthConfig[MAX_NUM_CCs];
+  long                    srs_SubframeConfig[MAX_NUM_CCs];
+  BOOLEAN_t               srs_ackNackST[MAX_NUM_CCs];
+  BOOLEAN_t               srs_MaxUpPts[MAX_NUM_CCs];
+  long                    pusch_p0_Nominal[MAX_NUM_CCs];
+  long                    pusch_alpha[MAX_NUM_CCs];
+  long                    pucch_p0_Nominal[MAX_NUM_CCs];
+  long                    msg3_delta_Preamble[MAX_NUM_CCs];
+  long                    ul_CyclicPrefixLength[MAX_NUM_CCs];
+  e_DeltaFList_PUCCH__deltaF_PUCCH_Format1                    pucch_deltaF_Format1[MAX_NUM_CCs];
+  e_DeltaFList_PUCCH__deltaF_PUCCH_Format1b                   pucch_deltaF_Format1b[MAX_NUM_CCs];
+  e_DeltaFList_PUCCH__deltaF_PUCCH_Format2                    pucch_deltaF_Format2[MAX_NUM_CCs];
+  e_DeltaFList_PUCCH__deltaF_PUCCH_Format2a                   pucch_deltaF_Format2a[MAX_NUM_CCs];
+  e_DeltaFList_PUCCH__deltaF_PUCCH_Format2b                   pucch_deltaF_Format2b[MAX_NUM_CCs];
+  long                    rach_numberOfRA_Preambles[MAX_NUM_CCs];
+  BOOLEAN_t               rach_preamblesGroupAConfig[MAX_NUM_CCs];
+  long                    rach_sizeOfRA_PreamblesGroupA[MAX_NUM_CCs];
+  long                    rach_messageSizeGroupA[MAX_NUM_CCs];
+  e_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB                    rach_messagePowerOffsetGroupB[MAX_NUM_CCs];
+  long                    rach_powerRampingStep[MAX_NUM_CCs];
+  long                    rach_preambleInitialReceivedTargetPower[MAX_NUM_CCs];
+  long                    rach_preambleTransMax[MAX_NUM_CCs];
+  long                    rach_raResponseWindowSize[MAX_NUM_CCs];
+  long                    rach_macContentionResolutionTimer[MAX_NUM_CCs];
+  long                    rach_maxHARQ_Msg3Tx[MAX_NUM_CCs];
+  long                    bcch_modificationPeriodCoeff[MAX_NUM_CCs];
+  long                    pcch_defaultPagingCycle[MAX_NUM_CCs];
+  long                    pcch_nB[MAX_NUM_CCs];
+  long                    ue_TimersAndConstants_t300[MAX_NUM_CCs];
+  long                    ue_TimersAndConstants_t301[MAX_NUM_CCs];
+  long                    ue_TimersAndConstants_t310[MAX_NUM_CCs];
+  long                    ue_TimersAndConstants_t311[MAX_NUM_CCs];
+  long                    ue_TimersAndConstants_n310[MAX_NUM_CCs];
+  long                    ue_TimersAndConstants_n311[MAX_NUM_CCs];
+  long                    ue_TransmissionMode[MAX_NUM_CCs];
+  long                    ue_multiple_max[MAX_NUM_CCs];
+
+  //TTN - for D2D
+  //SIB18
+  e_SL_CP_Len_r12                rxPool_sc_CP_Len[MAX_NUM_CCs];
+  e_SL_PeriodComm_r12            rxPool_sc_Period[MAX_NUM_CCs];
+  e_SL_CP_Len_r12                rxPool_data_CP_Len[MAX_NUM_CCs];
+  long                           rxPool_ResourceConfig_prb_Num[MAX_NUM_CCs];
+  long                           rxPool_ResourceConfig_prb_Start[MAX_NUM_CCs];
+  long                           rxPool_ResourceConfig_prb_End[MAX_NUM_CCs];
+  SL_OffsetIndicator_r12_PR      rxPool_ResourceConfig_offsetIndicator_present[MAX_NUM_CCs];
+  long                           rxPool_ResourceConfig_offsetIndicator_choice[MAX_NUM_CCs];
+  SubframeBitmapSL_r12_PR        rxPool_ResourceConfig_subframeBitmap_present[MAX_NUM_CCs];
+  char*                          rxPool_ResourceConfig_subframeBitmap_choice_bs_buf[MAX_NUM_CCs];
+  long                           rxPool_ResourceConfig_subframeBitmap_choice_bs_size[MAX_NUM_CCs];
+  long                           rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[MAX_NUM_CCs];
+
+  //SIB19
+  //for discRxPool
+  SL_CP_Len_r12_t                discRxPool_cp_Len[MAX_NUM_CCs];
+  e_SL_DiscResourcePool_r12__discPeriod_r12                   discRxPool_discPeriod[MAX_NUM_CCs];
+  long                           discRxPool_numRetx[MAX_NUM_CCs];
+  long                           discRxPool_numRepetition[MAX_NUM_CCs];
+  long                           discRxPool_ResourceConfig_prb_Num[MAX_NUM_CCs];
+  long                           discRxPool_ResourceConfig_prb_Start[MAX_NUM_CCs];
+  long                           discRxPool_ResourceConfig_prb_End[MAX_NUM_CCs];
+  SL_OffsetIndicator_r12_PR      discRxPool_ResourceConfig_offsetIndicator_present[MAX_NUM_CCs];
+  long                           discRxPool_ResourceConfig_offsetIndicator_choice[MAX_NUM_CCs];
+  SubframeBitmapSL_r12_PR        discRxPool_ResourceConfig_subframeBitmap_present[MAX_NUM_CCs];
+  char*                          discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf[MAX_NUM_CCs];
+  long                           discRxPool_ResourceConfig_subframeBitmap_choice_bs_size[MAX_NUM_CCs];
+  long                           discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[MAX_NUM_CCs];
+  //for discRxPoolPS
+  SL_CP_Len_r12_t                discRxPoolPS_cp_Len[MAX_NUM_CCs];
+  e_SL_DiscResourcePool_r12__discPeriod_r12                   discRxPoolPS_discPeriod[MAX_NUM_CCs];
+  long                           discRxPoolPS_numRetx[MAX_NUM_CCs];
+  long                           discRxPoolPS_numRepetition[MAX_NUM_CCs];
+  long                           discRxPoolPS_ResourceConfig_prb_Num[MAX_NUM_CCs];
+  long                           discRxPoolPS_ResourceConfig_prb_Start[MAX_NUM_CCs];
+  long                           discRxPoolPS_ResourceConfig_prb_End[MAX_NUM_CCs];
+  SL_OffsetIndicator_r12_PR      discRxPoolPS_ResourceConfig_offsetIndicator_present[MAX_NUM_CCs];
+  long                           discRxPoolPS_ResourceConfig_offsetIndicator_choice[MAX_NUM_CCs];
+  SubframeBitmapSL_r12_PR        discRxPoolPS_ResourceConfig_subframeBitmap_present[MAX_NUM_CCs];
+  char*                          discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf[MAX_NUM_CCs];
+  long                           discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size[MAX_NUM_CCs];
+  long                           discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused[MAX_NUM_CCs];
 } RrcConfigurationReq;
+
+#define MAX_NUM_NBIOT_CELEVELS    3
+
+typedef struct NbIoTRrcConfigurationReq_s {
+  uint32_t            cell_identity;
+
+  uint16_t            tac;
+
+  uint16_t	      mcc;
+  uint16_t	      mnc;
+  uint8_t	      mnc_digit_length;
+  lte_frame_type_t	  frame_type;
+  uint8_t                 tdd_config;
+  uint8_t                 tdd_config_s;
+  lte_prefix_type_t       prefix_type;
+  lte_prefix_type_t	  prefix_type_UL;
+  int16_t                 eutra_band;
+  uint32_t                downlink_frequency;
+  int32_t                 uplink_frequency_offset;
+  int16_t                 Nid_cell;// for testing, change later
+  int16_t                 N_RB_DL;// for testing, change later
+  //RACH
+  long					  rach_raResponseWindowSize_NB;
+  long					  rach_macContentionResolutionTimer_NB;
+  long					  rach_powerRampingStep_NB;
+  long					  rach_preambleInitialReceivedTargetPower_NB;
+  long					  rach_preambleTransMax_CE_NB;
+  //BCCH
+  long					  bcch_modificationPeriodCoeff_NB;
+  //PCCH
+  long					  pcch_defaultPagingCycle_NB;
+  long					  pcch_nB_NB;
+  long					  pcch_npdcch_NumRepetitionPaging_NB;
+  //NPRACH
+  long					  nprach_CP_Length;
+  long					  nprach_rsrp_range;
+  long					  nprach_Periodicity[MAX_NUM_NBIOT_CELEVELS];
+  long					  nprach_StartTime[MAX_NUM_NBIOT_CELEVELS];
+  long					  nprach_SubcarrierOffset[MAX_NUM_NBIOT_CELEVELS];
+  long					  nprach_NumSubcarriers[MAX_NUM_NBIOT_CELEVELS];
+  long					  numRepetitionsPerPreambleAttempt_NB[MAX_NUM_NBIOT_CELEVELS];
+  long					  nprach_SubcarrierMSG3_RangeStart;
+  long					  maxNumPreambleAttemptCE_NB;
+  long					  npdcch_NumRepetitions_RA[MAX_NUM_NBIOT_CELEVELS];
+  long					  npdcch_StartSF_CSS_RA[MAX_NUM_NBIOT_CELEVELS];
+  long					  npdcch_Offset_RA[MAX_NUM_NBIOT_CELEVELS];
+  //NPDSCH
+  long					  npdsch_nrs_Power;
+  //NPUSCH
+  long					  npusch_ack_nack_numRepetitions_NB;
+  long					  npusch_srs_SubframeConfig_NB;
+  long					  npusch_threeTone_CyclicShift_r13;
+  long					  npusch_sixTone_CyclicShift_r13;
+  BOOLEAN_t				  npusch_groupHoppingEnabled;
+  long					  npusch_groupAssignmentNPUSCH_r13;
+
+  //DL_GapConfig
+  long					  dl_GapThreshold_NB;
+  long	 				  dl_GapPeriodicity_NB;
+  long	 				  dl_GapDurationCoeff_NB;
+  //Uplink power control Common
+  long					  npusch_p0_NominalNPUSCH;
+  long					  npusch_alpha;
+  long					  deltaPreambleMsg3;
+  //UE timers and constants
+  long					  ue_TimersAndConstants_t300_NB;
+  long					  ue_TimersAndConstants_t301_NB;
+  long					  ue_TimersAndConstants_t310_NB;
+  long					  ue_TimersAndConstants_t311_NB;
+  long					  ue_TimersAndConstants_n310_NB;
+  long					  ue_TimersAndConstants_n311_NB;
+} NbIoTRrcConfigurationReq;
+
 
 // UE: NAS -> RRC messages
 typedef kenb_refresh_req_t      NasKenbRefreshReq;

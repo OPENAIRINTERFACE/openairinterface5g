@@ -22,26 +22,33 @@
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
 # include "create_tasks.h"
-# include "log.h"
+# include "common/utils/LOG/log.h"
 
 # ifdef OPENAIR2
 #   if defined(ENABLE_USE_MME)
 #     include "sctp_eNB_task.h"
+#     include "x2ap_eNB.h"
 #     include "s1ap_eNB.h"
 #     include "nas_ue_task.h"
 #     include "udp_eNB_task.h"
 #     include "gtpv1u_eNB_task.h"
+#   else
+#     define EPC_MODE_ENABLED 0
 #   endif
 #   if ENABLE_RAL
 #     include "lteRALue.h"
 #     include "lteRALenb.h"
 #   endif
-#   include "RRC/LITE/defs.h"
+#   include "RRC/LTE/rrc_defs.h"
 # endif
 # include "enb_app.h"
 
-int create_tasks(uint32_t enb_nb, uint32_t ue_nb)
+extern int emulate_rf;
+
+int create_tasks(uint32_t enb_nb)
 {
+  LOG_D(ENB_APP, "%s(enb_nb:%d\n", __FUNCTION__, enb_nb);
+
   itti_wait_ready(1);
   if (itti_create_task (TASK_L2L1, l2l1_task, NULL) < 0) {
     LOG_E(PDCP, "Create task for L2L1 failed\n");
@@ -55,13 +62,14 @@ int create_tasks(uint32_t enb_nb, uint32_t ue_nb)
       return -1;
     }
   }
-
-
-# ifdef OPENAIR2
-  {
-#   if defined(ENABLE_USE_MME)
-    {
+# if defined(ENABLE_USE_MME)
+  if (EPC_MODE_ENABLED) {
       if (enb_nb > 0) {
+        if (itti_create_task (TASK_X2AP, x2ap_task, NULL) < 0) {
+          LOG_E(X2AP, "Create task for X2AP failed\n");
+          return -1;
+        }
+
         if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
           LOG_E(SCTP, "Create task for SCTP failed\n");
           return -1;
@@ -71,10 +79,11 @@ int create_tasks(uint32_t enb_nb, uint32_t ue_nb)
           LOG_E(S1AP, "Create task for S1AP failed\n");
           return -1;
         }
-
-        if (itti_create_task (TASK_UDP, udp_eNB_task, NULL) < 0) {
-          LOG_E(UDP_, "Create task for UDP failed\n");
-          return -1;
+        if(!emulate_rf){
+          if (itti_create_task (TASK_UDP, udp_eNB_task, NULL) < 0) {
+            LOG_E(UDP_, "Create task for UDP failed\n");
+            return -1;
+          }
         }
 
         if (itti_create_task (TASK_GTPV1_U, &gtpv1u_eNB_task, NULL) < 0) {
@@ -83,20 +92,8 @@ int create_tasks(uint32_t enb_nb, uint32_t ue_nb)
         }
       }
 
-#      if defined(NAS_BUILT_IN_UE)
-      if (ue_nb > 0) {
-        nas_user_container_t *users = calloc(1, sizeof(*users));
-        if (users == NULL) abort();
-        users->count = ue_nb;
-        if (itti_create_task (TASK_NAS_UE, nas_ue_task, users) < 0) {
-          LOG_E(NAS, "Create task for NAS UE failed\n");
-          return -1;
-        }
-      }
-#      endif
-    }
-#   endif
-
+  } /* if (EPC_MODE_ENABLED) */
+#endif
     if (enb_nb > 0) {
       LOG_I(RRC,"Creating RRC eNB Task\n");
 
@@ -104,26 +101,7 @@ int create_tasks(uint32_t enb_nb, uint32_t ue_nb)
         LOG_E(RRC, "Create task for RRC eNB failed\n");
         return -1;
       }
-
     }
-
-    if (ue_nb > 0) {
-      if (itti_create_task (TASK_RRC_UE, rrc_ue_task, NULL) < 0) {
-        LOG_E(RRC, "Create task for RRC UE failed\n");
-        return -1;
-      }
-
-#   if ENABLE_RAL
-
-      if (itti_create_task (TASK_RAL_UE, mRAL_task, NULL) < 0) {
-        LOG_E(RAL_UE, "Create task for RAL UE failed\n");
-        return -1;
-      }
-
-#   endif
-    }
-  }
-# endif // openair2: NN: should be openair3
 
 
   itti_wait_ready(0);

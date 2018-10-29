@@ -8,6 +8,7 @@ void list_ids(void *database);
 void list_groups(void *database);
 void on_off(void *d, char *item, int *a, int onoff);
 char *event_name_from_id(void *database, int id);
+char *event_vcd_name_from_id(void *_database, int id);
 int event_id_from_name(void *database, char *name);
 int number_of_ids(void *database);
 int database_get_ids(void *database, char ***ids);

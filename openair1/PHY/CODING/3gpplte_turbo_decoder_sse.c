@@ -41,7 +41,6 @@
 #include "PHY/defs.h"
 #include "PHY/CODING/defs.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
-#include "extern_3GPPinterleaver.h"
 #else
 
 #include "defs.h"
@@ -1907,6 +1906,18 @@ void compute_ext(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, ll
 //int pi2[n],pi3[n+8],pi5[n+8],pi4[n+8],pi6[n+8],
 int *pi2tab[188],*pi5tab[188],*pi4tab[188],*pi6tab[188];
 
+void free_td()
+{
+  int ind;
+
+  for (ind = 0; ind < 188; ind++) {
+    free_and_zero(pi2tab[ind]);
+    free_and_zero(pi5tab[ind]);
+    free_and_zero(pi4tab[ind]);
+    free_and_zero(pi6tab[ind]);
+  }
+}
+
 void init_td()
 {
 
@@ -1971,8 +1982,6 @@ void init_td()
 unsigned char phy_threegpplte_turbo_decoder(short *y,
     unsigned char *decoded_bytes,
     unsigned short n,
-    unsigned short f1,
-    unsigned short f2,
     unsigned char max_iterations,
     unsigned char crc_type,
     unsigned char F,
@@ -2607,8 +2616,6 @@ int test_logmap8()
   test[2] = 0x11;
   test[3] = 0x92;
   test[4] = 0xfe;
-
-  crcTableInit();
 
   crc = crc24a(test,
                40)>>8;

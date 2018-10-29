@@ -27,9 +27,6 @@
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/vars.h"
-#ifdef EMOS
-#include "SCHED/phy_procedures_emos.h"
-#endif
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 #include "LAYER2/MAC/vars.h"
@@ -76,10 +73,6 @@ int main(int argc, char **argv)
   uint8_t extended_prefix_flag=0;
   //  int8_t interf1=-19,interf2=-19;
   LTE_DL_FRAME_PARMS *frame_parms;
-#ifdef EMOS
-  fifo_dump_emos emos_dump;
-#endif
-
 
   SCM_t channel_model=Rayleigh1;
 
@@ -432,8 +425,8 @@ int main(int argc, char **argv)
   /* tx_lev_dB not used later, no need to set */
   //tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
 
-  write_output("txsig0_new.m","txs0", &txdata[0][subframe*frame_parms->samples_per_tti],frame_parms->samples_per_tti,1,1);
-  //write_output("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+  LOG_M("txsig0_new.m","txs0", &txdata[0][subframe*frame_parms->samples_per_tti],frame_parms->samples_per_tti,1,1);
+  //LOG_M("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 
   // multipath channel
   dump_prach_config(&eNB->frame_parms,subframe);
@@ -528,13 +521,13 @@ int main(int argc, char **argv)
             else
               printf("preamble %d : energy %d, delay %d\n",i,preamble_energy_list[i],preamble_delay_list[i]);
 
-          write_output("prach0.m","prach0", &txdata[0][subframe*frame_parms->samples_per_tti],frame_parms->samples_per_tti,1,1);
-          write_output("prachF0.m","prachF0", &eNB->prach_vars.prachF[0],24576,1,1);
-          write_output("rxsig0.m","rxs0",
+          LOG_M("prach0.m","prach0", &txdata[0][subframe*frame_parms->samples_per_tti],frame_parms->samples_per_tti,1,1);
+          LOG_M("prachF0.m","prachF0", &eNB->prach_vars.prachF[0],24576,1,1);
+          LOG_M("rxsig0.m","rxs0",
                        &eNB->common_vars.rxdata[0][0][subframe*frame_parms->samples_per_tti],
                        frame_parms->samples_per_tti,1,1);
-          write_output("rxsigF0.m","rxsF0", eNB->prach_vars.rxsigF[0],6144,1,1);
-          write_output("prach_preamble.m","prachp",&eNB->X_u[0],839,1,1);
+          LOG_M("rxsigF0.m","rxsF0", eNB->prach_vars.rxsigF[0],6144,1,1);
+          LOG_M("prach_preamble.m","prachp",&eNB->X_u[0],839,1,1);
         }
       }
 

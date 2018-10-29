@@ -41,10 +41,10 @@
 #include "PHY/sse_intrin.h"
 
 #ifndef TEST_DEBUG
-#include "PHY/defs.h"
-#include "PHY/CODING/defs.h"
+#include "PHY/impl_defs_top.h"
+#include "PHY/defs_common.h"
+#include "PHY/CODING/coding_defs.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
-#include "extern_3GPPinterleaver.h"
 #else
 
 #include "defs.h"
@@ -232,9 +232,6 @@ void compute_alpha16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned s
 #if defined(__x86_64__) || defined(__i386__)
     alpha128 = (__m128i *)alpha;
     //#ifdef __AVX2__
-#if 0
-    alpha256 = (__m256i *)alpha;
-#endif
 #elif defined(__arm__)
     alpha128 = (int16x8_t *)alpha;
 #endif
@@ -316,10 +313,6 @@ void compute_alpha16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned s
 
     alpha_ptr = &alpha128[0];
     //#ifdef __AVX2__
-#if 0
-    alpha_ptr256 = &alpha256[0];
-#endif
-
 #if defined(__x86_64__) || defined(__i386__)
     m11p = (__m128i*)m_11;
     m10p = (__m128i*)m_10;
@@ -449,9 +442,6 @@ void compute_alpha16(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned s
 
       alpha_ptr+=8;
       //#ifdef __AVX2__
-#if 0
-      alpha_ptr256+=4;
-#endif
       m11p++;
       m10p++;
 #if defined(__x86_64__) || defined(__i386__)
@@ -1117,14 +1107,14 @@ void free_td16(void)
   int ind;
 
   for (ind=0; ind<188; ind++) {
-    free(pi2tab16[ind]);
-    free(pi5tab16[ind]);
-    free(pi4tab16[ind]);
-    free(pi6tab16[ind]);
+    free_and_zero(pi2tab16[ind]);
+    free_and_zero(pi5tab16[ind]);
+    free_and_zero(pi4tab16[ind]);
+    free_and_zero(pi6tab16[ind]);
   }
 }
 
-void init_td16()
+void init_td16(void)
 {
 
   int ind,i,i2,i3,j,n,pi,pi3;
@@ -1171,22 +1161,21 @@ void init_td16()
   }
 }
 
-unsigned char phy_threegpplte_turbo_decoder16(short *y,
-    unsigned char *decoded_bytes,
-    unsigned short n,
-    unsigned short f1,
-    unsigned short f2,
-    unsigned char max_iterations,
-    unsigned char crc_type,
-    unsigned char F,
-    time_stats_t *init_stats,
-    time_stats_t *alpha_stats,
-    time_stats_t *beta_stats,
-    time_stats_t *gamma_stats,
-    time_stats_t *ext_stats,
-    time_stats_t *intl1_stats,
-    time_stats_t *intl2_stats)
-{
+uint8_t phy_threegpplte_turbo_decoder16(int16_t *y,
+                               int16_t *y2,
+                               uint8_t *decoded_bytes,
+                               uint8_t *decoded_bytes2,
+                               uint16_t n,
+                               uint8_t max_iterations,
+                               uint8_t crc_type,
+                               uint8_t F,
+                               time_stats_t *init_stats,
+                               time_stats_t *alpha_stats,
+                               time_stats_t *beta_stats,
+                               time_stats_t *gamma_stats,
+                               time_stats_t *ext_stats,
+                               time_stats_t *intl1_stats,
+                               time_stats_t *intl2_stats) {
 
   /*  y is a pointer to the input
       decoded_bytes is a pointer to the decoded output

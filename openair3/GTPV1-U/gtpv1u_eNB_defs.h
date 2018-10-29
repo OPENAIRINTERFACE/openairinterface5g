@@ -28,7 +28,7 @@
  */
 
 #include "hashtable.h"
-#include "asn1_constants.h"
+#include "asn_constant.h"
 
 #ifndef GTPV1U_ENB_DEFS_H_
 #define GTPV1U_ENB_DEFS_H_
@@ -97,8 +97,6 @@ typedef struct gtpv1u_data_s {
   //RB_HEAD(gtpv1u_ue_map, gtpv1u_ue_data_s) gtpv1u_ue_map_head;
   /* Local IP address to use */
   in_addr_t             enb_ip_address_for_S1u_S12_S4_up;
-  char                 *ip_addr;
-  tcp_udp_port_t        enb_port_for_S1u_S12_S4_up;
   /* UDP internal data */
   //udp_data_t            udp_data;
 

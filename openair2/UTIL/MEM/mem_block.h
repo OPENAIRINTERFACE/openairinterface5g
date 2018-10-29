@@ -31,51 +31,36 @@
 #ifndef __MEM_BLOCK_H__
 #    define __MEM_BLOCK_H__
 
-#ifdef USER_MODE
 #include <stdint.h>
+#include <stddef.h>
+#ifdef __cplusplus
+extern "C" {
 #endif
-#ifdef MEM_BLOCK_C
-#    define public_mem_block(x) x
-#    define private_mem_block(x) x
-#else
-#    define public_mem_block(x) extern x
-#    define private_mem_block(x)
-#endif
+#include "openair2/COMMON/platform_constants.h"
 //-----------------------------------------------------------------------------
 
 typedef struct mem_block_t {
   struct mem_block_t *next;
   struct mem_block_t *previous;
+  size_t size;
   unsigned char pool_id;
   unsigned char *data;
 } mem_block_t;
-#include "UTIL/LISTS/list.h"
 
 //-----------------------------------------------------------------------------
 
-public_mem_block(void        *pool_buffer_init (void);)
-public_mem_block(void        *pool_buffer_clean (void *arg);)
-public_mem_block(void         free_mem_block (mem_block_t * leP, const char* caller);)
-public_mem_block(mem_block_t* get_free_mem_block (uint32_t sizeP, const char* caller);)
-public_mem_block(mem_block_t *get_free_copy_mem_block (void);)
-public_mem_block(mem_block_t *get_free_copy_mem_block_up (void);)
-public_mem_block(mem_block_t *copy_mem_block (mem_block_t * leP, mem_block_t * destP);)
-public_mem_block(void         display_mem_load (void);)
+void        *pool_buffer_init (void);
+void        *pool_buffer_clean (void *arg);
+void         free_mem_block (mem_block_t * leP, const char* caller);
+mem_block_t* get_free_mem_block (uint32_t sizeP, const char* caller);
+mem_block_t *get_free_copy_mem_block (void);
+mem_block_t *get_free_copy_mem_block_up (void);
+mem_block_t *copy_mem_block (mem_block_t * leP, mem_block_t * destP);
+void         display_mem_load (void);
 
-public_mem_block(void         check_mem_area (void);)
-#    ifdef USER_MODE
-private_mem_block(void        check_free_mem_block (mem_block_t * leP);)
-#    endif
-#ifdef USER_MODE
-//#    define MEM_SCALE MAX_MOBILES_PER_ENB*NB_RB_MAX
+void         check_mem_area (void);
+void        check_free_mem_block (mem_block_t * leP);
 #    define MEM_SCALE MAX_MOBILES_PER_ENB
-#else
-#    ifdef NODE_RG
-#        define MEM_SCALE 2
-#    else
-#        define MEM_SCALE 1
-#    endif
-#endif
 // definition of the size of the allocated memory area
 #    define MEM_MNGT_MB0_BLOCK_SIZE     64
 // 64
@@ -152,9 +137,26 @@ private_mem_block(void        check_free_mem_block (mem_block_t * leP);)
 #    define MEM_MNGT_NB_ELEMENTS        MEM_MNGT_MB0_NB_BLOCKS + MEM_MNGT_MB1_NB_BLOCKS + MEM_MNGT_MB2_NB_BLOCKS + MEM_MNGT_MB3_NB_BLOCKS + MEM_MNGT_MB4_NB_BLOCKS + MEM_MNGT_MB5_NB_BLOCKS + MEM_MNGT_MB6_NB_BLOCKS + MEM_MNGT_MB7_NB_BLOCKS + MEM_MNGT_MB8_NB_BLOCKS + MEM_MNGT_MB9_NB_BLOCKS + MEM_MNGT_MB10_NB_BLOCKS + MEM_MNGT_MB11_NB_BLOCKS + MEM_MNGT_MB12_NB_BLOCKS + MEM_MNGT_MBCOPY_NB_BLOCKS
 #    define MEM_MNGT_POOL_ID_COPY        13
 
+#define LIST_NAME_MAX_CHAR 32
 
 
-private_mem_block(typedef struct {
+typedef struct {
+  struct mem_block_t *head;
+  struct mem_block_t *tail;
+  int                nb_elements;
+  char               name[LIST_NAME_MAX_CHAR];
+} list2_t;
+//-----------------------------------------------------------------------------
+typedef struct {
+  struct mem_block_t *head;
+  struct mem_block_t *tail;
+  int                nb_elements;
+  char               name[LIST_NAME_MAX_CHAR];
+} list_t;
+
+
+
+typedef struct {
   //-----------------------------------------------------------
   // basic memory management
   //-----------------------------------------------------------
@@ -174,9 +176,12 @@ private_mem_block(typedef struct {
   mem_block_t     mem_blocks[MEM_MNGT_NB_ELEMENTS];
   list_t          mem_lists[14];
 
-} mem_pool;)
+} mem_pool;
 
-private_mem_block(mem_pool  mem_block_var;)
+mem_pool  *memBlockVar;
+#define mem_block_var (*memBlockVar)
 
-
+#ifdef __cplusplus
+}
+#endif
 #endif

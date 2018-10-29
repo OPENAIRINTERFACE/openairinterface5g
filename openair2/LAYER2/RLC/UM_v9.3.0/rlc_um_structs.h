@@ -36,9 +36,7 @@
 #        include "rlc_um_constants.h"
 #        include "mac_primitives.h"
 #        include "rlc_primitives.h"
-//#ifdef USER_MODE
 #        include "mac_rlc_primitives.h"
-//#endif //USER_MODE
 //-----------------------
 /**
 * @addtogroup _rlc_um_impl_

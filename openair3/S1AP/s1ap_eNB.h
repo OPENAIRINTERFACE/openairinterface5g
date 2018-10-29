@@ -35,14 +35,12 @@ typedef struct s1ap_eNB_config_s {
   unsigned char mme_enabled;          ///< MME enabled ?
 } s1ap_eNB_config_t;
 
-#if defined(OAI_EMU)
-# define EPC_MODE_ENABLED       oai_emulation.info.s1ap_config.mme_enabled
-#else
 extern s1ap_eNB_config_t s1ap_config;
 
-# define EPC_MODE_ENABLED       s1ap_config.mme_enabled
-#endif
+#define EPC_MODE_ENABLED       s1ap_config.mme_enabled
 
+void *s1ap_eNB_process_itti_msg(void*);
+void  s1ap_eNB_init(void);
 void *s1ap_eNB_task(void *arg);
 
 uint32_t s1ap_generate_eNB_id(void);

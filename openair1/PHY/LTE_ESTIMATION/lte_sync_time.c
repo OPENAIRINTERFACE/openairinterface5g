@@ -26,19 +26,15 @@
 */
 
 //#include <string.h>
-#include "defs.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "SCHED/extern.h"
+#include "PHY/defs_UE.h"
+#include "PHY/phy_extern_ue.h"
 #include <math.h>
 
-#ifdef OPENAIR2
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/extern.h"
-#include "RRC/LITE/extern.h"
-#include "PHY_INTERFACE/extern.h"
-#endif
-//#define DEBUG_PHY
+
+#include "LAYER2/MAC/mac.h"
+#include "RRC/LTE/rrc_extern.h"
+#include "PHY_INTERFACE/phy_interface.h"
+
 
 int* sync_corr_ue0 = NULL;
 int* sync_corr_ue1 = NULL;
@@ -278,11 +274,11 @@ int lte_sync_time_init(LTE_DL_FRAME_PARMS *frame_parms )   // LTE_UE_COMMON *com
 
 
 
-#ifdef DEBUG_PHY
-  write_output("primary_sync0.m","psync0",primary_synch0_time,frame_parms->ofdm_symbol_size,1,1);
-  write_output("primary_sync1.m","psync1",primary_synch1_time,frame_parms->ofdm_symbol_size,1,1);
-  write_output("primary_sync2.m","psync2",primary_synch2_time,frame_parms->ofdm_symbol_size,1,1);
-#endif
+  if ( LOG_DUMPFLAG(DEBUG_LTEESTIM)){
+    LOG_M("primary_sync0.m","psync0",primary_synch0_time,frame_parms->ofdm_symbol_size,1,1);
+    LOG_M("primary_sync1.m","psync1",primary_synch1_time,frame_parms->ofdm_symbol_size,1,1);
+    LOG_M("primary_sync2.m","psync2",primary_synch2_time,frame_parms->ofdm_symbol_size,1,1);
+  }
   return (1);
 }
 
@@ -333,10 +329,6 @@ static inline int abs32(int x)
 {
   return (((int)((short*)&x)[0])*((int)((short*)&x)[0]) + ((int)((short*)&x)[1])*((int)((short*)&x)[1]));
 }
-
-#ifdef DEBUG_PHY
-int debug_cnt=0;
-#endif
 
 #define SHIFT 17
 
@@ -465,29 +457,26 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
 
   *eNB_id = sync_source;
 
-  LOG_D(PHY,"[UE] lte_sync_time: Sync source = %d, Peak found at pos %d, val = %d (%d dB)\n",sync_source,peak_pos,peak_val,dB_fixed(peak_val)/2);
+  LOG_I(PHY,"[UE] lte_sync_time: Sync source = %d, Peak found at pos %d, val = %d (%d dB)\n",sync_source,peak_pos,peak_val,dB_fixed(peak_val)/2);
 
 
-#ifdef DEBUG_PHY
-  if (debug_cnt == 0) {
-    write_output("sync_corr0_ue.m","synccorr0",sync_corr_ue0,2*length,1,2);
-    write_output("sync_corr1_ue.m","synccorr1",sync_corr_ue1,2*length,1,2);
-    write_output("sync_corr2_ue.m","synccorr2",sync_corr_ue2,2*length,1,2);
-    write_output("rxdata0.m","rxd0",rxdata[0],length<<1,1,1);
-    //    exit(-1);
-  } else {
+  if ( LOG_DUMPFLAG(DEBUG_LTEESTIM)){
+    static int debug_cnt;
+    if (debug_cnt == 0) {
+      LOG_M("sync_corr0_ue.m","synccorr0",sync_corr_ue0,2*length,1,2);
+      LOG_M("sync_corr1_ue.m","synccorr1",sync_corr_ue1,2*length,1,2);
+      LOG_M("sync_corr2_ue.m","synccorr2",sync_corr_ue2,2*length,1,2);
+      LOG_M("rxdata0.m","rxd0",rxdata[0],length<<1,1,1);
+      //    exit(-1);
+    } else {
     debug_cnt++;
   }
-
-
-#endif
+} 
 
 
   return(peak_pos);
 
 }
-
-//#define DEBUG_PHY
 
 int lte_sync_time_eNB(int32_t **rxdata, ///rx data in time domain
                       LTE_DL_FRAME_PARMS *frame_parms,
@@ -578,30 +567,6 @@ int lte_sync_time_eNB(int32_t **rxdata, ///rx data in time domain
 
 }
 
-#ifdef PHY_ABSTRACTION
-#include "SIMULATION/TOOLS/defs.h"
-#include "SIMULATION/RF/defs.h"
-//extern channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
 
-int lte_sync_time_eNB_emul(PHY_VARS_eNB *phy_vars_eNB,
-                           uint8_t sect_id,
-                           int32_t *sync_val)
-{
 
-  uint8_t UE_id;
-  uint8_t CC_id = phy_vars_eNB->CC_id;
 
-  LOG_E(PHY,"[PHY] EMUL lte_sync_time_eNB_emul eNB %d, sect_id %d\n",phy_vars_eNB->Mod_id,sect_id);
-  *sync_val = 0;
-
-  for (UE_id=0; UE_id<NB_UE_INST; UE_id++) {
-    //LOG_E(PHY,"[PHY] EMUL : eNB %d checking UE %d (PRACH %d) PL %d dB\n",phy_vars_eNB->Mod_id,UE_id,PHY_vars_UE_g[UE_id]->generate_prach,UE2eNB[UE_id][phy_vars_eNB->Mod_id]->path_loss_dB);
-    if ((PHY_vars_UE_g[UE_id][CC_id]->generate_prach == 1) && (phy_vars_eNB->Mod_id == (UE_id % NB_eNB_INST))) {
-      *sync_val = 1;
-      return(0);
-    }
-  }
-
-  return(-1);
-}
-#endif

@@ -28,13 +28,9 @@
    date: 21.10.2009
 */
 
-#ifdef USER_MODE
-#include <stdio.h>
-#endif
-
 #ifndef TEST_DEBUG
-#include "PHY/defs.h"
-#include "PHY/extern.h"
+#include "PHY/defs_common.h"
+#include "PHY/phy_extern.h"
 #else
 #include <stdio.h>
 #include <stdlib.h>
@@ -126,7 +122,7 @@ void print_shorts(__m128i x,char *s) {
 
 }
 */
-#endif // USER_MODE
+#endif // DEBUG_VITERBI
 
 
 

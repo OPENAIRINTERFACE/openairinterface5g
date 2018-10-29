@@ -338,14 +338,8 @@ _attach_accept(
 {
   int index = 0;
 
-#if 0
-  /* T3412 timer value */
-  index += snprintf(buffer + index, length - index, "T3412 = ");
-  index += gprsTimer(buffer + index, length - index, &msg->t3412value);
-  /* TAI list */
-  index += snprintf(buffer + index, length - index, ", ");
-  index += taiList(buffer + index, length - index, &msg->tailist);
-#endif
+  /* T3412 timer value (TBD) */
+  /* TAI list (TBD) */
 
   /* GUTI */
   if (msg->presencemask & ATTACH_ACCEPT_GUTI_PRESENT) {

@@ -28,12 +28,8 @@
 * \email: navid.nikaein@eurecom.fr, lionel.gauthier@eurecom.fr
 */
 
-//#include "nas_common.h"
 #include "local.h"
 #include "proto_extern.h"
-#ifdef RTAI
-#include "rtai_fifos.h"
-#endif
 
 //#define NAS_DEBUG_RECEIVE 1
 //#define NAS_DEBUG_SEND 1
@@ -57,17 +53,14 @@ void nas_COMMON_receive(uint16_t dlen,
   struct sk_buff *skb;
   struct ipversion *ipv;
   struct nas_priv *gpriv=netdev_priv(nasdev[inst]);
-  uint32_t odaddr,osaddr;
 
   //int i;
 
   unsigned char protocol;
 
-  unsigned char /**addr,*/ *daddr,*saddr,*ifaddr /*,sn*/;
 
   //struct udphdr *uh;
   //struct tcphdr *th;
-  uint16_t *cksum,check;
 
   struct iphdr *network_header;
 
@@ -118,11 +111,12 @@ void nas_COMMON_receive(uint16_t dlen,
       // Make the third byte of both the source and destination equal to the fourth of the destination
 
 
-
+      unsigned char * ifaddr, *saddr, daddr;
       daddr = (unsigned char *)&((struct iphdr *)skb->data)->daddr;
       odaddr = ((struct iphdr *)skb->data)->daddr;
       //    sn = addr[3];
       saddr = (unsigned char *)&((struct iphdr *)skb->data)->saddr;
+      uint32_t odaddr,osaddr;
       osaddr = ((struct iphdr *)skb->data)->saddr;
 
       if (daddr[0] == saddr[0]) {// same network
@@ -223,6 +217,7 @@ void nas_COMMON_receive(uint16_t dlen,
 
       case IPPROTO_TCP:
 
+  uint16_t *cksum,check;
         cksum  = (uint16_t*)&(((struct tcphdr*)(((char *)network_header + (network_header->ihl<<2))))->check);
         //check  = csum_tcpudp_magic(((struct iphdr *)network_header)->saddr, ((struct iphdr *)network_header)->daddr, tcp_hdrlen(skb), IPPROTO_TCP, ~(*cksum));
 
@@ -313,7 +308,7 @@ void nas_COMMON_receive(uint16_t dlen,
 
   printk("\n");
 #endif //NAS_DEBUG_RECEIVE
-  netif_rx(skb);
+  netif_rx_ni(skb);
 #ifdef NAS_DEBUG_RECEIVE
   printk("NAS_COMMON_RECEIVE: end\n");
 #endif

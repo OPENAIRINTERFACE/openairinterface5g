@@ -3,7 +3,7 @@
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
  * The OpenAirInterface Software Alliance licenses this file to You under
- * the OAI Public License, Version 1.0  (the "License"); you may not use this file
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
  * except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -29,6 +29,9 @@
  * \note
  * \warning
  */
+
+#ifndef __M_DCI__H__
+#define __M_DCI__H__
 
 #include <stdint.h>
 
@@ -479,3 +482,4 @@ struct DCI6_2_di_20MHz {
 typedef struct DCI6_2_di_20MHz DCI6_2_di_20MHz_t;
 #define sizeof_DCI6_2_20MHz_t 13
 
+#endif

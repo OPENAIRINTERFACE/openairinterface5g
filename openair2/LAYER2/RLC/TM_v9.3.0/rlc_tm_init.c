@@ -23,7 +23,7 @@
 #define RLC_TM_INIT_C 1
 //-----------------------------------------------------------------------------
 #include "rlc_tm.h"
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac_extern.h"
 //-----------------------------------------------------------------------------
 void config_req_rlc_tm (
   const protocol_ctxt_t* const  ctxt_pP,
@@ -83,6 +83,7 @@ void rlc_tm_init (
 
   if ((rlcP->input_sdus_alloc == NULL) && (rlcP->size_input_sdus_buffer > 0)) {
     rlcP->input_sdus_alloc = get_free_mem_block (rlcP->size_input_sdus_buffer * sizeof (void *), __func__);
+    if(rlcP->input_sdus_alloc == NULL) return;
     rlcP->input_sdus = (mem_block_t **) (rlcP->input_sdus_alloc->data);
     memset (rlcP->input_sdus, 0, rlcP->size_input_sdus_buffer * sizeof (void *));
   }
@@ -125,6 +126,7 @@ rlc_tm_cleanup (
   // RX SIDE
   if ((rlcP->output_sdu_in_construction)) {
     free_mem_block (rlcP->output_sdu_in_construction, __func__);
+    rlcP->output_sdu_in_construction = NULL;
   }
 
   memset(rlcP, 0, sizeof(rlc_tm_entity_t));

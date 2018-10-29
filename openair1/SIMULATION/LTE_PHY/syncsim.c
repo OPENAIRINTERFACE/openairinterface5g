@@ -30,11 +30,6 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 
-#ifdef RTAI_ENABLED
-#include <rtai_mbx.h>
-#include <rtai_msg.h>
-#endif
-
 #include "SIMULATION/TOOLS/defs.h"
 #include "SIMULATION/RF/defs.h"
 #include "PHY/types.h"
@@ -43,9 +38,6 @@
 #include "MAC_INTERFACE/vars.h"
 #ifdef IFFT_FPGA
 #include "PHY/LTE_REFSIG/mod_table.h"
-#endif
-#ifdef EMOS
-#include "SCHED/phy_procedures_emos.h"
 #endif
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
@@ -381,9 +373,6 @@ int main(int argc, char **argv)
   uint8_t extended_prefix_flag=0,frame_type=1;
   int8_t interf1=-21,interf2=-21;
   LTE_DL_FRAME_PARMS *frame_parms;
-#ifdef EMOS
-  fifo_dump_emos emos_dump;
-#endif
 
   FILE *input_fd=NULL,*pbch_file_fd=NULL;
   char input_val_str[50],input_val_str2[50];
@@ -429,13 +418,6 @@ int main(int argc, char **argv)
   unsigned char i_mod = 2;
 
   int rx_offset_mod;
-
-#ifdef RTAI_ENABLED
-  int period;
-  RTIME expected;
-  RT_TASK *task;
-#define PERIOD 1000000000
-#endif
 
   logInit();
 
@@ -693,23 +675,6 @@ int main(int argc, char **argv)
       break;
     }
   }
-
-#ifdef RTAI_ENABLED
-
-  if (!(task = rt_task_init_schmod(nam2num("SYNCSIM"), 0, 0, 0, SCHED_FIFO, 0xF))) {
-    printf("CANNOT INIT MASTER TASK\n");
-    exit(1);
-  }
-
-  rt_set_periodic_mode();
-
-  period = start_rt_timer(nano2count(PERIOD));
-
-  mlockall(MCL_CURRENT | MCL_FUTURE);
-
-  rt_make_hard_real_time();
-  rt_task_make_periodic(task, expected = rt_get_time() + 10*period, period);
-#endif
 
 #ifdef XFORMS
 
@@ -1143,12 +1108,12 @@ int main(int argc, char **argv)
            5);
     */
 
-    //  write_output("pilotsF.m","rsF",txdataF[0],lte_frame_parms->ofdm_symbol_size,1,1);
+    //  LOG_M("pilotsF.m","rsF",txdataF[0],lte_frame_parms->ofdm_symbol_size,1,1);
 #ifdef IFFT_FPGA
-    write_output("txsigF0.m","txsF0", PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id][0],300*120,1,4);
+    LOG_M("txsigF0.m","txsF0", PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id][0],300*120,1,4);
 
     if (PHY_vars_eNB->lte_frame_parms.nb_antennas_tx>1)
-      write_output("txsigF1.m","txsF1", PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id][1],300*120,1,4);
+      LOG_M("txsigF1.m","txsF1", PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id][1],300*120,1,4);
 
     for (i=0; i<10; i++)
       debug_msg("%08x\n",((unsigned int*)&PHY_vars_eNB->lte_eNB_common_vars.txdataF[0][0][1*(PHY_vars_eNB->lte_frame_parms.N_RB_DL*12)*(PHY_vars_eNB->lte_frame_parms.symbols_per_tti>>1)])[i]);
@@ -1169,10 +1134,10 @@ int main(int argc, char **argv)
       //printf("l=%d\n",l);
     }
 
-    write_output("txsigF20.m","txsF20", txdataF2[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+    LOG_M("txsigF20.m","txsF20", txdataF2[0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 
     if (PHY_vars_eNB->lte_frame_parms.nb_antennas_tx>1)
-      write_output("txsigF21.m","txsF21", txdataF2[1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+      LOG_M("txsigF21.m","txsF21", txdataF2[1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 
 
     tx_lev=0;
@@ -1197,10 +1162,10 @@ int main(int argc, char **argv)
     }
 
 #else
-    write_output("txsigF0.m","txsF0", PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+    LOG_M("txsigF0.m","txsF0", PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id][0],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 
     if (PHY_vars_eNB->lte_frame_parms.nb_antennas_tx>1)
-      write_output("txsigF1.m","txsF1", PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
+      LOG_M("txsigF1.m","txsF1", PHY_vars_eNB->lte_eNB_common_vars.txdataF[eNb_id][1],FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX,1,1);
 
     tx_lev = 0;
 
@@ -1272,10 +1237,10 @@ int main(int argc, char **argv)
 
 
 
-    write_output("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+    LOG_M("txsig0.m","txs0", txdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 
     if (frame_parms->nb_antennas_tx>1)
-      write_output("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+      LOG_M("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
   } else if ((oai_hw_input==0)&&(oai_hw_output==0)) { //read in from file
     i=0;
 
@@ -1299,8 +1264,8 @@ int main(int argc, char **argv)
     }
 
     printf("Read in %d samples (%d)\n",i,FRAME_LENGTH_COMPLEX_SAMPLES);
-    write_output("txsig0.m","txs0", txdata[0],10*frame_parms->samples_per_tti,1,1);
-    //    write_output("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+    LOG_M("txsig0.m","txs0", txdata[0],10*frame_parms->samples_per_tti,1,1);
+    //    LOG_M("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
     tx_lev = signal_energy(&txdata[0][0],
                            OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES);
   } else { // get from OAI HW
@@ -1373,11 +1338,6 @@ int main(int argc, char **argv)
       n_alamouti = 0;
 
       for (trial=0; trial<n_frames; trial++) {
-
-#ifdef RTAI_ENABLED
-        ret = rt_task_wait_period();
-        printf("rt_task_wait_period() returns %d, time %llu\n",ret, rt_get_time());
-#endif
 
         if (oai_hw_input == 0) {
 
@@ -1718,19 +1678,19 @@ int main(int argc, char **argv)
 
     if (n_frames==1) {
 
-      write_output("H00.m","h00",&(PHY_vars_UE[0]->lte_ue_common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][0][0]),((frame_parms->Ncp==0)?7:6)*(PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size),1,1);
+      LOG_M("H00.m","h00",&(PHY_vars_UE[0]->lte_ue_common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][0][0]),((frame_parms->Ncp==0)?7:6)*(PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size),1,1);
 
       if (n_tx==2)
-        write_output("H10.m","h10",&(PHY_vars_UE[0]->lte_ue_common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][2][0]),((frame_parms->Ncp==0)?7:6)*(PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size),1,1);
+        LOG_M("H10.m","h10",&(PHY_vars_UE[0]->lte_ue_common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[0][2][0]),((frame_parms->Ncp==0)?7:6)*(PHY_vars_eNB->lte_frame_parms.ofdm_symbol_size),1,1);
 
-      write_output("rxsig0.m","rxs0", PHY_vars_UE[0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-      write_output("rxsigF0.m","rxsF0", PHY_vars_UE[0]->lte_ue_common_vars.rxdataF[0],NUMBER_OF_OFDM_CARRIERS*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*nsymb,2,1);
-      write_output("PBCH_rxF0_ext.m","pbch0_ext",PHY_vars_UE[0]->lte_ue_pbch_vars[0]->rxdataF_ext[0],12*4*6,1,1);
-      write_output("PBCH_rxF0_comp.m","pbch0_comp",PHY_vars_UE[0]->lte_ue_pbch_vars[0]->rxdataF_comp[0],12*4*6,1,1);
-      write_output("PBCH_rxF_llr.m","pbch_llr",PHY_vars_UE[0]->lte_ue_pbch_vars[0]->llr,(frame_parms->Ncp==0) ? 1920 : 1728,1,4);
-      write_output("pdcch_rxF_ext0.m","pdcch_rxF_ext0",PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->rxdataF_ext[0],3*300,1,1);
-      write_output("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->rxdataF_comp[0],4*300,1,1);
-      write_output("pdcch_rxF_llr.m","pdcch_llr",PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->llr,2400,1,4);
+      LOG_M("rxsig0.m","rxs0", PHY_vars_UE[0]->lte_ue_common_vars.rxdata[0],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+      LOG_M("rxsigF0.m","rxsF0", PHY_vars_UE[0]->lte_ue_common_vars.rxdataF[0],NUMBER_OF_OFDM_CARRIERS*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*nsymb,2,1);
+      LOG_M("PBCH_rxF0_ext.m","pbch0_ext",PHY_vars_UE[0]->lte_ue_pbch_vars[0]->rxdataF_ext[0],12*4*6,1,1);
+      LOG_M("PBCH_rxF0_comp.m","pbch0_comp",PHY_vars_UE[0]->lte_ue_pbch_vars[0]->rxdataF_comp[0],12*4*6,1,1);
+      LOG_M("PBCH_rxF_llr.m","pbch_llr",PHY_vars_UE[0]->lte_ue_pbch_vars[0]->llr,(frame_parms->Ncp==0) ? 1920 : 1728,1,4);
+      LOG_M("pdcch_rxF_ext0.m","pdcch_rxF_ext0",PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->rxdataF_ext[0],3*300,1,1);
+      LOG_M("pdcch_rxF_comp0.m","pdcch0_rxF_comp0",PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->rxdataF_comp[0],4*300,1,1);
+      LOG_M("pdcch_rxF_llr.m","pdcch_llr",PHY_vars_UE[0]->lte_ue_pdcch_vars[eNb_id]->llr,2400,1,4);
 
       coded_bits_per_codeword = get_G(&PHY_vars_UE[0]->lte_frame_parms,
                                       PHY_vars_UE[0]->dlsch_ue[0][0]->nb_rb,
@@ -1751,11 +1711,6 @@ int main(int argc, char **argv)
     ioctl(openair_fd,openair_SET_TX_GAIN,(void *)&temp[0]);
     ioctl(openair_fd,openair_START_TX_SIG,(void *)NULL);
   }
-
-#ifdef RTAI_ENABLED
-  rt_make_soft_real_time();
-  rt_task_delete(task);
-#endif
 
 #ifdef XFORMS
 

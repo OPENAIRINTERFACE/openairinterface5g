@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-event get_event(int socket, char *event_buffer, void *database)
+event get_event(int socket, OBUF *event_buffer, void *database)
 {
 #ifdef T_SEND_TIME
   struct timespec t;
@@ -29,17 +29,23 @@ again:
 #endif
   if (fullread(socket, &type, sizeof(int)) == -1) goto read_error;
   length -= sizeof(int);
-  if (fullread(socket, event_buffer, length) == -1) goto read_error;
+  if (event_buffer->omaxsize < length) {
+    event_buffer->omaxsize = (length + 65535) & ~65535;
+    event_buffer->obuf = realloc(event_buffer->obuf, event_buffer->omaxsize);
+    if (event_buffer->obuf == NULL) { printf("out of memory\n"); exit(1); }
+  }
+  if (fullread(socket, event_buffer->obuf, length) == -1) goto read_error;
+  event_buffer->osize = length;
 
-  if (type == -1) append_received_config_chunk(event_buffer, length);
+  if (type == -1) append_received_config_chunk(event_buffer->obuf, length);
   if (type == -2) verify_config();
 
   if (type == -1 || type == -2) goto again;
 
 #ifdef T_SEND_TIME
-  return new_event(t, type, length, event_buffer, database);
+  return new_event(t, type, length, event_buffer->obuf, database);
 #else
-  return new_event(type, length, event_buffer, database);
+  return new_event(type, length, event_buffer->obuf, database);
 #endif
 
 read_error:
