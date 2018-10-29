@@ -730,7 +730,7 @@ err_code_t flexran_agent_init_cont_stats_update(mid_t mod_id) {
   stats_context[mod_id].mutex = calloc(1, sizeof(pthread_mutex_t));
   if (stats_context[mod_id].mutex == NULL)
     goto error;
-  if (pthread_mutex_init(stats_context[mod_id].mutex, NULL))
+  if (pthread_mutex_init(stats_context[mod_id].mutex, NULL) != 0)
     goto error;
 
   return 0;

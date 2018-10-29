@@ -235,8 +235,11 @@ int flexran_agent_start(mid_t mod_id)
    */
 
   /*Initialize the continuous stats update mechanism*/
-  flexran_agent_init_cont_stats_update(mod_id);
-  
+  if (flexran_agent_init_cont_stats_update(mod_id) < 0) {
+    LOG_E(FLEXRAN_AGENT, "could not initialize continuous stats updates\n");
+    goto error;
+  }
+
   new_thread(receive_thread, flexran);
 
   /* Register and initialize the control modules depending on capabilities.
