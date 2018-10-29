@@ -90,7 +90,7 @@ void nr_modulation(uint32_t *in,
 void nr_pdsch_codeword_modulation(uint32_t *in,
                          uint8_t  Qm,
                          uint32_t length,
-                         uint16_t *out) {
+                         int16_t *out) {
 
   uint16_t offset = (Qm==2)? NR_MOD_TABLE_QPSK_OFFSET : (Qm==4)? NR_MOD_TABLE_QAM16_OFFSET : \
                     (Qm==6)? NR_MOD_TABLE_QAM64_OFFSET: (Qm==8)? NR_MOD_TABLE_QAM256_OFFSET : 0;
@@ -111,16 +111,15 @@ void nr_pdsch_codeword_modulation(uint32_t *in,
   }
 }
 
-void nr_pdsch_layer_mapping(uint16_t **mod_symbs,
-                         uint8_t n_codewords,
+void nr_pdsch_layer_mapping(int16_t **mod_symbs,
                          uint8_t n_layers,
                          uint16_t n_symbs,
-                         uint16_t **tx_layers) {
+                         int16_t **tx_layers) {
 
   switch (n_layers) {
 
     case 1:
-      memcpy((void*)tx_layers[0], (void*)mod_symbs[0], (n_symbs<<1)*sizeof(uint16_t));
+      memcpy((void*)tx_layers[0], (void*)mod_symbs[0], (n_symbs<<1)*sizeof(int16_t));
     break;
 
     case 2:
@@ -196,7 +195,7 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
   nfapi_nr_dl_config_pdcch_parameters_rel15_t pdcch_params = dci_alloc.pdcch_params;
   uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH];
   int16_t mod_symbs[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>1];
-  uint16_t tx_layers[NR_MAX_NB_LAYERS][NR_MAX_PDSCH_ENCODED_LENGTH>>1];
+  int16_t tx_layers[NR_MAX_NB_LAYERS][NR_MAX_PDSCH_ENCODED_LENGTH>>1];
   uint16_t n_symbs;
   int8_t Wf[2], Wt[2], l0, delta;
   uint16_t TBS = rel15->transport_block_size;
@@ -218,10 +217,10 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
                          n_RNTI,
                          scrambled_output[q]);
 #ifdef DEBUG_DLSCH
-printf("PDSCH Scrambling(TBS %d): before  \t after \n", TBS);
-for (int i=0; i<TBS; i++) {
-  printf("%d\t%d\n", harq->f[i], scrambled_output[0][i]);
-}
+//printf("PDSCH Scrambling(TBS %d): before  \t after \n", TBS);
+//for (int i=0; i<TBS; i++) {
+  //printf("%d\t%d\n", harq->f[i], scrambled_output[0][i]);
+//}
 #endif
 
  
@@ -245,7 +244,6 @@ for (int i=0; i<n_symbs; i++) {
 
   /// Layer mapping
   nr_pdsch_layer_mapping(mod_symbs,
-                         rel15->nb_codewords,
                          rel15->nb_layers,
                          n_symbs,
                          tx_layers);
@@ -284,8 +282,8 @@ for (int i=0; i<n_symbs; i++) {
           k -= frame_parms.ofdm_symbol_size;
 
         if ((l==l0) && (k == ((dmrs_type)? (6*n+k_prime+delta):((n<<2)+(k_prime<<1)+delta)))) {
-          ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (Wt[k_prime]*Wf[k_prime]*amp*mod_dmrs[dmrs_idx<<1]) >> 15;
-          ((int16_t*)txdataF[ap])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (Wt[k_prime]*Wf[k_prime]*amp*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
+          ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (Wt[k_prime]*Wf[k_prime]*amp/2*mod_dmrs[dmrs_idx<<1]) >> 15;
+          ((int16_t*)txdataF[ap])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (Wt[k_prime]*Wf[k_prime]*amp/2*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
           dmrs_idx++;
           n++;
           k_prime++;

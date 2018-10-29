@@ -70,13 +70,12 @@ void nr_pdsch_codeword_scrambling(uint8_t *in,
 void nr_pdsch_codeword_modulation(uint32_t *in,
                          uint8_t  Qm,
                          uint32_t length,
-                         uint16_t *out);
+                         int16_t *out);
 
-void nr_pdsch_layer_mapping(uint16_t **mod_symbs,
-                         uint8_t n_codewords,
+void nr_pdsch_layer_mapping(int16_t **mod_symbs,
                          uint8_t n_layers,
                          uint16_t n_symbs,
-                         uint16_t **tx_layers);
+                         int16_t **tx_layers);
 
 uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
                           NR_gNB_DCI_ALLOC_t dci_alloc,
