@@ -232,7 +232,7 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
       
     } else if (packet_type == IF4p5_PRACH) {
       // nothing in RU for RAU
-    }ru->south_out_cnt= 0;
+    }//ru->south_out_cnt= 0; (I guess this is wrong)
     LOG_D(PHY,"rx_fh_if4p5: subframe %d symbol mask %x\n",*subframe,proc->symbol_mask[*subframe]);
   } while(proc->symbol_mask[*subframe] != symbol_mask_full);    
 
@@ -800,6 +800,7 @@ void tx_rf(RU_t *ru) {
 				      ru->nb_tx,
 				      flags);
     ru->south_out_cnt++;
+    LOG_I(PHY,"south_out_cnt %d\n",ru->south_out_cnt);
     int se = dB_fixed(signal_energy(txp[0],siglen+sf_extension));
 
     if (SF_type == SF_S) LOG_D(PHY,"[TXPATH] RU %d tx_rf (en %d,len %d), writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx,se,siglen+sf_extension,
