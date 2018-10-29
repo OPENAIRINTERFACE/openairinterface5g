@@ -382,7 +382,7 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
 extern int oai_exit;
 void *td_thread(void *param) {
   PHY_VARS_eNB *eNB = ((td_params*)param)->eNB;
-  eNB_proc_t *proc  = &eNB->proc;
+  L1_proc_t *proc  = &eNB->proc;
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
   
@@ -412,7 +412,7 @@ void *td_thread(void *param) {
 
 int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) {
 
-  eNB_proc_t *proc = &eNB->proc;
+  L1_proc_t *proc = &eNB->proc;
   unsigned int r,r_offset=0,Kr,Kr_bytes;
   uint8_t crc_type;
   int offset = 0;
@@ -762,7 +762,7 @@ static inline unsigned int lte_gold_unscram(unsigned int *x1, unsigned int *x2, 
 
 }
   
-unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
+unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
                              uint8_t UE_id,
                              uint8_t control_only_flag,
                              uint8_t Nbundled,

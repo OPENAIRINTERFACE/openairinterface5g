@@ -48,7 +48,7 @@ extern uint8_t nfapi_mode;
 
 void handle_nfapi_dci_dl_pdu(PHY_VARS_eNB *eNB,
                              int frame, int subframe,
-                             eNB_rxtx_proc_t *proc,
+                             L1_rxtx_proc_t *proc,
                              nfapi_dl_config_request_pdu_t *dl_config_pdu)
 {
   int idx                         = subframe&1;
@@ -66,7 +66,7 @@ void handle_nfapi_dci_dl_pdu(PHY_VARS_eNB *eNB,
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
 void handle_nfapi_mpdcch_pdu(PHY_VARS_eNB *eNB,
-                             eNB_rxtx_proc_t *proc,
+                             L1_rxtx_proc_t *proc,
                              nfapi_dl_config_request_pdu_t *dl_config_pdu)
 {
   int idx                         = proc->subframe_tx&1;
@@ -81,7 +81,7 @@ void handle_nfapi_mpdcch_pdu(PHY_VARS_eNB *eNB,
 
 #endif
 
-void handle_nfapi_hi_dci0_dci_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t *proc,
+void handle_nfapi_hi_dci0_dci_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t *proc,
                                   nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu)
 {
   int idx                         = subframe&1;
@@ -93,7 +93,7 @@ void handle_nfapi_hi_dci0_dci_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_r
   fill_dci0(eNB,frame,subframe,proc,&pdcch_vars->dci_alloc[pdcch_vars->num_dci], &hi_dci0_config_pdu->dci_pdu);
 }
 
-void handle_nfapi_hi_dci0_hi_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t *proc,
+void handle_nfapi_hi_dci0_hi_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t *proc,
                                  nfapi_hi_dci0_request_pdu_t *hi_dci0_config_pdu)
 {
   LTE_eNB_PHICH *phich = &eNB->phich_vars[subframe&1];
@@ -112,7 +112,7 @@ void handle_nfapi_hi_dci0_hi_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rx
 
 }
 
-void handle_nfapi_bch_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
+void handle_nfapi_bch_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
                           nfapi_dl_config_request_pdu_t *dl_config_pdu,
                           uint8_t *sdu)
 {
@@ -139,7 +139,7 @@ extern uint32_t localRIV2alloc_LUT100_2[6000];
 extern uint32_t localRIV2alloc_LUT100_3[6000];
 #endif
 
-void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t *proc,
+void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t *proc,
                             nfapi_dl_config_request_pdu_t *dl_config_pdu,
                             uint8_t codeword_index,
                             uint8_t *sdu)
@@ -569,7 +569,7 @@ void handle_srs_pdu(PHY_VARS_eNB *eNB,nfapi_ul_config_request_pdu_t *ul_config_p
   AssertFatal(i<NUMBER_OF_UE_MAX,"No room for SRS processing\n");
 }
 
-void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
+void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
                          nfapi_ul_config_request_pdu_t *ul_config_pdu,
                          uint16_t frame,uint8_t subframe,uint8_t srs_present)
 {
@@ -647,7 +647,7 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 void schedule_response(Sched_Rsp_t *Sched_INFO)
 {
   PHY_VARS_eNB *eNB;
-  eNB_rxtx_proc_t *proc;
+  L1_rxtx_proc_t *proc;
   // copy data from L2 interface into L1 structures
   module_id_t               Mod_id       = Sched_INFO->module_id;
   uint8_t                   CC_id        = Sched_INFO->CC_id;

@@ -705,7 +705,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
 
 
 void generate_phich_top(PHY_VARS_eNB *eNB,
-                        eNB_rxtx_proc_t *proc,
+                        L1_rxtx_proc_t *proc,
 			int16_t amp)
 {
 

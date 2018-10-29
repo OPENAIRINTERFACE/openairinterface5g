@@ -748,7 +748,7 @@ typedef struct {
   pthread_cond_t cond_RUs;
   /// mutex for RXn-TXnp4 processing thread
   pthread_mutex_t mutex_RUs;
-} eNB_rxtx_proc_t;
+} L1_rxtx_proc_t;
 
 typedef struct {
   struct PHY_VARS_eNB_s *eNB;
@@ -780,7 +780,7 @@ typedef struct {
 } te_params;
 
 /// Context data structure for eNB subframe processing
-typedef struct eNB_proc_t_s {
+typedef struct L1_proc_t_s {
   /// Component Carrier index
   uint8_t              CC_id;
   /// thread index
@@ -919,12 +919,12 @@ typedef struct eNB_proc_t_s {
   /// parameters for turbo-encoding worker thread
   te_params tep[3];
   /// set of scheduling variables RXn-TXnp4 threads
-  eNB_rxtx_proc_t L1_proc,L1_proc_tx;
+  L1_rxtx_proc_t L1_proc,L1_proc_tx;
   /// stats thread pthread descriptor
   pthread_t process_stats_thread;
   /// for waking up tx procedure
   RU_proc_t *ru_proc;
-} eNB_proc_t;
+} L1_proc_t;
 
 
 
@@ -993,7 +993,7 @@ typedef struct PHY_VARS_eNB_s {
   module_id_t          Mod_id;
   uint8_t              CC_id;
   uint8_t              configured;
-  eNB_proc_t           proc;
+  L1_proc_t           proc;
   int                  single_thread_flag;
   int                  abstraction_flag;
   int                  num_RU;

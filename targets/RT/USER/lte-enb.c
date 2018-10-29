@@ -156,7 +156,7 @@ void init_eNB(int,int);
 void stop_eNB(int nb_inst);
 
 int wakeup_tx(PHY_VARS_eNB *eNB);
-int wakeup_txfh(eNB_rxtx_proc_t *proc,PHY_VARS_eNB *eNB);
+int wakeup_txfh(L1_rxtx_proc_t *proc,PHY_VARS_eNB *eNB);
 void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe);
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 void wakeup_prach_eNB_br(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe);
@@ -172,7 +172,7 @@ extern void add_subframe(uint16_t *frameP, uint16_t *subframeP, int offset);
 #define TICK_TO_US(ts) (ts.trials==0?0:ts.diff/ts.trials)
 
 
-static inline int rxtx(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc, char *thread_name) {
+static inline int rxtx(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, char *thread_name) {
   start_meas(&softmodem_stats_rxtx_sf);
 LOG_I(PHY,"ENTERED rxtx\n");
   if (nfapi_mode == 1) {
@@ -332,8 +332,8 @@ LOG_I(PHY,"ENTERED rxtx\n");
 
 static void* L1_thread_tx(void* param) {
 
-  eNB_proc_t *eNB_proc  = (eNB_proc_t*)param;
-  eNB_rxtx_proc_t *proc = &eNB_proc->L1_proc_tx;
+  L1_proc_t *eNB_proc  = (L1_proc_t*)param;
+  L1_rxtx_proc_t *proc = &eNB_proc->L1_proc_tx;
   PHY_VARS_eNB *eNB = RC.eNB[0][proc->CC_id];
   LOG_I(PHY,"ENTERED L1_thread_tx\n");
   char thread_name[100];
@@ -374,22 +374,22 @@ static void* L1_thread_tx(void* param) {
 
 /*!
  * \brief The RX UE-specific and TX thread of eNB.
- * \param param is a \ref eNB_proc_t structure which contains the info what to process.
+ * \param param is a \ref L1_proc_t structure which contains the info what to process.
  * \returns a pointer to an int. The storage is not on the heap and must not be freed.
  */
 
 static void* L1_thread( void* param ) {
 
   static int eNB_thread_rxtx_status;
-  //eNB_proc_t *eNB_proc  = (eNB_proc_t*)param;
-  eNB_rxtx_proc_t *proc;
+  //L1_proc_t *eNB_proc  = (L1_proc_t*)param;
+  L1_rxtx_proc_t *proc;
 LOG_I(PHY,"ENTERED L1_thread\n");
   // Working
   if(nfapi_mode ==2){
-	  proc = (eNB_rxtx_proc_t*)param;
+	  proc = (L1_rxtx_proc_t*)param;
   }
   else{
-	  eNB_proc_t *eNB_proc  = (eNB_proc_t*)param;
+	  L1_proc_t *eNB_proc  = (L1_proc_t*)param;
 	  proc = &eNB_proc->L1_proc;
   }
 
@@ -460,8 +460,8 @@ LOG_I(PHY,"ENTERED L1_thread\n");
 
 void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string,RU_t *ru)
 {
-  eNB_proc_t *proc           = &eNB->proc;
-  eNB_rxtx_proc_t *L1_proc = &proc->L1_proc;
+  L1_proc_t *proc           = &eNB->proc;
+  L1_rxtx_proc_t *L1_proc = &proc->L1_proc;
   LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
   RU_proc_t *ru_proc=&ru->proc;
 
@@ -484,7 +484,7 @@ void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string,RU_t
   }
 }
 
-int wakeup_txfh(eNB_rxtx_proc_t *proc,PHY_VARS_eNB *eNB) {
+int wakeup_txfh(L1_rxtx_proc_t *proc,PHY_VARS_eNB *eNB) {
   RU_proc_t *ru_proc;
 
   struct timespec wait;
@@ -539,14 +539,14 @@ int wakeup_txfh(eNB_rxtx_proc_t *proc,PHY_VARS_eNB *eNB) {
 }
 
 int wakeup_tx(PHY_VARS_eNB *eNB) {
-  eNB_proc_t *proc=&eNB->proc;
+  L1_proc_t *proc=&eNB->proc;
 
  /* LTE_DL_FRAME_PARMS *fp;
   fp = &eNB->frame_parms;
 if ((fp->frame_type == TDD) && (subframe_select(fp,proc_rxtx0->subframe_tx)==SF_UL)) return;
   */
-  eNB_rxtx_proc_t *L1_proc_tx = &proc->L1_proc_tx;
-  eNB_rxtx_proc_t *L1_proc    = &proc->L1_proc;
+  L1_rxtx_proc_t *L1_proc_tx = &proc->L1_proc_tx;
+  L1_rxtx_proc_t *L1_proc    = &proc->L1_proc;
 
   
   struct timespec wait;
@@ -586,9 +586,9 @@ if ((fp->frame_type == TDD) && (subframe_select(fp,proc_rxtx0->subframe_tx)==SF_
 
 int wakeup_rxtx(PHY_VARS_eNB *eNB,RU_t *ru) {
 
-  eNB_proc_t *proc=&eNB->proc;
+  L1_proc_t *proc=&eNB->proc;
   RU_proc_t *ru_proc=&ru->proc;
-  eNB_rxtx_proc_t *L1_proc=&proc->L1_proc;
+  L1_rxtx_proc_t *L1_proc=&proc->L1_proc;
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   
   LOG_I(PHY,"ENTERED wakeup_rxtx\n");
@@ -640,7 +640,7 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,RU_t *ru) {
 
 void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
 
-  eNB_proc_t *proc = &eNB->proc;
+  L1_proc_t *proc = &eNB->proc;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   int i;
 
@@ -702,7 +702,7 @@ void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 void wakeup_prach_eNB_br(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
 
-  eNB_proc_t *proc = &eNB->proc;
+  L1_proc_t *proc = &eNB->proc;
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   int i;
 
@@ -766,7 +766,7 @@ void wakeup_prach_eNB_br(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
 
 /*!
  * \brief The prach receive thread of eNB.
- * \param param is a \ref eNB_proc_t structure which contains the info what to process.
+ * \param param is a \ref L1_proc_t structure which contains the info what to process.
  * \returns a pointer to an int. The storage is not on the heap and must not be freed.
  */
 static void* eNB_thread_prach( void* param ) {
@@ -774,7 +774,7 @@ static void* eNB_thread_prach( void* param ) {
 
 
   PHY_VARS_eNB *eNB= (PHY_VARS_eNB *)param;
-  eNB_proc_t *proc = &eNB->proc;
+  L1_proc_t *proc = &eNB->proc;
 
   // set default return value
   eNB_thread_prach_status = 0;
@@ -809,7 +809,7 @@ static void* eNB_thread_prach( void* param ) {
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 /*!
  * \brief The prach receive thread of eNB for BL/CE UEs.
- * \param param is a \ref eNB_proc_t structure which contains the info what to process.
+ * \param param is a \ref L1_proc_t structure which contains the info what to process.
  * \returns a pointer to an int. The storage is not on the heap and must not be freed.
  */
 static void* eNB_thread_prach_br( void* param ) {
@@ -817,7 +817,7 @@ static void* eNB_thread_prach_br( void* param ) {
 
 
   PHY_VARS_eNB *eNB= (PHY_VARS_eNB *)param;
-  eNB_proc_t *proc = &eNB->proc;
+  L1_proc_t *proc = &eNB->proc;
 
   // set default return value
   eNB_thread_prach_status = 0;
@@ -888,8 +888,8 @@ void init_eNB_proc(int inst) {
   /*int i=0;*/
   int CC_id;
   PHY_VARS_eNB *eNB;
-  eNB_proc_t *proc;
-  eNB_rxtx_proc_t *L1_proc, *L1_proc_tx;
+  L1_proc_t *proc;
+  L1_rxtx_proc_t *L1_proc, *L1_proc_tx;
   pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_prach=NULL;
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   pthread_attr_t *attr_prach_br=NULL;
@@ -996,7 +996,7 @@ void init_eNB_proc(int inst) {
 
      if (eNB->node_timing == synch_to_ext_device) { //master
      eNB->proc.num_slaves = MAX_NUM_CCs-1;
-     eNB->proc.slave_proc = (eNB_proc_t**)malloc(eNB->proc.num_slaves*sizeof(eNB_proc_t*));
+     eNB->proc.slave_proc = (L1_proc_t**)malloc(eNB->proc.num_slaves*sizeof(L1_proc_t*));
 
      for (i=0; i< eNB->proc.num_slaves; i++) {
      if (i < CC_id)  eNB->proc.slave_proc[i] = &(PHY_vars_eNB_g[inst][i]->proc);
@@ -1023,8 +1023,8 @@ void kill_eNB_proc(int inst) {
 
   int *status;
   PHY_VARS_eNB *eNB;
-  eNB_proc_t *proc;
-  eNB_rxtx_proc_t *L1_proc, *L1_proc_tx;
+  L1_proc_t *proc;
+  L1_rxtx_proc_t *L1_proc, *L1_proc_tx;
 
   for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     eNB=RC.eNB[inst][CC_id];

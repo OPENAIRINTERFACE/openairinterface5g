@@ -820,7 +820,7 @@ void tx_rf(RU_t *ru) {
 /*!
  * \brief The Asynchronous RX/TX FH thread of RAU/RCC/eNB/RRU.
  * This handles the RX FH for an asynchronous RRU/UE
- * \param param is a \ref eNB_proc_t structure which contains the info what to process.
+ * \param param is a \ref L1_proc_t structure which contains the info what to process.
  * \returns a pointer to an int. The storage is not on the heap and must not be freed.
  */
 static void* ru_thread_asynch_rxtx( void* param ) {
@@ -1140,7 +1140,7 @@ void wakeup_L1s(RU_t *ru) {
   int i;
   PHY_VARS_eNB **eNB_list = ru->eNB_list;
   PHY_VARS_eNB *eNB=eNB_list[0];
-  eNB_proc_t *proc      = &eNB->proc;
+  L1_proc_t *proc      = &eNB->proc;
   RU_proc_t  *ruproc    = &ru->proc;
   struct timespec t;
   LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d (state %s)ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru_states[ru->state],ru->eNB_top);
@@ -1487,8 +1487,8 @@ static void* ru_thread_tx( void* param ) {
   RU_t *ru              = (RU_t*)param;
   RU_proc_t *proc       = &ru->proc;
   PHY_VARS_eNB *eNB;
-  eNB_proc_t *eNB_proc;
-  eNB_rxtx_proc_t *L1_proc;
+  L1_proc_t *eNB_proc;
+  L1_rxtx_proc_t *L1_proc;
 
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
@@ -1993,7 +1993,7 @@ void* pre_scd_thread( void* param ){
 #ifdef PHY_TX_THREAD
 /*!
  * \brief The phy tx thread of eNB.
- * \param param is a \ref eNB_proc_t structure which contains the info what to process.
+ * \param param is a \ref L1_proc_t structure which contains the info what to process.
  * \returns a pointer to an int. The storage is not on the heap and must not be freed.
  */
 static void* eNB_thread_phy_tx( void* param ) {
@@ -2004,7 +2004,7 @@ static void* eNB_thread_phy_tx( void* param ) {
   RU_proc_t *proc = &ru->proc;
   PHY_VARS_eNB **eNB_list = ru->eNB_list;
 
-  eNB_rxtx_proc_t L1_proc;
+  L1_rxtx_proc_t L1_proc;
 
   // set default return value
   eNB_thread_phy_tx_status = 0;
