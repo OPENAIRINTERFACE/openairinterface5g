@@ -128,7 +128,7 @@ extern void  phy_free_RU(RU_t*);
 
 void init_RU(char*,clock_source_t clock_source,clock_source_t time_source,int generate_dmrssync);
 void stop_RU(int nb_ru);
-void do_ru_sync(RU_t *ru);
+void do_ru_synch(RU_t *ru);
 
 
 void reset_proc(RU_t *ru);
@@ -233,7 +233,7 @@ LOG_I(PHY,"ENTERED fh_if4p5_south_in\n");
       
     } else if (packet_type == IF4p5_PRACH) {
       // nothing in RU for RAU
-    }//ru->south_out_cnt= 0; (why??? I guess this is wrong)
+    }
     LOG_D(PHY,"rx_fh_if4p5: subframe %d symbol mask %x\n",*subframe,proc->symbol_mask[*subframe]);
   } while(proc->symbol_mask[*subframe] != symbol_mask_full);    
 
@@ -601,6 +601,7 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
 
   ru->south_in_cnt++;
+  LOG_I(PHY,"south_in_cnt %d\n",ru->south_in_cnt);
 
   if (ru->cmd==RU_FRAME_RESYNCH) {
     LOG_I(PHY,"Applying frame resynch %d => %d\n",*frame,ru->cmdval);
@@ -801,6 +802,7 @@ void tx_rf(RU_t *ru) {
 				      ru->nb_tx,
 				      flags);
     ru->south_out_cnt++;
+    LOG_I(PHY,"south_out_cnt %d\n",ru->south_out_cnt);
     int se = dB_fixed(signal_energy(txp[0],siglen+sf_extension));
 
     if (SF_type == SF_S) LOG_D(PHY,"[TXPATH] RU %d tx_rf (en %d,len %d), writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx,se,siglen+sf_extension,
@@ -1081,7 +1083,6 @@ void do_ru_synch(RU_t *ru) {
 				     fp->samples_per_tti*10,
 				     ru->nb_rx);
     if (rxs != fp->samples_per_tti*10) LOG_E(PHY,"requested %d samples, got %d\n",fp->samples_per_tti*10,rxs);
- 
     // wakeup synchronization processing thread
     wakeup_synch(ru);
     ic=0;
@@ -1906,15 +1907,15 @@ void *ru_thread_synch(void *arg) {
 				   &avg);
       LOG_I(PHY,"RU synch cnt %d: %d, val %llu (%d dB,%d dB)\n",cnt,ru->rx_offset,(unsigned long long)peak_val,dB_fixed64(peak_val),dB_fixed64(avg));
       cnt++;
-      if (ru->rx_offset >= 0 && cnt>50) {
+      if (/*ru->rx_offset >= 0*/dB_fixed64(peak_val)>=85 && cnt>10) {
 
 	LOG_I(PHY,"Estimated peak_val %d dB, avg %d => timing offset %llu\n",dB_fixed(peak_val),dB_fixed(avg),(unsigned long long int)ru->rx_offset);
 	ru->in_synch = 1;
-/*
+
         LOG_M("ru_sync_rx.m","rurx",&ru->common.rxdata[0][0],LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti,1,1);
         LOG_M("ru_sync_corr.m","sync_corr",ru->dmrs_corr,LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti,1,6);
         LOG_M("ru_dmrs.m","rudmrs",&ru->dmrssync[0],fp->ofdm_symbol_size,1,1);
-        exit(-1);*/
+        //exit(-1);
       } // sync_pos > 0
       else //AssertFatal(cnt<1000,"Cannot find synch reference\n");
           { 

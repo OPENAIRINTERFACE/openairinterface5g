@@ -150,8 +150,8 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
 	   uint32_t *rx0 = (uint32_t*) &rxdataF[antenna_id][blockoffsetF];
 	   uint32_t *rx1 = (uint32_t*) &rxdataF[antenna_id][slotoffsetF];
 
-	   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF4_SYMBOL, symbol_id );
-	   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_COMPR_IF, 1 );		
+	   //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SEND_IF4_SYMBOL, symbol_id );
+	   //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_COMPR_IF, 1 );		
 
 	   start_meas(&ru->compression);
 
@@ -181,12 +181,12 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
           }
         }
         stop_meas(&ru->compression);
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_COMPR_IF, 0 );   	
+        //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_COMPR_IF, 0 );   	
         packet_header->frame_status &= ~(0x07);
         packet_header->frame_status |= ru->nb_rx-1;
 	packet_header->frame_status &= ~(0x000f<<26);
 	packet_header->frame_status |= (symbol_id&0x000f)<<26; 
-	if (ru->idx<=1) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0+ru->idx, 1 );  
+	//if (ru->idx<=1) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0+ru->idx, 1 );  
 	start_meas(&ru->transport);
 	if ((ru->ifdevice.trx_write_func(&ru->ifdevice,
 					 symbol_id,
@@ -197,7 +197,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
 	  perror("ETHERNET write for IF4p5_PULFFT\n");
 	}
 	stop_meas(&ru->transport);
-	if (ru->idx<=1) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0+ru->idx, 0 );
+	//if (ru->idx<=1) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE_IF0+ru->idx, 0 );
 	slotoffsetF  += fp->ofdm_symbol_size;
 	blockoffsetF += fp->ofdm_symbol_size;
       }    
