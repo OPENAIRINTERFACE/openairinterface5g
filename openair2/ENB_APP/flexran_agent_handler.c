@@ -242,89 +242,90 @@ int flexran_agent_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
 
       //Set the number of UEs and create list with their RNTIs stats configs
       report_config.nr_ue = flexran_get_mac_num_ues(mod_id);
-      report_config.ue_report_type = (ue_report_type_t *) malloc(sizeof(ue_report_type_t) * report_config.nr_ue);
+      report_config.ue_report_type = malloc(sizeof(ue_report_type_t) * report_config.nr_ue);
       if (report_config.ue_report_type == NULL) {
-  // TODO: Add appropriate error code
-  err_code = -100;
-  goto error;
+        // TODO: Add appropriate error code
+        err_code = -100;
+        goto error;
       }
       for (i = 0; i < report_config.nr_ue; i++) {
-  report_config.ue_report_type[i].ue_rnti = flexran_get_mac_ue_crnti(enb_id, i);
-  report_config.ue_report_type[i].ue_report_flags = ue_flags;
+        report_config.ue_report_type[i].ue_rnti = flexran_get_mac_ue_crnti(enb_id, i);
+        report_config.ue_report_type[i].ue_report_flags = ue_flags;
       }
       //Set the number of CCs and create a list with the cell stats configs
       report_config.nr_cc = MAX_NUM_CCs;
-      report_config.cc_report_type = (cc_report_type_t *) malloc(sizeof(cc_report_type_t) * report_config.nr_cc);
+      report_config.cc_report_type = malloc(sizeof(cc_report_type_t) * report_config.nr_cc);
       if (report_config.cc_report_type == NULL) {
-  // TODO: Add appropriate error code
-  err_code = -100;
-  goto error;
+        // TODO: Add appropriate error code
+        err_code = -100;
+        goto error;
       }
       for (i = 0; i < report_config.nr_cc; i++) {
-  //TODO: Must fill in the proper cell ids
-  report_config.cc_report_type[i].cc_id = i;
-  report_config.cc_report_type[i].cc_report_flags = c_flags;
+        //TODO: Must fill in the proper cell ids
+        report_config.cc_report_type[i].cc_id = i;
+        report_config.cc_report_type[i].cc_report_flags = c_flags;
       }
       /* Check if request was periodical */
       if (comp_req->report_frequency == PROTOCOL__FLEX_STATS_REPORT_FREQ__FLSRF_PERIODICAL) {
-  /* Create a one off flexran message as an argument for the periodical task */
-  Protocol__FlexranMessage *timer_msg;
-  stats_request_config_t request_config;
-  request_config.report_type = PROTOCOL__FLEX_STATS_TYPE__FLST_COMPLETE_STATS;
-  request_config.report_frequency = PROTOCOL__FLEX_STATS_REPORT_FREQ__FLSRF_ONCE;
-  request_config.period = 0;
-  /* Need to make sure that the ue flags are saved (Bug) */
-  if (report_config.nr_ue == 0) {
-    report_config.nr_ue = 1;
-    report_config.ue_report_type = (ue_report_type_t *) malloc(sizeof(ue_report_type_t));
-     if (report_config.ue_report_type == NULL) {
-       // TODO: Add appropriate error code
-       err_code = -100;
-       goto error;
-     }
-     report_config.ue_report_type[0].ue_rnti = 0; // Dummy value
-     report_config.ue_report_type[0].ue_report_flags = ue_flags;
-  }
-  request_config.config = &report_config;
-  flexran_agent_stats_request(enb_id, xid, &request_config, &timer_msg);
-  /* Create a timer */
-  long timer_id = 0;
-  flexran_agent_timer_args_t *timer_args;
-  timer_args = malloc(sizeof(flexran_agent_timer_args_t));
-  memset (timer_args, 0, sizeof(flexran_agent_timer_args_t));
-  timer_args->mod_id = enb_id;
-  timer_args->msg = timer_msg;
-  /*Convert subframes to usec time*/
-  usec_interval = 1000*comp_req->sf;
-  sec_interval = 0;
-  /*add seconds if required*/
-  if (usec_interval >= 1000*1000) {
-    sec_interval = usec_interval/(1000*1000);
-    usec_interval = usec_interval%(1000*1000);
-  }
-  flexran_agent_create_timer(sec_interval, usec_interval, FLEXRAN_AGENT_DEFAULT, enb_id, FLEXRAN_AGENT_TIMER_TYPE_PERIODIC, xid, flexran_agent_handle_timed_task,(void*) timer_args, &timer_id);
+        /* Create a one off flexran message as an argument for the periodical task */
+        Protocol__FlexranMessage *timer_msg;
+        stats_request_config_t request_config;
+        request_config.report_type = PROTOCOL__FLEX_STATS_TYPE__FLST_COMPLETE_STATS;
+        request_config.report_frequency = PROTOCOL__FLEX_STATS_REPORT_FREQ__FLSRF_ONCE;
+        request_config.period = 0;
+        /* Need to make sure that the ue flags are saved (Bug) */
+        if (report_config.nr_ue == 0) {
+          report_config.nr_ue = 1;
+          report_config.ue_report_type = malloc(sizeof(ue_report_type_t));
+           if (report_config.ue_report_type == NULL) {
+             // TODO: Add appropriate error code
+             err_code = -100;
+             goto error;
+           }
+           report_config.ue_report_type[0].ue_rnti = 0; // Dummy value
+           report_config.ue_report_type[0].ue_report_flags = ue_flags;
+        }
+        request_config.config = &report_config;
+        flexran_agent_stats_request(enb_id, xid, &request_config, &timer_msg);
+        /* Create a timer */
+        long timer_id = 0;
+        flexran_agent_timer_args_t *timer_args = malloc(sizeof(flexran_agent_timer_args_t));
+        memset (timer_args, 0, sizeof(flexran_agent_timer_args_t));
+        timer_args->mod_id = enb_id;
+        timer_args->msg = timer_msg;
+        /*Convert subframes to usec time*/
+        usec_interval = 1000*comp_req->sf;
+        sec_interval = 0;
+        /*add seconds if required*/
+        if (usec_interval >= 1000*1000) {
+          sec_interval = usec_interval/(1000*1000);
+          usec_interval = usec_interval%(1000*1000);
+        }
+        flexran_agent_create_timer(sec_interval, usec_interval, FLEXRAN_AGENT_DEFAULT,
+            enb_id, FLEXRAN_AGENT_TIMER_TYPE_PERIODIC, xid,
+            flexran_agent_handle_timed_task,(void*) timer_args, &timer_id);
       } else if (comp_req->report_frequency == PROTOCOL__FLEX_STATS_REPORT_FREQ__FLSRF_CONTINUOUS) {
-  /*If request was for continuous updates, disable the previous configuration and
-    set up a new one*/
-  flexran_agent_disable_cont_stats_update(mod_id);
-  stats_request_config_t request_config;
-  request_config.report_type = PROTOCOL__FLEX_STATS_TYPE__FLST_COMPLETE_STATS;
-  request_config.report_frequency = PROTOCOL__FLEX_STATS_REPORT_FREQ__FLSRF_ONCE;
-  request_config.period = 0;
-  /* Need to make sure that the ue flags are saved (Bug) */
-  if (report_config.nr_ue == 0) {
-    report_config.nr_ue = 1;
-    report_config.ue_report_type = (ue_report_type_t *) malloc(sizeof(ue_report_type_t));
-    if (report_config.ue_report_type == NULL) {
-      // TODO: Add appropriate error code
-      err_code = -100;
-      goto error;
-    }
-    report_config.ue_report_type[0].ue_rnti = 0; // Dummy value
-    report_config.ue_report_type[0].ue_report_flags = ue_flags;
-  }
-  request_config.config = &report_config;
-  flexran_agent_enable_cont_stats_update(enb_id, xid, &request_config);
+        /*If request was for continuous updates, disable the previous configuration and
+          set up a new one*/
+        flexran_agent_disable_cont_stats_update(mod_id);
+        stats_request_config_t request_config;
+        request_config.report_type = PROTOCOL__FLEX_STATS_TYPE__FLST_COMPLETE_STATS;
+        request_config.report_frequency = PROTOCOL__FLEX_STATS_REPORT_FREQ__FLSRF_ONCE;
+        request_config.period = 0;
+        /* Need to make sure that the ue flags are saved (Bug) */
+        if (report_config.nr_ue == 0) {
+          report_config.nr_ue = 1;
+          report_config.ue_report_type = malloc(sizeof(ue_report_type_t));
+          if (report_config.ue_report_type == NULL) {
+            // TODO: Add appropriate error code
+            err_code = -100;
+            goto error;
+          }
+          report_config.ue_report_type[0].ue_rnti = 0; // Dummy value
+          report_config.ue_report_type[0].ue_report_flags = ue_flags;
+        }
+        request_config.config = &report_config;
+        flexran_agent_enable_cont_stats_update(enb_id, xid, &request_config);
       }
     }
     break;
@@ -334,14 +335,14 @@ int flexran_agent_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
     report_config.nr_ue = 0;
     report_config.ue_report_type = NULL;
     report_config.nr_cc = cell_req->n_cell;
-    report_config.cc_report_type = (cc_report_type_t *) malloc(sizeof(cc_report_type_t) * report_config.nr_cc);
+    report_config.cc_report_type = malloc(sizeof(cc_report_type_t) * report_config.nr_cc);
     if (report_config.cc_report_type == NULL) {
       // TODO: Add appropriate error code
       err_code = -100;
       goto error;
     }
     for (i = 0; i < report_config.nr_cc; i++) {
-  //TODO: Must fill in the proper cell ids
+      //TODO: Must fill in the proper cell ids
       report_config.cc_report_type[i].cc_id = cell_req->cell[i];
       report_config.cc_report_type[i].cc_report_flags = cell_req->flags;
     }
@@ -352,7 +353,7 @@ int flexran_agent_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
     report_config.nr_cc = 0;
     report_config.cc_report_type = NULL;
     report_config.nr_ue = ue_req->n_rnti;
-    report_config.ue_report_type = (ue_report_type_t *) malloc(sizeof(ue_report_type_t) * report_config.nr_ue);
+    report_config.ue_report_type = malloc(sizeof(ue_report_type_t) * report_config.nr_ue);
     if (report_config.ue_report_type == NULL) {
       // TODO: Add appropriate error code
       err_code = -100;
@@ -369,10 +370,10 @@ int flexran_agent_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
     goto error;
   }
 
-   if (flexran_agent_stats_reply(enb_id, xid, &report_config, msg )){  
-      err_code = PROTOCOL__FLEXRAN_ERR__MSG_BUILD;
-      goto error;
-    }
+  if (flexran_agent_stats_reply(enb_id, xid, &report_config, msg )) {
+    err_code = PROTOCOL__FLEXRAN_ERR__MSG_BUILD;
+    goto error;
+  }
 
   free(report_config.ue_report_type);
   free(report_config.cc_report_type);
