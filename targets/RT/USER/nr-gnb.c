@@ -755,7 +755,7 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     LOG_I(PHY,"Allocating Transport Channel Buffers for DLSCH, UE %d\n",i);
     for (j=0; j<2; j++) {
-      gNB->dlsch[i][j] = new_gNB_dlsch(1,16,NSOFT,cfg->rf_config.dl_carrier_bandwidth.value,0,cfg);
+      gNB->dlsch[i][j] = new_gNB_dlsch(1,16,NSOFT,0,fp,cfg);
       if (!gNB->dlsch[i][j]) {
 	LOG_E(PHY,"Can't get gNB dlsch structures for UE %d \n", i);
 	exit(-1);
