@@ -265,7 +265,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 #endif
 
     // Payload interleaving
-  uint32_t in=0, out=0;
+  uint32_t in=0;//, out=0;
   for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS>>3; i++)
     in |= (uint32_t)(pbch->pbch_a[i]<<((3-i)<<3));
 

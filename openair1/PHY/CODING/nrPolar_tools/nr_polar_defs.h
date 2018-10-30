@@ -145,11 +145,10 @@ void polar_encoder_dci(uint32_t *in,
 					   t_nrPolar_paramsPtr polarParams,
 					   uint16_t n_RNTI);
 
-void polar_encoder_timing(uint32_t *in,
-						  uint32_t *out,
-						  t_nrPolar_paramsPtr polarParams,
-						  double cpuFreqGHz,
-						  FILE* logFile);
+void polar_encoder_fast(uint64_t *A,
+		uint32_t *out,
+		int32_t crcmask,
+		t_nrPolar_paramsPtr polarParams);
 
 int8_t polar_decoder(double *input,
 		 	 	 	 uint8_t *output,
@@ -184,7 +183,12 @@ int8_t polar_decoder_dci(double *input,
 						 uint8_t pathMetricAppr,
 						 uint16_t n_RNTI);
 
-void generic_polar_decoder(t_nrPolar_params *,decoder_node_t *);
+void generic_polar_decoder(t_nrPolar_params *,
+		decoder_node_t *);
+
+void build_decoder_tree(t_nrPolar_params *pp);
+void build_polar_tables(t_nrPolar_paramsPtr polarParams);
+void init_polar_deinterleaver_table(t_nrPolar_params *polarParams);
 
 void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 				   int8_t messageType,
@@ -210,150 +214,165 @@ const uint16_t* nr_polar_sequence_pattern(uint8_t n);
  * @param E
  * @param n_max */
 uint32_t nr_polar_output_length(uint16_t K,
-								uint16_t E,
-								uint8_t n_max);
+		uint16_t E,
+		uint8_t n_max);
 
 void nr_polar_channel_interleaver_pattern(uint16_t *cip,
-										  uint8_t I_BIL,
-										  uint16_t E);
+		uint8_t I_BIL,
+		uint16_t E);
 
 void nr_polar_rate_matching_pattern(uint16_t *rmp,
-									uint16_t *J,
-									const uint8_t *P_i_,
-									uint16_t K,
-									uint16_t N,
-									uint16_t E);
+		uint16_t *J,
+		const uint8_t *P_i_,
+		uint16_t K,
+		uint16_t N,
+		uint16_t E);
 
 void nr_polar_rate_matching(double *input,
-							double *output,
-							uint16_t *rmp,
-							uint16_t K,
-							uint16_t N,
-							uint16_t E);
+		double *output,
+		uint16_t *rmp,
+		uint16_t K,
+		uint16_t N,
+		uint16_t E);
 
-void nr_polar_rate_matching_int16(int16_t *input, int16_t *output, uint16_t *rmp, uint16_t K, uint16_t N, uint16_t E);
+void nr_polar_rate_matching_int16(int16_t *input,
+		int16_t *output,
+		uint16_t *rmp,
+		uint16_t K,
+		uint16_t N,
+		uint16_t E);
 
 void nr_polar_interleaving_pattern(uint16_t K,
-								   uint8_t I_IL,
-								   uint16_t *PI_k_);
+		uint8_t I_IL,
+		uint16_t *PI_k_);
 
 void nr_polar_info_bit_pattern(uint8_t *ibp,
-							   int16_t *Q_I_N,
-							   int16_t *Q_F_N,
-							   uint16_t *J,
-							   const uint16_t *Q_0_Nminus1,
-							   uint16_t K,
-							   uint16_t N,
-							   uint16_t E,
-							   uint8_t n_PC);
+		int16_t *Q_I_N,
+		int16_t *Q_F_N,
+		uint16_t *J,
+		const uint16_t *Q_0_Nminus1,
+		uint16_t K,
+		uint16_t N,
+		uint16_t E,
+		uint8_t n_PC);
 
 void nr_polar_info_bit_extraction(uint8_t *input,
-								  uint8_t *output,
-								  uint8_t *pattern,
-								  uint16_t size);
+		uint8_t *output,
+		uint8_t *pattern,
+		uint16_t size);
 
 void nr_bit2byte_uint32_8_t(uint32_t *in,
-							uint16_t arraySize,
-							uint8_t *out);
+		uint16_t arraySize,
+		uint8_t *out);
 
 void nr_byte2bit_uint8_32_t(uint8_t *in,
-							uint16_t arraySize,
-							uint32_t *out);
+		uint16_t arraySize,
+		uint32_t *out);
 
 void nr_crc_bit2bit_uint32_8_t(uint32_t *in,
-							   uint16_t arraySize,
-							   uint8_t *out);
+		uint16_t arraySize,
+		uint8_t *out);
 
 void nr_polar_bit_insertion(uint8_t *input,
-							uint8_t *output,
-							uint16_t N,
-							uint16_t K,
-							int16_t *Q_I_N,
-							int16_t *Q_PC_N,
-							uint8_t n_PC);
+		uint8_t *output,
+		uint16_t N,
+		uint16_t K,
+		int16_t *Q_I_N,
+		int16_t *Q_PC_N,
+		uint8_t n_PC);
 
-void nr_matrix_multiplication_uint8_t_1D_uint8_t_2D(uint8_t *matrix1,
-													uint8_t **matrix2,
-													uint8_t *output,
-													uint16_t row,
-													uint16_t col);
+void nr_matrix_multiplication_uint8_1D_uint8_2D(uint8_t *matrix1,
+		uint8_t **matrix2,
+		uint8_t *output,
+		uint16_t row,
+		uint16_t col);
 
-uint8_t ***nr_alloc_uint8_t_3D_array(uint16_t xlen,
-									 uint16_t ylen,
-									 uint16_t zlen);
+uint8_t ***nr_alloc_uint8_3D_array(uint16_t xlen,
+		uint16_t ylen,
+		uint16_t zlen);
 
-uint8_t **nr_alloc_uint8_t_2D_array(uint16_t xlen,
-									uint16_t ylen);
+uint8_t **nr_alloc_uint8_2D_array(uint16_t xlen,
+		uint16_t ylen);
 
 double ***nr_alloc_double_3D_array(uint16_t xlen,
-								   uint16_t ylen,
-								   uint16_t zlen);
+		uint16_t ylen,
+		uint16_t zlen);
 
-void nr_free_uint8_t_3D_array(uint8_t ***input,
-							  uint16_t xlen,
-							  uint16_t ylen);
-
-void nr_free_uint8_t_2D_array(uint8_t **input,
-							  uint16_t xlen);
+double **nr_alloc_double_2D_array(uint16_t xlen,
+		uint16_t ylen);
 
 void nr_free_double_3D_array(double ***input,
-							 uint16_t xlen,
-							 uint16_t ylen);
+		uint16_t xlen,
+		uint16_t ylen);
 
-void updateLLR(double ***llr,
-			   uint8_t **llrU,
-			   uint8_t ***bit,
-			   uint8_t **bitU,
-			   uint8_t listSize,
-			   uint16_t row,
-			   uint16_t col,
-			   uint16_t xlen,
-			   uint8_t ylen,
-			   uint8_t approximation);
+void nr_free_double_2D_array(double **input,
+		uint16_t xlen);
 
-void updateBit(uint8_t ***bit,
-			   uint8_t **bitU,
-			   uint8_t listSize,
-			   uint16_t row,
-			   uint16_t col,
-			   uint16_t xlen,
-			   uint8_t ylen);
+void nr_free_uint8_3D_array(uint8_t ***input,
+		uint16_t xlen,
+		uint16_t ylen);
 
-void updatePathMetric(double *pathMetric,
-					  double ***llr,
-					  uint8_t listSize,
-					  uint8_t bitValue,
-					  uint16_t row,
-					  uint8_t approximation);
-
-void updatePathMetric2(double *pathMetric,
-					   double ***llr,
-					   uint8_t listSize,
-					   uint16_t row,
-					   uint8_t approximation);
-
-void computeLLR(double ***llr,
-				uint16_t row,
-				uint16_t col,
-				uint8_t i,
-				uint16_t offset,
-				uint8_t approximation);
-
-void updateCrcChecksum(uint8_t **crcChecksum,
-					   uint8_t **crcGen,
-					   uint8_t listSize,
-					   uint32_t i2,
-					   uint8_t len);
-
-void updateCrcChecksum2(uint8_t **crcChecksum,
-						uint8_t **crcGen,
-						uint8_t listSize,
-						uint32_t i2,
-						uint8_t len);
+void nr_free_uint8_2D_array(uint8_t **input,
+		uint16_t xlen);
 
 void nr_sort_asc_double_1D_array_ind(double *matrix,
-									 uint8_t *ind,
-									 uint8_t len);
+		uint8_t *ind,
+		uint8_t len);
+
+void nr_sort_asc_int16_1D_array_ind(int32_t *matrix,
+		int *ind,
+		int len);
+
+void updateLLR(double ***llr,
+		uint8_t **llrU,
+		uint8_t ***bit,
+		uint8_t **bitU,
+		uint8_t listSize,
+		uint16_t row,
+		uint16_t col,
+		uint16_t xlen,
+		uint8_t ylen,
+		uint8_t approximation);
+
+void updateBit(uint8_t ***bit,
+		uint8_t **bitU,
+		uint8_t listSize,
+		uint16_t row,
+		uint16_t col,
+		uint16_t xlen,
+		uint8_t ylen);
+
+void updatePathMetric(double *pathMetric,
+		double ***llr,
+		uint8_t listSize,
+		uint8_t bitValue,
+		uint16_t row,
+		uint8_t approximation);
+
+void updatePathMetric2(double *pathMetric,
+		double ***llr,
+		uint8_t listSize,
+		uint16_t row,
+		uint8_t approximation);
+
+void computeLLR(double ***llr,
+		uint16_t row,
+		uint16_t col,
+		uint8_t i,
+		uint16_t offset,
+		uint8_t approximation);
+
+void updateCrcChecksum(uint8_t **crcChecksum,
+		uint8_t **crcGen,
+		uint8_t listSize,
+		uint32_t i2,
+		uint8_t len);
+
+void updateCrcChecksum2(uint8_t **crcChecksum,
+		uint8_t **crcGen,
+		uint8_t listSize,
+		uint32_t i2,
+		uint8_t len);
 
 uint8_t **crc24c_generator_matrix(uint16_t payloadSizeBits);
 
