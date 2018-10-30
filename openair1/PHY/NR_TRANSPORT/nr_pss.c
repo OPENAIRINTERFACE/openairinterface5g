@@ -22,7 +22,7 @@
 
 #include "PHY/NR_TRANSPORT/nr_transport.h"
 
-#define NR_PSS_DEBUG
+//#define NR_PSS_DEBUG
 
 int nr_generate_pss(  int16_t *d_pss,
                       int32_t **txdataF,
