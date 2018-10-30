@@ -53,7 +53,7 @@ int flexran_agent_mac_destroy_sf_trigger(Protocol__FlexranMessage *msg);
 
 /* Statistics reply protocol message constructor and destructor */
 int flexran_agent_mac_stats_reply(mid_t mod_id, const report_config_t *report_config, Protocol__FlexUeStatsReport **ue_report, Protocol__FlexCellStatsReport **cell_report);
-int flexran_agent_mac_destroy_stats_reply(Protocol__FlexranMessage *msg);
+int flexran_agent_mac_destroy_stats_reply(Protocol__FlexStatsReply *reply);
 
 /* DL MAC scheduling decision protocol message constructor (empty command) and destructor */ 
 int flexran_agent_mac_create_empty_dl_config(mid_t mod_id, Protocol__FlexranMessage **msg);

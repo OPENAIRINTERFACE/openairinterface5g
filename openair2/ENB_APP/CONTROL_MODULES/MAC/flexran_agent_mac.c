@@ -646,14 +646,9 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
   return -1;
 }
 
-int flexran_agent_mac_destroy_stats_reply(Protocol__FlexranMessage *msg) {
-  //TODO: Need to deallocate memory for the stats reply message
-  if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_STATS_REPLY_MSG)
-    goto error;
-  free(msg->stats_reply_msg->header);
+int flexran_agent_mac_destroy_stats_reply(Protocol__FlexStatsReply *reply) {
   int i, j, k;
 
-  Protocol__FlexStatsReply *reply = msg->stats_reply_msg;
   Protocol__FlexDlCqiReport *dl_report;
   Protocol__FlexUlCqiReport *ul_report;
   Protocol__FlexPagingBufferReport *paging_report;
@@ -744,20 +739,23 @@ int flexran_agent_mac_destroy_stats_reply(Protocol__FlexranMessage *msg) {
 	free(ul_report->pucch_dbm[j]);
       }
       free(ul_report->pucch_dbm);
+      free(ul_report);
     }
-    free(reply->ue_report[i]);
+    if (reply->ue_report[i]->flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_MAC_STATS) {
+      for (j = 0; j < reply->ue_report[i]->mac_stats->n_mac_sdus_dl; j++)
+        free(reply->ue_report[i]->mac_stats->mac_sdus_dl[j]);
+      free(reply->ue_report[i]->mac_stats->mac_sdus_dl);
+      free(reply->ue_report[i]->mac_stats);
+    }
   }
-  free(reply->ue_report);
 
   // Free memory for all Cell reports
   for (i = 0; i < reply->n_cell_report; i++) {
-    free(reply->cell_report[i]->noise_inter_report);
-    free(reply->cell_report[i]);
+    if (reply->cell_report[i]->flags & PROTOCOL__FLEX_CELL_STATS_TYPE__FLCST_NOISE_INTERFERENCE) {
+      free(reply->cell_report[i]->noise_inter_report);
+    }
   }
-  free(reply->cell_report);
 
-  free(reply);
-  free(msg);
   return 0;
 
  error:

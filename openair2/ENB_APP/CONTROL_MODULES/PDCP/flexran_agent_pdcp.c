@@ -136,6 +136,14 @@ int flexran_agent_pdcp_stats_reply(mid_t mod_id,
   return -1;
 }
 
+int flexran_agent_pdcp_destroy_stats_reply(Protocol__FlexStatsReply *reply)
+{
+  for (int i = 0; i < reply->n_ue_report; ++i) {
+    if (reply->ue_report[i]->pdcp_stats)
+      free(reply->ue_report[i]->pdcp_stats);
+  }
+  return 0;
+}
 
 
 int flexran_agent_register_pdcp_xface(mid_t mod_id)

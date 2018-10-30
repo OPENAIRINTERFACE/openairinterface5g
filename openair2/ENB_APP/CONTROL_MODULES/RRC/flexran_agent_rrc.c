@@ -493,7 +493,7 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
 
   for (int i = 0; i < report_config->nr_ue; i++){
 
-      if (ue_report[i]->rrc_measurements->neigh_meas != NULL){
+      if (ue_report[i]->rrc_measurements && ue_report[i]->rrc_measurements->neigh_meas != NULL){
           for (int j = 0; j < ue_report[i]->rrc_measurements->neigh_meas->n_eutra_meas; j++){
 
              free(ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]);
@@ -508,6 +508,22 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
         free(ue_report);
 
   return -1;
+}
+
+int flexran_agent_rrc_destroy_stats_reply(Protocol__FlexStatsReply *reply)
+{
+  for (int i = 0; i < reply->n_ue_report; i++){
+    if (reply->ue_report[i]->rrc_measurements && reply->ue_report[i]->rrc_measurements->neigh_meas){
+      for (int j = 0; j < reply->ue_report[i]->rrc_measurements->neigh_meas->n_eutra_meas; j++){
+        free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]->meas_result);
+        free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas[j]);
+      }
+      free(reply->ue_report[i]->rrc_measurements->neigh_meas->eutra_meas);
+      free(reply->ue_report[i]->rrc_measurements->neigh_meas);
+      free(reply->ue_report[i]->rrc_measurements);
+    }
+  }
+  return 0;
 }
 
 void flexran_agent_fill_rrc_ue_config(mid_t mod_id, rnti_t rnti,

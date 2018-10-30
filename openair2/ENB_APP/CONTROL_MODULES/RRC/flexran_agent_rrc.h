@@ -58,7 +58,7 @@ void flexran_trigger_rrc_measurements (mid_t mod_id, MeasResults_t *);
 
 /* Statistics reply protocol message constructor and destructor */
 int flexran_agent_rrc_stats_reply(mid_t mod_id, const report_config_t *report_config, Protocol__FlexUeStatsReport **ue_report, Protocol__FlexCellStatsReport **cell_report);
-int flexran_agent_rrc_destroy_stats_reply(Protocol__FlexranMessage *msg);
+int flexran_agent_rrc_destroy_stats_reply(Protocol__FlexStatsReply *reply);
 
 /* Fill the RRC part of a ue_config message */
 void flexran_agent_fill_rrc_ue_config(mid_t mod_id, rnti_t rnti,

@@ -113,7 +113,7 @@ Protocol__FlexranMessage* flexran_agent_handle_message (mid_t mod_id,
   err_code = ((*agent_messages_callback[decoded_message->msg_case-1][decoded_message->msg_dir-1])(mod_id, (void *) decoded_message, &reply_message));
   if ( err_code < 0 ){
     goto error;
-  } else if (err_code == 1) { //If err_code > 1, we do not want to dispose the message yet
+  } else if (err_code == 0) { //If err_code > 1, we do not want to dispose the message yet
     protocol__flexran_message__free_unpacked(decoded_message, NULL);
   }
   return reply_message;
@@ -653,14 +653,16 @@ int flexran_agent_destroy_stats_reply(Protocol__FlexranMessage *msg)
     return -1;
   }
 
-  flexran_agent_mac_destroy_stats_reply((Protocol__FlexranMessage *)msg->stats_reply_msg);
-  // TODO implement rrc_destroy_stats_reply()
-  //flexran_agent_rrc_destroy_stats_reply(msg->stats_reply_msg);
-  // TODO implement pdcp_destroy_stats_reply()
-  //flexran_agent_pdcp_destroy_stats_reply(msg->stats_reply_msg);
-  free(msg->stats_reply_msg->header);
+  flexran_agent_mac_destroy_stats_reply(msg->stats_reply_msg);
+  flexran_agent_rrc_destroy_stats_reply(msg->stats_reply_msg);
+  flexran_agent_pdcp_destroy_stats_reply(msg->stats_reply_msg);
+  for (int i = 0; i < msg->stats_reply_msg->n_cell_report; ++i)
+    free(msg->stats_reply_msg->cell_report[i]);
+  for (int i = 0; i < msg->stats_reply_msg->n_ue_report; ++i)
+    free(msg->stats_reply_msg->ue_report[i]);
   free(msg->stats_reply_msg->cell_report);
   free(msg->stats_reply_msg->ue_report);
+  free(msg->stats_reply_msg->header);
   free(msg->stats_reply_msg);
   free(msg);
   return 0;
