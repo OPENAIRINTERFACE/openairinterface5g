@@ -209,13 +209,13 @@ int i;
    i = sscanf(cfgparam,"%m[^':']:%ms",&cfgmode,&modeparams);
    if (i< 0) {
        fprintf(stderr,"[CONFIG] %s, %d, sscanf error parsing config source  %s: %s\n", __FILE__, __LINE__,cfgparam, strerror(errno));
-       exit(-1);
+       exit(-1) ;
    }
    else if ( i == 1 ) {
   /* -O argument doesn't contain ":" separator, assume -O <conf file> option, default cfgmode to libconfig
      with one parameter, the path to the configuration file */
        modeparams=cfgmode;
-       cfgmode=strdup(CONFIG_LIBCONFIGFILE);
+       cfgmode=NULL; //strdup(CONFIG_LIBCONFIGFILE);
    }
 
    cfgptr = malloc(sizeof(configmodule_interface_t));
