@@ -796,7 +796,7 @@ void *UE_thread(void *arg) {
 
     PHY_VARS_NR_UE *UE = (PHY_VARS_NR_UE *) arg;
     //  int tx_enabled = 0;
-    int dummy_rx[UE->frame_parms.nb_antennas_rx][UE->frame_parms.samples_per_tti] __attribute__((aligned(32)));
+    int dummy_rx[UE->frame_parms.nb_antennas_rx][UE->frame_parms.samples_per_subframe] __attribute__((aligned(32)));
     openair0_timestamp timestamp;
     void* rxp[NB_ANTENNAS_RX], *txp[NB_ANTENNAS_TX];
     int start_rx_stream = 0;
@@ -828,7 +828,7 @@ void *UE_thread(void *arg) {
     //itti_send_msg_to_task (TASK_NAS_UE, UE->Mod_id + NB_eNB_INST, message_p);
 #endif
 
-    int tti_nr=-1;
+    int subframe_nr=-1;
     //int cumulated_shift=0;
     if ((oaisim_flag == 0) && (UE->mode != loop_through_memory))
       AssertFatal(UE->rfdevice.trx_start_func(&UE->rfdevice) == 0, "Could not start the device\n");
@@ -926,12 +926,11 @@ void *UE_thread(void *arg) {
                     rt_sleep_ns(1000*1000);
 
             } else {
-                tti_nr++;
-                int ttis_per_frame = LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*UE->frame_parms.ttis_per_subframe;
-                tti_nr %= ttis_per_frame;               
+                subframe_nr++;
+                subframe_nr %= NR_NUMBER_OF_SUBFRAMES_PER_FRAME;               
                 UE_nr_rxtx_proc_t *proc = &UE->proc.proc_rxtx[thread_idx];
                 // update thread index for received subframe
-                UE->current_thread_id[tti_nr] = thread_idx;
+                UE->current_thread_id[subframe_nr] = thread_idx;
 
 #if BASIC_SIMULATOR
                 {
@@ -944,7 +943,7 @@ void *UE_thread(void *arg) {
                   }
                 }
 #endif
-                LOG_D(PHY,"Process TTI %d thread Idx %d \n", tti_nr, UE->current_thread_id[tti_nr]);
+                LOG_D(PHY,"Process subframe %d thread Idx %d \n", subframe_nr, UE->current_thread_id[subframe_nr]);
 
                 thread_idx++;
                 if(thread_idx>=RX_NB_TH)
@@ -955,14 +954,14 @@ void *UE_thread(void *arg) {
                     for (i=0; i<UE->frame_parms.nb_antennas_rx; i++)
                         rxp[i] = (void*)&UE->common_vars.rxdata[i][UE->frame_parms.ofdm_symbol_size+
                                  UE->frame_parms.nb_prefix_samples0+
-                                 tti_nr*UE->frame_parms.samples_per_tti];
+                                 subframe_nr*UE->frame_parms.samples_per_subframe];
                     for (i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-                        txp[i] = (void*)&UE->common_vars.txdata[i][((tti_nr+2)%10*UE->frame_parms.ttis_per_subframe)*UE->frame_parms.samples_per_tti];
+		      txp[i] = (void*)&UE->common_vars.txdata[i][((subframe_nr+2)%NR_NUMBER_OF_SUBFRAMES_PER_FRAME)*UE->frame_parms.samples_per_subframe];
 
                     int readBlockSize, writeBlockSize;
-                    if (tti_nr<(ttis_per_frame - 1)) {
-                        readBlockSize=UE->frame_parms.samples_per_tti;
-                        writeBlockSize=UE->frame_parms.samples_per_tti;
+                    if (subframe_nr<(NR_NUMBER_OF_SUBFRAMES_PER_FRAME - 1)) {
+                        readBlockSize=UE->frame_parms.samples_per_subframe;
+                        writeBlockSize=UE->frame_parms.samples_per_subframe;
                     } else {
                         // set TO compensation to zero
                         UE->rx_offset_diff = 0;
@@ -971,15 +970,15 @@ void *UE_thread(void *arg) {
                                 UE->rx_offset > 0 )
                             UE->rx_offset_diff = -1 ;
                         if ( UE->rx_offset > 5*UE->frame_parms.samples_per_subframe &&
-                                UE->rx_offset < 10*UE->frame_parms.samples_per_tti )
+                                UE->rx_offset < 10*UE->frame_parms.samples_per_subframe )
                             UE->rx_offset_diff = 1;
 
-                        LOG_D(PHY,"AbsSubframe %d.%d TTI SET rx_off_diff to %d rx_offset %d \n",proc->frame_rx,tti_nr,UE->rx_offset_diff,UE->rx_offset);
-                        readBlockSize=UE->frame_parms.samples_per_tti -
+                        LOG_D(PHY,"AbsSubframe %d.%d TTI SET rx_off_diff to %d rx_offset %d \n",proc->frame_rx,subframe_nr,UE->rx_offset_diff,UE->rx_offset);
+                        readBlockSize=UE->frame_parms.samples_per_subframe -
                                       UE->frame_parms.ofdm_symbol_size -
                                       UE->frame_parms.nb_prefix_samples0 -
                                       UE->rx_offset_diff;
-                        writeBlockSize=UE->frame_parms.samples_per_tti -
+                        writeBlockSize=UE->frame_parms.samples_per_subframe -
                                        UE->rx_offset_diff;
                     }
 
@@ -992,7 +991,7 @@ void *UE_thread(void *arg) {
                     AssertFatal( writeBlockSize ==
                                  UE->rfdevice.trx_write_func(&UE->rfdevice,
                                          timestamp+
-                                         (2*UE->frame_parms.samples_per_tti) -
+                                         (2*UE->frame_parms.samples_per_subframe) -
                                          UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0 -
                                          openair0_cfg[0].tx_sample_advance,
                                          txp,
@@ -1000,7 +999,7 @@ void *UE_thread(void *arg) {
                                          UE->frame_parms.nb_antennas_tx,
                                          1),"");
 		    
-                    if( tti_nr==(ttis_per_frame-1)) {
+                    if( subframe_nr==(NR_NUMBER_OF_SUBFRAMES_PER_FRAME-1)) {
                         // read in first symbol of next frame and adjust for timing drift
                         int first_symbols=writeBlockSize-readBlockSize;
                         if ( first_symbols > 0 )
@@ -1016,7 +1015,7 @@ void *UE_thread(void *arg) {
                     pickTime(gotIQs);
                     // operate on thread sf mod 2
                     AssertFatal(pthread_mutex_lock(&proc->mutex_rxtx) ==0,"");
-                    if(tti_nr == 0) {
+                    if(subframe_nr == 0) {
                         //UE->proc.proc_rxtx[0].frame_rx++;
                         //UE->proc.proc_rxtx[1].frame_rx++;
                         for (th_id=0; th_id < RX_NB_TH; th_id++) {
@@ -1038,18 +1037,18 @@ void *UE_thread(void *arg) {
                         UE->proc.proc_rxtx[th_id].gotIQs=readTime(gotIQs);
                     }
 
-                    proc->nr_tti_rx=tti_nr;
-                    proc->subframe_rx=tti_nr>>((uint8_t)(log2 (UE->frame_parms.ttis_per_subframe)));
+                    proc->nr_tti_rx=subframe_nr;
+                    proc->subframe_rx=subframe_nr;
 
                     proc->frame_tx = proc->frame_rx;
-                    proc->nr_tti_tx= tti_nr + DURATION_RX_TO_TX;
-                    if (proc->nr_tti_tx > ttis_per_frame) {
+                    proc->nr_tti_tx= subframe_nr + DURATION_RX_TO_TX;
+                    if (proc->nr_tti_tx > NR_NUMBER_OF_SUBFRAMES_PER_FRAME) {
                       proc->frame_tx = (proc->frame_tx + 1)%MAX_FRAME_NUMBER;
-                      proc->nr_tti_tx %= ttis_per_frame;
+                      proc->nr_tti_tx %= NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
                     }
-                    proc->subframe_tx=(proc->nr_tti_tx)>>((uint8_t)(log2 (UE->frame_parms.ttis_per_subframe)));
+                    proc->subframe_tx=subframe_nr + DURATION_RX_TO_TX;
                     proc->timestamp_tx = timestamp+
-                                         (DURATION_RX_TO_TX*UE->frame_parms.samples_per_tti)-
+                                         (DURATION_RX_TO_TX*UE->frame_parms.samples_per_subframe)-
                                          UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0;
 
                     proc->instance_cnt_rxtx++;
@@ -1069,7 +1068,7 @@ void *UE_thread(void *arg) {
                         char exit_fun_string[256];
                         sprintf(exit_fun_string,"[SCHED][UE %d] !!! UE instance_cnt_rxtx > 2 (IC %d) (Proc %d)!!",
                         			UE->Mod_id, proc->instance_cnt_rxtx,
-                        			UE->current_thread_id[tti_nr]);
+                        			UE->current_thread_id[subframe_nr]);
           				printf("%s\n",exit_fun_string);
           				fflush(stdout);
           				sleep(1);
