@@ -34,7 +34,7 @@
 #include "nr_dci.h"
 #include "nr_sch_dmrs.h"
 
-#define DEBUG_DLSCH
+//#define DEBUG_DLSCH
 #define DEBUG_DLSCH_MAPPING
 
 uint8_t mod_order[5] = {1, 2, 4, 6, 8};
@@ -314,7 +314,7 @@ printf("DMRS params for ap %d: Wt %d %d \t Wf %d %d\n", ap, Wt[0], Wt[1], Wf[0],
     uint8_t k_prime=0, n=0, dmrs_idx=0;
     uint16_t m = 0;
 
-    for (int l=rel15->start_symbol; l<rel15->nb_symbols; l++)
+    for (int l=rel15->start_symbol; l<rel15->start_symbol+rel15->nb_symbols; l++)
       for (int k=start_sc; k<rel15->n_prb*NR_NB_SC_PER_RB; k++) {
         if (k >= frame_parms.ofdm_symbol_size)
           k -= frame_parms.ofdm_symbol_size;
