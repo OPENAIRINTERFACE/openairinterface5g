@@ -115,50 +115,10 @@ pipeline {
             }
         }
 
-        stage ("Start VM -- cppcheck") {
-            steps {
-                timeout (time: 5, unit: 'MINUTES') {
-                    sh "./ci-scripts/createVM.sh --variant cppcheck --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-                }
-            }
-        }
-
-        stage ("Start VM -- enb-usrp") {
-            steps {
-                timeout (time: 5, unit: 'MINUTES') {
-                    sh "./ci-scripts/createVM.sh --variant enb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-                }
-            }
-        }
-
         stage ("Start VM -- basic-sim") {
             steps {
                 timeout (time: 5, unit: 'MINUTES') {
-                    sh "./ci-scripts/createVM.sh --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-                }
-            }
-        }
-
-        stage ("Start VM -- phy-sim") {
-            steps {
-                timeout (time: 5, unit: 'MINUTES') {
-                    sh "./ci-scripts/createVM.sh --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-                }
-            }
-        }
-
-        stage ("Start VM -- enb-ethernet") {
-            steps {
-                timeout (time: 5, unit: 'MINUTES') {
-                    sh "./ci-scripts/createVM.sh --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-                }
-            }
-        }
-
-        stage ("Start VM -- ue-ethernet") {
-            steps {
-                timeout (time: 5, unit: 'MINUTES') {
-                    sh "./ci-scripts/createVM.sh --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                    sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
             }
         }
@@ -166,16 +126,56 @@ pipeline {
         stage ("Start VM -- gnb-usrp") {
             steps {
                 timeout (time: 5, unit: 'MINUTES') {
-                    sh "./ci-scripts/createVM.sh --variant gnb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-		    }
+                    sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant gnb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
+                }
             }
         }
 
         stage ("Start VM -- nu-ue-usrp") {
             steps {
                 timeout (time: 5, unit: 'MINUTES') {
-                    sh "./ci-scripts/createVM.sh --variant nu-ue-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-		    }
+                    sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant nu-ue-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
+                }
+            }
+        }
+
+        stage ("Start VM -- enb-usrp") {
+            steps {
+                timeout (time: 5, unit: 'MINUTES') {
+                    sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant enb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
+                }
+            }
+        }
+
+        stage ("Start VM -- enb-ethernet") {
+            steps {
+                timeout (time: 5, unit: 'MINUTES') {
+                    sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
+                }
+            }
+        }
+
+        stage ("Start VM -- ue-ethernet") {
+            steps {
+                timeout (time: 5, unit: 'MINUTES') {
+                    sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
+                }
+            }
+        }
+
+        stage ("Start VM -- phy-sim") {
+            steps {
+                timeout (time: 5, unit: 'MINUTES') {
+                    sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
+                }
+            }
+        }
+
+        stage ("Start VM -- cppcheck") {
+            steps {
+                timeout (time: 5, unit: 'MINUTES') {
+                    sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant cppcheck --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
+                }
             }
         }
 
@@ -185,7 +185,7 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Analysis with cppcheck") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant cppcheck --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                                sh "./ci-scripts/waitBuildOnVM.sh --workspace $WORKSPACE --variant cppcheck --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
                             }
                         }
                     }
@@ -194,7 +194,7 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build eNb-USRP") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant enb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                                sh "./ci-scripts/waitBuildOnVM.sh --workspace $WORKSPACE --variant enb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
                             }
                         }
                     }
@@ -203,7 +203,7 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build basic-sim") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                                sh "./ci-scripts/waitBuildOnVM.sh --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                             }
                         }
                     }
@@ -212,7 +212,7 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build eNb-ethernet") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                                sh "./ci-scripts/waitBuildOnVM.sh --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                             }
                         }
                     }
@@ -221,18 +221,17 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build UE-ethernet") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                                sh "./ci-scripts/waitBuildOnVM.sh --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                             }
                         }
                     }
                 }
-
-		stage ("Build 5G gNB-USRP") {
+                stage ("Build 5G gNB-USRP") {
                     steps {
                         gitlabCommitStatus(name: "Build gNb-usrp") {
                             timeout (time: 20, unit: 'MINUTES') {
-                             sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant gnb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-			     }
+                                sh "./ci-scripts/waitBuildOnVM.sh --workspace $WORKSPACE --variant gnb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                            }
                         }
                     }
                 }
@@ -240,8 +239,8 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build nr-UE-usrp") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant nu-ue-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-			    }
+                                sh "./ci-scripts/waitBuildOnVM.sh --workspace $WORKSPACE --variant nu-ue-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                            }
                         }
                     }
                 }
@@ -249,8 +248,8 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build phy-sim") {
                             timeout (time: 20, unit: 'MINUTES') {
-                               sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
-			    }
+                               sh "./ci-scripts/waitBuildOnVM.sh --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                            }
                         }
                     }
                 }
@@ -329,6 +328,7 @@ pipeline {
                         }
                     }
                 }
+/* Disabled for the moment: main.py is pulled over from develop branch for the moment.. problem of location
                 stage ("Test on CI bench #1") {
                     stages {
                         stage ("Test FDD - Band 7 - B210") {
@@ -529,6 +529,7 @@ pipeline {
                         }
                     }
                 }
+*/
             }
             post {
                 always {
