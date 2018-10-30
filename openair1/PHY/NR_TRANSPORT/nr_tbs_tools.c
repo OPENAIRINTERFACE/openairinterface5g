@@ -107,6 +107,8 @@ void nr_get_tbs(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
                 nfapi_nr_dl_config_dci_dl_pdu dci_pdu,
                 nfapi_nr_config_request_t config) {
 
+  LOG_I(MAC, "TBS calculation\n");
+
   nfapi_nr_dl_config_pdcch_parameters_rel15_t params_rel15 = dci_pdu.pdcch_params_rel15;
   nfapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_rel15 = &dlsch_pdu->dlsch_pdu_rel15;
   uint8_t rnti_type = params_rel15.rnti_type;
@@ -125,7 +127,7 @@ void nr_get_tbs(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
   uint8_t table_idx, Qm, n, scale;
 
   table_idx = get_table_idx(mcs_table, dci_format, rnti_type, ss_type);
-  scale = 10 + (((table_idx==2)&&((Imcs==20)||(Imcs==26)))?1:0);
+  scale = ((table_idx==2)&&((Imcs==20)||(Imcs==26)))?11:10;
   
   N_RE = min(156, N_RE_prime)*dlsch_rel15->n_prb;
   R = nr_get_code_rate(Imcs, table_idx);
@@ -165,6 +167,7 @@ void nr_get_tbs(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
   dlsch_rel15->modulation_order = Qm;
   dlsch_rel15->transport_block_size = TBS;
   dlsch_rel15->nb_re_dmrs = N_PRB_DMRS;
+  dlsch_rel15->nb_mod_symbols = N_RE_prime*dlsch_rel15->n_prb*dlsch_rel15->nb_codewords;
 
 }
 

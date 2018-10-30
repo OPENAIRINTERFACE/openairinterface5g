@@ -76,8 +76,8 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 
     dlsch_pdu_rel15->start_prb = 0;
     dlsch_pdu_rel15->n_prb = 106;
-    dlsch_pdu_rel15->start_symbol = 8;
-    dlsch_pdu_rel15->nb_symbols = 6;
+    dlsch_pdu_rel15->start_symbol = 2;
+    dlsch_pdu_rel15->nb_symbols = 8;
     dlsch_pdu_rel15->rnti = rnti;
     dlsch_pdu_rel15->nb_layers =1;
     dlsch_pdu_rel15->nb_codewords = 1;

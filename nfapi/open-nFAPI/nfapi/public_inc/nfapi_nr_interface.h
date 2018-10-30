@@ -508,7 +508,7 @@ typedef struct{
 
 typedef struct {
   nfapi_tl_t tl;
-  uint8_t rnti;
+  uint16_t rnti;
   uint8_t rnti_type;
   uint8_t dci_format;
   uint8_t config_type;
@@ -550,6 +550,7 @@ typedef struct {
 	uint16_t length;
 	uint8_t pdu_index;
 	uint16_t rnti;
+  uint16_t nb_mod_symbols;
   uint8_t time_allocation_type;
 	uint8_t freq_allocation_type;
   uint8_t start_prb;
