@@ -1144,10 +1144,8 @@ void wakeup_L1s(RU_t *ru) {
   L1_proc_t *proc      = &eNB->proc;
   RU_proc_t  *ruproc    = &ru->proc;
   struct timespec t;
-  LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d (state %s)ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru_states[ru->state],ru->eNB_top);
 
   LOG_I(PHY,"wakeup_L1s (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
-
 
     // call eNB function directly
   
@@ -1217,20 +1215,20 @@ void wakeup_L1s(RU_t *ru) {
             }
          }
       }
-      AssertFatal(0==pthread_mutex_lock(&ruproc->mutex_eNBs),"");
+    /*  AssertFatal(0==pthread_mutex_lock(&ruproc->mutex_eNBs),"");
       LOG_D(PHY,"RU %d sending signal to unlock waiting ru_threads\n", ru->idx);
       AssertFatal(0==pthread_cond_broadcast(&ruproc->cond_eNBs),"");
       if (ruproc->instance_cnt_eNBs==-1) ruproc->instance_cnt_eNBs++;
       AssertFatal(0==pthread_mutex_unlock(&ruproc->mutex_eNBs),"");
- 
+ */
 
     }
-    else 
+    /*else 
       AssertFatal(0==pthread_mutex_unlock(&proc->mutex_RU),"");
 //      pthread_mutex_unlock(&proc->mutex_RU);
 //      LOG_D(PHY,"wakeup eNB top for for subframe %d\n", ru->proc.subframe_rx);
 //      ru->eNB_top(eNB_list[0],ru->proc.frame_rx,ru->proc.subframe_rx,string);
-
+*/
     ru->proc.emulate_rf_busy = 0;
   
 }
@@ -1502,7 +1500,7 @@ static void* ru_thread_tx( void* param ) {
   //wait_sync("ru_thread_tx");
   wait_on_condition(&proc->mutex_FH1,&proc->cond_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
 
-  printf( "ru_thread_tx ready\n");
+  //printf( "ru_thread_tx ready\n");
   while (!oai_exit) { 
 
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_CPUID_RU_THREAD_TX,sched_getcpu());   
@@ -1527,8 +1525,10 @@ static void* ru_thread_tx( void* param ) {
   	      
       if (ru->fh_north_out) ru->fh_north_out(ru);
 	}
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_IC_ENB,proc->instance_cnt_eNBs);
     release_thread(&proc->mutex_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
-    
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_IC_ENB,proc->instance_cnt_eNBs);
+
     for(int i = 0; i<ru->num_eNB; i++)
     {
       eNB       = ru->eNB_list[i];
@@ -1545,17 +1545,17 @@ static void* ru_thread_tx( void* param ) {
         }
       }
       if (eNB_proc->RU_mask_tx != (1<<eNB->num_RU)-1) {  // not all RUs have provided their information so return
-printf("~~~~~~~~~~~~~~~~~~~~~~(mask = %d)\n", eNB_proc->RU_mask_tx);
+      	LOG_I(PHY,"Not all RUs have provided their info (mask = %d)\n", eNB_proc->RU_mask_tx);
         pthread_mutex_unlock(&eNB_proc->mutex_RU_tx);
       }
       else { // all RUs TX are finished so send the ready signal to eNB processing
-printf("~~~~~~~~~~~~~~~~~~~~~~ready to send wakeup signal\n");
+      	LOG_I(PHY,"All RUs TX are finished. Ready to send wakeup signal to eNB processing\n");
         eNB_proc->RU_mask_tx = 0;
         pthread_mutex_unlock(&eNB_proc->mutex_RU_tx);
 
         pthread_mutex_lock( &L1_proc->mutex_RUs);
         L1_proc->instance_cnt_RUs = 0;
-printf("~~~~~~~~~~~~~~~~~~~~~~ru_thread_tx send signal to L1_thread_tx with (mask = %d)\n", eNB_proc->RU_mask_tx);
+        LOG_I(PHY,"ru_thread_tx send signal to L1_thread_tx with (mask = %d)\n", eNB_proc->RU_mask_tx);
         // the thread can now be woken up
         if (pthread_cond_signal(&L1_proc->cond_RUs) != 0) {
           LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
@@ -1661,7 +1661,7 @@ static void* ru_thread( void* param ) {
       if (wait_on_condition(&ru->proc.mutex_ru,&ru->proc.cond_ru_thread,&ru->proc.instance_cnt_ru,"ru_thread")<0) break;
     }
     else wait_sync("ru_thread");
-
+if(!emulate_rf){
     if (ru->is_slave == 0) AssertFatal(ru->state == RU_RUN,"ru-%d state = %s != RU_RUN\n",ru->idx,ru_states[ru->state]);
     else if (ru->is_slave == 1) AssertFatal(ru->state == RU_SYNC || ru->state == RU_RUN,"ru %d state = %s != RU_SYNC or RU_RUN\n",ru->idx,ru_states[ru->state]); 
     // Start RF device if any
@@ -1671,7 +1671,7 @@ static void* ru_thread( void* param ) {
       else LOG_I(PHY,"RU %d rf device ready\n",ru->idx);
     }
     else LOG_D(PHY,"RU %d no rf device\n",ru->idx);
-
+}
 
     // if an asnych_rxtx thread exists
     // wakeup the thread because the devices are ready at this point
