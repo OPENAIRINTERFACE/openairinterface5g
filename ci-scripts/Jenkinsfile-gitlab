@@ -328,7 +328,6 @@ pipeline {
                         }
                     }
                 }
-/* Disabled for the moment: main.py is pulled over from develop branch for the moment.. problem of location
                 stage ("Test on CI bench #1") {
                     stages {
                         stage ("Test FDD - Band 7 - B210") {
@@ -529,7 +528,6 @@ pipeline {
                         }
                     }
                 }
-*/
             }
             post {
                 always {

@@ -368,6 +368,7 @@ echo "unzip -qq -DD ../localZip.zip" >> $VM_CMDS
 if [[ "$VM_NAME" == *"-cppcheck"* ]]
 then
     echo "mkdir cmake_targets/log" >> $VM_CMDS
+    echo "chmod 777 cmake_targets/log" >> $VM_CMDS
     echo "cp /home/ubuntu/zip-install.txt cmake_targets/log" >> $VM_CMDS
     echo "echo \"cppcheck $BUILD_OPTIONS . \"" >> $VM_CMDS
     if [ $DAEMON -eq 0 ]
@@ -383,6 +384,7 @@ else
     echo "source oaienv" >> $VM_CMDS
     echo "cd cmake_targets/" >> $VM_CMDS
     echo "mkdir log" >> $VM_CMDS
+    echo "chmod 777 log" >> $VM_CMDS
     echo "cp /home/ubuntu/zip-install.txt log" >> $VM_CMDS
     if [ $DAEMON -eq 0 ]
     then
