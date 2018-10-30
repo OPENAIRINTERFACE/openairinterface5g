@@ -175,7 +175,6 @@ set(CMAKE_C_FLAGS
 set(CMAKE_CXX_FLAGS
   "${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR} -std=c++11 -D'MAKE_VERSION(a,b,c)=((a)*256+(b)*16+c)'"
 )
-add_definitions("-DASN_DISABLE_OER_SUPPORT")
 
 
 #########################
