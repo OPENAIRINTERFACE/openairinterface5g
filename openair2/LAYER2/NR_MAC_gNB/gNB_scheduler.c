@@ -419,7 +419,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   }
 
   // Phytest scheduling/ option not activated because of pending bug
-  nr_schedule_css_dlsch_phytest(module_idP, frameP, subframeP);
+  if (subframeP==1)
+    nr_schedule_css_dlsch_phytest(module_idP, frameP, subframeP);
 
 
   /*

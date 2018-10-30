@@ -198,7 +198,7 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
   int16_t **mod_symbs = (int16_t**)dlsch.mod_symbs;
   int16_t **tx_layers = (int16_t**)dlsch.txdataF;
   uint16_t n_symbs;
-  int8_t Wf[2], Wt[2], l0, delta;
+  int8_t Wf[2], Wt[2], l0, l_prime, delta;
   uint16_t TBS = rel15->transport_block_size;
   uint8_t Qm = rel15->modulation_order;
 
@@ -323,7 +323,7 @@ printf("DMRS params for ap %d: Wt %d %d \t Wf %d %d\n", ap, Wt[0], Wt[1], Wf[0],
           ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (Wt[k_prime]*Wf[k_prime]*amp/2*mod_dmrs[dmrs_idx<<1]) >> 15;
           ((int16_t*)txdataF[ap])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (Wt[k_prime]*Wf[k_prime]*amp/2*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
 #ifdef DEBUG_DLSCH_MAPPING
-printf("dmrs_idx %d\t l %d \t k %d \t k_prime %d \t n %d \t txdataF: %d %d",
+printf("dmrs_idx %d\t l %d \t k %d \t k_prime %d \t n %d \t txdataF: %d %d\n",
 dmrs_idx, l, k, k_prime, n, ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1], ((int16_t*)txdataF[ap])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1]);
 #endif
           dmrs_idx++;
@@ -335,7 +335,7 @@ dmrs_idx, l, k, k_prime, n, ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_s
         ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (amp * tx_layers[ap][m<<1]) >> 15;
         ((int16_t*)txdataF[ap])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (amp * tx_layers[ap][(m<<1) + 1]) >> 15;
 #ifdef DEBUG_DLSCH_MAPPING
-printf("m %d\t l %d \t k %d \t txdataF: %d %d",
+printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
 m, l, k, ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1], ((int16_t*)txdataF[ap])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1]);
 #endif
         m++;
