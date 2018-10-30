@@ -763,10 +763,10 @@ int flexran_agent_handle_enb_config_reply(mid_t mod_id, const void *params, Prot
 
   if (enb_config->n_cell_config > 1)
     LOG_W(FLEXRAN_AGENT, "ignoring slice configs for other cell except cell 0\n");
-  if (enb_config->cell_config[0]->slice_config) {
+  if (flexran_agent_get_mac_xface(mod_id) && enb_config->cell_config[0]->slice_config) {
     prepare_update_slice_config(mod_id, enb_config->cell_config[0]->slice_config);
-  } else {
-    initiate_soft_restart(mod_id, enb_config->cell_config[0]);
+  //} else {
+  //  initiate_soft_restart(mod_id, enb_config->cell_config[0]);
   }
 
   *msg = NULL;
@@ -779,7 +779,7 @@ int flexran_agent_handle_ue_config_reply(mid_t mod_id, const void *params, Proto
   Protocol__FlexranMessage *input = (Protocol__FlexranMessage *)params;
   Protocol__FlexUeConfigReply *ue_config_reply = input->ue_config_reply_msg;
 
-  for (i = 0; i < ue_config_reply->n_ue_config; i++)
+  for (i = 0; flexran_agent_get_mac_xface(mod_id) && i < ue_config_reply->n_ue_config; i++)
     prepare_ue_slice_assoc_update(mod_id, ue_config_reply->ue_config[i]);
 
   *msg = NULL;
