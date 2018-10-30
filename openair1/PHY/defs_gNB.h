@@ -105,9 +105,11 @@ typedef struct {
 typedef struct {
 
   /// Pointers to 16 HARQ processes for the DLSCH
-  NR_DL_gNB_HARQ_t *harq_processes[16];
+  NR_DL_gNB_HARQ_t *harq_processes[NR_MAX_NB_HARQ_PROCESSES];
   /// TX buffers for UE-spec transmission (antenna ports 5 or 7..14, prior to precoding)
-  int32_t *txdataF[8];
+  int32_t *txdataF[NR_MAX_NB_LAYERS];
+  /// Modulated symbols buffer
+  int32_t *mod_symbs[NR_MAX_NB_CODEWORDS];
   /// beamforming weights for UE-spec transmission (antenna ports 5 or 7..14), for each codeword, maximum 4 layers?
   int32_t **ue_spec_bf_weights[4];
   /// dl channel estimates (estimated from ul channel estimates)

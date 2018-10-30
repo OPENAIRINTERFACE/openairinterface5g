@@ -88,6 +88,7 @@
 #define NR_MAX_NB_RBG 18
 #define NR_MAX_NB_LAYERS 8
 #define NR_MAX_NB_CODEWORDS 2
+#define NR_MAX_NB_HARQ_PROCESSES 16
 #define NR_MAX_PDSCH_ENCODED_LENGTH 950984
 
 typedef enum {

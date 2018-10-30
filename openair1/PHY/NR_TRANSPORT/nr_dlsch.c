@@ -194,8 +194,8 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
   nfapi_nr_dl_config_dlsch_pdu_rel15_t *rel15 = &harq->dlsch_pdu.dlsch_pdu_rel15;
   nfapi_nr_dl_config_pdcch_parameters_rel15_t pdcch_params = dci_alloc.pdcch_params;
   uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
-  int16_t mod_symbs[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>1];
-  int16_t tx_layers[NR_MAX_NB_LAYERS][NR_MAX_PDSCH_ENCODED_LENGTH>>1];
+  int16_t **mod_symbs = (int16_t**)dlsch.mod_symbs;
+  int16_t **tx_layers = (int16_t**)dlsch.txdataF;
   uint16_t n_symbs;
   int8_t Wf[2], Wt[2], l0, delta;
   uint16_t TBS = rel15->transport_block_size;
@@ -243,10 +243,10 @@ for (int i=0; i<n_symbs; i++) {
 
 
   /// Layer mapping
-  nr_pdsch_layer_mapping((int16_t**)mod_symbs,
+  nr_pdsch_layer_mapping(mod_symbs,
                          rel15->nb_layers,
                          n_symbs,
-                         (int16_t**)tx_layers);
+                         tx_layers);
 
   /// Antenna port mapping
     //to be moved to init phase potentially, for now tx_layers 1-8 are mapped on antenna ports 1000-1007

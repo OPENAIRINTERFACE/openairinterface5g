@@ -755,7 +755,7 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
   for (i=0; i<NUMBER_OF_UE_MAX; i++) {
     LOG_I(PHY,"Allocating Transport Channel Buffers for DLSCH, UE %d\n",i);
     for (j=0; j<2; j++) {
-      gNB->dlsch[i][j] = new_gNB_dlsch(1,16,NSOFT,cfg->rf_config.dl_carrier_bandwidth.value,0,fp);
+      gNB->dlsch[i][j] = new_gNB_dlsch(1,16,NSOFT,cfg->rf_config.dl_carrier_bandwidth.value,0,cfg);
       if (!gNB->dlsch[i][j]) {
 	LOG_E(PHY,"Can't get gNB dlsch structures for UE %d \n", i);
 	exit(-1);
@@ -784,11 +784,11 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
     LOG_E(PHY,"Can't get gNB ulsch structures\n");
     exit(-1);
   }*/
-  gNB->dlsch_SI  = new_gNB_dlsch(1,8,NSOFT,fp->N_RB_DL, 0, fp);
+  gNB->dlsch_SI  = new_gNB_dlsch(1,8,NSOFT, 0, fp, cfg);
   LOG_D(PHY,"gNB %d.%d : SI %p\n",gNB->Mod_id,gNB->CC_id,gNB->dlsch_SI);
-  gNB->dlsch_ra  = new_gNB_dlsch(1,8,NSOFT,fp->N_RB_DL, 0, fp);
+  gNB->dlsch_ra  = new_gNB_dlsch(1,8,NSOFT, 0, fp, cfg);
   LOG_D(PHY,"gNB %d.%d : RA %p\n",gNB->Mod_id,gNB->CC_id,gNB->dlsch_ra);
-  gNB->dlsch_MCH = new_gNB_dlsch(1,8,NSOFT,fp->N_RB_DL, 0, fp);
+  gNB->dlsch_MCH = new_gNB_dlsch(1,8,NSOFT, 0, fp, cfg);
   LOG_D(PHY,"gNB %d.%d : MCH %p\n",gNB->Mod_id,gNB->CC_id,gNB->dlsch_MCH);
   
   

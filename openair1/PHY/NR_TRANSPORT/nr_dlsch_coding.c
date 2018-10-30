@@ -106,15 +106,21 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
 
 }
 
-NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_t Nsoft,unsigned char N_RB_DL, uint8_t abstraction_flag, NR_DL_FRAME_PARMS* frame_parms)
+NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,
+                              unsigned char Mdlharq,
+                              uint32_t Nsoft,
+                              uint8_t abstraction_flag,
+                              NR_DL_FRAME_PARMS *frame_parms,
+                              nfapi_nr_config_request_t *config)
 {
 
   NR_gNB_DLSCH_t *dlsch;
   unsigned char exit_flag = 0,i,r,aa,layer;
   int re;
   unsigned char bw_scaling =1;
+  uint16_t N_RB = config->rf_config.dl_carrier_bandwidth.value;
 
-  switch (N_RB_DL) {
+  switch (N_RB) {
 
   case 106:
     bw_scaling =2;
@@ -134,19 +140,24 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_t
     dlsch->Mlimit = 4;
     dlsch->Nsoft = Nsoft;
 
-    for (layer=0; layer<4; layer++) {
-      dlsch->ue_spec_bf_weights[layer] = (int32_t**)malloc16(frame_parms->nb_antennas_tx*sizeof(int32_t*));
+    for (layer=0; layer<NR_MAX_NB_LAYERS; layer++) {
+      dlsch->ue_spec_bf_weights[layer] = (int32_t**)malloc16(config->rf_config.tx_antenna_ports.value*sizeof(int32_t*));
 
-       for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+       for (aa=0; aa<config->rf_config.tx_antenna_ports.value; aa++) {
          dlsch->ue_spec_bf_weights[layer][aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
          for (re=0;re<OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; re++) {
            dlsch->ue_spec_bf_weights[layer][aa][re] = 0x00007fff;
          }
        }
+
+      dlsch->txdataF[layer] = (int32_t *)malloc16((NR_MAX_PDSCH_ENCODED_LENGTH>>1)*sizeof(int32_t*));
      }
 
-     dlsch->calib_dl_ch_estimates = (int32_t**)malloc16(frame_parms->nb_antennas_tx*sizeof(int32_t*));
-     for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
+    for (int q=0; q<NR_MAX_NB_CODEWORDS; q++)
+      dlsch->mod_symbs[q] = (int32_t *)malloc16((NR_MAX_PDSCH_ENCODED_LENGTH>>1)*sizeof(int32_t*));
+
+     dlsch->calib_dl_ch_estimates = (int32_t**)malloc16(config->rf_config.tx_antenna_ports.value*sizeof(int32_t*));
+     for (aa=0; aa<config->rf_config.tx_antenna_ports.value; aa++) {
        dlsch->calib_dl_ch_estimates[aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
 
      }
@@ -158,7 +169,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,unsigned char Mdlharq,uint32_t
     for (i=0; i<Mdlharq; i++) {
       dlsch->harq_processes[i] = (NR_DL_gNB_HARQ_t *)malloc16(sizeof(NR_DL_gNB_HARQ_t));
       LOG_T(PHY, "Required mem size %d (bw scaling %d), dlsch->harq_processes[%d] %p\n",
-    		  MAX_NR_ULSCH_PAYLOAD_BYTES/bw_scaling,bw_scaling, i,dlsch->harq_processes[i]);
+    		  MAX_NR_DLSCH_PAYLOAD_BYTES/bw_scaling,bw_scaling, i,dlsch->harq_processes[i]);
 
       if (dlsch->harq_processes[i]) {
         bzero(dlsch->harq_processes[i],sizeof(NR_DL_gNB_HARQ_t));

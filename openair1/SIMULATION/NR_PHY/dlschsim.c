@@ -405,7 +405,7 @@ int main(int argc, char **argv)
   for (int k=0; k<2; k++) {
     // Create transport channel structures for 2 transport blocks (MIMO)
     for (i=0; i<2; i++) {
-      gNB->dlsch[k][i] = new_gNB_dlsch(Kmimo,8,Nsoft,N_RB_DL,0,&gNB->frame_parms);
+      gNB->dlsch[k][i] = new_gNB_dlsch(Kmimo,8,Nsoft,0,frame_parms,gNB_config);
 
       if (!gNB->dlsch[k][i]) {
         printf("Can't get eNB dlsch structures\n");
