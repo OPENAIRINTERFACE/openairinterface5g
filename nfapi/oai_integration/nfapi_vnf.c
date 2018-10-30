@@ -343,9 +343,9 @@ int pnf_config_resp_cb(nfapi_vnf_config_t* config, int p5_idx, nfapi_pnf_config_
 
 int wake_eNB_rxtx(PHY_VARS_eNB *eNB, uint16_t sfn, uint16_t sf) {
 
-  eNB_proc_t *proc=&eNB->proc;
+  L1_proc_t *proc=&eNB->proc;
 
-  eNB_rxtx_proc_t *L1_proc= (sf&1)? &proc->L1_proc : &proc->L1_proc_tx;
+  L1_rxtx_proc_t *L1_proc= (sf&1)? &proc->L1_proc : &proc->L1_proc_tx;
 
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
 
