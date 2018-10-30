@@ -35,7 +35,8 @@
 #include "nr_sch_dmrs.h"
 
 //#define DEBUG_DLSCH
-#define DEBUG_DLSCH_MAPPING
+//#define DEBUG_DLSCH_MAPPING
+#define DEBUG_FILE_OUTPUT
 
 uint8_t mod_order[5] = {1, 2, 4, 6, 8};
 uint16_t mod_offset[5] = {1,3,7,23,87};
@@ -300,7 +301,7 @@ for (int i=0; i<n_dmrs>>3; i++) {
     // Non interleaved VRB to PRB mapping
   uint8_t start_sc = frame_parms.first_carrier_offset + rel15->start_prb*NR_NB_SC_PER_RB +\
   ((pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_COMMON) && (pdcch_params.dci_format == NFAPI_NR_DL_DCI_FORMAT_1_0))?\
-       (((int)floor(frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB) + pdcch_params.rb_offset)*NR_NB_SC_PER_RB) : 0;
+       ((frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB + pdcch_params.rb_offset)*NR_NB_SC_PER_RB) : 0;
 
   for (int ap=0; ap<rel15->nb_layers; ap++) {
 
@@ -310,7 +311,7 @@ for (int i=0; i<n_dmrs>>3; i++) {
     delta = get_delta(ap, dmrs_type);
     l_prime[0] = 0; // single symbol ap 0
 #ifdef DEBUG_DLSCH_MAPPING
-printf("DMRS params for ap %d: Wt %d %d \t Wf %d %d\n", ap, Wt[0], Wt[1], Wf[0], Wf[1]);
+printf("DMRS params for ap %d: Wt %d %d \t Wf %d %d \t delta %d \t l_prime %d \t l0 %d\n", ap, Wt[0], Wt[1], Wf[0], Wf[1], delta, l_prime[0], l0);
 #endif
     uint8_t k_prime=0, n=0, dmrs_idx=0;
     uint16_t m = 0;
@@ -321,8 +322,8 @@ printf("DMRS params for ap %d: Wt %d %d \t Wf %d %d\n", ap, Wt[0], Wt[1], Wf[0],
           k -= frame_parms.ofdm_symbol_size;
 
         if ((l==(l0+l_prime[0])) && (k == ((dmrs_type)? (6*n+k_prime+delta):((n<<2)+(k_prime<<1)+delta)))) {
-          ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (Wt[l_prime[0]]*Wf[k_prime]*amp/2*mod_dmrs[dmrs_idx<<1]) >> 15;
-          ((int16_t*)txdataF[ap])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (Wt[l_prime[0]]*Wf[k_prime]*amp/2*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
+          ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (Wt[l_prime[0]]*Wf[k_prime]*(amp>>1)*mod_dmrs[dmrs_idx<<1]) >> 15;
+          ((int16_t*)txdataF[ap])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (Wt[l_prime[0]]*Wf[k_prime]*(amp>>1)*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
 #ifdef DEBUG_DLSCH_MAPPING
 printf("dmrs_idx %d\t l %d \t k %d \t k_prime %d \t n %d \t txdataF: %d %d\n",
 dmrs_idx, l, k, k_prime, n, ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1], ((int16_t*)txdataF[ap])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1]);
@@ -343,8 +344,8 @@ m, l, k, ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1], ((int
       }
   }
 
-#ifdef DEBUG_DLSCH
-  write_output("txdataF_dlsch.m", "txdataF_dlsch", txdataF[0], frame_parms.samples_per_subframe_wCP>>1, 1, 1);
+#ifdef DEBUG_FILE_OUTPUT
+  write_output("txdataF_dlsch.m", "txdataF_dlsch", &txdataF[0][28*frame_parms.ofdm_symbol_size], frame_parms.samples_per_subframe_wCP>>1, 1, 1);
 #endif
 
   return 0;
