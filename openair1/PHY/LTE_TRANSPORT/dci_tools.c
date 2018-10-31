@@ -50,6 +50,8 @@
 #include "dci_tools_common_extern.h"
 #include "transport_proto.h"
 
+//#undef LOG_D
+//#define LOG_D(A,B...) printf(B)
 
 int16_t find_dlsch(uint16_t rnti, PHY_VARS_eNB *eNB,find_type_t type)
 {
@@ -2012,7 +2014,7 @@ void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu
 
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   ulsch->ue_type = ulsch_pdu->ulsch_pdu_rel13.ue_type;
-  AssertFatal(harq_pid ==0, "Harq PID is not zero for BL/CE UE\n");
+  AssertFatal(harq_pid ==0 || ulsch->ue_type == NOCE, "Harq PID is not zero for BL/CE UE\n");
 
 
 #else
@@ -2023,6 +2025,14 @@ void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu
   if(ulsch->harq_processes[harq_pid]->nb_rb == 0){
     LOG_E(PHY, "fill_ulsch UE_id %d nb_rb = 0\n", UE_id);
   }
+
+  ulsch->harq_processes[harq_pid]->frame                                 = frame;
+  ulsch->harq_processes[harq_pid]->subframe                              = subframe;
+  ulsch->harq_processes[harq_pid]->handled                               = 0;
+
+  ulsch->harq_processes[harq_pid]->first_rb                              = ulsch_pdu->ulsch_pdu_rel8.resource_block_start;
+  ulsch->harq_processes[harq_pid]->nb_rb                                 = ulsch_pdu->ulsch_pdu_rel8.number_of_resource_blocks;
+
 
   ulsch->harq_processes[harq_pid]->dci_alloc                             = 1;
   ulsch->harq_processes[harq_pid]->rar_alloc                             = 0;
