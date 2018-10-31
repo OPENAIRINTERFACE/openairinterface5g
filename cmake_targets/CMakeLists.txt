@@ -2142,6 +2142,9 @@ if (${XFORMS})
   set(XFORMS_SOURCE
     ${OPENAIR1_DIR}/PHY/TOOLS/lte_phy_scope.c
     )
+  set(XFORMS_SOURCE_NR
+    ${OPENAIR1_DIR}/PHY/TOOLS/nr_phy_scope.c
+    )
   set(XFORMS_SOURCE_SOFTMODEM
     ${OPENAIR_TARGETS}/RT/USER/stats.c
     )
@@ -2444,7 +2447,7 @@ add_executable(nr-uesoftmodem
   ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
-  ${XFORMS_SOURCE}
+  ${XFORMS_SOURCE_NR}
   ${XFORMS_SOURCE_SOFTMODEM}
   ${T_SOURCE}
   ${CONFIG_SOURCES}
@@ -2478,7 +2481,7 @@ add_executable(nr-uesoftmodem-nos1
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
-  ${XFORMS_SOURCE}
+  ${XFORMS_SOURCE_NR}
   ${XFORMS_SOURCE_SOFTMODEM}
   ${T_SOURCE}
   ${CONFIG_SOURCES}

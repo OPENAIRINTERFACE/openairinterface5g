@@ -532,6 +532,7 @@ static void *UE_thread_synch(void *arg) {
             } else {
                 // initial sync failed
                 // calculate new offset and try again
+	      
                 if (UE->UE_scan_carrier == 1) {
                     if (freq_offset >= 0)
                         freq_offset += 100;
@@ -553,6 +554,7 @@ static void *UE_thread_synch(void *arg) {
                         return &UE_thread_synch_retval; // not reached
                     }
                 }
+
 #if DISABLE_LOG_X
                 printf("[initial_sync] trying carrier off %d Hz, rxgain %d (DL %u, UL %u)\n",
                        freq_offset,
@@ -646,8 +648,8 @@ static void *UE_thread_rxn_txnp4(void *arg) {
         }
 
 //        initRefTimes(t2);
-        initRefTimes(t3);
-        pickTime(current);
+//        initRefTimes(t3);
+//        pickTime(current);
 //        updateTimes(proc->gotIQs, &t2, 10000, "Delay to wake up UE_Thread_Rx (case 2)");
 
         // Process Rx data for one sub-frame
@@ -876,7 +878,7 @@ void *UE_thread(void *arg) {
                 if (UE->mode != loop_through_memory) {
                     for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
                         rxp[i] = (void*)&dummy_rx[i][0];
-                    for (int sf=0; sf<LTE_NUMBER_OF_SUBFRAMES_PER_FRAME; sf++)
+                    for (int sf=0; sf<NR_NUMBER_OF_SUBFRAMES_PER_FRAME; sf++)
                         //	    printf("Reading dummy sf %d\n",sf);
 		      AssertFatal(UE->frame_parms.samples_per_subframe==
 				 UE->rfdevice.trx_read_func(&UE->rfdevice,
@@ -1114,6 +1116,7 @@ void init_UE_threads(PHY_VARS_NR_UE *UE) {
 
     pthread_mutex_init(&UE->proc.mutex_synch,NULL);
     pthread_cond_init(&UE->proc.cond_synch,NULL);
+    UE->proc.instance_cnt_synch = -1;
 
     // the threads are not yet active, therefore access is allowed without locking
     int nb_threads=RX_NB_TH;
@@ -1186,6 +1189,7 @@ void fill_ue_band_info(void) {
 }*/
 #endif
 
+/*
 int setup_ue_buffers(PHY_VARS_NR_UE **phy_vars_ue, openair0_config_t *openair0_cfg) {
 
     int i, CC_id;
@@ -1225,4 +1229,4 @@ int setup_ue_buffers(PHY_VARS_NR_UE **phy_vars_ue, openair0_config_t *openair0_c
     }
     return 0;
 }
-
+*/

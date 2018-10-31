@@ -156,6 +156,7 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   // FK: added N_RB_DL paramter here as this function shares code with the gNB where it is needed. We should rewrite this function for the UE. 
   nr_init_frame_parms_ue(fp,NR_MU_1,NORMAL,fp->N_RB_DL,n_ssb_crb,0);
   LOG_D(PHY,"nr_initial sync ue RB_DL %d\n", fp->N_RB_DL);
+
   /*
   write_output("rxdata0.m","rxd0",ue->common_vars.rxdata[0],10*fp->samples_per_subframe,1,1);
   exit(-1);
@@ -196,7 +197,7 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 #endif
 
   /* check that SSS/PBCH block is continuous inside the received buffer */
-  if (sync_pos < (10*fp->slots_per_subframe*fp->samples_per_subframe - (NB_SYMBOLS_PBCH * fp->ofdm_symbol_size))) {
+  if (sync_pos < (NR_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_subframe - (NB_SYMBOLS_PBCH * fp->ofdm_symbol_size))) {
 
 #ifdef DEBUG_INITIAL_SYNCH
     LOG_I(PHY,"Calling sss detection (normal CP)\n");
