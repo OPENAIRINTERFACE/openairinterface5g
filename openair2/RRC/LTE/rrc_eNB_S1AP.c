@@ -1184,7 +1184,7 @@ rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(
 //------------------------------------------------------------------------------
 {
   if (ue_context_pP == NULL) {
-    LOG_W(RRC, "[eNB] In S1AP_UE_CONTEXT_RELEASE_REQ: invalid UE\n");
+    LOG_E(RRC, "[eNB] In S1AP_UE_CONTEXT_RELEASE_REQ: invalid UE\n");
   } else {
 	  MSC_LOG_TX_MESSAGE(MSC_RRC_ENB,
       MSC_S1AP_ENB,

@@ -842,11 +842,11 @@ rrc_eNB_free_UE(
   const struct rrc_eNB_ue_context_s *const ue_context_pP)
 //-----------------------------------------------------------------------------
 {
-  protocol_ctxt_t ctxt;
+  //protocol_ctxt_t ctxt; // rm ?
   rnti_t rnti = ue_context_pP->ue_context.rnti;
 
   if (enb_mod_idP >= NB_eNB_INST) {
-    LOG_I(RRC, "eNB instance invalid (%d/%d) for UE %x!\n",
+    LOG_E(RRC, "eNB instance invalid (%d/%d) for UE %x!\n",
       enb_mod_idP, 
       NB_eNB_INST,
       rnti);
@@ -854,49 +854,47 @@ rrc_eNB_free_UE(
     return;
   }
  
-  if (NULL != ue_context_pP) {
-    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, enb_mod_idP, ENB_FLAG_YES, rnti, 0, 0, enb_mod_idP);
+  //PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, enb_mod_idP, ENB_FLAG_YES, rnti, 0, 0, enb_mod_idP); // rm ?
 
-    LOG_W(RRC, "[eNB %d] Removing UE RNTI %x\n", 
-      enb_mod_idP, 
-      rnti);
-
-    if (EPC_MODE_ENABLED) {
-      if ((ue_context_pP->ue_context.ul_failure_timer >= 20000) && (mac_eNB_get_rrc_status(enb_mod_idP, rnti) >= RRC_CONNECTED)) {
-        LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ sent for RNTI %x, cause 21, radio connection with ue lost\n", 
-          enb_mod_idP, 
-          rnti);
-        
-        rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(enb_mod_idP, ue_context_pP, S1AP_CAUSE_RADIO_NETWORK, 21); 
-        // send cause 21: radio connection with ue lost
-        /* From 3GPP 36300v10 p129 : 19.2.2.2.2 S1 UE Context Release Request (eNB triggered)
-         * If the E-UTRAN internal reason is a radio link failure detected in the eNB, the eNB shall wait a sufficient time before
-         *  triggering the S1 UE Context Release Request procedure in order to allow the UE to perform the NAS recovery
-         *  procedure, see TS 23.401 [17].
-         */
-         
-        return;
-      }
+  if (EPC_MODE_ENABLED) {
+    if ((ue_context_pP->ue_context.ul_failure_timer >= 20000) && (mac_eNB_get_rrc_status(enb_mod_idP, rnti) >= RRC_CONNECTED)) {
+      LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ sent for RNTI %x, cause 21, radio connection with ue lost\n", 
+        enb_mod_idP, 
+        rnti);
       
-      if((ue_context_pP->ue_context.ue_rrc_inactivity_timer >= ue_context_pP->ue_context.ue_rrc_inactivity_timer_thres) &&
-        (mac_eNB_get_rrc_status(enb_mod_idP, rnti) >= RRC_CONNECTED)) {
-        LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ sent for RNTI %x, cause 20, user inactivity\n", 
-          enb_mod_idP, 
-          rnti);
+      rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(enb_mod_idP, ue_context_pP, S1AP_CAUSE_RADIO_NETWORK, 21); 
+      // send cause 21: radio connection with ue lost
+      /* From 3GPP 36300v10 p129 : 19.2.2.2.2 S1 UE Context Release Request (eNB triggered)
+        * If the E-UTRAN internal reason is a radio link failure detected in the eNB, the eNB shall wait a sufficient time before
+        *  triggering the S1 UE Context Release Request procedure in order to allow the UE to perform the NAS recovery
+        *  procedure, see TS 23.401 [17].
+        */
         
-        rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(enb_mod_idP, ue_context_pP, S1AP_CAUSE_RADIO_NETWORK, 20); 
-        // send cause 20: user inactivity
-
-        return;
-      }
+      return;
     }
+    
+    if((ue_context_pP->ue_context.ue_rrc_inactivity_timer >= ue_context_pP->ue_context.ue_rrc_inactivity_timer_thres) &&
+      (mac_eNB_get_rrc_status(enb_mod_idP, rnti) >= RRC_CONNECTED)) {
+      LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ sent for RNTI %x, cause 20, user inactivity\n", 
+        enb_mod_idP, 
+        rnti);
+      
+      rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(enb_mod_idP, ue_context_pP, S1AP_CAUSE_RADIO_NETWORK, 20); 
+      // send cause 20: user inactivity
 
-    // add UE info to freeList
-    LOG_I(RRC, "Put UE %x into freeList\n",
-      rnti);
-
-    put_UE_in_freelist(enb_mod_idP, rnti, 1);
+      return;
+    }
   }
+
+  LOG_W(RRC, "[eNB %d] Removing UE RNTI %x\n", 
+    enb_mod_idP, 
+    rnti);
+
+  // add UE info to freeList
+  LOG_I(RRC, "Put UE %x into freeList\n",
+    rnti);
+
+  put_UE_in_freelist(enb_mod_idP, rnti, 1);
 }
 
 void remove_UE_from_freelist(module_id_t mod_id, rnti_t rnti)
