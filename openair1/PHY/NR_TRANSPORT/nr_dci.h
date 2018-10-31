@@ -49,7 +49,7 @@ void nr_pdcch_scrambling(uint32_t *in,
 void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
                            int frame,
                            int subframe,
-                           gNB_rxtx_proc_t *proc,
+                           gNB_L1_rxtx_proc_t *proc,
                            NR_gNB_DCI_ALLOC_t *dci_alloc,
                            nfapi_nr_dl_config_request_pdu_t *pdu);
 

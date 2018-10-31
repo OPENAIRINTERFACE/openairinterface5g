@@ -874,7 +874,7 @@ void tx_rf(RU_t *ru) {
 /*!
  * \brief The Asynchronous RX/TX FH thread of RAU/RCC/gNB/RRU.
  * This handles the RX FH for an asynchronous RRU/UE
- * \param param is a \ref gNB_proc_t structure which contains the info what to process.
+ * \param param is a \ref gNB_L1_proc_t structure which contains the info what to process.
  * \returns a pointer to an int. The storage is not on the heap and must not be freed.
  */
 static void* ru_thread_asynch_rxtx( void* param ) {
