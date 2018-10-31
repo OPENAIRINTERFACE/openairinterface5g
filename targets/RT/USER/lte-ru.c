@@ -1185,7 +1185,7 @@ void wakeup_L1s(RU_t *ru) {
     //clock_gettime(CLOCK_MONOTONIC,&t);
     //LOG_I(PHY,"RU mask is now %x, time is %lu\n",proc->RU_mask[ru->proc.subframe_rx], t.tv_nsec - proc->t[ru->proc.subframe_rx].tv_nsec);
 
-    if (proc->RU_mask[ru->proc.subframe_rx] == (1<<eNB->num_RU)-1) {
+    if (proc->RU_mask[ru->proc.subframe_rx] == (1<<eNB->num_RU)-1) { // all RUs have provided their information so continue on and wakeup eNB top
       LOG_D(PHY, "ru_mask is %d \n ", proc->RU_mask[ru->proc.subframe_rx]);
       LOG_D(PHY, "the number of RU is %d, the current ru is RU %d \n ", (1<<eNB->num_RU)-1, ru->idx);
       LOG_D(PHY, "ru->proc.subframe_rx is %d \n", ru->proc.subframe_rx);
@@ -1201,7 +1201,7 @@ void wakeup_L1s(RU_t *ru) {
       AssertFatal(0==pthread_mutex_unlock(&proc->mutex_RU),"");
 
       // unlock RUs that are waiting for eNB processing to be completed
-      LOG_D(PHY,"RU %d wakeup eNB top for for subframe %d\n", ru->idx,ru->proc.subframe_rx);
+      LOG_D(PHY,"RU %d wakeup eNB top for subframe %d\n", ru->idx,ru->proc.subframe_rx);
       if (ru->wait_cnt == 0) {
          if (ru->num_eNB==1 && ru->eNB_top!=0 && get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD)
             ru->eNB_top(eNB_list[0],proc->frame_rx,proc->subframe_rx,string,ru);
@@ -1223,12 +1223,13 @@ void wakeup_L1s(RU_t *ru) {
  */
 
     }
-    /*else 
-      AssertFatal(0==pthread_mutex_unlock(&proc->mutex_RU),"");
+    else{ // not all RUs have provided their information  
+    	AssertFatal(0==pthread_mutex_unlock(&proc->mutex_RU),"");
+    }
 //      pthread_mutex_unlock(&proc->mutex_RU);
 //      LOG_D(PHY,"wakeup eNB top for for subframe %d\n", ru->proc.subframe_rx);
 //      ru->eNB_top(eNB_list[0],ru->proc.frame_rx,ru->proc.subframe_rx,string);
-*/
+
     ru->proc.emulate_rf_busy = 0;
   
 }
