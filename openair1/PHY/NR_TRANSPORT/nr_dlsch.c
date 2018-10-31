@@ -36,7 +36,7 @@
 
 //#define DEBUG_DLSCH
 //#define DEBUG_DLSCH_MAPPING
-#define DEBUG_FILE_OUTPUT
+//#define DEBUG_FILE_OUTPUT
 
 uint8_t mod_order[5] = {1, 2, 4, 6, 8};
 uint16_t mod_offset[5] = {1,3,7,23,87};
@@ -183,6 +183,11 @@ void nr_pdsch_layer_mapping(int16_t **mod_symbs,
   }
 }
 
+static inline uint16_t get_pdsch_dmrs_idx(uint8_t n, uint8_t k_prime, uint8_t delta, uint8_t dmrs_type) {
+  uint16_t dmrs_idx = (dmrs_type)? (6*n+k_prime+delta):((n<<2)+(k_prime<<1)+delta);
+  return dmrs_idx;
+}
+
 uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
                           NR_gNB_DCI_ALLOC_t dci_alloc,
                           uint32_t **pdsch_dmrs,
@@ -304,6 +309,10 @@ for (int i=0; i<n_dmrs>>3; i++) {
   ((pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_COMMON) && (pdcch_params.dci_format == NFAPI_NR_DL_DCI_FORMAT_1_0))?\
        ((frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB + pdcch_params.rb_offset)*NR_NB_SC_PER_RB) : 0;
 
+#ifdef DEBUG_DLSCH_MAPPING
+printf("PDSCH resource mapping started (start SC %d\tstart symbol %d\tN_PRB %d\tnb_symbols %d)\n", start_sc, rel15->start_symbol, rel15->n_prb, rel15->nb_symbols);
+#endif
+
   for (int ap=0; ap<rel15->nb_layers; ap++) {
 
     // DMRS params for this ap
@@ -311,8 +320,9 @@ for (int i=0; i<n_dmrs>>3; i++) {
     get_Wf(Wf, ap, dmrs_type);
     delta = get_delta(ap, dmrs_type);
     l_prime[0] = 0; // single symbol ap 0
+    uint8_t dmrs_symbol = l0+l_prime[0];
 #ifdef DEBUG_DLSCH_MAPPING
-printf("DMRS params for ap %d: Wt %d %d \t Wf %d %d \t delta %d \t l_prime %d \t l0 %d\n", ap, Wt[0], Wt[1], Wf[0], Wf[1], delta, l_prime[0], l0);
+printf("DMRS params for ap %d: Wt %d %d \t Wf %d %d \t delta %d \t l_prime %d \t l0 %d\tDMRS symbol %d\n", ap, Wt[0], Wt[1], Wf[0], Wf[1], delta, l_prime[0], l0, dmrs_symbol);
 #endif
     uint8_t k_prime=0, n=0, dmrs_idx=0;
     uint16_t m = 0;
@@ -322,9 +332,9 @@ printf("DMRS params for ap %d: Wt %d %d \t Wf %d %d \t delta %d \t l_prime %d \t
         if (k >= frame_parms.ofdm_symbol_size)
           k -= frame_parms.ofdm_symbol_size;
 
-        if ((l==(l0+l_prime[0])) && (k == ((dmrs_type)? (6*n+k_prime+delta):((n<<2)+(k_prime<<1)+delta)))) {
-          ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (Wt[l_prime[0]]*Wf[k_prime]*(amp>>1)*mod_dmrs[dmrs_idx<<1]) >> 15;
-          ((int16_t*)txdataF[ap])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (Wt[l_prime[0]]*Wf[k_prime]*(amp>>1)*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
+        if ((l == dmrs_symbol) && (k == (start_sc+get_pdsch_dmrs_idx(n, k_prime, delta, dmrs_type)))) {
+          ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (Wt[l_prime[0]]*Wf[k_prime]*amp*mod_dmrs[dmrs_idx<<1]) >> 15;
+          ((int16_t*)txdataF[ap])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (Wt[l_prime[0]]*Wf[k_prime]*amp*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
 #ifdef DEBUG_DLSCH_MAPPING
 printf("dmrs_idx %d\t l %d \t k %d \t k_prime %d \t n %d \t txdataF: %d %d\n",
 dmrs_idx, l, k, k_prime, n, ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1], ((int16_t*)txdataF[ap])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1]);
