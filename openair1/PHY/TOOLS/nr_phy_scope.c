@@ -35,6 +35,9 @@ float tput_time_ue[NUMBER_OF_UE_MAX][TPUT_WINDOW_LENGTH] = {{0}};
 float tput_ue[NUMBER_OF_UE_MAX][TPUT_WINDOW_LENGTH] = {{0}};
 float tput_ue_max[NUMBER_OF_UE_MAX] = {0};
 
+extern int64_t *pss_corr_ue[3];
+
+
 static void ia_receiver_on_off( FL_OBJECT *button, long arg)
 {
 
@@ -494,6 +497,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   int16_t **rxsig_t;
   float **rxsig_t_dB;
   float *time;
+  float *corr;
   /*
   int16_t **chest_t;
   int16_t **chest_f;
@@ -572,6 +576,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     rxsig_t_dB[arx] = (float*) calloc(samples_per_frame,sizeof(float));
   }
   time = calloc(samples_per_frame,sizeof(float));
+  corr = calloc(samples_per_frame,sizeof(float));
   
   /*
   chest_t = (int16_t**) phy_vars_ue->common_vars.common_vars_rx_data_per_thread[phy_vars_ue->current_thread_id[subframe]].dl_ch_estimates_time[eNB_id];
@@ -609,6 +614,21 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     }
     */
   }
+
+  for (ind=0;ind<3;ind++) {
+    if (pss_corr_ue[ind]) {
+      for (i=0; i<samples_per_frame; i++) {
+        corr[i] = (float) pss_corr_ue[ind][i];
+        time[i] = (float) i;
+      }
+
+      if (ind==0)
+	fl_set_xyplot_data(form->chest_t,time,corr,samples_per_frame,"","","");
+      else
+        fl_add_xyplot_overlay(form->chest_t,ind,time,corr,samples_per_frame,rx_antenna_colors[ind]);
+    }
+  }
+    
 
   /*
   // Channel Impulse Response (still repeated format)
@@ -798,6 +818,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   fl_check_forms();
 
   free(time);
+  free(corr);
   for (arx=0; arx<nb_antennas_rx; arx++) {
     free(rxsig_t_dB[arx]);
   }
