@@ -35,11 +35,10 @@
 #include "assertions.h"
 #include "common/ran_context.h"
 
-#include "log.h"
+#include "common/utils/LOG/log.h"
 
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
-# include "timer.h"
 # if defined(ENABLE_USE_MME)
 #   include "s1ap_eNB.h"
 #   include "sctp_eNB_task.h"

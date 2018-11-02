@@ -159,7 +159,7 @@ void nr_pdcch_scrambling(uint32_t *in,
 }
 
 uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
-							t_nrPolar_paramsPtr *nrPolar_params,
+			    t_nrPolar_paramsPtr *nrPolar_params,
                             uint32_t **gold_pdcch_dmrs,
                             int32_t** txdataF,
                             int16_t amp,

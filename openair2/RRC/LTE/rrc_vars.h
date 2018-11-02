@@ -36,7 +36,7 @@
 #include "COMMON/mac_rrc_primitives.h"
 #include "LAYER2/MAC/mac.h"
 
-UE_PF_PO_t UE_PF_PO[MAX_NUM_CCs][MAX_MOBILES_PER_ENB];
+UE_PF_PO_t UE_PF_PO[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
 pthread_mutex_t ue_pf_po_mutex;
 UE_RRC_INST *UE_rrc_inst;
 #include "LAYER2/MAC/mac_extern.h"

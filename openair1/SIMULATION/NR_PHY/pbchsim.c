@@ -26,19 +26,26 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 
+#include "common/config/config_userapi.h"
+#include "common/utils/LOG/log.h"
+#include "common/ran_context.h" 
+
 #include "SIMULATION/TOOLS/sim.h"
 #include "SIMULATION/RF/rf.h"
 #include "PHY/types.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
 #include "PHY/defs_gNB.h"
-
+#include "PHY/NR_REFSIG/refsig_defs_ue.h"
+#include "PHY/MODULATION/modulation_eNB.h"
+#include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/INIT/phy_init.h"
+#include "PHY/NR_TRANSPORT/nr_transport.h"
+#include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
+
 #include "SCHED_NR/sched_nr.h"
 
-#include "PHY/MODULATION/modulation_common.h"
 
-#include "common/ran_context.h" 
 
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
@@ -63,10 +70,14 @@ int32_t get_uldl_offset(int eutra_bandP) {return(0);}
 
 NR_IF_Module_t *NR_IF_Module_init(int Mod_id){return(NULL);}
 
-void exit_fun(const char *s) { exit(-1); }
+void exit_function(const char* file, const char* function, const int line,const char *s) { 
+   const char * msg= s==NULL ? "no comment": s;
+   printf("Exiting at: %s:%d %s(), %s\n", file, line, function, msg); 
+   exit(-1); 
+}
 
 // needed for some functions
-PHY_VARS_NR_UE * PHY_vars_UE_g[1][1]={NULL};
+PHY_VARS_NR_UE * PHY_vars_UE_g[1][1]={{NULL}};
 
 int main(int argc, char **argv)
 {

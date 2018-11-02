@@ -719,7 +719,8 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   if(emulate_rf){
     wait_on_condition(&proc->mutex_emulateRF,&proc->cond_emulateRF,&proc->instance_cnt_emulateRF,"emulatedRF_thread");
     release_thread(&proc->mutex_emulateRF,&proc->instance_cnt_emulateRF,"emulatedRF_thread");
-    rxs = fp->samples_per_tti;
+    rxs = fp->samples_per_subframe;
+    ts = old_ts + rxs;
   }
   else{
     rxs = ru->rfdevice.trx_read_func(&ru->rfdevice,
@@ -794,7 +795,7 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   if (rxs != fp->samples_per_subframe)
   {
     //exit_fun( "problem receiving samples" );
-    LOG_E(PHY, "problem receiving samples");
+    LOG_E(PHY, "problem receiving samples\n");
   }
 }
 
@@ -843,12 +844,12 @@ void tx_rf(RU_t *ru) {
 
     for (i=0; i<ru->nb_tx; i++)
       txp[i] = (void*)&ru->common.txdata[i][(proc->subframe_tx*fp->samples_per_subframe)-sf_extension];
-
+/*
     if (proc->subframe_tx == 0){
       write_output("txdataF_frame.m","txdataF_frame",&ru->common.txdataF_BF[i],fp->samples_per_subframe_wCP, 1, 1);
       write_output("txdata_frame.m","txdata_frame",&ru->common.txdata[i],fp->samples_per_subframe, 1, 1);
     }
-    
+*/    
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_tx-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
     // prepare tx buffer pointers
@@ -1417,7 +1418,7 @@ static void* ru_thread( void* param ) {
       AssertFatal(ru->start_if(ru,NULL) == 0, "Could not start the IF device\n");
       if (ru->if_south == LOCAL_RF) ret = connect_rau(ru);
       else ret = attach_rru(ru);
-      AssertFatal(ret==0,"Cannot connect to radio\n");
+      AssertFatal(ret==0,"Cannot connect to remote radio\n");
     }
     if (ru->if_south == LOCAL_RF) { // configure RF parameters only
       fill_rf_config(ru,ru->rf_config_file);
@@ -1426,6 +1427,7 @@ static void* ru_thread( void* param ) {
       nr_phy_init_RU(ru);
   
       ret = openair0_device_load(&ru->rfdevice,&ru->openair0_cfg);
+      AssertFatal(ret==0,"Cannot connect to local radio\n");
     }
     if (setup_RU_buffers(ru)!=0) {
           printf("Exiting, cannot initialize RU Buffers\n");
@@ -1542,6 +1544,18 @@ static void* ru_thread( void* param ) {
           {
             sprintf(filename,"tx%ddata_frame%d.m", i, print_frame);
             LOG_M(filename,"txdata_frame",&ru->common.txdata[i][0],fp->samples_per_frame, 1, 1);
+            sprintf(filename,"tx%ddata_frame%d.dat", i, print_frame);
+	    FILE *output_fd = fopen(filename,"w");
+	    if (output_fd) {
+	      fwrite(&ru->common.txdata[i][0],
+		     sizeof(int32_t),
+		     fp->samples_per_frame,
+		     output_fd);
+	      fclose(output_fd);
+	    }
+	    else {
+	      LOG_E(PHY,"Cannot write to file %s\n",filename);
+	    }
           }
         }
       }
@@ -2085,6 +2099,7 @@ void set_function_spec_param(RU_t *ru)
     ru->start_rf               = start_rf;                            // need to start the local RF interface
     ru->stop_rf                = stop_rf;
     printf("configuring ru_id %d (start_rf %p)\n", ru->idx, start_rf);
+    
 /*
     if (ru->function == gNodeB_3GPP) { // configure RF parameters only for 3GPP eNodeB, we need to get them from RAU otherwise
       fill_rf_config(ru,rf_config_file);
@@ -2305,6 +2320,24 @@ void RCconfig_RU(void) {
 	    RC.ru[j]->num_gNB                           = 0;
       for (i=0;i<RC.ru[j]->num_gNB;i++) RC.ru[j]->gNB_list[i] = RC.gNB[RUParamList.paramarray[j][RU_ENB_LIST_IDX].iptr[i]][0];     
 
+      if (config_isparamset(RUParamList.paramarray[j], RU_SDR_ADDRS)) {
+        RC.ru[j]->openair0_cfg.sdr_addrs = strdup(*(RUParamList.paramarray[j][RU_SDR_ADDRS].strptr));
+      }
+
+      if (config_isparamset(RUParamList.paramarray[j], RU_SDR_CLK_SRC)) {
+        if (strcmp(*(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr), "internal") == 0) {
+          RC.ru[j]->openair0_cfg.clock_source = internal;
+          LOG_D(PHY, "RU clock source set as internal\n");
+        } else if (strcmp(*(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr), "external") == 0) {
+          RC.ru[j]->openair0_cfg.clock_source = external;
+          LOG_D(PHY, "RU clock source set as external\n");
+        } else if (strcmp(*(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr), "gpsdo") == 0) {
+          RC.ru[j]->openair0_cfg.clock_source = gpsdo;
+          LOG_D(PHY, "RU clock source set as gpsdo\n");
+        } else {
+          LOG_E(PHY, "Erroneous RU clock source in the provided configuration file: '%s'\n", *(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr));
+        }
+      }
 
       if (strcmp(*(RUParamList.paramarray[j][RU_LOCAL_RF_IDX].strptr), "yes") == 0) {
 	if ( !(config_isparamset(RUParamList.paramarray[j],RU_LOCAL_IF_NAME_IDX)) ) {

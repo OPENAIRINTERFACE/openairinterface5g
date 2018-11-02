@@ -179,29 +179,29 @@ void extract_dci1C_info(uint8_t N_RB_DL, lte_frame_type_t frame_type, void *dci_
 
     uint32_t rballoc=0;
     uint8_t mcs=0;
+    uint8_t Ngap=0;
 
     switch (N_RB_DL) {
         case 6:
-          mcs             = ((DCI1C_5MHz_t *)dci_pdu)->mcs;
-          rballoc         = conv_1C_RIV(((DCI1C_5MHz_t *)dci_pdu)->rballoc,6);
-
+          mcs             = ((DCI1C_1_5MHz_t *)dci_pdu)->mcs;
+          rballoc         = conv_1C_RIV(((DCI1C_1_5MHz_t *)dci_pdu)->rballoc, 6);
           break;
 
         case 25:
-            mcs             = ((DCI1C_5MHz_t *)dci_pdu)->mcs;
-            rballoc         = conv_1C_RIV(((DCI1C_5MHz_t *)dci_pdu)->rballoc,6);
-
+          mcs             = ((DCI1C_5MHz_t *)dci_pdu)->mcs;
+          rballoc         = conv_1C_RIV(((DCI1C_5MHz_t *)dci_pdu)->rballoc, 25);
           break;
 
         case 50:
-            mcs             = ((DCI1C_10MHz_t *)dci_pdu)->mcs;
-            rballoc         = conv_1C_RIV(((DCI1C_10MHz_t *)dci_pdu)->rballoc,6);
-
+          mcs             = ((DCI1C_10MHz_t *)dci_pdu)->mcs;
+          rballoc         = conv_1C_RIV(((DCI1C_10MHz_t *)dci_pdu)->rballoc, 50);
+          Ngap            = ((DCI1C_10MHz_t *)dci_pdu)->Ngap;
           break;
 
         case 100:
-            mcs             = ((DCI1C_20MHz_t *)dci_pdu)->mcs;
-            rballoc         = conv_1C_RIV(((DCI1C_20MHz_t *)dci_pdu)->rballoc,6);
+          mcs             = ((DCI1C_20MHz_t *)dci_pdu)->mcs;
+          rballoc         = conv_1C_RIV(((DCI1C_20MHz_t *)dci_pdu)->rballoc, 100);
+          Ngap            = ((DCI1C_20MHz_t *)dci_pdu)->Ngap;
           break;
 
         default:
@@ -211,6 +211,7 @@ void extract_dci1C_info(uint8_t N_RB_DL, lte_frame_type_t frame_type, void *dci_
 
     pdci_info_extarcted->mcs1     = mcs;
     pdci_info_extarcted->rballoc  = rballoc;
+    pdci_info_extarcted->Ngap     = Ngap;
 }
 
 void extract_dci1_info(uint8_t N_RB_DL, lte_frame_type_t frame_type, void *dci_pdu, DCI_INFO_EXTRACTED_t *pdci_info_extarcted)

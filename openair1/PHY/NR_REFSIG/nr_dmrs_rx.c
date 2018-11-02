@@ -42,7 +42,7 @@
 #include "refsig_defs_ue.h"
 #include "PHY/defs_nr_UE.h"
 //#include "nr_mod_table.h"
-#include "log.h"
+#include "common/utils/LOG/log.h"
 
 /*Table 7.4.1.1.2-1/2 from 38.211 */
 int wf1[8][2] = {{1,1},{1,-1},{1,1},{1,-1},{1,1},{1,-1},{1,1},{1,1}};

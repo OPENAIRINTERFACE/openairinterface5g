@@ -148,7 +148,7 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 		free(J);
 
 		build_decoder_tree(newPolarInitNode);
-		printf("decoder tree nodes %d\n",newPolarInitNode->tree.num_nodes);
+		//printf("decoder tree nodes %d\n",newPolarInitNode->tree.num_nodes);
 
 	} else {
 		AssertFatal(1 == 0, "[nr_polar_init] New t_nrPolar_paramsPtr could not be created");

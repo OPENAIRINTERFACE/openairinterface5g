@@ -393,10 +393,10 @@ int main(int argc, char *argv[]) {
 			}
 
 			//Iteration times are in microseconds.
-			timeEncoderCumulative+=(timeEncoder.diff_now/(cpu_freq_GHz*1000.0));
-			timeDecoderCumulative+=(timeDecoder.diff_now/(cpu_freq_GHz*1000.0));
+			timeEncoderCumulative+=(timeEncoder.diff/(cpu_freq_GHz*1000.0));
+			timeDecoderCumulative+=(timeDecoder.diff/(cpu_freq_GHz*1000.0));
 			fprintf(logFile,",%f,%d,%d,%f,%f\n", SNR, nBitError, blockErrorState,
-					(timeEncoder.diff_now/(cpu_freq_GHz*1000.0)), (timeDecoder.diff_now/(cpu_freq_GHz*1000.0)));
+					(timeEncoder.diff/(cpu_freq_GHz*1000.0)), (timeDecoder.diff/(cpu_freq_GHz*1000.0)));
 
 			if (nBitError<0) {
 				blockErrorCumulative++;

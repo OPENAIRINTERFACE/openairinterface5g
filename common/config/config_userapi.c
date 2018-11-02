@@ -29,6 +29,9 @@
  * \note
  * \warning
  */
+
+#define _GNU_SOURCE
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -37,8 +40,8 @@
 #include <dlfcn.h>
 #include <arpa/inet.h>
 
+#include <platform_types.h>
 #include "config_userapi.h"
-extern void exit_fun(const char* s);  // lte-softmodem clean exit function
 
 
 configmodule_interface_t *config_get_if(void)
@@ -208,6 +211,36 @@ configmodule_interface_t *cfgif = config_get_if();
   return ret;
   }
 return ret;
+}
+
+int config_getlist(paramlist_def_t *ParamList, paramdef_t *params, int numparams, char *prefix)
+{
+  if (CONFIG_ISFLAGSET(CONFIG_ABORT)) {
+    fprintf(stderr,"[CONFIG] config_get skipped, config module not properly initialized\n");
+    return -1;
+  }
+  if (!config_get_if())
+    return -1;
+
+  const int ret = config_get_if()->getlist(ParamList, params, numparams, prefix);
+  if (ret >= 0 && params) {
+    char *newprefix;
+    if (prefix) {
+      int rc = asprintf(&newprefix, "%s.%s", prefix, ParamList->listname);
+      if (rc < 0) newprefix = NULL;
+    } else {
+      newprefix = ParamList->listname;
+    }
+    char cfgpath[MAX_OPTNAME_SIZE*2 + 6]; /* prefix.listname.[listindex] */
+    for (int i = 0; i < ParamList->numelt; ++i) {
+      // TODO config_process_cmdline?
+      sprintf(cfgpath, "%s.[%i]", newprefix, i);
+      config_execcheck(ParamList->paramarray[i], numparams, cfgpath);
+    }
+    if (prefix)
+      free(newprefix);
+  }
+  return ret;
 }
 
 int config_isparamset(paramdef_t *params,int paramidx)

@@ -159,7 +159,7 @@
 #define MIN_MAC_HDR_RLC_SIZE    (1 + MIN_RLC_PDU_SIZE)
 
 /*!\brief maximum number of slices / groups */
-#define MAX_NUM_SLICES 4
+#define MAX_NUM_SLICES 10
 
 
 #define U_PLANE_INACTIVITY_VALUE 6000
@@ -442,7 +442,7 @@ typedef struct {
 /*!\brief LCID of MCCH for DL */
 #define MCCH_LCHANID 0
 /*!\brief LCID of MCH scheduling info for DL */
-#define MCH_SCHDL_INFO 3
+#define MCH_SCHDL_INFO 30
 /*!\brief LCID of Carrier component activation/deactivation */
 #define CC_ACT_DEACT 27
 //TTN (for D2D)
@@ -849,6 +849,9 @@ typedef struct {
     /// LCGID mapping
     long lcgidmap[11];
 
+	///UE logical channel priority
+    long lcgidpriority[11];
+
     /// phr information
     int8_t phr_info;
 
@@ -1099,6 +1102,10 @@ typedef struct {
 
     /// Sorting criteria for the UE list in the MAC preprocessor
     uint16_t sorting_criteria[MAX_NUM_SLICES][CR_NUM];
+    uint16_t first_rb_offset[NFAPI_CC_MAX][MAX_NUM_SLICES];
+
+    int assoc_dl_slice_idx[MAX_MOBILES_PER_ENB];
+    int assoc_ul_slice_idx[MAX_MOBILES_PER_ENB];
 
 } UE_list_t;
 
@@ -1117,6 +1124,117 @@ typedef struct {
     int head_freelist; ///the head position of the delete list
     int tail_freelist; ///the tail position of the delete list
 } UE_free_list_t;
+
+/// Structure for saving the output of each pre_processor instance
+typedef struct {
+    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
+    uint16_t nb_rbs_accounted[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
+    uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
+    uint8_t  slice_allocation_mask[NFAPI_CC_MAX][N_RBG_MAX];
+    uint8_t  MIMO_mode_indicator[NFAPI_CC_MAX][N_RBG_MAX];
+
+    uint32_t bytes_lcid[MAX_MOBILES_PER_ENB][MAX_NUM_LCID];
+    uint32_t wb_pmi[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
+    uint8_t  mcs[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
+
+} pre_processor_results_t;
+
+/**
+ * slice specific scheduler for the DL
+ */
+typedef void (*slice_scheduler_dl)(module_id_t mod_id,
+                                   int         slice_idx,
+                                   frame_t     frame,
+                                   sub_frame_t subframe,
+                                   int        *mbsfn_flag);
+
+typedef struct {
+    slice_id_t id;
+
+    /// RB share for each slice
+    float     pct;
+
+    /// whether this slice is isolated from the others
+    int       isol;
+
+    int       prio;
+
+    /// Frequency ranges for slice positioning
+    int       pos_low;
+    int       pos_high;
+
+    // max mcs for each slice
+    int       maxmcs;
+
+    /// criteria for sorting policies of the slices
+    uint32_t  sorting;
+
+    /// Accounting policy (just greedy(1) or fair(0) setting for now)
+    int       accounting;
+
+    /// name of available scheduler
+    char     *sched_name;
+
+    /// pointer to the slice specific scheduler in DL
+    slice_scheduler_dl sched_cb;
+
+} slice_sched_conf_dl_t;
+
+typedef void (*slice_scheduler_ul)(module_id_t   mod_id,
+                                   int           slice_idx,
+                                   frame_t       frame,
+                                   sub_frame_t   subframe,
+                                   unsigned char sched_subframe,
+                                   uint16_t     *first_rb);
+
+typedef struct {
+    slice_id_t id;
+
+    /// RB share for each slice
+    float     pct;
+
+    // MAX MCS for each slice
+    int       maxmcs;
+
+    /// criteria for sorting policies of the slices
+    uint32_t  sorting;
+
+    /// starting RB (RB offset) of UL scheduling
+    int       first_rb;
+
+    /// name of available scheduler
+    char     *sched_name;
+
+    /// pointer to the slice specific scheduler in UL
+    slice_scheduler_ul sched_cb;
+
+} slice_sched_conf_ul_t;
+
+
+typedef struct {
+    /// counter used to indicate when all slices have pre-allocated UEs
+    //int      slice_counter;
+
+    /// indicates whether remaining RBs after first intra-slice allocation will
+    /// be allocated to UEs of the same slice
+    int       intraslice_share_active;
+    /// indicates whether remaining RBs after slice allocation will be
+    /// allocated to UEs of another slice. Isolated slices will be ignored
+    int       interslice_share_active;
+
+    /// number of active DL slices
+    int      n_dl;
+    slice_sched_conf_dl_t dl[MAX_NUM_SLICES];
+
+    /// number of active UL slices
+    int      n_ul;
+    slice_sched_conf_ul_t ul[MAX_NUM_SLICES];
+
+    pre_processor_results_t pre_processor_results[MAX_NUM_SLICES];
+
+    /// common rb allocation list between slices
+    uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX];
+} slice_info_t;
 
 /*! \brief eNB common channels */
 typedef struct {
@@ -1238,7 +1356,10 @@ typedef struct eNB_MAC_INST_s {
   /// UL handle
   uint32_t ul_handle;
   UE_list_t UE_list;
-  
+
+  /// slice-related configuration
+  slice_info_t slice_info;
+
   ///subband bitmap configuration
   SBMAP_CONF sbmap_conf;
   /// CCE table used to build DCI scheduling information
@@ -1502,7 +1623,16 @@ typedef struct {
     /// MCCH status
     uint8_t mcch_status;
     /// MSI status
-    uint8_t msi_status;		// could be an array if there are >1 MCH in one MBSFN area
+    uint8_t msi_status_v[28];
+    uint8_t msi_current_alloc;
+    uint8_t msi_pmch;
+
+    struct MBSFN_SubframeConfig *commonSF_Alloc_r9_mbsfn_SubframeConfig[8]; // FIXME replace 8 by MAX_MBSFN_AREA?
+    uint8_t commonSF_AllocPeriod_r9;
+    int common_num_sf_alloc;
+
+    uint8_t pmch_lcids[28];
+    uint16_t pmch_stop_mtch[28];
 #endif
   //#ifdef CBA
   /// CBA RNTI for each group

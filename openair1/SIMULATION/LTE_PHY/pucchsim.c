@@ -30,7 +30,6 @@
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 #include "LAYER2/MAC/vars.h"
-#include "intertask_interface_init.h"
 
 #include "OCG_vars.h"
 #include "UTIL/LOG/log_extern.h"

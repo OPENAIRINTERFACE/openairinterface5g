@@ -44,7 +44,7 @@
 #include "rrc_messages_types.h"
 #endif
 
-#include "intertask_interface_types.h"
+#include "intertask_interface.h"
 #include "RRC/NR/nr_rrc_defs.h"
 
 #define IPV4_STR_ADDR_TO_INT_NWBO(AdDr_StR,NwBo,MeSsAgE ) do {\

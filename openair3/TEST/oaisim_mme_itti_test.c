@@ -32,13 +32,12 @@
 #include "mme_config.h"
 #include "gtpv1u_sgw_defs.h"
 
-#include "intertask_interface_init.h"
+#include "intertask_interface.h"
 
 #include "sctp_primitives_server.h"
 #include "udp_primitives_server.h"
 #include "s1ap_mme.h"
 #include "log.h"
-#include "timer.h"
 #include "sgw_lite_defs.h"
 #include "ipv4_defs.h"
 

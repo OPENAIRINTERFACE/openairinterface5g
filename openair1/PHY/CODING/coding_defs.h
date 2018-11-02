@@ -436,8 +436,7 @@ int32_t rate_matching_lte(uint32_t N_coded,
                           uint8_t *inPtr,
                           uint32_t off);
 
-
-
+void crcTableInit (void);
 
 unsigned int crcbit (unsigned char * inputptr, int octetlen, unsigned int poly);
 
