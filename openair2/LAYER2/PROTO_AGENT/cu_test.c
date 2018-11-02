@@ -38,7 +38,7 @@ pdcp_data_ind(
   fflush(stdout);
   free_mem_block(sdu_buffer_pP, __func__);
   /* cannot free because of const */
-  free(ctxt_pP);
+  //free(ctxt_pP);
   recv_client = 1;
   return 0;
 }

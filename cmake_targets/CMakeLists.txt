@@ -2085,7 +2085,7 @@ add_executable(cu_test
 )
 target_link_libraries(cu_test
   ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FSPT_MSG_LIB} ${PROTOBUF_LIB}
-  ${PROTO_AGENT_LIB} pthread UTIL ${T_LIB} dl
+  ${PROTO_AGENT_LIB} pthread UTIL ${T_LIB} dl ${ITTI_LIB}
 )
 
 add_executable(du_test
@@ -2099,7 +2099,7 @@ add_executable(du_test
 )
 target_link_libraries(du_test
   ${FLPT_MSG_LIB} ${ASYNC_IF_LIB} ${FSPT_MSG_LIB} ${PROTOBUF_LIB}
-  ${PROTO_AGENT_LIB} pthread UTIL ${T_LIB} dl
+  ${PROTO_AGENT_LIB} pthread UTIL ${T_LIB} dl ${ITTI_LIB}
 )
 
 target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})

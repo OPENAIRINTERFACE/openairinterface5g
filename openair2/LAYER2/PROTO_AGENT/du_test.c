@@ -40,7 +40,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
   fwrite(sdu_pP->data, sdu_sizeP, 1, stdout);
   fflush(stdout);
   free_mem_block(sdu_pP, __func__);
-  free(ctxt_pP);
+  //free(ctxt_pP);
   return 0;
 }
 
