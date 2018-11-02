@@ -308,7 +308,7 @@ PHICH_DURATION_t flexran_get_phich_duration(mid_t mod_id, uint8_t cc_id);
 /* Get timer in subframes. Controls the synchronization
    status of the UE, not the actual timing 
    advance procedure. See TS 36.321 */
-TimeAlignmentTimer_t flexran_get_time_alignment_timer(mid_t mod_id, mid_t ue_id);
+LTE_TimeAlignmentTimer_t flexran_get_time_alignment_timer(mid_t mod_id, mid_t ue_id);
 
 /* Get measurement gap configuration. See TS 36.133 */
 Protocol__FlexMeasGapConfigPattern flexran_get_meas_gap_config(mid_t mod_id, mid_t ue_id);
@@ -365,7 +365,7 @@ BOOLEAN_t flexran_get_simultaneous_ack_nack_cqi(mid_t mod_id, mid_t ue_id);
 BOOLEAN_t flexran_get_ack_nack_simultaneous_trans(mid_t mod_id, mid_t ue_id, uint8_t cc_id);
 
 /* Get aperiodic CQI report mode */
-CQI_ReportModeAperiodic_t flexran_get_aperiodic_cqi_rep_mode(mid_t mod_id,mid_t ue_id);
+LTE_CQI_ReportModeAperiodic_t flexran_get_aperiodic_cqi_rep_mode(mid_t mod_id,mid_t ue_id);
 
 /* Get ACK/NACK feedback mode. TDD only */
 long flexran_get_tdd_ack_nack_feedback_mode(mid_t mod_id, mid_t ue_id);
@@ -481,7 +481,7 @@ uint32_t flexran_get_pdcp_rx_oo(mid_t mod_id, mid_t ue_id, lcid_t lcid);
 
 /*********************RRC**********************/
 /*Get primary cell measuremeant id flexRAN*/
-MeasId_t flexran_get_rrc_pcell_measid(mid_t mod_id, mid_t ue_id);
+LTE_MeasId_t flexran_get_rrc_pcell_measid(mid_t mod_id, mid_t ue_id);
 
 /*Get primary cell RSRP measurement flexRAN*/  
 float flexran_get_rrc_pcell_rsrp(mid_t mod_id, mid_t ue_id);
@@ -493,7 +493,7 @@ float flexran_get_rrc_pcell_rsrq(mid_t mod_id, mid_t ue_id);
 int flexran_get_rrc_num_ncell(mid_t mod_id, mid_t ue_id);
 
 /*Get physical cell id*/
-PhysCellId_t flexran_get_rrc_neigh_phy_cell_id(mid_t mod_id, mid_t ue_id, int cell_id);
+LTE_PhysCellId_t flexran_get_rrc_neigh_phy_cell_id(mid_t mod_id, mid_t ue_id, int cell_id);
 
 /*Get RSRP of neighbouring Cell*/
 float flexran_get_rrc_neigh_rsrp(mid_t mod_id, mid_t ue_id, int cell_id);

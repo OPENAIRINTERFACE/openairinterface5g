@@ -39,8 +39,8 @@
 #include "list.h"
 #include "LAYER2/MAC/mac_extern.h"
 #include "common/utils/LOG/log.h"
-#include "UL-AM-RLC.h"
-#include "DL-AM-RLC.h"
+#include "LTE_UL-AM-RLC.h"
+#include "LTE_DL-AM-RLC.h"
 
 
 //-----------------------------------------------------------------------------
@@ -237,24 +237,24 @@ config_req_rlc_am (
           PROTOCOL_RLC_AM_CTXT_ARGS(ctxt_pP,l_rlc_p));
   }
 }
-uint16_t pollPDU_tab[PollPDU_pInfinity+1]= {4,8,16,32,64,128,256,RLC_AM_POLL_PDU_INFINITE}; //PollPDU_pInfinity is chosen to 0xFFFF for now
-uint32_t maxRetxThreshold_tab[UL_AM_RLC__maxRetxThreshold_t32+1]= {1,2,3,4,6,8,16,32};
-uint32_t pollByte_tab[PollByte_spare1]= {25000,50000,75000,100000,125000,250000,375000,500000,750000,1000000,1250000,1500000,2000000,3000000,RLC_AM_POLL_BYTE_INFINITE}; // PollByte_kBinfinity is chosen to 0xFFFFFFFF for now
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-uint32_t PollRetransmit_tab[T_PollRetransmit_spare5]= {5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,155,160,165,170,175,180,185,190,195,200,205,210,215,220,225,230,235,240,245,250,300,350,400,450,500,800,1000,2000,4000};
+uint16_t pollPDU_tab[LTE_PollPDU_pInfinity+1]= {4,8,16,32,64,128,256,RLC_AM_POLL_PDU_INFINITE}; //PollPDU_pInfinity is chosen to 0xFFFF for now
+uint32_t maxRetxThreshold_tab[LTE_UL_AM_RLC__maxRetxThreshold_t32+1]= {1,2,3,4,6,8,16,32};
+uint32_t pollByte_tab[LTE_PollByte_spare1]= {25000,50000,75000,100000,125000,250000,375000,500000,750000,1000000,1250000,1500000,2000000,3000000,RLC_AM_POLL_BYTE_INFINITE}; // PollByte_kBinfinity is chosen to 0xFFFFFFFF for now
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+uint32_t PollRetransmit_tab[LTE_T_PollRetransmit_spare5]= {5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,155,160,165,170,175,180,185,190,195,200,205,210,215,220,225,230,235,240,245,250,300,350,400,450,500,800,1000,2000,4000};
 uint32_t am_t_Reordering_tab[32]= {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200,1600};
-uint32_t t_StatusProhibit_tab[T_StatusProhibit_spare2]= {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,155,160,165,170,175,180,185,190,195,200,205,210,215,220,225,230,235,240,245,250,300,350,400,450,500,800,1000,1200,1600,2000,2400};
+uint32_t t_StatusProhibit_tab[LTE_T_StatusProhibit_spare2]= {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,155,160,165,170,175,180,185,190,195,200,205,210,215,220,225,230,235,240,245,250,300,350,400,450,500,800,1000,1200,1600,2000,2400};
 #else
-uint32_t PollRetransmit_tab[T_PollRetransmit_spare9]= {5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,155,160,165,170,175,180,185,190,195,200,205,210,215,220,225,230,235,240,245,250,300,350,400,450,500};
-uint32_t am_t_Reordering_tab[T_Reordering_spare1]= {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200};
-uint32_t t_StatusProhibit_tab[T_StatusProhibit_spare8]= {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,155,160,165,170,175,180,185,190,195,200,205,210,215,220,225,230,235,240,245,250,300,350,400,450,500};
+uint32_t PollRetransmit_tab[LTE_T_PollRetransmit_spare9]= {5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,155,160,165,170,175,180,185,190,195,200,205,210,215,220,225,230,235,240,245,250,300,350,400,450,500};
+uint32_t am_t_Reordering_tab[LTE_T_Reordering_spare1]= {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200};
+uint32_t t_StatusProhibit_tab[LTE_T_StatusProhibit_spare8]= {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,105,110,115,120,125,130,135,140,145,150,155,160,165,170,175,180,185,190,195,200,205,210,215,220,225,230,235,240,245,250,300,350,400,450,500};
 #endif
 
 //-----------------------------------------------------------------------------
 void config_req_rlc_am_asn1 (
   const protocol_ctxt_t* const         ctxt_pP,
   const srb_flag_t                     srb_flagP,
-  const struct RLC_Config__am  * const config_am_pP,
+  const struct LTE_RLC_Config__am  * const config_am_pP,
   const rb_id_t                        rb_idP,
   const logical_chan_id_t              chan_idP)
 {
@@ -268,17 +268,17 @@ void config_req_rlc_am_asn1 (
   if (h_rc == HASH_TABLE_OK) {
     l_rlc_p = &rlc_union_p->rlc.am;
 
-    if ((config_am_pP->ul_AM_RLC.maxRetxThreshold <= UL_AM_RLC__maxRetxThreshold_t32) &&
-        (config_am_pP->ul_AM_RLC.pollPDU<=PollPDU_pInfinity) &&
-        (config_am_pP->ul_AM_RLC.pollByte<PollByte_spare1) &&
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-        (config_am_pP->ul_AM_RLC.t_PollRetransmit<T_PollRetransmit_spare5) &&
+    if ((config_am_pP->ul_AM_RLC.maxRetxThreshold <= LTE_UL_AM_RLC__maxRetxThreshold_t32) &&
+        (config_am_pP->ul_AM_RLC.pollPDU<=LTE_PollPDU_pInfinity) &&
+        (config_am_pP->ul_AM_RLC.pollByte<LTE_PollByte_spare1) &&
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+        (config_am_pP->ul_AM_RLC.t_PollRetransmit<LTE_T_PollRetransmit_spare5) &&
         (config_am_pP->dl_AM_RLC.t_Reordering<32) &&
-        (config_am_pP->dl_AM_RLC.t_StatusProhibit<T_StatusProhibit_spare2) ) {
+        (config_am_pP->dl_AM_RLC.t_StatusProhibit<LTE_T_StatusProhibit_spare2) ) {
 #else
-        (config_am_pP->ul_AM_RLC.t_PollRetransmit<T_PollRetransmit_spare9) &&
-        (config_am_pP->dl_AM_RLC.t_Reordering<T_Reordering_spare1) &&
-        (config_am_pP->dl_AM_RLC.t_StatusProhibit<T_StatusProhibit_spare8) ) {
+        (config_am_pP->ul_AM_RLC.t_PollRetransmitLTE_T_PollRetransmit_spare9) &&
+        (config_am_pP->dl_AM_RLC.t_Reordering<LTE_T_Reordering_spare1) &&
+        (config_am_pP->dl_AM_RLC.t_StatusProhibit<LTE_T_StatusProhibit_spare8) ) {
 #endif
 
       MSC_LOG_RX_MESSAGE(
