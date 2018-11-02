@@ -64,7 +64,9 @@
 #endif
 
 extern int otg_enabled;
-
+#if defined(ENABLE_USE_MME)
+extern uint8_t nfapi_mode;
+#endif
 #include "common/ran_context.h"
 extern RAN_CONTEXT_t RC;
 hash_table_t  *pdcp_coll_p = NULL;
@@ -796,7 +798,15 @@ pdcp_data_ind(
          * for the UE compiled in noS1 mode, we need 0
          * TODO: be sure of this
          */
-        ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = 1;
+        if (nfapi_mode == 3) {
+#ifdef UESIM_EXPANSION
+          ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = 1;
+#else
+          ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = ctxt_pP->module_id + 1;
+#endif
+        } else {
+          ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = 1;
+        }
 #endif
       } else {
         ((pdcp_data_ind_header_t*) new_sdu_p->data)->rb_id = rb_id + (ctxt_pP->module_id * maxDRB);

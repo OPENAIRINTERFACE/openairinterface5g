@@ -82,10 +82,13 @@ extern struct msghdr nas_msg_tx;
 extern struct msghdr nas_msg_rx;
 
 unsigned char pdcp_read_state_g = 0;
+extern uint8_t nfapi_mode;
+#ifdef UESIM_EXPANSION
+extern uint16_t inst_pdcp_list[NUMBER_OF_UE_MAX];
+#endif
 #endif
 
 extern Packet_OTG_List_t *otg_pdcp_buffer;
-extern uint8_t nfapi_mode;
 #if defined(LINK_ENB_PDCP_TO_GTPV1U)
 #  include "gtpv1u_eNB_task.h"
 #  include "gtpv1u_eNB_defs.h"
@@ -931,7 +934,15 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
             rab_id      = pdcp_read_header_g.rb_id % maxDRB;
             ctxt.rnti          = pdcp_eNB_UE_instance_to_rnti[pdcp_read_header_g.rb_id / maxDRB];
           } else {
-            ctxt.module_id = 0;
+            if (nfapi_mode == 3) {
+#ifdef UESIM_EXPANSION
+              ctxt.module_id = inst_pdcp_list[pdcp_read_header_g.inst];
+#else
+              ctxt.module_id = pdcp_read_header_g.inst - 1;
+#endif
+            } else {
+              ctxt.module_id = 0;
+            }
             rab_id      = pdcp_read_header_g.rb_id % maxDRB;
             ctxt.rnti          = pdcp_UE_UE_module_id_to_rnti[ctxt.module_id];
           }
