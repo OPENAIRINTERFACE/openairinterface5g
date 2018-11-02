@@ -59,6 +59,8 @@
 
 #include "T.h"
 
+#include "PHY/TOOLS/nr_phy_scope.h"
+
 extern double cpuf;
 //static  nfapi_nr_config_request_t config_t;
 //static  nfapi_nr_config_request_t* config =&config_t;
@@ -587,6 +589,12 @@ static void *UE_thread_synch(void *arg) {
             break;
         }
 
+      extern FD_lte_phy_scope_ue  *form_ue[NUMBER_OF_UE_MAX];
+
+      phy_scope_UE(form_ue[0],
+		   PHY_vars_UE_g[0][0],
+		   0,0,7);
+
         AssertFatal ( 0== pthread_mutex_lock(&UE->proc.mutex_synch), "");
         // indicate readiness
         UE->proc.instance_cnt_synch--;
@@ -1016,6 +1024,10 @@ void *UE_thread(void *arg) {
                         if ( first_symbols <0 )
                             LOG_E(PHY,"can't compensate: diff =%d\n", first_symbols);
                     }
+                } //UE->mode != loop_through_memory
+                else
+                    rt_sleep_ns(1000*1000);
+
                     pickTime(gotIQs);
                     // operate on thread sf mod 2
                     AssertFatal(pthread_mutex_lock(&proc->mutex_rxtx) ==0,"");
@@ -1076,7 +1088,7 @@ void *UE_thread(void *arg) {
           				printf("%s\n",exit_fun_string);
           				fflush(stdout);
           				sleep(1);
-                        exit_fun(exit_fun_string);
+					exit_fun(exit_fun_string);
                       }
                     }
 
@@ -1087,10 +1099,6 @@ void *UE_thread(void *arg) {
 //                    updateTimes(lastTime, &t1, 20000, "Delay between two IQ acquisitions (case 1)");
 //                    pickStaticTime(lastTime);
 
-                } else {
-                    printf("Processing subframe %d",proc->subframe_rx);
-                    getchar();
-                }
             } // start_rx_stream==1
         } // UE->is_synchronized==1
 

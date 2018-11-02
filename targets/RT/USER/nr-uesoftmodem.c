@@ -419,10 +419,11 @@ static void *scope_thread(void *arg) {
       fl_clear_browser(form_stats->stats_text);
       fl_add_browser_line(form_stats->stats_text, stats_buffer);
       
-      phy_scope_UE(form_ue[0],
-		   PHY_vars_UE_g[0][0],
-		   0,0,7);
-      
+      if (PHY_vars_UE_g[0][0]->is_synchronized == 1)
+	phy_scope_UE(form_ue[0],
+		     PHY_vars_UE_g[0][0],
+		     0,0,7);
+      //else it is done in the synch thread
       
       //printf("doing forms\n");
       //usleep(100000); // 100 ms
@@ -498,7 +499,7 @@ static void get_options(void) {
   int CC_id;
   int tddflag, nonbiotflag;
   char *loopfile=NULL;
-  int dumpframe;
+  int dumpframe=0;
   uint32_t online_log_messages;
   uint32_t glog_level, glog_verbosity;
   uint32_t start_telnetsrv;
@@ -1190,16 +1191,18 @@ int main( int argc, char **argv ) {
     printf("TYPE <CTRL-C> TO TERMINATE\n");
     //getchar();
 
+    /*
 #if defined(ENABLE_ITTI)
     printf("Entering ITTI signals handler\n");
     itti_wait_tasks_end();
     oai_exit=1;
 #else
+    */
 
     while (oai_exit==0)
         rt_sleep_ns(100000000ULL);
 
-#endif
+    //#endif
 
   // stop threads
 #ifdef XFORMS
