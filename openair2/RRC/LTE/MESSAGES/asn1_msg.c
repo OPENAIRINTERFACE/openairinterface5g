@@ -704,7 +704,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
     = configuration->pcch_defaultPagingCycle[CC_id];
   (*sib2)->radioResourceConfigCommon.pcch_Config.nB
     = configuration->pcch_nB[CC_id];
-  LOG_E(RRC,"[SIB2] With ITTI. Basic config of paging cycle DRX: radio frame cycle length %x, paging occasion number %x\n",
+  LOG_I(RRC,"[SIB2] With ITTI. Basic config of paging cycle DRX: radio frame cycle length %x, paging occasion number %x\n",
       (uint32_t)configuration->pcch_defaultPagingCycle[CC_id],
       (uint32_t)configuration->pcch_nB[CC_id]);
 

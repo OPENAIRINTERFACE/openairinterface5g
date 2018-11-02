@@ -842,7 +842,6 @@ rrc_eNB_free_UE(
   const struct rrc_eNB_ue_context_s *const ue_context_pP)
 //-----------------------------------------------------------------------------
 {
-  //protocol_ctxt_t ctxt; // rm ?
   rnti_t rnti = ue_context_pP->ue_context.rnti;
 
   if (enb_mod_idP >= NB_eNB_INST) {
@@ -853,8 +852,6 @@ rrc_eNB_free_UE(
     
     return;
   }
- 
-  //PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, enb_mod_idP, ENB_FLAG_YES, rnti, 0, 0, enb_mod_idP); // rm ?
 
   if (EPC_MODE_ENABLED) {
     if ((ue_context_pP->ue_context.ul_failure_timer >= 20000) && (mac_eNB_get_rrc_status(enb_mod_idP, rnti) >= RRC_CONNECTED)) {
