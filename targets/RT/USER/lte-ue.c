@@ -1023,10 +1023,11 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg) {
     proc->frame_rx = timer_frame;
     
     // FDD and TDD tx timing settings.
+    // XXX:It is the result of timing adjustment in debug.
+    // It is necessary to investigate why this will work in the future.
     proc->subframe_tx=(timer_subframe+sf_ahead)%10;
     proc->frame_tx = proc->frame_rx + (proc->subframe_rx>(9-sf_ahead)?1:0);
     //oai_subframe_ind(proc->frame_rx, proc->subframe_rx);
-
 
     if(UE->frame_parms.frame_type == FDD){
     oai_subframe_ind(proc->frame_rx, proc->subframe_rx);
