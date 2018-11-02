@@ -197,20 +197,20 @@ int config_get(paramdef_t *params,int numparams, char *prefix)
 {
 int ret= -1;
 
-if (CONFIG_ISFLAGSET(CONFIG_ABORT)) {
+  if (CONFIG_ISFLAGSET(CONFIG_ABORT)) {
     fprintf(stderr,"[CONFIG] config_get, section %s skipped, config module not properly initialized\n",prefix);
     return ret;
-}
-configmodule_interface_t *cfgif = config_get_if();
-  if (cfgif != NULL) {
-      ret = config_get_if()->get(params, numparams,prefix);
-      if (ret >= 0) {
-         config_process_cmdline(params,numparams,prefix);
-         config_execcheck(params,numparams,prefix);
-     }
-  return ret;
   }
-return ret;
+  configmodule_interface_t *cfgif = config_get_if();
+  if (cfgif != NULL) {
+    ret = config_get_if()->get(params, numparams,prefix);
+    if (ret >= 0) {
+      config_process_cmdline(params,numparams,prefix);
+      config_execcheck(params,numparams,prefix);
+    }
+    return ret;
+  }
+  return ret;
 }
 
 int config_getlist(paramlist_def_t *ParamList, paramdef_t *params, int numparams, char *prefix)

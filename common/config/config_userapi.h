@@ -55,7 +55,9 @@ extern void config_assign_processedint(paramdef_t *cfgoption, int val);
 extern void config_assign_int(paramdef_t *cfgoptions, char *fullname, int val);
 extern int config_assign_ipv4addr(paramdef_t *cfgoptions, char *ipv4addr);
 
-/* apis to get parameters, to be used by oai modules, at configuration time */
+/* apis to get/check parameters, to be used by oai modules, at configuration time */
+#define CONFIG_CHECKALLSECTIONS "ALLSECTIONS"
+extern int config_check_cmdlineopt(char *prefix);
 extern int config_get(paramdef_t *params,int numparams, char *prefix);
 extern int config_getlist(paramlist_def_t *ParamList, paramdef_t *params, int numparams, char *prefix);
 

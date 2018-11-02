@@ -37,6 +37,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "common/config/config_paramdesc.h"
+#include "common/utils/T/T.h"
 #define CONFIG_MAX_OOPT_PARAMS    10     // maximum number of parameters in the -O option (-O <cfgmode>:P1:P2...
 #define CONFIG_MAX_ALLOCATEDPTRS  1024   // maximum number of parameters that can be dynamicaly allocated in the config module
 
@@ -44,12 +45,14 @@
 #define CONFIG_LIBCONFIGFILE        "libconfig"  // use libconfig file
 #define CONFIG_CMDLINEONLY          "cmdline"    // use only command line options
 #define DEFAULT_CFGFILENAME         "oai.conf"   // default config file
-
-/* rtflags bit position definitions */
+/*   bit position definition for the argv_info mask of the configmodule_interface_t structure */
+#define CONFIG_CMDLINEOPT_PROCESSED    (1<<0)   // command line option has been processed
+/*  bit position definitions for the rtflags mask of the configmodule_interface_t structure*/
 #define CONFIG_PRINTPARAMS    1                 // print parameters values while processing
 #define CONFIG_DEBUGPTR       (1<<1)            // print memory allocation/free debug messages
 #define CONFIG_DEBUGCMDLINE   (1<<2)            // print command line processing messages
-#define CONFIG_NOABORTONCHKF  (1<<3)            // disable abort execution when parameter checking function fails
+#define CONFIG_NOCHECKUNKOPT  (1<<3)            // disable check unprocessed (so invalid) command line options 
+#define CONFIG_NOABORTONCHKF  (1<<4)            // disable abort execution when parameter checking function fails
 #define CONFIG_NOEXITONHELP   (1<<19)           // do not exit after printing help
 #define CONFIG_HELP           (1<<20)           // print help message
 #define CONFIG_ABORT          (1<<21)           // config failed,abort execution 
@@ -62,6 +65,7 @@ typedef struct configmodule_interface
 {
   int      argc;
   char     **argv;
+  uint32_t *argv_info;
   char     *cfgmode;
   int      num_cfgP;
   char     *cfgP[CONFIG_MAX_OOPT_PARAMS];

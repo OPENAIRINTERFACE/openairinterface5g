@@ -140,12 +140,43 @@ char defbool[2]="1";
     return optisset;
 }
 
+int config_check_cmdlineopt(char *prefix)
+{
+int unknowndetected=0;
+char testprefix[CONFIG_MAXOPTLENGTH]="";
+int finalcheck = 0; 
+
+    if (prefix != NULL) {
+       if (strcmp(prefix,CONFIG_CHECKALLSECTIONS) == 0) 
+         finalcheck = 1;
+       else if (strlen(prefix) > 0) {
+         sprintf(testprefix,"--%s.",prefix);
+       }
+    } 
+
+    for (int i=1; i<config_get_if()->argc ; i++) {
+      if ( !finalcheck && strstr(config_get_if()->argv[i],testprefix) == NULL ) continue;
+      if ( !finalcheck && testprefix[0]==0 && index(config_get_if()->argv[i],'.') != NULL) continue;
+      if ( !finalcheck && config_get_if()->argv[i][0] == '-' && isdigit(config_get_if()->argv[i][1])) continue;
+      if ( (config_get_if()->argv_info[i] & CONFIG_CMDLINEOPT_PROCESSED) == 0 ) {
+        fprintf(stderr,"[CONFIG] unknown option: %s\n",
+                config_get_if()->argv[i] );
+        unknowndetected++; 
+      }  
+    }
+
+ 
+  printf_cmdl("[CONFIG] %i unknown option(s) in command line starting with %s (section %s)\n",
+              unknowndetected,testprefix,((prefix==NULL)?"":prefix));
+  return unknowndetected;            
+}  /* parse_cmdline*/
+
 int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix)
 {
   int c = config_get_if()->argc;
   int i,j;
   char *pp;
-  char cfgpath[512]; /* 512 should be enough for the sprintf below */
+  char cfgpath[CONFIG_MAXOPTLENGTH];
  
   j = 0;
   i = 0;
@@ -155,6 +186,7 @@ int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix)
         if (strncmp(oneargv, "-h",2) == 0 || strncmp(oneargv, "--help",6) == 0 ) {
             char *tokctx;
             pp=strtok_r(oneargv, "_",&tokctx);
+            config_get_if()->argv_info[i] |= CONFIG_CMDLINEOPT_PROCESSED;
             if (pp == NULL || strcasecmp(pp,config_get_if()->argv[i] ) == 0 ) {
                 if( prefix == NULL) {
                   config_printhelp(cfgoptions,numoptions);
@@ -189,6 +221,7 @@ int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix)
     		     ((strlen(oneargv) > 2) && (strcmp(oneargv + 2,cfgpath ) == 0 )) ) {
                    char *valptr=NULL;
                    int ret;
+                   config_get_if()->argv_info[i] |= CONFIG_CMDLINEOPT_PROCESSED;
                    if (c > 0) {
     		      pp = config_get_if()->argv[i+1];
                       if (pp != NULL ) {                      
@@ -204,6 +237,7 @@ int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix)
                    j += processoption(&(cfgoptions[n]), valptr);
     		   if (  valptr != NULL ) {
                       i++;
+                      config_get_if()->argv_info[i] |= CONFIG_CMDLINEOPT_PROCESSED;
                       c--;
     		   } 
                    break;
@@ -215,5 +249,13 @@ int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix)
          c--;  
     }   /* fin du while */
   printf_cmdl("[CONFIG] %s %i options set from command line\n",((prefix == NULL) ? "(root)":prefix),j);
+  if ( !(CONFIG_ISFLAGSET( CONFIG_NOCHECKUNKOPT )) ) {
+      i=config_check_cmdlineopt(prefix);
+      if (i > 0) {
+         fprintf(stderr,"[CONFIG] %i unknown options for section %s detected in command line\n",
+                 i,((prefix==NULL)?"\"root section\"":prefix));
+         exit_fun(" Exiting after detecting errors in command line \n");
+      }
+  }
   return j;            
 }  /* parse_cmdline*/

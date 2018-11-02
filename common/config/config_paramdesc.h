@@ -38,7 +38,7 @@
 
 
 #define MAX_OPTNAME_SIZE 64
-
+#define CONFIG_MAXOPTLENGTH 512 /* max full option length, full option name exemple: (prefix1.[<index>].prefix2.optname */
 
 
 /* parameter flags definitions */
@@ -54,7 +54,6 @@
 #define PARAMFLAG_MALLOCINCONFIG          (1 << 15)        // parameter allocated in config module
 #define PARAMFLAG_PARAMSET                (1 << 16)        // parameter has been explicitely set in get functions
 #define PARAMFLAG_PARAMSETDEF             (1 << 17)        // parameter has been set to default value in get functions
-
 
 /* checkedparam_t is possibly used in paramdef_t for specific parameter value validation */
 #define CONFIG_MAX_NUMCHECKVAL            20

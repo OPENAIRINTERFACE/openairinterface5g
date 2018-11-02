@@ -178,12 +178,14 @@ char *strtokctx=NULL;
 char *atoken;
 uint32_t tmpflags=0;
 int i;
+int OoptIdx=-1;
  
 /* first parse the command line to look for the -O option */
   for (i = 0;i<argc;i++) {
        if (strlen(argv[i]) < 2) continue;
        if ( argv[i][1] == 'O' && i < (argc -1)) {
-          cfgparam = argv[i+1]; 
+          cfgparam = argv[i+1];
+          OoptIdx=i;
        } 
        if ( strstr(argv[i], "help_config") != NULL  ) {
           config_printhelp(Config_Params,CONFIG_PARAMLENGTH(Config_Params));
@@ -218,8 +220,13 @@ int i;
        cfgmode=NULL; //strdup(CONFIG_LIBCONFIGFILE);
    }
 
-   cfgptr = malloc(sizeof(configmodule_interface_t));
-   memset(cfgptr,0,sizeof(configmodule_interface_t));
+   cfgptr = calloc(sizeof(configmodule_interface_t),1);
+   cfgptr->argv_info = calloc(sizeof(int32_t), argc);
+   cfgptr->argv_info[0] |= CONFIG_CMDLINEOPT_PROCESSED;
+   if (OoptIdx >= 0) {
+     cfgptr->argv_info[OoptIdx] |= CONFIG_CMDLINEOPT_PROCESSED;
+     cfgptr->argv_info[OoptIdx+1] |= CONFIG_CMDLINEOPT_PROCESSED;
+   }
 
    cfgptr->rtflags = cfgptr->rtflags | tmpflags;
    cfgptr->argc   = argc;
