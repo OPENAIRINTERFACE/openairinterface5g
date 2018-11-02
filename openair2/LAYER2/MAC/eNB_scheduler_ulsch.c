@@ -1029,7 +1029,8 @@ schedule_ulsch(module_id_t module_idP, frame_t frameP,
     for (i = 0; i < NB_RA_PROC_MAX; i++) {
       if ((cc->ra[i].state == WAITMSG3) &&
 	  (cc->ra[i].Msg3_subframe == sched_subframe)) {
-	first_rb[CC_id]++;
+        if (first_rb[CC_id] < cc->ra[i].msg3_first_rb + cc->ra[i].msg3_nb_rb)
+          first_rb[CC_id] = cc->ra[i].msg3_first_rb + cc->ra[i].msg3_nb_rb;
 	//    cc->ray[i].Msg3_subframe = -1;
 	break;
       }
