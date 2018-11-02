@@ -254,6 +254,8 @@ void common_signal_procedures (PHY_VARS_eNB *eNB,int frame, int subframe) {
       if (eNB->pbch_configured!=1) return;
       eNB->pbch_configured=0;
     }
+    T(T_ENB_PHY_MIB, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe),
+      T_BUFFER(pbch_pdu, 3));
     generate_pbch(&eNB->pbch,
 		  txdataF,
 		  AMP,

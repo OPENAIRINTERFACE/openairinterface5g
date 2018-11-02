@@ -14,6 +14,11 @@
 #define DEFAULT_IP   "127.0.0.1"
 #define DEFAULT_PORT 9999
 
+#define NO_PREAMBLE -1
+
+int no_sib = 0;
+int no_mib = 0;
+
 typedef struct {
   int socket;
   struct sockaddr_in to;
@@ -28,11 +33,24 @@ typedef struct {
   int dl_frame;
   int dl_subframe;
   int dl_data;
+  /* mib */
+  int mib_frame;
+  int mib_subframe;
+  int mib_data;
+  /* RA preamble */
+  int preamble_frame;
+  int preamble_subframe;
+  int preamble_preamble;
+  /* RAR */
+  int rar_rnti;
+  int rar_frame;
+  int rar_subframe;
+  int rar_data;
 } ev_data;
 
-void ul(void *_d, event e)
+void trace(ev_data *d, int direction, int rnti_type, int rnti,
+    int frame, int subframe, void *buf, int bufsize, int preamble)
 {
-  ev_data *d = _d;
   ssize_t ret;
   int fsf;
   int i;
@@ -41,79 +59,118 @@ void ul(void *_d, event e)
 
   PUTS(&d->buf, MAC_LTE_START_STRING);
   PUTC(&d->buf, FDD_RADIO);
-  PUTC(&d->buf, DIRECTION_UPLINK);
-  PUTC(&d->buf, C_RNTI);
+  PUTC(&d->buf, direction);
+  PUTC(&d->buf, rnti_type);
 
-  PUTC(&d->buf, MAC_LTE_RNTI_TAG);
-  PUTC(&d->buf, (e.e[d->ul_rnti].i>>8) & 255);
-  PUTC(&d->buf, e.e[d->ul_rnti].i & 255);
+  if (rnti_type == C_RNTI || rnti_type == RA_RNTI) {
+    PUTC(&d->buf, MAC_LTE_RNTI_TAG);
+    PUTC(&d->buf, (rnti>>8) & 255);
+    PUTC(&d->buf, rnti & 255);
+  }
 
   /* for newer version of wireshark? */
-  fsf = (e.e[d->ul_frame].i << 4) + e.e[d->ul_subframe].i;
+  fsf = (frame << 4) + subframe;
   /* for older version? */
-  fsf = e.e[d->ul_subframe].i;
+  //fsf = subframe;
   PUTC(&d->buf, MAC_LTE_FRAME_SUBFRAME_TAG);
   PUTC(&d->buf, (fsf>>8) & 255);
   PUTC(&d->buf, fsf & 255);
 
+  if (preamble != NO_PREAMBLE) {
+    PUTC(&d->buf, MAC_LTE_SEND_PREAMBLE_TAG);
+    PUTC(&d->buf, preamble);
+    PUTC(&d->buf, 0); /* rach attempt - always 0 for us (not sure of this) */
+  }
+
   PUTC(&d->buf, MAC_LTE_PAYLOAD_TAG);
-  for (i = 0; i < e.e[d->ul_data].bsize; i++)
-    PUTC(&d->buf, ((char*)e.e[d->ul_data].b)[i]);
+  for (i = 0; i < bufsize; i++)
+    PUTC(&d->buf, ((char*)buf)[i]);
 
   ret = sendto(d->socket, d->buf.obuf, d->buf.osize, 0,
       (struct sockaddr *)&d->to, sizeof(struct sockaddr_in));
   if (ret != d->buf.osize) abort();
+}
+
+void ul(void *_d, event e)
+{
+  ev_data *d = _d;
+  trace(d, DIRECTION_UPLINK, C_RNTI, e.e[d->ul_rnti].i,
+        e.e[d->ul_frame].i, e.e[d->ul_subframe].i,
+        e.e[d->ul_data].b, e.e[d->ul_data].bsize,
+        NO_PREAMBLE);
 }
 
 void dl(void *_d, event e)
 {
   ev_data *d = _d;
-  ssize_t ret;
-  int fsf;
-  int i;
 
-  d->buf.osize = 0;
+  if (e.e[d->dl_rnti].i == 0xffff && no_sib) return;
 
-  PUTS(&d->buf, MAC_LTE_START_STRING);
-  PUTC(&d->buf, FDD_RADIO);
-  PUTC(&d->buf, DIRECTION_DOWNLINK);
-  PUTC(&d->buf, C_RNTI);
-
-  PUTC(&d->buf, MAC_LTE_RNTI_TAG);
-  PUTC(&d->buf, (e.e[d->dl_rnti].i>>8) & 255);
-  PUTC(&d->buf, e.e[d->dl_rnti].i & 255);
-
-  /* for newer version of wireshark? */
-  fsf = (e.e[d->dl_frame].i << 4) + e.e[d->dl_subframe].i;
-  /* for older version? */
-  fsf = e.e[d->dl_subframe].i;
-  PUTC(&d->buf, MAC_LTE_FRAME_SUBFRAME_TAG);
-  PUTC(&d->buf, (fsf>>8) & 255);
-  PUTC(&d->buf, fsf & 255);
-
-  PUTC(&d->buf, MAC_LTE_PAYLOAD_TAG);
-  for (i = 0; i < e.e[d->dl_data].bsize; i++)
-    PUTC(&d->buf, ((char*)e.e[d->dl_data].b)[i]);
-
-  ret = sendto(d->socket, d->buf.obuf, d->buf.osize, 0,
-      (struct sockaddr *)&d->to, sizeof(struct sockaddr_in));
-  if (ret != d->buf.osize) abort();
+  trace(d, DIRECTION_DOWNLINK,
+        e.e[d->dl_rnti].i != 0xffff ? C_RNTI : SI_RNTI, e.e[d->dl_rnti].i,
+        e.e[d->dl_frame].i, e.e[d->dl_subframe].i,
+        e.e[d->dl_data].b, e.e[d->dl_data].bsize,
+        NO_PREAMBLE);
 }
 
-void setup_data(ev_data *d, void *database, int ul_id, int dl_id)
+void mib(void *_d, event e)
+{
+  ev_data *d = _d;
+
+  if (no_mib) return;
+
+  trace(d, DIRECTION_DOWNLINK, NO_RNTI, 0,
+        e.e[d->mib_frame].i, e.e[d->mib_subframe].i,
+        e.e[d->mib_data].b, e.e[d->mib_data].bsize,
+        NO_PREAMBLE);
+}
+
+void preamble(void *_d, event e)
+{
+  ev_data *d = _d;
+  trace(d, DIRECTION_UPLINK, NO_RNTI, 0,
+        e.e[d->preamble_frame].i, e.e[d->preamble_subframe].i,
+        NULL, 0,
+        e.e[d->preamble_preamble].i);
+}
+
+void rar(void *_d, event e)
+{
+  ev_data *d = _d;
+  trace(d, DIRECTION_DOWNLINK, RA_RNTI, e.e[d->rar_rnti].i,
+        e.e[d->rar_frame].i, e.e[d->rar_subframe].i,
+        e.e[d->rar_data].b, e.e[d->rar_data].bsize,
+        NO_PREAMBLE);
+}
+
+void setup_data(ev_data *d, void *database, int ul_id, int dl_id, int mib_id,
+    int preamble_id, int rar_id)
 {
   database_event_format f;
   int i;
 
-  d->ul_rnti     = -1;
-  d->ul_frame    = -1;
-  d->ul_subframe = -1;
-  d->ul_data     = -1;
+  d->ul_rnti           = -1;
+  d->ul_frame          = -1;
+  d->ul_subframe       = -1;
+  d->ul_data           = -1;
 
-  d->dl_rnti     = -1;
-  d->dl_frame    = -1;
-  d->dl_subframe = -1;
-  d->dl_data     = -1;
+  d->dl_rnti           = -1;
+  d->dl_frame          = -1;
+  d->dl_subframe       = -1;
+  d->dl_data           = -1;
+
+  d->mib_frame         = -1;
+  d->mib_subframe      = -1;
+  d->mib_data          = -1;
+
+  d->preamble_frame    = -1;
+  d->preamble_subframe = -1;
+  d->preamble_preamble = -1;
+
+  d->rar_rnti           = -1;
+  d->rar_frame          = -1;
+  d->rar_subframe       = -1;
+  d->rar_data           = -1;
 
 #define G(var_name, var_type, var) \
   if (!strcmp(f.name[i], var_name)) { \
@@ -143,6 +200,37 @@ void setup_data(ev_data *d, void *database, int ul_id, int dl_id)
   }
   if (d->dl_rnti == -1 || d->dl_frame == -1 || d->dl_subframe == -1 ||
       d->dl_data == -1) goto error;
+
+  /* MIB: frame, subframe, data */
+  f = get_format(database, mib_id);
+  for (i = 0; i < f.count; i++) {
+    G("frame",    "int",    d->mib_frame);
+    G("subframe", "int",    d->mib_subframe);
+    G("data",     "buffer", d->mib_data);
+  }
+  if (d->mib_frame == -1 || d->mib_subframe == -1 || d->mib_data == -1)
+    goto error;
+
+  /* preamble: frame, subframe, preamble */
+  f = get_format(database, preamble_id);
+  for (i = 0; i < f.count; i++) {
+    G("frame",    "int", d->preamble_frame);
+    G("subframe", "int", d->preamble_subframe);
+    G("preamble", "int", d->preamble_preamble);
+  }
+  if (d->preamble_frame == -1 || d->preamble_subframe == -1 ||
+      d->preamble_preamble == -1) goto error;
+
+  /* rar: rnti, frame, subframe, data */
+  f = get_format(database, rar_id);
+  for (i = 0; i < f.count; i++) {
+    G("rnti",     "int",    d->rar_rnti);
+    G("frame",    "int",    d->rar_frame);
+    G("subframe", "int",    d->rar_subframe);
+    G("data",     "buffer", d->rar_data);
+  }
+  if (d->rar_rnti == -1 || d->rar_frame == -1 || d->rar_subframe == -1 ||
+      d->rar_data == -1) goto error;
 
 #undef G
 
@@ -179,7 +267,9 @@ void usage(void)
 "    -d <database file>        this option is mandatory\n"
 "    -i <dump file>            read events from this dump file\n"
 "    -ip <IP address>          send packets to this IP address (default %s)\n"
-"    -p <port>                 send packets to this port (default %d)\n",
+"    -p <port>                 send packets to this port (default %d)\n"
+"    -no-mib                   do not report MIB\n"
+"    -no-sib                   do not report SIBs\n",
   DEFAULT_IP,
   DEFAULT_PORT
   );
@@ -194,7 +284,7 @@ int main(int n, char **v)
   event_handler *h;
   int in;
   int i;
-  int ul_id, dl_id;
+  int ul_id, dl_id, mib_id = -1, preamble_id, rar_id;
   ev_data d;
   char *ip = DEFAULT_IP;
   int port = DEFAULT_PORT;
@@ -209,6 +299,8 @@ int main(int n, char **v)
       { if (i > n-2) usage(); input_filename = v[++i]; continue; }
     if (!strcmp(v[i], "-ip")) { if (i > n-2) usage(); ip = v[++i]; continue; }
     if (!strcmp(v[i], "-p")) {if(i>n-2)usage(); port=atoi(v[++i]); continue; }
+    if (!strcmp(v[i], "-no-mib")) { no_mib = 1; continue; }
+    if (!strcmp(v[i], "-no-sib")) { no_sib = 1; continue; }
     usage();
   }
 
@@ -232,10 +324,16 @@ int main(int n, char **v)
 
   ul_id = event_id_from_name(database, "ENB_MAC_UE_UL_PDU_WITH_DATA");
   dl_id = event_id_from_name(database, "ENB_MAC_UE_DL_PDU_WITH_DATA");
-  setup_data(&d, database, ul_id, dl_id);
+  mib_id = event_id_from_name(database, "ENB_PHY_MIB");
+  preamble_id = event_id_from_name(database, "ENB_PHY_INITIATE_RA_PROCEDURE");
+  rar_id = event_id_from_name(database, "ENB_MAC_UE_DL_RAR_PDU_WITH_DATA");
+  setup_data(&d, database, ul_id, dl_id, mib_id, preamble_id, rar_id);
 
   register_handler_function(h, ul_id, ul, &d);
   register_handler_function(h, dl_id, dl, &d);
+  register_handler_function(h, mib_id, mib, &d);
+  register_handler_function(h, preamble_id, preamble, &d);
+  register_handler_function(h, rar_id, rar, &d);
 
   d.socket = socket(AF_INET, SOCK_DGRAM, 0);
   if (d.socket == -1) { perror("socket"); exit(1); }
@@ -253,7 +351,8 @@ int main(int n, char **v)
     event e;
     e = get_event(in, &ebuf, database);
     if (e.type == -1) break;
-    if (!(e.type == ul_id || e.type == dl_id)) continue;
+    if (!(e.type == ul_id || e.type == dl_id || e.type == mib_id ||
+          e.type == preamble_id || e.type == rar_id)) continue;
     handle_event(h, e);
   }
 
