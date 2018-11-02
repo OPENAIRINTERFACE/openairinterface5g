@@ -1862,7 +1862,7 @@ void init_UE_threads_stub(int inst) {
 #ifdef OPENAIR2
 void fill_ue_band_info(void) {
 
-  UE_EUTRA_Capability_t *UE_EUTRA_Capability = UE_rrc_inst[0].UECap->UE_EUTRA_Capability;
+  LTE_UE_EUTRA_Capability_t *UE_EUTRA_Capability = UE_rrc_inst[0].UECap->UE_EUTRA_Capability;
   int i,j;
 
   bands_to_scan.nbands = UE_EUTRA_Capability->rf_Parameters.supportedBandListEUTRA.list.count;
