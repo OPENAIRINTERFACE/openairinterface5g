@@ -652,7 +652,7 @@ function main() {
           lte-simulators coding \
           libcoding.so $dbin/libcoding.so
     compilations \
-	  phy_simulators $config_libconfig_shlib \
+	  lte-simulators $config_libconfig_shlib \
 	  lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
   fi
 

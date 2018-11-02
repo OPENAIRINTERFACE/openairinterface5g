@@ -201,12 +201,20 @@ int OoptIdx=-1;
      cfgparam = getenv("OAI_CONFIGMODULE");
      }
 
-/* default */
+/* default different for UE and softmodem because UE doesn't use config file*/
+/* and -O option is not mandatory for UE                                    */
+/* phy simulators behave as UE                                              */
+/* test of exec name would better be replaced by a parameter to the l       */
+/* oad_configmodule function */
   if (cfgparam == NULL) {
     tmpflags = tmpflags | CONFIG_NOOOPT;
-    cfgparam = CONFIG_CMDLINEONLY ":dbgl0" ;         
+    if (strstr(argv[0],"uesoftmodem") == NULL || strstr(argv[0],"lsim") == NULL) {
+       cfgparam = CONFIG_LIBCONFIGFILE ":" DEFAULT_CFGFILENAME;
+    } else {
+      cfgparam = CONFIG_CMDLINEONLY ":dbgl0" ;         
+    }
   }
-   
+ 
 /* parse the config parameters to set the config source */
    i = sscanf(cfgparam,"%m[^':']:%ms",&cfgmode,&modeparams);
    if (i< 0) {
@@ -215,9 +223,9 @@ int OoptIdx=-1;
    }
    else if ( i == 1 ) {
   /* -O argument doesn't contain ":" separator, assume -O <conf file> option, default cfgmode to libconfig
-     with one parameter, the path to the configuration file */
+     with one parameter, the path to the configuration file cfgmode must not be NULL */
        modeparams=cfgmode;
-       cfgmode=NULL; //strdup(CONFIG_LIBCONFIGFILE);
+       cfgmode=strdup(CONFIG_LIBCONFIGFILE);
    }
 
    cfgptr = calloc(sizeof(configmodule_interface_t),1);
