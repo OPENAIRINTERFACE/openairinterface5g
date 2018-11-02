@@ -838,13 +838,14 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
   /* Search pss in the received buffer each 4 samples which ensures a memory alignment on 128 bits (32 bits x 4 ) */
   /* This is required by SIMD (single instruction Multiple Data) Extensions of Intel processors. */
   /* Correlation computation is based on a a dot product which is realized thank to SIMS extensions */
-  for (int pss_index = 0; pss_index < NUMBER_PSS_SEQUENCE; pss_index++) avg[pss_index]=0;
+  for (int pss_index = 0; pss_index < NUMBER_PSS_SEQUENCE; pss_index++) {
+    avg[pss_index]=0;
+    memset(pss_corr_ue[pss_index],0,length*sizeof(int64_t)); 
+  }
 
-  for (n=0; n < length; n+=4) {
+  for (n=0; n < length; n+=4) { //
 
     for (int pss_index = 0; pss_index < NUMBER_PSS_SEQUENCE; pss_index++) {
-
-      pss_corr_ue[pss_index][n] = 0; /* clean correlation for position n */
 
       if ( n < (length - frame_parms->ofdm_symbol_size)) {
 
@@ -886,24 +887,19 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
 
   LOG_I(PHY,"[UE] nr_synchro_time: Sync source = %d, Peak found at pos %d, val = %llu (%d dB) avg %d dB\n", pss_source, peak_position, (unsigned long long)peak_value, dB_fixed64(peak_value),dB_fixed64(avg[pss_source]));
 
-//#ifdef DEBUG_PSS_NR
-
-#define  PSS_DETECTION_FLOOR_NR     (31)
-  if (peak_value < 5*avg[pss_source]) { //PSS_DETECTION_FLOOR_NR)
-
+  if (peak_value < 5*avg[pss_source])
     return(-1);
-  }
-//#endif
+
 
 #ifdef DBG_PSS_NR
 
-  static debug_cnt = 0;
+  static int debug_cnt = 0;
 
   if (debug_cnt == 0) {
-    /*    LOG_M("pss_corr_ue0.m","pss_corr_ue0",pss_corr_ue[0],length,1,6);
+    LOG_M("pss_corr_ue0.m","pss_corr_ue0",pss_corr_ue[0],length,1,6);
     LOG_M("pss_corr_ue1.m","pss_corr_ue1",pss_corr_ue[1],length,1,6);
     LOG_M("pss_corr_ue2.m","pss_corr_ue2",pss_corr_ue[2],length,1,6);
-    LOG_M("rxdata0.m","rxd0",rxdata[0],length,1,1); */
+    LOG_M("rxdata0.m","rxd0",rxdata[0],length,1,1); 
   } else {
     debug_cnt++;
   }

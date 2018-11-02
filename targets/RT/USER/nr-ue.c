@@ -435,7 +435,7 @@ static void *UE_thread_synch(void *arg) {
 #endif
             if (nr_initial_sync( UE, UE->mode ) == 0) {
 
-                hw_slot_offset = (UE->rx_offset<<1) / UE->frame_parms.samples_per_tti;
+                hw_slot_offset = (UE->rx_offset<<1) / UE->frame_parms.samples_per_subframe;
                 printf("Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %d (DL %u, UL %u), UE_scan_carrier %d\n",
                        hw_slot_offset,
                        freq_offset,
@@ -488,15 +488,17 @@ static void *UE_thread_synch(void *arg) {
                         break;
                     }
 
-                    UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
-                    //UE->rfdevice.trx_set_gains_func(&openair0,&openair0_cfg[0]);
-                    //UE->rfdevice.trx_stop_func(&UE->rfdevice);
-                    // sleep(1);
-		    //nr_init_frame_parms_ue(&UE->frame_parms);
-                    /*if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) {
-                        LOG_E(HW,"Could not start the device\n");
-                        oai_exit=1;
-                    }*/
+		if (UE->mode != loop_through_memory) {
+		  UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
+		  //UE->rfdevice.trx_set_gains_func(&openair0,&openair0_cfg[0]);
+		  //UE->rfdevice.trx_stop_func(&UE->rfdevice);
+		  // sleep(1);
+		  //nr_init_frame_parms_ue(&UE->frame_parms);
+		  /*if (UE->rfdevice.trx_start_func(&UE->rfdevice) != 0 ) {
+		    LOG_E(HW,"Could not start the device\n");
+		    oai_exit=1;
+                  }*/
+		}
 
 		if (UE->UE_scan_carrier == 1) {
 
