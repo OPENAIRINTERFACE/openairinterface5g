@@ -60,6 +60,11 @@ macpdu2wireshark: macpdu2wireshark.o database.o utils.o handler.o event.o \
 multi: multi.o utils.o database.o config.o
 	$(CC) $(CFLAGS) -o multi $^ $(LIBS)
 
+multi.o: ../T_IDs.h
+
+../T_IDs.h:
+	cd .. && $(MAKE)
+
 .PHONY: all gui/gui.a view/view.a logger/logger.a filter/filter.a
 
 gui/gui.a:
