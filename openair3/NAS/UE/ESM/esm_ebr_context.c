@@ -284,16 +284,16 @@ int esm_ebr_context_create(
                 // if it's made too many tables , OS may crush so we use one table.
 #ifdef PDCP_USE_NETLINK
 #ifdef UESIM_EXPANSION
-                uint16_t inst_nic = (pdn->ip_addr[3] & 0x000000FF) - 1;
+                uint16_t inst_nic = (pdn->ip_addr[3] & 0x000000FF) - 2;
                 res = sprintf(command_line,
                            "ifconfig oip%d %s netmask %s broadcast %s up && "
                            "ip rule add from %s/24 table %d && "
                            "ip rule add to %s/24 table %d && "
                            "ip route add default dev oip%d table %d",
-                           inst_nic, ipv4_addr, netmask, broadcast,
+                           inst_nic + 1, ipv4_addr, netmask, broadcast,
                            ipv4_addr, 201,
                            ipv4_addr, 201,
-                           inst_nic, 201);
+                           inst_nic + 1, 201);
 
                inst_pdcp_list[inst_nic] = ueid;
 #else

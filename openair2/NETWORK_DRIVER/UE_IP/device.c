@@ -61,7 +61,7 @@ int ue_ip_find_inst(struct net_device *dev_pP)
   //---------------------------------------------------------------------------
   int i;
 
-  for (i=1; i<=UE_IP_NB_INSTANCES_MAX; i++)
+  for (i=0; i<UE_IP_NB_INSTANCES_MAX; i++)
     if (ue_ip_dev[i] == dev_pP) {
       return(i);
     }
@@ -194,7 +194,7 @@ void ue_ip_teardown(struct net_device *dev_pP)
     priv_p = netdev_priv(dev_pP);
     inst = ue_ip_find_inst(dev_pP);
 
-    if ((inst<=0) || (inst>UE_IP_NB_INSTANCES_MAX)) {
+    if ((inst<0) || (inst>=UE_IP_NB_INSTANCES_MAX)) {
       printk("[UE_IP_DRV][%s] ERROR, couldn't find instance\n", __FUNCTION__);
       return;
     }
@@ -243,7 +243,7 @@ int ue_ip_hard_start_xmit(struct sk_buff *skb_pP, struct net_device *dev_pP)
     return -1;
   }
 
-  if ((inst>0) && (inst<=UE_IP_NB_INSTANCES_MAX)) {
+  if ((inst>=0) && (inst<UE_IP_NB_INSTANCES_MAX)) {
 #ifdef OAI_DRV_OAI_DRV_DEBUG_DEVICE
     printk("[UE_IP_DRV][%s] inst %d,  begin\n", __FUNCTION__,inst);
 #endif
@@ -392,9 +392,9 @@ int init_module (void)
   // Initialize parameters shared with RRC
   printk("[UE_IP_DRV][%s] Starting OAI IP driver", __FUNCTION__);
 
-  for (inst=1; inst<=UE_IP_NB_INSTANCES_MAX; inst++) {
+  for (inst=0; inst<UE_IP_NB_INSTANCES_MAX; inst++) {
     printk("[UE_IP_DRV][%s] begin init instance %d\n", __FUNCTION__,inst);
-    sprintf(devicename,"oip%d",inst);
+    sprintf(devicename,"oip%d",inst+1);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
     ue_ip_dev[inst]  = alloc_netdev(sizeof(ue_ip_priv_t),devicename, ue_ip_init);
 #else
@@ -434,7 +434,7 @@ void cleanup_module(void)
 
   printk("[UE_IP_DRV][CLEANUP] begin\n");
 
-  for (inst=1; inst<=UE_IP_NB_INSTANCES_MAX; inst++) {
+  for (inst=0; inst<UE_IP_NB_INSTANCES_MAX; inst++) {
 #ifdef OAI_DRV_DEBUG_DEVICE
     printk("[UE_IP_DRV][CLEANUP]  unregister and free net device instance %d\n",inst);
 #endif

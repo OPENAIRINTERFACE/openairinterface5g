@@ -306,10 +306,10 @@ ue_ip_common_ip2wireless(
     }
     // modify inst by IP address for the U-Plane of multiple UEs while L2 fapi simulator start
 #ifdef UESIM_EXPANSION
-    if ((src_addr[3] - 1)> instP) {
-        pdcph.inst = src_addr[3] - 1;
+    if ((src_addr[3] - 2)> instP) {
+        pdcph.inst = src_addr[3] - 2;
         printk("[UE_IP_DRV] change INST from %d to %d\n",instP, pdcph.inst);
-        instP = src_addr[3] - 1;
+        instP = src_addr[3] - 2;
         priv_p=netdev_priv(ue_ip_dev[instP]);
     }
 #endif

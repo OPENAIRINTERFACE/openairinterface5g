@@ -938,7 +938,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
 #ifdef UESIM_EXPANSION
               ctxt.module_id = inst_pdcp_list[pdcp_read_header_g.inst];
 #else
-              ctxt.module_id = pdcp_read_header_g.inst - 1;
+              ctxt.module_id = pdcp_read_header_g.inst;
 #endif
             } else {
               ctxt.module_id = 0;
