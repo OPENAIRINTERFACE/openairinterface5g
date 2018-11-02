@@ -87,6 +87,8 @@ const char* eurecomVariablesNames[] = {
   "subframe_number_if4p5_south_in",
   "frame_number_if4p5_south_in",
   "ic_enb",
+  "l1_proc_ic",
+  "l1_proc_tx_ic",
   "runtime_TX_eNB",
   "runtime_RX_eNB",
   "frame_number_TX0_UE",

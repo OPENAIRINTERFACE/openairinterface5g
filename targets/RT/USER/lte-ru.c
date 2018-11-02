@@ -155,11 +155,10 @@ static inline void fh_if5_south_out(RU_t *ru) {
 // southbound IF4p5 fronthaul
 static inline void fh_if4p5_south_out(RU_t *ru) {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
-  LOG_I(PHY,"ENTERED fh_if4p5_south_out   Sending IF4p5 for frame %d subframe %d ru %d\n",ru->proc.frame_tx,ru->proc.subframe_tx,ru->idx);
   if (subframe_select(&ru->frame_parms,ru->proc.subframe_tx)!=SF_UL) {
     send_IF4p5(ru,ru->proc.frame_tx, ru->proc.subframe_tx, IF4p5_PDLFFT);
     ru->south_out_cnt++;
-    LOG_I(PHY,"south_out_cnt %d\n",ru->south_out_cnt);
+    printf("south_out_cnt %d, frame %d, subframe %d\n",ru->south_out_cnt,ru->proc.frame_tx,ru->proc.subframe_tx);
   }
 /*if (ru == RC.ru[0] || ru == RC.ru[1]) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU+ru->idx, ru->proc.frame_tx );
@@ -211,7 +210,6 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
   RU_proc_t *proc = &ru->proc;
   int f,sf;
 
-LOG_I(PHY,"ENTERED fh_if4p5_south_in\n");
   uint16_t packet_type;
   uint32_t symbol_number=0;
   uint32_t symbol_mask_full;
@@ -220,7 +218,7 @@ LOG_I(PHY,"ENTERED fh_if4p5_south_in\n");
     symbol_mask_full = (1<<fp->ul_symbols_in_S_subframe)-1;   
   else     
     symbol_mask_full = (1<<fp->symbols_per_tti)-1; 
-  LOG_I(PHY,"fh_if4p5_south_in: RU %d, frame %d, subframe %d, ru %d\n",ru->idx,*frame,*subframe,ru->idx);
+  //printf("fh_if4p5_south_in: RU %d, frame %d, subframe %d, ru %d\n",ru->idx,*frame,*subframe,ru->idx);
   AssertFatal(proc->symbol_mask[*subframe]==0,"rx_fh_if4p5: proc->symbol_mask[%d] = %x\n",*subframe,proc->symbol_mask[*subframe]);
   do {
     recv_IF4p5(ru, &f, &sf, &packet_type, &symbol_number);
@@ -1145,7 +1143,7 @@ void wakeup_L1s(RU_t *ru) {
   RU_proc_t  *ruproc    = &ru->proc;
   struct timespec t;
 
-  LOG_I(PHY,"wakeup_L1s (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
+  LOG_D(PHY,"wakeup_L1s (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
 
     // call eNB function directly
   
@@ -1508,7 +1506,7 @@ static void* ru_thread_tx( void* param ) {
     if (oai_exit) break;   
 
 
-    LOG_I(PHY,"ru_thread_tx (ru %d): Waiting for TX processing\n",ru->idx);
+    LOG_D(PHY,"ru_thread_tx (ru %d): Waiting for TX processing\n",ru->idx);
     // wait until eNBs are finished subframe RX n and TX n+4
     wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
     LOG_I(PHY,"ru_thread_tx (ru %d): Woken from condition\n",ru->idx);
@@ -1544,19 +1542,22 @@ static void* ru_thread_tx( void* param ) {
 	      eNB->Mod_id,eNB_proc->frame_rx,eNB_proc->subframe_rx,ru->idx,eNB->num_RU,eNB_proc->RU_mask_tx);
           eNB_proc->RU_mask_tx |= (1<<j);
         }
+        else if (eNB->RU_list[j]->state == RU_SYNC){
+      		eNB_proc->RU_mask_tx |= (1<<j);
+        }
       }
       if (eNB_proc->RU_mask_tx != (1<<eNB->num_RU)-1) {  // not all RUs have provided their information so return
-      	LOG_I(PHY,"Not all RUs have provided their info (mask = %d)\n", eNB_proc->RU_mask_tx);
+      	printf("Not all RUs have provided their info (mask = %d)\n", eNB_proc->RU_mask_tx);
         pthread_mutex_unlock(&eNB_proc->mutex_RU_tx);
       }
       else { // all RUs TX are finished so send the ready signal to eNB processing
-      	LOG_I(PHY,"All RUs TX are finished. Ready to send wakeup signal to eNB processing\n");
+      	printf("All RUs TX are finished. Ready to send wakeup signal to eNB processing\n");
         eNB_proc->RU_mask_tx = 0;
         pthread_mutex_unlock(&eNB_proc->mutex_RU_tx);
 
         pthread_mutex_lock( &L1_proc->mutex_RUs);
         L1_proc->instance_cnt_RUs = 0;
-        LOG_I(PHY,"ru_thread_tx send signal to L1_thread_tx with (mask = %d)\n", eNB_proc->RU_mask_tx);
+        printf("ru_thread_tx send signal to L1_thread_tx with (mask = %d)\n", eNB_proc->RU_mask_tx);
         // the thread can now be woken up
         if (pthread_cond_signal(&L1_proc->cond_RUs) != 0) {
           LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
