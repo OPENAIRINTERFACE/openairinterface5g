@@ -757,7 +757,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   int           si_Narrowband_r13             = 0;
   int           si_TBS_r13                    = 0;
   
-  int           systemInfoValueTagSi_r13      = 0;
+  //  int           systemInfoValueTagSi_r13      = 0;
   
   int           firstPreamble_r13                     = 0;
   int           lastPreamble_r13                      = 0;
@@ -773,7 +773,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   int   numRepetitionPerPreambleAttempt_r13   = 0;
   int   mpdcch_NumRepetition_RA_r13           = 0;
   int   prach_HoppingConfig_r13               = 0;
-  int           *maxavailablenarrowband               = NULL;
+  //int           *maxavailablenarrowband               = NULL;
   int           pucch_info_value                      = 0;
   
   int           paging_narrowbands_r13                = 0;
@@ -799,12 +799,12 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   int   sib2_mpdcch_pdsch_hoppingOffset_r13       = 0;
   
 
-  int           pusch_HoppingOffset_v1310                         = 0;
+  //int           pusch_HoppingOffset_v1310                         = 0;
   
-  int           hyperSFN_r13                                      = 0;
-  int           eDRX_Allowed_r13                                  = 0;
+  //int           hyperSFN_r13                                      = 0;
+  //int           eDRX_Allowed_r13                                  = 0;
   int           q_RxLevMinCE_r13                                  = 0;
-  int           q_QualMinRSRQ_CE_r13                              = 0;
+  //int           q_QualMinRSRQ_CE_r13                              = 0;
   char   *si_WindowLength_BR_r13                            = NULL;
   char   *si_RepetitionPattern_r13                          = NULL;
   int           startSymbolBR_r13                                 = 0;
@@ -3654,8 +3654,7 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
     pucch_nRB_CQI, pucch_nCS_AN, pucch_n1_AN, pdsch_referenceSignalPower,
     pdsch_p_b, pusch_n_SB, pusch_hoppingOffset, pusch_groupAssignment,
     pusch_nDMRS1, srs_BandwidthConfig, srs_SubframeConfig, pusch_p0_Nominal,
-    pucch_p0_Nominal, msg3_delta_Preamble;
-  char *rach_numberOfRA_Preambles;
+    pucch_p0_Nominal, msg3_delta_Preamble,rach_numberOfRA_Preambles;
   int32_t rach_sizeOfRA_PreamblesGroupA, rach_messageSizeGroupA,
     rach_powerRampingStep, rach_preambleInitialReceivedTargetPower,
     rach_preambleTransMax, rach_raResponseWindowSize,
