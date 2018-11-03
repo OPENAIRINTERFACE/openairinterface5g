@@ -100,9 +100,7 @@ typedef struct RadioResourceConfig_s {
   long                    pucch_delta_shift;
   long                    pucch_nRB_CQI;
   long                    pucch_nCS_AN;
-#if !defined(Rel10) && !defined(Rel14)
   long                    pucch_n1_AN;
-#endif
   long                    pdsch_referenceSignalPower;
   long                    pdsch_p_b;
   long                    pusch_n_SB;
@@ -151,6 +149,7 @@ typedef struct RadioResourceConfig_s {
   long                    ue_TimersAndConstants_n310;
   long                    ue_TimersAndConstants_n311;
   long                    ue_TransmissionMode;
+  long                    ue_multiple_max;
 #ifdef Rel14
   //SIB2 BR Options
   long*			  preambleTransMax_CE_r13;
@@ -188,7 +187,8 @@ typedef struct RrcConfigurationReq_s {
   int16_t                 N_RB_DL[MAX_NUM_CCs];// for testing, change later
   int                     nb_antenna_ports[MAX_NUM_CCs];
 
-
+  int                     eMTC_configured;
+  int                     SL_configured;
 
   RadioResourceConfig     radioresourceconfig[MAX_NUM_CCs];
   RadioResourceConfig     radioresourceconfig_BR[MAX_NUM_CCs];

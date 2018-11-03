@@ -112,13 +112,13 @@ fill_rar(const module_id_t module_idP,
 //------------------------------------------------------------------------------
 
 unsigned short fill_rar_br(eNB_MAC_INST *eNB,
-               int CC_id,
-               RA_TEMPLATE        *RA_template,
-               const frame_t      frameP,
-               const sub_frame_t  subframeP,
-               uint8_t*    const  dlsch_buffer,
-               const uint8_t      ce_level
-)
+			   int CC_id,
+			   RA_t        *ra,
+			   const frame_t      frameP,
+			   const sub_frame_t  subframeP,
+			   uint8_t*    const  dlsch_buffer,
+			   const uint8_t      ce_level
+			   )
 //------------------------------------------------------------------------------
 {
 
@@ -132,47 +132,46 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
   int input_buffer_length;
 
 
-    AssertFatal(ra != NULL, "RA is null \n");
-
-    // subheader fixed
-    rarh->E = 0;		// First and last RAR
-    rarh->T = 1;		// 0 for E/T/R/R/BI subheader, 1 for E/T/RAPID subheader
-    rarh->RAPID = ra->preamble_index;	// Respond to Preamble 0 only for the moment
-    ra->timing_offset /= 16;	//T_A = N_TA/16, where N_TA should be on a 30.72Msps
-    rar[0] = (uint8_t) (ra->timing_offset >> (2 + 4));	// 7 MSBs of timing advance + divide by 4
-    rar[1] = (uint8_t) (ra->timing_offset << (4 - 2)) & 0xf0;	// 4 LSBs of timing advance + divide by 4
-
-
+  AssertFatal(ra != NULL, "RA is null \n");
+  
+  // subheader fixed
+  rarh->E = 0;		// First and last RAR
+  rarh->T = 1;		// 0 for E/T/R/R/BI subheader, 1 for E/T/RAPID subheader
+  rarh->RAPID = ra->preamble_index;	// Respond to Preamble 0 only for the moment
+  ra->timing_offset /= 16;	//T_A = N_TA/16, where N_TA should be on a 30.72Msps
+  rar[0] = (uint8_t) (ra->timing_offset >> (2 + 4));	// 7 MSBs of timing advance + divide by 4
+  rar[1] = (uint8_t) (ra->timing_offset << (4 - 2)) & 0xf0;	// 4 LSBs of timing advance + divide by 4
+  
+  int N_NB_index;
+  
   // Copy the Msg2 narrowband
-  RA_template->msg34_narrowband = RA_template->msg2_narrowband;
-  RA_template->msg3_first_rb    = 0;
-  RA_template->msg3_nb_rb       = 2;
+  ra->msg34_narrowband = ra->msg2_narrowband;
+  ra->msg3_first_rb    = 0;
+  ra->msg3_nb_rb       = 2;
 
 
-    // Copy the Msg2 narrowband
-    ra->msg34_narrowband = ra->msg2_narrowband;
+  if (ce_level < 2) {		//CE Level 0,1, CEmodeA
+    input_buffer_length = 6;
+    
+    N_NB_index = get_numnarrowbandbits(cc->mib->message.dl_Bandwidth);
 
-    if (ce_level < 2) {		//CE Level 0,1, CEmodeA
-	input_buffer_length = 6;
-
-
-    rar[4] = (uint8_t)(RA_template->rnti>>8);
-    rar[5] = (uint8_t)(RA_template->rnti&0xff);
-    //cc->RA_template[ra_idx].timing_offset = 0;
-
+    rar[4] = (uint8_t)(ra->rnti>>8);
+    rar[5] = (uint8_t)(ra->rnti&0xff);
+    //cc->ra[ra_idx].timing_offset = 0;
+    
     reps = 0;
-    RA_template->msg3_mcs = 7;
+    ra->msg3_mcs = 7;
     TPC = 3; // no power increase
     ULdelay = 0;
     cqireq = 0;
     mpdcch_nb_index = 0;
-    rballoc = mac_computeRIV(6,RA_template->msg3_first_rb,RA_template->msg3_nb_rb);
+    rballoc = mac_computeRIV(6,ra->msg3_first_rb,ra->msg3_nb_rb);
 
     uint32_t buffer = 0;
-    buffer |= RA_template->msg34_narrowband << (16 + (4 - N_NB_index));
+    buffer |= ra->msg34_narrowband << (16 + (4 - N_NB_index));
     buffer |= ((rballoc & 0xFF) << (12 + (4 - N_NB_index)));
     buffer |= ((reps & 0x03) << (10 + (4 - N_NB_index)));
-    buffer |= ((RA_template->msg3_mcs & 0x07) << (7 + (4 - N_NB_index)));
+    buffer |= ((ra->msg3_mcs & 0x07) << (7 + (4 - N_NB_index)));
     buffer |= ((TPC & 0x07) << (4 + (4 - N_NB_index)));
     buffer |= ((cqireq & 0x01) << (3 + (4 - N_NB_index)));
     buffer |= ((ULdelay & 0x01) << (2 + (4 - N_NB_index)));
@@ -183,47 +182,30 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
   }
   else { // CE level 2,3 => CEModeB
 
-	//    reps    = 4;
-	mcs = 7;
-	TPC = 3;		// no power increase
-	ULdelay = 0;
-	cqireq = 0;
-	rar[2] |= ((mcs & 0x8) >> 3);	// mcs 10
-	rar[3] =
-	    (((mcs & 0x7) << 5)) | ((TPC & 7) << 2) | ((ULdelay & 1) << 1)
-	    | (cqireq & 1);
-    } else {			// CE level 2,3 => CEModeB
+    AssertFatal(1==0,"Shouldn't get here ...\n");
+    input_buffer_length =5;
 
 
-    rar[3] = (uint8_t)(RA_template->rnti>>8);
-    rar[4] = (uint8_t)(RA_template->rnti&0xff);
+    rar[3] = (uint8_t)(ra->rnti>>8);
+    rar[4] = (uint8_t)(ra->rnti&0xff);
   }
   LOG_I(MAC,"[RAPROC] Frame %d Subframe %d : Generating RAR BR (%02x|%02x.%02x.%02x.%02x.%02x.%02x) for ce_level %d, CRNTI %x,preamble %d/%d,TIMING OFFSET %d\n",
         frameP,subframeP,
         *(uint8_t*)rarh,rar[0],rar[1],rar[2],rar[3],rar[4],rar[5],
         ce_level,
-        RA_template->rnti,
-        rarh->RAPID,RA_template->preamble_index,
-        RA_template->timing_offset);
+        ra->rnti,
+        rarh->RAPID,ra->preamble_index,
+        ra->timing_offset);
 
-	rar[3] = (uint8_t) (ra->rnti >> 8);
-	rar[4] = (uint8_t) (ra->rnti & 0xff);
-    }
-    LOG_D(MAC,
-	  "[RAPROC] Frame %d Generating RAR BR (%02x|%02x.%02x.%02x.%02x.%02x.%02x) for ce_level %d, CRNTI %x,preamble %d/%d,TIMING OFFSET %d\n",
-	  frameP, *(uint8_t *) rarh, rar[0], rar[1], rar[2], rar[3],
-	  rar[4], rar[5], ce_level, ra->rnti, rarh->RAPID,
-	  ra->preamble_index, ra->timing_offset);
+  if (opt_enabled) {
+    trace_pdu(DIRECTION_DOWNLINK , dlsch_buffer, input_buffer_length, eNB->Mod_id,  WS_RA_RNTI , 1,
+	      eNB->frame, eNB->subframe, 0, 0);
+    LOG_D(OPT,
+	  "[RAPROC] RAR Frame %d trace pdu for rnti %x and  rapid %d size %d\n",
+	  frameP, ra->rnti, rarh->RAPID, input_buffer_length);
+  }
 
-    if (opt_enabled) {
-	trace_pdu(DIRECTION_DOWNLINK , dlsch_buffer, input_buffer_length, eNB->Mod_id,  WS_RA_RNTI , 1,
-		  eNB->frame, eNB->subframe, 0, 0);
-	LOG_D(OPT,
-	      "[RAPROC] RAR Frame %d trace pdu for rnti %x and  rapid %d size %d\n",
-	      frameP, ra->rnti, rarh->RAPID, input_buffer_length);
-    }
-
-    return (ra->rnti);
+  return (ra->rnti);
 }
 #endif
 

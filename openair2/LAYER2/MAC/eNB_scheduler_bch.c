@@ -387,8 +387,6 @@ schedule_SI_BR(module_id_t module_idP, frame_t frameP,
 					     frameP,
 					     BCCH_SI_BR+i,1,
 					     &cc->BCCH_BR_pdu[i+1].payload[0],
-					     1,
-					     module_idP,
 					     0); // not used in this case
 	  
 	  AssertFatal(bcch_sdu_length>0,"RRC returned 0 bytes for SI-BR %d\n",i);

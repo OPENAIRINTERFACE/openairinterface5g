@@ -432,6 +432,9 @@ mac_rrc_data_ind(
   const uint8_t*        sduP,
   const sdu_size_t      sdu_lenP,
   const uint8_t         mbsfn_sync_areaP
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  , const boolean_t		brOption
+#endif
 );
 
 int8_t
@@ -458,9 +461,6 @@ mac_rrc_data_ind_ue(
   const sdu_size_t      sdu_lenP,
   const mac_enb_index_t eNB_indexP,
   const uint8_t         mbsfn_sync_areaP
-#ifdef Rel14
-	, const boolean_t		brOption
-#endif
 );
 
 void mac_sync_ind( module_id_t Mod_instP, uint8_t status);

@@ -1857,7 +1857,7 @@ int rrc_eNB_process_PAGING_IND(MessageDef *msg_p, const char *msg_name, instance
                   lte_frame_type_t frame_type = RC.eNB[instance][CC_id]->frame_parms.frame_type;
                   /* get nB from configuration */
                   /* get default DRX cycle from configuration */
-                  Tc = (uint8_t)RC.rrc[instance]->configuration.pcch_defaultPagingCycle[CC_id];
+                  Tc = (uint8_t)RC.rrc[instance]->configuration.radioresourceconfig[CC_id].pcch_defaultPagingCycle;
                   if (Tc < PCCH_Config__defaultPagingCycle_rf32 || Tc > PCCH_Config__defaultPagingCycle_rf256) {
                       continue;
                   }
@@ -1865,7 +1865,7 @@ int rrc_eNB_process_PAGING_IND(MessageDef *msg_p, const char *msg_name, instance
                   /* set T = min(Tc,Tue) */
                   T = Tc < Tue ? Ttab[Tc] : Ttab[Tue];
                   /* set pcch_nB = PCCH-Config->nB */
-                  pcch_nB = (uint32_t)RC.rrc[instance]->configuration.pcch_nB[CC_id];
+                  pcch_nB = (uint32_t)RC.rrc[instance]->configuration.radioresourceconfig[CC_id].pcch_nB;
                   switch (pcch_nB) {
                     case PCCH_Config__nB_fourT:
                         Ns = 4;

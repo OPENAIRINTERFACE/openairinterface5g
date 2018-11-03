@@ -2385,8 +2385,8 @@ schedule_ue_spec(module_id_t module_idP, int slice_idxP,
 	    if (ue_sched_ctl->pucch1_cqi_update[CC_id] == 1) {
 	      ue_sched_ctl->pucch1_cqi_update[CC_id] = 0;
 
-        UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_frame = frameP;
-        UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_subframe = subframeP;
+	      UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_frame = frameP;
+	      UE_list->UE_template[CC_id][UE_id].pucch_tpc_tx_subframe = subframeP;
 
 	      if (normalized_rx_power > (target_rx_power + 4)) {
 		tpc = 0;	//-1
@@ -2866,15 +2866,19 @@ schedule_ue_spec_br(
         if ( TBS-ta_len-header_len_dcch > 0 ) {
 	  LOG_I(MAC,"Calling mac_rlc_status_ind for DCCH\n");
           rlc_status = mac_rlc_status_ind(
-                         module_idP,
-                         rnti,
-			 module_idP,
-                         frameP,
-			 subframeP,
-                         ENB_FLAG_YES,
-                         MBMS_FLAG_NO,
-                         DCCH,
-                         (TBS-ta_len-header_len_dcch)); // transport block set size
+					  module_idP,
+					  rnti,
+					  module_idP,
+					  frameP,
+					  subframeP,
+					  ENB_FLAG_YES,
+					  MBMS_FLAG_NO,
+					  DCCH,
+					  (TBS-ta_len-header_len_dcch)
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+					  ,0, 0
+#endif
+					  ); // transport block set size
 
           sdu_lengths[0]=0;
 
@@ -2890,7 +2894,11 @@ schedule_ue_spec_br(
 					      MBMS_FLAG_NO,
 					      DCCH,
 					      TBS, //not used
-					      (char *)&dlsch_buffer[0]);
+					      (char *)&dlsch_buffer[0]
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+						,0, 0
+#endif
+);
 
             T(T_ENB_MAC_UE_DL_SDU, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP), T_INT(subframeP),
               T_INT(harq_pid), T_INT(DCCH), T_INT(sdu_lengths[0]));
@@ -2918,7 +2926,11 @@ schedule_ue_spec_br(
 					  ENB_FLAG_YES,
 					  MBMS_FLAG_NO,
 					  DCCH+1,
-					  (TBS-ta_len-header_len_dcch-sdu_length_total)); // transport block set size less allocations for timing advance and
+					  (TBS-ta_len-header_len_dcch-sdu_length_total)
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+					  ,0, 0
+#endif
+); // transport block set size less allocations for timing advance and
           // DCCH SDU
 	  sdu_lengths[num_sdus] = 0;
 	  
@@ -2934,7 +2946,11 @@ schedule_ue_spec_br(
 						      MBMS_FLAG_NO,
 						      DCCH+1,
 						      TBS, //not used
-						      (char *)&dlsch_buffer[sdu_length_total]);
+						      (char *)&dlsch_buffer[sdu_length_total]
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+						      ,0, 0
+#endif
+);
 	    
             T(T_ENB_MAC_UE_DL_SDU, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP), T_INT(subframeP),
               T_INT(harq_pid), T_INT(DCCH+1), T_INT(sdu_lengths[num_sdus]));
@@ -2970,8 +2986,12 @@ schedule_ue_spec_br(
 					    ENB_FLAG_YES,
 					    MBMS_FLAG_NO,
 					    lcid,
-					    TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch);
-	   
+					    TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+					    ,0, 0
+#endif
+					    );
+	    
 
 	    if (rlc_status.bytes_in_buffer > 0) {
 	      
@@ -2985,7 +3005,11 @@ schedule_ue_spec_br(
 						       MBMS_FLAG_NO,
 						       lcid,
 						       TBS,	//not used
-						       (char*)&dlsch_buffer[sdu_length_total]);
+						       (char*)&dlsch_buffer[sdu_length_total]
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+						       ,0, 0
+#endif
+						       );
 	      T(T_ENB_MAC_UE_DL_SDU, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP), T_INT(subframeP),
               T_INT(harq_pid), T_INT(lcid), T_INT(sdu_lengths[num_sdus]));
 
@@ -3109,8 +3133,8 @@ schedule_ue_spec_br(
           // this is the normalized RX power
 
           /* TODO: fix how we deal with power, unit is not dBm, it's special from nfapi */
-	  normalized_rx_power = ue_sched_ctl->pucch1_snr[CC_id];
-	  target_rx_power = 208;
+	  normalized_rx_power = (5*ue_sched_ctl->pucch1_snr[CC_id]-640)/10+30;
+	  target_rx_power = eNB->puCch10xSnr/10+30;
 	    
           // this assumes accumulated tpc
 	  // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
@@ -3125,17 +3149,15 @@ schedule_ue_spec_br(
 	      
 	      if (normalized_rx_power>(target_rx_power+4)) {
 		tpc = 0; //-1
-		ue_sched_ctl->pucch_tpc_accumulated[CC_id]--;
 	      } else if (normalized_rx_power<(target_rx_power-4)) {
 		tpc = 2; //+1
-		ue_sched_ctl->pucch_tpc_accumulated[CC_id]++;
 	      } else {
 		tpc = 1; //0
 	      }
 	      	      
-	      LOG_D(MAC,"[eNB %d] DLSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, accumulated %d, normalized/target rx power %d/%d\n",
+	      LOG_D(MAC,"[eNB %d] DLSCH scheduler: frame %d, subframe %d, harq_pid %d, tpc %d, normalized/target rx power %d/%d\n",
 		    module_idP,frameP, subframeP,harq_pid,tpc,
-		    ue_sched_ctl->pucch_tpc_accumulated[CC_id],normalized_rx_power,target_rx_power);
+		    normalized_rx_power,target_rx_power);
 
 	    } // Po_PUCCH has been updated 
 	    else {

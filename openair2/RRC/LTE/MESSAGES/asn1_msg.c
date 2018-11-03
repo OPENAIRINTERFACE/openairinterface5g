@@ -371,7 +371,6 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
   uint8_t *buffer;
   BCCH_DL_SCH_Message_t *bcch_message;
   SystemInformationBlockType1_t **sib1;
-  SystemInformationBlockType1_BR_r13_t **sib1_br;
 
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   if (brOption) {
@@ -400,7 +399,7 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
   memset(&sib_type,0,sizeof(SIB_Type_t));
 
   /* as per TS 36.311, up to 6 PLMN_identity_info are allowed in list -> add one by one */
-  for (i = 0; i < configuration->num_plmn; ++i) {
+  for (int i = 0; i < configuration->num_plmn; ++i) {
     PLMN_identity_info[i].plmn_Identity.mcc = CALLOC(1,sizeof(*PLMN_identity_info[i].plmn_Identity.mcc));
     memset(PLMN_identity_info[i].plmn_Identity.mcc,0,sizeof(*PLMN_identity_info[i].plmn_Identity.mcc));
 
@@ -616,7 +615,7 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 
       if (configuration->bandwidthReducedAccessRelatedInfo_r13[CC_id])
       {
-          printf("[DEBUGGING][KOGO][TANY2]: bandwidthReducedAccessRelatedInfo_r13 = %d\n", configuration->bandwidthReducedAccessRelatedInfo_r13[CC_id]);
+
 
           sib1_1310->bandwidthReducedAccessRelatedInfo_r13
                   = calloc(1, sizeof(struct SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13));
@@ -631,7 +630,7 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
           sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_RepetitionPattern_r13
                   = configuration->si_RepetitionPattern_r13[CC_id]; // 0
 
-          printf("[DEBUGGING][KOGO][ASN1]: si_RepetitionPattern_r13 = %d\n", configuration->si_RepetitionPattern_r13[CC_id]);
+
 
           sib1_1310->bandwidthReducedAccessRelatedInfo_r13->schedulingInfoList_BR_r13 = calloc(1, sizeof(SchedulingInfoList_BR_r13_t));
 
@@ -645,9 +644,7 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
 
               schedulinginfo_br_13->si_Narrowband_r13 = configuration->si_Narrowband_r13[CC_id][index];
               schedulinginfo_br_13->si_TBS_r13 = configuration->si_TBS_r13[CC_id][index];
-              printf("[DEBUGGING][ASN1]: si_NarrowBand_r13: %d\n", configuration->si_Narrowband_r13[CC_id][index]);
-              printf("[DEBUGGING][ASN1]: si_TBS_r13: %d\n", configuration->si_TBS_r13[CC_id][index]);
-              LOG_I(RRC,"Adding (%d,%d) to scheduling_info_br_13\n",schedulinginfo_br_13->si_Narrowband_r13,schedulinginfo_br_13->si_TBS_r13);
+              LOG_I(RRC,"Adding (%d,%d) to scheduling_info_br_13\n",(int)schedulinginfo_br_13->si_Narrowband_r13,(int)schedulinginfo_br_13->si_TBS_r13);
               ASN_SEQUENCE_ADD(&sib1_1310->bandwidthReducedAccessRelatedInfo_r13->schedulingInfoList_BR_r13->list, schedulinginfo_br_13);
           }
 
@@ -716,7 +713,7 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
               sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13 = calloc(1, sizeof(long));
               memset(sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13, 0, sizeof(long));
               *sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13 = *configuration->si_ValidityTime_r13[CC_id];
-              printf("[DEBUGGING][KOGO]: si_validity time = %d\n", *sib1_1310->bandwidthReducedAccessRelatedInfo_r13->si_ValidityTime_r13);
+
           }
           else
           {
@@ -990,7 +987,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 #endif
 
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-  struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib13_part;
+  struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib13_part=NULL;
   MBSFN_SubframeConfigList_t *MBSFNSubframeConfigList;
   MBSFN_AreaInfoList_r9_t *MBSFNArea_list;
   struct MBSFN_AreaInfo_r9 *MBSFN_Area1, *MBSFN_Area2;
@@ -1275,7 +1272,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   (*sib2)->radioResourceConfigCommon.ul_CyclicPrefixLength
     = rrconfig->ul_CyclicPrefixLength;
 
-  // LTE-M - +Kogo
+
   (*sib2)->radioResourceConfigCommon.ext4 = calloc(1, sizeof(struct RadioResourceConfigCommonSIB__ext4));
   memset((*sib2)->radioResourceConfigCommon.ext4, 0, sizeof(struct RadioResourceConfigCommonSIB__ext4));
   (*sib2)->radioResourceConfigCommon.ext4->bcch_Config_v1310 = NULL; //calloc(1, sizeof(BCCH_Config_v1310_t));
@@ -1303,81 +1300,18 @@ uint8_t do_SIB23(uint8_t Mod_id,
   }
 
 
+  
   if (configuration->sib2_freq_hoppingParameters_r13_exists[CC_id])
   {
-      puts("[DEBUGGING][KOGO][SIB23]: Structure exists");
+
       (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13 = CALLOC(1, sizeof(FreqHoppingParameters_r13_t));
-      if (configuration->sib2_mpdcch_pdsch_hoppingNB_r13[CC_id])
-      {
-          (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->mpdcch_pdsch_HoppingNB_r13 = CALLOC(1, sizeof(long));
-          *(*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->mpdcch_pdsch_HoppingNB_r13 = *configuration->sib2_mpdcch_pdsch_hoppingNB_r13[CC_id];
-
-      }
-      else
-      {
-          (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->mpdcch_pdsch_HoppingNB_r13 = NULL;
-      }
-
-      if (configuration->sib2_interval_DLHoppingConfigCommonModeA_r13[CC_id])
-      {
-          (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_DLHoppingConfigCommonModeA_r13
-                  = CALLOC(1, sizeof(struct FreqHoppingParameters_r13__interval_DLHoppingConfigCommonModeA_r13));
-          if (*configuration->sib2_interval_DLHoppingConfigCommonModeA_r13[CC_id] == 0)
-          {
-              (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_DLHoppingConfigCommonModeA_r13->present
-                      = FreqHoppingParameters_r13__interval_DLHoppingConfigCommonModeA_r13_PR_interval_FDD_r13;
-              (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_DLHoppingConfigCommonModeA_r13->choice.interval_FDD_r13
-                      = configuration->sib2_interval_DLHoppingConfigCommonModeA_r13_val[CC_id];
-          }
-          else
-          {
-              (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_DLHoppingConfigCommonModeA_r13->present
-                      = FreqHoppingParameters_r13__interval_DLHoppingConfigCommonModeA_r13_PR_interval_TDD_r13;
-              (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_DLHoppingConfigCommonModeA_r13->choice.interval_TDD_r13
-                      = configuration->sib2_interval_DLHoppingConfigCommonModeA_r13_val[CC_id];
-
-          }
-      }
-      else
-      {
-          (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_DLHoppingConfigCommonModeA_r13 = NULL;
-      }
-
-
-      if (configuration->sib2_interval_DLHoppingConfigCommonModeB_r13[CC_id])
-      {
-          (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_DLHoppingConfigCommonModeB_r13
-                  = CALLOC(1, sizeof(struct FreqHoppingParameters_r13__interval_DLHoppingConfigCommonModeB_r13));
-          if (*configuration->sib2_interval_DLHoppingConfigCommonModeB_r13[CC_id] == 0)
-          {
-              (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_DLHoppingConfigCommonModeB_r13->present
-                      = FreqHoppingParameters_r13__interval_DLHoppingConfigCommonModeB_r13_PR_interval_FDD_r13;
-              (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_DLHoppingConfigCommonModeB_r13->choice.interval_FDD_r13
-                      = configuration->sib2_interval_DLHoppingConfigCommonModeB_r13_val[CC_id];
-          }
-          else
-          {
-              (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_DLHoppingConfigCommonModeB_r13->present
-                      = FreqHoppingParameters_r13__interval_DLHoppingConfigCommonModeB_r13_PR_interval_TDD_r13;
-              (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_DLHoppingConfigCommonModeB_r13->choice.interval_TDD_r13
-                      = configuration->sib2_interval_DLHoppingConfigCommonModeB_r13_val[CC_id];
-
-          }
-      }
-      else
-      {
-          (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_DLHoppingConfigCommonModeB_r13 = NULL;
-      }
-
+  
       if (configuration->sib2_interval_ULHoppingConfigCommonModeA_r13[CC_id])
       {
-          puts("[DEBUGGING][KOGO][ASN]: SIB2 Interval UL HOPPING CONFIG COMMON MODE A\n");
           (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_ULHoppingConfigCommonModeA_r13
                   = CALLOC(1, sizeof(struct FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeA_r13));
           if (*configuration->sib2_interval_ULHoppingConfigCommonModeA_r13[CC_id] == 0)
           {
-              printf("[DEBUGGING][KOGO][ASN]: FDD UL HOPPING CONFIG COMMON MODE A\n");
-              printf("[DEBUGGING][KOGO][ASN]: interval UL hopping config common:  %d\n", configuration->sib2_interval_ULHoppingConfigCommonModeA_r13_val[CC_id]);
               (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_ULHoppingConfigCommonModeA_r13->present
                       = FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeA_r13_PR_interval_FDD_r13;
               (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_ULHoppingConfigCommonModeA_r13->choice.interval_FDD_r13
@@ -1395,7 +1329,6 @@ uint8_t do_SIB23(uint8_t Mod_id,
       }
       else
       {
-          printf("[DEBUGGING][KOGO][ALLOC ERROR] interval ul hopping: %d\n", configuration->sib2_interval_ULHoppingConfigCommonModeA_r13[CC_id]);
           (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_ULHoppingConfigCommonModeA_r13 = NULL;
       }
 
@@ -1424,21 +1357,12 @@ uint8_t do_SIB23(uint8_t Mod_id,
           (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_ULHoppingConfigCommonModeB_r13 = NULL;
       }
 
-      if (configuration->sib2_mpdcch_pdsch_hoppingOffset_r13[CC_id])
-      {
-          (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->mpdcch_pdsch_HoppingOffset_r13 = CALLOC(1, sizeof(long));
-          *(*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->mpdcch_pdsch_HoppingOffset_r13 = *configuration->sib2_mpdcch_pdsch_hoppingOffset_r13[CC_id];
-      }
-      else
-      {
-          (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->mpdcch_pdsch_HoppingOffset_r13 = NULL;
-      }
   }
   else
   {
       (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13 = NULL;
   }
-
+  
 
 
   // pdsch_ConfigCommon_v1310
@@ -1447,7 +1371,6 @@ uint8_t do_SIB23(uint8_t Mod_id,
   if (configuration->pdsch_maxNumRepetitionCEmodeA_r13[CC_id]) {
       (*sib2)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310->pdsch_maxNumRepetitionCEmodeA_r13 = CALLOC(1, sizeof(long));
       *(*sib2)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310->pdsch_maxNumRepetitionCEmodeA_r13 = *configuration->pdsch_maxNumRepetitionCEmodeA_r13[CC_id];
-      printf("[DEBUGGING][KOGO] : pdsch CE MODE A : %ld\n", *(*sib2)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310->pdsch_maxNumRepetitionCEmodeA_r13);
   } else {
       (*sib2)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310->pdsch_maxNumRepetitionCEmodeA_r13 = NULL;
   }
@@ -1455,7 +1378,6 @@ uint8_t do_SIB23(uint8_t Mod_id,
   if (configuration->pdsch_maxNumRepetitionCEmodeB_r13[CC_id]) {
       (*sib2)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310->pdsch_maxNumRepetitionCEmodeB_r13 = CALLOC(1, sizeof(long)); // check if they're really long
       *(*sib2)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310->pdsch_maxNumRepetitionCEmodeB_r13 = *configuration->pdsch_maxNumRepetitionCEmodeB_r13[CC_id];
-      printf("[DEBUGGING][KOGO] : pdsch CE MODE B : %ld\n", *(*sib2)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310->pdsch_maxNumRepetitionCEmodeB_r13);
   } else {
       (*sib2)->radioResourceConfigCommon.ext4->pdsch_ConfigCommon_v1310->pdsch_maxNumRepetitionCEmodeB_r13 = NULL;
   }
@@ -1469,7 +1391,6 @@ uint8_t do_SIB23(uint8_t Mod_id,
   if (configuration->pusch_maxNumRepetitionCEmodeA_r13[CC_id]) {
       (*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_maxNumRepetitionCEmodeA_r13 = calloc(1,sizeof(long));
       *(*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_maxNumRepetitionCEmodeA_r13 = *configuration->pusch_maxNumRepetitionCEmodeA_r13[CC_id];
-      printf("[DEBUGGING][KOGO] : pusch CE MODE A : %ld\n", *(*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_maxNumRepetitionCEmodeA_r13);
   } else {
       (*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_maxNumRepetitionCEmodeA_r13 = NULL;
   }
@@ -1477,7 +1398,6 @@ uint8_t do_SIB23(uint8_t Mod_id,
   if (configuration->pusch_maxNumRepetitionCEmodeB_r13[CC_id]) {
       (*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_maxNumRepetitionCEmodeB_r13 = CALLOC(1, sizeof(long));
       *(*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_maxNumRepetitionCEmodeB_r13 = *configuration->pusch_maxNumRepetitionCEmodeB_r13[CC_id];
-      printf("[DEBUGGING][KOGO] : pusch CE MODE B : %ld\n", *(*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_maxNumRepetitionCEmodeB_r13);
   } else {
       (*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_maxNumRepetitionCEmodeB_r13 = NULL;
   }
@@ -1485,7 +1405,6 @@ uint8_t do_SIB23(uint8_t Mod_id,
   if (configuration->pusch_HoppingOffset_v1310[CC_id]) {
       (*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_HoppingOffset_v1310 = CALLOC(1, sizeof(long));
       *(*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_HoppingOffset_v1310 = *configuration->pusch_HoppingOffset_v1310[CC_id];
-      printf("[DEBUGGING][KOGO] : pusch hopping offset : %ld\n", *(*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_HoppingOffset_v1310);
   } else {
       (*sib2)->radioResourceConfigCommon.ext4->pusch_ConfigCommon_v1310->pusch_HoppingOffset_v1310 = NULL;
   }
@@ -1509,7 +1428,6 @@ uint8_t do_SIB23(uint8_t Mod_id,
           if (configuration->rsrp_range_list_size[CC_id])
           {
               *rsrp_range = configuration->rsrp_range[CC_id][rsrp_index];
-              printf("[DEBUGGING][KOGO][SIB23] : rsrp range = %d\n", *rsrp_range);
           }
           else
           {
@@ -1536,8 +1454,6 @@ uint8_t do_SIB23(uint8_t Mod_id,
               (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13->present = PRACH_ConfigSIB_v1310__mpdcch_startSF_CSS_RA_r13_PR_tdd_r13;
               (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13->choice.tdd_r13 = rrconfig->mpdcch_startSF_CSS_RA_r13_val;
           }
-          printf("[DEBUGGING][KOGO][SIB23]: mpdcch_startSF_CSS_RA_r13->choice.fdd_r13 = %d\n",
-                 (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->mpdcch_startSF_CSS_RA_r13->choice.fdd_r13);
       }
 
       if (rrconfig->prach_HoppingOffset_r13)
@@ -1549,9 +1465,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
       {
           (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->prach_HoppingOffset_r13 = NULL;
       }
-      printf("[DEBUGGING][KOGO][SIB23]: prach_HoppingOffset_r13 = %d\n",
-             *(*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->prach_HoppingOffset_r13);
-
+       
       PRACH_ParametersCE_r13_t *prach_parametersce_r13;
 
       int num_prach_parameters_ce = configuration->prach_parameters_list_size[CC_id];
@@ -1641,7 +1555,6 @@ uint8_t do_SIB23(uint8_t Mod_id,
       puts("LEVEL 0");
       (*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level0_r13  = CALLOC(1, sizeof(long));
       *(*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level0_r13 =  *configuration->pucch_NumRepetitionCE_Msg4_Level0_r13[CC_id];
-      printf("[DEBUGGING][KOGO][SIB23]: pucch_NumRepetitionCE_Msg4_Level0_r13 = %d\n", *(*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level0_r13);
   }
   else
   {
@@ -1654,7 +1567,6 @@ uint8_t do_SIB23(uint8_t Mod_id,
       puts("LEVEL 1");
       (*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level1_r13  = CALLOC(1, sizeof(long));
       *(*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level1_r13 =  *configuration->pucch_NumRepetitionCE_Msg4_Level1_r13[CC_id];
-      printf("[DEBUGGING][KOGO][SIB23]: pucch_NumRepetitionCE_Msg4_Level1_r13 = %d\n", *(*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level1_r13);
   }
   else
   {
@@ -1666,7 +1578,6 @@ uint8_t do_SIB23(uint8_t Mod_id,
       puts("LEVEL 2");
       (*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level2_r13  = CALLOC(1, sizeof(long));
       *(*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level2_r13 =  *configuration->pucch_NumRepetitionCE_Msg4_Level2_r13[CC_id];
-      printf("[DEBUGGING][KOGO][SIB23]: pucch_NumRepetitionCE_Msg4_Level2_r13 = %d\n", *(*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level2_r13);
   }
   else
   {
@@ -1678,7 +1589,6 @@ uint8_t do_SIB23(uint8_t Mod_id,
       puts("LEVEL 3");
       (*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level3_r13  = CALLOC(1, sizeof(long));
       *(*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level3_r13 =  *configuration->pucch_NumRepetitionCE_Msg4_Level3_r13[CC_id];
-      printf("[DEBUGGING][KOGO][SIB23]: pucch_NumRepetitionCE_Msg4_Level3_r13 = %d\n", *(*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level3_r13);
   }
   else
   {
@@ -2673,9 +2583,11 @@ uint8_t do_RRCConnectionSetupComplete(uint8_t Mod_id, uint8_t *buffer, const uin
   */
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message,
+				   NULL,
 				   (void*)&ul_dcch_msg,
 				   buffer,
 				   100);
+
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
 	       enc_rval.failed_type->name, enc_rval.encoded);
 
@@ -2735,6 +2647,7 @@ do_RRCConnectionReconfigurationComplete(
   rrcConnectionReconfigurationComplete->criticalExtensions.choice.rrcConnectionReconfigurationComplete_r8.nonCriticalExtension=NULL;
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message,
+				   NULL,
 				   (void*)&ul_dcch_msg,
 				   buffer,
 				   100);
@@ -2781,7 +2694,6 @@ do_RRCConnectionSetup_BR(
 {
 
   asn_enc_rval_t enc_rval;
-  uint8_t ecause=0;
   eNB_RRC_INST *rrc               = RC.rrc[ctxt_pP->module_id];
   rrc_eNB_carrier_data_t *carrier = &rrc->carrier[CC_id];
 
@@ -2938,7 +2850,7 @@ do_RRCConnectionSetup_BR(
   physicalConfigDedicated2->cqi_ReportConfig->nomPDSCH_RS_EPRE_Offset = 0; // 0 dB
   physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic = CALLOC(1,sizeof(*physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic));
   physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->present = CQI_ReportPeriodic_PR_release;
-  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.release = NULL;
+  physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.release = (NULL_t)0;
 
     
   /// TODO to be reviewed
@@ -2955,7 +2867,7 @@ do_RRCConnectionSetup_BR(
                   == SoundingRS_UL_ConfigCommon_PR_setup)
               if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig!=0)
                   LOG_W(RRC,"This code has been optimized for SRS Subframe Config 0, but current config is %d. Expect undefined behaviour!\n",
-                        carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig);
+                        (int)carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig);
           if (ue_context_pP->local_uid >=20)
               LOG_W(RRC,"This code has been optimized for up to 10 UEs, but current UE_id is %d. Expect undefined behaviour!\n",
                     ue_context_pP->local_uid);
@@ -2968,8 +2880,8 @@ do_RRCConnectionSetup_BR(
                   == SoundingRS_UL_ConfigCommon_PR_setup)
               if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig!=7) {
                   LOG_W(RRC,"This code has been optimized for SRS Subframe Config 7 and TDD config 3, but current configs are %d and %d. Expect undefined behaviour!\n",
-                        carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig,
-                        carrier->sib1->tdd_Config->subframeAssignment);
+                        (int)carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig,
+                        (int)carrier->sib1->tdd_Config->subframeAssignment);
               }
           if (ue_context_pP->local_uid >=6)
               LOG_W(RRC,"This code has been optimized for up to 6 UEs, but current UE_id is %d. Expect undefined behaviour!\n",
@@ -2978,8 +2890,8 @@ do_RRCConnectionSetup_BR(
           physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb= ue_context_pP->local_uid%2;
       }
       LOG_W(RRC,"local UID %d, srs ConfigIndex %d, TransmissionComb %d\n",ue_context_pP->local_uid,
-            physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex,
-            physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb);
+            (int)physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.srs_ConfigIndex,
+            (int)physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.transmissionComb);
 
       physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->choice.setup.cyclicShift=
               SoundingRS_UL_ConfigDedicated__setup__cyclicShift_cs0;
@@ -3065,13 +2977,6 @@ do_RRCConnectionSetup_BR(
     }
   }
 
-  enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message,
-                                   NULL,
-                                   (void*)&ul_dcch_msg,
-                                   buffer,
-                                   100);
-  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
-               enc_rval.failed_type->name, enc_rval.encoded);
 
   physicalConfigDedicated2->schedulingRequestConfig->choice.setup.dsr_TransMax = SchedulingRequestConfig__setup__dsr_TransMax_n16;
 
@@ -3100,9 +3005,6 @@ do_RRCConnectionSetup_BR(
   epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.size = 5;
   epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.bits_unused = 2;
   memset(epdcch_setconfig_r11->resourceBlockAssignment_r11.resourceBlockAssignment_r11.buf, 0, 5 * sizeof(uint8_t));
-
-  LOG_D(RRC,"RRCConnectionSetupComplete Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
-
 
   epdcch_setconfig_r11->dmrs_ScramblingSequenceInt_r11 = 54;
   epdcch_setconfig_r11->pucch_ResourceStartOffset_r11 = 0;
@@ -3142,7 +3044,6 @@ do_RRCConnectionSetup_BR(
 
   physicalConfigDedicated2->ext7->csi_RS_Config_v1310 = NULL;
 
-
   // FIXME ce_Mode_r13 allocation
   physicalConfigDedicated2->ext7->ce_Mode_r13 = CALLOC(1, sizeof(struct PhysicalConfigDedicated__ext7__ce_Mode_r13));
   physicalConfigDedicated2->ext7->ce_Mode_r13->present      = PhysicalConfigDedicated__ext7__ce_Mode_r13_PR_setup;
@@ -3175,12 +3076,11 @@ do_RRCConnectionSetup_BR(
 #ifdef XER_PRINT
   xer_fprint(stdout, &asn_DEF_DL_CCCH_Message, (void*)&dl_ccch_msg);
 #endif
-  enc_rval = uper_encode_to_buffer(&asn_DEF_UL_DCCH_Message,
-                                   NULL,
-                                   (void*)&ul_dcch_msg,
-                                   buffer,
-                                   100);
-
+  enc_rval = uper_encode_to_buffer(&asn_DEF_DL_CCCH_Message,
+				   NULL,
+				   (void*)&dl_ccch_msg,
+				   buffer,
+				   100);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
 	       enc_rval.failed_type->name, enc_rval.encoded);
 
@@ -3203,10 +3103,10 @@ do_RRCConnectionSetup_BR(
 # endif
 #endif
 
-
-  LOG_D(RRC,"RRCConnectionSetup Encoded %zd bits (%zd bytes)\n",
-	enc_rval.encoded,(enc_rval.encoded+7)/8);
-
+#ifdef USER_MODE
+  LOG_D(RRC,"RRCConnectionSetup Encoded %d bits (%d bytes), ecause %d\n",
+	enc_rval.encoded,(enc_rval.encoded+7)/8,ecause);
+#endif
 
   //  FREEMEM(SRB_list);
   //  free(SRB1_config);
@@ -3436,7 +3336,7 @@ do_RRCConnectionSetup(
                   == SoundingRS_UL_ConfigCommon_PR_setup)
               if (carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig!=0)
                   LOG_W(RRC,"This code has been optimized for SRS Subframe Config 0, but current config is %d. Expect undefined behaviour!\n",
-                        carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig);
+                        (int)carrier->sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.srs_SubframeConfig);
           if (ue_context_pP->local_uid >=20)
               LOG_W(RRC,"This code has been optimized for up to 10 UEs, but current UE_id is %d. Expect undefined behaviour!\n",
                     ue_context_pP->local_uid);
@@ -3922,10 +3822,11 @@ do_RRCConnectionReconfiguration_BR(
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.securityConfigHO     = NULL;
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_DL_DCCH_Message,
+				   NULL,
 				   (void*)&dl_dcch_msg,
 				   buffer,
 				   RRC_BUF_SIZE);
-  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %l)!\n",
+  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed %s, %lu!\n",
 	       enc_rval.failed_type->name, enc_rval.encoded);
 
 #ifdef XER_PRINT
@@ -3951,13 +3852,8 @@ do_RRCConnectionReconfiguration_BR(
 # endif
 #endif
 
-  //#ifdef USER_MODE
-  LOG_I(RRC,"RRCConnectionReconfiguration Encoded %d bits (%d bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
-  // for (i=0;i<30;i++)
-  //    msg("%x.",buffer[i]);
-  // msg("\n");
 
-  //#endif
+  LOG_I(RRC,"RRCConnectionReconfiguration Encoded %d bits (%d bytes)\n",(int)enc_rval.encoded,(int)(enc_rval.encoded+7)/8);
 
   return((enc_rval.encoded+7)/8);
 }

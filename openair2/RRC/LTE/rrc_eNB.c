@@ -3054,9 +3054,9 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
   //TODO: change TM for secondary CC in SCelltoaddmodlist
   if (*physicalConfigDedicated) {
     if ((*physicalConfigDedicated)->antennaInfo) {
-      (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.transmissionMode = rrc_inst->configuration.ue_TransmissionMode[0];
-      LOG_D(RRC,"Setting transmission mode to %ld+1\n",rrc_inst->configuration.ue_TransmissionMode[0]);
-      if (rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm3) {
+      (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.transmissionMode = rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode;
+      LOG_D(RRC,"Setting transmission mode to %ld+1\n",rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode);
+      if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==AntennaInfoDedicated__transmissionMode_tm3) {
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
 	  CALLOC(1,sizeof(AntennaInfoDedicated__codebookSubsetRestriction_PR));
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
@@ -3066,7 +3066,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.size=1;
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.bits_unused=6;
       }
-      else if (rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm4) {
+      else if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==AntennaInfoDedicated__transmissionMode_tm4) {
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
 	  CALLOC(1,sizeof(AntennaInfoDedicated__codebookSubsetRestriction_PR));
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
@@ -3077,7 +3077,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm4.bits_unused=2;
 
       }
-      else if (rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm5) {
+      else if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==AntennaInfoDedicated__transmissionMode_tm5) {
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
 	  CALLOC(1,sizeof(AntennaInfoDedicated__codebookSubsetRestriction_PR));
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
@@ -3087,7 +3087,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm5.size=1;
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm5.bits_unused=4;
       }
-      else if (rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm6) {
+      else if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==AntennaInfoDedicated__transmissionMode_tm6) {
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
 	  CALLOC(1,sizeof(AntennaInfoDedicated__codebookSubsetRestriction_PR));
 	(*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
@@ -3102,9 +3102,9 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t* cons
       LOG_E(RRC,"antenna_info not present in physical_config_dedicated. Not reconfiguring!\n");
     }
     if ((*physicalConfigDedicated)->cqi_ReportConfig) {
-      if ((rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm4) ||
-	  (rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm5) ||
-	  (rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm6)) {
+      if ((rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==AntennaInfoDedicated__transmissionMode_tm4) ||
+	  (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==AntennaInfoDedicated__transmissionMode_tm5) ||
+	  (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==AntennaInfoDedicated__transmissionMode_tm6)) {
 	//feedback mode needs to be set as well
 	//TODO: I think this is taken into account in the PHY automatically based on the transmission mode variable
 	printf("setting cqi reporting mode to rm31\n");
@@ -3781,9 +3781,9 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
   //TODO: change TM for secondary CC in SCelltoaddmodlist
   if (*physicalConfigDedicated) {
     if ((*physicalConfigDedicated)->antennaInfo) {
-      (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.transmissionMode = rrc_inst->configuration.ue_TransmissionMode[0];
-      LOG_D(RRC,"Setting transmission mode to %ld+1\n",rrc_inst->configuration.ue_TransmissionMode[0]);
-      if (rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm3) {
+      (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.transmissionMode = rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode;
+      LOG_D(RRC,"Setting transmission mode to %ld+1\n",rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode);
+      if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==AntennaInfoDedicated__transmissionMode_tm3) {
   (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
     CALLOC(1,sizeof(AntennaInfoDedicated__codebookSubsetRestriction_PR));
   (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
@@ -3793,7 +3793,7 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
   (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.size=1;
   (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm3.bits_unused=6;
       }
-      else if (rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm4) {
+      else if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==AntennaInfoDedicated__transmissionMode_tm4) {
   (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
     CALLOC(1,sizeof(AntennaInfoDedicated__codebookSubsetRestriction_PR));
   (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
@@ -3804,7 +3804,7 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
   (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm4.bits_unused=2;
 
       }
-      else if (rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm5) {
+      else if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==AntennaInfoDedicated__transmissionMode_tm5) {
   (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
     CALLOC(1,sizeof(AntennaInfoDedicated__codebookSubsetRestriction_PR));
   (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
@@ -3814,7 +3814,7 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
   (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm5.size=1;
   (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->choice.n2TxAntenna_tm5.bits_unused=4;
       }
-      else if (rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm6) {
+      else if (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==AntennaInfoDedicated__transmissionMode_tm6) {
   (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction=     
     CALLOC(1,sizeof(AntennaInfoDedicated__codebookSubsetRestriction_PR));
   (*physicalConfigDedicated)->antennaInfo->choice.explicitValue.codebookSubsetRestriction->present =
@@ -3830,9 +3830,9 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
       LOG_E(RRC,"antenna_info not present in physical_config_dedicated. Not reconfiguring!\n");
     }
     if ((*physicalConfigDedicated)->cqi_ReportConfig) {
-      if ((rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm4) ||
-    (rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm5) ||
-    (rrc_inst->configuration.ue_TransmissionMode[0]==AntennaInfoDedicated__transmissionMode_tm6)) {
+      if ((rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==AntennaInfoDedicated__transmissionMode_tm4) ||
+    (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==AntennaInfoDedicated__transmissionMode_tm5) ||
+    (rrc_inst->configuration.radioresourceconfig[0].ue_TransmissionMode==AntennaInfoDedicated__transmissionMode_tm6)) {
   //feedback mode needs to be set as well
   //TODO: I think this is taken into account in the PHY automatically based on the transmission mode variable
   printf("setting cqi reporting mode to rm31\n");
@@ -5736,13 +5736,13 @@ rrc_eNB_generate_RRCConnectionSetup(
   if (is_mtc) {
     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size =
       do_RRCConnectionSetup_BR(ctxt_pP,
-                            ue_context_pP,
-                            CC_id,
-                            (uint8_t*) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload,
-      (uint8_t*) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
-      rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
-      SRB_configList,
-      &ue_context_pP->ue_context.physicalConfigDedicated);
+			       ue_context_pP,
+			       CC_id,
+			       (uint8_t*) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload,
+			       (const uint8_t) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
+			       rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
+			       SRB_configList,
+			       &ue_context_pP->ue_context.physicalConfigDedicated);
   } else 
 #endif
   {
@@ -5751,7 +5751,7 @@ rrc_eNB_generate_RRCConnectionSetup(
                           ue_context_pP,
                           CC_id,
                           (uint8_t*) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload,
-              (uint8_t*) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
+			  (const uint8_t) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
                           rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
                           SRB_configList,
                           &ue_context_pP->ue_context.physicalConfigDedicated);

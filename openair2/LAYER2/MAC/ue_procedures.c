@@ -558,20 +558,16 @@ ue_send_sdu(module_id_t module_idP,
 		LOG_T(MAC, "\n");
 #endif
 
-      mac_rrc_data_ind(module_idP,
-                       CC_id,
-                       frameP,subframeP,
-                       UE_mac_inst[module_idP].crnti,
-                       CCCH,
-                       (uint8_t*)payload_ptr,
-                       rx_lengths[i],
-                       ENB_FLAG_NO,
-                       eNB_index,
-                       0
-                 #ifdef Rel14
-                       ,0
-                 #endif
-                       );
+      mac_rrc_data_ind_ue(module_idP,
+			  CC_id,
+			  frameP,subframeP,
+			  UE_mac_inst[module_idP].crnti,
+			  CCCH,
+			  (uint8_t*)payload_ptr,
+			  rx_lengths[i],
+			  eNB_index,
+			  0
+			  );
 
     } else if ((rx_lcids[i] == DCCH) || (rx_lcids[i] == DCCH1)) {
       LOG_D(MAC,"[UE %d] Frame %d : DLSCH -> DL-DCCH%d, RRC message (eNB %d, %d bytes)\n", module_idP, frameP, rx_lcids[i],eNB_index,rx_lengths[i]);

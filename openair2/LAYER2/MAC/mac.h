@@ -896,9 +896,6 @@ typedef struct {
     uint32_t pucch_tpc_tx_frame;
     uint32_t pucch_tpc_tx_subframe;
 
-#ifdef LOCALIZATION
-    eNB_UE_estimated_distances distance;
-#endif
 
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     uint8_t rach_resource_type;
@@ -978,6 +975,7 @@ typedef struct {
     uint16_t feedback_cnt[NFAPI_CC_MAX];
     uint16_t timing_advance;
     uint16_t timing_advance_r9;
+    uint8_t tpc_accumulated[NFAPI_CC_MAX];
     uint8_t periodic_wideband_cqi[NFAPI_CC_MAX];
     uint8_t periodic_wideband_spatial_diffcqi[NFAPI_CC_MAX];
     uint8_t periodic_wideband_pmi[NFAPI_CC_MAX];
@@ -999,60 +997,63 @@ typedef struct {
 } UE_sched_ctrl;
 /*! \brief eNB template for the Random access information */
 typedef struct {
-    /// Flag to indicate this process is active
-    RA_state state;
-    /// Subframe where preamble was received
-    uint8_t preamble_subframe;
-    /// Subframe where Msg2 is to be sent
-    uint8_t Msg2_subframe;
-    /// Frame where Msg2 is to be sent
-    frame_t Msg2_frame;
-    /// Subframe where Msg3 is to be sent
-    sub_frame_t Msg3_subframe;
-    /// Frame where Msg3 is to be sent
-    frame_t Msg3_frame;
-    /// Subframe where Msg4 is to be sent
-    sub_frame_t Msg4_subframe;
-    /// Frame where Msg4 is to be sent
-    frame_t Msg4_frame;
-    /// harq_pid used for Msg4 transmission
-    uint8_t harq_pid;
-    /// UE RNTI allocated during RAR
-    rnti_t rnti;
-    /// RA RNTI allocated from received PRACH
-    uint16_t RA_rnti;
-    /// Received preamble_index
-    uint8_t preamble_index;
-    /// Received UE Contention Resolution Identifier
-    uint8_t cont_res_id[6];
-    /// Timing offset indicated by PHY
-    int16_t timing_offset;
-    /// Timeout for RRC connection
-    int16_t RRC_timer;
-    /// Msg3 first RB
-    uint8_t msg3_first_rb;
-    /// Msg3 number of RB
-    uint8_t msg3_nb_rb;
-    /// Msg3 MCS
-    uint8_t msg3_mcs;
-    /// Msg3 TPC command
-    uint8_t msg3_TPC;
-    /// Msg3 ULdelay command
-    uint8_t msg3_ULdelay;
-    /// Msg3 cqireq command
-    uint8_t msg3_cqireq;
-    /// Round of Msg3 HARQ
-    uint8_t msg3_round;
-    /// TBS used for Msg4
-    int msg4_TBsize;
-    /// MCS used for Msg4
-    int msg4_mcs;
+  /// Flag to indicate this process is active
+  RA_state state;
+  /// Subframe where preamble was received
+  uint8_t preamble_subframe;
+  /// Subframe where Msg2 is to be sent
+  uint8_t Msg2_subframe;
+  /// Frame where Msg2 is to be sent
+  frame_t Msg2_frame;
+  /// Subframe where Msg3 is to be sent
+  sub_frame_t Msg3_subframe;
+  /// Frame where Msg3 is to be sent
+  frame_t Msg3_frame;
+  /// Subframe where Msg4 is to be sent
+  sub_frame_t Msg4_subframe;
+  /// Frame where Msg4 is to be sent
+  frame_t Msg4_frame;
+  /// harq_pid used for Msg4 transmission
+  uint8_t harq_pid;
+  /// UE RNTI allocated during RAR
+  rnti_t rnti;
+  /// RA RNTI allocated from received PRACH
+  uint16_t RA_rnti;
+  /// Received preamble_index
+  uint8_t preamble_index;
+  /// Received UE Contention Resolution Identifier
+  uint8_t cont_res_id[6];
+  /// Timing offset indicated by PHY
+  int16_t timing_offset;
+  /// Timeout for RRC connection
+  int16_t RRC_timer;
+  /// Msg3 first RB
+  uint8_t msg3_first_rb;
+  /// Msg3 number of RB
+  uint8_t msg3_nb_rb;
+  /// Msg3 MCS
+  uint8_t msg3_mcs;
+  /// Msg3 TPC command
+  uint8_t msg3_TPC;
+  /// Msg3 ULdelay command
+  uint8_t msg3_ULdelay;
+  /// Msg3 cqireq command
+  uint8_t msg3_cqireq;
+  /// Round of Msg3 HARQ
+  uint8_t msg3_round;
+  /// TBS used for Msg4
+  int msg4_TBsize;
+  /// MCS used for Msg4
+  int msg4_mcs;
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-    uint8_t rach_resource_type;
-    uint8_t msg2_mpdcch_repetition_cnt;
-    uint8_t msg4_mpdcch_repetition_cnt;
-    uint8_t msg2_narrowband;
-    uint8_t msg34_narrowband;
+  uint8_t rach_resource_type;
+  uint8_t msg2_mpdcch_repetition_cnt;
+  int     msg2_mpdcch_done;
+  uint8_t msg4_mpdcch_repetition_cnt;
+  int     msg4_mpdcch_done;
+  uint8_t msg2_narrowband;
+  uint8_t msg34_narrowband;
+  int     msg4_rrc_sdu_length;
 #endif
     int32_t  crnti_rrc_mui;
     int8_t   crnti_harq_pid;
