@@ -59,7 +59,12 @@
 
 #include "T.h"
 
+#ifdef XFORMS
 #include "PHY/TOOLS/nr_phy_scope.h"
+
+extern char do_forms;
+#endif
+
 
 extern double cpuf;
 //static  nfapi_nr_config_request_t config_t;
@@ -589,12 +594,16 @@ static void *UE_thread_synch(void *arg) {
             break;
         }
 
-      extern FD_lte_phy_scope_ue  *form_ue[NUMBER_OF_UE_MAX];
-
-      phy_scope_UE(form_ue[0],
-		   PHY_vars_UE_g[0][0],
-		   0,0,7);
-
+#ifdef XFORMS
+	if (do_forms) {
+	  extern FD_lte_phy_scope_ue  *form_ue[NUMBER_OF_UE_MAX];
+	  
+	  phy_scope_UE(form_ue[0],
+		       PHY_vars_UE_g[0][0],
+		       0,0,7);
+	}
+#endif
+	
         AssertFatal ( 0== pthread_mutex_lock(&UE->proc.mutex_synch), "");
         // indicate readiness
         UE->proc.instance_cnt_synch--;
