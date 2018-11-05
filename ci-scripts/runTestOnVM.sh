@@ -89,6 +89,8 @@ function start_basic_sim_enb {
     echo "echo \"grep N_RB_DL ci-$LOC_CONF_FILE\"" >> $1
     echo "grep N_RB_DL ci-$LOC_CONF_FILE | sed -e 's#N_RB_DL.*=#N_RB_DL =#'" >> $1
     echo "echo \"cd /home/ubuntu/tmp/cmake_targets/basic_simulator/enb/\"" >> $1
+    echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/basic_simulator" >> $1
+    echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/basic_simulator/enb/" >> $1
     echo "cd /home/ubuntu/tmp/cmake_targets/basic_simulator/enb/" >> $1
     echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE\" > ./my-lte-softmodem-run.sh " >> $1
     echo "chmod 775 ./my-lte-softmodem-run.sh" >> $1
@@ -105,7 +107,8 @@ function start_basic_sim_ue {
     local LOC_NB_RBS=$4
     local LOC_FREQUENCY=$5
     echo "echo \"cd /home/ubuntu/tmp/cmake_targets/basic_simulator/ue\"" > $1
-    echo "cd /home/ubuntu/tmp/cmake_targets/basic_simulator/ue" > $1
+    echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/basic_simulator/ue" >> $1
+    echo "cd /home/ubuntu/tmp/cmake_targets/basic_simulator/ue" >> $1
     echo "echo \"./lte-uesoftmodem -C ${LOC_FREQUENCY}000000 -r $LOC_NB_RBS --ue-rxgain 140\" > ./my-lte-uesoftmodem-run.sh" >> $1
     echo "chmod 775 ./my-lte-uesoftmodem-run.sh" >> $1
     echo "cat ./my-lte-uesoftmodem-run.sh" >> $1
