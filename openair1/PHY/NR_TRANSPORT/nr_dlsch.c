@@ -340,9 +340,9 @@ printf("dmrs_idx %d\t l %d \t k %d \t k_prime %d \t n %d \t txdataF: %d %d\n",
 dmrs_idx, l, k, k_prime, n, ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1], ((int16_t*)txdataF[ap])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1]);
 #endif
           dmrs_idx++;
-          n++;
           k_prime++;
           k_prime&=1;
+          n+=(k_prime)?0:1;
         }
 
         else {
