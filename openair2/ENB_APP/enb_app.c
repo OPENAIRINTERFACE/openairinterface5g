@@ -43,10 +43,14 @@
 #   include "s1ap_eNB.h"
 #   include "sctp_eNB_task.h"
 #   include "gtpv1u_eNB_task.h"
-# else
-#    define EPC_MODE_ENABLED 0
-# endif
-
+/* temporary warning removale while implementing noS1 */
+/* as config option                                   */
+#   else
+#     ifdef EPC_MODE_ENABLED
+#       undef  EPC_MODE_ENABLED
+#     endif
+#     define EPC_MODE_ENABLED 0
+#   endif
 #   include "x2ap_eNB.h"
 #   include "x2ap_messages_types.h"
 #   define X2AP_ENB_REGISTER_RETRY_DELAY   10

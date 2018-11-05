@@ -33,7 +33,12 @@
 #     include "nas_ue_task.h"
 #     include "udp_eNB_task.h"
 #     include "gtpv1u_eNB_task.h"
+/* temporary warning removale while implementing noS1 */
+/* as config option                                   */
 #   else
+#     ifdef EPC_MODE_ENABLED
+#       undef  EPC_MODE_ENABLED
+#     endif
 #     define EPC_MODE_ENABLED 0
 #   endif
 #   if ENABLE_RAL
