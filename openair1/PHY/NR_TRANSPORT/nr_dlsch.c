@@ -324,8 +324,8 @@ printf("PDSCH resource mapping started (start SC %d\tstart symbol %d\tN_PRB %d\t
 #ifdef DEBUG_DLSCH_MAPPING
 printf("DMRS params for ap %d: Wt %d %d \t Wf %d %d \t delta %d \t l_prime %d \t l0 %d\tDMRS symbol %d\n", ap, Wt[0], Wt[1], Wf[0], Wf[1], delta, l_prime[0], l0, dmrs_symbol);
 #endif
-    uint8_t k_prime=0, n=0, dmrs_idx=0;
-    uint16_t m = 0;
+    uint8_t k_prime=0;
+    uint16_t m=0, n=0, dmrs_idx=0;;
 
     for (int l=rel15->start_symbol; l<rel15->start_symbol+rel15->nb_symbols; l++)
       for (int k=start_sc; k<rel15->n_prb*NR_NB_SC_PER_RB; k++) {
