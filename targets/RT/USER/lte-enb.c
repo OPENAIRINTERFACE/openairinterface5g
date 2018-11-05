@@ -426,14 +426,11 @@ static void* L1_thread( void* param ) {
       if (rxtx(eNB,proc,thread_name) < 0) break;
     }
 
+    if(get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT)              phy_procedures_eNB_TX(eNB, proc, 1);
     if (release_thread(&proc->mutex,&proc->instance_cnt,thread_name)<0) break;
     if (nfapi_mode!=2){
     	if(get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)      wakeup_tx(eNB);
-    	else if(get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT)
-    	{
-    		phy_procedures_eNB_TX(eNB, proc, 1);
-    		wakeup_txfh(proc,eNB);
-    	}
+    	else if(get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT)     wakeup_txfh(proc,eNB);
     }
 
   } // while !oai_exit
@@ -481,7 +478,6 @@ int wakeup_txfh(L1_rxtx_proc_t *proc,PHY_VARS_eNB *eNB) {
   struct timespec wait;
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
-//printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~inside wakeup_txfh %d.%d IC_RU = %d\n", proc->frame_tx, proc->subframe_tx, proc->instance_cnt_RUs);
 
   if(wait_on_condition(&proc->mutex_RUs,&proc->cond_RUs,&proc->instance_cnt_RUs,"wakeup_txfh")<0) {
     LOG_E(PHY,"Frame %d, subframe %d: TX FH not ready\n", proc->frame_tx, proc->subframe_tx);
@@ -922,7 +918,6 @@ void init_eNB_proc(int inst) {
     proc->first_rx                 =1;
     proc->first_tx                 =1;
     proc->RU_mask_tx               = (1<<eNB->num_RU)-1;
-printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~proc->RU_mask_tx = %d\n", proc->RU_mask_tx);
     proc->RU_mask                  =0;
     proc->RU_mask_prach            =0;
 
@@ -1045,15 +1040,17 @@ void kill_eNB_proc(int inst) {
     }
     LOG_I(PHY, "Killing TX CC_id %d inst %d\n", CC_id, inst );
 
-    pthread_mutex_lock(&L1_proc->mutex);
-    L1_proc->instance_cnt = 0;
-    pthread_cond_signal(&L1_proc->cond);
-    pthread_mutex_unlock(&L1_proc->mutex);
+    if ((get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) && nfapi_mode!=2) {
+      pthread_mutex_lock(&L1_proc->mutex);
+      L1_proc->instance_cnt = 0;
+      pthread_cond_signal(&L1_proc->cond);
+      pthread_mutex_unlock(&L1_proc->mutex);
 
-    pthread_mutex_lock(&L1_proc_tx->mutex);
-    L1_proc_tx->instance_cnt = 0;
-    pthread_cond_signal(&L1_proc_tx->cond);
-    pthread_mutex_unlock(&L1_proc_tx->mutex);
+      pthread_mutex_lock(&L1_proc_tx->mutex);
+      L1_proc_tx->instance_cnt = 0;
+      pthread_cond_signal(&L1_proc_tx->cond);
+      pthread_mutex_unlock(&L1_proc_tx->mutex);
+    }
 
     pthread_mutex_lock(&proc->mutex_prach);
     proc->instance_cnt_prach = 0;
@@ -1088,9 +1085,13 @@ void kill_eNB_proc(int inst) {
     LOG_I(PHY, "Destroying L1_proc mutex/cond\n");
     pthread_mutex_destroy( &L1_proc->mutex );
     pthread_cond_destroy( &L1_proc->cond );
+    pthread_mutex_destroy( &L1_proc->mutex_RUs );
+    pthread_cond_destroy( &L1_proc->cond_RUs );
     LOG_I(PHY, "Destroying L1_proc_tx mutex/cond\n");
     pthread_mutex_destroy( &L1_proc_tx->mutex );
     pthread_cond_destroy( &L1_proc_tx->cond );
+    pthread_mutex_destroy( &L1_proc_tx->mutex_RUs );
+    pthread_cond_destroy( &L1_proc_tx->cond_RUs );
 
     pthread_attr_destroy(&proc->attr_prach);
     pthread_attr_destroy(&proc->attr_asynch_rxtx);

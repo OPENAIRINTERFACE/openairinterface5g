@@ -1558,7 +1558,6 @@ static void* ru_thread_tx( void* param ) {
 	// wait until eNBs are finished subframe RX n and TX n+4
     wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
     if (oai_exit) break;
-//printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~ru_thread_tx is waken up %d.%d having L1 %d\n", proc->frame_tx, proc->subframe_tx, ru->num_eNB);
   	       
     // do TX front-end processing if needed (precoding and/or IDFTs)
     if (ru->feptx_prec) ru->feptx_prec(ru);
@@ -1587,17 +1586,14 @@ static void* ru_thread_tx( void* param ) {
         }
       }
       if (eNB_proc->RU_mask_tx != (1<<eNB->num_RU)-1) {  // not all RUs have provided their information so return
-printf("~~~~~~~~~~~~~~~~~~~~~~(mask = %d)\n", eNB_proc->RU_mask_tx);
         pthread_mutex_unlock(&eNB_proc->mutex_RU_tx);
       }
       else { // all RUs TX are finished so send the ready signal to eNB processing
-printf("~~~~~~~~~~~~~~~~~~~~~~ready to send wakeup signal\n");
         eNB_proc->RU_mask_tx = 0;
         pthread_mutex_unlock(&eNB_proc->mutex_RU_tx);
 
         pthread_mutex_lock( &L1_proc->mutex_RUs);
         L1_proc->instance_cnt_RUs = 0;
-printf("~~~~~~~~~~~~~~~~~~~~~~ru_thread_tx send signal to L1_thread_tx with (mask = %d)\n", eNB_proc->RU_mask_tx);
         // the thread can now be woken up
         if (pthread_cond_signal(&L1_proc->cond_RUs) != 0) {
           LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
