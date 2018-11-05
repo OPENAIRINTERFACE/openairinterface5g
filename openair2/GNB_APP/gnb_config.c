@@ -77,6 +77,10 @@
 #include "NR_EUTRA-MBSFN-SubframeConfig.h"
 
 extern uint16_t sf_ahead;
+extern void set_parallel_conf(char *parallel_conf);
+extern void set_worker_conf(char *worker_conf);
+extern PARALLEL_CONF_t get_thread_parallel_conf(void);
+extern WORKER_CONF_t   get_thread_worker_conf(void);
 
 void RCconfig_nr_flexran()
 {
@@ -2976,6 +2980,36 @@ int RCconfig_NR_S1(MessageDef *msg_p, uint32_t i) {
   return 0;
 }
 
+int RCconfig_nr_parallel(void) {
+  char *parallel_conf = NULL;
+  char *worker_conf   = NULL;
+  extern char *parallel_config;
+  extern char *worker_config;
+  paramdef_t ThreadParams[]  = THREAD_CONF_DESC;
+  paramlist_def_t THREADParamList = {THREAD_CONFIG_STRING_THREAD_STRUCT,NULL,0};
+  config_getlist( &THREADParamList,NULL,0,NULL);
+
+  if(THREADParamList.numelt>0) {
+    config_getlist( &THREADParamList,ThreadParams,sizeof(ThreadParams)/sizeof(paramdef_t),NULL);
+    parallel_conf = strdup(*(THREADParamList.paramarray[0][THREAD_PARALLEL_IDX].strptr));
+  } else {
+    parallel_conf = strdup("PARALLEL_RU_L1_TRX_SPLIT");
+  }
+
+  if(THREADParamList.numelt>0) {
+    config_getlist( &THREADParamList,ThreadParams,sizeof(ThreadParams)/sizeof(paramdef_t),NULL);
+    worker_conf   = strdup(*(THREADParamList.paramarray[0][THREAD_WORKER_IDX].strptr));
+  } else {
+    worker_conf   = strdup("WORKER_ENABLE");
+  }
+
+  if(parallel_config == NULL) set_parallel_conf(parallel_conf);
+
+  if(worker_config == NULL)   set_worker_conf(worker_conf);
+
+  return 0;
+}
+
 void NRRCConfig(void) {
 
   paramlist_def_t MACRLCParamList = {CONFIG_STRING_MACRLC_LIST,NULL,0};
@@ -3016,7 +3050,7 @@ void NRRCConfig(void) {
     config_getlist( &RUParamList,NULL,0, NULL);  
     RC.nb_RU     = RUParamList.numelt; 
  
-    RCconfig_parallel();
+    RCconfig_nr_parallel();
 
 
 }

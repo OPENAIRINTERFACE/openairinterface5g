@@ -304,8 +304,6 @@ typedef struct RU_proc_t_s {
   int instance_pre_scd;
 #endif
   /// pipeline ready state
-  int ru_rx_ready;
-  int ru_tx_ready;
   int emulate_rf_busy;
 } RU_proc_t;
 

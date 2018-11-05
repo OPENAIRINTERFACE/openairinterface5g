@@ -1099,3 +1099,29 @@ typedef enum {
 #define MACRLC_REMOTE_S_PORTD_IDX                              16
 #define MACRLC_SCHED_MODE_IDX                                  17
 #define MACRLC_PHY_TEST_IDX                                    18
+
+
+/* thread configuration parameters section name */
+#define THREAD_CONFIG_STRING_THREAD_STRUCT                "THREAD_STRUCT"
+
+/* thread configuration parameters names   */
+#define THREAD_CONFIG_STRING_PARALLEL              "parallel_config"
+#define THREAD_CONFIG_STRING_WORKER                "worker_config"
+
+
+#define THREAD_PARALLEL_IDX          0
+#define THREAD_WORKER_IDX            1
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                                             thread configuration parameters                                                                 */
+/*   optname                                          helpstr   paramflags    XXXptr       defXXXval                                 type           numelt     */
+/*-------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+#define THREAD_CONF_DESC {  \
+{THREAD_CONFIG_STRING_PARALLEL,          CONFIG_HLP_PARALLEL,      0,       strptr:NULL,   defstrval:"PARALLEL_RU_L1_TRX_SPLIT",   TYPE_STRING,   0},          \
+{THREAD_CONFIG_STRING_WORKER,            CONFIG_HLP_WORKER,        0,       strptr:NULL,   defstrval:"WORKER_ENABLE",              TYPE_STRING,   0}           \
+}
+
+
+#define CONFIG_HLP_WORKER                          "coding and FEP worker thread WORKER_DISABLE or WORKER_ENABLE\n"
+#define CONFIG_HLP_PARALLEL                        "PARALLEL_SINGLE_THREAD, PARALLEL_RU_L1_SPLIT, or PARALLEL_RU_L1_TRX_SPLIT(RU_L1_TRX_SPLIT by defult)\n"
+/*-------------------------------------------------------------------------------------------------------------------------------------------------------------*/
