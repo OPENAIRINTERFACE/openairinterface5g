@@ -419,7 +419,7 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config)
   gNB_config->rf_config.ul_carrier_bandwidth.value      = phy_config->cfg->rf_config.ul_carrier_bandwidth.value;//106;
   gNB_config->sch_config.half_frame_index.value         = 0;
   gNB_config->sch_config.ssb_subcarrier_offset.value    = phy_config->cfg->sch_config.ssb_subcarrier_offset.value;//0;
-  gNB_config->sch_config.n_ssb_crb.value                = 86;
+  gNB_config->sch_config.n_ssb_crb.value                = (phy_config->cfg->rf_config.dl_carrier_bandwidth.value-20)>>1;
   gNB_config->sch_config.physical_cell_id.value         = phy_config->cfg->sch_config.physical_cell_id.value;
 
   if (phy_config->cfg->subframe_config.duplex_mode.value == 0) {

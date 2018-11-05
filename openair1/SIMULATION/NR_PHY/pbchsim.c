@@ -379,7 +379,7 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  frame_length_complex_samples = frame_parms->samples_per_subframe;
+  frame_length_complex_samples = frame_parms->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
   frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP;
 
   s_re = malloc(2*sizeof(double*));
@@ -432,34 +432,47 @@ int main(int argc, char **argv)
     gNB->pbch_configured = 1;
     for (int i=0;i<4;i++) gNB->pbch_pdu[i]=i+1;
     nr_common_signal_procedures (gNB,frame,subframe);
-  }
 
-  /*  
-  LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],frame_length_complex_samples_no_prefix,1,1);
-  if (gNB->frame_parms.nb_antennas_tx>1)
-    LOG_M("txsigF1.m","txsF1", gNB->common_vars.txdataF[1],frame_length_complex_samples_no_prefix,1,1);
-  */
-  //TODO: loop over slots
-  for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
-    if (gNB_config->subframe_config.dl_cyclic_prefix_type.value == 1) {
-      PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
-		   txdata[aa],
-		   frame_parms->ofdm_symbol_size,
-		   12,
-		   frame_parms->nb_prefix_samples,
-		   CYCLIC_PREFIX);
-    } else {
-      nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
-			   txdata[aa],
-			   14,
-			   frame_parms);
+    /*  
+	LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],frame_length_complex_samples_no_prefix,1,1);
+	if (gNB->frame_parms.nb_antennas_tx>1)
+	LOG_M("txsigF1.m","txsF1", gNB->common_vars.txdataF[1],frame_length_complex_samples_no_prefix,1,1);
+    */
+    //TODO: loop over slots
+    for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
+      if (gNB_config->subframe_config.dl_cyclic_prefix_type.value == 1) {
+	PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
+		     txdata[aa],
+		     frame_parms->ofdm_symbol_size,
+		     12,
+		     frame_parms->nb_prefix_samples,
+		     CYCLIC_PREFIX);
+      } else {
+	nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
+			     txdata[aa],
+			     14,
+			     frame_parms);
+      }
+    }
+  } else {
+    printf("Reading %d samples from file to antenna buffer %d\n",frame_length_complex_samples,0);
+    
+    if (fread(txdata[0],
+	      sizeof(int32_t),
+	      frame_length_complex_samples,
+	      input_fd) != frame_length_complex_samples) {
+      printf("error reading from file\n");
+      exit(-1);
     }
   }
-  /*
+
   LOG_M("txsig0.m","txs0", txdata[0],frame_length_complex_samples,1,1);
   if (gNB->frame_parms.nb_antennas_tx>1)
     LOG_M("txsig1.m","txs1", txdata[1],frame_length_complex_samples,1,1);
-  */
+
+  if (output_fd) 
+    fwrite(txdata[0],sizeof(int32_t),frame_length_complex_samples,output_fd);
+
   int txlev = signal_energy(&txdata[0][5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
 			    frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
 
@@ -568,8 +581,11 @@ int main(int argc, char **argv)
   free(r_im);
   free(txdata);
 
-  if (write_output_file)
+  if (output_fd)
     fclose(output_fd);
+
+  if (input_fd)
+    fclose(input_fd);
 
   return(n_errors);
 

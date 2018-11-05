@@ -80,7 +80,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "system.h"
 #include "stats.h"
 #ifdef XFORMS
-#include "PHY/TOOLS/lte_phy_scope.h"
+#include "PHY/TOOLS/nr_phy_scope.h"
 //#include "stats.h"
 // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
 // at eNB 0, an UL scope for every UE
@@ -111,11 +111,10 @@ volatile int             oai_exit = 0;
 static clock_source_t clock_source = internal;
 static int wait_for_sync = 0;
 
-static char              UE_flag=0;
-unsigned int                    mmapped_dma=0;
-int                             single_thread_flag=1;
+unsigned int             mmapped_dma=0;
+int                      single_thread_flag=1;
 
-static char                     threequarter_fs=0;
+int                      threequarter_fs=0;
 
 uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
@@ -149,7 +148,7 @@ double rx_gain_off = 0.0;
 double sample_rate=30.72e6;
 double bw = 10.0e6;
 
-static int                      tx_max_power[MAX_NUM_CCs]; /* =  {0,0}*/;
+static int  tx_max_power[MAX_NUM_CCs] = {0};
 
 char   rf_config_file[1024];
 
@@ -175,7 +174,7 @@ int                      		rx_input_level_dBm;
 
 #ifdef XFORMS
 extern int                      otg_enabled;
-static char                     do_forms=0;
+int                             do_forms=0;
 #else
 int                             otg_enabled;
 #endif
@@ -415,22 +414,20 @@ static void *scope_thread(void *arg) {
 #endif
 
     while (!oai_exit) {
-        if (UE_flag==1) {
-            //len = dump_ue_stats (PHY_vars_UE_g[0][0], &PHY_vars_UE_g[0][0]->proc.proc_rxtx[0],stats_buffer, 0, mode,rx_input_level_dBm);
-            //fl_set_object_label(form_stats->stats_text, stats_buffer);
-            fl_clear_browser(form_stats->stats_text);
-            fl_add_browser_line(form_stats->stats_text, stats_buffer);
-
-            /*phy_scope_UE(form_ue[0],
-                         PHY_vars_UE_g[0][0],
-                         0,
-                         0,7);*/
-
-        }
-
-        //printf("doing forms\n");
-        //usleep(100000); // 100 ms
-        sleep(1);
+      //len = dump_ue_stats (PHY_vars_UE_g[0][0], &PHY_vars_UE_g[0][0]->proc.proc_rxtx[0],stats_buffer, 0, mode,rx_input_level_dBm);
+      //fl_set_object_label(form_stats->stats_text, stats_buffer);
+      fl_clear_browser(form_stats->stats_text);
+      fl_add_browser_line(form_stats->stats_text, stats_buffer);
+      
+      if (PHY_vars_UE_g[0][0]->is_synchronized == 1)
+	phy_scope_UE(form_ue[0],
+		     PHY_vars_UE_g[0][0],
+		     0,0,7);
+      //else it is done in the synch thread
+      
+      //printf("doing forms\n");
+      //usleep(100000); // 100 ms
+      sleep(1);
     }
 
     //  printf("%s",stats_buffer);
@@ -502,7 +499,7 @@ static void get_options(void) {
   int CC_id;
   int tddflag, nonbiotflag;
   char *loopfile=NULL;
-  int dumpframe;
+  int dumpframe=0;
   uint32_t online_log_messages;
   uint32_t glog_level, glog_verbosity;
   uint32_t start_telnetsrv;
@@ -614,10 +611,6 @@ static void get_options(void) {
     printf("%s\n",uecap_xer);
     uecap_xer_in=1;
   } /* UE with config file  */
-
-#if defined(OAI_USRP) || defined(CPRIGW) || defined(OAI_ADRV9371_ZC706)
-    int clock_src;
-#endif
 
 }
 
@@ -1002,8 +995,6 @@ int main( int argc, char **argv ) {
 	UE[CC_id]->pdcch_vars[1][0]->crnti = 0x1235;
       }
     
-    rx_gain[CC_id][0] = 81;
-    tx_max_power[CC_id] = -40;
     
     UE[CC_id]->rx_total_gain_dB =  (int)rx_gain[CC_id][0] + rx_gain_off;
     UE[CC_id]->tx_power_max_dBm = tx_max_power[CC_id];
@@ -1120,11 +1111,14 @@ int main( int argc, char **argv ) {
 
 #ifdef XFORMS
     int UE_id;
+    int fl_argc=1;
 
   if (do_forms==1) {
-    fl_initialize (&argc, argv, NULL, 0, 0);
-	
-	form_stats = create_form_stats_form();
+    // fl_initialize messes with argv and argc, so pretend to not pass any options
+    fl_initialize (&fl_argc, argv, NULL, 0, 0);
+    // restore the original command line args
+    // argv = fl_get_cmdline_args( &argc );
+    form_stats = create_form_stats_form();
     fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
     UE_id = 0;
     form_ue[UE_id] = create_lte_phy_scope_ue();
@@ -1155,24 +1149,16 @@ int main( int argc, char **argv ) {
 
     rt_sleep_ns(10*100000000ULL);
 
-
-
-    // start the main thread
-   //if (UE_flag == 1) {
-        init_UE(1);
-        number_of_cards = 1;
-
+    init_UE(1);
+    number_of_cards = 1;
+    
     for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
       PHY_vars_UE_g[0][CC_id]->rf_map.card=0;
       PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
     }
-   //}
 
-    // connect the TX/RX buffers
-    //if (UE_flag==1) {
 
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      
       
 #if defined(OAI_USRP) || defined(OAI_ADRV9371_ZC706)
       UE[CC_id]->hw_timing_advance = timing_advance;
@@ -1180,23 +1166,17 @@ int main( int argc, char **argv ) {
       UE[CC_id]->hw_timing_advance = 160;
 #endif
     }
-	if (setup_ue_buffers(UE,&openair0_cfg[0])!=0) {
-            printf("Error setting up eNB buffer\n");
-            exit(-1);
-        }
 
+    
+    if (input_fd) {
+      printf("Reading in from file to antenna buffer %d\n",0);
+      if (fread(UE[0]->common_vars.rxdata[0],
+		sizeof(int32_t),
+		frame_parms[0]->samples_per_subframe*10,
+		input_fd) != frame_parms[0]->samples_per_subframe*10)
+	printf("error reading from file\n");
+    }
 
-
-        if (input_fd) {
-            printf("Reading in from file to antenna buffer %d\n",0);
-            if (fread(UE[0]->common_vars.rxdata[0],
-                      sizeof(int32_t),
-                      frame_parms[0]->samples_per_subframe*10,
-                      input_fd) != frame_parms[0]->samples_per_subframe*10)
-                printf("error reading from file\n");
-        }
-        //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
-    //}
     sleep(3);
 
 
@@ -1211,16 +1191,18 @@ int main( int argc, char **argv ) {
     printf("TYPE <CTRL-C> TO TERMINATE\n");
     //getchar();
 
+    /*
 #if defined(ENABLE_ITTI)
     printf("Entering ITTI signals handler\n");
     itti_wait_tasks_end();
     oai_exit=1;
 #else
+    */
 
     while (oai_exit==0)
         rt_sleep_ns(100000000ULL);
 
-#endif
+    //#endif
 
   // stop threads
 #ifdef XFORMS
