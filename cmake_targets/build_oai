@@ -651,9 +651,9 @@ function main() {
     compilations \
           lte-simulators coding \
           libcoding.so $dbin/libcoding.so
-    compilations \
-	  lte-simulators $config_libconfig_shlib \
-	  lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
+#    compilations \
+#	  lte-simulators $config_libconfig_shlib \
+#	  lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
   fi
 
   # Core simulators

@@ -106,8 +106,9 @@ extern configmodule_interface_t *cfgptr;
 #define printf_params(...) if ( (cfgptr->rtflags & (CONFIG_PRINTPARAMS)) != 0 )  { printf ( __VA_ARGS__ ); }
 #define printf_ptrs(...)   if ( (cfgptr->rtflags & (CONFIG_DEBUGPTR)) != 0 )     { printf ( __VA_ARGS__ ); }     
 #define printf_cmdl(...)   if ( (cfgptr->rtflags & (CONFIG_DEBUGCMDLINE)) != 0 ) { printf ( __VA_ARGS__ ); }
- 
-extern configmodule_interface_t *load_configmodule(int argc, char **argv);
+
+#define CONFIG_ENABLECMDLINEONLY  (1<<1)
+extern configmodule_interface_t *load_configmodule(int argc, char **argv, uint32_t initflags);
 extern void end_configmodule(void);
 
 #endif  /* INCLUDE_CONFIG_LOADCONFIGMODULE_H */

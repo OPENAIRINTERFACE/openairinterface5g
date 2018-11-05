@@ -695,7 +695,7 @@ int main( int argc, char **argv )
 #if defined (XFORMS)
   int ret;
 #endif
-  if ( load_configmodule(argc,argv) == NULL) {
+  if ( load_configmodule(argc,argv,0) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   } 
       

@@ -761,7 +761,7 @@ int main( int argc, char **argv )
 #endif
 
   start_background_system();
-  if ( load_configmodule(argc,argv) == NULL) {
+  if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   } 
       
@@ -887,7 +887,7 @@ int main( int argc, char **argv )
 
 
   if (simL1flag==1) {
-    AssertFatal(NULL!=load_configmodule(argc,argv),
+    AssertFatal(NULL!=load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY),
                 "[SOFTMODEM] Error, configuration module init failed\n");
 
     RCConfig_sim();

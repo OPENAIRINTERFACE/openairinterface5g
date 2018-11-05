@@ -169,7 +169,7 @@ int config_cmdlineonly_get(paramdef_t *cfgoptions,int numoptions, char *prefix )
   return numdefvals;
 }
 
-configmodule_interface_t *load_configmodule(int argc, char **argv)
+configmodule_interface_t *load_configmodule(int argc, char **argv, uint32_t initflags)
 {
 char *cfgparam=NULL;
 char *modeparams=NULL;
@@ -208,10 +208,10 @@ int OoptIdx=-1;
 /* oad_configmodule function */
   if (cfgparam == NULL) {
     tmpflags = tmpflags | CONFIG_NOOOPT;
-    if (strstr(argv[0],"uesoftmodem") == NULL || strstr(argv[0],"lsim") == NULL) {
-       cfgparam = CONFIG_LIBCONFIGFILE ":" DEFAULT_CFGFILENAME;
+    if ( initflags &  CONFIG_ENABLECMDLINEONLY) {
+       cfgparam = CONFIG_CMDLINEONLY ":dbgl0" ;
     } else {
-      cfgparam = CONFIG_CMDLINEONLY ":dbgl0" ;         
+      cfgparam = CONFIG_CMDLINEONLY ":dbgl0" ;cfgparam = CONFIG_LIBCONFIGFILE ":" DEFAULT_CFGFILENAME;         
     }
   }
  
