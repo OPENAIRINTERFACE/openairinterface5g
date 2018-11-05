@@ -2283,8 +2283,7 @@ int RCconfig_S1(
             /* Default DRX param */
             /*
             * Here we get the config of the first CC, since the s1ap_register_enb_req_t doesn't support multiple CC.
-            * It is not clear in the spec if the eNB can have different default paging values in case of several SIB2 from the same eNB.
-            * Yet, from the spec and logically, there should be a unique value associated with eNB.
+            * There is a unique value of defaultPagingCycle per eNB (same for multiple cells).
             * Hence, it should be stated somewhere that the value should be the same for every CC, or put the value outside the CC
             * in the conf file.
             */
