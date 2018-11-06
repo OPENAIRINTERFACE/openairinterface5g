@@ -29,7 +29,6 @@
 #ifndef GTPV1U_ENB_TASK_H_
 #define GTPV1U_ENB_TASK_H_
 
-#include "messages_types.h"
 
 /*
 int
@@ -41,6 +40,8 @@ gtpv1u_new_data_req(
   uint32_t buf_len,
   uint32_t buf_offset);*/
 
+int   gtpv1u_eNB_init(void);
+void *gtpv1u_eNB_process_itti_msg(void*);
 void *gtpv1u_eNB_task(void *args);
 
 int

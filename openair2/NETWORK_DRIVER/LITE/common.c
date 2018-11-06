@@ -333,7 +333,7 @@ void oai_nw_drv_common_class_wireless2ip(uint16_t dlen,
 
   printk("\n");
 #endif //OAI_DRV_DEBUG_RECEIVE
-  netif_rx(skb);
+  netif_rx_ni(skb);
 #ifdef OAI_DRV_DEBUG_RECEIVE
   printk("[OAI_IP_DRV][%s] end\n",__FUNCTION__);
 #endif

@@ -120,7 +120,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     params_rel15->rnti_type = NFAPI_NR_RNTI_C;
     params_rel15->dci_format = NFAPI_NR_DL_DCI_FORMAT_1_0;
     //params_rel15->aggregation_level = 1;
-    LOG_I(MAC, "DCI type 1 params: rmsi_pdcch_config %d, rnti %d, rnti_type %d, dci_format %d\n \
+    LOG_D(MAC, "DCI type 1 params: rmsi_pdcch_config %d, rnti %d, rnti_type %d, dci_format %d\n \
                 coreset params: mux_pattern %d, n_rb %d, n_symb %d, rb_offset %d  \n \
                 ss params : nb_ss_sets_per_slot %d, first symb %d, nb_slots %d, sfn_mod2 %d, first slot %d\n",
                 0,

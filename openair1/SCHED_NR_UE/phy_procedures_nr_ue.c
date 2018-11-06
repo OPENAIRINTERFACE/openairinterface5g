@@ -3161,18 +3161,13 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
   #endif
   // p in TS 38.212 Subclause 10.1, for each active BWP the UE can deal with 3 different CORESETs (including coresetId 0 for common search space)
   int nb_coreset_total = NR_NBR_CORESET_ACT_BWP;
-  uint8_t dci_cnt=0;
+  unsigned int dci_cnt=0;
   // this table contains 56 (NBR_NR_DCI_FIELDS) elements for each dci field and format described in TS 38.212. Each element represents the size in bits for each dci field
-  //uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS] = {0};
+  uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS] = {0};
   // this is the UL bandwidth part. FIXME! To be defined where this value comes from
   uint16_t n_RB_ULBWP = 106;
   // this is the DL bandwidth part. FIXME! To be defined where this value comes from
   uint16_t n_RB_DLBWP = 106;
-  #ifdef NR_PDCCH_SCHED_DEBUG
-    printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> n_RB_ULBWP=%d n_RB_DLBWP=%d\n",
-            n_RB_ULBWP,
-            n_RB_DLBWP);
-  #endif
 
   // First we have to identify each searchSpace active at a time and do PDCCH monitoring corresponding to current searchSpace
   // Up to 10 searchSpaces can be configured to UE (s<=10)
@@ -3364,6 +3359,25 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
                     nb_searchspace_active,
                     nb_coreset_active,
                     dci_cnt);
+
+          #endif
+          dci_cnt += nr_dci_decoding_procedure(nb_searchspace_active,
+                                              nb_coreset_active,
+                                              ue,
+                                              dci_alloc_rx[dci_cnt],
+                                              searchSpaceType,  // if we're in PUSCH don't listen to common search space,
+                                                                // later when we need paging or RA during connection, update this ...
+                                              eNB_id,
+                                              nr_tti_rx,
+                                              dci_fields_sizes,dci_fields_sizes_cnt,
+                                              n_RB_ULBWP,
+                                              n_RB_DLBWP,
+                                              &crc_scrambled,
+                                              &format_found);
+          #ifdef NR_PDCCH_SCHED_DEBUG
+            printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Ending function nr_dci_decoding_procedure() -> dci_cnt=%d\n",dci_cnt);
+          #endif
+
         }
         if (searchSpaceType == ue_specific){// search all possible dci's for UE-SPECIFIC SEARCH SPACES according to the current SEARCHSPACE configuration
              printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Entering function nr_dci_decoding_procedure with eNB_id=%d (n_RB_ULBWP=%d, n_RB_DLBWP=%d, searchSpaceType=%d, nb_searchspace_active=%d, nb_coreset_active=%d) -> dci_cnt=%d\n",
@@ -3371,9 +3385,26 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
                     nb_searchspace_active,
                     nb_coreset_active,
                     dci_cnt);
-        }
-        #endif
 
+          #endif
+          dci_cnt += nr_dci_decoding_procedure(nb_searchspace_active,
+                                              nb_coreset_active,
+                                              ue,
+                                              dci_alloc_rx[dci_cnt],
+                                              searchSpaceType,  // if we're in PUSCH don't listen to common search space,
+                                                                // later when we need paging or RA during connection, update this ...
+                                              eNB_id,
+                                              nr_tti_rx,
+                                              dci_fields_sizes,dci_fields_sizes_cnt,
+                                              n_RB_ULBWP,
+                                              n_RB_DLBWP,
+                                              &crc_scrambled,
+                                              &format_found);
+          #ifdef NR_PDCCH_SCHED_DEBUG
+            printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Ending function nr_dci_decoding_procedure() -> dci_cnt=%d\n",dci_cnt);
+          #endif
+
+        }
        
       
         nr_dci_decoding_procedure(nb_searchspace_active,
@@ -3821,10 +3852,6 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
   return(0);
 }
 
-
-
-#endif
-
 #if 0
 
 void ue_pmch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc,int eNB_id,int abstraction_flag) {
@@ -3929,7 +3956,7 @@ void ue_pmch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc,int eNB_id,i
       else
   ue->dlsch_mtch_trials[sync_area][0]++;
 
-      if (ret == (1+ue->dlsch_MCH[0]->max_ldpc_iterations)) {
+      if (ret == (1+ue->dlsch_MCH[0]->max_turbo_iterations)) {
   if (mcch_active == 1)
     ue->dlsch_mcch_errors[sync_area][0]++;
   else
@@ -3941,7 +3968,7 @@ void ue_pmch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc,int eNB_id,i
         ue->dlsch_mcch_errors[sync_area][0],
         ue->dlsch_mtch_errors[sync_area][0],
         ue->dlsch_MCH[0]->harq_processes[0]->TBS>>3,
-        ue->dlsch_MCH[0]->max_ldpc_iterations,
+        ue->dlsch_MCH[0]->max_turbo_iterations,
         ue->dlsch_MCH[0]->harq_processes[0]->G);
   dump_mch(ue,0,ue->dlsch_MCH[0]->harq_processes[0]->G,nr_tti_rx);
 #ifdef DEBUG_DLSCH
@@ -3992,7 +4019,7 @@ void copy_harq_proc_struct(NR_DL_UE_HARQ_t *harq_processes_dest, NR_DL_UE_HARQ_t
       harq_processes_dest->DCINdi         = current_harq_processes->DCINdi         ;
       harq_processes_dest->F              = current_harq_processes->F              ;
       harq_processes_dest->G              = current_harq_processes->G              ;
-      harq_processes_dest->K              = current_harq_processes->K          ;
+      harq_processes_dest->K              = current_harq_processes->K              ;
       harq_processes_dest->Nl             = current_harq_processes->Nl             ;
       harq_processes_dest->Qm             = current_harq_processes->Qm             ;
       harq_processes_dest->TBS            = current_harq_processes->TBS            ;
@@ -4619,6 +4646,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
 
 }
+
 
 /*!
  * \brief This is the UE synchronize thread.

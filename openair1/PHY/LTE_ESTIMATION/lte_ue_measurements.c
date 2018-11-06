@@ -23,7 +23,7 @@
 
 #include "PHY/defs_UE.h"
 #include "PHY/phy_extern_ue.h"
-#include "log.h"
+#include "common/utils/LOG/log.h"
 #include "PHY/sse_intrin.h"
 
 //#define k1 1000

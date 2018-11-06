@@ -75,7 +75,7 @@ void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
                         uint8_t nushift,
                         uint16_t M,
                         uint16_t length,
-                        uint8_t bitwise);
+                        uint8_t encoded);
 
 /*!
 \fn int nr_generate_pbch

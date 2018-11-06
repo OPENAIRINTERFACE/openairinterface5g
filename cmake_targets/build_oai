@@ -40,7 +40,7 @@ set_openair_env
 gen_nvram_path=$OPENAIR_DIR/targets/bin
 conf_nvram_path=$OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf
 
-MSC_GEN="False"
+MSC_GEN=0
 XFORMS="True"
 UE_EXPANSION="False"
 PRINT_STATS="False"
@@ -164,6 +164,10 @@ Options
    Disable all LOG_* macros
 --build-eclipse
    Build eclipse project files. Paths are auto corrected by fixprj.sh
+--build-telnet
+   Build telnet server, specify --telnetsrv on command line to start it (eNB only)
+--build-msc
+   Build MSC tracing utility, specify --msc on command line to start it (eNB and UE)
 --usrp-recplay
    Build for I/Q record-playback modes
 --ue-nas-use-tun
@@ -375,6 +379,10 @@ function main() {
        --build-telnetsrv)
             BUILD_TELNETSRV=1
             echo_info "Build embedded telnet server"
+            shift ;;
+       --build-msc)
+            MSC_GEN=1
+            echo_info "Build MSC tracing utility"
             shift ;;			
         --usrp-recplay)
             USRP_REC_PLAY="True"
@@ -684,7 +692,7 @@ function main() {
     echo_info "Compiling unitary tests simulators"
     # TODO: fix: dlsim_tm4 pucchsim prachsim pdcchsim pbchsim mbmssim
     #simlist="dlsim_tm4 dlsim ulsim pucchsim prachsim pdcchsim pbchsim mbmssim"
-    simlist="dlsim ulsim polartest ldpctest"
+    simlist="dlsim ulsim polartest ldpctest nr_pbchsim"
     for f in $simlist ; do
       compilations \
       phy_simulators $f \
@@ -739,6 +747,15 @@ function main() {
               compilations \
                   $build_dir telnetsrv \
                   libtelnetsrv.so $dbin/libtelnetsrv.so
+
+  fi 
+  # Telnet server compilation
+  #####################
+  if [ "$MSC_GEN" = "1" ] ; then
+              build_dir=$lte_build_dir
+              compilations \
+                  $build_dir msc \
+                  libmsc.so $dbin/libmsc.so
 
   fi  
   # HWLAT compilation

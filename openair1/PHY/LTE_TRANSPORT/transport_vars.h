@@ -21,7 +21,6 @@
 
 #include "dlsch_tbs.h"
 //#include "dlsch_tbs_full.h"
-#include "sss.h"
 
 unsigned short lte_cqi_eff1024[16] = {156,          //-6, .15234
                                       240,          //-4  .234

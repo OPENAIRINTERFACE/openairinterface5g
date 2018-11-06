@@ -222,7 +222,7 @@ skb_p->mark = rb_idP;
 
   printk("\n");
 #endif //OAI_DRV_DEBUG_RECEIVE
-  netif_rx(skb_p);
+  netif_rx_ni(skb_p);
 #ifdef OAI_DRV_DEBUG_RECEIVE
   printk("[UE_IP_DRV][%s] end\n",__FUNCTION__);
 #endif

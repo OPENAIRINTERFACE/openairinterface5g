@@ -34,7 +34,9 @@
 #define __PHY_DEFS_COMMON__H__
 
 
+#ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#endif
 #include <sched.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -68,6 +70,7 @@
 #include "TOOLS/tools_defs.h"
 
 #include "targets/COMMON/openairinterface5g_limits.h"
+#include "common/utils/LOG/log.h"
 
 #include "types.h"
 #include "nfapi_interface.h"
@@ -858,7 +861,22 @@ typedef enum {
   RESYNCH=4
 } UE_MODE_t;
 
+/// Threading Parameter
+typedef enum {
+  PARALLEL_SINGLE_THREAD    =0,
+  PARALLEL_RU_L1_SPLIT      =1,
+  PARALLEL_RU_L1_TRX_SPLIT  =2
+}PARALLEL_CONF_t;
 
+typedef enum {
+  WORKER_DISABLE            =0,
+  WORKER_ENABLE             =1
+}WORKER_CONF_t;
+
+typedef struct THREAD_STRUCT_s {
+  PARALLEL_CONF_t  parallel_conf;
+  WORKER_CONF_t    worker_conf;
+} THREAD_STRUCT;
 
 typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;
 
@@ -882,8 +900,6 @@ typedef enum {no_relay=1,unicast_relay_type1,unicast_relay_type2, multicast_rela
 #define NUMBER_OF_eNB_SECTORS_MAX 3
 
 #define NB_BANDS_MAX 8
-
-void exit_fun(const char* s);
 
 #include "common/utils/LOG/log_extern.h"
 extern pthread_cond_t sync_cond;
@@ -945,13 +961,18 @@ static inline void wait_sync(char *thread_name) {
   pthread_mutex_unlock(&sync_mutex);
   
   printf( "got sync (%s)\n", thread_name);
-
+  /*
+   * Raphael Defosseux: added for CI to get faster the got sync message.
+   */
+  fflush(stdout);
+  fflush(stderr);
 }
 
 static inline int wakeup_thread(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
-
-  if (pthread_mutex_lock(mutex) != 0) {
-    LOG_E( PHY, "error locking mutex for %s\n",name);
+  int rc;
+  if ((rc = pthread_mutex_lock(mutex)) != 0) {
+    LOG_E(PHY, "wakeup_thread(): error locking mutex for %s (%d %s, %p)\n",
+        name, rc, strerror(rc), (void *)mutex);
     exit_fun("nothing to add");
     return(-1);
   }
@@ -968,8 +989,10 @@ static inline int wakeup_thread(pthread_mutex_t *mutex,pthread_cond_t *cond,int 
 }
 
 static inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
-  if (pthread_mutex_lock(mutex) != 0) {
-    LOG_E( PHY, "[SCHED][eNB] error locking mutex for %s\n",name);
+  int rc;
+  if ((rc = pthread_mutex_lock(mutex)) != 0) {
+    LOG_E(PHY, "[SCHED][eNB] wait_on_condition(): error locking mutex for %s (%d %s, %p)\n",
+        name, rc, strerror(rc), (void *)mutex);
     exit_fun("nothing to add");
     return(-1);
   }
@@ -989,9 +1012,10 @@ static inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,
 }
 
 static inline int wait_on_busy_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
-
-  if (pthread_mutex_lock(mutex) != 0) {
-    LOG_E( PHY, "[SCHED][eNB] error locking mutex for %s\n",name);
+  int rc;
+  if ((rc = pthread_mutex_lock(mutex)) != 0) {
+    LOG_E(PHY, "[SCHED][eNB] wait_on_busy_condition(): error locking mutex for %s (%d %s, %p)\n",
+        name, rc, strerror(rc), (void *)mutex);
     exit_fun("nothing to add");
     return(-1);
   }
@@ -1011,9 +1035,10 @@ static inline int wait_on_busy_condition(pthread_mutex_t *mutex,pthread_cond_t *
 }
 
 static inline int release_thread(pthread_mutex_t *mutex,int *instance_cnt,char *name) {
-
-  if (pthread_mutex_lock(mutex) != 0) {
-    LOG_E( PHY, "[SCHED][eNB] error locking mutex for %s\n",name);
+  int rc;
+  if ((rc = pthread_mutex_lock(mutex)) != 0) {
+    LOG_E(PHY, "[SCHED][eNB] release_thread(): error locking mutex for %s (%d %s, %p)\n",
+        name, rc, strerror(rc), (void *)mutex);
     exit_fun("nothing to add");
     return(-1);
   }

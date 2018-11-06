@@ -140,8 +140,6 @@ static struct {
 
 extern double cpuf;
 
-void exit_fun(const char* s);
-
 void init_gNB(int,int);
 void stop_gNB(int nb_inst);
 

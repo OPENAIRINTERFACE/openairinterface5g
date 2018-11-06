@@ -313,3 +313,25 @@ void nr_polar_rate_matching(double *input, double *output, uint16_t *rmp, uint16
 	}
 
 }
+
+void nr_polar_rate_matching_int16(int16_t *input, int16_t *output, uint16_t *rmp, uint16_t K, uint16_t N, uint16_t E){
+
+	if (E>=N) { //repetition
+		for (int i=0; i<=N-1; i++) output[i]=0;
+		for (int i=0; i<=E-1; i++){
+			output[rmp[i]]+=input[i];
+		}
+	} else {
+		if ( (K/(double)E) <= (7.0/16) ) { //puncturing
+			for (int i=0; i<=N-1; i++) output[i]=0;
+		} else { //shortening
+			for (int i=0; i<=N-1; i++) output[i]=INFINITY;
+		}
+
+		for (int i=0; i<=E-1; i++){
+			output[rmp[i]]=input[i];
+		}
+	}
+
+}
+

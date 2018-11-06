@@ -92,30 +92,3 @@ int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) { return(0
 int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) { return(0); }
 
 
-int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
-				uint8_t eNB_id,
-				uint8_t eNB_offset,
-				unsigned char Ns,
-				unsigned char p,
-				unsigned char l,
-				unsigned char symbol,
-				unsigned short bwp_start_subcarrier,
-				unsigned short nb_rb_pdsch) {return(0);}
-
-int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
-			       uint8_t eNB_id,
-			       uint8_t eNB_offset,
-			       unsigned char Ns,
-			       unsigned char p,
-			       unsigned char l,
-			       unsigned char symbol) {return(0);}
-
-int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
-				uint8_t eNB_id,
-				uint8_t eNB_offset,
-				unsigned char Ns,
-				unsigned char p,
-				unsigned char l,
-				unsigned char symbol,
-				unsigned short coreset_start_subcarrier,
-				unsigned short nb_rb_coreset) {return(0);}

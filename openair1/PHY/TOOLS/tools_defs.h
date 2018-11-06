@@ -344,6 +344,8 @@ int8_t dB_fixed2(uint32_t x,uint32_t y);
 
 int16_t dB_fixed_times10(uint32_t x);
 
+uint8_t dB_fixed64(uint64_t x);
+
 int32_t phy_phase_compensation_top (uint32_t pilot_type, uint32_t initial_pilot,
                                     uint32_t last_pilot, int32_t ignore_prefix);
 
@@ -351,6 +353,11 @@ int32_t dot_product(int16_t *x,
                     int16_t *y,
                     uint32_t N, //must be a multiple of 8
                     uint8_t output_shift);
+
+int64_t dot_product64(int16_t *x,
+		      int16_t *y,
+		      uint32_t N, //must be a multiple of 8
+		      uint8_t output_shift);
 
 void dft12(int16_t *x,int16_t *y);
 void dft24(int16_t *x,int16_t *y,uint8_t scale_flag);
@@ -378,6 +385,7 @@ void dft576(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft600(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft648(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft720(int16_t *x,int16_t *y,uint8_t scale_flag);
+void dft768(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft864(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft900(int16_t *x,int16_t *y,uint8_t scale_flag);
 void dft960(int16_t *x,int16_t *y,uint8_t scale_flag);

@@ -711,5 +711,4 @@ typedef struct PHY_VARS_eNB_s {
   int32_t pusch_stats_BO[NUMBER_OF_UE_MAX][10240];
 } PHY_VARS_eNB;
 
-
-#endif /* __PHY_DEFS_ENB__H__ */
+#endif //  __PHY_DEFS_eNB_H__

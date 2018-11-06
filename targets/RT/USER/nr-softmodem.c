@@ -75,7 +75,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #endif
 
 #if defined(ENABLE_ITTI)
-#include "intertask_interface_init.h"
+#include "intertask_interface.h"
 #include "create_nr_tasks.h"
 #endif
 
@@ -230,9 +230,32 @@ extern void init_eNB_afterRU(void);
 
 int transmission_mode=1;
 int emulate_rf = 0;
-//int numerology = 0;
-int codingw = 0;
-//int fepw = 0;
+int numerology = 0;
+char *parallel_config = NULL;
+char *worker_config = NULL;
+
+static THREAD_STRUCT thread_struct;
+void set_parallel_conf(char *parallel_conf)
+{
+  if(strcmp(parallel_conf,"PARALLEL_SINGLE_THREAD")==0)           thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
+  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_SPLIT")==0)        thread_struct.parallel_conf = PARALLEL_RU_L1_SPLIT;
+  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_TRX_SPLIT")==0)    thread_struct.parallel_conf = PARALLEL_RU_L1_TRX_SPLIT;
+  printf("[CONFIG] parallel conf is set to %d\n",thread_struct.parallel_conf);
+} 
+void set_worker_conf(char *worker_conf)
+{
+  if(strcmp(worker_conf,"WORKER_DISABLE")==0)                     thread_struct.worker_conf = WORKER_DISABLE;
+  else if(strcmp(worker_conf,"WORKER_ENABLE")==0)                 thread_struct.worker_conf = WORKER_ENABLE;
+  printf("[CONFIG] worker conf is set to %d\n",thread_struct.worker_conf);
+} 
+PARALLEL_CONF_t get_thread_parallel_conf(void)
+{
+  return thread_struct.parallel_conf;
+} 
+WORKER_CONF_t get_thread_worker_conf(void)
+{
+  return thread_struct.worker_conf;
+} 
 
 
 /* struct for ethernet specific parameters given in eNB conf file */
@@ -331,15 +354,23 @@ void signal_handler(int sig) {
 #define KBLU  "\x1B[34m"
 #define RESET "\033[0m"
 
+#if defined(ENABLE_ITTI)
+void signal_handler_itti(int sig) {
+  // Call exit function
+  char msg[256];
+  memset(msg, 0, 256);
+  sprintf(msg, "caught signal %s\n", strsignal(sig));
+  exit_function(__FILE__, __FUNCTION__, __LINE__, msg);
+}
+#endif
 
-
-void exit_fun(const char* s)
+void exit_function(const char* file, const char* function, const int line, const char* s)
 {
 
   int ru_id;
 
   if (s != NULL) {
-    printf("%s %s() Exiting OAI softmodem: %s\n",__FILE__, __FUNCTION__, s);
+    printf("%s:%d %s() Exiting OAI softmodem: %s\n",file,line, function, s);
   }
 
   oai_exit = 1;
@@ -348,18 +379,22 @@ void exit_fun(const char* s)
     if (RC.ru == NULL)
         exit(-1); // likely init not completed, prevent crash or hang, exit now...
     for (ru_id=0; ru_id<RC.nb_RU;ru_id++) {
-      if (RC.ru[ru_id] && RC.ru[ru_id]->rfdevice.trx_end_func)
+      if (RC.ru[ru_id] && RC.ru[ru_id]->rfdevice.trx_end_func) {
 	RC.ru[ru_id]->rfdevice.trx_end_func(&RC.ru[ru_id]->rfdevice);
-      if (RC.ru[ru_id] && RC.ru[ru_id]->ifdevice.trx_end_func)
+        RC.ru[ru_id]->rfdevice.trx_end_func = NULL;
+      }
+      if (RC.ru[ru_id] && RC.ru[ru_id]->ifdevice.trx_end_func) {
 	RC.ru[ru_id]->ifdevice.trx_end_func(&RC.ru[ru_id]->ifdevice);  
+        RC.ru[ru_id]->ifdevice.trx_end_func = NULL;
+      }
     }
 
 
-#if defined(ENABLE_ITTI)
     sleep(1); //allow lte-softmodem threads to exit first
+#if defined(ENABLE_ITTI)
     itti_terminate_tasks (TASK_UNKNOWN);
 #endif
-
+   exit(1);
 
 }
 
@@ -557,7 +592,7 @@ static void get_options(void) {
   }
 
   if (start_telnetsrv) {
-     load_module_shlib("telnetsrv",NULL,0);
+    load_module_shlib("telnetsrv",NULL,0,NULL);
   }
 
 #if T_TRACER
@@ -573,6 +608,8 @@ static void get_options(void) {
       NB_RU	  = RC.nb_RU;
       printf("Configuration: nb_rrc_inst %d, nb_nr_L1_inst %d, nb_ru %d\n",NB_gNB_INST,RC.nb_nr_L1_inst,NB_RU);
    }
+  if(parallel_config != NULL) set_parallel_conf(parallel_config);
+  if(worker_config != NULL)   set_worker_conf(worker_config);
 }
 
 
@@ -908,7 +945,6 @@ static  void wait_nfapi_init(char *thread_name) {
 
 int main( int argc, char **argv )
 {
-	crcTableInit();
   int i;
 #if defined (XFORMS)
   //void *status;
@@ -975,14 +1011,7 @@ int main( int argc, char **argv )
 #endif
 
   if (opt_type != OPT_NONE) {
-    radio_type_t radio_type;
-
-    if (config[0]->subframe_config.duplex_mode.value == FDD)
-      radio_type = RADIO_TYPE_FDD;
-    else
-      radio_type = RADIO_TYPE_TDD;
-
-    if (init_opt(in_path, in_ip, NULL, radio_type) == -1)
+    if (init_opt(in_path, in_ip) == -1)
       LOG_E(OPT,"failed to run OPT \n");
   }
 

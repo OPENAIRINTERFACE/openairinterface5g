@@ -29,7 +29,6 @@
  * \note
  * \warning
 */
-#define NR_POLAR_CRC_ERROR_CORRECTION_BITS 3
 
 #ifndef __NR_POLAR_DEFS__H__
 #define __NR_POLAR_DEFS__H__
@@ -43,6 +42,8 @@
 #include "PHY/CODING/nrPolar_tools/nr_polar_dci_defs.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_uci_defs.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
+#include "PHY/CODING/coding_defs.h"
+//#include "SIMULATION/TOOLS/sim.h"
 
 #define NR_POLAR_DECODER_LISTSIZE 8 //uint8_t
 #define NR_POLAR_DECODER_PATH_METRIC_APPROXIMATION 0 //uint8_t; 0 --> eq. (8a) and (11b), 1 --> eq. (9) and (12)
@@ -54,6 +55,27 @@
 #define NR_POLAR_AGGREGATION_LEVEL_16_PRIME 167 //uint16_t
 
 static const uint8_t nr_polar_subblock_interleaver_pattern[32] = { 0, 1, 2, 4, 3, 5, 6, 7, 8, 16, 9, 17, 10, 18, 11, 19, 12, 20, 13, 21, 14, 22, 15, 23, 24, 25, 26, 28, 27, 29, 30, 31 };
+
+
+#define Nmax 1024
+#define nmax 10
+
+typedef struct decoder_node_t_s {
+  struct decoder_node_t_s *left;
+  struct decoder_node_t_s *right;
+  int level;
+  int leaf;
+  int Nv;
+  int first_leaf_index;
+  int all_frozen;
+  int16_t *alpha;
+  int16_t *beta;
+} decoder_node_t;
+
+typedef struct decoder_tree_t_s {
+  decoder_node_t *root;
+  int num_nodes;
+} decoder_tree_t;
 
 struct nrPolar_params {
 	//messageType: 0=PBCH, 1=DCI, -1=UCI
@@ -88,11 +110,12 @@ struct nrPolar_params {
 	uint8_t **crc_generator_matrix; //G_P
 	uint8_t **G_N;
 	uint32_t* crc256Table;
-
+  uint8_t **extended_crc_generator_matrix;
 	//lowercase: bits, Uppercase: Bits stored in bytes
 	//polar_encoder vectors
 	uint8_t *nr_polar_crc;
 	uint8_t *nr_polar_aPrime;
+	uint8_t *nr_polar_APrime;
 	uint8_t *nr_polar_D;
 	uint8_t *nr_polar_E;
 
@@ -101,6 +124,8 @@ struct nrPolar_params {
 	uint8_t *nr_polar_CPrime;
 	uint8_t *nr_polar_B;
 	uint8_t *nr_polar_U;
+
+decoder_tree_t tree;
 } __attribute__ ((__packed__));
 typedef struct nrPolar_params t_nrPolar_params;
 typedef t_nrPolar_params *t_nrPolar_paramsPtr;
@@ -113,6 +138,12 @@ void polar_encoder_dci(uint32_t *in,
 					   uint32_t *out,
 					   t_nrPolar_paramsPtr polarParams,
 					   uint16_t n_RNTI);
+
+void polar_encoder_timing(uint32_t *in,
+						  uint32_t *out,
+						  t_nrPolar_paramsPtr polarParams,
+						  double cpuFreqGHz,
+						  FILE* logFile);
 
 int8_t polar_decoder(double *input,
 		 	 	 	 uint8_t *output,
@@ -127,8 +158,23 @@ int8_t polar_decoder_aPriori(double *input,
 							 uint8_t pathMetricAppr,
 							 double *aPrioriPayload);
 
-void nr_polar_kernal_operation(uint8_t *u, uint8_t *d, uint16_t N);
+int8_t polar_decoder_aPriori_timing(double *input,
+									uint32_t *output,
+									t_nrPolar_paramsPtr polarParams,
+									uint8_t listSize,
+									uint8_t pathMetricAppr,
+									double *aPrioriPayload,
+									double cpuFreqGHz,
+									FILE* logFile);
 
+int8_t polar_decoder_dci(double *input,
+						 uint32_t *out,
+						 t_nrPolar_paramsPtr polarParams,
+						 uint8_t listSize,
+						 uint8_t pathMetricAppr,
+						 uint16_t n_RNTI);
+
+void generic_polar_decoder(t_nrPolar_params *,decoder_node_t *);
 
 void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 				   int8_t messageType,
@@ -174,6 +220,8 @@ void nr_polar_rate_matching(double *input,
 							uint16_t K,
 							uint16_t N,
 							uint16_t E);
+
+void nr_polar_rate_matching_int16(int16_t *input, int16_t *output, uint16_t *rmp, uint16_t K, uint16_t N, uint16_t E);
 
 void nr_polar_interleaving_pattern(uint16_t K,
 								   uint8_t I_IL,
@@ -242,6 +290,9 @@ void nr_free_double_3D_array(double ***input,
 							 uint16_t xlen,
 							 uint16_t ylen);
 
+void nr_free_double_2D_array(double **input, uint16_t xlen);
+
+
 void updateLLR(double ***llr,
 			   uint8_t **llrU,
 			   uint8_t ***bit,
@@ -301,14 +352,7 @@ uint8_t **crc24c_generator_matrix(uint16_t payloadSizeBits);
 
 uint8_t **crc11_generator_matrix(uint16_t payloadSizeBits);
 
-void crcTable256Init (uint32_t poly, uint32_t* crc256Table);
-void nr_crc_computation(uint8_t* input, uint8_t* output, uint16_t payloadBits, uint16_t crcParityBits, uint32_t* crc256Table);
-unsigned int crcbit (unsigned char* inputptr, int octetlen, uint32_t poly);
-unsigned int crcPayload(unsigned char * inptr, int bitlen, uint32_t* crc256Table);
-
-static inline void nr_polar_rate_matcher(uint8_t *input, unsigned char *output, uint16_t *pattern, uint16_t size) {
-	for (int i=0; i<size; i++) output[i]=input[pattern[i]];
-}
+uint8_t **crc6_generator_matrix(uint16_t payloadSizeBits);
 
 //Also nr_polar_rate_matcher
 static inline void nr_polar_interleaver(uint8_t *input,
@@ -320,11 +364,18 @@ static inline void nr_polar_interleaver(uint8_t *input,
 }
 
 static inline void nr_polar_deinterleaver(uint8_t *input,
-										  uint8_t *output,
-										  uint16_t *pattern,
-										  uint16_t size)
+					  uint8_t *output,
+					  uint16_t *pattern,
+					  uint16_t size)
 {
-	for (int i=0; i<size; i++) output[pattern[i]]=input[i];
+  for (int i=0; i<size; i++) {
+    output[pattern[i]]=input[i];
+  }
 }
 
+void build_decoder_tree(t_nrPolar_params *pp);
+
+int8_t polar_decoder_int16(int16_t *input,
+			   uint8_t *out,
+			   t_nrPolar_params *polarParams);
 #endif

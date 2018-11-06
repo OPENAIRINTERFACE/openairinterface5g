@@ -133,7 +133,7 @@ uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
 }
 
 void nr_pdcch_scrambling(uint32_t *in,
-                         uint8_t size,
+                         uint16_t size,
                          uint32_t Nid,
                          uint32_t n_RNTI,
                          uint32_t* out) {
@@ -148,14 +148,18 @@ void nr_pdcch_scrambling(uint32_t *in,
     if ((i&0x1f)==0) {
       s = lte_gold_generic(&x1, &x2, reset);
       reset = 0;
+      if (i){
+      in++;
+      out++;
+	}
     }
-    *out ^= (((*in)>>i)&1) ^ ((s>>i)&1);
+    (*out) ^= ((((*in)>>(i&0x1f))&1) ^ ((s>>(i&0x1f))&1))<<(i&0x1f);
   }
 
 }
 
 uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
-							t_nrPolar_paramsPtr *nrPolar_params,
+			    t_nrPolar_paramsPtr *nrPolar_params,
                             uint32_t **gold_pdcch_dmrs,
                             int32_t** txdataF,
                             int16_t amp,
@@ -217,9 +221,13 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   nr_polar_init(nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
   t_nrPolar_paramsPtr currentPtr = nr_polar_params(*nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
 #endif
-  polar_encoder_dci(dci_alloc.dci_pdu, encoder_output, currentPtr, n_RNTI);
+
+polar_encoder_dci(dci_alloc.dci_pdu, encoder_output, currentPtr, pdcch_params.rnti);
 
 #ifdef DEBUG_CHANNEL_CODING
+  printf("polar rnti %d\n",pdcch_params.rnti);
+  for (int i=0;i<54;i++) printf("Encoded Payload: [%d]->0x%08x \n", i,encoder_output[i]);
+
   printf("DCI PDU: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
     		  dci_alloc.dci_pdu[0], dci_alloc.dci_pdu[1], dci_alloc.dci_pdu[2], dci_alloc.dci_pdu[3]);
   printf("Encoded Payload: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
@@ -227,8 +235,14 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
 #endif
 
   /// Scrambling
-  uint32_t scrambled_output[NR_MAX_DCI_SIZE_DWORD];
+  uint32_t scrambled_output[NR_MAX_DCI_SIZE_DWORD]={0};
   nr_pdcch_scrambling(encoder_output, encoded_length, Nid, n_RNTI, scrambled_output);
+#ifdef DEBUG_CHANNEL_CODING
+printf("scrambled output: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\t [4]->0x%08x\t [5]->0x%08x\t \
+[6]->0x%08x \t [7]->0x%08x \t [8]->0x%08x \t [9]->0x%08x\t [10]->0x%08x\t [11]->0x%08x\n",
+		  scrambled_output[0], scrambled_output[1], scrambled_output[2], scrambled_output[3], scrambled_output[4],scrambled_output[5],
+		  scrambled_output[6], scrambled_output[7], scrambled_output[8], scrambled_output[9], scrambled_output[10],scrambled_output[11] );	
+#endif
 
     // QPSK modulation
   int16_t mod_dci[NR_MAX_DCI_SIZE>>1];
@@ -237,8 +251,8 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
     mod_dci[i<<1] = nr_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
     mod_dci[(i<<1)+1] = nr_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
 #ifdef DEBUG_DCI
-  printf("i %d idx %d b0-b1 %d-%d mod_dci %d %d\n", i, idx, (((encoder_output[(i<<1)>>5])>>((i<<1)&0x1f))&1),
-  (((encoder_output[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1), mod_dci[(i<<1)], mod_dci[(i<<1)+1]);
+  printf("i %d idx %d b0-b1 %d-%d mod_dci %d %d\n", i, idx, (((scrambled_output[(i<<1)>>5])>>((i<<1)&0x1f))&1),
+  (((scrambled_output[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1), mod_dci[(i<<1)], mod_dci[(i<<1)+1]);
 #endif
   }
 
@@ -307,6 +321,7 @@ printf("\n");
         else { // DCI payload
           ((int16_t*)txdataF[aa])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (a * mod_dci[dci_idx<<1]) >> 15;
           ((int16_t*)txdataF[aa])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (a * mod_dci[(dci_idx<<1) + 1]) >> 15;
+          //printf("dci output %d %d\n",(a * mod_dci[dci_idx<<1]) >> 15, (a * mod_dci[(dci_idx<<1) + 1]) >> 15);
           dci_idx++;
         }
         k++;

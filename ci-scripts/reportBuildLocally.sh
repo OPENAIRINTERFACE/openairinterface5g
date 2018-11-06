@@ -260,7 +260,7 @@ function sca_summary_table_footer {
     echo "      </tr>" >> ./build_results.html
     echo "   </table>" >> ./build_results.html
     echo "   <p>Full details in zipped artifact (cppcheck/cppcheck.xml) </p>" >> ./build_results.html
-    echo "   <p>Graphical Interface tool : <code>cppcheck-gui -l cppcheck/cppcheck.xml</code> </p>" >> ./build_results.html
+    echo "   <p style=\"margin-left: 30px\">Graphical Interface tool : <strong><code>cppcheck-gui -l cppcheck/cppcheck.xml</code></strong></p>" >> ./build_results.html
 }
 
 jb_checker=0
@@ -438,6 +438,10 @@ echo "  </table>" >> ./build_results.html
 echo "  <br>" >> ./build_results.html
 echo "   <table border = \"1\">" >> ./build_results.html
 echo "      <tr>" >> ./build_results.html
+echo "        <td bgcolor = \"lightcyan\" >Build Start Time (UTC)</td>" >> ./build_results.html
+echo "        <td>TEMPLATE_BUILD_TIME</td>" >> ./build_results.html
+echo "      </tr>" >> ./build_results.html
+echo "      <tr>" >> ./build_results.html
 echo "        <td bgcolor = \"lightcyan\" >GIT Repository</td>" >> ./build_results.html
 echo "        <td>$GIT_URL</td>" >> ./build_results.html
 echo "      </tr>" >> ./build_results.html
@@ -490,12 +494,20 @@ then
     then 
         if [ $PU_TRIG -eq 1 ]; then echo "        <td bgcolor = \"green\">All files in repository follow OAI rules. </td>" >> ./build_results.html; fi
         if [ $MR_TRIG -eq 1 ]; then echo "        <td bgcolor = \"green\">All modified files in Merge-Request follow OAI rules.</td>" >> ./build_results.html; fi
+        echo "      </tr>" >> ./build_results.html
+        echo "   </table>" >> ./build_results.html
     else
         if [ $PU_TRIG -eq 1 ]; then echo "        <td bgcolor = \"orange\">$NB_FILES files in repository DO NOT follow OAI rules. </td>" >> ./build_results.html; fi
         if [ $MR_TRIG -eq 1 ]; then echo "        <td bgcolor = \"orange\">$NB_FILES modified files in Merge-Request DO NOT follow OAI rules.</td>" >> ./build_results.html; fi
+        echo "      </tr>" >> ./build_results.html
+        if [ -f ./oai_rules_result_list.txt ]
+        then
+            awk '{print "      <tr><td></td><td>"$1"</td></tr>"}' ./oai_rules_result_list.txt >> ./build_results.html
+        fi
+        echo "   </table>" >> ./build_results.html
+        echo "   <p>Please apply the following command to this(ese) file(s): </p>" >> ./build_results.html
+        echo "   <p style=\"margin-left: 30px\"><strong><code>astyle --options=ci-scripts/astyle-options.txt filename(s)</code></strong></p>" >> ./build_results.html
     fi
-    echo "      </tr>" >> ./build_results.html
-    echo "   </table>" >> ./build_results.html
 fi
 
 echo "   <h2>Ubuntu 16.04 LTS -- Summary</h2>" >> ./build_results.html
@@ -529,13 +541,17 @@ summary_table_header "OAI Build Physical simulators option"
 summary_table_row "DL Simulator - Release 15" ./archives/phy_sim/dlsim.Rel15.txt "Built target dlsim" ./phy_sim_row1.html
 summary_table_row "UL Simulator - Release 15" ./archives/phy_sim/ulsim.Rel15.txt "Built target ulsim" ./phy_sim_row2.html
 summary_table_row "Coding - Release 15" ./archives/phy_sim/coding.Rel15.txt "Built target coding" ./phy_sim_row3.html
-if [ -f ./archives/phy_sim/./archives/phy_sim/ldpctest.Rel15.txt ]
+if [ -f ./archives/phy_sim/ldpctest.Rel15.txt ]
 then
-    summary_table_row "LDPC Test - Release 15" ./archives/phy_sim/ldpctest.Rel15.txt "Built target coding" ./phy_sim_row4.html
+    summary_table_row "LDPC Test - Release 15" ./archives/phy_sim/ldpctest.Rel15.txt "Built target ldpctest" ./phy_sim_row4.html
 fi
-if [ -f ./archives/phy_sim/./archives/phy_sim/polartest.Rel15.txt ]
+if [ -f ./archives/phy_sim/polartest.Rel15.txt ]
 then
-    summary_table_row "Polar Test - Release 15" ./archives/phy_sim/polartest.Rel15.txt "Built target coding" ./phy_sim_row5.html
+    summary_table_row "Polar Test - Release 15" ./archives/phy_sim/polartest.Rel15.txt "Built target polartest" ./phy_sim_row5.html
+fi
+if [ -f ./archives/phy_sim/nr_pbchsim.Rel15.txt ]
+then
+    summary_table_row "PBCH Test - Release 15" ./archives/phy_sim/nr_pbchsim.Rel15.txt "Built target nr_pbchsim" ./phy_sim_row6.html
 fi
 summary_table_footer
 

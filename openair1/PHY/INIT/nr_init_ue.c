@@ -34,6 +34,9 @@
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 //#include "PHY/LTE_REFSIG/lte_refsig.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
+#include "PHY/INIT/phy_init.h"
+#include "PHY/NR_REFSIG/pss_nr.h"
+#include "openair1/PHY/NR_REFSIG/ul_ref_seq_nr.h"
 
 //uint8_t dmrs1_tab_ue[8] = {0,2,3,4,6,8,9,10};
 
@@ -324,6 +327,7 @@ void phy_config_sib13_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,int mbsfn_Area_
   }
 }
 
+
 void phy_config_meas_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index,uint8_t n_adj_cells,unsigned int *adj_cell_id)
 {
 
@@ -341,6 +345,7 @@ void phy_config_meas_ue(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index,uint8_t n
   memcpy((void*)phy_meas->adj_cell_id,(void *)adj_cell_id,n_adj_cells*sizeof(unsigned int));
 
 }
+*/
 
 #if defined(Rel10) || defined(Rel14)
 void phy_config_dedicated_scell_ue(uint8_t Mod_id,
@@ -352,17 +357,17 @@ void phy_config_dedicated_scell_ue(uint8_t Mod_id,
 }
 #endif
 
-
-void phy_config_harq_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
+void phy_config_harq_ue(module_id_t Mod_id,int CC_id,uint8_t eNB_id,
                         uint16_t max_harq_tx )
 {
 
-  PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id][CC_id];
+  PHY_VARS_NR_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id][CC_id];
   phy_vars_ue->ulsch[eNB_id]->Mlimit = max_harq_tx;
 }
 
 extern uint16_t beta_cqi[16];
 
+/*
 void phy_config_dedicated_ue(uint8_t Mod_id,int CC_id,uint8_t eNB_id,
                              struct PhysicalConfigDedicated *physicalConfigDedicated )
 {
@@ -650,16 +655,17 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   int i,j,k,l;
   int eNB_id;
   int th_id;
-
+  int n_ssb_crb=(fp->N_RB_DL-20)>>1;
   abstraction_flag = 0;
   fp->nb_antennas_tx = 1;
   fp->nb_antennas_rx=1;
 
+
   printf("Initializing UE vars (abstraction %"PRIu8") for eNB TXant %"PRIu8", UE RXant %"PRIu8"\n",abstraction_flag,fp->nb_antennas_tx,fp->nb_antennas_rx);
   //LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_UE][MOD %02u][]\n", ue->Mod_id+NB_eNB_INST);
   
+  nr_init_frame_parms_ue(fp,NR_MU_1,NORMAL,fp->N_RB_DL,n_ssb_crb,0);
   phy_init_nr_top(ue);
-  //nr_init_frame_parms_ue(&ue->frame_parms);
 
   // many memory allocation sizes are hard coded
   AssertFatal( fp->nb_antennas_rx <= 2, "hard coded allocation for ue_common_vars->dl_ch_estimates[eNB_id]" );
@@ -694,7 +700,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     for (i=0; i<fp->nb_antennas_tx; i++) {
 
       common_vars->txdata[i]  = (int32_t*)malloc16_clear( fp->samples_per_subframe*10*sizeof(int32_t) );
-      common_vars->txdataF[i] = (int32_t *)malloc16_clear( fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t) );
+      common_vars->txdataF[i] = (int32_t *)malloc16_clear( fp->ofdm_symbol_size*fp->symbols_per_slot*10*sizeof(int32_t) );
     }
 
     // init RX buffers
@@ -723,7 +729,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
       for (j=0; j<4; j++) {
         int idx = (j<<1) + i;
         for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
-            common_vars->common_vars_rx_data_per_thread[th_id].dl_ch_estimates[eNB_id][idx] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->symbols_per_tti*(fp->ofdm_symbol_size+LTE_CE_FILTER_LENGTH) );
+            common_vars->common_vars_rx_data_per_thread[th_id].dl_ch_estimates[eNB_id][idx] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->symbols_per_slot*(fp->ofdm_symbol_size+LTE_CE_FILTER_LENGTH) );
             common_vars->common_vars_rx_data_per_thread[th_id].dl_ch_estimates_time[eNB_id][idx] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size*2 );
         }
       }
@@ -845,7 +851,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
       pbch_vars[eNB_id]->rxdataF_ext         = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
       pbch_vars[eNB_id]->rxdataF_comp        = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
       pbch_vars[eNB_id]->dl_ch_estimates_ext = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-      pbch_vars[eNB_id]->llr                 = (int8_t*)malloc16_clear( 1920 );//
+      pbch_vars[eNB_id]->llr                 = (int16_t*)malloc16_clear( 1920 );//
       prach_vars[eNB_id]->prachF             = (int16_t*)malloc16_clear( sizeof(int)*(7*2*sizeof(int)*(fp->ofdm_symbol_size*12)) );
       prach_vars[eNB_id]->prach              = (int16_t*)malloc16_clear( sizeof(int)*(7*2*sizeof(int)*(fp->ofdm_symbol_size*12)) );
 
@@ -935,39 +941,25 @@ void init_nr_ue_transport(PHY_VARS_NR_UE *ue,int abstraction_flag) {
 
 void phy_init_nr_top(PHY_VARS_NR_UE *ue)
 {
-	NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
-
+  NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
+  NR_UE_DLSCH_t *dlsch0 = ue->dlsch[0][0][0];
+  dlsch0 =(NR_UE_DLSCH_t *)malloc16(sizeof(NR_UE_DLSCH_t));
+  
   crcTableInit();
 
-  ccodedot11_init();
-  ccodedot11_init_inv();
-
-  ccodelte_init();
-  ccodelte_init_inv();
-
-  //treillis_table_init();
-
-  phy_generate_viterbi_tables();
-  phy_generate_viterbi_tables_lte();
-
-  //init_td8();
-  //init_td16();
-#ifdef __AVX2__
-  //init_td16avx2();
-#endif
+  init_dfts();
 
   init_context_synchro_nr(frame_parms);
 
   generate_ul_reference_signal_sequences(SHRT_MAX);
 
   // Polar encoder init for PBCH
-  //nr_polar_init(&frame_parms->pbch_polar_params, 1);
-  /*t_nrPolar_paramsPtr nrPolar_params = NULL, currentPtr = NULL;
-  nr_polar_init(&ue->nrPolar_params,
-    		  	  	NR_POLAR_PBCH_MESSAGE_TYPE,
-					NR_POLAR_PBCH_PAYLOAD_BITS,
-					NR_POLAR_PBCH_AGGREGATION_LEVEL);*/
 
+  ue->nrPolar_params = NULL;
+  nr_polar_init(&ue->nrPolar_params,
+		NR_POLAR_PBCH_MESSAGE_TYPE,
+		NR_POLAR_PBCH_PAYLOAD_BITS,
+		NR_POLAR_PBCH_AGGREGATION_LEVEL);
   //lte_sync_time_init(frame_parms);
 
   //generate_ul_ref_sigs();

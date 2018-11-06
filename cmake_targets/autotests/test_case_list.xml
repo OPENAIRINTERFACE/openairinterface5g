@@ -990,12 +990,12 @@
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec> $OPENAIR_DIR/targets/bin/ulsim.Rel15</main_exec>
-      <main_exec_args> -B25 -m5 -y1 -gN -x1 -s6 -w1.0 -e.1 -P -n500 -O70 
-                       -B25 -m16 -y1 -gN -x1 -s12 -w1.0 -e.1 -P -n500 -O70 
-                        -B50 -m5 -y1 -gN -x1 -s6 -w1.0 -e.1 -P -n500 -O70  
-                       -B50 -m16 -y1 -gN -x1 -s12 -w1.0 -e.1 -P -n500 -O70 
-                        -B100 -m5 -y1 -gN -x1 -s6 -w1.0 -e.1 -P -n500 -O70 
-                       -B100 -m16 -y1 -gN -x1 -s12 -w1.0 -e.1 -P -n500 -O70 </main_exec_args>
+      <main_exec_args> -BnbRBs=25 -mcs=5 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=6 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70 
+                       -BnbRBs=25 -mcs=16 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=12 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70 
+                        -BnbRBs=50 -mcs=5 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=6 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70  
+                       -BnbRBs=50 -mcs=16 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=12 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70 
+                        -BnbRBs=100 -mcs=5 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=6 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70 
+                       -BnbRBs=100 -mcs=16 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=12 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70 </main_exec_args>
      <tags>ulsim.test1 ulsim.test2 ulsim.test3 ulsim.test4 ulsim.test5 ulsim.test6</tags>
       <search_expr_true>"passed"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -1026,6 +1026,40 @@
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
     </testCase>
+
+    <testCase id="015103">
+      <class>execution</class>
+      <desc>polartest test cases.</desc>
+      <pre_compile_prog></pre_compile_prog>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
+      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+      <pre_exec_args></pre_exec_args>
+      <main_exec> $OPENAIR_DIR/targets/bin/polartest.Rel15</main_exec>
+      <main_exec_args>-q -s-10 -f0</main_exec_args>
+      <tags>polartest.test1</tags>
+      <search_expr_true>BLER= 0.000000</search_expr_true>
+      <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <nruns>3</nruns>
+    </testCase>
+
+     <testCase id="015104">
+      <class>execution</class>
+      <desc>nr_pbchsim test cases.</desc>
+      <pre_compile_prog></pre_compile_prog>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
+      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+      <pre_exec_args></pre_exec_args>
+      <main_exec> $OPENAIR_DIR/targets/bin/nr_pbchsim.Rel15</main_exec>
+      <main_exec_args>-s-11 -S-10 -n1000
+                      -s-11 -S-10 -n10 -I</main_exec_args>
+      <tags>nr_pbchsim.test1</tags>
+      <search_expr_true>n_errors \(negative CRC\) = 0</search_expr_true>
+      <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <nruns>3</nruns>
+    </testCase> 
+ 
     
     <testCase id="015110">
       <class>execution</class>

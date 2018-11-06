@@ -39,11 +39,13 @@
 #include "openair2/NR_PHY_INTERFACE/NR_IF_Module.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 
+#define MAX_NUM_RU_PER_gNB MAX_NUM_RU_PER_eNB
+
 typedef struct {
   uint8_t pbch_a[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
-  uint8_t pbch_a_interleaved[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
-  uint8_t pbch_a_prime[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
-  uint8_t pbch_e[NR_POLAR_PBCH_E];
+  uint32_t pbch_a_interleaved;
+  uint32_t pbch_a_prime;
+  uint32_t pbch_e[NR_POLAR_PBCH_E_DWORD];
 } NR_gNB_PBCH;
 
 typedef struct {

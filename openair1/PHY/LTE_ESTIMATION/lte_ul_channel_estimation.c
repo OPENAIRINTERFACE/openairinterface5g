@@ -91,7 +91,7 @@ int32_t temp_in_ifft_0[2048*2] __attribute__((aligned(32)));
                   eNB->ulsch[UE_id]->harq_processes[harq_pid]->n_DMRS2 +
                   frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[(subframe<<1)+Ns]) % 12;
 
-  Msc_idx_ptr = (uint16_t*) bsearch(&Msc_RS, dftsizes, 33, sizeof(uint16_t), compareints);
+  Msc_idx_ptr = (uint16_t*) bsearch(&Msc_RS, dftsizes, 34, sizeof(uint16_t), compareints);
 
   if (Msc_idx_ptr)
     Msc_RS_idx = Msc_idx_ptr - dftsizes;

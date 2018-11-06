@@ -35,7 +35,6 @@ extern unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
 //#include "PHY/LTE_TRANSPORT/transport_extern.h"
 
 extern short conjugate[8],conjugate2[8];
-
 extern int number_of_cards;
 
 

@@ -1041,11 +1041,15 @@ int32_t nr_rx_pdsch(PHY_VARS_NR_UE *phy_vars_ue,
                  uint8_t harq_pid);
 
 int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
-                 uint32_t frame,
-                 uint8_t subframe,
-                 uint8_t eNB_id,
-                 MIMO_mode_t mimo_mode,
-                 uint32_t high_speed_flag);
+                    uint32_t frame,
+                    uint8_t nr_tti_rx,
+                    uint8_t eNB_id,
+                    MIMO_mode_t mimo_mode,
+                    uint32_t high_speed_flag,
+                    uint8_t is_secondary_ue,
+                    int nb_coreset_active,
+                    uint16_t symbol_mon,
+                    NR_SEARCHSPACE_TYPE_t searchSpaceType);
 
 /*! \brief Extract PSS and SSS resource elements
   @param phy_vars_ue Pointer to UE variables
@@ -1089,13 +1093,13 @@ int rx_sss(PHY_VARS_NR_UE *phy_vars_ue,int32_t *tot_metric,uint8_t *flip_max,uin
 /*! \brief receiver for the PBCH
   \returns number of tx antennas or -1 if error
 */
-uint16_t rx_pbch(NR_UE_COMMON *lte_ue_common_vars,
-                 NR_UE_PBCH *lte_ue_pbch_vars,
-                 NR_DL_FRAME_PARMS *frame_parms,
-                 uint8_t eNB_id,
-                 MIMO_mode_t mimo_mode,
-                 uint32_t high_speed_flag,
-                 uint8_t frame_mod4);
+int nr_rx_pbch( PHY_VARS_NR_UE *ue,
+		     UE_nr_rxtx_proc_t *proc,
+		     NR_UE_PBCH *nr_ue_pbch_vars,
+		     NR_DL_FRAME_PARMS *frame_parms,
+		     uint8_t eNB_id,
+		     MIMO_mode_t mimo_mode,
+		     uint32_t high_speed_flag);
 
 uint16_t rx_pbch_emul(PHY_VARS_NR_UE *phy_vars_ue,
                       uint8_t eNB_id,
@@ -1379,6 +1383,7 @@ void generate_RIV_tables(void);
   N_RB_DL, PHICH_CONFIG and Nid_cell) and the UE can begin decoding PDCCH and DLSCH SI to retrieve the rest.  Once these
   parameters are know, the routine calls some basic initialization routines (cell-specific reference signals, etc.)
   @param phy_vars_ue Pointer to UE variables
+  @param mode current running mode
 */
 int nr_initial_sync(PHY_VARS_NR_UE *phy_vars_ue, runmode_t mode);
 
@@ -1622,9 +1627,11 @@ uint8_t get_prach_prb_offset(NR_DL_FRAME_PARMS *frame_parms,
 			     uint8_t n_ra_prboffset,
 			     uint8_t tdd_mapindex, uint16_t Nf);
 
+void nr_pdcch_unscrambling(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8_t nr_tti_rx,
+			   uint16_t *z, uint32_t length, uint16_t pdcch_DMRS_scrambling_id, int do_common);
 
 
-
+uint32_t lte_gold_generic(uint32_t *x1, uint32_t *x2, uint8_t reset);
 
 /**@}*/
 #endif
