@@ -934,7 +934,7 @@ printf("~~~~~~~~~~~~~~~~~~~~successfully get the parallel config[%d], worker con
 #endif
 
 //TTN for D2D
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   printf ("RRC control socket\n");
   rrc_control_socket_init();
   printf ("PDCP PC5S socket\n");

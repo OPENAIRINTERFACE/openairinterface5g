@@ -268,12 +268,15 @@ class SSHConnection():
 				self.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
-		self.command('mkdir -p  log', '\$', 5)
+		self.command('mkdir -p log', '\$', 5)
+		self.command('chmod 777 log', '\$', 5)
 		# no need to remove in log (git clean did the trick)
-		self.command('echo ' + self.eNBPassword + ' | sudo -S stdbuf -o0 ./build_oai ' + self.Build_eNB_args + ' 2>&1 | stdbuf -o0 tee -a compile_oai_enb.log', 'Bypassing the Tests', 600)
+		self.command('stdbuf -o0 ./build_oai ' + self.Build_eNB_args + ' 2>&1 | stdbuf -o0 tee -a compile_oai_enb.log', 'Bypassing the Tests', 600)
 		self.command('mkdir -p build_log_' + SSH.testCase_id, '\$', 5)
-		self.command('echo ' + self.eNBPassword + ' | sudo -S mv log/* ' + 'build_log_' + SSH.testCase_id, '\$', 5)
-		self.command('echo ' + self.eNBPassword + ' | sudo -S mv compile_oai_enb.log ' + 'build_log_' + SSH.testCase_id, '\$', 5)
+		self.command('mv log/* ' + 'build_log_' + SSH.testCase_id, '\$', 5)
+		self.command('mv compile_oai_enb.log ' + 'build_log_' + SSH.testCase_id, '\$', 5)
+		# Workaround to run with develop-nr
+		self.command('if [ -e ran_build ]; then cp -rf ran_build lte_build_oai; fi', '\$', 30)
 		self.close()
 		self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
 
@@ -344,7 +347,7 @@ class SSHConnection():
 		pStatus = self.CheckProcessExist(initialize_eNB_flag)
 		if (pStatus < 0):
 			self.CreateHtmlTestRow(self.Initialize_eNB_args, 'KO', pStatus)
-			self.CreateHtmlFooter()
+			self.CreateHtmlFooter(False)
 			sys.exit(1)
 		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
@@ -384,9 +387,9 @@ class SSHConnection():
 			loopCounter = loopCounter - 1
 			if (loopCounter == 0):
 				doLoop = False
-				logging.error('\u001B[1;37;41m eNB logging system did not show got sync! See with attach later \u001B[0m')
+				logging.error('\u001B[1;37;41m eNB logging system did not show got sync! \u001B[0m')
 				self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'KO', ALL_PROCESSES_OK)
-				self.CreateHtmlFooter()
+				self.CreateHtmlFooter(False)
 				self.close()
 				sys.exit(1)
 			else:
@@ -489,7 +492,8 @@ class SSHConnection():
 		pStatus = self.CheckProcessExist(initialize_eNB_flag)
 		if (pStatus < 0):
 			self.CreateHtmlTestRow('N/A', 'KO', pStatus)
-			self.CreateHtmlFooter()
+			self.AutoTerminateUEandeNB()
+			self.CreateHtmlFooter(False)
 			sys.exit(1)
 		multi_jobs = []
 		status_queue = SimpleQueue()
@@ -504,7 +508,8 @@ class SSHConnection():
 
 		if (status_queue.empty()):
 			self.CreateHtmlTestRow('N/A', 'KO', ALL_PROCESSES_OK)
-			self.CreateHtmlFooter()
+			self.CreateHtmlFooter(False)
+			self.AutoTerminateUEandeNB()
 			sys.exit(1)
 		else:
 			attach_status = True
@@ -524,7 +529,8 @@ class SSHConnection():
 				self.CreateHtmlTestRowQueue('N/A', 'OK', len(self.UEDevices), html_queue)
 			else:
 				self.CreateHtmlTestRowQueue('N/A', 'KO', len(self.UEDevices), html_queue)
-				self.CreateHtmlFooter()
+				self.AutoTerminateUEandeNB()
+				self.CreateHtmlFooter(False)
 				sys.exit(1)
 
 	def DetachUE_common(self, device_id):
@@ -544,7 +550,8 @@ class SSHConnection():
 		pStatus = self.CheckProcessExist(initialize_eNB_flag)
 		if (pStatus < 0):
 			self.CreateHtmlTestRow('N/A', 'KO', pStatus)
-			self.CreateHtmlFooter()
+			self.AutoTerminateUEandeNB()
+			self.CreateHtmlFooter(False)
 			sys.exit(1)
 		multi_jobs = []
 		for device_id in self.UEDevices:
@@ -603,7 +610,7 @@ class SSHConnection():
 		pStatus = self.CheckProcessExist(initialize_eNB_flag)
 		if (pStatus < 0):
 			self.CreateHtmlTestRow('N/A', 'KO', pStatus)
-			self.CreateHtmlFooter()
+			self.CreateHtmlFooter(False)
 			sys.exit(1)
 		multi_jobs = []
 		for device_id in self.UEDevices:
@@ -742,12 +749,12 @@ class SSHConnection():
 		pStatus = self.CheckProcessExist(initialize_eNB_flag)
 		if (pStatus < 0):
 			self.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
-			self.CreateHtmlFooter()
+			self.CreateHtmlFooter(False)
 			sys.exit(1)
 		ueIpStatus = self.GetAllUEIPAddresses()
 		if (ueIpStatus < 0):
 			self.CreateHtmlTestRow(self.ping_args, 'KO', UE_IP_ADDRESS_ISSUE)
-			self.CreateHtmlFooter()
+			self.CreateHtmlFooter(False)
 			sys.exit(1)
 		multi_jobs = []
 		i = 0
@@ -765,7 +772,8 @@ class SSHConnection():
 
 		if (status_queue.empty()):
 			self.CreateHtmlTestRow(self.ping_args, 'KO', ALL_PROCESSES_OK)
-			self.CreateHtmlFooter()
+			self.AutoTerminateUEandeNB()
+			self.CreateHtmlFooter(False)
 			sys.exit(1)
 		else:
 			ping_status = True
@@ -783,7 +791,8 @@ class SSHConnection():
 				self.CreateHtmlTestRowQueue(self.ping_args, 'OK', len(self.UEDevices), html_queue)
 			else:
 				self.CreateHtmlTestRowQueue(self.ping_args, 'KO', len(self.UEDevices), html_queue)
-				self.CreateHtmlFooter()
+				self.AutoTerminateUEandeNB()
+				self.CreateHtmlFooter(False)
 				sys.exit(1)
 
 	def Iperf_ComputeTime(self):
@@ -1217,12 +1226,14 @@ class SSHConnection():
 		pStatus = self.CheckProcessExist(initialize_eNB_flag)
 		if (pStatus < 0):
 			self.CreateHtmlTestRow(self.iperf_args, 'KO', pStatus)
-			self.CreateHtmlFooter()
+			self.AutoTerminateUEandeNB()
+			self.CreateHtmlFooter(False)
 			sys.exit(1)
 		ueIpStatus = self.GetAllUEIPAddresses()
 		if (ueIpStatus < 0):
 			self.CreateHtmlTestRow(self.iperf_args, 'KO', UE_IP_ADDRESS_ISSUE)
-			self.CreateHtmlFooter()
+			self.AutoTerminateUEandeNB()
+			self.CreateHtmlFooter(False)
 			sys.exit(1)
 		multi_jobs = []
 		i = 0
@@ -1241,7 +1252,8 @@ class SSHConnection():
 
 		if (status_queue.empty()):
 			self.CreateHtmlTestRow(self.iperf_args, 'KO', ALL_PROCESSES_OK)
-			self.CreateHtmlFooter()
+			self.AutoTerminateUEandeNB()
+			self.CreateHtmlFooter(False)
 			sys.exit(1)
 		else:
 			iperf_status = True
@@ -1264,7 +1276,8 @@ class SSHConnection():
 				self.CreateHtmlTestRowQueue(self.iperf_args, 'OK', len(self.UEDevices), html_queue)
 			else:
 				self.CreateHtmlTestRowQueue(self.iperf_args, 'KO', len(self.UEDevices), html_queue)
-				self.CreateHtmlFooter()
+				self.AutoTerminateUEandeNB()
+				self.CreateHtmlFooter(False)
 				sys.exit(1)
 
 	def CheckProcessExist(self, initialize_eNB_flag):
@@ -1391,6 +1404,8 @@ class SSHConnection():
 		rrcReestablishComplete = 0
 		rrcReestablishReject = 0
 		uciStatMsgCount = 0
+		pdcpFailure = 0
+		ulschFailure = 0
 		for line in enb_log_file.readlines():
 			result = re.search('[Ss]egmentation [Ff]ault', str(line))
 			if result is not None:
@@ -1434,10 +1449,24 @@ class SSHConnection():
 			result = re.search('uci->stat', str(line))
 			if result is not None:
 				uciStatMsgCount += 1
+			result = re.search('PDCP.*Out of Resources.*reason', str(line))
+			if result is not None:
+				pdcpFailure += 1
+			result = re.search('ULSCH in error in round', str(line))
+			if result is not None:
+				ulschFailure += 1
 		enb_log_file.close()
 		self.htmleNBFailureMsg = ''
 		if uciStatMsgCount > 0:
-			statMsg = 'eNB showed ' + str(uciStatMsgCount) + ' uci->stat message(s)'
+			statMsg = 'eNB showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
+			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += statMsg + '\n'
+		if pdcpFailure > 0:
+			statMsg = 'eNB showed ' + str(pdcpFailure) + ' "PDCP Out of Resources" message(s)'
+			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += statMsg + '\n'
+		if ulschFailure > 0:
+			statMsg = 'eNB showed ' + str(ulschFailure) + ' "ULSCH in error in round" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += statMsg + '\n'
 		if rrcSetupRequest > 0 or rrcSetupComplete > 0:
@@ -1498,7 +1527,7 @@ class SSHConnection():
 			logStatus = self.AnalyzeLogFile_eNB()
 			if (logStatus < 0):
 				self.CreateHtmlTestRow('N/A', 'KO', logStatus)
-				self.CreateHtmlFooter()
+				self.CreateHtmlFooter(False)
 				sys.exit(1)
 			else:
 				self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
@@ -1586,6 +1615,17 @@ class SSHConnection():
 			job.join()
 		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
+	def AutoTerminateUEandeNB(self):
+		self.testCase_id = 'AUTO-KILL-UE'
+		self.desc = 'Automatic Termination of UE'
+		self.ShowTestID()
+		self.TerminateUE()
+		self.testCase_id = 'AUTO-KILL-eNB'
+		self.desc = 'Automatic Termination of eNB'
+		self.ShowTestID()
+		self.eNB_instance = '0'
+		self.TerminateeNB()
+
 	def LogCollectBuild(self):
 		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
@@ -1670,14 +1710,13 @@ class SSHConnection():
 			self.htmlFile.write('<html class="no-js" lang="en-US">\n')
 			self.htmlFile.write('<head>\n')
 			self.htmlFile.write('  <title>Test Results for TEMPLATE_JOB_NAME job build #TEMPLATE_BUILD_ID</title>\n')
-			self.htmlFile.write('  <base href = "http://www.openairinterface.org/" />\n')
 			self.htmlFile.write('</head>\n')
 			self.htmlFile.write('<body>\n')
 			self.htmlFile.write('  <table style="border-collapse: collapse; border: none;">\n')
 			self.htmlFile.write('    <tr style="border-collapse: collapse; border: none;">\n')
 			self.htmlFile.write('      <td style="border-collapse: collapse; border: none;">\n')
 			self.htmlFile.write('        <a href="http://www.openairinterface.org/">\n')
-			self.htmlFile.write('           <img src="/wp-content/uploads/2016/03/cropped-oai_final_logo2.png" alt="" border="none" height=50 width=150>\n')
+			self.htmlFile.write('           <img src="http://www.openairinterface.org/wp-content/uploads/2016/03/cropped-oai_final_logo2.png" alt="" border="none" height=50 width=150>\n')
 			self.htmlFile.write('           </img>\n')
 			self.htmlFile.write('        </a>\n')
 			self.htmlFile.write('      </td>\n')
@@ -1727,9 +1766,13 @@ class SSHConnection():
 			terminate_ue_flag = True
 			SSH.GetAllUEDevices(terminate_ue_flag)
 			self.htmlUEConnected = len(self.UEDevices)
-			self.htmlFile.write('<h2>' + str(self.htmlUEConnected) + ' UE(s) is(are) connected to ADB bench server</h2>\n')
 
+			self.htmlFile.write('  <h2><a href="#FinalStatus">Jump to Final Status</a></h2>\n')
 			self.htmlFile.write('  <br>\n')
+
+			self.htmlFile.write('  <h2>' + str(self.htmlUEConnected) + ' UE(s) is(are) connected to ADB bench server</h2>\n')
+			self.htmlFile.write('  <br>\n')
+
 			self.htmlFile.write('  <h2>Test Summary for ' + SSH.testXMLfile + '</h2>\n')
 			self.htmlFile.write('  <table border = "1">\n')
 			self.htmlFile.write('      <tr bgcolor = "#33CCFF" >\n')
@@ -1744,8 +1787,15 @@ class SSHConnection():
 			self.htmlFile.write('      </tr>\n')
 		self.htmlHeaderCreated = True
 
-	def CreateHtmlFooter(self):
+	def CreateHtmlFooter(self, passStatus):
 		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
+			self.htmlFile.write('      <tr id="FinalStatus">\n')
+			self.htmlFile.write('        <th bgcolor = "#33CCFF" colspan=2>Final Status</th>\n')
+			if passStatus:
+				self.htmlFile.write('        <th bgcolor = "green" colspan=' + str(2 + self.htmlUEConnected) + '><font color="white">PASS</font></th>\n')
+			else:
+				self.htmlFile.write('        <th bgcolor = "red" colspan=' + str(2 + self.htmlUEConnected) + '><font color="white">FAIL</font></th>\n')
+			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('  </table>\n')
 			self.htmlFile.write('</body>\n')
 			self.htmlFile.write('</html>\n')
@@ -1784,7 +1834,15 @@ class SSHConnection():
 			else:
 				self.htmlFile.write('        <td bgcolor = "orange" >' + str(status)  + '</td>\n')
 			if (len(str(self.htmleNBFailureMsg)) > 2):
-				self.htmlFile.write('        <td colspan=' + str(self.htmlUEConnected) + '><pre>' + self.htmleNBFailureMsg + '</pre></td>\n')
+				cellBgColor = 'white'
+				result = re.search('ended with|faced real time issues', self.htmleNBFailureMsg)
+				if result is not None:
+					cellBgColor = 'red'
+				else:
+					result = re.search('showed|Reestablishment', self.htmleNBFailureMsg)
+					if result is not None:
+						cellBgColor = 'orange'
+				self.htmlFile.write('        <td bgcolor = "' + cellBgColor + '" colspan=' + str(self.htmlUEConnected) + '><pre>' + self.htmleNBFailureMsg + '</pre></td>\n')
 				self.htmleNBFailureMsg = ''
 			else:
 				i = 0
@@ -1823,6 +1881,15 @@ class SSHConnection():
 			self.htmlFile.write('      </tr>\n')
 
 #-----------------------------------------------------------
+# ShowTestID()
+#-----------------------------------------------------------
+	def ShowTestID(self):
+		logging.debug('\u001B[1m----------------------------------------\u001B[0m')
+		logging.debug('\u001B[1mTest ID:' + self.testCase_id + '\u001B[0m')
+		logging.debug('\u001B[1m' + self.desc + '\u001B[0m')
+		logging.debug('\u001B[1m----------------------------------------\u001B[0m')
+
+#-----------------------------------------------------------
 # Usage()
 #-----------------------------------------------------------
 def Usage():
@@ -1852,15 +1919,6 @@ def Usage():
 	print('  --ADBPassword=[ADB\'s Login Password]')
 	print('  --XMLTestFile=[XML Test File to be run]')
 	print('------------------------------------------------------------')
-
-#-----------------------------------------------------------
-# ShowTestID()
-#-----------------------------------------------------------
-def ShowTestID():
-	logging.debug('\u001B[1m----------------------------------------\u001B[0m')
-	logging.debug('\u001B[1mTest ID:' + SSH.testCase_id + '\u001B[0m')
-	logging.debug('\u001B[1m' + SSH.desc + '\u001B[0m')
-	logging.debug('\u001B[1m----------------------------------------\u001B[0m')
 
 def CheckClassValidity(action,id):
 	if action != 'Build_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW':
@@ -2118,7 +2176,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE):
 			action = test.findtext('class')
 			if (CheckClassValidity(action, id) == False):
 				continue
-			ShowTestID()
+			SSH.ShowTestID()
 			GetParametersFromXML(action)
 			if action == 'Initialize_UE' or action == 'Attach_UE' or action == 'Detach_UE' or action == 'Ping' or action == 'Iperf' or action == 'Reboot_UE':
 				terminate_ue_flag = False
@@ -2158,7 +2216,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE):
 			else:
 				sys.exit('Invalid action')
 
-	SSH.CreateHtmlFooter()
+	SSH.CreateHtmlFooter(True)
 else:
 	Usage()
 	sys.exit('Invalid mode')

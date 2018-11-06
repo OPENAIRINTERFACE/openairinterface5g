@@ -72,6 +72,9 @@ void feptx_ofdm(RU_t *ru);
 void feptx_prec(RU_t *ru);
 
 double cpuf;
+#define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
+//#define MCS_COUNT 23//added for PHY abstraction
+#include <openair1/SIMULATION/LTE_PHY/common_sim.h>
 
 int otg_enabled=0;
 /*the following parameters are used to control the processing times calculations*/
@@ -535,23 +538,42 @@ void fill_DCI(PHY_VARS_eNB *eNB,
 }
 
 int n_users = 1;
-sub_frame_t subframe=7;
+int subframe=7;
 int num_common_dci=0,num_ue_spec_dci=0,num_dci=0,num_pdcch_symbols=1;
 uint16_t n_rnti=0x1234;
-  int nfapi_mode=0;
+int nfapi_mode=0;
+int abstx=0;
+int Nid_cell=0;
+int N_RB_DL=25;
+int tdd_config=3;
+int dci_flag=0;
+int threequarter_fs=0;
+double snr_step=1,input_snr_step=1, snr_int=30;
+double forgetting_factor=0.0; //in [0,1] 0 means a new channel every time, 1 means keep the same channel
+int test_perf=0;
+int n_frames;
+int n_ch_rlz = 1;
+int rx_sample_offset = 0;
+int xforms=0;
+int dump_table=0;
+int loglvl=OAILOG_WARNING;
+int mcs1=0,mcs2=0,mcs_i=0,dual_stream_UE = 0,awgn_flag=0;
+int two_thread_flag=0;
+int num_rounds = 4;//,fix_rounds=0;
+int perfect_ce = 0;
+int extended_prefix_flag=0;
+int verbose=0, help=0;
+double SNR,snr0=-2.0,snr1,rate = 0;
+int print_perf=0;
 
 int main(int argc, char **argv)
 {
 
-  int c;
   int k,i,j,aa;
   int re;
-  int loglvl=OAILOG_DEBUG;
 
   int s,Kr,Kr_bytes;
 
-  double SNR,snr0=-2.0,snr1,rate = 0;
-  double snr_step=1,input_snr_step=1, snr_int=30;
 
   LTE_DL_FRAME_PARMS *frame_parms;
   double s_re0[30720*2],s_im0[30720*2],r_re0[30720*2],r_im0[30720*2];
@@ -560,17 +582,14 @@ int main(int argc, char **argv)
   double *s_im[2]={s_im0,s_im1};
   double *r_re[2]={r_re0,r_re1};
   double *r_im[2]={r_im0,r_im1};
-  double forgetting_factor=0.0; //in [0,1] 0 means a new channel every time, 1 means keep the same channel
 
 
-  uint8_t extended_prefix_flag=0,transmission_mode=1,n_tx_port=1,n_tx_phy=1,n_rx=2;
-  uint16_t Nid_cell=0;
+  uint8_t transmission_mode=1,n_tx_port=1,n_tx_phy=1,n_rx=2;
 
   int eNB_id = 0;
-  unsigned char mcs1=0,mcs2=0,mcs_i=0,dual_stream_UE = 0,awgn_flag=0,round;
+  unsigned char round;
   unsigned char i_mod = 2;
   unsigned short NB_RB;
-  uint16_t tdd_config=3;
 
 
   SCM_t channel_model=Rayleigh1;
@@ -602,18 +621,13 @@ int main(int argc, char **argv)
   FILE *input_fd=NULL;
   unsigned char input_file=0;
 
-  int n_frames;
-  int n_ch_rlz = 1;
   channel_desc_t *eNB2UE[4];
   //uint8_t num_pdcch_symbols_2=0;
-  uint8_t rx_sample_offset = 0;
   //char stats_buffer[4096];
   //int len;
-  uint8_t num_rounds = 4;//,fix_rounds=0;
 
   //int u;
   int n=0;
-  int abstx=0;
   //int iii;
 
   int ch_realization;
@@ -625,9 +639,8 @@ int main(int argc, char **argv)
   //  int bler;
   double blerr[4];
   short *uncoded_ber_bit=NULL;
-  uint8_t N_RB_DL=25,osf=1;
+  int osf=1;
   frame_t frame_type = FDD;
-  int xforms=0;
   FD_lte_phy_scope_ue *form_ue = NULL;
   char title[255];
 
@@ -640,16 +653,12 @@ int main(int argc, char **argv)
   //  time_stats_t ts;//,sts,usts;
   int avg_iter,iter_trials;
   int rballocset=0;
-  int print_perf=0;
-  int test_perf=0;
   int test_passed=0;
-  int dump_table=0;
 
   double effective_rate=0.0;
   char channel_model_input[10]="I";
 
   int TB0_active = 1;
-  uint32_t perfect_ce = 0;
 
   //  LTE_DL_UE_HARQ_t *dlsch0_ue_harq;
   //  LTE_DL_eNB_HARQ_t *dlsch0_eNB_harq;
@@ -657,20 +666,11 @@ int main(int argc, char **argv)
   uint8_t ue_category=4;
   uint32_t Nsoft;
   int sf;
-
-
-
   int CCE_table[800];
-
-  int threequarter_fs=0;
-
-
   opp_enabled=1; // to enable the time meas
 
   FILE *csv_fd=NULL;
-  char csv_fname[32];
-  int dci_flag=0;
-  int two_thread_flag=0;
+  char csv_fname[FILENAME_MAX];
   int DLSCH_RB_ALLOC = 0;
 
   int dci_received;
@@ -726,36 +726,95 @@ int main(int argc, char **argv)
   snr0 = 0;
   //  num_layers = 1;
   perfect_ce = 0;
+  static paramdef_t options[] = {
+    { "awgn", "Use AWGN channel and not multipath", PARAMFLAG_BOOL, strptr:NULL, defintval:0, TYPE_INT, 0, NULL, NULL },
+    { "Abstx", "Turns on calibration mode for abstraction.", PARAMFLAG_BOOL, iptr:&abstx,  defintval:0, TYPE_INT, 0 },
+    { "bTDD", "Set the tdd configuration mode",0, iptr:&tdd_config,  defintval:3, TYPE_INT, 0 },
+    { "BnbRBs", "The LTE bandwith in RBs (100 is 20MHz)",0, iptr:&N_RB_DL,  defintval:25, TYPE_INT, 0 },
+    { "cPdcch", "Number of PDCCH symbols",0, iptr:&num_pdcch_symbols,  defintval:1, TYPE_INT, 0 },
+    { "CnidCell", "The cell id ",0, iptr:&Nid_cell,  defintval:0, TYPE_INT, 0 },
+    { "dciFlag", "Transmit the DCI and compute its error statistics", PARAMFLAG_BOOL, iptr:&dci_flag,  defintval:0, TYPE_INT, 0 },
+    { "Dtdd", "Enable tdd", PARAMFLAG_BOOL,  strptr:NULL, defintval:0, TYPE_INT, 0, NULL, NULL },
+    { "eRounds", "Number of rounds",0, iptr:NULL,  defintval:25, TYPE_INT, 0 },
+    { "EsubSampling","three quarters sub-sampling",PARAMFLAG_BOOL, iptr:&threequarter_fs, defintval:0, TYPE_INT, 0 },
+    { "f_snr_step", "step size of SNR, default value is 1.",0, dblptr:&input_snr_step,  defdblval:1, TYPE_DOUBLE, 0 },
+    { "Forgetting", "forgetting factor (0 new channel every trial, 1 channel constant)",0, dblptr:&forgetting_factor,  defdblval:0.0, TYPE_DOUBLE, 0 },
+    { "input_file", "input IQ data file",0, iptr:NULL,  defintval:0, TYPE_INT, 0 },
+    { "Input_file_trch", " Input filename for TrCH data (binary)",0, iptr:NULL,  defintval:0, TYPE_INT, 0 },
+    { "WtwoThreads", "two_thread_flag", PARAMFLAG_BOOL, iptr:&two_thread_flag,  defintval:0, TYPE_INT, 0 },
+    { "lMuMimo", "offset_mumimo_llr_drange_fix",0, u8ptr:&offset_mumimo_llr_drange_fix,  defintval:0, TYPE_UINT8, 0 },
+    { "mcs1", "The MCS for TB 1", 0, iptr:&mcs1,  defintval:0, TYPE_INT, 0 },
+    { "Mcs2", "The MCS for TB 2", 0, iptr:&mcs2,  defintval:0, TYPE_INT, 0 },
+    { "Operf", "Set the percenatge of effective rate to testbench the modem performance (typically 30 and 70, range 1-100)",0, iptr:&test_perf,  defintval:0, TYPE_INT, 0 },
+    { "tmcs_i", "MCS of interfering UE",0, iptr:NULL,  defintval:0, TYPE_INT, 0 },
+    { "nb_frame", "number of frame in a test",0, iptr:&n_frames,  defintval:1, TYPE_INT, 0 },
+    { "offsetRxSample", "Sample offset for receiver", 0, iptr:&rx_sample_offset,  defintval:0, TYPE_INT, 0 },
+    { "rballocset", "ressource block allocation (see  section 7.1.6.3 in 36.213)",0, iptr:NULL,  defintval:0, TYPE_INT, 0 },
+    { "snr", "Starting SNR, runs from SNR to SNR+%.1fdB in steps of %.1fdB. If n_frames is 1 then just SNR is simulated and MATLAB/OCTAVE output is generated", dblptr:&snr0,  defdblval:-2.0, TYPE_DOUBLE, 0 },
+    { "wsnrInterrupt", "snr int ?", 0, dblptr:&snr_int,  defdblval:30, TYPE_DOUBLE, 0 },
+    { "N_ch_rlzN0", "Determines the number of Channel Realizations in Abstraction mode. Default value is 1",0, iptr:&n_ch_rlz,  defintval:1, TYPE_INT, 0 },
+    { "prefix_extended","Enable extended prefix", PARAMFLAG_BOOL, iptr:&extended_prefix_flag,  defintval:0, TYPE_INT, 0 },
+    { "RNumRound", "Number of HARQ rounds (fixed)",0, iptr:&num_rounds,  defintval:4, TYPE_INT, 0 },
+    { "Subframe", "subframe ",0, iptr:&subframe,  defintval:7, TYPE_INT, 0 },
+    { "Trnti", "rnti",0, u16ptr:&n_rnti,  defuintval:0x1234, TYPE_UINT16, 0 },
+    { "vi_mod", "i_mod",0, iptr:NULL,  defintval:0, TYPE_INT, 0 },
+    { "Performance", "Display CPU perfomance of each L1 piece", PARAMFLAG_BOOL,  iptr:&print_perf,  defintval:0, TYPE_INT, 0 },
+    { "q_tx_port", "Number of TX antennas ports used in eNB",0, iptr:NULL,  defintval:0, TYPE_INT, 0 },
+    { "uEdual", "Enables the Interference Aware Receiver for TM5 (default is normal receiver)",0, iptr:NULL,  defintval:0, TYPE_INT, 0 },
+    { "xTransmission","Transmission mode (1,2,6,7 for the moment)",0, iptr:NULL,  defintval:25, TYPE_INT, 0 },
+    { "yn_tx_phy","Number of TX antennas used in eNB",0, iptr:NULL,  defintval:25, TYPE_INT, 0 },
+    { "XForms", "Display the soft scope", PARAMFLAG_BOOL, iptr:&xforms,  defintval:0, TYPE_INT, 0 },
+    { "Yperfect_ce","Perfect CE", PARAMFLAG_BOOL, iptr:&perfect_ce,  defintval:0, TYPE_INT, 0 },
+    { "Zdump", "dump table",PARAMFLAG_BOOL,  iptr:&dump_table, defintval:0, TYPE_INT, 0 },
+    { "Loglvl", "log level",0, iptr:&loglvl,  defintval:OAILOG_DEBUG, TYPE_INT, 0 },
+    { "zn_rx", "Number of RX antennas used in UE",0, iptr:NULL,  defintval:2, TYPE_INT, 0 },
+    { "gchannel", "[A:M] Use 3GPP 25.814 SCM-A/B/C/D('A','B','C','D') or 36-101 EPA('E'), EVA ('F'),ETU('G') models (ignores delay spread and Ricean factor), Rayghleigh8 ('H'), Rayleigh1('I'), Rayleigh1_corr('J'), Rayleigh1_anticorr ('K'),  Rice8('L'), Rice1('M')",0, strptr:NULL,  defstrval:NULL, TYPE_STRING, 0 },
+    { "verbose", "display debug text", PARAMFLAG_BOOL,  iptr:&verbose, defintval:0, TYPE_INT, 0 },
+    { "help", "display help and exit", PARAMFLAG_BOOL,  iptr:&help, defintval:0, TYPE_INT, 0 },
+    { "", "",0,  iptr:NULL, defintval:0, TYPE_INT, 0 },
+  };
 
-  while ((c = getopt (argc, argv, "ahdpZDe:Em:n:o:s:f:t:c:g:r:F:x:q:y:z:AM:N:I:i:O:R:S:C:T:b:u:v:w:B:Pl:WXYL:")) != -1) {
-    switch (c) {
+  
+  struct option * long_options = parse_oai_options(options); 
+  
+
+  int option_index;
+
+  int res;
+
+  while ((res=getopt_long_only(argc, argv, "", long_options, &option_index)) == 0) {
+    if (options[option_index].voidptr != NULL ) {
+      if (long_options[option_index].has_arg==no_argument)
+        *(bool *)options[option_index].iptr=1;
+      else switch (options[option_index].type) {
+          case TYPE_INT:
+            *(int *)options[option_index].iptr=atoi(optarg);
+            break;
+
+          case TYPE_DOUBLE:
+            *(double *)options[option_index].dblptr=atof(optarg);
+            break;
+	    
+	case TYPE_UINT8:
+	  *(uint8_t *)options[option_index].dblptr=atoi(optarg);
+	  break;
+	  	    
+	case TYPE_UINT16:
+	  *(uint16_t *)options[option_index].dblptr=atoi(optarg);
+	  break;
+	  
+	default:
+            printf("not decoded type.\n");
+            exit(1);
+        }
+
+      continue;
+    }
+
+    switch (long_options[option_index].name[0]) {
     case 'a':
       awgn_flag = 1;
       channel_model = AWGN;
-      break;
-
-    case 'A':
-      abstx = 1;
-      break;
-
-    case 'b':
-      tdd_config=atoi(optarg);
-      break;
-
-    case 'B':
-      N_RB_DL=atoi(optarg);
-      break;
-
-    case 'c':
-      num_pdcch_symbols=atoi(optarg);
-      break;
-
-    case 'C':
-      Nid_cell = atoi(optarg);
-      break;
-
-    case 'd':
-      dci_flag = 1;
       break;
 
     case 'D':
@@ -766,18 +825,6 @@ int main(int argc, char **argv)
       num_rounds=1;
       common_flag = 1;
       TPC = atoi(optarg);
-      break;
-
-    case 'E':
-      threequarter_fs=1;
-      break;
-
-    case 'f':
-      input_snr_step= atof(optarg);
-      break;
-
-    case 'F':
-      forgetting_factor = atof(optarg);
       break;
 
     case 'i':
@@ -791,38 +838,9 @@ int main(int argc, char **argv)
       input_trch_file=1;
       break;
 
-    case 'W':
-      two_thread_flag = 1;
-      break;
-    case 'l':
-      offset_mumimo_llr_drange_fix=atoi(optarg);
-      break;
-
-    case 'm':
-      mcs1 = atoi(optarg);
-      break;
-
-    case 'M':
-      mcs2 = atoi(optarg);
-      break;
-
-    case 'O':
-      test_perf=atoi(optarg);
-      //print_perf =1;
-      break;
-
     case 't':
       mcs_i = atoi(optarg);
       i_mod = get_Qm(mcs_i);
-      break;
-
-    case 'n':
-      n_frames = atoi(optarg);
-      break;
-
-
-    case 'o':
-      rx_sample_offset = atoi(optarg);
       break;
 
     case 'r':
@@ -830,99 +848,40 @@ int main(int argc, char **argv)
       rballocset = 1;
       break;
 
-    case 's':
-      snr0 = atof(optarg);
-      break;
-
-    case 'w':
-      snr_int = atof(optarg);
-      break;
-
-
-    case 'N':
-      n_ch_rlz= atof(optarg);
-      break;
-
-    case 'p':
-      extended_prefix_flag=1;
-      break;
-
     case 'g':
-      memcpy(channel_model_input,optarg,10);
+    strncpy(channel_model_input,optarg,9);
+    struct tmp {
+      char opt;
+      int m;
+      int M;
+    }
+    tmp[]= {
+      {'A',SCM_A,2},
+          {'B',SCM_B,3},
+          {'C',SCM_C,4},
+          {'D',SCM_D,5},
+          {'E',EPA,6},
+          {'F',EVA,6},
+          {'G',ETU,8},
+          {'H',Rayleigh8,9},
+          {'I',Rayleigh1,10},
+          {'J',Rayleigh1_corr,11},
+          {'K',Rayleigh1_anticorr,12},
+          {'L',Rice8,13},
+          {'M',Rice1,14},
+          {'N',AWGN,1},
+          {0,0,0}
+        };
+        struct tmp *ptr;
 
-      switch((char)*optarg) {
-      case 'A':
-        channel_model=SCM_A;
+        for (ptr=tmp; ptr->opt!=0; ptr++)
+          if ( ptr->opt == optarg[0] ) {
+            channel_model=ptr->m;
+            break;
+          }
+
+        AssertFatal(ptr->opt != 0, "Unsupported channel model: %s !\n", optarg );
         break;
-
-      case 'B':
-        channel_model=SCM_B;
-        break;
-
-      case 'C':
-        channel_model=SCM_C;
-        break;
-
-      case 'D':
-        channel_model=SCM_D;
-        break;
-
-      case 'E':
-        channel_model=EPA;
-        break;
-
-      case 'F':
-        channel_model=EVA;
-        break;
-
-      case 'G':
-        channel_model=ETU;
-        break;
-
-      case 'H':
-        channel_model=Rayleigh8;
-        break;
-
-      case 'I':
-        channel_model=Rayleigh1;
-        break;
-
-      case 'J':
-        channel_model=Rayleigh1_corr;
-        break;
-
-      case 'K':
-        channel_model=Rayleigh1_anticorr;
-        break;
-
-      case 'L':
-        channel_model=Rice8;
-        break;
-
-      case 'M':
-        channel_model=Rice1;
-        break;
-
-      case 'N':
-        channel_model=AWGN;
-        break;
-      default:
-        printf("Unsupported channel model!\n");
-        exit(-1);
-      }
-
-      break;
-    case 'R':
-      num_rounds=atoi(optarg);
-      break;
-
-    case 'S':
-      subframe=atoi(optarg);
-      break;
-
-    case 'T':
-      n_rnti=atoi(optarg);
-      break;
 
     case 'u':
       dual_stream_UE=1;
@@ -943,10 +902,6 @@ int main(int argc, char **argv)
         exit(-1);
       }
 
-      break;
-
-    case 'P':
-      print_perf=1;
       break;
 
     case 'q':
@@ -999,15 +954,6 @@ int main(int argc, char **argv)
       }
 
       break;
-      break;
-
-    case 'X':
-      xforms=1;
-      break;
-
-    case 'Y':
-      perfect_ce=1;
-      break;
 
     case 'z':
       n_rx=atoi(optarg);
@@ -1019,51 +965,23 @@ int main(int argc, char **argv)
 
       break;
 
-    case 'Z':
-      dump_table=1;
-      break;
-
-    case 'L':
-      loglvl = atoi(optarg);
-      break;
-
-    case 'h':
     default:
-      printf("%s -h(elp) -a(wgn on) -d(ci decoding on) -p(extended prefix on) -m mcs1 -M mcs2 -n n_frames -s snr0 -x transmission mode (1,2,5,6,7) -y TXant -z RXant -I trch_file\n",argv[0]);
-      printf("-h This message\n");
-      printf("-a Use AWGN channel and not multipath\n");
-      printf("-c Number of PDCCH symbols\n");
-      printf("-m MCS1 for TB 1\n");
-      printf("-M MCS2 for TB 2\n");
-      printf("-d Transmit the DCI and compute its error statistics\n");
-      printf("-p Use extended prefix mode\n");
-      printf("-n Number of frames to simulate\n");
-      printf("-o Sample offset for receiver\n");
-      printf("-s Starting SNR, runs from SNR to SNR+%.1fdB in steps of %.1fdB. If n_frames is 1 then just SNR is simulated and MATLAB/OCTAVE output is generated\n", snr_int, snr_step);
-      printf("-f step size of SNR, default value is 1.\n");
-      printf("-C cell id\n");
-      printf("-S subframe\n");
-      printf("-D use TDD mode\n");
-      printf("-b TDD config\n");
-      printf("-B bandwidth configuration (in number of ressource blocks): 6, 25, 50, 100\n");
-      printf("-r ressource block allocation (see  section 7.1.6.3 in 36.213\n");
-      printf("-g [A:M] Use 3GPP 25.814 SCM-A/B/C/D('A','B','C','D') or 36-101 EPA('E'), EVA ('F'),ETU('G') models (ignores delay spread and Ricean factor), Rayghleigh8 ('H'), Rayleigh1('I'), Rayleigh1_corr('J'), Rayleigh1_anticorr ('K'), Rice8('L'), Rice1('M')\n");
-      printf("-F forgetting factor (0 new channel every trial, 1 channel constant\n");
-      printf("-x Transmission mode (1,2,6,7 for the moment)\n");
-      printf("-q Number of TX antennas ports used in eNB\n");
-      printf("-y Number of TX antennas used in eNB\n");
-      printf("-z Number of RX antennas used in UE\n");
-      printf("-t MCS of interfering UE\n");
-      printf("-R Number of HARQ rounds (fixed)\n");
-      printf("-A Turns on calibration mode for abstraction.\n");
-      printf("-N Determines the number of Channel Realizations in Abstraction mode. Default value is 1. \n");
-      printf("-O Set the percenatge of effective rate to testbench the modem performance (typically 30 and 70, range 1-100) \n");
-      printf("-I Input filename for TrCH data (binary)\n");
-      printf("-u Enables the Interference Aware Receiver for TM5 (default is normal receiver)\n");
+      printf("Wrong option: %s\n",long_options[option_index].name);
       exit(1);
       break;
     }
   }
+
+  if ( res != -1 ) {
+    printf("A wrong option has been found\n");
+    exit(1);
+  }
+
+  if (help || verbose )
+     display_options_values(options, true);
+  if (help)
+    exit(0);
+  
   set_parallel_conf("PARALLEL_RU_L1_TRX_SPLIT");
   set_worker_conf("WORKER_ENABLE");
 
@@ -1073,8 +991,10 @@ int main(int argc, char **argv)
   AssertFatal(load_configmodule(argc,argv) != NULL,
 	      "cannot load configuration module, exiting\n");
   logInit();
+  set_glog_onlinelog(true);
   // enable these lines if you need debug info
   set_glog(loglvl);
+  SET_LOG_DEBUG(UE_TIMING);
   // moreover you need to init itti with the following line
   // however itti will catch all signals, so ctrl-c won't work anymore
   // alternatively you can disable ITTI completely in CMakeLists.txt
@@ -1522,9 +1442,17 @@ int main(int argc, char **argv)
       reset_meas(&eNB->dlsch_interleaving_stats);
       reset_meas(&eNB->dlsch_rate_matching_stats);
       reset_meas(&eNB->dlsch_turbo_encoding_stats);
-
-      reset_meas(&UE->phy_proc_rx[UE->current_thread_id[subframe]]); // total UE rx
+      for (int i=0; i<RX_NB_TH; i++) {
+	reset_meas(&UE->phy_proc_rx[i]); // total UE rx
+	reset_meas(&UE->ue_front_end_stat[i]);
+        reset_meas(&UE->pdsch_procedures_stat[i]);
+	reset_meas(&UE->dlsch_procedures_stat[i]);
+	reset_meas(&UE->dlsch_decoding_stats[i]);
+	reset_meas(&UE->dlsch_llr_stats_parallelization[i][0]);
+	reset_meas(&UE->dlsch_llr_stats_parallelization[i][1]);
+      }
       reset_meas(&UE->ofdm_demod_stats);
+      reset_meas(&UE->crnti_procedures_stats);
       reset_meas(&UE->dlsch_channel_estimation_stats);
       reset_meas(&UE->dlsch_freq_offset_estimation_stats);
       reset_meas(&UE->rx_dft_stats);
@@ -1541,25 +1469,21 @@ int main(int argc, char **argv)
       reset_meas(&UE->dlsch_tc_intl1_stats);
       reset_meas(&UE->dlsch_tc_intl2_stats);
       // initialization
-      struct list time_vector_tx;
-      initialize(&time_vector_tx);
-      struct list time_vector_tx_ifft;
-      initialize(&time_vector_tx_ifft);
-      struct list time_vector_tx_mod;
-      initialize(&time_vector_tx_mod);
-      struct list time_vector_tx_enc;
-      initialize(&time_vector_tx_enc);
-
-      struct list time_vector_rx;
-      initialize(&time_vector_rx);
-      struct list time_vector_rx_fft;
-      initialize(&time_vector_rx_fft);
-      struct list time_vector_rx_demod;
-      initialize(&time_vector_rx_demod);
-      struct list time_vector_rx_dec;
-      initialize(&time_vector_rx_dec);
-
-
+            // initialization
+      varArray_t *table_tx=initVarArray(1000,sizeof(double));
+      varArray_t *table_tx_ifft=initVarArray(1000,sizeof(double));
+      varArray_t *table_tx_mod=initVarArray(1000,sizeof(double));
+      varArray_t *table_tx_enc=initVarArray(1000,sizeof(double));
+      varArray_t *table_rx=initVarArray(1000,sizeof(double));
+      time_stats_t phy_proc_rx_tot;
+      time_stats_t pdsch_procedures_tot;
+      time_stats_t dlsch_procedures_tot;
+      time_stats_t dlsch_decoding_tot;
+      time_stats_t dlsch_llr_tot;
+      time_stats_t ue_front_end_tot;
+      varArray_t *table_rx_fft=initVarArray(1000,sizeof(double));
+      varArray_t *table_rx_demod=initVarArray(1000,sizeof(double));
+      varArray_t *table_rx_dec=initVarArray(1000,sizeof(double));
 
       for (trials = 0; trials<n_frames; trials++) {
 	//printf("Trial %d\n",trials);
@@ -2004,119 +1928,52 @@ int main(int argc, char **argv)
         /* calculate the total processing time for each packet,
          * get the max, min, and number of packets that exceed t>2000us
          */
-        double t_tx = (double)eNB->phy_proc_tx.p_time/cpu_freq_GHz/1000.0;
-        double t_tx_ifft = (double)eNB->ofdm_mod_stats.p_time/cpu_freq_GHz/1000.0;
-        double t_tx_mod = (double)eNB->dlsch_modulation_stats.p_time/cpu_freq_GHz/1000.0;
-        double t_tx_enc = (double)eNB->dlsch_encoding_stats.p_time/cpu_freq_GHz/1000.0;
+	double t_tx = inMicroS(eNB->phy_proc_tx.p_time);
+        double t_tx_ifft = inMicroS(eNB->ofdm_mod_stats.p_time);
+        double t_rx = inMicroS(UE->phy_proc_rx[UE->current_thread_id[subframe]].p_time);
+	sumUpStats(&phy_proc_rx_tot, UE->phy_proc_rx, UE->current_thread_id[subframe]);
+	sumUpStats(&ue_front_end_tot, UE->ue_front_end_stat, UE->current_thread_id[subframe]);
+	sumUpStats(&pdsch_procedures_tot, UE->pdsch_procedures_stat, UE->current_thread_id[subframe]);	
+	sumUpStats(&dlsch_procedures_tot, UE->dlsch_procedures_stat, UE->current_thread_id[subframe]);
+	sumUpStats(&dlsch_decoding_tot, UE->dlsch_decoding_stats, UE->current_thread_id[subframe]);
+	sumUpStatsSlot(&dlsch_llr_tot, UE->dlsch_llr_stats_parallelization, UE->current_thread_id[subframe]);
 
 
-        double t_rx = (double)UE->phy_proc_rx[UE->current_thread_id[subframe]].p_time/cpu_freq_GHz/1000.0;
-        double t_rx_fft = (double)UE->ofdm_demod_stats.p_time/cpu_freq_GHz/1000.0;
-        double t_rx_demod = (double)UE->dlsch_rx_pdcch_stats.p_time/cpu_freq_GHz/1000.0;
-        double t_rx_dec = (double)UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].p_time/cpu_freq_GHz/1000.0;
+	double t_rx_fft = inMicroS(UE->ofdm_demod_stats.p_time);
+        double t_rx_demod = inMicroS(UE->dlsch_rx_pdcch_stats.p_time);
+        double t_rx_dec = inMicroS(UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].p_time);
 
-        if (t_tx > t_tx_max)
-          t_tx_max = t_tx;
-
-        if (t_tx < t_tx_min)
-          t_tx_min = t_tx;
-
-        if (t_rx > t_rx_max)
-          t_rx_max = t_rx;
-
-        if (t_rx < t_rx_min)
-          t_rx_min = t_rx;
-
-        if (t_tx > 2000)
+        if (t_tx > 2000 )// 2ms is too much time for a subframe
           n_tx_dropped++;
-
-        if (t_rx > 2000)
+	
+        if (t_rx > 2000 )
           n_rx_dropped++;
-
-        push_front(&time_vector_tx, t_tx);
-        push_front(&time_vector_tx_ifft, t_tx_ifft);
-        push_front(&time_vector_tx_mod, t_tx_mod);
-        push_front(&time_vector_tx_enc, t_tx_enc);
-
-        push_front(&time_vector_rx, t_rx);
-        push_front(&time_vector_rx_fft, t_rx_fft);
-        push_front(&time_vector_rx_demod, t_rx_demod);
-        push_front(&time_vector_rx_dec, t_rx_dec);
-
+	
+	appendVarArray(table_tx, &t_tx);
+        appendVarArray(table_tx_ifft, &t_tx_ifft);
+        appendVarArray(table_rx, &t_rx );
+        appendVarArray(table_rx_fft, &t_rx_fft );
+        appendVarArray(table_rx_demod, &t_rx_demod );
+        appendVarArray(table_rx_dec, &t_rx_dec );
 
       }   //trials
 
       // round_trials[0]: number of code word : goodput the protocol
-      double table_tx[time_vector_tx.size];
-      totable(table_tx, &time_vector_tx);
-      double table_tx_ifft[time_vector_tx_ifft.size];
-      totable(table_tx_ifft, &time_vector_tx_ifft);
-      double table_tx_mod[time_vector_tx_mod.size];
-      totable(table_tx_mod, &time_vector_tx_mod);
-      double table_tx_enc[time_vector_tx_enc.size];
-      totable(table_tx_enc, &time_vector_tx_enc);
-
-      double table_rx[time_vector_rx.size];
-      totable(table_rx, &time_vector_rx);
-      double table_rx_fft[time_vector_rx_fft.size];
-      totable(table_rx_fft, &time_vector_rx_fft);
-      double table_rx_demod[time_vector_rx_demod.size];
-      totable(table_rx_demod, &time_vector_rx_demod);
-      double table_rx_dec[time_vector_rx_dec.size];
-      totable(table_rx_dec, &time_vector_rx_dec);
-
-
       // sort table
-      qsort (table_tx, time_vector_tx.size, sizeof(double), &compare);
-      qsort (table_rx, time_vector_rx.size, sizeof(double), &compare);
+      qsort (dataArray(table_tx), table_tx->size, table_tx->atomSize, &cmpdouble);
+      qsort (dataArray(table_tx_ifft), table_tx_ifft->size, table_tx_ifft->atomSize, &cmpdouble);
+      qsort (dataArray(table_tx_mod), table_tx_mod->size, table_tx_mod->atomSize, &cmpdouble);
+      qsort (dataArray(table_tx_enc), table_tx_enc->size, table_tx_enc->atomSize, &cmpdouble);
+      qsort (dataArray(table_rx), table_rx->size, table_rx->atomSize, &cmpdouble);
+      qsort (dataArray(table_rx_fft), table_rx_fft->size, table_rx_fft->atomSize, &cmpdouble);
+      qsort (dataArray(table_rx_demod), table_rx_demod->size, table_rx_demod->atomSize, &cmpdouble);
+      qsort (dataArray(table_rx_dec), table_rx_dec->size, table_rx_dec->atomSize, &cmpdouble);
 
       if (dump_table == 1 ) {
         set_component_filelog(SIM);  // file located in /tmp/usim.txt
-        LOG_UDUMPMSG(SIM,table_tx,time_vector_tx.size,LOG_DUMP_DOUBLE,"The transmitter raw data: \n");
-        LOG_UDUMPMSG(SIM,table_rx,time_vector_rx.size,LOG_DUMP_DOUBLE,"Thereceiver raw data: \n");
+        LOG_UDUMPMSG(SIM,table_tx,table_tx->size,LOG_DUMP_DOUBLE,"The transmitter raw data: \n");
+        LOG_UDUMPMSG(SIM,table_rx,table_rx->size,LOG_DUMP_DOUBLE,"Thereceiver raw data: \n");
       }
-
-      double tx_median = table_tx[time_vector_tx.size/2];
-      double tx_q1 = table_tx[time_vector_tx.size/4];
-      double tx_q3 = table_tx[3*time_vector_tx.size/4];
-
-      double tx_ifft_median = table_tx_ifft[time_vector_tx_ifft.size/2];
-      double tx_ifft_q1 = table_tx_ifft[time_vector_tx_ifft.size/4];
-      double tx_ifft_q3 = table_tx_ifft[3*time_vector_tx_ifft.size/4];
-
-      double tx_mod_median = table_tx_mod[time_vector_tx_mod.size/2];
-      double tx_mod_q1 = table_tx_mod[time_vector_tx_mod.size/4];
-      double tx_mod_q3 = table_tx_mod[3*time_vector_tx_mod.size/4];
-
-      double tx_enc_median = table_tx_enc[time_vector_tx_enc.size/2];
-      double tx_enc_q1 = table_tx_enc[time_vector_tx_enc.size/4];
-      double tx_enc_q3 = table_tx_enc[3*time_vector_tx_enc.size/4];
-
-      double rx_median = table_rx[time_vector_rx.size/2];
-      double rx_q1 = table_rx[time_vector_rx.size/4];
-      double rx_q3 = table_rx[3*time_vector_rx.size/4];
-
-      double rx_fft_median = table_rx_fft[time_vector_rx_fft.size/2];
-      double rx_fft_q1 = table_rx_fft[time_vector_rx_fft.size/4];
-      double rx_fft_q3 = table_rx_fft[3*time_vector_rx_fft.size/4];
-
-      double rx_demod_median = table_rx_demod[time_vector_rx_demod.size/2];
-      double rx_demod_q1 = table_rx_demod[time_vector_rx_demod.size/4];
-      double rx_demod_q3 = table_rx_demod[3*time_vector_rx_demod.size/4];
-
-      double rx_dec_median = table_rx_dec[time_vector_rx_dec.size/2];
-      double rx_dec_q1 = table_rx_dec[time_vector_rx_dec.size/4];
-      double rx_dec_q3 = table_rx_dec[3*time_vector_rx_dec.size/4];
-
-      double std_phy_proc_tx=0;
-      double std_phy_proc_tx_ifft=0;
-      double std_phy_proc_tx_mod=0;
-      double std_phy_proc_tx_enc=0;
-
-      double std_phy_proc_rx=0;
-      double std_phy_proc_rx_fft=0;
-      double std_phy_proc_rx_demod=0;
-      double std_phy_proc_rx_dec=0;
 
       effective_rate = 1.0-((double)(errs[0]+errs[1]+errs[2]+errs[3])/((double)round_trials[0] + round_trials[1] + round_trials[2] + round_trials[3]));
 
@@ -2149,108 +2006,49 @@ int main(int argc, char **argv)
              (double)eNB->dlsch[0][0]->harq_processes[0]->TBS,
              (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]));
 
+      double timeBase=1/(1000*cpu_freq_GHz);
       if (print_perf==1) {
-        printf("eNB TX function statistics (per 1ms subframe)\n\n");
-        std_phy_proc_tx = sqrt((double)eNB->phy_proc_tx.diff_square/pow(cpu_freq_GHz,2)/pow(1000,
-                               2)/eNB->phy_proc_tx.trials - pow((double)eNB->phy_proc_tx.diff/eNB->phy_proc_tx.trials/cpu_freq_GHz/1000,2));
-        std_phy_proc_tx_ifft = sqrt((double)eNB->ofdm_mod_stats.diff_square/pow(cpu_freq_GHz,2)/pow(1000,
-                                    2)/eNB->ofdm_mod_stats.trials - pow((double)eNB->ofdm_mod_stats.diff/eNB->ofdm_mod_stats.trials/cpu_freq_GHz/1000,2));
-        printf("OFDM_mod time                     :%f us (%d trials)\n",(double)eNB->ofdm_mod_stats.diff/eNB->ofdm_mod_stats.trials/cpu_freq_GHz/1000.0,eNB->ofdm_mod_stats.trials);
-        printf("|__ Statistcs                           std: %fus median %fus q1 %fus q3 %fus \n",std_phy_proc_tx_ifft, tx_ifft_median, tx_ifft_q1, tx_ifft_q3);
-        printf("Total PHY proc tx                 :%f us (%d trials)\n",(double)eNB->phy_proc_tx.diff/eNB->phy_proc_tx.trials/cpu_freq_GHz/1000.0,eNB->phy_proc_tx.trials);
-        printf("|__ Statistcs                           std: %fus max: %fus min: %fus median %fus q1 %fus q3 %fus n_dropped: %d packet \n",std_phy_proc_tx, t_tx_max, t_tx_min, tx_median, tx_q1, tx_q3,
-               n_tx_dropped);
+        printf("\neNB TX function statistics (per 1ms subframe)\n");
+	printDistribution(&eNB->phy_proc_tx,table_tx,"PHY proc tx");
+	printStatIndent(&eNB->dlsch_common_and_dci,"DL common channels and dci time");
+	printStatIndent(&eNB->dlsch_encoding_stats,"DLSCH encoding time");
+	printStatIndent2(&eNB->dlsch_rate_matching_stats,"DLSCH rate matching time",eNB->dlsch_rate_matching_stats.trials);
+	printStatIndent2(&eNB->dlsch_turbo_encoding_stats,"DLSCH turbo encoding time", eNB->dlsch_turbo_encoding_stats.trials);
+	printStatIndent2(&eNB->dlsch_interleaving_stats,"DLSCH interleaving time", eNB->dlsch_interleaving_stats.trials);
+	printStatIndent(&eNB->dlsch_scrambling_stats,  "DLSCH scrambling time");
+	printStatIndent(&eNB->dlsch_modulation_stats, "DLSCH modulation time");
+	printDistribution(&eNB->ofdm_mod_stats,table_tx_ifft,"OFDM_mod (idft) time");
 
-        std_phy_proc_tx_mod = sqrt((double)eNB->dlsch_modulation_stats.diff_square/pow(cpu_freq_GHz,2)/pow(1000,
-                                   2)/eNB->dlsch_modulation_stats.trials - pow((double)eNB->dlsch_modulation_stats.diff/eNB->dlsch_modulation_stats.trials/cpu_freq_GHz/1000,2));
-        printf("DLSCH modulation time             :%f us (%d trials)\n",(double)eNB->dlsch_modulation_stats.diff/eNB->dlsch_modulation_stats.trials/cpu_freq_GHz/1000.0,
-               eNB->dlsch_modulation_stats.trials);
-        printf("|__ Statistcs                           std: %fus median %fus q1 %fus q3 %fus \n",std_phy_proc_tx_mod, tx_mod_median, tx_mod_q1, tx_mod_q3);
-        printf("DLSCH scrambling time             :%f us (%d trials)\n",(double)eNB->dlsch_scrambling_stats.diff/eNB->dlsch_scrambling_stats.trials/cpu_freq_GHz/1000.0,
-               eNB->dlsch_scrambling_stats.trials);
-        std_phy_proc_tx_enc = sqrt((double)eNB->dlsch_encoding_stats.diff_square/pow(cpu_freq_GHz,2)/pow(1000,
-                                   2)/eNB->dlsch_encoding_stats.trials - pow((double)eNB->dlsch_encoding_stats.diff/eNB->dlsch_encoding_stats.trials/cpu_freq_GHz/1000,2));
-        printf("DLSCH encoding time               :%f us (%d trials)\n",(double)eNB->dlsch_encoding_stats.diff/eNB->dlsch_encoding_stats.trials/cpu_freq_GHz/1000.0,
-               eNB->dlsch_modulation_stats.trials);
-        printf("|__ Statistcs                           std: %fus median %fus q1 %fus q3 %fus \n",std_phy_proc_tx_enc, tx_enc_median, tx_enc_q1, tx_enc_q3);
-        printf("|__ DLSCH turbo encoding time         :%f us (%d trials)\n",
-               ((double)eNB->dlsch_turbo_encoding_stats.trials/eNB->dlsch_encoding_stats.trials)*(double)
-               eNB->dlsch_turbo_encoding_stats.diff/eNB->dlsch_turbo_encoding_stats.trials/cpu_freq_GHz/1000.0,eNB->dlsch_turbo_encoding_stats.trials);
-        printf("|__ DLSCH rate-matching time          :%f us (%d trials)\n",
-               ((double)eNB->dlsch_rate_matching_stats.trials/eNB->dlsch_encoding_stats.trials)*(double)
-               eNB->dlsch_rate_matching_stats.diff/eNB->dlsch_rate_matching_stats.trials/cpu_freq_GHz/1000.0,eNB->dlsch_rate_matching_stats.trials);
-        printf("|__ DLSCH sub-block interleaving time :%f us (%d trials)\n",
-               ((double)eNB->dlsch_interleaving_stats.trials/eNB->dlsch_encoding_stats.trials)*(double)
-               eNB->dlsch_interleaving_stats.diff/eNB->dlsch_interleaving_stats.trials/cpu_freq_GHz/1000.0,eNB->dlsch_interleaving_stats.trials);
+        printf("\nUE RX function statistics (per 1ms subframe)\n");
+	printDistribution(&phy_proc_rx_tot, table_rx,"Total PHY proc rx");
+	printStatIndent(&ue_front_end_tot,"Front end processing");
+	printStatIndent(&dlsch_llr_tot,"rx_pdsch processing");
+	printStatIndent2(&pdsch_procedures_tot,"pdsch processing", pdsch_procedures_tot.trials);
+	printStatIndent2(&dlsch_procedures_tot,"dlsch processing", dlsch_procedures_tot.trials);
+	printStatIndent2(&UE->crnti_procedures_stats,"C-RNTI processing", UE->crnti_procedures_stats.trials);
+	printStatIndent(&UE->ofdm_demod_stats,"ofdm demodulation");
+	printStatIndent(&UE->dlsch_channel_estimation_stats,"DLSCH channel estimation time");
+	printStatIndent(&UE->dlsch_freq_offset_estimation_stats,"DLSCH frequency offset estimation time");
+	printStatIndent(&dlsch_decoding_tot, "DLSCH Decoding time ");
+	printStatIndent(&UE->dlsch_unscrambling_stats,"DLSCH unscrambling time");
+        printStatIndent(&UE->dlsch_rate_unmatching_stats,"DLSCH Rate Unmatching");
+	printf("|__ DLSCH Turbo Decoding(%d bits), avg iterations: %.1f       %.2f us (%d cycles, %d trials)\n",
+	       UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->Cminus ?
+	       UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->Kminus :
+	       UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->Kplus,
 
-        printf("\n\nUE RX function statistics (per 1ms subframe)\n\n");
-        std_phy_proc_rx = sqrt((double)UE->phy_proc_rx[UE->current_thread_id[subframe]].diff_square/pow(cpu_freq_GHz,2)/pow(1000,
-                               2)/UE->phy_proc_rx[UE->current_thread_id[subframe]].trials - pow((double)UE->phy_proc_rx[UE->current_thread_id[subframe]].diff/UE->phy_proc_rx[UE->current_thread_id[subframe]].trials/cpu_freq_GHz/1000,2));
-        printf("Total PHY proc rx                                   :%f us (%d trials)\n",(double)UE->phy_proc_rx[UE->current_thread_id[subframe]].diff/UE->phy_proc_rx[UE->current_thread_id[subframe]].trials/cpu_freq_GHz/1000.0,
-               UE->phy_proc_rx[UE->current_thread_id[subframe]].trials*2/3);
-        printf("|__Statistcs                                            std: %fus max: %fus min: %fus median %fus q1 %fus q3 %fus n_dropped: %d packet \n", std_phy_proc_rx, t_rx_max, t_rx_min, rx_median,
-               rx_q1, rx_q3, n_rx_dropped);
-        std_phy_proc_rx_fft = sqrt((double)UE->ofdm_demod_stats.diff_square/pow(cpu_freq_GHz,2)/pow(1000,
-                                   2)/UE->ofdm_demod_stats.trials - pow((double)UE->ofdm_demod_stats.diff/UE->ofdm_demod_stats.trials/cpu_freq_GHz/1000,2));
-        printf("DLSCH OFDM demodulation and channel_estimation time :%f us (%d trials)\n",(nsymb)*(double)UE->ofdm_demod_stats.diff/UE->ofdm_demod_stats.trials/cpu_freq_GHz/1000.0,
-               UE->ofdm_demod_stats.trials*2/3);
-        printf("|__ Statistcs                           std: %fus median %fus q1 %fus q3 %fus \n",std_phy_proc_rx_fft, rx_fft_median, rx_fft_q1, rx_fft_q3);
-        printf("|__ DLSCH rx dft                                        :%f us (%d trials)\n",
-               (nsymb*UE->frame_parms.nb_antennas_rx)*(double)UE->rx_dft_stats.diff/UE->rx_dft_stats.trials/cpu_freq_GHz/1000.0,UE->rx_dft_stats.trials*2/3);
-        printf("|__ DLSCH channel estimation time                       :%f us (%d trials)\n",
-               (4.0)*(double)UE->dlsch_channel_estimation_stats.diff/UE->dlsch_channel_estimation_stats.trials/cpu_freq_GHz/1000.0,UE->dlsch_channel_estimation_stats.trials*2/3);
-        printf("|__ DLSCH frequency offset estimation time              :%f us (%d trials)\n",
-               (4.0)*(double)UE->dlsch_freq_offset_estimation_stats.diff/UE->dlsch_freq_offset_estimation_stats.trials/cpu_freq_GHz/1000.0,
-               UE->dlsch_freq_offset_estimation_stats.trials*2/3);
-        printf("DLSCH rx pdcch                                       :%f us (%d trials)\n",(double)UE->dlsch_rx_pdcch_stats.diff/UE->dlsch_rx_pdcch_stats.trials/cpu_freq_GHz/1000.0,
-               UE->dlsch_rx_pdcch_stats.trials);
-        std_phy_proc_rx_demod = sqrt((double)UE->dlsch_llr_stats.diff_square/pow(cpu_freq_GHz,2)/pow(1000,
-                                     2)/UE->dlsch_llr_stats.trials - pow((double)UE->dlsch_llr_stats.diff/UE->dlsch_llr_stats.trials/cpu_freq_GHz/1000,2));
-        printf("DLSCH Channel Compensation and LLR generation time  :%f us (%d trials)\n",(14-num_pdcch_symbols)*(double)UE->dlsch_llr_stats.diff/UE->dlsch_llr_stats.trials/cpu_freq_GHz/1000.0,
-               UE->dlsch_llr_stats.trials/3);
-        printf("|__ Statistcs                           std: %fus median %fus q1 %fus q3 %fus \n",std_phy_proc_rx_demod, rx_demod_median, rx_demod_q1, rx_demod_q3);
-        printf("DLSCH unscrambling time                             :%f us (%d trials)\n",(double)UE->dlsch_unscrambling_stats.diff/UE->dlsch_unscrambling_stats.trials/cpu_freq_GHz/1000.0,
-               UE->dlsch_unscrambling_stats.trials);
-        std_phy_proc_rx_dec = sqrt((double)UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].diff_square/pow(cpu_freq_GHz,2)/pow(1000,
-                                   2)/UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].trials - pow((double)UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].diff/UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].trials/cpu_freq_GHz/1000,2));
-        printf("DLSCH Decoding time (%02.2f Mbit/s, avg iter %1.2f)    :%f us (%d trials, max %f)\n",
-               eNB->dlsch[0][0]->harq_processes[0]->TBS/1000.0,(double)avg_iter/iter_trials,
-               (double)UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].diff/UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].trials/cpu_freq_GHz/1000.0,UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].trials,
-               (double)UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].max/cpu_freq_GHz/1000.0);
-        printf("|__ Statistcs                           std: %fus median %fus q1 %fus q3 %fus \n",std_phy_proc_rx_dec, rx_dec_median, rx_dec_q1, rx_dec_q3);
-        printf("|__ DLSCH Rate Unmatching                               :%f us (%d trials)\n",
-               (double)UE->dlsch_rate_unmatching_stats.diff/UE->dlsch_rate_unmatching_stats.trials/cpu_freq_GHz/1000.0,UE->dlsch_rate_unmatching_stats.trials);
-        printf("|__ DLSCH Turbo Decoding(%d bits)                       :%f us (%d trials)\n",
-               UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->Cminus ? UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->Kminus : UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->Kplus,
-               (double)UE->dlsch_turbo_decoding_stats.diff/UE->dlsch_turbo_decoding_stats.trials/cpu_freq_GHz/1000.0,UE->dlsch_turbo_decoding_stats.trials);
-        printf("    |__ init                                            %f us (cycles/iter %f, %d trials)\n",
-               (double)UE->dlsch_tc_init_stats.diff/UE->dlsch_tc_init_stats.trials/cpu_freq_GHz/1000.0,
-               (double)UE->dlsch_tc_init_stats.diff/UE->dlsch_tc_init_stats.trials/((double)avg_iter/iter_trials),
-               UE->dlsch_tc_init_stats.trials);
-        printf("    |__ alpha                                           %f us (cycles/iter %f, %d trials)\n",
-               (double)UE->dlsch_tc_alpha_stats.diff/UE->dlsch_tc_alpha_stats.trials/cpu_freq_GHz/1000.0,
-               (double)UE->dlsch_tc_alpha_stats.diff/UE->dlsch_tc_alpha_stats.trials*2,
-               UE->dlsch_tc_alpha_stats.trials);
-        printf("    |__ beta                                            %f us (cycles/iter %f,%d trials)\n",
-               (double)UE->dlsch_tc_beta_stats.diff/UE->dlsch_tc_beta_stats.trials/cpu_freq_GHz/1000.0,
-               (double)UE->dlsch_tc_beta_stats.diff/UE->dlsch_tc_beta_stats.trials*2,
-               UE->dlsch_tc_beta_stats.trials);
-        printf("    |__ gamma                                           %f us (cycles/iter %f,%d trials)\n",
-               (double)UE->dlsch_tc_gamma_stats.diff/UE->dlsch_tc_gamma_stats.trials/cpu_freq_GHz/1000.0,
-               (double)UE->dlsch_tc_gamma_stats.diff/UE->dlsch_tc_gamma_stats.trials*2,
-               UE->dlsch_tc_gamma_stats.trials);
-        printf("    |__ ext                                             %f us (cycles/iter %f,%d trials)\n",
-               (double)UE->dlsch_tc_ext_stats.diff/UE->dlsch_tc_ext_stats.trials/cpu_freq_GHz/1000.0,
-               (double)UE->dlsch_tc_ext_stats.diff/UE->dlsch_tc_ext_stats.trials*2,
-               UE->dlsch_tc_ext_stats.trials);
-        printf("    |__ intl1                                           %f us (cycles/iter %f,%d trials)\n",
-               (double)UE->dlsch_tc_intl1_stats.diff/UE->dlsch_tc_intl1_stats.trials/cpu_freq_GHz/1000.0,
-               (double)UE->dlsch_tc_intl1_stats.diff/UE->dlsch_tc_intl1_stats.trials,
-               UE->dlsch_tc_intl1_stats.trials);
-        printf("    |__ intl2+HD+CRC                                    %f us (cycles/iter %f,%d trials)\n",
-               (double)UE->dlsch_tc_intl2_stats.diff/UE->dlsch_tc_intl2_stats.trials/cpu_freq_GHz/1000.0,
-               (double)UE->dlsch_tc_intl2_stats.diff/UE->dlsch_tc_intl2_stats.trials,
-               UE->dlsch_tc_intl2_stats.trials);
+               UE->dlsch_tc_intl1_stats.trials/(double)UE->dlsch_tc_init_stats.trials,
+               (double)UE->dlsch_turbo_decoding_stats.diff/UE->dlsch_turbo_decoding_stats.trials*timeBase,
+               (int)((double)UE->dlsch_turbo_decoding_stats.diff/UE->dlsch_turbo_decoding_stats.trials),
+               UE->dlsch_turbo_decoding_stats.trials);
+        printStatIndent2(&UE->dlsch_tc_init_stats,"init", UE->dlsch_tc_init_stats.trials);
+        printStatIndent2(&UE->dlsch_tc_alpha_stats,"alpha", UE->dlsch_tc_init_stats.trials);
+        printStatIndent2(&UE->dlsch_tc_beta_stats,"beta", UE->dlsch_tc_init_stats.trials);
+        printStatIndent2(&UE->dlsch_tc_gamma_stats,"gamma", UE->dlsch_tc_init_stats.trials);
+        printStatIndent2(&UE->dlsch_tc_ext_stats,"ext", UE->dlsch_tc_init_stats.trials);
+        printStatIndent2(&UE->dlsch_tc_intl1_stats,"turbo internal interleaver", UE->dlsch_tc_init_stats.trials);
+        printStatIndent2(&UE->dlsch_tc_intl2_stats,"intl2+HardDecode+CRC", UE->dlsch_tc_init_stats.trials);
+	
       }
 
       if ((transmission_mode != 3) && (transmission_mode != 4)) {
@@ -2399,7 +2197,7 @@ int main(int argc, char **argv)
                 eNB->dlsch_modulation_stats.trials,
                 eNB->dlsch_scrambling_stats.trials,
                 eNB->dlsch_encoding_stats.trials,
-                UE->phy_proc_rx[UE->current_thread_id[subframe]].trials,
+                phy_proc_rx_tot.trials,
                 UE->ofdm_demod_stats.trials,
                 UE->dlsch_rx_pdcch_stats.trials,
                 UE->dlsch_llr_stats.trials,
@@ -2412,7 +2210,7 @@ int main(int argc, char **argv)
                 get_time_meas_us(&eNB->dlsch_modulation_stats),
                 get_time_meas_us(&eNB->dlsch_scrambling_stats),
                 get_time_meas_us(&eNB->dlsch_encoding_stats),
-                get_time_meas_us(&UE->phy_proc_rx[UE->current_thread_id[subframe]]),
+                get_time_meas_us(&phy_proc_rx_tot),
                 nsymb*get_time_meas_us(&UE->ofdm_demod_stats),
                 get_time_meas_us(&UE->dlsch_rx_pdcch_stats),
                 3*get_time_meas_us(&UE->dlsch_llr_stats),
@@ -2420,45 +2218,36 @@ int main(int argc, char **argv)
                 get_time_meas_us(&UE->dlsch_decoding_stats[UE->current_thread_id[subframe]])
                );
         //fprintf(time_meas_fd,"eNB_PROC_TX_STD;eNB_PROC_TX_MAX;eNB_PROC_TX_MIN;eNB_PROC_TX_MED;eNB_PROC_TX_Q1;eNB_PROC_TX_Q3;eNB_PROC_TX_DROPPED;\n");
-        fprintf(time_meas_fd,"%f;%f;%f;%f;%f;%f;%d;", std_phy_proc_tx, t_tx_max, t_tx_min, tx_median, tx_q1, tx_q3, n_tx_dropped);
-
+        fprintf(time_meas_fd,"%f;%f;%f;%f;%f;%f;%d;",squareRoot(&UE->phy_proc_tx), t_tx_max, t_tx_min, median(table_tx), q1(table_tx), q3(table_tx), n_tx_dropped);
         //fprintf(time_meas_fd,"IFFT;\n");
-        fprintf(time_meas_fd,"%f;%f;%f;%f;", std_phy_proc_tx_ifft, tx_ifft_median, tx_ifft_q1, tx_ifft_q3);
-
+        fprintf(time_meas_fd,"%f;%f;%f;%f;",
+		squareRoot(&eNB->ofdm_mod_stats),
+                median(table_tx_ifft),q1(table_tx_ifft),q3(table_tx_ifft));
         //fprintf(time_meas_fd,"MOD;\n");
-        fprintf(time_meas_fd,"%f;%f;%f;%f;", std_phy_proc_tx_mod, tx_mod_median, tx_mod_q1, tx_mod_q3);
-
+        fprintf(time_meas_fd,"%f;%f;%f;%f;",
+		squareRoot(&eNB->dlsch_modulation_stats),
+                median(table_tx_mod), q1(table_tx_mod), q3(table_tx_mod));
         //fprintf(time_meas_fd,"ENC;\n");
-        fprintf(time_meas_fd,"%f;%f;%f;%f;", std_phy_proc_tx_enc, tx_enc_median, tx_enc_q1, tx_enc_q3);
-
-
-        //fprintf(time_meas_fd,"UE_PROC_RX_STD;UE_PROC_RX_MAX;UE_PROC_RX_MIN;UE_PROC_RX_MED;UE_PROC_RX_Q1;UE_PROC_RX_Q3;UE_PROC_RX_DROPPED;\n");
-        fprintf(time_meas_fd,"%f;%f;%f;%f;%f;%f;%d;", std_phy_proc_rx, t_rx_max, t_rx_min, rx_median, rx_q1, rx_q3, n_rx_dropped);
-
+        fprintf(time_meas_fd,"%f;%f;%f;%f;",
+		squareRoot(&eNB->dlsch_encoding_stats),
+                median(table_tx_enc),q1(table_tx_enc),q3(table_tx_enc));
+        //fprintf(time_meas_fd,"eNB_PROC_RX_STD;eNB_PROC_RX_MAX;eNB_PROC_RX_MIN;eNB_PROC_RX_MED;eNB_PROC_RX_Q1;eNB_PROC_RX_Q3;eNB_PROC_RX_DROPPED;\n");
+        fprintf(time_meas_fd,"%f;%f;%f;%f;%f;%f;%d;",
+		squareRoot(&phy_proc_rx_tot), t_rx_max, t_rx_min,
+                median(table_rx), q1(table_rx), q3(table_rx), n_rx_dropped);
         //fprintf(time_meas_fd,"FFT;\n");
-        fprintf(time_meas_fd,"%f;%f;%f;%f;", std_phy_proc_rx_fft, rx_fft_median, rx_fft_q1, rx_fft_q3);
-
+        fprintf(time_meas_fd,"%f;%f;%f;%f;",
+		squareRoot(&UE->ofdm_demod_stats),
+                median(table_rx_fft), q1(table_rx_fft), q3(table_rx_fft));
         //fprintf(time_meas_fd,"DEMOD;\n");
-        fprintf(time_meas_fd,"%f;%f;%f;%f;", std_phy_proc_rx_demod,rx_demod_median, rx_demod_q1, rx_demod_q3);
-
+        fprintf(time_meas_fd,"%f;%f;%f;%f;",
+		squareRoot(&UE->dlsch_demodulation_stats),
+                median(table_rx_demod), q1(table_rx_demod), q3(table_rx_demod));
         //fprintf(time_meas_fd,"DEC;\n");
-        fprintf(time_meas_fd,"%f;%f;%f;%f\n", std_phy_proc_rx_dec, rx_dec_median, rx_dec_q1, rx_dec_q3);
+        fprintf(time_meas_fd,"%f;%f;%f;%f\n",
+		squareRoot(&UE->dlsch_decoding_stats[subframe]),
+                median(table_rx_dec), q1(table_rx_dec), q3(table_rx_dec));
 
-
-        /*
-        fprintf(time_meas_fd,"%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;",
-        eNB->phy_proc_tx.trials,
-        eNB->ofdm_mod_stats.trials,
-        eNB->dlsch_modulation_stats.trials,
-        eNB->dlsch_scrambling_stats.trials,
-        eNB->dlsch_encoding_stats.trials,
-        UE->phy_proc_rx[UE->current_thread_id[subframe]].trials,
-        UE->ofdm_demod_stats.trials,
-        UE->dlsch_rx_pdcch_stats.trials,
-        UE->dlsch_llr_stats.trials,
-        UE->dlsch_unscrambling_stats.trials,
-        UE->dlsch_decoding_stats[UE->current_thread_id[subframe]].trials);
-        */
         printf("[passed] effective rate : %f  (%2.1f%%,%f)): log and break \n",rate*effective_rate, 100*effective_rate, rate );
 	test_passed = 1;
         break;

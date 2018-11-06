@@ -99,7 +99,7 @@ boolean_t pdcp_data_req(
   const sdu_size_t     sdu_buffer_sizeP,
   unsigned char *const sdu_buffer_pP,
   const pdcp_transmission_mode_t modeP
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     ,const uint32_t * const sourceL2Id
     ,const uint32_t * const destinationL2Id
 #endif
@@ -146,7 +146,7 @@ boolean_t pdcp_data_req(
     if (srb_flagP) {
       AssertError (rb_idP < 3, return FALSE, "RB id is too high (%u/%d) %u %u!\n", rb_idP, 3, ctxt_pP->module_id, ctxt_pP->rnti);
     } else {
-      AssertError (rb_idP < maxDRB, return FALSE, "RB id is too high (%u/%d) %u %u!\n", rb_idP, maxDRB, ctxt_pP->module_id, ctxt_pP->rnti);
+      AssertError (rb_idP < LTE_maxDRB, return FALSE, "RB id is too high (%u/%d) %u %u!\n", rb_idP, LTE_maxDRB, ctxt_pP->module_id, ctxt_pP->rnti);
     }
   }
 
@@ -186,7 +186,7 @@ boolean_t pdcp_data_req(
                                 sdu_buffer_sizeP);
 #endif
       rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_YES, rb_idP, muiP, confirmP, sdu_buffer_sizeP, pdcp_pdu_p
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                 ,NULL, NULL
 #endif
                                 );
@@ -320,7 +320,7 @@ boolean_t pdcp_data_req(
         pdcp_apply_security(ctxt_pP,
                             pdcp_p,
                             srb_flagP,
-                            rb_idP % maxDRB,
+                            rb_idP % LTE_maxDRB,
                             pdcp_header_len,
                             current_sn,
                             pdcp_pdu_p->data,
@@ -370,7 +370,7 @@ boolean_t pdcp_data_req(
                 "[MSG] PDCP DL %s PDU on rb_id %d\n",(srb_flagP)? "CONTROL" : "DATA", rb_idP);
 
     rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                              ,sourceL2Id
                              ,destinationL2Id
 #endif
@@ -507,15 +507,15 @@ pdcp_data_ind(
     }
 
   } else {
-    rb_id = rb_idP % maxDRB;
-    AssertError (rb_id < maxDRB, return FALSE, "RB id is too high (%u/%d) %u UE %x!\n",
+    rb_id = rb_idP % LTE_maxDRB;
+    AssertError (rb_id < LTE_maxDRB, return FALSE, "RB id is too high (%u/%d) %u UE %x!\n",
                  rb_id,
-                 maxDRB,
+                 LTE_maxDRB,
                  ctxt_pP->module_id,
                  ctxt_pP->rnti);
     AssertError (rb_id > 0, return FALSE, "RB id is too low (%u/%d) %u UE %x!\n",
                  rb_id,
-                 maxDRB,
+                 LTE_maxDRB,
                  ctxt_pP->module_id,
                  ctxt_pP->rnti);
     key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_id, srb_flagP);
@@ -809,7 +809,7 @@ pdcp_data_ind(
         }
 #endif
       } else {
-        ((pdcp_data_ind_header_t*) new_sdu_p->data)->rb_id = rb_id + (ctxt_pP->module_id * maxDRB);
+        ((pdcp_data_ind_header_t*) new_sdu_p->data)->rb_id = rb_id + (ctxt_pP->module_id * LTE_maxDRB);
         ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = ctxt_pP->module_id;
       }
       // new_sdu_p->data->inst is set again in UE case so move to above.
@@ -993,7 +993,7 @@ pdcp_run (
                                 RRC_DCCH_DATA_REQ (msg_p).sdu_size,
                                 RRC_DCCH_DATA_REQ (msg_p).sdu_p,
                                 RRC_DCCH_DATA_REQ (msg_p).mode
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                 , NULL, NULL
 #endif
                                 );
@@ -1096,8 +1096,8 @@ pdcp_remove_UE(
 )
 //-----------------------------------------------------------------------------
 {
-  DRB_Identity_t  srb_id         = 0;
-  DRB_Identity_t  drb_id         = 0;
+  LTE_DRB_Identity_t  srb_id         = 0;
+  LTE_DRB_Identity_t  drb_id         = 0;
   hash_key_t      key            = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t  h_rc;
   int i; 
@@ -1115,7 +1115,7 @@ pdcp_remove_UE(
     h_rc = hashtable_remove(pdcp_coll_p, key);
   }
 
-  for (drb_id=0; drb_id<maxDRB; drb_id++) {
+  for (drb_id=0; drb_id<LTE_maxDRB; drb_id++) {
     key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, drb_id, SRB_FLAG_NO);
     h_rc = hashtable_remove(pdcp_coll_p, key);
 
@@ -1144,44 +1144,44 @@ pdcp_remove_UE(
 boolean_t
 rrc_pdcp_config_asn1_req (
   const protocol_ctxt_t* const  ctxt_pP,
-  SRB_ToAddModList_t  *const srb2add_list_pP,
-  DRB_ToAddModList_t  *const drb2add_list_pP,
-  DRB_ToReleaseList_t *const drb2release_list_pP,
+  LTE_SRB_ToAddModList_t  *const srb2add_list_pP,
+  LTE_DRB_ToAddModList_t  *const drb2add_list_pP,
+  LTE_DRB_ToReleaseList_t *const drb2release_list_pP,
   const uint8_t                   security_modeP,
   uint8_t                  *const kRRCenc_pP,
   uint8_t                  *const kRRCint_pP,
   uint8_t                  *const kUPenc_pP
-#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-  ,PMCH_InfoList_r9_t*  const pmch_InfoList_r9_pP
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+  ,LTE_PMCH_InfoList_r9_t*  const pmch_InfoList_r9_pP
 #endif
   ,rb_id_t                 *const defaultDRB 
 )
 //-----------------------------------------------------------------------------
 {
   long int        lc_id          = 0;
-  DRB_Identity_t  srb_id         = 0;
+  LTE_DRB_Identity_t  srb_id     = 0;
   long int        mch_id         = 0;
   rlc_mode_t      rlc_type       = RLC_MODE_NONE;
-  DRB_Identity_t  drb_id         = 0;
-  DRB_Identity_t *pdrb_id_p      = NULL;
+  LTE_DRB_Identity_t  drb_id     = 0;
+  LTE_DRB_Identity_t *pdrb_id_p  = NULL;
   uint8_t         drb_sn         = 12;
   uint8_t         srb_sn         = 5; // fixed sn for SRBs
   uint8_t         drb_report     = 0;
   long int        cnt            = 0;
   uint16_t        header_compression_profile = 0;
   config_action_t action                     = CONFIG_ACTION_ADD;
-  SRB_ToAddMod_t *srb_toaddmod_p = NULL;
-  DRB_ToAddMod_t *drb_toaddmod_p = NULL;
+  LTE_SRB_ToAddMod_t *srb_toaddmod_p = NULL;
+  LTE_DRB_ToAddMod_t *drb_toaddmod_p = NULL;
   pdcp_t         *pdcp_p         = NULL;
 
   hash_key_t      key            = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t  h_rc;
   hash_key_t      key_defaultDRB = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t  h_defaultDRB_rc;
-#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   int i,j;
-  MBMS_SessionInfoList_r9_t *mbms_SessionInfoList_r9_p = NULL;
-  MBMS_SessionInfo_r9_t     *MBMS_SessionInfo_p        = NULL;
+  LTE_MBMS_SessionInfoList_r9_t *mbms_SessionInfoList_r9_p = NULL;
+  LTE_MBMS_SessionInfo_r9_t     *MBMS_SessionInfo_p        = NULL;
 #endif
 
   LOG_T(PDCP, PROTOCOL_CTXT_FMT" %s() SRB2ADD %p DRB2ADD %p DRB2RELEASE %p\n",
@@ -1228,12 +1228,12 @@ rrc_pdcp_config_asn1_req (
 
       if (srb_toaddmod_p->rlc_Config) {
         switch (srb_toaddmod_p->rlc_Config->present) {
-        case SRB_ToAddMod__rlc_Config_PR_NOTHING:
+        case LTE_SRB_ToAddMod__rlc_Config_PR_NOTHING:
           break;
 
-        case SRB_ToAddMod__rlc_Config_PR_explicitValue:
+        case LTE_SRB_ToAddMod__rlc_Config_PR_explicitValue:
           switch (srb_toaddmod_p->rlc_Config->choice.explicitValue.present) {
-          case RLC_Config_PR_NOTHING:
+          case LTE_RLC_Config_PR_NOTHING:
             break;
 
           default:
@@ -1258,7 +1258,7 @@ rrc_pdcp_config_asn1_req (
 
           break;
 
-        case SRB_ToAddMod__rlc_Config_PR_defaultValue:
+        case LTE_SRB_ToAddMod__rlc_Config_PR_defaultValue:
         	pdcp_config_req_asn1 (
         	              ctxt_pP,
         	              pdcp_p,
@@ -1307,7 +1307,7 @@ rrc_pdcp_config_asn1_req (
         continue;
       }
 
-      DevCheck4(drb_id < maxDRB, drb_id, maxDRB, ctxt_pP->module_id, ctxt_pP->rnti);
+      DevCheck4(drb_id < LTE_maxDRB, drb_id, LTE_maxDRB, ctxt_pP->module_id, ctxt_pP->rnti);
       key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, drb_id, SRB_FLAG_NO);
       h_rc = hashtable_get(pdcp_coll_p, key, (void**)&pdcp_p);
 
@@ -1356,7 +1356,7 @@ rrc_pdcp_config_asn1_req (
 
         if (drb_toaddmod_p->pdcp_Config->rlc_AM) {
           drb_report = drb_toaddmod_p->pdcp_Config->rlc_AM->statusReportRequired;
-          drb_sn = PDCP_Config__rlc_UM__pdcp_SN_Size_len12bits; // default SN size
+          drb_sn = LTE_PDCP_Config__rlc_UM__pdcp_SN_Size_len12bits; // default SN size
           rlc_type = RLC_MODE_AM;
         }
 
@@ -1366,12 +1366,12 @@ rrc_pdcp_config_asn1_req (
         }
 
         switch (drb_toaddmod_p->pdcp_Config->headerCompression.present) {
-        case PDCP_Config__headerCompression_PR_NOTHING:
-        case PDCP_Config__headerCompression_PR_notUsed:
+        case LTE_PDCP_Config__headerCompression_PR_NOTHING:
+        case LTE_PDCP_Config__headerCompression_PR_notUsed:
           header_compression_profile=0x0;
           break;
 
-        case PDCP_Config__headerCompression_PR_rohc:
+        case LTE_PDCP_Config__headerCompression_PR_rohc:
 
           // parse the struc and get the rohc profile
           if(drb_toaddmod_p->pdcp_Config->headerCompression.choice.rohc.profiles.profile0x0001) {
@@ -1476,7 +1476,7 @@ rrc_pdcp_config_asn1_req (
     }
   }
 
-#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 
   if (pmch_InfoList_r9_pP != NULL) {
     for (i=0; i<pmch_InfoList_r9_pP->list.count; i++) {
@@ -1493,7 +1493,7 @@ rrc_pdcp_config_asn1_req (
 
         // can set the mch_id = i
         if (ctxt_pP->enb_flag) {
-          drb_id =  (mch_id * maxSessionPerPMCH ) + lc_id ;//+ (maxDRB + 3)*MAX_MOBILES_PER_ENB; // 1
+          drb_id =  (mch_id * LTE_maxSessionPerPMCH ) + lc_id ;//+ (LTE_maxDRB + 3)*MAX_MOBILES_PER_ENB; // 1
 
           if (pdcp_mbms_array_eNB[ctxt_pP->module_id][mch_id][lc_id].instanciated_instance == TRUE) {
             action = CONFIG_ACTION_MBMS_MODIFY;
@@ -1501,7 +1501,7 @@ rrc_pdcp_config_asn1_req (
             action = CONFIG_ACTION_MBMS_ADD;
           }
         } else {
-          drb_id =  (mch_id * maxSessionPerPMCH ) + lc_id; // + (maxDRB + 3); // 15
+          drb_id =  (mch_id * LTE_maxSessionPerPMCH ) + lc_id; // + (LTE_maxDRB + 3); // 15
 
           if (pdcp_mbms_array_ue[ctxt_pP->module_id][mch_id][lc_id].instanciated_instance == TRUE) {
             action = CONFIG_ACTION_MBMS_MODIFY;
@@ -1593,9 +1593,9 @@ pdcp_config_req_asn1 (
     pdcp_pP->header_compression_profile = header_compression_profileP;
     pdcp_pP->status_report              = rb_reportP;
 
-    if (rb_snP == PDCP_Config__rlc_UM__pdcp_SN_Size_len12bits) {
+    if (rb_snP == LTE_PDCP_Config__rlc_UM__pdcp_SN_Size_len12bits) {
       pdcp_pP->seq_num_size = PDCP_SN_12BIT;
-    } else if (rb_snP == PDCP_Config__rlc_UM__pdcp_SN_Size_len7bits) {
+    } else if (rb_snP == LTE_PDCP_Config__rlc_UM__pdcp_SN_Size_len7bits) {
       pdcp_pP->seq_num_size = PDCP_SN_7BIT;
     } else {
       pdcp_pP->seq_num_size = PDCP_SN_5BIT;
@@ -1653,9 +1653,9 @@ pdcp_config_req_asn1 (
         kUPenc_pP);
     }
 
-    if (rb_snP == PDCP_Config__rlc_UM__pdcp_SN_Size_len7bits) {
+    if (rb_snP == LTE_PDCP_Config__rlc_UM__pdcp_SN_Size_len7bits) {
       pdcp_pP->seq_num_size = 7;
-    } else if (rb_snP == PDCP_Config__rlc_UM__pdcp_SN_Size_len12bits) {
+    } else if (rb_snP == LTE_PDCP_Config__rlc_UM__pdcp_SN_Size_len12bits) {
       pdcp_pP->seq_num_size = 12;
     } else {
       pdcp_pP->seq_num_size=5;
@@ -1698,7 +1698,7 @@ pdcp_config_req_asn1 (
 
     memset(pdcp_pP, 0, sizeof(pdcp_t));
     break;
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   case CONFIG_ACTION_MBMS_ADD:
   case CONFIG_ACTION_MBMS_MODIFY:
@@ -2019,7 +2019,7 @@ void pdcp_layer_init(void)
 
   module_id_t       instance;
   int i,j;
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   mbms_session_id_t session_id;
   mbms_service_id_t service_id;
 #endif
@@ -2027,14 +2027,14 @@ void pdcp_layer_init(void)
    * Initialize SDU list
    */
   list_init(&pdcp_sdu_list, NULL);
-  pdcp_coll_p = hashtable_create ((maxDRB + 2) * NUMBER_OF_UE_MAX, NULL, pdcp_free);
+  pdcp_coll_p = hashtable_create ((LTE_maxDRB + 2) * NUMBER_OF_UE_MAX, NULL, pdcp_free);
   AssertFatal(pdcp_coll_p != NULL, "UNRECOVERABLE error, PDCP hashtable_create failed");
 
   for (instance = 0; instance < MAX_MOBILES_PER_ENB; instance++) {
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
-    for (service_id = 0; service_id < maxServiceCount; service_id++) {
-      for (session_id = 0; session_id < maxSessionPerPMCH; session_id++) {
+    for (service_id = 0; service_id < LTE_maxServiceCount; service_id++) {
+      for (session_id = 0; session_id < LTE_maxSessionPerPMCH; session_id++) {
         memset(&pdcp_mbms_array_ue[instance][service_id][session_id], 0, sizeof(pdcp_mbms_t));
       }
     }
@@ -2045,10 +2045,10 @@ void pdcp_layer_init(void)
 
     
   for (instance = 0; instance < NUMBER_OF_eNB_MAX; instance++) {
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
-    for (service_id = 0; service_id < maxServiceCount; service_id++) {
-      for (session_id = 0; session_id < maxSessionPerPMCH; session_id++) {
+    for (service_id = 0; service_id < LTE_maxServiceCount; service_id++) {
+      for (session_id = 0; session_id < LTE_maxSessionPerPMCH; session_id++) {
         memset(&pdcp_mbms_array_eNB[instance][service_id][session_id], 0, sizeof(pdcp_mbms_t));
       }
     }

@@ -61,6 +61,7 @@ pipeline {
     options {
         disableConcurrentBuilds()
         ansiColor('xterm')
+        lock (ciSmartPhoneResource)
     }
     // the following parameter options are commented out so it shows the ones
     // that you SHALL have to run the job.
@@ -184,7 +185,6 @@ pipeline {
             steps {
                 script {
                     dir ('ci-scripts') {
-                      lock (ciSmartPhoneResource) {
                         try {
                             echo "\u2705 \u001B[32m${testStageName}\u001B[0m"
                             withCredentials([
@@ -197,7 +197,6 @@ pipeline {
                         } catch (Exception e) {
                             currentBuild.result = 'FAILURE'
                         }
-                      }
                     }
                 }
             }
@@ -328,7 +327,7 @@ pipeline {
                             }
                             if(fileExists("ci-scripts/test_results.html")) {
                                 sh "mv ci-scripts/test_results.html test_results-${JOB_NAME}.html"
-                                sh "sed -i -e 's#TEMPLATE_JOB_NAME#${JOB_NAME}#' -e 's#TEMPLATE_BUILD_ID#<a href=\"${BUILD_URL}\">${BUILD_ID}</a>#' test_results-${JOB_NAME}.html"
+                                sh "sed -i -e 's#TEMPLATE_JOB_NAME#${JOB_NAME}#' -e 's@build #TEMPLATE_BUILD_ID@build #${BUILD_ID}@' -e 's#Build-ID: TEMPLATE_BUILD_ID#Build-ID: <a href=\"${BUILD_URL}\">${BUILD_ID}</a>#' test_results-${JOB_NAME}.html"
                                 archiveArtifacts "test_results-${JOB_NAME}.html"
                             }
                         }

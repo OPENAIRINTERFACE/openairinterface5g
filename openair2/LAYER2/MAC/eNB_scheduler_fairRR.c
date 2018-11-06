@@ -132,7 +132,7 @@ void pre_scd_nb_rbs_required(    module_id_t     module_idP,
             rlc_status =
                     mac_rlc_status_ind(module_idP, rnti, module_idP, frameP, subframeP,
                             ENB_FLAG_YES, MBMS_FLAG_NO, lc_id, 0
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                             ,0, 0
 #endif
                     );
@@ -1247,7 +1247,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
 
 		if (TBS - ta_len - header_len_dcch > 0) {
 		    rlc_status = mac_rlc_status_ind(module_idP, rnti, module_idP, frameP, subframeP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH, (TBS - ta_len - header_len_dcch)
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                                     ,0, 0
 #endif
                                                    );	// transport block set size
@@ -1263,7 +1263,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
 							  (char *)
 							  &dlsch_buffer
 							  [0]
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                                           ,0, 0
 #endif
                                                          );
@@ -1352,7 +1352,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
 		// check for DCCH1 and update header information (assume 2 byte sub-header)
 		if (TBS - ta_len - header_len_dcch - sdu_length_total > 0) {
 		    rlc_status = mac_rlc_status_ind(module_idP, rnti, module_idP, frameP, subframeP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH + 1, (TBS - ta_len - header_len_dcch - sdu_length_total)
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                                     ,0, 0
 #endif
                                                    );	// transport block set size less allocations for timing advance and
@@ -1368,7 +1368,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
 								  (char *)
 								  &dlsch_buffer
 								  [sdu_length_total]
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                                                   ,0, 0
 #endif
                                                                  );
@@ -1430,7 +1430,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
 							header_len_dcch -
 							sdu_length_total -
 							header_len_dtch
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                                         ,0, 0
 #endif
                                                        );
@@ -1449,7 +1449,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
 								      *)
 								     &dlsch_buffer
 								     [sdu_length_total]
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                                                      ,0, 0
 #endif
                                                                     );
@@ -2868,7 +2868,7 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
                                                  get_TBS_UL(UE_template->mcs_UL[harq_pid],
                                                             rb_table[rb_table_index])
                                                  );
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
             if (UE_template->rach_resource_type>0) { // This is a BL/CE UE allocation
               fill_nfapi_ulsch_config_request_emtc(&ul_req_tmp->ul_config_pdu_list[ul_req_index],
                                                    UE_template->rach_resource_type>2 ? 2 : 1,
@@ -3014,7 +3014,7 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
                                                  0, // n_srs
                                                  UE_template->TBS_UL[harq_pid]
                                                  );
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
             if (UE_template->rach_resource_type>0) { // This is a BL/CE UE allocation
               fill_nfapi_ulsch_config_request_emtc(&ul_req_tmp->ul_config_pdu_list[ul_req_index],
                                                    UE_template->rach_resource_type>2 ? 2 : 1,

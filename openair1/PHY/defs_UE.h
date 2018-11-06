@@ -853,6 +853,7 @@ typedef struct {
   time_stats_t pdsch_procedures_stat[RX_NB_TH];
   time_stats_t pdsch_procedures_per_slot_stat[RX_NB_TH][LTE_SLOTS_PER_SUBFRAME];
   time_stats_t dlsch_procedures_stat[RX_NB_TH];
+  time_stats_t crnti_procedures_stats;
 
   time_stats_t ofdm_demod_stats;
   time_stats_t dlsch_rx_pdcch_stats;

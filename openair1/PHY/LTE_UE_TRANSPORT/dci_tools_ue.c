@@ -3593,7 +3593,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
     if (cqi_req == 1) {
 
-      if( (AntennaInfoDedicated__transmissionMode_tm3 == transmission_mode) || (AntennaInfoDedicated__transmissionMode_tm4 == transmission_mode) )
+      if( (LTE_AntennaInfoDedicated__transmissionMode_tm3 == transmission_mode) || (LTE_AntennaInfoDedicated__transmissionMode_tm4 == transmission_mode) )
       {
           ulsch->O_RI = 1;
       }
