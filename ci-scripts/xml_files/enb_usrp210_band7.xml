@@ -40,19 +40,19 @@
 	<testCase id="030101">
 		<class>Initialize_eNB</class>
 		<desc>Initialize eNB (FDD/Band7/5MHz)</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.usrpb210.conf --codingw --fepw</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.usrpb210.conf</Initialize_eNB_args>
 	</testCase>
 
 	<testCase id="030111">
 		<class>Initialize_eNB</class>
 		<desc>Initialize eNB (FDD/Band7/10MHz)</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.50PRB.usrpb210.conf --codingw --fepw</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.50PRB.usrpb210.conf</Initialize_eNB_args>
 	</testCase>
 
 	<testCase id="030121">
 		<class>Initialize_eNB</class>
 		<desc>Initialize eNB (FDD/Band7/20MHz)</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.100PRB.usrpb210.conf --codingw --fepw</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.100PRB.usrpb210.conf</Initialize_eNB_args>
 	</testCase>
 
 	<testCase id="030201">
