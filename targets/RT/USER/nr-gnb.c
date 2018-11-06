@@ -290,6 +290,8 @@ static void* gNB_L1_thread_tx(void* param) {
   gNB_L1_proc_t *gNB_proc  = (gNB_L1_proc_t*)param;
   gNB_L1_rxtx_proc_t *proc = &gNB_proc->L1_proc_tx;
   PHY_VARS_gNB *gNB = RC.gNB[0][proc->CC_id];
+
+printf("~~~~~~~~~~~~~~~~~~~~gNB_L1_thread_tx is created\n");
   
   char thread_name[100];
   sprintf(thread_name,"TXnp4_%d\n",&gNB->proc.L1_proc == proc ? 0 : 1);
@@ -299,8 +301,9 @@ static void* gNB_L1_thread_tx(void* param) {
   
   while (!oai_exit) {
     
-
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX1, 0 );
     if (wait_on_condition(&proc->mutex,&proc->cond,&proc->instance_cnt,thread_name)<0) break;
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX1, 1 );
     if (oai_exit) break;    
     // *****************************************
     // TX processing for subframe n+4
@@ -308,6 +311,11 @@ static void* gNB_L1_thread_tx(void* param) {
     // (may be relaxed in the future for performance reasons)
     // *****************************************
     
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX1_GNB,proc->subframe_tx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX1_GNB,proc->subframe_rx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX1_GNB,proc->frame_tx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX1_GNB,proc->frame_rx);
+
     phy_procedures_gNB_TX(gNB, proc, 1);
 
     pthread_mutex_lock( &proc->mutex );
@@ -337,6 +345,8 @@ static void* gNB_L1_thread( void* param ) {
   gNB_L1_rxtx_proc_t *proc = &gNB_proc->L1_proc;
   PHY_VARS_gNB *gNB = RC.gNB[0][proc->CC_id];
 
+printf("~~~~~~~~~~~~~~~~~~~~gNB_L1_thread_tx is created\n");
+
   char thread_name[100];
 
 
@@ -349,8 +359,14 @@ static void* gNB_L1_thread( void* param ) {
 
   while (!oai_exit) {
 
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX0, 0 );
     if (wait_on_condition(&proc->mutex,&proc->cond,&proc->instance_cnt,thread_name)<0) break;
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX0, 1 );
 
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_GNB,proc->subframe_tx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_GNB,proc->subframe_rx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_GNB,proc->frame_tx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_GNB,proc->frame_rx);
 
     if (oai_exit) break;
 
@@ -769,7 +785,9 @@ void init_gNB_proc(int inst) {
 
     LOG_I(PHY,"gNB->single_thread_flag:%d\n", gNB->single_thread_flag);
 
+printf("~~~~~~~~~~~~~~~~~~~thread_parallel = %d",get_thread_parallel_conf());
     if (get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) {
+printf("~~~~~~~~~~~~~~~~~~~~~~~creating gNB_L1_thread and gNB_L1_thread_tx \n");
       pthread_create( &L1_proc->pthread, attr0, gNB_L1_thread, proc );
       pthread_create( &L1_proc_tx->pthread, attr1, gNB_L1_thread_tx, proc);
     }
@@ -1046,6 +1064,7 @@ void init_eNB_afterRU(void) {
       //init_transport(gNB);
       //init_precoding_weights(RC.gNB[inst][CC_id]);
     }
+printf("~~~~~~~~~~~~~~~~~~~~~~~start init gNB proc\n");
     init_gNB_proc(inst);
   }
 

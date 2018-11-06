@@ -1407,8 +1407,7 @@ static void* ru_thread_tx( void* param ) {
 
   printf( "ru_thread_tx ready\n");
   while (!oai_exit) { 
-
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_CPUID_RU_THREAD_TX,sched_getcpu());   
+ 
     if (oai_exit) break;   
 
 
@@ -1430,7 +1429,7 @@ static void* ru_thread_tx( void* param ) {
     }
     else
     {
-      if(proc->frame_tx == print_frame)
+      /*if(proc->frame_tx == print_frame)
       {
         for (i=0; i<ru->nb_tx; i++)
         {
@@ -1454,7 +1453,7 @@ static void* ru_thread_tx( void* param ) {
 	    }
           }//if(proc->subframe_tx == 9)
         }//for (i=0; i<ru->nb_tx; i++)
-      }//if(proc->frame_tx == print_frame)
+      }//if(proc->frame_tx == print_frame)*/
     }//else  emulate_rf
     release_thread(&proc->mutex_gNBs,&proc->instance_cnt_gNBs,"ru_thread_tx");
     for(i = 0; i<ru->num_gNB; i++)
