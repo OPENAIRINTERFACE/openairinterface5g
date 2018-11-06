@@ -137,7 +137,13 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                 params_rel15->sfn_mod2,
                 params_rel15->first_slot);
   nr_get_tbs(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu, *cfg);
-  //LOG_I(MAC, "DLSCH PDU: ")
+  LOG_I(MAC, "DLSCH PDU: start PRB %d n_PRB %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d\n",
+  dlsch_pdu_rel15->start_prb,
+  dlsch_pdu_rel15->n_prb,
+  dlsch_pdu_rel15->start_symbol,
+  dlsch_pdu_rel15->nb_symbols,
+  dlsch_pdu_rel15->nb_codewords,
+  dlsch_pdu_rel15->nb_layers);
 
   dl_req->number_dci++;
   dl_req->number_pdsch_rnti++;
