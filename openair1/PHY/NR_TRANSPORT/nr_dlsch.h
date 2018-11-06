@@ -79,7 +79,7 @@ void nr_pdsch_layer_mapping(int16_t **mod_symbs,
 
 uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
                           NR_gNB_DCI_ALLOC_t dci_alloc,
-                          uint32_t **pdsch_dmrs,
+                          uint32_t ***pdsch_dmrs,
                           int32_t** txdataF,
                           int16_t amp,
                           uint8_t subframe,

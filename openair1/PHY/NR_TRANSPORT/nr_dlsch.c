@@ -190,7 +190,7 @@ static inline uint16_t get_pdsch_dmrs_idx(uint8_t n, uint8_t k_prime, uint8_t de
 
 uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
                           NR_gNB_DCI_ALLOC_t dci_alloc,
-                          uint32_t **pdsch_dmrs,
+                          uint32_t ***pdsch_dmrs,
                           int32_t** txdataF,
                           int16_t amp,
                           uint8_t subframe,
@@ -289,7 +289,7 @@ for (int l=0; l<rel15->nb_layers; l++)
   int16_t mod_dmrs[n_dmrs<<1];
   uint8_t dmrs_type = config.pdsch_config.dmrs_type.value;
   l0 = get_l0(dmrs_type, 2);//config.pdsch_config.dmrs_typeA_position.value);
-  nr_modulation(pdsch_dmrs[l0], n_dmrs, MOD_QPSK, mod_dmrs);
+  nr_modulation(pdsch_dmrs[l0][0], n_dmrs, MOD_QPSK, mod_dmrs); // currently only codeword 0 is modulated
 #ifdef DEBUG_DLSCH
 printf("DMRS modulation (single symbol %d, %d symbols, type %d):\n", l0, n_dmrs, dmrs_type);
 for (int i=0; i<n_dmrs>>3; i++) {

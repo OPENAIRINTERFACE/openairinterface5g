@@ -147,14 +147,18 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 
 
    //PDSCH DMRS init
-   gNB->nr_gold_pdsch_dmrs = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t**));
-   uint32_t ***pdsch_dmrs             = gNB->nr_gold_pdsch_dmrs;
+   gNB->nr_gold_pdsch_dmrs = (uint32_t ****)malloc16(fp->slots_per_frame*sizeof(uint32_t***));
+   uint32_t ****pdsch_dmrs             = gNB->nr_gold_pdsch_dmrs;
    for (int slot=0; slot<fp->slots_per_frame; slot++) {
-    pdsch_dmrs[slot] = (uint32_t **)malloc16(fp->symbols_per_slot*sizeof(uint32_t*));
+    pdsch_dmrs[slot] = (uint32_t ***)malloc16(fp->symbols_per_slot*sizeof(uint32_t**));
     AssertFatal(pdsch_dmrs[slot]!=NULL, "NR init: pdsch_dmrs for slot %d - malloc failed\n", slot);
     for (int symb=0; symb<fp->symbols_per_slot; symb++){
-      pdsch_dmrs[slot][symb] = (uint32_t *)malloc16(NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD*sizeof(uint32_t));
+      pdsch_dmrs[slot][symb] = (uint32_t **)malloc16(NR_MAX_NB_CODEWORDS*sizeof(uint32_t*));
       AssertFatal(pdsch_dmrs[slot][symb]!=NULL, "NR init: pdsch_dmrs for slot %d symbol %d - malloc failed\n", slot, symb);
+      for (int q=0; q<NR_MAX_NB_CODEWORDS; q++) {
+        pdsch_dmrs[slot][symb][q] = (uint32_t*)malloc16(NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD*sizeof(uint32_t));
+        AssertFatal(pdsch_dmrs[slot][symb][q]!=NULL, "NR init: pdsch_dmrs for slot %d symbol %d codeword %d - malloc failed\n", slot, symb, q);
+      }
     }
   }
    
