@@ -950,11 +950,12 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
 
     switch (hi_dci0_req_pdu->pdu_type) {
 
-      case NFAPI_HI_DCI0_DCI_PDU_TYPE:
-
-        handle_nfapi_hi_dci0_dci_pdu(eNB,NFAPI_SFNSF2SFN(HI_DCI0_req->sfn_sf),NFAPI_SFNSF2SF(HI_DCI0_req->sfn_sf),proc,hi_dci0_req_pdu);
-
-
+    case NFAPI_HI_DCI0_DCI_PDU_TYPE:
+      
+      handle_nfapi_hi_dci0_dci_pdu(eNB,NFAPI_SFNSF2SFN(HI_DCI0_req->sfn_sf),NFAPI_SFNSF2SF(HI_DCI0_req->sfn_sf),proc,hi_dci0_req_pdu);
+      eNB->pdcch_vars[NFAPI_SFNSF2SF(HI_DCI0_req->sfn_sf)&1].num_dci++;
+      break;
+      
     case NFAPI_HI_DCI0_MPDCCH_DCI_PDU_TYPE:
       handle_nfapi_hi_dci0_mpdcch_dci_pdu(eNB,proc,hi_dci0_req_pdu);
       eNB->mpdcch_vars[subframe&1].num_dci++;

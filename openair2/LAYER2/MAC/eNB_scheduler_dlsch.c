@@ -2704,7 +2704,7 @@ void dlsch_scheduler_qos_multiplexing(module_id_t Mod_id, int frameP, sub_frame_
 }
 
 
-#ifdef Rel14
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 //------------------------------------------------------------------------------
 void
 schedule_ue_spec_br(
@@ -2713,9 +2713,9 @@ schedule_ue_spec_br(
 		    sub_frame_t   subframeP
 		    ) {
   int CC_id = 0,UE_id;
-  eNB_MAC_INST                        *eNB = RC.mac[module_idP];
-  COMMON_channels_t                    *cc = eNB->common_channels;
-  UE_list_t                      *UE_list  = &eNB->UE_list;
+  eNB_MAC_INST                        *mac = RC.mac[module_idP];
+  COMMON_channels_t                    *cc = mac->common_channels;
+  UE_list_t                      *UE_list  = &mac->UE_list;
   UE_TEMPLATE       *UE_template;
   UE_sched_ctrl     *ue_sched_ctl;
   int32_t                        tpc=1;
@@ -2749,10 +2749,12 @@ schedule_ue_spec_br(
   uint32_t        ackNAK_absSF;
   int             first_rb;
 
-  dl_req = &eNB->DL_req[CC_id].dl_config_request_body;
+  dl_req = &mac->DL_req[CC_id].dl_config_request_body;
   dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
 
   if ((frameP&1) == 0) return;
+
+  if (cc[CC_id].mib->message.schedulingInfoSIB1_BR_r13 ==0) return;
 
   if (cc[CC_id].radioResourceConfigCommon_BR) {
 
@@ -3121,7 +3123,7 @@ schedule_ue_spec_br(
           if (opt_enabled == 1) {
             trace_pdu(1, (uint8_t *)UE_list->DLSCH_pdu[CC_id][0][UE_id].payload[0],
                       TBS, module_idP, 3, UE_RNTI(module_idP,UE_id),
-                      eNB->frame, eNB->subframe,0,0);
+                      mac->frame, mac->subframe,0,0);
             LOG_D(OPT,"[eNB %d][DLSCH] CC_id %d Frame %d  rnti %x  with size %d\n",
                   module_idP, CC_id, frameP, UE_RNTI(module_idP,UE_id), TBS);
           }
@@ -3134,7 +3136,7 @@ schedule_ue_spec_br(
 
           /* TODO: fix how we deal with power, unit is not dBm, it's special from nfapi */
 	  normalized_rx_power = (5*ue_sched_ctl->pucch1_snr[CC_id]-640)/10+30;
-	  target_rx_power = eNB->puCch10xSnr/10+30;
+	  target_rx_power = mac->puCch10xSnr/10+30;
 	    
           // this assumes accumulated tpc
 	  // make sure that we are only sending a tpc update once a frame, otherwise the control loop will freak out
@@ -3241,7 +3243,7 @@ schedule_ue_spec_br(
 	  memset ((void *) dl_config_pdu, 0, sizeof (nfapi_dl_config_request_pdu_t));
       dl_config_pdu->pdu_type = NFAPI_DL_CONFIG_DLSCH_PDU_TYPE;
       dl_config_pdu->pdu_size = (uint8_t) (2 + sizeof (nfapi_dl_config_dlsch_pdu));
-      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index = eNB->pdu_index[CC_id];
+      dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.pdu_index = mac->pdu_index[CC_id];
       dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.rnti = rnti;
       dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.resource_allocation_type = 2;   // format 1A/1B/1D
       dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.virtual_resource_block_assignment_flag = 0;     // localized
@@ -3273,18 +3275,18 @@ schedule_ue_spec_br(
       dl_req->number_pdu++;
 
       // DL request
-      eNB->TX_req[CC_id].sfn_sf = (frameP << 4) + subframeP;
-      TX_req = &eNB->TX_req[CC_id].tx_request_body.tx_pdu_list[eNB->TX_req[CC_id].tx_request_body.number_of_pdus];
+      mac->TX_req[CC_id].sfn_sf = (frameP << 4) + subframeP;
+      TX_req = &mac->TX_req[CC_id].tx_request_body.tx_pdu_list[mac->TX_req[CC_id].tx_request_body.number_of_pdus];
       TX_req->pdu_length = get_TBS_DL(UE_template->mcs[harq_pid],
 				      6);
-      TX_req->pdu_index = eNB->pdu_index[CC_id]++;
+      TX_req->pdu_index = mac->pdu_index[CC_id]++;
       TX_req->num_segments = 1;
       TX_req->segments[0].segment_length = TX_req->pdu_length;
-      TX_req->segments[0].segment_data = eNB->UE_list.DLSCH_pdu[CC_id][0][(unsigned char) UE_id].payload[0];
-      eNB->TX_req[CC_id].tx_request_body.number_of_pdus++;
+      TX_req->segments[0].segment_data = mac->UE_list.DLSCH_pdu[CC_id][0][(unsigned char) UE_id].payload[0];
+      mac->TX_req[CC_id].tx_request_body.number_of_pdus++;
 
       ackNAK_absSF = absSF + 4;
-      ul_req = &eNB->UL_req_tmp[CC_id][ackNAK_absSF % 10].ul_config_request_body;
+      ul_req = &mac->UL_req_tmp[CC_id][ackNAK_absSF % 10].ul_config_request_body;
       ul_config_pdu = &ul_req->ul_config_pdu_list[ul_req->number_of_pdus];
       
       ul_config_pdu->pdu_type = NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE;
@@ -3309,10 +3311,10 @@ schedule_ue_spec_br(
       }
       ul_req->number_of_pdus++;
       T (T_ENB_MAC_UE_DL_PDU_WITH_DATA, T_INT (module_idP), T_INT (CC_id), T_INT (rnti), T_INT (frameP), T_INT (subframeP),
-	 T_INT (0 /*harq_pid always 0? */ ), T_BUFFER (&eNB->UE_list.DLSCH_pdu[CC_id][0][UE_id].payload[0], TX_req->pdu_length));
+	 T_INT (0 /*harq_pid always 0? */ ), T_BUFFER (&mac->UE_list.DLSCH_pdu[CC_id][0][UE_id].payload[0], TX_req->pdu_length));
       
       if (opt_enabled == 1) {
-	trace_pdu (1, (uint8_t *) eNB->UE_list.DLSCH_pdu[CC_id][0][(unsigned char) UE_id].payload[0], TX_req->pdu_length , UE_id, 3, rnti, frameP, subframeP, 0, 0);
+	trace_pdu (1, (uint8_t *) mac->UE_list.DLSCH_pdu[CC_id][0][(unsigned char) UE_id].payload[0], TX_req->pdu_length , UE_id, 3, rnti, frameP, subframeP, 0, 0);
 	LOG_D (OPT, "[eNB %d][DLSCH] CC_id %d Frame %d trace pdu for rnti %x with size %d\n", module_idP, CC_id, frameP, rnti, TX_req->pdu_length );
       }
 
@@ -3818,6 +3820,7 @@ void schedule_PCH(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 	  // dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.bf_vector                    = ;
 
 	// Rel10 fields
+
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel10.pdsch_start                           = 3;
 #endif

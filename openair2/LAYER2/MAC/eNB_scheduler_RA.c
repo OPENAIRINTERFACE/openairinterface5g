@@ -276,7 +276,8 @@ generate_Msg2(module_id_t module_idP, int CC_idP, frame_t frameP,
   if (absSF > absSF_Msg2)
     return;                     // we're not ready yet, need to be to start ==  
 
-  if (cc[CC_idP].radioResourceConfigCommon_BR) {
+  if (cc[CC_idP].mib->message.schedulingInfoSIB1_BR_r13 > 0 && 
+      cc[CC_idP].radioResourceConfigCommon_BR) {
 
     ext4_prach = cc[CC_idP].radioResourceConfigCommon_BR->ext4->prach_ConfigCommon_v1310;
     prach_ParametersListCE_r13 = &ext4_prach->prach_ParametersListCE_r13;
@@ -606,7 +607,8 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
   int             pucchreps[4] = { 1, 1, 1, 1 };
   int             n1pucchan[4] = { 0, 0, 0, 0 };
 
-  if (cc[CC_idP].radioResourceConfigCommon_BR) {
+  if (cc[CC_idP].mib->message.schedulingInfoSIB1_BR_r13 > 0 && 
+      cc[CC_idP].radioResourceConfigCommon_BR) {
 
     ext4_prach = cc[CC_idP].radioResourceConfigCommon_BR->ext4->prach_ConfigCommon_v1310;
     ext4_pucch = cc[CC_idP].radioResourceConfigCommon_BR->ext4->pucch_ConfigCommon_v1310;
@@ -656,7 +658,7 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
     N_RB_DL = to_prb(cc[CC_idP].mib->message.dl_Bandwidth);
 
     UE_id = find_UE_id(module_idP, ra->rnti);
-    AssertFatal(UE_id >= 0, "Can't find UE for t-crnti\n");
+    AssertFatal(UE_id >= 0, "Can't find UE for t-crnti %x\n",ra->rnti);
 
     // set HARQ process round to 0 for this UE
 
@@ -1361,18 +1363,21 @@ initiate_ra_proc(module_id_t module_idP,
     COMMON_channels_t *cc = &RC.mac[module_idP]->common_channels[CC_id];
     RA_t *ra = &cc->ra[0];
 
+    static uint8_t failure_cnt = 0;
 
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
     struct PRACH_ConfigSIB_v1310 *ext4_prach = NULL;
     PRACH_ParametersListCE_r13_t *prach_ParametersListCE_r13 = NULL;
   
-    static uint8_t failure_cnt = 0;
 
-    if (cc->radioResourceConfigCommon_BR
-	&& cc->radioResourceConfigCommon_BR->ext4) {
-	ext4_prach = cc->radioResourceConfigCommon_BR->ext4->prach_ConfigCommon_v1310;
-	prach_ParametersListCE_r13 = &ext4_prach->prach_ParametersListCE_r13;
+
+    if (cc->mib->message.schedulingInfoSIB1_BR_r13>0) {
+      AssertFatal(cc->radioResourceConfigCommon_BR != NULL,"radioResourceConfigCommon_BR is null\n");
+      AssertFatal(cc->radioResourceConfigCommon_BR->ext4 != NULL, "radioResourceConfigCommon_BR->ext4 is null\n");
+      ext4_prach = cc->radioResourceConfigCommon_BR->ext4->prach_ConfigCommon_v1310;
+      AssertFatal(ext4_prach!=NULL,"ext4_prach is null\n");
+      prach_ParametersListCE_r13 = &ext4_prach->prach_ParametersListCE_r13;
     }
 
 #endif /* #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0)) */
