@@ -527,6 +527,8 @@ int main(int argc, char **argv)
 
   for (SNR=snr0;SNR<snr1;SNR+=snr_step)
     {
+	  for (trial=0; trial < n_trials; trial++)
+	    {
 
  	for (i = 0; i < available_bits; i++) {
  #ifdef DEBUG_CODER
@@ -567,6 +569,7 @@ int main(int argc, char **argv)
 
  	}
 
+ 	//if (errors_bit_uncoded>10)
  	printf("errors bits uncoded %f\n", errors_bit_uncoded);
 
 
@@ -597,8 +600,9 @@ int main(int argc, char **argv)
              //printf("estimated bits error occurs @%d ",i);
            }
          }
-
-       printf("\n errors_bit %d \n", errors_bit);
+//if (errors_bit>10)
+       printf("\n errors_bit %d (trial %d)\n", errors_bit,trial);
+	    }
 
     printf("SNR %f, BER %f \n",SNR,(float)errors_bit/(float)n_trials/(float)TBS);
     }

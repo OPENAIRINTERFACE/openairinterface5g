@@ -4251,6 +4251,9 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   NR_UE_PDSCH *pdsch_vars;
   uint8_t is_cw0_active = 0;
   uint8_t is_cw1_active = 0;
+  uint8_t nb_re_dmrs = 6;
+  uint16_t length_dmrs = 1;
+  uint16_t nb_symb_sch = 4;
 
   if (dlsch0==NULL)
       AssertFatal(0,"dlsch0 should be defined at this level \n");
@@ -4315,25 +4318,22 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
     if (abstraction_flag == 0) {
 
       // start ldpc decode for CW 0
-      dlsch0->harq_processes[harq_pid]->G = get_G(&ue->frame_parms,
-						  dlsch0->harq_processes[harq_pid]->nb_rb,
-						  dlsch0->harq_processes[harq_pid]->rb_alloc_even,
-						  dlsch0->harq_processes[harq_pid]->Qm,
-						  dlsch0->harq_processes[harq_pid]->Nl,
-						  ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->num_pdcch_symbols,
-						  frame_rx,
-						  nr_tti_rx,
-						  ue->transmission_mode[eNB_id]<7?0:ue->transmission_mode[eNB_id]);
+      dlsch0->harq_processes[harq_pid]->G = nr_get_G(dlsch0->harq_processes[harq_pid]->nb_rb,
+    		  	  	  	  	  	  	  	  	  	  nb_symb_sch,
+												  nb_re_dmrs,
+												  length_dmrs,
+												  dlsch0->harq_processes[harq_pid]->Qm,
+												  dlsch0->harq_processes[harq_pid]->Nl);
 #if UE_TIMING_TRACE
       start_meas(&ue->dlsch_unscrambling_stats);
 #endif
-      /*dlsch_unscrambling(&ue->frame_parms,
-			 0,
-			 dlsch0,
-			 dlsch0->harq_processes[harq_pid]->G,
-			 pdsch_vars->llr[0],
-			 0,
-			 nr_tti_rx<<1);*/
+      nr_dlsch_unscrambling(pdsch_vars->llr[0],
+    		  	  	  	  	dlsch0->harq_processes[harq_pid]->G,
+                            0,
+							ue->frame_parms.Nid_cell,
+							dlsch0->rnti);
+
+
 #if UE_TIMING_TRACE
       stop_meas(&ue->dlsch_unscrambling_stats);
 #endif
@@ -4371,6 +4371,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 			   dlsch0,
 			   dlsch0->harq_processes[harq_pid],
 			   frame_rx,
+			   nb_symb_sch,
 			   nr_tti_rx,
 			   harq_pid,
 			   pdsch==PDSCH?1:0,//proc->decoder_switch,
@@ -4396,25 +4397,20 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       if(is_cw1_active)
       {
           // start ldpc decode for CW 1
-          dlsch1->harq_processes[harq_pid]->G = get_G(&ue->frame_parms,
-                  dlsch1->harq_processes[harq_pid]->nb_rb,
-                  dlsch1->harq_processes[harq_pid]->rb_alloc_even,
-                  dlsch1->harq_processes[harq_pid]->Qm,
-                  dlsch1->harq_processes[harq_pid]->Nl,
-                  ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->num_pdcch_symbols,
-                  frame_rx,
-                  nr_tti_rx,
-                  ue->transmission_mode[eNB_id]<7?0:ue->transmission_mode[eNB_id]);
+          dlsch1->harq_processes[harq_pid]->G = nr_get_G(dlsch1->harq_processes[harq_pid]->nb_rb,
+              		  	  	  	  	  	  	  	  	  	  nb_symb_sch,
+          												  nb_re_dmrs,
+          												  length_dmrs,
+          												  dlsch1->harq_processes[harq_pid]->Qm,
+          												  dlsch1->harq_processes[harq_pid]->Nl);
 #if UE_TIMING_TRACE
           start_meas(&ue->dlsch_unscrambling_stats);
 #endif
-          /*dlsch_unscrambling(&ue->frame_parms,
-                  0,
-                  dlsch1,
-                  dlsch1->harq_processes[harq_pid]->G,
-                  pdsch_vars->llr[1],
-                  1,
-                  nr_tti_rx<<1);*/
+          nr_dlsch_unscrambling(pdsch_vars->llr[1],
+              		  	  	  	  	dlsch1->harq_processes[harq_pid]->G,
+                                    0,
+          							ue->frame_parms.Nid_cell,
+          							dlsch1->rnti);
 #if UE_TIMING_TRACE
           stop_meas(&ue->dlsch_unscrambling_stats);
 #endif
@@ -4452,6 +4448,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                   dlsch1,
                   dlsch1->harq_processes[harq_pid],
                   frame_rx,
+		  nb_symb_sch,
                   nr_tti_rx,
                   harq_pid,
                   pdsch==PDSCH?1:0,//proc->decoder_switch,
@@ -5634,15 +5631,25 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 //#if 0
   LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
   //to update from pdsch config
-  nr_gold_pdsch(ue,0,0, 1);
+  nr_gold_pdsch(ue,2,0, 1);
+
+  int nb_prefix_samples0 = ue->frame_parms.nb_prefix_samples0;
+  ue->frame_parms.nb_prefix_samples0 = ue->frame_parms.nb_prefix_samples;
 
   nr_slot_fep(ue,
           2,  //to be updated from higher layer
-          (nr_tti_rx<<1),
+          nr_tti_rx,
           0,
           0,
           0,
  		  NR_PDSCH_EST);
+
+  //put back nb_prefix_samples0
+  ue->frame_parms.nb_prefix_samples0 = nb_prefix_samples0;
+
+  //set active for testing, to be removed
+  if (nr_tti_rx==1)
+	  ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active = 1;
 
 #if UE_TIMING_TRACE
   start_meas(&ue->generic_stat);
