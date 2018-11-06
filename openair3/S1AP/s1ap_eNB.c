@@ -444,16 +444,22 @@ void *s1ap_eNB_task(void *arg)
   return NULL;
 }
 
+//-----------------------------------------------------------------------------
+/*
+* eNB generate a S1 setup request towards MME
+*/
 static int s1ap_eNB_generate_s1_setup_request(
-  s1ap_eNB_instance_t *instance_p, s1ap_eNB_mme_data_t *s1ap_mme_data_p)
+  s1ap_eNB_instance_t *instance_p,
+  s1ap_eNB_mme_data_t *s1ap_mme_data_p)
+//-----------------------------------------------------------------------------
 {
-  S1AP_S1AP_PDU_t                     pdu;
-  S1AP_S1SetupRequest_t              *out;
-  S1AP_S1SetupRequestIEs_t           *ie;
-  S1AP_SupportedTAs_Item_t           *ta;
-  S1AP_PLMNidentity_t                *plmn;
-  uint8_t  *buffer;
-  uint32_t  len;
+  S1AP_S1AP_PDU_t            pdu;
+  S1AP_S1SetupRequest_t     *out = NULL;
+  S1AP_S1SetupRequestIEs_t   *ie = NULL;
+  S1AP_SupportedTAs_Item_t   *ta = NULL;
+  S1AP_PLMNidentity_t      *plmn = NULL;
+  uint8_t  *buffer = NULL;
+  uint32_t  len = 0;
   int       ret = 0;
 
   DevAssert(instance_p != NULL);
