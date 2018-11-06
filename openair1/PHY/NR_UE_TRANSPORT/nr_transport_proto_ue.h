@@ -1005,6 +1005,12 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                          uint8_t is_crnti,
                          uint8_t llr8_flag);
 
+void nr_dlsch_unscrambling(int16_t* llr,
+                         uint8_t size,
+                         uint8_t q,
+                         uint32_t Nid,
+                         uint32_t n_RNTI);
+
 
 uint32_t dlsch_decoding_emul(PHY_VARS_NR_UE *phy_vars_ue,
                              uint8_t subframe,
