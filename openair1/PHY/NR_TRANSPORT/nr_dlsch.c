@@ -255,7 +255,7 @@ for (int i=0; i<encoded_length>>7; i++) {
                          encoded_length,
                          mod_symbs[q]);
 #ifdef DEBUG_DLSCH
-printf("PDSCH Modulation: Qm %d(%d)\n", Qm, n_symbs);
+printf("PDSCH Modulation: Qm %d(%d)\n", Qm, nb_symbols);
 for (int i=0; i<nb_symbols>>3; i++) {
   for (int j=0; j<8; j++) {
     printf("%d %d\t", mod_symbs[0][((i<<3)+j)<<1], mod_symbs[0][(((i<<3)+j)<<1)+1]);
@@ -273,7 +273,7 @@ for (int i=0; i<nb_symbols>>3; i++) {
 #ifdef DEBUG_DLSCH
 printf("Layer mapping (%d layers):\n", rel15->nb_layers);
 for (int l=0; l<rel15->nb_layers; l++)
-  for (int i=0; i<(nb_symbs/rel15->nb_layers)>>3; i++) {
+  for (int i=0; i<(nb_symbols/rel15->nb_layers)>>3; i++) {
     for (int j=0; j<8; j++) {
       printf("%d %d\t", tx_layers[l][((i<<3)+j)<<1], tx_layers[l][(((i<<3)+j)<<1)+1]);
     }
