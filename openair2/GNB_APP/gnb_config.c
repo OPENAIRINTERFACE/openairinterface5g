@@ -3004,10 +3004,7 @@ int RCconfig_nr_parallel(void) {
   }
 
   if(parallel_config == NULL) set_parallel_conf(parallel_conf);
-if(parallel_config == NULL)printf("~~~~~~~~~~~~~~~~~~~~parallel_conf = %s\n",parallel_conf);
-
   if(worker_config == NULL)   set_worker_conf(worker_conf);
-if(worker_config == NULL)printf("~~~~~~~~~~~~~~~~~~~~worker_conf = %s\n",worker_conf);
 
   return 0;
 }

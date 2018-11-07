@@ -1141,7 +1141,7 @@ void wakeup_gNB_L1s(RU_t *ru) {
 
   LOG_D(PHY,"wakeup_gNB_L1s (num %d) for RU %d ru->gNB_top:%p\n",ru->num_gNB,ru->idx, ru->gNB_top);
 
-  if (ru->num_gNB==1 && ru->gNB_top!=0) {
+  if (ru->num_gNB==1 && ru->gNB_top!=0 && get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD) {
     // call gNB function directly
 
     char string[20];
@@ -1156,7 +1156,6 @@ void wakeup_gNB_L1s(RU_t *ru) {
     for (i=0;i<ru->num_gNB;i++)
     {
       LOG_D(PHY,"ru->wakeup_rxtx:%p\n", ru->nr_wakeup_rxtx);
-
       if (ru->nr_wakeup_rxtx!=0 && ru->nr_wakeup_rxtx(gNB_list[i],ru) < 0)
       {
 	LOG_E(PHY,"could not wakeup gNB rxtx process for subframe %d\n", ru->proc.subframe_rx);
@@ -1429,7 +1428,7 @@ static void* ru_thread_tx( void* param ) {
     }
     else
     {
-      /*if(proc->frame_tx == print_frame)
+      if(proc->frame_tx == print_frame)
       {
         for (i=0; i<ru->nb_tx; i++)
         {
@@ -1453,7 +1452,7 @@ static void* ru_thread_tx( void* param ) {
 	    }
           }//if(proc->subframe_tx == 9)
         }//for (i=0; i<ru->nb_tx; i++)
-      }//if(proc->frame_tx == print_frame)*/
+      }//if(proc->frame_tx == print_frame)
     }//else  emulate_rf
     release_thread(&proc->mutex_gNBs,&proc->instance_cnt_gNBs,"ru_thread_tx");
     for(i = 0; i<ru->num_gNB; i++)
@@ -1554,11 +1553,6 @@ static void* ru_thread( void* param ) {
   RC.ru_mask &= ~(1<<ru->idx);
   pthread_cond_signal(&RC.ru_cond);
   pthread_mutex_unlock(&RC.ru_mutex);
-
-  pthread_mutex_lock(&proc->mutex_FH1);
-  proc->instance_cnt_FH1 = 0;
-  pthread_mutex_unlock(&proc->mutex_FH1);
-  pthread_cond_signal(&proc->cond_FH1);
   
   wait_sync("ru_thread");
 
@@ -1587,6 +1581,10 @@ static void* ru_thread( void* param ) {
     if ((ru->is_slave) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
   }
 
+  pthread_mutex_lock(&proc->mutex_FH1);
+  proc->instance_cnt_FH1 = 0;
+  pthread_mutex_unlock(&proc->mutex_FH1);
+  pthread_cond_signal(&proc->cond_FH1);
 
   // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
   while (!oai_exit) {
@@ -1830,6 +1828,7 @@ void init_RU_proc(RU_t *ru) {
   proc->instance_cnt_synch       = -1;     ;
   proc->instance_cnt_FH          = -1;
   proc->instance_cnt_FH1         = -1;
+  proc->instance_cnt_gNBs        = -1;
   proc->instance_cnt_asynch_rxtx = -1;
   proc->instance_cnt_emulateRF   = -1;
   proc->first_rx                 = 1;

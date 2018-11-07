@@ -287,15 +287,15 @@ static inline int rxtx(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc, char *thread_
 
 static void* gNB_L1_thread_tx(void* param) {
 
-  gNB_L1_proc_t *gNB_proc  = (gNB_L1_proc_t*)param;
+  PHY_VARS_gNB *gNB        = (PHY_VARS_gNB*)param;
+  gNB_L1_proc_t *gNB_proc  = &gNB->proc;
   gNB_L1_rxtx_proc_t *proc = &gNB_proc->L1_proc_tx;
-  PHY_VARS_gNB *gNB = RC.gNB[0][proc->CC_id];
+  //PHY_VARS_gNB *gNB = RC.gNB[0][proc->CC_id];
 
-printf("~~~~~~~~~~~~~~~~~~~~gNB_L1_thread_tx is created\n");
   
   char thread_name[100];
   sprintf(thread_name,"TXnp4_%d\n",&gNB->proc.L1_proc == proc ? 0 : 1);
-  thread_top_init(thread_name,1,470000,500000,500000);
+  //thread_top_init(thread_name,1,470000,500000,500000);
   
   //wait_sync("tx_thread");
   
@@ -341,13 +341,14 @@ printf("~~~~~~~~~~~~~~~~~~~~gNB_L1_thread_tx is created\n");
 static void* gNB_L1_thread( void* param ) {
 
   static int gNB_thread_rxtx_status;
-  gNB_L1_proc_t *gNB_proc  = (gNB_L1_proc_t*)param;
+  PHY_VARS_gNB *gNB        = (PHY_VARS_gNB*)param;
+  gNB_L1_proc_t *gNB_proc  = &gNB->proc;
   gNB_L1_rxtx_proc_t *proc = &gNB_proc->L1_proc;
-  PHY_VARS_gNB *gNB = RC.gNB[0][proc->CC_id];
+  //PHY_VARS_gNB *gNB = RC.gNB[0][proc->CC_id];
 
-printf("~~~~~~~~~~~~~~~~~~~~gNB_L1_thread_tx is created\n");
 
   char thread_name[100];
+
 
 
   // set default return value
@@ -355,7 +356,7 @@ printf("~~~~~~~~~~~~~~~~~~~~gNB_L1_thread_tx is created\n");
 
 
   sprintf(thread_name,"RXn_TXnp4_%d",&gNB->proc.L1_proc == proc ? 0 : 1);
-  thread_top_init(thread_name,1,850000L,1000000L,2000000L);
+  //thread_top_init(thread_name,1,850000L,1000000L,2000000L);
 
   while (!oai_exit) {
 
@@ -454,7 +455,7 @@ int wakeup_txfh(gNB_L1_rxtx_proc_t *proc,PHY_VARS_gNB *gNB) {
   struct timespec wait;
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
-//printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~inside wakeup_txfh %d.%d IC_RU = %d\n", proc->frame_tx, proc->subframe_tx, proc->instance_cnt_RUs);
+printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~inside wakeup_txfh %d.%d IC_RU = %d\n", proc->frame_tx, proc->subframe_tx, proc->instance_cnt_RUs);
 
   if(wait_on_condition(&proc->mutex_RUs,&proc->cond_RUs,&proc->instance_cnt_RUs,"wakeup_txfh")<0) {
     LOG_E(PHY,"Frame %d, subframe %d: TX FH not ready\n", proc->frame_tx, proc->subframe_tx);
@@ -606,6 +607,8 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
   L1_proc->subframe_rx  = proc->subframe_rx;
   L1_proc->frame_tx     = (L1_proc->subframe_rx > (9-sf_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
   L1_proc->subframe_tx  = (L1_proc->subframe_rx + sf_ahead)%10;
+
+printf("~~~~~~~~~~~~~~~~~~~~~~passing parameter IC = %d, RX: %d.%d, TX: %d.%d to L1 sf_ahead = %d\n", L1_proc->instance_cnt, L1_proc->frame_rx, L1_proc->subframe_rx, L1_proc->frame_tx, L1_proc->subframe_tx, sf_ahead);
 
   // the thread can now be woken up
   if (pthread_cond_signal(&L1_proc->cond) != 0) {
@@ -785,11 +788,9 @@ void init_gNB_proc(int inst) {
 
     LOG_I(PHY,"gNB->single_thread_flag:%d\n", gNB->single_thread_flag);
 
-printf("~~~~~~~~~~~~~~~~~~~thread_parallel = %d",get_thread_parallel_conf());
     if (get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) {
-printf("~~~~~~~~~~~~~~~~~~~~~~~creating gNB_L1_thread and gNB_L1_thread_tx \n");
-      pthread_create( &L1_proc->pthread, attr0, gNB_L1_thread, proc );
-      pthread_create( &L1_proc_tx->pthread, attr1, gNB_L1_thread_tx, proc);
+      pthread_create( &L1_proc->pthread, attr0, gNB_L1_thread, gNB );
+      pthread_create( &L1_proc_tx->pthread, attr1, gNB_L1_thread_tx, gNB);
     }
     //pthread_create( &proc->pthread_prach, attr_prach, gNB_thread_prach, gNB );
 
@@ -1064,7 +1065,6 @@ void init_eNB_afterRU(void) {
       //init_transport(gNB);
       //init_precoding_weights(RC.gNB[inst][CC_id]);
     }
-printf("~~~~~~~~~~~~~~~~~~~~~~~start init gNB proc\n");
     init_gNB_proc(inst);
   }
 
