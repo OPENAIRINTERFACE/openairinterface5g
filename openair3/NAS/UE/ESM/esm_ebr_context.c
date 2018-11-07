@@ -214,7 +214,7 @@ int esm_ebr_context_create(
            char           broadcast[INET_ADDRSTRLEN];
            struct in_addr in_addr;
            char           command_line[500];
-           int            res;
+           int            res = -1;
 
            switch (pdn->type) {
            case NET_PDN_TYPE_IPV4V6:
