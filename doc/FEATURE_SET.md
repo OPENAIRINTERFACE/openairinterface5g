@@ -34,23 +34,23 @@ The Physical layer implements **3GPP 36.211**, **36.212**, **36.213** and provid
 
 ### Performances ###
 
-**Transmission Mode, Bandwidth** | **Expected Throughput** | **Conditions**
--------------------------------- | ----------------------- | ----------------:
-FDD DL: 5 MHz, 25 PRBS/ MCS 28   | 16 - 17 Mbit/s          | measured with COTS UE Cat 3/4
-FDD DL: 10 MHz, 50 PRBS/ MCS 28  | 34 - 35 Mbit/s          | measured with COTS UE Cat 3/4
-FDD DL: 20 MHz, 100 PRBS/ MCS 28 | 70 Mbit/s               | measured with COTS UE Cat 3/4
+**Transmission Mode, Bandwidth** | **Expected Throughput** | **Measured Throughput** | **Measurement Conditions**
+-------------------------------- | ----------------------- | ------------------------| ----------------:
+FDD DL: 5 MHz, 25 PRBS/ MCS 28   | 16 - 17 Mbit/s          | TM1: 17.0 Mbits/s       | COTS-UE Cat 4 (150/50 Mbps)
+FDD DL: 10 MHz, 50 PRBS/ MCS 28  | 34 - 35 Mbit/s          | TM1: 32.8 Mbits/s       | COTS-UE Cat 4 (150/50 Mbps)
+FDD DL: 20 MHz, 100 PRBS/ MCS 28 | 70 Mbit/s               | TM1: 69.9 Mbits/s       | COTS-UE Cat 4 (150/50 Mbps)
+ |  |  | 
+FDD UL: 5 MHz, 25 PRBS/ MCS 20   | 9 Mbit/s                | TM1: 8.28 Mbits/s       | COTS-UE Cat 4 (150/50 Mbps)
+FDD UL: 10 MHz, 50 PRBS/ MCS 20  | 17 Mbit/s               | TM1: 15.2 Mbits/s       | COTS-UE Cat 4 (150/50 Mbps)
+FDD UL: 20 MHz, 100 PRBS/ MCS 20 | 35 Mbit/s               | TM1: 18.6 Mbits/s       | COTS-UE Cat 4 (150/50 Mbps)
  |  | 
-FDD UL: 5 MHz, 25 PRBS/ MCS 20   | 9 Mbit/s                | measured with COTS UE Cat 3/4
-FDD UL: 10 MHz, 50 PRBS/ MCS 20  | 17 Mbit/s               | measured with COTS UE Cat 3/4
-FDD UL: 20 MHz, 100 PRBS/ MCS 20 | 35 Mbit/s               | measured with COTS UE Cat 3/4
- |  | 
-TDD DL: 5 MHz, 25 PRBS/ MCS **XX**   | **TBC** Mbit/s | 
-TDD DL: 10 MHz, 50 PRBS/ MCS **XX**  | **TBC** Mbit/s | 
-TDD DL: 20 MHz, 100 PRBS/ MCS **XX** | **TBC** Mbit/s | 
- |  | 
-TDD UL: 5 MHz, 25 PRBS/ MCS **XX**   | **TBC** Mbit/s | 
-TDD UL: 10 MHz, 50 PRBS/ MCS **XX**  | **TBC** Mbit/s | 
-TDD UL: 20 MHz, 100 PRBS/ MCS **XX** | **TBC** Mbit/s | 
+TDD DL: 5 MHz, 25 PRBS/ MCS **XX**   | **TBC** Mbit/s | 3.33 Mbits/s | COTS-UE Cat 4 (150/50 Mbps)
+TDD DL: 10 MHz, 50 PRBS/ MCS **XX**  | **TBC** Mbit/s | 8.90 Mbits/s | COTS-UE Cat 4 (150/50 Mbps)
+TDD DL: 20 MHz, 100 PRBS/ MCS **XX** | **TBC** Mbit/s | N/A | COTS-UE Cat 4 (150/50 Mbps)
+ |  | | 
+TDD UL: 5 MHz, 25 PRBS/ MCS **XX**   | **TBC** Mbit/s | 1.66 Mbits/s | COTS-UE Cat 4 (150/50 Mbps)
+TDD UL: 10 MHz, 50 PRBS/ MCS **XX**  | **TBC** Mbit/s | 1.89 Mbits/s | COTS-UE Cat 4 (150/50 Mbps)
+TDD UL: 20 MHz, 100 PRBS/ MCS **XX** | **TBC** Mbit/s | N/A | COTS-UE Cat 4 (150/50 Mbps)
 
 - Number of supported UEs: **To Be Completed**
 
