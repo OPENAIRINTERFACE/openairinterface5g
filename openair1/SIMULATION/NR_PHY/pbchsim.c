@@ -133,6 +133,8 @@ int main(int argc, char **argv)
 
   int loglvl=OAILOG_WARNING;
 
+  float target_error_rate = 0.01;
+
   cpuf = get_cpu_freq_GHz();
 
   if ( load_configmodule(argc,argv) == 0) {
@@ -296,6 +298,7 @@ int main(int argc, char **argv)
       
     case 'I':
       run_initial_sync=1;
+      target_error_rate=0.1;
       break;
 
     case 'L':
@@ -571,7 +574,12 @@ int main(int argc, char **argv)
 
     printf("SNR %f : n_errors (negative CRC) = %d/%d\n", SNR,n_errors,n_trials);
 
-    if (n_trials==1 || ((float)n_errors/(float)n_trials < 0.01))
+    if ((float)n_errors/(float)n_trials <= target_error_rate) {
+      printf("PBCH test OK\n");
+      break;
+    }
+      
+    if (n_trials==1)
       break;
 
   } // NSR
