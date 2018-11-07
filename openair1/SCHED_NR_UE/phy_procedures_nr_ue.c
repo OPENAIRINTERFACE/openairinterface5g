@@ -5913,8 +5913,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 #endif
 
   //nr_gold_pdcch(ue,0, 2);
-/*
-  for (l=0; l<2; l++) {
+
+  for (int l=0; l<2; l++) {
     if (abstraction_flag == 0) {
 #if UE_TIMING_TRACE
         start_meas(&ue->ofdm_demod_stats);
@@ -5933,7 +5933,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
       stop_meas(&ue->ofdm_demod_stats);
 #endif
     }
-  }*/
+  }
     //ue_measurement_procedures(l-1,ue,proc,eNB_id,(nr_tti_rx<<1),abstraction_flag,mode);
 
     //if (do_pdcch_flag) {
