@@ -782,7 +782,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
 #if DISABLE_LOG_X
     printf("[AbsSFN %d.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp %5.2f \n",frame,subframe,slot,symbol,pdsch_vars[eNB_id]->log2_maxh,proc->channel_level,ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time/(cpuf*1000.0));
 #else
-    LOG_I(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp  %5.2f \n",frame,subframe,slot,symbol,pdsch_vars[eNB_id]->log2_maxh,proc->channel_level,ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time/(cpuf*1000.0));
+    LOG_I(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d log2_maxh %d Channel Comp  %5.2f \n",frame,subframe,slot,symbol,pdsch_vars[eNB_id]->log2_maxh,ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time/(cpuf*1000.0));
 #endif
 #endif
 // MRC

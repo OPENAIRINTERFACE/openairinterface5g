@@ -19,11 +19,36 @@
  *      contact@openairinterface.org
  */
 
-#ifndef SIGNALS_H_
-#define SIGNALS_H_
+#include <stdio.h>
+#include <string.h>
+#include <stdint.h>
 
-int signal_mask(void);
+#include "assertions.h"
+#include "conversions.h"
+#include "intertask_interface.h"
+#include "x2ap_common.h"
+#include "x2ap_eNB_encoder.h"
 
-int signal_handle(int *end);
+int x2ap_eNB_encode_pdu(X2AP_X2AP_PDU_t *pdu, uint8_t **buffer, uint32_t *len)
+{
+  ssize_t    encoded;
 
-#endif /* SIGNALS_H_ */
+  DevAssert(pdu != NULL);
+  DevAssert(buffer != NULL);
+  DevAssert(len != NULL);
+
+  if (asn1_xer_print) {
+    xer_fprint(stdout, &asn_DEF_X2AP_X2AP_PDU, (void *)pdu);
+  }
+
+  encoded = aper_encode_to_new_buffer(&asn_DEF_X2AP_X2AP_PDU, 0, pdu, (void **)buffer);
+
+  if (encoded < 0) {
+    return -1;
+  }
+
+  *len = encoded;
+
+  ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_X2AP_X2AP_PDU, pdu);
+  return encoded;
+}

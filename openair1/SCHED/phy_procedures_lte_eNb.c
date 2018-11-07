@@ -412,7 +412,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
       &eNB->dlsch_turbo_encoding_wakeup_stats1,
 	  &eNB->dlsch_interleaving_stats);
     stop_meas(&eNB->dlsch_encoding_stats);
-  if(eNB->dlsch_encoding_stats.diff_now>500*3000 && opp_enabled == 1)
+  if(eNB->dlsch_encoding_stats.p_time>500*3000 && opp_enabled == 1)
   {
     print_meas_now(&eNB->dlsch_encoding_stats,"total coding",stderr);
   }
@@ -1337,21 +1337,26 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
             ret,
             ulsch_harq->cqi_crc_status,
             ulsch_harq->O_ACK,
-            eNB->ulsch_decoding_stats.diff_now, eNB->ulsch_decoding_stats.max);
+            eNB->ulsch_decoding_stats.p_time, eNB->ulsch_decoding_stats.max);
       
       //compute the expected ULSCH RX power (for the stats)
       ulsch_harq->delta_TF = get_hundred_times_delta_IF_eNB(eNB,i,harq_pid, 0); // 0 means bw_factor is not considered
       
-      if (ulsch_harq->cqi_crc_status == 1) {
+      if (RC.mac != NULL) { /* ulsim dose not use RC.mac context. */
+        if (ulsch_harq->cqi_crc_status == 1) {
 #ifdef DEBUG_PHY_PROC
 	//if (((frame%10) == 0) || (frame < 50))
 	print_CQI(ulsch_harq->o,ulsch_harq->uci_format,0,fp->N_RB_DL);
 #endif
-	
-	fill_ulsch_cqi_indication(eNB,frame,subframe,
-				  ulsch_harq,
-				  ulsch->rnti);
-	
+          fill_ulsch_cqi_indication(eNB,frame,subframe,ulsch_harq,ulsch->rnti);
+          RC.mac[eNB->Mod_id]->UE_list.UE_sched_ctrl[i].cqi_req_flag &= (~(1 << subframe));
+        } else {
+          if(RC.mac[eNB->Mod_id]->UE_list.UE_sched_ctrl[i].cqi_req_flag & (1 << subframe) ){
+            RC.mac[eNB->Mod_id]->UE_list.UE_sched_ctrl[i].cqi_req_flag &= (~(1 << subframe));
+            RC.mac[eNB->Mod_id]->UE_list.UE_sched_ctrl[i].cqi_req_timer=30;
+            LOG_D(PHY,"Frame %d,Subframe %d, We're supposed to get a cqi here. Set cqi_req_timer to 30.\n",frame,subframe);
+          }
+        }
       }
     
       if (ret == (1+MAX_TURBO_ITERATIONS)) {
@@ -2079,7 +2084,4 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC, 0 );
-
-  stop_meas(&eNB->phy_proc_rx);
-
 }

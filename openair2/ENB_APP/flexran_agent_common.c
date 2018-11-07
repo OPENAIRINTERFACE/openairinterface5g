@@ -40,6 +40,7 @@
 #include "flexran_agent_rrc.h"
 //#include "PHY/extern.h"
 #include "common/utils/LOG/log.h"
+#include "flexran_agent_mac_internal.h"
 
 //#include "SCHED/defs.h"
 #include "RRC/LTE/rrc_extern.h"
@@ -296,6 +297,23 @@ int flexran_agent_destroy_enb_config_reply(Protocol__FlexranMessage *msg) {
       free(reply->cell_config[i]->si_config->si_message);
       free(reply->cell_config[i]->si_config);
     }
+    if (reply->cell_config[i]->slice_config != NULL) {
+      for (int j = 0; j < reply->cell_config[i]->slice_config->n_dl; ++j) {
+        if (reply->cell_config[i]->slice_config->dl[j]->n_sorting > 0)
+          free(reply->cell_config[i]->slice_config->dl[j]->sorting);
+        free(reply->cell_config[i]->slice_config->dl[j]->scheduler_name);
+        free(reply->cell_config[i]->slice_config->dl[j]);
+      }
+      free(reply->cell_config[i]->slice_config->dl);
+      for (int j = 0; j < reply->cell_config[i]->slice_config->n_ul; ++j) {
+        if (reply->cell_config[i]->slice_config->ul[j]->n_sorting > 0)
+          free(reply->cell_config[i]->slice_config->ul[j]->sorting);
+        free(reply->cell_config[i]->slice_config->ul[j]->scheduler_name);
+        free(reply->cell_config[i]->slice_config->ul[j]);
+      }
+      free(reply->cell_config[i]->slice_config->ul);
+      free(reply->cell_config[i]->slice_config);
+    }
     free(reply->cell_config[i]);
   }
   free(reply->cell_config);
@@ -405,8 +423,14 @@ int flexran_agent_control_delegation(mid_t mod_id, const void *params, Protocol_
   
   FILE *f;
   f = fopen(target, "wb");
-  fwrite(control_delegation_msg->payload.data, control_delegation_msg->payload.len, 1, f);
-  fclose(f);
+  if (f) {
+    fwrite(control_delegation_msg->payload.data, control_delegation_msg->payload.len, 1, f);
+    fclose(f);
+  }
+  else {
+    LOG_W(FLEXRAN_AGENT, "[%d] can not write control delegation data to %s\n",
+          mod_id, target);
+  }
 
   //  long time_elapsed_nanos = timer_end(vartime);
   *msg = NULL;
@@ -474,7 +498,8 @@ int flexran_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Fl
       if (!lc_ue_config[i]) goto error;
 
       protocol__flex_lc_ue_config__init(lc_ue_config[i]);
-      flexran_agent_fill_mac_lc_ue_config(mod_id, i, lc_ue_config[i]);
+      const int UE_id = flexran_get_mac_ue_id(mod_id, i);
+      flexran_agent_fill_mac_lc_ue_config(mod_id, UE_id, lc_ue_config[i]);
     } // end for UE
     lc_config_reply_msg->lc_ue_config = lc_ue_config;
   } // lc_config_reply_msg->n_lc_ue_config > 0
@@ -514,8 +539,6 @@ int flexran_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Fl
   Protocol__FlexUeConfigRequest *ue_config_request_msg = input->ue_config_request_msg;
   xid = (ue_config_request_msg->header)->xid;
 
-  int i;
-
   Protocol__FlexUeConfigReply *ue_config_reply_msg;
   ue_config_reply_msg = malloc(sizeof(Protocol__FlexUeConfigReply));
   if(ue_config_reply_msg == NULL)
@@ -547,15 +570,17 @@ int flexran_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Fl
     }
     rnti_t rntis[ue_config_reply_msg->n_ue_config];
     flexran_get_rrc_rnti_list(mod_id, rntis, ue_config_reply_msg->n_ue_config);
-    for (i = 0; i < ue_config_reply_msg->n_ue_config; i++) {
+    for (int i = 0; i < ue_config_reply_msg->n_ue_config; i++) {
       const rnti_t rnti = rntis[i];
       ue_config[i] = malloc(sizeof(Protocol__FlexUeConfig));
       protocol__flex_ue_config__init(ue_config[i]);
 
       if (flexran_agent_get_rrc_xface(mod_id))
         flexran_agent_fill_rrc_ue_config(mod_id, rnti, ue_config[i]);
-      if (flexran_agent_get_mac_xface(mod_id))
-        flexran_agent_fill_mac_ue_config(mod_id, i, ue_config[i]);
+      if (flexran_agent_get_mac_xface(mod_id)) {
+        const int UE_id = flexran_get_mac_ue_id(mod_id, i);
+        flexran_agent_fill_mac_ue_config(mod_id, UE_id, ue_config[i]);
+      }
     }
     ue_config_reply_msg->ue_config = ue_config;
   }
@@ -661,6 +686,7 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
         flexran_agent_fill_rrc_cell_config(mod_id, i, cell_conf[i]);
       if (flexran_agent_get_mac_xface(mod_id))
         flexran_agent_fill_mac_cell_config(mod_id, i, cell_conf[i]);
+
       cell_conf[i]->carrier_index = i;
       cell_conf[i]->has_carrier_index = 1;
     }
@@ -723,5 +749,39 @@ int flexran_agent_destroy_rrc_measurement(Protocol__FlexranMessage *msg){
   return 0;
 }
 
+int flexran_agent_handle_enb_config_reply(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg)
+{
+  Protocol__FlexranMessage *input = (Protocol__FlexranMessage *)params;
+  Protocol__FlexEnbConfigReply *enb_config = input->enb_config_reply_msg;
 
+  if (enb_config->n_cell_config == 0) {
+    LOG_W(FLEXRAN_AGENT,
+          "received enb_config_reply message does not contain a cell_config\n");
+    *msg = NULL;
+    return 0;
+  }
 
+  if (enb_config->n_cell_config > 1)
+    LOG_W(FLEXRAN_AGENT, "ignoring slice configs for other cell except cell 0\n");
+  if (enb_config->cell_config[0]->slice_config) {
+    prepare_update_slice_config(mod_id, enb_config->cell_config[0]->slice_config);
+  } else {
+    initiate_soft_restart(mod_id, enb_config->cell_config[0]);
+  }
+
+  *msg = NULL;
+  return 0;
+}
+
+int flexran_agent_handle_ue_config_reply(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg)
+{
+  int i;
+  Protocol__FlexranMessage *input = (Protocol__FlexranMessage *)params;
+  Protocol__FlexUeConfigReply *ue_config_reply = input->ue_config_reply_msg;
+
+  for (i = 0; i < ue_config_reply->n_ue_config; i++)
+    prepare_ue_slice_assoc_update(mod_id, ue_config_reply->ue_config[i]);
+
+  *msg = NULL;
+  return 0;
+}

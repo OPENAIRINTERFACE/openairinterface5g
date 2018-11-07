@@ -19,7 +19,19 @@
  *      contact@openairinterface.org
  */
 
-// This task is mandatory and must always be placed in first position
-TASK_DEF(TASK_TIMER, TASK_PRIORITY_MED, 10)
+/*! \file flexran_agent_mac_slice_verification.h
+ * \brief MAC Agent slice verification helper functions
+ * \author Robert Schmidt
+ * \date 2018
+ * \version 0.1
+ */
 
-// Dummy file for the generic intertask interface definition. Actual definition should be in top level build directory.
+#include "flexran_agent_common_internal.h"
+#include "flexran_agent_mac_internal.h"
+
+int flexran_verify_dl_slice(mid_t mod_id, Protocol__FlexDlSlice *dls);
+int flexran_verify_group_dl_slices(mid_t mod_id, Protocol__FlexDlSlice **existing,
+    int n_ex, Protocol__FlexDlSlice **update, int n_up);
+int flexran_verify_ul_slice(mid_t mod_id, Protocol__FlexUlSlice *uls);
+int flexran_verify_group_ul_slices(mid_t mod_id, Protocol__FlexUlSlice **existing,
+    int n_ex, Protocol__FlexUlSlice **update, int n_up);

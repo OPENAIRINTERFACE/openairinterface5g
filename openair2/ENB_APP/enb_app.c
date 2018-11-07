@@ -39,7 +39,6 @@
 
 #if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
-# include "timer.h"
 # if defined(ENABLE_USE_MME)
 #   define ENB_REGISTER_RETRY_DELAY 10
 #   include "s1ap_eNB.h"
@@ -53,7 +52,7 @@
 #   include "flexran_agent.h"
 #endif
 
-//#   include "x2ap_eNB.h"
+#   include "x2ap_eNB.h"
 #   include "x2ap_messages_types.h"
 #   define X2AP_ENB_REGISTER_RETRY_DELAY   10
 
@@ -68,7 +67,7 @@ extern int emulate_rf;
 
 /*------------------------------------------------------------------------------*/
 # if defined(ENABLE_USE_MME)
-static uint32_t eNB_app_register(ngran_node_t node_type,uint32_t enb_id_start, uint32_t enb_id_end)//, const Enb_properties_array_t *enb_properties)
+static uint32_t eNB_app_register(ngran_node_t node_type,uint32_t enb_id_start, uint32_t enb_id_end)
 {
   uint32_t         enb_id;
   MessageDef      *msg_p;
@@ -124,7 +123,7 @@ static uint32_t eNB_app_register_x2(uint32_t enb_id_start, uint32_t enb_id_end)
 
       RCconfig_X2(msg_p, enb_id);
 
-	//itti_send_msg_to_task (TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
+      itti_send_msg_to_task (TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
 
       register_enb_x2_pending++;
     }
@@ -146,8 +145,8 @@ void *eNB_app_task(void *args_p)
   long                            enb_register_retry_timer_id;
 # endif
   uint32_t                        x2_register_enb_pending;
-  //uint32_t                        x2_registered_enb;
-  //long                            x2_enb_register_retry_timer_id;
+  uint32_t                        x2_registered_enb;
+  long                            x2_enb_register_retry_timer_id;
   uint32_t                        enb_id;
   MessageDef                     *msg_p           = NULL;
   instance_t                      instance;
@@ -187,6 +186,10 @@ void *eNB_app_task(void *args_p)
 
     case MESSAGE_TEST:
       LOG_I(ENB_APP, "Received %s\n", ITTI_MSG_NAME(msg_p));
+      break;
+
+    case SOFT_RESTART_MESSAGE:
+      handle_reconfiguration(instance);
       break;
 
     case S1AP_REGISTER_ENB_CNF:
@@ -287,16 +290,67 @@ void *eNB_app_task(void *args_p)
 
     case TIMER_HAS_EXPIRED:
 # if defined(ENABLE_USE_MME)
-  	LOG_I(ENB_APP, " Received %s: timer_id %ld\n", ITTI_MSG_NAME (msg_p), TIMER_HAS_EXPIRED(msg_p).timer_id);
+      LOG_I(ENB_APP, " Received %s: timer_id %ld\n", ITTI_MSG_NAME (msg_p), TIMER_HAS_EXPIRED(msg_p).timer_id);
 
-  	if (TIMER_HAS_EXPIRED (msg_p).timer_id == enb_register_retry_timer_id) {
-  	  /* Restart the registration process */
-  	  registered_enb = 0;
-  	  register_enb_pending = eNB_app_register (RC.rrc[0]->node_type, enb_id_start, enb_id_end);//, enb_properties_p);
-  	}
-#endif
+      if (TIMER_HAS_EXPIRED (msg_p).timer_id == enb_register_retry_timer_id) {
+        /* Restart the registration process */
+        registered_enb = 0;
+        register_enb_pending = eNB_app_register (RC.rrc[0]->node_type, enb_id_start, enb_id_end);
+      }
+
+      if (TIMER_HAS_EXPIRED (msg_p).timer_id == x2_enb_register_retry_timer_id) {
+        /* Restart the registration process */
+	x2_registered_enb = 0;
+        x2_register_enb_pending = eNB_app_register_x2 (enb_id_start, enb_id_end);
+      }
+# endif
       break;
 
+    case X2AP_DEREGISTERED_ENB_IND:
+      LOG_W(ENB_APP, "[eNB %d] Received %s: associated eNB %d\n", instance, ITTI_MSG_NAME (msg_p),
+            X2AP_DEREGISTERED_ENB_IND(msg_p).nb_x2);
+
+      /* TODO handle recovering of registration */
+      break;
+
+    case X2AP_REGISTER_ENB_CNF:
+      LOG_I(ENB_APP, "[eNB %d] Received %s: associated eNB %d\n", instance, ITTI_MSG_NAME (msg_p),
+            X2AP_REGISTER_ENB_CNF(msg_p).nb_x2);
+
+      DevAssert(x2_register_enb_pending > 0);
+      x2_register_enb_pending--;
+
+      /* Check if at least eNB is registered with one target eNB */
+      if (X2AP_REGISTER_ENB_CNF(msg_p).nb_x2 > 0) {
+        x2_registered_enb++;
+      }
+
+      /* Check if all register eNB requests have been processed */
+      if (x2_register_enb_pending == 0) {
+        if (x2_registered_enb == enb_nb) {
+          /* If all eNB are registered, start RRC HO task */
+
+	}else {
+          uint32_t x2_not_associated = enb_nb - x2_registered_enb;
+
+          LOG_W(ENB_APP, " %d eNB %s not associated with the target\n",
+                x2_not_associated, x2_not_associated > 1 ? "are" : "is");
+	  // timer to retry
+	  /* Restart the eNB registration process in ENB_REGISTER_RETRY_DELAY seconds */
+          if (timer_setup (X2AP_ENB_REGISTER_RETRY_DELAY, 0, TASK_ENB_APP,
+			   INSTANCE_DEFAULT, TIMER_ONE_SHOT, NULL,
+			   &x2_enb_register_retry_timer_id) < 0) {
+            LOG_E(ENB_APP, " Can not start eNB X2AP register: retry timer, use \"sleep\" instead!\n");
+
+            sleep(X2AP_ENB_REGISTER_RETRY_DELAY);
+            /* Restart the registration process */
+            x2_registered_enb = 0;
+            x2_register_enb_pending = eNB_app_register_x2 (enb_id_start, enb_id_end);
+          }
+        }
+      }
+
+      break;
 
     default:
       LOG_E(ENB_APP, "Received unexpected message %s\n", ITTI_MSG_NAME (msg_p));
@@ -311,4 +365,54 @@ void *eNB_app_task(void *args_p)
 
 
   return NULL;
+}
+
+void handle_reconfiguration(module_id_t mod_id)
+{
+  struct timespec start, end;
+  clock_gettime(CLOCK_MONOTONIC, &start);
+  flexran_agent_info_t *flexran = RC.flexran[mod_id];
+
+  LOG_I(ENB_APP, "lte-softmodem soft-restart requested\n");
+
+  if (ENB_WAIT == flexran->node_ctrl_state) {
+    /* this is already waiting, just release */
+    pthread_mutex_lock(&flexran->mutex_node_ctrl);
+    flexran->node_ctrl_state = ENB_NORMAL_OPERATION;
+    pthread_mutex_unlock(&flexran->mutex_node_ctrl);
+    pthread_cond_signal(&flexran->cond_node_ctrl);
+    return;
+  }
+
+  if (stop_L1L2(mod_id) < 0) {
+    LOG_E(ENB_APP, "can not stop lte-softmodem, aborting restart\n");
+    return;
+  }
+
+  /* node_ctrl_state should have value ENB_MAKE_WAIT only if this method is not
+   * executed by the FlexRAN thread */
+  if (ENB_MAKE_WAIT == flexran->node_ctrl_state) {
+    LOG_I(ENB_APP, " * eNB %d: Waiting for FlexRAN RTController command *\n", mod_id);
+    pthread_mutex_lock(&flexran->mutex_node_ctrl);
+    flexran->node_ctrl_state = ENB_WAIT;
+    while (ENB_NORMAL_OPERATION != flexran->node_ctrl_state)
+      pthread_cond_wait(&flexran->cond_node_ctrl, &flexran->mutex_node_ctrl);
+    pthread_mutex_unlock(&flexran->mutex_node_ctrl);
+  }
+
+  if (restart_L1L2(mod_id) < 0) {
+    LOG_E(ENB_APP, "can not restart, killing lte-softmodem\n");
+    exit_fun("can not restart L1L2, killing lte-softmodem");
+    return;
+  }
+
+  clock_gettime(CLOCK_MONOTONIC, &end);
+  end.tv_sec -= start.tv_sec;
+  if (end.tv_nsec >= start.tv_nsec) {
+    end.tv_nsec -= start.tv_nsec;
+  } else {
+    end.tv_sec -= 1;
+    end.tv_nsec = end.tv_nsec - start.tv_nsec + 1000000000;
+  }
+  LOG_I(ENB_APP, "lte-softmodem restart succeeded in %ld.%ld s\n", end.tv_sec, end.tv_nsec / 1000000);
 }

@@ -456,7 +456,7 @@ int rt =   pthread_getname_np(pthread_self(), threadname,bufsize) ;
    }
 }
 
-int inline log_header(char *log_buffer, int buffsize, int comp, int level,const char *format) {
+static int log_header(char *log_buffer, int buffsize, int comp, int level,const char *format) {
   char threadname[PR_SET_NAME];
 return  snprintf(log_buffer, buffsize , "%s%s[%s]%c %s %s%s",
   	   log_level_highlight_end[level],

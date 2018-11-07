@@ -44,6 +44,8 @@
 #include<linux/types.h>
 #include<stdlib.h>
 #include<sys/queue.h>
+#include <string.h>
+
 
 #include "UTIL/MEM/mem_block.h"
 
@@ -102,5 +104,38 @@ void   del         (struct list*);
 void   totable     (double*, struct list*);
 int compare (const void * a, const void * b);
 int32_t calculate_median(struct list *loc_list);
+
+
+typedef struct {
+  size_t size;
+  size_t mallocedSize;
+  size_t atomSize;
+  size_t increment;
+} varArray_t;
+
+static inline varArray_t * initVarArray(size_t increment, size_t atomSize) {
+    varArray_t * tmp=malloc(sizeof(varArray_t)+increment*atomSize);
+    tmp->size=0;
+    tmp->atomSize=atomSize;
+    tmp->mallocedSize=increment;
+    tmp->increment=increment;
+    return(tmp);
+}
+
+static inline void * dataArray(varArray_t * input) {
+  return input+1;
+}
+
+static inline void appendVarArray(varArray_t * input, void* data) {
+  if (input->size>=input->mallocedSize) {
+     input->mallocedSize+=input->increment;
+     input=realloc(input,sizeof(varArray_t)+input->mallocedSize*input->atomSize);
+  }
+  memcpy((uint8_t*)(input+1)+input->atomSize*input->size++, data, input->atomSize);
+}
+
+static inline void freeVarArray(varArray_t * input) {
+   free(input);
+}
 
 #endif

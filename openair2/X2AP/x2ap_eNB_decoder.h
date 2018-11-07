@@ -19,19 +19,10 @@
  *      contact@openairinterface.org
  */
 
-/*
- * messages_types.h
- *
- *  Created on: Oct 14, 2013
- *      Author: winckel
- */
+#ifndef X2AP_ENB_DECODER_H_
+#define X2AP_ENB_DECODER_H_
 
-#ifndef MESSAGES_TYPES_H_
-#define MESSAGES_TYPES_H_
+int x2ap_eNB_decode_pdu(X2AP_X2AP_PDU_t *pdu, const uint8_t *const buffer, uint32_t length)
+__attribute__ ((warn_unused_result));
 
-#include "intertask_messages_types.h"
-#include "timer_messages_types.h"
-
-// Dummy file for the generic intertask interface definition. Actual definition should be in top level build directory.
-
-#endif /* MESSAGES_TYPES_H_ */
+#endif /* X2AP_ENB_DECODER_H_ */

@@ -32,12 +32,17 @@
 #    define __MEM_BLOCK_H__
 
 #include <stdint.h>
+#include <stddef.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include "openair2/COMMON/platform_constants.h"
 //-----------------------------------------------------------------------------
 
 typedef struct mem_block_t {
   struct mem_block_t *next;
   struct mem_block_t *previous;
+  size_t size;
   unsigned char pool_id;
   unsigned char *data;
 } mem_block_t;
@@ -175,7 +180,10 @@ typedef struct {
 
 } mem_pool;
 
-mem_pool  mem_block_var;
+mem_pool  *memBlockVar;
+#define mem_block_var (*memBlockVar)
 
-
+#ifdef __cplusplus
+}
+#endif
 #endif

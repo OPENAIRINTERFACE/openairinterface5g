@@ -79,7 +79,6 @@ void flexran_agent_ue_state_change(mid_t mod_id, uint32_t rnti, uint8_t state_ch
     /* we don't call into the MAC CM here; it will be called later through an
      * ue_config_request */
     break;
-
   case PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_MOVED:
   default:
     LOG_E(FLEXRAN_AGENT, "state change FLUESC_MOVED or unknown state occured for RNTI %x\n",
@@ -137,6 +136,8 @@ void flexran_trigger_rrc_measurements (mid_t mod_id, MeasResults_t*  measResults
   // err_code_t             err_code = -100;
   triggered_rrc = true;
 
+  /* TODO do we need this at the current state? meas_stats is never put into a
+   * protobuf message?!
   int num = flexran_get_rrc_num_ues (mod_id);
   rnti_t rntis[num];
   flexran_get_rrc_rnti_list(mod_id, rntis, num);
@@ -150,9 +151,7 @@ void flexran_trigger_rrc_measurements (mid_t mod_id, MeasResults_t*  measResults
     meas_stats[i].rsrp =  flexran_get_rrc_pcell_rsrp(mod_id, rnti) - 140;
     // measResults->measResultPCell.rsrpResult - 140;
     meas_stats[i].rsrq =  flexran_get_rrc_pcell_rsrq(mod_id, rnti)/2 - 20;
-    // (measResults->measResultPCell.rsrqResult)/2 - 20;                          
-    
-  }
+  */
     // repl->neigh_meas = NULL;
 
   // if (meas->measResultNeighCells != NULL) {
@@ -363,7 +362,6 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
   if (report_config->nr_ue > 0) {
     rnti_t rntis[report_config->nr_ue];
     flexran_get_rrc_rnti_list(mod_id, rntis, report_config->nr_ue);
-
     for (int i = 0; i < report_config->nr_ue; i++) {
       const rnti_t rnti = rntis[i];
       
@@ -385,7 +383,6 @@ int flexran_agent_rrc_stats_reply(mid_t mod_id,
       	
         rrc_measurements->pcell_rsrq = flexran_get_rrc_pcell_rsrq(mod_id, rnti);
       	rrc_measurements->has_pcell_rsrq = 1 ;
-
         
         /* Target Cell, Neghibouring*/
         Protocol__FlexNeighCellsMeasurements *neigh_meas;

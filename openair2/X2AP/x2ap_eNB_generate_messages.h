@@ -19,8 +19,25 @@
  *      contact@openairinterface.org
  */
 
-// These messages files are mandatory and must always be placed in first position
-#include "intertask_messages_def.h"
-#include "timer_messages_def.h"
+#ifndef X2AP_ENB_GENERATE_MESSAGES_H_
+#define X2AP_ENB_GENERATE_MESSAGES_H_
 
-// Dummy file for the generic intertask interface definition. Actual definition should be in top level build directory.
+#include "x2ap_eNB_defs.h"
+#include "x2ap_common.h"
+
+int x2ap_eNB_generate_x2_setup_request(x2ap_eNB_instance_t *instance_p,
+				       x2ap_eNB_data_t *x2ap_enb_data_p);
+
+int x2ap_eNB_generate_x2_setup_response(x2ap_eNB_data_t *x2ap_enb_data_p);
+
+int x2ap_eNB_generate_x2_setup_failure(instance_t instance,
+                                       uint32_t assoc_id,
+                                       X2AP_Cause_PR cause_type,
+                                       long cause_value,
+                                       long time_to_wait);
+
+int x2ap_eNB_set_cause (X2AP_Cause_t * cause_p,
+                        X2AP_Cause_PR cause_type,
+                        long cause_value);
+
+#endif /*  X2AP_ENB_GENERATE_MESSAGES_H_ */

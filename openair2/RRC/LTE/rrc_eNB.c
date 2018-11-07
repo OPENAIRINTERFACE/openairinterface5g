@@ -7452,8 +7452,8 @@ void handle_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
     int found_cell=0;
     for (int j=0;j<RC.nb_inst;j++) {
       eNB_RRC_INST *rrc = RC.rrc[j];
-      if (rrc->mcc == f1_setup_req->mcc[i] && 
-	  rrc->mnc == f1_setup_req->mnc[i] && 
+      if (rrc->configuration.mcc == f1_setup_req->mcc[i] &&
+	  rrc->configuration.mnc == f1_setup_req->mnc[i] &&
 	  rrc->nr_cellid == f1_setup_req->nr_cellid[i]) {
         // check that CU rrc instance corresponds to mcc/mnc/cgi (normally cgi should be enough, but just in case)
 
@@ -7504,9 +7504,9 @@ void handle_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
           msg_p = itti_alloc_new_message (TASK_CU_F1,F1AP_SETUP_RESP); 						 
         }
         F1AP_SETUP_RESP (msg_p).gNB_CU_name                                = rrc->node_name;
-        F1AP_SETUP_RESP (msg_p).mcc[cu_cell_ind]                           = rrc->mcc;
-        F1AP_SETUP_RESP (msg_p).mnc[cu_cell_ind]                           = rrc->mnc;
-        F1AP_SETUP_RESP (msg_p).mnc_digit_length[cu_cell_ind]              = rrc->mnc_digit_length;
+        F1AP_SETUP_RESP (msg_p).mcc[cu_cell_ind]                           = rrc->configuration.mcc;
+        F1AP_SETUP_RESP (msg_p).mnc[cu_cell_ind]                           = rrc->configuration.mnc;
+        F1AP_SETUP_RESP (msg_p).mnc_digit_length[cu_cell_ind]              = rrc->configuration.mnc_digit_length;
 	F1AP_SETUP_RESP (msg_p).nr_cellid[cu_cell_ind]                     = rrc->nr_cellid;
         F1AP_SETUP_RESP (msg_p).nrpci[cu_cell_ind]                         = f1_setup_req->nr_pci[i];
         int num_SI= 0;
@@ -7530,7 +7530,7 @@ void handle_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
       } else {// setup_req mcc/mnc match rrc internal list element
         
         LOG_W(RRC,"[Inst %d] No matching MCC/MNC: rrc->mcc/f1_setup_req->mcc %d/%d rrc->mnc/f1_setup_req->mnc %d/%d \n", 
-            j, rrc->mcc, f1_setup_req->mcc[i],rrc->mnc, f1_setup_req->mnc[i]);
+            j, rrc->configuration.mcc, f1_setup_req->mcc[i],rrc->configuration.mnc, f1_setup_req->mnc[i]);
 
       }
     }// for (int j=0;j<RC.nb_inst;j++)
@@ -7548,26 +7548,25 @@ void handle_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
 
   // ignore 5GNR fields for now, just take MIB and SIB1
 //-----------------------------------------------------------------------------
-void*
-rrc_enb_task(
-  void* args_p
-)
 //-----------------------------------------------------------------------------
-{
-  MessageDef                         *msg_p;
-  const char                         *msg_name_p;
-  instance_t                          instance;
-  int                                rrc_inst;
-  int                                 result;
-
-  protocol_ctxt_t                     ctxt;
-
+void rrc_enb_init(void) {
   pthread_mutex_init(&lock_ue_freelist, NULL);
   pthread_mutex_init(&rrc_release_freelist, NULL);
   memset(&rrc_release_info,0,sizeof(RRC_release_list_t));
-  itti_mark_task_ready(TASK_RRC_ENB);
-  LOG_I(RRC,"Entering main loop of RRC message task\n");
-  while (1) {
+}
+
+//-----------------------------------------------------------------------------
+void *rrc_enb_process_itti_msg(void *notUsed) {
+    MessageDef                         *msg_p;
+    const char                         *msg_name_p;
+    instance_t                          instance;
+    int                                rrc_inst;
+    int                                 result;
+    SRB_INFO                           *srb_info_p;
+    int                                 CC_id;
+
+    protocol_ctxt_t                     ctxt;
+
     // Wait for a message
     itti_receive_msg(TASK_RRC_ENB, &msg_p);
 
@@ -7740,9 +7739,28 @@ rrc_enb_task(
     result = itti_free(ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
     if (result != EXIT_SUCCESS) {
         LOG_I(RRC, "Failed to free memory (%d)!\n",result);
-        continue;
     }
     msg_p = NULL;
+    return NULL;
+}
+
+//-----------------------------------------------------------------------------
+void*
+rrc_enb_task(
+  void* args_p
+)
+//-----------------------------------------------------------------------------
+{
+  rrc_enb_init();
+
+  itti_mark_task_ready(TASK_RRC_ENB);
+  LOG_I(RRC,"Entering main loop of RRC message task\n");
+
+
+  while (1) {
+
+    (void) rrc_enb_process_itti_msg(NULL);
+
   }
 }
 #endif

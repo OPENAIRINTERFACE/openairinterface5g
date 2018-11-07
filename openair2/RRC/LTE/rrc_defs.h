@@ -711,17 +711,10 @@ typedef struct eNB_RRC_INST_s {
 #if defined(ENABLE_ITTI)
   RrcConfigurationReq configuration;
 #endif
-  // other PLMN parameters
-  /// Mobile country code
-  int mcc;
-  /// Mobile network code
-  int mnc;
-  /// number of mnc digits
-  int mnc_digit_length;
-  /// tac
-  int tac;
+
   /// NR cell id
   uint64_t nr_cellid;
+
   // other RAN parameters
   int srb1_timer_poll_retransmit;
   int srb1_poll_pdu;

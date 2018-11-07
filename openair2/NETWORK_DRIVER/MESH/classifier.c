@@ -410,7 +410,7 @@ struct cx_entity *nas_CLASS_cx6(struct sk_buff *skb,
 #endif //NAS_DEBUG_CLASS
 
           //if ((dst = (unsigned int*)&(((struct rt6_info *)skbdst)->rt6i_gateway)) == 0){
-          if ((dst = ((struct iphdr*)(skb_network_header(skb)))->daddr) == 0) {
+          if ( (dst = &((struct iphdr*)(skb_network_header(skb)))->daddr) == NULL) {
 
             printk("nas_CLASS_cx6: dst addr is null \n");
             p = p->next;
@@ -475,7 +475,7 @@ struct cx_entity *nas_CLASS_cx4(struct sk_buff *skb,
   if (skb!=NULL) {
     daddr = ((struct iphdr*)(skb_network_header(skb)))->daddr;
 
-    if (daddr!=NULL) {
+    if (daddr!=0) {
 
 #ifdef NAS_DEBUG_CLASS
       printk("[NAS][CLASS][IPv4] Searching for %d.%d.%d.%d\n",

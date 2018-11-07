@@ -84,7 +84,6 @@
 #endif
 
 #if defined(ENABLE_ITTI)
-#include "intertask_interface_init.h"
 #include "create_tasks.h"
 #endif
 
@@ -221,8 +220,34 @@ int transmission_mode=1;
 
 int emulate_rf = 0;
 int numerology = 0;
-int codingw = 0;
-int fepw = 0;
+char *parallel_config = NULL;
+char *worker_config = NULL;
+
+char* usrp_args=NULL;
+char* usrp_clksrc=NULL;
+
+static THREAD_STRUCT thread_struct;
+void set_parallel_conf(char *parallel_conf)
+{
+  if(strcmp(parallel_conf,"PARALLEL_SINGLE_THREAD")==0)           thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
+  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_SPLIT")==0)        thread_struct.parallel_conf = PARALLEL_RU_L1_SPLIT;
+  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_TRX_SPLIT")==0)    thread_struct.parallel_conf = PARALLEL_RU_L1_TRX_SPLIT;
+  printf("[CONFIG] parallel conf is set to %d\n",thread_struct.parallel_conf);
+}
+void set_worker_conf(char *worker_conf)
+{
+  if(strcmp(worker_conf,"WORKER_DISABLE")==0)                     thread_struct.worker_conf = WORKER_DISABLE;
+  else if(strcmp(worker_conf,"WORKER_ENABLE")==0)                 thread_struct.worker_conf = WORKER_ENABLE;
+  printf("[CONFIG] worker conf is set to %d\n",thread_struct.worker_conf);
+}
+PARALLEL_CONF_t get_thread_parallel_conf(void)
+{
+  return thread_struct.parallel_conf;
+}
+WORKER_CONF_t get_thread_worker_conf(void)
+{
+  return thread_struct.worker_conf;
+}
 
 /* struct for ethernet specific parameters given in eNB conf file */
 eth_params_t *eth_params;
@@ -323,13 +348,13 @@ void signal_handler(int sig) {
 
 
 
-void exit_fun(const char* s)
+void exit_function(const char* file, const char* function, const int line, const char* s)
 {
   int CC_id;
 
   logClean();
   if (s != NULL) {
-    printf("%s %s() Exiting OAI softmodem: %s\n",__FILE__, __FUNCTION__, s);
+    printf("%s:%d %s() Exiting OAI softmodem: %s\n",file,line, function, s);
   }
 
   oai_exit = 1;
@@ -342,10 +367,11 @@ void exit_fun(const char* s)
 	        PHY_vars_UE_g[0][CC_id]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][CC_id]->rfdevice);
     }
 
-#if defined(ENABLE_ITTI)
     sleep(1); //allow lte-softmodem threads to exit first
+#if defined(ENABLE_ITTI)
     itti_terminate_tasks (TASK_UNKNOWN);
 #endif
+  exit(1);
 }
 
 #ifdef XFORMS
@@ -583,6 +609,8 @@ static void get_options(unsigned int *start_msc) {
     if(nfapi_mode!=3)
     	uecap_xer_in=1;
 	} *//* UE with config file  */
+  if(parallel_config != NULL) set_parallel_conf(parallel_config);
+  if(worker_config != NULL)   set_worker_conf(worker_config);
 }
 
 
@@ -714,6 +742,26 @@ void init_openair0(LTE_DL_FRAME_PARMS *frame_parms,int rxgain) {
 	     openair0_cfg[card].tx_freq[i],
 	     openair0_cfg[card].rx_freq[i]);
     }
+
+    if (usrp_args) openair0_cfg[card].sdr_addrs = usrp_args;
+    if (usrp_clksrc) {
+      if (strcmp(usrp_clksrc, "internal") == 0) {
+	openair0_cfg[card].clock_source = internal;
+	LOG_D(PHY, "USRP clock source set as internal\n");
+      } else if (strcmp(usrp_clksrc, "external") == 0) {
+	openair0_cfg[card].clock_source = external;
+	LOG_D(PHY, "USRP clock source set as external\n");
+      } else if (strcmp(usrp_clksrc, "gpsdo") == 0) {
+	openair0_cfg[card].clock_source = gpsdo;
+	LOG_D(PHY, "USRP clock source set as gpsdo\n");
+      } else {
+	openair0_cfg[card].clock_source = internal;
+	LOG_I(PHY, "USRP clock source unknown ('%s'). defaulting to internal\n", usrp_clksrc);
+      }
+    } else {
+      openair0_cfg[card].clock_source = internal;
+      LOG_I(PHY, "USRP clock source not specified. defaulting to internal\n");
+    }
   }
 }
 
@@ -799,6 +847,8 @@ int main( int argc, char **argv )
 
   for (int i=0;i<MAX_NUM_CCs;i++) tx_max_power[i]=23; 
   get_options (&start_msc);
+
+printf("~~~~~~~~~~~~~~~~~~~~successfully get the parallel config[%d], worker config [%d] \n", get_thread_parallel_conf(), get_thread_worker_conf());
 
 
   printf("Running with %d UE instances\n",NB_UE_INST);

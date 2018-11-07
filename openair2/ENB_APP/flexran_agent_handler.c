@@ -46,9 +46,9 @@ flexran_agent_message_decoded_callback agent_messages_callback[][3] = {
   {0, 0, 0}, /*PROTOCOK__FLEXRAN_MESSAGE__MSG_SF_TRIGGER_MSG*/
   {0, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_UL_SR_INFO_MSG*/
   {flexran_agent_enb_config_reply, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_ENB_CONFIG_REQUEST_MSG*/
-  {0, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_ENB_CONFIG_REPLY_MSG*/
+  {flexran_agent_handle_enb_config_reply, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_ENB_CONFIG_REPLY_MSG*/
   {flexran_agent_ue_config_reply, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_UE_CONFIG_REQUEST_MSG*/
-  {0, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_UE_CONFIG_REPLY_MSG*/
+  {flexran_agent_handle_ue_config_reply, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_UE_CONFIG_REPLY_MSG*/
   {flexran_agent_lc_config_reply, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_LC_CONFIG_REQUEST_MSG*/
   {0, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_LC_CONFIG_REPLY_MSG*/
   {flexran_agent_mac_handle_dl_mac_config, 0, 0}, /*PROTOCOL__FLEXRAN_MESSAGE__MSG_DL_MAC_CONFIG_MSG*/
@@ -268,7 +268,8 @@ int flexran_agent_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
       }
       if (flexran_agent_get_mac_xface(mod_id) && !flexran_agent_get_rrc_xface(mod_id)) {
         for (i = 0; i < report_config.nr_ue; i++) {
-          report_config.ue_report_type[i].ue_rnti = flexran_get_mac_ue_crnti(enb_id, i);
+          const int UE_id = flexran_get_mac_ue_id(mod_id, i);
+          report_config.ue_report_type[i].ue_rnti = flexran_get_mac_ue_crnti(enb_id, UE_id);
           report_config.ue_report_type[i].ue_report_flags = ue_flags;
         }
       }
@@ -380,7 +381,8 @@ int flexran_agent_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
       goto error;
     }
     for (i = 0; i < report_config.nr_ue; i++) {
-      report_config.ue_report_type[i].ue_rnti = ue_req->rnti[i];
+      const int UE_id = flexran_get_mac_ue_id(mod_id, i);
+      report_config.ue_report_type[i].ue_rnti = ue_req->rnti[UE_id];
       report_config.ue_report_type[i].ue_report_flags = ue_req->flags;
     }
     break;

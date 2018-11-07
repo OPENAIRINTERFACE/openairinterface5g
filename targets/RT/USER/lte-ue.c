@@ -333,6 +333,13 @@ void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correcti
     }
     else UE->N_TA_offset = 0;
 
+#if BASIC_SIMULATOR
+    /* this is required for the basic simulator in TDD mode
+     * TODO: find a proper cleaner solution
+     */
+    UE->N_TA_offset = 0;
+#endif
+
     if (simL1flag == 1) init_ue_devices(UE);
     LOG_I(PHY,"Intializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
     init_UE_threads(inst);

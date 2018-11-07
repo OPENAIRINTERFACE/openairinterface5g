@@ -27,6 +27,8 @@
 
 # ifdef OPENAIR2
 #   if defined(ENABLE_USE_MME)
+#     include "sctp_eNB_task.h"
+#     include "x2ap_eNB.h"
 #     include "s1ap_eNB.h"
 #     include "nas_ue_task.h"
 #     include "udp_eNB_task.h"
@@ -104,6 +106,10 @@ int create_tasks(uint32_t enb_nb)
       }
       rc = itti_create_task(TASK_GTPV1_U, gtpv1u_eNB_task, NULL);
       AssertFatal(rc >= 0, "Create task for GTPV1U failed\n");
+      if (EPC_MODE_ENABLED) {
+        rc = itti_create_task(TASK_X2AP, x2ap_task, NULL);
+        AssertFatal(rc >= 0, "Create task for X2AP failed\n");
+      }
     }
 #endif
     break;

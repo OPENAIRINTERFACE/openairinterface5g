@@ -98,9 +98,10 @@ typedef struct RrcConfigurationReq_s {
 
   uint16_t            tac;
 
-  uint16_t            mcc;
-  uint16_t            mnc;
-  uint8_t             mnc_digit_length;
+  uint16_t            mcc[PLMN_LIST_MAX_SIZE];
+  uint16_t            mnc[PLMN_LIST_MAX_SIZE];
+  uint8_t             mnc_digit_length[PLMN_LIST_MAX_SIZE];
+  uint8_t             num_plmn;
 
   
   paging_drx_t            default_drx;

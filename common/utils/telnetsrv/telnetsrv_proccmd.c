@@ -303,8 +303,6 @@ char sv1[64];
 } 
 int proccmd_exit(char *buf, int debug, telnet_printfunc_t prnt)
 {
-extern void exit_fun(const char* s);   
-   
    if (debug > 0)
        prnt("process module received %s\n",buf);
 

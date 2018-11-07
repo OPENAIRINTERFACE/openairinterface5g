@@ -19,17 +19,10 @@
  *      contact@openairinterface.org
  */
 
-#ifndef TIMER_MESSAGES_TYPES_H_
-#define TIMER_MESSAGES_TYPES_H_
+#ifndef X2AP_ENB_ENCODER_H_
+#define X2AP_ENB_ENCODER_H_
 
-//-------------------------------------------------------------------------------------------//
-// Defines to access message fields.
-#define TIMER_HAS_EXPIRED(mSGpTR)   (mSGpTR)->ittiMsg.timer_has_expired
+int x2ap_eNB_encode_pdu(X2AP_X2AP_PDU_t *pdu, uint8_t **buffer, uint32_t *len)
+__attribute__ ((warn_unused_result));
 
-//-------------------------------------------------------------------------------------------//
-typedef struct {
-  void *arg;
-  long  timer_id;
-} timer_has_expired_t;
-
-#endif /* TIMER_MESSAGES_TYPES_H_ */
+#endif /* X2AP_ENB_ENCODER_H_ */

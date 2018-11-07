@@ -538,7 +538,7 @@ boolean_t pdcp_data_req(
    */
 
   for (pdcp_uid=0; pdcp_uid< MAX_MOBILES_PER_ENB;pdcp_uid++){
-    if (pdcp_enb[ctxt_pP->module_id].rnti[pdcp_uid] == ctxt_pP->rnti ) 
+    if (pdcp_enb[ctxt_pP->module_id].rnti[pdcp_uid] == ctxt_pP->rnti )
       break;
   }
 

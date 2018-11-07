@@ -56,7 +56,6 @@
 
 # include "tree.h"
 # include "intertask_interface.h"
-# include "timer.h"
 
 #define FLEXSPLIT_VERSION 0
 
