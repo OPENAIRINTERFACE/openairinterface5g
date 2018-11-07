@@ -442,11 +442,10 @@ int main(int argc, char **argv)
     for (int i=0;i<4;i++) gNB->pbch_pdu[i]=i+1;
     nr_common_signal_procedures (gNB,frame,subframe);
 
-    /*  
 	LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],frame_length_complex_samples_no_prefix,1,1);
 	if (gNB->frame_parms.nb_antennas_tx>1)
 	LOG_M("txsigF1.m","txsF1", gNB->common_vars.txdataF[1],frame_length_complex_samples_no_prefix,1,1);
-    */
+
     //TODO: loop over slots
     for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
       if (gNB_config->subframe_config.dl_cyclic_prefix_type.value == 1) {
