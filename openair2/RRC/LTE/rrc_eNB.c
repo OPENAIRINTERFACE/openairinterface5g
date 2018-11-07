@@ -7452,8 +7452,8 @@ void handle_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
     int found_cell=0;
     for (int j=0;j<RC.nb_inst;j++) {
       eNB_RRC_INST *rrc = RC.rrc[j];
-      if (rrc->configuration.mcc == f1_setup_req->mcc[i] &&
-	  rrc->configuration.mnc == f1_setup_req->mnc[i] &&
+      if (rrc->configuration.mcc[0] == f1_setup_req->mcc[i] &&
+	  rrc->configuration.mnc[0] == f1_setup_req->mnc[i] &&
 	  rrc->nr_cellid == f1_setup_req->nr_cellid[i]) {
         // check that CU rrc instance corresponds to mcc/mnc/cgi (normally cgi should be enough, but just in case)
 
@@ -7504,9 +7504,9 @@ void handle_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
           msg_p = itti_alloc_new_message (TASK_CU_F1,F1AP_SETUP_RESP); 						 
         }
         F1AP_SETUP_RESP (msg_p).gNB_CU_name                                = rrc->node_name;
-        F1AP_SETUP_RESP (msg_p).mcc[cu_cell_ind]                           = rrc->configuration.mcc;
-        F1AP_SETUP_RESP (msg_p).mnc[cu_cell_ind]                           = rrc->configuration.mnc;
-        F1AP_SETUP_RESP (msg_p).mnc_digit_length[cu_cell_ind]              = rrc->configuration.mnc_digit_length;
+        F1AP_SETUP_RESP (msg_p).mcc[cu_cell_ind]                           = rrc->configuration.mcc[0];
+        F1AP_SETUP_RESP (msg_p).mnc[cu_cell_ind]                           = rrc->configuration.mnc[0];
+        F1AP_SETUP_RESP (msg_p).mnc_digit_length[cu_cell_ind]              = rrc->configuration.mnc_digit_length[0];
 	F1AP_SETUP_RESP (msg_p).nr_cellid[cu_cell_ind]                     = rrc->nr_cellid;
         F1AP_SETUP_RESP (msg_p).nrpci[cu_cell_ind]                         = f1_setup_req->nr_pci[i];
         int num_SI= 0;
@@ -7530,7 +7530,7 @@ void handle_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
       } else {// setup_req mcc/mnc match rrc internal list element
         
         LOG_W(RRC,"[Inst %d] No matching MCC/MNC: rrc->mcc/f1_setup_req->mcc %d/%d rrc->mnc/f1_setup_req->mnc %d/%d \n", 
-            j, rrc->configuration.mcc, f1_setup_req->mcc[i],rrc->configuration.mnc, f1_setup_req->mnc[i]);
+            j, rrc->configuration.mcc[0], f1_setup_req->mcc[i],rrc->configuration.mnc[0], f1_setup_req->mnc[i]);
 
       }
     }// for (int j=0;j<RC.nb_inst;j++)

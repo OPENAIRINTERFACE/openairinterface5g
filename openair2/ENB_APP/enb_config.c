@@ -272,10 +272,10 @@ void RCconfig_macrlc(int macrlc_has_f1[MAX_MAC_INST]) {
         printf("sched mode = default %d [%s]\n",global_scheduler_mode,*(MacRLC_ParamList.paramarray[j][MACRLC_SCHED_MODE_IDX].strptr));
       }
     }// j=0..num_inst
-  } else {// MacRLC_ParamList.numelt > 0
+  } /*else {// MacRLC_ParamList.numelt > 0 // ignore it
     AssertFatal (0,
                  "No " CONFIG_STRING_MACRLC_LIST " configuration found");
-  }
+  }*/
 }
 
 int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
@@ -2013,8 +2013,18 @@ int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
     for (k=0; k <num_enbs ; k++) {
       if (strcmp(ENBSParams[ENB_ACTIVE_ENBS_IDX].strlistptr[k], *(ENBParamList.paramarray[i][ENB_ENB_NAME_IDX].strptr) )== 0) {
 
-        paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
         char aprefix[MAX_OPTNAME_SIZE*2 + 8];
+        sprintf(aprefix,"%s.[%i]",ENB_CONFIG_STRING_ENB_LIST,k);
+        paramdef_t PLMNParams[] = PLMNPARAMS_DESC;
+        paramlist_def_t PLMNParamList = {ENB_CONFIG_STRING_PLMN_LIST, NULL, 0};
+        /* map parameter checking array instances to parameter definition array instances */
+        checkedparam_t config_check_PLMNParams [] = PLMNPARAMS_CHECK;
+
+        for (int I = 0; I < sizeof(PLMNParams) / sizeof(paramdef_t); ++I)
+          PLMNParams[I].chkPptr = &(config_check_PLMNParams[I]);
+        config_getlist(&PLMNParamList, PLMNParams, sizeof(PLMNParams)/sizeof(paramdef_t), aprefix);
+
+        paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
 	
 	      F1AP_SETUP_REQ (msg_p).num_cells_available++;
 
@@ -2024,16 +2034,16 @@ int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i) {
         F1AP_SETUP_REQ (msg_p).gNB_DU_name      = strdup(*(ENBParamList.paramarray[0][ENB_ENB_NAME_IDX].strptr));
         LOG_I(ENB_APP,"F1AP: gNB_DU_name[%d] %s\n",k,F1AP_SETUP_REQ (msg_p).gNB_DU_name);
 
-        F1AP_SETUP_REQ (msg_p).tac[k]              = (uint16_t)atoi(*(ENBParamList.paramarray[i][ENB_TRACKING_AREA_CODE_IDX].strptr));
+        F1AP_SETUP_REQ (msg_p).tac[k]              = *ENBParamList.paramarray[i][ENB_TRACKING_AREA_CODE_IDX].uptr;
         LOG_I(ENB_APP,"F1AP: tac[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).tac[k]);
 
-        F1AP_SETUP_REQ (msg_p).mcc[k]              = (uint16_t)atoi(*(ENBParamList.paramarray[i][ENB_MOBILE_COUNTRY_CODE_IDX].strptr));
+        F1AP_SETUP_REQ (msg_p).mcc[k]              = *PLMNParamList.paramarray[0][ENB_MOBILE_COUNTRY_CODE_IDX].uptr;
         LOG_I(ENB_APP,"F1AP: mcc[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).mcc[k]);
 
-        F1AP_SETUP_REQ (msg_p).mnc[k]              = (uint16_t)atoi(*(ENBParamList.paramarray[i][ENB_MOBILE_NETWORK_CODE_IDX].strptr));
+        F1AP_SETUP_REQ (msg_p).mnc[k]              = *PLMNParamList.paramarray[0][ENB_MOBILE_NETWORK_CODE_IDX].uptr;
         LOG_I(ENB_APP,"F1AP: mnc[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).mnc[k]);
 
-        F1AP_SETUP_REQ (msg_p).mnc_digit_length[k] = strlen(*(ENBParamList.paramarray[i][ENB_MOBILE_NETWORK_CODE_IDX].strptr));
+        F1AP_SETUP_REQ (msg_p).mnc_digit_length[k] = *PLMNParamList.paramarray[0][ENB_MNC_DIGIT_LENGTH].u8ptr;
         LOG_I(ENB_APP,"F1AP: mnc_digit_length[%d] %d\n",k,F1AP_SETUP_REQ (msg_p).mnc_digit_length[k]);
 	
         AssertFatal((F1AP_SETUP_REQ (msg_p).mnc_digit_length[k] == 2) ||
