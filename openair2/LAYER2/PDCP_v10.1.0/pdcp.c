@@ -452,7 +452,6 @@ boolean_t pdcp_data_req(
           } // switch case 
       } /* end if node_type is CU */
     
-      free_mem_block(pdcp_pdu_p, __FUNCTION__);
       rlc_status = ack_result;
     }
     else // SRB
