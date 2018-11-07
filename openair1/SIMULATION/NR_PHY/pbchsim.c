@@ -131,16 +131,17 @@ int main(int argc, char **argv)
   int ret;
   int run_initial_sync=0;
 
+  int loglvl=OAILOG_WARNING;
+
   cpuf = get_cpu_freq_GHz();
 
   if ( load_configmodule(argc,argv) == 0) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
 
-  logInit();
   randominit(0);
 
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:N:F:GR:dP:I")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:N:F:GR:dP:IL:")) != -1) {
     switch (c) {
     case 'f':
       write_output_file=1;
@@ -296,6 +297,11 @@ int main(int argc, char **argv)
     case 'I':
       run_initial_sync=1;
       break;
+
+    case 'L':
+      loglvl = atoi(optarg);
+      break;
+
     default:
     case 'h':
       printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
@@ -324,6 +330,10 @@ int main(int argc, char **argv)
       break;
     }
   }
+
+  logInit();
+  set_glog(loglvl);
+  T_stdout = 1;
 
   if (snr1set==0)
     snr1 = snr0+10;
