@@ -601,7 +601,7 @@ int flexran_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Fl
     free(ue_config_reply_msg);
   if(*msg != NULL)
     free(*msg);
-  //LOG_E(FLEXRAN_AGENT, "%s: an error occured\n", __FUNCTION__);
+  LOG_E(FLEXRAN_AGENT, "%s: an error occured\n", __FUNCTION__);
   return -1;
 }
 

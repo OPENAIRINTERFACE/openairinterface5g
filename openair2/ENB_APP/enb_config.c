@@ -2939,13 +2939,13 @@ void handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
 
 
   int i,j,si_ind;
-  printf("cells_to_activated %d, RRC instances %d\n",
+  LOG_I(ENB_APP, "cells_to_activated %d, RRC instances %d\n",
 	 resp->num_cells_to_activate,RC.nb_inst);
   for (j=0;j<resp->num_cells_to_activate;j++) {
     for (i=0;i<RC.nb_inst;i++) {
       rrc_eNB_carrier_data_t *carrier =  &RC.rrc[i]->carrier[0];
       // identify local index of cell j by nr_cellid, plmn identity and physical cell ID
-      printf("Checking cell %d, rrc inst %d : rrc->nr_cellid %lx, resp->nr_cellid %lx\n",
+      LOG_I(ENB_APP, "Checking cell %d, rrc inst %d : rrc->nr_cellid %lx, resp->nr_cellid %lx\n",
 	     j,i,RC.rrc[i]->nr_cellid,resp->nr_cellid[j]);
       if (RC.rrc[i]->nr_cellid == resp->nr_cellid[j] && 
 	  (check_plmn_identity(carrier, resp->mcc[j], resp->mnc[j], resp->mnc_digit_length[j])>0 &&
@@ -2962,6 +2962,8 @@ void handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
 	}
 	// perform MAC/L1 common configuration
 	configure_du_mac(i);
+      } else {
+        LOG_E(ENB_APP, "F1 Setup Response not matching\n");
       }
     }
   }
