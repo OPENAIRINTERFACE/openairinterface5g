@@ -571,7 +571,7 @@ int main(int argc, char **argv)
 
     printf("SNR %f : n_errors (negative CRC) = %d/%d\n", SNR,n_errors,n_trials);
 
-    if (n_trials==1)
+    if (n_trials==1 || ((float)n_errors/(float)n_trials < 0.01))
       break;
 
   } // NSR
