@@ -545,10 +545,9 @@ int wakeup_tx(PHY_VARS_gNB *gNB) {
 int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
 
   gNB_L1_proc_t *proc=&gNB->proc;
-
   gNB_L1_rxtx_proc_t *L1_proc=&proc->L1_proc;
-
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
+  RU_proc_t *ru_proc=&ru->proc;
 
   int i;
   struct timespec wait;
@@ -602,9 +601,9 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
   // The last (TS_rx mod samples_per_frame) was n*samples_per_tti, 
   // we want to generate subframe (n+sf_ahead), so TS_tx = TX_rx+sf_ahead*samples_per_tti,
   // and proc->subframe_tx = proc->subframe_rx+sf_ahead
-  L1_proc->timestamp_tx = proc->timestamp_rx + (sf_ahead*fp->samples_per_subframe);
-  L1_proc->frame_rx     = proc->frame_rx;
-  L1_proc->subframe_rx  = proc->subframe_rx;
+  L1_proc->timestamp_tx = ru_proc->timestamp_rx + (sf_ahead*fp->samples_per_subframe);
+  L1_proc->frame_rx     = ru_proc->frame_rx;
+  L1_proc->subframe_rx  = ru_proc->subframe_rx;
   L1_proc->frame_tx     = (L1_proc->subframe_rx > (9-sf_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
   L1_proc->subframe_tx  = (L1_proc->subframe_rx + sf_ahead)%10;
 

@@ -1620,6 +1620,7 @@ static void* ru_thread( void* param ) {
     }*/
 
     // adjust for timing offset between RU
+printf("~~~~~~~~~~~~~~~~~~~~~~~~~~%d.%d in ru_thread is in process\n", proc->frame_rx, proc->subframe_rx);
     if (ru->idx!=0) proc->frame_tx = (proc->frame_tx+proc->frame_offset)&1023;
 
 
