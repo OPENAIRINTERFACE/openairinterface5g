@@ -200,9 +200,9 @@ uint8_t nr_init_pbch_interleaver(uint8_t *interleaver) {
     else if (i==28) // Hrf bit
       *(interleaver+j_hrf) = *(nr_pbch_payload_interleaving_pattern+i);
     else if (i>28) // Ssb bits
-      *(interleaver+j_ssb) = *(nr_pbch_payload_interleaving_pattern+i);
+      *(interleaver+j_ssb++) = *(nr_pbch_payload_interleaving_pattern+i);
     else
-      *(interleaver+j_other) = *(nr_pbch_payload_interleaving_pattern+i);
+      *(interleaver+j_other++) = *(nr_pbch_payload_interleaving_pattern+i);
 }
 
 /*This pattern takes into account the adjustments for the field specific counters j_sfn, j_hrf, j_ssb and j_other*/
