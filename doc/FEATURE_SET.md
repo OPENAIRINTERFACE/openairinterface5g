@@ -9,6 +9,11 @@
    6. [eNB X2AP](#enb-x2ap)
    7. [eNB Advanced Features](#enb-advanced-features)
 2. [OpenAirInterface UE Feature Set](#openairinterface-ue-feature-set)
+   1.  [LTE UE PHY Layer](#lte-ue-phy-layer)
+   2.  [LTE UE MAC Layer](#lte-ue-mac-layer)
+   3.  [LTE UE RLC Layer](#lte-ue-rlc-layer)
+   4.  [LTE UE PDCP Layer](#lte-ue-pdcp-layer)
+   5.  [LTE UE RRC Layer](#lte-ue-rrc-layer)
 
 # OpenAirInterface Block diagram #
 
@@ -125,5 +130,42 @@ The X2AP layer is based on **3GPP 36.423** v14.6.0 and implements the following 
 
 # OpenAirInterface UE Feature Set #
 
-**To be completed**
+## LTE UE PHY Layer ##
 
+The Physical layer implements **3GPP 36.211**, **36.212**, **36.213** and provides the following features:
+
+- LTE release 8.6 compliant, and implements a subset of release 10
+- FDD and TDD configurations: 1 (experimental) and 3
+- Bandwidth: 5, 10, and 20 MHz
+- Transmission modes: 1, 2 (stable)
+- Max number of antennas: 2
+- CQI/PMI reporting: aperiodic, feedback mode 3 - 0 and 3 - 1
+- PRACH preamble format 0
+- All downlink (DL) channels are supported: PSS, SSS, PBCH, PCFICH, PHICH, PDCCH, PDSCH, PMCH
+- All uplink (UL) channels are supported: PRACH, PUSCH, PUCCH (format 1/1a/1b), SRS, DRS
+
+## LTE UE MAC Layer ##
+
+The MAC layer implements a subset of the **3GPP 36.321** release v8.6 in support of BCH, DLSCH, RACH, and ULSCH channels. 
+
+- RRC interface for CCCH, DCCH, and DTCH
+- HARQ Support
+- RA procedures and RNTI management
+- RLC interface (AM, UM)
+- UL power control
+- Link adaptation
+
+## LTE UE RLC Layer ##
+
+The RLC layer implements a full specification of the 3GPP 36.322 release v9.3.
+
+## LTE UE PDCP Layer ##
+
+The current PDCP layer is header compliant with **3GPP 36.323** Rel 10.1.0.
+
+## LTE UE RRC Layer ##
+
+The RRC layer is based on **3GPP 36.331** v14.3.0 and implements the following functions:
+
+- System Information decoding
+- RRC connection establishment
