@@ -546,7 +546,7 @@ int main(int argc, char **argv)
   int c;
   int k,i,j,aa;
   int re;
-  int loglvl=OAILOG_DEBUG;
+  int loglvl=OAILOG_WARNING;
 
   int s,Kr,Kr_bytes;
 
@@ -1073,12 +1073,8 @@ int main(int argc, char **argv)
   AssertFatal(load_configmodule(argc,argv) != NULL,
 	      "cannot load configuration module, exiting\n");
   logInit();
-  // enable these lines if you need debug info
   set_glog(loglvl);
-  // moreover you need to init itti with the following line
-  // however itti will catch all signals, so ctrl-c won't work anymore
-  // alternatively you can disable ITTI completely in CMakeLists.txt
-  //itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, NULL);
+  T_stdout = 1;
 
 
   if (common_flag == 0) {
