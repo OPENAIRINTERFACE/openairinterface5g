@@ -82,5 +82,5 @@ for(int i=0 ; i < sizeof(someoptions)/sizeof(paramdesc_t) ; i ++) {
 ```
 When you need a specific verification algorithm, you can provide your own verification function and use it in place of the available ones, in the `checkedparam_t` union. If no existing structure definition match your need, you can enhance the configuration module. You then have to add a new verification function in https://gitlab.eurecom.fr/oai/openairinterface5g/blob/develop/common/config/config_userapi.c and add a new structure definition in the `checkedparam_t` type defined in https://gitlab.eurecom.fr/oai/openairinterface5g/blob/develop/common/config/config_paramdesc.h
 
-[Configuration module developer main page](config/devusage)  
-[Configuration module home](config)
+[Configuration module developer main page](../../config/devusage.md)  
+[Configuration module home](../../config.md)
