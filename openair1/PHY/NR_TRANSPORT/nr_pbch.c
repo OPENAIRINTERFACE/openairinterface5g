@@ -274,9 +274,9 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 
   for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++) {
     pbch->pbch_a_interleaved |= ((in>>i)&1)<<(*(interleaver+i));
-#ifdef DEBUG_PBCH_ENCODING
+//#ifdef DEBUG_PBCH_ENCODING
   printf("i %d in 0x%08x out 0x%08x ilv %d (in>>i)&1) %d\n", i, in, pbch->pbch_a_interleaved, *(interleaver+i), (in>>i)&1);
-#endif
+//#endif
   }
 
 #ifdef DEBUG_PBCH_ENCODING
