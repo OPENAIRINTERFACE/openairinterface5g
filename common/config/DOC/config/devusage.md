@@ -5,10 +5,10 @@ The configuration module objectives are
 
 As a developer you may need to look at these sections:
 
-* [add parameters in an existing section](config/devusage/addaparam)
-* [add a parameter set, in a new section](config/devusage/addparamset)
-* [configuration module API](config/devusage/api) 
-* [configuration module public structures](config/devusage/struct)  
+* [add parameters in an existing section](devusage/addaparam)
+* [add a parameter set, in a new section](devusage/addparamset)
+* [configuration module API](devusage/api) 
+* [configuration module public structures](devusage/struct)  
 
 Whatever your need is, configuration module usage examples can be found in oai sources:  
 *  complex example, using all the configuration module functionalities, including parameter checking: 
@@ -17,4 +17,4 @@ Whatever your need is, configuration module usage examples can be found in oai s
 *  an example with run-time definition of parameters, in the logging sub-system: the log_getconfig function at the top of [openair2/UTIL/LOG/log.c](https://gitlab.eurecom.fr/oai/openairinterface5g/blob/develop/openair2/UTIL/LOG/log.c)
 
 
-[Configuration module home](config)
+[Configuration module home](../config.md)
