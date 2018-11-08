@@ -4,8 +4,8 @@ The configuration module provides an api that other oai components can use to ge
 
 ## Documentation
 
-* [runtime usage](config/rtusage)
-* [developer usage](config/devusage)
-* [module architecture](config/arch)
+* [runtime usage](config/rtusage.md)
+* [developer usage](config/devusage.md)
+* [module architecture](config/arch.md)
 
 [oai Wikis home](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/home)
