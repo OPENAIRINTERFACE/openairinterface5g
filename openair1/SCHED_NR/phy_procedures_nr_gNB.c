@@ -188,7 +188,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
     LOG_I(PHY, "[gNB %d] Frame %d subframe %d \
     Calling nr_generate_dci_top (number of DCI %d)\n", gNB->Mod_id, frame, subframe, num_dci);
 
-    uint8_t slot_idx = gNB->pdcch_vars.dci_alloc[0].pdcch_params.first_slot;
+    uint8_t slot_idx = gNB->pdcch_vars.dci_alloc[0].pdcch_params.first_slot + subframe*fp->slots_per_subframe;
 
     if (nfapi_mode == 0 || nfapi_mode == 1){
       nr_generate_dci_top(gNB->pdcch_vars,

@@ -290,7 +290,7 @@ for (int l=0; l<rel15->nb_layers; l++)
   uint8_t dmrs_type = config.pdsch_config.dmrs_type.value;
   l0 = get_l0(dmrs_type, 2);//config.pdsch_config.dmrs_typeA_position.value);
   nr_modulation(pdsch_dmrs[l0][0], n_dmrs, MOD_QPSK, mod_dmrs); // currently only codeword 0 is modulated
-#ifdef DEBUG_DLSCH
+//#ifdef DEBUG_DLSCH
 printf("DMRS modulation (single symbol %d, %d symbols, type %d):\n", l0, n_dmrs, dmrs_type);
 for (int i=0; i<n_dmrs>>3; i++) {
   for (int j=0; j<8; j++) {
@@ -298,7 +298,7 @@ for (int i=0; i<n_dmrs>>3; i++) {
   }
   printf("\n");
 }
-#endif
+//#endif
 
   /// Resource mapping
   AssertFatal(rel15->nb_layers<=config.rf_config.tx_antenna_ports.value, "Not enough Tx antennas (%d) for %d layers\n",\
