@@ -2150,8 +2150,6 @@ void init_RU_proc(RU_t *ru) {
   proc->frame_offset             = 0;
   proc->num_slaves               = 0;
   proc->frame_tx_unwrap          = 0;
-  proc->ru_rx_ready              = 0;
-  proc->ru_tx_ready              = 0;
 
   for (i=0;i<10;i++) proc->symbol_mask[i]=0;
   
@@ -2326,7 +2324,6 @@ void kill_RU_proc(RU_t *ru)
   pthread_mutex_unlock(&proc->mutex_synch);
 
   pthread_mutex_lock(&proc->mutex_eNBs);
-  proc->ru_tx_ready = 0;
   proc->instance_cnt_eNBs = 1;
   // cond_eNBs is used by both ru_thread and ru_thread_tx, so we need to send
   // a broadcast to wake up both threads

@@ -223,31 +223,6 @@ static inline int rxtx(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, char *thread_name
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER , 1 );
 
-/*//#TODO
-  if(get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)
-  {
-    if (pthread_mutex_lock(mutex) != 0) {
-      LOG_E(PHY, "[SCHED][eNB] ERROR locking mutex for eNB L1_thread_tx\n");
-      exit_fun("ERROR pthread_lock");
-      return(-1);
-    }
-    while(L1_proc_tx->instance_cnt == 0){
-      pthread_cond_wait(L1_proc_tx->cond,L1_proc_tx->mutex);
-    }
-    L1_proc_tx->instance_cnt = 0;
-    if (pthread_cond_signal(&L1_proc_tx->cond) != 0) {
-      LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB L1_thread_tx\n");
-      exit_fun( "ERROR pthread_cond_signal" );
-      return(-1);
-    }
-    if (pthread_mutex_unlock(mutex) != 0) {
-      LOG_E(PHY,"[SCHED][eNB] error unlocking mutex for %s\n",name);
-      exit_fun("ERROR pthread_unlock");
-      return(-1);
-    }
-  }*/
-  
-
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
 
   eNB->UL_INFO.frame     = proc->frame_rx;
