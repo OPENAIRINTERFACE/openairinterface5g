@@ -128,4 +128,4 @@ list to be read is under another section.
 ```  
 
 [Configuration module developer main page](../../config/devusage.md)  
-[Configuration module home](../..config.md)
+[Configuration module home](../../config.md)
