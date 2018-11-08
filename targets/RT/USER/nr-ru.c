@@ -771,8 +771,6 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   if (ru == RC.ru[0]) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_RU, proc->frame_rx );
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_RU, proc->subframe_rx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, proc->subframe_tx );
   }
   
   if (proc->first_rx == 0) {
@@ -844,6 +842,8 @@ void tx_rf(RU_t *ru) {
       flags = 4; // start of burst and end of burst (only one DL SF between two UL)
       sf_extension = ru->N_TA_offset<<1;
     } */
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, proc->subframe_tx );
 
     for (i=0; i<ru->nb_tx; i++)
       txp[i] = (void*)&ru->common.txdata[i][(proc->subframe_tx*fp->samples_per_subframe)-sf_extension];
@@ -1415,6 +1415,9 @@ static void* ru_thread_tx( void* param ) {
     wait_on_condition(&proc->mutex_gNBs,&proc->cond_gNBs,&proc->instance_cnt_gNBs,"ru_thread_tx");
     if (oai_exit) break;
   	       
+printf("~~~~~~~~~~~~~~~~start process for ru_thread_tx %d.%d\n", proc->frame_tx, proc->subframe_tx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, proc->subframe_tx );
     // do TX front-end processing if needed (precoding and/or IDFTs)
     if (ru->feptx_prec) ru->feptx_prec(ru);
   	  
@@ -1634,22 +1637,7 @@ printf("~~~~~~~~~~~~~~~~~~~~~~~~~~%d.%d in ru_thread is in process\n", proc->fra
     // wakeup all gNB processes waiting for this RU
     if (ru->num_gNB>0) wakeup_gNB_L1s(ru);
 
-    if(get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD || ru->num_eNB==0){
-      // do TX front-end processing if needed (precoding and/or IDFTs)
-      if (ru->feptx_prec) ru->feptx_prec(ru);
-      
-      // do OFDM if needed
-      if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
-      if(!emulate_rf){
-        // do outgoing fronthaul (south) if needed
-        if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
-        
-        if (ru->fh_north_out) ru->fh_north_out(ru);
-      }
-      proc->emulate_rf_busy = 0;
-    }
-
-    if(get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD)
+    if(get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD && ru->num_eNB==0)
     {
       // do TX front-end processing if needed (precoding and/or IDFTs)
       if (ru->feptx_prec) ru->feptx_prec(ru);
@@ -1691,6 +1679,7 @@ printf("~~~~~~~~~~~~~~~~~~~~~~~~~~%d.%d in ru_thread is in process\n", proc->fra
           }//for (i=0; i<ru->nb_tx; i++)
         }//if(proc->frame_tx == print_frame)
       }//else  emulate_rf
+      proc->emulate_rf_busy = 0;
     }//if(get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD)
   }
   
