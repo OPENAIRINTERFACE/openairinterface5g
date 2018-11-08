@@ -81,5 +81,5 @@ The configuration module provides an implementation of the functions to be used 
 |:-----------|:------------------------------------------------------------------|
 | `f4`  or `f5` | pointer to the checking function. they are generic structures to be used  when no existing structure provides the required parameter verification. `f4` takes one argument, the `paramdef_t` structure corresponding to the parameter to be checked (`int  (*f4)(paramdef_t *param)`), `f5` taxes no argument (`void (*checkfunc)(void)`) |
 
-[Configuration module developer main page](config/devusage)  
-[Configuration module home](config)
+[Configuration module developer main page](../../config/devusage.md)  
+[Configuration module home](../../config.md)
