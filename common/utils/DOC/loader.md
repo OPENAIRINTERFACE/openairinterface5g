@@ -10,8 +10,8 @@ The main drawback is a performance cost at init time, when loading libraries.
 
 ## Documentation
 
-* [runtime usage](loader/rtusage)
-* [developer usage](loader/devusage)
-* [module architecture](loader/arch)
+* [runtime usage](loader/rtusage.md)
+* [developer usage](loader/devusage.md)
+* [module architecture](loader/arch.md)
 
-[oai Wikis home](home)
+[oai Wikis home](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/home)
