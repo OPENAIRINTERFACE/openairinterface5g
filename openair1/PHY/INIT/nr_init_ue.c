@@ -655,7 +655,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   int i,j,k,l;
   int eNB_id;
   int th_id;
-  int n_ssb_crb=(fp->N_RB_DL-20)>>1;
+  int n_ssb_crb=(fp->N_RB_DL-20);
   abstraction_flag = 0;
   fp->nb_antennas_tx = 1;
   fp->nb_antennas_rx=1;

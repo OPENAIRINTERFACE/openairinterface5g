@@ -963,7 +963,7 @@ nb_sf_init=5;
 #if BASIC_SIMULATOR
                 {
                   int t;
-                  for (t = 0; t < 2; t++) {
+                  for (t = 0; t < RX_NB_TH; t++) {
                         UE_rxtx_proc_t *proc = &UE->proc.proc_rxtx[t];
                         pthread_mutex_lock(&proc->mutex_rxtx);
                         while (proc->instance_cnt_rxtx >= 0) pthread_cond_wait( &proc->cond_rxtx, &proc->mutex_rxtx );
@@ -971,12 +971,12 @@ nb_sf_init=5;
                   }
                 }
 #endif
+
                 LOG_D(PHY,"Process subframe %d thread Idx %d \n", subframe_nr, UE->current_thread_id[subframe_nr]);
 
                 thread_idx++;
                 if(thread_idx>=RX_NB_TH)
                     thread_idx = 0;
-
 
                 if (UE->mode != loop_through_memory) {
                     for (i=0; i<UE->frame_parms.nb_antennas_rx; i++)
@@ -1040,9 +1040,6 @@ nb_sf_init=5;
                         if ( first_symbols <0 )
                             LOG_E(PHY,"can't compensate: diff =%d\n", first_symbols);
                     }
-                } //UE->mode != loop_through_memory
-                else
-                    rt_sleep_ns(1000*1000);
 
                     pickTime(gotIQs);
                     // operate on thread sf mod 2
@@ -1054,13 +1051,13 @@ nb_sf_init=5;
                             UE->proc.proc_rxtx[th_id].frame_rx++;
                         }
 #ifdef SAIF_ENABLED
-						if (!(proc->frame_rx%4000))
-						{
-							printf("frame_rx=%d rx_thread_busy=%ld - rate %8.3f\n",
-								proc->frame_rx, g_ue_rx_thread_busy,
-								(float)g_ue_rx_thread_busy/(proc->frame_rx*10+1)*100.0);
-							fflush(stdout);
-						}
+			if (!(proc->frame_rx%4000))
+			  {
+			    printf("frame_rx=%d rx_thread_busy=%ld - rate %8.3f\n",
+				   proc->frame_rx, g_ue_rx_thread_busy,
+				   (float)g_ue_rx_thread_busy/(proc->frame_rx*10+1)*100.0);
+			    fflush(stdout);
+			  }
 #endif
                     }
                     //UE->proc.proc_rxtx[0].gotIQs=readTime(gotIQs);
@@ -1078,7 +1075,7 @@ nb_sf_init=5;
                       proc->frame_tx = (proc->frame_tx + 1)%MAX_FRAME_NUMBER;
                       proc->nr_tti_tx %= NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
                     }
-                    proc->subframe_tx=subframe_nr + DURATION_RX_TO_TX;
+                    proc->subframe_tx=proc->nr_tti_rx;
                     proc->timestamp_tx = timestamp+
                                          (DURATION_RX_TO_TX*UE->frame_parms.samples_per_subframe)-
                                          UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0;
@@ -1114,7 +1111,41 @@ nb_sf_init=5;
 //                    initStaticTime(lastTime);
 //                    updateTimes(lastTime, &t1, 20000, "Delay between two IQ acquisitions (case 1)");
 //                    pickStaticTime(lastTime);
+                } //UE->mode != loop_through_memory
+                else {
+                    proc->nr_tti_rx=subframe_nr;
+                    proc->subframe_rx=subframe_nr;
+		    if(subframe_nr == 0) {
+		      for (th_id=0; th_id < RX_NB_TH; th_id++) {
+			UE->proc.proc_rxtx[th_id].frame_rx++;
+		      }
+		    }
+                    proc->frame_tx = proc->frame_rx;
+                    proc->nr_tti_tx= subframe_nr + DURATION_RX_TO_TX;
+                    if (proc->nr_tti_tx > NR_NUMBER_OF_SUBFRAMES_PER_FRAME) {
+                      proc->frame_tx = (proc->frame_tx + 1)%MAX_FRAME_NUMBER;
+                      proc->nr_tti_tx %= NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
+                    }
+                    proc->subframe_tx=proc->nr_tti_tx;
 
+                    printf("Processing subframe %d\n",proc->subframe_rx);
+
+		    if(UE->if_inst != NULL && UE->if_inst->ul_indication != NULL){
+		      UE->ul_indication.module_id = 0;
+		      UE->ul_indication.gNB_index = 0;
+		      UE->ul_indication.cc_id = 0;
+		      UE->ul_indication.slot = 0;     //  to be fill
+		      UE->ul_indication.frame = 0;    //  to be fill
+		      //  [TODO] mapping right after NR initial sync
+		      UE->ul_indication.frame = proc->frame_rx; 
+		      UE->ul_indication.slot = proc->nr_tti_rx;
+		      
+		      UE->if_inst->ul_indication(&UE->ul_indication);
+		    }
+
+		    phy_procedures_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay);
+		    getchar();
+		} // else loop_through_memory
             } // start_rx_stream==1
         } // UE->is_synchronized==1
 

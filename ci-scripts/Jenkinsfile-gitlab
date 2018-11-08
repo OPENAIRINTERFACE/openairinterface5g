@@ -118,7 +118,7 @@ pipeline {
         stage ("Start VM -- basic-sim") {
             steps {
                 timeout (time: 5, unit: 'MINUTES') {
-                    sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
+                    sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
             }
         }
@@ -126,7 +126,7 @@ pipeline {
         stage ("Start VM -- gnb-usrp") {
             steps {
                 timeout (time: 5, unit: 'MINUTES') {
-                    sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant gnb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
+                    sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant gnb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
             }
         }
@@ -134,7 +134,7 @@ pipeline {
         stage ("Start VM -- nu-ue-usrp") {
             steps {
                 timeout (time: 5, unit: 'MINUTES') {
-                    sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant nu-ue-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
+                    sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant nu-ue-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
             }
         }
@@ -142,7 +142,7 @@ pipeline {
         stage ("Start VM -- enb-usrp") {
             steps {
                 timeout (time: 5, unit: 'MINUTES') {
-                    sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant enb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
+                    sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant enb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
             }
         }
@@ -150,7 +150,7 @@ pipeline {
         stage ("Start VM -- enb-ethernet") {
             steps {
                 timeout (time: 5, unit: 'MINUTES') {
-                    sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
+                    sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
             }
         }
@@ -158,7 +158,7 @@ pipeline {
         stage ("Start VM -- ue-ethernet") {
             steps {
                 timeout (time: 5, unit: 'MINUTES') {
-                    sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
+                    sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
             }
         }
@@ -166,7 +166,7 @@ pipeline {
         stage ("Start VM -- phy-sim") {
             steps {
                 timeout (time: 5, unit: 'MINUTES') {
-                    sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
+                    sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
             }
         }
@@ -174,7 +174,7 @@ pipeline {
         stage ("Start VM -- cppcheck") {
             steps {
                 timeout (time: 5, unit: 'MINUTES') {
-                    sh "./ci-scripts/buildOnVM.sh --workspace $WORKSPACE --variant cppcheck --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
+                    sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant cppcheck --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
             }
         }
@@ -185,7 +185,7 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Analysis with cppcheck") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/waitBuildOnVM.sh --workspace $WORKSPACE --variant cppcheck --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant cppcheck --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
                             }
                         }
                     }
@@ -194,7 +194,7 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build eNb-USRP") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/waitBuildOnVM.sh --workspace $WORKSPACE --variant enb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant enb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
                             }
                         }
                     }
@@ -203,7 +203,7 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build basic-sim") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/waitBuildOnVM.sh --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                             }
                         }
                     }
@@ -212,7 +212,7 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build eNb-ethernet") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/waitBuildOnVM.sh --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                             }
                         }
                     }
@@ -221,7 +221,7 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build UE-ethernet") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/waitBuildOnVM.sh --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                             }
                         }
                     }
@@ -230,7 +230,7 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build gNb-usrp") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/waitBuildOnVM.sh --workspace $WORKSPACE --variant gnb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant gnb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
                             }
                         }
                     }
@@ -239,7 +239,7 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build nr-UE-usrp") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/waitBuildOnVM.sh --workspace $WORKSPACE --variant nu-ue-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant nu-ue-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
                             }
                         }
                     }
@@ -248,7 +248,7 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build phy-sim") {
                             timeout (time: 20, unit: 'MINUTES') {
-                               sh "./ci-scripts/waitBuildOnVM.sh --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                               sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                             }
                         }
                     }
@@ -286,7 +286,7 @@ pipeline {
                             archiveArtifacts artifacts: 'archives/vm_build_logs.zip'
                         }
                         if ("MERGE".equals(env.gitlabActionType)) {
-                            sh "./ci-scripts/reportBuildLocally.sh --git-url ${GIT_URL} --job-name ${JOB_NAME} --build-id ${BUILD_ID} --trigger merge-request --src-branch ${env.gitlabSourceBranch} --src-commit ${env.gitlabMergeRequestLastCommit} --target-branch ${env.gitlabTargetBranch} --target-commit ${GIT_COMMIT}"
+                            sh "./ci-scripts/oai-ci-vm-tool report-build --workspace $WORKSPACE --git-url ${GIT_URL} --job-name ${JOB_NAME} --build-id ${BUILD_ID} --trigger merge-request --src-branch ${env.gitlabSourceBranch} --src-commit ${env.gitlabMergeRequestLastCommit} --target-branch ${env.gitlabTargetBranch} --target-commit ${GIT_COMMIT}"
                             sh "./ci-scripts/checkAddedWarnings.sh --src-branch ${env.gitlabSourceBranch} --target-branch ${env.gitlabTargetBranch}"
                             def res=readFile('./oai_warning_files.txt').trim();
                             if ("0".equals(res)) {
@@ -297,7 +297,7 @@ pipeline {
                                 addGitLabMRComment comment: message
                             }
                         } else {
-                            sh "./ci-scripts/reportBuildLocally.sh --git-url ${GIT_URL} --job-name ${JOB_NAME} --build-id ${BUILD_ID} --trigger push --branch ${GIT_BRANCH} --commit ${GIT_COMMIT}"
+                            sh "./ci-scripts/oai-ci-vm-tool report-build --workspace $WORKSPACE --git-url ${GIT_URL} --job-name ${JOB_NAME} --build-id ${BUILD_ID} --trigger push --branch ${GIT_BRANCH} --commit ${GIT_COMMIT}"
                         }
                         if(fileExists('build_results.html')) {
                             sh "sed -i -e 's#Build-ID: ${BUILD_ID}#Build-ID: <a href=\"${BUILD_URL}\">${BUILD_ID}</a>#' -e 's#TEMPLATE_BUILD_TIME#${JOB_TIMESTAMP}#' build_results.html"
@@ -314,7 +314,7 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Test phy-sim") {
                             timeout (time: 45, unit: 'MINUTES') {
-                                sh "./ci-scripts/runTestOnVM.sh --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                                sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
                             }
                         }
                     }
@@ -323,7 +323,7 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Test basic-sim") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/runTestOnVM.sh --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                                sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
                             }
                         }
                     }
@@ -518,9 +518,9 @@ pipeline {
                         if(fileExists('archives/vm_tests_logs.zip')) {
                             archiveArtifacts artifacts: 'archives/vm_tests_logs.zip'
                             if ("MERGE".equals(env.gitlabActionType)) {
-                                sh "./ci-scripts/reportTestLocally.sh --git-url ${GIT_URL} --job-name ${JOB_NAME} --build-id ${BUILD_ID} --trigger merge-request --src-branch ${env.gitlabSourceBranch} --src-commit ${env.gitlabMergeRequestLastCommit} --target-branch ${env.gitlabTargetBranch} --target-commit ${GIT_COMMIT}"
+                                sh "./ci-scripts/oai-ci-vm-tool report-test --workspace $WORKSPACE --git-url ${GIT_URL} --job-name ${JOB_NAME} --build-id ${BUILD_ID} --trigger merge-request --src-branch ${env.gitlabSourceBranch} --src-commit ${env.gitlabMergeRequestLastCommit} --target-branch ${env.gitlabTargetBranch} --target-commit ${GIT_COMMIT}"
                             } else {
-                                sh "./ci-scripts/reportTestLocally.sh --git-url ${GIT_URL} --job-name ${JOB_NAME} --build-id ${BUILD_ID} --trigger push --branch ${GIT_BRANCH} --commit ${GIT_COMMIT}"
+                                sh "./ci-scripts/oai-ci-vm-tool report-test --workspace $WORKSPACE --git-url ${GIT_URL} --job-name ${JOB_NAME} --build-id ${BUILD_ID} --trigger push --branch ${GIT_BRANCH} --commit ${GIT_COMMIT}"
                             }
                             if(fileExists('test_simulator_results.html')) {
                                 sh "sed -i -e 's#Build-ID: ${BUILD_ID}#Build-ID: <a href=\"${BUILD_URL}\">${BUILD_ID}</a>#' -e 's#TEMPLATE_BUILD_TIME#${JOB_TIMESTAMP}#' test_simulator_results.html"
@@ -533,7 +533,7 @@ pipeline {
         }
         stage ("Destroy all Virtual Machines") {
             steps {
-                sh "./ci-scripts/destroyAllRunningVM.sh --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                sh "./ci-scripts/oai-ci-vm-tool destroy --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
             }
         }
     }
@@ -541,7 +541,7 @@ pipeline {
         always {
             script {
                 // Stage destroy may not be run if error in previous stage
-                sh "./ci-scripts/destroyAllRunningVM.sh --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                sh "./ci-scripts/oai-ci-vm-tool destroy --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
                 emailext attachmentsPattern: '*results*.html',
                      body: '''Hi,
 Here are attached HTML report files for $PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!

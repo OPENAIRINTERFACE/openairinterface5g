@@ -406,7 +406,7 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu)
   gNB_config->rf_config.ul_carrier_bandwidth.value = N_RB_UL;
   gNB_config->sch_config.half_frame_index.value = 0;
   gNB_config->sch_config.ssb_subcarrier_offset.value = 0;
-  gNB_config->sch_config.n_ssb_crb.value = (N_RB_DL-20)>>1;
+  gNB_config->sch_config.n_ssb_crb.value = (N_RB_DL-20);
   gNB_config->sch_config.ssb_subcarrier_offset.value = 0;
 
 
@@ -441,7 +441,7 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config)
   gNB_config->rf_config.ul_carrier_bandwidth.value      = phy_config->cfg->rf_config.ul_carrier_bandwidth.value;//106;
   gNB_config->sch_config.half_frame_index.value         = 0;
   gNB_config->sch_config.ssb_subcarrier_offset.value    = phy_config->cfg->sch_config.ssb_subcarrier_offset.value;//0;
-  gNB_config->sch_config.n_ssb_crb.value                = (phy_config->cfg->rf_config.dl_carrier_bandwidth.value-20)>>1;
+  gNB_config->sch_config.n_ssb_crb.value                = (phy_config->cfg->rf_config.dl_carrier_bandwidth.value-20);
   gNB_config->sch_config.physical_cell_id.value         = phy_config->cfg->sch_config.physical_cell_id.value;
 
   if (phy_config->cfg->subframe_config.duplex_mode.value == 0) {
