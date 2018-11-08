@@ -103,7 +103,7 @@ function details_table {
     COMPLETE_MESSAGE="start"
     for MESSAGE in $LIST_MESSAGES
     do
-        if [[ $MESSAGE == *"/home/ubuntu/tmp"* ]]
+        if [[ $MESSAGE == *"/home/ubuntu/tmp"* ]] || [[  $MESSAGE == *"/tmp/CI-eNB"* ]]
         then
             FILENAME=`echo $MESSAGE | sed -e "s#^/home/ubuntu/tmp/##" -e "s#^.*/tmp/CI-eNB/##" | awk -F ":" '{print $1}'`
             LINENB=`echo $MESSAGE | awk -F ":" '{print $2}'`
