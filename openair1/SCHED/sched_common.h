@@ -30,7 +30,7 @@
 
 #include "PHY/defs_eNB.h"
 #include "PHY/defs_UE.h"
-#include "TDD-Config.h"
+#include "LTE_TDD-Config.h"
 /*! \brief Function to compute subframe Number(DL and S) as a function of Frame type and TDD Configuration
   @param frame_parms Pointer to DL frame parameter descriptor
   @returns Subframe Number (DL,S)
@@ -346,7 +346,7 @@ void compute_srs_pos(lte_frame_type_t frameType,uint16_t isrs,uint16_t *psrsPeri
 
 int ul_ACK_subframe2_dl_frame(LTE_DL_FRAME_PARMS *frame_parms,int frame, unsigned char subframe,unsigned char subframe_tx);
 
-void get_retransmission_timing(TDD_Config_t *tdd_Config, frame_t *frameP,  sub_frame_t *subframeP);
+void get_retransmission_timing(LTE_TDD_Config_t *tdd_Config, frame_t *frameP,  sub_frame_t *subframeP);
 /*@}*/
 
 

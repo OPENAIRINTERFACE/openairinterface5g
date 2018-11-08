@@ -561,7 +561,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 	    if ((UE_id = add_new_ue(enb_mod_idP, CC_idP,
 				    mac->common_channels[CC_idP].
 				    ra[ii].rnti, harq_pid
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 				    ,
 				    mac->common_channels[CC_idP].
 				    ra[ii].rach_resource_type
@@ -1029,7 +1029,8 @@ schedule_ulsch(module_id_t module_idP, frame_t frameP,
     for (i = 0; i < NB_RA_PROC_MAX; i++) {
       if ((cc->ra[i].state == WAITMSG3) &&
 	  (cc->ra[i].Msg3_subframe == sched_subframe)) {
-	first_rb[CC_id]++;
+        if (first_rb[CC_id] < cc->ra[i].msg3_first_rb + cc->ra[i].msg3_nb_rb)
+          first_rb[CC_id] = cc->ra[i].msg3_first_rb + cc->ra[i].msg3_nb_rb;
 	//    cc->ray[i].Msg3_subframe = -1;
 	break;
       }
@@ -1427,7 +1428,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 						  mcs_UL[harq_pid],
 						  rb_table
 						  [rb_table_index]));
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	    if (UE_template->rach_resource_type > 0) {	// This is a BL/CE UE allocation
 	      fill_nfapi_ulsch_config_request_emtc(&ul_req_tmp_body->ul_config_pdu_list[ul_req_index], UE_template->rach_resource_type > 2 ? 2 : 1, 1,	//total_number_of_repetitions
 						   1,	//repetition_number
@@ -1511,7 +1512,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 						 0,	// n_srs
 						 UE_template->
 						 TBS_UL[harq_pid]);
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	    if (UE_template->rach_resource_type > 0) {	// This is a BL/CE UE allocation
 	      fill_nfapi_ulsch_config_request_emtc(&ul_req_tmp_body->ul_config_pdu_list[ul_req_index], UE_template->rach_resource_type > 2 ? 2 : 1, 1,	//total_number_of_repetitions
 						   1,	//repetition_number

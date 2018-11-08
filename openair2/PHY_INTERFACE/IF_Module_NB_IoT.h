@@ -10,7 +10,7 @@
 
 #include "nfapi_interface.h"
 //#include "openair1/PHY/LTE_TRANSPORT/defs_NB_IoT.h"
-#include "PhysicalConfigDedicated-NB-r13.h"
+#include "LTE_PhysicalConfigDedicated-NB-r13.h"
 //#include "openair2/PHY_INTERFACE/IF_Module_NB_IoT.h"
 #include "openair2/COMMON/platform_types.h"
 //#include "openair1/SCHED/IF_Module_L1_primitives_NB_IoT.h"
@@ -54,7 +54,7 @@ typedef struct{
 	uint16_t npdcch_Offset_USS; //Alfa_offset (see TS 36.213 ch 16.6)
 
 
-	ACK_NACK_NumRepetitions_NB_r13_t *ack_nack_numRepetitions_MSG4; //pointer to the first cell of a list of ack_nack_num_repetitions
+	LTE_ACK_NACK_NumRepetitions_NB_r13_t *ack_nack_numRepetitions_MSG4; //pointer to the first cell of a list of ack_nack_num_repetitions
 
     //ulPowerControlCommon (UE side)
     uint16_t p0_nominal_npusch;

@@ -290,36 +290,36 @@ set(protobuf_generated_dir ${OPENAIR_BIN_DIR})
 add_list2_option(RRC_ASN1_VERSION "Rel14" "ASN.1 version of RRC interface" "Rel8" "Rel10" "Rel14" "CBA")
 
 if (${RRC_ASN1_VERSION} STREQUAL "Rel8")
-  make_version(RRC_VERSION 8 6 0)
+  make_version(LTE_RRC_VERSION 8 6 0)
   set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-86.asn)
 elseif (${RRC_ASN1_VERSION} STREQUAL "CBA")
-  make_version(RRC_VERSION 10 2 0)
+  make_version(LTE_RRC_VERSION 10 2 0)
   add_definitions(-DCBA)
   set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-a20-lola.asn)
 elseif (${RRC_ASN1_VERSION} STREQUAL "Rel10")
-  make_version(RRC_VERSION 10 2 0)
+  make_version(LTE_RRC_VERSION 10 2 0)
   set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-a20.asn)
 elseif (${RRC_ASN1_VERSION} STREQUAL "Rel11")
-  make_version(RRC_VERSION 11 18 0)
+  make_version(LTE_RRC_VERSION 11 18 0)
   set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/lte-rrc-11.18.0.asn1)
 elseif (${RRC_ASN1_VERSION} STREQUAL "Rel12")
-  make_version(RRC_VERSION 12 16 0)
+  make_version(LTE_RRC_VERSION 12 16 0)
   set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/lte-rrc-12.16.0.asn1)
 elseif (${RRC_ASN1_VERSION} STREQUAL "Rel13")
-  make_version(RRC_VERSION 13 9 1)
+  make_version(LTE_RRC_VERSION 13 9 1)
   set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/lte-rrc-13.9.1.asn1)
 elseif (${RRC_ASN1_VERSION} STREQUAL "Rel14")
-  make_version(RRC_VERSION 14 7 0)
+  make_version(LTE_RRC_VERSION 14 7 0)
   set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/lte-rrc-14.7.0.asn1)
 elseif (${RRC_ASN1_VERSION} STREQUAL "Rel15")
-  make_version(RRC_VERSION 15 2 2)
+  make_version(LTE_RRC_VERSION 15 2 2)
   set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/lte-rrc-15.2.2.asn1)
 endif  (${RRC_ASN1_VERSION} STREQUAL "Rel8")
-add_definitions(-DRRC_VERSION=${RRC_VERSION})
+add_definitions(-DLTE_RRC_VERSION=${LTE_RRC_VERSION})
 set (RRC_FULL_DIR ${asn1_generated_dir}/RRC_${RRC_ASN1_VERSION})
-message("calling asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}")
+message("calling ASN1C_PREFIX=LTE_ asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}")
 execute_process(COMMAND mkdir -p ${RRC_FULL_DIR}
-                COMMAND env asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}
+                COMMAND env "ASN1C_PREFIX=LTE_" asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}
                 RESULT_VARIABLE ret)
 if (NOT ${ret} STREQUAL 0)
   message(FATAL_ERROR "${ret}: error")
@@ -339,7 +339,7 @@ include_directories ("${RRC_FULL_DIR}")
 add_custom_command (
   OUTPUT ${RRC_FULL_DIR}/asn_constant.h
   COMMAND mkdir -p ${RRC_FULL_DIR}
-  COMMAND env asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}
+  COMMAND env "ASN1C_PREFIX=LTE_" asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -D ${RRC_FULL_DIR} ${RRC_GRAMMAR}
   DEPENDS ${RRC_GRAMMAR}
   )
 

@@ -62,7 +62,7 @@ uint32_t pdcp_get_next_count_tx(
     /* 5 bits length SN */
     count = ((pdcp_pP->tx_hfn << 5)  | (pdcp_sn & 0x001F));
   } else {
-    if (pdcp_pP->seq_num_size == PDCP_Config__rlc_UM__pdcp_SN_Size_len7bits) {
+    if (pdcp_pP->seq_num_size == LTE_PDCP_Config__rlc_UM__pdcp_SN_Size_len7bits) {
       count = ((pdcp_pP->tx_hfn << 7) | (pdcp_sn & 0x07F));
     } else { /*Default is the 12 bits length SN */
       count = ((pdcp_pP->tx_hfn << 12) | (pdcp_sn & 0x0FFF));
@@ -88,7 +88,7 @@ uint32_t pdcp_get_next_count_rx(
     /* 5 bits length SN */
     count = (((pdcp_pP->rx_hfn + pdcp_pP->rx_hfn_offset) << 5)  | (pdcp_sn & 0x001F));
   } else {
-    if (pdcp_pP->seq_num_size == PDCP_Config__rlc_UM__pdcp_SN_Size_len7bits) {
+    if (pdcp_pP->seq_num_size == LTE_PDCP_Config__rlc_UM__pdcp_SN_Size_len7bits) {
       /* 7 bits length SN */
       count = (((pdcp_pP->rx_hfn + pdcp_pP->rx_hfn_offset) << 7) | (pdcp_sn & 0x007F));
     } else { // default

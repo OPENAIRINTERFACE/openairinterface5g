@@ -121,7 +121,7 @@ uint8_t *generate_dci0(uint8_t *dci,
 	      (aggregation_level==2) ||
 	      (aggregation_level==4) ||
 	      (aggregation_level==8)
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0)) // Added for EPDCCH/MPDCCH
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) // Added for EPDCCH/MPDCCH
 	      ||
 	      (aggregation_level==16) ||
 	      (aggregation_level==24) ||

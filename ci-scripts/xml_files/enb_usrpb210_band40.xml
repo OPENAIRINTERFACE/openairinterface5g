@@ -43,19 +43,19 @@
 	<testCase id="030104">
 		<class>Initialize_eNB</class>
 		<desc>Initialize eNB (TDD/Band40/5MHz)</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band40.tm1.25PRB.FairScheduler.usrpb210.conf --codingw --fepw</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band40.tm1.25PRB.FairScheduler.usrpb210.conf</Initialize_eNB_args>
 	</testCase>
 	
 	<testCase id="030114">
                 <class>Initialize_eNB</class>
                 <desc>Initialize eNB (TDD/Band40/10MHz/info)</desc>
-                <Initialize_eNB_args>-O ci-scripts/conf_files/enb.band40.tm1.50PRB.FairScheduler.usrpb210.conf --codingw --fepw</Initialize_eNB_args>
+                <Initialize_eNB_args>-O ci-scripts/conf_files/enb.band40.tm1.50PRB.FairScheduler.usrpb210.conf</Initialize_eNB_args>
         </testCase>
 
 	<testCase id="030106">
 		<class>Initialize_eNB</class>
 		<desc>Initialize eNB (TDD/Band40/20MHz/info)</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band40.tm1.100PRB.FairScheduler.usrpb210.conf --codingw --fepw</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band40.tm1.100PRB.FairScheduler.usrpb210.conf</Initialize_eNB_args>
 	</testCase>
 
 	<testCase id="030201">
