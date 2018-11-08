@@ -4,4 +4,4 @@
 ![configmodule_components](/uploads/54f8a3953d5ee53717cd9a3b71f85c68/configmodule_components.png)
 
 
-[Configuration module home](config)
+[Configuration module home](../config.md)
