@@ -16,5 +16,5 @@ void * get_shlibmodule_fptr(char *modname, char *fname)
 ```
 Returns a pointer to the symbol `fname`, defined in module `modname`, or `NULL` if the symbol is not found. 
 
-[loader home page](../loader.md)  
+[loader home page](../../../loader.md)  
 [loader developer home page](../devusage.md)
