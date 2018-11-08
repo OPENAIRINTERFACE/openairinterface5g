@@ -47,4 +47,4 @@ With this latest example, nn the softmodem logs, you can check that the right de
 
 ```
 
-[loader home page](..loader.md)
+[loader home page](../loader.md)
