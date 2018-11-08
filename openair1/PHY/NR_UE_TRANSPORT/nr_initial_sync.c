@@ -149,7 +149,7 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   int rx_power=0; //aarx,
   //nfapi_nr_config_request_t* config;
 
-  int n_ssb_crb=(fp->N_RB_DL-20)>>1;
+  int n_ssb_crb=(fp->N_RB_DL-20);
   // First try TDD normal prefix, mu 1
   fp->Ncp=NORMAL;
   fp->frame_type=TDD;
@@ -213,12 +213,12 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
     
     nr_gold_pdcch(ue,0, 2);
     /*
-    int nb_prefix_samples0 = frame_parms->nb_prefix_samples0;
-    frame_parms->nb_prefix_samples0 = frame_parms->nb_prefix_samples.
+    int nb_prefix_samples0 = fp->nb_prefix_samples0;
+    fp->nb_prefix_samples0 = fp->nb_prefix_samples;
 	  
     nr_slot_fep(ue,0, 0, ue->ssb_offset, 0, 1, NR_PDCCH_EST);
     nr_slot_fep(ue,1, 0, ue->ssb_offset, 0, 1, NR_PDCCH_EST);
-    frame_parms->nb_prefix_samples0 = nb_prefix_samples0;	
+    fp->nb_prefix_samples0 = nb_prefix_samples0;	
 
     LOG_I(PHY,"[UE  %d] AUTOTEST Cell Sync : frame = %d, rx_offset %d, freq_offset %d \n",
               ue->Mod_id,
