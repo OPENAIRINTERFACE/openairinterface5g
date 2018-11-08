@@ -4,7 +4,7 @@ Retrieving a single occurence of a parameter set ( a group in the libconfig term
 1.  call the `config_get` function  
 
 
-[config_get example](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/config/devusage/addaparam)
+[config_get example](../../config/devusage/addaparam.md)
 
 
 In oai some parameters set may be instantiated a variable number of occurrences. In a configuration file this is mapped to lists of group of parameters, with this syntax:
@@ -127,5 +127,5 @@ list to be read is under another section.
 
 ```  
 
-[Configuration module developer main page](config/devusage)  
-[Configuration module home](config)
+[Configuration module developer main page](../../config/devusage.md)  
+[Configuration module home](../..config.md)
