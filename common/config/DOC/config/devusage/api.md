@@ -44,5 +44,5 @@ int config_libconfig_getlist(paramlist_def_t *ParamList, paramdef_t *params, int
 * The returned value is the number of occurrences in the list or -1 in case of severe error  
 
 
-[Configuration module developer main page](config/devusage)  
-[Configuration module home](config)
+[Configuration module developer main page](../../config/devusage.md)  
+[Configuration module home](../../config.md)
