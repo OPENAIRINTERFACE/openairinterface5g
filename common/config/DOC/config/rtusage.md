@@ -49,4 +49,4 @@ $ ./lte-softmodem -O <config> --eNBs.[0].component_carriers.[0].N_RB_DL 100
 
 As specified earlier, use the dbgl1 debug level to get the full name of a parameter you would like to modify on the command line.
 
-[Configuration module home](../config)
+[Configuration module home](../config.md)
