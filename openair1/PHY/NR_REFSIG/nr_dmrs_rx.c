@@ -51,7 +51,7 @@ int nr_pdsch_dmrs_rx(PHY_VARS_NR_UE *ue,
 						unsigned int Ns,
 						unsigned int *nr_gold_pdsch,
 						int32_t *output,
-						unsigned char p,
+						unsigned short p,
 						unsigned char lp,
 						unsigned short nb_pdsch_rb)
 {

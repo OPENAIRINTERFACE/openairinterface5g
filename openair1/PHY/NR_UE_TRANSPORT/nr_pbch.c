@@ -35,7 +35,7 @@
 #include "PHY/sse_intrin.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 
-#define DEBUG_PBCH 1
+//#define DEBUG_PBCH 1
 //#define DEBUG_PBCH_ENCODING
 
 #ifdef OPENAIR2

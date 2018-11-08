@@ -824,6 +824,7 @@ void *UE_thread(void *arg) {
     int i;
     char threadname[128];
     int th_id;
+    unsigned char nb_sf_init=10;
     UE->proc.proc_rxtx[0].counter_decoder = 0;
     UE->proc.proc_rxtx[1].counter_decoder = 0;
     UE->proc.proc_rxtx[2].counter_decoder = 0;
@@ -866,17 +867,23 @@ void *UE_thread(void *arg) {
 	    usleep(500*1000);
 	  }
 #endif
+
+#ifndef OAI_ADRV9371_ZC706
+nb_sf_init = 10;
+#else
+nb_sf_init=5;
+#endif
             if (instance_cnt_synch < 0) {  // we can invoke the synch
                 // grab 10 ms of signal and wakeup synch thread
                 for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
                     rxp[i] = (void*)&UE->common_vars.rxdata[i][0];
 
                 if (UE->mode != loop_through_memory)
-                    AssertFatal( UE->frame_parms.samples_per_subframe*10 ==
+                    AssertFatal( UE->frame_parms.samples_per_subframe*nb_sf_init ==
                                  UE->rfdevice.trx_read_func(&UE->rfdevice,
                                                             &timestamp,
                                                             rxp,
-                                                            UE->frame_parms.samples_per_subframe*10,
+                                                            UE->frame_parms.samples_per_subframe*nb_sf_init,
                                                             UE->frame_parms.nb_antennas_rx), "error reading samples");
 
 		AssertFatal ( 0== pthread_mutex_lock(&UE->proc.mutex_synch), "");

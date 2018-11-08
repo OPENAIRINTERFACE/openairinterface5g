@@ -261,6 +261,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 #endif
     nr_pdsch_channel_estimation(ue,eNB_id,0,
 				Ns,
+				0,
 				l,
 				symbol,
 				bwp_start_subcarrier,

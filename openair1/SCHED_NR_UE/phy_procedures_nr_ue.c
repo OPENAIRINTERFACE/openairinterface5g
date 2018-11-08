@@ -5568,8 +5568,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
       nr_slot_fep(ue,
          l,
          nr_tti_rx,
+         ue->ssb_offset,
          0,
-         1,
          1,
 		 NR_PDCCH_EST);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_OUT);
@@ -5630,26 +5630,29 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 #endif
 //#if 0
   LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
+  //set active for testing, to be removed
+  //if (nr_tti_rx==2){
   //to update from pdsch config
   nr_gold_pdsch(ue,2,0, 1);
 
+  
   int nb_prefix_samples0 = ue->frame_parms.nb_prefix_samples0;
   ue->frame_parms.nb_prefix_samples0 = ue->frame_parms.nb_prefix_samples;
 
   nr_slot_fep(ue,
           2,  //to be updated from higher layer
           nr_tti_rx,
+          ue->ssb_offset,
           0,
-          0,
-          0,
+          1,
  		  NR_PDSCH_EST);
 
   //put back nb_prefix_samples0
   ue->frame_parms.nb_prefix_samples0 = nb_prefix_samples0;
-
-  //set active for testing, to be removed
-  if (nr_tti_rx==1)
+  
+  
 	  ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active = 1;
+  //}
 
 #if UE_TIMING_TRACE
   start_meas(&ue->generic_stat);
@@ -5726,13 +5729,13 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
           start_meas(&ue->ofdm_demod_stats);
 #endif
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_IN);
-	nr_slot_fep(ue,
+	/*nr_slot_fep(ue,
 		 l,
 		 1+(nr_tti_rx<<1),
 		 0,
 		 0,
 		 0,
-		 NR_PDSCH_EST);
+		 NR_PDSCH_EST);*/
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_OUT);
 #if UE_TIMING_TRACE
     stop_meas(&ue->ofdm_demod_stats);
@@ -5747,13 +5750,13 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
     int next_nr_tti_rx = (1+nr_tti_rx)%10;
     if (nr_subframe_select(&ue->frame_parms,next_nr_tti_rx) != SF_UL)
     {
-      nr_slot_fep(ue,
+      /*nr_slot_fep(ue,
          0,
          (next_nr_tti_rx<<1),
          0,
          0,
          0,
-		 NR_PDSCH_EST);
+		 NR_PDSCH_EST);*/
     }
   } // not an S-subframe
 #if UE_TIMING_TRACE

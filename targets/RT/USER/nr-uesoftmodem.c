@@ -782,7 +782,9 @@ void init_openair0() {
 		 openair0_cfg[card].rx_freq[i]);
 	}
 	
+#ifndef OAI_ADRV9371_ZC706 
 	if (usrp_args) openair0_cfg[card].sdr_addrs = usrp_args;
+#endif
 	if (usrp_clksrc) {
 	  if (strcmp(usrp_clksrc, "internal") == 0) {
 	    openair0_cfg[card].clock_source = internal;
