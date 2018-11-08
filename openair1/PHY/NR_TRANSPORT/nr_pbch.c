@@ -194,15 +194,17 @@ uint8_t nr_init_pbch_interleaver(uint8_t *interleaver) {
   uint8_t j_sfn=0, j_hrf=10, j_ssb=11, j_other=14;
   memset((void*)interleaver,0, NR_POLAR_PBCH_PAYLOAD_BITS);
 
-  for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++)
-    if ((i<6)||(23<i && i<28)) //Sfn bits
-      *(interleaver+j_sfn++) = *(nr_pbch_payload_interleaving_pattern+i);
+  for (uint8_t i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++)
+    if (i<6) //Sfn bits:6
+      *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_sfn++);
+    else if (i<24) // other
+      *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_other++);
+    else if (i<28) // Sfn:4
+      *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_sfn++);
     else if (i==28) // Hrf bit
-      *(interleaver+j_hrf) = *(nr_pbch_payload_interleaving_pattern+i);
-    else if (i>28) // Ssb bits
-      *(interleaver+j_ssb++) = *(nr_pbch_payload_interleaving_pattern+i);
-    else
-      *(interleaver+j_other++) = *(nr_pbch_payload_interleaving_pattern+i);
+      *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_hrf);
+    else // Ssb bits
+      *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_ssb++);
 }
 
 /*This pattern takes into account the adjustments for the field specific counters j_sfn, j_hrf, j_ssb and j_other*/
