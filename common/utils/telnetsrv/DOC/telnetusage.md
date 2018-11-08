@@ -17,12 +17,12 @@ By default the telnet server listen on all the ip addresses configured on the sy
 The telnet server includes a basic help, listing available commands and some commands also provide a specific detailed help sub-command.
 Below are  examples of telnet sessions:  
 
-*  [getting help](telnethelp)
-*  [using the history](telnethist)
-*  [using the get and set commands](telnetgetset)
-*  [using the loop command](telnetloop)
-*  [loader command](telnetloader)
-*  [log command](telnetlog)  
+*  [getting help](telnethelp.md)
+*  [using the history](telnethist.md)
+*  [using the get and set commands](telnetgetset.md)
+*  [using the loop command](telnetloop.md)
+*  [loader command](telnetloader.md)
+*  [log command](telnetlog.md)  
 
 # telnet server parameters
 The telnet server is using the [oai configuration module](Config/Rtusage). Telnet parameters must be specified in the `telnetsrv` section. Some parameters can be modified via the telnet telnet server command, as specified in the last column of the following table.
@@ -36,4 +36,4 @@ The telnet server is using the [oai configuration module](Config/Rtusage). Telne
 | `histfile` | `character string` | "oaitelnet.history" | file used for command history persistency | Y |
 | `histfsize` | `integer` | 50 | maximum number of commands saved in the history | Y |
 
-[oai telnet server home](telnetsrv)
+[oai telnet server home](telnetsrv.md)
