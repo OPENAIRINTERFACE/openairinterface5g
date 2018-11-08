@@ -190,7 +190,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
     if (nfapi_mode == 0 || nfapi_mode == 1)
       nr_generate_dci_top(gNB->pdcch_vars,
-                          gNB->nrPolar_params,
+                          &gNB->nrPolar_params,
                           gNB->nr_gold_pdcch_dmrs[slot_idx],
                           gNB->common_vars.txdataF,
                           AMP, *fp, *cfg);

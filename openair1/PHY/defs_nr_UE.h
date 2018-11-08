@@ -57,7 +57,7 @@
 #     include "COMMON/ral_messages_types.h"
 #     include "UTIL/queue.h"
 #   endif
-#   include "log.h"
+#   include "common/utils/LOG/log.h"
 #   define msg(aRGS...) LOG_D(PHY, ##aRGS)
 # else
 #   define msg printf
@@ -1303,8 +1303,6 @@ struct nr_rxtx_thread_data {
   PHY_VARS_NR_UE    *UE;
   UE_nr_rxtx_proc_t *proc;
 };
-
-void exit_fun(const char* s);
 
 /*static inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
 

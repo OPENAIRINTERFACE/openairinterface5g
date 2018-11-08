@@ -287,6 +287,12 @@ void dft_lte(int32_t *z,int32_t *d, int32_t Msc_PUSCH, uint8_t Nsymb)
     dft720((int16_t*)dft_in2,(int16_t*)dft_out2,1);
     break;
 
+  case 768:
+    dft768((int16_t*)dft_in0,(int16_t*)dft_out0,1);
+    dft768((int16_t*)dft_in1,(int16_t*)dft_out1,1);
+    dft768((int16_t*)dft_in2,(int16_t*)dft_out2,1);
+    break;
+
   case 864:
     dft864((int16_t*)dft_in0,(int16_t*)dft_out0,1);
     dft864((int16_t*)dft_in1,(int16_t*)dft_out1,1);

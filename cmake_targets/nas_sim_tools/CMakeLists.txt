@@ -27,7 +27,6 @@ set(CONF2UEDATA_LIB_SRC
     ${OPENAIR_DIR}/openair3/NAS/UE/API/USIM/usim_api.c
     ${OPENAIR_DIR}/openair3/NAS/UE/API/USIM/aka_functions.c
     ${OPENAIR_DIR}/openair3/NAS/COMMON/UTIL/memory.c
-    ${OPENAIR_DIR}/openair3/NAS/COMMON/UTIL/nas_log.c
     ${OPENAIR_DIR}/openair3/NAS/COMMON/UTIL/OctetString.c
     ${OPENAIR_DIR}/openair3/NAS/COMMON/UTIL/TLVEncoder.c
     ${OPENAIR_DIR}/common/utils/utils.c

@@ -1043,7 +1043,7 @@ int s1ap_eNB_handle_paging(uint32_t               assoc_id,
 
   /* Paging procedure -> stream != 0 */
   if (stream == 0) {
-    S1AP_ERROR("[SCTP %d] Received Paging procedure on stream (%d)\n",
+    LOG_W(S1AP,"[SCTP %d] Received Paging procedure on stream (%d)\n",
                assoc_id, stream);
     return -1;
   }

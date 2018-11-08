@@ -29,6 +29,7 @@
 
  */
 
+#include <dlfcn.h>
 #include "mac.h"
 #include "mac_proto.h"
 #include "mac_extern.h"
@@ -45,149 +46,180 @@
 
 extern RAN_CONTEXT_t RC;
 
-
-void mac_top_init_eNB(void){
-
-  module_id_t i, j;
+void init_UE_list(UE_list_t *UE_list)
+{
   int list_el;
-  UE_list_t *UE_list;
-  eNB_MAC_INST *mac;
+  UE_list->num_UEs = 0;
+  UE_list->head = -1;
+  UE_list->head_ul = -1;
+  UE_list->avail = 0;
+  for (list_el = 0; list_el < MAX_MOBILES_PER_ENB - 1; list_el++) {
+    UE_list->next[list_el] = list_el + 1;
+    UE_list->next_ul[list_el] = list_el + 1;
+  }
+  UE_list->next[list_el] = -1;
+  UE_list->next_ul[list_el] = -1;
+  memset(UE_list->DLSCH_pdu, 0, sizeof(UE_list->DLSCH_pdu));
+  memset(UE_list->UE_template, 0, sizeof(UE_list->UE_template));
+  memset(UE_list->eNB_UE_stats, 0, sizeof(UE_list->eNB_UE_stats));
+  memset(UE_list->UE_sched_ctrl, 0, sizeof(UE_list->UE_sched_ctrl));
+  memset(UE_list->active, 0, sizeof(UE_list->active));
+  memset(UE_list->assoc_dl_slice_idx, 0, sizeof(UE_list->assoc_dl_slice_idx));
+  memset(UE_list->assoc_ul_slice_idx, 0, sizeof(UE_list->assoc_ul_slice_idx));
+}
 
-  LOG_I(MAC, "[MAIN] Init function start:nb_macrlc_inst=%d\n",RC.nb_macrlc_inst);
+void init_slice_info(slice_info_t *sli)
+{
+  sli->intraslice_share_active = 1;
+  sli->interslice_share_active = 1;
 
-  if (RC.nb_macrlc_inst > 0) {
+  sli->n_dl = 1;
+  memset(sli->dl, 0, sizeof(slice_sched_conf_dl_t) * MAX_NUM_SLICES);
+  sli->dl[0].pct = 1.0;
+  sli->dl[0].prio = 10;
+  sli->dl[0].pos_high = N_RBG_MAX;
+  sli->dl[0].maxmcs = 28;
+  sli->dl[0].sorting = 0x012345;
+  sli->dl[0].sched_name = "schedule_ue_spec";
+  sli->dl[0].sched_cb = dlsym(NULL, sli->dl[0].sched_name);
+  AssertFatal(sli->dl[0].sched_cb, "DLSCH scheduler callback is NULL\n");
 
-    if (RC.mac == NULL){
-      RC.mac = (eNB_MAC_INST **) malloc16(RC.nb_macrlc_inst *sizeof(eNB_MAC_INST *));
-      bzero(RC.mac, RC.nb_macrlc_inst * sizeof(eNB_MAC_INST *));
-    }
+  sli->n_ul = 1;
+  memset(sli->ul, 0, sizeof(slice_sched_conf_ul_t) * MAX_NUM_SLICES);
+  sli->ul[0].pct = 1.0;
+  sli->ul[0].maxmcs = 20;
+  sli->ul[0].sorting = 0x0123;
+  sli->ul[0].sched_name = "schedule_ulsch_rnti";
+  sli->ul[0].sched_cb = dlsym(NULL, sli->ul[0].sched_name);
+  AssertFatal(sli->ul[0].sched_cb, "ULSCH scheduler callback is NULL\n");
+}
 
-    AssertFatal(RC.mac != NULL,
+void mac_top_init_eNB(void)
+{
+  module_id_t i, j;
+  eNB_MAC_INST **mac;
+
+  LOG_I(MAC, "[MAIN] Init function start:nb_macrlc_inst=%d\n",
+        RC.nb_macrlc_inst);
+
+  if (RC.nb_macrlc_inst <= 0) {
+    RC.mac = NULL;
+    return;
+  }
+
+  mac = malloc16(RC.nb_macrlc_inst * sizeof(eNB_MAC_INST *));
+  AssertFatal(mac != NULL,
+              "can't ALLOCATE %zu Bytes for %d eNB_MAC_INST with size %zu \n",
+              RC.nb_macrlc_inst * sizeof(eNB_MAC_INST *),
+              RC.nb_macrlc_inst, sizeof(eNB_MAC_INST));
+  for (i = 0; i < RC.nb_macrlc_inst; i++) {
+    mac[i] = malloc16(sizeof(eNB_MAC_INST));
+    AssertFatal(mac[i] != NULL,
                 "can't ALLOCATE %zu Bytes for %d eNB_MAC_INST with size %zu \n",
                 RC.nb_macrlc_inst * sizeof(eNB_MAC_INST *),
                 RC.nb_macrlc_inst, sizeof(eNB_MAC_INST));
-  
-    for (i = 0; i < RC.nb_macrlc_inst; i++) {
-      if (RC.mac[i] == NULL) {
-        RC.mac[i] = (eNB_MAC_INST *) malloc16(sizeof(eNB_MAC_INST));
-        
-        AssertFatal(RC.mac[i] != NULL,
-                    "can't ALLOCATE %zu Bytes for %d eNB_MAC_INST with size %zu \n",
-                    RC.nb_macrlc_inst * sizeof(eNB_MAC_INST *),
-                    RC.nb_macrlc_inst, sizeof(eNB_MAC_INST));
-        LOG_D(MAC,"[MAIN] ALLOCATE %zu Bytes for %d eNB_MAC_INST @ %p\n",
-              sizeof(eNB_MAC_INST), RC.nb_macrlc_inst, RC.mac);
-        
-        bzero(RC.mac[i], sizeof(eNB_MAC_INST));
-      }
-
-      RC.mac[i]->Mod_id = i;
-
-      for (j = 0; j < MAX_NUM_CCs; j++) {
-        RC.mac[i]->DL_req[j].dl_config_request_body.dl_config_pdu_list = RC.mac[i]->dl_config_pdu_list[j];
-        RC.mac[i]->UL_req[j].ul_config_request_body.ul_config_pdu_list = RC.mac[i]->ul_config_pdu_list[j];
-      
-        for (int k = 0; k < 10; k++)
-          RC.mac[i]->UL_req_tmp[j][k].ul_config_request_body.ul_config_pdu_list =RC.mac[i]->ul_config_pdu_list_tmp[j][k];
-        
-        for(int sf=0;sf<10;sf++){
-          RC.mac[i]->HI_DCI0_req[j][sf].hi_dci0_request_body.hi_dci0_pdu_list =RC.mac[i]->hi_dci0_pdu_list[j][sf];
-        }
-
-        RC.mac[i]->TX_req[j].tx_request_body.tx_pdu_list =RC.mac[i]->tx_request_pdu[j];
-        RC.mac[i]->ul_handle = 0;
-      }
+    LOG_D(MAC,
+          "[MAIN] ALLOCATE %zu Bytes for %d eNB_MAC_INST @ %p\n",
+          sizeof(eNB_MAC_INST), RC.nb_macrlc_inst, mac);
+    bzero(mac[i], sizeof(eNB_MAC_INST));
+    mac[i]->Mod_id = i;
+    for (j = 0; j < MAX_NUM_CCs; j++) {
+      mac[i]->DL_req[j].dl_config_request_body.dl_config_pdu_list =
+          mac[i]->dl_config_pdu_list[j];
+      mac[i]->UL_req[j].ul_config_request_body.ul_config_pdu_list =
+          mac[i]->ul_config_pdu_list[j];
+      for (int k = 0; k < 10; k++)
+        mac[i]->UL_req_tmp[j][k].ul_config_request_body.ul_config_pdu_list =
+            mac[i]->ul_config_pdu_list_tmp[j][k];
+      for(int sf=0;sf<10;sf++)
+        mac[i]->HI_DCI0_req[j][sf].hi_dci0_request_body.hi_dci0_pdu_list =
+            mac[i]->hi_dci0_pdu_list[j][sf];
+      mac[i]->TX_req[j].tx_request_body.tx_pdu_list = mac[i]->tx_request_pdu[j];
+      mac[i]->ul_handle = 0;
     }
 
-    AssertFatal(rlc_module_init() == 0,"Could not initialize RLC layer\n");
+    mac[i]->if_inst = IF_Module_init(i);
 
-    // These should be out of here later
-    pdcp_layer_init();
-
-    rrc_init_global_param();
-
-  }else{
-    RC.mac = NULL;
+    init_UE_list(&mac[i]->UE_list);
+    init_slice_info(&mac[i]->slice_info);
   }
 
-  // Initialize Linked-List for Active UEs
-  for (i = 0; i < RC.nb_macrlc_inst; i++) {
-    mac = RC.mac[i];
+  RC.mac = mac;
 
+  AssertFatal(rlc_module_init() == 0,
+      "Could not initialize RLC layer\n");
 
-    mac->if_inst = IF_Module_init(i);
-
-    UE_list = &mac->UE_list;
-
-    UE_list->num_UEs = 0;
-    UE_list->head = -1;
-    UE_list->head_ul = -1;
-    UE_list->avail = 0;
-
-    for (list_el = 0; list_el < MAX_MOBILES_PER_ENB - 1; list_el++) {
-      UE_list->next[list_el] = list_el + 1;
-      UE_list->next_ul[list_el] = list_el + 1;
-    }
-
-    UE_list->next[list_el] = -1;
-    UE_list->next_ul[list_el] = -1;
-  }
-}
-
-void mac_init_cell_params(int Mod_idP, int CC_idP){
-
-  int j;
-  UE_TEMPLATE *UE_template;
-
-  LOG_D(MAC, "[MSC_NEW][FRAME 00000][MAC_eNB][MOD %02d][]\n", Mod_idP);
-  //COMMON_channels_t *cc = &RC.mac[Mod_idP]->common_channels[CC_idP];
-
-  memset(&RC.mac[Mod_idP]->eNB_stats, 0, sizeof(eNB_STATS));
-  UE_template = (UE_TEMPLATE *) & RC.mac[Mod_idP]->UE_list.UE_template[CC_idP][0];
-
-  for (j = 0; j < MAX_MOBILES_PER_ENB; j++) {
-    UE_template[j].rnti = 0;
-    // initiallize the eNB to UE statistics
-    memset(&RC.mac[Mod_idP]->UE_list.eNB_UE_stats[CC_idP][j], 0,sizeof(eNB_UE_STATS));
-  }
-
-}
-
-
-int rlcmac_init_global_param(void){
-  LOG_I(MAC, "[MAIN] CALLING RLC_MODULE_INIT...\n");
-
-  if (rlc_module_init() != 0) {
-    return (-1);
-  }
-
+  // These should be out of here later
   pdcp_layer_init();
 
-  LOG_I(MAC, "[MAIN] Init Global Param Done\n");
+  rrc_init_global_param();
+}
 
-  return 0;
+void mac_init_cell_params(int Mod_idP, int CC_idP)
+{
+
+    int j;
+    UE_TEMPLATE *UE_template;
+
+    LOG_D(MAC, "[MSC_NEW][FRAME 00000][MAC_eNB][MOD %02d][]\n", Mod_idP);
+    //COMMON_channels_t *cc = &RC.mac[Mod_idP]->common_channels[CC_idP];
+
+    memset(&RC.mac[Mod_idP]->eNB_stats, 0, sizeof(eNB_STATS));
+    UE_template =
+	(UE_TEMPLATE *) & RC.mac[Mod_idP]->UE_list.UE_template[CC_idP][0];
+
+    for (j = 0; j < MAX_MOBILES_PER_ENB; j++) {
+	UE_template[j].rnti = 0;
+	// initiallize the eNB to UE statistics
+	memset(&RC.mac[Mod_idP]->UE_list.eNB_UE_stats[CC_idP][j], 0,
+	       sizeof(eNB_UE_STATS));
+    }
+
 }
 
 
-void mac_top_cleanup(void){
+int rlcmac_init_global_param(void)
+{
 
-  if (NB_UE_INST > 0) {
-    free(UE_mac_inst);
-  }
 
-  if (RC.nb_macrlc_inst > 0) {
-    free(RC.mac);
-  }
+    LOG_I(MAC, "[MAIN] CALLING RLC_MODULE_INIT...\n");
+
+    if (rlc_module_init() != 0) {
+	return (-1);
+    }
+
+    pdcp_layer_init();
+
+    LOG_I(MAC, "[MAIN] Init Global Param Done\n");
+
+    return 0;
+}
+
+
+void mac_top_cleanup(void)
+{
+
+    if (NB_UE_INST > 0) {
+	free(UE_mac_inst);
+    }
+
+    if (RC.nb_macrlc_inst > 0) {
+	free(RC.mac);
+    }
 
 }
 
-int l2_init_eNB(void){
+int l2_init_eNB(void)
+{
 
-  LOG_I(MAC, "[MAIN] MAC_INIT_GLOBAL_PARAM IN...\n");
 
-  rlcmac_init_global_param();
 
-  LOG_D(MAC, "[MAIN] ALL INIT OK\n");
+    LOG_I(MAC, "[MAIN] MAC_INIT_GLOBAL_PARAM IN...\n");
 
-  return (1);
+    rlcmac_init_global_param();
+
+    LOG_D(MAC, "[MAIN] ALL INIT OK\n");
+
+
+    return (1);
 }

@@ -26,19 +26,26 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 
+#include "common/config/config_userapi.h"
+#include "common/utils/LOG/log.h"
+#include "common/ran_context.h" 
+
 #include "SIMULATION/TOOLS/sim.h"
 #include "SIMULATION/RF/rf.h"
 #include "PHY/types.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
 #include "PHY/defs_gNB.h"
-
+#include "PHY/NR_REFSIG/refsig_defs_ue.h"
+#include "PHY/MODULATION/modulation_eNB.h"
+#include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/INIT/phy_init.h"
+#include "PHY/NR_TRANSPORT/nr_transport.h"
+#include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
+
 #include "SCHED_NR/sched_nr.h"
 
-#include "PHY/MODULATION/modulation_common.h"
 
-#include "common/ran_context.h" 
 
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
@@ -63,10 +70,14 @@ int32_t get_uldl_offset(int eutra_bandP) {return(0);}
 
 NR_IF_Module_t *NR_IF_Module_init(int Mod_id){return(NULL);}
 
-void exit_fun(const char *s) { exit(-1); }
+void exit_function(const char* file, const char* function, const int line,const char *s) { 
+   const char * msg= s==NULL ? "no comment": s;
+   printf("Exiting at: %s:%d %s(), %s\n", file, line, function, msg); 
+   exit(-1); 
+}
 
 // needed for some functions
-PHY_VARS_NR_UE * PHY_vars_UE_g[1][1]={NULL};
+PHY_VARS_NR_UE * PHY_vars_UE_g[1][1]={{NULL}};
 
 int main(int argc, char **argv)
 {
@@ -120,16 +131,17 @@ int main(int argc, char **argv)
   int ret;
   int run_initial_sync=0;
 
+  int loglvl=OAILOG_WARNING;
+
   cpuf = get_cpu_freq_GHz();
 
   if ( load_configmodule(argc,argv) == 0) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
 
-  logInit();
   randominit(0);
 
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:N:F:GR:dP:I")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:N:F:GR:dP:IL:")) != -1) {
     switch (c) {
     case 'f':
       write_output_file=1;
@@ -285,6 +297,11 @@ int main(int argc, char **argv)
     case 'I':
       run_initial_sync=1;
       break;
+
+    case 'L':
+      loglvl = atoi(optarg);
+      break;
+
     default:
     case 'h':
       printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
@@ -314,9 +331,12 @@ int main(int argc, char **argv)
     }
   }
 
+  logInit();
+  set_glog(loglvl);
+  T_stdout = 1;
+
   if (snr1set==0)
     snr1 = snr0+10;
-
 
   printf("Initializing gNodeB for mu %d, N_RB_DL %d\n",mu,N_RB_DL);
 
@@ -368,7 +388,7 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  frame_length_complex_samples = frame_parms->samples_per_subframe;
+  frame_length_complex_samples = frame_parms->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
   frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP;
 
   s_re = malloc(2*sizeof(double*));
@@ -421,34 +441,47 @@ int main(int argc, char **argv)
     gNB->pbch_configured = 1;
     for (int i=0;i<4;i++) gNB->pbch_pdu[i]=i+1;
     nr_common_signal_procedures (gNB,frame,subframe);
-  }
 
-  /*  
-  LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],frame_length_complex_samples_no_prefix,1,1);
-  if (gNB->frame_parms.nb_antennas_tx>1)
-    LOG_M("txsigF1.m","txsF1", gNB->common_vars.txdataF[1],frame_length_complex_samples_no_prefix,1,1);
-  */
-  //TODO: loop over slots
-  for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
-    if (gNB_config->subframe_config.dl_cyclic_prefix_type.value == 1) {
-      PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
-		   txdata[aa],
-		   frame_parms->ofdm_symbol_size,
-		   12,
-		   frame_parms->nb_prefix_samples,
-		   CYCLIC_PREFIX);
-    } else {
-      nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
-			   txdata[aa],
-			   14,
-			   frame_parms);
+    /*  
+	LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],frame_length_complex_samples_no_prefix,1,1);
+	if (gNB->frame_parms.nb_antennas_tx>1)
+	LOG_M("txsigF1.m","txsF1", gNB->common_vars.txdataF[1],frame_length_complex_samples_no_prefix,1,1);
+    */
+    //TODO: loop over slots
+    for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
+      if (gNB_config->subframe_config.dl_cyclic_prefix_type.value == 1) {
+	PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
+		     txdata[aa],
+		     frame_parms->ofdm_symbol_size,
+		     12,
+		     frame_parms->nb_prefix_samples,
+		     CYCLIC_PREFIX);
+      } else {
+	nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
+			     txdata[aa],
+			     14,
+			     frame_parms);
+      }
+    }
+  } else {
+    printf("Reading %d samples from file to antenna buffer %d\n",frame_length_complex_samples,0);
+    
+    if (fread(txdata[0],
+	      sizeof(int32_t),
+	      frame_length_complex_samples,
+	      input_fd) != frame_length_complex_samples) {
+      printf("error reading from file\n");
+      exit(-1);
     }
   }
-  /*
+
   LOG_M("txsig0.m","txs0", txdata[0],frame_length_complex_samples,1,1);
   if (gNB->frame_parms.nb_antennas_tx>1)
     LOG_M("txsig1.m","txs1", txdata[1],frame_length_complex_samples,1,1);
-  */
+
+  if (output_fd) 
+    fwrite(txdata[0],sizeof(int32_t),frame_length_complex_samples,output_fd);
+
   int txlev = signal_energy(&txdata[0][5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
 			    frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
 
@@ -477,7 +510,7 @@ int main(int argc, char **argv)
       sigma2 = pow(10,sigma2_dB/10);
       //      printf("sigma2 %f (%f dB)\n",sigma2,sigma2_dB);
 
-      for (i=0; i<frame_length_complex_samples; i++) {
+      for (i=0; i<frame_parms->samples_per_subframe; i++) {
 	for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
 	  
 	  ((short*) UE->common_vars.rxdata[aa])[2*i]   = (short) ((r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
@@ -486,9 +519,9 @@ int main(int argc, char **argv)
       }
 
       if (n_trials==1) {
-	LOG_M("rxsig0.m","rxs0", UE->common_vars.rxdata[0],frame_length_complex_samples,1,1);
+	LOG_M("rxsig0.m","rxs0", UE->common_vars.rxdata[0],frame_parms->samples_per_subframe,1,1);
 	if (gNB->frame_parms.nb_antennas_tx>1)
-	  LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1],frame_length_complex_samples,1,1);
+	  LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1],frame_parms->samples_per_subframe,1,1);
       }
       if (UE->is_synchronized == 0) {
 	ret = nr_initial_sync(UE, normal_txrx);
@@ -557,8 +590,11 @@ int main(int argc, char **argv)
   free(r_im);
   free(txdata);
 
-  if (write_output_file)
+  if (output_fd)
     fclose(output_fd);
+
+  if (input_fd)
+    fclose(input_fd);
 
   return(n_errors);
 

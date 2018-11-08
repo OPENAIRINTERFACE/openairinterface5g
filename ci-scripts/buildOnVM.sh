@@ -57,6 +57,9 @@ function usage {
     echo "    --keep-vm-alive OR -k"
     echo "    Keep the VM alive after the build."
     echo ""
+    echo "    --daemon OR -D"
+    echo "    Run as daemon"
+    echo ""
     echo "    --help OR -h"
     echo "    Print this help message."
     echo ""
@@ -96,6 +99,7 @@ LOG_PATTERN=.Rel15.txt
 NB_PATTERN_FILES=4
 BUILD_OPTIONS="--eNB -w USRP"
 KEEP_VM_ALIVE=0
+DAEMON=0
 
 while [[ $# -gt 0 ]]
 do
@@ -126,12 +130,16 @@ case $key in
     KEEP_VM_ALIVE=1
     shift
     ;;
+    -D|--daemon)
+    DAEMON=1
+    shift
+    ;;
     -v1)
     VM_NAME=ci-enb-usrp
     ARCHIVES_LOC=enb_usrp
     LOG_PATTERN=.Rel15.txt
     NB_PATTERN_FILES=4
-    BUILD_OPTIONS="--eNB -w USRP"
+    BUILD_OPTIONS="--eNB -w USRP --mu"
     shift
     ;;
     -v2)
@@ -148,7 +156,7 @@ case $key in
     VM_NAME=ci-phy-sim
     ARCHIVES_LOC=phy_sim
     LOG_PATTERN=.Rel15.txt
-    NB_PATTERN_FILES=5
+    NB_PATTERN_FILES=6
     BUILD_OPTIONS="--phy_simulators"
     shift
     ;;
@@ -201,7 +209,7 @@ case $key in
         ARCHIVES_LOC=enb_usrp
         LOG_PATTERN=.Rel15.txt
         NB_PATTERN_FILES=4
-        BUILD_OPTIONS="--eNB -w USRP"
+        BUILD_OPTIONS="--eNB -w USRP --mu"
         ;;
         basic-sim)
         VM_NAME=ci-basic-sim
@@ -216,7 +224,7 @@ case $key in
         VM_NAME=ci-phy-sim
         ARCHIVES_LOC=phy_sim
         LOG_PATTERN=.Rel15.txt
-        NB_PATTERN_FILES=5
+        NB_PATTERN_FILES=6
         BUILD_OPTIONS="--phy_simulators"
         ;;
         cppcheck)
@@ -331,13 +339,27 @@ echo "sudo cp 01proxy /etc/apt/apt.conf.d/" > $VM_CMDS
 echo "touch /home/ubuntu/.hushlogin" >> $VM_CMDS
 if [[ "$VM_NAME" == *"-cppcheck"* ]]
 then
-    echo "echo \"sudo apt-get --yes --quiet install zip cppcheck \"" >> $VM_CMDS
-    echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
-    echo "sudo apt-get --yes install zip cppcheck >> zip-install.txt 2>&1" >> $VM_CMDS
+    if [ $DAEMON -eq 0 ]
+    then
+        echo "echo \"sudo apt-get --yes --quiet install zip cppcheck \"" >> $VM_CMDS
+        echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
+        echo "sudo apt-get --yes install zip cppcheck >> zip-install.txt 2>&1" >> $VM_CMDS
+    else
+        echo "echo \"sudo apt-get --yes --quiet install zip daemon cppcheck \"" >> $VM_CMDS
+        echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
+        echo "sudo apt-get --yes install zip daemon cppcheck >> zip-install.txt 2>&1" >> $VM_CMDS
+    fi
 else
-    echo "echo \"sudo apt-get --yes --quiet install zip subversion libboost-dev \"" >> $VM_CMDS
-    echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
-    echo "sudo apt-get --yes install zip subversion libboost-dev >> zip-install.txt 2>&1" >> $VM_CMDS
+    if [ $DAEMON -eq 0 ]
+    then
+        echo "echo \"sudo apt-get --yes --quiet install zip subversion libboost-dev \"" >> $VM_CMDS
+        echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
+        echo "sudo apt-get --yes install zip subversion libboost-dev >> zip-install.txt 2>&1" >> $VM_CMDS
+    else
+        echo "echo \"sudo apt-get --yes --quiet install zip daemon subversion libboost-dev \"" >> $VM_CMDS
+        echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
+        echo "sudo apt-get --yes install zip daemon subversion libboost-dev >> zip-install.txt 2>&1" >> $VM_CMDS
+    fi
 fi
 echo "mkdir tmp" >> $VM_CMDS
 echo "cd tmp" >> $VM_CMDS
@@ -346,19 +368,42 @@ echo "unzip -qq -DD ../localZip.zip" >> $VM_CMDS
 if [[ "$VM_NAME" == *"-cppcheck"* ]]
 then
     echo "mkdir cmake_targets/log" >> $VM_CMDS
+    echo "chmod 777 cmake_targets/log" >> $VM_CMDS
     echo "cp /home/ubuntu/zip-install.txt cmake_targets/log" >> $VM_CMDS
     echo "echo \"cppcheck $BUILD_OPTIONS . \"" >> $VM_CMDS
-    echo "cppcheck $BUILD_OPTIONS . 2> cmake_targets/log/cppcheck.xml 1> cmake_targets/log/cppcheck_build.txt" >> $VM_CMDS
+    if [ $DAEMON -eq 0 ]
+    then
+        echo "cppcheck $BUILD_OPTIONS . 2> cmake_targets/log/cppcheck.xml 1> cmake_targets/log/cppcheck_build.txt" >> $VM_CMDS
+    else
+        echo "echo \"cppcheck $BUILD_OPTIONS .\" > ./my-vm-build.sh" >> $VM_CMDS
+        echo "chmod 775 ./my-vm-build.sh " >> $VM_CMDS
+        echo "sudo -E daemon --inherit --unsafe --name=build_daemon --chdir=/home/ubuntu/tmp -O /home/ubuntu/tmp/cmake_targets/log/cppcheck_build.txt -E /home/ubuntu/tmp/cmake_targets/log/cppcheck.xml ./my-vm-build.sh" >> $VM_CMDS
+    fi
 else
     echo "echo \"source oaienv\"" >> $VM_CMDS
     echo "source oaienv" >> $VM_CMDS
     echo "cd cmake_targets/" >> $VM_CMDS
     echo "mkdir log" >> $VM_CMDS
+    echo "chmod 777 log" >> $VM_CMDS
     echo "cp /home/ubuntu/zip-install.txt log" >> $VM_CMDS
-    echo "echo \"./build_oai -I $BUILD_OPTIONS \"" >> $VM_CMDS
-    echo "./build_oai -I $BUILD_OPTIONS > log/install-build.txt 2>&1" >> $VM_CMDS
+    if [ $DAEMON -eq 0 ]
+    then
+        echo "echo \"./build_oai -I $BUILD_OPTIONS \"" >> $VM_CMDS
+        echo "./build_oai -I $BUILD_OPTIONS > log/install-build.txt 2>&1" >> $VM_CMDS
+    else
+        echo "echo \"./build_oai -I $BUILD_OPTIONS\" > ./my-vm-build.sh" >> $VM_CMDS
+        echo "chmod 775 ./my-vm-build.sh " >> $VM_CMDS
+        echo "echo \"sudo -E daemon --inherit --unsafe --name=build_daemon --chdir=/home/ubuntu/tmp/cmake_targets -o /home/ubuntu/tmp/cmake_targets/log/install-build.txt ./my-vm-build.sh\"" >> $VM_CMDS
+        echo "sudo -E daemon --inherit --unsafe --name=build_daemon --chdir=/home/ubuntu/tmp/cmake_targets -o /home/ubuntu/tmp/cmake_targets/log/install-build.txt ./my-vm-build.sh" >> $VM_CMDS
+    fi
 fi
 ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
+if [ $DAEMON -eq 1 ]
+then
+    rm -f $VM_CMDS
+    echo "STATUS is OK"
+    exit 0
+fi
 
 echo "############################################################"
 echo "Creating a tmp folder to store results and artifacts"

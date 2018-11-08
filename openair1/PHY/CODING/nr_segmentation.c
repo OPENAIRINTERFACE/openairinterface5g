@@ -39,7 +39,7 @@ int32_t nr_segmentation(unsigned char *input_buffer,
                      unsigned int *F)
 {
 
-  unsigned int L,Bprime,Bprime_by_C,Z,r,Kb,k,s,crc,Kprime;
+  unsigned int L,Bprime,Bprime_by_C,Z,r,Kb,k,s,Kprime;
 
   if (B<=8448) {
     L=0;

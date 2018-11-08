@@ -228,7 +228,6 @@ extern volatile int             start_gNB;
 #include "threads_t.h"
 extern threads_t threads;
 
-extern void exit_fun(const char* s);
 // In nr-gnb.c
 extern void init_gNB(int single_thread_flag,int wait_for_sync);
 extern void stop_gNB(int);

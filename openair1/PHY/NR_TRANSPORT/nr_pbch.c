@@ -265,7 +265,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 #endif
 
     // Payload interleaving
-  uint32_t in=0, out=0;
+  uint32_t in=0;
   for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS>>3; i++)
     in |= (uint32_t)(pbch->pbch_a[i]<<((3-i)<<3));
 
@@ -292,7 +292,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 #endif
 
   /// CRC, coding and rate matching
-  polar_encoder (&pbch->pbch_a_prime, pbch->pbch_e, polar_params);
+  polar_encoder_fast ((int64_t*)&pbch->pbch_a_prime, (uint32_t*)pbch->pbch_e, 0, polar_params);
 #ifdef DEBUG_PBCH_ENCODING
   printf("Channel coding:\n");
   for (int i=0; i<NR_POLAR_PBCH_E_DWORD; i++)

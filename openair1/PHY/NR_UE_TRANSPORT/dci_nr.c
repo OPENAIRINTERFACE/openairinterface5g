@@ -34,14 +34,10 @@
 #include <stdlib.h>
 #include <string.h>
 #endif
-//#include "PHY/defs.h"
-#include "PHY/defs_nr_UE.h"
+#include "nr_transport_proto_ue.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_dci_defs.h"
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/CODING/coding_extern.h"
-//#include "PHY/extern.h"
-//#include "SCHED/defs.h"
-//#include "SIMULATION/TOOLS/defs.h" // for taus 
 #include "PHY/sse_intrin.h"
 
 #include "assertions.h" 
@@ -53,7 +49,7 @@
 
 //#define NR_LTE_PDCCH_DCI_SWITCH
 #define NR_PDCCH_DCI_RUN              // activates new nr functions
-#define NR_PDCCH_DCI_DEBUG            // activates NR_PDCCH_DCI_DEBUG logs
+//#define NR_PDCCH_DCI_DEBUG            // activates NR_PDCCH_DCI_DEBUG logs
 #define NR_NBR_CORESET_ACT_BWP 3      // The number of CoreSets per BWP is limited to 3 (including initial CORESET: ControlResourceId 0)
 #define NR_NBR_SEARCHSPACE_ACT_BWP 10 // The number of SearSpaces per BWP is limited to 10 (including initial SEARCHSPACE: SearchSpaceId 0)
 #define PDCCH_TEST_POLAR_TEMP_FIX
@@ -1055,12 +1051,6 @@ T(T_UE_PHY_PDCCH_ENERGY, T_INT(eNB_id), T_INT(0), T_INT(frame%1024), T_INT(nr_tt
       #endif
       pdcch_detection_mrc(frame_parms, pdcch_vars[eNB_id]->rxdataF_comp,s);
     }
-    if (mimo_mode == SISO) {
-      #ifdef NR_PDCCH_DCI_DEBUG
-       printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> we enter pdcch_siso ---> pdcch_vars[eNB_id]->rxdataF_comp Nothing to do here. TO BE REMOVED!!!\n");
-      #endif
-      //pdcch_siso(frame_parms, pdcch_vars[eNB_id]->rxdataF_comp,s);
-    } else pdcch_alamouti(frame_parms, pdcch_vars[eNB_id]->rxdataF_comp,s);
 
 #ifdef MU_RECEIVER
 
@@ -1197,7 +1187,7 @@ if (do_common){
 //uint32_t puissance_2_16 = ((1<<16)*n_rnti)+n_id;
 //uint32_t puissance_2_31= (1<<30)*2;
 //uint32_t calc_x2=puissance_2_16%puissance_2_31;
-    x2 = (((1<<16)*n_rnti)+n_id)%((1<<30)*2); //this is c_init in 38.211 v15.1.0 Section 7.3.2.3
+ x2 = (((1<<16)*n_rnti)+n_id); //mod 2^31 is implicit //this is c_init in 38.211 v15.1.0 Section 7.3.2.3
 //	x2 = (nr_tti_rx << 9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.8.2
 #ifndef NR_PDCCH_DCI_DEBUG
 printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_unscrambling)->  (c_init=%d, n_id=%d, n_rnti=%d, length=%d)\n",x2,n_id,n_rnti,length);

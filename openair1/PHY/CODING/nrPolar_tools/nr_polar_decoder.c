@@ -1108,6 +1108,7 @@ int8_t polar_decoder_int16(int16_t *input,
     *out = B & (((uint64_t)1<<polarParams->payloadBits)-1);
     return(0);
   }
+
   else  return(-1);
 
 }

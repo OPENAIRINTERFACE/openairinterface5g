@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
 	double timeEncoderCumulative = 0, timeDecoderCumulative = 0;
 	uint8_t aggregation_level = 8, decoderListSize = 8, pathMetricAppr = 0;
 
-	while ((arguments = getopt (argc, argv, "s:d:f:m:i:l:a:h:qg")) != -1)
+	while ((arguments = getopt (argc, argv, "s:d:f:m:i:l:a:hqg")) != -1)
 	switch (arguments)
 	{
 		case 's':
@@ -82,8 +82,9 @@ int main(int argc, char *argv[]) {
 		  SNRstop =-6.0;
 		  decoder_int16=1;
                   break;
+
 	        case 'h':
-		  printf("./polartest -s SNRstart -d SNRinc -f SNRstop -m [0=PBCH|1=DCI|2=UCI] -i iterations -l decoderListSize -a pathMetricAppr\n");
+		  printf("./polartest -s SNRstart -d SNRinc -f SNRstop -m [0=PBCH|1=DCI|2=UCI] -i iterations -l decoderListSize -a pathMetricAppr -q (use fixed point decoder)\n");
 		  exit(-1);
 
 		default:
@@ -108,11 +109,14 @@ int main(int argc, char *argv[]) {
 	//Logging
 	time_t currentTime;
 	time (&currentTime);
-	char *folderName, fileName[512], currentTimeInfo[25];
+	char fileName[512], currentTimeInfo[25];
+	char folderName[] = ".";
 
+	/*
 	folderName=getenv("HOME");
 	strcat(folderName,"/Desktop/polartestResults");
-
+	*/
+	
 	#ifdef DEBUG_POLAR_TIMING
 	sprintf(fileName,"%s/TIMING_ListSize_%d_pmAppr_%d_Payload_%d_Itr_%d",folderName,decoderListSize,pathMetricAppr,testLength,iterations);
 	#else
@@ -122,15 +126,17 @@ int main(int argc, char *argv[]) {
 	strcat(fileName,currentTimeInfo);
 
 	//Create "~/Desktop/polartestResults" folder if it doesn't already exist.
+	/*
 	struct stat folder = {0};
 	if (stat(folderName, &folder) == -1) mkdir(folderName, S_IRWXU | S_IRWXG | S_IRWXO);
-
+	*/
+	
 	FILE* logFile;
-    logFile = fopen(fileName, "w");
-    if (logFile==NULL) {
-        fprintf(stderr,"[polartest.c] Problem creating file %s with fopen\n",fileName);
-        exit(-1);
-      }
+	logFile = fopen(fileName, "w");
+	if (logFile==NULL) {
+	  fprintf(stderr,"[polartest.c] Problem creating file %s with fopen\n",fileName);
+	  exit(-1);
+	}
 
 #ifdef DEBUG_POLAR_TIMING
     fprintf(logFile,",timeEncoderCRCByte[us],timeEncoderCRCBit[us],timeEncoderInterleaver[us],timeEncoderBitInsertion[us],timeEncoder1[us],timeEncoder2[us],timeEncoderRateMatching[us],timeEncoderByte2Bit[us]\n");
@@ -396,10 +402,10 @@ int main(int argc, char *argv[]) {
 			}
 
 			//Iteration times are in microseconds.
-			timeEncoderCumulative+=(timeEncoder.diff_now/(cpu_freq_GHz*1000.0));
-			timeDecoderCumulative+=(timeDecoder.diff_now/(cpu_freq_GHz*1000.0));
+			timeEncoderCumulative+=(timeEncoder.diff/(cpu_freq_GHz*1000.0));
+			timeDecoderCumulative+=(timeDecoder.diff/(cpu_freq_GHz*1000.0));
 			fprintf(logFile,",%f,%d,%d,%f,%f\n", SNR, nBitError, blockErrorState,
-					(timeEncoder.diff_now/(cpu_freq_GHz*1000.0)), (timeDecoder.diff_now/(cpu_freq_GHz*1000.0)));
+					(timeEncoder.diff/(cpu_freq_GHz*1000.0)), (timeDecoder.diff/(cpu_freq_GHz*1000.0)));
 
 			if (nBitError<0) {
 				blockErrorCumulative++;
@@ -419,6 +425,9 @@ int main(int argc, char *argv[]) {
 				decoderListSize, pathMetricAppr, SNR, ((double)blockErrorCumulative/iterations),
 				((double)bitErrorCumulative / (iterations*testLength)),
 				(timeEncoderCumulative/iterations),timeDecoderCumulative/iterations);
+
+		if (blockErrorCumulative==0 && bitErrorCumulative==0)
+		  break;
 
 		blockErrorCumulative = 0; bitErrorCumulative = 0;
 		timeEncoderCumulative = 0; timeDecoderCumulative = 0;

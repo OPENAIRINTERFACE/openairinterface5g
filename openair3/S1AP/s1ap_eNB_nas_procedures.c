@@ -81,6 +81,16 @@ int s1ap_eNB_handle_nas_first_req(
                    instance_p,
                    s1ap_nas_first_req_p->establishment_cause,
                    s1ap_nas_first_req_p->ue_identity.gummei);
+    if (mme_desc_p) {
+      S1AP_INFO("[eNB %d] Chose MME '%s' (assoc_id %d) through GUMMEI MCC %d MNC %d MMEGI %d MMEC %d\n",
+                instance,
+                mme_desc_p->mme_name,
+                mme_desc_p->assoc_id,
+                s1ap_nas_first_req_p->ue_identity.gummei.mcc,
+                s1ap_nas_first_req_p->ue_identity.gummei.mnc,
+                s1ap_nas_first_req_p->ue_identity.gummei.mme_group_id,
+                s1ap_nas_first_req_p->ue_identity.gummei.mme_code);
+    }
   }
 
   if (mme_desc_p == NULL) {
@@ -89,18 +99,53 @@ int s1ap_eNB_handle_nas_first_req(
       mme_desc_p = s1ap_eNB_nnsf_select_mme_by_mme_code(
                      instance_p,
                      s1ap_nas_first_req_p->establishment_cause,
+                     s1ap_nas_first_req_p->selected_plmn_identity,
                      s1ap_nas_first_req_p->ue_identity.s_tmsi.mme_code);
+      if (mme_desc_p) {
+        S1AP_INFO("[eNB %d] Chose MME '%s' (assoc_id %d) through S-TMSI MMEC %d and selected PLMN Identity index %d MCC %d MNC %d\n",
+                  instance,
+                  mme_desc_p->mme_name,
+                  mme_desc_p->assoc_id,
+                  s1ap_nas_first_req_p->ue_identity.s_tmsi.mme_code,
+                  s1ap_nas_first_req_p->selected_plmn_identity,
+                  instance_p->mcc[s1ap_nas_first_req_p->selected_plmn_identity],
+                  instance_p->mnc[s1ap_nas_first_req_p->selected_plmn_identity]);
+      }
+    }
+  }
+
+  if (mme_desc_p == NULL) {
+    /* Select MME based on the selected PLMN identity, received through RRC
+     * Connection Setup Complete */
+    mme_desc_p = s1ap_eNB_nnsf_select_mme_by_plmn_id(
+                   instance_p,
+                   s1ap_nas_first_req_p->establishment_cause,
+                   s1ap_nas_first_req_p->selected_plmn_identity);
+    if (mme_desc_p) {
+      S1AP_INFO("[eNB %d] Chose MME '%s' (assoc_id %d) through selected PLMN Identity index %d MCC %d MNC %d\n",
+                instance,
+                mme_desc_p->mme_name,
+                mme_desc_p->assoc_id,
+                s1ap_nas_first_req_p->selected_plmn_identity,
+                instance_p->mcc[s1ap_nas_first_req_p->selected_plmn_identity],
+                instance_p->mnc[s1ap_nas_first_req_p->selected_plmn_identity]);
     }
   }
 
   if (mme_desc_p == NULL) {
     /*
-     * If no MME corresponds to the GUMMEI or the s-TMSI, selects the MME with the
-     * highest capacity.
+     * If no MME corresponds to the GUMMEI, the s-TMSI, or the selected PLMN
+     * identity, selects the MME with the highest capacity.
      */
     mme_desc_p = s1ap_eNB_nnsf_select_mme(
                    instance_p,
                    s1ap_nas_first_req_p->establishment_cause);
+    if (mme_desc_p) {
+      S1AP_INFO("[eNB %d] Chose MME '%s' (assoc_id %d) through highest relative capacity\n",
+                instance,
+                mme_desc_p->mme_name,
+                mme_desc_p->assoc_id);
+    }
   }
 
   if (mme_desc_p == NULL) {
@@ -124,6 +169,7 @@ int s1ap_eNB_handle_nas_first_req(
   ue_desc_p->mme_ref       = mme_desc_p;
   ue_desc_p->ue_initial_id = s1ap_nas_first_req_p->ue_initial_id;
   ue_desc_p->eNB_instance  = instance_p;
+  ue_desc_p->selected_plmn_identity = s1ap_nas_first_req_p->selected_plmn_identity;
 
   do {
     struct s1ap_eNB_ue_context_s *collision_p;
@@ -172,9 +218,9 @@ int s1ap_eNB_handle_nas_first_req(
   ie->value.present = S1AP_InitialUEMessage_IEs__value_PR_TAI;
   /* Assuming TAI is the TAI from the cell */
   INT16_TO_OCTET_STRING(instance_p->tac, &ie->value.choice.TAI.tAC);
-  MCC_MNC_TO_PLMNID(instance_p->mcc,
-                    instance_p->mnc,
-                    instance_p->mnc_digit_length,
+  MCC_MNC_TO_PLMNID(instance_p->mcc[ue_desc_p->selected_plmn_identity],
+                    instance_p->mnc[ue_desc_p->selected_plmn_identity],
+                    instance_p->mnc_digit_length[ue_desc_p->selected_plmn_identity],
                     &ie->value.choice.TAI.pLMNidentity);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
@@ -191,9 +237,9 @@ int s1ap_eNB_handle_nas_first_req(
   MACRO_ENB_ID_TO_CELL_IDENTITY(instance_p->eNB_id,
                                 0, // Cell ID
                                 &ie->value.choice.EUTRAN_CGI.cell_ID);
-  MCC_MNC_TO_TBCD(instance_p->mcc,
-                  instance_p->mnc,
-                  instance_p->mnc_digit_length,
+  MCC_MNC_TO_TBCD(instance_p->mcc[ue_desc_p->selected_plmn_identity],
+                  instance_p->mnc[ue_desc_p->selected_plmn_identity],
+                  instance_p->mnc_digit_length[ue_desc_p->selected_plmn_identity],
                   &ie->value.choice.EUTRAN_CGI.pLMNidentity);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
@@ -473,17 +519,11 @@ int s1ap_eNB_handle_nas_downlink(uint32_t         assoc_id,
     MSC_LOG_RX_DISCARDED_MESSAGE(
       MSC_S1AP_ENB,
       MSC_S1AP_MME,
-      (const char *)NULL,
       NULL,
+      0,
       MSC_AS_TIME_FMT" downlinkNASTransport  eNB_ue_s1ap_id %u mme_ue_s1ap_id %u",
-      0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
       enb_ue_s1ap_id,
       mme_ue_s1ap_id);
-    /* TODO: fix this log - the original version is suspicious (twice downlink_NAS_transport_p->eNB_UE_S1AP_ID?) */
-    /*S1AP_ERROR("[SCTP %d] Received NAS downlink message for non existing UE context eNB_UE_S1AP_ID: 0x%"PRIx32" %u\n",
-               assoc_id,
-               downlink_NAS_transport_p->eNB_UE_S1AP_ID,
-               downlink_NAS_transport_p->eNB_UE_S1AP_ID);*/
     S1AP_ERROR("[SCTP %d] Received NAS downlink message for non existing UE context eNB_UE_S1AP_ID: 0x%lx\n",
                assoc_id,
                enb_ue_s1ap_id);
@@ -518,11 +558,10 @@ int s1ap_eNB_handle_nas_downlink(uint32_t         assoc_id,
   MSC_LOG_RX_MESSAGE(
     MSC_S1AP_ENB,
     MSC_S1AP_MME,
-    (const char *)NULL,
     NULL,
+    0,
     MSC_AS_TIME_FMT" downlinkNASTransport  eNB_ue_s1ap_id %u mme_ue_s1ap_id %u",
-    0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-    enb_ue_s1ap_id,
+    assoc_id,
     mme_ue_s1ap_id);
 
   S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_DownlinkNASTransport_IEs_t, ie, container,
@@ -615,9 +654,9 @@ int s1ap_eNB_nas_uplink(instance_t instance, s1ap_uplink_nas_t *s1ap_uplink_nas_
   ie->criticality = S1AP_Criticality_ignore;
   ie->value.present = S1AP_UplinkNASTransport_IEs__value_PR_EUTRAN_CGI;
   MCC_MNC_TO_PLMNID(
-    s1ap_eNB_instance_p->mcc,
-    s1ap_eNB_instance_p->mnc,
-    s1ap_eNB_instance_p->mnc_digit_length,
+    s1ap_eNB_instance_p->mcc[ue_context_p->selected_plmn_identity],
+    s1ap_eNB_instance_p->mnc[ue_context_p->selected_plmn_identity],
+    s1ap_eNB_instance_p->mnc_digit_length[ue_context_p->selected_plmn_identity],
     &ie->value.choice.EUTRAN_CGI.pLMNidentity);
   //#warning "TODO get cell id from RRC"
   MACRO_ENB_ID_TO_CELL_IDENTITY(s1ap_eNB_instance_p->eNB_id,
@@ -631,9 +670,9 @@ int s1ap_eNB_nas_uplink(instance_t instance, s1ap_uplink_nas_t *s1ap_uplink_nas_
   ie->criticality = S1AP_Criticality_ignore;
   ie->value.present = S1AP_UplinkNASTransport_IEs__value_PR_TAI;
   MCC_MNC_TO_PLMNID(
-    s1ap_eNB_instance_p->mcc,
-    s1ap_eNB_instance_p->mnc,
-    s1ap_eNB_instance_p->mnc_digit_length,
+    s1ap_eNB_instance_p->mcc[ue_context_p->selected_plmn_identity],
+    s1ap_eNB_instance_p->mnc[ue_context_p->selected_plmn_identity],
+    s1ap_eNB_instance_p->mnc_digit_length[ue_context_p->selected_plmn_identity],
     &ie->value.choice.TAI.pLMNidentity);
   TAC_TO_ASN1(s1ap_eNB_instance_p->tac, &ie->value.choice.TAI.tAC);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);

@@ -345,7 +345,7 @@ void polar_encoder_timing(uint32_t *in,
   start_meas(&timeEncoderByte2Bit); //Return bits.
   nr_byte2bit_uint8_32_t(polarParams->nr_polar_E, polarParams->encoderLength, out);
   stop_meas(&timeEncoderByte2Bit);
-
+  /*
   fprintf(logFile,",%f,%f,%f,%f,%f,%f,%f,%f\n",
 	  (timeEncoderCRCByte.diff_now/(cpuFreqGHz*1000.0)),
 	  (timeEncoderCRCBit.diff_now/(cpuFreqGHz*1000.0)),
@@ -355,6 +355,7 @@ void polar_encoder_timing(uint32_t *in,
 	  (timeEncoder2.diff_now/(cpuFreqGHz*1000.0)),
 	  (timeEncoderRateMatching.diff_now/(cpuFreqGHz*1000.0)),
 	  (timeEncoderByte2Bit.diff_now/(cpuFreqGHz*1000.0)));
+  */
 }
 
 static inline void polar_rate_matching(t_nrPolar_paramsPtr polarParams,void *in,void *out) __attribute__((always_inline));
@@ -556,4 +557,5 @@ void polar_encoder_fast(int64_t *A,
 #endif
 
   polar_rate_matching(polarParams,(void*)D,(void*)out);  
+
 }

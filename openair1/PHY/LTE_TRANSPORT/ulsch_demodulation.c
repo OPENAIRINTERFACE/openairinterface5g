@@ -33,7 +33,6 @@
 #include "PHY/defs_eNB.h"
 #include "PHY/phy_extern.h"
 #include "transport_eNB.h"
-//#define DEBUG_ULSCH
 #include "PHY/sse_intrin.h"
 #include "transport_common_proto.h"
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
@@ -67,7 +66,7 @@ void lte_idft(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *z, uint16_t Msc_PUSCH)
 
 
 
-  //  printf("Doing lte_idft for Msc_PUSCH %d\n",Msc_PUSCH);
+  LOG_T(PHY,"Doing lte_idft for Msc_PUSCH %d\n",Msc_PUSCH);
 
   if (frame_parms->Ncp == 0) { // Normal prefix
     z0 = z;
@@ -336,6 +335,12 @@ void lte_idft(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *z, uint16_t Msc_PUSCH)
     dft720((int16_t*)idft_in2,(int16_t*)idft_out2,1);
     break;
 
+  case 768:
+    dft768((int16_t*)idft_in0,(int16_t*)idft_out0,1);
+    dft768((int16_t*)idft_in1,(int16_t*)idft_out1,1);
+    dft768((int16_t*)idft_in2,(int16_t*)idft_out2,1);
+    break;
+
   case 864:
     dft864((int16_t*)idft_in0,(int16_t*)idft_out0,1);
     dft864((int16_t*)idft_in1,(int16_t*)idft_out1,1);
@@ -388,13 +393,13 @@ void lte_idft(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *z, uint16_t Msc_PUSCH)
 
   for (i=0,ip=0; i<Msc_PUSCH; i++,ip+=4) {
     z0[i]     = ((uint32_t*)idft_out0)[ip];
-    /*
-      printf("out0 (%d,%d),(%d,%d),(%d,%d),(%d,%d)\n",
-      ((int16_t*)&idft_out0[ip])[0],((int16_t*)&idft_out0[ip])[1],
-      ((int16_t*)&idft_out0[ip+1])[0],((int16_t*)&idft_out0[ip+1])[1],
-      ((int16_t*)&idft_out0[ip+2])[0],((int16_t*)&idft_out0[ip+2])[1],
-      ((int16_t*)&idft_out0[ip+3])[0],((int16_t*)&idft_out0[ip+3])[1]);
-    */
+      if(LOG_DEBUGFLAG(DEBUG_ULSCH)) {
+        LOG_I(PHY,"out0 (%d,%d),(%d,%d),(%d,%d),(%d,%d)\n",
+            ((int16_t*)&idft_out0[ip])[0],((int16_t*)&idft_out0[ip])[1],
+            ((int16_t*)&idft_out0[ip+1])[0],((int16_t*)&idft_out0[ip+1])[1],
+            ((int16_t*)&idft_out0[ip+2])[0],((int16_t*)&idft_out0[ip+2])[1],
+            ((int16_t*)&idft_out0[ip+3])[0],((int16_t*)&idft_out0[ip+3])[1]);
+      }
     z1[i]     = ((uint32_t*)idft_out0)[ip+1];
     z2[i]     = ((uint32_t*)idft_out0)[ip+2];
     z3[i]     = ((uint32_t*)idft_out0)[ip+3];
@@ -479,10 +484,7 @@ int32_t ulsch_qpsk_llr(LTE_DL_FRAME_PARMS *frame_parms,
 
   int i;
 
-  //  printf("qpsk llr for symbol %d (pos %d), llr offset %d\n",symbol,(symbol*frame_parms->N_RB_DL*12),llr128U-(__m128i*)ulsch_llr);
-
   for (i=0; i<(nb_rb*3); i++) {
-    //printf("%d,%d,%d,%d,%d,%d,%d,%d\n",((int16_t *)rxF)[0],((int16_t *)rxF)[1],((int16_t *)rxF)[2],((int16_t *)rxF)[3],((int16_t *)rxF)[4],((int16_t *)rxF)[5],((int16_t *)rxF)[6],((int16_t *)rxF)[7]);
     *(*llrp128) = *rxF;
     rxF++;
     (*llrp128)++;
@@ -593,7 +595,9 @@ void ulsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   ch_mag =(int16x8_t*)&ul_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
   ch_magb =(int16x8_t*)&ul_ch_magb[0][(symbol*frame_parms->N_RB_DL*12)];
 #endif
-  //  printf("symbol %d: mag %d, magb %d\n",symbol,_mm_extract_epi16(ch_mag[0],0),_mm_extract_epi16(ch_magb[0],0));
+  if(LOG_DEBUGFLAG(DEBUG_ULSCH)) {
+     LOG_UI(PHY,"symbol %d: mag %d, magb %d\n",symbol,_mm_extract_epi16(ch_mag[0],0),_mm_extract_epi16(ch_magb[0],0));
+  }
   for (i=0; i<(nb_rb*3); i++) {
 
 
@@ -736,9 +740,9 @@ void ulsch_extract_rbs_single(int32_t **rxdataF,
     nb_rb1 = cmin(cmax((int)(frame_parms->N_RB_UL) - (int)(2*first_rb),(int)0),(int)(2*nb_rb));    // 2 times no. RBs before the DC
     nb_rb2 = 2*nb_rb - nb_rb1;                                   // 2 times no. RBs after the DC
  
-#ifdef DEBUG_ULSCH
-    printf("ulsch_extract_rbs_single: 2*nb_rb1 = %d, 2*nb_rb2 = %d\n",nb_rb1,nb_rb2);
-#endif
+    if(LOG_DEBUGFLAG(DEBUG_ULSCH)) {
+       LOG_UI(PHY,"ulsch_extract_rbs_single: 2*nb_rb1 = %d, 2*nb_rb2 = %d\n",nb_rb1,nb_rb2);
+    }
 
     rxF_ext   = &rxdataF_ext[aarx][(symbol*frame_parms->N_RB_UL*12)];
 
@@ -838,7 +842,7 @@ void ulsch_channel_compensation(int32_t **rxdataF_ext,
 
 #endif
     for (rb=0; rb<nb_rb; rb++) {
-      //            printf("comp: symbol %d rb %d\n",symbol,rb);
+      LOG_D(PHY,"comp: symbol %d rb %d\n",symbol,rb);
 
 // just compute channel magnitude without scaling, this is done after equalization for SC-FDMA
 
@@ -861,7 +865,7 @@ void ulsch_channel_compensation(int32_t **rxdataF_ext,
       mmtmpU1 = _mm_packs_epi32(mmtmpU0,mmtmpU0);
       ul_ch_mag128[2] = _mm_unpacklo_epi16(mmtmpU1,mmtmpU1);
 
-      // printf("comp: symbol %d rb %d => %d,%d,%d (output_shift %d)\n",symbol,rb,*((int16_t*)&ul_ch_mag128[0]),*((int16_t*)&ul_ch_mag128[1]),*((int16_t*)&ul_ch_mag128[2]),output_shift);
+      LOG_D(PHY,"comp: symbol %d rb %d => %d,%d,%d (output_shift %d)\n",symbol,rb,*((int16_t*)&ul_ch_mag128[0]),*((int16_t*)&ul_ch_mag128[1]),*((int16_t*)&ul_ch_mag128[2]),output_shift);
 
 
 #elif defined(__arm__)
@@ -1125,10 +1129,9 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
 
   harq_pid = subframe2harq_pid(frame_parms,proc->frame_rx,subframe);
   Qm = ulsch[UE_id]->harq_processes[harq_pid]->Qm;
-#ifdef DEBUG_ULSCH
-  printf("rx_ulsch: harq_pid %d, nb_rb %d first_rb %d\n",harq_pid,ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,ulsch[UE_id]->harq_processes[harq_pid]->first_rb);
-
-#endif //DEBUG_ULSCH
+  if(LOG_DEBUGFLAG(DEBUG_ULSCH)) {
+     LOG_I(PHY,"rx_ulsch: harq_pid %d, nb_rb %d first_rb %d\n",harq_pid,ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,ulsch[UE_id]->harq_processes[harq_pid]->first_rb);
+  }
 
   if (ulsch[UE_id]->harq_processes[harq_pid]->nb_rb == 0) {
     LOG_E(PHY,"PUSCH (%d/%x) nb_rb=0!\n", harq_pid,ulsch[UE_id]->rnti);
@@ -1137,13 +1140,13 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
 
   for (l=0; l<(frame_parms->symbols_per_tti-ulsch[UE_id]->harq_processes[harq_pid]->srs_active); l++) {
 
-#ifdef DEBUG_ULSCH
-    printf("rx_ulsch : symbol %d (first_rb %d,nb_rb %d), rxdataF %p, rxdataF_ext %p\n",l,
+  if(LOG_DEBUGFLAG(DEBUG_ULSCH)) {
+    LOG_I(PHY,"rx_ulsch : symbol %d (first_rb %d,nb_rb %d), rxdataF %p, rxdataF_ext %p\n",l,
         ulsch[UE_id]->harq_processes[harq_pid]->first_rb,
         ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,
         common_vars->rxdataF,
         pusch_vars->rxdataF_ext);
-#endif //DEBUG_ULSCH
+  }
 
     ulsch_extract_rbs_single(common_vars->rxdataF,
                              pusch_vars->rxdataF_ext,
@@ -1179,21 +1182,16 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
     
     pusch_vars->ulsch_power[i] = signal_energy_nodc(pusch_vars->drs_ch_estimates[i],
 						    ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12)/correction_factor;
-    /*    printf("%4.4d.%d power harq_pid %d rb %2.2d TBS %2.2d (MPR_times_Ks %d correction %d)  power %d dBtimes10\n", proc->frame_rx, proc->subframe_rx, harq_pid, ulsch[UE_id]->harq_processes[harq_pid]->nb_rb, ulsch[UE_id]->harq_processes[harq_pid]->TBS,MPR_times_100Ks,correction_factor,dB_fixed_times10(pusch_vars->ulsch_power[i])); 
-     */
+    LOG_D(PHY,"%4.4d.%d power harq_pid %d rb %2.2d TBS %2.2d (MPR_times_Ks %d correction %d)  power %d dBtimes10\n", proc->frame_rx, proc->subframe_rx, harq_pid, ulsch[UE_id]->harq_processes[harq_pid]->nb_rb, ulsch[UE_id]->harq_processes[harq_pid]->TBS,MPR_times_100Ks,correction_factor,dB_fixed_times10(pusch_vars->ulsch_power[i])); 
+     
   }
-
-
-  //LOG_M("rxdataF_ext.m","rxF_ext",pusch_vars->rxdataF_ext[eNB_id][0],300*(frame_parms->symbols_per_tti-ulsch[UE_id]->srs_active),1,1);
-  //LOG_M("ulsch_chest.m","drs_est",pusch_vars->drs_ch_estimates[eNB_id][0],300*(frame_parms->symbols_per_tti-ulsch[UE_id]->srs_active),1,1);
-
 
   ulsch_channel_level(pusch_vars->drs_ch_estimates,
 		      frame_parms,
 		      avgU,
 		      ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);
   
-  //  printf("[ULSCH] avg[0] %d\n",avgU[0]);
+  LOG_D(PHY,"[ULSCH] avg[0] %d\n",avgU[0]);
   
   
   avgs = 0;
@@ -1205,9 +1203,9 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
   
   log2_maxh = (log2_approx(avgs)/2)+ log2_approx(frame_parms->nb_antennas_rx-1)+4;
   
-#ifdef DEBUG_ULSCH
-  printf("[ULSCH] log2_maxh = %d (%d,%d)\n",log2_maxh,avgU[0],avgs);
-#endif
+
+  LOG_D(PHY,"[ULSCH] log2_maxh = %d (%d,%d)\n",log2_maxh,avgU[0],avgs);
+
 
 
   for (l=0; l<(frame_parms->symbols_per_tti-ulsch[UE_id]->harq_processes[harq_pid]->srs_active); l++) {
@@ -1229,9 +1227,6 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
 			       ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,
 			       log2_maxh); // log2_maxh+I0_shift
 
-  
-
-
     if (frame_parms->nb_antennas_rx > 1)
       ulsch_detection_mrc(frame_parms,
 			  pusch_vars->rxdataF_comp,
@@ -1240,9 +1235,7 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
 			  l,
 			  ulsch[UE_id]->harq_processes[harq_pid]->nb_rb);
     
-    
-    
-    //    if ((eNB->measurements.n0_power_dB[0]+3)<pusch_vars->ulsch_power[0]) {
+    //    if ((eNB->measurements.n0_power_dB[0]+3)<pusch_vars->ulsch_power[0]) 
     if (23<pusch_vars->ulsch_power[0]) {
       freq_equalization(frame_parms,
 			pusch_vars->rxdataF_comp,
@@ -1254,22 +1247,9 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
     }
   }
 
-  
-
-
-
-  //#ifdef DEBUG_ULSCH
-  // Inverse-Transform equalized outputs
-  //  printf("Doing IDFTs\n");
   lte_idft(frame_parms,
            (uint32_t*)pusch_vars->rxdataF_comp[0],
            ulsch[UE_id]->harq_processes[harq_pid]->nb_rb*12);
-  //  printf("Done\n");
-  //#endif //DEBUG_ULSCH
-
-
-
-
 
   llrp = (int16_t*)&pusch_vars->llr[0];
 
@@ -1316,9 +1296,8 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
       break;
 
     default:
-#ifdef DEBUG_ULSCH
-      printf("ulsch_demodulation.c (rx_ulsch): Unknown Qm!!!!\n");
-#endif //DEBUG_ULSCH
+      LOG_E(PHY,"ulsch_demodulation.c (rx_ulsch): Unknown Qm!!!!\n");
+
       break;
     }
   }
@@ -1329,7 +1308,7 @@ void rx_ulsch_emul(PHY_VARS_eNB *eNB,
 		   eNB_rxtx_proc_t *proc,
                    uint8_t UE_index)
 {
-  printf("[PHY] EMUL eNB %d rx_ulsch_emul : subframe %d, UE_index %d\n",eNB->Mod_id,proc->subframe_rx,UE_index);
+  LOG_I(PHY,"[PHY] EMUL eNB %d rx_ulsch_emul : subframe %d, UE_index %d\n",eNB->Mod_id,proc->subframe_rx,UE_index);
   eNB->pusch_vars[UE_index]->ulsch_power[0] = 31622; //=45dB;
   eNB->pusch_vars[UE_index]->ulsch_power[1] = 31622; //=45dB;
 
@@ -1344,7 +1323,7 @@ void rx_ulsch_emul(PHY_VARS_eNB *eNB,
 
   harq_pid = subframe2harq_pid(&eNB->frame_parms,frame,subframe);
 
-  printf("Dumping ULSCH in subframe %d with harq_pid %d, round %d for NB_rb %d, TBS %d, Qm %d, N_symb %d\n", 
+  LOG_UI(PHY,"Dumping ULSCH in subframe %d with harq_pid %d, round %d for NB_rb %d, TBS %d, Qm %d, N_symb %d\n", 
 	 subframe,harq_pid,round,eNB->ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,
          eNB->ulsch[UE_id]->harq_processes[harq_pid]->TBS,eNB->ulsch[UE_id]->harq_processes[harq_pid]->Qm,
          eNB->ulsch[UE_id]->harq_processes[harq_pid]->Nsymb_pusch);
