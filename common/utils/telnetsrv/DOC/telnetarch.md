@@ -18,4 +18,4 @@ telnet server source files are located in [common/utils/telnetsrv](https://gitla
 1.  `telnetsrv\_\<XXX\>.h`: include file for the implementation of XXX CLI command. Usually included only in the corresponding `.c`file
 1.  [telnetsrv_CMakeLists.txt](https://gitlab.eurecom.fr/oai/openairinterface5g/blob/develop/common/utils/telnetsrv/telnetsrv_CMakeLists.txt): CMakelists file containing the cmake instructions to build the telnet server. this file is included in the [global oai CMakelists](https://gitlab.eurecom.fr/oai/openairinterface5g/blob/develop/cmake_targets/CMakeLists.txt).
 
-[oai telnet server home](telnetsrv)
+[oai telnet server home](telnetsrv.md)

@@ -4,4 +4,4 @@ The oai embedded telnet server is an optional monitoring and debugging tool. It 
 * [Adding commands to the oai telnet server](telnetaddcmd.md)
 * [telnet server architecture ](telnetarch.md)
  
-[oai Wikis home](home)
+[oai Wikis home](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/home)

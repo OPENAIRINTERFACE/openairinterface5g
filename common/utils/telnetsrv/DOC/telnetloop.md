@@ -36,5 +36,5 @@ softmodem> loop softmodem show thread
 ```  
 A **_loop_** command can be interrupted by pressing the  **_enter_** key till getting the  prompt. 
 
-[oai telnetserver home](telnetsrv)  
-[oai telnetserver usage home](telnetusage)
+[oai telnetserver home](telnetsrv.md)  
+[oai telnetserver usage home](telnetusage.md)

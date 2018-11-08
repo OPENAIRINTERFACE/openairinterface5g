@@ -6,7 +6,7 @@ Shared library full names are built by the loader using the format:
 1.  the < *module version* > and < *path* > optional  parameters, are defined at run-time, depending on the configuration.
 
 ## loader parameters
-The loader is using the [configuration module](config), and defines global and per library parameters. Global parameters must be specified under the **loader** section and library specific parameters under a **loader.<*module name*>** section. Module specific parameters override the global parameters. 
+The loader is using the [configuration module](../../../config/DOCconfig.md), and defines global and per library parameters. Global parameters must be specified under the **loader** section and library specific parameters under a **loader.<*module name*>** section. Module specific parameters override the global parameters. 
 ### Global loader parameters
 | name | type | default | description |
 |:---:|:---:|:---:|:----|
@@ -47,4 +47,4 @@ With this latest example, nn the softmodem logs, you can check that the right de
 
 ```
 
-[loader home page](loader)
+[loader home page](..loader.md)

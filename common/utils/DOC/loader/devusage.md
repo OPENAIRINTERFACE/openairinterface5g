@@ -5,13 +5,13 @@ The configuration module objectives are
 
 As a developer you may need to look at these sections:
 
-* [loading a shared library](loader/devusage/loading)
-* [loader API](loader/devusage/api) 
-* [loader public structures](loader/devusage/struct)  
+* [loading a shared library](devusage/loading.md)
+* [loader API](devusage/api.md) 
+* [loader public structures](devusage/struct.md)  
 
 Loader usage examples can be found in oai sources:  
 
 *  device and transport initialization code: [function `load_lib` in *targets/ARCH/COMMON/__common_lib.c__* ](https://gitlab.eurecom.fr/oai/openairinterface5g/blob/develop/targets/ARCH/COMMON/common_lib.c#L91) 
 *  turbo encoder and decoder initialization: [function `load_codinglib`in *openair1/PHY/CODING/__coding_load.c__*](https://gitlab.eurecom.fr/oai/openairinterface5g/blob/develop/openair1/PHY/CODING/coding_load.c#L113)
 
-[loader home page](loader)
+[loader home page](../loader.md)

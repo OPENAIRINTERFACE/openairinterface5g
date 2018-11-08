@@ -52,5 +52,5 @@ if (f2 != NULL) {
 ```
 When loading a shared library the loader looks for a symbol named `< module name > _autoinit` and, if it finds it, calls it. The `autoinit` function is called without any argument and the returned value, if any, is not tested. 
 
-[loader home page](loader)  
-[loader developer home page](loader/devusage)
+[loader home page](../loader.md)  
+[loader developer home page](../../loader/devusage.md)

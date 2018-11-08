@@ -1,4 +1,4 @@
-The log command can be used to get the status of the log parameters and to dynamically modify these parameters. The log command has its own [help](telnethelp#oai-telnet-server-specific-commands-help)
+The log command can be used to get the status of the log parameters and to dynamically modify these parameters. The log command has its own [help](telnethelp.md#oai-telnet-server-specific-commands-help)
 ```bash
 softmodem>  softmodem log disable 0-35
 log level/verbosity  comp 0 PHY set to info / medium (disabled)
@@ -91,5 +91,5 @@ softmodem> exit
 Connection closed by foreign host.
 ```  
 
-[oai telnetserver home](telnetsrv)  
-[oai telnetserver usage home](telnetusage)
+[oai telnetserver home](telnetsrv.md)  
+[oai telnetserver usage home](telnetusage.md)

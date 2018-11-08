@@ -92,7 +92,7 @@ int add_telnetcmd(char *modulename, telnetshell_vardef_t *var, telnetshell_cmdde
 Add a command and the `cmd` list of sub-commands to the telnet server. After a successful call to `add_telnetcmd` function, the telnet server calls the function defined for each sub-commands in the null terminated `cmd` array, when the character string received from the telnet client matches the command and sub-command strings.  
 Also adds the list of variables described in the `var` array to the list of variable which can be set and read.  
 The function returns -1 if one argument is NULL.  
-The telnet server is dynamically loaded, to use  the `add_telnetcmd` function, the shared library loader API should be used to check the availability of the telnet server and retrieve it's address, as shown in [the example at the top of this page](telnetaddcmd#code-example-of-adding-a-command-to-the-telnet-server).  
+The telnet server is dynamically loaded, to use  the `add_telnetcmd` function, the shared library loader API should be used to check the availability of the telnet server and retrieve it's address, as shown in [the example at the top of this page](telnetaddcmd.md#code-example-of-adding-a-command-to-the-telnet-server).  
 
 # telnet server public data types
 ## `telnetshell_vardef_t`structure  
@@ -113,4 +113,4 @@ The telnet server is dynamically loaded, to use  the `add_telnetcmd` function, t
 | `helpstr`     | `char[TELNET_HELPSTR_SIZE]` |  character string to print when the elp`command is received from the telnet client |
 | `cmdfunc`     | `cmdfunc_t` |  pointer to the function implementing the `cmdname` sub command. |
 
-[oai telnet server home](telnetsrv)
+[oai telnet server home](telnetsrv.md)
