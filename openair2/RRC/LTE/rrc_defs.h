@@ -573,7 +573,7 @@ typedef struct eNB_RRC_UE_s {
   security_capabilities_t            security_capabilities;
 
   /* Total number of e_rab already setup in the list */
-  uint8_t                           setup_e_rabs;
+  uint8_t                            setup_e_rabs;
   /* Number of e_rab to be setup in the list */
   uint8_t                            nb_of_e_rabs;
   /* Number of e_rab to be modified in the list */

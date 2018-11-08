@@ -36,6 +36,11 @@
 # include "rrc_eNB_S1AP.h"
 # include "enb_config.h"
 # include "common/ran_context.h"
+/****************************************/
+//# include "../../S1AP/s1ap_eNB_defs.h"
+//# include "s1ap_eNB_management_procedures.h"
+# include "s1ap_eNB_ue_context.h"
+/****************************************/
 
 # if defined(ENABLE_ITTI)
 #   include "asn1_conversions.h"
@@ -161,6 +166,9 @@ void extract_imsi(uint8_t *pdu_buf, uint32_t pdu_len, rrc_eNB_ue_context_t *ue_c
 
 # if defined(ENABLE_ITTI)
 //------------------------------------------------------------------------------
+/*
+* TODO
+*/
 struct rrc_ue_s1ap_ids_s*
 rrc_eNB_S1AP_get_ue_ids(
   eNB_RRC_INST* const rrc_instance_pP,
@@ -171,48 +179,169 @@ rrc_eNB_S1AP_get_ue_ids(
 {
   rrc_ue_s1ap_ids_t *result = NULL;
   rrc_ue_s1ap_ids_t *result2 = NULL;
+  /*****************************/
+  instance_t instance = 0;
+  s1ap_eNB_instance_t *s1ap_eNB_instance_p = NULL;
+  s1ap_eNB_ue_context_t *ue_desc_p = NULL;
+  /*****************************/
   hashtable_rc_t     h_rc;
 
-  // we assume that a rrc_ue_s1ap_ids_s is initially inserted in initial_id2_s1ap_ids
-  if (eNB_ue_s1ap_id > 0) {
-	h_rc = hashtable_get(rrc_instance_pP->s1ap_id2_s1ap_ids, (hash_key_t)eNB_ue_s1ap_id, (void**)&result);
-  }
   if (ue_initial_id != UE_INITIAL_ID_INVALID) {
     h_rc = hashtable_get(rrc_instance_pP->initial_id2_s1ap_ids, (hash_key_t)ue_initial_id, (void**)&result);
-	if  (h_rc == HASH_TABLE_OK) {
-	  if (eNB_ue_s1ap_id > 0) {
-	    h_rc = hashtable_get(rrc_instance_pP->s1ap_id2_s1ap_ids, (hash_key_t)eNB_ue_s1ap_id, (void**)&result2);
-	    if  (h_rc != HASH_TABLE_OK) {
-		  result2 = malloc(sizeof(*result2));
-		  if (NULL != result2) {
-		    *result2 = *result;
-		    result2->eNB_ue_s1ap_id = eNB_ue_s1ap_id;
-		    result->eNB_ue_s1ap_id  = eNB_ue_s1ap_id;
-            h_rc = hashtable_insert(rrc_instance_pP->s1ap_id2_s1ap_ids,
-		    		               (hash_key_t)eNB_ue_s1ap_id,
-		    		               result2);
+	
+    if (h_rc == HASH_TABLE_OK) {
+      
+      if (eNB_ue_s1ap_id > 0) {
+        h_rc = hashtable_get(rrc_instance_pP->s1ap_id2_s1ap_ids, (hash_key_t)eNB_ue_s1ap_id, (void**)&result2);
+        
+        if (h_rc != HASH_TABLE_OK) { // this case is equivalent to associate eNB_ue_s1ap_id and ue_initial_id
+          result2 = malloc(sizeof(*result2));
+          
+          if (NULL != result2) {
+            *result2 = *result;
+            
+            result2->eNB_ue_s1ap_id = eNB_ue_s1ap_id;
+            result->eNB_ue_s1ap_id  = eNB_ue_s1ap_id;
+            
+            h_rc = hashtable_insert(rrc_instance_pP->s1ap_id2_s1ap_ids, (hash_key_t)eNB_ue_s1ap_id, result2);
+
             if (h_rc != HASH_TABLE_OK) {
-              LOG_E(S1AP, "[eNB %ld] Error while hashtable_insert in s1ap_id2_s1ap_ids eNB_ue_s1ap_id %"PRIu32"\n",
-		    		  rrc_instance_pP - RC.rrc[0], eNB_ue_s1ap_id);
+              LOG_E(S1AP, "[eNB %ld] Error while hashtable_insert in s1ap_id2_s1ap_ids eNB_ue_s1ap_id %"PRIu32"\n", 
+                rrc_instance_pP - RC.rrc[0], 
+                eNB_ue_s1ap_id);
             }
-		  }
-		}
-	  }
-	}
+          }
+
+        } else { // here we should check that the association was done correctly
+          
+          if ((result->ue_initial_id != result2->ue_initial_id) || (result->eNB_ue_s1ap_id != result2->eNB_ue_s1ap_id)) {
+            
+            LOG_E(S1AP, "[eNB %ld] Error while hashtable_get, two rrc_ue_s1ap_ids_t that should be equal, are not: \
+              ue_initial_id 1 = %"PRIu16", \
+              ue_initial_id 2 = %"PRIu16", \
+              eNB_ue_s1ap_id 1 = %"PRIu32", \
+              eNB_ue_s1ap_id 2 = %"PRIu32"\n",
+                rrc_instance_pP - RC.rrc[0],
+                result->ue_initial_id,
+                result2->ue_initial_id,
+                result->eNB_ue_s1ap_id,
+                result2->eNB_ue_s1ap_id);
+
+          }
+
+        }
+      } // end if if (eNB_ue_s1ap_id > 0)
+
+    } else { // end if (h_rc == HASH_TABLE_OK)
+
+      LOG_E(S1AP, "[eNB %ld] In hashtable_get, couldn't find in initial_id2_s1ap_ids ue_initial_id %"PRIu16"\n", 
+        rrc_instance_pP - RC.rrc[0], 
+        ue_initial_id);
+      /*
+      * At the moment this is written, this case shouldn't (cannot) happen and is equivalent to an error.
+      * One could try to find the struct instance based on s1ap_id2_s1ap_ids and eNB_ue_s1ap_id (if > 0),
+      * but this behavior is not expected at the moment.
+      */
+
+    } // end else (h_rc != HASH_TABLE_OK)
+
+  } else { // end if (ue_initial_id != UE_INITIAL_ID_INVALID)
+
+    if (eNB_ue_s1ap_id > 0) {
+	    h_rc = hashtable_get(rrc_instance_pP->s1ap_id2_s1ap_ids, (hash_key_t)eNB_ue_s1ap_id, (void**)&result);
+
+      if (h_rc != HASH_TABLE_OK) {
+        /*
+        * This case is uncommon, but can happen when:
+        * -> if the first NAS message was a Detach Request (non exhaustiv), the UE RRC context exist 
+        * but is not associated with eNB_ue_s1ap_id
+        * -> if the UE is in IDLE, hence no S1 context exist (in this case [h_rc != HASH_TABLE_OK] is normal)
+        * -> ... (?)
+        */
+        LOG_E(S1AP, "[eNB %ld] In hashtable_get, couldn't find in s1ap_id2_s1ap_ids eNB_ue_s1ap_id %"PRIu32", trying \
+          to find it through S1AP context\n", 
+          rrc_instance_pP - RC.rrc[0], 
+          eNB_ue_s1ap_id);
+
+        instance = ENB_MODULE_ID_TO_INSTANCE(rrc_instance_pP - RC.rrc[0]); // get eNB instance
+
+        s1ap_eNB_instance_p = s1ap_eNB_get_instance(instance); // get s1ap_eNB_instance
+
+        ue_desc_p = s1ap_eNB_get_ue_context(s1ap_eNB_instance_p, eNB_ue_s1ap_id); // get s1ap_eNB_ue_context
+
+        if (ue_desc_p != NULL) {
+          result = rrc_eNB_S1AP_get_ue_ids(rrc_instance_pP, ue_desc_p->ue_initial_id, eNB_ue_s1ap_id);
+
+        } else {
+
+          LOG_E(S1AP, "[eNB %ld] In hashtable_get, couldn't find in s1ap_id2_s1ap_ids eNB_ue_s1ap_id %"PRIu32", even \
+          when looking at S1AP context\n", 
+          rrc_instance_pP - RC.rrc[0], 
+          eNB_ue_s1ap_id);
+          
+        }
+
+      } // end if (h_rc != HASH_TABLE_OK)
+    } // end if (eNB_ue_s1ap_id > 0)
+  } // end else (ue_initial_id == UE_INITIAL_ID_INVALID)
+
+  return result;
+
+  // we assume that a rrc_ue_s1ap_ids_s is initially inserted in initial_id2_s1ap_ids
+  /*
+  if (eNB_ue_s1ap_id > 0) {
+	  h_rc = hashtable_get(rrc_instance_pP->s1ap_id2_s1ap_ids, (hash_key_t)eNB_ue_s1ap_id, (void**)&result);
+  }
+
+  if (ue_initial_id != UE_INITIAL_ID_INVALID) {
+    h_rc = hashtable_get(rrc_instance_pP->initial_id2_s1ap_ids, (hash_key_t)ue_initial_id, (void**)&result);
+	
+    if (h_rc == HASH_TABLE_OK) {
+      
+      if (eNB_ue_s1ap_id > 0) {
+        h_rc = hashtable_get(rrc_instance_pP->s1ap_id2_s1ap_ids, (hash_key_t)eNB_ue_s1ap_id, (void**)&result2);
+        
+        if (h_rc != HASH_TABLE_OK) {
+          result2 = malloc(sizeof(*result2));
+          
+          if (NULL != result2) {
+            *result2 = *result;
+            
+            result2->eNB_ue_s1ap_id = eNB_ue_s1ap_id;
+            result->eNB_ue_s1ap_id  = eNB_ue_s1ap_id;
+            
+            h_rc = hashtable_insert(rrc_instance_pP->s1ap_id2_s1ap_ids, (hash_key_t)eNB_ue_s1ap_id, result2);
+
+            if (h_rc != HASH_TABLE_OK) {
+              LOG_E(S1AP, "[eNB %ld] Error while hashtable_insert in s1ap_id2_s1ap_ids eNB_ue_s1ap_id %"PRIu32"\n", 
+                rrc_instance_pP - RC.rrc[0], 
+                eNB_ue_s1ap_id);
+            }
+          }
+        }
+      }
+    }
   }
   return result;
+  */
 }
+
 //------------------------------------------------------------------------------
+/*
+* TODO
+*/
 void
 rrc_eNB_S1AP_remove_ue_ids(
-  eNB_RRC_INST*              const rrc_instance_pP,
-  struct rrc_ue_s1ap_ids_s* const ue_ids_pP
+  eNB_RRC_INST *const rrc_instance_pP,
+  struct rrc_ue_s1ap_ids_s *const ue_ids_pP
 )
 //------------------------------------------------------------------------------
 {
   const uint16_t ue_initial_id  = ue_ids_pP->ue_initial_id;
   const uint32_t eNB_ue_s1ap_id = ue_ids_pP->eNB_ue_s1ap_id;
+
   hashtable_rc_t h_rc;
+
   if (rrc_instance_pP == NULL) {
     LOG_E(RRC, "Bad RRC instance\n");
     return;
@@ -224,21 +353,23 @@ rrc_eNB_S1AP_remove_ue_ids(
   }
 
   if (eNB_ue_s1ap_id > 0) {
-	h_rc = hashtable_remove(rrc_instance_pP->s1ap_id2_s1ap_ids, (hash_key_t)eNB_ue_s1ap_id);
-	if (h_rc != HASH_TABLE_OK) {
-	  LOG_W(RRC, "S1AP Did not find entry in hashtable s1ap_id2_s1ap_ids for eNB_ue_s1ap_id %u\n", eNB_ue_s1ap_id);
-	} else {
-	  LOG_W(RRC, "S1AP removed entry in hashtable s1ap_id2_s1ap_ids for eNB_ue_s1ap_id %u\n", eNB_ue_s1ap_id);
-	}
+	  h_rc = hashtable_remove(rrc_instance_pP->s1ap_id2_s1ap_ids, (hash_key_t)eNB_ue_s1ap_id);
+	
+    if (h_rc != HASH_TABLE_OK) {
+	    LOG_W(RRC, "S1AP Did not find entry in hashtable s1ap_id2_s1ap_ids for eNB_ue_s1ap_id %u\n", eNB_ue_s1ap_id);
+	  } else {
+	    LOG_W(RRC, "S1AP removed entry in hashtable s1ap_id2_s1ap_ids for eNB_ue_s1ap_id %u\n", eNB_ue_s1ap_id);
+	  }
   }
 
   if (ue_initial_id != UE_INITIAL_ID_INVALID) {
     h_rc = hashtable_remove(rrc_instance_pP->initial_id2_s1ap_ids, (hash_key_t)ue_initial_id);
-	if (h_rc != HASH_TABLE_OK) {
-	  LOG_W(RRC, "S1AP Did not find entry in hashtable initial_id2_s1ap_ids for ue_initial_id %u\n", ue_initial_id);
-	} else {
-	  LOG_W(RRC, "S1AP removed entry in hashtable initial_id2_s1ap_ids for ue_initial_id %u\n", ue_initial_id);
-	}
+ 
+    if (h_rc != HASH_TABLE_OK) {
+      LOG_W(RRC, "S1AP Did not find entry in hashtable initial_id2_s1ap_ids for ue_initial_id %u\n", ue_initial_id);
+    } else {
+      LOG_W(RRC, "S1AP removed entry in hashtable initial_id2_s1ap_ids for ue_initial_id %u\n", ue_initial_id);
+    }
   }
 }
 
@@ -284,17 +415,11 @@ rrc_eNB_get_ue_context_from_s1ap_ids(
 )
 {
   rrc_ue_s1ap_ids_t* temp = NULL;
-  temp =
-    rrc_eNB_S1AP_get_ue_ids(
-      RC.rrc[ENB_INSTANCE_TO_MODULE_ID(instanceP)],
-      ue_initial_idP,
-      eNB_ue_s1ap_idP);
 
-  if (temp) {
+  temp = rrc_eNB_S1AP_get_ue_ids(RC.rrc[ENB_INSTANCE_TO_MODULE_ID(instanceP)], ue_initial_idP, eNB_ue_s1ap_idP);
 
-    return rrc_eNB_get_ue_context(
-             RC.rrc[ENB_INSTANCE_TO_MODULE_ID(instanceP)],
-             temp->ue_rnti);
+  if (temp != NULL) {
+    return rrc_eNB_get_ue_context(RC.rrc[ENB_INSTANCE_TO_MODULE_ID(instanceP)], temp->ue_rnti);
   }
 
   return NULL;
@@ -686,28 +811,31 @@ void rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(
 }
 
 //------------------------------------------------------------------------------
+/*
+* TODO
+*/
 void
 rrc_eNB_send_S1AP_NAS_FIRST_REQ(
   const protocol_ctxt_t* const ctxt_pP,
-  rrc_eNB_ue_context_t*          const ue_context_pP,
+  rrc_eNB_ue_context_t* const ue_context_pP,
   RRCConnectionSetupComplete_r8_IEs_t* rrcConnectionSetupComplete
 )
 //------------------------------------------------------------------------------
-
-
 {
-  eNB_RRC_INST *rrc=RC.rrc[ctxt_pP->module_id];
+  eNB_RRC_INST *rrc = RC.rrc[ctxt_pP->module_id];
+
 #if defined(ENABLE_ITTI)
   {
     MessageDef*         message_p         = NULL;
     rrc_ue_s1ap_ids_t*  rrc_ue_s1ap_ids_p = NULL;
     hashtable_rc_t      h_rc;
 
-    message_p = itti_alloc_new_message (TASK_RRC_ENB, S1AP_NAS_FIRST_REQ);
+    message_p = itti_alloc_new_message(TASK_RRC_ENB, S1AP_NAS_FIRST_REQ);
     memset(&message_p->ittiMsg.s1ap_nas_first_req, 0, sizeof(s1ap_nas_first_req_t));
 
-    ue_context_pP->ue_context.ue_initial_id = get_next_ue_initial_id (ctxt_pP->module_id);
-    S1AP_NAS_FIRST_REQ (message_p).ue_initial_id = ue_context_pP->ue_context.ue_initial_id;
+    ue_context_pP->ue_context.ue_initial_id = get_next_ue_initial_id(ctxt_pP->module_id);
+    
+    S1AP_NAS_FIRST_REQ(message_p).ue_initial_id = ue_context_pP->ue_context.ue_initial_id;
 
     rrc_ue_s1ap_ids_p = malloc(sizeof(*rrc_ue_s1ap_ids_p));
     rrc_ue_s1ap_ids_p->ue_initial_id  = ue_context_pP->ue_context.ue_initial_id;
@@ -715,22 +843,26 @@ rrc_eNB_send_S1AP_NAS_FIRST_REQ(
     rrc_ue_s1ap_ids_p->ue_rnti        = ctxt_pP->rnti;
 
     h_rc = hashtable_insert(RC.rrc[ctxt_pP->module_id]->initial_id2_s1ap_ids,
-    		               (hash_key_t)ue_context_pP->ue_context.ue_initial_id,
-    		               rrc_ue_s1ap_ids_p);
+    		                (hash_key_t)ue_context_pP->ue_context.ue_initial_id,
+    		                rrc_ue_s1ap_ids_p);
+
     if (h_rc != HASH_TABLE_OK) {
       LOG_E(S1AP, "[eNB %d] Error while hashtable_insert in initial_id2_s1ap_ids ue_initial_id %u\n",
-    		  ctxt_pP->module_id, ue_context_pP->ue_context.ue_initial_id);
+        ctxt_pP->module_id, 
+        ue_context_pP->ue_context.ue_initial_id);
     }
 
     /* Assume that cause is coded in the same way in RRC and S1ap, just check that the value is in S1ap range */
     AssertFatal(ue_context_pP->ue_context.establishment_cause < RRC_CAUSE_LAST,
-    "Establishment cause invalid (%jd/%d) for eNB %d!",
-    ue_context_pP->ue_context.establishment_cause, RRC_CAUSE_LAST, ctxt_pP->module_id);
+      "Establishment cause invalid (%jd/%d) for eNB %d!",
+      ue_context_pP->ue_context.establishment_cause, 
+      RRC_CAUSE_LAST, 
+      ctxt_pP->module_id);
 
     S1AP_NAS_FIRST_REQ (message_p).establishment_cause = ue_context_pP->ue_context.establishment_cause;
 
-    /* Forward NAS message */S1AP_NAS_FIRST_REQ (message_p).nas_pdu.buffer =
-    rrcConnectionSetupComplete->dedicatedInfoNAS.buf;
+    /* Forward NAS message */ 
+    S1AP_NAS_FIRST_REQ (message_p).nas_pdu.buffer = rrcConnectionSetupComplete->dedicatedInfoNAS.buf;
     S1AP_NAS_FIRST_REQ (message_p).nas_pdu.length = rrcConnectionSetupComplete->dedicatedInfoNAS.size;
 
     extract_imsi(S1AP_NAS_FIRST_REQ (message_p).nas_pdu.buffer,
@@ -748,12 +880,13 @@ rrc_eNB_send_S1AP_NAS_FIRST_REQ(
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.presenceMask |= UE_IDENTITIES_s_tmsi;
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.s_tmsi.mme_code = s_TMSI->mme_code;
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.s_tmsi.m_tmsi = s_TMSI->m_tmsi;
+
         LOG_I(S1AP, "[eNB %d] Build S1AP_NAS_FIRST_REQ with s_TMSI: MME code %u M-TMSI %u ue %x\n",
             ctxt_pP->module_id,
             S1AP_NAS_FIRST_REQ (message_p).ue_identity.s_tmsi.mme_code,
             S1AP_NAS_FIRST_REQ (message_p).ue_identity.s_tmsi.m_tmsi,
             ue_context_pP->ue_context.rnti);
-      }
+      } // end if S-TMSI presence
 
       /* selected_plmn_identity: IE is 1-based, convert to 0-based (C array) */
       int selected_plmn_identity = rrcConnectionSetupComplete->selectedPLMN_Identity - 1;
@@ -769,31 +902,33 @@ rrc_eNB_send_S1AP_NAS_FIRST_REQ(
           if ((r_mme->plmn_Identity->mcc != NULL) && (r_mme->plmn_Identity->mcc->list.count > 0)) {
             /* Use first indicated PLMN MCC if it is defined */
             S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mcc = *r_mme->plmn_Identity->mcc->list.array[selected_plmn_identity];
+            
             LOG_I(S1AP, "[eNB %d] Build S1AP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MCC %u ue %x\n",
-                ctxt_pP->module_id,
-                S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mcc,
-                ue_context_pP->ue_context.rnti);
+              ctxt_pP->module_id,
+              S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mcc,
+              ue_context_pP->ue_context.rnti);
           }
 
           if (r_mme->plmn_Identity->mnc.list.count > 0) {
             /* Use first indicated PLMN MNC if it is defined */
             S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc = *r_mme->plmn_Identity->mnc.list.array[selected_plmn_identity];
+            
             LOG_I(S1AP, "[eNB %d] Build S1AP_NAS_FIRST_REQ adding in s_TMSI: GUMMEI MNC %u ue %x\n",
-                  ctxt_pP->module_id,
-                  S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc,
-                  ue_context_pP->ue_context.rnti);
+              ctxt_pP->module_id,
+              S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc,
+              ue_context_pP->ue_context.rnti);
           }
-        } else {
+
+        } else { // end if plmn_Identity != NULL
           S1AP_NAS_FIRST_REQ(message_p).ue_identity.gummei.mcc = rrc->configuration.mcc[selected_plmn_identity];
           S1AP_NAS_FIRST_REQ(message_p).ue_identity.gummei.mnc = rrc->configuration.mnc[selected_plmn_identity];
           S1AP_NAS_FIRST_REQ(message_p).ue_identity.gummei.mnc_len = rrc->configuration.mnc_digit_length[selected_plmn_identity];
-        }
+        } // end else (plmn_Identity == NULL)
 
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mme_code     = BIT_STRING_to_uint8 (&r_mme->mmec);
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mme_group_id = BIT_STRING_to_uint16 (&r_mme->mmegi);
 
-        MSC_LOG_TX_MESSAGE(
-          MSC_S1AP_ENB,
+        MSC_LOG_TX_MESSAGE(MSC_S1AP_ENB,
           MSC_S1AP_MME,
           (const char *)&message_p->ittiMsg.s1ap_nas_first_req,
           sizeof(s1ap_nas_first_req_t),
@@ -807,11 +942,15 @@ rrc_eNB_send_S1AP_NAS_FIRST_REQ(
               S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mme_code,
               S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mme_group_id,
               ue_context_pP->ue_context.rnti);
-      }
-    }
+
+      } // end if MME info present
+    } // end "Fill UE identities with available information" sub-part
+
     itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, message_p);
   }
+
 #else
+
   {
     s1ap_eNB_new_data_request (
       ctxt_pP->module_id,
@@ -821,6 +960,7 @@ rrc_eNB_send_S1AP_NAS_FIRST_REQ(
       rrcConnectionSetupComplete->dedicatedInfoNAS.
       size);
   }
+
 #endif
 }
 
@@ -846,7 +986,6 @@ rrc_eNB_process_S1AP_DOWNLINK_NAS(
   ue_initial_id = S1AP_DOWNLINK_NAS (msg_p).ue_initial_id;
   eNB_ue_s1ap_id = S1AP_DOWNLINK_NAS (msg_p).eNB_ue_s1ap_id;
   ue_context_p = rrc_eNB_get_ue_context_from_s1ap_ids(instance, ue_initial_id, eNB_ue_s1ap_id);
-
 
   LOG_I(RRC, "[eNB %d] Received %s: ue_initial_id %d, eNB_ue_s1ap_id %d\n",
         instance,
@@ -1250,11 +1389,12 @@ rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_COMMAND(
 
     rrc_ue_s1ap_ids = rrc_eNB_S1AP_get_ue_ids(RC.rrc[instance], UE_INITIAL_ID_INVALID, eNB_ue_s1ap_id);
 
-    if (NULL != rrc_ue_s1ap_ids) {
+    if (rrc_ue_s1ap_ids != NULL) {
       rrc_eNB_S1AP_remove_ue_ids(RC.rrc[instance], rrc_ue_s1ap_ids);
     }
 
     return -1;
+
   } else {
     ue_context_p->ue_context.ue_release_timer_s1 = 0;
 
