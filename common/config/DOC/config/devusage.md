@@ -5,10 +5,10 @@ The configuration module objectives are
 
 As a developer you may need to look at these sections:
 
-* [add parameters in an existing section](devusage/addaparam)
-* [add a parameter set, in a new section](devusage/addparamset)
-* [configuration module API](devusage/api) 
-* [configuration module public structures](devusage/struct)  
+* [add parameters in an existing section](devusage/addaparam.md)
+* [add a parameter set, in a new section](devusage/addparamset.md)
+* [configuration module API](devusage/api.md) 
+* [configuration module public structures](devusage/struct.md)  
 
 Whatever your need is, configuration module usage examples can be found in oai sources:  
 *  complex example, using all the configuration module functionalities, including parameter checking: 
