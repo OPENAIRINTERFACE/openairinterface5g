@@ -5591,10 +5591,10 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 	
   //printf(">>> at phy_procedures_nrUE_RX, nr_ue_pdcch_procedures init, dlsch->active=%d\n",
   //        ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active); 
-  if (nr_ue_pdcch_procedures(eNB_id,ue,proc,abstraction_flag) == -1) {
+  /*if (nr_ue_pdcch_procedures(eNB_id,ue,proc,abstraction_flag) == -1) {
     LOG_E(PHY,"[UE  %d] Frame %d, nr_tti_rx %d: Error in pdcch procedures\n",ue->Mod_id,frame_rx,nr_tti_rx);
     return(-1);
-  }
+  }*/
   //for (int m=0;m<1000;m++) printf("%d",m); 
   //printf("\n>>> at phy_procedures_nrUE_RX, nr_ue_pdcch_procedures end, dlsch->active=%d\n",
   //        ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active); 
@@ -5654,7 +5654,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 //#if 0
   LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
   //set active for testing, to be removed
-  //if (nr_tti_rx==2){
+  if (nr_tti_rx==2){
   //to update from pdsch config
   nr_gold_pdsch(ue,2,0, 1);
 
@@ -5665,7 +5665,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   nr_slot_fep(ue,
           2,  //to be updated from higher layer
           nr_tti_rx,
-          ue->ssb_offset,
+          0,
           0,
           1,
  		  NR_PDSCH_EST);
@@ -5675,7 +5675,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   
   
 	  ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active = 1;
-  //}
+  }
 
 #if UE_TIMING_TRACE
   start_meas(&ue->generic_stat);
