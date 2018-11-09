@@ -131,16 +131,19 @@ int main(int argc, char **argv)
   int ret;
   int run_initial_sync=0;
 
+  int loglvl=OAILOG_WARNING;
+
+  float target_error_rate = 0.01;
+
   cpuf = get_cpu_freq_GHz();
 
   if ( load_configmodule(argc,argv) == 0) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
 
-  logInit();
   randominit(0);
 
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:N:F:GR:dP:I")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:N:F:GR:dP:IL:")) != -1) {
     switch (c) {
     case 'f':
       write_output_file=1;
@@ -295,7 +298,13 @@ int main(int argc, char **argv)
       
     case 'I':
       run_initial_sync=1;
+      target_error_rate=0.1;
       break;
+
+    case 'L':
+      loglvl = atoi(optarg);
+      break;
+
     default:
     case 'h':
       printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
@@ -325,9 +334,12 @@ int main(int argc, char **argv)
     }
   }
 
+  logInit();
+  set_glog(loglvl);
+  T_stdout = 1;
+
   if (snr1set==0)
     snr1 = snr0+10;
-
 
   printf("Initializing gNodeB for mu %d, N_RB_DL %d\n",mu,N_RB_DL);
 
@@ -379,7 +391,7 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
-  frame_length_complex_samples = frame_parms->samples_per_subframe;
+  frame_length_complex_samples = frame_parms->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
   frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP;
 
   s_re = malloc(2*sizeof(double*));
@@ -432,34 +444,46 @@ int main(int argc, char **argv)
     gNB->pbch_configured = 1;
     for (int i=0;i<4;i++) gNB->pbch_pdu[i]=i+1;
     nr_common_signal_procedures (gNB,frame,subframe);
-  }
 
-  /*  
-  LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],frame_length_complex_samples_no_prefix,1,1);
-  if (gNB->frame_parms.nb_antennas_tx>1)
-    LOG_M("txsigF1.m","txsF1", gNB->common_vars.txdataF[1],frame_length_complex_samples_no_prefix,1,1);
-  */
-  //TODO: loop over slots
-  for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
-    if (gNB_config->subframe_config.dl_cyclic_prefix_type.value == 1) {
-      PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
-		   txdata[aa],
-		   frame_parms->ofdm_symbol_size,
-		   12,
-		   frame_parms->nb_prefix_samples,
-		   CYCLIC_PREFIX);
-    } else {
-      nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
-			   txdata[aa],
-			   14,
-			   frame_parms);
+	LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],frame_length_complex_samples_no_prefix,1,1);
+	if (gNB->frame_parms.nb_antennas_tx>1)
+	LOG_M("txsigF1.m","txsF1", gNB->common_vars.txdataF[1],frame_length_complex_samples_no_prefix,1,1);
+
+    //TODO: loop over slots
+    for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
+      if (gNB_config->subframe_config.dl_cyclic_prefix_type.value == 1) {
+	PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
+		     txdata[aa],
+		     frame_parms->ofdm_symbol_size,
+		     12,
+		     frame_parms->nb_prefix_samples,
+		     CYCLIC_PREFIX);
+      } else {
+	nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
+			     txdata[aa],
+			     14,
+			     frame_parms);
+      }
+    }
+  } else {
+    printf("Reading %d samples from file to antenna buffer %d\n",frame_length_complex_samples,0);
+    
+    if (fread(txdata[0],
+	      sizeof(int32_t),
+	      frame_length_complex_samples,
+	      input_fd) != frame_length_complex_samples) {
+      printf("error reading from file\n");
+      exit(-1);
     }
   }
-  /*
+
   LOG_M("txsig0.m","txs0", txdata[0],frame_length_complex_samples,1,1);
   if (gNB->frame_parms.nb_antennas_tx>1)
     LOG_M("txsig1.m","txs1", txdata[1],frame_length_complex_samples,1,1);
-  */
+
+  if (output_fd) 
+    fwrite(txdata[0],sizeof(int32_t),frame_length_complex_samples,output_fd);
+
   int txlev = signal_energy(&txdata[0][5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
 			    frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
 
@@ -549,6 +573,11 @@ int main(int argc, char **argv)
 
     printf("SNR %f : n_errors (negative CRC) = %d/%d\n", SNR,n_errors,n_trials);
 
+    if ((float)n_errors/(float)n_trials <= target_error_rate) {
+      printf("PBCH test OK\n");
+      break;
+    }
+      
     if (n_trials==1)
       break;
 
@@ -568,8 +597,11 @@ int main(int argc, char **argv)
   free(r_im);
   free(txdata);
 
-  if (write_output_file)
+  if (output_fd)
     fclose(output_fd);
+
+  if (input_fd)
+    fclose(input_fd);
 
   return(n_errors);
 
