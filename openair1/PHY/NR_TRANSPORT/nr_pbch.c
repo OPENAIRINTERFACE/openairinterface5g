@@ -207,10 +207,6 @@ uint8_t nr_init_pbch_interleaver(uint8_t *interleaver) {
       *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_ssb++);
 }
 
-/*This pattern takes into account the adjustments for the field specific counters j_sfn, j_hrf, j_ssb and j_other*/
-//uint8_t nr_pbch_payload_interleaving_pattern[32] = {1,4,9,11,12,13,14,15,19,20,21,22,25,26,27,28,
-//                                                    29,31,16,23,18,17,8,30,10,6,24,7,0,5,3,2};
-
 int nr_generate_pbch(NR_gNB_PBCH *pbch,
                      t_nrPolar_paramsPtr polar_params,
                      uint8_t *pbch_pdu,
@@ -274,9 +270,9 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 
   for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++) {
     pbch->pbch_a_interleaved |= ((in>>i)&1)<<(*(interleaver+i));
-//#ifdef DEBUG_PBCH_ENCODING
+#ifdef DEBUG_PBCH_ENCODING
   printf("i %d in 0x%08x out 0x%08x ilv %d (in>>i)&1) %d\n", i, in, pbch->pbch_a_interleaved, *(interleaver+i), (in>>i)&1);
-//#endif
+#endif
   }
 
 #ifdef DEBUG_PBCH_ENCODING
