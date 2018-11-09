@@ -14,7 +14,8 @@
    3.  [LTE UE RLC Layer](#lte-ue-rlc-layer)
    4.  [LTE UE PDCP Layer](#lte-ue-pdcp-layer)
    5.  [LTE UE RRC Layer](#lte-ue-rrc-layer)
-3. [OpenAirInterface 5G-NR Feature Set](#openairinterface-5g-nr-feature-set)
+3. [OpenAirInterface Functional Split](#openairinterface-functional-split)
+4. [OpenAirInterface 5G-NR Feature Set](#openairinterface-5g-nr-feature-set)
    1. [General Parameters](#general-parameters)
    2. [gNB Features](#gnb-features)
       1. [gNB Physical Layer](#gnb-phy-layer)
@@ -177,6 +178,18 @@ The RRC layer is based on **3GPP 36.331** v14.3.0 and implements the following f
 
 - System Information decoding
 - RRC connection establishment
+
+# OpenAirInterface Functional Split #
+
+-  RCC: Radio-Cloud Center
+-  RAU: Radio-Access Unit
+-  RRU: Remote Radio-Unit
+
+![Functional Split Architecture](./oai_enb_func_split_arch.png)
+
+-  IF4.5 / IF5 : similar to IEEE P1914.1
+-  FAPI (IF2)  : specified by Small Cell Forum (open-nFAPI implementation)
+-  IF1         : F1 in 3GPP Release 15
 
 # OpenAirInterface 5G-NR Feature Set #
 
