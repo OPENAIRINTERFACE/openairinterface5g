@@ -14,6 +14,14 @@
    3.  [LTE UE RLC Layer](#lte-ue-rlc-layer)
    4.  [LTE UE PDCP Layer](#lte-ue-pdcp-layer)
    5.  [LTE UE RRC Layer](#lte-ue-rrc-layer)
+3. [OpenAirInterface 5G-NR Feature Set](#openairinterface-5g-nr-feature-set)
+   1. [General Parameters](#general-parameters)
+   2. [gNB Features](#gnb-features)
+      1. [gNB Physical Layer](#gnb-phy-layer)
+      2. [gNB Higher Layers](#gnb-higher-layers)
+   3. [NR UE Features](#nr-ue-features)
+      1. [NR UE Physical Layer](#nr-ue-phy-layer)
+      2. [NR UE Higher Layers](#nr-ue-higher-layers)
 
 # OpenAirInterface Block diagram #
 
@@ -169,3 +177,53 @@ The RRC layer is based on **3GPP 36.331** v14.3.0 and implements the following f
 
 - System Information decoding
 - RRC connection establishment
+
+# OpenAirInterface 5G-NR Feature Set #
+
+## General Parameters ##
+
+The following features are valid for the gNB and the 5G-NR UE.
+
+*  Static TDD, 
+*  Normal CP
+*  30 kHz subcarrier spacing
+*  Bandwidths up to 80MHz (217 Physical Resource Blocks)
+*  Single antenna port (single beam)
+*  Slot format: 14 OFDM symbols in UL or DL
+
+## gNB Features ##
+
+### gNB PHY Layer ###
+
+*  Generation of PSS/SSS/PBCH for a single beam
+*  Generation of PDCCH for SIB1 (as defined in the MIB)
+   -  (including generation of DCI, polar encoding, scrambling, modulation, RB mapping, etc). 
+*  Generation of PDSCH 
+   -  (including Segmentation, LDPC encoding, rate matching, scrambling, modulation, RB mapping, etc).
+
+### gNB higher Layers ###
+  
+- NR RRC (38.331) Rel 15 messages using new asn1c 
+- LTE RRC (36.331) also updated to Rel 15 
+- Generation of MIB
+- Application to read configuration file and program gNB RRC
+- RRC -> MAC configuration
+- MAC -> PHY configuration (using NR FAPI P5 interface)
+- FAPI P7 interface for BCH PDU, DCI PDU, PDSCH PDU
+
+For more details see [this document](https://gitlab.eurecom.fr/oai/openairinterface5g/uploads/ba5368448d627743a28c770c29e8978e/OAI_Software_Architecture_for_Dual_Connectivity_in_E-UTRA_and_5G-NR_and_nFAPI_for_MAC-PHY_Interface.docx)
+
+## NR UE Features ##
+
+### NR UE PHY Layer ###
+
+- initial synchronization (single-beam only)
+- PBCH RX
+- PDCCH RX 
+- PDSCH RX
+
+### NR UE higher Layers ###
+
+For more details see [this document](https://gitlab.eurecom.fr/oai/openairinterface5g/uploads/f7386f3a64806fd6b2ac1fc3d0252fff/UE_FAPI-like_interface.docx)
+
+
