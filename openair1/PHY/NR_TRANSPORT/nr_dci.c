@@ -331,9 +331,5 @@ printf("\n");
     }
   }
 
-#ifdef DEBUG_DCI
-  write_output("txdataF_dci.m", "txdataF_dci", txdataF[0], frame_parms.samples_per_frame_wCP>>1, 1, 1);
-#endif
-
   return 0;
 }

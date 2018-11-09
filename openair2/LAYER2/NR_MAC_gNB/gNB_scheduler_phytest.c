@@ -142,8 +142,9 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   dlsch_pdu_rel15->n_prb,
   dlsch_pdu_rel15->start_symbol,
   dlsch_pdu_rel15->nb_symbols,
+  dlsch_pdu_rel15->nb_layers,
   dlsch_pdu_rel15->nb_codewords,
-  dlsch_pdu_rel15->nb_layers);
+  dlsch_pdu_rel15->mcs_idx);
 
   dl_req->number_dci++;
   dl_req->number_pdsch_rnti++;

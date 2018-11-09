@@ -19,13 +19,13 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/LTE_TRANSPORT/dlsch_decoding.c
-* \brief Top-level routines for decoding  Turbo-coded (DLSCH) transport channels from 36-212, V8.6 2009-03
-* \author R. Knopp
-* \date 2011
+/*! \file PHY/NR_TRANSPORT/dlsch_decoding.c
+* \brief Top-level routines for transmission of the PDSCH 38211 v 15.2.0
+* \author Guy De Souza
+* \date 2018
 * \version 0.1
 * \company Eurecom
-* \email: knopp@eurecom.fr
+* \email: desouza@eurecom.fr
 * \note
 * \warning
 */
@@ -36,7 +36,6 @@
 
 //#define DEBUG_DLSCH
 //#define DEBUG_DLSCH_MAPPING
-//#define DEBUG_FILE_OUTPUT
 
 uint8_t mod_order[5] = {1, 2, 4, 6, 8};
 uint16_t mod_offset[5] = {1,3,7,23,87};
@@ -290,7 +289,7 @@ for (int l=0; l<rel15->nb_layers; l++)
   uint8_t dmrs_type = config.pdsch_config.dmrs_type.value;
   l0 = get_l0(dmrs_type, 2);//config.pdsch_config.dmrs_typeA_position.value);
   nr_modulation(pdsch_dmrs[l0][0], n_dmrs, MOD_QPSK, mod_dmrs); // currently only codeword 0 is modulated
-//#ifdef DEBUG_DLSCH
+#ifdef DEBUG_DLSCH
 printf("DMRS modulation (single symbol %d, %d symbols, type %d):\n", l0, n_dmrs, dmrs_type);
 for (int i=0; i<n_dmrs>>3; i++) {
   for (int j=0; j<8; j++) {
@@ -298,19 +297,23 @@ for (int i=0; i<n_dmrs>>3; i++) {
   }
   printf("\n");
 }
-//#endif
+#endif
 
   /// Resource mapping
   AssertFatal(rel15->nb_layers<=config.rf_config.tx_antenna_ports.value, "Not enough Tx antennas (%d) for %d layers\n",\
    config.rf_config.tx_antenna_ports.value, rel15->nb_layers);
 
     // Non interleaved VRB to PRB mapping
-  uint8_t start_sc = frame_parms.first_carrier_offset + rel15->start_prb*NR_NB_SC_PER_RB +\
-  ((pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_COMMON) && (pdcch_params.dci_format == NFAPI_NR_DL_DCI_FORMAT_1_0))?\
-       ((frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB + pdcch_params.rb_offset)*NR_NB_SC_PER_RB) : 0;
+  uint16_t start_sc = frame_parms.first_carrier_offset + frame_parms.ssb_start_subcarrier;
+  if (start_sc >= frame_parms.ofdm_symbol_size)
+    start_sc -= frame_parms.ofdm_symbol_size;
+ /*rel15->start_prb*NR_NB_SC_PER_RB +*/
+  //((pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_COMMON) && (pdcch_params.dci_format == NFAPI_NR_DL_DCI_FORMAT_1_0))?\
+   //    ((frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB + pdcch_params.rb_offset)*NR_NB_SC_PER_RB) : 0;
 
 #ifdef DEBUG_DLSCH_MAPPING
-printf("PDSCH resource mapping started (start SC %d\tstart symbol %d\tN_PRB %d\tnb_symbols %d)\n", start_sc, rel15->start_symbol, rel15->n_prb, rel15->nb_symbols);
+printf("PDSCH resource mapping started (start SC %d\tstart symbol %d\tN_PRB %d\tnb_symbols %d)\n",
+start_sc, rel15->start_symbol, rel15->n_prb, rel15->nb_symbols);
 #endif
 
   for (int ap=0; ap<rel15->nb_layers; ap++) {
@@ -322,22 +325,24 @@ printf("PDSCH resource mapping started (start SC %d\tstart symbol %d\tN_PRB %d\t
     l_prime[0] = 0; // single symbol ap 0
     uint8_t dmrs_symbol = l0+l_prime[0];
 #ifdef DEBUG_DLSCH_MAPPING
-printf("DMRS params for ap %d: Wt %d %d \t Wf %d %d \t delta %d \t l_prime %d \t l0 %d\tDMRS symbol %d\n", ap, Wt[0], Wt[1], Wf[0], Wf[1], delta, l_prime[0], l0, dmrs_symbol);
+printf("DMRS params for ap %d: Wt %d %d \t Wf %d %d \t delta %d \t l_prime %d \t l0 %d\tDMRS symbol %d\n",
+ap, Wt[0], Wt[1], Wf[0], Wf[1], delta, l_prime[0], l0, dmrs_symbol);
 #endif
     uint8_t k_prime=0;
-    uint16_t m=0, n=0, dmrs_idx=0;;
+    uint16_t m=0, n=0, dmrs_idx=0, k=0;
 
-    for (int l=rel15->start_symbol; l<rel15->start_symbol+rel15->nb_symbols; l++)
-      for (int k=start_sc; k<rel15->n_prb*NR_NB_SC_PER_RB; k++) {
-        if (k >= frame_parms.ofdm_symbol_size)
-          k -= frame_parms.ofdm_symbol_size;
-
-        if ((l == dmrs_symbol) && (k == (start_sc+get_pdsch_dmrs_idx(n, k_prime, delta, dmrs_type)))) {
-          ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (Wt[l_prime[0]]*Wf[k_prime]*amp*mod_dmrs[dmrs_idx<<1]) >> 15;
-          ((int16_t*)txdataF[ap])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (Wt[l_prime[0]]*Wf[k_prime]*amp*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
+    for (int l=rel15->start_symbol; l<rel15->start_symbol+rel15->nb_symbols; l++) {
+      k = start_sc;
+      for (int i=0; i<rel15->n_prb*NR_NB_SC_PER_RB; i++) {
+// Note the dmrs index modulo 2048 only works for that symbol size -- to be fixed soon
+// Also the different amplitudes are for debug purposes and temporary
+        if ((l == dmrs_symbol) && (k == ((start_sc+get_pdsch_dmrs_idx(n, k_prime, delta, dmrs_type))&((1<<11)-1)))) {
+          ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (Wt[l_prime[0]]*Wf[k_prime]*(amp>>1)*mod_dmrs[dmrs_idx<<1]) >> 15;
+          ((int16_t*)txdataF[ap])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (Wt[l_prime[0]]*Wf[k_prime]*(amp>>1)*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
 #ifdef DEBUG_DLSCH_MAPPING
 printf("dmrs_idx %d\t l %d \t k %d \t k_prime %d \t n %d \t txdataF: %d %d\n",
-dmrs_idx, l, k, k_prime, n, ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1], ((int16_t*)txdataF[ap])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1]);
+dmrs_idx, l, k, k_prime, n, ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1],
+((int16_t*)txdataF[ap])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1]);
 #endif
           dmrs_idx++;
           k_prime++;
@@ -347,20 +352,20 @@ dmrs_idx, l, k, k_prime, n, ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_s
 
         else {
 
-          ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (amp * tx_layers[ap][m<<1]) >> 15;
-          ((int16_t*)txdataF[ap])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (amp * tx_layers[ap][(m<<1) + 1]) >> 15;
+          ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1] = ((amp<<1) * tx_layers[ap][m<<1]) >> 15;
+          ((int16_t*)txdataF[ap])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = ((amp<<1) * tx_layers[ap][(m<<1) + 1]) >> 15;
 #ifdef DEBUG_DLSCH_MAPPING
 printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
-m, l, k, ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1], ((int16_t*)txdataF[ap])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1]);
+m, l, k, ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1],
+((int16_t*)txdataF[ap])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1]);
 #endif
           m++;
         }
+        if (++k >= frame_parms.ofdm_symbol_size)
+          k -= frame_parms.ofdm_symbol_size;
       }
+    }
   }
-
-#ifdef DEBUG_FILE_OUTPUT
-  write_output("txdataF_dlsch.m", "txdataF_dlsch", txdataF[0], frame_parms.samples_per_subframe_wCP>>1, 1, 1);
-#endif
 
   return 0;
 }
