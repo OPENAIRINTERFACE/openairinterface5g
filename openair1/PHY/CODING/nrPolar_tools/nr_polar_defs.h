@@ -115,7 +115,8 @@ struct nrPolar_params {
   int     *rm_tab;
   uint64_t cprime_tab0[8][256];
   uint64_t cprime_tab1[8][256];
-  uint64_t B_tab[8][256];
+  uint64_t B_tab0[8][256];
+  uint64_t B_tab1[8][256];
   uint32_t* crc256Table;
   uint8_t **extended_crc_generator_matrix;
   //lowercase: bits, Uppercase: Bits stored in bytes

@@ -1042,9 +1042,9 @@ int8_t polar_decoder_dci(double *input,
 void init_polar_deinterleaver_table(t_nrPolar_params *polarParams) {
 
   AssertFatal(polarParams->K > 32, "K = %d < 33, is not supported yet\n",polarParams->K);
-  AssertFatal(polarParams->K < 65, "K = %d > 64, is not supported yet\n",polarParams->K);
+  AssertFatal(polarParams->K < 129, "K = %d > 128, is not supported yet\n",polarParams->K);
   
-  int bit_i,ip;
+  int bit_i,ip,ipmod64;
 
   int numbytes = polarParams->K>>3;
   int residue = polarParams->K&7;
@@ -1055,10 +1055,12 @@ void init_polar_deinterleaver_table(t_nrPolar_params *polarParams) {
     else numbits=residue;
     for (int i=0;i<numbits;i++) {
       ip=polarParams->interleaving_pattern[(8*byte)+i];
-      AssertFatal(ip<64,"ip = %d\n",ip);
+      ipmod64 = ip&63;
+      AssertFatal(ip<128,"ip = %d\n",ip);
       for (int val=0;val<256;val++) {
 	bit_i=(val>>i)&1;
-	polarParams->B_tab[byte][val] |= (((uint64_t)bit_i)<<ip);				
+	if (ip<64) polarParams->B_tab0[byte][val] |= (((uint64_t)bit_i)<<ipmod64);
+	else       polarParams->B_tab1[byte][val] |= (((uint64_t)bit_i)<<ipmod64);
       }
     }
   }
@@ -1084,28 +1086,53 @@ int8_t polar_decoder_int16(int16_t *input,
 
 
   //Extract the information bits (û to ĉ)
-  uint64_t Cprime=0;
-  uint64_t B;
-  for (int i=0;i<polarParams->K;i++) Cprime = Cprime | ((uint64_t)polarParams->nr_polar_U[polarParams->Q_I_N[i]])<<i;
+  uint64_t Cprime[4]={0,0,0,0};
+  uint64_t B[4]={0,0,0,0};
+  for (int i=0;i<polarParams->K;i++) Cprime[i>>6] = Cprime[i>>6] | ((uint64_t)polarParams->nr_polar_U[polarParams->Q_I_N[i]])<<(i&63);
 
   //Deinterleaving (ĉ to b)
-  uint8_t *Cprimebyte = (uint8_t*)&Cprime;
-  B = polarParams->B_tab[0][Cprimebyte[0]] |
-      polarParams->B_tab[1][Cprimebyte[1]] |
-      polarParams->B_tab[2][Cprimebyte[2]] |
-      polarParams->B_tab[3][Cprimebyte[3]] |
-      polarParams->B_tab[4][Cprimebyte[4]] |
-      polarParams->B_tab[5][Cprimebyte[5]] |
-      polarParams->B_tab[6][Cprimebyte[6]] |
-      polarParams->B_tab[7][Cprimebyte[7]];
+  uint8_t *Cprimebyte = (uint8_t*)Cprime;
+  if (polarParams->K<65) {
+    B[0] = polarParams->B_tab0[0][Cprimebyte[0]] |
+      polarParams->B_tab0[1][Cprimebyte[1]] |
+      polarParams->B_tab0[2][Cprimebyte[2]] |
+      polarParams->B_tab0[3][Cprimebyte[3]] |
+      polarParams->B_tab0[4][Cprimebyte[4]] |
+      polarParams->B_tab0[5][Cprimebyte[5]] |
+      polarParams->B_tab0[6][Cprimebyte[6]] |
+      polarParams->B_tab0[7][Cprimebyte[7]];
+  }
+  if (polarParams->K<129) {
+    for (int k=0;k<polarParams->K;k++) {
+      B[0] |= polarParams->B_tab0[k][Cprimebyte[k]];
+      B[1] |= polarParams->B_tab1[k][Cprimebyte[k]];
+    }
+  }
 
-#if 0
-  printf("Decoded B %llx (crc %x,B>>payloadBits %x)\n",B,crc24c((uint8_t*)&B,polarParams->payloadBits)>>8,
-   	 (uint32_t)(B>>polarParams->payloadBits));
-#endif
   
-  if ((uint64_t)(crc24c((uint8_t*)&B,polarParams->payloadBits)>>8) == (B>>polarParams->payloadBits)) {
-    *out = B & (((uint64_t)1<<polarParams->payloadBits)-1);
+  int len=polarParams->payloadBits;
+  int len_mod64=len&63;
+  int quadwpos=len>>6;
+  int crclen = polarParams->crcParityBits;
+  int quadwpos2  = polarParams->K>>6;
+  uint64_t rxcrc;
+  if (len_mod64==0) rxcrc = 0;
+  else              rxcrc = B[quadwpos]>>len_mod64;
+
+  if (quadwpos2>quadwpos) { // there are extra CRC bits in the next quadword
+    rxcrc |= (B[quadwpos2]<<(64-len_mod64));
+  }
+#if 0
+  printf("Decoded B %llx%llx (crc %x,B>>payloadBits %x)\n",B[1],B[0],crc24c((uint8_t*)&B,polarParams->payloadBits)>>8,
+   	 (uint32_t)rxcrc);
+#endif
+  if ((uint64_t)(crc24c((uint8_t*)&B[0],polarParams->payloadBits)>>8) == rxcrc) {
+  
+    int k=0;
+    // copy quadwords without CRC directly
+    for (k=0;k<polarParams->payloadBits/64;k++) out[k]=B[k];
+  // copy last one
+    out[k] = B[k] & (((uint64_t)1<<(polarParams->payloadBits&63))-1);
     return(0);
   }
 
