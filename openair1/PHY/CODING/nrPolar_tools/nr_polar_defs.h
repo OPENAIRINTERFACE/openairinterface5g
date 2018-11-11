@@ -148,9 +148,9 @@ void polar_encoder_dci(uint32_t *in,
 					   uint16_t n_RNTI);
 
 void polar_encoder_fast(uint64_t *A,
-		uint32_t *out,
-		int32_t crcmask,
-		t_nrPolar_paramsPtr polarParams);
+			uint32_t *out,
+			int32_t crcmask,
+			t_nrPolar_paramsPtr polarParams);
 
 int8_t polar_decoder(double *input,
 		 	 	 	 uint8_t *output,
@@ -158,9 +158,9 @@ int8_t polar_decoder(double *input,
 					 uint8_t listSize,
 					 uint8_t pathMetricAppr);
 
-int8_t polar_decoder_int16(int16_t *input,
-			   uint64_t *out,
-			   t_nrPolar_params *polarParams);
+uint32_t polar_decoder_int16(int16_t *input,
+			     uint64_t *out,
+			     t_nrPolar_params *polarParams);
 
 int8_t polar_decoder_aPriori(double *input,
 							 uint32_t *output,

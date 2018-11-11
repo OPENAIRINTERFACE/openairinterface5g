@@ -1070,9 +1070,9 @@ void init_polar_deinterleaver_table(t_nrPolar_params *polarParams) {
 
 }
 
-int8_t polar_decoder_int16(int16_t *input,
-			   uint64_t *out,
-			   t_nrPolar_params *polarParams)
+uint32_t polar_decoder_int16(int16_t *input,
+			     uint64_t *out,
+			     t_nrPolar_params *polarParams)
 {
   
 
@@ -1137,15 +1137,14 @@ int8_t polar_decoder_int16(int16_t *input,
 	 B[1],B[0],Cprime[1],Cprime[0],crc,
    	 rxcrc,polarParams->payloadBits);
 #endif
-  if (((uint64_t)crc) == rxcrc) {
-    int k=0;
-    // copy quadwords without CRC directly
-    for (k=0;k<polarParams->payloadBits/64;k++) out[k]=B[k];
+  int k=0;
+  // copy quadwords without CRC directly
+  for (k=0;k<polarParams->payloadBits/64;k++) out[k]=B[k];
   // copy last one
-    out[k] = B[k] & (((uint64_t)1<<(polarParams->payloadBits&63))-1);
-    return(0);
-  }
+  out[k] = B[k] & (((uint64_t)1<<(polarParams->payloadBits&63))-1);
 
-  else  return(-1);
+  return(crc^rxcrc);
+  
+
 
 }
