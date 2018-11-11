@@ -1055,6 +1055,9 @@ void init_polar_deinterleaver_table(t_nrPolar_params *polarParams) {
     else numbits=residue;
     for (int i=0;i<numbits;i++) {
       ip=polarParams->interleaving_pattern[(8*byte)+i];
+#if 1
+      printf("byte %d, i %d => ip %d\n",byte,i,ip);
+#endif
       ipmod64 = ip&63;
       AssertFatal(ip<128,"ip = %d\n",ip);
       for (int val=0;val<256;val++) {
@@ -1102,32 +1105,39 @@ int8_t polar_decoder_int16(int16_t *input,
       polarParams->B_tab0[6][Cprimebyte[6]] |
       polarParams->B_tab0[7][Cprimebyte[7]];
   }
-  if (polarParams->K<129) {
-    for (int k=0;k<polarParams->K;k++) {
+  else if (polarParams->K<129) {
+    int len = polarParams->K/8;
+    if ((polarParams->K&7) > 0) len++;
+    for (int k=0;k<len;k++) {
       B[0] |= polarParams->B_tab0[k][Cprimebyte[k]];
       B[1] |= polarParams->B_tab1[k][Cprimebyte[k]];
     }
   }
 
-  
+
   int len=polarParams->payloadBits;
   int len_mod64=len&63;
   int quadwpos=len>>6;
   int crclen = polarParams->crcParityBits;
   int quadwpos2  = polarParams->K>>6;
   uint64_t rxcrc;
+  uint32_t crc;
   if (len_mod64==0) rxcrc = 0;
   else              rxcrc = B[quadwpos]>>len_mod64;
 
   if (quadwpos2>quadwpos) { // there are extra CRC bits in the next quadword
     rxcrc |= (B[quadwpos2]<<(64-len_mod64));
   }
+  // clear everything but payload bits in last quadword
+  B[quadwpos]&=((((uint64_t)1)<<len_mod64)-1);
+  crc = crc24c((uint8_t*)B,polarParams->payloadBits)>>8;
 #if 0
-  printf("Decoded B %llx%llx (crc %x,B>>payloadBits %x)\n",B[1],B[0],crc24c((uint8_t*)&B,polarParams->payloadBits)>>8,
-   	 (uint32_t)rxcrc);
+  printf("A %llx B %llx|%llx Cprime %llx|%llx  (crc %x,rxcrc %llx %d)\n",
+	 B[quadwpos]&((((uint64_t)1)<<len_mod64)-1),
+	 B[1],B[0],Cprime[1],Cprime[0],crc,
+   	 rxcrc,polarParams->payloadBits);
 #endif
-  if ((uint64_t)(crc24c((uint8_t*)&B[0],polarParams->payloadBits)>>8) == rxcrc) {
-  
+  if (((uint64_t)crc) == rxcrc) {
     int k=0;
     // copy quadwords without CRC directly
     for (k=0;k<polarParams->payloadBits/64;k++) out[k]=B[k];

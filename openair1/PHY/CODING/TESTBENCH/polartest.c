@@ -98,8 +98,8 @@ int main(int argc, char *argv[]) {
 		aggregation_level = NR_POLAR_PBCH_AGGREGATION_LEVEL;
 	} else if (polarMessageType == 1) { //DCI
 		//testLength = nr_get_dci_size(params_rel15->dci_format, params_rel15->rnti_type, &fp->initial_bwp_dl, cfg);
-	  testLength = 64; //20;
-		coderLength = 108; //to be changed by aggregate level function.
+	  testLength = 41; //20;
+	  coderLength = 108*8; //to be changed by aggregate level function.
 	} else if (polarMessageType == -1) { //UCI
 		//testLength = ;
 		//coderLength = ;
@@ -325,8 +325,8 @@ int main(int argc, char *argv[]) {
 				printf("%d\n",(testInput[0]>>i)&1);*/
 
 
-
-
+			int len_mod64=currentPtr->payloadBits&63;
+			((uint64_t*)testInput)[currentPtr->payloadBits/64]&=((((uint64_t)1)<<len_mod64)-1);
 
 			start_meas(&timeEncoder);
 			if (decoder_int16==0)
@@ -391,7 +391,7 @@ int main(int argc, char *argv[]) {
 			} else {
 			  for (int j = 0; j < currentPtr->payloadBits; j++) {
 			    if (((estimatedOutput[0]>>j) & 1) != ((testInput[0]>>j) & 1)) nBitError++;
-			    
+			    //			    printf("bit %d: %d => %d\n",j,(testInput[0]>>j)&1,(estimatedOutput[0]>>j)&1);
 			  }
 			
 
@@ -424,7 +424,8 @@ int main(int argc, char *argv[]) {
 		printf("[ListSize=%d, Appr=%d] SNR=%+8.3f, BLER=%9.6f, BER=%12.9f, t_Encoder=%9.3fus, t_Decoder=%9.3fus\n",
 				decoderListSize, pathMetricAppr, SNR, ((double)blockErrorCumulative/iterations),
 				((double)bitErrorCumulative / (iterations*testLength)),
-				(timeEncoderCumulative/iterations),timeDecoderCumulative/iterations);
+		       (double)timeEncoder.diff/timeEncoder.trials/(cpu_freq_GHz*1000.0),(double)timeDecoder.diff/timeDecoder.trials/(cpu_freq_GHz*1000.0));
+		       //(timeEncoderCumulative/iterations),timeDecoderCumulative/iterations);
 
 		if (blockErrorCumulative==0 && bitErrorCumulative==0)
 		  break;
