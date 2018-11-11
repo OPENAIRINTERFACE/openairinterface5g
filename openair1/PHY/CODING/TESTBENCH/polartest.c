@@ -18,11 +18,8 @@ int main(int argc, char *argv[]) {
 
 	//Initiate timing. (Results depend on CPU Frequency. Therefore, might change due to performance variances during simulation.)
 	time_stats_t timeEncoder,timeDecoder;
-	time_stats_t polar_decoder_init,polar_rate_matching,decoding,bit_extraction,deinterleaving;
-	time_stats_t path_metric,sorting,update_LLR;
 	opp_enabled=1;
 	int decoder_int16=0;
-	int generate_optim_code=0;
 	cpu_freq_GHz = get_cpu_freq_GHz();
 	reset_meas(&timeEncoder);
 	reset_meas(&timeDecoder);
@@ -71,21 +68,20 @@ int main(int argc, char *argv[]) {
 			pathMetricAppr = (uint8_t) atoi(optarg);
 			break;
 
-  	        case 'q':
-		        decoder_int16=1;
-		        break;
+		case 'q':
+			decoder_int16 = 1;
+			break;
 
-    	        case 'g':
-		  generate_optim_code=1;
-                  iterations=1;
-		  SNRstart=-6.0;
-		  SNRstop =-6.0;
-		  decoder_int16=1;
-                  break;
+		case 'g':
+			iterations = 1;
+			SNRstart = -6.0;
+			SNRstop = -6.0;
+			decoder_int16 = 1;
+			break;
 
-	        case 'h':
-		  printf("./polartest -s SNRstart -d SNRinc -f SNRstop -m [0=PBCH|1=DCI|2=UCI] -i iterations -l decoderListSize -a pathMetricAppr -q (use fixed point decoder)\n");
-		  exit(-1);
+		case 'h':
+			printf("./polartest -s SNRstart -d SNRinc -f SNRstop -m [0=PBCH|1=DCI|2=UCI] -i iterations -l decoderListSize -a pathMetricAppr\n");
+			exit(-1);
 
 		default:
 			perror("[polartest.c] Problem at argument parsing with getopt");
@@ -147,18 +143,18 @@ int main(int argc, char *argv[]) {
     uint8_t testArrayLength = ceil(testLength / 32.0);
     uint8_t coderArrayLength = ceil(coderLength / 32.0);
 
-	uint32_t *testInput = malloc(sizeof(uint32_t) * testArrayLength); //generate randomly
-	uint32_t *encoderOutput = malloc(sizeof(uint32_t) * coderArrayLength);
-	uint32_t *estimatedOutput = malloc(sizeof(uint32_t) * testArrayLength); //decoder output
+	uint32_t testInput[testArrayLength]; //generate randomly
+	uint32_t encoderOutput[coderArrayLength];
+	uint32_t estimatedOutput[testArrayLength]; //decoder output
 	memset(testInput,0,sizeof(uint32_t) * testArrayLength);
 	memset(encoderOutput,0,sizeof(uint32_t) * coderArrayLength);
 	memset(estimatedOutput,0,sizeof(uint32_t) * testArrayLength);
 
-	uint8_t *encoderOutputByte = malloc(sizeof(uint8_t) * coderLength);
-	double *modulatedInput = malloc (sizeof(double) * coderLength); //channel input
-	double *channelOutput  = malloc (sizeof(double) * coderLength); //add noise
-	int16_t *channelOutput_int16;
-	if (decoder_int16 == 1) channelOutput_int16 = (int16_t*)malloc (sizeof(int16_t) * coderLength);
+	uint8_t encoderOutputByte[coderLength];
+	double modulatedInput[coderLength]; //channel input
+	double channelOutput[coderLength];  //add noise
+
+	int16_t channelOutput_int16[coderLength];
  
 	t_nrPolar_paramsPtr nrPolar_params = NULL, currentPtr = NULL;
 	nr_polar_init(&nrPolar_params, polarMessageType, testLength, aggregation_level);
@@ -209,6 +205,8 @@ int main(int argc, char *argv[]) {
 									 rnti);
 	printf("dci_estimation: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
 			dci_estimation[0], dci_estimation[1], dci_estimation[2], dci_estimation[3]);
+	free(encoder_outputByte);
+	free(channel_output);
 	return 0;
 #endif
 
@@ -268,7 +266,7 @@ int main(int argc, char *argv[]) {
     uint8_t nr_polar_A[32] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,1};
     uint8_t nr_polar_crc[24];
     uint8_t **crc_generator_matrix = crc24c_generator_matrix(32);
-	nr_matrix_multiplication_uint8_t_1D_uint8_t_2D(nr_polar_A,
+	nr_matrix_multiplication_uint8_1D_uint8_2D(nr_polar_A,
 												   crc_generator_matrix,
 												   nr_polar_crc,
 												   32,
@@ -325,6 +323,7 @@ int main(int argc, char *argv[]) {
 				printf("%d\n",(testInput[0]>>i)&1);*/
 
 
+
 			int len_mod64=currentPtr->payloadBits&63;
 			((uint64_t*)testInput)[currentPtr->payloadBits/64]&=((((uint64_t)1)<<len_mod64)-1);
 
@@ -332,7 +331,8 @@ int main(int argc, char *argv[]) {
 			if (decoder_int16==0)
 			  polar_encoder(testInput, encoderOutput, currentPtr);
 			else
-			  polar_encoder_fast((uint64_t*)testInput, (uint64_t*)encoderOutput,0, currentPtr);
+				polar_encoder_fast((uint64_t*)testInput, encoderOutput,0, currentPtr);
+			  //polar_encoder_fast((uint64_t*)testInput, (uint64_t*)encoderOutput,0, currentPtr);
 			stop_meas(&timeEncoder);
 			/*printf("encoderOutput: [0]->0x%08x\n", encoderOutput[0]);
 			printf("encoderOutput: [1]->0x%08x\n", encoderOutput[1]);*/
@@ -438,14 +438,5 @@ int main(int argc, char *argv[]) {
 	print_meas(&timeDecoder,"polar_decoder",NULL,NULL);
 
 	fclose(logFile);
-	//Bit
-	free(testInput);
-	free(encoderOutput);
-	free(estimatedOutput);
-	//Byte
-	free(encoderOutputByte);
-	free(modulatedInput);
-	free(channelOutput);
-
 	return (0);
 }

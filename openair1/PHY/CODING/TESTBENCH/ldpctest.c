@@ -259,6 +259,7 @@ int test_ldpc(short No_iteration,
       //estimated_output=ldpc_decoder(channel_output_fixed, block_length, No_iteration, (double)((float)nom_rate/(float)denom_rate));
 
       n_iter = nrLDPC_decoder(&decParams, (int8_t*) channel_output_fixed, (int8_t*) estimated_output, NULL);
+      printf("nrLDPC_decoder n_iter=%d\n",n_iter);
 
       //for (i=(Kb+nrows) * Zc-5;i<(Kb+nrows) * Zc;i++)
       //  printf("esimated_output[%d]=%d\n",i,esimated_output[i]);
@@ -268,9 +269,9 @@ int test_ldpc(short No_iteration,
       {
         if (estimated_output[i] != test_input[0][i])
         {
-	  printf("error pos %d (%d, %d)\n",i,estimated_output[i],test_input[0][i]);
-          *errors = (*errors) + 1;
-          break;
+        	printf("error pos %d (%d, %d)\n",i,estimated_output[i],test_input[0][i]);
+        	*errors = (*errors) + 1;
+        	break;
         }
       }
 

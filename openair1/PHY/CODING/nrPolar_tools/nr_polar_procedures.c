@@ -325,7 +325,7 @@ void nr_polar_rate_matching_int16(int16_t *input, int16_t *output, uint16_t *rmp
 		if ( (K/(double)E) <= (7.0/16) ) { //puncturing
 			for (int i=0; i<=N-1; i++) output[i]=0;
 		} else { //shortening
-			for (int i=0; i<=N-1; i++) output[i]=INFINITY;
+			for (int i=0; i<=N-1; i++) output[i]=32767;//instead of INFINITY, to prevent [-Woverflow]
 		}
 
 		for (int i=0; i<=E-1; i++){
