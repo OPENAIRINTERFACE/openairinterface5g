@@ -298,7 +298,10 @@ rx_sdu(const module_id_t enb_mod_idP,
     case POWER_HEADROOM:
       if (UE_id != -1) {
 	UE_list->UE_template[CC_idP][UE_id].phr_info =
-	  (payload_ptr[0] & 0x3f) - PHR_MAPPING_OFFSET;
+	  (payload_ptr[0] & 0x3f) - PHR_MAPPING_OFFSET + (int8_t)(hundred_times_log10_NPRB[UE_list->UE_template[CC_idP][UE_id].nb_rb_ul[harq_pid]-1]/100);
+	if(UE_list->UE_template[CC_idP][UE_id].phr_info > 40)
+		UE_list->UE_template[CC_idP][UE_id].phr_info = 40;
+
 	LOG_D(MAC,
 	      "[eNB %d] CC_id %d MAC CE_LCID %d : Received PHR PH = %d (db)\n",
 	      enb_mod_idP, CC_idP, rx_ces[i],

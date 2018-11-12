@@ -1,0 +1,138 @@
+BladeRF documentation
+=====================
+
+As of 2018-11-06, the bladeRF support is not fully automatic and requires
+some manual settings before use. This documentation is the ultimate source
+of information. If something described in this file does not work or does
+not correspond to the reality, then contact us so we can fix the problems
+and update this documentation.
+
+1. Install bladeRF 2.0 libraries.
+
+    As of now, it's better to install from source.
+    So, do not run: ./build_oai -I -w BLADERF
+    (That is: do not include '-w BLADERF'.)
+
+    Instead, follow the instructions at: https://github.com/Nuand/bladeRF
+
+    If you already had some bladeRF software installed using automatic
+    methods, first remove it by hand ('apt-get purge bladeRF' or something
+    similar, you can get the list of installed bladeRF packages by running
+    'dpkg -l|grep -i blade', remove them all).
+
+2. Update the device.
+
+    Download the latest FX3 firmware and FPGA images from Nuand's website.
+    As of writing, this is:
+
+        https://github.com/Nuand/bladeRF/wiki
+
+    That points to the following pages.
+    For FX3:
+
+        http://www.nuand.com/fx3_images/
+
+    For FPGA:
+
+        http://www.nuand.com/fpga_images/
+
+    Install FX3 firmware:
+
+        sudo bladeRF-cli -f bladeRF_fw_latest.img
+
+    Install FPGA image (this is for BladeRF x40):
+
+        sudo bladeRF-cli -L hostedx40-latest.rbf
+
+    Retrieve calibration information:
+
+        sudo bladeRF-cli -i
+        info
+
+    That outputs the serial number of your device.
+
+    Go to:
+
+        https://www.nuand.com/calibration
+
+    And enter your serial number.
+    The website tells you to run something like:
+
+        sudo bladeRF-cli -i
+        flash_init_cal 40 0x9271
+
+    Actual values depend on your device and serial number.
+
+3. Calibrate the bladeRF device.
+
+    We will work with band 7 on 2.68GHz with a bandwidth of 5 MHz (25 RBs).
+
+    Plug the bladeRF device, then run:
+
+        sudo bladeRF-cli -i
+        set frequency tx 2680000000
+        set frequency rx 2560000000
+        set gain rx 60
+        set gain tx 60
+        set bandwidth 5000000
+        set samplerate 7680000
+        cal lms
+        cal lms
+        cal lms
+        cal dc rxtx
+        cal dc rxtx
+        cal dc rxtx
+
+4. Tune the RX gain using the enb tracer.
+
+    Run the softmodem and the 'enb' tracer. For instructions, see:
+
+        https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/T/basic
+
+    In the enb window, check the 'input signal'. You should see some blue
+    signal as seen at:
+
+        https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/T/enb
+
+    (the 'Time signal power' plot).
+
+    The level should be around 30.
+
+    If it's not around 30 then edit your configuration file and modify
+    the value 'max_rxgain' in the section 'RUs'.
+
+    The configuration file to use is:
+
+        configuration/bladeRF/enb-band7-5mhz.conf
+
+    In the configuration file, you also need to set the correct values for:
+
+        - tracking_area_code
+        - plmn_list: mcc, mnc, mnc_length
+        - mme_ip_address: this is the IP address used by the computer running
+          the softmodem to connect to the EPC
+        - NETWORK_INTERFACES: all the ENB*ADDRESS* variables have to point
+          to the IP address of the EPC machine
+
+5. You're good to go.
+
+    You can now connect a UE and pass some traffic. If everything is well
+    configured you can expect more than 16 Mb/s of throughput in the downlink
+    using iperf and more than 8 Mb/s in the uplink. Looking at the logs, you
+    should find lines containing 'PHR 40' and 'CQI 15'. If your values are
+    lower then your setup may need some adjustments.
+
+6. In case of problems.
+
+    If the performance of the softmodem is very bad, you can stop it and
+    run the calibration again, without setting the parameters (frequencies,
+    gains, etc.). Just run:
+
+        sudo bladeRF-cli -i
+        cal lms
+        cal dc rxtx
+
+    That may help.
+
+    Be sure to use proper radio equipment (duplexer, antennas, clean
+    environment without interferences).

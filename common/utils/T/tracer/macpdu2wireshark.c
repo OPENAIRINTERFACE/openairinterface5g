@@ -14,10 +14,10 @@
 #define DEFAULT_IP   "127.0.0.1"
 #define DEFAULT_PORT 9999
 
-#define NO_PREAMBLE -1
+#define DEFAULT_LIVE_IP   "127.0.0.1"
+#define DEFAULT_LIVE_PORT 2021
 
-int no_sib = 0;
-int no_mib = 0;
+#define NO_PREAMBLE -1
 
 typedef struct {
   int socket;
@@ -46,6 +46,15 @@ typedef struct {
   int rar_frame;
   int rar_subframe;
   int rar_data;
+  /* config */
+  int no_mib;
+  int no_sib;
+  int max_mib;
+  int max_sib;
+  int live;
+  /* runtime vars */
+  int cur_mib;
+  int cur_sib;
 } ev_data;
 
 void trace(ev_data *d, int direction, int rnti_type, int rnti,
@@ -104,7 +113,11 @@ void dl(void *_d, event e)
 {
   ev_data *d = _d;
 
-  if (e.e[d->dl_rnti].i == 0xffff && no_sib) return;
+  if (e.e[d->dl_rnti].i == 0xffff) {
+    if (d->no_sib) return;
+    if (d->max_sib && d->cur_sib == d->max_sib) return;
+    d->cur_sib++;
+  }
 
   trace(d, DIRECTION_DOWNLINK,
         e.e[d->dl_rnti].i != 0xffff ? C_RNTI : SI_RNTI, e.e[d->dl_rnti].i,
@@ -117,7 +130,9 @@ void mib(void *_d, event e)
 {
   ev_data *d = _d;
 
-  if (no_mib) return;
+  if (d->no_mib) return;
+  if (d->max_mib && d->cur_mib == d->max_mib) return;
+  d->cur_mib++;
 
   trace(d, DIRECTION_DOWNLINK, NO_RNTI, 0,
         e.e[d->mib_frame].i, e.e[d->mib_subframe].i,
@@ -269,9 +284,18 @@ void usage(void)
 "    -ip <IP address>          send packets to this IP address (default %s)\n"
 "    -p <port>                 send packets to this port (default %d)\n"
 "    -no-mib                   do not report MIB\n"
-"    -no-sib                   do not report SIBs\n",
+"    -no-sib                   do not report SIBs\n"
+"    -max-mib <n>              report at maximum n MIB\n"
+"    -max-sib <n>              report at maximum n SIBs\n"
+"    -live                     run live\n"
+"    -live-ip <IP address>     tracee's IP address (default %p)\n"
+"    -live-port <por>          tracee's port (default %d)\n"
+"-i and -live are mutually exclusive options. One of them must be provided\n"
+"but not both.\n",
   DEFAULT_IP,
-  DEFAULT_PORT
+  DEFAULT_PORT,
+  DEFAULT_LIVE_IP,
+  DEFAULT_LIVE_PORT
   );
   exit(1);
 }
@@ -288,6 +312,9 @@ int main(int n, char **v)
   ev_data d;
   char *ip = DEFAULT_IP;
   int port = DEFAULT_PORT;
+  char *live_ip = DEFAULT_LIVE_IP;
+  int live_port = DEFAULT_LIVE_PORT;
+  int live = 0;
 
   memset(&d, 0, sizeof(ev_data));
 
@@ -299,8 +326,17 @@ int main(int n, char **v)
       { if (i > n-2) usage(); input_filename = v[++i]; continue; }
     if (!strcmp(v[i], "-ip")) { if (i > n-2) usage(); ip = v[++i]; continue; }
     if (!strcmp(v[i], "-p")) {if(i>n-2)usage(); port=atoi(v[++i]); continue; }
-    if (!strcmp(v[i], "-no-mib")) { no_mib = 1; continue; }
-    if (!strcmp(v[i], "-no-sib")) { no_sib = 1; continue; }
+    if (!strcmp(v[i], "-no-mib")) { d.no_mib = 1; continue; }
+    if (!strcmp(v[i], "-no-sib")) { d.no_sib = 1; continue; }
+    if (!strcmp(v[i], "-max-mib"))
+      { if (i > n-2) usage(); d.max_mib = atoi(v[++i]); continue; }
+    if (!strcmp(v[i], "-max-sib"))
+      { if (i > n-2) usage(); d.max_sib = atoi(v[++i]); continue; }
+    if (!strcmp(v[i], "-live")) { live = 1; continue; }
+    if (!strcmp(v[i], "-live-ip"))
+      { if (i > n-2) usage(); live_ip = v[++i]; continue; }
+    if (!strcmp(v[i], "-live-port"))
+      { if (i > n-2) usage(); live_port = atoi(v[++i]); continue; }
     usage();
   }
 
@@ -309,18 +345,46 @@ int main(int n, char **v)
     exit(1);
   }
 
-  if (input_filename == NULL) {
-    printf("ERROR: provide an input file (-i)\n");
+  if (input_filename == NULL && live == 0) {
+    printf("ERROR: provide an input file (-i) or run live (-live)\n");
     exit(1);
   }
 
-  in = open(input_filename, O_RDONLY);
-  if (in == -1) { perror(input_filename); return 1; }
+  if (input_filename != NULL && live != 0) {
+    printf("ERROR: cannot use both -i and -live\n");
+    exit(1);
+  }
+
+  if (live == 0) {
+    in = open(input_filename, O_RDONLY);
+    if (in == -1) { perror(input_filename); return 1; }
+  } else
+    in = connect_to(live_ip, live_port);
 
   database = parse_database(database_filename);
   load_config_file(database_filename);
 
   h = new_handler(database);
+
+  if (live) {
+    char mt = 1;
+    int  number_of_events = number_of_ids(database);
+    int *is_on = calloc(number_of_events, sizeof(int));
+    if (is_on == NULL) { printf("ERROR: out of memory\n"); exit(1); }
+    on_off(database, "ENB_MAC_UE_UL_PDU_WITH_DATA", is_on, 1);
+    on_off(database, "ENB_MAC_UE_DL_PDU_WITH_DATA", is_on, 1);
+    on_off(database, "ENB_PHY_MIB", is_on, 1);
+    on_off(database, "ENB_PHY_INITIATE_RA_PROCEDURE", is_on, 1);
+    on_off(database, "ENB_MAC_UE_DL_RAR_PDU_WITH_DATA", is_on, 1);
+    /* activate selected traces */
+    if (socket_send(in, &mt, 1) == -1 ||
+        socket_send(in, &number_of_events, sizeof(int)) == -1 ||
+        socket_send(in, is_on, number_of_events * sizeof(int)) == -1) {
+      printf("ERROR: socket_send failed\n");
+      exit(1);
+    }
+    free(is_on);
+  }
 
   ul_id = event_id_from_name(database, "ENB_MAC_UE_UL_PDU_WITH_DATA");
   dl_id = event_id_from_name(database, "ENB_MAC_UE_DL_PDU_WITH_DATA");
