@@ -85,8 +85,8 @@ int nfapi_mode = 0;
 
 extern void fep_full(RU_t *ru);
 extern void ru_fep_full_2thread(RU_t *ru);
-extern void eNB_fep_full(PHY_VARS_eNB *eNB,L1_proc_t *proc);
-extern void eNB_fep_full_2thread(PHY_VARS_eNB *eNB,L1_proc_t *proc);
+extern void eNB_fep_full(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc);
+extern void eNB_fep_full_2thread(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc);
 
 nfapi_dl_config_request_t DL_req;
 nfapi_ul_config_request_t UL_req;
@@ -818,7 +818,7 @@ int main(int argc, char **argv) {
   UE->frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
   eNB->frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
   UE->mac_enabled=0;
-  L1_proc_t *proc_rxtx         = &eNB->proc.L1_proc;
+  L1_rxtx_proc_t *proc_rxtx         = &eNB->proc.L1_proc;
   UE_rxtx_proc_t *proc_rxtx_ue = &UE->proc.proc_rxtx[subframe&1];
   proc_rxtx->frame_rx=1;
   proc_rxtx->subframe_rx=subframe;

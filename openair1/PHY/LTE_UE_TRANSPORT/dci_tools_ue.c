@@ -4222,7 +4222,7 @@ int generate_ue_ulsch_params_from_dci(void *dci_pdu,
 
 /*
 int generate_eNB_ulsch_params_from_dci(PHY_VARS_eNB *eNB,
-                                       eNB_rxtx_proc_t *proc,
+                                       L1_rxtx_proc_t *proc,
                                        void *dci_pdu,
                                        uint16_t rnti,
                                        DCI_format_t dci_format,
