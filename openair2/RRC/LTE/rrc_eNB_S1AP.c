@@ -256,7 +256,6 @@ rrc_eNB_S1AP_get_ue_ids(
         * This case is uncommon, but can happen when:
         * -> if the first NAS message was a Detach Request (non exhaustiv), the UE RRC context exist 
         * but is not associated with eNB_ue_s1ap_id
-        * -> if the UE is in IDLE, hence no S1 context exist (in this case [h_rc != HASH_TABLE_OK] is normal)
         * -> ... (?)
         */
         LOG_E(S1AP, "[eNB %ld] In hashtable_get, couldn't find in s1ap_id2_s1ap_ids eNB_ue_s1ap_id %"PRIu32", trying to find it through S1AP context\n", 
@@ -266,9 +265,6 @@ rrc_eNB_S1AP_get_ue_ids(
         instance = ENB_MODULE_ID_TO_INSTANCE(rrc_instance_pP - RC.rrc[0]); // get eNB instance
 
         s1ap_eNB_instance_p = s1ap_eNB_get_instance(instance); // get s1ap_eNB_instance
-
-        // s1ap_eNB_instance_p = s1ap_eNB_get_instance((uint8_t) rrc_instance_pP - RC.rrc[0]); // get s1ap_eNB_instance
-        // s1ap_eNB_instance_t *s1ap_eNB_get_instance(uint8_t mod_id);
 
         ue_desc_p = s1ap_eNB_get_ue_context(s1ap_eNB_instance_p, eNB_ue_s1ap_id); // get s1ap_eNB_ue_context
 
