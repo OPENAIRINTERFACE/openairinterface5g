@@ -38,7 +38,6 @@
 
 extern uint32_t from_earfcn(int eutra_bandP,uint32_t dl_earfcn);
 extern int32_t get_uldl_offset(int eutra_bandP);
-extern void init_nr_transport(PHY_VARS_gNB *gNB);
 
 int l1_north_init_gNB() {
 
@@ -479,4 +478,70 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config)
 
 
 
+}
+
+void init_nr_transport(PHY_VARS_gNB *gNB) {
+
+  int i;
+  int j;
+  NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
+  nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
+
+  LOG_I(PHY, "Initialise nr transport\n");
+
+  for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+    LOG_I(PHY,"Allocating Transport Channel Buffers for DLSCH, UE %d\n",i);
+    for (j=0; j<2; j++) {
+      gNB->dlsch[i][j] = new_gNB_dlsch(1,16,NSOFT,0,fp,cfg);
+      if (!gNB->dlsch[i][j]) {
+	LOG_E(PHY,"Can't get gNB dlsch structures for UE %d \n", i);
+	exit(-1);
+      } else {
+	gNB->dlsch[i][j]->rnti=0;
+	LOG_D(PHY,"dlsch[%d][%d] => %p rnti:%d\n",i,j,gNB->dlsch[i][j], gNB->dlsch[i][j]->rnti);
+      }
+    }
+    
+    //LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH, UE %d\n",i);
+    //gNB->ulsch[1+i] = new_gNB_ulsch(MAX_TURBO_ITERATIONS,fp->N_RB_UL, 0);
+    
+    /*if (!gNB->ulsch[1+i]) {
+      LOG_E(PHY,"Can't get gNB ulsch structures\n");
+      exit(-1);
+    }*/
+    
+    // this is the transmission mode for the signalling channels
+    // this will be overwritten with the real transmission mode by the RRC once the UE is connected
+    //gNB->transmission_mode[i] = fp->nb_antenna_ports_gNB==1 ? 1 : 2;
+  }
+  // ULSCH for RA
+  //gNB->ulsch[0] = new_gNB_ulsch(MAX_TURBO_ITERATIONS, fp->N_RB_UL, 0);
+  
+  /*if (!gNB->ulsch[0]) {
+    LOG_E(PHY,"Can't get gNB ulsch structures\n");
+    exit(-1);
+  }*/
+  gNB->dlsch_SI  = new_gNB_dlsch(1,8,NSOFT, 0, fp, cfg);
+  LOG_D(PHY,"gNB %d.%d : SI %p\n",gNB->Mod_id,gNB->CC_id,gNB->dlsch_SI);
+  gNB->dlsch_ra  = new_gNB_dlsch(1,8,NSOFT, 0, fp, cfg);
+  LOG_D(PHY,"gNB %d.%d : RA %p\n",gNB->Mod_id,gNB->CC_id,gNB->dlsch_ra);
+  gNB->dlsch_MCH = new_gNB_dlsch(1,8,NSOFT, 0, fp, cfg);
+  LOG_D(PHY,"gNB %d.%d : MCH %p\n",gNB->Mod_id,gNB->CC_id,gNB->dlsch_MCH);
+  
+  
+  gNB->rx_total_gain_dB=130;
+  
+  for(i=0; i<NUMBER_OF_UE_MAX; i++)
+    gNB->mu_mimo_mode[i].dl_pow_off = 2;
+  
+  gNB->check_for_total_transmissions = 0;
+  
+  gNB->check_for_MUMIMO_transmissions = 0;
+  
+  gNB->FULL_MUMIMO_transmissions = 0;
+  
+  gNB->check_for_SUMIMO_transmissions = 0;
+  
+  //fp->pucch_config_common.deltaPUCCH_Shift = 1;
+    
 }
