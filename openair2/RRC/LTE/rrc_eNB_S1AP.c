@@ -37,8 +37,8 @@
 # include "enb_config.h"
 # include "common/ran_context.h"
 /****************************************/
-//# include "../../S1AP/s1ap_eNB_defs.h"
-//# include "s1ap_eNB_management_procedures.h"
+# include "s1ap_eNB_defs.h"
+# include "s1ap_eNB_management_procedures.h"
 # include "s1ap_eNB_ue_context.h"
 /****************************************/
 
@@ -183,12 +183,13 @@ rrc_eNB_S1AP_get_ue_ids(
   instance_t instance = 0;
   s1ap_eNB_instance_t *s1ap_eNB_instance_p = NULL;
   s1ap_eNB_ue_context_t *ue_desc_p = NULL;
+  rrc_eNB_ue_context_t *ue_context_p = NULL;
   /*****************************/
   hashtable_rc_t     h_rc;
 
   if (ue_initial_id != UE_INITIAL_ID_INVALID) {
     h_rc = hashtable_get(rrc_instance_pP->initial_id2_s1ap_ids, (hash_key_t)ue_initial_id, (void**)&result);
-	
+
     if (h_rc == HASH_TABLE_OK) {
       
       if (eNB_ue_s1ap_id > 0) {
@@ -216,10 +217,10 @@ rrc_eNB_S1AP_get_ue_ids(
           
           if ((result->ue_initial_id != result2->ue_initial_id) || (result->eNB_ue_s1ap_id != result2->eNB_ue_s1ap_id)) {
             
-            LOG_E(S1AP, "[eNB %ld] Error while hashtable_get, two rrc_ue_s1ap_ids_t that should be equal, are not: \
-              ue_initial_id 1 = %"PRIu16", \
-              ue_initial_id 2 = %"PRIu16", \
-              eNB_ue_s1ap_id 1 = %"PRIu32", \
+            LOG_E(S1AP, "[eNB %ld] Error while hashtable_get, two rrc_ue_s1ap_ids_t that should be equal, are not:\n \
+              ue_initial_id 1 = %"PRIu16",\n \
+              ue_initial_id 2 = %"PRIu16",\n \
+              eNB_ue_s1ap_id 1 = %"PRIu32",\n \
               eNB_ue_s1ap_id 2 = %"PRIu32"\n",
                 rrc_instance_pP - RC.rrc[0],
                 result->ue_initial_id,
@@ -258,8 +259,7 @@ rrc_eNB_S1AP_get_ue_ids(
         * -> if the UE is in IDLE, hence no S1 context exist (in this case [h_rc != HASH_TABLE_OK] is normal)
         * -> ... (?)
         */
-        LOG_E(S1AP, "[eNB %ld] In hashtable_get, couldn't find in s1ap_id2_s1ap_ids eNB_ue_s1ap_id %"PRIu32", trying \
-          to find it through S1AP context\n", 
+        LOG_E(S1AP, "[eNB %ld] In hashtable_get, couldn't find in s1ap_id2_s1ap_ids eNB_ue_s1ap_id %"PRIu32", trying to find it through S1AP context\n", 
           rrc_instance_pP - RC.rrc[0], 
           eNB_ue_s1ap_id);
 
@@ -267,15 +267,34 @@ rrc_eNB_S1AP_get_ue_ids(
 
         s1ap_eNB_instance_p = s1ap_eNB_get_instance(instance); // get s1ap_eNB_instance
 
+        // s1ap_eNB_instance_p = s1ap_eNB_get_instance((uint8_t) rrc_instance_pP - RC.rrc[0]); // get s1ap_eNB_instance
+        // s1ap_eNB_instance_t *s1ap_eNB_get_instance(uint8_t mod_id);
+
         ue_desc_p = s1ap_eNB_get_ue_context(s1ap_eNB_instance_p, eNB_ue_s1ap_id); // get s1ap_eNB_ue_context
 
         if (ue_desc_p != NULL) {
+
           result = rrc_eNB_S1AP_get_ue_ids(rrc_instance_pP, ue_desc_p->ue_initial_id, eNB_ue_s1ap_id);
+
+          ue_context_p = rrc_eNB_get_ue_context(RC.rrc[ENB_INSTANCE_TO_MODULE_ID(instance)], result->ue_rnti);
+
+          if ((ue_context_p != NULL) && (ue_context_p->ue_context.eNB_ue_s1ap_id == 0)) {
+
+            ue_context_p->ue_context.eNB_ue_s1ap_id = eNB_ue_s1ap_id;
+          
+          } else {
+
+            LOG_E(RRC, "[eNB %ld] Incoherence between RRC context and S1AP context (%d != %d) for UE RNTI %d or UE RRC context doesn't exist\n",
+              rrc_instance_pP - RC.rrc[0],
+              ue_context_p->ue_context.eNB_ue_s1ap_id,
+              eNB_ue_s1ap_id,
+              result->ue_rnti);
+
+          }
 
         } else {
 
-          LOG_E(S1AP, "[eNB %ld] In hashtable_get, couldn't find in s1ap_id2_s1ap_ids eNB_ue_s1ap_id %"PRIu32", even \
-          when looking at S1AP context\n", 
+          LOG_E(S1AP, "[eNB %ld] In hashtable_get, couldn't find in s1ap_id2_s1ap_ids eNB_ue_s1ap_id %"PRIu32", even when looking at S1AP context\n", 
           rrc_instance_pP - RC.rrc[0], 
           eNB_ue_s1ap_id);
           
@@ -286,44 +305,6 @@ rrc_eNB_S1AP_get_ue_ids(
   } // end else (ue_initial_id == UE_INITIAL_ID_INVALID)
 
   return result;
-
-  // we assume that a rrc_ue_s1ap_ids_s is initially inserted in initial_id2_s1ap_ids
-  /*
-  if (eNB_ue_s1ap_id > 0) {
-	  h_rc = hashtable_get(rrc_instance_pP->s1ap_id2_s1ap_ids, (hash_key_t)eNB_ue_s1ap_id, (void**)&result);
-  }
-
-  if (ue_initial_id != UE_INITIAL_ID_INVALID) {
-    h_rc = hashtable_get(rrc_instance_pP->initial_id2_s1ap_ids, (hash_key_t)ue_initial_id, (void**)&result);
-	
-    if (h_rc == HASH_TABLE_OK) {
-      
-      if (eNB_ue_s1ap_id > 0) {
-        h_rc = hashtable_get(rrc_instance_pP->s1ap_id2_s1ap_ids, (hash_key_t)eNB_ue_s1ap_id, (void**)&result2);
-        
-        if (h_rc != HASH_TABLE_OK) {
-          result2 = malloc(sizeof(*result2));
-          
-          if (NULL != result2) {
-            *result2 = *result;
-            
-            result2->eNB_ue_s1ap_id = eNB_ue_s1ap_id;
-            result->eNB_ue_s1ap_id  = eNB_ue_s1ap_id;
-            
-            h_rc = hashtable_insert(rrc_instance_pP->s1ap_id2_s1ap_ids, (hash_key_t)eNB_ue_s1ap_id, result2);
-
-            if (h_rc != HASH_TABLE_OK) {
-              LOG_E(S1AP, "[eNB %ld] Error while hashtable_insert in s1ap_id2_s1ap_ids eNB_ue_s1ap_id %"PRIu32"\n", 
-                rrc_instance_pP - RC.rrc[0], 
-                eNB_ue_s1ap_id);
-            }
-          }
-        }
-      }
-    }
-  }
-  return result;
-  */
 }
 
 //------------------------------------------------------------------------------
@@ -1364,7 +1345,7 @@ rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_COMMAND(
   eNB_ue_s1ap_id = S1AP_UE_CONTEXT_RELEASE_COMMAND(msg_p).eNB_ue_s1ap_id;
 
   ue_context_p = rrc_eNB_get_ue_context_from_s1ap_ids(instance, UE_INITIAL_ID_INVALID, eNB_ue_s1ap_id);
-
+  
   if (ue_context_p == NULL) {
     /* Can not associate this message to an UE index */
     MessageDef *msg_complete_p = NULL;
