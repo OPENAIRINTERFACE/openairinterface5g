@@ -182,17 +182,20 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   /* process pss search on received buffer */
   sync_pos = pss_synchro_nr(ue, NO_RATE_CHANGE);
 
+  sync_pos_slot = (fp->samples_per_subframe/fp->slots_per_subframe) - 10*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
   
-  if (sync_pos >= fp->nb_prefix_samples)
-    ue->ssb_offset = sync_pos - fp->nb_prefix_samples;
-  else
-    ue->ssb_offset = sync_pos + (fp->samples_per_subframe * 10) - fp->nb_prefix_samples;
+  if (sync_pos >= fp->nb_prefix_samples){
+    ue->ssb_offset = sync_pos - fp->nb_prefix_samples;}
+  else{
+    ue->ssb_offset = sync_pos + (fp->samples_per_subframe * 10) - fp->nb_prefix_samples;}
+    
+    ue->rx_offset = ue->ssb_offset - sync_pos_slot;
   
   //write_output("rxdata1.m","rxd1",ue->common_vars.rxdata[0],10*fp->samples_per_subframe,1,1);
 
 #ifdef DEBUG_INITIAL_SYNCH
   LOG_I(PHY,"[UE%d] Initial sync : Estimated PSS position %d, Nid2 %d\n", ue->Mod_id, sync_pos,ue->common_vars.eNb_id);
-  LOG_I(PHY,"sync_pos %d ssb_offset %d\n",sync_pos,ue->ssb_offset);
+  LOG_I(PHY,"sync_pos %d ssb_offset %d sync_pos_slot %d \n",sync_pos,ue->ssb_offset,sync_pos_slot);
 #endif
 
   /* check that SSS/PBCH block is continuous inside the received buffer */

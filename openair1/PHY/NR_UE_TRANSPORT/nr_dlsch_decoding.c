@@ -292,7 +292,7 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   harq_process->G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, harq_process->Qm,harq_process->Nl);
   G = harq_process->G;
 
-  //printf("DLSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d \n",harq_pid,A,G, harq_process->mcs, harq_process->Nl, nb_symb_sch);
+  printf("DLSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d \n",harq_pid,A,G, harq_process->mcs, harq_process->Nl, nb_symb_sch);
 
   if (harq_process->round == 0) {
     // This is a new packet, so compute quantities regarding segmentation

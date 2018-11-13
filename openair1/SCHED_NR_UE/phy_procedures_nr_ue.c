@@ -4264,8 +4264,8 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   if(dlsch1)
     is_cw1_active = dlsch1->harq_processes[harq_pid]->status;
 
-  LOG_D(PHY,"AbsSubframe %d.%d Start Turbo Decoder for CW0 [harq_pid %d] ? %d \n", frame_rx%1024, nr_tti_rx, harq_pid, is_cw0_active);
-  LOG_D(PHY,"AbsSubframe %d.%d Start Turbo Decoder for CW1 [harq_pid %d] ? %d \n", frame_rx%1024, nr_tti_rx, harq_pid, is_cw1_active);
+  LOG_D(PHY,"AbsSubframe %d.%d Start LDPC Decoder for CW0 [harq_pid %d] ? %d \n", frame_rx%1024, nr_tti_rx, harq_pid, is_cw0_active);
+  LOG_D(PHY,"AbsSubframe %d.%d Start LDPC Decoder for CW1 [harq_pid %d] ? %d \n", frame_rx%1024, nr_tti_rx, harq_pid, is_cw1_active);
 
   if(is_cw0_active && is_cw1_active)
   {
@@ -5557,7 +5557,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 #endif
 
   //nr_gold_pdcch(ue,0, 2);
-
+ if (nr_tti_rx==2)
   for (int l=0; l<2; l++) {
     if (abstraction_flag == 0) {
 #if UE_TIMING_TRACE
@@ -5653,28 +5653,21 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 #endif
 //#if 0
   LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
-  //set active for testing, to be removed
+  
   if (nr_tti_rx==2){
   //to update from pdsch config
   nr_gold_pdsch(ue,2,0, 1);
 
-  
-  int nb_prefix_samples0 = ue->frame_parms.nb_prefix_samples0;
-  ue->frame_parms.nb_prefix_samples0 = ue->frame_parms.nb_prefix_samples;
-
+  for (int m=2;m<6 ; m++)
   nr_slot_fep(ue,
-          2,  //to be updated from higher layer
+          m,  //to be updated from higher layer
           nr_tti_rx,
           0,
           0,
           1,
  		  NR_PDSCH_EST);
-
-  //put back nb_prefix_samples0
-  ue->frame_parms.nb_prefix_samples0 = nb_prefix_samples0;
-  
-  
-	  ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active = 1;
+    //set active for testing, to be removed
+	ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active = 1;
   }
 
 #if UE_TIMING_TRACE
@@ -5689,8 +5682,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 			PDSCH,
 			ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0],
 			NULL,
-			ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->num_pdcch_symbols,
-			ue->frame_parms.symbols_per_tti>>1,
+			2, //ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->num_pdcch_symbols,
+			5, //ue->frame_parms.symbols_per_tti>>1,
 			abstraction_flag);
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
@@ -5741,7 +5734,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 			abstraction_flag);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_RA, VCD_FUNCTION_OUT);
   }
-
+//#if 0
   LOG_D(PHY," ------ slot 1 Processing: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
   LOG_D(PHY," ------  --> FFT/ChannelEst/PDCCH slot 1: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
 
@@ -5792,7 +5785,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 
 #endif
 
-  LOG_D(PHY," ------  end FFT/ChannelEst/PDCCH slot 1: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
+  //LOG_D(PHY," ------  end FFT/ChannelEst/PDCCH slot 1: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
 
   /*if ( (nr_tti_rx == 0) && (ue->decode_MIB == 1))
   {
@@ -5807,7 +5800,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 #if UE_TIMING_TRACE
     start_meas(&ue->pdsch_procedures_stat[ue->current_thread_id[nr_tti_rx]]);
 #endif
-    nr_ue_pdsch_procedures(ue,
+    /*nr_ue_pdsch_procedures(ue,
 			proc,
 			eNB_id,
 			PDSCH,
@@ -5817,11 +5810,14 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 			ue->frame_parms.symbols_per_tti-1,
 			abstraction_flag);
     LOG_D(PHY," ------ end PDSCH ChannelComp/LLR slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
-    LOG_D(PHY," ------ --> PDSCH Turbo Decoder slot 0/1: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
+    LOG_D(PHY," ------ --> PDSCH Turbo Decoder slot 0/1: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);*/
 #if UE_TIMING_TRACE
     stop_meas(&ue->pdsch_procedures_stat[ue->current_thread_id[nr_tti_rx]]);
     start_meas(&ue->dlsch_procedures_stat[ue->current_thread_id[nr_tti_rx]]);
 #endif
+
+//#endif //slot 1
+
     nr_ue_dlsch_procedures(ue,
 			proc,
 			eNB_id,

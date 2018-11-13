@@ -56,7 +56,7 @@ uint32_t nr_compute_tbs(uint8_t mcs,
     // Intermediate number of information bits
     Ninfo = (double)((nb_re * R * Qm * Nl)/1024);
 
-    //printf("Ninfo %d nbp_re %d nb_re %d Qm %d, R %d\n", Ninfo, nbp_re, nb_re, Qm, R);
+    //printf("Ninfo %lf nbp_re %d nb_re %d mcs %d Qm %d, R %d\n", Ninfo, nbp_re, nb_re,mcs, Qm, R);
 
     if (Ninfo <=3824) {
 
@@ -85,7 +85,7 @@ uint32_t nr_compute_tbs(uint8_t mcs,
             }
             else {
             	nr_tbs = (uint32_t)(8 * ceil( (Np_info + 24)/8 ) - 24);
-            	//printf("n %f Np_info %f pow %f ceil %f \n",n, Np_info,pow(2,6),ceil( (Np_info + 24)/8 ));
+            	//printf("n %lf Np_info %f pow %f ceil %f \n",n, Np_info,pow(2,6),ceil( (Np_info + 24)/8 ));
             }
 
         }

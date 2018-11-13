@@ -54,6 +54,8 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   uint16_t nb_rb_coreset = 24;
   uint16_t bwp_start_subcarrier = frame_parms->first_carrier_offset+516;
   uint16_t nb_rb_pdsch = 50;
+  uint8_t p=0;
+  uint8_t l0 = 2;
 
   void (*dft)(int16_t *,int16_t *, int);
   int tmp_dft_in[8192] __attribute__ ((aligned (32)));  // This is for misalignment issues for 6 and 15 PRBs
@@ -259,13 +261,18 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
     start_meas(&ue->dlsch_channel_estimation_stats);
 #endif
+
+  ue->frame_parms.nushift =  (p>>1)&1;;
+
+    if (symbol ==l0)
     nr_pdsch_channel_estimation(ue,eNB_id,0,
 				Ns,
-				0,
+				p,
 				l,
 				symbol,
 				bwp_start_subcarrier,
 				nb_rb_pdsch);
+				
 #if UE_TIMING_TRACE
     stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif
