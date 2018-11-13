@@ -36,11 +36,10 @@
 # include "rrc_eNB_S1AP.h"
 # include "enb_config.h"
 # include "common/ran_context.h"
-/****************************************/
+
 # include "s1ap_eNB_defs.h"
 # include "s1ap_eNB_management_procedures.h"
 # include "s1ap_eNB_ue_context.h"
-/****************************************/
 
 # if defined(ENABLE_ITTI)
 #   include "asn1_conversions.h"
