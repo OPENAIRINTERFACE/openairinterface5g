@@ -1025,7 +1025,7 @@ void
 rrc_eNB_process_RRCConnectionSetupComplete(
   const protocol_ctxt_t *const ctxt_pP,
   rrc_eNB_ue_context_t *ue_context_pP,
-  RRCConnectionSetupComplete_r8_IEs_t *rrcConnectionSetupComplete
+  LTE_RRCConnectionSetupComplete_r8_IEs_t *rrcConnectionSetupComplete
 )
 //-----------------------------------------------------------------------------
 {

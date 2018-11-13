@@ -190,27 +190,27 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
   switch (N_RB_DL) {
 
     case 6:
-      mib->message.dl_Bandwidth = MasterInformationBlock__dl_Bandwidth_n6;
+      mib->message.dl_Bandwidth = LTE_MasterInformationBlock__dl_Bandwidth_n6;
       break;
 
     case 15:
-      mib->message.dl_Bandwidth = MasterInformationBlock__dl_Bandwidth_n15;
+      mib->message.dl_Bandwidth = LTE_MasterInformationBlock__dl_Bandwidth_n15;
       break;
 
     case 25:
-      mib->message.dl_Bandwidth = MasterInformationBlock__dl_Bandwidth_n25;
+      mib->message.dl_Bandwidth = LTE_MasterInformationBlock__dl_Bandwidth_n25;
       break;
 
     case 50:
-      mib->message.dl_Bandwidth = MasterInformationBlock__dl_Bandwidth_n50;
+      mib->message.dl_Bandwidth = LTE_MasterInformationBlock__dl_Bandwidth_n50;
       break;
 
     case 75:
-      mib->message.dl_Bandwidth = MasterInformationBlock__dl_Bandwidth_n75;
+      mib->message.dl_Bandwidth = LTE_MasterInformationBlock__dl_Bandwidth_n75;
       break;
 
     case 100:
-      mib->message.dl_Bandwidth = MasterInformationBlock__dl_Bandwidth_n100;
+      mib->message.dl_Bandwidth = LTE_MasterInformationBlock__dl_Bandwidth_n100;
       break;
     default:
       AssertFatal(1==0,"Unknown dl_Bandwidth %d\n",N_RB_DL);

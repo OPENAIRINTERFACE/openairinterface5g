@@ -1047,18 +1047,18 @@ schedule_ue_spec(module_id_t module_idP, int slice_idxP,
 
 	  if (TBS - ta_len - header_length_total - sdu_length_total - 3 > 0) {
 	    rlc_status = mac_rlc_status_ind(module_idP,
-                    rnti,
-                    module_idP,
-                    frameP,
-                    subframeP,
-                    ENB_FLAG_YES,
-                    MBMS_FLAG_NO,
-                    lcid,
-                    TBS - ta_len - header_length_total - sdu_length_total - 3
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                  , 0, 0
+                                      rnti,
+                                      module_idP,
+                                      frameP,
+                                      subframeP,
+                                      ENB_FLAG_YES,
+                                      MBMS_FLAG_NO,
+                                      lcid,
+                                      TBS - ta_len - header_length_total - sdu_length_total - 3
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                                    , 0, 0
 #endif
-                    );
+                                      );
 
 	    if (rlc_status.bytes_in_buffer > 0) {
 	      LOG_D(MAC, "[eNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting %d bytes from RLC (lcid %d total hdr len %d)\n",
@@ -1077,7 +1077,7 @@ schedule_ue_spec(module_id_t module_idP, int slice_idxP,
                                   lcid,
                                   TBS, //not used
 						                      (char *)&dlsch_buffer[sdu_length_total]
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                   , 0, 0
 #endif
 	                                );
