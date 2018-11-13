@@ -653,7 +653,7 @@ int main(int argc, char *argv[])
   }
 
   char fname[200];
-  sprintf(fname,"../../../openair1/PHY/CODING/TESTBENCH/ldpctest_BG_%d_Zc_%d_rate_%d-%d_block_length_%d_maxit_%d.txt",BG,Zc,nom_rate,denom_rate,block_length, No_iteration);
+  sprintf(fname,"ldpctest_BG_%d_Zc_%d_rate_%d-%d_block_length_%d_maxit_%d.txt",BG,Zc,nom_rate,denom_rate,block_length, No_iteration);
   FILE *fd=fopen(fname,"w");
   AssertFatal(fd!=NULL,"cannot open %s\n",fname);
 
