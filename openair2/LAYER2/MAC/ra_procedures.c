@@ -57,12 +57,12 @@ get_prach_resources(module_id_t module_idP,
 		    uint8_t eNB_index,
 		    uint8_t t_id,
 		    uint8_t first_Msg3,
-		    RACH_ConfigDedicated_t * rach_ConfigDedicated)
+		    LTE_RACH_ConfigDedicated_t * rach_ConfigDedicated)
 {
     uint8_t Msg3_size = UE_mac_inst[module_idP].RA_Msg3_size;
     PRACH_RESOURCES_t *prach_resources =
 	&UE_mac_inst[module_idP].RA_prach_resources;
-    RACH_ConfigCommon_t *rach_ConfigCommon = NULL;
+    LTE_RACH_ConfigCommon_t *rach_ConfigCommon = NULL;
     uint8_t noGroupB = 0;
     uint8_t f_id = 0, num_prach = 0;
     int numberOfRA_Preambles;
@@ -311,8 +311,8 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
 
     uint8_t lcid = CCCH;
     uint16_t Size16;
-    struct RACH_ConfigCommon *rach_ConfigCommon =
-	(struct RACH_ConfigCommon *) NULL;
+    struct LTE_RACH_ConfigCommon *rach_ConfigCommon =
+	(struct LTE_RACH_ConfigCommon *) NULL;
     int32_t frame_diff = 0;
     uint8_t dcch_header_len = 0;
     uint16_t sdu_lengths;
@@ -408,7 +408,7 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
 				       UE_mac_inst[module_idP].crnti,
 				       eNB_indexP, frameP, subframeP,
 				       ENB_FLAG_NO, MBMS_FLAG_NO, DCCH, 6
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                ,0, 0
 #endif
                );
@@ -428,7 +428,7 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
 
 		sdu_lengths = mac_rlc_data_req(module_idP, UE_mac_inst[module_idP].crnti, eNB_indexP, frameP, ENB_FLAG_NO, MBMS_FLAG_NO, DCCH, 6,	//not used
 						  (char *) &ulsch_buff[0]
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 						  ,0,
 						  0
 #endif
@@ -553,37 +553,37 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
 		int preambleTransMax = -1;
 		switch (rach_ConfigCommon->ra_SupervisionInfo.
 			preambleTransMax) {
-		case PreambleTransMax_n3:
+		case LTE_PreambleTransMax_n3:
 		    preambleTransMax = 3;
 		    break;
-		case PreambleTransMax_n4:
+		case LTE_PreambleTransMax_n4:
 		    preambleTransMax = 4;
 		    break;
-		case PreambleTransMax_n5:
+		case LTE_PreambleTransMax_n5:
 		    preambleTransMax = 5;
 		    break;
-		case PreambleTransMax_n6:
+		case LTE_PreambleTransMax_n6:
 		    preambleTransMax = 6;
 		    break;
-		case PreambleTransMax_n7:
+		case LTE_PreambleTransMax_n7:
 		    preambleTransMax = 7;
 		    break;
-		case PreambleTransMax_n8:
+		case LTE_PreambleTransMax_n8:
 		    preambleTransMax = 8;
 		    break;
-		case PreambleTransMax_n10:
+		case LTE_PreambleTransMax_n10:
 		    preambleTransMax = 10;
 		    break;
-		case PreambleTransMax_n20:
+		case LTE_PreambleTransMax_n20:
 		    preambleTransMax = 20;
 		    break;
-		case PreambleTransMax_n50:
+		case LTE_PreambleTransMax_n50:
 		    preambleTransMax = 50;
 		    break;
-		case PreambleTransMax_n100:
+		case LTE_PreambleTransMax_n100:
 		    preambleTransMax = 100;
 		    break;
-		case PreambleTransMax_n200:
+		case LTE_PreambleTransMax_n200:
 		    preambleTransMax = 200;
 		    break;
 		}

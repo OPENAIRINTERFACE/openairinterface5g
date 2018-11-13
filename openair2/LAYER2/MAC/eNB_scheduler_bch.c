@@ -59,7 +59,7 @@ extern RAN_CONTEXT_t RC;
 // NEED TO ADD schedule_SI_BR for SIB1_BR and SIB23_BR
 // CCE_allocation_infeasible to be done for EPDCCH/MPDCCH
 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
 #define size_Sj25 2
 int Sj25[size_Sj25] = { 0, 3 };
@@ -301,8 +301,8 @@ schedule_SIB1_BR(module_id_t module_idP,
     }
 }
 
-int si_WindowLength_BR_r13tab[SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_WindowLength_BR_r13_spare] = { 20, 40, 60, 80, 120, 160, 200 };
-int si_TBS_r13tab[SchedulingInfo_BR_r13__si_TBS_r13_b936 + 1] = { 152, 208, 256, 328, 408, 504, 600, 712, 808, 936 };
+int si_WindowLength_BR_r13tab[LTE_SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_WindowLength_BR_r13_spare] = { 20, 40, 60, 80, 120, 160, 200 };
+int si_TBS_r13tab[LTE_SchedulingInfo_BR_r13__si_TBS_r13_b936 + 1] = { 152, 208, 256, 328, 408, 504, 600, 712, 808, 936 };
 
 //------------------------------------------------------------------------------
 void
@@ -340,31 +340,31 @@ schedule_SI_BR(module_id_t module_idP, frame_t frameP,
 	    AssertFatal(cc->sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 != NULL,
 			"sib_v13ext->bandwidthReducedAccessRelatedInfo_r13 is null\n");
 
-	    SchedulingInfoList_BR_r13_t *schedulingInfoList_BR_r13 = cc->sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->schedulingInfoList_BR_r13;
+	    LTE_SchedulingInfoList_BR_r13_t *schedulingInfoList_BR_r13 = cc->sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->schedulingInfoList_BR_r13;
 	    AssertFatal(schedulingInfoList_BR_r13 != NULL,
 			"sib_v13ext->schedulingInfoList_BR_r13 is null\n");
 
-	    SchedulingInfoList_t *schedulingInfoList = cc->schedulingInfoList;
+	    LTE_SchedulingInfoList_t *schedulingInfoList = cc->schedulingInfoList;
 	    AssertFatal(schedulingInfoList_BR_r13->list.count == schedulingInfoList->list.count,
 			"schedulingInfolist_BR.r13->list.count %d != schedulingInfoList.list.count %d\n",
 			schedulingInfoList_BR_r13->list.count,
 			schedulingInfoList->list.count);
 
-	    AssertFatal(cc->sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->si_WindowLength_BR_r13<=SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_WindowLength_BR_r13_ms200,
+	    AssertFatal(cc->sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->si_WindowLength_BR_r13<=LTE_SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_WindowLength_BR_r13_ms200,
 			"si_WindowLength_BR_r13 %d > %d\n",
 			(int) cc->sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->si_WindowLength_BR_r13,
-			SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_WindowLength_BR_r13_ms200);
+			LTE_SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_WindowLength_BR_r13_ms200);
 
 	    // check that SI frequency-hopping is disabled
-	    AssertFatal(cc->sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->si_HoppingConfigCommon_r13 == SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_HoppingConfigCommon_r13_off,
+	    AssertFatal(cc->sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->si_HoppingConfigCommon_r13 == LTE_SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_HoppingConfigCommon_r13_off,
 			"Deactivate SI_HoppingConfigCommon_r13 in configuration file, not supported for now\n");
 	    long si_WindowLength_BR_r13 = si_WindowLength_BR_r13tab[cc->sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->si_WindowLength_BR_r13];
 
 	    long si_RepetitionPattern_r13 = cc->sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->si_RepetitionPattern_r13;
-	    AssertFatal(si_RepetitionPattern_r13<=SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_RepetitionPattern_r13_every8thRF,
+	    AssertFatal(si_RepetitionPattern_r13<=LTE_SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_RepetitionPattern_r13_every8thRF,
 			"si_RepetitionPattern_r13 %d > %d\n",
 			(int) si_RepetitionPattern_r13,
-			SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_RepetitionPattern_r13_every8thRF);
+			LTE_SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_RepetitionPattern_r13_every8thRF);
 	    // cycle through SIB list
 
 	    for (i = 0; i < schedulingInfoList_BR_r13->list.count; i++) {
@@ -533,7 +533,7 @@ schedule_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 	    LOG_D(MAC, "Frame %d, subframe %d: Adding BCH PDU in position %d (length %d)\n", frameP, subframeP, dl_req->number_pdu, mib_sdu_length);
 
 	    if ((frameP & 1023) < 40)
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 		LOG_D(MAC,
 		      "[eNB %d] Frame %d : MIB->BCH  CC_id %d, Received %d bytes (cc->mib->message.schedulingInfoSIB1_BR_r13 %d)\n",
 		      module_idP, frameP, CC_id, mib_sdu_length,
@@ -758,6 +758,9 @@ schedule_SI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 			  module_idP, CC_id, frameP, subframeP);
 		}
 
+                T(T_ENB_MAC_UE_DL_PDU_WITH_DATA, T_INT(module_idP), T_INT(CC_id), T_INT(0xffff),
+                  T_INT(frameP), T_INT(subframeP), T_INT(0), T_BUFFER(cc->BCCH_pdu.payload, bcch_sdu_length));
+
 		if (opt_enabled == 1) {
 		    trace_pdu(DIRECTION_DOWNLINK,
 			      &cc->BCCH_pdu.payload[0],
@@ -789,7 +792,7 @@ schedule_SI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 	    }
 	}
     }
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     schedule_SIB1_BR(module_idP, frameP, subframeP);
     schedule_SI_BR(module_idP, frameP, subframeP);
 #endif

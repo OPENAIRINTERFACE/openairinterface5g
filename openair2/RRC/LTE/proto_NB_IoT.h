@@ -203,7 +203,7 @@ rrc_eNB_generate_dedicatedRRCConnectionReconfiguration_NB_IoT(
 void rrc_eNB_process_RRCConnectionSetupComplete_NB_IoT(
   const protocol_ctxt_t* const ctxt_pP,
   rrc_eNB_ue_context_NB_IoT_t*         ue_context_pP,
-  RRCConnectionSetupComplete_NB_r13_IEs_t * rrcConnectionSetupComplete_NB
+  LTE_RRCConnectionSetupComplete_NB_r13_IEs_t * rrcConnectionSetupComplete_NB
 );
 
 void rrc_eNB_generate_SecurityModeCommand_NB_IoT(

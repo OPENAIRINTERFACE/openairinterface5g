@@ -52,7 +52,7 @@
 #endif
 #include "msc.h"
 
-#include "UERadioAccessCapabilityInformation.h"
+#include "LTE_UERadioAccessCapabilityInformation.h"
 
 #include "gtpv1u_eNB_task.h"
 #include "RRC/LTE/rrc_eNB_GTPV1U.h"
@@ -74,13 +74,13 @@ static const uint16_t S1AP_ENCRYPTION_EEA2_MASK = 0x4000;
 static const uint16_t S1AP_INTEGRITY_EIA1_MASK = 0x8000;
 static const uint16_t S1AP_INTEGRITY_EIA2_MASK = 0x4000;
 
-#if (RRC_VERSION >= MAKE_VERSION(9, 2, 0))
-# define INTEGRITY_ALGORITHM_NONE SecurityAlgorithmConfig__integrityProtAlgorithm_eia0_v920
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 2, 0))
+# define INTEGRITY_ALGORITHM_NONE LTE_SecurityAlgorithmConfig__integrityProtAlgorithm_eia0_v920
 #else
 #ifdef EXMIMO_IOT
-# define INTEGRITY_ALGORITHM_NONE SecurityAlgorithmConfig__integrityProtAlgorithm_eia2
+# define INTEGRITY_ALGORITHM_NONE LTE_SecurityAlgorithmConfig__integrityProtAlgorithm_eia2
 #else
-# define INTEGRITY_ALGORITHM_NONE SecurityAlgorithmConfig__integrityProtAlgorithm_reserved
+# define INTEGRITY_ALGORITHM_NONE LTE_SecurityAlgorithmConfig__integrityProtAlgorithm_reserved
 #endif
 #endif
 
@@ -305,21 +305,21 @@ rrc_eNB_get_ue_context_from_s1ap_ids(
  *\param algorithms The bit mask of available algorithms received from S1AP.
  *\return the selected algorithm.
  */
-static CipheringAlgorithm_r12_t rrc_eNB_select_ciphering(uint16_t algorithms)
+static LTE_CipheringAlgorithm_r12_t rrc_eNB_select_ciphering(uint16_t algorithms)
 {
 
 //#warning "Forced   return SecurityAlgorithmConfig__cipheringAlgorithm_eea0, to be deleted in future"
-  return CipheringAlgorithm_r12_eea0;
+  return LTE_CipheringAlgorithm_r12_eea0;
 
   if (algorithms & S1AP_ENCRYPTION_EEA2_MASK) {
-    return CipheringAlgorithm_r12_eea2;
+    return LTE_CipheringAlgorithm_r12_eea2;
   }
 
   if (algorithms & S1AP_ENCRYPTION_EEA1_MASK) {
-    return CipheringAlgorithm_r12_eea1;
+    return LTE_CipheringAlgorithm_r12_eea1;
   }
 
-  return CipheringAlgorithm_r12_eea0;
+  return LTE_CipheringAlgorithm_r12_eea0;
 }
 
 /*! \fn e_SecurityAlgorithmConfig__integrityProtAlgorithm rrc_eNB_select_integrity(uint16_t algorithms)
@@ -327,15 +327,15 @@ static CipheringAlgorithm_r12_t rrc_eNB_select_ciphering(uint16_t algorithms)
  *\param algorithms The bit mask of available algorithms received from S1AP.
  *\return the selected algorithm.
  */
-static e_SecurityAlgorithmConfig__integrityProtAlgorithm rrc_eNB_select_integrity(uint16_t algorithms)
+static e_LTE_SecurityAlgorithmConfig__integrityProtAlgorithm rrc_eNB_select_integrity(uint16_t algorithms)
 {
 
   if (algorithms & S1AP_INTEGRITY_EIA2_MASK) {
-    return SecurityAlgorithmConfig__integrityProtAlgorithm_eia2;
+    return LTE_SecurityAlgorithmConfig__integrityProtAlgorithm_eia2;
   }
 
   if (algorithms & S1AP_INTEGRITY_EIA1_MASK) {
-    return SecurityAlgorithmConfig__integrityProtAlgorithm_eia1;
+    return LTE_SecurityAlgorithmConfig__integrityProtAlgorithm_eia1;
   }
 
   return INTEGRITY_ALGORITHM_NONE;
@@ -355,9 +355,9 @@ rrc_eNB_process_security(
   security_capabilities_t* security_capabilities_pP
 )
 {
-  boolean_t                                         changed = FALSE;
-  CipheringAlgorithm_r12_t                          cipheringAlgorithm;
-  e_SecurityAlgorithmConfig__integrityProtAlgorithm integrityProtAlgorithm;
+  boolean_t                                             changed = FALSE;
+  LTE_CipheringAlgorithm_r12_t                          cipheringAlgorithm;
+  e_LTE_SecurityAlgorithmConfig__integrityProtAlgorithm integrityProtAlgorithm;
 
   /* Save security parameters */
   ue_context_pP->ue_context.security_capabilities = *security_capabilities_pP;
@@ -443,7 +443,7 @@ rrc_pdcp_config_security(
 #if defined(ENABLE_SECURITY)
 
 
-  SRB_ToAddModList_t*                 SRB_configList = ue_context_pP->ue_context.SRB_configList;
+  LTE_SRB_ToAddModList_t*             SRB_configList = ue_context_pP->ue_context.SRB_configList;
   uint8_t                            *kRRCenc = NULL;
   uint8_t                            *kRRCint = NULL;
   uint8_t                            *kUPenc = NULL;
@@ -565,21 +565,21 @@ void
 rrc_eNB_send_S1AP_UPLINK_NAS(
   const protocol_ctxt_t*    const ctxt_pP,
   rrc_eNB_ue_context_t*             const ue_context_pP,
-  UL_DCCH_Message_t*        const ul_dcch_msg
+  LTE_UL_DCCH_Message_t*        const ul_dcch_msg
 )
 //------------------------------------------------------------------------------
 {
 #if defined(ENABLE_ITTI)
   {
-    ULInformationTransfer_t *ulInformationTransfer = &ul_dcch_msg->message.choice.c1.choice.ulInformationTransfer;
+    LTE_ULInformationTransfer_t *ulInformationTransfer = &ul_dcch_msg->message.choice.c1.choice.ulInformationTransfer;
 
-    if ((ulInformationTransfer->criticalExtensions.present == ULInformationTransfer__criticalExtensions_PR_c1)
+    if ((ulInformationTransfer->criticalExtensions.present == LTE_ULInformationTransfer__criticalExtensions_PR_c1)
     && (ulInformationTransfer->criticalExtensions.choice.c1.present
-    == ULInformationTransfer__criticalExtensions__c1_PR_ulInformationTransfer_r8)
+    == LTE_ULInformationTransfer__criticalExtensions__c1_PR_ulInformationTransfer_r8)
     && (ulInformationTransfer->criticalExtensions.choice.c1.choice.ulInformationTransfer_r8.dedicatedInfoType.present
-    == ULInformationTransfer_r8_IEs__dedicatedInfoType_PR_dedicatedInfoNAS)) {
+    == LTE_ULInformationTransfer_r8_IEs__dedicatedInfoType_PR_dedicatedInfoNAS)) {
       /* This message hold a dedicated info NAS payload, forward it to NAS */
-      struct ULInformationTransfer_r8_IEs__dedicatedInfoType *dedicatedInfoType =
+      struct LTE_ULInformationTransfer_r8_IEs__dedicatedInfoType *dedicatedInfoType =
           &ulInformationTransfer->criticalExtensions.choice.c1.choice.ulInformationTransfer_r8.dedicatedInfoType;
       uint32_t pdu_length;
       uint8_t *pdu_buffer;
@@ -602,15 +602,15 @@ rrc_eNB_send_S1AP_UPLINK_NAS(
   }
 #else
   {
-    ULInformationTransfer_t *ulInformationTransfer;
+    LTE_ULInformationTransfer_t *ulInformationTransfer;
     ulInformationTransfer =
     &ul_dcch_msg->message.choice.c1.choice.
     ulInformationTransfer;
 
     if (ulInformationTransfer->criticalExtensions.present ==
-    ULInformationTransfer__criticalExtensions_PR_c1) {
+    LTE_ULInformationTransfer__criticalExtensions_PR_c1) {
       if (ulInformationTransfer->criticalExtensions.choice.c1.present ==
-      ULInformationTransfer__criticalExtensions__c1_PR_ulInformationTransfer_r8) {
+      LTE_ULInformationTransfer__criticalExtensions__c1_PR_ulInformationTransfer_r8) {
 
         ULInformationTransfer_r8_IEs_t
         *ulInformationTransferR8;
@@ -619,7 +619,7 @@ rrc_eNB_send_S1AP_UPLINK_NAS(
         c1.choice.ulInformationTransfer_r8;
 
         if (ulInformationTransferR8->dedicatedInfoType.present ==
-            ULInformationTransfer_r8_IEs__dedicatedInfoType_PR_dedicatedInfoNAS) {
+            LTE_ULInformationTransfer_r8_IEs__dedicatedInfoType_PR_dedicatedInfoNAS) {
 
           extract_imsi(ulInformationTransferR8->dedicatedInfoType.choice.dedicatedInfoNAS.buf,
                        ulInformationTransferR8->dedicatedInfoType.choice.dedicatedInfoNAS.size,
@@ -639,30 +639,30 @@ rrc_eNB_send_S1AP_UPLINK_NAS(
 void rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(
   const protocol_ctxt_t* const ctxt_pP,
   rrc_eNB_ue_context_t*          const ue_context_pP,
-  UL_DCCH_Message_t* ul_dcch_msg
+  LTE_UL_DCCH_Message_t* ul_dcch_msg
 )
 //------------------------------------------------------------------------------
 {
-  UECapabilityInformation_t *ueCapabilityInformation = &ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation;
+  LTE_UECapabilityInformation_t *ueCapabilityInformation = &ul_dcch_msg->message.choice.c1.choice.ueCapabilityInformation;
   /* 4096 is arbitrary, should be big enough */
   unsigned char buf[4096];
   unsigned char *buf2;
-  UERadioAccessCapabilityInformation_t rac;
+  LTE_UERadioAccessCapabilityInformation_t rac;
 
-  if (ueCapabilityInformation->criticalExtensions.present != UECapabilityInformation__criticalExtensions_PR_c1
-      || ueCapabilityInformation->criticalExtensions.choice.c1.present != UECapabilityInformation__criticalExtensions__c1_PR_ueCapabilityInformation_r8) {
+  if (ueCapabilityInformation->criticalExtensions.present != LTE_UECapabilityInformation__criticalExtensions_PR_c1
+      || ueCapabilityInformation->criticalExtensions.choice.c1.present != LTE_UECapabilityInformation__criticalExtensions__c1_PR_ueCapabilityInformation_r8) {
     LOG_E(RRC, "[eNB %d][UE %x] bad UE capabilities\n", ctxt_pP->module_id, ue_context_pP->ue_context.rnti);
     return;
   }
 
-  asn_enc_rval_t ret = uper_encode_to_buffer(&asn_DEF_UECapabilityInformation, NULL, ueCapabilityInformation, buf, 4096);
+  asn_enc_rval_t ret = uper_encode_to_buffer(&asn_DEF_LTE_UECapabilityInformation, NULL, ueCapabilityInformation, buf, 4096);
 
   if (ret.encoded == -1) abort();
 
-  memset(&rac, 0, sizeof(UERadioAccessCapabilityInformation_t));
+  memset(&rac, 0, sizeof(LTE_UERadioAccessCapabilityInformation_t));
 
-  rac.criticalExtensions.present = UERadioAccessCapabilityInformation__criticalExtensions_PR_c1;
-  rac.criticalExtensions.choice.c1.present = UERadioAccessCapabilityInformation__criticalExtensions__c1_PR_ueRadioAccessCapabilityInformation_r8;
+  rac.criticalExtensions.present = LTE_UERadioAccessCapabilityInformation__criticalExtensions_PR_c1;
+  rac.criticalExtensions.choice.c1.present = LTE_UERadioAccessCapabilityInformation__criticalExtensions__c1_PR_ueRadioAccessCapabilityInformation_r8;
   rac.criticalExtensions.choice.c1.choice.ueRadioAccessCapabilityInformation_r8.ue_RadioAccessCapabilityInfo.buf = buf;
   rac.criticalExtensions.choice.c1.choice.ueRadioAccessCapabilityInformation_r8.ue_RadioAccessCapabilityInfo.size = (ret.encoded+7)/8;
   rac.criticalExtensions.choice.c1.choice.ueRadioAccessCapabilityInformation_r8.nonCriticalExtension = NULL;
@@ -671,7 +671,7 @@ void rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(
   buf2 = malloc16(8192);
   if (buf2 == NULL) abort();
 
-  ret = uper_encode_to_buffer(&asn_DEF_UERadioAccessCapabilityInformation, NULL, &rac, buf2, 8192);
+  ret = uper_encode_to_buffer(&asn_DEF_LTE_UERadioAccessCapabilityInformation, NULL, &rac, buf2, 8192);
 
   if (ret.encoded == -1) abort();
 
@@ -690,7 +690,7 @@ void
 rrc_eNB_send_S1AP_NAS_FIRST_REQ(
   const protocol_ctxt_t* const ctxt_pP,
   rrc_eNB_ue_context_t*          const ue_context_pP,
-  RRCConnectionSetupComplete_r8_IEs_t* rrcConnectionSetupComplete
+  LTE_RRCConnectionSetupComplete_r8_IEs_t* rrcConnectionSetupComplete
 )
 //------------------------------------------------------------------------------
 
@@ -761,7 +761,7 @@ rrc_eNB_send_S1AP_NAS_FIRST_REQ(
 
       if (rrcConnectionSetupComplete->registeredMME != NULL) {
         /* Fill GUMMEI */
-        struct RegisteredMME *r_mme = rrcConnectionSetupComplete->registeredMME;
+        struct LTE_RegisteredMME *r_mme = rrcConnectionSetupComplete->registeredMME;
 
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.presenceMask |= UE_IDENTITIES_gummei;
 
@@ -1858,7 +1858,7 @@ int rrc_eNB_process_PAGING_IND(MessageDef *msg_p, const char *msg_name, instance
                   /* get nB from configuration */
                   /* get default DRX cycle from configuration */
                   Tc = (uint8_t)RC.rrc[instance]->configuration.pcch_defaultPagingCycle[CC_id];
-                  if (Tc < PCCH_Config__defaultPagingCycle_rf32 || Tc > PCCH_Config__defaultPagingCycle_rf256) {
+                  if (Tc < LTE_PCCH_Config__defaultPagingCycle_rf32 || Tc > LTE_PCCH_Config__defaultPagingCycle_rf256) {
                       continue;
                   }
                   Tue = (uint8_t)S1AP_PAGING_IND(msg_p).paging_drx;
@@ -1867,10 +1867,10 @@ int rrc_eNB_process_PAGING_IND(MessageDef *msg_p, const char *msg_name, instance
                   /* set pcch_nB = PCCH-Config->nB */
                   pcch_nB = (uint32_t)RC.rrc[instance]->configuration.pcch_nB[CC_id];
                   switch (pcch_nB) {
-                    case PCCH_Config__nB_fourT:
+                    case LTE_PCCH_Config__nB_fourT:
                         Ns = 4;
                         break;
-                    case PCCH_Config__nB_twoT:
+                    case LTE_PCCH_Config__nB_twoT:
                         Ns = 2;
                         break;
                     default:
@@ -1878,21 +1878,21 @@ int rrc_eNB_process_PAGING_IND(MessageDef *msg_p, const char *msg_name, instance
                         break;
                   }
                   /* set N = min(T,nB) */
-                  if (pcch_nB > PCCH_Config__nB_oneT) {
+                  if (pcch_nB > LTE_PCCH_Config__nB_oneT) {
                     switch (pcch_nB) {
-                    case PCCH_Config__nB_halfT:
+                    case LTE_PCCH_Config__nB_halfT:
                       N = T/2;
                       break;
-                    case PCCH_Config__nB_quarterT:
+                    case LTE_PCCH_Config__nB_quarterT:
                       N = T/4;
                       break;
-                    case PCCH_Config__nB_oneEighthT:
+                    case LTE_PCCH_Config__nB_oneEighthT:
                       N = T/8;
                       break;
-                    case PCCH_Config__nB_oneSixteenthT:
+                    case LTE_PCCH_Config__nB_oneSixteenthT:
                       N = T/16;
                       break;
-                    case PCCH_Config__nB_oneThirtySecondT:
+                    case LTE_PCCH_Config__nB_oneThirtySecondT:
                       N = T/32;
                       break;
                     default:
