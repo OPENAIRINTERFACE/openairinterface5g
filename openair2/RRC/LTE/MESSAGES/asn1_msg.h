@@ -40,7 +40,7 @@
 #include <asn_internal.h> /* for _ASN_DEFAULT_STACK_MAX */
 
 #include "RRC/LTE/rrc_defs.h"
-#include "SL-DestinationInfoList-r12.h"
+#include "LTE_SL-DestinationInfoList-r12.h"
 
 /*
  * The variant of the above function which dumps the BASIC-XER (XER_F_BASIC)
@@ -110,7 +110,7 @@ uint8_t do_RRCConnectionRequest(uint8_t Mod_id, uint8_t *buffer,uint8_t *rv);
 @param discTxResourceReq Pointer to  number of discovery messages for discovery announcements for which  UE requests E-UTRAN to assign dedicated resources
 @param mode Indicates different requests from upper layers
 @returns Size of encoded bit stream in bytes*/
-uint8_t do_SidelinkUEInformation(uint8_t Mod_id, uint8_t *buffer, SL_DestinationInfoList_r12_t  *destinationInfoList, long *discTxResourceReq, SL_TRIGGER_t mode);
+uint8_t do_SidelinkUEInformation(uint8_t Mod_id, uint8_t *buffer, LTE_SL_DestinationInfoList_r12_t  *destinationInfoList, long *discTxResourceReq, SL_TRIGGER_t mode);
 
 /** \brief Generate an RRCConnectionSetupComplete UL-DCCH-Message (UE)
 @param buffer Pointer to PER-encoded ASN.1 description of UL-DCCH-Message PDU
@@ -149,8 +149,8 @@ do_RRCConnectionSetup(
   uint8_t*                   const buffer,
   const uint8_t                    transmission_mode,
   const uint8_t                    Transaction_id,
-  SRB_ToAddModList_t**             SRB_configList,
-  struct PhysicalConfigDedicated** physicalConfigDedicated
+  LTE_SRB_ToAddModList_t**             SRB_configList,
+  struct LTE_PhysicalConfigDedicated** physicalConfigDedicated
 );
 
 /**
@@ -180,26 +180,26 @@ do_RRCConnectionReconfiguration(
   const protocol_ctxt_t*        const ctxt_pP,
     uint8_t                            *buffer,
     uint8_t                             Transaction_id,
-    SRB_ToAddModList_t                 *SRB_list,
-    DRB_ToAddModList_t                 *DRB_list,
-    DRB_ToReleaseList_t                *DRB_list2,
-    struct SPS_Config                  *sps_Config,
-    struct PhysicalConfigDedicated     *physicalConfigDedicated,
-    MeasObjectToAddModList_t           *MeasObj_list,
-    ReportConfigToAddModList_t         *ReportConfig_list,
-    QuantityConfig_t                   *quantityConfig,
-    MeasIdToAddModList_t               *MeasId_list,
-    MAC_MainConfig_t                   *mac_MainConfig,
-    MeasGapConfig_t                    *measGapConfig,
-    MobilityControlInfo_t              *mobilityInfo,
-    struct MeasConfig__speedStatePars  *speedStatePars,
-    RSRP_Range_t                       *rsrp,
-    C_RNTI_t                           *cba_rnti,
-  struct RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList* dedicatedInfoNASList,
-  SL_CommConfig_r12_t                *sl_CommConfig,
-  SL_DiscConfig_r12_t                *sl_DiscConfig
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-    , SCellToAddMod_r10_t  *SCell_config
+    LTE_SRB_ToAddModList_t                 *SRB_list,
+    LTE_DRB_ToAddModList_t                 *DRB_list,
+    LTE_DRB_ToReleaseList_t                *DRB_list2,
+    struct LTE_SPS_Config                  *sps_Config,
+    struct LTE_PhysicalConfigDedicated     *physicalConfigDedicated,
+    LTE_MeasObjectToAddModList_t           *MeasObj_list,
+    LTE_ReportConfigToAddModList_t         *ReportConfig_list,
+    LTE_QuantityConfig_t                   *quantityConfig,
+    LTE_MeasIdToAddModList_t               *MeasId_list,
+    LTE_MAC_MainConfig_t                   *mac_MainConfig,
+    LTE_MeasGapConfig_t                    *measGapConfig,
+    LTE_MobilityControlInfo_t              *mobilityInfo,
+    struct LTE_MeasConfig__speedStatePars  *speedStatePars,
+    LTE_RSRP_Range_t                       *rsrp,
+    LTE_C_RNTI_t                           *cba_rnti,
+  struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList* dedicatedInfoNASList,
+  LTE_SL_CommConfig_r12_t                *sl_CommConfig,
+  LTE_SL_DiscConfig_r12_t                *sl_DiscConfig
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+    , LTE_SCellToAddMod_r10_t  *SCell_config
 #endif
                                         );
 /**
@@ -222,8 +222,8 @@ do_RRCConnectionReestablishment(
   uint8_t*                   const buffer,
   const uint8_t                    transmission_mode,
   const uint8_t                    Transaction_id,
-  SRB_ToAddModList_t               **SRB_configList,
-  struct PhysicalConfigDedicated   **physicalConfigDedicated);
+  LTE_SRB_ToAddModList_t               **SRB_configList,
+  struct LTE_PhysicalConfigDedicated   **physicalConfigDedicated);
 
 /**
 \brief Generate an RRCConnectionReestablishmentReject DL-CCCH-Message (eNB).
@@ -261,7 +261,7 @@ uint8_t do_RRCConnectionRelease(uint8_t Mod_id, uint8_t *buffer,int Transaction_
  * @returns Size of encoded bit stream in bytes
 */
 uint8_t do_MCCHMessage(uint8_t *buffer);
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 /***
  * \brief Generate an MCCH-Message (eNB). This routine configures MBSFNAreaConfiguration (PMCH-InfoList and Subframe Allocation for MBMS data)
  * @param buffer Pointer to PER-encoded ASN.1 description of MCCH-Message PDU
@@ -270,8 +270,8 @@ uint8_t do_MCCHMessage(uint8_t *buffer);
 uint8_t do_MBSFNAreaConfig(uint8_t Mod_id,
                            uint8_t sync_area,
                            uint8_t *buffer,
-                           MCCH_Message_t *mcch_message,
-                           MBSFNAreaConfiguration_r9_t **mbsfnAreaConfiguration);
+                           LTE_MCCH_Message_t *mcch_message,
+                           LTE_MBSFNAreaConfiguration_r9_t **mbsfnAreaConfiguration);
 #endif
 
 uint8_t do_MeasurementReport(uint8_t Mod_id, uint8_t *buffer,int measid,int phy_id,long rsrp_s,long rsrq_s,long rsrp_t,long rsrq_t);
@@ -282,7 +282,7 @@ uint8_t do_Paging(uint8_t Mod_id, uint8_t *buffer, ue_paging_identity_t ue_pagin
 
 uint8_t do_ULInformationTransfer(uint8_t **buffer, uint32_t pdu_length, uint8_t *pdu_buffer);
 
-OAI_UECapability_t *fill_ue_capability(char *UE_EUTRA_Capability_xer);
+OAI_UECapability_t *fill_ue_capability(char *LTE_UE_EUTRA_Capability_xer);
 
 uint8_t
 do_UECapabilityEnquiry(

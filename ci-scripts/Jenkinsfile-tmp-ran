@@ -53,6 +53,7 @@ def eNB_Repository
 def eNB_Branch
 def eNB_CommitID
 def eNB_AllowMergeRequestProcess = false
+def eNB_TargetBranch
 
 pipeline {
     agent {
@@ -61,6 +62,7 @@ pipeline {
     options {
         disableConcurrentBuilds()
         ansiColor('xterm')
+        lock (ciSmartPhoneResource)
     }
     // the following parameter options are commented out so it shows the ones
     // that you SHALL have to run the job.
@@ -149,6 +151,14 @@ pipeline {
                     echo "eNB_CommitID          :   ${eNB_CommitID}"
                     if (params.eNB_mergeRequest != null) {
                         eNB_AllowMergeRequestProcess = params.eNB_mergeRequest
+                        if (eNB_AllowMergeRequestProcess) {
+                            if (params.eNB_TargetBranch != null) {
+                                eNB_TargetBranch = params.eNB_TargetBranch
+                            } else {
+                                eNB_TargetBranch = 'develop'
+                            }
+                            echo "eNB_TargetBranch      :   ${eNB_TargetBranch}"
+                        }
                     }
 
                     if (params.EPC_IPAddress == null) {
@@ -184,7 +194,6 @@ pipeline {
             steps {
                 script {
                     dir ('ci-scripts') {
-                      lock (ciSmartPhoneResource) {
                         try {
                             echo "\u2705 \u001B[32m${testStageName}\u001B[0m"
                             withCredentials([
@@ -192,12 +201,11 @@ pipeline {
                                 [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password'],
                                 [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.ADB_Credentials}", usernameVariable: 'ADB_Username', passwordVariable: 'ADB_Password']
                             ]) {
-                                sh "python3 main.py --mode=TesteNB --eNBIPAddress=${params.eNB_IPAddress} --eNBRepository=${eNB_Repository} --eNBBranch=${eNB_Branch} --eNBCommitID=${eNB_CommitID} --eNB_AllowMerge=${eNB_AllowMergeRequestProcess} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --EPCIPAddress=${params.EPC_IPAddress} --EPCType=${params.EPC_Type} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --XMLTestFile=${testXMLFile}"
+                                sh "python3 main.py --mode=TesteNB --eNBIPAddress=${params.eNB_IPAddress} --eNBRepository=${eNB_Repository} --eNBBranch=${eNB_Branch} --eNBCommitID=${eNB_CommitID} --eNB_AllowMerge=${eNB_AllowMergeRequestProcess} --eNBTargetBranch=${eNB_TargetBranch} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --EPCIPAddress=${params.EPC_IPAddress} --EPCType=${params.EPC_Type} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --XMLTestFile=${testXMLFile}"
                             }
                         } catch (Exception e) {
                             currentBuild.result = 'FAILURE'
                         }
-                      }
                     }
                 }
             }

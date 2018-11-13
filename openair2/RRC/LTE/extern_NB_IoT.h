@@ -33,7 +33,7 @@
 #include "RRC/LTE/defs_NB_IoT.h"
 #include "PHY_INTERFACE/IF_Module_NB_IoT.h"
 #include "LAYER2/RLC/rlc.h"
-#include "LogicalChannelConfig-NB-r13.h"
+#include "LTE_LogicalChannelConfig-NB-r13.h"
 #include "LAYER2/MAC/defs_NB_IoT.h"
 
 #include "common/ran_context.h"
@@ -48,8 +48,8 @@ extern PHY_Config_NB_IoT_t 						*config_INFO;
 
 extern rlc_info_t 							Rlc_info_am_NB_IoT,Rlc_info_am_config_NB_IoT;
 extern uint8_t 								DRB2LCHAN_NB_IoT[2];
-extern LogicalChannelConfig_NB_r13_t 		SRB1bis_logicalChannelConfig_defaultValue_NB_IoT;
-extern LogicalChannelConfig_NB_r13_t 		SRB1_logicalChannelConfig_defaultValue_NB_IoT;
+extern LTE_LogicalChannelConfig_NB_r13_t 		SRB1bis_logicalChannelConfig_defaultValue_NB_IoT;
+extern LTE_LogicalChannelConfig_NB_r13_t 		SRB1_logicalChannelConfig_defaultValue_NB_IoT;
 
 extern uint16_t 							T300_NB_IoT[8];
 extern uint16_t 							T301_NB_IoT[8];

@@ -29,7 +29,7 @@
  ***************************************************************************/
 
 #ifdef CMAKER
-#include "asn_constant.h"
+#include "LTE_asn_constant.h"
 #else
 #include "RRC/LTE/MESSAGES/asn1_constants.h"
 #endif
@@ -87,19 +87,19 @@
 #define MAX_MANAGED_ENB_PER_MOBILE  2
 
 ///NB-IOT
-#define NB_RB_MAX_NB_IOT  (maxDRB_NB_r13 + 3) //MP: NB_IoT --> 2(DRB)+3(SRBs - 2 is not used) = 5
+#define NB_RB_MAX_NB_IOT  (LTE_maxDRB_NB_r13 + 3) //MP: NB_IoT --> 2(DRB)+3(SRBs - 2 is not used) = 5
 
 
 #define DEFAULT_RAB_ID 1
 
-#define NB_RB_MAX      (maxDRB + 3) /* was 11, now 14, maxDRB comes from asn1_constants.h, + 3 because of 3 SRB, one invisible id 0, then id 1 and 2 */
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-#define NB_RB_MBMS_MAX (maxSessionPerPMCH*maxServiceCount)
+#define NB_RB_MAX      (LTE_maxDRB + 3) /* was 11, now 14, maxDRB comes from asn1_constants.h, + 3 because of 3 SRB, one invisible id 0, then id 1 and 2 */
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#define NB_RB_MBMS_MAX (LTE_maxSessionPerPMCH*LTE_maxServiceCount)
 #else
 // Do not allocate unused memory
 #define NB_RB_MBMS_MAX 1
 #endif
-#define NB_RAB_MAX     maxDRB       /* was 8, now 11 */
+#define NB_RAB_MAX     LTE_maxDRB       /* was 8, now 11 */
 #define RAB_SHIFT1     9
 #define RAB_SHIFT2     3
 #define RAB_OFFSET     0x0007

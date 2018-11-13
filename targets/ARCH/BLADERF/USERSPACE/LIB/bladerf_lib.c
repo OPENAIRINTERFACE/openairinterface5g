@@ -116,15 +116,6 @@ int trx_brf_start(openair0_device *device) {
     abort();
   }
 
-  if ((status=bladerf_calibrate_dc(brf->dev, BLADERF_MODULE_TX)) != 0) {
-    fprintf(stderr,"Failed to calibrate TX DC: %s\n", bladerf_strerror(status));
-    abort();
-  }
-  if ((status=bladerf_calibrate_dc(brf->dev, BLADERF_MODULE_RX)) != 0) {
-    fprintf(stderr,"Failed to calibrate RX DC: %s\n", bladerf_strerror(status));
-    abort();
-  }
-
   return 0;
 }
 
@@ -235,8 +226,6 @@ static int trx_brf_read(openair0_device *device, openair0_timestamp *ptimestamp,
  * \param device the hardware to use
  */
 void trx_brf_end(openair0_device *device) {
-abort();
-
   int status;
   brf_state_t *brf = (brf_state_t*)device->priv;
   // Disable RX module, shutting down our underlying RX stream
@@ -247,6 +236,7 @@ abort();
     fprintf(stderr, "Failed to disable TX module: %s\n",  bladerf_strerror(status));
   }
   bladerf_close(brf->dev);
+  exit(1);
 }
 
 /*! \brief print the BladeRF statistics  
@@ -362,6 +352,8 @@ void set_rx_gain_offset(openair0_config_t *openair0_cfg, int chain_index) {
  */
 void calibrate_rf(openair0_device *device) {
 
+  /* TODO: this function does not seem to work. Disabled until fixed. */
+  return;
 
   brf_state_t *brf = (brf_state_t *)device->priv;
   openair0_timestamp ptimestamp;
@@ -1005,6 +997,12 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   // RX  
   // Example of CLI output: RX Frequency: 2539999999Hz
   
+
+  if ((status=bladerf_set_gain_mode(brf->dev, BLADERF_MODULE_RX, BLADERF_GAIN_MGC))) {
+    fprintf(stderr, "[BRF] Failed to disable AGC\n");
+    brf_error(status);
+  }
+
   if ((status=bladerf_set_frequency(brf->dev, BLADERF_MODULE_RX, (unsigned int) openair0_cfg->rx_freq[0])) != 0){
     fprintf(stderr,"Failed to set RX frequency: %s\n",bladerf_strerror(status));
     brf_error(status);
@@ -1096,17 +1094,14 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
 
   // calibrate 
     
- if ((status=bladerf_calibrate_dc(brf->dev, BLADERF_MODULE_TX)) != 0) {
-    fprintf(stderr,"Failed to calibrate TX DC: %s\n", bladerf_strerror(status));
+  if ((status=bladerf_calibrate_dc(brf->dev, BLADERF_DC_CAL_LPF_TUNING)) != 0 ||
+      (status=bladerf_calibrate_dc(brf->dev, BLADERF_DC_CAL_TX_LPF)) != 0 ||
+      (status=bladerf_calibrate_dc(brf->dev, BLADERF_DC_CAL_RX_LPF)) != 0 ||
+      (status=bladerf_calibrate_dc(brf->dev, BLADERF_DC_CAL_RXVGA2)) != 0) {
+    fprintf(stderr, "[BRF] error calibrating\n");
     brf_error(status);
-  } else 
-    printf("[BRF] TX module calibrated DC \n");
- 
-  if ((status=bladerf_calibrate_dc(brf->dev, BLADERF_MODULE_RX)) != 0) {
-    fprintf(stderr,"Failed to calibrate RX DC: %s\n", bladerf_strerror(status));
-    brf_error(status);
-  }else 
-    printf("[BRF] RX module calibrated DC \n");
+  } else
+    printf("[BRF] calibration OK\n");
   
   bladerf_log_set_verbosity(get_brf_log_level(openair0_cfg->log_level));
   
@@ -1146,8 +1141,8 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
  * \returns 0 on success
  */
 int brf_error(int status) {
-  
-  //exit(-1);
+  fprintf(stderr, "[BRF] brf_error: %s\n", bladerf_strerror(status));
+  exit(-1);
   return status; // or status error code
 }
 
@@ -1190,7 +1185,7 @@ struct bladerf * open_bladerf_from_serial(const char *serial) {
 int get_brf_log_level(int log_level){
 
   int level=BLADERF_LOG_LEVEL_INFO;
-  return  BLADERF_LOG_LEVEL_DEBUG; // BLADERF_LOG_LEVEL_VERBOSE;// BLADERF_LOG_LEVEL_DEBUG; //
+  return  BLADERF_LOG_LEVEL_INFO;
   switch(log_level) {
   case LOG_DEBUG:
     level=BLADERF_LOG_LEVEL_DEBUG;

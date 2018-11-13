@@ -44,29 +44,29 @@
 #include <string.h>
 
 #include "COMMON/platform_constants.h"
-#include "BCCH-BCH-Message.h"
-#include "RadioResourceConfigCommon.h"
-#include "RadioResourceConfigCommonSIB.h"
-#include "RadioResourceConfigDedicated.h"
-#include "MeasGapConfig.h"
-#include "SchedulingInfoList.h"
-#include "TDD-Config.h"
-#include "RACH-ConfigCommon.h"
-#include "MeasObjectToAddModList.h"
-#include "MobilityControlInfo.h"
-#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-#include "MBSFN-AreaInfoList-r9.h"
-#include "MBSFN-SubframeConfigList.h"
-#include "PMCH-InfoList-r9.h"
+#include "LTE_BCCH-BCH-Message.h"
+#include "LTE_RadioResourceConfigCommon.h"
+#include "LTE_RadioResourceConfigCommonSIB.h"
+#include "LTE_RadioResourceConfigDedicated.h"
+#include "LTE_MeasGapConfig.h"
+#include "LTE_SchedulingInfoList.h"
+#include "LTE_TDD-Config.h"
+#include "LTE_RACH-ConfigCommon.h"
+#include "LTE_MeasObjectToAddModList.h"
+#include "LTE_MobilityControlInfo.h"
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+#include "LTE_MBSFN-AreaInfoList-r9.h"
+#include "LTE_MBSFN-SubframeConfigList.h"
+#include "LTE_PMCH-InfoList-r9.h"
 #endif
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-#include "SCellToAddMod-r10.h"
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#include "LTE_SCellToAddMod-r10.h"
 #endif
-#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-#include "SystemInformationBlockType1-v1310-IEs.h"
-#include "SystemInformationBlockType18-r12.h"
+#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
+#include "LTE_SystemInformationBlockType1-v1310-IEs.h"
+#include "LTE_SystemInformationBlockType18-r12.h"
 #endif
-#include "RadioResourceConfigCommonSIB.h"
+#include "LTE_RadioResourceConfigCommonSIB.h"
 #include "nfapi_interface.h"
 #include "PHY_INTERFACE/IF_Module.h"
 
@@ -91,7 +91,7 @@
 #define DCH_PAYLOAD_SIZE_MAX 4096
 /// Logical channel ids from 36-311 (Note BCCH is not specified in 36-311, uses the same as first DRB)
 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
 // Mask for identifying subframe for MBMS
 #define MBSFN_TDD_SF3 0x80	// for TDD
@@ -380,7 +380,7 @@ typedef struct {
     uint8_t payload[PCCH_PAYLOAD_SIZE_MAX];
 } __attribute__ ((__packed__)) PCCH_PDU;
 
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 /*! \brief MCCH payload */
 typedef struct {
     uint8_t payload[MCCH_PAYLOAD_SIZE_MAX];
@@ -437,7 +437,7 @@ typedef struct {
 /*!\brief LCID of padding LCID for DLSCH */
 #define SHORT_PADDING 31
 
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 // MCH LCHAN IDs (table6.2.1-4 TS36.321)
 /*!\brief LCID of MCCH for DL */
 #define MCCH_LCHANID 0
@@ -900,14 +900,14 @@ typedef struct {
     eNB_UE_estimated_distances distance;
 #endif
 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     uint8_t rach_resource_type;
     uint16_t mpdcch_repetition_cnt;
     frame_t Msg2_frame;
 #endif
     sub_frame_t Msg2_subframe;
 
-    PhysicalConfigDedicated_t *physicalConfigDedicated;
+    LTE_PhysicalConfigDedicated_t *physicalConfigDedicated;
 
 } UE_TEMPLATE;
 
@@ -1047,7 +1047,7 @@ typedef struct {
     int msg4_TBsize;
     /// MCS used for Msg4
     int msg4_mcs;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     uint8_t rach_resource_type;
     uint8_t msg2_mpdcch_repetition_cnt;
     uint8_t msg4_mpdcch_repetition_cnt;
@@ -1243,14 +1243,14 @@ typedef struct {
     int Ncp;
     int eutra_band;
     uint32_t dl_CarrierFreq;
-    BCCH_BCH_Message_t *mib;
-    RadioResourceConfigCommonSIB_t *radioResourceConfigCommon;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-    RadioResourceConfigCommonSIB_t *radioResourceConfigCommon_BR;
+    LTE_BCCH_BCH_Message_t *mib;
+    LTE_RadioResourceConfigCommonSIB_t *radioResourceConfigCommon;
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+    LTE_RadioResourceConfigCommonSIB_t *radioResourceConfigCommon_BR;
 #endif
-    TDD_Config_t *tdd_Config;
-    SchedulingInfoList_t *schedulingInfoList;
-    ARFCN_ValueEUTRA_t ul_CarrierFreq;
+    LTE_TDD_Config_t *tdd_Config;
+    LTE_SchedulingInfoList_t *schedulingInfoList;
+    LTE_ARFCN_ValueEUTRA_t ul_CarrierFreq;
     long ul_Bandwidth;
     /// Outgoing MIB PDU for PHY
     MIB_PDU MIB_pdu;
@@ -1273,10 +1273,10 @@ typedef struct {
     /// VRB map for common channels and retransmissions by PHICH
     uint8_t vrb_map_UL[100];
     /// MBSFN SubframeConfig
-    struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];
+    struct LTE_MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];
     /// number of subframe allocation pattern available for MBSFN sync area
     uint8_t num_sf_allocation_pattern;
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     /// MBMS Flag
     uint8_t MBMS_flag;
     /// Outgoing MCCH pdu for PHY
@@ -1290,17 +1290,17 @@ typedef struct {
     /// number of active MBSFN area
     uint8_t num_active_mbsfn_area;
     /// MBSFN Area Info
-    struct MBSFN_AreaInfo_r9 *mbsfn_AreaInfo[MAX_MBSFN_AREA];
+    struct LTE_MBSFN_AreaInfo_r9 *mbsfn_AreaInfo[MAX_MBSFN_AREA];
     /// PMCH Config
-    struct PMCH_Config_r9 *pmch_Config[MAX_PMCH_perMBSFN];
+    struct LTE_PMCH_Config_r9 *pmch_Config[MAX_PMCH_perMBSFN];
     /// MBMS session info list
-    struct MBMS_SessionInfoList_r9 *mbms_SessionList[MAX_PMCH_perMBSFN];
+    struct LTE_MBMS_SessionInfoList_r9 *mbms_SessionList[MAX_PMCH_perMBSFN];
     /// Outgoing MCH pdu for PHY
     MCH_PDU MCH_pdu;
 #endif
-#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
     /// Rel13 parameters from SIB1
-    SystemInformationBlockType1_v1310_IEs_t *sib1_v13ext;
+    LTE_SystemInformationBlockType1_v1310_IEs_t *sib1_v13ext;
     /// Counter for SIB1-BR scheduling
     int SIB1_BR_cnt;
     /// Outgoing BCCH-BR pdu for PHY
@@ -1454,9 +1454,9 @@ typedef struct {
     /// default value is false
     uint16_t ttiBundling;
     /// default value is release
-    struct DRX_Config *drx_config;
+    struct LTE_DRX_Config *drx_config;
     /// default value is release
-    struct MAC_MainConfig__phr_Config *phr_config;
+    struct LTE_MAC_MainConfig__phr_Config *phr_config;
     ///timer before triggering a periodic PHR
     uint16_t periodicPHR_Timer;
     ///timer before triggering a prohibit PHR
@@ -1498,30 +1498,30 @@ typedef struct {
     /// uplink active flag
     uint8_t ul_active;
     /// pointer to RRC PHY configuration
-    RadioResourceConfigCommonSIB_t *radioResourceConfigCommon;
+    LTE_RadioResourceConfigCommonSIB_t *radioResourceConfigCommon;
     /// pointer to RACH_ConfigDedicated (NULL when not active, i.e. upon HO completion or T304 expiry)
-    struct RACH_ConfigDedicated *rach_ConfigDedicated;
+    struct LTE_RACH_ConfigDedicated *rach_ConfigDedicated;
     /// pointer to RRC PHY configuration
-    struct PhysicalConfigDedicated *physicalConfigDedicated;
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+    struct LTE_PhysicalConfigDedicated *physicalConfigDedicated;
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   /// pointer to RRC PHY configuration SCEll
-  struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10;
+  struct LTE_PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10;
   /// Preconfiguration for Sidelink
-  struct SL_Preconfiguration_r12 *SL_Preconfiguration;
+  struct LTE_SL_Preconfiguration_r12 *SL_Preconfiguration;
   /// RX Pool for Sidelink from SIB18
-  SL_CommRxPoolList_r12_t	 commRxPool_r12;
+  LTE_SL_CommRxPoolList_r12_t	 commRxPool_r12;
   /// TX Pool Normal for Sidelink from SIB18
-  struct SL_CommTxPoolList_r12	*commTxPoolNormalCommon_r12;
+  struct LTE_SL_CommTxPoolList_r12	*commTxPoolNormalCommon_r12;
   /// TX Pool Exceptional for Sidelink from SIB18
-  struct SL_CommTxPoolList_r12	*commTxPoolExceptional_r12;
+  struct LTE_SL_CommTxPoolList_r12	*commTxPoolExceptional_r12;
   /// Common Sync Config for Sidelink from SIB18
-  struct SL_SyncConfigList_r12	*commSyncConfig_r12;
+  struct LTE_SL_SyncConfigList_r12	*commSyncConfig_r12;
   /// Dedicated Sync TX control for Sidelink
-  struct SL_SyncTxControl_r12 *sl_SyncTxControl_r12;
+  struct LTE_SL_SyncTxControl_r12 *sl_SyncTxControl_r12;
   /// Dedicated Discovery TX control for Sidelink
-  struct SL_DiscConfig_r12	*sl_DiscConfig_r12;
+  struct LTE_SL_DiscConfig_r12	*sl_DiscConfig_r12;
   /// Dedicated TX config for Sidelink
-  struct SL_CommConfig_r12	*sl_CommConfig_r12;
+  struct LTE_SL_CommConfig_r12	*sl_CommConfig_r12;
   //SL sourceL2ID
   uint32_t sourceL2Id;
   //SL groupL2Id
@@ -1535,17 +1535,17 @@ typedef struct {
 
 #endif
     /// pointer to TDD Configuration (NULL for FDD)
-    TDD_Config_t *tdd_Config;
+    LTE_TDD_Config_t *tdd_Config;
     /// Number of adjacent cells to measure
     uint8_t n_adj_cells;
     /// Array of adjacent physical cell ids
     uint32_t adj_cell_id[6];
     /// Pointer to RRC MAC configuration
-    MAC_MainConfig_t *macConfig;
+    LTE_MAC_MainConfig_t *macConfig;
     /// Pointer to RRC Measurement gap configuration
-    MeasGapConfig_t *measGapConfig;
+    LTE_MeasGapConfig_t *measGapConfig;
     /// Pointers to LogicalChannelConfig indexed by LogicalChannelIdentity. Note NULL means LCHAN is inactive.
-    LogicalChannelConfig_t *logicalChannelConfig[MAX_NUM_LCID];
+    LTE_LogicalChannelConfig_t *logicalChannelConfig[MAX_NUM_LCID];
     /// Scheduling Information
     UE_SCHEDULING_INFO scheduling_info;
     /// Outgoing CCCH pdu for PHY
@@ -1554,7 +1554,7 @@ typedef struct {
     RAR_PDU RAR_pdu;
     /// Incoming DLSCH pdu for PHY
     DLSCH_PDU DLSCH_pdu[MAX_MOBILES_PER_ENB][2];
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     int sltx_active;
     SLSCH_t slsch;
     SLDCH_t sldch;
@@ -1610,16 +1610,16 @@ typedef struct {
     uint8_t periodBSRTimer_expires_flag;
 
     /// MBSFN_Subframe Configuration
-    struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];	// FIXME replace 8 by MAX_MBSFN_AREA?
+    struct LTE_MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];	// FIXME replace 8 by MAX_MBSFN_AREA?
     /// number of subframe allocation pattern available for MBSFN sync area
     uint8_t num_sf_allocation_pattern;
-#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
     /// number of active MBSFN area
     uint8_t num_active_mbsfn_area;
     /// MBSFN Area Info
-    struct MBSFN_AreaInfo_r9 *mbsfn_AreaInfo[MAX_MBSFN_AREA];
+    struct LTE_MBSFN_AreaInfo_r9 *mbsfn_AreaInfo[MAX_MBSFN_AREA];
     /// PMCH Config
-    struct PMCH_Config_r9 *pmch_Config[MAX_PMCH_perMBSFN];
+    struct LTE_PMCH_Config_r9 *pmch_Config[MAX_PMCH_perMBSFN];
     /// MCCH status
     uint8_t mcch_status;
     /// MSI status
@@ -1627,7 +1627,7 @@ typedef struct {
     uint8_t msi_current_alloc;
     uint8_t msi_pmch;
 
-    struct MBSFN_SubframeConfig *commonSF_Alloc_r9_mbsfn_SubframeConfig[8]; // FIXME replace 8 by MAX_MBSFN_AREA?
+    struct LTE_MBSFN_SubframeConfig *commonSF_Alloc_r9_mbsfn_SubframeConfig[8]; // FIXME replace 8 by MAX_MBSFN_AREA?
     uint8_t commonSF_AllocPeriod_r9;
     int common_num_sf_alloc;
 
