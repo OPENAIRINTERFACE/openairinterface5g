@@ -45,6 +45,10 @@
 
 #include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
+/************************************************/
+//#include "RRC/LTE/rrc_eNB_UE_context.h"
+//#include "RRC/LTE/rrc_defs.h"
+/************************************************/
 
 #include "assertions.h"
 //#include "LAYER2/MAC/pre_processor.c"
@@ -110,6 +114,8 @@ rx_sdu(const module_id_t enb_mod_idP,
   RA_t *ra =
     (RA_t *) & RC.mac[enb_mod_idP]->common_channels[CC_idP].ra[0];
   int first_rb = 0;
+
+  rrc_eNB_ue_context_t *ue_contextP; // added by LA
 
   start_meas(&mac->rx_ulsch_sdu);
 
@@ -732,6 +738,18 @@ rx_sdu(const module_id_t enb_mod_idP,
             //clear uplane_inactivity_timer
             UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer = 0;
 
+            // reset RRC inactivity timer after uplane activity
+            ue_contextP = rrc_eNB_get_ue_context(RC.rrc[enb_mod_idP], rntiP);
+            ue_contextP->ue_context.ue_rrc_inactivity_timer = 1;
+
+            LOG_W(RRC, "After reset, rrc_inactivity_timer is %d, of UE rntiP %d, ue_context_rnti %d, UE_id %d, ue_initial_id %d\n",
+              ue_contextP->ue_context.ue_rrc_inactivity_timer,
+              rntiP,
+              ue_contextP->ue_id_rnti,
+              UE_id,
+              ue_contextP->ue_context.ue_initial_id);
+            
+
           } else {	/* rx_length[i] */
             UE_list->eNB_UE_stats[CC_idP][UE_id].num_errors_rx += 1;
             
@@ -743,7 +761,7 @@ rx_sdu(const module_id_t enb_mod_idP,
             UE_id);
           }
 
-	      } else {	/*(UE_id != -1 */
+	      } else {	// end if (UE_id != -1)
           LOG_E(MAC,"[eNB %d] CC_id %d Frame %d : received unsupported or unknown LCID %d from UE %d ",
           enb_mod_idP, 
           CC_idP, 

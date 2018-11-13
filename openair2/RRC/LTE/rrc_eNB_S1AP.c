@@ -167,7 +167,8 @@ void extract_imsi(uint8_t *pdu_buf, uint32_t pdu_len, rrc_eNB_ue_context_t *ue_c
 # if defined(ENABLE_ITTI)
 //------------------------------------------------------------------------------
 /*
-* TODO
+* Get the UE S1 struct containing hashtables S1_id/UE_id.
+* Is also used to set the S1_id of the UE, depending on inputs.
 */
 struct rrc_ue_s1ap_ids_s*
 rrc_eNB_S1AP_get_ue_ids(
@@ -305,7 +306,7 @@ rrc_eNB_S1AP_get_ue_ids(
 
 //------------------------------------------------------------------------------
 /*
-* TODO
+* Remove UE ids (ue_initial_id and S1_id) from hashtables.
 */
 void
 rrc_eNB_S1AP_remove_ue_ids(
@@ -789,7 +790,7 @@ void rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(
 
 //------------------------------------------------------------------------------
 /*
-* TODO
+* Initial UE NAS message on S1AP.
 */
 void
 rrc_eNB_send_S1AP_NAS_FIRST_REQ(

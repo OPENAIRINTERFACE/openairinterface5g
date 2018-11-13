@@ -43,6 +43,10 @@
 
 #include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
+/************************************************/
+//#include "RRC/LTE/rrc_eNB_UE_context.h"
+//#include "RRC/LTE/rrc_defs.h"
+/************************************************/
 
 //#include "LAYER2/MAC/pre_processor.c"
 #include "pdcp.h"
@@ -465,6 +469,8 @@ schedule_ue_spec(module_id_t module_idP, int slice_idxP,
   int ta_update;
   int header_length_last;
   int header_length_total;
+
+  rrc_eNB_ue_context_t *ue_contextP; // added by LA
 
   start_meas(&eNB->schedule_dlsch);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH, VCD_FUNCTION_IN);
@@ -1105,6 +1111,17 @@ schedule_ue_spec(module_id_t module_idP, int slice_idxP,
 	      num_sdus++;
 
 	      UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer = 0;
+
+        // reset RRC inactivity timer after uplane activity
+        ue_contextP = rrc_eNB_get_ue_context(RC.rrc[module_idP], rnti);
+        ue_contextP->ue_context.ue_rrc_inactivity_timer = 1;
+
+        LOG_W(RRC, "After reset, rrc_inactivity_timer is %d, of UE rntiP %d, ue_context_rnti %d, UE_id %d, ue_initial_id %d\n",
+              ue_contextP->ue_context.ue_rrc_inactivity_timer,
+              rnti,
+              ue_contextP->ue_id_rnti,
+              UE_id,
+              ue_contextP->ue_context.ue_initial_id);
 
 	    } // end if (rlc_status.bytes_in_buffer > 0)
 	  } else {  // no TBS left

@@ -1036,7 +1036,7 @@ rrc_eNB_process_RRCConnectionSetupComplete(
   ue_context_pP->ue_context.Srb1.Active = 1;
   ue_context_pP->ue_context.Status = RRC_CONNECTED;
   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 1; // set rrc inactivity when UE goes into RRC_CONNECTED
-  ue_context_pP->ue_context.ue_rrc_inactivity_timer_thres = 10000; // SHOULD NOT BE DONE HERE !!!!!
+  ue_context_pP->ue_context.ue_rrc_inactivity_timer_thres = 10000; // The value should come from config file
 
   T(T_ENB_RRC_CONNECTION_SETUP_COMPLETE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
@@ -1369,6 +1369,8 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   uint8_t next_xid = rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id);
 
   ue_context_pP->ue_context.Status = RRC_CONNECTED;
+  ue_context_pP->ue_context.ue_rrc_inactivity_timer = 1; // set rrc inactivity when UE goes into RRC_CONNECTED
+  ue_context_pP->ue_context.ue_rrc_inactivity_timer_thres = 10000; // The value should come from config file
   ue_context_pP->ue_context.reestablishment_xid = next_xid;
 
   SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[xid];
