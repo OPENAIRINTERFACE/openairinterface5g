@@ -225,10 +225,10 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,
     }
   }
 
-  LOG_D(PHY,"new_gNB_dlsch exit flag %d, size of  %ld\n",
+ /* LOG_D(PHY,"new_gNB_dlsch exit flag %d, size of  %ld\n",
 	exit_flag, sizeof(NR_gNB_DLSCH_t));
   free_gNB_dlsch(dlsch);
-  return(NULL);
+  return(NULL);*/
 
 
 }

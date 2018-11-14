@@ -496,10 +496,10 @@ void init_nr_transport(PHY_VARS_gNB *gNB) {
       if (!gNB->dlsch[i][j]) {
 	LOG_E(PHY,"Can't get gNB dlsch structures for UE %d \n", i);
 	exit(-1);
-      } else {
+      }/* else {
 	gNB->dlsch[i][j]->rnti=0;
 	LOG_D(PHY,"dlsch[%d][%d] => %p rnti:%d\n",i,j,gNB->dlsch[i][j], gNB->dlsch[i][j]->rnti);
-      }
+      }*/
     }
     
     //LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH, UE %d\n",i);
