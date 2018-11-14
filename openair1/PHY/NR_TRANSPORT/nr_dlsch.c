@@ -34,7 +34,7 @@
 #include "nr_dci.h"
 #include "nr_sch_dmrs.h"
 
-//#define DEBUG_DLSCH
+#define DEBUG_DLSCH
 //#define DEBUG_DLSCH_MAPPING
 
 uint8_t mod_order[5] = {1, 2, 4, 6, 8};
@@ -47,18 +47,21 @@ void nr_pdsch_codeword_scrambling(uint8_t *in,
                          uint32_t n_RNTI,
                          uint32_t* out) {
 
-  uint8_t reset;
+  uint8_t reset, b_idx;
   uint32_t x1, x2, s=0;
 
   reset = 1;
   x2 = (n_RNTI<<15) + (q<<14) + Nid;
 
   for (int i=0; i<size; i++) {
-    if ((i&0x1f)==0) {
+    b_idx = i&0x1f;
+    if (b_idx==0) {
       s = lte_gold_generic(&x1, &x2, reset);
       reset = 0;
+      if (i)
+        out++;
     }
-    *out ^= ((in[i])&1) ^ ((s>>i)&1);
+    *out ^= (((in[i])&1) ^ ((s>>b_idx)&1))<<b_idx;
   }
 
 }
@@ -209,17 +212,16 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
   uint16_t encoded_length = nb_symbols*Qm;
 
   /// CRC, coding, interleaving and rate matching
-  memset((void*)harq->pdu, 1, (TBS>>3)*sizeof(uint8_t));
   nr_dlsch_encoding(harq->pdu, subframe, &dlsch, &frame_parms);
 #ifdef DEBUG_DLSCH
 printf("PDSCH encoding:\nPayload:\n");
-for (int i=0; i<MAX_NR_DLSCH_PAYLOAD_BYTES>>4; i++) {
+for (int i=0; i<TBS>>7; i++) {
   for (int j=0; j<16; j++)
     printf("0x%02x\t", harq->pdu[(i<<4)+j]);
   printf("\n");
 }
 printf("\nEncoded payload:\n");
-for (int i=0; i<encoded_length>>4; i++) {
+for (int i=0; i<encoded_length>>7; i++) {
   for (int j=0; j<16; j++)
     printf("0x%02x\t", harq->f[(i<<4)+j]);
   printf("\n");
@@ -290,8 +292,8 @@ for (int l=0; l<rel15->nb_layers; l++)
   l0 = get_l0(dmrs_type, 2);//config.pdsch_config.dmrs_typeA_position.value);
   nr_modulation(pdsch_dmrs[l0][0], n_dmrs, MOD_QPSK, mod_dmrs); // currently only codeword 0 is modulated
 #ifdef DEBUG_DLSCH
-printf("DMRS modulation (single symbol %d, %d symbols, type %d):\n", l0, n_dmrs, dmrs_type);
-for (int i=0; i<n_dmrs>>3; i++) {
+printf("DMRS modulation (single symbol %d, %d symbols, type %d):\n", l0, n_dmrs>>1, dmrs_type);
+for (int i=0; i<n_dmrs>>4; i++) {
   for (int j=0; j<8; j++) {
     printf("%d %d\t", mod_dmrs[((i<<3)+j)<<1], mod_dmrs[(((i<<3)+j)<<1)+1]);
   }
@@ -366,6 +368,5 @@ m, l, k, ((int16_t*)txdataF[ap])[(l*frame_parms.ofdm_symbol_size + k)<<1],
       }
     }
   }
-
   return 0;
 }

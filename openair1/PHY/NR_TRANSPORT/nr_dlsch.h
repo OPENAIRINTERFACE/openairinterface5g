@@ -95,3 +95,5 @@ int nr_dlsch_encoding(unsigned char *a,
                      NR_gNB_DLSCH_t *dlsch,
                      NR_DL_FRAME_PARMS* frame_parms);
 
+void nr_emulate_dlsch_payload(uint8_t* payload, uint16_t size);
+

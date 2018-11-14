@@ -178,6 +178,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,
         dlsch->harq_processes[i]->pdu = (uint8_t*)malloc16(MAX_NR_DLSCH_PAYLOAD_BYTES/bw_scaling);
         if (dlsch->harq_processes[i]->pdu) {
           bzero(dlsch->harq_processes[i]->pdu,MAX_NR_DLSCH_PAYLOAD_BYTES/bw_scaling);
+          nr_emulate_dlsch_payload(dlsch->harq_processes[i]->pdu, (MAX_NR_DLSCH_PAYLOAD_BYTES/bw_scaling)>>3);
         } else {
           printf("Can't allocate PDU\n");
           exit_flag=1;

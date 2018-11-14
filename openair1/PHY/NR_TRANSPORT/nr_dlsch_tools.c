@@ -237,3 +237,10 @@ void nr_get_PRG_parms(NR_BWP_PARMS* bwp, NR_gNB_DCI_ALLOC_t dci_alloc, uint8_t p
   LOG_I(PHY, "PRG parameters for BWP %d location %d N_RB %d:\n", bwp->bwp_id, bwp->location, bwp->N_RB);
   LOG_I(PHY, "P_prime %d\t start size %d\t endsize %d\t N_PRG %d\n", prg_parms->P_prime, prg_parms->start_size, prg_parms->end_size, prg_parms->N_PRG);
 }
+
+  /// Payload emulation
+void nr_emulate_dlsch_payload(uint8_t* pdu, uint16_t size) {
+  set_taus_seed(0);
+  for (int i=0; i<size; i++)
+    *(pdu+i) = (uint8_t)rand();
+}
