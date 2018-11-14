@@ -34,14 +34,14 @@
 #include "nr_dci.h"
 #include "nr_sch_dmrs.h"
 
-#define DEBUG_DLSCH
+//#define DEBUG_DLSCH
 //#define DEBUG_DLSCH_MAPPING
 
 uint8_t mod_order[5] = {1, 2, 4, 6, 8};
 uint16_t mod_offset[5] = {1,3,7,23,87};
 
 void nr_pdsch_codeword_scrambling(uint8_t *in,
-                         uint8_t size,
+                         uint16_t size,
                          uint8_t q,
                          uint32_t Nid,
                          uint32_t n_RNTI,
@@ -62,6 +62,7 @@ void nr_pdsch_codeword_scrambling(uint8_t *in,
         out++;
     }
     *out ^= (((in[i])&1) ^ ((s>>b_idx)&1))<<b_idx;
+    //printf("i %d b_idx %d in %d s 0x%08x out 0x%08x\n", i, b_idx, in[i], s, *out);
   }
 
 }
@@ -221,14 +222,17 @@ for (int i=0; i<TBS>>7; i++) {
   printf("\n");
 }
 printf("\nEncoded payload:\n");
-for (int i=0; i<encoded_length>>7; i++) {
-  for (int j=0; j<16; j++)
-    printf("0x%02x\t", harq->f[(i<<4)+j]);
-  printf("\n");
+for (int i=0; i<encoded_length>>3; i++) {
+  for (int j=0; j<8; j++)
+    printf("%d", harq->f[(i<<3)+j]);
+  printf("\t");
 }
+printf("\n");
 #endif
 
   /// scrambling
+  for (int q=0; q<rel15->nb_codewords; q++)
+    memset((void*)scrambled_output[q], 0, (encoded_length>>5)*sizeof(uint32_t));
   uint16_t n_RNTI = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? \
   ((pdcch_params.scrambling_id)?pdcch_params.rnti:0) : 0;
   uint16_t Nid = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? \
@@ -242,7 +246,7 @@ for (int i=0; i<encoded_length>>7; i++) {
                          scrambled_output[q]);
 #ifdef DEBUG_DLSCH
 printf("PDSCH scrambling:\n");
-for (int i=0; i<encoded_length>>7; i++) {
+for (int i=0; i<encoded_length>>8; i++) {
   for (int j=0; j<8; j++)
     printf("0x%08x\t", scrambled_output[0][(i<<3)+j]);
   printf("\n");

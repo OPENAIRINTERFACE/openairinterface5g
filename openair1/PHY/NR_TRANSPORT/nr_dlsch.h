@@ -61,7 +61,7 @@ void nr_get_tbs(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
                 nfapi_nr_config_request_t config);
 
 void nr_pdsch_codeword_scrambling(uint8_t *in,
-                         uint8_t size,
+                         uint16_t size,
                          uint8_t q,
                          uint32_t Nid,
                          uint32_t n_RNTI,
