@@ -196,14 +196,12 @@ void oai_create_enb(void) {
   int bodge_counter=0;
   PHY_VARS_eNB *eNB = RC.eNB[0][0];
 
-  printf("[VNF] RC.eNB[0][0]. Mod_id:%d CC_id:%d nb_CC[0]:%d abstraction_flag:%d single_thread_flag:%d td:%p te:%p if_inst:%p\n", eNB->Mod_id, eNB->CC_id, RC.nb_CC[0], eNB->abstraction_flag, eNB->single_thread_flag, eNB->td, eNB->te, eNB->if_inst);
+  printf("[VNF] RC.eNB[0][0]. Mod_id:%d CC_id:%d nb_CC[0]:%d abstraction_flag:%d single_thread_flag:%d if_inst:%p\n", eNB->Mod_id, eNB->CC_id, RC.nb_CC[0], eNB->abstraction_flag, eNB->single_thread_flag, eNB->if_inst);
 
   eNB->Mod_id  = bodge_counter;
   eNB->CC_id   = bodge_counter;
   eNB->abstraction_flag   = 0;
   eNB->single_thread_flag = 0;//single_thread_flag;
-  eNB->td                   = ulsch_decoding_data_all;//(single_thread_flag==1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
-  eNB->te                   = dlsch_encoding_all;//(single_thread_flag==1) ? dlsch_encoding_2threads : dlsch_encoding;
 
   RC.nb_CC[bodge_counter] = 1;
 
