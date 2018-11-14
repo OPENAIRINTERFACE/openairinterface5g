@@ -133,6 +133,8 @@ int main(int argc, char **argv)
 
   int loglvl=OAILOG_WARNING;
 
+  float target_error_rate = 0.01;
+
   cpuf = get_cpu_freq_GHz();
 
   if ( load_configmodule(argc,argv) == 0) {
@@ -296,6 +298,7 @@ int main(int argc, char **argv)
       
     case 'I':
       run_initial_sync=1;
+      target_error_rate=0.1;
       break;
 
     case 'L':
@@ -442,11 +445,10 @@ int main(int argc, char **argv)
     for (int i=0;i<4;i++) gNB->pbch_pdu[i]=i+1;
     nr_common_signal_procedures (gNB,frame,subframe);
 
-    /*  
 	LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],frame_length_complex_samples_no_prefix,1,1);
 	if (gNB->frame_parms.nb_antennas_tx>1)
 	LOG_M("txsigF1.m","txsF1", gNB->common_vars.txdataF[1],frame_length_complex_samples_no_prefix,1,1);
-    */
+
     //TODO: loop over slots
     for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
       if (gNB_config->subframe_config.dl_cyclic_prefix_type.value == 1) {
@@ -571,6 +573,11 @@ int main(int argc, char **argv)
 
     printf("SNR %f : n_errors (negative CRC) = %d/%d\n", SNR,n_errors,n_trials);
 
+    if ((float)n_errors/(float)n_trials <= target_error_rate) {
+      printf("PBCH test OK\n");
+      break;
+    }
+      
     if (n_trials==1)
       break;
 
