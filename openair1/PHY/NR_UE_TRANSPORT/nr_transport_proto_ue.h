@@ -340,7 +340,7 @@ void qam64_qpsk(short *stream0_in,
     @param nb_rb number of RBs for this allocation
     @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
     @param llr16p pointer to pointer to symbol in dlsch_llr*/
-int dlsch_64qam_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
+int nr_dlsch_64qam_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
                          int **rxdataF_comp,
                          int **rxdataF_comp_i,
                          int **dl_ch_mag,
@@ -397,7 +397,7 @@ void qam64_qam16_avx2(short *stream0_in,
     @param nb_rb number of RBs for this allocation
     @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
     @param llr16p pointer to pointer to symbol in dlsch_llr*/
-int dlsch_64qam_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
+int nr_dlsch_64qam_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                           int **rxdataF_comp,
                           int **rxdataF_comp_i,
                           int **dl_ch_mag,
@@ -455,7 +455,7 @@ void qam64_qam64_avx2(int32_t *stream0_in,
     @param nb_rb number of RBs for this allocation
     @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
     @param llr16p pointer to pointer to symbol in dlsch_llr*/
-int dlsch_64qam_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
+int nr_dlsch_64qam_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                           int **rxdataF_comp,
                           int **rxdataF_comp_i,
                           int **dl_ch_mag,
@@ -829,7 +829,7 @@ void nr_dlsch_deinterleaving(uint8_t symbol,
 							uint16_t L,
 							uint16_t *llr,
 							uint16_t *llr_deint,
-							uint32_t nb_rb_pdsch);
+							uint16_t nb_rb_pdsch);
 
 void dlsch_dual_stream_correlation(NR_DL_FRAME_PARMS *frame_parms,
                                    unsigned char symbol,

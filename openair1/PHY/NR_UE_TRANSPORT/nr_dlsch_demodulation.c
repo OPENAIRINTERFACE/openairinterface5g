@@ -128,8 +128,14 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
   //to be updated higher layer
   unsigned short start_rb = 0;
-  unsigned short nb_pdsch_rb = 106;
-
+  unsigned short nb_rb_pdsch = 50;
+  int8_t  *pllr_symbol_cw0;
+  int8_t  *pllr_symbol_cw1;
+  int8_t  *pllr_symbol_cw0_deint;
+  int8_t  *pllr_symbol_cw1_deint;
+  uint32_t llr_offset_symbol;
+  uint16_t bundle_L = 2;
+  
   switch (type) {
   case SI_PDSCH:
     pdsch_vars = &ue->pdsch_vars_SI[eNB_id];
@@ -148,7 +154,17 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   case PDSCH:
     pdsch_vars = ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]];
     dlsch = ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id];
-    //printf("status TB0 = %d, status TB1 = %d \n", dlsch[0]->harq_processes[harq_pid]->status, dlsch[1]->harq_processes[harq_pid]->status);
+    
+    
+  //set active for testing -> to be removed
+  dlsch[0]->harq_processes[harq_pid]->status = ACTIVE;
+  dlsch[0]->harq_processes[harq_pid]->Qm = 2;
+  dlsch[0]->harq_processes[harq_pid]->mcs = 9;
+  dlsch[0]->harq_processes[harq_pid]->Nl=1;
+  dlsch[0]->harq_processes[harq_pid]->nb_rb = nb_rb_pdsch;
+  frame_parms->nushift = 0;
+  
+    printf("status TB0 = %d, status TB1 = %d \n", dlsch[0]->harq_processes[harq_pid]->status, dlsch[1]->harq_processes[harq_pid]->status);
     LOG_D(PHY,"AbsSubframe %d.%d / Sym %d harq_pid %d,  harq status %d.%d \n",
                    frame,nr_tti_rx,symbol,harq_pid,
                    dlsch[0]->harq_processes[harq_pid]->status,
@@ -322,6 +338,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
 #endif
 	  if (beamforming_mode==0) { //else if nb_antennas_ports_eNB==1 && beamforming_mode == 0
+		  printf("start nr dlsch extract nr_tti_rx %d thread id %d \n", nr_tti_rx, ue->current_thread_id[nr_tti_rx]);
     nb_rb = nr_dlsch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
                                      common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].dl_ch_estimates[eNB_id],
                                      pdsch_vars[eNB_id]->rxdataF_ext,
@@ -331,7 +348,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                      rballoc,
                                      symbol,
 									 start_rb,
-									 nb_pdsch_rb,
+									 nb_rb_pdsch,
                                      nr_tti_rx,
                                      ue->high_speed_flag,
                                      frame_parms);
@@ -516,14 +533,14 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                               symbol,
                               nb_rb);*/
     }
-#ifdef UE_DEBUG_TRACE
-    LOG_D(PHY,"[DLSCH] AbsSubframe %d.%d log2_maxh = %d [log2_maxh0 %d log2_maxh1 %d] (%d,%d)\n",
+//#ifdef UE_DEBUG_TRACE
+    LOG_I(PHY,"[DLSCH] AbsSubframe %d.%d log2_maxh = %d [log2_maxh0 %d log2_maxh1 %d] (%d,%d)\n",
             frame%1024,nr_tti_rx, pdsch_vars[eNB_id]->log2_maxh,
                                                  pdsch_vars[eNB_id]->log2_maxh0,
                                                  pdsch_vars[eNB_id]->log2_maxh1,
                                                  avg[0],avgs);
     //LOG_D(PHY,"[DLSCH] mimo_mode = %d\n", dlsch0_harq->mimo_mode);
-#endif
+//#endif
 
     //wait until pdcch is decoded
     //proc->channel_level = 1;
@@ -761,9 +778,9 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #if DISABLE_LOG_X
-    //printf("[AbsSFN %d.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp %5.2f \n",frame,nr_tti_rx,slot,symbol,pdsch_vars[eNB_id]->log2_maxh,proc->channel_level,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
+    printf("[AbsSFN %d.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp %5.2f \n",frame,nr_tti_rx,slot,symbol,pdsch_vars[eNB_id]->log2_maxh,proc->channel_level,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #else
-    //LOG_I(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp  %5.2f \n",frame,nr_tti_rx,slot,symbol,pdsch_vars[eNB_id]->log2_maxh,proc->channel_level,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
+    LOG_I(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp  %5.2f \n",frame,nr_tti_rx,slot,symbol,pdsch_vars[eNB_id]->log2_maxh,proc->channel_level,ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot].p_time/(cpuf*1000.0));
 #endif
 #endif
 // MRC
@@ -826,7 +843,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   }
 #endif
 
-  //    printf("LLR");
+      printf("start compute LLR\n");
   if ((dlsch0_harq->mimo_mode == LARGE_CDD) ||
       ((dlsch0_harq->mimo_mode >=DUALSTREAM_UNIFORM_PRECODING1) &&
        (dlsch0_harq->mimo_mode <=DUALSTREAM_PUSCH_PRECODING)))  {
@@ -840,7 +857,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   }
 
   nb_re= (symbol==2)? (nb_rb*6):(nb_rb*12);
-  pdsch_vars[eNB_id]->llr_offset[symbol] = nb_re*dlsch0_harq->Qm * 2;
+  pdsch_vars[eNB_id]->llr_offset[symbol] = nb_re*dlsch0_harq->Qm;
 
 #if UE_TIMING_TRACE
     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
@@ -857,27 +874,31 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   //printf("LLR dlsch0_harq->Qm %d rx_type %d cw0 %d cw1 %d symbol %d \n",dlsch0_harq->Qm,rx_type,codeword_TB0,codeword_TB1,symbol);
   // compute LLRs
   // -> // compute @pointer where llrs should filled for this ofdm-symbol
-  int8_t  *pllr_symbol_cw0;
-  int8_t  *pllr_symbol_cw1;
-  int8_t  *pllr_symbol_cw0_deint;
-  int8_t  *pllr_symbol_cw1_deint;
-  uint32_t llr_offset_symbol;
-  uint32_t nb_rb_pdsch = 106;
-  uint16_t bundle_L = 2;
+
   llr_offset_symbol = pdsch_vars[eNB_id]->llr_offset[symbol];
-  pllr_symbol_cw0_deint  = (int8_t*)pdsch_vars[eNB_id]->llr[0];
-  pllr_symbol_cw1_deint  = (int8_t*)pdsch_vars[eNB_id]->llr[1];
+  //pllr_symbol_cw0_deint  = (int8_t*)pdsch_vars[eNB_id]->llr[0];
+  //pllr_symbol_cw1_deint  = (int8_t*)pdsch_vars[eNB_id]->llr[1];
+  pllr_symbol_cw0 = (int8_t*)pdsch_vars[eNB_id]->llr[0];
+  pllr_symbol_cw1 = (int8_t*)pdsch_vars[eNB_id]->llr[1];
   pllr_symbol_cw0 += llr_offset_symbol;
   pllr_symbol_cw1 += llr_offset_symbol;
 
 
-  /*LOG_I(PHY,"compute LLRs [AbsSubframe %d.%d-%d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %x @LLR Buff(symb) %x\n",
-             proc->frame_rx, proc->subframe_rx,symbol,
+  /*LOG_I(PHY,"compute LLRs [symbol %d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %x @LLR Buff(symb) %x\n",
+             symbol,
              nb_rb,dlsch0_harq->Qm,
              pdsch_vars[eNB_id]->llr_length[symbol],
              pdsch_vars[eNB_id]->llr_offset[symbol],
              (int16_t*)pdsch_vars[eNB_id]->llr[0],
-             pllr_symbol);*/
+             pllr_symbol_cw0);*/
+             
+             printf("compute LLRs [symbol %d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %p @LLR Buff(symb) %p\n",
+             symbol,
+             nb_rb,dlsch0_harq->Qm,
+             pdsch_vars[eNB_id]->llr_length[symbol],
+             pdsch_vars[eNB_id]->llr_offset[symbol],
+             (int16_t*)pdsch_vars[eNB_id]->llr[0],
+             pllr_symbol_cw0);
 
   switch (dlsch0_harq->Qm) {
   case 2 :
@@ -889,6 +910,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                        first_symbol_flag,
                        nb_rb,
                        beamforming_mode);
+                       printf("end llr symol %d\n",symbol);
 
     } else if (codeword_TB0 == -1){
 
@@ -1197,7 +1219,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   }
   }
 
-  nr_dlsch_deinterleaving(symbol,bundle_L,(int16_t*)pllr_symbol_cw0,(int16_t*)pllr_symbol_cw0_deint, nb_rb_pdsch);
+  //nr_dlsch_deinterleaving(symbol,bundle_L,(int16_t*)pllr_symbol_cw0,(int16_t*)pllr_symbol_cw0_deint, nb_rb_pdsch);
 
 #if UE_TIMING_TRACE
     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
@@ -1261,7 +1283,7 @@ void nr_dlsch_deinterleaving(uint8_t symbol,
 							uint16_t L,
 							uint16_t *llr,
 							uint16_t *llr_deint,
-							uint32_t nb_rb_pdsch)
+							uint16_t nb_rb_pdsch)
 {
 
   uint32_t bundle_idx, N_bundle, R, C, r,c;
@@ -1329,8 +1351,6 @@ void nr_dlsch_channel_compensation(int **rxdataF_ext,
   __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128,QAM_amp128b;
 
 
-  
-  //if (frame_parms->mode1_flag==1) // 10 out of 12 so don't reduce size
   if (symbol == 2){
       pilots=1;
   }
@@ -1846,7 +1866,7 @@ void nr_dlsch_channel_level(int **dl_ch_estimates_ext,
 #if defined(__x86_64__)||defined(__i386__)
 
   short rb;
-  unsigned char aatx,aarx,nre=12,symbol_mod;
+  unsigned char aatx,aarx,nre=12;
   __m128i *dl_ch128, avg128D;
 
     if (symbol==2) //assume start symbol 2
@@ -1876,14 +1896,14 @@ void nr_dlsch_channel_level(int **dl_ch_estimates_ext,
         //avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[0],_mm_srai_epi16(_mm_mulhi_epi16(dl_ch128[0], coeff128),15)));
         //avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[1],_mm_srai_epi16(_mm_mulhi_epi16(dl_ch128[1], coeff128),15)));
 
-	    if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_eNB!=1)) {
+	    /*if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(frame_parms->nb_antenna_ports_eNB!=1)) {
           dl_ch128+=2;
         }
-        else {
+        else {*/
 	  avg128D = _mm_add_epi32(avg128D,_mm_srai_epi16(_mm_madd_epi16(dl_ch128[2],dl_ch128[2]),x));
           //avg128D = _mm_add_epi32(avg128D,_mm_madd_epi16(dl_ch128[2],_mm_srai_epi16(_mm_mulhi_epi16(dl_ch128[2], coeff128),15)));
           dl_ch128+=3;
-        }
+       // }
         /*
           if (rb==0) {
           print_shorts("dl_ch128",&dl_ch128[0]);
@@ -1975,53 +1995,53 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
                                         unsigned int *rb_alloc,
                                         unsigned char symbol,
 										unsigned short start_rb,
-										unsigned short nb_pdsch_rb,
+										unsigned short nb_rb_pdsch,
                                         unsigned char nr_tti_rx,
                                         uint32_t high_speed_flag,
                                         NR_DL_FRAME_PARMS *frame_parms) {
 
 
 
-  unsigned short k,rb,nb_rb=0;
-  unsigned char rb_alloc_ind;
-  unsigned char i,aarx,l,nsymb,skip_half=0,sss_symb,pss_symb=0;
+  unsigned short k,rb;
+  unsigned char i,aarx,l; //,nsymb,sss_symb,pss_symb=0;
   int *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
 
 
 
-  unsigned char symbol_mod,pilots=0,j=0,poffset=0;
+  unsigned char pilots=0,j=0;
 
-  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
+  //symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
   pilots = (symbol==2) ? 1 : 0; //to updated from config
   l=symbol;
-  nsymb = (frame_parms->Ncp==NORMAL) ? 14:12;
+  //nsymb = (frame_parms->Ncp==NORMAL) ? 14:12;
+  k = frame_parms->first_carrier_offset + 516; //0
 
-  if (frame_parms->frame_type == TDD) {  // TDD
+ /* if (frame_parms->frame_type == TDD) {  // TDD
     sss_symb = nsymb-1;
     pss_symb = 2;
   } else {
     sss_symb = (nsymb>>1)-2;
     pss_symb = (nsymb>>1)-1;
-  }
+  }*/
 
-  if (symbol_mod==(4-frame_parms->Ncp))
-    poffset=3;
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
     if (high_speed_flag == 1)
-      dl_ch0     = &dl_ch_estimates[aarx][(symbol*(frame_parms->ofdm_symbol_size))];
+      dl_ch0     = &dl_ch_estimates[aarx][(2*(frame_parms->ofdm_symbol_size))];
     else
       dl_ch0     = &dl_ch_estimates[aarx][0];
 
-    dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol*(nb_pdsch_rb*12)];
+    dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol*(nb_rb_pdsch*12)];
 
-    rxF_ext   = &rxdataF_ext[aarx][symbol*(nb_pdsch_rb*12)];
-    rxF       = &rxdataF[aarx][(frame_parms->first_carrier_offset + (symbol*(frame_parms->ofdm_symbol_size)))];
+    rxF_ext   = &rxdataF_ext[aarx][symbol*(nb_rb_pdsch*12)];
+    rxF       = &rxdataF[aarx][(k+(symbol*(frame_parms->ofdm_symbol_size)))];
+    
+    printf("extract single addr %p pilots %d symbol %d, l %d RB_DL %d nushift %d k %d\n", rxF, pilots, symbol, l, frame_parms->N_RB_DL,frame_parms->nushift,k);
 
-    if ((frame_parms->N_RB_DL&1) == 0)  // even number of RBs
+    //if ((frame_parms->N_RB_DL&1) == 0){  // even number of RBs
 
-      for (rb=start_rb;rb<nb_pdsch_rb;rb++) {
+      for (rb=start_rb;rb<nb_rb_pdsch;rb++) {
 
         // For second half of RBs skip DC carrier
         if (k>=frame_parms->ofdm_symbol_size) {
@@ -2042,8 +2062,11 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
             for (i=0; i<12; i++) {
               rxF_ext[i]=rxF[i];
               dl_ch0_ext[i]=dl_ch0[i];
-              /*printf("%d : (%d,%d)\n",(rxF+i-&rxdataF[aarx][( (symbol*(frame_parms->ofdm_symbol_size)))]),
-                ((short*)&rxF[i])[0],((short*)&rxF[i])[1]);*/
+              printf("rb %ld %p: (%d,%d)\n",(rxF+i-&rxdataF[aarx][( (symbol*(frame_parms->ofdm_symbol_size)))]),rxF,
+                ((short*)&rxF[i])[0],((short*)&rxF[i])[1]);
+              printf("rb %ld %p: dl_ch (%d,%d)\n",(rxF+i-&rxdataF[aarx][( (symbol*(frame_parms->ofdm_symbol_size)))]),rxF,
+                ((short*)&dl_ch0[i])[0],((short*)&dl_ch0[i])[1]);
+                printf("re count %d\n",rb*12+i);
             }
 
             dl_ch0_ext+=12;
@@ -2054,9 +2077,11 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
             for (i=0; i<12; i++) {
               if ((i&1)!=frame_parms->nushift){
                 rxF_ext[j]=rxF[i];
-                //            printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
-                dl_ch0_ext[j++]=dl_ch0[i];
-
+                     printf("extract rb %d, re %d => rxF (%d,%d) rxF ext (%d,%d) addr %p\n",rb,i,*(short *)&rxF[i],*(1+(short*)&rxF[i]),*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]),rxF_ext);
+                dl_ch0_ext[j]=dl_ch0[i];
+					printf("rb %ld %p: dl_ch (%d,%d)\n",(rxF+i-&rxdataF[aarx][( (symbol*(frame_parms->ofdm_symbol_size)))]),rxF,
+                ((short*)&dl_ch0[i])[0],((short*)&dl_ch0[i])[1]);
+                j++;
               }
             }
 
@@ -2068,376 +2093,10 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
         rxF+=12;
         k+=12;
       }
-    else {  // Odd number of RBs
-      for (rb=0; rb<frame_parms->N_RB_DL>>1; rb++) {
-#ifdef DEBUG_DLSCH_DEMOD
-        printf("dlch_ext %d\n",dl_ch0_ext-&dl_ch_estimates_ext[aarx][0]);
-#endif
-        skip_half=0;
-
-        if (rb_alloc_ind==1) {
-
-#ifdef DEBUG_DLSCH_DEMOD
-          printf("rb %d/symbol %d (skip_half %d)\n",rb,l,skip_half);
-#endif
-          if (pilots==0) {
-            //      printf("Extracting w/o pilots (symbol %d, rb %d, skip_half %d)\n",l,rb,skip_half);
-            if (skip_half==1) {
-              memcpy(dl_ch0_ext,dl_ch0,6*sizeof(int));
-
-              for (i=0; i<6; i++) {
-                rxF_ext[i]=rxF[i];
-#ifdef DEBUG_DLSCH_DEMOD
-                printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
-#endif
-              }
-              dl_ch0_ext+=6;
-              rxF_ext+=6;
-            } else if (skip_half==2) {
-              memcpy(dl_ch0_ext,dl_ch0+6,6*sizeof(int));
-
-              for (i=0; i<6; i++) {
-                rxF_ext[i]=rxF[(i+6)];
-#ifdef DEBUG_DLSCH_DEMOD
-                printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
-#endif
-              }
-              dl_ch0_ext+=6;
-              rxF_ext+=6;
-            } else {
-              memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
-
-              for (i=0; i<12; i++) {
-                rxF_ext[i]=rxF[i];
-#ifdef DEBUG_DLSCH_DEMOD
-                printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
-#endif
-              }
-              dl_ch0_ext+=12;
-              rxF_ext+=12;
-            }
-          } else {
-            //      printf("Extracting with pilots (symbol %d, rb %d, skip_half %d)\n",l,rb,skip_half);
-            j=0;
-
-            if (skip_half==1) {
-              for (i=0; i<6; i++) {
-                if (i!=((frame_parms->nushift+poffset)%6)) {
-                  rxF_ext[j]=rxF[i];
-#ifdef DEBUG_DLSCH_DEMOD
-                  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
-#endif
-                  dl_ch0_ext[j++]=dl_ch0[i];
-                }
-              }
-              rxF_ext+=5;
-              dl_ch0_ext+=5;
-            } else if (skip_half==2) {
-              for (i=0; i<6; i++) {
-                if (i!=((frame_parms->nushift+poffset)%6)) {
-                  rxF_ext[j]=rxF[(i+6)];
-#ifdef DEBUG_DLSCH_DEMOD
-                  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
-#endif
-                  dl_ch0_ext[j++]=dl_ch0[i+6];
-                }
-              }
-
-              dl_ch0_ext+=5;
-              rxF_ext+=5;
-            } else {
-              for (i=0; i<12; i++) {
-                if ((i!=(frame_parms->nushift+poffset)) &&
-                    (i!=((frame_parms->nushift+poffset+6)%12))) {
-                  rxF_ext[j]=rxF[i];
-#ifdef DEBUG_DLSCH_DEMOD
-                  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
-#endif
-                  dl_ch0_ext[j++]=dl_ch0[i];
-
-                }
-              }
-
-              dl_ch0_ext+=10;
-              rxF_ext+=10;
-            }
-          }
-        }
-        dl_ch0+=12;
-        rxF+=12;
-      } // first half loop
-
-
-      // Do middle RB (around DC)
-      if (rb < 32)
-        rb_alloc_ind = (rb_alloc[0]>>rb) & 1;
-      else if (rb < 64)
-        rb_alloc_ind = (rb_alloc[1]>>(rb-32)) & 1;
-      else if (rb < 96)
-        rb_alloc_ind = (rb_alloc[2]>>(rb-64)) & 1;
-      else if (rb < 100)
-        rb_alloc_ind = (rb_alloc[3]>>(rb-96)) & 1;
-      else
-        rb_alloc_ind = 0;
-
-
-      if (rb_alloc_ind == 1)
-        nb_rb++;
-
-      // PBCH
-
-      if ((nr_tti_rx==0) &&
-          (l>=(nsymb>>1)) &&
-          (l<((nsymb>>1) + 4))) {
-        rb_alloc_ind = 0;
-      }
-
-      //SSS
-      if (((nr_tti_rx==0)||(nr_tti_rx==5)) && (l==sss_symb) ) {
-        rb_alloc_ind = 0;
-      }
-
-      if (frame_parms->frame_type == FDD) {
-        //PSS
-        if (((nr_tti_rx==0)||(nr_tti_rx==5)) && (l==pss_symb) ) {
-          rb_alloc_ind = 0;
-        }
-      }
-
-      //PSS
-      if ((frame_parms->frame_type == TDD) &&
-          (nr_tti_rx==6) &&
-          (l==pss_symb) ) {
-        rb_alloc_ind = 0;
-      }
-
-
-      //  printf("dlch_ext %d\n",dl_ch0_ext-&dl_ch_estimates_ext[aarx][0]);
-      //      printf("DC rb %d (%p)\n",rb,rxF);
-      if (rb_alloc_ind==1) {
-#ifdef DEBUG_DLSCH_DEMOD
-        printf("rb %d/symbol %d (skip_half %d)\n",rb,l,skip_half);
-#endif
-        if (pilots==0) {
-          for (i=0; i<6; i++) {
-            dl_ch0_ext[i]=dl_ch0[i];
-            rxF_ext[i]=rxF[i];
-          }
-
-          rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))];
-
-          for (; i<12; i++) {
-            dl_ch0_ext[i]=dl_ch0[i];
-            rxF_ext[i]=rxF[(1+i-6)];
-          }
-
-          dl_ch0_ext+=12;
-          rxF_ext+=12;
-        } else { // pilots==1
-          j=0;
-
-          for (i=0; i<6; i++) {
-            if (i!=((frame_parms->nushift+poffset)%6)) {
-              dl_ch0_ext[j]=dl_ch0[i];
-              rxF_ext[j++]=rxF[i];
-#ifdef DEBUG_DLSCH_DEMOD
-              printf("**extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
-#endif
-            }
-          }
-
-          rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))];
-
-          for (; i<12; i++) {
-            if (i!=((frame_parms->nushift+6+poffset)%12)) {
-              dl_ch0_ext[j]=dl_ch0[i];
-              rxF_ext[j++]=rxF[(1+i-6)];
-#ifdef DEBUG_DLSCH_DEMOD
-              printf("**extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j-1],*(1+(short*)&rxF_ext[j-1]));
-#endif
-            }
-          }
-
-          dl_ch0_ext+=10;
-          rxF_ext+=10;
-        } // symbol_mod==0
-      } // rballoc==1
-      else {
-        rxF       = &rxdataF[aarx][((symbol*(frame_parms->ofdm_symbol_size)))];
-      }
-
-      dl_ch0+=12;
-      rxF+=7;
-      rb++;
-
-      for (;rb<frame_parms->N_RB_DL;rb++) {
-        //      printf("dlch_ext %d\n",dl_ch0_ext-&dl_ch_estimates_ext[aarx][0]);
-        //      printf("rb %d (%p)\n",rb,rxF);
-        skip_half=0;
-
-        if (rb < 32)
-          rb_alloc_ind = (rb_alloc[0]>>rb) & 1;
-        else if (rb < 64)
-          rb_alloc_ind = (rb_alloc[1]>>(rb-32)) & 1;
-        else if (rb < 96)
-          rb_alloc_ind = (rb_alloc[2]>>(rb-64)) & 1;
-        else if (rb < 100)
-          rb_alloc_ind = (rb_alloc[3]>>(rb-96)) & 1;
-        else
-          rb_alloc_ind = 0;
-
-        if (rb_alloc_ind == 1)
-          nb_rb++;
-
-        // PBCH
-        if ((nr_tti_rx==0) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l>=nsymb>>1) && (l<((nsymb>>1) + 4))) {
-          rb_alloc_ind = 0;
-        }
-        //PBCH subframe 0, symbols nsymb>>1 ... nsymb>>1 + 3
-        if ((nr_tti_rx==0) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l>=(nsymb>>1)) && (l<((nsymb>>1) + 4)))
-          skip_half=1;
-        else if ((nr_tti_rx==0) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l>=(nsymb>>1)) && (l<((nsymb>>1) + 4)))
-          skip_half=2;
-
-        //SSS
-        if (((nr_tti_rx==0)||(nr_tti_rx==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==sss_symb) ) {
-          rb_alloc_ind = 0;
-        }
-        //SSS
-        if (((nr_tti_rx==0)||(nr_tti_rx==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==sss_symb))
-          skip_half=1;
-        else if (((nr_tti_rx==0)||(nr_tti_rx==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==sss_symb))
-          skip_half=2;
-        if (frame_parms->frame_type == FDD) {
-          //PSS
-          if (((nr_tti_rx==0)||(nr_tti_rx==5)) && (rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==pss_symb) ) {
-            rb_alloc_ind = 0;
-          }
-
-          //PSS
-
-          if (((nr_tti_rx==0)||(nr_tti_rx==5)) && (rb==((frame_parms->N_RB_DL>>1)-3)) && (l==pss_symb))
-            skip_half=1;
-          else if (((nr_tti_rx==0)||(nr_tti_rx==5)) && (rb==((frame_parms->N_RB_DL>>1)+3)) && (l==pss_symb))
-            skip_half=2;
-        }
-
-        if ((frame_parms->frame_type == TDD) &&
-
-            (nr_tti_rx==6)) { //TDD Subframe 6
-          if ((rb>((frame_parms->N_RB_DL>>1)-3)) && (rb<((frame_parms->N_RB_DL>>1)+3)) && (l==pss_symb) ) {
-            rb_alloc_ind = 0;
-          }
-
-          if ((rb==((frame_parms->N_RB_DL>>1)-3)) && (l==pss_symb))
-            skip_half=1;
-          else if ((rb==((frame_parms->N_RB_DL>>1)+3)) && (l==pss_symb))
-            skip_half=2;
-        }
-
-        if (rb_alloc_ind==1) {
-#ifdef DEBUG_DLSCH_DEMOD
-          printf("rb %d/symbol %d (skip_half %d)\n",rb,l,skip_half);
-#endif
-          /*
-            printf("rb %d\n",rb);
-            for (i=0;i<12;i++)
-            printf("(%d %d)",((short *)dl_ch0)[i<<1],((short*)dl_ch0)[1+(i<<1)]);
-            printf("\n");
-          */
-          if (pilots==0) {
-            //      printf("Extracting w/o pilots (symbol %d, rb %d, skip_half %d)\n",l,rb,skip_half);
-            if (skip_half==1) {
-              memcpy(dl_ch0_ext,dl_ch0,6*sizeof(int));
-
-              for (i=0; i<6; i++) {
-                rxF_ext[i]=rxF[i];
-#ifdef DEBUG_DLSCH_DEMOD
-                printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
-#endif
-              }
-              dl_ch0_ext+=6;
-              rxF_ext+=6;
-
-            } else if (skip_half==2) {
-              memcpy(dl_ch0_ext,dl_ch0+6,6*sizeof(int));
-
-              for (i=0; i<6; i++) {
-                rxF_ext[i]=rxF[(i+6)];
-#ifdef DEBUG_DLSCH_DEMOD
-                printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
-#endif
-              }
-              dl_ch0_ext+=6;
-              rxF_ext+=6;
-
-            } else {
-              memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
-
-              for (i=0; i<12; i++) {
-                rxF_ext[i]=rxF[i];
-#ifdef DEBUG_DLSCH_DEMOD
-                printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[i],*(1+(short*)&rxF_ext[i]));
-#endif
-              }
-              dl_ch0_ext+=12;
-              rxF_ext+=12;
-            }
-          } else {
-            //      printf("Extracting with pilots (symbol %d, rb %d, skip_half %d)\n",l,rb,skip_half);
-            j=0;
-
-            if (skip_half==1) {
-              for (i=0; i<6; i++) {
-                if (i!=((frame_parms->nushift+poffset)%6)) {
-                  rxF_ext[j]=rxF[i];
-#ifdef DEBUG_DLSCH_DEMOD
-                  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
-#endif
-                  dl_ch0_ext[j++]=dl_ch0[i];
-                }
-              }
-
-              dl_ch0_ext+=5;
-              rxF_ext+=5;
-            } else if (skip_half==2) {
-              for (i=0; i<6; i++) {
-                if (i!=((frame_parms->nushift+poffset)%6)) {
-                  rxF_ext[j]=rxF[(i+6)];
-#ifdef DEBUG_DLSCH_DEMOD
-                  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
-#endif
-                  dl_ch0_ext[j++]=dl_ch0[i+6];
-                }
-              }
-
-              dl_ch0_ext+=5;
-              rxF_ext+=5;
-            } else {
-              for (i=0; i<12; i++) {
-                if ((i!=(frame_parms->nushift+poffset)) &&
-                    (i!=((frame_parms->nushift+poffset+6)%12))) {
-                  rxF_ext[j]=rxF[i];
-#ifdef DEBUG_DLSCH_DEMOD
-                  printf("extract rb %d, re %d => (%d,%d)\n",rb,i,*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]));
-#endif
-                  dl_ch0_ext[j++]=dl_ch0[i];
-                }
-              }
-              dl_ch0_ext+=10;
-              rxF_ext+=10;
-            }
-          } // pilots=0
-        }
-
-        dl_ch0+=12;
-        rxF+=12;
-      }
-    }
   }
 
 
-  return(nb_rb/frame_parms->nb_antennas_rx);
+  return(nb_rb_pdsch/frame_parms->nb_antennas_rx);
 }
 
 //==============================================================================================
