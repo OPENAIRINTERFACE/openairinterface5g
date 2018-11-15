@@ -5375,7 +5375,6 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
 //-----------------------------------------------------------------------------
 /*
 * TODO: * add function description
-*       * add ue_rrc_inactivity_timer set
 *       * format the function correctly
 */
 void
@@ -7915,7 +7914,7 @@ rrc_rx_tx(
       pthread_mutex_unlock(&rrc_release_freelist);
 
       if (ue_context_p->ue_context.ue_rrc_inactivity_timer > 0) {
-        ue_context_p->ue_context.ue_rrc_inactivity_timer++;
+        // ue_context_p->ue_context.ue_rrc_inactivity_timer++; // (un)comment this line to (de)activate the RRC inactivity timer
 
         if (ue_context_p->ue_context.ue_rrc_inactivity_timer >= ue_context_p->ue_context.ue_rrc_inactivity_timer_thres) {
           LOG_I(RRC, "Removing UE %x instance because of rrc_inactivity_timer timeout\n", 
