@@ -181,6 +181,8 @@ int8_t nr_ue_if_module_kill(uint32_t module_id);
    \param dl_info including dci_ind and rx_request messages*/
 int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info);
 
+int8_t nr_ue_ul_indication(nr_uplink_indication_t *ul_info);
+
 //  TODO check
 /**\brief handle BCCH-BCH message from dl_indication
    \param pduP            pointer to bch pdu

@@ -87,6 +87,8 @@ fifo_dump_emos_UE emos_dump_UE;
 
 #define NS_PER_SLOT 500000
 
+char mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};
+
 extern double cpuf;
 
 int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
@@ -6137,10 +6139,10 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 
   LOG_D(PHY," ------  end FFT/ChannelEst/PDCCH slot 1: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
 
-  /*if ( (nr_tti_rx == 0) && (ue->decode_MIB == 1))
+  if ( (nr_tti_rx == 0) && (ue->decode_MIB == 1))
   {
     ue_pbch_procedures(eNB_id,ue,proc,abstraction_flag);
-  }*/
+  }
 
   // do procedures for C-RNTI
   LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
