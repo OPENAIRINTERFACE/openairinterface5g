@@ -724,12 +724,193 @@ void wakeup_prach_eNB_br(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
     }
   }
     
+<<<<<<< HEAD
   // check if we have to detect PRACH first
   if (is_prach_subframe(fp,frame,subframe)>0) { 
     LOG_D(PHY,"Triggering prach br processing, frame %d, subframe %d\n",frame,subframe);
     if (proc->instance_cnt_prach_br == 0) {
       LOG_W(PHY,"[eNB] Frame %d Subframe %d, dropping PRACH BR\n", frame,subframe);
       return;
+=======
+  }
+
+  eNB_thread_asynch_rxtx_status=0;
+  return(&eNB_thread_asynch_rxtx_status);
+}
+
+
+
+
+
+void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
+
+  eNB_proc_t *proc = &eNB->proc;
+  LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
+  void *rxp[fp->nb_antennas_rx],*txp[fp->nb_antennas_tx]; 
+  unsigned int rxs,txs;
+  int i;
+  int tx_sfoffset = (eNB->single_thread_flag == 1) ? 3 : 2;
+  openair0_timestamp ts,old_ts;
+
+  if (proc->first_rx==0) {
+    
+    // Transmit TX buffer based on timestamp from RX
+    //    printf("trx_write -> USRP TS %llu (sf %d)\n", (proc->timestamp_rx+(3*fp->samples_per_tti)),(proc->subframe_rx+2)%10);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_rx+(tx_sfoffset*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance)&0xffffffff );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
+    // prepare tx buffer pointers
+
+    lte_subframe_t SF_type     = subframe_select(fp,(proc->subframe_rx+tx_sfoffset)%10);
+    lte_subframe_t prevSF_type = subframe_select(fp,(proc->subframe_rx+tx_sfoffset+9)%10);
+    lte_subframe_t nextSF_type = subframe_select(fp,(proc->subframe_rx+tx_sfoffset+1)%10);
+    int sf_extension = 0; 
+
+    if ((SF_type == SF_DL) ||
+	(SF_type == SF_S)) {
+
+      int siglen=fp->samples_per_tti,flags=1;
+
+      if (SF_type == SF_S) {
+	siglen = (fp->dl_symbols_in_S_subframe+1)*(fp->ofdm_symbol_size+fp->nb_prefix_samples0);
+	flags=3; // end of burst
+      }
+      if ((fp->frame_type == TDD) &&
+	  (SF_type == SF_DL)&&
+	  (prevSF_type == SF_UL) && 
+	  (nextSF_type == SF_DL)) {
+	flags = 2; // start of burst
+	sf_extension = eNB->N_TA_offset<<1;
+      }
+      if ((fp->frame_type == TDD) &&
+	  (SF_type == SF_DL)&&
+	  (prevSF_type == SF_UL) &&
+	  (nextSF_type == SF_UL)) {
+	flags = 4; // start of burst and end of burst (only one DL SF between two UL)
+	sf_extension = eNB->N_TA_offset<<1;
+      }
+     
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_WRITE_FLAGS,flags); 
+
+      for (i=0; i<fp->nb_antennas_tx; i++)
+	txp[i] = (void*)&eNB->common_vars.txdata[0][i][((proc->subframe_rx+tx_sfoffset)%10)*fp->samples_per_tti-sf_extension]; 
+
+      txs = eNB->rfdevice.trx_write_func(&eNB->rfdevice,
+					 proc->timestamp_rx+eNB->ts_offset+(tx_sfoffset*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance-sf_extension,
+					 txp,
+					 siglen+sf_extension,
+					 fp->nb_antennas_tx,
+					 flags);
+      clock_gettime( CLOCK_MONOTONIC, &end_rf);    
+      end_rf_ts = proc->timestamp_rx+eNB->ts_offset+(tx_sfoffset*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance;
+      if (recv_if_count != 0 ) {
+        recv_if_count = recv_if_count-1;
+        LOG_D(HW,"[From Timestamp %"PRId64" to Timestamp %"PRId64"] RTT_RF: %"PRId64"; RTT_RF\n", start_rf_prev_ts, end_rf_ts, clock_difftime_ns(start_rf_prev, end_rf));
+        LOG_D(HW,"[From Timestamp %"PRId64" to Timestamp %"PRId64"] RTT_RF: %"PRId64"; RTT_RF\n",start_rf_prev2_ts, end_rf_ts, clock_difftime_ns(start_rf_prev2, end_rf));
+      }
+      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
+      
+      
+      
+      if (txs !=  siglen+sf_extension) {
+	LOG_E(PHY,"TX : Timeout (sent %d/%d)\n",txs, fp->samples_per_tti);
+	exit_fun( "problem transmitting samples" );
+      }	
+    }
+  }
+
+  for (i=0; i<fp->nb_antennas_rx; i++)
+    rxp[i] = (void*)&eNB->common_vars.rxdata[0][i][*subframe*fp->samples_per_tti];
+  
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
+
+  old_ts = proc->timestamp_rx;
+
+  rxs = eNB->rfdevice.trx_read_func(&eNB->rfdevice,
+				    &ts,
+				    rxp,
+				    fp->samples_per_tti,
+				    fp->nb_antennas_rx);
+  start_rf_prev2= start_rf_prev;
+  start_rf_prev2_ts= start_rf_prev_ts; 
+  start_rf_prev = start_rf_new;
+  start_rf_prev_ts = start_rf_new_ts;
+  clock_gettime( CLOCK_MONOTONIC, &start_rf_new);
+  start_rf_new_ts = ts;
+  LOG_D(PHY,"rx_rf: first_rx %d received ts %"PRId64" (sptti %d)\n",proc->first_rx,ts,fp->samples_per_tti);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
+
+  proc->timestamp_rx = ts-eNB->ts_offset;
+
+  if (rxs != fp->samples_per_tti)
+    LOG_E(PHY,"rx_rf: Asked for %d samples, got %d from USRP\n",fp->samples_per_tti,rxs);
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
+ 
+  if (proc->first_rx == 1) {
+    eNB->ts_offset = proc->timestamp_rx;
+    proc->timestamp_rx=0;
+  }
+  else {
+
+    if (proc->timestamp_rx - old_ts != fp->samples_per_tti) {
+      LOG_I(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",proc->timestamp_rx - old_ts - fp->samples_per_tti,eNB->ts_offset);
+      eNB->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_tti);
+      proc->timestamp_rx = ts-eNB->ts_offset;
+    }
+  }
+  proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
+  proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
+  proc->frame_rx    = (proc->frame_rx+proc->frame_offset)&1023;
+  proc->frame_tx    = proc->frame_rx;
+  if (proc->subframe_rx > 5) proc->frame_tx=(proc->frame_tx+1)&1023;
+  // synchronize first reception to frame 0 subframe 0
+
+  proc->timestamp_tx = proc->timestamp_rx+(4*fp->samples_per_tti);
+  //  printf("trx_read <- USRP TS %lu (offset %d sf %d, f %d, first_rx %d)\n", proc->timestamp_rx,eNB->ts_offset,proc->subframe_rx,proc->frame_rx,proc->first_rx);  
+  
+  if (proc->first_rx == 0) {
+    if (proc->subframe_rx != *subframe){
+      LOG_E(PHY,"rx_rf: Received Timestamp (%"PRId64") doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->timestamp_rx,proc->subframe_rx,*subframe);
+      exit_fun("Exiting");
+    }
+    int f2 = (*frame+proc->frame_offset)&1023;    
+    if (proc->frame_rx != f2) {
+      LOG_E(PHY,"rx_rf: Received Timestamp (%"PRId64") doesn't correspond to the time we think it is (proc->frame_rx %d frame %d, frame_offset %d, f2 %d)\n",proc->timestamp_rx,proc->frame_rx,*frame,proc->frame_offset,f2);
+      exit_fun("Exiting");
+    }
+  } else {
+    proc->first_rx--;
+    *frame = proc->frame_rx;
+    *subframe = proc->subframe_rx;        
+  }
+  
+  //printf("timestamp_rx %lu, frame %d(%d), subframe %d(%d)\n",proc->timestamp_rx,proc->frame_rx,frame,proc->subframe_rx,subframe);
+  
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
+  
+  if (rxs != fp->samples_per_tti)
+    exit_fun( "problem receiving samples" );
+  
+
+  
+}
+
+void rx_fh_if5(PHY_VARS_eNB *eNB,int *frame, int *subframe) {
+
+  LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
+  eNB_proc_t *proc = &eNB->proc;
+
+  recv_IF5(eNB, &proc->timestamp_rx, *subframe, IF5_RRH_GW_UL); 
+
+  proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
+  proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
+  
+  if (proc->first_rx == 0) {
+    if (proc->subframe_rx != *subframe){
+      LOG_E(PHY,"rx_fh_if5: Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,*subframe);
+      exit_fun("Exiting");
+>>>>>>> ae0494b0bc431bf664e300b0b5a10f348d6b6757
     }
     
     // wake up thread for PRACH RX
