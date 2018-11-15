@@ -26,22 +26,31 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 
+#include "common/config/config_userapi.h"
+#include "common/utils/LOG/log.h"
+#include "common/ran_context.h" 
+
 #include "SIMULATION/TOOLS/sim.h"
 #include "SIMULATION/RF/rf.h"
 #include "PHY/types.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
 #include "PHY/defs_gNB.h"
+#include "PHY/NR_REFSIG/refsig_defs_ue.h"
+#include "PHY/NR_REFSIG/nr_mod_table.h"
+#include "PHY/MODULATION/modulation_eNB.h"
+#include "PHY/MODULATION/modulation_UE.h"
+#include "PHY/INIT/phy_init.h"
+#include "PHY/NR_TRANSPORT/nr_transport.h"
+#include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 
-#include "PHY/INIT/phy_init.h"
 #include "SCHED_NR/sched_nr.h"
 
-#include "PHY/MODULATION/modulation_common.h"
-#include "common/config/config_load_configmodule.h"
-#include "common/utils/LOG/log.h"
-#include "UTIL/LISTS/list.h"
-#include "common/ran_context.h" 
+//#include "PHY/MODULATION/modulation_common.h"
+//#include "common/config/config_load_configmodule.h"
+//#include "UTIL/LISTS/list.h"
+//#include "common/ran_context.h" 
 
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
@@ -66,11 +75,14 @@ int32_t get_uldl_offset(int eutra_bandP) {return(0);}
 
 NR_IF_Module_t *NR_IF_Module_init(int Mod_id){return(NULL);}
 
-void exit_fun(const char *s) { exit(-1); }
-//extern void init_eNB_afterRU(void);
+void exit_function(const char* file, const char* function, const int line,const char *s) { 
+   const char * msg= s==NULL ? "no comment": s;
+   printf("Exiting at: %s:%d %s(), %s\n", file, line, function, msg); 
+   exit(-1); 
+}
 
 // needed for some functions
-PHY_VARS_NR_UE * PHY_vars_UE_g[1][1]={NULL};
+PHY_VARS_NR_UE * PHY_vars_UE_g[1][1]={{NULL}};
 uint16_t n_rnti=0x1234;
 
 char quantize(double D,double x,unsigned char B)
@@ -96,41 +108,31 @@ int main(int argc, char **argv)
 
   char c;
 
-  int i,j,l,aa;
-  double sigma2, sigma2_dB=10,SNR,SNR_lin,snr0=-2.0,snr1=2.0;
+  int i; //,j,l,aa;
+  double SNR,SNR_lin,snr0=-2.0,snr1=2.0;
   double snr_step = 0.1;
   uint8_t snr1set=0;
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
-  double iqim = 0.0;
-  unsigned char pbch_pdu[6];
   //  int sync_pos, sync_pos_slot;
   //  FILE *rx_frame_file;
   FILE *output_fd = NULL;
   uint8_t write_output_file=0;
-  //int result;
-  int freq_offset;
   //  int subframe_offset;
   //  char fname[40], vname[40];
-  int trial,n_trials=1,n_errors,n_errors2,n_alamouti;
+  int trial,n_trials=1,n_errors;
   uint8_t transmission_mode = 1,n_tx=1,n_rx=1;
   uint16_t Nid_cell=0;
 
   channel_desc_t *gNB2UE;
-  uint32_t nsymb,tx_lev,tx_lev1 = 0,tx_lev2 = 0;
   uint8_t extended_prefix_flag=0;
   int8_t interf1=-21,interf2=-21;
 
   FILE *input_fd=NULL,*pbch_file_fd=NULL;
   char input_val_str[50],input_val_str2[50];
-
-  uint8_t frame_mod4,num_pdcch_symbols = 0;
-  uint16_t NB_RB=25;
+  //uint16_t NB_RB=25;
 
   SCM_t channel_model=AWGN;//Rayleigh1_anticorr;
-
-  double pbch_sinr;
-  int pbch_tx_ant;
   uint8_t N_RB_DL=106,mu=1;
 
   unsigned char frame_type = 0;
@@ -138,9 +140,9 @@ int main(int argc, char **argv)
 
   int frame=0,subframe=0;
   int frame_length_complex_samples;
-  int frame_length_complex_samples_no_prefix;
+  //int frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
-  nfapi_nr_config_request_t *gNB_config;
+  //nfapi_nr_config_request_t *gNB_config;
 
   uint8_t Kmimo;
   uint32_t Nsoft;
@@ -148,14 +150,19 @@ int main(int argc, char **argv)
   unsigned char qbits=8;
 
   int ret;
-  
+  int run_initial_sync=0;
+
+  int loglvl=OAILOG_WARNING;
+
+  float target_error_rate = 0.01;
+    
   cpuf = get_cpu_freq_GHz();
 
   if ( load_configmodule(argc,argv) == 0) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
 
-  logInit();
+  //logInit();
   randominit(0);
 
   while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:N:F:GR:dP:")) != -1) {
@@ -340,6 +347,10 @@ int main(int argc, char **argv)
     }
   }
 
+  logInit();
+  set_glog(loglvl);
+  T_stdout = 1;
+
   if (snr1set==0)
     snr1 = snr0+10;
 
@@ -361,19 +372,19 @@ int main(int argc, char **argv)
   RC.gNB[0] = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
   RC.gNB[0][0] = malloc(sizeof(PHY_VARS_gNB));
   gNB = RC.gNB[0][0];
-  gNB_config = &gNB->gNB_config;
+  //gNB_config = &gNB->gNB_config;
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
   frame_parms->nb_antennas_tx = n_tx;
   frame_parms->nb_antennas_rx = n_rx;
   frame_parms->N_RB_DL = N_RB_DL;
 
   crcTableInit();
-  nr_phy_config_request_sim(gNB);
+  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu);
   phy_init_nr_gNB(gNB,0,0);
   //init_eNB_afterRU();
 
   frame_length_complex_samples = frame_parms->samples_per_subframe;
-  frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP;
+  //frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP;
 
   s_re = malloc(2*sizeof(double*));
   s_im = malloc(2*sizeof(double*));
@@ -402,7 +413,7 @@ int main(int argc, char **argv)
     load_pbch_desc(pbch_file_fd);
   }
 
-  for (int k=0; k<2; k++) {
+/*  for (int k=0; k<2; k++) {
     // Create transport channel structures for 2 transport blocks (MIMO)
     for (i=0; i<2; i++) {
       gNB->dlsch[k][i] = new_gNB_dlsch(Kmimo,8,Nsoft,0,frame_parms,gNB_config);
@@ -411,12 +422,12 @@ int main(int argc, char **argv)
         printf("Can't get eNB dlsch structures\n");
         exit(-1);
       }
-
+gNB->dlsch[k][i]->Nsoft = 10;
       gNB->dlsch[k][i]->rnti = n_rnti+k;
     }
-  }
-
-
+  }*/
+  
+  
   //configure UE
   UE = malloc(sizeof(PHY_VARS_NR_UE));
   memcpy(&UE->frame_parms,frame_parms,sizeof(NR_DL_FRAME_PARMS));
@@ -444,38 +455,47 @@ int main(int argc, char **argv)
         UE->dlsch_SI[0]  = new_nr_ue_dlsch(1,1,Nsoft,5,N_RB_DL,0);
         UE->dlsch_ra[0]  = new_nr_ue_dlsch(1,1,Nsoft,5,N_RB_DL,0);
 
-
+  unsigned char harq_pid = 0; //dlsch->harq_ids[subframe];
   NR_gNB_DLSCH_t *dlsch = gNB->dlsch[0][0];
+  nfapi_nr_dl_config_dlsch_pdu_rel15_t rel15 = dlsch->harq_processes[harq_pid]->dlsch_pdu.dlsch_pdu_rel15;
+  // dlsch->harq_processes[0]->b = (unsigned char*)malloc16(800);
+    //    dlsch->harq_processes[i]->pdu = (uint8_t*)malloc16(MAX_NR_DLSCH_PAYLOAD_BYTES/bw_scaling);
   time_stats_t *rm_stats;
   time_stats_t *te_stats;
   time_stats_t *i_stats;
   uint8_t is_crnti;
   uint8_t llr8_flag;
-  unsigned char harq_pid = 0; //dlsch->harq_ids[subframe];
+  
   unsigned int TBS = 8424;
   unsigned int available_bits;
-  uint16_t nb_symb_sch =10;
+  uint16_t nb_symb_sch =4;
   uint8_t nb_re_dmrs = 6;
   uint16_t length_dmrs = 1;
   unsigned char mod_order;
-  uint16_t nb_rb = 106;
-  uint8_t Imcs=22;
+  uint16_t nb_rb = 50;
+  uint8_t Imcs=9;
   uint8_t Nl=1;
   uint8_t rvidx = 0;
+  
+  dlsch->rnti =1;
 
-  dlsch->harq_ids[subframe]= 0;
-  dlsch->harq_processes[0]->nb_rb = nb_rb;
-  dlsch->harq_processes[0]->mcs = Imcs;
-  dlsch->harq_processes[0]->Nl = Nl;
-  dlsch->harq_processes[0]->rvidx = rvidx;
+  
+  /*dlsch->harq_processes[0]->mcs = Imcs;
+  dlsch->harq_processes[0]->rvidx = rvidx;*/
 
-  printf("dlschsim harqid %d nb_rb %d, mscs %d\n",dlsch->harq_ids[subframe],
-		  dlsch->harq_processes[0]->nb_rb,dlsch->harq_processes[0]->mcs,dlsch->harq_processes[0]->Nl);
+  //printf("dlschsim harqid %d nb_rb %d, mscs %d\n",dlsch->harq_ids[subframe],
+	//	  dlsch->harq_processes[0]->nb_rb,dlsch->harq_processes[0]->mcs,dlsch->harq_processes[0]->Nl);
 
-  mod_order = nr_get_Qm(dlsch->harq_processes[0]->mcs,1);
-  available_bits = nr_get_G(dlsch->harq_processes[0]->nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,Nl);
+  mod_order = nr_get_Qm(Imcs,1);
+  available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,2,1);
   TBS= nr_compute_tbs(Imcs,nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs,Nl);
   printf("available bits %d TBS %d mod_order %d\n",available_bits, TBS, mod_order);
+  //dlsch->harq_ids[subframe]= 0;
+  rel15.n_prb = nb_rb;
+  rel15.nb_symbols = nb_symb_sch;
+  rel15.modulation_order = mod_order;
+  rel15.nb_layers = Nl;
+  rel15.nb_re_dmrs = nb_re_dmrs;
 
   double *modulated_input = malloc16(sizeof(double) * 16*68*384);
   short *channel_output_fixed = malloc16(sizeof( short) *16* 68*384);
@@ -506,22 +526,18 @@ int main(int argc, char **argv)
 
   estimated_output = harq_process->b;
 
-  //for (int i=0; i<TBS/8; i++)
-	//  printf("test input[%d]=%d \n",i,test_input[i]);
+  for (int i=0; i<TBS/8; i++)
+	  printf("test input[%d]=%d \n",i,test_input[i]);
 
-  printf("crc32: [0]->0x%08x\n",crc24c(test_input, 32));
+  //printf("crc32: [0]->0x%08x\n",crc24c(test_input, 32));
 
   // generate signal
   if (input_fd==NULL) {
-    nr_dlsch_encoding(gNB,
-    				  test_input,
-					  nb_symb_sch,
+    nr_dlsch_encoding(test_input,
+		      subframe,
                       dlsch,
-                      frame,
-                      subframe,
-                      rm_stats,
-                      te_stats,
-                      i_stats);
+                      frame_parms);
+                     
 
   }
 
@@ -585,9 +601,11 @@ int main(int argc, char **argv)
 					  dlsch0_ue->harq_processes[0],
                       frame,
 					  nb_symb_sch,
+					  subframe,
                       harq_pid,
                       is_crnti,
                       llr8_flag);
+                   
 
        //count errors
        for (i=0; i<TBS; i++)
@@ -661,8 +679,11 @@ int main(int argc, char **argv)
   free(r_im);
   free(txdata);
 
-  if (write_output_file)
+  if (output_fd)
     fclose(output_fd);
+
+  if (input_fd)
+    fclose(input_fd);
 
   return(n_errors);
 
