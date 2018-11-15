@@ -57,7 +57,7 @@ uint16_t get_adjacent_cell_id(uint8_t Mod_id,uint8_t index);
 uint8_t get_adjacent_cell_mod_id(uint16_t phyCellId);
 
 /**
-\brief Generate configuration for SIB1 (eNB).
+\brief Generate configuration for MIB (eNB).
 @param carrier pointer to Carrier information
 @param N_RB_DL Number of downlink PRBs
 @param phich_Resource PHICH resoure parameter

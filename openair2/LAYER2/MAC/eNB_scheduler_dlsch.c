@@ -466,6 +466,8 @@ schedule_ue_spec(module_id_t module_idP, int slice_idxP,
   int header_length_last;
   int header_length_total;
 
+  rrc_eNB_ue_context_t *ue_contextP = NULL;
+
   start_meas(&eNB->schedule_dlsch);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH, VCD_FUNCTION_IN);
 
@@ -1033,68 +1035,86 @@ schedule_ue_spec(module_id_t module_idP, int slice_idxP,
 	  // TODO: check if the lcid is active
 
 	  LOG_D(MAC, "[eNB %d], Frame %d, DTCH%d->DLSCH, Checking RLC status (tbs %d, len %d)\n",
-		module_idP, frameP, lcid, TBS,
-                TBS - ta_len - header_length_total - sdu_length_total - 3);
+		  module_idP, 
+      frameP, 
+      lcid, 
+      TBS,
+      TBS - ta_len - header_length_total - sdu_length_total - 3);
 
 	  if (TBS - ta_len - header_length_total - sdu_length_total - 3 > 0) {
 	    rlc_status = mac_rlc_status_ind(module_idP,
-					    rnti,
-					    module_idP,
-					    frameP,
-					    subframeP,
-					    ENB_FLAG_YES,
-					    MBMS_FLAG_NO,
-					    lcid,
-					    TBS - ta_len - header_length_total - sdu_length_total - 3
+                                      rnti,
+                                      module_idP,
+                                      frameP,
+                                      subframeP,
+                                      ENB_FLAG_YES,
+                                      MBMS_FLAG_NO,
+                                      lcid,
+                                      TBS - ta_len - header_length_total - sdu_length_total - 3
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                                    ,0, 0
+                                    , 0, 0
 #endif
-                                           );
-
-
+                                      );
 
 	    if (rlc_status.bytes_in_buffer > 0) {
-	      LOG_D(MAC,
-		    "[eNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting %d bytes from RLC (lcid %d total hdr len %d)\n",
-		    module_idP, frameP,
-                    TBS - ta_len - header_length_total - sdu_length_total - 3,
+	      LOG_D(MAC, "[eNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting %d bytes from RLC (lcid %d total hdr len %d)\n",
+		    module_idP, 
+        frameP,
+        TBS - ta_len - header_length_total - sdu_length_total - 3,
 		    lcid,
 		    header_length_total);
 
-	      sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP, rnti, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, lcid,
-                                                       TBS, //not used
-						       (char *)&dlsch_buffer[sdu_length_total]
+	      sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP, 
+                                  rnti, 
+                                  module_idP, 
+                                  frameP, 
+                                  ENB_FLAG_YES, 
+                                  MBMS_FLAG_NO, 
+                                  lcid,
+                                  TBS, //not used
+						                      (char *)&dlsch_buffer[sdu_length_total]
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                          ,0, 0
+                                  , 0, 0
 #endif
-	      );
+	                                );
 
-	      T(T_ENB_MAC_UE_DL_SDU, T_INT(module_idP),
-		T_INT(CC_id), T_INT(rnti), T_INT(frameP),
-		T_INT(subframeP), T_INT(harq_pid),
-		T_INT(lcid), T_INT(sdu_lengths[num_sdus]));
+	      T(T_ENB_MAC_UE_DL_SDU, 
+          T_INT(module_idP),
+		      T_INT(CC_id), 
+          T_INT(rnti), 
+          T_INT(frameP),
+		      T_INT(subframeP), 
+          T_INT(harq_pid),
+		      T_INT(lcid), 
+          T_INT(sdu_lengths[num_sdus]));
 
-	      LOG_D(MAC,
-		    "[eNB %d][USER-PLANE DEFAULT DRB] Got %d bytes for DTCH %d \n",
-		    module_idP, sdu_lengths[num_sdus], lcid);
+	      LOG_D(MAC, "[eNB %d][USER-PLANE DEFAULT DRB] Got %d bytes for DTCH %d \n",
+		      module_idP, 
+          sdu_lengths[num_sdus], 
+          lcid);
 
 	      sdu_lcids[num_sdus] = lcid;
 	      sdu_length_total += sdu_lengths[num_sdus];
+
 	      UE_list->eNB_UE_stats[CC_id][UE_id].num_pdu_tx[lcid]++;
-              UE_list->eNB_UE_stats[CC_id][UE_id].lcid_sdu[num_sdus] = lcid;
-              UE_list->eNB_UE_stats[CC_id][UE_id].sdu_length_tx[lcid] = sdu_lengths[num_sdus];
+        UE_list->eNB_UE_stats[CC_id][UE_id].lcid_sdu[num_sdus] = lcid;
+        UE_list->eNB_UE_stats[CC_id][UE_id].sdu_length_tx[lcid] = sdu_lengths[num_sdus];
 	      UE_list->eNB_UE_stats[CC_id][UE_id].num_bytes_tx[lcid] += sdu_lengths[num_sdus];
 
-              header_length_last = 1 + 1 + (sdu_lengths[num_sdus] >= 128);
-              header_length_total += header_length_last;
+        header_length_last = 1 + 1 + (sdu_lengths[num_sdus] >= 128);
+        header_length_total += header_length_last;
 
 	      num_sdus++;
 
 	      UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer = 0;
-	    }
-	  } else {
-            // no TBS left
-	    break;
+
+        // reset RRC inactivity timer after uplane activity
+        ue_contextP = rrc_eNB_get_ue_context(RC.rrc[module_idP], rnti);
+        ue_contextP->ue_context.ue_rrc_inactivity_timer = 1;
+
+	    } // end if (rlc_status.bytes_in_buffer > 0)
+	  } else {  // no TBS left
+	    break;  // break for (lcid = NB_RB_MAX - 1; lcid >= DTCH; lcid--)
 	  }
 	}
 

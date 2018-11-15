@@ -279,6 +279,9 @@ mac_rrc_data_ind(
 }
 
 //------------------------------------------------------------------------------
+/*
+* Get RRC status (Connected, Idle...) of UE from RNTI
+*/
 int
 mac_eNB_get_rrc_status(
   const module_id_t Mod_idP,
@@ -287,9 +290,7 @@ mac_eNB_get_rrc_status(
 //------------------------------------------------------------------------------
 {
   struct rrc_eNB_ue_context_s* ue_context_p = NULL;
-  ue_context_p = rrc_eNB_get_ue_context(
-                   RC.rrc[Mod_idP],
-                   rntiP);
+  ue_context_p = rrc_eNB_get_ue_context(RC.rrc[Mod_idP], rntiP);
 
   if (ue_context_p != NULL) {
     return(ue_context_p->ue_context.Status);

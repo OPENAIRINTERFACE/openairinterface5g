@@ -184,43 +184,43 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
   asn_enc_rval_t enc_rval;
   LTE_BCCH_BCH_Message_t *mib=&carrier->mib ;
   uint8_t sfn = (uint8_t)((frame>>2)&0xff);
-  uint16_t *spare= calloc(1, sizeof(uint16_t));
+  uint16_t *spare = calloc(1, sizeof(uint16_t));
   if (spare == NULL) abort();
 
   switch (N_RB_DL) {
 
-  case 6:
-    mib->message.dl_Bandwidth = LTE_MasterInformationBlock__dl_Bandwidth_n6;
-    break;
+    case 6:
+      mib->message.dl_Bandwidth = LTE_MasterInformationBlock__dl_Bandwidth_n6;
+      break;
 
-  case 15:
-    mib->message.dl_Bandwidth = LTE_MasterInformationBlock__dl_Bandwidth_n15;
-    break;
+    case 15:
+      mib->message.dl_Bandwidth = LTE_MasterInformationBlock__dl_Bandwidth_n15;
+      break;
 
-  case 25:
-    mib->message.dl_Bandwidth = LTE_MasterInformationBlock__dl_Bandwidth_n25;
-    break;
+    case 25:
+      mib->message.dl_Bandwidth = LTE_MasterInformationBlock__dl_Bandwidth_n25;
+      break;
 
-  case 50:
-    mib->message.dl_Bandwidth = LTE_MasterInformationBlock__dl_Bandwidth_n50;
-    break;
+    case 50:
+      mib->message.dl_Bandwidth = LTE_MasterInformationBlock__dl_Bandwidth_n50;
+      break;
 
-  case 75:
-    mib->message.dl_Bandwidth = LTE_MasterInformationBlock__dl_Bandwidth_n75;
-    break;
+    case 75:
+      mib->message.dl_Bandwidth = LTE_MasterInformationBlock__dl_Bandwidth_n75;
+      break;
 
-  case 100:
-    mib->message.dl_Bandwidth = LTE_MasterInformationBlock__dl_Bandwidth_n100;
-    break;
-  default:
-    AssertFatal(1==0,"Unknown dl_Bandwidth %d\n",N_RB_DL);
+    case 100:
+      mib->message.dl_Bandwidth = LTE_MasterInformationBlock__dl_Bandwidth_n100;
+      break;
+    default:
+      AssertFatal(1==0,"Unknown dl_Bandwidth %d\n",N_RB_DL);
   }
 
   AssertFatal(phich_Resource <= LTE_PHICH_Config__phich_Resource_two,"Illegal phich_Resource\n");
   mib->message.phich_Config.phich_Resource = phich_Resource;
   AssertFatal(phich_duration <= LTE_PHICH_Config__phich_Duration_extended,"Illegal phich_Duration\n");
   mib->message.phich_Config.phich_Duration = phich_duration;
-  LOG_I(RRC,"[MIB] systemBandwidth %x, phich_duration %x, phich_resource %x,sfn %x\n",
+  LOG_I(RRC,"[MIB] systemBandwidth %x, phich_duration %x, phich_resource %x, sfn %x\n",
          (uint32_t)mib->message.dl_Bandwidth,
          (uint32_t)phich_duration,
          (uint32_t)phich_Resource,
@@ -704,6 +704,9 @@ uint8_t do_SIB23(uint8_t Mod_id,
     = configuration->pcch_defaultPagingCycle[CC_id];
   (*sib2)->radioResourceConfigCommon.pcch_Config.nB
     = configuration->pcch_nB[CC_id];
+  LOG_I(RRC,"[SIB2] With ITTI. Basic config of paging cycle DRX: radio frame cycle length %x, paging occasion number %x\n",
+      (uint32_t)configuration->pcch_defaultPagingCycle[CC_id],
+      (uint32_t)configuration->pcch_nB[CC_id]);
 
   // PRACH-Config
   (*sib2)->radioResourceConfigCommon.prach_Config.rootSequenceIndex
