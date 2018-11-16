@@ -468,7 +468,7 @@ gNB->dlsch[k][i]->Nsoft = 10;
   
   unsigned int TBS = 8424;
   unsigned int available_bits;
-  uint16_t nb_symb_sch =4;
+  uint16_t nb_symb_sch =8;
   uint8_t nb_re_dmrs = 6;
   uint16_t length_dmrs = 1;
   unsigned char mod_order;
@@ -487,7 +487,7 @@ gNB->dlsch[k][i]->Nsoft = 10;
 	//	  dlsch->harq_processes[0]->nb_rb,dlsch->harq_processes[0]->mcs,dlsch->harq_processes[0]->Nl);
 
   mod_order = nr_get_Qm(Imcs,1);
-  available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,2,1);
+  available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,1);
   TBS= nr_compute_tbs(Imcs,nb_rb,nb_symb_sch,nb_re_dmrs,length_dmrs,Nl);
   printf("available bits %d TBS %d mod_order %d\n",available_bits, TBS, mod_order);
   //dlsch->harq_ids[subframe]= 0;
@@ -526,8 +526,8 @@ gNB->dlsch[k][i]->Nsoft = 10;
 
   estimated_output = harq_process->b;
 
-  for (int i=0; i<TBS/8; i++)
-	  printf("test input[%d]=%d \n",i,test_input[i]);
+  /*for (int i=0; i<TBS/8; i++)
+	  printf("test input[%d]=%d \n",i,test_input[i]);*/
 
   //printf("crc32: [0]->0x%08x\n",crc24c(test_input, 32));
 

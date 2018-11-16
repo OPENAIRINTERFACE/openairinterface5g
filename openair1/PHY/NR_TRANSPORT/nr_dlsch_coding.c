@@ -341,6 +341,8 @@ int nr_dlsch_encoding(unsigned char *a,
     Kr = dlsch->harq_processes[harq_pid]->K;
     //Kr_bytes = Kr>>3;
 
+    //printf("segment Z %d kb %d k %d Kr %d BG %d\n", *pz,kb,dlsch->harq_processes[harq_pid]->K,Kr,BG);
+
     //start_meas(te_stats);
     for (r=0; r<dlsch->harq_processes[harq_pid]->C; r++) {
       d_tmp[r] = &dlsch->harq_processes[harq_pid]->d[r][0];
