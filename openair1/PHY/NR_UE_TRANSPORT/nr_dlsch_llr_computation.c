@@ -660,7 +660,7 @@ int nr_dlsch_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
   */
   for (i=0; i<len; i++) {
     *llr32 = *rxF;
-     printf("dlsch_qpsk_llr %d : (%d,%d)\n",i,((int16_t*)llr32)[0],((int16_t*)llr32)[1]);
+     //printf("dlsch_qpsk_llr %d : (%d,%d)\n",i,((int16_t*)llr32)[0],((int16_t*)llr32)[1]);
     rxF++;
     llr32++;
   }

@@ -168,7 +168,7 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
 }
 
 void nr_dlsch_unscrambling(int16_t* llr,
-                         uint8_t size,
+                         uint32_t size,
                          uint8_t q,
                          uint32_t Nid,
                          uint32_t n_RNTI) {
@@ -538,11 +538,13 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 		      				harq_process->c[r][m]= (uint8_t) llrProcBuf[m];
 		      	      	}
 
-#ifdef DEBUG_DLSCH_DECODING
-      printf("output decoder %d %d %d %d %d \n", harq_process->c[r][0], harq_process->c[r][1], harq_process->c[r][2],harq_process->c[r][3], harq_process->c[r][4]);
+//#ifdef DEBUG_DLSCH_DECODING
+      //printf("output decoder %d %d %d %d %d \n", harq_process->c[r][0], harq_process->c[r][1], harq_process->c[r][2],harq_process->c[r][3], harq_process->c[r][4]);
+      for (int k=0;k<32;k++)
+       printf("output decoder [%d] =  0x%02x \n", k, harq_process->c[r][k]);
       printf("no_iterations_ldpc %d (ret %d)\n",no_iteration_ldpc,ret);
       //write_output("dec_output.m","dec0",harq_process->c[0],Kr_bytes,1,4);
-#endif
+//#endif
 
 
 #if UE_TIMING_TRACE

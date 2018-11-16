@@ -5579,7 +5579,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
     }
   }
 
-  write_output("rxdataF.m","rxF",ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx>>1]].rxdataF[0],ue->frame_parms.ofdm_symbol_size*2,1,1);
+  //write_output("rxdataF.m","rxF",ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx>>1]].rxdataF[0],ue->frame_parms.ofdm_symbol_size*2,1,1);
 
   //ue_measurement_procedures(l-1,ue,proc,eNB_id,(nr_tti_rx<<1),abstraction_flag,mode);
 

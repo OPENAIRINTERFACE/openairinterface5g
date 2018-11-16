@@ -129,12 +129,13 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   //to be updated higher layer
   unsigned short start_rb = 0;
   unsigned short nb_rb_pdsch = 50;
-  int8_t  *pllr_symbol_cw0;
-  int8_t  *pllr_symbol_cw1;
-  int8_t  *pllr_symbol_cw0_deint;
-  int8_t  *pllr_symbol_cw1_deint;
+  int16_t  *pllr_symbol_cw0;
+  int16_t  *pllr_symbol_cw1;
+  int16_t  *pllr_symbol_cw0_deint;
+  int16_t  *pllr_symbol_cw1_deint;
   uint32_t llr_offset_symbol;
   uint16_t bundle_L = 2;
+  uint8_t l0 =2;
   
   switch (type) {
   case SI_PDSCH:
@@ -338,7 +339,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
 #endif
 	  if (beamforming_mode==0) { //else if nb_antennas_ports_eNB==1 && beamforming_mode == 0
-		  printf("start nr dlsch extract nr_tti_rx %d thread id %d \n", nr_tti_rx, ue->current_thread_id[nr_tti_rx]);
+		  //printf("start nr dlsch extract nr_tti_rx %d thread id %d \n", nr_tti_rx, ue->current_thread_id[nr_tti_rx]);
     nb_rb = nr_dlsch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
                                      common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].dl_ch_estimates[eNB_id],
                                      pdsch_vars[eNB_id]->rxdataF_ext,
@@ -843,7 +844,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   }
 #endif
 
-      printf("start compute LLR\n");
+      //printf("start compute LLR\n");
   if ((dlsch0_harq->mimo_mode == LARGE_CDD) ||
       ((dlsch0_harq->mimo_mode >=DUALSTREAM_UNIFORM_PRECODING1) &&
        (dlsch0_harq->mimo_mode <=DUALSTREAM_PUSCH_PRECODING)))  {
@@ -855,10 +856,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     dl_ch_mag_ptr = pdsch_vars[eNB_id_i]->dl_ch_mag0;
     //i_mod should have been passed as a parameter
   }
-
-  nb_re= (symbol==2)? (nb_rb*6):(nb_rb*12);
-  pdsch_vars[eNB_id]->llr_offset[symbol] = nb_re*dlsch0_harq->Qm;
-
+  
 #if UE_TIMING_TRACE
     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #if DISABLE_LOG_X
@@ -875,15 +873,18 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   // compute LLRs
   // -> // compute @pointer where llrs should filled for this ofdm-symbol
 
-  llr_offset_symbol = pdsch_vars[eNB_id]->llr_offset[symbol];
+  pdsch_vars[eNB_id]->llr_offset[l0-1] = 0;
+  llr_offset_symbol = pdsch_vars[eNB_id]->llr_offset[symbol-1];
   //pllr_symbol_cw0_deint  = (int8_t*)pdsch_vars[eNB_id]->llr[0];
   //pllr_symbol_cw1_deint  = (int8_t*)pdsch_vars[eNB_id]->llr[1];
-  pllr_symbol_cw0 = (int8_t*)pdsch_vars[eNB_id]->llr[0];
-  pllr_symbol_cw1 = (int8_t*)pdsch_vars[eNB_id]->llr[1];
+  pllr_symbol_cw0 = pdsch_vars[eNB_id]->llr[0];
+  pllr_symbol_cw1 = pdsch_vars[eNB_id]->llr[1];
   pllr_symbol_cw0 += llr_offset_symbol;
   pllr_symbol_cw1 += llr_offset_symbol;
-
-
+  
+  nb_re= (symbol==l0)? (nb_rb*6):(nb_rb*12);
+  pdsch_vars[eNB_id]->llr_offset[symbol] = nb_re*dlsch0_harq->Qm + llr_offset_symbol;
+ 
   /*LOG_I(PHY,"compute LLRs [symbol %d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %x @LLR Buff(symb) %x\n",
              symbol,
              nb_rb,dlsch0_harq->Qm,
@@ -892,31 +893,30 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
              (int16_t*)pdsch_vars[eNB_id]->llr[0],
              pllr_symbol_cw0);*/
              
-             printf("compute LLRs [symbol %d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %p @LLR Buff(symb) %p\n",
+             /*printf("compute LLRs [symbol %d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %p @LLR Buff(symb) %p\n",
              symbol,
              nb_rb,dlsch0_harq->Qm,
              pdsch_vars[eNB_id]->llr_length[symbol],
              pdsch_vars[eNB_id]->llr_offset[symbol],
-             (int16_t*)pdsch_vars[eNB_id]->llr[0],
-             pllr_symbol_cw0);
+             pdsch_vars[eNB_id]->llr[0],
+             pllr_symbol_cw0);*/
 
   switch (dlsch0_harq->Qm) {
   case 2 :
     if ((rx_type==rx_standard) || (codeword_TB1 == -1)) {
         nr_dlsch_qpsk_llr(frame_parms,
                        pdsch_vars[eNB_id]->rxdataF_comp0,
-                       (int16_t*)pllr_symbol_cw0,
+                       pllr_symbol_cw0,
                        symbol,
                        first_symbol_flag,
                        nb_rb,
                        beamforming_mode);
-                       printf("end llr symol %d\n",symbol);
 
     } else if (codeword_TB0 == -1){
 
         nr_dlsch_qpsk_llr(frame_parms,
                        pdsch_vars[eNB_id]->rxdataF_comp0,
-                       (int16_t*)pllr_symbol_cw1,
+                       pllr_symbol_cw1,
                        symbol,
                        first_symbol_flag,
                        nb_rb,
@@ -1093,7 +1093,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     } else if (codeword_TB0 == -1){
       nr_dlsch_64qam_llr(frame_parms,
                       pdsch_vars[eNB_id]->rxdataF_comp0,
-                      (int16_t*)pllr_symbol_cw1,
+                      pllr_symbol_cw1,
                       pdsch_vars[eNB_id]->dl_ch_mag0,
                       pdsch_vars[eNB_id]->dl_ch_magb0,
                       symbol,first_symbol_flag,nb_rb,
@@ -1165,7 +1165,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                 dl_ch_mag_ptr,
                                 pdsch_vars[eNB_id]->dl_ch_mag0,//i
                                 pdsch_vars[eNB_id]->dl_ch_rho_ext[harq_pid][round],
-                                (int16_t*)pllr_symbol_cw1,
+                                pllr_symbol_cw1,
                                 symbol,first_symbol_flag,nb_rb,
                                 adjust_G2(frame_parms,dlsch1_harq->rb_alloc_even,6,nr_tti_rx,symbol),
                                 pdsch_vars[eNB_id]->llr_offset[symbol]);
@@ -1184,7 +1184,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     if (rx_type==rx_standard) {
         nr_dlsch_qpsk_llr(frame_parms,
                        pdsch_vars[eNB_id]->rxdataF_comp0,
-                       (int16_t*)pllr_symbol_cw0,
+                       pllr_symbol_cw0,
                        symbol,first_symbol_flag,nb_rb,
                        beamforming_mode);
     }
@@ -1204,7 +1204,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     if (rx_type==rx_standard) {
       nr_dlsch_64qam_llr(frame_parms,
                       pdsch_vars[eNB_id]->rxdataF_comp0,
-                      (int16_t*)pllr_symbol_cw0,
+                      pllr_symbol_cw0,
                       pdsch_vars[eNB_id]->dl_ch_mag0,
                       pdsch_vars[eNB_id]->dl_ch_magb0,
                       symbol,first_symbol_flag,nb_rb,
@@ -1220,7 +1220,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   }
 
   //nr_dlsch_deinterleaving(symbol,bundle_L,(int16_t*)pllr_symbol_cw0,(int16_t*)pllr_symbol_cw0_deint, nb_rb_pdsch);
-
+  
 #if UE_TIMING_TRACE
     stop_meas(&ue->generic_stat_bis[ue->current_thread_id[nr_tti_rx]][slot]);
 #if DISABLE_LOG_X
@@ -2037,7 +2037,7 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
     rxF_ext   = &rxdataF_ext[aarx][symbol*(nb_rb_pdsch*12)];
     rxF       = &rxdataF[aarx][(k+(symbol*(frame_parms->ofdm_symbol_size)))];
     
-    printf("extract single addr %p pilots %d symbol %d, l %d RB_DL %d nushift %d k %d\n", rxF, pilots, symbol, l, frame_parms->N_RB_DL,frame_parms->nushift,k);
+    //printf("extract single addr %p pilots %d symbol %d, l %d RB_DL %d nushift %d k %d\n", rxF, pilots, symbol, l, frame_parms->N_RB_DL,frame_parms->nushift,k);
 
     //if ((frame_parms->N_RB_DL&1) == 0){  // even number of RBs
 
@@ -2062,11 +2062,11 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
             for (i=0; i<12; i++) {
               rxF_ext[i]=rxF[i];
               dl_ch0_ext[i]=dl_ch0[i];
-              printf("rb %ld %p: (%d,%d)\n",(rxF+i-&rxdataF[aarx][( (symbol*(frame_parms->ofdm_symbol_size)))]),rxF,
+              /*printf("rb %ld %p: (%d,%d)\n",(rxF+i-&rxdataF[aarx][( (symbol*(frame_parms->ofdm_symbol_size)))]),rxF,
                 ((short*)&rxF[i])[0],((short*)&rxF[i])[1]);
               printf("rb %ld %p: dl_ch (%d,%d)\n",(rxF+i-&rxdataF[aarx][( (symbol*(frame_parms->ofdm_symbol_size)))]),rxF,
                 ((short*)&dl_ch0[i])[0],((short*)&dl_ch0[i])[1]);
-                printf("re count %d\n",rb*12+i);
+                printf("re count %d\n",rb*12+i);*/
             }
 
             dl_ch0_ext+=12;
@@ -2077,10 +2077,10 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
             for (i=0; i<12; i++) {
               if ((i&1)!=frame_parms->nushift){
                 rxF_ext[j]=rxF[i];
-                     printf("extract rb %d, re %d => rxF (%d,%d) rxF ext (%d,%d) addr %p\n",rb,i,*(short *)&rxF[i],*(1+(short*)&rxF[i]),*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]),rxF_ext);
+                     //printf("extract rb %d, re %d => rxF (%d,%d) rxF ext (%d,%d) addr %p\n",rb,i,*(short *)&rxF[i],*(1+(short*)&rxF[i]),*(short *)&rxF_ext[j],*(1+(short*)&rxF_ext[j]),rxF_ext);
                 dl_ch0_ext[j]=dl_ch0[i];
-					printf("rb %ld %p: dl_ch (%d,%d)\n",(rxF+i-&rxdataF[aarx][( (symbol*(frame_parms->ofdm_symbol_size)))]),rxF,
-                ((short*)&dl_ch0[i])[0],((short*)&dl_ch0[i])[1]);
+					//printf("rb %ld %p: dl_ch (%d,%d)\n",(rxF+i-&rxdataF[aarx][( (symbol*(frame_parms->ofdm_symbol_size)))]),rxF,
+                //((short*)&dl_ch0[i])[0],((short*)&dl_ch0[i])[1]);
                 j++;
               }
             }
