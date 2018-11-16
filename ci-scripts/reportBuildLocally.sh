@@ -411,6 +411,10 @@ function report_build {
     then
         summary_table_row "PBCH Test - Release 15" ./archives/phy_sim/nr_pbchsim.Rel15.txt "Built target nr_pbchsim" ./phy_sim_row6.html
     fi
+    if [ -f ./archives/phy_sim/nr_dlschsim.Rel15.txt ]
+    then
+        summary_table_row "DLSCH Test - Release 15" ./archives/phy_sim/nr_dlschsim.Rel15.txt "Built target nr_dlschsim" ./phy_sim_row7.html
+    fi
     summary_table_footer
 
 
