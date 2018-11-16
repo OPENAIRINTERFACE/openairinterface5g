@@ -71,7 +71,7 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
 @param carrier pointer to Carrier information
 @param Mod_id Instance of eNB
 @param Component carrier Component carrier to configure
-@param configuration Pointer Configuration Request structure  
+@param configuration Pointer Configuration Request structure
 @return size of encoded bit stream in bytes*/
 
 uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,int Mod_id,int CC_id, RrcConfigurationReq *configuration
@@ -91,7 +91,7 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,int Mod_id,int CC_id, RrcConfigu
 uint8_t do_SIB23(uint8_t Mod_id,
                  int CC_id
 #if defined(ENABLE_ITTI)
-                 , RrcConfigurationReq *configuration
+  , RrcConfigurationReq *configuration
 #endif
                 );
 
@@ -115,16 +115,16 @@ uint8_t do_SidelinkUEInformation(uint8_t Mod_id, uint8_t *buffer, LTE_SL_Destina
 /** \brief Generate an RRCConnectionSetupComplete UL-DCCH-Message (UE)
 @param buffer Pointer to PER-encoded ASN.1 description of UL-DCCH-Message PDU
 @returns Size of encoded bit stream in bytes*/
-uint8_t do_RRCConnectionSetupComplete(uint8_t Mod_id, uint8_t* buffer, const uint8_t Transaction_id, const int dedicatedInfoNASLength,
-                                      const char* dedicatedInfoNAS);
+uint8_t do_RRCConnectionSetupComplete(uint8_t Mod_id, uint8_t *buffer, const uint8_t Transaction_id, const int dedicatedInfoNASLength,
+                                      const char *dedicatedInfoNAS);
 
 /** \brief Generate an RRCConnectionReconfigurationComplete UL-DCCH-Message (UE)
 @param buffer Pointer to PER-encoded ASN.1 description of UL-DCCH-Message PDU
 @returns Size of encoded bit stream in bytes*/
 uint8_t
 do_RRCConnectionReconfigurationComplete(
-  const protocol_ctxt_t* const ctxt_pP,
-  uint8_t* buffer,
+  const protocol_ctxt_t *const ctxt_pP,
+  uint8_t *buffer,
   const uint8_t Transaction_id
 );
 
@@ -143,14 +143,14 @@ PhysicalConfigDedicated IEs.  The latter does not enable periodic CQI reporting 
 @returns Size of encoded bit stream in bytes*/
 uint8_t
 do_RRCConnectionSetup(
-  const protocol_ctxt_t*     const ctxt_pP,
-  rrc_eNB_ue_context_t*      const ue_context_pP,
+  const protocol_ctxt_t     *const ctxt_pP,
+  rrc_eNB_ue_context_t      *const ue_context_pP,
   int                              CC_id,
-  uint8_t*                   const buffer,
+  uint8_t                   *const buffer,
   const uint8_t                    transmission_mode,
   const uint8_t                    Transaction_id,
-  LTE_SRB_ToAddModList_t**             SRB_configList,
-  struct LTE_PhysicalConfigDedicated** physicalConfigDedicated
+  LTE_SRB_ToAddModList_t             **SRB_configList,
+  struct LTE_PhysicalConfigDedicated **physicalConfigDedicated
 );
 
 /**
@@ -177,31 +177,31 @@ do_RRCConnectionSetup(
 
 uint16_t
 do_RRCConnectionReconfiguration(
-  const protocol_ctxt_t*        const ctxt_pP,
-    uint8_t                            *buffer,
-    uint8_t                             Transaction_id,
-    LTE_SRB_ToAddModList_t                 *SRB_list,
-    LTE_DRB_ToAddModList_t                 *DRB_list,
-    LTE_DRB_ToReleaseList_t                *DRB_list2,
-    struct LTE_SPS_Config                  *sps_Config,
-    struct LTE_PhysicalConfigDedicated     *physicalConfigDedicated,
-    LTE_MeasObjectToAddModList_t           *MeasObj_list,
-    LTE_ReportConfigToAddModList_t         *ReportConfig_list,
-    LTE_QuantityConfig_t                   *quantityConfig,
-    LTE_MeasIdToAddModList_t               *MeasId_list,
-    LTE_MAC_MainConfig_t                   *mac_MainConfig,
-    LTE_MeasGapConfig_t                    *measGapConfig,
-    LTE_MobilityControlInfo_t              *mobilityInfo,
-    struct LTE_MeasConfig__speedStatePars  *speedStatePars,
-    LTE_RSRP_Range_t                       *rsrp,
-    LTE_C_RNTI_t                           *cba_rnti,
-  struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList* dedicatedInfoNASList,
+  const protocol_ctxt_t        *const ctxt_pP,
+  uint8_t                            *buffer,
+  uint8_t                             Transaction_id,
+  LTE_SRB_ToAddModList_t                 *SRB_list,
+  LTE_DRB_ToAddModList_t                 *DRB_list,
+  LTE_DRB_ToReleaseList_t                *DRB_list2,
+  struct LTE_SPS_Config                  *sps_Config,
+  struct LTE_PhysicalConfigDedicated     *physicalConfigDedicated,
+  LTE_MeasObjectToAddModList_t           *MeasObj_list,
+  LTE_ReportConfigToAddModList_t         *ReportConfig_list,
+  LTE_QuantityConfig_t                   *quantityConfig,
+  LTE_MeasIdToAddModList_t               *MeasId_list,
+  LTE_MAC_MainConfig_t                   *mac_MainConfig,
+  LTE_MeasGapConfig_t                    *measGapConfig,
+  LTE_MobilityControlInfo_t              *mobilityInfo,
+  struct LTE_MeasConfig__speedStatePars  *speedStatePars,
+  LTE_RSRP_Range_t                       *rsrp,
+  LTE_C_RNTI_t                           *cba_rnti,
+  struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList *dedicatedInfoNASList,
   LTE_SL_CommConfig_r12_t                *sl_CommConfig,
   LTE_SL_DiscConfig_r12_t                *sl_DiscConfig
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-    , LTE_SCellToAddMod_r10_t  *SCell_config
+  , LTE_SCellToAddMod_r10_t  *SCell_config
 #endif
-                                        );
+);
 /**
 \brief Generate an RRCConnectionReestablishment DL-CCCH-Message (eNB).  This routine configures SRB_ToAddMod (SRB1/SRB2) and
 PhysicalConfigDedicated IEs.  The latter does not enable periodic CQI reporting (PUCCH format 2/2a/2b) or SRS.
@@ -216,10 +216,10 @@ PhysicalConfigDedicated IEs.  The latter does not enable periodic CQI reporting 
 @returns Size of encoded bit stream in bytes*/
 uint8_t
 do_RRCConnectionReestablishment(
-  const protocol_ctxt_t*     const ctxt_pP,
-  rrc_eNB_ue_context_t*      const ue_context_pP,
+  const protocol_ctxt_t     *const ctxt_pP,
+  rrc_eNB_ue_context_t      *const ue_context_pP,
   int                              CC_id,
-  uint8_t*                   const buffer,
+  uint8_t                   *const buffer,
   const uint8_t                    transmission_mode,
   const uint8_t                    Transaction_id,
   LTE_SRB_ToAddModList_t               **SRB_configList,
@@ -232,8 +232,8 @@ do_RRCConnectionReestablishment(
 @returns Size of encoded bit stream in bytes*/
 uint8_t
 do_RRCConnectionReestablishmentReject(
-    uint8_t                    Mod_id,
-    uint8_t*                   const buffer);
+  uint8_t                    Mod_id,
+  uint8_t                   *const buffer);
 
 /**
 \brief Generate an RRCConnectionReject DL-CCCH-Message (eNB).
@@ -242,8 +242,8 @@ do_RRCConnectionReestablishmentReject(
 @returns Size of encoded bit stream in bytes*/
 uint8_t
 do_RRCConnectionReject(
-    uint8_t                    Mod_id,
-    uint8_t*                   const buffer);
+  uint8_t                    Mod_id,
+  uint8_t                   *const buffer);
 
 /**
 \brief Generate an RRCConnectionRequest UL-CCCH-Message (UE) based on random string or S-TMSI.  This
@@ -286,14 +286,14 @@ OAI_UECapability_t *fill_ue_capability(char *LTE_UE_EUTRA_Capability_xer);
 
 uint8_t
 do_UECapabilityEnquiry(
-  const protocol_ctxt_t* const ctxt_pP,
-  uint8_t*               const buffer,
+  const protocol_ctxt_t *const ctxt_pP,
+  uint8_t               *const buffer,
   const uint8_t                Transaction_id
 );
 
 uint8_t do_SecurityModeCommand(
-  const protocol_ctxt_t* const ctxt_pP,
-  uint8_t* const buffer,
+  const protocol_ctxt_t *const ctxt_pP,
+  uint8_t *const buffer,
   const uint8_t Transaction_id,
   const uint8_t cipheringAlgorithm,
   const uint8_t integrityProtAlgorithm);

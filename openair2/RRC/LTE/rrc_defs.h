@@ -64,10 +64,10 @@
 
 #define IPV4_ADDR    "%u.%u.%u.%u"
 #define IPV4_ADDR_FORMAT(aDDRESS)                 \
-      (uint8_t)((aDDRESS)  & 0x000000ff),         \
-      (uint8_t)(((aDDRESS) & 0x0000ff00) >> 8 ),  \
-      (uint8_t)(((aDDRESS) & 0x00ff0000) >> 16),  \
-      (uint8_t)(((aDDRESS) & 0xff000000) >> 24)
+  (uint8_t)((aDDRESS)  & 0x000000ff),         \
+  (uint8_t)(((aDDRESS) & 0x0000ff00) >> 8 ),  \
+  (uint8_t)(((aDDRESS) & 0x00ff0000) >> 16),  \
+  (uint8_t)(((aDDRESS) & 0xff000000) >> 24)
 
 
 //-----------------------------------------------------
@@ -84,74 +84,74 @@
 #define GROUP_COMMUNICATION_RELEASE_RSP     8
 #define PC5S_ESTABLISH_REQ                  9
 #define PC5S_ESTABLISH_RSP                  10
-#define PC5_DISCOVERY_MESSAGE          	  11
+#define PC5_DISCOVERY_MESSAGE             11
 
 
-#define PC5_DISCOVERY_PAYLOAD_SIZE	    29
+#define PC5_DISCOVERY_PAYLOAD_SIZE      29
 
 
 typedef enum {
-   UE_STATE_OFF_NETWORK,
-   UE_STATE_ON_NETWORK
+  UE_STATE_OFF_NETWORK,
+  UE_STATE_ON_NETWORK
 } SL_UE_STATE_t;
 
 typedef enum {
-   GROUP_COMMUNICATION_RELEASE_OK = 0,
-   GROUP_COMMUNICATION_RELEASE_FAILURE
+  GROUP_COMMUNICATION_RELEASE_OK = 0,
+  GROUP_COMMUNICATION_RELEASE_FAILURE
 } Group_Communication_Status_t;
 
 struct GroupCommunicationEstablishReq {
-   uint32_t sourceL2Id;
-   uint32_t groupL2Id;
-   uint32_t groupIpAddress;
-   uint8_t pppp;
+  uint32_t sourceL2Id;
+  uint32_t groupL2Id;
+  uint32_t groupIpAddress;
+  uint8_t pppp;
 };
 
 struct GroupCommunicationReleaseReq {
-   uint32_t sourceL2Id;
-   uint32_t groupL2Id;
-   int slrb_id;
+  uint32_t sourceL2Id;
+  uint32_t groupL2Id;
+  int slrb_id;
 };
 
 struct DirectCommunicationEstablishReq {
-   uint32_t sourceL2Id;
-   uint32_t destinationL2Id;
-   uint32_t pppp;
+  uint32_t sourceL2Id;
+  uint32_t destinationL2Id;
+  uint32_t pppp;
 };
 
-struct PC5SEstablishReq{
-   uint8_t type;
-   uint32_t sourceL2Id;
-   uint32_t destinationL2Id;
+struct PC5SEstablishReq {
+  uint8_t type;
+  uint32_t sourceL2Id;
+  uint32_t destinationL2Id;
 };
 
-struct PC5SEstablishRsp{
-   uint32_t slrbid_lcid28;
-   uint32_t slrbid_lcid29;
-   uint32_t slrbid_lcid30;
+struct PC5SEstablishRsp {
+  uint32_t slrbid_lcid28;
+  uint32_t slrbid_lcid29;
+  uint32_t slrbid_lcid30;
 };
 
 
 //PC5_DISCOVERY MESSAGE
 typedef struct  {
-   unsigned char payload[PC5_DISCOVERY_PAYLOAD_SIZE];
-   uint32_t measuredPower;
+  unsigned char payload[PC5_DISCOVERY_PAYLOAD_SIZE];
+  uint32_t measuredPower;
 }  __attribute__((__packed__)) PC5DiscoveryMessage ;
 
 
 struct sidelink_ctrl_element {
-   unsigned short type;
-   union {
-      struct GroupCommunicationEstablishReq group_comm_establish_req;
-      struct DirectCommunicationEstablishReq direct_comm_establish_req;
-      Group_Communication_Status_t group_comm_release_rsp;
-      //struct DirectCommunicationReleaseReq  direct_comm_release_req;
-      SL_UE_STATE_t ue_state;
-      int slrb_id;
-      struct PC5SEstablishReq pc5s_establish_req;
-      struct PC5SEstablishRsp pc5s_establish_rsp;
-      PC5DiscoveryMessage pc5_discovery_message;
-   } sidelinkPrimitive;
+  unsigned short type;
+  union {
+    struct GroupCommunicationEstablishReq group_comm_establish_req;
+    struct DirectCommunicationEstablishReq direct_comm_establish_req;
+    Group_Communication_Status_t group_comm_release_rsp;
+    //struct DirectCommunicationReleaseReq  direct_comm_release_req;
+    SL_UE_STATE_t ue_state;
+    int slrb_id;
+    struct PC5SEstablishReq pc5s_establish_req;
+    struct PC5SEstablishRsp pc5s_establish_rsp;
+    PC5DiscoveryMessage pc5_discovery_message;
+  } sidelinkPrimitive;
 };
 
 
@@ -167,7 +167,7 @@ void *send_UE_status_notification(void *);
 
 //#include "COMMON/openair_defs.h"
 #ifndef USER_MODE
-//#include <rtai.h>
+  //#include <rtai.h>
 #endif
 
 #include "LTE_SystemInformationBlockType1.h"
@@ -182,18 +182,18 @@ void *send_UE_status_notification(void *);
 #include "LTE_SBCCH-SL-BCH-MessageType.h"
 #include "LTE_BCCH-BCH-Message.h"
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-#include "LTE_MCCH-Message.h"
-#include "LTE_MBSFNAreaConfiguration-r9.h"
+  #include "LTE_MCCH-Message.h"
+  #include "LTE_MBSFNAreaConfiguration-r9.h"
 #endif
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-#include "LTE_SCellToAddMod-r10.h"
+  #include "LTE_SCellToAddMod-r10.h"
 #endif
 #include "LTE_AS-Config.h"
 #include "LTE_AS-Context.h"
 #include "LTE_UE-EUTRA-Capability.h"
 #include "LTE_MeasResults.h"
 #if (LTE_RRC_VERSION >= MAKE_VERSION(12, 0, 0))
-#include "LTE_SidelinkUEInformation-r12.h"
+  #include "LTE_SidelinkUEInformation-r12.h"
 #endif
 
 /* for ImsiMobileIdentity_t */
@@ -203,66 +203,66 @@ void *send_UE_status_notification(void *);
  * the code is in favor of Rel14, those defines do the translation
  */
 #if (LTE_RRC_VERSION < MAKE_VERSION(14, 0, 0))
-#  define CipheringAlgorithm_r12_t e_SecurityAlgorithmConfig__cipheringAlgorithm
-#  define CipheringAlgorithm_r12_eea0 SecurityAlgorithmConfig__cipheringAlgorithm_eea0
-#  define CipheringAlgorithm_r12_eea1 SecurityAlgorithmConfig__cipheringAlgorithm_eea1
-#  define CipheringAlgorithm_r12_eea2 SecurityAlgorithmConfig__cipheringAlgorithm_eea2
-#  define CipheringAlgorithm_r12_spare1 SecurityAlgorithmConfig__cipheringAlgorithm_spare1
-#  define Alpha_r12_al0 UplinkPowerControlCommon__alpha_al0
-#  define Alpha_r12_al04 UplinkPowerControlCommon__alpha_al04
-#  define Alpha_r12_al05 UplinkPowerControlCommon__alpha_al05
-#  define Alpha_r12_al06 UplinkPowerControlCommon__alpha_al06
-#  define Alpha_r12_al07 UplinkPowerControlCommon__alpha_al07
-#  define Alpha_r12_al08 UplinkPowerControlCommon__alpha_al08
-#  define Alpha_r12_al09 UplinkPowerControlCommon__alpha_al09
-#  define Alpha_r12_al1 UplinkPowerControlCommon__alpha_al1
-#  define PreambleTransMax_n3 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n3
-#  define PreambleTransMax_n4 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n4
-#  define PreambleTransMax_n5 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n5
-#  define PreambleTransMax_n6 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n6
-#  define PreambleTransMax_n7 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n7
-#  define PreambleTransMax_n8 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n8
-#  define PreambleTransMax_n10 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n10
-#  define PreambleTransMax_n20 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n20
-#  define PreambleTransMax_n50 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n50
-#  define PreambleTransMax_n100 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n100
-#  define PreambleTransMax_n200 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n200
-#  define PeriodicBSR_Timer_r12_sf5 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf5
-#  define PeriodicBSR_Timer_r12_sf10 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf10
-#  define PeriodicBSR_Timer_r12_sf16 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf16
-#  define PeriodicBSR_Timer_r12_sf20 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf20
-#  define PeriodicBSR_Timer_r12_sf32 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf32
-#  define PeriodicBSR_Timer_r12_sf40 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf40
-#  define PeriodicBSR_Timer_r12_sf64 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf64
-#  define PeriodicBSR_Timer_r12_sf80 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf80
-#  define PeriodicBSR_Timer_r12_sf128 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf128
-#  define PeriodicBSR_Timer_r12_sf160 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf160
-#  define PeriodicBSR_Timer_r12_sf320 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf320
-#  define PeriodicBSR_Timer_r12_sf640 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf640
-#  define PeriodicBSR_Timer_r12_sf1280 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf1280
-#  define PeriodicBSR_Timer_r12_sf2560 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf2560
-#  define PeriodicBSR_Timer_r12_infinity MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity
-#  define RetxBSR_Timer_r12_sf320 MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf320
-#  define RetxBSR_Timer_r12_sf640 MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf640
-#  define RetxBSR_Timer_r12_sf1280 MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf1280
-#  define RetxBSR_Timer_r12_sf2560 MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf2560
-#  define RetxBSR_Timer_r12_sf5120 MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf5120
-#  define RetxBSR_Timer_r12_sf10240 MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf10240
+  #define CipheringAlgorithm_r12_t e_SecurityAlgorithmConfig__cipheringAlgorithm
+  #define CipheringAlgorithm_r12_eea0 SecurityAlgorithmConfig__cipheringAlgorithm_eea0
+  #define CipheringAlgorithm_r12_eea1 SecurityAlgorithmConfig__cipheringAlgorithm_eea1
+  #define CipheringAlgorithm_r12_eea2 SecurityAlgorithmConfig__cipheringAlgorithm_eea2
+  #define CipheringAlgorithm_r12_spare1 SecurityAlgorithmConfig__cipheringAlgorithm_spare1
+  #define Alpha_r12_al0 UplinkPowerControlCommon__alpha_al0
+  #define Alpha_r12_al04 UplinkPowerControlCommon__alpha_al04
+  #define Alpha_r12_al05 UplinkPowerControlCommon__alpha_al05
+  #define Alpha_r12_al06 UplinkPowerControlCommon__alpha_al06
+  #define Alpha_r12_al07 UplinkPowerControlCommon__alpha_al07
+  #define Alpha_r12_al08 UplinkPowerControlCommon__alpha_al08
+  #define Alpha_r12_al09 UplinkPowerControlCommon__alpha_al09
+  #define Alpha_r12_al1 UplinkPowerControlCommon__alpha_al1
+  #define PreambleTransMax_n3 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n3
+  #define PreambleTransMax_n4 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n4
+  #define PreambleTransMax_n5 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n5
+  #define PreambleTransMax_n6 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n6
+  #define PreambleTransMax_n7 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n7
+  #define PreambleTransMax_n8 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n8
+  #define PreambleTransMax_n10 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n10
+  #define PreambleTransMax_n20 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n20
+  #define PreambleTransMax_n50 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n50
+  #define PreambleTransMax_n100 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n100
+  #define PreambleTransMax_n200 RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n200
+  #define PeriodicBSR_Timer_r12_sf5 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf5
+  #define PeriodicBSR_Timer_r12_sf10 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf10
+  #define PeriodicBSR_Timer_r12_sf16 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf16
+  #define PeriodicBSR_Timer_r12_sf20 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf20
+  #define PeriodicBSR_Timer_r12_sf32 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf32
+  #define PeriodicBSR_Timer_r12_sf40 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf40
+  #define PeriodicBSR_Timer_r12_sf64 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf64
+  #define PeriodicBSR_Timer_r12_sf80 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf80
+  #define PeriodicBSR_Timer_r12_sf128 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf128
+  #define PeriodicBSR_Timer_r12_sf160 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf160
+  #define PeriodicBSR_Timer_r12_sf320 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf320
+  #define PeriodicBSR_Timer_r12_sf640 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf640
+  #define PeriodicBSR_Timer_r12_sf1280 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf1280
+  #define PeriodicBSR_Timer_r12_sf2560 MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_sf2560
+  #define PeriodicBSR_Timer_r12_infinity MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity
+  #define RetxBSR_Timer_r12_sf320 MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf320
+  #define RetxBSR_Timer_r12_sf640 MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf640
+  #define RetxBSR_Timer_r12_sf1280 MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf1280
+  #define RetxBSR_Timer_r12_sf2560 MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf2560
+  #define RetxBSR_Timer_r12_sf5120 MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf5120
+  #define RetxBSR_Timer_r12_sf10240 MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf10240
 #endif
 
 // This corrects something generated by asn1c which is different between Rel8 and Rel10
 #if (LTE_RRC_VERSION <= MAKE_VERSION(10, 0, 0))
-#define SystemInformation_r8_IEs__sib_TypeAndInfo__Member SystemInformation_r8_IEs_sib_TypeAndInfo_Member
-#define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib2
-#define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib3 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib3
-#define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib4 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib4
-#define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib5 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib5
-#define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib6 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib6
-#define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib7 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib7
-#define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib8 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib8
-#define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib9 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib9
-#define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib10 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib10
-#define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib11 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib11
+  #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member SystemInformation_r8_IEs_sib_TypeAndInfo_Member
+  #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib2
+  #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib3 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib3
+  #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib4 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib4
+  #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib5 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib5
+  #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib6 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib6
+  #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib7 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib7
+  #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib8 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib8
+  #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib9 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib9
+  #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib10 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib10
+  #define SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib11 SystemInformation_r8_IEs_sib_TypeAndInfo_Member_PR_sib11
 #endif
 
 
@@ -279,13 +279,13 @@ void *send_UE_status_notification(void *);
 */
 //#include "L3_rrc_defs.h"
 #ifndef NO_RRM
-#include "L3_rrc_interface.h"
-#include "rrc_rrm_msg.h"
-#include "rrc_rrm_interface.h"
+  #include "L3_rrc_interface.h"
+  #include "rrc_rrm_msg.h"
+  #include "rrc_rrm_interface.h"
 #endif
 
 #if defined(ENABLE_ITTI)
-# include "intertask_interface.h"
+  #include "intertask_interface.h"
 #endif
 
 /* TODO: be sure this include is correct.
@@ -293,11 +293,11 @@ void *send_UE_status_notification(void *);
  * issue #186.
  */
 #if !defined(ENABLE_ITTI)
-# include "as_message.h"
+  #include "as_message.h"
 #endif
 
 #if defined(ENABLE_USE_MME)
-# include "commonDef.h"
+  #include "commonDef.h"
 #endif
 
 //--------
@@ -516,29 +516,29 @@ typedef struct eNB_RRC_UE_s {
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   LTE_SCellToAddMod_r10_t            sCell_config[2];
 #endif
-  LTE_SRB_ToAddModList_t*            SRB_configList;
-  LTE_SRB_ToAddModList_t*            SRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
-  LTE_DRB_ToAddModList_t*            DRB_configList;
-  LTE_DRB_ToAddModList_t*            DRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
-  LTE_DRB_ToReleaseList_t*           DRB_Release_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
+  LTE_SRB_ToAddModList_t            *SRB_configList;
+  LTE_SRB_ToAddModList_t            *SRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
+  LTE_DRB_ToAddModList_t            *DRB_configList;
+  LTE_DRB_ToAddModList_t            *DRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
+  LTE_DRB_ToReleaseList_t           *DRB_Release_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
   uint8_t                            DRB_active[8];
-  struct LTE_PhysicalConfigDedicated*    physicalConfigDedicated;
-  struct LTE_SPS_Config*             sps_Config;
-  LTE_MeasObjectToAddMod_t*          MeasObj[MAX_MEAS_OBJ];
-  struct LTE_ReportConfigToAddMod*   ReportConfig[MAX_MEAS_CONFIG];
-  struct LTE_QuantityConfig*         QuantityConfig;
-  struct LTE_MeasIdToAddMod*         MeasId[MAX_MEAS_ID];
-  LTE_MAC_MainConfig_t*              mac_MainConfig;
-  LTE_MeasGapConfig_t*               measGapConfig;
+  struct LTE_PhysicalConfigDedicated    *physicalConfigDedicated;
+  struct LTE_SPS_Config             *sps_Config;
+  LTE_MeasObjectToAddMod_t          *MeasObj[MAX_MEAS_OBJ];
+  struct LTE_ReportConfigToAddMod   *ReportConfig[MAX_MEAS_CONFIG];
+  struct LTE_QuantityConfig         *QuantityConfig;
+  struct LTE_MeasIdToAddMod         *MeasId[MAX_MEAS_ID];
+  LTE_MAC_MainConfig_t              *mac_MainConfig;
+  LTE_MeasGapConfig_t               *measGapConfig;
   SRB_INFO                           SI;
   SRB_INFO                           Srb0;
   SRB_INFO_TABLE_ENTRY               Srb1;
   SRB_INFO_TABLE_ENTRY               Srb2;
-  LTE_MeasConfig_t*                  measConfig;
-  HANDOVER_INFO*                     handover_info;
-  LTE_MeasResults_t*                 measResults;
+  LTE_MeasConfig_t                  *measConfig;
+  HANDOVER_INFO                     *handover_info;
+  LTE_MeasResults_t                 *measResults;
 
-  LTE_UE_EUTRA_Capability_t*         UE_Capability;
+  LTE_UE_EUTRA_Capability_t         *UE_Capability;
   ImsiMobileIdentity_t               imsi;
 
 #if defined(ENABLE_SECURITY)
@@ -601,7 +601,7 @@ typedef struct eNB_RRC_UE_s {
   uint32_t                           ue_reestablishment_timer_thres;
   /* RRC inactivity timer: on timeout, should release RRC connection for inactivity on all E-RABs */
   uint32_t                           ue_rrc_inactivity_timer;
-  uint32_t                           ue_rrc_inactivity_timer_thres;     
+  uint32_t                           ue_rrc_inactivity_timer_thres;
   uint8_t                            e_rab_release_command_flag;
   int8_t                             reestablishment_xid;
 } eNB_RRC_UE_t;
@@ -771,7 +771,7 @@ typedef struct UE_RRC_INST_s {
   //current destination
   uint32_t destinationL2Id;
   //List of destinations
-   uint32_t destinationList[MAX_NUM_DEST];
+  uint32_t destinationList[MAX_NUM_DEST];
   //sl_discovery..
   SRB_INFO SL_Discovery[NB_CNX_UE];
 #endif
