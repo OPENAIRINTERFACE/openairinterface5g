@@ -18,7 +18,9 @@ cd eur_oai_develop-nr
 git clone https://gitlab.eurecom.fr/oai/openairinterface5g.git
 cd openairinterface5g
 
-git checkout 375-syrtem-adrv9371zc706_update
+git checkout 375-syrtem-sdr-platform
+or
+git checkout develop-nr (after merge request accepted)
 
 ./targets/ARCH/ADRV9371_ZC706/SYRTEM_IQ_uninstall_previous_SW.sh
 -> Reading package lists... Done
