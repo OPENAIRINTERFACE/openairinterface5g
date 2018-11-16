@@ -684,8 +684,6 @@ void wakeup_prach_eNB_br(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
     }
   }
 
-  <<<<<<< HEAD
-
   // check if we have to detect PRACH first
   if (is_prach_subframe(fp,frame,subframe)>0) {
     LOG_D(PHY,"Triggering prach br processing, frame %d, subframe %d\n",frame,subframe);
