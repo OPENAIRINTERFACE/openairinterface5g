@@ -115,5 +115,7 @@ LOG_UDUMPMSG(c, b, s, f, x...)
 
 [example in oai code](https://gitlab.eurecom.fr/oai/openairinterface5g/blob/develop/openair1/SIMULATION/LTE_PHY/dlsim.c#L1974) 
 
+### logging facility APIs
+
 [logging facility  main page](log.md)  
 [oai Wikis home](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/home)
