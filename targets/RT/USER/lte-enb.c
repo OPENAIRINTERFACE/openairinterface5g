@@ -691,709 +691,568 @@ void wakeup_prach_eNB_br(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe) {
     if (proc->instance_cnt_prach_br == 0) {
       LOG_W(PHY,"[eNB] Frame %d Subframe %d, dropping PRACH BR\n", frame,subframe);
       return;
-      =======
     }
 
-    eNB_thread_asynch_rxtx_status=0;
-    return(&eNB_thread_asynch_rxtx_status);
+    // wake up thread for PRACH RX
+    if (pthread_mutex_lock(&proc->mutex_prach_br) != 0) {
+      LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB PRACH thread %d (IC %d)\n", proc->thread_index, proc->instance_cnt_prach_br);
+      exit_fun( "error locking mutex_prach" );
+      return;
+    }
+
+    ++proc->instance_cnt_prach_br;
+    // set timing for prach thread
+    proc->frame_prach_br = frame;
+    proc->subframe_prach_br = subframe;
+
+    // the thread can now be woken up
+    if (pthread_cond_signal(&proc->cond_prach_br) != 0) {
+      LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB PRACH BR thread %d\n", proc->thread_index);
+      exit_fun( "ERROR pthread_cond_signal" );
+      return;
+    }
+
+    pthread_mutex_unlock( &proc->mutex_prach_br );
   }
-
-  void rx_rf(PHY_VARS_eNB *eNB,int *frame,int *subframe) {
-    eNB_proc_t *proc = &eNB->proc;
-    LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
-    void *rxp[fp->nb_antennas_rx],*txp[fp->nb_antennas_tx];
-    unsigned int rxs,txs;
-    int i;
-    int tx_sfoffset = (eNB->single_thread_flag == 1) ? 3 : 2;
-    openair0_timestamp ts,old_ts;
-
-    if (proc->first_rx==0) {
-      // Transmit TX buffer based on timestamp from RX
-      //    printf("trx_write -> USRP TS %llu (sf %d)\n", (proc->timestamp_rx+(3*fp->samples_per_tti)),(proc->subframe_rx+2)%10);
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_rx+(tx_sfoffset*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance)&0xffffffff );
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
-      // prepare tx buffer pointers
-      lte_subframe_t SF_type     = subframe_select(fp,(proc->subframe_rx+tx_sfoffset)%10);
-      lte_subframe_t prevSF_type = subframe_select(fp,(proc->subframe_rx+tx_sfoffset+9)%10);
-      lte_subframe_t nextSF_type = subframe_select(fp,(proc->subframe_rx+tx_sfoffset+1)%10);
-      int sf_extension = 0;
-
-      if ((SF_type == SF_DL) ||
-          (SF_type == SF_S)) {
-        int siglen=fp->samples_per_tti,flags=1;
-
-        if (SF_type == SF_S) {
-          siglen = (fp->dl_symbols_in_S_subframe+1)*(fp->ofdm_symbol_size+fp->nb_prefix_samples0);
-          flags=3; // end of burst
-        }
-
-        if ((fp->frame_type == TDD) &&
-            (SF_type == SF_DL)&&
-            (prevSF_type == SF_UL) &&
-            (nextSF_type == SF_DL)) {
-          flags = 2; // start of burst
-          sf_extension = eNB->N_TA_offset<<1;
-        }
-
-        if ((fp->frame_type == TDD) &&
-            (SF_type == SF_DL)&&
-            (prevSF_type == SF_UL) &&
-            (nextSF_type == SF_UL)) {
-          flags = 4; // start of burst and end of burst (only one DL SF between two UL)
-          sf_extension = eNB->N_TA_offset<<1;
-        }
-
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
-        VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_WRITE_FLAGS,flags);
-
-        for (i=0; i<fp->nb_antennas_tx; i++)
-          txp[i] = (void *)&eNB->common_vars.txdata[0][i][((proc->subframe_rx+tx_sfoffset)%10)*fp->samples_per_tti-sf_extension];
-
-        txs = eNB->rfdevice.trx_write_func(&eNB->rfdevice,
-                                           proc->timestamp_rx+eNB->ts_offset+(tx_sfoffset*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance-sf_extension,
-                                           txp,
-                                           siglen+sf_extension,
-                                           fp->nb_antennas_tx,
-                                           flags);
-        clock_gettime( CLOCK_MONOTONIC, &end_rf);
-        end_rf_ts = proc->timestamp_rx+eNB->ts_offset+(tx_sfoffset*fp->samples_per_tti)-openair0_cfg[0].tx_sample_advance;
-
-        if (recv_if_count != 0 ) {
-          recv_if_count = recv_if_count-1;
-          LOG_D(HW,"[From Timestamp %"PRId64" to Timestamp %"PRId64"] RTT_RF: %"PRId64"; RTT_RF\n", start_rf_prev_ts, end_rf_ts, clock_difftime_ns(start_rf_prev, end_rf));
-          LOG_D(HW,"[From Timestamp %"PRId64" to Timestamp %"PRId64"] RTT_RF: %"PRId64"; RTT_RF\n",start_rf_prev2_ts, end_rf_ts, clock_difftime_ns(start_rf_prev2, end_rf));
-        }
-
-        VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
-
-        if (txs !=  siglen+sf_extension) {
-          LOG_E(PHY,"TX : Timeout (sent %d/%d)\n",txs, fp->samples_per_tti);
-          exit_fun( "problem transmitting samples" );
-        }
-      }
-    }
-
-    for (i=0; i<fp->nb_antennas_rx; i++)
-      rxp[i] = (void *)&eNB->common_vars.rxdata[0][i][*subframe*fp->samples_per_tti];
-
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
-    old_ts = proc->timestamp_rx;
-    rxs = eNB->rfdevice.trx_read_func(&eNB->rfdevice,
-                                      &ts,
-                                      rxp,
-                                      fp->samples_per_tti,
-                                      fp->nb_antennas_rx);
-    start_rf_prev2= start_rf_prev;
-    start_rf_prev2_ts= start_rf_prev_ts;
-    start_rf_prev = start_rf_new;
-    start_rf_prev_ts = start_rf_new_ts;
-    clock_gettime( CLOCK_MONOTONIC, &start_rf_new);
-    start_rf_new_ts = ts;
-    LOG_D(PHY,"rx_rf: first_rx %d received ts %"PRId64" (sptti %d)\n",proc->first_rx,ts,fp->samples_per_tti);
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
-    proc->timestamp_rx = ts-eNB->ts_offset;
-
-    if (rxs != fp->samples_per_tti)
-      LOG_E(PHY,"rx_rf: Asked for %d samples, got %d from USRP\n",fp->samples_per_tti,rxs);
-
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
-
-    if (proc->first_rx == 1) {
-      eNB->ts_offset = proc->timestamp_rx;
-      proc->timestamp_rx=0;
-    } else {
-      if (proc->timestamp_rx - old_ts != fp->samples_per_tti) {
-        LOG_I(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",proc->timestamp_rx - old_ts - fp->samples_per_tti,eNB->ts_offset);
-        eNB->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_tti);
-        proc->timestamp_rx = ts-eNB->ts_offset;
-      }
-    }
-
-    proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
-    proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
-    proc->frame_rx    = (proc->frame_rx+proc->frame_offset)&1023;
-    proc->frame_tx    = proc->frame_rx;
-
-    if (proc->subframe_rx > 5) proc->frame_tx=(proc->frame_tx+1)&1023;
-
-    // synchronize first reception to frame 0 subframe 0
-    proc->timestamp_tx = proc->timestamp_rx+(4*fp->samples_per_tti);
-    //  printf("trx_read <- USRP TS %lu (offset %d sf %d, f %d, first_rx %d)\n", proc->timestamp_rx,eNB->ts_offset,proc->subframe_rx,proc->frame_rx,proc->first_rx);
-
-    if (proc->first_rx == 0) {
-      if (proc->subframe_rx != *subframe) {
-        LOG_E(PHY,"rx_rf: Received Timestamp (%"PRId64") doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->timestamp_rx,proc->subframe_rx,*subframe);
-        exit_fun("Exiting");
-      }
-
-      int f2 = (*frame+proc->frame_offset)&1023;
-
-      if (proc->frame_rx != f2) {
-        LOG_E(PHY,"rx_rf: Received Timestamp (%"PRId64") doesn't correspond to the time we think it is (proc->frame_rx %d frame %d, frame_offset %d, f2 %d)\n",proc->timestamp_rx,proc->frame_rx,*frame,
-              proc->frame_offset,f2);
-        exit_fun("Exiting");
-      }
-    } else {
-      proc->first_rx--;
-      *frame = proc->frame_rx;
-      *subframe = proc->subframe_rx;
-    }
-
-    //printf("timestamp_rx %lu, frame %d(%d), subframe %d(%d)\n",proc->timestamp_rx,proc->frame_rx,frame,proc->subframe_rx,subframe);
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
-
-    if (rxs != fp->samples_per_tti)
-      exit_fun( "problem receiving samples" );
-  }
-  void rx_fh_if5(PHY_VARS_eNB *eNB,int *frame, int *subframe) {
-    LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
-    eNB_proc_t *proc = &eNB->proc;
-    recv_IF5(eNB, &proc->timestamp_rx, *subframe, IF5_RRH_GW_UL);
-    proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
-    proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
-
-    if (proc->first_rx == 0) {
-      if (proc->subframe_rx != *subframe) {
-        LOG_E(PHY,"rx_fh_if5: Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,*subframe);
-        exit_fun("Exiting");
-        >>>>>>> ae0494b0bc431bf664e300b0b5a10f348d6b6757
-      }
-
-      // wake up thread for PRACH RX
-      if (pthread_mutex_lock(&proc->mutex_prach_br) != 0) {
-        LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB PRACH thread %d (IC %d)\n", proc->thread_index, proc->instance_cnt_prach_br);
-        exit_fun( "error locking mutex_prach" );
-        return;
-      }
-
-      ++proc->instance_cnt_prach_br;
-      // set timing for prach thread
-      proc->frame_prach_br = frame;
-      proc->subframe_prach_br = subframe;
-
-      // the thread can now be woken up
-      if (pthread_cond_signal(&proc->cond_prach_br) != 0) {
-        LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB PRACH BR thread %d\n", proc->thread_index);
-        exit_fun( "ERROR pthread_cond_signal" );
-        return;
-      }
-
-      pthread_mutex_unlock( &proc->mutex_prach_br );
-    }
-  }
+}
 #endif
-  /*!
-   * \brief The prach receive thread of eNB.
-   * \param param is a \ref eNB_proc_t structure which contains the info what to process.
-   * \returns a pointer to an int. The storage is not on the heap and must not be freed.
-   */
-  static void *eNB_thread_prach( void *param ) {
-    static int eNB_thread_prach_status;
-    PHY_VARS_eNB *eNB= (PHY_VARS_eNB *)param;
-    eNB_proc_t *proc = &eNB->proc;
-    // set default return value
-    eNB_thread_prach_status = 0;
-    thread_top_init("eNB_thread_prach",1,500000,1000000,20000000);
 
-    //wait_sync("eNB_thread_prach");
 
-    while (!oai_exit) {
-      if (wait_on_condition(&proc->mutex_prach,&proc->cond_prach,&proc->instance_cnt_prach,"eNB_prach_thread") < 0) break;
+/*!
+ * \brief The prach receive thread of eNB.
+ * \param param is a \ref eNB_proc_t structure which contains the info what to process.
+ * \returns a pointer to an int. The storage is not on the heap and must not be freed.
+ */
+static void *eNB_thread_prach( void *param ) {
+  static int eNB_thread_prach_status;
+  PHY_VARS_eNB *eNB= (PHY_VARS_eNB *)param;
+  eNB_proc_t *proc = &eNB->proc;
+  // set default return value
+  eNB_thread_prach_status = 0;
+  thread_top_init("eNB_thread_prach",1,500000,1000000,20000000);
 
-      if (oai_exit) break;
+  //wait_sync("eNB_thread_prach");
 
-      LOG_D(PHY,"Running eNB prach procedures\n");
-      prach_procedures(eNB
+  while (!oai_exit) {
+    if (wait_on_condition(&proc->mutex_prach,&proc->cond_prach,&proc->instance_cnt_prach,"eNB_prach_thread") < 0) break;
+
+    if (oai_exit) break;
+
+    LOG_D(PHY,"Running eNB prach procedures\n");
+    prach_procedures(eNB
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                       ,0
+                     ,0
 #endif
-                      );
+                    );
 
-      if (release_thread(&proc->mutex_prach,&proc->instance_cnt_prach,"eNB_prach_thread") < 0) break;
-    }
-
-    LOG_I(PHY, "Exiting eNB thread PRACH\n");
-    eNB_thread_prach_status = 0;
-    return &eNB_thread_prach_status;
+    if (release_thread(&proc->mutex_prach,&proc->instance_cnt_prach,"eNB_prach_thread") < 0) break;
   }
+
+  LOG_I(PHY, "Exiting eNB thread PRACH\n");
+  eNB_thread_prach_status = 0;
+  return &eNB_thread_prach_status;
+}
+
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  /*!
-   * \brief The prach receive thread of eNB for BL/CE UEs.
-   * \param param is a \ref eNB_proc_t structure which contains the info what to process.
-   * \returns a pointer to an int. The storage is not on the heap and must not be freed.
-   */
-  static void *eNB_thread_prach_br( void *param ) {
-    static int eNB_thread_prach_status;
-    PHY_VARS_eNB *eNB= (PHY_VARS_eNB *)param;
-    eNB_proc_t *proc = &eNB->proc;
-    // set default return value
-    eNB_thread_prach_status = 0;
-    thread_top_init("eNB_thread_prach_br",1,500000,1000000,20000000);
+/*!
+ * \brief The prach receive thread of eNB for BL/CE UEs.
+ * \param param is a \ref eNB_proc_t structure which contains the info what to process.
+ * \returns a pointer to an int. The storage is not on the heap and must not be freed.
+ */
+static void *eNB_thread_prach_br( void *param ) {
+  static int eNB_thread_prach_status;
+  PHY_VARS_eNB *eNB= (PHY_VARS_eNB *)param;
+  eNB_proc_t *proc = &eNB->proc;
+  // set default return value
+  eNB_thread_prach_status = 0;
+  thread_top_init("eNB_thread_prach_br",1,500000,1000000,20000000);
 
-    while (!oai_exit) {
-      if (wait_on_condition(&proc->mutex_prach_br,&proc->cond_prach_br,&proc->instance_cnt_prach_br,"eNB_prach_thread_br") < 0) break;
+  while (!oai_exit) {
+    if (wait_on_condition(&proc->mutex_prach_br,&proc->cond_prach_br,&proc->instance_cnt_prach_br,"eNB_prach_thread_br") < 0) break;
 
-      if (oai_exit) break;
+    if (oai_exit) break;
 
-      LOG_D(PHY,"Running eNB prach procedures for BL/CE UEs\n");
-      prach_procedures(eNB,1);
+    LOG_D(PHY,"Running eNB prach procedures for BL/CE UEs\n");
+    prach_procedures(eNB,1);
 
-      if (release_thread(&proc->mutex_prach_br,&proc->instance_cnt_prach_br,"eNB_prach_thread_br") < 0) break;
-    }
-
-    LOG_I(PHY, "Exiting eNB thread PRACH BR\n");
-    eNB_thread_prach_status = 0;
-    return &eNB_thread_prach_status;
+    if (release_thread(&proc->mutex_prach_br,&proc->instance_cnt_prach_br,"eNB_prach_thread_br") < 0) break;
   }
+
+  LOG_I(PHY, "Exiting eNB thread PRACH BR\n");
+  eNB_thread_prach_status = 0;
+  return &eNB_thread_prach_status;
+}
+
 #endif
-  extern void init_td_thread(PHY_VARS_eNB *);
-  extern void init_te_thread(PHY_VARS_eNB *);
-  extern void kill_td_thread(PHY_VARS_eNB *);
-  extern void kill_te_thread(PHY_VARS_eNB *);
-  static void *process_stats_thread(void *param) {
-    PHY_VARS_eNB     *eNB      = (PHY_VARS_eNB *)param;
-    wait_sync("process_stats_thread");
 
-    while (!oai_exit) {
-      sleep(1);
 
-      if (opp_enabled == 1) {
-        if (eNB->td) print_meas(&eNB->ulsch_decoding_stats,"ulsch_decoding",NULL,NULL);
 
-        if (eNB->te) {
-          print_meas(&eNB->dlsch_turbo_encoding_preperation_stats,"dlsch_coding_crc",NULL,NULL);
-          print_meas(&eNB->dlsch_turbo_encoding_segmentation_stats,"dlsch_segmentation",NULL,NULL);
-          print_meas(&eNB->dlsch_encoding_stats,"dlsch_encoding",NULL,NULL);
-          print_meas(&eNB->dlsch_turbo_encoding_signal_stats,"coding_signal",NULL,NULL);
-          print_meas(&eNB->dlsch_turbo_encoding_main_stats,"coding_main",NULL,NULL);
-          print_meas(&eNB->dlsch_turbo_encoding_stats,"turbo_encoding",NULL,NULL);
-          print_meas(&eNB->dlsch_interleaving_stats,"turbo_interleaving",NULL,NULL);
-          print_meas(&eNB->dlsch_rate_matching_stats,"turbo_rate_matching",NULL,NULL);
-          print_meas(&eNB->dlsch_turbo_encoding_waiting_stats,"coding_wait",NULL,NULL);
-          print_meas(&eNB->dlsch_turbo_encoding_wakeup_stats0,"coding_worker_0",NULL,NULL);
-          print_meas(&eNB->dlsch_turbo_encoding_wakeup_stats1,"coding_worker_1",NULL,NULL);
-        }
+extern void init_td_thread(PHY_VARS_eNB *);
+extern void init_te_thread(PHY_VARS_eNB *);
+extern void kill_td_thread(PHY_VARS_eNB *);
+extern void kill_te_thread(PHY_VARS_eNB *);
 
-        print_meas(&eNB->dlsch_modulation_stats,"dlsch_modulation",NULL,NULL);
+static void *process_stats_thread(void *param) {
+  PHY_VARS_eNB     *eNB      = (PHY_VARS_eNB *)param;
+  wait_sync("process_stats_thread");
+
+  while (!oai_exit) {
+    sleep(1);
+
+    if (opp_enabled == 1) {
+      if (eNB->td) print_meas(&eNB->ulsch_decoding_stats,"ulsch_decoding",NULL,NULL);
+
+      if (eNB->te) {
+        print_meas(&eNB->dlsch_turbo_encoding_preperation_stats,"dlsch_coding_crc",NULL,NULL);
+        print_meas(&eNB->dlsch_turbo_encoding_segmentation_stats,"dlsch_segmentation",NULL,NULL);
+        print_meas(&eNB->dlsch_encoding_stats,"dlsch_encoding",NULL,NULL);
+        print_meas(&eNB->dlsch_turbo_encoding_signal_stats,"coding_signal",NULL,NULL);
+        print_meas(&eNB->dlsch_turbo_encoding_main_stats,"coding_main",NULL,NULL);
+        print_meas(&eNB->dlsch_turbo_encoding_stats,"turbo_encoding",NULL,NULL);
+        print_meas(&eNB->dlsch_interleaving_stats,"turbo_interleaving",NULL,NULL);
+        print_meas(&eNB->dlsch_rate_matching_stats,"turbo_rate_matching",NULL,NULL);
+        print_meas(&eNB->dlsch_turbo_encoding_waiting_stats,"coding_wait",NULL,NULL);
+        print_meas(&eNB->dlsch_turbo_encoding_wakeup_stats0,"coding_worker_0",NULL,NULL);
+        print_meas(&eNB->dlsch_turbo_encoding_wakeup_stats1,"coding_worker_1",NULL,NULL);
       }
+
+      print_meas(&eNB->dlsch_modulation_stats,"dlsch_modulation",NULL,NULL);
     }
-
-    return(NULL);
   }
-  void init_eNB_proc(int inst) {
-    /*int i=0;*/
-    int CC_id;
-    PHY_VARS_eNB *eNB;
-    eNB_proc_t *proc;
-    eNB_rxtx_proc_t *proc_rxtx;
-    pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_prach=NULL;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-    pthread_attr_t *attr_prach_br=NULL;
-#endif
-    LOG_I(PHY,"%s(inst:%d) RC.nb_CC[inst]:%d \n",__FUNCTION__,inst,RC.nb_CC[inst]);
 
-    for (CC_id=0; CC_id<RC.nb_CC[inst]; CC_id++) {
-      eNB = RC.eNB[inst][CC_id];
+  return(NULL);
+}
+
+
+void init_eNB_proc(int inst) {
+  /*int i=0;*/
+  int CC_id;
+  PHY_VARS_eNB *eNB;
+  eNB_proc_t *proc;
+  eNB_rxtx_proc_t *proc_rxtx;
+  pthread_attr_t *attr0=NULL,*attr1=NULL,*attr_prach=NULL;
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  pthread_attr_t *attr_prach_br=NULL;
+#endif
+  LOG_I(PHY,"%s(inst:%d) RC.nb_CC[inst]:%d \n",__FUNCTION__,inst,RC.nb_CC[inst]);
+
+  for (CC_id=0; CC_id<RC.nb_CC[inst]; CC_id++) {
+    eNB = RC.eNB[inst][CC_id];
 #ifndef OCP_FRAMEWORK
-      LOG_I(PHY,"Initializing eNB processes instance:%d CC_id %d \n",inst,CC_id);
+    LOG_I(PHY,"Initializing eNB processes instance:%d CC_id %d \n",inst,CC_id);
 #endif
-      proc = &eNB->proc;
-      proc_rxtx                      = proc->proc_rxtx;
-      proc_rxtx[0].instance_cnt_rxtx = -1;
-      proc_rxtx[1].instance_cnt_rxtx = -1;
-      proc_rxtx[0].pipe_ready        = 0;
-      proc_rxtx[1].pipe_ready        = 0;
-      proc->instance_cnt_prach       = -1;
-      proc->instance_cnt_asynch_rxtx = -1;
-      proc->instance_cnt_synch       = -1;
-      proc->CC_id                    = CC_id;
-      proc->first_rx=1;
-      proc->first_tx=1;
-      proc->RU_mask=0;
-      proc->RU_mask_prach=0;
-      pthread_mutex_init( &eNB->UL_INFO_mutex, NULL);
-      pthread_mutex_init( &proc_rxtx[0].mutex_rxtx, NULL);
-      pthread_mutex_init( &proc_rxtx[1].mutex_rxtx, NULL);
-      pthread_cond_init( &proc_rxtx[0].cond_rxtx, NULL);
-      pthread_cond_init( &proc_rxtx[1].cond_rxtx, NULL);
-      pthread_mutex_init( &proc->mutex_prach, NULL);
-      pthread_mutex_init( &proc->mutex_asynch_rxtx, NULL);
-      pthread_mutex_init( &proc->mutex_RU,NULL);
-      pthread_mutex_init( &proc->mutex_RU_PRACH,NULL);
-      pthread_cond_init( &proc->cond_prach, NULL);
-      pthread_cond_init( &proc->cond_asynch_rxtx, NULL);
-      pthread_attr_init( &proc->attr_prach);
-      pthread_attr_init( &proc->attr_asynch_rxtx);
-      pthread_attr_init( &proc_rxtx[0].attr_rxtx);
-      pthread_attr_init( &proc_rxtx[1].attr_rxtx);
+    proc = &eNB->proc;
+    proc_rxtx                      = proc->proc_rxtx;
+    proc_rxtx[0].instance_cnt_rxtx = -1;
+    proc_rxtx[1].instance_cnt_rxtx = -1;
+    proc_rxtx[0].pipe_ready        = 0;
+    proc_rxtx[1].pipe_ready        = 0;
+    proc->instance_cnt_prach       = -1;
+    proc->instance_cnt_asynch_rxtx = -1;
+    proc->instance_cnt_synch       = -1;
+    proc->CC_id                    = CC_id;
+    proc->first_rx=1;
+    proc->first_tx=1;
+    proc->RU_mask=0;
+    proc->RU_mask_prach=0;
+    pthread_mutex_init( &eNB->UL_INFO_mutex, NULL);
+    pthread_mutex_init( &proc_rxtx[0].mutex_rxtx, NULL);
+    pthread_mutex_init( &proc_rxtx[1].mutex_rxtx, NULL);
+    pthread_cond_init( &proc_rxtx[0].cond_rxtx, NULL);
+    pthread_cond_init( &proc_rxtx[1].cond_rxtx, NULL);
+    pthread_mutex_init( &proc->mutex_prach, NULL);
+    pthread_mutex_init( &proc->mutex_asynch_rxtx, NULL);
+    pthread_mutex_init( &proc->mutex_RU,NULL);
+    pthread_mutex_init( &proc->mutex_RU_PRACH,NULL);
+    pthread_cond_init( &proc->cond_prach, NULL);
+    pthread_cond_init( &proc->cond_asynch_rxtx, NULL);
+    pthread_attr_init( &proc->attr_prach);
+    pthread_attr_init( &proc->attr_asynch_rxtx);
+    pthread_attr_init( &proc_rxtx[0].attr_rxtx);
+    pthread_attr_init( &proc_rxtx[1].attr_rxtx);
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-      proc->instance_cnt_prach_br    = -1;
-      proc->RU_mask_prach_br=0;
-      pthread_mutex_init( &proc->mutex_prach_br, NULL);
-      pthread_mutex_init( &proc->mutex_RU_PRACH_br,NULL);
-      pthread_cond_init( &proc->cond_prach_br, NULL);
-      pthread_attr_init( &proc->attr_prach_br);
+    proc->instance_cnt_prach_br    = -1;
+    proc->RU_mask_prach_br=0;
+    pthread_mutex_init( &proc->mutex_prach_br, NULL);
+    pthread_mutex_init( &proc->mutex_RU_PRACH_br,NULL);
+    pthread_cond_init( &proc->cond_prach_br, NULL);
+    pthread_attr_init( &proc->attr_prach_br);
 #endif
 #ifndef DEADLINE_SCHEDULER
-      attr0       = &proc_rxtx[0].attr_rxtx;
-      attr1       = &proc_rxtx[1].attr_rxtx;
-      attr_prach  = &proc->attr_prach;
+    attr0       = &proc_rxtx[0].attr_rxtx;
+    attr1       = &proc_rxtx[1].attr_rxtx;
+    attr_prach  = &proc->attr_prach;
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-      attr_prach_br  = &proc->attr_prach_br;
+    attr_prach_br  = &proc->attr_prach_br;
 #endif
-      //    attr_td     = &proc->attr_td;
-      //    attr_te     = &proc->attr_te;
+    //    attr_td     = &proc->attr_td;
+    //    attr_te     = &proc->attr_te;
 #endif
 
-      if(get_thread_worker_conf() == WORKER_ENABLE) {
-        init_te_thread(eNB);
-        init_td_thread(eNB);
-      }
+    if(get_thread_worker_conf() == WORKER_ENABLE) {
+      init_te_thread(eNB);
+      init_td_thread(eNB);
+    }
 
-      LOG_I(PHY,"eNB->single_thread_flag:%d\n", eNB->single_thread_flag);
+    LOG_I(PHY,"eNB->single_thread_flag:%d\n", eNB->single_thread_flag);
 
-      if ((get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) && nfapi_mode!=2) {
-        pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, proc );
-        pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, tx_thread, proc);
-      }
+    if ((get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) && nfapi_mode!=2) {
+      pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, proc );
+      pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, tx_thread, proc);
+    }
 
-      pthread_create( &proc->pthread_prach, attr_prach, eNB_thread_prach, eNB );
+    pthread_create( &proc->pthread_prach, attr_prach, eNB_thread_prach, eNB );
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-      pthread_create( &proc->pthread_prach_br, attr_prach_br, eNB_thread_prach_br, eNB );
+    pthread_create( &proc->pthread_prach_br, attr_prach_br, eNB_thread_prach_br, eNB );
 #endif
-      /*char name[16];
-      if (eNB->single_thread_flag==0) {
-        snprintf( name, sizeof(name), "RXTX0 %d", i );
-        pthread_setname_np( proc_rxtx[0].pthread_rxtx, name );
-        snprintf( name, sizeof(name), "RXTX1 %d", i );
-        pthread_setname_np( proc_rxtx[1].pthread_rxtx, name );
-      }*/
-      AssertFatal(proc->instance_cnt_prach == -1,"instance_cnt_prach = %d\n",proc->instance_cnt_prach);
+    /*char name[16];
+    if (eNB->single_thread_flag==0) {
+      snprintf( name, sizeof(name), "RXTX0 %d", i );
+      pthread_setname_np( proc_rxtx[0].pthread_rxtx, name );
+      snprintf( name, sizeof(name), "RXTX1 %d", i );
+      pthread_setname_np( proc_rxtx[1].pthread_rxtx, name );
+    }*/
+    AssertFatal(proc->instance_cnt_prach == -1,"instance_cnt_prach = %d\n",proc->instance_cnt_prach);
 
-      if (opp_enabled == 1) pthread_create(&proc->process_stats_thread,NULL,process_stats_thread,(void *)eNB);
+    if (opp_enabled == 1) pthread_create(&proc->process_stats_thread,NULL,process_stats_thread,(void *)eNB);
+  }
+
+  //for multiple CCs: setup master and slaves
+  /*
+     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+     eNB = PHY_vars_eNB_g[inst][CC_id];
+
+     if (eNB->node_timing == synch_to_ext_device) { //master
+     eNB->proc.num_slaves = MAX_NUM_CCs-1;
+     eNB->proc.slave_proc = (eNB_proc_t**)malloc(eNB->proc.num_slaves*sizeof(eNB_proc_t*));
+
+     for (i=0; i< eNB->proc.num_slaves; i++) {
+     if (i < CC_id)  eNB->proc.slave_proc[i] = &(PHY_vars_eNB_g[inst][i]->proc);
+     if (i >= CC_id)  eNB->proc.slave_proc[i] = &(PHY_vars_eNB_g[inst][i+1]->proc);
+     }
+     }
+     }
+  */
+  /* setup PHY proc TX sync mechanism */
+  pthread_mutex_init(&sync_phy_proc.mutex_phy_proc_tx, NULL);
+  pthread_cond_init(&sync_phy_proc.cond_phy_proc_tx, NULL);
+  sync_phy_proc.phy_proc_CC_id = 0;
+}
+
+
+
+/*!
+ * \brief Terminate eNB TX and RX threads.
+ */
+void kill_eNB_proc(int inst) {
+  int *status;
+  PHY_VARS_eNB *eNB;
+  eNB_proc_t *proc;
+  eNB_rxtx_proc_t *proc_rxtx;
+  int i;
+
+  for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+    eNB=RC.eNB[inst][CC_id];
+    proc = &eNB->proc;
+    proc_rxtx = &proc->proc_rxtx[0];
+
+    if(get_thread_worker_conf() == WORKER_ENABLE) {
+      kill_td_thread(eNB);
+      kill_te_thread(eNB);
     }
 
-    //for multiple CCs: setup master and slaves
-    /*
-       for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-       eNB = PHY_vars_eNB_g[inst][CC_id];
+    LOG_I(PHY, "Killing TX CC_id %d inst %d\n", CC_id, inst );
 
-       if (eNB->node_timing == synch_to_ext_device) { //master
-       eNB->proc.num_slaves = MAX_NUM_CCs-1;
-       eNB->proc.slave_proc = (eNB_proc_t**)malloc(eNB->proc.num_slaves*sizeof(eNB_proc_t*));
+    for (i=0; i<2; i++) {
+      pthread_mutex_lock(&proc_rxtx[i].mutex_rxtx);
+      proc_rxtx[i].instance_cnt_rxtx = 0;
+      proc_rxtx[i].pipe_ready = 0;
+      pthread_cond_signal(&proc_rxtx[i].cond_rxtx);
+      pthread_mutex_unlock(&proc_rxtx[i].mutex_rxtx);
+    }
 
-       for (i=0; i< eNB->proc.num_slaves; i++) {
-       if (i < CC_id)  eNB->proc.slave_proc[i] = &(PHY_vars_eNB_g[inst][i]->proc);
-       if (i >= CC_id)  eNB->proc.slave_proc[i] = &(PHY_vars_eNB_g[inst][i+1]->proc);
-       }
-       }
-       }
-    */
-    /* setup PHY proc TX sync mechanism */
-    pthread_mutex_init(&sync_phy_proc.mutex_phy_proc_tx, NULL);
-    pthread_cond_init(&sync_phy_proc.cond_phy_proc_tx, NULL);
-    sync_phy_proc.phy_proc_CC_id = 0;
-  }
-  /*!
-   * \brief Terminate eNB TX and RX threads.
-   */
-  void kill_eNB_proc(int inst) {
-    int *status;
-    PHY_VARS_eNB *eNB;
-    eNB_proc_t *proc;
-    eNB_rxtx_proc_t *proc_rxtx;
-    int i;
-
-    for (int CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      eNB=RC.eNB[inst][CC_id];
-      proc = &eNB->proc;
-      proc_rxtx = &proc->proc_rxtx[0];
-
-      if(get_thread_worker_conf() == WORKER_ENABLE) {
-        kill_td_thread(eNB);
-        kill_te_thread(eNB);
-      }
-
-      LOG_I(PHY, "Killing TX CC_id %d inst %d\n", CC_id, inst );
-
-      for (i=0; i<2; i++) {
-        pthread_mutex_lock(&proc_rxtx[i].mutex_rxtx);
-        proc_rxtx[i].instance_cnt_rxtx = 0;
-        proc_rxtx[i].pipe_ready = 0;
-        pthread_cond_signal(&proc_rxtx[i].cond_rxtx);
-        pthread_mutex_unlock(&proc_rxtx[i].mutex_rxtx);
-      }
-
-      pthread_mutex_lock(&proc->mutex_prach);
-      proc->instance_cnt_prach = 0;
-      pthread_cond_signal( &proc->cond_prach );
-      pthread_mutex_unlock(&proc->mutex_prach);
-      pthread_cond_signal( &proc->cond_asynch_rxtx );
-      pthread_cond_broadcast(&sync_phy_proc.cond_phy_proc_tx);
-      LOG_D(PHY, "joining pthread_prach\n");
-      pthread_join( proc->pthread_prach, (void **)&status );
-      LOG_I(PHY, "Destroying prach mutex/cond\n");
-      pthread_mutex_destroy( &proc->mutex_prach );
-      pthread_cond_destroy( &proc->cond_prach );
+    pthread_mutex_lock(&proc->mutex_prach);
+    proc->instance_cnt_prach = 0;
+    pthread_cond_signal( &proc->cond_prach );
+    pthread_mutex_unlock(&proc->mutex_prach);
+    pthread_cond_signal( &proc->cond_asynch_rxtx );
+    pthread_cond_broadcast(&sync_phy_proc.cond_phy_proc_tx);
+    LOG_D(PHY, "joining pthread_prach\n");
+    pthread_join( proc->pthread_prach, (void **)&status );
+    LOG_I(PHY, "Destroying prach mutex/cond\n");
+    pthread_mutex_destroy( &proc->mutex_prach );
+    pthread_cond_destroy( &proc->cond_prach );
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-      proc->instance_cnt_prach_br = 0;
-      pthread_cond_signal( &proc->cond_prach_br );
-      pthread_join( proc->pthread_prach_br, (void **)&status );
-      pthread_mutex_destroy( &proc->mutex_prach_br );
-      pthread_cond_destroy( &proc->cond_prach_br );
+    proc->instance_cnt_prach_br = 0;
+    pthread_cond_signal( &proc->cond_prach_br );
+    pthread_join( proc->pthread_prach_br, (void **)&status );
+    pthread_mutex_destroy( &proc->mutex_prach_br );
+    pthread_cond_destroy( &proc->cond_prach_br );
 #endif
-      LOG_I(PHY, "Destroying UL_INFO mutex\n");
-      pthread_mutex_destroy(&eNB->UL_INFO_mutex);
+    LOG_I(PHY, "Destroying UL_INFO mutex\n");
+    pthread_mutex_destroy(&eNB->UL_INFO_mutex);
 
-      for (i=0; i<2; i++) {
-        LOG_I(PHY, "Joining rxtx[%d] mutex/cond\n",i);
-        pthread_join( proc_rxtx[i].pthread_rxtx, (void **)&status );
-        LOG_I(PHY, "Destroying rxtx[%d] mutex/cond\n",i);
-        pthread_mutex_destroy( &proc_rxtx[i].mutex_rxtx );
-        pthread_cond_destroy( &proc_rxtx[i].cond_rxtx );
-      }
+    for (i=0; i<2; i++) {
+      LOG_I(PHY, "Joining rxtx[%d] mutex/cond\n",i);
+      pthread_join( proc_rxtx[i].pthread_rxtx, (void **)&status );
+      LOG_I(PHY, "Destroying rxtx[%d] mutex/cond\n",i);
+      pthread_mutex_destroy( &proc_rxtx[i].mutex_rxtx );
+      pthread_cond_destroy( &proc_rxtx[i].cond_rxtx );
+    }
 
-      pthread_attr_destroy(&proc->attr_prach);
-      pthread_attr_destroy(&proc->attr_asynch_rxtx);
-      pthread_attr_destroy(&proc_rxtx[0].attr_rxtx);
-      pthread_attr_destroy(&proc_rxtx[1].attr_rxtx);
+    pthread_attr_destroy(&proc->attr_prach);
+    pthread_attr_destroy(&proc->attr_asynch_rxtx);
+    pthread_attr_destroy(&proc_rxtx[0].attr_rxtx);
+    pthread_attr_destroy(&proc_rxtx[1].attr_rxtx);
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-      pthread_mutex_destroy(&proc->mutex_RU_PRACH_br);
-      pthread_attr_destroy(&proc->attr_prach_br);
+    pthread_mutex_destroy(&proc->mutex_RU_PRACH_br);
+    pthread_attr_destroy(&proc->attr_prach_br);
 #endif
-    }
   }
-  void reset_opp_meas(void) {
-    int sfn;
-    reset_meas(&softmodem_stats_mt);
-    reset_meas(&softmodem_stats_hw);
+}
 
-    for (sfn=0; sfn < 10; sfn++) {
-      reset_meas(&softmodem_stats_rxtx_sf);
-      reset_meas(&softmodem_stats_rx_sf);
-    }
+
+
+
+void reset_opp_meas(void) {
+  int sfn;
+  reset_meas(&softmodem_stats_mt);
+  reset_meas(&softmodem_stats_hw);
+
+  for (sfn=0; sfn < 10; sfn++) {
+    reset_meas(&softmodem_stats_rxtx_sf);
+    reset_meas(&softmodem_stats_rx_sf);
   }
-  void print_opp_meas(void) {
-    int sfn=0;
-    print_meas(&softmodem_stats_mt, "Main ENB Thread", NULL, NULL);
-    print_meas(&softmodem_stats_hw, "HW Acquisation", NULL, NULL);
+}
 
-    for (sfn=0; sfn < 10; sfn++) {
-      print_meas(&softmodem_stats_rxtx_sf,"[eNB][total_phy_proc_rxtx]",NULL, NULL);
-      print_meas(&softmodem_stats_rx_sf,"[eNB][total_phy_proc_rx]",NULL,NULL);
-    }
+
+void print_opp_meas(void) {
+  int sfn=0;
+  print_meas(&softmodem_stats_mt, "Main ENB Thread", NULL, NULL);
+  print_meas(&softmodem_stats_hw, "HW Acquisation", NULL, NULL);
+
+  for (sfn=0; sfn < 10; sfn++) {
+    print_meas(&softmodem_stats_rxtx_sf,"[eNB][total_phy_proc_rxtx]",NULL, NULL);
+    print_meas(&softmodem_stats_rx_sf,"[eNB][total_phy_proc_rx]",NULL,NULL);
   }
-  void free_transport(PHY_VARS_eNB *eNB) {
-    int i;
-    int j;
+}
 
-    for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-      LOG_D(PHY, "Freeing Transport Channel Buffers for DLSCH, UE %d\n",i);
+void free_transport(PHY_VARS_eNB *eNB) {
+  int i;
+  int j;
 
-      for (j=0; j<2; j++) free_eNB_dlsch(eNB->dlsch[i][j]);
+  for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+    LOG_D(PHY, "Freeing Transport Channel Buffers for DLSCH, UE %d\n",i);
 
-      LOG_D(PHY, "Freeing Transport Channel Buffer for ULSCH, UE %d\n",i);
-      free_eNB_ulsch(eNB->ulsch[1+i]);
-    }
+    for (j=0; j<2; j++) free_eNB_dlsch(eNB->dlsch[i][j]);
 
-    free_eNB_ulsch(eNB->ulsch[0]);
+    LOG_D(PHY, "Freeing Transport Channel Buffer for ULSCH, UE %d\n",i);
+    free_eNB_ulsch(eNB->ulsch[1+i]);
   }
-  void init_transport(PHY_VARS_eNB *eNB) {
-    int i;
-    int j;
-    LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
-    LOG_I(PHY, "Initialise transport\n");
 
-    for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-      LOG_D(PHY,"Allocating Transport Channel Buffers for DLSCH, UE %d\n",i);
+  free_eNB_ulsch(eNB->ulsch[0]);
+}
 
-      for (j=0; j<2; j++) {
-        eNB->dlsch[i][j] = new_eNB_dlsch(1,8,NSOFT,fp->N_RB_DL,0,fp);
+void init_transport(PHY_VARS_eNB *eNB) {
+  int i;
+  int j;
+  LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
+  LOG_I(PHY, "Initialise transport\n");
 
-        if (!eNB->dlsch[i][j]) {
-          LOG_E(PHY,"Can't get eNB dlsch structures for UE %d \n", i);
-          exit(-1);
-        } else {
-          eNB->dlsch[i][j]->rnti=0;
-          LOG_D(PHY,"dlsch[%d][%d] => %p rnti:%d\n",i,j,eNB->dlsch[i][j], eNB->dlsch[i][j]->rnti);
-        }
-      }
+  for (i=0; i<NUMBER_OF_UE_MAX; i++) {
+    LOG_D(PHY,"Allocating Transport Channel Buffers for DLSCH, UE %d\n",i);
 
-      LOG_D(PHY,"Allocating Transport Channel Buffer for ULSCH, UE %d\n",i);
-      eNB->ulsch[1+i] = new_eNB_ulsch(MAX_TURBO_ITERATIONS,fp->N_RB_UL, 0);
+    for (j=0; j<2; j++) {
+      eNB->dlsch[i][j] = new_eNB_dlsch(1,8,NSOFT,fp->N_RB_DL,0,fp);
 
-      if (!eNB->ulsch[1+i]) {
-        LOG_E(PHY,"Can't get eNB ulsch structures\n");
+      if (!eNB->dlsch[i][j]) {
+        LOG_E(PHY,"Can't get eNB dlsch structures for UE %d \n", i);
         exit(-1);
+      } else {
+        eNB->dlsch[i][j]->rnti=0;
+        LOG_D(PHY,"dlsch[%d][%d] => %p rnti:%d\n",i,j,eNB->dlsch[i][j], eNB->dlsch[i][j]->rnti);
       }
-
-      // this is the transmission mode for the signalling channels
-      // this will be overwritten with the real transmission mode by the RRC once the UE is connected
-      eNB->transmission_mode[i] = fp->nb_antenna_ports_eNB==1 ? 1 : 2;
     }
 
-    // ULSCH for RA
-    eNB->ulsch[0] = new_eNB_ulsch(MAX_TURBO_ITERATIONS, fp->N_RB_UL, 0);
+    LOG_D(PHY,"Allocating Transport Channel Buffer for ULSCH, UE %d\n",i);
+    eNB->ulsch[1+i] = new_eNB_ulsch(MAX_TURBO_ITERATIONS,fp->N_RB_UL, 0);
 
-    if (!eNB->ulsch[0]) {
+    if (!eNB->ulsch[1+i]) {
       LOG_E(PHY,"Can't get eNB ulsch structures\n");
       exit(-1);
     }
 
-    eNB->dlsch_SI  = new_eNB_dlsch(1,8,NSOFT,fp->N_RB_DL, 0, fp);
-    LOG_D(PHY,"eNB %d.%d : SI %p\n",eNB->Mod_id,eNB->CC_id,eNB->dlsch_SI);
-    eNB->dlsch_ra  = new_eNB_dlsch(1,8,NSOFT,fp->N_RB_DL, 0, fp);
-    LOG_D(PHY,"eNB %d.%d : RA %p\n",eNB->Mod_id,eNB->CC_id,eNB->dlsch_ra);
-    eNB->dlsch_MCH = new_eNB_dlsch(1,8,NSOFT,fp->N_RB_DL, 0, fp);
-    LOG_D(PHY,"eNB %d.%d : MCH %p\n",eNB->Mod_id,eNB->CC_id,eNB->dlsch_MCH);
-    eNB->rx_total_gain_dB=130;
-
-    for(i=0; i<NUMBER_OF_UE_MAX; i++)
-      eNB->mu_mimo_mode[i].dl_pow_off = 2;
-
-    eNB->check_for_total_transmissions = 0;
-    eNB->check_for_MUMIMO_transmissions = 0;
-    eNB->FULL_MUMIMO_transmissions = 0;
-    eNB->check_for_SUMIMO_transmissions = 0;
-    fp->pucch_config_common.deltaPUCCH_Shift = 1;
+    // this is the transmission mode for the signalling channels
+    // this will be overwritten with the real transmission mode by the RRC once the UE is connected
+    eNB->transmission_mode[i] = fp->nb_antenna_ports_eNB==1 ? 1 : 2;
   }
-  void init_eNB_afterRU(void) {
-    int inst,CC_id,ru_id,i,aa;
-    PHY_VARS_eNB *eNB;
-    LOG_I(PHY,"%s() RC.nb_inst:%d\n", __FUNCTION__, RC.nb_inst);
 
-    for (inst=0; inst<RC.nb_inst; inst++) {
-      LOG_I(PHY,"RC.nb_CC[inst]:%d\n", RC.nb_CC[inst]);
+  // ULSCH for RA
+  eNB->ulsch[0] = new_eNB_ulsch(MAX_TURBO_ITERATIONS, fp->N_RB_UL, 0);
 
-      for (CC_id=0; CC_id<RC.nb_CC[inst]; CC_id++) {
-        LOG_I(PHY,"RC.nb_CC[inst:%d][CC_id:%d]:%p\n", inst, CC_id, RC.eNB[inst][CC_id]);
-        eNB                                  =  RC.eNB[inst][CC_id];
-        phy_init_lte_eNB(eNB,0,0);
+  if (!eNB->ulsch[0]) {
+    LOG_E(PHY,"Can't get eNB ulsch structures\n");
+    exit(-1);
+  }
 
-        // map antennas and PRACH signals to eNB RX
-        if (0) AssertFatal(eNB->num_RU>0,"Number of RU attached to eNB %d is zero\n",eNB->Mod_id);
+  eNB->dlsch_SI  = new_eNB_dlsch(1,8,NSOFT,fp->N_RB_DL, 0, fp);
+  LOG_D(PHY,"eNB %d.%d : SI %p\n",eNB->Mod_id,eNB->CC_id,eNB->dlsch_SI);
+  eNB->dlsch_ra  = new_eNB_dlsch(1,8,NSOFT,fp->N_RB_DL, 0, fp);
+  LOG_D(PHY,"eNB %d.%d : RA %p\n",eNB->Mod_id,eNB->CC_id,eNB->dlsch_ra);
+  eNB->dlsch_MCH = new_eNB_dlsch(1,8,NSOFT,fp->N_RB_DL, 0, fp);
+  LOG_D(PHY,"eNB %d.%d : MCH %p\n",eNB->Mod_id,eNB->CC_id,eNB->dlsch_MCH);
+  eNB->rx_total_gain_dB=130;
 
-        LOG_I(PHY,"Mapping RX ports from %d RUs to eNB %d\n",eNB->num_RU,eNB->Mod_id);
-        eNB->frame_parms.nb_antennas_rx       = 0;
-        LOG_I(PHY,"Overwriting eNB->prach_vars.rxsigF[0]:%p\n", eNB->prach_vars.rxsigF[0]);
-        eNB->prach_vars.rxsigF[0] = (int16_t **)malloc16(64*sizeof(int16_t *));
+  for(i=0; i<NUMBER_OF_UE_MAX; i++)
+    eNB->mu_mimo_mode[i].dl_pow_off = 2;
+
+  eNB->check_for_total_transmissions = 0;
+  eNB->check_for_MUMIMO_transmissions = 0;
+  eNB->FULL_MUMIMO_transmissions = 0;
+  eNB->check_for_SUMIMO_transmissions = 0;
+  fp->pucch_config_common.deltaPUCCH_Shift = 1;
+}
+
+void init_eNB_afterRU(void) {
+  int inst,CC_id,ru_id,i,aa;
+  PHY_VARS_eNB *eNB;
+  LOG_I(PHY,"%s() RC.nb_inst:%d\n", __FUNCTION__, RC.nb_inst);
+
+  for (inst=0; inst<RC.nb_inst; inst++) {
+    LOG_I(PHY,"RC.nb_CC[inst]:%d\n", RC.nb_CC[inst]);
+
+    for (CC_id=0; CC_id<RC.nb_CC[inst]; CC_id++) {
+      LOG_I(PHY,"RC.nb_CC[inst:%d][CC_id:%d]:%p\n", inst, CC_id, RC.eNB[inst][CC_id]);
+      eNB                                  =  RC.eNB[inst][CC_id];
+      phy_init_lte_eNB(eNB,0,0);
+
+      // map antennas and PRACH signals to eNB RX
+      if (0) AssertFatal(eNB->num_RU>0,"Number of RU attached to eNB %d is zero\n",eNB->Mod_id);
+
+      LOG_I(PHY,"Mapping RX ports from %d RUs to eNB %d\n",eNB->num_RU,eNB->Mod_id);
+      eNB->frame_parms.nb_antennas_rx       = 0;
+      LOG_I(PHY,"Overwriting eNB->prach_vars.rxsigF[0]:%p\n", eNB->prach_vars.rxsigF[0]);
+      eNB->prach_vars.rxsigF[0] = (int16_t **)malloc16(64*sizeof(int16_t *));
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
-        for (int ce_level=0; ce_level<4; ce_level++) {
-          LOG_I(PHY,"Overwriting eNB->prach_vars_br.rxsigF.rxsigF[0]:%p\n", eNB->prach_vars_br.rxsigF[ce_level]);
-          eNB->prach_vars_br.rxsigF[ce_level] = (int16_t **)malloc16(64*sizeof(int16_t *));
-        }
-
-#endif
-        LOG_I(PHY,"eNB->num_RU:%d\n", eNB->num_RU);
-
-        for (ru_id=0,aa=0; ru_id<eNB->num_RU; ru_id++) {
-          eNB->frame_parms.nb_antennas_rx    += eNB->RU_list[ru_id]->nb_rx;
-          AssertFatal(eNB->RU_list[ru_id]->common.rxdataF!=NULL,
-                      "RU %d : common.rxdataF is NULL\n",
-                      eNB->RU_list[ru_id]->idx);
-          AssertFatal(eNB->RU_list[ru_id]->prach_rxsigF!=NULL,
-                      "RU %d : prach_rxsigF is NULL\n",
-                      eNB->RU_list[ru_id]->idx);
-
-          for (i=0; i<eNB->RU_list[ru_id]->nb_rx; aa++,i++) {
-            LOG_I(PHY,"Attaching RU %d antenna %d to eNB antenna %d\n",eNB->RU_list[ru_id]->idx,i,aa);
-            eNB->prach_vars.rxsigF[0][aa]    =  eNB->RU_list[ru_id]->prach_rxsigF[i];
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-
-            for (int ce_level=0; ce_level<4; ce_level++)
-              eNB->prach_vars_br.rxsigF[ce_level][aa] = eNB->RU_list[ru_id]->prach_rxsigF_br[ce_level][i];
-
-#endif
-            eNB->common_vars.rxdataF[aa]     =  eNB->RU_list[ru_id]->common.rxdataF[i];
-          }
-        }
-
-        /* TODO: review this code, there is something wrong.
-         * In monolithic mode, we come here with nb_antennas_rx == 0
-         * (not tested in other modes).
-         */
-        if (eNB->frame_parms.nb_antennas_rx < 1) {
-          LOG_I(PHY, "%s() ************* DJP ***** eNB->frame_parms.nb_antennas_rx:%d - GOING TO HARD CODE TO 1", __FUNCTION__, eNB->frame_parms.nb_antennas_rx);
-          eNB->frame_parms.nb_antennas_rx = 1;
-        } else {
-          //LOG_I(PHY," Delete code\n");
-        }
-
-        if (eNB->frame_parms.nb_antennas_tx < 1) {
-          LOG_I(PHY, "%s() ************* DJP ***** eNB->frame_parms.nb_antennas_tx:%d - GOING TO HARD CODE TO 1", __FUNCTION__, eNB->frame_parms.nb_antennas_tx);
-          eNB->frame_parms.nb_antennas_tx = 1;
-        } else {
-          //LOG_I(PHY," Delete code\n");
-        }
-
-        AssertFatal(eNB->frame_parms.nb_antennas_rx >0,
-                    "inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,eNB->frame_parms.nb_antennas_rx);
-        LOG_I(PHY,"inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,eNB->frame_parms.nb_antennas_rx);
-        init_transport(eNB);
-        //init_precoding_weights(RC.eNB[inst][CC_id]);
+      for (int ce_level=0; ce_level<4; ce_level++) {
+        LOG_I(PHY,"Overwriting eNB->prach_vars_br.rxsigF.rxsigF[0]:%p\n", eNB->prach_vars_br.rxsigF[ce_level]);
+        eNB->prach_vars_br.rxsigF[ce_level] = (int16_t **)malloc16(64*sizeof(int16_t *));
       }
 
-      init_eNB_proc(inst);
-    }
-
-    for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
-      AssertFatal(RC.ru[ru_id]!=NULL,"ru_id %d is null\n",ru_id);
-      RC.ru[ru_id]->wakeup_rxtx         = wakeup_rxtx;
-      RC.ru[ru_id]->wakeup_prach_eNB    = wakeup_prach_eNB;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-      RC.ru[ru_id]->wakeup_prach_eNB_br = wakeup_prach_eNB_br;
 #endif
-      RC.ru[ru_id]->eNB_top             = eNB_top;
+      LOG_I(PHY,"eNB->num_RU:%d\n", eNB->num_RU);
+
+      for (ru_id=0,aa=0; ru_id<eNB->num_RU; ru_id++) {
+        eNB->frame_parms.nb_antennas_rx    += eNB->RU_list[ru_id]->nb_rx;
+        AssertFatal(eNB->RU_list[ru_id]->common.rxdataF!=NULL,
+                    "RU %d : common.rxdataF is NULL\n",
+                    eNB->RU_list[ru_id]->idx);
+        AssertFatal(eNB->RU_list[ru_id]->prach_rxsigF!=NULL,
+                    "RU %d : prach_rxsigF is NULL\n",
+                    eNB->RU_list[ru_id]->idx);
+
+        for (i=0; i<eNB->RU_list[ru_id]->nb_rx; aa++,i++) {
+          LOG_I(PHY,"Attaching RU %d antenna %d to eNB antenna %d\n",eNB->RU_list[ru_id]->idx,i,aa);
+          eNB->prach_vars.rxsigF[0][aa]    =  eNB->RU_list[ru_id]->prach_rxsigF[i];
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+
+          for (int ce_level=0; ce_level<4; ce_level++)
+            eNB->prach_vars_br.rxsigF[ce_level][aa] = eNB->RU_list[ru_id]->prach_rxsigF_br[ce_level][i];
+
+#endif
+          eNB->common_vars.rxdataF[aa]     =  eNB->RU_list[ru_id]->common.rxdataF[i];
+        }
+      }
+
+      /* TODO: review this code, there is something wrong.
+       * In monolithic mode, we come here with nb_antennas_rx == 0
+       * (not tested in other modes).
+       */
+      if (eNB->frame_parms.nb_antennas_rx < 1) {
+        LOG_I(PHY, "%s() ************* DJP ***** eNB->frame_parms.nb_antennas_rx:%d - GOING TO HARD CODE TO 1", __FUNCTION__, eNB->frame_parms.nb_antennas_rx);
+        eNB->frame_parms.nb_antennas_rx = 1;
+      } else {
+        //LOG_I(PHY," Delete code\n");
+      }
+
+      if (eNB->frame_parms.nb_antennas_tx < 1) {
+        LOG_I(PHY, "%s() ************* DJP ***** eNB->frame_parms.nb_antennas_tx:%d - GOING TO HARD CODE TO 1", __FUNCTION__, eNB->frame_parms.nb_antennas_tx);
+        eNB->frame_parms.nb_antennas_tx = 1;
+      } else {
+        //LOG_I(PHY," Delete code\n");
+      }
+
+      AssertFatal(eNB->frame_parms.nb_antennas_rx >0,
+                  "inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,eNB->frame_parms.nb_antennas_rx);
+      LOG_I(PHY,"inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,eNB->frame_parms.nb_antennas_rx);
+      init_transport(eNB);
+      //init_precoding_weights(RC.eNB[inst][CC_id]);
     }
+
+    init_eNB_proc(inst);
   }
-  void init_eNB(int single_thread_flag,int wait_for_sync) {
-    int CC_id;
-    int inst;
-    PHY_VARS_eNB *eNB;
-    LOG_I(PHY,"[lte-softmodem.c] eNB structure about to allocated RC.nb_L1_inst:%d RC.nb_L1_CC[0]:%d\n",RC.nb_L1_inst,RC.nb_L1_CC[0]);
 
-    if (RC.eNB == NULL) RC.eNB = (PHY_VARS_eNB ***) malloc(RC.nb_L1_inst*sizeof(PHY_VARS_eNB **));
+  for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
+    AssertFatal(RC.ru[ru_id]!=NULL,"ru_id %d is null\n",ru_id);
+    RC.ru[ru_id]->wakeup_rxtx         = wakeup_rxtx;
+    RC.ru[ru_id]->wakeup_prach_eNB    = wakeup_prach_eNB;
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+    RC.ru[ru_id]->wakeup_prach_eNB_br = wakeup_prach_eNB_br;
+#endif
+    RC.ru[ru_id]->eNB_top             = eNB_top;
+  }
+}
 
-    LOG_I(PHY,"[lte-softmodem.c] eNB structure RC.eNB allocated\n");
+void init_eNB(int single_thread_flag,int wait_for_sync) {
+  int CC_id;
+  int inst;
+  PHY_VARS_eNB *eNB;
+  LOG_I(PHY,"[lte-softmodem.c] eNB structure about to allocated RC.nb_L1_inst:%d RC.nb_L1_CC[0]:%d\n",RC.nb_L1_inst,RC.nb_L1_CC[0]);
 
-    for (inst=0; inst<RC.nb_L1_inst; inst++) {
-      if (RC.eNB[inst] == NULL) RC.eNB[inst] = (PHY_VARS_eNB **) malloc(RC.nb_CC[inst]*sizeof(PHY_VARS_eNB *));
+  if (RC.eNB == NULL) RC.eNB = (PHY_VARS_eNB ***) malloc(RC.nb_L1_inst*sizeof(PHY_VARS_eNB **));
 
-      for (CC_id=0; CC_id<RC.nb_L1_CC[inst]; CC_id++) {
-        if (RC.eNB[inst][CC_id] == NULL) RC.eNB[inst][CC_id] = (PHY_VARS_eNB *) malloc(sizeof(PHY_VARS_eNB));
+  LOG_I(PHY,"[lte-softmodem.c] eNB structure RC.eNB allocated\n");
 
-        eNB                     = RC.eNB[inst][CC_id];
-        eNB->abstraction_flag   = 0;
-        eNB->single_thread_flag = single_thread_flag;
-        LOG_I(PHY,"Initializing eNB %d CC_id %d single_thread_flag:%d\n",inst,CC_id,single_thread_flag);
+  for (inst=0; inst<RC.nb_L1_inst; inst++) {
+    if (RC.eNB[inst] == NULL) RC.eNB[inst] = (PHY_VARS_eNB **) malloc(RC.nb_CC[inst]*sizeof(PHY_VARS_eNB *));
+
+    for (CC_id=0; CC_id<RC.nb_L1_CC[inst]; CC_id++) {
+      if (RC.eNB[inst][CC_id] == NULL) RC.eNB[inst][CC_id] = (PHY_VARS_eNB *) malloc(sizeof(PHY_VARS_eNB));
+
+      eNB                     = RC.eNB[inst][CC_id];
+      eNB->abstraction_flag   = 0;
+      eNB->single_thread_flag = single_thread_flag;
+      LOG_I(PHY,"Initializing eNB %d CC_id %d single_thread_flag:%d\n",inst,CC_id,single_thread_flag);
 #ifndef OCP_FRAMEWORK
-        LOG_I(PHY,"Initializing eNB %d CC_id %d\n",inst,CC_id);
+      LOG_I(PHY,"Initializing eNB %d CC_id %d\n",inst,CC_id);
 #endif
-        eNB->td                   = ulsch_decoding_data_all;
-        eNB->te                   = dlsch_encoding_all;
-        LOG_I(PHY,"Registering with MAC interface module\n");
-        AssertFatal((eNB->if_inst         = IF_Module_init(inst))!=NULL,"Cannot register interface");
-        eNB->if_inst->schedule_response   = schedule_response;
-        eNB->if_inst->PHY_config_req      = phy_config_request;
-        memset((void *)&eNB->UL_INFO,0,sizeof(eNB->UL_INFO));
-        memset((void *)&eNB->Sched_INFO,0,sizeof(eNB->Sched_INFO));
-        LOG_I(PHY,"Setting indication lists\n");
-        eNB->UL_INFO.rx_ind.rx_indication_body.rx_pdu_list   = eNB->rx_pdu_list;
-        eNB->UL_INFO.crc_ind.crc_indication_body.crc_pdu_list = eNB->crc_pdu_list;
-        eNB->UL_INFO.sr_ind.sr_indication_body.sr_pdu_list = eNB->sr_pdu_list;
-        eNB->UL_INFO.harq_ind.harq_indication_body.harq_pdu_list = eNB->harq_pdu_list;
-        eNB->UL_INFO.cqi_ind.cqi_pdu_list = eNB->cqi_pdu_list;
-        eNB->UL_INFO.cqi_ind.cqi_raw_pdu_list = eNB->cqi_raw_pdu_list;
-        eNB->prach_energy_counter = 0;
-      }
+      eNB->td                   = ulsch_decoding_data_all;
+      eNB->te                   = dlsch_encoding_all;
+      LOG_I(PHY,"Registering with MAC interface module\n");
+      AssertFatal((eNB->if_inst         = IF_Module_init(inst))!=NULL,"Cannot register interface");
+      eNB->if_inst->schedule_response   = schedule_response;
+      eNB->if_inst->PHY_config_req      = phy_config_request;
+      memset((void *)&eNB->UL_INFO,0,sizeof(eNB->UL_INFO));
+      memset((void *)&eNB->Sched_INFO,0,sizeof(eNB->Sched_INFO));
+      LOG_I(PHY,"Setting indication lists\n");
+      eNB->UL_INFO.rx_ind.rx_indication_body.rx_pdu_list   = eNB->rx_pdu_list;
+      eNB->UL_INFO.crc_ind.crc_indication_body.crc_pdu_list = eNB->crc_pdu_list;
+      eNB->UL_INFO.sr_ind.sr_indication_body.sr_pdu_list = eNB->sr_pdu_list;
+      eNB->UL_INFO.harq_ind.harq_indication_body.harq_pdu_list = eNB->harq_pdu_list;
+      eNB->UL_INFO.cqi_ind.cqi_pdu_list = eNB->cqi_pdu_list;
+      eNB->UL_INFO.cqi_ind.cqi_raw_pdu_list = eNB->cqi_raw_pdu_list;
+      eNB->prach_energy_counter = 0;
     }
+  }
 
-    LOG_I(PHY,"[lte-softmodem.c] eNB structure allocated\n");
+  LOG_I(PHY,"[lte-softmodem.c] eNB structure allocated\n");
+}
+
+
+void stop_eNB(int nb_inst) {
+  for (int inst=0; inst<nb_inst; inst++) {
+    LOG_I(PHY,"Killing eNB %d processing threads\n",inst);
+    kill_eNB_proc(inst);
   }
-  void stop_eNB(int nb_inst) {
-    for (int inst=0; inst<nb_inst; inst++) {
-      LOG_I(PHY,"Killing eNB %d processing threads\n",inst);
-      kill_eNB_proc(inst);
-    }
-  }
+}
