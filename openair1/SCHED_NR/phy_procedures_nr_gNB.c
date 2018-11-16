@@ -153,7 +153,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int subframe) {
 }
 
 void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
-						   gNB_rxtx_proc_t *proc,
+						   gNB_L1_rxtx_proc_t *proc,
 						   int do_meas)
 {
   int aa;

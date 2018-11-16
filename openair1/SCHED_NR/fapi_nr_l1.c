@@ -37,7 +37,7 @@ int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req);
 extern uint8_t nfapi_mode;
 
 void handle_nr_nfapi_bch_pdu(PHY_VARS_gNB *gNB,
-                             gNB_rxtx_proc_t *proc,
+                             gNB_L1_rxtx_proc_t *proc,
                              nfapi_nr_dl_config_request_pdu_t *dl_config_pdu,
                              uint8_t *sdu)
 {
@@ -56,7 +56,7 @@ void handle_nr_nfapi_bch_pdu(PHY_VARS_gNB *gNB,
 
 void handle_nfapi_nr_dci_dl_pdu(PHY_VARS_gNB *gNB,
                                 int frame, int subframe,
-                                gNB_rxtx_proc_t *proc,
+                                gNB_L1_rxtx_proc_t *proc,
                                 nfapi_nr_dl_config_request_pdu_t *dl_config_pdu,
                                 nfapi_nr_dl_config_request_pdu_t *dl_config_dlsch_pdu)
 {
@@ -74,7 +74,7 @@ void handle_nfapi_nr_dci_dl_pdu(PHY_VARS_gNB *gNB,
 
 void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   PHY_VARS_gNB *gNB;
-  gNB_rxtx_proc_t *proc;
+  gNB_L1_rxtx_proc_t *proc;
   // copy data from L2 interface into L1 structures
   module_id_t                   Mod_id       = Sched_INFO->module_id;
   uint8_t                       CC_id        = Sched_INFO->CC_id;
@@ -88,7 +88,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   AssertFatal(RC.gNB[Mod_id][CC_id]!=NULL,"RC.gNB[%d][%d] is null\n",Mod_id,CC_id);
 
   gNB         = RC.gNB[Mod_id][CC_id];
-  proc        = &gNB->proc.proc_rxtx[0];
+  proc        = &gNB->proc.L1_proc;
 
   uint8_t number_dl_pdu             = DL_req->dl_config_request_body.number_pdu;
 

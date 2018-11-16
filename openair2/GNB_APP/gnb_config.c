@@ -77,6 +77,10 @@
 #include "NR_EUTRA-MBSFN-SubframeConfig.h"
 
 extern uint16_t sf_ahead;
+extern void set_parallel_conf(char *parallel_conf);
+extern void set_worker_conf(char *worker_conf);
+extern PARALLEL_CONF_t get_thread_parallel_conf(void);
+extern WORKER_CONF_t   get_thread_worker_conf(void);
 
 void RCconfig_nr_flexran()
 {
@@ -290,7 +294,7 @@ void RCconfig_NR_L1(void) {
       }
 
       if(strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "local_mac") == 0) {
-        sf_ahead = 2; // Need 4 subframe gap between RX and TX
+        //sf_ahead = 2; // Need 4 subframe gap between RX and TX
       }else if (strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "nfapi") == 0) {
         RC.gNB[j][0]->eth_params_n.local_if_name            = strdup(*(L1_ParamList.paramarray[j][L1_LOCAL_N_IF_NAME_IDX].strptr));
         RC.gNB[j][0]->eth_params_n.my_addr                  = strdup(*(L1_ParamList.paramarray[j][L1_LOCAL_N_ADDRESS_IDX].strptr));
@@ -301,7 +305,7 @@ void RCconfig_NR_L1(void) {
         RC.gNB[j][0]->eth_params_n.remote_portd             = *(L1_ParamList.paramarray[j][L1_REMOTE_N_PORTD_IDX].iptr);
         RC.gNB[j][0]->eth_params_n.transp_preference        = ETH_UDP_MODE;
 
-        sf_ahead = 2; // Cannot cope with 4 subframes betweem RX and TX - set it to 2
+        //sf_ahead = 2; // Cannot cope with 4 subframes betweem RX and TX - set it to 2
 
         RC.nb_nr_macrlc_inst = 1;  // This is used by mac_top_init_gNB()
 
@@ -400,7 +404,7 @@ void RCconfig_nr_macrlc() {
         RC.nrmac[j]->eth_params_s.remote_portd             = *(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_S_PORTD_IDX].iptr);
         RC.nrmac[j]->eth_params_s.transp_preference        = ETH_UDP_MODE;
 
-        sf_ahead = 2; // Cannot cope with 4 subframes betweem RX and TX - set it to 2
+        //sf_ahead = 2; // Cannot cope with 4 subframes betweem RX and TX - set it to 2
 
         printf("**************** vnf_port:%d\n", RC.mac[j]->eth_params_s.my_portc);
         configure_nfapi_vnf(RC.nrmac[j]->eth_params_s.my_addr, RC.nrmac[j]->eth_params_s.my_portc);
@@ -795,6 +799,10 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
             }
         
             NRRRC_CONFIGURATION_REQ (msg_p).N_RB_DL[j]= N_RB_DL;
+            if(N_RB_DL == 217)      sf_ahead = 2;
+            else if(N_RB_DL == 106) sf_ahead = 4;
+            else                    AssertFatal (0,"Failed to parse gNB configuration file %s, gnb %d unknown value \"%d\" for N_RB_DL choice: 106, 217 !\n",
+                                                 RC.config_file_name, i, N_RB_DL);
             
             /*
             if ((N_RB_DL!=6) && (N_RB_DL!=15) && (N_RB_DL!=25) && (N_RB_DL!=50) && (N_RB_DL!=75) && (N_RB_DL!=100)) {
@@ -2976,6 +2984,35 @@ int RCconfig_NR_S1(MessageDef *msg_p, uint32_t i) {
   return 0;
 }
 
+int RCconfig_nr_parallel(void) {
+  char *parallel_conf = NULL;
+  char *worker_conf   = NULL;
+  extern char *parallel_config;
+  extern char *worker_config;
+  paramdef_t ThreadParams[]  = THREAD_CONF_DESC;
+  paramlist_def_t THREADParamList = {THREAD_CONFIG_STRING_THREAD_STRUCT,NULL,0};
+  config_getlist( &THREADParamList,NULL,0,NULL);
+
+  if(THREADParamList.numelt>0) {
+    config_getlist( &THREADParamList,ThreadParams,sizeof(ThreadParams)/sizeof(paramdef_t),NULL);
+    parallel_conf = strdup(*(THREADParamList.paramarray[0][THREAD_PARALLEL_IDX].strptr));
+  } else {
+    parallel_conf = strdup("PARALLEL_RU_L1_TRX_SPLIT");
+  }
+
+  if(THREADParamList.numelt>0) {
+    config_getlist( &THREADParamList,ThreadParams,sizeof(ThreadParams)/sizeof(paramdef_t),NULL);
+    worker_conf   = strdup(*(THREADParamList.paramarray[0][THREAD_WORKER_IDX].strptr));
+  } else {
+    worker_conf   = strdup("WORKER_ENABLE");
+  }
+
+  if(parallel_config == NULL) set_parallel_conf(parallel_conf);
+  if(worker_config == NULL)   set_worker_conf(worker_conf);
+
+  return 0;
+}
+
 void NRRCConfig(void) {
 
   paramlist_def_t MACRLCParamList = {CONFIG_STRING_MACRLC_LIST,NULL,0};
@@ -3016,7 +3053,7 @@ void NRRCConfig(void) {
     config_getlist( &RUParamList,NULL,0, NULL);  
     RC.nb_RU     = RUParamList.numelt; 
  
-    RCconfig_parallel();
+    RCconfig_nr_parallel();
 
 
 }
