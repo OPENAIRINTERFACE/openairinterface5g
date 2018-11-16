@@ -103,12 +103,14 @@ class SSHConnection():
 		self.iperf_packetloss_threshold = ''
 		self.iperf_profile = ''
 		self.UEDevices = []
+		self.CatMDevices = []
 		self.UEIPAddresses = []
 		self.htmlFile = ''
 		self.htmlHeaderCreated = False
 		self.htmlFooterCreated = False
 		self.htmlUEConnected = 0
 		self.htmleNBFailureMsg = ''
+		self.picocom_closure = False
 
 	def open(self, ipaddress, username, password):
 		count = 0
@@ -170,8 +172,9 @@ class SSHConnection():
 		elif self.sshresponse == 2:
 			logging.debug('\u001B[1;37;41m Unexpected TIMEOUT \u001B[0m')
 			logging.debug('Expected Line : ' + expectedline)
-			result = re.search('ping |iperf ', str(commandline))
+			result = re.search('ping |iperf |picocom', str(commandline))
 			if result is None:
+				logging.debug(str(self.ssh.before))
 				sys.exit(self.sshresponse)
 			else:
 				return -1
@@ -187,9 +190,10 @@ class SSHConnection():
 		if self.sshresponse == 0:
 			pass
 		elif self.sshresponse == 1:
-			logging.debug('\u001B[1;37;41m Unexpected TIMEOUT \u001B[0m')
+			if not self.picocom_closure:
+				logging.debug('\u001B[1;37;41m Unexpected TIMEOUT during closing\u001B[0m')
 		else:
-			logging.debug('\u001B[1;37;41m Unexpected Others \u001B[0m')
+			logging.debug('\u001B[1;37;41m Unexpected Others during closing\u001B[0m')
 
 	def copyin(self, ipaddress, username, password, source, destination):
 		logging.debug('scp '+ username + '@' + ipaddress + ':' + source + ' ' + destination)
@@ -440,6 +444,109 @@ class SSHConnection():
 			job.join()
 		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
+	def checkDevTTYisUnlocked(self):
+		self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+		count = 0
+		while count < 5:
+			self.command('echo ' + self.ADBPassword + ' | sudo -S lsof | grep ttyUSB0', '\$', 10)
+			result = re.search('picocom', str(self.ssh.before))
+			if result is None:
+				count = 10
+			else:
+				time.sleep(5)
+				count = count + 1
+		self.close()
+
+	def InitializeCatM(self):
+		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
+			Usage()
+			sys.exit('Insufficient Parameter')
+		self.picocom_closure = True
+		self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+		# dummy call to start a sudo session. The picocom command does NOT handle well the `sudo -S`
+		self.command('echo ' + self.ADBPassword + ' | sudo -S ls', '\$', 10)
+		self.command('sudo picocom --baud 921600 --flow n --databits 8 /dev/ttyUSB0', 'Terminal ready', 10)
+		time.sleep(1)
+		# Calling twice AT to clear all buffers
+		self.command('AT', 'OK|ERROR', 5)
+		self.command('AT', 'OK', 5)
+		# Disabling the Radio
+		self.command('AT+CFUN=0', 'OK', 5)
+		logging.debug('\u001B[1m Cellular Functionality disabled\u001B[0m')
+		# Checking if auto-attach is enabled
+		self.command('AT^AUTOATT?', 'OK', 5)
+		result = re.search('AUTOATT: (?P<state>[0-9\-]+)', str(self.ssh.before))
+		if result is not None:
+			if result.group('state') is not None:
+				autoAttachState = int(result.group('state'))
+				if autoAttachState is not None:
+					if autoAttachState == 0:
+						self.command('AT^AUTOATT=1', 'OK', 5)
+					logging.debug('\u001B[1m Auto-Attach enabled\u001B[0m')
+		else:
+			logging.debug('\u001B[1;37;41m Could not check Auto-Attach! \u001B[0m')
+		# Force closure of picocom but device might still be locked
+		self.close()
+		self.picocom_closure = False
+		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+		self.checkDevTTYisUnlocked()
+
+	def TerminateCatM(self):
+		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
+			Usage()
+			sys.exit('Insufficient Parameter')
+		self.picocom_closure = True
+		self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+		# dummy call to start a sudo session. The picocom command does NOT handle well the `sudo -S`
+		self.command('echo ' + self.ADBPassword + ' | sudo -S ls', '\$', 10)
+		self.command('sudo picocom --baud 921600 --flow n --databits 8 /dev/ttyUSB0', 'Terminal ready', 10)
+		time.sleep(1)
+		# Calling twice AT to clear all buffers
+		self.command('AT', 'OK|ERROR', 5)
+		self.command('AT', 'OK', 5)
+		# Disabling the Radio
+		self.command('AT+CFUN=0', 'OK', 5)
+		logging.debug('\u001B[1m Cellular Functionality disabled\u001B[0m')
+		self.close()
+		self.picocom_closure = False
+		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+		self.checkDevTTYisUnlocked()
+
+	def AttachCatM(self):
+		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
+			Usage()
+			sys.exit('Insufficient Parameter')
+		self.picocom_closure = True
+		self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+		# dummy call to start a sudo session. The picocom command does NOT handle well the `sudo -S`
+		self.command('echo ' + self.ADBPassword + ' | sudo -S ls', '\$', 10)
+		self.command('sudo picocom --baud 921600 --flow n --databits 8 /dev/ttyUSB0', 'Terminal ready', 10)
+		time.sleep(1)
+		# Calling twice AT to clear all buffers
+		self.command('AT', 'OK|ERROR', 5)
+		self.command('AT', 'OK', 5)
+		# Enabling the Radio
+		self.command('AT+CFUN=1', 'SIMSTORE,READY', 5)
+		logging.debug('\u001B[1m Cellular Functionality enabled\u001B[0m')
+		time.sleep(4)
+		# We should check if we register
+		count = 0
+		while count < 3:
+			self.command('AT+CEREG?', 'OK', 5)
+			result = re.search('CEREG: 2,(?P<state>[0-9\-]+)', str(self.ssh.before))
+			if result is not None:
+				mDataConnectionState = int(result.group('state'))
+				if mDataConnectionState is not None:
+					logging.debug('+CEREG: 2,' + str(mDataConnectionState))
+			else:
+				logging.debug(str(self.ssh.before))
+			count = count + 1
+			time.sleep(1)
+		self.close()
+		self.picocom_closure = False
+		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+		self.checkDevTTYisUnlocked()
+
 	def AttachUE_common(self, device_id, statusQueue, lock):
 		try:
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
@@ -635,6 +742,19 @@ class SSHConnection():
 		if terminate_ue_flag == False:
 			if len(self.UEDevices) == 0:
 				logging.debug('\u001B[1;37;41m UE Not Found! \u001B[0m')
+				sys.exit(1)
+		self.close()
+
+	def GetAllCatMDevices(self, terminate_ue_flag):
+		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
+			Usage()
+			sys.exit('Insufficient Parameter')
+		self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+		self.command('lsusb | egrep "Future Technology Devices International, Ltd FT2232C" | sed -e "s#:.*##" -e "s# #_#g"', '\$', 15)
+		self.CatMDevices = re.findall("\\\\r\\\\n([A-Za-z0-9_]+)",str(self.ssh.before))
+		if terminate_ue_flag == False:
+			if len(self.CatMDevices) == 0:
+				logging.debug('\u001B[1;37;41m CAT-M UE Not Found! \u001B[0m')
 				sys.exit(1)
 		self.close()
 
@@ -1771,12 +1891,14 @@ class SSHConnection():
 
 			terminate_ue_flag = True
 			SSH.GetAllUEDevices(terminate_ue_flag)
+			SSH.GetAllCatMDevices(terminate_ue_flag)
 			self.htmlUEConnected = len(self.UEDevices)
 
 			self.htmlFile.write('  <h2><a href="#FinalStatus">Jump to Final Status</a></h2>\n')
 			self.htmlFile.write('  <br>\n')
 
-			self.htmlFile.write('  <h2>' + str(self.htmlUEConnected) + ' UE(s) is(are) connected to ADB bench server</h2>\n')
+			self.htmlFile.write('  <h2>' + str(len(self.UEDevices)) + ' UE(s) is(are) connected to ADB bench server</h2>\n')
+			self.htmlFile.write('  <h2>' + str(len(self.CatMDevices)) + ' CAT-M UE(s) is(are) connected to bench server</h2>\n')
 			self.htmlFile.write('  <br>\n')
 
 			self.htmlFile.write('  <h2>Test Summary for ' + SSH.testXMLfile + '</h2>\n')
@@ -1929,7 +2051,7 @@ def Usage():
 	print('------------------------------------------------------------')
 
 def CheckClassValidity(action,id):
-	if action != 'Build_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW':
+	if action != 'Build_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW'  and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module':
 		logging.debug('ERROR: test-case ' + id + ' has wrong class ' + action)
 		return False
 	return True
@@ -2206,6 +2328,14 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE):
 				SSH.AttachUE()
 			elif action == 'Detach_UE':
 				SSH.DetachUE()
+			elif action == 'Initialize_CatM_module':
+				SSH.InitializeCatM()
+			elif action == 'Terminate_CatM_module':
+				SSH.TerminateCatM()
+			elif action == 'Attach_CatM_module':
+				SSH.AttachCatM()
+			elif action == 'Detach_CatM_module':
+				SSH.TerminateCatM()
 			elif action == 'Ping':
 				SSH.Ping()
 			elif action == 'Iperf':
