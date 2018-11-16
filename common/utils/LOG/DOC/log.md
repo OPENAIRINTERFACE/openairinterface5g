@@ -13,7 +13,7 @@ By default, this facility is included at build-time and activated at run-time. T
 ## Documentation
 
 * [runtime usage](rtusage.md)
-* [developer usage](config/devusage.md)
+* [developer usage](devusage.md)
 * [module architecture](arch.md)
 
 [oai Wikis home](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/home)
