@@ -1018,7 +1018,6 @@ uint8_t do_SIB23(uint8_t Mod_id,
   SystemInformationBlockType3_t       **sib3        = &RC.rrc[Mod_id]->carrier[CC_id].sib3;
 #if defined(Rel10) || defined(Rel14)
   SystemInformationBlockType13_r9_t   **sib13       = &RC.rrc[Mod_id]->carrier[CC_id].sib13;
-  uint8_t                             MBMS_flag     = RC.rrc[Mod_id]->carrier[CC_id].MBMS_flag;
 #endif
 
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
@@ -1046,7 +1045,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   }
 
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-  LOG_I(RRC,"[eNB %d] Configuration SIB2/3, MBMS = %d\n", Mod_id, MBMS_flag);
+  LOG_I(RRC,"[eNB %d] Configuration SIB2/3, eMBMS = %d\n", Mod_id, configuration->eMBMS_configured);
 #else
   LOG_I(RRC,"[eNB %d] Configuration SIB2/3\n", Mod_id);
 #endif
@@ -1063,7 +1062,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
-  if ((MBMS_flag > 0) && (brOption==FALSE)) {
+  if ((configuration->eMBMS_configured > 0) && (brOption==FALSE)) {
     sib13_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
     memset(sib13_part,0,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
     sib13_part->present = SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib13_v920;
@@ -1073,22 +1072,23 @@ uint8_t do_SIB23(uint8_t Mod_id,
 #endif
 
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  if (configuration->SL_configured > 0) {
   //TTN - for D2D
-  sib18_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
-  sib19_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
-  sib21_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
-  memset(sib18_part,0,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
-  memset(sib19_part,0,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
-  memset(sib21_part,0,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
-
-  sib18_part->present = SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib18_v1250;
-  sib19_part->present = SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib19_v1250;
-  sib21_part->present = SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib21_v1430;
-
-  *sib18 = &sib18_part->choice.sib18_v1250;
-  *sib19 = &sib19_part->choice.sib19_v1250;
-  *sib21 = &sib21_part->choice.sib21_v1430;
-
+    sib18_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
+    sib19_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
+    sib21_part = CALLOC(1,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
+    memset(sib18_part,0,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
+    memset(sib19_part,0,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
+    memset(sib21_part,0,sizeof(struct SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
+    
+    sib18_part->present = SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib18_v1250;
+    sib19_part->present = SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib19_v1250;
+    sib21_part->present = SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib21_v1430;
+    
+    *sib18 = &sib18_part->choice.sib18_v1250;
+    *sib19 = &sib19_part->choice.sib19_v1250;
+    *sib21 = &sib21_part->choice.sib21_v1430;
+  }
 #endif
 
 
@@ -1701,7 +1701,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
-  if (MBMS_flag > 0) {
+  if (configuration->eMBMS_configured > 0) {
     LOG_I(RRC,"Adding MBSFN subframe Configuration 1 to SIB2\n");
     MBSFN_SubframeConfig_t *sib2_mbsfn_SubframeConfig1;
     (*sib2)->mbsfn_SubframeConfigList = CALLOC(1,sizeof(struct MBSFN_SubframeConfigList));
@@ -1721,7 +1721,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
     ASN_SEQUENCE_ADD(&MBSFNSubframeConfigList->list, sib2_mbsfn_SubframeConfig1);
 
-    if (MBMS_flag == 4 ) {
+    if (configuration->eMBMS_configured == 4 ) {
       LOG_I(RRC,"Adding MBSFN subframe Configuration 2 to SIB2\n");
       MBSFN_SubframeConfig_t *sib2_mbsfn_SubframeConfig2;
       sib2_mbsfn_SubframeConfig2= CALLOC(1,sizeof(*sib2_mbsfn_SubframeConfig2));
@@ -1791,7 +1791,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   // fill in all elements of SIB13 if present
 #if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 
-  if (MBMS_flag > 0 ) {
+  if (configuration->eMBMS_configured > 0 ) {
     //  Notification for mcch change
     (*sib13)->notificationConfig_r9.notificationRepetitionCoeff_r9= MBMS_NotificationConfig_r9__notificationRepetitionCoeff_r9_n2;
     (*sib13)->notificationConfig_r9.notificationOffset_r9= 0;
@@ -1822,7 +1822,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
     ASN_SEQUENCE_ADD(&MBSFNArea_list->list,MBSFN_Area1);
 
     //MBSFN Area 2: currently only activated for eMBMS relaying
-    if (MBMS_flag == 4 ) {
+    if (configuration->eMBMS_configured == 4 ) {
       MBSFN_Area2= CALLOC(1, sizeof(*MBSFN_Area2));
       MBSFN_Area2->mbsfn_AreaId_r9= 2;
       MBSFN_Area2->non_MBSFNregionLength= MBSFN_AreaInfo_r9__non_MBSFNregionLength_s2;
@@ -1850,295 +1850,297 @@ uint8_t do_SIB23(uint8_t Mod_id,
 
 
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-  //TTN - for D2D
-  // SIB18
-  //commRxPool_r12
-  (*sib18)->commConfig_r12 = CALLOC (1, sizeof(*(*sib18)->commConfig_r12));
-  SL_CommRxPoolList= &(*sib18)->commConfig_r12->commRxPool_r12;
-  memset(SL_CommRxPoolList,0,sizeof(*SL_CommRxPoolList));
-
-  SL_CommResourcePool = CALLOC(1, sizeof(*SL_CommResourcePool));
-  memset(SL_CommResourcePool,0,sizeof(*SL_CommResourcePool));
-
-  SL_CommResourcePool->sc_CP_Len_r12 = configuration->rxPool_sc_CP_Len[CC_id];
-  SL_CommResourcePool->sc_Period_r12 = configuration->rxPool_sc_Period[CC_id];
-  SL_CommResourcePool->data_CP_Len_r12  = configuration->rxPool_data_CP_Len[CC_id];
-  //sc_TF_ResourceConfig_r12
-  SL_CommResourcePool->sc_TF_ResourceConfig_r12.prb_Num_r12 = configuration->rxPool_ResourceConfig_prb_Num[CC_id];
-  SL_CommResourcePool->sc_TF_ResourceConfig_r12.prb_Start_r12 = configuration->rxPool_ResourceConfig_prb_Start[CC_id];
-  SL_CommResourcePool->sc_TF_ResourceConfig_r12.prb_End_r12 = configuration->rxPool_ResourceConfig_prb_End[CC_id];
-  SL_CommResourcePool->sc_TF_ResourceConfig_r12.offsetIndicator_r12.present = configuration->rxPool_ResourceConfig_offsetIndicator_present[CC_id];
-
-  if (SL_CommResourcePool->sc_TF_ResourceConfig_r12.offsetIndicator_r12.present == SL_OffsetIndicator_r12_PR_small_r12 ) {
-     SL_CommResourcePool->sc_TF_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12 = configuration->rxPool_ResourceConfig_offsetIndicator_choice[CC_id] ;
-  } else if (SL_CommResourcePool->sc_TF_ResourceConfig_r12.offsetIndicator_r12.present == SL_OffsetIndicator_r12_PR_large_r12 ){
-     SL_CommResourcePool->sc_TF_ResourceConfig_r12.offsetIndicator_r12.choice.large_r12 = configuration->rxPool_ResourceConfig_offsetIndicator_choice[CC_id] ;
+  if (configuration->SL_configured>0) {
+    //TTN - for D2D
+    // SIB18
+    //commRxPool_r12
+    (*sib18)->commConfig_r12 = CALLOC (1, sizeof(*(*sib18)->commConfig_r12));
+    SL_CommRxPoolList= &(*sib18)->commConfig_r12->commRxPool_r12;
+    memset(SL_CommRxPoolList,0,sizeof(*SL_CommRxPoolList));
+    
+    SL_CommResourcePool = CALLOC(1, sizeof(*SL_CommResourcePool));
+    memset(SL_CommResourcePool,0,sizeof(*SL_CommResourcePool));
+    
+    SL_CommResourcePool->sc_CP_Len_r12 = configuration->rxPool_sc_CP_Len[CC_id];
+    SL_CommResourcePool->sc_Period_r12 = configuration->rxPool_sc_Period[CC_id];
+    SL_CommResourcePool->data_CP_Len_r12  = configuration->rxPool_data_CP_Len[CC_id];
+    //sc_TF_ResourceConfig_r12
+    SL_CommResourcePool->sc_TF_ResourceConfig_r12.prb_Num_r12 = configuration->rxPool_ResourceConfig_prb_Num[CC_id];
+    SL_CommResourcePool->sc_TF_ResourceConfig_r12.prb_Start_r12 = configuration->rxPool_ResourceConfig_prb_Start[CC_id];
+    SL_CommResourcePool->sc_TF_ResourceConfig_r12.prb_End_r12 = configuration->rxPool_ResourceConfig_prb_End[CC_id];
+    SL_CommResourcePool->sc_TF_ResourceConfig_r12.offsetIndicator_r12.present = configuration->rxPool_ResourceConfig_offsetIndicator_present[CC_id];
+    
+    if (SL_CommResourcePool->sc_TF_ResourceConfig_r12.offsetIndicator_r12.present == SL_OffsetIndicator_r12_PR_small_r12 ) {
+      SL_CommResourcePool->sc_TF_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12 = configuration->rxPool_ResourceConfig_offsetIndicator_choice[CC_id] ;
+    } else if (SL_CommResourcePool->sc_TF_ResourceConfig_r12.offsetIndicator_r12.present == SL_OffsetIndicator_r12_PR_large_r12 ){
+      SL_CommResourcePool->sc_TF_ResourceConfig_r12.offsetIndicator_r12.choice.large_r12 = configuration->rxPool_ResourceConfig_offsetIndicator_choice[CC_id] ;
+    }
+    
+    SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.present = configuration->rxPool_ResourceConfig_subframeBitmap_present[CC_id];
+    if (SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs4_r12){
+      //for BS4
+      SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.size = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
+      SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.buf  = (uint8_t *)configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
+      SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.bits_unused = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
+    } else if (SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs8_r12){
+      //for BS8
+      SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs8_r12.size = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
+      SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs8_r12.buf  = (uint8_t *)configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
+      SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs8_r12.bits_unused = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
+    } else if (SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs12_r12){
+      //for BS12
+      SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs12_r12.size = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
+      SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs12_r12.buf  = (uint8_t *)configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
+      SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs12_r12.bits_unused = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
+    }else if (SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs16_r12){
+      //for BS16
+      SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.size = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
+      SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.buf  = (uint8_t *)configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
+      SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.bits_unused = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
+    }else if (SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs30_r12){
+      //for BS30
+      SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs30_r12.size = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
+      SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs30_r12.buf  = (uint8_t *)configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
+      SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs30_r12.bits_unused = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
+    }else if (SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs40_r12){
+      //for BS40
+      SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.size = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
+      SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.buf  = (uint8_t *)configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
+      SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.bits_unused = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
+    }else if (SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs42_r12){
+      //for BS42
+      SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs42_r12.size = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
+      SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs42_r12.buf  = (uint8_t *)configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
+      SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs42_r12.bits_unused = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
+    }
+    
+    //dataHoppingConfig_r12
+    SL_CommResourcePool->dataHoppingConfig_r12.hoppingParameter_r12 = 0;
+    SL_CommResourcePool->dataHoppingConfig_r12.numSubbands_r12  =  SL_HoppingConfigComm_r12__numSubbands_r12_ns1;
+    SL_CommResourcePool->dataHoppingConfig_r12.rb_Offset_r12 = 0;
+    
+    //ue_SelectedResourceConfig_r12
+    SL_CommResourcePool->ue_SelectedResourceConfig_r12 = CALLOC (1, sizeof (*SL_CommResourcePool->ue_SelectedResourceConfig_r12));
+    SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.prb_Num_r12 = 20;
+    SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.prb_Start_r12 = 5;
+    SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.prb_End_r12 = 44;
+    SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.offsetIndicator_r12.present = SL_OffsetIndicator_r12_PR_small_r12;
+    SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12 = 0 ;
+    SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.present = SubframeBitmapSL_r12_PR_bs40_r12;
+    SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.size = 5;
+    SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.buf  = CALLOC(1,5);
+    SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.bits_unused = 0;
+    SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.buf[0] = 0xF0;
+    SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.buf[1] = 0xFF;
+    SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.buf[2] = 0xFF;
+    SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.buf[3] = 0xFF;
+    SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.buf[4] = 0xFF;
+    //SL_CommResourcePool->ue_SelectedResourceConfig_r12->trpt_Subset_r12 = CALLOC (1, sizeof(*SL_CommResourcePool->ue_SelectedResourceConfig_r12->trpt_Subset_r12));
+    //rxParametersNCell_r12
+    SL_CommResourcePool->rxParametersNCell_r12 = CALLOC (1, sizeof (*SL_CommResourcePool->rxParametersNCell_r12));
+    SL_CommResourcePool->rxParametersNCell_r12->tdd_Config_r12 = CALLOC (1, sizeof (*SL_CommResourcePool->rxParametersNCell_r12->tdd_Config_r12));
+    SL_CommResourcePool->rxParametersNCell_r12->tdd_Config_r12->subframeAssignment = 0 ;
+    SL_CommResourcePool->rxParametersNCell_r12->tdd_Config_r12->specialSubframePatterns = 0;
+    SL_CommResourcePool->rxParametersNCell_r12->syncConfigIndex_r12 = 0;
+    //txParameters_r12
+    SL_CommResourcePool->txParameters_r12 = CALLOC (1, sizeof (*SL_CommResourcePool->txParameters_r12));
+    SL_CommResourcePool->txParameters_r12->sc_TxParameters_r12.alpha_r12 = Alpha_r12_al0;
+    SL_CommResourcePool->txParameters_r12->sc_TxParameters_r12.p0_r12 = 0;
+    
+    SL_CommResourcePool->ext1 = NULL ;
+    //end SL_CommResourcePool
+    //add SL_CommResourcePool to SL_CommRxPoolList
+    ASN_SEQUENCE_ADD(&SL_CommRxPoolList->list,SL_CommResourcePool);
+    //end commRxPool_r12
+    
+    //TODO:  commTxPoolNormalCommon_r12, similar to commRxPool_r12
+    //TODO: commTxPoolExceptional_r12
+    //TODO: commSyncConfig_r12
+    // may add commTxResourceUC-ReqAllowed with Ext1
+    (*sib18)->ext1 = NULL;
+    (*sib18)->lateNonCriticalExtension = NULL;
+    // end SIB18
+    
+    // SIB19
+    // fill in all elements of SIB19 if present
+    
+    //discConfig_r12
+    (*sib19)->discConfig_r12 = CALLOC (1, sizeof(*(*sib19)->discConfig_r12));
+    SL_DiscRxPoolList = &(*sib19)->discConfig_r12->discRxPool_r12;
+    memset(SL_DiscRxPoolList,0,sizeof(*SL_DiscRxPoolList));
+    //fill SL_DiscResourcePool
+    SL_DiscResourcePool = CALLOC(1, sizeof(*SL_DiscResourcePool));
+    
+    SL_DiscResourcePool->cp_Len_r12 = configuration->discRxPool_cp_Len[CC_id];
+    SL_DiscResourcePool->discPeriod_r12 = configuration->discRxPool_discPeriod[CC_id];
+    //sc_TF_ResourceConfig_r12
+    SL_DiscResourcePool->numRetx_r12 = configuration->discRxPool_numRetx[CC_id];
+    SL_DiscResourcePool->numRepetition_r12 = configuration->discRxPool_numRepetition[CC_id];
+    SL_DiscResourcePool->tf_ResourceConfig_r12.prb_Num_r12 = configuration->discRxPool_ResourceConfig_prb_Num[CC_id];
+    SL_DiscResourcePool->tf_ResourceConfig_r12.prb_Start_r12 = configuration->discRxPool_ResourceConfig_prb_Start[CC_id];
+    SL_DiscResourcePool->tf_ResourceConfig_r12.prb_End_r12 = configuration->discRxPool_ResourceConfig_prb_End[CC_id];
+    SL_DiscResourcePool->tf_ResourceConfig_r12.offsetIndicator_r12.present = configuration->discRxPool_ResourceConfig_offsetIndicator_present[CC_id];
+    if (SL_DiscResourcePool->tf_ResourceConfig_r12.offsetIndicator_r12.present == SL_OffsetIndicator_r12_PR_small_r12 ) {
+      SL_DiscResourcePool->tf_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12 = configuration->discRxPool_ResourceConfig_offsetIndicator_choice[CC_id] ;
+    } else if (SL_DiscResourcePool->tf_ResourceConfig_r12.offsetIndicator_r12.present == SL_OffsetIndicator_r12_PR_large_r12 ){
+      SL_DiscResourcePool->tf_ResourceConfig_r12.offsetIndicator_r12.choice.large_r12 = configuration->discRxPool_ResourceConfig_offsetIndicator_choice[CC_id] ;
+    }
+    SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.present = configuration->discRxPool_ResourceConfig_subframeBitmap_present[CC_id];
+    if (SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs4_r12){
+      //for BS4
+      SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.size = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
+      SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.buf  =  (uint8_t *)configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
+      SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.bits_unused = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
+    } else if (SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs8_r12){
+      //for BS8
+      SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs8_r12.size = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
+      SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs8_r12.buf  = (uint8_t *)configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
+      SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs8_r12.bits_unused = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
+    } else if (SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs12_r12){
+      //for BS12
+      SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs12_r12.size = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
+      SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs12_r12.buf  = (uint8_t *)configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
+      SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs12_r12.bits_unused = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
+    }else if (SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs16_r12){
+      //for BS16
+      SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.size = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
+      SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.buf  = (uint8_t *)configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
+      SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.bits_unused = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
+    }else if (SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs30_r12){
+      //for BS30
+      SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs30_r12.size = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
+      SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs30_r12.buf  = (uint8_t *)configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
+      SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs30_r12.bits_unused = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
+    }else if (SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs40_r12){
+      //for BS40
+      SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.size = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
+      SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.buf  = (uint8_t *)configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
+      SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.bits_unused = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
+    }else if (SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs42_r12){
+      //for BS42
+      SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs42_r12.size = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
+      SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs42_r12.buf  = (uint8_t *)configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
+      SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs42_r12.bits_unused = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
+    }
+    
+    //add SL_DiscResourcePool to SL_DiscRxPoolList
+    ASN_SEQUENCE_ADD(&SL_DiscRxPoolList->list,SL_DiscResourcePool);
+    
+    /*
+    //for DiscRxPoolPS
+    (*sib19)->ext1 = CALLOC (1, sizeof(*(*sib19)->ext1));
+    (*sib19)->ext1->discConfigPS_13 = CALLOC (1, sizeof(*((*sib19)->ext1->discConfigPS_13)));
+    
+    SL_DiscRxPoolPSList = &(*sib19)->ext1->discConfigPS_13->discRxPoolPS_r13;
+    memset(SL_DiscRxPoolPSList,0,sizeof(*SL_DiscRxPoolPSList));
+    //fill SL_DiscResourcePool
+    SL_DiscResourcePoolPS = CALLOC(1, sizeof(*SL_DiscResourcePoolPS));
+    
+    SL_DiscResourcePoolPS->cp_Len_r12 = configuration->discRxPoolPS_cp_Len[CC_id];
+    SL_DiscResourcePoolPS->discPeriod_r12 = configuration->discRxPoolPS_discPeriod[CC_id];
+    //sc_TF_ResourceConfig_r12
+    SL_DiscResourcePoolPS->numRetx_r12 = configuration->discRxPoolPS_numRetx[CC_id];
+    SL_DiscResourcePoolPS->numRepetition_r12 =  configuration->discRxPoolPS_numRepetition[CC_id];
+    
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.prb_Num_r12 = configuration->discRxPoolPS_ResourceConfig_prb_Num[CC_id];
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.prb_Start_r12 = configuration->discRxPoolPS_ResourceConfig_prb_Start[CC_id];
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.prb_End_r12 = configuration->discRxPoolPS_ResourceConfig_prb_End[CC_id];
+    
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.offsetIndicator_r12.present = configuration->discRxPoolPS_ResourceConfig_offsetIndicator_present[CC_id];
+    if (SL_DiscResourcePoolPS->tf_ResourceConfig_r12.offsetIndicator_r12.present == SL_OffsetIndicator_r12_PR_small_r12 ) {
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12 = configuration->discRxPoolPS_ResourceConfig_offsetIndicator_choice[CC_id] ;
+    } else if (SL_DiscResourcePoolPS->tf_ResourceConfig_r12.offsetIndicator_r12.present == SL_OffsetIndicator_r12_PR_large_r12 ){
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.offsetIndicator_r12.choice.large_r12 = configuration->discRxPoolPS_ResourceConfig_offsetIndicator_choice[CC_id] ;
+    }
+    
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.present = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_present[CC_id];
+    if (SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs4_r12){
+    //for BS4
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.size = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.buf  = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.bits_unused = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
+    } else if (SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs8_r12){
+    //for BS8
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs8_r12.size = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs8_r12.buf  = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs8_r12.bits_unused = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
+    } else if (SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs12_r12){
+    //for BS12
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs12_r12.size = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs12_r12.buf  = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs12_r12.bits_unused = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
+    }else if (SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs16_r12){
+    //for BS16
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.size = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.buf  = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.bits_unused = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
+    }else if (SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs30_r12){
+    //for BS30
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs30_r12.size = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs30_r12.buf  = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs30_r12.bits_unused = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
+    }else if (SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs40_r12){
+    //for BS40
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.size = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.buf  = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.bits_unused = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
+    }else if (SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs42_r12){
+    //for BS42
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs42_r12.size = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs42_r12.buf  = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
+    SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs42_r12.bits_unused = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
+    }
+    
+    //add SL_DiscResourcePool to SL_DiscRxPoolList
+    ASN_SEQUENCE_ADD(&SL_DiscRxPoolPSList->list,SL_DiscResourcePoolPS);
+    */
+    
+    (*sib19)->lateNonCriticalExtension = NULL;
+    //end SIB19
+    
+    //SIB21
+    (*sib21)->sl_V2X_ConfigCommon_r14 = CALLOC (1, sizeof(*(*sib21)->sl_V2X_ConfigCommon_r14));
+    //SL_V2X_ConfigCommon= (*sib21)->sl_V2X_ConfigCommon_r14;
+    memset((*sib21)->sl_V2X_ConfigCommon_r14,0,sizeof(*(*sib21)->sl_V2X_ConfigCommon_r14));
+    
+    struct SL_CommRxPoolListV2X_r14 *SL_CommRxPoolListV2X;
+    struct SL_CommResourcePoolV2X_r14 *SL_CommResourcePoolV2X;
+    (*sib21)->sl_V2X_ConfigCommon_r14->v2x_CommRxPool_r14 = CALLOC(1, sizeof(*(*sib21)->sl_V2X_ConfigCommon_r14->v2x_CommRxPool_r14));
+    SL_CommRxPoolListV2X = (*sib21)->sl_V2X_ConfigCommon_r14->v2x_CommRxPool_r14;
+    
+    SL_CommResourcePoolV2X = CALLOC(1, sizeof(*SL_CommResourcePoolV2X));
+    memset(SL_CommResourcePoolV2X,0,sizeof(*SL_CommResourcePoolV2X));
+    
+    SL_CommResourcePoolV2X->sl_OffsetIndicator_r14 = CALLOC(1, sizeof(*SL_CommResourcePoolV2X->sl_OffsetIndicator_r14));
+    SL_CommResourcePoolV2X->sl_OffsetIndicator_r14->present  = SL_OffsetIndicator_r12_PR_small_r12;
+    SL_CommResourcePoolV2X->sl_OffsetIndicator_r14->choice.small_r12 = 0;
+    SL_CommResourcePoolV2X->sl_Subframe_r14.present = SubframeBitmapSL_r14_PR_bs40_r14;
+    SL_CommResourcePoolV2X->sl_Subframe_r14.choice.bs40_r14.size =  5;
+    SL_CommResourcePoolV2X->sl_Subframe_r14.choice.bs40_r14.buf =  CALLOC(1,5);
+    SL_CommResourcePoolV2X->sl_Subframe_r14.choice.bs40_r14.bits_unused = 0;
+    SL_CommResourcePoolV2X->sl_Subframe_r14.choice.bs40_r14.buf[0] = 0xF0;
+    SL_CommResourcePoolV2X->sl_Subframe_r14.choice.bs40_r14.buf[1] = 0xFF;
+    SL_CommResourcePoolV2X->sl_Subframe_r14.choice.bs40_r14.buf[2] = 0xFF;
+    SL_CommResourcePoolV2X->sl_Subframe_r14.choice.bs40_r14.buf[3] = 0xFF;
+    SL_CommResourcePoolV2X->sl_Subframe_r14.choice.bs40_r14.buf[4] = 0xFF;
+    
+    SL_CommResourcePoolV2X->adjacencyPSCCH_PSSCH_r14 = 1;
+    SL_CommResourcePoolV2X->sizeSubchannel_r14 = 10;
+    SL_CommResourcePoolV2X->numSubchannel_r14 =  5;
+    SL_CommResourcePoolV2X->startRB_Subchannel_r14 = 10;
+    
+    //rxParametersNCell_r12
+    SL_CommResourcePoolV2X->rxParametersNCell_r14 = CALLOC (1, sizeof (*SL_CommResourcePoolV2X->rxParametersNCell_r14));
+    SL_CommResourcePoolV2X->rxParametersNCell_r14->tdd_Config_r14 = CALLOC (1, sizeof (*SL_CommResourcePoolV2X->rxParametersNCell_r14->tdd_Config_r14));
+    SL_CommResourcePoolV2X->rxParametersNCell_r14->tdd_Config_r14->subframeAssignment = 0 ;
+    SL_CommResourcePoolV2X->rxParametersNCell_r14->tdd_Config_r14->specialSubframePatterns = 0;
+    SL_CommResourcePoolV2X->rxParametersNCell_r14->syncConfigIndex_r14 = 0;
+    
+    ASN_SEQUENCE_ADD(&SL_CommRxPoolListV2X->list,SL_CommResourcePoolV2X);
+    //end SIB21
   }
-
-  SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.present = configuration->rxPool_ResourceConfig_subframeBitmap_present[CC_id];
-  if (SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs4_r12){
-     //for BS4
-     SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.size = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
-     SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.buf  = (uint8_t *)configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
-     SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.bits_unused = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
-  } else if (SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs8_r12){
-     //for BS8
-     SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs8_r12.size = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
-     SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs8_r12.buf  = (uint8_t *)configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
-     SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs8_r12.bits_unused = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
-  } else if (SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs12_r12){
-     //for BS12
-     SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs12_r12.size = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
-     SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs12_r12.buf  = (uint8_t *)configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
-     SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs12_r12.bits_unused = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
-  }else if (SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs16_r12){
-     //for BS16
-     SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.size = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
-     SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.buf  = (uint8_t *)configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
-     SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.bits_unused = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
-  }else if (SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs30_r12){
-     //for BS30
-     SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs30_r12.size = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
-     SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs30_r12.buf  = (uint8_t *)configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
-     SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs30_r12.bits_unused = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
-  }else if (SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs40_r12){
-     //for BS40
-     SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.size = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
-     SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.buf  = (uint8_t *)configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
-     SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.bits_unused = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
-  }else if (SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs42_r12){
-     //for BS42
-     SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs42_r12.size = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
-     SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs42_r12.buf  = (uint8_t *)configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
-     SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs42_r12.bits_unused = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
-  }
-
-  //dataHoppingConfig_r12
-  SL_CommResourcePool->dataHoppingConfig_r12.hoppingParameter_r12 = 0;
-  SL_CommResourcePool->dataHoppingConfig_r12.numSubbands_r12  =  SL_HoppingConfigComm_r12__numSubbands_r12_ns1;
-  SL_CommResourcePool->dataHoppingConfig_r12.rb_Offset_r12 = 0;
-
-  //ue_SelectedResourceConfig_r12
-  SL_CommResourcePool->ue_SelectedResourceConfig_r12 = CALLOC (1, sizeof (*SL_CommResourcePool->ue_SelectedResourceConfig_r12));
-  SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.prb_Num_r12 = 20;
-  SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.prb_Start_r12 = 5;
-  SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.prb_End_r12 = 44;
-  SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.offsetIndicator_r12.present = SL_OffsetIndicator_r12_PR_small_r12;
-  SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12 = 0 ;
-  SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.present = SubframeBitmapSL_r12_PR_bs40_r12;
-  SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.size = 5;
-  SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.buf  = CALLOC(1,5);
-  SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.bits_unused = 0;
-  SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.buf[0] = 0xF0;
-  SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.buf[1] = 0xFF;
-  SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.buf[2] = 0xFF;
-  SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.buf[3] = 0xFF;
-  SL_CommResourcePool->ue_SelectedResourceConfig_r12->data_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.buf[4] = 0xFF;
-  //SL_CommResourcePool->ue_SelectedResourceConfig_r12->trpt_Subset_r12 = CALLOC (1, sizeof(*SL_CommResourcePool->ue_SelectedResourceConfig_r12->trpt_Subset_r12));
-  //rxParametersNCell_r12
-  SL_CommResourcePool->rxParametersNCell_r12 = CALLOC (1, sizeof (*SL_CommResourcePool->rxParametersNCell_r12));
-  SL_CommResourcePool->rxParametersNCell_r12->tdd_Config_r12 = CALLOC (1, sizeof (*SL_CommResourcePool->rxParametersNCell_r12->tdd_Config_r12));
-  SL_CommResourcePool->rxParametersNCell_r12->tdd_Config_r12->subframeAssignment = 0 ;
-  SL_CommResourcePool->rxParametersNCell_r12->tdd_Config_r12->specialSubframePatterns = 0;
-  SL_CommResourcePool->rxParametersNCell_r12->syncConfigIndex_r12 = 0;
-  //txParameters_r12
-  SL_CommResourcePool->txParameters_r12 = CALLOC (1, sizeof (*SL_CommResourcePool->txParameters_r12));
-  SL_CommResourcePool->txParameters_r12->sc_TxParameters_r12.alpha_r12 = Alpha_r12_al0;
-  SL_CommResourcePool->txParameters_r12->sc_TxParameters_r12.p0_r12 = 0;
-
-  SL_CommResourcePool->ext1 = NULL ;
-  //end SL_CommResourcePool
-  //add SL_CommResourcePool to SL_CommRxPoolList
-  ASN_SEQUENCE_ADD(&SL_CommRxPoolList->list,SL_CommResourcePool);
-  //end commRxPool_r12
-
-  //TODO:  commTxPoolNormalCommon_r12, similar to commRxPool_r12
-  //TODO: commTxPoolExceptional_r12
-  //TODO: commSyncConfig_r12
-  // may add commTxResourceUC-ReqAllowed with Ext1
-  (*sib18)->ext1 = NULL;
-  (*sib18)->lateNonCriticalExtension = NULL;
-  // end SIB18
-
-  // SIB19
-  // fill in all elements of SIB19 if present
-
-  //discConfig_r12
-  (*sib19)->discConfig_r12 = CALLOC (1, sizeof(*(*sib19)->discConfig_r12));
-  SL_DiscRxPoolList = &(*sib19)->discConfig_r12->discRxPool_r12;
-  memset(SL_DiscRxPoolList,0,sizeof(*SL_DiscRxPoolList));
-  //fill SL_DiscResourcePool
-  SL_DiscResourcePool = CALLOC(1, sizeof(*SL_DiscResourcePool));
-
-  SL_DiscResourcePool->cp_Len_r12 = configuration->discRxPool_cp_Len[CC_id];
-  SL_DiscResourcePool->discPeriod_r12 = configuration->discRxPool_discPeriod[CC_id];
-  //sc_TF_ResourceConfig_r12
-  SL_DiscResourcePool->numRetx_r12 = configuration->discRxPool_numRetx[CC_id];
-  SL_DiscResourcePool->numRepetition_r12 = configuration->discRxPool_numRepetition[CC_id];
-  SL_DiscResourcePool->tf_ResourceConfig_r12.prb_Num_r12 = configuration->discRxPool_ResourceConfig_prb_Num[CC_id];
-  SL_DiscResourcePool->tf_ResourceConfig_r12.prb_Start_r12 = configuration->discRxPool_ResourceConfig_prb_Start[CC_id];
-  SL_DiscResourcePool->tf_ResourceConfig_r12.prb_End_r12 = configuration->discRxPool_ResourceConfig_prb_End[CC_id];
-  SL_DiscResourcePool->tf_ResourceConfig_r12.offsetIndicator_r12.present = configuration->discRxPool_ResourceConfig_offsetIndicator_present[CC_id];
-  if (SL_DiscResourcePool->tf_ResourceConfig_r12.offsetIndicator_r12.present == SL_OffsetIndicator_r12_PR_small_r12 ) {
-     SL_DiscResourcePool->tf_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12 = configuration->discRxPool_ResourceConfig_offsetIndicator_choice[CC_id] ;
-  } else if (SL_DiscResourcePool->tf_ResourceConfig_r12.offsetIndicator_r12.present == SL_OffsetIndicator_r12_PR_large_r12 ){
-     SL_DiscResourcePool->tf_ResourceConfig_r12.offsetIndicator_r12.choice.large_r12 = configuration->discRxPool_ResourceConfig_offsetIndicator_choice[CC_id] ;
-  }
-  SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.present = configuration->discRxPool_ResourceConfig_subframeBitmap_present[CC_id];
-  if (SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs4_r12){
-     //for BS4
-     SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.size = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
-     SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.buf  =  (uint8_t *)configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
-     SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.bits_unused = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
-  } else if (SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs8_r12){
-     //for BS8
-     SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs8_r12.size = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
-     SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs8_r12.buf  = (uint8_t *)configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
-     SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs8_r12.bits_unused = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
-  } else if (SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs12_r12){
-     //for BS12
-     SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs12_r12.size = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
-     SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs12_r12.buf  = (uint8_t *)configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
-     SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs12_r12.bits_unused = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
-  }else if (SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs16_r12){
-     //for BS16
-     SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.size = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
-     SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.buf  = (uint8_t *)configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
-     SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.bits_unused = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
-  }else if (SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs30_r12){
-     //for BS30
-     SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs30_r12.size = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
-     SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs30_r12.buf  = (uint8_t *)configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
-     SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs30_r12.bits_unused = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
-  }else if (SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs40_r12){
-     //for BS40
-     SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.size = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
-     SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.buf  = (uint8_t *)configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
-     SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.bits_unused = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
-  }else if (SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs42_r12){
-     //for BS42
-     SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs42_r12.size = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
-     SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs42_r12.buf  = (uint8_t *)configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
-     SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs42_r12.bits_unused = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
-  }
-
-  //add SL_DiscResourcePool to SL_DiscRxPoolList
-  ASN_SEQUENCE_ADD(&SL_DiscRxPoolList->list,SL_DiscResourcePool);
-
-/*
-  //for DiscRxPoolPS
-  (*sib19)->ext1 = CALLOC (1, sizeof(*(*sib19)->ext1));
-  (*sib19)->ext1->discConfigPS_13 = CALLOC (1, sizeof(*((*sib19)->ext1->discConfigPS_13)));
-
-  SL_DiscRxPoolPSList = &(*sib19)->ext1->discConfigPS_13->discRxPoolPS_r13;
-  memset(SL_DiscRxPoolPSList,0,sizeof(*SL_DiscRxPoolPSList));
-  //fill SL_DiscResourcePool
-  SL_DiscResourcePoolPS = CALLOC(1, sizeof(*SL_DiscResourcePoolPS));
-
-  SL_DiscResourcePoolPS->cp_Len_r12 = configuration->discRxPoolPS_cp_Len[CC_id];
-  SL_DiscResourcePoolPS->discPeriod_r12 = configuration->discRxPoolPS_discPeriod[CC_id];
-  //sc_TF_ResourceConfig_r12
-  SL_DiscResourcePoolPS->numRetx_r12 = configuration->discRxPoolPS_numRetx[CC_id];
-  SL_DiscResourcePoolPS->numRepetition_r12 =  configuration->discRxPoolPS_numRepetition[CC_id];
-
-  SL_DiscResourcePoolPS->tf_ResourceConfig_r12.prb_Num_r12 = configuration->discRxPoolPS_ResourceConfig_prb_Num[CC_id];
-  SL_DiscResourcePoolPS->tf_ResourceConfig_r12.prb_Start_r12 = configuration->discRxPoolPS_ResourceConfig_prb_Start[CC_id];
-  SL_DiscResourcePoolPS->tf_ResourceConfig_r12.prb_End_r12 = configuration->discRxPoolPS_ResourceConfig_prb_End[CC_id];
-
-  SL_DiscResourcePoolPS->tf_ResourceConfig_r12.offsetIndicator_r12.present = configuration->discRxPoolPS_ResourceConfig_offsetIndicator_present[CC_id];
-  if (SL_DiscResourcePoolPS->tf_ResourceConfig_r12.offsetIndicator_r12.present == SL_OffsetIndicator_r12_PR_small_r12 ) {
-     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12 = configuration->discRxPoolPS_ResourceConfig_offsetIndicator_choice[CC_id] ;
-  } else if (SL_DiscResourcePoolPS->tf_ResourceConfig_r12.offsetIndicator_r12.present == SL_OffsetIndicator_r12_PR_large_r12 ){
-     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.offsetIndicator_r12.choice.large_r12 = configuration->discRxPoolPS_ResourceConfig_offsetIndicator_choice[CC_id] ;
-  }
-
-  SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.present = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_present[CC_id];
-  if (SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs4_r12){
-     //for BS4
-     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.size = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
-     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.buf  = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
-     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.bits_unused = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
-  } else if (SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs8_r12){
-     //for BS8
-     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs8_r12.size = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
-     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs8_r12.buf  = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
-     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs8_r12.bits_unused = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
-  } else if (SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs12_r12){
-     //for BS12
-     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs12_r12.size = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
-     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs12_r12.buf  = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
-     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs12_r12.bits_unused = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
-  }else if (SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs16_r12){
-     //for BS16
-     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.size = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
-     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.buf  = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
-     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.bits_unused = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
-  }else if (SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs30_r12){
-     //for BS30
-     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs30_r12.size = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
-     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs30_r12.buf  = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
-     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs30_r12.bits_unused = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
-  }else if (SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs40_r12){
-     //for BS40
-     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.size = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
-     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.buf  = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
-     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs40_r12.bits_unused = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
-  }else if (SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs42_r12){
-     //for BS42
-     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs42_r12.size = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
-     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs42_r12.buf  = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
-     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs42_r12.bits_unused = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
-  }
-
-  //add SL_DiscResourcePool to SL_DiscRxPoolList
-  ASN_SEQUENCE_ADD(&SL_DiscRxPoolPSList->list,SL_DiscResourcePoolPS);
-*/
-
-  (*sib19)->lateNonCriticalExtension = NULL;
-  //end SIB19
-
-  //SIB21
-  (*sib21)->sl_V2X_ConfigCommon_r14 = CALLOC (1, sizeof(*(*sib21)->sl_V2X_ConfigCommon_r14));
-  //SL_V2X_ConfigCommon= (*sib21)->sl_V2X_ConfigCommon_r14;
-  memset((*sib21)->sl_V2X_ConfigCommon_r14,0,sizeof(*(*sib21)->sl_V2X_ConfigCommon_r14));
-
-  struct SL_CommRxPoolListV2X_r14 *SL_CommRxPoolListV2X;
-  struct SL_CommResourcePoolV2X_r14 *SL_CommResourcePoolV2X;
-  (*sib21)->sl_V2X_ConfigCommon_r14->v2x_CommRxPool_r14 = CALLOC(1, sizeof(*(*sib21)->sl_V2X_ConfigCommon_r14->v2x_CommRxPool_r14));
-  SL_CommRxPoolListV2X = (*sib21)->sl_V2X_ConfigCommon_r14->v2x_CommRxPool_r14;
-
-  SL_CommResourcePoolV2X = CALLOC(1, sizeof(*SL_CommResourcePoolV2X));
-  memset(SL_CommResourcePoolV2X,0,sizeof(*SL_CommResourcePoolV2X));
-
-  SL_CommResourcePoolV2X->sl_OffsetIndicator_r14 = CALLOC(1, sizeof(*SL_CommResourcePoolV2X->sl_OffsetIndicator_r14));
-  SL_CommResourcePoolV2X->sl_OffsetIndicator_r14->present  = SL_OffsetIndicator_r12_PR_small_r12;
-  SL_CommResourcePoolV2X->sl_OffsetIndicator_r14->choice.small_r12 = 0;
-  SL_CommResourcePoolV2X->sl_Subframe_r14.present = SubframeBitmapSL_r14_PR_bs40_r14;
-  SL_CommResourcePoolV2X->sl_Subframe_r14.choice.bs40_r14.size =  5;
-  SL_CommResourcePoolV2X->sl_Subframe_r14.choice.bs40_r14.buf =  CALLOC(1,5);
-  SL_CommResourcePoolV2X->sl_Subframe_r14.choice.bs40_r14.bits_unused = 0;
-  SL_CommResourcePoolV2X->sl_Subframe_r14.choice.bs40_r14.buf[0] = 0xF0;
-  SL_CommResourcePoolV2X->sl_Subframe_r14.choice.bs40_r14.buf[1] = 0xFF;
-  SL_CommResourcePoolV2X->sl_Subframe_r14.choice.bs40_r14.buf[2] = 0xFF;
-  SL_CommResourcePoolV2X->sl_Subframe_r14.choice.bs40_r14.buf[3] = 0xFF;
-  SL_CommResourcePoolV2X->sl_Subframe_r14.choice.bs40_r14.buf[4] = 0xFF;
-
-  SL_CommResourcePoolV2X->adjacencyPSCCH_PSSCH_r14 = 1;
-  SL_CommResourcePoolV2X->sizeSubchannel_r14 = 10;
-  SL_CommResourcePoolV2X->numSubchannel_r14 =  5;
-  SL_CommResourcePoolV2X->startRB_Subchannel_r14 = 10;
-
-  //rxParametersNCell_r12
-  SL_CommResourcePoolV2X->rxParametersNCell_r14 = CALLOC (1, sizeof (*SL_CommResourcePoolV2X->rxParametersNCell_r14));
-  SL_CommResourcePoolV2X->rxParametersNCell_r14->tdd_Config_r14 = CALLOC (1, sizeof (*SL_CommResourcePoolV2X->rxParametersNCell_r14->tdd_Config_r14));
-  SL_CommResourcePoolV2X->rxParametersNCell_r14->tdd_Config_r14->subframeAssignment = 0 ;
-  SL_CommResourcePoolV2X->rxParametersNCell_r14->tdd_Config_r14->specialSubframePatterns = 0;
-  SL_CommResourcePoolV2X->rxParametersNCell_r14->syncConfigIndex_r14 = 0;
-
-  ASN_SEQUENCE_ADD(&SL_CommRxPoolListV2X->list,SL_CommResourcePoolV2X);
-  //end SIB21
 #endif
- 
+    
 
   bcch_message->message.present = BCCH_DL_SCH_MessageType_PR_c1;
   bcch_message->message.choice.c1.present = BCCH_DL_SCH_MessageType__c1_PR_systemInformation;
@@ -2158,7 +2160,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
                    sib3_part);
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
-  if (MBMS_flag > 0) {
+  if (configuration->eMBMS_configured > 0) {
     ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list, sib13_part);
   }
 #endif

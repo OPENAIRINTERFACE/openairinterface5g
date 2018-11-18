@@ -296,7 +296,7 @@ void conv_eMTC_rballoc (uint16_t resource_block_coding, uint32_t N_RB_DL, uint32
   int             ind = first_rb >> 5;
   int             ind_mod = first_rb & 31;
 
-  AssertFatal(RIV<32,"RIV is %d > 31\n");
+  AssertFatal(RIV<32,"RIV is %d > 31\n",RIV);
 
   if (((N_RB_DL & 1) > 0) && (narrowband >= (N_NB_DL >> 1)))
     first_rb++;

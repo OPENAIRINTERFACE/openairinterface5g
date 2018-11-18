@@ -30,6 +30,8 @@
  * \warning
  */
 
+#ifndef ENB_PARAMDEF_H_
+#define ENB_PARAMDEF_H_
 #include "common/config/config_paramdesc.h"
 #include "RRC_paramsvalues.h"
 
@@ -1031,3 +1033,4 @@ typedef struct srb1_params_s {
 
 #include "enb_paramdef_emtc.h"
 #include "enb_paramdef_sidelink.h"
+#endif

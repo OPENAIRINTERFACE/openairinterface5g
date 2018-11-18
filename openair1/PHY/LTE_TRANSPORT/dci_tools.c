@@ -2145,7 +2145,6 @@ fill_mpdcch_dci0 (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc, mDCI_ALLOC_t * dci
   nfapi_hi_dci0_mpdcch_dci_pdu_rel13_t *rel13 = &pdu->mpdcch_dci_pdu_rel13;
 
   uint32_t        cqi_req = rel13->csi_request;
-  uint32_t        dai = rel13->dl_assignment_index;
   uint32_t        TPC = rel13->tpc;
   uint32_t        mcs = rel13->mcs;
   uint32_t        hopping = rel13->frequency_hopping_flag;

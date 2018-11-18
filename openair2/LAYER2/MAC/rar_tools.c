@@ -126,9 +126,8 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
   COMMON_channels_t *cc = &eNB->common_channels[CC_id];
   uint8_t *rar = (uint8_t *)(dlsch_buffer+1);
 
-  int i;
   uint32_t rballoc,reps;
-  uint32_t mcs,TPC,ULdelay,cqireq,mpdcch_nb_index;
+  uint32_t TPC,ULdelay,cqireq,mpdcch_nb_index;
   int input_buffer_length;
 
 

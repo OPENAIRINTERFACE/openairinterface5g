@@ -186,7 +186,7 @@ typedef struct RrcConfigurationReq_s {
   int16_t                 Nid_cell[MAX_NUM_CCs];// for testing, change later
   int16_t                 N_RB_DL[MAX_NUM_CCs];// for testing, change later
   int                     nb_antenna_ports[MAX_NUM_CCs];
-
+  int                     eMBMS_configured;
   int                     eMTC_configured;
   int                     SL_configured;
 

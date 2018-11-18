@@ -39,6 +39,7 @@
 #include "SCHED/sched_eNB.h"
 #include "SIMULATION/TOOLS/sim.h"      // for taus
 #include "PHY/sse_intrin.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
 
 #include "assertions.h"
 #include "T.h"
@@ -270,7 +271,6 @@ void generate_mdci_top(PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp,
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   int             i;
   int             gain_lin_QPSK;
-  uint8_t         bitsperCCE;
   uint16_t       *mpdcchtab;
 
   uint32_t        x1, x2, s = 0;
@@ -278,7 +278,7 @@ void generate_mdci_top(PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp,
   uint16_t        j0, j, idelta;
   uint16_t        i0;
 
-  int             off;
+  int             off=0;
 
   // Assumption: only handle a single MPDCCH per narrowband
 
@@ -453,11 +453,13 @@ void generate_mdci_top(PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp,
 	      (nprb<= last_prb)) {
 	    ((int16_t *) & yIQ)[0] = (((s >> (i & 0x1f)) & 1) == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
 	    ((int16_t *) & yIQ)[1] = (((s >> ((i + 1) & 0x1f)) & 1) == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
+	    AssertFatal(mdci->transmission_type==1,"transmission_type %d!=1, handle this ...\n",mdci->transmission_type);
 	    if (mdci->transmission_type==1) { // same thing on both 107 and 109
 	      txF[(5*mprime)] = yIQ;
 	      txF[1+(5*mprime)] = yIQ;
 	    }
 	    else { // put on selected antenna port with w sequence
+
 	      if (((mprime+nprb)&1) == 0) 
 		txF[off+(5*mprime)] = yIQ*w[lprime];
 	      else

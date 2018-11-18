@@ -140,11 +140,8 @@ openair_rrc_on(
 static void
 init_SI(
   const protocol_ctxt_t* const ctxt_pP,
-  const int              CC_id
-#if defined(ENABLE_ITTI)
-  ,
+  const int              CC_id,
   RrcConfigurationReq * configuration
-#endif
 )
 //-----------------------------------------------------------------------------
 {
@@ -176,20 +173,12 @@ init_SI(
   LOG_I(RRC, "configuration->schedulingInfoSIB1_BR_r13[CC_id] %d\n",(int)configuration->schedulingInfoSIB1_BR_r13[CC_id]);
 #endif
   do_MIB(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],
-#ifdef ENABLE_ITTI
 	 configuration->N_RB_DL[CC_id],
 	 (int)configuration->radioresourceconfig[CC_id].phich_resource,
 	 (int)configuration->radioresourceconfig[CC_id].phich_duration,
 	 0
-#else
-	 50, 0, 0, 0
-#endif
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-#ifdef ENABLE_ITTI
 	 ,configuration->schedulingInfoSIB1_BR_r13[CC_id]
-#else
-	 ,0
-#endif
 #endif
 	 );
   
@@ -205,9 +194,7 @@ init_SI(
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 								   ,FALSE
 #endif
-#if defined(ENABLE_ITTI)
 								   , configuration
-#endif
 								   );
 
   AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1 != 255,"FATAL, RC.rrc[enb_mod_idP].carrier[CC_id].sizeof_SIB1 == 255");
@@ -219,9 +206,7 @@ init_SI(
     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1_BR = (uint8_t*) malloc16(32);
     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1_BR = do_SIB1(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],ctxt_pP->module_id,CC_id
 									,TRUE
-#if defined(ENABLE_ITTI)
 									, configuration
-#endif
 									);
   }
 #endif
@@ -234,9 +219,7 @@ init_SI(
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 								     ,FALSE
 #endif
-#if defined(ENABLE_ITTI)
 								     , configuration
-#endif
 								     );
 
   AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB23 != 255,"FATAL, RC.rrc[mod].carrier[CC_id].sizeof_SIB23 == 255");
@@ -252,10 +235,8 @@ init_SI(
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                       ,TRUE
 #endif
-#if defined(ENABLE_ITTI)
                                       ,configuration
                 );
-#endif
   }
 #endif
 
@@ -315,7 +296,6 @@ init_SI(
 	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib2->mbsfn_SubframeConfigList->list.array[i]->radioframeAllocationOffset);
     }
 
-#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
     //   SIB13
     for (i = 0; i < RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13->mbsfn_AreaInfoList_r9.list.count; i++) {
       LOG_D(RRC, PROTOCOL_RRC_CTXT_FMT" SIB13 contents for MBSFN sync area %d/%d (partial)\n",
@@ -329,80 +309,83 @@ init_SI(
 	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
 	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13->mbsfn_AreaInfoList_r9.list.array[i]->mcch_Config_r9.mcch_Offset_r9);
     }
-#endif
   }
   else memset((void*)&RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13,0,sizeof(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib13));
 
   //TTN - SIB 18
-  for (int j = 0; j < RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.count; j++) {
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" Contents of SIB18 %d/%d \n",
-           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-           j+1,
-           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.count);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 rxPool_sc_CP_Len: %ld \n",
-           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_CP_Len_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 sc_Period_r12: %ld \n",
-           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_Period_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 data_CP_Len_r12: %ld \n",
-           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->data_CP_Len_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 prb_Num_r12: %ld \n",
-           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.prb_Num_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 prb_Start_r12: %ld \n",
-           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.prb_Start_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 prb_End_r12: %ld \n",
-           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.prb_End_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 offsetIndicator: %ld \n",
-           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 subframeBitmap_choice_bs_buf: %s \n",
-           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.buf);
+  if (configuration->SL_configured>0) {
+    for (int j = 0; j < RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.count; j++) {
+      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" Contents of SIB18 %d/%d \n",
+	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	    j+1,
+	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.count);
+      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 rxPool_sc_CP_Len: %ld \n",
+	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_CP_Len_r12);
+      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 sc_Period_r12: %ld \n",
+	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_Period_r12);
+      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 data_CP_Len_r12: %ld \n",
+	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->data_CP_Len_r12);
+      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 prb_Num_r12: %ld \n",
+	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.prb_Num_r12);
+      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 prb_Start_r12: %ld \n",
+	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.prb_Start_r12);
+      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 prb_End_r12: %ld \n",
+	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.prb_End_r12);
+      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 offsetIndicator: %ld \n",
+	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12);
+      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB18 subframeBitmap_choice_bs_buf: %s \n",
+	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib18->commConfig_r12->commRxPool_r12.list.array[j]->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.buf);
+      
+    }
 
+
+
+
+    for (int j = 0; j < RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.count; j++) {
+      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" Contents of SIB19 %d/%d \n",
+	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	    j+1,
+	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.count);
+      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 cp_Len_r12: %ld \n",
+	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->cp_Len_r12);
+      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 discPeriod_r12: %ld \n",
+	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->discPeriod_r12);
+      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 numRetx_r12: %ld \n",
+	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->numRetx_r12);
+      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 numRepetition_r12: %ld \n",
+	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->numRepetition_r12);
+      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 prb_Num_r12: %ld \n",
+	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.prb_Num_r12);
+      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 prb_Start_r12: %ld \n",
+	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.prb_Start_r12);
+      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 prb_End_r12: %ld \n",
+	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.prb_End_r12);
+      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 offsetIndicator: %ld \n",
+	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12);
+      LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 subframeBitmap_choice_bs_buf: %s \n",
+	    PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+	    RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.buf);
+      
+    }
   }
 
-  //TTN - SIB 19
-  for (int j = 0; j < RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.count; j++) {
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" Contents of SIB19 %d/%d \n",
-           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-           j+1,
-           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.count);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 cp_Len_r12: %ld \n",
-           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->cp_Len_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 discPeriod_r12: %ld \n",
-           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->discPeriod_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 numRetx_r12: %ld \n",
-           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->numRetx_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 numRepetition_r12: %ld \n",
-           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->numRepetition_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 prb_Num_r12: %ld \n",
-           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.prb_Num_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 prb_Start_r12: %ld \n",
-           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.prb_Start_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 prb_End_r12: %ld \n",
-           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.prb_End_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 offsetIndicator: %ld \n",
-           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12);
-     LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB19 tf_ResourceConfig_r12 subframeBitmap_choice_bs_buf: %s \n",
-           PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
-           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib19->discConfig_r12->discRxPool_r12.list.array[j]->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs16_r12.buf);
-
-  }
-
-#endif
+#endif // (RRC_VERSION >= MAKE_VERSION(10, 0, 0))    
 
   LOG_D(RRC,
 	PROTOCOL_RRC_CTXT_FMT" RRC_UE --- MAC_CONFIG_REQ (SIB1.tdd & SIB2 params) ---> MAC_UE\n",

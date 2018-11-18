@@ -1619,7 +1619,7 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
 			     frame_t       frameP,
 			     sub_frame_t   subframeP,
 			     unsigned char sched_subframeP,
-			     uint16_t     *emtc_active)
+			     int          *emtc_active)
 {
   int               UE_id;
   rnti_t            rnti           = -1;
