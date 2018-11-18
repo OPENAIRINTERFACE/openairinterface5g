@@ -788,7 +788,7 @@ get_srs_pos(COMMON_channels_t * cc, uint16_t isrs,
 
 void
 get_csi_params(COMMON_channels_t * cc,
-	       struct CQI_ReportPeriodic *cqi_ReportPeriodic,
+	       struct LTE_CQI_ReportPeriodic *cqi_ReportPeriodic,
 	       uint16_t * Npd, uint16_t * N_OFFSET_CQI, int *H)
 {
   uint16_t cqi_PMI_ConfigIndex =
@@ -861,7 +861,7 @@ get_csi_params(COMMON_channels_t * cc,
   // get H
   if (cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.
       present ==
-      CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_subbandCQI)
+      LTE_CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_subbandCQI)
     *H = 1 +
       (Jtab[cc->mib->message.dl_Bandwidth] *
        cqi_ReportPeriodic->choice.setup.
@@ -873,7 +873,7 @@ get_csi_params(COMMON_channels_t * cc,
 uint8_t
 get_dl_cqi_pmi_size_pusch(COMMON_channels_t * cc, uint8_t tmode,
 			  uint8_t ri,
-			  CQI_ReportModeAperiodic_t *
+			  LTE_CQI_ReportModeAperiodic_t *
 			  cqi_ReportModeAperiodic)
 {
   int Ntab[6] = { 0, 4, 7, 9, 10, 13 };
@@ -885,7 +885,7 @@ get_dl_cqi_pmi_size_pusch(COMMON_channels_t * cc, uint8_t tmode,
 	      "cqi_ReportPeriodic is null!\n");
 
   switch (*cqi_ReportModeAperiodic) {
-  case CQI_ReportModeAperiodic_rm12:
+  case LTE_CQI_ReportModeAperiodic_rm12:
     AssertFatal(tmode == 4 || tmode == 6 || tmode == 8 || tmode == 9
 		|| tmode == 10,
 		"Illegal TM (%d) for CQI_ReportModeAperiodic_rm12\n",
@@ -901,7 +901,7 @@ get_dl_cqi_pmi_size_pusch(COMMON_channels_t * cc, uint8_t tmode,
     else if (ri > 1 && cc->p_eNB == 4)
       return (8 + (N << 2));
     break;
-  case CQI_ReportModeAperiodic_rm20:
+  case LTE_CQI_ReportModeAperiodic_rm20:
     // Table 5.2.2.6.3-1 (36.212)
     AssertFatal(tmode == 1 || tmode == 2 || tmode == 3 || tmode == 7
 		|| tmode == 9
@@ -913,7 +913,7 @@ get_dl_cqi_pmi_size_pusch(COMMON_channels_t * cc, uint8_t tmode,
 		"TM9/10 will be handled later for CQI_ReportModeAperiodic_rm20\n");
     return (4 + 2 + L);
     break;
-  case CQI_ReportModeAperiodic_rm22:
+  case LTE_CQI_ReportModeAperiodic_rm22:
     // Table 5.2.2.6.3-2 (36.212)
     AssertFatal(tmode == 4 || tmode == 6 || tmode == 8 || tmode == 9
 		|| tmode == 10,
@@ -931,7 +931,7 @@ get_dl_cqi_pmi_size_pusch(COMMON_channels_t * cc, uint8_t tmode,
     if (ri >= 2 && cc->p_eNB == 4)
       return (4 + 2 + 4 + 2 + L + 8);
     break;
-  case CQI_ReportModeAperiodic_rm30:
+  case LTE_CQI_ReportModeAperiodic_rm30:
     // Table 5.2.2.6.2-1 (36.212)
     AssertFatal(tmode == 1 || tmode == 2 || tmode == 3 || tmode == 7
 		|| tmode == 8 || tmode == 9
@@ -943,7 +943,7 @@ get_dl_cqi_pmi_size_pusch(COMMON_channels_t * cc, uint8_t tmode,
 		"TM8/9/10 will be handled later for CQI_ReportModeAperiodic_rm30\n");
     return (4 + (N << 1));
     break;
-  case CQI_ReportModeAperiodic_rm31:
+  case LTE_CQI_ReportModeAperiodic_rm31:
     // Table 5.2.2.6.2-2 (36.212)
     AssertFatal(tmode == 4 || tmode == 6 || tmode == 8 || tmode == 9
 		|| tmode == 10,
@@ -961,8 +961,8 @@ get_dl_cqi_pmi_size_pusch(COMMON_channels_t * cc, uint8_t tmode,
     else if (ri >= 2 && cc->p_eNB == 4)
       return (4 + (N << 1) + 4 + (N << 1) + 4);
     break;
-#if (RRC_VERSION >= MAKE_VERSION(12, 5, 0))
-  case CQI_ReportModeAperiodic_rm32_v1250:
+#if (LTE_RRC_VERSION >= MAKE_VERSION(12, 5, 0))
+  case LTE_CQI_ReportModeAperiodic_rm32_v1250:
     AssertFatal(tmode == 4 || tmode == 6 || tmode == 8 || tmode == 9
 		|| tmode == 10,
 		"Illegal TM (%d) for CQI_ReportModeAperiodic_rm32\n",
@@ -970,14 +970,14 @@ get_dl_cqi_pmi_size_pusch(COMMON_channels_t * cc, uint8_t tmode,
     AssertFatal(1 == 0,
 		"CQI_ReportModeAperiodic_rm32_v1250 not supported yet\n");
     break;
-  case CQI_ReportModeAperiodic_rm10_v1310:
+  case LTE_CQI_ReportModeAperiodic_rm10_v1310:
     // Table 5.2.2.6.1-1F/G (36.212)
     if (ri == 1)
       return (4);		// F
     else
       return (7);		// G
     break;
-  case CQI_ReportModeAperiodic_rm11_v1310:
+  case LTE_CQI_ReportModeAperiodic_rm11_v1310:
     // Table 5.2.2.6.1-1H (36.212)
     AssertFatal(tmode == 4 || tmode == 6 || tmode == 8 || tmode == 9
 		|| tmode == 10,
@@ -995,7 +995,7 @@ get_dl_cqi_pmi_size_pusch(COMMON_channels_t * cc, uint8_t tmode,
       return (4 + 4 + 4);
 
     break;
-#endif /* #if (RRC_VERSION >= MAKE_VERSION(12, 5, 0)) */
+#endif /* #if (LTE_RRC_VERSION >= MAKE_VERSION(12, 5, 0)) */
   }
   AssertFatal(1 == 0, "Shouldn't get here\n");
   return (0);
@@ -1004,7 +1004,7 @@ get_dl_cqi_pmi_size_pusch(COMMON_channels_t * cc, uint8_t tmode,
 uint8_t
 get_rel8_dl_cqi_pmi_size(UE_sched_ctrl * sched_ctl, int CC_idP,
 			 COMMON_channels_t * cc, uint8_t tmode,
-			 struct CQI_ReportPeriodic * cqi_ReportPeriodic)
+			 struct LTE_CQI_ReportPeriodic * cqi_ReportPeriodic)
 {
   int no_pmi = 0;
   //    Ltab[6] = {0,log2(15/4/2),log2(25/4/2),log2(50/6/3),log2(75/8/4),log2(100/8/4)};
@@ -1014,10 +1014,10 @@ get_rel8_dl_cqi_pmi_size(UE_sched_ctrl * sched_ctl, int CC_idP,
 
   AssertFatal(cqi_ReportPeriodic != NULL,
 	      "cqi_ReportPeriodic is null!\n");
-  AssertFatal(cqi_ReportPeriodic->present != CQI_ReportPeriodic_PR_NOTHING,
+  AssertFatal(cqi_ReportPeriodic->present != LTE_CQI_ReportPeriodic_PR_NOTHING,
 	      "cqi_ReportPeriodic->present == CQI_ReportPeriodic_PR_NOTHING!\n");
   AssertFatal(cqi_ReportPeriodic->choice.
-	      setup.cqi_FormatIndicatorPeriodic.present != CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_NOTHING,
+	      setup.cqi_FormatIndicatorPeriodic.present != LTE_CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_NOTHING,
 	      "cqi_ReportPeriodic->cqi_FormatIndicatorPeriodic.choice.setup.present == CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_NOTHING!\n");
 
   switch (tmode) {
@@ -1032,7 +1032,7 @@ get_rel8_dl_cqi_pmi_size(UE_sched_ctrl * sched_ctl, int CC_idP,
     no_pmi = 0;
   }
 
-  if ((cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present == CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_widebandCQI)
+  if ((cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present == LTE_CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_widebandCQI)
       || (sched_ctl->feedback_cnt[CC_idP] == 0)) {
     // send wideband report every opportunity if wideband reporting mode is selected, else every H opportunities
     if (no_pmi == 1)                        return (4);
@@ -1044,7 +1044,7 @@ get_rel8_dl_cqi_pmi_size(UE_sched_ctrl * sched_ctl, int CC_idP,
       AssertFatal(1 == 0,
 		  "illegal combination p %d, ri %d, no_pmi %d\n",
 		  cc->p_eNB, ri, no_pmi);
-  } else if (cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present == CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_subbandCQI) {
+  } else if (cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present == LTE_CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_subbandCQI) {
     if ((no_pmi == 1) || ri == 1) return (4 + Ltab[cc->mib->message.dl_Bandwidth]);
     else                          return (7 + Ltab[cc->mib->message.dl_Bandwidth]);
   }
@@ -1103,12 +1103,12 @@ program_dlsch_acknak(module_id_t module_idP, int CC_idP, int UE_idP,
   nfapi_ul_config_ulsch_harq_information *ulsch_harq_information      = NULL;
   nfapi_ul_config_harq_information       *harq_information            = NULL;
 
-#if (RRC_VERSION >= MAKE_VERSION(10, 2, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 2, 0))
 
   if ((UE_list->UE_template[CC_idP][UE_idP].physicalConfigDedicated->ext2)
       && (UE_list->UE_template[CC_idP][UE_idP].physicalConfigDedicated->ext2->pucch_ConfigDedicated_v1020)
       && (UE_list->UE_template[CC_idP][UE_idP].physicalConfigDedicated->ext2->pucch_ConfigDedicated_v1020->simultaneousPUCCH_PUSCH_r10)
-      && (*UE_list->UE_template[CC_idP][UE_idP].physicalConfigDedicated->ext2->pucch_ConfigDedicated_v1020->simultaneousPUCCH_PUSCH_r10 == PUCCH_ConfigDedicated_v1020__simultaneousPUCCH_PUSCH_r10_true))
+      && (*UE_list->UE_template[CC_idP][UE_idP].physicalConfigDedicated->ext2->pucch_ConfigDedicated_v1020->simultaneousPUCCH_PUSCH_r10 == LTE_PUCCH_ConfigDedicated_v1020__simultaneousPUCCH_PUSCH_r10_true))
     use_simultaneous_pucch_pusch = 1;
 #endif
 
@@ -1261,7 +1261,7 @@ fill_nfapi_ulsch_harq_information(module_id_t                            module_
 
   int UE_id = find_UE_id(module_idP, rntiP);
 
-  PUSCH_ConfigDedicated_t *puschConfigDedicated;
+  LTE_PUSCH_ConfigDedicated_t *puschConfigDedicated;
   //  PUSCH_ConfigDedicated_v1020_t        *puschConfigDedicated_v1020;
   //  PUSCH_ConfigDedicated_v1130_t        *puschConfigDedicated_v1130;
   //  PUSCH_ConfigDedicated_v1250_t        *puschConfigDedicated_v1250;
@@ -1270,17 +1270,17 @@ fill_nfapi_ulsch_harq_information(module_id_t                            module_
   AssertFatal(UE_list != NULL, "UE_list is null\n");
   AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated != NULL,
 	      "physicalConfigDedicated for rnti %x is null\n", rntiP);
-  AssertFatal((puschConfigDedicated = (PUSCH_ConfigDedicated_t *)
+  AssertFatal((puschConfigDedicated = (LTE_PUSCH_ConfigDedicated_t *)
 	       UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pusch_ConfigDedicated) != NULL,
 	      "physicalConfigDedicated->puschConfigDedicated for rnti %x is null\n",
 	      rntiP);
-#if (RRC_VERSION >= MAKE_VERSION(10, 2, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 2, 0))
   /*  if (UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->ext2) puschConfigDedicated_v1020 =  UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->ext2->pusch_ConfigDedicated_v1020;
       #endif
-      #if (RRC_VERSION >= MAKE_VERSION(11, 3, 0))
+      #if (LTE_RRC_VERSION >= MAKE_VERSION(11, 3, 0))
       if (UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->ext4) puschConfigDedicated_v1130 =  UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->ext4->pusch_ConfigDedicated_v1130;
       #endif
-      #if (RRC_VERSION >= MAKE_VERSION(12, 5, 0))
+      #if (LTE_RRC_VERSION >= MAKE_VERSION(12, 5, 0))
       if (UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->ext5) puschConfigDedicated_v1250 =  UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->ext5->pusch_ConfigDedicated_v1250;
       #endif
   */
@@ -1289,7 +1289,7 @@ fill_nfapi_ulsch_harq_information(module_id_t                            module_
   AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pucch_ConfigDedicated != NULL,
 	      "pucch_ConfigDedicated is null!\n");
   if ((UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode != NULL)
-      && (*UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode == PUCCH_ConfigDedicated__tdd_AckNackFeedbackMode_multiplexing))
+      && (*UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode == LTE_PUCCH_ConfigDedicated__tdd_AckNackFeedbackMode_multiplexing))
     harq_information->harq_information_rel10.ack_nack_mode = 1;	// multiplexing
   else
     harq_information->harq_information_rel10.ack_nack_mode = 0;	// bundling
@@ -1374,7 +1374,7 @@ fill_nfapi_harq_information(module_id_t                      module_idP,
       if (UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated != NULL
           && UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pucch_ConfigDedicated != NULL
           && (UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode != NULL)
-	  && (*UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode == PUCCH_ConfigDedicated__tdd_AckNackFeedbackMode_multiplexing))
+	  && (*UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode == LTE_PUCCH_ConfigDedicated__tdd_AckNackFeedbackMode_multiplexing))
       {
         harq_information->harq_information_rel10_tdd.harq_size             = 2;        // 2-bit ACK/NAK
         harq_information->harq_information_rel10_tdd.ack_nack_mode         = 1;        // multiplexing
@@ -1398,7 +1398,7 @@ fill_nfapi_harq_information(module_id_t                      module_idP,
       AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pucch_ConfigDedicated != NULL,
 		  "pucch_ConfigDedicated is null for TDD!\n");
       if ((UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode != NULL)
-	  && (*UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode == PUCCH_ConfigDedicated__tdd_AckNackFeedbackMode_multiplexing)) {
+	  && (*UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pucch_ConfigDedicated->tdd_AckNackFeedbackMode == LTE_PUCCH_ConfigDedicated__tdd_AckNackFeedbackMode_multiplexing)) {
 	harq_information->harq_information_rel10_tdd.ack_nack_mode            = 1;	// multiplexing
       } else {
 	harq_information->harq_information_rel10_tdd.ack_nack_mode            = 0;	// bundling
@@ -1544,7 +1544,7 @@ void
 fill_nfapi_ulsch_config_request_rel8(nfapi_ul_config_request_pdu_t *ul_config_pdu, 
 				     uint8_t                        cqi_req,
 				     COMMON_channels_t              *cc,
-				     struct PhysicalConfigDedicated *physicalConfigDedicated,
+				     struct LTE_PhysicalConfigDedicated *physicalConfigDedicated,
 				     uint8_t                        tmode, 
 				     uint32_t                       handle,
 				     uint16_t                       rnti,
@@ -1615,7 +1615,7 @@ fill_nfapi_ulsch_config_request_rel8(nfapi_ul_config_request_pdu_t *ul_config_pd
   }
 }
 
-#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 void
 fill_nfapi_ulsch_config_request_emtc(nfapi_ul_config_request_pdu_t *
 				     ul_config_pdu, uint8_t ue_type,
@@ -1658,12 +1658,12 @@ mpdcch_sf_condition(eNB_MAC_INST * eNB, int CC_id, frame_t frameP,
 		    sub_frame_t subframeP, int rmax,
 		    MPDCCH_TYPES_t mpdcch_type, int UE_id)
 {
-  struct PRACH_ConfigSIB_v1310 *ext4_prach =
+  struct LTE_PRACH_ConfigSIB_v1310 *ext4_prach =
     eNB->common_channels[CC_id].radioResourceConfigCommon_BR->
     ext4->prach_ConfigCommon_v1310;
 
   int T;
-  EPDCCH_SetConfig_r11_t *epdcch_setconfig_r11;
+  LTE_EPDCCH_SetConfig_r11_t *epdcch_setconfig_r11;
 
   switch (mpdcch_type) {
   case TYPE0:
@@ -1916,7 +1916,7 @@ void dump_ue_list(UE_list_t * listP, int ul_flag)
 }
 
 int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP, int harq_pidP
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	       , uint8_t rach_resource_type
 #endif
 	       )
@@ -1950,7 +1950,7 @@ int add_new_ue(module_id_t mod_idP, int cc_idP, rnti_t rntiP, int harq_pidP
     UE_list->UE_template[cc_idP][UE_id].pre_assigned_mcs_ul = 0;
 #endif    
 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     UE_list->UE_template[cc_idP][UE_id].rach_resource_type =
       rach_resource_type;
 #endif
@@ -2272,7 +2272,7 @@ uint8_t get_tmode(module_id_t module_idP, int CC_idP, int UE_idP)
   eNB_MAC_INST *eNB = RC.mac[module_idP];
   COMMON_channels_t *cc = &eNB->common_channels[CC_idP];
 
-  struct PhysicalConfigDedicated *physicalConfigDedicated =
+  struct LTE_PhysicalConfigDedicated *physicalConfigDedicated =
     eNB->UE_list.physicalConfigDedicated[CC_idP][UE_idP];
 
   if (physicalConfigDedicated == NULL) {	// RRCConnectionSetup not received by UE yet
@@ -2285,16 +2285,16 @@ uint8_t get_tmode(module_id_t module_idP, int CC_idP, int UE_idP)
 		UE_idP);
 
     AssertFatal(physicalConfigDedicated->antennaInfo->present !=
-		PhysicalConfigDedicated__antennaInfo_PR_NOTHING,
+		LTE_PhysicalConfigDedicated__antennaInfo_PR_NOTHING,
 		"antennaInfo (mod_id %d, CC_id %d) is set to NOTHING\n",
 		module_idP, CC_idP);
 
     if (physicalConfigDedicated->antennaInfo->present ==
-	PhysicalConfigDedicated__antennaInfo_PR_explicitValue) {
+	LTE_PhysicalConfigDedicated__antennaInfo_PR_explicitValue) {
       return (physicalConfigDedicated->antennaInfo->
 	      choice.explicitValue.transmissionMode);
     } else if (physicalConfigDedicated->antennaInfo->present ==
-	       PhysicalConfigDedicated__antennaInfo_PR_defaultValue) {
+	       LTE_PhysicalConfigDedicated__antennaInfo_PR_defaultValue) {
       AssertFatal(cc->p_eNB <= 2, "p_eNB is %d, should be <2\n",
 		  cc->p_eNB);
       return (cc->p_eNB);
@@ -3310,7 +3310,7 @@ CCE_allocation_infeasible(int module_idP,
 
   return res;
 }
-void get_retransmission_timing(TDD_Config_t *tdd_Config, frame_t *frameP,
+void get_retransmission_timing(LTE_TDD_Config_t *tdd_Config, frame_t *frameP,
     sub_frame_t *subframeP)
 {
 
@@ -3361,7 +3361,7 @@ uint8_t get_dl_subframe_count(int tdd_config_sfa, sub_frame_t subframeP){
     return -1;
 }
 
-uint8_t frame_subframe2_dl_harq_pid(TDD_Config_t *tdd_Config, int abs_frameP, sub_frame_t subframeP){
+uint8_t frame_subframe2_dl_harq_pid(LTE_TDD_Config_t *tdd_Config, int abs_frameP, sub_frame_t subframeP){
     int harq_pid;
     if(tdd_Config){
 
@@ -3382,7 +3382,7 @@ uint8_t frame_subframe2_dl_harq_pid(TDD_Config_t *tdd_Config, int abs_frameP, su
     return -1;
 }
 
-unsigned char ul_ACK_subframe2M(TDD_Config_t *tdd_Config,unsigned char subframe)
+unsigned char ul_ACK_subframe2M(LTE_TDD_Config_t *tdd_Config,unsigned char subframe)
 {
 
   if (tdd_Config == NULL) {
@@ -3447,7 +3447,7 @@ unsigned char ul_ACK_subframe2M(TDD_Config_t *tdd_Config,unsigned char subframe)
   return(0);
 }
 
-unsigned char ul_ACK_subframe2dl_subframe(TDD_Config_t *tdd_Config,unsigned char subframe,unsigned char ACK_index)
+unsigned char ul_ACK_subframe2dl_subframe(LTE_TDD_Config_t *tdd_Config,unsigned char subframe,unsigned char ACK_index)
 {
 
   if (tdd_Config == NULL) {
@@ -3531,7 +3531,7 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
   int frame_tx;
   uint8_t harq_pid;
   
-#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
   if (UE_list->UE_template[pCCid][UE_id].physicalConfigDedicated != NULL &&
       UE_list->UE_template[pCCid][UE_id].physicalConfigDedicated->pucch_ConfigDedicated != NULL &&
       (UE_list->UE_template[pCCid][UE_id].physicalConfigDedicated->ext7)
@@ -4013,7 +4013,7 @@ extract_pucch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
   UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
   UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   COMMON_channels_t *cc = &RC.mac[mod_idP]->common_channels[CC_idP];
-  struct CQI_ReportPeriodic *cqi_ReportPeriodic;
+  struct LTE_CQI_ReportPeriodic *cqi_ReportPeriodic;
   int no_pmi;
   uint8_t Ltab[6] = { 0, 2, 4, 4, 4, 4 };
   uint8_t Jtab[6] = { 0, 2, 2, 3, 4, 4 };
@@ -4028,10 +4028,10 @@ extract_pucch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
 	      "cqi_ReportPeriodic is null for UE %d\n", UE_id);
 
   // determine feedback mode
-  AssertFatal(cqi_ReportPeriodic->present != CQI_ReportPeriodic_PR_NOTHING,
-	      "cqi_ReportPeriodic->present == CQI_ReportPeriodic_PR_NOTHING!\n");
-  AssertFatal(cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present != CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_NOTHING,
-	      "cqi_ReportPeriodic->cqi_FormatIndicatorPeriodic.choice.setup.present == CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_NOTHING!\n");
+  AssertFatal(cqi_ReportPeriodic->present != LTE_CQI_ReportPeriodic_PR_NOTHING,
+	      "cqi_ReportPeriodic->present == LTE_CQI_ReportPeriodic_PR_NOTHING!\n");
+  AssertFatal(cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present != LTE_CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_NOTHING,
+	      "cqi_ReportPeriodic->cqi_FormatIndicatorPeriodic.choice.setup.present == LTE_CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_NOTHING!\n");
 
   uint16_t Npd, N_OFFSET_CQI;
   int H, K, bandwidth_part, L, Lmask;
@@ -4065,7 +4065,7 @@ extract_pucch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
     no_pmi = 0;
   }
 
-  if ((cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present == CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_widebandCQI)
+  if ((cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present == LTE_CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_widebandCQI)
       || (feedback_cnt == 0)) {
     // Note: This implements only Tables: 5.3.3.1-1,5.3.3.1-1A and 5.3.3.1-2 from 36.213 (1,2,4 antenna ports Wideband CQI/PMI)
 
@@ -4098,7 +4098,7 @@ extract_pucch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
       AssertFatal(1 == 0,
 		  "illegal combination p %d, ri %d, no_pmi %d\n",
 		  cc->p_eNB, ri, no_pmi);
-  } else if (cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present == CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_subbandCQI)
+  } else if (cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present == LTE_CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_subbandCQI)
     {
       // This is Table 5.2.3.3.2-2 for 36.213
       if (ri == 1) {
@@ -4129,7 +4129,7 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
   int i;
   uint64_t p = *(uint64_t *) pdu;
   int curbyte, curbit;
-  CQI_ReportModeAperiodic_t *cqi_ReportModeAperiodic;
+  LTE_CQI_ReportModeAperiodic_t *cqi_ReportModeAperiodic;
 
   AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated != NULL,
 	      "physicalConfigDedicated is null for UE %d\n", UE_id);
@@ -4146,7 +4146,7 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
   int m;
 
   switch (*cqi_ReportModeAperiodic) {
-  case CQI_ReportModeAperiodic_rm12:
+  case LTE_CQI_ReportModeAperiodic_rm12:
     AssertFatal(0 == 1, "to be fixed, don't use p but pdu directly\n");
     // wideband multiple PMI (TM4/6), Table 5.2.2.6.1-1 (for TM4/6)
     AssertFatal(tmode == 4 || tmode == 6 || tmode == 8 || tmode == 9 || tmode == 10,
@@ -4195,7 +4195,7 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
     }
 
     break;
-  case CQI_ReportModeAperiodic_rm20:
+  case LTE_CQI_ReportModeAperiodic_rm20:
     AssertFatal(0 == 1, "to be fixed, don't use p but pdu directly\n");
     // UE-selected subband CQI no PMI (TM1/2/3/7) , Table 5.2.2.6.3-1 from 36.213
     AssertFatal(tmode == 1 || tmode == 2 || tmode == 3
@@ -4212,7 +4212,7 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
     for (m = 0; m < Mtab_uesel[bw]; m++)
       sched_ctl->aperiodic_subband_diffcqi0[CC_idP][v[m]] = diffcqi0;
     break;
-  case CQI_ReportModeAperiodic_rm22:
+  case LTE_CQI_ReportModeAperiodic_rm22:
     AssertFatal(0 == 1, "to be fixed, don't use p but pdu directly\n");
     // UE-selected subband CQI multiple PMI (TM4/6) Table 5.2.2.6.3-2 from 36.213
 
@@ -4257,7 +4257,7 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
       sched_ctl->aperiodic_subband_pmi[CC_idP][v[m]] = pmi_uesel;
     }
     break;
-  case CQI_ReportModeAperiodic_rm30:
+  case LTE_CQI_ReportModeAperiodic_rm30:
     //subband CQI no PMI (TM1/2/3/7)
     AssertFatal(tmode == 1 || tmode == 2 || tmode == 3
 		|| tmode == 7,
@@ -4278,7 +4278,7 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
     sched_ctl->dl_cqi[CC_idP] =
       sched_ctl->aperiodic_wideband_cqi0[CC_idP];
     break;
-  case CQI_ReportModeAperiodic_rm31:
+  case LTE_CQI_ReportModeAperiodic_rm31:
     AssertFatal(0 == 1, "to be fixed, don't use p but pdu directly\n");
     //subband CQI single PMI (TM4/5/6)
     AssertFatal(tmode == 4 || tmode == 5 || tmode == 6 || tmode == 8
@@ -4349,8 +4349,8 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
     }
 
     break;
-#if (RRC_VERSION >= MAKE_VERSION(12, 5, 0))
-  case CQI_ReportModeAperiodic_rm32_v1250:
+#if (LTE_RRC_VERSION >= MAKE_VERSION(12, 5, 0))
+  case LTE_CQI_ReportModeAperiodic_rm32_v1250:
     AssertFatal(tmode == 4 || tmode == 5 || tmode == 6 || tmode == 8
 		|| tmode == 9
 		|| tmode == 10,
@@ -4359,15 +4359,15 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
     AssertFatal(1 == 0, "CQI_ReportModeAperiodic_rm32 to be done\n");
     break;
 #endif
-#if (RRC_VERSION >= MAKE_VERSION(13, 1, 0))
-  case CQI_ReportModeAperiodic_rm10_v1310:
+#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 1, 0))
+  case LTE_CQI_ReportModeAperiodic_rm10_v1310:
     AssertFatal(tmode == 1 || tmode == 2 || tmode == 3
 		|| tmode == 7,
 		"Illegal transmission mode %d for CQI_ReportModeAperiodic_rm10\n",
 		tmode);
     AssertFatal(1 == 0, "CQI_ReportModeAperiodic_rm10 to be done\n");
     break;
-  case CQI_ReportModeAperiodic_rm11_v1310:
+  case LTE_CQI_ReportModeAperiodic_rm11_v1310:
     AssertFatal(tmode == 4 || tmode == 5 || tmode == 6 || tmode == 8
 		|| tmode == 9
 		|| tmode == 10,
@@ -4375,7 +4375,7 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
 		tmode);
     AssertFatal(1 == 0, "CQI_ReportModeAperiodic_rm11 to be done\n");
     break;
-#endif /* #if (RRC_VERSION >= MAKE_VERSION(13, 1, 0)) */
+#endif /* #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 1, 0)) */
   }
 }
 

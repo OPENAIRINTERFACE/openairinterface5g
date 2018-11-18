@@ -1,0 +1,537 @@
+#!/bin/bash
+#/*
+# * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+# * contributor license agreements.  See the NOTICE file distributed with
+# * this work for additional information regarding copyright ownership.
+# * The OpenAirInterface Software Alliance licenses this file to You under
+# * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+# * except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *      http://www.openairinterface.org/?page_id=698
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *-------------------------------------------------------------------------------
+# * For more information about the OpenAirInterface (OAI) Software Alliance:
+# *      contact@openairinterface.org
+# */
+
+function top_usage {
+    echo "OAI CI VM script"
+    echo "   Original Author: Raphael Defosseux"
+    echo "   Requirements:"
+    echo "     -- uvtool uvtool-libvirt apt-cacher"
+    echo "     -- xenial image already synced"
+    echo ""
+    echo "Usage:"
+    echo "------"
+    echo "    oai-ci-vm-tool (-h|--help) {create,destroy,build,wait,test,report-build,report-test} ..."
+    echo ""
+}
+
+function variant_usage {
+    echo "    --variant enb-usrp     OR -v1"
+    echo "    --variant basic-sim    OR -v2"
+    echo "    --variant phy-sim      OR -v3"
+    echo "    --variant cppcheck     OR -v4"
+    echo "    --variant enb-ethernet OR -v7"
+    echo "    --variant ue-ethernet  OR -v8"
+}
+
+MY_DIR=$(dirname $(readlink -f $0))
+. $MY_DIR/createVM.sh
+. $MY_DIR/buildOnVM.sh
+. $MY_DIR/waitBuildOnVM.sh
+. $MY_DIR/destroyAllRunningVM.sh
+. $MY_DIR/runTestOnVM.sh
+. $MY_DIR/reportBuildLocally.sh
+. $MY_DIR/reportTestLocally.sh
+
+if [ $# -lt 1 ]
+then
+    echo "Syntax Error: too few arguments"
+    echo ""
+    top_usage
+    exit 1
+fi
+
+VM_TEMPLATE=ci-
+JOB_NAME=XX
+BUILD_ID=XX
+VM_NAME=ci-enb-usrp
+VM_MEMORY=2048
+VM_CPU=4
+ARCHIVES_LOC=enb_usrp
+LOG_PATTERN=.Rel14.txt
+NB_PATTERN_FILES=4
+BUILD_OPTIONS="--eNB -w USRP"
+KEEP_VM_ALIVE=0
+RUN_OPTIONS="none"
+DAEMON=0
+MR_TRIG=0
+PU_TRIG=0
+
+HELP_CMD=0
+CREATE_CMD=0
+BUILD_CMD=0
+WAIT_CMD=0
+DESTROY_CMD=0
+TEST_CMD=0
+REPORT_BUILD_CMD=0
+REPORT_TEST_CMD=0
+NBARGS=0
+
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+    -h|--help)
+    HELP_CMD=1
+    shift
+    ;;
+    create)
+    CREATE_CMD=1
+    # It is implied to keep the VM when creating it
+    KEEP_VM_ALIVE=1
+    shift
+    ;;
+    build)
+    BUILD_CMD=1
+    shift
+    ;;
+    wait)
+    WAIT_CMD=1
+    shift
+    ;;
+    test)
+    TEST_CMD=1
+    shift
+    ;;
+    destroy)
+    DESTROY_CMD=1
+    shift
+    ;;
+    report-build)
+    REPORT_BUILD_CMD=1
+    shift
+    ;;
+    report-test)
+    REPORT_TEST_CMD=1
+    shift
+    ;;
+    -jn|--job-name)
+    JOB_NAME="$2"
+    NBARGS=$[$NBARGS+1]
+    shift
+    shift
+    ;;
+    -id|--build-id)
+    BUILD_ID="$2"
+    NBARGS=$[$NBARGS+2]
+    shift
+    shift
+    ;;
+    -ws|--workspace)
+    JENKINS_WKSP="$2"
+    NBARGS=$[$NBARGS+4]
+    shift
+    shift
+    ;;
+    -k|--keep-vm-alive)
+    KEEP_VM_ALIVE=1
+    NBARGS=$[$NBARGS+8]
+    shift
+    ;;
+    -D|--daemon)
+    DAEMON=1
+    NBARGS=$[$NBARGS+16]
+    shift
+    ;;
+    -gu|--git-url)
+    GIT_URL="$2"
+    NBARGS=$[$NBARGS+32]
+    shift
+    shift
+    ;;
+    --trigger)
+    TRIG="$2"
+    case $TRIG in
+        merge-request)
+        MR_TRIG=1
+        ;;
+        push)
+        PU_TRIG=1
+        ;;
+        *)
+        echo ""
+        echo "Syntax Error: Invalid Trigger option -> $TRIG"
+        echo ""
+        trigger_usage
+        exit
+        ;;
+    esac
+    NBARGS=$[$NBARGS+64]
+    shift
+    shift
+    ;;
+    -mr)
+    MR_TRIG=1
+    NBARGS=$[$NBARGS+64]
+    shift
+    ;;
+    -pu)
+    PU_TRIG=1
+    NBARGS=$[$NBARGS+64]
+    shift
+    ;;
+    -sb|--src-branch)
+    SOURCE_BRANCH="$2"
+    NBARGS=$[$NBARGS+1024]
+    shift
+    shift
+    ;;
+    -sc|--src-commit)
+    SOURCE_COMMIT_ID="$2"
+    NBARGS=$[$NBARGS+2048]
+    shift
+    shift
+    ;;
+    -tb|--target-branch)
+    TARGET_BRANCH="$2"
+    NBARGS=$[$NBARGS+4096]
+    shift
+    shift
+    ;;
+    -tc|--target-commit)
+    TARGET_COMMIT_ID="$2"
+    NBARGS=$[$NBARGS+8192]
+    shift
+    shift
+    ;;
+    -br|--branch)
+    SOURCE_BRANCH="$2"
+    NBARGS=$[$NBARGS+16384]
+    shift
+    shift
+    ;;
+    -co|--commit)
+    SOURCE_COMMIT_ID="$2"
+    NBARGS=$[$NBARGS+32768]
+    shift
+    shift
+    ;;
+    -v1)
+    VM_NAME=ci-enb-usrp
+    ARCHIVES_LOC=enb_usrp
+    LOG_PATTERN=.Rel14.txt
+    NB_PATTERN_FILES=4
+    BUILD_OPTIONS="--eNB -w USRP --mu"
+    NBARGS=$[$NBARGS+256]
+    shift
+    ;;
+    -v2)
+    VM_NAME=ci-basic-sim
+    ARCHIVES_LOC=basic_sim
+    LOG_PATTERN=basic_simulator
+    NB_PATTERN_FILES=2
+    BUILD_OPTIONS="--basic-simulator"
+    VM_MEMORY=8192
+    VM_CPU=4
+    RUN_OPTIONS="complex"
+    NBARGS=$[$NBARGS+256]
+    shift
+    ;;
+    -v3)
+    VM_NAME=ci-phy-sim
+    ARCHIVES_LOC=phy_sim
+    LOG_PATTERN=.Rel14.txt
+    NB_PATTERN_FILES=3
+    BUILD_OPTIONS="--phy_simulators"
+    RUN_OPTIONS="./run_exec_autotests.bash -g \"01510*\" -q -np -b"
+    NBARGS=$[$NBARGS+256]
+    shift
+    ;;
+    -v4)
+    VM_NAME=ci-cppcheck
+    VM_MEMORY=4096
+    ARCHIVES_LOC=cppcheck
+    LOG_PATTERN=cppcheck.xml
+    NB_PATTERN_FILES=1
+    BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2"
+    NBARGS=$[$NBARGS+256]
+    shift
+    ;;
+    -v7)
+    VM_NAME=ci-enb-ethernet
+    ARCHIVES_LOC=enb_eth
+    LOG_PATTERN=.Rel14.txt
+    NB_PATTERN_FILES=6
+    BUILD_OPTIONS="--eNB -t ETHERNET --noS1"
+    NBARGS=$[$NBARGS+256]
+    shift
+    ;;
+    -v8)
+    VM_NAME=ci-ue-ethernet
+    ARCHIVES_LOC=ue_eth
+    LOG_PATTERN=.Rel14.txt
+    NB_PATTERN_FILES=6
+    BUILD_OPTIONS="--UE -t ETHERNET --noS1"
+    NBARGS=$[$NBARGS+256]
+    shift
+    ;;
+    --variant)
+    variant="$2"
+    case $variant in
+        enb-usrp)
+        VM_NAME=ci-enb-usrp
+        ARCHIVES_LOC=enb_usrp
+        LOG_PATTERN=.Rel14.txt
+        NB_PATTERN_FILES=4
+        BUILD_OPTIONS="--eNB -w USRP --mu"
+        NBARGS=$[$NBARGS+256]
+        ;;
+        basic-sim)
+        VM_NAME=ci-basic-sim
+        ARCHIVES_LOC=basic_sim
+        LOG_PATTERN=basic_simulator
+        NB_PATTERN_FILES=2
+        BUILD_OPTIONS="--basic-simulator"
+        VM_MEMORY=8192
+        VM_CPU=4
+        RUN_OPTIONS="complex"
+        NBARGS=$[$NBARGS+256]
+        ;;
+        phy-sim)
+        VM_NAME=ci-phy-sim
+        ARCHIVES_LOC=phy_sim
+        LOG_PATTERN=.Rel14.txt
+        NB_PATTERN_FILES=3
+        BUILD_OPTIONS="--phy_simulators"
+        RUN_OPTIONS="./run_exec_autotests.bash -g \"01510*\" -q -np -b"
+        NBARGS=$[$NBARGS+256]
+        ;;
+        cppcheck)
+        VM_NAME=ci-cppcheck
+        VM_MEMORY=8192
+        ARCHIVES_LOC=cppcheck
+        LOG_PATTERN=cppcheck.xml
+        NB_PATTERN_FILES=1
+        BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2"
+        NBARGS=$[$NBARGS+256]
+        ;;
+        enb-ethernet)
+        VM_NAME=ci-enb-ethernet
+        ARCHIVES_LOC=enb_eth
+        LOG_PATTERN=.Rel14.txt
+        NB_PATTERN_FILES=6
+        BUILD_OPTIONS="--eNB -t ETHERNET --noS1"
+        NBARGS=$[$NBARGS+256]
+        ;;
+        ue-ethernet)
+        VM_NAME=ci-ue-ethernet
+        ARCHIVES_LOC=ue_eth
+        LOG_PATTERN=.Rel14.txt
+        NB_PATTERN_FILES=6
+        BUILD_OPTIONS="--UE -t ETHERNET --noS1"
+        NBARGS=$[$NBARGS+256]
+        ;;
+        *)
+        echo ""
+        echo "Syntax Error: Invalid Variant option -> $variant"
+        echo ""
+        variant_usage
+        exit 1
+    esac
+    shift
+    shift
+    ;;
+    *)
+    echo "Syntax Error: unknown option: $key"
+    echo ""
+    top_usage
+    exit 1
+esac
+done
+
+MANY_CMDS=$[$CREATE_CMD+$BUILD_CMD+$WAIT_CMD+$DESTROY_CMD+$TEST_CMD+$REPORT_BUILD_CMD+$REPORT_TEST_CMD]
+if [ $MANY_CMDS -gt 1 ]
+then
+    echo "Syntax Error: too many commands"
+    top_usage
+    exit 1
+fi
+
+if [ $HELP_CMD -eq 1 ]
+then
+    if [ $MANY_CMDS -eq 0 ]
+    then
+        top_usage
+        exit 0
+    fi
+    if [ $CREATE_CMD -eq 1 ]
+    then
+        create_usage
+        exit 0
+    fi
+    if [ $BUILD_CMD -eq 1 ]
+    then
+        build_usage
+        exit 0
+    fi
+    if [ $WAIT_CMD -eq 1 ]
+    then
+        wait_usage
+        exit 0
+    fi
+    if [ $TEST_CMD -eq 1 ]
+    then
+        run_test_usage
+        exit 0
+    fi
+    if [ $DESTROY_CMD -eq 1 ]
+    then
+        destroy_usage
+        exit 0
+    fi
+    if [ $REPORT_BUILD_CMD -eq 1 ]
+    then
+        report_build_usage
+        exit 0
+    fi
+    if [ $REPORT_TEST_CMD -eq 1 ]
+    then
+        report_test_usage
+        exit 0
+    fi
+else
+    if [ $MANY_CMDS -eq 0 ]
+    then
+        echo "Syntax Error: no command"
+        top_usage
+        exit 1
+    fi
+    # For create, mandatory options: jn, id. Optional: variant
+    if [ $CREATE_CMD -eq 1 ] && [ $NBARGS -ne 3 ] && [ $NBARGS -ne 259 ]
+    then
+        echo "Syntax Error: unsupported option(s) for create command"
+        create_usage
+        exit 1
+    fi
+    # For build, mandatory options: jn, id, ws. Optional: variant, k, D
+    if [ $BUILD_CMD -eq 1 ] && [ $NBARGS -ne 7 ] && [ $NBARGS -ne 263 ] && [ $NBARGS -ne 15 ] && [ $NBARGS -ne 271 ] && [ $NBARGS -ne 23 ] && [ $NBARGS -ne 279 ] && [ $NBARGS -ne 31 ] && [ $NBARGS -ne 287 ]
+    then
+        echo "Syntax Error: unsupported option(s) for build command"
+        build_usage
+        exit 1
+    fi
+    # For wait, mandatory options: jn, id, ws. Optional: variant, k
+    if [ $WAIT_CMD -eq 1 ] && [ $NBARGS -ne 7 ] && [ $NBARGS -ne 263 ] && [ $NBARGS -ne 15 ] && [ $NBARGS -ne 271 ]
+    then
+        echo "Syntax Error: unsupported option(s) for wait command"
+        wait_usage
+        exit 1
+    fi
+    # For test, mandatory options: jn, id, ws. Optional: variant, k
+    if [ $TEST_CMD -eq 1 ] && [ $NBARGS -ne 7 ] && [ $NBARGS -ne 263 ] && [ $NBARGS -ne 15 ] && [ $NBARGS -ne 271 ]
+    then
+        echo "Syntax Error: unsupported option(s) for test command"
+        run_test_usage
+        exit 1
+    fi
+    # For destroy, mandatory options: jn, id.
+    if [ $DESTROY_CMD -eq 1 ] && [ $NBARGS -ne 3 ]
+    then
+        echo "Syntax Error: unsupported option(s) for destroy command"
+        destroy_usage
+        exit 1
+    fi
+    # For report-build, mandatory options: jn, id, ws, gu, pu, br,co.
+    #                                  or: jn, id, ws, gu, mr, sb, sc, tb, tc.
+    if [ $REPORT_BUILD_CMD -eq 1 ] && [ $NBARGS -ne 15463 ] && [ $NBARGS -ne 49255 ]
+    then
+        echo "Syntax Error: unsupported option(s) for report-build command"
+        report_build_usage
+        exit 1
+    fi
+    # For report-test, mandatory options: jn, id, ws, gu, pu, br,co.
+    #                                 or: jn, id, ws, gu, mr, sb, sc, tb, tc.
+    if [ $REPORT_TEST_CMD -eq 1 ] && [ $NBARGS -ne 15463 ] && [ $NBARGS -ne 49255 ]
+    then
+        echo "Syntax Error: unsupported option(s) for report-test command"
+        report_test_usage
+        exit 1
+    fi
+fi
+
+# Checking uvt-kvm is installed
+UVT_KVM_PATH=`which uvt-kvm | grep -c uvt-kvm`
+if [ $UVT_KVM_PATH -eq 0 ]
+then
+    echo "Error: uvt-kvm is not installed"
+    top_usage
+    exit 1
+fi
+
+if [ "$JOB_NAME" == "XX" ] || [ "$BUILD_ID" == "XX" ]
+then
+    VM_TEMPLATE=ci-
+else
+    VM_TEMPLATE=${JOB_NAME}-b${BUILD_ID}-
+fi
+
+VM_NAME=`echo $VM_NAME | sed -e "s#ci-#$VM_TEMPLATE#"`
+VM_CMDS=${VM_NAME}_cmds.txt
+ARCHIVES_LOC=${JENKINS_WKSP}/archives/${ARCHIVES_LOC}
+
+STATUS=0
+if [ $CREATE_CMD -eq 1 ]
+then
+    create_vm
+fi
+if [ $BUILD_CMD -eq 1 ]
+then
+    build_on_vm
+    if [ $DAEMON -eq 0 ] && [ $STATUS -eq 0 ]
+    then
+        check_on_vm_build
+    fi
+fi
+if [ $WAIT_CMD -eq 1 ]
+then
+    wait_on_vm_build
+    if [ $STATUS -eq 0 ]
+    then
+        check_on_vm_build
+    fi
+fi
+if [ $TEST_CMD -eq 1 ]
+then
+    ARCHIVES_LOC=${ARCHIVES_LOC}/test
+    run_test_on_vm
+fi
+if [ $DESTROY_CMD -eq 1 ]
+then
+    destroy_vm
+fi
+if [ $REPORT_BUILD_CMD -eq 1 ]
+then
+    report_build
+fi
+if [ $REPORT_TEST_CMD -eq 1 ]
+then
+    report_test
+fi
+
+# Did command pass or fail?
+if [ $STATUS -eq 0 ]
+then
+    echo "STATUS seems OK"
+else
+    echo "STATUS failed?"
+fi
+exit $STATUS

@@ -33,33 +33,33 @@
 #include "rrc_types.h"
 #include "s1ap_messages_types.h"
 #ifdef CMAKER
-#include "SystemInformationBlockType2.h"
+#include "LTE_SystemInformationBlockType2.h"
 #else
-#include "RRC/LTE/MESSAGES/SystemInformationBlockType2.h"
+#include "RRC/LTE/MESSAGES/LTE_SystemInformationBlockType2.h"
 #endif
-#include "SL-OffsetIndicator-r12.h"
-#include "SubframeBitmapSL-r12.h"
-#include "SL-CP-Len-r12.h"
-#include "SL-PeriodComm-r12.h"
-#include "SL-DiscResourcePool-r12.h"
+#include "LTE_SL-OffsetIndicator-r12.h"
+#include "LTE_SubframeBitmapSL-r12.h"
+#include "LTE_SL-CP-Len-r12.h"
+#include "LTE_SL-PeriodComm-r12.h"
+#include "LTE_SL-DiscResourcePool-r12.h"
 
 
 //-------------------------------------------------------------------------------------------//
 // Messages for RRC logging
 #if defined(DISABLE_ITTI_XER_PRINT)
-#include "BCCH-DL-SCH-Message.h"
-#include "DL-CCCH-Message.h"
-#include "DL-DCCH-Message.h"
-#include "UE-EUTRA-Capability.h"
-#include "UL-CCCH-Message.h"
-#include "UL-DCCH-Message.h"
+#include "LTE_BCCH-DL-SCH-Message.h"
+#include "LTE_DL-CCCH-Message.h"
+#include "LTE_DL-DCCH-Message.h"
+#include "LTE_UE-EUTRA-Capability.h"
+#include "LTE_UL-CCCH-Message.h"
+#include "LTE_UL-DCCH-Message.h"
 
-typedef BCCH_DL_SCH_Message_t   RrcDlBcchMessage;
-typedef DL_CCCH_Message_t       RrcDlCcchMessage;
-typedef DL_DCCH_Message_t       RrcDlDcchMessage;
-typedef UE_EUTRA_Capability_t   RrcUeEutraCapability;
-typedef UL_CCCH_Message_t       RrcUlCcchMessage;
-typedef UL_DCCH_Message_t       RrcUlDcchMessage;
+typedef LTE_BCCH_DL_SCH_Message_t   RrcDlBcchMessage;
+typedef LTE_DL_CCCH_Message_t       RrcDlCcchMessage;
+typedef LTE_DL_DCCH_Message_t       RrcDlDcchMessage;
+typedef LTE_UE_EUTRA_Capability_t   RrcUeEutraCapability;
+typedef LTE_UL_CCCH_Message_t       RrcUlCcchMessage;
+typedef LTE_UL_DCCH_Message_t       RrcUlDcchMessage;
 #endif
 
 //-------------------------------------------------------------------------------------------//
@@ -123,16 +123,16 @@ typedef struct RadioResourceConfig_s {
   long                    pucch_p0_Nominal;
   long                    msg3_delta_Preamble;
   long                    ul_CyclicPrefixLength;
-  e_DeltaFList_PUCCH__deltaF_PUCCH_Format1                    pucch_deltaF_Format1;
-  e_DeltaFList_PUCCH__deltaF_PUCCH_Format1b                   pucch_deltaF_Format1b;
-  e_DeltaFList_PUCCH__deltaF_PUCCH_Format2                    pucch_deltaF_Format2;
-  e_DeltaFList_PUCCH__deltaF_PUCCH_Format2a                   pucch_deltaF_Format2a;
-  e_DeltaFList_PUCCH__deltaF_PUCCH_Format2b                   pucch_deltaF_Format2b;
+  e_LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format1                    pucch_deltaF_Format1;
+  e_LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format1b                   pucch_deltaF_Format1b;
+  e_LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2                    pucch_deltaF_Format2;
+  e_LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2a                   pucch_deltaF_Format2a;
+  e_LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2b                   pucch_deltaF_Format2b;
   long                    rach_numberOfRA_Preambles;
   BOOLEAN_t               rach_preamblesGroupAConfig;
   long                    rach_sizeOfRA_PreamblesGroupA;
   long                    rach_messageSizeGroupA;
-  e_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB                    rach_messagePowerOffsetGroupB;
+  e_LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB                    rach_messagePowerOffsetGroupB;
   long                    rach_powerRampingStep;
   long                    rach_preambleInitialReceivedTargetPower;
   long                    rach_preambleTransMax;
@@ -193,7 +193,7 @@ typedef struct RrcConfigurationReq_s {
   RadioResourceConfig     radioresourceconfig[MAX_NUM_CCs];
   RadioResourceConfig     radioresourceconfig_BR[MAX_NUM_CCs];
    
-#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 
 
 
@@ -305,46 +305,47 @@ typedef struct RrcConfigurationReq_s {
 
 #endif
 
+
   //SIB18
-  e_SL_CP_Len_r12                rxPool_sc_CP_Len[MAX_NUM_CCs];
-  e_SL_PeriodComm_r12            rxPool_sc_Period[MAX_NUM_CCs];
-  e_SL_CP_Len_r12                rxPool_data_CP_Len[MAX_NUM_CCs];
+  e_LTE_SL_CP_Len_r12            rxPool_sc_CP_Len[MAX_NUM_CCs];
+  e_LTE_SL_PeriodComm_r12        rxPool_sc_Period[MAX_NUM_CCs];
+  e_LTE_SL_CP_Len_r12            rxPool_data_CP_Len[MAX_NUM_CCs];
   long                           rxPool_ResourceConfig_prb_Num[MAX_NUM_CCs];
   long                           rxPool_ResourceConfig_prb_Start[MAX_NUM_CCs];
   long                           rxPool_ResourceConfig_prb_End[MAX_NUM_CCs];
-  SL_OffsetIndicator_r12_PR      rxPool_ResourceConfig_offsetIndicator_present[MAX_NUM_CCs];
+  LTE_SL_OffsetIndicator_r12_PR  rxPool_ResourceConfig_offsetIndicator_present[MAX_NUM_CCs];
   long                           rxPool_ResourceConfig_offsetIndicator_choice[MAX_NUM_CCs];
-  SubframeBitmapSL_r12_PR        rxPool_ResourceConfig_subframeBitmap_present[MAX_NUM_CCs];
+  LTE_SubframeBitmapSL_r12_PR    rxPool_ResourceConfig_subframeBitmap_present[MAX_NUM_CCs];
   char*                          rxPool_ResourceConfig_subframeBitmap_choice_bs_buf[MAX_NUM_CCs];
   long                           rxPool_ResourceConfig_subframeBitmap_choice_bs_size[MAX_NUM_CCs];
   long                           rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[MAX_NUM_CCs];
 
   //SIB19
   //for discRxPool
-  SL_CP_Len_r12_t                discRxPool_cp_Len[MAX_NUM_CCs];
-  e_SL_DiscResourcePool_r12__discPeriod_r12                   discRxPool_discPeriod[MAX_NUM_CCs];
+  LTE_SL_CP_Len_r12_t            discRxPool_cp_Len[MAX_NUM_CCs];
+  e_LTE_SL_DiscResourcePool_r12__discPeriod_r12               discRxPool_discPeriod[MAX_NUM_CCs];
   long                           discRxPool_numRetx[MAX_NUM_CCs];
   long                           discRxPool_numRepetition[MAX_NUM_CCs];
   long                           discRxPool_ResourceConfig_prb_Num[MAX_NUM_CCs];
   long                           discRxPool_ResourceConfig_prb_Start[MAX_NUM_CCs];
   long                           discRxPool_ResourceConfig_prb_End[MAX_NUM_CCs];
-  SL_OffsetIndicator_r12_PR      discRxPool_ResourceConfig_offsetIndicator_present[MAX_NUM_CCs];
+  LTE_SL_OffsetIndicator_r12_PR  discRxPool_ResourceConfig_offsetIndicator_present[MAX_NUM_CCs];
   long                           discRxPool_ResourceConfig_offsetIndicator_choice[MAX_NUM_CCs];
-  SubframeBitmapSL_r12_PR        discRxPool_ResourceConfig_subframeBitmap_present[MAX_NUM_CCs];
+  LTE_SubframeBitmapSL_r12_PR    discRxPool_ResourceConfig_subframeBitmap_present[MAX_NUM_CCs];
   char*                          discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf[MAX_NUM_CCs];
   long                           discRxPool_ResourceConfig_subframeBitmap_choice_bs_size[MAX_NUM_CCs];
   long                           discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[MAX_NUM_CCs];
   //for discRxPoolPS
-  SL_CP_Len_r12_t                discRxPoolPS_cp_Len[MAX_NUM_CCs];
-  e_SL_DiscResourcePool_r12__discPeriod_r12                   discRxPoolPS_discPeriod[MAX_NUM_CCs];
+  LTE_SL_CP_Len_r12_t            discRxPoolPS_cp_Len[MAX_NUM_CCs];
+  e_LTE_SL_DiscResourcePool_r12__discPeriod_r12                   discRxPoolPS_discPeriod[MAX_NUM_CCs];
   long                           discRxPoolPS_numRetx[MAX_NUM_CCs];
   long                           discRxPoolPS_numRepetition[MAX_NUM_CCs];
   long                           discRxPoolPS_ResourceConfig_prb_Num[MAX_NUM_CCs];
   long                           discRxPoolPS_ResourceConfig_prb_Start[MAX_NUM_CCs];
   long                           discRxPoolPS_ResourceConfig_prb_End[MAX_NUM_CCs];
-  SL_OffsetIndicator_r12_PR      discRxPoolPS_ResourceConfig_offsetIndicator_present[MAX_NUM_CCs];
+  LTE_SL_OffsetIndicator_r12_PR  discRxPoolPS_ResourceConfig_offsetIndicator_present[MAX_NUM_CCs];
   long                           discRxPoolPS_ResourceConfig_offsetIndicator_choice[MAX_NUM_CCs];
-  SubframeBitmapSL_r12_PR        discRxPoolPS_ResourceConfig_subframeBitmap_present[MAX_NUM_CCs];
+  LTE_SubframeBitmapSL_r12_PR    discRxPoolPS_ResourceConfig_subframeBitmap_present[MAX_NUM_CCs];
   char*                          discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf[MAX_NUM_CCs];
   long                           discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size[MAX_NUM_CCs];
   long                           discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused[MAX_NUM_CCs];

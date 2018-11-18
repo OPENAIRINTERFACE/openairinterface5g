@@ -71,7 +71,7 @@ mac_rrc_data_req(
 
   eNB_RRC_INST *rrc;
   rrc_eNB_carrier_data_t *carrier;
-  BCCH_BCH_Message_t *mib;
+  LTE_BCCH_BCH_Message_t *mib;
 
 
     rrc     = RC.rrc[Mod_idP];
@@ -126,7 +126,7 @@ mac_rrc_data_req(
     if( (Srb_id & RAB_OFFSET ) == MIBCH) {
 
         mib->message.systemFrameNumber.buf = &sfn;
-	enc_rval = uper_encode_to_buffer(&asn_DEF_BCCH_BCH_Message,
+	enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_BCCH_BCH_Message,
 					 NULL,
 					 (void*)mib,
 					 carrier->MIB,
@@ -178,7 +178,7 @@ mac_rrc_data_req(
       return (Sdu_size);
     }
 
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
     if((Srb_id & RAB_OFFSET) == MCCH) {
       if(RC.rrc[Mod_idP]->carrier[CC_id].MCCH_MESS[mbsfn_sync_area].Active==0) {
@@ -202,9 +202,9 @@ mac_rrc_data_req(
      return (RC.rrc[Mod_idP]->carrier[CC_id].sizeof_MCCH_MESSAGE[mbsfn_sync_area]);
     }
 
-#endif // #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#endif // #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     if ((Srb_id & RAB_OFFSET) == BCCH_SIB1_BR){
         memcpy(&buffer_pP[0],
                RC.rrc[Mod_idP]->carrier[CC_id].SIB1_BR,
@@ -237,7 +237,7 @@ mac_rrc_data_ind(
   const uint8_t*        sduP,
   const sdu_size_t      sdu_lenP,
   const uint8_t         mbsfn_sync_areaP
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   , const boolean_t		brOption
 #endif
 
@@ -259,7 +259,7 @@ mac_rrc_data_ind(
     if((srb_idP & RAB_OFFSET) == CCCH) {
     Srb_info = &RC.rrc[module_idP]->carrier[CC_id].Srb0;
     LOG_D(RRC,"[eNB %d] Received SDU for CCCH on SRB %d\n",module_idP,Srb_info->Srb_id);
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     ctxt.brOption = brOption;
 #endif    
     //    msg("\n******INST %d Srb_info %p, Srb_id=%d****\n\n",Mod_id,Srb_info,Srb_info->Srb_id);

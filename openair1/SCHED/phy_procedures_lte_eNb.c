@@ -136,7 +136,7 @@ lte_subframe_t get_subframe_direction(uint8_t Mod_id,uint8_t CC_id,uint8_t subfr
 void pmch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
 
 
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   MCH_PDU *mch_pduP=NULL;
   //  uint8_t sync_area=255;
 #endif
@@ -149,7 +149,7 @@ void pmch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
   generate_pilots_slot (eNB, eNB->common_vars.txdataF, AMP, subframe << 1, 1);
 
 
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   // if mcch is active, send regardless of the node type: eNB or RN
   // when mcch is active, MAC sched does not allow MCCH and MTCH multiplexing
   /*
@@ -232,6 +232,9 @@ void common_signal_procedures (PHY_VARS_eNB *eNB,int frame, int subframe) {
       if (eNB->pbch_configured!=1) return;
       eNB->pbch_configured=0;
     }
+    T(T_ENB_PHY_MIB, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe),
+      T_BUFFER(pbch_pdu, 3));
+
     generate_pbch (&eNB->pbch, txdataF, AMP, fp, pbch_pdu, frame & 3);
 
   } else if ((subframe == 1) && (fp->frame_type == TDD)) {
@@ -417,7 +420,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   int16_t UE_id=0;
   uint8_t num_pdcch_symbols=0;
   uint8_t num_dci=0;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uint8_t         num_mdci = 0;
 #endif
   uint8_t ul_subframe;
@@ -432,7 +435,8 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+(eNB->CC_id),1);
   if (do_meas==1) start_meas(&eNB->phy_proc_tx);
-  
+  if (do_meas==1) start_meas(&eNB->dlsch_common_and_dci);
+
   // clear the transmit data array for the current subframe
   for (aa = 0; aa < fp->nb_antenna_ports_eNB; aa++) {
     memset (&eNB->common_vars.txdataF[aa][subframe * fp->ofdm_symbol_size * (fp->symbols_per_tti)], 0, fp->ofdm_symbol_size * (fp->symbols_per_tti) * sizeof (int32_t));
@@ -468,7 +472,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   //    (subframe_select(fp,ul_subframe)==SF_UL)) { // This means that there is a potential UL subframe that will be scheduled here
   if (ul_subframe < 10) { // This means that there is a potential UL subframe that will be scheduled here
     for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
       if (eNB->ulsch[i] && eNB->ulsch[i]->ue_type >0) harq_pid = 0;
       else 
 #endif
@@ -526,7 +530,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 		     eNB->common_vars.txdataF,
 		     subframe);
     
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     num_mdci = eNB->mpdcch_vars[subframe &1].num_dci;
     if (num_mdci > 0) {
       LOG_I (PHY, "[eNB %" PRIu8 "] Frame %d, subframe %d: Calling generate_mdci_top (mpdcch) (num_dci %" PRIu8 ")\n", eNB->Mod_id, frame, subframe, num_mdci);
@@ -536,8 +540,11 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
     }
 #endif
   }
-  
-  
+
+  if (do_meas==1) stop_meas(&eNB->dlsch_common_and_dci);
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,0);
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,1);
   // Now scan UE specific DLSCH
   LTE_eNB_DLSCH_t *dlsch0,*dlsch1;
@@ -839,7 +846,7 @@ void uci_procedures (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc) {
 	    metric[0] = rx_pucch (eNB, pucch_format1b, i, uci->n_pucch_1_0_sr[0], 0,    //n2_pucch
 				  uci->srs_active,      // shortened format
 				  pucch_b0b1[0], frame, subframe, PUCCH1a_THRES
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 				  ,uci->ue_type
 #endif
 				  );
@@ -853,7 +860,7 @@ void uci_procedures (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc) {
 	      metric[res] = rx_pucch (eNB, uci->pucch_fmt, i, uci->n_pucch_1[res][0], 0,        // n2_pucch
 				      uci->srs_active,  // shortened format
 				      pucch_b0b1[res], frame, subframe, PUCCH1a_THRES
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 				      ,uci->ue_type
 #endif		  
 				      );
@@ -868,7 +875,7 @@ void uci_procedures (PHY_VARS_eNB * eNB, eNB_rxtx_proc_t * proc) {
 				     frame,
 				     subframe,
 				     PUCCH1a_THRES,
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 				     ,uci->ue_type
 #endif		  
 				     );
@@ -1471,7 +1478,7 @@ void fill_rx_indication(PHY_VARS_eNB *eNB,int UE_id,int frame,int subframe) {
   
   uint32_t        harq_pid;
   
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   if (eNB->ulsch[UE_id]->ue_type > 0) harq_pid = 0;
   else
 #endif

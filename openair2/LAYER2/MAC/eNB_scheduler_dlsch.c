@@ -426,7 +426,7 @@ schedule_dlsch(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP, in
 //------------------------------------------------------------------------------
 
 void  getRepetition(UE_TEMPLATE * pue_template,unsigned int *maxRep , unsigned int *narrowBandindex){
-    EPDCCH_SetConfig_r11_t *epdcch_setconfig_r11;
+    LTE_EPDCCH_SetConfig_r11_t *epdcch_setconfig_r11;
 
     AssertFatal(pue_template->physicalConfigDedicated !=NULL, "no RRC physical configuration for this UE ") ;
     AssertFatal(pue_template->physicalConfigDedicated->ext4 !=NULL, "no RRC physical configuration for this UE ") ;
@@ -1962,7 +1962,7 @@ schedule_ue_spec(module_id_t module_idP, int slice_idxP,
 	if (TBS - ta_len - header_length_total - sdu_length_total - 3 > 0) {
 	  rlc_status = mac_rlc_status_ind(module_idP, rnti, module_idP, frameP, subframeP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH,
                                           TBS - ta_len - header_length_total - sdu_length_total - 3
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                                     ,0, 0
 #endif
                           );
@@ -1977,7 +1977,7 @@ schedule_ue_spec(module_id_t module_idP, int slice_idxP,
 	    sdu_lengths[0] = mac_rlc_data_req(module_idP, rnti, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH,
                                               TBS, //not used
 					      (char *)&dlsch_buffer[0]
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                           ,0, 0
 #endif
                           );
@@ -2071,7 +2071,7 @@ schedule_ue_spec(module_id_t module_idP, int slice_idxP,
 	if (TBS - ta_len - header_length_total - sdu_length_total - 3 > 0) {
 	  rlc_status = mac_rlc_status_ind(module_idP, rnti, module_idP, frameP, subframeP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH + 1,
                                           TBS - ta_len - header_length_total - sdu_length_total - 3
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                                     ,0, 0
 #endif
                                          );
@@ -2087,7 +2087,7 @@ schedule_ue_spec(module_id_t module_idP, int slice_idxP,
 	    sdu_lengths[num_sdus] += mac_rlc_data_req(module_idP, rnti, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, DCCH + 1,
                                                       TBS, //not used
 						      (char *)&dlsch_buffer[sdu_length_total]
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                           ,0, 0
 #endif
 	    );
@@ -2142,7 +2142,7 @@ schedule_ue_spec(module_id_t module_idP, int slice_idxP,
 					    MBMS_FLAG_NO,
 					    lcid,
 					    TBS - ta_len - header_length_total - sdu_length_total - 3
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                                     ,0, 0
 #endif
                                            );
@@ -2160,7 +2160,7 @@ schedule_ue_spec(module_id_t module_idP, int slice_idxP,
 	      sdu_lengths[num_sdus] = mac_rlc_data_req(module_idP, rnti, module_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, lcid,
                                                        TBS, //not used
 						       (char *)&dlsch_buffer[sdu_length_total]
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                           ,0, 0
 #endif
 	      );
@@ -2704,7 +2704,7 @@ void dlsch_scheduler_qos_multiplexing(module_id_t Mod_id, int frameP, sub_frame_
 }
 
 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 //------------------------------------------------------------------------------
 void
 schedule_ue_spec_br(
@@ -2739,11 +2739,11 @@ schedule_ue_spec_br(
   nfapi_dl_config_request_body_t *dl_req;
   nfapi_ul_config_request_body_t *ul_req;
 
-  struct PRACH_ConfigSIB_v1310 *ext4_prach;
-  struct PUCCH_ConfigCommon_v1310 *ext4_pucch;
-  PRACH_ParametersListCE_r13_t *prach_ParametersListCE_r13;
-  struct N1PUCCH_AN_InfoList_r13 *pucch_N1PUCCH_AN_InfoList_r13;
-  PRACH_ParametersCE_r13_t *p[4] = { NULL, NULL, NULL, NULL };
+  struct LTE_PRACH_ConfigSIB_v1310 *ext4_prach;
+  struct LTE_PUCCH_ConfigCommon_v1310 *ext4_pucch;
+  LTE_PRACH_ParametersListCE_r13_t *prach_ParametersListCE_r13;
+  struct LTE_N1PUCCH_AN_InfoList_r13 *pucch_N1PUCCH_AN_InfoList_r13;
+  LTE_PRACH_ParametersCE_r13_t *p[4] = { NULL, NULL, NULL, NULL };
   int             pucchreps[4] = { 1, 1, 1, 1 };
   int             n1pucchan[4] = { 0, 0, 0, 0 }; 
   uint32_t        ackNAK_absSF;
@@ -2818,12 +2818,12 @@ schedule_ue_spec_br(
 		 "UE_template->physicalConfigDedicated->ext4 is null\n");
     AssertFatal (UE_template->physicalConfigDedicated->ext4->epdcch_Config_r11 != NULL, 
 		 "UE_template->physicalConfigDedicated->ext4->epdcch_Config_r11 is null\n");
-    AssertFatal (UE_template->physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.present == EPDCCH_Config_r11__config_r11_PR_setup, 
+    AssertFatal (UE_template->physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.present == LTE_EPDCCH_Config_r11__config_r11_PR_setup, 
 		 "UE_template->physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.present != setup\n");
     AssertFatal (UE_template->physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11 != NULL,
 		 "UE_template->physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11 = NULL\n");
 
-    EPDCCH_SetConfig_r11_t *epdcch_setconfig_r11 = UE_template->physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11->list.array[0];
+    LTE_EPDCCH_SetConfig_r11_t *epdcch_setconfig_r11 = UE_template->physicalConfigDedicated->ext4->epdcch_Config_r11->config_r11.choice.setup.setConfigToAddModList_r11->list.array[0];
 
     AssertFatal(epdcch_setconfig_r11 != NULL, "epdcch_setconfig_r11 is null\n");
     AssertFatal(epdcch_setconfig_r11->ext2!=NULL, "epdcch_setconfig_r11->ext2 is null\n");
@@ -2831,11 +2831,11 @@ schedule_ue_spec_br(
 		"epdcch_setconfig_r11->ext2->mpdcch_config_r13 is null");
     AssertFatal(epdcch_setconfig_r11->ext2->mpdcch_config_r13!=NULL,
 		"epdcch_setconfig_r11->ext2->mpdcch_config_r13 is null");
-    AssertFatal(epdcch_setconfig_r11->ext2->mpdcch_config_r13->present==EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13_PR_setup, 
+    AssertFatal(epdcch_setconfig_r11->ext2->mpdcch_config_r13->present==LTE_EPDCCH_SetConfig_r11__ext2__mpdcch_config_r13_PR_setup, 
 		"epdcch_setconfig_r11->ext2->mpdcch_config_r13->present is not setup\n");
     AssertFatal(epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310!=NULL,
 		"epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310 is null");
-    AssertFatal(epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310->present==EPDCCH_SetConfig_r11__ext2__numberPRB_Pairs_v1310_PR_setup, 
+    AssertFatal(epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310->present==LTE_EPDCCH_SetConfig_r11__ext2__numberPRB_Pairs_v1310_PR_setup, 
 		"epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310->present is not setup\n");
            
 
@@ -2877,9 +2877,7 @@ schedule_ue_spec_br(
 					  MBMS_FLAG_NO,
 					  DCCH,
 					  (TBS-ta_len-header_len_dcch)
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 					  ,0, 0
-#endif
 					  ); // transport block set size
 
           sdu_lengths[0]=0;
@@ -2897,9 +2895,7 @@ schedule_ue_spec_br(
 					      DCCH,
 					      TBS, //not used
 					      (char *)&dlsch_buffer[0]
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-						,0, 0
-#endif
+					      ,0, 0
 );
 
             T(T_ENB_MAC_UE_DL_SDU, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP), T_INT(subframeP),
@@ -2929,10 +2925,7 @@ schedule_ue_spec_br(
 					  MBMS_FLAG_NO,
 					  DCCH+1,
 					  (TBS-ta_len-header_len_dcch-sdu_length_total)
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-					  ,0, 0
-#endif
-); // transport block set size less allocations for timing advance and
+					  ,0, 0); // transport block set size less allocations for timing advance and
           // DCCH SDU
 	  sdu_lengths[num_sdus] = 0;
 	  
@@ -2949,10 +2942,8 @@ schedule_ue_spec_br(
 						      DCCH+1,
 						      TBS, //not used
 						      (char *)&dlsch_buffer[sdu_length_total]
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 						      ,0, 0
-#endif
-);
+						      );
 	    
             T(T_ENB_MAC_UE_DL_SDU, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP), T_INT(subframeP),
               T_INT(harq_pid), T_INT(DCCH+1), T_INT(sdu_lengths[num_sdus]));
@@ -2989,10 +2980,7 @@ schedule_ue_spec_br(
 					    MBMS_FLAG_NO,
 					    lcid,
 					    TBS-ta_len-header_len_dcch-sdu_length_total-header_len_dtch
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-					    ,0, 0
-#endif
-					    );
+					    ,0, 0);
 	    
 
 	    if (rlc_status.bytes_in_buffer > 0) {
@@ -3008,10 +2996,7 @@ schedule_ue_spec_br(
 						       lcid,
 						       TBS,	//not used
 						       (char*)&dlsch_buffer[sdu_length_total]
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-						       ,0, 0
-#endif
-						       );
+						       ,0, 0);
 	      T(T_ENB_MAC_UE_DL_SDU, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP), T_INT(subframeP),
               T_INT(harq_pid), T_INT(lcid), T_INT(sdu_lengths[num_sdus]));
 
@@ -3820,12 +3805,11 @@ void schedule_PCH(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 	  // dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.bf_vector                    = ;
 
 	// Rel10 fields
-
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel10.pdsch_start                           = 3;
 #endif
 	// Rel13 fields
-#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.ue_type                               = 0; // regular UE
 	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.pdsch_payload_type                    = 2; // not BR
 	dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.initial_transmission_sf_io            = 0xFFFF;

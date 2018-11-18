@@ -127,7 +127,7 @@ void phy_procedures_eNB_S_RX(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc);
   @param phy_vars_eNB Pointer to eNB variables on which to act
   @param br_flag indicator for eMTC PRACH
 */
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 void prach_procedures(PHY_VARS_eNB *eNB,
 		      int br_flag);
 #else

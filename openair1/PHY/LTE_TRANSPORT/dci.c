@@ -117,7 +117,6 @@ uint8_t *generate_dci0(uint8_t *dci,
 
   uint8_t dci_flip[8];
 
-
   #ifdef DEBUG_DCI_ENCODING
   for (int i=0;i<1+((DCI_LENGTH+16)/8);i++)
     printf("i %d : %x\n",i,dci[i]);

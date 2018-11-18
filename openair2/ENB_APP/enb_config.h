@@ -41,10 +41,10 @@
 #include "PHY/defs_eNB.h"
 #include "s1ap_messages_types.h"
 #ifdef CMAKER
-#include "SystemInformationBlockType2.h"
+#include "LTE_SystemInformationBlockType2.h"
 #include "rrc_messages_types.h"
 #else
-#include "RRC/LTE/MESSAGES/SystemInformationBlockType2.h"
+#include "RRC/LTE/MESSAGES/LTE_SystemInformationBlockType2.h"
 #endif
 #include "RRC/LTE/rrc_defs.h"
 #include <intertask_interface.h>

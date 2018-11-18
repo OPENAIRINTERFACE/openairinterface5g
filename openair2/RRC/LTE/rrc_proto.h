@@ -106,7 +106,7 @@ rrc_ue_decode_dcch(
   const uint8_t                eNB_indexP
 );
 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 int decode_SL_Discovery_Message(
   const protocol_ctxt_t* const ctxt_pP,
   const uint8_t                eNB_index,
@@ -130,7 +130,7 @@ rrc_ue_generate_RRCConnectionRequest(
 void
 rrc_ue_process_rrcConnectionReconfiguration(
   const protocol_ctxt_t* const       ctxt_pP,
-  RRCConnectionReconfiguration_t* rrcConnectionReconfiguration,
+  LTE_RRCConnectionReconfiguration_t* rrcConnectionReconfiguration,
   uint8_t eNB_index
 );
 
@@ -140,7 +140,7 @@ rrc_ue_process_rrcConnectionReconfiguration(
     \param eNB_index Index of corresponding eNB/CH
     \param SRB_config Pointer to SRB_ToAddMod IE from configuration
     @returns 0 on success*/
-int32_t  rrc_ue_establish_srb1(module_id_t module_idP,frame_t frameP,uint8_t eNB_index,struct SRB_ToAddMod *SRB_config);
+int32_t  rrc_ue_establish_srb1(module_id_t module_idP,frame_t frameP,uint8_t eNB_index,struct LTE_SRB_ToAddMod *SRB_config);
 
 /** \brief Establish SRB2 based on configuration in SRB_ToAddMod structure.  Configures RLC/PDCP accordingly
     \param module_idP Instance ID of UE
@@ -148,14 +148,14 @@ int32_t  rrc_ue_establish_srb1(module_id_t module_idP,frame_t frameP,uint8_t eNB
     \param eNB_index Index of corresponding eNB/CH
     \param SRB_config Pointer to SRB_ToAddMod IE from configuration
     @returns 0 on success*/
-int32_t  rrc_ue_establish_srb2(module_id_t module_idP,frame_t frameP, uint8_t eNB_index,struct SRB_ToAddMod *SRB_config);
+int32_t  rrc_ue_establish_srb2(module_id_t module_idP,frame_t frameP, uint8_t eNB_index,struct LTE_SRB_ToAddMod *SRB_config);
 
 /** \brief Establish a DRB according to DRB_ToAddMod structure
     \param module_idP Instance ID of UE
     \param eNB_index Index of corresponding CH/eNB
     \param DRB_config Pointer to DRB_ToAddMod IE from configuration
     @returns 0 on success */
-int32_t  rrc_ue_establish_drb(module_id_t module_idP,frame_t frameP,uint8_t eNB_index,struct DRB_ToAddMod *DRB_config);
+int32_t  rrc_ue_establish_drb(module_id_t module_idP,frame_t frameP,uint8_t eNB_index,struct LTE_DRB_ToAddMod *DRB_config);
 
 /** \brief Process MobilityControlInfo Message to proceed with handover and configure PHY/MAC
     \param ctxt_pP Running context
@@ -166,7 +166,7 @@ void
 rrc_ue_process_mobilityControlInfo(
   const protocol_ctxt_t* const       ctxt_pP,
   const uint8_t                      eNB_index,
-  struct MobilityControlInfo* const mobilityControlInfo
+  struct LTE_MobilityControlInfo* const mobilityControlInfo
 );
 
 /** \brief Process a measConfig Message and configure PHY/MAC
@@ -177,7 +177,7 @@ void
 rrc_ue_process_measConfig(
   const protocol_ctxt_t* const       ctxt_pP,
   const uint8_t                      eNB_index,
-  MeasConfig_t* const               measConfig
+  LTE_MeasConfig_t* const               measConfig
 );
 
 /** \brief Process a RadioResourceConfigDedicated Message and configure PHY/MAC
@@ -187,7 +187,7 @@ rrc_ue_process_measConfig(
 void rrc_ue_process_radioResourceConfigDedicated(
   const protocol_ctxt_t* const ctxt_pP,
   uint8_t eNB_index,
-  RadioResourceConfigDedicated_t *radioResourceConfigDedicated);
+  LTE_RadioResourceConfigDedicated_t *radioResourceConfigDedicated);
 
 
 /** \brief Process a RadioResourceConfig and configure PHY/MAC for SL communication/discovery
@@ -200,10 +200,10 @@ void rrc_ue_process_radioResourceConfigDedicated(
 void rrc_ue_process_sidelink_radioResourceConfig(
   module_id_t Mod_idP,
   uint8_t eNB_index,
-  SystemInformationBlockType18_r12_t     *sib18,
-  SystemInformationBlockType19_r12_t     *sib19,
-  SL_CommConfig_r12_t* sl_CommConfig,
-  SL_DiscConfig_r12_t* sl_DiscConfig);
+  LTE_SystemInformationBlockType18_r12_t     *sib18,
+  LTE_SystemInformationBlockType19_r12_t     *sib19,
+  LTE_SL_CommConfig_r12_t* sl_CommConfig,
+  LTE_SL_DiscConfig_r12_t* sl_DiscConfig);
 
 /** \brief Init control socket to listen to incoming packets from ProSe App
  *
@@ -269,7 +269,7 @@ void
 rrc_eNB_process_RRCConnectionSetupComplete(
   const protocol_ctxt_t* const ctxt_pP,
   rrc_eNB_ue_context_t*        ue_context_pP,
-  RRCConnectionSetupComplete_r8_IEs_t* rrcConnectionSetupComplete
+  LTE_RRCConnectionSetupComplete_r8_IEs_t* rrcConnectionSetupComplete
 );
 
 /**\brief Process the RRCConnectionReconfigurationComplete based on information coming from UE
@@ -370,7 +370,7 @@ int
 rrc_eNB_generate_RRCConnectionReconfiguration_Sidelink(
       const protocol_ctxt_t* const ctxt_pP,
       rrc_eNB_ue_context_t*           const ue_context_pP,
-      SL_DestinationInfoList_r12_t  *destinationInfoList,
+      LTE_SL_DestinationInfoList_r12_t  *destinationInfoList,
       int n_discoveryMessages
 );
 
@@ -381,24 +381,24 @@ uint8_t
 rrc_eNB_process_SidelinkUEInformation(
       const protocol_ctxt_t* const ctxt_pP,
       rrc_eNB_ue_context_t*         ue_context_pP,
-      SidelinkUEInformation_r12_t*  sidelinkUEInformation
+      LTE_SidelinkUEInformation_r12_t*  sidelinkUEInformation
 );
 
 /** \brief Get a Resource Pool to transmit SL communication
     \param ctxt_pP Running context
     \param ue_context_pP UE context
     \param destinationInfoList Pointer to the list of SL destinations*/
-SL_CommConfig_r12_t rrc_eNB_get_sidelink_commTXPool(
+LTE_SL_CommConfig_r12_t rrc_eNB_get_sidelink_commTXPool(
       const protocol_ctxt_t* const ctxt_pP,
       rrc_eNB_ue_context_t* const ue_context_pP,
-      SL_DestinationInfoList_r12_t  *destinationInfoList
+      LTE_SL_DestinationInfoList_r12_t  *destinationInfoList
 );
 
 /** \brief Get a Resource Pool for Discovery
     \param ctxt_pP Running context
     \param ue_context_pP UE context
     \param n_discoveryMessages Number of discovery messages*/
-SL_DiscConfig_r12_t rrc_eNB_get_sidelink_discTXPool(
+LTE_SL_DiscConfig_r12_t rrc_eNB_get_sidelink_discTXPool(
       const protocol_ctxt_t* const ctxt_pP,
       rrc_eNB_ue_context_t* const ue_context_pP,
       int n_discoveryMessages
@@ -432,7 +432,7 @@ mac_rrc_data_ind(
   const uint8_t*        sduP,
   const sdu_size_t      sdu_lenP,
   const uint8_t         mbsfn_sync_areaP
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   , const boolean_t		brOption
 #endif
 );
@@ -575,14 +575,14 @@ void
 rrc_eNB_process_MeasurementReport(
   const protocol_ctxt_t* const ctxt_pP,
   rrc_eNB_ue_context_t*        ue_context_pP,
-  const MeasResults_t*   const measResults2
+  const LTE_MeasResults_t*   const measResults2
 );
 
 void
 rrc_eNB_generate_HandoverPreparationInformation(
   const protocol_ctxt_t* const ctxt_pP,
   rrc_eNB_ue_context_t*          const ue_context_pP,
-  PhysCellId_t targetPhyId
+  LTE_PhysCellId_t targetPhyId
 );
 
 void
