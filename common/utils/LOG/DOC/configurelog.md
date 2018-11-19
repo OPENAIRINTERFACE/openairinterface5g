@@ -44,6 +44,6 @@ Example of using the logging utility APIs can be found, for initialization and c
 Adding a new component is just adding an item in the `comp_name_t` enum defined in [log.h](../log.h) . You must also declare it in the T Tracer facility [message fefinitions](../../T/T_messages.txt).
 To add a flag than can then be used for adding conditional code or memory dumps you have to add the flag definition in the `LOG_MASKMAP_INIT` macro, in [log.h](../log.h). 
 
-[logging facility developer main page](ldevusage.md)  
+[logging facility developer main page](devusage.md)  
 [logging facility  main page](log.md)  
 [oai Wikis home](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/home)
