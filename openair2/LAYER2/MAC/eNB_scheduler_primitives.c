@@ -2272,8 +2272,7 @@ uint8_t get_tmode(module_id_t module_idP, int CC_idP, int UE_idP)
   eNB_MAC_INST *eNB = RC.mac[module_idP];
   COMMON_channels_t *cc = &eNB->common_channels[CC_idP];
 
-  struct LTE_PhysicalConfigDedicated *physicalConfigDedicated =
-    eNB->UE_list.physicalConfigDedicated[CC_idP][UE_idP];
+  struct LTE_PhysicalConfigDedicated *physicalConfigDedicated = &eNB->UE_list.physicalConfigDedicated[CC_idP][UE_idP];
 
   if (physicalConfigDedicated == NULL) {	// RRCConnectionSetup not received by UE yet
     AssertFatal(cc->p_eNB <= 2, "p_eNB is %d, should be <2\n",

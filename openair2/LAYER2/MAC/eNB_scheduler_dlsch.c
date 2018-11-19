@@ -2743,7 +2743,6 @@ schedule_ue_spec_br(
   struct LTE_PUCCH_ConfigCommon_v1310 *ext4_pucch;
   LTE_PRACH_ParametersListCE_r13_t *prach_ParametersListCE_r13;
   struct LTE_N1PUCCH_AN_InfoList_r13 *pucch_N1PUCCH_AN_InfoList_r13;
-  LTE_PRACH_ParametersCE_r13_t *p[4] = { NULL, NULL, NULL, NULL };
   int             pucchreps[4] = { 1, 1, 1, 1 };
   int             n1pucchan[4] = { 0, 0, 0, 0 }; 
   uint32_t        ackNAK_absSF;
@@ -2769,23 +2768,19 @@ schedule_ue_spec_br(
 
     switch (prach_ParametersListCE_r13->list.count) {
     case 4:
-      p[3] = prach_ParametersListCE_r13->list.array[3];
       n1pucchan[3] = *pucch_N1PUCCH_AN_InfoList_r13->list.array[3];
       AssertFatal (ext4_pucch->pucch_NumRepetitionCE_Msg4_Level3_r13 != NULL, "pucch_NumRepetitionCE_Msg4_Level3 shouldn't be NULL\n");
       pucchreps[3] = (int) (4 << *ext4_pucch->pucch_NumRepetitionCE_Msg4_Level3_r13);
 
     case 3:
-      p[2] = prach_ParametersListCE_r13->list.array[2];
       n1pucchan[2] = *pucch_N1PUCCH_AN_InfoList_r13->list.array[2];
       AssertFatal (ext4_pucch->pucch_NumRepetitionCE_Msg4_Level2_r13 != NULL, "pucch_NumRepetitionCE_Msg4_Level2 shouldn't be NULL\n");
       pucchreps[2] = (int) (4 << *ext4_pucch->pucch_NumRepetitionCE_Msg4_Level2_r13);
     case 2:
-      p[1] = prach_ParametersListCE_r13->list.array[1];
       n1pucchan[1] = *pucch_N1PUCCH_AN_InfoList_r13->list.array[1];
       AssertFatal (ext4_pucch->pucch_NumRepetitionCE_Msg4_Level1_r13 != NULL, "pucch_NumRepetitionCE_Msg4_Level1 shouldn't be NULL\n");
       pucchreps[1] = (int) (1 << *ext4_pucch->pucch_NumRepetitionCE_Msg4_Level1_r13);
     case 1:
-      p[0] = prach_ParametersListCE_r13->list.array[0];
       n1pucchan[0] = *pucch_N1PUCCH_AN_InfoList_r13->list.array[0];
       AssertFatal (ext4_pucch->pucch_NumRepetitionCE_Msg4_Level0_r13 != NULL, "pucch_NumRepetitionCE_Msg4_Level0 shouldn't be NULL\n");
       pucchreps[0] = (int) (1 << *ext4_pucch->pucch_NumRepetitionCE_Msg4_Level0_r13);
