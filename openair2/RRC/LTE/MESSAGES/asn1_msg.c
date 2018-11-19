@@ -2855,6 +2855,8 @@ do_RRCConnectionSetup(
   //assign_enum(&physicalConfigDedicated2->antennaInfo->choice.explicitValue.transmissionMode,
   //     AntennaInfoDedicated__transmissionMode_tm2);
 
+  LOG_D(RRC,"physicalConfigDedicated2 %p, physicalConfigDedicated2->antennaInfo %p => %d\n",physicalConfigDedicated2,physicalConfigDedicated2->antennaInfo,transmission_mode);
+
   switch (transmission_mode) {
   default:
     LOG_W(RRC,"At RRCConnectionSetup Transmission mode can only take values 1 or 2! Defaulting to 1!\n");

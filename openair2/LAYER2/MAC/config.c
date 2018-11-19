@@ -727,55 +727,54 @@ config_dedicated_scell(int Mod_idP,
 }
 
 
-int
-rrc_mac_config_req_eNB(module_id_t Mod_idP,
-		       int CC_idP,
-		       int physCellId,
-		       int p_eNB,
-		       int Ncp, int eutra_band, uint32_t dl_CarrierFreq,
+int rrc_mac_config_req_eNB(module_id_t Mod_idP,
+			   int CC_idP,
+			   int physCellId,
+			   int p_eNB,
+			   int Ncp, int eutra_band, uint32_t dl_CarrierFreq,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-		       int pbch_repetition,
+			   int pbch_repetition,
 #endif
-		       rnti_t rntiP,
-		       LTE_BCCH_BCH_Message_t * mib,
-		       LTE_RadioResourceConfigCommonSIB_t *
-		       radioResourceConfigCommon,
+			   rnti_t rntiP,
+			   LTE_BCCH_BCH_Message_t * mib,
+			   LTE_RadioResourceConfigCommonSIB_t *
+			   radioResourceConfigCommon,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-		       LTE_RadioResourceConfigCommonSIB_t *
-		       radioResourceConfigCommon_BR,
+			   LTE_RadioResourceConfigCommonSIB_t *
+			   radioResourceConfigCommon_BR,
 #endif
-		       struct LTE_PhysicalConfigDedicated
-		       *physicalConfigDedicated,
+			   struct LTE_PhysicalConfigDedicated
+			   *physicalConfigDedicated,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-		       LTE_SCellToAddMod_r10_t * sCellToAddMod_r10,
-		       //struct LTE_PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
+			   LTE_SCellToAddMod_r10_t * sCellToAddMod_r10,
+			   //struct LTE_PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
-		       LTE_MeasObjectToAddMod_t ** measObj,
-		       LTE_MAC_MainConfig_t * mac_MainConfig,
-		       long logicalChannelIdentity,
-		       LTE_LogicalChannelConfig_t * logicalChannelConfig,
-		       LTE_MeasGapConfig_t * measGapConfig,
-		       LTE_TDD_Config_t * tdd_Config,
-		       LTE_MobilityControlInfo_t * mobilityControlInfo,
-		       LTE_SchedulingInfoList_t * schedulingInfoList,
-		       uint32_t ul_CarrierFreq,
-		       long *ul_Bandwidth,
-		       LTE_AdditionalSpectrumEmission_t *
-		       additionalSpectrumEmission,
-		       struct LTE_MBSFN_SubframeConfigList
-		       *mbsfn_SubframeConfigList
+			   LTE_MeasObjectToAddMod_t ** measObj,
+			   LTE_MAC_MainConfig_t * mac_MainConfig,
+			   long logicalChannelIdentity,
+			   LTE_LogicalChannelConfig_t * logicalChannelConfig,
+			   LTE_MeasGapConfig_t * measGapConfig,
+			   LTE_TDD_Config_t * tdd_Config,
+			   LTE_MobilityControlInfo_t * mobilityControlInfo,
+			   LTE_SchedulingInfoList_t * schedulingInfoList,
+			   uint32_t ul_CarrierFreq,
+			   long *ul_Bandwidth,
+			   LTE_AdditionalSpectrumEmission_t *
+			   additionalSpectrumEmission,
+			   struct LTE_MBSFN_SubframeConfigList
+			   *mbsfn_SubframeConfigList
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-		       , uint8_t MBMS_Flag,
-		       LTE_MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList,
-		       LTE_PMCH_InfoList_r9_t * pmch_InfoList
+			   , uint8_t MBMS_Flag,
+			   LTE_MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList,
+			   LTE_PMCH_InfoList_r9_t * pmch_InfoList
 #endif
 #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-		       ,
-		       LTE_SystemInformationBlockType1_v1310_IEs_t *
-		       sib1_v13ext
+			   ,
+			   LTE_SystemInformationBlockType1_v1310_IEs_t *
+			   sib1_v13ext
 #endif
-                       ) {
-			   
+			   ) {
+  
   int i;
 
   int UE_id = -1;
@@ -897,36 +896,18 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
   if (logicalChannelConfig != NULL) {	// check for eMTC specific things
     UE_id = find_UE_id(Mod_idP, rntiP);
 
-    if (UE_id == -1) {
-      LOG_E(MAC, "%s:%d:%s: ERROR, UE_id == -1\n", __FILE__,
-	    __LINE__, __FUNCTION__);
-    } else {
-		if (logicalChannelConfig) {
-        UE_list->
-          UE_template[CC_idP][UE_id].lcgidmap
-          [logicalChannelIdentity] =
-          *logicalChannelConfig->
-			ul_SpecificParameters->logicalChannelGroup;
-		UE_list->
-          UE_template[CC_idP][UE_id].lcgidpriority
-          [logicalChannelIdentity]=
-			logicalChannelConfig->ul_SpecificParameters->priority;
-
-		} else
-			UE_list->
-				UE_template[CC_idP][UE_id].lcgidmap
-				[logicalChannelIdentity] = 0;
-    }
+    AssertFatal(UE_id>=0,"Configuration received for unknown UE (%x), shouldn't happen\n",rntiP);
+    if (logicalChannelConfig) {
+        UE_list->UE_template[CC_idP][UE_id].lcgidmap[logicalChannelIdentity]      = *logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup;
+	UE_list->UE_template[CC_idP][UE_id].lcgidpriority[logicalChannelIdentity] =  logicalChannelConfig->ul_SpecificParameters->priority;
+    } else UE_list->UE_template[CC_idP][UE_id].lcgidmap[logicalChannelIdentity]   =  0;
   }
-
-
+  
   if (physicalConfigDedicated != NULL) {
     UE_id = find_UE_id(Mod_idP, rntiP);
-
-    if (UE_id == -1)
-      LOG_E(MAC, "%s:%d:%s: ERROR, UE_id == -1\n", __FILE__, __LINE__, __FUNCTION__);
-    else
-      UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated = physicalConfigDedicated;
+    AssertFatal(UE_id>=0,"Configuration received for unknown UE (%x), shouldn't happen\n",rntiP);
+    UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated = physicalConfigDedicated;
+    LOG_I(MAC,"Added physicalConfigDedicated %p for %d.%d\n",physicalConfigDedicated,CC_idP,UE_id);
   }
 
 
@@ -934,27 +915,19 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
 
   if (sCellToAddMod_r10 != NULL) {
     UE_id = find_UE_id(Mod_idP, rntiP);
-    if (UE_id == -1)
-      LOG_E(MAC, "%s:%d:%s: ERROR, UE_id == -1\n", __FILE__,
-	    __LINE__, __FUNCTION__);
-    else
-      config_dedicated_scell(Mod_idP, rntiP, sCellToAddMod_r10);
+    AssertFatal(UE_id>=0,"Configuration received for unknown UE (%x), shouldn't happen\n",rntiP);
+    config_dedicated_scell(Mod_idP, rntiP, sCellToAddMod_r10);
   }
 #endif
-
-
-
 
   if (mbsfn_SubframeConfigList != NULL) {
     LOG_I(MAC,
 	  "[eNB %d][CONFIG] Received %d subframe allocation pattern for MBSFN\n",
 	  Mod_idP, mbsfn_SubframeConfigList->list.count);
-    RC.mac[Mod_idP]->common_channels[0].num_sf_allocation_pattern =
-      mbsfn_SubframeConfigList->list.count;
+    RC.mac[Mod_idP]->common_channels[0].num_sf_allocation_pattern = mbsfn_SubframeConfigList->list.count;
 
     for (i = 0; i < mbsfn_SubframeConfigList->list.count; i++) {
-      RC.mac[Mod_idP]->common_channels[0].mbsfn_SubframeConfig[i] =
-	mbsfn_SubframeConfigList->list.array[i];
+      RC.mac[Mod_idP]->common_channels[0].mbsfn_SubframeConfig[i] = mbsfn_SubframeConfigList->list.array[i];
       LOG_I(MAC,
 	    "[eNB %d][CONFIG] MBSFN_SubframeConfig[%d] pattern is  %x\n",
 	    Mod_idP, i,

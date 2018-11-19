@@ -1070,44 +1070,40 @@ typedef struct {
 } SBMAP_CONF;
 /*! \brief UE list used by eNB to order UEs/CC for scheduling*/
 typedef struct {
-    /// Dedicated information for UEs
-    struct PhysicalConfigDedicated
-	*physicalConfigDedicated[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
-    /// DLSCH pdu
-    DLSCH_PDU DLSCH_pdu[NFAPI_CC_MAX][2][MAX_MOBILES_PER_ENB];
-    /// DCI template and MAC connection parameters for UEs
-    UE_TEMPLATE UE_template[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
-    /// DCI template and MAC connection for RA processes
-    int pCC_id[MAX_MOBILES_PER_ENB];
-    /// sorted downlink component carrier for the scheduler
-    int ordered_CCids[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
-    /// number of downlink active component carrier
-    int numactiveCCs[MAX_MOBILES_PER_ENB];
-    /// sorted uplink component carrier for the scheduler
-    int ordered_ULCCids[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
-    /// number of uplink active component carrier
-    int numactiveULCCs[MAX_MOBILES_PER_ENB];
-    /// number of downlink active component carrier
-    uint8_t dl_CC_bitmap[MAX_MOBILES_PER_ENB];
-    /// eNB to UE statistics
-    eNB_UE_STATS eNB_UE_stats[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
-    /// scheduling control info
-    UE_sched_ctrl UE_sched_ctrl[MAX_MOBILES_PER_ENB];
-    int next[MAX_MOBILES_PER_ENB];
-    int head;
-    int next_ul[MAX_MOBILES_PER_ENB];
-    int head_ul;
-    int avail;
-    int num_UEs;
-    boolean_t active[MAX_MOBILES_PER_ENB];
-
-    /// Sorting criteria for the UE list in the MAC preprocessor
-    uint16_t sorting_criteria[MAX_NUM_SLICES][CR_NUM];
-    uint16_t first_rb_offset[NFAPI_CC_MAX][MAX_NUM_SLICES];
-
-    int assoc_dl_slice_idx[MAX_MOBILES_PER_ENB];
-    int assoc_ul_slice_idx[MAX_MOBILES_PER_ENB];
-
+  DLSCH_PDU DLSCH_pdu[NFAPI_CC_MAX][2][MAX_MOBILES_PER_ENB];
+  /// DCI template and MAC connection parameters for UEs
+  UE_TEMPLATE UE_template[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
+  /// DCI template and MAC connection for RA processes
+  int pCC_id[MAX_MOBILES_PER_ENB];
+  /// sorted downlink component carrier for the scheduler
+  int ordered_CCids[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
+  /// number of downlink active component carrier
+  int numactiveCCs[MAX_MOBILES_PER_ENB];
+  /// sorted uplink component carrier for the scheduler
+  int ordered_ULCCids[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
+  /// number of uplink active component carrier
+  int numactiveULCCs[MAX_MOBILES_PER_ENB];
+  /// number of downlink active component carrier
+  uint8_t dl_CC_bitmap[MAX_MOBILES_PER_ENB];
+  /// eNB to UE statistics
+  eNB_UE_STATS eNB_UE_stats[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
+  /// scheduling control info
+  UE_sched_ctrl UE_sched_ctrl[MAX_MOBILES_PER_ENB];
+  int next[MAX_MOBILES_PER_ENB];
+  int head;
+  int next_ul[MAX_MOBILES_PER_ENB];
+  int head_ul;
+  int avail;
+  int num_UEs;
+  boolean_t active[MAX_MOBILES_PER_ENB];
+  
+  /// Sorting criteria for the UE list in the MAC preprocessor
+  uint16_t sorting_criteria[MAX_NUM_SLICES][CR_NUM];
+  uint16_t first_rb_offset[NFAPI_CC_MAX][MAX_NUM_SLICES];
+  
+  int assoc_dl_slice_idx[MAX_MOBILES_PER_ENB];
+  int assoc_ul_slice_idx[MAX_MOBILES_PER_ENB];
+  
 } UE_list_t;
 
 /*! \brief deleting control information*/

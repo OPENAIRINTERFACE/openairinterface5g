@@ -2272,7 +2272,7 @@ uint8_t get_tmode(module_id_t module_idP, int CC_idP, int UE_idP)
   eNB_MAC_INST *eNB = RC.mac[module_idP];
   COMMON_channels_t *cc = &eNB->common_channels[CC_idP];
 
-  struct LTE_PhysicalConfigDedicated *physicalConfigDedicated = &eNB->UE_list.physicalConfigDedicated[CC_idP][UE_idP];
+  struct LTE_PhysicalConfigDedicated *physicalConfigDedicated = eNB->UE_list.UE_template[CC_idP][UE_idP].physicalConfigDedicated;
 
   if (physicalConfigDedicated == NULL) {	// RRCConnectionSetup not received by UE yet
     AssertFatal(cc->p_eNB <= 2, "p_eNB is %d, should be <2\n",
@@ -2280,8 +2280,8 @@ uint8_t get_tmode(module_id_t module_idP, int CC_idP, int UE_idP)
     return (cc->p_eNB);
   } else {
     AssertFatal(physicalConfigDedicated->antennaInfo != NULL,
-		"antennaInfo is null for CCId %d, UEid %d\n", CC_idP,
-		UE_idP);
+		"antennaInfo (mod_id %d) is null for CCId %d, UEid %d, physicalConfigDedicated %p\n", module_idP,CC_idP,
+		UE_idP,physicalConfigDedicated);
 
     AssertFatal(physicalConfigDedicated->antennaInfo->present !=
 		LTE_PhysicalConfigDedicated__antennaInfo_PR_NOTHING,
@@ -2290,7 +2290,7 @@ uint8_t get_tmode(module_id_t module_idP, int CC_idP, int UE_idP)
 
     if (physicalConfigDedicated->antennaInfo->present ==
 	LTE_PhysicalConfigDedicated__antennaInfo_PR_explicitValue) {
-      return (physicalConfigDedicated->antennaInfo->
+      return (1+physicalConfigDedicated->antennaInfo->
 	      choice.explicitValue.transmissionMode);
     } else if (physicalConfigDedicated->antennaInfo->present ==
 	       LTE_PhysicalConfigDedicated__antennaInfo_PR_defaultValue) {

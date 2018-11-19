@@ -1704,7 +1704,7 @@ schedule_ue_spec(module_id_t module_idP, int slice_idxP,
                                           format2A);
             break;
           default:
-            LOG_W(MAC, "Unsupported transmission mode %d\n", get_tmode(module_idP, CC_id, UE_id));
+            AssertFatal(1==0,"Unsupported transmission mode %d\n", get_tmode(module_idP, CC_id, UE_id));
             aggregation = 2;
         }
       }
