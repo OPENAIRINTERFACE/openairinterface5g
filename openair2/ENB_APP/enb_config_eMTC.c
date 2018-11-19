@@ -34,7 +34,7 @@
 #include "assertions.h"
 #include "enb_config.h"
 #include "intertask_interface.h"
-#include "SystemInformationBlockType2.h"
+#include "LTE_SystemInformationBlockType2.h"
 #include "common/config/config_userapi.h"
 #include "RRC_config_tools.h"
 #include "enb_paramdef.h"
