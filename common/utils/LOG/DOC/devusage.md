@@ -6,6 +6,7 @@ The logging facility objectives are
 Most developpers will only use the log macros to add console messages to the code. The logging facility also provides an api that is used for initialization and configuration. 
 
 [Adding console traces in oaicode](addconsoletrace.md) 
+
 [Configuring the logging facility](configurelog.md) 
 
 
