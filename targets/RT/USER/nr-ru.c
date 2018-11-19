@@ -118,6 +118,9 @@ extern void  nr_phy_init_RU(RU_t*);
 extern void  nr_phy_free_RU(RU_t*);
 extern void  nr_phy_config_request(NR_PHY_Config_t *gNB);
 
+extern PARALLEL_CONF_t get_thread_parallel_conf(void);
+extern WORKER_CONF_t   get_thread_worker_conf(void);
+
 void init_RU(char*);
 void stop_RU(int nb_ru);
 void do_ru_sync(RU_t *ru);
@@ -768,8 +771,6 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   if (ru == RC.ru[0]) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_RU, proc->frame_rx );
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_RU, proc->subframe_rx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, proc->subframe_tx );
   }
   
   if (proc->first_rx == 0) {
@@ -841,6 +842,8 @@ void tx_rf(RU_t *ru) {
       flags = 4; // start of burst and end of burst (only one DL SF between two UL)
       sf_extension = ru->N_TA_offset<<1;
     } */
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, proc->subframe_tx );
 
     for (i=0; i<ru->nb_tx; i++)
       txp[i] = (void*)&ru->common.txdata[i][(proc->subframe_tx*fp->samples_per_subframe)-sf_extension];
@@ -874,7 +877,7 @@ void tx_rf(RU_t *ru) {
 /*!
  * \brief The Asynchronous RX/TX FH thread of RAU/RCC/gNB/RRU.
  * This handles the RX FH for an asynchronous RRU/UE
- * \param param is a \ref gNB_proc_t structure which contains the info what to process.
+ * \param param is a \ref gNB_L1_proc_t structure which contains the info what to process.
  * \returns a pointer to an int. The storage is not on the heap and must not be freed.
  */
 static void* ru_thread_asynch_rxtx( void* param ) {
@@ -1131,14 +1134,14 @@ void do_ru_synch(RU_t *ru) {
 
 
 
-void wakeup_gNBs(RU_t *ru) {
+void wakeup_gNB_L1s(RU_t *ru) {
 
   int i;
   PHY_VARS_gNB **gNB_list = ru->gNB_list;
 
-  LOG_D(PHY,"wakeup_gNBs (num %d) for RU %d ru->gNB_top:%p\n",ru->num_gNB,ru->idx, ru->gNB_top);
+  LOG_D(PHY,"wakeup_gNB_L1s (num %d) for RU %d ru->gNB_top:%p\n",ru->num_gNB,ru->idx, ru->gNB_top);
 
-  if (ru->num_gNB==1 && ru->gNB_top!=0) {
+  if (ru->num_gNB==1 && ru->gNB_top!=0 && get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD) {
     // call gNB function directly
 
     char string[20];
@@ -1153,7 +1156,6 @@ void wakeup_gNBs(RU_t *ru) {
     for (i=0;i<ru->num_gNB;i++)
     {
       LOG_D(PHY,"ru->wakeup_rxtx:%p\n", ru->nr_wakeup_rxtx);
-
       if (ru->nr_wakeup_rxtx!=0 && ru->nr_wakeup_rxtx(gNB_list[i],ru) < 0)
       {
 	LOG_E(PHY,"could not wakeup gNB rxtx process for subframe %d\n", ru->proc.subframe_rx);
@@ -1378,6 +1380,120 @@ static void* ru_stats_thread(void* param) {
   return(NULL);
 }
 
+static void* ru_thread_tx( void* param ) {
+  RU_t *ru              = (RU_t*)param;
+  RU_proc_t *proc       = &ru->proc;
+  PHY_VARS_gNB *gNB;
+  gNB_L1_proc_t *gNB_proc;
+  gNB_L1_rxtx_proc_t *L1_proc;
+  NR_DL_FRAME_PARMS *fp      = ru->nr_frame_parms;
+  char               filename[40];
+  int                print_frame = 2;
+  int                i = 0;
+
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+
+
+  thread_top_init("ru_thread_tx",1,400000,500000,500000);
+
+  //CPU_SET(5, &cpuset);
+  //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  //wait_sync("ru_thread_tx");
+
+  wait_on_condition(&proc->mutex_FH1,&proc->cond_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
+  
+
+  printf( "ru_thread_tx ready\n");
+  while (!oai_exit) { 
+ 
+    if (oai_exit) break;   
+
+
+	LOG_I(PHY,"ru_thread_tx: Waiting for TX processing\n");
+	// wait until eNBs are finished subframe RX n and TX n+4
+    wait_on_condition(&proc->mutex_gNBs,&proc->cond_gNBs,&proc->instance_cnt_gNBs,"ru_thread_tx");
+    if (oai_exit) break;
+  	       
+//printf("~~~~~~~~~~~~~~~~start process for ru_thread_tx %d.%d\n", proc->frame_tx, proc->subframe_tx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, proc->subframe_tx );
+    // do TX front-end processing if needed (precoding and/or IDFTs)
+    if (ru->feptx_prec) ru->feptx_prec(ru);
+  	  
+    // do OFDM if needed
+    if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
+    if(!emulate_rf){    
+      // do outgoing fronthaul (south) if needed
+      if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
+  	      
+      if (ru->fh_north_out) ru->fh_north_out(ru);
+    }
+    else
+    {
+      if(proc->frame_tx == print_frame)
+      {
+        for (i=0; i<ru->nb_tx; i++)
+        {
+          sprintf(filename,"tx%ddataF_frame%d_sf%d.m", i, print_frame, proc->subframe_tx);
+          LOG_M(filename,"txdataF_frame",&ru->common.txdataF_BF[i][0],fp->samples_per_subframe_wCP, 1, 1);
+          if(proc->subframe_tx == 9)
+          {
+            sprintf(filename,"tx%ddata_frame%d.m", i, print_frame);
+            LOG_M(filename,"txdata_frame",&ru->common.txdata[i][0],fp->samples_per_frame, 1, 1);
+            sprintf(filename,"tx%ddata_frame%d.dat", i, print_frame);
+            FILE *output_fd = fopen(filename,"w");
+            if (output_fd) {
+	      fwrite(&ru->common.txdata[i][0],
+                     sizeof(int32_t),
+                     fp->samples_per_frame,
+                     output_fd);
+                     fclose(output_fd);
+            }
+	    else {
+	      LOG_E(PHY,"Cannot write to file %s\n",filename);
+	    }
+          }//if(proc->subframe_tx == 9)
+        }//for (i=0; i<ru->nb_tx; i++)
+      }//if(proc->frame_tx == print_frame)
+    }//else  emulate_rf
+    release_thread(&proc->mutex_gNBs,&proc->instance_cnt_gNBs,"ru_thread_tx");
+    for(i = 0; i<ru->num_gNB; i++)
+    {
+      gNB       = ru->gNB_list[i];
+      gNB_proc  = &gNB->proc;
+      L1_proc   = (get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)? &gNB_proc->L1_proc_tx : &gNB_proc->L1_proc;
+      pthread_mutex_lock(&gNB_proc->mutex_RU_tx);
+      for (int j=0;j<gNB->num_RU;j++) {
+        if (ru == gNB->RU_list[j]) {
+          if ((gNB_proc->RU_mask_tx&(1<<j)) > 0)
+            LOG_E(PHY,"eNB %d frame %d, subframe %d : previous information from RU tx %d (num_RU %d,mask %x) has not been served yet!\n",
+	      gNB->Mod_id,gNB_proc->frame_rx,gNB_proc->subframe_rx,ru->idx,gNB->num_RU,gNB_proc->RU_mask_tx);
+          gNB_proc->RU_mask_tx |= (1<<j);
+        }
+      }
+      if (gNB_proc->RU_mask_tx != (1<<gNB->num_RU)-1) {  // not all RUs have provided their information so return
+        pthread_mutex_unlock(&gNB_proc->mutex_RU_tx);
+      }
+      else { // all RUs TX are finished so send the ready signal to eNB processing
+        gNB_proc->RU_mask_tx = 0;
+        pthread_mutex_unlock(&gNB_proc->mutex_RU_tx);
+
+        pthread_mutex_lock( &L1_proc->mutex_RUs);
+        L1_proc->instance_cnt_RUs = 0;
+        // the thread can now be woken up
+        if (pthread_cond_signal(&L1_proc->cond_RUs) != 0) {
+          LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
+          exit_fun( "ERROR pthread_cond_signal" );
+        }
+        pthread_mutex_unlock( &L1_proc->mutex_RUs );
+      }
+    }
+  }
+  release_thread(&proc->mutex_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
+  return 0;
+}
+
 static void* ru_thread( void* param ) {
 
   static int ru_thread_status;
@@ -1468,6 +1584,10 @@ static void* ru_thread( void* param ) {
     if ((ru->is_slave) && (ru->if_south == LOCAL_RF)) do_ru_synch(ru);
   }
 
+  pthread_mutex_lock(&proc->mutex_FH1);
+  proc->instance_cnt_FH1 = 0;
+  pthread_mutex_unlock(&proc->mutex_FH1);
+  pthread_cond_signal(&proc->cond_FH1);
 
   // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
   while (!oai_exit) {
@@ -1503,6 +1623,7 @@ static void* ru_thread( void* param ) {
     }*/
 
     // adjust for timing offset between RU
+//printf("~~~~~~~~~~~~~~~~~~~~~~~~~~%d.%d in ru_thread is in process\n", proc->frame_rx, proc->subframe_rx);
     if (ru->idx!=0) proc->frame_tx = (proc->frame_tx+proc->frame_offset)&1023;
 
 
@@ -1514,53 +1635,52 @@ static void* ru_thread( void* param ) {
     wakeup_slaves(proc);
 
     // wakeup all gNB processes waiting for this RU
-    if (ru->num_gNB>0) wakeup_gNBs(ru);
+    if (ru->num_gNB>0) wakeup_gNB_L1s(ru);
 
-    // wait until gNBs are finished subframe RX n and TX n+sf_ahead
-    wait_on_condition(&proc->mutex_gNBs,&proc->cond_gNBs,&proc->instance_cnt_gNBs,"ru_thread");
-
-
-    // do TX front-end processing if needed (precoding and/or IDFTs)
-    if (ru->feptx_prec) ru->feptx_prec(ru);
+    if(get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD && ru->num_eNB==0)
+    {
+      // do TX front-end processing if needed (precoding and/or IDFTs)
+      if (ru->feptx_prec) ru->feptx_prec(ru);
    
-    // do OFDM if needed
-    if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
-    if(!emulate_rf)
-    {
-      // do outgoing fronthaul (south) if needed
-      if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
-  
-      if (ru->fh_north_out) ru->fh_north_out(ru);
-    }
-    else
-    {
-      if(proc->frame_tx == print_frame)
+      // do OFDM if needed
+      if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
+      if(!emulate_rf)
       {
-        for (i=0; i<ru->nb_tx; i++)
-        {
-          sprintf(filename,"tx%ddataF_frame%d_sf%d.m", i, print_frame, proc->subframe_tx);
-          LOG_M(filename,"txdataF_frame",&ru->common.txdataF_BF[i][0],fp->samples_per_subframe_wCP, 1, 1);
-          if(proc->subframe_tx == 9)
-          {
-            sprintf(filename,"tx%ddata_frame%d.m", i, print_frame);
-            LOG_M(filename,"txdata_frame",&ru->common.txdata[i][0],fp->samples_per_frame, 1, 1);
-            sprintf(filename,"tx%ddata_frame%d.dat", i, print_frame);
-	    FILE *output_fd = fopen(filename,"w");
-	    if (output_fd) {
-	      fwrite(&ru->common.txdata[i][0],
-		     sizeof(int32_t),
-		     fp->samples_per_frame,
-		     output_fd);
-	      fclose(output_fd);
-	    }
-	    else {
-	      LOG_E(PHY,"Cannot write to file %s\n",filename);
-	    }
-          }
-        }
+        // do outgoing fronthaul (south) if needed
+        if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
+  
+        if (ru->fh_north_out) ru->fh_north_out(ru);
       }
-      //else if (proc->frame_tx > print_frame) oai_exit = 1;
-    }
+      else
+      {
+        if(proc->frame_tx == print_frame)
+        {
+          for (i=0; i<ru->nb_tx; i++)
+          {
+            sprintf(filename,"tx%ddataF_frame%d_sf%d.m", i, print_frame, proc->subframe_tx);
+            LOG_M(filename,"txdataF_frame",&ru->common.txdataF_BF[i][0],fp->samples_per_subframe_wCP, 1, 1);
+            if(proc->subframe_tx == 9)
+            {
+              sprintf(filename,"tx%ddata_frame%d.m", i, print_frame);
+              LOG_M(filename,"txdata_frame",&ru->common.txdata[i][0],fp->samples_per_frame, 1, 1);
+              sprintf(filename,"tx%ddata_frame%d.dat", i, print_frame);
+              FILE *output_fd = fopen(filename,"w");
+	      if (output_fd) {
+	        fwrite(&ru->common.txdata[i][0],
+                       sizeof(int32_t),
+                       fp->samples_per_frame,
+                       output_fd);
+                       fclose(output_fd);
+              }
+	      else {
+	        LOG_E(PHY,"Cannot write to file %s\n",filename);
+	      }
+            }//if(proc->subframe_tx == 9)
+          }//for (i=0; i<ru->nb_tx; i++)
+        }//if(proc->frame_tx == print_frame)
+      }//else  emulate_rf
+      proc->emulate_rf_busy = 0;
+    }//if(get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD)
   }
   
 
@@ -1680,7 +1800,7 @@ void init_RU_proc(RU_t *ru) {
    
   int i=0;
   RU_proc_t *proc;
-  pthread_attr_t *attr_FH=NULL,*attr_prach=NULL,*attr_asynch=NULL, *attr_emulateRF=NULL;// *attr_synch=NULL;
+  pthread_attr_t *attr_FH=NULL, *attr_FH1=NULL,*attr_prach=NULL,*attr_asynch=NULL, *attr_emulateRF=NULL;// *attr_synch=NULL;
   //pthread_attr_t *attr_fep=NULL;
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   //pthread_attr_t *attr_prach_br=NULL;
@@ -1697,6 +1817,8 @@ void init_RU_proc(RU_t *ru) {
   proc->instance_cnt_prach       = -1;
   proc->instance_cnt_synch       = -1;     ;
   proc->instance_cnt_FH          = -1;
+  proc->instance_cnt_FH1         = -1;
+  proc->instance_cnt_gNBs        = -1;
   proc->instance_cnt_asynch_rxtx = -1;
   proc->instance_cnt_emulateRF   = -1;
   proc->first_rx                 = 1;
@@ -1711,17 +1833,20 @@ void init_RU_proc(RU_t *ru) {
   pthread_mutex_init( &proc->mutex_asynch_rxtx, NULL);
   pthread_mutex_init( &proc->mutex_synch,NULL);
   pthread_mutex_init( &proc->mutex_FH,NULL);
+  pthread_mutex_init( &proc->mutex_FH1,NULL);
   pthread_mutex_init( &proc->mutex_emulateRF,NULL);
   pthread_mutex_init( &proc->mutex_gNBs, NULL);
   
   pthread_cond_init( &proc->cond_prach, NULL);
   pthread_cond_init( &proc->cond_FH, NULL);
+  pthread_cond_init( &proc->cond_FH1, NULL);
   pthread_cond_init( &proc->cond_emulateRF, NULL);
   pthread_cond_init( &proc->cond_asynch_rxtx, NULL);
   pthread_cond_init( &proc->cond_synch,NULL);
   pthread_cond_init( &proc->cond_gNBs, NULL);
   
   pthread_attr_init( &proc->attr_FH);
+  pthread_attr_init( &proc->attr_FH1);
   pthread_attr_init( &proc->attr_emulateRF);
   pthread_attr_init( &proc->attr_prach);
   pthread_attr_init( &proc->attr_synch);
@@ -1731,6 +1856,7 @@ void init_RU_proc(RU_t *ru) {
   
 #ifndef DEADLINE_SCHEDULER
   attr_FH        = &proc->attr_FH;
+  attr_FH1       = &proc->attr_FH1;
   attr_emulateRF = &proc->attr_emulateRF;
   attr_prach     = &proc->attr_prach;
   //attr_synch     = &proc->attr_synch;
@@ -1738,6 +1864,8 @@ void init_RU_proc(RU_t *ru) {
 #endif
   
   pthread_create( &proc->pthread_FH, attr_FH, ru_thread, (void*)ru );
+  if (get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)
+    pthread_create( &proc->pthread_FH1, attr_FH1, ru_thread_tx, (void*)ru );
   if(emulate_rf)
     pthread_create( &proc->pthread_emulateRF, attr_emulateRF, emulatedRF_thread, (void*)proc );
   if (ru->function == NGFI_RRU_IF4p5) {

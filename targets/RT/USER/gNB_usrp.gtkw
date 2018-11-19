@@ -1,0 +1,57 @@
+[*]
+[*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
+[*] Tue Nov  6 14:54:14 2018
+[*]
+[dumpfile] "/tmp/openair_dump_eNB.vcd"
+[dumpfile_mtime] "Tue Nov  6 14:50:45 2018"
+[dumpfile_size] 1894074
+[savefile] "/homes/wangts/openairinterface5g/targets/RT/USER/gNB_usrp.gtkw"
+[timestart] 1238454000
+[size] 1920 1018
+[pos] -159 -155
+*-20.848083 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 386
+[signals_width] 344
+[sst_expanded] 1
+[sst_vpaned_height] 421
+@28
+functions.trx_read
+functions.trx_write
+@24
+variables.trx_ts[63:0]
+variables.trx_tst[63:0]
+@28
+functions.eNB_thread_rxtx0
+@24
+variables.frame_number_RX0_RU[63:0]
+variables.subframe_number_RX0_RU[63:0]
+variables.frame_number_TX0_RU[63:0]
+variables.subframe_number_TX0_RU[63:0]
+@28
+functions.mac_schedule_dlsch
+functions.macxface_eNB_dlsch_ulsch_scheduler
+functions.macxface_ue_scheduler
+functions.phy_eNB_ofdm_mod_l
+@24
+variables.frame_number_RX0_gNB[63:0]
+variables.subframe_number_RX0_gNB[63:0]
+variables.frame_number_TX0_gNB[63:0]
+variables.subframe_number_TX0_gNB[63:0]
+@28
+functions.gNB_thread_rxtx0
+@24
+variables.frame_number_RX1_gNB[63:0]
+variables.subframe_number_RX1_gNB[63:0]
+variables.frame_number_TX1_gNB[63:0]
+variables.subframe_number_TX1_gNB[63:0]
+@28
+functions.gNB_thread_rxtx1
+functions.phy_procedures_ru_feprx0
+functions.phy_procedures_ru_feprx0
+functions.phy_procedures_ru_feprx1
+functions.phy_procedures_ru_feptx_ofdm0
+functions.phy_procedures_ru_feptx_ofdm1
+functions.phy_procedures_ru_feptx_prec0
+functions.phy_procedures_ru_feptx_prec1
+[pattern_trace] 1
+[pattern_trace] 0

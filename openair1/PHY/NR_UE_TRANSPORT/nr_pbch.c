@@ -91,7 +91,7 @@ uint16_t nr_pbch_extract(int **rxdataF,
     for (rb=0; rb<20; rb++) {
       j=0;
 
-      if (symbol==1 || symbol==7) {
+      if (symbol==1 || symbol==3) {
         for (i=0; i<12; i++) {
           if ((i!=nushiftmod4) &&
               (i!=(nushiftmod4+4)) &&
@@ -147,7 +147,7 @@ uint16_t nr_pbch_extract(int **rxdataF,
     
     for (rb=0; rb<20; rb++) {
       j=0;
-      if (symbol==1 || symbol==7) {
+      if (symbol==1 || symbol==3) {
 	for (i=0; i<12; i++) {
 	  if ((i!=nushiftmod4) &&
 	      (i!=(nushiftmod4+4)) &&
