@@ -528,15 +528,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
             RRC_CONFIGURATION_REQ (msg_p).downlink_frequency[j] = (uint32_t) ccparams_lte.downlink_frequency;
             RRC_CONFIGURATION_REQ (msg_p).uplink_frequency_offset[j] = (unsigned int) ccparams_lte.uplink_frequency_offset;
 
-            if (config_check_band_frequencies(j,
-                                              RRC_CONFIGURATION_REQ (msg_p).eutra_band[j],
-                                              RRC_CONFIGURATION_REQ (msg_p).downlink_frequency[j],
-                                              RRC_CONFIGURATION_REQ (msg_p).uplink_frequency_offset[j],
-                                              RRC_CONFIGURATION_REQ (msg_p).frame_type[j])) {
-              AssertFatal(0, "error calling enb_check_band_frequencies\n");
-            }
-
-
 
             RRC_CONFIGURATION_REQ (msg_p).Nid_cell[j]= ccparams_lte.Nid_cell;
 
@@ -567,6 +558,14 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for frame_type choice: FDD or TDD !\n",
                            RC.config_file_name, i, ccparams_lte.frame_type);
+            }
+
+            if (config_check_band_frequencies(j,
+                                              RRC_CONFIGURATION_REQ (msg_p).eutra_band[j],
+                                              RRC_CONFIGURATION_REQ (msg_p).downlink_frequency[j],
+                                              RRC_CONFIGURATION_REQ (msg_p).uplink_frequency_offset[j],
+                                              RRC_CONFIGURATION_REQ (msg_p).frame_type[j])) {
+              AssertFatal(0, "error calling enb_check_band_frequencies\n");
             }
 
 
