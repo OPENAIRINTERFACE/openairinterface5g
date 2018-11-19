@@ -1602,7 +1602,14 @@ add_library(L2
   ${MAC_SRC}
   ${ENB_APP_SRC}
   )
-#  ${OPENAIR2_DIR}/RRC/L2_INTERFACE/openair_rrc_L2_interface.c)
+
+add_library(MAC_NR
+  ${MAC_NR_SRC}
+  )
+
+add_library(MAC_UE_NR
+  ${MAC_NR_SRC_UE}
+  )
 
 add_library(L2_NR
   ${L2_NR_SRC}
@@ -2549,6 +2556,9 @@ target_link_libraries(ldpctest SIMU PHY PHY_NR m ${ATLAS_LIBRARIES})
 
 add_executable(nr_pbchsim  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pbchsim.c ${T_SOURCE})
 target_link_libraries(nr_pbchsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
+
+add_executable(nr_dlsim  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlsim.c ${T_SOURCE})
+target_link_libraries(nr_dlsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR CONFIG_LIB -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
 
 
 foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)
