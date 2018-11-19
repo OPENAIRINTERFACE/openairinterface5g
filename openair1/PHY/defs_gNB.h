@@ -41,7 +41,7 @@
 #define MAX_NUM_RU_PER_gNB MAX_NUM_RU_PER_eNB
 
 typedef struct {
-  uint8_t pbch_a[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
+  uint32_t pbch_a;
   uint32_t pbch_a_interleaved;
   uint32_t pbch_a_prime;
   uint32_t pbch_e[NR_POLAR_PBCH_E_DWORD];
