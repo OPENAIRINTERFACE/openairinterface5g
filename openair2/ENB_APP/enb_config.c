@@ -579,7 +579,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
         for (int I = 0; I < sizeof(PLMNParams) / sizeof(paramdef_t); ++I)
           PLMNParams[I].chkPptr = &(config_check_PLMNParams[I]);
 
-        RRC_CONFIGURATION_REQ (msg_p).rrc_inactivity_timer_thres = 10000;
+        RRC_CONFIGURATION_REQ (msg_p).rrc_inactivity_timer_thres = 0; // set to 0 to deactivate
 
         RRC_CONFIGURATION_REQ (msg_p).cell_identity = enb_id;
         RRC_CONFIGURATION_REQ (msg_p).tac = *ENBParamList.paramarray[i][ENB_TRACKING_AREA_CODE_IDX].uptr;

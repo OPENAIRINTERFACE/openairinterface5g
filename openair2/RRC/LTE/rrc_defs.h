@@ -601,7 +601,6 @@ typedef struct eNB_RRC_UE_s {
   uint32_t                           ue_reestablishment_timer_thres;
   /* RRC inactivity timer: on timeout, should release RRC connection for inactivity on all E-RABs */
   uint32_t                           ue_rrc_inactivity_timer;
-  // uint32_t                           ue_rrc_inactivity_timer_thres;
   uint8_t                            e_rab_release_command_flag;
   int8_t                             reestablishment_xid;
 } eNB_RRC_UE_t;

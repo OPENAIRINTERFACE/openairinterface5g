@@ -835,9 +835,9 @@ rrc_eNB_free_UE(
       return;
     }
 
-    // if((ue_context_pP->ue_context.ue_rrc_inactivity_timer >= ue_context_pP->ue_context.ue_rrc_inactivity_timer_thres) &&
     if((ue_context_pP->ue_context.ue_rrc_inactivity_timer >= RC.rrc[enb_mod_idP]->configuration.rrc_inactivity_timer_thres) &&
-        (mac_eNB_get_rrc_status(enb_mod_idP, rnti) >= RRC_CONNECTED)) {
+        (mac_eNB_get_rrc_status(enb_mod_idP, rnti) >= RRC_CONNECTED) &&
+        (RC.rrc[enb_mod_idP]->configuration.rrc_inactivity_timer_thres > 0)) {
       LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ sent for RNTI %x, cause 20, user inactivity\n",
             enb_mod_idP,
             rnti);
@@ -1009,7 +1009,6 @@ rrc_eNB_process_RRCConnectionSetupComplete(
   ue_context_pP->ue_context.Srb1.Active = 1;
   ue_context_pP->ue_context.Status = RRC_CONNECTED;
   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 1; // set rrc inactivity when UE goes into RRC_CONNECTED
-  // ue_context_pP->ue_context.ue_rrc_inactivity_timer_thres = 10000; // The value should come from config file
   T(T_ENB_RRC_CONNECTION_SETUP_COMPLETE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
@@ -1315,7 +1314,6 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   uint8_t next_xid = rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id);
   ue_context_pP->ue_context.Status = RRC_CONNECTED;
   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 1; // set rrc inactivity when UE goes into RRC_CONNECTED
-  // ue_context_pP->ue_context.ue_rrc_inactivity_timer_thres = 10000; // The value should come from config file
   ue_context_pP->ue_context.reestablishment_xid = next_xid;
   SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[xid];
 
@@ -7380,9 +7378,8 @@ rrc_rx_tx(
 
     pthread_mutex_unlock(&rrc_release_freelist);
 
-    if ((ue_context_p->ue_context.ue_rrc_inactivity_timer > 0) && (RC.rrc[enb_mod_idP]->configuration.rrc_inactivity_timer_thres > 0)) {
+    if ((ue_context_p->ue_context.ue_rrc_inactivity_timer > 0) && (RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres > 0)) {
       ue_context_p->ue_context.ue_rrc_inactivity_timer++; // (un)comment this line to (de)activate the RRC inactivity timer
-      //if (ue_context_p->ue_context.ue_rrc_inactivity_timer >= ue_context_p->ue_context.ue_rrc_inactivity_timer_thres) {
       if (ue_context_p->ue_context.ue_rrc_inactivity_timer >= RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres){
         LOG_I(RRC, "Removing UE %x instance because of rrc_inactivity_timer timeout\n",
               ue_context_p->ue_context.rnti);
@@ -7424,8 +7421,8 @@ rrc_rx_tx(
 
   if (ue_to_be_removed) {
     if ((ue_to_be_removed->ue_context.ul_failure_timer >= 20000) ||
-        (ue_to_be_removed->ue_context.ue_rrc_inactivity_timer >= RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres)) {
-        //(ue_to_be_removed->ue_context.ue_rrc_inactivity_timer >= ue_to_be_removed->ue_context.ue_rrc_inactivity_timer_thres)) {
+        ((ue_to_be_removed->ue_context.ue_rrc_inactivity_timer >= RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres) && 
+        (RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres > 0))) {
       ue_to_be_removed->ue_context.ue_release_timer_s1 = 1;
       ue_to_be_removed->ue_context.ue_release_timer_thres_s1 = 100;
       ue_to_be_removed->ue_context.ue_release_timer = 0;
@@ -7438,8 +7435,8 @@ rrc_rx_tx(
       ue_to_be_removed->ue_context.ul_failure_timer = 0;
     }
 
-    //if (ue_to_be_removed->ue_context.ue_rrc_inactivity_timer >= ue_to_be_removed->ue_context.ue_rrc_inactivity_timer_thres) {
-    if (ue_to_be_removed->ue_context.ue_rrc_inactivity_timer >= RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres) {
+    if ((ue_to_be_removed->ue_context.ue_rrc_inactivity_timer >= RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres) &&
+      (RC.rrc[ctxt_pP->module_id]->configuration.rrc_inactivity_timer_thres > 0)) {
       ue_to_be_removed->ue_context.ue_rrc_inactivity_timer = 0; //reset timer after S1 command UE context release request is sent
     }
   }
