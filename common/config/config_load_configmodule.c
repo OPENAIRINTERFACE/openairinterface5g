@@ -169,7 +169,7 @@ int config_cmdlineonly_get(paramdef_t *cfgoptions,int numoptions, char *prefix )
   return numdefvals;
 }
 
-configmodule_interface_t *load_configmodule(int argc, char **argv)
+configmodule_interface_t *load_configmodule(int argc, char **argv, uint32_t initflags)
 {
 char *cfgparam=NULL;
 char *modeparams=NULL;
@@ -178,12 +178,14 @@ char *strtokctx=NULL;
 char *atoken;
 uint32_t tmpflags=0;
 int i;
+int OoptIdx=-1;
  
 /* first parse the command line to look for the -O option */
   for (i = 0;i<argc;i++) {
        if (strlen(argv[i]) < 2) continue;
        if ( argv[i][1] == 'O' && i < (argc -1)) {
-          cfgparam = argv[i+1]; 
+          cfgparam = argv[i+1];
+          OoptIdx=i;
        } 
        if ( strstr(argv[i], "help_config") != NULL  ) {
           config_printhelp(Config_Params,CONFIG_PARAMLENGTH(Config_Params));
@@ -199,31 +201,40 @@ int i;
      cfgparam = getenv("OAI_CONFIGMODULE");
      }
 
-/* default */
+/* default different for UE and softmodem because UE doesn't use config file*/
+/* and -O option is not mandatory for UE                                    */
+/* phy simulators behave as UE                                              */
+/* test of exec name would better be replaced by a parameter to the l       */
+/* oad_configmodule function */
   if (cfgparam == NULL) {
-         tmpflags = tmpflags | CONFIG_NOOOPT;
-     if (strstr(argv[0],"uesoftmodem") == NULL) {
-         cfgparam = CONFIG_LIBCONFIGFILE ":" DEFAULT_CFGFILENAME;
-      } else {
-         cfgparam = CONFIG_CMDLINEONLY ":dbgl0" ;         
-      }
-   }
-   
+    tmpflags = tmpflags | CONFIG_NOOOPT;
+    if ( initflags &  CONFIG_ENABLECMDLINEONLY) {
+       cfgparam = CONFIG_CMDLINEONLY ":dbgl0" ;
+    } else {
+      cfgparam = CONFIG_CMDLINEONLY ":dbgl0" ;cfgparam = CONFIG_LIBCONFIGFILE ":" DEFAULT_CFGFILENAME;         
+    }
+  }
+ 
 /* parse the config parameters to set the config source */
    i = sscanf(cfgparam,"%m[^':']:%ms",&cfgmode,&modeparams);
    if (i< 0) {
        fprintf(stderr,"[CONFIG] %s, %d, sscanf error parsing config source  %s: %s\n", __FILE__, __LINE__,cfgparam, strerror(errno));
-       exit(-1);
+       exit(-1) ;
    }
    else if ( i == 1 ) {
   /* -O argument doesn't contain ":" separator, assume -O <conf file> option, default cfgmode to libconfig
-     with one parameter, the path to the configuration file */
+     with one parameter, the path to the configuration file cfgmode must not be NULL */
        modeparams=cfgmode;
        cfgmode=strdup(CONFIG_LIBCONFIGFILE);
    }
 
-   cfgptr = malloc(sizeof(configmodule_interface_t));
-   memset(cfgptr,0,sizeof(configmodule_interface_t));
+   cfgptr = calloc(sizeof(configmodule_interface_t),1);
+   cfgptr->argv_info = calloc(sizeof(int32_t), argc);
+   cfgptr->argv_info[0] |= CONFIG_CMDLINEOPT_PROCESSED;
+   if (OoptIdx >= 0) {
+     cfgptr->argv_info[OoptIdx] |= CONFIG_CMDLINEOPT_PROCESSED;
+     cfgptr->argv_info[OoptIdx+1] |= CONFIG_CMDLINEOPT_PROCESSED;
+   }
 
    cfgptr->rtflags = cfgptr->rtflags | tmpflags;
    cfgptr->argc   = argc;

@@ -39,9 +39,6 @@
 #include "vcd_signal_dumper.h"
 #include "assertions.h"
 
-#if defined(ENABLE_ITTI)
-# include "intertask_interface.h"
-#endif
 
 # include <pthread.h>
 # include <string.h>
@@ -242,7 +239,7 @@ void  log_getconfig(log_t *g_log) {
   paramdef_t logparams_logfile[MAX_LOG_PREDEF_COMPONENTS];
   paramdef_t logparams_debug[sizeof(log_maskmap)/sizeof(mapping)];
   paramdef_t logparams_dump[sizeof(log_maskmap)/sizeof(mapping)];
-
+  CONFIG_SETRTFLAG(CONFIG_NOCHECKUNKOPT);
   int ret = config_get( logparams_defaults,sizeof(logparams_defaults)/sizeof(paramdef_t),CONFIG_STRING_LOG_PREFIX);
   if (ret <0) {
        fprintf(stderr,"[LOG] init aborted, configuration couldn't be performed");
@@ -319,6 +316,7 @@ void  log_getconfig(log_t *g_log) {
       logparams_dump[i].numelt      = 0;
   }
   config_get( logparams_debug,(sizeof(log_maskmap)/sizeof(mapping)) - 1 ,CONFIG_STRING_LOG_PREFIX);
+  CONFIG_CLEARRTFLAG(CONFIG_NOCHECKUNKOPT);
   config_get( logparams_dump,(sizeof(log_maskmap)/sizeof(mapping)) - 1 ,CONFIG_STRING_LOG_PREFIX);
 /* set the debug mask according to the debug parameters values */
   for (int i=0; log_maskmap[i].name != NULL ; i++) {
@@ -356,6 +354,14 @@ int computed_compidx=compidx;
       fprintf(stderr,"{LOG} %s %d Couldn't register componemt %s\n",__FILE__,__LINE__,name);
   }
 return computed_compidx;
+}
+
+int isLogInitDone (void){
+   if (g_log == NULL) 
+     return 0;
+   if (!(g_log->flag & FLAG_INITIALIZED))
+     return 0;
+   return 1;
 }
 
 int logInit (void)
@@ -437,6 +443,7 @@ int logInit (void)
   for (i=MAX_LOG_PREDEF_COMPONENTS; i < MAX_LOG_COMPONENTS; i++) {
         memset(&(g_log->log_component[i]),0,sizeof(log_component_t));
   }
+  g_log->flag =  g_log->flag | FLAG_INITIALIZED;
   printf("log init done\n");
 
   return 0;
@@ -656,13 +663,12 @@ int is_newline( char *str, int size)
 void logClean (void)
 {
   int i;
-  LOG_UI(PHY,"\n");
 
-
-
-
-  for (i=MIN_LOG_COMPONENTS; i < MAX_LOG_COMPONENTS; i++) {
-     close_component_filelog(i);
+  if(isLogInitDone()) {
+    LOG_UI(PHY,"\n");
+    for (i=MIN_LOG_COMPONENTS; i < MAX_LOG_COMPONENTS; i++) {
+      close_component_filelog(i);
+    }
   }
 }
 

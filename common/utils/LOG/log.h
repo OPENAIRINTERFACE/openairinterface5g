@@ -115,12 +115,11 @@ extern "C" {
  * @{*/
 
 
-#define FLAG_NOCOLOR   0x0001  /*!< \brief use colors in log messages, depending on level */
-#define FLAG_THREAD    0x0008  /*!< \brief display thread name in log messages */
-#define FLAG_LEVEL     0x0010  /*!< \brief display log level in log messages */
-#define FLAG_FUNCT     0x0020
-#define FLAG_FILE_LINE 0x0040
-#define FLAG_TIME      0x0100
+#define FLAG_NOCOLOR     0x0001  /*!< \brief use colors in log messages, depending on level */
+#define FLAG_THREAD      0x0008  /*!< \brief display thread name in log messages */
+#define FLAG_LEVEL       0x0010  /*!< \brief display log level in log messages */
+#define FLAG_TIME        0x0100
+#define FLAG_INITIALIZED 0x8000
 
 #define SET_LOG_OPTION(O)   g_log->flag = (g_log->flag | O)
 #define CLEAR_LOG_OPTION(O) g_log->flag = (g_log->flag & (~O))
@@ -283,6 +282,7 @@ extern log_t *g_log;
 #    include "log_if.h"
 /*----------------------------------------------------------------------------*/
 int  logInit (void);
+int isLogInitDone (void);
 void logRecord_mt(const char *file, const char *func, int line,int comp, int level, const char *format, ...) __attribute__ ((format (printf, 6, 7)));
 void log_dump(int component, void *buffer, int buffsize,int datatype, const char* format, ... );
 int  set_log(int component, int level);
