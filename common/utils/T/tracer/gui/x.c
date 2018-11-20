@@ -135,7 +135,7 @@ x_image *x_create_image(x_connection *_x, unsigned char *data,
   if (ret == NULL) OOM;
 
   template.class = TrueColor;
-  template.depth = 32;
+  template.depth = 24;
   template.red_mask = 0xff0000;
   template.green_mask = 0x00ff00;
   template.blue_mask = 0x0000ff;
