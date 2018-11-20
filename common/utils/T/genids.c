@@ -24,11 +24,11 @@ int new_unique_id(char *s, char *input_file)
   if (unique_ids_size == unique_ids_maxsize) {
     unique_ids_maxsize += 256;
     unique_ids = realloc(unique_ids, unique_ids_maxsize * sizeof(char *));
-    if (unique_ids == NULL) { printf("erorr: out of memory\n"); abort(); }
+    if (unique_ids == NULL) { printf("error: out of memory\n"); abort(); }
   }
   unique_ids[unique_ids_size] = strdup(s);
   if (unique_ids[unique_ids_size] == NULL)
-    { printf("erorr: out of memory\n"); abort(); }
+    { printf("error: out of memory\n"); abort(); }
   unique_ids_size++;
   qsort(unique_ids, unique_ids_size, sizeof(char *), cmp);
   return 1;
@@ -44,7 +44,7 @@ void putname(int c)
     bufname_maxsize += 256;
     bufname = realloc(bufname, bufname_maxsize);
     if (bufname == NULL)
-      { printf("erorr: memory allocation error\n"); exit(1); }
+      { printf("error: memory allocation error\n"); exit(1); }
   }
   bufname[bufname_size] = c;
   bufname_size++;
