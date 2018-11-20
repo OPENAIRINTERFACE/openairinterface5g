@@ -582,7 +582,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
           PLMNParams[I].chkPptr = &(config_check_PLMNParams[I]);
 
         RRC_CONFIGURATION_REQ (msg_p).rrc_inactivity_timer_thres = RRC_INACTIVITY_THRESH; // set to 0 to deactivate
-
         RRC_CONFIGURATION_REQ (msg_p).cell_identity = enb_id;
         RRC_CONFIGURATION_REQ (msg_p).tac = *ENBParamList.paramarray[i][ENB_TRACKING_AREA_CODE_IDX].uptr;
         AssertFatal(!ENBParamList.paramarray[i][ENB_MOBILE_COUNTRY_CODE_IDX_OLD].strptr
@@ -2312,7 +2311,7 @@ int RCconfig_S1(
 
               default: {
                 LOG_E(S1AP, "Default I-DRX value in conf file is invalid (%i). Should be 32, 64, 128 or 256. \
-             Default DRX set to 32 in MME configuration\n",
+           Default DRX set to 32 in MME configuration\n",
                       pcch_defaultPagingCycle);
                 S1AP_REGISTER_ENB_REQ(msg_p).default_drx = 0;
               }
