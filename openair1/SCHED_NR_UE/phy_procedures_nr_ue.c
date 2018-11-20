@@ -3903,8 +3903,11 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
                                                 crc_scrambled_values,
                                                 ptr_nr_dci_info_extracted);//&nr_dci_info_extracted);
 
-        ue->dci_ind.dci_list[i].rnti = dci_alloc_rx[i].rnti;
-        ue->dci_ind.dci_list[i].dci_format = dci_alloc_rx[i].format;
+       ue->dci_ind.dci_list[i].rnti = dci_alloc_rx[i].rnti;
+       ue->dci_ind.dci_list[i].dci_format = dci_alloc_rx[i].format;
+       ue->dci_ind.dci_list[i].n_CCE = dci_alloc_rx[i].firstCCE;
+       ue->dci_ind.dci_list[i].N_CCE = (int)dci_alloc_rx[i].L;
+       ue->dci_ind.number_of_dcis = ue->dci_ind.number_of_dcis + 1;
         memcpy(&ue->dci_ind.dci_list[i].dci, &nr_dci_info_extracted, sizeof(fapi_nr_dci_pdu_rel15_t) );
  
         //printf(">>> example mcs=%d\n",nr_dci_info_extracted.mcs);
