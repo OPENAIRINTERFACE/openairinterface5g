@@ -216,6 +216,8 @@ rrc_eNB_S1AP_get_ue_ids(
                   result2->ue_initial_id,
                   result->eNB_ue_s1ap_id,
                   result2->eNB_ue_s1ap_id);
+
+            // Still return *result 
           }
         }
       } // end if if (eNB_ue_s1ap_id > 0)
@@ -223,6 +225,8 @@ rrc_eNB_S1AP_get_ue_ids(
       LOG_E(S1AP, "[eNB %ld] In hashtable_get, couldn't find in initial_id2_s1ap_ids ue_initial_id %"PRIu16"\n",
             rrc_instance_pP - RC.rrc[0],
             ue_initial_id);
+      
+      return NULL;
       /*
       * At the moment this is written, this case shouldn't (cannot) happen and is equivalent to an error.
       * One could try to find the struct instance based on s1ap_id2_s1ap_ids and eNB_ue_s1ap_id (if > 0),
@@ -245,25 +249,38 @@ rrc_eNB_S1AP_get_ue_ids(
               eNB_ue_s1ap_id);
         instance = ENB_MODULE_ID_TO_INSTANCE(rrc_instance_pP - RC.rrc[0]); // get eNB instance
         s1ap_eNB_instance_p = s1ap_eNB_get_instance(instance); // get s1ap_eNB_instance
-        ue_desc_p = s1ap_eNB_get_ue_context(s1ap_eNB_instance_p, eNB_ue_s1ap_id); // get s1ap_eNB_ue_context
+
+        if (s1ap_eNB_instance_p != NULL) {
+          ue_desc_p = s1ap_eNB_get_ue_context(s1ap_eNB_instance_p, eNB_ue_s1ap_id); // get s1ap_eNB_ue_context
+        } else {
+          LOG_E(S1AP, "[eNB instance %d] Couldn't find the eNB S1AP context\n",
+              instance);
+
+          return NULL;
+        }
 
         if (ue_desc_p != NULL) {
           result = rrc_eNB_S1AP_get_ue_ids(rrc_instance_pP, ue_desc_p->ue_initial_id, eNB_ue_s1ap_id);
-          ue_context_p = rrc_eNB_get_ue_context(RC.rrc[ENB_INSTANCE_TO_MODULE_ID(instance)], result->ue_rnti);
 
-          if ((ue_context_p != NULL) && (ue_context_p->ue_context.eNB_ue_s1ap_id == 0)) {
-            ue_context_p->ue_context.eNB_ue_s1ap_id = eNB_ue_s1ap_id;
-          } else {
-            LOG_E(RRC, "[eNB %ld] Incoherence between RRC context and S1AP context (%d != %d) for UE RNTI %d or UE RRC context doesn't exist\n",
-                  rrc_instance_pP - RC.rrc[0],
-                  ue_context_p->ue_context.eNB_ue_s1ap_id,
-                  eNB_ue_s1ap_id,
-                  result->ue_rnti);
+          if (result != NULL) {
+            ue_context_p = rrc_eNB_get_ue_context(RC.rrc[ENB_INSTANCE_TO_MODULE_ID(instance)], result->ue_rnti);
+
+            if ((ue_context_p != NULL) && (ue_context_p->ue_context.eNB_ue_s1ap_id == 0)) {
+              ue_context_p->ue_context.eNB_ue_s1ap_id = eNB_ue_s1ap_id;
+            } else {
+              LOG_E(RRC, "[eNB %ld] Incoherence between RRC context and S1AP context (%d != %d) for UE RNTI %d or UE RRC context doesn't exist\n",
+                    rrc_instance_pP - RC.rrc[0],
+                    ue_context_p->ue_context.eNB_ue_s1ap_id,
+                    eNB_ue_s1ap_id,
+                    result->ue_rnti);
+            }
           }
         } else {
           LOG_E(S1AP, "[eNB %ld] In hashtable_get, couldn't find in s1ap_id2_s1ap_ids eNB_ue_s1ap_id %"PRIu32", even when looking at S1AP context\n",
                 rrc_instance_pP - RC.rrc[0],
                 eNB_ue_s1ap_id);
+  
+          return NULL;
         }
       } // end if (h_rc != HASH_TABLE_OK)
     } // end if (eNB_ue_s1ap_id > 0)

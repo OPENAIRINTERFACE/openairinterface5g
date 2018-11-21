@@ -716,8 +716,15 @@ rx_sdu(const module_id_t enb_mod_idP,
               //clear uplane_inactivity_timer
               UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer = 0;
               // reset RRC inactivity timer after uplane activity
-              ue_contextP = rrc_eNB_get_ue_context(RC.rrc[enb_mod_idP], rntiP);
-              ue_contextP->ue_context.ue_rrc_inactivity_timer = 1;
+              ue_contextP = rrc_eNB_get_ue_context(RC.rrc[enb_mod_idP], current_rnti);
+              if (ue_contextP != NULL) {
+                ue_contextP->ue_context.ue_rrc_inactivity_timer = 1;
+              } else {
+                LOG_E(MAC, "[eNB %d] CC_id %d Couldn't find the context associated to UE (RNTI %d) and reset RRC inactivity timer\n",
+                      enb_mod_idP,
+                      CC_idP,
+                      current_rnti);
+              }
             } else {  /* rx_length[i] */
               UE_list->eNB_UE_stats[CC_idP][UE_id].num_errors_rx += 1;
               LOG_E(MAC, "[eNB %d] CC_id %d Frame %d : Max size of transport block reached LCID %d from UE %d ",

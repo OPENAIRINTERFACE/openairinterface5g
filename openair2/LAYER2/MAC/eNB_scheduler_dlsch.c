@@ -1084,7 +1084,14 @@ schedule_ue_spec(module_id_t module_idP, int slice_idxP,
               UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer = 0;
               // reset RRC inactivity timer after uplane activity
               ue_contextP = rrc_eNB_get_ue_context(RC.rrc[module_idP], rnti);
-              ue_contextP->ue_context.ue_rrc_inactivity_timer = 1;
+              if (ue_contextP != NULL) {
+                ue_contextP->ue_context.ue_rrc_inactivity_timer = 1;
+              } else {
+                LOG_E(MAC, "[eNB %d] CC_id %d Couldn't find the context associated to UE (RNTI %d) and reset RRC inactivity timer\n",
+                      module_idP,
+                      CC_id,
+                      rnti);
+              }
             } // end if (rlc_status.bytes_in_buffer > 0)
           } else {  // no TBS left
             break;  // break for (lcid = NB_RB_MAX - 1; lcid >= DTCH; lcid--)
