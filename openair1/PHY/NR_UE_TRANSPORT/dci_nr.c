@@ -1426,9 +1426,9 @@ void nr_dci_decoding_procedure0(int s,
       
       uint32_t dci_estimation[4]={0};
 
-      t_nrPolar_paramsPtr nrPolar_params = NULL;
-      nr_polar_init(&nrPolar_params, 1, 41, 8);
-      t_nrPolar_paramsPtr currentPtrDCI=nr_polar_params(nrPolar_params, 1, 41, 8);
+      t_nrPolar_paramsPtr nrPolar_params = pdcch_vars[eNB_id]->nrPolar_params;
+      nr_polar_init(&nrPolar_params, 1, sizeof_bits, L2);
+      t_nrPolar_paramsPtr currentPtrDCI=nr_polar_params(nrPolar_params, 1, sizeof_bits, L2);
       decoderState = polar_decoder_int16((int16_t*)&pdcch_vars[eNB_id]->e_rx[CCEind*9*6*2],
 					 dci_estimation,
 					 currentPtrDCI);

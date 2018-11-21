@@ -219,8 +219,8 @@ decoder_node_t *add_nodes(int level,int first_leaf_index,t_nrPolar_params *pp) {
   decoder_node_t *new_node = new_decoder_node(first_leaf_index,level);
 #ifdef DEBUG_NEW_IMPL
   printf("New node %d order %d, level %d\n",pp->tree.num_nodes,Nv,level);
-  pp->tree.num_nodes++;
 #endif
+  pp->tree.num_nodes++;
   if (level==0) {
 #ifdef DEBUG_NEW_IMPL
     printf("leaf %d (%s)\n",first_leaf_index,pp->information_bit_pattern[first_leaf_index]==1 ? "information or crc" : "frozen");

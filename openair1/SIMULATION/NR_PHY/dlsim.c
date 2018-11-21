@@ -375,6 +375,8 @@ int main(int argc, char **argv)
   RC.gNB = (PHY_VARS_gNB***) malloc(sizeof(PHY_VARS_gNB **));
   RC.gNB[0] = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
   RC.gNB[0][0] = malloc(sizeof(PHY_VARS_gNB));
+  memset(RC.gNB[0][0],0,sizeof(PHY_VARS_gNB));
+
   gNB = RC.gNB[0][0];
   gNB_config = &gNB->gNB_config;
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
@@ -454,11 +456,12 @@ int main(int argc, char **argv)
 
   //configure UE
   UE = malloc(sizeof(PHY_VARS_NR_UE));
+  memset((void*)UE,0,sizeof(PHY_VARS_NR_UE));
   PHY_vars_UE_g = malloc(sizeof(PHY_VARS_NR_UE**));
   PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE*));
   PHY_vars_UE_g[0][0] = UE;
   memcpy(&UE->frame_parms,frame_parms,sizeof(NR_DL_FRAME_PARMS));
-  phy_init_nr_top(UE);
+
   if (run_initial_sync==1)  UE->is_synchronized = 0;
   else                      UE->is_synchronized = 1;
                       
@@ -561,6 +564,7 @@ int main(int argc, char **argv)
       r_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
     }
   }
+
 
   //Configure UE
   fapi_nr_dl_config_request_t dl_config; 

@@ -42,9 +42,9 @@ static int intcmp(const void *p1,const void *p2) {
 }
 
 void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
-				   int8_t messageType,
-				   uint16_t messageLength,
-				   uint8_t aggregation_level)
+		   int8_t messageType,
+		   uint16_t messageLength,
+		   uint8_t aggregation_level)
 {
 	t_nrPolar_paramsPtr currentPtr = *polarParams;
 	uint16_t aggregation_prime = nr_polar_aggregation_prime(aggregation_level);
@@ -75,6 +75,7 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 			newPolarInitNode->encoderLength = NR_POLAR_PBCH_E;
 			newPolarInitNode->crcCorrectionBits = NR_POLAR_PBCH_CRC_ERROR_CORRECTION_BITS;
 			newPolarInitNode->crc_generator_matrix = crc24c_generator_matrix(newPolarInitNode->payloadBits);//G_P
+			printf("Initializing polar parameters for PBCH (K %d, E %d)\n",newPolarInitNode->payloadBits,newPolarInitNode->encoderLength);
 		} else if (messageType == 1) { //DCI
 			newPolarInitNode->n_max = NR_POLAR_DCI_N_MAX;
 			newPolarInitNode->i_il = NR_POLAR_DCI_I_IL;
@@ -87,6 +88,7 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 			newPolarInitNode->encoderLength = aggregation_level*108;
 			newPolarInitNode->crcCorrectionBits = NR_POLAR_DCI_CRC_ERROR_CORRECTION_BITS;
 			newPolarInitNode->crc_generator_matrix=crc24c_generator_matrix(newPolarInitNode->payloadBits+newPolarInitNode->crcParityBits);//G_P
+			printf("Initializing polar parameters for DCI (K %d, E %d, L %d)\n",newPolarInitNode->payloadBits,newPolarInitNode->encoderLength,aggregation_level);
 		} else if (messageType == -1) { //UCI
 
 		} else {

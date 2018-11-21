@@ -124,10 +124,11 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   // PBCH DMRS gold sequences generation
   nr_init_pbch_dmrs(gNB);
   // Polar encoder init for PBCH
+  
   nr_polar_init(&gNB->nrPolar_params,
-        NR_POLAR_PBCH_MESSAGE_TYPE,
-				NR_POLAR_PBCH_PAYLOAD_BITS,
-				NR_POLAR_PBCH_AGGREGATION_LEVEL);
+		NR_POLAR_PBCH_MESSAGE_TYPE,
+		NR_POLAR_PBCH_PAYLOAD_BITS,
+		NR_POLAR_PBCH_AGGREGATION_LEVEL);
 
   //PDCCH DMRS init
   gNB->nr_gold_pdcch_dmrs = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t**));
@@ -436,15 +437,15 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config)
   fp->threequarter_fs                    = 0;
 
   LOG_I(PHY,"Configuring MIB for instance %d, CCid %d : (band %d,N_RB_DL %d, N_RB_UL %d, Nid_cell %d,gNB_tx_antenna_ports %d,DL freq %u)\n",
-  Mod_id, 
-  CC_id, 
-  gNB_config->nfapi_config.rf_bands.rf_band[0], 
-  gNB_config->rf_config.dl_carrier_bandwidth.value, 
-  gNB_config->rf_config.ul_carrier_bandwidth.value, 
-  gNB_config->sch_config.physical_cell_id.value, 
-  gNB_config->rf_config.tx_antenna_ports.value,
-  fp->dl_CarrierFreq );
-
+	Mod_id, 
+	CC_id, 
+	gNB_config->nfapi_config.rf_bands.rf_band[0], 
+	gNB_config->rf_config.dl_carrier_bandwidth.value, 
+	gNB_config->rf_config.ul_carrier_bandwidth.value, 
+	gNB_config->sch_config.physical_cell_id.value, 
+	gNB_config->rf_config.tx_antenna_ports.value,
+	fp->dl_CarrierFreq );
+  
   nr_init_frame_parms(gNB_config, fp);
 
   if (RC.gNB[Mod_id][CC_id]->configured == 1){

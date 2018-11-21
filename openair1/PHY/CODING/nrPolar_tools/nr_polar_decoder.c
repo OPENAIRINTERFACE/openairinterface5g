@@ -1055,7 +1055,7 @@ void init_polar_deinterleaver_table(t_nrPolar_params *polarParams) {
     else numbits=residue;
     for (int i=0;i<numbits;i++) {
       ip=polarParams->interleaving_pattern[(8*byte)+i];
-#if 1
+#if 0
       printf("byte %d, i %d => ip %d\n",byte,i,ip);
 #endif
       ipmod64 = ip&63;

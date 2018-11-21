@@ -893,6 +893,7 @@ typedef struct {
   //Check for specific DCIFormat and AgregationLevel
   uint8_t dciFormat;
   uint8_t agregationLevel;
+  t_nrPolar_paramsPtr nrPolar_params;
   #ifdef NR_PDCCH_DEFS_NR_UE
   int nb_searchSpaces;
   // CORESET structure, where maximum number of CORESETs to be handled is 3 (according to 38.331 V15.1.0)

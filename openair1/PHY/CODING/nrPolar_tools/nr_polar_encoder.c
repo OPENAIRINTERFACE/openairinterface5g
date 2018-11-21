@@ -317,7 +317,6 @@ void build_polar_tables(t_nrPolar_paramsPtr polarParams) {
       polarParams->cprime_tab1[byte][val] = 0;
       for (int i=0;i<numbits;i++) {
 	ip=polarParams->deinterleaving_pattern[(8*byte)+i];
-	if (val==0) printf("%d => %d\n",(8*byte)+i,ip);
 	AssertFatal(ip<128,"ip = %d\n",ip);
 	bit_i=(val>>i)&1;
 	if (ip<64) polarParams->cprime_tab0[byte][val] |= (((uint64_t)bit_i)<<ip);				
@@ -361,9 +360,11 @@ void build_polar_tables(t_nrPolar_paramsPtr polarParams) {
     if ((ip - iplast) == 1) ccnt++;
     else {
       groupcnt++;
+#ifdef DEBUG_POLAR_ENCODER
       printf("group %d (size %d): (%d:%d) => (%d:%d)\n",groupcnt,ccnt+1,
 	     firstingroup_in,firstingroup_in+ccnt,
 	     firstingroup_out,firstingroup_out+ccnt);
+#endif
       if ((ccnt+1)<mingroupsize) mingroupsize=ccnt+1;
       ccnt=0;
       firstingroup_out=outpos;
