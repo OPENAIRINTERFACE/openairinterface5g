@@ -2443,9 +2443,11 @@ void RCconfig_RU(void) {
 	    RC.ru[j]->num_gNB                           = 0;
       for (i=0;i<RC.ru[j]->num_gNB;i++) RC.ru[j]->gNB_list[i] = RC.gNB[RUParamList.paramarray[j][RU_ENB_LIST_IDX].iptr[i]][0];     
 
+#ifndef OAI_ADRV9371_ZC706
       if (config_isparamset(RUParamList.paramarray[j], RU_SDR_ADDRS)) {
         RC.ru[j]->openair0_cfg.sdr_addrs = strdup(*(RUParamList.paramarray[j][RU_SDR_ADDRS].strptr));
       }
+#endif
 
       if (config_isparamset(RUParamList.paramarray[j], RU_SDR_CLK_SRC)) {
         if (strcmp(*(RUParamList.paramarray[j][RU_SDR_CLK_SRC].strptr), "internal") == 0) {
