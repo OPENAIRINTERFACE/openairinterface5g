@@ -262,7 +262,7 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
 				unsigned short nb_rb_coreset)
 {
   int pilot[200] __attribute__((aligned(16)));
-  unsigned char aarx;
+  unsigned char aarx,p;
   unsigned short k;
   unsigned int pilot_cnt;
   int16_t ch[2],*pil,*rxF,*dl_ch,*fl,*fm,*fr;
@@ -424,6 +424,52 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
     }
 
   }
+  
+  void (*idft)(int16_t *,int16_t *, int);
+
+  switch (ue->frame_parms.ofdm_symbol_size) {
+  case 128:
+    idft = idft128;
+    break;
+
+  case 256:
+    idft = idft256;
+    break;
+
+  case 512:
+    idft = idft512;
+    break;
+
+  case 1024:
+    idft = idft1024;
+    break;
+
+  case 1536:
+    idft = idft1536;
+    break;
+
+  case 2048:
+    idft = idft2048;
+    break;
+
+  default:
+    idft = idft512;
+    break;
+  }
+
+  if( ((Ns%2) == 0) && (l == 0))
+  {
+      // do ifft of channel estimate
+      for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++)
+          for (p=0; p<ue->frame_parms.nb_antenna_ports_eNB; p++) {
+              if (ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].dl_ch_estimates[eNB_offset][(p<<1)+aarx])
+              {
+                  //LOG_I(PHY,"Channel Impulse Computation Slot %d ThreadId %d Symbol %d \n", Ns, ue->current_thread_id[Ns>>1], l);
+                  idft((int16_t*) &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].dl_ch_estimates[eNB_offset][(p<<1)+aarx][0],
+                          (int16_t*) ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].dl_ch_estimates_time[eNB_offset][(p<<1)+aarx],1);
+              }
+          }
+  }
 
   return(0);
 }
@@ -465,7 +511,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   int re_offset = k;
 
 //#ifdef DEBUG_CH
-  printf("PDSCH Channel Estimation : ThreadId %d, eNB_offset %d ch_offset %d, symbol_offset %d OFDM size %d, Ncp=%d, l=%d, Ns=%d, k=%d symbol %d\n",ue->current_thread_id[Ns>>1], eNB_offset,ch_offset,symbol_offset,ue->frame_parms.ofdm_symbol_size,
+  printf("PDSCH Channel Estimation : ThreadId %d, eNB_offset %d ch_offset %d, symbol_offset %d OFDM size %d, Ncp=%d, l=%d, Ns=%d, k=%d symbol %d\n",ue->current_thread_id[Ns], eNB_offset,ch_offset,symbol_offset,ue->frame_parms.ofdm_symbol_size,
          ue->frame_parms.Ncp,l,Ns,k, symbol);
 //#endif
 

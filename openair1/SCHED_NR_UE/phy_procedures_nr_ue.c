@@ -46,6 +46,7 @@
 #include "SCHED_NR/extern.h"
 //#include <sched.h>
 //#include "targets/RT/USER/nr-softmodem.h"
+#include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 
 #ifdef EMOS
 #include "SCHED/phy_procedures_emos.h"
@@ -2643,19 +2644,25 @@ void phy_procedures_UE_S_TX(PHY_VARS_NR_UE *ue,uint8_t eNB_id,uint8_t abstractio
   }
 }
 
-void ue_measurement_procedures(
+#endif 
+
+void nr_ue_measurement_procedures(
     uint16_t l,    // symbol index of each slot [0..6]
-    PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc, uint8_t eNB_id,
+    PHY_VARS_NR_UE *ue,
+    UE_nr_rxtx_proc_t *proc, 
+    uint8_t eNB_id,
     uint16_t slot, // slot index of each radio frame [0..19]
-    uint8_t abstraction_flag,runmode_t mode)
+    uint8_t abstraction_flag,
+    runmode_t mode)
 {
 
-  //LOG_I(PHY,"ue_measurement_procedures l %d Ncp %d\n",l,ue->frame_parms.Ncp);
+  LOG_I(PHY,"ue_measurement_procedures l %u Ncp %d\n",l,ue->frame_parms.Ncp);
 
   NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
 
   int nr_tti_rx = proc->nr_tti_rx;
 
+#if 0
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_MEASUREMENT_PROCEDURES, VCD_FUNCTION_IN);
 
   if (l==0) {
@@ -2705,12 +2712,12 @@ void ue_measurement_procedures(
       ue->sinr_eff =  sinr_eff_cqi_calc(ue, 0, nr_tti_rx);
 
   }
-
+#endif
   // accumulate and filter timing offset estimation every nr_tti_rx (instead of every frame)
   if (( (slot%2) == 0) && (l==(4-frame_parms->Ncp))) {
 
     // AGC
-
+/*
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL, VCD_FUNCTION_IN);
 
 #ifndef OAI_USRP
@@ -2724,12 +2731,14 @@ void ue_measurement_procedures(
 #endif
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL, VCD_FUNCTION_OUT);
-
+*/
     eNB_id = 0;
 
     if (abstraction_flag == 0) {
+		
+		printf("start adjust sync l = %d slot = %d no timing %d\n",l, slot, ue->no_timing_correction);
       if (ue->no_timing_correction==0)
-  lte_adjust_synch(&ue->frame_parms,
+  nr_adjust_synch_ue(&ue->frame_parms,
        ue,
        eNB_id,
        nr_tti_rx,
@@ -2741,6 +2750,7 @@ void ue_measurement_procedures(
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_MEASUREMENT_PROCEDURES, VCD_FUNCTION_OUT);
 }
+
 
 #ifdef EMOS
 void phy_procedures_emos_UE_RX(PHY_VARS_NR_UE *ue,uint8_t last_slot,uint8_t eNB_id)
@@ -2830,7 +2840,7 @@ void phy_procedures_emos_UE_RX(PHY_VARS_NR_UE *ue,uint8_t last_slot,uint8_t eNB_
 }
 #endif
 
-
+#if 0
 void restart_phy(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc, uint8_t eNB_id,uint8_t abstraction_flag)
 {
 
@@ -5475,6 +5485,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   int nr_tti_rx = proc->nr_tti_rx;
   proc->decoder_switch = 0;
   //int counter_decoder = 0;
+  
+  LOG_I(PHY," ****** start RX-Chain for AbsSubframe %d.%d ******  \n", frame_rx%1024, nr_tti_rx);
 
   uint8_t next1_thread_id = ue->current_thread_id[nr_tti_rx]== (RX_NB_TH-1) ? 0:(ue->current_thread_id[nr_tti_rx]+1);
   uint8_t next2_thread_id = next1_thread_id== (RX_NB_TH-1) ? 0:(next1_thread_id+1);
@@ -5557,8 +5569,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 #endif
 
   //nr_gold_pdcch(ue,0, 2);
- if (nr_tti_rx==2)
-  for (int l=0; l<2; l++) {
+ if (nr_tti_rx==1){
+  for (uint16_t l=0; l<2; l++) {
     if (abstraction_flag == 0) {
 #if UE_TIMING_TRACE
         start_meas(&ue->ofdm_demod_stats);
@@ -5567,7 +5579,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_IN);
       nr_slot_fep(ue,
 		  l,
-		  nr_tti_rx,
+		  nr_tti_rx<<1,
 		  0,
 		  0,
 		  1,
@@ -5576,8 +5588,12 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 #if UE_TIMING_TRACE
       stop_meas(&ue->ofdm_demod_stats);
 #endif
+    printf("phy procedure pdcch start measurement l =%d\n",l);
+    nr_ue_measurement_procedures(l,ue,proc,eNB_id,(nr_tti_rx<<1),abstraction_flag,mode);
     }
+    
   }
+ }
 
   //write_output("rxdataF.m","rxF",ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx>>1]].rxdataF[0],ue->frame_parms.ofdm_symbol_size*2,1,1);
 
@@ -5654,18 +5670,23 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 //#if 0
   LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
   
-  if (nr_tti_rx==2){
+  if (nr_tti_rx==1){
   //to update from pdsch config
   nr_gold_pdsch(ue,2,0, 1);
 
-  for (int m=2;m<6 ; m++)
+  for (uint16_t m=2;m<6 ; m++){
   nr_slot_fep(ue,
           m,  //to be updated from higher layer
-          nr_tti_rx,
+          nr_tti_rx<<1,
           0,
           0,
           1,
  		  NR_PDSCH_EST);
+ 		 
+ 		 printf("phy procedure pdsch start measurement\n"); 
+ 	  nr_ue_measurement_procedures(m,ue,proc,eNB_id,(nr_tti_rx<<1),abstraction_flag,mode);
+ 		  
+	  }
     //set active for testing, to be removed
 	ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active = 1;
   }
