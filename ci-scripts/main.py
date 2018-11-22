@@ -102,6 +102,7 @@ class SSHConnection():
 		self.iperf_args = ''
 		self.iperf_packetloss_threshold = ''
 		self.iperf_profile = ''
+		self.nbMaxUEtoAttach = -1
 		self.UEDevices = []
 		self.CatMDevices = []
 		self.UEIPAddresses = []
@@ -358,6 +359,18 @@ class SSHConnection():
 			self.CreateHtmlTestRow(self.Initialize_eNB_args, 'KO', pStatus)
 			self.CreateHtmlFooter(False)
 			sys.exit(1)
+		# If tracer options is on, running tshark on EPC side and capture traffic b/ EPC and eNB
+		result = re.search('T_stdout', str(self.Initialize_eNB_args))
+		if result is not None:
+			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+			self.command('ip addr show | awk -f /tmp/active_net_interfaces.awk | egrep -v "lo|tun"', '\$', 5)
+			result = re.search('interfaceToUse=(?P<eth_interface>[a-zA-Z0-9\-\_]+)done', str(self.ssh.before))
+			if result is not None:
+				eth_interface = result.group('eth_interface')
+				logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + '\u001B[0m')
+				self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f /tmp/enb_' + SSH.testCase_id + '_s1log.pcap', '\$', 5)
+				self.command('echo $USER; nohup sudo tshark -f "host ' + self.eNBIPAddress +'" -i ' + eth_interface + ' -w /tmp/enb_' + SSH.testCase_id + '_s1log.pcap > /tmp/tshark.log 2>&1 &', self.EPCUserName, 5)
+			self.close()
 		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 		# Initialize_eNB_args usually start with -O and followed by the location in repository
@@ -365,6 +378,14 @@ class SSHConnection():
 		extIdx = full_config_file.find('.conf')
 		if (extIdx > 0):
 			extra_options = full_config_file[extIdx + 5:]
+			# if tracer options is on, compiling and running T Tracer
+			result = re.search('T_stdout', str(extra_options))
+			if result is not None:
+				logging.debug('\u001B[1m Compiling and launching T Tracer\u001B[0m')
+				self.command('cd common/utils/T/tracer', '\$', 5)
+				self.command('make', '\$', 10)
+				self.command('echo $USER; nohup ./record -d ../T_messages.txt -o ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + SSH.testCase_id + '_record.raw -ON -off VCD -off HEAVY -off LEGACY_GROUP_TRACE -off LEGACY_GROUP_DEBUG > ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + SSH.testCase_id + '_record.log 2>&1 &', self.eNBUserName, 5)
+				self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 			full_config_file = full_config_file[:extIdx + 5]
 			config_path, config_file = os.path.split(full_config_file)
 		else:
@@ -608,11 +629,14 @@ class SSHConnection():
 		multi_jobs = []
 		status_queue = SimpleQueue()
 		lock = Lock()
+		nb_ue_to_connect = 0
 		for device_id in self.UEDevices:
-			p = Process(target = SSH.AttachUE_common, args = (device_id, status_queue, lock,))
-			p.daemon = True
-			p.start()
-			multi_jobs.append(p)
+			if (self.nbMaxUEtoAttach == -1) or (nb_ue_to_connect < self.nbMaxUEtoAttach):
+				p = Process(target = SSH.AttachUE_common, args = (device_id, status_queue, lock,))
+				p.daemon = True
+				p.start()
+				multi_jobs.append(p)
+			nb_ue_to_connect = nb_ue_to_connect + 1
 		for job in multi_jobs:
 			job.join()
 
@@ -1645,8 +1669,21 @@ class SSHConnection():
 			self.command('echo ' + self.eNBPassword + ' | sudo -S killall --signal SIGKILL lte-softmodem || true', '\$', 5)
 		self.close()
 		result = re.search('enb_', str(self.eNBLogFile))
+		# If tracer options is on, stopping tshark on EPC side
+		result = re.search('T_stdout', str(self.Initialize_eNB_args))
+		if result is not None:
+			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+			logging.debug('\u001B[1m Stopping tshark \u001B[0m')
+			self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
+			time.sleep(1)
+			pcap_log_file = self.eNBLogFile.replace('.log', '_s1log.pcap')
+			self.command('echo ' + self.EPCPassword + ' | sudo -S chmod 666 /tmp/' + pcap_log_file, '\$', 5)
+			self.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, '/tmp/' + pcap_log_file, '.')
+			self.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, pcap_log_file, self.eNBSourceCodePath + '/cmake_targets/.')
+			self.close()
 		if result is not None:
 			self.copyin(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, self.eNBSourceCodePath + '/cmake_targets/' + self.eNBLogFile, '.')
+			logging.debug('\u001B[1m Analyzing eNB logfile \u001B[0m')
 			logStatus = self.AnalyzeLogFile_eNB()
 			if (logStatus < 0):
 				self.CreateHtmlTestRow('N/A', 'KO', logStatus)
@@ -1672,11 +1709,8 @@ class SSHConnection():
 			self.command('cd scripts', '\$', 5)
 			self.command('rm -f ./kill_hss.sh', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S daemon --name=simulated_hss --stop', '\$', 5)
-			time.sleep(2)
-			self.command('ps -aux | egrep --color=never "hss_sim|simulated_hss" | grep -v grep | awk \'BEGIN{n=0}{pidId[n]=$2;n=n+1}END{print "kill -9 " pidId[0] " " pidId[1]}\' > ./kill_hss.sh', '\$', 5)
-			self.command('chmod 755 ./kill_hss.sh', '\$', 5)
-			self.command('echo ' + self.EPCPassword + ' | sudo -S ./kill_hss.sh', '\$', 5)
-			self.command('rm ./kill_hss.sh', '\$', 5)
+			time.sleep(1)
+			self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL hss_sim', '\$', 5)
 		self.close()
 		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
@@ -1763,8 +1797,8 @@ class SSHConnection():
 		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
 		self.command('echo ' + self.eNBPassword + ' | sudo -S rm -f enb.log.zip', '\$', 5)
-		self.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core*', '\$', 60)
-		self.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core*', '\$', 5)
+		self.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap', '\$', 60)
+		self.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap', '\$', 5)
 		self.close()
 
 	def LogCollectPing(self):
@@ -2071,6 +2105,13 @@ def GetParametersFromXML(action):
 		if (SSH.eNB_instance is None):
 			SSH.eNB_instance = '0'
 
+	if action == 'Attach_UE':
+		nbMaxUEtoAttach = test.findtext('nbMaxUEtoAttach')
+		if (nbMaxUEtoAttach is None):
+			SSH.nbMaxUEtoAttach = -1
+		else:
+			SSH.nbMaxUEtoAttach = int(nbMaxUEtoAttach)
+
 	if action == 'Ping':
 		SSH.ping_args = test.findtext('ping_args')
 		SSH.ping_packetloss_threshold = test.findtext('ping_packetloss_threshold')
@@ -2248,6 +2289,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE):
 		sys.exit('Insufficient Parameter')
 
 	SSH.copyout(SSH.EPCIPAddress, SSH.EPCUserName, SSH.EPCPassword, sys.path[0] + "/tcp_iperf_stats.awk", "/tmp")
+	SSH.copyout(SSH.EPCIPAddress, SSH.EPCUserName, SSH.EPCPassword, sys.path[0] + "/active_net_interfaces.awk", "/tmp")
 	SSH.CreateHtmlHeader()
 
 	#read test_case_list.xml file
