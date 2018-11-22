@@ -20,7 +20,7 @@
  */
 
 /*! \file common/config/config_userapi.h
- * \brief: configuration module, include file to be used by the source code calling the 
+ * \brief: configuration module, include file to be used by the source code calling the
  *  configuration module to access configuration parameters
  * \author Francois TABURET
  * \date 2017
@@ -31,7 +31,7 @@
  * \warning
  */
 #ifndef INCLUDE_CONFIG_USERAPI_H
-#define INCLUDE_CONFIG_USERAPI_H 
+#define INCLUDE_CONFIG_USERAPI_H
 #include "config_load_configmodule.h"
 
 #ifdef __cplusplus
@@ -48,7 +48,7 @@ extern "C"
 #define CONFIG_ISPARAMFLAGSET(P,F) ( !!(P.paramflags & F))
 /* utility functions, to be used by configuration module and/or configuration libraries */
 extern configmodule_interface_t *config_get_if(void);
-extern char * config_check_valptr(paramdef_t *cfgoptions, char **ptr, int length) ;
+extern char *config_check_valptr(paramdef_t *cfgoptions, char **ptr, int length) ;
 extern void config_printhelp(paramdef_t *,int numparams);
 extern int config_process_cmdline(paramdef_t *params,int numparams, char *prefix);
 extern void config_assign_processedint(paramdef_t *cfgoption, int val);

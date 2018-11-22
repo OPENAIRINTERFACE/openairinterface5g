@@ -20,8 +20,8 @@
  */
 
 /*! \file common/config/config_load_configmodule.h
- * \brief: configuration module, include file to be used by the source code calling the 
- *  configuration module initialization 
+ * \brief: configuration module, include file to be used by the source code calling the
+ *  configuration module initialization
  * \author Francois TABURET
  * \date 2017
  * \version 0.1
@@ -31,7 +31,7 @@
  * \warning
  */
 #ifndef INCLUDE_CONFIG_LOADCONFIGMODULE_H
-#define INCLUDE_CONFIG_LOADCONFIGMODULE_H 
+#define INCLUDE_CONFIG_LOADCONFIGMODULE_H
 
 
 #include <string.h>
@@ -61,8 +61,7 @@ typedef int(*configmodule_initfunc_t)(char *cfgP[],int numP);
 typedef int(*configmodule_getfunc_t)(paramdef_t *,int numparams, char *prefix);
 typedef int(*configmodule_getlistfunc_t)(paramlist_def_t *, paramdef_t *,int numparams, char *prefix);
 typedef void(*configmodule_endfunc_t)(void);
-typedef struct configmodule_interface
-{
+typedef struct configmodule_interface {
   int      argc;
   char     **argv;
   uint32_t *argv_info;
@@ -75,7 +74,7 @@ typedef struct configmodule_interface
   configmodule_endfunc_t          end;
   uint32_t numptrs;
   uint32_t rtflags;
-  char     *ptrs[CONFIG_MAX_ALLOCATEDPTRS];  
+  char     *ptrs[CONFIG_MAX_ALLOCATEDPTRS];
 } configmodule_interface_t;
 
 #ifdef CONFIG_LOADCONFIG_MAIN
@@ -85,17 +84,17 @@ static char config_helpstr [] = "\n lte-softmodem -O [config mode]<:dbgl[debugfl
           debugflags can also be defined in the config_libconfig section of the config file\n \
           debugflags: mask,    1->print parameters, 2->print memory allocations debug messages\n \
                                4->print command line processing debug messages\n ";
-			       
+
 #define CONFIG_SECTIONNAME "config"
 #define CONFIGPARAM_DEBUGFLAGS_IDX        0
 
 
 static paramdef_t Config_Params[] = {
-/*-----------------------------------------------------------------------------------------------------------------------*/
-/*                                            config parameters for config module                                        */
-/*   optname              helpstr           paramflags     XXXptr       defXXXval            type       numelt           */
-/*-----------------------------------------------------------------------------------------------------------------------*/
-{"debugflags",            config_helpstr,   0,             uptr:NULL,   defintval:0,        TYPE_MASK,  0}, 
+  /*-----------------------------------------------------------------------------------------------------------------------*/
+  /*                                            config parameters for config module                                        */
+  /*   optname              helpstr           paramflags     XXXptr       defXXXval            type       numelt           */
+  /*-----------------------------------------------------------------------------------------------------------------------*/
+  {"debugflags",            config_helpstr,   0,             uptr:NULL,   defintval:0,        TYPE_MASK,  0},
 };
 
 #else
@@ -104,7 +103,7 @@ extern configmodule_interface_t *cfgptr;
 
 
 #define printf_params(...) if ( (cfgptr->rtflags & (CONFIG_PRINTPARAMS)) != 0 )  { printf ( __VA_ARGS__ ); }
-#define printf_ptrs(...)   if ( (cfgptr->rtflags & (CONFIG_DEBUGPTR)) != 0 )     { printf ( __VA_ARGS__ ); }     
+#define printf_ptrs(...)   if ( (cfgptr->rtflags & (CONFIG_DEBUGPTR)) != 0 )     { printf ( __VA_ARGS__ ); }
 #define printf_cmdl(...)   if ( (cfgptr->rtflags & (CONFIG_DEBUGCMDLINE)) != 0 ) { printf ( __VA_ARGS__ ); }
 
 #define CONFIG_ENABLECMDLINEONLY  (1<<1)
