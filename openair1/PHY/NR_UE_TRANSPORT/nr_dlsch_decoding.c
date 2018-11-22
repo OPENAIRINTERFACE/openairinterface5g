@@ -292,7 +292,7 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   harq_process->G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, harq_process->Qm,harq_process->Nl);
   G = harq_process->G;
 
-  printf("DLSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d \n",harq_pid,A,G, harq_process->mcs, harq_process->Nl, nb_symb_sch);
+  //printf("DLSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d \n",harq_pid,A,G, harq_process->mcs, harq_process->Nl, nb_symb_sch);
 
   if (harq_process->round == 0) {
     // This is a new packet, so compute quantities regarding segmentation
@@ -325,7 +325,7 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   		  kc = 52;
   	  	  }
 
-      p_decParams->numMaxIter = 2;
+      p_decParams->numMaxIter = dlsch->max_ldpc_iterations;
       Kr = p_decParams->Z*kb;
       p_decParams->outMode= 0;
 
@@ -365,7 +365,7 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   for (r=0; r<harq_process->C; r++) {
 
-	  printf("start rx segment %d\n",r);
+    //printf("start rx segment %d\n",r);
 
 #if UE_TIMING_TRACE
     start_meas(dlsch_rate_unmatching_stats);
@@ -519,13 +519,12 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 		*/
 
 		nb_total_decod++;
-		if (no_iteration_ldpc > 10){
+		if (no_iteration_ldpc > dlsch->max_ldpc_iterations){
 		  nb_error_decod++;
-		  ret = 1+dlsch->max_ldpc_iterations;
 		}
-		else {
-		  ret=2;
-		}
+
+		ret=no_iteration_ldpc;
+
 		//if (!nb_total_decod%10000){
 				printf("Error number of iteration LPDC %d %ld/%ld \n", no_iteration_ldpc, nb_error_decod,nb_total_decod);fflush(stdout);
 		//}
@@ -538,13 +537,13 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 		      				harq_process->c[r][m]= (uint8_t) llrProcBuf[m];
 		      	      	}
 
-//#ifdef DEBUG_DLSCH_DECODING
+#ifdef DEBUG_DLSCH_DECODING
       //printf("output decoder %d %d %d %d %d \n", harq_process->c[r][0], harq_process->c[r][1], harq_process->c[r][2],harq_process->c[r][3], harq_process->c[r][4]);
       for (int k=0;k<32;k++)
        printf("output decoder [%d] =  0x%02x \n", k, harq_process->c[r][k]);
       printf("no_iterations_ldpc %d (ret %d)\n",no_iteration_ldpc,ret);
       //write_output("dec_output.m","dec0",harq_process->c[0],Kr_bytes,1,4);
-//#endif
+#endif
 
 
 #if UE_TIMING_TRACE
@@ -1233,10 +1232,10 @@ if (harq_process->C>1) { // wakeup worker if more than 1 segment
 				llrProcBuf,
           		p_procTime);
 
-		if (no_iteration_ldpc > 2)
-			printf("Error number of iteration LPDC %d\n", no_iteration_ldpc);
+		//if (no_iteration_ldpc > 2)
+		//printf("Error number of iteration LPDC %d\n", no_iteration_ldpc);
 		//else
-			//printf("OK number of iteration LPDC %d\n", no_iteration_ldpc);
+		//printf("OK number of iteration LPDC %d\n", no_iteration_ldpc);
 
 		for (int m=0; m < Kr>>3; m ++)
 		      	      	{
