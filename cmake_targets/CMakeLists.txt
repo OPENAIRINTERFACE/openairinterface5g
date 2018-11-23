@@ -1357,6 +1357,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/TOOLS/time_meas.c
   ${OPENAIR1_DIR}/PHY/TOOLS/lut.c
   ${OPENAIR1_DIR}/PHY/INIT/nr_init_ue.c
+  #  ${OPENAIR1_DIR}/SIMULATION/NR_UE_PHY/unit_tests/src/pucch_uci_test.c
   ${PHY_POLARSRC}
   ${PHY_LDPCSRC}
   )
