@@ -59,8 +59,6 @@ unsigned short rev[2048],rev_times4[8192],rev_half[1024];
 unsigned short rev256[256],rev512[512],rev1024[1024],rev4096[4096],rev2048[2048],rev8192[8192];
 
 
-char mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};
-
 short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
 short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
 

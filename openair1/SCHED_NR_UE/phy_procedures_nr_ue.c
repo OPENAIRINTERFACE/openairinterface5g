@@ -88,6 +88,8 @@ fifo_dump_emos_UE emos_dump_UE;
 
 #define NS_PER_SLOT 500000
 
+char mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};
+
 extern double cpuf;
 
 
