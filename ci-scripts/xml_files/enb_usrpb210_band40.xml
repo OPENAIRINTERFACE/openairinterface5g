@@ -24,6 +24,7 @@
         <TestCaseRequestedList>
  010101
  050101 060101 070101 040101
+ 030100 040300 040401 040201 030201
  030104 040301 040501 040602 040601 040603 040642 040641 040643 040401 040201 030201
  030114 040301 040511 040612 040611 040613 040652 040651 040653 040401 040201 030201
  050201 060201 070201
@@ -40,12 +41,18 @@
 		<Build_eNB_args>-w USRP -c --eNB</Build_eNB_args>
 	</testCase>
 
+	<testCase id="030100">
+		<class>Initialize_eNB</class>
+		<desc>Initialize eNB (TDD/Band40/5MHz) with T Tracer on</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band40.tm1.25PRB.FairScheduler.usrpb210.conf --T_stdout 0</Initialize_eNB_args>
+	</testCase>
+
 	<testCase id="030104">
 		<class>Initialize_eNB</class>
 		<desc>Initialize eNB (TDD/Band40/5MHz)</desc>
 		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band40.tm1.25PRB.FairScheduler.usrpb210.conf</Initialize_eNB_args>
 	</testCase>
-	
+
 	<testCase id="030114">
                 <class>Initialize_eNB</class>
                 <desc>Initialize eNB (TDD/Band40/10MHz/info)</desc>
@@ -72,6 +79,12 @@
 		<class>Terminate_UE</class>
 		<desc>Terminate UE</desc>
 	</testCase>
+
+        <testCase id="040300">
+                <class>Attach_UE</class>
+                <desc>Attach single UE</desc>
+                <nbMaxUEtoAttach>1</nbMaxUEtoAttach>
+        </testCase>
 
         <testCase id="040301">
                 <class>Attach_UE</class>
