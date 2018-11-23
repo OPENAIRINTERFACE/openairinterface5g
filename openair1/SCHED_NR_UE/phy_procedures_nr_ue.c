@@ -2714,7 +2714,7 @@ void nr_ue_measurement_procedures(
   }
 #endif
   // accumulate and filter timing offset estimation every nr_tti_rx (instead of every frame)
-  if (( (slot%2) == 0) && (l==(4-frame_parms->Ncp))) {
+  if (( (slot%2) == 0) && (l==(1-frame_parms->Ncp))) {
 
     // AGC
 /*
@@ -4261,9 +4261,10 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   NR_UE_PDSCH *pdsch_vars;
   uint8_t is_cw0_active = 0;
   uint8_t is_cw1_active = 0;
+  // to be updated by higher layer
   uint8_t nb_re_dmrs = 6;
   uint16_t length_dmrs = 1;
-  uint16_t nb_symb_sch = 4;
+  uint16_t nb_symb_sch = 8;
 
   if (dlsch0==NULL)
       AssertFatal(0,"dlsch0 should be defined at this level \n");
@@ -5483,7 +5484,9 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   int pmch_flag=0;
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
-  proc->decoder_switch = 0;
+  uint16_t nb_symb_sch = 8; // to be updated by higher layer
+  uint8_t nb_symb_pdcch =2; 
+  //proc->decoder_switch = 0;
   //int counter_decoder = 0;
   
   LOG_I(PHY," ****** start RX-Chain for AbsSubframe %d.%d ******  \n", frame_rx%1024, nr_tti_rx);
@@ -5570,7 +5573,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 
   //nr_gold_pdcch(ue,0, 2);
  if (nr_tti_rx==1){
-  for (uint16_t l=0; l<2; l++) {
+  for (uint16_t l=0; l<nb_symb_pdcch; l++) {
     if (abstraction_flag == 0) {
 #if UE_TIMING_TRACE
         start_meas(&ue->ofdm_demod_stats);
@@ -5672,9 +5675,9 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   
   if (nr_tti_rx==1){
   //to update from pdsch config
-  nr_gold_pdsch(ue,2,0, 1);
+  nr_gold_pdsch(ue,nb_symb_pdcch,0, 1);
 
-  for (uint16_t m=2;m<6 ; m++){
+  for (uint16_t m=nb_symb_pdcch;m<=(nb_symb_sch+nb_symb_pdcch-1) ; m++){
   nr_slot_fep(ue,
           m,  //to be updated from higher layer
           nr_tti_rx<<1,
@@ -5703,8 +5706,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 			PDSCH,
 			ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0],
 			NULL,
-			2, //ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->num_pdcch_symbols,
-			5, //ue->frame_parms.symbols_per_tti>>1,
+			nb_symb_pdcch, //ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->num_pdcch_symbols,
+			(nb_symb_sch+nb_symb_pdcch-1), //ue->frame_parms.symbols_per_tti>>1,
 			abstraction_flag);
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);

@@ -96,7 +96,7 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
       else
           count_max_pos_ok = 0;
           
-          printf("adjust sync count_max_pos_ok = %d\n",count_max_pos_ok);
+      printf("adjust sync count_max_pos_ok = %d\n",count_max_pos_ok);
 
       if(count_max_pos_ok > 10 && first_time == 1)
       {
