@@ -99,9 +99,10 @@ typedef struct RrcConfigurationReq_s {
 
   uint16_t                tac;
 
-  uint16_t                mcc;
-  uint16_t                mnc;
-  uint8_t                 mnc_digit_length;
+  uint16_t            mcc[PLMN_LIST_MAX_SIZE];
+  uint16_t            mnc[PLMN_LIST_MAX_SIZE];
+  uint8_t             mnc_digit_length[PLMN_LIST_MAX_SIZE];
+  uint8_t             num_plmn;
 
   
   paging_drx_t            default_drx;
@@ -300,9 +301,9 @@ typedef struct NbIoTRrcConfigurationReq_s {
 typedef struct NRRrcConfigurationReq_s {
   uint32_t                cell_identity;
   uint16_t                tac;
-  uint16_t                mcc;
-  uint16_t                mnc;
-  uint8_t                 mnc_digit_length;
+  uint16_t                mcc[PLMN_LIST_MAX_SIZE];
+  uint16_t                mnc[PLMN_LIST_MAX_SIZE];
+  uint8_t                 mnc_digit_length[PLMN_LIST_MAX_SIZE];
   int16_t                 nb_cc;
   lte_frame_type_t        frame_type[MAX_NUM_CCs];
   uint8_t                 tdd_config[MAX_NUM_CCs];

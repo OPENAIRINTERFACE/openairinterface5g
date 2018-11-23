@@ -119,8 +119,8 @@ uint16_t ue_process_rar(const module_id_t module_idP, const int CC_id, const fra
 	LOG_D(OPT,
 	      "[UE %d][RAPROC] CC_id %d RAR Frame %d trace pdu for ra-RNTI %x\n",
 	      module_idP, CC_id, frameP, ra_rnti);
-	trace_pdu(1, (uint8_t *) dlsch_buffer, n_rarh + n_rarpy * 6,
-		  module_idP, 2, ra_rnti, UE_mac_inst[module_idP].rxFrame,
+	trace_pdu(DIRECTION_DOWNLINK, (uint8_t *) dlsch_buffer, n_rarh + n_rarpy * 6,
+		  module_idP, WS_RA_RNTI, ra_rnti, UE_mac_inst[module_idP].rxFrame,
 		  UE_mac_inst[module_idP].rxSubframe, 0, 0);
     }
 

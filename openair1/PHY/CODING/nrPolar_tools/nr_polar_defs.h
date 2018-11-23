@@ -56,6 +56,27 @@
 
 static const uint8_t nr_polar_subblock_interleaver_pattern[32] = { 0, 1, 2, 4, 3, 5, 6, 7, 8, 16, 9, 17, 10, 18, 11, 19, 12, 20, 13, 21, 14, 22, 15, 23, 24, 25, 26, 28, 27, 29, 30, 31 };
 
+
+#define Nmax 1024
+#define nmax 10
+
+typedef struct decoder_node_t_s {
+  struct decoder_node_t_s *left;
+  struct decoder_node_t_s *right;
+  int level;
+  int leaf;
+  int Nv;
+  int first_leaf_index;
+  int all_frozen;
+  int16_t *alpha;
+  int16_t *beta;
+} decoder_node_t;
+
+typedef struct decoder_tree_t_s {
+  decoder_node_t *root;
+  int num_nodes;
+} decoder_tree_t;
+
 struct nrPolar_params {
 	//messageType: 0=PBCH, 1=DCI, -1=UCI
 	int idx; //idx = (messageType * messageLength * aggregation_prime);
@@ -89,7 +110,7 @@ struct nrPolar_params {
 	uint8_t **crc_generator_matrix; //G_P
 	uint8_t **G_N;
 	uint32_t* crc256Table;
-
+  uint8_t **extended_crc_generator_matrix;
 	//lowercase: bits, Uppercase: Bits stored in bytes
 	//polar_encoder vectors
 	uint8_t *nr_polar_crc;
@@ -103,6 +124,8 @@ struct nrPolar_params {
 	uint8_t *nr_polar_CPrime;
 	uint8_t *nr_polar_B;
 	uint8_t *nr_polar_U;
+
+decoder_tree_t tree;
 } __attribute__ ((__packed__));
 typedef struct nrPolar_params t_nrPolar_params;
 typedef t_nrPolar_params *t_nrPolar_paramsPtr;
@@ -151,6 +174,8 @@ int8_t polar_decoder_dci(double *input,
 						 uint8_t pathMetricAppr,
 						 uint16_t n_RNTI);
 
+void generic_polar_decoder(t_nrPolar_params *,decoder_node_t *);
+
 void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 				   int8_t messageType,
 				   uint16_t messageLength,
@@ -195,6 +220,8 @@ void nr_polar_rate_matching(double *input,
 							uint16_t K,
 							uint16_t N,
 							uint16_t E);
+
+void nr_polar_rate_matching_int16(int16_t *input, int16_t *output, uint16_t *rmp, uint16_t K, uint16_t N, uint16_t E);
 
 void nr_polar_interleaving_pattern(uint16_t K,
 								   uint8_t I_IL,
@@ -262,6 +289,9 @@ void nr_free_uint8_t_2D_array(uint8_t **input,
 void nr_free_double_3D_array(double ***input,
 							 uint16_t xlen,
 							 uint16_t ylen);
+
+void nr_free_double_2D_array(double **input, uint16_t xlen);
+
 
 void updateLLR(double ***llr,
 			   uint8_t **llrU,
@@ -334,11 +364,18 @@ static inline void nr_polar_interleaver(uint8_t *input,
 }
 
 static inline void nr_polar_deinterleaver(uint8_t *input,
-										  uint8_t *output,
-										  uint16_t *pattern,
-										  uint16_t size)
+					  uint8_t *output,
+					  uint16_t *pattern,
+					  uint16_t size)
 {
-	for (int i=0; i<size; i++) output[pattern[i]]=input[i];
+  for (int i=0; i<size; i++) {
+    output[pattern[i]]=input[i];
+  }
 }
 
+void build_decoder_tree(t_nrPolar_params *pp);
+
+int8_t polar_decoder_int16(int16_t *input,
+			   uint8_t *out,
+			   t_nrPolar_params *polarParams);
 #endif

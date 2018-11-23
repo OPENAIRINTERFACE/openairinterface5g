@@ -655,15 +655,16 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   int i,j,k,l;
   int eNB_id;
   int th_id;
-
+  int n_ssb_crb=(fp->N_RB_DL-20);
   abstraction_flag = 0;
   fp->nb_antennas_tx = 1;
   fp->nb_antennas_rx=1;
 
+
   printf("Initializing UE vars (abstraction %"PRIu8") for eNB TXant %"PRIu8", UE RXant %"PRIu8"\n",abstraction_flag,fp->nb_antennas_tx,fp->nb_antennas_rx);
   //LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_UE][MOD %02u][]\n", ue->Mod_id+NB_eNB_INST);
   
-  nr_init_frame_parms_ue(&ue->frame_parms);
+  nr_init_frame_parms_ue(fp,NR_MU_1,NORMAL,fp->N_RB_DL,n_ssb_crb,0);
   phy_init_nr_top(ue);
 
   // many memory allocation sizes are hard coded
@@ -699,7 +700,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     for (i=0; i<fp->nb_antennas_tx; i++) {
 
       common_vars->txdata[i]  = (int32_t*)malloc16_clear( fp->samples_per_subframe*10*sizeof(int32_t) );
-      common_vars->txdataF[i] = (int32_t *)malloc16_clear( fp->ofdm_symbol_size*fp->symbols_per_tti*10*sizeof(int32_t) );
+      common_vars->txdataF[i] = (int32_t *)malloc16_clear( fp->ofdm_symbol_size*fp->symbols_per_slot*10*sizeof(int32_t) );
     }
 
     // init RX buffers
@@ -728,7 +729,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
       for (j=0; j<4; j++) {
         int idx = (j<<1) + i;
         for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
-            common_vars->common_vars_rx_data_per_thread[th_id].dl_ch_estimates[eNB_id][idx] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->symbols_per_tti*(fp->ofdm_symbol_size+LTE_CE_FILTER_LENGTH) );
+            common_vars->common_vars_rx_data_per_thread[th_id].dl_ch_estimates[eNB_id][idx] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->symbols_per_slot*(fp->ofdm_symbol_size+LTE_CE_FILTER_LENGTH) );
             common_vars->common_vars_rx_data_per_thread[th_id].dl_ch_estimates_time[eNB_id][idx] = (int32_t*)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size*2 );
         }
       }
@@ -850,7 +851,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
       pbch_vars[eNB_id]->rxdataF_ext         = (int32_t**)malloc16( fp->nb_antennas_rx*sizeof(int32_t*) );
       pbch_vars[eNB_id]->rxdataF_comp        = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
       pbch_vars[eNB_id]->dl_ch_estimates_ext = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
-      pbch_vars[eNB_id]->llr                 = (int8_t*)malloc16_clear( 1920 );//
+      pbch_vars[eNB_id]->llr                 = (int16_t*)malloc16_clear( 1920 );//
       prach_vars[eNB_id]->prachF             = (int16_t*)malloc16_clear( sizeof(int)*(7*2*sizeof(int)*(fp->ofdm_symbol_size*12)) );
       prach_vars[eNB_id]->prach              = (int16_t*)malloc16_clear( sizeof(int)*(7*2*sizeof(int)*(fp->ofdm_symbol_size*12)) );
 
@@ -941,41 +942,25 @@ void init_nr_ue_transport(PHY_VARS_NR_UE *ue,int abstraction_flag) {
 
 void phy_init_nr_top(PHY_VARS_NR_UE *ue)
 {
-	NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
-	NR_UE_DLSCH_t *dlsch0 = ue->dlsch[0][0][0];
-	dlsch0 =(NR_UE_DLSCH_t *)malloc16(sizeof(NR_UE_DLSCH_t));
-
+  NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
+  NR_UE_DLSCH_t *dlsch0 = ue->dlsch[0][0][0];
+  dlsch0 =(NR_UE_DLSCH_t *)malloc16(sizeof(NR_UE_DLSCH_t));
+  
   crcTableInit();
 
-  ccodedot11_init();
-  ccodedot11_init_inv();
-
-  ccodelte_init();
-  ccodelte_init_inv();
-
-  //treillis_table_init();
-
-  phy_generate_viterbi_tables();
-  phy_generate_viterbi_tables_lte();
-
-  //init_td8();
-  //init_td16();
-#ifdef __AVX2__
-  //init_td16avx2();
-#endif
+  init_dfts();
 
   init_context_synchro_nr(frame_parms);
 
   generate_ul_reference_signal_sequences(SHRT_MAX);
 
   // Polar encoder init for PBCH
-  //nr_polar_init(&frame_parms->pbch_polar_params, 1);
-  /*t_nrPolar_paramsPtr nrPolar_params = NULL, currentPtr = NULL;
-  nr_polar_init(&ue->nrPolar_params,
-    		  	  	NR_POLAR_PBCH_MESSAGE_TYPE,
-					NR_POLAR_PBCH_PAYLOAD_BITS,
-					NR_POLAR_PBCH_AGGREGATION_LEVEL);*/
 
+  ue->nrPolar_params = NULL;
+  nr_polar_init(&ue->nrPolar_params,
+		NR_POLAR_PBCH_MESSAGE_TYPE,
+		NR_POLAR_PBCH_PAYLOAD_BITS,
+		NR_POLAR_PBCH_AGGREGATION_LEVEL);
   //lte_sync_time_init(frame_parms);
 
   //generate_ul_ref_sigs();
@@ -989,5 +974,66 @@ void phy_init_nr_top(PHY_VARS_NR_UE *ue)
   //init_scrambling_lut();
   
   //set_taus_seed(1328);
+
+}
+
+void set_default_frame_parms_single(nfapi_nr_config_request_t *config, NR_DL_FRAME_PARMS *frame_parms) {
+
+  //int CC_id;
+
+  //for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+        /* Set some default values that may be overwritten while reading options */
+        frame_parms = (NR_DL_FRAME_PARMS*) malloc(sizeof(NR_DL_FRAME_PARMS));
+        config = (nfapi_nr_config_request_t*) malloc(sizeof(nfapi_nr_config_request_t));
+        config->subframe_config.numerology_index_mu.value =1;
+        config->subframe_config.duplex_mode.value = 1; //FDD
+        config->subframe_config.dl_cyclic_prefix_type.value = 0; //NORMAL
+        config->rf_config.dl_carrier_bandwidth.value = 106;
+        config->rf_config.ul_carrier_bandwidth.value = 106;
+        config->rf_config.tx_antenna_ports.value = 1;
+        config->rf_config.rx_antenna_ports.value = 1;
+        config->sch_config.physical_cell_id.value = 0;
+
+        frame_parms->frame_type          = FDD;
+        frame_parms->tdd_config          = 3;
+        //frame_parms[CC_id]->tdd_config_S        = 0;
+        frame_parms->N_RB_DL             = 100;
+        frame_parms->N_RB_UL             = 100;
+        frame_parms->Ncp                 = NORMAL;
+        //frame_parms[CC_id]->Ncp_UL              = NORMAL;
+        frame_parms->Nid_cell            = 0;
+        //frame_parms[CC_id]->num_MBSFN_config    = 0;
+        frame_parms->nb_antenna_ports_eNB  = 1;
+        frame_parms->nb_antennas_tx      = 1;
+        frame_parms->nb_antennas_rx      = 1;
+
+        //frame_parms[CC_id]->nushift             = 0;
+
+        ///frame_parms[CC_id]->phich_config_common.phich_resource = oneSixth;
+        //frame_parms[CC_id]->phich_config_common.phich_duration = normal;
+	
+	// UL RS Config
+        /*frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.cyclicShift = 1;//n_DMRS1 set to 0
+        frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.groupHoppingEnabled = 1;
+        frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled = 0;
+        frame_parms[CC_id]->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
+
+	frame_parms[CC_id]->pusch_config_common.n_SB = 1;
+	frame_parms[CC_id]->pusch_config_common.hoppingMode = 0;
+	frame_parms[CC_id]->pusch_config_common.pusch_HoppingOffset = 0;
+	frame_parms[CC_id]->pusch_config_common.enable64QAM = 0;
+		
+        frame_parms[CC_id]->prach_config_common.rootSequenceIndex=22;
+        frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.zeroCorrelationZoneConfig=1;
+        frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_ConfigIndex=0;
+        frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.highSpeedFlag=0;
+        frame_parms[CC_id]->prach_config_common.prach_ConfigInfo.prach_FreqOffset=0;*/
+
+        // NR: Init to legacy LTE 20Mhz params
+        frame_parms->numerology_index	= 0;
+        frame_parms->ttis_per_subframe	= 1;
+        frame_parms->slots_per_tti		= 2;
+
+    //}
 
 }

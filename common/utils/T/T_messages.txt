@@ -838,6 +838,27 @@ ID = LEGACY_OSA_TRACE
     GROUP = ALL:LEGACY_OSA:LEGACY_GROUP_TRACE:LEGACY
     FORMAT = string,log
 
+ID = LEGACY_ASN_INFO
+    DESC = ASN legacy logs - info level
+    GROUP = ALL:LEGACY_ASN:LEGACY_GROUP_INFO:LEGACY
+    FORMAT = string,log
+ID = LEGACY_ASN_ERROR
+    DESC = ASN legacy logs - error level
+    GROUP = ALL:LEGACY_ASN:LEGACY_GROUP_ERROR:LEGACY
+    FORMAT = string,log
+ID = LEGACY_ASN_WARNING
+    DESC = ASN legacy logs - warning level
+    GROUP = ALL:LEGACY_ASN:LEGACY_GROUP_WARNING:LEGACY
+    FORMAT = string,log
+ID = LEGACY_ASN_DEBUG
+    DESC = ASN legacy logs - debug level
+    GROUP = ALL:LEGACY_ASN:LEGACY_GROUP_DEBUG:LEGACY
+    FORMAT = string,log
+ID = LEGACY_ASN_TRACE
+    DESC = ASN legacy logs - trace level
+    GROUP = ALL:LEGACY_ASN:LEGACY_GROUP_TRACE:LEGACY
+    FORMAT = string,log
+
 ID = LEGACY_SIM_INFO
     DESC = SIM legacy logs - info level
     GROUP = ALL:LEGACY_SIM:LEGACY_GROUP_INFO:LEGACY
@@ -1658,6 +1679,48 @@ ID = VCD_VARIABLE_CPUID_RU_THREAD_TX
     GROUP = ALL:VCD:ENB:VCD_VARIABLE
     FORMAT = ulong,value
     VCD_NAME = ru_thread_tx_CPUID
+
+ #variable for gNB
+ID = VCD_VARIABLE_FRAME_NUMBER_TX0_GNB
+    DESC = VCD variable FRAME_NUMBER_TX0_GNB
+    GROUP = ALL:VCD:ENB:VCD_VARIABLE
+    FORMAT = ulong,value
+    VCD_NAME = frame_number_TX0_gNB
+ID = VCD_VARIABLE_FRAME_NUMBER_TX1_GNB
+    DESC = VCD variable FRAME_NUMBER_TX1_GNB
+    GROUP = ALL:VCD:ENB:VCD_VARIABLE
+    FORMAT = ulong,value
+    VCD_NAME = frame_number_TX1_gNB
+ID = VCD_VARIABLE_FRAME_NUMBER_RX0_GNB
+    DESC = VCD variable FRAME_NUMBER_RX0_GNB
+    GROUP = ALL:VCD:ENB:VCD_VARIABLE
+    FORMAT = ulong,value
+    VCD_NAME = frame_number_RX0_gNB
+ID = VCD_VARIABLE_FRAME_NUMBER_RX1_GNB
+    DESC = VCD variable FRAME_NUMBER_RX1_GNB
+    GROUP = ALL:VCD:ENB:VCD_VARIABLE
+    FORMAT = ulong,value
+    VCD_NAME = frame_number_RX1_gNB
+ID = VCD_VARIABLE_SUBFRAME_NUMBER_TX0_GNB
+    DESC = VCD variable SUBFRAME_NUMBER_TX0_GNB
+    GROUP = ALL:VCD:ENB:VCD_VARIABLE
+    FORMAT = ulong,value
+    VCD_NAME = subframe_number_TX0_gNB
+ID = VCD_VARIABLE_SUBFRAME_NUMBER_TX1_GNB
+    DESC = VCD variable SUBFRAME_NUMBER_TX1_GNB
+    GROUP = ALL:VCD:ENB:VCD_VARIABLE
+    FORMAT = ulong,value
+    VCD_NAME = subframe_number_TX1_gNB
+ID = VCD_VARIABLE_SUBFRAME_NUMBER_RX0_GNB
+    DESC = VCD variable SUBFRAME_NUMBER_RX0_GNB
+    GROUP = ALL:VCD:ENB:VCD_VARIABLE
+    FORMAT = ulong,value
+    VCD_NAME = subframe_number_RX0_gNB
+ID = VCD_VARIABLE_SUBFRAME_NUMBER_RX1_GNB
+    DESC = VCD variable SUBFRAME_NUMBER_RX1_GNB
+    GROUP = ALL:VCD:ENB:VCD_VARIABLE
+    FORMAT = ulong,value
+    VCD_NAME = subframe_number_RX1_gNB
 
 #functions
 
@@ -2616,3 +2679,15 @@ ID = VCD_FUNCTION_PDCCH_TX
     GROUP = ALL:VCD:ENB:VCD_FUNCTION
     FORMAT = int,value
     VCD_NAME = pdcch_tx
+
+  #function for gNB
+ID = VCD_FUNCTION_gNB_PROC_RXTX0
+    DESC = VCD function gNB_PROC_RXTX0
+    GROUP = ALL:VCD:ENB:VCD_FUNCTION
+    FORMAT = int,value
+    VCD_NAME = gNB_thread_rxtx0
+ID = VCD_FUNCTION_gNB_PROC_RXTX1
+    DESC = VCD function gNB_PROC_RXTX1
+    GROUP = ALL:VCD:ENB:VCD_FUNCTION
+    FORMAT = int,value
+    VCD_NAME = gNB_thread_rxtx1

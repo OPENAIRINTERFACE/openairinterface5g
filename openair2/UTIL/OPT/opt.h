@@ -54,6 +54,16 @@ This header file must be included */
 //#include "PHY/extern.h"
 #endif
 
+#define PACKET_MAC_LTE_DEFAULT_UDP_PORT (9999)
+
+typedef uint8_t  guint8;
+typedef uint16_t guint16;
+typedef uint32_t guint32;
+typedef guint8   gboolean;
+
+#include "packet-mac-lte.h"
+#include "mac_pcap.h"
+
 #ifdef OCP_FRAMEWORK
 #include <enums.h>
 #else
@@ -73,7 +83,7 @@ typedef enum radio_type_e {
 
 extern trace_mode_t opt_type;
 extern char in_ip[40];
-extern char in_path[100];
+extern char in_path[FILENAME_MAX];
 
 /**
  * function def
@@ -83,7 +93,7 @@ void trace_pdu(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
                int ueid, int rntiType, int rnti, uint16_t sysFrame, uint8_t subframe,
                int oob_event, int oob_event_value);
 
-int init_opt(char *path, char *ip, char *port, radio_type_t radio_type_p);
+int init_opt(char *path, char *ip);
 
 void terminate_opt(void);
 

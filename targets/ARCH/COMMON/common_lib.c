@@ -106,7 +106,7 @@ int load_lib(openair0_device *device, openair0_config_t *openair0_cfg, eth_param
       libname=OAI_TP_LIBNAME;
       shlib_fdesc[0].fname="transport_init";      
     } 
-  ret=load_module_shlib(libname,shlib_fdesc,1);
+  ret=load_module_shlib(libname,shlib_fdesc,1,NULL);
   if (ret < 0) {
        fprintf(stderr,"Library %s couldn't be loaded\n",libname);
   } else {

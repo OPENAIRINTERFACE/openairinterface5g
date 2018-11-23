@@ -43,7 +43,7 @@
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "RRC/LTE/rrc_eNB_UE_context.h"
 #include "PHY/phy_extern.h"
-#include "log.h"
+#include "common/utils/LOG/log.h"
 
 /****************************
  * get generic info from RAN
@@ -72,6 +72,10 @@ uint16_t flexran_get_future_sfn_sf(mid_t mod_id, int ahead_of_time);
 
 /* Return the number of attached UEs */
 int flexran_get_num_ues(mid_t mod_id);
+
+/* Return the UE id of attached UE as opposed to the index [0,NUM UEs] (i.e.,
+ * the i'th active UE). Returns 0 if the i'th active UE could not be found. */
+int flexran_get_ue_id(mid_t mod_id, int i);
 
 /* Get the rnti of a UE with id ue_id */
 rnti_t flexran_get_ue_crnti(mid_t mod_id, mid_t ue_id);
@@ -421,59 +425,59 @@ uint8_t flexran_get_rrc_status(mid_t mod_id, mid_t ue_id);
 /***************************** PDCP ***********************/
 
 /*PDCP superframe numberflexRAN*/
-uint32_t flexran_get_pdcp_sfn(const mid_t mod_id);
+uint32_t flexran_get_pdcp_sfn(mid_t mod_id);
 
 /*PDCP pdcp tx stats window*/
-void flexran_set_pdcp_tx_stat_window(const mid_t mod_id, const mid_t ue_id, uint16_t obs_window);
+void flexran_set_pdcp_tx_stat_window(mid_t mod_id, mid_t ue_id, uint16_t obs_window);
 
 /*PDCP pdcp rx stats window*/
-void flexran_set_pdcp_rx_stat_window(const mid_t mod_id, const mid_t ue_id, uint16_t obs_window);
+void flexran_set_pdcp_rx_stat_window(mid_t mod_id, mid_t ue_id, uint16_t obs_window);
 
 /*PDCP num tx pdu status flexRAN*/
-uint32_t flexran_get_pdcp_tx(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+uint32_t flexran_get_pdcp_tx(mid_t mod_id, mid_t ue_id, lcid_t lcid);
 
 /*PDCP num tx bytes status flexRAN*/
-uint32_t flexran_get_pdcp_tx_bytes(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+uint32_t flexran_get_pdcp_tx_bytes(mid_t mod_id, mid_t ue_id, lcid_t lcid);
 
 /*PDCP number of transmit packet / second status flexRAN*/
-uint32_t flexran_get_pdcp_tx_w(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+uint32_t flexran_get_pdcp_tx_w(mid_t mod_id, mid_t ue_id, lcid_t lcid);
 
 /*PDCP pdcp tx bytes in a given window flexRAN*/
-uint32_t flexran_get_pdcp_tx_bytes_w(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+uint32_t flexran_get_pdcp_tx_bytes_w(mid_t mod_id, mid_t ue_id, lcid_t lcid);
 
 /*PDCP tx sequence number flexRAN*/
-uint32_t flexran_get_pdcp_tx_sn(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+uint32_t flexran_get_pdcp_tx_sn(mid_t mod_id, mid_t ue_id, lcid_t lcid);
 
 /*PDCP tx aggregated packet arrival  flexRAN*/
-uint32_t flexran_get_pdcp_tx_aiat(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+uint32_t flexran_get_pdcp_tx_aiat(mid_t mod_id, mid_t ue_id, lcid_t lcid);
 
 /*PDCP tx aggregated packet arrival per second flexRAN*/
-uint32_t flexran_get_pdcp_tx_aiat_w(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+uint32_t flexran_get_pdcp_tx_aiat_w(mid_t mod_id, mid_t ue_id, lcid_t lcid);
 
 
 /*PDCP num rx pdu status flexRAN*/
-uint32_t flexran_get_pdcp_rx(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+uint32_t flexran_get_pdcp_rx(mid_t mod_id, mid_t ue_id, lcid_t lcid);
 
 /*PDCP num rx bytes status flexRAN*/
-uint32_t flexran_get_pdcp_rx_bytes(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+uint32_t flexran_get_pdcp_rx_bytes(mid_t mod_id, mid_t ue_id, lcid_t lcid);
 
 /*PDCP number of received packet / second  flexRAN*/
-uint32_t flexran_get_pdcp_rx_w(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+uint32_t flexran_get_pdcp_rx_w(mid_t mod_id, mid_t ue_id, lcid_t lcid);
 
 /*PDCP gootput (bit/s) status flexRAN*/
-uint32_t flexran_get_pdcp_rx_bytes_w(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+uint32_t flexran_get_pdcp_rx_bytes_w(mid_t mod_id, mid_t ue_id, lcid_t lcid);
 
 /*PDCP rx sequence number flexRAN*/
-uint32_t flexran_get_pdcp_rx_sn(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+uint32_t flexran_get_pdcp_rx_sn(mid_t mod_id, mid_t ue_id, lcid_t lcid);
 
 /*PDCP rx aggregated packet arrival  flexRAN*/
-uint32_t flexran_get_pdcp_rx_aiat(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+uint32_t flexran_get_pdcp_rx_aiat(mid_t mod_id, mid_t ue_id, lcid_t lcid);
 
 /*PDCP rx aggregated packet arrival per second flexRAN*/
-uint32_t flexran_get_pdcp_rx_aiat_w(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+uint32_t flexran_get_pdcp_rx_aiat_w(mid_t mod_id, mid_t ue_id, lcid_t lcid);
 
 /*PDCP num of received outoforder pdu status flexRAN*/
-uint32_t flexran_get_pdcp_rx_oo(const mid_t mod_id,  const mid_t ue_id, const lcid_t lcid);
+uint32_t flexran_get_pdcp_rx_oo(mid_t mod_id, mid_t ue_id, lcid_t lcid);
 
 /*********************RRC**********************/
 /*Get primary cell measuremeant id flexRAN*/
@@ -504,3 +508,155 @@ int flexran_get_rrc_neigh_plmn_mcc(mid_t mod_id, mid_t ue_id, int cell_id); */
 /*Get MNC PLMN identity neighbouring Cell*/
 /* currently not implemented
 int flexran_get_rrc_neigh_plmn_mnc(mid_t mod_id, mid_t ue_id, int cell_id); */
+
+/************************** Slice configuration **************************/
+
+/* Get the DL slice ID for a UE */
+int flexran_get_ue_dl_slice_id(mid_t mod_id, mid_t ue_id);
+
+/* Set the DL slice index(!) for a UE */
+void flexran_set_ue_dl_slice_idx(mid_t mod_id, mid_t ue_id, int slice_idx);
+
+/* Get the UL slice ID for a UE */
+int flexran_get_ue_ul_slice_id(mid_t mod_id, mid_t ue_id);
+
+/* Set the UL slice index(!) for a UE */
+void flexran_set_ue_ul_slice_idx(mid_t mod_id, mid_t ue_id, int slice_idx);
+
+/* Whether intraslice sharing is active, return boolean */
+int flexran_get_intraslice_sharing_active(mid_t mod_id);
+/* Set whether intraslice sharing is active */
+void flexran_set_intraslice_sharing_active(mid_t mod_id, int intraslice_active);
+
+/* Whether intraslice sharing is active, return boolean */
+int flexran_get_interslice_sharing_active(mid_t mod_id);
+/* Set whether intraslice sharing is active */
+void flexran_set_interslice_sharing_active(mid_t mod_id, int interslice_active);
+
+/* Get the number of slices in DL */
+int flexran_get_num_dl_slices(mid_t mod_id);
+
+/* Query slice existence in DL. Return is boolean value */
+int flexran_dl_slice_exists(mid_t mod_id, int slice_idx);
+
+/* Create slice in DL, returns the new slice index */
+int flexran_create_dl_slice(mid_t mod_id, slice_id_t slice_id);
+/* Finds slice in DL with given slice_id and returns slice index */
+int flexran_find_dl_slice(mid_t mod_id, slice_id_t slice_id);
+/* Remove slice in DL, returns new number of slices or -1 on error */
+int flexran_remove_dl_slice(mid_t mod_id, int slice_idx);
+
+/* Get the ID of a slice in DL */
+slice_id_t flexran_get_dl_slice_id(mid_t mod_id, int slice_idx);
+/* Set the ID of a slice in DL */
+void flexran_set_dl_slice_id(mid_t mod_id, int slice_idx, slice_id_t slice_id);
+
+/* Get the RB share a slice in DL, value 0-100 */
+int flexran_get_dl_slice_percentage(mid_t mod_id, int slice_idx);
+/* Set the RB share a slice in DL, value 0-100 */
+void flexran_set_dl_slice_percentage(mid_t mod_id, int slice_idx, int percentage);
+
+/* Whether a slice in DL is isolated */
+int flexran_get_dl_slice_isolation(mid_t mod_id, int slice_idx);
+/* Set whether a slice in DL is isolated */
+void flexran_set_dl_slice_isolation(mid_t mod_id, int slice_idx, int is_isolated);
+
+/* Get the priority of a slice in DL */
+int flexran_get_dl_slice_priority(mid_t mod_id, int slice_idx);
+/* Get the priority of a slice in DL */
+void flexran_set_dl_slice_priority(mid_t mod_id, int slice_idx, int priority);
+
+/* Get the lower end of the frequency range for the slice positioning in DL */
+int flexran_get_dl_slice_position_low(mid_t mod_id, int slice_idx);
+/* Set the lower end of the frequency range for the slice positioning in DL */
+void flexran_set_dl_slice_position_low(mid_t mod_id, int slice_idx, int poslow);
+
+/* Get the higher end of the frequency range for the slice positioning in DL */
+int flexran_get_dl_slice_position_high(mid_t mod_id, int slice_idx);
+/* Set the higher end of the frequency range for the slice positioning in DL */
+void flexran_set_dl_slice_position_high(mid_t mod_id, int slice_idx, int poshigh);
+
+/* Get the maximum MCS for slice in DL */
+int flexran_get_dl_slice_maxmcs(mid_t mod_id, int slice_idx);
+/* Set the maximum MCS for slice in DL */
+void flexran_set_dl_slice_maxmcs(mid_t mod_id, int slice_idx, int maxmcs);
+
+/* Get the sorting order of a slice in DL, return value is number of elements
+ * in sorting_list */
+int flexran_get_dl_slice_sorting(mid_t mod_id, int slice_idx, Protocol__FlexDlSorting **sorting_list);
+/* Set the sorting order of a slice in DL */
+void flexran_set_dl_slice_sorting(mid_t mod_id, int slice_idx, Protocol__FlexDlSorting *sorting_list, int n);
+
+/* Get the accounting policy for a slice in DL */
+Protocol__FlexDlAccountingPolicy flexran_get_dl_slice_accounting_policy(mid_t mod_id, int slice_idx);
+/* Set the accounting policy for a slice in DL */
+void flexran_set_dl_slice_accounting_policy(mid_t mod_id, int slice_idx, Protocol__FlexDlAccountingPolicy accounting);
+
+/* Get the scheduler name for a slice in DL */
+char *flexran_get_dl_slice_scheduler(mid_t mod_id, int slice_idx);
+/* Set the scheduler name for a slice in DL */
+int flexran_set_dl_slice_scheduler(mid_t mod_id, int slice_idx, char *name);
+
+/* Get the number of slices in UL */
+int flexran_get_num_ul_slices(mid_t mod_id);
+
+/* Query slice existence in UL. Return is boolean value */
+int flexran_ul_slice_exists(mid_t mod_id, int slice_idx);
+
+/* Create slice in UL, returns the new slice index */
+int flexran_create_ul_slice(mid_t mod_id, slice_id_t slice_id);
+/* Finds slice in UL with given slice_id and returns slice index */
+int flexran_find_ul_slice(mid_t mod_id, slice_id_t slice_id);
+/* Remove slice in UL */
+int flexran_remove_ul_slice(mid_t mod_id, int slice_idx);
+
+/* Get the ID of a slice in UL */
+slice_id_t flexran_get_ul_slice_id(mid_t mod_id, int slice_idx);
+/* Set the ID of a slice in UL */
+void flexran_set_ul_slice_id(mid_t mod_id, int slice_idx, slice_id_t slice_id);
+
+/* Get the RB share a slice in UL, value 0-100 */
+int flexran_get_ul_slice_percentage(mid_t mod_id, int slice_idx);
+/* Set the RB share a slice in UL, value 0-100 */
+void flexran_set_ul_slice_percentage(mid_t mod_id, int slice_idx, int percentage);
+
+/* TODO Whether a slice in UL is isolated */
+/*int flexran_get_ul_slice_isolation(mid_t mod_id, int slice_idx);*/
+/* TODO Set whether a slice in UL is isolated */
+/*void flexran_set_ul_slice_isolation(mid_t mod_id, int slice_idx, int is_isolated);*/
+
+/* TODO Get the priority of a slice in UL */
+/*int flexran_get_ul_slice_priority(mid_t mod_id, int slice_idx);*/
+/* TODO Set the priority of a slice in UL */
+/*void flexran_set_ul_slice_priority(mid_t mod_id, int slice_idx, int priority);*/
+
+/* Get the first RB for allocation in a slice in UL */
+int flexran_get_ul_slice_first_rb(mid_t mod_id, int slice_idx);
+/* Set the first RB for allocation in a slice in UL */
+void flexran_set_ul_slice_first_rb(mid_t mod_id, int slice_idx, int first_rb);
+
+/* TODO Get the number of RB for the allocation in a slice in UL */
+/*int flexran_get_ul_slice_length_rb(mid_t mod_id, int slice_idx);*/
+/* TODO Set the of number of RB for the allocation in a slice in UL */
+/*void flexran_set_ul_slice_length_rb(mid_t mod_id, int slice_idx, int poshigh);*/
+
+/* Get the maximum MCS for slice in UL */
+int flexran_get_ul_slice_maxmcs(mid_t mod_id, int slice_idx);
+/* Set the maximum MCS for slice in UL */
+void flexran_set_ul_slice_maxmcs(mid_t mod_id, int slice_idx, int maxmcs);
+
+/* TODO Get the sorting order of a slice in UL, return value is number of elements
+ * in sorting_list */
+/*int flexran_get_ul_slice_sorting(mid_t mod_id, int slice_idx, Protocol__FlexUlSorting **sorting_list);*/
+/* TODO Set the sorting order of a slice in UL */
+/*void flexran_set_ul_slice_sorting(mid_t mod_id, int slice_idx, Protocol__FlexUlSorting *sorting_list, int n);*/
+
+/* TODO Get the accounting policy for a slice in UL */
+/*Protocol__UlAccountingPolicy flexran_get_ul_slice_accounting_policy(mid_t mod_id, int slice_idx);*/
+/* TODO Set the accounting policy for a slice in UL */
+/*void flexran_get_ul_slice_accounting_policy(mid_t mod_id, int slice_idx, Protocol__UlAccountingPolicy accountin);*/
+
+/* Get the scheduler name for a slice in UL */
+char *flexran_get_ul_slice_scheduler(mid_t mod_id, int slice_idx);
+/* Set the scheduler name for a slice in UL */
+int flexran_set_ul_slice_scheduler(mid_t mod_id, int slice_idx, char *name);

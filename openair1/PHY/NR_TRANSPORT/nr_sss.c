@@ -83,7 +83,7 @@ int nr_generate_sss(  int16_t *d_sss,
     }
   }
 #ifdef NR_SSS_DEBUG
-  write_output("sss_0.m", "sss_0", (void*)txdataF[0][2*l*frame_parms->ofdm_symbol_size], frame_parms->ofdm_symbol_size, 1, 1);
+  //  write_output("sss_0.m", "sss_0", (void*)txdataF[0][l*frame_parms->ofdm_symbol_size], frame_parms->ofdm_symbol_size, 1, 1);
 #endif
 
   return 0;

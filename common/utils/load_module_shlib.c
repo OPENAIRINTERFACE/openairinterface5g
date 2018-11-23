@@ -70,8 +70,8 @@ char *tmpstr;
 char *shlibpath   =NULL;
 char *shlibversion=NULL;
 char *cfgprefix;
-paramdef_t LoaderParams[] ={{"shlibpath", NULL, 0, strptr:&shlibpath, defstrval:NULL, TYPE_STRING, 0},
-                            {"shlibversion", NULL, 0, strptr:&shlibversion, defstrval:"", TYPE_STRING, 0}};
+paramdef_t LoaderParams[] ={{"shlibpath", NULL, 0, strptr:&shlibpath, defstrval:NULL, TYPE_STRING, 0, NULL},
+                            {"shlibversion", NULL, 0, strptr:&shlibversion, defstrval:"", TYPE_STRING, 0, NULL}};
 
 int ret;
 
@@ -118,77 +118,118 @@ int ret;
    return tmpstr; 
 }
 
-int load_module_shlib(char *modname,loader_shlibfunc_t *farray, int numf)
+int load_module_shlib(char *modname,loader_shlibfunc_t *farray, int numf, void *autoinit_arg)
 {
-   void *lib_handle;
-   initfunc_t fpi;
-   checkverfunc_t fpc;
-   getfarrayfunc_t fpg;
-   char *shlib_path;
-   char *afname=NULL;
-   int ret=0;
+  void *lib_handle = NULL;
+  initfunc_t fpi;
+  checkverfunc_t fpc;
+  getfarrayfunc_t fpg;
+  char *shlib_path = NULL;
+  char *afname = NULL;
+  int ret = 0;
+  int lib_idx = -1;
 
-   if (loader_data.shlibpath  == NULL) {
-      loader_init();
-   }
+  if (!modname) {
+    fprintf(stderr, "[LOADER] load_module_shlib(): no library name given\n");
+    return -1;
+  }
 
-   shlib_path = loader_format_shlibpath(modname);
+  if (!loader_data.shlibpath) {
+     loader_init();
+  }
 
-   ret = 0;
-   lib_handle = dlopen(shlib_path, RTLD_LAZY|RTLD_NODELETE|RTLD_GLOBAL);
-   if (!lib_handle) {
-      fprintf(stderr,"[LOADER] library %s is not loaded: %s\n", shlib_path,dlerror());
+  shlib_path = loader_format_shlibpath(modname);
+
+  for (int i = 0; i < loader_data.numshlibs; i++) {
+    if (strcmp(loader_data.shlibs[i].name, modname) == 0) {
+      printf("[LOADER] library %s has been loaded previously, reloading function pointers\n",
+             shlib_path);
+      lib_idx = i;
+      break;
+    }
+  }
+  if (lib_idx < 0) {
+    lib_idx = loader_data.numshlibs;
+    ++loader_data.numshlibs;
+    if (loader_data.numshlibs > loader_data.maxshlibs) {
+      fprintf(stderr, "[LOADER] can not load more than %d shlibs\n",
+              loader_data.maxshlibs);
       ret = -1;
-   } else {
-      printf("[LOADER] library %s successfully loaded\n", shlib_path);
-      afname=malloc(strlen(modname)+15);
-      sprintf(afname,"%s_checkbuildver",modname);
-      fpc = dlsym(lib_handle,afname);
-      if (fpc != NULL ){
-	 int chkver_ret = fpc(loader_data.mainexec_buildversion, &(loader_data.shlibs[loader_data.numshlibs].shlib_buildversion));
-         if (chkver_ret < 0) {
-              fprintf(stderr,"[LOADER]  %s %d lib %s, version mismatch",__FILE__, __LINE__, modname);
-              exit_fun("[LOADER] unrecoverable error");
-         }
+      goto load_module_shlib_exit;
+    }
+    loader_data.shlibs[lib_idx].name = strdup(modname);
+    loader_data.shlibs[lib_idx].thisshlib_path = strdup(shlib_path);
+  }
+
+  lib_handle = dlopen(shlib_path, RTLD_LAZY|RTLD_NODELETE|RTLD_GLOBAL);
+  if (!lib_handle) {
+    fprintf(stderr,"[LOADER] library %s is not loaded: %s\n", shlib_path,dlerror());
+    ret = -1;
+    goto load_module_shlib_exit;
+  }
+
+  printf("[LOADER] library %s successfully loaded\n", shlib_path);
+  afname = malloc(strlen(modname)+15);
+  if (!afname) {
+    fprintf(stderr, "[LOADER] unable to allocate memory for library %s\n", shlib_path);
+    ret = -1;
+    goto load_module_shlib_exit;
+  }
+  sprintf(afname,"%s_checkbuildver",modname);
+  fpc = dlsym(lib_handle,afname);
+  if (fpc) {
+    int chkver_ret = fpc(loader_data.mainexec_buildversion,
+                         &(loader_data.shlibs[lib_idx].shlib_buildversion));
+    if (chkver_ret < 0) {
+      fprintf(stderr, "[LOADER]  %s %d lib %s, version mismatch",
+              __FILE__, __LINE__, modname);
+      ret = -1;
+      goto load_module_shlib_exit;
+    }
+  }
+  sprintf(afname,"%s_autoinit",modname);
+  fpi = dlsym(lib_handle,afname);
+
+  if (fpi) {
+    fpi(autoinit_arg);
+  }
+
+  if (farray) {
+    if (!loader_data.shlibs[lib_idx].funcarray) {
+      loader_data.shlibs[lib_idx].funcarray = malloc(numf*sizeof(loader_shlibfunc_t));
+      if (!loader_data.shlibs[lib_idx].funcarray) {
+        fprintf(stderr, "[LOADER] load_module_shlib(): unable to allocate memory\n");
+        ret = -1;
+        goto load_module_shlib_exit;
       }
-      sprintf(afname,"%s_autoinit",modname);
-      fpi = dlsym(lib_handle,afname);
-
-      if (fpi != NULL ) {
-	 fpi();
+    }
+    loader_data.shlibs[lib_idx].numfunc = 0;
+    for (int i = 0; i < numf; i++) {
+      farray[i].fptr = dlsym(lib_handle,farray[i].fname);
+      if (!farray[i].fptr) {
+        fprintf(stderr, "[LOADER] load_module_shlib(): function %s not found: %s\n",
+                  farray[i].fname, dlerror());
+        ret = -1;
+        goto load_module_shlib_exit;
       }
+      loader_data.shlibs[lib_idx].funcarray[i].fname=strdup(farray[i].fname);
+      loader_data.shlibs[lib_idx].funcarray[i].fptr = farray[i].fptr;
+      loader_data.shlibs[lib_idx].numfunc++;
+    } /* for int i... */
+  } else {  /* farray ! NULL */
+    sprintf(afname,"%s_getfarray",modname);
+    fpg = dlsym(lib_handle,afname);
+    if (fpg) {
+      loader_data.shlibs[lib_idx].numfunc =
+          fpg(&(loader_data.shlibs[lib_idx].funcarray));
+    }
+  } /* farray ! NULL */
 
-      if (farray != NULL) {
-          loader_data.shlibs[loader_data.numshlibs].funcarray=malloc(numf*sizeof(loader_shlibfunc_t));
-          loader_data.shlibs[loader_data.numshlibs].numfunc=0;
-          for (int i=0; i<numf; i++) {
-	      farray[i].fptr = dlsym(lib_handle,farray[i].fname);
-	      if (farray[i].fptr == NULL ) {
-	          fprintf(stderr,"[LOADER] %s %d %s function not found %s\n",__FILE__, __LINE__, dlerror(),farray[i].fname);
-                  ret= -1;
-	      } else { /* farray[i].fptr == NULL */
-                  loader_data.shlibs[loader_data.numshlibs].funcarray[i].fname=strdup(farray[i].fname); 
-                  loader_data.shlibs[loader_data.numshlibs].funcarray[i].fptr = farray[i].fptr;
-                  loader_data.shlibs[loader_data.numshlibs].numfunc++;                 
-              }/* farray[i].fptr != NULL */
-	  } /* for int i... */
-      }	else {  /* farray ! NULL */
-          sprintf(afname,"%s_getfarray",modname);
-          fpg = dlsym(lib_handle,afname);
-          if (fpg != NULL ) {
-	      loader_data.shlibs[loader_data.numshlibs].numfunc = fpg(&(loader_data.shlibs[loader_data.numshlibs].funcarray));
-          }            
-      } /* farray ! NULL */
-    loader_data.shlibs[loader_data.numshlibs].name=strdup(modname);
-    loader_data.shlibs[loader_data.numshlibs].thisshlib_path=strdup(shlib_path); 
-
-    (loader_data.numshlibs)++;
-    } /* lib_handle != NULL */ 
-	  	 
-   if ( shlib_path!= NULL) free(shlib_path);
-   if ( afname!= NULL) free(afname);
-   if (lib_handle != NULL) dlclose(lib_handle); 
-   return ret;	       
+load_module_shlib_exit:
+  if (shlib_path) free(shlib_path);
+  if (afname)     free(afname);
+  if (lib_handle) dlclose(lib_handle);
+  return ret;
 }
 
 void * get_shlibmodule_fptr(char *modname, char *fname)

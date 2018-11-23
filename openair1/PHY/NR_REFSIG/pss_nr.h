@@ -63,7 +63,7 @@
 
 /* PSS configuration */
 
-#define SYNCHRO_FFT_SIZE_MAX           (2048)                       /* maximum size of fft for synchronisation */
+#define SYNCHRO_FFT_SIZE_MAX           (8192)                       /* maximum size of fft for synchronisation */
 
 #define  NO_RATE_CHANGE                (1)
 
@@ -102,13 +102,18 @@ EXTERN int16_t *primary_synchro_nr[NUMBER_PSS_SEQUENCE]
 = { NULL, NULL, NULL}
 #endif
 ;
+EXTERN int16_t *primary_synchro_nr2[NUMBER_PSS_SEQUENCE]
+#ifdef INIT_VARIABLES_PSS_NR_H
+= { NULL, NULL, NULL}
+#endif
+;
 EXTERN int16_t *primary_synchro_time_nr[NUMBER_PSS_SEQUENCE]
 #ifdef INIT_VARIABLES_PSS_NR_H
 = { NULL, NULL, NULL}
 #endif
 ;
 
-EXTERN int *pss_corr_ue[NUMBER_PSS_SEQUENCE]
+EXTERN int64_t *pss_corr_ue[NUMBER_PSS_SEQUENCE]
 #ifdef INIT_VARIABLES_PSS_NR_H
 = { NULL, NULL, NULL}
 #endif

@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *-------------------------------------------------------------------------------
- * For more information about the OpenAirInterface (OAI) Software Alliance:
+ * For more information about the OpenAirInterface (OAI) Software Alliance
  *      contact@openairinterface.org
  */
 
@@ -37,6 +37,7 @@
  */
 
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
+
 
 int8_t polar_decoder(
 		double *input,
@@ -285,7 +286,6 @@ int8_t polar_decoder_aPriori(double *input,
 							 uint8_t pathMetricAppr,
 							 double *aPrioriPayload)
 {
-
 	uint8_t ***bit = nr_alloc_uint8_t_3D_array(polarParams->N, (polarParams->n+1), 2*listSize);
 	uint8_t **bitUpdated = nr_alloc_uint8_t_2D_array(polarParams->N, (polarParams->n+1)); //0=False, 1=True
 	uint8_t **llrUpdated = nr_alloc_uint8_t_2D_array(polarParams->N, (polarParams->n+1)); //0=False, 1=True
@@ -355,6 +355,7 @@ int8_t polar_decoder_aPriori(double *input,
 	uint8_t listIndex[2*listSize], copyIndex;
 
 	for (uint16_t currentBit=0; currentBit<polarParams->N; currentBit++){
+
 		updateLLR(llr, llrUpdated, bit, bitUpdated, currentListSize, currentBit, 0, polarParams->N, (polarParams->n+1), pathMetricAppr);
 		if (polarParams->information_bit_pattern[currentBit]==0) { //Frozen bit.
 			updatePathMetric(pathMetric, llr, currentListSize, 0, currentBit, pathMetricAppr); //approximation=0 --> 11b, approximation=1 --> 12
@@ -528,6 +529,7 @@ int8_t polar_decoder_aPriori(double *input,
 	 */
 	nr_byte2bit_uint8_32_t(polarParams->nr_polar_A, polarParams->payloadBits, out);
 	return(0);
+
 }
 
 
@@ -1033,4 +1035,51 @@ int8_t polar_decoder_dci(double *input,
 	 */
 	nr_byte2bit_uint8_32_t(polarParams->nr_polar_A, polarParams->payloadBits, out);
 	return(0);
+}
+
+
+int8_t polar_decoder_int16(int16_t *input,
+			   uint8_t *out,
+			   t_nrPolar_params *polarParams)
+{
+  
+
+  
+  int16_t d_tilde[polarParams->N];// = malloc(sizeof(double) * polarParams->N);
+  nr_polar_rate_matching_int16(input, d_tilde, polarParams->rate_matching_pattern, polarParams->K, polarParams->N, polarParams->encoderLength);
+  for (int i=0;i<polarParams->N;i++) {
+    if (d_tilde[i]<-128) d_tilde[i]=-128;
+    else if (d_tilde[i]>127) d_tilde[i]=128;
+  }
+  memcpy((void*)&polarParams->tree.root->alpha[0],(void*)&d_tilde[0],sizeof(int16_t)*polarParams->N);
+  
+  /*
+   * SCL polar decoder.
+   */
+
+
+  generic_polar_decoder(polarParams,polarParams->tree.root);
+
+
+  //Extract the information bits (û to ĉ)
+  nr_polar_info_bit_extraction(polarParams->nr_polar_U, polarParams->nr_polar_CPrime, polarParams->information_bit_pattern, polarParams->N);
+
+  //Deinterleaving (ĉ to b)
+
+  nr_polar_deinterleaver(polarParams->nr_polar_CPrime, polarParams->nr_polar_B, polarParams->interleaving_pattern, polarParams->K);
+
+  //Remove the CRC (â)
+  //for (int j = 0; j < polarParams->payloadBits; j++) polarParams->nr_polar_A[j]=polarParams->nr_polar_B[j];  
+
+  // Check the CRC
+  for (int j=0;j<polarParams->crcParityBits;j++) {
+    int crcbit=0;
+    for (int i=0;i<polarParams->payloadBits;i++)
+      crcbit = crcbit ^ (polarParams->crc_generator_matrix[i][j] & polarParams->nr_polar_B[i]);
+    if (crcbit != polarParams->nr_polar_B[polarParams->payloadBits+j]) return(-1); 
+  }
+  // pack into ceil(payloadBits/32) 32 bit words, lowest index in MSB
+  //  nr_byte2bit_uint8_32_t(polarParams->nr_polar_A, polarParams->payloadBits, out);
+  nr_byte2bit_uint8_32_t(polarParams->nr_polar_B, polarParams->payloadBits, (unsigned int *)out);
+  return(0);
 }

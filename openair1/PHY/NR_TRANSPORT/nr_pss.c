@@ -52,7 +52,8 @@ int nr_generate_pss(  int16_t *d_pss,
   }
 
 #ifdef NR_PSS_DEBUG
-  write_output("d_pss.m", "d_pss", (void*)d_pss, NR_PSS_LENGTH, 1, 1);
+  write_output("d_pss.m", "d_pss", (void*)d_pss, NR_PSS_LENGTH, 1, 0);
+  printf("PSS: ofdm_symbol_size %d, first_carrier_offset %d\n",frame_parms->ofdm_symbol_size,frame_parms->first_carrier_offset);
 #endif
 
   /// Resource mapping
@@ -63,9 +64,12 @@ int nr_generate_pss(  int16_t *d_pss,
 
     // PSS occupies a predefined position (subcarriers 56-182, symbol 0) within the SSB block starting from
     k = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier + 56; //and
+    if (k>= frame_parms->ofdm_symbol_size) k-=frame_parms->ofdm_symbol_size;
+
     l = ssb_start_symbol;
 
     for (m = 0; m < NR_PSS_LENGTH; m++) {
+      //      printf("pss: writing position k %d / %d\n",k,frame_parms->ofdm_symbol_size);
       ((int16_t*)txdataF[aa])[2*(l*frame_parms->ofdm_symbol_size + k)] = (a * d_pss[m]) >> 15;
       k++;
 
@@ -75,7 +79,9 @@ int nr_generate_pss(  int16_t *d_pss,
   }
 
 #ifdef NR_PSS_DEBUG
-  write_output("pss_0.m", "pss_0", (void*)txdataF[0][2*l*frame_parms->ofdm_symbol_size], frame_parms->ofdm_symbol_size, 1, 1);
+  LOG_M("pss_0.m", "pss_0", 
+	(void*)&txdataF[0][ssb_start_symbol*frame_parms->ofdm_symbol_size], 
+	frame_parms->ofdm_symbol_size, 1, 1);
 #endif
 
   return 0;

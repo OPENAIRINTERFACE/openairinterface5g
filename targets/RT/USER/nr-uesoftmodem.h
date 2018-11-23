@@ -85,11 +85,14 @@
 #define CONFIG_HLP_TNOFORK       "to ease debugging with gdb\n"
 
 #define CONFIG_HLP_NUMEROLOGY    "adding numerology for 5G\n"
-#define CONFIG_HLP_CODINGW       "coding worker thread enable(disable by defult)\n"
-#define CONFIG_HLP_FEPW          "FEP worker thread enabled(disable by defult)\n"
 #define CONFIG_HLP_EMULATE_RF    "Emulated RF enabled(disable by defult)\n"
+#define CONFIG_HLP_PARALLEL_CMD  "three config for level of parallelism 'PARALLEL_SINGLE_THREAD', 'PARALLEL_RU_L1_SPLIT', or 'PARALLEL_RU_L1_TRX_SPLIT'\n"
+#define CONFIG_HLP_WORKER_CMD    "two option for worker 'WORKER_DISABLE' or 'WORKER_ENABLE'\n"
 
 #define CONFIG_HLP_DISABLNBIOT   "disable nb-iot, even if defined in config\n"
+
+#define CONFIG_HLP_USRP_ARGS                "set the arguments to identify USRP (same syntax as in UHD)\n"
+#define CONFIG_HLP_USRP_CLK_SRC              "USRP clock source: 'internal' or 'external'\n"
 
 /***************************************************************************************************************************************/
 /* command line options definitions, CMDLINE_XXXX_DESC macros are used to initialize paramdef_t arrays which are then used as argument
@@ -133,8 +136,10 @@
 {"ue-nb-ant-tx",     	       CONFIG_HLP_UENANTT,    0,		u8ptr:&nb_antenna_tx,		    defuintval:1,   TYPE_UINT8,    0},     \
 {"ue-scan-carrier",  	       CONFIG_HLP_UESCAN,     PARAMFLAG_BOOL,	iptr:&UE_scan_carrier,  	    defintval:0,    TYPE_INT,	   0},     \
 {"ue-max-power",     	       NULL,		      0,		iptr:&(tx_max_power[0]),	    defintval:90,   TYPE_INT,	   0},     \
-{"r"  ,                        CONFIG_HLP_PRB,        0,                u8ptr:&(frame_parms[0]->N_RB_DL),   defintval:25,   TYPE_UINT8,    0},     \
+{"r"  ,                        CONFIG_HLP_PRB,        0,                iptr:&(frame_parms[0]->N_RB_DL),   defintval:25,   TYPE_UINT,    0},     \
 {"dlsch-demod-shift",     	 CONFIG_HLP_DLSHIFT,	0,		  iptr:(int32_t *)&dlsch_demod_shift,	defintval:0,			   TYPE_INT,	  0},			   \
+{"usrp-args",               CONFIG_HLP_USRP_ARGS,   0,                      strptr:(char **)&usrp_args,         defstrval:"type=b200",          TYPE_STRING,    0},                     \
+{"usrp-clksrc",             CONFIG_HLP_USRP_CLK_SRC,0,                      strptr:(char **)&usrp_clksrc,       defstrval:"internal",           TYPE_STRING,    0}                     \
 }
 
 #define DEFAULT_DLF 2680000000
@@ -162,8 +167,8 @@
 {"A" ,                      CONFIG_HLP_TADV,        0,                      uptr:&timing_advance,               defintval:0,                    TYPE_UINT,      0},                     \
 {"C" ,                      CONFIG_HLP_DLF,         0,                      uptr:&(downlink_frequency[0][0]),   defuintval:2680000000,          TYPE_UINT,      0},                     \
 {"a" ,                      CONFIG_HLP_CHOFF,       0,                      iptr:&chain_offset,                 defintval:0,                    TYPE_INT,       0},                     \
-{"d" ,                      CONFIG_HLP_SOFTS,       PARAMFLAG_BOOL,         uptr:(uint32_t *)&do_forms,         defintval:0,                    TYPE_INT8,      0},                     \
-{"E" ,                      CONFIG_HLP_TQFS,        PARAMFLAG_BOOL,         i8ptr:&threequarter_fs,             defintval:0,                    TYPE_INT8,      0},                     \
+{"d" ,                      CONFIG_HLP_SOFTS,       PARAMFLAG_BOOL,         iptr:&do_forms,                    defintval:0,                     TYPE_INT,      0},                     \
+{"E" ,                      CONFIG_HLP_TQFS,        PARAMFLAG_BOOL,         iptr:&threequarter_fs,             defintval:0,                     TYPE_INT,      0},                     \
 {"K" ,                      CONFIG_HLP_ITTIL,       PARAMFLAG_NOFREE,       strptr:&itti_dump_file,             defstrval:"/tmp/itti.dump",     TYPE_STRING,    0},                     \
 {"m" ,                      CONFIG_HLP_DLMCS,       0,                      uptr:&target_dl_mcs,                defintval:0,                    TYPE_UINT,      0},                     \
 {"t" ,                      CONFIG_HLP_ULMCS,       0,                      uptr:&target_ul_mcs,                defintval:0,                    TYPE_UINT,      0},                     \
@@ -174,8 +179,8 @@
 {"T" ,                      CONFIG_HLP_TDD,         PARAMFLAG_BOOL,         iptr:&tddflag,                      defintval:0,                    TYPE_INT,       0},                     \
 {"numerology" ,             CONFIG_HLP_NUMEROLOGY,  PARAMFLAG_BOOL,         iptr:&numerology,                   defintval:0,                    TYPE_INT,       0},                     \
 {"emulate-rf" ,             CONFIG_HLP_EMULATE_RF,  PARAMFLAG_BOOL,         iptr:&emulate_rf,                   defintval:0,                    TYPE_INT,       0},                     \
-{"codingw" ,                CONFIG_HLP_CODINGW,     PARAMFLAG_BOOL,         iptr:&codingw,                      defintval:0,                    TYPE_INT,       0},                     \
-{"fepw" ,                   CONFIG_HLP_FEPW,        PARAMFLAG_BOOL,         iptr:&fepw,                         defintval:0,                    TYPE_INT,       0},                     \
+{"parallel-config",         CONFIG_HLP_PARALLEL_CMD,0,                      strptr:(char **)&parallel_config,   defstrval:NULL,                 TYPE_STRING,    0},                     \
+{"worker-config",           CONFIG_HLP_WORKER_CMD,  0,                      strptr:(char **)&worker_config,     defstrval:NULL,                 TYPE_STRING,    0},                     \
 {"nbiot-disable",           CONFIG_HLP_DISABLNBIOT, PARAMFLAG_BOOL,         iptr:&nonbiotflag,			defintval:0,			TYPE_INT,	0} \
 }
 
@@ -236,8 +241,6 @@ extern volatile int             start_UE;
 
 #include "threads_t.h"
 extern threads_t threads;
-
-extern void exit_fun(const char* s);
 
 // In nr-ue.c
 extern int setup_ue_buffers(PHY_VARS_NR_UE **phy_vars_ue, openair0_config_t *openair0_cfg);

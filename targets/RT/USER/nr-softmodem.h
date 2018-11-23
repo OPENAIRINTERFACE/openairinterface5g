@@ -86,7 +86,10 @@
 #define CONFIG_HLP_TNOFORK       "to ease debugging with gdb\n"
 #define CONFIG_HLP_DISABLNBIOT   "disable nb-iot, even if defined in config\n"
 
+#define CONFIG_HLP_NUMEROLOGY    "adding numerology for 5G\n"
 #define CONFIG_HLP_EMULATE_RF    "Emulated RF enabled(disable by defult)\n"
+#define CONFIG_HLP_PARALLEL_CMD  "three config for level of parallelism 'PARALLEL_SINGLE_THREAD', 'PARALLEL_RU_L1_SPLIT', or 'PARALLEL_RU_L1_TRX_SPLIT'\n"
+#define CONFIG_HLP_WORKER_CMD    "two option for worker 'WORKER_DISABLE' or 'WORKER_ENABLE'\n"
 
 /***************************************************************************************************************************************/
 /* command line options definitions, CMDLINE_XXXX_DESC macros are used to initialize paramdef_t arrays which are then used as argument 
@@ -167,8 +170,10 @@
 {"P" ,  		  	 CONFIG_HLP_L2MONP,	0,		  strptr:(char **)&in_path,		defstrval:"/tmp/oai_opt.pcap",     TYPE_STRING,   sizeof(in_path)},	   \
 {"q" ,  		  	 CONFIG_HLP_STMON,	PARAMFLAG_BOOL,   iptr:&opp_enabled,			defintval:0,			   TYPE_INT,	  0},			   \
 {"S" ,  		  	 CONFIG_HLP_MSLOTS,	PARAMFLAG_BOOL,   u8ptr:&exit_missed_slots,		defintval:1,			   TYPE_UINT8,    0},			   \
-{"T" ,  		  	 CONFIG_HLP_TDD,	PARAMFLAG_BOOL,   iptr:&tddflag,			defintval:0,			   TYPE_INT,	  0},			   \
-{"emulate-rf" ,                  CONFIG_HLP_EMULATE_RF, PARAMFLAG_BOOL,   iptr:&emulate_rf,                     defintval:0,                       TYPE_INT,      0},                      \
+{"T" ,  		  	 CONFIG_HLP_TDD,	PARAMFLAG_BOOL,   iptr:&tddflag,			defintval:0,			   TYPE_INT,	  0},			   {"numerology" ,                  CONFIG_HLP_NUMEROLOGY,  PARAMFLAG_BOOL,         iptr:&numerology,                   defintval:0,                    TYPE_INT,       0},                     \
+{"emulate-rf" ,                  CONFIG_HLP_EMULATE_RF,  PARAMFLAG_BOOL,         iptr:&emulate_rf,                   defintval:0,                    TYPE_INT,       0},                     \
+{"parallel-config",              CONFIG_HLP_PARALLEL_CMD,0,                      strptr:(char **)&parallel_config,   defstrval:NULL,                 TYPE_STRING,    0},                     \
+{"worker-config",                CONFIG_HLP_WORKER_CMD,  0,                      strptr:(char **)&worker_config,     defstrval:NULL,                 TYPE_STRING,    0},                     \
 {"nbiot-disable",        	 CONFIG_HLP_DISABLNBIOT,PARAMFLAG_BOOL,   iptr:&nonbiotflag,			defintval:0,			   TYPE_INT,	  0}                       \
 }
 
@@ -228,7 +233,6 @@ extern volatile int             start_gNB;
 #include "threads_t.h"
 extern threads_t threads;
 
-extern void exit_fun(const char* s);
 // In nr-gnb.c
 extern void init_gNB(int single_thread_flag,int wait_for_sync);
 extern void stop_gNB(int);

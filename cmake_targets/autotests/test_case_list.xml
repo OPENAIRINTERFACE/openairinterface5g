@@ -933,23 +933,20 @@
 
     <testCase id="015100">
       <class>execution</class>
-      <desc>dlsim test cases (Test 1: 10 MHz, R2.FDD (MCS 5), EVA5, -1dB), 
+      <desc>dlsim Test cases. (Test 1: 10 MHz, R2.FDD (MCS 5), EVA5, -1dB),
       (Test 5: 1.4 MHz, R4.FDD (MCS 4), EVA5, 0dB (70%)),
-      (Test 6, 10 MHz, R3.FDD (MCS 15), EVA5, 6.7dB (70%)),
-      (Test 6b, 5 MHz, R3-1.FDD (MCS 15), EVA5, 6.7dB (70%)),
-      (Test 7, 5 MHz, R3-1.FDD (MCS 15), EVA5, 6.7dB (30%)),
-      (Test 7b, 5 MHz, R3-1.FDD (MCS 15), ETU70, 1.4 dB (30%)),
-      (Test 10, 5 MHz, R6.FDD (MCS 25), EVA5, 17.4 dB (70%)),
-      (Test 10b, 5 MHz, R6-1.FDD (MCS 24,18 PRB), EVA5, 17.5dB (70%)),
-      (Test 11, 10 MHz, R7.FDD (MCS 25), EVA5, 17.7dB (70%)),
-      (Test 11b, 10 MHz, R7-1.FDD (MCS 25), EVA5, 16.7dB (70%)),
-      (Test 15, 20 MHz, R.9 FDD	(MCS 26), EVA5, 17.6dB (70%)),
-      (Test 15b, 20 MHz, R.9-2 FDD (MCS 26, 17PRB), EVA5, 17.3dB (70%)),
-      (Test 15c, 20 MHz, R.9-1 FDD (MCS 26, 83 PRB), EVA5, 16.6dB (70%)),
-
-      (TM2 Test 1 10 MHz, R.11 FDD (MCS 14), EVA5, 6.8 dB (70%)),
-      (TM2 Test 1b 5 MHz, R.11-2 FDD (MCS 13), EVA5, 5.9 dB (70%)),
-       </desc>
+      (Test 6: 10 MHz, R3.FDD (MCS 15), EVA5, 6.7dB (70%)),
+      (Test 6b: 5 MHz, R3-1.FDD (MCS 15), EVA5, 6.7dB (70%)),
+      (Test 7: 10 MHz, R3-1.FDD (MCS 15), EVA5, 6.7dB (30%)),
+      (Test 7b: 5 MHz, R3-1.FDD (MCS 15), ETU70, 1.4 dB (30%)),
+      (Test 10: 5 MHz, R6.FDD (MCS 25), EVA5, 17.4 dB (70%)),
+      (Test 10b: 5 MHz, R6-1.FDD (MCS 24,18 PRB), EVA5, 17.5dB (70%)),
+      (Test 11: 10 MHz, R7.FDD (MCS 25), EVA5, 17.7dB (70%)),
+      (Test 15: 20 MHz, R.9 FDD	(MCS 26), EVA5, 17.6dB (70%)),
+      (Test 15b: 20 MHz, R.9-2 FDD (MCS 26, 17PRB), EVA5, 17.3dB (70%)),
+      (Test 15c: 20 MHz, R.9-1 FDD (MCS 26, 83 PRB), EVA5, 16.6dB (70%)),
+      (TM2 Test 1: 10 MHz, R.11 FDD (MCS 14), EVA5, 6.8 dB (70%)),
+      (TM2 Test 1b: 5 MHz, R.11-2 FDD (MCS 13), EVA5, 5.9 dB (70%))</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
@@ -970,7 +967,7 @@
                        -m26 -gF -s16.6 -w1.0 -f.2 -n500 -B100 -c2 -z2 -r1899 -O60
 		       -m14 -gF -s6.8  -w1.0 -f.2 -n500 -B50 -c2 -x2 -y2 -z2 -O60
                        -m13 -gF -s5.9  -w1.0 -f.2 -n500 -B25 -c3 -x2 -y2 -z2 -O60</main_exec_args>
-      <tags>dlsim.test1 dlsim.test5 dlsim.test6 dlsim.test6b dlsim.test7 dlsim.test7b dlsim.test10 dlsim.test10b dlsim.test11 dlsim.TM2_test1 dlsim.TM2_test1b</tags>
+      <tags>dlsim.test1 dlsim.test5 dlsim.test6 dlsim.test6b dlsim.test7 dlsim.test7b dlsim.test10 dlsim.test10b dlsim.test11 dlsim.test11a dlsim.test11b dlsim.test11c dlsim.TM2_test1 dlsim.TM2_test1b</tags>
       <search_expr_true>"passed"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
@@ -978,24 +975,24 @@
 
     <testCase id="015101">
       <class>execution</class>
-      <desc>ulsim Test cases. (Test 1, 5 MHz, FDD (MCS 5), AWGN, 6dB), 
-             (Test 2, 5 MHz, FDD (MCS 16), AWGN , 12dB (70%)),
-             (Test 3, 10 MHz, R3.FDD (MCS 5), AWGN, 6dB (70%)),
-             (Test 4, 10 MHz, R3-1.FDD (MCS 16), AWGN, 12dB (70%)),
-             (Test 5, 20 MHz, FDD (MCS 5), AWGN, 6dB (70%)),
-             (Test 6, 20 MHz, FDD (MCS 16), AWGN, 12 dB (70%))</desc>
+      <desc>ulsim Test cases. (Test 1: 5 MHz, FDD (MCS 5), AWGN, 6dB),
+             (Test 2: 5 MHz, FDD (MCS 16), AWGN , 12dB (70%)),
+             (Test 3: 10 MHz, R3.FDD (MCS 5), AWGN, 6dB (70%)),
+             (Test 4: 10 MHz, R3-1.FDD (MCS 16), AWGN, 12dB (70%)),
+             (Test 5: 20 MHz, FDD (MCS 5), AWGN, 6dB (70%)),
+             (Test 6: 20 MHz, FDD (MCS 16), AWGN, 12 dB (70%))</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec> $OPENAIR_DIR/targets/bin/ulsim.Rel15</main_exec>
-      <main_exec_args> -B25 -m5 -y1 -gN -x1 -s6 -w1.0 -e.1 -P -n500 -O70 
-                       -B25 -m16 -y1 -gN -x1 -s12 -w1.0 -e.1 -P -n500 -O70 
-                        -B50 -m5 -y1 -gN -x1 -s6 -w1.0 -e.1 -P -n500 -O70  
-                       -B50 -m16 -y1 -gN -x1 -s12 -w1.0 -e.1 -P -n500 -O70 
-                        -B100 -m5 -y1 -gN -x1 -s6 -w1.0 -e.1 -P -n500 -O70 
-                       -B100 -m16 -y1 -gN -x1 -s12 -w1.0 -e.1 -P -n500 -O70 </main_exec_args>
+      <main_exec_args> -BnbRBs=25 -mcs=5 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=6 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70 
+                       -BnbRBs=25 -mcs=16 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=12 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70 
+                        -BnbRBs=50 -mcs=5 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=6 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70  
+                       -BnbRBs=50 -mcs=16 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=12 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70 
+                        -BnbRBs=100 -mcs=5 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=6 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70 
+                       -BnbRBs=100 -mcs=16 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=12 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70 </main_exec_args>
      <tags>ulsim.test1 ulsim.test2 ulsim.test3 ulsim.test4 ulsim.test5 ulsim.test6</tags>
       <search_expr_true>"passed"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -1004,7 +1001,16 @@
 
     <testCase id="015102">
       <class>execution</class>
-      <desc>ldpctest test cases.</desc>
+      <desc>ldpc Test cases. (Test1: block length = 3872),
+             (Test2: block length = 4224),
+             (Test3: block length = 4576),
+             (Test4: block length = 4928),
+             (Test5: block length = 5280),
+             (Test6: block length = 5632),
+             (Test7: block length = 6336),
+             (Test8: block length = 7040),
+             (Test9: block length = 7744),
+             (Test10: block length = 8448)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
@@ -1021,11 +1027,46 @@
 		      -l7040 -s10 -n100
 		      -l7744 -s10 -n100
 		      -l8448 -s10 -n100</main_exec_args>
-      <tags>ldpctest.test1</tags>
+      <tags>ldpctest.test1 ldpctest.test2 ldpctest.test3 ldpctest.test4 ldpctest.test5 ldpctest.test6 ldpctest.test7 ldpctest.test8 ldpctest.test9 ldpctest.test10</tags>
       <search_expr_true>BLER 0.000000</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
     </testCase>
+
+    <testCase id="015103">
+      <class>execution</class>
+      <desc>polartest Test cases. (Test1: PBCH polar test)</desc>
+      <pre_compile_prog></pre_compile_prog>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
+      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+      <pre_exec_args></pre_exec_args>
+      <main_exec> $OPENAIR_DIR/targets/bin/polartest.Rel15</main_exec>
+      <main_exec_args>-q -s-10 -f0</main_exec_args>
+      <tags>polartest.test1</tags>
+      <search_expr_true>BLER= 0.000000</search_expr_true>
+      <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <nruns>3</nruns>
+    </testCase>
+
+     <testCase id="015104">
+      <class>execution</class>
+      <desc>nr_pbchsim Test cases. (Test1: PBCH-only),
+             (Test2: PBCH and synchronization)</desc>
+      <pre_compile_prog></pre_compile_prog>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
+      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+      <pre_exec_args></pre_exec_args>
+      <main_exec> $OPENAIR_DIR/targets/bin/nr_pbchsim.Rel15</main_exec>
+      <main_exec_args>-s-11 -S-10 -n1000
+                      -s-11 -S-10 -n10 -I</main_exec_args>
+      <tags>nr_pbchsim.test1 nr_pbchsim.test2</tags>
+      <search_expr_true>PBCH test OK</search_expr_true>
+      <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <nruns>3</nruns>
+    </testCase> 
+ 
     
     <testCase id="015110">
       <class>execution</class>

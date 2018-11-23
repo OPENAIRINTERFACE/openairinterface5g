@@ -54,7 +54,7 @@ void polar_encoder(uint32_t *in,
 													   polarParams->nr_polar_crc,
 													   polarParams->payloadBits,
 													   polarParams->crcParityBits);
-		for (uint8_t i = 0; i < polarParams->crcParityBits; i++)
+		for (uint8_t i = 0; i < polarParams->crcParityBits; i++) 
 			polarParams->nr_polar_crc[i] = (polarParams->nr_polar_crc[i] % 2);
 
 		//Attach CRC to the Transport Block. (a to b)
@@ -305,12 +305,12 @@ void polar_encoder_timing(uint32_t *in,
 	stop_meas(&timeEncoderByte2Bit);
 
 	fprintf(logFile,",%f,%f,%f,%f,%f,%f,%f,%f\n",
-			(timeEncoderCRCByte.diff_now/(cpuFreqGHz*1000.0)),
-			(timeEncoderCRCBit.diff_now/(cpuFreqGHz*1000.0)),
-			(timeEncoderInterleaver.diff_now/(cpuFreqGHz*1000.0)),
-			(timeEncoderBitInsertion.diff_now/(cpuFreqGHz*1000.0)),
-			(timeEncoder1.diff_now/(cpuFreqGHz*1000.0)),
-			(timeEncoder2.diff_now/(cpuFreqGHz*1000.0)),
-			(timeEncoderRateMatching.diff_now/(cpuFreqGHz*1000.0)),
-			(timeEncoderByte2Bit.diff_now/(cpuFreqGHz*1000.0)));
+			(timeEncoderCRCByte.diff/(cpuFreqGHz*1000.0)),
+			(timeEncoderCRCBit.diff/(cpuFreqGHz*1000.0)),
+			(timeEncoderInterleaver.diff/(cpuFreqGHz*1000.0)),
+			(timeEncoderBitInsertion.diff/(cpuFreqGHz*1000.0)),
+			(timeEncoder1.diff/(cpuFreqGHz*1000.0)),
+			(timeEncoder2.diff/(cpuFreqGHz*1000.0)),
+			(timeEncoderRateMatching.diff/(cpuFreqGHz*1000.0)),
+			(timeEncoderByte2Bit.diff/(cpuFreqGHz*1000.0)));
 }

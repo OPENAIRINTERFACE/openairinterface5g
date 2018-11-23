@@ -91,6 +91,8 @@ typedef enum {
 #define CONFIG_STRING_RU_MAX_RXGAIN               "max_rxgain"
 #define CONFIG_STRING_RU_IF_COMPRESSION           "if_compression"
 #define CONFIG_STRING_RU_NBIOTRRC_LIST            "NbIoT_RRC_instances"
+#define CONFIG_STRING_RU_SDR_ADDRS                "sdr_addrs"
+#define CONFIG_STRING_RU_SDR_CLK_SRC              "clock_src"
 
 #define RU_LOCAL_IF_NAME_IDX          0
 #define RU_LOCAL_ADDRESS_IDX          1
@@ -169,8 +171,8 @@ typedef enum {
 #define GNB_CONFIG_STRING_CELL_TYPE                     "cell_type"
 #define GNB_CONFIG_STRING_GNB_NAME                      "gNB_name"
 #define GNB_CONFIG_STRING_TRACKING_AREA_CODE            "tracking_area_code"
-#define GNB_CONFIG_STRING_MOBILE_COUNTRY_CODE           "mobile_country_code"
-#define GNB_CONFIG_STRING_MOBILE_NETWORK_CODE           "mobile_network_code"
+#define GNB_CONFIG_STRING_MOBILE_COUNTRY_CODE_OLD       "mobile_country_code"
+#define GNB_CONFIG_STRING_MOBILE_NETWORK_CODE_OLD       "mobile_network_code"
 #define GNB_CONFIG_STRING_TRANSPORT_S_PREFERENCE        "tr_s_preference"
 #define GNB_CONFIG_STRING_LOCAL_S_IF_NAME               "local_s_if_name"
 #define GNB_CONFIG_STRING_LOCAL_S_ADDRESS               "local_s_address"
@@ -189,8 +191,8 @@ typedef enum {
 {GNB_CONFIG_STRING_CELL_TYPE,                    NULL,   0,            strptr:NULL, defstrval:"CELL_MACRO_GNB",  TYPE_STRING,    0},  \
 {GNB_CONFIG_STRING_GNB_NAME,                     NULL,   0,            strptr:NULL, defstrval:"OAIgNodeB",       TYPE_STRING,    0},  \
 {GNB_CONFIG_STRING_TRACKING_AREA_CODE,           NULL,   0,            strptr:NULL, defstrval:"0",               TYPE_STRING,    0},  \
-{GNB_CONFIG_STRING_MOBILE_COUNTRY_CODE,          NULL,   0,            strptr:NULL, defstrval:"0",               TYPE_STRING,    0},  \
-{GNB_CONFIG_STRING_MOBILE_NETWORK_CODE,          NULL,   0,            strptr:NULL, defstrval:"0",               TYPE_STRING,    0},  \
+{GNB_CONFIG_STRING_MOBILE_COUNTRY_CODE_OLD,      NULL,   0,            strptr:NULL, defstrval:NULL,               TYPE_STRING,    0},  \
+{GNB_CONFIG_STRING_MOBILE_NETWORK_CODE_OLD,      NULL,   0,            strptr:NULL, defstrval:NULL,               TYPE_STRING,    0},  \
 {GNB_CONFIG_STRING_TRANSPORT_S_PREFERENCE,       NULL,   0,            strptr:NULL, defstrval:"local_mac",       TYPE_STRING,    0},  \
 {GNB_CONFIG_STRING_LOCAL_S_IF_NAME,              NULL,   0,            strptr:NULL, defstrval:"lo",              TYPE_STRING,    0},  \
 {GNB_CONFIG_STRING_LOCAL_S_ADDRESS,              NULL,   0,            strptr:NULL, defstrval:"127.0.0.1",       TYPE_STRING,    0},  \
@@ -204,8 +206,8 @@ typedef enum {
 #define GNB_CELL_TYPE_IDX               1
 #define GNB_GNB_NAME_IDX                2
 #define GNB_TRACKING_AREA_CODE_IDX      3
-#define GNB_MOBILE_COUNTRY_CODE_IDX     4
-#define GNB_MOBILE_NETWORK_CODE_IDX     5
+#define GNB_MOBILE_COUNTRY_CODE_IDX_OLD 4
+#define GNB_MOBILE_NETWORK_CODE_IDX_OLD 5
 #define GNB_TRANSPORT_S_PREFERENCE_IDX  6
 #define GNB_LOCAL_S_IF_NAME_IDX         7
 #define GNB_LOCAL_S_ADDRESS_IDX         8
@@ -214,8 +216,56 @@ typedef enum {
 #define GNB_REMOTE_S_PORTC_IDX          11
 #define GNB_LOCAL_S_PORTD_IDX           12
 #define GNB_REMOTE_S_PORTD_IDX          13
+
+#define TRACKING_AREA_CODE_OKRANGE {0x0001,0xFFFD}
+#define GNBPARAMS_CHECK {                                         \
+  { .s5 = { NULL } },                                             \
+  { .s5 = { NULL } },                                             \
+  { .s5 = { NULL } },                                             \
+  { .s2 = { config_check_intrange, TRACKING_AREA_CODE_OKRANGE } },\
+  { .s5 = { NULL } },                                             \
+  { .s5 = { NULL } },                                             \
+  { .s5 = { NULL } },                                             \
+  { .s5 = { NULL } },                                             \
+  { .s5 = { NULL } },                                             \
+  { .s5 = { NULL } },                                             \
+  { .s5 = { NULL } },                                             \
+  { .s5 = { NULL } },                                             \
+  { .s5 = { NULL } },                                             \
+  { .s5 = { NULL } },                                             \
+}
+
 /*-------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*-------------------------------------------------------------------------------------------------------------------------------------------------*/		  
+
+/* PLMN ID configuration */
+
+#define GNB_CONFIG_STRING_PLMN_LIST                     "plmn_list"
+
+#define GNB_CONFIG_STRING_MOBILE_COUNTRY_CODE           "mcc"
+#define GNB_CONFIG_STRING_MOBILE_NETWORK_CODE           "mnc"
+#define GNB_CONFIG_STRING_MNC_DIGIT_LENGTH              "mnc_length"
+
+#define GNB_MOBILE_COUNTRY_CODE_IDX     0
+#define GNB_MOBILE_NETWORK_CODE_IDX     1
+#define GNB_MNC_DIGIT_LENGTH            2
+
+#define PLMNPARAMS_DESC {                                                                  \
+/*   optname                              helpstr               paramflags XXXptr     def val          type    numelt */ \
+  {GNB_CONFIG_STRING_MOBILE_COUNTRY_CODE, "mobile country code",        0, uptr:NULL, defuintval:1000, TYPE_UINT, 0},    \
+  {GNB_CONFIG_STRING_MOBILE_NETWORK_CODE, "mobile network code",        0, uptr:NULL, defuintval:1000, TYPE_UINT, 0},    \
+  {GNB_CONFIG_STRING_MNC_DIGIT_LENGTH,    "length of the MNC (2 or 3)", 0, uptr:NULL, defuintval:0,    TYPE_UINT, 0},    \
+}
+
+#define MCC_MNC_OKRANGES           {0,999}
+#define MNC_DIGIT_LENGTH_OKVALUES  {2,3}
+
+#define PLMNPARAMS_CHECK {                                           \
+  { .s2 = { config_check_intrange, MCC_MNC_OKRANGES } },             \
+  { .s2 = { config_check_intrange, MCC_MNC_OKRANGES } },             \
+  { .s1 = { config_check_intval,   MNC_DIGIT_LENGTH_OKVALUES, 2 } }, \
+}
+
 
 
 /* component carries configuration parameters name */
@@ -883,6 +933,7 @@ typedef enum {
 #define GNB_CONFIG_STRING_MME_IPV6_ADDRESS              "ipv6"
 #define GNB_CONFIG_STRING_MME_IP_ADDRESS_ACTIVE         "active"
 #define GNB_CONFIG_STRING_MME_IP_ADDRESS_PREFERENCE     "preference"
+#define GNB_CONFIG_STRING_MME_BROADCAST_PLMN_INDEX      "broadcast_plmn_index"
 
 
 /*-------------------------------------------------------------------------------------------------------------------------------------*/
@@ -900,6 +951,7 @@ typedef enum {
 #define GNB_MME_IPV6_ADDRESS_IDX          1
 #define GNB_MME_IP_ADDRESS_ACTIVE_IDX     2
 #define GNB_MME_IP_ADDRESS_PREFERENCE_IDX 3
+#define GNB_MME_BROADCAST_PLMN_INDEX      4
 /*---------------------------------------------------------------------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------------------------------------------------------------------*/
 /* SCTP configuration parameters section name */
@@ -1047,3 +1099,29 @@ typedef enum {
 #define MACRLC_REMOTE_S_PORTD_IDX                              16
 #define MACRLC_SCHED_MODE_IDX                                  17
 #define MACRLC_PHY_TEST_IDX                                    18
+
+
+/* thread configuration parameters section name */
+#define THREAD_CONFIG_STRING_THREAD_STRUCT                "THREAD_STRUCT"
+
+/* thread configuration parameters names   */
+#define THREAD_CONFIG_STRING_PARALLEL              "parallel_config"
+#define THREAD_CONFIG_STRING_WORKER                "worker_config"
+
+
+#define THREAD_PARALLEL_IDX          0
+#define THREAD_WORKER_IDX            1
+
+/*-------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                                             thread configuration parameters                                                                 */
+/*   optname                                          helpstr   paramflags    XXXptr       defXXXval                                 type           numelt     */
+/*-------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+#define THREAD_CONF_DESC {  \
+{THREAD_CONFIG_STRING_PARALLEL,          CONFIG_HLP_PARALLEL,      0,       strptr:NULL,   defstrval:"PARALLEL_RU_L1_TRX_SPLIT",   TYPE_STRING,   0},          \
+{THREAD_CONFIG_STRING_WORKER,            CONFIG_HLP_WORKER,        0,       strptr:NULL,   defstrval:"WORKER_ENABLE",              TYPE_STRING,   0}           \
+}
+
+
+#define CONFIG_HLP_WORKER                          "coding and FEP worker thread WORKER_DISABLE or WORKER_ENABLE\n"
+#define CONFIG_HLP_PARALLEL                        "PARALLEL_SINGLE_THREAD, PARALLEL_RU_L1_SPLIT, or PARALLEL_RU_L1_TRX_SPLIT(RU_L1_TRX_SPLIT by defult)\n"
+/*-------------------------------------------------------------------------------------------------------------------------------------------------------------*/

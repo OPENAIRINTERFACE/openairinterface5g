@@ -201,13 +201,9 @@ int i;
 
 /* default */
   if (cfgparam == NULL) {
-         tmpflags = tmpflags | CONFIG_NOOOPT;
-     if (strstr(argv[0],"uesoftmodem") == NULL) {
-         cfgparam = CONFIG_LIBCONFIGFILE ":" DEFAULT_CFGFILENAME;
-      } else {
-         cfgparam = CONFIG_CMDLINEONLY ":dbgl0" ;         
-      }
-   }
+    tmpflags = tmpflags | CONFIG_NOOOPT;
+    cfgparam = CONFIG_CMDLINEONLY ":dbgl0" ;         
+  }
    
 /* parse the config parameters to set the config source */
    i = sscanf(cfgparam,"%m[^':']:%ms",&cfgmode,&modeparams);

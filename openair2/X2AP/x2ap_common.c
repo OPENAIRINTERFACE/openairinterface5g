@@ -66,7 +66,7 @@ ssize_t x2ap_generate_initiating_message(
   pdu.present = X2AP_X2AP_PDU_PR_initiatingMessage;
   pdu.choice.initiatingMessage.procedureCode = procedureCode;
   pdu.choice.initiatingMessage.criticality   = criticality;
-  ANY_fromType_aper(&pdu.choice.initiatingMessage.value, td, sptr);
+  ANY_fromType_aper((ANY_t *)&pdu.choice.initiatingMessage.value, td, sptr);
 
   if (asn1_xer_print) {
     xer_fprint(stdout, &asn_DEF_X2AP_X2AP_PDU, (void *)&pdu);
@@ -98,7 +98,7 @@ ssize_t x2ap_generate_successfull_outcome(
   pdu.present = X2AP_X2AP_PDU_PR_successfulOutcome;
   pdu.choice.successfulOutcome.procedureCode = procedureCode;
   pdu.choice.successfulOutcome.criticality   = criticality;
-  ANY_fromType_aper(&pdu.choice.successfulOutcome.value, td, sptr);
+  ANY_fromType_aper((ANY_t *)&pdu.choice.successfulOutcome.value, td, sptr);
 
   if (asn1_xer_print) {
     xer_fprint(stdout, &asn_DEF_X2AP_X2AP_PDU, (void *)&pdu);
@@ -130,7 +130,7 @@ ssize_t x2ap_generate_unsuccessfull_outcome(
   pdu.present = X2AP_X2AP_PDU_PR_unsuccessfulOutcome;
   pdu.choice.successfulOutcome.procedureCode = procedureCode;
   pdu.choice.successfulOutcome.criticality   = criticality;
-  ANY_fromType_aper(&pdu.choice.successfulOutcome.value, td, sptr);
+  ANY_fromType_aper((ANY_t *)&pdu.choice.successfulOutcome.value, td, sptr);
 
   if (asn1_xer_print) {
     xer_fprint(stdout, &asn_DEF_X2AP_X2AP_PDU, (void *)&pdu);

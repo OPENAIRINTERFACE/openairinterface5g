@@ -44,7 +44,6 @@
 #include <unistd.h>
 
 #include "assertions.h"
-#include "signals.h"
 
 #include "vcd_signal_dumper.h"
 
@@ -190,7 +189,17 @@ const char* eurecomVariablesNames[] = {
   "ue0_trx_write_ns_missing",
   "enb_thread_rxtx_CPUID",
   "ru_thread_CPUID",
-  "ru_thread_tx_CPUID"
+  "ru_thread_tx_CPUID",
+
+  /*signal for NR*/
+  "frame_number_TX0_gNB",
+  "frame_number_TX1_gNB",
+  "frame_number_RX0_gNB",
+  "frame_number_RX1_gNB",
+  "subframe_number_TX0_gNB",
+  "subframe_number_TX1_gNB",
+  "subframe_number_RX0_gNB",
+  "subframe_number_RX1_gNB"
 };
 
 const char* eurecomFunctionsNames[] = {
@@ -408,6 +417,10 @@ const char* eurecomFunctionsNames[] = {
   "pdcch_modulation",
   "pdcch_interleaving",
   "pdcch_tx",
+
+  /*NR softmodem signal*/
+  "gNB_thread_rxtx0",
+  "gNB_thread_rxtx1"
 
 };
 

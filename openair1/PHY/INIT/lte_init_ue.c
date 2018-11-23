@@ -34,6 +34,8 @@
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 
+void init_7_5KHz(void);
+
 uint8_t dmrs1_tab_ue[8] = {0,2,3,4,6,8,9,10};
 extern uint8_t nfapi_mode;
 
@@ -165,11 +167,11 @@ void phy_config_sib2_ue(module_id_t Mod_id,int CC_id,
       } else if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_fourFrames) { // 24-bit subframe configuration
         fp->MBSFN_config[i].fourFrames_flag = 1;
         fp->MBSFN_config[i].mbsfn_SubframeConfig =
-          mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]|
+          mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[2]|
           (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[1]<<8)|
-          (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[2]<<16);
+          (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]<<16);
 
-        LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %d\n", i,
+        LOG_I(PHY, "[CONFIG] MBSFN_SubframeConfig[%d] pattern is  %x\n", i,
               fp->MBSFN_config[i].mbsfn_SubframeConfig);
       }
     }
@@ -662,6 +664,7 @@ int init_lte_ue_signal(PHY_VARS_UE *ue,
 
   init_frame_parms(&ue->frame_parms,1);
   init_lte_top(&ue->frame_parms);
+  init_7_5KHz();
   init_ul_hopping(&ue->frame_parms);
 
 

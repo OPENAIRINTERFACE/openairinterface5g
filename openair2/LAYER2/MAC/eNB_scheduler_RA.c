@@ -988,9 +988,10 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
 			   payload[0], ra->msg4_TBsize));
 
 		if (opt_enabled == 1) {
-		    trace_pdu(1,
+		    trace_pdu(DIRECTION_DOWNLINK,
 			      (uint8_t *) mac->
-			      UE_list.DLSCH_pdu[CC_idP][0][(unsigned char)UE_id].payload[0], rrc_sdu_length, UE_id, 3,
+			      UE_list.DLSCH_pdu[CC_idP][0][(unsigned char)UE_id].payload[0],
+			      rrc_sdu_length, UE_id, WS_C_RNTI,
 			      UE_RNTI(module_idP, UE_id), mac->frame,
 			      mac->subframe, 0, 0);
 		    LOG_D(OPT,
@@ -1193,9 +1194,10 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
 			   payload[0], ra->msg4_TBsize));
 
 		if (opt_enabled == 1) {
-		    trace_pdu(1,
+		    trace_pdu(DIRECTION_DOWNLINK,
 			      (uint8_t *) mac->
-			      UE_list.DLSCH_pdu[CC_idP][0][(unsigned char)UE_id].payload[0], rrc_sdu_length, UE_id, 3,
+			      UE_list.DLSCH_pdu[CC_idP][0][(unsigned char)UE_id].payload[0],
+			      rrc_sdu_length, UE_id,  WS_C_RNTI,
 			      UE_RNTI(module_idP, UE_id), mac->frame,
 			      mac->subframe, 0, 0);
 		    LOG_D(OPT,

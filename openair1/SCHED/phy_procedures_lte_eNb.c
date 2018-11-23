@@ -347,7 +347,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 	  dlsch_harq->rvidx,
 	  dlsch_harq->round);
   }    
-#if defined(MESSAGE_CHART_GENERATOR_PHY)
+
   MSC_LOG_TX_MESSAGE(
 		     MSC_PHY_ENB,MSC_PHY_UE,
 		     NULL,0,
@@ -368,7 +368,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 		     pmi2hex_2Ar1(dlsch_harq->pmi_alloc),
 		     dlsch_harq->rvidx,
 		     dlsch_harq->round);
-#endif
+
   
   
   if (ue_stats) ue_stats->dlsch_sliding_cnt++;
@@ -412,7 +412,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
       &eNB->dlsch_turbo_encoding_wakeup_stats1,
 	  &eNB->dlsch_interleaving_stats);
     stop_meas(&eNB->dlsch_encoding_stats);
-  if(eNB->dlsch_encoding_stats.diff_now>500*3000 && opp_enabled == 1)
+  if(eNB->dlsch_encoding_stats.p_time>500*3000 && opp_enabled == 1)
   {
     print_meas_now(&eNB->dlsch_encoding_stats,"total coding",stderr);
   }
@@ -1337,21 +1337,26 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
             ret,
             ulsch_harq->cqi_crc_status,
             ulsch_harq->O_ACK,
-            eNB->ulsch_decoding_stats.diff_now, eNB->ulsch_decoding_stats.max);
+            eNB->ulsch_decoding_stats.p_time, eNB->ulsch_decoding_stats.max);
       
       //compute the expected ULSCH RX power (for the stats)
       ulsch_harq->delta_TF = get_hundred_times_delta_IF_eNB(eNB,i,harq_pid, 0); // 0 means bw_factor is not considered
       
-      if (ulsch_harq->cqi_crc_status == 1) {
+      if (RC.mac != NULL) { /* ulsim dose not use RC.mac context. */
+        if (ulsch_harq->cqi_crc_status == 1) {
 #ifdef DEBUG_PHY_PROC
 	//if (((frame%10) == 0) || (frame < 50))
 	print_CQI(ulsch_harq->o,ulsch_harq->uci_format,0,fp->N_RB_DL);
 #endif
-	
-	fill_ulsch_cqi_indication(eNB,frame,subframe,
-				  ulsch_harq,
-				  ulsch->rnti);
-	
+          fill_ulsch_cqi_indication(eNB,frame,subframe,ulsch_harq,ulsch->rnti);
+          RC.mac[eNB->Mod_id]->UE_list.UE_sched_ctrl[i].cqi_req_flag &= (~(1 << subframe));
+        } else {
+          if(RC.mac[eNB->Mod_id]->UE_list.UE_sched_ctrl[i].cqi_req_flag & (1 << subframe) ){
+            RC.mac[eNB->Mod_id]->UE_list.UE_sched_ctrl[i].cqi_req_flag &= (~(1 << subframe));
+            RC.mac[eNB->Mod_id]->UE_list.UE_sched_ctrl[i].cqi_req_timer=30;
+            LOG_D(PHY,"Frame %d,Subframe %d, We're supposed to get a cqi here. Set cqi_req_timer to 30.\n",frame,subframe);
+          }
+        }
       }
     
       if (ret == (1+MAX_TURBO_ITERATIONS)) {
@@ -1375,7 +1380,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 	  ulsch->harq_mask   &= ~(1 << harq_pid);
 	  ulsch_harq->round   = 0;
 	}
-#if defined(MESSAGE_CHART_GENERATOR_PHY)
+
         MSC_LOG_RX_DISCARDED_MESSAGE(
 				     MSC_PHY_ENB,MSC_PHY_UE,
 				     NULL,0,
@@ -1384,7 +1389,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
 				     ulsch->rnti,harq_pid,
 				     ulsch_harq->round-1
 				     );
-#endif
+
 	
         /* Mark the HARQ process to release it later if max transmission reached
          * (see below).
@@ -1403,7 +1408,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
         T(T_ENB_PHY_ULSCH_UE_ACK, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(ulsch->rnti),
           T_INT(harq_pid));
 
-#if defined(MESSAGE_CHART_GENERATOR_PHY)
+
           MSC_LOG_RX_MESSAGE(
               MSC_PHY_ENB,MSC_PHY_UE,
               NULL,0,
@@ -1411,7 +1416,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
               frame,subframe,
               ulsch->rnti,harq_pid
               );
-#endif
+
 
 #ifdef DEBUG_PHY_PROC
 #ifdef DEBUG_ULSCH
@@ -1604,6 +1609,16 @@ static void do_release_harq(PHY_VARS_eNB *eNB,int UE_id,int tb,uint16_t frame,ui
     dlsch1_harq     = dlsch1->harq_processes[harq_pid];
     AssertFatal(dlsch0_harq!=NULL,"dlsch0_harq is null\n");
 
+#if T_TRACER
+    if (after_rounds != -1) {
+      T(T_ENB_PHY_DLSCH_UE_NACK, T_INT(0), T_INT(frame), T_INT(subframe),
+        T_INT(dlsch0->rnti), T_INT(harq_pid));
+    } else {
+      T(T_ENB_PHY_DLSCH_UE_ACK, T_INT(0), T_INT(frame), T_INT(subframe),
+        T_INT(dlsch0->rnti), T_INT(harq_pid));
+    }
+#endif
+
     if (dlsch0_harq->round >= after_rounds) {
       dlsch0_harq->status = SCH_IDLE;
       /*if ((dlsch1_harq == NULL)||
@@ -1631,6 +1646,15 @@ static void do_release_harq(PHY_VARS_eNB *eNB,int UE_id,int tb,uint16_t frame,ui
 	  dlsch1_harq     = dlsch1->harq_processes[harq_pid];
 	  AssertFatal(dlsch0_harq!=NULL,"dlsch0_harq is null\n");
       
+#if T_TRACER
+          if (after_rounds != -1) {
+            T(T_ENB_PHY_DLSCH_UE_NACK, T_INT(0), T_INT(frame), T_INT(subframe),
+              T_INT(dlsch0->rnti), T_INT(harq_pid));
+          } else {
+            T(T_ENB_PHY_DLSCH_UE_ACK, T_INT(0), T_INT(frame), T_INT(subframe),
+              T_INT(dlsch0->rnti), T_INT(harq_pid));
+          }
+#endif
           if (dlsch0_harq->round >= after_rounds) {
 	    dlsch0_harq->status = SCH_IDLE;
 	    if ((dlsch1_harq == NULL)||
@@ -1753,22 +1777,6 @@ void fill_ulsch_harq_indication(PHY_VARS_eNB *eNB,LTE_UL_eNB_HARQ_t *ulsch_harq,
       pdu->harq_indication_fdd_rel13.harq_tb_n[i] = 2-ulsch_harq->o_ACK[i];
       // release DLSCH if needed
       release_harq(eNB,UE_id,i,frame,subframe,0xffff, ulsch_harq->o_ACK[i] == 1);
-
-
-#if T_TRACER
-      /* TODO: get correct harq pid */
-      {
-        int subframe_tx = (subframe+6)%10;
-        int frame_tx = subframe_tx >= 6 ? (frame+1023)%1024 : frame;
-        if (ulsch_harq->o_ACK[i] != 1) {
-          T(T_ENB_PHY_DLSCH_UE_NACK, T_INT(0), T_INT(frame), T_INT(subframe),
-            T_INT(rnti), T_INT(eNB->dlsch[UE_id][0]->harq_ids[frame_tx%2][subframe_tx]));
-        } else {
-          T(T_ENB_PHY_DLSCH_UE_ACK, T_INT(0), T_INT(frame), T_INT(subframe),
-            T_INT(rnti), T_INT(eNB->dlsch[UE_id][0]->harq_ids[frame_tx%2][subframe_tx]));
-        }
-      }
-#endif
     }
   }
   else { // TDD
@@ -1857,21 +1865,6 @@ void fill_uci_harq_indication(PHY_VARS_eNB *eNB,
       pdu->harq_indication_fdd_rel13.harq_tb_n[0] = harq_ack[0];
       // release DLSCH if needed
       release_harq(eNB,UE_id,0,frame,subframe,0xffff, harq_ack[0] == 1);
-
-
-#if T_TRACER
-      {
-        int subframe_tx = (subframe+6)%10;
-        int frame_tx = subframe_tx >= 6 ? (frame+1023)%1024 : frame;
-        if (harq_ack[0] != 1) {
-          T(T_ENB_PHY_DLSCH_UE_NACK, T_INT(0), T_INT(frame), T_INT(subframe),
-            T_INT(uci->rnti), T_INT(eNB->dlsch[UE_id][0]->harq_ids[frame_tx%2][subframe_tx]));
-        } else {
-          T(T_ENB_PHY_DLSCH_UE_ACK, T_INT(0), T_INT(frame), T_INT(subframe),
-            T_INT(uci->rnti), T_INT(eNB->dlsch[UE_id][0]->harq_ids[frame_tx%2][subframe_tx]));
-        }
-      }
-#endif
     }
     else if (uci->pucch_fmt == pucch_format1b) {
       pdu->harq_indication_fdd_rel13.tl.tag = NFAPI_HARQ_INDICATION_FDD_REL13_TAG;
@@ -2041,15 +2034,14 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
   const int subframe = proc->subframe_rx;
   const int frame    = proc->frame_rx;
 
-
-  if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_UL)) return;
-
-  T(T_ENB_PHY_UL_TICK, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe));
-
   /* TODO: use correct rxdata */
   T(T_ENB_PHY_INPUT_SIGNAL, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe), T_INT(0),
     T_BUFFER(&eNB->RU_list[0]->common.rxdata[0][subframe*eNB->frame_parms.samples_per_tti],
              eNB->frame_parms.samples_per_tti * 4));
+
+  if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_UL)) return;
+
+  T(T_ENB_PHY_UL_TICK, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe));
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC, 1 );
 
@@ -2092,7 +2084,4 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC, 0 );
-
-  stop_meas(&eNB->phy_proc_rx);
-
 }

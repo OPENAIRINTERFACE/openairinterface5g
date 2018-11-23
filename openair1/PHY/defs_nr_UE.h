@@ -57,7 +57,7 @@
 #     include "COMMON/ral_messages_types.h"
 #     include "UTIL/queue.h"
 #   endif
-#   include "log.h"
+#   include "common/utils/LOG/log.h"
 #   define msg(aRGS...) LOG_D(PHY, ##aRGS)
 # else
 #   define msg printf
@@ -920,14 +920,15 @@ typedef struct {
   /// - first index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
   /// - second index: ? [0..287] (hard coded)
   int32_t **dl_ch_estimates_ext;
+  int log2_maxh;
   uint8_t pbch_a[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
   uint32_t pbch_a_interleaved;
   uint32_t pbch_a_prime;
   uint8_t pbch_e[NR_POLAR_PBCH_E];
-  double  demod_pbch_e[NR_POLAR_PBCH_E];
+  int16_t  demod_pbch_e[NR_POLAR_PBCH_E];
   /// \brief Pointer to PBCH llrs.
   /// - first index: ? [0..1919] (hard coded)
-  int8_t *llr;
+  int16_t *llr;
   /// \brief Pointer to PBCH decoded output.
   /// - first index: ? [0..63] (hard coded)
   uint8_t *decoded_output;
@@ -1061,7 +1062,7 @@ typedef struct {
   uint32_t dmrs_pbch_bitmap_nr[DMRS_PBCH_I_SSB][DMRS_PBCH_N_HF][DMRS_BITMAP_SIZE];
 
 #endif
-  t_nrPolar_paramsPtr nrPolar_params;
+  t_nrPolar_params  *nrPolar_params;
 
   /// PBCH DMRS sequence
   uint32_t nr_gold_pbch[2][64][NR_PBCH_DMRS_LENGTH_DWORD];
@@ -1129,6 +1130,8 @@ typedef struct {
   //  uint8_t               prach_timer;
   uint8_t               decode_SIB;
   uint8_t               decode_MIB;
+  /// temporary offset during cell search prior to MIB decoding
+  int              ssb_offset;
   int              rx_offset; /// Timing offset
   int              rx_offset_diff; /// Timing adjustment for ofdm symbol0 on HW USRP
   int              time_sync_cell;
@@ -1300,8 +1303,6 @@ struct nr_rxtx_thread_data {
   PHY_VARS_NR_UE    *UE;
   UE_nr_rxtx_proc_t *proc;
 };
-
-void exit_fun(const char* s);
 
 /*static inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
 

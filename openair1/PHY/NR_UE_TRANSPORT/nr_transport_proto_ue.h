@@ -1362,6 +1362,7 @@ void generate_RIV_tables(void);
   N_RB_DL, PHICH_CONFIG and Nid_cell) and the UE can begin decoding PDCCH and DLSCH SI to retrieve the rest.  Once these
   parameters are know, the routine calls some basic initialization routines (cell-specific reference signals, etc.)
   @param phy_vars_ue Pointer to UE variables
+  @param mode current running mode
 */
 int nr_initial_sync(PHY_VARS_NR_UE *phy_vars_ue, runmode_t mode);
 
@@ -1636,9 +1637,11 @@ uint8_t get_prach_prb_offset(NR_DL_FRAME_PARMS *frame_parms,
 			     uint8_t n_ra_prboffset,
 			     uint8_t tdd_mapindex, uint16_t Nf);
 
+void nr_pdcch_unscrambling(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8_t nr_tti_rx,
+			   uint16_t *z, uint32_t length, uint16_t pdcch_DMRS_scrambling_id, int do_common);
 
 
-
+uint32_t lte_gold_generic(uint32_t *x1, uint32_t *x2, uint8_t reset);
 
 /**@}*/
 #endif
