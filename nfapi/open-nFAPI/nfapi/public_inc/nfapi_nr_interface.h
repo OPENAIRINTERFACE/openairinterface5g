@@ -451,6 +451,8 @@ typedef struct {
   uint8_t rnti;
   uint8_t rnti_type;
   uint8_t dci_format;
+  /// Number of CRB in BWP that this DCI configures 
+  uint8_t n_RB_BWP;
   uint8_t config_type;
   uint8_t search_space_type;  
   uint8_t aggregation_level;

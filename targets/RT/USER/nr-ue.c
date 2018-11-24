@@ -679,6 +679,9 @@ static void *UE_thread_rxn_txnp4(void *arg) {
             UE->dci_ind.number_of_dcis = 0;
             //clean previous FAPI MESSAGE
 
+	    // call L2 for DL_CONFIG (DCI)
+	    UE->if_inst->dcireq(&UE->dci_config,proc->frame_rx,proc->nr_tti_rx);
+
 #ifdef UE_SLOT_PARALLELISATION
             phy_procedures_slot_parallelization_UE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else

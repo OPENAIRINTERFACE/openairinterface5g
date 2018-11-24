@@ -3541,14 +3541,14 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
   // this table contains 56 (NBR_NR_DCI_FIELDS) elements for each dci field and format described in TS 38.212. Each element represents the size in bits for each dci field
   //uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS] = {0};
   // this is the UL bandwidth part. FIXME! To be defined where this value comes from
-  uint16_t n_RB_ULBWP = 106;
+  //  uint16_t n_RB_ULBWP = 106;
   // this is the DL bandwidth part. FIXME! To be defined where this value comes from
-  uint16_t n_RB_DLBWP = 106;
-  #ifdef NR_PDCCH_SCHED_DEBUG
-    printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> n_RB_ULBWP=%d n_RB_DLBWP=%d\n",
-            n_RB_ULBWP,
-            n_RB_DLBWP);
-  #endif
+  //uint16_t n_RB_DLBWP = 106;
+  //#ifdef NR_PDCCH_SCHED_DEBUG
+  //    printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> n_RB_ULBWP=%d n_RB_DLBWP=%d\n",
+  //            n_RB_ULBWP,
+  //            n_RB_DLBWP);
+  //  #endif
 
   // First we have to identify each searchSpace active at a time and do PDCCH monitoring corresponding to current searchSpace
   // Up to 10 searchSpaces can be configured to UE (s<=10)
@@ -5819,12 +5819,11 @@ int phy_procedures_slot_parallelization_UE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc
 
 
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,
-			 uint8_t abstraction_flag,uint8_t do_pdcch_flag,runmode_t mode,
-			 relaying_type_t r_type) {
+			   uint8_t do_pdcch_flag,runmode_t mode) {
+
 
   //int l,l2;
   //int pilot1;
-  //int pmch_flag=0;
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
   proc->decoder_switch = 0;
@@ -5854,7 +5853,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   start_meas(&ue->generic_stat);
 #endif
 
-  pmch_flag = is_pmch_subframe(frame_rx,nr_tti_rx,&ue->frame_parms) ? 1 : 0;
+
   
   
         
@@ -5891,8 +5890,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 
   if (nr_subframe_select(&ue->frame_parms,nr_tti_rx) == SF_S) { // S-subframe, do first 5 symbols only
     l2 = 5;
-  } else if (pmch_flag == 1) { // do first 2 symbols only
-    l2 = 1;
   } else { // normal nr_tti_rx, last symbol to be processed is the first of the second slot
     l2 = (ue->frame_parms.symbols_per_tti/2)-1;
   }
@@ -5949,6 +5946,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 	
   //printf(">>> at phy_procedures_nrUE_RX, nr_ue_pdcch_procedures init, dlsch->active=%d\n",
   //        ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active); 
+
   if (nr_ue_pdcch_procedures(eNB_id,ue,proc,abstraction_flag) == -1) {
     LOG_E(PHY,"[UE  %d] Frame %d, nr_tti_rx %d: Error in pdcch procedures\n",ue->Mod_id,frame_rx,nr_tti_rx);
     return(-1);
@@ -5984,10 +5982,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   ue_measurement_procedures(l-1,ue,proc,eNB_id,(nr_tti_rx<<1),abstraction_flag,mode);
 
   LOG_D(PHY," ------  end FFT/ChannelEst/PDCCH slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
-    // If this is PMCH, call procedures and return
-  if (pmch_flag == 1) {
-    ue_pmch_procedures(ue,proc,eNB_id,abstraction_flag);
-    return 0;
+  
+  return 0;
   }
 
   nr_slot_fep(ue,
