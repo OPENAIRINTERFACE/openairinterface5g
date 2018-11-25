@@ -4335,7 +4335,7 @@ void dlsch_channel_aver_band(int **dl_ch_estimates_ext,
   else
     nre=12;
 
-  for (aatx=0; aatx<frame_parms->nb_antennas_tx; aatx++){
+  for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++){
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
       dl_ch128=(__m128i *)&dl_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx + aarx][symbol*frame_parms->N_RB_DL*12];
       avg128D = _mm_setzero_si128();

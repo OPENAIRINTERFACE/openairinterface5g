@@ -40,7 +40,6 @@
 //#define DEBUG_DLSCH_DECODING
 #define UE_DEBUG_TRACE 1
 
-
 void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch)
 {
 

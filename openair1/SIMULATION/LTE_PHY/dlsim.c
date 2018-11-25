@@ -372,6 +372,7 @@ fill_dlsch_config(nfapi_dl_config_request_body_t * dl_req,
   dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_mode                      = transmission_mode;
   dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_prb_per_subband                 = num_bf_prb_per_subband;
   dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_vector                          = num_bf_vector;
+  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.initial_transmission_sf_io            = 0xFFFF;
   dl_req->number_pdu++;
 }
 
@@ -402,6 +403,7 @@ void fill_DCI(PHY_VARS_eNB *eNB,
   nfapi_dl_config_request_body_t *dl_req=&sched_resp->DL_req->dl_config_request_body;
   nfapi_dl_config_request_pdu_t  *dl_config_pdu;
   nfapi_tx_request_body_t        *TX_req=&sched_resp->TX_req->tx_request_body;
+  int NB_RB4TBS = common_flag == 0 ? NB_RB : (2+TPC);
 
   dl_req->number_dci=0;
   dl_req->number_pdu=0;
@@ -414,26 +416,24 @@ void fill_DCI(PHY_VARS_eNB *eNB,
     case 2:
 
     case 7:
-      if (common_flag == 0) {
-
 	dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
 	memset((void *) dl_config_pdu, 0,
 	       sizeof(nfapi_dl_config_request_pdu_t));
 	dl_config_pdu->pdu_type = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE;
 	dl_config_pdu->pdu_size = (uint8_t) (2 + sizeof(nfapi_dl_config_dci_dl_pdu));
-	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format = NFAPI_DL_DCI_FORMAT_1;
+	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format = (common_flag == 0) ? NFAPI_DL_DCI_FORMAT_1 : NFAPI_DL_DCI_FORMAT_1A;
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level = 4;
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tl.tag = NFAPI_DL_CONFIG_REQUEST_DCI_DL_PDU_REL8_TAG;
-	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti = n_rnti+k;
-	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type = 1;	// CRNTI : see Table 4-10 from SCF082 - nFAPI specifications
+	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti = (common_flag == 0) ? n_rnti+k : SI_RNTI;
+	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type = (common_flag ==0 ) ? 1: 2;	// CRNTI : see Table 4-10 from SCF082 - nFAPI specifications
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.transmission_power = 6000;	// equal to RS power
 
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.harq_process = 0;
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tpc = TPC;	// dont adjust power when retransmitting
-	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1 = ndi;
+	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1 = (common_flag == 0) ? ndi : 0;
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.mcs_1 = mcs1;
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_1 = rv;
-	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding = DLSCH_RB_ALLOC;
+	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding = (common_flag == 0) ? DLSCH_RB_ALLOC : computeRIV(eNB->frame_parms.N_RB_DL,0,NB_RB);
 	//deactivate second codeword
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.mcs_2 = 0;
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_2 = 1;
@@ -445,11 +445,12 @@ void fill_DCI(PHY_VARS_eNB *eNB,
 	dl_req->number_pdu++;
 	dl_req->tl.tag = NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
 
+	AssertFatal(TPC>=0 && TPC<2, "TPC should be 0 or 1\n");
 
 	fill_dlsch_config(dl_req,
-			  get_TBS_DL(mcs1,NB_RB),
+			  get_TBS_DL(mcs1,NB_RB4TBS),
 			  (retrans > 0) ? -1 : 0, /* retransmission, no pdu_index */
-			  n_rnti,
+			  (common_flag == 0) ? n_rnti : SI_RNTI,
 			  0,	// type 0 allocation from 7.1.6 in 36.213
 			  0,	// virtual_resource_block_assignment_flag, unused here
 			  DLSCH_RB_ALLOC,	// resource_block_coding,
@@ -472,13 +473,10 @@ void fill_DCI(PHY_VARS_eNB *eNB,
 			  );
 	fill_tx_req(TX_req,
 		    (frame * 10) + subframe,
-		    get_TBS_DL(mcs1,NB_RB),
+		    get_TBS_DL(mcs1,NB_RB4TBS),
 		    0,
 		    input_buffer[k]);
-      }
-      else {
-
-      }
+    
 
       break;
 
@@ -589,8 +587,7 @@ int main(int argc, char **argv)
   int eNB_id = 0;
   unsigned char round;
   unsigned char i_mod = 2;
-  unsigned short NB_RB;
-
+  int NB_RB;
 
   SCM_t channel_model=Rayleigh1;
   //  unsigned char *input_data,*decoded_output;
@@ -1000,30 +997,33 @@ int main(int argc, char **argv)
   // alternatively you can disable ITTI completely in CMakeLists.txt
   //itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, NULL);
 
-
   if (common_flag == 0) {
     switch (N_RB_DL) {
     case 6:
       if (rballocset==0) DLSCH_RB_ALLOC = 0x3f;
       num_pdcch_symbols = 3;
       break;
-
+      
     case 25:
       if (rballocset==0) DLSCH_RB_ALLOC = 0x1fff;
       break;
-
+      
     case 50:
       if (rballocset==0) DLSCH_RB_ALLOC = 0x1ffff;
       break;
-
+      
     case 100:
       if (rballocset==0) DLSCH_RB_ALLOC = 0x1ffffff;
       break;
     }
-
-    NB_RB=conv_nprb(0,DLSCH_RB_ALLOC,N_RB_DL);
-  } else
-    NB_RB = 4;
+    
+    NB_RB = conv_nprb(0,DLSCH_RB_ALLOC,N_RB_DL);
+  }
+  else {
+    if (rballocset==0) NB_RB = 8;
+    else               NB_RB = DLSCH_RB_ALLOC;
+    AssertFatal(NB_RB <= N_RB_DL,"illegal NB_RB %d\n",NB_RB);
+  }
 
   if (xforms==1) {
     fl_initialize (&argc, argv, NULL, 0, 0);
@@ -1524,7 +1524,7 @@ int main(int argc, char **argv)
 
             // Simulate HARQ procedures!!!
 	    memset(CCE_table,0,800*sizeof(int));
-            if (common_flag == 0) {
+            if (/*common_flag == 0*/ 1) {
 
 	      num_dci=0;
 	      num_common_dci=0;
@@ -1656,7 +1656,7 @@ int main(int argc, char **argv)
 	    if  (generate_ue_dlsch_params_from_dci(proc->frame_rx,
 						   proc->subframe_rx,
 						   (void *)&dci_alloc[0].dci_pdu,
-						   n_rnti,
+						   common_flag == 0 ? n_rnti : SI_RNTI,
 						   dci_alloc[0].format,
 						   UE->pdcch_vars[UE->current_thread_id[proc->subframe_rx]][eNB_id],
 						   UE->pdsch_vars[UE->current_thread_id[proc->subframe_rx]][eNB_id],
