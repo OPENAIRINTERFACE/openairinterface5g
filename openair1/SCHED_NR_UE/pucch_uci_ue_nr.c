@@ -178,7 +178,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   int       ri_status = 0;
   int       csi_status = 0;
 
-  int       initial_pucch_id = NB_INITIAL_PUCCH_RESOURCE;;
+  int       initial_pucch_id = NB_INITIAL_PUCCH_RESOURCE;
   int       pucch_resource_set = MAX_NB_OF_PUCCH_RESOURCE_SETS;
   int       pucch_resource_id = MAX_NB_OF_PUCCH_RESOURCES;
   int       pucch_resource_indicator = MAX_PUCCH_RESOURCE_INDICATOR;
@@ -587,7 +587,9 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     }
     case pucch_format2_nr:
     {
-      nr_generate_pucch2(ue,ue->common_vars.txdataF,
+      nr_generate_pucch2(ue,
+                         ue->pdcch_vars[ue->current_thread_id[proc->nr_tti_rx]][gNB_id]->crnti,
+                         ue->common_vars.txdataF,
                          &ue->frame_parms,
                          &ue->pucch_config_dedicated_nr[gNB_id],
                          pucch_payload,
@@ -603,7 +605,9 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     case pucch_format3_nr:
     case pucch_format4_nr:
     {
-      nr_generate_pucch3_4(ue,ue->common_vars.txdataF,
+      nr_generate_pucch3_4(ue,
+                           ue->pdcch_vars[ue->current_thread_id[proc->nr_tti_rx]][gNB_id]->crnti,
+                           ue->common_vars.txdataF,
                            &ue->frame_parms,
                            format,
                            &ue->pucch_config_dedicated_nr[gNB_id],
@@ -871,6 +875,10 @@ boolean_t select_pucch_resource(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int uci_size
     else  {
       /* see TS 38.213 9.2.1  PUCCH Resource Sets */
       int delta_PRI = harq_status->pucch_resource_indicator;
+      // n_CCE can be obtained from ue->dci_ind.dci_list[i].n_CCE. FIXME!!!
+      // N_CCE can be obtained from ue->dci_ind.dci_list[i].N_CCE. FIXME!!!
+      //int n_CCE = ue->dci_ind.dci_list[0].n_CCE;
+      //int N_CCE = ue->dci_ind.dci_list[0].N_CCE;
       int n_CCE_0 = harq_status->n_CCE;
       int N_CCE_0 = harq_status->N_CCE;
       if (N_CCE_0 == 0) {

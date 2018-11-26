@@ -516,10 +516,10 @@ function main() {
         install_usrp_uhd_driver $UHD_IMAGES_DIR
       fi
     fi 
-    if [ "$HW" == "OAI_ADRV9371_ZC706" ] ; then
-      echo_info "\nInstalling packages for ADRV9371_ZC706 support"
-      check_install_libiio_driver
-    fi 
+#    if [ "$HW" == "OAI_ADRV9371_ZC706" ] ; then
+#      echo_info "\nInstalling packages for ADRV9371_ZC706 support"
+#      check_install_libiio_driver
+#    fi 
     if [ "$HW" == "OAI_BLADERF" ] ; then
       echo_info "installing packages for BLADERF support"
       check_install_bladerf_driver
@@ -836,9 +836,18 @@ function main() {
 	      echo_info "liboai_device.so is linked to EXMIMO device library"       
 	  elif [ "$HW" == "OAI_ADRV9371_ZC706" ] ; then
 
-        ln -sf $OPENAIR_DIR/targets/ARCH/ADRV9371_ZC706/slib/libadrv9371_zc706.so liboai_device.so
+			SYRIQ_KVER=$(uname -r)
+			SYRIQ_KMAJ=$(echo $SYRIQ_KVER | sed -e 's/^\([0-9][0-9]*\)\.[0-9][0-9]*\.[0-9][0-9]*.*/\1/')
+			SYRIQ_KMIN=$(echo $SYRIQ_KVER | sed -e 's/^[0-9][0-9]*\.\([0-9][0-9]*\)\.[0-9][0-9]*.*/\1/')
+			#echo $SYRIQ_KMAJ$SYRIQ_KMIN
+			if [ "$SYRIQ_KMAJ$SYRIQ_KMIN" == "319" ] || [ "$SYRIQ_KMAJ$SYRIQ_KMIN" == "410" ] || [ "$SYRIQ_KMAJ$SYRIQ_KMIN" == "415" ] ; then
+#				echo "Kernel $SYRIQ_KMAJ.$SYRIQ_KMIN detected"
+				ln -sf /usr/local/lib/syriq/libadrv9371zc706.so liboai_device.so
+			else
+				echo_error "== FAILED == Unexpected Kernel $SYRIQ_KMAJ.$SYRIQ_KMIN"
+			fi
+			echo_info "liboai_device.so is linked to ADRV9371_ZC706 device library for Kernel $SYRIQ_KMAJ.$SYRIQ_KMIN"
 
-	      echo_info "liboai_device.so is linked to ADRV9371_ZC706 device library"        
 	  elif [ "$HW" == "OAI_USRP" ] ; then
               compilations \
                   $build_dir oai_usrpdevif \
