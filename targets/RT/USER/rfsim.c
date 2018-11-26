@@ -62,7 +62,6 @@ sim_t sim;
 
 
 void init_ru_devices(void);
-void init_RU(const char*);
 void *rfsim_top(void *n_frames);
 
 void wait_RUs(void)

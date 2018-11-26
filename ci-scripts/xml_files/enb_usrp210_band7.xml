@@ -24,6 +24,7 @@
 	<TestCaseRequestedList>
  010101
  050101 060101 070101 040101
+ 030100 040300 040401 040201 030201
  030101 040301 040501 040603 040604 040605 040606 040607 040641 040642 040643 040644 040401 040201 030201
  030111 040301 040511 040613 040614 040615 040616 040617 040651 040652 040653 040654 040401 040201 030201
  030121 040301 040521 040623 040624 040625 040626 040627 040662 040661 040663 040664 040401 040201 030201
@@ -35,6 +36,12 @@
 		<class>Build_eNB</class>
 		<desc>Build eNB (USRP)</desc>
 		<Build_eNB_args>-w USRP -c --eNB</Build_eNB_args>
+	</testCase>
+
+	<testCase id="030100">
+		<class>Initialize_eNB</class>
+		<desc>Initialize eNB (FDD/Band7/5MHz) with T Tracer on</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.usrpb210.conf --T_stdout 0</Initialize_eNB_args>
 	</testCase>
 
 	<testCase id="030101">
@@ -69,6 +76,12 @@
 		<class>Terminate_UE</class>
 		<desc>Terminate UE</desc>
 	</testCase>
+
+        <testCase id="040300">
+                <class>Attach_UE</class>
+                <desc>Attach single UE</desc>
+                <nbMaxUEtoAttach>1</nbMaxUEtoAttach>
+        </testCase>
 
         <testCase id="040301">
                 <class>Attach_UE</class>

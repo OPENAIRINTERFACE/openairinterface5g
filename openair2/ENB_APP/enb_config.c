@@ -251,7 +251,7 @@ void RCconfig_L1(void) {
       }
     }// j=0..num_inst
 
-    printf("Initializing northbound interface for L1\n");
+    LOG_I(ENB_APP,"Initializing northbound interface for L1\n");
     l1_north_init_eNB();
   } else {
     LOG_I(PHY,"No " CONFIG_STRING_L1_LIST " configuration found");
@@ -323,16 +323,16 @@ void RCconfig_macrlc() {
         RC.mac[j]->eth_params_s.remote_portd             = *(MacRLC_ParamList.paramarray[j][MACRLC_REMOTE_S_PORTD_IDX].iptr);
         RC.mac[j]->eth_params_s.transp_preference        = ETH_UDP_MODE;
         sf_ahead = 2; // Cannot cope with 4 subframes betweem RX and TX - set it to 2
-        printf("**************** vnf_port:%d\n", RC.mac[j]->eth_params_s.my_portc);
+        LOG_I(ENB_APP,"**************** vnf_port:%d\n", RC.mac[j]->eth_params_s.my_portc);
         configure_nfapi_vnf(RC.mac[j]->eth_params_s.my_addr, RC.mac[j]->eth_params_s.my_portc);
-        printf("**************** RETURNED FROM configure_nfapi_vnf() vnf_port:%d\n", RC.mac[j]->eth_params_s.my_portc);
+        LOG_I(ENB_APP,"**************** RETURNED FROM configure_nfapi_vnf() vnf_port:%d\n", RC.mac[j]->eth_params_s.my_portc);
       } else { // other midhaul
         AssertFatal(1==0,"MACRLC %d: %s unknown southbound midhaul\n",j,*(MacRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_S_PREFERENCE_IDX].strptr));
       }
 
       if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_SCHED_MODE_IDX].strptr), "default") == 0) {
         global_scheduler_mode=SCHED_MODE_DEFAULT;
-        printf("sched mode = default %d [%s]\n",global_scheduler_mode,*(MacRLC_ParamList.paramarray[j][MACRLC_SCHED_MODE_IDX].strptr));
+        LOG_I(ENB_APP,"sched mode = default %d [%s]\n",global_scheduler_mode,*(MacRLC_ParamList.paramarray[j][MACRLC_SCHED_MODE_IDX].strptr));
       } else if (strcmp(*(MacRLC_ParamList.paramarray[j][MACRLC_SCHED_MODE_IDX].strptr), "fairRR") == 0) {
         global_scheduler_mode=SCHED_MODE_FAIR_RR;
         printf("sched mode = fairRR %d [%s]\n",global_scheduler_mode,*(MacRLC_ParamList.paramarray[j][MACRLC_SCHED_MODE_IDX].strptr));
@@ -413,7 +413,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
       enb_id = *(ENBParamList.paramarray[i][ENB_ENB_ID_IDX].uptr);
     }
 
-    printf("RRC %d: Southbound Transport %s\n",i,*(ENBParamList.paramarray[i][ENB_TRANSPORT_S_PREFERENCE_IDX].strptr));
+    LOG_I(ENB_APP,"RRC %d: Southbound Transport %s\n",i,*(ENBParamList.paramarray[i][ENB_TRANSPORT_S_PREFERENCE_IDX].strptr));
 
     if (strcmp(*(ENBParamList.paramarray[i][ENB_TRANSPORT_S_PREFERENCE_IDX].strptr), "local_mac") == 0) {
     } else if (strcmp(*(ENBParamList.paramarray[i][ENB_TRANSPORT_S_PREFERENCE_IDX].strptr), "cudu") == 0) {
@@ -2148,8 +2148,7 @@ return 0;
 int RCconfig_parallel(void) {
   char *parallel_conf = NULL;
   char *worker_conf   = NULL;
-  extern char *parallel_config;
-  extern char *worker_config;
+
   paramdef_t ThreadParams[]  = THREAD_CONF_DESC;
   paramlist_def_t THREADParamList = {THREAD_CONFIG_STRING_THREAD_STRUCT,NULL,0};
   config_getlist( &THREADParamList,NULL,0,NULL);
@@ -2168,9 +2167,10 @@ int RCconfig_parallel(void) {
     worker_conf   = strdup("WORKER_ENABLE");
   }
 
-  if(parallel_config == NULL) set_parallel_conf(parallel_conf);
 
-  if(worker_config == NULL)   set_worker_conf(worker_conf);
+  set_parallel_conf(parallel_conf);
+  set_worker_conf(worker_conf);
+
 
   return 0;
 }

@@ -85,8 +85,13 @@
 #   else
 #      include "../../S1AP/s1ap_eNB.h"
 #   endif
+/* temporary warning removale while implementing noS1 */
+/* as config option                                   */
 #else
-# define EPC_MODE_ENABLED 0
+#   ifdef EPC_MODE_ENABLED
+#      undef  EPC_MODE_ENABLED
+#   endif
+#   define EPC_MODE_ENABLED 0
 #endif
 
 #include "pdcp.h"

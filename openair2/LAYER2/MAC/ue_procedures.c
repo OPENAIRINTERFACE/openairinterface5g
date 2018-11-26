@@ -65,7 +65,6 @@
 #define DEBUG_HEADER_PARSING 1
 #define ENABLE_MAC_PAYLOAD_DEBUG 1
 
-extern uint8_t usim_test;
 
 extern UL_IND_t *UL_INFO;
 
@@ -2027,7 +2026,7 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
 	    {
 
 		// Workaround for issue in OAI eNB or EPC which are not able to process SRB2 message multiplexed with SRB1 on the same MAC PDU
-		if ((usim_test == 0) && (lcid == DCCH1)
+		if (( get_softmodem_params()->usim_test == 0) && (lcid == DCCH1)
 		    && (lcid_rlc_pdu_count == 0) && (num_sdus)) {
 
 		    // Skip SRB2 multiplex if at least one SRB1 SDU is already multiplexed
