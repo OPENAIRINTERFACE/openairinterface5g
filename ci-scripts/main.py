@@ -414,11 +414,26 @@ class SSHConnection():
 		while (doLoop):
 			loopCounter = loopCounter - 1
 			if (loopCounter == 0):
+				# In case of T tracer recording, we may need to kill it
+				result = re.search('T_stdout', str(self.Initialize_eNB_args))
+				if result is not None:
+					self.command('killall --signal SIGKILL record', '\$', 5)
+				self.close()
 				doLoop = False
 				logging.error('\u001B[1;37;41m eNB logging system did not show got sync! \u001B[0m')
 				self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'KO', ALL_PROCESSES_OK)
 				self.CreateHtmlFooter(False)
-				self.close()
+				# In case of T tracer recording, we need to kill tshark on EPC side
+				result = re.search('T_stdout', str(self.Initialize_eNB_args))
+				if result is not None:
+					self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+					logging.debug('\u001B[1m Stopping tshark \u001B[0m')
+					self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
+					self.close()
+					time.sleep(1)
+					pcap_log_file = 'enb_' + SSH.testCase_id + '_s1log.pcap'
+					self.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, '/tmp/' + pcap_log_file, '.')
+					self.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, pcap_log_file, self.eNBSourceCodePath + '/cmake_targets/.')
 				sys.exit(1)
 			else:
 				self.command('stdbuf -o0 cat enb_' + SSH.testCase_id + '.log | egrep --color=never -i "wait|sync"', '\$', 4)
@@ -661,6 +676,10 @@ class SSHConnection():
 				html_queue.put(html_cell)
 			if (attach_status):
 				self.CreateHtmlTestRowQueue('N/A', 'OK', len(self.UEDevices), html_queue)
+				result = re.search('T_stdout', str(self.Initialize_eNB_args))
+				if result is not None:
+					logging.debug('Waiting 5 seconds to fill up record file')
+					time.sleep(5)
 			else:
 				self.CreateHtmlTestRowQueue('N/A', 'KO', len(self.UEDevices), html_queue)
 				self.AutoTerminateUEandeNB()
@@ -696,6 +715,10 @@ class SSHConnection():
 		for job in multi_jobs:
 			job.join()
 		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+		result = re.search('T_stdout', str(self.Initialize_eNB_args))
+		if result is not None:
+			logging.debug('Waiting 5 seconds to fill up record file')
+			time.sleep(5)
 
 	def RebootUE_common(self, device_id):
 		try:
@@ -1462,7 +1485,7 @@ class SSHConnection():
 				fileCheck = re.search('enb_', str(self.eNBLogFile))
 				if fileCheck is not None:
 					self.copyin(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, self.eNBSourceCodePath + '/cmake_targets/' + self.eNBLogFile, '.')
-					logStatus = self.AnalyzeLogFile_eNB()
+					logStatus = self.AnalyzeLogFile_eNB(self.eNBLogFile)
 					if logStatus < 0:
 						result = logStatus
 			return result
@@ -1533,10 +1556,10 @@ class SSHConnection():
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
-	def AnalyzeLogFile_eNB(self):
-		if (not os.path.isfile('./' + SSH.eNBLogFile)):
+	def AnalyzeLogFile_eNB(self, eNBlogFile):
+		if (not os.path.isfile('./' + eNBlogFile)):
 			return -1
-		enb_log_file = open('./' + SSH.eNBLogFile, 'r')
+		enb_log_file = open('./' + eNBlogFile, 'r')
 		foundAssertion = False
 		msgAssertion = ''
 		msgLine = 0
@@ -1569,28 +1592,28 @@ class SSHConnection():
 			if foundAssertion and (msgLine < 3):
 				msgLine += 1
 				msgAssertion += str(line)
-			result = re.search('Generating RRCConnectionSetup', str(line))
+			result = re.search('Generating LTE_RRCConnectionSetup', str(line))
 			if result is not None:
 				rrcSetupRequest += 1
-			result = re.search('RRCConnectionSetupComplete from UE', str(line))
+			result = re.search('LTE_RRCConnectionSetupComplete from UE', str(line))
 			if result is not None:
 				rrcSetupComplete += 1
-			result = re.search('Generate RRCConnectionRelease', str(line))
+			result = re.search('Generate LTE_RRCConnectionRelease', str(line))
 			if result is not None:
 				rrcReleaseRequest += 1
-			result = re.search('Generate RRCConnectionReconfiguration', str(line))
+			result = re.search('Generate LTE_RRCConnectionReconfiguration', str(line))
 			if result is not None:
 				rrcReconfigRequest += 1
-			result = re.search('RRCConnectionReconfigurationComplete from UE rnti', str(line))
+			result = re.search('LTE_RRCConnectionReconfigurationComplete from UE rnti', str(line))
 			if result is not None:
 				rrcReconfigComplete += 1
-			result = re.search('RRCConnectionReestablishmentRequest', str(line))
+			result = re.search('LTE_RRCConnectionReestablishmentRequest', str(line))
 			if result is not None:
 				rrcReestablishRequest += 1
-			result = re.search('RRCConnectionReestablishmentComplete', str(line))
+			result = re.search('LTE_RRCConnectionReestablishmentComplete', str(line))
 			if result is not None:
 				rrcReestablishComplete += 1
-			result = re.search('RRCConnectionReestablishmentReject', str(line))
+			result = re.search('LTE_RRCConnectionReestablishmentReject', str(line))
 			if result is not None:
 				rrcReestablishReject += 1
 			result = re.search('uci->stat', str(line))
@@ -1668,7 +1691,6 @@ class SSHConnection():
 		if result is not None:
 			self.command('echo ' + self.eNBPassword + ' | sudo -S killall --signal SIGKILL lte-softmodem || true', '\$', 5)
 		self.close()
-		result = re.search('enb_', str(self.eNBLogFile))
 		# If tracer options is on, stopping tshark on EPC side
 		result = re.search('T_stdout', str(self.Initialize_eNB_args))
 		if result is not None:
@@ -1681,19 +1703,37 @@ class SSHConnection():
 			self.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, '/tmp/' + pcap_log_file, '.')
 			self.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, pcap_log_file, self.eNBSourceCodePath + '/cmake_targets/.')
 			self.close()
-		if result is not None:
-			self.copyin(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, self.eNBSourceCodePath + '/cmake_targets/' + self.eNBLogFile, '.')
-			logging.debug('\u001B[1m Analyzing eNB logfile \u001B[0m')
-			logStatus = self.AnalyzeLogFile_eNB()
-			if (logStatus < 0):
-				self.CreateHtmlTestRow('N/A', 'KO', logStatus)
-				self.CreateHtmlFooter(False)
-				sys.exit(1)
-			else:
-				self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+			logging.debug('\u001B[1m Replaying RAW record file\u001B[0m')
+			self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
+			self.command('cd ' + self.eNBSourceCodePath + '/common/utils/T/tracer/', '\$', 5)
+			raw_record_file = self.eNBLogFile.replace('.log', '_record.raw')
+			replay_log_file = self.eNBLogFile.replace('.log', '_replay.log')
+			extracted_txt_file = self.eNBLogFile.replace('.log', '_extracted_messages.txt')
+			extracted_log_file = self.eNBLogFile.replace('.log', '_extracted_messages.log')
+			self.command('./extract_config -i ' + self.eNBSourceCodePath + '/cmake_targets/' + raw_record_file + ' > ' + self.eNBSourceCodePath + '/cmake_targets/' + extracted_txt_file, '\$', 5)
+			self.command('echo $USER; nohup ./replay -i ' + self.eNBSourceCodePath + '/cmake_targets/' + raw_record_file + ' > ' + self.eNBSourceCodePath + '/cmake_targets/' + replay_log_file + ' 2>&1 &', self.eNBUserName, 5)
+			self.command('./textlog -d ' +  self.eNBSourceCodePath + '/cmake_targets/' + extracted_txt_file + ' -no-gui -ON -full > ' + self.eNBSourceCodePath + '/cmake_targets/' + extracted_log_file, '\$', 5)
+			self.close()
+			self.copyin(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, self.eNBSourceCodePath + '/cmake_targets/' + extracted_log_file, '.')
+			logging.debug('\u001B[1m Analyzing eNB replay logfile \u001B[0m')
+			logStatus = self.AnalyzeLogFile_eNB(extracted_log_file)
+			self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 			self.eNBLogFile = ''
 		else:
-			self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+			result = re.search('enb_', str(self.eNBLogFile))
+			if result is not None:
+				self.copyin(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, self.eNBSourceCodePath + '/cmake_targets/' + self.eNBLogFile, '.')
+				logging.debug('\u001B[1m Analyzing eNB logfile \u001B[0m')
+				logStatus = self.AnalyzeLogFile_eNB(self.eNBLogFile)
+				if (logStatus < 0):
+					self.CreateHtmlTestRow('N/A', 'KO', logStatus)
+					self.CreateHtmlFooter(False)
+					sys.exit(1)
+				else:
+					self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+				self.eNBLogFile = ''
+			else:
+				self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
 	def TerminateHSS(self):
 		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
@@ -1797,8 +1837,8 @@ class SSHConnection():
 		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
 		self.command('echo ' + self.eNBPassword + ' | sudo -S rm -f enb.log.zip', '\$', 5)
-		self.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap', '\$', 60)
-		self.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap', '\$', 5)
+		self.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log core* enb_*record.raw enb_*.pcap enb_*txt', '\$', 60)
+		self.command('echo ' + self.eNBPassword + ' | sudo -S rm enb*.log core* enb_*record.raw enb_*.pcap enb_*txt', '\$', 5)
 		self.close()
 
 	def LogCollectPing(self):
