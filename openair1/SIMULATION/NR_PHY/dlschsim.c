@@ -497,7 +497,7 @@ int main(int argc, char **argv) {
   harq_process->nb_rb = nb_rb;
   harq_process->Qm = mod_order;
   harq_process->rvidx = rvidx;
-  printf("harq process ue mcs = %d Qm = %d\n", harq_process->mcs, harq_process->Qm);
+  printf("harq process ue mcs = %d Qm = %d, symb %d\n", harq_process->mcs, harq_process->Qm,nb_symb_sch);
   unsigned char *test_input;
   test_input=(unsigned char *)malloc16(sizeof(unsigned char) * TBS/8);
 
@@ -524,6 +524,7 @@ int main(int argc, char **argv) {
     n_false_positive = 0;
     
     for (trial=0; trial < n_trials; trial++) {
+      errors_bit_uncoded = 0;
       for (i = 0; i < available_bits; i++) {
 #ifdef DEBUG_CODER
 
@@ -563,7 +564,7 @@ int main(int argc, char **argv) {
       }
 
       //if (errors_bit_uncoded>10)
-      printf("errors bits uncoded %f\n", errors_bit_uncoded);
+      //printf("errors bits uncoded %f\n", errors_bit_uncoded);
 #ifdef DEBUG_CODER
       printf("\n");
       exit(-1);

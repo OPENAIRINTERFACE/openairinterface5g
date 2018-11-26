@@ -35,6 +35,7 @@
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/CODING/coding_defs.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
+#include "PHY/CODING/nrLDPC_encoder/defs.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
@@ -225,10 +226,10 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,
     }
   }
 
- /* LOG_D(PHY,"new_gNB_dlsch exit flag %d, size of  %ld\n",
+  LOG_D(PHY,"new_gNB_dlsch exit flag %d, size of  %ld\n",
 	exit_flag, sizeof(NR_gNB_DLSCH_t));
   free_gNB_dlsch(dlsch);
-  return(NULL);*/
+  return(NULL);
 
 
 }
@@ -294,7 +295,7 @@ int nr_dlsch_encoding(unsigned char *a,
   A = rel15.transport_block_size;
 
   G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,rel15.nb_layers);
-  printf("dlsch coding A %d G %d mod_order %d\n", A,G, mod_order);
+  LOG_D(PHY,"dlsch coding A %d G %d mod_order %d\n", A,G, mod_order);
 
   Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0, rel15.nb_layers);
 

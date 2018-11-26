@@ -161,7 +161,7 @@ int test_ldpc(short No_iteration,
   t_nrLDPC_time_stats decoder_profiler;
   t_nrLDPC_time_stats* p_decoder_profiler =&decoder_profiler ;
 
-  int32_t n_iter = 0;;
+  int32_t n_iter = 0;
 
   *errors=0;
   *errors_bit=0;
