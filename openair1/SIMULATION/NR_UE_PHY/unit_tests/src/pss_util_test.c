@@ -70,7 +70,7 @@ static  nfapi_config_request_t* config =&config_t;
 
 /*************** FUNCTIONS ****************************************/
 
-void phy_init_nr_top(NR_DL_FRAME_PARMS *frame_parms);
+//void phy_init_nr_top(NR_DL_FRAME_PARMS *frame_parms);
 int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_eNB, uint8_t abstraction_flag);
 
 /*******************************************************************
@@ -262,7 +262,7 @@ int init_test(unsigned char N_tx, unsigned char N_rx, unsigned char transmission
 
   PHY_vars_UE->frame_parms.Nid_cell = (3 * N_ID_1_NUMBER) + N_ID_2_NUMBER; /* set to unvalid value */
 
-  phy_init_nr_top(frame_parms);
+  //phy_init_nr_top(frame_parms);
 
   if (init_nr_ue_signal(PHY_vars_UE, 1, 0) != 0)
   {

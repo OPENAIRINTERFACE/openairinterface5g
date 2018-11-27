@@ -373,7 +373,7 @@ void config_downlink_harq_process(PHY_VARS_NR_UE *ue, int gNB_id, int TB_id, int
 {
   NR_UE_DLSCH_t *dlsch;
 
-  //dlsch = (NR_UE_DLSCH_t *)malloc16(sizeof(NR_UE_DLSCH_t));
+  dlsch = (NR_UE_DLSCH_t *)malloc16(sizeof(NR_UE_DLSCH_t));
 
   if (dlsch != NULL) {
 
