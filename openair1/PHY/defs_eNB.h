@@ -301,7 +301,8 @@ typedef enum {
   RU_READY  = 2,
   RU_RUN    = 3,
   RU_ERROR  = 4,
-  RU_SYNC   = 5
+  RU_SYNC   = 5,
+  RU_CHECK_SYNC = 6
 } rru_state_t;
 
 /// Some commamds to RRU. Not sure we should do it like this !
@@ -480,7 +481,8 @@ typedef enum {
   RRU_stop=5,
   RRU_sync_ok=6,
   RRU_frame_resynch=7,
-  RRU_MSG_max_num=8
+  RRU_MSG_max_num=8,
+  RRU_check_sync = 9
 } rru_config_msg_type_t;
 
 typedef struct RRU_CONFIG_msg_s {
