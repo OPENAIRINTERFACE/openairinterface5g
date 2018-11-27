@@ -301,7 +301,8 @@ typedef enum {
   RU_READY  = 2,
   RU_RUN    = 3,
   RU_ERROR  = 4,
-  RU_SYNC   = 5
+  RU_SYNC   = 5,
+  RU_CHECK_SYNC = 6
 } rru_state_t;
 
 /// Some commamds to RRU. Not sure we should do it like this !
@@ -345,6 +346,8 @@ typedef struct RU_t_s{
   int has_ctrl_prt;
   /// counter to delay start of processing of RU until HW settles
   int wait_cnt;
+  /// counter to delay start of slave RUs until stable synchronization
+  int wait_check;
   /// Total gain of receive chain
   uint32_t             rx_total_gain_dB;
   /// number of bands that this device can support
@@ -441,6 +444,7 @@ typedef struct RU_t_s{
   time_stats_t transport;
   /// RX and TX buffers for precoder output
   RU_COMMON            common;
+  RU_CALIBRATION calibration; 
   /// beamforming weight vectors per eNB
   int32_t **beam_weights[NUMBER_OF_eNB_MAX+1][15];
 
@@ -480,7 +484,8 @@ typedef enum {
   RRU_stop=5,
   RRU_sync_ok=6,
   RRU_frame_resynch=7,
-  RRU_MSG_max_num=8
+  RRU_MSG_max_num=8,
+  RRU_check_sync = 9
 } rru_config_msg_type_t;
 
 typedef struct RRU_CONFIG_msg_s {

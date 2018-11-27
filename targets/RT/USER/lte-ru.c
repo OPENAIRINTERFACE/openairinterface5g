@@ -601,7 +601,7 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
 
   ru->south_in_cnt++;
-  LOG_I(PHY,"south_in_cnt %d\n",ru->south_in_cnt);
+  LOG_D(PHY,"south_in_cnt %d\n",ru->south_in_cnt);
 
   if (ru->cmd==RU_FRAME_RESYNCH) {
     LOG_I(PHY,"Applying frame resynch %d => %d\n",*frame,ru->cmdval);
@@ -1118,14 +1118,32 @@ void do_ru_synch(RU_t *ru) {
 
     ru->rfdevice.trx_set_freq_func(&ru->rfdevice,ru->rfdevice.openair0_cfg,0);
   */
-  ru->state    = RU_RUN;
-  // Send RRU_sync_ok
-  rru_config_msg.type = RRU_sync_ok;
+  
+  // Verification of synchronization procedure
+  ru->state = RU_CHECK_SYNC;
+ /* // Send RRU_check_sync
+  rru_config_msg.type = RRU_check_sync;
   rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t); // TODO: set to correct msg len
-
-  LOG_I(PHY,"Sending RRU_sync_ok to RAU\n");
+  LOG_I(PHY,"Sending RRU_check_sync to RAU\n");
   AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),"Failed to send msg to RAU %d\n",ru->idx);
+  
+  while (check_sync_flag){ // continuously read frames until check synch procedure is over 
 
+  }
+
+
+  //if (synch_peak>...) {
+	ru->state    = RU_RUN;
+  	// Send RRU_sync_ok
+  	rru_config_msg.type = RRU_sync_ok;
+  	rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t); // TODO: set to correct msg len
+  	LOG_I(PHY,"Sending RRU_sync_ok to RAU\n");
+  	AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),"Failed to send msg to RAU %d\n",ru->idx);
+    //}
+  //else {
+    	//do_ru_synch(ru);
+  //}
+*/
   LOG_I(PHY,"Exiting synch routine\n");
 }
 
@@ -1653,8 +1671,14 @@ static void* ru_thread( void* param ) {
 
   while (!oai_exit) {
 
-    if (ru->if_south != LOCAL_RF && ru->is_slave==1) ru->wait_cnt = 100;
-    else                          ru->wait_cnt = 0;
+    if (ru->if_south != LOCAL_RF && ru->is_slave==1) {
+   	 ru->wait_cnt = 100;
+    }
+    else { 
+         ru->wait_cnt = 0;
+	 ru->wait_check = 0;
+    }
+
 
     // wait to be woken up
     if (ru->function!=eNodeB_3GPP && ru->has_ctrl_prt == 1) {
@@ -1663,7 +1687,7 @@ static void* ru_thread( void* param ) {
     else wait_sync("ru_thread");
 
     if (ru->is_slave == 0) AssertFatal(ru->state == RU_RUN,"ru-%d state = %s != RU_RUN\n",ru->idx,ru_states[ru->state]);
-    else if (ru->is_slave == 1) AssertFatal(ru->state == RU_SYNC || ru->state == RU_RUN,"ru %d state = %s != RU_SYNC or RU_RUN\n",ru->idx,ru_states[ru->state]); 
+    else if (ru->is_slave == 1) AssertFatal(ru->state == RU_SYNC || ru->state == RU_RUN || ru->state == RU_CHECK_SYNC,"ru %d state = %s != RU_SYNC or RU_RUN or RU_CHECK_SYNC\n",ru->idx,ru_states[ru->state]); 
     // Start RF device if any
     if (ru->start_rf) {
       if (ru->start_rf(ru) != 0)
@@ -1691,7 +1715,7 @@ static void* ru_thread( void* param ) {
 
     LOG_D(PHY,"Starting steady-state operation\n");
     // This is a forever while loop, it loops over subframes which are scheduled by incoming samples from HW devices
-    while (ru->state == RU_RUN) {
+    while (ru->state == RU_RUN || ru->state == RU_CHECK_SYNC) {
 
       // these are local subframe/frame counters to check that we are in synch with the fronthaul timing.
       // They are set on the first rx/tx in the underly FH routines.
@@ -1841,7 +1865,7 @@ static void* ru_thread( void* param ) {
         // do outgoing fronthaul (south) if needed
         if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
         
-        if (ru->fh_north_out) ru->fh_north_out(ru);
+        if ((ru->fh_north_out) && (ru->state!=RU_CHECK_SYNC)) ru->fh_north_out(ru);
       }
       proc->emulate_rf_busy = 0;
     }
@@ -1907,15 +1931,16 @@ void *ru_thread_synch(void *arg) {
 				   &avg);
       LOG_I(PHY,"RU synch cnt %d: %d, val %llu (%d dB,%d dB)\n",cnt,ru->rx_offset,(unsigned long long)peak_val,dB_fixed64(peak_val),dB_fixed64(avg));
       cnt++;
-      if (/*ru->rx_offset >= 0*/dB_fixed64(peak_val)>=85 && cnt>10) {
+      if (/*ru->rx_offset >= 0*/dB_fixed(peak_val)>=85 && cnt>10) {
 
 	LOG_I(PHY,"Estimated peak_val %d dB, avg %d => timing offset %llu\n",dB_fixed(peak_val),dB_fixed(avg),(unsigned long long int)ru->rx_offset);
 	ru->in_synch = 1;
-
+/*
         LOG_M("ru_sync_rx.m","rurx",&ru->common.rxdata[0][0],LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti,1,1);
         LOG_M("ru_sync_corr.m","sync_corr",ru->dmrs_corr,LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti,1,6);
         LOG_M("ru_dmrs.m","rudmrs",&ru->dmrssync[0],fp->ofdm_symbol_size,1,1);
-        //exit(-1);
+  */      
+//exit(-1);
       } // sync_pos > 0
       else //AssertFatal(cnt<1000,"Cannot find synch reference\n");
           { 
