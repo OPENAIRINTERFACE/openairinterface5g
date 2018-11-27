@@ -205,9 +205,7 @@ typedef struct {
   clock_source_t clock_source;
   //! Manual SDR IP address
 //#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) 
-#ifndef OAI_ADRV9371_ZC706
   char *sdr_addrs;
-#endif
   //! Auto calibration flag
   int autocal[4];
   //! rf devices work with x bits iqs when oai have its own iq format
