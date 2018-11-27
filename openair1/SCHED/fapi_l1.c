@@ -706,7 +706,7 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
     AssertFatal((UE_id = find_uci(ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti,
                                   proc->frame_tx,proc->subframe_tx,eNB,SEARCH_EXIST_OR_FREE))>=0,
                 "No available UE UCI for rnti %x\n",ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti);
-    LOG_I(PHY,"Applying UL UCI_HARQ config for UE %d, rnti %x for frame %d, subframe %d\n",
+    LOG_D(PHY,"Applying UL UCI_HARQ config for UE %d, rnti %x for frame %d, subframe %d\n",
           UE_id,ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti,frame,subframe);
 
     handle_uci_harq_pdu(eNB,UE_id,ul_config_pdu,frame,subframe,srs_present);
