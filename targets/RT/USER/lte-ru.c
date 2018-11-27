@@ -159,7 +159,7 @@ static inline void fh_if4p5_south_out(RU_t *ru) {
   if (subframe_select(&ru->frame_parms,ru->proc.subframe_tx)!=SF_UL) {
     send_IF4p5(ru,ru->proc.frame_tx, ru->proc.subframe_tx, IF4p5_PDLFFT);
     ru->south_out_cnt++;
-    LOG_I(PHY,"south_out_cnt %d\n",ru->south_out_cnt);
+    LOG_D(PHY,"south_out_cnt %d\n",ru->south_out_cnt);
   }
 /*if (ru == RC.ru[0] || ru == RC.ru[1]) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU+ru->idx, ru->proc.frame_tx );
@@ -424,7 +424,7 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
   LOG_D(PHY,"fh_if4p5_north_asynch_in: RU %d, frame %d, subframe %d\n",ru->idx,*frame,*subframe);
   do {   
     recv_IF4p5(ru, &frame_tx, &subframe_tx, &packet_type, &symbol_number);
-    LOG_D(PHY,"income frame.subframe %d.%d, our frame.subframe %d.%d.%d (symbol mask %x)\n",frame_tx,subframe_tx,*frame,*subframe,symbol_number,symbol_mask);
+    LOG_D(PHY,"income frame.subframe %d.%d, our frame.subframe.symbol_number %d.%d.%d (symbol mask %x)\n",frame_tx,subframe_tx,*frame,*subframe,symbol_number,symbol_mask);
     if (ru->cmd == STOP_RU){
       LOG_E(PHY,"Got STOP_RU\n");
       pthread_mutex_lock(&proc->mutex_ru);
@@ -601,7 +601,7 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
 
   ru->south_in_cnt++;
-  LOG_I(PHY,"south_in_cnt %d\n",ru->south_in_cnt);
+  LOG_D(PHY,"south_in_cnt %d\n",ru->south_in_cnt);
 
   if (ru->cmd==RU_FRAME_RESYNCH) {
     LOG_I(PHY,"Applying frame resynch %d => %d\n",*frame,ru->cmdval);
@@ -713,7 +713,6 @@ void tx_rf(RU_t *ru) {
   lte_subframe_t nextSF_type = subframe_select(fp,(proc->subframe_tx+1)%10);
   int sf_extension = 0;
   
-  LOG_D(PHY,"south_out/tx_rf: frame %d, subframe %d\n",proc->frame_tx,proc->subframe_tx);
 
   if ((SF_type == SF_DL) ||
       (SF_type == SF_S)) {
@@ -802,7 +801,7 @@ void tx_rf(RU_t *ru) {
 				      ru->nb_tx,
 				      flags);
     ru->south_out_cnt++;
-    LOG_I(PHY,"south_out_cnt %d\n",ru->south_out_cnt);
+    LOG_D(PHY,"south_out_cnt %d, frame %d, subframe %d\n",ru->south_out_cnt,proc->frame_tx,proc->subframe_tx);
     int se = dB_fixed(signal_energy(txp[0],siglen+sf_extension));
 
     if (SF_type == SF_S) LOG_D(PHY,"[TXPATH] RU %d tx_rf (en %d,len %d), writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx,se,siglen+sf_extension,

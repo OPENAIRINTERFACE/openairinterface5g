@@ -112,7 +112,6 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
     subframe_offset = subframe*fp->symbols_per_tti*fp->ofdm_symbol_size;
     symbol_offset = subframe_offset + fp->ofdm_symbol_size*l;
 
-
 #ifdef DEBUG_DRS
     printf("generate_drs_pusch: symbol_offset %d, subframe offset %d, cyclic shift %d\n",symbol_offset,subframe_offset,cyclic_shift);
 #endif
