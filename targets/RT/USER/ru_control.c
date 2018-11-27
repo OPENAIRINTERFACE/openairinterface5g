@@ -705,7 +705,7 @@ void* ru_thread_control( void* param ) {
 	      if (ru->if_south == LOCAL_RF) LOG_E(PHY,"Received RRU_config_ok msg...Ignoring\n");
 	      else{
 		if (ru->is_slave == 1){
-                  LOG_I(PHY,"Received RRU_sync_ok from RRU %d\n",ru->idx);
+                  printf(PHY,"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Received RRU_sync_ok from RRU %d\n",ru->idx);
 		  // Just change the state of the RRU to unblock ru_thread()
 		  ru->state = RU_RUN;		
 		}else LOG_E(PHY,"Received RRU_sync_ok from a master RRU...Ignoring\n"); 	

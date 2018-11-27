@@ -155,7 +155,6 @@ static inline void fh_if5_south_out(RU_t *ru) {
 // southbound IF4p5 fronthaul
 static inline void fh_if4p5_south_out(RU_t *ru) {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
-  LOG_I(PHY,"ENTERED fh_if4p5_south_out   Sending IF4p5 for frame %d subframe %d ru %d\n",ru->proc.frame_tx,ru->proc.subframe_tx,ru->idx);
   if (subframe_select(&ru->frame_parms,ru->proc.subframe_tx)!=SF_UL) {
     send_IF4p5(ru,ru->proc.frame_tx, ru->proc.subframe_tx, IF4p5_PDLFFT);
     ru->south_out_cnt++;
@@ -165,8 +164,8 @@ static inline void fh_if4p5_south_out(RU_t *ru) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU+ru->idx, ru->proc.frame_tx );
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU+ru->idx, ru->proc.subframe_tx );
   }*/
-VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_IF4P5_SOUTH_OUT,ru->proc.frame_tx);
-VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_IF4P5_SOUTH_OUT,ru->proc.subframe_tx);
+VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_IF4P5_SOUTH_OUT_RU+ru->idx,ru->proc.frame_tx);
+VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_IF4P5_SOUTH_OUT_RU+ru->idx,ru->proc.subframe_tx);
 
 }
 
@@ -211,7 +210,6 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
   RU_proc_t *proc = &ru->proc;
   int f,sf;
 
-LOG_I(PHY,"ENTERED fh_if4p5_south_in\n");
   uint16_t packet_type;
   uint32_t symbol_number=0;
   uint32_t symbol_mask_full;
@@ -220,7 +218,7 @@ LOG_I(PHY,"ENTERED fh_if4p5_south_in\n");
     symbol_mask_full = (1<<fp->ul_symbols_in_S_subframe)-1;   
   else     
     symbol_mask_full = (1<<fp->symbols_per_tti)-1; 
-  LOG_I(PHY,"fh_if4p5_south_in: RU %d, frame %d, subframe %d, ru %d\n",ru->idx,*frame,*subframe,ru->idx);
+  LOG_D(PHY,"fh_if4p5_south_in: RU %d, frame %d, subframe %d, ru %d\n",ru->idx,*frame,*subframe,ru->idx);
   AssertFatal(proc->symbol_mask[*subframe]==0,"rx_fh_if4p5: proc->symbol_mask[%d] = %x\n",*subframe,proc->symbol_mask[*subframe]);
   do {
     recv_IF4p5(ru, &f, &sf, &packet_type, &symbol_number);
@@ -271,8 +269,8 @@ LOG_I(PHY,"ENTERED fh_if4p5_south_in\n");
     
   }*/
 
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_IF4P5_SOUTH_IN,f);
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_IF4P5_SOUTH_IN,sf);
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_IF4P5_SOUTH_IN_RU+ru->idx,f);
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_IF4P5_SOUTH_IN_RU+ru->idx,sf);
 
   proc->symbol_mask[sf] = 0;  
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
@@ -1144,7 +1142,7 @@ void wakeup_L1s(RU_t *ru) {
   RU_proc_t  *ruproc    = &ru->proc;
   struct timespec t;
 
-  LOG_I(PHY,"wakeup_L1s (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
+  LOG_D(PHY,"wakeup_L1s (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
 
     // call eNB function directly
   
@@ -1152,9 +1150,10 @@ void wakeup_L1s(RU_t *ru) {
     sprintf(string,"Incoming RU %d",ru->idx);
     
     AssertFatal(0==pthread_mutex_lock(&proc->mutex_RU),"");
-    LOG_D(PHY,"Frame %d, Subframe %d: RU %d done (wait_cnt %d),RU_mask[%d] %x\n",
+    LOG_D(PHY,"wakeup_L1s: Frame %d, Subframe %d: RU %d done (wait_cnt %d),RU_mask[%d] %x\n",
           ru->proc.frame_rx,ru->proc.subframe_rx,ru->idx,ru->wait_cnt,ru->proc.subframe_rx,proc->RU_mask[ru->proc.subframe_rx]);
-    
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_WAKEUP_L1S_RU+ru->idx, ru->proc.frame_rx);
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_WAKEUP_L1S_RU+ru->idx, ru->proc.subframe_rx);
     clock_gettime(CLOCK_MONOTONIC,&ru->proc.t[ru->proc.subframe_rx]);
     
     if (proc->RU_mask[ru->proc.subframe_rx] == 0){
@@ -1168,7 +1167,8 @@ void wakeup_L1s(RU_t *ru) {
       if (ru == eNB->RU_list[i]) {
 //	AssertFatal((proc->RU_mask&(1<<i)) == 0, "eNB %d frame %d, subframe %d : previous information from RU %d (num_RU %d,mask %x) has not been served yet!\n",eNB->Mod_id,ru->proc.frame_rx,ru->proc.subframe_rx,ru->idx,eNB->num_RU,proc->RU_mask);
         proc->RU_mask[ru->proc.subframe_rx] |= (1<<i);
-      }else if (eNB->RU_list[i]->state == RU_SYNC){
+      }else if (eNB->RU_list[i]->state == RU_SYNC || 
+                (eNB->RU_list[i]->is_slave==1 && eNB->RU_list[i]->wait_cnt>0)){
       	proc->RU_mask[ru->proc.subframe_rx] |= (1<<i);
       }
 
@@ -1184,7 +1184,7 @@ void wakeup_L1s(RU_t *ru) {
     //clock_gettime(CLOCK_MONOTONIC,&t);
     //LOG_I(PHY,"RU mask is now %x, time is %lu\n",proc->RU_mask[ru->proc.subframe_rx], t.tv_nsec - proc->t[ru->proc.subframe_rx].tv_nsec);
 
-    if (proc->RU_mask[ru->proc.subframe_rx] == (1<<eNB->num_RU)-1) {
+    if (proc->RU_mask[ru->proc.subframe_rx] == (1<<eNB->num_RU)-1) { // all RUs have provided their information so continue on and wakeup eNB top
       LOG_D(PHY, "ru_mask is %d \n ", proc->RU_mask[ru->proc.subframe_rx]);
       LOG_D(PHY, "the number of RU is %d, the current ru is RU %d \n ", (1<<eNB->num_RU)-1, ru->idx);
       LOG_D(PHY, "ru->proc.subframe_rx is %d \n", ru->proc.subframe_rx);
@@ -1194,13 +1194,14 @@ void wakeup_L1s(RU_t *ru) {
       //stop_meas(&proc->ru_arrival_time);
       AssertFatal(t.tv_nsec < proc->t[ru->proc.subframe_rx].tv_nsec+5000000,
                   "Time difference for subframe %d (Frame %d) => %lu > 5ms, this is RU %d\n",
-                  ru->proc.subframe_rx, ru->proc.frame_rx,t.tv_nsec - proc->t[ru->proc.subframe_rx].tv_nsec, ru->idx);
+                  ru->proc.subframe_rx, ru->proc.frame_rx, t.tv_nsec - proc->t[ru->proc.subframe_rx].tv_nsec, ru->idx);
     
-
+     // VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_WAKEUP_L1S_RU+ru->idx, ru->proc.frame_rx);
+      //VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_WAKEUP_L1S_RU+ru->idx, ru->proc.subframe_rx);
       AssertFatal(0==pthread_mutex_unlock(&proc->mutex_RU),"");
 
       // unlock RUs that are waiting for eNB processing to be completed
-      LOG_D(PHY,"RU %d wakeup eNB top for for subframe %d\n", ru->idx,ru->proc.subframe_rx);
+      LOG_D(PHY,"RU %d wakeup eNB top for subframe %d\n", ru->idx,ru->proc.subframe_rx);
       if (ru->wait_cnt == 0) {
          if (ru->num_eNB==1 && ru->eNB_top!=0 && get_thread_parallel_conf() == PARALLEL_SINGLE_THREAD)
             ru->eNB_top(eNB_list[0],proc->frame_rx,proc->subframe_rx,string,ru);
@@ -1222,12 +1223,13 @@ void wakeup_L1s(RU_t *ru) {
  */
 
     }
-    /*else 
-      AssertFatal(0==pthread_mutex_unlock(&proc->mutex_RU),"");
+    else{ // not all RUs have provided their information  
+    	AssertFatal(0==pthread_mutex_unlock(&proc->mutex_RU),"");
+    }
 //      pthread_mutex_unlock(&proc->mutex_RU);
 //      LOG_D(PHY,"wakeup eNB top for for subframe %d\n", ru->proc.subframe_rx);
 //      ru->eNB_top(eNB_list[0],ru->proc.frame_rx,ru->proc.subframe_rx,string);
-*/
+
     ru->proc.emulate_rf_busy = 0;
   
 }
@@ -1506,10 +1508,10 @@ static void* ru_thread_tx( void* param ) {
     if (oai_exit) break;   
 
 
-    LOG_I(PHY,"ru_thread_tx (ru %d): Waiting for TX processing\n",ru->idx);
+    LOG_D(PHY,"ru_thread_tx (ru %d): Waiting for TX processing\n",ru->idx);
     // wait until eNBs are finished subframe RX n and TX n+4
     wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
-    LOG_I(PHY,"ru_thread_tx (ru %d): Woken from condition\n",ru->idx);
+    LOG_D(PHY,"ru_thread_tx (ru %d): Woken from condition\n",ru->idx);
     if (oai_exit) break;
     //printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~ru_thread_tx is waken up %d.%d having L1 %d\n", proc->frame_tx, proc->subframe_tx, ru->num_eNB);
   	       
@@ -1541,6 +1543,9 @@ static void* ru_thread_tx( void* param ) {
             LOG_E(PHY,"eNB %d frame %d, subframe %d : previous information from RU tx %d (num_RU %d,mask %x) has not been served yet!\n",
 	      eNB->Mod_id,eNB_proc->frame_rx,eNB_proc->subframe_rx,ru->idx,eNB->num_RU,eNB_proc->RU_mask_tx);
           eNB_proc->RU_mask_tx |= (1<<j);
+        }
+        else if (eNB->RU_list[j]->state == RU_SYNC){
+      		eNB_proc->RU_mask_tx |= (1<<j);
         }
       }
       if (eNB_proc->RU_mask_tx != (1<<eNB->num_RU)-1) {  // not all RUs have provided their information so return
@@ -1751,7 +1756,7 @@ if(!emulate_rf){
 
         ru->wait_cnt--;
 
-        LOG_D(PHY,"RU thread %d, frame %d, subframe %d, wait_cnt %d \n",ru->idx, frame, subframe, ru->wait_cnt);
+        LOG_I(PHY,"RU thread %d, frame %d, subframe %d, wait_cnt %d \n",ru->idx, frame, subframe, ru->wait_cnt);
 
         if (ru->if_south!=LOCAL_RF && ru->wait_cnt <=20 && subframe == 5 && frame != RC.ru[0]->proc.frame_rx && resynch_done == 0) {
         // Send RRU_frame adjust
@@ -1764,7 +1769,6 @@ if(!emulate_rf){
           AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),"Failed to send msg to RAU\n");
           resynch_done=1;
         }
-      
         wakeup_L1s(ru);
       }
       else {
@@ -1825,7 +1829,6 @@ if(!emulate_rf){
 	  exit_fun("error unlocking mutex_pre_scd");
 	}
 #endif
-
     // wakeup all eNB processes waiting for this RU
     if (ru->num_eNB>0) wakeup_L1s(ru);
     
