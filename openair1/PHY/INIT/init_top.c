@@ -64,7 +64,6 @@ void init_lte_top(LTE_DL_FRAME_PARMS *frame_parms) {
   ccodelte_init_inv();
   phy_generate_viterbi_tables_lte();
   load_codinglib();
-  lte_sync_time_init(frame_parms);
   generate_ul_ref_sigs();
   generate_ul_ref_sigs_rx();
   generate_64qam_table();
@@ -79,7 +78,6 @@ void init_lte_top(LTE_DL_FRAME_PARMS *frame_parms) {
 
 void free_lte_top(void) {
   free_codinglib();
-  lte_sync_time_free();
   /* free_ul_ref_sigs() is called in phy_free_lte_eNB() */
 }
 
