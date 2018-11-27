@@ -144,20 +144,20 @@ void nr_get_tbs(nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
       }
   }
   else {
-    n = log2(Ninfo)-29;
+    n = log2(Ninfo-24)-5;
     Ninfo_prime = max(3840, (ROUNDIDIV((Ninfo-24),(1<<n)))<<n);
 
     if (R<256) {
       C = CEILIDIV((Ninfo_prime+24),3816);
-      TBS = (C*CEILIDIV((Ninfo_prime+24),(C<<3)))<<3;
+      TBS = (C<<3)*CEILIDIV((Ninfo_prime+24),(C<<3)) - 24;
     }
     else {
       if (Ninfo_prime>8424) {
         C = CEILIDIV((Ninfo_prime+24),8424);
-        TBS = (C*CEILIDIV((Ninfo_prime+24),(C<<3)))<<3;
+        TBS = (C<<3)*CEILIDIV((Ninfo_prime+24),(C<<3)) - 24;
       }
       else
-        TBS = (CEILIDIV((Ninfo_prime+24),8) - 24)<<3;
+        TBS = ((CEILIDIV((Ninfo_prime+24),8))<<3) - 24;
     }    
   }
 
