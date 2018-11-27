@@ -160,7 +160,7 @@ void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
   uint8_t reset, offset;
   uint32_t x1, x2, s=0;
   uint32_t *pbch_e = pbch->pbch_e;
-  //uint32_t unscrambling_mask = 0x100006D;
+
   reset = 1;
   // x1 is set in lte_gold_generic
   x2 = Nid;
@@ -171,9 +171,9 @@ void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
   }
   // Scrambling is now done with offset (nushift*M)%32
   offset = (nushift*M)&0x1f;
-//#ifdef DEBUG_PBCH_ENCODING
+#ifdef DEBUG_PBCH_ENCODING
   printf("Scrambling params: nushift %d M %d length %d encoded %d offset %d mask 0x%08x\n", nushift, M, length, encoded, offset, unscrambling_mask);
-//#endif
+#endif
 
   for (int i=0; i<length; i++) {
     if (((i+offset)&0x1f)==0) {
@@ -241,11 +241,11 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   pbch->pbch_a=0;
   for (int i=0; i<NR_PBCH_PDU_BITS; i++)
     pbch->pbch_a |= ((pbch_pdu[2-(i>>3)]>>(7-(i&7)))&1)<<i;
-//#ifdef DEBUG_PBCH_ENCODING
+#ifdef DEBUG_PBCH_ENCODING
   for (int i=0; i<3; i++)
     printf("pbch_pdu[%d]: 0x%02x\n", i, pbch_pdu[i]);
   printf("PBCH payload = 0x%08x\n",pbch->pbch_a);
-//#endif
+#endif
 
     // Extra byte generation
   for (int i=0; i<4; i++)
@@ -265,9 +265,9 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   
   for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++) {
     pbch->pbch_a_interleaved |= ((pbch->pbch_a>>i)&1)<<(*(interleaver+i));
-//#ifdef DEBUG_PBCH_ENCODING
+#ifdef DEBUG_PBCH_ENCODING
   printf("i %d out 0x%08x ilv %d (in>>i)&1) %d\n", i, pbch->pbch_a_interleaved, *(interleaver+i), (pbch->pbch_a>>i)&1);
-//#endif
+#endif
   }
 
 #ifdef DEBUG_PBCH_ENCODING
@@ -276,7 +276,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 #endif
 
     // Scrambling
-  unscrambling_mask = (Lmax ==64)? 0x100006D:0x1000021;
+  unscrambling_mask = (Lmax ==64)? 0x100006D:0x1000041;
   M = (Lmax == 64)? (NR_POLAR_PBCH_PAYLOAD_BITS - 6) : (NR_POLAR_PBCH_PAYLOAD_BITS - 3);
   nushift = (((sfn>>2)&1)<<1) ^ ((sfn>>1)&1);
   pbch->pbch_a_prime = 0;
