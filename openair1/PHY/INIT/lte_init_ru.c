@@ -40,6 +40,8 @@ int phy_init_RU(RU_t *ru) {
   int i,j;
   int p;
   int re;
+  
+  init_dfts();  
 
   LOG_I(PHY,"Initializing RU signal buffers (if_south %s) nb_tx %d\n",ru_if_types[ru->if_south],ru->nb_tx);
 
