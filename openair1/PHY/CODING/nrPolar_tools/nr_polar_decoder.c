@@ -1056,7 +1056,7 @@ void init_polar_deinterleaver_table(t_nrPolar_params *polarParams) {
     for (int i=0;i<numbits;i++) {
       // flip bit endian for B
       ip=polarParams->K - 1 - polarParams->interleaving_pattern[(8*byte)+i];
-#if 1
+#if 0
       printf("byte %d, i %d => ip %d\n",byte,i,ip);
 #endif
       ipmod64 = ip&63;
@@ -1149,7 +1149,7 @@ uint32_t polar_decoder_int16(int16_t *input,
     crc = (uint64_t)(crc24c(A64_flip,len)>>8);
   }
 
-#if 1
+#if 0
   printf("A %llx B %llx|%llx Cprime %llx|%llx  (crc %x,rxcrc %llx %d)\n",
 	 Ar,
 	 B[1],B[0],Cprime[1],Cprime[0],crc,

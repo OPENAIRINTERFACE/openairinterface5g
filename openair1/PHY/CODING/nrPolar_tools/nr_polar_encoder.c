@@ -30,7 +30,7 @@
  * \warning
  */
 
-#define DEBUG_POLAR_ENCODER
+//#define DEBUG_POLAR_ENCODER
 //#define DEBUG_POLAR_ENCODER_DCI
 //#define DEBUG_POLAR_ENCODER_TIMING
 
@@ -419,7 +419,7 @@ void polar_encoder_fast(uint64_t *A,
     tcrc = (uint64_t)((crcmask^(crc24c(A32_flip,bitlen)>>8)));
   }
   else if (bitlen<=64) {
-    uint8_t A64_flip[4];
+    uint8_t A64_flip[8];
     uint64_t Aprime= (uint32_t)(((uint64_t)*A)<<(64-bitlen));
     A64_flip[0]=((uint8_t*)&Aprime)[7];
     A64_flip[1]=((uint8_t*)&Aprime)[6];
