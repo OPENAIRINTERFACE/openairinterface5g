@@ -368,6 +368,11 @@ int nr_is_srs_occasion_common(NR_DL_FRAME_PARMS *frame_parms,int frame_tx,int su
 
 void nr_compute_srs_pos(lte_frame_type_t frameType,uint16_t isrs,uint16_t *psrsPeriodicity,uint16_t *psrsOffset);
 
+void set_tx_harq_id(NR_UE_ULSCH_t *ulsch, int harq_pid, int slot_tx);
+int get_tx_harq_id(NR_UE_ULSCH_t *ulsch, int slot_tx);
+
+
+
 /*@}*/
 
 

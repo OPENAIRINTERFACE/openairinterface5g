@@ -442,6 +442,8 @@ static void *UE_thread_synch(void *arg) {
 #endif
             if (nr_initial_sync( UE, UE->mode ) == 0) {
 
+	      //write_output("txdata_sym.m", "txdata_sym", UE->common_vars.rxdata[0], (10*UE->frame_parms.samples_per_subframe), 1, 1);
+
                 hw_slot_offset = (UE->rx_offset<<1) / UE->frame_parms.samples_per_subframe;
                 printf("Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %d (DL %u, UL %u), UE_scan_carrier %d\n",
                        hw_slot_offset,
@@ -594,7 +596,7 @@ static void *UE_thread_synch(void *arg) {
             break;
         }
 
-#ifdef XFORMS
+#if 0 //defined XFORMS
 	if (do_forms) {
 	  extern FD_lte_phy_scope_ue  *form_ue[NUMBER_OF_UE_MAX];
 	  
@@ -603,7 +605,7 @@ static void *UE_thread_synch(void *arg) {
 		       0,0,7);
 	}
 #endif
-	
+
         AssertFatal ( 0== pthread_mutex_lock(&UE->proc.mutex_synch), "");
         // indicate readiness
         UE->proc.instance_cnt_synch--;
@@ -683,15 +685,14 @@ static void *UE_thread_rxn_txnp4(void *arg) {
             phy_procedures_slot_parallelization_UE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
             phy_procedures_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay);
-            printf(">>> nr_ue_pdcch_procedures ended\n");
-
+            //printf(">>> nr_ue_pdcch_procedures ended\n");
 #endif
         }
 
 #if UE_TIMING_TRACE
         start_meas(&UE->generic_stat);
 #endif
-printf(">>> mac init\n");
+	//printf(">>> mac init\n");
 
         if (UE->mac_enabled==1) {
 
@@ -762,7 +763,7 @@ printf(">>> mac init\n");
 #if UE_TIMING_TRACE
         stop_meas(&UE->generic_stat);
 #endif
-printf(">>> mac ended\n");
+	//printf(">>> mac ended\n");
 
         // Prepare the future Tx data
 #if 0
@@ -932,10 +933,10 @@ nb_sf_init=5;
                     }
                     UE->rx_offset=0;
                     UE->time_sync_cell=0;
-                    //UE->proc.proc_rxtx[0].frame_rx++;
+                    UE->proc.proc_rxtx[0].frame_rx++;
                     //UE->proc.proc_rxtx[1].frame_rx++;
-                    for (th_id=0; th_id < RX_NB_TH; th_id++) {
-                        UE->proc.proc_rxtx[th_id].frame_rx++;
+                    for (th_id=1; th_id < RX_NB_TH; th_id++) {
+                        UE->proc.proc_rxtx[th_id].frame_rx = UE->proc.proc_rxtx[0].frame_rx;
                     }
                     
                     //printf("first stream frame rx %d\n",UE->proc.proc_rxtx[0].frame_rx);
@@ -954,6 +955,10 @@ nb_sf_init=5;
                     rt_sleep_ns(1000*1000);
 
             } else {
+                thread_idx++;
+                if(thread_idx>=RX_NB_TH)
+                    thread_idx = 0;
+
                 subframe_nr++;
                 subframe_nr %= NR_NUMBER_OF_SUBFRAMES_PER_FRAME;               
                 UE_nr_rxtx_proc_t *proc = &UE->proc.proc_rxtx[thread_idx];
@@ -974,9 +979,6 @@ nb_sf_init=5;
 
                 LOG_D(PHY,"Process subframe %d thread Idx %d \n", subframe_nr, UE->current_thread_id[subframe_nr]);
 
-                thread_idx++;
-                if(thread_idx>=RX_NB_TH)
-                    thread_idx = 0;
 
                 if (UE->mode != loop_through_memory) {
                     for (i=0; i<UE->frame_parms.nb_antennas_rx; i++)
@@ -1045,10 +1047,10 @@ nb_sf_init=5;
                     // operate on thread sf mod 2
                     AssertFatal(pthread_mutex_lock(&proc->mutex_rxtx) ==0,"");
                     if(subframe_nr == 0) {
-                        //UE->proc.proc_rxtx[0].frame_rx++;
+                        UE->proc.proc_rxtx[0].frame_rx++;
                         //UE->proc.proc_rxtx[1].frame_rx++;
-                        for (th_id=0; th_id < RX_NB_TH; th_id++) {
-                            UE->proc.proc_rxtx[th_id].frame_rx++;
+                        for (th_id=1; th_id < RX_NB_TH; th_id++) {
+                            UE->proc.proc_rxtx[th_id].frame_rx = UE->proc.proc_rxtx[0].frame_rx;
                         }
 #ifdef SAIF_ENABLED
 			if (!(proc->frame_rx%4000))
@@ -1068,7 +1070,7 @@ nb_sf_init=5;
 
                     proc->nr_tti_rx=subframe_nr;
                     proc->subframe_rx=subframe_nr;
-
+		    
                     proc->frame_tx = proc->frame_rx;
                     proc->nr_tti_tx= subframe_nr + DURATION_RX_TO_TX;
                     if (proc->nr_tti_tx > NR_NUMBER_OF_SUBFRAMES_PER_FRAME) {

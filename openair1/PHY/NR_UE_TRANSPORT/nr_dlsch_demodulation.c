@@ -165,7 +165,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   dlsch[0]->harq_processes[harq_pid]->nb_rb = nb_rb_pdsch;
   frame_parms->nushift = 0;
   
-    printf("status TB0 = %d, status TB1 = %d \n", dlsch[0]->harq_processes[harq_pid]->status, dlsch[1]->harq_processes[harq_pid]->status);
+  //printf("status TB0 = %d, status TB1 = %d \n", dlsch[0]->harq_processes[harq_pid]->status, dlsch[1]->harq_processes[harq_pid]->status);
     LOG_D(PHY,"AbsSubframe %d.%d / Sym %d harq_pid %d,  harq status %d.%d \n",
                    frame,nr_tti_rx,symbol,harq_pid,
                    dlsch[0]->harq_processes[harq_pid]->status,

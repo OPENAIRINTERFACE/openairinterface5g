@@ -1006,11 +1006,10 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                          uint8_t llr8_flag);
 
 void nr_dlsch_unscrambling(int16_t* llr,
-                         uint8_t size,
-                         uint8_t q,
-                         uint32_t Nid,
-                         uint32_t n_RNTI);
-
+			   uint32_t size,
+			   uint8_t q,
+			   uint32_t Nid,
+			   uint32_t n_RNTI);
 
 uint32_t dlsch_decoding_emul(PHY_VARS_NR_UE *phy_vars_ue,
                              uint8_t subframe,
@@ -1638,6 +1637,67 @@ void nr_pdcch_unscrambling(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8
 
 
 uint32_t lte_gold_generic(uint32_t *x1, uint32_t *x2, uint8_t reset);
+
+uint8_t nr_dci_decoding_procedure(int s,
+                                  int p,
+                                  PHY_VARS_NR_UE *ue,
+                                  NR_DCI_ALLOC_t *dci_alloc,
+                                  NR_SEARCHSPACE_TYPE_t searchSpacetype,
+                                  int16_t eNB_id,
+                                  uint8_t nr_tti_rx,
+                                  uint8_t dci_fields_sizes_cnt[MAX_NR_DCI_DECODED_SLOT][NBR_NR_DCI_FIELDS][NBR_NR_FORMATS],
+                                  uint16_t n_RB_ULBWP,
+                                  uint16_t n_RB_DLBWP,
+                                  crc_scrambled_t *crc_scrambled,
+                                  format_found_t *format_found,
+                                  uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES]);
+
+int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
+        uint8_t eNB_id,
+        int frame,
+        uint8_t nr_tti_rx,
+        uint32_t dci_pdu[4],
+        uint16_t rnti,
+        uint8_t dci_length,
+        NR_DCI_format_t dci_format,
+        NR_UE_PDCCH *pdcch_vars,
+        NR_UE_PDSCH *pdsch_vars,
+        NR_UE_DLSCH_t **dlsch,
+        NR_UE_ULSCH_t *ulsch,
+        NR_DL_FRAME_PARMS *frame_parms,
+        PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
+        uint8_t beamforming_mode,
+        uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS],
+        uint16_t n_RB_ULBWP,
+        uint16_t n_RB_DLBWP,
+        uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES],
+	NR_DCI_INFO_EXTRACTED_t *nr_dci_info_extracted);
+
+int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
+             PDSCH_t type,
+             unsigned char eNB_id,
+             unsigned char eNB_id_i, //if this == ue->n_connected_eNB, we assume MU interference
+             uint32_t frame,
+             uint8_t nr_tti_rx,
+             unsigned char symbol,
+             unsigned char first_symbol_flag,
+             RX_type_t rx_type,
+             unsigned char i_mod,
+		unsigned char harq_pid);
+
+uint32_t nr_get_G(uint16_t nb_rb, uint16_t nb_symb_sch,uint8_t nb_re_dmrs,uint16_t length_dmrs, uint8_t Qm, uint8_t Nl) ;
+
+uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
+                         short *dlsch_llr,
+                         NR_DL_FRAME_PARMS *frame_parms,
+                         NR_UE_DLSCH_t *dlsch,
+                         NR_DL_UE_HARQ_t *harq_process,
+                         uint32_t frame,
+						 uint16_t nb_symb_sch,
+                         uint8_t nr_tti_rx,
+                         uint8_t harq_pid,
+                         uint8_t is_crnti,
+			    uint8_t llr8_flag);
 
 /**@}*/
 #endif

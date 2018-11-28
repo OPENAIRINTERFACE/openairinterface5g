@@ -437,13 +437,13 @@ static void *scope_thread(void *arg) {
 
 #endif
 
-    while (!oai_exit) {
+  while (!oai_exit) {
       //len = dump_ue_stats (PHY_vars_UE_g[0][0], &PHY_vars_UE_g[0][0]->proc.proc_rxtx[0],stats_buffer, 0, mode,rx_input_level_dBm);
       //fl_set_object_label(form_stats->stats_text, stats_buffer);
       fl_clear_browser(form_stats->stats_text);
       fl_add_browser_line(form_stats->stats_text, stats_buffer);
       
-      if (PHY_vars_UE_g[0][0]->is_synchronized == 1)
+      //if (PHY_vars_UE_g[0][0]->is_synchronized == 1)
 	phy_scope_UE(form_ue[0],
 		     PHY_vars_UE_g[0][0],
 		     0,0,7);
@@ -549,7 +549,7 @@ static void get_options(void) {
       set_glog_onlinelog(online_log_messages);
   }
   if(config_isparamset(cmdline_logparams,CMDLINE_GLOGLEVEL_IDX)) {
-      set_glog(glog_level);
+    set_glog(glog_level);
   }
 
   if (start_telnetsrv) {
@@ -874,23 +874,6 @@ int main( int argc, char **argv ) {
 
 #if T_TRACER
     T_Config_Init();
-#endif
-
-    // initialize the log (see log.h for details)
-    set_glog(OAILOG_DEBUG);
-
-    set_log(HW,      OAILOG_DEBUG);
-    set_log(PHY,     OAILOG_DEBUG);
-    set_log(MAC,     OAILOG_INFO);
-    set_log(RLC,     OAILOG_INFO);
-    set_log(PDCP,    OAILOG_INFO);
-    set_log(OTG,     OAILOG_INFO);
-    set_log(RRC,     OAILOG_INFO);
-#if defined(ENABLE_ITTI)
-    set_log(SIM,     OAILOG_INFO);
-# if defined(ENABLE_USE_MME)
-    set_log(NAS,     OAILOG_INFO);
-# endif
 #endif
 
     //randominit (0);

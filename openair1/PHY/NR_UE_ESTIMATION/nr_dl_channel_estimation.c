@@ -510,10 +510,10 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   k = bwp_start_subcarrier;
   int re_offset = k;
 
-//#ifdef DEBUG_CH
+#ifdef DEBUG_CH
   printf("PDSCH Channel Estimation : ThreadId %d, eNB_offset %d ch_offset %d, symbol_offset %d OFDM size %d, Ncp=%d, l=%d, Ns=%d, k=%d symbol %d\n",ue->current_thread_id[Ns], eNB_offset,ch_offset,symbol_offset,ue->frame_parms.ofdm_symbol_size,
          ue->frame_parms.Ncp,l,Ns,k, symbol);
-//#endif
+#endif
 
   switch (nushift) {
    case 0:
@@ -593,7 +593,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
       pil+=2;
       re_offset = (re_offset+2)&(ue->frame_parms.ofdm_symbol_size-1);
       rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
-      printf("dl_ch addr %p\n",dl_ch);
+      //printf("dl_ch addr %p\n",dl_ch);
       
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
