@@ -78,6 +78,7 @@ class SSHConnection():
 		self.eNBBranch = ''
 		self.eNB_AllowMerge = False
 		self.eNBCommitID = ''
+		self.eNBTargetBranch = ''
 		self.eNBUserName = ''
 		self.eNBPassword = ''
 		self.eNBSourceCodePath = ''
@@ -264,8 +265,12 @@ class SSHConnection():
 		# if the branch is not develop, then it is a merge request and we need to do 
 		# the potential merge. Note that merge conflicts should already been checked earlier
 		if (self.eNB_AllowMerge):
-			if (self.eNBBranch != 'develop') and (self.eNBBranch != 'origin/develop'):
-				self.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
+			if self.eNBTargetBranch == '':
+				if (self.eNBBranch != 'develop') and (self.eNBBranch != 'origin/develop'):
+					self.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
+			else:
+				logging.debug('Merging with the target branch: ' + self.eNBTargetBranch)
+				self.command('git merge --ff origin/' + self.eNBTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
 		self.command('mkdir -p log', '\$', 5)
@@ -367,10 +372,8 @@ class SSHConnection():
 			rruCheck = True
 		# Make a copy and adapt to EPC / eNB IP addresses
 		self.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
-		self.command('sed -i -e \'s/mme_ip_address.*$/mme_ip_address      = ( { ipv4       = "' + self.EPCIPAddress + '";/\' ' + ci_full_config_file, '\$', 2);
-		self.command('sed -i -e \'s/ENB_IPV4_ADDRESS_FOR_S1_MME.*$/ENB_IPV4_ADDRESS_FOR_S1_MME              = "' + self.eNBIPAddress + '";/\' ' + ci_full_config_file, '\$', 2);
-		self.command('sed -i -e \'s/ENB_IPV4_ADDRESS_FOR_S1U.*$/ENB_IPV4_ADDRESS_FOR_S1U                 = "' + self.eNBIPAddress + '";/\' ' + ci_full_config_file, '\$', 2);
-		self.command('sed -i -e \'s/ENB_IPV4_ADDRESS_FOR_X2C.*$/ENB_IPV4_ADDRESS_FOR_X2C                 = "' + self.eNBIPAddress + '";/\' ' + ci_full_config_file, '\$', 2);
+		self.command('sed -i -e \'s/CI_MME_IP_ADDR/' + self.EPCIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
+		self.command('sed -i -e \'s/CI_ENB_IP_ADDR/' + self.eNBIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
 		# Launch eNB with the modified config file
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
@@ -1759,7 +1762,10 @@ class SSHConnection():
 			if (SSH.eNB_AllowMerge):
 				self.htmlFile.write('     <tr>\n')
 				self.htmlFile.write('       <td bgcolor = "lightcyan" >Target Branch</td>\n')
-				self.htmlFile.write('       <td>develop</td>\n')
+				if (self.eNBTargetBranch == ''):
+					self.htmlFile.write('       <td>develop</td>\n')
+				else:
+					self.htmlFile.write('       <td>' + self.eNBTargetBranch + '</td>\n')
 				self.htmlFile.write('     </tr>\n')
 			self.htmlFile.write('  </table>\n')
 
@@ -1906,6 +1912,8 @@ def Usage():
 	print('  --eNBRepository=[eNB\'s Repository URL]')
 	print('  --eNBBranch=[eNB\'s Branch Name]')
 	print('  --eNBCommitID=[eNB\'s Commit Number]')
+	print('  --eNB_AllowMerge=[eNB\'s Allow Merge Request (with target branch)]')
+	print('  --eNBTargetBranch=[eNB\'s Target Branch in case of a Merge Request]')
 	print('  --eNBUserName=[eNB\'s Login User Name]')
 	print('  --eNBPassword=[eNB\'s Login Password]')
 	print('  --eNBSourceCodePath=[eNB\'s Source Code Path]')
@@ -2002,6 +2010,9 @@ while len(argvs) > 1:
 	elif re.match('^\-\-eNBCommitID=(.*)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-eNBCommitID=(.*)$', myArgv, re.IGNORECASE)
 		SSH.eNBCommitID = matchReg.group(1)
+	elif re.match('^\-\-eNBTargetBranch=(.*)$', myArgv, re.IGNORECASE):
+		matchReg = re.match('^\-\-eNBTargetBranch=(.*)$', myArgv, re.IGNORECASE)
+		SSH.eNBTargetBranch = matchReg.group(1)
 	elif re.match('^\-\-eNBUserName=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-eNBUserName=(.+)$', myArgv, re.IGNORECASE)
 		SSH.eNBUserName = matchReg.group(1)

@@ -149,8 +149,6 @@ void wakeup_prach_eNB(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe);
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 void wakeup_prach_eNB_br(PHY_VARS_eNB *eNB,RU_t *ru,int frame,int subframe);
 #endif
-extern PARALLEL_CONF_t get_thread_parallel_conf(void);
-extern WORKER_CONF_t   get_thread_worker_conf(void);
 
 extern uint8_t nfapi_mode;
 extern void oai_subframe_ind(uint16_t sfn, uint16_t sf);
@@ -835,9 +833,9 @@ static void* process_stats_thread(void* param) {
   while (!oai_exit) {
     sleep(1);
       if (opp_enabled == 1) {
-        if (eNB->td) print_meas(&eNB->ulsch_decoding_stats,"ulsch_decoding",NULL,NULL);
-        if (eNB->te)
-        {
+	if ( eNB->ulsch_decoding_stats.trials>0) 
+          print_meas(&eNB->ulsch_decoding_stats,"ulsch_decoding",NULL,NULL);
+	if (eNB->dlsch_encoding_stats.trials >0) {
           print_meas(&eNB->dlsch_turbo_encoding_preperation_stats,"dlsch_coding_crc",NULL,NULL);
           print_meas(&eNB->dlsch_turbo_encoding_segmentation_stats,"dlsch_segmentation",NULL,NULL);
           print_meas(&eNB->dlsch_encoding_stats,"dlsch_encoding",NULL,NULL);
@@ -1316,11 +1314,6 @@ void init_eNB(int single_thread_flag,int wait_for_sync) {
 #ifndef OCP_FRAMEWORK
       LOG_I(PHY,"Initializing eNB %d CC_id %d\n",inst,CC_id);
 #endif
-
-
-      eNB->td                   = ulsch_decoding_data_all;
-      eNB->te                   = dlsch_encoding_all;
-
       
       LOG_I(PHY,"Registering with MAC interface module\n");
       AssertFatal((eNB->if_inst         = IF_Module_init(inst))!=NULL,"Cannot register interface");

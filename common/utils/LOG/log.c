@@ -39,10 +39,6 @@
 #include "vcd_signal_dumper.h"
 #include "assertions.h"
 
-#if defined(ENABLE_ITTI)
-# include "intertask_interface.h"
-#endif
-
 # include <pthread.h>
 # include <string.h>
 #include  <linux/prctl.h>
