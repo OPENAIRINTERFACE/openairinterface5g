@@ -2350,7 +2350,7 @@ do_RRCConnectionReestablishment(
     return -1;
   }
 
-  LOG_D(RRC,"RRCConnectionReestablishment Encoded %zd bits (%zd bytes)\n",
+  LOG_D(RRC,"RRCConnectionReestablishment Encoded %u bits (%u bytes)\n",
         (uint32_t)enc_rval.encoded, (uint32_t)(enc_rval.encoded+7)/8);
   return((enc_rval.encoded+7)/8);
 }

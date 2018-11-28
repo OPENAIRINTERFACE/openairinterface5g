@@ -49,6 +49,7 @@ softmodem_params_t* get_softmodem_params(void) {
      return &softmodem_params;
 }
 
+#if 0
 void set_parallel_conf(char *parallel_conf)
 {
   if(strcmp(parallel_conf,"PARALLEL_SINGLE_THREAD")==0)           softmodem_params.thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
@@ -70,6 +71,7 @@ WORKER_CONF_t get_thread_worker_conf(void)
 {
   return softmodem_params.thread_struct.worker_conf;
 }  
+#endif
 void get_common_options(void)
 {
 char *parallel_config=NULL;
