@@ -36,13 +36,13 @@
 #include "UTIL/OTG/otg.h"
 #include "UTIL/OTG/otg_externs.h"
 #if defined(ENABLE_ITTI)
-#include "intertask_interface.h"
-#if defined(ENABLE_USE_MME)
-#include "s1ap_eNB.h"
-#include "sctp_eNB_task.h"
-#else
-#define EPC_MODE_ENABLED 0
-#endif
+  #include "intertask_interface.h"
+  #if defined(ENABLE_USE_MME)
+    #include "s1ap_eNB.h"
+    #include "sctp_eNB_task.h"
+  #else
+    #define EPC_MODE_ENABLED 0
+  #endif
 #endif
 #include "sctp_default_values.h"
 #include "LTE_SystemInformationBlockType2.h"
@@ -59,6 +59,8 @@
 #include "common/config/config_userapi.h"
 #include "RRC_config_tools.h"
 #include "enb_paramdef.h"
+
+#define RRC_INACTIVITY_THRESH 0
 
 extern uint16_t sf_ahead;
 extern void set_parallel_conf(char *parallel_conf);
@@ -579,8 +581,9 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
         for (int I = 0; I < sizeof(PLMNParams) / sizeof(paramdef_t); ++I)
           PLMNParams[I].chkPptr = &(config_check_PLMNParams[I]);
 
+        RRC_CONFIGURATION_REQ (msg_p).rrc_inactivity_timer_thres = RRC_INACTIVITY_THRESH; // set to 0 to deactivate
         RRC_CONFIGURATION_REQ (msg_p).cell_identity = enb_id;
-        RRC_CONFIGURATION_REQ(msg_p).tac = *ENBParamList.paramarray[i][ENB_TRACKING_AREA_CODE_IDX].uptr;
+        RRC_CONFIGURATION_REQ (msg_p).tac = *ENBParamList.paramarray[i][ENB_TRACKING_AREA_CODE_IDX].uptr;
         AssertFatal(!ENBParamList.paramarray[i][ENB_MOBILE_COUNTRY_CODE_IDX_OLD].strptr
                     && !ENBParamList.paramarray[i][ENB_MOBILE_NETWORK_CODE_IDX_OLD].strptr,
                     "It seems that you use an old configuration file. Please change the existing\n"
@@ -2041,37 +2044,162 @@ int RCconfig_gtpu(void ) {
   return 0;
 }
 
-
-int RCconfig_S1(MessageDef *msg_p, uint32_t i) {
-  int               j,k                           = 0;
-  int enb_id;
-  int32_t     my_int;
-  const char       *active_enb[MAX_ENB];
-  char             *address                       = NULL;
-  char             *cidr                          = NULL;
+//-----------------------------------------------------------------------------
+/*
+* Configure the s1ap_register_enb_req in itti message for future
+* communications between eNB(s) and MME.
+*/
+int RCconfig_S1(
+  MessageDef *msg_p,
+  uint32_t i)
+//-----------------------------------------------------------------------------
+{
+  int enb_id = 0;
+  int32_t my_int = 0;
+  const char *active_enb[MAX_ENB];
+  char *address = NULL;
+  char *cidr    = NULL;
+  /*------------------------------------------------------------------------------*/
+  /*
+  * the only reason for all these variables is, that they are "hard-encoded" into
+  * the CCPARAMS_DESC macro and we need it for the default_DRX value ...
+  */
+  char       *frame_type                    = NULL;
+  int32_t     tdd_config                    = 0;
+  int32_t     tdd_config_s                  = 0;
+  char       *prefix_type                   = NULL;
+  char       *pbch_repetition               = NULL;
+  int32_t     eutra_band                    = 0;
+  long long int     downlink_frequency      = 0;
+  int32_t     uplink_frequency_offset       = 0;
+  int32_t     Nid_cell                      = 0;
+  int32_t     Nid_cell_mbsfn                = 0;
+  int32_t     N_RB_DL                       = 0;
+  int32_t     nb_antenna_ports              = 0;
+  int32_t     prach_root                    = 0;
+  int32_t     prach_config_index            = 0;
+  char            *prach_high_speed         = NULL;
+  int32_t     prach_zero_correlation        = 0;
+  int32_t     prach_freq_offset             = 0;
+  int32_t     pucch_delta_shift             = 0;
+  int32_t     pucch_nRB_CQI                 = 0;
+  int32_t     pucch_nCS_AN                  = 0;
+  int32_t     pucch_n1_AN                   = 0;
+  int32_t     pdsch_referenceSignalPower    = 0;
+  int32_t     pdsch_p_b                     = 0;
+  int32_t     pusch_n_SB                    = 0;
+  char       *pusch_hoppingMode             = NULL;
+  int32_t     pusch_hoppingOffset           = 0;
+  char          *pusch_enable64QAM          = NULL;
+  char          *pusch_groupHoppingEnabled  = NULL;
+  int32_t     pusch_groupAssignment         = 0;
+  char        *pusch_sequenceHoppingEnabled = NULL;
+  int32_t     pusch_nDMRS1                  = 0;
+  char       *phich_duration                = NULL;
+  char       *phich_resource                = NULL;
+  char       *srs_enable                    = NULL;
+  int32_t     srs_BandwidthConfig           = 0;
+  int32_t     srs_SubframeConfig            = 0;
+  char       *srs_ackNackST                 = NULL;
+  char       *srs_MaxUpPts                  = NULL;
+  int32_t     pusch_p0_Nominal              = 0;
+  char       *pusch_alpha                   = NULL;
+  int32_t     pucch_p0_Nominal              = 0;
+  int32_t     msg3_delta_Preamble           = 0;
+  char       *pucch_deltaF_Format1          = NULL;
+  char       *pucch_deltaF_Format1b         = NULL;
+  char       *pucch_deltaF_Format2          = NULL;
+  char       *pucch_deltaF_Format2a         = NULL;
+  char       *pucch_deltaF_Format2b         = NULL;
+  int32_t     rach_numberOfRA_Preambles     = 0;
+  char       *rach_preamblesGroupAConfig    = NULL;
+  int32_t     rach_sizeOfRA_PreamblesGroupA = 0;
+  int32_t     rach_messageSizeGroupA        = 0;
+  char       *rach_messagePowerOffsetGroupB = NULL;
+  int32_t     rach_powerRampingStep         = 0;
+  int32_t     rach_preambleInitialReceivedTargetPower = 0;
+  int32_t     rach_preambleTransMax         = 0;
+  int32_t     rach_raResponseWindowSize     = 10;
+  int32_t     rach_macContentionResolutionTimer = 0;
+  int32_t     rach_maxHARQ_Msg3Tx           = 0;
+  int32_t     pcch_defaultPagingCycle       = 0;
+  char       *pcch_nB                       = NULL;
+  int32_t     bcch_modificationPeriodCoeff  = 0;
+  int32_t     ue_TimersAndConstants_t300    = 0;
+  int32_t     ue_TimersAndConstants_t301    = 0;
+  int32_t     ue_TimersAndConstants_t310    = 0;
+  int32_t     ue_TimersAndConstants_t311    = 0;
+  int32_t     ue_TimersAndConstants_n310    = 0;
+  int32_t     ue_TimersAndConstants_n311    = 0;
+  int32_t     ue_TransmissionMode           = 0;
+  int32_t     ue_multiple_max               = 0;
+  //TTN - for D2D
+  //SIB18
+  const char       *rxPool_sc_CP_Len                                        = NULL;
+  const char       *rxPool_sc_Period                                        = NULL;
+  const char       *rxPool_data_CP_Len                                      = NULL;
+  libconfig_int     rxPool_ResourceConfig_prb_Num                           = 0;
+  libconfig_int     rxPool_ResourceConfig_prb_Start                         = 0;
+  libconfig_int     rxPool_ResourceConfig_prb_End                           = 0;
+  const char       *rxPool_ResourceConfig_offsetIndicator_present           = NULL;
+  libconfig_int     rxPool_ResourceConfig_offsetIndicator_choice            = 0;
+  const char       *rxPool_ResourceConfig_subframeBitmap_present            = NULL;
+  char             *rxPool_ResourceConfig_subframeBitmap_choice_bs_buf      = NULL;
+  libconfig_int     rxPool_ResourceConfig_subframeBitmap_choice_bs_size     = 0;
+  libconfig_int     rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused     = 0;
+  //SIB19
+  //For discRxPool
+  const char       *discRxPool_cp_Len                                              = NULL;
+  const char       *discRxPool_discPeriod                                          = NULL;
+  libconfig_int     discRxPool_numRetx                                             = 0;
+  libconfig_int     discRxPool_numRepetition                                       = 0;
+  libconfig_int     discRxPool_ResourceConfig_prb_Num                              = 0;
+  libconfig_int     discRxPool_ResourceConfig_prb_Start                            = 0;
+  libconfig_int     discRxPool_ResourceConfig_prb_End                              = 0;
+  const char       *discRxPool_ResourceConfig_offsetIndicator_present              = NULL;
+  libconfig_int     discRxPool_ResourceConfig_offsetIndicator_choice               = 0;
+  const char       *discRxPool_ResourceConfig_subframeBitmap_present               = NULL;
+  char             *discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf         = NULL;
+  libconfig_int     discRxPool_ResourceConfig_subframeBitmap_choice_bs_size        = 0;
+  libconfig_int     discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused = 0;
+  //For discRxPoolPS
+  const char       *discRxPoolPS_cp_Len                                              = NULL;
+  const char       *discRxPoolPS_discPeriod                                          = NULL;
+  libconfig_int     discRxPoolPS_numRetx                                             = 0;
+  libconfig_int     discRxPoolPS_numRepetition                                       = 0;
+  libconfig_int     discRxPoolPS_ResourceConfig_prb_Num                              = 0;
+  libconfig_int     discRxPoolPS_ResourceConfig_prb_Start                            = 0;
+  libconfig_int     discRxPoolPS_ResourceConfig_prb_End                              = 0;
+  const char       *discRxPoolPS_ResourceConfig_offsetIndicator_present              = NULL;
+  libconfig_int     discRxPoolPS_ResourceConfig_offsetIndicator_choice               = 0;
+  const char       *discRxPoolPS_ResourceConfig_subframeBitmap_present               = NULL;
+  char             *discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf         = NULL;
+  libconfig_int     discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size        = 0;
+  libconfig_int     discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused = 0;
+  /*------------------------------------------------------------------------------*/
   // for no gcc warnings
   (void)my_int;
-  memset((char *)active_enb,     0, MAX_ENB * sizeof(char *));
+  memset((char *)active_enb, 0, MAX_ENB * sizeof(char *));
   paramdef_t ENBSParams[] = ENBSPARAMS_DESC;
-  paramdef_t ENBParams[]  = ENBPARAMS_DESC;
-  paramlist_def_t ENBParamList = {ENB_CONFIG_STRING_ENB_LIST,NULL,0};
+  paramdef_t ENBParams[] = ENBPARAMS_DESC;
+  paramlist_def_t ENBParamList = {ENB_CONFIG_STRING_ENB_LIST, NULL, 0};
   /* get global parameters, defined outside any section in the config file */
-  config_get( ENBSParams,sizeof(ENBSParams)/sizeof(paramdef_t),NULL);
-  AssertFatal (i<ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt,
+  config_get(ENBSParams, sizeof(ENBSParams)/sizeof(paramdef_t), NULL);
+  AssertFatal (i < ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt,
                "Failed to parse config file %s, %uth attribute %s \n",
                RC.config_file_name, i, ENB_CONFIG_STRING_ACTIVE_ENBS);
 
-  if (ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt>0) {
+  if (ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt > 0) {
     // Output a list of all eNBs.
-    config_getlist( &ENBParamList,ENBParams,sizeof(ENBParams)/sizeof(paramdef_t),NULL);
+    config_getlist(&ENBParamList, ENBParams, sizeof(ENBParams)/sizeof(paramdef_t), NULL);
 
     if (ENBParamList.numelt > 0) {
-      for (k = 0; k < ENBParamList.numelt; k++) {
+      for (int k = 0; k < ENBParamList.numelt; k++) {
         if (ENBParamList.paramarray[k][ENB_ENB_ID_IDX].uptr == NULL) {
           // Calculate a default eNB ID
           if (EPC_MODE_ENABLED) {
-            uint32_t hash;
-            hash = s1ap_generate_eNB_id ();
+            uint32_t hash = 0;
+            hash = s1ap_generate_eNB_id();
             enb_id = k + (hash & 0xFFFF8);
           } else {
             enb_id = k;
@@ -2081,22 +2209,31 @@ int RCconfig_S1(MessageDef *msg_p, uint32_t i) {
         }
 
         // search if in active list
-        for (j=0; j < ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt; j++) {
+        for (int j = 0; j < ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt; j++) {
           if (strcmp(ENBSParams[ENB_ACTIVE_ENBS_IDX].strlistptr[j], *(ENBParamList.paramarray[k][ENB_ENB_NAME_IDX].strptr)) == 0) {
             paramdef_t PLMNParams[] = PLMNPARAMS_DESC;
             paramlist_def_t PLMNParamList = {ENB_CONFIG_STRING_PLMN_LIST, NULL, 0};
+            paramdef_t CCsParams[] = CCPARAMS_DESC;
+            /* map parameter checking array instances to parameter definition array instances */
+            checkedparam_t config_check_CCparams[] = CCPARAMS_CHECK;
+
+            for (int I = 0; I < (sizeof(CCsParams) / sizeof(paramdef_t)); I++) {
+              CCsParams[I].chkPptr = &(config_check_CCparams[I]);
+            }
+
             /* map parameter checking array instances to parameter definition array instances */
             checkedparam_t config_check_PLMNParams [] = PLMNPARAMS_CHECK;
 
-            for (int I = 0; I < sizeof(PLMNParams) / sizeof(paramdef_t); ++I)
+            for (int I = 0; I < sizeof(PLMNParams) / sizeof(paramdef_t); ++I) {
               PLMNParams[I].chkPptr = &(config_check_PLMNParams[I]);
+            }
 
-            paramdef_t S1Params[]  = S1PARAMS_DESC;
-            paramlist_def_t S1ParamList = {ENB_CONFIG_STRING_MME_IP_ADDRESS,NULL,0};
-            paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
-            paramdef_t NETParams[]  =  NETPARAMS_DESC;
+            paramdef_t S1Params[] = S1PARAMS_DESC;
+            paramlist_def_t S1ParamList = {ENB_CONFIG_STRING_MME_IP_ADDRESS, NULL, 0};
+            paramdef_t SCTPParams[] = SCTPPARAMS_DESC;
+            paramdef_t NETParams[] =  NETPARAMS_DESC;
             char aprefix[MAX_OPTNAME_SIZE*2 + 8];
-            sprintf(aprefix,"%s.[%i]",ENB_CONFIG_STRING_ENB_LIST,k);
+            sprintf(aprefix, "%s.[%i]", ENB_CONFIG_STRING_ENB_LIST, k);
             S1AP_REGISTER_ENB_REQ (msg_p).eNB_id = enb_id;
 
             if (strcmp(*(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr), "CELL_MACRO_ENB") == 0) {
@@ -2104,13 +2241,15 @@ int RCconfig_S1(MessageDef *msg_p, uint32_t i) {
             } else  if (strcmp(*(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr), "CELL_HOME_ENB") == 0) {
               S1AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_HOME_ENB;
             } else {
-              AssertFatal (0,
-                           "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for cell_type choice: CELL_MACRO_ENB or CELL_HOME_ENB !\n",
-                           RC.config_file_name, i, *(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr));
+              AssertFatal(0,
+                          "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for cell_type choice: CELL_MACRO_ENB or CELL_HOME_ENB !\n",
+                          RC.config_file_name,
+                          i,
+                          *(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr));
             }
 
-            S1AP_REGISTER_ENB_REQ (msg_p).eNB_name         = strdup(*(ENBParamList.paramarray[k][ENB_ENB_NAME_IDX].strptr));
-            S1AP_REGISTER_ENB_REQ(msg_p).tac               = *ENBParamList.paramarray[k][ENB_TRACKING_AREA_CODE_IDX].uptr;
+            S1AP_REGISTER_ENB_REQ (msg_p).eNB_name = strdup(*(ENBParamList.paramarray[k][ENB_ENB_NAME_IDX].strptr));
+            S1AP_REGISTER_ENB_REQ(msg_p).tac = *ENBParamList.paramarray[k][ENB_TRACKING_AREA_CODE_IDX].uptr;
             AssertFatal(!ENBParamList.paramarray[k][ENB_MOBILE_COUNTRY_CODE_IDX_OLD].strptr
                         && !ENBParamList.paramarray[k][ENB_MOBILE_NETWORK_CODE_IDX_OLD].strptr,
                         "It seems that you use an old configuration file. Please change the existing\n"
@@ -2122,9 +2261,10 @@ int RCconfig_S1(MessageDef *msg_p, uint32_t i) {
                         "    plmn_list = ( { mcc = 208; mnc = 93; mnc_length = 2; } )\n");
             config_getlist(&PLMNParamList, PLMNParams, sizeof(PLMNParams)/sizeof(paramdef_t), aprefix);
 
-            if (PLMNParamList.numelt < 1 || PLMNParamList.numelt > 6)
+            if (PLMNParamList.numelt < 1 || PLMNParamList.numelt > 6) {
               AssertFatal(0, "The number of PLMN IDs must be in [1,6], but is %d\n",
                           PLMNParamList.numelt);
+            }
 
             S1AP_REGISTER_ENB_REQ(msg_p).num_plmn = PLMNParamList.numelt;
 
@@ -2138,8 +2278,48 @@ int RCconfig_S1(MessageDef *msg_p, uint32_t i) {
                           S1AP_REGISTER_ENB_REQ(msg_p).mnc[l]);
             }
 
-            S1AP_REGISTER_ENB_REQ(msg_p).default_drx = 0;
-            config_getlist( &S1ParamList,S1Params,sizeof(S1Params)/sizeof(paramdef_t),aprefix);
+            /* Default DRX param */
+            /*
+            * Here we get the config of the first CC, since the s1ap_register_enb_req_t doesn't support multiple CC.
+            * There is a unique value of defaultPagingCycle per eNB (same for multiple cells).
+            * Hence, it should be stated somewhere that the value should be the same for every CC, or put the value outside the CC
+            * in the conf file.
+            */
+            sprintf(aprefix, "%s.[%i].%s.[%i]", ENB_CONFIG_STRING_ENB_LIST, k, ENB_CONFIG_STRING_COMPONENT_CARRIERS, 0);
+            config_get(CCsParams, sizeof(CCsParams)/sizeof(paramdef_t), aprefix);
+
+            switch (pcch_defaultPagingCycle) {
+              case 32: {
+                S1AP_REGISTER_ENB_REQ(msg_p).default_drx = 0;
+                break;
+              }
+
+              case 64: {
+                S1AP_REGISTER_ENB_REQ(msg_p).default_drx = 1;
+                break;
+              }
+
+              case 128: {
+                S1AP_REGISTER_ENB_REQ(msg_p).default_drx = 2;
+                break;
+              }
+
+              case 256: {
+                S1AP_REGISTER_ENB_REQ(msg_p).default_drx = 3;
+                break;
+              }
+
+              default: {
+                LOG_E(S1AP, "Default I-DRX value in conf file is invalid (%i). Should be 32, 64, 128 or 256. \
+           Default DRX set to 32 in MME configuration\n",
+                      pcch_defaultPagingCycle);
+                S1AP_REGISTER_ENB_REQ(msg_p).default_drx = 0;
+              }
+            }
+
+            /* MME connection params */
+            sprintf(aprefix, "%s.[%i]", ENB_CONFIG_STRING_ENB_LIST, k);
+            config_getlist(&S1ParamList, S1Params, sizeof(S1Params)/sizeof(paramdef_t), aprefix);
             S1AP_REGISTER_ENB_REQ (msg_p).nb_mme = 0;
 
             for (int l = 0; l < S1ParamList.numelt; l++) {
@@ -2156,10 +2336,11 @@ int RCconfig_S1(MessageDef *msg_p, uint32_t i) {
                 S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[l].ipv6 = 1;
               }
 
-              if (S1ParamList.paramarray[l][ENB_MME_BROADCAST_PLMN_INDEX].iptr)
+              if (S1ParamList.paramarray[l][ENB_MME_BROADCAST_PLMN_INDEX].iptr) {
                 S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l] = S1ParamList.paramarray[l][ENB_MME_BROADCAST_PLMN_INDEX].numelt;
-              else
+              } else {
                 S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l] = 0;
+              }
 
               AssertFatal(S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l] <= S1AP_REGISTER_ENB_REQ(msg_p).num_plmn,
                           "List of broadcast PLMN to be sent to MME can not be longer than actual "
@@ -2181,8 +2362,9 @@ int RCconfig_S1(MessageDef *msg_p, uint32_t i) {
               if (S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l] == 0) {
                 S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_num[l] = S1AP_REGISTER_ENB_REQ(msg_p).num_plmn;
 
-                for (int el = 0; el < S1AP_REGISTER_ENB_REQ(msg_p).num_plmn; ++el)
+                for (int el = 0; el < S1AP_REGISTER_ENB_REQ(msg_p).num_plmn; ++el) {
                   S1AP_REGISTER_ENB_REQ(msg_p).broadcast_plmn_index[l][el] = el;
+                }
               }
             }
 
@@ -2200,7 +2382,6 @@ int RCconfig_S1(MessageDef *msg_p, uint32_t i) {
             sprintf(aprefix,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,k,ENB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
             // NETWORK_INTERFACES
             config_get( NETParams,sizeof(NETParams)/sizeof(paramdef_t),aprefix);
-            //    S1AP_REGISTER_ENB_REQ (msg_p).enb_interface_name_for_S1U = strdup(enb_interface_name_for_S1U);
             cidr = *(NETParams[ENB_IPV4_ADDRESS_FOR_S1_MME_IDX].strptr);
             address = strtok(cidr, "/");
             S1AP_REGISTER_ENB_REQ (msg_p).enb_ip_address.ipv6 = 0;
@@ -2390,10 +2571,8 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
                         || X2AP_REGISTER_ENB_REQ(msg_p).mnc < 100,
                         "MNC %d cannot be encoded in two digits as requested (change mnc_digit_length to 3)\n",
                         X2AP_REGISTER_ENB_REQ(msg_p).mnc);
-
             /* CC params */
             config_getlist(&CCsParamList, NULL, 0, aprefix);
-
             X2AP_REGISTER_ENB_REQ (msg_p).num_cc = CCsParamList.numelt;
 
             if (CCsParamList.numelt > 0) {
@@ -2440,7 +2619,6 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
             AssertFatal(X2ParamList.numelt <= X2AP_MAX_NB_ENB_IP_ADDRESS,
                         "value of X2ParamList.numelt %d must be lower than X2AP_MAX_NB_ENB_IP_ADDRESS %d value: reconsider to increase X2AP_MAX_NB_ENB_IP_ADDRESS\n",
                         X2ParamList.numelt,X2AP_MAX_NB_ENB_IP_ADDRESS);
-
             X2AP_REGISTER_ENB_REQ (msg_p).nb_x2 = 0;
 
             for (l = 0; l < X2ParamList.numelt; l++) {
