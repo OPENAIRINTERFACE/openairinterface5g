@@ -40,7 +40,7 @@
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "PHY/MODULATION/modulation_UE.h"
-#include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
+//#include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 //#include "PHY/extern.h"
 #include "SCHED_NR_UE/defs.h"
 #include "SCHED_NR/extern.h"
