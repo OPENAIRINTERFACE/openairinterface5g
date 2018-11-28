@@ -970,7 +970,7 @@ int main(int argc, char **argv)
   if (transmission_mode>1) pa=dBm3;
   printf("dlsim: tmode %d, pa %d\n",transmission_mode,pa);
 
-  AssertFatal(load_configmodule(argc,argv) != NULL,
+  AssertFatal(load_configmodule(argc,argv, CONFIG_ENABLECMDLINEONLY) != NULL,
 	      "cannot load configuration module, exiting\n");
   logInit();
   set_glog_onlinelog(true);

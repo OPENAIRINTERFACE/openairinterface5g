@@ -407,7 +407,7 @@ int main(int argc, char **argv) {
   set_parallel_conf("PARALLEL_SINGLE_THREAD");
 
   printf("Detected cpu_freq %f GHz\n",cpu_freq_GHz);
-  AssertFatal(load_configmodule(argc,argv) != NULL,
+  AssertFatal(load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) != NULL,
               "cannot load configuration module, exiting\n");
   logInit();
   // enable these lines if you need debug info

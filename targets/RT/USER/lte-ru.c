@@ -90,6 +90,7 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
 #include "enb_config.h"
+#include "targets/RT/USER/lte-softmodem.h" 
 //#include "PHY/TOOLS/time_meas.h"
 
 /* these variables have to be defined before including ENB_APP/enb_paramdef.h */
@@ -117,16 +118,14 @@ static int DEFENBS[] = {0};
 #include "pdcp.h"
 
 extern volatile int                    oai_exit;
-extern int emulate_rf;
-extern int numerology;
-extern clock_source_t clock_source;
+
 
 extern PARALLEL_CONF_t get_thread_parallel_conf(void);
 extern WORKER_CONF_t   get_thread_worker_conf(void);
 extern void  phy_init_RU(RU_t*);
 extern void  phy_free_RU(RU_t*);
 
-void init_RU(char*);
+
 void stop_RU(int nb_ru);
 void do_ru_sync(RU_t *ru);
 
@@ -699,6 +698,7 @@ static void* emulatedRF_thread(void* param) {
   RU_proc_t *proc = (RU_proc_t *) param;
   int microsec = 500; // length of time to sleep, in miliseconds
   struct timespec req = {0};
+  int numerology = get_softmodem_params()->numerology;
   req.tv_sec = 0;
   req.tv_nsec = (numerology>0)? ((microsec * 1000L)/numerology):(microsec * 1000L)*2;
   cpu_set_t cpuset;
@@ -743,7 +743,7 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
 
   old_ts = proc->timestamp_rx;
-  if(emulate_rf){
+  if(get_softmodem_params()->emulate_rf){
     wait_on_condition(&proc->mutex_emulateRF,&proc->cond_emulateRF,&proc->instance_cnt_emulateRF,"emulatedRF_thread");
     release_thread(&proc->mutex_emulateRF,&proc->instance_cnt_emulateRF,"emulatedRF_thread");
     rxs = fp->samples_per_tti;
@@ -1351,7 +1351,7 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
   LTE_DL_FRAME_PARMS *fp   = &ru->frame_parms;
   openair0_config_t *cfg   = &ru->openair0_cfg;
   //printf("////////////////numerology in config = %d\n",numerology);
-
+  int numerology = get_softmodem_params()->numerology;
   if(fp->N_RB_DL == 100) {
     if(numerology == 0){
       if (fp->threequarter_fs) {
@@ -1410,7 +1410,7 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
   cfg->num_rb_dl=fp->N_RB_DL;
   cfg->tx_num_channels=ru->nb_tx;
   cfg->rx_num_channels=ru->nb_rx;
-  cfg->clock_source=clock_source;
+  cfg->clock_source=get_softmodem_params()->clock_source;
 
   for (i=0; i<ru->nb_tx; i++) {
     
@@ -1564,7 +1564,7 @@ static void* ru_thread_tx( void* param ) {
   	  
     // do OFDM if needed
     if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
-    if(!emulate_rf){    
+    if(!(get_softmodem_params()->emulate_rf)){    
       // do outgoing fronthaul (south) if needed
       if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
   	      
@@ -1638,7 +1638,7 @@ static void* ru_thread( void* param ) {
 
   LOG_I(PHY,"Starting RU %d (%s,%s),\n",ru->idx,eNB_functions[ru->function],eNB_timing[ru->if_timing]);
 
-  if(emulate_rf){
+  if(get_softmodem_params()->emulate_rf){
     fill_rf_config(ru,ru->rf_config_file);
     init_frame_parms(&ru->frame_parms,1);
     phy_init_RU(ru);
@@ -1684,7 +1684,7 @@ static void* ru_thread( void* param ) {
 
   wait_sync("ru_thread");
 
-  if(!emulate_rf){
+  if(!(get_softmodem_params()->emulate_rf)){
     // Start RF device if any
     if (ru->start_rf) {
       if (ru->start_rf(ru) != 0)
@@ -1819,7 +1819,7 @@ static void* ru_thread( void* param ) {
       
       // do OFDM if needed
       if ((ru->fh_north_asynch_in == NULL) && (ru->feptx_ofdm)) ru->feptx_ofdm(ru);
-      if(!emulate_rf){
+      if(!(get_softmodem_params()->emulate_rf)){
         // do outgoing fronthaul (south) if needed
         if ((ru->fh_north_asynch_in == NULL) && (ru->fh_south_out)) ru->fh_south_out(ru);
         
@@ -1842,7 +1842,7 @@ static void* ru_thread( void* param ) {
 
   printf( "Exiting ru_thread \n");
 
-  if (!emulate_rf){
+  if (!(get_softmodem_params()->emulate_rf)){
     if (ru->stop_rf != NULL) {
       if (ru->stop_rf(ru) != 0)
         LOG_E(HW,"Could not stop the RF device\n");
@@ -2221,7 +2221,7 @@ void init_RU_proc(RU_t *ru) {
     pthread_create( &proc->pthread_rf_tx, NULL, rf_tx, (void*)ru );
 #endif
 
-  if(emulate_rf)
+  if(get_softmodem_params()->emulate_rf)
     pthread_create( &proc->pthread_emulateRF, attr_emulateRF, emulatedRF_thread, (void*)proc );
 
   if (get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)
