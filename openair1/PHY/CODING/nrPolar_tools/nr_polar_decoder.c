@@ -1054,8 +1054,9 @@ void init_polar_deinterleaver_table(t_nrPolar_params *polarParams) {
     if (byte<(polarParams->K>>3)) numbits=8;
     else numbits=residue;
     for (int i=0;i<numbits;i++) {
-      ip=polarParams->interleaving_pattern[(8*byte)+i];
-#if 0
+      // flip bit endian for B
+      ip=polarParams->K - 1 - polarParams->interleaving_pattern[(8*byte)+i];
+#if 1
       printf("byte %d, i %d => ip %d\n",byte,i,ip);
 #endif
       ipmod64 = ip&63;
@@ -1067,7 +1068,7 @@ void init_polar_deinterleaver_table(t_nrPolar_params *polarParams) {
       }
     }
   }
-
+ 
 }
 
 uint32_t polar_decoder_int16(int16_t *input,
@@ -1117,31 +1118,46 @@ uint32_t polar_decoder_int16(int16_t *input,
 
   int len=polarParams->payloadBits;
   int len_mod64=len&63;
-  int quadwpos=len>>6;
   int crclen = polarParams->crcParityBits;
-  int quadwpos2  = polarParams->K>>6;
-  uint64_t rxcrc;
+  uint64_t rxcrc=B[0]&((1<<crclen)-1);
   uint32_t crc;
-  if (len_mod64==0) rxcrc = 0;
-  else              rxcrc = B[quadwpos]>>len_mod64;
+  uint64_t Ar;
 
-  if (quadwpos2>quadwpos) { // there are extra CRC bits in the next quadword
-    rxcrc |= (B[quadwpos2]<<(64-len_mod64));
+  AssertFatal(len<65,"A must be less than 65 bits\n");
+  if (len<=32) {
+    Ar = (uint32_t)(B[0]>>crclen);
+    uint8_t A32_flip[4];
+    uint32_t Aprime= (uint32_t)(Ar<<(32-len));
+    A32_flip[0]=((uint8_t*)&Aprime)[3];
+    A32_flip[1]=((uint8_t*)&Aprime)[2];
+    A32_flip[2]=((uint8_t*)&Aprime)[1];
+    A32_flip[3]=((uint8_t*)&Aprime)[0];
+    crc = (uint64_t)(crc24c(A32_flip,len)>>8);
   }
-  // clear everything but payload bits in last quadword
-  B[quadwpos]&=((((uint64_t)1)<<len_mod64)-1);
-  crc = crc24c((uint8_t*)B,polarParams->payloadBits)>>8;
-#if 0
+  else if (len<=64) {
+    Ar = (B[0]>>crclen) | (B[1]<<(64-crclen));;
+    uint8_t A64_flip[4];
+    uint64_t Aprime= (uint32_t)(Ar<<(64-len));
+    A64_flip[0]=((uint8_t*)&Aprime)[7];
+    A64_flip[1]=((uint8_t*)&Aprime)[6];
+    A64_flip[2]=((uint8_t*)&Aprime)[5];
+    A64_flip[3]=((uint8_t*)&Aprime)[4];
+    A64_flip[4]=((uint8_t*)&Aprime)[3];
+    A64_flip[5]=((uint8_t*)&Aprime)[2];
+    A64_flip[6]=((uint8_t*)&Aprime)[1];
+    A64_flip[7]=((uint8_t*)&Aprime)[0];
+    crc = (uint64_t)(crc24c(A64_flip,len)>>8);
+  }
+
+#if 1
   printf("A %llx B %llx|%llx Cprime %llx|%llx  (crc %x,rxcrc %llx %d)\n",
-	 B[quadwpos]&((((uint64_t)1)<<len_mod64)-1),
+	 Ar,
 	 B[1],B[0],Cprime[1],Cprime[0],crc,
    	 rxcrc,polarParams->payloadBits);
 #endif
-  int k=0;
-  // copy quadwords without CRC directly
-  for (k=0;k<polarParams->payloadBits/64;k++) out[k]=B[k];
-  // copy last one
-  out[k] = B[k] & (((uint64_t)1<<(polarParams->payloadBits&63))-1);
+
+  out[0]=Ar;
+
 
   return(crc^rxcrc);
   

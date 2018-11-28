@@ -56,8 +56,8 @@ The first bit is in the MSB of each byte
 
 *********************************************************/
 unsigned int crcbit (unsigned char * inputptr,
-					 int octetlen,
-					 unsigned int poly)
+		     int octetlen,
+		     unsigned int poly)
 {
   unsigned int i, crc = 0, c;
 

@@ -30,7 +30,7 @@
  * \warning
  */
 
-//#define DEBUG_POLAR_ENCODER
+#define DEBUG_POLAR_ENCODER
 //#define DEBUG_POLAR_ENCODER_DCI
 //#define DEBUG_POLAR_ENCODER_TIMING
 
@@ -316,7 +316,8 @@ void build_polar_tables(t_nrPolar_paramsPtr polarParams) {
       polarParams->cprime_tab0[byte][val] = 0;
       polarParams->cprime_tab1[byte][val] = 0;
       for (int i=0;i<numbits;i++) {
-	ip=polarParams->deinterleaving_pattern[(8*byte)+i];
+	// flip bit endian of B bitstring
+	ip=polarParams->deinterleaving_pattern[polarParams->K-1-((8*byte)+i)];
 	AssertFatal(ip<128,"ip = %d\n",ip);
 	bit_i=(val>>i)&1;
 	if (ip<64) polarParams->cprime_tab0[byte][val] |= (((uint64_t)bit_i)<<ip);				
@@ -402,16 +403,47 @@ void polar_encoder_fast(uint64_t *A,
 
   int bitlen0=bitlen;
 
-  uint64_t tcrc = (uint64_t)((crcmask^(crc24c((uint8_t*)A,bitlen)>>8)));
+  uint64_t tcrc=0;
+
+  // A bitstring should be stored as a_{N-1} a_{N-2} ... a_{N-A} 0 .... 0, where N=64,128,192,..., N is smallest multiple of 64 greater than or equal to A
+
+  // First flip A bitstring byte endian for CRC routines (optimized for DLSCH/ULSCH, not PBCH/PDCCH)
+  // CRC reads in each byte in bit positions 7 downto 0, for PBCH/PDCCH we need to read in a_{A-1} downto a_{0}, A = length of bit string (e.g. 32 for PBCH)
+  if (bitlen<=32) {
+    uint8_t A32_flip[4];
+    uint32_t Aprime= (uint32_t)(((uint32_t)*A)<<(32-bitlen));
+    A32_flip[0]=((uint8_t*)&Aprime)[3];
+    A32_flip[1]=((uint8_t*)&Aprime)[2];
+    A32_flip[2]=((uint8_t*)&Aprime)[1];
+    A32_flip[3]=((uint8_t*)&Aprime)[0];
+    tcrc = (uint64_t)((crcmask^(crc24c(A32_flip,bitlen)>>8)));
+  }
+  else if (bitlen<=64) {
+    uint8_t A64_flip[4];
+    uint64_t Aprime= (uint32_t)(((uint64_t)*A)<<(64-bitlen));
+    A64_flip[0]=((uint8_t*)&Aprime)[7];
+    A64_flip[1]=((uint8_t*)&Aprime)[6];
+    A64_flip[2]=((uint8_t*)&Aprime)[5];
+    A64_flip[3]=((uint8_t*)&Aprime)[4];
+    A64_flip[4]=((uint8_t*)&Aprime)[3];
+    A64_flip[5]=((uint8_t*)&Aprime)[2];
+    A64_flip[6]=((uint8_t*)&Aprime)[1];
+    A64_flip[7]=((uint8_t*)&Aprime)[0];
+    tcrc = (uint64_t)((crcmask^(crc24c(A64_flip,bitlen)>>8)));
+  }
+
   int n;
-  for (n=0;n<(1+(bitlen>>6));n++)
-    if (bitlen0<64) B[n] = ((A[n])&((((uint64_t)1)<<bitlen0)-1)) | (tcrc<<bitlen0);
-    else {
-      B[n] = A[n];
-      bitlen0-=64;
-    }
-  // handle residual part of CRC in next quadword
-  if (polarParams->crcParityBits > (64-bitlen0)) B[n] = tcrc>>(64-bitlen0);
+  // this is number of quadwords in the bit string
+  int quadwlen = (polarParams->K>>6);
+  if ((polarParams->K&63) > 0) quadwlen++;
+
+  // Create the B bitstring as
+  // b_{N'-1} b_{N'-2} ... b_{N'-A} b_{N'-A-1} ... b_{N'-A-Nparity} = a_{N-1} a_{N-2} ... a_{N-A} p_{N_parity-1} ... p_0
+
+  for (n=0;n<quadwlen;n++) if (n==0) B[n] = (A[n] << polarParams->crcParityBits) | tcrc;
+                           else      B[n] = (A[n] << polarParams->crcParityBits) | (A[n-1]>>64-polarParams->crcParityBits);
+  
+    
   uint8_t *Bbyte = (uint8_t*)B;
   // for each byte of B, lookup in corresponding table for 64-bit word corresponding to that byte and its position
   if (polarParams->K<65) 
@@ -486,6 +518,7 @@ void polar_encoder_fast(uint64_t *A,
     for (int i=0;i<((len>63) ? 64 : len);i++) {
 
       Cprime_i = -((Cprime[j]>>i)&1); // this converts bit 0 as, 0 => 0000x00, 1 => 1111x11
+      /*
 #ifdef DEBUG_POLAR_ENCODER
       printf("%llx Cprime_%d (%llx) G %llx,%llx,%llx,%llx,%llx,%llx,%llx,%llx\n",
 	     Cprime_i,off+i,(Cprime[j]>>i) &1,
@@ -498,6 +531,7 @@ void polar_encoder_fast(uint64_t *A,
 	     polarParams->G_N_tab[off+i][6],
 	     polarParams->G_N_tab[off+i][7]);
 #endif
+      */
       uint64_t *Gi=polarParams->G_N_tab[off+i];
       D[0] ^= (Cprime_i & Gi[0]);
       D[1] ^= (Cprime_i & Gi[1]);
