@@ -680,7 +680,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
             //clean previous FAPI MESSAGE
 
 #ifdef UE_SLOT_PARALLELISATION
-            phy_procedures_slot_parallelization_UE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
+            phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
             phy_procedures_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay);
             printf(">>> nr_ue_pdcch_procedures ended\n");
@@ -1187,11 +1187,11 @@ void init_UE_threads(PHY_VARS_NR_UE *UE) {
 #ifdef UE_DLSCH_PARALLELISATION
         pthread_mutex_init(&UE->proc.proc_rxtx[i].mutex_dlsch_td,NULL);
         pthread_cond_init(&UE->proc.proc_rxtx[i].cond_dlsch_td,NULL);
-        pthread_create(&UE->proc.proc_rxtx[i].pthread_dlsch_td,NULL,dlsch_decoding_2thread0, rtd);
+        pthread_create(&UE->proc.proc_rxtx[i].pthread_dlsch_td,NULL,nr_dlsch_decoding_2thread0, rtd);
         //thread 2
         pthread_mutex_init(&UE->proc.proc_rxtx[i].mutex_dlsch_td1,NULL);
         pthread_cond_init(&UE->proc.proc_rxtx[i].cond_dlsch_td1,NULL);
-        pthread_create(&UE->proc.proc_rxtx[i].pthread_dlsch_td1,NULL,dlsch_decoding_2thread1, rtd);
+        pthread_create(&UE->proc.proc_rxtx[i].pthread_dlsch_td1,NULL,nr_dlsch_decoding_2thread1, rtd);
 #endif
 
 #ifdef UE_SLOT_PARALLELISATION

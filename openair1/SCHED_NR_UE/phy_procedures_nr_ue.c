@@ -40,7 +40,7 @@
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "PHY/MODULATION/modulation_UE.h"
-//#include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
+#include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 //#include "PHY/extern.h"
 #include "SCHED_NR_UE/defs.h"
 #include "SCHED_NR/extern.h"
@@ -3936,7 +3936,7 @@ void ue_pmch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc,int eNB_id,i
          ue->pdsch_vars_MCH[0]->llr[0],0,nr_tti_rx<<1);
 
 #ifdef UE_DLSCH_PARALLELISATION
-  ret = dlsch_decoding_mthread(ue,proc, eNB_id,
+  ret = nr_dlsch_decoding_mthread(ue,proc, eNB_id,
              ue->pdsch_vars_MCH[0]->llr[0],
              &ue->frame_parms,
              ue->dlsch_MCH[0],
@@ -3946,7 +3946,7 @@ void ue_pmch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc,int eNB_id,i
              0,
              0,1);
 #else
-  ret = dlsch_decoding(ue,
+  ret = nr_dlsch_decoding(ue,
            ue->pdsch_vars_MCH[0]->llr[0],
            &ue->frame_parms,
            ue->dlsch_MCH[0],
@@ -4370,7 +4370,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 #endif
 
 #ifdef UE_DLSCH_PARALLELISATION
-		 ret = dlsch_decoding_mthread(ue,proc,eNB_id,
+		 ret = nr_dlsch_decoding_mthread(ue,proc,eNB_id,
 			   pdsch_vars->llr[0],
 			   &ue->frame_parms,
 			   dlsch0,
@@ -4446,7 +4446,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 #endif
 
 #ifdef UE_DLSCH_PARALLELISATION
-          ret1 = dlsch_decoding_mthread(ue,proc, eNB_id,
+          ret1 = nr_dlsch_decoding_mthread(ue,proc, eNB_id,
                             pdsch_vars->llr[1],
                             &ue->frame_parms,
                             dlsch1,
@@ -4958,7 +4958,7 @@ void *UE_thread_slot1_dl_processing(void *arg) {
 #endif
 
 #ifdef UE_SLOT_PARALLELISATION
-int phy_procedures_slot_parallelization_UE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,
+int phy_procedures_slot_parallelization_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,
         uint8_t abstraction_flag,uint8_t do_pdcch_flag,runmode_t mode,
         relaying_type_t r_type)  {
 
