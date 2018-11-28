@@ -2906,14 +2906,15 @@ void restart_phy(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc, uint8_t eNB_id,uint
   //ue->bitrate[eNB_id] = 0;
   //ue->total_received_bits[eNB_id] = 0;
 }
+#endif //(0)
 
-
-void ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc, uint8_t abstraction_flag)
+void nr_ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc, uint8_t abstraction_flag)
 {
 
   //  int i;
-  int pbch_tx_ant=0;
-  uint8_t pbch_phase;
+  //int pbch_tx_ant=0;
+  //uint8_t pbch_phase;
+  int ret = 0;
   uint16_t frame_tx;
   static uint8_t first_run = 1;
   uint8_t pbch_trials = 0;
@@ -2925,49 +2926,36 @@ void ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *pro
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCH_PROCEDURES, VCD_FUNCTION_IN);
 
-  pbch_phase=(frame_rx%4);
+  /*pbch_phase=(frame_rx%4);
 
   if (pbch_phase>=4)
-    pbch_phase=0;
+    pbch_phase=0;*/
 
   for (pbch_trials=0; pbch_trials<4; pbch_trials++) {
     //for (pbch_phase=0;pbch_phase<4;pbch_phase++) {
     //LOG_I(PHY,"[UE  %d] Frame %d, Trying PBCH %d (NidCell %d, eNB_id %d)\n",ue->Mod_id,frame_rx,pbch_phase,ue->frame_parms.Nid_cell,eNB_id);
     if (abstraction_flag == 0) {
-      pbch_tx_ant = rx_pbch(ue, proc,
+      ret = nr_rx_pbch(ue, proc,
           ue->pbch_vars[eNB_id],
           &ue->frame_parms,
           eNB_id,
-          ue->frame_parms.mode1_flag==1?SISO:ALAMOUTI,
-          ue->high_speed_flag,
-          pbch_phase);
-
-
-
+          SISO,
+          ue->high_speed_flag);
     }
 
-#ifdef PHY_ABSTRACTION
-    else {
-      pbch_tx_ant = rx_pbch_emul(ue,
-         eNB_id,
-         pbch_phase);
-    }
-
-#endif
-
-    if ((pbch_tx_ant>0) && (pbch_tx_ant<=4)) {
+    if (ret==0) {
       break;
     }
 
-    pbch_phase++;
+    /*pbch_phase++;
 
     if (pbch_phase>=4)
-      pbch_phase=0;
+      pbch_phase=0;*/
   }
 
 
 
-  if ((pbch_tx_ant>0) && (pbch_tx_ant<=4)) {
+  if (ret==0) {
 
     if (opt_enabled) {
       static uint8_t dummy[3];
@@ -2980,17 +2968,10 @@ void ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *pro
           ue->Mod_id, nr_tti_rx);
     }
 
-    if (pbch_tx_ant>2) {
-      LOG_W(PHY,"[openair][SCHED][SYNCH] PBCH decoding: pbch_tx_ant>2 not supported\n");
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCH_PROCEDURES, VCD_FUNCTION_OUT);
-      return;
-    }
-
-
     ue->pbch_vars[eNB_id]->pdu_errors_conseq = 0;
-    frame_tx = (((int)(ue->pbch_vars[eNB_id]->decoded_output[2]&0x03))<<8);
+    /*frame_tx = (((int)(ue->pbch_vars[eNB_id]->decoded_output[2]&0x03))<<8);
     frame_tx += ((int)(ue->pbch_vars[eNB_id]->decoded_output[1]&0xfc));
-    frame_tx += pbch_phase;
+    frame_tx += pbch_phase;*/
 
     //if (ue->mac_enabled==1) {
     //mac_xface->dl_phy_sync_success(ue->Mod_id,frame_rx,eNB_id,first_run);
@@ -3011,13 +2992,11 @@ void ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *pro
         ue->proc.proc_rxtx[th_id].frame_rx = proc->frame_rx;
         ue->proc.proc_rxtx[th_id].frame_tx = proc->frame_tx;
 
-        printf("[UE %d] frame %d, nr_tti_rx %d: Adjusting frame counter (PBCH ant_tx=%d, frame_tx=%d, phase %d, rx_offset %d) => new frame %d\n",
+        printf("[UE %d] frame %d, nr_tti_rx %d: Adjusting frame counter (PBCH frame_tx=%d, rx_offset %d) => new frame %d\n",
  	    ue->Mod_id,
  	    ue->proc.proc_rxtx[th_id].frame_rx,
  	    nr_tti_rx,
- 	    pbch_tx_ant,
  	    frame_tx,
- 	    pbch_phase,
  	    ue->rx_offset,
  	    proc->frame_rx);
       }
@@ -3027,14 +3006,12 @@ void ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *pro
 
     } else if (((frame_tx & 0x03FF) != (proc->frame_rx & 0x03FF))) {
       //(pbch_tx_ant != ue->frame_parms.nb_antennas_tx)) {
-      LOG_D(PHY,"[UE %d] frame %d, nr_tti_rx %d: Re-adjusting frame counter (PBCH ant_tx=%d, frame_rx=%d, frame%%1024=%d, phase %d).\n",
+      LOG_D(PHY,"[UE %d] frame %d, nr_tti_rx %d: Re-adjusting frame counter (PBCH frame_rx=%d, frame%%1024=%d).\n",
       ue->Mod_id,
       proc->frame_rx,
       nr_tti_rx,
-      pbch_tx_ant,
       frame_tx,
-      frame_rx & 0x03FF,
-      pbch_phase);
+      frame_rx & 0x03FF);
 
       proc->frame_rx = (proc->frame_rx & 0xFFFFFC00) | (frame_tx & 0x000003FF);
       proc->frame_tx = proc->frame_rx;
@@ -3049,16 +3026,12 @@ void ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *pro
     }
 
 #ifdef DEBUG_PHY_PROC
-    LOG_D(PHY,"[UE %d] frame %d, nr_tti_rx %d, Received PBCH (MIB): mode1_flag %d, tx_ant %d, frame_tx %d. N_RB_DL %d, phich_duration %d, phich_resource %d/6!\n",
+    LOG_D(PHY,"[UE %d] frame %d, nr_tti_rx %d, Received PBCH (MIB): frame_tx %d. N_RB_DL %d\n",
     ue->Mod_id,
     frame_rx,
     nr_tti_rx,
-    ue->frame_parms.mode1_flag,
-    pbch_tx_ant,
     frame_tx,
-    ue->frame_parms.N_RB_DL,
-    ue->frame_parms.phich_config_common.phich_duration,
-    ue->frame_parms.phich_config_common.phich_resource);
+    ue->frame_parms.N_RB_DL);
 #endif
 
   } else {
@@ -3109,7 +3082,6 @@ void ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *pro
 }
 
 
-#endif //(0)
 
 unsigned int get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb_rb)
 {
@@ -5816,10 +5788,19 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 
   //LOG_D(PHY," ------  end FFT/ChannelEst/PDCCH slot 1: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
 
-  /*if ( (nr_tti_rx == 0) && (ue->decode_MIB == 1))
+  if ( (nr_tti_rx == 0) && (ue->decode_MIB == 1))
   {
-    ue_pbch_procedures(eNB_id,ue,proc,abstraction_flag);
-  }*/
+	for (int i=0; i<3; i++)
+		nr_slot_fep(ue,
+			      (5+i), //mu=1 case B
+				  nr_tti_rx,
+			      0,
+			      0,
+			      1,
+			      NR_PBCH_EST);
+
+    nr_ue_pbch_procedures(eNB_id,ue,proc,abstraction_flag);
+  }
 
   // do procedures for C-RNTI
   LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
