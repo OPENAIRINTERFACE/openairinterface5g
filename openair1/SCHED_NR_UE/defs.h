@@ -154,7 +154,7 @@ void *UE_thread_slot1_dl_processing(void *arg);
 */
 
 
-nr_subframe_t nr_subframe_select(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
+//nr_subframe_t nr_subframe_select(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
 
 
 /*! \brief Function to compute subframe type as a function of Frame type and TDD Configuration (implements Table 4.2.2 from 36.211, p.11 from version 8.6) and subframe index.  Same as nr_subframe_select, except that it uses the Mod_id and is provided as a service to the MAC scheduler.
