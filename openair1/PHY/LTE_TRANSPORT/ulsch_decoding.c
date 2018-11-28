@@ -1505,7 +1505,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 
   // Do ULSCH Decoding for data portion
 
-  ret = eNB->td(eNB,UE_id,harq_pid,llr8_flag);
+  ret = ulsch_decoding_data_all(eNB,UE_id,harq_pid,llr8_flag);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_ULSCH_DECODING0+harq_pid,0);
 
