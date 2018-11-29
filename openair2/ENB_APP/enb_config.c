@@ -67,6 +67,8 @@ extern PARALLEL_CONF_t get_thread_parallel_conf(void);
 extern WORKER_CONF_t   get_thread_worker_conf(void);
 extern uint32_t to_earfcn_DL(int eutra_bandP, uint32_t dl_CarrierFreq, uint32_t bw);
 extern uint32_t to_earfcn_UL(int eutra_bandP, uint32_t ul_CarrierFreq, uint32_t bw);
+extern char *parallel_config;
+extern char *worker_config;
 
 void RCconfig_flexran() {
   uint16_t i;
@@ -2494,28 +2496,32 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
 int RCconfig_parallel(void) {
   char *parallel_conf = NULL;
   char *worker_conf   = NULL;
+  
 
   paramdef_t ThreadParams[]  = THREAD_CONF_DESC;
   paramlist_def_t THREADParamList = {THREAD_CONFIG_STRING_THREAD_STRUCT,NULL,0};
   config_getlist( &THREADParamList,NULL,0,NULL);
 
-  if(THREADParamList.numelt>0) {
-    config_getlist( &THREADParamList,ThreadParams,sizeof(ThreadParams)/sizeof(paramdef_t),NULL);
-    parallel_conf = strdup(*(THREADParamList.paramarray[0][THREAD_PARALLEL_IDX].strptr));
-  } else {
-    parallel_conf = strdup("PARALLEL_RU_L1_TRX_SPLIT");
+  if(parallel_config == NULL){
+    if(THREADParamList.numelt>0) {
+      config_getlist( &THREADParamList,ThreadParams,sizeof(ThreadParams)/sizeof(paramdef_t),NULL);
+      parallel_conf = strdup(*(THREADParamList.paramarray[0][THREAD_PARALLEL_IDX].strptr));
+    } else {
+      parallel_conf = strdup("PARALLEL_RU_L1_TRX_SPLIT");
+    }
+    set_parallel_conf(parallel_conf);
   }
 
-  if(THREADParamList.numelt>0) {
-    config_getlist( &THREADParamList,ThreadParams,sizeof(ThreadParams)/sizeof(paramdef_t),NULL);
-    worker_conf   = strdup(*(THREADParamList.paramarray[0][THREAD_WORKER_IDX].strptr));
-  } else {
-    worker_conf   = strdup("WORKER_ENABLE");
+  if(worker_config == NULL){
+    if(THREADParamList.numelt>0) {
+      config_getlist( &THREADParamList,ThreadParams,sizeof(ThreadParams)/sizeof(paramdef_t),NULL);
+      worker_conf   = strdup(*(THREADParamList.paramarray[0][THREAD_WORKER_IDX].strptr));
+    } else {
+      worker_conf   = strdup("WORKER_ENABLE");
+    }
+    set_worker_conf(worker_conf);
   }
 
-
-  set_parallel_conf(parallel_conf);
-  set_worker_conf(worker_conf);
 
 
   return 0;

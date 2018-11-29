@@ -35,6 +35,8 @@
 #include "common/config/config_userapi.h"
 #include "common/utils/load_module_shlib.h"
 static softmodem_params_t softmodem_params;
+char *parallel_config=NULL;
+char *worker_config=NULL;
 
 uint64_t get_softmodem_optmask(void) {
      return softmodem_params.optmask;
@@ -51,8 +53,6 @@ softmodem_params_t* get_softmodem_params(void) {
 
 void get_common_options(void)
 {
-char *parallel_config=NULL;
-char *worker_config=NULL;
 
 
 uint32_t online_log_messages;
