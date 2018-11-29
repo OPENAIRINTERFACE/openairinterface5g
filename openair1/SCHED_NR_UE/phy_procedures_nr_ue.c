@@ -3541,9 +3541,9 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
   // this table contains 56 (NBR_NR_DCI_FIELDS) elements for each dci field and format described in TS 38.212. Each element represents the size in bits for each dci field
   //uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS] = {0};
   // this is the UL bandwidth part. FIXME! To be defined where this value comes from
-  //  uint16_t n_RB_ULBWP = 106;
+  uint16_t n_RB_ULBWP = 106;
   // this is the DL bandwidth part. FIXME! To be defined where this value comes from
-  //uint16_t n_RB_DLBWP = 106;
+  uint16_t n_RB_DLBWP = 106;
   //#ifdef NR_PDCCH_SCHED_DEBUG
   //    printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> n_RB_ULBWP=%d n_RB_DLBWP=%d\n",
   //            n_RB_ULBWP,
@@ -5917,25 +5917,24 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   //nr_gold_pdcch(ue,0, 2);
 
   for (int l=0; l<2; l++) {
-    if (abstraction_flag == 0) {
 #if UE_TIMING_TRACE
-        start_meas(&ue->ofdm_demod_stats);
+    start_meas(&ue->ofdm_demod_stats);
 #endif
-
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_IN);
-      nr_slot_fep(ue,
-		  l,
-		  nr_tti_rx,
-		  0,
-		  0,
-		  1,
-		 NR_PDCCH_EST);
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_OUT);
+    
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_IN);
+    nr_slot_fep(ue,
+		l,
+		nr_tti_rx,
+		0,
+		0,
+		1,
+		NR_PDCCH_EST);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_OUT);
 #if UE_TIMING_TRACE
-      stop_meas(&ue->ofdm_demod_stats);
+    stop_meas(&ue->ofdm_demod_stats);
 #endif
-    }
   }
+  
 
   write_output("rxdataF.m","rxF",ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx>>1]].rxdataF[0],ue->frame_parms.ofdm_symbol_size*2,1,1);
 
@@ -5950,7 +5949,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   //printf(">>> at phy_procedures_nrUE_RX, nr_ue_pdcch_procedures init, dlsch->active=%d\n",
   //        ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active); 
 
-  if (nr_ue_pdcch_procedures(eNB_id,ue,proc,abstraction_flag) == -1) {
+  if (nr_ue_pdcch_procedures(eNB_id,ue,proc,0) == -1) {
     LOG_E(PHY,"[UE  %d] Frame %d, nr_tti_rx %d: Error in pdcch procedures\n",ue->Mod_id,frame_rx,nr_tti_rx);
     return(-1);
   }
@@ -6014,12 +6013,12 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   nr_gold_pdsch(ue,0,0, 1);
 
   nr_slot_fep(ue,
-          2,  //to be updated from higher layer
-          (nr_tti_rx<<1),
-          0,
-          0,
-          0,
- 		  NR_PDSCH_EST);
+	      2,  //to be updated from higher layer
+	      (nr_tti_rx<<1),
+	      0,
+	      0,
+	      0,
+	      NR_PDSCH_EST);
 
 #if UE_TIMING_TRACE
   start_meas(&ue->generic_stat);
@@ -6035,7 +6034,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 			NULL,
 			ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->num_pdcch_symbols,
 			ue->frame_parms.symbols_per_tti>>1,
-			abstraction_flag);
+			0);
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
   }
@@ -6052,7 +6051,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 			NULL,
 			ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->num_pdcch_symbols,
 			ue->frame_parms.symbols_per_tti>>1,
-			abstraction_flag);
+			0);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_SI, VCD_FUNCTION_OUT);
   }
 
@@ -6067,7 +6066,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 			NULL,
 			ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->num_pdcch_symbols,
 			ue->frame_parms.symbols_per_tti>>1,
-			abstraction_flag);
+			0);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_P, VCD_FUNCTION_OUT);
   }
 
@@ -6082,7 +6081,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 			NULL,
 			ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->num_pdcch_symbols,
 			ue->frame_parms.symbols_per_tti>>1,
-			abstraction_flag);
+			0);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_RA, VCD_FUNCTION_OUT);
   }
 
@@ -6140,7 +6139,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 
   if ( (nr_tti_rx == 0) && (ue->decode_MIB == 1))
   {
-    ue_pbch_procedures(eNB_id,ue,proc,abstraction_flag);
+    ue_pbch_procedures(eNB_id,ue,proc,0);
   }
 
   // do procedures for C-RNTI
@@ -6159,7 +6158,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 			NULL,
 			1+(ue->frame_parms.symbols_per_tti>>1),
 			ue->frame_parms.symbols_per_tti-1,
-			abstraction_flag);
+			0);
     LOG_D(PHY," ------ end PDSCH ChannelComp/LLR slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
     LOG_D(PHY," ------ --> PDSCH Turbo Decoder slot 0/1: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
 #if UE_TIMING_TRACE
@@ -6174,7 +6173,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 			ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][1],
 			&ue->dlsch_errors[eNB_id],
 			mode,
-			abstraction_flag);*/
+			0);*/
 #if UE_TIMING_TRACE
     stop_meas(&ue->dlsch_procedures_stat[ue->current_thread_id[nr_tti_rx]]);
 #if DISABLE_LOG_X
@@ -6224,7 +6223,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
       NULL,
       1+(ue->frame_parms.symbols_per_tti>>1),
       ue->frame_parms.symbols_per_tti-1,
-      abstraction_flag);
+      0);
 
     /*ue_dlsch_procedures(ue,
       proc,
@@ -6234,7 +6233,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
       NULL,
       &ue->dlsch_SI_errors[eNB_id],
       mode,
-      abstraction_flag);
+      0);
     ue->dlsch_SI[eNB_id]->active = 0;*/
   }
 
@@ -6248,7 +6247,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
       NULL,
       1+(ue->frame_parms.symbols_per_tti>>1),
       ue->frame_parms.symbols_per_tti-1,
-      abstraction_flag);
+      0);
 
     /*ue_dlsch_procedures(ue,
       proc,
@@ -6258,7 +6257,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
       NULL,
       &ue->dlsch_p_errors[eNB_id],
       mode,
-      abstraction_flag);*/
+      0);*/
     ue->dlsch_p[eNB_id]->active = 0;
   }
   // do procedures for RA-RNTI
@@ -6271,7 +6270,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
       NULL,
       1+(ue->frame_parms.symbols_per_tti>>1),
       ue->frame_parms.symbols_per_tti-1,
-      abstraction_flag);
+      0);
     /*ue_dlsch_procedures(ue,
       proc,
       eNB_id,
@@ -6280,7 +6279,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
       NULL,
       &ue->dlsch_ra_errors[eNB_id],
       mode,
-      abstraction_flag);*/
+      0);*/
     ue->dlsch_ra[eNB_id]->active = 0;
   }
 
