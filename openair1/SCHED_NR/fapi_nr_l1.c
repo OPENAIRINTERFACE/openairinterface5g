@@ -104,6 +104,8 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
 
   int do_oai =0;
   int dont_send =0;
+  gNB->pdcch_vars.num_dci = 0;
+  gNB->pdcch_vars.num_pdsch_rnti = 0;
 
   for (i=0;i<number_dl_pdu;i++) {
     dl_config_pdu = &DL_req->dl_config_request_body.dl_config_pdu_list[i];
