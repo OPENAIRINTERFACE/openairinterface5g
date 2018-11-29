@@ -2927,104 +2927,15 @@ void nr_ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCH_PROCEDURES, VCD_FUNCTION_IN);
 
-  /*pbch_phase=(frame_rx%4);
-
-  if (pbch_phase>=4)
-    pbch_phase=0;*/
-
-  for (pbch_trials=0; pbch_trials<4; pbch_trials++) {
-    //for (pbch_phase=0;pbch_phase<4;pbch_phase++) {
-    //LOG_I(PHY,"[UE  %d] Frame %d, Trying PBCH %d (NidCell %d, eNB_id %d)\n",ue->Mod_id,frame_rx,pbch_phase,ue->frame_parms.Nid_cell,eNB_id);
-    if (abstraction_flag == 0) {
-      ret = nr_rx_pbch(ue, proc,
-          ue->pbch_vars[eNB_id],
-          &ue->frame_parms,
-          eNB_id,
-          SISO,
-          ue->high_speed_flag);
-    }
-
-    if (ret==0) {
-      break;
-    }
-
-    /*pbch_phase++;
-
-    if (pbch_phase>=4)
-      pbch_phase=0;*/
-  }
-
-
+  //LOG_I(PHY,"[UE  %d] Frame %d, Trying PBCH %d (NidCell %d, eNB_id %d)\n",ue->Mod_id,frame_rx,pbch_phase,ue->frame_parms.Nid_cell,eNB_id);
+  ret = nr_rx_pbch(ue, proc,
+		   ue->pbch_vars[eNB_id],
+		   &ue->frame_parms,
+		   eNB_id,
+		   SISO,
+		   ue->high_speed_flag);
 
   if (ret==0) {
-
-    if (opt_enabled) {
-      static uint8_t dummy[3];
-      dummy[0] = ue->pbch_vars[eNB_id]->decoded_output[2];
-      dummy[1] = ue->pbch_vars[eNB_id]->decoded_output[1];
-      dummy[2] = ue->pbch_vars[eNB_id]->decoded_output[0];
-      trace_pdu(1, dummy, 3, ue->Mod_id, 0, 0,
-          frame_rx, nr_tti_rx, 0, 0);
-      LOG_D(OPT,"[UE %d][PBCH] Frame %d trace pdu for PBCH\n",
-          ue->Mod_id, nr_tti_rx);
-    }
-
-    ue->pbch_vars[eNB_id]->pdu_errors_conseq = 0;
-    /*frame_tx = (((int)(ue->pbch_vars[eNB_id]->decoded_output[2]&0x03))<<8);
-    frame_tx += ((int)(ue->pbch_vars[eNB_id]->decoded_output[1]&0xfc));
-    frame_tx += pbch_phase;*/
-
-    //if (ue->mac_enabled==1) {
-    //mac_xface->dl_phy_sync_success(ue->Mod_id,frame_rx,eNB_id,first_run);
-      //}
-
-#ifdef EMOS
-    //emos_dump_UE.frame_tx = frame_tx;
-    //emos_dump_UE.mimo_mode = ue->pbch_vars[eNB_id]->decoded_output[1];
-#endif
-
-    if (first_run) {
-      first_run = 0;
-
-      proc->frame_rx = (proc->frame_rx & 0xFFFFFC00) | (frame_tx & 0x000003FF);
-      proc->frame_tx = proc->frame_rx;
-      for(int th_id=0; th_id<RX_NB_TH; th_id++)
-      {
-        ue->proc.proc_rxtx[th_id].frame_rx = proc->frame_rx;
-        ue->proc.proc_rxtx[th_id].frame_tx = proc->frame_tx;
-
-        printf("[UE %d] frame %d, nr_tti_rx %d: Adjusting frame counter (PBCH frame_tx=%d, rx_offset %d) => new frame %d\n",
- 	    ue->Mod_id,
- 	    ue->proc.proc_rxtx[th_id].frame_rx,
- 	    nr_tti_rx,
- 	    frame_tx,
- 	    ue->rx_offset,
- 	    proc->frame_rx);
-      }
-
-
-      frame_rx = proc->frame_rx;
-
-    } else if (((frame_tx & 0x03FF) != (proc->frame_rx & 0x03FF))) {
-      //(pbch_tx_ant != ue->frame_parms.nb_antennas_tx)) {
-      LOG_D(PHY,"[UE %d] frame %d, nr_tti_rx %d: Re-adjusting frame counter (PBCH frame_rx=%d, frame%%1024=%d).\n",
-      ue->Mod_id,
-      proc->frame_rx,
-      nr_tti_rx,
-      frame_tx,
-      frame_rx & 0x03FF);
-
-      proc->frame_rx = (proc->frame_rx & 0xFFFFFC00) | (frame_tx & 0x000003FF);
-      proc->frame_tx = proc->frame_rx;
-      frame_rx = proc->frame_rx;
-      
-      for(int th_id=0; th_id<RX_NB_TH; th_id++)
-      {
-        ue->proc.proc_rxtx[th_id].frame_rx = (proc->frame_rx & 0xFFFFFC00) | (frame_tx & 0x000003FF);
-        ue->proc.proc_rxtx[th_id].frame_tx = proc->frame_rx;
-      }
-
-    }
 
 #ifdef DEBUG_PHY_PROC
     LOG_D(PHY,"[UE %d] frame %d, nr_tti_rx %d, Received PBCH (MIB): frame_tx %d. N_RB_DL %d\n",
@@ -3036,13 +2947,10 @@ void nr_ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
 #endif
 
   } else {
-    /*
     LOG_E(PHY,"[UE %d] frame %d, nr_tti_rx %d, Error decoding PBCH!\n",
-    ue->Mod_id,frame_rx, nr_tti_rx);
+	  ue->Mod_id,frame_rx, nr_tti_rx);
 
-    LOG_I(PHY,"[UE %d] rx_offset %d\n",ue->Mod_id,ue->rx_offset);
-
-
+    /*
     write_output("rxsig0.m","rxs0", ue->common_vars.rxdata[0],ue->frame_parms.samples_per_subframe,1,1);
 
     write_output("H00.m","h00",&(ue->common_vars.dl_ch_estimates[0][0][0]),((ue->frame_parms.Ncp==0)?7:6)*(ue->frame_parms.ofdm_symbol_size),1,1);
@@ -3062,8 +2970,8 @@ void nr_ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
     }
     else{
       if (ue->pbch_vars[eNB_id]->pdu_errors_conseq>=100) {
-  LOG_E(PHY,"More that 100 consecutive PBCH errors! Exiting!\n");
-  //mac_xface->macphy_exit("More that 100 consecutive PBCH errors!");
+	LOG_E(PHY,"More that 100 consecutive PBCH errors! Exiting!\n");
+	exit_fun("More that 100 consecutive PBCH errors! Exiting!\n");
       }
     }
   }
@@ -3646,7 +3554,7 @@ void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB
 
     if (dlsch0 && (!dlsch1))  {
       harq_pid = dlsch0->current_harq_pid;
-      LOG_D(PHY,"[UE %d] PDSCH active in nr_tti_rx %d, harq_pid %d Symbol %d\n",ue->Mod_id,nr_tti_rx,harq_pid,m);
+      LOG_D(PHY,"[UE %d] PDSCH type %d active in nr_tti_rx %d, harq_pid %d Symbol %d\n",ue->Mod_id,pdsch,nr_tti_rx,harq_pid,m);
 
       if ((pdsch==PDSCH) &&
           (ue->transmission_mode[eNB_id] == 5) &&
@@ -4199,15 +4107,16 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
         }
     }
 
-#ifdef DEBUG_PHY_PROC
-    LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d nr_tti_rx %d: PDSCH/DLSCH decoding iter %d (mcs %d, rv %d, TBS %d)\n",
+    //#ifdef DEBUG_PHY_PROC
+    LOG_I(PHY,"[UE  %d][PDSCH %x/%d] Frame %d nr_tti_rx %d: PDSCH/DLSCH decoding iter %d/%d (mcs %d, rv %d, TBS %d)\n",
     ue->Mod_id,
     dlsch0->rnti,harq_pid,
-    frame_rx,nr_tti_rx,ret,
+	  frame_rx,nr_tti_rx,ret,dlsch0->max_ldpc_iterations,
     dlsch0->harq_processes[harq_pid]->mcs,
     dlsch0->harq_processes[harq_pid]->rvidx,
     dlsch0->harq_processes[harq_pid]->TBS);
 
+#ifdef DEBUG_PHY_PROC
     if (frame_rx%100==0) {
       LOG_D(PHY,"[UE  %d][PDSCH %x] Frame %d nr_tti_rx %d dlsch_errors %d, dlsch_received %d, dlsch_fer %d, current_dlsch_cqi %d\n",
       ue->Mod_id,dlsch0->rnti,
@@ -5141,6 +5050,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   LOG_D(PHY," ------  --> FFT/ChannelEst/PDCCH slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
 #endif
 
+#ifdef NR_PDCCH_SCHED
   //nr_gold_pdcch(ue,0, 2);
  if (nr_tti_rx==1){
   for (uint16_t l=0; l<nb_symb_pdcch; l++) {
@@ -5166,80 +5076,13 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 	}
       }
 
-  //write_output("rxdataF.m","rxF",ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx>>1]].rxdataF[0],ue->frame_parms.ofdm_symbol_size*2,1,1);
-
-  //ue_measurement_procedures(l-1,ue,proc,eNB_id,(nr_tti_rx<<1),abstraction_flag,mode);
-
-  //if (do_pdcch_flag) {
-  //      if ((l==pilot1) || ((pmch_flag==1)&(l==l2)))  {
-  //	LOG_D(PHY,"[UE  %d] Frame %d: Calling pdcch procedures (eNB %d)\n",ue->Mod_id,frame_rx,eNB_id);
-
-  //start_meas(&ue->rx_pdcch_stats[ue->current_thread_id[nr_tti_rx]]);
-	
-  //printf(">>> at phy_procedures_nrUE_RX, nr_ue_pdcch_procedures init, dlsch->active=%d\n",
-  //        ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active); 
   if (nr_ue_pdcch_procedures(eNB_id,ue,proc,abstraction_flag) == -1) {
     LOG_E(PHY,"[UE  %d] Frame %d, nr_tti_rx %d: Error in pdcch procedures\n",ue->Mod_id,frame_rx,nr_tti_rx);
     return(-1);
   }
  }
-  //for (int m=0;m<1000;m++) printf("%d",m); 
-  //printf("\n>>> at phy_procedures_nrUE_RX, nr_ue_pdcch_procedures end, dlsch->active=%d\n",
-  //        ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active); 
-  
-  // preparing for PDSCH procedures
-  //  if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active == 1) {
-  //    ue_pdsch_procedures(ue,
-  //			proc,
-  //			eNB_id,
-  //			PDSCH,
-  //			ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0],
-  //			NULL,
-  //			ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->num_pdcch_symbols,
-  //			ue->frame_parms.symbols_per_tti>>1,
-  //			abstraction_flag);
-  //  }
-#if 0
-  //stop_meas(&ue->rx_pdcch_stats[ue->current_thread_id[nr_tti_rx]]);
-  //printf("nr_tti_rx %d n_pdcch_sym %d pdcch procedures  %5.3f \n",
-  //        nr_tti_rx, ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->num_pdcch_symbols,
-  //     (ue->rx_pdcch_stats[ue->current_thread_id[nr_tti_rx]].p_time)/(cpuf*1000.0));
-  LOG_D(PHY,"num_pdcch_symbols %d\n",ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->num_pdcch_symbols);
-  //      }
-  //}
-  
-  //  } // for l=1..l2
-  
-  
-  ue_measurement_procedures(l-1,ue,proc,eNB_id,(nr_tti_rx<<1),abstraction_flag,mode);
+#endif //NR_PDCCH_SCHED
 
-  LOG_D(PHY," ------  end FFT/ChannelEst/PDCCH slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
-    // If this is PMCH, call procedures and return
-  if (pmch_flag == 1) {
-    ue_pmch_procedures(ue,proc,eNB_id,abstraction_flag);
-    return 0;
-  }
-
-  nr_slot_fep(ue,
-     0,
-     1+(nr_tti_rx<<1),
-     0,
-     0,
-     0,
-	 NR_PDSCH_EST);
-#endif
-
-  // first slot has been processed (FFTs + Channel Estimation, PCFICH/PHICH/PDCCH)
-#if UE_TIMING_TRACE
-  stop_meas(&ue->generic_stat);
-#if DISABLE_LOG_X
-  printf("[SFN %d] Slot0: FFT + Channel Estimate + PCFICH/PHICH/PDCCH %5.2f \n",nr_tti_rx,ue->generic_stat.p_time/(cpuf*1000.0));
-#else
-  LOG_D(PHY, "[SFN %d] Slot0: FFT + Channel Estimate + PCFICH/PHICH/PDCCH %5.2f \n",nr_tti_rx,ue->generic_stat.p_time/(cpuf*1000.0));
-#endif
-
-#endif
-//#if 0
   LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
   
   if (nr_tti_rx==1){
@@ -5262,6 +5105,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
     //set active for testing, to be removed
     ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active = 1;
   }
+  else 
+    ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active = 0;
 
 #if UE_TIMING_TRACE
   start_meas(&ue->generic_stat);
