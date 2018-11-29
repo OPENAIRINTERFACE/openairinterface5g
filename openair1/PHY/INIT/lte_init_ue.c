@@ -30,6 +30,7 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "assertions.h"
 #include <math.h>
+#include "PHY/LTE_ESTIMATION/lte_estimation.h"
 #include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
