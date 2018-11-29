@@ -2,6 +2,7 @@
 #define _THREADS_T_H_
 
 typedef struct threads_s {
+    int main;
     int iq;
     int one;
     int two;

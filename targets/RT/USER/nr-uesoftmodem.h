@@ -157,12 +157,13 @@
 {"external-clock",          CONFIG_HLP_EXCCLK,      PARAMFLAG_BOOL,         uptr:&clock_source,                 defintval:0,                    TYPE_INT,       0},                     \
 {"wait-for-sync",           NULL,                   PARAMFLAG_BOOL,         iptr:&wait_for_sync,                defintval:0,                    TYPE_INT,       0},                     \
 {"single-thread-disable",   CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL,         iptr:&single_thread_flag,           defintval:1,                    TYPE_INT,       0},                     \
-{"threadIQ",                NULL,                   0,                      iptr:&(threads.iq),                 defintval:1,                    TYPE_INT,       0},                     \
-{"threadOneSubframe",       NULL,                   0,                      iptr:&(threads.one),                defintval:1,                    TYPE_INT,       0},                     \
-{"threadTwoSubframe",       NULL,                   0,                      iptr:&(threads.two),                defintval:1,                    TYPE_INT,       0},                     \
-{"threadThreeSubframe",     NULL,                   0,                      iptr:&(threads.three),              defintval:1,                    TYPE_INT,       0},                     \
-{"threadSlot1ProcOne",      NULL,                   0,                      iptr:&(threads.slot1_proc_one),     defintval:1,                    TYPE_INT,       0},                     \
-{"threadSlot1ProcTwo",      NULL,                   0,                      iptr:&(threads.slot1_proc_two),     defintval:1,                    TYPE_INT,       0},                     \
+{"threadmain",                NULL,                   0,                      iptr:&(threads.main),              defintval:-1,                    TYPE_INT,       0},                     \
+{"threadIQ",                NULL,                   0,                      iptr:&(threads.iq),                 defintval:-1,                    TYPE_INT,       0},                     \
+{"threadOneSubframe",       NULL,                   0,                      iptr:&(threads.one),                defintval:-1,                    TYPE_INT,       0},                     \
+{"threadTwoSubframe",       NULL,                   0,                      iptr:&(threads.two),                defintval:-1,                    TYPE_INT,       0},                     \
+{"threadThreeSubframe",     NULL,                   0,                      iptr:&(threads.three),              defintval:-1,                    TYPE_INT,       0},                     \
+{"threadSlot1ProcOne",      NULL,                   0,                      iptr:&(threads.slot1_proc_one),     defintval:-1,                    TYPE_INT,       0},                     \
+{"threadSlot1ProcTwo",      NULL,                   0,                      iptr:&(threads.slot1_proc_two),     defintval:-1,                    TYPE_INT,       0},                     \
 {"nr_dlsch-demod-shift",    CONFIG_HLP_DLSHIFT,     0,                      iptr:(int32_t *)&nr_dlsch_demod_shift, defintval:0,                    TYPE_INT,       0},                     \
 {"A" ,                      CONFIG_HLP_TADV,        0,                      uptr:&timing_advance,               defintval:0,                    TYPE_UINT,      0},                     \
 {"C" ,                      CONFIG_HLP_DLF,         0,                      uptr:&(downlink_frequency[0][0]),   defuintval:2680000000,          TYPE_UINT,      0},                     \

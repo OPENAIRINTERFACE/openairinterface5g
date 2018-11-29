@@ -593,14 +593,15 @@ int main(int argc, char **argv) {
 
         if (estimated_output_bit[i] != test_input_bit[i]) {
           errors_bit++;
-          //printf("estimated bits error occurs @%d ",i);
+	  if (n_trials==1)          
+	    printf("bit error @%d\n",i);
         }
       }
 
       if (errors_bit>0) {
 	n_false_positive++;
 	if (n_trials == 1)
-	  printf("\n errors_bit %d (trial %d)\n", errors_bit,trial);
+	  printf("total bit errors %d\n", errors_bit);
       }
     }
 

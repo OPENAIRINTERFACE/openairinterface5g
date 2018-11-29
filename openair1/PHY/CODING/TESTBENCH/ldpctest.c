@@ -310,19 +310,21 @@ int test_ldpc(short No_iteration,
     }
     stop_meas(&time);
 
-/*    start_meas(time_optim);
+    start_meas(time_optim);
     ldpc_encoder_optim_8seg(test_input,channel_input_optim,block_length,BG,n_segments,&tinput,&tprep,&tparity,&toutput);
-    for(j=0;j<n_segments;j++) {
+    /*
+      for(j=0;j<n_segments;j++) {
       ldpc_encoder_optim(test_input[j],channel_input_optim[j],block_length,BG,&tinput,&tprep,&tparity,&toutput);
       }
-    stop_meas(time_optim);*/
-
+    */
+    stop_meas(time_optim);
+    /*
     for(j=0;j<(n_segments%8+1);j++) {
     	start_meas(time_optim);
     	ldpc_encoder_optim_8seg_multi(test_input,channel_input_optim,block_length, BG, n_segments,j,&tinput,&tprep,&tparity,&toutput);
     	stop_meas(time_optim);
     }
-    
+    */  
     if (ntrials==1)    
       for (j=0;j<n_segments;j++)
     for (i = 0; i < block_length+(nrows-no_punctured_columns) * Zc - removed_bit; i++)

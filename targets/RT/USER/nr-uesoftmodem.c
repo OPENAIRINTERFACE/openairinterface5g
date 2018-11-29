@@ -268,7 +268,7 @@ char uecap_xer[1024],uecap_xer_in=0;
 int oaisim_flag=0;
 int emulate_rf = 0;
 
-threads_t threads= {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
+threads_t threads= {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
 
 char* usrp_args=NULL;
 char* usrp_clksrc=NULL;
@@ -1030,7 +1030,20 @@ int main( int argc, char **argv ) {
   
   init_openair0();
   
-
+  threads.main = 16;
+  threads.iq   = 17;
+  threads.one  = 18;
+  threads.two  = 19;
+  threads.three = 20;
+  threads.slot1_proc_one = 21;
+  threads.slot1_proc_two = 22;
+  threads.slot1_proc_three = 23;
+  threads.dlsch_td_one = 24;
+  threads.dlsch_td_two = 25;
+  threads.dlsch_td_three = 26;
+  threads.dlsch_td1_one = 27;
+  threads.dlsch_td1_two = 28;
+  threads.dlsch_td1_three = 29;
 
 #ifndef DEADLINE_SCHEDULER
 
@@ -1042,7 +1055,7 @@ int main( int argc, char **argv ) {
     CPU_ZERO(&cpuset);
 #ifdef CPU_AFFINITY
     if (get_nprocs() > 2) {
-        CPU_SET(0, &cpuset);
+        CPU_SET(threads.main, &cpuset);
         s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
         if (s != 0) {
             perror( "pthread_setaffinity_np");
