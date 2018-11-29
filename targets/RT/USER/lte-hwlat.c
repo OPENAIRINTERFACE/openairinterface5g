@@ -57,9 +57,9 @@
 #include "LAYER2/MAC/extern.h"
 #include "LAYER2/MAC/proto.h"
 
-#define 		RIFFA_CHANNEL_TESTER  0
-#define 		RIFFA_CHANNEL_TESTER2 0
-#define     RIFFA_CHANNEL_DATA1   1
+#define 		SYRIQ_CHANNEL_TESTER  0
+#define 		SYRIQ_CHANNEL_TESTER2 0
+#define     SYRIQ_CHANNEL_DATA1   1
 
 volatile int             oai_exit = 0;
 
@@ -346,7 +346,7 @@ int main(void)
 	int 				c 				= 0;
 	int 				numIter			= 0;
 	int 				fpga_loop		= 0;
-#if RIFFA_CHANNEL_DATA1
+#if SYRIQ_CHANNEL_DATA1
 	uint64_t			first_ts		= 0;
 	uint8_t				is_first_ts		= 0;
 	uint64_t			trx_read_cnt	= 0;
@@ -383,7 +383,7 @@ int main(void)
 #endif
 
   const char *openair_dir = getenv("OPENAIR_DIR");
-  const char *ini_file		= "/targets/ARCH/ADRV9371_ZC706/USERSPACE/PROFILES/ue.band7.tm1.PRB100.adrv9371-zc706_HWgain15dB.ini";
+  const char *ini_file    = "/usr/local/etc/syriq/ue.band7.tm1.PRB100.NR20.dat";
 
   int   readBlockSize;
   void* rxp[nb_antennas_rx];
@@ -726,9 +726,9 @@ int main(void)
 //#endif
 
 /* ********** ********** */
-/*  RIFFA_CHANNEL_DATA1  */
+/*  SYRIQ_CHANNEL_DATA1  */
 /* ********** ********** */
-#if RIFFA_CHANNEL_DATA1
+#if SYRIQ_CHANNEL_DATA1
 
 //  rf_device.trx_get_stats_func( &rf_device );
 
@@ -766,12 +766,12 @@ int main(void)
 //      break;
 //    }
 //  }
-	printf("RIFFA CHANNEL DATA1 done !!!\n");
+	printf("SYRIQ CHANNEL DATA1 done !!!\n");
   sleep(1);
 	return(0);
 #endif
 /* ********** ********** */
-/*  RIFFA_CHANNEL_DATA1  */
+/*  SYRIQ_CHANNEL_DATA1  */
 /* ********** ********** */
 
 
@@ -809,9 +809,9 @@ int main(void)
 		if (ret > 0)
 		{
 /* ********** ********** */
-/*  RIFFA_CHANNEL_TESTER */
+/*  SYRIQ_CHANNEL_TESTER */
 /* ********** ********** */
-#if RIFFA_CHANNEL_TESTER
+#if SYRIQ_CHANNEL_TESTER
       failure = 0;
 			for (i = 0; i < ret; i++)
 			{
@@ -843,9 +843,9 @@ int main(void)
       			}
 #endif
 /* ********** ********** */
-/*  RIFFA_CHANNEL_TESTER2*/
+/*  SYRIQ_CHANNEL_TESTER2*/
 /* ********** ********** */
-#if RIFFA_CHANNEL_TESTER2
+#if SYRIQ_CHANNEL_TESTER2
 //			printf("* ret=%d timestamp=%ld (%ld)\n", ret, timestamp, (timestamp%307200));
       failure = 0;
 			for (i = 0; i < ret; i++)

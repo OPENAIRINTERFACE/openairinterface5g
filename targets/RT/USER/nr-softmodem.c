@@ -164,7 +164,7 @@ double bw = 10.0e6;
 
 static int                      tx_max_power[MAX_NUM_CCs]; /* =  {0,0}*/;
 
-char   rf_config_file[1024]="./targets/ARCH/ADRV9371_ZC706/USERSPACE/PROFILES/gnb.band7.tm1.PRB100.NR40.adrv9371-zc706_HWgain15dB.ini";
+char   rf_config_file[1024]="/usr/local/etc/syriq/ue.band7.tm1.PRB100.NR40.dat";
 
 int chain_offset=0;
 int phy_test = 0;
