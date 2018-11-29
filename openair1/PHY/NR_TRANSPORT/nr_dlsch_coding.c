@@ -358,11 +358,8 @@ int nr_dlsch_encoding(unsigned char *a,
       printf("\n");
 
 #endif
-      //&dlsch->harq_processes[harq_pid]->d[r][0] //channel_input[r]
-      //ldpc_encoder_orig((unsigned char*)dlsch->harq_processes[harq_pid]->c[r],&dlsch->harq_processes[harq_pid]->d[r][0],Kr,1,3,0);
-      ldpc_encoder_orig((unsigned char*)dlsch->harq_processes[harq_pid]->c[r],dlsch->harq_processes[harq_pid]->d[r],Kr,BG,0);
-      //ldpc_encoder((unsigned char*)dlsch->harq_processes[harq_pid]->c[r],&dlsch->harq_processes[harq_pid]->d[r][0],Kr,1,3);
-      //ldpc_encoder_optim((unsigned char*)dlsch->harq_processes[harq_pid]->c[r],(unsigned char*)&dlsch->harq_processes[harq_pid]->d[r][0],Kr,1,3,NULL,NULL,NULL,NULL);
+      //ldpc_encoder_orig((unsigned char*)dlsch->harq_processes[harq_pid]->c[r],dlsch->harq_processes[harq_pid]->d[r],Kr,BG,0);
+      //ldpc_encoder_optim((unsigned char*)dlsch->harq_processes[harq_pid]->c[r],(unsigned char*)&dlsch->harq_processes[harq_pid]->d[r][0],Kr,BG,NULL,NULL,NULL,NULL);
     }
 
     //for (int i=0;i<68*384;i++)
@@ -376,7 +373,8 @@ int nr_dlsch_encoding(unsigned char *a,
     	}
     	printf("\n");*/
 
-    //ldpc_encoder_optim_8seg(dlsch->harq_processes[harq_pid]->c,d_tmp,Kr,1,3,dlsch->harq_processes[harq_pid]->C,NULL,NULL,NULL,NULL);
+    ldpc_encoder_optim_8seg(dlsch->harq_processes[harq_pid]->c,d_tmp,Kr,BG,dlsch->harq_processes[harq_pid]->C,NULL,NULL,NULL,NULL);
+
     //stop_meas(te_stats);
     //printf("end ldpc encoder -- output\n");
 
