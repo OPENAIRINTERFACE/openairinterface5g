@@ -32,6 +32,7 @@
 #ifndef __NR_TRANSPORT_PROTO_UE__H__
 #define __NR_TRANSPORT_PROTO_UE__H__
 #include "PHY/defs_nr_UE.h"
+#include "SCHED_NR_UE/defs.h"
 //#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 #include <math.h>
 #include "nfapi_interface.h"
@@ -1004,6 +1005,23 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                          uint8_t harq_pid,
                          uint8_t is_crnti,
                          uint8_t llr8_flag);
+
+uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
+						 UE_nr_rxtx_proc_t *proc,
+                         int eNB_id,
+                         short *dlsch_llr,
+                         NR_DL_FRAME_PARMS *frame_parms,
+                         NR_UE_DLSCH_t *dlsch,
+                         NR_DL_UE_HARQ_t *harq_process,
+                         uint32_t frame,
+                         uint8_t nr_tti_rx,
+                         uint8_t harq_pid,
+                         uint8_t is_crnti,
+                         uint8_t llr8_flag);
+
+void *nr_dlsch_decoding_2thread0(void *arg);
+
+void *nr_dlsch_decoding_2thread1(void *arg);
 
 void nr_dlsch_unscrambling(int16_t* llr,
 			   uint32_t size,
