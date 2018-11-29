@@ -41,7 +41,7 @@
 static nr_ue_if_module_t *nr_ue_if_module_inst[MAX_IF_MODULES];
 
 //  L2 Abstraction Layer
-int8_t handle_bcch_bch(module_id_t module_id, int cc_id, uint8_t gNB_index, uint8_t *pduP, uint8_t additional_bits, uint32_t ssb_index, uint32_t ssb_length, uint16_t cell_id){
+int handle_bcch_bch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint8_t *pduP, unsigned int additional_bits, uint32_t ssb_index, uint32_t ssb_length, uint16_t cell_id){
 
     return nr_ue_decode_mib( module_id,
                              cc_id,
@@ -55,18 +55,18 @@ int8_t handle_bcch_bch(module_id_t module_id, int cc_id, uint8_t gNB_index, uint
 }
 
 //  L2 Abstraction Layer
-int8_t handle_bcch_dlsch(module_id_t module_id, int cc_id, uint8_t gNB_index, uint32_t sibs_mask, uint8_t *pduP, uint32_t pdu_len){
+int handle_bcch_dlsch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint32_t sibs_mask, uint8_t *pduP, uint32_t pdu_len){
 
     return 0;
 }
 //  L2 Abstraction Layer
-int8_t handle_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_type){
+int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, fapi_nr_dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_type){
 
     return nr_ue_process_dci(module_id, cc_id, gNB_index, dci, rnti, dci_type);
 
 }
 
-int8_t nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
+int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
 
     NR_UE_L2_STATE_t ret;
     module_id_t module_id = ul_info->module_id;
@@ -106,7 +106,7 @@ int8_t nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
     return 0;
 }
 
-int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
+int nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
     
     int32_t i;
     uint32_t ret_mask = 0x0;
@@ -232,7 +232,7 @@ nr_ue_if_module_t *nr_ue_if_module_init(uint32_t module_id){
     return nr_ue_if_module_inst[module_id];
 }
 
-int8_t nr_ue_if_module_kill(uint32_t module_id) {
+int nr_ue_if_module_kill(uint32_t module_id) {
 
     if (nr_ue_if_module_inst[module_id] != NULL){
         free(nr_ue_if_module_inst[module_id]);
