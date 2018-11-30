@@ -85,30 +85,7 @@ double t_rx_min = 1000000000; /*!< \brief initial min process time for rx */
 int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
 
-char *parallel_config = NULL;
-char *worker_config = NULL;
-static THREAD_STRUCT thread_struct;
-void set_parallel_conf(char *parallel_conf)
-{
-  if(strcmp(parallel_conf,"PARALLEL_SINGLE_THREAD")==0)           thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
-  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_SPLIT")==0)        thread_struct.parallel_conf = PARALLEL_RU_L1_SPLIT;
-  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_TRX_SPLIT")==0)    thread_struct.parallel_conf = PARALLEL_RU_L1_TRX_SPLIT;
-  printf("[CONFIG] parallel conf is set to %d\n",thread_struct.parallel_conf);
-} 
-void set_worker_conf(char *worker_conf)
-{
-  if(strcmp(worker_conf,"WORKER_DISABLE")==0)                     thread_struct.worker_conf = WORKER_DISABLE;
-  else if(strcmp(worker_conf,"WORKER_ENABLE")==0)                 thread_struct.worker_conf = WORKER_ENABLE;
-  printf("[CONFIG] worker conf is set to %d\n",thread_struct.worker_conf);
-} 
-PARALLEL_CONF_t get_thread_parallel_conf(void)
-{
-  return thread_struct.parallel_conf;
-} 
-WORKER_CONF_t get_thread_worker_conf(void)
-{
-  return thread_struct.worker_conf;
-} 
+THREAD_STRUCT thread_struct;
 
 int emulate_rf = 0;
 
@@ -715,7 +692,7 @@ int main(int argc, char **argv)
 
   DL_req.dl_config_request_body.dl_config_pdu_list = dl_config_pdu_list;
   TX_req.tx_request_body.tx_pdu_list = tx_pdu_list;
-
+  set_parallel_conf("PARALLEL_SINGLE_THREAD");
   cpuf = cpu_freq_GHz;
 
   //signal(SIGSEGV, handler);
@@ -758,6 +735,7 @@ int main(int argc, char **argv)
     { "Subframe", "subframe ",0, iptr:&subframe,  defintval:7, TYPE_INT, 0 },
     { "Trnti", "rnti",0, u16ptr:&n_rnti,  defuintval:0x1234, TYPE_UINT16, 0 },
     { "vi_mod", "i_mod",0, iptr:NULL,  defintval:0, TYPE_INT, 0 },
+    { "Qparallel", "Enable parallel execution",0, strptr:NULL,  defstrval:NULL, TYPE_STRING,  0 },
     { "Performance", "Display CPU perfomance of each L1 piece", PARAMFLAG_BOOL,  iptr:&print_perf,  defintval:0, TYPE_INT, 0 },
     { "q_tx_port", "Number of TX antennas ports used in eNB",0, iptr:NULL,  defintval:0, TYPE_INT, 0 },
     { "uEdual", "Enables the Interference Aware Receiver for TM5 (default is normal receiver)",0, iptr:NULL,  defintval:0, TYPE_INT, 0 },
@@ -965,6 +943,10 @@ int main(int argc, char **argv)
 
       break;
 
+    case 'Q':
+      set_parallel_conf(optarg);
+      break;
+      
     default:
       printf("Wrong option: %s\n",long_options[option_index].name);
       exit(1);
@@ -982,8 +964,8 @@ int main(int argc, char **argv)
   if (help)
     exit(0);
   
-  set_parallel_conf("PARALLEL_RU_L1_TRX_SPLIT");
-  set_worker_conf("WORKER_ENABLE");
+  if (thread_struct.parallel_conf != PARALLEL_SINGLE_THREAD)
+    set_worker_conf("WORKER_ENABLE");
 
   if (transmission_mode>1) pa=dBm3;
   printf("dlsim: tmode %d, pa %d\n",transmission_mode,pa);
@@ -1079,11 +1061,7 @@ int main(int argc, char **argv)
      ru->do_precoding=1;
 
   eNB->mac_enabled=1;
-  if (two_thread_flag == 0) {
-    eNB->te = dlsch_encoding;
-  }
-  else {
-    eNB->te = dlsch_encoding_2threads;
+  if(get_thread_worker_conf() == WORKER_ENABLE) {
     extern void init_td_thread(PHY_VARS_eNB *);
     extern void init_te_thread(PHY_VARS_eNB *);
     init_td_thread(eNB);
@@ -1442,6 +1420,8 @@ int main(int argc, char **argv)
       reset_meas(&eNB->dlsch_interleaving_stats);
       reset_meas(&eNB->dlsch_rate_matching_stats);
       reset_meas(&eNB->dlsch_turbo_encoding_stats);
+      reset_meas(&eNB->dlsch_common_and_dci);
+      reset_meas(&eNB->dlsch_ue_specific);
       for (int i=0; i<RX_NB_TH; i++) {
 	reset_meas(&UE->phy_proc_rx[i]); // total UE rx
 	reset_meas(&UE->ue_front_end_stat[i]);
@@ -1783,9 +1763,6 @@ int main(int argc, char **argv)
 
 	  }
 
-
-
-
           if (UE->dlsch[UE->current_thread_id[subframe]][eNB_id][0]->harq_ack[subframe].ack == 1) {
 
             avg_iter += UE->dlsch[UE->current_thread_id[subframe]][eNB_id][0]->last_iteration_cnt;
@@ -2011,21 +1988,22 @@ int main(int argc, char **argv)
         printf("\neNB TX function statistics (per 1ms subframe)\n");
 	printDistribution(&eNB->phy_proc_tx,table_tx,"PHY proc tx");
 	printStatIndent(&eNB->dlsch_common_and_dci,"DL common channels and dci time");
-	printStatIndent(&eNB->dlsch_encoding_stats,"DLSCH encoding time");
-	printStatIndent2(&eNB->dlsch_rate_matching_stats,"DLSCH rate matching time",eNB->dlsch_rate_matching_stats.trials);
-	printStatIndent2(&eNB->dlsch_turbo_encoding_stats,"DLSCH turbo encoding time", eNB->dlsch_turbo_encoding_stats.trials);
-	printStatIndent2(&eNB->dlsch_interleaving_stats,"DLSCH interleaving time", eNB->dlsch_interleaving_stats.trials);
-	printStatIndent(&eNB->dlsch_scrambling_stats,  "DLSCH scrambling time");
-	printStatIndent(&eNB->dlsch_modulation_stats, "DLSCH modulation time");
+	printStatIndent(&eNB->dlsch_ue_specific,"DL per ue part time");
+	printStatIndent2(&eNB->dlsch_encoding_stats,"DLSCH encoding time");
+	printStatIndent3(&eNB->dlsch_rate_matching_stats,"DLSCH rate matching time");
+	printStatIndent3(&eNB->dlsch_turbo_encoding_stats,"DLSCH turbo encoding time");
+	printStatIndent3(&eNB->dlsch_interleaving_stats,"DLSCH interleaving time");
+	printStatIndent2(&eNB->dlsch_scrambling_stats,  "DLSCH scrambling time");
+	printStatIndent2(&eNB->dlsch_modulation_stats, "DLSCH modulation time");
 	printDistribution(&eNB->ofdm_mod_stats,table_tx_ifft,"OFDM_mod (idft) time");
 
         printf("\nUE RX function statistics (per 1ms subframe)\n");
 	printDistribution(&phy_proc_rx_tot, table_rx,"Total PHY proc rx");
 	printStatIndent(&ue_front_end_tot,"Front end processing");
 	printStatIndent(&dlsch_llr_tot,"rx_pdsch processing");
-	printStatIndent2(&pdsch_procedures_tot,"pdsch processing", pdsch_procedures_tot.trials);
-	printStatIndent2(&dlsch_procedures_tot,"dlsch processing", dlsch_procedures_tot.trials);
-	printStatIndent2(&UE->crnti_procedures_stats,"C-RNTI processing", UE->crnti_procedures_stats.trials);
+	printStatIndent2(&pdsch_procedures_tot,"pdsch processing");
+	printStatIndent2(&dlsch_procedures_tot,"dlsch processing");
+	printStatIndent2(&UE->crnti_procedures_stats,"C-RNTI processing");
 	printStatIndent(&UE->ofdm_demod_stats,"ofdm demodulation");
 	printStatIndent(&UE->dlsch_channel_estimation_stats,"DLSCH channel estimation time");
 	printStatIndent(&UE->dlsch_freq_offset_estimation_stats,"DLSCH frequency offset estimation time");
@@ -2041,13 +2019,13 @@ int main(int argc, char **argv)
                (double)UE->dlsch_turbo_decoding_stats.diff/UE->dlsch_turbo_decoding_stats.trials*timeBase,
                (int)((double)UE->dlsch_turbo_decoding_stats.diff/UE->dlsch_turbo_decoding_stats.trials),
                UE->dlsch_turbo_decoding_stats.trials);
-        printStatIndent2(&UE->dlsch_tc_init_stats,"init", UE->dlsch_tc_init_stats.trials);
-        printStatIndent2(&UE->dlsch_tc_alpha_stats,"alpha", UE->dlsch_tc_init_stats.trials);
-        printStatIndent2(&UE->dlsch_tc_beta_stats,"beta", UE->dlsch_tc_init_stats.trials);
-        printStatIndent2(&UE->dlsch_tc_gamma_stats,"gamma", UE->dlsch_tc_init_stats.trials);
-        printStatIndent2(&UE->dlsch_tc_ext_stats,"ext", UE->dlsch_tc_init_stats.trials);
-        printStatIndent2(&UE->dlsch_tc_intl1_stats,"turbo internal interleaver", UE->dlsch_tc_init_stats.trials);
-        printStatIndent2(&UE->dlsch_tc_intl2_stats,"intl2+HardDecode+CRC", UE->dlsch_tc_init_stats.trials);
+        printStatIndent2(&UE->dlsch_tc_init_stats,"init");
+        printStatIndent2(&UE->dlsch_tc_alpha_stats,"alpha");
+        printStatIndent2(&UE->dlsch_tc_beta_stats,"beta");
+        printStatIndent2(&UE->dlsch_tc_gamma_stats,"gamma");
+        printStatIndent2(&UE->dlsch_tc_ext_stats,"ext");
+        printStatIndent2(&UE->dlsch_tc_intl1_stats,"turbo internal interleaver");
+        printStatIndent2(&UE->dlsch_tc_intl2_stats,"intl2+HardDecode+CRC");
 	
       }
 

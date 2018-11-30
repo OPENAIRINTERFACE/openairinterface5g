@@ -96,30 +96,7 @@ nfapi_tx_request_pdu_t tx_pdu_list[MAX_NUM_TX_REQUEST_PDU];
 nfapi_tx_request_t TX_req;
 Sched_Rsp_t sched_resp;
 
-char *parallel_config = NULL;
-char *worker_config = NULL;
-static THREAD_STRUCT thread_struct;
-void set_parallel_conf(char *parallel_conf)
-{
-  if(strcmp(parallel_conf,"PARALLEL_SINGLE_THREAD")==0)           thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
-  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_SPLIT")==0)        thread_struct.parallel_conf = PARALLEL_RU_L1_SPLIT;
-  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_TRX_SPLIT")==0)    thread_struct.parallel_conf = PARALLEL_RU_L1_TRX_SPLIT;
-  printf("[CONFIG] parallel conf is set to %d\n",thread_struct.parallel_conf);
-} 
-void set_worker_conf(char *worker_conf)
-{
-  if(strcmp(worker_conf,"WORKER_DISABLE")==0)                     thread_struct.worker_conf = WORKER_DISABLE;
-  else if(strcmp(worker_conf,"WORKER_ENABLE")==0)                 thread_struct.worker_conf = WORKER_ENABLE;
-  printf("[CONFIG] worker conf is set to %d\n",thread_struct.worker_conf);
-} 
-PARALLEL_CONF_t get_thread_parallel_conf(void)
-{
-  return thread_struct.parallel_conf;
-} 
-WORKER_CONF_t get_thread_worker_conf(void)
-{
-  return thread_struct.worker_conf;
-} 
+THREAD_STRUCT thread_struct;
 
 void
 fill_nfapi_ulsch_config_request(nfapi_ul_config_request_pdu_t *ul_config_pdu,
@@ -410,7 +387,6 @@ int main(int argc, char **argv) {
   double effective_rate=0.0;
   char channel_model_input[10]= {0};
   static int max_turbo_iterations=4;
-  static int parallel_flag=0;
   int nb_rb_set = 0;
   int sf;
   static int threequarter_fs=0;
@@ -428,6 +404,8 @@ int main(int argc, char **argv) {
   TX_req.tx_request_body.tx_pdu_list = tx_pdu_list;
   cpu_freq_GHz = (double)get_cpu_freq_GHz();
   cpuf = cpu_freq_GHz;
+  set_parallel_conf("PARALLEL_SINGLE_THREAD");
+
   printf("Detected cpu_freq %f GHz\n",cpu_freq_GHz);
   AssertFatal(load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) != NULL,
               "cannot load configuration module, exiting\n");
@@ -455,7 +433,7 @@ int main(int argc, char **argv) {
     { "Doppler", "Maximum doppler shift",0, dblptr:&maxDoppler,  defdblval:0.0, TYPE_DOUBLE, 0 },
     { "Zdump", "dump table",PARAMFLAG_BOOL,  iptr:&dump_table, defintval:0, TYPE_INT, 0 },
     { "Forms", "Display the soft scope", PARAMFLAG_BOOL, iptr:&xforms,  defintval:0, TYPE_INT, 0 },
-    { "Lparallel", "Enable parallel execution", PARAMFLAG_BOOL, iptr:&parallel_flag,  defintval:0, TYPE_INT, 0 },
+    { "Lparallel", "Enable parallel execution",0, strptr:NULL,  defstrval:NULL, TYPE_STRING,  0 },
     { "Iterations", "Number of iterations of turbo decoder", 0, iptr:&max_turbo_iterations,  defintval:4, TYPE_INT, 0 },
     { "Performance", "Display CPU perfomance of each L1 piece", PARAMFLAG_BOOL,  iptr:NULL,  defintval:0, TYPE_INT, 0 },
     { "Q_cqi", "Enable CQI", PARAMFLAG_BOOL, iptr:&cqi_flag,  defintval:0, TYPE_INT, 0 },
@@ -600,6 +578,10 @@ int main(int argc, char **argv) {
       opp_enabled=1;
       break;
 
+    case 'L':
+      set_parallel_conf(optarg);
+      break;
+      
     default:
       printf("Wrong option: %s\n",long_options[option_index].name);
       exit(1);
@@ -618,8 +600,8 @@ int main(int argc, char **argv) {
   if (help)
     exit(0);
   
-  set_parallel_conf("PARALLEL_RU_L1_TRX_SPLIT");
-  set_worker_conf("WORKER_ENABLE");
+  if (thread_struct.parallel_conf != PARALLEL_SINGLE_THREAD)
+    set_worker_conf("WORKER_ENABLE");
   RC.nb_L1_inst = 1;
   RC.nb_RU = 1;
   lte_param_init(&eNB,&UE,&ru,
@@ -767,7 +749,7 @@ int main(int argc, char **argv) {
   UE->ulsch[0]   = new_ue_ulsch(N_RB_DL,0);
   printf("ULSCH %p\n",UE->ulsch[0]);
 
-  if (parallel_flag == 1) {
+  if(get_thread_worker_conf() == WORKER_ENABLE) {
     extern void init_fep_thread(PHY_VARS_eNB *, pthread_attr_t *);
     extern void init_td_thread(PHY_VARS_eNB *);
     init_fep_thread(eNB,NULL);
@@ -1175,8 +1157,7 @@ int main(int argc, char **argv) {
           }
 
 	  start_meas(&eNB->phy_proc_rx);
-          ru->feprx = (parallel_flag == 1) ? ru_fep_full_2thread        : fep_full;
-          eNB->td  = (parallel_flag == 1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
+          ru->feprx = (get_thread_worker_conf() == WORKER_ENABLE) ? ru_fep_full_2thread        : fep_full;
           ru->feprx(ru);
           phy_procedures_eNB_uespec_RX(eNB,proc_rxtx);
 	  stop_meas(&eNB->phy_proc_rx);
@@ -1377,20 +1358,18 @@ int main(int argc, char **argv) {
         printStatIndent(&UE->ulsch_rate_matching_stats,"ULSCH rate-matching time");
         printStatIndent(&UE->ulsch_interleaving_stats,"ULSCH sub-block interleaving");
         printStatIndent(&UE->ulsch_multiplexing_stats,"ULSCH multiplexing time");
-        printDistribution(&eNB->phy_proc_rx,table_rx,"\nTotal PHY proc rx subframe");
-        printDistribution(&ru->ofdm_demod_stats,table_rx_fft,"OFDM_demod time");
-        printDistribution(&eNB->ulsch_demodulation_stats,table_rx_demod,"ULSCH demodulation time");
-        printf("ULSCH Decoding time (%.2f Mbit/s, avg iter %.2f)      :%.2f us (%d trials, max %.2f)\n",
-               UE->ulsch[0]->harq_processes[harq_pid]->TBS/1000.0,(double)iter_trials,
-               (double)eNB->ulsch_decoding_stats.diff/eNB->ulsch_decoding_stats.trials*timeBase,
-               eNB->ulsch_decoding_stats.trials,
-               (double)eNB->ulsch_decoding_stats.max*timeBase);
-        printf("|__ Statistics                           std: %.2fus median %.2fus q1 %.2fus q3 %.2fus \n",
-               squareRoot(&eNB->ulsch_decoding_stats),
-               median(table_rx_dec), q1(table_rx_dec), q3(table_rx_dec));
-        printStatIndent(&eNB->ulsch_deinterleaving_stats,"sub-block interleaving" );
-        printStatIndent(&eNB->ulsch_demultiplexing_stats,"sub-block demultiplexing" );
-        printStatIndent(&eNB->ulsch_rate_unmatching_stats,"sub-block rate-matching" );
+	printf("\n");
+        printDistribution(&eNB->phy_proc_rx,table_rx,"Total PHY proc rx subframe");
+        printDistribution(&ru->ofdm_demod_stats,table_rx_fft,"|__ OFDM_demod time");
+        printDistribution(&eNB->ulsch_demodulation_stats,table_rx_demod,"|__ ULSCH demodulation time");
+	printDistribution(&eNB->ulsch_decoding_stats,table_rx_dec,"|__ ULSCH Decoding time");
+        printf("     (%.2f Mbit/s, avg iter %.2f, max %.2f)\n",
+               UE->ulsch[0]->harq_processes[harq_pid]->TBS/1000.0,
+	       (double)iter_trials,
+	       (double)eNB->ulsch_decoding_stats.max*timeBase);
+        printStatIndent2(&eNB->ulsch_deinterleaving_stats,"sub-block interleaving" );
+        printStatIndent2(&eNB->ulsch_demultiplexing_stats,"sub-block demultiplexing" );
+        printStatIndent2(&eNB->ulsch_rate_unmatching_stats,"sub-block rate-matching" );
         printf("|__ turbo_decoder(%d bits), avg iterations: %.1f       %.2f us (%d cycles, %d trials)\n",
                eNB->ulsch[0]->harq_processes[harq_pid]->Cminus ?
                eNB->ulsch[0]->harq_processes[harq_pid]->Kminus :
@@ -1399,13 +1378,13 @@ int main(int argc, char **argv) {
                (double)eNB->ulsch_turbo_decoding_stats.diff/eNB->ulsch_turbo_decoding_stats.trials*timeBase,
                (int)((double)eNB->ulsch_turbo_decoding_stats.diff/eNB->ulsch_turbo_decoding_stats.trials),
                eNB->ulsch_turbo_decoding_stats.trials);
-        printStatIndent2(&eNB->ulsch_tc_init_stats,"init", eNB->ulsch_tc_init_stats.trials);
-        printStatIndent2(&eNB->ulsch_tc_alpha_stats,"alpha", eNB->ulsch_tc_init_stats.trials);
-        printStatIndent2(&eNB->ulsch_tc_beta_stats,"beta", eNB->ulsch_tc_init_stats.trials);
-        printStatIndent2(&eNB->ulsch_tc_gamma_stats,"gamma", eNB->ulsch_tc_init_stats.trials);
-        printStatIndent2(&eNB->ulsch_tc_ext_stats,"ext", eNB->ulsch_tc_init_stats.trials);
-        printStatIndent2(&eNB->ulsch_tc_intl1_stats,"turbo internal interleaver", eNB->ulsch_tc_init_stats.trials);
-        printStatIndent2(&eNB->ulsch_tc_intl2_stats,"intl2+HardDecode+CRC", eNB->ulsch_tc_init_stats.trials);
+        printStatIndent3(&eNB->ulsch_tc_init_stats,"init");
+        printStatIndent3(&eNB->ulsch_tc_alpha_stats,"alpha");
+        printStatIndent3(&eNB->ulsch_tc_beta_stats,"beta");
+        printStatIndent3(&eNB->ulsch_tc_gamma_stats,"gamma");
+        printStatIndent3(&eNB->ulsch_tc_ext_stats,"ext");
+        printStatIndent3(&eNB->ulsch_tc_intl1_stats,"turbo internal interleaver");
+        printStatIndent3(&eNB->ulsch_tc_intl2_stats,"intl2+HardDecode+CRC");
       }
 
       if(abstx) { //ABSTRACTION

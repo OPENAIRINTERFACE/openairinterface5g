@@ -1,4 +1,4 @@
-/*
+ /*
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -1070,8 +1070,7 @@ typedef struct {
 /*! \brief UE list used by eNB to order UEs/CC for scheduling*/
 typedef struct {
     /// Dedicated information for UEs
-    struct PhysicalConfigDedicated
-	*physicalConfigDedicated[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
+    LTE_PhysicalConfigDedicated_t *physicalConfigDedicated[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
     /// DLSCH pdu
     DLSCH_PDU DLSCH_pdu[NFAPI_CC_MAX][2][MAX_MOBILES_PER_ENB];
     /// DCI template and MAC connection parameters for UEs

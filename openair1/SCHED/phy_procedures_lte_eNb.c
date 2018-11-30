@@ -400,7 +400,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 
     start_meas(&eNB->dlsch_encoding_stats);
 
-    eNB->te(eNB,
+    dlsch_encoding_all(eNB,
 	  dlsch_harq->pdu,
 	  dlsch_harq->pdsch_start,
 	  dlsch,
@@ -582,6 +582,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   }
 
   if (do_meas==1) stop_meas(&eNB->dlsch_common_and_dci);
+  if (do_meas==1) start_meas(&eNB->dlsch_ue_specific);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,0);
 
@@ -649,6 +650,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_PHICH,0);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+(eNB->CC_id),0);
+  if (do_meas==1) stop_meas(&eNB->dlsch_ue_specific);
   if (do_meas==1) stop_meas(&eNB->phy_proc_tx);
   
 }

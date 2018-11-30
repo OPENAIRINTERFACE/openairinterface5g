@@ -436,7 +436,7 @@ class SSHConnection():
 					self.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, pcap_log_file, self.eNBSourceCodePath + '/cmake_targets/.')
 				sys.exit(1)
 			else:
-				self.command('stdbuf -o0 cat enb_' + SSH.testCase_id + '.log | egrep --color=never -i "wait|sync"', '\$', 4)
+				self.command('stdbuf -o0 cat enb_' + SSH.testCase_id + '.log | egrep --text --color=never -i "wait|sync"', '\$', 4)
 				if rruCheck:
 					result = re.search('wait RUs', str(self.ssh.before))
 				else:
@@ -1573,6 +1573,8 @@ class SSHConnection():
 		rrcReestablishRequest = 0
 		rrcReestablishComplete = 0
 		rrcReestablishReject = 0
+		rlcDiscardBuffer = 0
+		rachCanceledProcedure = 0
 		uciStatMsgCount = 0
 		pdcpFailure = 0
 		ulschFailure = 0
@@ -1625,6 +1627,12 @@ class SSHConnection():
 			result = re.search('ULSCH in error in round', str(line))
 			if result is not None:
 				ulschFailure += 1
+			result = re.search('BAD all_segments_received', str(line))
+			if result is not None:
+				rlcDiscardBuffer += 1
+			result = re.search('Canceled RA procedure for UE rnti', str(line))
+			if result is not None:
+				rachCanceledProcedure += 1
 		enb_log_file.close()
 		self.htmleNBFailureMsg = ''
 		if uciStatMsgCount > 0:
@@ -1667,6 +1675,10 @@ class SSHConnection():
 			rrcMsg = ' -- ' + str(rrcReestablishReject) + ' were rejected'
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += rrcMsg + '\n'
+		if rachCanceledProcedure > 0:
+			rachMsg = 'eNB cancelled ' + str(rachCanceledProcedure) + ' RA procedure(s)'
+			logging.debug('\u001B[1;30;43m ' + rachMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += rachMsg + '\n'
 		if foundSegFault:
 			logging.debug('\u001B[1;37;41m eNB ended with a Segmentation Fault! \u001B[0m')
 			return ENB_PROCESS_SEG_FAULT
@@ -1676,6 +1688,11 @@ class SSHConnection():
 			return ENB_PROCESS_ASSERTION
 		if foundRealTimeIssue:
 			logging.debug('\u001B[1;37;41m eNB faced real time issues! \u001B[0m')
+			return ENB_PROCESS_REALTIME_ISSUE
+		if rlcDiscardBuffer > 0:
+			rlcMsg = 'eNB RLC discarded ' + str(rlcDiscardBuffer) + ' buffer(s)'
+			logging.debug('\u001B[1;37;41m ' + rlcMsg + ' \u001B[0m')
+			self.htmleNBFailureMsg += rlcMsg + '\n'
 			return ENB_PROCESS_REALTIME_ISSUE
 		return 0
 
