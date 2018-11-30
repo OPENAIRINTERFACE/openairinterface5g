@@ -191,7 +191,7 @@ int                             otg_enabled;
 
 
 //static NR_DL_FRAME_PARMS      *frame_parms[MAX_NUM_CCs];
-static nfapi_nr_config_request_t *config[MAX_NUM_CCs];
+//static nfapi_nr_config_request_t *config[MAX_NUM_CCs];
 uint32_t target_dl_mcs = 28; //maximum allowed mcs
 uint32_t target_ul_mcs = 20;
 uint32_t timing_advance = 0;

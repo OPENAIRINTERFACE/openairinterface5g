@@ -149,48 +149,6 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
   return 0;
 }
 
-/*void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
-                        uint32_t Nid,
-                        uint8_t nushift,
-                        uint16_t M,
-                        uint16_t length,
-                        uint8_t encoded,
-                        uint32_t unscrambling_mask)
-{
-  uint8_t reset, offset;
-  uint32_t x1, x2, s=0;
-  uint32_t *pbch_e = pbch->pbch_e;
-
-  reset = 1;
-  // x1 is set in lte_gold_generic
-  x2 = Nid;
-  // The Gold sequence is shifted by nushift* M, so we skip (nushift*M /32) double words
-  for (int i=0; i<CEILIDIV(nushift*M,32); i++) {
-    s = lte_gold_generic(&x1, &x2, reset);
-    reset = 0;
-  }
-  // Scrambling is now done with offset (nushift*M)%32
-  offset = (nushift*M)&0x1f;
-#ifdef DEBUG_PBCH_ENCODING
-  printf("Scrambling params: nushift %d M %d length %d encoded %d offset %d mask 0x%08x\n", nushift, M, length, encoded, offset, unscrambling_mask);
-#endif
-
-  for (int i=0; i<length; i++) {
-    if (((i+offset)&0x1f)==0) {
-      s = lte_gold_generic(&x1, &x2, reset);
-      reset = 0;
-    }
-#ifdef DEBUG_PBCH_ENCODING
-  printf("i %d (i+offset)&0x1f %d s: %04x\n",i, (i+offset)&0x1f, s);
-#endif
-    if (!encoded)
-      pbch->pbch_a_prime ^= ((unscrambling_mask>>i)&1)? ((pbch->pbch_a_interleaved>>i)&1)<<i : (((pbch->pbch_a_interleaved>>i)&1) ^ ((s>>((i+offset)&0x1f))&1))<<i;      
-
-    else
-      pbch_e[i>>5] ^= (((s>>((i+offset)&0x1f))&1)<<(i&0x1f));
-  }
-}*/
-
 void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
                         uint32_t Nid,
                         uint8_t nushift,
@@ -250,7 +208,7 @@ void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
 }
 
 
-uint8_t nr_init_pbch_interleaver(uint8_t *interleaver) {
+void nr_init_pbch_interleaver(uint8_t *interleaver) {
   uint8_t j_sfn=0, j_hrf=10, j_ssb=11, j_other=14;
   memset((void*)interleaver,0, NR_POLAR_PBCH_PAYLOAD_BITS);
 

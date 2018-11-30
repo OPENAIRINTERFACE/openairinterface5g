@@ -104,6 +104,6 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 @param bit index i of the input payload
 @returns the bit index of the output
  */
-uint8_t nr_init_pbch_interleaver(uint8_t *interleaver);
+void nr_init_pbch_interleaver(uint8_t *interleaver);
 
 #endif /*__NR_TRANSPORT__H__*/
