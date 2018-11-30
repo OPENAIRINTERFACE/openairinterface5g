@@ -441,6 +441,7 @@ void nr_pbch_unscrambling(NR_UE_PBCH *pbch,
 {
   uint8_t reset, offset;
   uint32_t x1, x2, s=0;
+  uint8_t k=0;
   int16_t *demod_pbch_e = pbch->llr;
 
 
@@ -468,7 +469,8 @@ void nr_pbch_unscrambling(NR_UE_PBCH *pbch,
 #endif
       if (bitwise) {
 	
-        (pbch->pbch_a_interleaved) ^= ((unscrambling_mask>>i)&1)? ((pbch->pbch_a_prime>>i)&1)<<i : (((pbch->pbch_a_prime>>i)&1) ^ ((s>>((i+offset)&0x1f))&1))<<i;
+        (pbch->pbch_a_interleaved) ^= ((unscrambling_mask>>i)&1)? ((pbch->pbch_a_prime>>i)&1)<<i : (((pbch->pbch_a_prime>>i)&1) ^ ((s>>((k+offset)&0x1f))&1))<<i;
+        k+=!((unscrambling_mask>>i)&1);
       }
 
       else {
