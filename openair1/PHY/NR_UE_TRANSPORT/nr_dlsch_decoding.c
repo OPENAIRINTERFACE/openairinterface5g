@@ -507,8 +507,9 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 						   (int8_t*)&pl[0],
 						   llrProcBuf,
 						   p_procTime);
+
 		/*
-		if (check_crc(llrProcBuf,Kr,crc_type)) {
+		if (check_crc(llrProcBuf,Kr,harq_process->F,crc_type)) {
 		  printf("CRC OK\n");
 		  ret = 2;
 		}

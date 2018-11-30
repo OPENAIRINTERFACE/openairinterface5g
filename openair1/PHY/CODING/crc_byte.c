@@ -257,6 +257,73 @@ unsigned int crcPayload(unsigned char * inptr, int bitlen, uint32_t* crc256Table
         return crc;
 }
 
+int check_crc(uint8_t* decoded_bytes, uint32_t n, uint32_t F, uint8_t crc_type)
+{
+  uint32_t crc,oldcrc;
+  uint8_t crc_len,temp;
+
+  switch (crc_type) {
+  case CRC24_A:
+  case CRC24_B:
+    crc_len=3;
+    break;
+
+  case CRC16:
+    crc_len=2;
+    break;
+
+  case CRC8:
+    crc_len=1;
+    break;
+
+  default:
+    crc_len=3;
+  }
+
+  oldcrc= *((unsigned int *)(&decoded_bytes[(n>>3)-crc_len]));
+
+  switch (crc_type) {
+    
+  case CRC24_A:
+    oldcrc&=0x00ffffff;
+    crc = crc24a(&decoded_bytes[F>>3],
+		 n-24-F)>>8;
+    temp=((uint8_t *)&crc)[2];
+    ((uint8_t *)&crc)[2] = ((uint8_t *)&crc)[0];
+    ((uint8_t *)&crc)[0] = temp;
+    
+    break;
+    
+  case CRC24_B:
+      oldcrc&=0x00ffffff;
+      crc = crc24b(decoded_bytes,
+                   n-24)>>8;
+      temp=((uint8_t *)&crc)[2];
+      ((uint8_t *)&crc)[2] = ((uint8_t *)&crc)[0];
+      ((uint8_t *)&crc)[0] = temp;
+      
+      break;
+
+    case CRC16:
+      oldcrc&=0x0000ffff;
+      crc = crc16(decoded_bytes,
+                  n-16)>>16;
+      
+      break;
+
+    case CRC8:
+      oldcrc&=0x000000ff;
+      crc = crc8(decoded_bytes,
+                 n-8)>>24;
+      break;
+    }
+
+    if (crc == oldcrc)
+      return(1);
+    else
+      return(0);
+
+}
 
 
 #ifdef DEBUG_CRC
