@@ -22,6 +22,7 @@
 /*! \file PHY/NR_TRANSPORT/nr_pbch.c
 * \brief Top-level routines for generating the PBCH/BCH physical/transport channel V15.1 03/2018
 * \author Guy De Souza
+* \thanks Special Thanks to Son Dang for helpfull contributions and testing
 * \date 2018
 * \version 0.1
 * \company Eurecom
@@ -39,8 +40,10 @@
 //#define DEBUG_PBCH_ENCODING
 //#define DEBUG_PBCH_DMRS
 
-//extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
 #include "PHY/NR_REFSIG/nr_mod_table.h"
+
+uint8_t nr_pbch_payload_interleaving_pattern[32] = {16, 23, 18, 17, 8, 30, 10, 6, 24, 7, 0, 5, 3, 2, 1, 4,
+                                                9, 11, 12, 13, 14, 15, 19, 20, 21, 22, 25, 26, 27, 28, 29, 31};
 
 int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
                           int32_t **txdataF,
@@ -152,66 +155,83 @@ void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
                         uint8_t nushift,
                         uint16_t M,
                         uint16_t length,
-                        uint8_t encoded)
-{
+                        uint8_t encoded,
+                        uint32_t unscrambling_mask) {
   uint8_t reset, offset;
   uint32_t x1, x2, s=0;
   uint32_t *pbch_e = pbch->pbch_e;
-  uint32_t unscrambling_mask = 0x100006D;
   reset = 1;
   // x1 is set in lte_gold_generic
   x2 = Nid;
+
   // The Gold sequence is shifted by nushift* M, so we skip (nushift*M /32) double words
   for (int i=0; i<(uint16_t)ceil(((float)nushift*M)/32); i++) {
-s = lte_gold_generic(&x1, &x2, reset);
+    s = lte_gold_generic(&x1, &x2, reset);
     reset = 0;
   }
+
   // Scrambling is now done with offset (nushift*M)%32
   offset = (nushift*M)&0x1f;
 #ifdef DEBUG_PBCH_ENCODING
   printf("Scrambling params: nushift %d M %d length %d encoded %d offset %d\n", nushift, M, length, encoded, offset);
 #endif
-
-  for (int i=0; i<length; i++) {
-    if (((i+offset)&0x1f)==0) {
-      s = lte_gold_generic(&x1, &x2, reset);
-      reset = 0;
-    }
 #ifdef DEBUG_PBCH_ENCODING
   printf("s: %04x\t", s);
 #endif
-    if (!encoded)
-      pbch->pbch_a_prime ^= ((unscrambling_mask>>i)&1)? ((pbch->pbch_a_interleaved>>i)&1)<<i : (((pbch->pbch_a_interleaved>>i)&1) ^ ((s>>((i+offset)&0x1f))&1))<<i;      
+  int k = 0;
 
-    else
+  if (!encoded) {
+    /// 1st Scrambling
+    for (int i = 0; i < length; ++i) {
+      if ((unscrambling_mask>>i)&1)
+        pbch->pbch_a_prime ^= ((pbch->pbch_a_interleaved>>i)&1)<<i;
+      else {
+        if (((k+offset)&0x1f)==0) {
+          s = lte_gold_generic(&x1, &x2, reset);
+          reset = 0;
+        }
+
+        pbch->pbch_a_prime ^= (((pbch->pbch_a_interleaved>>i)&1) ^ ((s>>((k+offset)&0x1f))&1))<<i;
+        k++;                  /// k increase only when payload bit is not special bit
+      }
+    }
+  } else {
+    /// 2nd Scrambling
+    for (int i = 0; i < length; ++i) {
+      if (((i+offset)&0x1f)==0) {
+        s = lte_gold_generic(&x1, &x2, reset);
+        reset = 0;
+      }
+
       pbch_e[i>>5] ^= (((s>>((i+offset)&0x1f))&1)<<(i&0x1f));
+    }
   }
 }
 
-// This portion of code is temporarily kept until the optimized version is validated
-uint8_t nr_pbch_payload_interleaving_pattern[32] = {16, 23, 18, 17, 8, 30, 10, 6, 24, 7, 0, 5, 3, 2, 1, 4,
-                                                9, 11, 12, 13, 14, 15, 19, 20, 21, 22, 25, 26, 27, 28, 29, 31};
 
-uint8_t nr_pbch_payload_interleaver(uint8_t i) {
-  uint8_t j_sfn=6, j_hrf=10, j_ssb=11, j_other=14;
+void nr_init_pbch_interleaver(uint8_t *interleaver) {
+  uint8_t j_sfn=0, j_hrf=10, j_ssb=11, j_other=14;
+  memset((void*)interleaver,0, NR_POLAR_PBCH_PAYLOAD_BITS);
 
-  if (24<=i && i<=27) //Sfn bits
-    return nr_pbch_payload_interleaving_pattern[j_sfn + i -24];
-  else if (i==28) // Hrf bit
-    return nr_pbch_payload_interleaving_pattern[j_hrf];
-  else if (29<=i) // Ssb bits
-    return nr_pbch_payload_interleaving_pattern[j_ssb + (i-29)];
-  else
-    return nr_pbch_payload_interleaving_pattern[(j_other + i)&0x1f];
+  for (uint8_t i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++)
+    if (!i) // choice bit:1
+     *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_other++);
+    else if (i<7) //Sfn bits:6
+      *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_sfn++);
+    else if (i<24) // other:17
+      *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_other++);
+    else if (i<28) // Sfn:4
+      *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_sfn++);
+    else if (i==28) // Hrf bit:1
+      *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_hrf);
+    else // Ssb bits:3
+      *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_ssb++);
 }
-
-/*This pattern takes into account the adjustments for the field specific counters j_sfn, j_hrf, j_ssb and j_other*/
-//uint8_t nr_pbch_payload_interleaving_pattern[32] = {1,4,9,11,12,13,14,15,19,20,21,22,25,26,27,28,
-//                                                    29,31,16,23,18,17,8,30,10,6,24,7,0,5,3,2};
 
 int nr_generate_pbch(NR_gNB_PBCH *pbch,
                      t_nrPolar_paramsPtr polar_params,
                      uint8_t *pbch_pdu,
+                     uint8_t *interleaver,
                      int32_t **txdataF,
                      int16_t amp,
                      uint8_t ssb_start_symbol,
@@ -229,50 +249,42 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   uint8_t idx=0;
   uint16_t M;
   uint8_t nushift;
-  uint8_t *xbyte = pbch->pbch_a;
-  memset((void*) xbyte, 0, 1);
-  //uint8_t pbch_a_b[32];
+  uint32_t unscrambling_mask;
 
-  //  LOG_D(PHY, "PBCH generation started\n");
+  LOG_I(PHY, "PBCH generation started\n");
+
+  ///Payload generation
 
   memset((void*)pbch, 0, sizeof(NR_gNB_PBCH));
-  ///Payload generation
-    // Fix byte endian
-  if (!(sfn&7))
-    for (int i=0; i<(NR_PBCH_PDU_BITS>>3); i++)
-      pbch->pbch_a[(NR_POLAR_PBCH_PAYLOAD_BITS>>3)-i-1] = pbch_pdu[i];
+  pbch->pbch_a=0;
+  for (int i=0; i<NR_PBCH_PDU_BITS; i++)
+    pbch->pbch_a |= ((pbch_pdu[2-(i>>3)]>>(7-(i&7)))&1)<<i;
 #ifdef DEBUG_PBCH_ENCODING
-  printf("Byte endian fix:\n");
-  for (int i=0; i<4; i++)
-    printf("pbch_a[%d]: 0x%02x\n", i, pbch->pbch_a[i]);
+  for (int i=0; i<3; i++)
+    printf("pbch_pdu[%d]: 0x%02x\n", i, pbch_pdu[i]);
+  printf("PBCH payload = 0x%08x\n",pbch->pbch_a);
 #endif
 
     // Extra byte generation
   for (int i=0; i<4; i++)
-    (*xbyte) ^= ((sfn>>i)&1)<<i; // 4 lsb of sfn
+    pbch->pbch_a |= ((sfn>>(3-i))&1)<<(24+i); // resp. 4th, 3rd, 2nd ans 1st lsb of sfn
 
-  (*xbyte) ^= n_hf<<4; // half frame index bit
+  pbch->pbch_a |= n_hf<<28; // half frame index bit
 
   if (Lmax == 64)
     for (int i=0; i<3; i++)
-      (*xbyte) ^= ((ssb_index>>(3+i))&1)<<(5+i); // resp. 4th, 5th and 6th bits of ssb_index
+      pbch->pbch_a |= ((ssb_index>>(5-i))&1)<<(29+i); // resp. 6th, 5th and 4th bits of ssb_index
   else
-    (*xbyte) ^= ((config->sch_config.ssb_subcarrier_offset.value>>5)&1)<<5; //MSB of k_SSB
-#ifdef DEBUG_PBCH_ENCODING
-  printf("Extra byte:\n");
-  for (int i=0; i<4; i++)
-    printf("pbch_a[%d]: 0x%02x\n", i, pbch->pbch_a[i]);
-#endif
+    pbch->pbch_a |= ((config->sch_config.ssb_subcarrier_offset.value>>4)&1)<<29; //MSB of k_SSB (bit index 4)
+
+  LOG_I(PHY,"After extra byte: pbch_a = 0x%08x\n",pbch->pbch_a);
 
     // Payload interleaving
-  uint32_t in=0;
-  for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS>>3; i++)
-    in |= (uint32_t)(pbch->pbch_a[i]<<((3-i)<<3));
-
-  for (int i=0; i<32; i++) {
-    pbch->pbch_a_interleaved |= ((in>>i)&1)<<(nr_pbch_payload_interleaver(i));//nr_pbch_payload_interleaving_pattern[i]
+  
+  for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++) {
+    pbch->pbch_a_interleaved |= ((pbch->pbch_a>>i)&1)<<(*(interleaver+i));
 #ifdef DEBUG_PBCH_ENCODING
-  printf("i %d in 0x%08x out 0x%08x ilv %d (in>>i)&1) %d\n", i, in, pbch->pbch_a_interleaved, nr_pbch_payload_interleaver(i), (in>>i)&1);
+  printf("i %d out 0x%08x ilv %d (in>>i)&1) %d\n", i, pbch->pbch_a_interleaved, *(interleaver+i), (pbch->pbch_a>>i)&1);
 #endif
   }
 
@@ -282,10 +294,11 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 #endif
 
     // Scrambling
+  unscrambling_mask = (Lmax ==64)? 0x100006D:0x1000041;
   M = (Lmax == 64)? (NR_POLAR_PBCH_PAYLOAD_BITS - 6) : (NR_POLAR_PBCH_PAYLOAD_BITS - 3);
   nushift = (((sfn>>2)&1)<<1) ^ ((sfn>>1)&1);
   pbch->pbch_a_prime = 0;
-  nr_pbch_scrambling(pbch, (uint32_t)config->sch_config.physical_cell_id.value, nushift, M, NR_POLAR_PBCH_PAYLOAD_BITS, 0);
+  nr_pbch_scrambling(pbch, (uint32_t)config->sch_config.physical_cell_id.value, nushift, M, NR_POLAR_PBCH_PAYLOAD_BITS, 0, unscrambling_mask);
 #ifdef DEBUG_PBCH_ENCODING
   printf("Payload scrambling: nushift %d M %d sfn3 %d sfn2 %d\n", nushift, M, (sfn>>2)&1, (sfn>>1)&1);
   printf("pbch_a_prime: 0x%08x\n", pbch->pbch_a_prime);
@@ -303,7 +316,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   /// Scrambling
   M =  NR_POLAR_PBCH_E;
   nushift = (Lmax==4)? ssb_index&3 : ssb_index&7;
-  nr_pbch_scrambling(pbch, (uint32_t)config->sch_config.physical_cell_id.value, nushift, M, NR_POLAR_PBCH_E, 1);
+  nr_pbch_scrambling(pbch, (uint32_t)config->sch_config.physical_cell_id.value, nushift, M, NR_POLAR_PBCH_E, 1, 0);
 #ifdef DEBUG_PBCH_ENCODING
   printf("Scrambling:\n");
   for (int i=0; i<NR_POLAR_PBCH_E_DWORD; i++)

@@ -210,12 +210,14 @@ int8_t nr_ue_decode_mib(
     
     AssertFatal(mac->mib != NULL, "nr_ue_decode_mib() mac->mib == NULL\n");
     //if(mac->mib != NULL){
-	    uint32_t frame = (mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused);
-	    uint32_t frame_number_4lsb = (uint32_t)(extra_bits & 0xf);                      //	extra bits[0:3]
-	    uint32_t half_frame_bit = (uint32_t)(( extra_bits >> 4 ) & 0x1 );               //	extra bits[4]
-	    uint32_t ssb_subcarrier_offset_msb = (uint32_t)(( extra_bits >> 5 ) & 0x1 );    //	extra bits[5]
+	    uint16_t frame = (mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused);
+	    uint16_t frame_number_4lsb = 0;
+      for (int i=0; i<4; i++)
+        frame_number_4lsb |= ((extra_bits>>i)&1)<<(3-i);
+	    uint8_t half_frame_bit = ( extra_bits >> 4 ) & 0x1;               //	extra bits[4]
+	    uint8_t ssb_subcarrier_offset_msb = ( extra_bits >> 5 ) & 0x1;    //	extra bits[5]
 	    
-	    uint32_t ssb_subcarrier_offset = mac->mib->ssb_SubcarrierOffset;
+	    uint8_t ssb_subcarrier_offset = (uint8_t)mac->mib->ssb_SubcarrierOffset;
 
 	    //uint32_t ssb_index = 0;    //  TODO: ssb_index should obtain from L1 in case Lssb != 64
 
@@ -238,7 +240,7 @@ int8_t nr_ue_decode_mib(
 		printf("dmrs type A position:          %d\n", (int)mac->mib->dmrs_TypeA_Position);
 		printf("pdcch config sib1:             %d\n", (int)mac->mib->pdcch_ConfigSIB1);
 		printf("cell barred:                   %d\n", (int)mac->mib->cellBarred);
-		printf("intra frequcney reselection:   %d\n", (int)mac->mib->intraFreqReselection);
+		printf("intra frequency reselection:   %d\n", (int)mac->mib->intraFreqReselection);
 		printf("half frame bit(extra bits):    %d\n", (int)half_frame_bit);
 		printf("ssb index(extra bits):         %d\n", (int)ssb_index);
 #endif
@@ -254,7 +256,6 @@ int8_t nr_ue_decode_mib(
         }else{  //NR_MIB__subCarrierSpacingCommon_scs30or120
             scs_pdcch = scs_30kHz;
         }
-        scs_pdcch = 2;
 
 	    channel_bandwidth_t min_channel_bw = bw_40MHz;  //  deafult for testing
 	    

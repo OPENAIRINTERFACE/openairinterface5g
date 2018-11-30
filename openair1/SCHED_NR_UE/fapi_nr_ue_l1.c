@@ -220,7 +220,7 @@ int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){
             printf("dmrs type A position:        %d\n", phy_config->config_req.pbch_config.dmrs_type_a_position);
             printf("pdcch config sib1:           %d\n", phy_config->config_req.pbch_config.pdcch_config_sib1);
             printf("cell barred:                 %d\n", phy_config->config_req.pbch_config.cell_barred);
-            printf("intra frequcney reselection: %d\n", phy_config->config_req.pbch_config.intra_frequency_reselection);
+            printf("intra frequency reselection: %d\n", phy_config->config_req.pbch_config.intra_frequency_reselection);
             printf("system frame number:         %d\n", phy_config->config_req.pbch_config.system_frame_number);
             printf("ssb index:                   %d\n", phy_config->config_req.pbch_config.ssb_index);
             printf("half frame bit:              %d\n", phy_config->config_req.pbch_config.half_frame_bit);

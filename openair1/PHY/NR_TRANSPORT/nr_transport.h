@@ -75,7 +75,8 @@ void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
                         uint8_t nushift,
                         uint16_t M,
                         uint16_t length,
-                        uint8_t encoded);
+                        uint8_t encoded,
+                        uint32_t unscrambling_mask);
 
 /*!
 \fn int nr_generate_pbch
@@ -86,6 +87,7 @@ void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
 int nr_generate_pbch(NR_gNB_PBCH *pbch,
                      t_nrPolar_paramsPtr polar_params,
                      uint8_t *pbch_pdu,
+                     uint8_t *interleaver,
                      int32_t **txdataF,
                      int16_t amp,
                      uint8_t ssb_start_symbol,
@@ -102,6 +104,6 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 @param bit index i of the input payload
 @returns the bit index of the output
  */
-uint8_t nr_pbch_payload_interleaver(uint8_t i);
+void nr_init_pbch_interleaver(uint8_t *interleaver);
 
 #endif /*__NR_TRANSPORT__H__*/

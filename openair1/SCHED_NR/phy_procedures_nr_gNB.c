@@ -146,7 +146,15 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int subframe) {
       gNB->pbch_configured = 0;
     }
     nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index],txdataF, AMP_OVER_2, ssb_start_symbol, cfg, fp);
-    nr_generate_pbch(&gNB->pbch, gNB->nrPolar_params, pbch_pdu, txdataF, AMP_OVER_2, ssb_start_symbol, n_hf, Lmax, ssb_index, frame, cfg, fp);
+    nr_generate_pbch(&gNB->pbch,
+                      gNB->nrPolar_params,
+                      pbch_pdu,
+                      gNB->nr_pbch_interleaver,
+                      txdataF,
+                      AMP_OVER_2,
+                      ssb_start_symbol,
+                      n_hf,Lmax,ssb_index,
+                      frame, cfg, fp);
   }
 
 }
