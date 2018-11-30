@@ -152,7 +152,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,
        }
 
       dlsch->txdataF[layer] = (int32_t *)malloc16((NR_MAX_PDSCH_ENCODED_LENGTH>>1)*sizeof(int32_t*));
-     }
+    }
 
     for (int q=0; q<NR_MAX_NB_CODEWORDS; q++)
       dlsch->mod_symbs[q] = (int32_t *)malloc16((NR_MAX_PDSCH_ENCODED_LENGTH>>1)*sizeof(int32_t*));
@@ -196,7 +196,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,
           for (r=0; r<MAX_NUM_NR_DLSCH_SEGMENTS/bw_scaling; r++) {
             // account for filler in first segment and CRCs for multiple segment case
             dlsch->harq_processes[i]->c[r] = (uint8_t*)malloc16(8448);
-            dlsch->harq_processes[i]->d[r] = (uint8_t*)malloc16(3*8448);
+            dlsch->harq_processes[i]->d[r] = (uint8_t*)malloc16(68*384);
             if (dlsch->harq_processes[i]->c[r]) {
               bzero(dlsch->harq_processes[i]->c[r],8448);
             } else {
@@ -277,8 +277,8 @@ int nr_dlsch_encoding(unsigned char *a,
   nfapi_nr_dl_config_dlsch_pdu_rel15_t rel15 = dlsch->harq_processes[harq_pid]->dlsch_pdu.dlsch_pdu_rel15;
   uint16_t nb_rb = rel15.n_prb;
   uint8_t nb_symb_sch = rel15.nb_symbols;
-  uint16_t A, Z;
-  uint16_t *pz = &Z;
+  uint32_t A, Z;
+  uint32_t *pz = &Z;
   uint8_t mod_order = rel15.modulation_order;
   uint16_t Kr=0,r,r_offset=0;//Kr_bytes
   uint8_t *d_tmp[MAX_NUM_DLSCH_SEGMENTS];
@@ -288,8 +288,14 @@ int nr_dlsch_encoding(unsigned char *a,
   uint32_t Tbslbrm = 950984; //max tbs
   uint8_t nb_re_dmrs = rel15.nb_re_dmrs;
   uint16_t length_dmrs = 1;
-  uint8_t *channel_input[MAX_NUM_DLSCH_SEGMENTS]; //unsigned char
 
+  /*
+  uint8_t *channel_input[MAX_NUM_DLSCH_SEGMENTS]; //unsigned char
+  for(j=0;j<MAX_NUM_DLSCH_SEGMENTS;j++) {
+    channel_input[j] = (unsigned char *)malloc16(sizeof(unsigned char) * 68*384);
+  }
+  */
+  
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_IN);
 
   A = rel15.transport_block_size;
@@ -324,12 +330,12 @@ int nr_dlsch_encoding(unsigned char *a,
     memcpy(dlsch->harq_processes[harq_pid]->b,a,(A/8)+4);
 
     nr_segmentation(dlsch->harq_processes[harq_pid]->b,
-		    		dlsch->harq_processes[harq_pid]->c,
-					dlsch->harq_processes[harq_pid]->B,
-					&dlsch->harq_processes[harq_pid]->C,
-					&dlsch->harq_processes[harq_pid]->K,
-					pz,
-					&dlsch->harq_processes[harq_pid]->F);
+		    dlsch->harq_processes[harq_pid]->c,
+		    dlsch->harq_processes[harq_pid]->B,
+		    &dlsch->harq_processes[harq_pid]->C,
+		    &dlsch->harq_processes[harq_pid]->K,
+		    pz,
+		    &dlsch->harq_processes[harq_pid]->F);
 
     kb = dlsch->harq_processes[harq_pid]->K/(*pz);
     if ( kb==22){
@@ -347,7 +353,7 @@ int nr_dlsch_encoding(unsigned char *a,
     //start_meas(te_stats);
     for (r=0; r<dlsch->harq_processes[harq_pid]->C; r++) {
       d_tmp[r] = &dlsch->harq_processes[harq_pid]->d[r][0];
-      channel_input[r] = &dlsch->harq_processes[harq_pid]->d[r][0];
+      //channel_input[r] = &dlsch->harq_processes[harq_pid]->d[r][0];
 #ifdef DEBUG_DLSCH_CODING
       printf("Encoder: B %d F %d \n",dlsch->harq_processes[harq_pid]->B, dlsch->harq_processes[harq_pid]->F);
       printf("start ldpc encoder segment %d/%d\n",r,dlsch->harq_processes[harq_pid]->C);
