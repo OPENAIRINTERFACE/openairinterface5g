@@ -87,6 +87,8 @@ fifo_dump_emos_UE emos_dump_UE;
 
 #define NS_PER_SLOT 500000
 
+char mode_string[4][20] = {"NOT SYNCHED","PRACH","RAR","PUSCH"};
+
 extern double cpuf;
 
 int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
@@ -3903,8 +3905,11 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
                                                 crc_scrambled_values,
                                                 ptr_nr_dci_info_extracted);//&nr_dci_info_extracted);
 
-        ue->dci_ind.dci_list[i].rnti = dci_alloc_rx[i].rnti;
-        ue->dci_ind.dci_list[i].dci_format = dci_alloc_rx[i].format;
+       ue->dci_ind.dci_list[i].rnti = dci_alloc_rx[i].rnti;
+       ue->dci_ind.dci_list[i].dci_format = dci_alloc_rx[i].format;
+       ue->dci_ind.dci_list[i].n_CCE = dci_alloc_rx[i].firstCCE;
+       ue->dci_ind.dci_list[i].N_CCE = (int)dci_alloc_rx[i].L;
+       ue->dci_ind.number_of_dcis = ue->dci_ind.number_of_dcis + 1;
         memcpy(&ue->dci_ind.dci_list[i].dci, &nr_dci_info_extracted, sizeof(fapi_nr_dci_pdu_rel15_t) );
  
         //printf(">>> example mcs=%d\n",nr_dci_info_extracted.mcs);
@@ -6137,10 +6142,10 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 
   LOG_D(PHY," ------  end FFT/ChannelEst/PDCCH slot 1: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
 
-  /*if ( (nr_tti_rx == 0) && (ue->decode_MIB == 1))
+  if ( (nr_tti_rx == 0) && (ue->decode_MIB == 1))
   {
     ue_pbch_procedures(eNB_id,ue,proc,abstraction_flag);
-  }*/
+  }
 
   // do procedures for C-RNTI
   LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
