@@ -71,7 +71,7 @@ pipeline {
                         doRedHatBuild = false
                     }
                     if (params.FlexRanRtcGitLabRepository_Credentials != null) {
-                        doFlexranCtrlTest = True
+                        doFlexranCtrlTest = true
                     }
                     if (fileExists("flexran")) {
                         sh "rm -Rf flexran > /dev/null 2>&1"
