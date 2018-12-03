@@ -362,6 +362,29 @@ function report_test {
         echo "   </table>" >> ./test_simulator_results.html
     fi
 
+    if [ -e $JENKINS_WKSP/flexran/flexran_build_complete.txt ]
+    then
+        echo "   <h3>Basic Simulator + FlexRan Controller Check</h3>" >> ./test_simulator_results.html
+        echo "   <table border = \"1\">" >> ./test_simulator_results.html
+        echo "      <tr bgcolor = \"#33CCFF\" >" >> ./test_simulator_results.html
+        echo "        <th>Log File Name</th>" >> ./test_simulator_results.html
+        echo "        <th>JSON Query Response</th>" >> ./test_simulator_results.html
+        echo "      </tr>" >> ./test_simulator_results.html
+
+        FLEXRAN_QUERIES=`ls $ARCHIVES_LOC/flexran_ctl_query_*log`
+        for QUERY in $FLEXRAN_QUERIES
+        do
+            echo "      <tr>" >> ./test_simulator_results.html
+            NAME=`echo $QUERY | sed -e "s#$ARCHIVES_LOC/##"`
+            echo "        <td>$NAME</td>" >> ./test_simulator_results.html
+            echo "        <td><pre><code>" >> ./test_simulator_results.html
+            egrep -v "LOG_NAME|\-\-\-\-\-" $QUERY >> ./test_simulator_results.html
+            echo "        </code></pre></td>" >> ./test_simulator_results.html
+            echo "      </tr>" >> ./test_simulator_results.html
+        done
+        echo "   </table>" >> ./test_simulator_results.html
+    fi
+
     ARCHIVES_LOC=archives/phy_sim/test
     if [ -d $ARCHIVES_LOC ]
     then

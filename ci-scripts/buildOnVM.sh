@@ -106,7 +106,12 @@ function build_on_vm {
     echo "############################################################"
     echo "Copying GIT repo into VM ($VM_NAME)" 
     echo "############################################################"
-    scp -o StrictHostKeyChecking=no $JENKINS_WKSP/localZip.zip ubuntu@$VM_IP_ADDR:/home/ubuntu
+    if [[ "$VM_NAME" == *"-flexran-rtc"* ]]
+    then
+        scp -o StrictHostKeyChecking=no $JENKINS_WKSP/flexran/flexran.zip ubuntu@$VM_IP_ADDR:/home/ubuntu/localZip.zip
+    else
+        scp -o StrictHostKeyChecking=no $JENKINS_WKSP/localZip.zip ubuntu@$VM_IP_ADDR:/home/ubuntu
+    fi
     scp -o StrictHostKeyChecking=no /etc/apt/apt.conf.d/01proxy ubuntu@$VM_IP_ADDR:/home/ubuntu
 
     echo "############################################################"
@@ -126,7 +131,22 @@ function build_on_vm {
             echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
             echo "sudo apt-get --yes install zip daemon cppcheck >> zip-install.txt 2>&1" >> $VM_CMDS
         fi
-    else
+    fi
+    if [[ "$VM_NAME" == *"-flexran-rtc"* ]]
+    then
+        if [ $DAEMON -eq 0 ]
+        then
+            echo "echo \"sudo apt-get --yes --quiet install zip curl jq \"" >> $VM_CMDS
+            echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
+            echo "sudo apt-get --yes install zip curl jq >> zip-install.txt 2>&1" >> $VM_CMDS
+        else
+            echo "echo \"sudo apt-get --yes --quiet install zip daemon curl jq \"" >> $VM_CMDS
+            echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
+            echo "sudo apt-get --yes install zip daemon curl jq >> zip-install.txt 2>&1" >> $VM_CMDS
+        fi
+    fi
+    if [[ "$VM_NAME" != *"-cppcheck"* ]] && [[ "$VM_NAME" != *"-flexran-rtc"* ]]
+    then
         if [ $DAEMON -eq 0 ]
         then
             echo "echo \"sudo apt-get --yes --quiet install zip subversion libboost-dev \"" >> $VM_CMDS
