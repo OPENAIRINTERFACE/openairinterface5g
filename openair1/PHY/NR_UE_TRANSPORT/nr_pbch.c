@@ -436,13 +436,13 @@ void nr_pbch_unscrambling(NR_UE_PBCH *pbch,
 			  uint8_t nushift,
 			  uint16_t M,
 			  uint16_t length,
-			  uint8_t bitwise)
+			  uint8_t bitwise,
+        uint32_t unscrambling_mask)
 {
   uint8_t reset, offset;
   uint32_t x1, x2, s=0;
+  uint8_t k=0;
   int16_t *demod_pbch_e = pbch->llr;
-
-  uint32_t unscrambling_mask = 0x100006D;
 
 
   reset = 1;
@@ -469,7 +469,8 @@ void nr_pbch_unscrambling(NR_UE_PBCH *pbch,
 #endif
       if (bitwise) {
 	
-        (pbch->pbch_a_interleaved) ^= ((unscrambling_mask>>i)&1)? ((pbch->pbch_a_prime>>i)&1)<<i : (((pbch->pbch_a_prime>>i)&1) ^ ((s>>((i+offset)&0x1f))&1))<<i;
+        (pbch->pbch_a_interleaved) ^= ((unscrambling_mask>>i)&1)? ((pbch->pbch_a_prime>>i)&1)<<i : (((pbch->pbch_a_prime>>i)&1) ^ ((s>>((k+offset)&0x1f))&1))<<i;
+        k+=!((unscrambling_mask>>i)&1);
       }
 
       else {
@@ -507,7 +508,7 @@ unsigned char sign(int8_t x) {
 }
 */
 
-uint8_t pbch_deinterleaving_pattern[32] = {28,0,31,30,1,29,25,27,22,2,24,3,4,5,6,7,18,21,20,8,9,10,11,19,26,12,13,14,15,16,23,17};
+uint8_t pbch_deinterleaving_pattern[32] = {28,0,31,30,7,29,25,27,5,8,24,9,10,11,12,13,1,4,3,14,15,16,17,2,26,18,19,20,21,22,30,23};
 
 int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 		UE_nr_rxtx_proc_t *proc,
@@ -647,7 +648,8 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   //un-scrambling
   M =  NR_POLAR_PBCH_E;
   nushift = (Lmax==4)? ssb_index&3 : ssb_index&7;
-  nr_pbch_unscrambling(nr_ue_pbch_vars,frame_parms->Nid_cell,nushift,M,NR_POLAR_PBCH_E,0);
+  uint32_t unscrambling_mask = (Lmax==64)?0x100006D:0x1000041;
+  nr_pbch_unscrambling(nr_ue_pbch_vars,frame_parms->Nid_cell,nushift,M,NR_POLAR_PBCH_E,0,0);
 
 
 
@@ -668,18 +670,18 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
   if(decoderState > 0)	return(decoderState);
   	
-  	//printf("polar decoder output 0x%08x\n",nr_ue_pbch_vars->pbch_a_prime);
+  	printf("polar decoder output 0x%08x\n",nr_ue_pbch_vars->pbch_a_prime);
   
   //payload un-scrambling
   memset(&nr_ue_pbch_vars->pbch_a_interleaved, 0, sizeof(uint32_t) );
   M = (Lmax == 64)? (NR_POLAR_PBCH_PAYLOAD_BITS - 6) : (NR_POLAR_PBCH_PAYLOAD_BITS - 3);
-  nushift = ((nr_ue_pbch_vars->pbch_a_prime>>6)&1) ^ (((nr_ue_pbch_vars->pbch_a_prime>>24)&1)<<1);
-  nr_pbch_unscrambling(nr_ue_pbch_vars,frame_parms->Nid_cell,nushift,M,NR_POLAR_PBCH_PAYLOAD_BITS,1);
+  nushift = ((nr_ue_pbch_vars->pbch_a_prime>>24)&1) ^ (((nr_ue_pbch_vars->pbch_a_prime>>6)&1)<<1);
+  nr_pbch_unscrambling(nr_ue_pbch_vars,frame_parms->Nid_cell,nushift,M,NR_POLAR_PBCH_PAYLOAD_BITS,1,unscrambling_mask);
+  printf("nushift %d sfn 3rd %d 2nd %d", nushift,((nr_ue_pbch_vars->pbch_a_prime>>6)&1), ((nr_ue_pbch_vars->pbch_a_prime>>24)&1) );
 
   //payload deinterleaving
   //uint32_t in=0;
   uint32_t out=0;
-
   for (int i=0; i<32; i++) {
     out |= ((nr_ue_pbch_vars->pbch_a_interleaved>>i)&1)<<(pbch_deinterleaving_pattern[i]);
 #ifdef DEBUG_PBCH
@@ -687,14 +689,18 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 #endif
   }
 
-  for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS>>3; i++)
-	  decoded_output[i] = (uint8_t)((out>>(i<<3))&0xff);
+ uint32_t payload = 0;
+ uint8_t xtra_byte = 0;
+ xtra_byte = (out>>24)&0xff;
 
-  // Fix byte endian
-  //  for (i=0; i<(NR_POLAR_PBCH_PAYLOAD_BITS>>3); i++)
-  //     decoded_output[(NR_POLAR_PBCH_PAYLOAD_BITS>>3)-i-1] = pbch_a[i];
-     
+  for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++)
+	  payload |= ((out>>i)&1)<<(NR_POLAR_PBCH_PAYLOAD_BITS-i-1);
+
+ for (int i=0; i<3; i++)
+  decoded_output[i] = (uint8_t)((payload>>((3-i)<<3))&0xff);
+
 #ifdef DEBUG_PBCH
+ printf("xtra_byte %x payload %x\n", xtra_byte, payload);
   for (i=0; i<(NR_POLAR_PBCH_PAYLOAD_BITS>>3); i++){
     //  	  printf("unscrambling pbch_a[%d] = %x \n", i,pbch_a[i]);
   	  printf("[PBCH] decoder payload[%d] = %x\n",i,decoded_output[i]);
@@ -707,7 +713,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
     ue->rx_ind.rx_indication_body = (fapi_nr_rx_indication_body_t *)malloc(sizeof(fapi_nr_rx_indication_body_t));
     ue->rx_ind.rx_indication_body->pdu_type = FAPI_NR_RX_PDU_TYPE_MIB;
     ue->rx_ind.rx_indication_body->mib_pdu.pdu = &decoded_output[0];
-    ue->rx_ind.rx_indication_body->mib_pdu.additional_bits = decoded_output[3];
+    ue->rx_ind.rx_indication_body->mib_pdu.additional_bits = xtra_byte;
     ue->rx_ind.rx_indication_body->mib_pdu.ssb_index = ssb_index;            //  confirm with TCL
     ue->rx_ind.rx_indication_body->mib_pdu.ssb_length = Lmax;                //  confirm with TCL
     ue->rx_ind.rx_indication_body->mib_pdu.cell_id = frame_parms->Nid_cell;  //  confirm with TCL
