@@ -77,7 +77,7 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 			newPolarInitNode->encoderLength = NR_POLAR_PBCH_E;
 			newPolarInitNode->crcCorrectionBits = NR_POLAR_PBCH_CRC_ERROR_CORRECTION_BITS;
 			newPolarInitNode->crc_generator_matrix = crc24c_generator_matrix(newPolarInitNode->payloadBits);//G_P
-			printf("Initializing polar parameters for PBCH (K %d, E %d)\n",newPolarInitNode->payloadBits,newPolarInitNode->encoderLength);
+			//printf("Initializing polar parameters for PBCH (K %d, E %d)\n",newPolarInitNode->payloadBits,newPolarInitNode->encoderLength);
 		} else if (messageType == 1) { //DCI
 			newPolarInitNode->n_max = NR_POLAR_DCI_N_MAX;
 			newPolarInitNode->i_il = NR_POLAR_DCI_I_IL;
@@ -90,7 +90,7 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 			newPolarInitNode->encoderLength = aggregation_level*108;
 			newPolarInitNode->crcCorrectionBits = NR_POLAR_DCI_CRC_ERROR_CORRECTION_BITS;
 			newPolarInitNode->crc_generator_matrix=crc24c_generator_matrix(newPolarInitNode->payloadBits+newPolarInitNode->crcParityBits);//G_P
-			printf("Initializing polar parameters for DCI (K %d, E %d, L %d)\n",newPolarInitNode->payloadBits,newPolarInitNode->encoderLength,aggregation_level);
+			//printf("Initializing polar parameters for DCI (K %d, E %d, L %d)\n",newPolarInitNode->payloadBits,newPolarInitNode->encoderLength,aggregation_level);
 		} else if (messageType == -1) { //UCI
 
 		} else {
@@ -166,7 +166,7 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 		build_polar_tables(newPolarInitNode);
 		init_polar_deinterleaver_table(newPolarInitNode);
 
-		printf("decoder tree nodes %d\n",newPolarInitNode->tree.num_nodes);
+		//printf("decoder tree nodes %d\n",newPolarInitNode->tree.num_nodes);
 
 	} else {
 		AssertFatal(1 == 0, "[nr_polar_init] New t_nrPolar_paramsPtr could not be created");

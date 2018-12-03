@@ -41,7 +41,7 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "T.h"
-#ifndef NR_UNIT_TEST
+#ifdef NR_UNIT_TEST
   #define DEBUG_PUCCH_TX
   #define DEBUG_NR_PUCCH_TX
 #endif
@@ -216,7 +216,7 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
   // we proceed to calculate alpha according to TS 38.211 Subclause 6.3.2.2.2
   for (int l=0; l<nrofSymbols; l++){
     // if frequency hopping is enabled n_hop = 1 for second hop. Not sure frequency hopping concerns format 0. FIXME!!!
-    //if ((PUCCH_Frequency_Hopping == 1)&&(l == (nrofSymbols-1))) n_hop = 1;
+    // if ((PUCCH_Frequency_Hopping == 1)&&(l == (nrofSymbols-1))) n_hop = 1;
     nr_group_sequence_hopping(ue,n_hop,nr_tti_tx,&u,&v); // calculating u and v value
     alpha = nr_cyclic_shift_hopping(ue,m0,mcs,l,startingSymbolIndex,nr_tti_tx);
     #ifdef DEBUG_NR_PUCCH_TX
@@ -364,10 +364,10 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
   uint8_t intraSlotFrequencyHopping = 0;
   if (startingPRB != startingPRB_intraSlotHopping){
     intraSlotFrequencyHopping=1;
-    #ifdef DEBUG_NR_PUCCH_TX
-      printf("\t [nr_generate_pucch1] intraSlotFrequencyHopping=%d \n",intraSlotFrequencyHopping);
-    #endif
   }
+#ifdef DEBUG_NR_PUCCH_TX
+  printf("\t [nr_generate_pucch1] intraSlotFrequencyHopping = %d \n",intraSlotFrequencyHopping);
+#endif
 /*
  * Implementing TS 38.211 Subclause 6.3.2.4.2 Mapping to physical resources
  */
@@ -401,6 +401,8 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
                                               - (((int32_t)(round(32767*sin(alpha*n))) * table_5_2_2_2_2_Im[u][n])>>15))); // Re part of DMRS base sequence shifted by alpha
       r_u_v_alpha_delta_dmrs_im[n] = (int16_t)(((((int32_t)(round(32767*cos(alpha*n))) * table_5_2_2_2_2_Im[u][n])>>15)
                                               + (((int32_t)(round(32767*sin(alpha*n))) * table_5_2_2_2_2_Re[u][n])>>15))); // Im part of DMRS base sequence shifted by alpha
+      r_u_v_alpha_delta_dmrs_re[n] = (int16_t)(((int32_t)(amp*r_u_v_alpha_delta_dmrs_re[n]))>>15);
+      r_u_v_alpha_delta_dmrs_im[n] = (int16_t)(((int32_t)(amp*r_u_v_alpha_delta_dmrs_im[n]))>>15);
       // PUCCH sequence = DM-RS sequence multiplied by d(0)
       y_n_re[n]               = (int16_t)(((((int32_t)(r_u_v_alpha_delta_re[n])*d_re)>>15)
                                          - (((int32_t)(r_u_v_alpha_delta_im[n])*d_im)>>15))); // Re part of y(n)
@@ -438,13 +440,17 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
     uint8_t mprime = 0;
     if (intraSlotFrequencyHopping == 0) { // intra-slot hopping disabled
       #ifdef DEBUG_NR_PUCCH_TX
-        printf("\t [nr_generate_pucch1] block-wise spread with the orthogonal sequence wi(m) if intraSlotFrequencyHopping = %d\n",
+        printf("\t [nr_generate_pucch1] block-wise spread with the orthogonal sequence wi(m) if intraSlotFrequencyHopping = %d, intra-slot hopping disabled\n",
                 intraSlotFrequencyHopping);
       #endif
       N_SF_mprime_PUCCH_1       =   table_6_3_2_4_1_1_N_SF_mprime_PUCCH_1_noHop[nrofSymbols-1]; // only if intra-slot hopping not enabled (PUCCH)
       N_SF_mprime_PUCCH_DMRS_1  = table_6_4_1_3_1_1_1_N_SF_mprime_PUCCH_1_noHop[nrofSymbols-1]; // only if intra-slot hopping not enabled (DM-RS)
       N_SF_mprime0_PUCCH_1      =   table_6_3_2_4_1_1_N_SF_mprime_PUCCH_1_noHop[nrofSymbols-1]; // only if intra-slot hopping not enabled mprime = 0 (PUCCH)
       N_SF_mprime0_PUCCH_DMRS_1 = table_6_4_1_3_1_1_1_N_SF_mprime_PUCCH_1_noHop[nrofSymbols-1]; // only if intra-slot hopping not enabled mprime = 0 (DM-RS)
+      #ifdef DEBUG_NR_PUCCH_TX
+        printf("\t [nr_generate_pucch1] w_index = %d, N_SF_mprime_PUCCH_1 = %d, N_SF_mprime_PUCCH_DMRS_1 = %d, N_SF_mprime0_PUCCH_1 = %d, N_SF_mprime0_PUCCH_DMRS_1 = %d\n",
+                 w_index, N_SF_mprime_PUCCH_1,N_SF_mprime_PUCCH_DMRS_1,N_SF_mprime0_PUCCH_1,N_SF_mprime0_PUCCH_DMRS_1);
+      #endif
       for (int m=0; m < N_SF_mprime_PUCCH_1; m++){
         for (int n=0; n<12 ; n++){
           z_re[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]           = (int16_t)((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m])*y_n_re[n])>>15)
@@ -452,8 +458,8 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
           z_im[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]           = (int16_t)((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m])*y_n_im[n])>>15)
                                                                               + (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*y_n_re[n])>>15));
           #ifdef DEBUG_NR_PUCCH_TX
-            printf("\t\t z_pucch[%d] \t= ((%d \t* %d \t-%d \t* %d),   (%d \t* %d \t+%d \t*%d))    = (%d,%d)\n",
-                    (mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n,
+            printf("\t [nr_generate_pucch1] block-wise spread with wi(m) (mprime=%d, m=%d, n=%d) z[%d] = ((%d * %d - %d * %d), (%d * %d + %d * %d)) = (%d,%d)\n",
+                    mprime, m, n, (mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n,
                     table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m],y_n_re[n],table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m],y_n_im[n],
                     table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m],y_n_im[n],table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m],y_n_re[n],
                     z_re[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],z_im[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]);
@@ -462,26 +468,34 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
       }
       for (int m=0; m < N_SF_mprime_PUCCH_DMRS_1; m++){
         for (int n=0; n<12 ; n++){
-          z_dmrs_re[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n] = (int16_t)((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m])*r_u_v_alpha_delta_re[n])>>15)
-                                                                              - (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*r_u_v_alpha_delta_im[n])>>15));
-          z_dmrs_im[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n] = (int16_t)((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m])*r_u_v_alpha_delta_im[n])>>15)
-                                                                              + (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*r_u_v_alpha_delta_re[n])>>15));
+          z_dmrs_re[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n] = (int16_t)((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m])*r_u_v_alpha_delta_dmrs_re[n])>>15)
+                                                                              - (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*r_u_v_alpha_delta_dmrs_im[n])>>15));
+          z_dmrs_im[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n] = (int16_t)((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m])*r_u_v_alpha_delta_dmrs_im[n])>>15)
+                                                                              + (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*r_u_v_alpha_delta_dmrs_re[n])>>15));
           #ifdef DEBUG_NR_PUCCH_TX
-            printf("\t\t z_dm-rs[%d] = ((),()) =(%d,%d)\n",
-                    (mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n,z_dmrs_re[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],z_dmrs_im[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]);
+            printf("\t [nr_generate_pucch1] block-wise spread with wi(m) (mprime=%d, m=%d, n=%d) z[%d] = ((%d * %d - %d * %d), (%d * %d + %d * %d)) = (%d,%d)\n",
+                    mprime, m, n, (mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n,
+                    table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m],r_u_v_alpha_delta_dmrs_re[n],table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m],r_u_v_alpha_delta_dmrs_im[n],
+                    table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m],r_u_v_alpha_delta_dmrs_im[n],table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m],r_u_v_alpha_delta_dmrs_re[n],
+                    z_dmrs_re[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],z_dmrs_im[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]);
           #endif
         }
       }
     }
     if (intraSlotFrequencyHopping == 1) { // intra-slot hopping enabled
       #ifdef DEBUG_NR_PUCCH_TX
-        printf("\t [nr_generate_pucch1] block-wise spread with the orthogonal sequence wi(m) if intraSlotFrequencyHopping = %d\n",
+        printf("\t [nr_generate_pucch1] block-wise spread with the orthogonal sequence wi(m) if intraSlotFrequencyHopping = %d, intra-slot hopping enabled\n",
                 intraSlotFrequencyHopping);
       #endif
       N_SF_mprime_PUCCH_1       =   table_6_3_2_4_1_1_N_SF_mprime_PUCCH_1_m0Hop[nrofSymbols-1]; // only if intra-slot hopping enabled mprime = 0 (PUCCH)
       N_SF_mprime_PUCCH_DMRS_1  = table_6_4_1_3_1_1_1_N_SF_mprime_PUCCH_1_m0Hop[nrofSymbols-1]; // only if intra-slot hopping enabled mprime = 0 (DM-RS)
       N_SF_mprime0_PUCCH_1      =   table_6_3_2_4_1_1_N_SF_mprime_PUCCH_1_m0Hop[nrofSymbols-1]; // only if intra-slot hopping enabled mprime = 0 (PUCCH)
       N_SF_mprime0_PUCCH_DMRS_1 = table_6_4_1_3_1_1_1_N_SF_mprime_PUCCH_1_m0Hop[nrofSymbols-1]; // only if intra-slot hopping enabled mprime = 0 (DM-RS)
+      #ifdef DEBUG_NR_PUCCH_TX
+        printf("\t [nr_generate_pucch1] w_index = %d, N_SF_mprime_PUCCH_1 = %d, N_SF_mprime_PUCCH_DMRS_1 = %d, N_SF_mprime0_PUCCH_1 = %d, N_SF_mprime0_PUCCH_DMRS_1 = %d\n",
+                 w_index, N_SF_mprime_PUCCH_1,N_SF_mprime_PUCCH_DMRS_1,N_SF_mprime0_PUCCH_1,N_SF_mprime0_PUCCH_DMRS_1);
+      #endif
+      for (int m=0; m < N_SF_mprime_PUCCH_1; m++){
       for (mprime = 0; mprime<2; mprime++){ // mprime can get values {0,1}
         for (int m=0; m < N_SF_mprime_PUCCH_1; m++){
           for (int n=0; n<12 ; n++){
@@ -489,18 +503,33 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
                                                                                 - (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*y_n_im[n])>>15));
             z_im[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]           = (int16_t)((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m])*y_n_im[n])>>15)
                                                                                 + (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*y_n_re[n])>>15));
+#ifdef DEBUG_NR_PUCCH_TX
+  printf("\t [nr_generate_pucch1] block-wise spread with wi(m) (mprime=%d, m=%d, n=%d) z[%d] = ((%d * %d - %d * %d), (%d * %d + %d * %d)) = (%d,%d)\n",
+          mprime, m, n, (mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n,
+          table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m],y_n_re[n],table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m],y_n_im[n],
+          table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m],y_n_im[n],table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m],y_n_re[n],
+          z_re[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],z_im[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]);
+#endif
           }
         }
         for (int m=0; m < N_SF_mprime_PUCCH_DMRS_1; m++){
           for (int n=0; n<12 ; n++){
-            z_dmrs_re[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n] = (int16_t)((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m])*r_u_v_alpha_delta_re[n])>>15)
-                                                                                - (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*r_u_v_alpha_delta_im[n])>>15));
-            z_dmrs_im[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n] = (int16_t)((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m])*r_u_v_alpha_delta_im[n])>>15)
-                                                                                + (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*r_u_v_alpha_delta_re[n])>>15));
+            z_dmrs_re[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n] = (int16_t)((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m])*r_u_v_alpha_delta_dmrs_re[n])>>15)
+                                                                                - (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*r_u_v_alpha_delta_dmrs_im[n])>>15));
+            z_dmrs_im[(mprime*12*N_SF_mprime0_PUCCH_DMRS_1)+(m*12)+n] = (int16_t)((((int32_t)(table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m])*r_u_v_alpha_delta_dmrs_im[n])>>15)
+                                                                                + (((int32_t)(table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m])*r_u_v_alpha_delta_dmrs_re[n])>>15));
+#ifdef DEBUG_NR_PUCCH_TX
+  printf("\t [nr_generate_pucch1] block-wise spread with wi(m) (mprime=%d, m=%d, n=%d) z[%d] = ((%d * %d - %d * %d), (%d * %d + %d * %d)) = (%d,%d)\n",
+          mprime, m, n, (mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n,
+          table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m],r_u_v_alpha_delta_dmrs_re[n],table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m],r_u_v_alpha_delta_dmrs_im[n],
+          table_6_3_2_4_1_2_Wi_Re[N_SF_mprime_PUCCH_1][w_index][m],r_u_v_alpha_delta_dmrs_im[n],table_6_3_2_4_1_2_Wi_Im[N_SF_mprime_PUCCH_1][w_index][m],r_u_v_alpha_delta_dmrs_re[n],
+          z_dmrs_re[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n],z_dmrs_im[(mprime*12*N_SF_mprime0_PUCCH_1)+(m*12)+n]);
+#endif
           }
         }
         N_SF_mprime_PUCCH_1       =   table_6_3_2_4_1_1_N_SF_mprime_PUCCH_1_m1Hop[nrofSymbols-1]; // only if intra-slot hopping enabled mprime = 1 (PUCCH)
         N_SF_mprime_PUCCH_DMRS_1  = table_6_4_1_3_1_1_1_N_SF_mprime_PUCCH_1_m1Hop[nrofSymbols-1]; // only if intra-slot hopping enabled mprime = 1 (DM-RS)
+      }
       }
     }
     if ((intraSlotFrequencyHopping == 1) && (l<floor(nrofSymbols/2))) { // intra-slot hopping enabled, we need to calculate new offset PRB
@@ -846,7 +875,7 @@ inline void nr_pucch2_3_4_scrambling(uint16_t M_bit,uint16_t rnti,uint16_t n_id,
     c = (uint8_t)((s>>i)&1);
     btilde[i] = (((B>>i)&1) ^ c);
     #ifdef DEBUG_NR_PUCCH_TX
-      printf("\t\t\t btilde[%d]=%lx from scrambled bit %d\n",i,btilde[i],((B>>i)&1));
+      //printf("\t\t\t btilde[%d]=%lx from scrambled bit %d\n",i,btilde[i],((B>>i)&1));
     #endif
   }
   #ifdef DEBUG_NR_PUCCH_TX
@@ -948,6 +977,7 @@ void nr_uci_encoding(uint64_t payload,
 }
 //#if 0
 void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
+                        uint16_t crnti,
                         int32_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
                         PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
@@ -982,7 +1012,11 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
    */
 
   uint8_t *btilde = malloc(sizeof(int8_t)*M_bit);
-  uint16_t rnti=0xff, n_id=0;
+  // rnti is given by the C-RNTI
+  uint16_t rnti=crnti, n_id=0;
+#ifdef DEBUG_NR_PUCCH_TX
+  printf("\t [nr_generate_pucch2] rnti = %d ,\n",rnti);
+#endif
 
   /*
    * Implementing TS 38.211 Subclause 6.3.2.5.1 scrambling format 2
@@ -1064,7 +1098,7 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
           ((int16_t *)&txdataF[0][re_offset])[0] = d_re[i+k];
           ((int16_t *)&txdataF[0][re_offset])[1] = d_im[i+k];
           #ifdef DEBUG_NR_PUCCH_TX
-            printf("\t [nr_generate_pucch1] (n=%d,i=%d) mapping PUCCH to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_pucch[%d]=txptr(%d)=(x_n(l=%d,n=%d)=(%d,%d))\n",
+            printf("\t [nr_generate_pucch2] (n=%d,i=%d) mapping PUCCH to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_pucch[%d]=txptr(%d)=(x_n(l=%d,n=%d)=(%d,%d))\n",
                     n,i,amp,frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,i+k,re_offset,
                     l,n,((int16_t *)&txdataF[0][re_offset])[0],((int16_t *)&txdataF[0][re_offset])[1]);
           #endif
@@ -1075,7 +1109,7 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
           ((int16_t *)&txdataF[0][re_offset])[1] = (int16_t)((int32_t)(amp*ONE_OVER_SQRT2*(1-(2*((uint8_t)((s>>((2*m)+1))&1)))))>>15);
           m++;
           #ifdef DEBUG_NR_PUCCH_TX
-            printf("\t [nr_generate_pucch1] (n=%d,i=%d) mapping DM-RS to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_dm-rs[%d]=txptr(%d)=(x_n(l=%d,n=%d)=(%d,%d))\n",
+            printf("\t [nr_generate_pucch2] (n=%d,i=%d) mapping DM-RS to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_dm-rs[%d]=txptr(%d)=(x_n(l=%d,n=%d)=(%d,%d))\n",
                     n,i,amp,frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,i+kk,re_offset,
                     l,n,((int16_t *)&txdataF[0][re_offset])[0],((int16_t *)&txdataF[0][re_offset])[1]);
           #endif
@@ -1089,6 +1123,7 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
 }
 //#if 0
 void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
+                          uint16_t crnti,
                           int32_t **txdataF,
                           NR_DL_FRAME_PARMS *frame_parms,
                           pucch_format_nr_t fmt,
@@ -1123,11 +1158,14 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
   if (startingPRB != startingPRB_intraSlotHopping){
     intraSlotFrequencyHopping=1;
     #ifdef DEBUG_NR_PUCCH_TX
-      printf("\t [nr_generate_pucch1] intraSlotFrequencyHopping=%d \n",intraSlotFrequencyHopping);
+      printf("\t [nr_generate_pucch3_4] intraSlotFrequencyHopping=%d \n",intraSlotFrequencyHopping);
     #endif
   }
   // add_dmrs indicates if we are using or not Additional DM-RS for formats 3 and 4. From higher layers. FIXME!!!
   uint8_t add_dmrs = 0;
+  //nrofPRB = 2; // only for test purposes
+  if (fmt == pucch_format4_nr) nrofPRB = 1;
+
   nr_uci_encoding(payload,nr_bit,fmt,is_pi_over_2_bpsk_enabled,nrofSymbols,nrofPRB,n_SF_PUCCH_s,intraSlotFrequencyHopping,add_dmrs,&b,&M_bit);
 
   /*
@@ -1144,7 +1182,11 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
    */
 
   uint8_t *btilde = malloc(sizeof(int8_t)*M_bit);
-  uint16_t rnti=0xff, n_id=0;
+  // rnti is given by the C-RNTI
+  uint16_t rnti=crnti, n_id=0;
+#ifdef DEBUG_NR_PUCCH_TX
+  printf("\t [nr_generate_pucch3_4] rnti = %d ,\n",rnti);
+#endif
 
   /*
    * Implementing TS 38.211 Subclause 6.3.2.6.1 scrambling formats 3 and 4
@@ -1226,27 +1268,27 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
   // Re part orthogonal sequences w_n(k) for PUCCH format 4 when N_SF_PUCCH4 = 2 (Table 6.3.2.6.3-1)
   // k={0,..11} n={0,1,2,3}
   // parameter PUCCH-F4-preDFT-OCC-index set of {0,1,2,3} -> n
-   uint16_t table_6_3_2_6_3_1_Wi_Re[2][12] = {{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+   uint16_t table_6_3_2_6_3_1_Wn_Re[2][12] = {{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
                                               {1, 1, 1, 1, 1, 1,-1,-1,-1,-1,-1,-1}};
   // Im part orthogonal sequences w_n(k) for PUCCH format 4 when N_SF_PUCCH4 = 2 (Table 6.3.2.6.3-1)
   // k={0,..11} n={0,1}
-  uint16_t table_6_3_2_6_3_1_Wi_Im[2][12] = {{0,0,0,0,0,0,0,0,0,0,0,0},
+  uint16_t table_6_3_2_6_3_1_Wn_Im[2][12] = {{0,0,0,0,0,0,0,0,0,0,0,0},
                                              {0,0,0,0,0,0,0,0,0,0,0,0}};
   // Re part orthogonal sequences w_n(k) for PUCCH format 4 when N_SF_PUCCH4 = 4 (Table 6.3.2.6.3-2)
   // k={0,..11} n={0,1,2.3}
-  uint16_t table_6_3_2_6_3_2_Wi_Re[4][12] = {{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+  uint16_t table_6_3_2_6_3_2_Wn_Re[4][12] = {{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
                                              {1, 1, 1, 0, 0, 0,-1,-1,-1, 0, 0, 0},
                                              {1, 1, 1,-1,-1,-1, 1, 1, 1,-1,-1,-1},
                                              {1, 1, 1, 0, 0, 0,-1,-1,-1, 0, 0, 0}};
   // Im part orthogonal sequences w_n(k) for PUCCH format 4 when N_SF_PUCCH4 = 4 (Table 6.3.2.6.3-2)
   // k={0,..11} n={0,1,2,3}
-  uint16_t table_6_3_2_6_3_2_Wi_Im[4][12] = {{0,0,0, 0, 0, 0,0,0,0, 0, 0, 0},
-                                             {0,0,0,-1,-1,-1,0,0,0, 1, 1, 1},
-                                             {0,0,0, 0, 0, 0,0,0,0, 0, 0, 0},
-                                             {0,0,0, 1, 1, 1,0,0,0,-1,-1,-1}};
+  uint16_t table_6_3_2_6_3_2_Wn_Im[4][12] = {{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                                             {0, 0, 0,-1,-1,-1, 0, 0, 0, 1, 1, 1},
+                                             {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                                             {0, 0, 0, 1, 1, 1, 0, 0, 0,-1,-1,-1}};
   uint8_t occ_Length = occ_length_format4; // higher layer parameter occ-Length
   uint8_t occ_Index  = occ_index_format4;  // higher layer parameter occ-Index
-
+//occ_Index = 1; //only for testing purposes; to be removed FIXME!!!
   if (fmt == pucch_format3_nr){ // no block-wise spreading for format 3
     n_SF_PUCCH_s = 1;
     for (int l=0; l < floor(m_symbol/(12*nrofPRB)); l++){
@@ -1265,23 +1307,27 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
     for (int l=0; l < floor((n_SF_PUCCH_s*m_symbol)/(12*nrofPRB)); l++){
       for (int k=0; k < (12*nrofPRB); k++){
         if (n_SF_PUCCH_s == 2){
-          y_n_re[l*(12*nrofPRB)+k] = (uint16_t)(((uint32_t)d_re[l*(12*nrofPRB/n_SF_PUCCH_s)+k%(12*nrofPRB/n_SF_PUCCH_s)] * table_6_3_2_6_3_1_Wi_Re[occ_Index][k])
-                                              - ((uint32_t)d_im[l*(12*nrofPRB/n_SF_PUCCH_s)+k%(12*nrofPRB/n_SF_PUCCH_s)] * table_6_3_2_6_3_1_Wi_Im[occ_Index][k]));
-          y_n_im[l*(12*nrofPRB)+k] = (uint16_t)(((uint32_t)d_im[l*(12*nrofPRB/n_SF_PUCCH_s)+k%(12*nrofPRB/n_SF_PUCCH_s)] * table_6_3_2_6_3_1_Wi_Re[occ_Index][k])
-                                              + ((uint32_t)d_re[l*(12*nrofPRB/n_SF_PUCCH_s)+k%(12*nrofPRB/n_SF_PUCCH_s)] * table_6_3_2_6_3_1_Wi_Im[occ_Index][k]));
+          y_n_re[l*(12*nrofPRB)+k] = (uint16_t)(((uint32_t)d_re[l*(12*nrofPRB/n_SF_PUCCH_s)+k%(12*nrofPRB/n_SF_PUCCH_s)] * table_6_3_2_6_3_1_Wn_Re[occ_Index][k])
+                                              - ((uint32_t)d_im[l*(12*nrofPRB/n_SF_PUCCH_s)+k%(12*nrofPRB/n_SF_PUCCH_s)] * table_6_3_2_6_3_1_Wn_Im[occ_Index][k]));
+          y_n_im[l*(12*nrofPRB)+k] = (uint16_t)(((uint32_t)d_im[l*(12*nrofPRB/n_SF_PUCCH_s)+k%(12*nrofPRB/n_SF_PUCCH_s)] * table_6_3_2_6_3_1_Wn_Re[occ_Index][k])
+                                              + ((uint32_t)d_re[l*(12*nrofPRB/n_SF_PUCCH_s)+k%(12*nrofPRB/n_SF_PUCCH_s)] * table_6_3_2_6_3_1_Wn_Im[occ_Index][k]));
           #ifdef DEBUG_NR_PUCCH_TX
-            printf("\t [nr_generate_pucch3_4] block-wise spreading for format 4 (n_SF_PUCCH_s 2): (l,k)=(%d,%d)\ty_n(%d)   = \t(d_re=%d, d_im=%d)\n",
-                    l,k,l*(12*nrofPRB)+k,y_n_re[l*(12*nrofPRB)+k],y_n_im[l*(12*nrofPRB)+k]);
+            printf("\t [nr_generate_pucch3_4] block-wise spreading for format 4 (n_SF_PUCCH_s 2) (occ_Index=%d): (l,k)=(%d,%d)\ty_n(%d)   = \t(d_re=%d, d_im=%d)\n",
+                    occ_Index,l,k,l*(12*nrofPRB)+k,y_n_re[l*(12*nrofPRB)+k],y_n_im[l*(12*nrofPRB)+k]);
+//            printf("\t\t d_re[l*(12*nrofPRB/n_SF_PUCCH_s)+k%(12*nrofPRB/n_SF_PUCCH_s)] = %d\n",d_re[l*(12*nrofPRB/n_SF_PUCCH_s)+k%(12*nrofPRB/n_SF_PUCCH_s)]);
+//            printf("\t\t d_im[l*(12*nrofPRB/n_SF_PUCCH_s)+k%(12*nrofPRB/n_SF_PUCCH_s)] = %d\n",d_im[l*(12*nrofPRB/n_SF_PUCCH_s)+k%(12*nrofPRB/n_SF_PUCCH_s)]);
+//            printf("\t\t table_6_3_2_6_3_1_Wn_Re[%d][%d] = %d\n",occ_Index,k,table_6_3_2_6_3_1_Wn_Re[occ_Index][k]);
+//            printf("\t\t table_6_3_2_6_3_1_Wn_Im[%d][%d] = %d\n",occ_Index,k,table_6_3_2_6_3_1_Wn_Im[occ_Index][k]);
           #endif
         }
         if (n_SF_PUCCH_s == 4){
-          y_n_re[l*(12*nrofPRB)+k] = (uint16_t)(((uint32_t)d_re[l*(12*nrofPRB/n_SF_PUCCH_s)+k%(12*nrofPRB/n_SF_PUCCH_s)] * table_6_3_2_6_3_2_Wi_Re[occ_Index][k])
-                                              - ((uint32_t)d_im[l*(12*nrofPRB/n_SF_PUCCH_s)+k%(12*nrofPRB/n_SF_PUCCH_s)] * table_6_3_2_6_3_2_Wi_Im[occ_Index][k]));
-          y_n_im[l*(12*nrofPRB)+k] = (uint16_t)(((uint32_t)d_im[l*(12*nrofPRB/n_SF_PUCCH_s)+k%(12*nrofPRB/n_SF_PUCCH_s)] * table_6_3_2_6_3_2_Wi_Re[occ_Index][k])
-                                              + ((uint32_t)d_re[l*(12*nrofPRB/n_SF_PUCCH_s)+k%(12*nrofPRB/n_SF_PUCCH_s)] * table_6_3_2_6_3_2_Wi_Im[occ_Index][k]));
+          y_n_re[l*(12*nrofPRB)+k] = (uint16_t)(((uint32_t)d_re[l*(12*nrofPRB/n_SF_PUCCH_s)+k%(12*nrofPRB/n_SF_PUCCH_s)] * table_6_3_2_6_3_2_Wn_Re[occ_Index][k])
+                                              - ((uint32_t)d_im[l*(12*nrofPRB/n_SF_PUCCH_s)+k%(12*nrofPRB/n_SF_PUCCH_s)] * table_6_3_2_6_3_2_Wn_Im[occ_Index][k]));
+          y_n_im[l*(12*nrofPRB)+k] = (uint16_t)(((uint32_t)d_im[l*(12*nrofPRB/n_SF_PUCCH_s)+k%(12*nrofPRB/n_SF_PUCCH_s)] * table_6_3_2_6_3_2_Wn_Re[occ_Index][k])
+                                              + ((uint32_t)d_re[l*(12*nrofPRB/n_SF_PUCCH_s)+k%(12*nrofPRB/n_SF_PUCCH_s)] * table_6_3_2_6_3_2_Wn_Im[occ_Index][k]));
           #ifdef DEBUG_NR_PUCCH_TX
-            printf("\t [nr_generate_pucch3_4] block-wise spreading for format 4 (n_SF_PUCCH_s 4): (l,k)=(%d,%d)\ty_n(%d)   = \t(d_re=%d, d_im=%d)\n",
-                    l,k,l*(12*nrofPRB)+k,y_n_re[l*(12*nrofPRB)+k],y_n_im[l*(12*nrofPRB)+k]);
+            printf("\t [nr_generate_pucch3_4] block-wise spreading for format 4 (n_SF_PUCCH_s 4) (occ_Index=%d): (l,k)=(%d,%d)\ty_n(%d)   = \t(d_re=%d, d_im=%d)\n",
+                    occ_Index,l,k,l*(12*nrofPRB)+k,y_n_re[l*(12*nrofPRB)+k],y_n_im[l*(12*nrofPRB)+k]);
           #endif
         }
       }
@@ -1293,14 +1339,20 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
    */
   int16_t *z_re = malloc(sizeof(int16_t)*4*M_bit); // 4 is the maximum number n_SF_PUCCH_s
   int16_t *z_im = malloc(sizeof(int16_t)*4*M_bit);
-  # define M_PI 3.14159265358979323846 // pi
+  #define M_PI 3.14159265358979323846 // pi
   //int16_t inv_sqrt_nrofPRBs = (int16_t)round(32767/sqrt(12*nrofPRB));
   for (int l=0; l<floor((n_SF_PUCCH_s*m_symbol)/(12*nrofPRB)); l++){
     for (int k=0; k<(12*nrofPRB); k++){
       z_re[l*(12*nrofPRB)+k] = 0;
       z_im[l*(12*nrofPRB)+k] = 0;
+//      int16_t z_re_tmp[240] = {0};
+//      int16_t z_im_tmp[240] = {0};
       for (int m=0; m<(12*nrofPRB); m++){
         //z_re[l*(12*nrofPRB)+k] = y_n_re[l*(12*nrofPRB)+m] * (int16_t)(round(32767*cos((2*M_PI*m*k)/(12*nrofPRB))));
+//        z_re_tmp[m] = (int16_t)(((int32_t)round(32767/sqrt(12*nrofPRB))*(int16_t)((((int32_t)y_n_re[l*(12*nrofPRB)+m] * (int16_t)round(32767 * cos(2*M_PI*m*k/(12*nrofPRB))))>>15)
+//                + (((int32_t)y_n_im[l*(12*nrofPRB)+m] * (int16_t)round(32767 * sin(2*M_PI*m*k/(12*nrofPRB))))>>15)))>>15);
+//        z_im_tmp[m] = (int16_t)(((int32_t)round(32767/sqrt(12*nrofPRB))*(int16_t)((((int32_t)y_n_im[l*(12*nrofPRB)+m] * (int16_t)round(32767 * cos(2*M_PI*m*k/(12*nrofPRB))))>>15)
+//                - (((int32_t)y_n_re[l*(12*nrofPRB)+m] * (int16_t)round(32767 * sin(2*M_PI*m*k/(12*nrofPRB))))>>15)))>>15);
         z_re[l*(12*nrofPRB)+k] = z_re[l*(12*nrofPRB)+k]
                                + (int16_t)(((int32_t)round(32767/sqrt(12*nrofPRB))*(int16_t)((((int32_t)y_n_re[l*(12*nrofPRB)+m] * (int16_t)round(32767 * cos(2*M_PI*m*k/(12*nrofPRB))))>>15)
                                                                                            + (((int32_t)y_n_im[l*(12*nrofPRB)+m] * (int16_t)round(32767 * sin(2*M_PI*m*k/(12*nrofPRB))))>>15)))>>15);
@@ -1308,12 +1360,14 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
                                + (int16_t)(((int32_t)round(32767/sqrt(12*nrofPRB))*(int16_t)((((int32_t)y_n_im[l*(12*nrofPRB)+m] * (int16_t)round(32767 * cos(2*M_PI*m*k/(12*nrofPRB))))>>15)
                                                                                            - (((int32_t)y_n_re[l*(12*nrofPRB)+m] * (int16_t)round(32767 * sin(2*M_PI*m*k/(12*nrofPRB))))>>15)))>>15);
         #ifdef DEBUG_NR_PUCCH_TX
-          printf("\t [nr_generate_pucch3_4] transform precoding for formats 3 and 4: (l,k,m)=(%d,%d,%d)\tz(%d)   = \t(%d, %d)\n",
-                  l,k,m,l*(12*nrofPRB)+k,z_re[l*(12*nrofPRB)+k],z_im[l*(12*nrofPRB)+k]);
+//        printf("\t\t z_re_tmp[%d] = %d\n",m,z_re_tmp[m]);
+//        printf("\t\t z_im_tmp[%d] = %d\n",m,z_im_tmp[m]);
+//          printf("\t [nr_generate_pucch3_4] transform precoding for formats 3 and 4: (l,k,m)=(%d,%d,%d)\tz(%d)   = \t(%d, %d)\n",
+//                  l,k,m,l*(12*nrofPRB)+k,z_re[l*(12*nrofPRB)+k],z_im[l*(12*nrofPRB)+k]);
         #endif
       }
       #ifdef DEBUG_NR_PUCCH_TX
-        printf("\t\t\t [nr_generate_pucch3_4] transform precoding for formats 3 and 4: (l,k)=(%d,%d)\tz(%d)   = \t(%d, %d)\n",
+        printf("\t [nr_generate_pucch3_4] transform precoding for formats 3 and 4: (l,k)=(%d,%d)\tz(%d)   = \t(%d, %d)\n",
                 l,k,l*(12*nrofPRB)+k,z_re[l*(12*nrofPRB)+k],z_im[l*(12*nrofPRB)+k]);
       #endif
     }
@@ -1480,13 +1534,9 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
           ((int16_t *)&txdataF[0][re_offset])[1] = (int16_t)((((int32_t)(32767*cos(alpha*((n+j)%N_ZC)))*r_u_v_base_im[n+j])>>15)
                                                            + (((int32_t)(32767*sin(alpha*((n+j)%N_ZC)))*r_u_v_base_re[n+j])>>15));
           #ifdef DEBUG_NR_PUCCH_TX
-            printf("\t [nr_generate_pucch3_4] (l=%d,rb=%d,n=%d,j=%d) mapping DM-RS to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_dm-rs[%d]=txptr(%d)=(r_u_v(l=%d,n=%d)=(%d,%d)) \t\t debug1=%d,debug2=%d,debug3=%d,debug4=%d\n",
+            printf("\t [nr_generate_pucch3_4] (l=%d,rb=%d,n=%d,j=%d) mapping DM-RS to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_dm-rs[%d]=txptr(%d)=(r_u_v(l=%d,n=%d)=(%d,%d))\n",
                     l,rb,n,j,amp,frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,n+j,re_offset,
-                    l,n,((int16_t *)&txdataF[0][re_offset])[0],((int16_t *)&txdataF[0][re_offset])[1],
-                    (((int32_t)(32767*cos(alpha*((n+j)%N_ZC)))*r_u_v_base_re[n+j])>>15),
-                    (((int32_t)(32767*sin(alpha*((n+j)%N_ZC)))*r_u_v_base_im[n+j])>>15),
-                    (((int32_t)(32767*cos(alpha*((n+j)%N_ZC)))*r_u_v_base_im[n+j])>>15),
-                    (((int32_t)(32767*sin(alpha*((n+j)%N_ZC)))*r_u_v_base_re[n+j])>>15));
+                    l,n,((int16_t *)&txdataF[0][re_offset])[0],((int16_t *)&txdataF[0][re_offset])[1]);
           #endif
         }
         re_offset++;

@@ -65,6 +65,18 @@ int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, fapi_nr
     return nr_ue_process_dci(module_id, cc_id, gNB_index, dci, rnti, dci_type);
 
 }
+//  L2 Abstraction Layer
+int8_t handle_dlsch (module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_indication_t *dci_ind, uint8_t *pduP, uint32_t pdu_len){
+
+//    return 0;
+    return nr_ue_process_dlsch( module_id,
+                                cc_id,
+                                gNB_index,
+                                &dci_ind,
+                                pduP,
+                                pdu_len);
+
+}
 
 int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
 
@@ -115,36 +127,6 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
 
     //  clean up scheduled_response structure
 
-    if(dl_info->rx_ind != NULL){
-        printf("[L2][IF MODULE][DL INDICATION][RX_IND]\n");
-        for(i=0; i<dl_info->rx_ind->number_pdus; ++i){
-            switch(dl_info->rx_ind->rx_indication_body[i].pdu_type){
-                case FAPI_NR_RX_PDU_TYPE_MIB:
-                    ret_mask |= (handle_bcch_bch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
-                                (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.pdu, 
-                                (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.additional_bits, 
-                                (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.ssb_index, 
-                                (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.ssb_length,
-                                (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.cell_id )) << FAPI_NR_RX_PDU_TYPE_MIB;
-                    break;
-                case FAPI_NR_RX_PDU_TYPE_SIB:
-                    ret_mask |= (handle_bcch_dlsch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
-                                (dl_info->rx_ind->rx_indication_body+i)->sib_pdu.sibs_mask,
-                                (dl_info->rx_ind->rx_indication_body+i)->sib_pdu.pdu,
-                                (dl_info->rx_ind->rx_indication_body+i)->sib_pdu.pdu_length )) << FAPI_NR_RX_PDU_TYPE_SIB;
-                    break;
-                case FAPI_NR_RX_PDU_TYPE_DLSCH:
-                    ret_mask |= (0) << FAPI_NR_RX_PDU_TYPE_DLSCH;
-                    break;
-                default:
-
-                    break;
-
-            }
-        }
-    }
-
-    
 
     if(dl_info->dci_ind != NULL){
         printf("[L2][IF MODULE][DL INDICATION][DCI_IND]\n");
@@ -207,6 +189,40 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
 
         }
     }
+
+    if(dl_info->rx_ind != NULL){
+        printf("[L2][IF MODULE][DL INDICATION][RX_IND]\n");
+        for(i=0; i<dl_info->rx_ind->number_pdus; ++i){
+            switch(dl_info->rx_ind->rx_indication_body[i].pdu_type){
+                case FAPI_NR_RX_PDU_TYPE_MIB:
+                    ret_mask |= (handle_bcch_bch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
+                                (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.pdu,
+                                (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.additional_bits,
+                                (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.ssb_index,
+                                (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.ssb_length,
+                                (dl_info->rx_ind->rx_indication_body+i)->mib_pdu.cell_id )) << FAPI_NR_RX_PDU_TYPE_MIB;
+                    break;
+                case FAPI_NR_RX_PDU_TYPE_SIB:
+                    ret_mask |= (handle_bcch_dlsch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index,
+                                (dl_info->rx_ind->rx_indication_body+i)->sib_pdu.sibs_mask,
+                                (dl_info->rx_ind->rx_indication_body+i)->sib_pdu.pdu,
+                                (dl_info->rx_ind->rx_indication_body+i)->sib_pdu.pdu_length )) << FAPI_NR_RX_PDU_TYPE_SIB;
+                    break;
+                case FAPI_NR_RX_PDU_TYPE_DLSCH:
+//                    ret_mask |= (0) << FAPI_NR_RX_PDU_TYPE_DLSCH;
+                    ret_mask |= (handle_dlsch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index, &dl_info->dci_ind,
+                                (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu,
+                                (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu_length)) << FAPI_NR_RX_PDU_TYPE_DLSCH;
+
+                    break;
+                default:
+
+                    break;
+
+            }
+        }
+    }
+
 
     AssertFatal( nr_ue_if_module_inst[module_id] != NULL, "IF module is void!\n" );
     nr_ue_if_module_inst[module_id]->scheduled_response(&mac->scheduled_response);

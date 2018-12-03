@@ -195,5 +195,6 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
                           gNB->common_vars.txdataF,
                           AMP, *fp, *cfg);
   }
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,0);
 
 }
