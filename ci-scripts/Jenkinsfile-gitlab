@@ -319,7 +319,7 @@ pipeline {
                     }
                     steps {
                         timeout (time: 20, unit: 'MINUTES') {
-                            sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant flexran-rtc --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-alive"
+                            sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant flexran-rtc --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                         }
                     }
                 }
