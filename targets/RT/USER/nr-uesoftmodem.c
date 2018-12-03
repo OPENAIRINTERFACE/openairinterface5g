@@ -1116,6 +1116,8 @@ int main( int argc, char **argv ) {
     pthread_cond_init(&sync_cond,NULL);
     pthread_mutex_init(&sync_mutex, NULL);
 
+    init_UE(1);
+
 #ifdef XFORMS
     int UE_id;
     int fl_argc=1;
@@ -1156,7 +1158,6 @@ int main( int argc, char **argv ) {
 
     rt_sleep_ns(10*100000000ULL);
 
-    init_UE(1);
     number_of_cards = 1;
     
     for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
