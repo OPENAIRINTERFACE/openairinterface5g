@@ -305,7 +305,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 #endif
 
   /// CRC, coding and rate matching
-  polar_encoder_fast ((int64_t*)&pbch->pbch_a_prime, (uint32_t*)pbch->pbch_e, 0, polar_params);
+  polar_encoder_fast ((uint64_t*)&pbch->pbch_a_prime, (uint32_t*)pbch->pbch_e, 0, polar_params);
 #ifdef DEBUG_PBCH_ENCODING
   printf("Channel coding:\n");
   for (int i=0; i<NR_POLAR_PBCH_E_DWORD; i++)
