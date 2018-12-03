@@ -59,8 +59,6 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     LOG_I(MAC, "Scheduling common search space DCI type 1 for CC_id %d\n",CC_id);
 
 
-
-
     dl_req = &nr_mac->DL_req[CC_id].dl_config_request_body;
     dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
     memset((void*)dl_config_pdu,0,sizeof(nfapi_nr_dl_config_request_pdu_t));
@@ -70,11 +68,11 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     nfapi_nr_dl_config_dci_dl_pdu_rel15_t *pdu_rel15 = &dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel15;
     nfapi_nr_dl_config_pdcch_parameters_rel15_t *params_rel15 = &dl_config_pdu->dci_dl_pdu.pdcch_params_rel15;
 
-    nr_configure_css_dci_from_mib(params_rel15,
-				  scs, scs, nr_FR1, 0, 0,
-				  slots_per_frame,
-				  dl_carrier_bandwidth);
-
+    nr_configure_css_dci_initial(params_rel15,
+				 scs, scs, nr_FR1, 0, 0,
+				 slots_per_frame,
+				 dl_carrier_bandwidth);
+    
     pdu_rel15->frequency_domain_assignment = 5;
     pdu_rel15->time_domain_assignment = 2;
     pdu_rel15->vrb_to_prb_mapping = 0;
