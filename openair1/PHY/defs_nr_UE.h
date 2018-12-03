@@ -902,6 +902,7 @@ typedef struct {
   // Each SearchSpace is associated with one ControlResourceSet 
   NR_UE_PDCCH_SEARCHSPACE searchSpace[NR_NBR_SEARCHSPACE_ACT_BWP];
 
+  int n_RB_BWP[NR_NBR_SEARCHSPACE_ACT_BWP];
   uint32_t nb_search_space;
   #endif
 } NR_UE_PDCCH;
@@ -933,6 +934,8 @@ typedef struct {
   /// \brief Pointer to PBCH decoded output.
   /// - first index: ? [0..63] (hard coded)
   uint8_t *decoded_output;
+  /// polar decoder parameters
+  t_nrPolar_paramsPtr nrPolar_params;
   /// \brief Total number of PDU errors.
   uint32_t pdu_errors;
   /// \brief Total number of PDU errors 128 frames ago.
@@ -1068,7 +1071,7 @@ typedef struct {
   uint32_t dmrs_pbch_bitmap_nr[DMRS_PBCH_I_SSB][DMRS_PBCH_N_HF][DMRS_BITMAP_SIZE];
 
 #endif
-  t_nrPolar_params  *nrPolar_params;
+
 
   /// PBCH DMRS sequence
   uint32_t nr_gold_pbch[2][64][NR_PBCH_DMRS_LENGTH_DWORD];

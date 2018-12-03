@@ -653,10 +653,15 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
   //polar decoding de-rate matching
 
+  nr_ue_pbch_vars->nrPolar_params = NULL;
+  nr_polar_init(&nr_ue_pbch_vars->nrPolar_params,
+		NR_POLAR_PBCH_MESSAGE_TYPE,
+		NR_POLAR_PBCH_PAYLOAD_BITS,
+		NR_POLAR_PBCH_AGGREGATION_LEVEL);
 
-  AssertFatal(ue->nrPolar_params != NULL,"ue->nrPolar_params is null\n");
+  AssertFatal(nr_ue_pbch_vars->nrPolar_params != NULL,"nr_ue_pbch_vars->nrPolar_params is null\n");
 
-  t_nrPolar_params *currentPtr = nr_polar_params(ue->nrPolar_params, NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL);
+  t_nrPolar_params *currentPtr = nr_polar_params(nr_ue_pbch_vars->nrPolar_params, NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL);
 
   decoderState = polar_decoder_int16(pbch_e_rx,(uint8_t*)&nr_ue_pbch_vars->pbch_a_prime,currentPtr);
 

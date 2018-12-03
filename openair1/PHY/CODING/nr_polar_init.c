@@ -51,10 +51,12 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 
 	//Parse the list. If the node is already created, return without initialization.
 	while (currentPtr != NULL) {
-		if (currentPtr->idx == (messageType * messageLength * aggregation_prime)) return;
-		else currentPtr = currentPtr->nextPtr;
+	  printf("currentPtr->idx %d, (%d,%d,%d)\n",currentPtr->idx,messageType,messageLength,aggregation_prime);
+	  if (currentPtr->idx == (messageType * messageLength * aggregation_prime)) return;
+	  else currentPtr = currentPtr->nextPtr;
 	}
 
+	printf("currentPtr %p (polarParams %p)\n",currentPtr,polarParams);
 	//Else, initialize and add node to the end of the linked list.
 	t_nrPolar_paramsPtr newPolarInitNode = malloc(sizeof(t_nrPolar_params));
 
@@ -175,13 +177,18 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 	if (currentPtr == NULL)
 	{
 		*polarParams = newPolarInitNode;
+		printf("Creating first polarParams entry index %d, %p\n",newPolarInitNode->idx,*polarParams);
 		return;
 	}
 	//Else, add node to the end of the linked list.
 	while (currentPtr->nextPtr != NULL) {
-			currentPtr = currentPtr->nextPtr;
+	  currentPtr = currentPtr->nextPtr;
 	}
 	currentPtr->nextPtr= newPolarInitNode;
+	printf("Adding new polarParams entry to list index %d,%p\n",
+	       newPolarInitNode->idx,
+	       currentPtr->nextPtr);
+
 	return;
 }
 

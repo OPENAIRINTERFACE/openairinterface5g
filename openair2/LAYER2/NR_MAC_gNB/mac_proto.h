@@ -59,4 +59,25 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
 void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
 
+
+
+void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
+                                   frame_t       frameP,
+                                   sub_frame_t   subframeP);
+
+
+void nr_configure_css_dci_from_mib(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
+				   nr_scs_e scs_common,
+				   nr_scs_e pdcch_scs,
+				   nr_frequency_range_e freq_range,
+				   uint8_t rmsi_pdcch_config,
+				   uint8_t ssb_idx,
+				   uint16_t nb_slots_per_frame,
+				   uint16_t N_RB);
+
+
+void nr_configure_css_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
+                                            nfapi_nr_coreset_t* coreset,
+                                            nfapi_nr_search_space_t* search_space);
+
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

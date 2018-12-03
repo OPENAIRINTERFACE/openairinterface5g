@@ -72,7 +72,7 @@ typedef struct
 
   // These TLVs are used by the VNF to configure the RF in the PNF
   // nfapi_uint16_tlv_t max_transmit_power;
-  nfapi_uint16_tlv_t earfcn;
+  nfapi_uint16_tlv_t nrarfcn;
 
   // nfapi_nmm_frequency_bands_t nmm_gsm_frequency_bands;
   // nfapi_nmm_frequency_bands_t nmm_umts_frequency_bands;
@@ -95,7 +95,7 @@ typedef struct
 #define NFAPI_NR_NFAPI_TIMING_INFO_MODE_TAG 0x511F
 #define NFAPI_NR_NFAPI_TIMING_INFO_PERIOD_TAG 0x5120
 #define NFAPI_NR_NFAPI_MAXIMUM_TRANSMIT_POWER_TAG 0x5128
-#define NFAPI_NR_NFAPI_EARFCN_TAG 0x5129
+#define NFAPI_NR_NFAPI_NRARFCN_TAG 0x5129
 #define NFAPI_NR_NFAPI_NMM_GSM_FREQUENCY_BANDS_TAG 0x5130
 #define NFAPI_NR_NFAPI_NMM_UMTS_FREQUENCY_BANDS_TAG 0x5131
 #define NFAPI_NR_NFAPI_NMM_LTE_FREQUENCY_BANDS_TAG 0x5132

@@ -105,7 +105,8 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
 
   for (i=0;i<number_dl_pdu;i++) {
     dl_config_pdu = &DL_req->dl_config_request_body.dl_config_pdu_list[i];
-    //LOG_D(PHY,"NFAPI: dl_pdu %d : type %d\n",i,dl_config_pdu->pdu_type);
+    LOG_D(PHY,"NFAPI: dl_pdu %d : type %d\n",i,dl_config_pdu->pdu_type);
+    printf("NFAPI: dl_pdu %d : type %d\n",i,dl_config_pdu->pdu_type);
     switch (dl_config_pdu->pdu_type) {
       case NFAPI_NR_DL_CONFIG_BCH_PDU_TYPE:
         AssertFatal(dl_config_pdu->bch_pdu_rel15.pdu_index < TX_req->tx_request_body.number_of_pdus,

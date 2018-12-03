@@ -36,8 +36,8 @@
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 #include "SCHED_NR/fapi_nr_l1.h"
 
-extern uint32_t from_earfcn(int eutra_bandP,uint32_t dl_earfcn);
-extern int32_t get_uldl_offset(int eutra_bandP);
+extern uint32_t from_nrarfcn(int nr_bandP,uint32_t dl_nrarfcn);
+extern int32_t get_uldl_offset(int nr_bandP);
 
 int l1_north_init_gNB() {
 
@@ -376,8 +376,8 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu)
   nfapi_nr_config_request_t *gNB_config = &gNB->gNB_config;
 
   //overwrite for new NR parameters
-  gNB_config->nfapi_config.rf_bands.rf_band[0] = 22;
-  gNB_config->nfapi_config.earfcn.value = 6600;
+  gNB_config->nfapi_config.rf_bands.rf_band[0] = 78;
+  gNB_config->nfapi_config.nrarfcn.value = 620000;
   gNB_config->subframe_config.numerology_index_mu.value = mu;
   gNB_config->subframe_config.duplex_mode.value = TDD;
   gNB_config->rf_config.tx_antenna_ports.value = 1;
@@ -391,7 +391,7 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu)
 
   gNB->mac_enabled     = 1;
 
-  fp->dl_CarrierFreq = from_earfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.earfcn.value);
+  fp->dl_CarrierFreq = from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
   fp->ul_CarrierFreq = fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
   fp->threequarter_fs                    = 0;
 
@@ -413,7 +413,7 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config)
 
 
   gNB_config->nfapi_config.rf_bands.rf_band[0]          = phy_config->cfg->nfapi_config.rf_bands.rf_band[0]; //22
-  gNB_config->nfapi_config.earfcn.value                 = phy_config->cfg->nfapi_config.earfcn.value; //6600
+  gNB_config->nfapi_config.nrarfcn.value                = phy_config->cfg->nfapi_config.nrarfcn.value; //6600
   gNB_config->subframe_config.numerology_index_mu.value = phy_config->cfg->subframe_config.numerology_index_mu.value;//1
   gNB_config->rf_config.tx_antenna_ports.value          = phy_config->cfg->rf_config.tx_antenna_ports.value; //1
   gNB_config->rf_config.dl_carrier_bandwidth.value      = phy_config->cfg->rf_config.dl_carrier_bandwidth.value;//106;
@@ -432,7 +432,7 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config)
 
   RC.gNB[Mod_id][CC_id]->mac_enabled     = 1;
 
-  fp->dl_CarrierFreq = from_earfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.earfcn.value);
+  fp->dl_CarrierFreq = from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
   fp->ul_CarrierFreq = fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
   fp->threequarter_fs                    = 0;
 

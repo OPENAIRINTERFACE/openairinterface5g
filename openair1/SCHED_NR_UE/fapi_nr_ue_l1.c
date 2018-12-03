@@ -60,7 +60,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
                 if(dl_config->dl_config_list[i].pdu_type == FAPI_NR_DL_CONFIG_TYPE_DCI){
                     pdcch_vars2->nb_search_space = pdcch_vars2->nb_search_space + 1;
                     fapi_nr_dl_config_dci_dl_pdu_rel15_t *dci_config = &dl_config->dl_config_list[i].dci_config_pdu.dci_config_rel15;
-                    
+             
+		    pdcch_vars2->n_RB_BWP[i] = dci_config->N_RB_BWP;
                     pdcch_vars2->searchSpace[i].monitoringSymbolWithinSlot = dci_config->monitoring_symbols_within_slot;
                     
                     pdcch_vars2->searchSpace[i].nrofCandidates_aggrlevel1  = dci_config->number_of_candidates[0];

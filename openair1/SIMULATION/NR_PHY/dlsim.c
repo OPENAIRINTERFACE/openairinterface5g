@@ -71,8 +71,8 @@ int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) { return(0
 
 int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req) {return(0);}
 
-uint32_t from_earfcn(int eutra_bandP,uint32_t dl_earfcn) {return(0);}
-int32_t get_uldl_offset(int eutra_bandP) {return(0);}
+uint32_t from_nrarfcn(int nr_bandP,uint32_t dl_nrarfcn) {return(0);}
+int32_t get_uldl_offset(int nr_bandP) {return(0);}
 
 NR_IF_Module_t *NR_IF_Module_init(int Mod_id){return(NULL);}
 
@@ -96,7 +96,12 @@ int rlc_module_init (void) {return(0);}
 void pdcp_layer_init(void) {}
 int rrc_init_nr_global_param(void){return(0);}
 
-
+void config_common(int Mod_idP, 
+                   int CC_idP,
+                   int nr_bandP,
+                   uint64_t dl_CarrierFreqP,
+                   uint32_t dl_BandwidthP
+		   );
 
 // needed for some functions
 PHY_VARS_NR_UE ***PHY_vars_UE_g;
@@ -385,8 +390,13 @@ int main(int argc, char **argv)
   frame_parms->N_RB_DL = N_RB_DL;
   frame_parms->N_RB_UL = N_RB_DL;
 
+  // stub to configure frame_parms
   nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu);
+  // call MAC to configure common parameters
+
   phy_init_nr_gNB(gNB,0,0);
+
+
 
   double fs,bw;
 
@@ -478,6 +488,8 @@ int main(int argc, char **argv)
   RC.nb_nr_macrlc_inst = 1;
   mac_top_init_gNB();
   gNB_mac = RC.nrmac[0];
+
+  config_common(0,0,78,(uint64_t)3640000000L,N_RB_DL*180000*(mu+1));
 
   nr_l2_init_ue();
   UE_mac = get_mac_inst(0);
@@ -607,8 +619,9 @@ int main(int argc, char **argv)
   dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.number_of_candidates[4] = table_38213_10_1_1_c2[4];   //  CCE aggregation level = 16
   dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.duration = search_space_duration;
   dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.monitoring_symbols_within_slot = (0x3fff << first_symbol_index) & (0x3fff >> (14-coreset_duration-first_symbol_index)) & 0x3fff;
-  	
-  
+
+  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.N_RB_BWP = N_RB_DL;
+
   for (SNR=snr0; SNR<snr1; SNR+=.2) {
 
     n_errors = 0;

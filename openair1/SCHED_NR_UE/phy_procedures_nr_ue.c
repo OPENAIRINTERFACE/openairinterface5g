@@ -3541,9 +3541,9 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
   // this table contains 56 (NBR_NR_DCI_FIELDS) elements for each dci field and format described in TS 38.212. Each element represents the size in bits for each dci field
   //uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS] = {0};
   // this is the UL bandwidth part. FIXME! To be defined where this value comes from
-  uint16_t n_RB_ULBWP = 106;
+  //  uint16_t n_RB_ULBWP = 106;
   // this is the DL bandwidth part. FIXME! To be defined where this value comes from
-  uint16_t n_RB_DLBWP = 106;
+  //uint16_t n_RB_DLBWP = 106;
   //#ifdef NR_PDCCH_SCHED_DEBUG
   //    printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> n_RB_ULBWP=%d n_RB_DLBWP=%d\n",
   //            n_RB_ULBWP,
@@ -3735,15 +3735,15 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
         
         #ifdef NR_PDCCH_SCHED_DEBUG
         if (searchSpaceType == common) {  // search all possible dci's for COMMON SEARCH SPACES according to the current SEARCHSPACE configuration
-            printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Entering function nr_dci_decoding_procedure with eNB_id=%d (n_RB_ULBWP=%d, n_RB_DLBWP=%d, searchSpaceType=%d, nb_searchspace_active=%d, nb_coreset_active=%d) -> dci_cnt=%d\n",
-                    eNB_id,n_RB_ULBWP,n_RB_DLBWP,searchSpaceType,
+            printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Entering function nr_dci_decoding_procedure with eNB_id=%d (n_RB_BWP=%d, searchSpaceType=%d, nb_searchspace_active=%d, nb_coreset_active=%d) -> dci_cnt=%d\n",
+                    eNB_id,pdcch_vars2->n_RB_BWP[nb_searchspace_active],searchSpaceType,
                     nb_searchspace_active,
                     nb_coreset_active,
                     dci_cnt);
         }
         if (searchSpaceType == ue_specific){// search all possible dci's for UE-SPECIFIC SEARCH SPACES according to the current SEARCHSPACE configuration
-             printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Entering function nr_dci_decoding_procedure with eNB_id=%d (n_RB_ULBWP=%d, n_RB_DLBWP=%d, searchSpaceType=%d, nb_searchspace_active=%d, nb_coreset_active=%d) -> dci_cnt=%d\n",
-                    eNB_id,n_RB_ULBWP,n_RB_DLBWP,searchSpaceType,
+             printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Entering function nr_dci_decoding_procedure with eNB_id=%d (n_RB_BWP=%d, searchSpaceType=%d, nb_searchspace_active=%d, nb_coreset_active=%d) -> dci_cnt=%d\n",
+                    eNB_id,pdcch_vars2->n_RB_BWP[nb_searchspace_active],searchSpaceType,
                     nb_searchspace_active,
                     nb_coreset_active,
                     dci_cnt);
@@ -3759,8 +3759,8 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
                                              eNB_id,
                                              nr_tti_rx,
                                              dci_fields_sizes_cnt,
-                                             n_RB_ULBWP,
-                                             n_RB_DLBWP,
+                                             pdcch_vars2->n_RB_BWP[nb_searchspace_active],
+                                             pdcch_vars2->n_RB_BWP[nb_searchspace_active],
                                              &crc_scrambled,
                                              &format_found,
                                              crc_scrambled_values);
@@ -3900,8 +3900,8 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
                                                 ue->pdsch_config_dedicated,
                                                 ue->transmission_mode[eNB_id]<7?0:ue->transmission_mode[eNB_id],
                                                 dci_fields_sizes_cnt[i],
-                                                n_RB_ULBWP,
-                                                n_RB_DLBWP,
+					       pdcch_vars2->n_RB_BWP[nb_searchspace_active],
+					       pdcch_vars2->n_RB_BWP[nb_searchspace_active],
                                                 crc_scrambled_values,
                                                 ptr_nr_dci_info_extracted);//&nr_dci_info_extracted);
 
