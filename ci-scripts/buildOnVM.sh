@@ -176,7 +176,19 @@ function build_on_vm {
             echo "chmod 775 ./my-vm-build.sh " >> $VM_CMDS
             echo "sudo -E daemon --inherit --unsafe --name=build_daemon --chdir=/home/ubuntu/tmp -O /home/ubuntu/tmp/cmake_targets/log/cppcheck_build.txt -E /home/ubuntu/tmp/cmake_targets/log/cppcheck.xml ./my-vm-build.sh" >> $VM_CMDS
         fi
-    else
+    fi
+    if [[ "$VM_NAME" == *"-flexran-rtc"* ]]
+    then
+        echo "mkdir -p cmake_targets/log" >> $VM_CMDS
+        echo "chmod 777 cmake_targets/log" >> $VM_CMDS
+        echo "cp /home/ubuntu/zip-install.txt cmake_targets/log" >> $VM_CMDS
+        echo "echo \"./tools/install_dependencies \"" >> $VM_CMDS
+        echo "./tools/install_dependencies > cmake_targets/log/install-build.txt 2>&1" >> $VM_CMDS
+        echo "echo \"$BUILD_OPTIONS \"" >> $VM_CMDS
+        echo "$BUILD_OPTIONS > cmake_targets/log/rt_controller.Rel14.txt 2>&1" >> $VM_CMDS
+    fi
+    if [[ "$VM_NAME" != *"-cppcheck"* ]] && [[ "$VM_NAME" != *"-flexran-rtc"* ]]
+    then
         echo "echo \"source oaienv\"" >> $VM_CMDS
         echo "source oaienv" >> $VM_CMDS
         echo "cd cmake_targets/" >> $VM_CMDS
