@@ -114,10 +114,10 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
       }
 
       if ( ue->rx_offset < 0 )
-          ue->rx_offset += FRAME_LENGTH_COMPLEX_SAMPLES;
+	ue->rx_offset += frame_parms->samples_per_frame;
 
-      if ( ue->rx_offset >= FRAME_LENGTH_COMPLEX_SAMPLES )
-          ue->rx_offset -= FRAME_LENGTH_COMPLEX_SAMPLES;
+      if ( ue->rx_offset >= frame_parms->samples_per_frame )
+          ue->rx_offset -= frame_parms->samples_per_frame;
 
 
 
