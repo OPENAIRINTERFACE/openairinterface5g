@@ -141,6 +141,23 @@ function details_table {
 
 function summary_table_header {
     echo "   <h3>$1</h3>" >> ./build_results.html
+    if [ -f $2/build_final_status.log ]
+    then
+        if [ `grep -c BUILD_OK $2/build_final_status.log` -eq 1 ]
+        then
+            echo "   <div class=\"alert alert-success\">" >> ./build_results.html
+            echo "      <strong>BUILD was SUCCESSFUL <span class=\"glyphicon glyphicon-ok-circle\"></span></strong>" >> ./build_results.html
+            echo "   </div>" >> ./build_results.html
+        else
+            echo "   <div class=\"alert alert-danger\">" >> ./build_results.html
+            echo "      <strong>BUILD was a FAILURE! <span class=\"glyphicon glyphicon-ban-circle\"></span></strong>" >> ./build_results.html
+            echo "   </div>" >> ./build_results.html
+        fi
+    else
+        echo "   <div class=\"alert alert-danger\">" >> ./build_results.html
+        echo "      <strong>COULD NOT DETERMINE BUILD FINAL STATUS! <span class=\"glyphicon glyphicon-ban-circle\"></span></strong>" >> ./build_results.html
+        echo "   </div>" >> ./build_results.html
+    fi
     echo "   <table border = \"1\">" >> ./build_results.html
     echo "      <tr bgcolor = \"#33CCFF\" >" >> ./build_results.html
     echo "        <th>Element</th>" >> ./build_results.html
@@ -198,7 +215,28 @@ function summary_table_footer {
 }
 
 function sca_summary_table_header {
-    echo "   <h3>$1</h3>" >> ./build_results.html
+    echo "   <h3>$2</h3>" >> ./build_results.html
+    NB_ERRORS=`egrep -c "severity=\"error\"" $1`
+    NB_WARNINGS=`egrep -c "severity=\"warning\"" $1`
+    if [ $NB_ERRORS -eq 0 ] && [ $NB_WARNINGS -eq 0 ]
+    then
+        echo "   <div class=\"alert alert-success\">" >> ./build_results.html
+        echo "      <strong>CPPCHECK found NO error and NO warning <span class=\"glyphicon glyphicon-ok-circle\"></span></strong>" >> ./build_results.html
+        echo "   </div>" >> ./build_results.html
+    else
+        if [ $NB_ERRORS -eq 0 ]
+        then
+            echo "   <div class=\"alert alert-warning\">" >> ./build_results.html
+            echo "      <strong>CPPCHECK found NO error and $NB_WARNINGS warnings <span class=\"glyphicon glyphicon-warning-sign\"></span></strong>" >> ./build_results.html
+            echo "   </div>" >> ./build_results.html
+        else
+            echo "   <div class=\"alert alert-danger\">" >> ./build_results.html
+            echo "      <strong>CPPCHECK found $NB_ERRORS errors and $NB_WARNINGS warnings <span class=\"glyphicon glyphicon-ban-circle\"></span></strong>" >> ./build_results.html
+            echo "   </div>" >> ./build_results.html
+        fi
+    fi
+    echo "   <button data-toggle=\"collapse\" data-target=\"#oai-cppcheck-details\">More details on CPPCHECK results</button>" >> ./build_results.html
+    echo "   <div id=\"oai-cppcheck-details\" class=\"collapse\">" >> ./build_results.html
     echo "   <table border = \"1\">" >> ./build_results.html
     echo "      <tr bgcolor = \"#33CCFF\" >" >> ./build_results.html
     echo "        <th>Error / Warning Type</th>" >> ./build_results.html
@@ -263,6 +301,7 @@ function sca_summary_table_footer {
     echo "   </table>" >> ./build_results.html
     echo "   <p>Full details in zipped artifact (cppcheck/cppcheck.xml) </p>" >> ./build_results.html
     echo "   <p style=\"margin-left: 30px\">Graphical Interface tool : <strong><code>cppcheck-gui -l cppcheck/cppcheck.xml</code></strong></p>" >> ./build_results.html
+    echo "   </div>" >> ./build_results.html
 }
 
 function report_build {
@@ -276,10 +315,14 @@ function report_build {
     echo "<!DOCTYPE html>" > ./build_results.html
     echo "<html class=\"no-js\" lang=\"en-US\">" >> ./build_results.html
     echo "<head>" >> ./build_results.html
+    echo "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">" >> ./build_results.html
+    echo "  <link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css\">" >> ./build_results.html
+    echo "  <script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js\"></script>" >> ./build_results.html
+    echo "  <script src=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js\"></script>" >> ./build_results.html
     echo "  <title>Build Results for $JOB_NAME job build #$BUILD_ID</title>" >> ./build_results.html
     echo "  <base href = \"http://www.openairinterface.org/\" />" >> ./build_results.html
     echo "</head>" >> ./build_results.html
-    echo "<body>" >> ./build_results.html
+    echo "<body><div class=\"container\">" >> ./build_results.html
     echo "  <table style=\"border-collapse: collapse; border: none;\">" >> ./build_results.html
     echo "    <tr style=\"border-collapse: collapse; border: none;\">" >> ./build_results.html
     echo "      <td style=\"border-collapse: collapse; border: none;\">" >> ./build_results.html
@@ -344,33 +387,38 @@ function report_build {
     if [ -f ./oai_rules_result.txt ]
     then
         echo "   <h3>OAI Coding / Formatting Guidelines Check</h3>" >> ./build_results.html
-        echo "   <table border = "1">" >> ./build_results.html
-        echo "      <tr>" >> ./build_results.html
-        echo "        <td bgcolor = \"lightcyan\" >Result:</td>" >> ./build_results.html
         NB_FILES=`cat ./oai_rules_result.txt`
         if [ $NB_FILES = "0" ]
         then 
-            if [ $PU_TRIG -eq 1 ]; then echo "        <td bgcolor = \"green\">All files in repository follow OAI rules. </td>" >> ./build_results.html; fi
-            if [ $MR_TRIG -eq 1 ]; then echo "        <td bgcolor = \"green\">All modified files in Merge-Request follow OAI rules.</td>" >> ./build_results.html; fi
-            echo "      </tr>" >> ./build_results.html
-            echo "   </table>" >> ./build_results.html
+            echo "   <div class=\"alert alert-success\">" >> ./build_results.html
+            if [ $PU_TRIG -eq 1 ]; then echo "      <strong>All files in repository follow OAI rules. <span class=\"glyphicon glyphicon-ok-circle\"></span></strong>" >> ./build_results.html; fi
+            if [ $MR_TRIG -eq 1 ]; then echo "      <strong>All modified files in Merge-Request follow OAI rules. <span class=\"glyphicon glyphicon-ok-circle\"></span></strong>" >> ./build_results.html; fi
+            echo "   </div>" >> ./build_results.html
         else
-            if [ $PU_TRIG -eq 1 ]; then echo "        <td bgcolor = \"orange\">$NB_FILES files in repository DO NOT follow OAI rules. </td>" >> ./build_results.html; fi
-            if [ $MR_TRIG -eq 1 ]; then echo "        <td bgcolor = \"orange\">$NB_FILES modified files in Merge-Request DO NOT follow OAI rules.</td>" >> ./build_results.html; fi
-            echo "      </tr>" >> ./build_results.html
-            if [ -f ./oai_rules_result_list.txt ]
-            then
-                awk '{print "      <tr><td></td><td>"$1"</td></tr>"}' ./oai_rules_result_list.txt >> ./build_results.html
-            fi
-            echo "   </table>" >> ./build_results.html
+            echo "   <div class=\"alert alert-warning\">" >> ./build_results.html
+            if [ $PU_TRIG -eq 1 ]; then echo "      <strong>$NB_FILES files in repository DO NOT follow OAI rules. <span class=\"glyphicon glyphicon-warning-sign\"></span></strong>" >> ./build_results.html; fi
+            if [ $MR_TRIG -eq 1 ]; then echo "      <strong>$NB_FILES modified files in Merge-Request DO NOT follow OAI rules. <span class=\"glyphicon glyphicon-warning-sign\"></span></strong>" >> ./build_results.html; fi
+            echo "   </div>" >> ./build_results.html
+        fi
+        if [ -f ./oai_rules_result_list.txt ]
+        then
+            echo "   <button data-toggle=\"collapse\" data-target=\"#oai-formatting-details\">More details on formatting check</button>" >> ./build_results.html
+            echo "   <div id=\"oai-formatting-details\" class=\"collapse\">" >> ./build_results.html
             echo "   <p>Please apply the following command to this(ese) file(s): </p>" >> ./build_results.html
             echo "   <p style=\"margin-left: 30px\"><strong><code>astyle --options=ci-scripts/astyle-options.txt filename(s)</code></strong></p>" >> ./build_results.html
+            echo "   <table border = 1>" >> ./build_results.html
+            echo "      <tr>" >> ./build_results.html
+            echo "        <th bgcolor = \"lightcyan\" >Filename</th>" >> ./build_results.html
+            echo "      </tr>" >> ./build_results.html
+            awk '{print "      <tr><td>"$1"</td></tr>"}' ./oai_rules_result_list.txt >> ./build_results.html
+            echo "   </table>" >> ./build_results.html
+            echo "   </div>" >> ./build_results.html
         fi
     fi
 
     echo "   <h2>Ubuntu 16.04 LTS -- Summary</h2>" >> ./build_results.html
 
-    sca_summary_table_header "OAI Static Code Analysis with CPPCHECK"
+    sca_summary_table_header ./archives/cppcheck/cppcheck.xml "OAI Static Code Analysis with CPPCHECK"
     sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Uninitialized variable" uninitvar
     sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Uninitialized struct member" uninitStructMember
     sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Memory leak" memleak
@@ -382,20 +430,20 @@ function report_build {
     sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Expression depends on order of evaluation of side effects" unknownEvaluationOrder
     sca_summary_table_footer ./archives/cppcheck/cppcheck.xml
 
-    summary_table_header "OAI Build eNB -- USRP option"
+    summary_table_header "OAI Build eNB -- USRP option" ./archives/enb_usrp
     summary_table_row "LTE SoftModem - Release 14" ./archives/enb_usrp/lte-softmodem.Rel14.txt "Built target lte-softmodem" ./enb_usrp_row1.html
     summary_table_row "Coding - Release 14" ./archives/enb_usrp/coding.Rel14.txt "Built target coding" ./enb_usrp_row2.html
     summary_table_row "OAI USRP device if - Release 14" ./archives/enb_usrp/oai_usrpdevif.Rel14.txt "Built target oai_usrpdevif" ./enb_usrp_row3.html
     summary_table_row "Parameters Lib Config - Release 14" ./archives/enb_usrp/params_libconfig.Rel14.txt "Built target params_libconfig" ./enb_usrp_row4.html
     summary_table_footer
 
-    summary_table_header "OAI Build basic simulator option"
+    summary_table_header "OAI Build basic simulator option" ./archives/basic_sim
     summary_table_row "Basic Simulator eNb - Release 14" ./archives/basic_sim/basic_simulator_enb.txt "Built target lte-softmodem" ./basic_sim_row1.html
     summary_table_row "Basic Simulator UE - Release 14" ./archives/basic_sim/basic_simulator_ue.txt "Built target lte-uesoftmodem" ./basic_sim_row2.html
     summary_table_row "Conf 2 UE data - Release 14" ./archives/basic_sim/conf2uedata.Rel14.txt "Built target conf2uedata" ./basic_sim_row3.html
     summary_table_footer
 
-    summary_table_header "OAI Build Physical simulators option"
+    summary_table_header "OAI Build Physical simulators option" ./archives/phy_sim
     summary_table_row "DL Simulator - Release 14" ./archives/phy_sim/dlsim.Rel14.txt "Built target dlsim" ./phy_sim_row1.html
     summary_table_row "UL Simulator - Release 14" ./archives/phy_sim/ulsim.Rel14.txt "Built target ulsim" ./phy_sim_row2.html
     summary_table_row "Coding - Release 14" ./archives/phy_sim/coding.Rel14.txt "Built target coding" ./phy_sim_row3.html
@@ -404,7 +452,7 @@ function report_build {
 
     if [ -f archives/gnb_usrp/nr-softmodem.Rel14.txt ]
     then
-        summary_table_header "OAI Build gNB -- USRP option"
+        summary_table_header "OAI Build gNB -- USRP option" ./archives/gnb_usrp
         summary_table_row "LTE SoftModem - Release 14" ./archives/gnb_usrp/nr-softmodem.Rel14.txt "Built target nr-softmodem" ./gnb_usrp_row1.html
         summary_table_row "Coding - Release 14" ./archives/gnb_usrp/coding.Rel14.txt "Built target coding" ./gnb_usrp_row2.html
         summary_table_row "OAI USRP device if - Release 14" ./archives/gnb_usrp/oai_usrpdevif.Rel14.txt "Built target oai_usrpdevif" ./gnb_usrp_row3.html
@@ -414,7 +462,7 @@ function report_build {
 
     if [ -f archives/nrue_usrp/nr-uesoftmodem.Rel14.txt ]
     then
-        summary_table_header "OAI Build 5G NR UE -- USRP option"
+        summary_table_header "OAI Build 5G NR UE -- USRP option" ./archives/nrue_usrp
         summary_table_row "UE SoftModem - Release 14" ./archives/nrue_usrp/nr-uesoftmodem.Rel14.txt "Built target nr-uesoftmodem" ./nrue_usrp_row1.html
         summary_table_row "Coding - Release 14" ./archives/nrue_usrp/coding.Rel14.txt "Built target coding" ./nrue_usrp_row2.html
         summary_table_row "OAI USRP device if - Release 14" ./archives/nrue_usrp/oai_usrpdevif.Rel14.txt "Built target oai_usrpdevif" ./nrue_usrp_row3.html
@@ -422,7 +470,7 @@ function report_build {
         summary_table_footer
     fi
 
-    summary_table_header "OAI Build eNB -- ETHERNET transport option"
+    summary_table_header "OAI Build eNB -- ETHERNET transport option" ./archives/enb_eth
     summary_table_row "LTE SoftModem w/o S1 - Release 14" ./archives/enb_eth/lte-softmodem-nos1.Rel14.txt "Built target lte-softmodem" ./enb_eth_row1.html
     summary_table_row "Coding - Release 14" ./archives/enb_eth/coding.Rel14.txt "Built target coding" ./enb_eth_row2.html
     summary_table_row "OAI ETHERNET transport - Release 14" ./archives/enb_eth/oai_eth_transpro.Rel14.txt "Built target oai_eth_transpro" ./enb_eth_row3.html
@@ -431,7 +479,7 @@ function report_build {
     summary_table_row "NAS Mesh - Release 14" ./archives/enb_eth/nasmesh.Rel14.txt "Built target nasmesh" ./enb_eth_row6.html
     summary_table_footer
 
-    summary_table_header "OAI Build UE -- ETHERNET transport option"
+    summary_table_header "OAI Build UE -- ETHERNET transport option" ./archives/ue_eth
     summary_table_row "LTE UE SoftModem w/o S1 - Release 14" ./archives/ue_eth/lte-uesoftmodem-nos1.Rel14.txt "Built target lte-uesoftmodem" ./ue_eth_row1.html
     summary_table_row "Coding - Release 14" ./archives/ue_eth/coding.Rel14.txt "Built target coding" ./ue_eth_row2.html
     summary_table_row "OAI ETHERNET transport - Release 14" ./archives/ue_eth/oai_eth_transpro.Rel14.txt "Built target oai_eth_transpro" ./ue_eth_row3.html
@@ -444,7 +492,7 @@ function report_build {
     then
         echo "   <h2>Red Hat (CentOS Linux release 7.4.1708) -- Summary</h2>" >> ./build_results.html
 
-        summary_table_header "Red Hat -- OAI Build eNB -- USRP option"
+        summary_table_header "Red Hat -- OAI Build eNB -- USRP option" ./archives/red_hat
         summary_table_row "LTE SoftModem - Release 14" ./archives/red_hat/lte-softmodem.Rel14.txt "Built target lte-softmodem" ./enb_usrp_rh_row1.html
         summary_table_row "Coding - Release 14" ./archives/red_hat/coding.Rel14.txt "Built target coding" ./enb_usrp_rh_row2.html
         summary_table_row "OAI USRP device if - Release 14" ./archives/red_hat/oai_usrpdevif.Rel14.txt "Built target oai_usrpdevif" ./enb_usrp_rh_row3.html
@@ -453,6 +501,8 @@ function report_build {
     fi
 
     echo "   <h3>Details</h3>" >> ./build_results.html
+    echo "   <button data-toggle=\"collapse\" data-target=\"#oai-compilation-details\">Details for Compilation Errors and Warnings </button>" >> ./build_results.html
+    echo "   <div id=\"oai-compilation-details\" class=\"collapse\">" >> ./build_results.html
 
     for DETAILS_TABLE in `ls ./enb_usrp_row*.html`
     do
@@ -492,6 +542,8 @@ function report_build {
     fi
     rm -f ./*_row*.html
 
-    echo "</body>" >> ./build_results.html
+    echo "   </div>" >> ./build_results.html
+    echo "   <div class=\"well well-lg\">End of Build Report -- Copyright <span class=\"glyphicon glyphicon-copyright-mark\"></span> 2018 <a href=\"http://www.openairinterface.org/\">OpenAirInterface</a>. All Rights Reserved.</div>" >> ./build_results.html
+    echo "</div></body>" >> ./build_results.html
     echo "</html>" >> ./build_results.html
 }

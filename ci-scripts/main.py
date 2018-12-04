@@ -670,9 +670,9 @@ class SSHConnection():
 				device_id = status_queue.get()
 				message = status_queue.get()
 				if (count < 0):
-					html_cell = "<pre>UE (" + device_id + ")\n" + message + "</pre>"
+					html_cell = '<pre style="background-color:white">UE (' + device_id + ')\n' + message + '</pre>'
 				else:
-					html_cell = "<pre>UE (" + device_id + ")\n" + message + ' in ' + str(count + 2) + ' seconds</pre>'
+					html_cell = '<pre style="background-color:white">UE (' + device_id + ')\n' + message + ' in ' + str(count + 2) + ' seconds</pre>'
 				html_queue.put(html_cell)
 			if (attach_status):
 				self.CreateHtmlTestRowQueue('N/A', 'OK', len(self.UEDevices), html_queue)
@@ -955,7 +955,7 @@ class SSHConnection():
 				device_id = status_queue.get()
 				ip_addr = status_queue.get()
 				message = status_queue.get()
-				html_cell = "<pre>UE (" + device_id + ")\nIP Address  : " + ip_addr + "\n" + message + "</pre>"
+				html_cell = '<pre style="background-color:white">UE (' + device_id + ')\nIP Address  : ' + ip_addr + '\n' + message + '</pre>'
 				html_queue.put(html_cell)
 			if (ping_status):
 				self.CreateHtmlTestRowQueue(self.ping_args, 'OK', len(self.UEDevices), html_queue)
@@ -1438,7 +1438,7 @@ class SSHConnection():
 				device_id = status_queue.get()
 				ip_addr = status_queue.get()
 				message = status_queue.get()
-				html_cell = "<pre>UE (" + device_id + ")\nIP Address  : " + ip_addr + "\n" + message + "</pre>"
+				html_cell = '<pre>UE (' + device_id + ')\nIP Address  : ' + ip_addr + '\n' + message + '</pre>'
 				html_queue.put(html_cell)
 			if (iperf_noperf and iperf_status):
 				self.CreateHtmlTestRowQueue(self.iperf_args, 'PERF NOT MET', len(self.UEDevices), html_queue)
@@ -1923,9 +1923,13 @@ class SSHConnection():
 			self.htmlFile.write('<!DOCTYPE html>\n')
 			self.htmlFile.write('<html class="no-js" lang="en-US">\n')
 			self.htmlFile.write('<head>\n')
+			self.htmlFile.write('  <meta name="viewport" content="width=device-width, initial-scale=1">\n')
+			self.htmlFile.write('  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">\n')
+			self.htmlFile.write('  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>\n')
+			self.htmlFile.write('  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>\n')
 			self.htmlFile.write('  <title>Test Results for TEMPLATE_JOB_NAME job build #TEMPLATE_BUILD_ID</title>\n')
 			self.htmlFile.write('</head>\n')
-			self.htmlFile.write('<body>\n')
+			self.htmlFile.write('<body><div class="container">\n')
 			self.htmlFile.write('  <table style="border-collapse: collapse; border: none;">\n')
 			self.htmlFile.write('    <tr style="border-collapse: collapse; border: none;">\n')
 			self.htmlFile.write('      <td style="border-collapse: collapse; border: none;">\n')
@@ -2016,7 +2020,8 @@ class SSHConnection():
 				self.htmlFile.write('        <th bgcolor = "red" colspan=' + str(2 + self.htmlUEConnected) + '><font color="white">FAIL</font></th>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('  </table>\n')
-			self.htmlFile.write('</body>\n')
+			self.htmlFile.write('   <div class="well well-lg">End of Test Report -- Copyright <span class="glyphicon glyphicon-copyright-mark"></span> 2018 <a href="http://www.openairinterface.org/">OpenAirInterface</a>. All Rights Reserved.</div>\n')
+			self.htmlFile.write('</div></body>\n')
 			self.htmlFile.write('</html>\n')
 			self.htmlFile.close()
 		self.htmlFooterCreated = False
@@ -2061,7 +2066,8 @@ class SSHConnection():
 					result = re.search('showed|Reestablishment', self.htmleNBFailureMsg)
 					if result is not None:
 						cellBgColor = 'orange'
-				self.htmlFile.write('        <td bgcolor = "' + cellBgColor + '" colspan=' + str(self.htmlUEConnected) + '><pre>' + self.htmleNBFailureMsg + '</pre></td>\n')
+				self.htmlFile.write('        <td bgcolor = "' + cellBgColor + '" colspan=' + str(self.htmlUEConnected) + '><pre style="background-color:' +
+ cellBgColor + '">' + self.htmleNBFailureMsg + '</pre></td>\n')
 				self.htmleNBFailureMsg = ''
 			else:
 				i = 0
@@ -2089,7 +2095,7 @@ class SSHConnection():
 				if (i < ue_status):
 					if (not ue_queue.empty()):
 						if (addOrangeBK):
-							self.htmlFile.write('        <td bgcolor = "orange" >' + str(ue_queue.get()) + '</td>\n')
+							self.htmlFile.write('        <td bgcolor = "orange" >' + str(ue_queue.get()).replace('white', 'orange') + '</td>\n')
 						else:
 							self.htmlFile.write('        <td>' + str(ue_queue.get()) + '</td>\n')
 					else:

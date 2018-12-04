@@ -441,6 +441,12 @@ function run_test_on_vm {
         if [ $NB_RUNS -eq 0 ]; then STATUS=-1; fi
         if [ $NB_FAILURES -ne 0 ]; then STATUS=-1; fi
 
+        if [ $STATUS -eq 0 ]
+        then
+            echo "TEST_OK" > $ARCHIVES_LOC/test_final_status.log
+        else
+            echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
+        fi
     fi
 
     if [[ "$RUN_OPTIONS" == "complex" ]] && [[ $VM_NAME =~ .*-basic-sim.* ]]
@@ -580,6 +586,7 @@ function run_test_on_vm {
             if [ $i -lt 50 ]
             then
                 echo "Problem w/ starting ltebox EPC"
+                echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
                 exit -1
             fi
         fi
@@ -615,6 +622,7 @@ function run_test_on_vm {
             scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
             recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+            echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
             exit -1
         fi
         get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
@@ -673,6 +681,7 @@ function run_test_on_vm {
             scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
             recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+            echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
             exit -1
         fi
         get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
@@ -731,6 +740,7 @@ function run_test_on_vm {
             scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
             recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+            echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
             exit -1
         fi
         get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
@@ -782,6 +792,7 @@ function run_test_on_vm {
             then
                 echo "ERROR: compiling flexran controller on vm went wrong"
                 terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+                echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
                 exit -1
             fi
             FLEXRAN_CTL_VM_NAME=`echo $VM_NAME | sed -e "s#basic-sim#flexran-rtc#"`
@@ -791,6 +802,7 @@ function run_test_on_vm {
             then
                 echo "ERROR: Flexran Ctl VM is not alive"
                 terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+                echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
                 exit -1
             fi
             uvt-kvm wait $FLEXRAN_CTL_VM_NAME --insecure
@@ -825,6 +837,7 @@ function run_test_on_vm {
                 recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
                 terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
                 stop_flexran_ctrl $FLEXRAN_CTL_VM_CMDS $FLEXRAN_CTL_VM_IP_ADDR
+                echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
                 exit -1
             fi
             query_flexran_ctrl_status $FLEXRAN_CTL_VM_CMDS $FLEXRAN_CTL_VM_IP_ADDR 03_enb_ue_connected
@@ -866,6 +879,7 @@ function run_test_on_vm {
             scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
             recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+            echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
             exit -1
         fi
         get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
@@ -916,6 +930,7 @@ function run_test_on_vm {
             scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
             recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+            echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
             exit -1
         fi
         get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
@@ -965,6 +980,7 @@ function run_test_on_vm {
             scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
             recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+            echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
             exit -1
         fi
         get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
@@ -1027,5 +1043,11 @@ function run_test_on_vm {
         if [ $PING_STATUS -ne 0 ]; then STATUS=-1; fi
         if [ $IPERF_STATUS -ne 0 ]; then STATUS=-1; fi
 
+        if [ $STATUS -eq 0 ]
+        then
+            echo "TEST_OK" > $ARCHIVES_LOC/test_final_status.log
+        else
+            echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
+        fi
     fi
 }

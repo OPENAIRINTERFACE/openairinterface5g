@@ -165,7 +165,11 @@ function check_on_vm_build {
         fi
     done
 
-    if [ $NB_PATTERN_FILES -ne $NB_FOUND_FILES ]; then STATUS=-1; fi
+    if [ $NB_PATTERN_FILES -ne $NB_FOUND_FILES ]
+    then
+        echo "Expecting $NB_PATTERN_FILES log files and found $NB_FOUND_FILES"
+        STATUS=-1
+    fi
 
     # If we were building the FlexRan Controller, flag-touch for basic-simulator to continue
     if [[ "$VM_NAME" == *"-flexran-rtc"* ]]
@@ -174,5 +178,12 @@ function check_on_vm_build {
         then
             touch $JENKINS_WKSP/flexran/flexran_build_complete.txt
         fi
+    fi
+
+    if [[ $STATUS -eq 0 ]]
+    then
+        echo "BUILD_OK" > $ARCHIVES_LOC/build_final_status.log
+    else
+        echo "BUILD_KO" > $ARCHIVES_LOC/build_final_status.log
     fi
 }

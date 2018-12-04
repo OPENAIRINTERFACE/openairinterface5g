@@ -92,10 +92,14 @@ function report_test {
     echo "<!DOCTYPE html>" > ./test_simulator_results.html
     echo "<html class=\"no-js\" lang=\"en-US\">" >> ./test_simulator_results.html
     echo "<head>" >> ./test_simulator_results.html
+    echo "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">" >> ./test_simulator_results.html
+    echo "  <link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css\">" >> ./test_simulator_results.html
+    echo "  <script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js\"></script>" >> ./test_simulator_results.html
+    echo "  <script src=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js\"></script>" >> ./test_simulator_results.html
     echo "  <title>Simulator Results for $JOB_NAME job build #$BUILD_ID</title>" >> ./test_simulator_results.html
     echo "  <base href = \"http://www.openairinterface.org/\" />" >> ./test_simulator_results.html
     echo "</head>" >> ./test_simulator_results.html
-    echo "<body>" >> ./test_simulator_results.html
+    echo "<body><div class=\"container\">" >> ./test_simulator_results.html
     echo "  <table style=\"border-collapse: collapse; border: none;\">" >> ./test_simulator_results.html
     echo "    <tr style=\"border-collapse: collapse; border: none;\">" >> ./test_simulator_results.html
     echo "      <td style=\"border-collapse: collapse; border: none;\">" >> ./test_simulator_results.html
@@ -162,6 +166,26 @@ function report_test {
     then
         echo "   <h3>Basic Simulator Check</h3>" >> ./test_simulator_results.html
 
+        if [ -f $ARCHIVES_LOC/test_final_status.log ]
+        then
+            if [ `grep -c TEST_OK $ARCHIVES_LOC/test_final_status.log` -eq 1 ]
+            then
+                echo "   <div class=\"alert alert-success\">" >> ./test_simulator_results.html
+                echo "      <strong>TEST was SUCCESSFUL <span class=\"glyphicon glyphicon-ok-circle\"></span></strong>" >> ./test_simulator_results.html
+                echo "   </div>" >> ./test_simulator_results.html
+            else
+                echo "   <div class=\"alert alert-danger\">" >> ./test_simulator_results.html
+                echo "      <strong>TEST was a FAILURE! <span class=\"glyphicon glyphicon-ban-circle\"></span></strong>" >> ./test_simulator_results.html
+                echo "   </div>" >> ./test_simulator_results.html
+            fi
+        else
+            echo "   <div class=\"alert alert-danger\">" >> ./test_simulator_results.html
+            echo "      <strong>COULD NOT DETERMINE TEST FINAL STATUS! <span class=\"glyphicon glyphicon-ban-circle\"></span></strong>" >> ./test_simulator_results.html
+            echo "   </div>" >> ./test_simulator_results.html
+        fi
+
+        echo "   <button data-toggle=\"collapse\" data-target=\"#oai-basic-sim-test-details\">More details on Basic Simulator test results</button>" >> ./test_simulator_results.html
+        echo "   <div id=\"oai-basic-sim-test-details\" class=\"collapse\">" >> ./test_simulator_results.html
         echo "   <table border = \"1\">" >> ./test_simulator_results.html
         echo "      <tr bgcolor = \"#33CCFF\" >" >> ./test_simulator_results.html
         echo "        <th>Log File Name</th>" >> ./test_simulator_results.html
@@ -360,11 +384,17 @@ function report_test {
         done
 
         echo "   </table>" >> ./test_simulator_results.html
+        echo "   </div>" >> ./test_simulator_results.html
     fi
 
     if [ -e $JENKINS_WKSP/flexran/flexran_build_complete.txt ]
     then
         echo "   <h3>Basic Simulator + FlexRan Controller Check</h3>" >> ./test_simulator_results.html
+        echo "   <div class=\"alert alert-success\">" >> ./test_simulator_results.html
+        echo "      <strong>TEST was SUCCESSFUL <span class=\"glyphicon glyphicon-ok-circle\"></span></strong>" >> ./test_simulator_results.html
+        echo "   </div>" >> ./test_simulator_results.html
+        echo "   <button data-toggle=\"collapse\" data-target=\"#oai-flexran-test-details\">More details on Basic Simulator + Fleran Controller test results</button>" >> ./test_simulator_results.html
+        echo "   <div id=\"oai-flexran-test-details\" class=\"collapse\">" >> ./test_simulator_results.html
         echo "   <table border = \"1\">" >> ./test_simulator_results.html
         echo "      <tr bgcolor = \"#33CCFF\" >" >> ./test_simulator_results.html
         echo "        <th>Log File Name</th>" >> ./test_simulator_results.html
@@ -383,12 +413,31 @@ function report_test {
             echo "      </tr>" >> ./test_simulator_results.html
         done
         echo "   </table>" >> ./test_simulator_results.html
+        echo "   </div>" >> ./test_simulator_results.html
     fi
 
     ARCHIVES_LOC=archives/phy_sim/test
     if [ -d $ARCHIVES_LOC ]
     then
         echo "   <h3>Physical Simulators Check</h3>" >> ./test_simulator_results.html
+
+        if [ -f $ARCHIVES_LOC/test_final_status.log ]
+        then
+            if [ `grep -c TEST_OK $ARCHIVES_LOC/test_final_status.log` -eq 1 ]
+            then
+                echo "   <div class=\"alert alert-success\">" >> ./test_simulator_results.html
+                echo "      <strong>TEST was SUCCESSFUL <span class=\"glyphicon glyphicon-ok-circle\"></span></strong>" >> ./test_simulator_results.html
+                echo "   </div>" >> ./test_simulator_results.html
+            else
+                echo "   <div class=\"alert alert-danger\">" >> ./test_simulator_results.html
+                echo "      <strong>TEST was a FAILURE! <span class=\"glyphicon glyphicon-ban-circle\"></span></strong>" >> ./test_simulator_results.html
+                echo "   </div>" >> ./test_simulator_results.html
+            fi
+        else
+            echo "   <div class=\"alert alert-danger\">" >> ./test_simulator_results.html
+            echo "      <strong>COULD NOT DETERMINE TEST FINAL STATUS! <span class=\"glyphicon glyphicon-ban-circle\"></span></strong>" >> ./test_simulator_results.html
+            echo "   </div>" >> ./test_simulator_results.html
+        fi
 
         echo "   <table border = \"1\">" >> ./test_simulator_results.html
         echo "      <tr bgcolor = \"#33CCFF\" >" >> ./test_simulator_results.html
@@ -422,6 +471,10 @@ function report_test {
         done
 
         echo "   </table>" >> ./test_simulator_results.html
+        echo "   <br>" >> ./test_simulator_results.html
+
+        echo "   <button data-toggle=\"collapse\" data-target=\"#oai-phy-sim-test-details\">More details on Physical Simulators test results</button>" >> ./test_simulator_results.html
+        echo "   <div id=\"oai-phy-sim-test-details\" class=\"collapse\">" >> ./test_simulator_results.html
 
         echo "   <h4>Details</h4>" >> ./test_simulator_results.html
         for XML_FILE in $XML_TESTS
@@ -472,6 +525,8 @@ function report_test {
         done
     fi
 
-    echo "</body>" >> ./test_simulator_results.html
+    echo "</div>" >> ./test_simulator_results.html
+    echo "   <div class=\"well well-lg\">End of Test Report -- Copyright <span class=\"glyphicon glyphicon-copyright-mark\"></span> 2018 <a href=\"http://www.openairinterface.org/\">OpenAirInterface</a>. All Rights Reserved.</div>" >> ./test_simulator_results.html
+    echo "</div></body>" >> ./test_simulator_results.html
     echo "</html>" >> ./test_simulator_results.html
 }
