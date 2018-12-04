@@ -56,7 +56,7 @@
 //#define DEBUG_PHY_PROC
 
 #define NR_PDCCH_SCHED
-//#define NR_PDCCH_SCHED_DEBUG
+#define NR_PDCCH_SCHED_DEBUG
 //#define NR_PUCCH_SCHED
 //#define NR_PUCCH_SCHED_DEBUG
 
@@ -2936,6 +2936,7 @@ void nr_ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
 		   ue->high_speed_flag);
 
   if (ret==0) {
+    ue->pbch_vars[eNB_id]->pdu_errors_conseq = 0;
 
 #ifdef DEBUG_PHY_PROC
     LOG_D(PHY,"[UE %d] frame %d, nr_tti_rx %d, Received PBCH (MIB): frame_tx %d. N_RB_DL %d\n",
@@ -2965,14 +2966,9 @@ void nr_ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
 
     ue->pbch_vars[eNB_id]->pdu_errors_conseq++;
     ue->pbch_vars[eNB_id]->pdu_errors++;
-    if (ue->mac_enabled == 1) {
-      //mac_xface->out_of_sync_ind(ue->Mod_id,frame_rx,eNB_id);
-    }
-    else{
-      if (ue->pbch_vars[eNB_id]->pdu_errors_conseq>=100) {
-	LOG_E(PHY,"More that 100 consecutive PBCH errors! Exiting!\n");
-	exit_fun("More that 100 consecutive PBCH errors! Exiting!\n");
-      }
+    if (ue->pbch_vars[eNB_id]->pdu_errors_conseq>=100) {
+      LOG_E(PHY,"More that 100 consecutive PBCH errors! Exiting!\n");
+      exit_fun("More that 100 consecutive PBCH errors! Exiting!\n");
     }
   }
 
@@ -5448,7 +5444,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 
 //#endif //pdsch
 
-  LOG_D(PHY," ****** end RX-Chain  for AbsSubframe %d.%d ******  \n", frame_rx%1024, nr_tti_rx);
+  LOG_I(PHY," ****** end RX-Chain  for AbsSubframe %d.%d ******  \n", frame_rx%1024, nr_tti_rx);
   return (0);
 }
 
