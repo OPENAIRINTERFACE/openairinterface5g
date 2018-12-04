@@ -1438,7 +1438,7 @@ class SSHConnection():
 				device_id = status_queue.get()
 				ip_addr = status_queue.get()
 				message = status_queue.get()
-				html_cell = '<pre>UE (' + device_id + ')\nIP Address  : ' + ip_addr + '\n' + message + '</pre>'
+				html_cell = '<pre style="background-color:white">UE (' + device_id + ')\nIP Address  : ' + ip_addr + '\n' + message + '</pre>'
 				html_queue.put(html_cell)
 			if (iperf_noperf and iperf_status):
 				self.CreateHtmlTestRowQueue(self.iperf_args, 'PERF NOT MET', len(self.UEDevices), html_queue)
@@ -2020,7 +2020,8 @@ class SSHConnection():
 				self.htmlFile.write('        <th bgcolor = "red" colspan=' + str(2 + self.htmlUEConnected) + '><font color="white">FAIL</font></th>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('  </table>\n')
-			self.htmlFile.write('   <div class="well well-lg">End of Test Report -- Copyright <span class="glyphicon glyphicon-copyright-mark"></span> 2018 <a href="http://www.openairinterface.org/">OpenAirInterface</a>. All Rights Reserved.</div>\n')
+			self.htmlFile.write('  <p></p>\n')
+			self.htmlFile.write('  <div class="well well-lg">End of Test Report -- Copyright <span class="glyphicon glyphicon-copyright-mark"></span> 2018 <a href="http://www.openairinterface.org/">OpenAirInterface</a>. All Rights Reserved.</div>\n')
 			self.htmlFile.write('</div></body>\n')
 			self.htmlFile.write('</html>\n')
 			self.htmlFile.close()

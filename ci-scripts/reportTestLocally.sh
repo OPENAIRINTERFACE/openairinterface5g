@@ -525,7 +525,8 @@ function report_test {
         done
     fi
 
-    echo "</div>" >> ./test_simulator_results.html
+    echo "   </div>" >> ./test_simulator_results.html
+    echo "   <p></p>" >> ./test_simulator_results.html
     echo "   <div class=\"well well-lg\">End of Test Report -- Copyright <span class=\"glyphicon glyphicon-copyright-mark\"></span> 2018 <a href=\"http://www.openairinterface.org/\">OpenAirInterface</a>. All Rights Reserved.</div>" >> ./test_simulator_results.html
     echo "</div></body>" >> ./test_simulator_results.html
     echo "</html>" >> ./test_simulator_results.html

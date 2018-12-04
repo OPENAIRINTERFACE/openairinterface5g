@@ -543,6 +543,7 @@ function report_build {
     rm -f ./*_row*.html
 
     echo "   </div>" >> ./build_results.html
+    echo "   <p></p>" >> ./build_results.html
     echo "   <div class=\"well well-lg\">End of Build Report -- Copyright <span class=\"glyphicon glyphicon-copyright-mark\"></span> 2018 <a href=\"http://www.openairinterface.org/\">OpenAirInterface</a>. All Rights Reserved.</div>" >> ./build_results.html
     echo "</div></body>" >> ./build_results.html
     echo "</html>" >> ./build_results.html
