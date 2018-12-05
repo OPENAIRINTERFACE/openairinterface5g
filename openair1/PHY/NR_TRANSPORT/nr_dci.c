@@ -150,11 +150,12 @@ void nr_pdcch_scrambling(uint32_t *in,
       s = lte_gold_generic(&x1, &x2, reset);
       reset = 0;
       if (i){
-      in++;
-      out++;
-	}
+	in++;
+	out++;
+      }
     }
     (*out) ^= ((((*in)>>(i&0x1f))&1) ^ ((s>>(i&0x1f))&1))<<(i&0x1f);
+    printf("nr_pdcch_scrambling: in %d => out %d\n",((*in)>>(i&0x1f))&1,((*out)>>(i&0x1f))&1);
   }
 
 }

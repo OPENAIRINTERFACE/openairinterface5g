@@ -28,7 +28,7 @@
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "filt16a_32.h"
 #include "T.h"
-#define DEBUG_CH
+//#define DEBUG_CH
 
 
 int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,

@@ -25,14 +25,14 @@
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 
-#define DEBUG_FEP
+//#define DEBUG_FEP
 
 #define SOFFSET 0
 
-#ifdef LOG_I
+/*#ifdef LOG_I
 #undef LOG_I
 #define LOG_I(A,B...) printf(A)
-#endif
+#endif*/
 
 int nr_slot_fep(PHY_VARS_NR_UE *ue,
 		unsigned char l,
