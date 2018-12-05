@@ -558,7 +558,8 @@ int flexran_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Fl
 
   if (flexran_agent_get_rrc_xface(mod_id) && flexran_agent_get_mac_xface(mod_id)
       && flexran_get_rrc_num_ues(mod_id) != flexran_get_mac_num_ues(mod_id)) {
-    LOG_E(FLEXRAN_AGENT, "different numbers of UEs in RRC and MAC\n");
+    LOG_E(FLEXRAN_AGENT, "different numbers of UEs in RRC (%d) and MAC (%d)\n",
+        flexran_get_rrc_num_ues(mod_id), flexran_get_mac_num_ues(mod_id));
     goto error;
   }
 
@@ -578,7 +579,7 @@ int flexran_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Fl
       if (flexran_agent_get_rrc_xface(mod_id))
         flexran_agent_fill_rrc_ue_config(mod_id, rnti, ue_config[i]);
       if (flexran_agent_get_mac_xface(mod_id)) {
-        const int UE_id = flexran_get_mac_ue_id(mod_id, i);
+        const int UE_id = flexran_get_mac_ue_id_rnti(mod_id, rnti);
         flexran_agent_fill_mac_ue_config(mod_id, UE_id, ue_config[i]);
       }
     }

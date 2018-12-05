@@ -80,6 +80,8 @@ int flexran_get_num_ue_lcs(mid_t mod_id, mid_t ue_id);
 /* Get the rnti of a UE with id ue_id from MAC */
 rnti_t flexran_get_mac_ue_crnti(mid_t mod_id, mid_t ue_id);
 
+int flexran_get_mac_ue_id_rnti(mid_t mod_id, rnti_t rnti);
+
 /* Return the UE id of attached UE as opposed to the index [0,NUM UEs] (i.e.,
  * the i'th active UE). Returns 0 if the i'th active UE could not be found. */
 int flexran_get_mac_ue_id(mid_t mod_id, int i);
