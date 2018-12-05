@@ -39,6 +39,7 @@
 extern RAN_CONTEXT_t RC;
 
 f1ap_setup_req_t *f1ap_du_data;
+f1ap_cudu_ue_inst_t f1ap_du_ue[MAX_eNB];
 
 void du_task_send_sctp_association_req(instance_t instance, f1ap_setup_req_t *f1ap_setup_req) {
   
@@ -177,6 +178,12 @@ void *F1AP_DU_task(void *arg) {
         AssertFatal (1 == 0, "Should not be here!\n" );
         //DU_send_UL_RRC_MESSAGE_TRANSFER(ITTI_MESSAGE_GET_INSTANCE(received_msg),
          //                               &F1AP_UL_RRC_MESSAGE(received_msg));
+        break;
+
+      case F1AP_UE_CONTEXT_RELEASE_REQ: // from MAC
+        LOG_I(DU_F1AP, "DU Task Received F1AP_UE_CONTEXT_RELEASE_REQ\n");
+        DU_send_UE_CONTEXT_RELEASE_REQUEST(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                           &F1AP_UE_CONTEXT_RELEASE_REQ(received_msg));
         break;
 
       case TERMINATE_MESSAGE:

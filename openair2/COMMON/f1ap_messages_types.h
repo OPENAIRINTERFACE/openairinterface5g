@@ -289,4 +289,20 @@ typedef struct f1ap_ue_context_setup_req_s {
   int      rrc_container_length;
 } f1ap_ue_context_setup_req_t;
 
+typedef enum F1ap_Cause_e {
+  F1AP_CAUSE_NOTHING,  /* No components present */
+  F1AP_CAUSE_RADIO_NETWORK,
+  F1AP_CAUSE_TRANSPORT,
+  F1AP_CAUSE_PROTOCOL,
+  F1AP_CAUSE_MISC,
+} f1ap_Cause_t;
+
+typedef struct f1ap_ue_context_release_s {
+  uint16_t      rnti;
+  f1ap_Cause_t  cause;
+  long          cause_value;
+  uint8_t      *rrc_container;
+  int           rrc_container_length;
+} f1ap_ue_context_release_req_t, f1ap_ue_context_release_cmd_t;
+
 #endif /* F1AP_MESSAGES_TYPES_H_ */

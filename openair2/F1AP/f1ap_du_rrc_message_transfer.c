@@ -57,9 +57,7 @@
 
 extern f1ap_setup_req_t *f1ap_du_data;
 extern RAN_CONTEXT_t RC;
-
-
-f1ap_cudu_ue_inst_t f1ap_du_ue[MAX_eNB];
+extern f1ap_cudu_ue_inst_t f1ap_du_ue[MAX_eNB];
 
 
 
