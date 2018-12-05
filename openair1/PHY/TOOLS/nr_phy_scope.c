@@ -507,7 +507,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   //int16_t *pdsch_mag;
   int8_t  *pdcch_llr;
   int16_t *pdcch_comp;
-  int8_t *pbch_llr;
+  int16_t *pbch_llr;
   int16_t *pbch_comp;
   float llr_pbch[1920], bit_pbch[1920];
   float *llr, *bit; 
@@ -517,6 +517,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   int num_re = 4500;
   int Qm = 2;
   int coded_bits_per_codeword = num_re*Qm;
+  int symbol, first_symbol,nb_re;
   /*
   float Re,Im,ymax=1;
   float **chest_t_abs, *chest_f_abs;
@@ -591,7 +592,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   chest_t = (int16_t**) phy_vars_ue->common_vars.common_vars_rx_data_per_thread[phy_vars_ue->current_thread_id[subframe]].dl_ch_estimates_time[eNB_id];
   chest_f = (int16_t**) phy_vars_ue->common_vars.common_vars_rx_data_per_thread[phy_vars_ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id];
   */
-  pbch_llr = (int8_t*) phy_vars_ue->pbch_vars[eNB_id]->llr;
+  pbch_llr = (int16_t*) phy_vars_ue->pbch_vars[eNB_id]->llr;
   pbch_comp = (int16_t*) phy_vars_ue->pbch_vars[eNB_id]->rxdataF_comp[0];
 
   pdcch_llr = (int8_t*) phy_vars_ue->pdcch_vars[phy_vars_ue->current_thread_id[subframe]][eNB_id]->llr;
@@ -625,6 +626,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     */
   }
 
+  if (phy_vars_ue->is_synchronized==0) {
   for (ind=0;ind<3;ind++) {
     if (pss_corr_ue[ind]) {
       for (i=0; i<samples_per_frame; i++) {
@@ -638,7 +640,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
         fl_add_xyplot_overlay(form->chest_t,ind,time,corr,samples_per_frame,rx_antenna_colors[ind]);
     }
   }
-    
+  }
 
   /*
   // Channel Impulse Response (still repeated format)
@@ -732,14 +734,24 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     fl_set_xyplot_data(form->pbch_llr,bit_pbch,llr_pbch,864,"","","");
   }
 
+  if (phy_vars_ue->is_synchronized==1)
+    first_symbol=5;
+  else
+    first_symbol=1;
+
   // PBCH I/Q of MF Output
   if (pbch_comp!=NULL) {
-    for (i=0; i<576; i++) {
-      I[i] = pbch_comp[2*i];
-      Q[i] = pbch_comp[2*i+1];
+    for (symbol=first_symbol; symbol<(first_symbol+3); symbol++) {
+      if (symbol == 2 || symbol == 6) 
+	nb_re = 72;
+      else
+	nb_re = 180;
+      for (i=0; i<nb_re; i++) {
+	I[i] = pbch_comp[2*symbol*20*12+2*i];
+	Q[i] = pbch_comp[2*symbol*20*12+2*i+1];
+      }
     }
-
-    fl_set_xyplot_data(form->pbch_comp,I,Q,576,"","","");
+    fl_set_xyplot_data(form->pbch_comp,I,Q,432,"","","");
   }
 
   // PDCCH LLRs
