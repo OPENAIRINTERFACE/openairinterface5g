@@ -37,6 +37,7 @@
 #define DEBUG_CHANNEL_CODING
 #define PDCCH_TEST_POLAR_TEMP_FIX
 
+
 extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
 
 uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
@@ -185,9 +186,11 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   * in frequency: the first subcarrier is obtained by adding the first CRB overlapping the SSB and the rb_offset
   * in time: by its first slot and its first symbol*/
   uint16_t cset_start_sc = frame_parms.first_carrier_offset + ((int)floor(frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB)+pdcch_params.rb_offset)*NR_NB_SC_PER_RB;
-  uint8_t cset_start_symb = pdcch_params.first_slot*frame_parms.symbols_per_slot + pdcch_params.first_symbol;
+  //  uint8_t cset_start_symb = pdcch_params.first_slot*frame_parms.symbols_per_slot + pdcch_params.first_symbol;
+  uint8_t cset_start_symb = pdcch_params.first_symbol;
   uint8_t cset_nsymb = pdcch_params.n_symb;
   dci_idx = 0;
+
 
   /// DMRS QPSK modulation
     /*There is a need to shift from which index the pregenerated DMRS sequence is used
@@ -278,12 +281,12 @@ printf("scrambled output: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%0
       }
     }
 #ifdef DEBUG_DCI
-printf("\n Ordered REG list:\n");
-for (int i=0; i<nb_regs; i++)
-  printf("%d\t",reg_mapping_list[i].reg_idx );
-printf("\n");
+    printf("\n Ordered REG list:\n");
+    for (int i=0; i<nb_regs; i++)
+      printf("%d\t",reg_mapping_list[i].reg_idx );
+    printf("\n");
 #endif
-
+    
     if (pdcch_params.precoder_granularity == NFAPI_NR_CSET_ALL_CONTIGUOUS_RBS) {
     /*in this case the DMRS are mapped on all the coreset*/
       for (l=cset_start_symb; l<cset_start_symb+ cset_nsymb; l++) {
@@ -292,6 +295,9 @@ printf("\n");
         while (dmrs_idx<3*pdcch_params.n_rb) {
           ((int16_t*)txdataF[aa])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (a * mod_dmrs[l][dmrs_idx<<1]) >> 15;
           ((int16_t*)txdataF[aa])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (a * mod_dmrs[l][(dmrs_idx<<1) + 1]) >> 15;
+#ifdef DEBUG_PDCCH_DMRS
+	  printf("symbol %d position %d => (%d,%d)\n",l,k,((int16_t*)txdataF[aa])[(l*frame_parms.ofdm_symbol_size + k)<<1] , ((int16_t*)txdataF[aa])[((l*frame_parms.ofdm_symbol_size + k)<<1)+1]); 
+#endif
           k+=4;
           if (k >= frame_parms.ofdm_symbol_size)
             k -= frame_parms.ofdm_symbol_size;
@@ -315,6 +321,9 @@ printf("\n");
           if (pdcch_params.precoder_granularity == NFAPI_NR_CSET_SAME_AS_REG_BUNDLE) {
             ((int16_t*)txdataF[aa])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (a * mod_dmrs[l][dmrs_idx<<1]) >> 15;
             ((int16_t*)txdataF[aa])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (a * mod_dmrs[l][(dmrs_idx<<1) + 1]) >> 15;
+#ifdef DEBUG_PDCCH_DMRS
+	    printf("l %d position %d => (%d,%d)\n",l,k,((int16_t*)txdataF[aa])[(l*frame_parms.ofdm_symbol_size + k)<<1] , ((int16_t*)txdataF[aa])[((l*frame_parms.ofdm_symbol_size + k)<<1)+1]); 
+#endif
             k_prime++;
             dmrs_idx++;
           }

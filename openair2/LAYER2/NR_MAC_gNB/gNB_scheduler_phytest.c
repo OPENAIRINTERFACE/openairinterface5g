@@ -72,7 +72,8 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 				 scs, scs, nr_FR1, 0, 0,
 				 slots_per_frame,
 				 dl_carrier_bandwidth);
-    
+    params_rel15->first_slot = 0;
+
     pdu_rel15->frequency_domain_assignment = 5;
     pdu_rel15->time_domain_assignment = 2;
     pdu_rel15->vrb_to_prb_mapping = 0;

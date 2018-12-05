@@ -150,7 +150,7 @@ int main(int argc, char **argv)
   unsigned char frame_type = 0;
   unsigned char pbch_phase = 0;
 
-  int frame=0,subframe=1;
+  int frame=0,slot=1;
   int frame_length_complex_samples;
   int frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
@@ -484,6 +484,7 @@ int main(int argc, char **argv)
   }
 
   nr_gold_pbch(UE);
+  nr_gold_pdcch(UE,0,2);
 
   RC.nb_nr_macrlc_inst = 1;
   mac_top_init_gNB();
@@ -509,11 +510,11 @@ int main(int argc, char **argv)
     gNB->pbch_configured = 1;
     for (int i=0;i<4;i++) gNB->pbch_pdu[i]=i+1;
 
-    nr_schedule_css_dlsch_phytest(0,frame,subframe);
+    nr_schedule_css_dlsch_phytest(0,frame,slot);
     Sched_INFO.module_id = 0;
     Sched_INFO.CC_id     = 0;
     Sched_INFO.frame     = frame;
-    Sched_INFO.subframe  = subframe;
+    Sched_INFO.slot      = slot;
     Sched_INFO.DL_req    = &gNB_mac->DL_req[0];
     Sched_INFO.UL_req    = NULL;
     Sched_INFO.HI_DCI0_req  = NULL;
@@ -521,7 +522,7 @@ int main(int argc, char **argv)
     nr_schedule_response(&Sched_INFO);
 
     gNB_proc.frame_tx = frame;
-    gNB_proc.subframe_tx = subframe;
+    gNB_proc.slot_tx  = slot;
     phy_procedures_gNB_TX(gNB,&gNB_proc,0);
     
     //nr_common_signal_procedures (gNB,frame,subframe);
@@ -660,11 +661,13 @@ int main(int argc, char **argv)
 	UE->rx_offset=0;
 
 	UE_proc.frame_rx = frame;
-	UE_proc.nr_tti_rx= subframe;
-	UE_proc.subframe_rx = subframe;
+	UE_proc.nr_tti_rx= slot;
+	UE_proc.subframe_rx = slot;
 	
 	UE_mac->scheduled_response.dl_config = &dl_config;
 	nr_ue_scheduled_response(&UE_mac->scheduled_response);
+
+	printf("Running phy procedures UE RX %d.%d\n",frame,slot);
 
 	phy_procedures_nrUE_RX(UE,
 			       &UE_proc,
