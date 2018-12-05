@@ -551,6 +551,15 @@ set(TPLIB_ETHERNET_SOURCE
   )
 add_library(oai_eth_transpro MODULE ${TPLIB_ETHERNET_SOURCE} )
 
+include_directories("${OPENAIR_TARGETS}/ARCH/IRIS/USERSPACE/LIB/")
+set(option_HWIRISLIB_lib "-l SoapySDR")
+set(HWLIB_IRIS_SOURCE
+        ${OPENAIR_TARGETS}/ARCH/IRIS/USERSPACE/LIB/iris_lib.cpp
+        )
+add_library(oai_irisdevif MODULE ${HWLIB_IRIS_SOURCE})
+target_include_directories(oai_irisdevif PRIVATE /usr/local/lib/SoapySDR/modules0.6/)
+target_link_libraries(oai_irisdevif SoapySDR)
+
 include_directories("${OPENAIR_TARGETS}/ARCH/mobipass/")
 set(TPLIB_MOBIPASS_SOURCE
   ${OPENAIR_TARGETS}/ARCH/mobipass/interface.c
@@ -1787,6 +1796,15 @@ include_directories(${CRYPTO_INCLUDE_DIRS})
 if (${RF_BOARD} STREQUAL "OAI_USRP")
   find_package(Boost REQUIRED)
   include_directories(${LIBBOOST_INCLUDE_DIR})
+
+elseif (${RF_BOARD} STREQUAL "OAI_IRIS")
+    include_directories("${OPENAIR_TARGETS}/ARCH/IRIS/USERSPACE/LIB/")
+    include_directories("/usr/local/include/")
+    set(HW_SOURCE ${HW_SOURCE}
+            ${OPENAIR_TARGETS}/ARCH/IRIS/USERSPACE/LIB/iris_lib.cpp)
+    LINK_DIRECTORIES("/usr/local/lib")
+    set(option_HW_lib "-lSoapySDR -rdynamic -ldl")
+
 endif (${RF_BOARD} STREQUAL "OAI_USRP")
 
 pkg_search_module(OPENPGM openpgm-5.1 openpgm-5.2)
