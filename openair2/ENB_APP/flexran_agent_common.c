@@ -531,6 +531,18 @@ int flexran_agent_lc_config_reply(mid_t mod_id, const void *params, Protocol__Fl
  * ************************************
  */
 
+int sort_ue_config(const void *a, const void *b)
+{
+  const Protocol__FlexUeConfig *fa = a;
+  const Protocol__FlexUeConfig *fb = b;
+
+  if (fa->rnti < fb->rnti)
+    return -1;
+  else if (fa->rnti < fb->rnti)
+    return 1;
+  return 0;
+}
+
 int flexran_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
 
   xid_t xid;
@@ -583,6 +595,7 @@ int flexran_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Fl
         flexran_agent_fill_mac_ue_config(mod_id, UE_id, ue_config[i]);
       }
     }
+    qsort(ue_config, ue_config_reply_msg->n_ue_config, sizeof(ue_config[0]), sort_ue_config);
     ue_config_reply_msg->ue_config = ue_config;
   }
   *msg = malloc(sizeof(Protocol__FlexranMessage));
