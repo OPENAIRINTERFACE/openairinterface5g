@@ -687,7 +687,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 	    UE->dcireq.cc_id     = 0;
 	    UE->dcireq.frame     = proc->frame_rx;
 	    UE->dcireq.slot      = proc->nr_tti_rx;
-	    UE->if_inst->dcireq(&UE->dcireq);
+	    //UE->if_inst->dcireq(&UE->dcireq);
 
 #ifdef UE_SLOT_PARALLELISATION
             phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
