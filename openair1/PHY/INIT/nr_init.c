@@ -144,6 +144,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   }
 
   nr_init_pdcch_dmrs(gNB, cfg->sch_config.physical_cell_id.value);
+  nr_init_pbch_interleaver(gNB->nr_pbch_interleaver);
 
 
    //PDSCH DMRS init

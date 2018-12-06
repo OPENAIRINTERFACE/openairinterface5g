@@ -42,7 +42,7 @@
 #define MAX_NUM_RU_PER_gNB MAX_NUM_RU_PER_eNB
 
 typedef struct {
-  uint8_t pbch_a[NR_POLAR_PBCH_PAYLOAD_BITS>>3];
+  uint32_t pbch_a;
   uint32_t pbch_a_interleaved;
   uint32_t pbch_a_prime;
   uint32_t pbch_e[NR_POLAR_PBCH_E_DWORD];
@@ -409,6 +409,9 @@ typedef struct PHY_VARS_gNB_s {
 
   /// PBCH DMRS sequence
   uint32_t nr_gold_pbch_dmrs[2][64][NR_PBCH_DMRS_LENGTH_DWORD];
+
+  /// PBCH interleaver
+  uint8_t nr_pbch_interleaver[NR_POLAR_PBCH_PAYLOAD_BITS];
 
   /// PDCCH DMRS sequence
   uint32_t ***nr_gold_pdcch_dmrs;
