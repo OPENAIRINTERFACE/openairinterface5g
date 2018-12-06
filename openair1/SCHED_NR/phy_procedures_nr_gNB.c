@@ -184,7 +184,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
 
   num_dci = gNB->pdcch_vars.num_dci;
   num_pdsch_rnti = gNB->pdcch_vars.num_pdsch_rnti;
-  if (num_dci && (subframe==1)) {
+  if (num_dci) {
     LOG_I(PHY, "[gNB %d] Frame %d subframe %d \
     Calling nr_generate_dci_top (number of DCI %d)\n", gNB->Mod_id, frame, subframe, num_dci);
 

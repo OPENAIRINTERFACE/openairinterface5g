@@ -537,13 +537,13 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 		      				harq_process->c[r][m]= (uint8_t) llrProcBuf[m];
 		      	      	}
 
-#ifdef DEBUG_DLSCH_DECODING
+		//#ifdef DEBUG_DLSCH_DECODING
       //printf("output decoder %d %d %d %d %d \n", harq_process->c[r][0], harq_process->c[r][1], harq_process->c[r][2],harq_process->c[r][3], harq_process->c[r][4]);
       for (int k=0;k<32;k++)
-       printf("output decoder [%d] =  0x%02x \n", k, harq_process->c[r][k]);
-      printf("no_iterations_ldpc %d (ret %d)\n",no_iteration_ldpc,ret);
+	LOG_I(PHY,"output decoder [%d] =  0x%02x \n", k, harq_process->c[r][k]);
+      LOG_I(PHY,"no_iterations_ldpc %d (ret %d)\n",no_iteration_ldpc,ret);
       //write_output("dec_output.m","dec0",harq_process->c[0],Kr_bytes,1,4);
-#endif
+      //#endif
 
 
 #if UE_TIMING_TRACE

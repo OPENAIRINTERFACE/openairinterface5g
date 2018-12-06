@@ -732,6 +732,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     }
 
     fl_set_xyplot_data(form->pbch_llr,bit_pbch,llr_pbch,864,"","","");
+    fl_set_xyplot_ybounds(form->pbch_llr,-32,32);
   }
 
   if (phy_vars_ue->is_synchronized==1)

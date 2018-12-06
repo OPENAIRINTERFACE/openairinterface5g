@@ -500,7 +500,7 @@ static void get_options(unsigned int *start_msc) {
   int CC_id;
   int tddflag, nonbiotflag;
   char *loopfile=NULL;
-  int dumpframe;
+  int dumpframe = 0;
   uint32_t online_log_messages;
   uint32_t glog_level;
   uint32_t start_telnetsrv;

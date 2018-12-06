@@ -1514,9 +1514,9 @@ void *UE_thread(void *arg) {
 				       UE->frame_parms.nb_antennas_rx);
 	}
 #endif
-	}
+      }
 
-        } // UE->is_synchronized==0
+    } // UE->is_synchronized==0
         else {
             if (start_rx_stream==0) {
                 start_rx_stream=1;

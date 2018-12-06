@@ -211,16 +211,21 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
   uint16_t nb_symbols = rel15->nb_mod_symbols;
   uint8_t Qm = rel15->modulation_order;
   uint16_t encoded_length = nb_symbols*Qm;
+  static uint8_t print=1;
 
   /// CRC, coding, interleaving and rate matching
   nr_dlsch_encoding(harq->pdu, subframe, &dlsch, &frame_parms);
+  //#ifdef DEBUG_DLSCH
+  if (print) {
+    print = 0;
+    printf("PDSCH encoding:\nPayload:\n");
+    for (int i=0; i<TBS>>7; i++) {
+      for (int j=0; j<16; j++)
+	printf("0x%02x\t", harq->pdu[(i<<4)+j]);
+      printf("\n");
+    }
+  }
 #ifdef DEBUG_DLSCH
-printf("PDSCH encoding:\nPayload:\n");
-for (int i=0; i<TBS>>7; i++) {
-  for (int j=0; j<16; j++)
-    printf("0x%02x\t", harq->pdu[(i<<4)+j]);
-  printf("\n");
-}
 printf("\nEncoded payload:\n");
 for (int i=0; i<encoded_length>>3; i++) {
   for (int j=0; j<8; j++)

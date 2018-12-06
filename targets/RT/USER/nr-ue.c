@@ -900,7 +900,7 @@ void *UE_thread(void *arg) {
                     for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
                         rxp[i] = (void*)&dummy_rx[i][0];
                     for (int sf=0; sf<NR_NUMBER_OF_SUBFRAMES_PER_FRAME; sf++)
-                        //	    printf("Reading dummy sf %d\n",sf);
+		      //LOG_I(PHY,"Reading dummy sf %d\n",sf);
 		      AssertFatal(UE->frame_parms.samples_per_subframe==
 				 UE->rfdevice.trx_read_func(&UE->rfdevice,
 							    &timestamp,
@@ -997,7 +997,7 @@ void *UE_thread(void *arg) {
                                 UE->rx_offset < 10*UE->frame_parms.samples_per_subframe )
                             UE->rx_offset_diff = 1;
 
-                        LOG_D(PHY,"AbsSubframe %d.%d TTI SET rx_off_diff to %d rx_offset %d \n",proc->frame_rx,subframe_nr,UE->rx_offset_diff,UE->rx_offset);
+                        LOG_I(PHY,"AbsSubframe %d.%d TTI SET rx_off_diff to %d rx_offset %d \n",proc->frame_rx,subframe_nr,UE->rx_offset_diff,UE->rx_offset);
                         readBlockSize=UE->frame_parms.samples_per_subframe -
                                       UE->frame_parms.ofdm_symbol_size -
                                       UE->frame_parms.nb_prefix_samples0 -

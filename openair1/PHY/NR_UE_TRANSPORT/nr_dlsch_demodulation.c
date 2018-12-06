@@ -160,7 +160,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   //set active for testing -> to be removed
   dlsch[0]->harq_processes[harq_pid]->status = ACTIVE;
   dlsch[0]->harq_processes[harq_pid]->Qm = 2;
-  dlsch[0]->harq_processes[harq_pid]->mcs = 9;
+  dlsch[0]->harq_processes[harq_pid]->mcs = 8;
   dlsch[0]->harq_processes[harq_pid]->Nl=1;
   dlsch[0]->harq_processes[harq_pid]->nb_rb = nb_rb_pdsch;
   frame_parms->nushift = 0;

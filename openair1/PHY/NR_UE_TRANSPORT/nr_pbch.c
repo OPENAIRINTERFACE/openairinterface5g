@@ -496,7 +496,7 @@ void nr_pbch_quantize(int16_t *pbch_llr8,
     if (pbch_llr[i]>31)
       pbch_llr8[i]=32;
     else if (pbch_llr[i]<-31)
-      pbch_llr8[i]=-32;
+      pbch_llr8[i]=-31;
     else
       pbch_llr8[i] = (char)(pbch_llr[i]);
 
