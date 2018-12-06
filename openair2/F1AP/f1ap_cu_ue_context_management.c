@@ -37,7 +37,10 @@
 #include "f1ap_cu_ue_context_management.h"
 #include <string.h>
 
+#include "openair2/LAYER2/MAC/mac_proto.h"
+
 extern f1ap_setup_req_t *f1ap_du_data_from_du;
+extern f1ap_cudu_ue_inst_t f1ap_cu_ue[MAX_eNB];
 
 int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
                                      f1ap_ue_context_setup_req_t *f1ap_ue_context_setup_req) {
@@ -766,38 +769,31 @@ int CU_handle_UE_CONTEXT_SETUP_FAILURE(instance_t       instance,
 }
 
 
-// note: is temporary with F1AP_UE_CONTEXT_SETUP_REQ
 int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t       instance,
                                          uint32_t         assoc_id,
                                          uint32_t         stream,
                                          F1AP_F1AP_PDU_t *pdu) {
-  MessageDef                      *msg_p; // message to RRC
   F1AP_UEContextReleaseRequest_t    *container;
   F1AP_UEContextReleaseRequestIEs_t *ie;
-  //int i;
+  rnti_t rnti;
 
   DevAssert(pdu);
 
-  msg_p = itti_alloc_new_message(TASK_DU_F1, F1AP_UE_CONTEXT_SETUP_REQ);
-  f1ap_ue_context_setup_req_t *f1ap_ue_context_setup_req;
-  f1ap_ue_context_setup_req = &F1AP_UE_CONTEXT_SETUP_REQ(msg_p);
-
   container = &pdu->choice.initiatingMessage->value.choice.UEContextReleaseRequest;
-
   /* GNB_CU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseRequestIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
-  f1ap_ue_context_setup_req->gNB_CU_ue_id = ie->value.choice.GNB_CU_UE_F1AP_ID;
+  rnti = f1ap_get_rnti_by_cu_id(&f1ap_cu_ue[instance], ie->value.choice.GNB_CU_UE_F1AP_ID);
 
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseRequestIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
-  f1ap_ue_context_setup_req->gNB_DU_ue_id = malloc(sizeof(uint32_t));
-  AssertFatal(f1ap_ue_context_setup_req->gNB_DU_ue_id,
-              "can not allocate memory for f1ap_ue_context_setup_req->gNB_DU_ue_id\n");
-  *f1ap_ue_context_setup_req->gNB_DU_ue_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
+  AssertFatal(rnti == f1ap_get_rnti_by_du_id(&f1ap_cu_ue[instance],
+                                             ie->value.choice.GNB_DU_UE_F1AP_ID),
+      "RNTI obtained through DU ID is different from CU ID\n");
 
   /* Cause */
+  /* We don't care for the moment
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseRequestIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_Cause, true);
 
@@ -819,9 +815,12 @@ int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t       instance,
     default:
       break;
   }
+  */
 
-  AssertFatal(0, "check configuration, send to appropriate handler\n");
+  LOG_I(CU_F1AP, "Received UE_CONTEXT_RELEASE_REQUEST for RNTI %x, signalling to RRC\n", rnti);
+  rrc_mac_signal_ue_release(instance, rnti);
 
+  return 0;
 }
 
 

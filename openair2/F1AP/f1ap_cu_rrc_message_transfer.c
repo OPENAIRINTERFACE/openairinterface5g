@@ -51,7 +51,7 @@ uint32_t        f1ap_assoc_id = 0;
 uint32_t        f1ap_stream = 0;
 
 
-f1ap_cudu_ue_inst_t f1ap_cu_ue[MAX_eNB];
+extern f1ap_cudu_ue_inst_t f1ap_cu_ue[MAX_eNB];
 
 /*
     Initial UL RRC Message Transfer
