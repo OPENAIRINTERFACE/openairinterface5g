@@ -85,10 +85,10 @@ unsigned short config_frames[4] = {2,9,11,13};
 // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
 // at eNB 0, an UL scope for every UE
 FD_lte_phy_scope_ue  *form_ue[NUMBER_OF_UE_MAX];
-FD_lte_phy_scope_enb *form_enb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
-FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
+//FD_lte_phy_scope_enb *form_enb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
+//FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
 char title[255];
-unsigned char                   scope_enb_num_ue = 2;
+//unsigned char                   scope_enb_num_ue = 2;
 static pthread_t                forms_thread; //xforms
 #endif //XFORMS
 #include "nr-uesoftmodem.h"
@@ -440,8 +440,8 @@ static void *scope_thread(void *arg) {
   while (!oai_exit) {
       //len = dump_ue_stats (PHY_vars_UE_g[0][0], &PHY_vars_UE_g[0][0]->proc.proc_rxtx[0],stats_buffer, 0, mode,rx_input_level_dBm);
       //fl_set_object_label(form_stats->stats_text, stats_buffer);
-      fl_clear_browser(form_stats->stats_text);
-      fl_add_browser_line(form_stats->stats_text, stats_buffer);
+      //fl_clear_browser(form_stats->stats_text);
+      //fl_add_browser_line(form_stats->stats_text, stats_buffer);
       
       //if (PHY_vars_UE_g[0][0]->is_synchronized == 1)
 	phy_scope_UE(form_ue[0],
@@ -451,7 +451,7 @@ static void *scope_thread(void *arg) {
       
       //printf("doing forms\n");
       //usleep(100000); // 100 ms
-      sleep(1);
+      sleep(0.1);
     }
 
     //  printf("%s",stats_buffer);
@@ -1127,8 +1127,8 @@ int main( int argc, char **argv ) {
     fl_initialize (&fl_argc, argv, NULL, 0, 0);
     // restore the original command line args
     // argv = fl_get_cmdline_args( &argc );
-    form_stats = create_form_stats_form();
-    fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
+    //form_stats = create_form_stats_form();
+    //fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
     UE_id = 0;
     form_ue[UE_id] = create_lte_phy_scope_ue();
     sprintf (title, "NR DL SCOPE UE");
@@ -1218,8 +1218,8 @@ int main( int argc, char **argv ) {
 
   if (do_forms==1) {
     pthread_join(forms_thread,&status);
-    fl_hide_form(form_stats->stats_form);
-    fl_free_form(form_stats->stats_form);
+    //fl_hide_form(form_stats->stats_form);
+    //fl_free_form(form_stats->stats_form);
     fl_hide_form(form_ue[0]->lte_phy_scope_ue);
     fl_free_form(form_ue[0]->lte_phy_scope_ue);
   }
