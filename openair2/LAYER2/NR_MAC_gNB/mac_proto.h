@@ -40,7 +40,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int CC_id,
                            int p_gNB,
                            int eutra_bandP,
-                           int dl_CarrierFreqP,
+                           uint32_t dl_CarrierFreqP,
                            int dl_BandwidthP,
                            NR_BCCH_BCH_Message_t *mib,
                            NR_ServingCellConfigCommon_t *servingcellconfigcommon

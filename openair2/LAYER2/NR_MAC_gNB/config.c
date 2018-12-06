@@ -179,7 +179,7 @@ void config_common(int Mod_idP,
   cfg->nfapi_config.rf_bands.tl.tag = NFAPI_PHY_RF_BANDS_TAG;
   cfg->num_tlv++;
 
-  cfg->nfapi_config.nrarfcn.value                   = to_nrarfcn(nr_bandP,dl_CarrierFreqP,dl_BandwidthP);
+  cfg->nfapi_config.nrarfcn.value                   = to_earfcn(nr_bandP,dl_CarrierFreqP,dl_BandwidthP);
   cfg->nfapi_config.nrarfcn.tl.tag = NFAPI_NR_NFAPI_NRARFCN_TAG;
   cfg->num_tlv++;
 
@@ -209,7 +209,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int CC_idP,
                            int p_gNB,
                            int nr_bandP,
-                           int dl_CarrierFreqP,
+                           uint32_t dl_CarrierFreqP,
                            int dl_BandwidthP,
                            NR_BCCH_BCH_Message_t *mib,
                            NR_ServingCellConfigCommon_t *servingcellconfigcommon

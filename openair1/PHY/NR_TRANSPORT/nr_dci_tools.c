@@ -129,7 +129,7 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
                         dci_alloc->pdcch_params.rnti_type,
                         N_RB,
                         cfg);
-  Assert_Fatal(dci_alloc->size<=64, "DCI sizes above 64 bits not yet supported");
+  AssertFatal(dci_alloc->size<=64, "DCI sizes above 64 bits not yet supported");
   n_shift = (dci_alloc->pdcch_params.config_type == NFAPI_NR_CSET_CONFIG_MIB_SIB1)?
                       cfg->sch_config.physical_cell_id.value : dci_alloc->pdcch_params.shift_index;
   nr_fill_cce_list(dci_alloc, n_shift, cand_idx);
