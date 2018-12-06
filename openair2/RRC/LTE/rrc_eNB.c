@@ -1068,8 +1068,13 @@ void release_UE_in_freeList(module_id_t mod_id)
               rrc_rlc_remove_ue(&ctxt);
             }
             else if (RC.rrc[mod_id]->node_type == ngran_eNB_CU || RC.rrc[mod_id]->node_type == ngran_ng_eNB_CU) {
-              // send UE_CONTEXT_RELEASE
-                AssertFatal(1==0,"Need to added context removal\n");
+              MessageDef *m = itti_alloc_new_message(TASK_RRC_ENB, F1AP_UE_CONTEXT_RELEASE_CMD);
+              F1AP_UE_CONTEXT_RELEASE_CMD(m).rnti = rnti;
+              F1AP_UE_CONTEXT_RELEASE_CMD(m).cause = F1AP_CAUSE_RADIO_NETWORK;
+              F1AP_UE_CONTEXT_RELEASE_CMD(m).cause_value = 10; // 10 = F1AP_CauseRadioNetwork_normal_release
+              F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container = NULL;
+              F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container_length = 0;
+              itti_send_msg_to_task(TASK_CU_F1, mod_id, m);
             }
             pdcp_remove_UE(&ctxt);
 
@@ -2176,14 +2181,24 @@ rrc_eNB_generate_RRCConnectionRelease(
     }
   }
   pthread_mutex_unlock(&rrc_release_freelist);
-  rrc_data_req(
-	       ctxt_pP,
-	       DCCH,
-	       rrc_eNB_mui++,
-	       SDU_CONFIRM_NO,
-	       size,
-	       buffer,
-	       PDCP_TRANSMISSION_MODE_CONTROL);
+  if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB_CU
+      || RC.rrc[ctxt_pP->module_id]->node_type == ngran_ng_eNB_CU) {
+    MessageDef *m = itti_alloc_new_message(TASK_RRC_ENB, F1AP_UE_CONTEXT_RELEASE_CMD);
+    F1AP_UE_CONTEXT_RELEASE_CMD(m).rnti = ctxt_pP->rnti;
+    F1AP_UE_CONTEXT_RELEASE_CMD(m).cause = F1AP_CAUSE_RADIO_NETWORK;
+    F1AP_UE_CONTEXT_RELEASE_CMD(m).cause_value = 10; // 10 = F1AP_CauseRadioNetwork_normal_release
+    F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container = buffer;
+    F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container_length = size;
+    itti_send_msg_to_task(TASK_CU_F1, ctxt_pP->module_id, m);
+  } else {
+    rrc_data_req(ctxt_pP,
+                 DCCH,
+                 rrc_eNB_mui++,
+                 SDU_CONFIRM_NO,
+                 size,
+                 buffer,
+                 PDCP_TRANSMISSION_MODE_CONTROL);
+  }
 }
 
 uint8_t qci_to_priority[9]={2,4,3,5,1,6,7,8,9};
@@ -6487,8 +6502,13 @@ rrc_eNB_decode_ccch(
 		rrc_mac_remove_ue(ctxt_pP->module_id, ue_context_p->ue_context.rnti);
 	      }
 	      else {
-		// send message to DU to remove context
-		AssertFatal(1==0,"Need to added context removal\n");
+                MessageDef *m = itti_alloc_new_message(TASK_RRC_ENB, F1AP_UE_CONTEXT_RELEASE_CMD);
+                F1AP_UE_CONTEXT_RELEASE_CMD(m).rnti = ctxt_pP->rnti;
+                F1AP_UE_CONTEXT_RELEASE_CMD(m).cause = F1AP_CAUSE_RADIO_NETWORK;
+                F1AP_UE_CONTEXT_RELEASE_CMD(m).cause_value = 10; // 10 = F1AP_CauseRadioNetwork_normal_release
+                F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container = NULL;
+                F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container_length = 0;
+                itti_send_msg_to_task(TASK_CU_F1, ctxt_pP->module_id, m);
 	      }
 	      stmsi_received=1;
               /* replace rnti in the context */
@@ -6590,8 +6610,15 @@ rrc_eNB_decode_ccch(
           if (RC.rrc[ctxt_pP->module_id] == ngran_eNB)
 	     rrc_mac_remove_ue(ctxt_pP->module_id,ctxt_pP->rnti);
           else if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB_CU || 
-                   RC.rrc[ctxt_pP->module_id]->node_type == ngran_ng_eNB_CU)
-             AssertFatal(1==0,"Need to added context removal\n");
+                   RC.rrc[ctxt_pP->module_id]->node_type == ngran_ng_eNB_CU) {
+            MessageDef *m = itti_alloc_new_message(TASK_RRC_ENB, F1AP_UE_CONTEXT_RELEASE_CMD);
+            F1AP_UE_CONTEXT_RELEASE_CMD(m).rnti = ctxt_pP->rnti;
+            F1AP_UE_CONTEXT_RELEASE_CMD(m).cause = F1AP_CAUSE_RADIO_NETWORK;
+            F1AP_UE_CONTEXT_RELEASE_CMD(m).cause_value = 10; // 10 = F1AP_CauseRadioNetwork_normal_release
+            F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container = NULL;
+            F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container_length = 0;
+            itti_send_msg_to_task(TASK_CU_F1, ctxt_pP->module_id, m);
+          }
 
           return -1;
         }

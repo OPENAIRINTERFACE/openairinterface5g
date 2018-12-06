@@ -790,7 +790,7 @@ int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t       instance,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
   AssertFatal(rnti == f1ap_get_rnti_by_du_id(&f1ap_cu_ue[instance],
                                              ie->value.choice.GNB_DU_UE_F1AP_ID),
-      "RNTI obtained through DU ID is different from CU ID\n");
+              "RNTI obtained through DU ID is different from CU ID\n");
 
   /* Cause */
   /* We don't care for the moment
@@ -825,14 +825,13 @@ int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t       instance,
 
 
 int CU_send_UE_CONTEXT_RELEASE_COMMAND(instance_t instance,
-                                       f1ap_ue_context_setup_req_t *f1ap_ue_context_setup_req) {
+                                       f1ap_ue_context_release_cmd_t *cmd) {
   F1AP_F1AP_PDU_t                   pdu;
   F1AP_UEContextReleaseCommand_t    *out;
   F1AP_UEContextReleaseCommandIEs_t *ie;
 
   uint8_t  *buffer;
   uint32_t  len;
-  //int       i = 0, j = 0;
 
   /* Create */
   /* 0. Message Type */
@@ -850,7 +849,7 @@ int CU_send_UE_CONTEXT_RELEASE_COMMAND(instance_t instance,
   ie->id                             = F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID;
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_UEContextReleaseCommandIEs__value_PR_GNB_CU_UE_F1AP_ID;
-  ie->value.choice.GNB_CU_UE_F1AP_ID = f1ap_ue_context_setup_req->gNB_CU_ue_id;
+  ie->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(&f1ap_cu_ue[instance], cmd->rnti);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* mandatory */
@@ -859,7 +858,7 @@ int CU_send_UE_CONTEXT_RELEASE_COMMAND(instance_t instance,
   ie->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_UEContextReleaseCommandIEs__value_PR_GNB_DU_UE_F1AP_ID;
-  ie->value.choice.GNB_DU_UE_F1AP_ID = *f1ap_ue_context_setup_req->gNB_DU_ue_id;
+  ie->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(&f1ap_cu_ue[instance], cmd->rnti);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* mandatory */
@@ -869,25 +868,26 @@ int CU_send_UE_CONTEXT_RELEASE_COMMAND(instance_t instance,
   ie->criticality                    = F1AP_Criticality_ignore;
   ie->value.present                  = F1AP_UEContextReleaseCommandIEs__value_PR_Cause;
 
-  // dummy value
-  ie->value.choice.Cause.present = F1AP_Cause_PR_radioNetwork;
-
-  switch(ie->value.choice.Cause.present)
-  {
-    case F1AP_Cause_PR_radioNetwork:
-      ie->value.choice.Cause.choice.radioNetwork = F1AP_CauseRadioNetwork_unspecified;
+  switch (cmd->cause) {
+    case F1AP_CAUSE_RADIO_NETWORK:
+      ie->value.choice.Cause.present = F1AP_Cause_PR_radioNetwork;
+      ie->value.choice.Cause.choice.radioNetwork = cmd->cause_value;
       break;
-    case F1AP_Cause_PR_transport:
-      ie->value.choice.Cause.choice.transport = F1AP_CauseTransport_unspecified;
+    case F1AP_CAUSE_TRANSPORT:
+      ie->value.choice.Cause.present = F1AP_Cause_PR_transport;
+      ie->value.choice.Cause.choice.transport = cmd->cause_value;
       break;
-    case F1AP_Cause_PR_protocol:
-      ie->value.choice.Cause.choice.protocol = F1AP_CauseProtocol_unspecified;
+    case F1AP_CAUSE_PROTOCOL:
+      ie->value.choice.Cause.present = F1AP_Cause_PR_protocol;
+      ie->value.choice.Cause.choice.protocol = cmd->cause_value;
       break;
-    case F1AP_Cause_PR_misc:
-      ie->value.choice.Cause.choice.misc = F1AP_CauseMisc_unspecified;
+    case F1AP_CAUSE_MISC:
+      ie->value.choice.Cause.present = F1AP_Cause_PR_misc;
+      ie->value.choice.Cause.choice.misc = cmd->cause_value;
       break;
-    case F1AP_Cause_PR_NOTHING:
+    case F1AP_CAUSE_NOTHING:
     default:
+      ie->value.choice.Cause.present = F1AP_Cause_PR_NOTHING;
       break;
   }
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
@@ -899,8 +899,8 @@ int CU_send_UE_CONTEXT_RELEASE_COMMAND(instance_t instance,
   ie->criticality                    = F1AP_Criticality_ignore;
   ie->value.present                  = F1AP_UEContextReleaseCommandIEs__value_PR_RRCContainer;
 
-  OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, "asdsa1d32sa1d31asd31as",
-                         strlen("asdsa1d32sa1d31asd31as"));
+  OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, (const char *)cmd->rrc_container,
+                       cmd->rrc_container_length);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* encode */
@@ -909,41 +909,33 @@ int CU_send_UE_CONTEXT_RELEASE_COMMAND(instance_t instance,
     return -1;
   }
 
-  // send
+  cu_f1ap_itti_send_sctp_data_req(instance, f1ap_du_data_from_du->assoc_id, buffer, len, 0);
 
   return 0;
 }
 
-// note: is temporary with F1AP_UE_CONTEXT_SETUP_REQ
 int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
                                          uint32_t         assoc_id,
                                          uint32_t         stream,
                                          F1AP_F1AP_PDU_t *pdu) {
-  MessageDef                      *msg_p; // message to RRC
   F1AP_UEContextReleaseComplete_t    *container;
   F1AP_UEContextReleaseCompleteIEs_t *ie;
-  //int i;
+  rnti_t rnti;
 
   DevAssert(pdu);
 
-  msg_p = itti_alloc_new_message(TASK_DU_F1, F1AP_UE_CONTEXT_SETUP_REQ);
-  f1ap_ue_context_setup_req_t *f1ap_ue_context_setup_req;
-  f1ap_ue_context_setup_req = &F1AP_UE_CONTEXT_SETUP_REQ(msg_p);
-
   container = &pdu->choice.successfulOutcome->value.choice.UEContextReleaseComplete;
-
   /* GNB_CU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCompleteIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
-  f1ap_ue_context_setup_req->gNB_CU_ue_id = ie->value.choice.GNB_CU_UE_F1AP_ID;
+  rnti = f1ap_get_rnti_by_cu_id(&f1ap_cu_ue[instance], ie->value.choice.GNB_CU_UE_F1AP_ID);
 
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCompleteIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
-  f1ap_ue_context_setup_req->gNB_DU_ue_id = malloc(sizeof(uint32_t));
-  AssertFatal(f1ap_ue_context_setup_req->gNB_DU_ue_id,
-              "can not allocate memory for f1ap_ue_context_setup_req->gNB_DU_ue_id\n");
-  *f1ap_ue_context_setup_req->gNB_DU_ue_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
+  AssertFatal(rnti == f1ap_get_rnti_by_du_id(&f1ap_cu_ue[instance],
+                                             ie->value.choice.GNB_DU_UE_F1AP_ID),
+              "RNTI obtained through DU ID is different from CU ID\n");
 
   /* Optional*/
   /* CriticalityDiagnostics */
@@ -958,7 +950,9 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
     // F1AP_CriticalityDiagnostics_IE_List
   }
 
-  AssertFatal(0, "check configuration, send to appropriate handler\n");
+  LOG_I(CU_F1AP, "Received UE CONTEXT RELEASE COMPLETE: Removing CU UE entry for RNTI %x\n", rnti);
+  f1ap_remove_ue(&f1ap_cu_ue[instance], rnti);
+  return 0;
 }
 
 

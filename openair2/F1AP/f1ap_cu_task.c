@@ -34,6 +34,7 @@
 #include "f1ap_handlers.h"
 #include "f1ap_cu_interface_management.h"
 #include "f1ap_cu_rrc_message_transfer.h"
+#include "f1ap_cu_ue_context_management.h"
 #include "f1ap_cu_task.h"
 #include "proto_agent.h"
 
@@ -168,6 +169,12 @@ void *F1AP_CU_task(void *arg) {
         LOG_I(CU_F1AP, "CU Task Received F1AP_DL_RRC_MESSAGE\n");
         CU_send_DL_RRC_MESSAGE_TRANSFER(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                                &F1AP_DL_RRC_MESSAGE(received_msg));
+        break;
+
+     case F1AP_UE_CONTEXT_RELEASE_CMD: // from rrc
+        LOG_I(CU_F1AP, "CU Task Received F1AP_UE_CONTEXT_RELEASE_CMD\n");
+        CU_send_UE_CONTEXT_RELEASE_COMMAND(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                           &F1AP_UE_CONTEXT_RELEASE_CMD(received_msg));
         break;
 
 //    case F1AP_SETUP_RESPONSE: // This is from RRC
