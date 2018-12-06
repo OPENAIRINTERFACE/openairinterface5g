@@ -40,9 +40,9 @@ uint32_t nr_compute_tbs(uint8_t mcs,
 						uint16_t length_dmrs,
 						uint8_t Nl)
 {
-	uint16_t nbp_re, nb_re, nb_dmrs_prb, nb_rb_oh,Qm,R;
-	uint32_t nr_tbs=0;
-	double Ninfo,Np_info,n,C;
+	uint16_t nbp_re, nb_re, nb_dmrs_prb, nb_rb_oh, Ninfo,Np_info,n,Qm,R,C;
+
+	uint32_t nr_tbs = 0;//Initialization to remove [-Wmaybe-uninitialized]
 
 	nb_rb_oh = 0; //set to 0 if not configured by higher layer
 	Qm = Mcsindextable1[mcs][0];

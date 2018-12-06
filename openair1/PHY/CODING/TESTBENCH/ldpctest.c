@@ -418,6 +418,11 @@ int test_ldpc(short No_iteration,
 	stop_meas(time_decoder);
       }
 
+<<<<<<< HEAD
+=======
+      n_iter = nrLDPC_decoder(&decParams, (int8_t*) channel_output_fixed, (int8_t*) estimated_output, NULL);
+      printf("nrLDPC_decoder n_iter=%d\n",n_iter);
+>>>>>>> florian/nr-polar-encoder-optimizations-florian
 
       //for (i=(Kb+nrows) * Zc-5;i<(Kb+nrows) * Zc;i++)
       //  printf("esimated_output[%d]=%d\n",i,esimated_output[i]);
@@ -432,11 +437,17 @@ int test_ldpc(short No_iteration,
           ///printf("test_input[0][%d]: %d \n",i,test_input[0][i]);
         if (estimated_output[j][i] != test_input[j][i])
         {
+<<<<<<< HEAD
 
 
       //////printf("error pos %d (%d, %d)\n\n",i,estimated_output[i],test_input[0][i]);
           segment_bler = segment_bler + 1;
           break;
+=======
+        	printf("error pos %d (%d, %d)\n",i,estimated_output[i],test_input[0][i]);
+        	*errors = (*errors) + 1;
+        	break;
+>>>>>>> florian/nr-polar-encoder-optimizations-florian
         }
       }
 

@@ -954,12 +954,7 @@ void phy_init_nr_top(PHY_VARS_NR_UE *ue)
   generate_ul_reference_signal_sequences(SHRT_MAX);
 
   // Polar encoder init for PBCH
-
-  ue->nrPolar_params = NULL;
-  nr_polar_init(&ue->nrPolar_params,
-		NR_POLAR_PBCH_MESSAGE_TYPE,
-		NR_POLAR_PBCH_PAYLOAD_BITS,
-		NR_POLAR_PBCH_AGGREGATION_LEVEL);
+  
   //lte_sync_time_init(frame_parms);
 
   //generate_ul_ref_sigs();

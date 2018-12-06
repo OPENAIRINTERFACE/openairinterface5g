@@ -49,15 +49,21 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   nfapi_nr_dl_config_request_pdu_t  *dl_config_dci_pdu;
   nfapi_nr_dl_config_request_pdu_t  *dl_config_dlsch_pdu;
   nfapi_tx_request_pdu_t            *TX_req;
+  nfapi_nr_config_request_t *cfg = &nr_mac->config[0];
+
   uint16_t sfn_sf = frameP << 4 | subframeP;
   uint16_t rnti = 0x1234;
+  int dl_carrier_bandwidth = cfg->rf_config.dl_carrier_bandwidth.value;
 
+  // everything here is hard-coded to 30 kHz
+  int scs = kHz30;
+  int mu = 1;
+  int slots_per_frame = 10 * (1<<mu);
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     LOG_I(MAC, "Scheduling common search space DCI type 1 for CC_id %d\n",CC_id);
 
-    PHY_VARS_gNB                *gNB      = RC.gNB[module_idP][CC_id];
-    nfapi_nr_config_request_t     *cfg   = &gNB->gNB_config;
-    NR_DL_FRAME_PARMS             *fp    = &gNB->frame_parms;
+
+
 
     dl_req = &nr_mac->DL_req[CC_id].dl_config_request_body;
     dl_config_dci_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
@@ -85,11 +91,10 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     dlsch_pdu_rel15->ndi = 1;
     dlsch_pdu_rel15->redundancy_version = 0;
 
-    nr_configure_css_dci_from_mib(&gNB->pdcch_type0_params,
-                               kHz30, kHz30, nr_FR1, 0, 0,
-                               fp->slots_per_frame,
-                               cfg->rf_config.dl_carrier_bandwidth.value);
-    memcpy((void*)params_rel15, (void*)&gNB->pdcch_type0_params, sizeof(nfapi_nr_dl_config_pdcch_parameters_rel15_t));
+    nr_configure_css_dci_from_mib(params_rel15,
+				  scs, scs, nr_FR1, 0, 0,
+				  slots_per_frame,
+				  dl_carrier_bandwidth);
 
     pdu_rel15->frequency_domain_assignment = get_RIV(dlsch_pdu_rel15->start_prb, dlsch_pdu_rel15->n_prb, cfg->rf_config.dl_carrier_bandwidth.value);
     pdu_rel15->time_domain_assignment = get_SLIV(dlsch_pdu_rel15->start_symbol, dlsch_pdu_rel15->nb_symbols);

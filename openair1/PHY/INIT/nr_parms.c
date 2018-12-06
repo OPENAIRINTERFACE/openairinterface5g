@@ -176,7 +176,9 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
 }
 
 int nr_init_frame_parms(nfapi_nr_config_request_t* config,
-                        NR_DL_FRAME_PARMS *fp) {
+                        NR_DL_FRAME_PARMS *fp)
+{
+
 
   return nr_init_frame_parms0(fp,
 			      config->subframe_config.numerology_index_mu.value,

@@ -367,7 +367,13 @@ int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,sho
   unsigned char d[68*384]; //coded output, unpacked, max size
   unsigned char channel_temp,temp;
   short *Gen_shift_values, *no_shift_values, *pointer_shift_values;
-  short Zc,Kb,nrows,ncols;
+  short Zc;
+  //initialize for BG == 1
+  short Kb = 22;
+  short nrows = 46;//parity check bits
+  short ncols = 22;//info bits
+
+
   int i,i1,i2,i3,i4,i5,temp_prime,var;
   int no_punctured_columns,removed_bit;
   //Table of possible lifting sizes
@@ -378,30 +384,20 @@ int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,sho
   int indlist2[1000];
 
   //determine number of bits in codeword
-  //if (block_length>3840)
-     if (BG==1)
-       {
-         //BG=1;
-         Kb = 22;
-         nrows=46; //parity check bits
-         ncols=22; //info bits
-       }
-       //else if (block_length<=3840)
-      else if	(BG==2)
-       {
-         //BG=2;
-         nrows=42; //parity check bits
-         ncols=10; // info bits
+  if (BG==2)
+  {
+    nrows=42;  //parity check bits
+    ncols=10;  // info bits
 
-         if (block_length>640)
-   	Kb = 10;
-         else if (block_length>560)
-   	Kb = 9;
-         else if (block_length>192)
-         Kb = 8;
-       else
-         Kb = 6;
-         }
+    if (block_length>640)
+      Kb = 10;
+    else if (block_length>560)
+      Kb = 9;
+    else if (block_length>192)
+      Kb = 8;
+    else
+      Kb = 6;
+  }
 
   //find minimum value in all sets of lifting size
   Zc=0;
@@ -418,6 +414,8 @@ int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,sho
     printf("ldpc_encoder_orig: could not determine lifting size\n");
     return(-1);
   }
+
+  //int K = ncols*Zc; //unused variable
 
   Gen_shift_values=choose_generator_matrix(BG,Zc);
   if (Gen_shift_values==NULL) {

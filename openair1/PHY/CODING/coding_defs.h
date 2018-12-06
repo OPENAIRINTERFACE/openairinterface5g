@@ -342,7 +342,7 @@ void ccodedab_init_inv(void);
 
 /*!\fn void crcTableInit(void)
 \brief This function initializes the different crc tables.*/
-//void crcTableInit (void);
+void crcTableInit (void);
 
 
 

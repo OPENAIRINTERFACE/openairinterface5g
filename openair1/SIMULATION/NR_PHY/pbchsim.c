@@ -66,8 +66,8 @@ int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) { return(0
 
 int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req) {return(0);}
 
-uint32_t from_earfcn(int eutra_bandP,uint32_t dl_earfcn) {return(0);}
-int32_t get_uldl_offset(int eutra_bandP) {return(0);}
+uint32_t from_nrarfcn(int nr_bandP,uint32_t dl_nrarfcn) {return(0);}
+int32_t get_uldl_offset(int nr_bandP) {return(0);}
 
 NR_IF_Module_t *NR_IF_Module_init(int Mod_id){return(NULL);}
 
@@ -513,7 +513,7 @@ int main(int argc, char **argv)
       sigma2 = pow(10,sigma2_dB/10);
       //      printf("sigma2 %f (%f dB)\n",sigma2,sigma2_dB);
 
-      for (i=0; i<frame_length_complex_samples; i++) {
+      for (i=0; i<frame_parms->samples_per_subframe; i++) {
 	for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
 	  
 	  ((short*) UE->common_vars.rxdata[aa])[2*i]   = (short) ((r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
@@ -522,9 +522,9 @@ int main(int argc, char **argv)
       }
 
       if (n_trials==1) {
-	LOG_M("rxsig0.m","rxs0", UE->common_vars.rxdata[0],frame_length_complex_samples,1,1);
+	LOG_M("rxsig0.m","rxs0", UE->common_vars.rxdata[0],frame_parms->samples_per_subframe,1,1);
 	if (gNB->frame_parms.nb_antennas_tx>1)
-	  LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1],frame_length_complex_samples,1,1);
+	  LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1],frame_parms->samples_per_subframe,1,1);
       }
 
       if (UE->is_synchronized == 0) {

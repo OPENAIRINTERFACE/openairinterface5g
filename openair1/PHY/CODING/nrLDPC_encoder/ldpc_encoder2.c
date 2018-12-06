@@ -201,7 +201,13 @@ void encode_parity_check_part_optim(uint8_t *c,uint8_t *d, short BG,short Zc,sho
 int ldpc_encoder_optim(unsigned char *test_input,unsigned char *channel_input,short block_length,short BG,time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput)
 {
 
-  short Zc,Kb,nrows,ncols;
+  short Zc;
+
+  //initialize for BG == 1
+  short Kb = 22;
+  short nrows = 46;//parity check bits
+  short ncols = 22;//info bits
+
   int i,i1;
   int no_punctured_columns,removed_bit;
 
@@ -211,31 +217,20 @@ int ldpc_encoder_optim(unsigned char *test_input,unsigned char *channel_input,sh
   int simd_size;
 
   //determine number of bits in codeword
-  //determine number of bits in codeword
-   //if (block_length>3840)
-   if (BG==1)
-     {
-       //BG=1;
-       Kb = 22;
-       nrows=46; //parity check bits
-       ncols=22; //info bits
-     }
-     //else if (block_length<=3840)
-    else if	(BG==2)
-     {
-       //BG=2;
-       nrows=42; //parity check bits
-       ncols=10; // info bits
-
-       if (block_length>640)
- 	Kb = 10;
-       else if (block_length>560)
- 	Kb = 9;
-       else if (block_length>192)
-       Kb = 8;
-     else
-       Kb = 6;
-       }
+    if (BG==2)
+    {
+      nrows=42; //parity check bits
+      ncols=10; // info bits
+      
+      if (block_length>640)
+	Kb = 10;
+      else if (block_length>560)
+	Kb = 9;
+      else if (block_length>192)
+      Kb = 8;
+    else
+      Kb = 6;
+    }
 
   //find minimum value in all sets of lifting size
   Zc=0;
@@ -256,7 +251,7 @@ int ldpc_encoder_optim(unsigned char *test_input,unsigned char *channel_input,sh
 #endif
 
   if ((Zc&31) > 0) simd_size = 16;
-  else          simd_size = 32;
+  else simd_size = 32;
 
   unsigned char c[22*Zc] __attribute__((aligned(32))); //padded input, unpacked, max size
   unsigned char d[46*Zc] __attribute__((aligned(32))); //coded parity part output, unpacked, max size
@@ -321,7 +316,13 @@ int ldpc_encoder_optim(unsigned char *test_input,unsigned char *channel_input,sh
 int ldpc_encoder_optim_8seg(unsigned char **test_input,unsigned char **channel_input,short block_length,short BG,int n_segments,time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput)
 {
 
-  short Zc,Kb,nrows,ncols;
+  short Zc;
+
+  //initialize for BG == 1
+  short Kb = 22;
+  short nrows = 46;//parity check bits
+  short ncols = 22;//info bits
+
   int i,i1,j;
   int no_punctured_columns,removed_bit;
   //Table of possible lifting sizes
@@ -348,16 +349,7 @@ int ldpc_encoder_optim_8seg(unsigned char **test_input,unsigned char **channel_i
   AssertFatal(n_segments>0&&n_segments<=8,"0 < n_segments %d <= 8\n",n_segments);
 
   //determine number of bits in codeword
-  //if (block_length>3840)
-  if (BG==1)
-    {
-      //BG=1;
-      Kb = 22;
-      nrows=46; //parity check bits
-      ncols=22; //info bits
-    }
-    //else if (block_length<=3840)
-   else if	(BG==2)
+    if (BG==2)
     {
       //BG=2;
       nrows=42; //parity check bits

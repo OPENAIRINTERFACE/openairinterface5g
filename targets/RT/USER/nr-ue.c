@@ -681,11 +681,20 @@ static void *UE_thread_rxn_txnp4(void *arg) {
             UE->dci_ind.number_of_dcis = 0;
             //clean previous FAPI MESSAGE
 
+	    // call L2 for DL_CONFIG (DCI)
+	    UE->dcireq.module_id = UE->Mod_id;
+	    UE->dcireq.gNB_index = 0;
+	    UE->dcireq.cc_id     = 0;
+	    UE->dcireq.frame     = proc->frame_rx;
+	    UE->dcireq.slot      = proc->nr_tti_rx;
+	    UE->if_inst->dcireq(&UE->dcireq);
+
 #ifdef UE_SLOT_PARALLELISATION
             phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
-            phy_procedures_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay);
-            //printf(">>> nr_ue_pdcch_procedures ended\n");
+            phy_procedures_nrUE_RX( UE, proc, 0, 1, UE->mode);
+            printf(">>> nr_ue_pdcch_procedures ended\n");
+
 #endif
         }
 
@@ -1139,7 +1148,7 @@ void *UE_thread(void *arg) {
 		      UE->if_inst->ul_indication(&UE->ul_indication);
 		    }
 
-		    phy_procedures_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay);
+		    phy_procedures_nrUE_RX( UE, proc, 0, 1, UE->mode);
 		    getchar();
 		} // else loop_through_memory
             } // start_rx_stream==1
