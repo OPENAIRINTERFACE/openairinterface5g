@@ -179,7 +179,7 @@ void config_common(int Mod_idP,
   cfg->nfapi_config.rf_bands.tl.tag = NFAPI_PHY_RF_BANDS_TAG;
   cfg->num_tlv++;
 
-  cfg->nfapi_config.nrarfcn.value                   = to_earfcn(nr_bandP,dl_CarrierFreqP,dl_BandwidthP);
+  cfg->nfapi_config.nrarfcn.value                   = to_nrarfcn(nr_bandP,dl_CarrierFreqP,dl_BandwidthP);
   cfg->nfapi_config.nrarfcn.tl.tag = NFAPI_NR_NFAPI_NRARFCN_TAG;
   cfg->num_tlv++;
 
