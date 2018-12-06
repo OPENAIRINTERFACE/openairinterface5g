@@ -2717,7 +2717,7 @@ void nr_ue_measurement_procedures(
   }
 #endif
   // accumulate and filter timing offset estimation every nr_tti_rx (instead of every frame)
-  if (( (slot%2) == 0) && (l==(1-frame_parms->Ncp))) {
+  if (( slot == 2) && (l==(1-frame_parms->Ncp))) {
 
     // AGC
 /*
@@ -5058,7 +5058,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_IN);
       nr_slot_fep(ue,
 		  l,
-		  nr_tti_rx,
+		  nr_tti_rx<<1,
 		  0,
 		  0,
 		  1,
