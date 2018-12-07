@@ -31,7 +31,7 @@
  */
 
 //#define DEBUG_DL_DMRS
-#define DEBUG_PDCCH
+//#define DEBUG_PDCCH
 //#define NR_PBCH_DMRS_LENGTH_DWORD 5
 //#define NR_PBCH_DMRS_LENGTH 144
 

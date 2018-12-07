@@ -44,12 +44,12 @@
 #include "T.h"
 
 //#define DEBUG_DCI_ENCODING 1
-#define DEBUG_DCI_DECODING 1
+//#define DEBUG_DCI_DECODING 1
 //#define DEBUG_PHY
 
 //#define NR_LTE_PDCCH_DCI_SWITCH
 #define NR_PDCCH_DCI_RUN              // activates new nr functions
-#define NR_PDCCH_DCI_DEBUG            // activates NR_PDCCH_DCI_DEBUG logs
+//#define NR_PDCCH_DCI_DEBUG            // activates NR_PDCCH_DCI_DEBUG logs
 #define NR_NBR_CORESET_ACT_BWP 3      // The number of CoreSets per BWP is limited to 3 (including initial CORESET: ControlResourceId 0)
 #define NR_NBR_SEARCHSPACE_ACT_BWP 10 // The number of SearSpaces per BWP is limited to 10 (including initial SEARCHSPACE: SearchSpaceId 0)
 #define PDCCH_TEST_POLAR_TEMP_FIX
@@ -130,7 +130,7 @@ void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
       bundle_j = (c*coreset_interleaver_size_R)+r;
       f_bundle_j = ((r*coreset_C)+c+n_shift)%((coreset_nbr_rb*coreset_time_dur)/reg_bundle_size_L);
       if (coreset_interleaved==0) f_bundle_j=bundle_j;
-#ifndef NR_PDCCH_DCI_DEBUG
+#ifdef NR_PDCCH_DCI_DEBUG
       printf("\n\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_demapping_deinterleaving)-> [r=%d,c=%d] bundle_j(%d) interleaved at f_bundle_j(%d)\n",r,c,bundle_j,f_bundle_j);
 #endif
     }
@@ -141,7 +141,7 @@ void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
     index_llr = 9*((uint16_t)floor(f_reg/coreset_time_dur)+((f_reg%coreset_time_dur)*(coreset_nbr_rb)));
     for (int i=0; i<9; i++){
       z[index_z + i] = llr[index_llr + i];
-#ifndef NR_PDCCH_DCI_DEBUG
+#ifdef NR_PDCCH_DCI_DEBUG
       printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_demapping_deinterleaving)-> [reg=%d,bundle_j=%d] z[%d]=(%d,%d) <-> \t[f_reg=%d,fbundle_j=%d] llr[%d]=(%d,%d) \n",
 	     reg,bundle_j,(index_z + i),*(int16_t*) &z[index_z + i],*(1 + (int16_t*) &z[index_z + i]),
 	     f_reg,f_bundle_j,(index_llr + i),*(int16_t*) &llr[index_llr + i], *(1 + (int16_t*) &llr[index_llr + i]));
@@ -167,7 +167,7 @@ int32_t nr_pdcch_llr(NR_DL_FRAME_PARMS *frame_parms, int32_t **rxdataF_comp,
     printf("pdcch_qpsk_llr: llr is null, symbol %d\n", symbol);
     return (-1);
   }
-#ifndef NR_PDCCH_DCI_DEBUG
+#ifdef NR_PDCCH_DCI_DEBUG
   printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_llr)-> llr logs: pdcch qpsk llr for symbol %d (pos %d), llr offset %d\n",symbol,(symbol*frame_parms->N_RB_DL*12),pdcch_llrp-pdcch_llr);
 #endif
   //for (i = 0; i < (frame_parms->N_RB_DL * ((symbol == 0) ? 16 : 24)); i++) {
@@ -179,8 +179,8 @@ int32_t nr_pdcch_llr(NR_DL_FRAME_PARMS *frame_parms, int32_t **rxdataF_comp,
       *pdcch_llrp = -32;
     else
       *pdcch_llrp = (*rxF);
-#ifndef NR_PDCCH_DCI_DEBUG
-    printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_llr)-> llr logs: rb=%d i=%d *rxF:%d => *pdcch_llr8:%d\n",i/18,i,*rxF,*pdcch_llr8);
+#ifdef NR_PDCCH_DCI_DEBUG
+    printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_llr)-> llr logs: rb=%d i=%d *rxF:%d => *pdcch_llrp:%d\n",i/18,i,*rxF,*pdcch_llrp);
 #endif
     rxF++;
     pdcch_llrp++;
@@ -265,7 +265,7 @@ void pdcch_channel_level(int32_t **dl_ch_estimates_ext,
 #elif defined(__arm__)
       
 #endif
-      for (int i=0;i<24;i+=2) printf("pdcch channel re %d (%d,%d)\n",(rb*12)+(i>>1),((int16_t*)dl_ch128)[i],((int16_t*)dl_ch128)[i+1]);
+      //      for (int i=0;i<24;i+=2) printf("pdcch channel re %d (%d,%d)\n",(rb*12)+(i>>1),((int16_t*)dl_ch128)[i],((int16_t*)dl_ch128)[i+1]);
       dl_ch128+=3;
       /*
 	if (rb==0) {
@@ -281,7 +281,6 @@ void pdcch_channel_level(int32_t **dl_ch_estimates_ext,
 		 ((int32_t*)&avg128P)[1] +
 		 ((int32_t*)&avg128P)[2] +
 		 ((int32_t*)&avg128P)[3])/(nb_rb*9);
-    printf("avg %d\n",avg[aarx]);
 
     //            printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
   }
@@ -939,7 +938,6 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
 #endif
 
   for (int s = start_symbol; s < (start_symbol + coreset_time_dur); s++) {
-    printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> we enter process pdcch ofdm symbol s=%d where coreset_time_dur=%d\n",s,coreset_time_dur);
 
 
 #ifdef NR_PDCCH_DCI_DEBUG
@@ -1397,7 +1395,7 @@ void nr_dci_decoding_procedure0(int s,
 	LOG_I(PHY,"[DCI search nPdcch %d - ue spec] Attempting candidate %d Aggregation Level %d DCI length %d at CCE %d/%d (CCEmap %x,CCEmap_cand %x) format %d\n",
 	      pdcch_vars[eNB_id]->num_pdcch_symbols,m,L2,sizeof_bits,CCEind,nCCE,*CCEmap,CCEmap_mask,format_uss);
 #endif
-#ifndef NR_PDCCH_DCI_DEBUG
+#ifdef NR_PDCCH_DCI_DEBUG
       printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> ... we enter function dci_decoding(sizeof_bits=%d L=%d) -----\n",sizeof_bits,L);
       printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> ... we have to replace this part of the code by polar decoding\n");
 #endif
@@ -1422,7 +1420,7 @@ void nr_dci_decoding_procedure0(int s,
 	}
       }
       
-#ifndef NR_PDCCH_DCI_DEBUG
+#ifdef NR_PDCCH_DCI_DEBUG
       printf("\n");
       int j=0;
       uint32_t polar_hex[27] = {0};
@@ -1436,22 +1434,16 @@ void nr_dci_decoding_procedure0(int s,
       
       uint32_t dci_estimation[4]={0};
 
-      printf("nrPolar_params %p\n",nrPolar_params);
+
       nr_polar_init(&nrPolar_params, 1, sizeof_bits, L2);
-      printf("nrPolar_params %p\n",nrPolar_params);
+
       t_nrPolar_paramsPtr currentPtrDCI=nr_polar_params(nrPolar_params, 1, sizeof_bits, L2);
       decoderState = polar_decoder_int16((int16_t*)&pdcch_vars[eNB_id]->e_rx[CCEind*9*6*2],
 					 dci_estimation,
 					 currentPtrDCI);
-      printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0: \t\tpolar decoding)-> decoderState %x\n", decoderState);				   
-
-      //dci_estimation[0] = 0x01189400;
-      printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0: \t\tdci_estimation: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
-	     dci_estimation[0], dci_estimation[1], dci_estimation[2], dci_estimation[3]);
-      
       crc = decoderState;						   
       //crc = (crc16(&dci_decoded_output[current_thread_id][0], sizeof_bits) >> 16) ^ extract_crc(&dci_decoded_output[current_thread_id][0], sizeof_bits);
-#ifndef NR_PDCCH_DCI_DEBUG
+#ifdef NR_PDCCH_DCI_DEBUG
       printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> ... we end function dci_decoding() with crc=%x\n",crc);
       printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> ... we have to replace this part of the code by polar decoding\n");
 #endif
@@ -1539,19 +1531,19 @@ void nr_dci_decoding_procedure0(int s,
 	    dci_alloc[*dci_cnt].format = format1_0;
 	    *dci_cnt = *dci_cnt + 1;
 	    *format_found=_format_1_0_found;
-	    printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> a format1_0=%d and dci_cnt=%d\n",*format_found,*dci_cnt);
+	    //	    printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> a format1_0=%d and dci_cnt=%d\n",*format_found,*dci_cnt);
 	  } else {
 	    if ((dci_estimation[0]&1) == 0){
 	      dci_alloc[*dci_cnt].format = format0_0;
 	      *dci_cnt = *dci_cnt + 1;
 	      *format_found=_format_0_0_found;
-	      printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> b format0_0=%d and dci_cnt=%d\n",*format_found,*dci_cnt);
+	      //	      printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> b format0_0=%d and dci_cnt=%d\n",*format_found,*dci_cnt);
 	    }
 	    if ((dci_estimation[0]&1) == 1){
 	      dci_alloc[*dci_cnt].format = format1_0;
 	      *dci_cnt = *dci_cnt + 1;
 	      *format_found=_format_1_0_found;
-	      printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> c format1_0=%d and dci_cnt=%d\n",*format_found,*dci_cnt);
+	      //	      printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> c format1_0=%d and dci_cnt=%d\n",*format_found,*dci_cnt);
 	    }
 	  }
 	}
@@ -1648,6 +1640,7 @@ void nr_dci_decoding_procedure0(int s,
 #ifdef DEBUG_DCI_DECODING
 	LOG_I(PHY,"[DCI search] Found DCI %d rnti %x Aggregation %d length %d format %d in CCE %d (CCEmap %x) candidate %d / %d \n",
 	      *dci_cnt,crc,1<<L,sizeof_bits,dci_alloc[*dci_cnt-1].format,CCEind,*CCEmap,m,nb_candidates );
+	
 	//	nr_extract_dci_into(
 	//	dump_dci(frame_parms,&dci_alloc[*dci_cnt-1]);
 
@@ -2544,7 +2537,7 @@ uint16_t nr_dci_format_size (PHY_VARS_NR_UE *ue,
 	   i,dci_size[i],n_RB_ULBWP);
 #endif
   }
-#ifndef NR_PDCCH_DCI_DEBUG
+#ifdef NR_PDCCH_DCI_DEBUG
   printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_format_size) dci_fields_sizes[][] = { \n");
   for (int j=0; j<NBR_NR_DCI_FIELDS; j++){
     printf("\t\t");
@@ -2606,7 +2599,7 @@ uint16_t nr_dci_format_size (PHY_VARS_NR_UE *ue,
    */
 
   //  }
-#ifndef NR_PDCCH_DCI_DEBUG
+#ifdef NR_PDCCH_DCI_DEBUG
   printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_format_size) dci_fields_sizes[][] = { \n");
   for (int j=0; j<NBR_NR_DCI_FIELDS; j++){
     printf("\t\t");

@@ -32,9 +32,9 @@
 
 #include "nr_dci.h"
 
-#define DEBUG_PDCCH_DMRS
-#define DEBUG_DCI
-#define DEBUG_CHANNEL_CODING
+//#define DEBUG_PDCCH_DMRS
+//#define DEBUG_DCI
+//#define DEBUG_CHANNEL_CODING
 #define PDCCH_TEST_POLAR_TEMP_FIX
 
 
@@ -154,7 +154,7 @@ void nr_pdcch_scrambling(uint32_t *in,
       }
     }
     (*out) ^= ((((*in)>>(i&0x1f))&1) ^ ((s>>(i&0x1f))&1))<<(i&0x1f);
-    printf("nr_pdcch_scrambling: in %d => out %d\n",((*in)>>(i&0x1f))&1,((*out)>>(i&0x1f))&1);
+    //    printf("nr_pdcch_scrambling: in %d => out %d\n",((*in)>>(i&0x1f))&1,((*out)>>(i&0x1f))&1);
   }
 
 }
