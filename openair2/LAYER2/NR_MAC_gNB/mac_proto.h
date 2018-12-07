@@ -66,14 +66,14 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                    sub_frame_t   subframeP);
 
 
-void nr_configure_css_dci_from_mib(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
-				   nr_scs_e scs_common,
-				   nr_scs_e pdcch_scs,
-				   nr_frequency_range_e freq_range,
-				   uint8_t rmsi_pdcch_config,
-				   uint8_t ssb_idx,
-				   uint16_t nb_slots_per_frame,
-				   uint16_t N_RB);
+void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
+				  nr_scs_e scs_common,
+				  nr_scs_e pdcch_scs,
+				  nr_frequency_range_e freq_range,
+				  uint8_t rmsi_pdcch_config,
+				  uint8_t ssb_idx,
+				  uint16_t nb_slots_per_frame,
+				  uint16_t N_RB);
 
 
 void nr_configure_css_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,

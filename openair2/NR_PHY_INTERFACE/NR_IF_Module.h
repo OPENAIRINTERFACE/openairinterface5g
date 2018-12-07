@@ -57,8 +57,8 @@ typedef struct{
   int CC_id;
   /// frame 
   frame_t frame;
-  /// subframe
-  sub_frame_t subframe;
+  /// slot
+  slot_t slot;
 
   /// harq indication list
   nfapi_harq_indication_t harq_ind;
@@ -88,7 +88,7 @@ typedef struct{
 
 } NR_UL_IND_t;
 
-// Downlink subframe P7
+// Downlink slot P7
 
 
 typedef struct{
@@ -98,8 +98,8 @@ typedef struct{
   uint8_t CC_id;
   /// frame
   frame_t frame;
-  /// subframe
-  sub_frame_t subframe;
+  /// slot
+  slot_t slot;
   /// nFAPI DL Config Request
   nfapi_nr_dl_config_request_t *DL_req;
   /// nFAPI UL Config Request
@@ -123,7 +123,7 @@ typedef struct NR_IF_Module_s{
   void (*NR_PHY_config_req)(NR_PHY_Config_t* config_INFO);
   uint32_t CC_mask;
   uint16_t current_frame;
-  uint8_t current_subframe;
+  uint8_t current_slot;
   pthread_mutex_t if_mutex;
 } NR_IF_Module_t;
 

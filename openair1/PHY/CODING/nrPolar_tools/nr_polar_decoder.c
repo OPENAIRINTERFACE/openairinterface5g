@@ -1079,11 +1079,13 @@ uint32_t polar_decoder_int16(int16_t *input,
 
   
   int16_t d_tilde[polarParams->N];// = malloc(sizeof(double) * polarParams->N);
+  for (int i=0;i<polarParams->encoderLength;i++) printf("polar_input_RMin[%d] %d\n",i,input[i]);
   nr_polar_rate_matching_int16(input, d_tilde, polarParams->rate_matching_pattern, polarParams->K, polarParams->N, polarParams->encoderLength);
   for (int i=0;i<polarParams->N;i++) {
     if (d_tilde[i]<-128) d_tilde[i]=-128;
     else if (d_tilde[i]>127) d_tilde[i]=128;
   }
+  for (int i=0;i<polarParams->encoderLength;i++) printf("polar_input_RMout[%d] %d\n",i,d_tilde[i]);
   memcpy((void*)&polarParams->tree.root->alpha[0],(void*)&d_tilde[0],sizeof(int16_t)*polarParams->N);
   
   generic_polar_decoder(polarParams,polarParams->tree.root);
@@ -1149,7 +1151,7 @@ uint32_t polar_decoder_int16(int16_t *input,
     crc = (uint64_t)(crc24c(A64_flip,len)>>8);
   }
 
-#if 0
+#if 1
   printf("A %llx B %llx|%llx Cprime %llx|%llx  (crc %x,rxcrc %llx %d)\n",
 	 Ar,
 	 B[1],B[0],Cprime[1],Cprime[0],crc,

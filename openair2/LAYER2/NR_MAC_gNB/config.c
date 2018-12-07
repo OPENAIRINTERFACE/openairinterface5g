@@ -168,6 +168,8 @@ void config_common(int Mod_idP,
 
   nfapi_nr_config_request_t *cfg = &RC.nrmac[Mod_idP]->config[CC_idP];
 
+  int mu = 1;
+
   // FDD
   cfg->subframe_config.duplex_mode.value                          = 1;
   cfg->subframe_config.duplex_mode.tl.tag = NFAPI_SUBFRAME_CONFIG_DUPLEX_MODE_TAG;
@@ -179,11 +181,11 @@ void config_common(int Mod_idP,
   cfg->nfapi_config.rf_bands.tl.tag = NFAPI_PHY_RF_BANDS_TAG;
   cfg->num_tlv++;
 
-  cfg->nfapi_config.nrarfcn.value                   = to_nrarfcn(nr_bandP,dl_CarrierFreqP,dl_BandwidthP);
+  cfg->nfapi_config.nrarfcn.value                   = to_nrarfcn(nr_bandP,dl_CarrierFreqP,dl_BandwidthP*180000*(1+mu));
   cfg->nfapi_config.nrarfcn.tl.tag = NFAPI_NR_NFAPI_NRARFCN_TAG;
   cfg->num_tlv++;
 
-  cfg->subframe_config.numerology_index_mu.value = 1;
+  cfg->subframe_config.numerology_index_mu.value = mu;
   //cfg->subframe_config.tl.tag = 
   //cfg->num_tlv++;
 

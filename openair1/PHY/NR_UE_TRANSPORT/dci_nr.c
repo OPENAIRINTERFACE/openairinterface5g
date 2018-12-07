@@ -44,7 +44,7 @@
 #include "T.h"
 
 //#define DEBUG_DCI_ENCODING 1
-//#define DEBUG_DCI_DECODING 1
+#define DEBUG_DCI_DECODING 1
 //#define DEBUG_PHY
 
 //#define NR_LTE_PDCCH_DCI_SWITCH
@@ -55,15 +55,18 @@
 #define PDCCH_TEST_POLAR_TEMP_FIX
 
 
-
+#ifdef LOG_I
+#undef LOG_I
+#define LOG_I(A,B...) printf(B)
+#endif
 
 #ifdef NR_PDCCH_DCI_RUN
 
 static const uint16_t conjugate[8]__attribute__((aligned(32))) = {-1,1,-1,1,-1,1,-1,1};
 
 
-void nr_pdcch_demapping_deinterleaving(uint16_t *llr,
-                                       uint16_t *z,
+void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
+                                       uint32_t *z,
                                        NR_DL_FRAME_PARMS *frame_parms,
                                        uint8_t coreset_time_dur,
                                        uint32_t coreset_nbr_rb,
@@ -140,8 +143,8 @@ void nr_pdcch_demapping_deinterleaving(uint16_t *llr,
       z[index_z + i] = llr[index_llr + i];
 #ifndef NR_PDCCH_DCI_DEBUG
       printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_demapping_deinterleaving)-> [reg=%d,bundle_j=%d] z[%d]=(%d,%d) <-> \t[f_reg=%d,fbundle_j=%d] llr[%d]=(%d,%d) \n",
-	     reg,bundle_j,(index_z + i),*(char*) &z[index_z + i],*(1 + (char*) &z[index_z + i]),
-	     f_reg,f_bundle_j,(index_llr + i),*(char*) &llr[index_llr + i], *(1 + (char*) &llr[index_llr + i]));
+	     reg,bundle_j,(index_z + i),*(int16_t*) &z[index_z + i],*(1 + (int16_t*) &z[index_z + i]),
+	     f_reg,f_bundle_j,(index_llr + i),*(int16_t*) &llr[index_llr + i], *(1 + (int16_t*) &llr[index_llr + i]));
 #endif
     }
     if ((reg%reg_bundle_size_L) == 0) r++;
@@ -152,35 +155,35 @@ void nr_pdcch_demapping_deinterleaving(uint16_t *llr,
 
 #ifdef NR_PDCCH_DCI_RUN
 int32_t nr_pdcch_llr(NR_DL_FRAME_PARMS *frame_parms, int32_t **rxdataF_comp,
-		     char *pdcch_llr, uint8_t symbol,uint32_t coreset_nbr_rb) {
+		     int16_t *pdcch_llr, uint8_t symbol,uint32_t coreset_nbr_rb) {
 
   int16_t *rxF = (int16_t*) &rxdataF_comp[0][(symbol * coreset_nbr_rb * 12)];
   int32_t i;
-  char *pdcch_llr8;
+  int16_t *pdcch_llrp;
 
-  pdcch_llr8 = &pdcch_llr[2 * symbol * coreset_nbr_rb * 9];
+  pdcch_llrp = &pdcch_llr[2 * symbol * coreset_nbr_rb * 9];
 
-  if (!pdcch_llr8) {
+  if (!pdcch_llrp) {
     printf("pdcch_qpsk_llr: llr is null, symbol %d\n", symbol);
     return (-1);
   }
 #ifndef NR_PDCCH_DCI_DEBUG
-  printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_llr)-> llr logs: pdcch qpsk llr for symbol %d (pos %d), llr offset %d\n",symbol,(symbol*frame_parms->N_RB_DL*12),pdcch_llr8-pdcch_llr);
+  printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_llr)-> llr logs: pdcch qpsk llr for symbol %d (pos %d), llr offset %d\n",symbol,(symbol*frame_parms->N_RB_DL*12),pdcch_llrp-pdcch_llr);
 #endif
   //for (i = 0; i < (frame_parms->N_RB_DL * ((symbol == 0) ? 16 : 24)); i++) {
   for (i = 0; i < (coreset_nbr_rb * ((symbol == 0) ? 18 : 18)); i++) {
 
     if (*rxF > 31)
-      *pdcch_llr8 = 31;
+      *pdcch_llrp = 31;
     else if (*rxF < -32)
-      *pdcch_llr8 = -32;
+      *pdcch_llrp = -32;
     else
-      *pdcch_llr8 = (char) (*rxF);
+      *pdcch_llrp = (*rxF);
 #ifndef NR_PDCCH_DCI_DEBUG
     printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_llr)-> llr logs: rb=%d i=%d *rxF:%d => *pdcch_llr8:%d\n",i/18,i,*rxF,*pdcch_llr8);
 #endif
     rxF++;
-    pdcch_llr8++;
+    pdcch_llrp++;
   }
 
   return (0);
@@ -237,7 +240,7 @@ void pdcch_channel_level(int32_t **dl_ch_estimates_ext,
 {
 
   int16_t rb;
-  uint8_t aatx,aarx;
+  uint8_t aarx;
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *dl_ch128;
   __m128i avg128P;
@@ -245,42 +248,43 @@ void pdcch_channel_level(int32_t **dl_ch_estimates_ext,
   int16x8_t *dl_ch128;
   int32x4_t *avg128P;
 #endif
-  for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++)
-    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-      //clear average level
+  for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+    //clear average level
 #if defined(__x86_64__) || defined(__i386__)
-      avg128P = _mm_setzero_si128();
-      dl_ch128=(__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][0];
+    avg128P = _mm_setzero_si128();
+    dl_ch128=(__m128i *)&dl_ch_estimates_ext[aarx][0];
 #elif defined(__arm__)
-
+    
 #endif
-      for (rb=0; rb<nb_rb; rb++) {
-
+    for (rb=0; rb<(nb_rb*3)>>2; rb++) {
+      
 #if defined(__x86_64__) || defined(__i386__)
-        avg128P = _mm_add_epi32(avg128P,_mm_madd_epi16(dl_ch128[0],dl_ch128[0]));
-        avg128P = _mm_add_epi32(avg128P,_mm_madd_epi16(dl_ch128[1],dl_ch128[1]));
-        avg128P = _mm_add_epi32(avg128P,_mm_madd_epi16(dl_ch128[2],dl_ch128[2]));
+      avg128P = _mm_add_epi32(avg128P,_mm_madd_epi16(dl_ch128[0],dl_ch128[0]));
+      avg128P = _mm_add_epi32(avg128P,_mm_madd_epi16(dl_ch128[1],dl_ch128[1]));
+      avg128P = _mm_add_epi32(avg128P,_mm_madd_epi16(dl_ch128[2],dl_ch128[2]));
 #elif defined(__arm__)
-
+      
 #endif
-        dl_ch128+=3;
-        /*
-          if (rb==0) {
-          print_shorts("dl_ch128",&dl_ch128[0]);
-          print_shorts("dl_ch128",&dl_ch128[1]);
-          print_shorts("dl_ch128",&dl_ch128[2]);
-          }
-        */
-      }
-
-      DevAssert( nb_rb );
-      avg[(aatx<<1)+aarx] = (((int32_t*)&avg128P)[0] +
-                             ((int32_t*)&avg128P)[1] +
-                             ((int32_t*)&avg128P)[2] +
-                             ((int32_t*)&avg128P)[3])/(nb_rb*12);
-
-      //            printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
+      for (int i=0;i<24;i+=2) printf("pdcch channel re %d (%d,%d)\n",(rb*12)+(i>>1),((int16_t*)dl_ch128)[i],((int16_t*)dl_ch128)[i+1]);
+      dl_ch128+=3;
+      /*
+	if (rb==0) {
+	print_shorts("dl_ch128",&dl_ch128[0]);
+	print_shorts("dl_ch128",&dl_ch128[1]);
+	print_shorts("dl_ch128",&dl_ch128[2]);
+	}
+      */
     }
+    
+    DevAssert( nb_rb );
+    avg[aarx] = (((int32_t*)&avg128P)[0] +
+		 ((int32_t*)&avg128P)[1] +
+		 ((int32_t*)&avg128P)[2] +
+		 ((int32_t*)&avg128P)[3])/(nb_rb*9);
+    printf("avg %d\n",avg[aarx]);
+
+    //            printf("Channel level : %d\n",avg[(aatx<<1)+aarx]);
+  }
 
 #if defined(__x86_64__) || defined(__i386__)
   _mm_empty();
@@ -501,7 +505,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
       if ((c_rb < (frame_parms->N_RB_DL >> 1)) && ((frame_parms->N_RB_DL & 1) == 0)) {
         //if RB to be treated is lower than middle system bandwidth then rxdataF pointed at (offset + c_br + symbol * ofdm_symbol_size): even case
         rxF = &rxdataF[aarx][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size)))];
-#ifndef NR_PDCCH_DCI_DEBUG
+#ifdef NR_PDCCH_DCI_DEBUG
 	printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> in even case c_rb (%d) is lower than half N_RB_DL -> rxF = &rxdataF[aarx = (%d)][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
 	       c_rb,aarx,(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))));
 #endif
@@ -510,7 +514,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
         // number of RBs is even  and c_rb is higher than half system bandwidth (we don't skip DC)
         // if these conditions are true the pointer has to be situated at the 1st part of the rxdataF
         rxF = &rxdataF[aarx][(12*(c_rb - (frame_parms->N_RB_DL>>1)) + (symbol * (frame_parms->ofdm_symbol_size)))]; // we point at the 1st part of the rxdataF in symbol
-#ifndef NR_PDCCH_DCI_DEBUG
+#ifdef NR_PDCCH_DCI_DEBUG
 	printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> in even case c_rb (%d) is higher than half N_RB_DL (not DC) -> rxF = &rxdataF[aarx = (%d)][(12*(c_rb - (frame_parms->N_RB_DL>>1)) + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
                c_rb,aarx,(12*(c_rb - (frame_parms->N_RB_DL>>1)) + (symbol * (frame_parms->ofdm_symbol_size))));
 #endif
@@ -523,7 +527,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
       if ((c_rb < (frame_parms->N_RB_DL >> 1)) && ((frame_parms->N_RB_DL & 1) != 0)){
         //if RB to be treated is lower than middle system bandwidth then rxdataF pointed at (offset + c_br + symbol * ofdm_symbol_size): odd case
         rxF = &rxdataF[aarx][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size)))];
-#ifndef NR_PDCCH_DCI_DEBUG
+#ifdef NR_PDCCH_DCI_DEBUG
 	printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> in odd case c_rb (%d) is lower or equal than half N_RB_DL -> rxF = &rxdataF[aarx = (%d)][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
 	       c_rb,aarx,(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))));
 #endif
@@ -532,7 +536,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
         // number of RBs is odd  and   c_rb is higher than half system bandwidth + 1
         // if these conditions are true the pointer has to be situated at the 1st part of the rxdataF just after the first IQ symbols of the RB containing DC
         rxF = &rxdataF[aarx][(12*(c_rb - (frame_parms->N_RB_DL>>1)) - 6 + (symbol * (frame_parms->ofdm_symbol_size)))]; // we point at the 1st part of the rxdataF in symbol
-#ifndef NR_PDCCH_DCI_DEBUG
+#ifdef NR_PDCCH_DCI_DEBUG
 	printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> in odd case c_rb (%d) is higher than half N_RB_DL (not DC) -> rxF = &rxdataF[aarx = (%d)][(12*(c_rb - frame_parms->N_RB_DL) - 5 + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
 	       c_rb,aarx,(12*(c_rb - (frame_parms->N_RB_DL>>1)) - 6 + (symbol * (frame_parms->ofdm_symbol_size))));
 #endif
@@ -541,7 +545,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
         // if odd number RBs in system bandwidth and first RB to be treated is higher than middle system bandwidth (around DC)
         // we have to treat the RB in two parts: first part from i=0 to 5, the data is at the end of rxdataF (pointing at the end of the table)
         rxF = &rxdataF[aarx][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size)))];
-#ifndef NR_PDCCH_DCI_DEBUG
+#ifdef NR_PDCCH_DCI_DEBUG
 	printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> in odd case c_rb (%d) is half N_RB_DL + 1 we treat DC case -> rxF = &rxdataF[aarx = (%d)][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
 	       c_rb,aarx,(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))));
 #endif
@@ -576,7 +580,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
         }
         // then we point at the begining of the symbol part of rxdataF do process second part of RB
         rxF = &rxdataF[aarx][((symbol * (frame_parms->ofdm_symbol_size)))]; // we point at the 1st part of the rxdataF in symbol
-#ifndef NR_PDCCH_DCI_DEBUG
+#ifdef NR_PDCCH_DCI_DEBUG
 	printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> in odd case c_rb (%d) is half N_RB_DL +1 we treat DC case -> rxF = &rxdataF[aarx = (%d)][(symbol * (frame_parms->ofdm_symbol_size)) = (%d)]\n",
 	       c_rb,aarx,(symbol * (frame_parms->ofdm_symbol_size)));
 #endif
@@ -611,8 +615,8 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
         for (i = 0; i < 12; i++) {
           if ((i != 1) && (i != 5) && (i != 9)) {
             rxF_ext[j] = rxF[i];
-#ifndef NR_PDCCH_DCI_DEBUG
-	    printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> RB[c_rb %d] \t RE[re %d] => rxF_ext[%d]=(%d,%d)\t rxF[%d]=(%d,%d)",
+#ifdef NR_PDCCH_DCI_DEBUG
+	    printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> RB[c_rb %d] \t RE[re %d] => rxF_ext[%d]=(%d,%d)\t rxF[%d]=(%d,%d)\n",
 		   c_rb, i, j, *(short *) &rxF_ext[j],*(1 + (short*) &rxF_ext[j]), i,
 		   *(short *) &rxF[i], *(1 + (short*) &rxF[i]));
 #endif
@@ -621,7 +625,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
             //printf("\t-> dl_ch0[%d] => dl_ch0_ext[%d](%d,%d)\n", i,j, *(short *) &dl_ch0[i], *(1 + (short*) &dl_ch0[i]));
             j++;
           } else {
-#ifndef NR_PDCCH_DCI_DEBUG
+#ifdef NR_PDCCH_DCI_DEBUG
 	    printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> RB[c_rb %d] \t RE[re %d] => rxF_ext[%d]=(%d,%d)\t rxF[%d]=(%d,%d) \t\t <==> DM-RS PDCCH, this is a pilot symbol\n",
 		   c_rb, i, j, *(short *) &rxF_ext[j], *(1 + (short*) &rxF_ext[j]), i,
 		   *(short *) &rxF[i], *(1 + (short*) &rxF[i]));
@@ -654,7 +658,7 @@ void nr_pdcch_channel_compensation(int32_t **rxdataF_ext,
 {
 
   uint16_t rb; //,nb_rb=20;
-  uint8_t aatx,aarx;
+  uint8_t aarx;
 
 #if defined(__x86_64__) || defined(__i386__)
   __m128i mmtmpP0,mmtmpP1,mmtmpP2,mmtmpP3;
@@ -668,99 +672,99 @@ void nr_pdcch_channel_compensation(int32_t **rxdataF_ext,
 
 #endif
 
-  for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB;aatx++)
-    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-
+  for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+    
 #if defined(__x86_64__) || defined(__i386__)
-      dl_ch128          = (__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*coreset_nbr_rb*12];
-      rxdataF128        = (__m128i *)&rxdataF_ext[aarx][symbol*coreset_nbr_rb*12];
-      rxdataF_comp128   = (__m128i *)&rxdataF_comp[(aatx<<1)+aarx][symbol*coreset_nbr_rb*12];
-      //printf("ch compensation dl_ch ext addr %p \n", &dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*20*12]);
-      //printf("rxdataf ext addr %p symbol %d\n", &rxdataF_ext[aarx][symbol*20*12], symbol);
-      //printf("rxdataf_comp addr %p\n",&rxdataF_comp[(aatx<<1)+aarx][symbol*20*12]); 
+    dl_ch128          = (__m128i *)&dl_ch_estimates_ext[aarx][symbol*coreset_nbr_rb*12];
+    rxdataF128        = (__m128i *)&rxdataF_ext[aarx][symbol*coreset_nbr_rb*12];
+    rxdataF_comp128   = (__m128i *)&rxdataF_comp[aarx][symbol*coreset_nbr_rb*12];
+    //printf("ch compensation dl_ch ext addr %p \n", &dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*20*12]);
+    //printf("rxdataf ext addr %p symbol %d\n", &rxdataF_ext[aarx][symbol*20*12], symbol);
+    //printf("rxdataf_comp addr %p\n",&rxdataF_comp[(aatx<<1)+aarx][symbol*20*12]); 
+    
+#elif defined(__arm__)
+    // to be filled in
+#endif
+    
+    for (rb=0; rb<(coreset_nbr_rb*3)>>2; rb++) {
+      //printf("rb %d\n",rb);
+#if defined(__x86_64__) || defined(__i386__)
+      // multiply by conjugated channel
+      mmtmpP0 = _mm_madd_epi16(dl_ch128[0],rxdataF128[0]);
+      //  print_ints("re",&mmtmpP0);
+      // mmtmpP0 contains real part of 4 consecutive outputs (32-bit)
+      mmtmpP1 = _mm_shufflelo_epi16(dl_ch128[0],_MM_SHUFFLE(2,3,0,1));
+      mmtmpP1 = _mm_shufflehi_epi16(mmtmpP1,_MM_SHUFFLE(2,3,0,1));
+      mmtmpP1 = _mm_sign_epi16(mmtmpP1,*(__m128i*)&conjugate[0]);
+      //  print_ints("im",&mmtmpP1);
+      mmtmpP1 = _mm_madd_epi16(mmtmpP1,rxdataF128[0]);
+      // mmtmpP1 contains imag part of 4 consecutive outputs (32-bit)
+      mmtmpP0 = _mm_srai_epi32(mmtmpP0,output_shift);
+      //  print_ints("re(shift)",&mmtmpP0);
+      mmtmpP1 = _mm_srai_epi32(mmtmpP1,output_shift);
+      //  print_ints("im(shift)",&mmtmpP1);
+      mmtmpP2 = _mm_unpacklo_epi32(mmtmpP0,mmtmpP1);
+      mmtmpP3 = _mm_unpackhi_epi32(mmtmpP0,mmtmpP1);
+      //      print_ints("c0",&mmtmpP2);
+      //  print_ints("c1",&mmtmpP3);
+      rxdataF_comp128[0] = _mm_packs_epi32(mmtmpP2,mmtmpP3);
+      //print_shorts("rx:",rxdataF128);
+      //print_shorts("ch:",dl_ch128);
+      //print_shorts("pack:",rxdataF_comp128);
+      
+      // multiply by conjugated channel
+      mmtmpP0 = _mm_madd_epi16(dl_ch128[1],rxdataF128[1]);
+      // mmtmpP0 contains real part of 4 consecutive outputs (32-bit)
+      mmtmpP1 = _mm_shufflelo_epi16(dl_ch128[1],_MM_SHUFFLE(2,3,0,1));
+      mmtmpP1 = _mm_shufflehi_epi16(mmtmpP1,_MM_SHUFFLE(2,3,0,1));
+      mmtmpP1 = _mm_sign_epi16(mmtmpP1,*(__m128i*)&conjugate[0]);
+      mmtmpP1 = _mm_madd_epi16(mmtmpP1,rxdataF128[1]);
+      // mmtmpP1 contains imag part of 4 consecutive outputs (32-bit)
+      mmtmpP0 = _mm_srai_epi32(mmtmpP0,output_shift);
+      mmtmpP1 = _mm_srai_epi32(mmtmpP1,output_shift);
+      mmtmpP2 = _mm_unpacklo_epi32(mmtmpP0,mmtmpP1);
+      mmtmpP3 = _mm_unpackhi_epi32(mmtmpP0,mmtmpP1);
+      rxdataF_comp128[1] = _mm_packs_epi32(mmtmpP2,mmtmpP3);
+      //print_shorts("rx:",rxdataF128+1);
+      //print_shorts("ch:",dl_ch128+1);
+      //print_shorts("pack:",rxdataF_comp128+1);
+      
+      // multiply by conjugated channel
+      mmtmpP0 = _mm_madd_epi16(dl_ch128[2],rxdataF128[2]);
+      // mmtmpP0 contains real part of 4 consecutive outputs (32-bit)
+      mmtmpP1 = _mm_shufflelo_epi16(dl_ch128[2],_MM_SHUFFLE(2,3,0,1));
+      mmtmpP1 = _mm_shufflehi_epi16(mmtmpP1,_MM_SHUFFLE(2,3,0,1));
+      mmtmpP1 = _mm_sign_epi16(mmtmpP1,*(__m128i*)&conjugate[0]);
+      mmtmpP1 = _mm_madd_epi16(mmtmpP1,rxdataF128[2]);
+      // mmtmpP1 contains imag part of 4 consecutive outputs (32-bit)
+      mmtmpP0 = _mm_srai_epi32(mmtmpP0,output_shift);
+      mmtmpP1 = _mm_srai_epi32(mmtmpP1,output_shift);
+      mmtmpP2 = _mm_unpacklo_epi32(mmtmpP0,mmtmpP1);
+      mmtmpP3 = _mm_unpackhi_epi32(mmtmpP0,mmtmpP1);
+      rxdataF_comp128[2] = _mm_packs_epi32(mmtmpP2,mmtmpP3);
+      ///////////////////////////////////////////////////////////////////////////////////////////////
+      //print_shorts("rx:",rxdataF128+2);
+      //print_shorts("ch:",dl_ch128+2);
+      //print_shorts("pack:",rxdataF_comp128+2);
 
+#ifdef NR_PDCCH_DCI_DEBUG
+      for (int i=0; i<12 ; i++)
+	printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_channel_compensation)-> rxdataF128[%d]=(%d,%d) X dlch[%d]=(%d,%d) rxdataF_comp128[%d]=(%d,%d)\n",
+	       (rb*12)+i, ((short *)rxdataF128)[i<<1],((short*)rxdataF128)[1+(i<<1)],
+	       (rb*12)+i, ((short *)dl_ch128)[i<<1],((short*)dl_ch128)[1+(i<<1)],
+	       (rb*12)+i, ((short *)rxdataF_comp128)[i<<1],((short*)rxdataF_comp128)[1+(i<<1)]);
+      
+#endif
+      
+      dl_ch128+=3;
+      rxdataF128+=3;
+      rxdataF_comp128+=3;
+      
 #elif defined(__arm__)
       // to be filled in
 #endif
-
-      for (rb=0; rb<coreset_nbr_rb; rb++) {
-        //printf("rb %d\n",rb);
-#if defined(__x86_64__) || defined(__i386__)
-        // multiply by conjugated channel
-        mmtmpP0 = _mm_madd_epi16(dl_ch128[0],rxdataF128[0]);
-        //  print_ints("re",&mmtmpP0);
-        // mmtmpP0 contains real part of 4 consecutive outputs (32-bit)
-        mmtmpP1 = _mm_shufflelo_epi16(dl_ch128[0],_MM_SHUFFLE(2,3,0,1));
-        mmtmpP1 = _mm_shufflehi_epi16(mmtmpP1,_MM_SHUFFLE(2,3,0,1));
-        mmtmpP1 = _mm_sign_epi16(mmtmpP1,*(__m128i*)&conjugate[0]);
-        //  print_ints("im",&mmtmpP1);
-        mmtmpP1 = _mm_madd_epi16(mmtmpP1,rxdataF128[0]);
-        // mmtmpP1 contains imag part of 4 consecutive outputs (32-bit)
-        mmtmpP0 = _mm_srai_epi32(mmtmpP0,output_shift);
-        //  print_ints("re(shift)",&mmtmpP0);
-        mmtmpP1 = _mm_srai_epi32(mmtmpP1,output_shift);
-        //  print_ints("im(shift)",&mmtmpP1);
-        mmtmpP2 = _mm_unpacklo_epi32(mmtmpP0,mmtmpP1);
-        mmtmpP3 = _mm_unpackhi_epi32(mmtmpP0,mmtmpP1);
-        //      print_ints("c0",&mmtmpP2);
-        //  print_ints("c1",&mmtmpP3);
-        rxdataF_comp128[0] = _mm_packs_epi32(mmtmpP2,mmtmpP3);
-	//print_shorts("rx:",rxdataF128);
-	//print_shorts("ch:",dl_ch128);
-	//print_shorts("pack:",rxdataF_comp128);
-
-        // multiply by conjugated channel
-        mmtmpP0 = _mm_madd_epi16(dl_ch128[1],rxdataF128[1]);
-        // mmtmpP0 contains real part of 4 consecutive outputs (32-bit)
-        mmtmpP1 = _mm_shufflelo_epi16(dl_ch128[1],_MM_SHUFFLE(2,3,0,1));
-        mmtmpP1 = _mm_shufflehi_epi16(mmtmpP1,_MM_SHUFFLE(2,3,0,1));
-        mmtmpP1 = _mm_sign_epi16(mmtmpP1,*(__m128i*)&conjugate[0]);
-        mmtmpP1 = _mm_madd_epi16(mmtmpP1,rxdataF128[1]);
-        // mmtmpP1 contains imag part of 4 consecutive outputs (32-bit)
-        mmtmpP0 = _mm_srai_epi32(mmtmpP0,output_shift);
-        mmtmpP1 = _mm_srai_epi32(mmtmpP1,output_shift);
-        mmtmpP2 = _mm_unpacklo_epi32(mmtmpP0,mmtmpP1);
-        mmtmpP3 = _mm_unpackhi_epi32(mmtmpP0,mmtmpP1);
-        rxdataF_comp128[1] = _mm_packs_epi32(mmtmpP2,mmtmpP3);
-	//print_shorts("rx:",rxdataF128+1);
-	//print_shorts("ch:",dl_ch128+1);
-	//print_shorts("pack:",rxdataF_comp128+1);
-
-	// multiply by conjugated channel
-	mmtmpP0 = _mm_madd_epi16(dl_ch128[2],rxdataF128[2]);
-	// mmtmpP0 contains real part of 4 consecutive outputs (32-bit)
-	mmtmpP1 = _mm_shufflelo_epi16(dl_ch128[2],_MM_SHUFFLE(2,3,0,1));
-	mmtmpP1 = _mm_shufflehi_epi16(mmtmpP1,_MM_SHUFFLE(2,3,0,1));
-	mmtmpP1 = _mm_sign_epi16(mmtmpP1,*(__m128i*)&conjugate[0]);
-	mmtmpP1 = _mm_madd_epi16(mmtmpP1,rxdataF128[2]);
-	// mmtmpP1 contains imag part of 4 consecutive outputs (32-bit)
-	mmtmpP0 = _mm_srai_epi32(mmtmpP0,output_shift);
-	mmtmpP1 = _mm_srai_epi32(mmtmpP1,output_shift);
-	mmtmpP2 = _mm_unpacklo_epi32(mmtmpP0,mmtmpP1);
-	mmtmpP3 = _mm_unpackhi_epi32(mmtmpP0,mmtmpP1);
-	rxdataF_comp128[2] = _mm_packs_epi32(mmtmpP2,mmtmpP3);
-	///////////////////////////////////////////////////////////////////////////////////////////////
-	//print_shorts("rx:",rxdataF128+2);
-	//print_shorts("ch:",dl_ch128+2);
-	//print_shorts("pack:",rxdataF_comp128+2);
-
-#ifndef NR_PDCCH_DCI_DEBUG
-	for (int i=0; i<20 ; i++)
-	  printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_channel_compensation)-> rb=%d rxdataF128[%d]=(%d,%d) rxdataF_comp128[%d]=(%d,%d)\n",
-		 rb, i, *(short *) &rxdataF128[i],*(1 + (short*) &rxdataF128[i]),
-		 i,*(short *) &rxdataF_comp128[i], *(1 + (short*) &rxdataF_comp128[i]));
-
-#endif
-
-	dl_ch128+=3;
-	rxdataF128+=3;
-	rxdataF_comp128+=3;
-        
-#elif defined(__arm__)
-	// to be filled in
-#endif
-      }
     }
+  }
 #if defined(__x86_64__) || defined(__i386__)
   _mm_empty();
   _m_empty();
@@ -773,7 +777,6 @@ void pdcch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
                          uint8_t symbol)
 {
 
-  uint8_t aatx;
 
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *rxdataF_comp128_0,*rxdataF_comp128_1;
@@ -783,22 +786,20 @@ void pdcch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
   int32_t i;
 
   if (frame_parms->nb_antennas_rx>1) {
-    for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++) {
 #if defined(__x86_64__) || defined(__i386__)
-      rxdataF_comp128_0   = (__m128i *)&rxdataF_comp[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];
-      rxdataF_comp128_1   = (__m128i *)&rxdataF_comp[(aatx<<1)+1][symbol*frame_parms->N_RB_DL*12];
+    rxdataF_comp128_0   = (__m128i *)&rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12];
+    rxdataF_comp128_1   = (__m128i *)&rxdataF_comp[1][symbol*frame_parms->N_RB_DL*12];
 #elif defined(__arm__)
-      rxdataF_comp128_0   = (int16x8_t *)&rxdataF_comp[(aatx<<1)][symbol*frame_parms->N_RB_DL*12];
-      rxdataF_comp128_1   = (int16x8_t *)&rxdataF_comp[(aatx<<1)+1][symbol*frame_parms->N_RB_DL*12];
+    rxdataF_comp128_0   = (int16x8_t *)&rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12];
+    rxdataF_comp128_1   = (int16x8_t *)&rxdataF_comp[1][symbol*frame_parms->N_RB_DL*12];
 #endif
-      // MRC on each re of rb
-      for (i=0; i<frame_parms->N_RB_DL*3; i++) {
+    // MRC on each re of rb
+    for (i=0; i<frame_parms->N_RB_DL*3; i++) {
 #if defined(__x86_64__) || defined(__i386__)
-        rxdataF_comp128_0[i] = _mm_adds_epi16(_mm_srai_epi16(rxdataF_comp128_0[i],1),_mm_srai_epi16(rxdataF_comp128_1[i],1));
+      rxdataF_comp128_0[i] = _mm_adds_epi16(_mm_srai_epi16(rxdataF_comp128_0[i],1),_mm_srai_epi16(rxdataF_comp128_1[i],1));
 #elif defined(__arm__)
-        rxdataF_comp128_0[i] = vhaddq_s16(rxdataF_comp128_0[i],rxdataF_comp128_1[i]);
+      rxdataF_comp128_0[i] = vhaddq_s16(rxdataF_comp128_0[i],rxdataF_comp128_1[i]);
 #endif
-      }
     }
   }
 
@@ -831,7 +832,6 @@ void pdcch_siso(NR_DL_FRAME_PARMS *frame_parms,
 }
 
 
-int32_t avgP[4];
 
 
 
@@ -858,6 +858,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   if (searchSpaceType == ue_specific) do_common=0;
   uint8_t log2_maxh, aatx, aarx;
   int32_t avgs;
+  int32_t avgP[4];
 
   // number of RB (1 symbol) or REG (12 RE) in one CORESET: higher-layer parameter CORESET-freq-dom
   // (bit map 45 bits: each bit indicates 6 RB in CORESET -> 1 bit MSB indicates PRB 0..6 are part of CORESET)
@@ -879,7 +880,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   // For each BWP the number of CORESETs is limited to 3 (including initial CORESET Id=0 -> ControlResourceSetId (0..maxNrofControlReourceSets-1) (0..12-1)
   //uint32_t n_BWP_start = 0;
   //uint32_t n_rb_offset = 0;
-  uint32_t n_rb_offset                                      = pdcch_vars2->coreset[nb_coreset_active].rb_offset+43; //to be removed 43
+  uint32_t n_rb_offset                                      = pdcch_vars2->coreset[nb_coreset_active].rb_offset+(int)floor(frame_parms->ssb_start_subcarrier/NR_NB_SC_PER_RB);
   // start time position for CORESET
   // parameter symbol_mon is a 14 bits bitmap indicating monitoring symbols within a slot
   uint8_t start_symbol = 0;
@@ -967,9 +968,8 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                         avgP,
                         coreset_nbr_rb);
     avgs = 0;
-    for (aatx = 0; aatx < frame_parms->nb_antenna_ports_eNB; aatx++)
-      for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++)
-        avgs = cmax(avgs, avgP[(aarx << 1) + aatx]);
+    for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++)
+      avgs = cmax(avgs, avgP[aarx]);
     log2_maxh = (log2_approx(avgs) / 2) + 5;  //+frame_parms->nb_antennas_rx;
 #ifdef UE_DEBUG_TRACE
     LOG_D(PHY,"nr_tti_rx %d: pdcch log2_maxh = %d (%d,%d)\n",nr_tti_rx,log2_maxh,avgP[0],avgs);
@@ -1037,8 +1037,8 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> we enter nr_pdcch_demapping_deinterleaving()\n");
 #endif
   
-  nr_pdcch_demapping_deinterleaving(pdcch_vars[eNB_id]->llr,
-				    (uint16_t*) pdcch_vars[eNB_id]->e_rx,
+  nr_pdcch_demapping_deinterleaving((uint32_t*) pdcch_vars[eNB_id]->llr,
+				    (uint32_t*) pdcch_vars[eNB_id]->e_rx,
 				    frame_parms,
 				    coreset_time_dur,
 				    coreset_nbr_rb,
@@ -1098,7 +1098,7 @@ void pdcch_scrambling(NR_DL_FRAME_PARMS *frame_parms,
 #ifdef NR_PDCCH_DCI_RUN
 
 void nr_pdcch_unscrambling(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8_t nr_tti_rx,
-			   uint16_t *z, uint32_t length, uint16_t pdcch_DMRS_scrambling_id, int do_common) {
+			   int16_t *z, uint32_t length, uint16_t pdcch_DMRS_scrambling_id, int do_common) {
   
   int i;
   uint8_t reset;
@@ -1122,7 +1122,7 @@ void nr_pdcch_unscrambling(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8
   //uint32_t calc_x2=puissance_2_16%puissance_2_31;
   x2 = (((1<<16)*n_rnti)+n_id); //mod 2^31 is implicit //this is c_init in 38.211 v15.1.0 Section 7.3.2.3
   //	x2 = (nr_tti_rx << 9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.8.2
-#ifndef NR_PDCCH_DCI_DEBUG
+#ifdef NR_PDCCH_DCI_DEBUG
   printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_unscrambling)->  (c_init=%d, n_id=%d, n_rnti=%d, length=%d)\n",x2,n_id,n_rnti,length);
 #endif
   for (i = 0; i < length; i++) {
@@ -1131,8 +1131,9 @@ void nr_pdcch_unscrambling(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8
       //printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_unscrambling)-> lte_gold[%d]=%x\n",i,s);
       reset = 0;
     }
-    
-#ifndef NR_PDCCH_DCI_DEBUG
+
+    /*    
+#ifdef NR_PDCCH_DCI_DEBUG
     if (i%2 == 0) printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_unscrambling)->  unscrambling %d : scrambled_z=%d, => ",
 			 i,*(char*) &z[(int)floor(i/2)]);
     if (i%2 == 1) printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_unscrambling)->  unscrambling %d : scrambled_z=%d, => ",
@@ -1144,11 +1145,19 @@ void nr_pdcch_unscrambling(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8
     }
     //llr[i] = -llr[i];
     //llr[i] = (-1)*llr[i];
-#ifndef NR_PDCCH_DCI_DEBUG
+#ifdef NR_PDCCH_DCI_DEBUG
     if (i%2 == 0) printf("unscrambled_z=%d\n",*(char*) &z[(int)floor(i/2)]);
     if (i%2 == 1) printf("unscrambled_z=%d\n",*(1 + (char*) &z[(int)floor(i/2)]));
 #endif
-    
+    */
+#ifdef NR_PDCCH_DCI_DEBUG
+    printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_unscrambling)->  unscrambling %d : scrambled_z=%d, => ",
+      i,z[i]);
+#endif
+    if (((s >> (i % 32)) & 1) == 1) z[i] = -z[i];
+#ifdef NR_PDCCH_DCI_DEBUG
+    printf("unscrambled_z=%d\n",z[i]);
+#endif
   }
 }
 
@@ -1386,7 +1395,7 @@ void nr_dci_decoding_procedure0(int s,
 	      pdcch_vars[eNB_id]->num_pdcch_symbols,m,L2,sizeof_bits,CCEind,nCCE,*CCEmap,CCEmap_mask);
       else
 	LOG_I(PHY,"[DCI search nPdcch %d - ue spec] Attempting candidate %d Aggregation Level %d DCI length %d at CCE %d/%d (CCEmap %x,CCEmap_cand %x) format %d\n",
-	      pdcch_vars[eNB_id]->num_pdcch_symbols,m,L2,sizeof_bits,CCEind,nCCE,*CCEmap,CCEmap_mask,format_c);
+	      pdcch_vars[eNB_id]->num_pdcch_symbols,m,L2,sizeof_bits,CCEind,nCCE,*CCEmap,CCEmap_mask,format_uss);
 #endif
 #ifndef NR_PDCCH_DCI_DEBUG
       printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> ... we enter function dci_decoding(sizeof_bits=%d L=%d) -----\n",sizeof_bits,L);
@@ -1637,9 +1646,10 @@ void nr_dci_decoding_procedure0(int s,
 	}
 
 #ifdef DEBUG_DCI_DECODING
-	LOG_I(PHY,"[DCI search] Found DCI %d rnti %x Aggregation %d length %d format %s in CCE %d (CCEmap %x) candidate %d / %d \n",
-	      *dci_cnt,crc,1<<L,sizeof_bits,dci_format_strings[dci_alloc[*dci_cnt-1].format],CCEind,*CCEmap,m,nb_candidates );
-	dump_dci(frame_parms,&dci_alloc[*dci_cnt-1]);
+	LOG_I(PHY,"[DCI search] Found DCI %d rnti %x Aggregation %d length %d format %d in CCE %d (CCEmap %x) candidate %d / %d \n",
+	      *dci_cnt,crc,1<<L,sizeof_bits,dci_alloc[*dci_cnt-1].format,CCEind,*CCEmap,m,nb_candidates );
+	//	nr_extract_dci_into(
+	//	dump_dci(frame_parms,&dci_alloc[*dci_cnt-1]);
 
 #endif
 	return;

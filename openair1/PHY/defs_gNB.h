@@ -83,16 +83,16 @@ typedef struct {
 } NR_gNB_COMMON;
 
 
-/// Context data structure for RX/TX portion of subframe processing
+/// Context data structure for RX/TX portion of slot processing
 typedef struct {
   /// Component Carrier index
   uint8_t              CC_id;
   /// timestamp transmitted to HW
   openair0_timestamp timestamp_tx;
-  /// subframe to act upon for transmission
-  int subframe_tx;
-  /// subframe to act upon for reception
-  int subframe_rx;
+  /// slot to act upon for transmission
+  int slot_tx;
+  /// slot to act upon for reception
+  int slot_rx;
   /// frame to act upon for transmission
   int frame_tx;
   /// frame to act upon for reception
@@ -120,7 +120,7 @@ typedef struct {
 } gNB_L1_rxtx_proc_t;
 
 
-/// Context data structure for eNB subframe processing
+/// Context data structure for eNB slot processing
 typedef struct gNB_L1_proc_t_s {
   /// Component Carrier index
   uint8_t              CC_id;
@@ -130,10 +130,10 @@ typedef struct gNB_L1_proc_t_s {
   openair0_timestamp timestamp_rx;
   /// timestamp to send to "slave rru"
   openair0_timestamp timestamp_tx;
-  /// subframe to act upon for reception
-  int subframe_rx;
-  /// subframe to act upon for PRACH
-  int subframe_prach;
+  /// slot to act upon for reception
+  int slot_rx;
+  /// slot to act upon for PRACH
+  int slot_prach;
   /// frame to act upon for reception
   int frame_rx;
   /// frame to act upon for transmission
@@ -391,7 +391,7 @@ typedef struct PHY_VARS_gNB_s {
   /// cba_last successful reception for each group, used for collision detection
   uint8_t cba_last_reception[4];
 
-  // Pointers for active physicalConfigDedicated to be applied in current subframe
+  // Pointers for active physicalConfigDedicated to be applied in current slot
   struct PhysicalConfigDedicated *physicalConfigDedicated[NUMBER_OF_UE_MAX];
 
 

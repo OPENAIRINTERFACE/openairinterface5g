@@ -30,7 +30,7 @@
  * \warning
  */
 
-//#define DEBUG_POLAR_ENCODER
+#define DEBUG_POLAR_ENCODER
 //#define DEBUG_POLAR_ENCODER_DCI
 //#define DEBUG_POLAR_ENCODER_TIMING
 
@@ -391,7 +391,8 @@ void polar_encoder_fast(uint64_t *A,
 			t_nrPolar_paramsPtr polarParams) {
 
   AssertFatal(polarParams->K > 32, "K = %d < 33, is not supported yet\n",polarParams->K);
-  AssertFatal(polarParams->K < 129, "K = %d > 64, is not supported yet\n",polarParams->K);
+  AssertFatal(polarParams->K < 129, "K = %d > 128, is not supported yet\n",polarParams->K);
+  AssertFatal(polarParams->payloadBits < 65, "payload bits = %d > 64, is not supported yet\n",polarParams->payloadBits);
 
   uint64_t B[4]={0,0,0,0},Cprime[4]={0,0,0,0};
   int bitlen = polarParams->payloadBits;

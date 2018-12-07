@@ -159,6 +159,8 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
   fp->symbols_per_slot = ((Ncp == NORMAL)? 14 : 12); // to redefine for different slot formats
   fp->samples_per_subframe_wCP = fp->ofdm_symbol_size * fp->symbols_per_slot * fp->slots_per_subframe;
   fp->samples_per_frame_wCP = 10 * fp->samples_per_subframe_wCP;
+  fp->samples_per_slot_wCP = fp->symbols_per_slot*fp->ofdm_symbol_size; 
+  fp->samples_per_slot = fp->nb_prefix_samples0 + ((fp->symbols_per_slot-1)*fp->nb_prefix_samples) + (fp->symbols_per_slot*fp->ofdm_symbol_size); 
   fp->samples_per_subframe = (fp->samples_per_subframe_wCP + (fp->nb_prefix_samples0 * fp->slots_per_subframe) +
                                       (fp->nb_prefix_samples * fp->slots_per_subframe * (fp->symbols_per_slot - 1)));
   fp->samples_per_frame = 10 * fp->samples_per_subframe;

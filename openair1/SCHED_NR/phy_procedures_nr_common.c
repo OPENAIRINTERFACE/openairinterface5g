@@ -36,7 +36,7 @@
 
 
 
-nr_subframe_t nr_subframe_select(nfapi_nr_config_request_t *cfg,unsigned char subframe)
+nr_subframe_t nr_slot_select(nfapi_nr_config_request_t *cfg,unsigned char slot)
 {
   if (cfg->subframe_config.duplex_mode.value == FDD)
     return(SF_DL);
