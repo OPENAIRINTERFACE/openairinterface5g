@@ -775,7 +775,6 @@ int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t       instance,
                                          F1AP_F1AP_PDU_t *pdu) {
   F1AP_UEContextReleaseRequest_t    *container;
   F1AP_UEContextReleaseRequestIEs_t *ie;
-  rnti_t rnti;
 
   DevAssert(pdu);
 
@@ -783,14 +782,16 @@ int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t       instance,
   /* GNB_CU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseRequestIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
-  rnti = f1ap_get_rnti_by_cu_id(&f1ap_cu_ue[instance], ie->value.choice.GNB_CU_UE_F1AP_ID);
+  const rnti_t rnti = f1ap_get_rnti_by_cu_id(&f1ap_cu_ue[instance],
+                                             ie->value.choice.GNB_CU_UE_F1AP_ID);
 
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseRequestIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
-  AssertFatal(rnti == f1ap_get_rnti_by_du_id(&f1ap_cu_ue[instance],
-                                             ie->value.choice.GNB_DU_UE_F1AP_ID),
-              "RNTI obtained through DU ID is different from CU ID\n");
+  const rnti_t rnti2 = f1ap_get_rnti_by_du_id(&f1ap_cu_ue[instance],
+                                              ie->value.choice.GNB_DU_UE_F1AP_ID);
+  AssertFatal(rnti == rnti2, "RNTI obtained through DU ID (%x) is different from CU ID (%x)\n",
+              rnti2, rnti);
 
   /* Cause */
   /* We don't care for the moment
@@ -920,7 +921,6 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
                                          F1AP_F1AP_PDU_t *pdu) {
   F1AP_UEContextReleaseComplete_t    *container;
   F1AP_UEContextReleaseCompleteIEs_t *ie;
-  rnti_t rnti;
 
   DevAssert(pdu);
 
@@ -928,14 +928,16 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
   /* GNB_CU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCompleteIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
-  rnti = f1ap_get_rnti_by_cu_id(&f1ap_cu_ue[instance], ie->value.choice.GNB_CU_UE_F1AP_ID);
+  const rnti_t rnti = f1ap_get_rnti_by_cu_id(&f1ap_cu_ue[instance],
+                                             ie->value.choice.GNB_CU_UE_F1AP_ID);
 
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCompleteIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
-  AssertFatal(rnti == f1ap_get_rnti_by_du_id(&f1ap_cu_ue[instance],
-                                             ie->value.choice.GNB_DU_UE_F1AP_ID),
-              "RNTI obtained through DU ID is different from CU ID\n");
+  const rnti_t rnti2 = f1ap_get_rnti_by_du_id(&f1ap_cu_ue[instance],
+                                              ie->value.choice.GNB_DU_UE_F1AP_ID);
+  AssertFatal(rnti == rnti2, "RNTI obtained through DU ID (%x) is different from CU ID (%x)\n",
+              rnti2, rnti);
 
   /* Optional*/
   /* CriticalityDiagnostics */

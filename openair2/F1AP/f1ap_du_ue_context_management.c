@@ -669,9 +669,11 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCommandIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
-  AssertFatal(ctxt.rnti == f1ap_get_rnti_by_du_id(&f1ap_du_ue[instance],
-                                                  ie->value.choice.GNB_DU_UE_F1AP_ID),
-              "RNTI obtained through DU ID is different from CU ID\n");
+  const rnti_t rnti = f1ap_get_rnti_by_du_id(&f1ap_du_ue[instance],
+                                             ie->value.choice.GNB_DU_UE_F1AP_ID);
+  AssertFatal(ctxt.rnti == rnti,
+              "RNTI obtained through DU ID (%x) is different from CU ID (%x)\n",
+              rnti, ctxt.rnti);
 
   /* We don't need the Cause */
 
