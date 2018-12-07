@@ -55,7 +55,7 @@
 
 //#define DEBUG_PHY_PROC
 
-//#define NR_PDCCH_SCHED
+#define NR_PDCCH_SCHED
 //#define NR_PDCCH_SCHED_DEBUG
 //#define NR_PUCCH_SCHED
 //#define NR_PUCCH_SCHED_DEBUG
@@ -3058,9 +3058,9 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
   // this table contains 56 (NBR_NR_DCI_FIELDS) elements for each dci field and format described in TS 38.212. Each element represents the size in bits for each dci field
   uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS] = {{0}};
   // this is the UL bandwidth part. FIXME! To be defined where this value comes from
-  //  uint16_t n_RB_ULBWP = 106;
+    uint16_t n_RB_ULBWP = 106;
   // this is the DL bandwidth part. FIXME! To be defined where this value comes from
-  //uint16_t n_RB_DLBWP = 106;
+  uint16_t n_RB_DLBWP = 106;
   //#ifdef NR_PDCCH_SCHED_DEBUG
   //    printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> n_RB_ULBWP=%d n_RB_DLBWP=%d\n",
   //            n_RB_ULBWP,
@@ -5050,7 +5050,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   //nr_gold_pdcch(ue,0, 2);
  if (nr_tti_rx==1){
   for (uint16_t l=0; l<nb_symb_pdcch; l++) {
-    if (abstraction_flag == 0) {
 #if UE_TIMING_TRACE
     start_meas(&ue->ofdm_demod_stats);
 #endif
@@ -5068,11 +5067,10 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
     stop_meas(&ue->ofdm_demod_stats);
 #endif
       //printf("phy procedure pdcch start measurement l =%d\n",l);
-      nr_ue_measurement_procedures(l,ue,proc,eNB_id,(nr_tti_rx<<1),abstraction_flag,mode);
-	}
-      }
+      nr_ue_measurement_procedures(l,ue,proc,eNB_id,(nr_tti_rx<<1),0,mode);
+  }
 
-  if (nr_ue_pdcch_procedures(eNB_id,ue,proc,abstraction_flag) == -1) {
+  if (nr_ue_pdcch_procedures(eNB_id,ue,proc,0) == -1) {
     LOG_E(PHY,"[UE  %d] Frame %d, nr_tti_rx %d: Error in pdcch procedures\n",ue->Mod_id,frame_rx,nr_tti_rx);
     return(-1);
   }
