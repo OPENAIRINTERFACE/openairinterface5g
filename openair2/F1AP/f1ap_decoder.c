@@ -96,8 +96,11 @@ static int f1ap_decode_successful_outcome(F1AP_F1AP_PDU_t *pdu)
 
   switch(pdu->choice.successfulOutcome->procedureCode) {
     case F1AP_ProcedureCode_id_F1Setup:
-      LOG_I(F1AP, "get F1AP_ProcedureCode_id_F1Setup\n");
-      
+      LOG_I(F1AP, "%s(): F1AP_ProcedureCode_id_F1Setup\n", __func__);
+      break;
+
+    case F1AP_ProcedureCode_id_UEContextRelease:
+      LOG_I(F1AP, "%s(): F1AP_ProcedureCode_id_UEContextRelease\n", __func__);
       break;
 
     default:

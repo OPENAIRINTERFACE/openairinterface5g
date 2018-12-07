@@ -62,9 +62,8 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
 /*
  * UE Context Release Complete (gNB-DU initiated)
  */
-// note: is temporary with f1ap_ue_context_setup_req_t
 int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance,
-                                        f1ap_ue_context_setup_req_t *f1ap_ue_context_setup_req);
+                                        f1ap_ue_context_release_cplt_t *cplt);
 
 
 /*

@@ -739,21 +739,19 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
   rrc_mac_remove_ue(instance, ctxt.rnti);
   rrc_rlc_remove_ue(&ctxt);
 
-  /* DU_send_UE_CONTEXT_RELEASE_COMPLETE() */
+  f1ap_ue_context_release_cplt_t cplt;
+  cplt.rnti = ctxt.rnti;
+  DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance, &cplt);
+
   return 0;
 }
 
 
-// note: is temporary with f1ap_ue_context_setup_req_t
 int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance,
-                                        f1ap_ue_context_setup_req_t *f1ap_ue_context_setup_req) {
-  F1AP_F1AP_PDU_t                   pdu;
+                                        f1ap_ue_context_release_cplt_t *cplt) {
+  F1AP_F1AP_PDU_t                     pdu;
   F1AP_UEContextReleaseComplete_t    *out;
   F1AP_UEContextReleaseCompleteIEs_t *ie;
-
-  uint8_t  *buffer;
-  uint32_t  len;
-  int       i = 0;//, j = 0;
 
   /* Create */
   /* 0. Message Type */
@@ -771,7 +769,7 @@ int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance,
   ie->id                             = F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID;
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_UEContextReleaseCompleteIEs__value_PR_GNB_CU_UE_F1AP_ID;
-  ie->value.choice.GNB_CU_UE_F1AP_ID = f1ap_ue_context_setup_req->gNB_CU_ue_id;
+  ie->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(&f1ap_du_ue[instance], cplt->rnti);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* mandatory */
@@ -780,73 +778,80 @@ int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance,
   ie->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_UEContextReleaseCompleteIEs__value_PR_GNB_DU_UE_F1AP_ID;
-  ie->value.choice.GNB_DU_UE_F1AP_ID = *f1ap_ue_context_setup_req->gNB_DU_ue_id;
+  ie->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(&f1ap_du_ue[instance], cplt->rnti);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
-  /* optional */
+  /* optional -> currently not used */
   /* c3. CriticalityDiagnostics */
-  if (0) {
-    ie = (F1AP_UEContextReleaseCompleteIEs_t *)calloc(1, sizeof(F1AP_UEContextReleaseCompleteIEs_t));
-    ie->id                             = F1AP_ProtocolIE_ID_id_CriticalityDiagnostics;
-    ie->criticality                    = F1AP_Criticality_ignore;
-    ie->value.present                  = F1AP_UEContextReleaseCompleteIEs__value_PR_CriticalityDiagnostics;
+  //if (0) {
+  //  ie = (F1AP_UEContextReleaseCompleteIEs_t *)calloc(1, sizeof(F1AP_UEContextReleaseCompleteIEs_t));
+  //  ie->id                             = F1AP_ProtocolIE_ID_id_CriticalityDiagnostics;
+  //  ie->criticality                    = F1AP_Criticality_ignore;
+  //  ie->value.present                  = F1AP_UEContextReleaseCompleteIEs__value_PR_CriticalityDiagnostics;
 
-    // dummy value
-    /* optional */
-    /* procedureCode */
-    if (0) {
-      ie->value.choice.CriticalityDiagnostics.procedureCode = (F1AP_ProcedureCode_t *)calloc(1, sizeof(F1AP_ProcedureCode_t));
-      ie->value.choice.CriticalityDiagnostics.procedureCode = 0L;
-    }
+  //  // dummy value
+  //  /* optional */
+  //  /* procedureCode */
+  //  if (0) {
+  //    ie->value.choice.CriticalityDiagnostics.procedureCode = (F1AP_ProcedureCode_t *)calloc(1, sizeof(F1AP_ProcedureCode_t));
+  //    ie->value.choice.CriticalityDiagnostics.procedureCode = 0L;
+  //  }
 
-    /* optional */
-    /* triggeringMessage */
-    if (0) {
-      ie->value.choice.CriticalityDiagnostics.triggeringMessage = (F1AP_TriggeringMessage_t *)calloc(1, sizeof(F1AP_TriggeringMessage_t));
-      ie->value.choice.CriticalityDiagnostics.triggeringMessage = (F1AP_TriggeringMessage_t *)F1AP_TriggeringMessage_successful_outcome;
-    }
+  //  /* optional */
+  //  /* triggeringMessage */
+  //  if (0) {
+  //    ie->value.choice.CriticalityDiagnostics.triggeringMessage = (F1AP_TriggeringMessage_t *)calloc(1, sizeof(F1AP_TriggeringMessage_t));
+  //    ie->value.choice.CriticalityDiagnostics.triggeringMessage = (F1AP_TriggeringMessage_t *)F1AP_TriggeringMessage_successful_outcome;
+  //  }
 
-    /* optional */
-    /* procedureCriticality */
-    if (0) {
-      ie->value.choice.CriticalityDiagnostics.procedureCriticality = (F1AP_Criticality_t *)calloc(1, sizeof(F1AP_Criticality_t));
-      ie->value.choice.CriticalityDiagnostics.procedureCriticality = F1AP_Criticality_reject;
-    }
+  //  /* optional */
+  //  /* procedureCriticality */
+  //  if (0) {
+  //    ie->value.choice.CriticalityDiagnostics.procedureCriticality = (F1AP_Criticality_t *)calloc(1, sizeof(F1AP_Criticality_t));
+  //    ie->value.choice.CriticalityDiagnostics.procedureCriticality = F1AP_Criticality_reject;
+  //  }
 
-    /* optional */
-    /* transactionID */
-    if (0) {
-      ie->value.choice.CriticalityDiagnostics.transactionID = (F1AP_TransactionID_t *)calloc(1, sizeof(F1AP_TransactionID_t));
-      ie->value.choice.CriticalityDiagnostics.transactionID = 0L;
-    }
+  //  /* optional */
+  //  /* transactionID */
+  //  if (0) {
+  //    ie->value.choice.CriticalityDiagnostics.transactionID = (F1AP_TransactionID_t *)calloc(1, sizeof(F1AP_TransactionID_t));
+  //    ie->value.choice.CriticalityDiagnostics.transactionID = 0L;
+  //  }
 
-    /* optional */
-    /* F1AP_CriticalityDiagnostics_IE_List */
-    if (0) {
-      for (i=0;
-           i<0;
-           i++) {
+  //  /* optional */
+  //  /* F1AP_CriticalityDiagnostics_IE_List */
+  //  if (0) {
+  //    for (i=0;
+  //         i<0;
+  //         i++) {
 
-          F1AP_CriticalityDiagnostics_IE_Item_t *criticalityDiagnostics_ie_item = (F1AP_CriticalityDiagnostics_IE_Item_t *)calloc(1, sizeof(F1AP_CriticalityDiagnostics_IE_Item_t));;
-          criticalityDiagnostics_ie_item->iECriticality = F1AP_Criticality_reject;
-          criticalityDiagnostics_ie_item->iE_ID         = 0L;
-          criticalityDiagnostics_ie_item->typeOfError   = F1AP_TypeOfError_not_understood;
+  //        F1AP_CriticalityDiagnostics_IE_Item_t *criticalityDiagnostics_ie_item = (F1AP_CriticalityDiagnostics_IE_Item_t *)calloc(1, sizeof(F1AP_CriticalityDiagnostics_IE_Item_t));;
+  //        criticalityDiagnostics_ie_item->iECriticality = F1AP_Criticality_reject;
+  //        criticalityDiagnostics_ie_item->iE_ID         = 0L;
+  //        criticalityDiagnostics_ie_item->typeOfError   = F1AP_TypeOfError_not_understood;
 
-          ASN_SEQUENCE_ADD(&ie->value.choice.CriticalityDiagnostics.iEsCriticalityDiagnostics->list,
-                      criticalityDiagnostics_ie_item);
-      }
-    }
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-  }
+  //        ASN_SEQUENCE_ADD(&ie->value.choice.CriticalityDiagnostics.iEsCriticalityDiagnostics->list,
+  //                    criticalityDiagnostics_ie_item);
+  //    }
+  //  }
+  //  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  //}
 
   /* encode */
+  uint8_t  *buffer;
+  uint32_t  len;
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     LOG_E(DU_F1AP, "Failed to encode F1 context release complete\n");
     return -1;
   }
 
-  // send
+  du_f1ap_itti_send_sctp_data_req(instance,
+      f1ap_du_data->assoc_id,
+      buffer,
+      len,
+      f1ap_du_data->default_sctp_stream_id);
 
+  f1ap_remove_ue(&f1ap_du_ue[instance], cplt->rnti);
   return 0;
 }
 

@@ -52,7 +52,7 @@ f1ap_message_decoded_callback f1ap_messages_callback[][3] = {
   { 0, 0, 0 }, /* gNBDUConfigurationUpdate */
   { 0, 0, 0 }, /* gNBCUConfigurationUpdate */
   { DU_handle_UE_CONTEXT_SETUP_REQUEST, CU_handle_UE_CONTEXT_SETUP_RESPONSE, 0 }, /* UEContextSetup */
-  { DU_handle_UE_CONTEXT_RELEASE_COMMAND, 0, 0 }, /* UEContextRelease */
+  { DU_handle_UE_CONTEXT_RELEASE_COMMAND, CU_handle_UE_CONTEXT_RELEASE_COMPLETE, 0 }, /* UEContextRelease */
   { 0, 0, 0 }, /* UEContextModification */
   { 0, 0, 0 }, /* UEContextModificationRequired */
   { 0, 0, 0 }, /* UEMobilityCommand */
