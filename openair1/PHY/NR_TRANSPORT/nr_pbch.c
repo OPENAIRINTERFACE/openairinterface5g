@@ -226,6 +226,7 @@ void nr_init_pbch_interleaver(uint8_t *interleaver) {
       *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_hrf);
     else // Ssb bits:3
       *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_ssb++);
+
 }
 
 int nr_generate_pbch(NR_gNB_PBCH *pbch,
@@ -250,6 +251,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   uint16_t M;
   uint8_t nushift;
   uint32_t unscrambling_mask;
+  uint64_t a_reversed=0;
 
   LOG_I(PHY, "PBCH generation started\n");
 
@@ -304,8 +306,14 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   printf("pbch_a_prime: 0x%08x\n", pbch->pbch_a_prime);
 #endif
 
+
+  // Encoder reversal
+  for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++)
+    a_reversed |= (((uint64_t)pbch->pbch_a_prime>>i)&1)<<(31-i);
+
+
   /// CRC, coding and rate matching
-  polar_encoder_fast ((uint64_t*)&pbch->pbch_a_prime, (uint32_t*)pbch->pbch_e, 0, polar_params);
+  polar_encoder_fast (&a_reversed, (uint32_t*)pbch->pbch_e, 0, polar_params);
 #ifdef DEBUG_PBCH_ENCODING
   printf("Channel coding:\n");
   for (int i=0; i<NR_POLAR_PBCH_E_DWORD; i++)
