@@ -183,15 +183,15 @@ void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
   if (!encoded) {
     /// 1st Scrambling
     for (int i = 0; i < length; ++i) {
-      if ((unscrambling_mask>>i)&1)
-        pbch->pbch_a_prime ^= ((pbch->pbch_a_interleaved>>i)&1)<<i;
+      if ((unscrambling_mask>>(31-i))&1)
+        pbch->pbch_a_prime ^= ((pbch->pbch_a_interleaved>>(31-i))&1)<<(31-i);
       else {
         if (((k+offset)&0x1f)==0) {
           s = lte_gold_generic(&x1, &x2, reset);
           reset = 0;
         }
 
-        pbch->pbch_a_prime ^= (((pbch->pbch_a_interleaved>>i)&1) ^ ((s>>((k+offset)&0x1f))&1))<<i;
+        pbch->pbch_a_prime ^= (((pbch->pbch_a_interleaved>>(31-i))&1) ^ ((s>>((k+offset)&0x1f))&1))<<(31-i);
         k++;                  /// k increase only when payload bit is not special bit
       }
     }
@@ -215,17 +215,17 @@ void nr_init_pbch_interleaver(uint8_t *interleaver) {
 
   for (uint8_t i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++)
     if (!i) // choice bit:1
-     *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_other++);
+     *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+31-j_other++);
     else if (i<7) //Sfn bits:6
-      *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_sfn++);
+      *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+31-j_sfn++);
     else if (i<24) // other:17
-      *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_other++);
+      *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+31-j_other++);
     else if (i<28) // Sfn:4
-      *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_sfn++);
+      *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+31-j_sfn++);
     else if (i==28) // Hrf bit:1
-      *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_hrf);
+      *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+31-j_hrf);
     else // Ssb bits:3
-      *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_ssb++);
+      *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+31-j_ssb++);
 }
 
 int nr_generate_pbch(NR_gNB_PBCH *pbch,
@@ -258,7 +258,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   memset((void*)pbch, 0, sizeof(NR_gNB_PBCH));
   pbch->pbch_a=0;
   for (int i=0; i<NR_PBCH_PDU_BITS; i++)
-    pbch->pbch_a |= ((pbch_pdu[2-(i>>3)]>>(7-(i&7)))&1)<<i;
+    pbch->pbch_a |= ((pbch_pdu[2-(i>>3)]>>(7-(i&7)))&1)<<(NR_PBCH_PDU_BITS-i-1);
 #ifdef DEBUG_PBCH_ENCODING
   for (int i=0; i<3; i++)
     printf("pbch_pdu[%d]: 0x%02x\n", i, pbch_pdu[i]);
@@ -267,15 +267,15 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 
     // Extra byte generation
   for (int i=0; i<4; i++)
-    pbch->pbch_a |= ((sfn>>(3-i))&1)<<(24+i); // resp. 4th, 3rd, 2nd ans 1st lsb of sfn
+    pbch->pbch_a |= ((sfn>>(3-i))&1)<<(7-i); // resp. 4th, 3rd, 2nd ans 1st lsb of sfn
 
-  pbch->pbch_a |= n_hf<<28; // half frame index bit
+  pbch->pbch_a |= n_hf<<3; // half frame index bit
 
   if (Lmax == 64)
     for (int i=0; i<3; i++)
-      pbch->pbch_a |= ((ssb_index>>(5-i))&1)<<(29+i); // resp. 6th, 5th and 4th bits of ssb_index
+      pbch->pbch_a |= ((ssb_index>>(5-i))&1)<<(2-i); // resp. 6th, 5th and 4th bits of ssb_index
   else
-    pbch->pbch_a |= ((config->sch_config.ssb_subcarrier_offset.value>>4)&1)<<29; //MSB of k_SSB (bit index 4)
+    pbch->pbch_a |= ((config->sch_config.ssb_subcarrier_offset.value>>4)&1)<<2; //MSB of k_SSB (bit index 4)
 
   LOG_I(PHY,"After extra byte: pbch_a = 0x%08x\n",pbch->pbch_a);
 
@@ -294,7 +294,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 #endif
 
     // Scrambling
-  unscrambling_mask = (Lmax ==64)? 0x100006D:0x1000041;
+  unscrambling_mask = (Lmax ==64)? 0xB6000080:0x82000080;
   M = (Lmax == 64)? (NR_POLAR_PBCH_PAYLOAD_BITS - 6) : (NR_POLAR_PBCH_PAYLOAD_BITS - 3);
   nushift = (((sfn>>2)&1)<<1) ^ ((sfn>>1)&1);
   pbch->pbch_a_prime = 0;
