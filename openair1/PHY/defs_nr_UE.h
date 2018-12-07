@@ -158,6 +158,7 @@
 #include "targets/ARCH/COMMON/common_lib.h"
 
 #include "NR_IF_Module.h"
+#include "PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
 
 /// Context data structure for RX/TX portion of subframe processing
 typedef struct {
@@ -1062,6 +1063,9 @@ typedef struct {
 
 #endif
   t_nrPolar_params  *nrPolar_params;
+
+  /// LDPC processing buffers for 2 segments in parallel
+  t_nrLDPC_procBuf* p_nrLDPC_procBuf[2];
 
   /// PBCH DMRS sequence
   uint32_t nr_gold_pbch[2][64][NR_PBCH_DMRS_LENGTH_DWORD];

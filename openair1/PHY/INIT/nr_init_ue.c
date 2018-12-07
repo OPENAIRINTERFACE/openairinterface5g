@@ -937,6 +937,9 @@ void init_nr_ue_transport(PHY_VARS_NR_UE *ue,int abstraction_flag) {
 
   ue->dlsch_MCH[0]  = new_nr_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_LDPC_ITERATIONS_MBSFN,ue->frame_parms.N_RB_DL,0);
 
+  // LDPC processing buffer allocation
+  ue->p_nrLDPC_procBuf[0] = nrLDPC_init_mem();
+  ue->p_nrLDPC_procBuf[1] = nrLDPC_init_mem();  
 }
 
 void phy_init_nr_top(PHY_VARS_NR_UE *ue)
