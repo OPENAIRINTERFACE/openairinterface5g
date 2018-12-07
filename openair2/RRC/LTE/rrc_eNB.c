@@ -942,7 +942,23 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
      if((ue_context_pP->ue_context.ul_failure_timer >= 20000) &&
   	(mac_eNB_get_rrc_status(enb_mod_idP,rnti) >= RRC_CONNECTED)) {
       LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ RNTI %x\n", enb_mod_idP, rnti);
-      rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(enb_mod_idP, ue_context_pP, S1AP_CAUSE_RADIO_NETWORK, 21); // send cause 21: connection with ue lost
+      if (RC.rrc[enb_mod_idP]->node_type == ngran_eNB
+          || RC.rrc[enb_mod_idP]->node_type == ngran_eNB_CU
+          || RC.rrc[enb_mod_idP]->node_type == ngran_gNB_CU) {
+        rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(
+            enb_mod_idP,
+            ue_context_pP,
+            S1AP_CAUSE_RADIO_NETWORK,
+            21); // send cause 21: connection with ue lost
+      } else { // DU
+        MessageDef *m = itti_alloc_new_message(TASK_RRC_ENB, F1AP_UE_CONTEXT_RELEASE_REQ);
+        F1AP_UE_CONTEXT_RELEASE_REQ(m).rnti = ue_context_pP->ue_context.rnti;
+        F1AP_UE_CONTEXT_RELEASE_REQ(m).cause = F1AP_CAUSE_RADIO_NETWORK;
+        F1AP_UE_CONTEXT_RELEASE_REQ(m).cause_value = 1; // 1 = F1AP_CauseRadioNetwork_rl_failure
+        F1AP_UE_CONTEXT_RELEASE_REQ(m).rrc_container = NULL;
+        F1AP_UE_CONTEXT_RELEASE_REQ(m).rrc_container_length = 0;
+        itti_send_msg_to_task(TASK_DU_F1, enb_mod_idP, m);
+      }
       /* From 3GPP 36300v10 p129 : 19.2.2.2.2 S1 UE Context Release Request (eNB triggered)
        * If the E-UTRAN internal reason is a radio link failure detected in the eNB, the eNB shall wait a sufficient time before
        *  triggering the S1 UE Context Release Request procedure
