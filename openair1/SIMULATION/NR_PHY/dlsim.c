@@ -79,6 +79,8 @@ NR_IF_Module_t *NR_IF_Module_init(int Mod_id){return(NULL);}
 int8_t dummy_nr_ue_dl_indication(nr_downlink_indication_t *dl_info){return(0);}
 int8_t dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info){return(0);}
 
+lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe) { return(SF_DL);}
+
 void exit_function(const char* file, const char* function, const int line,const char *s) { 
    const char * msg= s==NULL ? "no comment": s;
    printf("Exiting at: %s:%d %s(), %s\n", file, line, function, msg); 
@@ -490,7 +492,7 @@ int main(int argc, char **argv)
   mac_top_init_gNB();
   gNB_mac = RC.nrmac[0];
 
-  config_common(0,0,78,(uint64_t)3640000000L,N_RB_DL*180000*(mu+1));
+  config_common(0,0,78,(uint64_t)3640000000L,N_RB_DL);
 
   nr_l2_init_ue();
   UE_mac = get_mac_inst(0);

@@ -44,7 +44,7 @@
 #include "T.h"
 
 //#define DEBUG_DCI_ENCODING 1
-//#define DEBUG_DCI_DECODING 1
+#define DEBUG_DCI_DECODING 1
 //#define DEBUG_PHY
 
 //#define NR_LTE_PDCCH_DCI_SWITCH
@@ -55,15 +55,18 @@
 #define PDCCH_TEST_POLAR_TEMP_FIX
 
 
-
+#ifdef LOG_I
+#undef LOG_I
+#define LOG_I(A,B...) printf(B)
+#endif
 
 #ifdef NR_PDCCH_DCI_RUN
 
 static const uint16_t conjugate[8]__attribute__((aligned(32))) = {-1,1,-1,1,-1,1,-1,1};
 
 
-void nr_pdcch_demapping_deinterleaving(uint16_t *llr,
-                                       uint16_t *z,
+void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
+                                       uint32_t *z,
                                        NR_DL_FRAME_PARMS *frame_parms,
                                        uint8_t coreset_time_dur,
                                        uint32_t coreset_nbr_rb,
@@ -140,8 +143,8 @@ void nr_pdcch_demapping_deinterleaving(uint16_t *llr,
       z[index_z + i] = llr[index_llr + i];
 #ifndef NR_PDCCH_DCI_DEBUG
       printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_demapping_deinterleaving)-> [reg=%d,bundle_j=%d] z[%d]=(%d,%d) <-> \t[f_reg=%d,fbundle_j=%d] llr[%d]=(%d,%d) \n",
-	     reg,bundle_j,(index_z + i),*(char*) &z[index_z + i],*(1 + (char*) &z[index_z + i]),
-	     f_reg,f_bundle_j,(index_llr + i),*(char*) &llr[index_llr + i], *(1 + (char*) &llr[index_llr + i]));
+	     reg,bundle_j,(index_z + i),*(int16_t*) &z[index_z + i],*(1 + (int16_t*) &z[index_z + i]),
+	     f_reg,f_bundle_j,(index_llr + i),*(int16_t*) &llr[index_llr + i], *(1 + (int16_t*) &llr[index_llr + i]));
 #endif
     }
     if ((reg%reg_bundle_size_L) == 0) r++;
@@ -152,35 +155,35 @@ void nr_pdcch_demapping_deinterleaving(uint16_t *llr,
 
 #ifdef NR_PDCCH_DCI_RUN
 int32_t nr_pdcch_llr(NR_DL_FRAME_PARMS *frame_parms, int32_t **rxdataF_comp,
-		     char *pdcch_llr, uint8_t symbol,uint32_t coreset_nbr_rb) {
+		     int16_t *pdcch_llr, uint8_t symbol,uint32_t coreset_nbr_rb) {
 
   int16_t *rxF = (int16_t*) &rxdataF_comp[0][(symbol * coreset_nbr_rb * 12)];
   int32_t i;
-  char *pdcch_llr8;
+  int16_t *pdcch_llrp;
 
-  pdcch_llr8 = &pdcch_llr[2 * symbol * coreset_nbr_rb * 9];
+  pdcch_llrp = &pdcch_llr[2 * symbol * coreset_nbr_rb * 9];
 
-  if (!pdcch_llr8) {
+  if (!pdcch_llrp) {
     printf("pdcch_qpsk_llr: llr is null, symbol %d\n", symbol);
     return (-1);
   }
 #ifndef NR_PDCCH_DCI_DEBUG
-  printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_llr)-> llr logs: pdcch qpsk llr for symbol %d (pos %d), llr offset %d\n",symbol,(symbol*frame_parms->N_RB_DL*12),pdcch_llr8-pdcch_llr);
+  printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_llr)-> llr logs: pdcch qpsk llr for symbol %d (pos %d), llr offset %d\n",symbol,(symbol*frame_parms->N_RB_DL*12),pdcch_llrp-pdcch_llr);
 #endif
   //for (i = 0; i < (frame_parms->N_RB_DL * ((symbol == 0) ? 16 : 24)); i++) {
   for (i = 0; i < (coreset_nbr_rb * ((symbol == 0) ? 18 : 18)); i++) {
 
     if (*rxF > 31)
-      *pdcch_llr8 = 31;
+      *pdcch_llrp = 31;
     else if (*rxF < -32)
-      *pdcch_llr8 = -32;
+      *pdcch_llrp = -32;
     else
-      *pdcch_llr8 = (char) (*rxF);
+      *pdcch_llrp = (*rxF);
 #ifndef NR_PDCCH_DCI_DEBUG
     printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_llr)-> llr logs: rb=%d i=%d *rxF:%d => *pdcch_llr8:%d\n",i/18,i,*rxF,*pdcch_llr8);
 #endif
     rxF++;
-    pdcch_llr8++;
+    pdcch_llrp++;
   }
 
   return (0);
@@ -1034,8 +1037,8 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> we enter nr_pdcch_demapping_deinterleaving()\n");
 #endif
   
-  nr_pdcch_demapping_deinterleaving(pdcch_vars[eNB_id]->llr,
-				    (uint16_t*) pdcch_vars[eNB_id]->e_rx,
+  nr_pdcch_demapping_deinterleaving((uint32_t*) pdcch_vars[eNB_id]->llr,
+				    (uint32_t*) pdcch_vars[eNB_id]->e_rx,
 				    frame_parms,
 				    coreset_time_dur,
 				    coreset_nbr_rb,
@@ -1095,7 +1098,7 @@ void pdcch_scrambling(NR_DL_FRAME_PARMS *frame_parms,
 #ifdef NR_PDCCH_DCI_RUN
 
 void nr_pdcch_unscrambling(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8_t nr_tti_rx,
-			   uint16_t *z, uint32_t length, uint16_t pdcch_DMRS_scrambling_id, int do_common) {
+			   int16_t *z, uint32_t length, uint16_t pdcch_DMRS_scrambling_id, int do_common) {
   
   int i;
   uint8_t reset;
@@ -1128,7 +1131,8 @@ void nr_pdcch_unscrambling(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8
       //printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_unscrambling)-> lte_gold[%d]=%x\n",i,s);
       reset = 0;
     }
-    
+
+    /*    
 #ifdef NR_PDCCH_DCI_DEBUG
     if (i%2 == 0) printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_unscrambling)->  unscrambling %d : scrambled_z=%d, => ",
 			 i,*(char*) &z[(int)floor(i/2)]);
@@ -1145,7 +1149,15 @@ void nr_pdcch_unscrambling(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8
     if (i%2 == 0) printf("unscrambled_z=%d\n",*(char*) &z[(int)floor(i/2)]);
     if (i%2 == 1) printf("unscrambled_z=%d\n",*(1 + (char*) &z[(int)floor(i/2)]));
 #endif
-    
+    */
+#ifdef NR_PDCCH_DCI_DEBUG
+    printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_unscrambling)->  unscrambling %d : scrambled_z=%d, => ",
+      i,z[i]);
+#endif
+    if (((s >> (i % 32)) & 1) == 1) z[i] = -z[i];
+#ifdef NR_PDCCH_DCI_DEBUG
+    printf("unscrambled_z=%d\n",z[i]);
+#endif
   }
 }
 
@@ -1383,7 +1395,7 @@ void nr_dci_decoding_procedure0(int s,
 	      pdcch_vars[eNB_id]->num_pdcch_symbols,m,L2,sizeof_bits,CCEind,nCCE,*CCEmap,CCEmap_mask);
       else
 	LOG_I(PHY,"[DCI search nPdcch %d - ue spec] Attempting candidate %d Aggregation Level %d DCI length %d at CCE %d/%d (CCEmap %x,CCEmap_cand %x) format %d\n",
-	      pdcch_vars[eNB_id]->num_pdcch_symbols,m,L2,sizeof_bits,CCEind,nCCE,*CCEmap,CCEmap_mask,format_c);
+	      pdcch_vars[eNB_id]->num_pdcch_symbols,m,L2,sizeof_bits,CCEind,nCCE,*CCEmap,CCEmap_mask,format_uss);
 #endif
 #ifndef NR_PDCCH_DCI_DEBUG
       printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> ... we enter function dci_decoding(sizeof_bits=%d L=%d) -----\n",sizeof_bits,L);
@@ -1634,9 +1646,10 @@ void nr_dci_decoding_procedure0(int s,
 	}
 
 #ifdef DEBUG_DCI_DECODING
-	LOG_I(PHY,"[DCI search] Found DCI %d rnti %x Aggregation %d length %d format %s in CCE %d (CCEmap %x) candidate %d / %d \n",
-	      *dci_cnt,crc,1<<L,sizeof_bits,dci_format_strings[dci_alloc[*dci_cnt-1].format],CCEind,*CCEmap,m,nb_candidates );
-	dump_dci(frame_parms,&dci_alloc[*dci_cnt-1]);
+	LOG_I(PHY,"[DCI search] Found DCI %d rnti %x Aggregation %d length %d format %d in CCE %d (CCEmap %x) candidate %d / %d \n",
+	      *dci_cnt,crc,1<<L,sizeof_bits,dci_alloc[*dci_cnt-1].format,CCEind,*CCEmap,m,nb_candidates );
+	//	nr_extract_dci_into(
+	//	dump_dci(frame_parms,&dci_alloc[*dci_cnt-1]);
 
 #endif
 	return;

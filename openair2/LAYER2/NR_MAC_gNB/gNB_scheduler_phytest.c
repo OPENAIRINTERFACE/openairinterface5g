@@ -37,7 +37,7 @@ extern RAN_CONTEXT_t RC;
  * current version has only a DCI for type 1 PDCCH for RA-RNTI*/
 void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
                                    frame_t       frameP,
-                                   sub_frame_t   subframeP)
+                                   sub_frame_t   slotP)
 {
   uint8_t  CC_id;
 
@@ -48,7 +48,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   nfapi_tx_request_pdu_t            *TX_req;
   nfapi_nr_config_request_t *cfg = &nr_mac->config[0];
 
-  uint16_t sfn_sf = frameP << 4 | subframeP;
+  uint16_t sfn_sf = frameP << 4 | slotP;
   int dl_carrier_bandwidth = cfg->rf_config.dl_carrier_bandwidth.value;
 
   // everything here is hard-coded to 30 kHz
@@ -68,10 +68,12 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     nfapi_nr_dl_config_dci_dl_pdu_rel15_t *pdu_rel15 = &dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel15;
     nfapi_nr_dl_config_pdcch_parameters_rel15_t *params_rel15 = &dl_config_pdu->dci_dl_pdu.pdcch_params_rel15;
 
+
     nr_configure_css_dci_initial(params_rel15,
 				 scs, scs, nr_FR1, 0, 0,
 				 slots_per_frame,
 				 dl_carrier_bandwidth);
+
     params_rel15->first_slot = 0;
 
     pdu_rel15->frequency_domain_assignment = 5;

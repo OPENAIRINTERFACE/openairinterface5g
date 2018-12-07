@@ -42,11 +42,10 @@ extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
 
 uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
                         nfapi_nr_rnti_type_e rnti_type,
-                        NR_BWP_PARMS* bwp,
+                        uint16_t N_RB,
                         nfapi_nr_config_request_t* config)
 {
   uint16_t size = 0;
-  uint16_t N_RB = bwp->N_RB;
 
   switch(format) {
 /*Only sizes for 0_0 and 1_0 are correct at the moment*/
@@ -54,7 +53,7 @@ uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
       /// fixed: Format identifier 1, Hop flag 1, MCS 5, NDI 1, RV 2, HARQ PID 4, PUSCH TPC 2 Time Domain assgnmt 4 --20
       size += 20;
       size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>1 ) ); // Freq domain assignment -- hopping scenario to be updated
-      size += nr_get_dci_size(NFAPI_NR_DL_DCI_FORMAT_1_0, rnti_type, bwp, config) - size; // Padding to match 1_0 size
+      size += nr_get_dci_size(NFAPI_NR_DL_DCI_FORMAT_1_0, rnti_type, N_RB, config) - size; // Padding to match 1_0 size
       // UL/SUL indicator assumed to be 0
       break;
 

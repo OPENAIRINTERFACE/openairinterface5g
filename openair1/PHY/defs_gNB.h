@@ -57,7 +57,7 @@ typedef struct {
   /// CCE list
   nr_cce_t cce_list[NR_MAX_PDCCH_AGG_LEVEL];
   /// DCI pdu
-  uint32_t dci_pdu[4];
+  uint64_t dci_pdu[2];
 } NR_gNB_DCI_ALLOC_t;
 
 typedef struct {

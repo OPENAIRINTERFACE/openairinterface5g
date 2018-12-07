@@ -252,6 +252,8 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* p
   pdcch_params->interleaver_size = 2;
   // set initial banwidth part to full bandwidth
   pdcch_params->n_RB_BWP = N_RB;
+
+
 }
 
 void nr_configure_css_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,

@@ -29,7 +29,7 @@ typedef unsigned __int128 uint128_t;
 
 uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
                         nfapi_nr_rnti_type_e rnti_type,
-                        NR_BWP_PARMS* bwp,
+                        uint16_t N_RB,
                         nfapi_nr_config_request_t* config);
 
 uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
