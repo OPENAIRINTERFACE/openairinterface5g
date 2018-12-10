@@ -101,9 +101,10 @@ uint16_t nr_dci_field(uint32_t dci_pdu[4],
   */
 
   uint64_t *dci_pdu64=(uint64_t*)&dci_pdu[0];
+  /*
+    printf("pdu %llx, field %d, pos %d, size %d => %u\n",(long long unsigned int)*dci_pdu64,dci_field,first_bit_position,dci_fields_sizes[dci_field],
+    (unsigned int)((*dci_pdu64>>first_bit_position)&((1<<dci_fields_sizes[dci_field])-1)));*/
 
-  printf("pdu %llx, field %d, pos %d, size %d => %u\n",(long long unsigned int)*dci_pdu64,dci_field,first_bit_position,dci_fields_sizes[dci_field],
-	 (unsigned int)((*dci_pdu64>>first_bit_position)&((1<<dci_fields_sizes[dci_field])-1)));
   return (uint16_t)((*dci_pdu64>>first_bit_position)&((1<<dci_fields_sizes[dci_field])-1));
 }
 
