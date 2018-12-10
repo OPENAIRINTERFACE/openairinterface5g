@@ -494,8 +494,8 @@ int test_ldpc(short No_iteration,
   //free(channel_output_fixed);
   //free(estimated_output);
 
-  //nrLDPC_free_mem(p_nrLDPC_procBuf);
-  
+  nrLDPC_free_mem(p_nrLDPC_procBuf);
+
   print_meas(&time,"ldpc_encoder",NULL,NULL);
   print_meas(time_optim,"ldpc_encoder_optim",NULL,NULL);
   print_meas(&tinput,"ldpc_encoder_optim(input)",NULL,NULL);

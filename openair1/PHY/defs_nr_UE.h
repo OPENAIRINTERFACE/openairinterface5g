@@ -158,7 +158,7 @@
 #include "targets/ARCH/COMMON/common_lib.h"
 
 #include "NR_IF_Module.h"
-#include "PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
+#include "PHY/CODING/nrLDPC_decoder/nrLDPC_init_mem.h"
 
 /// Context data structure for RX/TX portion of subframe processing
 typedef struct {

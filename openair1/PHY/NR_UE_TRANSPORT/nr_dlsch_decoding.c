@@ -219,6 +219,9 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   t_nrLDPC_dec_params* p_decParams = &decParams;
   t_nrLDPC_time_stats procTime;
   t_nrLDPC_time_stats* p_procTime =&procTime ;
+  // Pointer to LDPC processing buffer of thread 0
+  t_nrLDPC_procBuf* p_nrLDPC_procBuf = phy_vars_ue->p_nrLDPC_procBuf[0];
+    
   int16_t z [68*384];
   int8_t l [68*384];
   //__m128i l;
@@ -506,7 +509,8 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 		no_iteration_ldpc = nrLDPC_decoder(p_decParams,
 						   (int8_t*)&pl[0],
 						   llrProcBuf,
-						   p_procTime);
+                           p_nrLDPC_procBuf,
+                           p_procTime);
 
 		/*
 		if (check_crc(llrProcBuf,Kr,harq_process->F,crc_type)) {
@@ -692,6 +696,8 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   t_nrLDPC_dec_params* p_decParams = &decParams;
   t_nrLDPC_time_stats procTime;
   t_nrLDPC_time_stats* p_procTime =&procTime ;
+  // Pointer to LDPC processing buffer of thread 0
+  t_nrLDPC_procBuf* p_nrLDPC_procBuf = phy_vars_ue->p_nrLDPC_procBuf[0];
   int16_t z [68*384];
   int8_t l [68*384];
   //__m128i l;
@@ -1091,6 +1097,7 @@ if (harq_process->C>1) { // wakeup worker if more than 1 segment
 		no_iteration_ldpc = nrLDPC_decoder(p_decParams,
 						   (int8_t*)&pl[0],
 						   llrProcBuf,
+                           p_nrLDPC_procBuf,
 						   p_procTime);
 
 		nb_total_decod++;
@@ -1274,6 +1281,8 @@ void *nr_dlsch_decoding_2thread0(void *arg)
     t_nrLDPC_dec_params* p_decParams = &decParams;
     t_nrLDPC_time_stats procTime;
     t_nrLDPC_time_stats* p_procTime =&procTime ;
+    // Pointer to LDPC processing buffer of thread 0
+    t_nrLDPC_procBuf* p_nrLDPC_procBuf = phy_vars_ue->p_nrLDPC_procBuf[0];
     int16_t z [68*384];
     int8_t l [68*384];
     //__m128i l;
@@ -1607,6 +1616,7 @@ void *nr_dlsch_decoding_2thread0(void *arg)
 		no_iteration_ldpc = nrLDPC_decoder(p_decParams,
 						   (int8_t*)&pl[0],
 						   llrProcBuf,
+                           p_nrLDPC_procBuf,                
 						   p_procTime);
 
 		if (no_iteration_ldpc > 10)
@@ -1779,6 +1789,8 @@ void *nr_dlsch_decoding_2thread1(void *arg)
     t_nrLDPC_dec_params* p_decParams = &decParams;
     t_nrLDPC_time_stats procTime;
     t_nrLDPC_time_stats* p_procTime =&procTime ;
+    // Pointer to LDPC processing buffer of thread 1
+    t_nrLDPC_procBuf* p_nrLDPC_procBuf = phy_vars_ue->p_nrLDPC_procBuf[1];
     int16_t z [68*384];
     int8_t l [68*384];
     //__m128i l;
@@ -2111,6 +2123,7 @@ void *nr_dlsch_decoding_2thread1(void *arg)
 		no_iteration_ldpc = nrLDPC_decoder(p_decParams,
 						   (int8_t*)&pl[0],
 						   llrProcBuf,
+                           p_nrLDPC_procBuf,                
 						   p_procTime);
 
 		if (no_iteration_ldpc > 10)
