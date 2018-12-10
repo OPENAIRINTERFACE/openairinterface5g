@@ -158,7 +158,7 @@ static inline void fh_if4p5_south_out(RU_t *ru) {
   if (subframe_select(&ru->frame_parms,ru->proc.subframe_tx)!=SF_UL) {
     send_IF4p5(ru,ru->proc.frame_tx, ru->proc.subframe_tx, IF4p5_PDLFFT);
     ru->south_out_cnt++;
-    LOG_I(PHY,"south_out_cnt %d, frame %d, subframe %d, RU %d\n",ru->south_out_cnt,ru->proc.frame_tx,ru->proc.subframe_tx,ru->idx);
+    printf("south_out_cnt %d, frame %d, subframe %d, RU %d\n",ru->south_out_cnt,ru->proc.frame_tx,ru->proc.subframe_tx,ru->idx);
   }
 /*if (ru == RC.ru[0] || ru == RC.ru[1]) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU+ru->idx, ru->proc.frame_tx );
@@ -1143,7 +1143,7 @@ void wakeup_L1s(RU_t *ru) {
   RU_proc_t  *ruproc    = &ru->proc;
   struct timespec t;
 
-  LOG_D(PHY,"wakeup_L1s (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
+  LOG_I(PHY,"wakeup_L1s (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
 
     // call eNB function directly
   
@@ -1151,7 +1151,7 @@ void wakeup_L1s(RU_t *ru) {
     sprintf(string,"Incoming RU %d",ru->idx);
     
     AssertFatal(0==pthread_mutex_lock(&proc->mutex_RU),"");
-    LOG_D(PHY,"wakeup_L1s: Frame %d, Subframe %d: RU %d done (wait_cnt %d),RU_mask[%d] %x\n",
+    printf("wakeup_L1s: Frame %d, Subframe %d: RU %d done (wait_cnt %d),RU_mask[%d] %x\n",
           ru->proc.frame_rx,ru->proc.subframe_rx,ru->idx,ru->wait_cnt,ru->proc.subframe_rx,proc->RU_mask[ru->proc.subframe_rx]);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_WAKEUP_L1S_RU+ru->idx, ru->proc.frame_rx);
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_WAKEUP_L1S_RU+ru->idx, ru->proc.subframe_rx);
@@ -1501,7 +1501,8 @@ static void* ru_thread_tx( void* param ) {
   //pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
   //wait_sync("ru_thread_tx");
   wait_on_condition(&proc->mutex_FH1,&proc->cond_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
-
+/*printf("ru_thread_tx: Frame %d, Subframe %d: RU %d done (wait_cnt %d),RU_mask_tx %x\n",
+          eNB_proc->frame_rx,eNB_proc->subframe_rx,ru->idx,ru->wait_cnt,eNB_proc->RU_mask_tx);*/
   //printf( "ru_thread_tx ready\n");
   while (!oai_exit) { 
 
@@ -1531,6 +1532,9 @@ static void* ru_thread_tx( void* param ) {
     release_thread(&proc->mutex_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_IC_ENB,proc->instance_cnt_eNBs);
 
+
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_MASK_TX_RU+ru->idx,eNB_proc->RU_mask_tx);
+
     for(int i = 0; i<ru->num_eNB; i++)
     {
       eNB       = ru->eNB_list[i];
@@ -1545,22 +1549,22 @@ static void* ru_thread_tx( void* param ) {
 	      eNB->Mod_id,eNB_proc->frame_rx,eNB_proc->subframe_rx,ru->idx,eNB->num_RU,eNB_proc->RU_mask_tx);
           eNB_proc->RU_mask_tx |= (1<<j);
         }
-        else if (eNB->RU_list[j]->state == RU_SYNC){
+        else if (eNB->RU_list[j]->state==RU_SYNC || (/*eNB->RU_list[i]->is_slave==1 &&*/ eNB->RU_list[j]->state==RU_RUN && eNB->RU_list[j]->wait_cnt==0)){
       		eNB_proc->RU_mask_tx |= (1<<j);
         }
       }
       if (eNB_proc->RU_mask_tx != (1<<eNB->num_RU)-1) {  // not all RUs have provided their information so return
-      	LOG_I(PHY,"Not all RUs have provided their info (mask = %d)\n", eNB_proc->RU_mask_tx);
+      	LOG_D(PHY,"Not all RUs have provided their info (mask = %d)\n", eNB_proc->RU_mask_tx);
         pthread_mutex_unlock(&eNB_proc->mutex_RU_tx);
       }
       else { // all RUs TX are finished so send the ready signal to eNB processing
-      	LOG_I(PHY,"All RUs TX are finished. Ready to send wakeup signal to eNB processing\n");
+      	LOG_D(PHY,"All RUs TX are finished. Ready to send wakeup signal to eNB processing\n");
         eNB_proc->RU_mask_tx = 0;
         pthread_mutex_unlock(&eNB_proc->mutex_RU_tx);
 
         pthread_mutex_lock( &L1_proc->mutex_RUs);
         L1_proc->instance_cnt_RUs = 0;
-        LOG_I(PHY,"ru_thread_tx send signal to L1_thread_tx with (mask = %d)\n", eNB_proc->RU_mask_tx);
+        LOG_D(PHY,"ru_thread_tx send signal to L1_thread_tx with (mask = %d)\n", eNB_proc->RU_mask_tx);
         // the thread can now be woken up
         if (pthread_cond_signal(&L1_proc->cond_RUs) != 0) {
           LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
@@ -1569,6 +1573,7 @@ static void* ru_thread_tx( void* param ) {
         pthread_mutex_unlock( &L1_proc->mutex_RUs );
       }
     }
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_MASK_TX_RU+ru->idx,eNB_proc->RU_mask_tx);
   }
   release_thread(&proc->mutex_FH1,&proc->instance_cnt_FH1,"ru_thread_tx");
   return 0;
@@ -1757,7 +1762,7 @@ if(!emulate_rf){
 
         ru->wait_cnt--;
 
-        LOG_I(PHY,"RU thread %d, frame %d, subframe %d, wait_cnt %d \n",ru->idx, frame, subframe, ru->wait_cnt);
+        //printf("RU thread %d, frame %d, subframe %d, wait_cnt %d \n",ru->idx, frame, subframe, ru->wait_cnt);
 
         if (ru->if_south!=LOCAL_RF && ru->wait_cnt <=20 && subframe == 5 && frame != RC.ru[0]->proc.frame_rx && resynch_done == 0) {
         // Send RRU_frame adjust
@@ -1770,7 +1775,7 @@ if(!emulate_rf){
           AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),"Failed to send msg to RAU\n");
           resynch_done=1;
         }
-        wakeup_L1s(ru);
+        /*if (ru->wait_cnt==0)*/ wakeup_L1s(ru);
       }
       else {
 

@@ -105,6 +105,8 @@ const char* eurecomVariablesNames[] = {
   "ic_enb",
   "l1_proc_ic",
   "l1_proc_tx_ic",
+  "mask_tx_ru",
+  "mask_tx_ru1",
   "runtime_TX_eNB",
   "runtime_RX_eNB",
   "frame_number_TX0_UE",
