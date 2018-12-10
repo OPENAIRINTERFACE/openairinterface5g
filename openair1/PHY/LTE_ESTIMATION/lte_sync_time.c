@@ -648,6 +648,7 @@ int ru_sync_time(RU_t *ru,
 
 
   LTE_DL_FRAME_PARMS *frame_parms = &ru->frame_parms;
+  RU_CALIBRATION *calibration = &ru->calibration;
 		      
   // perform a time domain correlation using the oversampled sync sequence
 
@@ -671,6 +672,14 @@ int ru_sync_time(RU_t *ru,
     maxval = max(maxval,ru->dmrssync[i]);
     maxval = max(maxval,-ru->dmrssync[i]);
   }
+
+  if (ru->state == RU_CHECK_SYNC) {
+  	for (int i=0;i<2*(frame_parms->ofdm_symbol_size);i++) {
+    		maxval = max(maxval,calibration->drs_ch_estimates_time[0][i]);
+	        maxval = max(maxval,-calibration->drs_ch_estimates_time[0][i]);
+        }
+  }
+
   int shift = log2_approx(maxval);
 
   for (int n=0; n<length; n+=4) {
@@ -684,6 +693,13 @@ int ru_sync_time(RU_t *ru,
 			      (int16_t*) &ru->common.rxdata[ar][n],
 			      frame_parms->ofdm_symbol_size,
 			      shift);     
+
+      if (ru->state == RU_CHECK_SYNC) {
+      	result  = dot_product64((int16_t*) &calibration->drs_ch_estimates_time[ar],
+                              (int16_t*) &ru->common.rxdata[ar][n],
+                              frame_parms->ofdm_symbol_size,
+                              shift);
+      }
       dmrs_corr += abs64(result);
     }
     if (ru->dmrs_corr != NULL) ru->dmrs_corr[n] = dmrs_corr;
@@ -696,7 +712,7 @@ int ru_sync_time(RU_t *ru,
   }
   avg0/=(length/4);
 
-  int dmrsoffset = frame_parms->samples_per_tti + (3*frame_parms->ofdm_symbol_size)+(2*frame_parms->nb_prefix_samples) + frame_parms->nb_prefix_samples0;
+  int dmrsoffset = frame_parms->samples_per_tti + (3*frame_parms->ofdm_symbol_size)+(3*frame_parms->nb_prefix_samples) + frame_parms->nb_prefix_samples0;
   
   if ((int64_t)maxlev0 > (10*avg0)) {*lev = maxlev0; *avg=avg0; return((length+maxpos0-dmrsoffset)%length);}
 
