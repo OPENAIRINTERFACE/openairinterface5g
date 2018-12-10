@@ -508,8 +508,7 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 						   llrProcBuf,
 						   p_procTime);
 
-		/*
-		if (check_crc(llrProcBuf,Kr,harq_process->F,crc_type)) {
+		if (check_crc(llrProcBuf,harq_process->B,harq_process->F,crc_type)) {
 		  printf("CRC OK\n");
 		  ret = 2;
 		}
@@ -517,7 +516,7 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 		  printf("CRC NOK\n");
 		  ret = 1+dlsch->max_ldpc_iterations;
 		}
-		*/
+		
 
 		nb_total_decod++;
 		if (no_iteration_ldpc > dlsch->max_ldpc_iterations){
@@ -539,7 +538,7 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
 #ifdef DEBUG_DLSCH_DECODING
       //printf("output decoder %d %d %d %d %d \n", harq_process->c[r][0], harq_process->c[r][1], harq_process->c[r][2],harq_process->c[r][3], harq_process->c[r][4]);
-      for (int k=0;k<32;k++)
+      for (int k=0;k<A>>3;k++)
        printf("output decoder [%d] =  0x%02x \n", k, harq_process->c[r][k]);
       printf("no_iterations_ldpc %d (ret %d)\n",no_iteration_ldpc,ret);
       //write_output("dec_output.m","dec0",harq_process->c[0],Kr_bytes,1,4);
