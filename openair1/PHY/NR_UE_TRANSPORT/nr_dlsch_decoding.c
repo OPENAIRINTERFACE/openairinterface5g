@@ -81,6 +81,8 @@ void free_nr_ue_dlsch(NR_UE_DLSCH_t *dlsch)
       }
     }
 
+    nrLDPC_free_mem(dlsch->p_nrLDPC_procBuf);
+    
     free16(dlsch,sizeof(NR_UE_DLSCH_t));
     dlsch = NULL;
   }
@@ -120,6 +122,7 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
     dlsch->Mdlharq = Mdlharq;
     dlsch->Nsoft = Nsoft;
     dlsch->max_ldpc_iterations = max_ldpc_iterations;
+    dlsch->p_nrLDPC_procBuf = nrLDPC_init_mem();
 
     for (i=0; i<Mdlharq; i++) {
       //      printf("new_ue_dlsch: Harq process %d\n",i);
@@ -219,8 +222,7 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   t_nrLDPC_dec_params* p_decParams = &decParams;
   t_nrLDPC_time_stats procTime;
   t_nrLDPC_time_stats* p_procTime =&procTime ;
-  // Pointer to LDPC processing buffer of thread 0
-  t_nrLDPC_procBuf* p_nrLDPC_procBuf = phy_vars_ue->p_nrLDPC_procBuf[0];
+  t_nrLDPC_procBuf* p_nrLDPC_procBuf = dlsch->p_nrLDPC_procBuf;
     
   int16_t z [68*384];
   int8_t l [68*384];
@@ -696,8 +698,7 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
   t_nrLDPC_dec_params* p_decParams = &decParams;
   t_nrLDPC_time_stats procTime;
   t_nrLDPC_time_stats* p_procTime =&procTime ;
-  // Pointer to LDPC processing buffer of thread 0
-  t_nrLDPC_procBuf* p_nrLDPC_procBuf = phy_vars_ue->p_nrLDPC_procBuf[0];
+  t_nrLDPC_procBuf* p_nrLDPC_procBuf = dlsch->p_nrLDPC_procBuf;
   int16_t z [68*384];
   int8_t l [68*384];
   //__m128i l;
@@ -1281,8 +1282,7 @@ void *nr_dlsch_decoding_2thread0(void *arg)
     t_nrLDPC_dec_params* p_decParams = &decParams;
     t_nrLDPC_time_stats procTime;
     t_nrLDPC_time_stats* p_procTime =&procTime ;
-    // Pointer to LDPC processing buffer of thread 0
-    t_nrLDPC_procBuf* p_nrLDPC_procBuf = phy_vars_ue->p_nrLDPC_procBuf[0];
+    t_nrLDPC_procBuf* p_nrLDPC_procBuf = dlsch->p_nrLDPC_procBuf;
     int16_t z [68*384];
     int8_t l [68*384];
     //__m128i l;
@@ -1789,8 +1789,7 @@ void *nr_dlsch_decoding_2thread1(void *arg)
     t_nrLDPC_dec_params* p_decParams = &decParams;
     t_nrLDPC_time_stats procTime;
     t_nrLDPC_time_stats* p_procTime =&procTime ;
-    // Pointer to LDPC processing buffer of thread 1
-    t_nrLDPC_procBuf* p_nrLDPC_procBuf = phy_vars_ue->p_nrLDPC_procBuf[1];
+    t_nrLDPC_procBuf* p_nrLDPC_procBuf = dlsch->p_nrLDPC_procBuf;
     int16_t z [68*384];
     int8_t l [68*384];
     //__m128i l;

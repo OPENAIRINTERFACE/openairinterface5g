@@ -34,7 +34,7 @@
 #include <limits.h>
 #include "PHY/impl_defs_top.h"
 
-
+#include "PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
 
 //#include "PHY/defs_nr_UE.h"
 #include "../NR_TRANSPORT/nr_transport_common_proto.h"
@@ -352,10 +352,10 @@ typedef struct {
   uint32_t Nsoft;
   /// Maximum number of LDPC iterations
   uint8_t max_ldpc_iterations;
+  /// LDPC processing buffers
+  t_nrLDPC_procBuf* p_nrLDPC_procBuf;
   /// number of iterations used in last turbo decoding
-  uint8_t last_iteration_cnt;
-  
-
+  uint8_t last_iteration_cnt;  
 } NR_UE_DLSCH_t;
 
 typedef enum {format0_0,
