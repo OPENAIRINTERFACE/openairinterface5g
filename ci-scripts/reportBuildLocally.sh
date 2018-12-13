@@ -355,7 +355,7 @@ function report_build {
     if [ $PU_TRIG -eq 1 ]
     then
         echo "      <tr>" >> ./build_results.html
-        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-tree\"></span> Branch</td>" >> ./build_results.html
+        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-tree-deciduous\"></span> Branch</td>" >> ./build_results.html
         echo "        <td>$SOURCE_BRANCH</td>" >> ./build_results.html
         echo "      </tr>" >> ./build_results.html
         echo "      <tr>" >> ./build_results.html

@@ -132,7 +132,7 @@ function report_test {
     if [ $PU_TRIG -eq 1 ]
     then
         echo "      <tr>" >> ./test_simulator_results.html
-        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-tree\"></span> Branch</td>" >> ./test_simulator_results.html
+        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-tree-deciduous\"></span> Branch</td>" >> ./test_simulator_results.html
         echo "        <td>$SOURCE_BRANCH</td>" >> ./test_simulator_results.html
         echo "      </tr>" >> ./test_simulator_results.html
         echo "      <tr>" >> ./test_simulator_results.html

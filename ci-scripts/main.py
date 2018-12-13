@@ -1975,7 +1975,7 @@ class SSHConnection():
 			if (self.eNB_AllowMerge):
 				self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-log-out"></span> Source Branch </td>\n')
 			else:
-				self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-tree"></span> Branch</td>\n')
+				self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-tree-deciduous"></span> Branch</td>\n')
 			self.htmlFile.write('       <td>' + self.eNBBranch + '</td>\n')
 			self.htmlFile.write('     </tr>\n')
 			self.htmlFile.write('     <tr>\n')
