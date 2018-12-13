@@ -110,7 +110,7 @@ class SSHConnection():
 		self.htmlFile = ''
 		self.htmlHeaderCreated = False
 		self.htmlFooterCreated = False
-		self.htmlUEConnected = 0
+		self.htmlUEConnected = -1
 		self.htmleNBFailureMsg = ''
 		self.picocom_closure = False
 		self.idle_sleep_time = 0
@@ -2040,6 +2040,17 @@ class SSHConnection():
 			self.htmlFile.write('        <th>Test Desc</th>\n')
 			self.htmlFile.write('        <th>Test Options</th>\n')
 			self.htmlFile.write('        <th>Test Status</th>\n')
+			if (self.htmlUEConnected == -1):
+				terminate_ue_flag = True
+				if (self.ADBIPAddress != 'none'):
+					self.GetAllUEDevices(terminate_ue_flag)
+					self.GetAllCatMDevices(terminate_ue_flag)
+				else:
+					self.UEDevices.append('doughq9rehg')
+					self.UEDevices.append('dnsgiuahgia')
+					self.UEDevices.append('uehgieng9')
+				self.htmlUEConnected = len(self.UEDevices)
+
 			i = 0
 			while (i < self.htmlUEConnected):
 				self.htmlFile.write('        <th>UE' + str(i) + ' Status</th>\n')
