@@ -56,7 +56,7 @@
 //#define DEBUG_PHY_PROC
 
 #define NR_PDCCH_SCHED
-#define NR_PDCCH_SCHED_DEBUG
+//#define NR_PDCCH_SCHED_DEBUG
 //#define NR_PUCCH_SCHED
 //#define NR_PUCCH_SCHED_DEBUG
 
@@ -3584,7 +3584,7 @@ void nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int eNB
         }
       }
 
-      if ((m==s0) && (m<4))
+      if ((m==s0) && (m<3))
           first_symbol_flag = 1;
       else
           first_symbol_flag = 0;
@@ -4104,7 +4104,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
     }
 
     //#ifdef DEBUG_PHY_PROC
-    LOG_I(PHY,"[UE  %d][PDSCH %x/%d] Frame %d nr_tti_rx %d: PDSCH/DLSCH decoding iter %d/%d (mcs %d, rv %d, TBS %d)\n",
+    LOG_D(PHY,"[UE  %d][PDSCH %x/%d] Frame %d nr_tti_rx %d: PDSCH/DLSCH decoding iter %d/%d (mcs %d, rv %d, TBS %d)\n",
     ue->Mod_id,
     dlsch0->rnti,harq_pid,
 	  frame_rx,nr_tti_rx,ret,dlsch0->max_ldpc_iterations,
@@ -4964,7 +4964,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   //proc->decoder_switch = 0;
   //int counter_decoder = 0;
   
-  LOG_I(PHY," ****** start RX-Chain for AbsSubframe %d.%d ******  \n", frame_rx%1024, nr_tti_rx);
+  LOG_D(PHY," ****** start RX-Chain for AbsSubframe %d.%d ******  \n", frame_rx%1024, nr_tti_rx);
 
   uint8_t next1_thread_id = ue->current_thread_id[nr_tti_rx]== (RX_NB_TH-1) ? 0:(ue->current_thread_id[nr_tti_rx]+1);
   uint8_t next2_thread_id = next1_thread_id== (RX_NB_TH-1) ? 0:(next1_thread_id+1);
@@ -5444,7 +5444,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 
 //#endif //pdsch
 
-  LOG_I(PHY," ****** end RX-Chain  for AbsSubframe %d.%d ******  \n", frame_rx%1024, nr_tti_rx);
+  LOG_D(PHY," ****** end RX-Chain  for AbsSubframe %d.%d ******  \n", frame_rx%1024, nr_tti_rx);
   return (0);
 }
 

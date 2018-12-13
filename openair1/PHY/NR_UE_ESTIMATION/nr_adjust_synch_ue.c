@@ -80,7 +80,7 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
     max_pos_fil = ((max_pos_fil * coef) + (max_pos * ncoef)) >> 15;
 
   // do not filter to have proactive timing adjustment
-  max_pos_fil = max_pos;
+  //max_pos_fil = max_pos;
 
   if(subframe == 1)
   {
@@ -96,7 +96,7 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
       else
           count_max_pos_ok = 0;
           
-      printf("adjust sync count_max_pos_ok = %d\n",count_max_pos_ok);
+      //printf("adjust sync count_max_pos_ok = %d\n",count_max_pos_ok);
 
       if(count_max_pos_ok > 10 && first_time == 1)
       {
@@ -122,7 +122,7 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
 
 
       #ifdef DEBUG_PHY
-      LOG_I(PHY,"AbsSubframe %d.%d: ThreadId %d diff =%i rx_offset (final) = %i : clear %d,max_pos = %d,max_pos_fil = %d (peak %d) max_val %d target_pos %d \n",
+      LOG_D(PHY,"AbsSubframe %d.%d: ThreadId %d diff =%i rx_offset (final) = %i : clear %d,max_pos = %d,max_pos_fil = %d (peak %d) max_val %d target_pos %d \n",
               ue->proc.proc_rxtx[ue->current_thread_id[subframe]].frame_rx,
               subframe,
               ue->current_thread_id[subframe],

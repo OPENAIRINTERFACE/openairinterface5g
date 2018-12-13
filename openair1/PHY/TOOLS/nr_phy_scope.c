@@ -518,6 +518,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   int Qm = 2;
   int coded_bits_per_codeword = num_re*Qm;
   int symbol, first_symbol,nb_re;
+  int nb_rb_pdsch =50;
   /*
   float Re,Im,ymax=1;
   float **chest_t_abs, *chest_f_abs;
@@ -756,8 +757,8 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
 
   // PDCCH LLRs
   if (pdcch_llr != NULL) {
-    for (i=0; i<12*frame_parms->N_RB_DL*2*num_pdcch_symbols; i++) {
-      llr_pdcch[i] = (float) pdcch_llr[i];
+    for (i=0; i<100; i++) { //12*frame_parms->N_RB_DL*2*num_pdcch_symbols
+      llr_pdcch[i] = (float) pdcch_llr[2*24*9 +i];
       bit_pdcch[i] = (float) i;
     }
 
@@ -766,9 +767,9 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
 
   // PDCCH I/Q of MF Output
   if (pdcch_comp!=NULL) {
-    for (i=0; i<12*frame_parms->N_RB_DL*num_pdcch_symbols; i++) {
-      I[i] = pdcch_comp[2*i];
-      Q[i] = pdcch_comp[2*i+1];
+    for (i=0; i<100; i++) {
+      I[i] = pdcch_comp[2*50*12+2*i];
+      Q[i] = pdcch_comp[2*50*12+2*i+1];
     }
     fl_set_xyplot_data(form->pdcch_comp,I,Q,12*frame_parms->N_RB_DL*num_pdcch_symbols,"","","");
   }
@@ -786,12 +787,12 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
 
   // PDSCH I/Q of MF Output
   if (pdsch_comp!=NULL) {
-    for (i=0; i<num_re; i++) {
-      I[ind] = pdsch_comp[i  ];
-      Q[ind] = pdsch_comp[i+1];
+    for (i=0; i<nb_rb_pdsch*12; i++) {
+      I[i] = pdsch_comp[2*2*nb_rb_pdsch*12+2*i  ];
+      Q[i] = pdsch_comp[2*2*nb_rb_pdsch*12+2*i+1];
     }
     
-    fl_set_xyplot_data(form->pdsch_comp,I,Q,num_re,"","","");
+    fl_set_xyplot_data(form->pdsch_comp,I,Q,nb_rb_pdsch*12,"","","");
   }
   /*
 
