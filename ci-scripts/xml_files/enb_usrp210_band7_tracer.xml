@@ -21,28 +21,45 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>epc-closure</htmlTabRef>
-	<htmlTabName>EPC-Closure</htmlTabName>
-	<htmlTabIcon>log-out</htmlTabIcon>
+	<htmlTabRef>tracer-test</htmlTabRef>
+	<htmlTabName>T-Tracer</htmlTabName>
+	<htmlTabIcon>duplicate</htmlTabIcon>
 	<TestCaseRequestedList>
- 050201 060201 070201
+ 040101
+ 030100 040300 040401 040201 030201
 	</TestCaseRequestedList>
-	<TestCaseExclusionList>
-	</TestCaseExclusionList>
+	<TestCaseExclusionList></TestCaseExclusionList>
 
-	<testCase id="050201">
-		<class>Terminate_HSS</class>
-		<desc>Terminate HSS</desc>
+	<testCase id="030100">
+		<class>Initialize_eNB</class>
+		<desc>Initialize eNB (FDD/Band7/5MHz) with T Tracer on</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.usrpb210.conf --T_stdout 0</Initialize_eNB_args>
 	</testCase>
 
-	<testCase id="060201">
-		<class>Terminate_MME</class>
-		<desc>Terminate MME</desc>
+	<testCase id="030201">
+		<class>Terminate_eNB</class>
+		<desc>Terminate eNB</desc>
 	</testCase>
 
-	<testCase id="070201">
-		<class>Terminate_SPGW</class>
-		<desc>Terminate SPGW</desc>
+	<testCase id="040101">
+		<class>Initialize_UE</class>
+		<desc>Initialize UE</desc>
 	</testCase>
+
+	<testCase id="040201">
+		<class>Terminate_UE</class>
+		<desc>Terminate UE</desc>
+	</testCase>
+
+        <testCase id="040300">
+                <class>Attach_UE</class>
+                <desc>Attach single UE</desc>
+                <nbMaxUEtoAttach>1</nbMaxUEtoAttach>
+        </testCase>
+
+        <testCase id="040401">
+                <class>Detach_UE</class>
+                <desc>Detach UE</desc>
+        </testCase>
 
 </testCaseList>

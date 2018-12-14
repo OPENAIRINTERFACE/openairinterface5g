@@ -21,9 +21,9 @@
 
 -->
 <testCaseList>
-        <htmlTabRef>build-tab</htmlTabRef>
-        <htmlTabName>Build</htmlTabName>
-        <htmlTabIcon>wrench</htmlTabIcon>
+	<htmlTabRef>build-tab</htmlTabRef>
+	<htmlTabName>Build</htmlTabName>
+	<htmlTabIcon>wrench</htmlTabIcon>
 	<TestCaseRequestedList>
  010101
  050101 060101 070101 040101

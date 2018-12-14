@@ -1955,6 +1955,7 @@ class SSHConnection():
 			self.htmlFile.write('    </tr>\n')
 			self.htmlFile.write('  </table>\n')
 			self.htmlFile.write('  <br>\n')
+			self.htmlFile.write('  <div class="alert alert-info"><strong> <span class="glyphicon glyphicon-dashboard"></span> TEMPLATE_STAGE_NAME</strong></div>\n')
 			self.htmlFile.write('  <table border = "1">\n')
 			self.htmlFile.write('     <tr>\n')
 			self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-time"></span> Build Start Time (UTC) </td>\n')

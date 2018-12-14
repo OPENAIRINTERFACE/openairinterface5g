@@ -24,37 +24,37 @@
 	<htmlTabRef>test-10</htmlTabRef>
 	<htmlTabName>Test-10MHz</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
-	<TestCaseRequestedList>
+        <TestCaseRequestedList>
  040101
- 030111 030112 040301 040511 040614 040652 040401 040201 030201 030202
+ 030114 030115 040301 040511 040612 040652 040401 040201 030201 030202
 	</TestCaseRequestedList>
 	<TestCaseExclusionList>
 	</TestCaseExclusionList>
 
-	<testCase id="030111">
+	<testCase id="030114">
 		<class>Initialize_eNB</class>
-		<desc>Initialize RRU (FDD/Band7)</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/rru.fdd.band7.conf</Initialize_eNB_args>
-		<eNB_instance>1</eNB_instance>
-	</testCase>
-
-	<testCase id="030112">
-		<class>Initialize_eNB</class>
-		<desc>Initialize RCC (FDD/Band7/10MHz)</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/rcc.band7.tm1.if4p5.lo.50PRB.usrpb210.conf</Initialize_eNB_args>
+		<desc>Initialize RRU (TDD/Band40)</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/rru.tdd.band40.conf</Initialize_eNB_args>
 		<eNB_instance>0</eNB_instance>
 	</testCase>
+	
+	<testCase id="030115">
+                <class>Initialize_eNB</class>
+                <desc>Initialize RCC (TDD/Band40/10MHz/info)</desc>
+                <Initialize_eNB_args>-O ci-scripts/conf_files/rcc.band40.tm1.50PRB.FairScheduler.usrpb210.conf</Initialize_eNB_args>
+		<eNB_instance>1</eNB_instance>
+        </testCase>
 
 	<testCase id="030201">
 		<class>Terminate_eNB</class>
 		<desc>Terminate RCC</desc>
-		<eNB_instance>0</eNB_instance>
+		<eNB_instance>1</eNB_instance>
 	</testCase>
 
 	<testCase id="030202">
 		<class>Terminate_eNB</class>
 		<desc>Terminate RRU</desc>
-		<eNB_instance>1</eNB_instance>
+		<eNB_instance>0</eNB_instance>
 	</testCase>
 
 	<testCase id="040101">
@@ -81,21 +81,21 @@
                 <class>Ping</class>
                 <desc>ping (10MHz - 20 sec)</desc>
                 <ping_args>-c 20</ping_args>
-                <ping_packetloss_threshold>5</ping_packetloss_threshold>
+                <ping_packetloss_threshold>25</ping_packetloss_threshold>
         </testCase>
 
-        <testCase id="040614">
-		<class>Iperf</class>
-		<desc>iperf (10MHz - DL/32Mbps/UDP)(30 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 32M -t 30 -i 1</iperf_args>
-		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
-		<iperf_profile>single-ue</iperf_profile>
+        <testCase id="040612">
+                <class>Iperf</class>
+                <desc>iperf (10MHz - DL/13.5Mbps/UDP)(30 sec)(single-ue)</desc>
+                <iperf_args>-u -b 13.5M -t 30 -i 1</iperf_args>
+                <iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+                <iperf_profile>single-ue</iperf_profile>
         </testCase>
 
 	<testCase id="040652">
 		<class>Iperf</class>
-		<desc>iperf (10MHz - UL/20Mbps/UDP)(30 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 20M -t 30 -i 1 -R</iperf_args>
+		<desc>iperf (10MHz - UL/2Mbps/UDP)(30 sec)(single-ue)</desc>
+		<iperf_args>-u -b 2M -t 30 -i 1 -R</iperf_args>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
