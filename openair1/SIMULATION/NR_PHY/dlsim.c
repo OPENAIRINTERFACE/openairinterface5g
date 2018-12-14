@@ -53,6 +53,7 @@
 #include "NR_PHY_INTERFACE/NR_IF_Module.h"
 #include "NR_UE_PHY_INTERFACE/NR_IF_Module.h"
 
+
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
@@ -104,6 +105,7 @@ void config_common(int Mod_idP,
                    uint64_t dl_CarrierFreqP,
                    uint32_t dl_BandwidthP
 		   );
+
 
 // needed for some functions
 PHY_VARS_NR_UE ***PHY_vars_UE_g;
@@ -475,7 +477,7 @@ int main(int argc, char **argv)
   memcpy(&UE->frame_parms,frame_parms,sizeof(NR_DL_FRAME_PARMS));
 
   if (run_initial_sync==1)  UE->is_synchronized = 0;
-  else                      UE->is_synchronized = 1;
+  else                      {UE->is_synchronized = 1; UE->UE_mode[0]=PUSCH;}
                       
   UE->perfect_ce = 0;
 
@@ -500,7 +502,7 @@ int main(int argc, char **argv)
   UE->if_inst = nr_ue_if_module_init(0);
   UE->if_inst->scheduled_response = nr_ue_scheduled_response;
   UE->if_inst->phy_config_request = nr_ue_phy_config_request;
-  UE->if_inst->dl_indication = dummy_nr_ue_dl_indication;
+  UE->if_inst->dl_indication = nr_ue_dl_indication;
   UE->if_inst->ul_indication = dummy_nr_ue_ul_indication;
   
 
@@ -582,6 +584,13 @@ int main(int argc, char **argv)
 
 
   //Configure UE
+  rrc_gNB_carrier_data_t carrier;
+  uint32_t pdcch_ConfigSIB1     = 0;
+  uint32_t ssb_SubcarrierOffset = 0;
+  carrier.MIB = (uint8_t*) malloc(4);
+  carrier.sizeof_MIB = do_MIB_NR(&carrier,0,ssb_SubcarrierOffset,pdcch_ConfigSIB1,30,2);
+
+  nr_rrc_mac_config_req_ue(0,0,0,carrier.mib.message.choice.mib,NULL,NULL,NULL);
   fapi_nr_dl_config_request_t dl_config; 
   //  Type0 PDCCH search space
   dl_config.number_pdus =  1;

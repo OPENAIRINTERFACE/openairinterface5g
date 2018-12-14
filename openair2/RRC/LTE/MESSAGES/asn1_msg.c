@@ -39,7 +39,7 @@
 #include <asn_application.h>
 #include <asn_internal.h> /* for _ASN_DEFAULT_STACK_MAX */
 #include <per_encoder.h>
-
+//#include "COMMON/messages_types.h"
 #include "assertions.h"
 #include "RRCConnectionRequest.h"
 #include "UL-CCCH-Message.h"

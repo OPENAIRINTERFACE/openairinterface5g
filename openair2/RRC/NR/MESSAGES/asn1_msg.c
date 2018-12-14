@@ -42,7 +42,6 @@
 
 #include "asn1_msg.h"
 #include "RRC/NR/nr_rrc_extern.h"
-
 #if defined(NR_Rel15)
 #include "NR_SCS-SpecificCarrier.h"
 #include "NR_TDD-UL-DL-ConfigCommon.h"
