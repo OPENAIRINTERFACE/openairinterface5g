@@ -122,7 +122,7 @@ int main(int argc, char **argv)
   unsigned char frame_type = 0;
   unsigned char pbch_phase = 0;
 
-  int frame=8,subframe=0;
+  int frame=0,subframe=0;
   int frame_length_complex_samples;
   int frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;

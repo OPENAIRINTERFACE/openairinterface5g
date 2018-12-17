@@ -277,8 +277,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   else
     pbch->pbch_a |= ((config->sch_config.ssb_subcarrier_offset.value>>4)&1)<<29; //MSB of k_SSB (bit index 4)
 
-  //LOG_I(PHY,"After extra byte: pbch_a = 0x%08x\n",pbch->pbch_a);
-  printf("After extra byte: pbch_a = 0x%08x\n",pbch->pbch_a);
+  LOG_I(PHY,"After extra byte: pbch_a = 0x%08x\n",pbch->pbch_a);
 
     // Payload interleaving
   

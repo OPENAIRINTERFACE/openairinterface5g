@@ -679,9 +679,9 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   uint32_t out=0;
   for (int i=0; i<32; i++) {
     out |= ((nr_ue_pbch_vars->pbch_a_interleaved>>i)&1)<<(pbch_deinterleaving_pattern[i]);
-//#ifdef DEBUG_PBCH
+#ifdef DEBUG_PBCH
     printf("i %d in 0x%08x out 0x%08x ilv %d (in>>i)&1) 0x%08x\n", i, nr_ue_pbch_vars->pbch_a_interleaved, out, pbch_deinterleaving_pattern[i], (nr_ue_pbch_vars->pbch_a_interleaved>>i)&1);
-//#endif
+#endif
   }
 
  uint32_t payload = 0;
