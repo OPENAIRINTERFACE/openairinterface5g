@@ -457,14 +457,14 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
     break;
   }
 
-  if( ((Ns%2) == 0) && (l == 0))
+  if( (Ns== 2) && (l == 0))
   {
       // do ifft of channel estimate
       for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++)
           for (p=0; p<ue->frame_parms.nb_antenna_ports_eNB; p++) {
               if (ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].dl_ch_estimates[eNB_offset][(p<<1)+aarx])
               {
-                  LOG_I(PHY,"Channel Impulse Computation Slot %d ThreadId %d Symbol %d \n", Ns, ue->current_thread_id[Ns>>1], l);
+                  LOG_D(PHY,"Channel Impulse Computation Slot %d ThreadId %d Symbol %d \n", Ns, ue->current_thread_id[Ns>>1], l);
                   idft((int16_t*) &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].dl_ch_estimates[eNB_offset][(p<<1)+aarx][0],
                           (int16_t*) ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].dl_ch_estimates_time[eNB_offset][(p<<1)+aarx],1);
               }

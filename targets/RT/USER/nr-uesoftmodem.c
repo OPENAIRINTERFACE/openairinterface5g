@@ -446,7 +446,7 @@ static void *scope_thread(void *arg) {
       //if (PHY_vars_UE_g[0][0]->is_synchronized == 1)
 	phy_scope_UE(form_ue[0],
 		     PHY_vars_UE_g[0][0],
-		     0,0,7);
+		     0,0,1);
       //else it is done in the synch thread
       
       //printf("doing forms\n");

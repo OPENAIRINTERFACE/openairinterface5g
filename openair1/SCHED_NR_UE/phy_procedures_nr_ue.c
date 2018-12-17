@@ -3411,6 +3411,7 @@ void ue_pmch_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc,int eNB_id,i
              ue->dlsch_MCH[0],
              ue->dlsch_MCH[0]->harq_processes[0],
              frame_rx,
+             nb_symb_sch,
              nr_tti_rx,
              0,
              0,1);
@@ -3845,6 +3846,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 			   dlsch0,
 			   dlsch0->harq_processes[harq_pid],
 			   frame_rx,
+			   nb_symb_sch,
 			   nr_tti_rx,
 			   harq_pid,
 			   pdsch==PDSCH?1:0,
@@ -3869,12 +3871,12 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 #if DISABLE_LOG_X
       printf(" --> Unscrambling for CW0 %5.3f\n",
               (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
-      printf("AbsSubframe %d.%d --> Turbo Decoding for CW0 %5.3f\n",
+      printf("AbsSubframe %d.%d --> LDPC Decoding for CW0 %5.3f\n",
               frame_rx%1024, nr_tti_rx,(ue->dlsch_decoding_stats[ue->current_thread_id[nr_tti_rx]].p_time)/(cpuf*1000.0));
 #else
       LOG_I(PHY, " --> Unscrambling for CW0 %5.3f\n",
               (ue->dlsch_unscrambling_stats.p_time)/(cpuf*1000.0));
-      LOG_I(PHY, "AbsSubframe %d.%d --> Turbo Decoding for CW0 %5.3f\n",
+      LOG_I(PHY, "AbsSubframe %d.%d --> LDPC Decoding for CW0 %5.3f\n",
               frame_rx%1024, nr_tti_rx,(ue->dlsch_decoding_stats[ue->current_thread_id[nr_tti_rx]].p_time)/(cpuf*1000.0));
 #endif
 
@@ -3921,6 +3923,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                             dlsch1,
                             dlsch1->harq_processes[harq_pid],
                             frame_rx,
+                            nb_symb_sch,
                             nr_tti_rx,
                             harq_pid,
                             pdsch==PDSCH?1:0,

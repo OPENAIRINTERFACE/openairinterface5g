@@ -162,6 +162,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   dlsch[0]->harq_processes[harq_pid]->Qm = 2;
   dlsch[0]->harq_processes[harq_pid]->mcs = 9;
   dlsch[0]->harq_processes[harq_pid]->Nl=1;
+  dlsch[0]->harq_processes[harq_pid]->round=0;
   dlsch[0]->harq_processes[harq_pid]->nb_rb = nb_rb_pdsch;
   frame_parms->nushift = 0;
   
@@ -1381,10 +1382,10 @@ void nr_dlsch_channel_compensation(int **rxdataF_ext,
           // get channel amplitude if not QPSK
 
           mmtmpD0 = _mm_madd_epi16(dl_ch128[0],dl_ch128[0]);
-          mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
+          mmtmpD0 = _mm_srai_epi32(mmtmpD0,(output_shift-2));
 
           mmtmpD1 = _mm_madd_epi16(dl_ch128[1],dl_ch128[1]);
-          mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
+          mmtmpD1 = _mm_srai_epi32(mmtmpD1,(output_shift-2));
 
           mmtmpD0 = _mm_packs_epi32(mmtmpD0,mmtmpD1);
 
@@ -1806,18 +1807,15 @@ void nr_dlsch_scale_channel(int **dl_ch_estimates_ext,
   unsigned char aatx,aarx,pilots=0,symbol_mod;
   __m128i *dl_ch128, ch_amp128;
 
-  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
-
-  if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp))) {
-    if (frame_parms->nb_antenna_ports_eNB==1) // 10 out of 12 so don't reduce size
-      nb_rb=1+(5*nb_rb/6);
-    else
-      pilots=1;
+  
+  if (symbol==2){
+	  nb_rb = nb_rb>>1;
+	  pilots=1;
   }
 
   // Determine scaling amplitude based the symbol
 
-ch_amp = ((pilots) ? (dlsch_ue[0]->sqrt_rho_b) : (dlsch_ue[0]->sqrt_rho_a));
+ch_amp = 1024*8; //((pilots) ? (dlsch_ue[0]->sqrt_rho_b) : (dlsch_ue[0]->sqrt_rho_a));
 
     LOG_D(PHY,"Scaling PDSCH Chest in OFDM symbol %d by %d, pilots %d nb_rb %d NCP %d symbol %d\n",symbol_mod,ch_amp,pilots,nb_rb,frame_parms->Ncp,symbol);
    // printf("Scaling PDSCH Chest in OFDM symbol %d by %d\n",symbol_mod,ch_amp);
@@ -1827,7 +1825,7 @@ ch_amp = ((pilots) ? (dlsch_ue[0]->sqrt_rho_b) : (dlsch_ue[0]->sqrt_rho_a));
   for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++) {
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
-      dl_ch128=(__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*frame_parms->N_RB_DL*12];
+      dl_ch128=(__m128i *)&dl_ch_estimates_ext[(aatx<<1)+aarx][symbol*nb_rb*12];
 
       for (rb=0;rb<nb_rb;rb++) {
 
