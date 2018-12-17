@@ -36,7 +36,7 @@
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 
 //#define DEBUG_PBCH 1
-#define DEBUG_PBCH_ENCODING
+//#define DEBUG_PBCH_ENCODING
 
 #ifdef OPENAIR2
 //#include "PHY_INTERFACE/defs.h"
@@ -508,7 +508,7 @@ unsigned char sign(int8_t x) {
 }
 */
 
-uint8_t pbch_deinterleaving_pattern[32] = {28,0,31,30,7,29,25,27,5,8,24,9,10,11,12,13,1,4,3,14,15,16,17,2,26,18,19,20,21,22,30,23};
+uint8_t pbch_deinterleaving_pattern[32] = {28,0,31,30,7,29,25,27,5,8,24,9,10,11,12,13,1,4,3,14,15,16,17,2,26,18,19,20,21,22,6,23};
 
 int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 		UE_nr_rxtx_proc_t *proc,
@@ -673,16 +673,15 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   M = (Lmax == 64)? (NR_POLAR_PBCH_PAYLOAD_BITS - 6) : (NR_POLAR_PBCH_PAYLOAD_BITS - 3);
   nushift = ((nr_ue_pbch_vars->pbch_a_prime>>24)&1) ^ (((nr_ue_pbch_vars->pbch_a_prime>>6)&1)<<1);
   nr_pbch_unscrambling(nr_ue_pbch_vars,frame_parms->Nid_cell,nushift,M,NR_POLAR_PBCH_PAYLOAD_BITS,1,unscrambling_mask);
-  printf("nushift %d sfn 3rd %d 2nd %d\n", nushift,((nr_ue_pbch_vars->pbch_a_prime>>6)&1), ((nr_ue_pbch_vars->pbch_a_prime>>24)&1) );
 
   //payload deinterleaving
   //uint32_t in=0;
   uint32_t out=0;
   for (int i=0; i<32; i++) {
     out |= ((nr_ue_pbch_vars->pbch_a_interleaved>>i)&1)<<(pbch_deinterleaving_pattern[i]);
-#ifdef DEBUG_PBCH
+//#ifdef DEBUG_PBCH
     printf("i %d in 0x%08x out 0x%08x ilv %d (in>>i)&1) 0x%08x\n", i, nr_ue_pbch_vars->pbch_a_interleaved, out, pbch_deinterleaving_pattern[i], (nr_ue_pbch_vars->pbch_a_interleaved>>i)&1);
-#endif
+//#endif
   }
 
  uint32_t payload = 0;

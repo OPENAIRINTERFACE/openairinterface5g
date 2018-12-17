@@ -122,13 +122,13 @@ int main(int argc, char **argv)
   unsigned char frame_type = 0;
   unsigned char pbch_phase = 0;
 
-  int frame=0,subframe=0;
+  int frame=8,subframe=0;
   int frame_length_complex_samples;
   int frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
   nfapi_nr_config_request_t *gNB_config;
 
-  int ret;
+  int ret, payload_ret=0;
   int run_initial_sync=0;
 
   int loglvl=OAILOG_WARNING;
@@ -570,9 +570,17 @@ int main(int argc, char **argv)
 	if (ret==0) {
 	  //UE->rx_ind.rx_indication_body->mib_pdu.ssb_index;  //not yet detected automatically
 	  //UE->rx_ind.rx_indication_body->mib_pdu.ssb_length; //Lmax, not yet detected automatically
-	  for (i=0;i<3;i++)
-	    printf("pdu byte %d gNB: 0x%02x UE: 0x%02x\n",i,((uint8_t*)&gNB->pbch.pbch_a)[i], UE->rx_ind.rx_indication_body->mib_pdu.pdu[i]);  
-	  printf("xtra byte gNB: 0x%02x UE: 0x%02x\n",((uint8_t*)&gNB->pbch.pbch_a)[3], UE->rx_ind.rx_indication_body->mib_pdu.additional_bits);
+    uint8_t gNB_xtra_byte=0;
+    for (int i=0; i<8; i++)
+      gNB_xtra_byte |= ((gNB->pbch.pbch_a>>(31-i))&1)<<(7-i);
+
+    payload_ret += (UE->rx_ind.rx_indication_body->mib_pdu.additional_bits == gNB_xtra_byte);
+	  for (i=0;i<3;i++){
+      payload_ret += (UE->rx_ind.rx_indication_body->mib_pdu.pdu[i] == gNB->pbch_pdu[2-i]);
+      //printf("pdu byte %d gNB: 0x%02x UE: 0x%02x\n",i,gNB->pbch_pdu[i], UE->rx_ind.rx_indication_body->mib_pdu.pdu[i]); 
+      } 
+	  //printf("xtra byte gNB: 0x%02x UE: 0x%02x\n",gNB_xtra_byte, UE->rx_ind.rx_indication_body->mib_pdu.additional_bits);
+    //printf("ret %d\n", payload_ret);
 	}
 
 	if (ret<0) n_errors++;
@@ -582,7 +590,12 @@ int main(int argc, char **argv)
     printf("SNR %f : n_errors (negative CRC) = %d/%d\n", SNR,n_errors,n_trials);
 
     if ((float)n_errors/(float)n_trials <= target_error_rate) {
-      printf("PBCH test OK\n");
+      if (payload_ret==4) {
+        printf("Payload OK\n");
+        printf("PBCH test OK\n");
+      }
+      else
+        printf("Payload NOK\n");
       break;
     }
       
