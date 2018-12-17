@@ -494,21 +494,23 @@ int wakeup_txfh(L1_rxtx_proc_t *proc,PHY_VARS_eNB *eNB) {
     	return(-1);
   }
   pthread_mutex_lock(&eNB->proc.mutex_RU_tx);
-  eNB->proc.RU_mask_tx = 0;
+  //eNB->proc.RU_mask_tx = 0;
   pthread_mutex_unlock(&eNB->proc.mutex_RU_tx);
   if (release_thread(&proc->mutex_RUs,&proc->instance_cnt_RUs,"wakeup_txfh")<0) return(-1);
 
   for(int ru_id=0; ru_id<eNB->num_RU; ru_id++){
   	ru_proc = &eNB->RU_list[ru_id]->proc;
     	fp = &eNB->RU_list[ru_id]->frame_parms;
-    	if ((fp->frame_type == TDD) && (subframe_select(fp,proc->subframe_tx)==SF_UL)){
+    	if ((fp->frame_type == TDD) && (subframe_select(fp,proc->subframe_tx)==SF_UL)||
+            (eNB->RU_list[ru_id]->state == RU_SYNC)||
+            (eNB->RU_list[ru_id]->wait_cnt>0)){
            pthread_mutex_lock(&proc->mutex_RUs);
            proc->instance_cnt_RUs = 0;
            pthread_mutex_unlock(&proc->mutex_RUs);
            continue;//hacking only works when all RU_tx works on the same subframe #TODO: adding mask stuff
         }
     	// skip the RUs that are not synced
-    	if (eNB->RU_list[ru_id]->state == RU_SYNC) { LOG_D(PHY,"wakeup_txfh: eNB %d : Skipping ru %d\n",eNB->Mod_id,ru_id); continue; }
+    	//if (eNB->RU_list[ru_id]->state == RU_SYNC /*|| eNB->RU_list[ru_id]->wait_cnt>0*/) { LOG_D(PHY,"wakeup_txfh: eNB %d : Skipping ru %d\n",eNB->Mod_id,ru_id); continue; }
 
     	//if(ru_proc == NULL) {return(0);}
     
@@ -521,14 +523,14 @@ int wakeup_txfh(L1_rxtx_proc_t *proc,PHY_VARS_eNB *eNB) {
       		exit_fun( "error locking mutex_eNB" );
       		return(-1);
     	}
-      	VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_IC_ENB,ru_proc->instance_cnt_eNBs);
+      	//VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_IC_ENB,ru_proc->instance_cnt_eNBs);
 	ru_proc->instance_cnt_eNBs = 0;
-        VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_IC_ENB,ru_proc->instance_cnt_eNBs);
+        VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_IC_ENB+ru_id,ru_proc->instance_cnt_eNBs);
       	ru_proc->timestamp_tx = proc->timestamp_tx;
       	ru_proc->subframe_tx  = proc->subframe_tx;
       	ru_proc->frame_tx     = proc->frame_tx;
         
-        LOG_D(PHY,"wakeup_txfh: ru_proc->subframe_tx %d\n",ru_proc->subframe_tx);
+       // printf("wakeup_txfh: RU %d, frame_tx %d, subframe_tx %d\n",ru_id,ru_proc->frame_tx,ru_proc->subframe_tx);
     	
         // the thread can now be woken up
     	if (pthread_cond_signal(&ru_proc->cond_eNBs) != 0) {
@@ -629,6 +631,11 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,RU_t *ru) {
 
   //printf("wakeup_rxtx: L1_proc->subframe_rx %d, L1_proc->subframe_tx %d, RU %d\n",L1_proc->subframe_rx,L1_proc->subframe_tx,ru->idx);
 
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_WAKEUP_RXTX_RX_RU+ru->idx, L1_proc->frame_rx);
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_WAKEUP_RXTX_RX_RU+ru->idx, L1_proc->subframe_rx);
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_WAKEUP_RXTX_TX_RU+ru->idx, L1_proc->frame_tx);
+  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_WAKEUP_RXTX_TX_RU+ru->idx, L1_proc->subframe_tx);
+
   // the thread can now be woken up
   if (pthread_cond_signal(&L1_proc->cond) != 0) {
     LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB RXn-TXnp4 thread\n");
@@ -637,12 +644,12 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,RU_t *ru) {
   }
   
   pthread_mutex_unlock( &L1_proc->mutex);
-
+/*
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_WAKEUP_RXTX_RX_RU+ru->idx, L1_proc->frame_rx);
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_WAKEUP_RXTX_RX_RU+ru->idx, L1_proc->subframe_rx);
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_WAKEUP_RXTX_TX_RU+ru->idx, L1_proc->frame_tx);
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_WAKEUP_RXTX_TX_RU+ru->idx, L1_proc->subframe_tx);
-
+*/
   return(0);
 }
 
