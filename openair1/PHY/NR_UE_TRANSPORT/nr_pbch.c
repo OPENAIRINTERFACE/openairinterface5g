@@ -666,7 +666,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   if(decoderState == -1)
   	return(decoderState);
   	
-  	printf("polar decoder output 0x%08x\n",nr_ue_pbch_vars->pbch_a_prime);
+  //printf("polar decoder output 0x%08x\n",nr_ue_pbch_vars->pbch_a_prime);
   
   //payload un-scrambling
   memset(&nr_ue_pbch_vars->pbch_a_interleaved, 0, sizeof(uint32_t) );
