@@ -567,6 +567,14 @@ int main(int argc, char **argv)
 			 SISO,
 			 UE->high_speed_flag);
 
+	if (ret==0) {
+	  //UE->rx_ind.rx_indication_body->mib_pdu.ssb_index;  //not yet detected automatically
+	  //UE->rx_ind.rx_indication_body->mib_pdu.ssb_length; //Lmax, not yet detected automatically
+	  for (i=0;i<3;i++)
+	    printf("pdu byte %d gNB: 0x%02x UE: 0x%02x\n",i,((uint8_t*)&gNB->pbch.pbch_a)[i], UE->rx_ind.rx_indication_body->mib_pdu.pdu[i]);  
+	  printf("xtra byte gNB: 0x%02x UE: 0x%02x\n",((uint8_t*)&gNB->pbch.pbch_a)[3], UE->rx_ind.rx_indication_body->mib_pdu.additional_bits);
+	}
+
 	if (ret<0) n_errors++;
       }
     } //noise trials

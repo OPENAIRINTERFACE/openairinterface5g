@@ -36,7 +36,7 @@
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 
 //#define DEBUG_PBCH 1
-//#define DEBUG_PBCH_ENCODING
+#define DEBUG_PBCH_ENCODING
 
 #ifdef OPENAIR2
 //#include "PHY_INTERFACE/defs.h"
@@ -673,7 +673,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   M = (Lmax == 64)? (NR_POLAR_PBCH_PAYLOAD_BITS - 6) : (NR_POLAR_PBCH_PAYLOAD_BITS - 3);
   nushift = ((nr_ue_pbch_vars->pbch_a_prime>>24)&1) ^ (((nr_ue_pbch_vars->pbch_a_prime>>6)&1)<<1);
   nr_pbch_unscrambling(nr_ue_pbch_vars,frame_parms->Nid_cell,nushift,M,NR_POLAR_PBCH_PAYLOAD_BITS,1,unscrambling_mask);
-  printf("nushift %d sfn 3rd %d 2nd %d", nushift,((nr_ue_pbch_vars->pbch_a_prime>>6)&1), ((nr_ue_pbch_vars->pbch_a_prime>>24)&1) );
+  printf("nushift %d sfn 3rd %d 2nd %d\n", nushift,((nr_ue_pbch_vars->pbch_a_prime>>6)&1), ((nr_ue_pbch_vars->pbch_a_prime>>24)&1) );
 
   //payload deinterleaving
   //uint32_t in=0;
