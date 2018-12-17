@@ -99,7 +99,7 @@ int main(int argc, char **argv)
   int freq_offset;
   //  int subframe_offset;
   //  char fname[40], vname[40];
-  int trial,n_trials=1,n_errors,n_errors2,n_alamouti;
+  int trial,n_trials=1,n_errors,n_errors_payload;
   uint8_t transmission_mode = 1,n_tx=1,n_rx=1;
   uint16_t Nid_cell=0;
 
@@ -499,8 +499,7 @@ int main(int argc, char **argv)
   for (SNR=snr0; SNR<snr1; SNR+=.2) {
 
     n_errors = 0;
-    n_errors2 = 0;
-    n_alamouti = 0;
+    n_errors_payload = 0;
 
     for (trial=0; trial<n_trials; trial++) {
 
@@ -581,21 +580,18 @@ int main(int argc, char **argv)
 	  } 
 	  //printf("xtra byte gNB: 0x%02x UE: 0x%02x\n",gNB_xtra_byte, UE->rx_ind.rx_indication_body->mib_pdu.additional_bits);
 	  //printf("ret %d\n", payload_ret);
+	  if (payload_ret!=4) 
+	    n_errors_payload++;
 	}
 
 	if (ret<0) n_errors++;
       }
     } //noise trials
 
-    printf("SNR %f : n_errors (negative CRC) = %d/%d\n", SNR,n_errors,n_trials);
+    printf("SNR %f: trials %d, n_errors_crc = %d, n_errors_payload %d\n", SNR,n_trials,n_errors,n_errors_payload);
 
-    if ((float)n_errors/(float)n_trials <= target_error_rate) {
-      if (payload_ret==4) {
-        printf("Payload OK\n");
-        printf("PBCH test OK\n");
-      }
-      else
-        printf("Payload NOK\n");
+    if (((float)n_errors/(float)n_trials <= target_error_rate) && (n_errors_payload==0)) {
+      printf("PBCH test OK\n");
       break;
     }
       
