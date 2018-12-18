@@ -371,6 +371,12 @@ void *s1ap_eNB_task(void *arg)
     }
     break;
 
+    case S1AP_PATH_SWITCH_REQ: {
+      s1ap_eNB_path_switch_req(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                               &S1AP_PATH_SWITCH_REQ(received_msg));
+    }
+    break;
+
     case S1AP_UE_CONTEXT_RELEASE_COMPLETE: {
       s1ap_ue_context_release_complete(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                        &S1AP_UE_CONTEXT_RELEASE_COMPLETE(received_msg));

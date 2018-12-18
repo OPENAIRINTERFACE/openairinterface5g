@@ -52,6 +52,8 @@
 #include "RRCConnectionSetup.h"
 #include "SRB-ToAddModList.h"
 #include "DRB-ToAddModList.h"
+#include "HandoverPreparationInformation.h"
+#include "HandoverCommand.h"
 #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 #include "MCCH-Message.h"
 //#define MRB1 1
@@ -2386,6 +2388,7 @@ do_RRCConnectionReconfiguration(
   MAC_MainConfig_t                   *mac_MainConfig,
   MeasGapConfig_t                    *measGapConfig,
   MobilityControlInfo_t              *mobilityInfo,
+  SecurityConfigHO_t                 *securityConfigHO,
   struct MeasConfig__speedStatePars  *speedStatePars,
   RSRP_Range_t                       *rsrp,
   C_RNTI_t                           *cba_rnti,
@@ -2485,8 +2488,16 @@ do_RRCConnectionReconfiguration(
     rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo  = NULL;
   }
 
+  if (securityConfigHO != NULL) {
+    rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.securityConfigHO     = CALLOC(1,
+        sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.securityConfigHO));
+    memcpy((void*)rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.securityConfigHO, (void*)securityConfigHO,
+           sizeof(SecurityConfigHO_t));
+  } else {
+    rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.securityConfigHO     = NULL;
+  }
+
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList = dedicatedInfoNASList;
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.securityConfigHO     = NULL;
 
   //TTN for D2D
   //allocate dedicated resource pools for SL communication (sl_CommConfig_r12)
@@ -2545,7 +2556,7 @@ do_RRCConnectionReconfiguration(
 #if defined(ENABLE_ITTI)
 # if !defined(DISABLE_XER_SPRINT)
   {
-    char        message_string[30000];
+    char        message_string[40000];
     size_t      message_string_size;
 
     if ((message_string_size = xer_sprint(message_string, sizeof(message_string), &asn_DEF_DL_DCCH_Message, (void *) &dl_dcch_msg)) > 0) {
@@ -3366,6 +3377,88 @@ uint8_t do_ULInformationTransfer(uint8_t **buffer, uint32_t pdu_length, uint8_t 
   encoded = uper_encode_to_new_buffer (&asn_DEF_UL_DCCH_Message, NULL, (void*) &ul_dcch_msg, (void **) buffer);
 
   return encoded;
+}
+
+int do_HandoverPreparation(char *ho_buf, int ho_size, UE_EUTRA_Capability_t *ue_eutra_cap, int rrc_size)
+{
+  asn_enc_rval_t enc_rval;
+  HandoverPreparationInformation_t ho;
+  HandoverPreparationInformation_r8_IEs_t *ho_info;
+  UE_CapabilityRAT_Container_t *ue_cap_rat_container;
+
+  char rrc_buf[rrc_size];
+
+  memset(rrc_buf, 0, rrc_size);
+
+  enc_rval = uper_encode_to_buffer(&asn_DEF_UE_EUTRA_Capability,
+                                   NULL,
+                                   ue_eutra_cap,
+                                   rrc_buf,
+                                   rrc_size);
+
+  /* TODO: free the OCTET_STRING */
+
+  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
+               enc_rval.failed_type->name, enc_rval.encoded);
+
+
+  memset(&ho, 0, sizeof(ho));
+
+  ho.criticalExtensions.present = HandoverPreparationInformation__criticalExtensions_PR_c1;
+  ho.criticalExtensions.choice.c1.present = HandoverPreparationInformation__criticalExtensions__c1_PR_handoverPreparationInformation_r8;
+
+  ho_info = &ho.criticalExtensions.choice.c1.choice.handoverPreparationInformation_r8;
+  {
+      ue_cap_rat_container = (UE_CapabilityRAT_Container_t *)calloc(1,sizeof(UE_CapabilityRAT_Container_t));
+      ue_cap_rat_container->rat_Type = RAT_Type_eutra;
+
+      AssertFatal (OCTET_STRING_fromBuf(
+                   &ue_cap_rat_container->ueCapabilityRAT_Container,
+                   rrc_buf, rrc_size) != -1, "fatal: OCTET_STRING_fromBuf failed\n");
+
+      ASN_SEQUENCE_ADD(&ho_info->ue_RadioAccessCapabilityInfo.list, ue_cap_rat_container);
+  }
+
+  enc_rval = uper_encode_to_buffer(&asn_DEF_HandoverPreparationInformation,
+                                   NULL,
+                                   &ho,
+                                   ho_buf,
+                                   ho_size);
+
+  /* TODO: free the OCTET_STRING */
+
+  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
+               enc_rval.failed_type->name, enc_rval.encoded);
+
+  return((enc_rval.encoded+7)/8);
+}
+
+int do_HandoverCommand(char *ho_buf, int ho_size, char *rrc_buf, int rrc_size)
+{
+  asn_enc_rval_t enc_rval;
+  HandoverCommand_t ho;
+
+  memset(&ho, 0, sizeof(ho));
+
+  ho.criticalExtensions.present = HandoverCommand__criticalExtensions_PR_c1;
+  ho.criticalExtensions.choice.c1.present = HandoverCommand__criticalExtensions__c1_PR_handoverCommand_r8;
+
+  AssertFatal (OCTET_STRING_fromBuf(
+               &ho.criticalExtensions.choice.c1.choice.handoverCommand_r8.handoverCommandMessage,
+               rrc_buf, rrc_size) != -1, "fatal: OCTET_STRING_fromBuf failed\n");
+
+  enc_rval = uper_encode_to_buffer(&asn_DEF_HandoverCommand,
+                                   NULL,
+                                   &ho,
+                                   ho_buf,
+                                   ho_size);
+
+  /* TODO: free the OCTET_STRING */
+
+  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
+               enc_rval.failed_type->name, enc_rval.encoded);
+
+  return((enc_rval.encoded+7)/8);
 }
 
 OAI_UECapability_t *fill_ue_capability(char *UE_EUTRA_Capability_xer_fname)

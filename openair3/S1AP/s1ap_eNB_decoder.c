@@ -166,6 +166,16 @@ static int s1ap_eNB_decode_successful_outcome(S1AP_S1AP_PDU_t *pdu)
       free(res.buffer);
       break;
 
+    case S1AP_ProcedureCode_id_PathSwitchRequest:
+      res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_S1AP_S1AP_PDU, pdu);
+      message_id = S1AP_S1_SETUP_LOG;
+      message_p = itti_alloc_new_message_sized(TASK_S1AP, message_id, res.result.encoded + sizeof (IttiMsgText));
+      message_p->ittiMsg.s1ap_s1_setup_log.size = res.result.encoded;
+      memcpy(&message_p->ittiMsg.s1ap_s1_setup_log.text, res.buffer, res.result.encoded);
+      itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
+      free(res.buffer);
+      break;
+
     default:
       S1AP_ERROR("Unknown procedure ID (%d) for successfull outcome message\n",
                  (int)pdu->choice.successfulOutcome.procedureCode);
@@ -184,6 +194,15 @@ static int s1ap_eNB_decode_unsuccessful_outcome(S1AP_S1AP_PDU_t *pdu)
 
   switch(pdu->choice.unsuccessfulOutcome.procedureCode) {
     case S1AP_ProcedureCode_id_S1Setup:
+      res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_S1AP_S1AP_PDU, pdu);
+      message_id = S1AP_S1_SETUP_LOG;
+      message_p = itti_alloc_new_message_sized(TASK_S1AP, message_id, res.result.encoded + sizeof (IttiMsgText));
+      message_p->ittiMsg.s1ap_s1_setup_log.size = res.result.encoded;
+      memcpy(&message_p->ittiMsg.s1ap_s1_setup_log.text, res.buffer, res.result.encoded);
+      itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
+      free(res.buffer);
+      break;
+   case S1AP_ProcedureCode_id_PathSwitchRequest:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_S1AP_S1AP_PDU, pdu);
       message_id = S1AP_S1_SETUP_LOG;
       message_p = itti_alloc_new_message_sized(TASK_S1AP, message_id, res.result.encoded + sizeof (IttiMsgText));

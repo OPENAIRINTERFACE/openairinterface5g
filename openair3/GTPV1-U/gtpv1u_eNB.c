@@ -150,7 +150,7 @@ gtpv1u_create_s1u_tunnel(
   const gtpv1u_enb_create_tunnel_req_t *  const create_tunnel_req_pP,
         gtpv1u_enb_create_tunnel_resp_t * const create_tunnel_resp_pP);
 
-static int
+int
 gtpv1u_delete_s1u_tunnel(
   const instance_t instanceP,
   const gtpv1u_enb_delete_tunnel_req_t * const req_pP);
@@ -911,7 +911,7 @@ int gtpv1u_update_s1u_tunnel(
 }
 
 //-----------------------------------------------------------------------------
-static int gtpv1u_delete_s1u_tunnel(
+int gtpv1u_delete_s1u_tunnel(
   const instance_t                             instanceP,
   const gtpv1u_enb_delete_tunnel_req_t * const req_pP)
 {
