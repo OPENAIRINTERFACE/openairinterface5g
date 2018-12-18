@@ -1,7 +1,8 @@
 
 /** iris_lib.cpp
  *
- * \author: Rahman Doost-Mohammady : doost@rice.edu
+ * \authors: Rahman Doost-Mohammady : doost@rice.edu
+ * 	    Clay Shepard : cws@rice.edu
  */
 
 #include <string.h>
@@ -30,6 +31,7 @@
 #  include <immintrin.h>
 #endif
 
+#define MOVE_DC
 #define SAMPLE_RATE_DOWN 1
 
 /*! \brief Iris Configuration */
@@ -595,7 +597,8 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
     }
 
     for (r = 0; r < s->device_num; r++) {
-        switch ((int) openair0_cfg[0].sample_rate) {
+        //this is unnecessary -- it will set the correct master clock based on sample rate
+        /*switch ((int) openair0_cfg[0].sample_rate) {
             case 1920000:
                 s->iris[r]->setMasterClockRate(256 * openair0_cfg[0].sample_rate);
                 break;
@@ -615,54 +618,34 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
                 printf("Error: unknown sampling rate %f\n", openair0_cfg[0].sample_rate);
                 exit(-1);
                 break;
-        }
-        // display Iris settings
-        printf("Actual master clock: %fMHz...\n", (s->iris[r]->getMasterClockRate() / 1e6));
-
-        /* Setting TX/RX BW after streamers are created due to iris calibration issue */
-        for (i = 0; i < s->tx_num_channels; i++) {
-            if (i < s->iris[r]->getNumChannels(SOAPY_SDR_TX)) {
-                if (s->iris[r]->getHardwareInfo()["frontend"].compare(devFE) != 0)
-                    s->iris[r]->setBandwidth(SOAPY_SDR_TX, i, 30e6);
-                else
-                    s->iris[r]->setBandwidth(SOAPY_SDR_TX, i, openair0_cfg[0].tx_bw);
-
-                printf("Setting tx bandwidth on channel %lu/%lu: BW %f (readback %f)\n", i,
-                       s->iris[r]->getNumChannels(SOAPY_SDR_TX), openair0_cfg[0].tx_bw / 1e6,
-                       s->iris[r]->getBandwidth(SOAPY_SDR_TX, i) / 1e6);
-            }
-        }
-        for (i = 0; i < s->rx_num_channels; i++) {
-            if (i < s->iris[r]->getNumChannels(SOAPY_SDR_RX)) {
-                if (s->iris[r]->getHardwareInfo()["frontend"].compare(devFE) != 0)
-                    s->iris[r]->setBandwidth(SOAPY_SDR_TX, i, 30e6);
-                else
-                    s->iris[r]->setBandwidth(SOAPY_SDR_RX, i, openair0_cfg[0].rx_bw);
-                printf("Setting rx bandwidth on channel %lu/%lu : BW %f (readback %f)\n", i,
-                       s->iris[r]->getNumChannels(SOAPY_SDR_RX), openair0_cfg[0].rx_bw / 1e6,
-                       s->iris[r]->getBandwidth(SOAPY_SDR_RX, i) / 1e6);
-            }
-        }
+        }*/
 
         for (i = 0; i < s->iris[r]->getNumChannels(SOAPY_SDR_RX); i++) {
             if (i < s->rx_num_channels) {
                 s->iris[r]->setSampleRate(SOAPY_SDR_RX, i, openair0_cfg[0].sample_rate / SAMPLE_RATE_DOWN);
+#ifdef MOVE_DC
+                printf("Moving DC out of main carrier for rx...\n");
+                s->iris[r]->setFrequency(SOAPY_SDR_RX, i, "RF", openair0_cfg[0].rx_freq[i]-.75*openair0_cfg[0].sample_rate);
+                s->iris[r]->setFrequency(SOAPY_SDR_RX, i, "BB", .75*openair0_cfg[0].sample_rate);
+#else
                 s->iris[r]->setFrequency(SOAPY_SDR_RX, i, "RF", openair0_cfg[0].rx_freq[i]);
+#endif
 
                 set_rx_gain_offset(&openair0_cfg[0], i, bw_gain_adjust);
                 //s->iris[r]->setGain(SOAPY_SDR_RX, i, openair0_cfg[0].rx_gain[i] - openair0_cfg[0].rx_gain_offset[i]);
+                printf("rx gain offset: %f, rx_gain: %f, tx_tgain: %f\n", openair0_cfg[0].rx_gain_offset[i], openair0_cfg[0].rx_gain[i], openair0_cfg[0].tx_gain[i]);
                 if (s->iris[r]->getHardwareInfo()["frontend"].compare(devFE) != 0) {
                     s->iris[r]->setGain(SOAPY_SDR_RX, i, "LNA", openair0_cfg[0].rx_gain[i] - openair0_cfg[0].rx_gain_offset[i]);
                     //s->iris[r]->setGain(SOAPY_SDR_RX, i, "LNA", 0);
                     s->iris[r]->setGain(SOAPY_SDR_RX, i, "LNA1", 30);
                     s->iris[r]->setGain(SOAPY_SDR_RX, i, "LNA2", 17);
-                    s->iris[r]->setGain(SOAPY_SDR_RX, i, "TIA", 0);
-                    s->iris[r]->setGain(SOAPY_SDR_RX, i, "PGA", 0);
+                    s->iris[r]->setGain(SOAPY_SDR_RX, i, "TIA", 7);
+                    s->iris[r]->setGain(SOAPY_SDR_RX, i, "PGA", 18);
                     s->iris[r]->setGain(SOAPY_SDR_RX, i, "ATTN", 0);
                 } else {
                     s->iris[r]->setGain(SOAPY_SDR_RX, i, "LNA", openair0_cfg[0].rx_gain[i] - openair0_cfg[0].rx_gain_offset[i]); //  [0,30]
-                    s->iris[r]->setGain(SOAPY_SDR_RX, i, "TIA", 0);  // [0,12,6]
-                    s->iris[r]->setGain(SOAPY_SDR_RX, i, "PGA", 0);  // [-12,19,1]
+                    s->iris[r]->setGain(SOAPY_SDR_RX, i, "TIA", 7);  // [0,12,6]
+                    s->iris[r]->setGain(SOAPY_SDR_RX, i, "PGA", 18);  // [-12,19,1]
                     //s->iris[r]->setGain(SOAPY_SDR_RX, i, 50);    // [-12,19,1]
 
                 }
@@ -673,22 +656,29 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
         for (i = 0; i < s->iris[r]->getNumChannels(SOAPY_SDR_TX); i++) {
             if (i < s->tx_num_channels) {
                 s->iris[r]->setSampleRate(SOAPY_SDR_TX, i, openair0_cfg[0].sample_rate / SAMPLE_RATE_DOWN);
+#ifdef MOVE_DC
+                printf("Moving DC out of main carrier for tx...\n");
+                s->iris[r]->setFrequency(SOAPY_SDR_TX, i, "RF", openair0_cfg[0].tx_freq[i]-.75*openair0_cfg[0].sample_rate);
+                s->iris[r]->setFrequency(SOAPY_SDR_TX, i, "BB", .75*openair0_cfg[0].sample_rate);
+#else
                 s->iris[r]->setFrequency(SOAPY_SDR_TX, i, "RF", openair0_cfg[0].tx_freq[i]);
+#endif
 
                 if (s->iris[r]->getHardwareInfo()["frontend"].compare(devFE) == 0) {
-                    //s->iris[r]->setGain(SOAPY_SDR_TX, i, "PAD", openair0_cfg[0].tx_gain[i]);
-                    s->iris[r]->setGain(SOAPY_SDR_TX, i, "PAD", 52);
+                    s->iris[r]->setGain(SOAPY_SDR_TX, i, "PAD", openair0_cfg[0].tx_gain[i]);
+                    //s->iris[r]->setGain(SOAPY_SDR_TX, i, "PAD", 50);
                     s->iris[r]->setGain(SOAPY_SDR_TX, i, "IAMP", 12);
                     //s->iris[r]->writeSetting("TX_ENABLE_DELAY", "0");
                     //s->iris[r]->writeSetting("TX_DISABLE_DELAY", "100");
                 } else {
+                    s->iris[r]->setGain(SOAPY_SDR_TX, i, "PAD", openair0_cfg[0].tx_gain[i]);
                     s->iris[r]->setGain(SOAPY_SDR_TX, i, "ATTN", 0); // [-18, 0, 6] dB
-                    s->iris[r]->setGain(SOAPY_SDR_TX, i, "IAMP", 9); // [-12, 12, 1] dB
-                    s->iris[r]->setGain(SOAPY_SDR_TX, i, "PAD", 52); //openair0_cfg[0].tx_gain[i]);
+                    s->iris[r]->setGain(SOAPY_SDR_TX, i, "IAMP", 6); // [-12, 12, 1] dB
+                    //s->iris[r]->setGain(SOAPY_SDR_TX, i, "PAD", 44); //openair0_cfg[0].tx_gain[i]);
                     //s->iris[r]->setGain(SOAPY_SDR_TX, i, "PAD", 35); // [0, 52, 1] dB
-                    s->iris[r]->setGain(SOAPY_SDR_TX, i, "PA1", 9); // 17 ??? dB
+                    //s->iris[r]->setGain(SOAPY_SDR_TX, i, "PA1", 17); // 17 ??? dB
                     s->iris[r]->setGain(SOAPY_SDR_TX, i, "PA2", 0); // [0, 17, 17] dB
-                    s->iris[r]->setGain(SOAPY_SDR_TX, i, "PA3", 20); // 33 ??? dB
+                    //s->iris[r]->setGain(SOAPY_SDR_TX, i, "PA3", 20); // 33 ??? dB
                     s->iris[r]->writeSetting("TX_ENABLE_DELAY", "0");
                     s->iris[r]->writeSetting("TX_DISABLE_DELAY", "100");
                 }
@@ -702,32 +692,47 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
         }
 
 
-        for (i = 0; i < s->iris[r]->getNumChannels(SOAPY_SDR_RX); i++) {
-            if (i < s->rx_num_channels) {
+        
+        printf("Actual master clock: %fMHz...\n", (s->iris[r]->getMasterClockRate() / 1e6));
 
-                //if (s->iris[r]->getHardwareInfo()["frontend"].compare(devFE) != 0) {
-                //    printf("\nUsing SKLK calibration...\n");
-                //    s->iris[r]->writeSetting(SOAPY_SDR_RX, i, "CALIBRATE", "SKLK");
-                //} else {
-                //    s->iris[r]->writeSetting(SOAPY_SDR_RX, i, "CALIBRATE", "");
-                //    printf("\nUsing LMS calibration...\n");
-
-                //}
+        int tx_filt_bw = openair0_cfg[0].tx_bw;
+        int rx_filt_bw = openair0_cfg[0].rx_bw;
+#ifdef MOVE_DC  //the filter is centered around the carrier, so we have to expand it if we have moved the DC tone.
+        tx_filt_bw *= 3; 
+        rx_filt_bw *= 3; 
+#endif
+        /* Setting TX/RX BW */
+        for (i = 0; i < s->tx_num_channels; i++) {
+            if (i < s->iris[r]->getNumChannels(SOAPY_SDR_TX)) {
+                s->iris[r]->setBandwidth(SOAPY_SDR_TX, i, tx_filt_bw);
+                printf("Setting tx bandwidth on channel %lu/%lu: BW %f (readback %f)\n", i,
+                       s->iris[r]->getNumChannels(SOAPY_SDR_TX), tx_filt_bw / 1e6,
+                       s->iris[r]->getBandwidth(SOAPY_SDR_TX, i) / 1e6);
             }
-
+        }
+        for (i = 0; i < s->rx_num_channels; i++) {
+            if (i < s->iris[r]->getNumChannels(SOAPY_SDR_RX)) {
+                s->iris[r]->setBandwidth(SOAPY_SDR_RX, i, rx_filt_bw);
+                printf("Setting rx bandwidth on channel %lu/%lu : BW %f (readback %f)\n", i,
+                       s->iris[r]->getNumChannels(SOAPY_SDR_RX), rx_filt_bw / 1e6,
+                       s->iris[r]->getBandwidth(SOAPY_SDR_RX, i) / 1e6);
+            }
         }
 
         for (i = 0; i < s->iris[r]->getNumChannels(SOAPY_SDR_TX); i++) {
             if (i < s->tx_num_channels) {
+                printf("\nUsing SKLK calibration...\n");
+                s->iris[r]->writeSetting(SOAPY_SDR_TX, i, "CALIBRATE", "SKLK");
 
-                if (s->iris[r]->getHardwareInfo()["frontend"].compare(devFE) != 0) {
-                    printf("\nUsing SKLK calibration...\n");
-                    s->iris[r]->writeSetting(SOAPY_SDR_TX, i, "CALIBRATE", "SKLK");
+            }
 
-                } else {
-                    printf("\nUsing LMS calibration...\n");
-                    s->iris[r]->writeSetting(SOAPY_SDR_TX, i, "CALIBRATE", "");
-                }
+        }
+
+        for (i = 0; i < s->iris[r]->getNumChannels(SOAPY_SDR_RX); i++) {
+            if (i < s->rx_num_channels) {
+                printf("\nUsing SKLK calibration...\n");
+                s->iris[r]->writeSetting(SOAPY_SDR_RX, i, "CALIBRATE", "SKLK");
+
             }
 
         }
