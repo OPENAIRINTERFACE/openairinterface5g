@@ -372,7 +372,7 @@ check_install_lmssdr_driver(){
         else
                 echo_error "lmssdr support implies installing lmssdr drivers and tools" \
                            " from sources. check:"
-                echo_info "https://open-cells.com/index.php/2017/05/10/limesdr-installation/"
+                echo_info "https://wiki.myriadrf.org/Lime_Suite"
                 echo_fatal "Cannot compile lmssdr device"
 	fi
 
