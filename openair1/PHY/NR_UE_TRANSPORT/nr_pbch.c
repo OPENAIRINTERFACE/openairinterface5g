@@ -458,22 +458,28 @@ void nr_pbch_unscrambling(NR_UE_PBCH *pbch,
   offset = (nushift*M)&0x1f;
 
   for (int i=0; i<length; i++) {
+      /*if (((i+offset)&0x1f)==0) {
+        s = lte_gold_generic(&x1, &x2, reset);
+        reset = 0;
+      }*/
+
+      if (bitwise) {
+      if (((k+offset)&0x1f)==0 && (!((unscrambling_mask>>i)&1))) {
+        s = lte_gold_generic(&x1, &x2, reset);
+        reset = 0;
+      }
+        (pbch->pbch_a_interleaved) ^= ((unscrambling_mask>>i)&1)? ((pbch->pbch_a_prime>>i)&1)<<i : (((pbch->pbch_a_prime>>i)&1) ^ ((s>>((k+offset)&0x1f))&1))<<i;
+        k += (!((unscrambling_mask>>i)&1));
+#ifdef DEBUG_PBCH_ENCODING
+    printf("i %d k %d offset %d (unscrambling_mask>>i)&1) %d s: %08x\t  pbch_a_interleaved 0x%08x (!((unscrambling_mask>>i)&1)) %d\n", i, k, offset, (unscrambling_mask>>i)&1, s, pbch->pbch_a_interleaved, (!((unscrambling_mask>>i)&1)));
+#endif
+      }
+
+      else {
       if (((i+offset)&0x1f)==0) {
         s = lte_gold_generic(&x1, &x2, reset);
         reset = 0;
       }
-#ifdef DEBUG_PBCH_ENCODING
-      if (i<8)
-	printf("s: %04x\t", s);
-      printf("pbch_a_interleaved 0x%08x\n", pbch->pbch_a_interleaved);
-#endif
-      if (bitwise) {
-	
-        (pbch->pbch_a_interleaved) ^= ((unscrambling_mask>>i)&1)? ((pbch->pbch_a_prime>>i)&1)<<i : (((pbch->pbch_a_prime>>i)&1) ^ ((s>>((k+offset)&0x1f))&1))<<i;
-        k+=!((unscrambling_mask>>i)&1);
-      }
-
-      else {
     	  if (((s>>((i+offset)&0x1f))&1)==1)
     		  demod_pbch_e[i] = -demod_pbch_e[i];
 #ifdef DEBUG_PBCH_ENCODING

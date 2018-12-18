@@ -22,7 +22,7 @@
 /*! \file PHY/NR_TRANSPORT/nr_pbch.c
 * \brief Top-level routines for generating the PBCH/BCH physical/transport channel V15.1 03/2018
 * \author Guy De Souza
-* \thanks Special Thanks to Son Dang for helpfull contributions and testing
+* \thanks Special Thanks to Son Dang for helpful contributions and testing
 * \date 2018
 * \version 0.1
 * \company Eurecom
@@ -190,7 +190,6 @@ void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
           s = lte_gold_generic(&x1, &x2, reset);
           reset = 0;
         }
-
         pbch->pbch_a_prime ^= (((pbch->pbch_a_interleaved>>i)&1) ^ ((s>>((k+offset)&0x1f))&1))<<i;
         k++;                  /// k increase only when payload bit is not special bit
       }
