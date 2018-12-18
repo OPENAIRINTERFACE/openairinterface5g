@@ -323,6 +323,7 @@ function report_build {
     echo "  <base href = \"http://www.openairinterface.org/\" />" >> ./build_results.html
     echo "</head>" >> ./build_results.html
     echo "<body><div class=\"container\">" >> ./build_results.html
+    echo "  <br>" >> ./build_results.html
     echo "  <table style=\"border-collapse: collapse; border: none;\">" >> ./build_results.html
     echo "    <tr style=\"border-collapse: collapse; border: none;\">" >> ./build_results.html
     echo "      <td style=\"border-collapse: collapse; border: none;\">" >> ./build_results.html
@@ -339,45 +340,45 @@ function report_build {
     echo "  <br>" >> ./build_results.html
     echo "   <table border = \"1\">" >> ./build_results.html
     echo "      <tr>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightcyan\" >Build Start Time (UTC)</td>" >> ./build_results.html
+    echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-time\"></span> Build Start Time (UTC)</td>" >> ./build_results.html
     echo "        <td>TEMPLATE_BUILD_TIME</td>" >> ./build_results.html
     echo "      </tr>" >> ./build_results.html
     echo "      <tr>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightcyan\" >GIT Repository</td>" >> ./build_results.html
-    echo "        <td>$GIT_URL</td>" >> ./build_results.html
+    echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-cloud-upload\"></span> GIT Repository</td>" >> ./build_results.html
+    echo "        <td><a href=\"$GIT_URL\">$GIT_URL</a></td>" >> ./test_simulator_results.html
     echo "      </tr>" >> ./build_results.html
     echo "      <tr>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightcyan\" >Job Trigger</td>" >> ./build_results.html
+    echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-wrench\"></span> Job Trigger</td>" >> ./build_results.html
     if [ $PU_TRIG -eq 1 ]; then echo "        <td>Push Event</td>" >> ./build_results.html; fi
     if [ $MR_TRIG -eq 1 ]; then echo "        <td>Merge-Request</td>" >> ./build_results.html; fi
     echo "      </tr>" >> ./build_results.html
     if [ $PU_TRIG -eq 1 ]
     then
         echo "      <tr>" >> ./build_results.html
-        echo "        <td bgcolor = \"lightcyan\" >Branch</td>" >> ./build_results.html
+        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-tree-deciduous\"></span> Branch</td>" >> ./build_results.html
         echo "        <td>$SOURCE_BRANCH</td>" >> ./build_results.html
         echo "      </tr>" >> ./build_results.html
         echo "      <tr>" >> ./build_results.html
-        echo "        <td bgcolor = \"lightcyan\" >Commit ID</td>" >> ./build_results.html
+        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-tag\"></span> Commit ID</td>" >> ./build_results.html
         echo "        <td>$SOURCE_COMMIT_ID</td>" >> ./build_results.html
         echo "      </tr>" >> ./build_results.html
     fi
     if [ $MR_TRIG -eq 1 ]
     then
         echo "      <tr>" >> ./build_results.html
-        echo "        <td bgcolor = \"lightcyan\" >Source Branch</td>" >> ./build_results.html
+        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-log-out\"></span> Source Branch</td>" >> ./build_results.html
         echo "        <td>$SOURCE_BRANCH</td>" >> ./build_results.html
         echo "      </tr>" >> ./build_results.html
         echo "      <tr>" >> ./build_results.html
-        echo "        <td bgcolor = \"lightcyan\" >Source Commit ID</td>" >> ./build_results.html
+        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-tag\"></span> Source Commit ID</td>" >> ./build_results.html
         echo "        <td>$SOURCE_COMMIT_ID</td>" >> ./build_results.html
         echo "      </tr>" >> ./build_results.html
         echo "      <tr>" >> ./build_results.html
-        echo "        <td bgcolor = \"lightcyan\" >Target Branch</td>" >> ./build_results.html
+        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-log-in\"></span> Target Branch</td>" >> ./build_results.html
         echo "        <td>$TARGET_BRANCH</td>" >> ./build_results.html
         echo "      </tr>" >> ./build_results.html
         echo "      <tr>" >> ./build_results.html
-        echo "        <td bgcolor = \"lightcyan\" >Target Commit ID</td>" >> ./build_results.html
+        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-tag\"></span> Target Commit ID</td>" >> ./build_results.html
         echo "        <td>$TARGET_COMMIT_ID</td>" >> ./build_results.html
         echo "      </tr>" >> ./build_results.html
     fi

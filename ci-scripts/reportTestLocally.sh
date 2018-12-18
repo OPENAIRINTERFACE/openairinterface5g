@@ -100,6 +100,7 @@ function report_test {
     echo "  <base href = \"http://www.openairinterface.org/\" />" >> ./test_simulator_results.html
     echo "</head>" >> ./test_simulator_results.html
     echo "<body><div class=\"container\">" >> ./test_simulator_results.html
+    echo "  <br>" >> ./test_simulator_results.html
     echo "  <table style=\"border-collapse: collapse; border: none;\">" >> ./test_simulator_results.html
     echo "    <tr style=\"border-collapse: collapse; border: none;\">" >> ./test_simulator_results.html
     echo "      <td style=\"border-collapse: collapse; border: none;\">" >> ./test_simulator_results.html
@@ -116,45 +117,45 @@ function report_test {
     echo "  <br>" >> ./test_simulator_results.html
     echo "   <table border = \"1\">" >> ./test_simulator_results.html
     echo "      <tr>" >> ./test_simulator_results.html
-    echo "        <td bgcolor = \"lightcyan\" >Build Start Time (UTC)</td>" >> ./test_simulator_results.html
+    echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-time\"></span> Build Start Time (UTC)</td>" >> ./test_simulator_results.html
     echo "        <td>TEMPLATE_BUILD_TIME</td>" >> ./test_simulator_results.html
     echo "      </tr>" >> ./test_simulator_results.html
     echo "      <tr>" >> ./test_simulator_results.html
-    echo "        <td bgcolor = \"lightcyan\" >GIT Repository</td>" >> ./test_simulator_results.html
+    echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-cloud-upload\"></span> GIT Repository</td>" >> ./test_simulator_results.html
     echo "        <td><a href=\"$GIT_URL\">$GIT_URL</a></td>" >> ./test_simulator_results.html
     echo "      </tr>" >> ./test_simulator_results.html
     echo "      <tr>" >> ./test_simulator_results.html
-    echo "        <td bgcolor = \"lightcyan\" >Job Trigger</td>" >> ./test_simulator_results.html
+    echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-wrench\"></span> Job Trigger</td>" >> ./test_simulator_results.html
     if [ $PU_TRIG -eq 1 ]; then echo "        <td>Push Event</td>" >> ./test_simulator_results.html; fi
     if [ $MR_TRIG -eq 1 ]; then echo "        <td>Merge-Request</td>" >> ./test_simulator_results.html; fi
     echo "      </tr>" >> ./test_simulator_results.html
     if [ $PU_TRIG -eq 1 ]
     then
         echo "      <tr>" >> ./test_simulator_results.html
-        echo "        <td bgcolor = \"lightcyan\" >Branch</td>" >> ./test_simulator_results.html
+        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-tree-deciduous\"></span> Branch</td>" >> ./test_simulator_results.html
         echo "        <td>$SOURCE_BRANCH</td>" >> ./test_simulator_results.html
         echo "      </tr>" >> ./test_simulator_results.html
         echo "      <tr>" >> ./test_simulator_results.html
-        echo "        <td bgcolor = \"lightcyan\" >Commit ID</td>" >> ./test_simulator_results.html
+        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-tag\"></span> Commit ID</td>" >> ./test_simulator_results.html
         echo "        <td>$SOURCE_COMMIT_ID</td>" >> ./test_simulator_results.html
         echo "      </tr>" >> ./test_simulator_results.html
     fi
     if [ $MR_TRIG -eq 1 ]
     then
         echo "      <tr>" >> ./test_simulator_results.html
-        echo "        <td bgcolor = \"lightcyan\" >Source Branch</td>" >> ./test_simulator_results.html
+        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-log-out\"></span> Source Branch</td>" >> ./test_simulator_results.html
         echo "        <td>$SOURCE_BRANCH</td>" >> ./test_simulator_results.html
         echo "      </tr>" >> ./test_simulator_results.html
         echo "      <tr>" >> ./test_simulator_results.html
-        echo "        <td bgcolor = \"lightcyan\" >Source Commit ID</td>" >> ./test_simulator_results.html
+        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-tag\"></span> Source Commit ID</td>" >> ./test_simulator_results.html
         echo "        <td>$SOURCE_COMMIT_ID</td>" >> ./test_simulator_results.html
         echo "      </tr>" >> ./test_simulator_results.html
         echo "      <tr>" >> ./test_simulator_results.html
-        echo "        <td bgcolor = \"lightcyan\" >Target Branch</td>" >> ./test_simulator_results.html
+        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-log-in\"></span> Target Branch</td>" >> ./test_simulator_results.html
         echo "        <td>$TARGET_BRANCH</td>" >> ./test_simulator_results.html
         echo "      </tr>" >> ./test_simulator_results.html
         echo "      <tr>" >> ./test_simulator_results.html
-        echo "        <td bgcolor = \"lightcyan\" >Target Commit ID</td>" >> ./test_simulator_results.html
+        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-tag\"></span> Target Commit ID</td>" >> ./test_simulator_results.html
         echo "        <td>$TARGET_COMMIT_ID</td>" >> ./test_simulator_results.html
         echo "      </tr>" >> ./test_simulator_results.html
     fi
