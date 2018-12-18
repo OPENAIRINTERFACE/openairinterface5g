@@ -761,9 +761,9 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   proc->timestamp_rx = ts-ru->ts_offset;
 
 //  AssertFatal(rxs == fp->samples_per_tti,
-//	      "rx_rf: Asked for %d samples, got %d from USRP\n",fp->samples_per_tti,rxs);
+//	      "rx_rf: Asked for %d samples, got %d from SDR\n",fp->samples_per_tti,rxs);
   if(rxs != fp->samples_per_tti){
-    LOG_E(PHY,"rx_rf: Asked for %d samples, got %d from USRP\n",fp->samples_per_tti,rxs);
+    LOG_E(PHY,"rx_rf: Asked for %d samples, got %d from SDR\n",fp->samples_per_tti,rxs);
     late_control=STATE_BURST_TERMINATE;
   }
 
