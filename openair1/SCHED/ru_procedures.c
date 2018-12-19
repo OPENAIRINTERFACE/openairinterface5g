@@ -532,7 +532,7 @@ void fep0(RU_t *ru,int slot) {
   LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
   int l;
 
-  //  printf("fep0: slot %d\n",slot);
+    //printf("fep0: slot %d\n",slot);
 
   //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX+slot, 1);
   remove_7_5_kHz(ru,(slot&1)+(proc->subframe_rx<<1));
@@ -649,8 +649,7 @@ void ru_fep_full_2thread(RU_t *ru) {
   //PHY_VARS_eNB *eNB = RC.eNB[0][0];
   LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
   RU_CALIBRATION *calibration = &ru->calibration;
-  
-  int cnt;
+  RRU_CONFIG_msg_t rru_config_msg;
   int check_sync_pos;
 
   struct timespec wait;
@@ -706,7 +705,7 @@ void ru_fep_full_2thread(RU_t *ru) {
 
   if (proc->subframe_rx==1 && ru->is_slave==1/* && ru->state == RU_CHECK_SYNC*/) {
 
-        LOG_I(PHY,"Running check synchronization procedure for frame %d\n", proc->frame_rx);
+        //LOG_I(PHY,"Running check synchronization procedure for frame %d\n", proc->frame_rx);
   	ulsch_extract_rbs_single(ru->common.rxdataF,
                                  calibration->rxdataF_ext,
                                  0,
@@ -715,7 +714,6 @@ void ru_fep_full_2thread(RU_t *ru) {
                                  3/(fp->symbols_per_tti/2),// Ns = slot number 
                                  fp);
         
-
 	/*lte_ul_channel_estimation((PHY_VARS_eNB *)NULL,
 				  proc,
                                   ru->idx,
@@ -740,15 +738,21 @@ void ru_fep_full_2thread(RU_t *ru) {
 
         check_sync_pos = lte_est_timing_advance_pusch((PHY_VARS_eNB *)NULL,
      				     		       ru->idx);
-	//LOG_I(PHY,"Estimated check_sync_pos %d\n",check_sync_pos);
         if (ru->state == RU_CHECK_SYNC) {
           if ((check_sync_pos >= 0 && check_sync_pos<8) || (check_sync_pos < 0 && check_sync_pos>-8)) {
-    		  LOG_I(PHY,"check_sync_pos %d, frame %d, cnt %d\n",check_sync_pos,proc->frame_rx,ru->wait_check); 
+    		  LOG_I(PHY,"~~~~~~~~~~~    check_sync_pos %d, frame %d, cnt %d\n",check_sync_pos,proc->frame_rx,ru->wait_check); 
                   ru->wait_check++;
           }
 
-          if (ru->wait_check==10) { 
+          if (ru->wait_check==20) { 
 	  	ru->state = RU_RUN;
+ 		ru->wait_check = 0;
+		// Send RRU_sync_ok
+                rru_config_msg.type = RRU_sync_ok;
+        	rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t); // TODO: set to correct msg len
+        	LOG_I(PHY,"Sending RRU_sync_ok to RAU\n");
+        	AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),"Failed to send msg to RAU %d\n",ru->idx);
+                //LOG_I(PHY,"~~~~~~~~~ RU_RUN\n");
           	/*LOG_M("dmrs_time.m","dmrstime",calibration->drs_ch_estimates_time[0], (fp->ofdm_symbol_size),1,1);
 		LOG_M("rxdataF_ext.m","rxdataFext",&calibration->rxdataF_ext[0][36*fp->N_RB_DL], 12*(fp->N_RB_DL),1,1);		
 		LOG_M("drs_seq0.m","drsseq0",ul_ref_sigs_rx[0][0][23],600,1,1);
@@ -759,7 +763,9 @@ void ru_fep_full_2thread(RU_t *ru) {
        else if (ru->state == RU_RUN) {
        	// check for synchronization error
        	if (check_sync_pos >= 8 || check_sync_pos<=-8) {
-	 	exit(-1);
+	 	LOG_E(PHY,"~~~~~~~~~~~~~~ check_sync_pos %d, frame %d ---> LOST SYNC-EXIT\n", check_sync_pos, proc->frame_rx);
+LOG_M("rxdata.m","rxdata",&ru->common.rxdata[0][0], fp->samples_per_tti*2,1,1);		
+exit(-1);
 	}
        }
     

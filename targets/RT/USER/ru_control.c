@@ -717,7 +717,7 @@ void* ru_thread_control( void* param ) {
                  LOG_I(PHY,"Received RRU_frame_resynch command\n");
                  ru->cmd = RU_FRAME_RESYNCH;
                  ru->cmdval = ((uint16_t*)&rru_config_msg.msg[0])[0];
-                 LOG_I(PHY,"Received Frame Resynch messaage with value %d\n",ru->cmdval);
+                 LOG_I(PHY,"Received Frame Resynch message with value %d\n",ru->cmdval);
               }
               break;
 

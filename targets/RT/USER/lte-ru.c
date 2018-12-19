@@ -444,7 +444,7 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
       AssertFatal(frame_tx == *frame,
 	          "frame_tx %d is not what we expect %d\n",frame_tx,*frame);
       AssertFatal(subframe_tx == *subframe,
-		  "subframe_tx %d is not what we expect %d\n",subframe_tx,*subframe);
+		  "In frame_tx %d : subframe_tx %d is not what we expect %d\n",frame_tx,subframe_tx,*subframe);
     }
     if (packet_type == IF4p5_PDLFFT) {
       symbol_mask = symbol_mask | (1<<symbol_number);
@@ -1737,7 +1737,7 @@ if(!emulate_rf){
 
 #ifdef PHY_TX_THREAD
       if(first_phy_tx == 0)
-	{
+	{ 
 	  phy_tx_end = 0;
 	  phy_tx_txdataF_end = 0;
 	  if(pthread_mutex_lock(&ru->proc.mutex_phy_tx) != 0){
@@ -1754,7 +1754,7 @@ if(!emulate_rf){
 	    ++ru->proc.instance_cnt_phy_tx;
 	  }
 	  pthread_mutex_unlock( &ru->proc.mutex_phy_tx );
-	} else {
+	} else { 
         phy_tx_end = 1;
         phy_tx_txdataF_end = 1;
       }
@@ -1780,7 +1780,7 @@ if(!emulate_rf){
 
         ru->wait_cnt--;
 
-        LOG_I(PHY,"RU thread %d, frame %d, subframe %d, wait_cnt %d \n",ru->idx, frame, subframe, ru->wait_cnt);
+        LOG_D(PHY,"RU thread %d, frame %d, subframe %d, wait_cnt %d \n",ru->idx, frame, subframe, ru->wait_cnt);
 
         if (ru->if_south!=LOCAL_RF && ru->wait_cnt <=20 && subframe == 5 && frame != RC.ru[0]->proc.frame_rx && resynch_done == 0) {
         // Send RRU_frame adjust
@@ -1789,7 +1789,7 @@ if(!emulate_rf){
           rru_config_msg.len  = sizeof(RRU_CONFIG_msg_t); // TODO: set to correct msg len
           ((uint16_t*)&rru_config_msg.msg[0])[0] = RC.ru[0]->proc.frame_rx;
           ru->cmd=WAIT_RESYNCH;
-          LOG_D(PHY,"Sending Frame Resynch %d to RRU %d\n", RC.ru[0]->proc.frame_rx,ru->idx);
+          LOG_I(PHY,"Sending Frame Resynch %d to RRU %d\n", RC.ru[0]->proc.frame_rx,ru->idx);
           AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),"Failed to send msg to RAU\n");
           resynch_done=1;
         }
@@ -1819,7 +1819,7 @@ if(!emulate_rf){
         wakeup_slaves(proc);
 
         // do RX front-end processing (frequency-shift, dft) if needed
-        if (ru->feprx) ru->feprx(ru);
+	if (ru->feprx) ru->feprx(ru);
 
         // wakeup all eNB processes waiting for this RU
 	pthread_mutex_lock(&proc->mutex_eNBs);
@@ -1882,7 +1882,7 @@ if(!emulate_rf){
 	}
 #endif
       } // else wait_cnt == 0
-    } // ru->state = RU_RU
+    } // ru->state = RU_RUN
   } // while !oai_exit
 
   printf( "Exiting ru_thread \n");
