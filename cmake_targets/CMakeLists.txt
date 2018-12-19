@@ -557,7 +557,7 @@ set(HWLIB_IRIS_SOURCE
         ${OPENAIR_TARGETS}/ARCH/IRIS/USERSPACE/LIB/iris_lib.cpp
         )
 add_library(oai_irisdevif MODULE ${HWLIB_IRIS_SOURCE})
-target_include_directories(oai_irisdevif PRIVATE /usr/local/lib/SoapySDR/modules0.6/)
+target_include_directories(oai_irisdevif PRIVATE /usr/local/lib/SoapySDR/modules0.7/)
 target_link_libraries(oai_irisdevif SoapySDR)
 
 include_directories("${OPENAIR_TARGETS}/ARCH/mobipass/")
