@@ -310,6 +310,7 @@ function report_build {
     echo "############################################################"
 
     echo "JENKINS_WKSP        = $JENKINS_WKSP"
+    echo "GIT_URL             = $GIT_URL"
 
     cd ${JENKINS_WKSP}
     echo "<!DOCTYPE html>" > ./build_results.html
@@ -345,7 +346,7 @@ function report_build {
     echo "      </tr>" >> ./build_results.html
     echo "      <tr>" >> ./build_results.html
     echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-cloud-upload\"></span> GIT Repository</td>" >> ./build_results.html
-    echo "        <td><a href=\"$GIT_URL\">$GIT_URL</a></td>" >> ./test_simulator_results.html
+    echo "        <td><a href=\"$GIT_URL\">$GIT_URL</a></td>" >> ./build_results.html
     echo "      </tr>" >> ./build_results.html
     echo "      <tr>" >> ./build_results.html
     echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-wrench\"></span> Job Trigger</td>" >> ./build_results.html
