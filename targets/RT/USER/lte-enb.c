@@ -518,7 +518,7 @@ int wakeup_txfh(L1_rxtx_proc_t *proc,PHY_VARS_eNB *eNB) {
         	LOG_E(PHY,"Frame %d, subframe %d: TX FH thread busy, dropping Frame %d, subframe %d\n", ru_proc->frame_tx, ru_proc->subframe_tx, proc->frame_rx, proc->subframe_rx);
       		return(-1);
     	}
-    	if (pthread_mutex_timedlock(&ru_proc->mutex_eNBs,&wait) != 0) {
+    	if (pthread_mutex_lock(&ru_proc->mutex_eNBs) != 0) {
       		LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB TX1 thread %d (IC %d)\n", ru_proc->subframe_rx&1,ru_proc->instance_cnt_eNBs );
       		exit_fun( "error locking mutex_eNB" );
       		return(-1);
@@ -558,7 +558,7 @@ int wakeup_tx(PHY_VARS_eNB *eNB) {
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
   
-  if (pthread_mutex_timedlock(&L1_proc_tx->mutex,&wait) != 0) {
+  if (pthread_mutex_lock(&L1_proc_tx->mutex) != 0) {
     LOG_E(PHY, "[SCHED][eNB] ERROR locking mutex for eNB L1_thread_tx\n");
     exit_fun("ERROR pthread_lock");
     return(-1);
@@ -608,7 +608,7 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,RU_t *ru) {
 
   // wake up TX for subframe n+sf_ahead
   // lock the TX mutex and make sure the thread is ready
-  if (pthread_mutex_timedlock(&L1_proc->mutex,&wait) != 0) {
+  if (pthread_mutex_lock(&L1_proc->mutex) != 0) {
     LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB RXTX thread %d (IC %d)\n", L1_proc->subframe_rx&1,L1_proc->instance_cnt );
     exit_fun( "error locking mutex_rxtx" );
     return(-1);

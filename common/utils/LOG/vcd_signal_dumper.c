@@ -63,6 +63,8 @@ struct vcd_module_s {
 
 const char* eurecomVariablesNames[] = {
   "frame_number_TX0_eNB",
+  "mask_ru",
+  "mask_tx_ru",
   "frame_number_TX1_eNB",
   "frame_number_RX0_eNB",
   "frame_number_RX1_eNB",
@@ -248,6 +250,8 @@ const char* eurecomFunctionsNames[] = {
   "ue_lock_mutex_rxtx_for_cnt_decrement1",
   "ue_lock_mutex_rxtx_for_cnt_increment0",
   "ue_lock_mutex_rxtx_for_cnt_increment1",
+  "lock_mutex_ru",
+  "lock_mutex_ru1",
   /* simulation signals */
   "do_DL_sig",
   "do_UL_sig",
