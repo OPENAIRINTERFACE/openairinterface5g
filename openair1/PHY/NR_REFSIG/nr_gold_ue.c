@@ -25,7 +25,7 @@ void nr_gold_pbch(PHY_VARS_NR_UE* ue)
 {
 
   unsigned int n, x1, x2;
-  unsigned char Nid, i_ssb, i_ssb2;
+  unsigned int Nid, i_ssb, i_ssb2;
   unsigned char Lmax, l, n_hf, N_hf;
 
   Nid = ue->frame_parms.Nid_cell;
