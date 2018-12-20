@@ -49,6 +49,15 @@ typedef struct {
 } NR_gNB_PBCH;
 
 typedef struct {
+  uint8_t ssb_start_symbol;
+  uint8_t n_hf;
+  uint8_t Lmax;
+  uint8_t ssb_index;
+  int32_t sfn;
+} NR_PBCH_parms_t;
+
+
+typedef struct {
   /// Length of DCI payload in bits
   uint16_t size;
   /// Aggregation level
