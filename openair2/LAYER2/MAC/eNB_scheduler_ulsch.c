@@ -1185,14 +1185,12 @@ schedule_ulsch_rnti(module_id_t module_idP,
     UE_list->first_rb_offset[CC_id][slice_idx] = cmin(n_rb_ul_val, sli->ul[slice_idx].first_rb);
   }
 
-  //LOG_D(MAC, "entering ulsch preprocesor\n");
   ulsch_scheduler_pre_processor(module_idP, slice_idx, frameP, subframeP, sched_subframeP, first_rb);
 
   for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; ++CC_id) {
     first_rb_slice[CC_id] = first_rb[CC_id] + UE_list->first_rb_offset[CC_id][slice_idx];
   }
 
-  //LOG_D(MAC, "exiting ulsch preprocesor\n");
   hi_dci0_req->sfn_sf = (frameP << 4) + subframeP;
 
   // loop over all active UEs
