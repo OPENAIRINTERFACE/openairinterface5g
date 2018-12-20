@@ -257,9 +257,6 @@ typedef struct RU_proc_t_s {
   pthread_mutex_t mutex_pre_scd;
   int instance_pre_scd;
 #endif
-  /// pipeline ready state
-  int ru_rx_ready;
-  int ru_tx_ready;
   int emulate_rf_busy;
 } RU_proc_t;
 
@@ -648,20 +645,25 @@ typedef struct {
   int frame_rx;
   /// \brief Instance count for RXn-TXnp4 processing thread.
   /// \internal This variable is protected by \ref mutex_rxtx.
-  int instance_cnt_rxtx;
+  int instance_cnt;
   /// pthread structure for RXn-TXnp4 processing thread
-  pthread_t pthread_rxtx;
+  pthread_t pthread;
   /// pthread attributes for RXn-TXnp4 processing thread
-  pthread_attr_t attr_rxtx;
+  pthread_attr_t attr;
   /// condition variable for tx processing thread
-  pthread_cond_t cond_rxtx;
+  pthread_cond_t cond;
   /// mutex for RXn-TXnp4 processing thread
-  pthread_mutex_t mutex_rxtx;
+  pthread_mutex_t mutex;
   /// scheduling parameters for RXn-TXnp4 thread
   struct sched_param sched_param_rxtx;
-  /// pipeline ready state
-  int pipe_ready;
-} eNB_rxtx_proc_t;
+
+  /// \internal This variable is protected by \ref mutex_RUs.
+  int instance_cnt_RUs;
+  /// condition variable for tx processing thread
+  pthread_cond_t cond_RUs;
+  /// mutex for RXn-TXnp4 processing thread
+  pthread_mutex_t mutex_RUs;
+} L1_rxtx_proc_t;
 
 typedef struct {
   struct PHY_VARS_eNB_s *eNB;
@@ -693,7 +695,7 @@ typedef struct {
 } te_params;
 
 /// Context data structure for eNB subframe processing
-typedef struct eNB_proc_t_s {
+typedef struct L1_proc_t_s {
   /// Component Carrier index
   uint8_t              CC_id;
   /// thread index
@@ -804,12 +806,16 @@ typedef struct eNB_proc_t_s {
   pthread_mutex_t mutex_asynch_rxtx;
   /// mutex for RU access to eNB processing (PDSCH/PUSCH)
   pthread_mutex_t mutex_RU;
+  /// mutex for eNB processing to access RU TX (PDSCH/PUSCH)
+  pthread_mutex_t mutex_RU_tx;
   /// mutex for RU access to eNB processing (PRACH)
   pthread_mutex_t mutex_RU_PRACH;
   /// mutex for RU access to eNB processing (PRACH BR)
   pthread_mutex_t mutex_RU_PRACH_br;
   /// mask for RUs serving eNB (PDSCH/PUSCH)
   int RU_mask;
+  /// mask for RUs serving eNB (PDSCH/PUSCH)
+  int RU_mask_tx;
   /// mask for RUs serving eNB (PRACH)
   int RU_mask_prach;
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
@@ -821,12 +827,10 @@ typedef struct eNB_proc_t_s {
   /// parameters for turbo-encoding worker thread
   te_params tep[3];
   /// set of scheduling variables RXn-TXnp4 threads
-  eNB_rxtx_proc_t proc_rxtx[2];
+  L1_rxtx_proc_t L1_proc,L1_proc_tx;
   /// stats thread pthread descriptor
   pthread_t process_stats_thread;
-  /// for waking up tx procedure
-  RU_proc_t *ru_proc;
-} eNB_proc_t;
+} L1_proc_t;
 
 
 
@@ -894,7 +898,7 @@ typedef struct PHY_VARS_eNB_s {
   module_id_t          Mod_id;
   uint8_t              CC_id;
   uint8_t              configured;
-  eNB_proc_t           proc;
+  L1_proc_t            proc;
   int                  single_thread_flag;
   int                  abstraction_flag;
   int                  num_RU;
