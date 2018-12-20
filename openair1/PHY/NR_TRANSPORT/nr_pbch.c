@@ -37,7 +37,7 @@
 #include "PHY/sse_intrin.h"
 
 //#define DEBUG_PBCH
-//#define DEBUG_PBCH_ENCODING
+#define DEBUG_PBCH_ENCODING
 //#define DEBUG_PBCH_DMRS
 
 #include "PHY/NR_REFSIG/nr_mod_table.h"

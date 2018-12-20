@@ -56,7 +56,7 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 	  else currentPtr = currentPtr->nextPtr;
 	}
 
-	printf("currentPtr %p (polarParams %p)\n",currentPtr,polarParams);
+	//	printf("currentPtr %p (polarParams %p)\n",currentPtr,polarParams);
 	//Else, initialize and add node to the end of the linked list.
 	t_nrPolar_paramsPtr newPolarInitNode = malloc(sizeof(t_nrPolar_params));
 
