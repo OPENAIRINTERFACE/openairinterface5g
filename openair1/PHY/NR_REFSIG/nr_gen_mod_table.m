@@ -3,6 +3,8 @@
 % 0        .. "0"
 % 1,2      .. BPSK(0),BPSK(1)
 
+K = 1/sqrt(2);
+
 % Amplitude for BPSK (\f$ 2^15 \times 1/\sqrt{2}\f$)
 BPSK = 23170;
 
@@ -124,7 +126,7 @@ end
 end
 end
 
-table = [ 0; bpsk_table(:); qpsk_table(:);qam16_table2(:); qam64_table2(:);qam256_table2(:) ];
+table = round(K * [ 0; bpsk_table(:); qpsk_table(:);qam16_table2(:); qam64_table2(:);qam256_table2(:) ]);
 %scatter (real(qam256_table2), imag(qam256_table2), 'x');
 save mod_table.mat table
 
