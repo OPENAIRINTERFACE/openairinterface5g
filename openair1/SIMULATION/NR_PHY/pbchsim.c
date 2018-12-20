@@ -427,7 +427,7 @@ int main(int argc, char **argv)
   //configure UE
   UE = malloc(sizeof(PHY_VARS_NR_UE));
   memcpy(&UE->frame_parms,frame_parms,sizeof(NR_DL_FRAME_PARMS));
-  phy_init_nr_top(UE);
+  //phy_init_nr_top(UE); //called from init_nr_ue_signal
   if (run_initial_sync==1)  UE->is_synchronized = 0;
   else                      UE->is_synchronized = 1;
                       

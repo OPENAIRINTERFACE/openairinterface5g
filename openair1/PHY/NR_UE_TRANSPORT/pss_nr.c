@@ -383,8 +383,8 @@ void init_context_pss_nr(NR_DL_FRAME_PARMS *frame_parms_ue)
       bzero( primary_synchro_nr[i], sizePss);
     }
     else {
-     msg("Fatal memory allocation problem \n");
-     assert(0);
+      LOG_E(PHY,"Fatal memory allocation problem \n");
+      assert(0);
     }
     p = malloc(LENGTH_PSS_NR*2);
     if (p != NULL) {
@@ -397,7 +397,7 @@ void init_context_pss_nr(NR_DL_FRAME_PARMS *frame_parms_ue)
       bzero( primary_synchro_time_nr[i], size);
     }
     else {
-     msg("Fatal memory allocation problem \n");
+      LOG_E(PHY,"Fatal memory allocation problem \n");
      assert(0);
     }
 
@@ -408,7 +408,7 @@ void init_context_pss_nr(NR_DL_FRAME_PARMS *frame_parms_ue)
       bzero( pss_corr_ue[i], size);
     }
     else {
-      msg("Fatal memory allocation problem \n");
+      LOG_E(PHY,"Fatal memory allocation problem \n");
       assert(0);
     }
 
@@ -437,7 +437,7 @@ void free_context_pss_nr(void)
       primary_synchro_time_nr[i] = NULL;
     }
     else {
-      msg("Fatal memory deallocation problem \n");
+      LOG_E(PHY,"Fatal memory deallocation problem \n");
       assert(0);
     }
 
@@ -446,7 +446,7 @@ void free_context_pss_nr(void)
       primary_synchro_nr[i] = NULL;
     }
     else {
-      msg("Fatal memory deallocation problem \n");
+      LOG_E(PHY,"Fatal memory deallocation problem \n");
       assert(0);
     }
 
@@ -455,7 +455,7 @@ void free_context_pss_nr(void)
       pss_corr_ue[i] = NULL;
     }
     else {
-      msg("Fatal memory deallocation problem \n");
+      LOG_E(PHY,"Fatal memory deallocation problem \n");
       assert(0);
     }
   }
@@ -480,13 +480,13 @@ void init_context_synchro_nr(NR_DL_FRAME_PARMS *frame_parms_ue)
   /* initialise global buffers for synchronisation */
   synchroF_tmp = malloc16(SYNCF_TMP_SIZE);
   if (synchroF_tmp == NULL) {
-    msg("Fatal memory allocation problem \n");
+    LOG_E(PHY,"Fatal memory allocation problem \n");
     assert(0);
   }
 
   synchro_tmp = malloc16(SYNC_TMP_SIZE);
   if (synchro_tmp == NULL) {
-    msg("Fatal memory allocation problem \n");
+    LOG_E(PHY,"Fatal memory allocation problem \n");
     assert(0);
   }
 
@@ -518,7 +518,7 @@ void free_context_synchro_nr(void)
     synchroF_tmp = NULL;
   }
   else {
-    msg("Fatal memory deallocation problem \n");
+    LOG_E(PHY,"Fatal memory deallocation problem \n");
     assert(0);
   }
 
@@ -527,7 +527,7 @@ void free_context_synchro_nr(void)
     synchro_tmp = NULL;
   }
   else {
-    msg("Fatal memory deallocation problem \n");
+    LOG_E(PHY,"Fatal memory deallocation problem \n");
     assert(0);
   }
 
