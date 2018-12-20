@@ -31,8 +31,6 @@
 
 /* indented with: indent -kr eNB_scheduler_RA.c */
 
-
-
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_proto.h"
 #include "LAYER2/MAC/mac_extern.h"
@@ -47,7 +45,6 @@
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 #include "assertions.h"
-//#include "LAYER2/MAC/pre_processor.c"
 #include "pdcp.h"
 
 #if defined(ENABLE_ITTI)
@@ -77,12 +74,21 @@ extern uint8_t nfapi_mode;
 
 // This table holds the allowable PRB sizes for ULSCH transmissions
 uint8_t rb_table[34] = {
-  1, 2, 3, 4, 5, 6, 8, 9, 10, 12, 15, 16, 18, 20, 24, 25, 27, 30, 32,
-  36, 40, 45, 48, 50, 54, 60, 64, 72, 75, 80, 81, 90, 96, 100
+  1, 2, 3, 4, 5,      // 0-4
+  6, 8, 9, 10, 12,    // 5-9
+  15, 16, 18, 20, 24, // 10-14
+  25, 27, 30, 32, 36, // 15-19
+  40, 45, 48, 50, 54, // 20-24
+  60, 64, 72, 75, 80, // 25-29
+  81, 90, 96, 100     // 30-33
 };
 
-extern mui_t    rrc_eNB_mui;
+extern mui_t rrc_eNB_mui;
 
+//-----------------------------------------------------------------------------
+/*
+*
+*/
 void
 rx_sdu(const module_id_t enb_mod_idP,
        const int CC_idP,
@@ -91,7 +97,10 @@ rx_sdu(const module_id_t enb_mod_idP,
        const rnti_t rntiP,
        uint8_t *sduP,
        const uint16_t sdu_lenP,
-       const uint16_t timing_advance, const uint8_t ul_cqi) {
+       const uint16_t timing_advance, 
+       const uint8_t ul_cqi) 
+//-----------------------------------------------------------------------------
+{
   int current_rnti = rntiP;
   unsigned char rx_ces[MAX_NUM_CE], num_ce, num_sdu, i, *payload_ptr;
   unsigned char rx_lcids[NB_RB_MAX];
@@ -797,7 +806,14 @@ rx_sdu(const module_id_t enb_mod_idP,
   stop_meas(&mac->rx_ulsch_sdu);
 }
 
-uint32_t bytes_to_bsr_index(int32_t nbytes) {
+//-----------------------------------------------------------------------------
+/*
+ * Return the BSR table index corresponding to the number of bytes in input
+ */
+uint32_t 
+bytes_to_bsr_index(int32_t nbytes) 
+//-----------------------------------------------------------------------------
+{
   uint32_t i = 0;
 
   if (nbytes < 0) {
@@ -811,26 +827,48 @@ uint32_t bytes_to_bsr_index(int32_t nbytes) {
   return (i - 1);
 }
 
+//-----------------------------------------------------------------------------
+/*
+ * Add ue info in eNB_ulsch_info[module_idP][CC_id][UE_id] struct
+ */
 void
-add_ue_ulsch_info(module_id_t module_idP, int CC_id, int UE_id,
-                  sub_frame_t subframeP, UE_ULSCH_STATUS status) {
+add_ue_ulsch_info(module_id_t module_idP, 
+  int CC_id, 
+  int UE_id,
+  sub_frame_t subframeP, 
+  UE_ULSCH_STATUS status) 
+//-----------------------------------------------------------------------------  
+{
   eNB_ulsch_info[module_idP][CC_id][UE_id].rnti     = UE_RNTI(module_idP, UE_id);
   eNB_ulsch_info[module_idP][CC_id][UE_id].subframe = subframeP;
   eNB_ulsch_info[module_idP][CC_id][UE_id].status   = status;
   eNB_ulsch_info[module_idP][CC_id][UE_id].serving_num++;
 }
 
-unsigned char *parse_ulsch_header(unsigned char *mac_header,
-                                  unsigned char *num_ce,
-                                  unsigned char *num_sdu,
-                                  unsigned char *rx_ces,
-                                  unsigned char *rx_lcids,
-                                  unsigned short *rx_lengths,
-                                  unsigned short tb_length) {
-  unsigned char not_done = 1, num_ces = 0, num_sdus =
-                                          0, lcid, num_sdu_cnt;
-  unsigned char *mac_header_ptr = mac_header;
+//-----------------------------------------------------------------------------
+/*
+ * Parse MAC header from ULSCH
+ */
+unsigned char *
+parse_ulsch_header(unsigned char *mac_header,
+  unsigned char *num_ce,
+  unsigned char *num_sdu,
+  unsigned char *rx_ces,
+  unsigned char *rx_lcids,
+  unsigned short *rx_lengths,
+  unsigned short tb_length) 
+//-----------------------------------------------------------------------------
+{
+  unsigned char not_done = 1;
+  unsigned char num_ces = 0;
+  unsigned char num_sdus = 0;
+  unsigned char lcid = 0;
+  unsigned char num_sdu_cnt = 0;
+  unsigned char *mac_header_ptr = NULL;
   unsigned short length, ce_len = 0;
+
+  /* Init */
+  mac_header_ptr = mac_header;
 
   while (not_done == 1) {
     if (((SCH_SUBHEADER_FIXED *) mac_header_ptr)->E == 0) {
@@ -844,8 +882,7 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
         mac_header_ptr++;
         length = tb_length - (mac_header_ptr - mac_header) - ce_len;
 
-        for (num_sdu_cnt = 0; num_sdu_cnt < num_sdus;
-             num_sdu_cnt++) {
+        for (num_sdu_cnt = 0; num_sdu_cnt < num_sdus; num_sdu_cnt++) {
           length -= rx_lengths[num_sdu_cnt];
         }
       } else {
@@ -853,22 +890,24 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
           length = ((SCH_SUBHEADER_SHORT *) mac_header_ptr)->L;
           mac_header_ptr += 2;  //sizeof(SCH_SUBHEADER_SHORT);
         } else {  // F = 1
-          length =
-            ((((SCH_SUBHEADER_LONG *) mac_header_ptr)->L_MSB &
-              0x7f) << 8) | (((SCH_SUBHEADER_LONG *)
-                              mac_header_ptr)->L_LSB & 0xff);
+          length = ((((SCH_SUBHEADER_LONG *) mac_header_ptr)->L_MSB & 0x7f) << 8) |
+           (((SCH_SUBHEADER_LONG *) mac_header_ptr)->L_LSB & 0xff);
           mac_header_ptr += 3;  //sizeof(SCH_SUBHEADER_LONG);
         }
       }
 
-      LOG_D(MAC,
-            "[eNB] sdu %d lcid %d tb_length %d length %d (offset now %ld)\n",
-            num_sdus, lcid, tb_length, length,
-            mac_header_ptr - mac_header);
+      LOG_D(MAC, "[eNB] sdu %d lcid %d tb_length %d length %d (offset now %ld)\n",
+        num_sdus, 
+        lcid, 
+        tb_length, 
+        length,
+        mac_header_ptr - mac_header);
+      
       rx_lcids[num_sdus] = lcid;
       rx_lengths[num_sdus] = length;
       num_sdus++;
-    } else {    // This is a control element subheader POWER_HEADROOM, BSR and CRNTI
+    
+    } else {  // This is a control element subheader POWER_HEADROOM, BSR and CRNTI
       if (lcid == SHORT_PADDING) {
         mac_header_ptr++;
       } else {
@@ -880,13 +919,10 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
           ce_len += 3;
         } else if (lcid == CRNTI) {
           ce_len += 2;
-        } else if ((lcid == POWER_HEADROOM)
-                   || (lcid == TRUNCATED_BSR)
-                   || (lcid == SHORT_BSR)) {
+        } else if ((lcid == POWER_HEADROOM) || (lcid == TRUNCATED_BSR) || (lcid == SHORT_BSR)) {
           ce_len++;
         } else {
           LOG_E(MAC, "unknown CE %d \n", lcid);
-          //AssertFatal(1 == 0, "unknown CE");
           return NULL;
         }
       }
@@ -898,6 +934,7 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
   return (mac_header_ptr);
 }
 
+//-----------------------------------------------------------------------------
 /* This function is called by PHY layer when it schedules some
  * uplink for a random access message 3.
  * The MAC scheduler has to skip the RBs used by this message 3
@@ -905,39 +942,65 @@ unsigned char *parse_ulsch_header(unsigned char *mac_header,
  */
 void
 set_msg3_subframe(module_id_t mod_id,
-                  int CC_id,
-                  int frame,
-                  int subframe, int rnti, int Msg3_frame,
-                  int Msg3_subframe) {
-  eNB_MAC_INST *mac = RC.mac[mod_id];
+  int CC_id,
+  int frame,
+  int subframe, 
+  int rnti, 
+  int Msg3_frame,
+  int Msg3_subframe) 
+//-----------------------------------------------------------------------------
+{
+  eNB_MAC_INST *mac = NULL;
   int i;
+
+  /* Init */
+  mac = RC.mac[mod_id];
 
   for (i = 0; i < NB_RA_PROC_MAX; i++) {
     if (mac->common_channels[CC_id].ra[i].state != IDLE &&
         mac->common_channels[CC_id].ra[i].rnti == rnti) {
-      mac->common_channels[CC_id].ra[i].Msg3_subframe =
-        Msg3_subframe;
+      mac->common_channels[CC_id].ra[i].Msg3_subframe = Msg3_subframe;
       break;
     }
   }
 }
 
+//-----------------------------------------------------------------------------
+/*
+ * Function called for uplink scheduling (DCI0).
+ */
 void
-schedule_ulsch(module_id_t module_idP, frame_t frameP,
-               sub_frame_t subframeP) {
-  uint16_t first_rb[NFAPI_CC_MAX], i;
-  int CC_id;
-  eNB_MAC_INST *mac = RC.mac[module_idP];
-  slice_info_t *sli = &RC.mac[module_idP]->slice_info;
-  COMMON_channels_t *cc;
-  start_meas(&mac->schedule_ulsch);
-  int sched_frame=frameP;
-  int sched_subframe = (subframeP + 4) % 10;
-  cc = &mac->common_channels[0];
-  int tdd_sfa;
+schedule_ulsch(module_id_t module_idP, 
+  frame_t frameP,
+  sub_frame_t subframeP) 
+//-----------------------------------------------------------------------------
+{
+  uint16_t first_rb[NFAPI_CC_MAX];
+  uint16_t i = 0;
+  int CC_id = 0;
+  eNB_MAC_INST *mac = NULL;
+  slice_info_t *sli = NULL;
+  COMMON_channels_t *cc = NULL;
 
-  // for TDD: check subframes where we have to act and return if nothing should be done now
-  if (cc->tdd_Config) {
+  /* Init */
+  mac = RC.mac[module_idP];
+  sli = &RC.mac[module_idP]->slice_info;
+  memset(first_rb, 0, NFAPI_CC_MAX * sizeof(uint16_t));
+
+  start_meas(&mac->schedule_ulsch);
+
+  /* Second setup step */
+  int sched_frame = 0;
+  int sched_subframe = 0;
+  int tdd_sfa = 0;
+
+  /* Second init step */
+  sched_frame = frameP;
+  sched_subframe = (subframeP + 4) % 10;
+  cc = &mac->common_channels[0];
+
+  /* For TDD: check subframes where we have to act and return if nothing should be done now */
+  if (cc->tdd_Config) {  // Done only for CC_id = 0, assume tdd_Config for all CC_id
     tdd_sfa = cc->tdd_Config->subframeAssignment;
 
     switch (subframeP) {
@@ -961,10 +1024,7 @@ schedule_ulsch(module_id_t module_idP, frame_t frameP,
 
         break;
 
-      default:
-        return;
-
-      case 2:   // Don't schedule UL in subframe 2 for TDD
+      case 2:  // Don't schedule UL in subframe 2 for TDD
         return;
 
       case 3:
@@ -1023,42 +1083,39 @@ schedule_ulsch(module_id_t module_idP, frame_t frameP,
           return;
 
         break;
+      
+      default:
+        return;
     }
   }
 
-  if (sched_subframe < subframeP) sched_frame++;
+  if (sched_subframe < subframeP) {
+    sched_frame++;
+  }
 
   for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++) {
-    //leave out first RB for PUCCH
-    first_rb[CC_id] = 1;
+    first_rb[CC_id] = 1;  // leave out first RB for PUCCH
+    cc = &mac->common_channels[CC_id];  // get the right cc from CC_id
 
-    // UE data info;
-    // check which UE has data to transmit
-    // function to decide the scheduling
-    // e.g. scheduling_rslt = Greedy(granted_UEs, nb_RB)
-
-    // default function for default scheduling
-    //
-
-    // output of scheduling, the UE numbers in RBs, where it is in the code???
-    // check if RA (Msg3) is active in this subframeP, if so skip the PRBs used for Msg3
-    // Msg3 is using 1 PRB so we need to increase first_rb accordingly
-    // not sure about the break (can there be more than 1 active RA procedure?)
-
+    /* 
+     * Check if RA (Msg3) is active in this subframeP, if so skip the PRB used for Msg3
+     * Msg3 is using 1 PRB so we need to increase first_rb accordingly
+     * Not sure about the break (can there be more than 1 active RA procedure per CC_id?)
+     */ 
     for (i = 0; i < NB_RA_PROC_MAX; i++) {
       if ((cc->ra[i].state == WAITMSG3) &&
           (cc->ra[i].Msg3_subframe == sched_subframe)) {
-        if (first_rb[CC_id] < cc->ra[i].msg3_first_rb + cc->ra[i].msg3_nb_rb)
+        if (first_rb[CC_id] < cc->ra[i].msg3_first_rb + cc->ra[i].msg3_nb_rb) {
           first_rb[CC_id] = cc->ra[i].msg3_first_rb + cc->ra[i].msg3_nb_rb;
-
-        //    cc->ray[i].Msg3_subframe = -1;
+        }
         break;
       }
     }
   }
 
+  /* Run each enabled slice-specific schedulers one by one */
   for (i = 0; i < sli->n_ul; i++) {
-    // Run each enabled slice-specific schedulers one by one
+    /* By default it is schedule_ulsch_rnti (see below) */
     sli->ul[i].sched_cb(module_idP, i, frameP, subframeP, sched_subframe, first_rb);
   }
 
