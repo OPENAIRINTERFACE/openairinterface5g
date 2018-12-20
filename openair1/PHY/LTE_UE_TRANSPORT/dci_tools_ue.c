@@ -51,7 +51,14 @@
 #include "transport_proto_ue.h"
 #include "../LTE_TRANSPORT/transport_common_proto.h"
 #include "SCHED/sched_common.h"
- 
+
+/*
+#undef LOG_D
+#define LOG_D(A,B...) printf(B)
+#undef LOG_I
+#define LOG_I(A,B...) printf(B)
+*/
+
 extern uint16_t beta_cqi[16];
 extern uint16_t beta_ri[16];
 extern uint16_t beta_ack[16];
@@ -1274,7 +1281,7 @@ void compute_llr_offset(LTE_DL_FRAME_PARMS *frame_parms,
         symbol_mod = (symbol >= (7-frame_parms->Ncp))? (symbol-(7-frame_parms->Ncp)) : symbol;
         if((symbol_mod == 0) || symbol_mod == (4-frame_parms->Ncp))
         {
-	  if (frame_parms->nb_antennas_tx == 2) 
+	  if (frame_parms->nb_antenna_ports_eNB == 2) 
 	    crs_re = 4;
 	  else
 	    crs_re = 2;
