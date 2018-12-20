@@ -40,7 +40,7 @@
 uint8_t dci_ndi_toggle_even[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 uint8_t dci_ndi_toggle_odd[8]  = {0, 0, 0, 0, 0, 0, 0, 0};
 
-void fill_dci(DCI_PDU *DCI_pdu,PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
+void fill_dci(DCI_PDU *DCI_pdu,PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc)
 {
 /* SYRTEM */
   uint8_t *dci_ndi_toggle_tmp = NULL;

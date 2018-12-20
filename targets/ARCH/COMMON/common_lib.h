@@ -95,6 +95,8 @@ typedef enum {
   BLADERF_DEV,
   /*!\brief device is LMSSDR (SoDeRa)*/
   LMSSDR_DEV,
+  /*!\brief device is Iris */
+  IRIS_DEV,
   /*!\brief device is NONE*/
   NONE_DEV,
   MAX_RF_DEV_TYPE
