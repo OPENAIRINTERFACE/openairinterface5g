@@ -41,7 +41,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot);
 void nr_init_feptx_thread(RU_t *ru,pthread_attr_t *attr_feptx);
 void nr_feptx_ofdm(RU_t *ru);
 void nr_feptx_ofdm_2thread(RU_t *ru);
-void nr_feptx0(RU_t *ru,int slot);
+void nr_feptx0(RU_t *ru,int first_symbol, int num_symbols);
 
 void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
 				  nr_scs_e scs_common,

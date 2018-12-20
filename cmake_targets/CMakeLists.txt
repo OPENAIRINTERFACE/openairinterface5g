@@ -961,7 +961,7 @@ set(UTIL_SRC
   ${OPENAIR_DIR}/common/utils/LOG/log.c
 #  ${OPENAIR2_DIR}/UTIL/LOG/vcd_signal_dumper.c
   ${OPENAIR2_DIR}/UTIL/MATH/oml.c
-  ${OPENAIR2_DIR}/UTIL/MEM/mem_block.c
+#  ${OPENAIR2_DIR}/UTIL/MEM/mem_block.c
 #  ${OPENAIR2_DIR}/UTIL/OCG/OCG.c
 #  ${OPENAIR2_DIR}/UTIL/OCG/OCG_create_dir.c
 #  ${OPENAIR2_DIR}/UTIL/OCG/OCG_detect_file.c

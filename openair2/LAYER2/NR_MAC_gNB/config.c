@@ -136,6 +136,23 @@ uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint32_t bw)
 }
 
 
+uint64_t from_nrarfcn(int nr_bandP, uint32_t dl_nrarfcn)
+{
+
+  int i;
+  int deltaFglobal;
+
+  if (nr_bandP < 77 || nr_bandP > 79) deltaFglobal = 5;
+  else                                deltaFglobal = 15;
+  
+  AssertFatal(nr_bandP < 87, "nr_band %d > 86\n", nr_bandP);
+  for (i = 0; i < 31 && nr_bandtable[i].band != nr_bandP; i++);
+  AssertFatal(dl_nrarfcn>=nr_bandtable[i].N_OFFs_DL,"dl_nrarfcn %d < N_OFFs_DL %d\n",dl_nrarfcn, nr_bandtable[i].N_OFFs_DL);
+ 
+  return 1000*(nr_bandtable[i].dl_min + (dl_nrarfcn - nr_bandtable[i].N_OFFs_DL) * deltaFglobal);
+	  
+}
+
 void config_nr_mib(int Mod_idP, 
                 int CC_idP,
                 int p_gNBP,

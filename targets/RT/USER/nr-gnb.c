@@ -168,14 +168,14 @@ static inline int rxtx(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc, char *thread_
 
     // I am a PNF and I need to let nFAPI know that we have a (sub)frame tick
     uint16_t frame = proc->frame_rx;
-    uint16_t subframe = proc->subframe_rx;
+    uint16_t slot  = proc->slot_rx;
 
     //add_subframe(&frame, &subframe, 4);
 
     //oai_subframe_ind(proc->frame_tx, proc->subframe_tx);
     //LOG_D(PHY, "oai_subframe_ind(frame:%u, subframe:%d) - NOT CALLED ********\n", frame, subframe);
     start_meas(&nfapi_meas);
-    oai_subframe_ind(frame, subframe);
+    oai_subframe_ind(frame, slot);
     stop_meas(&nfapi_meas);
 
     if (gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus||
@@ -190,8 +190,8 @@ static inline int rxtx(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc, char *thread_
           NFAPI_SFNSF2DEC(gNB->UL_INFO.crc_ind.sfn_sf),  gNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs, 
           NFAPI_SFNSF2DEC(gNB->UL_INFO.rach_ind.sfn_sf), gNB->UL_INFO.rach_ind.rach_indication_body.number_of_preambles,
           gNB->UL_INFO.cqi_ind.number_of_cqis, 
-          proc->frame_rx, proc->subframe_rx, 
-      proc->frame_tx, proc->subframe_tx);
+          proc->frame_rx, proc->slot_rx, 
+      proc->frame_tx, proc->slot_tx);
     }
   }
 
@@ -200,11 +200,11 @@ static inline int rxtx(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc, char *thread_
   // ****************************************
   // Common RX procedures subframe n
 
-  T(T_GNB_PHY_DL_TICK, T_INT(gNB->Mod_id), T_INT(proc->frame_tx), T_INT(proc->subframe_tx));
+  T(T_GNB_PHY_DL_TICK, T_INT(gNB->Mod_id), T_INT(proc->frame_tx), T_INT(proc->slot_tx));
 /*
   // if this is IF5 or 3GPP_gNB
   if (gNB && gNB->RU_list && gNB->RU_list[0] && gNB->RU_list[0]->function < NGFI_RAU_IF4p5) {
-    wakeup_prach_gNB(gNB,NULL,proc->frame_rx,proc->subframe_rx);
+    wakeup_prach_gNB(gNB,NULL,proc->frame_rx,proc->slot_rx);
   }
 
   // UE-specific RX processing for subframe n
@@ -215,7 +215,7 @@ static inline int rxtx(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc, char *thread_
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
 
   gNB->UL_INFO.frame     = proc->frame_rx;
-  gNB->UL_INFO.subframe  = proc->subframe_rx;
+  gNB->UL_INFO.slot      = proc->slot_rx;
   gNB->UL_INFO.module_id = gNB->Mod_id;
   gNB->UL_INFO.CC_id     = gNB->CC_id;
 
@@ -238,7 +238,7 @@ static inline int rxtx(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc, char *thread_
 
   stop_meas( &softmodem_stats_rxtx_sf );
 
-  LOG_D(PHY,"%s() Exit proc[rx:%d%d tx:%d%d]\n", __FUNCTION__, proc->frame_rx, proc->subframe_rx, proc->frame_tx, proc->subframe_tx);
+  LOG_D(PHY,"%s() Exit proc[rx:%d%d tx:%d%d]\n", __FUNCTION__, proc->frame_rx, proc->slot_rx, proc->frame_tx, proc->slot_tx);
 
 #if 0
   LOG_D(PHY, "rxtx:%lld nfapi:%lld phy:%lld tx:%lld rx:%lld prach:%lld ofdm:%lld ",
@@ -311,8 +311,8 @@ static void* gNB_L1_thread_tx(void* param) {
     // (may be relaxed in the future for performance reasons)
     // *****************************************
     
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX1_GNB,proc->subframe_tx);
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX1_GNB,proc->subframe_rx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX1_GNB,proc->slot_tx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX1_GNB,proc->slot_rx);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX1_GNB,proc->frame_tx);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX1_GNB,proc->frame_rx);
 
@@ -364,8 +364,8 @@ static void* gNB_L1_thread( void* param ) {
     if (wait_on_condition(&proc->mutex,&proc->cond,&proc->instance_cnt,thread_name)<0) break;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX0, 1 );
 
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_GNB,proc->subframe_tx);
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_GNB,proc->subframe_rx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_GNB,proc->slot_tx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_GNB,proc->slot_rx);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_GNB,proc->frame_tx);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_GNB,proc->frame_rx);
 
@@ -420,7 +420,7 @@ static void wait_system_ready (char *message, volatile int *start_flag) {
 
 
 
-void gNB_top(PHY_VARS_gNB *gNB, int frame_rx, int subframe_rx, char *string, struct RU_t_s *ru)
+void gNB_top(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, char *string, struct RU_t_s *ru)
 {
   gNB_L1_proc_t *proc           = &gNB->proc;
   gNB_L1_rxtx_proc_t *L1_proc = &proc->L1_proc;
@@ -428,20 +428,20 @@ void gNB_top(PHY_VARS_gNB *gNB, int frame_rx, int subframe_rx, char *string, str
   RU_proc_t *ru_proc=&ru->proc;
 
   proc->frame_rx    = frame_rx;
-  proc->subframe_rx = subframe_rx;
+  proc->slot_rx = slot_rx;
 
   if (!oai_exit) {
-    T(T_ENB_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx), T_INT(proc->subframe_rx));
+    T(T_ENB_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx), T_INT(proc->slot_rx));
 
     L1_proc->timestamp_tx = ru_proc->timestamp_rx + (sf_ahead*fp->samples_per_subframe);
     L1_proc->frame_rx     = ru_proc->frame_rx;
-    L1_proc->subframe_rx  = ru_proc->subframe_rx;
-    L1_proc->frame_tx     = (L1_proc->subframe_rx > (9-sf_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
-    L1_proc->subframe_tx  = (L1_proc->subframe_rx + sf_ahead)%10;
+    L1_proc->slot_rx      = ru_proc->tti_rx;
+    L1_proc->frame_tx     = (L1_proc->slot_rx > (9-sf_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
+    L1_proc->slot_tx      = (L1_proc->slot_rx + sf_ahead)%10;
 
     if (rxtx(gNB,L1_proc,string) < 0) LOG_E(PHY,"gNB %d CC_id %d failed during execution\n",gNB->Mod_id,gNB->CC_id);
     ru_proc->timestamp_tx = L1_proc->timestamp_tx;
-    ru_proc->subframe_tx  = L1_proc->subframe_tx;
+    ru_proc->tti_tx       = L1_proc->slot_tx;
     ru_proc->frame_tx     = L1_proc->frame_tx;
   }
 }
@@ -455,10 +455,10 @@ int wakeup_txfh(gNB_L1_rxtx_proc_t *proc,PHY_VARS_gNB *gNB) {
   struct timespec wait;
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
-//printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~inside wakeup_txfh %d.%d IC_RU = %d\n", proc->frame_tx, proc->subframe_tx, proc->instance_cnt_RUs);
+//printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~inside wakeup_txfh %d.%d IC_RU = %d\n", proc->frame_tx, proc->slot_tx, proc->instance_cnt_RUs);
 
   if(wait_on_condition(&proc->mutex_RUs,&proc->cond_RUs,&proc->instance_cnt_RUs,"wakeup_txfh")<0) {
-    LOG_E(PHY,"Frame %d, subframe %d: TX FH not ready\n", proc->frame_tx, proc->subframe_tx);
+    LOG_E(PHY,"Frame %d, subframe %d: TX FH not ready\n", proc->frame_tx, proc->slot_tx);
     return(-1);
   }
   pthread_mutex_lock(&gNB->proc.mutex_RU_tx);
@@ -471,18 +471,18 @@ int wakeup_txfh(gNB_L1_rxtx_proc_t *proc,PHY_VARS_gNB *gNB) {
     ru      = gNB->RU_list[i];
     ru_proc = &ru->proc;
     if (ru_proc->instance_cnt_gNBs == 0) {
-      LOG_E(PHY,"Frame %d, subframe %d: TX FH thread busy, dropping Frame %d, subframe %d\n", ru_proc->frame_tx, ru_proc->subframe_tx, proc->frame_rx, proc->subframe_rx);
+      LOG_E(PHY,"Frame %d, subframe %d: TX FH thread busy, dropping Frame %d, subframe %d\n", ru_proc->frame_tx, ru_proc->tti_tx, proc->frame_rx, proc->slot_rx);
       return(-1);
     }
     if (pthread_mutex_timedlock(&ru_proc->mutex_gNBs,&wait) != 0) {
-      LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB TX1 thread %d (IC %d)\n", ru_proc->subframe_rx&1,ru_proc->instance_cnt_gNBs );
+      LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB TX1 thread %d (IC %d)\n", ru_proc->tti_rx&1,ru_proc->instance_cnt_gNBs );
       exit_fun( "error locking mutex_gNB" );
       return(-1);
     }
 
     ru_proc->instance_cnt_gNBs = 0;
     ru_proc->timestamp_tx = proc->timestamp_tx;
-    ru_proc->subframe_tx  = proc->subframe_tx;
+    ru_proc->tti_tx       = proc->slot_tx;
     ru_proc->frame_tx     = proc->frame_tx;
 
   
@@ -524,9 +524,9 @@ int wakeup_tx(PHY_VARS_gNB *gNB) {
   L1_proc_tx->instance_cnt = 0;
 
   
-  L1_proc_tx->subframe_rx   = L1_proc->subframe_rx;
+  L1_proc_tx->slot_rx   = L1_proc->slot_rx;
   L1_proc_tx->frame_rx      = L1_proc->frame_rx;
-  L1_proc_tx->subframe_tx   = L1_proc->subframe_tx;
+  L1_proc_tx->slot_tx   = L1_proc->slot_tx;
   L1_proc_tx->frame_tx      = L1_proc->frame_tx;
   L1_proc_tx->timestamp_tx  = L1_proc->timestamp_tx;
   
@@ -557,7 +557,7 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
     if (ru == gNB->RU_list[i]) {
       if ((proc->RU_mask&(1<<i)) > 0)
 	LOG_E(PHY,"gNB %d frame %d, subframe %d : previous information from RU %d (num_RU %d,mask %x) has not been served yet!\n",
-	      gNB->Mod_id,proc->frame_rx,proc->subframe_rx,ru->idx,gNB->num_RU,proc->RU_mask);
+	      gNB->Mod_id,proc->frame_rx,proc->slot_rx,ru->idx,gNB->num_RU,proc->RU_mask);
       proc->RU_mask |= (1<<i);
     }
   }
@@ -577,7 +577,7 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
 
   /* accept some delay in processing - up to 5ms */
   for (i = 0; i < 10 && L1_proc->instance_cnt == 0; i++) {
-    LOG_W( PHY,"[gNB] Frame %d Subframe %d, gNB RXn-TXnp4 thread busy!! (cnt %i)\n", L1_proc->frame_tx, L1_proc->subframe_tx, L1_proc->instance_cnt);
+    LOG_W( PHY,"[gNB] Frame %d Subframe %d, gNB RXn-TXnp4 thread busy!! (cnt %i)\n", L1_proc->frame_tx, L1_proc->slot_tx, L1_proc->instance_cnt);
     usleep(500);
   }
   if (L1_proc->instance_cnt == 0) {
@@ -588,7 +588,7 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
   // wake up TX for subframe n+sf_ahead
   // lock the TX mutex and make sure the thread is ready
   if (pthread_mutex_timedlock(&L1_proc->mutex,&wait) != 0) {
-    LOG_E( PHY, "[gNB] ERROR pthread_mutex_lock for gNB RXTX thread %d (IC %d)\n", L1_proc->subframe_rx&1,L1_proc->instance_cnt );
+    LOG_E( PHY, "[gNB] ERROR pthread_mutex_lock for gNB RXTX thread %d (IC %d)\n", L1_proc->slot_rx&1,L1_proc->instance_cnt );
     exit_fun( "error locking mutex" );
     return(-1);
   }
@@ -600,14 +600,14 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
   // transmitted timestamp of the next TX slot (first).
   // The last (TS_rx mod samples_per_frame) was n*samples_per_tti, 
   // we want to generate subframe (n+sf_ahead), so TS_tx = TX_rx+sf_ahead*samples_per_tti,
-  // and proc->subframe_tx = proc->subframe_rx+sf_ahead
+  // and proc->slot_tx = proc->slot_rx+sf_ahead
   L1_proc->timestamp_tx = ru_proc->timestamp_rx + (sf_ahead*fp->samples_per_subframe);
   L1_proc->frame_rx     = ru_proc->frame_rx;
-  L1_proc->subframe_rx  = ru_proc->subframe_rx;
-  L1_proc->frame_tx     = (L1_proc->subframe_rx > (9-sf_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
-  L1_proc->subframe_tx  = (L1_proc->subframe_rx + sf_ahead)%10;
+  L1_proc->slot_rx  = ru_proc->tti_rx;
+  L1_proc->frame_tx     = (L1_proc->slot_rx > (9-sf_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
+  L1_proc->slot_tx  = (L1_proc->slot_rx + sf_ahead)%10;
 
-//printf("~~~~~~~~~~~~~~~~~~~~~~passing parameter IC = %d, RX: %d.%d, TX: %d.%d to L1 sf_ahead = %d\n", L1_proc->instance_cnt, L1_proc->frame_rx, L1_proc->subframe_rx, L1_proc->frame_tx, L1_proc->subframe_tx, sf_ahead);
+//printf("~~~~~~~~~~~~~~~~~~~~~~passing parameter IC = %d, RX: %d.%d, TX: %d.%d to L1 sf_ahead = %d\n", L1_proc->instance_cnt, L1_proc->frame_rx, L1_proc->slot_rx, L1_proc->frame_tx, L1_proc->slot_tx, sf_ahead);
 
   // the thread can now be woken up
   if (pthread_cond_signal(&L1_proc->cond) != 0) {
