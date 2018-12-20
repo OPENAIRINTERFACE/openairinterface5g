@@ -442,7 +442,7 @@ void polar_encoder_fast(uint64_t *A,
   // b_{N'-1} b_{N'-2} ... b_{N'-A} b_{N'-A-1} ... b_{N'-A-Nparity} = a_{N-1} a_{N-2} ... a_{N-A} p_{N_parity-1} ... p_0
 
   for (n=0;n<quadwlen;n++) if (n==0) B[n] = (A[n] << polarParams->crcParityBits) | tcrc;
-                           else      B[n] = (A[n] << polarParams->crcParityBits) | (A[n-1]>>64-polarParams->crcParityBits);
+                           else      B[n] = (A[n] << polarParams->crcParityBits) | (A[n-1]>>(64-polarParams->crcParityBits));
   
     
   uint8_t *Bbyte = (uint8_t*)B;

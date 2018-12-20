@@ -51,7 +51,7 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 
 	//Parse the list. If the node is already created, return without initialization.
 	while (currentPtr != NULL) {
-	  printf("currentPtr->idx %d, (%d,%d,%d)\n",currentPtr->idx,messageType,messageLength,aggregation_prime);
+	  //	  printf("currentPtr->idx %d, (%d,%d,%d)\n",currentPtr->idx,messageType,messageLength,aggregation_prime);
 	  if (currentPtr->idx == (messageType * messageLength * aggregation_prime)) return;
 	  else currentPtr = currentPtr->nextPtr;
 	}
