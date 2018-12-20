@@ -99,7 +99,7 @@ int main(int argc, char **argv)
   int freq_offset;
   //  int subframe_offset;
   //  char fname[40], vname[40];
-  int trial,n_trials=1,n_errors,n_errors2,n_alamouti;
+  int trial,n_trials=1,n_errors,n_errors_payload;
   uint8_t transmission_mode = 1,n_tx=1,n_rx=1;
   uint16_t Nid_cell=0;
 
@@ -128,7 +128,7 @@ int main(int argc, char **argv)
   NR_DL_FRAME_PARMS *frame_parms;
   nfapi_nr_config_request_t *gNB_config;
 
-  int ret;
+  int ret, payload_ret=0;
   int run_initial_sync=0;
 
   int loglvl=OAILOG_WARNING;
@@ -499,8 +499,7 @@ int main(int argc, char **argv)
   for (SNR=snr0; SNR<snr1; SNR+=.2) {
 
     n_errors = 0;
-    n_errors2 = 0;
-    n_alamouti = 0;
+    n_errors_payload = 0;
 
     for (trial=0; trial<n_trials; trial++) {
 
@@ -567,13 +566,31 @@ int main(int argc, char **argv)
 			 SISO,
 			 UE->high_speed_flag);
 
+	if (ret==0) {
+	  //UE->rx_ind.rx_indication_body->mib_pdu.ssb_index;  //not yet detected automatically
+	  //UE->rx_ind.rx_indication_body->mib_pdu.ssb_length; //Lmax, not yet detected automatically
+	  uint8_t gNB_xtra_byte=0;
+	  for (int i=0; i<8; i++)
+	    gNB_xtra_byte |= ((gNB->pbch.pbch_a>>(31-i))&1)<<(7-i);
+	  
+	  payload_ret = (UE->rx_ind.rx_indication_body->mib_pdu.additional_bits == gNB_xtra_byte);
+	  for (i=0;i<3;i++){
+	    payload_ret += (UE->rx_ind.rx_indication_body->mib_pdu.pdu[i] == gNB->pbch_pdu[2-i]);
+	    //printf("pdu byte %d gNB: 0x%02x UE: 0x%02x\n",i,gNB->pbch_pdu[i], UE->rx_ind.rx_indication_body->mib_pdu.pdu[i]); 
+	  } 
+	  //printf("xtra byte gNB: 0x%02x UE: 0x%02x\n",gNB_xtra_byte, UE->rx_ind.rx_indication_body->mib_pdu.additional_bits);
+	  //printf("ret %d\n", payload_ret);
+	  if (payload_ret!=4) 
+	    n_errors_payload++;
+	}
+
 	if (ret<0) n_errors++;
       }
     } //noise trials
 
-    printf("SNR %f : n_errors (negative CRC) = %d/%d\n", SNR,n_errors,n_trials);
+    printf("SNR %f: trials %d, n_errors_crc = %d, n_errors_payload %d\n", SNR,n_trials,n_errors,n_errors_payload);
 
-    if ((float)n_errors/(float)n_trials <= target_error_rate) {
+    if (((float)n_errors/(float)n_trials <= target_error_rate) && (n_errors_payload==0)) {
       printf("PBCH test OK\n");
       break;
     }
