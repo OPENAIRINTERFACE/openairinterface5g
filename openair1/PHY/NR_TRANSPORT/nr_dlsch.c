@@ -207,7 +207,6 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
   int16_t **mod_symbs = (int16_t**)dlsch.mod_symbs;
   int16_t **tx_layers = (int16_t**)dlsch.txdataF;
   int8_t Wf[2], Wt[2], l0, l_prime[2], delta;
-  uint16_t TBS = rel15->transport_block_size;
   uint16_t nb_symbols = rel15->nb_mod_symbols;
   uint8_t Qm = rel15->modulation_order;
   uint16_t encoded_length = nb_symbols*Qm;
@@ -313,9 +312,9 @@ for (int i=0; i<n_dmrs>>4; i++) {
   uint16_t start_sc = frame_parms.first_carrier_offset + frame_parms.ssb_start_subcarrier;
   if (start_sc >= frame_parms.ofdm_symbol_size)
     start_sc -= frame_parms.ofdm_symbol_size;
- /*rel15->start_prb*NR_NB_SC_PER_RB +*/
-  //((pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_COMMON) && (pdcch_params.dci_format == NFAPI_NR_DL_DCI_FORMAT_1_0))?\
-   //    ((frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB + pdcch_params.rb_offset)*NR_NB_SC_PER_RB) : 0;
+ /*rel15->start_prb*NR_NB_SC_PER_RB +
+  ((pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_COMMON) && (pdcch_params.dci_format == NFAPI_NR_DL_DCI_FORMAT_1_0))?\
+       ((frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB + pdcch_params.rb_offset)*NR_NB_SC_PER_RB) : 0;*/
 
 #ifdef DEBUG_DLSCH_MAPPING
 printf("PDSCH resource mapping started (start SC %d\tstart symbol %d\tN_PRB %d\tnb_symbols %d)\n",

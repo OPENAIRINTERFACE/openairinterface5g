@@ -32,6 +32,8 @@
 
 #include "nr_dlsch.h"
 
+extern void set_taus_seed(unsigned int seed_type);
+
 uint8_t nr_pdsch_default_time_alloc_A_S_nCP[23] = {2,3,2,3,2,3,2,3,2,3,9,10,4,6,5,5,9,12,1,1,2,4,8};
 uint8_t nr_pdsch_default_time_alloc_A_L_nCP[23] = {12,11,10,9,9,8,7,6,5,4,4,4,4,4,7,2,2,2,13,6,4,7,4};
 uint8_t nr_pdsch_default_time_alloc_A_S_eCP[23] = {2,3,2,3,2,3,2,3,2,3,6,8,4,6,5,5,9,10,1,1,2,4,8};
@@ -105,7 +107,8 @@ static inline uint8_t get_K0(uint8_t row_idx, uint8_t time_alloc_type) {
 /*ideally combine the calculation of L in the same function once the right struct is defined*/
 uint8_t nr_get_S(uint8_t row_idx, uint8_t CP, uint8_t time_alloc_type, uint8_t dmrs_typeA_position) {
 
-  uint8_t idx, S;
+  uint8_t idx;
+  //uint8_t S;
 
   switch(time_alloc_type) {
     case NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_A:
@@ -126,6 +129,7 @@ uint8_t nr_get_S(uint8_t row_idx, uint8_t CP, uint8_t time_alloc_type, uint8_t d
   default:
   AssertFatal(0, "Invalid Time domain allocation type %d in %s %s\n", time_alloc_type, __FUNCTION__, __FILE__);
   }
+  return 0; // temp warning fix
 }
 
 void nr_check_time_alloc(uint8_t S, uint8_t L, nfapi_nr_config_request_t config) {

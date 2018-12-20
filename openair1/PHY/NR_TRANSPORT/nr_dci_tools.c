@@ -162,7 +162,7 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
         for (int i=0; i<fsize; i++) 
             *dci_pdu |= ((pdu_rel15->frequency_domain_assignment>>(fsize-i-1))&1)<<pos++;
 
-      if ((pdu_rel15->frequency_domain_assignment+1)&1 ==0) //fsize are all 1  38.212 p86
+      if (((pdu_rel15->frequency_domain_assignment+1)&1) ==0) //fsize are all 1  38.212 p86
       {
           printf("***************************\n");
           
