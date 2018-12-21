@@ -1145,12 +1145,8 @@ schedule_ulsch_rnti(module_id_t module_idP,
   int32_t normalized_rx_power = 0; 
   int32_t target_rx_power = 0;
   static int32_t tpc_accumulated = 0;
-  int UE_id = -1;
-  int n = 0;
-  int CC_id = 0;
-  int drop_ue = 0;
-  int n_rb_ul_val = 0;
   int sched_frame = 0;
+  int CC_id = 0;
   eNB_MAC_INST *mac = NULL;
   COMMON_channels_t *cc = NULL;
   UE_list_t *UE_list = NULL;
@@ -1159,6 +1155,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
   UE_sched_ctrl *UE_sched_ctrl_ptr = NULL;
   int rvidx_tab[4] = {0, 2, 3, 1};
   int first_rb_slice[NFAPI_CC_MAX];
+  int n_rb_ul_tab[NFAPI_CC_MAX];
 
   /* Init */
   mac = RC.mac[module_idP];
@@ -1166,6 +1163,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
   UE_list = &(mac->UE_list);
   sli = &(mac->slice_info);
   memset(first_rb_slice, 0, NFAPI_CC_MAX * sizeof(int));
+  memset(n_rb_ul_tab, 0, NFAPI_CC_MAX * sizeof(int));
   sched_frame = frameP; 
 
   if (sched_subframeP < subframeP) {
@@ -1180,136 +1178,132 @@ schedule_ulsch_rnti(module_id_t module_idP,
   nfapi_ul_config_request_body_t *ul_req_tmp_body  = &(ul_req_tmp->ul_config_request_body);
   nfapi_ul_config_ulsch_harq_information *ulsch_harq_information;
 
-  for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; ++CC_id) {
-    n_rb_ul_val = to_prb(cc[CC_id].ul_Bandwidth);
-    UE_list->first_rb_offset[CC_id][slice_idx] = cmin(n_rb_ul_val, sli->ul[slice_idx].first_rb);
+  hi_dci0_req->sfn_sf = (frameP << 4) + subframeP;
+
+  /* Note: RC.nb_mac_CC[module_idP] should be lower than or equal to NFAPI_CC_MAX */
+  for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++) {
+    n_rb_ul_tab[CC_id] = to_prb(cc[CC_id].ul_Bandwidth);
+    UE_list->first_rb_offset[CC_id][slice_idx] = cmin(n_rb_ul_tab[CC_id], sli->ul[slice_idx].first_rb);
   }
 
+  /* ULSCH preprocessor: set UE_template->
+   * pre_allocated_nb_rb_ul[slice_idx]
+   * pre_assigned_mcs_ul
+   * pre_allocated_rb_table_index_ul
+   */
   ulsch_scheduler_pre_processor(module_idP, slice_idx, frameP, subframeP, sched_subframeP, first_rb);
 
-  for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; ++CC_id) {
+  for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++) {
     first_rb_slice[CC_id] = first_rb[CC_id] + UE_list->first_rb_offset[CC_id][slice_idx];
   }
 
-  hi_dci0_req->sfn_sf = (frameP << 4) + subframeP;
-
   // loop over all active UEs
-  for (UE_id = UE_list->head_ul; UE_id >= 0;
-       UE_id = UE_list->next_ul[UE_id]) {
-    if (!ue_ul_slice_membership(module_idP, UE_id, slice_idx))
+  for (int UE_id = UE_list->head_ul; UE_id >= 0; UE_id = UE_list->next_ul[UE_id]) {
+    if (!ue_ul_slice_membership(module_idP, UE_id, slice_idx)) {
       continue;
+    }
 
     // don't schedule if Msg4 is not received yet
-    if (UE_list->UE_template[UE_PCCID(module_idP, UE_id)][UE_id].
-        configured == FALSE) {
-      LOG_D(MAC,
-            "[eNB %d] frame %d subfarme %d, UE %d: not configured, skipping UE scheduling \n",
-            module_idP, frameP, subframeP, UE_id);
+    if (UE_list->UE_template[UE_PCCID(module_idP, UE_id)][UE_id].configured == FALSE) {
+      LOG_D(MAC, "[eNB %d] frame %d, subframe %d, UE %d: not configured, skipping UE scheduling \n",
+        module_idP, 
+        frameP, 
+        subframeP, 
+        UE_id);
+
       continue;
     }
 
     rnti = UE_RNTI(module_idP, UE_id);
 
     if (rnti == NOT_A_RNTI) {
-      LOG_W(MAC, "[eNB %d] frame %d subfarme %d, UE %d: no RNTI \n",
-            module_idP, frameP, subframeP, UE_id);
-      continue;
-    }
-
-    drop_ue = 0;
-
-    /* let's drop the UE if get_eNB_UE_stats returns NULL when calling it with any of the UE's active UL CCs */
-    /* TODO: refine?
-
-       for (n=0; n<UE_list->numactiveULCCs[UE_id]; n++) {
-       CC_id = UE_list->ordered_ULCCids[n][UE_id];
-
-       if (mac_xface->get_eNB_UE_stats(module_idP,CC_id,rnti) == NULL) {
-       LOG_W(MAC,"[eNB %d] frame %d subframe %d, UE %d/%x CC %d: no PHY context\n", module_idP,frameP,subframeP,UE_id,rnti,CC_id);
-       drop_ue = 1;
-       break;
-       }
-       } */
-    if (drop_ue == 1) {
-      /* we can't come here, ulsch_scheduler_pre_processor won't put in the list a UE with no PHY context */
-      abort();
-
-      /* TODO: this is a hack. Sometimes the UE has no PHY context but
-       * is still present in the MAC with 'ul_failure_timer' = 0 and
-       * 'ul_out_of_sync' = 0. It seems wrong and the UE stays there forever. Let's
-       * start an UL out of sync procedure in this case.
-       * The root cause of this problem has to be found and corrected.
-       * In the meantime, this hack...
-       */
-      if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer == 0 &&
-          UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync == 0) {
-        LOG_W(MAC,
-              "[eNB %d] frame %d subframe %d, UE %d/%x CC %d: UE in weird state, let's put it 'out of sync'\n",
-              module_idP, frameP, subframeP, UE_id, rnti, CC_id);
-        // inform RRC of failure and clear timer
-        mac_eNB_rrc_ul_failure(module_idP, CC_id, frameP,
-                               subframeP, rnti);
-        UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 0;
-        UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync = 1;
-      }
+      LOG_W(MAC, "[eNB %d] frame %d, subframe %d, UE %d: no RNTI \n",
+        module_idP, 
+        frameP, 
+        subframeP, 
+        UE_id);
 
       continue;
     }
 
     // loop over all active UL CC_ids for this UE
-    for (n = 0; n < UE_list->numactiveULCCs[UE_id]; n++) {
+    for (int n = 0; n < UE_list->numactiveULCCs[UE_id]; n++) {
       // This is the actual CC_id in the list
       CC_id = UE_list->ordered_ULCCids[n][UE_id];
-      n_rb_ul_val = to_prb(cc[CC_id].ul_Bandwidth);
 
-      /*
-      aggregation=get_aggregation(get_bw_index(module_idP,CC_id),
-      eNB_UE_stats->dl_cqi,
-      format0);
-      */
+      /* should format_flag be 2 in CCE_allocation_infeasible??? */
+      /* this test seems to be way too long, can we provide an optimization? */
+      if (CCE_allocation_infeasible(module_idP, CC_id, 1, subframeP, aggregation, rnti)) {
+        LOG_W(MAC, "[eNB %d] frame %d, subframe %d, UE %d/%x CC %d: not enough CCE\n",
+          module_idP, 
+          frameP, 
+          subframeP, 
+          UE_id, 
+          rnti, 
+          CC_id);
 
-      if (CCE_allocation_infeasible
-          (module_idP, CC_id, 1, subframeP, aggregation, rnti)) {
-        LOG_W(MAC,
-              "[eNB %d] frame %d subframe %d, UE %d/%x CC %d: not enough nCCE\n",
-              module_idP, frameP, subframeP, UE_id, rnti, CC_id);
-        continue; // break;
-      }
-
-      /* be sure that there are some free RBs */
-      if (first_rb_slice[CC_id] >= n_rb_ul_val - 1) {
-        LOG_W(MAC,
-              "[eNB %d] frame %d subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
-              module_idP, frameP, subframeP, UE_id, rnti, CC_id);
         continue;
       }
 
-      //      if (eNB_UE_stats->mode == PUSCH) { // ue has a ulsch channel
-      UE_template_ptr = &UE_list->UE_template[CC_id][UE_id];
-      UE_sched_ctrl_ptr = &UE_list->UE_sched_ctrl[UE_id];
+      /* be sure that there are some free RBs */
+      if (first_rb_slice[CC_id] >= n_rb_ul_tab[CC_id] - 1) {
+        LOG_W(MAC, "[eNB %d] frame %d, subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
+          module_idP, 
+          frameP, 
+          subframeP, 
+          UE_id, 
+          rnti, 
+          CC_id);
+
+        continue;
+      }
+
+      UE_template_ptr = &(UE_list->UE_template[CC_id][UE_id]);
+      UE_sched_ctrl_ptr = &(UE_list->UE_sched_ctrl[UE_id]);
       harq_pid = subframe2harqpid(&cc[CC_id], sched_frame, sched_subframeP);
       round_index = UE_sched_ctrl_ptr->round_UL[CC_id][harq_pid];
-      AssertFatal(round_index < 8, "round %d > 7 for UE %d/%x\n", round_index,
-                  UE_id, rnti);
-      LOG_D(MAC,
-            "[eNB %d] frame %d subframe %d (sched_frame %d, sched_subframe %d), Checking PUSCH %d for UE %d/%x CC %d : aggregation level %d, N_RB_UL %d\n",
-            module_idP, frameP, subframeP, sched_frame, sched_subframeP, harq_pid, UE_id, rnti,
-            CC_id, aggregation, n_rb_ul_val);
-      RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP * 10) + subframeP] = UE_template_ptr->estimated_ul_buffer;
-      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BO,RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP *
-                                              10) +
-                                              subframeP]);
 
-      if (UE_is_to_be_scheduled(module_idP, CC_id, UE_id) > 0 || round_index > 0) // || ((frameP%10)==0))
-        // if there is information on bsr of DCCH, DTCH or if there is UL_SR, or if there is a packet to retransmit, or we want to schedule a periodic feedback every 10 frames
+      AssertFatal(round_index < 8, "round %d > 7 for UE %d/%x\n", 
+        round_index,
+        UE_id,
+        rnti);
+
+      LOG_D(MAC, "[eNB %d] frame %d subframe %d (sched_frame %d, sched_subframe %d), Checking PUSCH %d for UE %d/%x CC %d : aggregation level %d, N_RB_UL %d\n",
+        module_idP, 
+        frameP, 
+        subframeP, 
+        sched_frame, 
+        sched_subframeP, 
+        harq_pid, 
+        UE_id, 
+        rnti,
+        CC_id, 
+        aggregation, 
+        n_rb_ul_tab[CC_id]);
+
+      RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP * 10) + subframeP] = UE_template_ptr->estimated_ul_buffer;
+      
+      VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BO, RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP * 10) + subframeP]);
+
+      /* 
+       * If there is information on bsr of DCCH, DTCH or if there is UL_SR, 
+       * or if there is a packet to retransmit, or we want to schedule a periodic feedback 
+       */
+      if (UE_is_to_be_scheduled(module_idP, CC_id, UE_id) > 0 || round_index > 0)
       {
-        LOG_D(MAC,
-              "[eNB %d][PUSCH %d] Frame %d subframe %d Scheduling UE %d/%x in round %d(SR %d,UL_inactivity timer %d,UL_failure timer %d,cqi_req_timer %d)\n",
-              module_idP, harq_pid, frameP, subframeP, UE_id, rnti,
-              round_index, UE_template_ptr->ul_SR,
-              UE_sched_ctrl_ptr->ul_inactivity_timer,
-              UE_sched_ctrl_ptr->ul_failure_timer,
-              UE_sched_ctrl_ptr->cqi_req_timer);
+        LOG_D(MAC, "[eNB %d][PUSCH %d] Frame %d subframe %d Scheduling UE %d/%x in round %d(SR %d,UL_inactivity timer %d,UL_failure timer %d,cqi_req_timer %d)\n",
+          module_idP, 
+          harq_pid, 
+          frameP, 
+          subframeP, 
+          UE_id, 
+          rnti,
+          round_index, 
+          UE_template_ptr->ul_SR,
+          UE_sched_ctrl_ptr->ul_inactivity_timer,
+          UE_sched_ctrl_ptr->ul_failure_timer,
+          UE_sched_ctrl_ptr->cqi_req_timer);
+          
         // reset the scheduling request
         UE_template_ptr->ul_SR = 0;
         status = mac_eNB_get_rrc_status(module_idP, rnti);
@@ -1408,7 +1402,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
           UE_list->eNB_UE_stats[CC_id][UE_id].ulsch_mcs2 = UE_template_ptr->mcs_UL[harq_pid];
           //            buffer_occupancy = UE_template_ptr->ul_total_buffer;
 
-          while (((rb_table[rb_table_index] > (n_rb_ul_val - first_rb_slice[CC_id]))
+          while (((rb_table[rb_table_index] > (n_rb_ul_tab[CC_id] - first_rb_slice[CC_id]))
                   || (rb_table[rb_table_index] > 45))
                  && (rb_table_index > 0)) {
             rb_table_index--;
@@ -1665,7 +1659,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
         first_rb[CC_id],UE_template_ptr->nb_rb_ul[harq_pid],
         harq_pid, round_index);
 
-        rballoc = mac_xface->computeRIV(frame_parms->n_rb_ul_val,
+        rballoc = mac_xface->computeRIV(frame_parms->n_rb_ul_tab[CC_id],
         first_rb[CC_id],
         UE_template_ptr->nb_rb_ul[harq_pid]);
         first_rb[CC_id]+=UE_template_ptr->nb_rb_ul[harq_pid];  // increment for next UE allocation
@@ -1678,6 +1672,6 @@ schedule_ulsch_rnti(module_id_t module_idP,
         }
       */
       }     // UE_is_to_be_scheduled
-    }     // loop over UE_id
-  }       // loop of CC_id
+    }  // loop over all active CC_ids
+  }  // loop over UE_ids
 }

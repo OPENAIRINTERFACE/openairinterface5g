@@ -203,7 +203,7 @@ void phy_adjust_gain (PHY_VARS_UE *phy_vars_ue,
                       unsigned char eNB_id);
 
 int lte_ul_channel_estimation(PHY_VARS_eNB *phy_vars_eNB,
-			      eNB_rxtx_proc_t *proc,
+			      L1_rxtx_proc_t *proc,
                               module_id_t UE_id,
                               uint8_t l,
                               uint8_t Ns);

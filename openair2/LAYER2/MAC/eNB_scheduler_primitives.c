@@ -3254,11 +3254,15 @@ nfapi_ul_config_request_pdu_t *has_ul_grant(module_id_t module_idP,
   return (NULL);		// no ul grant at all for this UE
 }
 
+//-----------------------------------------------------------------------------
 boolean_t
 CCE_allocation_infeasible(int module_idP,
-			  int CC_idP,
-			  int format_flag,
-			  int subframe, int aggregation, int rnti)
+  int CC_idP,
+  int format_flag,
+  int subframe,
+  int aggregation,
+  int rnti)
+//-----------------------------------------------------------------------------
 {
   nfapi_dl_config_request_body_t *DL_req       = &RC.mac[module_idP]->DL_req[CC_idP].dl_config_request_body;
   nfapi_dl_config_request_pdu_t *dl_config_pdu = &DL_req->dl_config_pdu_list[DL_req->number_pdu];
@@ -3269,9 +3273,12 @@ CCE_allocation_infeasible(int module_idP,
 
   if (format_flag != 2) {	// DL DCI
     if (DL_req->number_pdu == MAX_NUM_DL_PDU) {
-      LOG_W(MAC,
-	    "Subframe %d: FAPI DL structure is full, skip scheduling UE %d\n",
-	    subframe, rnti);
+      LOG_W(MAC, "Subframe %d: FAPI DL structure is full, skip scheduling UE %d\n",
+	      subframe, 
+        rnti);
+
+      res = TRUE;
+
     } else {
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tl.tag            = NFAPI_DL_CONFIG_REQUEST_DCI_DL_PDU_REL8_TAG;
       dl_config_pdu->pdu_type                                     = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE;
@@ -3279,22 +3286,29 @@ CCE_allocation_infeasible(int module_idP,
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type         = (format_flag == 0) ? 2 : 1;
       dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level = aggregation;
       DL_req->number_pdu++;
-      LOG_D(MAC,
-	    "Subframe %d: Checking CCE feasibility format %d : (%x,%d) (%x,%d,%d)\n",
-	    subframe, format_flag, rnti, aggregation,
-	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti,
-	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.
-	    aggregation_level,
-	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type);
+      
+      LOG_D(MAC, "Subframe %d: Checking CCE feasibility format %d : (%x,%d) \n",
+        subframe, 
+        format_flag, 
+        rnti, 
+        aggregation);
+
       ret = allocate_CCEs(module_idP, CC_idP, 0, subframe, 0);
-      if (ret == -1) res = TRUE;
+
+      if (ret == -1) {
+        res = TRUE;
+      }
+
       DL_req->number_pdu--;
     }
-  } else {			// ue-specific UL DCI
+  } else { // ue-specific UL DCI
     if (HI_DCI0_req->number_of_dci + HI_DCI0_req->number_of_hi == MAX_NUM_HI_DCI0_PDU) {
-      LOG_W(MAC,
-	    "Subframe %d: FAPI UL structure is full, skip scheduling UE %d\n",
-	    subframe, rnti);
+      LOG_W(MAC, "Subframe %d: FAPI UL structure is full, skip scheduling UE %d\n",
+  	    subframe, 
+        rnti);
+
+      res = TRUE;
+      
     } else {
       hi_dci0_pdu->pdu_type                               = NFAPI_HI_DCI0_DCI_PDU_TYPE;
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.tl.tag            = NFAPI_HI_DCI0_REQUEST_DCI_PDU_REL8_TAG;
@@ -3302,13 +3316,18 @@ CCE_allocation_infeasible(int module_idP,
       hi_dci0_pdu->dci_pdu.dci_pdu_rel8.aggregation_level = aggregation;
       HI_DCI0_req->number_of_dci++;
       ret = allocate_CCEs(module_idP, CC_idP, 0, subframe, 0);
-      if (ret == -1) res = TRUE;
+
+      if (ret == -1) {
+        res = TRUE;
+      }
+
       HI_DCI0_req->number_of_dci--;
     }
   }
 
   return res;
 }
+
 void get_retransmission_timing(LTE_TDD_Config_t *tdd_Config, frame_t *frameP,
     sub_frame_t *subframeP)
 {
