@@ -64,7 +64,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
   eth_state_t *eth = (eth_state_t*) (ru->ifdevice.priv);
   int nsym = fp->symbols_per_tti;
   
-  if (ru->idx<=1) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4_RU+ru->idx,1);   
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4_RU+ru->idx,1);   
 
   if (packet_type == IF4p5_PDLFFT) {
     LOG_D(PHY,"send DL_IF4p5: RU %d frame %d, subframe %d\n",ru->idx,frame,subframe);
@@ -266,7 +266,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
     AssertFatal(1==0, "send_IF4p5 - Unknown packet_type %x", packet_type);     
   }
 
-  if (ru->idx<=1) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4_RU+ru->idx,0);  
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF4_RU+ru->idx,0);  
   return;  		    
 }
 
@@ -285,7 +285,7 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
   int slotoffsetF=0, blockoffsetF=0; 
   eth_state_t *eth = (eth_state_t*) (ru->ifdevice.priv);
   int idx;
-  if (ru->idx<=1) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4_RU+ru->idx,1);   
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4_RU+ru->idx,1);   
   
   if (ru->function == NGFI_RRU_IF4p5) {
     db_fulllength = (12*fp->N_RB_DL)*ru->nb_tx; 
@@ -420,7 +420,7 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
     AssertFatal(1==0, "recv_IF4p5 - Unknown packet_type %x", *packet_type);            
   }
 
-  if (ru->idx<=1) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4_RU+ru->idx,0);     
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RECV_IF4_RU+ru->idx,0);     
   return;   
 }
 

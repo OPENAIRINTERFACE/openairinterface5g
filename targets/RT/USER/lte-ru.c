@@ -1189,19 +1189,20 @@ void wakeup_L1s(RU_t *ru) {
       //start_meas(&proc->ru_arrival_time);
       LOG_D(PHY,"RU %d starting timer for frame %d subframe %d\n",ru->idx, ru->proc.frame_rx,ru->proc.subframe_rx);
     }
+
     for (i=0;i<eNB->num_RU;i++) {
       if (eNB->RU_list[i]->wait_cnt==1 && ru->proc.subframe_rx!=9) eNB->RU_list[i]->wait_cnt=0;
       LOG_D(PHY,"RU %d has frame %d and subframe %d, state %s\n",eNB->RU_list[i]->idx,eNB->RU_list[i]->proc.frame_rx, eNB->RU_list[i]->proc.subframe_rx, ru_states[eNB->RU_list[i]->state]);
-      if (ru == eNB->RU_list[i] && eNB->RU_list[i]->wait_cnt == 0 /*|| eNB->RU_list[i]->is_slave==0*/) {
+      if (ru == eNB->RU_list[i] && eNB->RU_list[i]->wait_cnt == 0) {
 //	AssertFatal((proc->RU_mask&(1<<i)) == 0, "eNB %d frame %d, subframe %d : previous information from RU %d (num_RU %d,mask %x) has not been served yet!\n",eNB->Mod_id,ru->proc.frame_rx,ru->proc.subframe_rx,ru->idx,eNB->num_RU,proc->RU_mask);
         proc->RU_mask[ru->proc.subframe_rx] |= (1<<i);
         //printf("oooooooooooooooooooo\n");
-      }else if (eNB->RU_list[i]->state == RU_SYNC || 
-                (eNB->RU_list[i]->is_slave==1 && eNB->RU_list[i]->wait_cnt>0 && ru!=eNB->RU_list[i])){
+      }else if (/*eNB->RU_list[i]->state == RU_SYNC || */
+                (eNB->RU_list[i]->is_slave==1 && eNB->RU_list[i]->wait_cnt>0 && ru!=eNB->RU_list[i] && ru->is_slave==0)){
       	proc->RU_mask[ru->proc.subframe_rx] |= (1<<i);
         //printf("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\n");
       }
-      //printf("RU %d, RU_mask %d, i %d\n",ru->idx,proc->RU_mask[ru->proc.subframe_rx],i);
+      //printf("RU %d, RU_mask[%d] %d, i %d, frame %d, slave %d, ru->cnt %d, i->cnt %d\n",ru->idx,ru->proc.subframe_rx,proc->RU_mask[ru->proc.subframe_rx],i,ru->proc.frame_rx,ru->is_slave,ru->wait_cnt,eNB->RU_list[i]->wait_cnt);
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_MASK_RU, proc->RU_mask[ru->proc.subframe_rx]);
       if (ru->is_slave == 0 && ( (proc->RU_mask[ru->proc.subframe_rx]&(1<<i)) == 1) && eNB->RU_list[i]->state == RU_RUN) { // This is master & the RRU has already been received
 	if (check_sync(eNB->RU_list[i],eNB->RU_list[0],ru->proc.subframe_rx)  == 0)
@@ -1590,8 +1591,7 @@ static void* ru_thread_tx( void* param ) {
           eNB_proc->RU_mask_tx |= (1<<j);
           //printf("aaaaaaaaaaaaaaaaaaaaaa1111111111111\n");
         }
-        else if (eNB->RU_list[j]->state==RU_SYNC || (eNB->RU_list[j]->is_slave==1 && eNB->RU_list[j]->wait_cnt>0 && ru != eNB->RU_list[j])){
-      	//else if (ru->state==RU_SYNC || (eNB->RU_list[j]->is_slave==1 && ru->state==RU_RUN && eNB->RU_list[j]->wait_cnt==0)){
+        else if (/*eNB->RU_list[j]->state==RU_SYNC ||*/ (eNB->RU_list[j]->is_slave==1 && eNB->RU_list[j]->wait_cnt>0 && ru!=eNB->RU_list[j] && ru->is_slave==0)){
 		eNB_proc->RU_mask_tx |= (1<<j);
      		//printf("aaaaaaaaaaaaaaaaaaaaa22222222222\n");
         }
@@ -1828,7 +1828,7 @@ if(!emulate_rf){
           AssertFatal((ru->ifdevice.trx_ctlsend_func(&ru->ifdevice,&rru_config_msg,rru_config_msg.len)!=-1),"Failed to send msg to RAU\n");
           resynch_done=1;
         }
-        /*if (ru->wait_cnt==0)*/ wakeup_L1s(ru);
+        wakeup_L1s(ru);
       }
       else {
 
