@@ -2154,7 +2154,6 @@ add_executable(test_epc_generate_scenario
   ${OPENAIR2_DIR}/ENB_APP/enb_config.h
   ${OPENAIR2_DIR}/COMMON/commonDef.h
   ${OPENAIR2_DIR}/COMMON/messages_def.h
-  ${OPENAIR2_DIR}/COMMON/messages_types.h
   ${OPENAIR3_DIR}/S1AP/s1ap_eNB_defs.h
   )
 target_link_libraries (test_epc_generate_scenario
@@ -2174,7 +2173,6 @@ add_executable(test_epc_play_scenario
   ${OPENAIR3_DIR}/TEST/EPC_TEST/play_scenario.h
   ${OPENAIR2_DIR}/COMMON/commonDef.h
   ${OPENAIR2_DIR}/COMMON/messages_def.h
-  ${OPENAIR2_DIR}/COMMON/messages_types.h
   )
 target_include_directories(test_epc_play_scenario PUBLIC /usr/local/share/asn1c)
 target_link_libraries (test_epc_play_scenario
