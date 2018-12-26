@@ -4783,7 +4783,7 @@ void phy_procedures_UE_lte(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,u
     if (msg_p != NULL) {
       switch (ITTI_MSG_ID(msg_p)) {
         case PHY_FIND_CELL_REQ:
-          LOG_I(PHY, "[UE %d] Received %s\n", ITTI_MSG_INSTANCE (msg_p) - NB_eNB_INST, ITTI_MSG_NAME (msg_p));
+          LOG_E(PHY, "[UE %d] Received PLMN doesn't match SIM data, but not developped further processing %s\n", ITTI_MSG_INSTANCE (msg_p) - NB_eNB_INST, ITTI_MSG_NAME (msg_p));
           /* TODO process the message */
           break;
 
