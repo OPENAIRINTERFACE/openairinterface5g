@@ -162,7 +162,7 @@ void nr_pdcch_scrambling(uint32_t *in,
 uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
 			    t_nrPolar_paramsPtr *nrPolar_params,
                             uint32_t **gold_pdcch_dmrs,
-                            int32_t** txdataF,
+                            int32_t* txdataF,
                             int16_t amp,
                             NR_DL_FRAME_PARMS frame_parms,
                             nfapi_nr_config_request_t config)
@@ -216,14 +216,13 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   uint32_t encoder_output[NR_MAX_DCI_SIZE_DWORD];
   uint16_t n_RNTI = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? ((pdcch_params.scrambling_id)?pdcch_params.rnti:0) : 0;
   uint16_t Nid = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? pdcch_params.scrambling_id : config.sch_config.physical_cell_id.value;
-#ifdef PDCCH_TEST_POLAR_TEMP_FIX
-  t_nrPolar_paramsPtr currentPtr = NULL;//, polarParams = NULL;
-  nr_polar_init(&currentPtr, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
+//#ifdef PDCCH_TEST_POLAR_TEMP_FIX
+//  nr_polar_init(&currentPtr, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
 //  t_nrPolar_paramsPtr currentPtr = nr_polar_params(*nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
-#else 
+//#else 
   nr_polar_init(nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
   t_nrPolar_paramsPtr currentPtr = nr_polar_params(*nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
-#endif
+//#endif
 
   //polar_encoder_dci(dci_alloc.dci_pdu, encoder_output, currentPtr, pdcch_params.rnti);
   polar_encoder_fast(dci_alloc.dci_pdu, encoder_output, pdcch_params.rnti,currentPtr);
@@ -261,10 +260,7 @@ printf("scrambled output: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%0
   }
 
   /// Resource mapping
-  a = (config.rf_config.tx_antenna_ports.value == 1) ? amp : (amp*ONE_OVER_SQRT2_Q15)>>15;
 
-  for (int aa = 0; aa < config.rf_config.tx_antenna_ports.value; aa++)
-  {
     if (cset_start_sc >= frame_parms.ofdm_symbol_size)
       cset_start_sc -= frame_parms.ofdm_symbol_size;
 
@@ -293,8 +289,8 @@ printf("scrambled output: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%0
         dmrs_idx = 0;
         k = cset_start_sc + 1;
         while (dmrs_idx<3*pdcch_params.n_rb) {
-          ((int16_t*)txdataF[aa])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (a * mod_dmrs[l][dmrs_idx<<1]) >> 15;
-          ((int16_t*)txdataF[aa])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (a * mod_dmrs[l][(dmrs_idx<<1) + 1]) >> 15;
+          ((int16_t*)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1]       = (amp * mod_dmrs[l][dmrs_idx<<1]) >> 15;
+          ((int16_t*)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (amp * mod_dmrs[l][(dmrs_idx<<1) + 1]) >> 15;
 #ifdef DEBUG_PDCCH_DMRS
 	  printf("symbol %d position %d => (%d,%d)\n",l,k,((int16_t*)txdataF[aa])[(l*frame_parms.ofdm_symbol_size + k)<<1] , ((int16_t*)txdataF[aa])[((l*frame_parms.ofdm_symbol_size + k)<<1)+1]); 
 #endif
@@ -319,8 +315,8 @@ printf("scrambled output: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%0
       for (int m=0; m<NR_NB_SC_PER_RB; m++) {
         if ( m == (k_prime<<2)+1) { // DMRS if not already mapped
           if (pdcch_params.precoder_granularity == NFAPI_NR_CSET_SAME_AS_REG_BUNDLE) {
-            ((int16_t*)txdataF[aa])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (a * mod_dmrs[l][dmrs_idx<<1]) >> 15;
-            ((int16_t*)txdataF[aa])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (a * mod_dmrs[l][(dmrs_idx<<1) + 1]) >> 15;
+            ((int16_t*)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1]       = (amp * mod_dmrs[l][dmrs_idx<<1]) >> 15;
+            ((int16_t*)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (amp * mod_dmrs[l][(dmrs_idx<<1) + 1]) >> 15;
 #ifdef DEBUG_PDCCH_DMRS
 	    printf("l %d position %d => (%d,%d)\n",l,k,((int16_t*)txdataF[aa])[(l*frame_parms.ofdm_symbol_size + k)<<1] , ((int16_t*)txdataF[aa])[((l*frame_parms.ofdm_symbol_size + k)<<1)+1]); 
 #endif
@@ -329,8 +325,8 @@ printf("scrambled output: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%0
           }
         }
         else { // DCI payload
-          ((int16_t*)txdataF[aa])[(l*frame_parms.ofdm_symbol_size + k)<<1] = (a * mod_dci[dci_idx<<1]) >> 15;
-          ((int16_t*)txdataF[aa])[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (a * mod_dci[(dci_idx<<1) + 1]) >> 15;
+          ((int16_t*)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1]       = (amp * mod_dci[dci_idx<<1]) >> 15;
+          ((int16_t*)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (amp * mod_dci[(dci_idx<<1) + 1]) >> 15;
           //printf("dci output %d %d\n",(a * mod_dci[dci_idx<<1]) >> 15, (a * mod_dci[(dci_idx<<1) + 1]) >> 15);
           dci_idx++;
         }
@@ -339,7 +335,6 @@ printf("scrambled output: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%0
           k -= frame_parms.ofdm_symbol_size;
       }
     }
-  }
 
 #ifdef DEBUG_DCI
   write_output("txdataF_dci.m", "txdataF_dci", txdataF[0], frame_parms.samples_per_frame_wCP>>1, 1, 1);

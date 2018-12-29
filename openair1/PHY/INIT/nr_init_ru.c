@@ -107,9 +107,7 @@ int nr_phy_init_RU(RU_t *ru) {
 
     for (i=0; i<RC.nb_nr_L1_inst; i++) {
       for (p=0;p<15;p++) {
-        LOG_D(PHY,"[INIT] %s() nb_antenna_ports_eNB:%d \n", __FUNCTION__, ru->gNB_list[i]->gNB_config.rf_config.tx_antenna_ports.value);
-	if (p<ru->gNB_list[i]->gNB_config.rf_config.tx_antenna_ports.value || p==5) {
-          LOG_D(PHY,"[INIT] %s() DO BEAM WEIGHTS nb_antenna_ports_eNB:%d nb_tx:%d\n", __FUNCTION__, ru->gNB_list[i]->gNB_config.rf_config.tx_antenna_ports.value, ru->nb_tx);
+	if (p == 0|| p==5) {
 	  ru->beam_weights[i][p] = (int32_t **)malloc16_clear(ru->nb_tx*sizeof(int32_t*));
 	  for (j=0; j<ru->nb_tx; j++) {
 	    ru->beam_weights[i][p][j] = (int32_t *)malloc16_clear(fp->ofdm_symbol_size*sizeof(int32_t));
@@ -180,7 +178,7 @@ void nr_phy_free_RU(RU_t *ru)
 
     for (i = 0; i < RC.nb_nr_L1_inst; i++) {
       for (p = 0; p < 15; p++) {
-	if (p < ru->gNB_list[i]->gNB_config.rf_config.tx_antenna_ports.value || p == 5) {
+	if (p == 0 || p == 5) {
 	  for (j=0; j<ru->nb_tx; j++) free_and_zero(ru->beam_weights[i][p][j]);
 	  free_and_zero(ru->beam_weights[i][p]);
 	}

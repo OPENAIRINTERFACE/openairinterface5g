@@ -165,20 +165,16 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 
 
   common_vars->rxdata  = (int32_t **)NULL;
-  common_vars->txdataF = (int32_t **)malloc16(NB_ANTENNA_PORTS_ENB*sizeof(int32_t*));
+  common_vars->txdataF = (int32_t **)malloc16(15*sizeof(int32_t*));
   common_vars->rxdataF = (int32_t **)malloc16(64*sizeof(int32_t*));
   
-  LOG_D(PHY,"[INIT] NB_ANTENNA_PORTS_ENB:%d fp->nb_antenna_ports_gNB:%d\n", NB_ANTENNA_PORTS_ENB, cfg->rf_config.tx_antenna_ports.value);
-
-  for (i=0; i<NB_ANTENNA_PORTS_ENB; i++) {
-    if (i<cfg->rf_config.tx_antenna_ports.value || i==5) {
+  for (i=0;i<15;i++){ 
       common_vars->txdataF[i] = (int32_t*)malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t) );
       
       LOG_D(PHY,"[INIT] common_vars->txdataF[%d] = %p (%lu bytes)\n",
 	    i,common_vars->txdataF[i],
 	    fp->samples_per_frame_wCP*sizeof(int32_t));
-    }
-  }  
+  }
   
   
   // Channel estimates for SRS
@@ -306,11 +302,9 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
 
   int i, UE_id;
 
-  for (i = 0; i < NB_ANTENNA_PORTS_ENB; i++) {
-    if (i < cfg->rf_config.tx_antenna_ports.value || i == 5) {
-      free_and_zero(common_vars->txdataF[i]);
+  for (i = 0; i < 15; i++) {
+    free_and_zero(common_vars->txdataF[i]);
       /* rxdataF[i] is not allocated -> don't free */
-    }
   }
   free_and_zero(common_vars->txdataF);
   free_and_zero(common_vars->rxdataF);
@@ -381,7 +375,6 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu)
   gNB_config->nfapi_config.nrarfcn.value = 620000;
   gNB_config->subframe_config.numerology_index_mu.value = mu;
   gNB_config->subframe_config.duplex_mode.value = TDD;
-  gNB_config->rf_config.tx_antenna_ports.value = 1;
   gNB_config->rf_config.dl_carrier_bandwidth.value = N_RB_DL;
   gNB_config->rf_config.ul_carrier_bandwidth.value = N_RB_UL;
   gNB_config->sch_config.half_frame_index.value = 0;
@@ -416,7 +409,6 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config)
   gNB_config->nfapi_config.rf_bands.rf_band[0]          = phy_config->cfg->nfapi_config.rf_bands.rf_band[0]; //22
   gNB_config->nfapi_config.nrarfcn.value                = phy_config->cfg->nfapi_config.nrarfcn.value; //6600
   gNB_config->subframe_config.numerology_index_mu.value = phy_config->cfg->subframe_config.numerology_index_mu.value;//1
-  gNB_config->rf_config.tx_antenna_ports.value          = phy_config->cfg->rf_config.tx_antenna_ports.value; //1
   gNB_config->rf_config.dl_carrier_bandwidth.value      = phy_config->cfg->rf_config.dl_carrier_bandwidth.value;//106;
   gNB_config->rf_config.ul_carrier_bandwidth.value      = phy_config->cfg->rf_config.ul_carrier_bandwidth.value;//106;
   gNB_config->sch_config.half_frame_index.value         = 0;
@@ -437,14 +429,13 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config)
   fp->ul_CarrierFreq = fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
   fp->threequarter_fs                    = 0;
 
-  LOG_I(PHY,"Configuring MIB for instance %d, CCid %d : (band %d,N_RB_DL %d, N_RB_UL %d, Nid_cell %d,gNB_tx_antenna_ports %d,DL freq %u)\n",
+  LOG_I(PHY,"Configuring MIB for instance %d, CCid %d : (band %d,N_RB_DL %d, N_RB_UL %d, Nid_cell %d,DL freq %u)\n",
 	Mod_id, 
 	CC_id, 
 	gNB_config->nfapi_config.rf_bands.rf_band[0], 
 	gNB_config->rf_config.dl_carrier_bandwidth.value, 
 	gNB_config->rf_config.ul_carrier_bandwidth.value, 
 	gNB_config->sch_config.physical_cell_id.value, 
-	gNB_config->rf_config.tx_antenna_ports.value,
 	fp->dl_CarrierFreq );
   
   nr_init_frame_parms(gNB_config, fp);

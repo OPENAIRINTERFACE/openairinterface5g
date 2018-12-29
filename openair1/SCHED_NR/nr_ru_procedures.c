@@ -66,7 +66,7 @@ void nr_feptx0(RU_t *ru,int first_symbol, int num_symbols) {
   int slot = ru->proc.tti_tx;
 
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM, 1 );
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+(first_symbol!=0?1:0) , 1 );
 
   slot_offset  = slot*fp->samples_per_slot;
   slot_offsetF = first_symbol*fp->ofdm_symbol_size;
@@ -109,7 +109,7 @@ void nr_feptx0(RU_t *ru,int first_symbol, int num_symbols) {
       }
     }
   }
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM, 0);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+(first_symbol!=0?1:0), 0);
 }
 
 void nr_feptx_ofdm_2thread(RU_t *ru) {

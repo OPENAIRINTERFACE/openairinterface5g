@@ -1650,7 +1650,7 @@ int main(int argc, char **argv)
 
 	    start_meas(&eNB->ofdm_mod_stats);
 
-	    ru->proc.subframe_tx=subframe;
+	    ru->proc.tti_tx=subframe;
 	    memcpy((void*)ru->frame_parms,(void*)&eNB->frame_parms,sizeof(LTE_DL_FRAME_PARMS));
 	    feptx_prec(ru);
 	    feptx_ofdm(ru);
@@ -1670,7 +1670,7 @@ int main(int argc, char **argv)
 	    phy_procedures_eNB_TX(eNB,proc_eNB,0);
 
 
-	    ru->proc.subframe_tx=(subframe+1)%10;
+	    ru->proc.tti_tx=(subframe+1)%10;
 	    feptx_prec(ru);
 	    feptx_ofdm(ru);
 

@@ -7,7 +7,6 @@
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-
     OpenAirInterface is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
@@ -135,7 +134,7 @@ int attach_rru(RU_t *ru);
 
 int connect_rau(RU_t *ru);
 
-extern uint16_t sf_ahead;
+extern uint16_t sl_ahead;
 
 extern int emulate_rf;
 extern int numerology;
@@ -337,8 +336,8 @@ void fh_if5_south_in(RU_t *ru,int *frame, int *tti) {
 
   recv_IF5(ru, &proc->timestamp_rx, *tti, IF5_RRH_GW_UL); 
 
-  proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_subframe*10))&1023;
-  proc->tti_rx = (proc->timestamp_rx / fp->samples_per_subframe)%10;
+  proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_slot*20))&1023;
+  proc->tti_rx = (proc->timestamp_rx / fp->samples_per_slot)%20;
   
   if (proc->first_rx == 0) {
     if (proc->tti_rx != *tti){
@@ -361,49 +360,49 @@ void fh_if5_south_in(RU_t *ru,int *frame, int *tti) {
 }
 
 // Synchronous if4p5 from south 
-void fh_if4p5_south_in(RU_t *ru,int *frame,int *tti) {
+void fh_if4p5_south_in(RU_t *ru,int *frame,int *slot) {
 
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   RU_proc_t *proc = &ru->proc;
-  int f,sf;
+  int f,sl;
 
 
   uint16_t packet_type;
   uint32_t symbol_number=0;
   uint32_t symbol_mask_full=0;
 /*
-  if ((fp->frame_type == TDD) && (subframe_select(fp,*tti)==SF_S))  
+  if ((fp->frame_type == TDD) && (subframe_select(fp,*slot)==SF_S))  
     symbol_mask_full = (1<<fp->ul_symbols_in_S_subframe)-1;   
   else     
-    symbol_mask_full = (1<<fp->symbols_per_tti)-1; 
+    symbol_mask_full = (1<<fp->symbols_per_slot)-1; 
 
-  AssertFatal(proc->symbol_mask[*tti]==0,"rx_fh_if4p5: proc->symbol_mask[%d] = %x\n",*tti,proc->symbol_mask[*tti]);*/
+  AssertFatal(proc->symbol_mask[*slot]==0,"rx_fh_if4p5: proc->symbol_mask[%d] = %x\n",*slot,proc->symbol_mask[*slot]);*/
   do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
-    recv_IF4p5(ru, &f, &sf, &packet_type, &symbol_number);
+    recv_IF4p5(ru, &f, &sl, &packet_type, &symbol_number);
 
-    if (packet_type == IF4p5_PULFFT) proc->symbol_mask[sf] = proc->symbol_mask[sf] | (1<<symbol_number);
+    if (packet_type == IF4p5_PULFFT) proc->symbol_mask[sl] = proc->symbol_mask[sl] | (1<<symbol_number);
     else if (packet_type == IF4p5_PULTICK) {           
       if ((proc->first_rx==0) && (f!=*frame)) LOG_E(PHY,"rx_fh_if4p5: PULTICK received frame %d != expected %d\n",f,*frame);       
-      if ((proc->first_rx==0) && (sf!=*tti)) LOG_E(PHY,"rx_fh_if4p5: PULTICK received subframe %d != expected %d (first_rx %d)\n",sf,*tti,proc->first_rx);       
+      if ((proc->first_rx==0) && (sl!=*slot)) LOG_E(PHY,"rx_fh_if4p5: PULTICK received subframe %d != expected %d (first_rx %d)\n",sl,*slot,proc->first_rx);       
       break;     
       
     } else if (packet_type == IF4p5_PRACH) {
       // nothing in RU for RAU
     }
-    LOG_D(PHY,"rx_fh_if4p5: subframe %d symbol mask %x\n",*tti,proc->symbol_mask[*tti]);
-  } while(proc->symbol_mask[*tti] != symbol_mask_full);    
+    LOG_D(PHY,"rx_fh_if4p5: subframe %d symbol mask %x\n",*slot,proc->symbol_mask[sl]);
+  } while(proc->symbol_mask[sl] != symbol_mask_full);    
 
   //caculate timestamp_rx, timestamp_tx based on frame and subframe
-  proc->tti_rx  = sf;
+  proc->tti_rx  = sl;
   proc->frame_rx     = f;
-  proc->timestamp_rx = ((proc->frame_rx * 10)  + proc->tti_rx ) * fp->samples_per_subframe ;
+  proc->timestamp_rx = ((proc->frame_rx * fp->slots_per_frame)  + proc->tti_rx ) * fp->samples_per_slot ;
   //  proc->timestamp_tx = proc->timestamp_rx +  (4*fp->samples_per_subframe);
-  proc->tti_tx  = (sf+sf_ahead)%10;
-  proc->frame_tx     = (sf>(9-sf_ahead)) ? (f+1)&1023 : f;
+  proc->tti_tx  = (sl+sl_ahead)%fp->slots_per_frame;
+  proc->frame_tx     = (sl>(fp->slots_per_frame-sl_ahead)) ? (f+1)&1023 : f;
  
   if (proc->first_rx == 0) {
-    if (proc->tti_rx != *tti){
-      LOG_E(PHY,"Received Timestamp (IF4p5) doesn't correspond to the time we think it is (proc->tti_rx %d, subframe %d)\n",proc->tti_rx,*tti);
+    if (proc->tti_rx != *slot){
+      LOG_E(PHY,"Received Timestamp (IF4p5) doesn't correspond to the time we think it is (proc->tti_rx %d, subframe %d)\n",proc->tti_rx,*slot);
       exit_fun("Exiting");
     }
     if (proc->frame_rx != *frame) {
@@ -413,81 +412,23 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *tti) {
   } else {
     proc->first_rx = 0;
     *frame = proc->frame_rx;
-    *tti = proc->tti_rx;        
+    *slot = proc->tti_rx;        
   }
 
   if (ru == RC.ru[0]) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_RU, f );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_RU, sf );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_RX0_RU,  sl);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, proc->tti_tx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, proc->tti_tx );
   }
 
-  proc->symbol_mask[sf] = 0;  
+  proc->symbol_mask[proc->tti_rx] = 0;  
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
   LOG_D(PHY,"RU %d: fh_if4p5_south_in sleeping ...\n",ru->idx);
-  usleep(100);
 }
-
-// Dummy FH from south for getting synchronization from master RU
-void fh_slave_south_in(RU_t *ru,int *frame,int *tti) {
-  // This case is for synchronization to another thread
-  // it just waits for an external event.  The actual rx_fh is handle by the asynchronous RX thread
-  RU_proc_t *proc=&ru->proc;
-
-  if (wait_on_condition(&proc->mutex_FH,&proc->cond_FH,&proc->instance_cnt_FH,"fh_slave_south_in") < 0)
-    return;
-
-  release_thread(&proc->mutex_FH,&proc->instance_cnt_FH,"rx_fh_slave_south_in");
-
-  
-}
-
-// asynchronous inbound if5 fronthaul from south (Mobipass)
-void fh_if5_south_asynch_in_mobipass(RU_t *ru,int *frame,int *tti) {
-
-  RU_proc_t *proc       = &ru->proc;
-  NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
-
-  recv_IF5(ru, &proc->timestamp_rx, *tti, IF5_MOBIPASS); 
-  pthread_mutex_lock(&proc->mutex_asynch_rxtx);
-  int offset_mobipass = 40120;
-  pthread_mutex_lock(&proc->mutex_asynch_rxtx);
-  proc->tti_rx = ((proc->timestamp_rx-offset_mobipass)/fp->samples_per_subframe)%10;
-  proc->frame_rx    = ((proc->timestamp_rx-offset_mobipass)/(fp->samples_per_subframe*10))&1023;
-
-  proc->tti_rx = (proc->timestamp_rx/fp->samples_per_subframe)%10;
-  proc->frame_rx    = (proc->timestamp_rx/(10*fp->samples_per_subframe))&1023;
-
-  if (proc->first_rx == 1) {
-    proc->first_rx =2;
-    *tti = proc->tti_rx;
-    *frame    = proc->frame_rx; 
-    LOG_E(PHY,"[Mobipass]timestamp_rx:%llu, frame_rx %d, subframe: %d\n",(unsigned long long int)proc->timestamp_rx,proc->frame_rx,proc->tti_rx);
-  }
-  else {
-    if (proc->tti_rx != *tti) {
-        proc->first_rx++;
-	LOG_E(PHY,"[Mobipass]timestamp:%llu, tti_rx %d is not what we expect %d, first_rx:%d\n",(unsigned long long int)proc->timestamp_rx, proc->tti_rx,*tti, proc->first_rx);
-      //exit_fun("Exiting");
-    }
-    if (proc->frame_rx != *frame) {
-        proc->first_rx++;
-       LOG_E(PHY,"[Mobipass]timestamp:%llu, frame_rx %d is not what we expect %d, first_rx:%d\n",(unsigned long long int)proc->timestamp_rx,proc->frame_rx,*frame, proc->first_rx);  
-     // exit_fun("Exiting");
-    }
-    // temporary solution
-      *tti = proc->tti_rx;
-      *frame    = proc->frame_rx;
-  }
-
-  pthread_mutex_unlock(&proc->mutex_asynch_rxtx);
-
-
-} // gNodeB_3GPP_BBU 
 
 // asynchronous inbound if4p5 fronthaul from south
-void fh_if4p5_south_asynch_in(RU_t *ru,int *frame,int *tti) {
+void fh_if4p5_south_asynch_in(RU_t *ru,int *frame,int *slot) {
 
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   RU_proc_t *proc       = &ru->proc;
@@ -497,7 +438,7 @@ void fh_if4p5_south_asynch_in(RU_t *ru,int *frame,int *tti) {
 //  uint32_t got_prach_info=0;
 
   symbol_number = 0;
-  symbol_mask   = (1<<(fp->symbols_per_slot * fp->slots_per_subframe))-1;
+  symbol_mask   = (1<<(fp->symbols_per_slot))-1;
   prach_rx      = 0;
 
   do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
@@ -509,7 +450,7 @@ void fh_if4p5_south_asynch_in(RU_t *ru,int *frame,int *tti) {
     }*/
     if (proc->first_rx != 0) {
       *frame = proc->frame_rx;
-      *tti = proc->tti_rx;
+      *slot = proc->tti_rx;
       proc->first_rx = 0;
     }
     else {
@@ -517,8 +458,8 @@ void fh_if4p5_south_asynch_in(RU_t *ru,int *frame,int *tti) {
 	LOG_E(PHY,"frame_rx %d is not what we expect %d\n",proc->frame_rx,*frame);
 	exit_fun("Exiting");
       }
-      if (proc->tti_rx != *tti) {
-	LOG_E(PHY,"tti_rx %d is not what we expect %d\n",proc->tti_rx,*tti);
+      if (proc->tti_rx != *slot) {
+	LOG_E(PHY,"tti_rx %d is not what we expect %d\n",proc->tti_rx,*slot);
 	exit_fun("Exiting");
       }
     }
@@ -536,7 +477,7 @@ void fh_if4p5_south_asynch_in(RU_t *ru,int *frame,int *tti) {
   
 // RRU IF4p5 TX fronthaul receiver. Assumes an if_device on input and if or rf device on output 
 // receives one subframe's worth of IF4p5 OFDM symbols and OFDM modulates
-void fh_if4p5_north_in(RU_t *ru,int *frame,int *tti) {
+void fh_if4p5_north_in(RU_t *ru,int *frame,int *slot) {
 
   uint32_t symbol_number=0;
   uint32_t symbol_mask, symbol_mask_full;
@@ -549,44 +490,44 @@ void fh_if4p5_north_in(RU_t *ru,int *frame,int *tti) {
   symbol_mask_full = (1<<(ru->nr_frame_parms->symbols_per_slot))-1;
   
   do { 
-    recv_IF4p5(ru, frame, tti, &packet_type, &symbol_number);
+    recv_IF4p5(ru, frame, slot, &packet_type, &symbol_number);
     symbol_mask = symbol_mask | (1<<symbol_number);
   } while (symbol_mask != symbol_mask_full); 
 
   // dump VCD output for first RU in list
   if (ru == RC.ru[0]) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, *frame );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, *tti );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, *slot );
   }
 }
 
-void fh_if5_north_asynch_in(RU_t *ru,int *frame,int *tti) {
+void fh_if5_north_asynch_in(RU_t *ru,int *frame,int *slot) {
 
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   RU_proc_t *proc        = &ru->proc;
   int tti_tx,frame_tx;
   openair0_timestamp timestamp_tx;
 
-  recv_IF5(ru, &timestamp_tx, *tti, IF5_RRH_GW_DL); 
+  recv_IF5(ru, &timestamp_tx, *slot, IF5_RRH_GW_DL); 
       //      printf("Received subframe %d (TS %llu) from RCC\n",tti_tx,timestamp_tx);
 
-  tti_tx = (timestamp_tx/fp->samples_per_subframe)%10;
-  frame_tx    = (timestamp_tx/(fp->samples_per_subframe*10))&1023;
+  tti_tx = (timestamp_tx/fp->samples_per_slot)%fp->slots_per_frame;
+  frame_tx    = (timestamp_tx/(fp->samples_per_slot*fp->slots_per_frame))&1023;
 
   if (proc->first_tx != 0) {
-    *tti = tti_tx;
+    *slot = tti_tx;
     *frame    = frame_tx;
     proc->first_tx = 0;
   }
   else {
-    AssertFatal(tti_tx == *tti,
-                "tti_tx %d is not what we expect %d\n",tti_tx,*tti);
+    AssertFatal(tti_tx == *slot,
+                "tti_tx %d is not what we expect %d\n",tti_tx,*slot);
     AssertFatal(frame_tx == *frame, 
                 "frame_tx %d is not what we expect %d\n",frame_tx,*frame);
   }
 }
 
-void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *tti) {
+void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *slot) {
 
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   nfapi_nr_config_request_t *cfg = &ru->gNB_list[0]->gNB_config;
@@ -594,28 +535,28 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *tti) {
 
   uint16_t packet_type;
   uint32_t symbol_number,symbol_mask,symbol_mask_full=0;
-  int tti_tx,frame_tx;
+  int slot_tx,frame_tx;
 
   LOG_D(PHY, "%s(ru:%p frame, subframe)\n", __FUNCTION__, ru);
   symbol_number = 0;
   symbol_mask = 0;
-//  symbol_mask_full = ((subframe_select(fp,*tti) == SF_S) ? (1<<fp->dl_symbols_in_S_subframe) : (1<<fp->symbols_per_tti))-1;
+//  symbol_mask_full = ((subframe_select(fp,*slot) == SF_S) ? (1<<fp->dl_symbols_in_S_subframe) : (1<<fp->symbols_per_slot))-1;
   do {   
-    recv_IF4p5(ru, &frame_tx, &tti_tx, &packet_type, &symbol_number);
-    if ((nr_slot_select(cfg,tti_tx) == SF_DL) && (symbol_number == 0)) start_meas(&ru->rx_fhaul);
+    recv_IF4p5(ru, &frame_tx, &slot_tx, &packet_type, &symbol_number);
+    if ((nr_slot_select(cfg,slot_tx) == SF_DL) && (symbol_number == 0)) start_meas(&ru->rx_fhaul);
     LOG_D(PHY,"subframe %d (%d): frame %d, subframe %d, symbol %d\n",
-         *tti,nr_slot_select(cfg,*tti),frame_tx,tti_tx,symbol_number);
+         *slot,nr_slot_select(cfg,*slot),frame_tx,slot_tx,symbol_number);
     if (proc->first_tx != 0) {
-      *frame    = frame_tx;
-      *tti = tti_tx;
+      *frame         = frame_tx;
+      *slot          = slot_tx;
       proc->first_tx = 0;
-      //symbol_mask_full = ((subframe_select(fp,*tti) == SF_S) ? (1<<fp->dl_symbols_in_S_subframe) : (1<<fp->symbols_per_tti))-1;
+      //symbol_mask_full = ((subframe_select(fp,*slot) == SF_S) ? (1<<fp->dl_symbols_in_S_subframe) : (1<<fp->symbols_per_slot))-1;
     }
     else {
       AssertFatal(frame_tx == *frame,
 	          "frame_tx %d is not what we expect %d\n",frame_tx,*frame);
-      AssertFatal(tti_tx == *tti,
-		  "tti_tx %d is not what we expect %d\n",tti_tx,*tti);
+      AssertFatal(slot_tx == *slot,
+		  "slot_tx %d is not what we expect %d\n",slot_tx,*slot);
     }
     if (packet_type == IF4p5_PDLFFT) {
       symbol_mask = symbol_mask | (1<<symbol_number);
@@ -623,20 +564,20 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *tti) {
     else AssertFatal(1==0,"Illegal IF4p5 packet type (should only be IF4p5_PDLFFT%d\n",packet_type);
   } while (symbol_mask != symbol_mask_full);    
 
-  if (nr_slot_select(cfg,tti_tx) == SF_DL) stop_meas(&ru->rx_fhaul);
+  if (nr_slot_select(cfg,slot_tx) == SF_DL) stop_meas(&ru->rx_fhaul);
 
-  proc->tti_tx  = tti_tx;
+  proc->tti_tx  = slot_tx;
   proc->frame_tx     = frame_tx;
 
-  if ((frame_tx == 0)&&(tti_tx == 0)) proc->frame_tx_unwrap += 1024;
+  if ((frame_tx == 0)&&(slot_tx == 0)) proc->frame_tx_unwrap += 1024;
 
-  proc->timestamp_tx = ((((uint64_t)frame_tx + (uint64_t)proc->frame_tx_unwrap) * 10) + (uint64_t)tti_tx) * (uint64_t)fp->samples_per_subframe;
+  proc->timestamp_tx = ((((uint64_t)frame_tx + (uint64_t)proc->frame_tx_unwrap) * fp->slots_per_frame) + (uint64_t)slot_tx) * (uint64_t)fp->samples_per_slot;
 
-  LOG_D(PHY,"RU %d/%d TST %llu, frame %d, subframe %d\n",ru->idx,0,(long long unsigned int)proc->timestamp_tx,frame_tx,tti_tx);
+  LOG_D(PHY,"RU %d/%d TST %llu, frame %d, subframe %d\n",ru->idx,0,(long long unsigned int)proc->timestamp_tx,frame_tx,slot_tx);
     // dump VCD output for first RU in list
   if (ru == RC.ru[0]) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame_tx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, tti_tx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, slot_tx );
   }
 
   if (ru->feptx_ofdm) ru->feptx_ofdm(ru);
@@ -661,7 +602,7 @@ void fh_if4p5_north_out(RU_t *ru) {
   RU_proc_t *proc=&ru->proc;
   //NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   //const int subframe     = proc->tti_rx;
-  if (ru->idx==0) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_RU, proc->tti_rx );
+  if (ru->idx==0) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_RX0_RU, proc->tti_rx );
 /*
   if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_UL)) {
     /// **** in TDD during DL send_IF4 of ULTICK to RCC **** ///
@@ -703,7 +644,7 @@ static void* emulatedRF_thread(void* param) {
   return 0;
 }
 
-void rx_rf(RU_t *ru,int *frame,int *tti) {
+void rx_rf(RU_t *ru,int *frame,int *slot) {
 
   RU_proc_t *proc = &ru->proc;
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
@@ -711,25 +652,28 @@ void rx_rf(RU_t *ru,int *frame,int *tti) {
   unsigned int rxs;
   int i;
   openair0_timestamp ts,old_ts;
-    
+   
+  AssertFatal(*slot<fp->slots_per_frame && *slot>=0, "slot %d is illegal (%d)\n",*slot,fp->slots_per_frame);
   for (i=0; i<ru->nb_rx; i++)
-    rxp[i] = (void*)&ru->common.rxdata[i][*tti*fp->samples_per_subframe];
+    rxp[i] = (void*)&ru->common.rxdata[i][*slot*fp->samples_per_slot];
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 1 );
 
   old_ts = proc->timestamp_rx;
 
+  LOG_I(PHY,"Reading %d samples for slot %d (%p)\n",fp->samples_per_slot,*slot,rxp[0]);
+
   if(emulate_rf){
     wait_on_condition(&proc->mutex_emulateRF,&proc->cond_emulateRF,&proc->instance_cnt_emulateRF,"emulatedRF_thread");
     release_thread(&proc->mutex_emulateRF,&proc->instance_cnt_emulateRF,"emulatedRF_thread");
-    rxs = fp->samples_per_subframe;
+    rxs = fp->samples_per_slot;
     ts = old_ts + rxs;
   }
   else{
     rxs = ru->rfdevice.trx_read_func(&ru->rfdevice,
 				   &ts,
 				   rxp,
-				   fp->samples_per_subframe,
+				   fp->samples_per_slot,
 				   ru->nb_rx);
   }
   
@@ -739,43 +683,43 @@ void rx_rf(RU_t *ru,int *frame,int *tti) {
 
   //AssertFatal(rxs == fp->samples_per_subframe,
 	      //"rx_rf: Asked for %d samples, got %d from USRP\n",fp->samples_per_subframe,rxs);
-  if (rxs != fp->samples_per_subframe) LOG_E(PHY, "rx_rf: Asked for %d samples, got %d from USRP\n",fp->samples_per_subframe,rxs);
+  if (rxs != fp->samples_per_slot) LOG_E(PHY, "rx_rf: Asked for %d samples, got %d from USRP\n",fp->samples_per_slot,rxs);
 
   if (proc->first_rx == 1) {
     ru->ts_offset = proc->timestamp_rx;
     proc->timestamp_rx = 0;
   }
   else {
-    if (proc->timestamp_rx - old_ts != fp->samples_per_subframe) {
-      LOG_I(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",proc->timestamp_rx - old_ts - fp->samples_per_subframe,ru->ts_offset);
-      ru->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_subframe);
+    if (proc->timestamp_rx - old_ts != fp->samples_per_slot) {
+      LOG_I(PHY,"rx_rf: rfdevice timing drift of %"PRId64" samples (ts_off %"PRId64")\n",proc->timestamp_rx - old_ts - fp->samples_per_slot,ru->ts_offset);
+      ru->ts_offset += (proc->timestamp_rx - old_ts - fp->samples_per_slot);
       proc->timestamp_rx = ts-ru->ts_offset;
     }
 
   }
-  proc->frame_rx     = (proc->timestamp_rx / (fp->samples_per_subframe*10))&1023;
-  proc->tti_rx  = (proc->timestamp_rx / fp->samples_per_subframe)%10;
+  proc->frame_rx     = (proc->timestamp_rx / (fp->samples_per_slot*fp->slots_per_frame))&1023;
+  proc->tti_rx       = (proc->timestamp_rx / fp->samples_per_slot)%fp->slots_per_frame;
   // synchronize first reception to frame 0 subframe 0
 
-  proc->timestamp_tx = proc->timestamp_rx+(sf_ahead*fp->samples_per_subframe);
-  proc->tti_tx  = (proc->tti_rx+sf_ahead)%10;
-  proc->frame_tx     = (proc->tti_rx>(9-sf_ahead)) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
+  proc->timestamp_tx = proc->timestamp_rx+(sl_ahead*fp->samples_per_slot);
+  proc->tti_tx  = (proc->tti_rx+sl_ahead)%fp->slots_per_frame;
+  proc->frame_tx     = (proc->tti_rx>(fp->slots_per_frame-1-sl_ahead)) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
   
-  LOG_D(PHY,"RU %d/%d TS %llu (off %d), frame %d, subframe %d\n",
+  LOG_I(PHY,"RU %d/%d TS %llu (off %d), frame %d, slot %d.%d / %d\n",
 	ru->idx, 
 	0, 
 	(unsigned long long int)proc->timestamp_rx,
-	(int)ru->ts_offset,proc->frame_rx,proc->tti_rx);
+	(int)ru->ts_offset,proc->frame_rx,proc->tti_rx,proc->tti_tx,fp->slots_per_frame);
 
     // dump VCD output for first RU in list
   if (ru == RC.ru[0]) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_RU, proc->frame_rx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_RU, proc->tti_rx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_RX0_RU, proc->tti_rx );
   }
   
   if (proc->first_rx == 0) {
-    if (proc->tti_rx != *tti){
-      LOG_E(PHY,"Received Timestamp (%llu) doesn't correspond to the time we think it is (proc->tti_rx %d, subframe %d)\n",(long long unsigned int)proc->timestamp_rx,proc->tti_rx,*tti);
+    if (proc->tti_rx != *slot){
+      LOG_E(PHY,"Received Timestamp (%llu) doesn't correspond to the time we think it is (proc->tti_rx %d, subframe %d)\n",(long long unsigned int)proc->timestamp_rx,proc->tti_rx,*slot);
       exit_fun("Exiting");
     }
     
@@ -786,14 +730,14 @@ void rx_rf(RU_t *ru,int *frame,int *tti) {
   } else {
     proc->first_rx = 0;
     *frame = proc->frame_rx;
-    *tti = proc->tti_rx;        
+    *slot  = proc->tti_rx;        
   }
   
   //printf("timestamp_rx %lu, frame %d(%d), subframe %d(%d)\n",ru->timestamp_rx,proc->frame_rx,frame,proc->tti_rx,subframe);
   
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
   
-  if (rxs != fp->samples_per_subframe)
+  if (rxs != fp->samples_per_slot)
   {
     //exit_fun( "problem receiving samples" );
     LOG_E(PHY, "problem receiving samples\n");
@@ -811,17 +755,15 @@ void tx_rf(RU_t *ru) {
   int i;
 
   T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(proc->frame_tx), T_INT(proc->tti_tx),
-    T_INT(0), T_BUFFER(&ru->common.txdata[0][proc->tti_tx * fp->samples_per_subframe], fp->samples_per_subframe * 4));
+    T_INT(0), T_BUFFER(&ru->common.txdata[0][proc->tti_tx * fp->samples_per_slot], fp->samples_per_slot * 4));
 
-  nr_subframe_t SF_type     = nr_slot_select(cfg,proc->tti_tx%10);
-  /*nr_subframe_t prevSF_type = nr_slot_select(cfg,(proc->tti_tx+9)%10);
-  nr_subframe_t nextSF_type = nr_slot_select(cfg,(proc->tti_tx+1)%10);*/
+  nr_subframe_t SF_type     = nr_slot_select(cfg,proc->tti_tx%fp->slots_per_frame);
   int sf_extension = 0;
 
   if ((SF_type == SF_DL) ||
       (SF_type == SF_S)) {
     
-    int siglen=fp->samples_per_subframe,flags=1;
+    int siglen=fp->samples_per_slot,flags=1;
 /*    
     if (SF_type == SF_S) {
       siglen = fp->dl_symbols_in_S_subframe*(fp->ofdm_symbol_size+fp->nb_prefix_samples0);
@@ -843,10 +785,10 @@ void tx_rf(RU_t *ru) {
       sf_extension = ru->N_TA_offset<<1;
     } */
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, proc->tti_tx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, proc->tti_tx );
 
     for (i=0; i<ru->nb_tx; i++)
-      txp[i] = (void*)&ru->common.txdata[i][(proc->tti_tx*fp->samples_per_subframe)-sf_extension];
+      txp[i] = (void*)&ru->common.txdata[i][(proc->tti_tx*fp->samples_per_slot)-sf_extension];
 /*
     if (proc->tti_tx == 0){
       write_output("txdataF_frame.m","txdataF_frame",&ru->common.txdataF_BF[i],fp->samples_per_subframe_wCP, 1, 1);
@@ -933,47 +875,6 @@ static void* ru_thread_asynch_rxtx( void* param ) {
 
 
 
-
-void wakeup_slaves(RU_proc_t *proc) {
-
-  int i;
-  struct timespec wait;
-  
-  wait.tv_sec=0;
-  wait.tv_nsec=5000000L;
-  
-  for (i=0;i<proc->num_slaves;i++) {
-    RU_proc_t *slave_proc = proc->slave_proc[i];
-    // wake up slave FH thread
-    // lock the FH mutex and make sure the thread is ready
-    if (pthread_mutex_timedlock(&slave_proc->mutex_FH,&wait) != 0) {
-      LOG_E( PHY, "ERROR pthread_mutex_lock for RU %d slave %d (IC %d)\n",proc->ru->idx,slave_proc->ru->idx,slave_proc->instance_cnt_FH);
-      exit_fun( "error locking mutex_rxtx" );
-      break;
-    }
-    
-    int cnt_slave            = ++slave_proc->instance_cnt_FH;
-    slave_proc->frame_rx     = proc->frame_rx;
-    slave_proc->tti_rx  = proc->tti_rx;
-    slave_proc->timestamp_rx = proc->timestamp_rx;
-    slave_proc->timestamp_tx = proc->timestamp_tx; 
-
-    pthread_mutex_unlock( &slave_proc->mutex_FH );
-    
-    if (cnt_slave == 0) {
-      // the thread was presumably waiting where it should and can now be woken up
-      if (pthread_cond_signal(&slave_proc->cond_FH) != 0) {
-	LOG_E( PHY, "ERROR pthread_cond_signal for RU %d, slave RU %d\n",proc->ru->idx,slave_proc->ru->idx);
-          exit_fun( "ERROR pthread_cond_signal" );
-	  break;
-      }
-    } else {
-      LOG_W( PHY,"[RU] Frame %d, slave %d thread busy!! (cnt_FH %i)\n",slave_proc->frame_rx,slave_proc->ru->idx, cnt_slave);
-      exit_fun( "FH thread busy" );
-      break;
-    }             
-  }
-}
 
 /*!
  * \brief The prach receive thread of RU.
@@ -1417,7 +1318,7 @@ static void* ru_thread_tx( void* param ) {
   	       
 //printf("~~~~~~~~~~~~~~~~start process for ru_thread_tx %d.%d\n", proc->frame_tx, proc->tti_tx);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, proc->tti_tx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, proc->tti_tx );
     // do TX front-end processing if needed (precoding and/or IDFTs)
     if (ru->feptx_prec) ru->feptx_prec(ru);
   	  
@@ -1502,7 +1403,7 @@ static void* ru_thread( void* param ) {
   RU_proc_t          *proc    = &ru->proc;
   NR_DL_FRAME_PARMS *fp      = ru->nr_frame_parms;
   int                ret;
-  int                subframe =9;
+  int                slot = fp->slots_per_frame-1;
   int                frame    =1023; 
   char               filename[40];
   int                print_frame = 2;
@@ -1594,20 +1495,20 @@ static void* ru_thread( void* param ) {
 
     // these are local subframe/frame counters to check that we are in synch with the fronthaul timing.
     // They are set on the first rx/tx in the underly FH routines.
-    if (subframe==9) { 
-      subframe=0;
+    if (slot==(fp->slots_per_frame-1)) { 
+      slot=0;
       frame++;
       frame&=1023;
     } else {
-      subframe++;
+      slot++;
     }      
 
     // synchronization on input FH interface, acquire signals/data and block
-    if (ru->fh_south_in) ru->fh_south_in(ru,&frame,&subframe);
+    if (ru->fh_south_in) ru->fh_south_in(ru,&frame,&slot);
     else AssertFatal(1==0, "No fronthaul interface at south port");
 
-    LOG_D(PHY,"AFTER fh_south_in - SFN/SF:%d%d RU->proc[RX:%d%d TX:%d%d] RC.gNB[0][0]:[RX:%d%d TX(SFN):%d]\n",
-        frame,subframe,
+    LOG_I(PHY,"AFTER fh_south_in - SFN/SL:%d%d RU->proc[RX:%d.%d TX:%d.%d] RC.gNB[0][0]:[RX:%d%d TX(SFN):%d]\n",
+        frame,slot,
         proc->frame_rx,proc->tti_rx,
         proc->frame_tx,proc->tti_tx,
         RC.gNB[0][0]->proc.frame_rx,RC.gNB[0][0]->proc.slot_rx,
@@ -1631,8 +1532,6 @@ static void* ru_thread( void* param ) {
     if (ru->feprx) ru->feprx(ru);
 
     // At this point, all information for subframe has been received on FH interface
-    // If this proc is to provide synchronization, do so
-    wakeup_slaves(proc);
 
     // wakeup all gNB processes waiting for this RU
     if (ru->num_gNB>0) wakeup_gNB_L1s(ru);
@@ -1658,7 +1557,7 @@ static void* ru_thread( void* param ) {
           for (i=0; i<ru->nb_tx; i++)
           {
             sprintf(filename,"tx%ddataF_frame%d_sf%d.m", i, print_frame, proc->tti_tx);
-            LOG_M(filename,"txdataF_frame",&ru->common.txdataF_BF[i][0],fp->samples_per_subframe_wCP, 1, 1);
+            LOG_M(filename,"txdataF_frame",&ru->common.txdataF_BF[i][0],fp->samples_per_slot_wCP, 1, 1);
             if(proc->tti_tx == 9)
             {
               sprintf(filename,"tx%ddata_frame%d.m", i, print_frame);
@@ -2247,16 +2146,9 @@ void set_function_spec_param(RU_t *ru)
     ru->feprx                  = (get_nprocs()<=2) ? fep_full : fep_full;                   // this is frequency-shift + DFTs
     ru->feptx_prec             = feptx_prec;                 // need to do transmit Precoding + IDFTs
     ru->feptx_ofdm             = (get_nprocs()<=2) ? nr_feptx_ofdm : nr_feptx_ofdm_2thread;                 // need to do transmit Precoding + IDFTs
-    if (ru->if_timing == synch_to_other) {
-      ru->fh_south_in          = fh_slave_south_in;                  // synchronize to master
-      ru->fh_south_out         = fh_if5_mobipass_south_out;          // use send_IF5 for mobipass
-      ru->fh_south_asynch_in   = fh_if5_south_asynch_in_mobipass;    // UL is asynchronous
-    }
-    else {
-      ru->fh_south_in          = fh_if5_south_in;     // synchronous IF5 reception
-      ru->fh_south_out         = fh_if5_south_out;    // synchronous IF5 transmission
-      ru->fh_south_asynch_in   = NULL;                // no asynchronous UL
-    }
+    ru->fh_south_in          = fh_if5_south_in;     // synchronous IF5 reception
+    ru->fh_south_out         = fh_if5_south_out;    // synchronous IF5 transmission
+    ru->fh_south_asynch_in   = NULL;                // no asynchronous UL
     ru->start_rf               = NULL;                 // no local RF
     ru->stop_rf                = NULL;
     ru->start_if               = start_if;             // need to start if interface for IF5

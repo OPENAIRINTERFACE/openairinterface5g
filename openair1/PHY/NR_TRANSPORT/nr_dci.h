@@ -35,7 +35,7 @@ uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
 uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
                             t_nrPolar_paramsPtr *nrPolar_params,
                             uint32_t **gold_pdcch_dmrs,
-                            int32_t** txdataF,
+                            int32_t* txdataF,
                             int16_t amp,
                             NR_DL_FRAME_PARMS frame_parms,
                             nfapi_nr_config_request_t config);

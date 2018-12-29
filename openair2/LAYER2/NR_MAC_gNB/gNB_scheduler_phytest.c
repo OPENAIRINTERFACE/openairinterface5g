@@ -30,6 +30,7 @@
 
 #include "nr_mac_gNB.h"
 #include "SCHED_NR/sched_nr.h"
+#include "mac_proto.h"
 
 extern RAN_CONTEXT_t RC;
 
@@ -48,13 +49,12 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
   nfapi_tx_request_pdu_t            *TX_req;
   nfapi_nr_config_request_t *cfg = &nr_mac->config[0];
 
-  uint16_t sfn_sf = frameP << 4 | slotP;
+  uint16_t sfn_sf = frameP << 7 | slotP;
   int dl_carrier_bandwidth = cfg->rf_config.dl_carrier_bandwidth.value;
 
   // everything here is hard-coded to 30 kHz
-  int scs = kHz30;
-  int mu = 1;
-  int slots_per_frame = 10 * (1<<mu);
+  int scs = get_dlscs(cfg);
+  int slots_per_frame = get_spf(cfg);
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     LOG_I(MAC, "Scheduling common search space DCI type 1 for CC_id %d\n",CC_id);
 

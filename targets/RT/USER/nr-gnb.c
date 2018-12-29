@@ -118,8 +118,8 @@ extern openair0_config_t openair0_cfg[MAX_CARDS];
 
 extern int transmission_mode;
 
+uint16_t sl_ahead=4;
 uint16_t sf_ahead=4;
-
 //pthread_t                       main_gNB_thread;
 
 time_stats_t softmodem_stats_mt; // main thread
@@ -225,7 +225,7 @@ static inline int rxtx(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc, char *thread_
 
 /// end
   // *****************************************
-  // TX processing for subframe n+sf_ahead
+  // TX processing for subframe n+sl_ahead
   // run PHY TX procedures the one after the other for all CCs to avoid race conditions
   // (may be relaxed in the future for performance reasons)
   // *****************************************
@@ -311,8 +311,8 @@ static void* gNB_L1_thread_tx(void* param) {
     // (may be relaxed in the future for performance reasons)
     // *****************************************
     
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX1_GNB,proc->slot_tx);
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX1_GNB,proc->slot_rx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SLOT_NUMBER_TX1_GNB,proc->slot_tx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SLOT_NUMBER_RX1_GNB,proc->slot_rx);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX1_GNB,proc->frame_tx);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX1_GNB,proc->frame_rx);
 
@@ -364,8 +364,8 @@ static void* gNB_L1_thread( void* param ) {
     if (wait_on_condition(&proc->mutex,&proc->cond,&proc->instance_cnt,thread_name)<0) break;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX0, 1 );
 
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_GNB,proc->slot_tx);
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_GNB,proc->slot_rx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SLOT_NUMBER_TX0_GNB,proc->slot_tx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SLOT_NUMBER_RX0_GNB,proc->slot_rx);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_GNB,proc->frame_tx);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_GNB,proc->frame_rx);
 
@@ -433,11 +433,11 @@ void gNB_top(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, char *string, struct 
   if (!oai_exit) {
     T(T_ENB_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx), T_INT(proc->slot_rx));
 
-    L1_proc->timestamp_tx = ru_proc->timestamp_rx + (sf_ahead*fp->samples_per_subframe);
+    L1_proc->timestamp_tx = ru_proc->timestamp_rx + (sl_ahead*fp->samples_per_slot);
     L1_proc->frame_rx     = ru_proc->frame_rx;
     L1_proc->slot_rx      = ru_proc->tti_rx;
-    L1_proc->frame_tx     = (L1_proc->slot_rx > (9-sf_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
-    L1_proc->slot_tx      = (L1_proc->slot_rx + sf_ahead)%10;
+    L1_proc->frame_tx     = (L1_proc->slot_rx > (fp->slots_per_frame-1-sl_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
+    L1_proc->slot_tx      = (L1_proc->slot_rx + sl_ahead)%fp->slots_per_frame;
 
     if (rxtx(gNB,L1_proc,string) < 0) LOG_E(PHY,"gNB %d CC_id %d failed during execution\n",gNB->Mod_id,gNB->CC_id);
     ru_proc->timestamp_tx = L1_proc->timestamp_tx;
@@ -485,7 +485,7 @@ int wakeup_txfh(gNB_L1_rxtx_proc_t *proc,PHY_VARS_gNB *gNB) {
     ru_proc->tti_tx       = proc->slot_tx;
     ru_proc->frame_tx     = proc->frame_tx;
 
-  
+    LOG_I(PHY,"Signaling tx_thread_fh for %d.%d\n",ru_proc->frame_tx,ru_proc->tti_tx);  
     // the thread can now be woken up
     if (pthread_cond_signal(&ru_proc->cond_gNBs) != 0) {
       LOG_E( PHY, "[gNB] ERROR pthread_cond_signal for gNB TXnp4 thread\n");
@@ -576,16 +576,16 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
   wait.tv_nsec=5000000L;
 
   /* accept some delay in processing - up to 5ms */
-  for (i = 0; i < 10 && L1_proc->instance_cnt == 0; i++) {
-    LOG_W( PHY,"[gNB] Frame %d Subframe %d, gNB RXn-TXnp4 thread busy!! (cnt %i)\n", L1_proc->frame_tx, L1_proc->slot_tx, L1_proc->instance_cnt);
-    usleep(500);
+  for (i = 0; i < fp->slots_per_frame && L1_proc->instance_cnt == 0; i++) {
+    LOG_W( PHY,"[gNB] SFN.SL %d.%d, gNB RXn-TXnp4 thread busy!! (i %d, cnt %i)\n", L1_proc->frame_tx, L1_proc->slot_tx, i,L1_proc->instance_cnt);
+    usleep(100);
   }
   if (L1_proc->instance_cnt == 0) {
     exit_fun( "TX thread busy" );
     return(-1);
   }
 
-  // wake up TX for subframe n+sf_ahead
+  // wake up TX for subframe n+sl_ahead
   // lock the TX mutex and make sure the thread is ready
   if (pthread_mutex_timedlock(&L1_proc->mutex,&wait) != 0) {
     LOG_E( PHY, "[gNB] ERROR pthread_mutex_lock for gNB RXTX thread %d (IC %d)\n", L1_proc->slot_rx&1,L1_proc->instance_cnt );
@@ -599,15 +599,15 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
   // TS_rx is the last received timestamp (start of 1st slot), TS_tx is the desired 
   // transmitted timestamp of the next TX slot (first).
   // The last (TS_rx mod samples_per_frame) was n*samples_per_tti, 
-  // we want to generate subframe (n+sf_ahead), so TS_tx = TX_rx+sf_ahead*samples_per_tti,
-  // and proc->slot_tx = proc->slot_rx+sf_ahead
-  L1_proc->timestamp_tx = ru_proc->timestamp_rx + (sf_ahead*fp->samples_per_subframe);
+  // we want to generate subframe (n+sl_ahead), so TS_tx = TX_rx+sl_ahead*samples_per_tti,
+  // and proc->slot_tx = proc->slot_rx+sl_ahead
+  L1_proc->timestamp_tx = ru_proc->timestamp_rx + (sl_ahead*fp->samples_per_slot);
   L1_proc->frame_rx     = ru_proc->frame_rx;
   L1_proc->slot_rx  = ru_proc->tti_rx;
-  L1_proc->frame_tx     = (L1_proc->slot_rx > (9-sf_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
-  L1_proc->slot_tx  = (L1_proc->slot_rx + sf_ahead)%10;
+  L1_proc->frame_tx     = (L1_proc->slot_rx > (fp->slots_per_frame-1-sl_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
+  L1_proc->slot_tx  = (L1_proc->slot_rx + sl_ahead)%fp->slots_per_frame;
 
-//printf("~~~~~~~~~~~~~~~~~~~~~~passing parameter IC = %d, RX: %d.%d, TX: %d.%d to L1 sf_ahead = %d\n", L1_proc->instance_cnt, L1_proc->frame_rx, L1_proc->slot_rx, L1_proc->frame_tx, L1_proc->slot_tx, sf_ahead);
+  LOG_I(PHY,"wakeupL1: passing parameter IC = %d, RX: %d.%d, TX: %d.%d to L1 sl_ahead = %d\n", L1_proc->instance_cnt, L1_proc->frame_rx, L1_proc->slot_rx, L1_proc->frame_tx, L1_proc->slot_tx, sl_ahead);
 
   // the thread can now be woken up
   if (pthread_cond_signal(&L1_proc->cond) != 0) {
@@ -1005,7 +1005,6 @@ void init_eNB_afterRU(void) {
       // map antennas and PRACH signals to gNB RX
       if (0) AssertFatal(gNB->num_RU>0,"Number of RU attached to gNB %d is zero\n",gNB->Mod_id);
       LOG_I(PHY,"Mapping RX ports from %d RUs to gNB %d\n",gNB->num_RU,gNB->Mod_id);
-      gNB->gNB_config.rf_config.tx_antenna_ports.value  = 0;
 
       //LOG_I(PHY,"Overwriting gNB->prach_vars.rxsigF[0]:%p\n", gNB->prach_vars.rxsigF[0]);
 
@@ -1014,7 +1013,6 @@ void init_eNB_afterRU(void) {
       LOG_I(PHY,"gNB->num_RU:%d\n", gNB->num_RU);
 
       for (ru_id=0,aa=0;ru_id<gNB->num_RU;ru_id++) {
-	gNB->gNB_config.rf_config.tx_antenna_ports.value    += gNB->RU_list[ru_id]->nb_rx;
 
 	AssertFatal(gNB->RU_list[ru_id]->common.rxdataF!=NULL,
 		    "RU %d : common.rxdataF is NULL\n",
@@ -1037,29 +1035,6 @@ void init_eNB_afterRU(void) {
        * In monolithic mode, we come here with nb_antennas_rx == 0
        * (not tested in other modes).
        */
-      if (gNB->gNB_config.rf_config.tx_antenna_ports.value < 1)
-      {
-        LOG_I(PHY, "%s() ************* DJP ***** gNB->gNB_config.rf_config.tx_antenna_ports:%d - GOING TO HARD CODE TO 1", __FUNCTION__, gNB->gNB_config.rf_config.tx_antenna_ports.value);
-        gNB->gNB_config.rf_config.tx_antenna_ports.value = 1;
-      }
-      else
-      {
-        //LOG_I(PHY," Delete code\n");
-      }
-
-      if (gNB->gNB_config.rf_config.tx_antenna_ports.value < 1)
-      {
-        LOG_I(PHY, "%s() ************* DJP ***** gNB->gNB_config.rf_config.tx_antenna_ports:%d - GOING TO HARD CODE TO 1", __FUNCTION__, gNB->gNB_config.rf_config.tx_antenna_ports.value);
-        gNB->gNB_config.rf_config.tx_antenna_ports.value = 1;
-      }
-      else
-      {
-        //LOG_I(PHY," Delete code\n");
-      }
-
-      AssertFatal(gNB->gNB_config.rf_config.tx_antenna_ports.value >0,
-		  "inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,gNB->gNB_config.rf_config.tx_antenna_ports.value);
-      LOG_I(PHY,"inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,gNB->gNB_config.rf_config.tx_antenna_ports.value);
 /// Transport init necessary for NR synchro
       //init_transport(gNB);
       //init_precoding_weights(RC.gNB[inst][CC_id]);

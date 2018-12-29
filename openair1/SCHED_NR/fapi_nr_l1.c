@@ -62,12 +62,12 @@ void handle_nfapi_nr_dci_dl_pdu(PHY_VARS_gNB *gNB,
   int idx                        = slot&1;
   NR_gNB_PDCCH *pdcch_vars       = &gNB->pdcch_vars;
 
-  LOG_D(PHY,"Frame %d, Slot %d: DCI processing - populating pdcch_vars->dci_alloc[%d] proc:slot_tx:%d idx:%d pdcch_vars->num_dci:%d\n",frame,slot, pdcch_vars->num_dci, proc->slot_tx, idx, pdcch_vars->num_dci);
+  LOG_I(PHY,"Frame %d, Slot %d: DCI processing - populating pdcch_vars->dci_alloc[%d] proc:slot_tx:%d idx:%d pdcch_vars->num_dci:%d\n",frame,slot, pdcch_vars->num_dci, proc->slot_tx, idx, pdcch_vars->num_dci);
 
   // copy dci configuration into gNB structure
   nr_fill_dci_and_dlsch(gNB,frame,slot,proc,&pdcch_vars->dci_alloc[pdcch_vars->num_dci],dl_config_pdu);
 
-  LOG_D(PHY,"Frame %d, Slot %d: DCI processing - populated pdcch_vars->dci_alloc[%d] proc:slot_tx:%d idx:%d pdcch_vars->num_dci:%d\n",proc->frame_tx,proc->slot_tx, pdcch_vars->num_dci, proc->slot_tx, idx, pdcch_vars->num_dci);
+  LOG_I(PHY,"Frame %d, Slot %d: DCI processing - populated pdcch_vars->dci_alloc[%d] proc:slot_tx:%d idx:%d pdcch_vars->num_dci:%d\n",proc->frame_tx,proc->slot_tx, pdcch_vars->num_dci, proc->slot_tx, idx, pdcch_vars->num_dci);
 }
 
 
@@ -80,7 +80,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   nfapi_nr_dl_config_request_t  *DL_req      = Sched_INFO->DL_req;
   nfapi_tx_request_t            *TX_req      = Sched_INFO->TX_req;
   frame_t                       frame        = Sched_INFO->frame;
-  sub_frame_t                   slot     = Sched_INFO->slot;
+  sub_frame_t                   slot         = Sched_INFO->slot;
 
   AssertFatal(RC.gNB!=NULL,"RC.gNB is null\n");
   AssertFatal(RC.gNB[Mod_id]!=NULL,"RC.gNB[%d] is null\n",Mod_id);
@@ -102,6 +102,8 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
 
   int do_oai =0;
   int dont_send =0;
+
+  gNB->pdcch_vars.num_dci=0;
 
   for (i=0;i<number_dl_pdu;i++) {
     dl_config_pdu = &DL_req->dl_config_request_body.dl_config_pdu_list[i];

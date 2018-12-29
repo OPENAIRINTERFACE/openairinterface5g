@@ -310,8 +310,8 @@ typedef struct NRRrcConfigurationReq_s {
   uint8_t                 tdd_config_s[MAX_NUM_CCs];
   lte_prefix_type_t       DL_prefix_type[MAX_NUM_CCs];
   lte_prefix_type_t       UL_prefix_type[MAX_NUM_CCs];
-  int16_t                 eutra_band[MAX_NUM_CCs];
-  uint32_t                downlink_frequency[MAX_NUM_CCs];
+  int16_t                 nr_band[MAX_NUM_CCs];
+  uint64_t                downlink_frequency[MAX_NUM_CCs];
   int32_t                 uplink_frequency_offset[MAX_NUM_CCs];
   int16_t                 Nid_cell[MAX_NUM_CCs];// for testing, change later
   int16_t                 N_RB_DL[MAX_NUM_CCs];// for testing, change later

@@ -149,8 +149,6 @@ typedef struct {
 #define NFAPI_NR_SUBFRAME_CONFIG_NUMEROLOGY_INDEX_MU_TAG 0x5006
 
 typedef struct {
-  nfapi_uint16_tlv_t  tx_antenna_ports;
-  nfapi_uint16_tlv_t  rx_antenna_ports; 
   nfapi_uint16_tlv_t  dl_carrier_bandwidth;
   nfapi_uint16_tlv_t  ul_carrier_bandwidth;
   nfapi_uint16_tlv_t  dl_bwp_subcarrierspacing;
@@ -161,18 +159,17 @@ typedef struct {
   nfapi_uint16_tlv_t  ul_absolutefrequencypointA;
   nfapi_uint16_tlv_t  dl_offsettocarrier;
   nfapi_uint16_tlv_t  ul_offsettocarrier;
-  nfapi_uint16_tlv_t  dl_scs_subcarrierspacing;
-  nfapi_uint16_tlv_t  ul_scs_subcarrierspacing;
-  nfapi_uint16_tlv_t  dl_scs_specificcarrier_k0;
-  nfapi_uint16_tlv_t  ul_scs_specificcarrier_k0;
+  nfapi_uint16_tlv_t  dl_subcarrierspacing;
+  nfapi_uint16_tlv_t  ul_subcarrierspacing;
+  nfapi_uint16_tlv_t  dl_specificcarrier_k0;
+  nfapi_uint16_tlv_t  ul_specificcarrier_k0;
   nfapi_uint16_tlv_t  NIA_subcarrierspacing;
 } nfapi_nr_rf_config_t;
 
-#define NFAPI_NR_RF_CONFIG_DL_CHANNEL_BANDWIDTH_TAG 0x500A
-#define NFAPI_NR_RF_CONFIG_UL_CHANNEL_BANDWIDTH_TAG 0x500B
-#define NFAPI_NR_RF_CONFIG_REFERENCE_SIGNAL_POWER_TAG 0x500C
-#define NFAPI_NR_RF_CONFIG_TX_ANTENNA_PORTS_TAG 0x500D
-#define NFAPI_NR_RF_CONFIG_RX_ANTENNA_PORTS_TAG 0x500E
+#define NFAPI_NR_RF_CONFIG_DL_CARRIER_BANDWIDTH_TAG 0x500A
+#define NFAPI_NR_RF_CONFIG_UL_CARRIER_BANDWIDTH_TAG 0x500B
+#define NFAPI_NR_RF_CONFIG_DL_SUBCARRIERSPACING_TAG 0x500C
+#define NFAPI_NR_RF_CONFIG_UL_SUBCARRIERSPACING_TAG 0x500D
 
 typedef struct {
   nfapi_uint16_tlv_t  physical_cell_id;

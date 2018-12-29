@@ -83,61 +83,9 @@ uint8_t nr_ss_param_M_type_0_mux1_FR2[14] = {1,0.5,1,0.5,1,0.5,0.5,0.5,0.5,1,0.5
 /// LUT for SS first symbol index indexed by ss index
 uint8_t nr_ss_first_symb_idx_type_0_mux1_FR1[8] = {0,0,1,2,1,2,1,2};
 
-int is_nr_UL_sf(NR_COMMON_channels_t * ccP, sub_frame_t subframeP){
-  // if FDD return dummy value
-  if (ccP->tdd_Config == NULL)
-    return (0);
+int is_nr_UL_slot(NR_COMMON_channels_t * ccP, int slot){
 
-  switch (ccP->tdd_Config->subframeAssignment) {
-  case 1:
-    switch (subframeP) {
-    case 0:
-    case 4:
-    case 5:
-    case 9:
-      return (0);
-      break;
-    case 2:
-    case 3:
-    case 7:
-    case 8:
-      return (1);
-      break;
-    default:
-      return (0);
-      break;
-    }
-    break;
-  case 3:
-    if ((subframeP <= 1) || (subframeP >= 5))
-      return (0);
-    else if ((subframeP > 1) && (subframeP < 5))
-      return (1);
-    else
-      AssertFatal(1 == 0, "Unknown subframe number\n");
-    break;
-  case 4:
-    if ((subframeP <= 1) || (subframeP >= 4))
-      return (0);
-    else if ((subframeP > 1) && (subframeP < 4))
-      return (1);
-    else
-      AssertFatal(1 == 0, "Unknown subframe number\n");
-    break;
-  case 5:
-    if ((subframeP <= 1) || (subframeP >= 3))
-      return (0);
-    else if ((subframeP > 1) && (subframeP < 3))
-      return (1);
-    else
-      AssertFatal(1 == 0, "Unknown subframe number\n");
-    break;
-  default:
-    AssertFatal(1 == 0,
-    "subframe %d Unsupported TDD configuration %d\n",
-    subframeP, (int) ccP->tdd_Config->subframeAssignment);
-    break;
-  }
+    return (0);
 }
 
 void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
@@ -167,6 +115,7 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* p
       if (N_RB < 106) { // Minimum 40Mhz bandwidth not satisfied
         switch(pdcch_scs) {
           case kHz15:
+            AssertFatal(1==0,"kHz15 not supported yet\n");   
             break;
 
           case kHz30:
@@ -185,6 +134,7 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* p
         AssertFatal(ss_idx<10 ,"Invalid scs_common/pdcch_scs combination %d/%d \n", scs_common, pdcch_scs);
         switch(pdcch_scs) {
           case kHz15:
+              AssertFatal(1==0,"15 kHz SCS not supported yet\n"); 
             break;
 
           case kHz30:
@@ -261,4 +211,29 @@ void nr_configure_css_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_
                                             nfapi_nr_search_space_t* search_space) {
 
   
+}
+
+int get_dlscs(nfapi_nr_config_request_t *cfg) {
+
+  return(cfg->rf_config.dl_subcarrierspacing.value);
+}
+
+
+int get_ulscs(nfapi_nr_config_request_t *cfg) {
+
+  return(cfg->rf_config.ul_subcarrierspacing.value);
+} 
+
+int get_spf(nfapi_nr_config_request_t *cfg) {
+
+  int mu = cfg->rf_config.dl_subcarrierspacing.value;
+  AssertFatal(mu>=0&&mu<4,"Illegal scs %d\n",mu);
+
+  return(10 * (1<<mu));
+} 
+
+int to_absslot(nfapi_nr_config_request_t *cfg,int frame,int slot) {
+
+  return(get_spf(cfg)*frame) + slot; 
+
 }

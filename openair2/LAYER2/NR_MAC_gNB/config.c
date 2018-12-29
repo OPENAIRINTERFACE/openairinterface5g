@@ -111,6 +111,7 @@ uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint32_t bw)
 
   int i;
 
+  LOG_I(MAC,"Searching for nr band %d DL Carrier frequency %llu bw %u\n",nr_bandP,(long long unsigned int)dl_CarrierFreq,bw);
   AssertFatal(nr_bandP < 86, "nr_band %d > 86\n", nr_bandP);
   for (i = 0; i < 30 && nr_bandtable[i].band != nr_bandP; i++);
 
@@ -147,7 +148,7 @@ uint64_t from_nrarfcn(int nr_bandP, uint32_t dl_nrarfcn)
   
   AssertFatal(nr_bandP < 87, "nr_band %d > 86\n", nr_bandP);
   for (i = 0; i < 31 && nr_bandtable[i].band != nr_bandP; i++);
-  AssertFatal(dl_nrarfcn>=nr_bandtable[i].N_OFFs_DL,"dl_nrarfcn %d < N_OFFs_DL %d\n",dl_nrarfcn, nr_bandtable[i].N_OFFs_DL);
+  AssertFatal(dl_nrarfcn>=nr_bandtable[i].N_OFFs_DL,"dl_nrarfcn %u < N_OFFs_DL %llu\n",dl_nrarfcn, (long long unsigned int)nr_bandtable[i].N_OFFs_DL);
  
   return 1000*(nr_bandtable[i].dl_min + (dl_nrarfcn - nr_bandtable[i].N_OFFs_DL) * deltaFglobal);
 	  
@@ -167,13 +168,18 @@ void config_nr_mib(int Mod_idP,
 
   cfg->num_tlv=0;
   
-  cfg->rf_config.tx_antenna_ports.value            = p_gNBP;
-  cfg->rf_config.tx_antenna_ports.tl.tag = NFAPI_RF_CONFIG_TX_ANTENNA_PORTS_TAG;
+  cfg->rf_config.dl_subcarrierspacing.value  = subCarrierSpacingCommon;
+
+  cfg->rf_config.dl_subcarrierspacing.tl.tag = NFAPI_NR_RF_CONFIG_DL_SUBCARRIERSPACING_TAG;
   cfg->num_tlv++;
   
-  cfg->sch_config.ssb_subcarrier_offset.value = ssb_SubcarrierOffset;
+  cfg->rf_config.ul_subcarrierspacing.value  = subCarrierSpacingCommon;
+  cfg->rf_config.ul_subcarrierspacing.tl.tag = NFAPI_NR_RF_CONFIG_UL_SUBCARRIERSPACING_TAG;
+  cfg->num_tlv++;
 
-  
+  cfg->sch_config.ssb_subcarrier_offset.value = ssb_SubcarrierOffset;
+  cfg->sch_config.ssb_subcarrier_offset.tl.tag = NFAPI_NR_SCH_CONFIG_SSB_SUBCARRIER_OFFSET_TAG;
+  cfg->num_tlv++; 
 }
 
 void config_common(int Mod_idP, 
@@ -228,7 +234,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                            int CC_idP,
                            int p_gNB,
                            int nr_bandP,
-                           int dl_CarrierFreqP,
+                           uint64_t dl_CarrierFreqP,
                            int dl_BandwidthP,
                            NR_BCCH_BCH_Message_t *mib,
                            NR_ServingCellConfigCommon_t *servingcellconfigcommon
