@@ -672,7 +672,6 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
   decoderState = polar_decoder_int16(pbch_e_rx,(uint8_t*)&nr_ue_pbch_vars->pbch_a_prime,currentPtr);
 
-
   if(decoderState > 0)	return(decoderState);
   	
   //  printf("polar decoder output 0x%08x\n",nr_ue_pbch_vars->pbch_a_prime);

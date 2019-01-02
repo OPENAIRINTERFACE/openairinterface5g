@@ -584,7 +584,7 @@ int main(int argc, char **argv)
 	    n_errors_payload++;
 	}
 
-	if (ret<0) n_errors++;
+	if (ret!=0) n_errors++;
       }
     } //noise trials
 

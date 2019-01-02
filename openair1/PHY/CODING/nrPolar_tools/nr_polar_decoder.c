@@ -1138,7 +1138,7 @@ uint32_t polar_decoder_int16(int16_t *input,
   }
   else if (len<=64) {
     Ar = (B[0]>>crclen) | (B[1]<<(64-crclen));;
-    uint8_t A64_flip[4];
+    uint8_t A64_flip[8];
     uint64_t Aprime= (uint32_t)(Ar<<(64-len));
     A64_flip[0]=((uint8_t*)&Aprime)[7];
     A64_flip[1]=((uint8_t*)&Aprime)[6];

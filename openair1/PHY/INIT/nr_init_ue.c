@@ -985,8 +985,6 @@ void set_default_frame_parms_single(nfapi_nr_config_request_t *config, NR_DL_FRA
         config->subframe_config.dl_cyclic_prefix_type.value = 0; //NORMAL
         config->rf_config.dl_carrier_bandwidth.value = 106;
         config->rf_config.ul_carrier_bandwidth.value = 106;
-        config->rf_config.tx_antenna_ports.value = 1;
-        config->rf_config.rx_antenna_ports.value = 1;
         config->sch_config.physical_cell_id.value = 0;
 
         frame_parms->frame_type          = FDD;
