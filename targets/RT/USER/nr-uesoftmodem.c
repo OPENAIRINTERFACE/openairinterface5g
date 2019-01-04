@@ -85,10 +85,10 @@ unsigned short config_frames[4] = {2,9,11,13};
 // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
 // at eNB 0, an UL scope for every UE
 FD_lte_phy_scope_ue  *form_ue[NUMBER_OF_UE_MAX];
-FD_lte_phy_scope_enb *form_enb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
-FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
+//FD_lte_phy_scope_enb *form_enb[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
+//FD_stats_form                  *form_stats=NULL,*form_stats_l2=NULL;
 char title[255];
-unsigned char                   scope_enb_num_ue = 2;
+//unsigned char                   scope_enb_num_ue = 2;
 static pthread_t                forms_thread; //xforms
 #endif //XFORMS
 #include "nr-uesoftmodem.h"
@@ -118,6 +118,8 @@ int                      threequarter_fs=0;
 
 uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
+
+extern int16_t nr_dlsch_demod_shift;
 
 
 //static char                    *conf_config_file_name = NULL;
@@ -435,21 +437,21 @@ static void *scope_thread(void *arg) {
 
 #endif
 
-    while (!oai_exit) {
+  while (!oai_exit) {
       //len = dump_ue_stats (PHY_vars_UE_g[0][0], &PHY_vars_UE_g[0][0]->proc.proc_rxtx[0],stats_buffer, 0, mode,rx_input_level_dBm);
       //fl_set_object_label(form_stats->stats_text, stats_buffer);
-      fl_clear_browser(form_stats->stats_text);
-      fl_add_browser_line(form_stats->stats_text, stats_buffer);
+      //fl_clear_browser(form_stats->stats_text);
+      //fl_add_browser_line(form_stats->stats_text, stats_buffer);
       
-      if (PHY_vars_UE_g[0][0]->is_synchronized == 1)
+      //if (PHY_vars_UE_g[0][0]->is_synchronized == 1)
 	phy_scope_UE(form_ue[0],
 		     PHY_vars_UE_g[0][0],
-		     0,0,7);
+		     0,0,1);
       //else it is done in the synch thread
       
       //printf("doing forms\n");
       //usleep(100000); // 100 ms
-      sleep(1);
+      sleep(0.1);
     }
 
     //  printf("%s",stats_buffer);
@@ -547,7 +549,7 @@ static void get_options(void) {
       set_glog_onlinelog(online_log_messages);
   }
   if(config_isparamset(cmdline_logparams,CMDLINE_GLOGLEVEL_IDX)) {
-      set_glog(glog_level);
+    set_glog(glog_level);
   }
 
   if (start_telnetsrv) {
@@ -872,23 +874,6 @@ int main( int argc, char **argv ) {
     T_Config_Init();
 #endif
 
-    // initialize the log (see log.h for details)
-    set_glog(OAILOG_DEBUG);
-
-    set_log(HW,      OAILOG_DEBUG);
-    set_log(PHY,     OAILOG_DEBUG);
-    set_log(MAC,     OAILOG_INFO);
-    set_log(RLC,     OAILOG_INFO);
-    set_log(PDCP,    OAILOG_INFO);
-    set_log(OTG,     OAILOG_INFO);
-    set_log(RRC,     OAILOG_INFO);
-#if defined(ENABLE_ITTI)
-    set_log(SIM,     OAILOG_INFO);
-# if defined(ENABLE_USE_MME)
-    set_log(NAS,     OAILOG_INFO);
-# endif
-#endif
-
     //randominit (0);
     set_taus_seed (0);
 
@@ -1131,6 +1116,8 @@ int main( int argc, char **argv ) {
     pthread_cond_init(&sync_cond,NULL);
     pthread_mutex_init(&sync_mutex, NULL);
 
+    init_UE(1);
+
 #ifdef XFORMS
     int UE_id;
     int fl_argc=1;
@@ -1140,8 +1127,8 @@ int main( int argc, char **argv ) {
     fl_initialize (&fl_argc, argv, NULL, 0, 0);
     // restore the original command line args
     // argv = fl_get_cmdline_args( &argc );
-    form_stats = create_form_stats_form();
-    fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
+    //form_stats = create_form_stats_form();
+    //fl_show_form (form_stats->stats_form, FL_PLACE_HOTSPOT, FL_FULLBORDER, "stats");
     UE_id = 0;
     form_ue[UE_id] = create_lte_phy_scope_ue();
     sprintf (title, "NR DL SCOPE UE");
@@ -1171,7 +1158,6 @@ int main( int argc, char **argv ) {
 
     rt_sleep_ns(10*100000000ULL);
 
-    init_UE(1);
     number_of_cards = 1;
     
     for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
@@ -1232,8 +1218,8 @@ int main( int argc, char **argv ) {
 
   if (do_forms==1) {
     pthread_join(forms_thread,&status);
-    fl_hide_form(form_stats->stats_form);
-    fl_free_form(form_stats->stats_form);
+    //fl_hide_form(form_stats->stats_form);
+    //fl_free_form(form_stats->stats_form);
     fl_hide_form(form_ue[0]->lte_phy_scope_ue);
     fl_free_form(form_ue[0]->lte_phy_scope_ue);
   }

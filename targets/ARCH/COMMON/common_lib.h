@@ -204,6 +204,7 @@ typedef struct {
   //! clock source 
   clock_source_t clock_source;
   //! Manual SDR IP address
+//#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) 
   char *sdr_addrs;
   //! Auto calibration flag
   int autocal[4];

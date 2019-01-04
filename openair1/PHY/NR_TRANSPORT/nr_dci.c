@@ -20,7 +20,7 @@
  */
 
 /*! \file PHY/NR_TRANSPORT/nr_dci.c
-* \brief Implements DCI encoding/decoding and PDCCH TX/RX procedures (38.212/38.213/38.214). V15.2.0 2018-06.
+* \brief Implements DCI encoding and PDCCH TX procedures (38.212/38.213/38.214). V15.2.0 2018-06.
 * \author Guy De Souza
 * \date 2018
 * \version 0.1
@@ -335,10 +335,6 @@ printf("scrambled output: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%0
           k -= frame_parms.ofdm_symbol_size;
       }
     }
-
-#ifdef DEBUG_DCI
-  write_output("txdataF_dci.m", "txdataF_dci", txdataF[0], frame_parms.samples_per_frame_wCP>>1, 1, 1);
-#endif
 
   return 0;
 }

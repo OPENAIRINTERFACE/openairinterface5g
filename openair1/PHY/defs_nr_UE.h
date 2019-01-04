@@ -57,7 +57,6 @@
 #     include "COMMON/ral_messages_types.h"
 #     include "UTIL/queue.h"
 #   endif
-#   include "common/utils/LOG/log.h"
 #   define msg(aRGS...) LOG_D(PHY, ##aRGS)
 # else
 #   define msg printf
@@ -864,16 +863,16 @@ typedef struct {
   int32_t **rho;
   /// \brief Pointer to llrs, 4-bit resolution.
   /// - first index: ? [0..48*N_RB_DL[
-  uint16_t *llr;
+  int16_t *llr;
   /// \brief Pointer to llrs, 16-bit resolution.
   /// - first index: ? [0..96*N_RB_DL[
-  uint16_t *llr16;
+  int16_t *llr16;
   /// \brief \f$\overline{w}\f$ from 36-211.
   /// - first index: ? [0..48*N_RB_DL[
-  uint16_t *wbar;
+  int16_t *wbar;
   /// \brief PDCCH/DCI e-sequence (input to rate matching).
   /// - first index: ? [0..96*N_RB_DL[
-  int8_t *e_rx;
+  int16_t *e_rx;
   /// number of PDCCH symbols in current subframe
   uint8_t num_pdcch_symbols;
   /// Allocated CRNTI for UE

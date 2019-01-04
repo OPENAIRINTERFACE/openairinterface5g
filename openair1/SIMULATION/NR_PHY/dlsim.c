@@ -37,6 +37,7 @@
 #include "PHY/defs_nr_UE.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
+#include "PHY/NR_REFSIG/nr_mod_table.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/INIT/phy_init.h"
@@ -494,6 +495,7 @@ int main(int argc, char **argv)
   gNB_mac = RC.nrmac[0];
 
   config_common(0,0,78,(uint64_t)3640000000L,N_RB_DL);
+  config_nr_mib(0,0,1,kHz30,0,0,0,0);
 
   nr_l2_init_ue();
   UE_mac = get_mac_inst(0);
@@ -682,10 +684,9 @@ int main(int argc, char **argv)
 	phy_procedures_nrUE_RX(UE,
 			       &UE_proc,
 			       0,
-			       0,
 			       do_pdcch_flag,
-			       normal_txrx,
-			       no_relay);
+			       normal_txrx);
+
 		
 	if (UE->dci_ind.number_of_dcis==0) n_errors++;
       }

@@ -764,6 +764,7 @@ void tx_rf(RU_t *ru) {
       (SF_type == SF_S)) {
     
     int siglen=fp->samples_per_slot,flags=1;
+
 /*    
     if (SF_type == SF_S) {
       siglen = fp->dl_symbols_in_S_subframe*(fp->ofdm_symbol_size+fp->nb_prefix_samples0);
@@ -788,13 +789,9 @@ void tx_rf(RU_t *ru) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, proc->tti_tx );
 
     for (i=0; i<ru->nb_tx; i++)
+
       txp[i] = (void*)&ru->common.txdata[i][(proc->tti_tx*fp->samples_per_slot)-sf_extension];
-/*
-    if (proc->tti_tx == 0){
-      write_output("txdataF_frame.m","txdataF_frame",&ru->common.txdataF_BF[i],fp->samples_per_subframe_wCP, 1, 1);
-      write_output("txdata_frame.m","txdata_frame",&ru->common.txdata[i],fp->samples_per_subframe, 1, 1);
-    }
-*/    
+
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_tx-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
     // prepare tx buffer pointers

@@ -24,7 +24,6 @@
 
 #include "PHY/types.h"
 #include "PHY/defs_UE.h"
-#include "PHY/phy_vars_ue.h"
 
 #include "common/ran_context.h"
 
@@ -52,6 +51,10 @@ PHY_VARS_UE * PHY_vars_UE_g[MAX_UE][MAX_NUM_CCs]={NULL};
 
 unsigned short rev[2048],rev_times4[8192],rev_half[1024];
 unsigned short rev256[256],rev512[512],rev1024[1024],rev4096[4096],rev2048[2048],rev8192[8192];
+
+
+short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
+short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
 
 
 #include "SIMULATION/ETH_TRANSPORT/vars.h"

@@ -283,6 +283,7 @@ void nr_pbch_channel_compensation(int **rxdataF_ext,
 
   uint16_t nb_re=180;
   uint8_t aarx;
+
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *dl_ch128,*rxdataF128,*rxdataF_comp128;
 #elif defined(__arm__)
@@ -569,7 +570,6 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
   for (symbol=first_symbol; symbol<(first_symbol+3); symbol++) {
 
-  
     nr_pbch_extract(nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF,
 		    nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].dl_ch_estimates[eNB_id],
 		    nr_ue_pbch_vars->rxdataF_ext,
@@ -681,6 +681,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   M = (Lmax == 64)? (NR_POLAR_PBCH_PAYLOAD_BITS - 6) : (NR_POLAR_PBCH_PAYLOAD_BITS - 3);
   nushift = ((nr_ue_pbch_vars->pbch_a_prime>>24)&1) ^ (((nr_ue_pbch_vars->pbch_a_prime>>6)&1)<<1);
   nr_pbch_unscrambling(nr_ue_pbch_vars,frame_parms->Nid_cell,nushift,M,NR_POLAR_PBCH_PAYLOAD_BITS,1,unscrambling_mask);
+  //printf("nushift %d sfn 3rd %d 2nd %d", nushift,((nr_ue_pbch_vars->pbch_a_prime>>6)&1), ((nr_ue_pbch_vars->pbch_a_prime>>24)&1) );
 
   //payload deinterleaving
   //uint32_t in=0;

@@ -42,6 +42,7 @@ extern PHY_VARS_NR_UE ***PHY_vars_UE_g;
 
 int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
+
   /// module id
   module_id_t module_id = scheduled_response->module_id; 
   /// component carrier id
@@ -106,7 +107,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
                     
 	  //dlsch0->harq_processes[0]->mcs = &dlsch_config_pdu->mcs;
                     
-	  NR_DL_UE_HARQ_t dlsch0_harq = dlsch0->harq_processes[current_harq_pid];
+	  NR_DL_UE_HARQ_t dlsch0_harq = *(dlsch0->harq_processes[current_harq_pid]);
+
                     
 	  //dlsch0->harq_processes[current_harq_pid]->nb_rb = dlsch_config_pdu->number_rbs;
                     
