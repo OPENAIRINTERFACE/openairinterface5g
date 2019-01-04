@@ -136,7 +136,12 @@ function check_on_vm_build {
     echo "Checking build status" 
     echo "############################################################"
 
-    LOG_FILES=`ls $ARCHIVES_LOC/*.txt $ARCHIVES_LOC/*.xml`
+    if [[ "$VM_NAME" == *"-cppcheck"* ]]
+    then
+        LOG_FILES=`ls $ARCHIVES_LOC/*.txt $ARCHIVES_LOC/*.xml`
+    else
+        LOG_FILES=`ls $ARCHIVES_LOC/*.txt`
+    fi
     STATUS=0
     NB_FOUND_FILES=0
 
