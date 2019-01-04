@@ -1779,12 +1779,13 @@ void fill_ulsch_harq_indication (PHY_VARS_eNB * eNB, LTE_UL_eNB_HARQ_t * ulsch_h
 	release_harq(eNB,UE_id,1,frame,subframe,1<<i, ulsch_harq->o_ACK[i] == 1);
       }
     }
-    //LOG_E(PHY,"eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs:%d\n", eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs);
-    eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs++;
-    
-    pthread_mutex_unlock(&eNB->UL_INFO_mutex);
-    
   }
+
+  //LOG_E(PHY,"eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs:%d\n", eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs);
+  eNB->UL_INFO.harq_ind.harq_indication_body.number_of_harqs++;
+    
+  pthread_mutex_unlock(&eNB->UL_INFO_mutex);
+    
 }
 
 void fill_uci_harq_indication (PHY_VARS_eNB * eNB, LTE_eNB_UCI * uci, int frame, int subframe, uint8_t * harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask) {
