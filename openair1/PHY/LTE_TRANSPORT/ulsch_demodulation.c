@@ -1104,7 +1104,7 @@ void init_ulsch_power_LUT(void) {
 }
 
 void rx_ulsch(PHY_VARS_eNB *eNB,
-	      eNB_rxtx_proc_t *proc,
+	      L1_rxtx_proc_t *proc,
               uint8_t UE_id) {
 
 
@@ -1308,7 +1308,7 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
 }
 
 void rx_ulsch_emul(PHY_VARS_eNB *eNB,
-		   eNB_rxtx_proc_t *proc,
+		   L1_rxtx_proc_t *proc,
                    uint8_t UE_index)
 {
   LOG_I(PHY,"[PHY] EMUL eNB %d rx_ulsch_emul : subframe %d, UE_index %d\n",eNB->Mod_id,proc->subframe_rx,UE_index);

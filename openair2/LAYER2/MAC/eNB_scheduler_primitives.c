@@ -2272,6 +2272,7 @@ uint8_t get_tmode(module_id_t module_idP, int CC_idP, int UE_idP)
   eNB_MAC_INST *eNB = RC.mac[module_idP];
   COMMON_channels_t *cc = &eNB->common_channels[CC_idP];
 
+
   struct LTE_PhysicalConfigDedicated *physicalConfigDedicated = eNB->UE_list.UE_template[CC_idP][UE_idP].physicalConfigDedicated;
 
   if (physicalConfigDedicated == NULL) {	// RRCConnectionSetup not received by UE yet

@@ -39,10 +39,9 @@
 #include "vcd_signal_dumper.h"
 #include "assertions.h"
 
-
-# include <pthread.h>
-# include <string.h>
-#include  <linux/prctl.h>
+#include <pthread.h>
+#include <string.h>
+#include <linux/prctl.h>
 #include "common/config/config_userapi.h"
 // main log variables
 

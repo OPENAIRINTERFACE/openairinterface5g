@@ -85,30 +85,7 @@ double t_rx_min = 1000000000; /*!< \brief initial min process time for rx */
 int n_tx_dropped = 0; /*!< \brief initial max process time for tx */
 int n_rx_dropped = 0; /*!< \brief initial max process time for rx */
 
-char *parallel_config = NULL;
-char *worker_config = NULL;
-static THREAD_STRUCT thread_struct;
-void set_parallel_conf(char *parallel_conf)
-{
-  if(strcmp(parallel_conf,"PARALLEL_SINGLE_THREAD")==0)           thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
-  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_SPLIT")==0)        thread_struct.parallel_conf = PARALLEL_RU_L1_SPLIT;
-  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_TRX_SPLIT")==0)    thread_struct.parallel_conf = PARALLEL_RU_L1_TRX_SPLIT;
-  printf("[CONFIG] parallel conf is set to %d\n",thread_struct.parallel_conf);
-} 
-void set_worker_conf(char *worker_conf)
-{
-  if(strcmp(worker_conf,"WORKER_DISABLE")==0)                     thread_struct.worker_conf = WORKER_DISABLE;
-  else if(strcmp(worker_conf,"WORKER_ENABLE")==0)                 thread_struct.worker_conf = WORKER_ENABLE;
-  printf("[CONFIG] worker conf is set to %d\n",thread_struct.worker_conf);
-} 
-PARALLEL_CONF_t get_thread_parallel_conf(void)
-{
-  return thread_struct.parallel_conf;
-} 
-WORKER_CONF_t get_thread_worker_conf(void)
-{
-  return thread_struct.worker_conf;
-} 
+THREAD_STRUCT thread_struct;
 
 int emulate_rf = 0;
 
@@ -372,6 +349,7 @@ fill_dlsch_config(nfapi_dl_config_request_body_t * dl_req,
   dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.transmission_mode                      = transmission_mode;
   dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_prb_per_subband                 = num_bf_prb_per_subband;
   dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8.num_bf_vector                          = num_bf_vector;
+  dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.initial_transmission_sf_io            = 0xFFFF;
   dl_req->number_pdu++;
 }
 
@@ -402,6 +380,7 @@ void fill_DCI(PHY_VARS_eNB *eNB,
   nfapi_dl_config_request_body_t *dl_req=&sched_resp->DL_req->dl_config_request_body;
   nfapi_dl_config_request_pdu_t  *dl_config_pdu;
   nfapi_tx_request_body_t        *TX_req=&sched_resp->TX_req->tx_request_body;
+  int NB_RB4TBS = common_flag == 0 ? NB_RB : (2+TPC);
 
   dl_req->number_dci=0;
   dl_req->number_pdu=0;
@@ -414,26 +393,24 @@ void fill_DCI(PHY_VARS_eNB *eNB,
     case 2:
 
     case 7:
-      if (common_flag == 0) {
-
 	dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
 	memset((void *) dl_config_pdu, 0,
 	       sizeof(nfapi_dl_config_request_pdu_t));
 	dl_config_pdu->pdu_type = NFAPI_DL_CONFIG_DCI_DL_PDU_TYPE;
 	dl_config_pdu->pdu_size = (uint8_t) (2 + sizeof(nfapi_dl_config_dci_dl_pdu));
-	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format = NFAPI_DL_DCI_FORMAT_1;
+	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format = (common_flag == 0) ? NFAPI_DL_DCI_FORMAT_1 : NFAPI_DL_DCI_FORMAT_1A;
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level = 4;
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tl.tag = NFAPI_DL_CONFIG_REQUEST_DCI_DL_PDU_REL8_TAG;
-	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti = n_rnti+k;
-	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type = 1;	// CRNTI : see Table 4-10 from SCF082 - nFAPI specifications
+	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti = (common_flag == 0) ? n_rnti+k : SI_RNTI;
+	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.rnti_type = (common_flag ==0 ) ? 1: 2;	// CRNTI : see Table 4-10 from SCF082 - nFAPI specifications
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.transmission_power = 6000;	// equal to RS power
 
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.harq_process = 0;
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tpc = TPC;	// dont adjust power when retransmitting
-	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1 = ndi;
+	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1 = (common_flag == 0) ? ndi : 0;
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.mcs_1 = mcs1;
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_1 = rv;
-	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding = DLSCH_RB_ALLOC;
+	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding = (common_flag == 0) ? DLSCH_RB_ALLOC : computeRIV(eNB->frame_parms.N_RB_DL,0,NB_RB);
 	//deactivate second codeword
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.mcs_2 = 0;
 	dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_2 = 1;
@@ -445,11 +422,12 @@ void fill_DCI(PHY_VARS_eNB *eNB,
 	dl_req->number_pdu++;
 	dl_req->tl.tag = NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
 
+	AssertFatal(TPC>=0 && TPC<2, "TPC should be 0 or 1\n");
 
 	fill_dlsch_config(dl_req,
-			  get_TBS_DL(mcs1,NB_RB),
+			  get_TBS_DL(mcs1,NB_RB4TBS),
 			  (retrans > 0) ? -1 : 0, /* retransmission, no pdu_index */
-			  n_rnti,
+			  (common_flag == 0) ? n_rnti : SI_RNTI,
 			  0,	// type 0 allocation from 7.1.6 in 36.213
 			  0,	// virtual_resource_block_assignment_flag, unused here
 			  DLSCH_RB_ALLOC,	// resource_block_coding,
@@ -472,13 +450,10 @@ void fill_DCI(PHY_VARS_eNB *eNB,
 			  );
 	fill_tx_req(TX_req,
 		    (frame * 10) + subframe,
-		    get_TBS_DL(mcs1,NB_RB),
+		    get_TBS_DL(mcs1,NB_RB4TBS),
 		    0,
 		    input_buffer[k]);
-      }
-      else {
-
-      }
+    
 
       break;
 
@@ -589,8 +564,7 @@ int main(int argc, char **argv)
   int eNB_id = 0;
   unsigned char round;
   unsigned char i_mod = 2;
-  unsigned short NB_RB;
-
+  int NB_RB;
 
   SCM_t channel_model=Rayleigh1;
   //  unsigned char *input_data,*decoded_output;
@@ -715,7 +689,7 @@ int main(int argc, char **argv)
 
   DL_req.dl_config_request_body.dl_config_pdu_list = dl_config_pdu_list;
   TX_req.tx_request_body.tx_pdu_list = tx_pdu_list;
-
+  set_parallel_conf("PARALLEL_SINGLE_THREAD");
   cpuf = cpu_freq_GHz;
 
   //signal(SIGSEGV, handler);
@@ -758,6 +732,7 @@ int main(int argc, char **argv)
     { "Subframe", "subframe ",0, iptr:&subframe,  defintval:7, TYPE_INT, 0 },
     { "Trnti", "rnti",0, u16ptr:&n_rnti,  defuintval:0x1234, TYPE_UINT16, 0 },
     { "vi_mod", "i_mod",0, iptr:NULL,  defintval:0, TYPE_INT, 0 },
+    { "Qparallel", "Enable parallel execution",0, strptr:NULL,  defstrval:NULL, TYPE_STRING,  0 },
     { "Performance", "Display CPU perfomance of each L1 piece", PARAMFLAG_BOOL,  iptr:&print_perf,  defintval:0, TYPE_INT, 0 },
     { "q_tx_port", "Number of TX antennas ports used in eNB",0, iptr:NULL,  defintval:0, TYPE_INT, 0 },
     { "uEdual", "Enables the Interference Aware Receiver for TM5 (default is normal receiver)",0, iptr:NULL,  defintval:0, TYPE_INT, 0 },
@@ -965,6 +940,10 @@ int main(int argc, char **argv)
 
       break;
 
+    case 'Q':
+      set_parallel_conf(optarg);
+      break;
+      
     default:
       printf("Wrong option: %s\n",long_options[option_index].name);
       exit(1);
@@ -982,8 +961,8 @@ int main(int argc, char **argv)
   if (help)
     exit(0);
   
-  set_parallel_conf("PARALLEL_RU_L1_TRX_SPLIT");
-  set_worker_conf("WORKER_ENABLE");
+  if (thread_struct.parallel_conf != PARALLEL_SINGLE_THREAD)
+    set_worker_conf("WORKER_ENABLE");
 
   if (transmission_mode>1) pa=dBm3;
   printf("dlsim: tmode %d, pa %d\n",transmission_mode,pa);
@@ -1000,30 +979,33 @@ int main(int argc, char **argv)
   // alternatively you can disable ITTI completely in CMakeLists.txt
   //itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, NULL);
 
-
   if (common_flag == 0) {
     switch (N_RB_DL) {
     case 6:
       if (rballocset==0) DLSCH_RB_ALLOC = 0x3f;
       num_pdcch_symbols = 3;
       break;
-
+      
     case 25:
       if (rballocset==0) DLSCH_RB_ALLOC = 0x1fff;
       break;
-
+      
     case 50:
       if (rballocset==0) DLSCH_RB_ALLOC = 0x1ffff;
       break;
-
+      
     case 100:
       if (rballocset==0) DLSCH_RB_ALLOC = 0x1ffffff;
       break;
     }
-
-    NB_RB=conv_nprb(0,DLSCH_RB_ALLOC,N_RB_DL);
-  } else
-    NB_RB = 4;
+    
+    NB_RB = conv_nprb(0,DLSCH_RB_ALLOC,N_RB_DL);
+  }
+  else {
+    if (rballocset==0) NB_RB = 8;
+    else               NB_RB = DLSCH_RB_ALLOC;
+    AssertFatal(NB_RB <= N_RB_DL,"illegal NB_RB %d\n",NB_RB);
+  }
 
   if (xforms==1) {
     fl_initialize (&argc, argv, NULL, 0, 0);
@@ -1079,11 +1061,7 @@ int main(int argc, char **argv)
      ru->do_precoding=1;
 
   eNB->mac_enabled=1;
-  if (two_thread_flag == 0) {
-    eNB->te = dlsch_encoding;
-  }
-  else {
-    eNB->te = dlsch_encoding_2threads;
+  if(get_thread_worker_conf() == WORKER_ENABLE) {
     extern void init_td_thread(PHY_VARS_eNB *);
     extern void init_te_thread(PHY_VARS_eNB *);
     init_td_thread(eNB);
@@ -1363,7 +1341,7 @@ int main(int argc, char **argv)
       eNB->UE_stats[1].DL_pmi_single = 0;
   }
 
-  eNB_rxtx_proc_t *proc_eNB = &eNB->proc.proc_rxtx[0];//UE->current_thread_id[subframe]];
+  L1_rxtx_proc_t *proc_eNB = &eNB->proc.L1_proc;
 
   if (input_fd==NULL) {
 
@@ -1442,6 +1420,8 @@ int main(int argc, char **argv)
       reset_meas(&eNB->dlsch_interleaving_stats);
       reset_meas(&eNB->dlsch_rate_matching_stats);
       reset_meas(&eNB->dlsch_turbo_encoding_stats);
+      reset_meas(&eNB->dlsch_common_and_dci);
+      reset_meas(&eNB->dlsch_ue_specific);
       for (int i=0; i<RX_NB_TH; i++) {
 	reset_meas(&UE->phy_proc_rx[i]); // total UE rx
 	reset_meas(&UE->ue_front_end_stat[i]);
@@ -1524,7 +1504,7 @@ int main(int argc, char **argv)
 
             // Simulate HARQ procedures!!!
 	    memset(CCE_table,0,800*sizeof(int));
-            if (common_flag == 0) {
+            if (/*common_flag == 0*/ 1) {
 
 	      num_dci=0;
 	      num_common_dci=0;
@@ -1656,7 +1636,7 @@ int main(int argc, char **argv)
 	    if  (generate_ue_dlsch_params_from_dci(proc->frame_rx,
 						   proc->subframe_rx,
 						   (void *)&dci_alloc[0].dci_pdu,
-						   n_rnti,
+						   common_flag == 0 ? n_rnti : SI_RNTI,
 						   dci_alloc[0].format,
 						   UE->pdcch_vars[UE->current_thread_id[proc->subframe_rx]][eNB_id],
 						   UE->pdsch_vars[UE->current_thread_id[proc->subframe_rx]][eNB_id],
@@ -1782,9 +1762,6 @@ int main(int argc, char **argv)
 	    LOG_M("pdcch_rxF_llr.m","pdcch_llr",UE->pdcch_vars[0][eNB_id]->llr,2400,1,4);
 
 	  }
-
-
-
 
           if (UE->dlsch[UE->current_thread_id[subframe]][eNB_id][0]->harq_ack[subframe].ack == 1) {
 
@@ -2011,21 +1988,22 @@ int main(int argc, char **argv)
         printf("\neNB TX function statistics (per 1ms subframe)\n");
 	printDistribution(&eNB->phy_proc_tx,table_tx,"PHY proc tx");
 	printStatIndent(&eNB->dlsch_common_and_dci,"DL common channels and dci time");
-	printStatIndent(&eNB->dlsch_encoding_stats,"DLSCH encoding time");
-	printStatIndent2(&eNB->dlsch_rate_matching_stats,"DLSCH rate matching time",eNB->dlsch_rate_matching_stats.trials);
-	printStatIndent2(&eNB->dlsch_turbo_encoding_stats,"DLSCH turbo encoding time", eNB->dlsch_turbo_encoding_stats.trials);
-	printStatIndent2(&eNB->dlsch_interleaving_stats,"DLSCH interleaving time", eNB->dlsch_interleaving_stats.trials);
-	printStatIndent(&eNB->dlsch_scrambling_stats,  "DLSCH scrambling time");
-	printStatIndent(&eNB->dlsch_modulation_stats, "DLSCH modulation time");
+	printStatIndent(&eNB->dlsch_ue_specific,"DL per ue part time");
+	printStatIndent2(&eNB->dlsch_encoding_stats,"DLSCH encoding time");
+	printStatIndent3(&eNB->dlsch_rate_matching_stats,"DLSCH rate matching time");
+	printStatIndent3(&eNB->dlsch_turbo_encoding_stats,"DLSCH turbo encoding time");
+	printStatIndent3(&eNB->dlsch_interleaving_stats,"DLSCH interleaving time");
+	printStatIndent2(&eNB->dlsch_scrambling_stats,  "DLSCH scrambling time");
+	printStatIndent2(&eNB->dlsch_modulation_stats, "DLSCH modulation time");
 	printDistribution(&eNB->ofdm_mod_stats,table_tx_ifft,"OFDM_mod (idft) time");
 
         printf("\nUE RX function statistics (per 1ms subframe)\n");
 	printDistribution(&phy_proc_rx_tot, table_rx,"Total PHY proc rx");
 	printStatIndent(&ue_front_end_tot,"Front end processing");
 	printStatIndent(&dlsch_llr_tot,"rx_pdsch processing");
-	printStatIndent2(&pdsch_procedures_tot,"pdsch processing", pdsch_procedures_tot.trials);
-	printStatIndent2(&dlsch_procedures_tot,"dlsch processing", dlsch_procedures_tot.trials);
-	printStatIndent2(&UE->crnti_procedures_stats,"C-RNTI processing", UE->crnti_procedures_stats.trials);
+	printStatIndent2(&pdsch_procedures_tot,"pdsch processing");
+	printStatIndent2(&dlsch_procedures_tot,"dlsch processing");
+	printStatIndent2(&UE->crnti_procedures_stats,"C-RNTI processing");
 	printStatIndent(&UE->ofdm_demod_stats,"ofdm demodulation");
 	printStatIndent(&UE->dlsch_channel_estimation_stats,"DLSCH channel estimation time");
 	printStatIndent(&UE->dlsch_freq_offset_estimation_stats,"DLSCH frequency offset estimation time");
@@ -2041,13 +2019,13 @@ int main(int argc, char **argv)
                (double)UE->dlsch_turbo_decoding_stats.diff/UE->dlsch_turbo_decoding_stats.trials*timeBase,
                (int)((double)UE->dlsch_turbo_decoding_stats.diff/UE->dlsch_turbo_decoding_stats.trials),
                UE->dlsch_turbo_decoding_stats.trials);
-        printStatIndent2(&UE->dlsch_tc_init_stats,"init", UE->dlsch_tc_init_stats.trials);
-        printStatIndent2(&UE->dlsch_tc_alpha_stats,"alpha", UE->dlsch_tc_init_stats.trials);
-        printStatIndent2(&UE->dlsch_tc_beta_stats,"beta", UE->dlsch_tc_init_stats.trials);
-        printStatIndent2(&UE->dlsch_tc_gamma_stats,"gamma", UE->dlsch_tc_init_stats.trials);
-        printStatIndent2(&UE->dlsch_tc_ext_stats,"ext", UE->dlsch_tc_init_stats.trials);
-        printStatIndent2(&UE->dlsch_tc_intl1_stats,"turbo internal interleaver", UE->dlsch_tc_init_stats.trials);
-        printStatIndent2(&UE->dlsch_tc_intl2_stats,"intl2+HardDecode+CRC", UE->dlsch_tc_init_stats.trials);
+        printStatIndent2(&UE->dlsch_tc_init_stats,"init");
+        printStatIndent2(&UE->dlsch_tc_alpha_stats,"alpha");
+        printStatIndent2(&UE->dlsch_tc_beta_stats,"beta");
+        printStatIndent2(&UE->dlsch_tc_gamma_stats,"gamma");
+        printStatIndent2(&UE->dlsch_tc_ext_stats,"ext");
+        printStatIndent2(&UE->dlsch_tc_intl1_stats,"turbo internal interleaver");
+        printStatIndent2(&UE->dlsch_tc_intl2_stats,"intl2+HardDecode+CRC");
 	
       }
 

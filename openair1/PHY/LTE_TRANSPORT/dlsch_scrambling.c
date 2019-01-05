@@ -168,7 +168,6 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 
 
     
-    
     s = lte_gold_generic(&x1, &x2, 0);
     e += 32;
   }

@@ -1,4 +1,4 @@
-/*
+ /*
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -1070,6 +1070,7 @@ typedef struct {
 } SBMAP_CONF;
 /*! \brief UE list used by eNB to order UEs/CC for scheduling*/
 typedef struct {
+
   DLSCH_PDU DLSCH_pdu[NFAPI_CC_MAX][2][MAX_MOBILES_PER_ENB];
   /// DCI template and MAC connection parameters for UEs
   UE_TEMPLATE UE_template[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
@@ -1102,8 +1103,7 @@ typedef struct {
   uint16_t first_rb_offset[NFAPI_CC_MAX][MAX_NUM_SLICES];
   
   int assoc_dl_slice_idx[MAX_MOBILES_PER_ENB];
-  int assoc_ul_slice_idx[MAX_MOBILES_PER_ENB];
-  
+  int assoc_ul_slice_idx[MAX_MOBILES_PER_ENB];  
 } UE_list_t;
 
 /*! \brief deleting control information*/

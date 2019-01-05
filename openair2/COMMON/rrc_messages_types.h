@@ -33,9 +33,9 @@
 #include "rrc_types.h"
 #include "s1ap_messages_types.h"
 #ifdef CMAKER
-#include "LTE_SystemInformationBlockType2.h"
+  #include "LTE_SystemInformationBlockType2.h"
 #else
-#include "RRC/LTE/MESSAGES/LTE_SystemInformationBlockType2.h"
+  #include "RRC/LTE/MESSAGES/LTE_SystemInformationBlockType2.h"
 #endif
 #include "LTE_SL-OffsetIndicator-r12.h"
 #include "LTE_SubframeBitmapSL-r12.h"
@@ -47,19 +47,19 @@
 //-------------------------------------------------------------------------------------------//
 // Messages for RRC logging
 #if defined(DISABLE_ITTI_XER_PRINT)
-#include "LTE_BCCH-DL-SCH-Message.h"
-#include "LTE_DL-CCCH-Message.h"
-#include "LTE_DL-DCCH-Message.h"
-#include "LTE_UE-EUTRA-Capability.h"
-#include "LTE_UL-CCCH-Message.h"
-#include "LTE_UL-DCCH-Message.h"
+  #include "LTE_BCCH-DL-SCH-Message.h"
+  #include "LTE_DL-CCCH-Message.h"
+  #include "LTE_DL-DCCH-Message.h"
+  #include "LTE_UE-EUTRA-Capability.h"
+  #include "LTE_UL-CCCH-Message.h"
+  #include "LTE_UL-DCCH-Message.h"
 
-typedef LTE_BCCH_DL_SCH_Message_t   RrcDlBcchMessage;
-typedef LTE_DL_CCCH_Message_t       RrcDlCcchMessage;
-typedef LTE_DL_DCCH_Message_t       RrcDlDcchMessage;
-typedef LTE_UE_EUTRA_Capability_t   RrcUeEutraCapability;
-typedef LTE_UL_CCCH_Message_t       RrcUlCcchMessage;
-typedef LTE_UL_DCCH_Message_t       RrcUlDcchMessage;
+  typedef BCCH_DL_SCH_Message_t   RrcDlBcchMessage;
+  typedef DL_CCCH_Message_t       RrcDlCcchMessage;
+  typedef DL_DCCH_Message_t       RrcDlDcchMessage;
+  typedef UE_EUTRA_Capability_t   RrcUeEutraCapability;
+  typedef UL_CCCH_Message_t       RrcUlCcchMessage;
+  typedef UL_DCCH_Message_t       RrcUlDcchMessage;
 #endif
 
 //-------------------------------------------------------------------------------------------//
@@ -172,7 +172,8 @@ typedef struct RrcConfigurationReq_s {
   uint8_t             mnc_digit_length[PLMN_LIST_MAX_SIZE];
   uint8_t             num_plmn;
 
-  
+  uint32_t            rrc_inactivity_timer_thres; // for testing, maybe change later
+
   paging_drx_t            default_drx;
   int16_t                 nb_cc;
   lte_frame_type_t        frame_type[MAX_NUM_CCs];
@@ -194,26 +195,18 @@ typedef struct RrcConfigurationReq_s {
   RadioResourceConfig     radioresourceconfig_BR[MAX_NUM_CCs];
    
 #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-
-
-
   //MIB
   long	 		  schedulingInfoSIB1_BR_r13[MAX_NUM_CCs];
   //SIB1 BR options
-  
-
   uint16_t*		  hyperSFN_r13                           [MAX_NUM_CCs];
   long*			  eDRX_Allowed_r13                       [MAX_NUM_CCs];
   BOOLEAN_t		  cellSelectionInfoCE_r13                [MAX_NUM_CCs];
   long			  q_RxLevMinCE_r13                       [MAX_NUM_CCs];
   long*			  q_QualMinRSRQ_CE_r13                   [MAX_NUM_CCs];
   BOOLEAN_t		  bandwidthReducedAccessRelatedInfo_r13  [MAX_NUM_CCs];
-
   long            si_Narrowband_r13         [MAX_NUM_CCs][32];
   long            si_TBS_r13                [MAX_NUM_CCs][32];
   int             scheduling_info_br_size   [MAX_NUM_CCs];
-
-
   long			  si_WindowLength_BR_r13                       [MAX_NUM_CCs];
   long			  si_RepetitionPattern_r13                     [MAX_NUM_CCs];
   BOOLEAN_t		 * fdd_DownlinkOrTddSubframeBitmapBR_r13       [MAX_NUM_CCs];
@@ -222,11 +215,8 @@ typedef struct RrcConfigurationReq_s {
   long			  startSymbolBR_r13                            [MAX_NUM_CCs];
   long			  si_HoppingConfigCommon_r13                   [MAX_NUM_CCs];
   long*			  si_ValidityTime_r13                          [MAX_NUM_CCs];
-
-
   long            systemInfoValueTagSi_r13      [MAX_NUM_CCs][10];
   int             system_info_value_tag_SI_size [MAX_NUM_CCs];
-
   BOOLEAN_t		  freqHoppingParametersDL_r13                   [MAX_NUM_CCs];
   long*			  mpdcch_pdsch_HoppingNB_r13                    [MAX_NUM_CCs];
   BOOLEAN_t		  interval_DLHoppingConfigCommonModeA_r13       [MAX_NUM_CCs];
@@ -234,24 +224,15 @@ typedef struct RrcConfigurationReq_s {
   BOOLEAN_t		  interval_DLHoppingConfigCommonModeB_r13       [MAX_NUM_CCs];
   long			  interval_DLHoppingConfigCommonModeB_r13_val   [MAX_NUM_CCs];
   long*			  mpdcch_pdsch_HoppingOffset_r13                [MAX_NUM_CCs];
-
-
   long firstPreamble_r13                 [MAX_NUM_CCs][4];
   long lastPreamble_r13                  [MAX_NUM_CCs][4];
   long ra_ResponseWindowSize_r13         [MAX_NUM_CCs][4];
   long mac_ContentionResolutionTimer_r13 [MAX_NUM_CCs][4];
   long rar_HoppingConfig_r13             [MAX_NUM_CCs][4];
   int  rach_CE_LevelInfoList_r13_size    [MAX_NUM_CCs];
-
-
 //  long pcch_defaultPagingCycle_br;
-
-
   long rsrp_range           [MAX_NUM_CCs][3];
   int rsrp_range_list_size  [MAX_NUM_CCs];
-
-
-
   long prach_config_index                        [MAX_NUM_CCs][4];
   long prach_freq_offset                         [MAX_NUM_CCs][4];
   long *prach_StartingSubframe_r13               [MAX_NUM_CCs][4];
@@ -262,50 +243,33 @@ typedef struct RrcConfigurationReq_s {
   int  prach_parameters_list_size                [MAX_NUM_CCs];
   long max_available_narrow_band                 [MAX_NUM_CCs][4][2];
   int  max_available_narrow_band_size            [MAX_NUM_CCs][4];
-
-
-
-
-    long pucch_info_value       [MAX_NUM_CCs][4];
-    int  pucch_info_value_size  [MAX_NUM_CCs];
-
-
-    bool  pcch_config_v1310               [MAX_NUM_CCs];
-    long  paging_narrowbands_r13          [MAX_NUM_CCs];
-    long  mpdcch_numrepetition_paging_r13 [MAX_NUM_CCs];
-    long  *nb_v1310                        [MAX_NUM_CCs];
-
-    long  *pucch_NumRepetitionCE_Msg4_Level0_r13  [MAX_NUM_CCs];
-    long  *pucch_NumRepetitionCE_Msg4_Level1_r13  [MAX_NUM_CCs];
-    long  *pucch_NumRepetitionCE_Msg4_Level2_r13  [MAX_NUM_CCs];
-    long  *pucch_NumRepetitionCE_Msg4_Level3_r13  [MAX_NUM_CCs];
-
-
-    bool  sib2_freq_hoppingParameters_r13_exists             [MAX_NUM_CCs];
-    long  *sib2_mpdcch_pdsch_hoppingNB_r13                   [MAX_NUM_CCs];
-    long  *sib2_interval_DLHoppingConfigCommonModeA_r13      [MAX_NUM_CCs];
-    long  sib2_interval_DLHoppingConfigCommonModeA_r13_val  [MAX_NUM_CCs];         
-    long  *sib2_interval_DLHoppingConfigCommonModeB_r13      [MAX_NUM_CCs]; 
-    long  sib2_interval_DLHoppingConfigCommonModeB_r13_val  [MAX_NUM_CCs];        
-    long  *sib2_interval_ULHoppingConfigCommonModeA_r13      [MAX_NUM_CCs];
-    long  sib2_interval_ULHoppingConfigCommonModeA_r13_val  [MAX_NUM_CCs];         
-    long  *sib2_interval_ULHoppingConfigCommonModeB_r13      [MAX_NUM_CCs];
-    long  sib2_interval_ULHoppingConfigCommonModeB_r13_val  [MAX_NUM_CCs];
-    long  *sib2_mpdcch_pdsch_hoppingOffset_r13               [MAX_NUM_CCs];
-
-
-    long  *pdsch_maxNumRepetitionCEmodeA_r13                 [MAX_NUM_CCs];
-    long  *pdsch_maxNumRepetitionCEmodeB_r13                 [MAX_NUM_CCs];
-
-    long  *pusch_maxNumRepetitionCEmodeA_r13                 [MAX_NUM_CCs];
-    long  *pusch_maxNumRepetitionCEmodeB_r13                 [MAX_NUM_CCs];
-    long  *pusch_HoppingOffset_v1310                         [MAX_NUM_CCs];
-
-
-
+  long pucch_info_value       [MAX_NUM_CCs][4];
+  int  pucch_info_value_size  [MAX_NUM_CCs];
+  bool  pcch_config_v1310               [MAX_NUM_CCs];
+  long  paging_narrowbands_r13          [MAX_NUM_CCs];
+  long  mpdcch_numrepetition_paging_r13 [MAX_NUM_CCs];
+  long  *nb_v1310                        [MAX_NUM_CCs];
+  long  *pucch_NumRepetitionCE_Msg4_Level0_r13  [MAX_NUM_CCs];
+  long  *pucch_NumRepetitionCE_Msg4_Level1_r13  [MAX_NUM_CCs];
+  long  *pucch_NumRepetitionCE_Msg4_Level2_r13  [MAX_NUM_CCs];
+  long  *pucch_NumRepetitionCE_Msg4_Level3_r13  [MAX_NUM_CCs];
+  bool  sib2_freq_hoppingParameters_r13_exists             [MAX_NUM_CCs];
+  long  *sib2_mpdcch_pdsch_hoppingNB_r13                   [MAX_NUM_CCs];
+  long  *sib2_interval_DLHoppingConfigCommonModeA_r13      [MAX_NUM_CCs];
+  long  sib2_interval_DLHoppingConfigCommonModeA_r13_val  [MAX_NUM_CCs];         
+  long  *sib2_interval_DLHoppingConfigCommonModeB_r13      [MAX_NUM_CCs]; 
+  long  sib2_interval_DLHoppingConfigCommonModeB_r13_val  [MAX_NUM_CCs];        
+  long  *sib2_interval_ULHoppingConfigCommonModeA_r13      [MAX_NUM_CCs];
+  long  sib2_interval_ULHoppingConfigCommonModeA_r13_val  [MAX_NUM_CCs];         
+  long  *sib2_interval_ULHoppingConfigCommonModeB_r13      [MAX_NUM_CCs];
+  long  sib2_interval_ULHoppingConfigCommonModeB_r13_val  [MAX_NUM_CCs];
+  long  *sib2_mpdcch_pdsch_hoppingOffset_r13               [MAX_NUM_CCs];
+  long  *pdsch_maxNumRepetitionCEmodeA_r13                 [MAX_NUM_CCs];
+  long  *pdsch_maxNumRepetitionCEmodeB_r13                 [MAX_NUM_CCs];
+  long  *pusch_maxNumRepetitionCEmodeA_r13                 [MAX_NUM_CCs];
+  long  *pusch_maxNumRepetitionCEmodeB_r13                 [MAX_NUM_CCs];
+  long  *pusch_HoppingOffset_v1310                         [MAX_NUM_CCs];
 #endif
-
-
   //SIB18
   e_LTE_SL_CP_Len_r12            rxPool_sc_CP_Len[MAX_NUM_CCs];
   e_LTE_SL_PeriodComm_r12        rxPool_sc_Period[MAX_NUM_CCs];
@@ -316,7 +280,7 @@ typedef struct RrcConfigurationReq_s {
   LTE_SL_OffsetIndicator_r12_PR  rxPool_ResourceConfig_offsetIndicator_present[MAX_NUM_CCs];
   long                           rxPool_ResourceConfig_offsetIndicator_choice[MAX_NUM_CCs];
   LTE_SubframeBitmapSL_r12_PR    rxPool_ResourceConfig_subframeBitmap_present[MAX_NUM_CCs];
-  char*                          rxPool_ResourceConfig_subframeBitmap_choice_bs_buf[MAX_NUM_CCs];
+  char                          *rxPool_ResourceConfig_subframeBitmap_choice_bs_buf[MAX_NUM_CCs];
   long                           rxPool_ResourceConfig_subframeBitmap_choice_bs_size[MAX_NUM_CCs];
   long                           rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[MAX_NUM_CCs];
 
@@ -332,7 +296,7 @@ typedef struct RrcConfigurationReq_s {
   LTE_SL_OffsetIndicator_r12_PR  discRxPool_ResourceConfig_offsetIndicator_present[MAX_NUM_CCs];
   long                           discRxPool_ResourceConfig_offsetIndicator_choice[MAX_NUM_CCs];
   LTE_SubframeBitmapSL_r12_PR    discRxPool_ResourceConfig_subframeBitmap_present[MAX_NUM_CCs];
-  char*                          discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf[MAX_NUM_CCs];
+  char                          *discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf[MAX_NUM_CCs];
   long                           discRxPool_ResourceConfig_subframeBitmap_choice_bs_size[MAX_NUM_CCs];
   long                           discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[MAX_NUM_CCs];
   //for discRxPoolPS
@@ -346,7 +310,7 @@ typedef struct RrcConfigurationReq_s {
   LTE_SL_OffsetIndicator_r12_PR  discRxPoolPS_ResourceConfig_offsetIndicator_present[MAX_NUM_CCs];
   long                           discRxPoolPS_ResourceConfig_offsetIndicator_choice[MAX_NUM_CCs];
   LTE_SubframeBitmapSL_r12_PR    discRxPoolPS_ResourceConfig_subframeBitmap_present[MAX_NUM_CCs];
-  char*                          discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf[MAX_NUM_CCs];
+  char                          *discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf[MAX_NUM_CCs];
   long                           discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size[MAX_NUM_CCs];
   long                           discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused[MAX_NUM_CCs];
 } RrcConfigurationReq;
@@ -355,72 +319,70 @@ typedef struct RrcConfigurationReq_s {
 
 typedef struct NbIoTRrcConfigurationReq_s {
   uint32_t            cell_identity;
-
   uint16_t            tac;
-
-  uint16_t	      mcc;
-  uint16_t	      mnc;
-  uint8_t	      mnc_digit_length;
-  lte_frame_type_t	  frame_type;
+  uint16_t        mcc;
+  uint16_t        mnc;
+  uint8_t       mnc_digit_length;
+  lte_frame_type_t    frame_type;
   uint8_t                 tdd_config;
   uint8_t                 tdd_config_s;
   lte_prefix_type_t       prefix_type;
-  lte_prefix_type_t	  prefix_type_UL;
+  lte_prefix_type_t   prefix_type_UL;
   int16_t                 eutra_band;
   uint32_t                downlink_frequency;
   int32_t                 uplink_frequency_offset;
   int16_t                 Nid_cell;// for testing, change later
   int16_t                 N_RB_DL;// for testing, change later
   //RACH
-  long					  rach_raResponseWindowSize_NB;
-  long					  rach_macContentionResolutionTimer_NB;
-  long					  rach_powerRampingStep_NB;
-  long					  rach_preambleInitialReceivedTargetPower_NB;
-  long					  rach_preambleTransMax_CE_NB;
+  long            rach_raResponseWindowSize_NB;
+  long            rach_macContentionResolutionTimer_NB;
+  long            rach_powerRampingStep_NB;
+  long            rach_preambleInitialReceivedTargetPower_NB;
+  long            rach_preambleTransMax_CE_NB;
   //BCCH
-  long					  bcch_modificationPeriodCoeff_NB;
+  long            bcch_modificationPeriodCoeff_NB;
   //PCCH
-  long					  pcch_defaultPagingCycle_NB;
-  long					  pcch_nB_NB;
-  long					  pcch_npdcch_NumRepetitionPaging_NB;
+  long            pcch_defaultPagingCycle_NB;
+  long            pcch_nB_NB;
+  long            pcch_npdcch_NumRepetitionPaging_NB;
   //NPRACH
-  long					  nprach_CP_Length;
-  long					  nprach_rsrp_range;
-  long					  nprach_Periodicity[MAX_NUM_NBIOT_CELEVELS];
-  long					  nprach_StartTime[MAX_NUM_NBIOT_CELEVELS];
-  long					  nprach_SubcarrierOffset[MAX_NUM_NBIOT_CELEVELS];
-  long					  nprach_NumSubcarriers[MAX_NUM_NBIOT_CELEVELS];
-  long					  numRepetitionsPerPreambleAttempt_NB[MAX_NUM_NBIOT_CELEVELS];
-  long					  nprach_SubcarrierMSG3_RangeStart;
-  long					  maxNumPreambleAttemptCE_NB;
-  long					  npdcch_NumRepetitions_RA[MAX_NUM_NBIOT_CELEVELS];
-  long					  npdcch_StartSF_CSS_RA[MAX_NUM_NBIOT_CELEVELS];
-  long					  npdcch_Offset_RA[MAX_NUM_NBIOT_CELEVELS];
+  long            nprach_CP_Length;
+  long            nprach_rsrp_range;
+  long            nprach_Periodicity[MAX_NUM_NBIOT_CELEVELS];
+  long            nprach_StartTime[MAX_NUM_NBIOT_CELEVELS];
+  long            nprach_SubcarrierOffset[MAX_NUM_NBIOT_CELEVELS];
+  long            nprach_NumSubcarriers[MAX_NUM_NBIOT_CELEVELS];
+  long            numRepetitionsPerPreambleAttempt_NB[MAX_NUM_NBIOT_CELEVELS];
+  long            nprach_SubcarrierMSG3_RangeStart;
+  long            maxNumPreambleAttemptCE_NB;
+  long            npdcch_NumRepetitions_RA[MAX_NUM_NBIOT_CELEVELS];
+  long            npdcch_StartSF_CSS_RA[MAX_NUM_NBIOT_CELEVELS];
+  long            npdcch_Offset_RA[MAX_NUM_NBIOT_CELEVELS];
   //NPDSCH
-  long					  npdsch_nrs_Power;
+  long            npdsch_nrs_Power;
   //NPUSCH
-  long					  npusch_ack_nack_numRepetitions_NB;
-  long					  npusch_srs_SubframeConfig_NB;
-  long					  npusch_threeTone_CyclicShift_r13;
-  long					  npusch_sixTone_CyclicShift_r13;
-  BOOLEAN_t				  npusch_groupHoppingEnabled;
-  long					  npusch_groupAssignmentNPUSCH_r13;
+  long            npusch_ack_nack_numRepetitions_NB;
+  long            npusch_srs_SubframeConfig_NB;
+  long            npusch_threeTone_CyclicShift_r13;
+  long            npusch_sixTone_CyclicShift_r13;
+  BOOLEAN_t         npusch_groupHoppingEnabled;
+  long            npusch_groupAssignmentNPUSCH_r13;
 
   //DL_GapConfig
-  long					  dl_GapThreshold_NB;
-  long	 				  dl_GapPeriodicity_NB;
-  long	 				  dl_GapDurationCoeff_NB;
+  long            dl_GapThreshold_NB;
+  long            dl_GapPeriodicity_NB;
+  long            dl_GapDurationCoeff_NB;
   //Uplink power control Common
-  long					  npusch_p0_NominalNPUSCH;
-  long					  npusch_alpha;
-  long					  deltaPreambleMsg3;
+  long            npusch_p0_NominalNPUSCH;
+  long            npusch_alpha;
+  long            deltaPreambleMsg3;
   //UE timers and constants
-  long					  ue_TimersAndConstants_t300_NB;
-  long					  ue_TimersAndConstants_t301_NB;
-  long					  ue_TimersAndConstants_t310_NB;
-  long					  ue_TimersAndConstants_t311_NB;
-  long					  ue_TimersAndConstants_n310_NB;
-  long					  ue_TimersAndConstants_n311_NB;
+  long            ue_TimersAndConstants_t300_NB;
+  long            ue_TimersAndConstants_t301_NB;
+  long            ue_TimersAndConstants_t310_NB;
+  long            ue_TimersAndConstants_t311_NB;
+  long            ue_TimersAndConstants_n310_NB;
+  long            ue_TimersAndConstants_n311_NB;
 } NbIoTRrcConfigurationReq;
 
 

@@ -61,6 +61,7 @@ function start_basic_sim_enb {
     local LOC_LOG_FILE=$4
     local LOC_NB_RBS=$5
     local LOC_CONF_FILE=$6
+    local LOC_FLEXRAN_CTL_IP_ADRR=$7
     echo "cd /home/ubuntu/tmp" > $1
     echo "echo \"sudo apt-get --yes --quiet install daemon \"" >> $1
     echo "sudo apt-get --yes install daemon >> /home/ubuntu/tmp/cmake_targets/log/daemon-install.txt 2>&1" >> $1
@@ -71,6 +72,12 @@ function start_basic_sim_enb {
     echo "cd ci-scripts/conf_files/" >> $1
     echo "cp $LOC_CONF_FILE ci-$LOC_CONF_FILE" >> $1
     echo "sed -i -e 's#N_RB_DL.*=.*;#N_RB_DL                                         = $LOC_NB_RBS;#' -e 's#CI_MME_IP_ADDR#$LOC_EPC_IP_ADDR#' -e 's#CI_ENB_IP_ADDR#$LOC_VM_IP_ADDR#' ci-$LOC_CONF_FILE" >> $1
+    if [[ $LOC_FLEXRAN_CTL_IP_ADRR =~ .*none.* ]]
+    then
+        echo "sed -i -e 's#CI_FLEXRAN_CTL_IP_ADDR#127.0.0.1#' ci-$LOC_CONF_FILE" >> $1
+    else
+        echo "sed -i -e 's#FLEXRAN_ENABLED        = .*no.*;#FLEXRAN_ENABLED        = \"yes\";#' -e 's#CI_FLEXRAN_CTL_IP_ADDR#$LOC_FLEXRAN_CTL_IP_ADRR#' ci-$LOC_CONF_FILE" >> $1
+    fi
     echo "echo \"grep N_RB_DL ci-$LOC_CONF_FILE\"" >> $1
     echo "grep N_RB_DL ci-$LOC_CONF_FILE | sed -e 's#N_RB_DL.*=#N_RB_DL =#'" >> $1
     echo "echo \"cd /home/ubuntu/tmp/cmake_targets/basic_simulator/enb/\"" >> $1
@@ -286,6 +293,35 @@ function terminate_ltebox_epc {
     rm $1
 }
 
+function start_flexran_ctrl {
+    echo "cd /home/ubuntu/tmp" > $1
+    echo "if [ -f cmake_targets/log/flexran_ctl_run.log ]; then rm -f cmake_targets/log/flexran_ctl_run.log cmake_targets/log/flexran_ctl_query*.log; fi" >> $1
+    echo "echo \" sudo build/rt_controller -c log_config/basic_log\"" >> $1
+    echo "nohup sudo build/rt_controller -c log_config/basic_log > cmake_targets/log/flexran_ctl_run.log 2>&1 &" >> $1
+    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+    rm $1
+    sleep 10
+}
+
+function stop_flexran_ctrl {
+    echo "echo \"sudo killall --signal SIGKILL rt_controller\"" > $1
+    echo "sudo killall --signal SIGKILL rt_controller" > $1
+    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+    rm $1
+    sleep 2
+}
+
+function query_flexran_ctrl_status {
+    local LOC_MESSAGE=$3
+    echo "cd /home/ubuntu/tmp" > $1
+    echo "echo \"------------------------------------------------------------\" > cmake_targets/log/flexran_ctl_query_${LOC_MESSAGE}.log" >> $1
+    echo "echo \"LOG_NAME: $LOC_MESSAGE\" >> cmake_targets/log/flexran_ctl_query_${LOC_MESSAGE}.log" >> $1
+    echo "echo \"------------------------------------------------------------\" >> cmake_targets/log/flexran_ctl_query_${LOC_MESSAGE}.log" >> $1
+    echo "curl http://localhost:9999/stats | jq '.' | tee -a cmake_targets/log/flexran_ctl_query_${LOC_MESSAGE}.log" >> $1
+    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+    rm $1
+}
+
 function run_test_on_vm {
     echo "############################################################"
     echo "OAI CI VM script"
@@ -405,6 +441,12 @@ function run_test_on_vm {
         if [ $NB_RUNS -eq 0 ]; then STATUS=-1; fi
         if [ $NB_FAILURES -ne 0 ]; then STATUS=-1; fi
 
+        if [ $STATUS -eq 0 ]
+        then
+            echo "TEST_OK" > $ARCHIVES_LOC/test_final_status.log
+        else
+            echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
+        fi
     fi
 
     if [[ "$RUN_OPTIONS" == "complex" ]] && [[ $VM_NAME =~ .*-basic-sim.* ]]
@@ -544,6 +586,7 @@ function run_test_on_vm {
             if [ $i -lt 50 ]
             then
                 echo "Problem w/ starting ltebox EPC"
+                echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
                 exit -1
             fi
         fi
@@ -564,7 +607,7 @@ function run_test_on_vm {
         echo "Starting the eNB in FDD-5MHz mode"
         echo "############################################################"
         CURRENT_ENB_LOG_FILE=fdd_05MHz_enb.log
-        start_basic_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 25 lte-fdd-basic-sim.conf
+        start_basic_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 25 lte-fdd-basic-sim.conf none
 
         echo "############################################################"
         echo "Starting the UE in FDD-5MHz mode"
@@ -579,6 +622,7 @@ function run_test_on_vm {
             scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
             recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+            echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
             exit -1
         fi
         get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
@@ -622,7 +666,7 @@ function run_test_on_vm {
         echo "Starting the eNB in FDD-10MHz mode"
         echo "############################################################"
         CURRENT_ENB_LOG_FILE=fdd_10MHz_enb.log
-        start_basic_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 50 lte-fdd-basic-sim.conf
+        start_basic_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 50 lte-fdd-basic-sim.conf none
 
         echo "############################################################"
         echo "Starting the UE in FDD-10MHz mode"
@@ -637,6 +681,7 @@ function run_test_on_vm {
             scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
             recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+            echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
             exit -1
         fi
         get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
@@ -680,7 +725,7 @@ function run_test_on_vm {
         echo "Starting the eNB in FDD-20MHz mode"
         echo "############################################################"
         CURRENT_ENB_LOG_FILE=fdd_20MHz_enb.log
-        start_basic_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 100 lte-fdd-basic-sim.conf
+        start_basic_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 100 lte-fdd-basic-sim.conf none
 
         echo "############################################################"
         echo "Starting the UE in FDD-20MHz mode"
@@ -695,6 +740,7 @@ function run_test_on_vm {
             scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
             recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+            echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
             exit -1
         fi
         get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
@@ -725,11 +771,100 @@ function run_test_on_vm {
         recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
         sleep 10
 
+        if [ -d $JENKINS_WKSP/flexran ]
+        then
+            echo "############################################################"
+            echo "Flexran testing is possible"
+            echo "############################################################"
+            local j="0"
+            while [ $j -lt 20 ]
+            do
+                if [ -e $JENKINS_WKSP/flexran/flexran_build_complete.txt ]
+                then
+                    echo "Found an proper flexran controller vm build"
+                    j="100"
+                else
+                    j=$[$j+1]
+                    sleep 30
+                fi
+            done
+            if [ $j -lt 50 ]
+            then
+                echo "ERROR: compiling flexran controller on vm went wrong"
+                terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+                echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
+                exit -1
+            fi
+            FLEXRAN_CTL_VM_NAME=`echo $VM_NAME | sed -e "s#basic-sim#flexran-rtc#"`
+            FLEXRAN_CTL_VM_CMDS=`echo $VM_CMDS | sed -e "s#cmds#flexran-rtc-cmds#"`
+            IS_FLEXRAN_VM_ALIVE=`uvt-kvm list | grep -c $FLEXRAN_CTL_VM_NAME`
+            if [ $IS_FLEXRAN_VM_ALIVE -eq 0 ]
+            then
+                echo "ERROR: Flexran Ctl VM is not alive"
+                terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+                echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
+                exit -1
+            fi
+            uvt-kvm wait $FLEXRAN_CTL_VM_NAME --insecure
+            FLEXRAN_CTL_VM_IP_ADDR=`uvt-kvm ip $FLEXRAN_CTL_VM_NAME`
+
+            echo "$FLEXRAN_CTL_VM_NAME has for IP addr = $FLEXRAN_CTL_VM_IP_ADDR"
+            echo "FLEXRAN_CTL_VM_CMDS     = $FLEXRAN_CTL_VM_CMDS"
+            echo "############################################################"
+            echo "Starting the FLEXRAN CONTROLLER"
+            echo "############################################################"
+            start_flexran_ctrl $FLEXRAN_CTL_VM_CMDS $FLEXRAN_CTL_VM_IP_ADDR
+            query_flexran_ctrl_status $FLEXRAN_CTL_VM_CMDS $FLEXRAN_CTL_VM_IP_ADDR 01_no_enb_connected
+
+            echo "############################################################"
+            echo "Starting the eNB in FDD-5MHz mode with Flexran ON"
+            echo "############################################################"
+            CURRENT_ENB_LOG_FILE=fdd_05fMHz_enb.log
+            start_basic_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 25 lte-fdd-basic-sim.conf $FLEXRAN_CTL_VM_IP_ADDR
+            query_flexran_ctrl_status $FLEXRAN_CTL_VM_CMDS $FLEXRAN_CTL_VM_IP_ADDR 02_enb_connected
+
+            echo "############################################################"
+            echo "Starting the UE in FDD-5MHz mode"
+            echo "############################################################"
+            CURRENT_UE_LOG_FILE=fdd_05fMHz_ue.log
+            start_basic_sim_ue $VM_CMDS $VM_IP_ADDR $CURRENT_UE_LOG_FILE 25 2680
+            if [ $UE_SYNC -eq 0 ]
+            then
+                echo "Problem w/ eNB and UE not syncing"
+                terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+                scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+                scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+                recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+                terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+                stop_flexran_ctrl $FLEXRAN_CTL_VM_CMDS $FLEXRAN_CTL_VM_IP_ADDR
+                echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
+                exit -1
+            fi
+            query_flexran_ctrl_status $FLEXRAN_CTL_VM_CMDS $FLEXRAN_CTL_VM_IP_ADDR 03_enb_ue_connected
+            get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
+
+            sleep 30
+            echo "############################################################"
+            echo "Terminate enb/ue simulators"
+            echo "############################################################"
+            terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+            scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+            scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+            recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+            sleep 10
+
+            echo "############################################################"
+            echo "Stopping the FLEXRAN CONTROLLER"
+            echo "############################################################"
+            stop_flexran_ctrl $FLEXRAN_CTL_VM_CMDS $FLEXRAN_CTL_VM_IP_ADDR
+            scp -o StrictHostKeyChecking=no ubuntu@$FLEXRAN_CTL_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/flexran_ctl_*.log $ARCHIVES_LOC
+        fi
+
         echo "############################################################"
         echo "Starting the eNB in TDD-5MHz mode"
         echo "############################################################"
         CURRENT_ENB_LOG_FILE=tdd_05MHz_enb.log
-        start_basic_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 25 lte-tdd-basic-sim.conf
+        start_basic_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 25 lte-tdd-basic-sim.conf none
 
         echo "############################################################"
         echo "Starting the UE in TDD-5MHz mode"
@@ -744,6 +879,7 @@ function run_test_on_vm {
             scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
             recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+            echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
             exit -1
         fi
         get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
@@ -779,7 +915,7 @@ function run_test_on_vm {
         echo "Starting the eNB in TDD-10MHz mode"
         echo "############################################################"
         CURRENT_ENB_LOG_FILE=tdd_10MHz_enb.log
-        start_basic_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 50 lte-tdd-basic-sim.conf
+        start_basic_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 50 lte-tdd-basic-sim.conf none
 
         echo "############################################################"
         echo "Starting the UE in TDD-10MHz mode"
@@ -794,6 +930,7 @@ function run_test_on_vm {
             scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
             recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+            echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
             exit -1
         fi
         get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
@@ -828,7 +965,7 @@ function run_test_on_vm {
         echo "Starting the eNB in TDD-20MHz mode"
         echo "############################################################"
         CURRENT_ENB_LOG_FILE=tdd_20MHz_enb.log
-        start_basic_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 100 lte-tdd-basic-sim.conf
+        start_basic_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 100 lte-tdd-basic-sim.conf none
 
         echo "############################################################"
         echo "Starting the UE in TDD-20MHz mode"
@@ -843,6 +980,7 @@ function run_test_on_vm {
             scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
             recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             terminate_ltebox_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+            echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
             exit -1
         fi
         get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
@@ -891,6 +1029,11 @@ function run_test_on_vm {
             ssh-keygen -R $VM_IP_ADDR
             uvt-kvm destroy $EPC_VM_NAME
             ssh-keygen -R $EPC_VM_IP_ADDR
+            if [ -e $JENKINS_WKSP/flexran/flexran_build_complete.txt ]
+            then
+                uvt-kvm destroy $FLEXRAN_CTL_VM_NAME
+                ssh-keygen -R $FLEXRAN_CTL_VM_IP_ADDR
+            fi
         fi
 
         echo "############################################################"
@@ -900,5 +1043,11 @@ function run_test_on_vm {
         if [ $PING_STATUS -ne 0 ]; then STATUS=-1; fi
         if [ $IPERF_STATUS -ne 0 ]; then STATUS=-1; fi
 
+        if [ $STATUS -eq 0 ]
+        then
+            echo "TEST_OK" > $ARCHIVES_LOC/test_final_status.log
+        else
+            echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
+        fi
     fi
 }
