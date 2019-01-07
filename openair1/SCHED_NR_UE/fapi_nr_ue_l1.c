@@ -50,7 +50,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
     if(scheduled_response != NULL){
         NR_UE_PDCCH *pdcch_vars2 = PHY_vars_UE_g[module_id][cc_id]->pdcch_vars[0][0];
-        NR_UE_DLSCH_t *dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch[0][0];
+        NR_UE_DLSCH_t *dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch[0];
         NR_UE_ULSCH_t *ulsch0 = PHY_vars_UE_g[module_id][cc_id]->ulsch[0];
         NR_DL_FRAME_PARMS frame_parms = PHY_vars_UE_g[module_id][cc_id]->frame_parms;
         PRACH_RESOURCES_t *prach_resources = PHY_vars_UE_g[module_id][cc_id]->prach_resources[0];
@@ -104,7 +104,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
                     
                     //dlsch0->harq_processes[0]->mcs = &dlsch_config_pdu->mcs;
                     
-                    NR_DL_UE_HARQ_t dlsch0_harq = dlsch0->harq_processes[current_harq_pid];
+                    NR_DL_UE_HARQ_t dlsch0_harq = *(dlsch0->harq_processes[current_harq_pid]);
                     
                     //dlsch0->harq_processes[current_harq_pid]->nb_rb = dlsch_config_pdu->number_rbs;
                     

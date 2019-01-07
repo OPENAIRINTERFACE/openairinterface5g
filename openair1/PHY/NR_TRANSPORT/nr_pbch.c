@@ -40,7 +40,7 @@
 //#define DEBUG_PBCH_ENCODING
 //#define DEBUG_PBCH_DMRS
 
-#include "PHY/NR_REFSIG/nr_mod_table.h"
+extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
 
 uint8_t nr_pbch_payload_interleaving_pattern[32] = {16, 23, 18, 17, 8, 30, 10, 6, 24, 7, 0, 5, 3, 2, 1, 4,
                                                 9, 11, 12, 13, 14, 15, 19, 20, 21, 22, 25, 26, 27, 28, 29, 31};
@@ -444,12 +444,6 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
     }
 
   }
-
-
-#ifdef DEBUG_PBCH
-  write_output("txdataF_pbch.m", "txdataF_pbch", txdataF[0], frame_parms->samples_per_frame_wCP>>1, 1, 1);
-#endif
-
 
   return 0;
 }

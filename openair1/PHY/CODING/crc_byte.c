@@ -35,12 +35,14 @@
 
 /*ref 36-212 v8.6.0 , pp 8-9 */
 /* the highest degree is set by default */
+
 unsigned int             poly24a = 0x864cfb00;   // 1000 0110 0100 1100 1111 1011
 												 // D^24 + D^23 + D^18 + D^17 + D^14 + D^11 + D^10 + D^7 + D^6 + D^5 + D^4 + D^3 + D + 1
 unsigned int             poly24b = 0x80006300;   // 1000 0000 0000 0000 0110 0011
 											     // D^24 + D^23 + D^6 + D^5 + D + 1
 unsigned int             poly24c = 0xb2b11700;   // 1011 0010 1011 0001 0001 0111
 												 // D^24+D^23+D^21+D^20+D^17+D^15+D^13+D^12+D^8+D^4+D^2+D+1
+
 unsigned int             poly16 = 0x10210000;    // 0001 0000 0010 0001            D^16 + D^12 + D^5 + 1
 unsigned int             poly12 = 0x80F00000;    // 1000 0000 1111                 D^12 + D^11 + D^3 + D^2 + D + 1
 unsigned int             poly8 = 0x9B000000;     // 1001 1011                      D^8  + D^7  + D^4 + D^3 + D + 1
@@ -255,6 +257,68 @@ unsigned int crcPayload(unsigned char * inptr, int bitlen, uint32_t* crc256Table
         return crc;
 }
 
+int check_crc(uint8_t* decoded_bytes, uint32_t n, uint32_t F, uint8_t crc_type)
+{
+  uint32_t crc=0,oldcrc=0;
+  uint8_t crc_len,temp;
+
+  switch (crc_type) {
+  case CRC24_A:
+  case CRC24_B:
+    crc_len=3;
+    break;
+
+  case CRC16:
+    crc_len=2;
+    break;
+
+  case CRC8:
+    crc_len=1;
+    break;
+
+  default:
+    crc_len=3;
+  }
+
+  for (int i=0; i<crc_len; i++)
+    oldcrc |= (decoded_bytes[(n>>3)-crc_len+i])<<((crc_len-1-i)<<3);
+
+  switch (crc_type) {
+    
+  case CRC24_A:
+    oldcrc&=0x00ffffff;
+    crc = crc24a(decoded_bytes,
+		 n-24)>>8;
+    
+    break;
+    
+  case CRC24_B:
+      oldcrc&=0x00ffffff;
+      crc = crc24b(decoded_bytes,
+                   n-24)>>8;
+      
+      break;
+
+    case CRC16:
+      oldcrc&=0x0000ffff;
+      crc = crc16(decoded_bytes,
+                  n-16)>>16;
+      
+      break;
+
+    case CRC8:
+      oldcrc&=0x000000ff;
+      crc = crc8(decoded_bytes,
+                 n-8)>>24;
+      break;
+    }
+
+    if (crc == oldcrc)
+      return(1);
+    else
+      return(0);
+
+}
 
 
 #ifdef DEBUG_CRC

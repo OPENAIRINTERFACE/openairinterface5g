@@ -163,7 +163,7 @@
 {"threadThreeSubframe",     NULL,                   0,                      iptr:&(threads.three),              defintval:1,                    TYPE_INT,       0},                     \
 {"threadSlot1ProcOne",      NULL,                   0,                      iptr:&(threads.slot1_proc_one),     defintval:1,                    TYPE_INT,       0},                     \
 {"threadSlot1ProcTwo",      NULL,                   0,                      iptr:&(threads.slot1_proc_two),     defintval:1,                    TYPE_INT,       0},                     \
-{"dlsch-demod-shift",       CONFIG_HLP_DLSHIFT,     0,                      iptr:(int32_t *)&dlsch_demod_shift, defintval:0,                    TYPE_INT,       0},                     \
+{"nr_dlsch-demod-shift",    CONFIG_HLP_DLSHIFT,     0,                      iptr:(int32_t *)&nr_dlsch_demod_shift, defintval:0,                    TYPE_INT,       0},                     \
 {"A" ,                      CONFIG_HLP_TADV,        0,                      uptr:&timing_advance,               defintval:0,                    TYPE_UINT,      0},                     \
 {"C" ,                      CONFIG_HLP_DLF,         0,                      uptr:&(downlink_frequency[0][0]),   defuintval:2680000000,          TYPE_UINT,      0},                     \
 {"a" ,                      CONFIG_HLP_CHOFF,       0,                      iptr:&chain_offset,                 defintval:0,                    TYPE_INT,       0},                     \

@@ -37,6 +37,7 @@
 #include "PHY/defs_nr_UE.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
+#include "PHY/NR_REFSIG/nr_mod_table.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/INIT/phy_init.h"
@@ -426,7 +427,7 @@ int main(int argc, char **argv)
   //configure UE
   UE = malloc(sizeof(PHY_VARS_NR_UE));
   memcpy(&UE->frame_parms,frame_parms,sizeof(NR_DL_FRAME_PARMS));
-  phy_init_nr_top(UE);
+  //phy_init_nr_top(UE); //called from init_nr_ue_signal
   if (run_initial_sync==1)  UE->is_synchronized = 0;
   else                      UE->is_synchronized = 1;
                       
@@ -524,6 +525,7 @@ int main(int argc, char **argv)
 	if (gNB->frame_parms.nb_antennas_tx>1)
 	  LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1],frame_length_complex_samples,1,1);
       }
+
       if (UE->is_synchronized == 0) {
 	ret = nr_initial_sync(UE, normal_txrx);
 	printf("nr_initial_sync1 returns %d\n",ret);

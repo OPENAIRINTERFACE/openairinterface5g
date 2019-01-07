@@ -42,4 +42,5 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO);
 void handle_nfapi_nr_dci_dl_pdu(PHY_VARS_gNB *gNB,
                                 int frame, int subframe,
                                 gNB_L1_rxtx_proc_t *proc,
-                                nfapi_nr_dl_config_request_pdu_t *dl_config_pdu);
+                                nfapi_nr_dl_config_request_pdu_t *dl_config_pdu,
+                                nfapi_nr_dl_config_request_pdu_t *dl_config_dlsch_pdu);

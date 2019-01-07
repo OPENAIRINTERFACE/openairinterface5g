@@ -38,6 +38,11 @@
 #define MAX_TURBO_ITERATIONS_MBSFN 8
 #define MAX_TURBO_ITERATIONS max_turbo_iterations
 
+#define MAX_LDPC_ITERATIONS 4
+#define MAX_LDPC_ITERATIONS_MBSFN 4
+
+#define LTE_NULL 2
+#define NR_NULL  2
 typedef struct {
   unsigned short nb_bits;
   unsigned short f1;
@@ -443,16 +448,11 @@ unsigned int crcbit (unsigned char * inputptr, int octetlen, unsigned int poly);
 int16_t reverseBits(int32_t ,int32_t);
 void phy_viterbi_dot11(int8_t *,uint8_t *,uint16_t);
 
-decoder_if_t phy_threegpplte_turbo_decoder;
-decoder_if_t phy_threegpplte_turbo_decoder8;
-decoder_if_t phy_threegpplte_turbo_decoder16;
-
 int32_t nr_segmentation(unsigned char *input_buffer,
                      unsigned char **output_buffers,
                      unsigned int B,
                      unsigned int *C,
-                     unsigned int *Kplus,
-                     unsigned int *Kminus,
+                     unsigned int *K,
 					 unsigned int *Zout,
                      unsigned int *F);
 
@@ -462,5 +462,41 @@ uint32_t nr_compute_tbs(uint8_t mcs,
 						uint8_t nb_re_dmrs,
 						uint16_t length_dmrs,
 						uint8_t Nl);
+
+void nr_interleaving_ldpc(uint32_t E, uint8_t Qm, uint8_t *e,uint8_t *f);
+
+void nr_deinterleaving_ldpc(uint32_t E, uint8_t Qm, int16_t *e,int16_t *f);
+
+uint32_t nr_rate_matching_ldpc(uint8_t Ilbrm,
+							   uint32_t Tbslbrm,
+							   uint8_t BG,
+							   uint16_t Z,
+                               uint32_t G,
+                               uint8_t *w,
+                               uint8_t *e,
+                               uint8_t C,
+                               uint8_t rvidx,
+                               uint8_t Qm,
+                               uint8_t Nl,
+                               uint8_t r);
+
+int nr_rate_matching_ldpc_rx(uint8_t Ilbrm,
+		 	 	 	 	 	 uint32_t Tbslbrm,
+							 uint8_t BG,
+							 uint16_t Z,
+							 uint32_t G,
+                             int16_t *w,
+                             int16_t *soft_input,
+                             uint8_t C,
+                             uint8_t rvidx,
+                             uint8_t clear,
+                             uint8_t Qm,
+                             uint8_t Nl,
+                             uint8_t r,
+                             uint32_t *E_out);
+
+decoder_if_t phy_threegpplte_turbo_decoder;
+decoder_if_t phy_threegpplte_turbo_decoder8;
+decoder_if_t phy_threegpplte_turbo_decoder16;
 
 #endif

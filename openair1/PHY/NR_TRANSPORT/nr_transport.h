@@ -106,4 +106,11 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
  */
 void nr_init_pbch_interleaver(uint8_t *interleaver);
 
+NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,
+                              unsigned char Mdlharq,
+                              uint32_t Nsoft,
+                              uint8_t abstraction_flag,
+                              NR_DL_FRAME_PARMS *frame_parms,
+                              nfapi_nr_config_request_t *config);
+
 #endif /*__NR_TRANSPORT__H__*/

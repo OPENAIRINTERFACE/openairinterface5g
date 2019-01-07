@@ -57,7 +57,6 @@
 #     include "COMMON/ral_messages_types.h"
 #     include "UTIL/queue.h"
 #   endif
-#   include "common/utils/LOG/log.h"
 #   define msg(aRGS...) LOG_D(PHY, ##aRGS)
 # else
 #   define msg printf

@@ -35,7 +35,6 @@
 #define CEILIDIV(a,b) ((a+b-1)/b)
 #define ROUNDIDIV(a,b) (((a<<1)+b)/(b<<1))
 
-
 struct complex {
   double x;
   double y;
@@ -415,5 +414,7 @@ void idft8192(int16_t *x,int16_t *y,int scale);
 
 
 double interp(double x, double *xs, double *ys, int count);
+
+int write_output(const char *fname,const char *vname,void *data,int length,int dec,char format);
 
 #endif //__PHY_TOOLS_DEFS__H__

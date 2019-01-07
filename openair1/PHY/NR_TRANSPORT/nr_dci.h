@@ -51,7 +51,8 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
                            int subframe,
                            gNB_L1_rxtx_proc_t *proc,
                            NR_gNB_DCI_ALLOC_t *dci_alloc,
-                           nfapi_nr_dl_config_request_pdu_t *pdu);
+                           nfapi_nr_dl_config_dci_dl_pdu *pdu,
+                           nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu);
 
 void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t* dci_alloc, uint16_t n_shift, uint8_t m);
 

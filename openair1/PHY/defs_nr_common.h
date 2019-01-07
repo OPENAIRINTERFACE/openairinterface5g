@@ -53,9 +53,12 @@
 #define ONE_OVER_SQRT2_Q15 23170
 #define ONE_OVER_TWO_Q15 16384
 
-#define NR_MOD_TABLE_SIZE_SHORT 14
+#define NR_MOD_TABLE_SIZE_SHORT 686
 #define NR_MOD_TABLE_BPSK_OFFSET 1
 #define NR_MOD_TABLE_QPSK_OFFSET 3
+#define NR_MOD_TABLE_QAM16_OFFSET 7
+#define NR_MOD_TABLE_QAM64_OFFSET 23
+#define NR_MOD_TABLE_QAM256_OFFSET 87
 
 #define NR_PSS_LENGTH 127
 #define NR_SSS_LENGTH 127
@@ -70,6 +73,9 @@
 /*used for the resource mapping*/
 #define NR_MAX_PDCCH_DMRS_LENGTH 576 // 16(L)*2(QPSK)*3(3 DMRS symbs per REG)*6(REG per CCE)
 
+#define NR_MAX_PDSCH_DMRS_LENGTH 3300      //275*6(k)*2(QPSK)
+#define NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD 104  // ceil(NR_MAX_PDSCH_DMRS_LENGTH/32)
+
 #define NR_MAX_DCI_PAYLOAD_SIZE 64
 #define NR_MAX_DCI_SIZE 1728 //16(L)*2(QPSK)*9(12 RE per REG - 3(DMRS))*6(REG per CCE)
 #define NR_MAX_DCI_SIZE_DWORD 54 // ceil(NR_MAX_DCI_SIZE/32)
@@ -78,6 +84,13 @@
 
 #define NR_MAX_PDCCH_AGG_LEVEL 16
 #define NR_MAX_CSET_DURATION 3
+
+#define NR_MAX_NB_RBG 18
+#define NR_MAX_NB_LAYERS 8
+#define NR_MAX_NB_CODEWORDS 2
+#define NR_MAX_NB_HARQ_PROCESSES 16
+#define NR_MAX_PDSCH_ENCODED_LENGTH 950984
+#define NR_MAX_PDSCH_TBS 3824
 
 typedef enum {
   NR_MU_0=0,
@@ -108,6 +121,36 @@ typedef enum {
   nr_FR2
 } nr_frequency_range_e;
 
+typedef enum {
+  MOD_BPSK=0,
+  MOD_QPSK,
+  MOD_QAM16,
+  MOD_QAM64,
+  MOD_QAM256
+}nr_mod_t;
+
+typedef struct {
+  /// Size of first RBG
+  uint8_t start_size;
+  /// Nominal size
+  uint8_t P;
+  /// Size of last RBG
+  uint8_t end_size;
+  /// Number of RBG
+  uint8_t N_RBG;
+}nr_rbg_parms_t;
+
+typedef struct {
+  /// Size of first PRG
+  uint8_t start_size;
+  /// Nominal size
+  uint8_t P_prime;
+  /// Size of last PRG
+  uint8_t end_size;
+  /// Number of PRG
+  uint8_t N_PRG;
+} nr_prg_parms_t;
+
 typedef struct NR_BWP_PARMS {
   /// BWP ID
   uint8_t bwp_id;
@@ -121,6 +164,10 @@ typedef struct NR_BWP_PARMS {
   uint16_t ofdm_symbol_size;
   /// Cyclic prefix
   uint8_t cyclic_prefix;
+  /// RBG params
+  nr_rbg_parms_t rbg_parms;
+  /// PRG params
+  nr_prg_parms_t prg_parms;
 } NR_BWP_PARMS;
 
 typedef struct {
