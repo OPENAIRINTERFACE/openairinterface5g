@@ -57,21 +57,16 @@ static inline void* malloc32_clear(size_t size)
 */
 static inline t_nrLDPC_procBuf* nrLDPC_init_mem(void)
 {
-    t_nrLDPC_procBuf procBuf;
-    t_nrLDPC_procBuf* p_procBuf = &procBuf;
+    t_nrLDPC_procBuf* p_procBuf = (t_nrLDPC_procBuf*) malloc32_clear(sizeof(t_nrLDPC_procBuf));
 
-    p_procBuf->cnProcBuf    = (int8_t*) malloc32_clear(NR_LDPC_SIZE_CN_PROC_BUF*sizeof(int8_t));
-    p_procBuf->cnProcBufRes = (int8_t*) malloc32_clear(NR_LDPC_SIZE_CN_PROC_BUF*sizeof(int8_t));
-    p_procBuf->bnProcBuf    = (int8_t*) malloc32_clear(NR_LDPC_SIZE_BN_PROC_BUF*sizeof(int8_t));
-    p_procBuf->bnProcBufRes = (int8_t*) malloc32_clear(NR_LDPC_SIZE_BN_PROC_BUF*sizeof(int8_t));
-    p_procBuf->llrRes       = (int8_t*) malloc32_clear(NR_LDPC_MAX_NUM_LLR     *sizeof(int8_t));
-    p_procBuf->llrProcBuf   = (int8_t*) malloc32_clear(NR_LDPC_MAX_NUM_LLR     *sizeof(int8_t));
-
-    int i;
-    for (i=0;i<10;i++)
+    if (p_procBuf)
     {
-        printf("p_procBuf->cnProcBuf[%d] = %d\n",i,p_procBuf->cnProcBuf[i]);
-        printf("p_procBuf->cnProcBuf[%d] = %d\n",NR_LDPC_SIZE_CN_PROC_BUF - i - 1,p_procBuf->cnProcBuf[NR_LDPC_SIZE_CN_PROC_BUF - i - 1]);
+        p_procBuf->cnProcBuf    = (int8_t*) malloc32_clear(NR_LDPC_SIZE_CN_PROC_BUF*sizeof(int8_t));
+        p_procBuf->cnProcBufRes = (int8_t*) malloc32_clear(NR_LDPC_SIZE_CN_PROC_BUF*sizeof(int8_t));
+        p_procBuf->bnProcBuf    = (int8_t*) malloc32_clear(NR_LDPC_SIZE_BN_PROC_BUF*sizeof(int8_t));
+        p_procBuf->bnProcBufRes = (int8_t*) malloc32_clear(NR_LDPC_SIZE_BN_PROC_BUF*sizeof(int8_t));
+        p_procBuf->llrRes       = (int8_t*) malloc32_clear(NR_LDPC_MAX_NUM_LLR     *sizeof(int8_t));
+        p_procBuf->llrProcBuf   = (int8_t*) malloc32_clear(NR_LDPC_MAX_NUM_LLR     *sizeof(int8_t));
     }
 
     return(p_procBuf);
@@ -85,5 +80,7 @@ static inline void nrLDPC_free_mem(t_nrLDPC_procBuf* p_procBuf)
     free(p_procBuf->bnProcBufRes);
     free(p_procBuf->llrRes);
     free(p_procBuf->llrProcBuf);
+
+    free(p_procBuf);
 }
 #endif
