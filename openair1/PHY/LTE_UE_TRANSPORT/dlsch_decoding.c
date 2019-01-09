@@ -40,7 +40,6 @@
 //#define DEBUG_DLSCH_DECODING
 //#define UE_DEBUG_TRACE 1
 
-
 void free_ue_dlsch(LTE_UE_DLSCH_t *dlsch)
 {
 
@@ -626,7 +625,7 @@ decoder_if_t *tc;
 
   if (err_flag == 1) {
 #if UE_DEBUG_TRACE
-    LOG_I(PHY,"[UE %d] DLSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d, mcs %d) Kr %d r %d harq_process->round %d\n",
+    LOG_D(PHY,"[UE %d] DLSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d, mcs %d) Kr %d r %d harq_process->round %d\n",
         phy_vars_ue->Mod_id, frame, subframe, harq_pid,harq_process->status, harq_process->round,harq_process->TBS,harq_process->mcs,Kr,r,harq_process->round);
 #endif
     dlsch->harq_ack[subframe].ack = 0;
@@ -650,7 +649,7 @@ decoder_if_t *tc;
     return((1+dlsch->max_turbo_iterations));
   } else {
 #if UE_DEBUG_TRACE
-      LOG_I(PHY,"[UE %d] DLSCH: Setting ACK for subframe %d TBS %d mcs %d nb_rb %d\n",
+      LOG_D(PHY,"[UE %d] DLSCH: Setting ACK for subframe %d TBS %d mcs %d nb_rb %d\n",
            phy_vars_ue->Mod_id,subframe,harq_process->TBS,harq_process->mcs,harq_process->nb_rb);
 #endif
 

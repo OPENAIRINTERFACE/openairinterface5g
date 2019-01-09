@@ -133,7 +133,7 @@ lte_subframe_t get_subframe_direction(uint8_t Mod_id,uint8_t CC_id,uint8_t subfr
 
 }
 
-void pmch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
+void pmch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
 
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
@@ -314,7 +314,7 @@ void common_signal_procedures (PHY_VARS_eNB *eNB,int frame, int subframe) {
 
 
 void pdsch_procedures(PHY_VARS_eNB *eNB,
-		      eNB_rxtx_proc_t *proc,
+		      L1_rxtx_proc_t *proc,
 		      int harq_pid,
 		      LTE_eNB_DLSCH_t *dlsch, 
 		      LTE_eNB_DLSCH_t *dlsch1,
@@ -400,7 +400,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 
     start_meas(&eNB->dlsch_encoding_stats);
 
-    eNB->te(eNB,
+    dlsch_encoding_all(eNB,
 	  dlsch_harq->pdu,
 	  dlsch_harq->pdsch_start,
 	  dlsch,
@@ -465,7 +465,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 
 
 void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
-			   eNB_rxtx_proc_t *proc,
+			   L1_rxtx_proc_t *proc,
 			   int do_meas)
 {
   int frame=proc->frame_tx;
@@ -582,6 +582,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   }
 
   if (do_meas==1) stop_meas(&eNB->dlsch_common_and_dci);
+  if (do_meas==1) start_meas(&eNB->dlsch_ue_specific);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,0);
 
@@ -649,12 +650,13 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_PHICH,0);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+(eNB->CC_id),0);
+  if (do_meas==1) stop_meas(&eNB->dlsch_ue_specific);
   if (do_meas==1) stop_meas(&eNB->phy_proc_tx);
   
 }
 
 
-void srs_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
+void srs_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
 
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   const int subframe = proc->subframe_rx;
@@ -717,7 +719,7 @@ void fill_sr_indication(PHY_VARS_eNB *eNB,uint16_t rnti,int frame,int subframe,u
   pthread_mutex_unlock(&eNB->UL_INFO_mutex);
 }
 
-void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
+void uci_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc)
 {
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   uint8_t SR_payload = 0,pucch_b0b1[4][2]= {{0,0},{0,0},{0,0},{0,0}},harq_ack[4]={0,0,0,0};
@@ -1251,7 +1253,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
   }
 }
 
-void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
+void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc)
 {
   uint32_t ret=0,i;
   uint32_t harq_pid;
@@ -1472,7 +1474,7 @@ extern void *td_thread(void*);
 
 void init_td_thread(PHY_VARS_eNB *eNB) {
 
-  eNB_proc_t *proc = &eNB->proc;
+  L1_proc_t *proc = &eNB->proc;
 
   proc->tdp.eNB = eNB;
   proc->instance_cnt_td         = -1;
@@ -1486,7 +1488,7 @@ void init_td_thread(PHY_VARS_eNB *eNB) {
 }
 void kill_td_thread(PHY_VARS_eNB *eNB) {
 
-  eNB_proc_t *proc = &eNB->proc;
+  L1_proc_t *proc = &eNB->proc;
   proc->instance_cnt_td         = 0;
   pthread_cond_signal(&proc->cond_td);
   
@@ -1499,7 +1501,7 @@ extern void *te_thread(void*);
 
 void init_te_thread(PHY_VARS_eNB *eNB) {
 
-  eNB_proc_t *proc = &eNB->proc;
+  L1_proc_t *proc = &eNB->proc;
 
   for(int i=0; i<3 ;i++){
     proc->tep[i].eNB = eNB;
@@ -1515,7 +1517,7 @@ void init_te_thread(PHY_VARS_eNB *eNB) {
 }
 void kill_te_thread(PHY_VARS_eNB *eNB) {
 
-  eNB_proc_t *proc = &eNB->proc;
+  L1_proc_t *proc = &eNB->proc;
 
   for(int i=0; i<3 ;i++){
     proc->tep[i].instance_cnt_te         = 0;
@@ -2031,7 +2033,7 @@ void fill_crc_indication(PHY_VARS_eNB *eNB,int UE_id,int frame,int subframe,uint
   pthread_mutex_unlock(&eNB->UL_INFO_mutex);
 }
 
-void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
+void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc)
 {
   //RX processing for ue-specific resources (i
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;

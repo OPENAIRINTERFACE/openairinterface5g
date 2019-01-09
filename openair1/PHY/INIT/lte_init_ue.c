@@ -30,6 +30,7 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "assertions.h"
 #include <math.h>
+#include "PHY/LTE_ESTIMATION/lte_estimation.h"
 #include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
@@ -661,8 +662,9 @@ int init_lte_ue_signal(PHY_VARS_UE *ue,
 
 
 
-
+  init_dfts();
   init_frame_parms(&ue->frame_parms,1);
+  lte_sync_time_init(&ue->frame_parms);
   init_lte_top(&ue->frame_parms);
   init_7_5KHz();
   init_ul_hopping(&ue->frame_parms);

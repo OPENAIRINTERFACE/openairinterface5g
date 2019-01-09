@@ -40,6 +40,7 @@ function variant_usage {
     echo "    --variant cppcheck     OR -v4"
     echo "    --variant enb-ethernet OR -v7"
     echo "    --variant ue-ethernet  OR -v8"
+    echo "    --variant flexran-rtc  OR -v10"
 }
 
 MY_DIR=$(dirname $(readlink -f $0))
@@ -284,6 +285,15 @@ case $key in
     NBARGS=$[$NBARGS+256]
     shift
     ;;
+    -v10)
+    VM_NAME=ci-flexran-rtc
+    ARCHIVES_LOC=flexran
+    LOG_PATTERN=.Rel14.txt
+    NB_PATTERN_FILES=1
+    BUILD_OPTIONS="cmake . && make -j2"
+    NBARGS=$[$NBARGS+256]
+    shift
+    ;;
     --variant)
     variant="$2"
     case $variant in
@@ -338,6 +348,14 @@ case $key in
         LOG_PATTERN=.Rel14.txt
         NB_PATTERN_FILES=6
         BUILD_OPTIONS="--UE -t ETHERNET --noS1"
+        NBARGS=$[$NBARGS+256]
+        ;;
+        flexran-rtc)
+        VM_NAME=ci-flexran-rtc
+        ARCHIVES_LOC=flexran
+        LOG_PATTERN=.Rel14.txt
+        NB_PATTERN_FILES=1
+        BUILD_OPTIONS="cmake . && make -j2"
         NBARGS=$[$NBARGS+256]
         ;;
         *)

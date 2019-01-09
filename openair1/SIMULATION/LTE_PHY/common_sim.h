@@ -49,22 +49,6 @@ void sumUpStatsSlot(time_stats_t *res, time_stats_t src[RX_NB_TH][2], int lastAc
 	res->p_time=src[lastActive][last].p_time;
 }
 
-void printStatIndent(time_stats_t *ptr, char *txt) {
-  printf("|__ %-50s %.2f us (%d trials)\n",
-         txt,
-         ptr->trials?inMicroS(ptr->diff/ptr->trials):0,
-         ptr->trials);
-}
-
-void printStatIndent2(time_stats_t *ptr, char *txt, int turbo_iter) {
-  double timeBase=1/(1000*cpu_freq_GHz);
-  printf("    |__ %-45s %.2f us (cycles/block %ld, %5d trials)\n",
-         txt,
-         ptr->trials?((double)ptr->diff)/ptr->trials*timeBase:0,
-         turbo_iter?(uint64_t)round(((double)ptr->diff)/turbo_iter):0,
-         ptr->trials);
-}
-
 double squareRoot(time_stats_t *ptr) {
   double timeBase=1/(1000*cpu_freq_GHz);
   return sqrt((double)ptr->diff_square*pow(timeBase,2)/ptr->trials -
@@ -73,13 +57,37 @@ double squareRoot(time_stats_t *ptr) {
 
 void printDistribution(time_stats_t *ptr, varArray_t *sortedList, char *txt) {
   double timeBase=1/(1000*cpu_freq_GHz);
-  printf("%-50s             :%.2f us (%d trials)\n",
+  printf("%-43s %6.2f us (%d trials)\n",
          txt,
          (double)ptr->diff/ptr->trials*timeBase,
          ptr->trials);
-  printf("|__ Statistics std=%.2f, median=%.2f, q1=%.2f, q3=%.2f µs (on %ld trials)\n",
+  printf(" Statistics std=%.2f, median=%.2f, q1=%.2f, q3=%.2f µs (on %ld trials)\n",
          squareRoot(ptr), median(sortedList),q1(sortedList),q3(sortedList), sortedList->size);
 }
+
+void printStatIndent(time_stats_t *ptr, char *txt) {
+  printf("|__ %-38s %6.2f us (%3d trials)\n",
+         txt,
+         ptr->trials?inMicroS(ptr->diff/ptr->trials):0,
+         ptr->trials);
+}
+
+void printStatIndent2(time_stats_t *ptr, char *txt) {
+  double timeBase=1/(1000*cpu_freq_GHz);
+  printf("    |__ %-34s %6.2f us (%3d trials)\n",
+         txt,
+         ptr->trials?((double)ptr->diff)/ptr->trials*timeBase:0,
+	 ptr->trials);
+}
+
+void printStatIndent3(time_stats_t *ptr, char *txt) {
+  double timeBase=1/(1000*cpu_freq_GHz);
+  printf("        |__ %-30s %6.2f us (%3d trials)\n",
+         txt,
+         ptr->trials?((double)ptr->diff)/ptr->trials*timeBase:0,
+	 ptr->trials);
+}
+
 
 void logDistribution(FILE* fd, time_stats_t *ptr, varArray_t *sortedList, int dropped) {
   fprintf(fd,"%f;%f;%f;%f;%f;%f;%d;",

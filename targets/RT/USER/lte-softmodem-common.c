@@ -35,6 +35,8 @@
 #include "common/config/config_userapi.h"
 #include "common/utils/load_module_shlib.h"
 static softmodem_params_t softmodem_params;
+char *parallel_config=NULL;
+char *worker_config=NULL;
 
 uint64_t get_softmodem_optmask(void) {
      return softmodem_params.optmask;
@@ -49,31 +51,8 @@ softmodem_params_t* get_softmodem_params(void) {
      return &softmodem_params;
 }
 
-void set_parallel_conf(char *parallel_conf)
-{
-  if(strcmp(parallel_conf,"PARALLEL_SINGLE_THREAD")==0)           softmodem_params.thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
-  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_SPLIT")==0)        softmodem_params.thread_struct.parallel_conf = PARALLEL_RU_L1_SPLIT;
-  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_TRX_SPLIT")==0)    softmodem_params.thread_struct.parallel_conf = PARALLEL_RU_L1_TRX_SPLIT;
-  printf("[CONFIG] parallel conf is set to %d\n",softmodem_params.thread_struct.parallel_conf);
-} 
-void set_worker_conf(char *worker_conf)
-{
-  if(strcmp(worker_conf,"WORKER_DISABLE")==0)                     softmodem_params.thread_struct.worker_conf = WORKER_DISABLE;
-  else if(strcmp(worker_conf,"WORKER_ENABLE")==0)                 softmodem_params.thread_struct.worker_conf = WORKER_ENABLE;
-  printf("[CONFIG] worker conf is set to %d\n",softmodem_params.thread_struct.worker_conf);
-} 
-PARALLEL_CONF_t get_thread_parallel_conf(void)
-{
-  return softmodem_params.thread_struct.parallel_conf;
-} 
-WORKER_CONF_t get_thread_worker_conf(void)
-{
-  return softmodem_params.thread_struct.worker_conf;
-}  
 void get_common_options(void)
 {
-char *parallel_config=NULL;
-char *worker_config=NULL;
 
 
 uint32_t online_log_messages;
