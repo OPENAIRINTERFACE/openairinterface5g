@@ -1438,10 +1438,11 @@ void ue_prach_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
     prach_power = generate_prach(ue,eNB_id,subframe_tx,frame_tx);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GENERATE_PRACH, VCD_FUNCTION_OUT);
     //      stop_meas(&ue->tx_prach);
-    LOG_D(PHY,"[UE  %d][RAPROC] PRACH PL %d dB, power %d dBm, digital power %d dB (amp %d)\n",
+    LOG_I(PHY,"[UE  %d][RAPROC] PRACH PL %d dB, power %d dBm (max %d dBm), digital power %d dB (amp %d)\n",
 	  ue->Mod_id,
 	  get_PL(ue->Mod_id,ue->CC_id,eNB_id),
 	  ue->tx_power_dBm[subframe_tx],
+          ue->tx_power_max_dBm,
 	  dB_fixed(prach_power),
 	  ue->prach_vars[eNB_id]->amp);
 
@@ -1657,7 +1658,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
   }
 
 
-  if ( LOG_DEBUGFLAG(DEBUG_UE_PHYPROC)){
+  //if ( LOG_DEBUGFLAG(DEBUG_UE_PHYPROC)){
         LOG_D(PHY,
               "[UE  %d][PUSCH %d] AbsSubframe %d.%d Generating PUSCH : first_rb %d, nb_rb %d, round %d, mcs %d, rv %d, "
               "cyclic_shift %d (cyclic_shift_common %d,n_DMRS2 %d,n_PRS %d), ACK (%d,%d), O_ACK %d, ack_status_cw0 %d ack_status_cw1 %d bundling %d, Nbundled %d, CQI %d, RI %d\n",
@@ -1679,7 +1680,7 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
           ue->ulsch[eNB_id]->bundling, Nbundled,
           cqi_status,
           ri_status);
-  }
+  //}
 
 
 
@@ -1816,10 +1817,10 @@ void ue_ulsch_uespec_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB
     T(T_UE_PHY_PUSCH_TX_POWER, T_INT(eNB_id), T_INT(frame_tx%1024), T_INT(subframe_tx),T_INT(ue->tx_power_dBm[subframe_tx]),
       T_INT(tx_amp),T_INT(ue->ulsch[eNB_id]->f_pusch),T_INT(get_PL(Mod_id,0,eNB_id)),T_INT(nb_rb));
 
-    if (LOG_DEBUGFLAG(DEBUG_UE_PHYPROC)) {
+    //if (LOG_DEBUGFLAG(DEBUG_UE_PHYPROC)) {
       LOG_D(PHY,"[UE  %d][PUSCH %d] AbsSubFrame %d.%d, generating PUSCH, Po_PUSCH: %d dBm (max %d dBm), amp %d\n",
 	    Mod_id,harq_pid,frame_tx%1024,subframe_tx,ue->tx_power_dBm[subframe_tx],ue->tx_power_max_dBm, tx_amp);
-    }
+    //}
     if (LOG_DEBUGFLAG(UE_TIMING)) {
       start_meas(&ue->ulsch_modulation_stats);
     }
@@ -2368,7 +2369,7 @@ void phy_procedures_UE_TX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,ui
   
   if (subframe_select(&ue->frame_parms,proc->subframe_tx) == SF_UL ||
       ue->frame_parms.frame_type == FDD) {    
-    if (ue->UE_mode[eNB_id] != PRACH ) {
+    if (ue->UE_mode[eNB_id] > PRACH ) {
       // check cell srs subframe and ue srs subframe. This has an impact on pusch encoding
       isSubframeSRS = is_srs_occasion_common(&ue->frame_parms,proc->frame_tx,proc->subframe_tx);
       
@@ -2641,7 +2642,7 @@ void ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc, uin
     }
 
     // if this is the first PBCH after initial synchronization, make L1 state = PRACH
-    if (ue->UE_mode[eNB_id]==NOT_SYNCHED) ue->UE_mode[eNB_id] = PRACH;
+    //if (ue->UE_mode[eNB_id]==NOT_SYNCHED) ue->UE_mode[eNB_id] = PRACH;
 
     if (first_run) {
       first_run = 0;

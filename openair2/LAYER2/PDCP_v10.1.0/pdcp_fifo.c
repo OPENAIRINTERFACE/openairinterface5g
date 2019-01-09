@@ -719,11 +719,11 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
          if (!ctxt.enb_flag) {
             if (rab_id != 0) {
                if (rab_id == UE_IP_DEFAULT_RAB_ID) {
-                  LOG_I(PDCP, "PDCP_COLL_KEY_DEFAULT_DRB_VALUE(module_id=%d, rnti=%x, enb_flag=%d)\n",
+                  LOG_D(PDCP, "PDCP_COLL_KEY_DEFAULT_DRB_VALUE(module_id=%d, rnti=%x, enb_flag=%d)\n",
                         ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
                   key = PDCP_COLL_KEY_DEFAULT_DRB_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
                   h_rc = hashtable_get(pdcp_coll_p, key, (void**)&pdcp_p);
-                  LOG_I(PDCP,"request key %x : (%d,%x,%d,%d)\n",
+                  LOG_D(PDCP,"request key %x : (%d,%x,%d,%d)\n",
                         (uint8_t)key,ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id);
                } else {
                   rab_id = rab_id % LTE_maxDRB;
