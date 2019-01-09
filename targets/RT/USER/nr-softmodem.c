@@ -247,8 +247,6 @@ double cpuf;
 extern char uecap_xer[1024];
 char uecap_xer_in=0;
 
-threads_t threads= {-1,-1,-1,-1,-1,-1,-1};
-
 /* see file openair2/LAYER2/MAC/main.c for why abstraction_flag is needed
  * this is very hackish - find a proper solution
  */
@@ -1036,14 +1034,19 @@ int main( int argc, char **argv )
   char cpu_affinity[1024];
   CPU_ZERO(&cpuset);
 #ifdef CPU_AFFINITY
+  int j;
   if (get_nprocs() > 2) {
-    CPU_SET(0, &cpuset);
+    // CPU_SET(1, &cpuset);
+    for (j = 2; j < get_nprocs(); j++)
+    {
+      CPU_SET(j, &cpuset);
+    }
     s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
     if (s != 0) {
       perror( "pthread_setaffinity_np");
       exit_fun("Error setting processor affinity");
     }
-    LOG_I(HW, "Setting the affinity of main function to CPU 0, for device library to use CPU 0 only!\n");
+    LOG_I(HW, "Setting the affinity of main function to all CPUs, for device library to use CPU 0 only!\n");
   }
 #endif
   

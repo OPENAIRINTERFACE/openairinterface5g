@@ -1499,7 +1499,7 @@ static void* ru_thread( void* param ) {
   int                ret;
   int                subframe =9;
   int                frame    =1023; 
-  char               filename[40];
+  char               filename[40],threadname[40];
   int                print_frame = 2;
   int                i = 0;
 
@@ -1508,7 +1508,8 @@ static void* ru_thread( void* param ) {
 
 
   // set default return value
-  thread_top_init("ru_thread",0,870000,1000000,1000000);
+  sprintf(threadname,"ru_thread %d",ru->idx);
+  thread_top_init(threadname,0,870000,1000000,1000000);
 
   LOG_I(PHY,"Starting RU %d (%s,%s),\n",ru->idx,NB_functions[ru->function],NB_timing[ru->if_timing]);
 
