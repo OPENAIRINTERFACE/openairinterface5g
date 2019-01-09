@@ -169,7 +169,8 @@
 {"clock",                   CONFIG_HLP_CLK,         0,                      uptr:&clock_source,                 defintval:0,                    TYPE_UINT,      0},                     \
 {"wait-for-sync",           NULL,                   PARAMFLAG_BOOL,         iptr:&wait_for_sync,                defintval:0,                    TYPE_INT,       0},                     \
 {"single-thread-enable",    CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL,         iptr:&single_thread_flag,           defintval:0,                    TYPE_INT,       0},                     \
-{"threadIQ",                NULL,                   0,                      iptr:&(threads.iq),                 defintval:1,                    TYPE_INT,       0},                     \
+{"threadMain",                NULL,                   0,                      iptr:&(threads.main),                 defintval:1,                    TYPE_INT,       0},                     \
+{"threadSync",                NULL,                   0,                      iptr:&(threads.sync),                 defintval:1,                    TYPE_INT,       0},                     \
 {"threadOneSubframe",       NULL,                   0,                      iptr:&(threads.one),                defintval:1,                    TYPE_INT,       0},                     \
 {"threadTwoSubframe",       NULL,                   0,                      iptr:&(threads.two),                defintval:1,                    TYPE_INT,       0},                     \
 {"threadThreeSubframe",     NULL,                   0,                      iptr:&(threads.three),              defintval:1,                    TYPE_INT,       0},                     \

@@ -268,7 +268,8 @@ char uecap_xer[1024],uecap_xer_in=0;
 int oaisim_flag=0;
 int emulate_rf = 0;
 
-threads_t threads= {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
+threads_t threads = {-1,-1,-1,-1,-1,-1,-1,-1};
+int threads_offset = 0;
 
 char* usrp_args=NULL;
 char* usrp_clksrc=NULL;
@@ -1029,8 +1030,25 @@ int main( int argc, char **argv ) {
   //dump_frame_parms(frame_parms[0]);
   
   init_openair0();
-  
 
+  // default threads.main = 2
+  // if there are enough processors, all others on subsequent CPUs
+  if (threads_offset>0) {
+    if (threads_offset+8<=get_nprocs()) {
+      if (threads.main<0) threads.main=threads_offset+1;
+      if (threads.sync<0) threads.sync=threads_offset+2;
+      if (threads.one<0) threads.one=threads_offset+3;
+      if (threads.two<0) threads.two=threads_offset+4;
+      if (threads.three<0) threads.three=threads_offset+5;
+      if (threads.slot1_proc_one<0) threads.slot1_proc_one=threads_offset+6;
+      if (threads.slot1_proc_two<0) threads.slot1_proc_two=threads_offset+7;
+      if (threads.slot1_proc_three<0) threads.slot1_proc_three=threads_offset+8;
+    }
+    else {
+      LOG_E(HW,"Not enough CPUs available (nprocs (=%d) >= threadmain (=%d) + 10)\n",get_nprocs(),threads_offset);
+      exit_fun("Error setting thread affinity\n");
+    }
+  }
 
 #ifndef DEADLINE_SCHEDULER
 
@@ -1041,14 +1059,17 @@ int main( int argc, char **argv ) {
     char cpu_affinity[1024];
     CPU_ZERO(&cpuset);
 #ifdef CPU_AFFINITY
-    if (get_nprocs() > 2) {
-        CPU_SET(0, &cpuset);
+    int j;
+    if (get_nprocs()>=2) {
+      for (j = 2; j < get_nprocs(); j++)
+	CPU_SET(j, &cpuset);
+
         s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
         if (s != 0) {
             perror( "pthread_setaffinity_np");
             exit_fun("Error setting processor affinity");
         }
-        LOG_I(HW, "Setting the affinity of main function to CPU 0, for device library to use CPU 0 only!\n");
+        LOG_I(HW, "Setting the affinity of main function to all CPUs, for device library to use CPU 0 only!\n");
     }
 #endif
 
