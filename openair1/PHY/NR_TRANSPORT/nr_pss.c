@@ -48,7 +48,7 @@ int nr_generate_pss(  int16_t *d_pss,
 
   for (i=0; i < NR_PSS_LENGTH; i++) {
     m = (i + 43*Nid2)%(NR_PSS_LENGTH);
-    d_pss[i] = (1 - 2*x[m]) * 32767;
+    d_pss[i] = (1 - 2*x[m]) * 23170;
   }
 
 #ifdef NR_PSS_DEBUG

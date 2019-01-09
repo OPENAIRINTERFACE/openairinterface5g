@@ -57,7 +57,7 @@ int nr_generate_sss(  int16_t *d_sss,
   m1 = Nid1 % 112;
 
   for (i = 0; i < NR_SSS_LENGTH ; i++) {
-    d_sss[i] = (1 - 2*x0[(i + m0) % NR_SSS_LENGTH] ) * (1 - 2*x1[(i + m1) % NR_SSS_LENGTH] ) * 32767;
+    d_sss[i] = (1 - 2*x0[(i + m0) % NR_SSS_LENGTH] ) * (1 - 2*x1[(i + m1) % NR_SSS_LENGTH] ) * 23170;
   }
 
 #ifdef NR_SSS_DEBUG
