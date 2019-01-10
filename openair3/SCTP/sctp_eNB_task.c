@@ -745,7 +745,7 @@ static int sctp_create_new_listener(
     }
   }
   else {
-    if ((sd = socket(AF_INET6, SOCK_STREAM, IPPROTO_SCTP)) < 0) {
+    if ((sd = socket(AF_INET, SOCK_STREAM, IPPROTO_SCTP)) < 0) {
       SCTP_ERROR("socket: %s:%d\n", strerror(errno), errno);
       return -1;
     }
