@@ -942,9 +942,7 @@ void init_nr_ue_transport(PHY_VARS_NR_UE *ue,int abstraction_flag) {
 void phy_init_nr_top(PHY_VARS_NR_UE *ue)
 {
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
-  NR_UE_DLSCH_t *dlsch0 = ue->dlsch[0][0][0];
-  dlsch0 =(NR_UE_DLSCH_t *)malloc16(sizeof(NR_UE_DLSCH_t));
-  
+    
   crcTableInit();
 
   init_dfts();

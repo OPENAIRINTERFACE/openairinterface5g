@@ -267,6 +267,8 @@ typedef struct {
   double w_abs[MAX_NUM_NR_DLSCH_SEGMENTS][3*8448];
   /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
   int16_t *d[MAX_NUM_NR_DLSCH_SEGMENTS];
+  /// LDPC processing buffers
+  t_nrLDPC_procBuf* p_nrLDPC_procBuf[MAX_NUM_DLSCH_SEGMENTS];
   /// Number of code segments 
   uint32_t C;
   /// Number of bits in code segments
@@ -352,8 +354,6 @@ typedef struct {
   uint32_t Nsoft;
   /// Maximum number of LDPC iterations
   uint8_t max_ldpc_iterations;
-  /// LDPC processing buffers
-  t_nrLDPC_procBuf* p_nrLDPC_procBuf;
   /// number of iterations used in last turbo decoding
   uint8_t last_iteration_cnt;  
 } NR_UE_DLSCH_t;
