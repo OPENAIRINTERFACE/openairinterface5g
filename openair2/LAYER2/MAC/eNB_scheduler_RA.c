@@ -1614,14 +1614,14 @@ cancel_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP,
 	  module_idP, CC_id, frameP, rnti);
 
     for (i = 0; i < NB_RA_PROC_MAX; i++) {
-	if (rnti == ra[i].rnti) {
-	  ra[i].state = IDLE;
-	  ra[i].timing_offset = 0;
-	  ra[i].RRC_timer = 20;
-	  ra[i].rnti = 0;
-	  ra[i].msg3_round = 0;
-    LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Canceled RA procedure for UE rnti %x\n", module_idP, CC_id, frameP, rnti);
-	}
+      if (rnti == ra[i].rnti) {
+        ra[i].state = IDLE;
+        ra[i].timing_offset = 0;
+        ra[i].RRC_timer = 20;
+        ra[i].rnti = 0;
+        ra[i].msg3_round = 0;
+        LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Canceled RA procedure for UE rnti %x\n", module_idP, CC_id, frameP, rnti);
+      }
     }
 }
 

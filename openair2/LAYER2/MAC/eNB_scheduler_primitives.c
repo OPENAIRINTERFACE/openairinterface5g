@@ -1862,18 +1862,19 @@ int find_UE_id(module_id_t mod_idP, rnti_t rntiP)
 int find_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP)
 //------------------------------------------------------------------------------
 {
-  int RA_id;
   AssertFatal(RC.mac[mod_idP], "RC.mac[%d] is null\n", mod_idP);
-  RA_t *ra = (RA_t *) & RC.mac[mod_idP]->common_channels[CC_idP].ra[0];
 
-  for (RA_id = 0; RA_id < NB_RA_PROC_MAX; RA_id++) {
-    LOG_D(MAC,
-          "Checking RA_id %d for %x : state %d\n",
-          RA_id, rntiP, ra[RA_id].state);
+  RA_t *ra_ptr = RC.mac[mod_idP]->common_channels[CC_idP].ra;
 
-    if (ra[RA_id].state != IDLE &&
-        ra[RA_id].rnti == rntiP)
+  for (int RA_id = 0; RA_id < NB_RA_PROC_MAX; RA_id++, ra_ptr++) {
+    LOG_D(MAC, "Checking RA_id %d for %x : state %d\n",
+      RA_id, 
+      rntiP, 
+      ra_ptr[RA_id].state);
+
+    if ((ra_ptr->state != IDLE) && (ra_ptr->rnti == rntiP)) {
       return (RA_id);
+    }
   }
 
   return (-1);
