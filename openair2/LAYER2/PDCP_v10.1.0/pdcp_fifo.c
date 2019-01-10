@@ -168,7 +168,7 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
             ((pdcp_data_ind_header_t*) sdu_p->data)->inst,
             ((pdcp_data_ind_header_t *) sdu_p->data)->data_size);
 #else
-      ((pdcp_data_ind_header_t *)(sdu_p->data))->inst = 0;
+      //((pdcp_data_ind_header_t *)(sdu_p->data))->inst = 0;
 #endif
 
 #if defined(LINK_ENB_PDCP_TO_GTPV1U)
@@ -195,7 +195,7 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
 
 #endif /* defined(ENABLE_USE_MME) */
 #ifdef PDCP_DEBUG
-      LOG_D(PDCP, "PDCP->IP TTI %d INST %d: Preparing %d Bytes of data from rab %d to Nas_mesh\n",
+      LOG_I(PDCP, "PDCP->IP TTI %d INST %d: Preparing %d Bytes of data from rab %d to Nas_mesh\n",
             ctxt_pP->frame, ((pdcp_data_ind_header_t *)(sdu_p->data))->inst,
             ((pdcp_data_ind_header_t *)(sdu_p->data))->data_size, ((pdcp_data_ind_header_t *)(sdu_p->data))->rb_id);
 #endif //PDCP_DEBUG

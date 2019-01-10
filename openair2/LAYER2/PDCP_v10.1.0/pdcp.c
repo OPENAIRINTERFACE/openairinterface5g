@@ -473,6 +473,7 @@ pdcp_data_ind(
   LOG_DUMPMSG(PDCP,DEBUG_PDCP,(char *)sdu_buffer_pP->data,sdu_buffer_sizeP,
               "[MSG] PDCP UL %s PDU on rb_id %d\n", (srb_flagP)? "CONTROL" : "DATA", rb_idP);
 
+
 #if T_TRACER
   if (ctxt_pP->enb_flag != ENB_FLAG_NO)
     T(T_ENB_PDCP_UL, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->rnti), T_INT(rb_idP), T_INT(sdu_buffer_sizeP));
@@ -802,13 +803,16 @@ pdcp_data_ind(
       } else {
         ((pdcp_data_ind_header_t*) new_sdu_p->data)->rb_id = rb_id + (ctxt_pP->module_id * LTE_maxDRB);
       }
-      ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = ctxt_pP->module_id;
+
+      //Panos: Commented this out because it cancels the assignment in #if defined(ENABLE_USE_MME) case
+      //((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = ctxt_pP->module_id;
 
 #ifdef DEBUG_PDCP_FIFO_FLUSH_SDU
       static uint32_t pdcp_inst = 0;
       ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst = pdcp_inst++;
       LOG_D(PDCP, "inst=%d size=%d\n", ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst, ((pdcp_data_ind_header_t *) new_sdu_p->data)->data_size);
 #endif
+      //((pdcp_data_ind_header_t*) new_sdu_p->data)->inst = 1; //pdcp_inst++;
 
       memcpy(&new_sdu_p->data[sizeof (pdcp_data_ind_header_t)], \
              &sdu_buffer_pP->data[payload_offset], \
