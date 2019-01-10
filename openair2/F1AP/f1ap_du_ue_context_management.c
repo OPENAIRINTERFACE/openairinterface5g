@@ -681,10 +681,10 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCommandIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_RRCContainer, false);
   if (ie) {
-    /*pstruct rrc_eNB_ue_context_s* ue_context_p;
+    struct rrc_eNB_ue_context_s* ue_context_p;
     ue_context_p = rrc_eNB_get_ue_context(RC.rrc[ctxt.module_id], ctxt.rnti);
 
-    thread_mutex_lock(&rrc_release_freelist);
+    pthread_mutex_lock(&rrc_release_freelist);
     for (uint16_t release_num = 0; release_num < NUMBER_OF_UE_MAX; release_num++) {
       if (rrc_release_info.RRC_release_ctrl[release_num].flag == 0) {
         if (ue_context_p->ue_context.ue_release_timer_s1 > 0)
@@ -700,7 +700,7 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
         break;
       }
     }
-    pthread_mutex_unlock(&rrc_release_freelist);*/
+    pthread_mutex_unlock(&rrc_release_freelist);
 
     const sdu_size_t sdu_len = ie->value.choice.RRCContainer.size;
     mem_block_t *pdu_p = NULL;
@@ -738,9 +738,6 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
     }
   }
   
-  rrc_mac_remove_ue(instance, ctxt.rnti);
-  rrc_rlc_remove_ue(&ctxt);
-
   f1ap_ue_context_release_cplt_t cplt;
   cplt.rnti = ctxt.rnti;
   DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance, &cplt);

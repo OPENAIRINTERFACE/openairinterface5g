@@ -1079,7 +1079,9 @@ void release_UE_in_freeList(module_id_t mod_id)
                 }
               }
             }
-            if (RC.rrc[mod_id]->node_type == ngran_eNB) {
+            if (RC.rrc[mod_id]->node_type != ngran_eNB_CU
+                && RC.rrc[mod_id]->node_type != ngran_ng_eNB_CU
+                && RC.rrc[mod_id]->node_type != ngran_gNB_CU) {
               rrc_mac_remove_ue(mod_id,rnti);
               rrc_rlc_remove_ue(&ctxt);
             }
