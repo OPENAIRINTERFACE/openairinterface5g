@@ -38,9 +38,12 @@
 #include <string.h>
 
 #include "openair2/LAYER2/MAC/mac_proto.h"
+#include "rrc_extern.h"
+#include "rrc_eNB_UE_context.h"
 
 extern f1ap_setup_req_t *f1ap_du_data_from_du;
 extern f1ap_cudu_ue_inst_t f1ap_cu_ue[MAX_eNB];
+extern RAN_CONTEXT_t RC;
 
 int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
                                      f1ap_ue_context_setup_req_t *f1ap_ue_context_setup_req) {
@@ -951,6 +954,23 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
 
     // F1AP_CriticalityDiagnostics_IE_List
   }
+
+  /* The following is normally done in the function release_UE_in_freeList() */
+  /* remove PDCP entry */
+  protocol_ctxt_t ctxt;
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, instance, ENB_FLAG_YES, rnti, 0, 0, instance);
+  pdcp_remove_UE(&ctxt);
+
+  /* trigger UE release in RRC */
+  struct rrc_eNB_ue_context_s *ue_context_pP;
+  ue_context_pP = rrc_eNB_get_ue_context(RC.rrc[instance], rnti);
+  if (ue_context_pP)
+    rrc_eNB_remove_ue_context(&ctxt, RC.rrc[instance], ue_context_pP);
+
+  /* notify the agent */
+  if (flexran_agent_get_rrc_xface(instance))
+    flexran_agent_get_rrc_xface(instance)->flexran_agent_notify_ue_state_change(
+        instance, rnti, PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
 
   LOG_I(CU_F1AP, "Received UE CONTEXT RELEASE COMPLETE: Removing CU UE entry for RNTI %x\n", rnti);
   f1ap_remove_ue(&f1ap_cu_ue[instance], rnti);
