@@ -487,6 +487,8 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
+  init_nr_ue_transport(UE,0);
+
   nr_gold_pbch(UE);
   nr_gold_pdcch(UE,0,2);
 

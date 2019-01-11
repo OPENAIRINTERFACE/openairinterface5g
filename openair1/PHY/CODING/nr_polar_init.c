@@ -51,7 +51,7 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 
 	//Parse the list. If the node is already created, return without initialization.
 	while (currentPtr != NULL) {
-	  printf("currentPtr->idx %d, (%d,%d)\n",currentPtr->idx,currentPtr->payloadBits,currentPtr->encoderLength);
+	  //printf("currentPtr->idx %d, (%d,%d)\n",currentPtr->idx,currentPtr->payloadBits,currentPtr->encoderLength);
 	  if (currentPtr->idx == (messageType * messageLength * aggregation_prime)) return;
 	  else currentPtr = currentPtr->nextPtr;
 	}
@@ -64,7 +64,7 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 
 		newPolarInitNode->idx = (messageType * messageLength * aggregation_prime);
 		newPolarInitNode->nextPtr = NULL;
-		printf("newPolarInitNode->idx %d, (%d,%d,%d:%d)\n",newPolarInitNode->idx,messageType,messageLength,aggregation_prime,aggregation_level);
+		//printf("newPolarInitNode->idx %d, (%d,%d,%d:%d)\n",newPolarInitNode->idx,messageType,messageLength,aggregation_prime,aggregation_level);
 
 		if (messageType == 0) { //PBCH
 			newPolarInitNode->n_max = NR_POLAR_PBCH_N_MAX;
@@ -178,7 +178,7 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 	if (currentPtr == NULL)
 	{
 		*polarParams = newPolarInitNode;
-		printf("Creating first polarParams entry index %d, %p\n",newPolarInitNode->idx,*polarParams);
+		//printf("Creating first polarParams entry index %d, %p\n",newPolarInitNode->idx,*polarParams);
 		return;
 	}
 	//Else, add node to the end of the linked list.

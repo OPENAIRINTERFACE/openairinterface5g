@@ -542,7 +542,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   uint8_t ssb_index=0;
   //uint16_t crc;
   unsigned short idx_demod =0;
-  int8_t decoderState=0;
+  uint32_t decoderState=0;
   uint8_t decoderListSize = 8, pathMetricAppr = 0;
 
   time_stats_t polar_decoder_init,polar_rate_matching,decoding,bit_extraction,deinterleaving;
@@ -672,7 +672,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
   decoderState = polar_decoder_int16(pbch_e_rx,(uint8_t*)&nr_ue_pbch_vars->pbch_a_prime,currentPtr);
 
-  if(decoderState > 0)	return(decoderState);
+  if(decoderState)	return(decoderState);
   	
   //  printf("polar decoder output 0x%08x\n",nr_ue_pbch_vars->pbch_a_prime);
   
