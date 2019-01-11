@@ -133,6 +133,19 @@ rx_sdu(const module_id_t enb_mod_idP,
   memset(rx_lcids, 0, NB_RB_MAX * sizeof(unsigned char));
   memset(rx_lengths, 0, NB_RB_MAX * sizeof(unsigned short));
 
+  // LAD
+  /*
+  if (UE_id == -1) {
+    LOG_E(MAC, "Step 1\n");
+    LOG_W(MAC, "[MAC] UE_id = -1 ; RNTI = %x ; frame = %d ; subframe = %d ; sdu_length = %d ; sdu = %d\n",
+      rntiP,
+      frameP,
+      subframeP,
+      sdu_lenP,
+      *sduP);
+  }
+  */
+
   start_meas(&mac->rx_ulsch_sdu);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_SDU, 1);
@@ -182,6 +195,16 @@ rx_sdu(const module_id_t enb_mod_idP,
       }
 
       /* update bytes to schedule */
+
+      // LAD
+      /*
+      LOG_E(MAC, "Step 2\n");
+      LOG_W(MAC, "[MAC] UE_id != -1 and sduP != NULL : first_rb = %d ; scheduled_ul_bytes = %d ; TBS_UL = %d\n",
+        first_rb,
+        UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes,
+        UE_list->UE_template[CC_idP][UE_id].TBS_UL[harq_pid]);
+      */
+
       UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes -= UE_list->UE_template[CC_idP][UE_id].TBS_UL[harq_pid];
 
       if (UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes < 0) {
@@ -189,14 +212,16 @@ rx_sdu(const module_id_t enb_mod_idP,
       }
 
     } else {  // sduP == NULL => error
-      LOG_I(MAC, "[eNB %d][PUSCH %d] CC_id %d %d.%d ULSCH in error in round %d, ul_cqi %d\n",
+      LOG_W(MAC, "[eNB %d][PUSCH %d] CC_id %d %d.%d ULSCH in error in round %d, ul_cqi %d, UE_id %d, RNTI %x\n",
         enb_mod_idP, 
         harq_pid, 
         CC_idP,
         frameP,
         subframeP,
         UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid],
-        ul_cqi);
+        ul_cqi,
+        UE_id,
+        current_rnti);
 
       if (ul_cqi > 200) { // too high energy pattern
         UE_list->UE_sched_ctrl[UE_id].pusch_snr[CC_idP] = ul_cqi;
@@ -271,11 +296,19 @@ rx_sdu(const module_id_t enb_mod_idP,
       RA_id, 
       ul_cqi);
 
-    // first_rb = ra->msg3_first_rb; // Should it be ra[RA_id]???
     first_rb = ra[RA_id].msg3_first_rb;
 
+    // LAD
+    /*
+    LOG_E(MAC, "Step 3\n");
+    LOG_W(MAC, "[MAC] UE_id == -1 : first_rb = %d ; scheduled_ul_bytes = %d ; TBS_UL = %d\n",
+        first_rb,
+        UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes,
+        UE_list->UE_template[CC_idP][UE_id].TBS_UL[harq_pid]);
+    */
+
     if (sduP == NULL) { // we've got an error on Msg3
-      LOG_I(MAC, "[eNB %d] CC_id %d, RA %d ULSCH in error in round %d/%d\n",
+      LOG_W(MAC, "[eNB %d] CC_id %d, RA %d ULSCH in error in round %d/%d\n",
         enb_mod_idP, 
         CC_idP, 
         RA_id,
@@ -287,13 +320,40 @@ rx_sdu(const module_id_t enb_mod_idP,
       } else {
         first_rb = UE_list->UE_template[CC_idP][UE_id].first_rb_ul[harq_pid]; // UE_id = -1 !?
         ra[RA_id].msg3_round++;
-        
+
+        // LAD
+        /*
+        LOG_E(MAC, "Step 4\n");
+        LOG_W(MAC, "[MAC] [UEINFO1] UE_id = %d ; RNTI_ue_template = %x ; RNTI_sdu = %x\n",
+            UE_id,
+            UE_list->UE_template[CC_idP][UE_id].rnti,
+            current_rnti);
+
+        // LAD
+        LOG_W(MAC, "[MAC] UE_id == -1 and sduP == NULL : first_rb = %d ; scheduled_ul_bytes = %d ; TBS_UL = %d\n",
+            first_rb,
+            UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes,
+            UE_list->UE_template[CC_idP][UE_id].TBS_UL[harq_pid]);
+
+        // LAD
+        LOG_W(MAC, "[MAC] [RAPROC] msg3_subframe = %d ; msg3_frame = %d\n",
+            ra[RA_id].Msg3_subframe,
+            ra[RA_id].Msg3_frame);
+        */
+
         /* Prepare handling of retransmission */
         get_Msg3allocret(&mac->common_channels[CC_idP],
                          ra[RA_id].Msg3_subframe, 
                          ra[RA_id].Msg3_frame,
                          &ra[RA_id].Msg3_frame, 
                          &ra[RA_id].Msg3_subframe);
+
+        // LAD
+        /*
+        LOG_W(MAC, "[MAC] [RAPROC] After update: msg3_subframe = %d ; msg3_frame = %d\n",
+            ra[RA_id].Msg3_subframe,
+            ra[RA_id].Msg3_frame);
+        */
 
         add_msg3(enb_mod_idP, CC_idP, &ra[RA_id], frameP, subframeP);
       }
@@ -348,6 +408,17 @@ rx_sdu(const module_id_t enb_mod_idP,
   mac->eNB_stats[CC_idP].total_ulsch_pdus_rx += 1;
   UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] = 0; // can UE_id = -1 !?
 
+  // LAD
+  /*
+  LOG_E(MAC, "Step 5\n");
+  LOG_W(MAC, "[MAC] [UEINFO2] UE_id = %d ; RNTI_ue_template = %x ; RNTI_sdu = %x ; frame = %d ; subframe = %d\n",
+      UE_id,
+      UE_list->UE_template[CC_idP][UE_id].rnti,
+      current_rnti,
+      frameP,
+      subframeP);
+  */
+ 
   /* Control element */
   for (int i = 0; i < num_ce; i++) {
     T(T_ENB_MAC_UE_UL_CE, 
@@ -451,7 +522,7 @@ rx_sdu(const module_id_t enb_mod_idP,
             UE_list->UE_template[CC_idP][UE_id].ul_SR = 1;
             UE_list->UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag = 1;
 
-            break;
+            // break;
           }
         } else {
           cancel_ra_proc(enb_mod_idP, CC_idP, frameP, current_rnti);
@@ -1083,10 +1154,17 @@ schedule_ulsch(module_id_t module_idP,
 
   /* Second setup step */
   int sched_subframe = 0;
+  int sched_frame = 0;
+  int n_rb_ul_tab = 0;
 
   /* Second init step */
   sched_subframe = (subframeP + 4) % 10;
+  sched_frame = frameP;
   cc = mac->common_channels;
+
+  if (sched_subframe < subframeP) {
+    sched_frame++;
+  }
 
   /* For TDD: check subframes where we have to act and return if nothing should be done now */
   if (cc->tdd_Config) {  // Done only for CC_id = 0, assume tdd_Config for all CC_id
@@ -1200,6 +1278,24 @@ schedule_ulsch(module_id_t module_idP,
          * I'm letting the break as a reminder, in case of misunderstanding the spec.
          */
         // break;
+      }
+    }
+
+    /* Louis-Adrien: Only set for FDD (for the moment)
+     * Hard coded for prach-ConfigIndex = 0 and prach-Freqoffset = 2
+     * ToDo: The PRACH resources should be added with modularity (here?)
+     */
+    if (cc[CC_id].tdd_Config == NULL) { // FDD
+      if (((sched_frame %2) == 0) && sched_subframe == 1) { // RACH frame and subframe
+        if (first_rb[CC_id] < 8) {
+          n_rb_ul_tab = to_prb(cc[CC_id].ul_Bandwidth); // return total number of PRB
+
+          if (n_rb_ul_tab >= 8) {
+            first_rb[CC_id] = 8;
+          } else {
+            return;
+          }
+        }
       }
     }
   }

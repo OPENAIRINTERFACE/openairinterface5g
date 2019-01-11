@@ -203,59 +203,81 @@ class SSHConnection():
 			logging.debug('\u001B[1;37;41m Unexpected Others during closing\u001B[0m')
 
 	def copyin(self, ipaddress, username, password, source, destination):
+		count = 0
+		copy_status = False
 		logging.debug('scp '+ username + '@' + ipaddress + ':' + source + ' ' + destination)
-		scp_spawn = pexpect.spawn('scp '+ username + '@' + ipaddress + ':' + source + ' ' + destination, timeout = 5)
-		scp_response = scp_spawn.expect(['Are you sure you want to continue connecting (yes/no)?', 'password:', pexpect.EOF, pexpect.TIMEOUT])
-		if scp_response == 0:
-			scp_spawn.sendline('yes')
-			scp_spawn.expect('password:')
-			scp_spawn.sendline(password)
-			scp_response = scp_spawn.expect(['\$', 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
+		while count < 4:
+			scp_spawn = pexpect.spawn('scp '+ username + '@' + ipaddress + ':' + source + ' ' + destination, timeout = 5)
+			scp_response = scp_spawn.expect(['Are you sure you want to continue connecting (yes/no)?', 'password:', pexpect.EOF, pexpect.TIMEOUT])
 			if scp_response == 0:
-				pass
+				scp_spawn.sendline('yes')
+				scp_spawn.expect('password:')
+				scp_spawn.sendline(password)
+				scp_response = scp_spawn.expect(['\$', 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
+				if scp_response == 0:
+					count = 10
+					copy_status = True
+				else:
+					logging.debug('1 - scp_response = ' + str(scp_response))
+			elif scp_response == 1:
+				scp_spawn.sendline(password)
+				scp_response = scp_spawn.expect(['\$', 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
+				if scp_response == 0 or scp_response == 3:
+					count = 10
+					copy_status = True
+				else:
+					logging.debug('2 - scp_response = ' + str(scp_response))
+			elif scp_response == 2:
+				count = 10
+				copy_status = True
 			else:
-				logging.debug('1 - scp_response = ' + str(scp_response))
-				sys.exit('SCP failed')
-		elif scp_response == 1:
-			scp_spawn.sendline(password)
-			scp_response = scp_spawn.expect(['\$', 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
-			if scp_response == 0 or scp_response == 3:
-				pass
-			else:
-				logging.debug('2 - scp_response = ' + str(scp_response))
-				sys.exit('SCP failed')
-		elif scp_response == 2:
+				logging.debug('3 - scp_response = ' + str(scp_response))
+			# adding a tempo when failure
+			if not copy_status:
+				time.sleep(1)
+			count += 1
+		if copy_status:
 			pass
 		else:
-			logging.debug('3 - scp_response = ' + str(scp_response))
 			sys.exit('SCP failed')
 
 	def copyout(self, ipaddress, username, password, source, destination):
+		count = 0
+		copy_status = False
 		logging.debug('scp ' + source + ' ' + username + '@' + ipaddress + ':' + destination)
-		scp_spawn = pexpect.spawn('scp ' + source + ' ' + username + '@' + ipaddress + ':' + destination, timeout = 5)
-		scp_response = scp_spawn.expect(['Are you sure you want to continue connecting (yes/no)?', 'password:', pexpect.EOF, pexpect.TIMEOUT])
-		if scp_response == 0:
-			scp_spawn.sendline('yes')
-			scp_spawn.expect('password:')
-			scp_spawn.sendline(password)
-			scp_response = scp_spawn.expect(['\$', 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
+		while count < 4:
+			scp_spawn = pexpect.spawn('scp ' + source + ' ' + username + '@' + ipaddress + ':' + destination, timeout = 5)
+			scp_response = scp_spawn.expect(['Are you sure you want to continue connecting (yes/no)?', 'password:', pexpect.EOF, pexpect.TIMEOUT])
 			if scp_response == 0:
-				pass
+				scp_spawn.sendline('yes')
+				scp_spawn.expect('password:')
+				scp_spawn.sendline(password)
+				scp_response = scp_spawn.expect(['\$', 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
+				if scp_response == 0:
+					count = 10
+					copy_status = True
+				else:
+					logging.debug('1 - scp_response = ' + str(scp_response))
+			elif scp_response == 1:
+				scp_spawn.sendline(password)
+				scp_response = scp_spawn.expect(['\$', 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
+				if scp_response == 0 or scp_response == 3:
+					count = 10
+					copy_status = True
+				else:
+					logging.debug('2 - scp_response = ' + str(scp_response))
+			elif scp_response == 2:
+				count = 10
+				copy_status = True
 			else:
-				logging.debug('1 - scp_response = ' + str(scp_response))
-				sys.exit('SCP failed')
-		elif scp_response == 1:
-			scp_spawn.sendline(password)
-			scp_response = scp_spawn.expect(['\$', 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
-			if scp_response == 0 or scp_response == 3:
-				pass
-			else:
-				logging.debug('2 - scp_response = ' + str(scp_response))
-				sys.exit('SCP failed')
-		elif scp_response == 2:
+				logging.debug('3 - scp_response = ' + str(scp_response))
+			# adding a tempo when failure
+			if not copy_status:
+				time.sleep(1)
+			count += 1
+		if copy_status:
 			pass
 		else:
-			logging.debug('3 - scp_response = ' + str(scp_response))
 			sys.exit('SCP failed')
 
 	def BuildeNB(self):
@@ -2061,7 +2083,7 @@ class SSHConnection():
 
 	def CreateHtmlTabFooter(self, passStatus):
 		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
-			self.htmlFile.write('      <tr">\n')
+			self.htmlFile.write('      <tr>\n')
 			self.htmlFile.write('        <th bgcolor = "#33CCFF" colspan=2>Final Tab Status</th>\n')
 			if passStatus:
 				self.htmlFile.write('        <th bgcolor = "green" colspan=' + str(2 + self.htmlUEConnected) + '><font color="white">PASS <span class="glyphicon glyphicon-ok"></span> </font></th>\n')

@@ -112,7 +112,7 @@ add_msg3(module_id_t module_idP, int CC_id, RA_t * ra, frame_t frameP,
     nfapi_hi_dci0_request_body_t   *hi_dci0_req_body;
     nfapi_hi_dci0_request_pdu_t    *hi_dci0_pdu;
     uint8_t sf_ahead_dl;
-    uint8_t rvseq[4] = { 0, 2, 3, 1 };
+    uint8_t rvseq[4] = {0, 2, 3, 1};
 
 
     ul_req = &mac->UL_req_tmp[CC_id][ra->Msg3_subframe];
