@@ -134,6 +134,7 @@ rx_sdu(const module_id_t enb_mod_idP,
   memset(rx_lengths, 0, NB_RB_MAX * sizeof(unsigned short));
 
   // LAD
+  /*
   if (UE_id == -1) {
     LOG_E(MAC, "Step 1\n");
     LOG_W(MAC, "[MAC] UE_id = -1 ; RNTI = %x ; frame = %d ; subframe = %d ; sdu_length = %d ; sdu = %d\n",
@@ -143,6 +144,7 @@ rx_sdu(const module_id_t enb_mod_idP,
       sdu_lenP,
       *sduP);
   }
+  */
 
   start_meas(&mac->rx_ulsch_sdu);
 
@@ -195,11 +197,13 @@ rx_sdu(const module_id_t enb_mod_idP,
       /* update bytes to schedule */
 
       // LAD
+      /*
       LOG_E(MAC, "Step 2\n");
       LOG_W(MAC, "[MAC] UE_id != -1 and sduP != NULL : first_rb = %d ; scheduled_ul_bytes = %d ; TBS_UL = %d\n",
         first_rb,
         UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes,
         UE_list->UE_template[CC_idP][UE_id].TBS_UL[harq_pid]);
+      */
 
       UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes -= UE_list->UE_template[CC_idP][UE_id].TBS_UL[harq_pid];
 
@@ -295,11 +299,13 @@ rx_sdu(const module_id_t enb_mod_idP,
     first_rb = ra[RA_id].msg3_first_rb;
 
     // LAD
+    /*
     LOG_E(MAC, "Step 3\n");
     LOG_W(MAC, "[MAC] UE_id == -1 : first_rb = %d ; scheduled_ul_bytes = %d ; TBS_UL = %d\n",
         first_rb,
         UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes,
         UE_list->UE_template[CC_idP][UE_id].TBS_UL[harq_pid]);
+    */
 
     if (sduP == NULL) { // we've got an error on Msg3
       LOG_W(MAC, "[eNB %d] CC_id %d, RA %d ULSCH in error in round %d/%d\n",
@@ -316,6 +322,7 @@ rx_sdu(const module_id_t enb_mod_idP,
         ra[RA_id].msg3_round++;
 
         // LAD
+        /*
         LOG_E(MAC, "Step 4\n");
         LOG_W(MAC, "[MAC] [UEINFO1] UE_id = %d ; RNTI_ue_template = %x ; RNTI_sdu = %x\n",
             UE_id,
@@ -332,7 +339,8 @@ rx_sdu(const module_id_t enb_mod_idP,
         LOG_W(MAC, "[MAC] [RAPROC] msg3_subframe = %d ; msg3_frame = %d\n",
             ra[RA_id].Msg3_subframe,
             ra[RA_id].Msg3_frame);
-        
+        */
+
         /* Prepare handling of retransmission */
         get_Msg3allocret(&mac->common_channels[CC_idP],
                          ra[RA_id].Msg3_subframe, 
@@ -341,9 +349,11 @@ rx_sdu(const module_id_t enb_mod_idP,
                          &ra[RA_id].Msg3_subframe);
 
         // LAD
+        /*
         LOG_W(MAC, "[MAC] [RAPROC] After update: msg3_subframe = %d ; msg3_frame = %d\n",
             ra[RA_id].Msg3_subframe,
             ra[RA_id].Msg3_frame);
+        */
 
         add_msg3(enb_mod_idP, CC_idP, &ra[RA_id], frameP, subframeP);
       }
@@ -399,6 +409,7 @@ rx_sdu(const module_id_t enb_mod_idP,
   UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] = 0; // can UE_id = -1 !?
 
   // LAD
+  /*
   LOG_E(MAC, "Step 5\n");
   LOG_W(MAC, "[MAC] [UEINFO2] UE_id = %d ; RNTI_ue_template = %x ; RNTI_sdu = %x ; frame = %d ; subframe = %d\n",
       UE_id,
@@ -406,7 +417,8 @@ rx_sdu(const module_id_t enb_mod_idP,
       current_rnti,
       frameP,
       subframeP);
-
+  */
+ 
   /* Control element */
   for (int i = 0; i < num_ce; i++) {
     T(T_ENB_MAC_UE_UL_CE, 
