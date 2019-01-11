@@ -128,7 +128,6 @@ rx_sdu(const module_id_t enb_mod_idP,
   mac = RC.mac[enb_mod_idP];
   harq_pid = subframe2harqpid(&mac->common_channels[CC_idP], frameP, subframeP);
   UE_list = &mac->UE_list;
-  //ra = (RA_t *) &RC.mac[enb_mod_idP]->common_channels[CC_idP].ra[0];
   ra = RC.mac[enb_mod_idP]->common_channels[CC_idP].ra;
   memset(rx_ces, 0, MAX_NUM_CE * sizeof(unsigned char));
   memset(rx_lcids, 0, NB_RB_MAX * sizeof(unsigned char));
@@ -141,7 +140,7 @@ rx_sdu(const module_id_t enb_mod_idP,
   if (opt_enabled == 1) {
     trace_pdu(DIRECTION_UPLINK, sduP, sdu_lenP, 0, WS_C_RNTI, current_rnti, frameP, subframeP, 0, 0);
     
-    LOG_D(OPT, "[eNB %d][ULSCH] Frame %d  rnti %x  with size %d\n",
+    LOG_D(OPT, "[eNB %d][ULSCH] Frame %d rnti %x with size %d\n",
       enb_mod_idP, 
       frameP, 
       current_rnti, 
@@ -179,7 +178,6 @@ rx_sdu(const module_id_t enb_mod_idP,
 
       if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync > 0) {
         UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync = 0;
-        // mac_eNB_rrc_ul_in_sync(enb_mod_idP, CC_idP, frameP, subframeP, UE_RNTI(enb_mod_idP, UE_id)); // replace UE_RNTI(enb_mod_idP, UE_id) by current_rnti ??
         mac_eNB_rrc_ul_in_sync(enb_mod_idP, CC_idP, frameP, subframeP, current_rnti);
       }
 
