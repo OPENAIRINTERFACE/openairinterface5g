@@ -530,10 +530,10 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
   int max_h=0;
 
-  int symbol,i;
+  int symbol;
   //uint8_t pbch_a[64];
   uint8_t *pbch_a = malloc(sizeof(uint8_t) * 32);
-  uint32_t pbch_a_prime;
+  //uint32_t pbch_a_prime;
   int16_t *pbch_e_rx;
   uint8_t *decoded_output = nr_ue_pbch_vars->decoded_output;
   uint8_t nushift;
@@ -541,12 +541,12 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   uint8_t Lmax=8; //to update
   uint8_t ssb_index=0;
   //uint16_t crc;
-  unsigned short idx_demod =0;
+  //unsigned short idx_demod =0;
   uint32_t decoderState=0;
-  uint8_t decoderListSize = 8, pathMetricAppr = 0;
+  //uint8_t decoderListSize = 8, pathMetricAppr = 0;
 
-  time_stats_t polar_decoder_init,polar_rate_matching,decoding,bit_extraction,deinterleaving;
-  time_stats_t path_metric,sorting,update_LLR;
+  //time_stats_t polar_decoder_init,polar_rate_matching,decoding,bit_extraction,deinterleaving;
+  //time_stats_t path_metric,sorting,update_LLR;
   memset(&pbch_a[0], 0, sizeof(uint8_t) * NR_POLAR_PBCH_PAYLOAD_BITS);
 
   //printf("nr_pbch_ue nid_cell %d\n",frame_parms->Nid_cell);
@@ -670,11 +670,18 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
   t_nrPolar_params *currentPtr = nr_polar_params(nr_ue_pbch_vars->nrPolar_params, NR_POLAR_PBCH_MESSAGE_TYPE, NR_POLAR_PBCH_PAYLOAD_BITS, NR_POLAR_PBCH_AGGREGATION_LEVEL);
 
-  decoderState = polar_decoder_int16(pbch_e_rx,(uint8_t*)&nr_ue_pbch_vars->pbch_a_prime,currentPtr);
-
-  if(decoderState)	return(decoderState);
+  decoderState = polar_decoder_int16(pbch_e_rx,(uint64_t*)&nr_ue_pbch_vars->pbch_a_prime,currentPtr);
+ 
+  if(decoderState) return(decoderState);
   	
   //  printf("polar decoder output 0x%08x\n",nr_ue_pbch_vars->pbch_a_prime);
+
+  // Decoder reversal
+  uint32_t a_reversed=0;
+  for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++)
+    a_reversed |= (((uint64_t)nr_ue_pbch_vars->pbch_a_prime>>i)&1)<<(31-i);
+
+  nr_ue_pbch_vars->pbch_a_prime = a_reversed;
   
   //payload un-scrambling
   memset(&nr_ue_pbch_vars->pbch_a_interleaved, 0, sizeof(uint32_t) );
