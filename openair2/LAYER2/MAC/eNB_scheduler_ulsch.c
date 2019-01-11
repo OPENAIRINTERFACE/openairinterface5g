@@ -135,6 +135,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 
   // LAD
   if (UE_id == -1) {
+    LOG_E(MAC, "Step 1\n");
     LOG_W(MAC, "[MAC] UE_id = -1 ; RNTI = %x ; frame = %d ; subframe = %d ; sdu_length = %d ; sdu = %d\n",
       rntiP,
       frameP,
@@ -194,6 +195,7 @@ rx_sdu(const module_id_t enb_mod_idP,
       /* update bytes to schedule */
 
       // LAD
+      LOG_E(MAC, "Step 2\n");
       LOG_W(MAC, "[MAC] UE_id != -1 and sduP != NULL : first_rb = %d ; scheduled_ul_bytes = %d ; TBS_UL = %d\n",
         first_rb,
         UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes,
@@ -293,13 +295,14 @@ rx_sdu(const module_id_t enb_mod_idP,
     first_rb = ra[RA_id].msg3_first_rb;
 
     // LAD
+    LOG_E(MAC, "Step 3\n");
     LOG_W(MAC, "[MAC] UE_id == -1 : first_rb = %d ; scheduled_ul_bytes = %d ; TBS_UL = %d\n",
         first_rb,
         UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes,
         UE_list->UE_template[CC_idP][UE_id].TBS_UL[harq_pid]);
 
     if (sduP == NULL) { // we've got an error on Msg3
-      LOG_I(MAC, "[eNB %d] CC_id %d, RA %d ULSCH in error in round %d/%d\n",
+      LOG_W(MAC, "[eNB %d] CC_id %d, RA %d ULSCH in error in round %d/%d\n",
         enb_mod_idP, 
         CC_idP, 
         RA_id,
@@ -313,7 +316,8 @@ rx_sdu(const module_id_t enb_mod_idP,
         ra[RA_id].msg3_round++;
 
         // LAD
-        LOG_W(MAC, "[MAC] [UEINFO] UE_id = %d ; RNTI_ue_template = %x ; RNTI_sdu = %x\n",
+        LOG_E(MAC, "Step 4\n");
+        LOG_W(MAC, "[MAC] [UEINFO1] UE_id = %d ; RNTI_ue_template = %x ; RNTI_sdu = %x\n",
             UE_id,
             UE_list->UE_template[CC_idP][UE_id].rnti,
             current_rnti);
@@ -395,10 +399,13 @@ rx_sdu(const module_id_t enb_mod_idP,
   UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] = 0; // can UE_id = -1 !?
 
   // LAD
-  LOG_W(MAC, "[MAC] [UEINFO] UE_id = %d ; RNTI_ue_template = %x ; RNTI_sdu = %x\n",
+  LOG_E(MAC, "Step 5\n");
+  LOG_W(MAC, "[MAC] [UEINFO2] UE_id = %d ; RNTI_ue_template = %x ; RNTI_sdu = %x ; frame = %d ; subframe = %d\n",
       UE_id,
       UE_list->UE_template[CC_idP][UE_id].rnti,
-      current_rnti);
+      current_rnti,
+      frameP,
+      subframeP);
 
   /* Control element */
   for (int i = 0; i < num_ce; i++) {
