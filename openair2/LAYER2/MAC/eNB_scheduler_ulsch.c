@@ -1142,10 +1142,17 @@ schedule_ulsch(module_id_t module_idP,
 
   /* Second setup step */
   int sched_subframe = 0;
+  int sched_frame = 0;
+  int n_rb_ul_tab = 0;
 
   /* Second init step */
   sched_subframe = (subframeP + 4) % 10;
+  sched_frame = frameP;
   cc = mac->common_channels;
+
+  if (sched_subframe < subframeP) {
+    sched_frame++;
+  }
 
   /* For TDD: check subframes where we have to act and return if nothing should be done now */
   if (cc->tdd_Config) {  // Done only for CC_id = 0, assume tdd_Config for all CC_id
@@ -1259,6 +1266,24 @@ schedule_ulsch(module_id_t module_idP,
          * I'm letting the break as a reminder, in case of misunderstanding the spec.
          */
         // break;
+      }
+    }
+
+    /* Louis-Adrien: Only set for FDD (for the moment)
+     * Hard coded for prach-ConfigIndex = 0 and prach-Freqoffset = 2
+     * ToDo: The PRACH resources should be added with modularity (here?)
+     */
+    if (cc[CC_id].tdd_Config == NULL) { // FDD
+      if (((sched_frame %2) == 0) && sched_subframe == 1) { // RACH frame and subframe
+        if (first_rb[CC_id] < 8) {
+          n_rb_ul_tab = to_prb(cc[CC_id].ul_Bandwidth); // return total number of PRB
+
+          if (n_rb_ul_tab >= 8) {
+            first_rb[CC_id] = 8;
+          } else {
+            return;
+          }
+        }
       }
     }
   }
