@@ -1,3 +1,4 @@
+
 /*
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -33,7 +34,7 @@
 #ifndef __NR_TRANSPORT_COMMON_PROTO__H__
 #define __NR_TRANSPORT_COMMON_PROTO__H__
 
-#define MAX_NUM_NR_DLSCH_SEGMENTS 32
+#define MAX_NUM_NR_DLSCH_SEGMENTS 16
 #define MAX_NUM_NR_ULSCH_SEGMENTS MAX_NUM_NR_DLSCH_SEGMENTS
 
 #define MAX_NR_DLSCH_PAYLOAD_BYTES (MAX_NUM_NR_DLSCH_SEGMENTS*1056)

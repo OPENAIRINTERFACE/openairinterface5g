@@ -88,4 +88,16 @@ typedef struct nrLDPC_time_stats {
     time_stats_t total; /**< Statistics for total processing time */
 } t_nrLDPC_time_stats;
 
+/**
+   Structure containing the processing buffers
+ */
+typedef struct nrLDPC_procBuf {
+    int8_t* cnProcBuf; /**< CN processing buffer */
+    int8_t* cnProcBufRes; /**< Buffer for CN processing results */
+    int8_t* bnProcBuf; /**< BN processing buffer */
+    int8_t* bnProcBufRes; /**< Buffer for BN processing results */
+    int8_t* llrRes; /**< Buffer for LLR results */
+    int8_t* llrProcBuf; /**< LLR processing buffer */
+} t_nrLDPC_procBuf;
+
 #endif
