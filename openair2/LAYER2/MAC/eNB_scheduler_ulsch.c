@@ -1307,12 +1307,14 @@ schedule_ulsch(module_id_t module_idP,
       first_rb[CC_id] = start_rb + nb_rb;
 
       // LAD
+      /*
       LOG_W(MAC, "[MAC] Config Index = %d ; Freq_offset = %d ; first_rb = %d ; subframe = %d ; sched_subframe = %d\n",
         frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
         frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset,
         first_rb[CC_id],
         subframeP,
         sched_subframe);
+      */
     }
 
     /*
