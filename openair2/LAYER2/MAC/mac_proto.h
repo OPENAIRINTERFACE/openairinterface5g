@@ -444,7 +444,7 @@ uint8_t get_aggregation(uint8_t bw_index, uint8_t cqi, uint8_t dci_fmt);
 
 int8_t find_active_UEs_with_traffic(module_id_t module_idP);
 
-void init_CCE_table(int module_idP, int CC_idP);
+void init_CCE_table(int *CCE_table);
 
 int get_nCCE_offset(int *CCE_table,
 		    const unsigned char L,
