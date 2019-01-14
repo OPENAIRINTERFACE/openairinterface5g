@@ -146,6 +146,17 @@ rx_sdu(const module_id_t enb_mod_idP,
   }
   */
 
+
+  // LAD
+  first_rb = UE_list->UE_template[CC_idP][UE_id].first_rb_ul[harq_pid];
+  LOG_W(MAC, "[MAC] UE_id = %d : first_rb = %d ; scheduled_ul_bytes = %d ; TBS_UL = %d ; frame = %d ; subframe = %d\n",
+    UE_id,
+    first_rb,
+    UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes,
+    UE_list->UE_template[CC_idP][UE_id].TBS_UL[harq_pid],
+    frameP,
+    subframeP);
+
   start_meas(&mac->rx_ulsch_sdu);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_SDU, 1);
