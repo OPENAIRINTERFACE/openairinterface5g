@@ -146,8 +146,8 @@ rx_sdu(const module_id_t enb_mod_idP,
   }
   */
 
-
   // LAD
+  /*
   first_rb = UE_list->UE_template[CC_idP][UE_id].first_rb_ul[harq_pid];
   LOG_W(MAC, "[MAC] UE_id = %d : first_rb = %d ; scheduled_ul_bytes = %d ; TBS_UL = %d ; frame = %d ; subframe = %d\n",
     UE_id,
@@ -156,6 +156,7 @@ rx_sdu(const module_id_t enb_mod_idP,
     UE_list->UE_template[CC_idP][UE_id].TBS_UL[harq_pid],
     frameP,
     subframeP);
+  */
 
   start_meas(&mac->rx_ulsch_sdu);
 
@@ -329,7 +330,7 @@ rx_sdu(const module_id_t enb_mod_idP,
       if (ra[RA_id].msg3_round >= mac->common_channels[CC_idP].radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx - 1) {
         cancel_ra_proc(enb_mod_idP, CC_idP, frameP, current_rnti); 
       } else {
-        first_rb = UE_list->UE_template[CC_idP][UE_id].first_rb_ul[harq_pid]; // UE_id = -1 !?
+        // first_rb = UE_list->UE_template[CC_idP][UE_id].first_rb_ul[harq_pid]; // UE_id = -1 !!!!
         ra[RA_id].msg3_round++;
 
         // LAD
@@ -417,7 +418,9 @@ rx_sdu(const module_id_t enb_mod_idP,
   mac->eNB_stats[CC_idP].ulsch_bytes_rx = sdu_lenP;
   mac->eNB_stats[CC_idP].total_ulsch_bytes_rx += sdu_lenP;
   mac->eNB_stats[CC_idP].total_ulsch_pdus_rx += 1;
-  UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] = 0; // can UE_id = -1 !?
+  if (UE_id != -1) {
+    UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] = 0;
+  }
 
   // LAD
   /*
@@ -1166,7 +1169,6 @@ schedule_ulsch(module_id_t module_idP,
   /* Second setup step */
   int sched_subframe = 0;
   int sched_frame = 0;
-  int n_rb_ul_tab = 0;
 
   /* Second init step */
   sched_subframe = (subframeP + 4) % 10;
@@ -1271,9 +1273,49 @@ schedule_ulsch(module_id_t module_idP,
   for (int CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++, cc++) {
     first_rb[CC_id] = 1;  // leave out first RB for PUCCH
 
+    int start_rb = 0;
+    int nb_rb = 6;
+    LTE_DL_FRAME_PARMS *frame_parms = &(RC.eNB[module_idP][CC_id]->frame_parms);
     RA_t *ra_ptr = cc->ra;
 
-    /* 
+    /* Louis-Adrien: Only set for FDD (for the moment)
+     * Hard coded for prach-ConfigIndex = 0 and prach-Freqoffset = 2
+     * ToDo: The PRACH resources should be added with modularity (here?)
+     */
+    /*
+    if (cc->tdd_Config == NULL) { // FDD
+      if (((sched_frame %2) == 0) && sched_subframe == 1) { // RACH frame and subframe
+        if (first_rb[CC_id] < 8) {
+          n_rb_ul_tab = to_prb(cc->ul_Bandwidth); // return total number of PRB
+
+          if (n_rb_ul_tab >= 8) {
+            first_rb[CC_id] = 8;
+          } else {
+            return;
+          }
+        }
+      }
+    }
+    */
+    if (is_prach_subframe(frame_parms, sched_frame, sched_subframe) == 1) {
+      start_rb = get_prach_prb_offset(frame_parms, 
+                                      frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
+                                      frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset,
+                                      0, // tdd_mapindex
+                                      frameP); // Nf  --> shouldn't it be sched_frame ???
+      
+      first_rb[CC_id] = start_rb + nb_rb;
+
+      // LAD
+      LOG_W(MAC, "[MAC] Config Index = %d ; Freq_offset = %d ; first_rb = %d ; subframe = %d ; sched_subframe = %d\n",
+        frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
+        frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset,
+        first_rb[CC_id],
+        subframeP,
+        sched_subframe);
+    }
+
+    /*
      * Check if RA (Msg3) is active in this subframeP, if so skip the PRB used for Msg3
      * Msg3 is using 1 PRB so we need to increase first_rb accordingly
      * Not sure about the break (can there be more than 1 active RA procedure per CC_id and per subframe?)
@@ -1289,24 +1331,6 @@ schedule_ulsch(module_id_t module_idP,
          * I'm letting the break as a reminder, in case of misunderstanding the spec.
          */
         // break;
-      }
-    }
-
-    /* Louis-Adrien: Only set for FDD (for the moment)
-     * Hard coded for prach-ConfigIndex = 0 and prach-Freqoffset = 2
-     * ToDo: The PRACH resources should be added with modularity (here?)
-     */
-    if (cc[CC_id].tdd_Config == NULL) { // FDD
-      if (((sched_frame %2) == 0) && sched_subframe == 1) { // RACH frame and subframe
-        if (first_rb[CC_id] < 8) {
-          n_rb_ul_tab = to_prb(cc[CC_id].ul_Bandwidth); // return total number of PRB
-
-          if (n_rb_ul_tab >= 8) {
-            first_rb[CC_id] = 8;
-          } else {
-            return;
-          }
-        }
       }
     }
   }
