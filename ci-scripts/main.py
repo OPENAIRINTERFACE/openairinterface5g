@@ -206,7 +206,7 @@ class SSHConnection():
 		count = 0
 		copy_status = False
 		logging.debug('scp '+ username + '@' + ipaddress + ':' + source + ' ' + destination)
-		while count < 4:
+		while count < 10:
 			scp_spawn = pexpect.spawn('scp '+ username + '@' + ipaddress + ':' + source + ' ' + destination, timeout = 5)
 			scp_response = scp_spawn.expect(['Are you sure you want to continue connecting (yes/no)?', 'password:', pexpect.EOF, pexpect.TIMEOUT])
 			if scp_response == 0:
@@ -1716,7 +1716,8 @@ class SSHConnection():
 			return ENB_PROCESS_ASSERTION
 		if foundRealTimeIssue:
 			logging.debug('\u001B[1;37;41m eNB faced real time issues! \u001B[0m')
-			return ENB_PROCESS_REALTIME_ISSUE
+			self.htmleNBFailureMsg += 'eNB faced real time issues!\n'
+			#return ENB_PROCESS_REALTIME_ISSUE
 		if rlcDiscardBuffer > 0:
 			rlcMsg = 'eNB RLC discarded ' + str(rlcDiscardBuffer) + ' buffer(s)'
 			logging.debug('\u001B[1;37;41m ' + rlcMsg + ' \u001B[0m')
