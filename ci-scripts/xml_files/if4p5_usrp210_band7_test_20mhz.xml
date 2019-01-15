@@ -86,16 +86,16 @@
 
         <testCase id="040624">
 		<class>Iperf</class>
-		<desc>iperf (20MHz - DL/70Mbps/UDP)(30 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 70M -t 30 -i 1</iperf_args>
+		<desc>iperf (20MHz - DL/50Mbps/UDP)(30 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 50M -t 30 -i 1</iperf_args>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
 		<iperf_profile>single-ue</iperf_profile>
         </testCase>
 
 	<testCase id="040662">
 		<class>Iperf</class>
-		<desc>iperf (20MHz - UL/20Mbps/UDP)(30 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 20M -t 30 -i 1 -R</iperf_args>
+		<desc>iperf (20MHz - UL/10Mbps/UDP)(30 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 10M -t 30 -i 1 -R</iperf_args>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
