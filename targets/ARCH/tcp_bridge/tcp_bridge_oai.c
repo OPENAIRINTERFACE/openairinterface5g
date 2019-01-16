@@ -58,6 +58,7 @@ typedef struct {
   int sock;
   int samples_per_subframe;
   uint64_t timestamp;
+  uint64_t next_tx_timestamp;
   int is_enb;
   char *ip;
 } tcp_bridge_state_t;
@@ -192,6 +193,26 @@ int tcp_bridge_write(openair0_device *device, openair0_timestamp timestamp, void
   }
 
   tcp_bridge_state_t *t = device->priv;
+
+  /* deal with discontinuities in output (think: eNB in TDD mode) */
+  if (t->next_tx_timestamp && timestamp != t->next_tx_timestamp) {
+    uint32_t b[4096];
+    uint64_t to_send = timestamp - t->next_tx_timestamp;
+    memset(b, 0, 4096 * sizeof(uint32_t));
+
+    while (to_send) {
+      int len = to_send > 4096 ? 4096 : to_send;
+      int n = fullwrite(t->sock, b, len * 4);
+
+      if (n != len * 4) {
+        printf("tcp_bridge: write error ret %d error %s\n", n, strerror(errno));
+        abort();
+      }
+
+      to_send -= len;
+    }
+  }
+
   int n = fullwrite(t->sock, buff[0], nsamps * 4);
 
   if (n != nsamps * 4) {
@@ -199,6 +220,7 @@ int tcp_bridge_write(openair0_device *device, openair0_timestamp timestamp, void
     abort();
   }
 
+  t->next_tx_timestamp = timestamp + nsamps;
   return nsamps;
 }
 
