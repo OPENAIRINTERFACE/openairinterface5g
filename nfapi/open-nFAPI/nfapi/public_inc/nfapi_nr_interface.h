@@ -516,7 +516,7 @@ typedef struct {
   uint8_t aggregation_level;
   uint8_t n_rb;
   uint8_t n_symb;
-  uint8_t rb_offset;
+  int8_t rb_offset;
   uint8_t cr_mapping_type;
   uint8_t reg_bundle_size;
   uint8_t interleaver_size;

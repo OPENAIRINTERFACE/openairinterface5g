@@ -92,7 +92,8 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
 
 
     nr_configure_css_dci_initial(params_rel15,
-				 scs, scs, nr_FR1, 0, 0,
+				 scs, scs, nr_FR1, 0, 0, 0,
+         sfn_sf, slotP,
 				 slots_per_frame,
 				 dl_carrier_bandwidth);
 
