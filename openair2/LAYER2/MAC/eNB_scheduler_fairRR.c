@@ -2582,7 +2582,7 @@ schedule_ulsch_fairRR(module_id_t module_idP, frame_t frameP,
             frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
             frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset,
             0,//tdd_mapindex
-            frameP); //Nf
+            frameP); //Nf --> shouldn't it be sched_frame ???
       ulsch_ue_select[CC_id].list[ulsch_ue_select[CC_id].ue_num].nb_rb = 6;
       ulsch_ue_select[CC_id].list[ulsch_ue_select[CC_id].ue_num].UE_id = -1;
       ulsch_ue_select[CC_id].ue_num++;
