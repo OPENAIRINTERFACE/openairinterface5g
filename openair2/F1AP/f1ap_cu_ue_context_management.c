@@ -40,6 +40,7 @@
 #include "openair2/LAYER2/MAC/mac_proto.h"
 #include "rrc_extern.h"
 #include "rrc_eNB_UE_context.h"
+#include "rrc_eNB_S1AP.h"
 
 extern f1ap_setup_req_t *f1ap_du_data_from_du;
 extern f1ap_cudu_ue_inst_t f1ap_cu_ue[MAX_eNB];
@@ -821,8 +822,14 @@ int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t       instance,
   }
   */
 
-  LOG_I(CU_F1AP, "Received UE_CONTEXT_RELEASE_REQUEST for RNTI %x, signalling to RRC\n", rnti);
-  rrc_mac_signal_ue_release(instance, rnti);
+  LOG_I(CU_F1AP, "Received UE CONTEXT RELEASE REQUEST: Trigger RRC for RNTI %x\n", rnti);
+  struct rrc_eNB_ue_context_s *ue_context_pP;
+  ue_context_pP = rrc_eNB_get_ue_context(RC.rrc[instance], rnti);
+  rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(
+      instance,
+      ue_context_pP,
+      S1AP_CAUSE_RADIO_NETWORK,
+      21); // send cause 21: connection with ue lost
 
   return 0;
 }

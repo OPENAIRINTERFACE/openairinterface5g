@@ -56,7 +56,7 @@ f1ap_message_decoded_callback f1ap_messages_callback[][3] = {
   { 0, 0, 0 }, /* UEContextModification */
   { 0, 0, 0 }, /* UEContextModificationRequired */
   { 0, 0, 0 }, /* UEMobilityCommand */
-  { 0, 0, 0 }, /* UEContextReleaseRequest */
+  { CU_handle_UE_CONTEXT_RELEASE_REQUEST, 0, 0 }, /* UEContextReleaseRequest */
   { CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER, 0, 0 }, /* InitialULRRCMessageTransfer */
   { DU_handle_DL_RRC_MESSAGE_TRANSFER, 0, 0 }, /* DLRRCMessageTransfer */
   { CU_handle_UL_RRC_MESSAGE_TRANSFER, 0, 0 }, /* ULRRCMessageTransfer */

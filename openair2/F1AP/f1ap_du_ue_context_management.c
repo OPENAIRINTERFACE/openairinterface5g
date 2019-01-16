@@ -574,7 +574,7 @@ int DU_send_UE_CONTEXT_RELEASE_REQUEST(instance_t instance,
   memset(&pdu, 0, sizeof(pdu));
   pdu.present = F1AP_F1AP_PDU_PR_initiatingMessage;
   pdu.choice.initiatingMessage = (F1AP_InitiatingMessage_t *)calloc(1, sizeof(F1AP_InitiatingMessage_t));
-  pdu.choice.initiatingMessage->procedureCode = F1AP_ProcedureCode_id_UEContextRelease;
+  pdu.choice.initiatingMessage->procedureCode = F1AP_ProcedureCode_id_UEContextReleaseRequest;
   pdu.choice.initiatingMessage->criticality   = F1AP_Criticality_reject;
   pdu.choice.initiatingMessage->value.present = F1AP_InitiatingMessage__value_PR_UEContextReleaseRequest;
   out = &pdu.choice.initiatingMessage->value.choice.UEContextReleaseRequest;
