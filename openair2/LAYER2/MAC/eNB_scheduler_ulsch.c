@@ -1191,9 +1191,6 @@ schedule_ulsch(module_id_t module_idP,
   for (int CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++, cc++) {
     first_rb[CC_id] = 1;  // leave out first RB for PUCCH
 
-    int start_rb = 0;
-    int nb_rb = 6;
-    LTE_DL_FRAME_PARMS *frame_parms = &(RC.eNB[module_idP][CC_id]->frame_parms);
     RA_t *ra_ptr = cc->ra;
 
     /* From Louis-Adrien to François:
@@ -1207,6 +1204,10 @@ schedule_ulsch(module_id_t module_idP,
      * To confirm.
      */
     /*
+    int start_rb = 0;
+    int nb_rb = 6;
+    LTE_DL_FRAME_PARMS *frame_parms = &(RC.eNB[module_idP][CC_id]->frame_parms);
+    
     if (is_prach_subframe(frame_parms, sched_frame, sched_subframe) == 1) {
       start_rb = get_prach_prb_offset(frame_parms, 
                                       frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
