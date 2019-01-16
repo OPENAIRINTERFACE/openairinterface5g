@@ -728,7 +728,6 @@ int main( int argc, char **argv ) {
 #endif
   int CC_id;
   uint8_t  abstraction_flag=0;
-  unsigned int start_msc=0;
 #ifdef PDCP_USE_NETLINK
 #ifdef UESIM_EXPANSION
   memset(inst_pdcp_list, 0, sizeof(inst_pdcp_list));
@@ -1001,12 +1000,12 @@ int main( int argc, char **argv ) {
       init_UE_stub_single_thread(NB_UE_INST,eMBMS_active,uecap_xer_in,emul_iface);
   }
   else {
-      init_UE(NB_UE_INST,eMBMS_active,uecap_xer_in,0,phy_test,UE_scan,UE_scan_carrier,mode,(int)rx_gain[0][0],tx_max_power[0],
+      init_UE(NB_UE_INST,eMBMS_active,uecap_xer_in,0,get_softmodem_params()->phy_test,UE_scan,UE_scan_carrier,mode,(int)rx_gain[0][0],tx_max_power[0],
               frame_parms[0]);
   }
 
 
-  if (phy_test==0) {
+  if (get_softmodem_params()->phy_test==0) {
     printf("Filling UE band info\n");
     fill_ue_band_info();
     dl_phy_sync_success (0, 0, 0, 1);
@@ -1016,7 +1015,7 @@ int main( int argc, char **argv ) {
       number_of_cards = 1;
       for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
               PHY_vars_UE_g[0][CC_id]->rf_map.card=0;
-              PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+chain_offset;
+              PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+(get_softmodem_params()->chain_offset);
       }
   }
   // connect the TX/RX buffers
