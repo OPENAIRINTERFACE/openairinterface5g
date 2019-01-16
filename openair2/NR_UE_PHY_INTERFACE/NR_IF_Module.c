@@ -211,7 +211,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
 	break;
       case FAPI_NR_RX_PDU_TYPE_DLSCH:
 	//                    ret_mask |= (0) << FAPI_NR_RX_PDU_TYPE_DLSCH;
-	ret_mask |= (handle_dlsch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index, &dl_info->dci_ind,
+	ret_mask |= (handle_dlsch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index, dl_info->dci_ind,
 				  (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu,
 				  (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu_length)) << FAPI_NR_RX_PDU_TYPE_DLSCH;
 

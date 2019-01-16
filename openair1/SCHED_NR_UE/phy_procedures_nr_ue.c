@@ -3237,11 +3237,13 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
         
 
 #ifdef NR_PDCCH_SCHED_DEBUG
-	printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Entering function nr_dci_decoding_procedure with eNB_id=%d (n_RB_ULBWP=%d, n_RB_DLBWP=%d, searchSpaceType=%d, nb_searchspace_active=%d, nb_coreset_active=%d) -> dci_cnt=%d\n",
-	       eNB_id,n_RB_ULBWP,n_RB_DLBWP,searchSpaceType,
+	printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Entering function nr_dci_decoding_procedure with eNB_id=%d (n_RB_ULBWP=%d, n_RB_DLBWP=%d, searchSpaceType=%d, nb_searchspace_active=%d, nb_coreset_active=%d)\n",
+	       eNB_id,
+	       pdcch_vars2->n_RB_BWP[nb_searchspace_active],
+	       pdcch_vars2->n_RB_BWP[nb_searchspace_active],
+	       searchSpaceType,
 	       nb_searchspace_active,
-	       nb_coreset_active,
-	       dci_cnt);
+	       nb_coreset_active);
 	
 #endif
 	
@@ -3352,7 +3354,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
         memcpy(&ue->dci_ind.dci_list[i].dci, &nr_dci_info_extracted, sizeof(fapi_nr_dci_pdu_rel15_t) );
         
         //  TODO: check where should we send up this message.
-        //ue->if_inst->dl_indication(&ue->dl_indication);
+        // ue->if_inst->dl_indication(&ue->dl_indication);
 
       } // end for loop dci_cnt
 
