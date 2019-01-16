@@ -58,8 +58,8 @@
 #include "UTIL/MATH/oml.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
-
-
+#include "lte-softmodem.h"
+#include "common/config/config_userapi.h"
 #include "T.h"
 
 extern double cpuf;
@@ -160,11 +160,20 @@ static const eutra_band_t eutra_bands[] = {
 };
 
 
-
+threads_t threads= {-1,-1,-1,-1,-1,-1,-1};
 
 pthread_t                       main_ue_thread;
 pthread_attr_t                  attr_UE_thread;
 struct sched_param              sched_param_UE_thread;
+
+
+void get_uethreads_params(void) {
+  paramdef_t cmdline_threadsparams[] =CMDLINE_UETHREADSPARAMS_DESC;
+
+
+  config_process_cmdline( cmdline_threadsparams,sizeof(cmdline_threadsparams)/sizeof(paramdef_t),NULL);
+}
+
 
 void phy_init_lte_ue_transport(PHY_VARS_UE *ue,int absraction_flag);
 
@@ -181,7 +190,7 @@ PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
     memcpy(&(ue->frame_parms), frame_parms, sizeof(LTE_DL_FRAME_PARMS));
   }
 
-
+  ue->hw_timing_advance=get_softmodem_params()->hw_timing_advance;
   ue->Mod_id      = UE_id;
   ue->mac_enabled = 1;
 

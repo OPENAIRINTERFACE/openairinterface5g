@@ -1,0 +1,54 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+-->
+<testCaseList>
+	<htmlTabRef>build-tab</htmlTabRef>
+	<htmlTabName>Build</htmlTabName>
+	<htmlTabIcon>wrench</htmlTabIcon>
+	<TestCaseRequestedList>
+ 010101
+ 050101 060101 070101
+	</TestCaseRequestedList>
+	<TestCaseExclusionList></TestCaseExclusionList>
+
+	<testCase id="010101">
+		<class>Build_eNB</class>
+		<desc>Build eNB (USRP)</desc>
+		<Build_eNB_args>-w USRP -c --eNB</Build_eNB_args>
+	</testCase>
+
+        <testCase id="050101">
+		<class>Initialize_HSS</class>
+		<desc>Initialize HSS</desc>
+        </testCase>
+
+	<testCase id="060101">
+		<class>Initialize_MME</class>
+		<desc>Initialize MME</desc>
+	</testCase>
+
+	<testCase id="070101">
+		<class>Initialize_SPGW</class>
+		<desc>Initialize SPGW</desc>
+	</testCase>
+
+</testCaseList>
