@@ -133,31 +133,6 @@ rx_sdu(const module_id_t enb_mod_idP,
   memset(rx_lcids, 0, NB_RB_MAX * sizeof(unsigned char));
   memset(rx_lengths, 0, NB_RB_MAX * sizeof(unsigned short));
 
-  // LAD
-  /*
-  if (UE_id == -1) {
-    LOG_E(MAC, "Step 1\n");
-    LOG_W(MAC, "[MAC] UE_id = -1 ; RNTI = %x ; frame = %d ; subframe = %d ; sdu_length = %d ; sdu = %d\n",
-      rntiP,
-      frameP,
-      subframeP,
-      sdu_lenP,
-      *sduP);
-  }
-  */
-
-  // LAD
-  /*
-  first_rb = UE_list->UE_template[CC_idP][UE_id].first_rb_ul[harq_pid];
-  LOG_W(MAC, "[MAC] UE_id = %d : first_rb = %d ; scheduled_ul_bytes = %d ; TBS_UL = %d ; frame = %d ; subframe = %d\n",
-    UE_id,
-    first_rb,
-    UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes,
-    UE_list->UE_template[CC_idP][UE_id].TBS_UL[harq_pid],
-    frameP,
-    subframeP);
-  */
-
   start_meas(&mac->rx_ulsch_sdu);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_SDU, 1);
@@ -206,17 +181,7 @@ rx_sdu(const module_id_t enb_mod_idP,
         mac_eNB_rrc_ul_in_sync(enb_mod_idP, CC_idP, frameP, subframeP, current_rnti);
       }
 
-      /* update bytes to schedule */
-
-      // LAD
-      /*
-      LOG_E(MAC, "Step 2\n");
-      LOG_W(MAC, "[MAC] UE_id != -1 and sduP != NULL : first_rb = %d ; scheduled_ul_bytes = %d ; TBS_UL = %d\n",
-        first_rb,
-        UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes,
-        UE_list->UE_template[CC_idP][UE_id].TBS_UL[harq_pid]);
-      */
-
+      /* Update bytes to schedule */
       UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes -= UE_list->UE_template[CC_idP][UE_id].TBS_UL[harq_pid];
 
       if (UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes < 0) {
@@ -310,15 +275,6 @@ rx_sdu(const module_id_t enb_mod_idP,
 
     first_rb = ra[RA_id].msg3_first_rb;
 
-    // LAD
-    /*
-    LOG_E(MAC, "Step 3\n");
-    LOG_W(MAC, "[MAC] UE_id == -1 : first_rb = %d ; scheduled_ul_bytes = %d ; TBS_UL = %d\n",
-        first_rb,
-        UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes,
-        UE_list->UE_template[CC_idP][UE_id].TBS_UL[harq_pid]);
-    */
-
     if (sduP == NULL) { // we've got an error on Msg3
       LOG_W(MAC, "[eNB %d] CC_id %d, RA %d ULSCH in error in round %d/%d\n",
         enb_mod_idP, 
@@ -333,39 +289,12 @@ rx_sdu(const module_id_t enb_mod_idP,
         // first_rb = UE_list->UE_template[CC_idP][UE_id].first_rb_ul[harq_pid]; // UE_id = -1 !!!!
         ra[RA_id].msg3_round++;
 
-        // LAD
-        /*
-        LOG_E(MAC, "Step 4\n");
-        LOG_W(MAC, "[MAC] [UEINFO1] UE_id = %d ; RNTI_ue_template = %x ; RNTI_sdu = %x\n",
-            UE_id,
-            UE_list->UE_template[CC_idP][UE_id].rnti,
-            current_rnti);
-
-        // LAD
-        LOG_W(MAC, "[MAC] UE_id == -1 and sduP == NULL : first_rb = %d ; scheduled_ul_bytes = %d ; TBS_UL = %d\n",
-            first_rb,
-            UE_list->UE_template[CC_idP][UE_id].scheduled_ul_bytes,
-            UE_list->UE_template[CC_idP][UE_id].TBS_UL[harq_pid]);
-
-        // LAD
-        LOG_W(MAC, "[MAC] [RAPROC] msg3_subframe = %d ; msg3_frame = %d\n",
-            ra[RA_id].Msg3_subframe,
-            ra[RA_id].Msg3_frame);
-        */
-
         /* Prepare handling of retransmission */
         get_Msg3allocret(&mac->common_channels[CC_idP],
                          ra[RA_id].Msg3_subframe, 
                          ra[RA_id].Msg3_frame,
                          &ra[RA_id].Msg3_frame, 
                          &ra[RA_id].Msg3_subframe);
-
-        // LAD
-        /*
-        LOG_W(MAC, "[MAC] [RAPROC] After update: msg3_subframe = %d ; msg3_frame = %d\n",
-            ra[RA_id].Msg3_subframe,
-            ra[RA_id].Msg3_frame);
-        */
 
         add_msg3(enb_mod_idP, CC_idP, &ra[RA_id], frameP, subframeP);
       }
@@ -421,17 +350,6 @@ rx_sdu(const module_id_t enb_mod_idP,
   if (UE_id != -1) {
     UE_list->UE_sched_ctrl[UE_id].round_UL[CC_idP][harq_pid] = 0;
   }
-
-  // LAD
-  /*
-  LOG_E(MAC, "Step 5\n");
-  LOG_W(MAC, "[MAC] [UEINFO2] UE_id = %d ; RNTI_ue_template = %x ; RNTI_sdu = %x ; frame = %d ; subframe = %d\n",
-      UE_id,
-      UE_list->UE_template[CC_idP][UE_id].rnti,
-      current_rnti,
-      frameP,
-      subframeP);
-  */
  
   /* Control element */
   for (int i = 0; i < num_ce; i++) {
@@ -1278,44 +1196,27 @@ schedule_ulsch(module_id_t module_idP,
     LTE_DL_FRAME_PARMS *frame_parms = &(RC.eNB[module_idP][CC_id]->frame_parms);
     RA_t *ra_ptr = cc->ra;
 
-    /* Louis-Adrien: Only set for FDD (for the moment)
-     * Hard coded for prach-ConfigIndex = 0 and prach-Freqoffset = 2
-     * ToDo: The PRACH resources should be added with modularity (here?)
+    /* From Louis-Adrien to François:
+     * The comment bloc below is to configure with a command line.
+     * I took it from the equivalent part in the fairRR scheduler (around line 2578 in eNB_scheduler_fairRR.c).
+     * As said in the meeting, it seems to work only for small TBS. 
+     * The cause of false RA still present with this fix is to investigate.
+     * 
+     * Note: in the get_prach_prb_offset() function below, the last argument is frameP in eNB_scheduler_fairRR.c
+     * I think it should be sched_frame instead. This parameter has only impacts in case TDD and preamble format 4.
+     * To confirm.
      */
     /*
-    if (cc->tdd_Config == NULL) { // FDD
-      if (((sched_frame %2) == 0) && sched_subframe == 1) { // RACH frame and subframe
-        if (first_rb[CC_id] < 8) {
-          n_rb_ul_tab = to_prb(cc->ul_Bandwidth); // return total number of PRB
-
-          if (n_rb_ul_tab >= 8) {
-            first_rb[CC_id] = 8;
-          } else {
-            return;
-          }
-        }
-      }
-    }
-    */
     if (is_prach_subframe(frame_parms, sched_frame, sched_subframe) == 1) {
       start_rb = get_prach_prb_offset(frame_parms, 
                                       frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
                                       frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset,
                                       0, // tdd_mapindex
-                                      frameP); // Nf  --> shouldn't it be sched_frame ???
+                                      sched_frame); // Nf
       
       first_rb[CC_id] = start_rb + nb_rb;
-
-      // LAD
-      /*
-      LOG_W(MAC, "[MAC] Config Index = %d ; Freq_offset = %d ; first_rb = %d ; subframe = %d ; sched_subframe = %d\n",
-        frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex,
-        frame_parms->prach_config_common.prach_ConfigInfo.prach_FreqOffset,
-        first_rb[CC_id],
-        subframeP,
-        sched_subframe);
-      */
     }
+    */
 
     /*
      * Check if RA (Msg3) is active in this subframeP, if so skip the PRB used for Msg3
@@ -1328,7 +1229,7 @@ schedule_ulsch(module_id_t module_idP,
           first_rb[CC_id] = ra_ptr->msg3_first_rb + ra_ptr->msg3_nb_rb;
         }
         /* Louis-Adrien: I couldn't find an interdiction of multiple Msg3 scheduling 
-         * on the same resources. Also the performance improvement of breaking is low, 
+         * on the same time resources. Also the performance improvement of breaking is low, 
          * since we will loop until the end, most of the time.
          * I'm letting the break as a reminder, in case of misunderstanding the spec.
          */
