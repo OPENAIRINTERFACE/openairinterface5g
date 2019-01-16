@@ -181,9 +181,9 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
   // alpha is cyclic shift
   double alpha;
   // lnormal is the OFDM symbol number in the PUCCH transmission where l=0 corresponds to the first OFDM symbol of the PUCCH transmission
-  uint8_t lnormal;
+  //uint8_t lnormal;
   // lprime is the index of the OFDM symbol in the slot that corresponds to the first OFDM symbol of the PUCCH transmission in the slot given by [5, TS 38.213]
-  uint8_t lprime;
+  //uint8_t lprime;
   // mcs is provided by TC 38.213 subclauses 9.2.3, 9.2.4, 9.2.5 FIXME!
   //uint8_t mcs;
 
@@ -198,7 +198,7 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
    * x(l*12+n) = r_u_v_alpha_delta(n)
    */
   // the value of u,v (delta always 0 for PUCCH) has to be calculated according to TS 38.211 Subclause 6.3.2.2.1
-  uint8_t u=0,v=0,delta=0;
+  uint8_t u=0,v=0;//,delta=0;
   // if frequency hopping is disabled by the higher-layer parameter PUCCH-frequency-hopping
   //              n_hop = 0
   // if frequency hopping is enabled by the higher-layer parameter PUCCH-frequency-hopping
@@ -332,7 +332,7 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
   // alpha is cyclic shift
   double alpha;
   // lnormal is the OFDM symbol number in the PUCCH transmission where l=0 corresponds to the first OFDM symbol of the PUCCH transmission
-  uint8_t lnormal = 0 ;
+  //uint8_t lnormal = 0 ;
   // lprime is the index of the OFDM symbol in the slot that corresponds to the first OFDM symbol of the PUCCH transmission in the slot given by [5, TS 38.213]
   uint8_t lprime = startingSymbolIndex;
   // mcs = 0 except for PUCCH format 0
@@ -350,7 +350,7 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
    * the complex-valued symbol d_0 shall be multiplied with a sequence r_u_v_alpha_delta(n): y(n) = d_0 * r_u_v_alpha_delta(n)
    */
   // the value of u,v (delta always 0 for PUCCH) has to be calculated according to TS 38.211 Subclause 6.3.2.2.1
-  uint8_t u=0,v=0,delta=0;
+  uint8_t u=0,v=0;//,delta=0;
   // if frequency hopping is disabled, intraSlotFrequencyHopping is not provided
   //              n_hop = 0
   // if frequency hopping is enabled,  intraSlotFrequencyHopping is     provided
@@ -1286,7 +1286,7 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
                                              {0, 0, 0,-1,-1,-1, 0, 0, 0, 1, 1, 1},
                                              {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
                                              {0, 0, 0, 1, 1, 1, 0, 0, 0,-1,-1,-1}};
-  uint8_t occ_Length = occ_length_format4; // higher layer parameter occ-Length
+  //uint8_t occ_Length = occ_length_format4; // higher layer parameter occ-Length
   uint8_t occ_Index  = occ_index_format4;  // higher layer parameter occ-Index
 //occ_Index = 1; //only for testing purposes; to be removed FIXME!!!
   if (fmt == pucch_format3_nr){ // no block-wise spreading for format 3
@@ -1377,7 +1377,7 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
    * Implementing TS 38.211 Subclauses 6.3.2.5.3 and 6.3.2.6.5 Mapping to physical resources
    */
   // the value of u,v (delta always 0 for PUCCH) has to be calculated according to TS 38.211 Subclause 6.3.2.2.1
-  uint8_t u=0,v=0,delta=0;
+  uint8_t u=0,v=0;//,delta=0;
   // if frequency hopping is disabled, intraSlotFrequencyHopping is not provided
   //              n_hop = 0
   // if frequency hopping is enabled,  intraSlotFrequencyHopping is     provided
@@ -1385,9 +1385,9 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
   //              n_hop = 1 for second hop
   uint8_t n_hop = 0;
   // lnormal is the OFDM symbol number in the PUCCH transmission where l=0 corresponds to the first OFDM symbol of the PUCCH transmission
-  uint8_t lnormal = 0 ;
+  //uint8_t lnormal = 0 ;
   // lprime is the index of the OFDM symbol in the slot that corresponds to the first OFDM symbol of the PUCCH transmission in the slot given by [5, TS 38.213]
-  uint8_t lprime = startingSymbolIndex;
+  //uint8_t lprime = startingSymbolIndex;
   // m0 is the cyclic shift index calculated depending on the Orthogonal sequence index n, according to table 6.4.1.3.3.1-1 from TS 38.211 subclause 6.4.1.3.3.1
   uint8_t m0;
   uint8_t mcs=0;
@@ -1404,13 +1404,13 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
   uint8_t N_ZC = 12*nrofPRB;
   int16_t *r_u_v_base_re        = malloc(sizeof(int16_t)*12*nrofPRB);
   int16_t *r_u_v_base_im        = malloc(sizeof(int16_t)*12*nrofPRB);
-  int16_t *r_u_v_alpha_delta_re = malloc(sizeof(int16_t)*12*nrofPRB);
-  int16_t *r_u_v_alpha_delta_im = malloc(sizeof(int16_t)*12*nrofPRB);
+  //int16_t *r_u_v_alpha_delta_re = malloc(sizeof(int16_t)*12*nrofPRB);
+  //int16_t *r_u_v_alpha_delta_im = malloc(sizeof(int16_t)*12*nrofPRB);
 
   // Next we proceed to mapping to physical resources according to TS 38.211, subclause 6.3.2.6.5 dor PUCCH formats 3 and 4 and subclause 6.4.1.3.3.2 for DM-RS
   int32_t *txptr;
   uint32_t re_offset;
-  uint32_t x1, x2, s=0;
+  //uint32_t x1, x2, s=0;
   // intraSlotFrequencyHopping
   // uint8_t intraSlotFrequencyHopping = 0;
   uint8_t table_6_4_1_3_3_2_1_dmrs_positions[11][14] ={

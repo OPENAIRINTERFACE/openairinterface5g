@@ -574,7 +574,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
   uint8_t restricted_set     = ue->frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag;
   //uint8_t n_ra_prboffset     = ue->frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset;
   uint8_t preamble_index     = ue->prach_resources[eNB_id]->ra_PreambleIndex;
-  uint8_t tdd_mapindex       = ue->prach_resources[eNB_id]->ra_TDD_map_index;
+  //uint8_t tdd_mapindex       = ue->prach_resources[eNB_id]->ra_TDD_map_index;
   int16_t *prachF           = ue->prach_vars[eNB_id]->prachF;
   static int16_t prach_tmp[45600*2] __attribute__((aligned(32)));
   int16_t *prach            = prach_tmp;

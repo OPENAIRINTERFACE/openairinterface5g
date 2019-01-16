@@ -131,10 +131,10 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   unsigned short nb_rb_pdsch = 50;
   int16_t  *pllr_symbol_cw0;
   int16_t  *pllr_symbol_cw1;
-  int16_t  *pllr_symbol_cw0_deint;
-  int16_t  *pllr_symbol_cw1_deint;
+  //int16_t  *pllr_symbol_cw0_deint;
+  //int16_t  *pllr_symbol_cw1_deint;
   uint32_t llr_offset_symbol;
-  uint16_t bundle_L = 2;
+  //uint16_t bundle_L = 2;
   uint8_t l0 =2;
   
   switch (type) {
@@ -2001,7 +2001,7 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
 
 
   unsigned short k,rb;
-  unsigned char i,aarx,l; //,nsymb,sss_symb,pss_symb=0;
+  unsigned char i,aarx; //,nsymb,sss_symb,pss_symb=0,l;
   int *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
 
 
@@ -2010,7 +2010,7 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
 
   //symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
   pilots = (symbol==2) ? 1 : 0; //to updated from config
-  l=symbol;
+  //l=symbol;
   //nsymb = (frame_parms->Ncp==NORMAL) ? 14:12;
   k = frame_parms->first_carrier_offset + 516; //0
 
