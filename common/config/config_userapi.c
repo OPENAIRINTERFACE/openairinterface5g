@@ -370,6 +370,12 @@ int config_checkstr_assign_integer(paramdef_t *param) {
   return -1;
 }
 
+void config_set_checkfunctions(paramdef_t *params, checkedparam_t *checkfunctions, int numparams) {
+  for (int i=0; i< numparams ; i++ ) {
+    params[i].chkPptr = &(checkfunctions[i]);
+  }
+}
+
 int config_setdefault_string(paramdef_t *cfgoptions, char *prefix) {
   int status = 0;
 
