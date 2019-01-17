@@ -689,7 +689,7 @@ int main( int argc, char **argv ) {
 #if T_TRACER
   T_Config_Init();
 #endif
-  ret=config_check_cmdlineopt(NULL);
+  ret=config_check_unknown_cmdlineopt(NULL);
 
   if (ret != 0) {
     LOG_E(ENB_APP, "%i unknown options in command line\n",ret);
@@ -938,7 +938,7 @@ int main( int argc, char **argv ) {
   sync_var=0;
   pthread_cond_broadcast(&sync_cond);
   pthread_mutex_unlock(&sync_mutex);
-  ret=config_check_cmdlineopt(CONFIG_CHECKALLSECTIONS);
+  ret=config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
 
   if (ret != 0) {
     LOG_E(ENB_APP, "%i unknown options in command line (invalid section name)\n",ret);
