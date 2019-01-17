@@ -675,33 +675,22 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
               "RNTI obtained through DU ID (%x) is different from CU ID (%x)\n",
               rnti, ctxt.rnti);
 
+  int UE_out_of_sync = 0;
+  for (int n = 0; n < MAX_MOBILES_PER_ENB; ++n) {
+    if (RC.mac[instance]->UE_list.active[n] == TRUE
+        && rnti == UE_RNTI(instance, n)) {
+      UE_out_of_sync = RC.mac[instance]->UE_list.UE_sched_ctrl[n].ul_out_of_sync;
+      break;
+    }
+  }
+
   /* We don't need the Cause */
 
   /* Optional RRC Container: if present, send to UE */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCommandIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_RRCContainer, false);
-  if (ie) {
-    struct rrc_eNB_ue_context_s* ue_context_p;
-    ue_context_p = rrc_eNB_get_ue_context(RC.rrc[ctxt.module_id], ctxt.rnti);
-
-    pthread_mutex_lock(&rrc_release_freelist);
-    for (uint16_t release_num = 0; release_num < NUMBER_OF_UE_MAX; release_num++) {
-      if (rrc_release_info.RRC_release_ctrl[release_num].flag == 0) {
-        if (ue_context_p->ue_context.ue_release_timer_s1 > 0)
-          rrc_release_info.RRC_release_ctrl[release_num].flag = 1;
-        else
-          rrc_release_info.RRC_release_ctrl[release_num].flag = 2;
-        rrc_release_info.RRC_release_ctrl[release_num].rnti = ctxt.rnti;
-        // TODO: how to provide the correct MUI?
-        rrc_release_info.RRC_release_ctrl[release_num].rrc_eNB_mui = 0;
-        rrc_release_info.num_UEs++;
-        LOG_D(RRC,"Generate DLSCH Release send: index %d rnti %x mui %d flag %d \n",release_num,
-              ctxt.rnti, 0, rrc_release_info.RRC_release_ctrl[release_num].flag);
-        break;
-      }
-    }
-    pthread_mutex_unlock(&rrc_release_freelist);
-
+  if (ie && !UE_out_of_sync) {
+    /* RRC message and UE is reachable, send message */
     const sdu_size_t sdu_len = ie->value.choice.RRCContainer.size;
     mem_block_t *pdu_p = NULL;
     pdu_p = get_free_mem_block(sdu_len, __func__);
@@ -737,7 +726,39 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
         break;
     }
   }
+
+  struct rrc_eNB_ue_context_s* ue_context_p;
+  ue_context_p = rrc_eNB_get_ue_context(RC.rrc[ctxt.module_id], ctxt.rnti);
+  if (ue_context_p && !UE_out_of_sync) {
+    /* UE exists and is in sync so we start a timer before releasing the
+     * connection */
+    pthread_mutex_lock(&rrc_release_freelist);
+    for (uint16_t release_num = 0; release_num < NUMBER_OF_UE_MAX; release_num++) {
+      if (rrc_release_info.RRC_release_ctrl[release_num].flag == 0) {
+        if (ue_context_p->ue_context.ue_release_timer_s1 > 0)
+          rrc_release_info.RRC_release_ctrl[release_num].flag = 1;
+        else
+          rrc_release_info.RRC_release_ctrl[release_num].flag = 2;
+        rrc_release_info.RRC_release_ctrl[release_num].rnti = ctxt.rnti;
+        LOG_W(DU_F1AP, "add rrc_release_info RNTI %x\n", ctxt.rnti);
+        // TODO: how to provide the correct MUI?
+        rrc_release_info.RRC_release_ctrl[release_num].rrc_eNB_mui = 0;
+        rrc_release_info.num_UEs++;
+        LOG_D(RRC,"Generate DLSCH Release send: index %d rnti %x mui %d flag %d \n",release_num,
+              ctxt.rnti, 0, rrc_release_info.RRC_release_ctrl[release_num].flag);
+        break;
+      }
+    }
+    pthread_mutex_unlock(&rrc_release_freelist);
+    ue_context_p->ue_context.ue_release_timer_s1 = 0;
+  } else if (ue_context_p && UE_out_of_sync) {
+    /* UE exists and is out of sync, drop the connection */
+    mac_eNB_rrc_ul_failure(instance, 0, 0, 0, rnti);
+  } else {
+    LOG_E(DU_F1AP, "no ue_context for RNTI %x, acknowledging release\n", rnti);
+  }
   
+  /* TODO send this once the connection has really been released */
   f1ap_ue_context_release_cplt_t cplt;
   cplt.rnti = ctxt.rnti;
   DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance, &cplt);
