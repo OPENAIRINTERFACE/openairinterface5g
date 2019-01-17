@@ -391,17 +391,6 @@ void mac_eNB_rrc_ul_failure(const module_id_t Mod_instP,
 								     rntiP, PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
   }
 
-  if (RC.rrc[Mod_instP]->node_type == ngran_eNB_DU
-      && RC.rrc[Mod_instP]->node_type == ngran_gNB_DU) {
-    MessageDef *m = itti_alloc_new_message(TASK_MAC_ENB, F1AP_UE_CONTEXT_RELEASE_REQ);
-    F1AP_UE_CONTEXT_RELEASE_REQ(m).rnti = rntiP;
-    F1AP_UE_CONTEXT_RELEASE_REQ(m).cause = F1AP_CAUSE_RADIO_NETWORK;
-    F1AP_UE_CONTEXT_RELEASE_REQ(m).cause_value = 1; // 1 = F1AP_CauseRadioNetwork_rl_failure
-    F1AP_UE_CONTEXT_RELEASE_REQ(m).rrc_container = NULL;
-    F1AP_UE_CONTEXT_RELEASE_REQ(m).rrc_container_length = 0;
-    itti_send_msg_to_task(TASK_DU_F1, Mod_instP, m);
-  }
-
   rrc_mac_remove_ue(Mod_instP,rntiP);
 }
 

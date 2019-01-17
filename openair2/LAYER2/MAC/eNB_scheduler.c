@@ -407,20 +407,24 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
     // check threshold
     if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer > 4000) {
       // note: probably ul_failure_timer should be less than UE radio link failure time(see T310/N310/N311)
-      // inform RRC of failure and clear timer
-      LOG_I(MAC,
-	    "UE %d rnti %x: UL Failure after repeated PDCCH orders: Triggering RRC \n",
-	    UE_id, rnti);
-      mac_eNB_rrc_ul_failure(module_idP, CC_id, frameP, subframeP,rnti);
+      if (RC.rrc[module_idP]->node_type == ngran_eNB_DU
+          || RC.rrc[module_idP]->node_type == ngran_gNB_DU) {
+        MessageDef *m = itti_alloc_new_message(TASK_MAC_ENB, F1AP_UE_CONTEXT_RELEASE_REQ);
+        F1AP_UE_CONTEXT_RELEASE_REQ(m).rnti = rnti;
+        F1AP_UE_CONTEXT_RELEASE_REQ(m).cause = F1AP_CAUSE_RADIO_NETWORK;
+        F1AP_UE_CONTEXT_RELEASE_REQ(m).cause_value = 1; // 1 = F1AP_CauseRadioNetwork_rl_failure
+        F1AP_UE_CONTEXT_RELEASE_REQ(m).rrc_container = NULL;
+        F1AP_UE_CONTEXT_RELEASE_REQ(m).rrc_container_length = 0;
+        itti_send_msg_to_task(TASK_DU_F1, module_idP, m);
+      } else {
+        // inform RRC of failure and clear timer
+        LOG_I(MAC,
+        "UE %d rnti %x: UL Failure after repeated PDCCH orders: Triggering RRC \n",
+        UE_id, rnti);
+        mac_eNB_rrc_ul_failure(module_idP, CC_id, frameP, subframeP,rnti);
+      }
       UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 0;
       UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync   = 1;
-
-      //Inform the controller about the UE deactivation. Should be moved to RRC agent in the future
-      if (flexran_agent_get_rrc_xface(module_idP)) {
-        LOG_W(MAC, "notify flexran Agent of UE state change\n");
-        flexran_agent_get_rrc_xface(module_idP)->flexran_agent_notify_ue_state_change(module_idP,
-            rnti, PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
-      }
     }
   }				// ul_failure_timer>0
 }
