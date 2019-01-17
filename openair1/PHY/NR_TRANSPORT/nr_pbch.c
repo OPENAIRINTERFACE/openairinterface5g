@@ -53,7 +53,7 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
                           NR_DL_FRAME_PARMS *frame_parms)
 {
   int k,l;
-  int16_t a;
+  //int16_t a;
   int16_t mod_dmrs[NR_PBCH_DMRS_LENGTH<<1];
   uint8_t idx=0;
   uint8_t nushift = config->sch_config.physical_cell_id.value &3;
@@ -240,7 +240,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 {
 
   int k,l,m;
-  int16_t a;
+  //int16_t a;
   int16_t mod_pbch_e[NR_POLAR_PBCH_E];
   uint8_t idx=0;
   uint16_t M;

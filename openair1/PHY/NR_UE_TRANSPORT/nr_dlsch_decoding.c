@@ -35,6 +35,7 @@
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/CODING/coding_defs.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
+#include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "SCHED_NR_UE/defs.h"
 #include "SIMULATION/TOOLS/sim.h"
@@ -190,7 +191,7 @@ void nr_dlsch_unscrambling(int16_t* llr,
 
 }
 
-uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
+uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                          short *dlsch_llr,
                          NR_DL_FRAME_PARMS *frame_parms,
                          NR_UE_DLSCH_t *dlsch,

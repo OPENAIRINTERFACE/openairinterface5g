@@ -379,7 +379,8 @@ int nr_dlsch_encoding(unsigned char *a,
     	}
     	printf("\n");*/
 
-    ldpc_encoder_optim_8seg(dlsch->harq_processes[harq_pid]->c,d_tmp,Kr,BG,dlsch->harq_processes[harq_pid]->C,NULL,NULL,NULL,NULL);
+    //ldpc_encoder_optim_8seg(dlsch->harq_processes[harq_pid]->c,d_tmp,Kr,BG,dlsch->harq_processes[harq_pid]->C,NULL,NULL,NULL,NULL);
+    ldpc_encoder_optim_8seg(dlsch->harq_processes[harq_pid]->c,dlsch->harq_processes[harq_pid]->d,Kr,BG,dlsch->harq_processes[harq_pid]->C,NULL,NULL,NULL,NULL);
 
     //stop_meas(te_stats);
     //printf("end ldpc encoder -- output\n");

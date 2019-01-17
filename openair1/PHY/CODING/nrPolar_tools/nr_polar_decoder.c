@@ -1119,7 +1119,7 @@ uint32_t polar_decoder_int16(int16_t *input,
 
 
   int len=polarParams->payloadBits;
-  int len_mod64=len&63;
+  //int len_mod64=len&63;
   int crclen = polarParams->crcParityBits;
   uint64_t rxcrc=B[0]&((1<<crclen)-1);
   uint32_t crc;

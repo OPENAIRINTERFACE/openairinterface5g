@@ -387,6 +387,8 @@ unsigned int crc12 (unsigned char * inptr, int bitlen);
 @param inPtr Pointer to input byte stream
 @param bitlen length of inputs in bits*/
 unsigned int crc8 (unsigned char * inptr, int bitlen);
+
+int check_crc(uint8_t* decoded_bytes, uint32_t n, uint32_t F, uint8_t crc_type);
     
 /*!\fn void phy_viterbi_dot11_sse2(int8_t *y, uint8_t *decoded_bytes, uint16_t n,int offset,int traceback)
 \brief This routine performs a SIMD optmized Viterbi decoder for the 802.11 64-state convolutional code. It can be
@@ -440,8 +442,6 @@ int32_t rate_matching_lte(uint32_t N_coded,
                           uint32_t N_input,
                           uint8_t *inPtr,
                           uint32_t off);
-
-void crcTableInit (void);
 
 unsigned int crcbit (unsigned char * inputptr, int octetlen, unsigned int poly);
 

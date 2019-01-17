@@ -36,6 +36,7 @@
 //#include "PHY/extern.h" 
 //#include "LAYER2/MAC/extern.h"
 #include "PHY/NR_UE_TRANSPORT/pucch_nr.h"
+#include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
@@ -129,7 +130,7 @@ double nr_cyclic_shift_hopping(PHY_VARS_NR_UE *ue,
  */
   // alpha_init initialized to 2*PI/12=0.5235987756
   double alpha = 0.5235987756;
-  uint16_t c_init = ue->pucch_config_common_nr->hoppingId; // we initialize c_init again to calculate n_cs
+  uint32_t c_init = ue->pucch_config_common_nr->hoppingId; // we initialize c_init again to calculate n_cs
 
   #ifdef DEBUG_NR_PUCCH_TX
     // initialization to be removed
@@ -236,8 +237,8 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
   /*
    * Implementing TS 38.211 Subclause 6.3.2.3.2 Mapping to physical resources FIXME!
    */
-  int32_t *txptr;
-  uint32_t re_offset;
+  //int32_t *txptr;
+  uint32_t re_offset=0;
   for (int l=0; l<nrofSymbols; l++) {
     if ((startingPRB <  (frame_parms->N_RB_DL>>1)) && ((frame_parms->N_RB_DL & 1) == 0)) { // if number RBs in bandwidth is even and current PRB is lower band
       re_offset = ((l+startingSymbolIndex)*frame_parms->ofdm_symbol_size) + (12*startingPRB) + frame_parms->first_carrier_offset;
@@ -254,7 +255,7 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
     if ((startingPRB == (frame_parms->N_RB_DL>>1)) && ((frame_parms->N_RB_DL & 1) == 1)) { // if number RBs in bandwidth is odd  and current PRB contains DC
       re_offset = ((l+startingSymbolIndex)*frame_parms->ofdm_symbol_size) + (12*startingPRB) + frame_parms->first_carrier_offset;
     }
-    txptr = &txdataF[0][re_offset];
+    //txptr = &txdataF[0][re_offset];
     for (int n=0; n<12; n++){
       if ((n==6) && (startingPRB == (frame_parms->N_RB_DL>>1)) && ((frame_parms->N_RB_DL & 1) == 1)) {
         // if number RBs in bandwidth is odd  and current PRB contains DC, we need to recalculate the offset when n=6 (for second half PRB)
@@ -299,7 +300,7 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
    *
    */
   // complex-valued symbol d_re, d_im containing complex-valued symbol d(0):
-  int16_t d_re, d_im;
+  int16_t d_re=0, d_im=0;
   if (nr_bit == 1) { // using BPSK if M_bit=1 according to TC 38.211 Subclause 5.1.2
     d_re = (payload&1)==0 ? (int16_t)(((int32_t)amp*ONE_OVER_SQRT2)>>15) : -(int16_t)(((int32_t)amp*ONE_OVER_SQRT2)>>15);
     d_im = (payload&1)==0 ? (int16_t)(((int32_t)amp*ONE_OVER_SQRT2)>>15) : -(int16_t)(((int32_t)amp*ONE_OVER_SQRT2)>>15);
@@ -371,8 +372,8 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
 /*
  * Implementing TS 38.211 Subclause 6.3.2.4.2 Mapping to physical resources
  */
-  int32_t *txptr;
-  uint32_t re_offset;
+  //int32_t *txptr;
+  uint32_t re_offset=0;
   int i=0;
   #define MAX_SIZE_Z 168 // this value has to be calculated from mprime*12*table_6_3_2_4_1_1_N_SF_mprime_PUCCH_1_noHop[pucch_symbol_length]+m*12+n
   int16_t z_re[MAX_SIZE_Z],z_im[MAX_SIZE_Z];
@@ -552,7 +553,7 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
     }
 
 
-    txptr = &txdataF[0][re_offset];
+    //txptr = &txdataF[0][re_offset];
     for (int n=0; n<12; n++){
       if ((n==6) && (startingPRB == (frame_parms->N_RB_DL>>1)) && ((frame_parms->N_RB_DL & 1) == 1)) {
         // if number RBs in bandwidth is odd  and current PRB contains DC, we need to recalculate the offset when n=6 (for second half PRB)
@@ -904,7 +905,7 @@ void nr_uci_encoding(uint64_t payload,
   // L is the CRC size
   uint8_t L;
   // E is the rate matching output sequence length as given in TS 38.212 subclause 6.3.1.4.1
-  uint16_t E,E_init;
+  uint16_t E=0,E_init;
   if (fmt == pucch_format2_nr) E = 16*nrofSymbols*nrofPRB;
   if (fmt == pucch_format3_nr){
     E_init = (is_pi_over_2_bpsk_enabled == 0) ? 24:12;
@@ -1061,8 +1062,8 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
   /*
    * Implementing TS 38.211 Subclause 6.3.2.5.3 Mapping to physical resources
    */
-  int32_t *txptr;
-  uint32_t re_offset;
+  //int32_t *txptr;
+  uint32_t re_offset=0;
   uint32_t x1, x2, s=0;
   int i=0;
   int m=0;
@@ -1086,7 +1087,7 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
       if (((rb+startingPRB) == (frame_parms->N_RB_DL>>1)) && ((frame_parms->N_RB_DL & 1) == 1)) { // if number RBs in bandwidth is odd  and current PRB contains DC
         re_offset = ((l+startingSymbolIndex)*frame_parms->ofdm_symbol_size) + (12*(rb+startingPRB)) + frame_parms->first_carrier_offset;
       }
-      txptr = &txdataF[0][re_offset];
+      //txptr = &txdataF[0][re_offset];
       int k=0;
       int kk=0;
       for (int n=0; n<12; n++){
@@ -1408,8 +1409,8 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
   //int16_t *r_u_v_alpha_delta_im = malloc(sizeof(int16_t)*12*nrofPRB);
 
   // Next we proceed to mapping to physical resources according to TS 38.211, subclause 6.3.2.6.5 dor PUCCH formats 3 and 4 and subclause 6.4.1.3.3.2 for DM-RS
-  int32_t *txptr;
-  uint32_t re_offset;
+  //int32_t *txptr;
+  uint32_t re_offset=0;
   //uint32_t x1, x2, s=0;
   // intraSlotFrequencyHopping
   // uint8_t intraSlotFrequencyHopping = 0;
@@ -1513,7 +1514,7 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
       #ifdef DEBUG_NR_PUCCH_TX
         printf("re_offset=%d,(rb+startingPRB)=%d\n",re_offset,(rb+startingPRB));
       #endif
-      txptr = &txdataF[0][re_offset];
+      //txptr = &txdataF[0][re_offset];
       for (int n=0; n<12; n++){
         if ((n==6) && ((rb+startingPRB) == (frame_parms->N_RB_DL>>1)) && ((frame_parms->N_RB_DL & 1) == 1)) {
           // if number RBs in bandwidth is odd  and current PRB contains DC, we need to recalculate the offset when n=6 (for second half PRB)

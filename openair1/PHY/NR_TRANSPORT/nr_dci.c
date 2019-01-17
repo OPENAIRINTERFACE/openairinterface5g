@@ -170,7 +170,7 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
 
   int16_t mod_dmrs[NR_MAX_CSET_DURATION][NR_MAX_PDCCH_DMRS_LENGTH>>1]; // 3 for the max coreset duration
   uint8_t idx=0;
-  uint16_t a;
+  //uint16_t a;
   int k,l,k_prime,dci_idx, dmrs_idx;
   nr_cce_t cce;
   nr_reg_t reg;
