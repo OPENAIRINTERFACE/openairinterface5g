@@ -392,8 +392,9 @@ int main(int argc, char **argv)
 
   // cfo with respect to sub-carrier spacing
   eps = cfo/scs;
-  int IFO;
 
+  // computation of integer and fractional FO to compare with estimation results
+  int IFO;
   if(eps!=0.0){
 	printf("Introducing a CFO of %lf relative to SCS of %d kHz\n",eps,(int)(scs/1000));
 	if (eps>0)	
@@ -546,7 +547,7 @@ int main(int argc, char **argv)
            0,  // interference power
            frame_parms->nb_antennas_rx,  // number of rx antennas
            frame_length_complex_samples,  // number of samples in frame
-           1.0e7/frame_length_complex_samples,   //sampling time (ns)
+           1.0e9/fs,   //sampling time (ns)
            cfo,	// frequency offset in Hz
            0.0, // drift (not implemented)
            0.0, // noise figure (not implemented)
@@ -557,8 +558,6 @@ int main(int argc, char **argv)
            -500.0, // phase noise amplitude in dBc
            0.0,  // IQ imbalance (dB),
 	   0.0); // IQ phase imbalance (rad)
-
-
 
    
       for (i=0; i<frame_length_complex_samples; i++) {

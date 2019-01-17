@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <errno.h>
+#include <math.h>
 
 #include "PHY/defs_nr_UE.h"
 
@@ -751,6 +752,15 @@ static inline int64_t abs64(int64_t x)
   return (((int64_t)((int32_t*)&x)[0])*((int64_t)((int32_t*)&x)[0]) + ((int64_t)((int32_t*)&x)[1])*((int64_t)((int32_t*)&x)[1]));
 }
 
+static inline double angle64(int64_t x)
+{
+
+  double re=((int32_t*)&x)[0];
+  double im=((int32_t*)&x)[1];
+  return (atan2(im,re));
+}
+
+
 /*******************************************************************
 *
 * NAME :         pss_search_time_nr
@@ -811,6 +821,7 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
   int64_t peak_value;
   int64_t result;
   int64_t avg[NUMBER_PSS_SEQUENCE];
+  double ffo_est;
 
 
   unsigned int length = (NR_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_subframe);  /* 1 frame for now, it should be 2 TODO_NR */
@@ -859,7 +870,6 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
 				  frame_parms->ofdm_symbol_size, 
 				  shift);
 	  pss_corr_ue[pss_index][n] += abs64(result);
-	  
           //((short*)pss_corr_ue[pss_index])[2*n] += ((short*) &result)[0];   /* real part */
           //((short*)pss_corr_ue[pss_index])[2*n+1] += ((short*) &result)[1]; /* imaginary part */
           //((short*)&synchro_out)[0] += ((short*) &result)[0];               /* real part */
@@ -874,10 +884,11 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
         peak_value = pss_corr_ue[pss_index][n];
         peak_position = n;
         pss_source = pss_index;
+	ffo_est = angle64(result)/M_PI;
 
-#ifdef DEBUG_PSS_NR
-        printf("pss_index %d: n %6d peak_value %15llu\n", pss_index, n, (unsigned long long)pss_corr_ue[pss_index][n]);
-#endif
+//#ifdef DEBUG_PSS_NR
+        printf("pss_index %d: n %6d peak_value %15llu ffo %lf\n", pss_index, n, (unsigned long long)pss_corr_ue[pss_index][n],ffo_est);
+//#endif
       }
     }
   }
