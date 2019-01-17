@@ -220,24 +220,6 @@ static inline int rxtx(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, char *thread_name
     phy_procedures_eNB_uespec_RX(eNB, proc);
   }
 
-#if 0
-  // Original Code from Fujitsu w/ old structure/field name
-  if(get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT && nfapi_mode != 2){
-    if(wait_on_condition(&proc[1].mutex_rxtx,&proc[1].cond_rxtx,&proc[1].pipe_ready,"wakeup_tx")<0) {
-      LOG_E(PHY,"Frame %d, subframe %d: TX1 not ready\n",proc[1].frame_rx,proc[1].subframe_rx);
-      return(-1);
-    }
-    if (release_thread(&proc[1].mutex_rxtx,&proc[1].pipe_ready,"wakeup_tx")<0)  return(-1);
-  }
-#endif
-  if(get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT && nfapi_mode != 2){
-    if (wait_on_condition(&proc->mutex,&proc->cond,&proc->instance_cnt, "wakeup_tx")<0) {
-      LOG_E(PHY,"Frame %d, subframe %d: TX1 not ready\n",proc->frame_rx,proc->subframe_rx);
-      return(-1);
-    }
-    if (release_thread(&proc->mutex,&proc->instance_cnt,"wakeup_tx")<0) return(-1);
-  }
-
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER, 1 );
 
 #if defined(PRE_SCD_THREAD)
