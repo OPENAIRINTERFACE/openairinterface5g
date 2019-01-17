@@ -227,7 +227,7 @@ int init_test(unsigned char N_tx, unsigned char N_rx, unsigned char transmission
 
   cpuf = get_cpu_freq_GHz();
 
-  LOG_I(PHY, "[CONFIG] Test of UE synchronisation \n");
+  //LOG_I(PHY, "[CONFIG] Test of UE synchronisation \n");
 
   set_component_filelog(USIM);  // file located in /tmp/testSynchroue.txt
 
@@ -258,7 +258,10 @@ int init_test(unsigned char N_tx, unsigned char N_rx, unsigned char transmission
   frame_parms->threequarter_fs      = 0;
   frame_parms->numerology_index     = NUMEROLOGY_INDEX_MAX_NR;
 
-  nr_init_frame_parms_ue(frame_parms);
+  int mu = 1;
+  int n_ssb_crb = 0;
+  int ssb_subcarrier_offset = 0;
+  nr_init_frame_parms_ue(frame_parms, mu, extended_prefix_flag, N_RB_DL, n_ssb_crb, ssb_subcarrier_offset);
 
   PHY_vars_UE->frame_parms.Nid_cell = (3 * N_ID_1_NUMBER) + N_ID_2_NUMBER; /* set to unvalid value */
 

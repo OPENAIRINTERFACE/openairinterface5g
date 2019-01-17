@@ -736,7 +736,7 @@ typedef struct {
   -- Corresponds to L1 parameter 'HoppingID' (see 38.211, section 6.3.2.2)
   hoppingId               BIT STRING (SIZE (10))                              OPTIONAL,   -- Need R
 */
-  uint16_t hoppingId;
+  uint32_t hoppingId;
 /*
   -- Power control parameter P0 for PUCCH transmissions. Value in dBm. Only even values (step size 2) allowed.
   -- Corresponds to L1 parameter 'p0-nominal-pucch' (see 38.213, section 7.2)

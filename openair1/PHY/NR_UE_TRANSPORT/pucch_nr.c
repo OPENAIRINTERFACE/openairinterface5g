@@ -89,6 +89,9 @@ void nr_group_sequence_hopping (//pucch_GroupHopping_t ue->pucch_config_common_n
   *v=0;
   uint32_t c_init = (1<<5)*floor(n_id/30)+(n_id%30); // we initialize c_init to calculate u,v
   uint32_t x1,s = lte_gold_generic(&x1, &c_init, 1); // TS 38.211 Subclause 5.2.1
+  int l = 32, minShift = ((2*nr_tti_tx+n_hop)<<3);
+  int tmpShift =0;
+
   #ifdef DEBUG_NR_PUCCH_TX
     printf("\t\t [nr_group_sequence_hopping] calculating u,v -> ");
   #endif
@@ -97,15 +100,35 @@ void nr_group_sequence_hopping (//pucch_GroupHopping_t ue->pucch_config_common_n
     f_ss = n_id%30;
   }
   if (PUCCH_GroupHopping == enable){ // PUCCH_GroupHopping 'enabled'
-    for (int m=0; m<8; m++){
+	  for (int m=0; m<8; m++){
+		  while(minShift >= l){
+			  s = lte_gold_generic(&x1, &c_init, 0);
+			  l = l+32;
+		  }
+		  tmpShift = (minShift&((1<<5)-1)); //minShift%32;
+		  f_gh = f_gh + ((1<<m)*((uint8_t)((s>>tmpShift)&1)));
+		  minShift ++;
+	  }
+	  f_gh = f_gh%30;
+	  f_ss = n_id%30;
+
+/*    for (int m=0; m<8; m++){
       f_gh = f_gh + ((1<<m)*((uint8_t)((s>>(8*(2*nr_tti_tx+n_hop)+m))&1))); // Not sure we have to use nr_tti_tx FIXME!!!
     }
     f_gh = f_gh%30;
-    f_ss = n_id%30;
+    f_ss = n_id%30;*/
   }
   if (PUCCH_GroupHopping == disable){ // PUCCH_GroupHopping 'disabled'
     f_ss = n_id%30;
-    *v = (uint8_t)((s>>(2*nr_tti_tx+n_hop))&1); // Not sure we have to use nr_tti_tx FIXME!!!
+    l = 32, minShift = (2*nr_tti_tx+n_hop);
+    while(minShift >= l){
+    	s = lte_gold_generic(&x1, &c_init, 0);
+    	l = l+32;
+    }
+    tmpShift = (minShift&((1<<5)-1)); //minShift%32;
+    *v = (uint8_t)((s>>tmpShift)&1);
+
+//    *v = (uint8_t)((s>>(2*nr_tti_tx+n_hop))&1); // Not sure we have to use nr_tti_tx FIXME!!!
   }
   *u = (f_gh+f_ss)%30;
   #ifdef DEBUG_NR_PUCCH_TX
@@ -129,7 +152,7 @@ double nr_cyclic_shift_hopping(PHY_VARS_NR_UE *ue,
  */
   // alpha_init initialized to 2*PI/12=0.5235987756
   double alpha = 0.5235987756;
-  uint16_t c_init = ue->pucch_config_common_nr->hoppingId; // we initialize c_init again to calculate n_cs
+  uint32_t c_init = ue->pucch_config_common_nr->hoppingId; // uint16_t causes error in generating gold sequence later
 
   #ifdef DEBUG_NR_PUCCH_TX
     // initialization to be removed
@@ -139,12 +162,23 @@ double nr_cyclic_shift_hopping(PHY_VARS_NR_UE *ue,
 
   uint32_t x1,s = lte_gold_generic(&x1, &c_init, 1); // TS 38.211 Subclause 5.2.1
   uint8_t n_cs=0;
-  #ifdef DEBUG_NR_PUCCH_TX
-    printf("\t\t [nr_cyclic_shift_hopping] calculating alpha (cyclic shift) using c_init=%d -> ",c_init);
-  #endif
+
+  int l = 32, minShift = (14*8*nr_tti_tx )+ 8*(lnormal+lprime);
+  int tmpShift =0;
+
+#ifdef DEBUG_NR_PUCCH_TX
+  printf("\t\t [nr_cyclic_shift_hopping] calculating alpha (cyclic shift) using c_init=%d -> \n",c_init);
+#endif
   for (int m=0; m<8; m++){
+	  while(minShift >= l){
+		  s = lte_gold_generic(&x1, &c_init, 0);
+		  l = l+32;
+	  }
+	  tmpShift = (minShift&((1<<5)-1)); //minShift%32;
+	  minShift ++;
+	  n_cs = n_cs+((1<<m)*((uint8_t)((s>>tmpShift)&1)));
     // calculating n_cs (Not sure we have to use nr_tti_tx FIXME!!!)
-    n_cs = n_cs+((1<<m)*((uint8_t)((s>>((14*8*nr_tti_tx) + 8*(lnormal+lprime) + m))&1)));
+    // n_cs = n_cs+((1<<m)*((uint8_t)((s>>((14*8*nr_tti_tx) + 8*(lnormal+lprime) + m))&1)));
   }
   alpha = (alpha * (double)((m0+mcs+n_cs)%12));
   #ifdef DEBUG_NR_PUCCH_TX
@@ -861,26 +895,26 @@ void nr_generate_pucch1_old(PHY_VARS_NR_UE *ue,
 inline void nr_pucch2_3_4_scrambling(uint16_t M_bit,uint16_t rnti,uint16_t n_id,uint32_t B,uint8_t *btilde) __attribute__((always_inline));
 inline void nr_pucch2_3_4_scrambling(uint16_t M_bit,uint16_t rnti,uint16_t n_id,uint32_t B,uint8_t *btilde) {
 
-  uint32_t x1, x2, s=0;
-  int i;
-  uint8_t c;
-  // c_init=nRNTI*2^15+n_id according to TS 38.211 Subclause 6.3.2.6.1
-  //x2 = (rnti) + ((uint32_t)(1+nr_tti_tx)<<16)*(1+(fp->Nid_cell<<1));
-  x2 = ((rnti)<<15)+n_id;
-  s = lte_gold_generic(&x1, &x2, 1);
-  #ifdef DEBUG_NR_PUCCH_TX
-    printf("\t\t [nr_pucch2_3_4_scrambling] gold sequence s=%lx\n",s);
-  #endif
-  for (i=0;i<M_bit;i++) {
-    c = (uint8_t)((s>>i)&1);
-    btilde[i] = (((B>>i)&1) ^ c);
-    #ifdef DEBUG_NR_PUCCH_TX
-      //printf("\t\t\t btilde[%d]=%lx from scrambled bit %d\n",i,btilde[i],((B>>i)&1));
-    #endif
-  }
-  #ifdef DEBUG_NR_PUCCH_TX
-    printf("\t\t [nr_pucch2_3_4_scrambling] scrambling M_bit=%d bits\n", M_bit);
-  #endif
+	uint32_t x1, x2, s=0;
+	int i;
+	uint8_t c;
+	// c_init=nRNTI*2^15+n_id according to TS 38.211 Subclause 6.3.2.6.1
+	//x2 = (rnti) + ((uint32_t)(1+nr_tti_tx)<<16)*(1+(fp->Nid_cell<<1));
+	x2 = ((rnti)<<15)+n_id;
+	s = lte_gold_generic(&x1, &x2, 1);
+#ifdef DEBUG_NR_PUCCH_TX
+	printf("\t\t [nr_pucch2_3_4_scrambling] gold sequence s=%lx\n",s);
+#endif
+	for (i=0;i<M_bit;i++) {
+		c = (uint8_t)((s>>i)&1);
+		btilde[i] = (((B>>i)&1) ^ c);
+#ifdef DEBUG_NR_PUCCH_TX
+		//printf("\t\t\t btilde[%d]=%lx from scrambled bit %d\n",i,btilde[i],((B>>i)&1));
+#endif
+	}
+#ifdef DEBUG_NR_PUCCH_TX
+	printf("\t\t [nr_pucch2_3_4_scrambling] scrambling M_bit=%d bits\n", M_bit);
+#endif
 
 }
 void nr_uci_encoding(uint64_t payload,
@@ -1013,7 +1047,7 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
 
   uint8_t *btilde = malloc(sizeof(int8_t)*M_bit);
   // rnti is given by the C-RNTI
-  uint16_t rnti=crnti, n_id=0;
+  uint16_t rnti=crnti, n_id=1000;
 #ifdef DEBUG_NR_PUCCH_TX
   printf("\t [nr_generate_pucch2] rnti = %d ,\n",rnti);
 #endif
@@ -1065,10 +1099,11 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
   uint32_t re_offset;
   uint32_t x1, x2, s=0;
   int i=0;
-  int m=0;
+  int m;
   for (int l=0; l<nrofSymbols; l++) {
     x2 = (((1<<17)*((14*nr_tti_tx) + (l+startingSymbolIndex) + 1)*((2*n_id) + 1)) + (2*n_id))%(1<<31); // c_init calculation according to TS38.211 subclause
     s = lte_gold_generic(&x1, &x2, 1);
+    m = 0;
     for (int rb=0; rb<nrofPRB; rb++){
       //startingPRB = startingPRB + rb;
       if (((rb+startingPRB) <  (frame_parms->N_RB_DL>>1)) && ((frame_parms->N_RB_DL & 1) == 0)) { // if number RBs in bandwidth is even and current PRB is lower band
@@ -1118,6 +1153,10 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
         re_offset++;
       }
       i+=8;
+      if ((m&((1<<4)-1))==0){
+    	  s = lte_gold_generic(&x1, &x2, 0);
+    	  m = 0;
+      }
     }
   }
 }
