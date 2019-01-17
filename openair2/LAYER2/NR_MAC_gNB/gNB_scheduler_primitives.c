@@ -21,11 +21,11 @@
 
 /*! \file gNB_scheduler_primitives.c
  * \brief primitives used by gNB for BCH, RACH, ULSCH, DLSCH scheduling
- * \author  Navid Nikaein and Raymond Knopp, WEI-TAI CHEN
- * \date 2010 - 2014, 2018
- * \email: navid.nikaein@eurecom.fr, kroempa@gmail.com
+ * \author  Raymond Knopp, Guy De Souza
+ * \date 2018, 2019
+ * \email: knopp@eurecom.fr, desouza@eurecom.fr
  * \version 1.0
- * \company Eurecom, NTUST
+ * \company Eurecom
  * @ingroup _mac
 
  */
@@ -87,16 +87,20 @@ int8_t  nr_coreset_rb_offset_pdcch_type_0_scs_120_120[8] = {0,4,14,14,-1,24,-1,4
 int8_t  nr_coreset_rb_offset_pdcch_type_0_scs_240_120[8] = {0,8,0,8,-1,25,-1,49};
 
 /// LUT for monitoring occasions param O indexed by ss index (4 LSB rmsi_pdcch_config)
+  // Note: scaling is used to avoid decimal values for O and M, original values commented
 uint8_t nr_ss_param_O_type_0_mux1_FR1[16] = {0,0,2,2,5,5,7,7,0,5,0,0,2,2,5,5};
-uint8_t nr_ss_param_O_type_0_mux1_FR2[14] = {0,0,2.5,2.5,5,5,0,2.5,5,7.5,7.5,7.5,0,5};
+uint8_t nr_ss_param_O_type_0_mux1_FR2[14] = {0,0,5,5,5,5,0,5,5,15,15,15,0,5}; //{0,0,2.5,2.5,5,5,0,2.5,5,7.5,7.5,7.5,0,5}
+uint8_t nr_ss_scale_O_mux1_FR2[14] = {0,0,1,1,0,0,0,1,0,1,1,1,0,0};
 
 /// LUT for number of SS sets per slot indexed by ss index
 uint8_t nr_ss_sets_per_slot_type_0_FR1[16] = {1,2,1,2,1,2,1,2,1,1,1,1,1,1,1,1};
 uint8_t nr_ss_sets_per_slot_type_0_FR2[14] = {1,2,1,2,1,2,2,2,2,1,2,2,1,1};
 
 /// LUT for monitoring occasions param M indexed by ss index
-uint8_t nr_ss_param_M_type_0_mux1_FR1[16] = {1,0.5,1,0.5,1,0.5,1,0.5,2,2,1,1,1,1,1,1};
-uint8_t nr_ss_param_M_type_0_mux1_FR2[14] = {1,0.5,1,0.5,1,0.5,0.5,0.5,0.5,1,0.5,0.5,2,2};
+uint8_t nr_ss_param_M_type_0_mux1_FR1[16] = {1,1,1,1,1,1,1,1,2,2,1,1,1,1,1,1}; //{1,0.5,1,0.5,1,0.5,1,0.5,2,2,1,1,1,1,1,1}
+uint8_t nr_ss_scale_M_mux1_FR1[16] = {0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,0};
+uint8_t nr_ss_param_M_type_0_mux1_FR2[14] = {1,1,1,1,1,1,1,1,1,1,1,1,2,2}; //{1,0.5,1,0.5,1,0.5,0.5,0.5,0.5,1,0.5,0.5,2,2}
+uint8_t nr_ss_scale_M_mux1_FR2[14] = {0,1,0,1,0,1,1,1,1,0,1,1,0,0};
 
 /// LUT for SS first symbol index indexed by ss index
 uint8_t nr_ss_first_symb_idx_type_0_mux1_FR1[8] = {0,0,1,2,1,2,1,2};
@@ -105,6 +109,7 @@ uint8_t nr_ss_first_symb_idx_scs_120_60_mux2[4] = {0,1,6,7};
 uint8_t nr_ss_first_symb_idx_scs_240_120_set1_mux2[6] = {0,1,2,3,0,1};
   // Mux pattern type 3
 uint8_t nr_ss_first_symb_idx_scs_120_120_mux3[4] = {4,8,2,6};
+
 
 
 int is_nr_UL_slot(NR_COMMON_channels_t * ccP, int slot){
@@ -127,13 +132,13 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* p
   uint8_t O, M;
   uint8_t ss_idx = rmsi_pdcch_config&0xf;
   uint8_t cset_idx = (rmsi_pdcch_config>>4)&0xf;
-  uint8_t mu;
+  uint8_t mu = scs_common;
+  uint8_t O_scale=0, M_scale=0; // used to decide if the values of O and M need to be divided by 2
 
   /// Coreset params
   switch(scs_common) {
 
     case kHz15:
-      mu = 0;
 
       switch(pdcch_scs) {
         case kHz15:
@@ -159,7 +164,6 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* p
       break;
 
     case kHz30:
-      mu = 1;
 
       if (N_RB < 106) { // Minimum 40Mhz bandwidth not satisfied
         switch(pdcch_scs) {
@@ -208,7 +212,6 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* p
       break;
 
     case kHz120:
-      mu = 3;
       switch(pdcch_scs) {
         case kHz60:
           AssertFatal(cset_idx<12,"Coreset index %d reserved for scs kHz120/kHz60\n", cset_idx);
@@ -234,7 +237,6 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* p
     break;
 
     case kHz240:
-    mu = 4;
     switch(pdcch_scs) {
       case kHz60:
         AssertFatal(cset_idx<4,"Coreset index %d reserved for scs kHz240/kHz60\n", cset_idx);
@@ -271,19 +273,22 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* p
         O = nr_ss_param_O_type_0_mux1_FR1[ss_idx];
         pdcch_params->nb_ss_sets_per_slot = nr_ss_sets_per_slot_type_0_FR1[ss_idx];
         M = nr_ss_param_M_type_0_mux1_FR1[ss_idx];
+        M_scale = nr_ss_scale_M_mux1_FR1[ss_idx];
         pdcch_params->first_symbol = (ss_idx < 8)? ( (ssb_idx&1)? pdcch_params->n_symb : 0 ) : nr_ss_first_symb_idx_type_0_mux1_FR1[ss_idx - 8];
       }
 
       else {
         AssertFatal(ss_idx<14 ,"Invalid search space index for multiplexing type 1 and FR2 %d\n", ss_idx);
         O = nr_ss_param_O_type_0_mux1_FR2[ss_idx];
+        O_scale = nr_ss_scale_O_mux1_FR2[ss_idx];
         pdcch_params->nb_ss_sets_per_slot = nr_ss_sets_per_slot_type_0_FR2[ss_idx];
         M = nr_ss_param_M_type_0_mux1_FR2[ss_idx];
+        M_scale = nr_ss_scale_M_mux1_FR2[ss_idx];
         pdcch_params->first_symbol = (ss_idx < 12)? ( (ss_idx&1)? 7 : 0 ) : 0;
       }
       pdcch_params->nb_slots = 2;
-      pdcch_params->sfn_mod2 = ((uint8_t)(floor( (O*pow(2, mu) + floor(ssb_idx*M)) / nb_slots_per_frame )) & 1)? 1 : 0;
-      pdcch_params->first_slot = (uint8_t)(O*pow(2, mu) + floor(ssb_idx*M)) % nb_slots_per_frame;
+      pdcch_params->sfn_mod2 = (CEILIDIV( (((O<<mu)>>O_scale) + ((ssb_idx*M)>>M_scale)), nb_slots_per_frame ) & 1)? 1 : 0;
+      pdcch_params->first_slot = (((O<<mu)>>O_scale) + ((ssb_idx*M)>>M_scale)) % nb_slots_per_frame;
 
     break;
 
