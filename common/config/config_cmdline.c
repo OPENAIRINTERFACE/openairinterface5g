@@ -290,4 +290,5 @@ int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix) 
   }   /* fin du while */
 
   printf_cmdl("[CONFIG] %s %i options set from command line\n",((prefix == NULL) ? "(root)":prefix),j);
+  return j;
 }  /* parse_cmdline*/

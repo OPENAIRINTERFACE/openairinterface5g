@@ -178,7 +178,7 @@ void config_printhelp(paramdef_t *params,int numparams, char *prefix) {
     printf("    %s%s: %s",
            (strlen(params[i].optname) <= 1) ? "-" : "--",
            params[i].optname,
-           (params[i].helpstr != NULL)?params[i].helpstr:"Help string not specified");
+           (params[i].helpstr != NULL)?params[i].helpstr:"Help string not specified\n");
   }   /* for on params entries */
 
   printf("--------------------------------------------------------------------\n\n");
