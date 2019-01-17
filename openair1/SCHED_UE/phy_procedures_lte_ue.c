@@ -1332,12 +1332,13 @@ void ue_prach_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
     prach_power = generate_prach(ue,eNB_id,subframe_tx,frame_tx);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GENERATE_PRACH, VCD_FUNCTION_OUT);
     //      stop_meas(&ue->tx_prach);
-    LOG_D(PHY,"[UE  %d][RAPROC] PRACH PL %d dB, power %d dBm, digital power %d dB (amp %d)\n",
-          ue->Mod_id,
-          get_PL(ue->Mod_id,ue->CC_id,eNB_id),
-          ue->tx_power_dBm[subframe_tx],
-          dB_fixed(prach_power),
-          ue->prach_vars[eNB_id]->amp);
+    LOG_I(PHY,"[UE  %d][RAPROC] PRACH PL %d dB, power %d dBm (max %d dBm), digital power %d dB (amp %d)\n",
+	  ue->Mod_id,
+	  get_PL(ue->Mod_id,ue->CC_id,eNB_id),
+	  ue->tx_power_dBm[subframe_tx],
+          ue->tx_power_max_dBm,
+	  dB_fixed(prach_power),
+	  ue->prach_vars[eNB_id]->amp);
 
     if (ue->mac_enabled==1) {
       Msg1_transmitted(ue->Mod_id,
@@ -2178,8 +2179,8 @@ void phy_procedures_UE_TX(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,ui
   }
 
   if (subframe_select(&ue->frame_parms,proc->subframe_tx) == SF_UL ||
-      ue->frame_parms.frame_type == FDD) {
-    if (ue->UE_mode[eNB_id] != PRACH ) {
+      ue->frame_parms.frame_type == FDD) {    
+    if (ue->UE_mode[eNB_id] > PRACH ) {
       // check cell srs subframe and ue srs subframe. This has an impact on pusch encoding
       isSubframeSRS = is_srs_occasion_common(&ue->frame_parms,proc->frame_tx,proc->subframe_tx);
       ue_compute_srs_occasion(ue,proc,eNB_id,isSubframeSRS);
@@ -2409,8 +2410,8 @@ void ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc, uin
                           ue->UE_mode[eNB_id]==NOT_SYNCHED ? 1 : 0);
     }
 
-    // if this is the first PBCH after initial synchronization, make L1 state = PRACH
-    if (ue->UE_mode[eNB_id]==NOT_SYNCHED) ue->UE_mode[eNB_id] = PRACH;
+    // if this is the first PBCH after initial synchronization and no timing correction is performed, make L1 state = PRACH
+    if (ue->UE_mode[eNB_id]==NOT_SYNCHED && ue->no_timing_correction == 1) ue->UE_mode[eNB_id] = PRACH;
 
     if (first_run) {
       first_run = 0;
