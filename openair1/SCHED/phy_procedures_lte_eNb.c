@@ -506,9 +506,14 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
        ) {
       // get harq_pid
       harq_pid = dlsch0->harq_ids[frame%2][subframe];
-      AssertFatal(harq_pid>=0,"harq_pid is negative\n");
+	//AssertFatal(harq_pid>=0,"harq_pid is negative\n");
 
-      if (harq_pid>=8) {
+        if((harq_pid < 0) || (harq_pid >= dlsch0->Mdlharq))
+        {
+          LOG_E(PHY,"harq_pid:%d corrupt must be 0-7 UE_id:%d frame:%d subframe:%d rnti:%x\n", harq_pid,UE_id,frame,subframe,dlsch0->rnti);
+        }
+        else
+        {
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
         if (dlsch0->ue_type==0)
@@ -1512,8 +1517,10 @@ static void do_release_harq(PHY_VARS_eNB *eNB,
 
     harq_pid = dlsch0->harq_ids[frame_tx%2][subframe_tx];
 
-    AssertFatal((harq_pid >= 0) && (harq_pid < 8),"harq_pid %d not in 0...7\n", harq_pid);
-
+    if((harq_pid < 0) || (harq_pid >= dlsch0->Mdlharq)) {
+      LOG_E(PHY,"illegal harq_pid %d %s:%d\n", harq_pid, __FILE__, __LINE__);
+      return;
+    }
     dlsch0_harq = dlsch0->harq_processes[harq_pid];
     dlsch1_harq = dlsch1->harq_processes[harq_pid];
     
@@ -1562,7 +1569,10 @@ static void do_release_harq(PHY_VARS_eNB *eNB,
       if (((1 << m) & mask) > 0) {
         harq_pid = dlsch0->harq_ids[frame_tx%2][subframe_tx];
 
-        if ((harq_pid >= 0) && (harq_pid < dlsch0->Mdlharq)) {
+        if((harq_pid < 0) || (harq_pid >= dlsch0->Mdlharq)) {
+          LOG_E(PHY,"illegal harq_pid %d %s:%d\n", harq_pid, __FILE__, __LINE__);
+          return;
+        }
           dlsch0_harq = dlsch0->harq_processes[harq_pid];
           dlsch1_harq = dlsch1->harq_processes[harq_pid];
 
@@ -1631,7 +1641,7 @@ int getM(PHY_VARS_eNB *eNB,int frame,int subframe) {
 
     harq_pid = dlsch0->harq_ids[frame_tx%2][subframe_tx];
 
-    if (harq_pid>=0 && harq_pid<10) {
+    if (harq_pid>=0 && harq_pid<dlsch0->Mdlharq) {
       dlsch0_harq     = dlsch0->harq_processes[harq_pid];
       dlsch1_harq     = dlsch1->harq_processes[harq_pid];
       AssertFatal(dlsch0_harq!=NULL,"dlsch0_harq is null\n");
