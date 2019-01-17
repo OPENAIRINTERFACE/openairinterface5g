@@ -345,6 +345,8 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
   }
 
 #define LOG_OPTIONS_IDX   2
+
+
 /*----------------------------------------------------------------------------------*/
 /** @defgroup _debugging debugging macros
  *  @ingroup _macro

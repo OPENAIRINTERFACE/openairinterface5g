@@ -456,7 +456,6 @@ static void get_options(void) {
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
   /* unknown parameters on command line will be checked in main
      after all init have been performed                         */
-  CONFIG_SETRTFLAG(CONFIG_NOCHECKUNKOPT);
   get_common_options();
   get_uethreads_params();
   paramdef_t cmdline_uemodeparams[] =CMDLINE_UEMODEPARAMS_DESC;
@@ -754,7 +753,6 @@ int main( int argc, char **argv ) {
 
   for (int i=0; i<MAX_NUM_CCs; i++) tx_max_power[i]=23;
 
-  CONFIG_SETRTFLAG(CONFIG_NOCHECKUNKOPT);
   get_options ();
   printf("Running with %d UE instances\n",NB_UE_INST);
 
@@ -791,7 +789,6 @@ int main( int argc, char **argv ) {
 #if T_TRACER
   T_Config_Init();
 #endif
-  CONFIG_CLEARRTFLAG(CONFIG_NOCHECKUNKOPT);
   //randominit (0);
   set_taus_seed (0);
   cpuf=get_cpu_freq_GHz();
@@ -808,12 +805,7 @@ int main( int argc, char **argv ) {
 
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
 #endif
-
-  if (opt_type != OPT_NONE) {
-    if (init_opt(in_path, in_ip) == -1)
-      LOG_E(OPT,"failed to run OPT \n");
-  }
-
+  init_opt();
 #ifdef PDCP_USE_NETLINK
   printf("PDCP netlink\n");
   netlink_init();
@@ -1077,13 +1069,7 @@ int main( int argc, char **argv ) {
   }
 
 #endif
-  ret=config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
-
-  if (ret != 0) {
-    LOG_E(ENB_APP, "%i unknown options in command line (invalid section name)\n",ret);
-    exit_fun("");
-  }
-
+  config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   printf("Sending sync to all threads (%p,%p,%p)\n",&sync_var,&sync_cond,&sync_mutex);
   pthread_mutex_lock(&sync_mutex);
   sync_var=0;
@@ -1134,9 +1120,7 @@ int main( int argc, char **argv ) {
   if (PHY_vars_UE_g[0][0]->rfdevice.trx_end_func)
     PHY_vars_UE_g[0][0]->rfdevice.trx_end_func(&PHY_vars_UE_g[0][0]->rfdevice);
 
-  if (opt_enabled == 1)
-    terminate_opt();
-
+  terminate_opt();
   logClean();
   printf("Bye.\n");
   return 0;

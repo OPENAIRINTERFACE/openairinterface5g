@@ -39,67 +39,58 @@ char *parallel_config=NULL;
 char *worker_config=NULL;
 
 uint64_t get_softmodem_optmask(void) {
-     return softmodem_params.optmask;
+  return softmodem_params.optmask;
 }
 
 uint64_t set_softmodem_optmask(uint64_t bitmask) {
-     softmodem_params.optmask = softmodem_params.optmask | bitmask;
-     return softmodem_params.optmask;
+  softmodem_params.optmask = softmodem_params.optmask | bitmask;
+  return softmodem_params.optmask;
 }
 
-softmodem_params_t* get_softmodem_params(void) {
-     return &softmodem_params;
+softmodem_params_t *get_softmodem_params(void) {
+  return &softmodem_params;
 }
 
-void get_common_options(void)
-{
-
-
-uint32_t online_log_messages;
-uint32_t glog_level ;
-uint32_t start_telnetsrv;
-uint32_t noS1;
-uint32_t nokrnmod;
-uint32_t nonbiot;
-paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
-paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
-
-
-
-  config_process_cmdline( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL); 
-
-  if (strlen(in_path) > 0) {
-      opt_type = OPT_PCAP;
-      opt_enabled=1;
-      printf("Enabling OPT for PCAP  with the following file %s \n",in_path);
-  }
-  if (strlen(in_ip) > 0) {
-      opt_enabled=1;
-      opt_type = OPT_WIRESHARK;
-      printf("Enabling OPT for wireshark for local interface");
-  }
-
-  config_process_cmdline( cmdline_logparams,sizeof(cmdline_logparams)/sizeof(paramdef_t),NULL);
+void get_common_options(void) {
+  uint32_t online_log_messages;
+  uint32_t glog_level ;
+  uint32_t start_telnetsrv;
+  uint32_t noS1;
+  uint32_t nokrnmod;
+  uint32_t nonbiot;
+  paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
+  paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
+  checkedparam_t cmdline_log_CheckParams[] = CMDLINE_LOGPARAMS_CHECK_DESC;
+  config_get( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
+  config_set_checkfunctions(cmdline_logparams, cmdline_log_CheckParams,
+                            sizeof(cmdline_logparams)/sizeof(paramdef_t));
+  config_get( cmdline_logparams,sizeof(cmdline_logparams)/sizeof(paramdef_t),NULL);
 
   if(config_isparamset(cmdline_logparams,CMDLINE_ONLINELOG_IDX)) {
-      set_glog_onlinelog(online_log_messages);
+    set_glog_onlinelog(online_log_messages);
   }
+
   if(config_isparamset(cmdline_logparams,CMDLINE_GLOGLEVEL_IDX)) {
-      set_glog(glog_level);
+    set_glog(glog_level);
   }
+
   if (start_telnetsrv) {
-     load_module_shlib("telnetsrv",NULL,0,NULL);
+    load_module_shlib("telnetsrv",NULL,0,NULL);
   }
 
   if (noS1) {
-     set_softmodem_optmask(SOFTMODEM_NOS1_BIT);
+    set_softmodem_optmask(SOFTMODEM_NOS1_BIT);
   }
+
   if (nokrnmod) {
-     set_softmodem_optmask(SOFTMODEM_NOKRNMOD_BIT);
-  } 
+    set_softmodem_optmask(SOFTMODEM_NOKRNMOD_BIT);
+  }
+
   if (nonbiot) {
-     set_softmodem_optmask(SOFTMODEM_NONBIOT_BIT);
-  } 
+    set_softmodem_optmask(SOFTMODEM_NONBIOT_BIT);
+  }
+
   if(parallel_config != NULL) set_parallel_conf(parallel_config);
+
   if(worker_config != NULL)   set_worker_conf(worker_config);
 }

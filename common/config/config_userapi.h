@@ -49,7 +49,7 @@ extern "C"
 /* utility functions, to be used by configuration module and/or configuration libraries */
 extern configmodule_interface_t *config_get_if(void);
 extern char *config_check_valptr(paramdef_t *cfgoptions, char **ptr, int length) ;
-extern void config_printhelp(paramdef_t *,int numparams);
+extern void config_printhelp(paramdef_t *,int numparams, char *prefix);
 extern int config_process_cmdline(paramdef_t *params,int numparams, char *prefix);
 extern void config_assign_processedint(paramdef_t *cfgoption, int val);
 extern void config_assign_int(paramdef_t *cfgoptions, char *fullname, int val);
