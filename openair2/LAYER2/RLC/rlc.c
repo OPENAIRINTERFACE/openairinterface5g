@@ -403,11 +403,18 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
     key = RLC_COLL_KEY_MBMS_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, mbms_id_p->service_id, mbms_id_p->session_id);
   }
   if (sourceL2Id && destinationL2Id){
-     key = RLC_COLL_KEY_SOURCE_DEST_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, *sourceL2Id, *destinationL2Id, srb_flagP);
+	  LOG_I (RLC, "RLC_COLL_KEY_VALUE: ctxt_pP->module_id: %d, ctxt_pP->rnti: %d, ctxt_pP->enb_flag: %d, rb_idP:%d, srb_flagP: %d \n \n", ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
+	      key = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
+
+	      //Thinh's line originally uncommented
+	      //key = RLC_COLL_KEY_SOURCE_DEST_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, *sourceL2Id, *destinationL2Id, srb_flagP);
+
+
      //key_lcid = RLC_COLL_KEY_LCID_SOURCE_DEST_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, chan_idP, *sourceL2Id, *destinationL2Id, srb_flagP);
   } else
 #endif
   {
+	  LOG_I (RLC, "RLC_COLL_KEY_VALUE: ctxt_pP->module_id: %d, ctxt_pP->rnti: %d, ctxt_pP->enb_flag: %d, rb_idP:%d, srb_flagP: %d \n \n", ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
     key = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
   }
 

@@ -185,6 +185,7 @@ boolean_t pdcp_data_req(
                                 (unsigned char*)&pdcp_pdu_p->data[0],
                                 sdu_buffer_sizeP);
 #endif
+      LOG_D(PDCP, "Before rlc_data_req 1, srb_flagP: %d, rb_idP: %d \n", srb_flagP, rb_idP);
       rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_YES, rb_idP, muiP, confirmP, sdu_buffer_sizeP, pdcp_pdu_p
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                 ,NULL, NULL
@@ -369,6 +370,7 @@ boolean_t pdcp_data_req(
     LOG_DUMPMSG(PDCP,DEBUG_PDCP,(char *)pdcp_pdu_p->data,pdcp_pdu_size,
                 "[MSG] PDCP DL %s PDU on rb_id %d\n",(srb_flagP)? "CONTROL" : "DATA", rb_idP);
 
+    LOG_D(PDCP, "Before rlc_data_req 2, srb_flagP: %d, rb_idP: %d \n", srb_flagP, rb_idP);
     rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                              ,sourceL2Id
@@ -473,6 +475,7 @@ pdcp_data_ind(
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_DATA_IND,VCD_FUNCTION_IN);
   LOG_DUMPMSG(PDCP,DEBUG_PDCP,(char *)sdu_buffer_pP->data,sdu_buffer_sizeP,
               "[MSG] PDCP UL %s PDU on rb_id %d\n", (srb_flagP)? "CONTROL" : "DATA", rb_idP);
+
 
 #if T_TRACER
   if (ctxt_pP->enb_flag != ENB_FLAG_NO)
@@ -813,6 +816,7 @@ pdcp_data_ind(
         ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = ctxt_pP->module_id;
       }
       // new_sdu_p->data->inst is set again in UE case so move to above.
+      //Panos: Commented this out because it cancels the assignment in #if defined(ENABLE_USE_MME) case
       //((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = ctxt_pP->module_id;
 
 #ifdef DEBUG_PDCP_FIFO_FLUSH_SDU
@@ -820,6 +824,7 @@ pdcp_data_ind(
       ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst = pdcp_inst++;
       LOG_D(PDCP, "inst=%d size=%d\n", ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst, ((pdcp_data_ind_header_t *) new_sdu_p->data)->data_size);
 #endif
+      //((pdcp_data_ind_header_t*) new_sdu_p->data)->inst = 1; //pdcp_inst++;
 
       memcpy(&new_sdu_p->data[sizeof (pdcp_data_ind_header_t)], \
              &sdu_buffer_pP->data[payload_offset], \
@@ -975,7 +980,7 @@ pdcp_run (
           RRC_DCCH_DATA_REQ (msg_p).frame, 
 	  0,
 	  RRC_DCCH_DATA_REQ (msg_p).eNB_index);
-        LOG_I(PDCP, PROTOCOL_CTXT_FMT"Received %s from %s: instance %d, rb_id %d, muiP %d, confirmP %d, mode %d\n",
+        LOG_D(PDCP, PROTOCOL_CTXT_FMT"Received %s from %s: instance %d, rb_id %d, muiP %d, confirmP %d, mode %d\n",
               PROTOCOL_CTXT_ARGS(&ctxt),
               ITTI_MSG_NAME (msg_p),
               ITTI_MSG_ORIGIN_NAME(msg_p),
@@ -985,6 +990,7 @@ pdcp_run (
               RRC_DCCH_DATA_REQ (msg_p).confirmp,
               RRC_DCCH_DATA_REQ (msg_p).mode);
 
+        LOG_D(PDCP, "Before calling pdcp_data_req from pdcp_run! RRC_DCCH_DATA_REQ (msg_p).rb_id: %d \n", RRC_DCCH_DATA_REQ (msg_p).rb_id);
         result = pdcp_data_req (&ctxt,
                                 SRB_FLAG_YES,
                                 RRC_DCCH_DATA_REQ (msg_p).rb_id,

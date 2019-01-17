@@ -3301,6 +3301,7 @@ int decode_SIB1( const protocol_ctxt_t* const ctxt_pP, const uint8_t eNB_index, 
       msg_p = itti_alloc_new_message(TASK_RRC_UE, PHY_FIND_NEXT_CELL_REQ);
 
       itti_send_msg_to_task(TASK_PHY_UE, ctxt_pP->instance, msg_p);
+      LOG_E(RRC, "Synched with a cell, but PLMN doesn't match our SIM, the message PHY_FIND_NEXT_CELL_REQ is sent but lost in current UE implementation! \n"); 
     }
   }
 #endif
@@ -4718,7 +4719,6 @@ void *rrc_ue_task( void *args_p )
       break;
 
     case MESSAGE_TEST:
-      LOG_D(RRC, "[UE %d] Received %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
       break;
 
       /* MAC messages */
@@ -5113,6 +5113,7 @@ void *rrc_ue_task( void *args_p )
       break; // PHY_FIND_CELL_IND
 
     case PHY_MEAS_REPORT_IND: {
+      LOG_D(RRC, "[UE %d] Received %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
       MessageDef *message_p;
       message_p = itti_alloc_new_message(TASK_RRC_UE, RRC_RAL_MEASUREMENT_REPORT_IND);
 
@@ -5130,6 +5131,7 @@ void *rrc_ue_task( void *args_p )
     }
 
     case RRC_RAL_CONFIGURE_THRESHOLD_REQ:
+      LOG_D(RRC, "[UE %d] Received %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
       rrc_ue_ral_handle_configure_threshold_request(ue_mod_id, msg_p);
       break;
 

@@ -1077,7 +1077,7 @@ int main( int argc, char **argv ) {
   }
 
 #endif
-  ret=config_check_cmdlineopt(CONFIG_CHECKALLSECTIONS);
+  ret=config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
 
   if (ret != 0) {
     LOG_E(ENB_APP, "%i unknown options in command line (invalid section name)\n",ret);

@@ -218,7 +218,7 @@ pipeline {
                                     buildStageStatus = false
                                 }
                             }
-                            sh "python3 main.py --mode=FinalizeHtml --finalStatus=${buildStageStatus}"
+                            sh "python3 main.py --mode=FinalizeHtml --finalStatus=${buildStageStatus} --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password}"
                         }
                     }
                 }

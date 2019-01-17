@@ -171,6 +171,7 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
             ((pdcp_data_ind_header_t*) sdu_p->data)->inst,
             ((pdcp_data_ind_header_t *) sdu_p->data)->data_size);
 #else
+      // Raphael: was suppressed by Raymond --> should be suppressed?
       // value of sdu_p->data->inst is set in pdcp_data_ind
       // it's necessary to set 1 in case of UE with S1.
       if (ctxt_pP->enb_flag){
@@ -202,7 +203,7 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
 
 #endif /* defined(ENABLE_USE_MME) */
 #ifdef PDCP_DEBUG
-      LOG_D(PDCP, "PDCP->IP TTI %d INST %d: Preparing %d Bytes of data from rab %d to Nas_mesh\n",
+      LOG_I(PDCP, "PDCP->IP TTI %d INST %d: Preparing %d Bytes of data from rab %d to Nas_mesh\n",
             ctxt_pP->frame, ((pdcp_data_ind_header_t *)(sdu_p->data))->inst,
             ((pdcp_data_ind_header_t *)(sdu_p->data))->data_size, ((pdcp_data_ind_header_t *)(sdu_p->data))->rb_id);
 #endif //PDCP_DEBUG
@@ -726,11 +727,11 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
          if (!ctxt.enb_flag) {
             if (rab_id != 0) {
                if (rab_id == UE_IP_DEFAULT_RAB_ID) {
-                  LOG_I(PDCP, "PDCP_COLL_KEY_DEFAULT_DRB_VALUE(module_id=%d, rnti=%x, enb_flag=%d)\n",
+                  LOG_D(PDCP, "PDCP_COLL_KEY_DEFAULT_DRB_VALUE(module_id=%d, rnti=%x, enb_flag=%d)\n",
                         ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
                   key = PDCP_COLL_KEY_DEFAULT_DRB_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
                   h_rc = hashtable_get(pdcp_coll_p, key, (void**)&pdcp_p);
-                  LOG_I(PDCP,"request key %x : (%d,%x,%d,%d)\n",
+                  LOG_D(PDCP,"request key %x : (%d,%x,%d,%d)\n",
                         (uint8_t)key,ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id);
                } else {
                   rab_id = rab_id % LTE_maxDRB;

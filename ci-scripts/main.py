@@ -118,6 +118,12 @@ class SSHConnection():
 		self.htmlTabNames = []
 		self.htmlTabIcons = []
 		self.finalStatus = False
+		self.eNBOsVersion = ''
+		self.eNBKernelVersion = ''
+		self.eNBUhdVersion = ''
+		self.eNBCpuNb = ''
+		self.eNBCpuModel = ''
+		self.eNBCpuMHz = ''
 
 	def open(self, ipaddress, username, password):
 		count = 0
@@ -1947,6 +1953,37 @@ class SSHConnection():
 			self.command('cp /opt/ltebox/var/log/xGwLog.0 .', '\$', 5)
 			self.command('zip spgw.log.zip xGwLog.0', '\$', 60)
 		self.close()
+	def RetrieveSystemVersion(self):
+		if self.eNBIPAddress == '' or self.eNBUserName == '' or self.eNBPassword == '':
+			Usage()
+			sys.exit('Insufficient Parameter')
+		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
+		self.command('lsb_release -a', '\$', 5)
+		result = re.search('Description:\\\\t(?P<os_type>[a-zA-Z0-9\-\_\.\ ]+)', str(self.ssh.before))
+		if result is not None:
+			self.eNBOsVersion = result.group('os_type')
+			logging.debug('OS is: ' + self.eNBOsVersion)
+		self.command('uname -r', '\$', 5)
+		result = re.search('uname -r\\\\r\\\\n(?P<kernel_version>[a-zA-Z0-9\-\_\.]+)', str(self.ssh.before))
+		if result is not None:
+			self.eNBKernelVersion = result.group('kernel_version')
+			logging.debug('Kernel Version is: ' + self.eNBKernelVersion)
+		self.command('dpkg --list | egrep --color=never uhd-host', '\$', 5)
+		result = re.search('uhd-host *(?P<uhd_version>[0-9\.]+)', str(self.ssh.before))
+		if result is not None:
+			self.eNBUhdVersion = result.group('uhd_version')
+			logging.debug('UHD Version is: ' + self.eNBUhdVersion)
+		self.command('lscpu', '\$', 5)
+		result = re.search('CPU\(s\): *(?P<nb_cpus>[0-9]+).*Model name: *(?P<model>[a-zA-Z0-9\-\_\.\ \(\)]+).*CPU MHz: *(?P<cpu_mhz>[0-9\.]+)', str(self.ssh.before))
+		if result is not None:
+			self.eNBCpuNb = result.group('nb_cpus')
+			logging.debug('nb_cpus: ' + self.eNBCpuNb)
+			self.eNBCpuModel = result.group('model')
+			logging.debug('model: ' + self.eNBCpuModel)
+			self.eNBCpuMHz = result.group('cpu_mhz') + ' MHz'
+			logging.debug('cpu_mhz: ' + self.eNBCpuMHz)
+		self.close()
+
 #-----------------------------------------------------------
 # HTML Reporting....
 #-----------------------------------------------------------
@@ -2097,17 +2134,37 @@ class SSHConnection():
 
 	def CreateHtmlFooter(self, passStatus):
 		if (os.path.isfile('test_results.html')):
+			self.RetrieveSystemVersion()
 			self.htmlFile = open('test_results.html', 'a')
 			self.htmlFile.write('</div>\n')
 			self.htmlFile.write('  <p></p>\n')
-			self.htmlFile.write('  <table class="table">\n')
-			self.htmlFile.write('      <tr">\n')
-			self.htmlFile.write('        <th bgcolor = "#33CCFF">Final Status</th>\n')
+			self.htmlFile.write('  <table class="table table-condensed">\n')
+			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <th colspan=6>eNB Server Characteristics</th>\n')
+			self.htmlFile.write('      </tr>\n')
+			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <td>OS Version</td>\n')
+			self.htmlFile.write('        <td><span class="label label-default">' + self.eNBOsVersion + '</span></td>\n')
+			self.htmlFile.write('        <td>Kernel Version</td>\n')
+			self.htmlFile.write('        <td><span class="label label-default">' + self.eNBKernelVersion + '</span></td>\n')
+			self.htmlFile.write('        <td>UHD Version</td>\n')
+			self.htmlFile.write('        <td><span class="label label-default">' + self.eNBUhdVersion + '</span></td>\n')
+			self.htmlFile.write('      </tr>\n')
+			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <td>Nb CPUs</td>\n')
+			self.htmlFile.write('        <td><span class="label label-default">' + self.eNBCpuNb + '</span></td>\n')
+			self.htmlFile.write('        <td>CPU Model Name</td>\n')
+			self.htmlFile.write('        <td><span class="label label-default">' + self.eNBCpuModel + '</span></td>\n')
+			self.htmlFile.write('        <td>CPU Frequency</td>\n')
+			self.htmlFile.write('        <td><span class="label label-default">' + self.eNBCpuMHz + '</span></td>\n')
+			self.htmlFile.write('      </tr>\n')
+			self.htmlFile.write('      <tr>\n')
+			self.htmlFile.write('        <th colspan=4 bgcolor = "#33CCFF">Final Status</th>\n')
 			if passStatus:
-				self.htmlFile.write('        <th bgcolor="green"><font color="white">PASS <span class="glyphicon glyphicon-ok"></span></font></th>\n')
+				self.htmlFile.write('        <th colspan=2 bgcolor="green"><font color="white">PASS <span class="glyphicon glyphicon-ok"></span></font></th>\n')
 			else:
-				self.htmlFile.write('        <th bgcolor="red"><font color="white">FAIL <span class="glyphicon glyphicon-remove"></span> </font></th>\n')
-			self.htmlFile.write('      </tr">\n')
+				self.htmlFile.write('        <th colspan=2 bgcolor="red"><font color="white">FAIL <span class="glyphicon glyphicon-remove"></span> </font></th>\n')
+			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('  </table>\n')
 			self.htmlFile.write('  <p></p>\n')
 			self.htmlFile.write('  <div class="well well-lg">End of Test Report -- Copyright <span class="glyphicon glyphicon-copyright-mark"></span> 2018 <a href="http://www.openairinterface.org/">OpenAirInterface</a>. All Rights Reserved.</div>\n')
