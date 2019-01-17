@@ -948,8 +948,8 @@ void init_eNB_proc(int inst) {
       // Original Code from Fujitsu w/ old structure/field name
       //pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, &proc_rxtx[0] );
       //pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, eNB_thread_rxtx, &proc_rxtx[1] );
-      pthread_create( &L1_proc->pthread, attr0, L1_thread, proc );
-      pthread_create( &L1_proc_tx->pthread, attr1, L1_thread, proc);
+      pthread_create( &L1_proc->pthread, attr0, L1_thread, L1_proc );
+      pthread_create( &L1_proc_tx->pthread, attr1, L1_thread, L1_proc_tx);
     }
 
     pthread_create( &proc->pthread_prach, attr_prach, eNB_thread_prach, eNB );

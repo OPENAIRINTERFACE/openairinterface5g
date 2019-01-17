@@ -379,7 +379,7 @@ static uint32_t get_sf_time(uint32_t now_hr, uint32_t sf_start_hr)
 {
 	if(now_hr < sf_start_hr)
 	{
-		NFAPI_TRACE(NFAPI_TRACE_INFO, "now is earlier than start of subframe now_hr:%u sf_start_hr:%u\n", now_hr, sf_start_hr);
+		//NFAPI_TRACE(NFAPI_TRACE_INFO, "now is earlier than start of subframe now_hr:%u sf_start_hr:%u\n", now_hr, sf_start_hr);
 		return 0;
 	}
 	else
