@@ -138,7 +138,7 @@ int main(int argc, char **argv) {
   uint8_t extended_prefix_flag=0;
   int8_t interf1=-21,interf2=-21;
   FILE *input_fd=NULL,*pbch_file_fd=NULL;
-  char input_val_str[50],input_val_str2[50];
+  //char input_val_str[50],input_val_str2[50];
   //uint16_t NB_RB=25;
   SCM_t channel_model=AWGN;//Rayleigh1_anticorr;
   uint8_t N_RB_DL=106,mu=1;
@@ -149,12 +149,12 @@ int main(int argc, char **argv) {
   //int frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
   //nfapi_nr_config_request_t *gNB_config;
-  uint8_t Kmimo;
-  uint32_t Nsoft;
+  uint8_t Kmimo=0;
+  uint32_t Nsoft=0;
   double sigma;
   unsigned char qbits=8;
   int ret;
-  int run_initial_sync=0;
+  //int run_initial_sync=0;
   int loglvl=OAILOG_WARNING;
   float target_error_rate = 0.01;
 
@@ -308,18 +308,22 @@ int main(int argc, char **argv) {
 
         break;
 
-    case 'm':
-      Imcs = atoi(optarg);
-      break;
+      case 'm':
+    	  Imcs = atoi(optarg);
+    	  break;
 
-    case 'l':
-      nb_symb_sch = atoi(optarg);
-      break;
+      case 'l':
+    	  nb_symb_sch = atoi(optarg);
+    	  break;
       
-    case 'r':
-      nb_rb = atoi(optarg);
-      break;
-	
+      case 'r':
+    	  nb_rb = atoi(optarg);
+    	  break;
+
+      case 'x':
+    	  transmission_mode = atoi(optarg);
+    	  break;
+
       default:
       case 'h':
         printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
@@ -451,11 +455,8 @@ int main(int argc, char **argv) {
   unsigned char harq_pid = 0; //dlsch->harq_ids[subframe];
   NR_gNB_DLSCH_t *dlsch = gNB->dlsch[0][0];
   nfapi_nr_dl_config_dlsch_pdu_rel15_t *rel15 = &dlsch->harq_processes[harq_pid]->dlsch_pdu.dlsch_pdu_rel15;
-  time_stats_t *rm_stats;
-  time_stats_t *te_stats;
-  time_stats_t *i_stats;
-  uint8_t is_crnti;
-  uint8_t llr8_flag;
+  //time_stats_t *rm_stats, *te_stats, *i_stats;
+  uint8_t is_crnti=0, llr8_flag=0;
   unsigned int TBS = 8424;
   unsigned int available_bits;
   uint8_t nb_re_dmrs = 6;

@@ -1131,7 +1131,7 @@ void nr_dci_decoding_procedure0(int s,
   //Table 10.1-2: Maximum number of PDCCH candidates    per slot and per serving cell as a function of the subcarrier spacing value 2^mu*15 KHz, mu {0,1,2,3}
   uint8_t m_max_slot_pdcch_Table10_1_2 [4] = {44,36,22,20};
   //Table 10.1-3: Maximum number of non-overlapped CCEs per slot and per serving cell as a function of the subcarrier spacing value 2^mu*15 KHz, mu {0,1,2,3}
-  uint8_t cce_max_slot_pdcch_Table10_1_3 [4] = {56,56,48,32};
+  //uint8_t cce_max_slot_pdcch_Table10_1_3 [4] = {56,56,48,32};
   
   int coreset_nbr_cce_per_symbol=0;
 
@@ -1264,9 +1264,10 @@ void nr_dci_decoding_procedure0(int s,
   for (m = 0; m < nb_candidates; m++) {
     int n_ci = 0;
     if (nCCE[p] < L2) return;
+
+#ifdef NR_PDCCH_DCI_DEBUG
     int debug1 = nCCE[p] / L2;
     int debug2 = L2*m_p_s_L_max;
-#ifdef NR_PDCCH_DCI_DEBUG
     printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> debug1(%d)=nCCE[p]/L2 | nCCE[%d](%d) | L2(%d)\n",debug1,p,nCCE[p],L2);
     printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> debug2(%d)=L2*m_p_s_L_max | L2(%d) | m_p_s_L_max(%d)\n",debug2,L2,m_p_s_L_max);
 #endif
