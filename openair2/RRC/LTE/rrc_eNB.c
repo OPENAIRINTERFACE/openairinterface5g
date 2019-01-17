@@ -941,10 +941,10 @@ rrc_eNB_free_UE(const module_id_t enb_mod_idP,const struct rrc_eNB_ue_context_s*
 
      if((ue_context_pP->ue_context.ul_failure_timer >= 20000) &&
   	(mac_eNB_get_rrc_status(enb_mod_idP,rnti) >= RRC_CONNECTED)) {
-      LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ RNTI %x\n", enb_mod_idP, rnti);
       if (RC.rrc[enb_mod_idP]->node_type == ngran_eNB
           || RC.rrc[enb_mod_idP]->node_type == ngran_eNB_CU
           || RC.rrc[enb_mod_idP]->node_type == ngran_gNB_CU) {
+        LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ RNTI %x\n", enb_mod_idP, rnti);
         rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(
             enb_mod_idP,
             ue_context_pP,
