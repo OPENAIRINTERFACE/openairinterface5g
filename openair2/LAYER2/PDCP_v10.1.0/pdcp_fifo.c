@@ -174,9 +174,9 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
       // Raphael: was suppressed by Raymond --> should be suppressed?
       // value of sdu_p->data->inst is set in pdcp_data_ind
       // it's necessary to set 1 in case of UE with S1.
-      if (ctxt_pP->enb_flag){
-        ((pdcp_data_ind_header_t *)(sdu_p->data))->inst = 0;
-      }
+      //if (ctxt_pP->enb_flag){
+      //  ((pdcp_data_ind_header_t *)(sdu_p->data))->inst = 0;
+      //}
 #endif
 
 #if defined(LINK_ENB_PDCP_TO_GTPV1U)
