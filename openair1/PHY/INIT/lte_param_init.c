@@ -169,6 +169,13 @@ void lte_param_init(PHY_VARS_eNB **eNBp,
   }
   else ru->N_TA_offset=0;
 
+#if BASIC_SIMULATOR
+  /* this is required for the basic simulator in TDD mode
+   * TODO: find a proper cleaner solution
+   */
+  UE->N_TA_offset = 0;
+#endif
+
   printf("Done lte_param_init\n");
 
 

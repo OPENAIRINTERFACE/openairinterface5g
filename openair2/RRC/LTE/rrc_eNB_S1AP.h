@@ -33,7 +33,7 @@
 
 # if defined(ENABLE_USE_MME)
 
-#include "UL-DCCH-Message.h"
+#include "LTE_UL-DCCH-Message.h"
 
 /* Up link procedures */
 
@@ -106,7 +106,7 @@ void
 rrc_eNB_send_S1AP_UPLINK_NAS(
   const protocol_ctxt_t*    const ctxt_pP,
   rrc_eNB_ue_context_t*          const ue_context_pP,
-  UL_DCCH_Message_t* const ul_dcch_msg
+  LTE_UL_DCCH_Message_t* const ul_dcch_msg
 );
 
 /*! \fn void rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(const protocol_ctxt_t   * const ctxt_pP, eNB_RRC_UE_t * const ue_context_pP, UL_DCCH_Message_t *ul_dcch_msg)
@@ -118,7 +118,7 @@ rrc_eNB_send_S1AP_UPLINK_NAS(
 void rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(
   const protocol_ctxt_t* const ctxt_pP,
   rrc_eNB_ue_context_t*          const ue_context_pP,
-  UL_DCCH_Message_t* ul_dcch_msg
+  LTE_UL_DCCH_Message_t* ul_dcch_msg
 );
 
 /*! \fn rrc_eNB_send_S1AP_NAS_FIRST_REQ(const protocol_ctxt_t* const ctxt_pP,eNB_RRC_UE_t *const ue_context_pP, RRCConnectionSetupComplete_r8_IEs_t *rrcConnectionSetupComplete)
@@ -132,7 +132,7 @@ void
 rrc_eNB_send_S1AP_NAS_FIRST_REQ(
   const protocol_ctxt_t* const ctxt_pP,
   rrc_eNB_ue_context_t*          const ue_context_pP,
-  RRCConnectionSetupComplete_r8_IEs_t* rrcConnectionSetupComplete
+  LTE_RRCConnectionSetupComplete_r8_IEs_t* rrcConnectionSetupComplete
 );
 
 

@@ -30,7 +30,7 @@
 
 #include "PHY/defs_eNB.h"
 #include "PHY/defs_UE.h"
-#include "TDD-Config.h"
+#include "LTE_TDD-Config.h"
 /*! \brief Function to compute subframe Number(DL and S) as a function of Frame type and TDD Configuration
   @param frame_parms Pointer to DL frame parameter descriptor
   @returns Subframe Number (DL,S)
@@ -180,7 +180,7 @@ uint8_t is_SR_TXOp(PHY_VARS_UE *phy_vars_ue,UE_rxtx_proc_t *proc,uint8_t eNB_id)
   @param UE_id ID of UE which may be issuing the SR
   @returns 1 if TXOp is active.
 */
-uint8_t is_SR_subframe(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,uint8_t UE_id);
+uint8_t is_SR_subframe(PHY_VARS_eNB *phy_vars_eNB,L1_rxtx_proc_t *proc,uint8_t UE_id);
 
 /*! \brief Gives the UL subframe corresponding to a PDDCH order in subframe n
   @param frame_parms Pointer to DL frame parameters
@@ -247,7 +247,7 @@ TDD, this routine computes the procedure described in Section 10.1 of 36.213 (th
 @param n1_pucch3 Pointer to n1_pucch3
 */
 void get_n1_pucch_eNB(PHY_VARS_eNB *phy_vars_eNB,
-		      eNB_rxtx_proc_t *proc,
+		      L1_rxtx_proc_t *proc,
                       uint8_t UE_id,
                       int16_t *n1_pucch0,
                       int16_t *n1_pucch1,
@@ -266,7 +266,7 @@ void get_n1_pucch_eNB(PHY_VARS_eNB *phy_vars_eNB,
 */
 void process_HARQ_feedback(uint8_t UE_id,
                            PHY_VARS_eNB *phy_vars_eNB,
-			   eNB_rxtx_proc_t *proc,
+			   L1_rxtx_proc_t *proc,
                            uint8_t pusch_flag,
                            uint8_t *pucch_payload,
                            uint8_t pucch_sel,
@@ -346,7 +346,7 @@ void compute_srs_pos(lte_frame_type_t frameType,uint16_t isrs,uint16_t *psrsPeri
 
 int ul_ACK_subframe2_dl_frame(LTE_DL_FRAME_PARMS *frame_parms,int frame, unsigned char subframe,unsigned char subframe_tx);
 
-void get_retransmission_timing(TDD_Config_t *tdd_Config, frame_t *frameP,  sub_frame_t *subframeP);
+void get_retransmission_timing(LTE_TDD_Config_t *tdd_Config, frame_t *frameP,  sub_frame_t *subframeP);
 /*@}*/
 
 

@@ -273,7 +273,7 @@ int mch_modulation(int32_t **txdataF,
     @param abstraction_flag
 
 */
-void generate_mch(PHY_VARS_eNB *phy_vars_eNB,eNB_rxtx_proc_t *proc,uint8_t *a);
+void generate_mch(PHY_VARS_eNB *phy_vars_eNB,L1_rxtx_proc_t *proc,uint8_t *a);
 
 /** \brief This function generates the frequency-domain pilots (cell-specific downlink reference signals)
     @param phy_vars_eNB Pointer to eNB variables
@@ -317,7 +317,7 @@ int32_t generate_pilots_slot(PHY_VARS_eNB *phy_vars_eNB,
                              int first_pilot_only);
 
 int32_t generate_mbsfn_pilot(PHY_VARS_eNB *phy_vars_eNB,
-                             eNB_rxtx_proc_t *proc,
+                             L1_rxtx_proc_t *proc,
                              int32_t **txdataF,
                              int16_t amp);
 
@@ -410,13 +410,13 @@ void ulsch_extract_rbs_single(int32_t **rxdataF,
 void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,
                         int frame,
                         int subframe,
-			eNB_rxtx_proc_t *proc,
+			L1_rxtx_proc_t *proc,
 			DCI_ALLOC_t *dci_alloc,
 			nfapi_dl_config_dci_dl_pdu *pdu);
 
-void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,mDCI_ALLOC_t *dci_alloc,nfapi_dl_config_mpdcch_pdu *pdu);
+void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,mDCI_ALLOC_t *dci_alloc,nfapi_dl_config_mpdcch_pdu *pdu);
 
-void fill_dci0(PHY_VARS_eNB *eNB,int frame,int subframe,eNB_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
+void fill_dci0(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t *proc,DCI_ALLOC_t *dci_alloc,
 	      nfapi_hi_dci0_dci_pdu *pdu);
 
 void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu,int frame,int subframe);
@@ -427,7 +427,7 @@ int generate_eNB_ulsch_params_from_rar(PHY_VARS_eNB *eNB,
                                        unsigned char subframe);
 
 int generate_eNB_ulsch_params_from_dci(PHY_VARS_eNB *PHY_vars_eNB,
-                                       eNB_rxtx_proc_t *proc,
+                                       L1_rxtx_proc_t *proc,
                                        void *dci_pdu,
                                        rnti_t rnti,
                                        DCI_format_t dci_format,
@@ -466,7 +466,7 @@ void init_transport_channels(uint8_t);
 
 
 void rx_ulsch(PHY_VARS_eNB *eNB,
-              eNB_rxtx_proc_t *proc,
+              L1_rxtx_proc_t *proc,
               uint8_t UE_id);
 
 
@@ -487,7 +487,7 @@ int ulsch_decoding_data_all(PHY_VARS_eNB *eNB,
   @returns 0 on success
 */
 unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
-                             eNB_rxtx_proc_t *proc,
+                             L1_rxtx_proc_t *proc,
                              uint8_t UE_id,
                              uint8_t control_only_flag,
                              uint8_t Nbundled,
@@ -520,7 +520,7 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,
                         int llr8_flag);
 
 void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
-			eNB_rxtx_proc_t *proc,
+			L1_rxtx_proc_t *proc,
                         int16_t amp);
 
 
@@ -578,7 +578,7 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,RU_t *ru,
 	      uint16_t *max_preamble_energy, 
 	      uint16_t *max_preamble_delay, 
 	      uint16_t Nf, uint8_t tdd_mapindex
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	      ,
               uint8_t br_flag
 #endif

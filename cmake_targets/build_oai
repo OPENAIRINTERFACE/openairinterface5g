@@ -107,7 +107,7 @@ Options
    Rel8 limits the implementation to 3GPP Release 8 version
    Rel10 limits the implementation to 3GPP Release 10 version
 -w | --hardware
-   EXMIMO, USRP, BLADERF, ETHERNET, LMSSDR, None (Default)
+   EXMIMO, USRP, BLADERF, ETHERNET, LMSSDR, IRIS, None (Default)
    Adds this RF board support (in external packages installation and in compilation)
 -t | --transport protocol
    ETHERNET , None
@@ -231,7 +231,7 @@ function main() {
        -w | --hardware)
             HW="$2" #"${i#*=}"
             # Use OAI_USRP  as the key word USRP is used inside UHD driver           
-	    if [ "$HW" != "BLADERF" -a  "$HW" != "USRP" -a "$HW" != "LMSSDR" -a  "$HW" != "None" -a  "$HW" != "EXMIMO"  ] ; then 
+            if [ "$HW" != "BLADERF" -a  "$HW" != "USRP" -a "$HW" != "LMSSDR" -a  "$HW" != "None" -a  "$HW" != "EXMIMO" -a  "$HW" != "IRIS"  ] ; then 
 		echo_fatal "Unknown HW type $HW will exit..."		
 	    else
 		if [ "$HW" == "USRP" ] ; then 
@@ -243,6 +243,9 @@ function main() {
 		if [ "$HW" == "LMSSDR" ] ; then 
 		    HW="OAI_LMSSDR"
 		fi 
+                if [ "$HW" == "IRIS" ] ; then
+                    HW="OAI_IRIS"
+                fi
 		echo_info "Setting hardware to: $HW"
 	    fi
             shift 2;;
@@ -414,7 +417,9 @@ function main() {
         DEADLINE_SCHEDULER_FLAG_USER="False"
      elif [ "$HW" = "OAI_BLADERF" ] ; then 
         DEADLINE_SCHEDULER_FLAG_USER="False"
-     elif [ "$HW" = "OAI_LMSSDR" ] ; then 
+     elif [ "$HW" = "OAI_LMSSDR" ] ; then     
+        DEADLINE_SCHEDULER_FLAG_USER="False" 
+     elif [ "$HW" = "OAI_IRIS" ] ; then
         DEADLINE_SCHEDULER_FLAG_USER="False"
      elif [ "$HW" = "None" ] ; then 
         DEADLINE_SCHEDULER_FLAG_USER="False"
@@ -483,6 +488,13 @@ function main() {
       if [ ! "$DISABLE_HARDWARE_DEPENDENCY" == "True" ]; then
         flash_firmware_bladerf
       fi
+    fi
+    if [ "$HW" == "OAI_IRIS" ] ; then
+      echo_info "installing packages for IRIS support"
+      check_install_soapy
+      #if [ ! "$DISABLE_HARDWARE_DEPENDENCY" == "True" ]; then
+      #  flash_firmware_iris
+      #fi
     fi
     echo_info "installing protobuf/protobuf-c for flexran agent support"
     install_protobuf_from_source
@@ -651,6 +663,9 @@ function main() {
     compilations \
           lte-simulators coding \
           libcoding.so $dbin/libcoding.so
+#    compilations \
+#	  lte-simulators $config_libconfig_shlib \
+#	  lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
   fi
 
   # Core simulators
@@ -756,6 +771,14 @@ function main() {
 	      ln -sf liboai_lmssdrdevif.so liboai_device.so
 	      ln -sf $dbin/liboai_lmssdrdevif.so.$REL $dbin/liboai_device.so
 	      echo_info "liboai_device.so is linked to LMSSDR device library"	 
+          elif [ "$HW" == "OAI_IRIS" ] ; then
+                  compilations \
+                      $build_dir oai_irisdevif \
+                      liboai_irisdevif.so $dbin/liboai_irisdevif.so.$REL
+
+              ln -s liboai_irisdevif.so liboai_device.so
+              ln -s $dbin/liboai_irisdevif.so.$REL $dbin/liboai_device.so
+              echo_info "liboai_device.so is linked to IRIS device library"
 	  else 
 	      echo_info "liboai_device.so is not linked to any device library"	    
 	  fi

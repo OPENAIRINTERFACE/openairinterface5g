@@ -22,7 +22,7 @@
 #ifndef X2AP_MESSAGES_TYPES_H_
 #define X2AP_MESSAGES_TYPES_H_
 
-#include "PhysCellId.h"
+#include "LTE_PhysCellId.h"
 
 //-------------------------------------------------------------------------------------------//
 // Defines to access message fields.
@@ -122,7 +122,7 @@ typedef struct x2ap_lastvisitedcell_info_s {
   uint16_t mcc;
   uint16_t mnc;
   uint8_t  mnc_len;
-  PhysCellId_t target_physCellId;
+  LTE_PhysCellId_t target_physCellId;
   cell_type_t cell_type;
   uint64_t time_UE_StayedInCell;
 }x2ap_lastvisitedcell_info_t;
@@ -134,7 +134,7 @@ typedef struct x2ap_handover_req_s {
 
   int old_eNB_ue_x2ap_id;
 
-  PhysCellId_t target_physCellId;
+  LTE_PhysCellId_t target_physCellId;
 
   x2ap_gummei_t ue_gummei;
 

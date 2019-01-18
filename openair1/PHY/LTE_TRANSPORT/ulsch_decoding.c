@@ -45,7 +45,7 @@
 #include "targets/RT/USER/rt_wrapper.h"
 #include "transport_proto.h"
 
-extern int codingw;
+extern WORKER_CONF_t get_thread_worker_conf(void);
 
 void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch)
 {
@@ -382,7 +382,7 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
 extern int oai_exit;
 void *td_thread(void *param) {
   PHY_VARS_eNB *eNB = ((td_params*)param)->eNB;
-  eNB_proc_t *proc  = &eNB->proc;
+  L1_proc_t *proc  = &eNB->proc;
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
   
@@ -412,7 +412,7 @@ void *td_thread(void *param) {
 
 int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) {
 
-  eNB_proc_t *proc = &eNB->proc;
+  L1_proc_t *proc = &eNB->proc;
   unsigned int r,r_offset=0,Kr,Kr_bytes;
   uint8_t crc_type;
   int offset = 0;
@@ -723,7 +723,7 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
 int ulsch_decoding_data_all(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
 {
   int ret = 0;
-  /*if(codingw)
+  /*if(get_thread_worker_conf() == WORKER_ENABLE)
   {
     ret = ulsch_decoding_data_2thread(eNB,UE_id,harq_pid,llr8_flag);
   }
@@ -762,7 +762,7 @@ static inline unsigned int lte_gold_unscram(unsigned int *x1, unsigned int *x2, 
 
 }
   
-unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
+unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
                              uint8_t UE_id,
                              uint8_t control_only_flag,
                              uint8_t Nbundled,
@@ -1505,7 +1505,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
 
   // Do ULSCH Decoding for data portion
 
-  ret = eNB->td(eNB,UE_id,harq_pid,llr8_flag);
+  ret = ulsch_decoding_data_all(eNB,UE_id,harq_pid,llr8_flag);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_ULSCH_DECODING0+harq_pid,0);
 

@@ -49,119 +49,12 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "common/ran_context.h"
 #include "gtpv1u_eNB_defs.h"
+#include "gtpv1u_eNB_task.h"
 
 #undef GTP_DUMP_SOCKET
 
-/*
-extern boolean_t pdcp_data_req(
-  const protocol_ctxt_t* const  ctxt_pP,
-  const srb_flag_t     srb_flagP,
-  const rb_id_t        rb_idP,
-  const mui_t          muiP,
-  const confirm_t      confirmP,
-  const sdu_size_t     sdu_buffer_sizeP,
-  unsigned char *const sdu_buffer_pP,
-  const pdcp_transmission_mode_t modeP
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-    ,const uint32_t * const sourceL2Id
-    ,const uint32_t * const destinationL2Id
-#endif
-    );
-
-  const pdcp_transmission_mode_t modeP);
-*/
 extern unsigned char NB_eNB_INST;
 extern RAN_CONTEXT_t RC;
-
-static int
-gtpv1u_eNB_send_init_udp(
-  uint16_t port_number);
-
-NwGtpv1uRcT
-gtpv1u_eNB_log_request(
-  NwGtpv1uLogMgrHandleT   hLogMgr,
-  uint32_t                  logLevel,
-  NwCharT                *file,
-  uint32_t                  line,
-  NwCharT                *logStr);
-
-NwGtpv1uRcT
-gtpv1u_eNB_send_udp_msg(
-  NwGtpv1uUdpHandleT      udpHandle,
-  uint8_t                  *buffer,
-  uint32_t                  buffer_len,
-  uint32_t                  buffer_offset,
-  uint32_t                  peerIpAddr,
-  uint16_t                  peerPort);
-
-NwGtpv1uRcT
-gtpv1u_eNB_process_stack_req(
-  NwGtpv1uUlpHandleT hUlp,
-  NwGtpv1uUlpApiT   *pUlpApi);
-
-int
-data_recv_callback(
-  uint16_t  portP,
-  uint32_t  address,
-  uint8_t  *buffer,
-  uint32_t  length,
-  void     *arg_p);
-//int
-//gtpv1u_create_tunnel_endpoint(
-//    gtpv1u_data_t *gtpv1u_data_pP,
-//    uint8_t        ue_idP,
-//    uint8_t        rab_idP,
-//    char          *sgw_ip_addr_pP,
-//    uint16_t       portP);
-static NwGtpv1uRcT
-gtpv1u_start_timer_wrapper(
-  NwGtpv1uTimerMgrHandleT tmrMgrHandle,
-  uint32_t                  timeoutSec,
-  uint32_t                  timeoutUsec,
-  uint32_t                  tmrType,
-  void                   *timeoutArg,
-  NwGtpv1uTimerHandleT   *hTmr);
-
-static NwGtpv1uRcT
-gtpv1u_stop_timer_wrapper(
-  NwGtpv1uTimerMgrHandleT     tmrMgrHandle,
-  NwGtpv1uTimerHandleT         hTmr);
-
-int
-gtpv1u_initial_req(
-  gtpv1u_data_t *gtpv1u_data_pP,
-  teid_t         teidP,
-  tcp_udp_port_t portP,
-  uint32_t       address);
-
-int
-gtpv1u_new_data_req(
-  uint8_t  enb_module_idP,
-  rnti_t   ue_rntiP,
-  uint8_t  rab_idP,
-  uint8_t *buffer_pP,
-  uint32_t buf_lenP,
-  uint32_t buf_offsetP
-);
-
-int
-gtpv1u_create_s1u_tunnel(
-  const instance_t instanceP,
-  const gtpv1u_enb_create_tunnel_req_t *  const create_tunnel_req_pP,
-        gtpv1u_enb_create_tunnel_resp_t * const create_tunnel_resp_pP);
-
-int
-gtpv1u_delete_s1u_tunnel(
-  const instance_t instanceP,
-  const gtpv1u_enb_delete_tunnel_req_t * const req_pP);
-
-static int
-gtpv1u_eNB_init(void);
-
-void *
-gtpv1u_eNB_task(void *args);
-
-//static gtpv1u_data_t gtpv1u_data_g;
 
 #if defined(GTP_DUMP_SOCKET) && GTP_DUMP_SOCKET > 0
 #include <linux/if.h>
@@ -215,11 +108,11 @@ static void gtpv1u_eNB_write_dump_socket(uint8_t *buffer_pP, uint32_t buffer_len
 #endif
 
 //-----------------------------------------------------------------------------
-static int gtpv1u_eNB_send_init_udp(uint16_t port_number)
+static int gtpv1u_eNB_send_init_udp(const Gtpv1uS1Req * req)
 {
   // Create and alloc new message
   MessageDef *message_p;
-  struct in_addr addr;
+  struct in_addr addr={0};
 
   message_p = itti_alloc_new_message(TASK_GTPV1_U, UDP_INIT);
 
@@ -227,12 +120,10 @@ static int gtpv1u_eNB_send_init_udp(uint16_t port_number)
     return -1;
   }
 
-  UDP_INIT(message_p).port = port_number;
-  //LG UDP_INIT(message_p).address = "0.0.0.0"; //ANY address
-
-  addr.s_addr = RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up;
+  UDP_INIT(message_p).port = req->enb_port_for_S1u_S12_S4_up;
+  addr.s_addr = req->enb_ip_address_for_S1u_S12_S4_up;
   UDP_INIT(message_p).address = inet_ntoa(addr);
-  LOG_I(GTPU, "Tx UDP_INIT IP addr %s (%x)\n", UDP_INIT(message_p).address,RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up);
+  LOG_I(GTPU, "Tx UDP_INIT IP addr %s (%x)\n", UDP_INIT(message_p).address,UDP_INIT(message_p).port);
 
   MSC_LOG_EVENT(
 	  MSC_GTPU_ENB,
@@ -240,6 +131,16 @@ static int gtpv1u_eNB_send_init_udp(uint16_t port_number)
 	  UDP_INIT(message_p).address,
 	  UDP_INIT(message_p).port);
   return itti_send_msg_to_task(TASK_UDP, INSTANCE_DEFAULT, message_p);
+}
+
+static int gtpv1u_s1_req(
+  const instance_t                             instanceP,
+  const Gtpv1uS1Req * const req) {
+  memcpy(&RC.gtpv1u_data_g->enb_ip_address_for_S1u_S12_S4_up,
+	 &req->enb_ip_address_for_S1u_S12_S4_up, 
+	 sizeof (req->enb_ip_address_for_S1u_S12_S4_up));
+  gtpv1u_eNB_send_init_udp(req);
+  return 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -362,7 +263,7 @@ NwGtpv1uRcT gtpv1u_eNB_process_stack_req(
 			     buffer_len,
 			     buffer,
 			     PDCP_TRANSMISSION_MODE_DATA
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
               ,NULL, NULL
 #endif
               );
@@ -999,23 +900,17 @@ int gtpv1u_delete_s1u_tunnel(
 
 
 //-----------------------------------------------------------------------------
-static int gtpv1u_eNB_init(void)
+int gtpv1u_eNB_init(void)
 {
-  int                     ret;
   NwGtpv1uRcT             rc = NW_GTPV1U_FAILURE;
   NwGtpv1uUlpEntityT      ulp;
   NwGtpv1uUdpEntityT      udp;
   NwGtpv1uLogMgrEntityT   log;
   NwGtpv1uTimerMgrEntityT tmr;
 
-
   //  enb_properties_p = enb_config_get()->properties[0];
-  RC.gtpv1u_data_g = (gtpv1u_data_t*)malloc(sizeof(gtpv1u_data_t));
-  memset(RC.gtpv1u_data_g, 0, sizeof(gtpv1u_data_t));
-
-  RCconfig_gtpu();
-
-
+  RC.gtpv1u_data_g = (gtpv1u_data_t*)calloc(sizeof(gtpv1u_data_t),1);
+  
   LOG_I(GTPU, "Initializing GTPU stack %p\n",&RC.gtpv1u_data_g);
   //gtpv1u_data_g.gtpv1u_stack;
   /* Initialize UE hashtable */
@@ -1024,7 +919,6 @@ static int gtpv1u_eNB_init(void)
   RC.gtpv1u_data_g->teid_mapping    = hashtable_create (256, NULL, NULL);
   AssertFatal(RC.gtpv1u_data_g->teid_mapping != NULL, " ERROR Initializing TASK_GTPV1_U task interface: in hashtable_create\n");
 //  RC.gtpv1u_data_g.enb_ip_address_for_S1u_S12_S4_up         = enb_properties_p->enb_ipv4_address_for_S1U;
-  RC.gtpv1u_data_g->ip_addr         = NULL;
 
   //gtpv1u_data_g.udp_data;
   RC.gtpv1u_data_g->seq_num         = 0;
@@ -1089,35 +983,21 @@ static int gtpv1u_eNB_init(void)
   }
 
 #endif
-  ret = gtpv1u_eNB_send_init_udp(RC.gtpv1u_data_g->enb_port_for_S1u_S12_S4_up);
-
-  if (ret < 0) {
-    return ret;
-  }
 
   LOG_D(GTPU, "Initializing GTPV1U interface for eNB: DONE\n");
   return 0;
 }
 
-
 //-----------------------------------------------------------------------------
-void *gtpv1u_eNB_task(void *args)
-{
-  int                       rc = 0;
-  instance_t                instance;
-  //const char               *msg_name_p;
-
-  rc = gtpv1u_eNB_init();
-  AssertFatal(rc == 0, "gtpv1u_eNB_init Failed");
-  itti_mark_task_ready(TASK_GTPV1_U);
-  MSC_START_USE();
-
-  while(1) {
+void *gtpv1u_eNB_process_itti_msg(void *notUsed) {
     /* Trying to fetch a message from the message queue.
      * If the queue is empty, this function will block till a
      * message is sent to the task.
      */
+    instance_t  instance;
     MessageDef *received_message_p = NULL;
+    int         rc = 0;
+    
     itti_receive_msg(TASK_GTPV1_U, &received_message_p);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GTPV1U_ENB_TASK, VCD_FUNCTION_IN);
     DevAssert(received_message_p != NULL);
@@ -1126,6 +1006,9 @@ void *gtpv1u_eNB_task(void *args)
     //msg_name_p = ITTI_MSG_NAME(received_message_p);
 
     switch (ITTI_MSG_ID(received_message_p)) {
+
+    case GTPV1U_ENB_S1_REQ:
+      gtpv1u_s1_req(instance, &received_message_p->ittiMsg.gtpv1uS1Req);
 
     case GTPV1U_ENB_DELETE_TUNNEL_REQ: {
       gtpv1u_delete_s1u_tunnel(instance, &received_message_p->ittiMsg.Gtpv1uDeleteTunnelReq);
@@ -1169,7 +1052,7 @@ void *gtpv1u_eNB_task(void *args)
       if (hash_rc == HASH_TABLE_KEY_NOT_EXISTS) {
         LOG_E(GTPU, "nwGtpv1uProcessUlpReq failed: while getting ue rnti %x in hashtable ue_mapping\n", data_req_p->rnti);
       } else {
-        if ((data_req_p->rab_id >= GTPV1U_BEARER_OFFSET) && (data_req_p->rab_id <= max_val_DRB_Identity)) {
+        if ((data_req_p->rab_id >= GTPV1U_BEARER_OFFSET) && (data_req_p->rab_id <= max_val_LTE_DRB_Identity)) {
           enb_s1u_teid                        = gtpv1u_ue_data_p->bearers[data_req_p->rab_id - GTPV1U_BEARER_OFFSET].teid_eNB;
           sgw_s1u_teid                        = gtpv1u_ue_data_p->bearers[data_req_p->rab_id - GTPV1U_BEARER_OFFSET].teid_sgw;
           stack_req.apiType                   = NW_GTPV1U_ULP_API_SEND_TPDU;
@@ -1258,6 +1141,22 @@ void *gtpv1u_eNB_task(void *args)
     AssertFatal(rc == EXIT_SUCCESS, "Failed to free memory (%d)!\n", rc);
     received_message_p = NULL;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GTPV1U_ENB_TASK, VCD_FUNCTION_OUT);
+
+    return NULL;
+}
+
+//-----------------------------------------------------------------------------
+void *gtpv1u_eNB_task(void *args)
+{
+  int rc = 0;
+
+  rc = gtpv1u_eNB_init();
+  AssertFatal(rc == 0, "gtpv1u_eNB_init Failed");
+  itti_mark_task_ready(TASK_GTPV1_U);
+  MSC_START_USE();
+
+  while(1) {
+    (void) gtpv1u_eNB_process_itti_msg (NULL);
   }
 
   return NULL;

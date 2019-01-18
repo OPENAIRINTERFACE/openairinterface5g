@@ -58,8 +58,8 @@
 #include "UTIL/MATH/oml.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
-
-
+#include "lte-softmodem.h"
+#include "common/config/config_userapi.h"
 #include "T.h"
 
 extern double cpuf;
@@ -158,11 +158,20 @@ static const eutra_band_t eutra_bands[] = {
 };
 
 
-
+threads_t threads= {-1,-1,-1,-1,-1,-1,-1};
 
 pthread_t                       main_ue_thread;
 pthread_attr_t                  attr_UE_thread;
 struct sched_param              sched_param_UE_thread;
+
+
+void get_uethreads_params(void) {
+  paramdef_t cmdline_threadsparams[] =CMDLINE_UETHREADSPARAMS_DESC;
+
+
+  config_process_cmdline( cmdline_threadsparams,sizeof(cmdline_threadsparams)/sizeof(paramdef_t),NULL);
+}
+
 
 void phy_init_lte_ue_transport(PHY_VARS_UE *ue,int absraction_flag);
 
@@ -179,7 +188,7 @@ PHY_VARS_UE* init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,
     memcpy(&(ue->frame_parms), frame_parms, sizeof(LTE_DL_FRAME_PARMS));
   }
 
-
+  ue->hw_timing_advance=get_softmodem_params()->hw_timing_advance;
   ue->Mod_id      = UE_id;
   ue->mac_enabled = 1;
 
@@ -332,6 +341,13 @@ void init_UE(int nb_inst,int eMBMS_active, int uecap_xer_in, int timing_correcti
       }
     }
     else UE->N_TA_offset = 0;
+
+#if BASIC_SIMULATOR
+    /* this is required for the basic simulator in TDD mode
+     * TODO: find a proper cleaner solution
+     */
+    UE->N_TA_offset = 0;
+#endif
 
     if (simL1flag == 1) init_ue_devices(UE);
     LOG_I(PHY,"Intializing UE Threads for instance %d (%p,%p)...\n",inst,PHY_vars_UE_g[inst],PHY_vars_UE_g[inst][0]);
@@ -1855,7 +1871,7 @@ void init_UE_threads_stub(int inst) {
 #ifdef OPENAIR2
 void fill_ue_band_info(void) {
 
-  UE_EUTRA_Capability_t *UE_EUTRA_Capability = UE_rrc_inst[0].UECap->UE_EUTRA_Capability;
+  LTE_UE_EUTRA_Capability_t *UE_EUTRA_Capability = UE_rrc_inst[0].UECap->UE_EUTRA_Capability;
   int i,j;
 
   bands_to_scan.nbands = UE_EUTRA_Capability->rf_Parameters.supportedBandListEUTRA.list.count;

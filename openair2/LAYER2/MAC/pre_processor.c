@@ -124,7 +124,7 @@ store_dlsch_buffer(module_id_t Mod_id,
 
 	    rlc_status = mac_rlc_status_ind(Mod_id, rnti, Mod_id, frameP, subframeP,
 				   ENB_FLAG_YES, MBMS_FLAG_NO, lcid, 0
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                    ,0, 0
 #endif
                    );

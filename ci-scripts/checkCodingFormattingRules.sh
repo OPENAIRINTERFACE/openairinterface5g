@@ -120,21 +120,34 @@ echo "Source Branch is    : $SOURCE_BRANCH"
 echo "Target Branch is    : $TARGET_BRANCH"
 echo "Merged Commit is    : $MERGE_COMMMIT"
 echo "Target Init   is    : $TARGET_INIT_COMMIT"
+echo ""
+echo " ----------------------------------------------------------"
+echo ""
 
 # Retrieve the list of modified files since the latest develop commit
 MODIFIED_FILES=`git log $TARGET_INIT_COMMIT..$MERGE_COMMMIT --oneline --name-status | egrep "^M|^A" | sed -e "s@^M\t*@@" -e "s@^A\t*@@" | sort | uniq`
 NB_TO_FORMAT=0
+if [ -f oai_rules_result_list.txt ]
+then
+    rm -f oai_rules_result_list.txt
+fi
 for FULLFILE in $MODIFIED_FILES
 do
-    echo $FULLFILE
     filename=$(basename -- "$FULLFILE")
     EXT="${filename##*.}"
     if [ $EXT = "c" ] || [ $EXT = "h" ] || [ $EXT = "cpp" ] || [ $EXT = "hpp" ]
     then
         TO_FORMAT=`astyle --dry-run --options=ci-scripts/astyle-options.txt $FULLFILE | grep -c Formatted `
         NB_TO_FORMAT=$((NB_TO_FORMAT + TO_FORMAT))
+        if [ $TO_FORMAT -ne 0 ]
+        then
+            echo $FULLFILE
+            echo $FULLFILE >> ./oai_rules_result_list.txt
+        fi
     fi
 done
+echo ""
+echo " ----------------------------------------------------------"
 echo "Nb Files that do NOT follow OAI rules: $NB_TO_FORMAT"
 echo $NB_TO_FORMAT > ./oai_rules_result.txt
 

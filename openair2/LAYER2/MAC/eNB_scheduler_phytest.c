@@ -71,7 +71,7 @@ schedule_ue_spec_phy_test(
   uint16_t                       rnti      = 0x1235;
   uint32_t                       rb_alloc  = 0x1FFFFF;
   int32_t                        tpc       = 1;
-  int32_t                        mcs       = 10;
+  int32_t                        mcs       = 28;
   int32_t                        cqi       = 15;
   int32_t                        ndi       = (frameP*10+subframeP)/8;
   int32_t                        dai       = 0;
@@ -169,7 +169,7 @@ schedule_ue_spec_phy_test(
 			      1, // number of subbands
 			      //			     uint8_t codebook_index,
 			      4, // UE category capacity
-			      PDSCH_ConfigDedicated__p_a_dB0, 
+			      LTE_PDSCH_ConfigDedicated__p_a_dB0, 
 			      0, // delta_power_offset for TM5
 			      0, // ngap
 			      0, // nprb
@@ -347,7 +347,7 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
 						 0, // n_srs
 						 get_TBS_UL(mcs,nb_rb)
 						 );
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	  if (UE_template->rach_resource_type>0) { // This is a BL/CE UE allocation
 	    fill_nfapi_ulsch_config_request_emtc(&ul_req->ul_config_pdu_list[ul_req_index],
 						   UE_template->rach_resource_type>2 ? 2 : 1,

@@ -1,0 +1,194 @@
+#!/bin/bash
+#/*
+# * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+# * contributor license agreements.  See the NOTICE file distributed with
+# * this work for additional information regarding copyright ownership.
+# * The OpenAirInterface Software Alliance licenses this file to You under
+# * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+# * except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *      http://www.openairinterface.org/?page_id=698
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *-------------------------------------------------------------------------------
+# * For more information about the OpenAirInterface (OAI) Software Alliance:
+# *      contact@openairinterface.org
+# */
+
+function wait_usage {
+    echo "OAI CI VM script"
+    echo "   Original Author: Raphael Defosseux"
+    echo "   Requirements:"
+    echo "     -- uvtool uvtool-libvirt apt-cacher"
+    echo "     -- xenial image already synced"
+    echo "   Default:"
+    echo "     -- eNB with USRP"
+    echo ""
+    echo "Usage:"
+    echo "------"
+    echo "    oai-ci-vm-tool wait [OPTIONS]"
+    echo ""
+    echo "Mandatory Options:"
+    echo "--------"
+    echo "    --job-name #### OR -jn ####"
+    echo "    Specify the name of the Jenkins job."
+    echo ""
+    echo "    --build-id #### OR -id ####"
+    echo "    Specify the build ID of the Jenkins job."
+    echo ""
+    echo "    --workspace #### OR -ws ####"
+    echo "    Specify the workspace."
+    echo ""
+    variant_usage
+    echo "    Specify the variant to build."
+    echo ""
+    echo "Options:"
+    echo "--------"
+    echo "    --keep-vm-alive OR -k"
+    echo "    Keep the VM alive after the build."
+    echo ""
+    echo "    --help OR -h"
+    echo "    Print this help message."
+    echo ""
+}
+
+function wait_on_vm_build {
+    echo "############################################################"
+    echo "OAI CI VM script"
+    echo "############################################################"
+
+    echo "VM_NAME             = $VM_NAME"
+    echo "VM_CMD_FILE         = $VM_CMDS"
+    echo "JENKINS_WKSP        = $JENKINS_WKSP"
+    echo "ARCHIVES_LOC        = $ARCHIVES_LOC"
+    echo "BUILD_OPTIONS       = $BUILD_OPTIONS"
+
+    IS_VM_ALIVE=`uvt-kvm list | grep -c $VM_NAME`
+
+    if [ $IS_VM_ALIVE -eq 0 ]
+    then
+        echo "############################################################"
+        echo "You should have created the VM before doing anything"
+        echo "############################################################"
+        STATUS=1
+        return
+    fi
+
+    echo "Waiting for VM to be started"
+    uvt-kvm wait $VM_NAME --insecure
+
+    VM_IP_ADDR=`uvt-kvm ip $VM_NAME`
+    echo "$VM_NAME has for IP addr = $VM_IP_ADDR"
+
+    echo "############################################################"
+    echo "Waiting build process to end on VM ($VM_NAME)"
+    echo "############################################################"
+
+    if [[ "$VM_NAME" == *"-cppcheck"* ]]
+    then
+        echo "echo \"ps -aux | grep cppcheck \"" >> $VM_CMDS
+        echo "while [ \$(ps -aux | grep --color=never cppcheck | grep -v grep | wc -l) -gt 0 ]; do sleep 3; done" >> $VM_CMDS
+    else
+        echo "echo \"ps -aux | grep build \"" >> $VM_CMDS
+        echo "while [ \$(ps -aux | grep --color=never build_oai | grep -v grep | wc -l) -gt 0 ]; do sleep 3; done" >> $VM_CMDS
+    fi
+
+    ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
+    rm -f $VM_CMDS
+}
+
+function check_on_vm_build {
+    echo "############################################################"
+    echo "Creating a tmp folder to store results and artifacts"
+    echo "############################################################"
+    if [ ! -d $JENKINS_WKSP/archives ]
+    then
+        mkdir $JENKINS_WKSP/archives
+    fi
+
+    if [ ! -d $ARCHIVES_LOC ]
+    then
+        mkdir $ARCHIVES_LOC
+    fi
+
+    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/*.txt $ARCHIVES_LOC
+    if [[ "$VM_NAME" == *"-cppcheck"* ]]
+    then
+        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/*.xml $ARCHIVES_LOC
+    fi
+
+    if [ $KEEP_VM_ALIVE -eq 0 ]
+    then
+        echo "############################################################"
+        echo "Destroying VM"
+        echo "############################################################"
+        uvt-kvm destroy $VM_NAME
+        ssh-keygen -R $VM_IP_ADDR
+    fi
+    rm -f $VM_CMDS
+
+    echo "############################################################"
+    echo "Checking build status" 
+    echo "############################################################"
+
+    if [[ "$VM_NAME" == *"-cppcheck"* ]]
+    then
+        LOG_FILES=`ls $ARCHIVES_LOC/*.txt $ARCHIVES_LOC/*.xml`
+    else
+        LOG_FILES=`ls $ARCHIVES_LOC/*.txt`
+    fi
+    STATUS=0
+    NB_FOUND_FILES=0
+
+    for FULLFILE in $LOG_FILES 
+    do
+        if [[ $FULLFILE == *"$LOG_PATTERN"* ]]
+        then
+            filename=$(basename -- "$FULLFILE")
+            if [ "$LOG_PATTERN" == ".Rel14.txt" ]
+            then
+                PASS_PATTERN=`echo $filename | sed -e "s#$LOG_PATTERN##"`
+            fi
+            if [ "$LOG_PATTERN" == "basic_simulator" ]
+            then
+                PASS_PATTERN="lte-"
+            fi
+            if [ "$LOG_PATTERN" == "cppcheck.xml" ]
+            then
+                PASS_PATTERN="results version"
+                LOCAL_STAT=`egrep -c "$PASS_PATTERN" $FULLFILE`
+            else
+                LOCAL_STAT=`egrep -c "Built target $PASS_PATTERN" $FULLFILE`
+            fi
+            if [ $LOCAL_STAT -eq 0 ]; then STATUS=-1; fi
+            NB_FOUND_FILES=$((NB_FOUND_FILES + 1))
+        fi
+    done
+
+    if [ $NB_PATTERN_FILES -ne $NB_FOUND_FILES ]
+    then
+        echo "Expecting $NB_PATTERN_FILES log files and found $NB_FOUND_FILES"
+        STATUS=-1
+    fi
+
+    # If we were building the FlexRan Controller, flag-touch for basic-simulator to continue
+    if [[ "$VM_NAME" == *"-flexran-rtc"* ]]
+    then
+        if [[ $STATUS -eq 0 ]]
+        then
+            touch $JENKINS_WKSP/flexran/flexran_build_complete.txt
+        fi
+    fi
+
+    if [[ $STATUS -eq 0 ]]
+    then
+        echo "BUILD_OK" > $ARCHIVES_LOC/build_final_status.log
+    else
+        echo "BUILD_KO" > $ARCHIVES_LOC/build_final_status.log
+    fi
+}

@@ -782,7 +782,7 @@ int rx_pdsch(PHY_VARS_UE *ue,
 #if DISABLE_LOG_X
     printf("[AbsSFN %d.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp %5.2f \n",frame,subframe,slot,symbol,pdsch_vars[eNB_id]->log2_maxh,proc->channel_level,ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time/(cpuf*1000.0));
 #else
-    LOG_I(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp  %5.2f \n",frame,subframe,slot,symbol,pdsch_vars[eNB_id]->log2_maxh,proc->channel_level,ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time/(cpuf*1000.0));
+    LOG_I(PHY, "[AbsSFN %d.%d] Slot%d Symbol %d log2_maxh %d Channel Comp  %5.2f \n",frame,subframe,slot,symbol,pdsch_vars[eNB_id]->log2_maxh,ue->generic_stat_bis[ue->current_thread_id[subframe]][slot].p_time/(cpuf*1000.0));
 #endif
 #endif
 // MRC
@@ -1298,7 +1298,7 @@ void dlsch_channel_compensation(int **rxdataF_ext,
   unsigned short rb;
   unsigned char aatx,aarx,symbol_mod,pilots=0;
   __m128i *dl_ch128,*dl_ch128_2,*dl_ch_mag128,*dl_ch_mag128b,*rxdataF128,*rxdataF_comp128,*rho128;
-  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128,QAM_amp128b;
+  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128;
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
@@ -1311,9 +1311,9 @@ void dlsch_channel_compensation(int **rxdataF_ext,
   }
 
   for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++) {
+    __m128i QAM_amp128b = _mm_setzero_si128();
     if (mod_order == 4) {
       QAM_amp128 = _mm_set1_epi16(QAM16_n1);  // 2/sqrt(10)
-      QAM_amp128b = _mm_setzero_si128();
     } else if (mod_order == 6) {
       QAM_amp128  = _mm_set1_epi16(QAM64_n1); //
       QAM_amp128b = _mm_set1_epi16(QAM64_n2);
@@ -1766,11 +1766,11 @@ void dlsch_channel_compensation_core(int **rxdataF_ext,
   int length_mod8 = 0;
   int length2;
   __m128i *dl_ch128,*dl_ch_mag128,*dl_ch_mag128b, *dl_ch128_2, *rxdataF128,*rxdataF_comp128,*rho128;
-  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128,QAM_amp128b;
+  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128;
   int aatx = 0, aarx = 0;
 
   for (aatx=0; aatx<n_tx; aatx++) {
-
+    __m128i QAM_amp128b;
     if (mod_order == 4) {
       QAM_amp128 = _mm_set1_epi16(QAM16_n1);  // 2/sqrt(10)
       QAM_amp128b = _mm_setzero_si128();
@@ -2158,7 +2158,7 @@ void dlsch_channel_compensation_TM56(int **rxdataF_ext,
   __m128i *dl_ch0_128,*dl_ch1_128,*dl_ch_mag128,*dl_ch_mag128b,*rxdataF128,*rxdataF_comp128;
   unsigned char aarx=0,symbol_mod,pilots=0;
   int precoded_signal_strength=0;
-  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128,QAM_amp128b;
+  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128;
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
@@ -2167,10 +2167,9 @@ void dlsch_channel_compensation_TM56(int **rxdataF_ext,
 
 
   //printf("comp prec: symbol %d, pilots %d\n",symbol, pilots);
-
+  __m128i QAM_amp128b = _mm_setzero_si128();
   if (mod_order == 4) {
     QAM_amp128 = _mm_set1_epi16(QAM16_n1);
-    QAM_amp128b = _mm_setzero_si128();
   } else if (mod_order == 6) {
     QAM_amp128  = _mm_set1_epi16(QAM64_n1);
     QAM_amp128b = _mm_set1_epi16(QAM64_n2);
@@ -2621,7 +2620,7 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
   int **rxdataF_comp0         = pdsch_vars->rxdataF_comp0;
   int **rxdataF_comp1         = pdsch_vars->rxdataF_comp1[harq_pid][round];
   unsigned char *pmi_ext      = pdsch_vars->pmi_ext;
-  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp0_128,QAM_amp0_128b,QAM_amp1_128,QAM_amp1_128b;
+  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp0_128,QAM_amp1_128;
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
@@ -2632,17 +2631,17 @@ void dlsch_channel_compensation_TM34(LTE_DL_FRAME_PARMS *frame_parms,
 
  // printf("comp prec: symbol %d, pilots %d\n",symbol, pilots);
 
+  __m128i  QAM_amp0_128b = _mm_setzero_si128();
   if (mod_order0 == 4) {
     QAM_amp0_128  = _mm_set1_epi16(QAM16_n1);
-    QAM_amp0_128b = _mm_setzero_si128();
   } else if (mod_order0 == 6) {
     QAM_amp0_128  = _mm_set1_epi16(QAM64_n1);
     QAM_amp0_128b = _mm_set1_epi16(QAM64_n2);
   }
 
+  __m128i  QAM_amp1_128b = _mm_setzero_si128();
   if (mod_order1 == 4) {
     QAM_amp1_128  = _mm_set1_epi16(QAM16_n1);
-    QAM_amp1_128b = _mm_setzero_si128();
   } else if (mod_order1 == 6) {
     QAM_amp1_128  = _mm_set1_epi16(QAM64_n1);
     QAM_amp1_128b = _mm_set1_epi16(QAM64_n2);
@@ -4335,7 +4334,7 @@ void dlsch_channel_aver_band(int **dl_ch_estimates_ext,
   else
     nre=12;
 
-  for (aatx=0; aatx<frame_parms->nb_antennas_tx; aatx++){
+  for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++){
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
       dl_ch128=(__m128i *)&dl_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx + aarx][symbol*frame_parms->N_RB_DL*12];
       avg128D = _mm_setzero_si128();

@@ -33,6 +33,7 @@ struct textlog {
   /* local output buffer */
   OBUF o;
   int dump_buffer;
+  int raw_time;
 };
 
 static void _event(void *p, event e)
@@ -51,9 +52,13 @@ static void _event(void *p, event e)
 
 #ifdef T_SEND_TIME
   t = localtime(&e.sending_time.tv_sec);
-  /* round tv_nsec to nearest millisecond */
-  sprintf(tt, "%2.2d:%2.2d:%2.2d.%9.9ld: ", t->tm_hour, t->tm_min, t->tm_sec,
-      e.sending_time.tv_nsec);
+  if (l->raw_time)
+    sprintf(tt, "%2.2d:%2.2d:%2.2d.%9.9ld [%ld]: ",
+        t->tm_hour, t->tm_min, t->tm_sec,
+        e.sending_time.tv_nsec, e.sending_time.tv_sec);
+  else
+    sprintf(tt, "%2.2d:%2.2d:%2.2d.%9.9ld: ", t->tm_hour, t->tm_min, t->tm_sec,
+        e.sending_time.tv_nsec);
   PUTS(&l->o, tt);
 #endif
 
@@ -214,4 +219,10 @@ void textlog_dump_buffer(logger *_this, int dump_buffer)
 {
   struct textlog *l = _this;
   l->dump_buffer = dump_buffer;
+}
+
+void textlog_raw_time(logger *_this, int raw_time)
+{
+  struct textlog *l = _this;
+  l->raw_time = raw_time;
 }

@@ -338,12 +338,14 @@ typedef struct s1ap_register_enb_req_s {
   /* Tracking area code */
   uint16_t tac;
 
+#define PLMN_LIST_MAX_SIZE 6
   /* Mobile Country Code
    * Mobile Network Code
    */
-  uint16_t mcc;
-  uint16_t mnc;
-  uint8_t  mnc_digit_length;
+  uint16_t mcc[PLMN_LIST_MAX_SIZE];
+  uint16_t mnc[PLMN_LIST_MAX_SIZE];
+  uint8_t  mnc_digit_length[PLMN_LIST_MAX_SIZE];
+  uint8_t  num_plmn;
 
   /* Default Paging DRX of the eNB as defined in TS 36.304 */
   paging_drx_t default_drx;
@@ -355,6 +357,8 @@ typedef struct s1ap_register_enb_req_s {
   uint8_t          nb_mme;
   /* List of MME to connect to */
   net_ip_address_t mme_ip_address[S1AP_MAX_NB_MME_IP_ADDRESS];
+  uint8_t          broadcast_plmn_num[S1AP_MAX_NB_MME_IP_ADDRESS];
+  uint8_t          broadcast_plmn_index[S1AP_MAX_NB_MME_IP_ADDRESS][PLMN_LIST_MAX_SIZE];
 
   /* Number of SCTP streams used for a mme association */
   uint16_t sctp_in_streams;
@@ -384,6 +388,10 @@ typedef struct s1ap_deregistered_enb_ind_s {
 typedef struct s1ap_nas_first_req_s {
   /* UE id for initial connection to S1AP */
   uint16_t ue_initial_id;
+
+  /* the chosen PLMN identity as index, see TS 36.331 6.2.2 RRC Connection
+   * Setup Complete. This index here is zero-based, unlike the standard! */
+  int selected_plmn_identity;
 
   /* Establishment cause as sent by UE */
   rrc_establishment_cause_t establishment_cause;

@@ -133,10 +133,10 @@ lte_subframe_t get_subframe_direction(uint8_t Mod_id,uint8_t CC_id,uint8_t subfr
 
 }
 
-void pmch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
+void pmch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
 
 
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   MCH_PDU *mch_pduP=NULL;
   //  uint8_t sync_area=255;
 #endif
@@ -152,7 +152,7 @@ void pmch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
 		       subframe<<1,1);
 
   
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   // if mcch is active, send regardless of the node type: eNB or RN
   // when mcch is active, MAC sched does not allow MCCH and MTCH multiplexing
   /*
@@ -254,6 +254,8 @@ void common_signal_procedures (PHY_VARS_eNB *eNB,int frame, int subframe) {
       if (eNB->pbch_configured!=1) return;
       eNB->pbch_configured=0;
     }
+    T(T_ENB_PHY_MIB, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe),
+      T_BUFFER(pbch_pdu, 3));
     generate_pbch(&eNB->pbch,
 		  txdataF,
 		  AMP,
@@ -312,7 +314,7 @@ void common_signal_procedures (PHY_VARS_eNB *eNB,int frame, int subframe) {
 
 
 void pdsch_procedures(PHY_VARS_eNB *eNB,
-		      eNB_rxtx_proc_t *proc,
+		      L1_rxtx_proc_t *proc,
 		      int harq_pid,
 		      LTE_eNB_DLSCH_t *dlsch, 
 		      LTE_eNB_DLSCH_t *dlsch1,
@@ -398,7 +400,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 
     start_meas(&eNB->dlsch_encoding_stats);
 
-    eNB->te(eNB,
+    dlsch_encoding_all(eNB,
 	  dlsch_harq->pdu,
 	  dlsch_harq->pdsch_start,
 	  dlsch,
@@ -412,7 +414,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
       &eNB->dlsch_turbo_encoding_wakeup_stats1,
 	  &eNB->dlsch_interleaving_stats);
     stop_meas(&eNB->dlsch_encoding_stats);
-  if(eNB->dlsch_encoding_stats.diff_now>500*3000 && opp_enabled == 1)
+  if(eNB->dlsch_encoding_stats.p_time>500*3000 && opp_enabled == 1)
   {
     print_meas_now(&eNB->dlsch_encoding_stats,"total coding",stderr);
   }
@@ -463,7 +465,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 
 
 void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
-			   eNB_rxtx_proc_t *proc,
+			   L1_rxtx_proc_t *proc,
 			   int do_meas)
 {
   int frame=proc->frame_tx;
@@ -484,6 +486,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+(eNB->CC_id),1);
   if (do_meas==1) start_meas(&eNB->phy_proc_tx);
+  if (do_meas==1) start_meas(&eNB->dlsch_common_and_dci);
 
   // clear the transmit data array for the current subframe
   for (aa=0; aa<fp->nb_antenna_ports_eNB; aa++) {      
@@ -578,6 +581,8 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
         subframe);
   }
 
+  if (do_meas==1) stop_meas(&eNB->dlsch_common_and_dci);
+  if (do_meas==1) start_meas(&eNB->dlsch_ue_specific);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,0);
 
@@ -645,12 +650,13 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_PHICH,0);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+(eNB->CC_id),0);
+  if (do_meas==1) stop_meas(&eNB->dlsch_ue_specific);
   if (do_meas==1) stop_meas(&eNB->phy_proc_tx);
   
 }
 
 
-void srs_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc) {
+void srs_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
 
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   const int subframe = proc->subframe_rx;
@@ -713,7 +719,7 @@ void fill_sr_indication(PHY_VARS_eNB *eNB,uint16_t rnti,int frame,int subframe,u
   pthread_mutex_unlock(&eNB->UL_INFO_mutex);
 }
 
-void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
+void uci_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc)
 {
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
   uint8_t SR_payload = 0,pucch_b0b1[4][2]= {{0,0},{0,0},{0,0},{0,0}},harq_ack[4]={0,0,0,0};
@@ -1247,7 +1253,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
   }
 }
 
-void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
+void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc)
 {
   uint32_t ret=0,i;
   uint32_t harq_pid;
@@ -1337,7 +1343,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
             ret,
             ulsch_harq->cqi_crc_status,
             ulsch_harq->O_ACK,
-            eNB->ulsch_decoding_stats.diff_now, eNB->ulsch_decoding_stats.max);
+            eNB->ulsch_decoding_stats.p_time, eNB->ulsch_decoding_stats.max);
       
       //compute the expected ULSCH RX power (for the stats)
       ulsch_harq->delta_TF = get_hundred_times_delta_IF_eNB(eNB,i,harq_pid, 0); // 0 means bw_factor is not considered
@@ -1468,7 +1474,7 @@ extern void *td_thread(void*);
 
 void init_td_thread(PHY_VARS_eNB *eNB) {
 
-  eNB_proc_t *proc = &eNB->proc;
+  L1_proc_t *proc = &eNB->proc;
 
   proc->tdp.eNB = eNB;
   proc->instance_cnt_td         = -1;
@@ -1482,7 +1488,7 @@ void init_td_thread(PHY_VARS_eNB *eNB) {
 }
 void kill_td_thread(PHY_VARS_eNB *eNB) {
 
-  eNB_proc_t *proc = &eNB->proc;
+  L1_proc_t *proc = &eNB->proc;
   proc->instance_cnt_td         = 0;
   pthread_cond_signal(&proc->cond_td);
   
@@ -1495,7 +1501,7 @@ extern void *te_thread(void*);
 
 void init_te_thread(PHY_VARS_eNB *eNB) {
 
-  eNB_proc_t *proc = &eNB->proc;
+  L1_proc_t *proc = &eNB->proc;
 
   for(int i=0; i<3 ;i++){
     proc->tep[i].eNB = eNB;
@@ -1511,7 +1517,7 @@ void init_te_thread(PHY_VARS_eNB *eNB) {
 }
 void kill_te_thread(PHY_VARS_eNB *eNB) {
 
-  eNB_proc_t *proc = &eNB->proc;
+  L1_proc_t *proc = &eNB->proc;
 
   for(int i=0; i<3 ;i++){
     proc->tep[i].instance_cnt_te         = 0;
@@ -2027,7 +2033,7 @@ void fill_crc_indication(PHY_VARS_eNB *eNB,int UE_id,int frame,int subframe,uint
   pthread_mutex_unlock(&eNB->UL_INFO_mutex);
 }
 
-void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
+void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc)
 {
   //RX processing for ue-specific resources (i
   LTE_DL_FRAME_PARMS *fp=&eNB->frame_parms;
@@ -2084,7 +2090,4 @@ void phy_procedures_eNB_uespec_RX(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc)
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_RX_UESPEC, 0 );
-
-  stop_meas(&eNB->phy_proc_rx);
-
 }

@@ -39,6 +39,8 @@ extern s1ap_eNB_config_t s1ap_config;
 
 #define EPC_MODE_ENABLED       s1ap_config.mme_enabled
 
+void *s1ap_eNB_process_itti_msg(void*);
+void  s1ap_eNB_init(void);
 void *s1ap_eNB_task(void *arg);
 
 uint32_t s1ap_generate_eNB_id(void);
