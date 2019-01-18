@@ -75,6 +75,7 @@ int processoption(paramdef_t *cfgoptions, char *value) {
   if ( value == NULL) {
     if( (cfgoptions->paramflags &PARAMFLAG_BOOL) == 0 ) { /* not a boolean, argument required */
       fprintf(stderr,"[CONFIG] command line, option %s requires an argument\n",cfgoptions->optname);
+      exit_fun("[CONFIG] command line parsing fatal error");
       return 0;
     } else {        /* boolean value option without argument, set value to true*/
       tmpval = defbool;
@@ -143,7 +144,10 @@ int processoption(paramdef_t *cfgoptions, char *value) {
   return optisset;
 }
 
-int config_check_cmdlineopt(char *prefix) {
+/*--------------------------------------------------------------------*/
+/*  check unknown options in the command line
+*/
+int config_check_unknown_cmdlineopt(char *prefix) {
   int unknowndetected=0;
   char testprefix[CONFIG_MAXOPTLENGTH]="";
   int finalcheck = 0;
@@ -161,6 +165,8 @@ int config_check_cmdlineopt(char *prefix) {
 
     if ( !finalcheck && testprefix[0]==0 && index(config_get_if()->argv[i],'.') != NULL) continue;
 
+    if ( !finalcheck && isdigit(config_get_if()->argv[i][0])) continue;
+
     if ( !finalcheck && config_get_if()->argv[i][0] == '-' && isdigit(config_get_if()->argv[i][1])) continue;
 
     if ( (config_get_if()->argv_info[i] & CONFIG_CMDLINEOPT_PROCESSED) == 0 ) {
@@ -173,7 +179,7 @@ int config_check_cmdlineopt(char *prefix) {
   printf_cmdl("[CONFIG] %i unknown option(s) in command line starting with %s (section %s)\n",
               unknowndetected,testprefix,((prefix==NULL)?"":prefix));
   return unknowndetected;
-}  /* parse_cmdline*/
+}  /* config_check_unknown_cmdlineopt */
 
 int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix) {
   int c = config_get_if()->argc;
@@ -269,7 +275,7 @@ int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix) 
   printf_cmdl("[CONFIG] %s %i options set from command line\n",((prefix == NULL) ? "(root)":prefix),j);
 
   if ( !(CONFIG_ISFLAGSET( CONFIG_NOCHECKUNKOPT )) ) {
-    i=config_check_cmdlineopt(prefix);
+    i=config_check_unknown_cmdlineopt(prefix);
 
     if (i > 0) {
       fprintf(stderr,"[CONFIG] %i unknown options for section %s detected in command line\n",
