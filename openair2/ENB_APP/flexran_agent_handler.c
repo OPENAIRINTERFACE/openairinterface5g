@@ -263,7 +263,7 @@ int flexran_agent_handle_stats(mid_t mod_id, const void *params, Protocol__Flexr
         rnti_t rntis[report_config.nr_ue];
         flexran_get_rrc_rnti_list(mod_id, rntis, report_config.nr_ue);
         for (i = 0; i < report_config.nr_ue; i++) {
-          report_config.ue_report_type[i].ue_rnti = rntis[mod_id];
+          report_config.ue_report_type[i].ue_rnti = rntis[i];
           report_config.ue_report_type[i].ue_report_flags = ue_flags;
         }
       }
