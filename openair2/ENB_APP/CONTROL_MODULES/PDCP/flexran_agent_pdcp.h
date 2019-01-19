@@ -55,7 +55,7 @@ int flexran_agent_pdcp_destroy_stats_reply(Protocol__FlexStatsReply *reply);
 
 /* Get the stats from RAN API and aggregate them per USER*/
 void flexran_agent_pdcp_aggregate_stats(const mid_t mod_id,
-					const mid_t ue_id,
+                                        uint16_t uid,
 					Protocol__FlexPdcpStats *pdcp_aggr_stats);
 
 /*Register technology specific interface callbacks*/
