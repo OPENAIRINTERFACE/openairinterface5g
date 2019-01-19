@@ -1186,6 +1186,41 @@ pdcp_run (
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_RUN, VCD_FUNCTION_OUT);
 }
 
+void pdcp_init_stats_UE(module_id_t mod, uint16_t uid)
+{
+  Pdcp_stats_tx_window_ms[mod][uid] = 100;
+  Pdcp_stats_rx_window_ms[mod][uid] = 100;
+
+  for (int i = 0; i < NB_RB_MAX; ++i) {
+    Pdcp_stats_tx_bytes[mod][uid][i] = 0;
+    Pdcp_stats_tx_bytes_w[mod][uid][i] = 0;
+    Pdcp_stats_tx_bytes_tmp_w[mod][uid][i] = 0;
+    Pdcp_stats_tx[mod][uid][i] = 0;
+    Pdcp_stats_tx_w[mod][uid][i] = 0;
+    Pdcp_stats_tx_tmp_w[mod][uid][i] = 0;
+    Pdcp_stats_tx_sn[mod][uid][i] = 0;
+    Pdcp_stats_tx_throughput_w[mod][uid][i] = 0;
+    Pdcp_stats_tx_aiat[mod][uid][i] = 0;
+    Pdcp_stats_tx_aiat_w[mod][uid][i] = 0;
+    Pdcp_stats_tx_aiat_tmp_w[mod][uid][i] = 0;
+    Pdcp_stats_tx_iat[mod][uid][i] = 0;
+
+    Pdcp_stats_rx[mod][uid][i] = 0;
+    Pdcp_stats_rx_w[mod][uid][i] = 0;
+    Pdcp_stats_rx_tmp_w[mod][uid][i] = 0;
+    Pdcp_stats_rx_bytes[mod][uid][i] = 0;
+    Pdcp_stats_rx_bytes_w[mod][uid][i] = 0;
+    Pdcp_stats_rx_bytes_tmp_w[mod][uid][i] = 0;
+    Pdcp_stats_rx_sn[mod][uid][i] = 0;
+    Pdcp_stats_rx_goodput_w[mod][uid][i] = 0;
+    Pdcp_stats_rx_aiat[mod][uid][i] = 0;
+    Pdcp_stats_rx_aiat_w[mod][uid][i] = 0;
+    Pdcp_stats_rx_aiat_tmp_w[mod][uid][i] = 0;
+    Pdcp_stats_rx_iat[mod][uid][i] = 0;
+    Pdcp_stats_rx_outoforder[mod][uid][i] = 0;
+  }
+}
+
 void pdcp_add_UE(const protocol_ctxt_t* const  ctxt_pP){
   int i, ue_flag=1; //, ret=-1; to be decied later
   for (i=0; i < MAX_MOBILES_PER_ENB; i++){
@@ -1201,6 +1236,7 @@ void pdcp_add_UE(const protocol_ctxt_t* const  ctxt_pP){
 	pdcp_enb[ctxt_pP->module_id].uid[i]=i;
 	pdcp_enb[ctxt_pP->module_id].num_ues++;
 	LOG_I(PDCP,"add new uid is %d %x\n\n", i, ctxt_pP->rnti);
+        pdcp_init_stats_UE(ctxt_pP->module_id, i);
 	// ret=1;
 	break;
       }
