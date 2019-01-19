@@ -19,7 +19,7 @@
 /* array used to activate/disactivate a log */
 static int T_IDs[T_NUMBER_OF_IDS];
 int *T_active = T_IDs;
-int T_stdout;
+int T_stdout = 1;
 
 static int T_socket;
 
