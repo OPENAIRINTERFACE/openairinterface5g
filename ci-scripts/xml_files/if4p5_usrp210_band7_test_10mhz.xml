@@ -94,9 +94,9 @@
 
 	<testCase id="040652">
 		<class>Iperf</class>
-		<desc>iperf (10MHz - UL/20Mbps/UDP)(30 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 20M -t 30 -i 1 -R</iperf_args>
-		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<desc>iperf (10MHz - UL/5Mbps/UDP)(30 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 5M -t 30 -i 1 -R</iperf_args>
+		<iperf_packetloss_threshold>60</iperf_packetloss_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>
 

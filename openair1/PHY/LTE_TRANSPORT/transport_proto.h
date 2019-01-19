@@ -461,14 +461,6 @@ void generate_pcfich(uint8_t num_pdcch_symbols,
                      int32_t **txdataF,
                      uint8_t subframe);
 
-
-
-
-
-void init_transport_channels(uint8_t);
-
-
-
 void rx_ulsch(PHY_VARS_eNB *eNB,
               L1_rxtx_proc_t *proc,
               uint8_t UE_id);

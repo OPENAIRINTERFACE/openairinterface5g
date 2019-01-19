@@ -26,9 +26,9 @@
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<TestCaseRequestedList>
  040101
- 030121 040301 040521 040623 040624 040625 040626 040627 040662 040661 040663 040664 040401 040201 030201
+ 030121 040301 040521 040623 040624 040625 040662 040401 040201 030201
 	</TestCaseRequestedList>
-	<TestCaseExclusionList></TestCaseExclusionList>
+	<TestCaseExclusionList>040626 040627 040661 040663 040664</TestCaseExclusionList>
 
 	<testCase id="030121">
 		<class>Initialize_eNB</class>
@@ -110,16 +110,16 @@
 
 	<testCase id="040661">
 		<class>Iperf</class>
-		<desc>iperf (20MHz - UL/20Mbps/UDP)(30 sec)(balanced profile)</desc>
-		<iperf_args>-u -b 20M -t 30 -i 1 -R</iperf_args>
+		<desc>iperf (20MHz - UL/12Mbps/UDP)(30 sec)(balanced profile)</desc>
+		<iperf_args>-u -b 12M -t 30 -i 1 -R</iperf_args>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
 		<iperf_profile>balanced</iperf_profile>
 	</testCase>
 
 	<testCase id="040662">
 		<class>Iperf</class>
-		<desc>iperf (20MHz - UL/20Mbps/UDP)(30 sec)(single-ue profile)</desc>
-		<iperf_args>-u -b 20M -t 30 -i 1 -R</iperf_args>
+		<desc>iperf (20MHz - UL/17Mbps/UDP)(30 sec)(single-ue profile)</desc>
+		<iperf_args>-u -b 17M -t 30 -i 1 -R</iperf_args>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
 		<iperf_profile>single-ue</iperf_profile>
 	</testCase>

@@ -28,11 +28,7 @@
 
  ***************************************************************************/
 
-#ifdef CMAKER
 #include "LTE_asn_constant.h"
-#else
-#include "RRC/LTE/MESSAGES/asn1_constants.h"
-#endif
 
 #ifndef __PLATFORM_CONSTANTS_H__
 #    define __PLATFORM_CONSTANTS_H__
