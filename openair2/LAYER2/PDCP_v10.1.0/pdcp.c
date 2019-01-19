@@ -2193,7 +2193,7 @@ void pdcp_layer_init(void)
   
   memset(Pdcp_stats_tx_window_ms, 0, sizeof(Pdcp_stats_tx_window_ms));
   memset(Pdcp_stats_rx_window_ms, 0, sizeof(Pdcp_stats_rx_window_ms));
-  for (i =0; i< MAX_NUM_CCs ; i ++){
+  for (i =0; i< MAX_eNB ; i ++){
     for (j=0; j< MAX_MOBILES_PER_ENB;j++){
       Pdcp_stats_tx_window_ms[i][j]=100;
       Pdcp_stats_rx_window_ms[i][j]=100;
