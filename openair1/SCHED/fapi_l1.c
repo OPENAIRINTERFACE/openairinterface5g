@@ -73,7 +73,7 @@ void handle_nfapi_mpdcch_pdu(PHY_VARS_eNB *eNB,
   LTE_eNB_MPDCCH *mpdcch_vars     = &eNB->mpdcch_vars[idx];
   nfapi_dl_config_mpdcch_pdu *pdu = &dl_config_pdu->mpdcch_pdu;
 
-  LOG_I(PHY,"Frame %d, Subframe %d: MDCI processing\n",proc->frame_tx,proc->subframe_tx);
+  LOG_D(PHY,"Frame %d, Subframe %d: MDCI processing\n",proc->frame_tx,proc->subframe_tx);
 
   // copy dci configuration into eNB structure
   fill_mdci_and_dlsch(eNB,proc,&mpdcch_vars->mdci_alloc[mpdcch_vars->num_dci],pdu);
@@ -101,7 +101,7 @@ void handle_nfapi_hi_dci0_mpdcch_dci_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
   int idx                         = proc->subframe_tx&1;
   LTE_eNB_MPDCCH *pdcch_vars      = &eNB->mpdcch_vars[idx];
   // copy dci configuration in to eNB structure
-  fill_mpdcch_dci0(eNB,proc,&pdcch_vars->mdci_alloc[pdcch_vars->num_dci], &hi_dci0_config_pdu->dci_pdu);
+  fill_mpdcch_dci0(eNB,proc,&pdcch_vars->mdci_alloc[pdcch_vars->num_dci], &hi_dci0_config_pdu->mpdcch_dci_pdu);
 }
 
 
@@ -265,7 +265,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_pro
     dlsch0_harq     = dlsch0->harq_processes[0];
     dlsch0_harq->pdu                    = sdu;
 
-    if (proc->frame_tx < 200) LOG_I(PHY,"NFAPI: frame %d, subframe %d (TX %d.%d): Programming SI-BR (%d) => %d\n",frame,subframe,proc->frame_tx,proc->subframe_tx,rel13->pdsch_payload_type,UE_id);
+    if (proc->frame_tx < 200) LOG_D(PHY,"NFAPI: frame %d, subframe %d (TX %d.%d): Programming SI-BR (%d) => %d\n",frame,subframe,proc->frame_tx,proc->subframe_tx,rel13->pdsch_payload_type,UE_id);
  
     dlsch0->rnti             = 0xFFFF;
     dlsch0->Kmimo            = 1;

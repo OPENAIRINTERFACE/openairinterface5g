@@ -211,7 +211,7 @@ schedule_SIB1_BR(module_id_t module_idP,
 		    bcch_sdu_length, TBS);
 
 	if ((frameP & 1023) < 200)
-	    LOG_I(MAC,
+	    LOG_D(MAC,
 		  "[eNB %d] Frame %d Subframe %d: SIB1_BR->DLSCH CC_id %d, Received %d bytes, scheduling on NB %d (i %d,m %d,N_S_NB %d)  rvidx %d\n",
 		  module_idP, frameP, subframeP, CC_id, bcch_sdu_length,
 		  n_NB, i, m, N_S_NB, rvidx);
@@ -409,7 +409,7 @@ schedule_SI_BR(module_id_t module_idP, frame_t frameP,
 	    vrb_map[first_rb+5] = 1;
 
 	    if ((frameP&1023) < 200) 
-	      LOG_I(MAC,"[eNB %d] Frame %d Subframe %d: SI_BR->DLSCH CC_id %d, Narrowband %d rvidx %d (sf_mod_period %d : si_WindowLength_BR_r13 %d : si_RepetitionPattern_r13 %d) bcch_sdu_length %d\n",
+	      LOG_D(MAC,"[eNB %d] Frame %d Subframe %d: SI_BR->DLSCH CC_id %d, Narrowband %d rvidx %d (sf_mod_period %d : si_WindowLength_BR_r13 %d : si_RepetitionPattern_r13 %d) bcch_sdu_length %d\n",
 					   module_idP,frameP,subframeP,CC_id,(int)si_Narrowband_r13-1,rvidx,
 					   sf_mod_period,(int)si_WindowLength_BR_r13,(int)si_RepetitionPattern_r13,
 					   bcch_sdu_length);	    

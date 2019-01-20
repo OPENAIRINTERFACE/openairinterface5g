@@ -105,8 +105,6 @@ rx_sdu(const module_id_t enb_mod_idP,
   int lcgid_updated[4] = {0, 0, 0, 0};
   UE_list_t *UE_list = &mac->UE_list;
   int crnti_rx = 0;
-  RA_t *ra =
-    (RA_t *) & RC.mac[enb_mod_idP]->common_channels[CC_idP].ra[0];
   int first_rb = 0;
   rrc_eNB_ue_context_t *ue_contextP = NULL;
   start_meas(&mac->rx_ulsch_sdu);
@@ -218,8 +216,11 @@ rx_sdu(const module_id_t enb_mod_idP,
       return;
     }
   } else if ((RA_id = find_RA_id(enb_mod_idP, CC_idP, current_rnti)) != -1) { // Check if this is an RA process for the rnti
+
+    RA_t *ra = (RA_t *) & mac->common_channels[CC_idP].ra[RA_id];
+	  
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-    if (UE_list->UE_template[CC_idP][UE_id].rach_resource_type > 0) harq_pid=0;
+    if (ra->rach_resource_type > 0) harq_pid=0;
 #endif
     AssertFatal(mac->common_channels[CC_idP].
                 radioResourceConfigCommon->rach_ConfigCommon.
@@ -230,7 +231,7 @@ rx_sdu(const module_id_t enb_mod_idP,
                 maxHARQ_Msg3Tx);
     LOG_D(MAC,
           "[eNB %d][PUSCH %d] CC_id %d [RAPROC Msg3] Received ULSCH sdu round %d from PHY (rnti %x, RA_id %d) ul_cqi %d\n",
-          enb_mod_idP, harq_pid, CC_idP, ra[RA_id].msg3_round,
+          enb_mod_idP, harq_pid, CC_idP, ra->msg3_round,
           current_rnti, RA_id, ul_cqi);
     first_rb = ra->msg3_first_rb;
 
@@ -238,21 +239,21 @@ rx_sdu(const module_id_t enb_mod_idP,
       LOG_D(MAC,
             "[eNB %d] CC_id %d, RA %d ULSCH in error in round %d/%d\n",
             enb_mod_idP, CC_idP, RA_id,
-            ra[RA_id].msg3_round,
+            ra->msg3_round,
             (int) mac->common_channels[CC_idP].
             radioResourceConfigCommon->rach_ConfigCommon.
             maxHARQ_Msg3Tx);
 
-      if (ra[RA_id].msg3_round >= mac->common_channels[CC_idP].radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx - 1) {
+      if (ra->msg3_round >= mac->common_channels[CC_idP].radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx - 1) {
         cancel_ra_proc(enb_mod_idP, CC_idP, frameP, current_rnti);
       } else {
         first_rb = UE_list->UE_template[CC_idP][UE_id].first_rb_ul[harq_pid];
-        ra[RA_id].msg3_round++;
+        ra->msg3_round++;
         // prepare handling of retransmission
         get_Msg3allocret(&mac->common_channels[CC_idP],
-                         ra[RA_id].Msg3_subframe, ra[RA_id].Msg3_frame,
-                         &ra[RA_id].Msg3_frame, &ra[RA_id].Msg3_subframe);
-        add_msg3(enb_mod_idP, CC_idP, &ra[RA_id], frameP, subframeP);
+                         ra->Msg3_subframe, ra->Msg3_frame,
+                         &ra->Msg3_frame, &ra->Msg3_subframe);
+        add_msg3(enb_mod_idP, CC_idP, ra, frameP, subframeP);
       }
 
       /* TODO: program NACK for PHICH? */
@@ -337,7 +338,7 @@ rx_sdu(const module_id_t enb_mod_idP,
            * the UE state in the eNB is wrong.
            */
           for (ii = 0; ii < NB_RA_PROC_MAX; ii++) {
-            ra = &mac->common_channels[CC_idP].ra[ii];
+            RA_t *ra = &mac->common_channels[CC_idP].ra[ii];
 
             if ((ra->rnti == current_rnti) && (ra->state != IDLE)) {
               mac_rrc_data_ind(enb_mod_idP,
