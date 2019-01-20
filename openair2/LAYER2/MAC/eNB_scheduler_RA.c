@@ -667,7 +667,11 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
     N_RB_DL = to_prb(cc[CC_idP].mib->message.dl_Bandwidth);
 
     UE_id = find_UE_id(module_idP, ra->rnti);
-    AssertFatal(UE_id >= 0, "Can't find UE for t-crnti %x\n",ra->rnti);
+    if (UE_id < 0) {
+      LOG_E(MAC,"Can't find UE for t-crnti %x, kill RA procedure for this UE\n",ra->rnti);
+      cancel_ra_proc(module_idP, CC_idP, frameP, ra->rnti);
+      return;
+    }
 
     // set HARQ process round to 0 for this UE
 
