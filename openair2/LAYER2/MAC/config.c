@@ -892,11 +892,15 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
     }
   } // mib != NULL
 
+
   // SRB2_lchan_config->choice.explicitValue.ul_SpecificParameters->logicalChannelGroup
   if (logicalChannelConfig != NULL) {	// check for eMTC specific things
     UE_id = find_UE_id(Mod_idP, rntiP);
 
-    AssertFatal(UE_id>=0,"Configuration received for unknown UE (%x), shouldn't happen\n",rntiP);
+    if (UE_id<0) { 
+      LOG_E(MAC,"Configuration received for unknown UE (%x), shouldn't happen\n",rntiP);
+      return(-1);
+    }
     if (logicalChannelConfig) {
         UE_list->UE_template[CC_idP][UE_id].lcgidmap[logicalChannelIdentity]      = *logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup;
 	UE_list->UE_template[CC_idP][UE_id].lcgidpriority[logicalChannelIdentity] =  logicalChannelConfig->ul_SpecificParameters->priority;
@@ -905,7 +909,10 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
   
   if (physicalConfigDedicated != NULL) {
     UE_id = find_UE_id(Mod_idP, rntiP);
-    AssertFatal(UE_id>=0,"Configuration received for unknown UE (%x), shouldn't happen\n",rntiP);
+    if (UE_id<0) { 
+      LOG_E(MAC,"Configuration received for unknown UE (%x), shouldn't happen\n",rntiP);
+      return(-1);
+    }
     UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated = physicalConfigDedicated;
     LOG_I(MAC,"Added physicalConfigDedicated %p for %d.%d\n",physicalConfigDedicated,CC_idP,UE_id);
   }
@@ -914,7 +921,10 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   if (sCellToAddMod_r10 != NULL) {
-    UE_id = find_UE_id(Mod_idP, rntiP);
+    if (UE_id<0) { 
+      LOG_E(MAC,"Configuration received for unknown UE (%x), shouldn't happen\n",rntiP);
+      return(-1);
+    }
     AssertFatal(UE_id>=0,"Configuration received for unknown UE (%x), shouldn't happen\n",rntiP);
     config_dedicated_scell(Mod_idP, rntiP, sCellToAddMod_r10);
   }

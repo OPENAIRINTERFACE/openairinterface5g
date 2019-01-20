@@ -443,6 +443,7 @@ clear_nfapi_information(eNB_MAC_INST * eNB, int CC_idP,
     DL_req[CC_idP].dl_config_request_body.number_pdu                          = 0;
     DL_req[CC_idP].dl_config_request_body.number_pdsch_rnti                   = 0;
     DL_req[CC_idP].dl_config_request_body.transmission_power_pcfich           = 6000;
+    DL_req[CC_idP].sfn_sf                                                     = subframeP + (frameP<<4);
 
     HI_DCI0_req->hi_dci0_request_body.sfnsf                                   = subframeP + (frameP<<4);
     HI_DCI0_req->hi_dci0_request_body.number_of_dci                           = 0;

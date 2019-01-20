@@ -73,7 +73,7 @@ void handle_nfapi_mpdcch_pdu(PHY_VARS_eNB *eNB,
   LTE_eNB_MPDCCH *mpdcch_vars     = &eNB->mpdcch_vars[idx];
   nfapi_dl_config_mpdcch_pdu *pdu = &dl_config_pdu->mpdcch_pdu;
 
-  LOG_I(PHY,"Frame %d, Subframe %d: MDCI processing\n",proc->frame_tx,proc->subframe_tx);
+  LOG_D(PHY,"Frame %d, Subframe %d: MDCI processing\n",proc->frame_tx,proc->subframe_tx);
 
   // copy dci configuration into eNB structure
   fill_mdci_and_dlsch(eNB,proc,&mpdcch_vars->mdci_alloc[mpdcch_vars->num_dci],pdu);
@@ -101,7 +101,7 @@ void handle_nfapi_hi_dci0_mpdcch_dci_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
   int idx                         = proc->subframe_tx&1;
   LTE_eNB_MPDCCH *pdcch_vars      = &eNB->mpdcch_vars[idx];
   // copy dci configuration in to eNB structure
-  fill_mpdcch_dci0(eNB,proc,&pdcch_vars->mdci_alloc[pdcch_vars->num_dci], &hi_dci0_config_pdu->dci_pdu);
+  fill_mpdcch_dci0(eNB,proc,&pdcch_vars->mdci_alloc[pdcch_vars->num_dci], &hi_dci0_config_pdu->mpdcch_dci_pdu);
 }
 
 
@@ -180,24 +180,24 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_pro
   dlsch1 = eNB->dlsch[UE_id][1];
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-  if ((rel13->pdsch_payload_type < 2) && (rel13->ue_type>0)) dlsch0->harq_ids[frame%2][subframe] = 0;
+  if ((rel13->pdsch_payload_type < 2) && (rel13->ue_type>0)) dlsch0->harq_ids[proc->frame_tx%2][proc->subframe_tx] = 0;
 #endif
 
-  harq_pid        = dlsch0->harq_ids[frame%2][subframe];
+  harq_pid        = dlsch0->harq_ids[proc->frame_tx%2][proc->subframe_tx];
   AssertFatal((harq_pid>=0) && (harq_pid<8),"harq_pid %d not in 0...7 frame:%d subframe:%d subframe(TX):%d rnti:%x UE_id:%d dlsch0[harq_ids:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d]\n",
       harq_pid,
       frame,subframe,
       proc->subframe_tx,rel8->rnti,UE_id,
-      dlsch0->harq_ids[frame%2][0],
-      dlsch0->harq_ids[frame%2][1],
-      dlsch0->harq_ids[frame%2][2],
-      dlsch0->harq_ids[frame%2][3],
-      dlsch0->harq_ids[frame%2][4],
-      dlsch0->harq_ids[frame%2][5],
-      dlsch0->harq_ids[frame%2][6],
-      dlsch0->harq_ids[frame%2][7],
-      dlsch0->harq_ids[frame%2][8],
-      dlsch0->harq_ids[frame%2][9]
+      dlsch0->harq_ids[proc->frame_tx%2][0],
+      dlsch0->harq_ids[proc->frame_tx%2][1],
+      dlsch0->harq_ids[proc->frame_tx%2][2],
+      dlsch0->harq_ids[proc->frame_tx%2][3],
+      dlsch0->harq_ids[proc->frame_tx%2][4],
+      dlsch0->harq_ids[proc->frame_tx%2][5],
+      dlsch0->harq_ids[proc->frame_tx%2][6],
+      dlsch0->harq_ids[proc->frame_tx%2][7],
+      dlsch0->harq_ids[proc->frame_tx%2][8],
+      dlsch0->harq_ids[proc->frame_tx%2][9]
       );
   dlsch0_harq     = dlsch0->harq_processes[harq_pid];
   dlsch1_harq     = dlsch1->harq_processes[harq_pid];
@@ -223,7 +223,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_pro
     computeRhoB_eNB(rel8->pa,eNB->frame_parms.pdsch_config_common.p_b,eNB->frame_parms.nb_antenna_ports_eNB,dlsch1,dlsch1_harq->dl_power_off);
   }
 
-  dlsch0_harq->pdsch_start = eNB->pdcch_vars[subframe & 1].num_pdcch_symbols;
+  dlsch0_harq->pdsch_start = eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols;
 
   if (dlsch0_harq->round==0) {  //get pointer to SDU if this a new SDU
     if(sdu == NULL) {
@@ -265,7 +265,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_pro
     dlsch0_harq     = dlsch0->harq_processes[0];
     dlsch0_harq->pdu                    = sdu;
 
-    if (proc->frame_tx < 200) LOG_D(PHY,"NFAPI: frame %d, subframe %d: Programming SI-BR (%d) => %d\n",proc->frame_tx,proc->subframe_tx,rel13->pdsch_payload_type,UE_id);
+    if (proc->frame_tx < 200) LOG_D(PHY,"NFAPI: frame %d, subframe %d (TX %d.%d): Programming SI-BR (%d) => %d\n",frame,subframe,proc->frame_tx,proc->subframe_tx,rel13->pdsch_payload_type,UE_id);
  
     dlsch0->rnti             = 0xFFFF;
     dlsch0->Kmimo            = 1;
@@ -274,7 +274,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_pro
 
     dlsch0->i0               = rel13->initial_transmission_sf_io;
     dlsch0_harq->pdsch_start = rel10->pdsch_start;
-    dlsch0->harq_ids[frame%2][proc->subframe_tx] = 0;
+    dlsch0->harq_ids[proc->frame_tx%2][proc->subframe_rx] = 0;
     dlsch0_harq->frame       = proc->frame_tx;
     dlsch0_harq->subframe    = proc->subframe_tx;
 
