@@ -2119,7 +2119,7 @@ int rrc_eNB_process_S1AP_PATH_SWITCH_REQ_ACK (MessageDef *msg_p, const char *msg
       }
 
       //memset(&create_tunnel_req, 0 , sizeof(create_tunnel_req));
-      uint8_t nb_e_rabs_tobeswitched = S1AP_PATH_SWITCH_REQ_ACK (msg_p).nb_e_rabs_tobeswitched;
+      //uint8_t nb_e_rabs_tobeswitched = S1AP_PATH_SWITCH_REQ_ACK (msg_p).nb_e_rabs_tobeswitched;
 
       // keep the previous bearer
       // the index for the rec
