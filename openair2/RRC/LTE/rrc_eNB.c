@@ -8204,12 +8204,12 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
       }
 
       break;
-#   endif
 
     case S1AP_PATH_SWITCH_REQ_ACK:
       LOG_I(RRC, "[eNB %d] received path switch ack %s\n", instance, msg_name_p);
       rrc_eNB_process_S1AP_PATH_SWITCH_REQ_ACK(msg_p, msg_name_p, instance);
       break;
+#   endif
 
     case X2AP_HANDOVER_REQ:
       LOG_I(RRC, "[eNB %d] target eNB Receives X2 HO Req %s at frame %d subframe %d\n", instance, msg_name_p,
