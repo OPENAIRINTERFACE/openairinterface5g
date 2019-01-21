@@ -124,10 +124,6 @@ int config_sync_var=-1;
 uint16_t runtime_phy_rx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 100]
 uint16_t runtime_phy_tx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 100]
 
-#if defined(ENABLE_ITTI)
-  volatile int             start_eNB = 0;
-  volatile int             start_UE = 0;
-#endif
 volatile int             oai_exit = 0;
 
 clock_source_t clock_source = internal;
@@ -397,48 +393,6 @@ static void *scope_thread(void *arg) {
 #endif
 
 
-
-#if defined(ENABLE_ITTI)
-void *l2l1_task(void *arg) {
-  MessageDef *message_p = NULL;
-  int         result;
-  itti_set_task_real_time(TASK_L2L1);
-  itti_mark_task_ready(TASK_L2L1);
-
-  do {
-    // Wait for a message
-    itti_receive_msg (TASK_L2L1, &message_p);
-
-    switch (ITTI_MSG_ID(message_p)) {
-      case TERMINATE_MESSAGE:
-        oai_exit=1;
-        itti_exit_task ();
-        break;
-
-      case ACTIVATE_MESSAGE:
-        start_UE = 1;
-        break;
-
-      case DEACTIVATE_MESSAGE:
-        start_UE = 0;
-        break;
-
-      case MESSAGE_TEST:
-        LOG_I(SIM, "Received %s\n", ITTI_MSG_NAME(message_p));
-        break;
-
-      default:
-        LOG_E(SIM, "Received unexpected message %s\n", ITTI_MSG_NAME(message_p));
-        break;
-    }
-
-    result = itti_free (ITTI_MSG_ORIGIN_ID(message_p), message_p);
-    AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-  } while(!oai_exit);
-
-  return NULL;
-}
-#endif
 
 extern int16_t dlsch_demod_shift;
 
