@@ -22,6 +22,7 @@
 #ifndef X2AP_MESSAGES_TYPES_H_
 #define X2AP_MESSAGES_TYPES_H_
 
+#include "s1ap_messages_types.h"
 #include "LTE_PhysCellId.h"
 
 //-------------------------------------------------------------------------------------------//

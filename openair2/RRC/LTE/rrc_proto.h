@@ -32,7 +32,7 @@
  */
 
 #include "RRC/LTE/rrc_defs.h"
-
+#include "x2ap_messages_types.h"
 #include "flexran_agent_extern.h"
 
 //main.c
