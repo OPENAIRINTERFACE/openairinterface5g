@@ -8094,9 +8094,9 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
       itti_exit_task();
       break;
 
-      case MESSAGE_TEST:
-        LOG_I(RRC, "[eNB %d] Received %s\n", instance, msg_name_p);
-        break;
+    case MESSAGE_TEST:
+      LOG_I(RRC, "[eNB %d] Received %s\n", instance, msg_name_p);
+      break;
 
     /* Messages from MAC */
     case RRC_MAC_CCCH_DATA_IND:
