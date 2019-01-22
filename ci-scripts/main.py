@@ -214,7 +214,7 @@ class SSHConnection():
 		copy_status = False
 		logging.debug('scp '+ username + '@' + ipaddress + ':' + source + ' ' + destination)
 		while count < 10:
-			scp_spawn = pexpect.spawn('scp '+ username + '@' + ipaddress + ':' + source + ' ' + destination, timeout = 5)
+			scp_spawn = pexpect.spawn('scp '+ username + '@' + ipaddress + ':' + source + ' ' + destination, timeout = 100)
 			scp_response = scp_spawn.expect(['Are you sure you want to continue connecting (yes/no)?', 'password:', pexpect.EOF, pexpect.TIMEOUT])
 			if scp_response == 0:
 				scp_spawn.sendline('yes')
@@ -253,7 +253,7 @@ class SSHConnection():
 		copy_status = False
 		logging.debug('scp ' + source + ' ' + username + '@' + ipaddress + ':' + destination)
 		while count < 4:
-			scp_spawn = pexpect.spawn('scp ' + source + ' ' + username + '@' + ipaddress + ':' + destination, timeout = 5)
+			scp_spawn = pexpect.spawn('scp ' + source + ' ' + username + '@' + ipaddress + ':' + destination, timeout = 100)
 			scp_response = scp_spawn.expect(['Are you sure you want to continue connecting (yes/no)?', 'password:', pexpect.EOF, pexpect.TIMEOUT])
 			if scp_response == 0:
 				scp_spawn.sendline('yes')
@@ -1977,8 +1977,8 @@ class SSHConnection():
 		if result is not None:
 			self.eNBKernelVersion = result.group('kernel_version')
 			logging.debug('Kernel Version is: ' + self.eNBKernelVersion)
-		self.command('dpkg --list | egrep --color=never uhd-host', '\$', 5)
-		result = re.search('uhd-host *(?P<uhd_version>[0-9\.]+)', str(self.ssh.before))
+		self.command('dpkg --list | egrep --color=never libuhd003', '\$', 5)
+		result = re.search('libuhd003:amd64 *(?P<uhd_version>[0-9\.]+)', str(self.ssh.before))
 		if result is not None:
 			self.eNBUhdVersion = result.group('uhd_version')
 			logging.debug('UHD Version is: ' + self.eNBUhdVersion)
