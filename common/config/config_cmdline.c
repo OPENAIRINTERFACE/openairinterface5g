@@ -164,9 +164,10 @@ int processoption(paramdef_t *cfgoptions, char *value) {
 */
 int config_check_unknown_cmdlineopt(char *prefix) {
   int unknowndetected=0;
-  char testprefix[CONFIG_MAXOPTLENGTH]="";
+  char testprefix[CONFIG_MAXOPTLENGTH];
   int finalcheck = 0;
 
+  memset(testpref,0,sizeof(testprefix));
   if (prefix != NULL) {
     if (strcmp(prefix,CONFIG_CHECKALLSECTIONS) == 0)
       finalcheck = 1;
