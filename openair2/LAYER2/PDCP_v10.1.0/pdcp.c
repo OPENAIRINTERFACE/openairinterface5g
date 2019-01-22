@@ -952,11 +952,17 @@ pdcp_data_ind(
   //util_print_hex_octets(PDCP, &new_sdu_p->data[sizeof (pdcp_data_ind_header_t)], sdu_buffer_sizeP - payload_offset);
   //util_flush_hex_octets(PDCP, &new_sdu_p->data[sizeof (pdcp_data_ind_header_t)], sdu_buffer_sizeP - payload_offset);
   
-  /*
-     * Update PDCP statistics
-   * XXX Following two actions are identical, is there a merge error?
-   */
   
+#if defined(STOP_ON_IP_TRAFFIC_OVERLOAD)
+    else {
+      AssertFatal(0, PROTOCOL_PDCP_CTXT_FMT" PDCP_DATA_IND SDU DROPPED, OUT OF MEMORY \n",
+                  PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p));
+    }
+#endif
+
+  }
+
+  /* Update PDCP statistics */
   for (pdcp_uid=0; pdcp_uid< MAX_MOBILES_PER_ENB;pdcp_uid++){
     if (pdcp_enb[ctxt_pP->module_id].rnti[pdcp_uid] == ctxt_pP->rnti ){
       break;
@@ -976,16 +982,6 @@ pdcp_data_ind(
   Pdcp_stats_rx_aiat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (pdcp_enb[ctxt_pP->module_id].sfn - Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
   Pdcp_stats_rx_aiat_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=(pdcp_enb[ctxt_pP->module_id].sfn - Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
   Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=pdcp_enb[ctxt_pP->module_id].sfn;
-
-  
-#if defined(STOP_ON_IP_TRAFFIC_OVERLOAD)
-    else {
-      AssertFatal(0, PROTOCOL_PDCP_CTXT_FMT" PDCP_DATA_IND SDU DROPPED, OUT OF MEMORY \n",
-                  PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p));
-    }
-#endif
-
-  }
 
   free_mem_block(sdu_buffer_pP, __func__);
 
