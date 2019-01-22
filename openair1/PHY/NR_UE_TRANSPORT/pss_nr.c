@@ -706,7 +706,9 @@ int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int rate_change)
 
   synchro_position = pss_search_time_nr(rxdata,
                                         frame_parms,
-                                        (int *)&PHY_vars_UE->common_vars.eNb_id);
+                                        (int *)&PHY_vars_UE->common_vars.eNb_id,
+					(int *)&PHY_vars_UE->common_vars.freq_offset);
+
 
 #if TEST_SYNCHRO_TIMING_PSS
 
@@ -815,11 +817,12 @@ static inline double angle64(int64_t x)
 
 int pss_search_time_nr(int **rxdata, ///rx data in time domain
                        NR_DL_FRAME_PARMS *frame_parms,
-                       int *eNB_id)
+                       int *eNB_id,
+		       int *f_off)
 {
   unsigned int n, ar, peak_position, pss_source;
   int64_t peak_value;
-  int64_t result;
+  int64_t result,result1,result2;
   int64_t avg[NUMBER_PSS_SEQUENCE];
   double ffo_est;
 
@@ -842,7 +845,6 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
     maxval = max(maxval,-primary_synchro_time_nr[1][i]);
     maxval = max(maxval,primary_synchro_time_nr[2][i]);
     maxval = max(maxval,-primary_synchro_time_nr[2][i]);
-
   }
   int shift = log2_approx(maxval);//*(frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples)*2);
 
@@ -877,27 +879,58 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
 
         }
       }
-
+ 
       /* calculate the absolute value of sync_corr[n] */
       avg[pss_index]+=pss_corr_ue[pss_index][n];
       if (pss_corr_ue[pss_index][n] > peak_value) {
         peak_value = pss_corr_ue[pss_index][n];
         peak_position = n;
         pss_source = pss_index;
-	ffo_est = angle64(result)/M_PI;
 
-//#ifdef DEBUG_PSS_NR
-        printf("pss_index %d: n %6d peak_value %15llu ffo %lf\n", pss_index, n, (unsigned long long)pss_corr_ue[pss_index][n],ffo_est);
-//#endif
+#ifdef DEBUG_PSS_NR
+        printf("pss_index %d: n %6d peak_value %15llu\n", pss_index, n, (unsigned long long)pss_corr_ue[pss_index][n]);
+#endif
       }
     }
   }
+
+  
+  // fractional frequency offser computation according to Cross-correlation Synchronization Algorithm Using PSS
+  // Shoujun Huang, Yongtao Su, Ying He and Shan Tang, "Joint time and frequency offset estimation in LTE downlink," 7th International Conference on Communications and Networking in China, 2012.
+
+  // Computing cross-correlation at peak on half the symbol size for first half of data
+  result1  = dot_product64((short*)primary_synchro_time_nr[pss_source], 
+				  (short*) &(rxdata[0][peak_position]), 
+				  frame_parms->ofdm_symbol_size>>1, 
+				  shift);
+  // Computing cross-correlation at peak on half the symbol size for data shifted by half symbol size 
+  // as it is real and complex it is necessary to shift by a value equal to symbol size to obtain such shift
+  result2  = dot_product64((short*)primary_synchro_time_nr[pss_source]+(frame_parms->ofdm_symbol_size), 
+				  (short*) &(rxdata[0][peak_position])+(frame_parms->ofdm_symbol_size), 
+				  frame_parms->ofdm_symbol_size>>1, 
+				  shift);
+
+  int64_t re1,re2,im1,im2;
+  re1=((int*) &result1)[0];
+  re2=((int*) &result2)[0];
+  im1=((int*) &result1)[1];
+  im2=((int*) &result2)[1];
+
+  // estimation of fractional frequency offset: angle[(result1)'*(result2)]/pi
+  ffo_est=atan2(re1*im2-re2*im1,re1*re2+im1*im2)/M_PI;
+  
+#ifdef DBG_PSS_NR
+  printf("ffo %lf\n",ffo_est);
+#endif
+
+  // computing absolute value of frequency offset
+  *f_off = ffo_est*frame_parms->subcarrier_spacing;  
 
   for (int pss_index = 0; pss_index < NUMBER_PSS_SEQUENCE; pss_index++) avg[pss_index]/=(length/4);
 
   *eNB_id = pss_source;
 
-  LOG_I(PHY,"[UE] nr_synchro_time: Sync source = %d, Peak found at pos %d, val = %llu (%d dB) avg %d dB\n", pss_source, peak_position, (unsigned long long)peak_value, dB_fixed64(peak_value),dB_fixed64(avg[pss_source]));
+  LOG_I(PHY,"[UE] nr_synchro_time: Sync source = %d, Peak found at pos %d, val = %llu (%d dB) avg %d dB, ffo %lf\n", pss_source, peak_position, (unsigned long long)peak_value, dB_fixed64(peak_value),dB_fixed64(avg[pss_source]),ffo_est);
 
   if (peak_value < 5*avg[pss_source])
     return(-1);

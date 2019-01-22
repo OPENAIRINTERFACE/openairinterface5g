@@ -19,7 +19,6 @@
  *      contact@openairinterface.org
  */
 
-#include <stdio.h>
 #include "tools_defs.h"
 #include "PHY/sse_intrin.h"
 

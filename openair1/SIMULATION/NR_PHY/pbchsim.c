@@ -120,7 +120,7 @@ int main(int argc, char **argv)
 
   double pbch_sinr;
   int pbch_tx_ant;
-  int N_RB_DL=106,mu=1;
+  int N_RB_DL=273,mu=1;
 
   unsigned char frame_type = 0;
   unsigned char pbch_phase = 0;
@@ -538,7 +538,6 @@ int main(int argc, char **argv)
       sigma2_dB = 10*log10((double)txlev)-SNR;
       sigma2 = pow(10,sigma2_dB/10);
       //      printf("sigma2 %f (%f dB)\n",sigma2,sigma2_dB);
- 
       if(eps!=0.0)
         rf_rx(r_re,  // real part of txdata
            r_im,  // imag part of txdata
