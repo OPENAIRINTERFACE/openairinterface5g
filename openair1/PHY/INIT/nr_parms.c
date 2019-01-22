@@ -195,10 +195,9 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
 			   int n_ssb_crb,
 			   int ssb_subcarrier_offset) 
 {
-
+  /*n_ssb_crb and ssb_subcarrier_offset are given in 15kHz SCS*/
   nr_init_frame_parms0(fp,mu,Ncp,N_RB_DL);
-  int start_rb = n_ssb_crb / (1<<mu);
-  fp->ssb_start_subcarrier = 12 * start_rb + ssb_subcarrier_offset;
+  fp->ssb_start_subcarrier = (12 * n_ssb_crb + ssb_subcarrier_offset)/(1<<mu);
   return 0;
 }
 

@@ -357,7 +357,7 @@ int main(int argc, char **argv)
   frame_parms->N_RB_DL = N_RB_DL;
   frame_parms->N_RB_UL = N_RB_DL;
 
-  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu);
+  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell);
   phy_init_nr_gNB(gNB,0,0);
 
   double fs,bw;
@@ -476,7 +476,7 @@ int main(int argc, char **argv)
 	      frame_length_complex_samples,
 	      input_fd) != frame_length_complex_samples) {
       printf("error reading from file\n");
-      exit(-1);
+      //exit(-1);
     }
   }
 

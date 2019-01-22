@@ -381,7 +381,7 @@ int main(int argc, char **argv) {
 	frame_parms->nb_antennas_rx = n_rx;
 	frame_parms->N_RB_DL = N_RB_DL;
 	crcTableInit();
-	nr_phy_config_request_sim(gNB, N_RB_DL, N_RB_DL, mu);
+	nr_phy_config_request_sim(gNB, N_RB_DL, N_RB_DL, mu, Nid_cell);
 	phy_init_nr_gNB(gNB, 0, 0);
 	//init_eNB_afterRU();
 	frame_length_complex_samples = frame_parms->samples_per_subframe;
