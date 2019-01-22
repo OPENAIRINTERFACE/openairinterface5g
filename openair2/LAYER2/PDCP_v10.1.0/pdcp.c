@@ -49,7 +49,7 @@
 #include "platform_constants.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "msc.h"
-
+#include "targets/COMMON/openairinterface5g_limits.h"
 #if defined(ENABLE_SECURITY)
 # include "UTIL/OSA/osa_defs.h"
 #endif
@@ -64,9 +64,12 @@
 #endif
 
 extern int otg_enabled;
-
+#if defined(ENABLE_USE_MME)
+extern uint8_t nfapi_mode;
+#endif
 #include "common/ran_context.h"
 extern RAN_CONTEXT_t RC;
+hash_table_t  *pdcp_coll_p = NULL;
 
 #ifdef MBMS_MULTICAST_OUT
 # include <sys/types.h>
@@ -798,12 +801,21 @@ pdcp_data_ind(
          * for the UE compiled in noS1 mode, we need 0
          * TODO: be sure of this
          */
-        ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = 1;
+        if (nfapi_mode == 3) {
+#ifdef UESIM_EXPANSION
+          ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = 0;
+#else
+          ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = ctxt_pP->module_id;
+#endif
+        } else {
+          ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = 1;
+        }
 #endif
       } else {
         ((pdcp_data_ind_header_t*) new_sdu_p->data)->rb_id = rb_id + (ctxt_pP->module_id * LTE_maxDRB);
+        ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = ctxt_pP->module_id;
       }
-
+      // new_sdu_p->data->inst is set again in UE case so move to above.
       //Panos: Commented this out because it cancels the assignment in #if defined(ENABLE_USE_MME) case
       //((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = ctxt_pP->module_id;
 
@@ -2021,7 +2033,7 @@ void pdcp_layer_init(void)
    * Initialize SDU list
    */
   list_init(&pdcp_sdu_list, NULL);
-  pdcp_coll_p = hashtable_create ((LTE_maxDRB + 2) * 16, NULL, pdcp_free);
+  pdcp_coll_p = hashtable_create ((LTE_maxDRB + 2) * NUMBER_OF_UE_MAX, NULL, pdcp_free);
   AssertFatal(pdcp_coll_p != NULL, "UNRECOVERABLE error, PDCP hashtable_create failed");
 
   for (instance = 0; instance < MAX_MOBILES_PER_ENB; instance++) {
