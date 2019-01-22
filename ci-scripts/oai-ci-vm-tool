@@ -373,7 +373,6 @@ case $key in
         BUILD_OPTIONS="--eNB -t ETHERNET"
         RUN_OPTIONS="complex"
         NBARGS=$[$NBARGS+256]
-        shift
         ;;
         flexran-rtc)
         VM_NAME=ci-flexran-rtc
