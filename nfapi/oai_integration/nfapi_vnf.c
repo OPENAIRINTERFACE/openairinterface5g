@@ -270,7 +270,7 @@ int pnf_param_resp_cb(nfapi_vnf_config_t* config, int p5_idx, nfapi_pnf_param_re
   for(int i = 0; i < resp->pnf_phy.number_of_phys; ++i)
   {
     phy_info phy;
-    memset(phy,0,sizeof(phy));
+    memset(&phy,0,sizeof(phy));
     phy.index = resp->pnf_phy.phy[i].phy_config_index;
 
     printf("[VNF] (PHY:%d) phy_config_idx:%d\n", i, resp->pnf_phy.phy[i].phy_config_index);
@@ -288,7 +288,7 @@ int pnf_param_resp_cb(nfapi_vnf_config_t* config, int p5_idx, nfapi_pnf_param_re
 
   for(int i = 0; i < resp->pnf_rf.number_of_rfs; ++i) {
     rf_info rf;
-    memset(rf,0,sizeof(rf));
+    memset(&rf,0,sizeof(rf));
     rf.index = resp->pnf_rf.rf[i].rf_config_index;
 
     printf("[VNF] (RF:%d) rf_config_idx:%d\n", i, resp->pnf_rf.rf[i].rf_config_index);
