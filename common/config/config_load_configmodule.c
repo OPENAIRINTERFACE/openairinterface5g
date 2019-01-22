@@ -345,7 +345,7 @@ void free_configmodule(void) {
 
     if( cfgptr->cfgmode != NULL) free(cfgptr->cfgmode);
 
-    printf ("[CONFIG] free %u config parameter pointers\n",cfgptr->num_cfgP);
+    printf ("[CONFIG] free %i config parameter pointers\n",cfgptr->num_cfgP);
 
     for (int i=0; i<cfgptr->num_cfgP; i++) {
       if ( cfgptr->cfgP[i] != NULL) free(cfgptr->cfgP[i]);

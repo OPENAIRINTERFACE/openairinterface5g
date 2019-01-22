@@ -202,9 +202,9 @@ void T_init(int remote_port, int wait_for_tracer, int dont_fork) {
 }
 
 void T_Config_Init(void) {
-  int T_port;         /* by default we wait for the tracer */
-  int T_nowait;       /* default port to listen to to wait for the tracer */
-  int T_dont_fork;    /* default is to fork, see 'T_init' to understand */
+  int T_port=TTRACER_DEFAULT_PORTNUM; /* by default we wait for the tracer */
+  int T_nowait=0;                     /* default port to listen to to wait for the tracer */
+  int T_dont_fork=0;                  /* default is to fork, see 'T_init' to understand */
   paramdef_t ttraceparams[] = CMDLINE_TTRACEPARAMS_DESC;
   /* for a cleaner config file, TTracer params should be defined in a
    * specific section...

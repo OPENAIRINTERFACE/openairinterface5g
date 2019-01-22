@@ -8,7 +8,7 @@
 #include "T_defs.h"
 
 #ifdef T_SEND_TIME
-#include <time.h>
+  #include <time.h>
 #endif
 
 /* T message IDs */
@@ -76,13 +76,13 @@
                              T_BUFFER_MAX - T_LOCAL_size, T_PUT_printf_deref x); \
     if (T_PUT_len < 0) { \
       printf("%s:%d:%s: you can't read this, or can you?", \
-               __FILE__, __LINE__, __FUNCTION__); \
+             __FILE__, __LINE__, __FUNCTION__); \
       abort(); \
     } \
     if (T_PUT_len >= T_BUFFER_MAX - T_LOCAL_size) { \
       printf("%s:%d:%s: cannot put argument %d in T macro, not enough space" \
-               ", consider increasing T_BUFFER_MAX (%d)\n", \
-               __FILE__, __LINE__, __FUNCTION__, argnum, T_BUFFER_MAX); \
+             ", consider increasing T_BUFFER_MAX (%d)\n", \
+             __FILE__, __LINE__, __FUNCTION__, argnum, T_BUFFER_MAX); \
       abort(); \
     } \
     T_LOCAL_size += T_PUT_len + 1; \
@@ -97,9 +97,9 @@ struct T_header;
 /* T macro tricks */
 extern int T_stdout;
 #define TN(...) TN_N(__VA_ARGS__,33,32,31,30,29,28,27,26,25,24,23,22,21,\
-        20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0)(__VA_ARGS__)
+                     20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0)(__VA_ARGS__)
 #define TN_N(n0,n1,n2,n3,n4,n5,n6,n7,n8,n9,n10,n11,n12,n13,n14,n15,n16,n17,\
-        n18,n19,n20,n21,n22,n23,n24,n25,n26,n27,n28,n29,n30,n31,n32,n,...) T##n
+             n18,n19,n20,n21,n22,n23,n24,n25,n26,n27,n28,n29,n30,n31,n32,n,...) T##n
 #define T(...) do { if (T_stdout == 0) TN(__VA_ARGS__); } while (0)
 
 /* type used to send arbitrary buffer data */
@@ -119,30 +119,30 @@ extern int *T_active;
  */
 #if BASIC_SIMULATOR
 #  define T_GET_SLOT \
-     do { \
-       extern volatile uint64_t T_next_id; \
-       extern volatile uint64_t T_active_id; \
-       uint64_t id; \
-       /* get a ticket */ \
-       id = __sync_fetch_and_add(&T_next_id, 1); \
-       /* wait for our turn */ \
-       while (id != __sync_fetch_and_add(&T_active_id, 0)) /* busy wait */; \
-       /* this is our turn, try to acquire the slot until it's free */ \
-       do { \
-         T_LOCAL_busy = __sync_fetch_and_or(&T_cache[T_LOCAL_slot].busy, 0x01); \
-         if (T_LOCAL_busy & 0x01) usleep(100); \
-       } while (T_LOCAL_busy & 0x01); \
-       /* check that there are still some tickets */ \
-       if (__sync_fetch_and_add(&T_active_id, 0) == 0xffffffffffffffff) { \
-         printf("T: reached the end of times, bye...\n"); \
-         abort(); \
-       } \
-       /* free our ticket, which signals the next waiter that it's its turn */ \
-       (void)__sync_fetch_and_add(&T_active_id, 1); \
-     } while (0)
+  do { \
+    extern volatile uint64_t T_next_id; \
+    extern volatile uint64_t T_active_id; \
+    uint64_t id; \
+    /* get a ticket */ \
+    id = __sync_fetch_and_add(&T_next_id, 1); \
+    /* wait for our turn */ \
+    while (id != __sync_fetch_and_add(&T_active_id, 0)) /* busy wait */; \
+    /* this is our turn, try to acquire the slot until it's free */ \
+    do { \
+      T_LOCAL_busy = __sync_fetch_and_or(&T_cache[T_LOCAL_slot].busy, 0x01); \
+      if (T_LOCAL_busy & 0x01) usleep(100); \
+    } while (T_LOCAL_busy & 0x01); \
+    /* check that there are still some tickets */ \
+    if (__sync_fetch_and_add(&T_active_id, 0) == 0xffffffffffffffff) { \
+      printf("T: reached the end of times, bye...\n"); \
+      abort(); \
+    } \
+    /* free our ticket, which signals the next waiter that it's its turn */ \
+    (void)__sync_fetch_and_add(&T_active_id, 1); \
+  } while (0)
 #else
 #  define T_GET_SLOT \
-     T_LOCAL_busy = __sync_fetch_and_or(&T_cache[T_LOCAL_slot].busy, 0x01);
+  T_LOCAL_busy = __sync_fetch_and_or(&T_cache[T_LOCAL_slot].busy, 0x01);
 #endif
 
 /* used at header of Tn, allocates buffer */
@@ -172,8 +172,8 @@ extern int *T_active;
 #define T_CHECK_SIZE(len, argnum) \
   if (T_LOCAL_size + (len) > T_BUFFER_MAX) { \
     printf("%s:%d:%s: cannot put argument %d in T macro, not enough space" \
-             ", consider increasing T_BUFFER_MAX (%d)\n", \
-             __FILE__, __LINE__, __FUNCTION__, argnum, T_BUFFER_MAX); \
+           ", consider increasing T_BUFFER_MAX (%d)\n", \
+           __FILE__, __LINE__, __FUNCTION__, argnum, T_BUFFER_MAX); \
     abort(); \
   }
 
@@ -598,20 +598,21 @@ extern int *T_active;
 
 
 #define TTRACER_CONFIG_PREFIX   "TTracer"
-/*------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                            configuration parameters for TTRACE utility                                                   */
-/*   optname                     helpstr                paramflags           XXXptr           defXXXval         type       numelt           */
-/*------------------------------------------------------------------------------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*                                            configuration parameters for TTRACE utility                                                          */
+/*   optname                     helpstr                paramflags           XXXptr           defXXXval                         type       numelt  */
+/*-------------------------------------------------------------------------------------------------------------------------------------------------*/
+#define TTRACER_DEFAULT_PORTNUM 2021
 #define CMDLINE_TTRACEPARAMS_DESC {  \
-{"T_port",                     CONFIG_HLP_TPORT,      0,                iptr:&T_port,        defintval:2021,     TYPE_INT,   0},           \
-{"T_nowait",                   CONFIG_HLP_NOTWAIT,    PARAMFLAG_BOOL,   iptr:&T_nowait,      defintval:0,        TYPE_INT,   0},           \
-{"T_dont_fork",                CONFIG_HLP_TNOFORK,    PARAMFLAG_BOOL,   iptr:&T_dont_fork,   defintval:0,        TYPE_INT,   0},           \
-{"T_stdout",                   CONFIG_HLP_STDOUT,     PARAMFLAG_BOOL,   iptr:&T_stdout,      defintval:1,        TYPE_INT,   0},           \
-} 
+    {"T_port",                     CONFIG_HLP_TPORT,      0,                iptr:&T_port,        defintval:TTRACER_DEFAULT_PORTNUM, TYPE_INT,   0},\
+    {"T_nowait",                   CONFIG_HLP_NOTWAIT,    PARAMFLAG_BOOL,   iptr:&T_nowait,      defintval:0,                       TYPE_INT,   0},\
+    {"T_dont_fork",                CONFIG_HLP_TNOFORK,    PARAMFLAG_BOOL,   iptr:&T_dont_fork,   defintval:0,                       TYPE_INT,   0},\
+    {"T_stdout",                   CONFIG_HLP_STDOUT,     PARAMFLAG_BOOL,   iptr:&T_stdout,      defintval:1,                       TYPE_INT,   0},\
+  }
 
 
 
-        /* log on stdout */
+/* log on stdout */
 void T_init(int remote_port, int wait_for_tracer, int dont_fork);
 void T_Config_Init(void);
 #else /* T_TRACER */
