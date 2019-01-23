@@ -1464,7 +1464,7 @@ fill_nfapi_harq_information(module_id_t                      module_idP,
   return;
 }
 
-void
+uint16_t
 fill_nfapi_uci_acknak(module_id_t module_idP,
                       int         CC_idP,
                       uint16_t    rntiP,
@@ -1473,17 +1473,16 @@ fill_nfapi_uci_acknak(module_id_t module_idP,
 {
   eNB_MAC_INST                   *eNB           = RC.mac[module_idP];
   COMMON_channels_t              *cc            = &eNB->common_channels[CC_idP];
-  nfapi_ul_config_request_t      *ul_req        = &eNB->UL_req_tmp[CC_idP][absSFP % 10];
+  int                            ackNAK_absSF   = get_pucch1_absSF(cc, absSFP);
+  nfapi_ul_config_request_t      *ul_req        = &eNB->UL_req_tmp[CC_idP][ackNAK_absSF % 10];
   nfapi_ul_config_request_body_t *ul_req_body   = &ul_req->ul_config_request_body;
   nfapi_ul_config_request_pdu_t  *ul_config_pdu = &ul_req_body->ul_config_pdu_list[ul_req_body->number_of_pdus];
-  int                            ackNAK_absSF   = get_pucch1_absSF(cc, absSFP);
 
   memset((void *) ul_config_pdu, 0, sizeof(nfapi_ul_config_request_pdu_t));
-
   ul_config_pdu->pdu_type                                               = NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE;
   ul_config_pdu->pdu_size                                               = (uint8_t) (2 + sizeof(nfapi_ul_config_uci_harq_pdu));
   ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.tl.tag = NFAPI_UL_CONFIG_REQUEST_UE_INFORMATION_REL8_TAG;
-  ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.handle = 0;  // don't know how to use this
+  ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.handle = 0;	// don't know how to use this
   ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti   = rntiP;
 
   fill_nfapi_harq_information(module_idP, 
@@ -1491,9 +1490,10 @@ fill_nfapi_uci_acknak(module_id_t module_idP,
                               rntiP,
                               &ul_config_pdu->uci_harq_pdu.harq_information, 
                               cce_idxP);
-
-  LOG_D(MAC, "Filled in UCI HARQ request for rnti %xacknakSF %d.%d, cce_idxP %d-> n1_pucch %d\n",
+  LOG_D(MAC, "Filled in UCI HARQ request for rnti %x SF %d.%d acknakSF %d.%d, cce_idxP %d-> n1_pucch %d\n",
         rntiP, 
+        absSFP / 10, 
+        absSFP % 10, 
         ackNAK_absSF / 10,
         ackNAK_absSF % 10, 
         cce_idxP,
@@ -1502,8 +1502,9 @@ fill_nfapi_uci_acknak(module_id_t module_idP,
   ul_req_body->number_of_pdus++;
   ul_req_body->tl.tag       = NFAPI_UL_CONFIG_REQUEST_BODY_TAG;
   ul_req->header.message_id = NFAPI_UL_CONFIG_REQUEST;
-  ul_req->sfn_sf            = ((ackNAK_absSF / 10) << 4) | ackNAK_absSF % 10;
-  return;
+  ul_req->sfn_sf            = (ackNAK_absSF/10) << 4 | ackNAK_absSF%10;
+
+  return (((ackNAK_absSF / 10) << 4) + (ackNAK_absSF % 10));
 }
 
 void
