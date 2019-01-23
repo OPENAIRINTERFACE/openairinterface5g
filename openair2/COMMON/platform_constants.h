@@ -64,6 +64,16 @@
 #    define MAX_MODULES                NB_MODULES_MAX
 
 #ifndef UE_EXPANSION
+// TODO:L2 FAPI simulator.
+// UESIM_EXPANSION is used to be same value of MAX_MOBILES_PER_ENB
+// in eNB and UE.
+// now , if we use --mu option in UE, compiling error will occur.
+// This problem will be fixed in the future.
+# ifdef UESIM_EXPANSION
+#    define MAX_MOBILES_PER_ENB         256
+#    define MAX_MOBILES_PER_ENB_NB_IoT  256
+#    define MAX_eNB                      2
+# else
 # ifdef LARGE_SCALE
 #    define MAX_MOBILES_PER_ENB         128
 #    define MAX_MOBILES_PER_ENB_NB_IoT  128
@@ -73,6 +83,7 @@
 #    define MAX_MOBILES_PER_ENB_NB_IoT  16
 #    define MAX_eNB                      2
 # endif
+#endif
 #else
 #    define MAX_MOBILES_PER_ENB 256
 #    define MAX_MOBILES_PER_ENB_NB_IoT 256
