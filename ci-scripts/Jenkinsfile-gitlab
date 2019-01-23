@@ -166,6 +166,14 @@ pipeline {
             }
         }
 
+        stage ("Start VM -- L2-Sim") {
+            steps {
+                timeout (time: 5, unit: 'MINUTES') {
+                    sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant l2-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
+                }
+            }
+        }
+
         stage ("Start VM -- phy-sim") {
             steps {
                 timeout (time: 5, unit: 'MINUTES') {
@@ -215,7 +223,7 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build eNb-ethernet") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
                             }
                         }
                     }
@@ -224,9 +232,18 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build UE-ethernet") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
                             }
                         }
+                    }
+                }
+                stage ("Build L2-Simulator-eNB") {
+                    steps {
+                        //gitlabCommitStatus(name: "Build UE-ethernet") {
+                            timeout (time: 20, unit: 'MINUTES') {
+                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant l2-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                            }
+                        //}
                     }
                 }
                 stage ("Build physical simulators") {
@@ -311,6 +328,15 @@ pipeline {
                                 sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
                             }
                         }
+                    }
+                }
+                stage ("Test L2 simulator") {
+                    steps {
+                        //gitlabCommitStatus(name: "Test basic-sim") {
+                            timeout (time: 30, unit: 'MINUTES') {
+                                sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant l2-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                            }
+                        //}
                     }
                 }
                 stage ("Build Flexran Controller") {

@@ -52,20 +52,20 @@ load_module ../../targets/bin/ue_ip.ko
 
 if [ "$1" = "UE" ]; then
   echo "bring up $LTEIF interface for UE"
-  ifconfig $LTEIF up
+  sudo ifconfig $LTEIF up
 fi
 
-ip route flush cache
+sudo ip route flush cache
 sleep 1
-sysctl -w net.ipv4.conf.all.log_martians=1
+sudo sysctl -w net.ipv4.conf.all.log_martians=1
 echo "Disabling reverse path filtering"
-sysctl -w net.ipv4.conf.all.rp_filter=0
-ip route flush cache
+sudo sysctl -w net.ipv4.conf.all.rp_filter=0
+sudo ip route flush cache
 
 # Check table 200 lte in /etc/iproute2/rt_tables
 fgrep lte /etc/iproute2/rt_tables  > /dev/null 
 if [ $? -ne 0 ]; then
     echo "200 lte " >> /etc/iproute2/rt_tables
 fi
-ip rule add fwmark 1 table lte
-ip route add default dev $LTEIF table lte
+sudo ip rule add fwmark 1 table lte
+sudo ip route add default dev $LTEIF table lte

@@ -34,7 +34,7 @@
 #include "common/utils/LOG/log.h"
 #include "UTIL/OCG/OCG_vars.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
-
+#include "targets/COMMON/openairinterface5g_limits.h"
 #include "assertions.h"
 
 extern boolean_t pdcp_data_ind(
@@ -403,11 +403,18 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
     key = RLC_COLL_KEY_MBMS_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, mbms_id_p->service_id, mbms_id_p->session_id);
   }
   if (sourceL2Id && destinationL2Id){
-     key = RLC_COLL_KEY_SOURCE_DEST_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, *sourceL2Id, *destinationL2Id, srb_flagP);
+	  LOG_I (RLC, "RLC_COLL_KEY_VALUE: ctxt_pP->module_id: %d, ctxt_pP->rnti: %d, ctxt_pP->enb_flag: %d, rb_idP:%d, srb_flagP: %d \n \n", ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
+	      key = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
+
+	      //Thinh's line originally uncommented
+	      //key = RLC_COLL_KEY_SOURCE_DEST_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, *sourceL2Id, *destinationL2Id, srb_flagP);
+
+
      //key_lcid = RLC_COLL_KEY_LCID_SOURCE_DEST_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, chan_idP, *sourceL2Id, *destinationL2Id, srb_flagP);
   } else
 #endif
   {
+	  LOG_I (RLC, "RLC_COLL_KEY_VALUE: ctxt_pP->module_id: %d, ctxt_pP->rnti: %d, ctxt_pP->enb_flag: %d, rb_idP:%d, srb_flagP: %d \n \n", ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
     key = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
   }
 
@@ -649,7 +656,7 @@ rlc_module_init (void)
   rlc_rrc_data_ind  = NULL;
   rlc_rrc_data_conf = NULL;
 
-  rlc_coll_p = hashtable_create ((LTE_maxDRB + 2) * 16, NULL, rb_free_rlc_union);
+  rlc_coll_p = hashtable_create ((LTE_maxDRB + 2) * NUMBER_OF_UE_MAX, NULL, rb_free_rlc_union);
   //AssertFatal(rlc_coll_p != NULL, "UNRECOVERABLE error, RLC hashtable_create failed");
   if(rlc_coll_p == NULL) {
     LOG_E(RLC, "UNRECOVERABLE error, RLC hashtable_create failed\n");

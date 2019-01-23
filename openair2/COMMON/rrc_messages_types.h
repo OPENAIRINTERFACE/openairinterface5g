@@ -32,11 +32,7 @@
 #include "as_message.h"
 #include "rrc_types.h"
 #include "s1ap_messages_types.h"
-#ifdef CMAKER
   #include "LTE_SystemInformationBlockType2.h"
-#else
-  #include "RRC/LTE/MESSAGES/LTE_SystemInformationBlockType2.h"
-#endif
 #include "LTE_SL-OffsetIndicator-r12.h"
 #include "LTE_SubframeBitmapSL-r12.h"
 #include "LTE_SL-CP-Len-r12.h"
