@@ -42,6 +42,7 @@ ENB_PROCESS_OK = +1
 ENB_PROCESS_SEG_FAULT = -11
 ENB_PROCESS_ASSERTION = -12
 ENB_PROCESS_REALTIME_ISSUE = -13
+ENB_PROCESS_NOLOGFILE_TO_ANALYZE = -14
 HSS_PROCESS_FAILED = -2
 HSS_PROCESS_OK = +2
 MME_PROCESS_FAILED = -3
@@ -243,9 +244,9 @@ class SSHConnection():
 				time.sleep(1)
 			count += 1
 		if copy_status:
-			pass
+			return 0
 		else:
-			sys.exit('SCP failed')
+			return -1
 
 	def copyout(self, ipaddress, username, password, source, destination):
 		count = 0
@@ -466,8 +467,9 @@ class SSHConnection():
 					self.close()
 					time.sleep(1)
 					pcap_log_file = 'enb_' + self.testCase_id + '_s1log.pcap'
-					self.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, '/tmp/' + pcap_log_file, '.')
-					self.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, pcap_log_file, self.eNBSourceCodePath + '/cmake_targets/.')
+					copyin_res = self.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, '/tmp/' + pcap_log_file, '.')
+					if (copyin_res == 0):
+						self.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, pcap_log_file, self.eNBSourceCodePath + '/cmake_targets/.')
 				sys.exit(1)
 			else:
 				self.command('stdbuf -o0 cat enb_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync"', '\$', 4)
@@ -1742,6 +1744,7 @@ class SSHConnection():
 		result = re.search('lte-softmodem', str(self.ssh.before))
 		if result is not None:
 			self.command('echo ' + self.eNBPassword + ' | sudo -S killall --signal SIGKILL lte-softmodem || true', '\$', 5)
+			time.sleep(5)
 		self.close()
 		# If tracer options is on, stopping tshark on EPC side
 		result = re.search('T_stdout', str(self.Initialize_eNB_args))
@@ -1774,7 +1777,13 @@ class SSHConnection():
 		else:
 			result = re.search('enb_', str(self.eNBLogFile))
 			if result is not None:
-				self.copyin(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, self.eNBSourceCodePath + '/cmake_targets/' + self.eNBLogFile, '.')
+				copyin_res = self.copyin(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, self.eNBSourceCodePath + '/cmake_targets/' + self.eNBLogFile, '.')
+				if (copyin_res == -1):
+					logging.debug('\u001B[1;37;41m Could not copy eNB logfile to analyze it! \u001B[0m')
+					self.htmleNBFailureMsg = 'Could not copy eNB logfile to analyze it!'
+					self.CreateHtmlTestRow('N/A', 'KO', ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
+					self.eNBLogFile = ''
+					return
 				logging.debug('\u001B[1m Analyzing eNB logfile \u001B[0m')
 				logStatus = self.AnalyzeLogFile_eNB(self.eNBLogFile)
 				if (logStatus < 0):
@@ -2190,7 +2199,9 @@ class SSHConnection():
 				elif (processesStatus == ENB_PROCESS_ASSERTION):
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - eNB process ended in Assertion</td>\n')
 				elif (processesStatus == ENB_PROCESS_REALTIME_ISSUE):
-					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - eNB process faced Real Time issue(s)/td>\n')
+					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - eNB process faced Real Time issue(s)</td>\n')
+				elif (processesStatus == ENB_PROCESS_NOLOGFILE_TO_ANALYZE):
+					self.htmlFile.write('        <td bgcolor = "orange" >OK</td>\n')
 				elif (processesStatus == HSS_PROCESS_FAILED):
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - HSS process not found</td>\n')
 				elif (processesStatus == MME_PROCESS_FAILED):
@@ -2209,7 +2220,7 @@ class SSHConnection():
 				if result is not None:
 					cellBgColor = 'red'
 				else:
-					result = re.search('showed|Reestablishment', self.htmleNBFailureMsg)
+					result = re.search('showed|Reestablishment|Could not copy eNB logfile', self.htmleNBFailureMsg)
 					if result is not None:
 						cellBgColor = 'orange'
 				self.htmlFile.write('        <td bgcolor = "' + cellBgColor + '" colspan=' + str(self.htmlUEConnected) + '><pre style="background-color:' +
