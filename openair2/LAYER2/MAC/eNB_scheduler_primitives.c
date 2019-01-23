@@ -1270,6 +1270,7 @@ program_dlsch_acknak(module_id_t module_idP,
   if (harq_information) {
     fill_nfapi_harq_information(module_idP, CC_idP, rnti, harq_information, cce_idx);
   }
+  return;
 }
 
 uint8_t get_V_UL_DAI(module_id_t module_idP, int CC_idP, uint16_t rntiP,sub_frame_t subframeP) {
@@ -1388,7 +1389,8 @@ fill_nfapi_harq_information(module_id_t                      module_idP,
                             int                              CC_idP,
                             uint16_t                         rntiP,
                             nfapi_ul_config_harq_information *harq_information,
-                            uint8_t                          cce_idxP) {
+                            uint8_t                          cce_idxP) 
+{
   eNB_MAC_INST *eNB     = RC.mac[module_idP];
   COMMON_channels_t *cc = &eNB->common_channels[CC_idP];
   UE_list_t *UE_list    = &eNB->UE_list;
@@ -1399,7 +1401,7 @@ fill_nfapi_harq_information(module_id_t                      module_idP,
 
   harq_information->harq_information_rel11.tl.tag        = NFAPI_UL_CONFIG_REQUEST_HARQ_INFORMATION_REL11_TAG;
   harq_information->harq_information_rel11.num_ant_ports = 1;
-  
+
   LTE_PhysicalConfigDedicated_t *physicalConfigDedicated = UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated;
   struct LTE_PUCCH_ConfigDedicated *pucch_ConfigDedicated = NULL;
   if (physicalConfigDedicated != NULL) pucch_ConfigDedicated = physicalConfigDedicated->pucch_ConfigDedicated;
@@ -1572,7 +1574,8 @@ fill_nfapi_tx_req(nfapi_tx_request_body_t *tx_req_body,
                   uint8_t                 *pdu) {
   nfapi_tx_request_pdu_t *TX_req = &tx_req_body->tx_pdu_list[tx_req_body->number_of_pdus];
   LOG_D(MAC, "Filling TX_req %d for pdu length %d\n",
-        tx_req_body->number_of_pdus, pdu_length);
+        tx_req_body->number_of_pdus, 
+        pdu_length);
   TX_req->pdu_length                 = pdu_length;
   TX_req->pdu_index                  = pdu_index;
   TX_req->num_segments               = 1;
@@ -2323,7 +2326,8 @@ UE_is_to_be_scheduled(module_id_t module_idP, int CC_id, uint8_t UE_id) {
 uint8_t
 get_tmode(module_id_t module_idP,
           int CC_idP,
-          int UE_idP) {
+          int UE_idP) 
+{
   eNB_MAC_INST *eNB = RC.mac[module_idP];
   COMMON_channels_t *cc = &eNB->common_channels[CC_idP];
   LTE_PhysicalConfigDedicated_t *physicalConfigDedicated = eNB->UE_list.physicalConfigDedicated[CC_idP][UE_idP];
@@ -2516,7 +2520,8 @@ get_bw_index(module_id_t module_id,
 
 int
 get_min_rb_unit(module_id_t module_id,
-                uint8_t CC_id) {
+                uint8_t CC_id) 
+{
   int min_rb_unit = 0;
   int N_RB_DL = to_prb(RC.mac[module_id]->common_channels[CC_id].mib->message.dl_Bandwidth);
 
@@ -2550,12 +2555,21 @@ get_min_rb_unit(module_id_t module_id,
 }
 
 uint32_t
-allocate_prbs_sub(int nb_rb, int N_RB_DL, int N_RBG, uint8_t *rballoc) {
+allocate_prbs_sub(int nb_rb, 
+                  int N_RB_DL, 
+                  int N_RBG, 
+                  uint8_t *rballoc) 
+{
   int check = 0;    //check1=0,check2=0;
   uint32_t rballoc_dci = 0;
   //uint8_t number_of_subbands=13;
   LOG_T(MAC, "*****Check1RBALLOC****: %d%d%d%d (nb_rb %d,N_RBG %d)\n",
-        rballoc[3], rballoc[2], rballoc[1], rballoc[0], nb_rb, N_RBG);
+        rballoc[3], 
+        rballoc[2], 
+        rballoc[1], 
+        rballoc[0], 
+        nb_rb, 
+        N_RBG);
 
   while ((nb_rb > 0) && (check < N_RBG)) {
     //printf("rballoc[%d] %d\n",check,rballoc[check]);
@@ -2592,12 +2606,13 @@ allocate_prbs_sub(int nb_rb, int N_RB_DL, int N_RBG, uint8_t *rballoc) {
     }
 
     //      printf("rb_alloc %x\n",rballoc_dci);
-    check = check + 1;
+    check++;
     //    check1 = check1+2;
   }
 
   // rballoc_dci = (rballoc_dci)&(0x1fff);
-  LOG_T(MAC, "*********RBALLOC : %x\n", rballoc_dci);
+  LOG_T(MAC, "*********RBALLOC : %x\n", 
+        rballoc_dci);
   // exit(-1);
   return (rballoc_dci);
 }
