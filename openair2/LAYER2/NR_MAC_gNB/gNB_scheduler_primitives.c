@@ -110,7 +110,19 @@ uint8_t nr_ss_first_symb_idx_scs_240_120_set1_mux2[6] = {0,1,2,3,0,1};
   // Mux pattern type 3
 uint8_t nr_ss_first_symb_idx_scs_120_120_mux3[4] = {4,8,2,6};
 
+/// Search space max values indexed by scs
+uint8_t nr_max_number_of_candidates_per_slot[4] = {44, 36, 22, 20};
+uint8_t nr_max_number_of_cces_per_slot[4] = {56, 56, 48, 32};
 
+static inline uint8_t get_max_candidates(uint8_t scs) {
+  AssertFatal(scs<4, "Invalid PDCCH subcarrier spacing %d\n", scs);
+  return (nr_max_number_of_candidates_per_slot[scs]);
+}
+
+static inline uint8_t get_max_cces(uint8_t scs) {
+  AssertFatal(scs<4, "Invalid PDCCH subcarrier spacing %d\n", scs);
+  return (nr_max_number_of_cces_per_slot[scs]);
+} 
 
 int is_nr_UL_slot(NR_COMMON_channels_t * ccP, int slot){
 
@@ -332,11 +344,166 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* p
 
 }
 
-void nr_configure_css_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
+void nr_configure_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
                                             nfapi_nr_coreset_t* coreset,
-                                            nfapi_nr_search_space_t* search_space) {
+                                            nfapi_nr_search_space_t* search_space,
+                                            nfapi_nr_config_request_t cfg) {
+/// coreset
 
+  //ControlResourceSetId
+  pdcch_params->config_type = (coreset->coreset_id==0)?NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG_CSET_0: NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG;
   
+  //frequencyDomainResources
+  uint8_t count=0, start=0, start_set=0;
+  uint64_t bitmap = coreset->frequency_domain_resources;
+  for (int i=0; i<64; i++)
+    if ((bitmap>>(63-i))&1) {
+      count++;
+      if (!start_set)
+        start = i;
+      start_set = 1;
+    }
+  pdcch_params->rb_offset = 6*start;
+  pdcch_params->n_rb = 6*count;
+
+  //duration
+  pdcch_params->n_symb = coreset->duration;
+
+  //cce-REG-MappingType
+  pdcch_params->cr_mapping_type = coreset->cce_reg_mapping_type;
+  if (pdcch_params->cr_mapping_type == NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED) {
+    pdcch_params->reg_bundle_size = coreset->reg_bundle_size;
+    pdcch_params->interleaver_size = coreset->interleaver_size;
+    pdcch_params->shift_index = coreset->shift_index;
+  }
+
+  //precoderGranularity
+  pdcch_params->precoder_granularity = coreset->precoder_granularity;
+
+  //TCI states
+  // PDCCH params does not yet include information about TCI and QCL (needed for DCI 1.1 and 0.1)
+
+  //pdcch-DMRS-ScramblingID
+  pdcch_params->scrambling_id = coreset->dmrs_scrambling_id;
+  
+
+/// SearchSpace
+
+  // first symbol and duration
+  //AssertFatal(pdcch_scs==kHz15, "PDCCH SCS above 15kHz not allowed if a symbol above 2 is monitored");
+  for (int i=0; i<get_symbolsperslot(&cfg); i++)
+    if ((search_space->monitoring_symbols_in_slot>>(15-i))&1)
+      pdcch_params->first_symbol=i;
+
+/*
+  //searchSpaceId
+  AssertFatal(search_space->search_space_id<40, "Search space index out of range %d\n", search_space->search_space_id);
+
+  //controlResourceSetId
+
+  //monitoringSlotPeriodicityAndOffset
+
+  //duration
+  pdcch_params->nb_ss_sets_per_slot = search_space->duration;
+
+
+  //monitoringSymbolsWithinSlot
+  pdcch_params->first_symbol = search_space->monitoring_symbols_in_slot;
+
+  //nrofCandidates
+  pdcch_params->aggregation_level = (uint8_t)number_of_candidates[NFAPI_NR_MAX_NB_CCE_AGGREGATION_LEVELS - 1];
+
+  //searchSpaceType
+  pdcch_params->search_space_type = search_space->search_space_type;
+  //Common_CSS
+  if (pdcch_params->search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_COMMON){
+    switch(search_space->css_formats_0_0_and_1_0){
+        case NFAPI_NR_RNTI_C:
+          pdcch_params->rnti_type = NFAPI_NR_RNTI_C;
+          break;
+        case NFAPI_NR_RNTI_CS:
+          pdcch_params->rnti_type = NFAPI_NR_RNTI_CS;
+          break;
+        case NFAPI_NR_RNTI_SP_CSI:
+          pdcch_params->rnti_type = NFAPI_NR_RNTI_SP_CSI;
+          break;
+        case NFAPI_NR_RNTI_RA:
+          pdcch_params->rnti_type = NFAPI_NR_RNTI_RA;
+          break;
+        case NFAPI_NR_RNTI_TC:
+          pdcch_params->rnti_type = NFAPI_NR_RNTI_TC;
+          break;
+        case NFAPI_NR_RNTI_P:
+          pdcch_params->rnti_type = NFAPI_NR_RNTI_P;
+          break;
+        case NFAPI_NR_RNTI_SI:
+          pdcch_params->rnti_type = NFAPI_NR_RNTI_SI;
+          break;
+        }
+
+    switch (search_space->css_format_2_0){
+        case NFAPI_NR_RNTI_SFI:
+          pdcch_params->rnti_type = NFAPI_NR_RNTI_SFI;
+          break;
+        }   
+
+    switch (search_space->css_format_2_1){
+        case NFAPI_NR_RNTI_INT:
+          pdcch_params->rnti_type = NFAPI_NR_RNTI_INT;
+          break;
+        }  
+
+    switch (search_space->css_format_2_2){
+        case NFAPI_NR_RNTI_TPC_PUSCH:
+          pdcch_params->rnti_type = NFAPI_NR_RNTI_TPC_PUSCH;
+          break;
+        case NFAPI_NR_RNTI_TPC_PUCCH:
+          pdcch_params->rnti_type = NFAPI_NR_RNTI_TPC_PUCCH;
+          break;
+        }  
+
+    switch (search_space->css_format_2_3){
+        case NFAPI_NR_RNTI_TPC_SRS:
+          pdcch_params->rnti_type = NFAPI_NR_RNTI_TPC_SRS;
+          break;
+        } 
+  }
+
+  //Ue_Specific_USS
+  if (pdcch_params->search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC){
+    switch (search_space->uss_dci_formats){
+        case NFAPI_NR_RNTI_C:
+          pdcch_params->rnti_type = NFAPI_NR_RNTI_C;
+          break;
+        case NFAPI_NR_RNTI_CS:
+          pdcch_params->rnti_type = NFAPI_NR_RNTI_CS;
+          break;
+        case NFAPI_NR_RNTI_SP_CSI:
+          pdcch_params->rnti_type = NFAPI_NR_RNTI_SP_CSI;
+          break;
+        }
+  }
+*/
+}
+
+int nr_is_dci_opportunity(nfapi_nr_search_space_t search_space,
+                                nfapi_nr_coreset_t coreset,
+                                uint16_t frame,
+                                uint16_t slot,
+                                nfapi_nr_config_request_t cfg) {
+
+  AssertFatal(search_space.coreset_id==coreset.coreset_id, "Invalid association of coreset(%d) and search space(%d)\n",
+  search_space.search_space_id, coreset.coreset_id);
+
+  uint8_t is_dci_opportunity=0;
+  uint16_t Ks=search_space.slot_monitoring_periodicity;
+  uint16_t Os=search_space.slot_monitoring_offset;
+  uint8_t Ts=search_space.duration;
+
+  if (((frame*get_spf(&cfg) + slot - Os)%Ks)==Ts)
+    is_dci_opportunity=1;
+
+  return is_dci_opportunity;
 }
 
 int get_dlscs(nfapi_nr_config_request_t *cfg) {
@@ -361,5 +528,11 @@ int get_spf(nfapi_nr_config_request_t *cfg) {
 int to_absslot(nfapi_nr_config_request_t *cfg,int frame,int slot) {
 
   return(get_spf(cfg)*frame) + slot; 
+
+}
+
+int get_symbolsperslot(nfapi_nr_config_request_t *cfg) {
+
+  return ((cfg->subframe_config.dl_cyclic_prefix_type.value==NFAPI_CP_EXTENDED)?12:14);
 
 }

@@ -13,6 +13,7 @@
 
 
 #define NFAPI_NR_MAX_NB_CCE_AGGREGATION_LEVELS 5
+#define NFAPI_NR_MAX_NB_TCI_STATES_PDCCH 64
 
 // Extension to the generic structures for single tlv values
 typedef struct {
@@ -356,13 +357,39 @@ typedef enum {
 
 typedef enum {
   NFAPI_NR_CSET_CONFIG_MIB_SIB1=0,
-  NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG
+  NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG, // implicit assumption of coreset Id other than 0
+  NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG_CSET_0
 } nfapi_nr_coreset_config_type_e;
 
 typedef enum {
   NFAPI_NR_CSET_SAME_AS_REG_BUNDLE=0,
   NFAPI_NR_CSET_ALL_CONTIGUOUS_RBS
 } nfapi_nr_coreset_precoder_granularity_type_e;
+
+typedef enum {
+  NFAPI_NR_QCL_TYPE_A=0,
+  NFAPI_NR_QCL_TYPE_B,
+  NFAPI_NR_QCL_TYPE_C,
+  NFAPI_NR_QCL_TYPE_D
+} nfapi_nr_qcl_type_e;
+
+typedef enum {
+  NFAPI_NR_SS_PERIODICITY_SL1=1,
+  NFAPI_NR_SS_PERIODICITY_SL2=2,
+  NFAPI_NR_SS_PERIODICITY_SL4=4,
+  NFAPI_NR_SS_PERIODICITY_SL5=5,
+  NFAPI_NR_SS_PERIODICITY_SL8=8,
+  NFAPI_NR_SS_PERIODICITY_SL10=10,
+  NFAPI_NR_SS_PERIODICITY_SL16=16,
+  NFAPI_NR_SS_PERIODICITY_SL20=20,
+  NFAPI_NR_SS_PERIODICITY_SL40=40,
+  NFAPI_NR_SS_PERIODICITY_SL80=80,
+  NFAPI_NR_SS_PERIODICITY_SL160=160,
+  NFAPI_NR_SS_PERIODICITY_SL320=320,
+  NFAPI_NR_SS_PERIODICITY_SL640=640,
+  NFAPI_NR_SS_PERIODICITY_SL1280=1280,
+  NFAPI_NR_SS_PERIODICITY_SL2560=2560
+} nfapi_nr_search_space_monitoring_periodicity_e;
 
 typedef enum {
   NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_A=0,
@@ -496,9 +523,9 @@ typedef struct{
   uint8_t   css_format_2_2;
   uint8_t   css_format_2_3;
   uint8_t   uss_dci_formats;
-  uint8_t   srs_monitoring_periodicity;
-  uint8_t   slot_monitoring_periodicity;
-  uint8_t   slot_monitoring_offset;
+  uint16_t   srs_monitoring_periodicity;
+  uint16_t   slot_monitoring_periodicity;
+  uint16_t   slot_monitoring_offset;
   uint16_t  monitoring_symbols_in_slot;
   uint16_t  number_of_candidates[NFAPI_NR_MAX_NB_CCE_AGGREGATION_LEVELS];
 } nfapi_nr_search_space_t;
