@@ -166,6 +166,7 @@ int config_check_unknown_cmdlineopt(char *prefix) {
   int unknowndetected=0;
   char testprefix[CONFIG_MAXOPTLENGTH];
   int finalcheck = 0;
+  memset(testprefix,0,sizeof(testprefix));
 
   memset(testprefix,0,sizeof(testprefix));
   if (prefix != NULL) {
