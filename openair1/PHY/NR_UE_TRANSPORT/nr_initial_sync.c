@@ -330,13 +330,13 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
     printf("[UE %d] Frame %d Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",
 	  ue->Mod_id,
 	  ue->proc.proc_rxtx[0].frame_rx,
-	  openair0_cfg[0].rx_freq[0]-ue->common_vars.freq_offset,
+	  openair0_cfg[0].rx_freq[0]+ue->common_vars.freq_offset,
 	  ue->common_vars.freq_offset);
 #  else
     LOG_I(PHY, "[UE %d] Frame %d Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",
 	  ue->Mod_id,
 	  ue->proc.proc_rxtx[0].frame_rx,
-	  openair0_cfg[0].rx_freq[0]-ue->common_vars.freq_offset,
+	  openair0_cfg[0].rx_freq[0]+ue->common_vars.freq_offset,
 	  ue->common_vars.freq_offset);
 #  endif
 #endif

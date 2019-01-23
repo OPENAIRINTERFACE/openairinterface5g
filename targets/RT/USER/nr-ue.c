@@ -458,7 +458,6 @@ static void *UE_thread_synch(void *arg) {
                     // rerun with new cell parameters and frequency-offset
                     for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
                         openair0_cfg[UE->rf_map.card].rx_gain[UE->rf_map.chain+i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
-			if (UE->UE_scan_carrier == 1) {
 			  if (freq_offset >= 0)
                             openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] += abs(freq_offset);
 			  else
@@ -466,8 +465,6 @@ static void *UE_thread_synch(void *arg) {
 			  openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] =
                             openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i]+uplink_frequency_offset[CC_id][i];
 			  downlink_frequency[CC_id][i] = openair0_cfg[CC_id].rx_freq[i];
-			  //freq_offset=0;
-			}
 		    }
 
                     // reconfigure for potentially different bandwidth
