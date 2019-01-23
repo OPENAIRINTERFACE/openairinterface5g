@@ -150,6 +150,7 @@
 {"emul-iface",                 CONFIG_HLP_EMULIFACE,   0,               strptr:&emul_iface,		    defstrval:"lo",       TYPE_STRING,   100}, \
 {"L2-emul",                    NULL,  		       0,               u8ptr:&nfapi_mode,		    defuintval:3,         TYPE_UINT8,	 0},   \
 {"num-ues",     	       NULL,                   0,               u8ptr:&(NB_UE_INST),		    defuintval:1,         TYPE_UINT8,	 0},   \
+{"nums_ue_thread",             NULL,                   0,               u16ptr:&(NB_THREAD_INST),           defuintval:1,         TYPE_UINT16,   0},   \
 {"r"  ,                        CONFIG_HLP_PRB,         0,               u8ptr:&(frame_parms[0]->N_RB_DL),   defintval:25,         TYPE_UINT8,    0},   \
 {"dlsch-demod-shift",          CONFIG_HLP_DLSHIFT,     0,		iptr:(int32_t *)&dlsch_demod_shift, defintval:0,          TYPE_INT,	 0},   \
 {"usrp-args",                  CONFIG_HLP_USRP_ARGS,   0,               strptr:(char **)&usrp_args,         defstrval:"type=b200",TYPE_STRING,   0},   \
@@ -158,7 +159,7 @@
 {"clock",                      CONFIG_HLP_CLK,         0,               uptr:&clock_source,                 defintval:0,          TYPE_UINT,     0},   \
 {"s" ,                         CONFIG_HLP_SNR,         0,               iptr:&snr_dB,                       defintval:25,         TYPE_INT,      0},   \
 {"T" ,                         CONFIG_HLP_TDD,         PARAMFLAG_BOOL,  iptr:&tddflag,                      defintval:0,          TYPE_INT,      0},   \
-{"A",                          CONFIG_HLP_TADV,        0,               iptr:&(timingadv),                    defintval:0,          TYPE_INT,      0}    \
+{"A",                          CONFIG_HLP_TADV,        0,               iptr:&(timingadv),                  defintval:0,          TYPE_INT,      0}    \
 }
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------*/
@@ -306,6 +307,7 @@ extern void kill_eNB_proc(int inst);
 // In lte-ru.c
 extern void init_RU(char*);
 extern void stop_ru(RU_t *ru);
+extern void init_ru_vnf(void);
 extern void init_RU_proc(RU_t *ru);
 extern void stop_RU(int nb_ru);
 extern void kill_RU_proc(RU_t *ru);

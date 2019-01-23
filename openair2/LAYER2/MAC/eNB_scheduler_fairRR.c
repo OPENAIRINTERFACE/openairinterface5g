@@ -594,6 +594,7 @@ void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
   LTE_eNB_UE_stats *eNB_UE_stats2 = NULL;
   UE_sched_ctrl *ue_sched_ctl1, *ue_sched_ctl2;
 #endif
+  memset(rballoc_sub[0],0,(MAX_NUM_CCs)*(N_RBG_MAX)*sizeof(unsigned char));
   memset(min_rb_unit,0,sizeof(min_rb_unit));
 
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {

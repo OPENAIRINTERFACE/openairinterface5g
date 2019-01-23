@@ -57,9 +57,12 @@ extern int config_assign_ipv4addr(paramdef_t *cfgoptions, char *ipv4addr);
 
 /* apis to get/check parameters, to be used by oai modules, at configuration time */
 #define CONFIG_CHECKALLSECTIONS "ALLSECTIONS"
-extern int config_check_cmdlineopt(char *prefix);
+extern int config_check_unknown_cmdlineopt(char *prefix);
 extern int config_get(paramdef_t *params,int numparams, char *prefix);
 extern int config_getlist(paramlist_def_t *ParamList, paramdef_t *params, int numparams, char *prefix);
+
+/* apis to set some of the paramdef_t fields before using the get/getlist api's */
+extern void config_set_checkfunctions(paramdef_t *params, checkedparam_t *checkfunctions, int numparams);
 
 /* apis to retrieve parameters info after calling get or getlist functions */
 extern int config_isparamset(paramdef_t *params,int paramidx);

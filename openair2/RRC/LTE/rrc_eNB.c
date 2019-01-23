@@ -115,9 +115,6 @@ extern RAN_CONTEXT_t RC;
 #endif
 extern eNB_MAC_INST                *eNB_mac_inst;
 extern UE_MAC_INST                 *UE_mac_inst;
-#ifdef BIGPHYSAREA
-  extern void                        *bigphys_malloc(int);
-#endif
 
 extern uint16_t                     two_tier_hexagonal_cellIds[7];
 

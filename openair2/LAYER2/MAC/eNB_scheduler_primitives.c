@@ -61,6 +61,7 @@ extern uint16_t frame_cnt;
 #include "SCHED/sched_common.h"
 
 extern RAN_CONTEXT_t RC;
+extern uint8_t nfapi_mode;
 
 int choose(int n, int k) {
   int res = 1;
@@ -1332,6 +1333,7 @@ fill_nfapi_ulsch_harq_information(module_id_t                            module_
   */
 #endif
   harq_information->harq_information_rel10.delta_offset_harq = puschConfigDedicated->betaOffset_ACK_Index;
+  harq_information->harq_information_rel10.tl.tag = NFAPI_UL_CONFIG_REQUEST_ULSCH_HARQ_INFORMATION_REL10_TAG;
   AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->pucch_ConfigDedicated != NULL,
               "pucch_ConfigDedicated is null!\n");
 
@@ -3640,40 +3642,52 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
     LOG_D(MAC,"frame %d subframe %d harq_pid %d mode %d tmode[0] %d num_ack_nak %d round %d\n",frameP,subframeP,harq_pid,harq_indication_fdd->mode,tmode[0],num_ack_nak,sched_ctl->round[CC_idP][harq_pid]);
 
     switch (harq_indication_fdd->mode) {
-      case 0:   // Format 1a/b (10.1.2.1)
-        AssertFatal(numCC == 1,
-                    "numCC %d > 1, should not be using Format1a/b\n",
-                    numCC);
-
-        if (tmode[0] == 1 || tmode[0] == 2 || tmode[0] == 5 || tmode[0] == 6 || tmode[0] == 7) {  // NOTE: have to handle the case of TM9-10 with 1 antenna port
+      case 0:	// Format 1a/b (10.1.2.1)
+        AssertFatal(numCC == 1, "numCC %d > 1, should not be using Format1a/b\n", numCC);
+        if (tmode[0] == 1 || tmode[0] == 2 || tmode[0] == 5 || tmode[0] == 6 || tmode[0] == 7) {	// NOTE: have to handle the case of TM9-10 with 1 antenna port
           // single ACK/NAK bit
-          AssertFatal(num_ack_nak == 1,
-                      "num_ack_nak %d > 1 for 1 CC and single-layer transmission frame:%d subframe:%d\n",
-                      num_ack_nak,frameP,subframeP);
-          AssertFatal(sched_ctl->round[CC_idP][harq_pid] < 8,
-                      "Got ACK/NAK for inactive harq_pid %d for UE %d/%x\n",
-                      harq_pid, UE_id, rnti);
-          AssertFatal(pdu[0] == 1 || pdu[0] == 2
-                      || pdu[0] == 4,
-                      "Received ACK/NAK %d which is not 1 or 2 for harq_pid %d from UE %d/%x\n",
-                      pdu[0], harq_pid, UE_id, rnti);
-          LOG_D(MAC, "Received %d for harq_pid %d\n", pdu[0],
-                harq_pid);
+          AssertFatal(num_ack_nak == 1, "num_ack_nak %d > 1 for 1 CC and single-layer transmission frame:%d subframe:%d\n", num_ack_nak,frameP,subframeP);
+
+          // In case of nFAPI, sometimes timing of eNB and UE become different.
+          // So if nfapi_mode == 2(VNF) , this function don't check assertion to avoid process exit.
+          if (nfapi_mode != 2) {
+            AssertFatal(sched_ctl->round[CC_idP][harq_pid] < 8, "Got ACK/NAK for inactive harq_pid %d for UE %d/%x\n",
+                  harq_pid, 
+                  UE_id, 
+                  rnti);
+          } else {
+            if (sched_ctl->round[CC_idP][harq_pid] == 8) {
+              LOG_E(MAC,"Got ACK/NAK for inactive harq_pid %d for UE %d/%x\n", harq_pid, UE_id, rnti);
+              return;
+            }
+          }
+
+          AssertFatal(pdu[0] == 1 || pdu[0] == 2 || pdu[0] == 4, "Received ACK/NAK %d which is not 1 or 2 for harq_pid %d from UE %d/%x\n",
+                pdu[0],
+                harq_pid,
+                UE_id,
+                rnti);
+
+          LOG_D(MAC, "Received %d for harq_pid %d\n", pdu[0], harq_pid);
+
           RA_t *ra = &RC.mac[mod_idP]->common_channels[CC_idP].ra[0];
 
           for (uint8_t ra_i = 0; ra_i < NB_RA_PROC_MAX; ra_i++) {
-            if ((ra[ra_i].rnti == rnti) && (ra[ra_i].state == MSGCRNTI_ACK) &&
-                (ra[ra_i].crnti_harq_pid == harq_pid)) {
-              LOG_D(MAC,"CRNTI Reconfiguration: ACK %d rnti %x round %d frame %d subframe %d \n",pdu[0],rnti,sched_ctl->round[CC_idP][harq_pid],frameP,subframeP);
+            if ((ra[ra_i].rnti == rnti) && (ra[ra_i].state == MSGCRNTI_ACK) &&  (ra[ra_i].crnti_harq_pid == harq_pid)) {
+              LOG_D(MAC,"CRNTI Reconfiguration: ACK %d rnti %x round %d frame %d subframe %d \n",
+                    pdu[0],
+                    rnti,
+                    sched_ctl->round[CC_idP][harq_pid],
+                    frameP,subframeP);
 
-              if(pdu[0] == 1) {
+              if (pdu[0] == 1) {
                 cancel_ra_proc(mod_idP, CC_idP, frameP, ra[ra_i].rnti);
               } else {
                 if(sched_ctl->round[CC_idP][harq_pid] == 7) {
                   cancel_ra_proc(mod_idP, CC_idP, frameP, ra[ra_i].rnti);
                 }
               }
-
+              
               break;
             }
           }
