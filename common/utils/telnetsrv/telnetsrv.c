@@ -357,7 +357,6 @@ int setgetvar(int moduleindex,char getorset,char *params) {
   memset(varname,0,sizeof(varname));
   n = sscanf(params,"%19s %ms",varname,&varval);
 
-
   for ( i=0 ; telnetparams.CmdParsers[moduleindex].var[i].varvalptr != NULL ; i++) {
     if ( strncasecmp(telnetparams.CmdParsers[moduleindex].var[i].varname,varname,strlen(telnetparams.CmdParsers[moduleindex].var[i].varname)) == 0) {
       if (n > 0 && (getorset == 'g' || getorset == 'G')) {
@@ -477,7 +476,6 @@ int process_command(char *buf) {
   bufbck=strdup(buf);
   rt=CMDSTATUS_NOTFOUND;
   j = sscanf(buf,"%9s %9s %2000[^\t\n]",modulename,cmd,cmdb);
-
 
   if (telnetparams.telnetdbg > 0)
     printf("process_command: %i words, module=%s cmd=%s, parameters= %s\n",j,modulename,cmd,cmdb);
