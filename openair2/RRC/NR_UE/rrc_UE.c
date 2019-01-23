@@ -322,25 +322,24 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
                                                    (const void *)bufferP,
                                                    buffer_len );
 
-    if(bcch_message->message.choice.mib->systemFrameNumber.buf != 0){
-        if ((dec_rval.code != RC_OK) || (dec_rval.consumed == 0)) {
-            printf("NR_CellGroupConfig decode error\n");
-            for (i=0; i<buffer_len; i++){
-                printf("%02x ",bufferP[i]);
-            }
-            printf("\n");
-            // free the memory
-            SEQUENCE_free( &asn_DEF_NR_BCCH_BCH_Message, (void *)bcch_message, 1 );
-            return -1;
-	    }
-
-	    //  link to rrc instance
-	    mib = bcch_message->message.choice.mib;
-	    //memcpy( (void *)mib,
-	    //    (void *)&bcch_message->message.choice.mib,
-	    //    sizeof(NR_MIB_t) );
-
-	    nr_rrc_mac_config_req_ue( 0, 0, 0, mib, NULL, NULL, NULL);
+    if ((dec_rval.code != RC_OK) || (dec_rval.consumed == 0)) {
+      printf("NR_BCCH_BCH decode error\n");
+      for (i=0; i<buffer_len; i++){
+	printf("%02x ",bufferP[i]);
+      }
+      printf("\n");
+      // free the memory
+      SEQUENCE_free( &asn_DEF_NR_BCCH_BCH_Message, (void *)bcch_message, 1 );
+      return -1;
+    }
+    else {
+      //  link to rrc instance
+      mib = bcch_message->message.choice.mib;
+      //memcpy( (void *)mib,
+      //    (void *)&bcch_message->message.choice.mib,
+      //    sizeof(NR_MIB_t) );
+      
+      nr_rrc_mac_config_req_ue( 0, 0, 0, mib, NULL, NULL, NULL);
     }
     
     return 0;

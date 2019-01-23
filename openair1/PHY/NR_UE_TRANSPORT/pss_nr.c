@@ -803,25 +803,47 @@ static inline int64_t abs64(int64_t x)
 
 #define DOT_PRODUCT_SCALING_SHIFT    (17)
 
+int max3(int64_t a, int64_t b, int64_t c) {
+  if (a>b) {
+    if (a>c) {
+      return(0);
+    }
+    else {
+      return(2);
+    }
+  }
+  else {
+    if (b>c) {
+      return(1);
+    }
+    else {
+      return(2);
+    }
+  }
+}
+    
+
 int pss_search_time_nr(int **rxdata, ///rx data in time domain
                        NR_DL_FRAME_PARMS *frame_parms,
                        int *eNB_id)
 {
-  unsigned int n, ar, peak_position, pss_source;
-  int64_t peak_value;
+  uint8_t L_max = 4;
+  unsigned int m, n, ar, n_peaks=0;
+  unsigned int peak_position[3*L_max], pss_source[3*L_max];
+  int64_t peak_value, threshold;
   int64_t result;
   int64_t avg[NUMBER_PSS_SEQUENCE];
-
+  uint8_t found_peak=0;
 
   unsigned int length = (NR_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_subframe);  /* 1 frame for now, it should be 2 TODO_NR */
 
   AssertFatal(length>0,"illegal length %d\n",length);
   for (int i = 0; i < NUMBER_PSS_SEQUENCE; i++) AssertFatal(pss_corr_ue[i] != NULL,"pss_corr_ue[%d] not yet allocated! Exiting.\n", i);
 
-    
-  peak_value = 0;
-  peak_position = 0;
-  pss_source = 0;
+  for (int i=0;i<4;i++) {
+    peak_position[i] = length; //max possible value
+    pss_source[i] = 0;
+  }
 
   int maxval=0;
   for (int i=0;i<2*(frame_parms->ofdm_symbol_size);i++) {
@@ -844,9 +866,9 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
     memset(pss_corr_ue[pss_index],0,length*sizeof(int64_t)); 
   }
 
-  for (n=0; n < length; n+=4) { //
+  for (int pss_index = 0; pss_index < NUMBER_PSS_SEQUENCE; pss_index++) {
 
-    for (int pss_index = 0; pss_index < NUMBER_PSS_SEQUENCE; pss_index++) {
+    for (n=0; n < length; n+=4) { //
 
       if ( n < (length - frame_parms->ofdm_symbol_size)) {
 
@@ -870,27 +892,40 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
 
       /* calculate the absolute value of sync_corr[n] */
       avg[pss_index]+=pss_corr_ue[pss_index][n];
-      if (pss_corr_ue[pss_index][n] > peak_value) {
-        peak_value = pss_corr_ue[pss_index][n];
-        peak_position = n;
-        pss_source = pss_index;
-
-#ifdef DEBUG_PSS_NR
-        printf("pss_index %d: n %6d peak_value %15llu\n", pss_index, n, (unsigned long long)pss_corr_ue[pss_index][n]);
-#endif
-      }
+    }
+  
+    avg[pss_index]/=(length/4);
+  }
+  
+  threshold = 10*avg[max3(avg[0],avg[1],avg[2])];
+  peak_value = threshold;
+  
+  for (n=0; n < length; n+=4) {
+    
+    m = max3(pss_corr_ue[0][n],pss_corr_ue[1][n],pss_corr_ue[2][n]);
+    
+    if (pss_corr_ue[m][n] > peak_value) {
+      peak_value = pss_corr_ue[m][n];
+      peak_position[n_peaks] = n;
+      pss_source[n_peaks] = m;
+      found_peak = 1;
+    }
+    
+    if ((peak_position[n_peaks]+4*(frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples)<n) &&
+	(found_peak==1)) {
+      //#ifdef DEBUG_PSS_NR
+      printf("peak %d found at pss_index %d, n %6d, peak_value %15llu\n", n_peaks, pss_source[n_peaks], peak_position[n_peaks], (unsigned long long)pss_corr_ue[ pss_source[n_peaks]][peak_position[n_peaks]]);
+      //#endif
+      peak_value = threshold;
+      found_peak = 0;
+      n_peaks++;
+      //if (n_peaks==L_max) break;
     }
   }
 
-  for (int pss_index = 0; pss_index < NUMBER_PSS_SEQUENCE; pss_index++) avg[pss_index]/=(length/4);
+  *eNB_id = pss_source[0];
 
-  *eNB_id = pss_source;
-
-  LOG_I(PHY,"[UE] nr_synchro_time: Sync source = %d, Peak found at pos %d, val = %llu (%d dB) avg %d dB\n", pss_source, peak_position, (unsigned long long)peak_value, dB_fixed64(peak_value),dB_fixed64(avg[pss_source]));
-
-  if (peak_value < 5*avg[pss_source])
-    return(-1);
-
+  //LOG_I(PHY,"[UE] nr_synchro_time: Sync source = %d, Peak found at pos %d, val = %llu (%d dB) avg %d dB\n", pss_source, peak_position, (unsigned long long)peak_value, dB_fixed64(peak_value),dB_fixed64(avg[pss_source]));
 
 #ifdef DBG_PSS_NR
 
@@ -907,6 +942,6 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
 
 #endif
 
-  return(peak_position);
+  return(peak_position[0]);
 }
 
