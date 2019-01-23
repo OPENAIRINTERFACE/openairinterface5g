@@ -201,7 +201,7 @@ void encode_parity_check_part_optim(uint8_t *c,uint8_t *d, short BG,short Zc,sho
 int ldpc_encoder_optim(unsigned char *test_input,unsigned char *channel_input,short block_length,short BG,time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput)
 {
 
-  short Zc,Kb,nrows,ncols;
+  short Zc,Kb=0,nrows=0,ncols=0;
   int i,i1;
   int no_punctured_columns,removed_bit;
 
@@ -210,7 +210,6 @@ int ldpc_encoder_optim(unsigned char *test_input,unsigned char *channel_input,sh
 
   int simd_size;
 
-  //determine number of bits in codeword
   //determine number of bits in codeword
    //if (block_length>3840)
    if (BG==1)
@@ -256,7 +255,7 @@ int ldpc_encoder_optim(unsigned char *test_input,unsigned char *channel_input,sh
 #endif
 
   if ((Zc&31) > 0) simd_size = 16;
-  else          simd_size = 32;
+  else simd_size = 32;
 
   unsigned char c[22*Zc] __attribute__((aligned(32))); //padded input, unpacked, max size
   unsigned char d[46*Zc] __attribute__((aligned(32))); //coded parity part output, unpacked, max size
@@ -321,7 +320,7 @@ int ldpc_encoder_optim(unsigned char *test_input,unsigned char *channel_input,sh
 int ldpc_encoder_optim_8seg(unsigned char **test_input,unsigned char **channel_input,short block_length,short BG,int n_segments,time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput)
 {
 
-  short Zc,Kb,nrows,ncols;
+  short Zc,Kb=0,nrows=0,ncols=0;
   int i,i1,j;
   int no_punctured_columns,removed_bit;
   //Table of possible lifting sizes
@@ -521,7 +520,7 @@ int ldpc_encoder_optim_8seg(unsigned char **test_input,unsigned char **channel_i
 int ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **channel_input,short block_length, short BG, int n_segments,unsigned int macro_num, time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput)
 {
 
-  short Zc,Kb,nrows,ncols;
+  short Zc,Kb=0,nrows=0,ncols=0;
   int i,i1,j;
   int no_punctured_columns,removed_bit;
   //Table of possible lifting sizes

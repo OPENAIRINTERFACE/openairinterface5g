@@ -74,10 +74,10 @@ const char* eurecomVariablesNames[] = {
   "frame_number_TX1_RU",
   "frame_number_RX0_RU",
   "frame_number_RX1_RU",
-  "subframe_number_TX0_RU",
-  "subframe_number_TX1_RU",
-  "subframe_number_RX0_RU",
-  "subframe_number_RX1_RU",
+  "tti_number_TX0_RU",
+  "tti_number_TX1_RU",
+  "tti_number_RX0_RU",
+  "tti_number_RX1_RU",
   "runtime_TX_eNB",
   "runtime_RX_eNB",
   "frame_number_TX0_UE",
@@ -196,10 +196,10 @@ const char* eurecomVariablesNames[] = {
   "frame_number_TX1_gNB",
   "frame_number_RX0_gNB",
   "frame_number_RX1_gNB",
-  "subframe_number_TX0_gNB",
-  "subframe_number_TX1_gNB",
-  "subframe_number_RX0_gNB",
-  "subframe_number_RX1_gNB"
+  "slot_number_TX0_gNB",
+  "slot_number_TX1_gNB",
+  "slot_number_RX0_gNB",
+  "slot_number_RX1_gNB"
 };
 
 const char* eurecomFunctionsNames[] = {

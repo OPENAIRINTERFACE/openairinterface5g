@@ -66,8 +66,8 @@ int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) { return(0
 
 int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req) {return(0);}
 
-uint32_t from_earfcn(int eutra_bandP,uint32_t dl_earfcn) {return(0);}
-int32_t get_uldl_offset(int eutra_bandP) {return(0);}
+uint32_t from_nrarfcn(int nr_bandP,uint32_t dl_nrarfcn) {return(0);}
+int32_t get_uldl_offset(int nr_bandP) {return(0);}
 
 NR_IF_Module_t *NR_IF_Module_init(int Mod_id){return(NULL);}
 
@@ -85,7 +85,7 @@ int main(int argc, char **argv)
 
   char c;
 
-  int i,l,aa;
+  int i,aa;//,l;
   double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1=2.0;
   double cfo=0;
   uint8_t snr1set=0;
@@ -99,27 +99,29 @@ int main(int argc, char **argv)
   FILE *output_fd = NULL;
   uint8_t write_output_file=0;
   //int result;
-  int freq_offset;
+  //int freq_offset;
   //  int subframe_offset;
   //  char fname[40], vname[40];
-  int trial,n_trials=1,n_errors,n_errors_payload;
+  int trial,n_trials=1,n_errors=0,n_errors_payload=0;
   uint8_t transmission_mode = 1,n_tx=1,n_rx=1;
   uint16_t Nid_cell=0;
 
   channel_desc_t *gNB2UE;
-  uint32_t nsymb,tx_lev,tx_lev1 = 0,tx_lev2 = 0;
+
   uint8_t extended_prefix_flag=0;
   int8_t interf1=-21,interf2=-21;
 
   FILE *input_fd=NULL,*pbch_file_fd=NULL;
-  char input_val_str[50],input_val_str2[50];
 
-  uint8_t frame_mod4,num_pdcch_symbols = 0;
+  //uint32_t nsymb,tx_lev,tx_lev1 = 0,tx_lev2 = 0;
+  //char input_val_str[50],input_val_str2[50];
+  //uint8_t frame_mod4,num_pdcch_symbols = 0;
+  //double pbch_sinr;
+  //int pbch_tx_ant;
 
   SCM_t channel_model=AWGN;//Rayleigh1_anticorr;
 
-  double pbch_sinr;
-  int pbch_tx_ant;
+
   int N_RB_DL=273,mu=1;
 
   unsigned char frame_type = 0;
@@ -363,7 +365,7 @@ int main(int argc, char **argv)
   frame_parms->N_RB_DL = N_RB_DL;
   frame_parms->N_RB_UL = N_RB_DL;
 
-  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu);
+  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell);
   phy_init_nr_gNB(gNB,0,0);
 
   double fs,bw,scs,eps;
@@ -500,7 +502,7 @@ int main(int argc, char **argv)
 	      frame_length_complex_samples,
 	      input_fd) != frame_length_complex_samples) {
       printf("error reading from file\n");
-      exit(-1);
+      //exit(-1);
     }
   }
 
@@ -538,6 +540,7 @@ int main(int argc, char **argv)
       sigma2_dB = 10*log10((double)txlev)-SNR;
       sigma2 = pow(10,sigma2_dB/10);
       //      printf("sigma2 %f (%f dB)\n",sigma2,sigma2_dB);
+
       if(eps!=0.0)
         rf_rx(r_re,  // real part of txdata
            r_im,  // imag part of txdata
@@ -568,9 +571,9 @@ int main(int argc, char **argv)
       }
 
       if (n_trials==1) {
-	LOG_M("rxsig0.m","rxs0", UE->common_vars.rxdata[0],frame_length_complex_samples,1,1);
+	LOG_M("rxsig0.m","rxs0", UE->common_vars.rxdata[0],frame_parms->samples_per_subframe,1,1);
 	if (gNB->frame_parms.nb_antennas_tx>1)
-	  LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1],frame_length_complex_samples,1,1);
+	  LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1],frame_parms->samples_per_subframe,1,1);
       }
 
       if (UE->is_synchronized == 0) {
@@ -606,7 +609,7 @@ int main(int argc, char **argv)
 		    0,
 		    1,
 		    NR_PBCH_EST);
-	
+	 
 	ret = nr_rx_pbch(UE,
 			 &UE->proc.proc_rxtx[0],
 			 UE->pbch_vars[0],
@@ -633,7 +636,7 @@ int main(int argc, char **argv)
 	    n_errors_payload++;
 	}
 
-	if (ret<0) n_errors++;
+	if (ret!=0) n_errors++;
       }
     } //noise trials
 

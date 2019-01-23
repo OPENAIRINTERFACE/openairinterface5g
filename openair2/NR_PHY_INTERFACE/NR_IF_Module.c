@@ -59,7 +59,7 @@ void handle_nr_rach(NR_UL_IND_t *UL_info) {
 
     AssertFatal(UL_info->rach_ind.rach_indication_body.number_of_preambles==1,"More than 1 preamble not supported\n");
     UL_info->rach_ind.rach_indication_body.number_of_preambles=0;
-    LOG_D(MAC,"UL_info[Frame %d, Subframe %d] Calling initiate_ra_proc RACH:SFN/SF:%d\n",UL_info->frame,UL_info->subframe, NFAPI_SFNSF2DEC(UL_info->rach_ind.sfn_sf));
+    LOG_D(MAC,"UL_info[Frame %d, Slot %d] Calling initiate_ra_proc RACH:SFN/SF:%d\n",UL_info->frame,UL_info->slot, NFAPI_SFNSF2DEC(UL_info->rach_ind.sfn_sf));
     initiate_ra_proc(UL_info->module_id,
          UL_info->CC_id,
          NFAPI_SFNSF2SFN(UL_info->rach_ind.sfn_sf),
@@ -80,12 +80,12 @@ void handle_nr_rach(NR_UL_IND_t *UL_info) {
     for (i=0;i<UL_info->rach_ind_br.rach_indication_body.number_of_preambles;i++) {
       AssertFatal(UL_info->rach_ind_br.rach_indication_body.preamble_list[i].preamble_rel13.rach_resource_type>0,
       "Got regular PRACH preamble, not BL/CE\n");
-      LOG_D(MAC,"Frame %d, Subframe %d Calling initiate_ra_proc (CE_level %d)\n",UL_info->frame,UL_info->subframe,
+      LOG_D(MAC,"Frame %d, Slot %d Calling initiate_ra_proc (CE_level %d)\n",UL_info->frame,UL_info->slot,
       UL_info->rach_ind_br.rach_indication_body.preamble_list[i].preamble_rel13.rach_resource_type-1);
       initiate_ra_proc(UL_info->module_id,
            UL_info->CC_id,
            UL_info->frame,
-           UL_info->subframe,
+           UL_info->slot,
            UL_info->rach_ind_br.rach_indication_body.preamble_list[i].preamble_rel8.preamble,
            UL_info->rach_ind_br.rach_indication_body.preamble_list[i].preamble_rel8.timing_advance,
            UL_info->rach_ind_br.rach_indication_body.preamble_list[i].preamble_rel8.rnti,
@@ -113,7 +113,7 @@ void handle_nr_sr(NR_UL_IND_t *UL_info) {
       SR_indication(UL_info->module_id,
           UL_info->CC_id,
           UL_info->frame,
-          UL_info->subframe,
+          UL_info->slot,
           UL_info->sr_ind.sr_indication_body.sr_pdu_list[i].rx_ue_information.rnti,
           UL_info->sr_ind.sr_indication_body.sr_pdu_list[i].ul_cqi_information.ul_cqi);
   }
@@ -133,7 +133,7 @@ void handle_nr_cqi(NR_UL_IND_t *UL_info) {
       nfapi_cqi_indication_t ind;
 
       ind.header.message_id = NFAPI_RX_CQI_INDICATION;
-      ind.sfn_sf = UL_info->frame<<4 | UL_info->subframe;
+      ind.sfn_sf = UL_info->frame<<4 | UL_info->slot;
       ind.cqi_indication_body = UL_info->cqi_ind;
 
       oai_nfapi_cqi_indication(&ind);
@@ -147,7 +147,7 @@ void handle_nr_cqi(NR_UL_IND_t *UL_info) {
       cqi_indication(UL_info->module_id,
           UL_info->CC_id,
           UL_info->frame,
-          UL_info->subframe,
+          UL_info->slot,
           UL_info->cqi_ind.cqi_pdu_list[i].rx_ue_information.rnti,
           &UL_info->cqi_ind.cqi_pdu_list[i].cqi_indication_rel9,
           UL_info->cqi_ind.cqi_raw_pdu_list[i].pdu,
@@ -220,11 +220,11 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info) {
               UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_ue_information.rnti) {
             LOG_D(PHY, "UL_info->crc_ind.crc_indication_body.crc_pdu_list[%d].crc_indication_rel8.crc_flag:%d\n", j, UL_info->crc_ind.crc_indication_body.crc_pdu_list[j].crc_indication_rel8.crc_flag);
             if (UL_info->crc_ind.crc_indication_body.crc_pdu_list[j].crc_indication_rel8.crc_flag == 1) { // CRC error indication
-              LOG_D(MAC,"Frame %d, Subframe %d Calling rx_sdu (CRC error) \n",UL_info->frame,UL_info->subframe);
+              LOG_D(MAC,"Frame %d, Slot %d Calling rx_sdu (CRC error) \n",UL_info->frame,UL_info->slot);
               rx_sdu(UL_info->module_id,
                   UL_info->CC_id,
                   NFAPI_SFNSF2SFN(UL_info->rx_ind.sfn_sf), //UL_info->frame,
-                  NFAPI_SFNSF2SF(UL_info->rx_ind.sfn_sf), //UL_info->subframe,
+                  NFAPI_SFNSF2SF(UL_info->rx_ind.sfn_sf), //UL_info->slot,
                   UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_ue_information.rnti,
                   (uint8_t *)NULL,
                   UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_indication_rel8.length,
@@ -232,11 +232,11 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info) {
                   UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_indication_rel8.ul_cqi);
             }
             else {
-              LOG_D(MAC,"Frame %d, Subframe %d Calling rx_sdu (CRC ok) \n",UL_info->frame,UL_info->subframe);
+              LOG_D(MAC,"Frame %d, Slot %d Calling rx_sdu (CRC ok) \n",UL_info->frame,UL_info->slot);
               rx_sdu(UL_info->module_id,
                   UL_info->CC_id,
                   NFAPI_SFNSF2SFN(UL_info->rx_ind.sfn_sf), //UL_info->frame,
-                  NFAPI_SFNSF2SF(UL_info->rx_ind.sfn_sf), //UL_info->subframe,
+                  NFAPI_SFNSF2SF(UL_info->rx_ind.sfn_sf), //UL_info->slot,
                   UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_ue_information.rnti,
                   UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].data,
                   UL_info->rx_ind.rx_indication_body.rx_pdu_list[i].rx_indication_rel8.length,
@@ -250,12 +250,12 @@ void handle_nr_ulsch(NR_UL_IND_t *UL_info) {
       } //   for (i=0;i<UL_info->rx_ind.number_of_pdus;i++)
       UL_info->crc_ind.crc_indication_body.number_of_crcs=0;
       UL_info->rx_ind.rx_indication_body.number_of_pdus = 0;
-    } // UL_info->rx_ind.rx_indication_body.number_of_pdus>0 && UL_info->subframe && UL_info->crc_ind.crc_indication_body.number_of_crcs>0
+    } // UL_info->rx_ind.rx_indication_body.number_of_pdus>0 && UL_info->slot && UL_info->crc_ind.crc_indication_body.number_of_crcs>0
     else if (UL_info->rx_ind.rx_indication_body.number_of_pdus!=0 || UL_info->crc_ind.crc_indication_body.number_of_crcs!=0) {
       LOG_E(PHY,"hoping not to have mis-match between CRC ind and RX ind - hopefully the missing message is coming shortly rx_ind:%d(SFN/SF:%05d) crc_ind:%d(SFN/SF:%05d) UL_info(SFN/SF):%04d%d\n",
           UL_info->rx_ind.rx_indication_body.number_of_pdus, NFAPI_SFNSF2DEC(UL_info->rx_ind.sfn_sf),
           UL_info->crc_ind.crc_indication_body.number_of_crcs, NFAPI_SFNSF2DEC(UL_info->crc_ind.sfn_sf),
-          UL_info->frame, UL_info->subframe);
+          UL_info->frame, UL_info->slot);
     }
   }
 }
@@ -276,7 +276,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info)
   gNB_MAC_INST *mac        = RC.nrmac[module_id];
 
   LOG_D(PHY,"SFN/SF:%d%d module_id:%d CC_id:%d UL_info[rx_ind:%d harqs:%d crcs:%d cqis:%d preambles:%d sr_ind:%d]\n",
-        UL_info->frame,UL_info->subframe,
+        UL_info->frame,UL_info->slot,
         module_id,CC_id,
         UL_info->rx_ind.rx_indication_body.number_of_pdus, UL_info->harq_ind.harq_indication_body.number_of_harqs, UL_info->crc_ind.crc_indication_body.number_of_crcs, UL_info->cqi_ind.number_of_cqis, UL_info->rach_ind.rach_indication_body.number_of_preambles, UL_info->sr_ind.sr_indication_body.number_of_srs);
 
@@ -284,18 +284,18 @@ void NR_UL_indication(NR_UL_IND_t *UL_info)
   {
     if (ifi->CC_mask==0) {
       ifi->current_frame    = UL_info->frame;
-      ifi->current_subframe = UL_info->subframe;
+      ifi->current_slot = UL_info->slot;
     }
     else {
       AssertFatal(UL_info->frame != ifi->current_frame,"CC_mask %x is not full and frame has changed\n",ifi->CC_mask);
-      AssertFatal(UL_info->subframe != ifi->current_subframe,"CC_mask %x is not full and subframe has changed\n",ifi->CC_mask);
+      AssertFatal(UL_info->slot != ifi->current_slot,"CC_mask %x is not full and slot has changed\n",ifi->CC_mask);
     }
     ifi->CC_mask |= (1<<CC_id);
   }
 
 
   // clear DL/UL info for new scheduling round
-  clear_nr_nfapi_information(RC.nrmac[module_id],CC_id,UL_info->frame,UL_info->subframe);
+  clear_nr_nfapi_information(mac,CC_id,UL_info->frame,UL_info->slot);
 
   handle_nr_rach(UL_info);
 
@@ -315,24 +315,26 @@ void NR_UL_indication(NR_UL_IND_t *UL_info)
     if (ifi->CC_mask == ((1<<MAX_NUM_CCs)-1)) {
       /*
       eNB_dlsch_ulsch_scheduler(module_id,
-          (UL_info->frame+((UL_info->subframe>(9-sf_ahead))?1:0)) % 1024,
-          (UL_info->subframe+sf_ahead)%10);
+          (UL_info->frame+((UL_info->slot>(9-sf_ahead))?1:0)) % 1024,
+          (UL_info->slot+sf_ahead)%10);
       */
-      
+      nfapi_nr_config_request_t *cfg = &mac->config[CC_id];
+      int spf = get_spf(cfg); 
+
       gNB_dlsch_ulsch_scheduler(module_id,
-          (UL_info->frame+((UL_info->subframe>(9-sf_ahead))?1:0)) % 1024,
-          (UL_info->subframe+sf_ahead)%10);
+          (UL_info->frame+((UL_info->slot>(spf-1-sf_ahead))?1:0)) % 1024,
+          (UL_info->slot+sf_ahead)%spf);
       
       ifi->CC_mask            = 0;
 
       sched_info->module_id   = module_id;
       sched_info->CC_id       = CC_id;
-      sched_info->frame       = (UL_info->frame + ((UL_info->subframe>(9-sf_ahead)) ? 1 : 0)) % 1024;
-      sched_info->subframe    = (UL_info->subframe+sf_ahead)%10;
+      sched_info->frame       = (UL_info->frame + ((UL_info->slot>(spf-1-sf_ahead)) ? 1 : 0)) % 1024;
+      sched_info->slot    = (UL_info->slot+sf_ahead)%spf;
       sched_info->DL_req      = &mac->DL_req[CC_id];
       sched_info->HI_DCI0_req = &mac->HI_DCI0_req[CC_id];
       if ((mac->common_channels[CC_id].tdd_Config==NULL) ||
-          (is_nr_UL_sf(&mac->common_channels[CC_id],(sched_info->subframe+sf_ahead)%10)>0))
+          (is_nr_UL_slot(&mac->common_channels[CC_id],(sched_info->slot+sf_ahead)%spf)>0))
         sched_info->UL_req      = &mac->UL_req[CC_id];
       else
         sched_info->UL_req      = NULL;
@@ -352,7 +354,7 @@ void NR_UL_indication(NR_UL_IND_t *UL_info)
         ifi->NR_Schedule_response(sched_info);
       }
 
-      LOG_D(PHY,"NR_Schedule_response: SFN_SF:%d%d dl_pdus:%d\n",sched_info->frame,sched_info->subframe,sched_info->DL_req->dl_config_request_body.number_pdu);
+      LOG_D(PHY,"NR_Schedule_response: SFN_SF:%d%d dl_pdus:%d\n",sched_info->frame,sched_info->slot,sched_info->DL_req->dl_config_request_body.number_pdu);
     }
   }
 }

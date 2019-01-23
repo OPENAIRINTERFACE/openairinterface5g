@@ -58,8 +58,8 @@ The first bit is in the MSB of each byte
 
 *********************************************************/
 unsigned int crcbit (unsigned char * inputptr,
-					 int octetlen,
-					 unsigned int poly)
+		     int octetlen,
+		     unsigned int poly)
 {
   unsigned int i, crc = 0, c;
 
@@ -170,14 +170,12 @@ unsigned int crc24c (unsigned char * inptr,
   resbit = (bitlen % 8);
 
   while (octetlen-- > 0) {
-/*#ifdef DEBUG_CRC24C
-	  printf("crc24c: in %x => crc %x (%x)\n",crc,*inptr,crc24cTable[(*inptr) ^ (crc >> 24)]);
-#endif*/
     crc = (crc << 8) ^ crc24cTable[(*inptr++) ^ (crc >> 24)];
   }
 
-  if (resbit > 0)
+  if (resbit > 0) {
     crc = (crc << resbit) ^ crc24cTable[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))];
+  }
 
   return crc;
 }

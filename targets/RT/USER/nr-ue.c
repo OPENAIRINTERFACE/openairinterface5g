@@ -634,7 +634,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
     proc->instance_cnt_rxtx=-1;
     proc->subframe_rx=proc->sub_frame_start;
 
-	proc->dci_err_cnt=0;
+    proc->dci_err_cnt=0;
     char threadname[256];
     sprintf(threadname,"UE_%d_proc_%d", UE->Mod_id, proc->sub_frame_start);
     cpu_set_t cpuset;
@@ -679,11 +679,20 @@ static void *UE_thread_rxn_txnp4(void *arg) {
             UE->dci_ind.number_of_dcis = 0;
             //clean previous FAPI MESSAGE
 
+	    // call L2 for DL_CONFIG (DCI)
+	    UE->dcireq.module_id = UE->Mod_id;
+	    UE->dcireq.gNB_index = 0;
+	    UE->dcireq.cc_id     = 0;
+	    UE->dcireq.frame     = proc->frame_rx;
+	    UE->dcireq.slot      = proc->nr_tti_rx;
+	    //UE->if_inst->dcireq(&UE->dcireq);
+
 #ifdef UE_SLOT_PARALLELISATION
             phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
-            phy_procedures_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay);
-            //printf(">>> nr_ue_pdcch_procedures ended\n");
+            phy_procedures_nrUE_RX( UE, proc, 0, 1, UE->mode);
+	    //            printf(">>> nr_ue_pdcch_procedures ended\n");
+
 #endif
         }
 
@@ -1107,42 +1116,42 @@ void *UE_thread(void *arg) {
 //                    pickStaticTime(lastTime);
                 } //UE->mode != loop_through_memory
                 else {
-                    proc->nr_tti_rx=subframe_nr;
-                    proc->subframe_rx=subframe_nr;
-		    if(subframe_nr == 0) {
-		      for (th_id=0; th_id < RX_NB_TH; th_id++) {
-			UE->proc.proc_rxtx[th_id].frame_rx++;
-		      }
+		  proc->nr_tti_rx=subframe_nr;
+		  proc->subframe_rx=subframe_nr;
+		  if(subframe_nr == 0) {
+		    for (th_id=0; th_id < RX_NB_TH; th_id++) {
+		      UE->proc.proc_rxtx[th_id].frame_rx++;
 		    }
-                    proc->frame_tx = proc->frame_rx;
-                    proc->nr_tti_tx= subframe_nr + DURATION_RX_TO_TX;
-                    if (proc->nr_tti_tx > NR_NUMBER_OF_SUBFRAMES_PER_FRAME) {
-                      proc->frame_tx = (proc->frame_tx + 1)%MAX_FRAME_NUMBER;
-                      proc->nr_tti_tx %= NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
-                    }
-                    proc->subframe_tx=proc->nr_tti_tx;
-
-                    printf("Processing subframe %d\n",proc->subframe_rx);
-
-		    if(UE->if_inst != NULL && UE->if_inst->ul_indication != NULL){
-		      UE->ul_indication.module_id = 0;
-		      UE->ul_indication.gNB_index = 0;
-		      UE->ul_indication.cc_id = 0;
-		      UE->ul_indication.slot = 0;     //  to be fill
-		      UE->ul_indication.frame = 0;    //  to be fill
-		      //  [TODO] mapping right after NR initial sync
-		      UE->ul_indication.frame = proc->frame_rx; 
-		      UE->ul_indication.slot = proc->nr_tti_rx;
-		      
-		      UE->if_inst->ul_indication(&UE->ul_indication);
-		    }
-
-		    phy_procedures_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay);
-		    getchar();
+		  }
+		  proc->frame_tx = proc->frame_rx;
+		  proc->nr_tti_tx= subframe_nr + DURATION_RX_TO_TX;
+		  if (proc->nr_tti_tx > NR_NUMBER_OF_SUBFRAMES_PER_FRAME) {
+		    proc->frame_tx = (proc->frame_tx + 1)%MAX_FRAME_NUMBER;
+		    proc->nr_tti_tx %= NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
+		  }
+		  proc->subframe_tx=proc->nr_tti_tx;
+		  
+		  printf("Processing subframe %d\n",proc->subframe_rx);
+		  
+		  if(UE->if_inst != NULL && UE->if_inst->ul_indication != NULL){
+		    UE->ul_indication.module_id = 0;
+		    UE->ul_indication.gNB_index = 0;
+		    UE->ul_indication.cc_id = 0;
+		    UE->ul_indication.slot = 0;     //  to be fill
+		    UE->ul_indication.frame = 0;    //  to be fill
+		    //  [TODO] mapping right after NR initial sync
+		    UE->ul_indication.frame = proc->frame_rx; 
+		    UE->ul_indication.slot = proc->nr_tti_rx;
+		    
+		    UE->if_inst->ul_indication(&UE->ul_indication);
+		  }
+		  
+		  phy_procedures_nrUE_RX( UE, proc, 0, 1, UE->mode);
+		  getchar();
 		} // else loop_through_memory
             } // start_rx_stream==1
         } // UE->is_synchronized==1
-
+	
     } // while !oai_exit
     return NULL;
 }

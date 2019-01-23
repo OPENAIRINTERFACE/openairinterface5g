@@ -367,7 +367,13 @@ int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,sho
   unsigned char d[68*384]; //coded output, unpacked, max size
   unsigned char channel_temp,temp;
   short *Gen_shift_values, *no_shift_values, *pointer_shift_values;
-  short Zc,Kb,nrows,ncols;
+  short Zc;
+  //initialize for BG == 1
+  short Kb = 22;
+  short nrows = 46;//parity check bits
+  short ncols = 22;//info bits
+
+
   int i,i1,i2,i3,i4,i5,temp_prime,var;
   int no_punctured_columns,removed_bit;
   //Table of possible lifting sizes
@@ -437,6 +443,9 @@ int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,sho
   {
     no_shift_values=(short *) no_shift_values_BG2;
     pointer_shift_values=(short *) pointer_shift_values_BG2;
+  }
+  else {
+	  AssertFatal(0,"BG %d is not supported yet\n",BG);
   }
   
   no_punctured_columns=(int)((nrows-2)*Zc+block_length-block_length*3)/Zc;

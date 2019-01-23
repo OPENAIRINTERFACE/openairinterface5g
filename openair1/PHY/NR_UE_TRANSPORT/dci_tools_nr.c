@@ -30,6 +30,7 @@
  * \warning
  */
 //#include "PHY/defs.h"
+#include <stdint.h>
 #include "PHY/defs_nr_UE.h"
 //#include "PHY/NR_TRANSPORT/nr_dci.h"
 //#include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
@@ -67,18 +68,28 @@ uint16_t nr_dci_field(uint32_t dci_pdu[4],
                       uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS],
                       uint8_t dci_field)
 {
-  uint16_t field_value  = 0 ;
+  //  uint16_t field_value  = 0 ;
   // first_bit_position contains the position of the first bit of the corresponding field within the dci pdu payload
-  uint16_t first_bit_position = 0;
+
   // last_bit_position contains the position of the last bit of the corresponding field within the dci pdu payload
-  uint16_t last_bit_position = 0;
-  uint8_t bit=0;
+  //  uint16_t last_bit_position = 0;
+  //  uint8_t bit=0;
   //printf("\tdci_field=%d, \tsize=%d \t|",dci_field,dci_fields_sizes[dci_field]);
-  for (int i=0; i<dci_field ; i++){
-    first_bit_position = first_bit_position + dci_fields_sizes[i];
+  int dci_size=0;
+
+  for (int i=0;i<NBR_NR_DCI_FIELDS;i++) dci_size+=dci_fields_sizes[i];
+
+  AssertFatal(dci_size<65,"DCI has %d > 64 bits, not supported for now\n",
+	      dci_size);
+
+  uint16_t first_bit_position = dci_size;
+  
+  for (int i=0; i<=dci_field ; i++){
+    first_bit_position = first_bit_position - dci_fields_sizes[i];
   }
-  last_bit_position = first_bit_position + dci_fields_sizes[dci_field];
+  //  last_bit_position = first_bit_position + dci_fields_sizes[dci_field];
   //printf("\tfirst_bit=%d,\tlast_bit=%d",first_bit_position,last_bit_position);
+  /*
   for (int i=0; i<4; i++)
     for (int j=0; j<32; j++){
       if ((((i*32)+j) >= first_bit_position) && (((i*32)+j) < last_bit_position)){
@@ -87,7 +98,14 @@ uint16_t nr_dci_field(uint32_t dci_pdu[4],
         //printf(" bit(%d)=%d[%d] ",(i*32)+j,bit,field_value);
       }
     }
-  return field_value;
+  */
+
+  uint64_t *dci_pdu64=(uint64_t*)&dci_pdu[0];
+  /*
+    printf("pdu %llx, field %d, pos %d, size %d => %u\n",(long long unsigned int)*dci_pdu64,dci_field,first_bit_position,dci_fields_sizes[dci_field],
+    (unsigned int)((*dci_pdu64>>first_bit_position)&((1<<dci_fields_sizes[dci_field])-1)));*/
+
+  return (uint16_t)((*dci_pdu64>>first_bit_position)&((1<<dci_fields_sizes[dci_field])-1));
 }
 
 int nr_extract_dci_info(PHY_VARS_NR_UE *ue,

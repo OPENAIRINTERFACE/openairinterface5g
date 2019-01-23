@@ -34,18 +34,18 @@
 #include "PHY/sse_intrin.h"
 #include "PHY/impl_defs_top.h"
 
-//#define DEBUG_NEW_IMPL
+//#define DEBUG_NEW_IMPL 1
 
 void updateLLR(double ***llr,
-			   uint8_t **llrU,
-			   uint8_t ***bit,
-			   uint8_t **bitU,
-			   uint8_t listSize,
-			   uint16_t row,
-			   uint16_t col,
-			   uint16_t xlen,
-			   uint8_t ylen,
-			   uint8_t approximation)
+	       uint8_t **llrU,
+	       uint8_t ***bit,
+	       uint8_t **bitU,
+	       uint8_t listSize,
+	       uint16_t row,
+	       uint16_t col,
+	       uint16_t xlen,
+	       uint8_t ylen,
+	       uint8_t approximation)
 {
 	uint16_t offset = (xlen/(pow(2,(ylen-col-1))));
 	for (uint8_t i=0; i<listSize; i++) {
@@ -219,8 +219,8 @@ decoder_node_t *add_nodes(int level,int first_leaf_index,t_nrPolar_params *pp) {
   decoder_node_t *new_node = new_decoder_node(first_leaf_index,level);
 #ifdef DEBUG_NEW_IMPL
   printf("New node %d order %d, level %d\n",pp->tree.num_nodes,Nv,level);
-  pp->tree.num_nodes++;
 #endif
+  pp->tree.num_nodes++;
   if (level==0) {
 #ifdef DEBUG_NEW_IMPL
     printf("leaf %d (%s)\n",first_leaf_index,pp->information_bit_pattern[first_leaf_index]==1 ? "information or crc" : "frozen");
@@ -233,16 +233,19 @@ decoder_node_t *add_nodes(int level,int first_leaf_index,t_nrPolar_params *pp) {
   for (int i=0;i<Nv;i++) {
     if (pp->information_bit_pattern[i+first_leaf_index]>0) all_frozen_below=0; 
   }
-if (all_frozen_below==0) new_node->left=add_nodes(level-1,first_leaf_index,pp);
- else {
+  if (all_frozen_below==0) new_node->left=add_nodes(level-1,first_leaf_index,pp);
+  else {
 #ifdef DEBUG_NEW_IMPL
-   printf("aggregating frozen bits %d ... %d at level %d (%s)\n",first_leaf_index,first_leaf_index+Nv-1,level,((first_leaf_index/Nv)&1)==0?"left":"right");
+    printf("aggregating frozen bits %d ... %d at level %d (%s)\n",first_leaf_index,first_leaf_index+Nv-1,level,((first_leaf_index/Nv)&1)==0?"left":"right");
 #endif
     new_node->leaf=1;
     new_node->all_frozen=1;
   }
   if (all_frozen_below==0) new_node->right=add_nodes(level-1,first_leaf_index+(Nv/2),pp);
 
+#ifdef DEBUG_NEW_IMPL
+  printf("new_node (%d): first_leaf_index %d, left %p, right %p\n",Nv,first_leaf_index,new_node->left,new_node->right);
+#endif  
   return(new_node);
 }
 
@@ -251,7 +254,9 @@ void build_decoder_tree(t_nrPolar_params *pp) {
 
   pp->tree.num_nodes=0;
   pp->tree.root = add_nodes(pp->n,0,pp);
-  			       
+#ifdef DEBUG_NEW_IMPL
+  printf("root : left %p, right %p\n",pp->tree.root->left,pp->tree.root->right);
+#endif
 }
 
 #if defined(__arm__) || defined(__aarch64__)

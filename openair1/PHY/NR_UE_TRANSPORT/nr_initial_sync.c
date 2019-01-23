@@ -140,7 +140,7 @@ char prefix_string[2][9] = {"NORMAL","EXTENDED"};
 int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 {
 
-  int32_t sync_pos, sync_pos2, sync_pos_slot; // k_ssb, N_ssb_crb,
+  int32_t sync_pos, sync_pos_slot; // k_ssb, N_ssb_crb, sync_pos2,
   int32_t metric_tdd_ncp=0;
   uint8_t phase_tdd_ncp;
 

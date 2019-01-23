@@ -40,6 +40,7 @@
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 
 #define nr_subframe_t lte_subframe_t
+#define nr_slot_t lte_subframe_t
 
 #define MAX_NUM_SUBCARRIER_SPACING 5
 
@@ -256,15 +257,19 @@ typedef struct NR_DL_FRAME_PARMS {
   uint16_t slots_per_frame;
   /// Number of samples in a subframe
   uint32_t samples_per_subframe;
+  /// Number of samples in a slot
+  uint32_t samples_per_slot;
   /// Number of OFDM/SC-FDMA symbols in one subframe (to be modified to account for potential different in UL/DL)
   uint16_t symbols_per_tti;
   /// Number of samples in a radio frame
   uint32_t samples_per_frame;
   /// Number of samples in a subframe without CP
   uint32_t samples_per_subframe_wCP;
+  /// Number of samples in a slot without CP
+  uint32_t samples_per_slot_wCP;
   /// Number of samples in a radio frame without CP
   uint32_t samples_per_frame_wCP;
-  /// Number of samples in a tti (same as subrame in LTE, depending on numerology in NR)
+  /// Number of samples in a tti (same as subrame in LTE, slot in NR)
   uint32_t samples_per_tti;
   /// NR numerology index [0..5] as specified in 38.211 Section 4 (mu). 0=15khZ SCS, 1=30khZ, 2=60kHz, etc
   uint8_t numerology_index;

@@ -39,7 +39,7 @@
 #define GNB_CONFIG_STRING_FRAME_TYPE                            "frame_type"
 #define GNB_CONFIG_STRING_DL_PREFIX_TYPE                        "DL_prefix_type"
 #define GNB_CONFIG_STRING_UL_PREFIX_TYPE                        "UL_prefix_type"
-#define GNB_CONFIG_STRING_EUTRA_BAND                            "eutra_band"
+#define GNB_CONFIG_STRING_NR_BAND                               "nr_band"
 #define GNB_CONFIG_STRING_DOWNLINK_FREQUENCY                    "downlink_frequency"
 #define GNB_CONFIG_STRING_UPLINK_FREQUENCY_OFFSET               "uplink_frequency_offset"
 #define GNB_CONFIG_STRING_NID_CELL                              "Nid_cell"

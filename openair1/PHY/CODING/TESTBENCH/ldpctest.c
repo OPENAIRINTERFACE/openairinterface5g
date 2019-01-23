@@ -421,7 +421,6 @@ int test_ldpc(short No_iteration,
 	stop_meas(time_decoder);
       }
 
-
       //for (i=(Kb+nrows) * Zc-5;i<(Kb+nrows) * Zc;i++)
       //  printf("esimated_output[%d]=%d\n",i,esimated_output[i]);
 
@@ -435,8 +434,6 @@ int test_ldpc(short No_iteration,
           ///printf("test_input[0][%d]: %d \n",i,test_input[0][i]);
         if (estimated_output[j][i] != test_input[j][i])
         {
-
-
       //////printf("error pos %d (%d, %d)\n\n",i,estimated_output[i],test_input[0][i]);
           segment_bler = segment_bler + 1;
           break;
