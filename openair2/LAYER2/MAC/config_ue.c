@@ -374,7 +374,9 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 #endif
 
   if (measObj != NULL) {
-    if (measObj[0] != NULL) {
+    if (measObj[0] != NULL &&
+        measObj[0]->measObject.present == LTE_MeasObjectToAddMod__measObject_PR_measObjectEUTRA &&
+        measObj[0]->measObject.choice.measObjectEUTRA.cellsToAddModList != NULL) {
       UE_mac_inst[Mod_idP].n_adj_cells =
 	measObj[0]->measObject.choice.
 	measObjectEUTRA.cellsToAddModList->list.count;
