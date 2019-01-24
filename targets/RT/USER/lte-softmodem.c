@@ -305,9 +305,6 @@ void exit_function(const char *file, const char *function, const int line, const
   }
 
   sleep(1); //allow lte-softmodem threads to exit first
-#if defined(ENABLE_ITTI)
-  itti_terminate_tasks (TASK_UNKNOWN);
-#endif
   exit(1);
 }
 
@@ -449,7 +446,7 @@ static void get_options(void) {
     NB_eNB_INST = RC.nb_inst;
     printf("Configuration: nb_rrc_inst %d, nb_L1_inst %d, nb_ru %d\n",NB_eNB_INST,RC.nb_L1_inst,RC.nb_RU);
 
-    if (!SOFTMODEM_NONBIOT) {
+    if (!IS_SOFTMODEM_NONBIOT) {
       load_NB_IoT();
       printf("               nb_nbiot_rrc_inst %d, nb_nbiot_L1_inst %d, nb_nbiot_macrlc_inst %d\n",
              RC.nb_nb_iot_rrc_inst, RC.nb_nb_iot_L1_inst, RC.nb_nb_iot_macrlc_inst);
@@ -505,7 +502,8 @@ void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
 }
 
 void wait_RUs(void) {
-  LOG_I(PHY,"Waiting for RUs to be configured ... RC.ru_mask:%02lx\n", RC.ru_mask);
+  /* do not modify the following LOG_UI message, which is used by CI */
+  LOG_UI(ENB_APP,"Waiting for RUs to be configured ... RC.ru_mask:%02lx\n", RC.ru_mask);
   // wait for all RUs to be configured over fronthaul
   pthread_mutex_lock(&RC.ru_mutex);
 
@@ -678,7 +676,6 @@ int main( int argc, char **argv ) {
   set_latency_target();
   logInit();
   printf("Reading in command-line options\n");
-  CONFIG_SETRTFLAG(CONFIG_NOCHECKUNKOPT);
   get_options ();
 
   if (CONFIG_ISFLAGSET(CONFIG_ABORT) ) {
@@ -689,14 +686,6 @@ int main( int argc, char **argv ) {
 #if T_TRACER
   T_Config_Init();
 #endif
-  ret=config_check_unknown_cmdlineopt(NULL);
-
-  if (ret != 0) {
-    LOG_E(ENB_APP, "%i unknown options in command line\n",ret);
-    exit_fun("");
-  }
-
-  CONFIG_CLEARRTFLAG(CONFIG_NOCHECKUNKOPT);
   //randominit (0);
   set_taus_seed (0);
   printf("configuring for RAU/RRU\n");
@@ -717,12 +706,7 @@ int main( int argc, char **argv ) {
 
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
 #endif
-
-  if (opt_type != OPT_NONE) {
-    if (init_opt(in_path, in_ip) == -1)
-      LOG_E(OPT,"failed to run OPT \n");
-  }
-
+  init_opt();
 #ifdef PDCP_USE_NETLINK
   printf("PDCP netlink\n");
   netlink_init();
@@ -947,13 +931,7 @@ if (nfapi_mode==2) {// VNF
   sync_var=0;
   pthread_cond_broadcast(&sync_cond);
   pthread_mutex_unlock(&sync_mutex);
-  ret=config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
-
-  if (ret != 0) {
-    LOG_E(ENB_APP, "%i unknown options in command line (invalid section name)\n",ret);
-    exit_fun("");
-  }
-
+  config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
   //getchar();
@@ -1008,9 +986,7 @@ if (nfapi_mode==2) {// VNF
   }
 
   free_lte_top();
-  printf("About to call end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
   end_configmodule();
-  printf("Called end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
   pthread_cond_destroy(&sync_cond);
   pthread_mutex_destroy(&sync_mutex);
   pthread_cond_destroy(&nfapi_sync_cond);
@@ -1029,9 +1005,7 @@ if (nfapi_mode==2) {// VNF
     }
   }
 
-  if (opt_enabled == 1)
-    terminate_opt();
-
+  terminate_opt();
   logClean();
   printf("Bye.\n");
   return 0;

@@ -39,15 +39,13 @@
 #include <errno.h>
 #include <dlfcn.h>
 #include <arpa/inet.h>
-
 #include <platform_types.h>
 #include "config_userapi.h"
-
+#include "../utils/LOG/log.h"
 
 configmodule_interface_t *config_get_if(void) {
   if (cfgptr == NULL) {
-    fprintf(stderr,"[CONFIG] %s %d config module not initialized\n",__FILE__, __LINE__);
-    exit(-1);
+    CONFIG_PRINTF_ERROR("[CONFIG] %s %d config module not initialized\n",__FILE__,__LINE__);
   }
 
   return cfgptr;
@@ -66,9 +64,8 @@ char *config_check_valptr(paramdef_t *cfgoptions, char **ptr, int length) {
         config_get_if()->numptrs++;
       }
     } else {
-      fprintf(stderr, "[CONFIG] %s %d option %s, cannot allocate pointer: %s \n",
-              __FILE__, __LINE__, cfgoptions->optname, strerror(errno));
-      exit(-1);
+      CONFIG_PRINTF_ERROR("[CONFIG] %s %d option %s, cannot allocate pointer: %s \n",
+                          __FILE__, __LINE__, cfgoptions->optname, strerror(errno));
     }
   }
 
@@ -78,9 +75,8 @@ char *config_check_valptr(paramdef_t *cfgoptions, char **ptr, int length) {
     if (*ptr != NULL) {
       return *ptr;
     } else {
-      fprintf(stderr,"[CONFIG] %s %d option %s, definition error: value pointer is NULL, declared as %i bytes allocated\n",
-              __FILE__, __LINE__,cfgoptions->optname, cfgoptions->numelt);
-      exit(-1);
+      CONFIG_PRINTF_ERROR("[CONFIG] %s %d option %s, definition error: value pointer is NULL, declared as %i bytes allocated\n",
+                          __FILE__, __LINE__,cfgoptions->optname, cfgoptions->numelt);
     }
   }
 
@@ -95,8 +91,7 @@ char *config_check_valptr(paramdef_t *cfgoptions, char **ptr, int length) {
         config_get_if()->numptrs++;
       }
     } else {
-      fprintf (stderr,"[CONFIG] %s %d malloc error\n",__FILE__, __LINE__);
-      exit(-1);
+      CONFIG_PRINTF_ERROR("[CONFIG] %s %d malloc error\n",__FILE__, __LINE__);
     }
   }
 
@@ -157,8 +152,7 @@ void config_assign_processedint(paramdef_t *cfgoption, int val) {
   if (  cfgoption->processedvalue != NULL) {
     *(cfgoption->processedvalue) = val;
   } else {
-    fprintf (stderr,"[CONFIG] %s %d malloc error\n",__FILE__, __LINE__);
-    exit(-1);
+    CONFIG_PRINTF_ERROR("[CONFIG] %s %d malloc error\n",__FILE__, __LINE__);
   }
 }
 
@@ -177,15 +171,17 @@ int config_get_processedint(paramdef_t *cfgoption) {
 
   return ret;
 }
-void config_printhelp(paramdef_t *params,int numparams) {
+void config_printhelp(paramdef_t *params,int numparams, char *prefix) {
+  printf("\n-----Help for section %-26s: %03i entries------\n",(prefix==NULL)?"(root section)":prefix ,numparams);
+
   for (int i=0 ; i<numparams ; i++) {
-    if ( params[i].helpstr != NULL) {
-      printf("%s%s: %s",
-             (strlen(params[i].optname) <= 1) ? "-" : "--",
-             params[i].optname,
-             params[i].helpstr);
-    }
-  }
+    printf("    %s%s: %s",
+           (strlen(params[i].optname) <= 1) ? "-" : "--",
+           params[i].optname,
+           (params[i].helpstr != NULL)?params[i].helpstr:"Help string not specified\n");
+  }   /* for on params entries */
+
+  printf("--------------------------------------------------------------------\n\n");
 }
 
 int config_execcheck(paramdef_t *params,int numparams, char *prefix) {
@@ -202,11 +198,7 @@ int config_execcheck(paramdef_t *params,int numparams, char *prefix) {
   }
 
   if (st != 0) {
-    fprintf(stderr,"[CONFIG] config_execcheck: section %s %i parameters with wrong value\n", prefix, -st);
-
-    if ( CONFIG_ISFLAGSET(CONFIG_NOABORTONCHKF) == 0) {
-      exit_fun("exit because configuration failed\n");
-    }
+    CONFIG_PRINTF_ERROR("[CONFIG] config_execcheck: section %s %i parameters with wrong value\n", prefix, -st);
   }
 
   return st;
@@ -263,6 +255,7 @@ int config_getlist(paramlist_def_t *ParamList, paramdef_t *params, int numparams
     for (int i = 0; i < ParamList->numelt; ++i) {
       // TODO config_process_cmdline?
       sprintf(cfgpath, "%s.[%i]", newprefix, i);
+      config_process_cmdline(ParamList->paramarray[i],numparams,cfgpath);
       config_execcheck(ParamList->paramarray[i], numparams, cfgpath);
     }
 
