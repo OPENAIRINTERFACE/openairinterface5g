@@ -63,7 +63,12 @@ extern uint16_t frame_cnt;
 extern RAN_CONTEXT_t RC;
 extern uint8_t nfapi_mode;
 
-int choose(int n, int k) {
+//------------------------------------------------------------------------------
+int 
+choose(int n, 
+       int k) 
+//------------------------------------------------------------------------------
+{
   int res = 1;
   int res2 = 1;
   int i;
@@ -83,81 +88,112 @@ int choose(int n, int k) {
   return (res / res2);
 }
 
+//------------------------------------------------------------------------------
 // Patented algorithm from Yang et al, US Patent 2009, "Channel Quality Indexing and Reverse Indexing"
-void reverse_index(int N, int M, int r, int *v) {
+void reverse_index(int N, 
+                   int M, 
+                   int r, 
+                   int *v) 
+//------------------------------------------------------------------------------
+{
   int BaseValue = 0;
   int IncreaseValue, ThresholdValue;
   int sumV;
   int i;
-  r = choose(N, M) - 1 - r;
-  memset((void *) v, 0, M * sizeof(int));
+
+  r = choose(N, 
+             M) - 1 - r;
+  memset((void *) v, 
+         0, 
+         M * sizeof(int));
   sumV = 0;
   i = M;
 
   while (i > 0 && r > 0) {
-    IncreaseValue = choose(N - M + 1 - sumV - v[i - 1] + i - 2, i - 1);
+    IncreaseValue = choose(N - M + 1 - sumV - v[i - 1] + i - 2, 
+                           i - 1);
     ThresholdValue = BaseValue + IncreaseValue;
 
     if (r >= ThresholdValue) {
       v[i - 1]++;
       BaseValue = ThresholdValue;
     } else {
-      r = r - BaseValue;
-      sumV += v[i - 1];
-      i--;
+      r -= BaseValue;
+      sumV += v[--i];
       BaseValue = 0;
     }
   }
 }
 
+//------------------------------------------------------------------------------
 int
-to_prb(int dl_Bandwidth) {
+to_prb(int dl_Bandwidth) 
+//------------------------------------------------------------------------------
+{
   int prbmap[6] = { 6, 15, 25, 50, 75, 100 };
   AssertFatal(dl_Bandwidth < 6, "dl_Bandwidth is 0..5\n");
   return (prbmap[dl_Bandwidth]);
 }
 
-int to_rbg(int dl_Bandwidth) {
+//------------------------------------------------------------------------------
+int 
+to_rbg(int dl_Bandwidth) 
+//------------------------------------------------------------------------------
+{
   int rbgmap[6] = { 6, 8, 13, 17, 19, 25 };
   AssertFatal(dl_Bandwidth < 6, "dl_Bandwidth is 0..5\n");
   return (rbgmap[dl_Bandwidth]);
 }
 
-int get_phich_resource_times6(COMMON_channels_t *cc) {
+//------------------------------------------------------------------------------
+int 
+get_phich_resource_times6(COMMON_channels_t *cc) 
+//------------------------------------------------------------------------------
+{
   int phichmap[4] = { 1, 3, 6, 12 };
   AssertFatal(cc != NULL, "cc is null\n");
   AssertFatal(cc->mib != NULL, "cc->mib is null\n");
-  AssertFatal((cc->mib->message.phich_Config.phich_Resource >= 0) &&
-              (cc->mib->message.phich_Config.phich_Resource < 4),
-              "phich_Resource %d not in 0..3\n",
-              (int) cc->mib->message.phich_Config.phich_Resource);
-  return (phichmap[cc->mib->message.phich_Config.phich_Resource]);
+  int phich_Resource = (int) cc->mib->message.phich_Config.phich_Resource;
+  AssertFatal(phich_Resource >= 0 && phich_Resource < 4, "phich_Resource %d not in 0..3\n",
+              phich_Resource);
+  return (phichmap[phich_Resource]);
 }
 
-uint16_t mac_computeRIV(uint16_t N_RB_DL, uint16_t RBstart, uint16_t Lcrbs) {
-  uint16_t RIV;
-
-  if (Lcrbs <= (1 + (N_RB_DL >> 1))) RIV = (N_RB_DL * (Lcrbs - 1)) + RBstart;
-  else                               RIV = (N_RB_DL * (N_RB_DL + 1 - Lcrbs)) + (N_RB_DL - 1 - RBstart);
-
-  return (RIV);
+//------------------------------------------------------------------------------
+uint16_t 
+mac_computeRIV(uint16_t N_RB_DL, 
+               uint16_t RBstart, 
+               uint16_t Lcrbs) 
+//------------------------------------------------------------------------------
+{
+  if (Lcrbs <= (1 + (N_RB_DL >> 1))) {
+    return (N_RB_DL * (Lcrbs - 1)) + RBstart;
+  }
+  return (N_RB_DL * (N_RB_DL + 1 - Lcrbs)) + (N_RB_DL - 1 - RBstart);
 }
 
+//------------------------------------------------------------------------------
 uint8_t 
 getQm(uint8_t mcs) 
+//------------------------------------------------------------------------------
 {
   if (mcs < 10)      return (2);
   else if (mcs < 17) return (4);
   return (6);
 }
 
+//------------------------------------------------------------------------------
 void
 get_Msg3alloc(COMMON_channels_t *cc,
               sub_frame_t       current_subframe,
               frame_t           current_frame,
               frame_t           *frame,
-              sub_frame_t       *subframe) {
+              sub_frame_t       *subframe) 
+//------------------------------------------------------------------------------
+{
   // Fill in other TDD Configuration!!!!
+  int subframeAssignment;
+
   if (cc->tdd_Config == NULL) { // FDD
     *subframe = current_subframe + 6;
 
@@ -168,7 +204,8 @@ get_Msg3alloc(COMMON_channels_t *cc,
       *frame = current_frame;
     }
   } else {      // TDD
-    if (cc->tdd_Config->subframeAssignment == 1) {
+    subframeAssignment = (int) cc->tdd_Config->subframeAssignment;
+    if (subframeAssignment == 1) {
       switch (current_subframe) {
         case 0:
           *subframe = 7;
@@ -190,7 +227,7 @@ get_Msg3alloc(COMMON_channels_t *cc,
           *frame = (current_frame + 1) & 1023;
           break;
       }
-    } else if (cc->tdd_Config->subframeAssignment == 3) {
+    } else if (subframeAssignment == 3) {
       switch (current_subframe) {
         case 0:
         case 5:
@@ -214,7 +251,7 @@ get_Msg3alloc(COMMON_channels_t *cc,
           *frame = (current_frame + 2) & 1023;
           break;
       }
-    } else if (cc->tdd_Config->subframeAssignment == 4) {
+    } else if (subframeAssignment == 4) {
       switch (current_subframe) {
         case 0:
         case 4:
@@ -235,7 +272,7 @@ get_Msg3alloc(COMMON_channels_t *cc,
           *frame = (current_frame + 2) & 1023;
           break;
       }
-    } else if (cc->tdd_Config->subframeAssignment == 5) {
+    } else if (subframeAssignment == 5) {
       switch (current_subframe) {
         case 0:
         case 4:
@@ -254,15 +291,20 @@ get_Msg3alloc(COMMON_channels_t *cc,
       }
     }
   }
+  return;
 }
 
-
-
+//------------------------------------------------------------------------------
 void
 get_Msg3allocret(COMMON_channels_t *cc,
                  sub_frame_t current_subframe,
                  frame_t current_frame,
-                 frame_t *frame, sub_frame_t *subframe) {
+                 frame_t *frame, 
+                 sub_frame_t *subframe) 
+//------------------------------------------------------------------------------
+{
+  int subframeAssignment;
+
   if (cc->tdd_Config == NULL) { //FDD
     /* always retransmit in n+8 */
     *subframe = current_subframe + 8;
@@ -274,31 +316,37 @@ get_Msg3allocret(COMMON_channels_t *cc,
       *frame = current_frame;
     }
   } else {
-    if (cc->tdd_Config->subframeAssignment == 1) {
+    subframeAssignment = (int) cc->tdd_Config->subframeAssignment;
+    if (subframeAssignment == 1) {
       // original PUSCH in 2, PHICH in 6 (S), ret in 2
       // original PUSCH in 3, PHICH in 9, ret in 3
       // original PUSCH in 7, PHICH in 1 (S), ret in 7
       // original PUSCH in 8, PHICH in 4, ret in 8
       *frame = (current_frame + 1) & 1023;
-    } else if (cc->tdd_Config->subframeAssignment == 3) {
+    } else if (subframeAssignment == 3) {
       // original PUSCH in 2, PHICH in 8, ret in 2 next frame
       // original PUSCH in 3, PHICH in 9, ret in 3 next frame
       // original PUSCH in 4, PHICH in 0, ret in 4 next frame
       *frame = (current_frame + 1) & 1023;
-    } else if (cc->tdd_Config->subframeAssignment == 4) {
+    } else if (subframeAssignment == 4) {
       // original PUSCH in 2, PHICH in 8, ret in 2 next frame
       // original PUSCH in 3, PHICH in 9, ret in 3 next frame
       *frame = (current_frame + 1) & 1023;
-    } else if (cc->tdd_Config->subframeAssignment == 5) {
+    } else if (subframeAssignment == 5) {
       // original PUSCH in 2, PHICH in 8, ret in 2 next frame
       *frame = (current_frame + 1) & 1023;
     }
   }
+  return;
 }
 
+//------------------------------------------------------------------------------
 uint8_t
-subframe2harqpid(COMMON_channels_t *cc, frame_t frame,
-                 sub_frame_t subframe) {
+subframe2harqpid(COMMON_channels_t *cc, 
+                 frame_t frame,
+                 sub_frame_t subframe) 
+//------------------------------------------------------------------------------
+{
   uint8_t ret = 255;
   AssertFatal(cc != NULL, "cc is null\n");
 
@@ -307,8 +355,7 @@ subframe2harqpid(COMMON_channels_t *cc, frame_t frame,
   } else {
     switch (cc->tdd_Config->subframeAssignment) {
       case 1:
-        if ((subframe == 2) ||
-            (subframe == 3) || (subframe == 7) || (subframe == 8))
+        if (subframe == 2 || subframe == 3 || subframe == 7 || subframe == 8) {
           switch (subframe) {
             case 2:
             case 3:
@@ -321,67 +368,64 @@ subframe2harqpid(COMMON_channels_t *cc, frame_t frame,
               break;
 
             default:
-              AssertFatal(1 == 0,
-                          "subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",
+              AssertFatal(1 == 0, "subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",
                           subframe,
                           (int) cc->tdd_Config->subframeAssignment);
               break;
           }
-
+        }
         break;
 
       case 2:
-        AssertFatal((subframe == 2) || (subframe == 7),
-                    "subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",
+        AssertFatal(subframe == 2 || subframe == 7, "subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",
                     subframe,
                     (int) cc->tdd_Config->subframeAssignment);
         ret = (subframe / 7);
         break;
 
       case 3:
-        AssertFatal((subframe > 1) && (subframe < 5),
-                    "subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",
+        AssertFatal(subframe > 1 && subframe < 5, "subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",
                     subframe,
                     (int) cc->tdd_Config->subframeAssignment);
         ret = (subframe - 2);
         break;
 
       case 4:
-        AssertFatal((subframe > 1) && (subframe < 4),
-                    "subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",
+        AssertFatal(subframe > 1 && subframe < 4, "subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",
                     subframe,
                     (int) cc->tdd_Config->subframeAssignment);
         ret = (subframe - 2);
         break;
 
       case 5:
-        AssertFatal(subframe == 2,
-                    "subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",
+        AssertFatal(subframe == 2, "subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",
                     subframe,
                     (int) cc->tdd_Config->subframeAssignment);
         ret = (subframe - 2);
         break;
 
       default:
-        AssertFatal(1 == 0,
-                    "subframe2_harq_pid, Unsupported TDD mode %d\n",
+        AssertFatal(1 == 0, "subframe2_harq_pid, Unsupported TDD mode %d\n",
                     (int) cc->tdd_Config->subframeAssignment);
+        break;
     }
   }
 
   return ret;
 }
 
+//------------------------------------------------------------------------------
 uint8_t
 get_Msg3harqpid(COMMON_channels_t *cc,
-                frame_t frame, sub_frame_t current_subframe) {
+                frame_t frame, 
+                sub_frame_t current_subframe) 
+//------------------------------------------------------------------------------
+{
   uint8_t ul_subframe = 0;
   uint32_t ul_frame = 0;
 
   if (cc->tdd_Config == NULL) { // FDD
-    ul_subframe =
-      (current_subframe >
-       3) ? (current_subframe - 4) : (current_subframe + 6);
+    ul_subframe = (current_subframe > 3) ? (current_subframe - 4) : (current_subframe + 6);
     ul_frame = (current_subframe > 3) ? ((frame + 1) & 1023) : frame;
   } else {
     switch (cc->tdd_Config->subframeAssignment) {
@@ -445,60 +489,80 @@ get_Msg3harqpid(COMMON_channels_t *cc,
         break;
 
       default:
-        LOG_E(PHY,
-              "get_Msg3_harq_pid: Unsupported TDD configuration %d\n",
+        LOG_E(PHY, "get_Msg3_harq_pid: Unsupported TDD configuration %d\n",
               (int) cc->tdd_Config->subframeAssignment);
-        AssertFatal(1 == 0,
-                    "get_Msg3_harq_pid: Unsupported TDD configuration");
+        AssertFatal(1 == 0, "get_Msg3_harq_pid: Unsupported TDD configuration");
         break;
     }
   }
 
-  return (subframe2harqpid(cc, ul_frame, ul_subframe));
+  return (subframe2harqpid(cc, 
+                           ul_frame, 
+                           ul_subframe));
 }
 
+//------------------------------------------------------------------------------
 uint32_t
-pdcchalloc2ulframe(COMMON_channels_t *ccP, uint32_t frame, uint8_t n) {
-  uint32_t ul_frame;
+pdcchalloc2ulframe(COMMON_channels_t *ccP, 
+                   uint32_t frame, 
+                   uint8_t n) 
+//------------------------------------------------------------------------------
+{
+  uint32_t ul_frame = (frame + (n >= 6 ? 1 : 0));
 
-  if ((ccP->tdd_Config) && (ccP->tdd_Config->subframeAssignment == 1) && ((n == 1) || (n == 6)))  // tdd_config 0,1 SF 1,5
-    ul_frame = (frame + (n == 1 ? 0 : 1));
-  else if ((ccP->tdd_Config) &&
-           (ccP->tdd_Config->subframeAssignment == 6) &&
-           ((n == 0) || (n == 1) || (n == 5) || (n == 6)))
-    ul_frame = (frame + (n >= 5 ? 1 : 0));
-  else if ((ccP->tdd_Config) && (ccP->tdd_Config->subframeAssignment == 6) && (n == 9)) // tdd_config 6 SF 9
-    ul_frame = (frame + 1);
-  else
-    ul_frame = (frame + (n >= 6 ? 1 : 0));
-
-  LOG_D(PHY, "frame %d subframe %d: PUSCH frame = %d\n", frame, n,
+  if (ccP->tdd_Config) {
+    if (ccP->tdd_Config->subframeAssignment == 1) {
+      if (n == 1 || n == 6) {
+        ul_frame = (frame + (n == 1 ? 0 : 1));
+      }
+    } else if (ccP->tdd_Config->subframeAssignment == 6) {
+      if (n == 0 || n == 1 || n == 5 || n == 6) {
+        ul_frame = (frame + (n >= 5 ? 1 : 0));
+      } else if (n == 9) {
+        ul_frame = (frame + 1);
+      }
+    }
+  }
+  LOG_D(PHY, "frame %d subframe %d: PUSCH frame = %d\n", 
+        frame, 
+        n,
         ul_frame);
+
   return ul_frame;
 }
 
-uint8_t pdcchalloc2ulsubframe(COMMON_channels_t *ccP, uint8_t n) {
+//------------------------------------------------------------------------------
+uint8_t 
+pdcchalloc2ulsubframe(COMMON_channels_t *ccP, 
+                      uint8_t n) 
+//------------------------------------------------------------------------------
+{
   uint8_t ul_subframe;
 
-  if ((ccP->tdd_Config) && (ccP->tdd_Config->subframeAssignment == 1) && ((n == 1) || (n == 6)))  // tdd_config 0,1 SF 1,5
+  if (ccP->tdd_Config && ccP->tdd_Config->subframeAssignment == 1 && (n == 1 || n == 6))  // tdd_config 0,1 SF 1,5
     ul_subframe = ((n + 6) % 10);
-  else if ((ccP->tdd_Config) &&
-           (ccP->tdd_Config->subframeAssignment == 6) &&
-           ((n == 0) || (n == 1) || (n == 5) || (n == 6)))
+  else if (ccP->tdd_Config && ccP->tdd_Config->subframeAssignment == 6 && (n == 0 || n == 1 || n == 5 || n == 6))
     ul_subframe = ((n + 7) % 10);
-  else if ((ccP->tdd_Config) && (ccP->tdd_Config->subframeAssignment == 6) && (n == 9)) // tdd_config 6 SF 9
+  else if (ccP->tdd_Config && ccP->tdd_Config->subframeAssignment == 6 && n == 9) // tdd_config 6 SF 9
     ul_subframe = ((n + 5) % 10);
   else
     ul_subframe = ((n + 4) % 10);
 
-  LOG_D(PHY, "subframe %d: PUSCH subframe = %d\n", n, ul_subframe);
+  LOG_D(PHY, "subframe %d: PUSCH subframe = %d\n", 
+        n, 
+        ul_subframe);
   return ul_subframe;
 }
 
-int is_UL_sf(COMMON_channels_t *ccP, sub_frame_t subframeP) {
+//------------------------------------------------------------------------------
+int 
+is_UL_sf(COMMON_channels_t *ccP, 
+         sub_frame_t subframeP) 
+//------------------------------------------------------------------------------
+{
   // if FDD return dummy value
   if (ccP->tdd_Config == NULL)
-    return (0);
+    return 0;
 
   switch (ccP->tdd_Config->subframeAssignment) {
     case 1:
@@ -507,87 +571,81 @@ int is_UL_sf(COMMON_channels_t *ccP, sub_frame_t subframeP) {
         case 4:
         case 5:
         case 9:
-          return (0);
-          break;
+          return 0;
 
         case 2:
         case 3:
         case 7:
         case 8:
-          return (1);
-          break;
+          return 1;
 
         default:
-          return (0);
-          break;
+          return 0;
       }
 
       break;
 
     case 3:
-      if ((subframeP <= 1) || (subframeP >= 5))
-        return (0);
-      else if ((subframeP > 1) && (subframeP < 5))
-        return (1);
-      else
-        AssertFatal(1 == 0, "Unknown subframe number\n");
+      if (subframeP <= 1 || subframeP >= 5)
+        return 0;
 
-      break;
+      return 1;
 
     case 4:
-      if ((subframeP <= 1) || (subframeP >= 4))
-        return (0);
-      else if ((subframeP > 1) && (subframeP < 4))
-        return (1);
-      else
-        AssertFatal(1 == 0, "Unknown subframe number\n");
+      if (subframeP <= 1 || subframeP >= 4)
+        return 0;
 
-      break;
+      return 1;
 
     case 5:
-      if ((subframeP <= 1) || (subframeP >= 3))
-        return (0);
-      else if ((subframeP > 1) && (subframeP < 3))
-        return (1);
-      else
-        AssertFatal(1 == 0, "Unknown subframe number\n");
+      if (subframeP <= 1 || subframeP >= 3)
+        return 0;
 
-      break;
+      return 1;
 
     default:
-      AssertFatal(1 == 0,
-                  "subframe %d Unsupported TDD configuration %d\n",
-                  subframeP, (int) ccP->tdd_Config->subframeAssignment);
+      AssertFatal(1 == 0,  "subframe %d Unsupported TDD configuration %d\n",
+                  subframeP, 
+                  (int) ccP->tdd_Config->subframeAssignment);
       break;
   }
+  return 0;
 }
 
-int is_S_sf(COMMON_channels_t *ccP, sub_frame_t subframeP) {
+//------------------------------------------------------------------------------
+int 
+is_S_sf(COMMON_channels_t *ccP, 
+        sub_frame_t subframeP) 
+//------------------------------------------------------------------------------
+{
   // if FDD return dummy value
   if (ccP->tdd_Config == NULL)
-    return (0);
+    return 0;
 
   switch (subframeP) {
     case 1:
-      return (1);
-      break;
+      return 1;
 
     case 6:
-      if(ccP->tdd_Config->subframeAssignment == 0 || ccP->tdd_Config->subframeAssignment == 1
-          || ccP->tdd_Config->subframeAssignment == 2 || ccP->tdd_Config->subframeAssignment == 6)
-        return (1);
+      if (ccP->tdd_Config->subframeAssignment == 0 || ccP->tdd_Config->subframeAssignment == 1 ||
+          ccP->tdd_Config->subframeAssignment == 2 || ccP->tdd_Config->subframeAssignment == 6)
+        return 1;
 
       break;
 
     default:
-      return (0);
       break;
   }
 
   return 0;
 }
 
-uint8_t ul_subframe2_k_phich(COMMON_channels_t *cc, sub_frame_t ul_subframe) {
+//------------------------------------------------------------------------------
+uint8_t 
+ul_subframe2_k_phich(COMMON_channels_t *cc, 
+                     sub_frame_t ul_subframe) 
+//------------------------------------------------------------------------------
+{
   if(cc->tdd_Config) { //TODO fill other tdd config
     switch(cc->tdd_Config->subframeAssignment) {
       case 0:
@@ -598,19 +656,11 @@ uint8_t ul_subframe2_k_phich(COMMON_channels_t *cc, sub_frame_t ul_subframe) {
           return 4;
         else if(ul_subframe == 3 || ul_subframe == 8)
           return 6;
-        else return 255;
-
-        break;
+        return 255;
 
       case 2:
-        break;
-
       case 3:
-        break;
-
       case 4:
-        break;
-
       case 5:
         break;
     }
@@ -619,9 +669,11 @@ uint8_t ul_subframe2_k_phich(COMMON_channels_t *cc, sub_frame_t ul_subframe) {
   return 4; //idk  sf_ahead?
 }
 
+//------------------------------------------------------------------------------
 uint16_t 
 get_pucch1_absSF(COMMON_channels_t *cc, 
                  uint16_t dlsch_absSF) 
+//------------------------------------------------------------------------------
 {
   uint16_t sf, f, nextf;
   LTE_TDD_Config_t *tdd_Config = cc->tdd_Config;
@@ -714,43 +766,36 @@ get_pucch1_absSF(COMMON_channels_t *cc,
   return 0;
 }
 
+//------------------------------------------------------------------------------
 void
-get_srs_pos(COMMON_channels_t *cc, uint16_t isrs,
-            uint16_t *psrsPeriodicity, uint16_t *psrsOffset) {
+get_srs_pos(COMMON_channels_t *cc, 
+            uint16_t isrs,
+            uint16_t *psrsPeriodicity, 
+            uint16_t *psrsOffset) 
+//------------------------------------------------------------------------------
+{
   if (cc->tdd_Config) { // TDD
     AssertFatal(isrs >= 10, "2 ms SRS periodicity not supported");
 
-    if ((isrs > 9) && (isrs < 15)) {
+    if (isrs > 9 && isrs < 15) {
       *psrsPeriodicity = 5;
       *psrsOffset = isrs - 10;
-    }
-
-    if ((isrs > 14) && (isrs < 25)) {
+    } else if (isrs > 14 && isrs < 25) {
       *psrsPeriodicity = 10;
       *psrsOffset = isrs - 15;
-    }
-
-    if ((isrs > 24) && (isrs < 45)) {
+    } else if (isrs > 24 && isrs < 45) {
       *psrsPeriodicity = 20;
       *psrsOffset = isrs - 25;
-    }
-
-    if ((isrs > 44) && (isrs < 85)) {
+    } else if (isrs > 44 && isrs < 85) {
       *psrsPeriodicity = 40;
       *psrsOffset = isrs - 45;
-    }
-
-    if ((isrs > 84) && (isrs < 165)) {
+    } else if (isrs > 84 && isrs < 165) {
       *psrsPeriodicity = 80;
       *psrsOffset = isrs - 85;
-    }
-
-    if ((isrs > 164) && (isrs < 325)) {
+    } else if (isrs > 164 && isrs < 325) {
       *psrsPeriodicity = 160;
       *psrsOffset = isrs - 165;
-    }
-
-    if ((isrs > 324) && (isrs < 645)) {
+    } else if (isrs > 324 && isrs < 645) {
       *psrsPeriodicity = 320;
       *psrsOffset = isrs - 325;
     }
@@ -761,56 +806,47 @@ get_srs_pos(COMMON_channels_t *cc, uint16_t isrs,
     if (isrs < 2) {
       *psrsPeriodicity = 2;
       *psrsOffset = isrs;
-    }
-
-    if ((isrs > 1) && (isrs < 7)) {
+    } else if (isrs > 1 && isrs < 7) {
       *psrsPeriodicity = 5;
       *psrsOffset = isrs - 2;
-    }
-
-    if ((isrs > 6) && (isrs < 17)) {
+    } else if (isrs > 6 && isrs < 17) {
       *psrsPeriodicity = 10;
       *psrsOffset = isrs - 7;
-    }
-
-    if ((isrs > 16) && (isrs < 37)) {
+    } else if (isrs > 16 && isrs < 37) {
       *psrsPeriodicity = 20;
       *psrsOffset = isrs - 17;
-    }
-
-    if ((isrs > 36) && (isrs < 77)) {
+    } else if (isrs > 36 && isrs < 77) {
       *psrsPeriodicity = 40;
       *psrsOffset = isrs - 37;
-    }
-
-    if ((isrs > 76) && (isrs < 157)) {
+    } else if (isrs > 76 && isrs < 157) {
       *psrsPeriodicity = 80;
       *psrsOffset = isrs - 77;
-    }
-
-    if ((isrs > 156) && (isrs < 317)) {
+    } else if (isrs > 156 && isrs < 317) {
       *psrsPeriodicity = 160;
       *psrsOffset = isrs - 157;
-    }
-
-    if ((isrs > 316) && (isrs < 637)) {
+    } else if (isrs > 316 && isrs < 637) {
       *psrsPeriodicity = 320;
       *psrsOffset = isrs - 317;
     }
 
     AssertFatal(isrs <= 636, "Isrs out of range %d>636\n", isrs);
   }
+  return;
 }
 
+//------------------------------------------------------------------------------
 void
 get_csi_params(COMMON_channels_t *cc,
                struct LTE_CQI_ReportPeriodic *cqi_ReportPeriodic,
-               uint16_t *Npd, uint16_t *N_OFFSET_CQI, int *H) {
-  uint16_t cqi_PMI_ConfigIndex =
-    cqi_ReportPeriodic->choice.setup.cqi_pmi_ConfigIndex;
+               uint16_t *Npd, 
+               uint16_t *N_OFFSET_CQI, 
+               int *H) 
+//------------------------------------------------------------------------------
+{
+  uint16_t cqi_PMI_ConfigIndex = cqi_ReportPeriodic->choice.setup.cqi_pmi_ConfigIndex;
   uint8_t Jtab[6] = { 0, 2, 2, 3, 4, 4 };
-  AssertFatal(cqi_ReportPeriodic != NULL,
-              "cqi_ReportPeriodic is null!\n");
+
+  AssertFatal(cqi_ReportPeriodic != NULL, "cqi_ReportPeriodic is null!\n");
 
   if (cc->tdd_Config == NULL) { //FDD
     if (cqi_PMI_ConfigIndex <= 1) { // 2 ms CQI_PMI period
@@ -872,71 +908,59 @@ get_csi_params(COMMON_channels_t *cc,
   }
 
   // get H
-  if (cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.
-      present ==
-      LTE_CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_subbandCQI)
-    *H = 1 +
-         (Jtab[cc->mib->message.dl_Bandwidth] *
-          cqi_ReportPeriodic->choice.setup.
-          cqi_FormatIndicatorPeriodic.choice.subbandCQI.k);
-  else
+  if (cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present == LTE_CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_subbandCQI) {
+    *H = 1 + (Jtab[cc->mib->message.dl_Bandwidth] * cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.choice.subbandCQI.k);
+  } else {
     *H = 1;
+  }
+  return;
 }
 
+//------------------------------------------------------------------------------
 uint8_t
-get_dl_cqi_pmi_size_pusch(COMMON_channels_t *cc, uint8_t tmode,
+get_dl_cqi_pmi_size_pusch(COMMON_channels_t *cc, 
+                          uint8_t tmode,
                           uint8_t ri,
                           LTE_CQI_ReportModeAperiodic_t *
-                          cqi_ReportModeAperiodic) {
+                          cqi_ReportModeAperiodic) 
+//------------------------------------------------------------------------------
+{
   int Ntab[6] = { 0, 4, 7, 9, 10, 13 };
   int N = Ntab[cc->mib->message.dl_Bandwidth];
   int Ltab_uesel[6] = { 0, 6, 9, 13, 15, 18 };
   int L = Ltab_uesel[cc->mib->message.dl_Bandwidth];
-  AssertFatal(cqi_ReportModeAperiodic != NULL,
-              "cqi_ReportPeriodic is null!\n");
+
+  AssertFatal(cqi_ReportModeAperiodic != NULL, "cqi_ReportPeriodic is null!\n");
 
   switch (*cqi_ReportModeAperiodic) {
     case LTE_CQI_ReportModeAperiodic_rm12:
-      AssertFatal(tmode == 4 || tmode == 6 || tmode == 8 || tmode == 9
-                  || tmode == 10,
-                  "Illegal TM (%d) for CQI_ReportModeAperiodic_rm12\n",
+      AssertFatal(tmode == 4 || tmode == 6 || tmode == 8 || tmode == 9 || tmode == 10, "Illegal TM (%d) for CQI_ReportModeAperiodic_rm12\n",
                   tmode);
-      AssertFatal(cc->p_eNB <= 4,
-                  "only up to 4 antenna ports supported here\n");
+      AssertFatal(cc->p_eNB <= 4, "only up to 4 antenna ports supported here\n");
 
       if (ri == 1 && cc->p_eNB == 2)
         return (4 + (N << 1));
-      else if (ri == 2 && cc->p_eNB == 2)
+      if (ri == 2 && cc->p_eNB == 2)
         return (8 + N);
-      else if (ri == 1 && cc->p_eNB == 4)
+      if (ri == 1 && cc->p_eNB == 4)
         return (4 + (N << 2));
-      else if (ri > 1 && cc->p_eNB == 4)
+      if (ri > 1 && cc->p_eNB == 4)
         return (8 + (N << 2));
 
       break;
 
     case LTE_CQI_ReportModeAperiodic_rm20:
       // Table 5.2.2.6.3-1 (36.212)
-      AssertFatal(tmode == 1 || tmode == 2 || tmode == 3 || tmode == 7
-                  || tmode == 9
-                  || tmode == 10,
-                  "Illegal TM (%d) for CQI_ReportModeAperiodic_rm20\n",
+      AssertFatal(tmode == 1 || tmode == 2 || tmode == 3 || tmode == 7 || tmode == 9 || tmode == 10, "Illegal TM (%d) for CQI_ReportModeAperiodic_rm20\n",
                   tmode);
-      AssertFatal(tmode != 9
-                  && tmode != 10,
-                  "TM9/10 will be handled later for CQI_ReportModeAperiodic_rm20\n");
+      AssertFatal(tmode != 9 && tmode != 10, "TM9/10 will be handled later for CQI_ReportModeAperiodic_rm20\n");
       return (4 + 2 + L);
-      break;
 
     case LTE_CQI_ReportModeAperiodic_rm22:
       // Table 5.2.2.6.3-2 (36.212)
-      AssertFatal(tmode == 4 || tmode == 6 || tmode == 8 || tmode == 9
-                  || tmode == 10,
-                  "Illegal TM (%d) for CQI_ReportModeAperiodic_rm22\n",
+      AssertFatal(tmode == 4 || tmode == 6 || tmode == 8 || tmode == 9 || tmode == 10, "Illegal TM (%d) for CQI_ReportModeAperiodic_rm22\n",
                   tmode);
-      AssertFatal(tmode != 9
-                  && tmode != 10,
-                  "TM9/10 will be handled later for CQI_ReportModeAperiodic_rm22\n");
+      AssertFatal(tmode != 9 && tmode != 10, "TM9/10 will be handled later for CQI_ReportModeAperiodic_rm22\n");
 
       if (ri == 1 && cc->p_eNB == 2)
         return (4 + 2 + 0 + 0 + L + 4);
@@ -954,84 +978,68 @@ get_dl_cqi_pmi_size_pusch(COMMON_channels_t *cc, uint8_t tmode,
 
     case LTE_CQI_ReportModeAperiodic_rm30:
       // Table 5.2.2.6.2-1 (36.212)
-      AssertFatal(tmode == 1 || tmode == 2 || tmode == 3 || tmode == 7
-                  || tmode == 8 || tmode == 9
-                  || tmode == 10,
+      AssertFatal(tmode == 1 || tmode == 2 || tmode == 3 || tmode == 7 || tmode == 8 || tmode == 9 || tmode == 10,
                   "Illegal TM (%d) for CQI_ReportModeAperiodic_rm30\n",
                   tmode);
-      AssertFatal(tmode != 8 && tmode != 9
-                  && tmode != 10,
-                  "TM8/9/10 will be handled later for CQI_ReportModeAperiodic_rm30\n");
+      AssertFatal(tmode != 8 && tmode != 9 && tmode != 10, "TM8/9/10 will be handled later for CQI_ReportModeAperiodic_rm30\n");
       return (4 + (N << 1));
-      break;
 
     case LTE_CQI_ReportModeAperiodic_rm31:
       // Table 5.2.2.6.2-2 (36.212)
-      AssertFatal(tmode == 4 || tmode == 6 || tmode == 8 || tmode == 9
-                  || tmode == 10,
-                  "Illegal TM (%d) for CQI_ReportModeAperiodic_rm31\n",
+      AssertFatal(tmode == 4 || tmode == 6 || tmode == 8 || tmode == 9 || tmode == 10, "Illegal TM (%d) for CQI_ReportModeAperiodic_rm31\n",
                   tmode);
-      AssertFatal(tmode != 8 && tmode != 9
-                  && tmode != 10,
-                  "TM8/9/10 will be handled later for CQI_ReportModeAperiodic_rm31\n");
+      AssertFatal(tmode != 8 && tmode != 9 && tmode != 10, "TM8/9/10 will be handled later for CQI_ReportModeAperiodic_rm31\n");
 
       if (ri == 1 && cc->p_eNB == 2)
         return (4 + (N << 1) + 0 + 0 + 2);
-      else if (ri == 2 && cc->p_eNB == 2)
+      if (ri == 2 && cc->p_eNB == 2)
         return (4 + (N << 1) + 4 + (N << 1) + 1);
-      else if (ri == 1 && cc->p_eNB == 4)
+      if (ri == 1 && cc->p_eNB == 4)
         return (4 + (N << 1) + 0 + 0 + 4);
-      else if (ri >= 2 && cc->p_eNB == 4)
+      if (ri >= 2 && cc->p_eNB == 4)
         return (4 + (N << 1) + 4 + (N << 1) + 4);
 
       break;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(12, 5, 0))
 
+#if (LTE_RRC_VERSION >= MAKE_VERSION(12, 5, 0))
     case LTE_CQI_ReportModeAperiodic_rm32_v1250:
-      AssertFatal(tmode == 4 || tmode == 6 || tmode == 8 || tmode == 9
-                  || tmode == 10,
-                  "Illegal TM (%d) for CQI_ReportModeAperiodic_rm32\n",
+      AssertFatal(tmode == 4 || tmode == 6 || tmode == 8 || tmode == 9 || tmode == 10, "Illegal TM (%d) for CQI_ReportModeAperiodic_rm32\n",
                   tmode);
-      AssertFatal(1 == 0,
-                  "CQI_ReportModeAperiodic_rm32_v1250 not supported yet\n");
+      AssertFatal(1 == 0, "CQI_ReportModeAperiodic_rm32_v1250 not supported yet\n");
       break;
 
     case LTE_CQI_ReportModeAperiodic_rm10_v1310:
 
       // Table 5.2.2.6.1-1F/G (36.212)
       if (ri == 1)
-        return (4);   // F
-      else
-        return (7);   // G
-
-      break;
+        return 4;   // F
+      return 7;   // G
 
     case LTE_CQI_ReportModeAperiodic_rm11_v1310:
       // Table 5.2.2.6.1-1H (36.212)
-      AssertFatal(tmode == 4 || tmode == 6 || tmode == 8 || tmode == 9
-                  || tmode == 10,
-                  "Illegal TM (%d) for CQI_ReportModeAperiodic_rm11\n",
+      AssertFatal(tmode == 4 || tmode == 6 || tmode == 8 || tmode == 9 || tmode == 10,  "Illegal TM (%d) for CQI_ReportModeAperiodic_rm11\n",
                   tmode);
-      AssertFatal(cc->p_eNB <= 4,
-                  "only up to 4 antenna ports supported here\n");
+      AssertFatal(cc->p_eNB <= 4, "only up to 4 antenna ports supported here\n");
 
       if (ri == 1 && cc->p_eNB == 2)
         return (4 + 0 + 2);
-      else if (ri == 2 && cc->p_eNB == 2)
+      if (ri == 2 && cc->p_eNB == 2)
         return (4 + 4 + 1);
-      else if (ri == 1 && cc->p_eNB == 4)
+      if (ri == 1 && cc->p_eNB == 4)
         return (4 + 0 + 4);
-      else if (ri > 1 && cc->p_eNB == 4)
+      if (ri > 1 && cc->p_eNB == 4)
         return (4 + 4 + 4);
 
       break;
 #endif /* #if (LTE_RRC_VERSION >= MAKE_VERSION(12, 5, 0)) */
+
   }
 
   AssertFatal(1 == 0, "Shouldn't get here\n");
-  return (0);
+  return 0;
 }
 
+//------------------------------------------------------------------------------
 uint8_t
 get_rel8_dl_cqi_pmi_size(UE_sched_ctrl *sched_ctl, int CC_idP,
                          COMMON_channels_t *cc, uint8_t tmode,
