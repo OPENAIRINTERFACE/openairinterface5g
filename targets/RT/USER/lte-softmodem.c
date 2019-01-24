@@ -127,10 +127,7 @@ int config_sync_var=-1;
 uint16_t runtime_phy_rx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 100]
 uint16_t runtime_phy_tx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 100]
 
-#if defined(ENABLE_ITTI)
-  volatile int             start_eNB = 0;
-  volatile int             start_UE = 0;
-#endif
+
 volatile int             oai_exit = 0;
 
 uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
@@ -379,61 +376,6 @@ static void *scope_thread(void *arg) {
 #endif
 
 
-
-
-#if defined(ENABLE_ITTI)
-void *l2l1_task(void *arg) {
-  MessageDef *message_p = NULL;
-  int         result;
-  itti_set_task_real_time(TASK_L2L1);
-  itti_mark_task_ready(TASK_L2L1);
-  /* Wait for the initialize message */
-  printf("Wait for the ITTI initialize message\n");
-
-  while (1) {
-    itti_receive_msg (TASK_L2L1, &message_p);
-
-    switch (ITTI_MSG_ID(message_p)) {
-      case INITIALIZE_MESSAGE:
-        /* Start eNB thread */
-        LOG_D(PHY, "L2L1 TASK received %s\n", ITTI_MSG_NAME(message_p));
-        start_eNB = 1;
-        break;
-
-      case TERMINATE_MESSAGE:
-        LOG_W(PHY, " *** Exiting L2L1 thread\n");
-        oai_exit=1;
-        start_eNB = 0;
-        itti_exit_task ();
-        break;
-
-      case ACTIVATE_MESSAGE:
-        start_UE = 1;
-        break;
-
-      case DEACTIVATE_MESSAGE:
-        start_UE = 0;
-        break;
-
-      case MESSAGE_TEST:
-        printf("Received %s\n", ITTI_MSG_NAME(message_p));
-        break;
-
-      default:
-        printf("Received unexpected message %s\n", ITTI_MSG_NAME(message_p));
-        break;
-    }
-
-    result = itti_free (ITTI_MSG_ORIGIN_ID(message_p), message_p);
-    AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-    message_p = NULL;
-  };
-
-  return NULL;
-}
-#endif
-
-
 static void get_options(void) {
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
   get_common_options();
@@ -565,7 +507,6 @@ int stop_L1L2(module_id_t enb_id) {
 
   /* these tasks need to pick up new configuration */
   terminate_task(enb_id, TASK_ENB_APP, TASK_RRC_ENB);
-  terminate_task(enb_id, TASK_ENB_APP, TASK_L2L1);
   oai_exit = 1;
   LOG_I(ENB_APP, "calling kill_RU_proc() for instance %d\n", enb_id);
   kill_RU_proc(RC.ru[enb_id]);
@@ -615,13 +556,6 @@ int restart_L1L2(module_id_t enb_id) {
     return -1;
   } else {
     LOG_I(RRC, "Re-created task for RRC eNB successfully\n");
-  }
-
-  if (itti_create_task (TASK_L2L1, l2l1_task, NULL) < 0) {
-    LOG_E(PDCP, "Create task for L2L1 failed\n");
-    return -1;
-  } else {
-    LOG_I(PDCP, "Re-created task for L2L1 successfully\n");
   }
 
   /* pass a reconfiguration request which will configure everything down to
