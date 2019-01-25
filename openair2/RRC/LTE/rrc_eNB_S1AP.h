@@ -151,6 +151,16 @@ void rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ (
   const long                               cause_valueP
 );
 
+/*! \fn rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_CPLT(const module_id_t enb_mod_idP, const struct rrc_eNB_ue_context_s *const ue_context_pP)
+ *\brief create a S1AP_UE_CONTEXT_RELEASE_COMPLETE message, the message is sent by the eNB to S1AP task to acknowledge/complete the release of the UE-associated S1-logical connection over the S1 interface. .
+ *\param enb_mod_idP Instance ID of eNB.
+ *\param eNB_ue_s1ap_id UE's S1AP ID in the eNB.
+ */
+void rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_CPLT(
+  module_id_t enb_mod_idP,
+  uint32_t eNB_ue_s1ap_id
+);
+
 /* Down link procedures */
 
 /*! \fn rrc_eNB_process_S1AP_DOWNLINK_NAS(MessageDef *msg_p, const char *msg_name, instance_t instance, mui_t *rrc_eNB_mui)

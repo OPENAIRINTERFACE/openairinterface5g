@@ -1229,6 +1229,23 @@ void rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ (
   }
 }
 
+void rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_CPLT(
+  module_id_t enb_mod_idP,
+  uint32_t eNB_ue_s1ap_id
+)
+{
+  MSC_LOG_TX_MESSAGE(
+      MSC_RRC_ENB,
+      MSC_S1AP_ENB,
+      NULL,0,
+      "0 S1AP_UE_CONTEXT_RELEASE_COMPLETE eNB_ue_s1ap_id 0x%06"PRIX32" ",
+      eNB_ue_s1ap_id);
+
+  MessageDef *msg = itti_alloc_new_message(TASK_RRC_ENB, S1AP_UE_CONTEXT_RELEASE_COMPLETE);
+  S1AP_UE_CONTEXT_RELEASE_COMPLETE(msg).eNB_ue_s1ap_id = eNB_ue_s1ap_id;
+  itti_send_msg_to_task(TASK_S1AP, ENB_MODULE_ID_TO_INSTANCE(enb_mod_idP), msg);
+}
+
 
 /*------------------------------------------------------------------------------*/
 int rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_COMMAND (MessageDef *msg_p, const char *msg_name, instance_t instance)

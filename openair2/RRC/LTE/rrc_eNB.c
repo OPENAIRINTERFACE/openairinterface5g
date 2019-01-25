@@ -8226,40 +8226,26 @@ rrc_rx_tx(
 #if defined(ENABLE_USE_MME)
 #if defined(ENABLE_ITTI)
            if (RC.rrc[ctxt_pP->module_id]->node_type != ngran_eNB_DU) {
-              int      e_rab;
-              MessageDef *msg_complete_p = NULL;
-              MessageDef *msg_delete_tunnels_p = NULL;
-              uint32_t eNB_ue_s1ap_id = ue_context_p->ue_context.eNB_ue_s1ap_id;
               if(rrc_release_info.RRC_release_ctrl[release_num].flag == 4){
-                MSC_LOG_TX_MESSAGE(
-                       MSC_RRC_ENB,
-                       MSC_S1AP_ENB,
-                       NULL,0,
-                       "0 S1AP_UE_CONTEXT_RELEASE_COMPLETE eNB_ue_s1ap_id 0x%06"PRIX32" ",
-                       eNB_ue_s1ap_id);
-                msg_complete_p = itti_alloc_new_message(TASK_RRC_ENB, S1AP_UE_CONTEXT_RELEASE_COMPLETE);
-                S1AP_UE_CONTEXT_RELEASE_COMPLETE(msg_complete_p).eNB_ue_s1ap_id = eNB_ue_s1ap_id;
-                itti_send_msg_to_task(TASK_S1AP, ctxt_pP->module_id, msg_complete_p);
+                rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_CPLT(ctxt_pP->module_id,
+                    ue_context_p->ue_context.eNB_ue_s1ap_id);
               }
-              MSC_LOG_TX_MESSAGE(MSC_RRC_ENB, MSC_GTPU_ENB, NULL,0, "0 GTPV1U_ENB_DELETE_TUNNEL_REQ rnti %x ", eNB_ue_s1ap_id);
-              msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
-              memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
-           // do not wait response
-              GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
-              for (e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
-                GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).eps_bearer_id[GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_erab++] =
-                  ue_context_p->ue_context.enb_gtp_ebi[e_rab];
-                // erase data
+
+              rrc_eNB_send_GTPV1U_ENB_DELETE_TUNNEL_REQ(ctxt_pP->module_id,
+                    ue_context_p);
+              // erase data of GTP tunnels in UE context
+              for (int e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
                 ue_context_p->ue_context.enb_gtp_teid[e_rab] = 0;
-                memset(&ue_context_p->ue_context.enb_gtp_addrs[e_rab], 0, sizeof(ue_context_p->ue_context.enb_gtp_addrs[e_rab]));
+                memset(&ue_context_p->ue_context.enb_gtp_addrs[e_rab],
+                    0, sizeof(ue_context_p->ue_context.enb_gtp_addrs[e_rab]));
                 ue_context_p->ue_context.enb_gtp_ebi[e_rab]  = 0;
               }
-              itti_send_msg_to_task(TASK_GTPV1_U, ctxt_pP->module_id, msg_delete_tunnels_p);
+
               struct rrc_ue_s1ap_ids_s    *rrc_ue_s1ap_ids = NULL;
               rrc_ue_s1ap_ids = rrc_eNB_S1AP_get_ue_ids(
                      RC.rrc[ctxt_pP->module_id],
                      0,
-                     eNB_ue_s1ap_id);
+                     ue_context_p->ue_context.eNB_ue_s1ap_id);
               if (NULL != rrc_ue_s1ap_ids) {
                 rrc_eNB_S1AP_remove_ue_ids(
                            RC.rrc[ctxt_pP->module_id],
