@@ -41,46 +41,6 @@ proto_agent_channel_t *proto_channel[NUM_MAX_ENB][ENB_AGENT_MAX];
 proto_agent_channel_instance_t channel_instance;
 int proto_agent_channel_id = 0;
 
-int proto_agent_msg_send(mod_id_t mod_id, proto_agent_id_t agent_id, void *data, int size, int priority) {
-  /*Check if agent id is valid*/
-  if (agent_id >= ENB_AGENT_MAX || agent_id < 0) {
-    goto error;
-  }
-  proto_agent_channel_t *channel;
-  channel = proto_channel[mod_id][agent_id];
-  
-  /*Check if agent has a channel registered*/
-  if (channel == NULL) {
-    goto error;
-  }
-
-  return channel->msg_send(data, size, priority, channel->channel_info);
-  
- error:
-  LOG_E(PROTO_AGENT, "No channel registered for agent with id %d\n", agent_id);
-  return -1;
-}
-
-int proto_agent_msg_recv(mod_id_t mod_id, proto_agent_id_t agent_id, void **data, int *size, int *priority) {
-  /*Check if agent id is valid*/
-  if (agent_id >= ENB_AGENT_MAX || agent_id < 0) {
-    goto error;
-  }
-  proto_agent_channel_t *channel;
-  channel = proto_channel[mod_id][agent_id];
-  
-  /*Check if agent has a channel registered*/
-  if (channel == NULL) {
-    goto error;
-  }
-  
-  return channel->msg_recv(data, size, priority, channel->channel_info);
-  
- error:
-  LOG_E(PROTO_AGENT, "No channel registered for agent with id %d\n", agent_id);
-  return -1;
-}
-
 int proto_agent_register_channel(mod_id_t mod_id, proto_agent_channel_t *channel, proto_agent_id_t agent_id) {
   int i;
 

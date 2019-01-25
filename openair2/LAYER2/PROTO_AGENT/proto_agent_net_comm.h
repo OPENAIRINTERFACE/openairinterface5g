@@ -59,10 +59,6 @@ typedef struct proto_agent_channel_instance_s{
   RB_HEAD(proto_agent_channel_map, proto_agent_channel_s) proto_agent_head;
 } proto_agent_channel_instance_t;
 
-/*Send and receive messages using the channel registered for a specific agent*/
-int proto_agent_msg_send(mod_id_t mod_id, proto_agent_id_t agent_id, void *data, int size, int priority);
-
-int proto_agent_msg_recv(mod_id_t mod_id, proto_agent_id_t agent_id, void **data, int *size, int *priority);
 
 /*Register a channel to an agent. Use ENB_AGENT_MAX to register the
  *same channel to all agents*/
