@@ -169,3 +169,10 @@ The RRC layer is based on **3GPP 36.331** v14.3.0 and implements the following f
 
 - System Information decoding
 - RRC connection establishment
+
+## LTE UE NAS Layer ##
+
+The NAS layer is based on **3GPP 24.301** and implements the following functions:
+
+- EMM attach/detach, authentication, tracking area update, and more
+- ESM default/dedicated bearer, PDN connectivity, and more
