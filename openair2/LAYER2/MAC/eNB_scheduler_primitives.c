@@ -3018,17 +3018,19 @@ dump_CCE_table(int *CCE_table,
   printf("CCE 0: ");
 
   for (i = 0; i < nCCE; i++) {
-    printf("%1d.", CCE_table[i]);
+    printf("%1d.", 
+           CCE_table[i]);
 
     if ((i & 7) == 7)
-      printf("\n CCE %d: ", i);
+      printf("\n CCE %d: ", 
+             i);
   }
 
   Yk = (unsigned int) rnti;
 
-  for (i = 0; i <= subframe; i++)
+  for (i = 0; i <= subframe; i++) {
     Yk = (Yk * 39827) % 65537;
-
+  }
   Yk = Yk % (nCCE / L);
 
   switch (L) {
@@ -3047,8 +3049,12 @@ dump_CCE_table(int *CCE_table,
       break;
   }
 
-  printf("rnti %x, Yk*L = %d, nCCE %d (nCCE/L %d),nb_cand*L %d\n", rnti,
-         Yk * L, nCCE, nCCE / L, nb_candidates * L);
+  printf("rnti %x, Yk*L = %d, nCCE %d (nCCE/L %d),nb_cand*L %d\n", 
+         rnti,
+         Yk * L, 
+         nCCE, 
+         nCCE / L, 
+         nb_candidates * L);
 }
 
 //------------------------------------------------------------------------------
@@ -3065,16 +3071,16 @@ getnquad(COMMON_channels_t *cc,
   int phich_resource = get_phich_resource_times6(cc);
   uint8_t Ngroup_PHICH = (phich_resource * N_RB_DL) / 48;
 
-  if (((phich_resource * N_RB_DL) % 48) > 0)
+  if (((phich_resource * N_RB_DL) % 48) > 0) {
     Ngroup_PHICH++;
-
+  }
   if (cc->Ncp == 1) {
     Ngroup_PHICH <<= 1;
   }
 
   Ngroup_PHICH *= mi;
 
-  if ((num_pdcch_symbols > 0) && (num_pdcch_symbols < 4))
+  if (num_pdcch_symbols > 0 && num_pdcch_symbols < 4)
     switch (N_RB_DL) {
       case 6:
         Nreg = 12 + (num_pdcch_symbols - 1) * 18;
@@ -3093,7 +3099,7 @@ getnquad(COMMON_channels_t *cc,
         break;
 
       default:
-        return (0);
+        return 0;
     }
 
   //   printf("Nreg %d (%d)\n",Nreg,Nreg - 4 - (3*Ngroup_PHICH));
@@ -3108,7 +3114,9 @@ getnCCE(COMMON_channels_t *cc,
 //------------------------------------------------------------------------------
 {
   AssertFatal(cc != NULL, "cc is null\n");
-  return (getnquad(cc, num_pdcch_symbols, mi) / 9);
+  return (getnquad(cc, 
+                   num_pdcch_symbols, 
+                   mi) / 9);
 }
 
 //------------------------------------------------------------------------------
@@ -3126,72 +3134,74 @@ getmi(COMMON_channels_t *cc,
   // for TDD
   switch (cc->tdd_Config->subframeAssignment) {
     case 0:
-      if ((subframe == 0) || (subframe == 5))
-        return (2);
-      else
-        return (1);
-
-      break;
+      if (subframe == 0 || subframe == 5) {
+        return 2;
+      }
+      return 1;
 
     case 1:
-      if ((subframe == 0) || (subframe == 5))
-        return (0);
-      else
-        return (1);
-
-      break;
+      if (subframe == 0 || subframe == 5) {
+        return 0;
+      }
+      return 1;
 
     case 2:
-      if ((subframe == 3) || (subframe == 8))
-        return (1);
-      else
-        return (0);
-
-      break;
+      if (subframe == 3 || subframe == 8) {
+        return 0;
+      }
+      return 1;
 
     case 3:
-      if ((subframe == 0) || (subframe == 8) || (subframe == 9))
-        return (1);
-      else
-        return (0);
-
-      break;
+      if (subframe == 0 || subframe == 8 || subframe == 9) {
+        return 1;
+      }
+      return 0;
 
     case 4:
-      if ((subframe == 8) || (subframe == 9))
-        return (1);
-      else
-        return (0);
-
-      break;
+      if (subframe == 8 || subframe == 9) {
+        return 1;
+      }
+      return 0;
 
     case 5:
-      if (subframe == 8)
-        return (1);
-      else
-        return (0);
-
-      break;
+      if (subframe == 8) {
+        return 1;
+      }
+      return 0;
 
     case 6:
-      return (1);
-      break;
+      return 1;
 
     default:
-      return (0);
+      break;
   }
+  return 0;
 }
 
 //------------------------------------------------------------------------------
 uint16_t
-get_nCCE_max(COMMON_channels_t *cc, int num_pdcch_symbols, int subframe) {
+get_nCCE_max(COMMON_channels_t *cc, 
+             int num_pdcch_symbols, 
+             int subframe) 
+//------------------------------------------------------------------------------
+{
   AssertFatal(cc != NULL, "cc is null\n");
-  return (getnCCE(cc, num_pdcch_symbols, getmi(cc, subframe)));
+  return (getnCCE(cc, 
+                  num_pdcch_symbols, 
+                  getmi(cc, 
+                        subframe)));
 }
 
 // Allocate the CCEs
+//------------------------------------------------------------------------------
 int
-allocate_CCEs(int module_idP, int CC_idP, frame_t frameP, sub_frame_t subframeP, int test_onlyP) {
+allocate_CCEs(int module_idP, 
+              int CC_idP, 
+              frame_t frameP, 
+              sub_frame_t subframeP, 
+              int test_onlyP) 
+//------------------------------------------------------------------------------
+{
   int *CCE_table = RC.mac[module_idP]->CCE_table[CC_idP];
   nfapi_dl_config_request_body_t *DL_req =
     &RC.mac[module_idP]->DL_req[CC_idP].dl_config_request_body;
@@ -3526,11 +3536,13 @@ failed:
   return -1;
 }
 
+//------------------------------------------------------------------------------
 nfapi_ul_config_request_pdu_t *
 has_ul_grant(module_id_t module_idP,
              int CC_idP, 
              uint16_t absSFP, 
              uint16_t rnti) 
+//------------------------------------------------------------------------------
 {
   nfapi_ul_config_request_body_t *ul_req = &RC.mac[module_idP]->UL_req_tmp[CC_idP][absSFP % 10].ul_config_request_body;
   nfapi_ul_config_request_pdu_t *ul_config_pdu = &ul_req->ul_config_pdu_list[0];
@@ -3594,11 +3606,16 @@ has_ul_grant(module_id_t module_idP,
   return (NULL);    // no ul grant at all for this UE
 }
 
+//------------------------------------------------------------------------------
 boolean_t
 CCE_allocation_infeasible(int module_idP,
                           int CC_idP,
                           int format_flag,
-                          int subframe, int aggregation, int rnti) {
+                          int subframe, 
+                          int aggregation, 
+                          int rnti) 
+//------------------------------------------------------------------------------
+{
   nfapi_dl_config_request_body_t *DL_req       = &RC.mac[module_idP]->DL_req[CC_idP].dl_config_request_body;
   nfapi_dl_config_request_pdu_t *dl_config_pdu = &DL_req->dl_config_pdu_list[DL_req->number_pdu];
   nfapi_hi_dci0_request_body_t *HI_DCI0_req    = &RC.mac[module_idP]->HI_DCI0_req[CC_idP][subframe].hi_dci0_request_body;
@@ -3652,44 +3669,55 @@ CCE_allocation_infeasible(int module_idP,
 
   return res;
 }
-void get_retransmission_timing(LTE_TDD_Config_t *tdd_Config, frame_t *frameP,
-                               sub_frame_t *subframeP) {
-  if (tdd_Config == NULL) {
-    if (*subframeP > 1)
-      *frameP = (*frameP + 1) % 1024;
 
+//------------------------------------------------------------------------------
+void 
+get_retransmission_timing(LTE_TDD_Config_t *tdd_Config, 
+                          frame_t *frameP,
+                          sub_frame_t *subframeP) 
+//------------------------------------------------------------------------------
+{
+  if (tdd_Config == NULL) {
+    if (*subframeP > 1) {
+      *frameP = (*frameP + 1) % 1024;
+    }
     *subframeP = (*subframeP + 8) % 10;
   } else {
     switch (tdd_Config->subframeAssignment) { //TODO fill in other TDD configs
       default:
-        printf("%s:%d: TODO\n", __FILE__, __LINE__);
+        printf("%s:%d: TODO\n", 
+               __FILE__, 
+               __LINE__);
         abort();
+        break;
 
       case 1:
         if (*subframeP == 0 || *subframeP == 5) {
           *subframeP  += 19;
-          *frameP = (*frameP + *subframeP/10) % 1024;
+          *frameP = (*frameP + (*subframeP / 10)) % 1024;
           *subframeP %= 10;
         } else if (*subframeP == 4 || *subframeP == 9) {
           *subframeP  += 16;
-          *frameP = (*frameP + *subframeP/10) % 1024;
+          *frameP = (*frameP + (*subframeP / 10)) % 1024;
           *subframeP %= 10;
         } else {
-          AssertFatal(2 == 1,
-                      "Illegal dl subframe %d for tdd config %ld\n", *subframeP,
+          AssertFatal(2 == 1, "Illegal dl subframe %d for tdd config %ld\n", 
+                      *subframeP,
                       tdd_Config->subframeAssignment);
         }
-
         break;
     }
   }
+  return;
 }
 
+//------------------------------------------------------------------------------
 uint8_t
 get_dl_subframe_count(int tdd_config_sfa,
                       sub_frame_t subframeP) 
+//------------------------------------------------------------------------------
 {
-  uint8_t tdd1[10] = {1,-1,-1,-1,2,3,-1,-1,-1,4}; // special subframes 1,6 are excluded
+  uint8_t tdd1[10] = {1, -1, -1, -1, 2, 3, -1, -1, -1, 4}; // special subframes 1,6 are excluded
 
   switch (tdd_config_sfa) {// TODO fill in other tdd configs
     case 1:
@@ -3699,17 +3727,21 @@ get_dl_subframe_count(int tdd_config_sfa,
   return -1;
 }
 
+//------------------------------------------------------------------------------
 uint8_t
 frame_subframe2_dl_harq_pid(LTE_TDD_Config_t *tdd_Config,
                             int abs_frameP,
-                            sub_frame_t subframeP) {
+                            sub_frame_t subframeP) 
+//------------------------------------------------------------------------------
+{
   int harq_pid;
   uint8_t count;
 
   if (tdd_Config) {
     switch(tdd_Config->subframeAssignment) { //TODO fill in other tdd config
       case 1:
-        count = get_dl_subframe_count(tdd_Config->subframeAssignment, subframeP);
+        count = get_dl_subframe_count(tdd_Config->subframeAssignment, 
+                                      subframeP);
         harq_pid = (((frame_cnt * 1024 + abs_frameP) * 4) - 1 + count) % 7;//4 dl subframe in a frame
 
         if (harq_pid < 0) {
@@ -3732,134 +3764,148 @@ frame_subframe2_dl_harq_pid(LTE_TDD_Config_t *tdd_Config,
   return -1;
 }
 
-unsigned char ul_ACK_subframe2M(LTE_TDD_Config_t *tdd_Config,unsigned char subframe) {
+//------------------------------------------------------------------------------
+unsigned char 
+ul_ACK_subframe2M(LTE_TDD_Config_t *tdd_Config,
+                  unsigned char subframe) 
+//------------------------------------------------------------------------------
+{
   if (tdd_Config == NULL) {
-    return(1);
-  } else {
-    switch (tdd_Config->subframeAssignment) {
-      case 1:
-        return 1; // don't ACK special subframe for now
+    return 1;
+  } 
+  switch (tdd_Config->subframeAssignment) {
+    case 1:
+      return 1; // don't ACK special subframe for now
+      /*
+      if (subframe == 2) {  // ACK subframes 5 and 6
+        return(2);
+      } else if (subframe == 3) { // ACK subframe 9
+        return(1);  // To be updated
+      } else if (subframe == 7) { // ACK subframes 0 and 1
+        return(2);  // To be updated
+      } else if (subframe == 8) { // ACK subframe 4
+        return(1);  // To be updated
+      } else {
+        AssertFatal(1==0,"illegal subframe %d for tdd_config %ld\n",
+                    subframe,tdd_Config->subframeAssignment);
+      }
+      break;
+      */
+    case 3:
+      if (subframe == 2) {  // ACK subframes 5 and 6
+        return 2; // should be 3
+      } 
+      if (subframe == 3) { // ACK subframes 7 and 8
+        return 2;  // To be updated
+      } 
+      if (subframe == 4) { // ACK subframes 9 and 0
+        return 2;
+      } 
+      AssertFatal(1==0,"illegal subframe %d for tdd_config %ld\n",
+                  subframe,
+                  tdd_Config->subframeAssignment);
+      break;
 
-        if (subframe == 2) {  // ACK subframes 5 and 6
-          return(2);
-        } else if (subframe == 3) { // ACK subframe 9
-          return(1);  // To be updated
-        } else if (subframe == 7) { // ACK subframes 0 and 1
-          return(2);  // To be updated
-        } else if (subframe == 8) { // ACK subframe 4
-          return(1);  // To be updated
-        } else {
-          AssertFatal(1==0,"illegal subframe %d for tdd_config %ld\n",
-                      subframe,tdd_Config->subframeAssignment);
-        }
+    case 4:
+      if (subframe == 2) {  // ACK subframes 0,4 and 5
+        return 3; // should be 4
+      } 
+      if (subframe == 3) { // ACK subframes 6,7,8 and 9
+        return 4;
+      } 
+      AssertFatal(1==0,"illegal subframe %d for tdd_config %ld\n",
+                  subframe,
+                  tdd_Config->subframeAssignment);
+      break;
 
-        break;
-
-      case 3:
-        if (subframe == 2) {  // ACK subframes 5 and 6
-          return(2); // should be 3
-        } else if (subframe == 3) { // ACK subframes 7 and 8
-          return(2);  // To be updated
-        } else if (subframe == 4) { // ACK subframes 9 and 0
-          return(2);
-        } else {
-          AssertFatal(1==0,"illegal subframe %d for tdd_config %ld\n",
-                      subframe,tdd_Config->subframeAssignment);
-        }
-
-        break;
-
-      case 4:
-        if (subframe == 2) {  // ACK subframes 0,4 and 5
-          return(3); // should be 4
-        } else if (subframe == 3) { // ACK subframes 6,7,8 and 9
-          return(4);
-        } else {
-          AssertFatal(1==0,"illegal subframe %d for tdd_config %ld\n",
-                      subframe,tdd_Config->subframeAssignment);
-        }
-
-        break;
-
-      case 5:
-        if (subframe == 2) {  // ACK subframes 0,3,4,5,6,7,8 and 9
-          return(8); // should be 3
-        } else {
-          AssertFatal(1==0,"illegal subframe %d for tdd_config %ld\n",
-                      subframe,tdd_Config->subframeAssignment);
-        }
-
-        break;
-    }
+    case 5:
+      if (subframe == 2) {  // ACK subframes 0,3,4,5,6,7,8 and 9
+        return 8; // should be 3
+      } 
+      AssertFatal(1==0,"illegal subframe %d for tdd_config %ld\n",
+                  subframe,
+                  tdd_Config->subframeAssignment);
+      break;
   }
 
-  return(0);
+  return 0;
 }
 
-unsigned char ul_ACK_subframe2dl_subframe(LTE_TDD_Config_t *tdd_Config,unsigned char subframe,unsigned char ACK_index) {
+//------------------------------------------------------------------------------
+unsigned char 
+ul_ACK_subframe2dl_subframe(LTE_TDD_Config_t *tdd_Config,
+                            unsigned char subframe,
+                            unsigned char ACK_index) 
+//------------------------------------------------------------------------------
+{
   if (tdd_Config == NULL) {
-    return((subframe<4) ? subframe+6 : subframe-4);
-  } else {
-    switch (tdd_Config->subframeAssignment) {
-      case 3:
-        if (subframe == 2) {  // ACK subframes 5 and 6
-          if (ACK_index==2)
-            return(1);
+    return ((subframe<4) ? subframe + 6 : subframe - 4);
+  } 
 
-          return(5+ACK_index);
-        } else if (subframe == 3) { // ACK subframes 7 and 8
-          return(7+ACK_index);  // To be updated
-        } else if (subframe == 4) { // ACK subframes 9 and 0
-          return((9+ACK_index)%10);
-        } else {
-          AssertFatal(1==0,"illegal subframe %d for tdd_config->subframeAssignment %ld\n",
-                      subframe,tdd_Config->subframeAssignment);
-        }
+  switch (tdd_Config->subframeAssignment) {
+    case 3:
+      if (subframe == 2) {  // ACK subframes 5 and 6
+        if (ACK_index == 2) return 1;
+        return (5 + ACK_index);
+      }
+      if (subframe == 3) { // ACK subframes 7 and 8
+        return (7 + ACK_index);  // To be updated
+      } 
+      if (subframe == 4) { // ACK subframes 9 and 0
+        return ((9 + ACK_index) % 10);
+      } 
+      AssertFatal(1==0,"illegal subframe %d for tdd_config->subframeAssignment %ld\n",
+                  subframe,
+                  tdd_Config->subframeAssignment);
+      break;
 
-        break;
+    case 4:
+      if (subframe == 2) {  // ACK subframes 0, 4 and 5
+        //if (ACK_index==2)
+        //  return(1); TBC
+        if (ACK_index == 2) return 0;
+        return (4 + ACK_index);
+      } 
+      if (subframe == 3) { // ACK subframes 6, 7 8 and 9
+        return (6 + ACK_index);  // To be updated
+      } 
+      AssertFatal(1 == 0,"illegal subframe %d for tdd_config %ld\n",
+                  subframe,
+                  tdd_Config->subframeAssignment);
+      break;
 
-      case 4:
-        if (subframe == 2) {  // ACK subframes 0, 4 and 5
-          //if (ACK_index==2)
-          //  return(1); TBC
-          if (ACK_index==2)
-            return(0);
-
-          return(4+ACK_index);
-        } else if (subframe == 3) { // ACK subframes 6, 7 8 and 9
-          return(6+ACK_index);  // To be updated
-        } else {
-          AssertFatal(1==0,"illegal subframe %d for tdd_config %ld\n",
-                      subframe,tdd_Config->subframeAssignment);
-        }
-
-        break;
-
-      case 1:
-        if (subframe == 2) {  // ACK subframes 5 and 6
-          return(5+ACK_index);
-        } else if (subframe == 3) { // ACK subframe 9
-          return(9);  // To be updated
-        } else if (subframe == 7) { // ACK subframes 0 and 1
-          return(ACK_index);  // To be updated
-        } else if (subframe == 8) { // ACK subframe 4
-          return(4);  // To be updated
-        } else {
-          AssertFatal(1==0,"illegal subframe %d for tdd_config %ld\n",
-                      subframe,tdd_Config->subframeAssignment);
-        }
-
-        break;
-    }
+    case 1:
+      if (subframe == 2) {  // ACK subframes 5 and 6
+        return (5 + ACK_index);
+      } 
+      if (subframe == 3) { // ACK subframe 9
+        return 9;  // To be updated
+      }
+      if (subframe == 7) { // ACK subframes 0 and 1
+        return ACK_index;  // To be updated
+      }
+      if (subframe == 8) { // ACK subframe 4
+        return 4;  // To be updated
+      } 
+      AssertFatal(1 == 0,"illegal subframe %d for tdd_config %ld\n",
+                  subframe,
+                  tdd_Config->subframeAssignment);
+      break;
   }
-
-  return(0);
+  return 0;
 }
 
+//------------------------------------------------------------------------------
 void
-extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
-             frame_t frameP, sub_frame_t subframeP,
-             void *harq_indication, int format) {
+extract_harq(module_id_t mod_idP, 
+             int CC_idP, 
+             int UE_id,
+             frame_t frameP, 
+             sub_frame_t subframeP,
+             void *harq_indication, 
+             int format) 
+//------------------------------------------------------------------------------
+{
   UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
   UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   rnti_t rnti = UE_RNTI(mod_idP, UE_id);
@@ -4422,6 +4468,7 @@ extract_harq(module_id_t mod_idP, int CC_idP, int UE_id,
   }
 }
 
+//------------------------------------------------------------------------------
 void
 extract_pucch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
                   frame_t frameP, sub_frame_t subframeP,
@@ -4525,6 +4572,7 @@ extract_pucch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
   }
 }
 
+//------------------------------------------------------------------------------
 void
 extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
                   frame_t frameP, sub_frame_t subframeP,
@@ -4826,6 +4874,7 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
   }
 }
 
+//------------------------------------------------------------------------------
 void
 cqi_indication(module_id_t mod_idP, int CC_idP, frame_t frameP,
                sub_frame_t subframeP, rnti_t rntiP,
@@ -4868,6 +4917,7 @@ cqi_indication(module_id_t mod_idP, int CC_idP, frame_t frameP,
   }
 }
 
+//------------------------------------------------------------------------------
 void
 SR_indication(module_id_t mod_idP, int cc_idP, frame_t frameP,
               sub_frame_t subframeP, rnti_t rntiP, uint8_t ul_cqi) {
@@ -4898,6 +4948,7 @@ SR_indication(module_id_t mod_idP, int cc_idP, frame_t frameP,
   }
 }
 
+//------------------------------------------------------------------------------
 void
 UL_failure_indication(module_id_t mod_idP, int cc_idP, frame_t frameP,
                       rnti_t rntiP, sub_frame_t subframeP) {
@@ -4921,6 +4972,7 @@ UL_failure_indication(module_id_t mod_idP, int cc_idP, frame_t frameP,
   }
 }
 
+//------------------------------------------------------------------------------
 static int nack_or_dtx_reported(
   COMMON_channels_t *cc,
   nfapi_harq_indication_pdu_t *harq_pdu) {
@@ -4945,6 +4997,7 @@ static int nack_or_dtx_reported(
   }
 }
 
+//------------------------------------------------------------------------------
 void
 harq_indication(module_id_t mod_idP, int CC_idP, frame_t frameP,
                 sub_frame_t subframeP,
@@ -4984,11 +5037,12 @@ harq_indication(module_id_t mod_idP, int CC_idP, frame_t frameP,
 }
 
 // Flexran Slicing functions
-
+//------------------------------------------------------------------------------
 uint16_t nb_rbs_allowed_slice(float rb_percentage, int total_rbs) {
   return (uint16_t) floor(rb_percentage * total_rbs);
 }
 
+//------------------------------------------------------------------------------
 int ue_dl_slice_membership(module_id_t mod_id, int UE_id, int slice_idx) {
   if ((slice_idx < 0)
       || (slice_idx >= RC.mac[mod_id]->slice_info.n_dl)) {
@@ -5001,6 +5055,7 @@ int ue_dl_slice_membership(module_id_t mod_id, int UE_id, int slice_idx) {
          && RC.mac[mod_id]->UE_list.assoc_dl_slice_idx[UE_id] == slice_idx;
 }
 
+//------------------------------------------------------------------------------
 int ue_ul_slice_membership(module_id_t mod_id, int UE_id, int slice_idx) {
   if ((slice_idx < 0)
       || (slice_idx >= RC.mac[mod_id]->slice_info.n_ul)) {
