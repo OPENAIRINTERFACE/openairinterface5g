@@ -1047,7 +1047,7 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
 
   uint8_t *btilde = malloc(sizeof(int8_t)*M_bit);
   // rnti is given by the C-RNTI
-  uint16_t rnti=crnti, n_id=1000;
+  uint16_t rnti=crnti, n_id=0;
 #ifdef DEBUG_NR_PUCCH_TX
   printf("\t [nr_generate_pucch2] rnti = %d ,\n",rnti);
 #endif
