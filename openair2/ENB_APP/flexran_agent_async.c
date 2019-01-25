@@ -94,11 +94,11 @@ int flexran_agent_async_msg_send(void *data, int size, int priority, void *chann
   return message_put(channel->send_queue, data, size, priority);
 }
 
-int flexran_agent_async_msg_recv(void **data, int *size, int *priority, void *channel_info) {
+int flexran_agent_async_msg_recv(void **data, int *priority, void *channel_info) {
   flexran_agent_async_channel_t *channel;
   channel = (flexran_agent_async_channel_t *)channel_info;
 
-  return message_get(channel->receive_queue, data, size, priority);
+  return message_get(channel->receive_queue, data, priority);
 }
 
 void flexran_agent_async_release(flexran_agent_channel_t *channel) {

@@ -51,7 +51,7 @@ typedef struct proto_agent_channel_s {
   struct proto_agent_async_channel_s *channel_info;
   /*Callbacks for channel message Tx and Rx*/
   int (*msg_send)(void *data, int size, int priority, void *channel_info);
-  int (*msg_recv)(void **data, int *size, int *priority, void *channel_info);
+  int (*msg_recv)(void **data, int *priority, void *channel_info);
   void (*release)(struct proto_agent_channel_s *channel);
 } proto_agent_channel_t;
 
@@ -70,7 +70,7 @@ void proto_agent_unregister_channel(mod_id_t mod_id, proto_agent_id_t agent_id);
 /*Create a new channel. Returns the id of the new channel or negative number otherwise*/
 int proto_agent_create_channel(void *channel_info,
 			       int (*msg_send)(void *data, int size, int priority, void *channel_info),
-			       int (*msg_recv)(void **data, int *size, int *priority, void *channel_info),
+			       int (*msg_recv)(void **data, int *priority, void *channel_info),
 			     void (*release)(proto_agent_channel_t *channel));
 
 /*Unregister a channel from all agents and destroy it. Returns 0 in case of success*/

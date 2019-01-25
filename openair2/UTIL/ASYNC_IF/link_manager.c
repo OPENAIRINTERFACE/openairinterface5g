@@ -46,7 +46,7 @@ static void *link_manager_sender_thread(void *_manager)
   LOG_D(MAC, "starting link manager sender thread\n");
 
   while (manager->run) {
-    while (message_get(manager->send_queue, &data, &size, &priority) == 0) {
+    while ((size = message_get(manager->send_queue, &data, &priority)) > 0) {
       link_send_packet(manager->socket_link, data, size, manager->peer_addr, manager->peer_port);
       free(data);
     }
@@ -184,7 +184,7 @@ int main(void)
   data = strdup("hello"); if (data == NULL) goto error;
   if (message_put(send_queue, data, 6, 100)) goto error;
 
-  if (message_get(receive_queue, &data, &size, &priority)) goto error;
+  if ((size = message_get(receive_queue, &data, &priority)) <= 0) goto error;
   printf("received message:\n");
   printf("    data: %s\n", (char *)data);
   printf("    size: %d\n", size);
@@ -228,7 +228,7 @@ int main(void)
   manager = create_link_manager(send_queue, receive_queue, link);
   if (manager == NULL) goto error;
 
-  if (message_get(receive_queue, &data, &size, &priority)) goto error;
+  if ((size = message_get(receive_queue, &data, &priority)) <= 0) goto error;
   printf("received message:\n");
   printf("    data: %s\n", (char *)data);
   printf("    size: %d\n", size);

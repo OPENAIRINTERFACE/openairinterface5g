@@ -39,7 +39,7 @@ int channel_id;
 void *channel_info;
 /*Callbacks for channel message Tx and Rx*/
 int (*msg_send)(void *data, int size, int priority, void *channel_info);
-int (*msg_recv)(void **data, int *size, int *priority, void *channel_info);
+int (*msg_recv)(void **data, int *priority, void *channel_info);
 void (*release)(struct flexran_agent_channel_s *channel);
 } flexran_agent_channel_t;
 
@@ -49,7 +49,7 @@ typedef struct flexran_agent_channel_instance_s{
 
 /*Send and receive messages using the channel registered for a specific agent*/
 int flexran_agent_msg_send(mid_t mod_id, agent_id_t agent_id, void *data, int size, int priority);
-int flexran_agent_msg_recv(mid_t mod_id, agent_id_t agent_id, void **data, int *size, int *priority);
+int flexran_agent_msg_recv(mid_t mod_id, agent_id_t agent_id, void **data, int *priority);
 
 /*Register a channel to an agent. Use FLEXRAN_AGENT_MAX to register the
  *same channel to all agents*/
@@ -61,7 +61,7 @@ void flexran_agent_unregister_channel(mid_t mod_id, agent_id_t agent_id);
 /*Create a new channel. Returns the id of the new channel or negative number otherwise*/
 int flexran_agent_create_channel(void *channel_info,
 				 int (*msg_send)(void *data, int size, int priority, void *channel_info),
-				 int (*msg_recv)(void **data, int *size, int *priority, void *channel_info),
+				 int (*msg_recv)(void **data, int *priority, void *channel_info),
 				 void (*release)(flexran_agent_channel_t *channel));
 
 /*Unregister a channel from all agents and destroy it. Returns 0 in case of success*/

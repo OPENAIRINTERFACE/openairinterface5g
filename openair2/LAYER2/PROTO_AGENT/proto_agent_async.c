@@ -78,10 +78,10 @@ int proto_agent_async_msg_send(void *data, int size, int priority, void *channel
   return message_put(channel->send_queue, data, size, priority);
 }
 
-int proto_agent_async_msg_recv(void **data, int *size, int *priority, void *channel_info)
+int proto_agent_async_msg_recv(void **data, int *priority, void *channel_info)
 {
   proto_agent_async_channel_t *channel = channel_info;
-  return message_get(channel->receive_queue, data, size, priority);
+  return message_get(channel->receive_queue, data, priority);
 }
 
 void proto_agent_async_release(proto_agent_channel_t *channel)

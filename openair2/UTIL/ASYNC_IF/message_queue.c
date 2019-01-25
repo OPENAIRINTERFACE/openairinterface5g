@@ -72,6 +72,8 @@ error:
 int message_put(message_queue_t *queue, void *data, int size, int priority)
 {
   message_t *m = NULL;
+  if (size <= 0)
+    goto error;
 
   m = calloc(1, sizeof(message_t));
   if (m == NULL)
@@ -106,12 +108,12 @@ int message_put(message_queue_t *queue, void *data, int size, int priority)
   return 0;
 
 error:
-  free(m);
+  if (m) free(m);
   LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
   return -1;
 }
 
-int message_get(message_queue_t *queue, void **data, int *size, int *priority)
+int message_get(message_queue_t *queue, void **data, int *priority)
 {
   message_t *m;
 
@@ -136,12 +138,11 @@ int message_get(message_queue_t *queue, void **data, int *size, int *priority)
     goto error;
 
   *data = m->data;
-  *size = m->size;
+  const int size = m->size;
   *priority = m->priority;
   free(m);
 
-  return 0;
-
+  return size;
 error:
   LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
   return -1;
@@ -181,10 +182,10 @@ int main(void)
   if (message_put(q, "hello", 6, 0)) goto error;
   if (message_put(q, "world", 6, 1)) goto error;
 
-  if (message_get(q, &data, &size, &priority)) goto error;
+  if ((size = message_get(q, &data, &priority)) <= 0) goto error;
   printf("message:\n  data: '%s'\n  size: %d\n  priority: %d\n",
          (char *)data, size, priority);
-  if (message_get(q, &data, &size, &priority)) goto error;
+  if ((size = message_get(q, &data, &priority)) <= 0) goto error;
   printf("message:\n  data: '%s'\n  size: %d\n  priority: %d\n",
          (char *)data, size, priority);
 

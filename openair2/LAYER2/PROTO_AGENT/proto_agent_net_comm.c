@@ -72,7 +72,7 @@ void proto_agent_unregister_channel(mod_id_t mod_id, proto_agent_id_t agent_id) 
 
 int proto_agent_create_channel(void *channel_info,
 			       int (*msg_send)(void *data, int size, int priority, void *channel_info),
-			       int (*msg_recv)(void **data, int *size, int *priority, void *channel_info),
+			       int (*msg_recv)(void **data, int *priority, void *channel_info),
 			     void (*release)(proto_agent_channel_t *channel)) {
   
   int channel_id = ++proto_agent_channel_id;

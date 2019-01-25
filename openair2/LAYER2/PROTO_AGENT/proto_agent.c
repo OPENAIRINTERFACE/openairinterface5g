@@ -266,7 +266,7 @@ proto_agent_receive(void *args)
     msg = NULL;
     ser_msg = NULL;
     
-    if (proto_agent_async_msg_recv(&data, &size, &priority, inst->channel->channel_info)){
+    if ((size = proto_agent_async_msg_recv(&data, &priority, inst->channel->channel_info)) <= 0){
       err_code = PROTOCOL__FLEXSPLIT_ERR__MSG_ENQUEUING;
       goto error;
     }

@@ -115,7 +115,7 @@ void *receive_thread(void *args) {
   
   while (1) {
 
-    while (flexran_agent_msg_recv(d->mod_id, FLEXRAN_AGENT_DEFAULT, &data, &size, &priority) == 0) {
+    while ((size = flexran_agent_msg_recv(d->mod_id, FLEXRAN_AGENT_DEFAULT, &data, &priority)) > 0) {
       
       LOG_D(FLEXRAN_AGENT,"received message with size %d\n", size);
   

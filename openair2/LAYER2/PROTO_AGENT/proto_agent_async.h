@@ -53,7 +53,7 @@ proto_agent_async_channel_info(mod_id_t mod_id, const char *bind_ip, uint16_t bi
 
 int proto_agent_async_msg_send(void *data, int size, int priority, void *channel_info);
 
-int proto_agent_async_msg_recv(void **data, int *size, int *priority, void *channel_info);
+int proto_agent_async_msg_recv(void **data, int *priority, void *channel_info);
 
 void proto_agent_async_release(proto_agent_channel_t *channel);
 
