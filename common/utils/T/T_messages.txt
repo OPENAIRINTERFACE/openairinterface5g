@@ -75,8 +75,12 @@ ID = ENB_PHY_MSG3_ALLOCATION
     FORMAT = int,eNB_ID : int,frame : int,subframe : int,rnti : int,first_transmission : int,Msg3_frame : int,Msg3_subframe
 ID = ENB_PHY_INITIATE_RA_PROCEDURE
     DESC = eNodeB initiates a random access procedure after detecting enough energy for one of the preambles
-    GROUP = ALL:PHY:ENB
+    GROUP = ALL:PHY:ENB:WIRESHARK
     FORMAT = int,eNB_ID : int,frame : int,subframe : int,preamble : int,energy : int,delay
+ID = ENB_PHY_MIB
+    DESC = MIB data
+    GROUP = ALL:PHY:ENB:WIRESHARK
+    FORMAT = int,eNB_ID : int,frame : int,subframe : buffer,data
 
 #MAC logs
 ID = ENB_MAC_UE_DL_SDU
@@ -97,7 +101,7 @@ ID = ENB_MAC_UE_UL_PDU
     FORMAT = int,eNB_ID : int,CC_id : int,rnti : int,frame : int,subframe : int,harq_pid : int,sdu_length : int,num_ce : int,num_sdu
 ID = ENB_MAC_UE_UL_PDU_WITH_DATA
     DESC = MAC uplink UE received PDU
-    GROUP = ALL:MAC:ENB
+    GROUP = ALL:MAC:ENB:WIRESHARK
     FORMAT = int,eNB_ID : int,CC_id : int,rnti : int,frame : int,subframe : int,harq_pid : int,sdu_length : int,num_ce : int,num_sdu : buffer,data
 ID = ENB_MAC_UE_UL_SDU
     DESC = MAC uplink UE received SDU
@@ -113,12 +117,16 @@ ID = ENB_MAC_UE_UL_CE
     FORMAT = int,eNB_ID : int,CC_id : int,rnti : int,frame : int,subframe : int,ce
 ID = ENB_MAC_UE_DL_PDU_WITH_DATA
     DESC = MAC downlink PDU for an UE
-    GROUP = ALL:MAC:ENB
+    GROUP = ALL:MAC:ENB:WIRESHARK
     FORMAT = int,eNB_ID : int,CC_id : int,rnti : int,frame : int,subframe : int,harq_pid : buffer,data
 ID = ENB_MAC_SCHEDULING_REQUEST
     DESC = MAC scheduling request detected for an UE
     GROUP = ALL:MAC:ENB
     FORMAT = int,eNB_ID : int,CC_id : int,frame : int,subframe : int,rnti
+ID = ENB_MAC_UE_DL_RAR_PDU_WITH_DATA
+    DESC = MAC downlink PDU for an UE
+    GROUP = ALL:MAC:ENB:WIRESHARK
+    FORMAT = int,eNB_ID : int,CC_id : int,rnti : int,frame : int,subframe : int,harq_pid : buffer,data
 
 #RLC logs
 ID = ENB_RLC_DL

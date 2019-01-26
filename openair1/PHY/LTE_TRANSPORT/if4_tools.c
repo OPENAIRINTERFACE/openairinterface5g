@@ -47,7 +47,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
   int32_t **txdataF          = ru->common.txdataF_BF;
   int32_t **rxdataF          = ru->common.rxdataF;
   int16_t **prach_rxsigF     = ru->prach_rxsigF;  
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   int16_t ***prach_rxsigF_br = ru->prach_rxsigF_br;
 #endif
   void *tx_buffer            = ru->ifbuffer.tx[subframe&1];
@@ -230,12 +230,10 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
 
     int16_t *rxF;
 
-
-    for (int antenna_id=0;antenna_id<ru->nb_rx;antenna_id++) {
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-      if (packet_type > IF4p5_PRACH)
-        rxF = &prach_rxsigF_br[packet_type - IF4p5_PRACH - 1][0][0];
-      else 
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+    if (packet_type > IF4p5_PRACH)
+      rxF = &prach_rxsigF_br[packet_type - IF4p5_PRACH - 1][0][0];
+    else 
 #endif
       rxF = &prach_rxsigF[antenna_id][0];
 
@@ -275,7 +273,7 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
   int32_t **txdataF          = ru->common.txdataF_BF;
   int32_t **rxdataF          = ru->common.rxdataF;
   int16_t **prach_rxsigF     = ru->prach_rxsigF;  
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   int16_t ***prach_rxsigF_br = ru->prach_rxsigF_br;
 #endif
   void *rx_buffer            = ru->ifbuffer.rx;
@@ -386,7 +384,6 @@ void recv_IF4p5(RU_t *ru, int *frame, int *subframe, uint16_t *packet_type, uint
 	     *packet_type <= IF4p5_PRACH + 4) {  
 
     int16_t *rxF;
-
     for (int antenna_id=0;antenna_id<ru->nb_rx;antenna_id++) { 
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
       if (*packet_type > IF4p5_PRACH)
