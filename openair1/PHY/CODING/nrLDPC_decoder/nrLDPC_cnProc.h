@@ -36,11 +36,14 @@
    \param p_lut Pointer to decoder LUTs
    \param Z Lifting size
 */
-static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, uint16_t Z)
+static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBuf, uint16_t Z)
 {
     const uint8_t*  lut_numCnInCnGroups   = p_lut->numCnInCnGroups;
     const uint32_t* lut_startAddrCnGroups = p_lut->startAddrCnGroups;
 
+    int8_t* cnProcBuf    = p_procBuf->cnProcBuf;
+    int8_t* cnProcBufRes = p_procBuf->cnProcBufRes;
+    
     __m256i* p_cnProcBuf;
     __m256i* p_cnProcBufRes;
 
@@ -362,11 +365,14 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, uint16_t Z)
    \param p_lut Pointer to decoder LUTs
    \param Z Lifting size
 */
-static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, uint16_t Z)
+static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBuf, uint16_t Z)
 {
     const uint8_t*  lut_numCnInCnGroups   = p_lut->numCnInCnGroups;
     const uint32_t* lut_startAddrCnGroups = p_lut->startAddrCnGroups;
 
+    int8_t* cnProcBuf    = p_procBuf->cnProcBuf;
+    int8_t* cnProcBufRes = p_procBuf->cnProcBufRes;
+    
     __m256i* p_cnProcBuf;
     __m256i* p_cnProcBufRes;
 
@@ -858,11 +864,14 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, uint16_t Z)
    \param Z Lifting size
    \return 32-bit parity check indicator
 */
-static inline uint32_t nrLDPC_cnProcPc_BG1(t_nrLDPC_lut* p_lut, uint16_t Z)
+static inline uint32_t nrLDPC_cnProcPc_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBuf, uint16_t Z)
 {
     const uint8_t*  lut_numCnInCnGroups   = p_lut->numCnInCnGroups;
     const uint32_t* lut_startAddrCnGroups = p_lut->startAddrCnGroups;
 
+    int8_t* cnProcBuf    = p_procBuf->cnProcBuf;
+    int8_t* cnProcBufRes = p_procBuf->cnProcBufRes;
+    
     __m256i* p_cnProcBuf;
     __m256i* p_cnProcBufRes;
 
@@ -1490,11 +1499,14 @@ static inline uint32_t nrLDPC_cnProcPc_BG1(t_nrLDPC_lut* p_lut, uint16_t Z)
    \param Z Lifting size
    \return 32-bit parity check indicator
 */
-static inline uint32_t nrLDPC_cnProcPc_BG2(t_nrLDPC_lut* p_lut, uint16_t Z)
+static inline uint32_t nrLDPC_cnProcPc_BG2(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBuf, uint16_t Z)
 {
     const uint8_t*  lut_numCnInCnGroups   = p_lut->numCnInCnGroups;
     const uint32_t* lut_startAddrCnGroups = p_lut->startAddrCnGroups;
 
+    int8_t* cnProcBuf    = p_procBuf->cnProcBuf;
+    int8_t* cnProcBufRes = p_procBuf->cnProcBufRes;
+    
     __m256i* p_cnProcBuf;
     __m256i* p_cnProcBufRes;
 

@@ -341,8 +341,8 @@ static void *UE_thread_synch(void *arg) {
 
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
-    if ( threads.iq != -1 )
-        CPU_SET(threads.iq, &cpuset);
+    if ( threads.sync != -1 )
+        CPU_SET(threads.sync, &cpuset);
     // this thread priority must be lower that the main acquisition thread
     sprintf(threadname, "sync UE %d", UE->Mod_id);
     init_thread(100000, 500000, FIFO_PRIORITY-1, &cpuset, threadname);
@@ -797,15 +797,15 @@ void *UE_thread(void *arg) {
 
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
-    if ( threads.iq != -1 )
-        CPU_SET(threads.iq, &cpuset);
-    init_thread(100000, 500000, FIFO_PRIORITY, &cpuset,
-                "UHD Threads");
+    if ( threads.main != -1 )
+        CPU_SET(threads.main, &cpuset);
+    sprintf(threadname, "Main UE %d", UE->Mod_id);
+    init_thread(100000, 500000, FIFO_PRIORITY, &cpuset,threadname);
+    
     if ((oaisim_flag == 0) && (UE->mode !=loop_through_memory))
         AssertFatal(0== openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]), "");
     UE->rfdevice.host_type = RAU_HOST;
-    sprintf(threadname, "Main UE %d", UE->Mod_id);
-    pthread_setname_np(pthread_self(), threadname);
+
     init_UE_threads(UE);
 
 #ifdef NAS_UE
