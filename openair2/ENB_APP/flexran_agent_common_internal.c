@@ -542,7 +542,7 @@ int apply_parameter_modification(void *parameter, yaml_parser_t *parser) {
 
 void initiate_soft_restart(module_id_t mod_id, Protocol__FlexCellConfig *c)
 {
-  uint8_t cc_id = c->has_cell_id ? c->cell_id : 0;
+  const uint8_t cc_id = 0;
   if (c->has_eutra_band) {
     flexran_agent_set_operating_eutra_band(mod_id, cc_id, c->eutra_band);
     LOG_I(ENB_APP, "Setting eutra_band to %d\n", c->eutra_band);

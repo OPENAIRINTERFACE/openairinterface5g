@@ -527,6 +527,18 @@ int flexran_get_rrc_neigh_plmn_mcc(mid_t mod_id, rnti_t rnti, int cell_id); */
 /* currently not implemented
 int flexran_get_rrc_neigh_plmn_mnc(mid_t mod_id, mid_t ue_id, int cell_id); */
 
+/* Get number of PLMNs that is broadcasted in SIB1 */
+uint8_t flexran_get_rrc_num_plmn_ids(mid_t mod_id);
+
+/* Get index'th MCC broadcasted in SIB1 */
+uint16_t flexran_get_rrc_mcc(mid_t mod_id, uint8_t index);
+
+/* Get index'th MNC broadcasted in SIB1 */
+uint16_t flexran_get_rrc_mnc(mid_t mod_id, uint8_t index);
+
+/* Get index'th MNC's digit length broadcasted in SIB1 */
+uint8_t flexran_get_rrc_mnc_digit_length(mid_t mod_id, uint8_t index);
+
 /************************** Slice configuration **************************/
 
 /* Get the DL slice ID for a UE */

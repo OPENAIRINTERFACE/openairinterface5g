@@ -262,3 +262,9 @@ enum flex_ue_state_change_type {
      FLUESC_DEACTIVATED = 2;
      FLUESC_MOVED = 3;
 }
+
+message flex_plmn {
+        optional uint32 mcc = 1;
+        optional uint32 mnc = 2;
+        optional uint32 mnc_length = 3;
+}

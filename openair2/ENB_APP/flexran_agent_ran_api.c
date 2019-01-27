@@ -1503,6 +1503,30 @@ float flexran_get_rrc_neigh_rsrq(mid_t mod_id, rnti_t rnti, long cell_id)
   return RSRQ_meas_mapping[*(ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[cell_id]->measResult.rsrqResult)];
 }
 
+uint8_t flexran_get_rrc_num_plmn_ids(mid_t mod_id)
+{
+  if (!rrc_is_present(mod_id)) return 0;
+  return RC.rrc[mod_id]->configuration.num_plmn;
+}
+
+uint16_t flexran_get_rrc_mcc(mid_t mod_id, uint8_t index)
+{
+  if (!rrc_is_present(mod_id)) return 0;
+  return RC.rrc[mod_id]->configuration.mcc[index];
+}
+
+uint16_t flexran_get_rrc_mnc(mid_t mod_id, uint8_t index)
+{
+  if (!rrc_is_present(mod_id)) return 0;
+  return RC.rrc[mod_id]->configuration.mnc[index];
+}
+
+uint8_t flexran_get_rrc_mnc_digit_length(mid_t mod_id, uint8_t index)
+{
+  if (!rrc_is_present(mod_id)) return 0;
+  return RC.rrc[mod_id]->configuration.mnc_digit_length[index];
+}
+
 /**************************** SLICING ****************************/
 int flexran_get_ue_dl_slice_id(mid_t mod_id, mid_t ue_id)
 {
