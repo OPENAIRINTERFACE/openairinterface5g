@@ -14,6 +14,8 @@
 
 #define NFAPI_NR_MAX_NB_CCE_AGGREGATION_LEVELS 5
 #define NFAPI_NR_MAX_NB_TCI_STATES_PDCCH 64
+#define NFAPI_NR_MAX_NB_CORESETS 12
+#define NFAPI_NR_MAX_NB_SEARCH_SPACES 40
 
 // Extension to the generic structures for single tlv values
 typedef struct {

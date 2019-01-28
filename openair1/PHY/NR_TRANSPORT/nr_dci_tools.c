@@ -62,7 +62,8 @@ void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t* dci_alloc, uint16_t n_shift, uint8_t m
   }
 
   uint8_t cond = N_reg%(bsize*R);
-  AssertFatal(cond==0, "CCE to REG interleaving: Invalid configuration leading to non integer C\n");
+  AssertFatal(cond==0, "CCE to REG interleaving: Invalid configuration leading to non integer C (N_reg %d, bsize %d R %d)\n",
+  N_reg, bsize, R);
   C = N_reg/(bsize*R);
 
   tmp = L * (( Y + (m*N_cce)/(L*M_s_max) + n_CI ) % (N_cce/L));

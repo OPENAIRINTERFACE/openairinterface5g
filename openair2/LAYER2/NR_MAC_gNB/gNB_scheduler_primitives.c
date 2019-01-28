@@ -351,17 +351,18 @@ void nr_configure_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel1
 /// coreset
 
   //ControlResourceSetId
-  pdcch_params->config_type = (coreset->coreset_id==0)?NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG_CSET_0: NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG;
+  pdcch_params->config_type = (coreset->coreset_id==0)?NFAPI_NR_CSET_CONFIG_MIB_SIB1: NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG;
   
   //frequencyDomainResources
   uint8_t count=0, start=0, start_set=0;
   uint64_t bitmap = coreset->frequency_domain_resources;
-  for (int i=0; i<64; i++)
-    if ((bitmap>>(63-i))&1) {
+  for (int i=0; i<45; i++)
+    if ((bitmap>>(44-i))&1) {
       count++;
-      if (!start_set)
+      if (!start_set) {
         start = i;
-      start_set = 1;
+        start_set = 1;
+      }
     }
   pdcch_params->rb_offset = 6*start;
   pdcch_params->n_rb = 6*count;
@@ -374,8 +375,14 @@ void nr_configure_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel1
   if (pdcch_params->cr_mapping_type == NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED) {
     pdcch_params->reg_bundle_size = coreset->reg_bundle_size;
     pdcch_params->interleaver_size = coreset->interleaver_size;
-    pdcch_params->shift_index = coreset->shift_index;
   }
+  else {
+    pdcch_params->reg_bundle_size = 6;
+    pdcch_params->interleaver_size = 1;
+  }
+
+  //shift index
+  pdcch_params->shift_index = coreset->shift_index;
 
   //precoderGranularity
   pdcch_params->precoder_granularity = coreset->precoder_granularity;
@@ -389,11 +396,16 @@ void nr_configure_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel1
 
 /// SearchSpace
 
-  // first symbol and duration
+  // first symbol
   //AssertFatal(pdcch_scs==kHz15, "PDCCH SCS above 15kHz not allowed if a symbol above 2 is monitored");
   for (int i=0; i<get_symbolsperslot(&cfg); i++)
-    if ((search_space->monitoring_symbols_in_slot>>(15-i))&1)
+    if ((search_space->monitoring_symbols_in_slot>>(15-i))&1) {
       pdcch_params->first_symbol=i;
+      break;
+    }
+
+  //searchSpaceType
+  pdcch_params->search_space_type = search_space->search_space_type;
 
 /*
   //searchSpaceId
@@ -413,8 +425,7 @@ void nr_configure_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel1
   //nrofCandidates
   pdcch_params->aggregation_level = (uint8_t)number_of_candidates[NFAPI_NR_MAX_NB_CCE_AGGREGATION_LEVELS - 1];
 
-  //searchSpaceType
-  pdcch_params->search_space_type = search_space->search_space_type;
+
   //Common_CSS
   if (pdcch_params->search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_COMMON){
     switch(search_space->css_formats_0_0_and_1_0){
@@ -500,7 +511,7 @@ int nr_is_dci_opportunity(nfapi_nr_search_space_t search_space,
   uint16_t Os=search_space.slot_monitoring_offset;
   uint8_t Ts=search_space.duration;
 
-  if (((frame*get_spf(&cfg) + slot - Os)%Ks)==Ts)
+  if (((frame*get_spf(&cfg) + slot - Os)%Ks)<Ts)
     is_dci_opportunity=1;
 
   return is_dci_opportunity;
@@ -535,4 +546,8 @@ int get_symbolsperslot(nfapi_nr_config_request_t *cfg) {
 
   return ((cfg->subframe_config.dl_cyclic_prefix_type.value==NFAPI_CP_EXTENDED)?12:14);
 
+}
+
+int nr_schedule_dci() {
+  
 }
