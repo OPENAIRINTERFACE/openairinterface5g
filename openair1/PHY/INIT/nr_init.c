@@ -314,8 +314,8 @@ void phy_config_request(PHY_Config_t *phy_config) {
 
 void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
 {
-//  NR_DL_FRAME_PARMS* const fp       = &gNB->frame_parms;
-  nfapi_nr_config_request_t *cfg       = &gNB->gNB_config;
+  //NR_DL_FRAME_PARMS* const fp       = &gNB->frame_parms;
+  //nfapi_nr_config_request_t *cfg       = &gNB->gNB_config;
   NR_gNB_COMMON* const common_vars  = &gNB->common_vars;
   LTE_eNB_PUSCH** const pusch_vars   = gNB->pusch_vars;
   LTE_eNB_SRS* const srs_vars        = gNB->srs_vars;
@@ -387,7 +387,7 @@ void install_schedule_handlers(IF_Module_t *if_inst)
 
 /// this function is a temporary addition for NR configuration
 
-void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu)
+void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu,int Nid_cell)
 {
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   nfapi_nr_config_request_t *gNB_config = &gNB->gNB_config;
@@ -403,6 +403,7 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu)
   gNB_config->sch_config.ssb_subcarrier_offset.value = 0;
   gNB_config->sch_config.n_ssb_crb.value = (N_RB_DL-20);
   gNB_config->sch_config.ssb_subcarrier_offset.value = 0;
+  gNB_config->sch_config.physical_cell_id.value=Nid_cell;
 
 
   gNB->mac_enabled     = 1;

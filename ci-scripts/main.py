@@ -1504,7 +1504,8 @@ class SSHConnection():
 			return ENB_PROCESS_ASSERTION
 		if foundRealTimeIssue:
 			logging.debug('\u001B[1;37;41m eNB faced real time issues! \u001B[0m')
-			return ENB_PROCESS_REALTIME_ISSUE
+			self.htmleNBFailureMsg += 'eNB faced real time issues!\n'
+			#return ENB_PROCESS_REALTIME_ISSUE
 		return 0
 
 	def TerminateeNB(self):

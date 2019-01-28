@@ -51,8 +51,8 @@ uint16_t nr_pbch_extract(int **rxdataF,
 			 int **rxdataF_ext,
 			 int **dl_ch_estimates_ext,
 			 uint32_t symbol,
+			 uint32_t s_offset,
 			 uint32_t high_speed_flag,
-			 int is_synchronized,
 			 NR_DL_FRAME_PARMS *frame_parms)
 {
 
@@ -65,18 +65,15 @@ uint16_t nr_pbch_extract(int **rxdataF,
 
   unsigned int  rx_offset = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier; //and
   if (rx_offset>= frame_parms->ofdm_symbol_size) rx_offset-=frame_parms->ofdm_symbol_size;
-  int s_offset=0;
  
   AssertFatal(symbol>=1 && symbol<5, 
 	      "symbol %d illegal for PBCH extraction\n",
 	      symbol);
 
-  if (is_synchronized==1) s_offset=4;
-
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
         
     rxF        = &rxdataF[aarx][(symbol+s_offset)*frame_parms->ofdm_symbol_size];
-    rxF_ext    = &rxdataF_ext[aarx][(symbol+s_offset)*(20*12)];
+    rxF_ext    = &rxdataF_ext[aarx][symbol*20*12];
 #ifdef DEBUG_PBCH
      printf("extract_rbs (nushift %d): rx_offset=%d, symbol %d\n",frame_parms->nushift,
 	    (rx_offset + ((symbol+s_offset)*(frame_parms->ofdm_symbol_size))),symbol);
@@ -143,7 +140,7 @@ uint16_t nr_pbch_extract(int **rxdataF,
     
     //printf("dl_ch0 addr %p\n",dl_ch0);
     
-    dl_ch0_ext = &dl_ch_estimates_ext[aarx][(symbol+s_offset)*(20*12)];
+    dl_ch0_ext = &dl_ch_estimates_ext[aarx][symbol*20*12];
     
     for (rb=0; rb<20; rb++) {
       j=0;
@@ -268,8 +265,7 @@ void nr_pbch_channel_compensation(int **rxdataF_ext,
 				  int **dl_ch_estimates_ext,
 				  int **rxdataF_comp,
 				  NR_DL_FRAME_PARMS *frame_parms,
-				  uint8_t symbol,
-				  int is_synchronized,
+				  uint32_t symbol,
 				  uint8_t output_shift)
 {
 
@@ -290,14 +286,11 @@ void nr_pbch_channel_compensation(int **rxdataF_ext,
 
 #endif
 
-  AssertFatal((symbol > 0 && symbol < 4 && is_synchronized == 0) || 
-	      (symbol > 4 && symbol < 8 && is_synchronized == 1),
-	      "symbol %d is illegal for PBCH DM-RS (is_synchronized %d)\n",
-	      symbol,is_synchronized);
+  AssertFatal((symbol > 0 && symbol < 4),
+	      "symbol %d is illegal for PBCH DM-RS\n",
+	      symbol);
 
-
-
-  if (symbol == 2 || symbol == 6) nb_re = 72;
+  if (symbol == 2) nb_re = 72;
 
   //  printf("comp: symbol %d : nb_re %d\n",symbol,nb_re);
 
@@ -559,31 +552,35 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   // clear LLR buffer
   memset(nr_ue_pbch_vars->llr,0,NR_POLAR_PBCH_E);
 
-  int first_symbol=1;
-  if (ue->is_synchronized > 0) first_symbol+=4;
+  int symbol_offset=1;
+  if (ue->is_synchronized > 0)
+    symbol_offset=4;
+  else
+    symbol_offset=0;
 
 #ifdef DEBUG_PBCH
     //printf("address dataf %p",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF);
     write_output("rxdataF0_pbch.m","rxF0pbch",
-		 &nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF[0][first_symbol*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size*3,1,1);
+		 &nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF[0][(symbol_offset+1)*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size*3,1,1);
 #endif
 
-  for (symbol=first_symbol; symbol<(first_symbol+3); symbol++) {
+    // symbol refers to symbol within SSB. symbol_offset is the offset of the SSB wrt start of slot
+  for (symbol=1; symbol<4; symbol++) {
 
     nr_pbch_extract(nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF,
 		    nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].dl_ch_estimates[eNB_id],
 		    nr_ue_pbch_vars->rxdataF_ext,
 		    nr_ue_pbch_vars->dl_ch_estimates_ext,
-		    symbol-first_symbol+1,
+		    symbol,
+		    symbol_offset,
 		    high_speed_flag,
-		    ue->is_synchronized,
 		    frame_parms);
 #ifdef DEBUG_PBCH
     LOG_I(PHY,"[PHY] PBCH Symbol %d ofdm size %d\n",symbol, frame_parms->ofdm_symbol_size );
     LOG_I(PHY,"[PHY] PBCH starting channel_level\n");
 #endif
 
-    if (symbol == 1 || symbol == 5) {
+    if (symbol == 1) {
       max_h = nr_pbch_channel_level(nr_ue_pbch_vars->dl_ch_estimates_ext,
 				    frame_parms,
 				    symbol);
@@ -599,7 +596,6 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 				 nr_ue_pbch_vars->rxdataF_comp,
 				 frame_parms,
 				 symbol,
-				 ue->is_synchronized,
 				 nr_ue_pbch_vars->log2_maxh); // log2_maxh+I0_shift
 
     /*if (frame_parms->nb_antennas_rx > 1)
@@ -615,7 +611,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
       return(-1);
     }
 */
-    if (symbol==(first_symbol+1)) {
+    if (symbol==1) {
       nr_pbch_quantize(pbch_e_rx,
                     (short*)&(nr_ue_pbch_vars->rxdataF_comp[0][symbol*240]),
                     144);
@@ -633,7 +629,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   }
 
 #ifdef DEBUG_PBCH
-  write_output("rxdataF_comp.m","rxFcomp",&nr_ue_pbch_vars->rxdataF_comp[0][240*first_symbol],240*3,1,1);
+  write_output("rxdataF_comp.m","rxFcomp",&nr_ue_pbch_vars->rxdataF_comp[0][240],240*3,1,1);
 #endif
     
 
@@ -644,7 +640,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 #ifdef DEBUG_PBCH
   //pbch_e_rx = &nr_ue_pbch_vars->llr[0];
 
-  short *p = (short *)&(nr_ue_pbch_vars->rxdataF_comp[0][first_symbol*20*12]);
+  short *p = (short *)&(nr_ue_pbch_vars->rxdataF_comp[0][20*12]);
   for (int cnt = 0; cnt < 864  ; cnt++)
     printf("pbch rx llr %d\n",*(pbch_e_rx+cnt));
 
@@ -720,14 +716,13 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
     ue->dl_indication.rx_ind = &ue->rx_ind; //  hang on rx_ind instance
     //ue->rx_ind.sfn_slot = 0;  //should be set by higher-1-layer, i.e. clean_and_set_if_instance()
-    ue->rx_ind.number_pdus = ue->rx_ind.number_pdus + 1;
-    ue->rx_ind.rx_indication_body = (fapi_nr_rx_indication_body_t *)malloc(sizeof(fapi_nr_rx_indication_body_t));
-    ue->rx_ind.rx_indication_body->pdu_type = FAPI_NR_RX_PDU_TYPE_MIB;
-    ue->rx_ind.rx_indication_body->mib_pdu.pdu = &decoded_output[0];
-    ue->rx_ind.rx_indication_body->mib_pdu.additional_bits = xtra_byte;
-    ue->rx_ind.rx_indication_body->mib_pdu.ssb_index = ssb_index;            //  confirm with TCL
-    ue->rx_ind.rx_indication_body->mib_pdu.ssb_length = Lmax;                //  confirm with TCL
-    ue->rx_ind.rx_indication_body->mib_pdu.cell_id = frame_parms->Nid_cell;  //  confirm with TCL
+    ue->rx_ind.rx_indication_body[0].pdu_type = FAPI_NR_RX_PDU_TYPE_MIB;
+    ue->rx_ind.rx_indication_body[0].mib_pdu.pdu = &decoded_output[0];
+    ue->rx_ind.rx_indication_body[0].mib_pdu.additional_bits = xtra_byte;
+    ue->rx_ind.rx_indication_body[0].mib_pdu.ssb_index = ssb_index;            //  confirm with TCL
+    ue->rx_ind.rx_indication_body[0].mib_pdu.ssb_length = Lmax;                //  confirm with TCL
+    ue->rx_ind.rx_indication_body[0].mib_pdu.cell_id = frame_parms->Nid_cell;  //  confirm with TCL
+    ue->rx_ind.number_pdus = 1;
 
     if (ue->if_inst && ue->if_inst->dl_indication)
       ue->if_inst->dl_indication(&ue->dl_indication);

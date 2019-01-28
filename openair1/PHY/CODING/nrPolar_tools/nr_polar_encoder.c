@@ -402,7 +402,7 @@ void polar_encoder_fast(uint64_t *A,
   AssertFatal(bitlen<129,"support for payloads <= 128 bits\n");
   AssertFatal(polarParams->crcParityBits == 24,"support for 24-bit crc only for now\n");
 
-  int bitlen0=bitlen;
+  //int bitlen0=bitlen;
 
   uint64_t tcrc=0;
 

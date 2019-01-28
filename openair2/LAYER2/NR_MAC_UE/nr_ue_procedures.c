@@ -95,7 +95,7 @@ int8_t nr_ue_process_dlsch(module_id_t module_id, int cc_id, uint8_t gNB_index, 
       ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.n_layers = 0;
       ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.tpmi = 0;
       ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.n_dmrs_cdm_groups = 0;
-      ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.dmrs_ports[4] = 0;
+      for (int i=0;i<4;i++) ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.dmrs_ports[i]=0;
       ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.n_front_load_symb = 0;
       //ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.srs_config = 0;
       ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15.csi_reportTriggerSize = 0;
@@ -125,7 +125,7 @@ int8_t nr_ue_process_dlsch(module_id_t module_id, int cc_id, uint8_t gNB_index, 
       ul_config->ul_config_list[ul_config->number_pdus].pucch_config_pdu.pucch_GroupHopping  = phy_config->config_req.ul_bwp_common.pucch_config_common.pucch_group_hopping;
       ul_config->ul_config_list[ul_config->number_pdus].pucch_config_pdu.hoppingId           = phy_config->config_req.ul_bwp_common.pucch_config_common.hopping_id;
       ul_config->ul_config_list[ul_config->number_pdus].pucch_config_pdu.p0_nominal          = phy_config->config_req.ul_bwp_common.pucch_config_common.p0_nominal;
-      ul_config->ul_config_list[ul_config->number_pdus].pucch_config_pdu.deltaF_PUCCH_f[NUMBER_PUCCH_FORMAT_NR] = 0;
+      for (int i=0;i<NUMBER_PUCCH_FORMAT_NR;i++) ul_config->ul_config_list[ul_config->number_pdus].pucch_config_pdu.deltaF_PUCCH_f[i] = 0;
       ul_config->ul_config_list[ul_config->number_pdus].pucch_config_pdu.p0_PUCCH_Id = 0;     /* INTEGER (1..8)     */
       ul_config->ul_config_list[ul_config->number_pdus].pucch_config_pdu.p0_PUCCH_Value = 0;
       ul_config->ul_config_list[ul_config->number_pdus].pucch_config_pdu.twoPUCCH_PC_AdjustmentStates = 0;
@@ -180,14 +180,14 @@ int8_t nr_ue_process_dlsch(module_id_t module_id, int cc_id, uint8_t gNB_index, 
       ul_config->ul_config_list[ul_config->number_pdus].pucch_config_pdu.pucch_GroupHopping        = phy_config->config_req.ul_bwp_common.pucch_config_common.pucch_group_hopping;
       ul_config->ul_config_list[ul_config->number_pdus].pucch_config_pdu.hoppingId                 = phy_config->config_req.ul_bwp_common.pucch_config_common.hopping_id;
       ul_config->ul_config_list[ul_config->number_pdus].pucch_config_pdu.p0_nominal                = phy_config->config_req.ul_bwp_common.pucch_config_common.p0_nominal;
-      ul_config->ul_config_list[ul_config->number_pdus].pucch_config_pdu.deltaF_PUCCH_f[NUMBER_PUCCH_FORMAT_NR] = 0;
+      for (int i=0;i<NUMBER_PUCCH_FORMAT_NR; i++) ul_config->ul_config_list[ul_config->number_pdus].pucch_config_pdu.deltaF_PUCCH_f[i] = 0;
       ul_config->ul_config_list[ul_config->number_pdus].pucch_config_pdu.p0_PUCCH_Id = 0;     /* INTEGER (1..8)     */
       ul_config->ul_config_list[ul_config->number_pdus].pucch_config_pdu.p0_PUCCH_Value = 0;
       ul_config->ul_config_list[ul_config->number_pdus].pucch_config_pdu.twoPUCCH_PC_AdjustmentStates = 0;
 
     }
     if(mac->if_module != NULL && mac->if_module->ul_indication != NULL){
-        mac->if_module->ul_indication(&mac->scheduled_response);
+        mac->if_module->dl_indication(&mac->scheduled_response);
     }
     return 0;
 }
@@ -659,9 +659,15 @@ NR_UE_L2_STATE_t nr_ue_scheduler(
 
         dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15 = mac->type0_pdcch_dci_config;
         dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
-        dl_config->number_pdus = dl_config->number_pdus + 1;
     	
     	dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.rnti = 0xaaaa;	//	to be set
+    	dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP = 106;	//	to be set
+	/*
+	printf("nr_ue_scheduler Type0 PDCCH with rnti %x, BWP %d\n",
+	       dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.rnti,
+	       dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP);  
+	*/   
+        dl_config->number_pdus = dl_config->number_pdus + 1;
     }
 
     if(search_space_mask & type0a_pdcch){
@@ -1301,9 +1307,9 @@ printf("\n>>> nr_ue_process_dci at MAC layer with dci_format=%d\n",dci_format);
             fapi_nr_ul_config_pusch_pdu_rel15_t *ulsch_config_pdu_0_0 = &ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.ulsch_pdu_rel15;
         /* IDENTIFIER_DCI_FORMATS */
         /* FREQ_DOM_RESOURCE_ASSIGNMENT_UL */
-            nr_ue_process_dci_freq_dom_resource_assignment(&ulsch_config_pdu_0_0,NULL,n_RB_ULBWP,0,dci->freq_dom_resource_assignment_UL);
+            nr_ue_process_dci_freq_dom_resource_assignment(ulsch_config_pdu_0_0,NULL,n_RB_ULBWP,0,dci->freq_dom_resource_assignment_UL);
         /* TIME_DOM_RESOURCE_ASSIGNMENT */
-            nr_ue_process_dci_time_dom_resource_assignment(&ulsch_config_pdu_0_0,NULL,dci->time_dom_resource_assignment,mac->mib->dmrs_TypeA_Position);
+            nr_ue_process_dci_time_dom_resource_assignment(ulsch_config_pdu_0_0,NULL,dci->time_dom_resource_assignment,mac->mib->dmrs_TypeA_Position);
         /* FREQ_HOPPING_FLAG */
             if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.resource_allocation != 0) &&
                 (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.frequency_hopping !=0))
@@ -1377,9 +1383,9 @@ printf("\n>>> nr_ue_process_dci at MAC layer with dci_format=%d\n",dci_format);
         /* BANDWIDTH_PART_IND */
             ulsch_config_pdu_0_1->bandwidth_part_ind = dci->bandwidth_part_ind;
         /* FREQ_DOM_RESOURCE_ASSIGNMENT_UL */
-            nr_ue_process_dci_freq_dom_resource_assignment(&ulsch_config_pdu_0_1,NULL,n_RB_ULBWP,0,dci->freq_dom_resource_assignment_UL);
+            nr_ue_process_dci_freq_dom_resource_assignment(ulsch_config_pdu_0_1,NULL,n_RB_ULBWP,0,dci->freq_dom_resource_assignment_UL);
         /* TIME_DOM_RESOURCE_ASSIGNMENT */
-            nr_ue_process_dci_time_dom_resource_assignment(&ulsch_config_pdu_0_1,NULL,dci->time_dom_resource_assignment,mac->mib->dmrs_TypeA_Position);
+            nr_ue_process_dci_time_dom_resource_assignment(ulsch_config_pdu_0_1,NULL,dci->time_dom_resource_assignment,mac->mib->dmrs_TypeA_Position);
         /* FREQ_HOPPING_FLAG */
             if ((mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.resource_allocation != 0) &&
                 (mac->phy_config.config_req.ul_bwp_dedicated.pusch_config_dedicated.frequency_hopping !=0))
@@ -1769,8 +1775,7 @@ printf("\n>>> nr_ue_process_dci at MAC layer with dci_format=%d\n",dci_format);
               //for (int k=0;k<1000;k++) printf(">>> %d ",k); 
               //mac->if_module->dl_indication(&mac->dl_info);       
               //mac->if_module->dl_indication(&mac->dl_config_request);       
-		      mac->if_module->dl_indication(&mac->phy_config);
-
+	      mac->if_module->dl_indication(&mac->phy_config);
             
 
             break;

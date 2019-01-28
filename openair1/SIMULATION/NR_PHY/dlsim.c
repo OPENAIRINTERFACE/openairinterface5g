@@ -622,7 +622,7 @@ int main(int argc, char **argv)
   
   uint32_t number_of_search_space_per_slot=1;
   uint32_t first_symbol_index=0;
-  uint32_t search_space_duration;  //  element of search space
+  uint32_t search_space_duration=0;  //  element of search space
   uint32_t coreset_duration;  //  element of coreset
   
   coreset_duration = num_symbols * number_of_search_space_per_slot;

@@ -862,8 +862,8 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
 	  
           //((short*)pss_corr_ue[pss_index])[2*n] += ((short*) &result)[0];   /* real part */
           //((short*)pss_corr_ue[pss_index])[2*n+1] += ((short*) &result)[1]; /* imaginary part */
-          //((short*)&synchro_out)[0] += ((short*) &result)[0];               /* real part */
-          //((short*)&synchro_out)[1] += ((short*) &result)[1];               /* imaginary part */
+          //((short*)&synchro_out)[0] += ((int*) &result)[0];               /* real part */
+          //((short*)&synchro_out)[1] += ((int*) &result)[1];               /* imaginary part */
 
         }
       }

@@ -201,7 +201,7 @@ void encode_parity_check_part_optim(uint8_t *c,uint8_t *d, short BG,short Zc,sho
 int ldpc_encoder_optim(unsigned char *test_input,unsigned char *channel_input,short block_length,short BG,time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput)
 {
 
-  short Zc,Kb,nrows,ncols;
+  short Zc,Kb=0,nrows=0,ncols=0;
   int i,i1;
   int no_punctured_columns,removed_bit;
 
@@ -320,7 +320,7 @@ int ldpc_encoder_optim(unsigned char *test_input,unsigned char *channel_input,sh
 int ldpc_encoder_optim_8seg(unsigned char **test_input,unsigned char **channel_input,short block_length,short BG,int n_segments,time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput)
 {
 
-  short Zc,Kb,nrows,ncols;
+  short Zc,Kb=0,nrows=0,ncols=0;
   int i,i1,j;
   int no_punctured_columns,removed_bit;
   //Table of possible lifting sizes
@@ -520,7 +520,7 @@ int ldpc_encoder_optim_8seg(unsigned char **test_input,unsigned char **channel_i
 int ldpc_encoder_optim_8seg_multi(unsigned char **test_input,unsigned char **channel_input,short block_length, short BG, int n_segments,unsigned int macro_num, time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput)
 {
 
-  short Zc,Kb,nrows,ncols;
+  short Zc,Kb=0,nrows=0,ncols=0;
   int i,i1,j;
   int no_punctured_columns,removed_bit;
   //Table of possible lifting sizes

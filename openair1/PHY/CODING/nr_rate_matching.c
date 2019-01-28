@@ -78,7 +78,7 @@ uint32_t nr_rate_matching_ldpc(uint8_t Ilbrm,
 {
   uint8_t Cprime;
   uint32_t Ncb,E,ind,k,Nref,N;
-  uint8_t *e2;
+  //uint8_t *e2;
 
   AssertFatal(Nl>0,"Nl is 0\n");
   AssertFatal(Qm>0,"Qm is 0\n");
@@ -110,7 +110,7 @@ uint32_t nr_rate_matching_ldpc(uint8_t Ilbrm,
   printf("nr_rate_matching: E %d, k0 %d Cprime %d modcprime %d\n",E,ind, Cprime,((G/(Nl*Qm))%Cprime));
 #endif
 
-  e2 = e;
+  //e2 = e;
 
   k=0;
 
@@ -120,7 +120,8 @@ uint32_t nr_rate_matching_ldpc(uint8_t Ilbrm,
     printf("RM_TX k%d Ind: %d (%d)\n",k,ind,w[ind]);
 #endif
 
-    if (w[ind] != NR_NULL) e2[k++]=w[ind];
+    //if (w[ind] != NR_NULL) e2[k++]=w[ind];
+    if (w[ind] != NR_NULL) e[k++]=w[ind];
   }
 
   while(k<E) {
@@ -130,7 +131,8 @@ uint32_t nr_rate_matching_ldpc(uint8_t Ilbrm,
       printf("RM_TX k%d Ind: %d (%d)\n",k,ind,w[ind]);
 #endif
 
-      if (w[ind] != NR_NULL) e2[k++]=w[ind];
+      //if (w[ind] != NR_NULL) e2[k++]=w[ind];
+      if (w[ind] != NR_NULL) e[k++]=w[ind];
     }
   }
 

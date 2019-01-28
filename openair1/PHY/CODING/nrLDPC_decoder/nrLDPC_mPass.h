@@ -41,13 +41,15 @@
    \param Z Lifting size
    \param BG Base graph
 */
-static inline void nrLDPC_llr2llrProcBuf(t_nrLDPC_lut* p_lut, int8_t* llr, uint16_t Z, uint8_t BG)
+static inline void nrLDPC_llr2llrProcBuf(t_nrLDPC_lut* p_lut, int8_t* llr, t_nrLDPC_procBuf* p_procBuf, uint16_t Z, uint8_t BG)
 {
     const uint16_t* lut_llr2llrProcBuf = p_lut->llr2llrProcBuf;
     uint32_t i;
     const uint8_t numBn2CnG1 = p_lut->numBnInBnGroups[0];
     uint32_t colG1 = NR_LDPC_START_COL_PARITY_BG1*Z;
 
+    int8_t* llrProcBuf = p_procBuf->llrProcBuf;
+    
     if (BG == 2)
     {
         colG1 = NR_LDPC_START_COL_PARITY_BG2*Z;
@@ -74,11 +76,13 @@ static inline void nrLDPC_llr2llrProcBuf(t_nrLDPC_lut* p_lut, int8_t* llr, uint1
    \param Z Lifting size
    \param BG Base graph
 */
-static inline void nrLDPC_llr2CnProcBuf(t_nrLDPC_lut* p_lut, int8_t* llr, uint16_t numLLR, uint16_t Z, uint8_t BG)
+static inline void nrLDPC_llr2CnProcBuf(t_nrLDPC_lut* p_lut, int8_t* llr, t_nrLDPC_procBuf* p_procBuf, uint16_t numLLR, uint16_t Z, uint8_t BG)
 {
     const uint32_t* lut_llr2CnProcBuf = p_lut->llr2CnProcBuf;
     const uint8_t* lut_numEdgesPerBn = p_lut->numEdgesPerBn;
 
+    int8_t* cnProcBuf = p_procBuf->cnProcBuf;
+    
     int8_t curLLR;
     uint8_t numEdges;
     uint32_t i;
@@ -123,12 +127,15 @@ static inline void nrLDPC_llr2CnProcBuf(t_nrLDPC_lut* p_lut, int8_t* llr, uint16
    \param p_lut Pointer to decoder LUTs
    \param Z Lifting size
 */
-static inline void nrLDPC_cn2bnProcBuf(t_nrLDPC_lut* p_lut, uint16_t Z)
+static inline void nrLDPC_cn2bnProcBuf(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBuf, uint16_t Z)
 {
     const uint32_t* lut_cn2bnProcBuf = p_lut->cn2bnProcBuf;
     const uint8_t*  lut_numCnInCnGroups = p_lut->numCnInCnGroups;
     const uint32_t* lut_startAddrCnGroups = p_lut->startAddrCnGroups;
 
+    int8_t* cnProcBufRes = p_procBuf->cnProcBufRes;
+    int8_t* bnProcBuf    = p_procBuf->bnProcBuf;
+    
     const uint32_t* p_lut_cn2bn;
     int8_t* p_cnProcBufRes;
     uint32_t bitOffsetInGroup;
@@ -245,12 +252,15 @@ static inline void nrLDPC_cn2bnProcBuf(t_nrLDPC_lut* p_lut, uint16_t Z)
    \param p_lut Pointer to decoder LUTs
    \param Z Lifting size
 */
-static inline void nrLDPC_cn2bnProcBuf_BG1(t_nrLDPC_lut* p_lut, uint16_t Z)
+static inline void nrLDPC_cn2bnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBuf, uint16_t Z)
 {
     const uint32_t* lut_cn2bnProcBuf = p_lut->cn2bnProcBuf;
     const uint8_t*  lut_numCnInCnGroups = p_lut->numCnInCnGroups;
     const uint32_t* lut_startAddrCnGroups = p_lut->startAddrCnGroups;
 
+    int8_t* cnProcBufRes = p_procBuf->cnProcBufRes;
+    int8_t* bnProcBuf    = p_procBuf->bnProcBuf;
+    
     const uint32_t* p_lut_cn2bn;
     int8_t* p_cnProcBufRes;
     uint32_t bitOffsetInGroup;
@@ -418,12 +428,15 @@ static inline void nrLDPC_cn2bnProcBuf_BG1(t_nrLDPC_lut* p_lut, uint16_t Z)
    \param p_lut Pointer to decoder LUTs
    \param Z Lifting size
 */
-static inline void nrLDPC_bn2cnProcBuf(t_nrLDPC_lut* p_lut, uint16_t Z)
+static inline void nrLDPC_bn2cnProcBuf(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBuf, uint16_t Z)
 {
     const uint32_t* lut_cn2bnProcBuf = p_lut->cn2bnProcBuf;
     const uint8_t*  lut_numCnInCnGroups = p_lut->numCnInCnGroups;
     const uint32_t* lut_startAddrCnGroups = p_lut->startAddrCnGroups;
 
+    int8_t* cnProcBuf = p_procBuf->cnProcBuf;
+    int8_t* bnProcBufRes = p_procBuf->bnProcBufRes;
+    
     int8_t* p_cnProcBuf;
     const uint32_t* p_lut_cn2bn;
     uint32_t bitOffsetInGroup;
@@ -543,12 +556,15 @@ static inline void nrLDPC_bn2cnProcBuf(t_nrLDPC_lut* p_lut, uint16_t Z)
    \param p_lut Pointer to decoder LUTs
    \param Z Lifting size
 */
-static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, uint16_t Z)
+static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, t_nrLDPC_procBuf* p_procBuf, uint16_t Z)
 {
     const uint32_t* lut_cn2bnProcBuf = p_lut->cn2bnProcBuf;
     const uint8_t*  lut_numCnInCnGroups = p_lut->numCnInCnGroups;
     const uint32_t* lut_startAddrCnGroups = p_lut->startAddrCnGroups;
 
+    int8_t* cnProcBuf    = p_procBuf->cnProcBuf;
+    int8_t* bnProcBufRes = p_procBuf->bnProcBufRes;
+    
     int8_t* p_cnProcBuf;
     const uint32_t* p_lut_cn2bn;
     uint32_t bitOffsetInGroup;
@@ -720,11 +736,13 @@ static inline void nrLDPC_bn2cnProcBuf_BG1(t_nrLDPC_lut* p_lut, uint16_t Z)
    \param llrOut Pointer to output LLRs
    \param numLLR Number of LLR values
 */
-static inline void nrLDPC_llrRes2llrOut(t_nrLDPC_lut* p_lut, int8_t* llrOut, uint16_t numLLR)
+static inline void nrLDPC_llrRes2llrOut(t_nrLDPC_lut* p_lut, int8_t* llrOut, t_nrLDPC_procBuf* p_procBuf, uint16_t numLLR)
 {
     const uint16_t* lut_llr2llrProcBuf = p_lut->llr2llrProcBuf;
     uint32_t i;
 
+    int8_t* llrRes = p_procBuf->llrRes;
+    
     for (i=0; i<numLLR; i++)
     {
         llrOut[i] = llrRes[lut_llr2llrProcBuf[i]];
