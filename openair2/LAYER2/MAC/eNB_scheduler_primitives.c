@@ -3839,7 +3839,7 @@ ul_ACK_subframe2dl_subframe(LTE_TDD_Config_t *tdd_Config,
 //------------------------------------------------------------------------------
 {
   if (tdd_Config == NULL) {
-    return ((subframe<4) ? subframe + 6 : subframe - 4);
+    return ((subframe < 4) ? subframe + 6 : subframe - 4);
   } 
 
   switch (tdd_Config->subframeAssignment) {
@@ -3854,7 +3854,7 @@ ul_ACK_subframe2dl_subframe(LTE_TDD_Config_t *tdd_Config,
       if (subframe == 4) { // ACK subframes 9 and 0
         return ((9 + ACK_index) % 10);
       } 
-      AssertFatal(1==0,"illegal subframe %d for tdd_config->subframeAssignment %ld\n",
+      AssertFatal(1==0, "illegal subframe %d for tdd_config->subframeAssignment %ld\n",
                   subframe,
                   tdd_Config->subframeAssignment);
       break;
@@ -3869,7 +3869,7 @@ ul_ACK_subframe2dl_subframe(LTE_TDD_Config_t *tdd_Config,
       if (subframe == 3) { // ACK subframes 6, 7 8 and 9
         return (6 + ACK_index);  // To be updated
       } 
-      AssertFatal(1 == 0,"illegal subframe %d for tdd_config %ld\n",
+      AssertFatal(1 == 0, "illegal subframe %d for tdd_config %ld\n",
                   subframe,
                   tdd_Config->subframeAssignment);
       break;
@@ -3887,7 +3887,7 @@ ul_ACK_subframe2dl_subframe(LTE_TDD_Config_t *tdd_Config,
       if (subframe == 8) { // ACK subframe 4
         return 4;  // To be updated
       } 
-      AssertFatal(1 == 0,"illegal subframe %d for tdd_config %ld\n",
+      AssertFatal(1 == 0, "illegal subframe %d for tdd_config %ld\n",
                   subframe,
                   tdd_Config->subframeAssignment);
       break;
@@ -3906,10 +3906,11 @@ extract_harq(module_id_t mod_idP,
              int format) 
 //------------------------------------------------------------------------------
 {
-  UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
+  eNB_MAC_INST *eNB = RC.mac[mod_idP];
+  UE_list_t *UE_list = &eNB->UE_list;
   UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   rnti_t rnti = UE_RNTI(mod_idP, UE_id);
-  COMMON_channels_t *cc = &RC.mac[mod_idP]->common_channels[CC_idP];
+  COMMON_channels_t *cc = &eNB->common_channels[CC_idP];
   nfapi_harq_indication_fdd_rel13_t *harq_indication_fdd;
   nfapi_harq_indication_tdd_rel13_t *harq_indication_tdd;
   uint16_t num_ack_nak;
@@ -3922,22 +3923,22 @@ extract_harq(module_id_t mod_idP,
   sub_frame_t subframe_tx;
   int frame_tx;
   uint8_t harq_pid;
+
 #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-
-  if (UE_list->UE_template[pCCid][UE_id].physicalConfigDedicated != NULL &&
-      UE_list->UE_template[pCCid][UE_id].physicalConfigDedicated->pucch_ConfigDedicated != NULL &&
-      (UE_list->UE_template[pCCid][UE_id].physicalConfigDedicated->ext7)
-      && (UE_list->UE_template[pCCid][UE_id].physicalConfigDedicated->ext7->pucch_ConfigDedicated_r13)
-      && (((UE_list->UE_template[pCCid][UE_id].physicalConfigDedicated->ext7->pucch_ConfigDedicated_r13->spatialBundlingPUCCH_r13) && (format == 0))
-          || ((UE_list->UE_template[pCCid][UE_id].physicalConfigDedicated->ext7->pucch_ConfigDedicated_r13->spatialBundlingPUSCH_r13)
-              && (format == 1))))
+  LTE_PhysicalConfigDedicated_t *physicalConfigDedicated = UE_list->UE_template[pCCid][UE_id].physicalConfigDedicated;
+  if (physicalConfigDedicated != NULL && physicalConfigDedicated->pucch_ConfigDedicated != NULL && 
+      physicalConfigDedicated->ext7 != NULL && physicalConfigDedicated->ext7->pucch_ConfigDedicated_r13 != NULL && 
+      ((physicalConfigDedicated->ext7->pucch_ConfigDedicated_r13->spatialBundlingPUCCH_r13 && format == 0) ||
+       (physicalConfigDedicated->ext7->pucch_ConfigDedicated_r13->spatialBundlingPUSCH_r13 && format == 1))) {
     spatial_bundling = 1;
-
-#endif
-
-  for (i = 0; i < numCC; i++)
-    tmode[i] = get_tmode(mod_idP, i, UE_id);
-
+  }
+#endif 
+    
+  for (i = 0; i < numCC; i++) {
+    tmode[i] = get_tmode(mod_idP, 
+                         i, 
+                         UE_id);
+  }
   if (cc->tdd_Config) {
     harq_indication_tdd = (nfapi_harq_indication_tdd_rel13_t *) harq_indication;
     //    pdu = &harq_indication_tdd->harq_tb_n[0];
@@ -3945,42 +3946,61 @@ extract_harq(module_id_t mod_idP,
 
     switch (harq_indication_tdd->mode) {
       case 0:   // Format 1a/b bundling
-        AssertFatal(numCC == 1, "numCC %d > 1, should not be using Format1a/b\n", numCC);
-        int M = ul_ACK_subframe2M(cc->tdd_Config,subframeP);
+        AssertFatal(numCC == 1, "numCC %d > 1, should not be using Format1a/b\n", 
+                    numCC);
+        int M = ul_ACK_subframe2M(cc->tdd_Config,
+                                  subframeP);
 
-        for(m=0; m<M; m++) {
-          subframe_tx = ul_ACK_subframe2dl_subframe(cc->tdd_Config,subframeP,m);
+        for (m=0; m<M; m++) {
+          subframe_tx = ul_ACK_subframe2dl_subframe(cc->tdd_Config,
+                                                    subframeP,
+                                                    m);
 
-          if(frameP==1023&&subframeP>5)
-            frame_tx=-1;
-          else
-            frame_tx = subframeP < 4 ? frameP -1 : frameP;
+          if (frameP==1023&&subframeP>5) frame_tx=-1;
+          else frame_tx = subframeP < 4 ? frameP -1 : frameP;
 
-          harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,frame_tx,subframe_tx);
-          RA_t *ra = &RC.mac[mod_idP]->common_channels[CC_idP].ra[0];
+          harq_pid = frame_subframe2_dl_harq_pid(cc->tdd_Config,
+                                                 frame_tx,
+                                                 subframe_tx);
+          RA_t *ra = &eNB->common_channels[CC_idP].ra[0];
 
-          if(num_ack_nak==1) {
-            if(harq_indication_tdd->harq_data[0].bundling.value_0==1) { //ack
+          if(num_ack_nak == 1) {
+            if (harq_indication_tdd->harq_data[0].bundling.value_0 == 1) { //ack
               sched_ctl->round[CC_idP][harq_pid] = 8; // release HARQ process
               sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
-              LOG_D(MAC,"frame %d subframe %d Acking (%d,%d) harq_pid %d round %d\n",frameP,subframeP,frame_tx,subframe_tx,harq_pid,sched_ctl->round[CC_idP][harq_pid]);
+              LOG_D(MAC, "frame %d subframe %d Acking (%d,%d) harq_pid %d round %d\n",
+                    frameP,
+                    subframeP,
+                    frame_tx,
+                    subframe_tx,
+                    harq_pid,
+                    sched_ctl->round[CC_idP][harq_pid]);
             } else { //nack
-              if( sched_ctl->round[CC_idP][harq_pid]<8) sched_ctl->round[CC_idP][harq_pid]++;
+              if (sched_ctl->round[CC_idP][harq_pid] < 8) sched_ctl->round[CC_idP][harq_pid]++;
 
               if (sched_ctl->round[CC_idP][harq_pid] == 4) {
                 sched_ctl->round[CC_idP][harq_pid] = 8;     // release HARQ process
                 sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
               }
 
-              LOG_D(MAC,"frame %d subframe %d Nacking (%d,%d) harq_pid %d round %d\n",frameP,subframeP,frame_tx,subframe_tx,harq_pid,sched_ctl->round[CC_idP][harq_pid]);
+              LOG_D(MAC,"frame %d subframe %d Nacking (%d,%d) harq_pid %d round %d\n",
+                    frameP,
+                    subframeP,
+                    frame_tx,
+                    subframe_tx,
+                    harq_pid,
+                    sched_ctl->round[CC_idP][harq_pid]);
 
-              if(sched_ctl->round[CC_idP][harq_pid] == 8) {
+              if (sched_ctl->round[CC_idP][harq_pid] == 8) {
                 for (uint8_t ra_i = 0; ra_i < NB_RA_PROC_MAX; ra_i++) {
-                  if((ra[ra_i].rnti == rnti) && (ra[ra_i].state == WAITMSG4ACK)) {
+                  if (ra[ra_i].rnti == rnti && ra[ra_i].state == WAITMSG4ACK) {
                     //Msg NACK num to MAC ,remove UE
                     // add UE info to freeList
-                    LOG_I(RRC, "put UE %x into freeList\n", rnti);
-                    put_UE_in_freelist(mod_idP, rnti, 1);
+                    LOG_I(RRC, "put UE %x into freeList\n", 
+                          rnti);
+                    put_UE_in_freelist(mod_idP, 
+                                      rnti, 
+                                      1);
                   }
                 }
               }
@@ -3988,17 +4008,27 @@ extract_harq(module_id_t mod_idP,
           }
 
           for (uint8_t ra_i = 0; ra_i < NB_RA_PROC_MAX; ra_i++) {
-            if ((ra[ra_i].rnti == rnti) && (ra[ra_i].state == MSGCRNTI_ACK) && (ra[ra_i].crnti_harq_pid == harq_pid)) {
-              LOG_D(MAC,"CRNTI Reconfiguration: ACK %d rnti %x round %d frame %d subframe %d \n",harq_indication_tdd->harq_data[0].bundling.value_0,rnti,sched_ctl->round[CC_idP][harq_pid],frameP,subframeP);
+            if (ra[ra_i].rnti == rnti && ra[ra_i].state == MSGCRNTI_ACK && ra[ra_i].crnti_harq_pid == harq_pid) {
+              LOG_D(MAC,"CRNTI Reconfiguration: ACK %d rnti %x round %d frame %d subframe %d \n",
+                    harq_indication_tdd->harq_data[0].bundling.value_0,
+                    rnti,
+                    sched_ctl->round[CC_idP][harq_pid],
+                    frameP,
+                    subframeP);
 
-              if(num_ack_nak == 1 && harq_indication_tdd->harq_data[0].bundling.value_0 == 1) {
-                cancel_ra_proc(mod_idP, CC_idP, frameP, ra[ra_i].rnti);
+              if (num_ack_nak == 1 && harq_indication_tdd->harq_data[0].bundling.value_0 == 1) {
+                cancel_ra_proc(mod_idP, 
+                               CC_idP, 
+                               frameP, 
+                               ra[ra_i].rnti);
               } else {
                 if(sched_ctl->round[CC_idP][harq_pid] == 7) {
-                  cancel_ra_proc(mod_idP, CC_idP, frameP, ra[ra_i].rnti);
+                  cancel_ra_proc(mod_idP, 
+                                 CC_idP, 
+                                 frameP, 
+                                 ra[ra_i].rnti);
                 }
               }
-
               break;
             }
           }
@@ -4007,14 +4037,8 @@ extract_harq(module_id_t mod_idP,
         break;
 
       case 1:   // Channel Selection
-        break;
-
       case 2:   // Format 3
-        break;
-
       case 3:   // Format 4
-        break;
-
       case 4:   // Format 5
         break;
     }
@@ -4023,11 +4047,19 @@ extract_harq(module_id_t mod_idP,
     num_ack_nak         = harq_indication_fdd->number_of_ack_nack;
     pdu                 = &harq_indication_fdd->harq_tb_n[0];
     harq_pid = ((10 * frameP) + subframeP + 10236) & 7;
-    LOG_D(MAC,"frame %d subframe %d harq_pid %d mode %d tmode[0] %d num_ack_nak %d round %d\n",frameP,subframeP,harq_pid,harq_indication_fdd->mode,tmode[0],num_ack_nak,sched_ctl->round[CC_idP][harq_pid]);
+    LOG_D(MAC, "frame %d subframe %d harq_pid %d mode %d tmode[0] %d num_ack_nak %d round %d\n",
+          frameP,
+          subframeP,
+          harq_pid,
+          harq_indication_fdd->mode,
+          tmode[0],
+          num_ack_nak,
+          sched_ctl->round[CC_idP][harq_pid]);
 
     switch (harq_indication_fdd->mode) {
       case 0:   // Format 1a/b (10.1.2.1)
-        AssertFatal(numCC == 1, "numCC %d > 1, should not be using Format1a/b\n", numCC);
+        AssertFatal(numCC == 1, "numCC %d > 1, should not be using Format1a/b\n", 
+                    numCC);
 
         if (tmode[0] == 1 || tmode[0] == 2 || tmode[0] == 5 || tmode[0] == 6 || tmode[0] == 7) {  // NOTE: have to handle the case of TM9-10 with 1 antenna port
           // single ACK/NAK bit
@@ -4059,12 +4091,14 @@ extract_harq(module_id_t mod_idP,
                       UE_id, 
                       rnti);
 
-          LOG_D(MAC, "Received %d for harq_pid %d\n", pdu[0], harq_pid);
+          LOG_D(MAC, "Received %d for harq_pid %d\n", 
+                pdu[0], 
+                harq_pid);
 
-          RA_t *ra = &RC.mac[mod_idP]->common_channels[CC_idP].ra[0];
+          RA_t *ra = &eNB->common_channels[CC_idP].ra[0];
 
           for (uint8_t ra_i = 0; ra_i < NB_RA_PROC_MAX; ra_i++) {
-            if ((ra[ra_i].rnti == rnti) && (ra[ra_i].state == MSGCRNTI_ACK) && (ra[ra_i].crnti_harq_pid == harq_pid)) {
+            if (ra[ra_i].rnti == rnti && ra[ra_i].state == MSGCRNTI_ACK && ra[ra_i].crnti_harq_pid == harq_pid) {
               LOG_D(MAC,"CRNTI Reconfiguration: ACK %d rnti %x round %d frame %d subframe %d \n",
                     pdu[0],
                     rnti,
@@ -4073,13 +4107,18 @@ extract_harq(module_id_t mod_idP,
                     subframeP);
 
               if (pdu[0] == 1) {
-                cancel_ra_proc(mod_idP, CC_idP, frameP, ra[ra_i].rnti);
+                cancel_ra_proc(mod_idP, 
+                               CC_idP, 
+                               frameP, 
+                               ra[ra_i].rnti);
               } else {
                 if (sched_ctl->round[CC_idP][harq_pid] == 7) {
-                  cancel_ra_proc(mod_idP, CC_idP, frameP, ra[ra_i].rnti);
+                  cancel_ra_proc(mod_idP, 
+                                 CC_idP, 
+                                 frameP, 
+                                 ra[ra_i].rnti);
                 }
               }
-
               break;
             }
           }
@@ -4100,44 +4139,34 @@ extract_harq(module_id_t mod_idP,
                 if((ra[ra_i].rnti == rnti) && (ra[ra_i].state == WAITMSG4ACK)) {
                   //Msg NACK num to MAC ,remove UE
                   // add UE info to freeList
-                  LOG_I(RRC, "put UE %x into freeList\n", rnti);
-                  put_UE_in_freelist(mod_idP, rnti, 1);
+                  LOG_I(RRC, "put UE %x into freeList\n", 
+                        rnti);
+                  put_UE_in_freelist(mod_idP, 
+                                     rnti, 
+                                     1);
                 }
               }
             }
           }
         } else {
           // one or two ACK/NAK bits
-          AssertFatal(num_ack_nak <= 2,
-                      "num_ack_nak %d > 2 for 1 CC and TM3/4/8/9/10\n",
+          AssertFatal(num_ack_nak <= 2, "num_ack_nak %d > 2 for 1 CC and TM3/4/8/9/10\n",
                       num_ack_nak);
 
-          if ((num_ack_nak == 2)
-              && (sched_ctl->round[CC_idP][harq_pid] < 8)
-              && (sched_ctl->tbcnt[CC_idP][harq_pid] == 1)
-              && (pdu[0] == 1) && (pdu[1] == 1)) {
+          if (num_ack_nak == 2 && sched_ctl->round[CC_idP][harq_pid] < 8 && sched_ctl->tbcnt[CC_idP][harq_pid] == 1 && pdu[0] == 1 && pdu[1] == 1) {
             sched_ctl->round[CC_idP][harq_pid] = 8;
             sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
           }
 
-          if ((num_ack_nak == 2)
-              && (sched_ctl->round[CC_idP][harq_pid] < 8)
-              && (sched_ctl->tbcnt[CC_idP][harq_pid] == 1)
-              && (pdu[0] == 2) && (pdu[1] == 2)) {
+          if (num_ack_nak == 2 && sched_ctl->round[CC_idP][harq_pid] < 8 && sched_ctl->tbcnt[CC_idP][harq_pid] == 1 && pdu[0] == 2 && pdu[1] == 2) {
             sched_ctl->round[CC_idP][harq_pid]++;
 
             if (sched_ctl->round[CC_idP][harq_pid] == 4) {
               sched_ctl->round[CC_idP][harq_pid] = 8;     // release HARQ process
               sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
             }
-          } else if (((num_ack_nak == 2)
-                      && (sched_ctl->round[CC_idP][harq_pid] < 8)
-                      && (sched_ctl->tbcnt[0][harq_pid] == 2)
-                      && (pdu[0] == 1) && (pdu[1] == 2))
-                     || ((num_ack_nak == 2)
-                         && (sched_ctl->round[CC_idP][harq_pid] < 8)
-                         && (sched_ctl->tbcnt[CC_idP][harq_pid] == 2)
-                         && (pdu[0] == 2) && (pdu[1] == 1))) {
+          } else if ((num_ack_nak == 2 && sched_ctl->round[CC_idP][harq_pid] < 8 && sched_ctl->tbcnt[0][harq_pid] == 2 && pdu[0] == 1 && pdu[1] == 2) || 
+                     (num_ack_nak == 2 && sched_ctl->round[CC_idP][harq_pid] < 8 && sched_ctl->tbcnt[CC_idP][harq_pid] == 2 && pdu[0] == 2 && pdu[1] == 1)) {
             sched_ctl->round[CC_idP][harq_pid]++;
             sched_ctl->tbcnt[CC_idP][harq_pid] = 1;
 
@@ -4145,10 +4174,7 @@ extract_harq(module_id_t mod_idP,
               sched_ctl->round[CC_idP][harq_pid] = 8;     // release HARQ process
               sched_ctl->tbcnt[CC_idP][harq_pid] = 0;  /* TODO: do we have to set it to 0? */
             }
-          } else if ((num_ack_nak == 2)
-                     && (sched_ctl->round[CC_idP][harq_pid] < 8)
-                     && (sched_ctl->tbcnt[CC_idP][harq_pid] == 2)
-                     && (pdu[0] == 2) && (pdu[1] == 2)) {
+          } else if (num_ack_nak == 2 && sched_ctl->round[CC_idP][harq_pid] < 8 && sched_ctl->tbcnt[CC_idP][harq_pid] == 2 && pdu[0] == 2 && pdu[1] == 2) {
             sched_ctl->round[CC_idP][harq_pid]++;
 
             if (sched_ctl->round[CC_idP][harq_pid] == 4) {
@@ -4156,72 +4182,65 @@ extract_harq(module_id_t mod_idP,
               sched_ctl->tbcnt[CC_idP][harq_pid] = 0;
             }
           } else
-            AssertFatal(1 == 0,
-                        "Illegal ACK/NAK/round combination (%d,%d,%d,%d,%d) for harq_pid %d, UE %d/%x\n",
+            AssertFatal(1 == 0, "Illegal ACK/NAK/round combination (%d,%d,%d,%d,%d) for harq_pid %d, UE %d/%x\n",
                         num_ack_nak,
                         sched_ctl->round[CC_idP][harq_pid],
-                        sched_ctl->round[CC_idP][harq_pid], pdu[0],
-                        pdu[1], harq_pid, UE_id, rnti);
+                        sched_ctl->round[CC_idP][harq_pid], 
+                        pdu[0],
+                        pdu[1], 
+                        harq_pid, 
+                        UE_id, 
+                        rnti);
         }
 
         break;
 
       case 1:   // FDD Channel Selection (10.1.2.2.1), must be received for 2 serving cells
-        AssertFatal(numCC == 2,
-                    "Should not receive harq indication with channel selection with %d active CCs\n",
+        AssertFatal(numCC == 2, "Should not receive harq indication with channel selection with %d active CCs\n",
                     numCC);
 
-        if ((num_ack_nak == 2)
-            && (sched_ctl->round[pCCid][harq_pid] < 8)
-            && (sched_ctl->round[1 - pCCid][harq_pid] < 8)
-            && (sched_ctl->tbcnt[pCCid][harq_pid] == 1)
-            && (sched_ctl->tbcnt[1 - pCCid][harq_pid] == 1)) {
+        if (num_ack_nak == 2 && sched_ctl->round[pCCid][harq_pid] < 8 && 
+            sched_ctl->round[1 - pCCid][harq_pid] < 8 && sched_ctl->tbcnt[pCCid][harq_pid] == 1 && sched_ctl->tbcnt[1 - pCCid][harq_pid] == 1) {
           AssertFatal(pdu[0] <= 3, "pdu[0] %d is not ACK/NAK/DTX\n",
                       pdu[0]);
           AssertFatal(pdu[1] <= 3, "pdu[1] %d is not ACK/NAK/DTX\n",
                       pdu[1]);
 
-          if (pdu[0] == 1)
-            sched_ctl->round[pCCid][harq_pid] = 8;
+          if (pdu[0] == 1) sched_ctl->round[pCCid][harq_pid] = 8;
           else {
             sched_ctl->round[pCCid][harq_pid]++;
-
-            if (sched_ctl->round[pCCid][harq_pid] == 4)
-              sched_ctl->round[pCCid][harq_pid] = 8;
+            if (sched_ctl->round[pCCid][harq_pid] == 4) sched_ctl->round[pCCid][harq_pid] = 8;
           }
 
-          if (pdu[1] == 1)
-            sched_ctl->round[1 - pCCid][harq_pid] = 8;
+          if (pdu[1] == 1) sched_ctl->round[1 - pCCid][harq_pid] = 8;
           else {
             sched_ctl->round[1 - pCCid][harq_pid]++;
-
-            if (sched_ctl->round[1 - pCCid][harq_pid] == 4)
-              sched_ctl->round[1 - pCCid][harq_pid] = 8;
+            if (sched_ctl->round[1 - pCCid][harq_pid] == 4) sched_ctl->round[1 - pCCid][harq_pid] = 8;
           }
         }     // A=2
-        else if ((num_ack_nak == 3)
-                 && (sched_ctl->round[pCCid][harq_pid] < 8)
-                 && (sched_ctl->tbcnt[pCCid][harq_pid] == 2)
-                 && (sched_ctl->round[1 - pCCid][harq_pid] < 8)
-                 && (sched_ctl->tbcnt[1 - pCCid][harq_pid] == 1)) {
+        else if (num_ack_nak == 3 && sched_ctl->round[pCCid][harq_pid] < 8 && 
+                 sched_ctl->tbcnt[pCCid][harq_pid] == 2 && sched_ctl->round[1 - pCCid][harq_pid] < 8 && sched_ctl->tbcnt[1 - pCCid][harq_pid] == 1) {
           AssertFatal(pdu[0] <= 3, "pdu[0] %d is not ACK/NAK/DTX\n",
                       pdu[0]);
           AssertFatal(pdu[1] <= 3, "pdu[1] %d is not ACK/NAK/DTX\n",
                       pdu[1]);
           AssertFatal(pdu[2] <= 3, "pdu[2] %d is not ACK/NAK/DTX\n",
                       pdu[2]);
-          AssertFatal(sched_ctl->tbcnt[pCCid][harq_pid] == 2,
-                      "sched_ctl->tbcnt[%d][%d] != 2 for UE %d/%x\n",
-                      pCCid, harq_pid, UE_id, rnti);
-          AssertFatal(sched_ctl->tbcnt[1 - pCCid][harq_pid] == 1,
-                      "sched_ctl->tbcnt[%d][%d] != 1 for UE %d/%x\n",
-                      1 - pCCid, harq_pid, UE_id, rnti);
+          AssertFatal(sched_ctl->tbcnt[pCCid][harq_pid] == 2, "sched_ctl->tbcnt[%d][%d] != 2 for UE %d/%x\n",
+                      pCCid, 
+                      harq_pid, 
+                      UE_id, 
+                      rnti);
+          AssertFatal(sched_ctl->tbcnt[1 - pCCid][harq_pid] == 1, "sched_ctl->tbcnt[%d][%d] != 1 for UE %d/%x\n",
+                      1 - pCCid, 
+                      harq_pid, 
+                      UE_id, 
+                      rnti);
 
-          if ((pdu[0] == 1) && (pdu[1] == 1)) { // both ACK
+          if (pdu[0] == 1 && pdu[1] == 1) { // both ACK
             sched_ctl->round[pCCid][harq_pid] = 8;
             sched_ctl->tbcnt[pCCid][harq_pid] = 0;
-          } else if (((pdu[0] == 2) && (pdu[1] == 1)) ||
-                     ((pdu[0] == 1) && (pdu[1] == 2))) {
+          } else if ((pdu[0] == 2 && pdu[1] == 1) || (pdu[0] == 1 && pdu[1] == 2)) {
             sched_ctl->round[pCCid][harq_pid]++;
             sched_ctl->tbcnt[pCCid][harq_pid] = 1;
 
@@ -4238,8 +4257,7 @@ extract_harq(module_id_t mod_idP,
             }
           }
 
-          if (pdu[2] == 1)
-            sched_ctl->round[1 - pCCid][harq_pid] = 8;
+          if (pdu[2] == 1) sched_ctl->round[1 - pCCid][harq_pid] = 8;
           else {
             sched_ctl->round[1 - pCCid][harq_pid]++;
 
@@ -4248,29 +4266,29 @@ extract_harq(module_id_t mod_idP,
             }
           }
         }     // A=3 primary cell has 2 TBs
-        else if ((num_ack_nak == 3)
-                 && (sched_ctl->round[1 - pCCid][harq_pid] < 8)
-                 && (sched_ctl->round[pCCid][harq_pid] < 8)
-                 && (sched_ctl->tbcnt[1 - pCCid][harq_pid] == 2)
-                 && (sched_ctl->tbcnt[pCCid][harq_pid] == 1)) {
+        else if (num_ack_nak == 3 && sched_ctl->round[1 - pCCid][harq_pid] < 8 && 
+                 sched_ctl->round[pCCid][harq_pid] < 8 && sched_ctl->tbcnt[1 - pCCid][harq_pid] == 2 && sched_ctl->tbcnt[pCCid][harq_pid] == 1) {
           AssertFatal(pdu[0] <= 3, "pdu[0] %d is not ACK/NAK/DTX\n",
                       pdu[0]);
           AssertFatal(pdu[1] <= 3, "pdu[1] %d is not ACK/NAK/DTX\n",
                       pdu[1]);
           AssertFatal(pdu[2] <= 3, "pdu[2] %d is not ACK/NAK/DTX\n",
                       pdu[2]);
-          AssertFatal(sched_ctl->tbcnt[1 - pCCid][harq_pid] == 2,
-                      "sched_ctl->tbcnt[%d][%d] != 2 for UE %d/%x\n",
-                      1 - pCCid, harq_pid, UE_id, rnti);
-          AssertFatal(sched_ctl->tbcnt[pCCid][harq_pid] == 1,
-                      "sched_ctl->tbcnt[%d][%d] != 1 for UE %d/%x\n",
-                      pCCid, harq_pid, UE_id, rnti);
+          AssertFatal(sched_ctl->tbcnt[1 - pCCid][harq_pid] == 2, "sched_ctl->tbcnt[%d][%d] != 2 for UE %d/%x\n",
+                      1 - pCCid, 
+                      harq_pid, 
+                      UE_id, 
+                      rnti);
+          AssertFatal(sched_ctl->tbcnt[pCCid][harq_pid] == 1, "sched_ctl->tbcnt[%d][%d] != 1 for UE %d/%x\n",
+                      pCCid, 
+                      harq_pid, 
+                      UE_id, 
+                      rnti);
 
-          if ((pdu[0] == 1) && (pdu[1] == 1)) { // both ACK
+          if (pdu[0] == 1 && pdu[1] == 1) { // both ACK
             sched_ctl->round[1 - pCCid][harq_pid] = 8;
             sched_ctl->tbcnt[1 - pCCid][harq_pid] = 0;
-          } else if (((pdu[0] >= 2) && (pdu[1] == 1))
-                     || ((pdu[0] == 1) && (pdu[1] >= 2))) { // one ACK
+          } else if ((pdu[0] >= 2 && pdu[1] == 1) || (pdu[0] == 1 && pdu[1] >= 2)) { // one ACK
             sched_ctl->round[1 - pCCid][harq_pid]++;
             sched_ctl->tbcnt[1 - pCCid][harq_pid] = 1;
 
@@ -4287,8 +4305,7 @@ extract_harq(module_id_t mod_idP,
             }
           }
 
-          if (pdu[2] == 1)
-            sched_ctl->round[pCCid][harq_pid] = 8;
+          if (pdu[2] == 1) sched_ctl->round[pCCid][harq_pid] = 8;
           else {
             sched_ctl->round[pCCid][harq_pid]++;
 
@@ -4299,11 +4316,8 @@ extract_harq(module_id_t mod_idP,
         }     // A=3 secondary cell has 2 TBs
 
 #if MAX_NUM_CCs>1
-        else if ((num_ack_nak == 4)
-                 && (sched_ctl->round[0][harq_pid] < 8)
-                 && (sched_ctl->round[1][harq_pid] < 8)
-                 && (sched_ctl->tbcnt[1 - pCCid][harq_pid] == 2)
-                 && (sched_ctl->tbcnt[pCCid][harq_pid] == 2)) {
+        else if (num_ack_nak == 4 && sched_ctl->round[0][harq_pid] < 8  && 
+                 sched_ctl->round[1][harq_pid] < 8 && sched_ctl->tbcnt[1 - pCCid][harq_pid] == 2 && sched_ctl->tbcnt[pCCid][harq_pid] == 2) {
           AssertFatal(pdu[0] <= 3, "pdu[0] %d is not ACK/NAK/DTX\n",
                       pdu[0]);
           AssertFatal(pdu[1] <= 3, "pdu[1] %d is not ACK/NAK/DTX\n",
@@ -4312,18 +4326,19 @@ extract_harq(module_id_t mod_idP,
                       pdu[2]);
           AssertFatal(pdu[3] <= 3, "pdu[3] %d is not ACK/NAK/DTX\n",
                       pdu[3]);
-          AssertFatal(sched_ctl->tbcnt[0][harq_pid] == 2,
-                      "sched_ctl->tbcnt[0][%d] != 2 for UE %d/%x\n",
-                      harq_pid, UE_id, rnti);
-          AssertFatal(sched_ctl->tbcnt[1][harq_pid] == 2,
-                      "sched_ctl->tbcnt[1][%d] != 2 for UE %d/%x\n",
-                      harq_pid, UE_id, rnti);
+          AssertFatal(sched_ctl->tbcnt[0][harq_pid] == 2, "sched_ctl->tbcnt[0][%d] != 2 for UE %d/%x\n",
+                      harq_pid, 
+                      UE_id, 
+                      rnti);
+          AssertFatal(sched_ctl->tbcnt[1][harq_pid] == 2, "sched_ctl->tbcnt[1][%d] != 2 for UE %d/%x\n",
+                      harq_pid, 
+                      UE_id, 
+                      rnti);
 
-          if ((pdu[0] == 1) && (pdu[1] == 1)) { // both ACK
+          if (pdu[0] == 1 && pdu[1] == 1) { // both ACK
             sched_ctl->round[0][harq_pid] = 8;
             sched_ctl->tbcnt[0][harq_pid] = 0;
-          } else if (((pdu[0] >= 2) && (pdu[1] == 1))
-                     || ((pdu[0] == 1) && (pdu[1] >= 2))) { // one ACK
+          } else if ((pdu[0] >= 2 && pdu[1] == 1) || (pdu[0] == 1 && pdu[1] >= 2)) { // one ACK
             sched_ctl->round[0][harq_pid]++;
             sched_ctl->tbcnt[0][harq_pid] = 1;
 
@@ -4340,11 +4355,10 @@ extract_harq(module_id_t mod_idP,
             }
           }
 
-          if ((pdu[2] == 1) && (pdu[3] == 1)) { // both ACK
+          if (pdu[2] == 1 && pdu[3] == 1) { // both ACK
             sched_ctl->round[1][harq_pid] = 8;
             sched_ctl->tbcnt[1][harq_pid] = 0;
-          } else if (((pdu[2] >= 2) && (pdu[3] == 1))
-                     || ((pdu[2] == 1) && (pdu[3] >= 2))) { // one ACK
+          } else if ((pdu[2] >= 2 && pdu[3] == 1) || (pdu[2] == 1 && pdu[3] >= 2)) { // one ACK
             sched_ctl->round[1][harq_pid]++;
             sched_ctl->tbcnt[1][harq_pid] = 1;
 
@@ -4366,14 +4380,12 @@ extract_harq(module_id_t mod_idP,
         break;
 
       case 2:   // Format 3
-        AssertFatal(numCC > 2,
-                    "Should not receive harq indication with FDD format 3 with %d < 3 active CCs\n",
+        AssertFatal(numCC > 2, "Should not receive harq indication with FDD format 3 with %d < 3 active CCs\n",
                     numCC);
 
         for (i = 0, j = 0; i < numCC; i++) {
-          if ((sched_ctl->round[i][harq_pid] < 8)) {
-            if (tmode[i] == 1 || tmode[i] == 2 || tmode[0] == 5
-                || tmode[0] == 6 || tmode[0] == 7) {
+          if (sched_ctl->round[i][harq_pid] < 8) {
+            if (tmode[i] == 1 || tmode[i] == 2 || tmode[0] == 5 || tmode[0] == 6 || tmode[0] == 7) {
               if (pdu[j] == 1) {
                 sched_ctl->round[i][harq_pid] = 8;
                 sched_ctl->tbcnt[i][harq_pid] = 0;
@@ -4385,18 +4397,19 @@ extract_harq(module_id_t mod_idP,
                   sched_ctl->tbcnt[i][harq_pid] = 0;
                 }
               } else
-                AssertFatal(1 == 0,
-                            "Illegal harq_ack value for CC %d harq_pid %d (%d) UE %d/%x\n",
-                            i, harq_pid, pdu[j], UE_id, rnti);
+                AssertFatal(1 == 0, "Illegal harq_ack value for CC %d harq_pid %d (%d) UE %d/%x\n",
+                            i, 
+                            harq_pid, 
+                            pdu[j], 
+                            UE_id, 
+                            rnti);
 
               j++;
             } else if (spatial_bundling == 0) {
-              if ((sched_ctl->tbcnt[i][harq_pid] == 2)
-                  && (pdu[j] == 1) && (pdu[j + 1] == 1)) {
+              if (sched_ctl->tbcnt[i][harq_pid] == 2 && pdu[j] == 1 && pdu[j + 1] == 1) {
                 sched_ctl->round[i][harq_pid] = 8;
                 sched_ctl->tbcnt[i][harq_pid] = 0;
-              } else if ((sched_ctl->tbcnt[i][harq_pid] == 2)
-                         && (pdu[j] == 1) && (pdu[j + 1] == 2)) {
+              } else if (sched_ctl->tbcnt[i][harq_pid] == 2 && pdu[j] == 1 && pdu[j + 1] == 2) {
                 sched_ctl->round[i][harq_pid]++;
                 sched_ctl->tbcnt[i][harq_pid] = 1;
 
@@ -4404,8 +4417,7 @@ extract_harq(module_id_t mod_idP,
                   sched_ctl->round[i][harq_pid] = 8;
                   sched_ctl->tbcnt[i][harq_pid] = 0;
                 }
-              } else if ((sched_ctl->tbcnt[i][harq_pid] == 2)
-                         && (pdu[j] == 2) && (pdu[j + 1] == 1)) {
+              } else if (sched_ctl->tbcnt[i][harq_pid] == 2 && pdu[j] == 2 && pdu[j + 1] == 1) {
                 sched_ctl->round[i][harq_pid]++;
                 sched_ctl->tbcnt[i][harq_pid] = 1;
 
@@ -4413,8 +4425,7 @@ extract_harq(module_id_t mod_idP,
                   sched_ctl->round[i][harq_pid] = 8;
                   sched_ctl->tbcnt[i][harq_pid] = 0;
                 }
-              } else if ((sched_ctl->tbcnt[i][harq_pid] == 2)
-                         && (pdu[j] == 2) && (pdu[j + 1] == 2)) {
+              } else if (sched_ctl->tbcnt[i][harq_pid] == 2 && pdu[j] == 2 && pdu[j + 1] == 2) {
                 sched_ctl->round[i][harq_pid]++;
 
                 if (sched_ctl->round[i][harq_pid] == 4) {
@@ -4422,11 +4433,14 @@ extract_harq(module_id_t mod_idP,
                   sched_ctl->tbcnt[i][harq_pid] = 0;
                 }
               } else
-                AssertFatal(1 == 0,
-                            "Illegal combination for CC %d harq_pid %d (%d,%d,%d) UE %d/%x\n",
-                            i, harq_pid,
+                AssertFatal(1 == 0, "Illegal combination for CC %d harq_pid %d (%d,%d,%d) UE %d/%x\n",
+                            i, 
+                            harq_pid,
                             sched_ctl->tbcnt[i][harq_pid],
-                            pdu[j], pdu[j + 1], UE_id, rnti);
+                            pdu[j], 
+                            pdu[j + 1], 
+                            UE_id, 
+                            rnti);
 
               j += 2;
             } else if (spatial_bundling == 1) {
@@ -4440,74 +4454,86 @@ extract_harq(module_id_t mod_idP,
                   sched_ctl->round[i][harq_pid] = 8;
                   sched_ctl->tbcnt[i][harq_pid] = 0;
                 }
-              } else
-                AssertFatal(1 == 0,
-                            "Illegal hack_nak value %d for CC %d harq_pid %d UE %d/%x\n",
-                            pdu[j], i, harq_pid, UE_id, rnti);
-
+              } else {
+                AssertFatal(1 == 0, "Illegal hack_nak value %d for CC %d harq_pid %d UE %d/%x\n",
+                            pdu[j], 
+                            i, 
+                            harq_pid, 
+                            UE_id, 
+                            rnti);
+              }
               j++;
-            } else
-              AssertFatal(1 == 0,
-                          "Illegal value for spatial_bundling %d\n",
+            } else {
+              AssertFatal(1 == 0, "Illegal value for spatial_bundling %d\n",
                           spatial_bundling);
+            } 
           }
         }
 
         break;
 
       case 3:   // Format 4
-        AssertFatal(1 == 0,
-                    "Should not receive harq indication with Format 4\n");
+        AssertFatal(1 == 0, "Should not receive harq indication with Format 4\n");
         break;
 
       case 4:   // Format 5
-        AssertFatal(1 == 0,
-                    "Should not receive harq indication with Format 5\n");
+        AssertFatal(1 == 0, "Should not receive harq indication with Format 5\n");
         break;
     }
   }
+  return;
 }
 
 //------------------------------------------------------------------------------
 void
-extract_pucch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
-                  frame_t frameP, sub_frame_t subframeP,
-                  uint8_t *pdu, uint8_t length) {
+extract_pucch_csi(module_id_t mod_idP, 
+                  int CC_idP, 
+                  int UE_id,
+                  frame_t frameP, 
+                  sub_frame_t subframeP,
+                  uint8_t *pdu, 
+                  uint8_t length) 
+//------------------------------------------------------------------------------
+{
   UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
   UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   COMMON_channels_t *cc = &RC.mac[mod_idP]->common_channels[CC_idP];
-  struct LTE_CQI_ReportPeriodic *cqi_ReportPeriodic;
   int no_pmi;
   uint8_t Ltab[6] = { 0, 2, 4, 4, 4, 4 };
   uint8_t Jtab[6] = { 0, 2, 2, 3, 4, 4 };
   int feedback_cnt;
-  AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated != NULL,
-              "physicalConfigDedicated is null for UE %d\n", UE_id);
-  AssertFatal(UE_list->
-              UE_template[CC_idP][UE_id].physicalConfigDedicated->cqi_ReportConfig != NULL,
-              "cqi_ReportConfig is null for UE %d\n", UE_id);
-  AssertFatal((cqi_ReportPeriodic = UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic) != NULL,
-              "cqi_ReportPeriodic is null for UE %d\n", UE_id);
+
+  AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated != NULL, "physicalConfigDedicated is null for UE %d\n", 
+              UE_id);
+  AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->cqi_ReportConfig != NULL, "cqi_ReportConfig is null for UE %d\n", 
+              UE_id);
+  struct LTE_CQI_ReportPeriodic *cqi_ReportPeriodic = UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic;            
+  AssertFatal(cqi_ReportPeriodic != NULL, "cqi_ReportPeriodic is null for UE %d\n", 
+              UE_id);
   // determine feedback mode
-  AssertFatal(cqi_ReportPeriodic->present != LTE_CQI_ReportPeriodic_PR_NOTHING,
-              "cqi_ReportPeriodic->present == LTE_CQI_ReportPeriodic_PR_NOTHING!\n");
+  AssertFatal(cqi_ReportPeriodic->present != LTE_CQI_ReportPeriodic_PR_NOTHING, "cqi_ReportPeriodic->present == LTE_CQI_ReportPeriodic_PR_NOTHING!\n");
   AssertFatal(cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present != LTE_CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_NOTHING,
               "cqi_ReportPeriodic->cqi_FormatIndicatorPeriodic.choice.setup.present == LTE_CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_NOTHING!\n");
   uint16_t Npd, N_OFFSET_CQI;
   int H, K, bandwidth_part, L, Lmask;
   int ri = sched_ctl->periodic_ri_received[CC_idP];
-  get_csi_params(cc, cqi_ReportPeriodic, &Npd, &N_OFFSET_CQI, &H);
+
+  get_csi_params(cc, 
+                 cqi_ReportPeriodic, 
+                 &Npd, 
+                 &N_OFFSET_CQI, 
+                 &H);
   K = (H - 1) / Jtab[cc->mib->message.dl_Bandwidth];
   L = Ltab[cc->mib->message.dl_Bandwidth];
   Lmask = L - 1;
   feedback_cnt = (((frameP * 10) + subframeP) / Npd) % H;
 
-  if (feedback_cnt > 0)
-    bandwidth_part = (feedback_cnt - 1) % K;
-  else
-    bandwidth_part = 0;
+  if (feedback_cnt > 0) bandwidth_part = (feedback_cnt - 1) % K;
+  else bandwidth_part = 0;
 
-  switch (get_tmode(mod_idP, CC_idP, UE_id)) {
+  switch (get_tmode(mod_idP, 
+                    CC_idP, 
+                    UE_id)) {
     case 1:
     case 2:
     case 3:
@@ -4524,40 +4550,38 @@ extract_pucch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
     default:
       // note: need to check TM8-10 without PMI/RI or with 1 antenna port (see Section 5.2.3.3.1 from 36.213)
       no_pmi = 0;
-  }
+      break;
+}
 
-  if ((cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present == LTE_CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_widebandCQI)
-      || (feedback_cnt == 0)) {
+  if (cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present == LTE_CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_widebandCQI || 
+      feedback_cnt == 0) {
     // Note: This implements only Tables: 5.3.3.1-1,5.3.3.1-1A and 5.3.3.1-2 from 36.213 (1,2,4 antenna ports Wideband CQI/PMI)
     if (no_pmi == 1) {  // get spatial_diffcqi if needed
       sched_ctl->periodic_wideband_cqi[CC_idP] = pdu[0] & 0xF;
-      sched_ctl->periodic_wideband_spatial_diffcqi[CC_idP] =
-        (pdu[0] >> 4) & 7;
-    } else if ((cc->p_eNB == 2) && (ri == 1)) {
+      sched_ctl->periodic_wideband_spatial_diffcqi[CC_idP] = (pdu[0] >> 4) & 7;
+    } else if (cc->p_eNB == 2 && ri == 1) {
       // p=2 Rank 1 wideband CQI/PMI 6 bits
       sched_ctl->periodic_wideband_cqi[CC_idP] = pdu[0] & 0xF;
       sched_ctl->periodic_wideband_pmi[CC_idP] = (pdu[0] >> 4) & 3;
-    } else if ((cc->p_eNB == 2) && (ri > 1)) {
+    } else if (cc->p_eNB == 2 && ri > 1) {
       // p=2 Rank 2 wideband CQI/PMI 8 bits
       sched_ctl->periodic_wideband_cqi[CC_idP] = pdu[0] & 0xF;
-      sched_ctl->periodic_wideband_spatial_diffcqi[CC_idP] =
-        (pdu[0] >> 4) & 7;
+      sched_ctl->periodic_wideband_spatial_diffcqi[CC_idP] = (pdu[0] >> 4) & 7;
       sched_ctl->periodic_wideband_pmi[CC_idP] = (pdu[0] >> 7) & 1;
-    } else if ((cc->p_eNB == 4) && (ri == 1)) {
+    } else if (cc->p_eNB == 4 && ri == 1) {
       // p=4 Rank 1 wideband CQI/PMI 8 bits
       sched_ctl->periodic_wideband_cqi[CC_idP] = pdu[0] & 0xF;
-      sched_ctl->periodic_wideband_pmi[CC_idP] =
-        (pdu[0] >> 4) & 0x0F;
-    } else if ((cc->p_eNB == 4) && (ri > 1)) {
+      sched_ctl->periodic_wideband_pmi[CC_idP] = (pdu[0] >> 4) & 0x0F;
+    } else if (cc->p_eNB == 4 && ri > 1) {
       // p=4 Rank 2 wideband CQI/PMI 11 bits
       sched_ctl->periodic_wideband_cqi[CC_idP] = pdu[0] & 0xF;
-      sched_ctl->periodic_wideband_spatial_diffcqi[CC_idP] =
-        (pdu[0] >> 4) & 7;
+      sched_ctl->periodic_wideband_spatial_diffcqi[CC_idP] = (pdu[0] >> 4) & 7;
       sched_ctl->periodic_wideband_pmi[CC_idP] = (pdu[0] >> 7) & 0xF;
     } else
-      AssertFatal(1 == 0,
-                  "illegal combination p %d, ri %d, no_pmi %d\n",
-                  cc->p_eNB, ri, no_pmi);
+      AssertFatal(1 == 0, "illegal combination p %d, ri %d, no_pmi %d\n",
+                  cc->p_eNB, 
+                  ri, 
+                  no_pmi);
   } else if (cqi_ReportPeriodic->choice.setup.cqi_FormatIndicatorPeriodic.present == LTE_CQI_ReportPeriodic__setup__cqi_FormatIndicatorPeriodic_PR_subbandCQI) {
     // This is Table 5.2.3.3.2-2 for 36.213
     if (ri == 1) {
@@ -4566,17 +4590,23 @@ extract_pucch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
     } else if (ri > 1) {
       //7+Ltab[cc->mib->message.dl_Bandwidth] bits;
       sched_ctl->periodic_subband_spatial_diffcqi[CC_idP][(bandwidth_part * L) + ((pdu[0] >> 7) & Lmask)] = (pdu[0] >> 4) & 7;
-      sched_ctl->periodic_subband_cqi[CC_idP][(bandwidth_part * L) + ((pdu[0] >> 7) & Lmask)] =
-        pdu[0] & 0xF;
+      sched_ctl->periodic_subband_cqi[CC_idP][(bandwidth_part * L) + ((pdu[0] >> 7) & Lmask)] = pdu[0] & 0xF;
     }
   }
+  return;
 }
 
 //------------------------------------------------------------------------------
 void
-extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
-                  frame_t frameP, sub_frame_t subframeP,
-                  uint8_t *pdu, uint8_t length) {
+extract_pusch_csi(module_id_t mod_idP, 
+                  int CC_idP, 
+                  int UE_id,
+                  frame_t frameP, 
+                  sub_frame_t subframeP,
+                  uint8_t *pdu, 
+                  uint8_t length) 
+//------------------------------------------------------------------------------
+{
   UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
   COMMON_channels_t *cc = &RC.mac[mod_idP]->common_channels[CC_idP];
   UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
@@ -4588,13 +4618,14 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
   int i;
   uint64_t p = *(uint64_t *) pdu;
   int curbyte, curbit;
-  LTE_CQI_ReportModeAperiodic_t *cqi_ReportModeAperiodic;
-  AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated != NULL,
-              "physicalConfigDedicated is null for UE %d\n", UE_id);
-  AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->cqi_ReportConfig != NULL,
-              "cqi_ReportConfig is null for UE %d\n", UE_id);
-  AssertFatal((cqi_ReportModeAperiodic = UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->cqi_ReportConfig->cqi_ReportModeAperiodic) != NULL,
-              "cqi_ReportModeAperiodic is null for UE %d\n", UE_id);
+  AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated != NULL, "physicalConfigDedicated is null for UE %d\n", 
+              UE_id);
+  AssertFatal(UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->cqi_ReportConfig != NULL, "cqi_ReportConfig is null for UE %d\n", 
+              UE_id);
+  LTE_CQI_ReportModeAperiodic_t *cqi_ReportModeAperiodic 
+    = UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated->cqi_ReportConfig->cqi_ReportModeAperiodic;
+  AssertFatal(cqi_ReportModeAperiodic  != NULL, "cqi_ReportModeAperiodic is null for UE %d\n", 
+              UE_id);
   int N = Ntab[cc->mib->message.dl_Bandwidth];
   int tmode = get_tmode(mod_idP, CC_idP, UE_id);
   int ri = sched_ctl->aperiodic_ri_received[CC_idP];
@@ -4606,13 +4637,12 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
     case LTE_CQI_ReportModeAperiodic_rm12:
       AssertFatal(0 == 1, "to be fixed, don't use p but pdu directly\n");
       // wideband multiple PMI (TM4/6), Table 5.2.2.6.1-1 (for TM4/6)
-      AssertFatal(tmode == 4 || tmode == 6 || tmode == 8 || tmode == 9 || tmode == 10,
-                  "Illegal transmission mode %d for CQI_ReportModeAperiodic_rm12\n",
+      AssertFatal(tmode == 4 || tmode == 6 || tmode == 8 || tmode == 9 || tmode == 10, "Illegal transmission mode %d for CQI_ReportModeAperiodic_rm12\n",
                   tmode);
 
       if (tmode <= 6) { //Table 5.2.2.6.1-1 36.213
-        if ((ri == 1) && (cc->p_eNB == 2)) {
-          sched_ctl->aperiodic_wideband_cqi0[CC_idP]    = (uint8_t) (p & 0x0F);
+        if (ri == 1 && cc->p_eNB == 2) {
+          sched_ctl->aperiodic_wideband_cqi0[CC_idP] = (uint8_t) (p & 0x0F);
           p >>= 4;
 
           for (i = 0; i < N; i++) {
@@ -4621,10 +4651,10 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
           }
         }
 
-        if ((ri == 2) && (cc->p_eNB == 2)) {
-          sched_ctl->aperiodic_wideband_cqi0[CC_idP]    = (uint8_t) (p & 0x0F);
+        if (ri == 2 && cc->p_eNB == 2) {
+          sched_ctl->aperiodic_wideband_cqi0[CC_idP] = (uint8_t) (p & 0x0F);
           p >>= 4;
-          sched_ctl->aperiodic_wideband_cqi1[CC_idP]    = (uint8_t) (p & 0x0F);
+          sched_ctl->aperiodic_wideband_cqi1[CC_idP] = (uint8_t) (p & 0x0F);
           p >>= 4;
 
           for (i = 0; i < N; i++) {
@@ -4633,8 +4663,8 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
           }
         }
 
-        if ((ri == 1) && (cc->p_eNB == 4)) {
-          sched_ctl->aperiodic_wideband_cqi0[CC_idP]    = (uint8_t) (p & 0x0F);
+        if (ri == 1 && cc->p_eNB == 4) {
+          sched_ctl->aperiodic_wideband_cqi0[CC_idP] = (uint8_t) (p & 0x0F);
           p >>= 4;
 
           for (i = 0; i < N; i++) {
@@ -4643,10 +4673,10 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
           }
         }
 
-        if ((ri == 2) && (cc->p_eNB == 4)) {
-          sched_ctl->aperiodic_wideband_cqi0[CC_idP]    = (uint8_t) (p & 0x0F);
+        if (ri == 2 && cc->p_eNB == 4) {
+          sched_ctl->aperiodic_wideband_cqi0[CC_idP] = (uint8_t) (p & 0x0F);
           p >>= 4;
-          sched_ctl->aperiodic_wideband_cqi1[CC_idP]    = (uint8_t) (p & 0x0F);
+          sched_ctl->aperiodic_wideband_cqi1[CC_idP] = (uint8_t) (p & 0x0F);
           p >>= 4;
 
           for (i = 0; i < N; i++) {
@@ -4664,28 +4694,28 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
     case LTE_CQI_ReportModeAperiodic_rm20:
       AssertFatal(0 == 1, "to be fixed, don't use p but pdu directly\n");
       // UE-selected subband CQI no PMI (TM1/2/3/7) , Table 5.2.2.6.3-1 from 36.213
-      AssertFatal(tmode == 1 || tmode == 2 || tmode == 3
-                  || tmode == 7,
-                  "Illegal transmission mode %d for CQI_ReportModeAperiodic_rm20\n",
+      AssertFatal(tmode == 1 || tmode == 2 || tmode == 3 || tmode == 7, "Illegal transmission mode %d for CQI_ReportModeAperiodic_rm20\n",
                   tmode);
       sched_ctl->aperiodic_wideband_cqi0[CC_idP] = (uint8_t) (p & 0x0F);
       p >>= 4;
       diffcqi0 = (uint8_t) (p & 0x03);
       p >>= 2;
       r = (uint8_t) (p & ((1 >> Ltab_uesel[bw]) - 1));
-      reverse_index(Ntab_uesel[bw], Mtab_uesel[bw], r, v);
+      reverse_index(Ntab_uesel[bw], 
+                    Mtab_uesel[bw], 
+                    r, 
+                    v);
 
-      for (m = 0; m < Mtab_uesel[bw]; m++)
+      for (m = 0; m < Mtab_uesel[bw]; m++) {
         sched_ctl->aperiodic_subband_diffcqi0[CC_idP][v[m]] = diffcqi0;
+      }
 
       break;
 
     case LTE_CQI_ReportModeAperiodic_rm22:
       AssertFatal(0 == 1, "to be fixed, don't use p but pdu directly\n");
       // UE-selected subband CQI multiple PMI (TM4/6) Table 5.2.2.6.3-2 from 36.213
-      AssertFatal(tmode == 4 || tmode == 6 || tmode == 8 || tmode == 9
-                  || tmode == 10,
-                  "Illegal transmission mode %d for CQI_ReportModeAperiodic_rm22\n",
+      AssertFatal(tmode == 4 || tmode == 6 || tmode == 8 || tmode == 9 || tmode == 10, "Illegal transmission mode %d for CQI_ReportModeAperiodic_rm22\n",
                   tmode);
       sched_ctl->aperiodic_wideband_cqi0[CC_idP] = (uint8_t) (p & 0x0F);
       p >>= 4;
@@ -4702,13 +4732,16 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
 
       r = (uint8_t) (p & ((1 >> Ltab_uesel[bw]) - 1));
       p >>= Ltab_uesel[bw];
-      reverse_index(Ntab_uesel[bw], Mtab_uesel[bw], r, v);
+      reverse_index(Ntab_uesel[bw], 
+                    Mtab_uesel[bw], 
+                    r, 
+                    v);
 
-      if ((ri == 1) && (cc->p_eNB == 2)) {
+      if (ri == 1 && cc->p_eNB == 2) {
         pmi_uesel = p & 0x3;
         p >>= 2;
         sched_ctl->aperiodic_wideband_pmi[CC_idP] = p & 0x3;
-      } else if ((ri == 2) && (cc->p_eNB == 2)) {
+      } else if (ri == 2 && cc->p_eNB == 2) {
         pmi_uesel = p & 0x1;
         p >>= 1;
         sched_ctl->aperiodic_wideband_pmi[CC_idP] = p & 0x1;
@@ -4721,9 +4754,7 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
       for (m = 0; m < Mtab_uesel[bw]; m++) {
         sched_ctl->aperiodic_subband_diffcqi0[CC_idP][v[m]] = diffcqi0;
 
-        if (ri > 1)
-          sched_ctl->aperiodic_subband_diffcqi1[CC_idP][v[m]] =
-            diffcqi1;
+        if (ri > 1) sched_ctl->aperiodic_subband_diffcqi1[CC_idP][v[m]] = diffcqi1;
 
         sched_ctl->aperiodic_subband_pmi[CC_idP][v[m]] = pmi_uesel;
       }
@@ -4732,9 +4763,7 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
 
     case LTE_CQI_ReportModeAperiodic_rm30:
       //subband CQI no PMI (TM1/2/3/7)
-      AssertFatal(tmode == 1 || tmode == 2 || tmode == 3
-                  || tmode == 7,
-                  "Illegal transmission mode %d for CQI_ReportModeAperiodic_rm30\n",
+      AssertFatal(tmode == 1 || tmode == 2 || tmode == 3 || tmode == 7, "Illegal transmission mode %d for CQI_ReportModeAperiodic_rm30\n",
                   tmode);
       sched_ctl->aperiodic_wideband_cqi0[CC_idP] = pdu[0] >> 4;
       curbyte = 0;
@@ -4751,89 +4780,75 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
         }
       }
 
-      sched_ctl->dl_cqi[CC_idP] =
-        sched_ctl->aperiodic_wideband_cqi0[CC_idP];
+      sched_ctl->dl_cqi[CC_idP] = sched_ctl->aperiodic_wideband_cqi0[CC_idP];
+
       break;
 
     case LTE_CQI_ReportModeAperiodic_rm31:
       AssertFatal(0 == 1, "to be fixed, don't use p but pdu directly\n");
       //subband CQI single PMI (TM4/5/6)
-      AssertFatal(tmode == 4 || tmode == 5 || tmode == 6 || tmode == 8
-                  || tmode == 9
-                  || tmode == 10,
+      AssertFatal(tmode == 4 || tmode == 5 || tmode == 6 || tmode == 8 || tmode == 9 || tmode == 10,
                   "Illegal transmission mode %d for CQI_ReportModeAperiodic_rm31\n",
                   tmode);
 
-      if ((ri == 1) && (cc->p_eNB == 2)) {
-        sched_ctl->aperiodic_wideband_cqi0[CC_idP] =
-          (uint8_t) (p & 0x0F);
+      if (ri == 1 && cc->p_eNB == 2) {
+        sched_ctl->aperiodic_wideband_cqi0[CC_idP] = (uint8_t) (p & 0x0F);
         p >>= 4;
 
         for (i = 0; i < N; i++) {
-          sched_ctl->aperiodic_subband_diffcqi0[CC_idP][i] =
-            (uint8_t) (p & 0x03);
+          sched_ctl->aperiodic_subband_diffcqi0[CC_idP][i] = (uint8_t) (p & 0x03);
           p >>= 2;
         }
 
         sched_ctl->aperiodic_wideband_pmi[CC_idP] = p & 0x03;
       }
 
-      if ((ri == 2) && (cc->p_eNB == 2)) {
-        sched_ctl->aperiodic_wideband_cqi0[CC_idP] =
-          (uint8_t) (p & 0x0F);
+      if (ri == 2 && cc->p_eNB == 2) {
+        sched_ctl->aperiodic_wideband_cqi0[CC_idP] = (uint8_t) (p & 0x0F);
         p >>= 4;
 
         for (i = 0; i < N; i++) {
-          sched_ctl->aperiodic_subband_pmi[CC_idP][i] =
-            (uint8_t) (p & 0x01);
+          sched_ctl->aperiodic_subband_pmi[CC_idP][i] = (uint8_t) (p & 0x01);
           p >>= 1;
         }
 
-        sched_ctl->aperiodic_wideband_cqi1[CC_idP] =
-          (uint8_t) (p & 0x0F);
+        sched_ctl->aperiodic_wideband_cqi1[CC_idP] = (uint8_t) (p & 0x0F);
         p >>= 4;
 
         for (i = 0; i < N; i++) {
-          sched_ctl->aperiodic_subband_pmi[CC_idP][i] =
-            (uint8_t) (p & 0x01);
+          sched_ctl->aperiodic_subband_pmi[CC_idP][i] = (uint8_t) (p & 0x01);
           p >>= 1;
         }
 
         sched_ctl->aperiodic_wideband_pmi[CC_idP] = p & 0x01;
       }
 
-      if ((ri == 1) && (cc->p_eNB == 4)) {
-        sched_ctl->aperiodic_wideband_cqi0[CC_idP] =
-          (uint8_t) (p & 0x0F);
+      if (ri == 1 && cc->p_eNB == 4) {
+        sched_ctl->aperiodic_wideband_cqi0[CC_idP] = (uint8_t) (p & 0x0F);
         p >>= 4;
 
         for (i = 0; i < N; i++) {
-          sched_ctl->aperiodic_subband_diffcqi0[CC_idP][i] =
-            (uint8_t) (p & 0x03);
+          sched_ctl->aperiodic_subband_diffcqi0[CC_idP][i] = (uint8_t) (p & 0x03);
           p >>= 2;
         }
 
         sched_ctl->aperiodic_wideband_pmi[CC_idP] = p & 0x0F;
       }
 
-      if ((ri > 1) && (cc->p_eNB == 4)) { // Note : 64 bits for 20 MHz
-        sched_ctl->aperiodic_wideband_cqi0[CC_idP] =
-          (uint8_t) (p & 0x0F);
+      if (ri > 1 && cc->p_eNB == 4) { // Note : 64 bits for 20 MHz
+        sched_ctl->aperiodic_wideband_cqi0[CC_idP] = (uint8_t) (p & 0x0F);
         p >>= 4;
 
         for (i = 0; i < N; i++) {
-          sched_ctl->aperiodic_subband_pmi[CC_idP][i] =
-            (uint8_t) (p & 0x01);
+          sched_ctl->aperiodic_subband_pmi[CC_idP][i] = (uint8_t) (p & 0x01);
           p >>= 1;
         }
 
-        sched_ctl->aperiodic_wideband_cqi1[CC_idP] =
-          (uint8_t) (p & 0x0F);
+        sched_ctl->aperiodic_wideband_cqi1[CC_idP] = (uint8_t) (p & 0x0F);
         p >>= 4;
 
         for (i = 0; i < N; i++) {
-          sched_ctl->aperiodic_subband_pmi[CC_idP][i] =
-            (uint8_t) (p & 0x01);
+          sched_ctl->aperiodic_subband_pmi[CC_idP][i] = (uint8_t) (p & 0x01);
           p >>= 2;
         }
 
@@ -4841,45 +4856,47 @@ extract_pusch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
       }
 
       break;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(12, 5, 0))
 
+#if (LTE_RRC_VERSION >= MAKE_VERSION(12, 5, 0))
     case LTE_CQI_ReportModeAperiodic_rm32_v1250:
-      AssertFatal(tmode == 4 || tmode == 5 || tmode == 6 || tmode == 8
-                  || tmode == 9
-                  || tmode == 10,
+      AssertFatal(tmode == 4 || tmode == 5 || tmode == 6 || tmode == 8 || tmode == 9 || tmode == 10,
                   "Illegal transmission mode %d for CQI_ReportModeAperiodic_rm32\n",
                   tmode);
       AssertFatal(1 == 0, "CQI_ReportModeAperiodic_rm32 to be done\n");
       break;
 #endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 1, 0))
 
+#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 1, 0))
     case LTE_CQI_ReportModeAperiodic_rm10_v1310:
-      AssertFatal(tmode == 1 || tmode == 2 || tmode == 3
-                  || tmode == 7,
-                  "Illegal transmission mode %d for CQI_ReportModeAperiodic_rm10\n",
+      AssertFatal(tmode == 1 || tmode == 2 || tmode == 3 || tmode == 7, "Illegal transmission mode %d for CQI_ReportModeAperiodic_rm10\n",
                   tmode);
       AssertFatal(1 == 0, "CQI_ReportModeAperiodic_rm10 to be done\n");
       break;
 
     case LTE_CQI_ReportModeAperiodic_rm11_v1310:
-      AssertFatal(tmode == 4 || tmode == 5 || tmode == 6 || tmode == 8
-                  || tmode == 9
-                  || tmode == 10,
+      AssertFatal(tmode == 4 || tmode == 5 || tmode == 6 || tmode == 8 || tmode == 9 || tmode == 10,
                   "Illegal transmission mode %d for CQI_ReportModeAperiodic_rm11\n",
                   tmode);
       AssertFatal(1 == 0, "CQI_ReportModeAperiodic_rm11 to be done\n");
       break;
 #endif /* #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 1, 0)) */
+
   }
+  return;
 }
 
 //------------------------------------------------------------------------------
 void
-cqi_indication(module_id_t mod_idP, int CC_idP, frame_t frameP,
-               sub_frame_t subframeP, rnti_t rntiP,
-               nfapi_cqi_indication_rel9_t *rel9, uint8_t *pdu,
-               nfapi_ul_cqi_information_t *ul_cqi_information) {
+cqi_indication(module_id_t mod_idP, 
+               int CC_idP, 
+               frame_t frameP,
+               sub_frame_t subframeP, 
+               rnti_t rntiP,
+               nfapi_cqi_indication_rel9_t *rel9, 
+               uint8_t *pdu,
+               nfapi_ul_cqi_information_t *ul_cqi_information) 
+//------------------------------------------------------------------------------
+{
   int UE_id = find_UE_id(mod_idP, rntiP);
   UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
 
@@ -4891,22 +4908,40 @@ cqi_indication(module_id_t mod_idP, int CC_idP, frame_t frameP,
   UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
 
   if (UE_id >= 0) {
-    LOG_D(MAC,"%s() UE_id:%d channel:%d cqi:%d\n", __FUNCTION__, UE_id, ul_cqi_information->channel, ul_cqi_information->ul_cqi);
+    LOG_D(MAC,"%s() UE_id:%d channel:%d cqi:%d\n", 
+          __FUNCTION__, 
+          UE_id, 
+          ul_cqi_information->channel, 
+          ul_cqi_information->ul_cqi);
 
     if (ul_cqi_information->channel == 0) { // PUCCH
       // extract pucch csi information before changing RI information
-      extract_pucch_csi(mod_idP, CC_idP, UE_id, frameP, subframeP,
+      extract_pucch_csi(mod_idP, 
+                        CC_idP, 
+                        UE_id, 
+                        frameP, 
+                        subframeP,
                         pdu, rel9->length);
       memcpy((void *) sched_ctl->periodic_ri_received,
-             (void *) rel9->ri, rel9->number_of_cc_reported);
+             (void *) rel9->ri, 
+             rel9->number_of_cc_reported);
       // SNR for PUCCH2
       sched_ctl->pucch2_snr[CC_idP] = ul_cqi_information->ul_cqi;
     } else {    //PUSCH
       memcpy((void *) sched_ctl->aperiodic_ri_received,
-             (void *) rel9->ri, rel9->number_of_cc_reported);
-      extract_pusch_csi(mod_idP, CC_idP, UE_id, frameP, subframeP,
-                        pdu, rel9->length);
-      LOG_D(MAC,"Frame %d Subframe %d update CQI:%d\n",frameP,subframeP,sched_ctl->dl_cqi[CC_idP]);
+             (void *) rel9->ri, 
+             rel9->number_of_cc_reported);
+      extract_pusch_csi(mod_idP, 
+                        CC_idP, 
+                        UE_id, 
+                        frameP, 
+                        subframeP,
+                        pdu, 
+                        rel9->length);
+      LOG_D(MAC,"Frame %d Subframe %d update CQI:%d\n",
+            frameP,
+            subframeP,
+            sched_ctl->dl_cqi[CC_idP]);
       sched_ctl->cqi_req_flag &= (~(1 << subframeP));
       sched_ctl->cqi_received = 1;
     }
@@ -4915,100 +4950,142 @@ cqi_indication(module_id_t mod_idP, int CC_idP, frame_t frameP,
     sched_ctl->timing_advance = rel9->timing_advance;
     sched_ctl->timing_advance_r9 = rel9->timing_advance_r9;
   }
+  return;
 }
 
 //------------------------------------------------------------------------------
 void
-SR_indication(module_id_t mod_idP, int cc_idP, frame_t frameP,
-              sub_frame_t subframeP, rnti_t rntiP, uint8_t ul_cqi) {
-  T(T_ENB_MAC_SCHEDULING_REQUEST, T_INT(mod_idP), T_INT(cc_idP),
-    T_INT(frameP), T_INT(subframeP), T_INT(rntiP));
-  int UE_id = find_UE_id(mod_idP, rntiP);
+SR_indication(module_id_t mod_idP, 
+              int cc_idP, 
+              frame_t frameP,
+              sub_frame_t subframeP, 
+              rnti_t rntiP, 
+              uint8_t ul_cqi) 
+//------------------------------------------------------------------------------
+{
+  T(T_ENB_MAC_SCHEDULING_REQUEST, 
+    T_INT(mod_idP), 
+    T_INT(cc_idP),
+    T_INT(frameP), 
+    T_INT(subframeP), 
+    T_INT(rntiP));
+  int UE_id = find_UE_id(mod_idP, 
+                         rntiP);
   UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
 
   if (UE_id != -1) {
-    if (mac_eNB_get_rrc_status(mod_idP, UE_RNTI(mod_idP, UE_id)) <
-        RRC_CONNECTED)
-      LOG_D(MAC,
-            "[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d on CC_id %d\n",
-            mod_idP, rntiP, frameP, subframeP, UE_id, cc_idP);
-
+    if (mac_eNB_get_rrc_status(mod_idP, 
+                               UE_RNTI(mod_idP, 
+                                       UE_id)) <  RRC_CONNECTED) {
+      LOG_D(MAC, "[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d on CC_id %d\n",
+            mod_idP, 
+            rntiP, 
+            frameP, 
+            subframeP, 
+            UE_id, 
+            cc_idP);
+    }
     UE_list->UE_template[cc_idP][UE_id].ul_SR = 1;
     UE_list->UE_template[cc_idP][UE_id].ul_active = TRUE;
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
-    (VCD_SIGNAL_DUMPER_FUNCTIONS_SR_INDICATION, 1);
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
-    (VCD_SIGNAL_DUMPER_FUNCTIONS_SR_INDICATION, 0);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SR_INDICATION, 
+                                            1);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SR_INDICATION, 
+                                            0);
   } else {
     //     AssertFatal(0, "find_UE_id(%u,rnti %d) not found", enb_mod_idP, rntiP);
     //    AssertError(0, 0, "Frame %d: find_UE_id(%u,rnti %d) not found\n", frameP, enb_mod_idP, rntiP);
-    LOG_D(MAC,
-          "[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d (unknown UEid) on CC_id %d\n",
-          mod_idP, rntiP, frameP, subframeP, UE_id, cc_idP);
+    LOG_D(MAC, "[eNB %d][SR %x] Frame %d subframeP %d Signaling SR for UE %d (unknown UEid) on CC_id %d\n",
+          mod_idP, 
+          rntiP, 
+          frameP, 
+          subframeP, 
+          UE_id, 
+          cc_idP);
   }
+  return;
 }
 
 //------------------------------------------------------------------------------
 void
-UL_failure_indication(module_id_t mod_idP, int cc_idP, frame_t frameP,
-                      rnti_t rntiP, sub_frame_t subframeP) {
+UL_failure_indication(module_id_t mod_idP, 
+                      int cc_idP, 
+                      frame_t frameP,
+                      rnti_t rntiP, 
+                      sub_frame_t subframeP) 
+//------------------------------------------------------------------------------
+{
   int UE_id = find_UE_id(mod_idP, rntiP);
   UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
 
   if (UE_id != -1) {
-    LOG_D(MAC,
-          "[eNB %d][UE %d/%x] Frame %d subframeP %d Signaling UL Failure for UE %d on CC_id %d (timer %d)\n",
-          mod_idP, UE_id, rntiP, frameP, subframeP, UE_id, cc_idP,
+    LOG_D(MAC, "[eNB %d][UE %d/%x] Frame %d subframeP %d Signaling UL Failure for UE %d on CC_id %d (timer %d)\n",
+          mod_idP, 
+          UE_id, 
+          rntiP, 
+          frameP, 
+          subframeP, 
+          UE_id, 
+          cc_idP,
           UE_list->UE_sched_ctrl[UE_id].ul_failure_timer);
 
-    if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer == 0)
-      UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 1;
+    if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer == 0) UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 1;
   } else {
     //     AssertFatal(0, "find_UE_id(%u,rnti %d) not found", enb_mod_idP, rntiP);
     //    AssertError(0, 0, "Frame %d: find_UE_id(%u,rnti %d) not found\n", frameP, enb_mod_idP, rntiP);
-    LOG_W(MAC,
-          "[eNB %d][SR %x] Frame %d subframeP %d Signaling UL Failure for UE %d (unknown UEid) on CC_id %d\n",
-          mod_idP, rntiP, frameP, subframeP, UE_id, cc_idP);
+    LOG_W(MAC, "[eNB %d][SR %x] Frame %d subframeP %d Signaling UL Failure for UE %d (unknown UEid) on CC_id %d\n",
+          mod_idP, 
+          rntiP, 
+          frameP, 
+          subframeP, 
+          UE_id, 
+          cc_idP);
   }
 }
 
 //------------------------------------------------------------------------------
-static int nack_or_dtx_reported(
-  COMMON_channels_t *cc,
-  nfapi_harq_indication_pdu_t *harq_pdu) {
+static int 
+nack_or_dtx_reported(COMMON_channels_t *cc,
+                     nfapi_harq_indication_pdu_t *harq_pdu) 
+//------------------------------------------------------------------------------
+{
   int i;
 
   if (cc->tdd_Config) {
     nfapi_harq_indication_tdd_rel13_t *hi = &harq_pdu->harq_indication_tdd_rel13;
 
-    for (i = 0; i < hi->number_of_ack_nack; hi++)
+    for (i = 0; i < hi->number_of_ack_nack; hi++) {
       if (hi->harq_data[0].bundling.value_0 != 1) //only bundling is used for tdd for now
         return 1;
-
+    }
     return 0;
-  } else {
-    nfapi_harq_indication_fdd_rel13_t *hi = &harq_pdu->harq_indication_fdd_rel13;
+  } 
 
-    for (i = 0; i < hi->number_of_ack_nack; hi++)
-      if (hi->harq_tb_n[i] != 1)
-        return 1;
-
-    return 0;
+  nfapi_harq_indication_fdd_rel13_t *hi = &harq_pdu->harq_indication_fdd_rel13;
+  for (i = 0; i < hi->number_of_ack_nack; hi++) {
+    if (hi->harq_tb_n[i] != 1)
+      return 1;
   }
+  return 0;
 }
 
 //------------------------------------------------------------------------------
 void
-harq_indication(module_id_t mod_idP, int CC_idP, frame_t frameP,
+harq_indication(module_id_t mod_idP, 
+                int CC_idP, 
+                frame_t frameP,
                 sub_frame_t subframeP,
-                nfapi_harq_indication_pdu_t *harq_pdu) {
+                nfapi_harq_indication_pdu_t *harq_pdu) 
+//------------------------------------------------------------------------------
+{
   rnti_t rnti = harq_pdu->rx_ue_information.rnti;
   uint8_t ul_cqi = harq_pdu->ul_cqi_information.ul_cqi;
   uint8_t channel = harq_pdu->ul_cqi_information.channel;
-  int UE_id = find_UE_id(mod_idP, rnti);
+  int UE_id = find_UE_id(mod_idP, 
+                         rnti);
 
   if (UE_id == -1) {
-    LOG_W(MAC, "harq_indication: UE %x not found\n", rnti);
+    LOG_W(MAC, "harq_indication: UE %x not found\n", 
+          rnti);
     return;
   }
 
@@ -5016,54 +5093,85 @@ harq_indication(module_id_t mod_idP, int CC_idP, frame_t frameP,
   UE_sched_ctrl *sched_ctl = &UE_list->UE_sched_ctrl[UE_id];
   COMMON_channels_t *cc = &RC.mac[mod_idP]->common_channels[CC_idP];
   // extract HARQ Information
-  LOG_D(MAC,
-        "Frame %d, subframe %d: Received harq indication (%d) from UE %d/%x, ul_cqi %d\n",
-        frameP, subframeP, channel, UE_id, rnti, ul_cqi);
+  LOG_D(MAC, "Frame %d, subframe %d: Received harq indication (%d) from UE %d/%x, ul_cqi %d\n",
+        frameP, 
+        subframeP, 
+        channel, 
+        UE_id, 
+        rnti, 
+        ul_cqi);
 
-  if (cc->tdd_Config)
-    extract_harq(mod_idP, CC_idP, UE_id, frameP, subframeP,
+  if (cc->tdd_Config) {
+    extract_harq(mod_idP, 
+                 CC_idP, 
+                 UE_id, 
+                 frameP, 
+                 subframeP,
                  (void *) &harq_pdu->harq_indication_tdd_rel13,
                  channel);
-  else
-    extract_harq(mod_idP, CC_idP, UE_id, frameP, subframeP,
+  }
+  else {
+    extract_harq(mod_idP, 
+                 CC_idP, 
+                 UE_id, 
+                 frameP, 
+                 subframeP,
                  (void *) &harq_pdu->harq_indication_fdd_rel13,
                  channel);
-
+  }
   /* don't care about cqi reporting if NACK/DTX is there */
-  if (channel == 0 && !nack_or_dtx_reported(cc, harq_pdu)) {
+  if (channel == 0 && !nack_or_dtx_reported(cc, 
+                                            harq_pdu)) {
     sched_ctl->pucch1_snr[CC_idP] = ul_cqi;
     sched_ctl->pucch1_cqi_update[CC_idP] = 1;
   }
+  return;
 }
 
 // Flexran Slicing functions
 //------------------------------------------------------------------------------
-uint16_t nb_rbs_allowed_slice(float rb_percentage, int total_rbs) {
+uint16_t 
+nb_rbs_allowed_slice(float rb_percentage, 
+                     int total_rbs) 
+//------------------------------------------------------------------------------
+{
   return (uint16_t) floor(rb_percentage * total_rbs);
 }
 
 //------------------------------------------------------------------------------
-int ue_dl_slice_membership(module_id_t mod_id, int UE_id, int slice_idx) {
-  if ((slice_idx < 0)
-      || (slice_idx >= RC.mac[mod_id]->slice_info.n_dl)) {
+int 
+ue_dl_slice_membership(module_id_t mod_id, 
+                       int UE_id, 
+                       int slice_idx) 
+//------------------------------------------------------------------------------
+{
+  eNB_MAC_INST *eNB = RC.mac[mod_id];
+
+  if (slice_idx < 0 || slice_idx >= eNB->slice_info.n_dl) {
     LOG_W(MAC, "out of range slice index %d (slice ID %d)\n",
-          slice_idx, RC.mac[mod_id]->slice_info.dl[slice_idx].id);
+          slice_idx, 
+          eNB->slice_info.dl[slice_idx].id);
     return 0;
   }
 
-  return RC.mac[mod_id]->UE_list.active[UE_id] == TRUE
-         && RC.mac[mod_id]->UE_list.assoc_dl_slice_idx[UE_id] == slice_idx;
+  return eNB->UE_list.active[UE_id] == TRUE && eNB->UE_list.assoc_dl_slice_idx[UE_id] == slice_idx;
 }
 
 //------------------------------------------------------------------------------
-int ue_ul_slice_membership(module_id_t mod_id, int UE_id, int slice_idx) {
-  if ((slice_idx < 0)
-      || (slice_idx >= RC.mac[mod_id]->slice_info.n_ul)) {
+int 
+ue_ul_slice_membership(module_id_t mod_id, 
+                       int UE_id, 
+                       int slice_idx) 
+//------------------------------------------------------------------------------
+{
+  eNB_MAC_INST *eNB = RC.mac[mod_id];
+
+  if (slice_idx < 0 || slice_idx >= eNB->slice_info.n_ul) {
     LOG_W(MAC, "out of range slice index %d (slice ID %d)\n",
-          slice_idx, RC.mac[mod_id]->slice_info.dl[slice_idx].id);
+          slice_idx, 
+          eNB->slice_info.dl[slice_idx].id);
     return 0;
   }
 
-  return RC.mac[mod_id]->UE_list.active[UE_id] == TRUE
-         && RC.mac[mod_id]->UE_list.assoc_ul_slice_idx[UE_id] == slice_idx;
+  return eNB->UE_list.active[UE_id] == TRUE && eNB->UE_list.assoc_ul_slice_idx[UE_id] == slice_idx;
 }
