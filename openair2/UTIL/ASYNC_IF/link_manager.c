@@ -50,11 +50,6 @@ static void *link_manager_sender_thread(void *_manager)
       link_send_packet(manager->socket_link, data, size, manager->peer_addr, manager->peer_port);
       free(data);
     }
-    //    if (message_get(manager->send_queue, &data, &size, &priority))
-    //  goto error;
-    //if (link_send_packet(manager->socket_link, data, size))
-    //  goto error;
-    //free(data);
   }
 
   LOG_D(MAC, "link manager sender thread quits\n");
@@ -148,10 +143,11 @@ error:
 
 void destroy_link_manager(link_manager_t *manager)
 {
-  LOG_D(MAC, "destroying link manager\n");
   manager->run = 0;
+  message_get_unlock(manager->send_queue);
   pthread_join(manager->sender, NULL);
-  pthread_join(manager->receiver, NULL);
+  /* cancel aborts the read performed in the receiver, then cancels the thread */
+  pthread_cancel(manager->receiver);
 }
 
 #ifdef SERVER_TEST

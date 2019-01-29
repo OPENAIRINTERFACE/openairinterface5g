@@ -119,6 +119,11 @@ int message_get(message_queue_t *queue, void **data, int *priority) {
   return size;
 }
 
+void message_get_unlock(message_queue_t *queue) {
+  /* don't do anything, this function exists to unlock a message_queue but is
+   * not needed in the case of the ringbuffer_queue */
+}
+
 void destroy_message_queue(message_queue_t *queue) {
   struct lfds700_misc_prng_state ls;
 

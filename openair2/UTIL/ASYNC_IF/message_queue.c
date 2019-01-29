@@ -56,6 +56,10 @@ message_queue_t *new_message_queue(void)
   if (pthread_cond_init(ret->cond, NULL))
     goto error;
 
+  ret->head = NULL;
+  ret->tail = NULL;
+  ret->exit = 0;
+
   return ret;
 
 error:
@@ -121,9 +125,14 @@ int message_get(message_queue_t *queue, void **data, int *priority)
     goto error;
 
   while (queue->count == 0) {
-    if (pthread_cond_wait(queue->cond, queue->mutex)) {
+    int rc = pthread_cond_wait(queue->cond, queue->mutex);
+    if (rc != 0) {
       pthread_mutex_unlock(queue->mutex);
       goto error;
+    }
+    if (queue->exit) {
+      pthread_mutex_unlock(queue->mutex);
+      return 0;
     }
   }
 
@@ -146,6 +155,14 @@ int message_get(message_queue_t *queue, void **data, int *priority)
 error:
   LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
   return -1;
+}
+
+void message_get_unlock(message_queue_t *queue)
+{
+  pthread_mutex_lock(queue->mutex);
+  queue->exit = 1;
+  pthread_mutex_unlock(queue->mutex);
+  pthread_cond_signal(queue->cond);
 }
 
 /* when calling this function, the queue must not be used anymore (we don't lock it) */
