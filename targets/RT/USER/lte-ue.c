@@ -984,6 +984,10 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg) {
   proc = &PHY_vars_UE_g[0][0]->proc.proc_rxtx[0];
   phy_stub_ticking->num_single_thread[ue_thread_id] = -1;
 
+  if (rtd != NULL) {
+    UE = rtd->UE;
+  }
+
   if(ue_thread_id == 0){
     phy_stub_ticking->ticking_var = -1;
     proc->subframe_rx=proc->sub_frame_start;
