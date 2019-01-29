@@ -142,9 +142,9 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,
     dlsch->Nsoft = Nsoft;
 
     for (layer=0; layer<NR_MAX_NB_LAYERS; layer++) {
-      dlsch->ue_spec_bf_weights[layer] = (int32_t**)malloc16(config->rf_config.tx_antenna_ports.value*sizeof(int32_t*));
+      dlsch->ue_spec_bf_weights[layer] = (int32_t**)malloc16(64*sizeof(int32_t*));
 
-       for (aa=0; aa<config->rf_config.tx_antenna_ports.value; aa++) {
+       for (aa=0; aa<64; aa++) {
          dlsch->ue_spec_bf_weights[layer][aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
          for (re=0;re<OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; re++) {
            dlsch->ue_spec_bf_weights[layer][aa][re] = 0x00007fff;
@@ -157,8 +157,8 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,
     for (int q=0; q<NR_MAX_NB_CODEWORDS; q++)
       dlsch->mod_symbs[q] = (int32_t *)malloc16((NR_MAX_PDSCH_ENCODED_LENGTH>>1)*sizeof(int32_t*));
 
-     dlsch->calib_dl_ch_estimates = (int32_t**)malloc16(config->rf_config.tx_antenna_ports.value*sizeof(int32_t*));
-     for (aa=0; aa<config->rf_config.tx_antenna_ports.value; aa++) {
+     dlsch->calib_dl_ch_estimates = (int32_t**)malloc16(64*sizeof(int32_t*));
+     for (aa=0; aa<64; aa++) {
        dlsch->calib_dl_ch_estimates[aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
 
      }
@@ -265,7 +265,7 @@ void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
 }
 
 int nr_dlsch_encoding(unsigned char *a,
-                     uint8_t subframe,
+                     uint8_t slot,
                      NR_gNB_DLSCH_t *dlsch,
                      NR_DL_FRAME_PARMS* frame_parms)
 {
@@ -273,7 +273,7 @@ int nr_dlsch_encoding(unsigned char *a,
   unsigned int G;
   unsigned int crc=1;
 
-  uint8_t harq_pid = dlsch->harq_ids[subframe];
+  uint8_t harq_pid = dlsch->harq_ids[slot];
   nfapi_nr_dl_config_dlsch_pdu_rel15_t rel15 = dlsch->harq_processes[harq_pid]->dlsch_pdu.dlsch_pdu_rel15;
   uint16_t nb_rb = rel15.n_prb;
   uint8_t nb_symb_sch = rel15.nb_symbols;
@@ -379,7 +379,8 @@ int nr_dlsch_encoding(unsigned char *a,
     	}
     	printf("\n");*/
 
-    ldpc_encoder_optim_8seg(dlsch->harq_processes[harq_pid]->c,d_tmp,Kr,BG,dlsch->harq_processes[harq_pid]->C,NULL,NULL,NULL,NULL);
+    //ldpc_encoder_optim_8seg(dlsch->harq_processes[harq_pid]->c,d_tmp,Kr,BG,dlsch->harq_processes[harq_pid]->C,NULL,NULL,NULL,NULL);
+    ldpc_encoder_optim_8seg(dlsch->harq_processes[harq_pid]->c,dlsch->harq_processes[harq_pid]->d,Kr,BG,dlsch->harq_processes[harq_pid]->C,NULL,NULL,NULL,NULL);
 
     //stop_meas(te_stats);
     //printf("end ldpc encoder -- output\n");

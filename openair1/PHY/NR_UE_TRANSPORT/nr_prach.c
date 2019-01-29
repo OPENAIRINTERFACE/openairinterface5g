@@ -40,6 +40,7 @@
 //#include "PHY/defs_nr_common.h"
 #include "PHY/defs_nr_UE.h"
 #include "PHY/NR_UE_TRANSPORT/nr_prach.h"
+#include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 //#include "PHY/extern.h"
 //#include "LAYER2/MAC/extern.h"
 //#include "PHY/NR_UE_TRANSPORT/pucch_nr.h"
@@ -574,7 +575,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
   uint8_t restricted_set     = ue->frame_parms.prach_config_common.prach_ConfigInfo.highSpeedFlag;
   //uint8_t n_ra_prboffset     = ue->frame_parms.prach_config_common.prach_ConfigInfo.prach_FreqOffset;
   uint8_t preamble_index     = ue->prach_resources[eNB_id]->ra_PreambleIndex;
-  uint8_t tdd_mapindex       = ue->prach_resources[eNB_id]->ra_TDD_map_index;
+  //uint8_t tdd_mapindex       = ue->prach_resources[eNB_id]->ra_TDD_map_index;
   int16_t *prachF           = ue->prach_vars[eNB_id]->prachF;
   static int16_t prach_tmp[45600*2] __attribute__((aligned(32)));
   int16_t *prach            = prach_tmp;
@@ -582,7 +583,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
   int16_t amp               = ue->prach_vars[eNB_id]->amp;
   int16_t Ncp;
   uint8_t n_ra_prb;
-  uint16_t NCS;
+  uint16_t NCS=0;
   uint16_t *prach_root_sequence_map;
   uint16_t preamble_offset,preamble_shift;
   uint16_t preamble_index0,n_shift_ra,n_shift_ra_bar;
@@ -599,7 +600,7 @@ int32_t generate_nr_prach( PHY_VARS_NR_UE *ue, uint8_t eNB_id, uint8_t subframe,
   int32_t Xu_re,Xu_im;
   uint16_t offset,offset2;
   int prach_start;
-  int i, prach_len;
+  int i, prach_len=0;
   uint16_t first_nonzero_root_idx=0;
 
 #if defined(EXMIMO) || defined(OAI_USRP)

@@ -196,7 +196,7 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
                           uint32_t ***pdsch_dmrs,
                           int32_t** txdataF,
                           int16_t amp,
-                          uint8_t subframe,
+                          uint8_t slot,
                           NR_DL_FRAME_PARMS frame_parms,
                           nfapi_nr_config_request_t config) {
 
@@ -212,7 +212,7 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
   uint16_t encoded_length = nb_symbols*Qm;
 
   /// CRC, coding, interleaving and rate matching
-  nr_dlsch_encoding(harq->pdu, subframe, &dlsch, &frame_parms);
+  nr_dlsch_encoding(harq->pdu, slot, &dlsch, &frame_parms);
 #ifdef DEBUG_DLSCH
 printf("PDSCH encoding:\nPayload:\n");
 for (int i=0; i<TBS>>7; i++) {
@@ -305,8 +305,7 @@ for (int i=0; i<n_dmrs>>4; i++) {
 #endif
 
   /// Resource mapping
-  AssertFatal(rel15->nb_layers<=config.rf_config.tx_antenna_ports.value, "Not enough Tx antennas (%d) for %d layers\n",\
-   config.rf_config.tx_antenna_ports.value, rel15->nb_layers);
+
 
     // Non interleaved VRB to PRB mapping
   uint16_t start_sc = frame_parms.first_carrier_offset + frame_parms.ssb_start_subcarrier;

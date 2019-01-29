@@ -636,7 +636,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
     proc->instance_cnt_rxtx=-1;
     proc->subframe_rx=proc->sub_frame_start;
 
-	proc->dci_err_cnt=0;
+    proc->dci_err_cnt=0;
     char threadname[256];
     sprintf(threadname,"UE_%d_proc_%d", UE->Mod_id, proc->sub_frame_start);
     cpu_set_t cpuset;
@@ -673,6 +673,8 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 //        pickTime(current);
 //        updateTimes(proc->gotIQs, &t2, 10000, "Delay to wake up UE_Thread_Rx (case 2)");
 
+
+
         // Process Rx data for one sub-frame
         if (slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx) & NR_DOWNLINK_SLOT) {
 
@@ -681,11 +683,24 @@ static void *UE_thread_rxn_txnp4(void *arg) {
             UE->dci_ind.number_of_dcis = 0;
             //clean previous FAPI MESSAGE
 
+	    // call L2 for DL_CONFIG (DCI)
+	    UE->dcireq.module_id = UE->Mod_id;
+	    UE->dcireq.gNB_index = 0;
+	    UE->dcireq.cc_id     = 0;
+	    UE->dcireq.frame     = proc->frame_rx;
+	    UE->dcireq.slot      = proc->nr_tti_rx;
+	    nr_ue_dcireq(&UE->dcireq); //to be replaced with function pointer later
+
+	    NR_UE_MAC_INST_t *UE_mac = get_mac_inst(0);
+	    UE_mac->scheduled_response.dl_config = &UE->dcireq.dl_config_req;
+	    nr_ue_scheduled_response(&UE_mac->scheduled_response);
+	    
 #ifdef UE_SLOT_PARALLELISATION
             phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
-            phy_procedures_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay);
-            //printf(">>> nr_ue_pdcch_procedures ended\n");
+            phy_procedures_nrUE_RX( UE, proc, 0, 1, UE->mode);
+	    //            printf(">>> nr_ue_pdcch_procedures ended\n");
+
 #endif
         }
 
@@ -698,68 +713,17 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 
             //  trigger L2 to run ue_scheduler thru IF module
             //  [TODO] mapping right after NR initial sync
-            if(1)
             if(UE->if_inst != NULL && UE->if_inst->ul_indication != NULL){
                 UE->ul_indication.module_id = 0;
                 UE->ul_indication.gNB_index = 0;
                 UE->ul_indication.cc_id = 0;
-                UE->ul_indication.slot = 0;     //  to be fill
-                UE->ul_indication.frame = 0;    //  to be fill
-                //  [TODO] mapping right after NR initial sync
                 UE->ul_indication.frame = proc->frame_rx; 
                 UE->ul_indication.slot = proc->nr_tti_rx;
                 
                 UE->if_inst->ul_indication(&UE->ul_indication);
             }
-
-
-
-#ifdef NEW_MAC
-          ret = mac_xface->ue_scheduler(UE->Mod_id,
-                                          proc->frame_rx,
-                                          proc->subframe_rx,
-                                          proc->nr_tti_rx,
-                                          proc->frame_tx,
-                                          proc->subframe_tx,
-                                          proc->nr_tti_tx%(UE->frame_parms.ttis_per_subframe),
-#ifndef NO_RAT_NR
-                                          slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx),
-#else
-                                          subframe_select(&UE->frame_parms,proc->subframe_tx),
-#endif
-                                          0,
-                                          0/*FIXME CC_id*/);
-#endif
-
-/*#else
-            ret = mac_xface->ue_scheduler(UE->Mod_id,
-                                          proc->frame_rx,
-                                          proc->subframe_rx,
-                                          proc->frame_tx,
-                                          proc->subframe_tx,
-                                          subframe_select(&UE->frame_parms,proc->subframe_tx),
-                                          0,  */
-//                                          0/*FIXME CC_id*/);
-//#endif
-            if ( ret != CONNECTION_OK) {
-                char *txt;
-                switch (ret) {
-                case CONNECTION_LOST:
-                    txt="RRC Connection lost, returning to PRACH";
-                    break;
-                case PHY_RESYNCH:
-                    txt="RRC Connection lost, trying to resynch";
-                    break;
-                case RESYNCH:
-                    txt="return to PRACH and perform a contention-free access";
-                    break;
-                default:
-                    txt="UNKNOWN RETURN CODE";
-                };
-                LOG_E( PHY, "[UE %"PRIu8"] Frame %"PRIu32", subframe %u %s\n",
-                       UE->Mod_id, proc->frame_rx, proc->subframe_tx,txt );
-            }
-        }
+	}
+    
 #if UE_TIMING_TRACE
         stop_meas(&UE->generic_stat);
 #endif
@@ -1109,42 +1073,60 @@ void *UE_thread(void *arg) {
 //                    pickStaticTime(lastTime);
                 } //UE->mode != loop_through_memory
                 else {
-                    proc->nr_tti_rx=subframe_nr;
-                    proc->subframe_rx=subframe_nr;
-		    if(subframe_nr == 0) {
-		      for (th_id=0; th_id < RX_NB_TH; th_id++) {
-			UE->proc.proc_rxtx[th_id].frame_rx++;
-		      }
+		  proc->nr_tti_rx=subframe_nr;
+		  proc->subframe_rx=subframe_nr;
+		  if(subframe_nr == 0) {
+		    for (th_id=0; th_id < RX_NB_TH; th_id++) {
+		      UE->proc.proc_rxtx[th_id].frame_rx++;
 		    }
-                    proc->frame_tx = proc->frame_rx;
-                    proc->nr_tti_tx= subframe_nr + DURATION_RX_TO_TX;
-                    if (proc->nr_tti_tx > NR_NUMBER_OF_SUBFRAMES_PER_FRAME) {
-                      proc->frame_tx = (proc->frame_tx + 1)%MAX_FRAME_NUMBER;
-                      proc->nr_tti_tx %= NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
-                    }
-                    proc->subframe_tx=proc->nr_tti_tx;
+		  }
+		  proc->frame_tx = proc->frame_rx;
+		  proc->nr_tti_tx= subframe_nr + DURATION_RX_TO_TX;
+		  if (proc->nr_tti_tx > NR_NUMBER_OF_SUBFRAMES_PER_FRAME) {
+		    proc->frame_tx = (proc->frame_tx + 1)%MAX_FRAME_NUMBER;
+		    proc->nr_tti_tx %= NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
+		  }
+		  proc->subframe_tx=proc->nr_tti_tx;
 
-                    printf("Processing subframe %d\n",proc->subframe_rx);
+		  if (slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx) & NR_DOWNLINK_SLOT) {
+		    
+		    //clean previous FAPI MESSAGE
+		    UE->rx_ind.number_pdus = 0;
+		    UE->dci_ind.number_of_dcis = 0;
+		    //clean previous FAPI MESSAGE
+		    
+		    // call L2 for DL_CONFIG (DCI)
+		    UE->dcireq.module_id = UE->Mod_id;
+		    UE->dcireq.gNB_index = 0;
+		    UE->dcireq.cc_id     = 0;
+		    UE->dcireq.frame     = proc->frame_rx;
+		    UE->dcireq.slot      = proc->nr_tti_rx;
+		    nr_ue_dcireq(&UE->dcireq); //to be replaced with function pointer later
 
-		    if(UE->if_inst != NULL && UE->if_inst->ul_indication != NULL){
-		      UE->ul_indication.module_id = 0;
-		      UE->ul_indication.gNB_index = 0;
-		      UE->ul_indication.cc_id = 0;
-		      UE->ul_indication.slot = 0;     //  to be fill
-		      UE->ul_indication.frame = 0;    //  to be fill
-		      //  [TODO] mapping right after NR initial sync
-		      UE->ul_indication.frame = proc->frame_rx; 
-		      UE->ul_indication.slot = proc->nr_tti_rx;
-		      
-		      UE->if_inst->ul_indication(&UE->ul_indication);
-		    }
+		    NR_UE_MAC_INST_t *UE_mac = get_mac_inst(0);
+		    UE_mac->scheduled_response.dl_config = &UE->dcireq.dl_config_req;
+		    nr_ue_scheduled_response(&UE_mac->scheduled_response);
 
-		    phy_procedures_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay);
-		    getchar();
+		    
+		    printf("Processing subframe %d\n",proc->subframe_rx);
+		    phy_procedures_nrUE_RX( UE, proc, 0, 1, UE->mode);
+		  }
+		  
+		  if(UE->if_inst != NULL && UE->if_inst->ul_indication != NULL){
+		    UE->ul_indication.module_id = 0;
+		    UE->ul_indication.gNB_index = 0;
+		    UE->ul_indication.cc_id = 0;
+		    UE->ul_indication.frame = proc->frame_rx; 
+		    UE->ul_indication.slot = proc->nr_tti_rx;
+		    
+		    UE->if_inst->ul_indication(&UE->ul_indication);
+		  }
+		  
+		  getchar();
 		} // else loop_through_memory
             } // start_rx_stream==1
         } // UE->is_synchronized==1
-
+	
     } // while !oai_exit
     return NULL;
 }

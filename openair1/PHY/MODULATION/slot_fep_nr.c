@@ -29,6 +29,11 @@
 
 #define SOFFSET 0
 
+/*#ifdef LOG_I
+#undef LOG_I
+#define LOG_I(A,B...) printf(A)
+#endif*/
+
 int nr_slot_fep(PHY_VARS_NR_UE *ue,
 		unsigned char l,
 		unsigned char Ns,
@@ -49,8 +54,8 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   //int i;
   unsigned int frame_length_samples = frame_parms->samples_per_subframe * 10;
   unsigned int rx_offset;
-  //NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[Ns>>1]][0];
-  uint16_t coreset_start_subcarrier = frame_parms->first_carrier_offset+516;
+  NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[Ns>>1]][0];
+  uint16_t coreset_start_subcarrier = frame_parms->first_carrier_offset+((int)floor(frame_parms->ssb_start_subcarrier/NR_NB_SC_PER_RB)+pdcch_vars->coreset[0].rb_offset)*NR_NB_SC_PER_RB;
   uint16_t nb_rb_coreset = 24;
   uint16_t bwp_start_subcarrier = frame_parms->first_carrier_offset+516;
   uint16_t nb_rb_pdsch = 50;
@@ -123,6 +128,12 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
     // Align with 256 bit
     //    rx_offset = rx_offset&0xfffffff8;
 
+#ifdef DEBUG_FEP
+      //  if (ue->frame <100)
+    /*LOG_I(PHY,*/printf("slot_fep: frame %d: slot %d, symbol %d, nb_prefix_samples %d, nb_prefix_samples0 %d, slot_offset %d, subframe_offset %d, sample_offset %d,rx_offset %d, frame_length_samples %d\n", ue->proc.proc_rxtx[(Ns>>1)&1].frame_rx,Ns, symbol,
+          nb_prefix_samples,nb_prefix_samples0,slot_offset,subframe_offset,sample_offset,rx_offset,frame_length_samples);
+#endif
+
     if (l==0) {
 
       if (rx_offset > (frame_length_samples - frame_parms->ofdm_symbol_size))
@@ -150,12 +161,6 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
     } else {
       rx_offset += (frame_parms->ofdm_symbol_size+nb_prefix_samples)*l;// +
       //                   (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1);
-
-//#ifdef DEBUG_FEP
-      //  if (ue->frame <100)
-      LOG_D(PHY,"slot_fep: frame %d: slot %d, symbol %d, nb_prefix_samples %d, nb_prefix_samples0 %d, slot_offset %d, sample_offset %d,rx_offset %d, frame_length_samples %d\n", ue->proc.proc_rxtx[(Ns>>1)&1].frame_rx,Ns, symbol,
-          nb_prefix_samples,nb_prefix_samples0,slot_offset,sample_offset,rx_offset,frame_length_samples);
-//#endif
 
       if (rx_offset > (frame_length_samples - frame_parms->ofdm_symbol_size))
         memcpy((void *)&common_vars->rxdata[aa][frame_length_samples],

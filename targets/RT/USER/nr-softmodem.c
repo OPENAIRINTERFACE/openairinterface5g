@@ -610,8 +610,6 @@ void set_default_frame_parms(nfapi_nr_config_request_t *config[MAX_NUM_CCs], NR_
     config[CC_id]->subframe_config.dl_cyclic_prefix_type.value = 0; //NORMAL
     config[CC_id]->rf_config.dl_carrier_bandwidth.value = 106;
     config[CC_id]->rf_config.ul_carrier_bandwidth.value = 106;
-    config[CC_id]->rf_config.tx_antenna_ports.value = 1;
-    config[CC_id]->rf_config.rx_antenna_ports.value = 1;
     config[CC_id]->sch_config.physical_cell_id.value = 0;
     ///dl frequency to be filled in
 

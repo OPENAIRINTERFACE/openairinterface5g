@@ -25,7 +25,7 @@
 //#define NR_PSS_DEBUG
 
 int nr_generate_pss(  int16_t *d_pss,
-                      int32_t **txdataF,
+                      int32_t *txdataF,
                       int16_t amp,
                       uint8_t ssb_start_symbol,
                       nfapi_nr_config_request_t* config,
@@ -48,7 +48,7 @@ int nr_generate_pss(  int16_t *d_pss,
 
   for (i=0; i < NR_PSS_LENGTH; i++) {
     m = (i + 43*Nid2)%(NR_PSS_LENGTH);
-    d_pss[i] = (1 - 2*x[m]) * 32767;
+    d_pss[i] = (1 - 2*x[m]) * 23170;
   }
 
 #ifdef NR_PSS_DEBUG
@@ -57,10 +57,8 @@ int nr_generate_pss(  int16_t *d_pss,
 #endif
 
   /// Resource mapping
-  a = (config->rf_config.tx_antenna_ports.value == 1) ? amp : (amp*ONE_OVER_SQRT2_Q15)>>15;
+  a = amp;
 
-  for (int aa = 0; aa < config->rf_config.tx_antenna_ports.value; aa++)
-  {
 
     // PSS occupies a predefined position (subcarriers 56-182, symbol 0) within the SSB block starting from
     k = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier + 56; //and
@@ -70,13 +68,12 @@ int nr_generate_pss(  int16_t *d_pss,
 
     for (m = 0; m < NR_PSS_LENGTH; m++) {
       //      printf("pss: writing position k %d / %d\n",k,frame_parms->ofdm_symbol_size);
-      ((int16_t*)txdataF[aa])[2*(l*frame_parms->ofdm_symbol_size + k)] = (a * d_pss[m]) >> 15;
+      ((int16_t*)txdataF)[2*(l*frame_parms->ofdm_symbol_size + k)] = (a * d_pss[m]) >> 15;
       k++;
 
       if (k >= frame_parms->ofdm_symbol_size)
         k-=frame_parms->ofdm_symbol_size;
     }
-  }
 
 #ifdef NR_PSS_DEBUG
   LOG_M("pss_0.m", "pss_0", 

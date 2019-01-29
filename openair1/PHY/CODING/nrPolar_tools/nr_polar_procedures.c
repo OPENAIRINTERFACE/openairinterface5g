@@ -33,15 +33,15 @@
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 
 void nr_polar_bit_insertion(uint8_t *input,
-						    uint8_t *output,
-							uint16_t N,
-							uint16_t K,
-							int16_t *Q_I_N,
-							int16_t *Q_PC_N,
-							uint8_t n_PC)
+			    uint8_t *output,
+			    uint16_t N,
+			    uint16_t K,
+			    int16_t *Q_I_N,
+			    int16_t *Q_PC_N,
+			    uint8_t n_PC)
 {
-	uint16_t k=0;
-	uint8_t flag;
+  uint16_t k=0;
+  uint8_t flag;
 
 	if (n_PC>0) {
 		/*
@@ -325,7 +325,7 @@ void nr_polar_rate_matching_int16(int16_t *input, int16_t *output, uint16_t *rmp
 		if ( (K/(double)E) <= (7.0/16) ) { //puncturing
 			for (int i=0; i<=N-1; i++) output[i]=0;
 		} else { //shortening
-			for (int i=0; i<=N-1; i++) output[i]=INFINITY;
+			for (int i=0; i<=N-1; i++) output[i]=32767;//instead of INFINITY, to prevent [-Woverflow]
 		}
 
 		for (int i=0; i<=E-1; i++){

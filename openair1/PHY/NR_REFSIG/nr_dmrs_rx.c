@@ -20,15 +20,15 @@
  */
 
 /*! \file PHY/NR_REFSIG/nr_dl_dmrs.c
-* \brief Top-level routines for generating DMRS from 38-211
-* \author
-* \date 2018
-* \version 0.1
-* \company Eurecom
-* \email:
-* \note
-* \warning
-*/
+ * \brief Top-level routines for generating DMRS from 38-211
+ * \author
+ * \date 2018
+ * \version 0.1
+ * \company Eurecom
+ * \email:
+ * \note
+ * \warning
+ */
 
 //#define NR_PBCH_DMRS_LENGTH_DWORD 5
 //#define NR_PBCH_DMRS_LENGTH 144
@@ -45,6 +45,7 @@ int wt2[12][2] = {{1,1},{1,1},{1,1},{1,1},{1,1},{1,1},{1,-1},{1,-1},{1,-1},{1,-1
 
 short nr_rx_mod_table[14]  = {0,0,23170,-23170,-23170,23170,23170,-23170,23170,23170,-23170,-23170,-23170,23170};
 short nr_rx_nmod_table[14] = {0,0,-23170,23170,23170,-23170,-23170,23170,-23170,-23170,23170,23170,23170,-23170};
+
 
 
 int nr_pdsch_dmrs_rx(PHY_VARS_NR_UE *ue,
@@ -69,7 +70,7 @@ int nr_pdsch_dmrs_rx(PHY_VARS_NR_UE *ue,
   wt = (config_type==0) ? wt1 : wt2;
 
   if (config_type > 1)
-      LOG_E(PHY,"Bad PDSCH DMRS config type %d\n", config_type);
+    LOG_E(PHY,"Bad PDSCH DMRS config type %d\n", config_type);
 
   if ((p>=1000) && (p<((config_type==0) ? 1008 : 1012))) {
       if (ue->frame_parms.Ncp == NORMAL) {
@@ -100,32 +101,32 @@ int nr_pdsch_dmrs_rx(PHY_VARS_NR_UE *ue,
 }
 
 int nr_pdcch_dmrs_rx(PHY_VARS_NR_UE *ue,
-						uint8_t eNB_offset,
-						unsigned int Ns,
-						unsigned int *nr_gold_pdcch,
-						int32_t *output,
-						unsigned short p,
-						unsigned short nb_rb_coreset)
+		     uint8_t eNB_offset,
+		     unsigned int Ns,
+		     unsigned int *nr_gold_pdcch,
+		     int32_t *output,
+		     unsigned short p,
+		     unsigned short nb_rb_coreset)
 {
 
-	uint8_t idx=0;
-	//uint8_t pdcch_rb_offset =0;
-	//nr_gold_pdcch += ((int)floor(ue->frame_parms.ssb_start_subcarrier/12)+pdcch_rb_offset)*3/32;
+  uint8_t idx=0;
+  //uint8_t pdcch_rb_offset =0;
+  //nr_gold_pdcch += ((int)floor(ue->frame_parms.ssb_start_subcarrier/12)+pdcch_rb_offset)*3/32;
 
-	if (p==2000) {
-    	for (int i=0; i<((nb_rb_coreset*6)>>1); i++) {
-    		idx = ((((nr_gold_pdcch[(i<<1)>>5])>>((i<<1)&0x1f))&1)<<1) ^ (((nr_gold_pdcch[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1);
-    		((int16_t*)output)[i<<1] = nr_rx_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
-    		((int16_t*)output)[(i<<1)+1] = nr_rx_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
+  if (p==2000) {
+    for (int i=0; i<((nb_rb_coreset*6)>>1); i++) {
+      idx = ((((nr_gold_pdcch[(i<<1)>>5])>>((i<<1)&0x1f))&1)<<1) ^ (((nr_gold_pdcch[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1);
+      ((int16_t*)output)[i<<1] = nr_rx_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
+      ((int16_t*)output)[(i<<1)+1] = nr_rx_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
 #ifdef DEBUG_PDCCH
       if (i<8)
-	  printf("i %d idx %d pdcch gold %u b0-b1 %d-%d mod_dmrs %d %d\n", i, idx, nr_gold_pdcch[(i<<1)>>5], (((nr_gold_pdcch[(i<<1)>>5])>>((i<<1)&0x1f))&1),
-	  (((nr_gold_pdcch[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1), ((int16_t*)output)[i<<1], ((int16_t*)output)[(i<<1)+1],&output[0]);
+	printf("i %d idx %d pdcch gold %u b0-b1 %d-%d mod_dmrs %d %d\n", i, idx, nr_gold_pdcch[(i<<1)>>5], (((nr_gold_pdcch[(i<<1)>>5])>>((i<<1)&0x1f))&1),
+	       (((nr_gold_pdcch[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1), ((int16_t*)output)[i<<1], ((int16_t*)output)[(i<<1)+1],&output[0]);
 #endif
-	    }
-	}
+    }
+  }
 
-	return(0);
+  return(0);
 }
 
 int nr_pbch_dmrs_rx(int symbol,unsigned int *nr_gold_pbch,int32_t *output	)

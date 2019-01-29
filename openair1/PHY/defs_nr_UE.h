@@ -863,16 +863,16 @@ typedef struct {
   int32_t **rho;
   /// \brief Pointer to llrs, 4-bit resolution.
   /// - first index: ? [0..48*N_RB_DL[
-  uint16_t *llr;
+  int16_t *llr;
   /// \brief Pointer to llrs, 16-bit resolution.
   /// - first index: ? [0..96*N_RB_DL[
-  uint16_t *llr16;
+  int16_t *llr16;
   /// \brief \f$\overline{w}\f$ from 36-211.
   /// - first index: ? [0..48*N_RB_DL[
-  uint16_t *wbar;
+  int16_t *wbar;
   /// \brief PDCCH/DCI e-sequence (input to rate matching).
   /// - first index: ? [0..96*N_RB_DL[
-  int8_t *e_rx;
+  int16_t *e_rx;
   /// number of PDCCH symbols in current subframe
   uint8_t num_pdcch_symbols;
   /// Allocated CRNTI for UE
@@ -892,6 +892,7 @@ typedef struct {
   //Check for specific DCIFormat and AgregationLevel
   uint8_t dciFormat;
   uint8_t agregationLevel;
+  t_nrPolar_paramsPtr nrPolar_params;
   #ifdef NR_PDCCH_DEFS_NR_UE
   int nb_searchSpaces;
   // CORESET structure, where maximum number of CORESETs to be handled is 3 (according to 38.331 V15.1.0)
@@ -900,6 +901,7 @@ typedef struct {
   // Each SearchSpace is associated with one ControlResourceSet 
   NR_UE_PDCCH_SEARCHSPACE searchSpace[NR_NBR_SEARCHSPACE_ACT_BWP];
 
+  int n_RB_BWP[NR_NBR_SEARCHSPACE_ACT_BWP];
   uint32_t nb_search_space;
   #endif
 } NR_UE_PDCCH;
@@ -931,6 +933,8 @@ typedef struct {
   /// \brief Pointer to PBCH decoded output.
   /// - first index: ? [0..63] (hard coded)
   uint8_t *decoded_output;
+  /// polar decoder parameters
+  t_nrPolar_paramsPtr nrPolar_params;
   /// \brief Total number of PDU errors.
   uint32_t pdu_errors;
   /// \brief Total number of PDU errors 128 frames ago.
@@ -1017,7 +1021,12 @@ typedef struct {
   nr_ue_if_module_t *if_inst;
   nr_downlink_indication_t dl_indication;
   nr_uplink_indication_t ul_indication;
+  /// UE FAPI DCI request
+  nr_dcireq_t dcireq;
+
+  /// UE FAPI indication for DLSCH reception
   fapi_nr_rx_indication_t rx_ind;
+  /// UE FAPI indication for DCI reception
   fapi_nr_dci_indication_t dci_ind;
 
   // point to the current rxTx thread index
@@ -1061,7 +1070,7 @@ typedef struct {
   uint32_t dmrs_pbch_bitmap_nr[DMRS_PBCH_I_SSB][DMRS_PBCH_N_HF][DMRS_BITMAP_SIZE];
 
 #endif
-  t_nrPolar_params  *nrPolar_params;
+
 
   /// PBCH DMRS sequence
   uint32_t nr_gold_pbch[2][64][NR_PBCH_DMRS_LENGTH_DWORD];

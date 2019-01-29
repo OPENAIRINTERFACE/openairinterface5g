@@ -385,8 +385,8 @@ typedef struct {
   int								                        Ncp_UL; //cyclic prefix for UL
   int                                       p_gNB; //number of tx antenna port
   int								                        p_rx_gNB; //number of receiving antenna ports
-  uint32_t                                  dl_CarrierFreq; //detected by the UE
-  uint32_t                                  ul_CarrierFreq; //detected by the UE
+  uint64_t                                  dl_CarrierFreq; //detected by the UE
+  uint64_t                                  ul_CarrierFreq; //detected by the UE
   
   //are the only static one (memory has been already allocated)
   NR_BCCH_BCH_Message_t                     mib;

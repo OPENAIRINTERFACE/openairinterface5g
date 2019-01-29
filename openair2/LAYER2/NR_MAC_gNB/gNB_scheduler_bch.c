@@ -57,7 +57,7 @@
 
 extern RAN_CONTEXT_t RC;
 
-void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP){
+void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP){
 
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc;
@@ -70,9 +70,9 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
   int mib_sdu_length;
   int CC_id;
 
-  uint16_t sfn_sf = frameP << 4 | subframeP;
+  uint16_t sfn_sf = frameP << 7 | slotP;
 
-  AssertFatal(subframeP == 0, "Subframe must be 0\n");
+  AssertFatal(slotP == 0, "Subframe must be 0\n");
   AssertFatal((frameP & 7) == 0, "Frame must be a multiple of 8\n");
 
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
@@ -83,11 +83,11 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
 
     mib_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, MIBCH, 1, &cc->MIB_pdu.payload[0]); // not used in this case
 
-    LOG_D(MAC, "Frame %d, subframe %d: BCH PDU length %d\n", frameP, subframeP, mib_sdu_length);
+    LOG_D(MAC, "Frame %d, slot %d: BCH PDU length %d\n", frameP, slotP, mib_sdu_length);
 
     if (mib_sdu_length > 0) {
 
-      LOG_D(MAC, "Frame %d, subframe %d: Adding BCH PDU in position %d (length %d)\n", frameP, subframeP, dl_req->number_pdu, mib_sdu_length);
+      LOG_D(MAC, "Frame %d, slot %d: Adding BCH PDU in position %d (length %d)\n", frameP, slotP, dl_req->number_pdu, mib_sdu_length);
 
       if ((frameP & 1023) < 80){
         LOG_D(MAC,"[gNB %d] Frame %d : MIB->BCH  CC_id %d, Received %d bytes\n",module_idP, frameP, CC_id, mib_sdu_length);

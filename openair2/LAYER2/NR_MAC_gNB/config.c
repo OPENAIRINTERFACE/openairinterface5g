@@ -52,98 +52,107 @@ extern uint8_t nfapi_mode;
 int32_t **rxdata;
 int32_t **txdata;
 
-typedef struct eutra_bandentry_s {
+typedef struct nr_bandentry_s {
   int16_t band;
-  uint32_t ul_min;
-  uint32_t ul_max;
-  uint32_t dl_min;
-  uint32_t dl_max;
-  uint32_t N_OFFs_DL;
-} eutra_bandentry_t;
+  uint64_t ul_min;
+  uint64_t ul_max;
+  uint64_t dl_min;
+  uint64_t dl_max;
+  uint64_t N_OFFs_DL;
+  uint64_t step_size;
+} nr_bandentry_t;
 
 typedef struct band_info_s {
   int nbands;
-  eutra_bandentry_t band_info[100];
-} band_info_t;
+  nr_bandentry_t band_info[100];
+} nr_band_info_t;
 
-static const eutra_bandentry_t eutra_bandtable[] = {
-  {1, 19200, 19800, 21100, 21700, 0},
-  {2, 18500, 19100, 19300, 19900, 6000},
-  {3, 17100, 17850, 18050, 18800, 12000},
-  {4, 17100, 17550, 21100, 21550, 19500},
-  {5, 8240, 8490, 8690, 8940, 24000},
-  {6, 8300, 8400, 8750, 8850, 26500},
-  {7, 25000, 25700, 26200, 26900, 27500},
-  {8, 8800, 9150, 9250, 9600, 34500},
-  {9, 17499, 17849, 18449, 18799, 38000},
-  {10, 17100, 17700, 21100, 21700, 41500},
-  {11, 14279, 14529, 14759, 15009, 47500},
-  {12, 6980, 7160, 7280, 7460, 50100},
-  {13, 7770, 7870, 7460, 7560, 51800},
-  {14, 7880, 7980, 7580, 7680, 52800},
-  {17, 7040, 7160, 7340, 7460, 57300},
-  {18, 8150, 9650, 8600, 10100, 58500},
-  {19, 8300, 8450, 8750, 8900, 60000},
-  {20, 8320, 8620, 7910, 8210, 61500},
-  {21, 14479, 14629, 14959, 15109, 64500},
-  {22, 34100, 34900, 35100, 35900, 66000},
-  {23, 20000, 20200, 21800, 22000, 75000},
-  {24, 16126, 16605, 15250, 15590, 77000},
-  {25, 18500, 19150, 19300, 19950, 80400},
-  {26, 8140, 8490, 8590, 8940, 86900},
-  {27, 8070, 8240, 8520, 8690, 90400},
-  {28, 7030, 7580, 7580, 8130, 92100},
-  {29, 0, 0, 7170, 7280, 96600},
-  {30, 23050, 23250, 23500, 23600, 97700},
-  {31, 45250, 34900, 46250, 35900, 98700},
-  {32, 0, 0, 14520, 14960, 99200},
-  {33, 19000, 19200, 19000, 19200, 36000},
-  {34, 20100, 20250, 20100, 20250, 36200},
-  {35, 18500, 19100, 18500, 19100, 36350},
-  {36, 19300, 19900, 19300, 19900, 36950},
-  {37, 19100, 19300, 19100, 19300, 37550},
-  {38, 25700, 26200, 25700, 26300, 37750},
-  {39, 18800, 19200, 18800, 19200, 38250},
-  {40, 23000, 24000, 23000, 24000, 38650},
-  {41, 24960, 26900, 24960, 26900, 39650},
-  {42, 34000, 36000, 34000, 36000, 41590},
-  {43, 36000, 38000, 36000, 38000, 43590},
-  {44, 7030, 8030, 7030, 8030, 45590},
-  {45, 14470, 14670, 14470, 14670, 46590},
-  {46, 51500, 59250, 51500, 59250, 46790},
-  {65, 19200, 20100, 21100, 22000, 65536},
-  {66, 17100, 18000, 21100, 22000, 66436},
-  {67, 0, 0, 7380, 7580, 67336},
-  {68, 6980, 7280, 7530, 7830, 67536}
+static const nr_bandentry_t nr_bandtable[] = {
+  {1,  1920000, 1980000, 2110000, 2170000, 20, 422000},
+  {2,  1850000, 1910000, 1930000, 1990000, 20, 386000},
+  {3,  1710000, 1785000, 1805000, 1880000, 20, 361000},
+  {5,   824000,  849000,  869000,  894000, 20, 173800},
+  {7,  2500000, 2570000, 2620000, 2690000, 20, 524000},
+  {8,   880000,  915000,  925000,  960000, 20, 185000},
+  {12,  698000,  716000,  728000,  746000, 20, 145800},
+  {20,  832000,  862000,  791000,  821000, 20, 158200},
+  {25, 1850000, 1915000, 1930000, 1995000, 20, 386000},
+  {28,  703000,  758000,  758000,  813000, 20, 151600},
+  {34, 2010000, 2025000, 2010000, 2025000, 20, 402000},
+  {38, 2570000, 2620000, 2570000, 2630000, 20, 514000},
+  {39, 1880000, 1920000, 1880000, 1920000, 20, 376000},
+  {40, 2300000, 2400000, 2300000, 2400000, 20, 460000},
+  {41, 2496000, 2690000, 2496000, 2690000,  3, 499200},
+  {50, 1432000, 1517000, 1432000, 1517000, 20, 286400},
+  {51, 1427000, 1432000, 1427000, 1432000, 20, 285400},
+  {66, 1710000, 1780000, 2110000, 2200000, 20, 422000},
+  {70, 1695000, 1710000, 1995000, 2020000, 20, 399000},
+  {71,  663000,  698000,  617000,  652000, 20, 123400},
+  {74, 1427000, 1470000, 1475000, 1518000, 20, 295000},
+  {75,     000,     000, 1432000, 1517000, 20, 286400},
+  {76,     000,     000, 1427000, 1432000, 20, 285400},
+  {77, 3300000, 4200000, 3300000, 4200000,  1, 620000},
+  {78, 3300000, 3800000, 3300000, 3800000,  1, 620000},
+  {79, 4400000, 5000000, 4400000, 5000000,  2, 693334},
+  {80, 1710000, 1785000,     000,     000, 20, 342000},
+  {81,  860000,  915000,     000,     000, 20, 176000},
+  {82,  832000,  862000,     000,     000, 20, 166400},
+  {83,  703000,  748000,     000,     000, 20, 140600},
+  {84, 1920000, 1980000,     000,     000, 20, 384000},
+  {86, 1710000, 1785000,     000,     000, 20, 342000}
 };
 
 
-uint32_t nr_to_earfcn(int eutra_bandP, uint32_t dl_CarrierFreq, uint32_t bw)
+uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint32_t bw)
 {
 
-  uint32_t dl_CarrierFreq_by_100k = dl_CarrierFreq / 100000;
-  int bw_by_100 = bw / 100;
+  uint64_t dl_CarrierFreq_by_1k = dl_CarrierFreq / 1000;
+  int bw_kHz = bw / 1000;
 
   int i;
 
-  AssertFatal(eutra_bandP < 69, "eutra_band %d > 68\n", eutra_bandP);
-  for (i = 0; i < 69 && eutra_bandtable[i].band != eutra_bandP; i++);
+  LOG_I(MAC,"Searching for nr band %d DL Carrier frequency %llu bw %u\n",nr_bandP,(long long unsigned int)dl_CarrierFreq,bw);
+  AssertFatal(nr_bandP < 86, "nr_band %d > 86\n", nr_bandP);
+  for (i = 0; i < 30 && nr_bandtable[i].band != nr_bandP; i++);
 
-  AssertFatal(dl_CarrierFreq_by_100k >= eutra_bandtable[i].dl_min,
-        "Band %d, bw %u : DL carrier frequency %u Hz < %u\n",
-        eutra_bandP, bw, dl_CarrierFreq,
-        eutra_bandtable[i].dl_min);
-  AssertFatal(dl_CarrierFreq_by_100k <=
-        (eutra_bandtable[i].dl_max - bw_by_100),
-        "Band %d, bw %u: DL carrier frequency %u Hz > %d\n",
-        eutra_bandP, bw, dl_CarrierFreq,
-        eutra_bandtable[i].dl_max - bw_by_100);
+  AssertFatal(dl_CarrierFreq_by_1k >= nr_bandtable[i].dl_min,
+        "Band %d, bw %u : DL carrier frequency %llu kHz < %llu\n",
+	      nr_bandP, bw, (long long unsigned int)dl_CarrierFreq_by_1k,
+	      (long long unsigned int)nr_bandtable[i].dl_min);
+  AssertFatal(dl_CarrierFreq_by_1k <=
+        (nr_bandtable[i].dl_max - bw_kHz),
+        "Band %d, dl_CarrierFreq %llu bw %u: DL carrier frequency %llu kHz > %llu\n",
+	      nr_bandP, (long long unsigned int)dl_CarrierFreq,bw, (long long unsigned int)dl_CarrierFreq_by_1k,
+	      (long long unsigned int)(nr_bandtable[i].dl_max - bw_kHz));
+ 
+  int deltaFglobal;
 
+  if (dl_CarrierFreq < 3e9) deltaFglobal = 5;
+  else                      deltaFglobal = 15;
 
-  return (dl_CarrierFreq_by_100k - eutra_bandtable[i].dl_min +
-    (eutra_bandtable[i].N_OFFs_DL / 10));
+  // This is equation before Table 5.4.2.1-1 in 38101-1-f30
+  // F_REF=F_REF_Offs + deltaF_Global(N_REF-NREF_REF_Offs)
+  return (((dl_CarrierFreq_by_1k - nr_bandtable[i].dl_min)/deltaFglobal) +
+	  nr_bandtable[i].N_OFFs_DL);
 }
 
+
+uint64_t from_nrarfcn(int nr_bandP, uint32_t dl_nrarfcn)
+{
+
+  int i;
+  int deltaFglobal;
+
+  if (nr_bandP < 77 || nr_bandP > 79) deltaFglobal = 5;
+  else                                deltaFglobal = 15;
+  
+  AssertFatal(nr_bandP < 87, "nr_band %d > 86\n", nr_bandP);
+  for (i = 0; i < 31 && nr_bandtable[i].band != nr_bandP; i++);
+  AssertFatal(dl_nrarfcn>=nr_bandtable[i].N_OFFs_DL,"dl_nrarfcn %u < N_OFFs_DL %llu\n",dl_nrarfcn, (long long unsigned int)nr_bandtable[i].N_OFFs_DL);
+ 
+  return 1000*(nr_bandtable[i].dl_min + (dl_nrarfcn - nr_bandtable[i].N_OFFs_DL) * deltaFglobal);
+	  
+}
 
 void config_nr_mib(int Mod_idP, 
                 int CC_idP,
@@ -159,23 +168,30 @@ void config_nr_mib(int Mod_idP,
 
   cfg->num_tlv=0;
   
-  cfg->rf_config.tx_antenna_ports.value            = p_gNBP;
-  cfg->rf_config.tx_antenna_ports.tl.tag = NFAPI_RF_CONFIG_TX_ANTENNA_PORTS_TAG;
+  cfg->rf_config.dl_subcarrierspacing.value  = subCarrierSpacingCommon;
+
+  cfg->rf_config.dl_subcarrierspacing.tl.tag = NFAPI_NR_RF_CONFIG_DL_SUBCARRIERSPACING_TAG;
   cfg->num_tlv++;
   
-  cfg->sch_config.ssb_subcarrier_offset.value = ssb_SubcarrierOffset;
+  cfg->rf_config.ul_subcarrierspacing.value  = subCarrierSpacingCommon;
+  cfg->rf_config.ul_subcarrierspacing.tl.tag = NFAPI_NR_RF_CONFIG_UL_SUBCARRIERSPACING_TAG;
+  cfg->num_tlv++;
 
-  
+  cfg->sch_config.ssb_subcarrier_offset.value = ssb_SubcarrierOffset;
+  cfg->sch_config.ssb_subcarrier_offset.tl.tag = NFAPI_NR_SCH_CONFIG_SSB_SUBCARRIER_OFFSET_TAG;
+  cfg->num_tlv++; 
 }
 
 void config_common(int Mod_idP, 
                    int CC_idP,
-                   int eutra_bandP,
-                   int dl_CarrierFreqP,
-                   int dl_BandwidthP
+                   int nr_bandP,
+                   uint64_t dl_CarrierFreqP,
+                   uint32_t dl_BandwidthP
                   ){
 
   nfapi_nr_config_request_t *cfg = &RC.nrmac[Mod_idP]->config[CC_idP];
+
+  int mu = 1;
 
   // FDD
   cfg->subframe_config.duplex_mode.value                          = 1;
@@ -184,15 +200,15 @@ void config_common(int Mod_idP,
   
   /// In NR DL and UL will be different band
   cfg->nfapi_config.rf_bands.number_rf_bands       = 1;
-  cfg->nfapi_config.rf_bands.rf_band[0]            = eutra_bandP;  
+  cfg->nfapi_config.rf_bands.rf_band[0]            = nr_bandP;  
   cfg->nfapi_config.rf_bands.tl.tag = NFAPI_PHY_RF_BANDS_TAG;
   cfg->num_tlv++;
 
-  cfg->nfapi_config.earfcn.value                   = nr_to_earfcn(eutra_bandP,dl_CarrierFreqP,dl_BandwidthP*180/100);
-  cfg->nfapi_config.earfcn.tl.tag = NFAPI_NFAPI_EARFCN_TAG;
+  cfg->nfapi_config.nrarfcn.value                   = to_nrarfcn(nr_bandP,dl_CarrierFreqP,dl_BandwidthP*180000*(1+mu));
+  cfg->nfapi_config.nrarfcn.tl.tag = NFAPI_NR_NFAPI_NRARFCN_TAG;
   cfg->num_tlv++;
 
-  cfg->subframe_config.numerology_index_mu.value = 1;
+  cfg->subframe_config.numerology_index_mu.value = mu;
   //cfg->subframe_config.tl.tag = 
   //cfg->num_tlv++;
 
@@ -217,8 +233,8 @@ void config_common(int Mod_idP,
 int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
                            int CC_idP,
                            int p_gNB,
-                           int eutra_bandP,
-                           int dl_CarrierFreqP,
+                           int nr_bandP,
+                           uint64_t dl_CarrierFreqP,
                            int dl_BandwidthP,
                            NR_BCCH_BCH_Message_t *mib,
                            NR_ServingCellConfigCommon_t *servingcellconfigcommon
@@ -245,7 +261,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
   if( servingcellconfigcommon != NULL ){
     config_common(Mod_idP, 
                   CC_idP,
-                  eutra_bandP,
+                  nr_bandP,
                   dl_CarrierFreqP,
                   dl_BandwidthP
                   );  

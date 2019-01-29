@@ -295,8 +295,10 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
   fm = filt16a_m1;
   fr = filt16a_r1;
 
-  // generate pilot
-  nr_pdcch_dmrs_rx(ue,eNB_offset,Ns,ue->nr_gold_pdcch[eNB_offset][Ns>>1][symbol], &pilot[0],2000,nb_rb_coreset);
+
+  // generate pilot 
+  nr_pdcch_dmrs_rx(ue,eNB_offset,Ns,ue->nr_gold_pdcch[eNB_offset][Ns][symbol], &pilot[0],2000,nb_rb_coreset);
+
 
   for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
 
@@ -313,10 +315,10 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
     printf("pdcch ch est pilot addr %p RB_DL %d\n",&pilot[0], ue->frame_parms.N_RB_DL);
     printf("k %d, first_carrier %d\n",k,ue->frame_parms.first_carrier_offset);
     printf("rxF addr %p\n", rxF);
-    printf("dl_ch addr %p nushift %d\n",dl_ch,nushift);
-#endif
-    if ((ue->frame_parms.N_RB_DL&1)==0) {
 
+    printf("dl_ch addr %p\n",dl_ch);
+#endif
+    //    if ((ue->frame_parms.N_RB_DL&1)==0) {
       // Treat first 2 pilots specially (left edge)
       ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
       ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
@@ -421,7 +423,7 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
       }
 
 
-    }
+      //}
 
   }
   

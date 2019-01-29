@@ -656,6 +656,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   int eNB_id;
   int th_id;
   int n_ssb_crb=(fp->N_RB_DL-20);
+  int k_ssb=0;
   abstraction_flag = 0;
   fp->nb_antennas_tx = 1;
   fp->nb_antennas_rx=1;
@@ -664,7 +665,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   printf("Initializing UE vars (abstraction %"PRIu8") for eNB TXant %"PRIu8", UE RXant %"PRIu8"\n",abstraction_flag,fp->nb_antennas_tx,fp->nb_antennas_rx);
   //LOG_D(PHY,"[MSC_NEW][FRAME 00000][PHY_UE][MOD %02u][]\n", ue->Mod_id+NB_eNB_INST);
   
-  nr_init_frame_parms_ue(fp,NR_MU_1,NORMAL,fp->N_RB_DL,n_ssb_crb,0);
+  nr_init_frame_parms_ue(fp,NR_MU_1,NORMAL,fp->N_RB_DL,n_ssb_crb,k_ssb);
   phy_init_nr_top(ue);
 
   // many memory allocation sizes are hard coded
@@ -816,10 +817,10 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
 
       // 100 PRBs * 12 REs/PRB * 4 PDCCH SYMBOLS * 2 LLRs/RE
       for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
-          (*pdcch_vars_th)[th_id][eNB_id]->llr   = (uint16_t*)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
-          (*pdcch_vars_th)[th_id][eNB_id]->llr16 = (uint16_t*)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
-          (*pdcch_vars_th)[th_id][eNB_id]->wbar  = (uint16_t*)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
-          (*pdcch_vars_th)[th_id][eNB_id]->e_rx  = (int8_t*)malloc16_clear( 4*2*100*12 );
+          (*pdcch_vars_th)[th_id][eNB_id]->llr   = (int16_t*)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
+          (*pdcch_vars_th)[th_id][eNB_id]->llr16 = (int16_t*)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
+          (*pdcch_vars_th)[th_id][eNB_id]->wbar  = (int16_t*)malloc16_clear( 2*4*100*12*sizeof(uint16_t) );
+          (*pdcch_vars_th)[th_id][eNB_id]->e_rx  = (int16_t*)malloc16_clear( 4*2*100*12 );
 
           (*pdcch_vars_th)[th_id][eNB_id]->rxdataF_comp        = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
           (*pdcch_vars_th)[th_id][eNB_id]->dl_ch_rho_ext       = (int32_t**)malloc16_clear( 8*sizeof(int32_t*) );
@@ -952,12 +953,7 @@ void phy_init_nr_top(PHY_VARS_NR_UE *ue)
   generate_ul_reference_signal_sequences(SHRT_MAX);
 
   // Polar encoder init for PBCH
-
-  ue->nrPolar_params = NULL;
-  nr_polar_init(&ue->nrPolar_params,
-		NR_POLAR_PBCH_MESSAGE_TYPE,
-		NR_POLAR_PBCH_PAYLOAD_BITS,
-		NR_POLAR_PBCH_AGGREGATION_LEVEL);
+  
   //lte_sync_time_init(frame_parms);
 
   //generate_ul_ref_sigs();
@@ -987,8 +983,6 @@ void set_default_frame_parms_single(nfapi_nr_config_request_t *config, NR_DL_FRA
         config->subframe_config.dl_cyclic_prefix_type.value = 0; //NORMAL
         config->rf_config.dl_carrier_bandwidth.value = 106;
         config->rf_config.ul_carrier_bandwidth.value = 106;
-        config->rf_config.tx_antenna_ports.value = 1;
-        config->rf_config.rx_antenna_ports.value = 1;
         config->sch_config.physical_cell_id.value = 0;
 
         frame_parms->frame_type          = FDD;
