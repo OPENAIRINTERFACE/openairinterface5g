@@ -5102,7 +5102,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
       
     }
     //set active for testing, to be removed
-    ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active = 1;
+    ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active = 0;
   }
   else 
     ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active = 0;
