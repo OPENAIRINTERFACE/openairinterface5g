@@ -70,6 +70,7 @@ int proto_agent_start(mod_id_t mod_id, const cudu_params_t *p)
   //DevAssert(p->remote_port > 1024); // "unprivileged" port
   
   proto_agent[mod_id].mod_id = mod_id;
+  proto_agent[mod_id].exit = 0;
 
   /* Initialize the channel container */
 
@@ -138,10 +139,14 @@ error:
 void proto_agent_stop(mod_id_t mod_id)
 {
   if (!proto_agent[mod_id].channel) return;
+  /* unlock the independent read thread proto_agent_receive() */
+  proto_agent[mod_id].exit = 1;
+  proto_agent_async_msg_recv_unlock(proto_agent[mod_id].channel->channel_info);
   proto_agent_async_release(proto_agent[mod_id].channel);
   proto_agent_destroy_channel(proto_agent[mod_id].channel->channel_id);
   free(proto_agent[mod_id].channel);
   proto_agent[mod_id].channel = NULL;
+  LOG_W(PROTO_AGENT, "server stopped\n");
 }
 
 //void
@@ -266,10 +271,11 @@ proto_agent_receive(void *args)
     msg = NULL;
     ser_msg = NULL;
     
-    if ((size = proto_agent_async_msg_recv(&data, &priority, inst->channel->channel_info)) <= 0){
+    if ((size = proto_agent_async_msg_recv(&data, &priority, inst->channel->channel_info)) < 0){
       err_code = PROTOCOL__FLEXSPLIT_ERR__MSG_ENQUEUING;
       goto error;
     }
+    if (inst->exit) break;
 
     LOG_D(PROTO_AGENT, "Server side Received message with size %d and priority %d, calling message handle\n", size, priority);
 

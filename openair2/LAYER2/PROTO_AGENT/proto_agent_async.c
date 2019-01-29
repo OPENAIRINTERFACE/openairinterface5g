@@ -84,6 +84,10 @@ int proto_agent_async_msg_recv(void **data, int *priority, void *channel_info)
   return message_get(channel->receive_queue, data, priority);
 }
 
+void proto_agent_async_msg_recv_unlock(proto_agent_async_channel_t *channel) {
+  message_get_unlock(channel->receive_queue);
+}
+
 void proto_agent_async_release(proto_agent_channel_t *channel)
 {
   proto_agent_async_channel_t *channel_info = channel->channel_info;

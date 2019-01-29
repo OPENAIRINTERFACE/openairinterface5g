@@ -121,6 +121,7 @@ typedef struct proto_agent_instance_s {
   proto_agent_info_t agent_info;
   struct proto_agent_channel_s *channel;
   pthread_t   recv_thread;
+  uint8_t     exit;
 } proto_agent_instance_t;
 
 #endif 

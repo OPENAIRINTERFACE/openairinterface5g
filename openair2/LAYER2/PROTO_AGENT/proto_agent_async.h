@@ -55,6 +55,9 @@ int proto_agent_async_msg_send(void *data, int size, int priority, void *channel
 
 int proto_agent_async_msg_recv(void **data, int *priority, void *channel_info);
 
+/* unlocks a running proto_agent_async_msg_recv() */
+void proto_agent_async_msg_recv_unlock(proto_agent_async_channel_t *channel);
+
 void proto_agent_async_release(proto_agent_channel_t *channel);
 
 
