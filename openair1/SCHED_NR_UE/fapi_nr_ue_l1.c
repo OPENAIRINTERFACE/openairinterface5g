@@ -88,8 +88,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 	    pdcch_vars2->coreset[i].cce_reg_mappingType.interleaversize = dci_config->coreset.cce_reg_interleaved_interleaver_size;
 	  }else{  //CCE_REG_MAPPING_TYPE_NON_INTERLEAVED
 	    pdcch_vars2->coreset[i].cce_reg_mappingType.shiftIndex = 0;
-	    pdcch_vars2->coreset[i].cce_reg_mappingType.reg_bundlesize = 0;
-	    pdcch_vars2->coreset[i].cce_reg_mappingType.interleaversize = 0;
+	    pdcch_vars2->coreset[i].cce_reg_mappingType.reg_bundlesize = 6;
+	    pdcch_vars2->coreset[i].cce_reg_mappingType.interleaversize = 1;
 	  }
                     
 	  pdcch_vars2->coreset[i].precoderGranularity = dci_config->coreset.precoder_granularity;

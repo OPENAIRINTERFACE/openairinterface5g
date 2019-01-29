@@ -3156,7 +3156,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
                                                                                                   // FIXME! A table of five enum elements
       // searchSpaceType indicates whether this is a common search space or a UE-specific search space
       //int searchSpaceType                             = pdcch_vars2->searchSpace[nb_searchspace_active].searchSpaceType.type;
-      NR_SEARCHSPACE_TYPE_t searchSpaceType                             = common;
+      NR_SEARCHSPACE_TYPE_t searchSpaceType                             = ue_specific;//common;
       #ifdef NR_PDCCH_SCHED_DEBUG
         printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> searchSpaceType=%d is hardcoded THIS HAS TO BE FIXED!!!\n",
                 searchSpaceType);

@@ -272,10 +272,9 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     params_rel15->rnti_type = NFAPI_NR_RNTI_C;
     params_rel15->dci_format = NFAPI_NR_DL_DCI_FORMAT_1_0;
     //params_rel15->aggregation_level = 1;
-    LOG_I(MAC, "DCI type 1 params: rmsi_pdcch_config %d, rnti %d, rnti_type %d, dci_format %d\n \
+    LOG_I(MAC, "DCI params: rnti %d, rnti_type %d, dci_format %d\n \
                 coreset params: mux_pattern %d, n_rb %d, n_symb %d, rb_offset %d  \n \
-                ss params : nb_ss_sets_per_slot %d, first symb %d, nb_slots %d, sfn_mod2 %d, first slot %d\n",
-                0,
+                ss params : first symb %d, ss type %d\n",
                 params_rel15->rnti,
                 params_rel15->rnti_type,
                 params_rel15->dci_format,
@@ -283,11 +282,8 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                 params_rel15->n_rb,
                 params_rel15->n_symb,
                 params_rel15->rb_offset,
-                params_rel15->nb_ss_sets_per_slot,
                 params_rel15->first_symbol,
-                params_rel15->nb_slots,
-                params_rel15->sfn_mod2,
-                params_rel15->first_slot);
+                params_rel15->search_space_type);
   nr_get_tbs(&dl_config_dlsch_pdu->dlsch_pdu, dl_config_dci_pdu->dci_dl_pdu, *cfg);
   LOG_I(MAC, "DLSCH PDU: start PRB %d n_PRB %d start symbol %d nb_symbols %d nb_layers %d nb_codewords %d mcs %d\n",
   dlsch_pdu_rel15->start_prb,

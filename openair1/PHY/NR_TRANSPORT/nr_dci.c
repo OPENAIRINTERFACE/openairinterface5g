@@ -32,8 +32,8 @@
 
 #include "nr_dci.h"
 
-#define DEBUG_PDCCH_DMRS
-#define DEBUG_DCI
+//#define DEBUG_PDCCH_DMRS
+//#define DEBUG_DCI
 //#define DEBUG_CHANNEL_CODING
 #define PDCCH_TEST_POLAR_TEMP_FIX
 
@@ -181,8 +181,6 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   /*First iteration: single DCI*/
   NR_gNB_DCI_ALLOC_t dci_alloc = pdcch_vars.dci_alloc[0];
   nfapi_nr_dl_config_pdcch_parameters_rel15_t pdcch_params = dci_alloc.pdcch_params;
-  uint16_t dmrs_length = dci_alloc.L*36; //2(QPSK)*3(per RB)*6(REG per CCE)
-  uint16_t encoded_length = dci_alloc.L*108; //2(QPSK)*9(per RB)*6(REG per CCE)
 
   /*The coreset is initialised
   * in frequency: the first subcarrier is obtained by adding the first CRB overlapping the SSB and the rb_offset for coreset 0
@@ -198,6 +196,12 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   cset_nsymb = pdcch_params.n_symb;
   dci_idx = 0;
   LOG_I(PHY, "Coreset starting subcarrier %d on symbol %d (%d symbols)\n", cset_start_sc, cset_start_symb, cset_nsymb);
+
+  // DMRS length is per OFDM symbol
+  uint16_t dmrs_length = (pdcch_params.precoder_granularity == NFAPI_NR_CSET_ALL_CONTIGUOUS_RBS)?
+  (pdcch_params.n_rb*6) : (dci_alloc.L*36/cset_nsymb); //2(QPSK)*3(per RB)*6(REG per CCE)
+  uint16_t encoded_length = dci_alloc.L*108; //2(QPSK)*9(per RB)*6(REG per CCE)
+  LOG_I(PHY, "DMRS length per symbol %d\t DCI encoded length %d\n", dmrs_length, encoded_length);
 
 
   /// DMRS QPSK modulation
