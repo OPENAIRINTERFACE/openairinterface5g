@@ -68,6 +68,7 @@
 #define CONFIG_HLP_EXTS          "tells hardware to use an external timing reference\n"
 #define CONFIG_HLP_DMRSSYNC      "tells RU to insert DMRS in subframe 1 slot 0"
 #define CONFIG_HLP_CLK           "tells hardware to use a clock reference (0:internal, 1:external, 2:gpsdo)\n"
+#define CONFIG_HLP_TIMING        "tells hardware to use an external PPS reference\n"
 #define CONFIG_HLP_USIM          "use XOR autentication algo in case of test usim mode\n" 
 #define CONFIG_HLP_NOSNGLT       "Disables single-thread mode in lte-softmodem\n" 
 #define CONFIG_HLP_TADV          "Set timing_advance\n"
@@ -192,6 +193,8 @@
 #define NUMEROLOGY          softmodem_params.numerology
 #define EMULATE_RF          softmodem_params.emulate_rf
 #define CLOCK_SOURCE        softmodem_params.clock_source
+#define TIMING_SOURCE       softmodem_params.timing_source
+#define SEND_DMRSSYNC       softmodem_params.send_dmrs_sync
 #define USIM_TEST           softmodem_params.usim_test
 #define CMDLINE_PARAMS_DESC {  \
 {"rf-config-file",          CONFIG_HLP_RFCFGF,      0,                      strptr:(char **)&RF_CONFIG_FILE,    defstrval:NULL,                 TYPE_STRING,    sizeof(RF_CONFIG_FILE)}, \
@@ -200,6 +203,8 @@
 {"usim-test",               CONFIG_HLP_USIM,        PARAMFLAG_BOOL,         u8ptr:&USIM_TEST,                   defintval:0,                    TYPE_UINT8,     0},                     \
 {"emulate-rf" ,             CONFIG_HLP_EMULATE_RF,  PARAMFLAG_BOOL,         iptr:&EMULATE_RF,                   defintval:0,                    TYPE_INT,       0},                     \
 {"clock",                   CONFIG_HLP_CLK,         0,                      uptr:&CLOCK_SOURCE,                 defintval:0,                    TYPE_UINT,      0},                     \
+{"timing",                  CONFIG_HLP_TIMING,      0,                      uptr:&TIMING_SOURCE,                defintval:0,                    TYPE_UINT,      0},                     \
+{"clock",                   CONFIG_HLP_DMRSSYNC,    0,                      uptr:&SEND_DMRSSYNC,                defintval:0,                    TYPE_UINT,      0},                     \
 {"wait-for-sync",           NULL,                   PARAMFLAG_BOOL,         iptr:&WAIT_FOR_SYNC,                defintval:0,                    TYPE_INT,       0},                     \
 {"single-thread-enable",    CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL,         iptr:&SINGLE_THREAD_FLAG,           defintval:0,                    TYPE_INT,       0},                     \
 {"C" ,                      CONFIG_HLP_DLF,         0,                      uptr:&(downlink_frequency[0][0]),   defuintval:2680000000,          TYPE_UINT,      0},                     \
@@ -259,7 +264,9 @@ typedef struct {
    unsigned int   start_msc;
    int            nonbiotflag;
    uint32_t       clock_source;
+   uint32_t       timing_source; 
    int            hw_timing_advance;
+   uint32_t       send_dmrs_sync; 
 } softmodem_params_t;
 
 #define SOFTMODEM_NOS1            ( get_softmodem_optmask() & SOFTMODEM_NOS1_BIT)
@@ -308,7 +315,7 @@ extern void kill_eNB_proc(int inst);
 
 // In lte-ru.c
 
-extern void init_RU(const char*,clock_source_t clock_source,clock_source_t time_source,int send_dmrssync);
+extern void init_RU(char*,clock_source_t clock_source,clock_source_t time_source,int send_dmrssync);
 extern void stop_ru(RU_t *ru);
 extern void init_ru_vnf(void);
 extern void init_RU_proc(RU_t *ru);

@@ -230,6 +230,8 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
 
     int16_t *rxF;
 
+    for (int antenna_id=0;antenna_id<ru->nb_rx;antenna_id++) {
+
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     if (packet_type > IF4p5_PRACH)
       rxF = &prach_rxsigF_br[packet_type - IF4p5_PRACH - 1][0][0];

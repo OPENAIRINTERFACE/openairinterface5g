@@ -69,6 +69,7 @@
 
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 #include "PHY/LTE_TRANSPORT/if5_tools.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
 
 #include "PHY/phy_extern.h"
 #include "LAYER2/MAC/mac_extern.h"
@@ -1543,7 +1544,6 @@ static void* ru_thread_tx( void* param ) {
       eNB_proc  = &eNB->proc;
       L1_proc   = (get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)? &eNB_proc->L1_proc_tx : &eNB_proc->L1_proc;
 
-      char *L1_proc_name = (get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)? "L1_proc_tx" : "L1_proc";
       pthread_mutex_lock(&eNB_proc->mutex_RU_tx);
       for (int j=0;j<eNB->num_RU;j++) {
         if (ru == eNB->RU_list[j]) {
@@ -1584,7 +1584,6 @@ static void* ru_thread( void* param ) {
   int                subframe =9;
   int                frame    =1023;
   int                   resynch_done = 0;
-  PHY_VARS_eNB **eNB_list = ru->eNB_list;
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
 
@@ -1865,7 +1864,8 @@ static void* ru_thread( void* param ) {
 	}
 #endif
       } // else wait_cnt == 0
-    } // ru->state = RU_RU
+    } // ru->state = RU_RUN
+   }
   } // while !oai_exit
 
   printf( "Exiting ru_thread \n");
@@ -1888,7 +1888,6 @@ void *ru_thread_synch(void *arg) {
 
   RU_t *ru = (RU_t*)arg;
   LTE_DL_FRAME_PARMS *fp=&ru->frame_parms;
-  int32_t sync_pos,sync_pos2;
   int64_t peak_val;
   int64_t avg;
   static int ru_thread_synch_status=0;
@@ -2171,7 +2170,6 @@ void init_RU_proc(RU_t *ru) {
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   pthread_attr_t *attr_prach_br=NULL;
 #endif
-  char name[100];
 
 #ifndef OCP_FRAMEWORK
   LOG_I(PHY,"Initializing RU proc %d (%s,%s),\n",ru->idx,eNB_functions[ru->function],eNB_timing[ru->if_timing]);

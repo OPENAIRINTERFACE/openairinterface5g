@@ -477,6 +477,7 @@ void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string,RU_t
 int wakeup_txfh(L1_rxtx_proc_t *proc,PHY_VARS_eNB *eNB) {
   RU_t *ru;
   RU_proc_t *ru_proc;
+  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
 
 
   struct timespec wait;
@@ -894,7 +895,7 @@ void init_eNB_proc(int inst) {
     proc->first_rx                 =1;
     proc->first_tx                 =1;
     proc->RU_mask_tx               = (1<<eNB->num_RU)-1;
-    proc->RU_mask                  =0;
+    memset((void*)proc->RU_mask,0,10*sizeof(proc->RU_mask[0]));
     proc->RU_mask_prach            =0;
 
     pthread_mutex_init( &eNB->UL_INFO_mutex, NULL);

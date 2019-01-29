@@ -910,7 +910,7 @@ if (nfapi_mode==2) {// VNF
   // some initialization is necessary and init_ru_vnf do this.
   if (RC.nb_RU >0 && nfapi_mode != 2) {
     printf("Initializing RU threads\n");
-    init_RU(get_softmodem_params()->rf_config_file,get_softmodem_params()->clock_source,get_softmodem_params()->send_dmrssync);
+    init_RU(get_softmodem_params()->rf_config_file,get_softmodem_params()->clock_source,get_softmodem_params()->timing_source,get_softmodem_params()->send_dmrs_sync);
     for (ru_id=0;ru_id<RC.nb_RU;ru_id++) {
       RC.ru[ru_id]->rf_map.card=0;
       RC.ru[ru_id]->rf_map.chain=CC_id+(get_softmodem_params()->chain_offset);
