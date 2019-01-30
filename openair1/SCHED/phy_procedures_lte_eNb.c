@@ -136,7 +136,7 @@ lte_subframe_t get_subframe_direction(uint8_t Mod_id,uint8_t CC_id,uint8_t subfr
 void pmch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
 
 
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   MCH_PDU *mch_pduP=NULL;
   //  uint8_t sync_area=255;
 #endif
@@ -152,7 +152,7 @@ void pmch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
 		       subframe<<1,1);
 
   
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   // if mcch is active, send regardless of the node type: eNB or RN
   // when mcch is active, MAC sched does not allow MCCH and MTCH multiplexing
   /*
@@ -254,6 +254,8 @@ void common_signal_procedures (PHY_VARS_eNB *eNB,int frame, int subframe) {
       if (eNB->pbch_configured!=1) return;
       eNB->pbch_configured=0;
     }
+    T(T_ENB_PHY_MIB, T_INT(eNB->Mod_id), T_INT(frame), T_INT(subframe),
+      T_BUFFER(pbch_pdu, 3));
     generate_pbch(&eNB->pbch,
 		  txdataF,
 		  AMP,
@@ -398,7 +400,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 
     start_meas(&eNB->dlsch_encoding_stats);
 
-    eNB->te(eNB,
+    dlsch_encoding_all(eNB,
 	  dlsch_harq->pdu,
 	  dlsch_harq->pdsch_start,
 	  dlsch,
@@ -484,6 +486,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+(eNB->CC_id),1);
   if (do_meas==1) start_meas(&eNB->phy_proc_tx);
+  if (do_meas==1) start_meas(&eNB->dlsch_common_and_dci);
 
   // clear the transmit data array for the current subframe
   for (aa=0; aa<fp->nb_antenna_ports_eNB; aa++) {      
@@ -578,6 +581,8 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
         subframe);
   }
 
+  if (do_meas==1) stop_meas(&eNB->dlsch_common_and_dci);
+  if (do_meas==1) start_meas(&eNB->dlsch_ue_specific);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_PDCCH_TX,0);
 
@@ -645,6 +650,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_PHICH,0);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+(eNB->CC_id),0);
+  if (do_meas==1) stop_meas(&eNB->dlsch_ue_specific);
   if (do_meas==1) stop_meas(&eNB->phy_proc_tx);
   
 }

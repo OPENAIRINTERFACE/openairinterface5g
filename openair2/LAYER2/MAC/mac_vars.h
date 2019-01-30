@@ -95,7 +95,7 @@ const uint8_t cqi2fmt2x_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE] = {
 
 uint32_t RRC_CONNECTION_FLAG;
 
-UE_MAC_INST *UE_mac_inst;	//[NB_MODULE_MAX];
+UE_MAC_INST *UE_mac_inst = NULL;	//[NB_MODULE_MAX];
 MAC_RLC_XFACE *Mac_rlc_xface;
 
 /// Primary component carrier index of eNB
@@ -109,7 +109,8 @@ eNB_DLSCH_INFO eNB_dlsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][MAX_MOBILES_PER_EN
 
 #ifdef OPENAIR2
 unsigned char NB_eNB_INST = 0;
-unsigned char NB_UE_INST = 0;
+uint16_t NB_UE_INST = 0;
+uint16_t NB_THREAD_INST = 0;
 unsigned char NB_RN_INST = 0;
 unsigned char NB_INST = 0;
 #endif
@@ -124,7 +125,7 @@ DCI1A_5MHz_TDD_1_6_t BCCH_alloc_pdu;
 DCI1A_5MHz_TDD_1_6_t CCCH_alloc_pdu;
 DCI1_5MHz_TDD_t DLSCH_alloc_pdu;
 
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 DCI1C_5MHz_t MCCH_alloc_pdu;
 #endif
 

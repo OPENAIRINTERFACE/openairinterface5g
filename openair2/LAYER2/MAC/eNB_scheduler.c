@@ -30,7 +30,7 @@
  */
 
 #include "assertions.h"
-
+#include "targets/RT/USER/lte-softmodem.h"
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_extern.h"
 
@@ -64,7 +64,7 @@
 #define DEBUG_eNB_SCHEDULER 1
 
 extern RAN_CONTEXT_t RC;
-extern int phy_test;
+
 
 uint16_t pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 
@@ -79,8 +79,8 @@ schedule_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
   nfapi_ul_config_request_body_t *ul_req;
   int CC_id, UE_id;
   COMMON_channels_t *cc = RC.mac[module_idP]->common_channels;
-  SoundingRS_UL_ConfigCommon_t *soundingRS_UL_ConfigCommon;
-  struct SoundingRS_UL_ConfigDedicated *soundingRS_UL_ConfigDedicated;
+  LTE_SoundingRS_UL_ConfigCommon_t *soundingRS_UL_ConfigCommon;
+  struct LTE_SoundingRS_UL_ConfigDedicated *soundingRS_UL_ConfigDedicated;
   uint8_t TSFC;
   uint16_t deltaTSFC;		// bitmap
   uint8_t srs_SubframeConfig;
@@ -119,7 +119,7 @@ schedule_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 		      UE_id);
 	  
 	  if ((soundingRS_UL_ConfigDedicated = UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->soundingRS_UL_ConfigDedicated) != NULL) {
-	    if (soundingRS_UL_ConfigDedicated->present == SoundingRS_UL_ConfigDedicated_PR_setup) {
+	    if (soundingRS_UL_ConfigDedicated->present == LTE_SoundingRS_UL_ConfigDedicated_PR_setup) {
 	      get_srs_pos(&cc[CC_id],
 			  soundingRS_UL_ConfigDedicated->choice.
 			  setup.srs_ConfigIndex,
@@ -163,7 +163,7 @@ schedule_CSI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
   COMMON_channels_t              *cc;
   nfapi_ul_config_request_body_t *ul_req;
   int                            CC_id, UE_id;
-  struct CQI_ReportPeriodic      *cqi_ReportPeriodic;
+  struct LTE_CQI_ReportPeriodic  *cqi_ReportPeriodic;
   uint16_t                       Npd, N_OFFSET_CQI;
   int                            H;
 
@@ -186,7 +186,7 @@ schedule_CSI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 
       if (UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->cqi_ReportConfig) {
 	if ((cqi_ReportPeriodic = UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->cqi_ReportConfig->cqi_ReportPeriodic) != NULL
-	    && (cqi_ReportPeriodic->present != CQI_ReportPeriodic_PR_release)) {
+	    && (cqi_ReportPeriodic->present != LTE_CQI_ReportPeriodic_PR_release)) {
 	  //Rel8 Periodic CQI/PMI/RI reporting
 
 	  get_csi_params(cc, cqi_ReportPeriodic, &Npd,
@@ -210,7 +210,7 @@ schedule_CSI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 	    ul_req->number_of_pdus++;
 	    ul_req->tl.tag                                                                   = NFAPI_UL_CONFIG_REQUEST_BODY_TAG;
 
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 	    // PUT rel10-13 UCI options here
 #endif
 	  } else
@@ -246,7 +246,7 @@ schedule_SR(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
   nfapi_ul_config_request_body_t *ul_req_body;
   int                            CC_id;
   int                            UE_id;
-  SchedulingRequestConfig_t      *SRconfig;
+  LTE_SchedulingRequestConfig_t  *SRconfig;
   int                            skip_ue;
   int                            is_harq;
   nfapi_ul_config_sr_information sr;
@@ -270,7 +270,7 @@ schedule_SR(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
 		  UE_id);
 
       if ((SRconfig = UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->schedulingRequestConfig) != NULL) {
-	if (SRconfig->present == SchedulingRequestConfig_PR_setup) {
+	if (SRconfig->present == LTE_SchedulingRequestConfig_PR_setup) {
 	  if (SRconfig->choice.setup.sr_ConfigIndex <= 4) {	// 5 ms SR period
 	    if ((subframeP % 5) != SRconfig->choice.setup.sr_ConfigIndex) continue;
 	  } else if (SRconfig->choice.setup.sr_ConfigIndex <= 14) {	// 10 ms SR period
@@ -313,7 +313,7 @@ schedule_SR(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
       LOG_D(MAC,"Frame %d, Subframe %d : Scheduling SR for UE %d/%x is_harq:%d\n",frameP,subframeP,UE_id,UE_list->UE_template[CC_id][UE_id].rnti, is_harq);
 
       // check Rel10 or Rel8 SR
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
       if ((UE_list-> UE_template[CC_id][UE_id].physicalConfigDedicated->ext2)
 	  && (UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->ext2->schedulingRequestConfig_v1020)
 	  && (UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->ext2->schedulingRequestConfig_v1020)) {
@@ -519,7 +519,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
     memset(cc[CC_id].vrb_map_UL, 0, 100);
 
 
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     cc[CC_id].mcch_active        = 0;
 #endif
 
@@ -630,7 +630,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
   rrc_rx_tx(&ctxt, CC_id);
 #endif
 
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     if (cc[CC_id].MBMS_flag > 0) {
@@ -662,7 +662,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
 
   if ((subframeP == 0) && (frameP & 3) == 0)
       schedule_mib(module_idP, frameP, subframeP);
-  if (phy_test == 0){
+  if (get_softmodem_params()->phy_test == 0){
     // This schedules SI for legacy LTE and eMTC starting in subframeP
     schedule_SI(module_idP, frameP, subframeP);
     // This schedules Paging in subframeP

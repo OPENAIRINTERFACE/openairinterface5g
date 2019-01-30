@@ -299,7 +299,7 @@ typedef enum {
 #define ENB_CONFIG_STRING_PUCCH_DELTA_SHIFT                             "pucch_delta_shift"
 #define ENB_CONFIG_STRING_PUCCH_NRB_CQI                                 "pucch_nRB_CQI"
 #define ENB_CONFIG_STRING_PUCCH_NCS_AN                                  "pucch_nCS_AN"
-//#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+//#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 #define ENB_CONFIG_STRING_PUCCH_N1_AN                                   "pucch_n1_AN"
 //#endif
 #define ENB_CONFIG_STRING_PDSCH_RS_EPRE                                 "pdsch_referenceSignalPower"

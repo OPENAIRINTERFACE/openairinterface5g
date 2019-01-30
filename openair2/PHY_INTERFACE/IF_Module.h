@@ -76,7 +76,7 @@ typedef struct{
   /// RACH indication list
   nfapi_rach_indication_t rach_ind;
 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// RACH indication list for BR UEs
   nfapi_rach_indication_t rach_ind_br;
 #endif
@@ -127,6 +127,17 @@ typedef struct IF_Module_s{
   uint8_t current_subframe;
   pthread_mutex_t if_mutex;
 }IF_Module_t;
+
+// These mutex is used for multiple UEs L2 FAPI simulator.
+// Each UEs set these value in UL and UL_INFO is shared in all UE's thread.
+typedef struct {
+  pthread_mutex_t rx_mutex;
+  pthread_mutex_t crc_mutex;
+  pthread_mutex_t sr_mutex;
+  pthread_mutex_t harq_mutex;
+  pthread_mutex_t cqi_mutex;
+  pthread_mutex_t rach_mutex;
+}FILL_UL_INFO_MUTEX_t;
 
 /*Initial */
 IF_Module_t *IF_Module_init(int Mod_id);

@@ -47,7 +47,7 @@ Description Implements the EPS Mobility Management procedures executed
 #include "commonDef.h"
 #include "networkDef.h"
 #include "nas_log.h"
-
+#include "targets/RT/USER/lte-softmodem.h"
 #include "emm_proc.h"
 
 #include <assert.h>
@@ -55,7 +55,7 @@ Description Implements the EPS Mobility Management procedures executed
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
 /****************************************************************************/
-extern uint8_t usim_test;
+
 
 /****************************************************************************/
 /*******************  L O C A L    D E F I N I T I O N S  *******************/
@@ -110,7 +110,7 @@ int EmmDeregisteredNormalService(nas_user_t *user, const emm_reg_t *evt)
     /*
      * Initiate the attach procedure for EPS services
      */
-    if(usim_test == 0)
+    if(get_softmodem_params()->usim_test == 0)
     {
       rc = emm_proc_attach(user, EMM_ATTACH_TYPE_EPS);
     }

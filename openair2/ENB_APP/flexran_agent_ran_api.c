@@ -157,7 +157,7 @@ rlc_buffer_occupancy_t flexran_get_tx_queue_size(mid_t mod_id, mid_t ue_id, logi
   frame_t frame = flexran_get_current_frame(mod_id);
   sub_frame_t subframe = flexran_get_current_subframe(mod_id);
   mac_rlc_status_resp_t rlc_status = mac_rlc_status_ind(mod_id,rnti, mod_id, frame, subframe, ENB_FLAG_YES,MBMS_FLAG_NO, channel_id, 0
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                                     ,0, 0
 #endif
                                                     );
@@ -170,7 +170,7 @@ rlc_buffer_occupancy_t flexran_get_num_pdus_buffer(mid_t mod_id, mid_t ue_id, lo
   frame_t frame = flexran_get_current_frame(mod_id);
   sub_frame_t subframe = flexran_get_current_subframe(mod_id);
   mac_rlc_status_resp_t rlc_status = mac_rlc_status_ind(mod_id,rnti, mod_id, frame, subframe, ENB_FLAG_YES,MBMS_FLAG_NO, channel_id, 0
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                                     ,0, 0
 #endif
                                                     );
@@ -183,7 +183,7 @@ frame_t flexran_get_hol_delay(mid_t mod_id, mid_t ue_id, logical_chan_id_t chann
   frame_t frame = flexran_get_current_frame(mod_id);
   sub_frame_t subframe = flexran_get_current_subframe(mod_id);
   mac_rlc_status_resp_t rlc_status = mac_rlc_status_ind(mod_id, rnti, mod_id, frame, subframe, ENB_FLAG_YES, MBMS_FLAG_NO, channel_id, 0
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                                     ,0, 0
 #endif
                                                     );
@@ -719,7 +719,7 @@ uint8_t flexran_get_num_pdcch_symb(mid_t mod_id, uint8_t cc_id)
  */
 
 
-TimeAlignmentTimer_t flexran_get_time_alignment_timer(mid_t mod_id, mid_t ue_id)
+LTE_TimeAlignmentTimer_t flexran_get_time_alignment_timer(mid_t mod_id, mid_t ue_id)
 {
   if (!rrc_is_present(mod_id)) return -1;
 
@@ -740,11 +740,11 @@ Protocol__FlexMeasGapConfigPattern flexran_get_meas_gap_config(mid_t mod_id, mid
 
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measGapConfig) return -1;
-  if (ue_context_p->ue_context.measGapConfig->present != MeasGapConfig_PR_setup) return -1;
+  if (ue_context_p->ue_context.measGapConfig->present != LTE_MeasGapConfig_PR_setup) return -1;
   switch (ue_context_p->ue_context.measGapConfig->choice.setup.gapOffset.present) {
-  case MeasGapConfig__setup__gapOffset_PR_gp0:
+  case LTE_MeasGapConfig__setup__gapOffset_PR_gp0:
     return PROTOCOL__FLEX_MEAS_GAP_CONFIG_PATTERN__FLMGCP_GP1;
-  case MeasGapConfig__setup__gapOffset_PR_gp1:
+  case LTE_MeasGapConfig__setup__gapOffset_PR_gp1:
     return PROTOCOL__FLEX_MEAS_GAP_CONFIG_PATTERN__FLMGCP_GP2;
   default:
     return PROTOCOL__FLEX_MEAS_GAP_CONFIG_PATTERN__FLMGCP_OFF;
@@ -761,11 +761,11 @@ long flexran_get_meas_gap_config_offset(mid_t mod_id, mid_t ue_id)
 
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measGapConfig) return -1;
-  if (ue_context_p->ue_context.measGapConfig->present != MeasGapConfig_PR_setup) return -1;
+  if (ue_context_p->ue_context.measGapConfig->present != LTE_MeasGapConfig_PR_setup) return -1;
   switch (ue_context_p->ue_context.measGapConfig->choice.setup.gapOffset.present) {
-  case MeasGapConfig__setup__gapOffset_PR_gp0:
+  case LTE_MeasGapConfig__setup__gapOffset_PR_gp0:
     return ue_context_p->ue_context.measGapConfig->choice.setup.gapOffset.choice.gp0;
-  case MeasGapConfig__setup__gapOffset_PR_gp1:
+  case LTE_MeasGapConfig__setup__gapOffset_PR_gp1:
     return ue_context_p->ue_context.measGapConfig->choice.setup.gapOffset.choice.gp1;
   default:
     return -1;
@@ -804,7 +804,7 @@ int flexran_get_half_duplex(mid_t mod_id, mid_t ue_id)
 
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.UE_Capability) return -1;
-  SupportedBandListEUTRA_t *bands = &ue_context_p->ue_context.UE_Capability->rf_Parameters.supportedBandListEUTRA;
+  LTE_SupportedBandListEUTRA_t *bands = &ue_context_p->ue_context.UE_Capability->rf_Parameters.supportedBandListEUTRA;
   for (int i = 0; i < bands->list.count; i++) {
     if (bands->list.array[i]->halfDuplex > 0) return 1;
   }
@@ -976,7 +976,7 @@ BOOLEAN_t flexran_get_ack_nack_simultaneous_trans(mid_t mod_id, mid_t ue_id, uin
   return RC.rrc[mod_id]->carrier[cc_id].sib2->radioResourceConfigCommon.soundingRS_UL_ConfigCommon.choice.setup.ackNackSRS_SimultaneousTransmission;
 }
 
-CQI_ReportModeAperiodic_t flexran_get_aperiodic_cqi_rep_mode(mid_t mod_id,mid_t ue_id)
+LTE_CQI_ReportModeAperiodic_t flexran_get_aperiodic_cqi_rep_mode(mid_t mod_id,mid_t ue_id)
 {
   if (!rrc_is_present(mod_id)) return -1;
 
@@ -1041,9 +1041,9 @@ int flexran_get_ue_transmission_antenna(mid_t mod_id, mid_t ue_id)
   if (!ue_context_p->ue_context.physicalConfigDedicated) return -1;
   if (!ue_context_p->ue_context.physicalConfigDedicated->antennaInfo) return -1;
   switch (ue_context_p->ue_context.physicalConfigDedicated->antennaInfo->choice.explicitValue.ue_TransmitAntennaSelection.choice.setup) {
-  case AntennaInfoDedicated__ue_TransmitAntennaSelection__setup_closedLoop:
+  case LTE_AntennaInfoDedicated__ue_TransmitAntennaSelection__setup_closedLoop:
     return 2;
-  case AntennaInfoDedicated__ue_TransmitAntennaSelection__setup_openLoop:
+  case LTE_AntennaInfoDedicated__ue_TransmitAntennaSelection__setup_openLoop:
     return 1;
   default:
     return 0;
@@ -1365,7 +1365,7 @@ uint32_t flexran_get_pdcp_rx_oo(mid_t mod_id, mid_t ue_id, lcid_t lcid)
 
 /******************** RRC *****************************/
 
-MeasId_t flexran_get_rrc_pcell_measid(mid_t mod_id, mid_t ue_id)
+LTE_MeasId_t flexran_get_rrc_pcell_measid(mid_t mod_id, mid_t ue_id)
 {
   if (!rrc_is_present(mod_id)) return -1;
 
@@ -1412,11 +1412,11 @@ int flexran_get_rrc_num_ncell(mid_t mod_id, mid_t ue_id)
   if (!ue_context_p) return 0;
   if (!ue_context_p->ue_context.measResults) return 0;
   if (!ue_context_p->ue_context.measResults->measResultNeighCells) return 0;
-  if (ue_context_p->ue_context.measResults->measResultNeighCells->present != MeasResults__measResultNeighCells_PR_measResultListEUTRA) return 0;
+  if (ue_context_p->ue_context.measResults->measResultNeighCells->present != LTE_MeasResults__measResultNeighCells_PR_measResultListEUTRA) return 0;
   return ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.count;
 }
 
-PhysCellId_t flexran_get_rrc_neigh_phy_cell_id(mid_t mod_id, mid_t ue_id, int cell_id)
+LTE_PhysCellId_t flexran_get_rrc_neigh_phy_cell_id(mid_t mod_id, mid_t ue_id, int cell_id)
 {
   if (!rrc_is_present(mod_id)) return -1;
 
@@ -1426,7 +1426,7 @@ PhysCellId_t flexran_get_rrc_neigh_phy_cell_id(mid_t mod_id, mid_t ue_id, int ce
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measResults) return -1;
   if (!ue_context_p->ue_context.measResults->measResultNeighCells) return -1;
-  if (ue_context_p->ue_context.measResults->measResultNeighCells->present != MeasResults__measResultNeighCells_PR_measResultListEUTRA) return -1;
+  if (ue_context_p->ue_context.measResults->measResultNeighCells->present != LTE_MeasResults__measResultNeighCells_PR_measResultListEUTRA) return -1;
   if (!ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[cell_id]) return -1;
   return ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[cell_id]->physCellId;
 }
@@ -1441,7 +1441,7 @@ float flexran_get_rrc_neigh_rsrp(mid_t mod_id, mid_t ue_id, int cell_id)
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measResults) return -1;
   if (!ue_context_p->ue_context.measResults->measResultNeighCells) return -1;
-  if (ue_context_p->ue_context.measResults->measResultNeighCells->present != MeasResults__measResultNeighCells_PR_measResultListEUTRA) return -1;
+  if (ue_context_p->ue_context.measResults->measResultNeighCells->present != LTE_MeasResults__measResultNeighCells_PR_measResultListEUTRA) return -1;
   if (!ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[cell_id]) return -1;
   if (!ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[cell_id]->measResult.rsrpResult) return 0;
   return RSRP_meas_mapping[*(ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[cell_id]->measResult.rsrpResult)];
@@ -1457,7 +1457,7 @@ float flexran_get_rrc_neigh_rsrq(mid_t mod_id, mid_t ue_id, int cell_id)
   if (!ue_context_p) return -1;
   if (!ue_context_p->ue_context.measResults) return -1;
   if (!ue_context_p->ue_context.measResults->measResultNeighCells) return -1;
-  if (ue_context_p->ue_context.measResults->measResultNeighCells->present != MeasResults__measResultNeighCells_PR_measResultListEUTRA) return -1;
+  if (ue_context_p->ue_context.measResults->measResultNeighCells->present != LTE_MeasResults__measResultNeighCells_PR_measResultListEUTRA) return -1;
   if (!ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[cell_id]->measResult.rsrqResult) return 0;
   return RSRQ_meas_mapping[*(ue_context_p->ue_context.measResults->measResultNeighCells->choice.measResultListEUTRA.list.array[cell_id]->measResult.rsrqResult)];
 }
