@@ -220,7 +220,7 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
   RU_proc_t *proc = &ru->proc;
   int f,sf;
 
-LOG_I(PHY,"ENTERED fh_if4p5_south_in\n");
+ // LOG_I(PHY,"ENTERED fh_if4p5_south_in\n");
   uint16_t packet_type;
   uint32_t symbol_number=0;
   uint32_t symbol_mask_full;
@@ -229,7 +229,7 @@ LOG_I(PHY,"ENTERED fh_if4p5_south_in\n");
     symbol_mask_full = (1<<fp->ul_symbols_in_S_subframe)-1;   
   else     
     symbol_mask_full = (1<<fp->symbols_per_tti)-1; 
-  LOG_I(PHY,"fh_if4p5_south_in: RU %d, frame %d, subframe %d, ru %d\n",ru->idx,*frame,*subframe,ru->idx);
+  LOG_D(PHY,"fh_if4p5_south_in: RU %d, frame %d, subframe %d, ru %d\n",ru->idx,*frame,*subframe,ru->idx);
   AssertFatal(proc->symbol_mask[*subframe]==0,"rx_fh_if4p5: proc->symbol_mask[%d] = %x\n",*subframe,proc->symbol_mask[*subframe]);
   do {
     recv_IF4p5(ru, &f, &sf, &packet_type, &symbol_number);
@@ -1154,9 +1154,8 @@ void wakeup_L1s(RU_t *ru) {
   L1_proc_t *proc      = &eNB->proc;
   RU_proc_t  *ruproc    = &ru->proc;
   struct timespec t;
-  LOG_D(PHY,"wakeup_eNBs (num %d) for RU %d (state %s)ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru_states[ru->state],ru->eNB_top);
 
-  LOG_I(PHY,"wakeup_L1s (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
+  LOG_D(PHY,"wakeup_L1s (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
 
 
     // call eNB function directly
@@ -1226,12 +1225,13 @@ void wakeup_L1s(RU_t *ru) {
             }
          }
       }
+/*
       AssertFatal(0==pthread_mutex_lock(&ruproc->mutex_eNBs),"");
       LOG_D(PHY,"RU %d sending signal to unlock waiting ru_threads\n", ru->idx);
       AssertFatal(0==pthread_cond_broadcast(&ruproc->cond_eNBs),"");
       if (ruproc->instance_cnt_eNBs==-1) ruproc->instance_cnt_eNBs++;
       AssertFatal(0==pthread_mutex_unlock(&ruproc->mutex_eNBs),"");
- 
+*/ 
 
     }
     else 
@@ -1522,7 +1522,7 @@ static void* ru_thread_tx( void* param ) {
     LOG_D(PHY,"ru_thread_tx: Waiting for TX processing\n");
     // wait until eNBs are finished subframe RX n and TX n+4
     wait_on_condition(&proc->mutex_eNBs,&proc->cond_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
-    LOG_I(PHY,"ru_thread_tx (ru %d): Woken from condition\n",ru->idx);
+    LOG_D(PHY,"ru_thread_tx (ru %d): Woken from condition\n",ru->idx);
     if (oai_exit) break;
   	       
     // do TX front-end processing if needed (precoding and/or IDFTs)
@@ -1537,7 +1537,7 @@ static void* ru_thread_tx( void* param ) {
       if (ru->fh_north_out) ru->fh_north_out(ru);
 	}
     release_thread(&proc->mutex_eNBs,&proc->instance_cnt_eNBs,"ru_thread_tx");
-    
+    LOG_D(PHY,"Releasing RU %d after processing, checking masks\n",ru->idx); 
     for(int i = 0; i<ru->num_eNB; i++)
     {
       eNB       = ru->eNB_list[i];
@@ -1553,6 +1553,7 @@ static void* ru_thread_tx( void* param ) {
           eNB_proc->RU_mask_tx |= (1<<j);
         }
       }
+      LOG_D(PHY,"ru_thread_tx: RU_mask_tx is now %d\n",eNB_proc->RU_mask_tx);
       if (eNB_proc->RU_mask_tx != (1<<eNB->num_RU)-1) {  // not all RUs have provided their information so return
         pthread_mutex_unlock(&eNB_proc->mutex_RU_tx);
       }
@@ -1563,6 +1564,7 @@ static void* ru_thread_tx( void* param ) {
         pthread_mutex_lock( &L1_proc->mutex_RUs);
         L1_proc->instance_cnt_RUs = 0;
         // the thread can now be woken up
+        LOG_D(PHY,"ru_thread_tx: clearing mask and Waking up L1 thread\n"); 
         if (pthread_cond_signal(&L1_proc->cond_RUs) != 0) {
           LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB TXnp4 thread\n");
           exit_fun( "ERROR pthread_cond_signal" );
