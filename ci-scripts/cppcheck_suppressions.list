@@ -1,6 +1,13 @@
-// suppress error about keysP not free, it is done by calling func */
-memleak:common/utils/hashtable/obj_hashtable.c
+// suppress error about keysP memory leak, free must be done by calling func */
+memleak:
+common/utils/hashtable/obj_hashtable.c
+// suppress error about keys memory leak, free must be done by calling func */
+memleak:
+openair2/UTIL/OMG/omg_hashtable.c
 // followings errors are in file not used in oai exec's included in CI
-invalidPrintfArgType_sint:openair1/PHY/CODING/TESTBENCH/ltetest.c
-memleak:openair1/PHY/CODING/TESTBENCH/ltetest.c
-invalidPrintfArgType_sint:openair1/PHY/CODING/TESTBENCH/pdcch_test.c
+invalidPrintfArgType_sint:
+openair1/PHY/CODING/TESTBENCH/ltetest.c
+memleak:
+openair1/PHY/CODING/TESTBENCH/ltetest.c
+invalidPrintfArgType_sint:
+openair1/PHY/CODING/TESTBENCH/pdcch_test.c

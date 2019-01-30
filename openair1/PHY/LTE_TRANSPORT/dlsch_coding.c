@@ -95,7 +95,6 @@ void free_eNB_dlsch(LTE_eNB_DLSCH_t *dlsch) {
     }
 
     free16(dlsch,sizeof(LTE_eNB_DLSCH_t));
-    dlsch = NULL;
   }
 }
 

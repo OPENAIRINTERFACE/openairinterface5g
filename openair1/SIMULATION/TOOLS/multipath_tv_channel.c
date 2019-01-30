@@ -37,24 +37,18 @@ void multipath_tv_channel(channel_desc_t *desc,
                           double **rx_sig_re,
                           double **rx_sig_im,
                           uint16_t length,
-                          uint8_t keep_channel)
-{
-
-  double complex **tx,**rx,***H_t,*rx_temp;//, *tv_H_t;
+                          uint8_t keep_channel) {
+  double complex **tx,**rx,* **H_t,*rx_temp; //, *tv_H_t;
   double path_loss = pow(10,desc->path_loss_dB/20);
   int i,j,k,dd;
-
   dd = abs(desc->channel_offset);
-
 #ifdef DEBUG_CH
   printf("[TV CHANNEL] keep = %d : path_loss = %g (%f), nb_rx %d, nb_tx %d, dd %d, len %d max_doppler %d\n",keep_channel,path_loss,desc->path_loss_dB,desc->nb_rx,desc->nb_tx,dd,desc->channel_length,
          desc->max_Doppler);
 #endif
-
   tx = (double complex **)malloc(desc->nb_tx*sizeof(double complex));
   rx = (double complex **)malloc(desc->nb_rx*sizeof(double complex));
-
-  H_t= (double complex ***) malloc(desc->nb_tx*desc->nb_rx*sizeof(double complex **));
+  H_t= (double complex ** *) malloc(desc->nb_tx*desc->nb_rx*sizeof(double complex **));
   //  tv_H_t = (double complex *) malloc(length*sizeof(double complex));
   rx_temp= (double complex *) calloc(length,sizeof(double complex));
 
@@ -128,17 +122,13 @@ void multipath_tv_channel(channel_desc_t *desc,
   }
 
   free(H_t);
-
   free(rx_temp);
 }
 
 //TODO: make phi_rad a parameter of this function
-void tv_channel(channel_desc_t *desc,double complex ***H,uint16_t length)
-{
-
+void tv_channel(channel_desc_t *desc,double complex ***H,uint16_t length) {
   int i,j,p,l,k;
   double *alpha,*phi_rad,pi=acos(-1),*w_Hz;
-
   alpha = (double *)calloc(desc->nb_paths,sizeof(double));
   phi_rad = (double *)calloc(desc->nb_paths,sizeof(double));
   w_Hz = (double *)calloc(desc->nb_paths,sizeof(double));
@@ -203,21 +193,17 @@ void tv_channel(channel_desc_t *desc,double complex ***H,uint16_t length)
 }
 
 // time varying convolution
-void tv_conv(double complex **h, double complex *x, double complex *y, uint16_t nb_samples, uint8_t nb_taps, int dd)
-{
-
+void tv_conv(double complex **h, double complex *x, double complex *y, uint16_t nb_samples, uint8_t nb_taps, int dd) {
   int i,j;
 
   for(i=0; i<((int)nb_samples-dd); i++) {
     for(j=0; j<nb_taps; j++) {
       if(i>j)
         y[i+dd] += creal(h[i][j])*creal(x[i-j])-cimag(h[i][j])*cimag(x[i-j]) + I*(creal(h[i][j])*cimag(x[i-j])+cimag(h[i][j])*creal(x[i-j]));
-
     }
   }
 }
 
-double frand_a_b(double a, double b)
-{
+double frand_a_b(double a, double b) {
   return (rand()/(double)RAND_MAX)*(b-a)+a;
 }

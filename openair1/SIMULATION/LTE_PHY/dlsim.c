@@ -580,7 +580,7 @@ int main(int argc, char **argv) {
   int dci_received;
   PHY_VARS_eNB *eNB;
   RU_t *ru;
-  PHY_VARS_UE *UE;
+  PHY_VARS_UE *UE=NULL;
   nfapi_dl_config_request_t DL_req;
   nfapi_ul_config_request_t UL_req;
   nfapi_hi_dci0_request_t HI_DCI0_req;
@@ -782,9 +782,13 @@ int main(int argc, char **argv) {
         break;
 
       case 'u':
-        dual_stream_UE=1;
-        UE->use_ia_receiver = 1;
-
+        dual_stream_UE=1; 
+	if (UE != NULL)
+           UE->use_ia_receiver = 1;
+        else {
+          printf("UE  is NULL\n");
+          exit(-1);	
+	}
         if ((n_tx_port!=2) || (transmission_mode!=5)) {
           printf("IA receiver only supported for TM5!");
           exit(-1);
@@ -941,10 +945,15 @@ int main(int argc, char **argv) {
     fl_show_form (form_ue->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
 
     if (!dual_stream_UE==0) {
-      UE->use_ia_receiver = 1;
-      fl_set_button(form_ue->button_0,1);
-      fl_set_object_label(form_ue->button_0, "IA Receiver ON");
-      fl_set_object_color(form_ue->button_0, FL_GREEN, FL_GREEN);
+      if (UE) {
+        UE->use_ia_receiver = 1;
+        fl_set_button(form_ue->button_0,1);
+        fl_set_object_label(form_ue->button_0, "IA Receiver ON");
+        fl_set_object_color(form_ue->button_0, FL_GREEN, FL_GREEN);
+      } else {
+          printf("UE  is NULL\n");
+          exit(-1);	
+      }
     }
   }
 

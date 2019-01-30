@@ -405,7 +405,6 @@ int main(int argc, char **argv) {
   cpu_freq_GHz = (double)get_cpu_freq_GHz();
   cpuf = cpu_freq_GHz;
   set_parallel_conf("PARALLEL_SINGLE_THREAD");
-
   printf("Detected cpu_freq %f GHz\n",cpu_freq_GHz);
   AssertFatal(load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) != NULL,
               "cannot load configuration module, exiting\n");
@@ -456,10 +455,8 @@ int main(int argc, char **argv) {
     { "help", "display help and exit", PARAMFLAG_BOOL,  iptr:&help, defintval:0, TYPE_INT, 0 },
     { "", "",0,  iptr:NULL, defintval:0, TYPE_INT, 0 },
   };
-  struct option * long_options = parse_oai_options(options); 
-
+  struct option *long_options = parse_oai_options(options);
   int option_index;
-
   int res;
 
   while ((res=getopt_long_only(argc, argv, "", long_options, &option_index)) == 0) {
@@ -467,125 +464,125 @@ int main(int argc, char **argv) {
       if (long_options[option_index].has_arg==no_argument)
         *(bool *)options[option_index].iptr=1;
       else switch (options[option_index].type) {
-	case TYPE_INT:
-	  *(int *)options[option_index].iptr=atoi(optarg);
-	  break;
+          case TYPE_INT:
+            *(int *)options[option_index].iptr=atoi(optarg);
+            break;
 
-	case TYPE_DOUBLE:
-	  *(double *)options[option_index].dblptr=atof(optarg);
-	  break;
+          case TYPE_DOUBLE:
+            *(double *)options[option_index].dblptr=atof(optarg);
+            break;
 
-	case TYPE_UINT8:
-	  *(uint8_t *)options[option_index].dblptr=atoi(optarg);
-	  break;
-	  	    
-	case TYPE_UINT16:
-	  *(uint16_t *)options[option_index].dblptr=atoi(optarg);
-	  break;
-	  
-	default:
-	  printf("not decoded type.\n");
-	  exit(1);
+          case TYPE_UINT8:
+            *(uint8_t *)options[option_index].dblptr=atoi(optarg);
+            break;
+
+          case TYPE_UINT16:
+            *(uint16_t *)options[option_index].dblptr=atoi(optarg);
+            break;
+
+          default:
+            printf("not decoded type.\n");
+            exit(1);
         }
 
       continue;
     }
 
     switch (long_options[option_index].name[0]) {
-    case 'T':
-      tdd_config=atoi(optarg);
-      frame_type=TDD;
-      break;
+      case 'T':
+        tdd_config=atoi(optarg);
+        frame_type=TDD;
+        break;
 
-    case 'a':
-      channel_model = AWGN;
-      chMod = 1;
-      break;
+      case 'a':
+        channel_model = AWGN;
+        chMod = 1;
+        break;
 
-    case 'g':
-      strncpy(channel_model_input,optarg,9);
-      struct tmp {
-	char opt;
-	int m;
-	int M;
-      }
-      tmp[]= {
-	{'A',SCM_A,2},
-	{'B',SCM_B,3},
-	{'C',SCM_C,4},
-	{'D',SCM_D,5},
-	{'E',EPA,6},
-	{'G',ETU,8},
-	{'H',Rayleigh8,9},
-	{'I',Rayleigh1,10},
-	{'J',Rayleigh1_corr,11},
-	{'K',Rayleigh1_anticorr,12},
-	{'L',Rice8,13},
-	{'M',Rice1,14},
-	{'N',AWGN,1},
-	{0,0,0}
-      };
-      struct tmp *ptr;
+      case 'g':
+        strncpy(channel_model_input,optarg,9);
+        struct tmp {
+          char opt;
+          int m;
+          int M;
+        }
+        tmp[]= {
+          {'A',SCM_A,2},
+          {'B',SCM_B,3},
+          {'C',SCM_C,4},
+          {'D',SCM_D,5},
+          {'E',EPA,6},
+          {'G',ETU,8},
+          {'H',Rayleigh8,9},
+          {'I',Rayleigh1,10},
+          {'J',Rayleigh1_corr,11},
+          {'K',Rayleigh1_anticorr,12},
+          {'L',Rice8,13},
+          {'M',Rice1,14},
+          {'N',AWGN,1},
+          {0,0,0}
+        };
+        struct tmp *ptr;
 
-      for (ptr=tmp; ptr->opt!=0; ptr++)
-	if ( ptr->opt == optarg[0] ) {
-	  channel_model=ptr->m;
-	  chMod=ptr->M;
-	  break;
-	}
+        for (ptr=tmp; ptr->opt!=0; ptr++)
+          if ( ptr->opt == optarg[0] ) {
+            channel_model=ptr->m;
+            chMod=ptr->M;
+            break;
+          }
 
-      AssertFatal(ptr->opt != 0, "Unsupported channel model: %s !\n", optarg );
-      break;
+        AssertFatal(ptr->opt != 0, "Unsupported channel model: %s !\n", optarg );
+        break;
 
-    case 'x':
-      transmission_m=atoi(optarg);
-      AssertFatal(transmission_m==1 || transmission_m==2,
-		  "Unsupported transmission mode %d\n",transmission_m);
-      break;
+      case 'x':
+        transmission_m=atoi(optarg);
+        AssertFatal(transmission_m==1 || transmission_m==2,
+                    "Unsupported transmission mode %d\n",transmission_m);
+        break;
 
-    case 'r':
-      nb_rb = atoi(optarg);
-      nb_rb_set = 1;
-      break;
+      case 'r':
+        nb_rb = atoi(optarg);
+        nb_rb_set = 1;
+        break;
 
       //case 'c':
       //  cyclic_shift = atoi(optarg);
       //  break;
 
-    case 'i':
-      input_fdUL = fopen(optarg,"r");
-      printf("Reading in %s (%p)\n",optarg,input_fdUL);
-      AssertFatal(input_fdUL != (FILE *)NULL,"Unknown file %s\n",optarg);
-      break;
+      case 'i':
+        input_fdUL = fopen(optarg,"r");
+        printf("Reading in %s (%p)\n",optarg,input_fdUL);
+        AssertFatal(input_fdUL != (FILE *)NULL,"Unknown file %s\n",optarg);
+        break;
 
-    case 'A':
-      beta_ACK = atoi(optarg);
-      AssertFatal(beta_ACK>15,"beta_ack must be in (0..15)\n");
-      break;
+      case 'A':
+        beta_ACK = atoi(optarg);
+        AssertFatal(beta_ACK>15,"beta_ack must be in (0..15)\n");
+        break;
 
-    case 'C':
-      beta_CQI = atoi(optarg);
-      AssertFatal((beta_CQI>15)||(beta_CQI<2),"beta_cqi must be in (2..15)\n");
-      break;
+      case 'C':
+        beta_CQI = atoi(optarg);
+        AssertFatal((beta_CQI>15)||(beta_CQI<2),"beta_cqi must be in (2..15)\n");
+        break;
 
-    case 'R':
-      beta_RI = atoi(optarg);
-      AssertFatal((beta_RI>15)||(beta_RI<2),"beta_ri must be in (0..13)\n");
-      break;
+      case 'R':
+        beta_RI = atoi(optarg);
+        AssertFatal((beta_RI>15)||(beta_RI<2),"beta_ri must be in (0..13)\n");
+        break;
 
-    case 'P':
-      dump_perf=1;
-      opp_enabled=1;
-      break;
+      case 'P':
+        dump_perf=1;
+        opp_enabled=1;
+        break;
 
-    case 'L':
-      set_parallel_conf(optarg);
-      break;
-      
-    default:
-      printf("Wrong option: %s\n",long_options[option_index].name);
-      exit(1);
-      break;
+      case 'L':
+        set_parallel_conf(optarg);
+        break;
+
+      default:
+        printf("Wrong option: %s\n",long_options[option_index].name);
+        exit(1);
+        break;
     }
   }
 
@@ -594,14 +591,15 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-
   if (help || verbose )
-     display_options_values(options, true);
+    display_options_values(options, true);
+
   if (help)
     exit(0);
-  
+
   if (thread_struct.parallel_conf != PARALLEL_SINGLE_THREAD)
     set_worker_conf("WORKER_ENABLE");
+
   RC.nb_L1_inst = 1;
   RC.nb_RU = 1;
   lte_param_init(&eNB,&UE,&ru,
@@ -619,7 +617,7 @@ int main(int argc, char **argv) {
                  threequarter_fs,
                  osf,
                  0);
-  RC.eNB = (PHY_VARS_eNB ***)malloc(sizeof(PHY_VARS_eNB **));
+  RC.eNB = (PHY_VARS_eNB ** *)malloc(sizeof(PHY_VARS_eNB **));
   RC.eNB[0] = (PHY_VARS_eNB **)malloc(sizeof(PHY_VARS_eNB *));
   RC.ru = (RU_t **)malloc(sizeof(RC.ru));
   RC.eNB[0][0] = eNB;
@@ -637,7 +635,7 @@ int main(int argc, char **argv) {
   eNB->UL_INFO.cqi_ind.cqi_raw_pdu_list = eNB->cqi_raw_pdu_list;
   printf("lte_param_init done\n");
   // for a call to phy_reset_ue later we need PHY_vars_UE_g allocated and pointing to UE
-  PHY_vars_UE_g = (PHY_VARS_UE ***)malloc(sizeof(PHY_VARS_UE **));
+  PHY_vars_UE_g = (PHY_VARS_UE ** *)malloc(sizeof(PHY_VARS_UE **));
   PHY_vars_UE_g[0] = (PHY_VARS_UE **) malloc(sizeof(PHY_VARS_UE *));
   PHY_vars_UE_g[0][0] = UE;
 
@@ -1156,12 +1154,12 @@ int main(int argc, char **argv) {
             if (eNB->frame_parms.nb_antennas_rx>1) LOG_M("rxsig1UL.m","rxs1", &ru->common.rxdata[1][eNB->frame_parms.samples_per_tti*subframe],eNB->frame_parms.samples_per_tti,1,1);
           }
 
-	  start_meas(&eNB->phy_proc_rx);
+          start_meas(&eNB->phy_proc_rx);
           ru->feprx = (get_thread_worker_conf() == WORKER_ENABLE) ? ru_fep_full_2thread        : fep_full;
           ru->feprx(ru);
           phy_procedures_eNB_uespec_RX(eNB,proc_rxtx);
-	  stop_meas(&eNB->phy_proc_rx);
-	  
+          stop_meas(&eNB->phy_proc_rx);
+
           if (cqi_flag > 0) {
             cqi_error = 0;
 
@@ -1358,15 +1356,15 @@ int main(int argc, char **argv) {
         printStatIndent(&UE->ulsch_rate_matching_stats,"ULSCH rate-matching time");
         printStatIndent(&UE->ulsch_interleaving_stats,"ULSCH sub-block interleaving");
         printStatIndent(&UE->ulsch_multiplexing_stats,"ULSCH multiplexing time");
-	printf("\n");
+        printf("\n");
         printDistribution(&eNB->phy_proc_rx,table_rx,"Total PHY proc rx subframe");
         printDistribution(&ru->ofdm_demod_stats,table_rx_fft,"|__ OFDM_demod time");
         printDistribution(&eNB->ulsch_demodulation_stats,table_rx_demod,"|__ ULSCH demodulation time");
-	printDistribution(&eNB->ulsch_decoding_stats,table_rx_dec,"|__ ULSCH Decoding time");
+        printDistribution(&eNB->ulsch_decoding_stats,table_rx_dec,"|__ ULSCH Decoding time");
         printf("     (%.2f Mbit/s, avg iter %.2f, max %.2f)\n",
                UE->ulsch[0]->harq_processes[harq_pid]->TBS/1000.0,
-	       (double)iter_trials,
-	       (double)eNB->ulsch_decoding_stats.max*timeBase);
+               (double)iter_trials,
+               (double)eNB->ulsch_decoding_stats.max*timeBase);
         printStatIndent2(&eNB->ulsch_deinterleaving_stats,"sub-block interleaving" );
         printStatIndent2(&eNB->ulsch_demultiplexing_stats,"sub-block demultiplexing" );
         printStatIndent2(&eNB->ulsch_rate_unmatching_stats,"sub-block rate-matching" );
@@ -1463,34 +1461,34 @@ int main(int argc, char **argv) {
                );
         //fprintf(time_meas_fd,"UE_PROC_TX_STD;UE_PROC_TX_MAX;UE_PROC_TX_MIN;UE_PROC_TX_MED;UE_PROC_TX_Q1;UE_PROC_TX_Q3;UE_PROC_TX_DROPPED;\n");
         fprintf(time_meas_fd,"%f;%f;%f;%f;%f;%f;%d;",
-		squareRoot(&UE->phy_proc_tx), t_tx_max, t_tx_min, median(table_tx), q1(table_tx), q3(table_tx), n_tx_dropped);
+                squareRoot(&UE->phy_proc_tx), t_tx_max, t_tx_min, median(table_tx), q1(table_tx), q3(table_tx), n_tx_dropped);
         //fprintf(time_meas_fd,"IFFT;\n");
         fprintf(time_meas_fd,"%f;%f;%f;%f;",
-		squareRoot(&UE->ofdm_mod_stats),
+                squareRoot(&UE->ofdm_mod_stats),
                 median(table_tx_ifft),q1(table_tx_ifft),q3(table_tx_ifft));
         //fprintf(time_meas_fd,"MOD;\n");
         fprintf(time_meas_fd,"%f;%f;%f;%f;",
-		squareRoot(&UE->ulsch_modulation_stats),
+                squareRoot(&UE->ulsch_modulation_stats),
                 median(table_tx_mod), q1(table_tx_mod), q3(table_tx_mod));
         //fprintf(time_meas_fd,"ENC;\n");
         fprintf(time_meas_fd,"%f;%f;%f;%f;",
-		squareRoot(&UE->ulsch_encoding_stats),
+                squareRoot(&UE->ulsch_encoding_stats),
                 median(table_tx_enc),q1(table_tx_enc),q3(table_tx_enc));
         //fprintf(time_meas_fd,"eNB_PROC_RX_STD;eNB_PROC_RX_MAX;eNB_PROC_RX_MIN;eNB_PROC_RX_MED;eNB_PROC_RX_Q1;eNB_PROC_RX_Q3;eNB_PROC_RX_DROPPED;\n");
         fprintf(time_meas_fd,"%f;%f;%f;%f;%f;%f;%d;",
-		squareRoot(&eNB->phy_proc_rx), t_rx_max, t_rx_min,
+                squareRoot(&eNB->phy_proc_rx), t_rx_max, t_rx_min,
                 median(table_rx), q1(table_rx), q3(table_rx), n_rx_dropped);
         //fprintf(time_meas_fd,"FFT;\n");
         fprintf(time_meas_fd,"%f;%f;%f;%f;",
-		squareRoot(&ru->ofdm_demod_stats),
+                squareRoot(&ru->ofdm_demod_stats),
                 median(table_rx_fft), q1(table_rx_fft), q3(table_rx_fft));
         //fprintf(time_meas_fd,"DEMOD;\n");
         fprintf(time_meas_fd,"%f;%f;%f;%f;",
-		squareRoot(&eNB->ulsch_demodulation_stats),
+                squareRoot(&eNB->ulsch_demodulation_stats),
                 median(table_rx_demod), q1(table_rx_demod), q3(table_rx_demod));
         //fprintf(time_meas_fd,"DEC;\n");
         fprintf(time_meas_fd,"%f;%f;%f;%f\n",
-		squareRoot(&eNB->ulsch_decoding_stats),
+                squareRoot(&eNB->ulsch_decoding_stats),
                 median(table_rx_dec), q1(table_rx_dec), q3(table_rx_dec));
         printf("[passed] effective rate : %f  (%2.1f%%,%f)): log and break \n",rate*effective_rate, 100*effective_rate, rate );
         break;

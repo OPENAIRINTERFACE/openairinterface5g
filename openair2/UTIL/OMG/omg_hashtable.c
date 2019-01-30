@@ -43,8 +43,7 @@
  * @returns hash_table_element_t object when success
  * @returns NULL when no memory
  */
-hash_table_element_t * hash_table_element_new(void)
-{
+hash_table_element_t *hash_table_element_new(void) {
   //INFO("creating a new hash table element");
   return calloc(1, hash_table_element_s);
 }
@@ -54,8 +53,7 @@ hash_table_element_t * hash_table_element_new(void)
  * @param table table from which element has to be deleted
  * @param element hash table element to be deleted
  */
-void hash_table_element_delete(omg_hash_table_t * table, hash_table_element_t * element)
-{
+void hash_table_element_delete(omg_hash_table_t *table, hash_table_element_t *element) {
   //INFO("Deleting an hash table element");
   if (table->mode == MODE_COPY) {
     free(element->value);
@@ -74,8 +72,7 @@ void hash_table_element_delete(omg_hash_table_t * table, hash_table_element_t * 
  * @returns omg_hash_table_t object which references the hash table
  * @returns NULL when no memory
  */
-omg_hash_table_t * hash_table_new(hash_table_mode_t mode)
-{
+omg_hash_table_t *hash_table_new(hash_table_mode_t mode) {
   //INFO("Creating a new hash table");
   omg_hash_table_t *table = calloc(1, SIZEOF_HASH_TABLE);
 
@@ -102,14 +99,13 @@ omg_hash_table_t * hash_table_new(hash_table_mode_t mode)
  * Function to delete the hash table
  * @param table hash table to be deleted
  */
-void hash_table_delete(omg_hash_table_t * table)
-{
+void hash_table_delete(omg_hash_table_t *table) {
   //INFO("Deleating a hash table");
   size_t i=0;
 
   for (; i<HASH_LEN; i++) {
     while (table->store_house[i]) {
-      hash_table_element_t * temp = table->store_house[i];
+      hash_table_element_t *temp = table->store_house[i];
       table->store_house[i] = table->store_house[i]->next;
       hash_table_element_delete(table, temp);
     }
@@ -129,8 +125,7 @@ void hash_table_delete(omg_hash_table_t * table)
  * @returns 0 on sucess
  * @returns -1 when no memory
  */
-int hash_table_add(omg_hash_table_t * table, void * key, size_t key_len, void * value, size_t value_len)
-{
+int hash_table_add(omg_hash_table_t *table, void *key, size_t key_len, void *value, size_t value_len) {
   if ((table->key_count / table->key_num) >= table->key_ratio) {
     //LOG("Ratio(%d) reached the set limit %d\nExpanding hash_table", (table->key_count / table->key_num), table->key_ratio);
     hash_table_resize(table, table->key_num*2);
@@ -138,7 +133,7 @@ int hash_table_add(omg_hash_table_t * table, void * key, size_t key_len, void * 
   }
 
   size_t hash = HASH(key, key_len);
-  hash_table_element_t * element = hash_table_element_new();
+  hash_table_element_t *element = hash_table_element_new();
 
   if (!element) {
     //INFO("Cannot allocate memory for element");
@@ -197,7 +192,7 @@ int hash_table_add(omg_hash_table_t * table, void * key, size_t key_len, void * 
     table->key_count++;
   } else {
     //LOG("Conflicts adding element at %d", (int)hash);
-    hash_table_element_t * temp = table->store_house[hash];
+    hash_table_element_t *temp = table->store_house[hash];
 
     while(temp->next) {
       while(temp->next && temp->next->key_len!=key_len) {
@@ -234,8 +229,7 @@ int hash_table_add(omg_hash_table_t * table, void * key, size_t key_len, void * 
  * @returns 0 on sucess
  * @returns -1 when key is not found
  */
-int hash_table_remove(omg_hash_table_t * table, void * key, size_t key_len)
-{
+int hash_table_remove(omg_hash_table_t *table, void *key, size_t key_len) {
   //INFO("Deleting a key-value pair from the hash table");
   if ((table->key_num/ table->key_count) >= table->key_ratio) {
     //LOG("Ratio(%d) reached the set limit %d\nContracting hash_table", (table->key_num / table->key_count), table->key_ratio);
@@ -290,8 +284,7 @@ int hash_table_remove(omg_hash_table_t * table, void * key, size_t key_len)
  * @returns NULL when key is not found in the hash table
  * @returns void* pointer to the value in the table
  */
-void * hash_table_lookup(omg_hash_table_t * table, void * key, size_t key_len)
-{
+void *hash_table_lookup(omg_hash_table_t *table, void *key, size_t key_len) {
   size_t hash = HASH(key, key_len);
 
   //LOG("Looking up a key-value pair for hash -> %d", (int)hash);
@@ -328,8 +321,7 @@ void * hash_table_lookup(omg_hash_table_t * table, void * key, size_t key_len)
  * @returns 0 when key is not found
  * @returns 1 when key is found
  */
-int hash_table_has_key(omg_hash_table_t * table, void * key, size_t key_len)
-{
+int hash_table_has_key(omg_hash_table_t *table, void *key, size_t key_len) {
   size_t hash = HASH(key, key_len);
 
   //LOG("Searching for key with hash -> %d", (int)hash);
@@ -365,11 +357,10 @@ int hash_table_has_key(omg_hash_table_t * table, void * key, size_t key_len)
  * @param keys a void** pointer where keys are filled in (memory allocated internally and must be freed)
  * @return total number of keys filled in keys
  */
-size_t hash_table_get_keys(omg_hash_table_t * table, void ** keys)
-{
+size_t hash_table_get_keys(omg_hash_table_t *table, void **keys) {
   size_t i = 0;
   size_t count = 0;
-  keys = calloc(table->key_count, sizeof(void *));
+  keys = calloc(table->key_count, sizeof(void *)*HASH_LEN);
 
   for(i=0; i<HASH_LEN; i++) {
     if (table->store_house[i]) {
@@ -403,8 +394,7 @@ size_t hash_table_get_keys(omg_hash_table_t * table, void ** keys)
  * @returns 1 when no memory
  * @returns count of elements
  */
-size_t hash_table_get_elements(omg_hash_table_t * table, hash_table_element_t *** elements)
-{
+size_t hash_table_get_elements(omg_hash_table_t *table, hash_table_element_t *** elements) {
   size_t i = 0;
   size_t count = 0;
   (*elements) = (hash_table_element_t **) calloc(table->key_count, sizeof(hash_table_element_t *));
@@ -446,8 +436,7 @@ size_t hash_table_get_elements(omg_hash_table_t * table, hash_table_element_t **
  * @param max_key max value of the hash to be returned by the function
  * @returns hash value belonging to [0, max_key)
  */
-uint16_t hash_table_do_hash(void * key, size_t key_len, uint16_t max_key)
-{
+uint16_t hash_table_do_hash(void *key, size_t key_len, uint16_t max_key) {
   uint16_t *ptr = (uint16_t *) key;
   uint16_t hash = 0xbabe; // WHY NOT
   size_t i = 0;
@@ -469,10 +458,9 @@ uint16_t hash_table_do_hash(void * key, size_t key_len, uint16_t max_key)
  * @returns -2 when no emmory for new store house
  * @returns 0 when sucess
  */
-int hash_table_resize(omg_hash_table_t *table, size_t len)
-{
+int hash_table_resize(omg_hash_table_t *table, size_t len) {
   //LOG("resizing hash table from %d to %d", table->key_num, len);
-  hash_table_element_t ** elements;
+  hash_table_element_t **elements;
   size_t count;
   // FIXME traversing the elements twice, change it some time soon
   count = hash_table_get_elements(table, &elements);
@@ -483,7 +471,7 @@ int hash_table_resize(omg_hash_table_t *table, size_t len)
   }
 
   // keep the current store house in case we dont get more memory
-  hash_table_element_t ** temp = table->store_house;
+  hash_table_element_t **temp = table->store_house;
   table->store_house = calloc(len, sizeof(hash_table_element_t *));
 
   if (!table->store_house) {

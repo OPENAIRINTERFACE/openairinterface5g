@@ -137,7 +137,7 @@
 
 #define CMDLINE_UEPARAMS_DESC {  \
     {"siml1",                      CONFIG_HLP_SIML1,       PARAMFLAG_BOOL,  iptr:&simL1flag,                    defintval:0,          TYPE_INT,      0},   \
-    {"U",            CONFIG_HLP_NUMUE,       0,               u16ptr:&NB_UE_INST,                  defuintval:1,         TYPE_UINT16,     0},   \
+    {"U",            CONFIG_HLP_NUMUE,       0,               u8ptr:(uint8_t *)&(NB_UE_INST),                defuintval:1,         TYPE_UINT8,    0},   \
     {"ue-rxgain",                CONFIG_HLP_UERXG,       0,   dblptr:&(rx_gain[0][0]),      defdblval:130,        TYPE_DOUBLE,   0},   \
     {"ue-rxgain-off",            CONFIG_HLP_UERXGOFF,    0,   dblptr:&rx_gain_off,        defdblval:0,          TYPE_DOUBLE,   0},   \
     {"ue-txgain",                CONFIG_HLP_UETXG,       0,   dblptr:&(tx_gain[0][0]),      defdblval:0,          TYPE_DOUBLE,   0},   \
@@ -147,7 +147,7 @@
     {"ue-max-power",             NULL,           0,   iptr:&(tx_max_power[0]),      defintval:23,         TYPE_INT,  0},   \
     {"emul-iface",                 CONFIG_HLP_EMULIFACE,   0,               strptr:&emul_iface,       defstrval:"lo",       TYPE_STRING,   100}, \
     {"L2-emul",                    NULL,             0,               u8ptr:&nfapi_mode,        defuintval:3,         TYPE_UINT8,  0},   \
-    {"num-ues",              NULL,                   0,               u16ptr:&(NB_UE_INST),        defuintval:1,         TYPE_UINT16,  0},   \
+    {"num-ues",              NULL,                   0,               u8ptr:(uint8_t *)&(NB_UE_INST),       defuintval:1,         TYPE_UINT8,  0},   \
     {"nums_ue_thread",             NULL,                   0,               u16ptr:&(NB_THREAD_INST),           defuintval:1,         TYPE_UINT16,   0},   \
     {"r"  ,                        CONFIG_HLP_PRB,         0,               u8ptr:&(frame_parms[0]->N_RB_DL),   defintval:25,         TYPE_UINT8,    0},   \
     {"dlsch-demod-shift",          CONFIG_HLP_DLSHIFT,     0,   iptr:(int32_t *)&dlsch_demod_shift, defintval:0,          TYPE_INT,  0},   \
@@ -201,6 +201,8 @@
     {"C" ,                      CONFIG_HLP_DLF,         0,                      uptr:&(downlink_frequency[0][0]),   defuintval:2680000000,          TYPE_UINT,      0},                     \
     {"a" ,                      CONFIG_HLP_CHOFF,       0,                      iptr:&CHAIN_OFFSET,                 defintval:0,                    TYPE_INT,       0},                     \
     {"d" ,                      CONFIG_HLP_SOFTS,       PARAMFLAG_BOOL,         uptr:(uint32_t *)&DO_FORMS,         defintval:0,                    TYPE_INT8,      0},                     \
+    {"W" ,                      CONFIG_HLP_L2MONW,      0,                      strptr:(char **)&in_ip,             defstrval:"127.0.0.1",          TYPE_STRING,    sizeof(in_ip)},         \
+    {"P" ,                      CONFIG_HLP_L2MONP,      0,                      strptr:(char **)&in_path,           defstrval:"/tmp/oai_opt.pcap",  TYPE_STRING,    sizeof(in_path)},       \
     {"q" ,                      CONFIG_HLP_STMON,       PARAMFLAG_BOOL,         iptr:&opp_enabled,                  defintval:0,                    TYPE_INT,       0},                     \
     {"S" ,                      CONFIG_HLP_MSLOTS,      PARAMFLAG_BOOL,         u8ptr:&exit_missed_slots,           defintval:1,                    TYPE_UINT8,     0},                     \
     {"numerology" ,             CONFIG_HLP_NUMEROLOGY,  PARAMFLAG_BOOL,         iptr:&NUMEROLOGY,                   defintval:0,                    TYPE_INT,       0},                     \
@@ -258,6 +260,7 @@ typedef struct {
   uint32_t       do_forms;
   int            numerology;
   unsigned int   start_msc;
+  int            nonbiotflag;
   uint32_t       clock_source;
   int            hw_timing_advance;
 } softmodem_params_t;
@@ -292,6 +295,11 @@ extern pthread_mutex_t sync_mutex;
 extern int sync_var;
 extern int transmission_mode;
 extern double cpuf;
+
+#if defined(ENABLE_ITTI)
+  extern volatile int             start_eNB;
+  extern volatile int             start_UE;
+#endif
 
 // In lte-enb.c
 extern void init_eNB(int single_thread_flag,int wait_for_sync);
