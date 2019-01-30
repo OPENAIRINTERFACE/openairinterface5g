@@ -164,11 +164,11 @@ static inline void fh_if5_south_out(RU_t *ru) {
 // southbound IF4p5 fronthaul
 static inline void fh_if4p5_south_out(RU_t *ru) {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
-  LOG_I(PHY,"ENTERED fh_if4p5_south_out   Sending IF4p5 for frame %d subframe %d ru %d\n",ru->proc.frame_tx,ru->proc.subframe_tx,ru->idx);
+  LOG_D(PHY,"ENTERED fh_if4p5_south_out   Sending IF4p5 for frame %d subframe %d ru %d\n",ru->proc.frame_tx,ru->proc.subframe_tx,ru->idx);
   if (subframe_select(&ru->frame_parms,ru->proc.subframe_tx)!=SF_UL) {
     send_IF4p5(ru,ru->proc.frame_tx, ru->proc.subframe_tx, IF4p5_PDLFFT);
     ru->south_out_cnt++;
-    LOG_I(PHY,"south_out_cnt %d\n",ru->south_out_cnt);
+    LOG_D(PHY,"south_out_cnt %d\n",ru->south_out_cnt);
   }
 /*if (ru == RC.ru[0] || ru == RC.ru[1]) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU+ru->idx, ru->proc.frame_tx );
@@ -611,7 +611,7 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_READ, 0 );
 
   ru->south_in_cnt++;
-  LOG_I(PHY,"south_in_cnt %d\n",ru->south_in_cnt);
+  LOG_D(PHY,"south_in_cnt %d\n",ru->south_in_cnt);
 
   if (ru->cmd==RU_FRAME_RESYNCH) {
     LOG_I(PHY,"Applying frame resynch %d => %d\n",*frame,ru->cmdval);
@@ -812,7 +812,7 @@ void tx_rf(RU_t *ru) {
 				      ru->nb_tx,
 				      flags);
     ru->south_out_cnt++;
-    LOG_I(PHY,"south_out_cnt %d\n",ru->south_out_cnt);
+    LOG_D(PHY,"south_out_cnt %d\n",ru->south_out_cnt);
     int se = dB_fixed(signal_energy(txp[0],siglen+sf_extension));
 
     if (SF_type == SF_S) LOG_D(PHY,"[TXPATH] RU %d tx_rf (en %d,len %d), writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx,se,siglen+sf_extension,
@@ -1920,9 +1920,9 @@ void *ru_thread_synch(void *arg) {
 	LOG_I(PHY,"Estimated peak_val %d dB, avg %d => timing offset %llu\n",dB_fixed(peak_val),dB_fixed(avg),(unsigned long long int)ru->rx_offset);
 	ru->in_synch = 1;
 
-        LOG_M("ru_sync_rx.m","rurx",&ru->common.rxdata[0][0],LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti,1,1);
-        LOG_M("ru_sync_corr.m","sync_corr",ru->dmrs_corr,LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti,1,6);
-        LOG_M("ru_dmrs.m","rudmrs",&ru->dmrssync[0],fp->ofdm_symbol_size,1,1);
+        //LOG_M("ru_sync_rx.m","rurx",&ru->common.rxdata[0][0],LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti,1,1);
+        //LOG_M("ru_sync_corr.m","sync_corr",ru->dmrs_corr,LTE_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_tti,1,6);
+        //LOG_M("ru_dmrs.m","rudmrs",&ru->dmrssync[0],fp->ofdm_symbol_size,1,1);
         //exit(-1);
       } // sync_pos > 0
       else //AssertFatal(cnt<1000,"Cannot find synch reference\n");
@@ -2679,6 +2679,7 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
     ru->ts_offset    = 0;
     if (ru->is_slave == 1) {
        ru->in_synch    = 0;
+       ru->generate_dmrs_sync = 0; 	
     }
     else {
        ru->in_synch    = 1;
@@ -2690,7 +2691,7 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
     // NOTE: multiple CC_id are not handled here yet!
     ru->openair0_cfg.clock_source  = clock_source;
     ru->openair0_cfg.time_source = time_source;
-    ru->generate_dmrs_sync = (ru->is_slave == 0) ? 1 : 0;
+//    ru->generate_dmrs_sync = (ru->is_slave == 0) ? 1 : 0;
     if (ru->generate_dmrs_sync == 1) {
     	generate_ul_ref_sigs();
         ru->dmrssync = (int16_t*)malloc16_clear(ru->frame_parms.ofdm_symbol_size*2*sizeof(int16_t)); 	

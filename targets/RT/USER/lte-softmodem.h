@@ -204,7 +204,7 @@
 {"emulate-rf" ,             CONFIG_HLP_EMULATE_RF,  PARAMFLAG_BOOL,         iptr:&EMULATE_RF,                   defintval:0,                    TYPE_INT,       0},                     \
 {"clock",                   CONFIG_HLP_CLK,         0,                      uptr:&CLOCK_SOURCE,                 defintval:0,                    TYPE_UINT,      0},                     \
 {"timing",                  CONFIG_HLP_TIMING,      0,                      uptr:&TIMING_SOURCE,                defintval:0,                    TYPE_UINT,      0},                     \
-{"clock",                   CONFIG_HLP_DMRSSYNC,    0,                      uptr:&SEND_DMRSSYNC,                defintval:0,                    TYPE_UINT,      0},                     \
+{"dmrssync",                CONFIG_HLP_DMRSSYNC,    0,                      uptr:&SEND_DMRSSYNC,                defintval:0,                    TYPE_UINT,      0},                     \
 {"wait-for-sync",           NULL,                   PARAMFLAG_BOOL,         iptr:&WAIT_FOR_SYNC,                defintval:0,                    TYPE_INT,       0},                     \
 {"single-thread-enable",    CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL,         iptr:&SINGLE_THREAD_FLAG,           defintval:0,                    TYPE_INT,       0},                     \
 {"C" ,                      CONFIG_HLP_DLF,         0,                      uptr:&(downlink_frequency[0][0]),   defuintval:2680000000,          TYPE_UINT,      0},                     \
