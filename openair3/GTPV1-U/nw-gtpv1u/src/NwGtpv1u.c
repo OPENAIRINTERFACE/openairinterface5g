@@ -689,9 +689,9 @@ nwGtpv1uInitialize( NW_INOUT NwGtpv1uStackHandleT *hGtpuStackHandle, uint32_t st
   NwGtpv1uStackT *thiz;
 
   thiz = (NwGtpv1uStackT *) malloc( sizeof(NwGtpv1uStackT));
-  memset(thiz, 0, sizeof(NwGtpv1uStackT));
 
   if(thiz) {
+    memset(thiz, 0, sizeof(NwGtpv1uStackT));
     thiz->id    = (NwPtrT)thiz;
     thiz->stackType = stackType;
     thiz->seq   = (uint16_t) ((uintptr_t)thiz) ; // FIXME interesting casts... don't know what this is good for...

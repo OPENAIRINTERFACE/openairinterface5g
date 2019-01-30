@@ -214,6 +214,10 @@ void client_socket_udp_ip4(int src, int dst, int state,int ctime) {
       // Data serialization
       char *tx_buffer;
       tx_buffer= (char *)malloc(PAYLOAD_MAX);
+      if (tx_buffer == NULL || payload == NULL) {
+          LOG_E(OTG,"Memory allocation failed\n");
+          return;
+      }
       payload->control_hdr=otg_info_hdr_gen(src, dst, UDP, IPV4);
       payload->payload_rest=payload_rest;
       memcpy(tx_buffer, payload->control_hdr, sizeof (control_hdr_t));
@@ -226,15 +230,8 @@ void client_socket_udp_ip4(int src, int dst, int state,int ctime) {
       //otg_info->rx_num_bytes[src][dst]+=  udp_send + (HDR_IP_v4 + HDR_UDP);
       //
 
-      if (NULL != payload) {
-        payload=NULL;
-        free(payload);
-      }
-
-      if (NULL != tx_buffer) {
-        free(tx_buffer);
-        tx_buffer=NULL;
-      }
+      free(payload);
+      free(tx_buffer);      
     }
 
     if(udp_send == -1) {
