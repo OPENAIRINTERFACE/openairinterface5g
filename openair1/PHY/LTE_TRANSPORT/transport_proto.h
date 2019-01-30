@@ -457,14 +457,6 @@ void generate_pcfich(uint8_t num_pdcch_symbols,
                      int32_t **txdataF,
                      uint8_t subframe);
 
-
-
-
-
-void init_transport_channels(uint8_t);
-
-
-
 void rx_ulsch(PHY_VARS_eNB *eNB,
               L1_rxtx_proc_t *proc,
               uint8_t UE_id);
@@ -578,7 +570,7 @@ void rx_prach(PHY_VARS_eNB *phy_vars_eNB,RU_t *ru,
 	      uint16_t *max_preamble_energy, 
 	      uint16_t *max_preamble_delay, 
 	      uint16_t Nf, uint8_t tdd_mapindex
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	      ,
               uint8_t br_flag
 #endif

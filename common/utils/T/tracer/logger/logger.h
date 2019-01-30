@@ -30,6 +30,7 @@ void framelog_set_skip(logger *_this, int skip_delay);
 void framelog_set_update_only_at_sf9(logger *_this, int update_only_at_sf9);
 
 void textlog_dump_buffer(logger *_this, int dump_buffer);
+void textlog_raw_time(logger *_this, int raw_time);
 
 #include "view/view.h"
 

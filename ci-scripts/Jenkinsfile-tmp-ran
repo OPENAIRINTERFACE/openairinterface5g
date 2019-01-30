@@ -27,6 +27,8 @@ def pythonExecutor = params.pythonExecutor
 
 // Location of the test XML file to be run
 def testXMLFile = params.pythonTestXmlFile
+def mainPythonAllXmlFiles = ""
+def buildStageStatus = true
 
 // Name of the test stage
 def testStageName = params.pipelineTestStageName
@@ -53,6 +55,7 @@ def eNB_Repository
 def eNB_Branch
 def eNB_CommitID
 def eNB_AllowMergeRequestProcess = false
+def eNB_TargetBranch
 
 pipeline {
     agent {
@@ -61,6 +64,7 @@ pipeline {
     options {
         disableConcurrentBuilds()
         ansiColor('xterm')
+        lock (ciSmartPhoneResource)
     }
     // the following parameter options are commented out so it shows the ones
     // that you SHALL have to run the job.
@@ -106,8 +110,14 @@ pipeline {
                     if (params.pythonTestXmlFile == null) {
                         // picking default
                         testXMLFile = 'xml_files/enb_usrpB210_band7_50PRB.xml'
+                        echo "Test XML file(default):   ${testXMLFile}"
+                        mainPythonAllXmlFiles += "--XMLTestFile=" + testXMLFile + " "
                     } else {
-                        echo "Test XML file         :   ${testXMLFile}"
+                        String[] myXmlTestSuite = testXMLFile.split("\\r?\\n")
+                        for (xmlFile in myXmlTestSuite) {
+                            mainPythonAllXmlFiles += "--XMLTestFile=" + xmlFile + " "
+                            echo "Test XML file         :   ${xmlFile}"
+                        }
                     }
                     // If not present picking a default Stage Name
                     if (params.pipelineTestStageName == null) {
@@ -149,6 +159,14 @@ pipeline {
                     echo "eNB_CommitID          :   ${eNB_CommitID}"
                     if (params.eNB_mergeRequest != null) {
                         eNB_AllowMergeRequestProcess = params.eNB_mergeRequest
+                        if (eNB_AllowMergeRequestProcess) {
+                            if (params.eNB_TargetBranch != null) {
+                                eNB_TargetBranch = params.eNB_TargetBranch
+                            } else {
+                                eNB_TargetBranch = 'develop'
+                            }
+                            echo "eNB_TargetBranch      :   ${eNB_TargetBranch}"
+                        }
                     }
 
                     if (params.EPC_IPAddress == null) {
@@ -184,20 +202,24 @@ pipeline {
             steps {
                 script {
                     dir ('ci-scripts') {
-                      lock (ciSmartPhoneResource) {
-                        try {
-                            echo "\u2705 \u001B[32m${testStageName}\u001B[0m"
-                            withCredentials([
-                                [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password'],
-                                [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password'],
-                                [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.ADB_Credentials}", usernameVariable: 'ADB_Username', passwordVariable: 'ADB_Password']
-                            ]) {
-                                sh "python3 main.py --mode=TesteNB --eNBIPAddress=${params.eNB_IPAddress} --eNBRepository=${eNB_Repository} --eNBBranch=${eNB_Branch} --eNBCommitID=${eNB_CommitID} --eNB_AllowMerge=${eNB_AllowMergeRequestProcess} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --EPCIPAddress=${params.EPC_IPAddress} --EPCType=${params.EPC_Type} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --XMLTestFile=${testXMLFile}"
+                        echo "\u2705 \u001B[32m${testStageName}\u001B[0m"
+                        withCredentials([
+                            [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password'],
+                            [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password'],
+                            [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.ADB_Credentials}", usernameVariable: 'ADB_Username', passwordVariable: 'ADB_Password']
+                        ]) {
+                            sh "python3 main.py --mode=InitiateHtml --eNBRepository=${eNB_Repository} --eNBBranch=${eNB_Branch} --eNBCommitID=${eNB_CommitID} --eNB_AllowMerge=${eNB_AllowMergeRequestProcess} --eNBTargetBranch=${eNB_TargetBranch} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} ${mainPythonAllXmlFiles}"
+                            String[] myXmlTestSuite = testXMLFile.split("\\r?\\n")
+                            for (xmlFile in myXmlTestSuite) {
+                                try {
+                                    sh "python3 main.py --mode=TesteNB --eNBIPAddress=${params.eNB_IPAddress} --eNBRepository=${eNB_Repository} --eNBBranch=${eNB_Branch} --eNBCommitID=${eNB_CommitID} --eNB_AllowMerge=${eNB_AllowMergeRequestProcess} --eNBTargetBranch=${eNB_TargetBranch} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --EPCIPAddress=${params.EPC_IPAddress} --EPCType=${params.EPC_Type} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --XMLTestFile=${xmlFile}"
+                                } catch (Exception e) {
+                                    currentBuild.result = 'FAILURE'
+                                    buildStageStatus = false
+                                }
                             }
-                        } catch (Exception e) {
-                            currentBuild.result = 'FAILURE'
+                            sh "python3 main.py --mode=FinalizeHtml --finalStatus=${buildStageStatus} --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password}"
                         }
-                      }
                     }
                 }
             }
@@ -328,7 +350,7 @@ pipeline {
                             }
                             if(fileExists("ci-scripts/test_results.html")) {
                                 sh "mv ci-scripts/test_results.html test_results-${JOB_NAME}.html"
-                                sh "sed -i -e 's#TEMPLATE_JOB_NAME#${JOB_NAME}#' -e 's@build #TEMPLATE_BUILD_ID@build #${BUILD_ID}@' -e 's#Build-ID: TEMPLATE_BUILD_ID#Build-ID: <a href=\"${BUILD_URL}\">${BUILD_ID}</a>#' test_results-${JOB_NAME}.html"
+                                sh "sed -i -e 's#TEMPLATE_JOB_NAME#${JOB_NAME}#' -e 's@build #TEMPLATE_BUILD_ID@build #${BUILD_ID}@' -e 's#Build-ID: TEMPLATE_BUILD_ID#Build-ID: <a href=\"${BUILD_URL}\">${BUILD_ID}</a>#' -e 's#TEMPLATE_STAGE_NAME#${testStageName}#' test_results-${JOB_NAME}.html"
                                 archiveArtifacts "test_results-${JOB_NAME}.html"
                             }
                         }

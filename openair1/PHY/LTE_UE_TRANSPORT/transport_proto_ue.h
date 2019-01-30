@@ -1440,8 +1440,6 @@ uint8_t rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
 void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms);
 
 
-void init_transport_channels(uint8_t);
-
 void generate_RIV_tables(void);
 
 /*!

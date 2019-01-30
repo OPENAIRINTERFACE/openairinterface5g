@@ -1,23 +1,23 @@
 /*
-   Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
-   contributor license agreements.  See the NOTICE file distributed with
-   this work for additional information regarding copyright ownership.
-   The OpenAirInterface Software Alliance licenses this file to You under
-   the OAI Public License, Version 1.1  (the "License"); you may not use this file
-   except in compliance with the License.
-   You may obtain a copy of the License at
-
-        http://www.openairinterface.org/?page_id=698
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-  -------------------------------------------------------------------------------
-   For more information about the OpenAirInterface (OAI) Software Alliance:
-        contact@openairinterface.org
-*/
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
 /*! \file ulsim.c
   \brief Top-level UL simulator
@@ -60,32 +60,7 @@
 double cpuf;
 #define inMicroS(a) (((double)(a))/(cpu_freq_GHz*1000.0))
 //#define MCS_COUNT 23//added for PHY abstraction
-static int cmpdouble(const void *p1, const void *p2) {
-  return *(double *)p1 > *(double *)p2;
-}
-
-double median(varArray_t *input) {
-  return *(double *)((uint8_t *)(input+1)+(input->size/2)*input->atomSize);
-}
-
-double q1(varArray_t *input) {
-  return *(double *)((uint8_t *)(input+1)+(input->size/4)*input->atomSize);
-}
-
-double q3(varArray_t *input) {
-  return *(double *)((uint8_t *)(input+1)+(3*input->size/4)*input->atomSize);
-}
-
-void dumpVarArray(varArray_t *input) {
-  double *ptr=dataArray(input);
-  printf("dumping size=%ld\n", input->size);
-
-  for (int i=0; i < input->size; i++)
-    printf("%.1f:", *ptr++);
-
-  printf("\n");
-}
-
+#include <openair1/SIMULATION/LTE_PHY/common_sim.h>
 channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
 channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
 //Added for PHY abstractionopenair1/PHY/TOOLS/lte_phy_scope.h
@@ -110,8 +85,8 @@ int nfapi_mode = 0;
 
 extern void fep_full(RU_t *ru);
 extern void ru_fep_full_2thread(RU_t *ru);
-extern void eNB_fep_full(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc);
-extern void eNB_fep_full_2thread(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc);
+extern void eNB_fep_full(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc);
+extern void eNB_fep_full_2thread(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc);
 
 nfapi_dl_config_request_t DL_req;
 nfapi_ul_config_request_t UL_req;
@@ -121,30 +96,7 @@ nfapi_tx_request_pdu_t tx_pdu_list[MAX_NUM_TX_REQUEST_PDU];
 nfapi_tx_request_t TX_req;
 Sched_Rsp_t sched_resp;
 
-char *parallel_config = NULL;
-char *worker_config = NULL;
-static THREAD_STRUCT thread_struct;
-void set_parallel_conf(char *parallel_conf)
-{
-  if(strcmp(parallel_conf,"PARALLEL_SINGLE_THREAD")==0)           thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
-  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_SPLIT")==0)        thread_struct.parallel_conf = PARALLEL_RU_L1_SPLIT;
-  else if(strcmp(parallel_conf,"PARALLEL_RU_L1_TRX_SPLIT")==0)    thread_struct.parallel_conf = PARALLEL_RU_L1_TRX_SPLIT;
-  printf("[CONFIG] parallel conf is set to %d\n",thread_struct.parallel_conf);
-} 
-void set_worker_conf(char *worker_conf)
-{
-  if(strcmp(worker_conf,"WORKER_DISABLE")==0)                     thread_struct.worker_conf = WORKER_DISABLE;
-  else if(strcmp(worker_conf,"WORKER_ENABLE")==0)                 thread_struct.worker_conf = WORKER_ENABLE;
-  printf("[CONFIG] worker conf is set to %d\n",thread_struct.worker_conf);
-} 
-PARALLEL_CONF_t get_thread_parallel_conf(void)
-{
-  return thread_struct.parallel_conf;
-} 
-WORKER_CONF_t get_thread_worker_conf(void)
-{
-  return thread_struct.worker_conf;
-} 
+THREAD_STRUCT thread_struct;
 
 void
 fill_nfapi_ulsch_config_request(nfapi_ul_config_request_pdu_t *ul_config_pdu,
@@ -348,48 +300,8 @@ void fill_ulsch_dci(PHY_VARS_eNB *eNB,
   ul_req->tl.tag = NFAPI_UL_CONFIG_REQUEST_BODY_TAG;
 }
 
-void printStatIndent(time_stats_t *ptr, char *txt) {
-  printf("|__ %-50s %.2f us (%d trials)\n",
-         txt,
-         inMicroS(ptr->diff/ptr->trials),
-         ptr->trials);
-}
-
-void printStatIndent2(time_stats_t *ptr, char *txt, int turbo_iter) {
-  double timeBase=1/(1000*cpu_freq_GHz);
-  printf("    |__ %-45s %.2f us (cycles/block %7g, %5d trials)\n",
-         txt,
-         ((double)ptr->diff)/ptr->trials*timeBase,
-         round(((double)ptr->diff)/turbo_iter),
-         ptr->trials);
-}
-
-double squareRoot(time_stats_t *ptr) {
-  double timeBase=1/(1000*cpu_freq_GHz);
-  return sqrt((double)ptr->diff_square*pow(timeBase,2)/ptr->trials -
-              pow((double)ptr->diff/ptr->trials*timeBase,2));
-}
-
-void printDistribution(time_stats_t *ptr, varArray_t *sortedList, char *txt) {
-  double timeBase=1/(1000*cpu_freq_GHz);
-  printf("%-50s             :%.2f us (%d trials)\n",
-         txt,
-         (double)ptr->diff/ptr->trials*timeBase,
-         ptr->trials);
-  printf("|__ Statistics std=%.2f, median=%.2f, q1=%.2f, q3=%.2f µs (on %ld trials)\n",
-         squareRoot(ptr), median(sortedList),q1(sortedList),q3(sortedList), sortedList->size);
-}
-
-void logDistribution(FILE* fd, time_stats_t *ptr, varArray_t *sortedList, int dropped) {
-  fprintf(fd,"%f;%f;%f;%f;%f;%f;%d;",
-	  squareRoot(ptr),
-	  (double)ptr->max, *(double*)dataArray(sortedList),
-	  median(sortedList),q1(sortedList),q3(sortedList),
-	  dropped); 
-}
-
 enum eTypes { eBool, eInt, eFloat, eText };
-static int verbose,disable_bundling=0,cqi_flag=0, extended_prefix_flag=0, test_perf=0, subframe=3, transmission_m=1,n_rx=1;
+static int verbose,help,disable_bundling=0,cqi_flag=0, extended_prefix_flag=0, test_perf=0, subframe=3, transmission_m=1,n_rx=1;
 
 int main(int argc, char **argv) {
   int i,j,aa,u;
@@ -475,7 +387,6 @@ int main(int argc, char **argv) {
   double effective_rate=0.0;
   char channel_model_input[10]= {0};
   static int max_turbo_iterations=4;
-  static int parallel_flag=0;
   int nb_rb_set = 0;
   int sf;
   static int threequarter_fs=0;
@@ -493,8 +404,10 @@ int main(int argc, char **argv) {
   TX_req.tx_request_body.tx_pdu_list = tx_pdu_list;
   cpu_freq_GHz = (double)get_cpu_freq_GHz();
   cpuf = cpu_freq_GHz;
+  set_parallel_conf("PARALLEL_SINGLE_THREAD");
+
   printf("Detected cpu_freq %f GHz\n",cpu_freq_GHz);
-  AssertFatal(load_configmodule(argc,argv) != NULL,
+  AssertFatal(load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) != NULL,
               "cannot load configuration module, exiting\n");
   logInit();
   // enable these lines if you need debug info
@@ -505,13 +418,13 @@ int main(int argc, char **argv) {
   //set_glog(LOG_DEBUG,LOG_MED);
   //hapZEbm:n:Y:X:x:s:w:e:q:d:D:O:c:r:i:f:y:c:oA:C:R:g:N:l:S:T:QB:PI:LF
   static paramdef_t options[] = {
-    { "awgn", "Additive white gaussian noise", PARAMFLAG_BOOL, strptr:NULL, defintval:0, TYPE_INT, 0, NULL, NULL },
+    { "awgn", "Use AWGN channel and not multipath", PARAMFLAG_BOOL, strptr:NULL, defintval:0, TYPE_INT, 0, NULL, NULL },
     { "BnbRBs", "The LTE bandwith in RBs (100 is 20MHz)",0, iptr:&N_RB_DL,  defintval:25, TYPE_INT, 0 },
     { "mcs", "The MCS to use", 0, iptr:&mcs,  defintval:10, TYPE_INT, 0 },
     { "nb_frame", "number of frame in a test",0, iptr:&n_frames,  defintval:1, TYPE_INT, 0 },
     { "snr", "starting snr", 0, dblptr:&snr0,  defdblval:-2.9, TYPE_DOUBLE, 0 },
     { "wsnrInterrupt", "snr int ?", 0, dblptr:&snr_int,  defdblval:30, TYPE_DOUBLE, 0 },
-    { "e_snr_step", "step increasint snr",0, dblptr:&input_snr_step,  defdblval:0.2, TYPE_DOUBLE, 0 },
+    { "e_snr_step", "step increasing snr",0, dblptr:&input_snr_step,  defdblval:0.2, TYPE_DOUBLE, 0 },
     { "rb_dynamic", "number of rb in dynamic allocation",0, iptr:NULL,  defintval:0, TYPE_INT, 0 },
     { "first_rb", "first rb used in dynamic allocation",0, iptr:&first_rb,  defintval:0, TYPE_INT, 0 },
     { "osrs", "enable srs generation",PARAMFLAG_BOOL, iptr:&srs_flag,  defintval:0, TYPE_INT, 0 },
@@ -520,7 +433,7 @@ int main(int argc, char **argv) {
     { "Doppler", "Maximum doppler shift",0, dblptr:&maxDoppler,  defdblval:0.0, TYPE_DOUBLE, 0 },
     { "Zdump", "dump table",PARAMFLAG_BOOL,  iptr:&dump_table, defintval:0, TYPE_INT, 0 },
     { "Forms", "Display the soft scope", PARAMFLAG_BOOL, iptr:&xforms,  defintval:0, TYPE_INT, 0 },
-    { "Lparallel", "Enable parallel execution", PARAMFLAG_BOOL, iptr:&parallel_flag,  defintval:0, TYPE_INT, 0 },
+    { "Lparallel", "Enable parallel execution",0, strptr:NULL,  defstrval:NULL, TYPE_STRING,  0 },
     { "Iterations", "Number of iterations of turbo decoder", 0, iptr:&max_turbo_iterations,  defintval:4, TYPE_INT, 0 },
     { "Performance", "Display CPU perfomance of each L1 piece", PARAMFLAG_BOOL,  iptr:NULL,  defintval:0, TYPE_INT, 0 },
     { "Q_cqi", "Enable CQI", PARAMFLAG_BOOL, iptr:&cqi_flag,  defintval:0, TYPE_INT, 0 },
@@ -538,37 +451,12 @@ int main(int argc, char **argv) {
     { "bundling_disable", "bundling disable",PARAMFLAG_BOOL,  iptr:&disable_bundling, defintval:0, TYPE_INT, 0 },
     { "Y",  "n_ch_rlz",0, iptr:&n_ch_rlz,  defintval:1, TYPE_INT, 0 },
     { "X",  "abstx", PARAMFLAG_BOOL,  iptr:&abstx, defintval:0, TYPE_INT, 0 },
-    { "Operf", "test perf mode ?",0, iptr:&test_perf,  defintval:0, TYPE_INT, 0 },
+    { "Operf", "Set the percentage of effective rate to testbench the modem performance (typically 30 and 70, range 1-100)",0, iptr:&test_perf,  defintval:0, TYPE_INT, 0 },
     { "verbose", "display debug text", PARAMFLAG_BOOL,  iptr:&verbose, defintval:0, TYPE_INT, 0 },
+    { "help", "display help and exit", PARAMFLAG_BOOL,  iptr:&help, defintval:0, TYPE_INT, 0 },
     { "", "",0,  iptr:NULL, defintval:0, TYPE_INT, 0 },
   };
-  int l;
-
-  for(l=0; options[l].optname[0]!=0; l++) {};
-
-  struct option *long_options=calloc(sizeof(struct option),l);
-
-  for(int i=0; options[i].optname[0]!=0; i++) {
-    long_options[i].name=options[i].optname;
-    long_options[i].has_arg=options[i].paramflags==PARAMFLAG_BOOL?no_argument:required_argument;
-
-    if ( options[i].voidptr)
-      switch (options[i].type) {
-        case TYPE_INT:
-          *options[i].iptr=options[i].defintval;
-          break;
-
-        case TYPE_DOUBLE:
-          *options[i].dblptr=options[i].defdblval;
-          break;
-
-        default:
-          printf("not parsed type for default value %s\n", options[i].optname );
-          exit(1);
-      }
-
-    continue;
-  };
+  struct option * long_options = parse_oai_options(options); 
 
   int option_index;
 
@@ -579,113 +467,125 @@ int main(int argc, char **argv) {
       if (long_options[option_index].has_arg==no_argument)
         *(bool *)options[option_index].iptr=1;
       else switch (options[option_index].type) {
-          case TYPE_INT:
-            *(int *)options[option_index].iptr=atoi(optarg);
-            break;
+	case TYPE_INT:
+	  *(int *)options[option_index].iptr=atoi(optarg);
+	  break;
 
-          case TYPE_DOUBLE:
-            *(double *)options[option_index].dblptr=atof(optarg);
-            break;
+	case TYPE_DOUBLE:
+	  *(double *)options[option_index].dblptr=atof(optarg);
+	  break;
 
-          default:
-            printf("not decoded type.\n");
-            exit(1);
+	case TYPE_UINT8:
+	  *(uint8_t *)options[option_index].dblptr=atoi(optarg);
+	  break;
+	  	    
+	case TYPE_UINT16:
+	  *(uint16_t *)options[option_index].dblptr=atoi(optarg);
+	  break;
+	  
+	default:
+	  printf("not decoded type.\n");
+	  exit(1);
         }
 
       continue;
     }
 
     switch (long_options[option_index].name[0]) {
-      case 'T':
-        tdd_config=atoi(optarg);
-        frame_type=TDD;
-        break;
+    case 'T':
+      tdd_config=atoi(optarg);
+      frame_type=TDD;
+      break;
 
-      case 'a':
-        channel_model = AWGN;
-        chMod = 1;
-        break;
+    case 'a':
+      channel_model = AWGN;
+      chMod = 1;
+      break;
 
-      case 'g':
-        strncpy(channel_model_input,optarg,9);
-        struct tmp {
-          char opt;
-          int m;
-          int M;
-        }
-        tmp[]= {
-          {'A',SCM_A,2},
-          {'B',SCM_B,3},
-          {'C',SCM_C,4},
-          {'D',SCM_D,5},
-          {'E',EPA,6},
-          {'G',ETU,8},
-          {'H',Rayleigh8,9},
-          {'I',Rayleigh1,10},
-          {'J',Rayleigh1_corr,11},
-          {'K',Rayleigh1_anticorr,12},
-          {'L',Rice8,13},
-          {'M',Rice1,14},
-          {'N',AWGN,1},
-          {0,0,0}
-        };
-        struct tmp *ptr;
+    case 'g':
+      strncpy(channel_model_input,optarg,9);
+      struct tmp {
+	char opt;
+	int m;
+	int M;
+      }
+      tmp[]= {
+	{'A',SCM_A,2},
+	{'B',SCM_B,3},
+	{'C',SCM_C,4},
+	{'D',SCM_D,5},
+	{'E',EPA,6},
+	{'G',ETU,8},
+	{'H',Rayleigh8,9},
+	{'I',Rayleigh1,10},
+	{'J',Rayleigh1_corr,11},
+	{'K',Rayleigh1_anticorr,12},
+	{'L',Rice8,13},
+	{'M',Rice1,14},
+	{'N',AWGN,1},
+	{0,0,0}
+      };
+      struct tmp *ptr;
 
-        for (ptr=tmp; ptr->opt!=0; ptr++)
-          if ( ptr->opt == optarg[0] ) {
-            channel_model=ptr->m;
-            chMod=ptr->M;
-            break;
-          }
+      for (ptr=tmp; ptr->opt!=0; ptr++)
+	if ( ptr->opt == optarg[0] ) {
+	  channel_model=ptr->m;
+	  chMod=ptr->M;
+	  break;
+	}
 
-        AssertFatal(ptr->opt != 0, "Unsupported channel model: %s !\n", optarg );
-        break;
+      AssertFatal(ptr->opt != 0, "Unsupported channel model: %s !\n", optarg );
+      break;
 
-      case 'x':
-        transmission_m=atoi(optarg);
-        AssertFatal(transmission_m==1 || transmission_m==2,
-                    "Unsupported transmission mode %d\n",transmission_m);
-        break;
+    case 'x':
+      transmission_m=atoi(optarg);
+      AssertFatal(transmission_m==1 || transmission_m==2,
+		  "Unsupported transmission mode %d\n",transmission_m);
+      break;
 
-      case 'r':
-        nb_rb = atoi(optarg);
-        nb_rb_set = 1;
-        break;
+    case 'r':
+      nb_rb = atoi(optarg);
+      nb_rb_set = 1;
+      break;
 
       //case 'c':
       //  cyclic_shift = atoi(optarg);
       //  break;
 
-      case 'i':
-        input_fdUL = fopen(optarg,"r");
-        printf("Reading in %s (%p)\n",optarg,input_fdUL);
-        AssertFatal(input_fdUL != (FILE *)NULL,"Unknown file %s\n",optarg);
-        break;
+    case 'i':
+      input_fdUL = fopen(optarg,"r");
+      printf("Reading in %s (%p)\n",optarg,input_fdUL);
+      AssertFatal(input_fdUL != (FILE *)NULL,"Unknown file %s\n",optarg);
+      break;
 
-      case 'A':
-        beta_ACK = atoi(optarg);
-        AssertFatal(beta_ACK>15,"beta_ack must be in (0..15)\n");
-        break;
+    case 'A':
+      beta_ACK = atoi(optarg);
+      AssertFatal(beta_ACK>15,"beta_ack must be in (0..15)\n");
+      break;
 
-      case 'C':
-        beta_CQI = atoi(optarg);
-        AssertFatal((beta_CQI>15)||(beta_CQI<2),"beta_cqi must be in (2..15)\n");
-        break;
+    case 'C':
+      beta_CQI = atoi(optarg);
+      AssertFatal((beta_CQI>15)||(beta_CQI<2),"beta_cqi must be in (2..15)\n");
+      break;
 
-      case 'R':
-        beta_RI = atoi(optarg);
-        AssertFatal((beta_RI>15)||(beta_RI<2),"beta_ri must be in (0..13)\n");
-        break;
+    case 'R':
+      beta_RI = atoi(optarg);
+      AssertFatal((beta_RI>15)||(beta_RI<2),"beta_ri must be in (0..13)\n");
+      break;
 
-      case 'P':
-        dump_perf=1;
-        opp_enabled=1;
-        break;
+    case 'P':
+      dump_perf=1;
+      opp_enabled=1;
+      break;
 
-      default:
-        printf("Wrong option\n");
-        exit(1);
-        break;
+    case 'L':
+      set_parallel_conf(optarg);
+      break;
+      
+    default:
+      printf("Wrong option: %s\n",long_options[option_index].name);
+      exit(1);
+      break;
     }
   }
 
@@ -694,36 +594,14 @@ int main(int argc, char **argv) {
     exit(1);
   }
 
-  paramdef_t *ptr=options ;
 
-  for( ptr=options; ptr->optname[0]!=0; ptr++) {
-    char varText[256]="need specific display";
-
-    if (ptr->voidptr != NULL) {
-      if ( (ptr->paramflags & PARAMFLAG_BOOL) )
-        strcpy(varText, *(bool *)ptr->iptr ? "True": "False" );
-      else  switch (ptr->type) {
-          case TYPE_INT:
-            sprintf(varText,"%d",*ptr->iptr);
-            break;
-
-          case TYPE_DOUBLE:
-            sprintf(varText,"%.2f",*ptr->dblptr);
-            break;
-
-          default:
-            printf("not decoded type\n");
-            exit(1);
-        }
-    }
-
-    printf("Option: %20s set to %s\n",ptr->optname, varText);
-
-    if (verbose)
-      printf("%s\n",ptr->helpstr);
-  }
-  set_parallel_conf("PARALLEL_RU_L1_TRX_SPLIT");
-  set_worker_conf("WORKER_ENABLE");
+  if (help || verbose )
+     display_options_values(options, true);
+  if (help)
+    exit(0);
+  
+  if (thread_struct.parallel_conf != PARALLEL_SINGLE_THREAD)
+    set_worker_conf("WORKER_ENABLE");
   RC.nb_L1_inst = 1;
   RC.nb_RU = 1;
   lte_param_init(&eNB,&UE,&ru,
@@ -871,7 +749,7 @@ int main(int argc, char **argv) {
   UE->ulsch[0]   = new_ue_ulsch(N_RB_DL,0);
   printf("ULSCH %p\n",UE->ulsch[0]);
 
-  if (parallel_flag == 1) {
+  if(get_thread_worker_conf() == WORKER_ENABLE) {
     extern void init_fep_thread(PHY_VARS_eNB *, pthread_attr_t *);
     extern void init_td_thread(PHY_VARS_eNB *);
     init_fep_thread(eNB,NULL);
@@ -922,7 +800,7 @@ int main(int argc, char **argv) {
   UE->frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
   eNB->frame_parms.pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH = 0;
   UE->mac_enabled=0;
-  eNB_rxtx_proc_t *proc_rxtx   = &eNB->proc.proc_rxtx[subframe&1];
+  L1_rxtx_proc_t *proc_rxtx         = &eNB->proc.L1_proc;
   UE_rxtx_proc_t *proc_rxtx_ue = &UE->proc.proc_rxtx[subframe&1];
   proc_rxtx->frame_rx=1;
   proc_rxtx->subframe_rx=subframe;
@@ -1279,8 +1157,7 @@ int main(int argc, char **argv) {
           }
 
 	  start_meas(&eNB->phy_proc_rx);
-          ru->feprx = (parallel_flag == 1) ? ru_fep_full_2thread        : fep_full;
-          eNB->td  = (parallel_flag == 1) ? ulsch_decoding_data_2thread : ulsch_decoding_data;
+          ru->feprx = (get_thread_worker_conf() == WORKER_ENABLE) ? ru_fep_full_2thread        : fep_full;
           ru->feprx(ru);
           phy_procedures_eNB_uespec_RX(eNB,proc_rxtx);
 	  stop_meas(&eNB->phy_proc_rx);
@@ -1481,20 +1358,18 @@ int main(int argc, char **argv) {
         printStatIndent(&UE->ulsch_rate_matching_stats,"ULSCH rate-matching time");
         printStatIndent(&UE->ulsch_interleaving_stats,"ULSCH sub-block interleaving");
         printStatIndent(&UE->ulsch_multiplexing_stats,"ULSCH multiplexing time");
-        printDistribution(&eNB->phy_proc_rx,table_rx,"\nTotal PHY proc rx subframe");
-        printDistribution(&ru->ofdm_demod_stats,table_rx_fft,"OFDM_demod time");
-        printDistribution(&eNB->ulsch_demodulation_stats,table_rx_demod,"ULSCH demodulation time");
-        printf("ULSCH Decoding time (%.2f Mbit/s, avg iter %.2f)      :%.2f us (%d trials, max %.2f)\n",
-               UE->ulsch[0]->harq_processes[harq_pid]->TBS/1000.0,(double)iter_trials,
-               (double)eNB->ulsch_decoding_stats.diff/eNB->ulsch_decoding_stats.trials*timeBase,
-               eNB->ulsch_decoding_stats.trials,
-               (double)eNB->ulsch_decoding_stats.max*timeBase);
-        printf("|__ Statistics                           std: %.2fus median %.2fus q1 %.2fus q3 %.2fus \n",
-               squareRoot(&eNB->ulsch_decoding_stats),
-               median(table_rx_dec), q1(table_rx_dec), q3(table_rx_dec));
-        printStatIndent(&eNB->ulsch_deinterleaving_stats,"sub-block interleaving" );
-        printStatIndent(&eNB->ulsch_demultiplexing_stats,"sub-block demultiplexing" );
-        printStatIndent(&eNB->ulsch_rate_unmatching_stats,"sub-block rate-matching" );
+	printf("\n");
+        printDistribution(&eNB->phy_proc_rx,table_rx,"Total PHY proc rx subframe");
+        printDistribution(&ru->ofdm_demod_stats,table_rx_fft,"|__ OFDM_demod time");
+        printDistribution(&eNB->ulsch_demodulation_stats,table_rx_demod,"|__ ULSCH demodulation time");
+	printDistribution(&eNB->ulsch_decoding_stats,table_rx_dec,"|__ ULSCH Decoding time");
+        printf("     (%.2f Mbit/s, avg iter %.2f, max %.2f)\n",
+               UE->ulsch[0]->harq_processes[harq_pid]->TBS/1000.0,
+	       (double)iter_trials,
+	       (double)eNB->ulsch_decoding_stats.max*timeBase);
+        printStatIndent2(&eNB->ulsch_deinterleaving_stats,"sub-block interleaving" );
+        printStatIndent2(&eNB->ulsch_demultiplexing_stats,"sub-block demultiplexing" );
+        printStatIndent2(&eNB->ulsch_rate_unmatching_stats,"sub-block rate-matching" );
         printf("|__ turbo_decoder(%d bits), avg iterations: %.1f       %.2f us (%d cycles, %d trials)\n",
                eNB->ulsch[0]->harq_processes[harq_pid]->Cminus ?
                eNB->ulsch[0]->harq_processes[harq_pid]->Kminus :
@@ -1503,13 +1378,13 @@ int main(int argc, char **argv) {
                (double)eNB->ulsch_turbo_decoding_stats.diff/eNB->ulsch_turbo_decoding_stats.trials*timeBase,
                (int)((double)eNB->ulsch_turbo_decoding_stats.diff/eNB->ulsch_turbo_decoding_stats.trials),
                eNB->ulsch_turbo_decoding_stats.trials);
-        printStatIndent2(&eNB->ulsch_tc_init_stats,"init", eNB->ulsch_tc_init_stats.trials);
-        printStatIndent2(&eNB->ulsch_tc_alpha_stats,"alpha", eNB->ulsch_tc_init_stats.trials);
-        printStatIndent2(&eNB->ulsch_tc_beta_stats,"beta", eNB->ulsch_tc_init_stats.trials);
-        printStatIndent2(&eNB->ulsch_tc_gamma_stats,"gamma", eNB->ulsch_tc_init_stats.trials);
-        printStatIndent2(&eNB->ulsch_tc_ext_stats,"ext", eNB->ulsch_tc_init_stats.trials);
-        printStatIndent2(&eNB->ulsch_tc_intl1_stats,"turbo internal interleaver", eNB->ulsch_tc_init_stats.trials);
-        printStatIndent2(&eNB->ulsch_tc_intl2_stats,"intl2+HardDecode+CRC", eNB->ulsch_tc_init_stats.trials);
+        printStatIndent3(&eNB->ulsch_tc_init_stats,"init");
+        printStatIndent3(&eNB->ulsch_tc_alpha_stats,"alpha");
+        printStatIndent3(&eNB->ulsch_tc_beta_stats,"beta");
+        printStatIndent3(&eNB->ulsch_tc_gamma_stats,"gamma");
+        printStatIndent3(&eNB->ulsch_tc_ext_stats,"ext");
+        printStatIndent3(&eNB->ulsch_tc_intl1_stats,"turbo internal interleaver");
+        printStatIndent3(&eNB->ulsch_tc_intl2_stats,"intl2+HardDecode+CRC");
       }
 
       if(abstx) { //ABSTRACTION

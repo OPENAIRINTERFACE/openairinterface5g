@@ -50,17 +50,17 @@
 
 //#include "SystemInformationBlockType1-NB.h"
 //#include "SystemInformation-NB.h"
-#include "RRCConnectionReconfiguration-NB.h"
-#include "RRCConnectionReconfigurationComplete-NB.h"
-#include "RRCConnectionSetup-NB.h"
-#include "RRCConnectionSetupComplete-NB.h"
-#include "RRCConnectionRequest-NB.h"
-#include "RRCConnectionReestablishmentRequest-NB.h"
-#include "BCCH-DL-SCH-Message-NB.h"
-#include "BCCH-BCH-Message-NB.h"
-#include "AS-Config-NB.h"
-#include "AS-Context-NB.h"
-#include "UE-Capability-NB-r13.h" //equivalent of UE-EUTRA-Capability.h
+#include "LTE_RRCConnectionReconfiguration-NB.h"
+#include "LTE_RRCConnectionReconfigurationComplete-NB.h"
+#include "LTE_RRCConnectionSetup-NB.h"
+#include "LTE_RRCConnectionSetupComplete-NB.h"
+#include "LTE_RRCConnectionRequest-NB.h"
+#include "LTE_RRCConnectionReestablishmentRequest-NB.h"
+#include "LTE_BCCH-DL-SCH-Message-NB.h"
+#include "LTE_BCCH-BCH-Message-NB.h"
+#include "LTE_AS-Config-NB.h"
+#include "LTE_AS-Context-NB.h"
+#include "LTE_UE-Capability-NB-r13.h" //equivalent of UE-EUTRA-Capability.h
 //-------------------
 
 #if defined(ENABLE_ITTI)
@@ -122,7 +122,7 @@ typedef struct UE_RRC_INFO_NB_IoT_s {
   uint8_t SIB1systemInfoValueTag;
   uint32_t SIStatus;
   uint32_t SIcnt;
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   uint8_t MCCHStatus[8]; // MAX_MBSFN_AREA
 #endif
   uint8_t SIwindowsize; //!< Corresponds to the SIB1 si-WindowLength parameter. The unit is ms. Possible values are (final): 1,2,5,10,15,20,40
@@ -235,14 +235,14 @@ typedef struct SRB_INFO_TABLE_ENTRY_NB_IoT_s {
 //MEAS_REPORT_LIST_s not implemented in NB-IoT but is used at UE side
 //HANDOVER_INFO_UE not implemented in NB-IoT
 typedef struct HANDOVER_INFO_UE_NB_IoT_s {
-  PhysCellId_t targetCellId;
+  LTE_PhysCellId_t targetCellId;
   uint8_t measFlag;
 } HANDOVER_INFO_UE_NB_IoT;
 
 //NB-IoT eNB_RRC_UE_NB_IoT_s--(used as a context in eNB --> ue_context in rrc_eNB_ue_context)------
 typedef struct eNB_RRC_UE_NB_IoT_s {
 
-  EstablishmentCause_t               establishment_cause;
+  LTE_EstablishmentCause_t           establishment_cause;
   uint8_t                            primaryCC_id;
   //in NB-IoT only SRB0, SRB1 and SRB1bis (until AS security activation) exist
 
@@ -256,14 +256,14 @@ typedef struct eNB_RRC_UE_NB_IoT_s {
    * 					   message previously sent by the eNB (e.g. RRCConnectionSetup -- RRCConnectionSetupComplete)
    * 					   this because it could happen that more messages are transmitted at the same time
    */
-  SRB_ToAddModList_NB_r13_t*                SRB_configList;//for SRB1 and SRB1bis
-  SRB_ToAddModList_NB_r13_t*                SRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
-  DRB_ToAddModList_NB_r13_t*                DRB_configList; //for all the DRBs
-  DRB_ToAddModList_NB_r13_t*                DRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER]; //for the configured DRBs of a xid
+  LTE_SRB_ToAddModList_NB_r13_t*            SRB_configList;//for SRB1 and SRB1bis
+  LTE_SRB_ToAddModList_NB_r13_t*            SRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER];
+  LTE_DRB_ToAddModList_NB_r13_t*            DRB_configList; //for all the DRBs
+  LTE_DRB_ToAddModList_NB_r13_t*            DRB_configList2[RRC_TRANSACTION_IDENTIFIER_NUMBER]; //for the configured DRBs of a xid
   uint8_t                            		DRB_active[2];//in LTE was 8 --> at most 2 for NB-IoT
 
-  struct PhysicalConfigDedicated_NB_r13*    physicalConfigDedicated_NB_IoT;
-  MAC_MainConfig_NB_r13_t*           mac_MainConfig_NB_IoT;
+  struct LTE_PhysicalConfigDedicated_NB_r13*    physicalConfigDedicated_NB_IoT;
+  LTE_MAC_MainConfig_NB_r13_t*           mac_MainConfig_NB_IoT;
 
   //No SPS(semi-persistent scheduling) in NB-IoT
   //No Measurement report in NB-IoT
@@ -279,8 +279,8 @@ typedef struct eNB_RRC_UE_NB_IoT_s {
 #endif
 
   /* Used integrity/ciphering algorithms--> maintained the same for NB-IoT */
-  e_CipheringAlgorithm_r12     ciphering_algorithm; //Specs. TS 36.331 V14.1.0 pag 432 Change position of chipering enumerative w.r.t previous version
-  e_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm;
+  e_LTE_CipheringAlgorithm_r12     ciphering_algorithm; //Specs. TS 36.331 V14.1.0 pag 432 Change position of chipering enumerative w.r.t previous version
+  e_LTE_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm;
 
   uint8_t                            Status;
   rnti_t                             rnti;
@@ -290,10 +290,10 @@ typedef struct eNB_RRC_UE_NB_IoT_s {
 
   /* Information from UE RRC ConnectionRequest-NB-r13_IE--> NB-IoT */
   UE_S_TMSI_NB_IoT                          Initialue_identity_s_TMSI;
-  EstablishmentCause_NB_r13_t               establishment_cause_NB_IoT; //different set for NB-IoT
+  LTE_EstablishmentCause_NB_r13_t               establishment_cause_NB_IoT; //different set for NB-IoT
 
   /* Information from UE RRC ConnectionReestablishmentRequest-NB--> NB-IoT */
-  ReestablishmentCause_NB_r13_t             reestablishment_cause_NB_IoT; //different set for NB_IoT
+  LTE_ReestablishmentCause_NB_r13_t             reestablishment_cause_NB_IoT; //different set for NB_IoT
 
   /* UE id for initial connection to S1AP */
   uint16_t                           ue_initial_id;
@@ -389,18 +389,18 @@ typedef struct {
   uint16_t                          physCellId; //not stored in the MIB-NB but is getting through NPSS/NSSS
 
   //are the only static one (memory has been already allocated)
-  BCCH_BCH_Message_NB_t                mib_NB_IoT;
-  BCCH_DL_SCH_Message_NB_t             siblock1_NB_IoT; //SIB1-NB
-  BCCH_DL_SCH_Message_NB_t             systemInformation_NB_IoT; //SI
+  LTE_BCCH_BCH_Message_NB_t                mib_NB_IoT;
+  LTE_BCCH_DL_SCH_Message_NB_t             siblock1_NB_IoT; //SIB1-NB
+  LTE_BCCH_DL_SCH_Message_NB_t             systemInformation_NB_IoT; //SI
 
-  SystemInformationBlockType1_NB_t     		*sib1_NB_IoT;
-  SystemInformationBlockType2_NB_r13_t   	*sib2_NB_IoT;
-  SystemInformationBlockType3_NB_r13_t   	*sib3_NB_IoT;
+  LTE_SystemInformationBlockType1_NB_t     		*sib1_NB_IoT;
+  LTE_SystemInformationBlockType2_NB_r13_t   	*sib2_NB_IoT;
+  LTE_SystemInformationBlockType3_NB_r13_t   	*sib3_NB_IoT;
   //not implemented yet
-  SystemInformationBlockType4_NB_r13_t    	*sib4_NB_IoT;
-  SystemInformationBlockType5_NB_r13_t     	*sib5_NB_IoT;
-  SystemInformationBlockType14_NB_r13_t     *sib14_NB_IoT;
-  SystemInformationBlockType16_NB_r13_t     *sib16_NB_IoT;
+  LTE_SystemInformationBlockType4_NB_r13_t    	*sib4_NB_IoT;
+  LTE_SystemInformationBlockType5_NB_r13_t     	*sib5_NB_IoT;
+  LTE_SystemInformationBlockType14_NB_r13_t     *sib14_NB_IoT;
+  LTE_SystemInformationBlockType16_NB_r13_t     *sib16_NB_IoT;
 
 
   SRB_INFO_NB_IoT                          SI;
@@ -466,7 +466,7 @@ typedef struct OAI_UECapability_NB_IoT_s {
  uint8_t sdu[MAX_UE_CAPABILITY_SIZE_NB_IoT];
  uint8_t sdu_size;
 ////NB-IoT------
-  UE_Capability_NB_r13_t  UE_Capability_NB_IoT; //replace the UE_EUTRA_Capability of LTE
+  LTE_UE_Capability_NB_r13_t  UE_Capability_NB_IoT; //replace the UE_EUTRA_Capability of LTE
 } OAI_UECapability_NB_IoT_t;
 
 #define RRC_BUFFER_SIZE_MAX_NB_IoT 1024
@@ -501,7 +501,7 @@ typedef struct UE_RRC_INST_NB_IoT_s {
   SystemInformationBlockType1_t *sib1[NB_CNX_UE];
   SystemInformation_t *si[NB_CNX_UE]; //!< Temporary storage for an SI message. Decoding happens in decode_SI().
   */
-  SystemInformationBlockType2_t *sib2[NB_CNX_UE];
+  LTE_SystemInformationBlockType2_t *sib2[NB_CNX_UE];
   /*
   SystemInformationBlockType3_t *sib3[NB_CNX_UE];
   SystemInformationBlockType4_t *sib4[NB_CNX_UE];
@@ -513,7 +513,7 @@ typedef struct UE_RRC_INST_NB_IoT_s {
   SystemInformationBlockType10_t *sib10[NB_CNX_UE];
   SystemInformationBlockType11_t *sib11[NB_CNX_UE];
 
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   uint8_t                           MBMS_flag;
   uint8_t *MCCH_MESSAGE[NB_CNX_UE];
   uint8_t sizeof_MCCH_MESSAGE[NB_CNX_UE];
