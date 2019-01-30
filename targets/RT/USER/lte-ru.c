@@ -220,6 +220,7 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
   RU_proc_t *proc = &ru->proc;
   int f,sf;
 
+ // LOG_I(PHY,"ENTERED fh_if4p5_south_in\n");
   uint16_t packet_type;
   uint32_t symbol_number=0;
   uint32_t symbol_mask_full;
@@ -810,7 +811,7 @@ void tx_rf(RU_t *ru) {
 				      ru->nb_tx,
 				      flags);
     ru->south_out_cnt++;
-    LOG_D(PHY,"south_out_cnt %d, frame %d, subframe %d\n",ru->south_out_cnt,proc->frame_tx,proc->subframe_tx);
+    LOG_D(PHY,"south_out_cnt %d\n",ru->south_out_cnt);
     int se = dB_fixed(signal_energy(txp[0],siglen+sf_extension));
 
     if (SF_type == SF_S) LOG_D(PHY,"[TXPATH] RU %d tx_rf (en %d,len %d), writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx,se,siglen+sf_extension,
@@ -1170,6 +1171,7 @@ void wakeup_L1s(RU_t *ru) {
   L1_proc_t *proc      = &eNB->proc;
   RU_proc_t  *ruproc    = &ru->proc;
   struct timespec t;
+  LOG_D(PHY,"wakeup_L1s (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
 
   LOG_D(PHY,"wakeup_L1s (num %d) for RU %d ru->eNB_top:%p\n",ru->num_eNB,ru->idx, ru->eNB_top);
 
@@ -1252,7 +1254,8 @@ void wakeup_L1s(RU_t *ru) {
             }
          }
       }
-    /*  AssertFatal(0==pthread_mutex_lock(&ruproc->mutex_eNBs),"");
+/*
+      AssertFatal(0==pthread_mutex_lock(&ruproc->mutex_eNBs),"");
       LOG_D(PHY,"RU %d sending signal to unlock waiting ru_threads\n", ru->idx);
       AssertFatal(0==pthread_cond_broadcast(&ruproc->cond_eNBs),"");
       if (ruproc->instance_cnt_eNBs==-1) ruproc->instance_cnt_eNBs++;
@@ -2723,6 +2726,7 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
     ru->ts_offset    = 0;
     if (ru->is_slave == 1) {
        ru->in_synch    = 0;
+       ru->generate_dmrs_sync = 0; 	
     }
     else {
        ru->in_synch    = 1;
@@ -2734,7 +2738,7 @@ void init_RU(char *rf_config_file, clock_source_t clock_source,clock_source_t ti
     // NOTE: multiple CC_id are not handled here yet!
     ru->openair0_cfg.clock_source  = clock_source;
     ru->openair0_cfg.time_source = time_source;
-    ru->generate_dmrs_sync = (ru->is_slave == 0) ? 1 : 0;
+//    ru->generate_dmrs_sync = (ru->is_slave == 0) ? 1 : 0;
     if (ru->generate_dmrs_sync == 1) {
     	generate_ul_ref_sigs();
         ru->dmrssync = (int16_t*)malloc16_clear(ru->frame_parms.ofdm_symbol_size*2*sizeof(int16_t)); 	
