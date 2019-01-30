@@ -96,13 +96,13 @@ void rx_prach0(PHY_VARS_eNB *eNB,
   int prach_ifft_cnt=0;
 #endif
 
-
-  if(eNB)  {
-    fp    = &(eNB->frame_parms);
-    nb_rx = fp->nb_antennas_rx;
-  } else {
+  
+  if(ru)  {
     fp    = &(ru->frame_parms);
-    nb_rx = ru->nb_rx; 
+    nb_rx = ru->nb_rx;  
+  } else {
+   fp    = &(eNB->frame_parms);
+   nb_rx = fp->nb_antennas_rx;    
   } 
   AssertFatal(fp==NULL,"rx_prach called without valid RU or eNB descriptor\n");
   frame_type          = fp->frame_type;
