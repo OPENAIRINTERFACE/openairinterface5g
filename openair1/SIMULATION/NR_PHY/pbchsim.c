@@ -510,9 +510,9 @@ int main(int argc, char **argv)
       //multipath_channel(gNB2UE,s_re,s_im,r_re,r_im,frame_length_complex_samples,0);
       
       //AWGN
-      sigma2_dB = 10*log10((double)txlev)-SNR;
+      sigma2_dB = 20*log10((double)AMP/4)-SNR;
       sigma2 = pow(10,sigma2_dB/10);
-      //      printf("sigma2 %f (%f dB)\n",sigma2,sigma2_dB);
+      //printf("sigma2 %f (%f dB), tx_lev %f (%f dB)\n",sigma2,sigma2_dB,txlev,10*log10((double)txlev));
 
       for (i=0; i<frame_parms->samples_per_subframe; i++) {
 	for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
