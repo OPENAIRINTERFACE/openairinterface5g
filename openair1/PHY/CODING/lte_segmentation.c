@@ -126,6 +126,7 @@ int lte_segmentation(unsigned char *input_buffer,
 #ifdef DEBUG_SEGMENTATION
   printf("C %u, Cplus %u, Cminus %u, Kplus %u, Kminus %u, Bprime_bytes %u, Bprime %u, F %u\n",
          *C,*Cplus,*Cminus,*Kplus,*Kminus,Bprime>>3,Bprime,*F);
+#endif
 
   if ((input_buffer) && (output_buffers)) {
     for (k=0; k<*F>>3; k++) {

@@ -171,8 +171,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
           if (((eNB->proc.frame_prach)&1023) < 20) LOG_I(PHY,"PRACH (eNB) : running rx_prach for subframe %d, prach_FreqOffset %d, prach_ConfigIndex %d , rootSequenceIndex %d\n", subframe,fp->prach_config_common.prach_ConfigInfo.prach_FreqOffset,prach_ConfigIndex,rootSequenceIndex);
         }
       }
-    }
-  } else {
+    } else {
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
     if (br_flag == 1) {
