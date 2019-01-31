@@ -671,8 +671,8 @@ int x2ap_eNB_handle_handover_preparation (instance_t instance,
   if (c->size > 1024 /* TODO: this is the size of rrc_buffer in struct x2ap_handover_req_ack_s*/)
     { printf("%s:%d: fatal: buffer too big\n", __FILE__, __LINE__); abort(); }
 
-  memcpy(X2AP_HANDOVER_REQ_ACK(msg).rrc_buffer, c->buf, c->size);
-  X2AP_HANDOVER_REQ_ACK(msg).rrc_buffer_size = c->size;
+  memcpy(X2AP_HANDOVER_REQ(msg).rrc_buffer, c->buf, c->size);
+  X2AP_HANDOVER_REQ(msg).rrc_buffer_size = c->size;
 
   itti_send_msg_to_task(TASK_RRC_ENB, x2ap_eNB_data->x2ap_eNB_instance->instance, msg);
 

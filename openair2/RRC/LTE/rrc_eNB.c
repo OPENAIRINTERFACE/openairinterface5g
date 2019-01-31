@@ -105,6 +105,9 @@ extern uint16_t                     two_tier_hexagonal_cellIds[7];
 mui_t                               rrc_eNB_mui = 0;
 
 extern uint32_t to_earfcn_DL(int eutra_bandP, uint32_t dl_CarrierFreq, uint32_t bw);
+extern int rrc_eNB_process_security(const protocol_ctxt_t *const ctxt_pP, rrc_eNB_ue_context_t *const ue_context_pP, security_capabilities_t *security_capabilities_pP);
+extern void process_eNB_security_key (const protocol_ctxt_t *const ctxt_pP, rrc_eNB_ue_context_t *const ue_context_pP, uint8_t *security_key_pP);
+extern int derive_keNB_star(const uint8_t *kenb_32, const uint16_t pci, const uint32_t earfcn_dl, const bool is_rel8_only, uint8_t * kenb_star);
 
 void
 openair_rrc_on(
@@ -3800,6 +3803,9 @@ rrc_eNB_process_MeasurementReport(
   int neighboring_cells=-1;
   int ncell_index = 0;
   long ncell_max = -150;
+  uint32_t earfcn_dl;
+  uint8_t KeNB_star[32] = { 0 };
+
   T(T_ENB_RRC_MEASUREMENT_REPORT, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
 
@@ -3929,9 +3935,11 @@ rrc_eNB_process_MeasurementReport(
     // Don't know how to get this ID?
     X2AP_HANDOVER_REQ(msg).mme_ue_s1ap_id = ue_context_pP->ue_context.mme_ue_s1ap_id;
     X2AP_HANDOVER_REQ(msg).security_capabilities = ue_context_pP->ue_context.security_capabilities;
-    memcpy (X2AP_HANDOVER_REQ(msg).kenb,
-            ue_context_pP->ue_context.kenb,
-            32);
+    // compute keNB*
+    earfcn_dl = (uint32_t)to_earfcn_DL(RC.rrc[ctxt_pP->module_id]->carrier[0].eutra_band, RC.rrc[ctxt_pP->module_id]->carrier[0].dl_CarrierFreq,
+    RC.rrc[ctxt_pP->module_id]->carrier[0].N_RB_DL);
+    derive_keNB_star(ue_context_pP->ue_context.kenb, X2AP_HANDOVER_REQ(msg).target_physCellId, earfcn_dl, true, KeNB_star);
+    memcpy(X2AP_HANDOVER_REQ(msg).kenb, KeNB_star, 32);
     X2AP_HANDOVER_REQ(msg).kenb_ncc = ue_context_pP->ue_context.kenb_ncc;
     //X2AP_HANDOVER_REQ(msg).ue_ambr=ue_context_pP->ue_context.ue_ambr;
     X2AP_HANDOVER_REQ(msg).nb_e_rabs_tobesetup = ue_context_pP->ue_context.setup_e_rabs;
@@ -4078,9 +4086,9 @@ void rrc_eNB_process_handoverPreparationInformation(int mod_id, x2ap_handover_re
   int rnti = taus() & 0xffff;
   int i;
   //global_rnti = rnti;
-  //HandoverPreparationInformation_t *ho = NULL;
-  //HandoverPreparationInformation_r8_IEs_t *ho_info;
-  //asn_dec_rval_t                      dec_rval;
+  LTE_HandoverPreparationInformation_t *ho = NULL;
+  LTE_HandoverPreparationInformation_r8_IEs_t *ho_info;
+  asn_dec_rval_t                      dec_rval;
   ue_context_target_p = rrc_eNB_get_ue_context(RC.rrc[mod_id], rnti);
 
   if (ue_context_target_p != NULL) {
@@ -4114,16 +4122,20 @@ void rrc_eNB_process_handoverPreparationInformation(int mod_id, x2ap_handover_re
   ue_context_target_p->ue_context.kenb_ncc = m->kenb_ncc;
   ue_context_target_p->ue_context.security_capabilities.encryption_algorithms = m->security_capabilities.encryption_algorithms;
   ue_context_target_p->ue_context.security_capabilities.integrity_algorithms = m->security_capabilities.integrity_algorithms;
-  /*
+
   dec_rval = uper_decode(NULL,
-                         &asn_DEF_HandoverPreparationInformation,
+                         &asn_DEF_LTE_HandoverPreparationInformation,
                          (void **)&ho,
                          m->rrc_buffer,
                          m->rrc_buffer_size, 0, 0);
 
+ if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+     xer_fprint(stdout, &asn_DEF_LTE_HandoverPreparationInformation, ho);
+ }
+
   if (dec_rval.code != RC_OK ||
-      ho->criticalExtensions.present != HandoverPreparationInformation__criticalExtensions_PR_c1 ||
-      ho->criticalExtensions.choice.c1.present != HandoverPreparationInformation__criticalExtensions__c1_PR_handoverPreparationInformation_r8) {
+      ho->criticalExtensions.present != LTE_HandoverPreparationInformation__criticalExtensions_PR_c1 ||
+      ho->criticalExtensions.choice.c1.present != LTE_HandoverPreparationInformation__criticalExtensions__c1_PR_handoverPreparationInformation_r8) {
     LOG_E(RRC, "could not decode Handover Preparation\n");
     abort();
   }
@@ -4132,13 +4144,13 @@ void rrc_eNB_process_handoverPreparationInformation(int mod_id, x2ap_handover_re
 
   if (ue_context_target_p->ue_context.UE_Capability) {
     LOG_I(RRC, "freeing old UE capabilities for UE %x\n", rnti);
-    ASN_STRUCT_FREE(asn_DEF_UE_EUTRA_Capability,
+    ASN_STRUCT_FREE(asn_DEF_LTE_UE_EUTRA_Capability,
                     ue_context_target_p->ue_context.UE_Capability);
     ue_context_target_p->ue_context.UE_Capability = 0;
   }
 
   dec_rval = uper_decode(NULL,
-                         &asn_DEF_UE_EUTRA_Capability,
+                         &asn_DEF_LTE_UE_EUTRA_Capability,
                          (void **)&ue_context_target_p->ue_context.UE_Capability,
                          ho_info->ue_RadioAccessCapabilityInfo.list.array[0]->ueCapabilityRAT_Container.buf,
                          ho_info->ue_RadioAccessCapabilityInfo.list.array[0]->ueCapabilityRAT_Container.size, 0, 0);
@@ -4146,16 +4158,16 @@ void rrc_eNB_process_handoverPreparationInformation(int mod_id, x2ap_handover_re
   ue_context_target_p->ue_context.UE_Capability_size = ho_info->ue_RadioAccessCapabilityInfo.list.array[0]->ueCapabilityRAT_Container.size;
 
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-     xer_fprint(stdout, &asn_DEF_UE_EUTRA_Capability, ue_context_target_p->ue_context.UE_Capability);
+     xer_fprint(stdout, &asn_DEF_LTE_UE_EUTRA_Capability, ue_context_target_p->ue_context.UE_Capability);
   }
 
   if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
       LOG_E(RRC, "Failed to decode UE capabilities (%zu bytes)\n", dec_rval.consumed);
-      ASN_STRUCT_FREE(asn_DEF_UE_EUTRA_Capability,
+      ASN_STRUCT_FREE(asn_DEF_LTE_UE_EUTRA_Capability,
                       ue_context_target_p->ue_context.UE_Capability);
       ue_context_target_p->ue_context.UE_Capability = 0;
   }
-  */
+
   ue_context_target_p->ue_context.nb_of_e_rabs = m->nb_e_rabs_tobesetup;
   ue_context_target_p->ue_context.setup_e_rabs = m->nb_e_rabs_tobesetup;
   ue_context_target_p->ue_context.mme_ue_s1ap_id = m->mme_ue_s1ap_id;
@@ -4239,7 +4251,6 @@ check_handovers(
 )
 //-----------------------------------------------------------------------------
 {
-  int                                 result;
   struct rrc_eNB_ue_context_s        *ue_context_p;
   RB_FOREACH(ue_context_p, rrc_ue_tree_s, &(RC.rrc[ctxt_pP->module_id]->rrc_ue_head)) {
     ctxt_pP->rnti  = ue_context_p->ue_id_rnti;
@@ -4256,19 +4267,15 @@ check_handovers(
         LOG_I(RRC,
               "[eNB %d] Frame %d : Logical Channel UL-DCCH, processing RRCHandoverPreparationInformation, sending RRCConnectionReconfiguration to UE %d \n",
               ctxt_pP->module_id, ctxt_pP->frame, ue_context_p->ue_context.rnti);
-        result = pdcp_data_req(ctxt_pP,
-                               SRB_FLAG_YES,
-                               DCCH,
-                               rrc_eNB_mui++,
-                               SDU_CONFIRM_NO,
-                               ue_context_p->ue_context.handover_info->size,
-                               ue_context_p->ue_context.handover_info->buf,
-                               PDCP_TRANSMISSION_MODE_CONTROL
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                               ,NULL, NULL
-#endif
-                              );
-        AssertFatal(result == TRUE, "PDCP data request failed!\n");
+        rrc_data_req(
+          ctxt_pP,
+          DCCH,
+          rrc_eNB_mui++,
+          SDU_CONFIRM_NO,
+          ue_context_p->ue_context.handover_info->size,
+          ue_context_p->ue_context.handover_info->buf,
+          PDCP_TRANSMISSION_MODE_CONTROL);
+
         ue_context_p->ue_context.handover_info->state = HO_COMPLETE;
         LOG_I(RRC, "RRC Sends RRCConnectionReconfiguration to UE %d  at frame %d and subframe %d \n", ue_context_p->ue_context.rnti, ctxt_pP->frame,ctxt_pP->subframe);
       }
@@ -5306,6 +5313,19 @@ rrc_eNB_configure_rbs_handover(struct rrc_eNB_ue_context_s *ue_context_p, protoc
                           , 0, 0
 #endif
                          );
+  rrc_eNB_process_security (
+    ctxt_pP,
+    ue_context_p,
+    &ue_context_p->ue_context.security_capabilities);
+  process_eNB_security_key (
+    ctxt_pP,
+    ue_context_p,
+    ue_context_p->ue_context.kenb);
+  rrc_pdcp_config_security(
+    ctxt_pP,
+    ue_context_p,
+    FALSE);
+
   // Add a new user (called during the HO procedure)
   LOG_I(RRC, "rrc_eNB_target_add_ue_handover module_id %d rnti %d\n", ctxt_pP->module_id, ctxt_pP->rnti);
   // Configure MAC for the target

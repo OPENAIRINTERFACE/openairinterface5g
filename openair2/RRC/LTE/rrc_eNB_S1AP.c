@@ -426,7 +426,7 @@ static e_LTE_SecurityAlgorithmConfig__integrityProtAlgorithm rrc_eNB_select_inte
  *\param security_capabilities The security capabilities received from S1AP.
  *\return TRUE if at least one algorithm has been changed else FALSE.
  */
-static int
+int
 rrc_eNB_process_security(
   const protocol_ctxt_t *const ctxt_pP,
   rrc_eNB_ue_context_t          *const ue_context_pP,
@@ -477,7 +477,7 @@ rrc_eNB_process_security(
  *\param security_key_pP The security key received from S1AP.
  */
 //------------------------------------------------------------------------------
-static void process_eNB_security_key (
+void process_eNB_security_key (
   const protocol_ctxt_t *const ctxt_pP,
   rrc_eNB_ue_context_t          *const ue_context_pP,
   uint8_t               *security_key_pP
