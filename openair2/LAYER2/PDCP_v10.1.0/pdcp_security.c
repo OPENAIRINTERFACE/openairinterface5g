@@ -29,12 +29,12 @@
 
 #include "assertions.h"
 
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 #include "UTIL/OSA/osa_defs.h"
 
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac_extern.h"
 
 #include "pdcp.h"
 #include "msc.h"
@@ -62,7 +62,7 @@ uint32_t pdcp_get_next_count_tx(
     /* 5 bits length SN */
     count = ((pdcp_pP->tx_hfn << 5)  | (pdcp_sn & 0x001F));
   } else {
-    if (pdcp_pP->seq_num_size == PDCP_Config__rlc_UM__pdcp_SN_Size_len7bits) {
+    if (pdcp_pP->seq_num_size == LTE_PDCP_Config__rlc_UM__pdcp_SN_Size_len7bits) {
       count = ((pdcp_pP->tx_hfn << 7) | (pdcp_sn & 0x07F));
     } else { /*Default is the 12 bits length SN */
       count = ((pdcp_pP->tx_hfn << 12) | (pdcp_sn & 0x0FFF));
@@ -88,7 +88,7 @@ uint32_t pdcp_get_next_count_rx(
     /* 5 bits length SN */
     count = (((pdcp_pP->rx_hfn + pdcp_pP->rx_hfn_offset) << 5)  | (pdcp_sn & 0x001F));
   } else {
-    if (pdcp_pP->seq_num_size == PDCP_Config__rlc_UM__pdcp_SN_Size_len7bits) {
+    if (pdcp_pP->seq_num_size == LTE_PDCP_Config__rlc_UM__pdcp_SN_Size_len7bits) {
       /* 7 bits length SN */
       count = (((pdcp_pP->rx_hfn + pdcp_pP->rx_hfn_offset) << 7) | (pdcp_sn & 0x007F));
     } else { // default
@@ -220,7 +220,7 @@ pdcp_validate_security(
   stream_decrypt(pdcp_pP->cipheringAlgorithm,
                  &decrypt_params,
                  &buffer_decrypted);
-
+#if !defined(USRP_REC_PLAY)
   if (srb_flagP) {
     /* Now check the integrity of the complete PDU */
     decrypt_params.message    = pdcp_pdu_buffer;
@@ -241,7 +241,7 @@ pdcp_validate_security(
       return -1;
     }
   }
-
+#endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_VALIDATE_SECURITY, VCD_FUNCTION_OUT);
 
   return 0;

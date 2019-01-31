@@ -25,7 +25,7 @@
    date: 19.11.2009
 */
 
-#include "PHY/defs.h"
+#include "PHY/defs_eNB.h"
 //#define DEBUG_PHY
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -118,7 +118,7 @@ int lte_est_freq_offset(int **dl_ch_estimates,
   ch_offset = (l*(frame_parms->ofdm_symbol_size));
 
   if ((l!=0) && (l!=(4-frame_parms->Ncp))) {
-    msg("lte_est_freq_offset: l (%d) must be 0 or %d\n",l,4-frame_parms->Ncp);
+    LOG_D(PHY,"lte_est_freq_offset: l (%d) must be 0 or %d\n",l,4-frame_parms->Ncp);
     return(-1);
   }
 
@@ -208,7 +208,7 @@ int lte_mbsfn_est_freq_offset(int **dl_ch_estimates,
   ch_offset = (l*(frame_parms->ofdm_symbol_size));
 
   if ((l!=2) && (l!=6) && (l!=10)) {
-    msg("lte_est_freq_offset: l (%d) must be 2 or 6 or 10", l);
+    LOG_D(PHY,"lte_est_freq_offset: l (%d) must be 2 or 6 or 10", l);
     return(-1);
   }
 

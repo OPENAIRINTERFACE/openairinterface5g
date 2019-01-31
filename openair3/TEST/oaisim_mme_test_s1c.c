@@ -40,9 +40,7 @@
 
 #include "UTIL/LOG/log_extern.h"
 #include "assertions.h"
-#include "intertask_interface_init.h"
 #include "intertask_interface.h"
-#include "timer.h"
 #include "sctp_eNB_task.h"
 #include "s1ap_eNB.h"
 #include "enb_config.h"
@@ -57,7 +55,6 @@ static void    *eNB_app_task    (void *args_p);
 void     mme_test_s1_start_test(instance_t instance);
 //------------------------------------------------------------------------------
 static char                    *conf_config_file_name = NULL;
-static char                    *itti_dump_file        = NULL;
 const Enb_properties_array_t   *enb_properties        = NULL;
 int16_t                         glog_level            = LOG_INFO;
 int16_t                         glog_verbosity        = LOG_MED;
@@ -77,10 +74,6 @@ static void get_options (int argc, char **argv)
 
   while ((c = getopt_long (argc, argv, "K:g:G:O:",NULL,NULL)) != -1) {
     switch (c) {
-    case 'K':
-      itti_dump_file = strdup(optarg);
-      break;
-
     case 'O':
       conf_config_file_name = optarg;
       break;
@@ -316,7 +309,7 @@ int main( int argc, char **argv )
   /* Read eNB configuration file */
   enb_properties = enb_config_init(conf_config_file_name);
 
-  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, itti_dump_file);
+  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
   itti_wait_ready(1);
 

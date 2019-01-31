@@ -19,8 +19,8 @@
  *      contact@openairinterface.org
  */
 
-#include "PHY/defs.h"
-#include "PHY/extern.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h"
 
 #include "PHY/sse_intrin.h"
 
@@ -29,18 +29,18 @@
 #define k1 1024
 #define k2 (1024-k1)
 
-int32_t rx_power_avg_eNB[3][3];
+int32_t rx_power_avg_eNB[3];
 
 
 void lte_eNB_I0_measurements(PHY_VARS_eNB *eNB,
 			     int subframe,
-                             unsigned char eNB_id,
+                             module_id_t eNB_id,
                              unsigned char clear)
 {
 
   LTE_eNB_COMMON *common_vars = &eNB->common_vars;
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
-  PHY_MEASUREMENTS_eNB *measurements = &eNB->measurements[eNB_id];
+  PHY_MEASUREMENTS_eNB *measurements = &eNB->measurements;
   uint32_t *rb_mask = eNB->rb_mask_ul;
 
   uint32_t aarx /* ,rx_power_correction */;
@@ -54,23 +54,26 @@ void lte_eNB_I0_measurements(PHY_VARS_eNB *eNB,
 
   measurements->n0_power_tot = 0;
 
-  for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-    if (clear == 1)
-      measurements->n0_power[aarx]=0;
+  if (common_vars->rxdata!=NULL) {
+    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+      if (clear == 1)
+	measurements->n0_power[aarx]=0;
+      
+      
+      measurements->n0_power[aarx] = ((k1*signal_energy(&common_vars->rxdata[aarx][(frame_parms->samples_per_tti<<1) -frame_parms->ofdm_symbol_size],
+							frame_parms->ofdm_symbol_size)) + k2*measurements->n0_power[aarx])>>10;
+      //measurements->n0_power[aarx] = (measurements->n0_power[aarx]) * 12*frame_parms->N_RB_DL)/(frame_parms->ofdm_symbol_size);
+      measurements->n0_power_dB[aarx] = (unsigned short) dB_fixed(measurements->n0_power[aarx]);
+      measurements->n0_power_tot +=  measurements->n0_power[aarx];
+    }
+  
 
-
-    measurements->n0_power[aarx] = ((k1*signal_energy(&common_vars->rxdata[eNB_id][aarx][(frame_parms->samples_per_tti<<1) -frame_parms->ofdm_symbol_size],
-							  frame_parms->ofdm_symbol_size)) + k2*measurements->n0_power[aarx])>>10;
-    //measurements->n0_power[aarx] = (measurements->n0_power[aarx]) * 12*frame_parms->N_RB_DL)/(frame_parms->ofdm_symbol_size);
-    measurements->n0_power_dB[aarx] = (unsigned short) dB_fixed(measurements->n0_power[aarx]);
-    measurements->n0_power_tot +=  measurements->n0_power[aarx];
-  }
-
-  measurements->n0_power_tot_dB = (unsigned short) dB_fixed(measurements->n0_power_tot);
-
-  measurements->n0_power_tot_dBm = measurements->n0_power_tot_dB - eNB->rx_total_gain_dB;
+    measurements->n0_power_tot_dB = (unsigned short) dB_fixed(measurements->n0_power_tot);
+    
+    measurements->n0_power_tot_dBm = measurements->n0_power_tot_dB - eNB->rx_total_gain_dB;
   //      printf("n0_power %d\n",measurements->n0_power_tot_dB);
 
+  }
 
   for (rb=0; rb<frame_parms->N_RB_UL; rb++) {
 
@@ -81,7 +84,7 @@ void lte_eNB_I0_measurements(PHY_VARS_eNB *eNB,
       // select the 7th symbol in an uplink subframe
 	offset = (frame_parms->first_carrier_offset + (rb*12))%frame_parms->ofdm_symbol_size;
 	offset += (7*frame_parms->ofdm_symbol_size);
-	ul_ch  = &common_vars->rxdataF[eNB_id][aarx][offset];
+	ul_ch  = &common_vars->rxdataF[aarx][offset];
 	len = 12;
 	// just do first half of middle PRB for odd number of PRBs
 	if (((frame_parms->N_RB_UL&1) == 1) && 
@@ -112,12 +115,12 @@ void lte_eNB_I0_measurements(PHY_VARS_eNB *eNB,
 }
 
 void lte_eNB_srs_measurements(PHY_VARS_eNB *eNB,
-                              unsigned char eNB_id,
-                              unsigned char UE_id,
+                              module_id_t eNB_id,
+                              module_id_t UE_id,
                               unsigned char init_averaging)
 {
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
-  PHY_MEASUREMENTS_eNB *measurements = &eNB->measurements[eNB_id];
+  PHY_MEASUREMENTS_eNB *measurements = &eNB->measurements;
   LTE_eNB_SRS *srs_vars = &eNB->srs_vars[UE_id];
 
   int32_t aarx,rx_power_correction;
@@ -128,7 +131,7 @@ void lte_eNB_srs_measurements(PHY_VARS_eNB *eNB,
   //printf("Running eNB_srs_measurements for eNB_id %d\n",eNB_id);
 
   if (init_averaging == 1)
-    rx_power_avg_eNB[eNB_id][UE_id] = 0;
+    rx_power_avg_eNB[UE_id] = 0;
 
   rx_power = 0;
 
@@ -145,9 +148,9 @@ void lte_eNB_srs_measurements(PHY_VARS_eNB *eNB,
 
 
     measurements->rx_spatial_power[UE_id][0][aarx] =
-      ((signal_energy_nodc(&srs_vars->srs_ch_estimates[eNB_id][aarx][frame_parms->first_carrier_offset],
+      ((signal_energy_nodc(&srs_vars->srs_ch_estimates[aarx][frame_parms->first_carrier_offset],
                            (frame_parms->N_RB_DL*6)) +
-        signal_energy_nodc(&srs_vars->srs_ch_estimates[eNB_id][aarx][1],
+        signal_energy_nodc(&srs_vars->srs_ch_estimates[aarx][1],
                            (frame_parms->N_RB_DL*6)))*rx_power_correction) -
       measurements->n0_power[aarx];
 
@@ -169,14 +172,14 @@ void lte_eNB_srs_measurements(PHY_VARS_eNB *eNB,
 
   //    measurements->rx_avg_power_dB[UE_id]/=frame_parms->nb_antennas_rx;
   if (init_averaging == 0)
-    rx_power_avg_eNB[UE_id][eNB_id] = ((k1*rx_power_avg_eNB[UE_id][eNB_id]) + (k2*rx_power))>>10;
+    rx_power_avg_eNB[UE_id] = ((k1*rx_power_avg_eNB[UE_id]) + (k2*rx_power))>>10;
   else
-    rx_power_avg_eNB[UE_id][eNB_id] = rx_power;
+    rx_power_avg_eNB[UE_id] = rx_power;
 
   measurements->wideband_cqi_tot[UE_id] = dB_fixed2(rx_power,2*measurements->n0_power_tot);
   // times 2 since we have noise only in the odd carriers of the srs comb
 
-  measurements->rx_rssi_dBm[UE_id] = (int32_t)dB_fixed(rx_power_avg_eNB[UE_id][eNB_id])-eNB->rx_total_gain_dB;
+  measurements->rx_rssi_dBm[UE_id] = (int32_t)dB_fixed(rx_power_avg_eNB[UE_id])-eNB->rx_total_gain_dB;
 
 
 
@@ -188,9 +191,9 @@ void lte_eNB_srs_measurements(PHY_VARS_eNB *eNB,
 
       //      printf("common_vars->srs_ch_estimates[0] => %x\n",common_vars->srs_ch_estimates[0]);
       if (rb < 12)
-        ul_ch    = &srs_vars->srs_ch_estimates[eNB_id][aarx][frame_parms->first_carrier_offset + (rb*12)];
+        ul_ch    = &srs_vars->srs_ch_estimates[aarx][frame_parms->first_carrier_offset + (rb*12)];
       else if (rb>12)
-        ul_ch    = &srs_vars->srs_ch_estimates[eNB_id][aarx][6 + (rb-13)*12];
+        ul_ch    = &srs_vars->srs_ch_estimates[aarx][6 + (rb-13)*12];
       else {
         measurements->subband_cqi_dB[UE_id][aarx][rb] = 0;
         continue;
@@ -210,7 +213,7 @@ void lte_eNB_srs_measurements(PHY_VARS_eNB *eNB,
           2*measurements->n0_power[aarx]);
       // 2*n0_power since we have noise from the odd carriers in the comb of the srs
 
-      //    msg("subband_cqi[%d][%d][%d] => %d (%d dB)\n",eNB_id,aarx,rb,measurements->subband_cqi[eNB_id][aarx][rb],measurements->subband_cqi_dB[eNB_id][aarx][rb]);
+      //    msg("subband_cqi[%d][%d][%d] => %d (%d dB)\n",eNB_id,aarx,rb,measurements->subband_cqi[aarx][rb],measurements->subband_cqi_dB[aarx][rb]);
     }
 
   }

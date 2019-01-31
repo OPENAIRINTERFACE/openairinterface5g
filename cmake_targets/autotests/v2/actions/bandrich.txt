@@ -13,6 +13,16 @@ containing lines:
     SUBSYSTEM=="tty", ENV{ID_VENDOR_ID}=="1a8d", ENV{ID_MODEL_ID}=="100d", ENV{ID_SERIAL_SHORT}=="357473040068155", ENV{ID_USB_INTERFACE_NUM}=="00", SYMLINK+="bandrich.data", MODE="0666"
     SUBSYSTEM=="tty", ENV{ID_VENDOR_ID}=="1a8d", ENV{ID_MODEL_ID}=="100d", ENV{ID_SERIAL_SHORT}=="357473040068155", ENV{ID_USB_INTERFACE_NUM}=="02", SYMLINK+="bandrich.control", MODE="0666"
 
+To avoid NetworkManager to play with the bandrich, add also the line:
+
+    ENV{ID_VENDOR_ID}=="1a8d", ENV{ID_MM_DEVICE_IGNORE}="1"
+
+Maybe also add; , ENV{ID_MM_DEVICE_IGNORE}="1"
+to the two other lines.
+
+Then run: udevadm control --reload-rules
+And:      service network-manager restart
+
 Change vendor_id/model_id/serial/interface num to match yours.
 Use lsusb -v to find values.
 

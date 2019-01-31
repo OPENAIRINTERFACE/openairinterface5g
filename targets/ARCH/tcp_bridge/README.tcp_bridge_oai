@@ -1,0 +1,42 @@
+The driver tcp_bridge_oai.c is to be used with the basic simulator.
+
+To build the basic simulator:
+    cd [openair top directory]
+    . oaienv
+    cd cmake_targets
+    ./build_oai -I -w USRP
+    ./build_oai --basic-simulator
+    cd ../common/utils/T/tracer
+    make
+
+To use it, you need to run the eNB and the UE.
+
+The eNB requires the T tracer.
+Open two terminals.
+In one terminal, run:
+    cd [openair top directory]
+    cd common/utils/T/tracer
+    ./enb -d ../T_messages.txt
+In the other terminal, run:
+    cd [openair top directory]
+    cd cmake_targets/basic_simulator/enb
+    export ENODEB=1
+    sudo -E ./lte-softmodem -O [configuration file] --T_stdout 0
+[configuration file] is just a regular configuration file.
+The eNB needs an EPC.
+
+To run the UE, open a terminal and run:
+    cd [openair top directory]
+    cd cmake_targets/basic_simulator/ue
+    sudo ./lte-uesoftmodem -C 2680000000 -r 25 --ue-rxgain 140
+Adapt the value of -r, it has to match the value N_RB_DL in the configuration
+file of the eNB. (Same for -C which should match the value downlink_frequency
+in the configuration file.)
+
+The UE configuration (security keys) is generated from the file
+openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf. You need to configure
+your EPC to know about the UE. If you change the file
+openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf then you need to
+regenerate the configuration files using the program targets/bin/conf2uedata.
+You run it as:
+    $OPENAIR_DIR/targets/bin/conf2uedata -c $OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf -o $OPENAIR_DIR/cmake_targets/basic_simulator/ue

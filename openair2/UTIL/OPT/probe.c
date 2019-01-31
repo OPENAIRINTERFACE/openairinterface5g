@@ -90,31 +90,27 @@ what about the implementation
 
 #include <pthread.h>
 #include <stdint.h>
-
+#include "common/config/config_userapi.h"
 #include "opt.h"
 
 int opt_enabled=0;
 
-#define PACKET_MAC_LTE_DEFAULT_UDP_PORT (9999)
-
-typedef uint8_t  guint8;
-typedef uint16_t guint16;
-typedef uint32_t guint32;
-typedef guint8   gboolean;
-
-#include "packet-mac-lte.h"
-#include "mac_pcap.h"
-
 //static unsigned char g_PDUBuffer[1600];
 //static unsigned int g_PDUOffset;
 
-
-char in_ip[40];
-char in_path[100];
+static char *in_ip;
+static char *in_path;
 FILE *file_fd = NULL;
+pcap_hdr_t file_header = {
+  0xa1b2c3d4,   /* magic number */
+  2, 4,         /* version number is 2.4 */
+  0,            /* timezone */
+  0,            /* sigfigs - apparently all tools do this */
+  65535,        /* snaplen - this should be long enough */
+  MAC_LTE_DLT   /* Data Link Type (DLT).  Set as unused value 147 for now */
+};
 
 trace_mode_t opt_type = OPT_NONE;
-static radio_type_t radio_type;
 static unsigned int subframesSinceCaptureStart;
 
 static int g_socksd = -1;/* UDP socket used for sending frames */
@@ -137,17 +133,15 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
 static int MAC_LTE_PCAP_WritePDU(MAC_Context_Info_t *context,
                                  const unsigned char *PDU, unsigned int length);
 
-static void *opt_listener_thread(void *arg)
-{
+static void *opt_listener_thread(void *arg) {
   ssize_t ret;
   struct sockaddr_in from_address;
   socklen_t socklen = sizeof(from_address);
-
   memset(&from_address, 0, sizeof(from_address));
 
   while(1) {
     /* Simply drop packets */
-    ret = recvfrom(opt_listener.sd, NULL, 0, 0, (struct sockaddr*)&from_address,
+    ret = recvfrom(opt_listener.sd, NULL, 0, 0, (struct sockaddr *)&from_address,
                    &socklen);
 
     if (ret == 0) {
@@ -169,17 +163,13 @@ static void *opt_listener_thread(void *arg)
 }
 
 static
-int opt_create_listener_socket(char *ip_address, uint16_t port)
-{
+int opt_create_listener_socket(char *ip_address, uint16_t port) {
   /* Create an UDP socket and listen on it.
    * Silently discard PDU received.
    */
-
   int sd = -1;
   int ret = -1;
-
   memset(&opt_listener, 0, sizeof(opt_listener_t));
-
   sd = socket(AF_INET, SOCK_DGRAM, 0);
 
   if (sd < 0) {
@@ -194,8 +184,7 @@ int opt_create_listener_socket(char *ip_address, uint16_t port)
   /* Listening only on provided IP address */
   opt_listener.address.sin_addr.s_addr = inet_addr(ip_address);
   opt_listener.address.sin_port = htons(port);
-
-  ret = bind(opt_listener.sd, (struct sockaddr*) &opt_listener.address, sizeof(opt_listener.address));
+  ret = bind(opt_listener.sd, (struct sockaddr *) &opt_listener.address, sizeof(opt_listener.address));
 
   if (ret != 0) {
     LOG_E(OPT, "Failed to bind socket to (%s:%u): %s\n",
@@ -235,58 +224,39 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
                       guint16 rnti, guint16 ueid, guint16 sfnSf,
                       guint8 isPredefinedData, guint8 retx, guint8 crcStatus,
                       guint8 oob_event, guint8 oob_event_value,
-                      uint8_t *pdu_buffer, unsigned int pdu_buffer_size)
-{
-  #ifdef JUMBO_FRAME
-     static unsigned char frameBuffer[9000];
-  #else
-     static unsigned char frameBuffer[1600];
-  #endif 
-  static unsigned int frameOffset;
-
+                      uint8_t *pdu_buffer, unsigned int pdu_buffer_size) {
+  unsigned char frameBuffer[9000];
+  unsigned int frameOffset;
   ssize_t bytesSent;
   frameOffset = 0;
   uint16_t tmp16;
-
-  /********************************************************************/
-  /* Fixed start to each frame (allowing heuristic dissector to work) */
-  /* Not NULL terminated */
-  memset(frameBuffer+frameOffset, 0, sizeof(mac_lte_info)+pdu_buffer_size + 8);
-
   memcpy(frameBuffer+frameOffset, MAC_LTE_START_STRING,
          strlen(MAC_LTE_START_STRING));
   frameOffset += strlen(MAC_LTE_START_STRING);
-
   /******************************************************************************/
   /* Now write out fixed fields (the mandatory elements of struct mac_lte_info) */
   frameBuffer[frameOffset++] = radioType;
   frameBuffer[frameOffset++] = direction;
   frameBuffer[frameOffset++] = rntiType;
-
   /*************************************/
   /* Now optional fields               */
-
   /* RNTI */
   frameBuffer[frameOffset++] = MAC_LTE_RNTI_TAG;
   tmp16 = htons(rnti);
   memcpy(frameBuffer+frameOffset, &tmp16, 2);
   frameOffset += 2;
-
   /* UEId */
   frameBuffer[frameOffset++] = MAC_LTE_UEID_TAG;
   tmp16 = htons(ueid);
   memcpy(frameBuffer+frameOffset, &tmp16, 2);
   frameOffset += 2;
-
   /* Subframe number */
-  frameBuffer[frameOffset++] = MAC_LTE_SUBFRAME_TAG;
+  frameBuffer[frameOffset++] = MAC_LTE_FRAME_SUBFRAME_TAG;
   tmp16 = htons(sfnSf); // frame counter : this will give an expert info as wireshark expects SF and not F
   memcpy(frameBuffer+frameOffset, &tmp16, 2);
   frameOffset += 2;
-
   frameBuffer[frameOffset++] = MAC_LTE_CRC_STATUS_TAG;
   frameBuffer[frameOffset++] = crcStatus;
-  
 #ifdef WIRESHARK_DEV
   frameOffset += 2;
   tmp16 = htons(sfnSf); // subframe
@@ -306,52 +276,55 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
     frameBuffer[frameOffset++] = retx;
   }
 
-//#ifdef WIRESHARK_DEV
+  //#ifdef WIRESHARK_DEV
 
   /* Relating to out-of-band events */
   /* N.B. dissector will only look to these fields if length is 0... */
   if (pdu_buffer_size==0) {
     switch (oob_event) {
-    case ltemac_send_preamble :
-      LOG_D(OPT,"oob ltemac_send_preamble event %02x."
-          //"%02x."
-          "%02x.%02x\n",
-          MAC_LTE_OOB_EVENT_TAG,
-          //ltemac_send_preamble,
-          rnti,
-          oob_event_value);
-      //frameBuffer[frameOffset++]=0;
-      //frameBuffer[frameOffset++]=0;
-      //frameBuffer[frameOffset++]=0;
-      frameBuffer[frameOffset++] = MAC_LTE_OOB_EVENT_TAG;
-      //frameBuffer[frameOffset++]=ltemac_send_preamble;
-      frameBuffer[frameOffset++]=rnti; // is the preamble
-      frameBuffer[frameOffset++]=oob_event_value;
-      break;
+      case ltemac_send_preamble :
+        LOG_D(OPT,"ltemac_send_preamble event %02x."
+              //"%02x."
+              "%02x.%02x\n",
+              MAC_LTE_SEND_PREAMBLE_TAG,
+              //ltemac_send_preamble,
+              rnti,
+              oob_event_value);
+        //frameBuffer[frameOffset++]=0;
+        //frameBuffer[frameOffset++]=0;
+        //frameBuffer[frameOffset++]=0;
+        frameBuffer[frameOffset++] = MAC_LTE_SEND_PREAMBLE_TAG;
+        //frameBuffer[frameOffset++]=ltemac_send_preamble;
+        frameBuffer[frameOffset++]=rnti; // is the preamble
+        frameBuffer[frameOffset++]=oob_event_value;
+        break;
 
-    case ltemac_send_sr:
-      frameBuffer[frameOffset++]=ltemac_send_sr;
-      frameOffset+=2;
-      frameBuffer[frameOffset++]=oob_event_value;
-      break;
+      case ltemac_send_sr:
+        frameBuffer[frameOffset++]=MAC_LTE_SR_TAG ;
+        frameOffset+=2;
+        frameBuffer[frameOffset++]=rnti;
+        frameOffset++;
+        frameBuffer[frameOffset++]=oob_event_value;
+        frameOffset++;
+        break;
 
-    case ltemac_sr_failure:
-    default:
-      LOG_W(OPT,"not implemeneted yet\n");
-      break;
+      case ltemac_sr_failure:
+      default:
+        LOG_W(OPT,"not implemeneted yet\n");
+        break;
     }
   }
 
-//#endif
+  //#endif
   /***************************************/
   /* Now write the MAC PDU               */
   frameBuffer[frameOffset++] = MAC_LTE_PAYLOAD_TAG;
-  
+
   /* Append actual PDU  */
   //memcpy(frameBuffer+frameOffset, g_PDUBuffer, g_PDUOffset);
   //frameOffset += g_PDUOffset;
   if (pdu_buffer != NULL) {
-    memcpy(frameBuffer+frameOffset, (void*)pdu_buffer, pdu_buffer_size);
+    memcpy(frameBuffer+frameOffset, (void *)pdu_buffer, pdu_buffer_size);
     frameOffset += pdu_buffer_size;
   }
 
@@ -368,203 +341,194 @@ static void SendFrame(guint8 radioType, guint8 direction, guint8 rntiType,
 
 /* Write an individual PDU (PCAP packet header + mac-context + mac-pdu) */
 static int MAC_LTE_PCAP_WritePDU(MAC_Context_Info_t *context,
-                                 const uint8_t *PDU, unsigned int length)
-{
+                                 const uint8_t *PDU, unsigned int length) {
   pcaprec_hdr_t packet_header;
   uint8_t context_header[256];
   int offset = 0;
   unsigned short tmp16;
-
   /*****************************************************************/
   /* Context information (same as written by UDP heuristic clients */
   context_header[offset++] = context->radioType;
   context_header[offset++] = context->direction;
   context_header[offset++] = context->rntiType;
-
   /* RNTI */
   context_header[offset++] = MAC_LTE_RNTI_TAG;
   tmp16 = htons(context->rnti);
   memcpy(context_header+offset, &tmp16, 2);
   offset += 2;
-
   /* UEId */
   context_header[offset++] = MAC_LTE_UEID_TAG;
   tmp16 = htons(context->ueid);
   memcpy(context_header+offset, &tmp16, 2);
   offset += 2;
-
   /* Subframe number */
-  context_header[offset++] = MAC_LTE_SUBFRAME_TAG;
+  context_header[offset++] = MAC_LTE_FRAME_SUBFRAME_TAG;
   tmp16 = htons(context->subFrameNumber);
   memcpy(context_header+offset, &tmp16, 2);
   offset += 2;
-
   /* CRC Status */
   context_header[offset++] = MAC_LTE_CRC_STATUS_TAG;
   context_header[offset++] = context->crcStatusOK;
-
   /* Data tag immediately preceding PDU */
   context_header[offset++] = MAC_LTE_PAYLOAD_TAG;
-
   /****************************************************************/
   /* PCAP Header                                                  */
   /* TODO: Timestamp might want to be relative to a more sensible
      base time... */
-#if defined(RTAI)
-  {
-    unsigned long long int current_ns;
-
-    current_ns = rt_get_time_ns();
-    packet_header.ts_sec  = current_ns / 1000000000UL;
-    packet_header.ts_usec = current_ns % 1000;
-  }
-#else
   packet_header.ts_sec = context->subframesSinceCaptureStart / 1000;
   packet_header.ts_usec = (context->subframesSinceCaptureStart % 1000) * 1000;
-#endif
   packet_header.incl_len = offset + length;
   packet_header.orig_len = offset + length;
-
   /***************************************************************/
   /* Now write everything to the file                            */
   fwrite(&packet_header, sizeof(pcaprec_hdr_t), 1, file_fd);
   fwrite(context_header, 1, offset, file_fd);
   fwrite(PDU, 1, length, file_fd);
-
   return 1;
 }
-
+#include <common/ran_context.h>
+extern RAN_CONTEXT_t RC;
+#include <openair1/PHY/phy_extern_ue.h>
 /* Remote serveraddress (where Wireshark is running) */
 void trace_pdu(int direction, uint8_t *pdu_buffer, unsigned int pdu_buffer_size,
                int ueid, int rntiType, int rnti, uint16_t sysFrameNumber, uint8_t subFrameNumber, int oob_event,
-               int oob_event_value)
-{
+               int oob_event_value) {
   MAC_Context_Info_t pdu_context;
+  int radioType=FDD_RADIO;
+
+  if (RC.eNB[0][0]!=NULL)
+    radioType=RC.eNB[0][0]->frame_parms.frame_type== FDD ? FDD_RADIO:TDD_RADIO;
+
+  if (PHY_vars_UE_g[0][0] != NULL)
+    radioType=PHY_vars_UE_g[0][0]->frame_parms.frame_type== FDD ? FDD_RADIO:TDD_RADIO;
 
   switch (opt_type) {
-  case OPT_WIRESHARK :
-    if (g_socksd == -1) {
-      return;
-    }
+    case OPT_WIRESHARK :
+      if (g_socksd == -1) {
+        return;
+      }
 
-    SendFrame(radio_type,
-              (direction == DIRECTION_DOWNLINK) ? DIRECTION_DOWNLINK : DIRECTION_UPLINK,
-              rntiType, rnti, ueid, (sysFrameNumber<<4) + subFrameNumber,
-              1, 0, 1,  //guint8 isPredefinedData, guint8 retx, guint8 crcStatus
-              oob_event,oob_event_value,
-              pdu_buffer, pdu_buffer_size);
-    break;
+      SendFrame( radioType,
+                 (direction == DIRECTION_DOWNLINK) ? DIRECTION_DOWNLINK : DIRECTION_UPLINK,
+                 rntiType, rnti, ueid, (sysFrameNumber<<4) + subFrameNumber,
+                 1, 0, 1,  //guint8 isPredefinedData, guint8 retx, guint8 crcStatus
+                 oob_event,oob_event_value,
+                 pdu_buffer, pdu_buffer_size);
+      break;
 
-  case OPT_PCAP:
-    if (file_fd == NULL) {
-      return;
-    }
+    case OPT_PCAP:
+      if (file_fd == NULL) {
+        return;
+      }
 
-    pdu_context.radioType = radio_type;
-    pdu_context.direction = (direction == DIRECTION_DOWNLINK) ? DIRECTION_DOWNLINK
-                            : DIRECTION_UPLINK;
-    pdu_context.rntiType = rntiType;
-    pdu_context.rnti = rnti;
-    pdu_context.ueid = ueid;
-    pdu_context.isRetx = 0;
-    pdu_context.crcStatusOK =1;
-    pdu_context.sysFrameNumber = sysFrameNumber;
-    pdu_context.subFrameNumber = subFrameNumber;
-    pdu_context.subframesSinceCaptureStart = subframesSinceCaptureStart++;
-    MAC_LTE_PCAP_WritePDU( &pdu_context, pdu_buffer, pdu_buffer_size);
-    break;
+      pdu_context.radioType =  radioType;
+      pdu_context.direction = (direction == DIRECTION_DOWNLINK) ? DIRECTION_DOWNLINK
+                              : DIRECTION_UPLINK;
+      pdu_context.rntiType = rntiType;
+      pdu_context.rnti = rnti;
+      pdu_context.ueid = ueid;
+      pdu_context.isRetx = 0;
+      pdu_context.crcStatusOK =1;
+      pdu_context.sysFrameNumber = sysFrameNumber;
+      pdu_context.subFrameNumber = subFrameNumber;
+      pdu_context.subframesSinceCaptureStart = subframesSinceCaptureStart++;
+      MAC_LTE_PCAP_WritePDU( &pdu_context, pdu_buffer, pdu_buffer_size);
+      break;
 
-  case OPT_TSHARK:
-  default:
-    break;
+    case OPT_TSHARK:
+    default:
+      break;
   }
 }
 /*---------------------------------------------------*/
-int init_opt(char *path, char *ip, char *port, radio_type_t radio_type_p)
-{
+int init_opt(void) {
+  char *in_type=NULL;
+  paramdef_t opt_params[]          = OPT_PARAMS_DESC ;
+  checkedparam_t opt_checkParams[] = OPTPARAMS_CHECK_DESC;
   uint16_t in_port;
+  config_set_checkfunctions(opt_params, opt_checkParams,
+                            sizeof(opt_params)/sizeof(paramdef_t));
+  config_get( opt_params,sizeof(opt_params)/sizeof(paramdef_t),OPT_CONFIGPREFIX);
   subframesSinceCaptureStart = 0;
+  int tmptype = config_get_processedint( &(opt_params[OPTTYPE_IDX]));
 
-  if (path != NULL) {
-    strncpy( in_path, path, sizeof(in_path) );
-    in_path[sizeof(in_path) - 1] = 0; // terminate string
+  if (tmptype == OPT_NONE) {
+    opt_enabled=0;
+    LOG_I(OPT,"OPT disabled\n");
+    return 0;
+  } else if (tmptype == OPT_PCAP && strlen(in_path) > 0) {
+    opt_type = OPT_PCAP;
+    opt_enabled=1;
+    LOG_I(OPT,"Enabling OPT for PCAP  with the following file %s \n",in_path);
+  } else if (tmptype == OPT_WIRESHARK && strlen(in_ip) > 0) {
+    opt_enabled=1;
+    opt_type = OPT_WIRESHARK;
+    LOG_I(OPT,"Enabling OPT for wireshark for local interface %s\n",in_ip);
   } else {
-    strcpy( in_path, "/tmp/opt.pcap" );
+    LOG_E(OPT,"Invalid OPT configuration\n");
+    config_printhelp(opt_params,sizeof(opt_params)/sizeof(paramdef_t),OPT_CONFIGPREFIX);
   }
 
-  if (ip != NULL) {
-    strncpy( in_ip, ip, sizeof(in_ip) );
-    in_ip[sizeof(in_ip) - 1] = 0; // terminate string
-  } else {
-    strcpy( in_ip, "127.0.0.1" );
-  }
-
-  if (port != NULL) {
-    in_port = atoi(port);
-  } else {
-    in_port = PACKET_MAC_LTE_DEFAULT_UDP_PORT;
-  }
-
-  radio_type = radio_type_p;
+  in_port = PACKET_MAC_LTE_DEFAULT_UDP_PORT;
 
   // trace_mode
   switch (opt_type) {
-  case OPT_WIRESHARK:
+    case OPT_WIRESHARK:
 
-    /* Create local server socket only if using localhost address */
-    if (strcmp(in_ip, "127.0.0.1") == 0) {
-      opt_create_listener_socket(in_ip, in_port);
-    }
+      /* Create local server socket only if using localhost address */
+      if (strcmp(in_ip, "127.0.0.1") == 0) {
+        opt_create_listener_socket(in_ip, in_port);
+      }
 
-    g_socksd = socket(AF_INET, SOCK_DGRAM, 0);
+      g_socksd = socket(AF_INET, SOCK_DGRAM, 0);
 
-    if (g_socksd == -1) {
-      LOG_E(OPT, "Error trying to create socket (errno=%d)\n", errno);
-      LOG_E(OPT, "CREATING SOCKET FAILED\n");
-      return (-1);
-    }
+      if (g_socksd == -1) {
+        LOG_E(OPT, "Error trying to create socket (errno=%d)\n", errno);
+        LOG_E(OPT, "CREATING SOCKET FAILED\n");
+        return (-1);
+      }
 
-    /* Get remote IP address from the function argument */
-    g_serv_addr.sin_family = AF_INET;
-    g_serv_addr.sin_port = htons(in_port);
-    g_serv_addr.sin_addr.s_addr = inet_addr(in_ip);
-    break;
+      /* Get remote IP address from the function argument */
+      g_serv_addr.sin_family = AF_INET;
+      g_serv_addr.sin_port = htons(in_port);
+      g_serv_addr.sin_addr.s_addr = inet_addr(in_ip);
+      break;
 
-  case OPT_PCAP:
-    file_fd = fopen(in_path, "w");
+    case OPT_PCAP:
+      file_fd = fopen(in_path, "w");
 
-    if (file_fd == NULL) {
-      LOG_D(OPT, "Failed to open file \"%s\" for writing\n", in_path);
-      return (-1);
-    }
-    /* Write the file header */
-    fwrite(&file_header, sizeof(pcap_hdr_t), 1, file_fd);
-    break;
+      if (file_fd == NULL) {
+        LOG_D(OPT, "Failed to open file \"%s\" for writing\n", in_path);
+        return (-1);
+      }
 
-  case OPT_TSHARK:
-    LOG_W(OPT, "Tshark is currently not supported\n");
-    opt_type = OPT_NONE;
-    break;
+      /* Write the file header */
+      fwrite(&file_header, sizeof(pcap_hdr_t), 1, file_fd);
+      break;
 
-  default:
-    opt_type = OPT_NONE;
-    LOG_W(OPT, "supported Option\n");
-    break;
+    case OPT_TSHARK:
+      LOG_W(OPT, "Tshark is currently not supported\n");
+      opt_type = OPT_NONE;
+      break;
+
+    default:
+      opt_type = OPT_NONE;
+      LOG_W(OPT, "supported Option\n");
+      break;
   }
 
   if ( opt_type == OPT_WIRESHARK )
-    LOG_G(OPT,"mode Wireshark: ip %s port %d\n", in_ip, in_port);
+    LOG_E(OPT,"mode Wireshark: ip %s port %d\n", in_ip, in_port);
   else if (opt_type == OPT_PCAP)
-    LOG_G(OPT,"mode PCAB : path is %s \n",in_path);
+    LOG_E(OPT,"mode PCAB : path is %s \n",in_path);
   else
-    LOG_G(OPT,"Unsupported or unknown mode %d \n", opt_type);
+    LOG_E(OPT,"Unsupported or unknown mode %d \n", opt_type);
 
   //  mac_info = (mac_info*)malloc16(sizeof(mac_lte_info));
   // memset(mac_info, 0, sizeof(mac_lte_info)+pdu_buffer_size + 8);
   return (1);
 }
-void terminate_opt(void)
-{
+void terminate_opt(void) {
   /* Close local socket */
   //  free(mac_info);
   if (opt_type != OPT_NONE) {
@@ -572,18 +536,18 @@ void terminate_opt(void)
   }
 
   switch (opt_type) {
-  case OPT_WIRESHARK:
-    close(g_socksd);
-    g_socksd = -1;
-    break;
+    case OPT_WIRESHARK:
+      close(g_socksd);
+      g_socksd = -1;
+      break;
 
-  case OPT_PCAP:
-    fclose (file_fd);
-    file_fd = NULL;
-    break;
+    case OPT_PCAP:
+      fclose (file_fd);
+      file_fd = NULL;
+      break;
 
-  default:
-    break;
+    default:
+      break;
   }
 }
 

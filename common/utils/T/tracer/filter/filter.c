@@ -10,6 +10,8 @@ struct filter {
     struct { struct filter *a, *b; } op2;
     int v;
     struct { int event_type; int arg_index; } evarg;
+    struct { int (*fun)(void *priv, int v); void *priv;
+             struct filter *x; } evfun;
   } v;
 
   int (*eval)(struct filter *this, event e);
@@ -52,6 +54,11 @@ int eval_evarg(struct filter *f, event e)
   return e.e[f->v.evarg.arg_index].i;
 }
 
+int eval_evfun(struct filter *f, event e)
+{
+  return f->v.evfun.fun(f->v.evfun.priv, f->v.evfun.x->eval(f->v.evfun.x, e));
+}
+
 /****************************************************************************/
 /*                     free memory functions                                */
 /****************************************************************************/
@@ -60,6 +67,12 @@ void free_op2(struct filter *f)
 {
   free_filter(f->v.op2.a);
   free_filter(f->v.op2.b);
+  free(f);
+}
+
+void free_evfun(struct filter *f)
+{
+  free_filter(f->v.evfun.x);
   free(f);
 }
 
@@ -132,6 +145,19 @@ filter *filter_evarg(void *database, char *event_name, char *varname)
     abort();
   }
 
+  return ret;
+}
+
+filter *filter_evfun(void *database, int (*fun)(void *priv, int v),
+    void *priv, filter *x)
+{
+  struct filter *ret = calloc(1, sizeof(struct filter));
+  if (ret == NULL) abort();
+  ret->eval = eval_evfun;
+  ret->free = free_evfun;
+  ret->v.evfun.fun  = fun;
+  ret->v.evfun.priv = priv;
+  ret->v.evfun.x    = x;
   return ret;
 }
 

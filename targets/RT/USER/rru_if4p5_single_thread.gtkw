@@ -1,0 +1,58 @@
+[*]
+[*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
+[*] Mon May  1 10:27:32 2017
+[*]
+[dumpfile] "/home/knopp/oai/openairinterface5g/cmake_targets/oaisim_build_oai/build/oaisim.vcd"
+[dumpfile_mtime] "Mon May  1 10:15:17 2017"
+[dumpfile_size] 3932640
+[savefile] "/home/knopp/oai/openairinterface5g/targets/RT/USER/rru_if4p5_single_thread.gtkw"
+[timestart] 15501300000
+[size] 1301 831
+[pos] 309 -10
+*-26.793451 15711000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 284
+[signals_width] 262
+[sst_expanded] 1
+[sst_vpaned_height] 354
+@28
+functions.trx_read
+functions.trx_write
+@24
+variables.trx_write_flags[63:0]
+@28
+functions.trx_write_if
+functions.send_if4
+functions.trx_read_if
+functions.recv_if4
+@24
+variables.trx_ts[63:0]
+variables.trx_tst[63:0]
+variables.trx_ts_ue[63:0]
+variables.trx_tst_ue[63:0]
+@28
+functions.phy_procedures_ru_feptx_ofdm0
+functions.phy_procedures_ru_feprx0
+functions.phy_ru_prach_rx
+@24
+variables.subframe_number_TX0_RU[63:0]
+variables.frame_number_TX0_RU[63:0]
+variables.subframe_number_RX0_RU[63:0]
+variables.frame_number_RX0_RU[63:0]
+variables.frame_number_RX0_UE[63:0]
+variables.subframe_RX0_UE[63:0]
+variables.frame_number_RX1_UE[63:0]
+variables.subframe_RX1_UE[63:0]
+variables.frame_number_TX0_UE[63:0]
+variables.subframe_TX0_UE[63:0]
+variables.frame_number_TX1_UE[63:0]
+variables.subframe_TX1_UE[63:0]
+@28
+functions.ue_thread_rxtx0
+functions.ue_thread_rxtx1
+functions.rx_pdcch
+functions.pdsch_procedures_si
+functions.pdsch_procedures
+@29
+functions.pdsch_procedures_ra
+[pattern_trace] 1
+[pattern_trace] 0

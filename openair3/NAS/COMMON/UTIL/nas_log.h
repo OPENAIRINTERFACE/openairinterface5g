@@ -39,7 +39,7 @@ Description Usefull logging functions
 #define __NAS_LOG_H__
 
 #if defined(NAS_BUILT_IN_UE) && defined(NAS_UE)
-# include "UTIL/LOG/log.h"
+# include "common/utils/LOG/log.h"
 # undef LOG_TRACE
 #endif
 
@@ -95,7 +95,7 @@ typedef enum {
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
-#if defined(NAS_BUILT_IN_UE) && defined(NAS_UE)
+#ifdef LOG_E
 # define LOG_TRACE(s, x, args...)                               \
 do {                                                            \
     switch (s) {                                                \
@@ -106,54 +106,21 @@ do {                                                            \
     }                                                           \
 } while (0)
 
-# define LOG_DUMP(dATA, lEN)                                                    \
-do {                                                                            \
-    char buffer[3*lEN + 1];                                                     \
-    int i;                                                                      \
-    for (i = 0; i < lEN; i++)                                                   \
-        sprintf (&buffer[3*i], "%02x ", dATA[i]);                               \
-    LOG_D(NAS, " Dump %d: %s\n", lEN, buffer);                                  \
-} while (0)
-
-# define LOG_FUNC_IN                                                            \
-do {                                                                            \
-    LOG_D(NAS, " %s:%d %*sEntering %s()\n", __FILE__, __LINE__, nas_log_func_indent, "", __FUNCTION__);   \
-    nas_log_func_indent += 2;                                                   \
-} while (0)
-
-# define LOG_FUNC_OUT                                                           \
-do {                                                                            \
-    nas_log_func_indent -= 2;                                                   \
-    LOG_D(NAS, " %s:%d %*sLeaving %s()\n", __FILE__, __LINE__, nas_log_func_indent, "", __FUNCTION__);    \
-} while (0)
-
-# define LOG_FUNC_RETURN(rETURNcODE)                                            \
-do {                                                                            \
-    nas_log_func_indent -= 2;                                                   \
-    LOG_D(NAS, " %s:%d %*sLeaving %s(rc = %ld)\n", __FILE__, __LINE__, nas_log_func_indent, "",           \
-          __FUNCTION__, (long) (rETURNcODE));                                     \
-    return (rETURNcODE);                                                        \
-} while (0)
+# define LOG_DUMP(dATA, lEN)   LOG_DUMPMSG(NAS, DEBUG_NAS,dATA, lEN, " Dump %d:\n", lEN)                                                 
+# define LOG_FUNC_IN  LOG_ENTER(NAS)
+# define LOG_FUNC_OUT  LOG_END(NAS)
+# define LOG_FUNC_RETURN(rETURNcODE) LOG_RETURN(NAS,rETURNcODE)
 
 extern int nas_log_func_indent;
 
 #else
-# define LOG_TRACE log_data(__FILE__, __LINE__); log_trace
-# define LOG_DUMP(a, b) log_dump((a),(b));
+# define LOG_TRACE(s, x, args...)  
+# define LOG_DUMP(dATA, lEN)   LOG_DUMPMSG(NAS, LOG_DUMP_CHAR,dATA, lEN,  " Dump %d:\n", lEN)
 
-# define LOG_FUNC_IN LOG_TRACE(FUNC_IN, "Entering %s()", __FUNCTION__)
-# define LOG_FUNC_OUT LOG_TRACE(FUNC_OUT, "Leaving %s()", __FUNCTION__)
-# define LOG_FUNC_RETURN(rETURNcODE)                                            \
-do {                                                                           \
-    LOG_TRACE(FUNC_OUT, "Leaving %s(rc = %ld)", __FUNCTION__,                  \
-    (long) (rETURNcODE));                                                        \
-    return (rETURNcODE);                                                       \
-} while(0)
+# define LOG_FUNC_IN 
+# define LOG_FUNC_OUT 
+# define LOG_FUNC_RETURN(rETURNcODE)  return  rETURNcODE                                  \
 
-void nas_log_init(char filter);
-void log_data(const char* filename, int line);
-void log_trace(log_severity_t severity, const char* data, ...);
-void log_dump(const char* data, int len);
 #endif
 
 #endif /* __NAS_LOG_H__*/

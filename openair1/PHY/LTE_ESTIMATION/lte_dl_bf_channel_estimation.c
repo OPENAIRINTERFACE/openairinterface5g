@@ -19,16 +19,16 @@
  *      contact@openairinterface.org
  */
 
-#ifdef USER_MODE
 #include <string.h>
-#endif
-#include "defs.h"
-#include "PHY/defs.h"
+#include "PHY/defs_UE.h"
+#include "lte_estimation.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
+
 #include "filt16_32.h"
 //#define DEBUG_BF_CH
 
 int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
-                                 uint8_t eNB_id,
+                                 module_id_t eNB_id,
                                  uint8_t eNB_offset,
                                  unsigned char Ns,
                                  unsigned char p,
@@ -81,7 +81,7 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
     //generate ue specific pilots
     lprime = symbol/3-1;
     lte_dl_ue_spec_rx(phy_vars_ue,uespec_pilot,Ns,5,lprime,0,dlsch0_harq->nb_rb);
-    //write_output("uespec_pilot_rx.m","uespec_pilot",uespec_pilot,300,1,1);
+    //LOG_M("uespec_pilot_rx.m","uespec_pilot",uespec_pilot,300,1,1);
 
     if (frame_parms->Ncp==0){
       if (symbol==3 || symbol==6 || symbol==9 || symbol==12)
@@ -193,7 +193,7 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
                                            phy_vars_ue->ch_est_alpha,dl_bf_ch-(frame_parms->ofdm_symbol_size<<1),
                                            1,frame_parms->ofdm_symbol_size);
       } else {
-        msg("lte_dl_bf_channel_estimation: beamforming channel estimation not supported for TM7 Extended CP.\n"); // phy_vars_ue->ch_est_beta should be defined equaling 1/3
+        LOG_E(PHY,"lte_dl_bf_channel_estimation: beamforming channel estimation not supported for TM7 Extended CP.\n"); // phy_vars_ue->ch_est_beta should be defined equaling 1/3
       }
     }
     //estimation and interpolation
@@ -234,11 +234,11 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
                 ch[1] = (short)(((int)pil[0]*rxF[17] + (int)pil[1]*rxF[16])>>15);
                 multadd_real_vector_complex_scalar(fr,ch,dl_bf_ch,16);
               } else {
-                msg("lte_dl_bf_channel_estimation(lte_dl_bf_channel_estimation.c):TM7 beamgforming channel estimation not supported for extented CP\n");
+                LOG_E(PHY,"lte_dl_bf_channel_estimation(lte_dl_bf_channel_estimation.c):TM7 beamgforming channel estimation not supported for extented CP\n");
                 exit(-1);
               }
             } else {
-              msg("lte_dl_bf_channel_estimation(lte_dl_bf_channel_estimation.c): transmission mode not supported.\n");
+              LOG_E(PHY,"lte_dl_bf_channel_estimation(lte_dl_bf_channel_estimation.c): transmission mode not supported.\n");
             }
           }
           nb_rb++;
@@ -388,12 +388,12 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 
                }  
              } else {
-              msg("lte_dl_bf_channel_estimation(lte_dl_bf_channel_estimation.c):TM7 beamgforming channel estimation not supported for extented CP\n");
-              exit(-1);
+		LOG_E(PHY,"lte_dl_bf_channel_estimation(lte_dl_bf_channel_estimation.c):TM7 beamgforming channel estimation not supported for extented CP\n");
+		exit(-1);
              }
           
            } else {
-            msg("lte_dl_bf_channel_estimation(lte_dl_bf_channel_estimation.c):transmission mode not supported.\n");
+	      LOG_E(PHY,"lte_dl_bf_channel_estimation(lte_dl_bf_channel_estimation.c):transmission mode not supported.\n");
            }
          }       
          nb_rb++;
@@ -637,12 +637,12 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
 
                 }
               } else {
-                msg("lte_dl_bf_channel_estimation(lte_dl_bf_channel_estimation.c):TM7 beamgforming channel estimation not supported for extented CP\n");
+                LOG_E(PHY,"lte_dl_bf_channel_estimation(lte_dl_bf_channel_estimation.c):TM7 beamgforming channel estimation not supported for extented CP\n");
                 exit(-1);
               }
             
             } else {
-              msg("lte_dl_bf_channel_estimation(lte_dl_bf_channel_estimation.c):transmission mode not supported.\n");
+              LOG_E(PHY,"lte_dl_bf_channel_estimation(lte_dl_bf_channel_estimation.c):transmission mode not supported.\n");
             }
           }
           nb_rb++;
@@ -725,10 +725,10 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
             }
 
           } else {
-            msg("lte_dl_bf_channel_estimation:temporal interpolation not supported for TM7 extented CP.\n");
+            LOG_E(PHY,"lte_dl_bf_channel_estimation:temporal interpolation not supported for TM7 extented CP.\n");
           }
         } else {
-          msg("lte_dl_bf_channel_estimation:temporal interpolation not supported for this beamforming mode.\n");
+          LOG_E(PHY,"lte_dl_bf_channel_estimation:temporal interpolation not supported for this beamforming mode.\n");
         } 
       }
     }

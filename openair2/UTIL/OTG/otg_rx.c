@@ -48,9 +48,10 @@ extern unsigned char NB_UE_INST;
 
 //#include "LAYER2/MAC/extern.h"
 
+#undef MAX
 #define MAX(x,y) ((x)>(y)?(x):(y))
+#undef MIN
 #define MIN(x,y) ((x)<(y)?(x):(y))
-
 
 // Check if the packet is well received or not and extract data
 int otg_rx_pkt(const int dst_instanceP, const int ctime, const char * const buffer_tx, const unsigned int size)
@@ -184,7 +185,7 @@ int otg_rx_pkt(const int dst_instanceP, const int ctime, const char * const buff
         otg_info->radio_access_delay[src_instance][dst_instance]=(float) (ctime- otg_hdr_rx->time);
         otg_multicast_info->radio_access_delay[src_instance][dst_instance]=(float) (ctime- otg_hdr_rx->time);
       } else {
-        LOG_N(OTG,"received packet has tx time %d greater than the current time %d\n",otg_hdr_rx->time,ctime );
+        LOG_I(OTG,"received packet has tx time %d greater than the current time %d\n",otg_hdr_rx->time,ctime );
         otg_info->radio_access_delay[src_instance][dst_instance] = 0;
         otg_multicast_info->radio_access_delay[src_instance][dst_instance]=0;
       }

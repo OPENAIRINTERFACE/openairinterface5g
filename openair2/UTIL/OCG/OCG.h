@@ -36,7 +36,7 @@
 #ifndef __OCG_H__
 #define __OCG_H__
 
-#include "PHY/defs.h"
+#include "PHY/defs_common.h"
 #include "PHY/impl_defs_top.h"
 #include "platform_types.h"
 
@@ -645,6 +645,8 @@ typedef struct {
   unsigned char nb_ue_remote;
   unsigned char nb_enb_local;
   unsigned char nb_enb_remote;
+  unsigned char nb_ru_local;
+  unsigned char nb_ru_remote;
   unsigned char nb_rn_local;
   unsigned char nb_rn_remote;
   module_id_t   first_enb_local;
@@ -700,8 +702,8 @@ typedef struct {
   // phy related params
   unsigned int n_frames;
   unsigned int n_frames_flag; // if set, then let the emulation goes to infinity
-  eNB_func_t node_function[MAX_NUM_CCs];
-  eNB_timing_t node_timing[MAX_NUM_CCs];
+  node_function_t node_function[MAX_NUM_CCs];
+  node_timing_t node_timing[MAX_NUM_CCs];
   unsigned char frame_type[MAX_NUM_CCs]; //! LTE frame type (TDD=1, FDD=0). \note this should be converted to \ref lte_frame_type_t (header file reorganization needed)
   char * frame_type_name[MAX_NUM_CCs];
   unsigned char tdd_config[MAX_NUM_CCs];

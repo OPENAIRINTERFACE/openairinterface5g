@@ -19,11 +19,9 @@
  *      contact@openairinterface.org
  */
 
-#include "defs.h"
-//#include "MAC_INTERFACE/extern.h"
-#ifdef USER_MODE
+#include "PHY/defs_common.h"
+#include "tools_defs.h"
 #include <stdio.h>
-#endif
 
 #if defined(__x86_64__) || defined(__i386__)
 int16_t conjug[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1} ;

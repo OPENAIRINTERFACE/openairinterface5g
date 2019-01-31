@@ -47,6 +47,9 @@ message flex_ue_stats_report {
 	optional flex_dl_cqi_report dl_cqi_report = 7;
 	optional flex_paging_buffer_report pbr = 8;
 	optional flex_ul_cqi_report ul_cqi_report = 9;
+	optional flex_rrc_measurements rrc_measurements = 10;
+        optional flex_pdcp_stats pdcp_stats = 11;
+        optional flex_mac_stats mac_stats = 12;
 }
 
 //
@@ -77,11 +80,17 @@ enum flex_cell_stats_type {
 // Flags for UE-related statistics
 enum flex_ue_stats_type {
      FLUST_BSR = 1;
-     FLUST_PRH = 2;
+     FLUST_PHR = 2;
      FLUST_RLC_BS = 4;
      FLUST_MAC_CE_BS = 8;
      FLUST_DL_CQI = 16;
      FLUST_PBS = 32;
      FLUST_UL_CQI = 64;
+     FLUST_MAC_STATS = 128;
+
+     FLUST_PDCP_STATS = 1024;     
+     FLUST_RRC_MEASUREMENTS = 65536;
      // To be extended with more types of stats
+
+
 }

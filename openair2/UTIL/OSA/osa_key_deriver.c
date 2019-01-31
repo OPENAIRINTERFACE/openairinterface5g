@@ -25,7 +25,7 @@
 
 #include "osa_defs.h"
 #include "osa_internal.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 
 static inline
 void kdf(const uint8_t *s, const uint32_t s_length, const uint8_t *key,

@@ -1,0 +1,26 @@
+# OAI is using a style that is similar to the Google style
+--style=google
+# long options can be written without the preceding '--'
+# Convert tabs to spaces
+convert-tabs
+# Indentation is 2 spaces
+indent=spaces=2
+# Indent 'switch' blocks so that the 'case X:' statements are indented in the switch block. 
+indent-switches
+# Indent preprocessor blocks at bracket level 0.
+indent-preproc-block
+# Indent multi-line preprocessor #define statements.
+indent-preproc-define
+# Indent C++ comments beginning in column one.
+indent-col1-comments
+# Pad empty lines around header blocks
+break-blocks
+delete-empty-lines
+# Attach a pointer or reference operator (*, &, or ^) to the variable name (right)
+align-pointer=name
+# The code line length is 200 characters/columns (this is the maximum allowed by astyle)
+max-code-length=200
+# If the line contains logical conditionals they will be placed first on the new line.
+break-after-logical
+# Force use of the linux end of line
+lineend=linux

@@ -36,8 +36,8 @@
 */
 
 //#include "defs.h"
-#include "PHY/defs.h"
-#include "PHY/extern.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h"
 
 int generate_pss(int32_t **txdataF,
                  short amp,
@@ -68,12 +68,17 @@ int generate_pss(int32_t **txdataF,
     break;
 
   default:
-    msg("[PSS] eNb_id has to be 0,1,2\n");
+    LOG_E(PHY,"[PSS] eNb_id has to be 0,1,2\n");
     return(-1);
   }
 
   a = (frame_parms->nb_antenna_ports_eNB == 1) ? amp: (amp*ONE_OVER_SQRT2_Q15)>>15;
   //printf("[PSS] amp=%d, a=%d\n",amp,a);
+
+#if BASIC_SIMULATOR
+  /* a hack to remove at some point (the UE doesn't synch with 100 RBs) */
+  a = (frame_parms->nb_antenna_ports_eNB == 1) ? 4*amp: (amp*ONE_OVER_SQRT2_Q15)>>15;
+#endif
 
   Nsymb = (frame_parms->Ncp==NORMAL)?14:12;
 
@@ -105,10 +110,3 @@ int generate_pss(int32_t **txdataF,
   return(0);
 }
 
-int generate_pss_emul(PHY_VARS_eNB *phy_vars_eNb,uint8_t sect_id)
-{
-
-  msg("[PHY] EMUL eNB generate_pss_emul eNB %d, sect_id %d\n",phy_vars_eNb->Mod_id,sect_id);
-  eNB_transport_info[phy_vars_eNb->Mod_id][phy_vars_eNb->CC_id].cntl.pss=sect_id;
-  return(0);
-}

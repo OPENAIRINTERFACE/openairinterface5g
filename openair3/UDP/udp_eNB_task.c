@@ -42,8 +42,8 @@
 #include "assertions.h"
 #include "udp_eNB_task.h"
 
-#include "UTIL/LOG/log.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/log.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 #include "msc.h"
 
 
@@ -99,7 +99,7 @@ void udp_eNB_receiver(struct udp_socket_desc_s *udp_sock_pP);
 
 void *udp_eNB_task(void *args_p);
 
-int udp_enb_init(const Enb_properties_t *enb_config_p);
+int udp_enb_init(void);
 /* @brief Retrieve the descriptor associated with the task_id
  */
 static
@@ -270,10 +270,18 @@ void udp_eNB_receiver(struct udp_socket_desc_s *udp_sock_pP)
             n, inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
 #endif
 
+      /* TODO: this is a hack. Let's accept failures and do nothing when
+       * it happens. Since itti_send_msg_to_task crashes when the message
+       * queue is full we wrote itti_try_send_msg_to_task that returns -1
+       * if the queue is full.
+       */
+      /* look for HACK_RLC_UM_LIMIT for others places related to the hack. Please do not remove this comment. */
       if (itti_send_msg_to_task(udp_sock_pP->task_id, INSTANCE_DEFAULT, message_p) < 0) {
-        LOG_I(UDP_, "Failed to send message %d to task %d\n",
+        LOG_E(UDP_, "Failed to send message %d to task %d\n",
               UDP_DATA_IND,
               udp_sock_pP->task_id);
+        itti_free(TASK_UDP, message_p);
+        itti_free(TASK_UDP, forwarded_buffer);
         return;
       }
     }
@@ -295,7 +303,7 @@ void *udp_eNB_task(void *args_p)
   MessageDef         *received_message_p    = NULL;
   //const char         *msg_name = NULL;
   //instance_t          instance  = 0;
-  udp_enb_init(NULL);
+  udp_enb_init();
 
   itti_mark_task_ready(TASK_UDP);
   MSC_START_USE();
@@ -389,7 +397,7 @@ void *udp_eNB_task(void *args_p)
       break;
 
       case TERMINATE_MESSAGE: {
-        LOG_W(UDP_, "Received TERMINATE_MESSAGE\n");
+        LOG_W(UDP_, " *** Exiting UDP thread\n");
         itti_exit_task();
       }
       break;
@@ -423,11 +431,11 @@ on_error:
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UDP_ENB_TASK, VCD_FUNCTION_OUT);
   }
 
-  LOG_N(UDP_, "Task UDP eNB exiting\n");
+  LOG_I(UDP_, "Task UDP eNB exiting\n");
   return NULL;
 }
 
-int udp_enb_init(const Enb_properties_t *enb_config_p)
+int udp_enb_init(void)
 {
   LOG_I(UDP_, "Initializing UDP task interface\n");
   STAILQ_INIT(&udp_socket_list);

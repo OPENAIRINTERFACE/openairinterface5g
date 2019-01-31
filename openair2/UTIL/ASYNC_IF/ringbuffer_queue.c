@@ -29,7 +29,7 @@
  */
 
 #include "ringbuffer_queue.h"
-#include "log.h"
+#include "common/utils/LOG/log.h"
 
 message_queue_t * new_message_queue(int size) {
   
@@ -117,7 +117,7 @@ int message_get(message_queue_t *queue, void **data, int *size, int *priority) {
   return 0;
 }
 
-message_queue_t destroy_message_queue(message_queue_t *queue) {
+void destroy_message_queue(message_queue_t *queue) {
   struct lfds700_misc_prng_state ls;
 
   message_t *m;

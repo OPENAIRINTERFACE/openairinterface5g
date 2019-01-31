@@ -73,17 +73,22 @@ int main(int n, char **v)
       socket_send(socket, is_on, number_of_events * sizeof(int)) == -1)
     abort();
 
+  OBUF ebuf = { osize: 0, omaxsize: 0, obuf: NULL };
+
   char dump[10][T_BUFFER_MAX];
   event dump_ev[10];
 FILE *z = fopen("/tmp/dd", "w"); if (z == NULL) abort();
   while (1) {
-    char v[T_BUFFER_MAX];
+    char *v;
     event e;
-    e = get_event(socket, v, database);
+    e = get_event(socket, &ebuf, database);
+    v = ebuf.obuf;
     if (e.type == -1) break;
     if (e.type == ev_input) {
       int sf = e.e[2].i;
-      memcpy(dump[sf], v, T_BUFFER_MAX);
+      if (ebuf.osize > T_BUFFER_MAX)
+        { printf("event size too big\n"); exit(1); }
+      memcpy(dump[sf], ebuf.obuf, ebuf.osize);
       dump_ev[sf] = e;
       printf("input %d/%d\n", e.e[1].i, sf);
 if (fwrite(dump_ev[sf].e[4].b, dump_ev[sf].e[4].bsize, 1, z) != 1) abort();

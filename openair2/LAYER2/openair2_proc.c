@@ -29,27 +29,14 @@
 # @ingroup _openair2
 */
 
-#ifdef USER_MODE
-# include <inttypes.h>
-#else
-#include <linux/kernel.h>
-#include <linux/module.h>
-#include <linux/proc_fs.h>
-
-# ifndef PRIu64
-#  if __WORDSIZE == 64
-#     define PRIu64 "lu"
-#   else
-#     define PRIu64 "llu"
-#   endif
-# endif
-#endif
+#include <inttypes.h>
 
 #include "LAYER2/RLC/rlc.h"
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/extern.h"
+#include "LAYER2/MAC/mac.h"
+#include "LAYER2/MAC/mac_extern.h"
 #include "LAYER2/PDCP_v10.1.0/pdcp.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
+#include "common/ran_context.h"
 
 static mapping rrc_status_names[] = {
   {"RRC_INACTIVE", 0},
@@ -60,6 +47,8 @@ static mapping rrc_status_names[] = {
   {"RRC_HO_EXECUTION",5},
   {NULL, -1}
 };
+
+extern RAN_CONTEXT_t RC;
 
 int dump_eNB_l2_stats(char *buffer, int length)
 {
@@ -109,7 +98,7 @@ int dump_eNB_l2_stats(char *buffer, int length)
 
   for (eNB_id=0; eNB_id<number_of_cards; eNB_id++) {
     /* reset the values */
-    eNB = &eNB_mac_inst[eNB_id];
+    eNB = RC.mac[eNB_id];
     UE_list = &eNB->UE_list;
 
     for (CC_id=0 ; CC_id < MAX_NUM_CCs; CC_id++) {
@@ -128,6 +117,12 @@ int dump_eNB_l2_stats(char *buffer, int length)
 		     eNB->eNB_stats[CC_id].bcch_buffer,
 		     eNB->eNB_stats[CC_id].total_bcch_buffer,
 		     eNB->eNB_stats[CC_id].bcch_mcs);
+
+      len += sprintf(&buffer[len],"PCCH , NB_TX_MAC = %d, transmitted bytes (TTI %d, total %d) MCS (TTI %d)\n",
+         eNB->eNB_stats[CC_id].total_num_pcch_pdu,
+         eNB->eNB_stats[CC_id].pcch_buffer,
+         eNB->eNB_stats[CC_id].total_pcch_buffer,
+         eNB->eNB_stats[CC_id].pcch_mcs);
       
       eNB->eNB_stats[CC_id].dlsch_bitrate=((eNB->eNB_stats[CC_id].dlsch_bytes_tx*8)/((eNB->frame + 1)*10));
       eNB->eNB_stats[CC_id].total_dlsch_pdus_tx+=eNB->eNB_stats[CC_id].dlsch_pdus_tx;
@@ -172,7 +167,7 @@ int dump_eNB_l2_stats(char *buffer, int length)
                        UE_id,
                        map_int_to_str(rrc_status_names, UE_list->eNB_UE_stats[CC_id][UE_id].rrc_status),
                        UE_list->eNB_UE_stats[CC_id][UE_id].crnti,
-                       UE_list->eNB_UE_stats[CC_id][UE_id].dl_cqi,
+                       UE_list->UE_sched_ctrl[UE_id].dl_cqi[CC_id],
                        UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_mcs1,
                        UE_list->eNB_UE_stats[CC_id][UE_id].dlsch_mcs2,
                        UE_list->eNB_UE_stats[CC_id][UE_id].rbs_used,
@@ -222,18 +217,18 @@ int dump_eNB_l2_stats(char *buffer, int length)
                        UE_list->eNB_UE_stats[CC_id][UE_id].num_errors_rx);
 
         len+= sprintf(&buffer[len],"[MAC] Received PHR PH = %d (db)\n", UE_list->UE_template[CC_id][UE_id].phr_info);
-        len+= sprintf(&buffer[len],"[MAC] Received BSR LCGID[0][1][2][3] = %u %u %u %u\n",
-                      UE_list->UE_template[CC_id][UE_id].bsr_info[LCGID0],
-                      UE_list->UE_template[CC_id][UE_id].bsr_info[LCGID1],
-                      UE_list->UE_template[CC_id][UE_id].bsr_info[LCGID2],
-                      UE_list->UE_template[CC_id][UE_id].bsr_info[LCGID3]
+        len+= sprintf(&buffer[len],"[MAC] Estimated size LCGID[0][1][2][3] = %u %u %u %u\n",
+                      UE_list->UE_template[CC_id][UE_id].ul_buffer_info[LCGID0],
+                      UE_list->UE_template[CC_id][UE_id].ul_buffer_info[LCGID1],
+                      UE_list->UE_template[CC_id][UE_id].ul_buffer_info[LCGID2],
+                      UE_list->UE_template[CC_id][UE_id].ul_buffer_info[LCGID3]
                      );
       }
       
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt,
 				     eNB_id,
 				     ENB_FLAG_YES,
-				     UE_list->eNB_UE_stats[UE_PCCID(eNB_id,UE_id)][UE_id].crnti, 
+				     UE_list->eNB_UE_stats[0][UE_id].crnti,//UE_PCCID(eNB_id,UE_id)][UE_id].crnti, 
 				     eNB->frame,
 				     eNB->subframe,
 				     eNB_id);
@@ -401,11 +396,7 @@ int dump_eNB_l2_stats(char *buffer, int length)
 }
 
 #ifdef PROC
-#ifndef USER_MODE
-static int openair2_stats_read(char *buffer, char **my_buffer, off_t off, int length)
-#else
 int openair2_stats_read(char *buffer, char **my_buffer, off_t off, int length)
-#endif
 {
 
   int len = 0,fg,Overhead, Sign;
@@ -688,36 +679,4 @@ int openair2_stats_read(char *buffer, char **my_buffer, off_t off, int length)
   return len;
 }
 
-#ifndef USER_MODE
-static struct proc_dir_entry *proc_openair2_root;
-/*
- * Initialize the module and add the /proc file.
- */
-int add_openair2_stats()
-{
-  struct proc_dir_entry *pde;
-
-  proc_openair2_root = proc_mkdir("openair2",0);
-  // pde = proc_create_entry("lchan_stats", S_IFREG | S_IRUGO, proc_openair2_root);
-  pde = proc_create_data("lchan_stats", S_IFREG | S_IRUGO, proc_openair2_root, NULL,openair2_stats_read);
-
-  if (!pde) {
-    printk("[OPENAIR][ERROR] can't create proc entry !\n");
-  }
-
-  return 0;
-}
-/*
- * Unregister the file when the module is closed.
- */
-void remove_openair_stats()
-{
-
-  if (proc_openair2_root) {
-    printk("[OPENAIR][CLEANUP] Removing openair proc entry\n");
-    remove_proc_entry("lchan_stats", proc_openair2_root);
-
-  }
-}
-#endif
 #endif

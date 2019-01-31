@@ -32,8 +32,8 @@ OS_DISTRO=$(grep "^ID=" /etc/os-release | sed "s/ID=//" | sed "s/\"//g")
 OS_RELEASE=$(grep "^VERSION_ID=" /etc/os-release | sed "s/VERSION_ID=//" | sed "s/\"//g")
 case "$OS_DISTRO" in
   fedora) OS_BASEDISTRO="fedora"; INSTALLER="dnf"; CMAKE="cmake" ;;
-  rhel)   OS_BASEDISTRO="fedora"; INSTALLER="yum"; CMAKE="cmake3" ;;
-  centos) OS_BASEDISTRO="fedora"; INSTALLER="yum"; CMAKE="cmake3" ;;
+  rhel)   OS_BASEDISTRO="fedora"; INSTALLER="yum --skip-broken"; CMAKE="cmake3" ;;
+  centos) OS_BASEDISTRO="fedora"; INSTALLER="yum --skip-broken"; CMAKE="cmake3" ;;
   debian) OS_BASEDISTRO="debian"; INSTALLER="apt-get"; CMAKE="cmake" ;;
   ubuntu) OS_BASEDISTRO="debian"; INSTALLER="apt-get"; CMAKE="cmake" ;;
 esac
@@ -56,7 +56,7 @@ white='\E[37m'
 reset_color='\E[00m'
 COLORIZE=1
 
-cecho()  {  
+cecho()  {
     # Color-echo
     # arg1 = message
     # arg2 = color
@@ -95,6 +95,9 @@ get_distribution_release() {
 check_supported_distribution() {
     local distribution=$(get_distribution_release)
     case "$distribution" in
+        "ubuntu18.04") return 0 ;;
+        "ubuntu17.10") return 0 ;;
+        "ubuntu17.04") return 0 ;;
         "ubuntu16.04") return 0 ;;
         "ubuntu14.04") return 0 ;;
         "fedora24")    return 0 ;;
@@ -144,10 +147,10 @@ clean_kernel() {
 clean_all_files() {
  set_openair_env
  dir=$OPENAIR_DIR/cmake_targets
- rm -rf $dir/log $OPENAIR_DIR/targets/bin/* 
+ rm -rf $dir/log $OPENAIR_DIR/targets/bin/*
  rm -rf $dir/lte_build_oai $dir/lte-simulators/build
  rm -rf $dir/oaisim_build_oai/build $dir/oaisim_build_oai/CMakeLists.txt
- rm -rf $dir/autotests/bin $dir/autotests/log $dir/autotests/*/build 
+ rm -rf $dir/autotests/bin $dir/autotests/log $dir/autotests/*/build
 }
 
 ###################################
@@ -208,7 +211,7 @@ install_protobuf_from_source(){
     #cd protobuf-2.6.1/
     rm -rf /tmp/protobuf-cpp-3.3.0.tar.gz* /tmp/protobuf-3.3.0
     wget https://github.com/google/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
-    tar -xzvf protobuf-cpp-3.3.0.tar.gz --owner $USER --group $USER --no-same-owner
+    tar -xzvf protobuf-cpp-3.3.0.tar.gz --owner $USER --group $(groups | cut -d" " -f1) --no-same-owner
     cd protobuf-3.3.0/
     ./configure
     echo "Compiling protobuf"
@@ -230,6 +233,7 @@ install_protobuf_c_from_source(){
     rm -rf /tmp/protobuf-c
     git clone https://github.com/protobuf-c/protobuf-c.git
     cd protobuf-c
+	git checkout 2a46af42784abf86804d536f6e0122d47cfeea45
     ./autogen.sh
     ./configure
     echo "Compiling protobuf-c"
@@ -246,14 +250,14 @@ install_usrp_uhd_driver_from_source(){
     cd /tmp
     echo "Downloading UHD driver"
     rm -rf /tmp/uhd
-    git clone git://github.com/EttusResearch/uhd.git
+    git clone https://github.com/EttusResearch/uhd.git
     cd uhd
-    git checkout tags/release_003_010_001_001
+    git checkout tags/v3.13.0.2
     mkdir -p host/build
     cd host/build
     $CMAKE ../
     echo "Compiling UHD"
-    make
+    make -j`nproc`
     make test
     $SUDO make install
     $SUDO ldconfig
@@ -264,20 +268,36 @@ check_install_usrp_uhd_driver(){
     if [[ "$OS_DISTRO" == "ubuntu" ]]; then
         #first we remove old installation
         $SUDO apt-get remove -y uhd || true
-        $SUDO apt-get remove libuhd-dev libuhd003 uhd-host -y
+        $SUDO apt-get remove libuhd-dev libuhd003 uhd-host -y || true
         v=$(lsb_release -cs)
         $SUDO apt-add-repository --remove "deb http://files.ettus.com/binaries/uhd/repo/uhd/ubuntu/$v $v main"
-        #The new USRP repository
-        $SUDO add-apt-repository ppa:ettusresearch/uhd -y
+        # The new USRP repository
+        # Raphael Defosseux: Adding a loop on adding PPA because in CI the gpg key retrieve may
+        # timeout due to proxy / network latencies in Eurecom on VM
+        echo_info "\nAdding PPA repository ettusresearch/uhd\n"
+        x=0
+        while [ $x -le 5 ]
+        do
+            if $SUDO add-apt-repository ppa:ettusresearch/uhd -y
+            then
+                echo_info "add-apt-repository successful\n"
+                break
+            else
+                echo_info "add-apt-repository failed, retrying...\n"
+                sleep 30
+            fi
+            x=$((x + 1))
+        done
         $SUDO apt-get update
         $SUDO apt-get -y --allow-unauthenticated install  python python-tk libboost-all-dev libusb-1.0-0-dev
         $SUDO apt-get -y --allow-unauthenticated install libuhd-dev libuhd003 uhd-host
     elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
         $SUDO $INSTALLER -y install python boost libusb-devel libusbx-devel boost-devel python-mako python-docutils cmake
+        $SUDO pip install requests
         if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
             # until EPEL repo hasn't bumped UHD driver to >=3.10 in EPEL, build driver from source
             $SUDO $INSTALLER -y remove uhd uhd-devel uhd-firmware
-            install_ursp_uhd_driver_from_source
+            install_usrp_uhd_driver_from_source
         else
             $SUDO $INSTALLER -y install uhd uhd-devel uhd-firmware
         fi
@@ -332,7 +352,7 @@ check_install_bladerf_driver(){
         fi
         $SUDO apt-get install -y --allow-unauthenticated  bladerf libbladerf-dev
         $SUDO apt-get install -y --allow-unauthenticated bladerf-firmware-fx3
-        $SUDO apt-get install -y --allow-unauthenticated bladerf-fpga-hostedx40	
+        $SUDO apt-get install -y --allow-unauthenticated bladerf-fpga-hostedx40
    elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
         install_bladerf_driver_from_source
    else
@@ -352,10 +372,78 @@ check_install_lmssdr_driver(){
         else
                 echo_error "lmssdr support implies installing lmssdr drivers and tools" \
                            " from sources. check:"
-                echo_info "https://open-cells.com/index.php/2017/05/10/limesdr-installation/"
-                echo_fatal "Cannot compile lmssdr device" 
+                echo_info "https://wiki.myriadrf.org/Lime_Suite"
+                echo_fatal "Cannot compile lmssdr device"
 	fi
 
+
+}
+
+install_soapy_from_source(){
+    soapy_install_log=$OPENAIR_DIR/cmake_targets/log/soapy_install_log.txt
+    echo_info "\nInstalling Soapy EcoSystem from source. The log file for Soapy installation is here: $soapy_install_log "
+    (
+    cd /tmp
+    echo "Downloading SoapySDR"
+    rm -rf /tmp/soapysdr
+    git clone -b soapy-sdr-0.7.0 --single-branch https://github.com/pothosware/SoapySDR.git
+    cd SoapySDR
+    #git checkout tags/release_003_010_001_001
+    mkdir -p build
+    cd build
+    $CMAKE ../
+    echo "Compiling SoapySDR"
+    make -j`nproc`
+    $SUDO make install
+    $SUDO ldconfig
+    cd /tmp
+    echo "Downloading SoapyRemote"
+    rm -rf /tmp/soapyremote
+    git clone -b soapy-remote-0.5.0 --single-branch https://github.com/pothosware/SoapyRemote.git
+    cd SoapyRemote
+    #git checkout tags/release_003_010_001_001
+    mkdir -p build
+    cd build
+    cmake ../
+    echo "Compiling SoapyRemote"
+    make -j`nproc`
+    $SUDO make install
+    $SUDO ldconfig
+    ) >& $soapy_install_log
+}
+
+install_soapy_iris_from_source(){
+    iris_install_log=$OPENAIR_DIR/cmake_targets/log/iris_install_log.txt
+    echo_info "\nInstalling Iris driver from source. The log file for Iris driver installation is here: $iris_install_log "
+    (
+    cd /tmp
+    echo "Downloading SoapyIris"
+    rm -rf /tmp/sklk-soapyiris
+    git clone -b soapy-iris-2018.08.0.1 --single-branch https://github.com/skylarkwireless/sklk-soapyiris.git
+    cd sklk-soapyiris
+    mkdir -p build
+    cd build
+    cmake ../
+    echo "Compiling SoapyIris"
+    make -j`nproc`
+    $SUDO make install
+    $SUDO ldconfig
+    ) >& $iris_install_log
+}
+
+check_install_soapy () {
+    #if [[ "$OS_DISTRO" == "ubuntu" ]]; then
+        #first we remove old installation
+    $SUDO apt-get remove -y soapysdr soapysdr-server libsoapysdr-dev python-soapysdr python3-soapysdr soapysdr-module-remote || true
+        #$SUDO add-apt-repository -y ppa:myriadrf/drivers
+        #$SUDO apt-get update
+        #$SUDO apt-get install -y soapysdr soapysdr-server libsoapysdr-dev python-soapysdr python3-soapysdr soapysdr-module-remote
+
+    #elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
+    #    $SUDO $INSTALLER -y install software-properties-common python3-software-properties python-software-properties subversion git python3 python-numpy python3-numpy cmake swig python-dev
+    install_soapy_from_source
+    #fi
+    install_soapy_iris_from_source
 
 }
 
@@ -450,7 +538,7 @@ check_install_additional_tools (){
       python2-matplotlib"
   fi
     $SUDO $INSTALLER install -y $PACKAGE_LIST
-    
+
     $SUDO rm -fr /opt/ssh
     $SUDO GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/ssh.git /opt/ssh
 
@@ -479,16 +567,31 @@ check_install_oai_software() {
     fi
     $SUDO $INSTALLER update -y
   if [[ "$OS_DISTRO" == "ubuntu" ]]; then
+    local LAPACK_LIBNAME="liblapack.so"
+    local LAPACK_TARGET="/usr/lib/atlas-base/atlas/liblapack.so"
     $SUDO apt install -y software-properties-common
     case "$(get_distribution_release)" in
         "ubuntu14.04")
-            specific_packages="libtasn1-3-dev"
+            specific_packages="libtasn1-3-dev libgnutls-dev libatlas-dev iproute libconfig8-dev"
             # For iperf3
             $SUDO add-apt-repository "deb http://archive.ubuntu.com/ubuntu trusty-backports universe"
             $SUDO apt-get update
             ;;
         "ubuntu16.04")
-            specific_packages="libtasn1-6-dev"
+            specific_packages="libtasn1-6-dev libgnutls-dev libatlas-dev iproute libconfig8-dev"
+            ;;
+        "ubuntu17.04")
+            specific_packages="libtasn1-6-dev libgnutls28-dev libatlas-dev iproute libconfig8-dev"
+            ;;
+        "ubuntu17.10")
+            specific_packages="libtasn1-6-dev libgnutls28-dev iproute libconfig8-dev"
+            LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
+            LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
+            ;;
+        "ubuntu18.04")
+            specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev"
+            LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
+            LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
             ;;
     esac
     $SUDO apt-get install -y \
@@ -504,20 +607,18 @@ check_install_oai_software() {
 	texlive-latex-base \
 	ethtool \
 	flex  \
-	gccxml \
 	gdb  \
 	git \
 	graphviz \
 	gtkwave \
 	guile-2.0-dev  \
 	iperf \
-	iproute \
 	iptables \
 	iptables-dev \
 	libatlas-base-dev \
-	libatlas-dev \
 	libblas-dev \
-	libconfig8-dev \
+  liblapack-dev\
+  liblapacke-dev\
 	libffi-dev \
 	libforms-bin \
 	libforms-dev \
@@ -553,11 +654,9 @@ check_install_oai_software() {
 	wget \
 	libxpm-dev
 
-    $SUDO update-alternatives --set liblapack.so /usr/lib/atlas-base/atlas/liblapack.so
-    
-    $SUDO apt-get install -y nettle-dev nettle-bin
+    $SUDO update-alternatives --set "$LAPACK_LIBNAME" "$LAPACK_TARGET"
 
-    $SUDO apt-get install -y libgnutls-dev
+    $SUDO apt-get install -y nettle-dev nettle-bin
   elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
     if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
       if rpm -q epel-release > /dev/null; then
@@ -566,14 +665,11 @@ check_install_oai_software() {
         echo "EPEL repos not present. Installing them."
         $SUDO $INSTALLER install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
       fi
-      $SUDO $INSTALLER install -y python-epdb
-      $SUDO $INSTALLER install -y gccxml
+      $SUDO $INSTALLER install -y python-epdb vim-common
     else
       $SUDO $INSTALLER install -y mscgen pydb
-      # Fedora repos already contain gccxml's successor castxml.
-      $SUDO $INSTALLER install -y castxml
     fi
-    
+
     $SUDO $INSTALLER install -y \
       autoconf \
       automake \
@@ -635,7 +731,8 @@ check_install_oai_software() {
       lapack \
       lapack-devel \
       blas \
-      blas-devel
+      blas-devel \
+      libyaml-devel
   fi
 
     install_asn1c_from_source
@@ -648,8 +745,14 @@ install_asn1c_from_source(){
     echo_info "\nInstalling ASN1. The log file for ASN1 installation is here: $asn1_install_log "
     (
     $SUDO rm -rf /tmp/asn1c
-    GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
+    # GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
+    git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
     cd /tmp/asn1c
+    # better to use a given commit than a branch in case the branch
+    # is updated and requires modifications in the source of OAI
+    #git checkout velichkov_s1ap_plus_option_group
+    git checkout 0a7524184f16e7093990a31d8d4db487a16e5782
+    autoreconf -iv
     ./configure
     make -j`nproc`
     $SUDO make install
@@ -659,7 +762,7 @@ install_asn1c_from_source(){
 }
 
 #################################################
-# 2. compile 
+# 2. compile
 ################################################
 
 install_nas_tools() {
@@ -688,7 +791,7 @@ set_openair_env(){
     [ -f "/.$fullpath" ] || fullpath=`readlink -f $PWD/$fullpath`
     openair_path=${fullpath%/cmake_targets/*}
     openair_path=${openair_path%/targets/*}
-    openair_path=${openair_path%/openair[123]/*}    
+    openair_path=${openair_path%/openair[123]/*}
     export OPENAIR_DIR=$openair_path
     export OPENAIR1_DIR=$openair_path/openair1
     export OPENAIR2_DIR=$openair_path/openair2
@@ -705,7 +808,7 @@ ppid=$$
 arraycounter=1
 echo_info "** Trapped CTRL-C. Killing all subprocesses now..."
 echo_info "** Calling sync now..."
-sync 
+sync
 while true
 do
         FORLOOP=FALSE
@@ -723,7 +826,7 @@ do
            arraycounter=`expr $arraycounter - 1`
            ## We want to kill child process id first and then parent id's
            while [ $arraycounter -ne 0 ]
-           do  
+           do
              echo "first we send ctrl-c to program"
              $SUDO kill -INT "${procid[$arraycounter]}"
              sleep 5

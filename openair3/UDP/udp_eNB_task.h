@@ -31,7 +31,6 @@
 #ifndef UDP_ENB_TASK_H_
 #define UDP_ENB_TASK_H_
 #include "enb_config.h"
-#include "intertask_interface_types.h"
 
 
 /** \brief UDP recv callback prototype. Will be called every time a payload is
@@ -93,6 +92,6 @@ void *udp_eNB_task(void *args_p);
  *  \param enb_config_p configuration of eNB
  *  @returns always 0
  */
-int udp_enb_init(const Enb_properties_t *enb_config_p);
+int udp_enb_init(void);
 
 #endif /* UDP_ENB_TASK_H_ */

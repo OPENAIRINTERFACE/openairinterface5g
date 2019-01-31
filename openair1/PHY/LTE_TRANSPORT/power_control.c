@@ -19,7 +19,8 @@
  *      contact@openairinterface.org
  */
 
-#include "PHY/defs.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/defs_UE.h"
 #include "PHY/impl_defs_lte.h"
 
 //#define DEBUG_PC 0
@@ -33,40 +34,40 @@ double ratioPB[2][4]={{ 0.00000,  -0.96910,  -2.21849,  -3.97940}, //in db
 
 double pa_values[8]={-6.0,-4.77,-3.0,-1.77,0.0,1.0,2.0,3.0}; //reported by higher layers
 
-double get_pa_dB(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated)
+double get_pa_dB(uint8_t pa)
 {
-  if (pdsch_config_dedicated)
-    return(pa_values[ pdsch_config_dedicated->p_a]);
-  else
-    return(0.0);
+  AssertFatal(pa<8,"pa %d is not in (0...7)\n",pa);
+
+  return(pa_values[pa]);
+
 }
 
-double computeRhoA_eNB(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
+double computeRhoA_eNB(uint8_t pa,
                        LTE_eNB_DLSCH_t *dlsch_eNB, int dl_power_off, uint8_t n_antenna_port){
   double rho_a_dB;
   double sqrt_rho_a_lin;
 
-  rho_a_dB = get_pa_dB(pdsch_config_dedicated);
+  rho_a_dB = get_pa_dB(pa);
 
   if(!dl_power_off) //if dl_power_offset is 0, this is for MU-interference, TM5
     rho_a_dB-=10*log10(2);
 
   if(n_antenna_port==4) // see TS 36.213 Section 5.2
-    rho_a_dB=+10*log10(2);
+    rho_a_dB+=10*log10(2);
 
   sqrt_rho_a_lin= pow(10,(0.05*rho_a_dB));
 
   dlsch_eNB->sqrt_rho_a= (short) (sqrt_rho_a_lin*pow(2,13));
 
 #if DEBUG_PC
-  printf("eNB: p_a=%d, value=%f, sqrt_rho_a=%d\n",pdsch_config_dedicated->p_a,pa_values[ pdsch_config_dedicated->p_a],dlsch_eNB->sqrt_rho_a);
+  printf("eNB: p_a=%d, value=%f, sqrt_rho_a=%d\n",p_a,pa_values[ pdsch_config_dedicated->p_a],dlsch_eNB->sqrt_rho_a);
 #endif
 
   return(rho_a_dB);
 }
 
-double computeRhoB_eNB(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
-                       PDSCH_CONFIG_COMMON *pdsch_config_common,
+double computeRhoB_eNB(uint8_t pa,
+                       uint8_t pb,
                        uint8_t n_antenna_port,
                        LTE_eNB_DLSCH_t *dlsch_eNB,
                        int dl_power_off)
@@ -75,23 +76,24 @@ double computeRhoB_eNB(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
   double rho_a_dB, rho_b_dB;
   double sqrt_rho_b_lin;
 
-  rho_a_dB= computeRhoA_eNB(pdsch_config_dedicated,dlsch_eNB,dl_power_off, n_antenna_port);
+  AssertFatal(pa<8,"pa %d is not in (0...7)\n",pa);
+  AssertFatal(pb<4,"pb %d is not in (0...3)\n",pb);
+  rho_a_dB= computeRhoA_eNB(pa,dlsch_eNB,dl_power_off, n_antenna_port);
 
   if(n_antenna_port>1)
-    rho_b_dB= ratioPB[1][pdsch_config_common->p_b] + rho_a_dB;
+    rho_b_dB= ratioPB[1][pb] + rho_a_dB;
   else
-    rho_b_dB= ratioPB[0][pdsch_config_common->p_b] + rho_a_dB;
+    rho_b_dB= ratioPB[0][pb] + rho_a_dB;
 
   sqrt_rho_b_lin= pow(10,(0.05*rho_b_dB));
 
   dlsch_eNB->sqrt_rho_b= (short) (sqrt_rho_b_lin*pow(2,13));
 
 #ifdef DEBUG_PC
-  printf("eNB: n_ant=%d, p_b=%d -> rho_b/rho_a=%f -> sqrt_rho_b=%d\n",n_antenna_port,pdsch_config_common->p_b,ratioPB[1][pdsch_config_common->p_b],dlsch_eNB->sqrt_rho_b);
+  printf("eNB: n_ant=%d, p_b=%d -> rho_b/rho_a=%f -> sqrt_rho_b=%d\n",n_antenna_port,pb,ratioPB[1][pb],dlsch_eNB->sqrt_rho_b);
 #endif
   return(rho_b_dB);
 }
-
 
 double computeRhoA_UE(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
                       LTE_UE_DLSCH_t *dlsch_ue,
@@ -102,7 +104,7 @@ double computeRhoA_UE(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
   double rho_a_dB;
   double sqrt_rho_a_lin;
 
-  rho_a_dB = get_pa_dB(pdsch_config_dedicated);
+  rho_a_dB = get_pa_dB(pdsch_config_dedicated->p_a);
 
   if(!dl_power_off)
     rho_a_dB-=10*log10(2);
@@ -148,3 +150,4 @@ double computeRhoB_UE(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
 #endif
   return(rho_b_dB);
 }
+

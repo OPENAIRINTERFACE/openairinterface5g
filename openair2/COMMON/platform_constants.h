@@ -28,11 +28,7 @@
 
  ***************************************************************************/
 
-#ifdef CMAKER
-#include "asn1_constants.h"
-#else
-#include "RRC/LITE/MESSAGES/asn1_constants.h"
-#endif
+#include "LTE_asn_constant.h"
 
 #ifndef __PLATFORM_CONSTANTS_H__
 #    define __PLATFORM_CONSTANTS_H__
@@ -43,7 +39,6 @@
 #define NL_MAX_PAYLOAD 9000  /* this should cover the max mtu size*/
 #endif
 
-#ifdef USER_MODE
 #ifdef LARGE_SCALE
 #    define NB_MODULES_MAX 128
 #    define NB_NODE_MAX    128
@@ -51,11 +46,6 @@
 #    define NB_MODULES_MAX 32
 #    define NB_NODE_MAX    32
 #endif
-#else
-#    define NB_MODULES_MAX 1
-#    define NB_NODE_MAX    1
-#endif //PHY_EMUL
-
 
 #ifdef JUMBO_FRAME
 #    define MAX_IP_PACKET_SIZE         10000 // 9000
@@ -73,26 +63,50 @@
 
 #    define MAX_MODULES                NB_MODULES_MAX
 
-#ifdef LARGE_SCALE
+#ifndef UE_EXPANSION
+// TODO:L2 FAPI simulator.
+// UESIM_EXPANSION is used to be same value of MAX_MOBILES_PER_ENB
+// in eNB and UE.
+// now , if we use --mu option in UE, compiling error will occur.
+// This problem will be fixed in the future.
+# ifdef UESIM_EXPANSION
+#    define MAX_MOBILES_PER_ENB         256
+#    define MAX_MOBILES_PER_ENB_NB_IoT  256
+#    define MAX_eNB                      2
+# else
+# ifdef LARGE_SCALE
 #    define MAX_MOBILES_PER_ENB         128
-//#    define MAX_RG                      2
-#else
+#    define MAX_MOBILES_PER_ENB_NB_IoT  128
+#    define MAX_eNB                      2
+# else
 #    define MAX_MOBILES_PER_ENB         16
-//#    define MAX_RG                      2
+#    define MAX_MOBILES_PER_ENB_NB_IoT  16
+#    define MAX_eNB                      2
+# endif
 #endif
+#else
+#    define MAX_MOBILES_PER_ENB 256
+#    define MAX_MOBILES_PER_ENB_NB_IoT 256
+#    define MAX_eNB                      2
+#endif
+
 
 #define MAX_MANAGED_ENB_PER_MOBILE  2
 
+///NB-IOT
+#define NB_RB_MAX_NB_IOT  (LTE_maxDRB_NB_r13 + 3) //MP: NB_IoT --> 2(DRB)+3(SRBs - 2 is not used) = 5
+
+
 #define DEFAULT_RAB_ID 1
 
-#define NB_RB_MAX      (maxDRB + 3) /* was 11, now 14, maxDRB comes from asn1_constants.h, + 3 because of 3 SRB, one invisible id 0, then id 1 and 2 */
-#if defined(Rel10) || defined(Rel14)
-#define NB_RB_MBMS_MAX (maxSessionPerPMCH*maxServiceCount)
+#define NB_RB_MAX      (LTE_maxDRB + 3) /* was 11, now 14, maxDRB comes from asn1_constants.h, + 3 because of 3 SRB, one invisible id 0, then id 1 and 2 */
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#define NB_RB_MBMS_MAX (LTE_maxSessionPerPMCH*LTE_maxServiceCount)
 #else
 // Do not allocate unused memory
 #define NB_RB_MBMS_MAX 1
 #endif
-#define NB_RAB_MAX     maxDRB       /* was 8, now 11 */
+#define NB_RAB_MAX     LTE_maxDRB       /* was 8, now 11 */
 #define RAB_SHIFT1     9
 #define RAB_SHIFT2     3
 #define RAB_OFFSET     0x0007
@@ -132,9 +146,7 @@
 #define  UNUSED_PARAM_MBMS_SESSION_ID  0
 #define  UNUSED_PARAM_MBMS_SERVICE_ID  0
 
-#ifdef USER_MODE
 #define printk printf
-#endif
 
 #define UNUSED_VARIABLE(vARIABLE)   (void)(vARIABLE)
 

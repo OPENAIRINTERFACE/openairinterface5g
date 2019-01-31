@@ -27,13 +27,9 @@
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/vars.h"
-#ifdef EMOS
-#include "SCHED/phy_procedures_emos.h"
-#endif
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 #include "LAYER2/MAC/vars.h"
-#include "intertask_interface_init.h"
 
 #include "OCG_vars.h"
 #include "UTIL/LOG/log_extern.h"
@@ -77,9 +73,6 @@ int main(int argc, char **argv)
   uint8_t extended_prefix_flag=0;
 
   LTE_DL_FRAME_PARMS *frame_parms;
-#ifdef EMOS
-  fifo_dump_emos emos_dump;
-#endif
 
   SCM_t channel_model=Rayleigh1_corr;
 
@@ -397,7 +390,7 @@ int main(int argc, char **argv)
   		   subframe, //subframe
          n_rnti);  //rnti
   }
-  write_output("txsigF0.m","txsF0", &UE->common_vars.txdataF[0][2*subframe*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX*nsymb,1,1);
+  LOG_M("txsigF0.m","txsF0", &UE->common_vars.txdataF[0][2*subframe*nsymb*OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX],OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES_NO_PREFIX*nsymb,1,1);
 
   tx_lev = 0;
 
@@ -430,8 +423,8 @@ int main(int argc, char **argv)
 
 
 
-  write_output("txsig0.m","txs0", txdata[0], FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-  //write_output("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+  LOG_M("txsig0.m","txs0", txdata[0], FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+  //LOG_M("txsig1.m","txs1", txdata[1],FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
 
   // multipath channel
 
@@ -612,10 +605,10 @@ int main(int argc, char **argv)
   }
 
   if (n_frames==1) {
-    //write_output("txsig0.m","txs0", &txdata[0][subframe*frame_parms->samples_per_tti],frame_parms->samples_per_tti,1,1);
-    write_output("txsig0pucch.m", "txs0", &txdata[0][0], FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
-    write_output("rxsig0.m","rxs0", &eNB->common_vars.rxdata[0][0][subframe*frame_parms->samples_per_tti],frame_parms->samples_per_tti,1,1);
-    write_output("rxsigF0.m","rxsF0", &eNB->common_vars.rxdataF[0][0][0],512*nsymb*2,2,1);
+    //LOG_M("txsig0.m","txs0", &txdata[0][subframe*frame_parms->samples_per_tti],frame_parms->samples_per_tti,1,1);
+    LOG_M("txsig0pucch.m", "txs0", &txdata[0][0], FRAME_LENGTH_COMPLEX_SAMPLES,1,1);
+    LOG_M("rxsig0.m","rxs0", &eNB->common_vars.rxdata[0][0][subframe*frame_parms->samples_per_tti],frame_parms->samples_per_tti,1,1);
+    LOG_M("rxsigF0.m","rxsF0", &eNB->common_vars.rxdataF[0][0][0],512*nsymb*2,2,1);
   }
 
 

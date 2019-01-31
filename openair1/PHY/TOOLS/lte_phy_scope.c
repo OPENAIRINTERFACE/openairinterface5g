@@ -23,6 +23,8 @@
 
 #include <stdlib.h>
 #include "lte_phy_scope.h"
+#include "PHY/defs_common.h"
+#include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 
 #define TPUT_WINDOW_LENGTH 100
 int otg_enabled;
@@ -162,7 +164,7 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   int16_t **chest_t;
   int16_t **chest_f;
   int16_t *pusch_llr;
-  int16_t *pusch_comp;
+  int32_t *pusch_comp;
   int32_t *pucch1_comp;
   int32_t *pucch1_thres;
   int32_t *pucch1ab_comp;
@@ -176,20 +178,20 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   float time[FRAME_LENGTH_COMPLEX_SAMPLES];
   float time2[2048];
   float freq[nsymb_ce*nb_antennas_rx*nb_antennas_tx];
-  int frame = phy_vars_enb->proc.proc_rxtx[0].frame_tx;
+  int frame = phy_vars_enb->proc.L1_proc.frame_tx;
   uint32_t total_dlsch_bitrate = phy_vars_enb->total_dlsch_bitrate;
   int coded_bits_per_codeword = 0;
   uint8_t harq_pid; // in TDD config 3 it is sf-2, i.e., can be 0,1,2
-  int mcs = 0;
+  int Qm = 2;
 
   // choose max MCS to compute coded_bits_per_codeword
   if (phy_vars_enb->ulsch[UE_id]!=NULL) {
     for (harq_pid=0; harq_pid<3; harq_pid++) {
-      mcs = cmax(phy_vars_enb->ulsch[UE_id]->harq_processes[harq_pid]->mcs,mcs);
+      Qm = cmax(phy_vars_enb->ulsch[UE_id]->harq_processes[harq_pid]->Qm,Qm);
     }
   }
 
-  coded_bits_per_codeword = frame_parms->N_RB_UL*12*get_Qm(mcs)*frame_parms->symbols_per_tti;
+  coded_bits_per_codeword = frame_parms->N_RB_UL*12*Qm*frame_parms->symbols_per_tti;
 
   chest_f_abs = (float*) calloc(nsymb_ce*nb_antennas_rx*nb_antennas_tx,sizeof(float));
   llr = (float*) calloc(coded_bits_per_codeword,sizeof(float)); // init to zero
@@ -200,7 +202,7 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   chest_t = (int16_t**) phy_vars_enb->srs_vars[UE_id].srs_ch_estimates[eNB_id];
   chest_f = (int16_t**) phy_vars_enb->pusch_vars[UE_id]->drs_ch_estimates[eNB_id];
   pusch_llr = (int16_t*) phy_vars_enb->pusch_vars[UE_id]->llr;
-  pusch_comp = (int16_t*) phy_vars_enb->pusch_vars[UE_id]->rxdataF_comp[eNB_id][0];
+  pusch_comp = (int32_t*) phy_vars_enb->pusch_vars[UE_id]->rxdataF_comp[0];
   pucch1_comp = (int32_t*) phy_vars_enb->pucch1_stats[UE_id];
   pucch1_thres = (int32_t*) phy_vars_enb->pucch1_stats_thres[UE_id];
   pucch1ab_comp = (int32_t*) phy_vars_enb->pucch1ab_stats[UE_id];

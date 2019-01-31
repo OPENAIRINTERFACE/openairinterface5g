@@ -22,14 +22,12 @@
 #define RLC_AM_MODULE 1
 #define RLC_AM_WINDOWS_C 1
 //-----------------------------------------------------------------------------
-#if USER_MODE
 #include <assert.h>
-#endif
 //-----------------------------------------------------------------------------
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
 #include "rlc_am.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 //-----------------------------------------------------------------------------
 signed int rlc_am_in_tx_window(
   const protocol_ctxt_t* const  ctxt_pP,

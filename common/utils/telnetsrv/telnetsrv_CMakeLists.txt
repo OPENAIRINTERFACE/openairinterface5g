@@ -1,0 +1,28 @@
+
+
+set(TELNETROOT ${OPENAIR_DIR}/common/utils/telnetsrv )
+
+
+
+set(TELNETSRV_SOURCE
+    ${TELNETROOT}/telnetsrv.c
+    ${TELNETROOT}/telnetsrv_phycmd.c
+    ${TELNETROOT}/telnetsrv_proccmd.c
+    ${TELNETROOT}/telnetsrv_loader.c
+    )
+
+#set(TELNETSRV_ETHDEVCMD_SOURCE
+#    ${APPROOT}/telnetsrv/telnetsrv_ethdevcmd.c
+#    )
+
+
+
+add_library(telnetsrv MODULE ${TELNETSRV_SOURCE} )
+#add_library(telnetsrv_ethdevcmd MODULE ${TELNETSRV_ETHDEVCMD_SOURCE} )
+target_link_libraries(telnetsrv PRIVATE history)
+
+install(TARGETS telnetsrv DESTINATION bin)
+
+if (EXISTS "${OPENAIR_BUILD_DIR}/lte_build_oai/build" AND IS_DIRECTORY "${OPENAIR_BUILD_DIR}/lte_build_oai/build")
+     install(TARGETS telnetsrv DESTINATION ${OPENAIR_BUILD_DIR}/lte_build_oai/build)
+endif (EXISTS "${OPENAIR_BUILD_DIR}/lte_build_oai/build" AND IS_DIRECTORY "${OPENAIR_BUILD_DIR}/lte_build_oai/build")

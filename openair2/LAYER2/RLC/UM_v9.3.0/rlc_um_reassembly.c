@@ -23,9 +23,7 @@
 #define RLC_UM_REASSEMBLY_C 1
 #include "platform_types.h"
 //-----------------------------------------------------------------------------
-#if USER_MODE
 #include <string.h>
-#endif
 #if ENABLE_ITTI
 # include "platform_types.h"
 # include "intertask_interface.h"
@@ -35,8 +33,8 @@
 #include "rlc_um.h"
 #include "rlc_primitives.h"
 #include "list.h"
-#include "LAYER2/MAC/extern.h"
-#include "UTIL/LOG/log.h"
+#include "LAYER2/MAC/mac_extern.h"
+#include "common/utils/LOG/log.h"
 #include "msc.h"
 
 //-----------------------------------------------------------------------------

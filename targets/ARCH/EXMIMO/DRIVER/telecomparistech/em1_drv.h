@@ -135,12 +135,6 @@ struct  em1_private_s {
 extern struct em1_private_s *em1_devices[MAX_EM1_DEVICES];
 
 /* em1_drv.c */
-#if 0
-static int em1_open(struct inode *inode, struct file *file);
-static int em1_release(struct inode *inode, struct file *file);
-static int __init em1_init(void);
-static void __exit em1_cleanup(void);
-#endif
 int em1_user_op_enter(struct em1_private_s *pv, wait_queue_t *wait,
                       wait_queue_head_t *wh, int busy_flag, int new_state);
 void em1_user_op_leave(struct em1_private_s *pv, wait_queue_t *wait,
@@ -153,9 +147,6 @@ ssize_t em1_write(struct file *file, const char __user *buf, size_t size, loff_t
 ssize_t em1_read(struct file *file, char __user *buf, size_t size, loff_t *ppos);
 
 /* em1_dev.c */
-#if 0
-static irqreturn_t irq_handler(int irq, void *dev_id);
-#endif
 int __devinit em1_probe(struct pci_dev *dev, const struct pci_device_id *id);
 void __devexit em1_remove(struct pci_dev *dev);
 
@@ -183,14 +174,6 @@ struct em1_ioctl_fifo_params {
   uint32_t *words;
   size_t count;
 };
-
-#if 0
-static int em1_ioctl_fifo_write(struct em1_private_s *pv,
-                                struct em1_ioctl_fifo_params *p);
-static int em1_ioctl_fifo_read(struct em1_private_s *pv,
-                               struct em1_ioctl_fifo_params *p);
-static int em1_ioctl_alloc(struct em1_private_s *pv, void **buf);
-#endif
 
 /*
  * Local Variables:

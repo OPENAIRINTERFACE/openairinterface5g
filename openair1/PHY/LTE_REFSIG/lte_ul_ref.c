@@ -24,15 +24,16 @@
 #include <stdlib.h>
 #include <math.h>
 #endif
-#include "defs.h"
+#include "lte_refsig.h"
+#include "PHY/defs_eNB.h"
 
-uint16_t dftsizes[33] = {12,24,36,48,60,72,96,108,120,144,180,192,216,240,288,300,324,360,384,432,480,540,576,600,648,720,864,900,960,972,1080,1152,1200};
+uint16_t dftsizes[34] = {12,24,36,48,60,72,96,108,120,144,180,192,216,240,288,300,324,360,384,432,480,540,576,600,648,720,768,864,900,960,972,1080,1152,1200};
 
-uint16_t ref_primes[33] = {11,23,31,47,59,71,89,107,113,139,179,191,211,239,283,293,317,359,383,431,479,523,571,599,647,719,863,887,953,971,1069,1151,1193};
+uint16_t ref_primes[34] = {11,23,31,47,59,71,89,107,113,139,179,191,211,239,283,293,317,359,383,431,479,523,571,599,647,719,761,863,887,953,971,1069,1151,1193};
 
 
-int16_t *ul_ref_sigs[30][2][33];
-int16_t *ul_ref_sigs_rx[30][2][33]; //these contain the sequences in repeated format and quantized to QPSK ifdef IFFT_FPGA
+int16_t *ul_ref_sigs[30][2][34];
+int16_t *ul_ref_sigs_rx[30][2][34]; //these contain the sequences in repeated format and quantized to QPSK ifdef IFFT_FPGA
 
 /* 36.211 table 5.5.1.2-1 */
 char ref12[360] = {-1,1,3,-3,3,3,1,1,3,1,-3,3,1,1,3,3,3,-1,1,-3,-3,1,-3,3,1,1,-3,-3,-3,-1,-3,-3,1,-3,1,-1,-1,1,1,1,1,-1,-3,-3,1,-3,3,-1,-1,3,1,-1,1,-1,-3,-1,1,-1,1,3,1,-3,3,-1,-1,1,1,-1,-1,3,-3,1,-1,3,-3,-3,-3,3,1,-1,3,3,-3,1,-3,-1,-1,-1,1,-3,3,-1,1,-3,3,1,1,-3,3,1,-1,-1,-1,1,1,3,-1,1,1,-3,-1,3,3,-1,-3,1,1,1,1,1,-1,3,-1,1,1,-3,-3,-1,-3,-3,3,-1,3,1,-1,-1,3,3,-3,1,3,1,3,3,1,-3,1,1,-3,1,1,1,-3,-3,-3,1,3,3,-3,3,-3,1,1,3,-1,-3,3,3,-3,1,-1,-3,-1,3,1,3,3,3,-1,1,3,-1,1,-3,-1,-1,1,1,3,1,-1,-3,1,3,1,-1,1,3,3,3,-1,-1,3,-1,-3,1,1,3,-3,3,-3,-3,3,1,3,-1,-3,3,1,1,-3,1,-3,-3,-1,-1,1,-3,-1,3,1,3,1,-1,-1,3,-3,-1,-3,-1,-1,-3,1,1,1,1,3,1,-1,1,-3,-1,-1,3,-1,1,-3,-3,-3,-3,-3,1,-1,-3,1,1,-3,-3,-3,-3,-1,3,-3,1,-3,3,1,1,-1,-3,-1,-3,1,-1,1,3,-1,1,1,1,3,1,3,3,-1,1,-1,-3,-3,1,1,-3,3,3,1,3,3,1,-3,-1,-1,3,1,3,-3,-3,3,-3,1,-1,-1,3,-1,-3,-3,-1,-3,-1,-3,3,1,-1,1,3,-3,-3,-1,3,-3,3,-1,3,3,-3,3,3,-1,-1,3,-3,-3,-1,-1,-3,-1,3,-3,3,1,-1};
@@ -48,7 +49,7 @@ void generate_ul_ref_sigs(void)
   unsigned int u,v,Msc_RS,q,m,n;
 
   // These are the Zadoff-Chu sequences (for RB 3-100)
-  for (Msc_RS=2; Msc_RS<33; Msc_RS++) {
+  for (Msc_RS=2; Msc_RS<34; Msc_RS++) {
     for (u=0; u<30; u++) {
       for (v=0; v<2; v++) {
         qbar = ref_primes[Msc_RS] * (u+1)/(double)31;
@@ -118,7 +119,7 @@ void generate_ul_ref_sigs_rx(void)
   unsigned int u,v,Msc_RS,q,m,n;
 
   // These are the complex conjugated Zadoff-Chu sequences quantized to QPSK stored in repeated format (for RB 3-100)
-  for (Msc_RS=2; Msc_RS<33; Msc_RS++) {
+  for (Msc_RS=2; Msc_RS<34; Msc_RS++) {
     for (u=0; u<30; u++) {
       for (v=0; v<2; v++) {
         qbar = ref_primes[Msc_RS] * (u+1)/(double)31;
@@ -185,14 +186,18 @@ void free_ul_ref_sigs(void)
 
   unsigned int u,v,Msc_RS;
 
-  for (Msc_RS=2; Msc_RS<33; Msc_RS++) {
+  for (Msc_RS=0; Msc_RS<34; Msc_RS++) {
     for (u=0; u<30; u++) {
       for (v=0; v<2; v++) {
-        if (ul_ref_sigs[u][v][Msc_RS])
+        if (ul_ref_sigs[u][v][Msc_RS]) {
           free16(ul_ref_sigs[u][v][Msc_RS],2*sizeof(int16_t)*dftsizes[Msc_RS]);
+          ul_ref_sigs[u][v][Msc_RS] = NULL;
+        }
 
-        if (ul_ref_sigs_rx[u][v][Msc_RS])
+        if (ul_ref_sigs_rx[u][v][Msc_RS]) {
           free16(ul_ref_sigs_rx[u][v][Msc_RS],4*sizeof(int16_t)*dftsizes[Msc_RS]);
+          ul_ref_sigs_rx[u][v][Msc_RS] = NULL;
+        }
       }
     }
   }

@@ -35,21 +35,6 @@
 #    ifndef __RLC_AM_SEGMENT_H__
 #        define __RLC_AM_SEGMENT_H__
 //-----------------------------------------------------------------------------
-#        ifdef RLC_AM_SEGMENT_C
-#            define private_rlc_am_segment(x)    x
-#            define protected_rlc_am_segment(x)  x
-#            define public_rlc_am_segment(x)     x
-#        else
-#            ifdef RLC_AM_MODULE
-#                define private_rlc_am_segment(x)
-#                define protected_rlc_am_segment(x)  extern x
-#                define public_rlc_am_segment(x)     extern x
-#            else
-#                define private_rlc_am_segment(x)
-#                define protected_rlc_am_segment(x)
-#                define public_rlc_am_segment(x)     extern x
-#            endif
-#        endif
 
 /*! \fn void rlc_am_pdu_polling (const protocol_ctxt_t* const  ctxt_pP, rlc_am_entity_t *const rlcP, rlc_am_pdu_sn_10_t *pduP, int16_t payload_sizeP,boolean_t is_new_pdu)
 * \brief      Set or not the poll bit in the PDU header depending on RLC AM protocol variables.
@@ -58,13 +43,13 @@
 * \param[in]  pduP           Pointer on the header of the PDU in order to be able to set the poll bit if necessary.
 * \param[in]  payload_sizeP  Size of the payload of the PDU.
 */
-protected_rlc_am_segment(void rlc_am_pdu_polling (const protocol_ctxt_t* const  ctxt_pP, rlc_am_entity_t *const rlcP, rlc_am_pdu_sn_10_t *pduP, int16_t payload_sizeP,boolean_t is_new_pdu);)
+void rlc_am_pdu_polling (const protocol_ctxt_t* const  ctxt_pP, rlc_am_entity_t *const rlcP, rlc_am_pdu_sn_10_t *pduP, int16_t payload_sizeP,boolean_t is_new_pdu);
 
 /*! \fn void rlc_am_segment_10 (const protocol_ctxt_t* const  ctxt_pP, rlc_am_entity_t * const rlcP)
 * \brief      Segment a PDU with 10 bits sequence number, based on segmentation information given by MAC (size to transmit).
 * \param[in]  ctxt_pP        Running context.
 * \param[in]  rlcP         RLC AM protocol instance pointer.
 */
-protected_rlc_am_segment(void rlc_am_segment_10 (const protocol_ctxt_t* const  ctxt_pP,rlc_am_entity_t *const rlcP);)
+void rlc_am_segment_10 (const protocol_ctxt_t* const  ctxt_pP,rlc_am_entity_t *const rlcP);
 /** @} */
 #    endif

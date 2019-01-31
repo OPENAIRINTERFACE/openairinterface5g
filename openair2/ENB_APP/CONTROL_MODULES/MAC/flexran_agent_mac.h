@@ -37,49 +37,9 @@
 #include "flexran_agent_common.h"
 #include "flexran_agent_extern.h"
 
-/* These types will be used to give
-   instructions for the type of stats reports
-   we need to create */
-typedef struct {
-  uint16_t ue_rnti;
-  uint32_t ue_report_flags; /* Indicates the report elements
-			       required for this UE id. See
-			       FlexRAN specification 1.2.4.2 */
-} ue_report_type_t;
-
-typedef struct {
-  uint16_t cc_id;
-  uint32_t cc_report_flags; /* Indicates the report elements
-			      required for this CC index. See
-			      FlexRAN specification 1.2.4.3 */
-} cc_report_type_t;
-
-typedef struct {
-  int nr_ue;
-  ue_report_type_t *ue_report_type;
-  int nr_cc;
-  cc_report_type_t *cc_report_type;
-} report_config_t;
-
-typedef struct stats_request_config_s{
-  uint8_t report_type;
-  uint8_t report_frequency;
-  uint16_t period; /*In number of subframes*/
-  report_config_t *config;
-} stats_request_config_t;
 
 /* Initialization function for the agent structures etc */
 void flexran_agent_init_mac_agent(mid_t mod_id);
-
-int flexran_agent_mac_handle_stats(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
-
-/* Statistics request protocol message constructor and destructor */
-int flexran_agent_mac_stats_request(mid_t mod_id, xid_t xid, const stats_request_config_t *report_config, Protocol__FlexranMessage **msg);
-int flexran_agent_mac_destroy_stats_request(Protocol__FlexranMessage *msg);
-
-/* Statistics reply protocol message constructor and destructor */
-int flexran_agent_mac_stats_reply(mid_t mod_id, xid_t xid, const report_config_t *report_config, Protocol__FlexranMessage **msg);
-int flexran_agent_mac_destroy_stats_reply(Protocol__FlexranMessage *msg);
 
 /* Scheduling request information protocol message constructor and estructor */
 int flexran_agent_mac_sr_info(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
@@ -89,9 +49,17 @@ int flexran_agent_mac_destroy_sr_info(Protocol__FlexranMessage *msg);
 int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
 int flexran_agent_mac_destroy_sf_trigger(Protocol__FlexranMessage *msg);
 
+/* Statistics reply protocol message constructor and destructor */
+int flexran_agent_mac_stats_reply(mid_t mod_id, const report_config_t *report_config, Protocol__FlexUeStatsReport **ue_report, Protocol__FlexCellStatsReport **cell_report);
+int flexran_agent_mac_destroy_stats_reply(Protocol__FlexranMessage *msg);
+
 /* DL MAC scheduling decision protocol message constructor (empty command) and destructor */ 
 int flexran_agent_mac_create_empty_dl_config(mid_t mod_id, Protocol__FlexranMessage **msg);
 int flexran_agent_mac_destroy_dl_config(Protocol__FlexranMessage *msg);
+
+/* UL MAC scheduling decision protocol message constructor (empty command) and destructor */ 
+int flexran_agent_mac_create_empty_ul_config(mid_t mod_id, Protocol__FlexranMessage **msg);
+int flexran_agent_mac_destroy_ul_config(Protocol__FlexranMessage *msg);
 
 int flexran_agent_mac_handle_dl_mac_config(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg);
 
@@ -118,5 +86,15 @@ int flexran_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface);
 
 /*Unregister technology specific callbacks*/
 int flexran_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface*xface);
+
+/***************************************
+ * FlexRAN agent - slice configuration *
+ ***************************************/
+
+/* Inform controller about possibility to update slice configuration */
+void flexran_agent_slice_update(mid_t mod_id);
+
+/* return a pointer to the current config */
+Protocol__FlexSliceConfig *flexran_agent_get_slice_config(mid_t mod_id);
 
 #endif

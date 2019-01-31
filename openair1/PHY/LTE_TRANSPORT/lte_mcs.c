@@ -30,9 +30,9 @@
 * \warning
 */
 
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "PHY/LTE_TRANSPORT/proto.h"
+#include "PHY/defs_common.h"
+#include "PHY/phy_extern.h"
+#include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 
 unsigned char get_Qm(unsigned char I_MCS)
 {
@@ -113,13 +113,8 @@ uint32_t get_TBS_DL(uint8_t mcs, uint16_t nb_rb)
   uint32_t TBS;
 
   if ((nb_rb > 0) && (mcs < 29)) {
-#ifdef TBS_FIX
-    TBS = 3*TBStable[get_I_TBS(mcs)][nb_rb-1]/4;
-    TBS = TBS>>3;
-#else
     TBS = TBStable[get_I_TBS(mcs)][nb_rb-1];
     TBS = TBS>>3;
-#endif
     return(TBS);
   } else {
     return(uint32_t)0;
@@ -132,13 +127,8 @@ uint32_t get_TBS_UL(uint8_t mcs, uint16_t nb_rb)
   uint32_t TBS = 0;
 
   if ((nb_rb > 0) && (mcs < 29)) {
-#ifdef TBS_FIX
-    TBS = 3*TBStable[get_I_TBS_UL(mcs)][nb_rb-1]/4;
-    TBS = TBS>>3;
-#else
     TBS = TBStable[get_I_TBS_UL(mcs)][nb_rb-1];
     TBS = TBS>>3;
-#endif
     return(TBS);
   } else {
     return(uint32_t)0;
@@ -298,7 +288,7 @@ int adjust_G(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_orde
   //    printf("re_pbch_sss %d\n",re_pbch_sss);
   if (subframe==0) {  //PBCH+SSS+PSS
     if (frame_parms->frame_type == TDD) { // TDD
-      if (frame_parms->mode1_flag==0)
+      if (frame_parms->nb_antenna_ports_eNB!=1)
         //2ant so PBCH 3+2/3 symbols, SSS 1 symbol * REs => (14/3)*re_pbch_sss for normal CP,
         // 2+4/3 symbols, SSS 1 symbol => (13/3)*re_pbch_sss for ext. CP
         return((-frame_parms->Ncp+14)*re_pbch_sss * mod_order/3);
@@ -307,7 +297,7 @@ int adjust_G(LTE_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_orde
         // 2+10/6 symbols, SSS 1 symbol => (28/6)*re_pbch_sss for ext. CP
         return((-frame_parms->Ncp+29)*re_pbch_sss * mod_order/6);
     } else { // FDD
-      if (frame_parms->mode1_flag==0)
+      if (frame_parms->nb_antenna_ports_eNB!=1)
         //2ant so PBCH 3+2/3 symbols, PSS+SSS 2 symbols * REs => (17/3)*re_pbch_sss for normal CP,
         // 2+4/3 symbols, PSS+SSS 2 symbols => (16/3)*re_pbch_sss for ext. CP
         return((-frame_parms->Ncp+17)*re_pbch_sss * mod_order/3);
@@ -337,7 +327,7 @@ int get_G(LTE_DL_FRAME_PARMS *frame_parms,uint16_t nb_rb,uint32_t *rb_alloc,uint
       // PDDDPDD PDDDPDD - 13 PDSCH symbols, 10 full, 3 w/ pilots = 10*12 + 3*8
       // PCDDPDD PDDDPDD - 12 PDSCH symbols, 9 full, 3 w/ pilots = 9*12 + 3*8
       // PCCDPDD PDDDPDD - 11 PDSCH symbols, 8 full, 3 w/pilots = 8*12 + 3*8
-      if (beamforming_mode==0 && frame_parms->mode1_flag==0) 
+      if (beamforming_mode==0 && frame_parms->nb_antenna_ports_eNB!=1) 
         return((((int)nb_rb * mod_order * ((11-num_pdcch_symbols)*12 + 3*8)) - G_adj)*Nl);
       else if(beamforming_mode==7)
         return(((int)nb_rb * mod_order * ((7-num_pdcch_symbols)*12 + 3*10 + 4*9)) - G_adj);
@@ -347,7 +337,7 @@ int get_G(LTE_DL_FRAME_PARMS *frame_parms,uint16_t nb_rb,uint32_t *rb_alloc,uint
       // PDDPDD PDDPDD - 11 PDSCH symbols, 8 full, 3 w/ pilots = 8*12 + 3*8
       // PCDPDD PDDPDD - 10 PDSCH symbols, 7 full, 3 w/ pilots = 7*12 + 3*8
       // PCCPDD PDDPDD - 9 PDSCH symbols, 6 full, 3 w/pilots = 6*12 + 3*8
-      if (frame_parms->mode1_flag==0)
+      if (frame_parms->nb_antenna_ports_eNB!=1)
         return((((int)nb_rb * mod_order * ((9-num_pdcch_symbols)*12 + 3*8)) - G_adj)*Nl);
       else if(beamforming_mode==7)
         return(((int)nb_rb * mod_order * ((5-num_pdcch_symbols)*12 + 3*8 + 4*9)) - G_adj);

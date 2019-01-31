@@ -19,8 +19,8 @@
  *      contact@openairinterface.org
  */
 
-#include "PHY/defs.h"
-#include "PHY/extern.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h"
 #include "PHY/sse_intrin.h"
 
 // This is 512/(1:256) in __m128i format
@@ -303,6 +303,11 @@ void freq_equalization(LTE_DL_FRAME_PARMS *frame_parms,
   ul_ch_mag128      = (int16x8_t*)&ul_ch_mag[0][symbol*frame_parms->N_RB_DL*12];
   ul_ch_magb128     = (int16x8_t*)&ul_ch_magb[0][symbol*frame_parms->N_RB_DL*12];
 #endif
+
+  AssertFatal(symbol<frame_parms->symbols_per_tti,"symbol %d >= %d\n",
+	      symbol,frame_parms->symbols_per_tti);
+  AssertFatal(Msc_RS<=frame_parms->N_RB_UL*12,"Msc_RS %d >= %d\n",
+	      Msc_RS,frame_parms->N_RB_UL*12);
 
   for (re=0; re<(Msc_RS>>2); re++) {
 

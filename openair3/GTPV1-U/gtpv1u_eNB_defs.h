@@ -28,15 +28,17 @@
  */
 
 #include "hashtable.h"
-#include "asn1_constants.h"
+#include "LTE_asn_constant.h"
 
 #ifndef GTPV1U_ENB_DEFS_H_
 #define GTPV1U_ENB_DEFS_H_
 
+#include "NwGtpv1u.h"
+
 #define GTPV1U_UDP_PORT (2152)
 #define GTPV1U_BEARER_OFFSET 3
 
-#define GTPV1U_MAX_BEARERS_ID     (max_val_DRB_Identity - GTPV1U_BEARER_OFFSET)
+#define GTPV1U_MAX_BEARERS_ID     (max_val_LTE_DRB_Identity - GTPV1U_BEARER_OFFSET)
 
 typedef enum {
   BEARER_DOWN = 0,
@@ -95,8 +97,6 @@ typedef struct gtpv1u_data_s {
   //RB_HEAD(gtpv1u_ue_map, gtpv1u_ue_data_s) gtpv1u_ue_map_head;
   /* Local IP address to use */
   in_addr_t             enb_ip_address_for_S1u_S12_S4_up;
-  char                 *ip_addr;
-  tcp_udp_port_t        enb_port_for_S1u_S12_S4_up;
   /* UDP internal data */
   //udp_data_t            udp_data;
 

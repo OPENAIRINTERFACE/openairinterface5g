@@ -30,8 +30,11 @@
 * \warning
 */
 
+#ifndef __IF5_TOOLS_H__
+#define __IF5_TOOLS_H__
+
 #include <stdint.h>
-#include "PHY/defs.h"
+#include "PHY/defs_eNB.h"
 
 #define IF5_RRH_GW_DL 0x0022
 #define IF5_RRH_GW_UL 0x0023
@@ -56,8 +59,11 @@ struct IF5_mobipass_header {
 typedef struct IF5_mobipass_header IF5_mobipass_header_t;
 #define sizeof_IF5_mobipass_header_t 14
 
-void send_IF5(PHY_VARS_eNB*, openair0_timestamp, int, uint8_t*, uint16_t);
+void send_IF5(RU_t *, openair0_timestamp, int, uint8_t*, uint16_t);
 
-void recv_IF5(PHY_VARS_eNB*, openair0_timestamp*, int, uint16_t);
+void recv_IF5(RU_t *, openair0_timestamp*, int, uint16_t);
 
-void malloc_IF5_buffer(PHY_VARS_eNB*);
+void malloc_IF5_buffer(RU_t *ru);
+
+#endif
+

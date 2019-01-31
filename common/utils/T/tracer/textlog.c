@@ -10,7 +10,6 @@
 #include "view/view.h"
 #include "gui/gui.h"
 #include "utils.h"
-#include "../T_defs.h"
 #include "event_selector.h"
 #include "config.h"
 
@@ -53,6 +52,7 @@ void usage(void)
 "                                    they will be processed in order\n"
 "                                    by default, all is off\n"
 "    -full                     also dump buffers' content\n"
+"    -raw-time                 also prints 'raw time'\n"
 "    -ip <host>                connect to given IP address (default %s)\n"
 "    -p <port>                 connect to given port (default %d)\n"
 "    -x                        GUI output\n"
@@ -92,6 +92,7 @@ int main(int n, char **v)
   int gui_active = 1;
   textlog_data textlog_data;
   int full = 0;
+  int raw_time = 0;
 
   /* write on a socket fails if the other end is closed and we get SIGPIPE */
   if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) abort();
@@ -118,6 +119,7 @@ int main(int n, char **v)
     if (!strcmp(v[i], "-debug-gui")) { gui_logd = 1; continue; }
     if (!strcmp(v[i], "-no-gui")) { gui_active = 0; continue; }
     if (!strcmp(v[i], "-full")) { full = 1; continue; }
+    if (!strcmp(v[i], "-raw-time")) { raw_time = 1; continue; }
     usage();
   }
 
@@ -163,6 +165,7 @@ int main(int n, char **v)
 //        "ev: {} eNB_id [eNB_ID] frame [frame] subframe [subframe]");
     logger_add_view(textlog, out);
     if (full) textlog_dump_buffer(textlog, 1);
+    if (raw_time) textlog_raw_time(textlog, 1);
     free(name);
     free(desc);
   }
@@ -182,12 +185,13 @@ int main(int n, char **v)
   /* send the first message - activate selected traces */
   is_on_changed(&textlog_data);
 
+  OBUF ebuf = { osize: 0, omaxsize: 0, obuf: NULL };
+
   /* read messages */
   while (1) {
-    char v[T_BUFFER_MAX];
     event e;
-    e = get_event(textlog_data.socket, v, database);
-    if (e.type == -1) abort();
+    e = get_event(textlog_data.socket, &ebuf, database);
+    if (e.type == -1) break;
     handle_event(h, e);
   }
 

@@ -29,14 +29,15 @@
  * \note
  * \warning
  */
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "PHY/CODING/defs.h"
-#include "PHY/CODING/extern.h"
+#include "PHY/defs_common.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h"
+#include "PHY/CODING/coding_defs.h"
+#include "PHY/CODING/coding_extern.h"
 #include "PHY/CODING/lte_interleaver_inline.h"
-#include "PHY/LTE_TRANSPORT/defs.h"
-#include "defs.h"
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "PHY/LTE_TRANSPORT/transport_eNB.h"
+#include "modulation_eNB.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 
 int beam_precoding(int32_t **txdataF,
 	           int32_t **txdataF_BF,
@@ -57,7 +58,12 @@ int beam_precoding(int32_t **txdataF,
 
   for (p=0; p<NB_ANTENNA_PORTS_ENB; p++) {
     if (p<frame_parms->nb_antenna_ports_eNB || p==5) {
-      multadd_cpx_vector((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size],(int16_t*)beam_weights[p][aa], (int16_t*)txdataF_BF[aa], 0, frame_parms->ofdm_symbol_size, 15);
+      multadd_cpx_vector((int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size],
+			 (int16_t*)beam_weights[p][aa], 
+			 (int16_t*)&txdataF_BF[aa][symbol*frame_parms->ofdm_symbol_size], 
+			 0, 
+			 frame_parms->ofdm_symbol_size, 
+			 15);
       //mult_cpx_conj_vector((int16_t*)beam_weights[p][aa], (int16_t*)&txdataF[p][slot_offset_F+symbol*frame_parms->ofdm_symbol_size], (int16_t*)txdataF_BF[aa], frame_parms->ofdm_symbol_size, 15, 1);
 
       // if check version

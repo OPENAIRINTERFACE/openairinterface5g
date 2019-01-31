@@ -21,11 +21,9 @@
 
 // this function fills the PHY_vars->PHY_measurement structure
 
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "SCHED/defs.h"
-#include "SCHED/extern.h"
-#include "log.h"
+#include "PHY/defs_UE.h"
+#include "PHY/phy_extern_ue.h"
+#include "common/utils/LOG/log.h"
 #include "PHY/sse_intrin.h"
 
 //#define k1 1000
@@ -38,7 +36,6 @@
 
 int16_t cond_num_threshold = 0;
 
-#ifdef USER_MODE
 void print_shorts(char *s,short *x)
 {
 
@@ -57,10 +54,8 @@ void print_ints(char *s,int *x)
         );
 
 }
-#endif
 
-
-int16_t get_PL(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
+int16_t get_PL(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
 {
 
   PHY_VARS_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
@@ -86,7 +81,7 @@ int16_t get_PL(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
 }
 
 
-uint8_t get_n_adj_cells (uint8_t Mod_id,uint8_t CC_id)
+uint8_t get_n_adj_cells (module_id_t Mod_id,uint8_t CC_id)
 {
 
   PHY_VARS_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
@@ -97,7 +92,7 @@ uint8_t get_n_adj_cells (uint8_t Mod_id,uint8_t CC_id)
     return 0;
 }
 
-uint32_t get_rx_total_gain_dB (uint8_t Mod_id,uint8_t CC_id)
+uint32_t get_rx_total_gain_dB (module_id_t Mod_id,uint8_t CC_id)
 {
 
   PHY_VARS_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
@@ -107,7 +102,7 @@ uint32_t get_rx_total_gain_dB (uint8_t Mod_id,uint8_t CC_id)
 
   return 0xFFFFFFFF;
 }
-uint32_t get_RSSI (uint8_t Mod_id,uint8_t CC_id)
+uint32_t get_RSSI (module_id_t Mod_id,uint8_t CC_id)
 {
 
   PHY_VARS_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
@@ -117,18 +112,23 @@ uint32_t get_RSSI (uint8_t Mod_id,uint8_t CC_id)
 
   return 0xFFFFFFFF;
 }
-uint32_t get_RSRP(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
+double get_RSRP(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
 {
+
+  AssertFatal(PHY_vars_UE_g!=NULL,"PHY_vars_UE_g is null\n");
+  AssertFatal(PHY_vars_UE_g[Mod_id]!=NULL,"PHY_vars_UE_g[%d] is null\n",Mod_id);
+  AssertFatal(PHY_vars_UE_g[Mod_id][CC_id]!=NULL,"PHY_vars_UE_g[%d][%d] is null\n",Mod_id,CC_id);
 
   PHY_VARS_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
 
   if (ue)
-    return ue->measurements.rsrp[eNB_index];
-
-  return 0xFFFFFFFF;
+    return ((dB_fixed_times10(ue->measurements.rsrp[eNB_index]))/10.0-
+	    get_rx_total_gain_dB(Mod_id,0) -
+	    10*log10(ue->frame_parms.N_RB_DL*12));
+  return -140.0;
 }
 
-uint32_t get_RSRQ(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
+uint32_t get_RSRQ(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
 {
 
   PHY_VARS_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
@@ -139,7 +139,7 @@ uint32_t get_RSRQ(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
   return 0xFFFFFFFF;
 }
 
-int8_t set_RSRP_filtered(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index,float rsrp)
+int8_t set_RSRP_filtered(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index,float rsrp)
 {
 
   PHY_VARS_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
@@ -153,7 +153,7 @@ int8_t set_RSRP_filtered(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index,float rs
   return -1;
 }
 
-int8_t set_RSRQ_filtered(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index,float rsrq)
+int8_t set_RSRQ_filtered(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index,float rsrq)
 {
 
   PHY_VARS_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
@@ -205,10 +205,8 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
              ((ue->frame_parms.frame_type == TDD) && ((subframe == 1) || (subframe == 6)))
                 )
         {  // FDD PSS/SSS, compute noise in DTX REs
-
-          if (ue->frame_parms.Ncp==NORMAL) {
+          if (ue->frame_parms.Ncp == NORMAL) {
             for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
-
           if(ue->frame_parms.frame_type == FDD)
           {
 	      rxF_sss = (int16_t *)&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF[aarx][(5*ue->frame_parms.ofdm_symbol_size)];
@@ -264,7 +262,7 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
         ue->measurements.n0_power_tot_dB = (unsigned short) dB_fixed(ue->measurements.n0_power_tot/(12*aarx));
         ue->measurements.n0_power_tot_dBm = ue->measurements.n0_power_tot_dB - ue->rx_total_gain_dB - dB_fixed(ue->frame_parms.ofdm_symbol_size);
         } else {
-            LOG_E(PHY, "Not yet implemented: noise power calculation when prefix length = EXTENDED\n");
+            LOG_E(PHY, "Not yet implemented: noise power calculation when prefix length == EXTENDED\n");
         }
         }
         else if ((ue->frame_parms.frame_type == TDD) &&
@@ -344,10 +342,10 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
 
       for (l=0,nu=0; l<=(4-ue->frame_parms.Ncp); l+=(4-ue->frame_parms.Ncp),nu=3) {
         k = (nu + nushift)%6;
-#ifdef DEBUG_MEAS_RRC
-        LOG_I(PHY,"[UE %d] Frame %d subframe %d Doing ue_rrc_measurements rsrp/rssi (Nid_cell %d, nushift %d, eNB_offset %d, k %d, l %d)\n",ue->Mod_id,ue->proc.proc_rxtx[subframe&1].frame_rx,subframe,Nid_cell,nushift,
+	//#ifdef DEBUG_MEAS_RRC
+        LOG_D(PHY,"[UE %d] Frame %d subframe %d Doing ue_rrc_measurements rsrp/rssi (Nid_cell %d, nushift %d, eNB_offset %d, k %d, l %d)\n",ue->Mod_id,ue->proc.proc_rxtx[subframe&1].frame_rx,subframe,Nid_cell,nushift,
               eNB_offset,k,l);
-#endif
+	//#endif
 
         for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
           rxF = (int16_t *)&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF[aarx][(l*ue->frame_parms.ofdm_symbol_size)];
@@ -422,18 +420,19 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
 
     }
 
-#ifdef DEBUG_MEAS_RRC
+    //#ifdef DEBUG_MEAS_RRC
 
     //    if (slot == 0) {
 
       if (eNB_offset == 0)
-       LOG_I(PHY,"[UE %d] Frame %d, subframe %d RRC Measurements => rssi %3.1f dBm (digital: %3.1f dB, gain %d), N0 %d dBm\n",ue->Mod_id,
+	
+        LOG_D(PHY,"[UE %d] Frame %d, subframe %d RRC Measurements => rssi %3.1f dBm (digital: %3.1f dB, gain %d), N0 %d dBm\n",ue->Mod_id,
               ue->proc.proc_rxtx[subframe&1].frame_rx,subframe,10*log10(ue->measurements.rssi)-ue->rx_total_gain_dB,
               10*log10(ue->measurements.rssi),
               ue->rx_total_gain_dB,
               ue->measurements.n0_power_tot_dBm);
 
-      LOG_I(PHY,"[UE %d] Frame %d, subframe %d RRC Measurements (idx %d, Cell id %d) => rsrp: %3.1f dBm/RE (%d), rsrq: %3.1f dB\n",
+      LOG_D(PHY,"[UE %d] Frame %d, subframe %d RRC Measurements (idx %d, Cell id %d) => rsrp: %3.1f dBm/RE (%d), rsrq: %3.1f dB\n",
             ue->Mod_id,
             ue->proc.proc_rxtx[subframe&1].frame_rx,subframe,eNB_offset,
             (eNB_offset>0) ? ue->measurements.adj_cell_id[eNB_offset-1] : ue->frame_parms.Nid_cell,
@@ -448,613 +447,9 @@ void ue_rrc_measurements(PHY_VARS_UE *ue,
 
       //    }
 
-#endif
+      //#endif
   }
 
-}
-
-void lte_ue_measurements(PHY_VARS_UE *ue,
-                         unsigned int subframe_offset,
-                         unsigned char N0_symbol,
-                         unsigned char abstraction_flag,
-                         unsigned char rank_adaptation,
-                         uint8_t subframe)
-{
-
-
-  int aarx,aatx,eNB_id=0; //,gain_offset=0;
-  //int rx_power[NUMBER_OF_CONNECTED_eNB_MAX];
-  int i;
-  unsigned int limit,subband;
-#if defined(__x86_64__) || defined(__i386__)
-  __m128i *dl_ch0_128,*dl_ch1_128;
-#elif defined(__arm__)
-  int16x8_t *dl_ch0_128, *dl_ch1_128;
-#endif
-  int *dl_ch0,*dl_ch1;
-
-  LTE_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
-  int nb_subbands,subband_size,last_subband_size;
-  int N_RB_DL = frame_parms->N_RB_DL;
-
-
-  int rank_tm3_tm4;
-
-
-  ue->measurements.nb_antennas_rx = frame_parms->nb_antennas_rx;
-
-
-  switch (N_RB_DL) {
-  case 6:
-    nb_subbands = 6;
-    subband_size = 12;
-    last_subband_size = 0;
-    break;
-
-  default:
-  case 25:
-    nb_subbands = 7;
-    subband_size = 4*12;
-    last_subband_size = 12;
-    break;
-
-  case 50:
-    nb_subbands = 9;
-    subband_size = 6*12;
-    last_subband_size = 2*12;
-    break;
-
-  case 100:
-    nb_subbands = 13;
-    subband_size = 8*12;
-    last_subband_size = 4*12;
-    break;
-  }
-
-  // signal measurements
-  for (eNB_id=0; eNB_id<ue->n_connected_eNB; eNB_id++) {
-    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-      for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++) {
-        ue->measurements.rx_spatial_power[eNB_id][aatx][aarx] =
-          (signal_energy_nodc(&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][(aatx<<1) + aarx][0],
-                              (N_RB_DL*12)));
-        //- ue->measurements.n0_power[aarx];
-
-        if (ue->measurements.rx_spatial_power[eNB_id][aatx][aarx]<0)
-          ue->measurements.rx_spatial_power[eNB_id][aatx][aarx] = 0; //ue->measurements.n0_power[aarx];
-
-        ue->measurements.rx_spatial_power_dB[eNB_id][aatx][aarx] = (unsigned short) dB_fixed(ue->measurements.rx_spatial_power[eNB_id][aatx][aarx]);
-
-        if (aatx==0)
-          ue->measurements.rx_power[eNB_id][aarx] = ue->measurements.rx_spatial_power[eNB_id][aatx][aarx];
-        else
-          ue->measurements.rx_power[eNB_id][aarx] += ue->measurements.rx_spatial_power[eNB_id][aatx][aarx];
-      } //aatx
-
-      ue->measurements.rx_power_dB[eNB_id][aarx] = (unsigned short) dB_fixed(ue->measurements.rx_power[eNB_id][aarx]);
-
-      if (aarx==0)
-        ue->measurements.rx_power_tot[eNB_id] = ue->measurements.rx_power[eNB_id][aarx];
-      else
-        ue->measurements.rx_power_tot[eNB_id] += ue->measurements.rx_power[eNB_id][aarx];
-    } //aarx
-
-    ue->measurements.rx_power_tot_dB[eNB_id] = (unsigned short) dB_fixed(ue->measurements.rx_power_tot[eNB_id]);
-
-  } //eNB_id
-
-  eNB_id=0;
-  if (ue->transmission_mode[0]==4 || ue->transmission_mode[0]==3){
-    if (rank_adaptation == 1)
-      rank_tm3_tm4 = rank_estimation_tm3_tm4(&ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][0][4],
-                                             &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][2][4],
-                                             &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][1][4],
-                                             &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][3][4],
-                                             N_RB_DL);
-    else
-      rank_tm3_tm4=1;
-#ifdef DEBUG_RANK_EST
-  printf("rank tm3 or tm4 %d\n", rank_tm3_tm4);
-#endif
-  }
-
-  if (ue->transmission_mode[eNB_id]!=4 && ue->transmission_mode[eNB_id]!=3)
-    ue->measurements.rank[eNB_id] = 0;
-  else
-    ue->measurements.rank[eNB_id] = rank_tm3_tm4;
-  //  printf ("tx mode %d\n", ue->transmission_mode[eNB_id]);
-  //  printf ("rank %d\n", ue->PHY_measurements.rank[eNB_id]);
-
-  // filter to remove jitter
-  if (ue->init_averaging == 0) {
-    for (eNB_id = 0; eNB_id < ue->n_connected_eNB; eNB_id++)
-      ue->measurements.rx_power_avg[eNB_id] = (int)
-          (((k1*((long long int)(ue->measurements.rx_power_avg[eNB_id]))) +
-            (k2*((long long int)(ue->measurements.rx_power_tot[eNB_id]))))>>10);
-
-    //LOG_I(PHY,"Noise Power Computation: k1 %d k2 %d n0 avg %d n0 tot %d\n", k1, k2, ue->measurements.n0_power_avg,
-    //    ue->measurements.n0_power_tot);
-    ue->measurements.n0_power_avg = (int)
-        (((k1*((long long int) (ue->measurements.n0_power_avg))) +
-          (k2*((long long int) (ue->measurements.n0_power_tot))))>>10);
-  } else {
-    for (eNB_id = 0; eNB_id < ue->n_connected_eNB; eNB_id++)
-      ue->measurements.rx_power_avg[eNB_id] = ue->measurements.rx_power_tot[eNB_id];
-
-    ue->measurements.n0_power_avg = ue->measurements.n0_power_tot;
-    ue->init_averaging = 0;
-  }
-
-  for (eNB_id = 0; eNB_id < ue->n_connected_eNB; eNB_id++) {
-    ue->measurements.rx_power_avg_dB[eNB_id] = dB_fixed( ue->measurements.rx_power_avg[eNB_id]);
-    ue->measurements.wideband_cqi_tot[eNB_id] = dB_fixed2(ue->measurements.rx_power_tot[eNB_id],ue->measurements.n0_power_tot);
-    ue->measurements.wideband_cqi_avg[eNB_id] = dB_fixed2(ue->measurements.rx_power_avg[eNB_id],ue->measurements.n0_power_avg);
-    ue->measurements.rx_rssi_dBm[eNB_id] = ue->measurements.rx_power_avg_dB[eNB_id] - ue->rx_total_gain_dB;
-#ifdef DEBUG_MEAS_UE
-      LOG_I(PHY,"[eNB %d] Subframe %d, RSSI %d dBm, RSSI (digital) %d dB, WBandCQI %d dB, rxPwrAvg %d, n0PwrAvg %d\n",
-            eNB_id,
-            subframe,
-            ue->measurements.rx_rssi_dBm[eNB_id],
-            ue->measurements.rx_power_avg_dB[eNB_id],
-            ue->measurements.wideband_cqi_avg[eNB_id],
-            ue->measurements.rx_power_avg[eNB_id],
-            ue->measurements.n0_power_tot);
-#endif
-  }
-
-  ue->measurements.n0_power_avg_dB = dB_fixed( ue->measurements.n0_power_avg);
-
-  for (eNB_id = 0; eNB_id < ue->n_connected_eNB; eNB_id++) {
-    if (frame_parms->mode1_flag==0) {
-      // cqi/pmi information
-
-      for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-        dl_ch0    = &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][aarx][4];
-        dl_ch1    = &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][2+aarx][4];
-
-        for (subband=0; subband<nb_subbands; subband++) {
-
-          // cqi
-          if (aarx==0)
-            ue->measurements.subband_cqi_tot[eNB_id][subband]=0;
-
-          if ((subband<(nb_subbands-1))||(N_RB_DL==6)) {
-            /*for (i=0;i<48;i++)
-            msg("subband %d (%d) : %d,%d\n",subband,i,((short *)dl_ch0)[2*i],((short *)dl_ch0)[1+(2*i)]);
-            */
-            ue->measurements.subband_cqi[eNB_id][aarx][subband] =
-              (signal_energy_nodc(dl_ch0,subband_size) + signal_energy_nodc(dl_ch1,subband_size));
-
-            if ( ue->measurements.subband_cqi[eNB_id][aarx][subband] < 0)
-              ue->measurements.subband_cqi[eNB_id][aarx][subband]=0;
-
-            /*
-            else
-            ue->measurements.subband_cqi[eNB_id][aarx][subband]-=ue->measurements.n0_power[aarx];
-            */
-
-            ue->measurements.subband_cqi_tot[eNB_id][subband] += ue->measurements.subband_cqi[eNB_id][aarx][subband];
-            ue->measurements.subband_cqi_dB[eNB_id][aarx][subband] = dB_fixed2(ue->measurements.subband_cqi[eNB_id][aarx][subband],
-                ue->measurements.n0_power[aarx]);
-          } else { // this is for the last subband which is smaller in size
-            //      for (i=0;i<12;i++)
-            //        printf("subband %d (%d) : %d,%d\n",subband,i,((short *)dl_ch0)[2*i],((short *)dl_ch0)[1+(2*i)]);
-            ue->measurements.subband_cqi[eNB_id][aarx][subband] = (signal_energy_nodc(dl_ch0,last_subband_size) +
-                signal_energy_nodc(dl_ch1,last_subband_size)); // - ue->measurements.n0_power[aarx];
-            ue->measurements.subband_cqi_tot[eNB_id][subband] += ue->measurements.subband_cqi[eNB_id][aarx][subband];
-            ue->measurements.subband_cqi_dB[eNB_id][aarx][subband] = dB_fixed2(ue->measurements.subband_cqi[eNB_id][aarx][subband],
-                ue->measurements.n0_power[aarx]);
-          }
-
-          dl_ch1+=subband_size;
-          dl_ch0+=subband_size;
-          //    msg("subband_cqi[%d][%d][%d] => %d (%d dB)\n",eNB_id,aarx,subband,ue->measurements.subband_cqi[eNB_id][aarx][subband],ue->measurements.subband_cqi_dB[eNB_id][aarx][subband]);
-        }
-
-      }
-
-      for (subband=0; subband<nb_subbands; subband++) {
-        ue->measurements.subband_cqi_tot_dB[eNB_id][subband] = dB_fixed2(ue->measurements.subband_cqi_tot[eNB_id][subband],ue->measurements.n0_power_tot);
-        //    msg("subband_cqi_tot[%d][%d] => %d dB (n0 %d)\n",eNB_id,subband,ue->measurements.subband_cqi_tot_dB[eNB_id][subband],ue->measurements.n0_power_tot);
-      }
-
-      for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-        //printf("aarx=%d", aarx);
-        // skip the first 4 RE due to interpolation filter length of 5 (not possible to skip 5 due to 128i alignment, must be multiple of 128bit)
-
-#if defined(__x86_64__) || defined(__i386__)
-       __m128i pmi128_re,pmi128_im,mmtmpPMI0,mmtmpPMI1 /* ,mmtmpPMI2,mmtmpPMI3 */ ;
-
-        dl_ch0_128    = (__m128i *)&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][aarx][4];
-        dl_ch1_128    = (__m128i *)&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][2+aarx][4];
-#elif defined(__arm__)
-        int32x4_t pmi128_re,pmi128_im,mmtmpPMI0,mmtmpPMI1,mmtmpPMI0b,mmtmpPMI1b;
-
-        dl_ch0_128    = (int16x8_t *)&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][aarx][4];
-        dl_ch1_128    = (int16x8_t *)&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][2+aarx][4];
-
-#endif
-        for (subband=0; subband<nb_subbands; subband++) {
-
-
-          // pmi
-#if defined(__x86_64__) || defined(__i386__)
-
-          pmi128_re = _mm_xor_si128(pmi128_re,pmi128_re);
-          pmi128_im = _mm_xor_si128(pmi128_im,pmi128_im);
-#elif defined(__arm__)
-
-          pmi128_re = vdupq_n_s32(0);
-          pmi128_im = vdupq_n_s32(0);
-#endif
-          // limit is the number of groups of 4 REs in a subband (12 = 4 RBs, 3 = 1 RB)
-          // for 5 MHz channelization, there are 7 subbands, 6 of size 4 RBs and 1 of size 1 RB
-          if ((N_RB_DL==6) || (subband<(nb_subbands-1)))
-            limit = subband_size>>2;
-          else
-            limit = last_subband_size>>2;
-
-          for (i=0; i<limit; i++) {
-
-#if defined(__x86_64__) || defined(__i386__)
-              mmtmpPMI0 = _mm_xor_si128(mmtmpPMI0,mmtmpPMI0);
-              mmtmpPMI1 = _mm_xor_si128(mmtmpPMI1,mmtmpPMI1);
-
-            // For each RE in subband perform ch0 * conj(ch1)
-            // multiply by conjugated channel
-                //  print_ints("ch0",&dl_ch0_128[0]);
-                //  print_ints("ch1",&dl_ch1_128[0]);
-
-            mmtmpPMI0 = _mm_madd_epi16(dl_ch0_128[0],dl_ch1_128[0]);
-                 //  print_ints("re",&mmtmpPMI0);
-            mmtmpPMI1 = _mm_shufflelo_epi16(dl_ch1_128[0],_MM_SHUFFLE(2,3,0,1));
-              //  print_ints("_mm_shufflelo_epi16",&mmtmpPMI1);
-            mmtmpPMI1 = _mm_shufflehi_epi16(mmtmpPMI1,_MM_SHUFFLE(2,3,0,1));
-                //  print_ints("_mm_shufflehi_epi16",&mmtmpPMI1);
-            mmtmpPMI1 = _mm_sign_epi16(mmtmpPMI1,*(__m128i*)&conjugate[0]);
-               //  print_ints("_mm_sign_epi16",&mmtmpPMI1);
-            mmtmpPMI1 = _mm_madd_epi16(mmtmpPMI1,dl_ch0_128[0]);
-               //   print_ints("mm_madd_epi16",&mmtmpPMI1);
-            // mmtmpPMI1 contains imag part of 4 consecutive outputs (32-bit)
-            pmi128_re = _mm_add_epi32(pmi128_re,mmtmpPMI0);
-             //   print_ints(" pmi128_re 0",&pmi128_re);
-            pmi128_im = _mm_add_epi32(pmi128_im,mmtmpPMI1);
-               //   print_ints(" pmi128_im 0 ",&pmi128_im);
-
-          /*  mmtmpPMI0 = _mm_xor_si128(mmtmpPMI0,mmtmpPMI0);
-            mmtmpPMI1 = _mm_xor_si128(mmtmpPMI1,mmtmpPMI1);
-
-            mmtmpPMI0 = _mm_madd_epi16(dl_ch0_128[1],dl_ch1_128[1]);
-                 //  print_ints("re",&mmtmpPMI0);
-            mmtmpPMI1 = _mm_shufflelo_epi16(dl_ch1_128[1],_MM_SHUFFLE(2,3,0,1));
-              //  print_ints("_mm_shufflelo_epi16",&mmtmpPMI1);
-            mmtmpPMI1 = _mm_shufflehi_epi16(mmtmpPMI1,_MM_SHUFFLE(2,3,0,1));
-                //  print_ints("_mm_shufflehi_epi16",&mmtmpPMI1);
-            mmtmpPMI1 = _mm_sign_epi16(mmtmpPMI1,*(__m128i*)&conjugate);
-               //  print_ints("_mm_sign_epi16",&mmtmpPMI1);
-            mmtmpPMI1 = _mm_madd_epi16(mmtmpPMI1,dl_ch0_128[1]);
-               //   print_ints("mm_madd_epi16",&mmtmpPMI1);
-            // mmtmpPMI1 contains imag part of 4 consecutive outputs (32-bit)
-            pmi128_re = _mm_add_epi32(pmi128_re,mmtmpPMI0);
-                //  print_ints(" pmi128_re 1",&pmi128_re);
-            pmi128_im = _mm_add_epi32(pmi128_im,mmtmpPMI1);
-            //print_ints(" pmi128_im 1 ",&pmi128_im);*/
-
-#elif defined(__arm__)
-
-            mmtmpPMI0 = vmull_s16(((int16x4_t*)dl_ch0_128)[0], ((int16x4_t*)dl_ch1_128)[0]);
-            mmtmpPMI1 = vmull_s16(((int16x4_t*)dl_ch0_128)[1], ((int16x4_t*)dl_ch1_128)[1]);
-            pmi128_re = vqaddq_s32(pmi128_re,vcombine_s32(vpadd_s32(vget_low_s32(mmtmpPMI0),vget_high_s32(mmtmpPMI0)),vpadd_s32(vget_low_s32(mmtmpPMI1),vget_high_s32(mmtmpPMI1))));
-
-            mmtmpPMI0b = vmull_s16(vrev32_s16(vmul_s16(((int16x4_t*)dl_ch0_128)[0],*(int16x4_t*)conjugate)), ((int16x4_t*)dl_ch1_128)[0]);
-            mmtmpPMI1b = vmull_s16(vrev32_s16(vmul_s16(((int16x4_t*)dl_ch0_128)[1],*(int16x4_t*)conjugate)), ((int16x4_t*)dl_ch1_128)[1]);
-            pmi128_im = vqaddq_s32(pmi128_im,vcombine_s32(vpadd_s32(vget_low_s32(mmtmpPMI0b),vget_high_s32(mmtmpPMI0b)),vpadd_s32(vget_low_s32(mmtmpPMI1b),vget_high_s32(mmtmpPMI1b))));
-
-#endif
-            dl_ch0_128++;
-            dl_ch1_128++;
-          }
-
-          ue->measurements.subband_pmi_re[eNB_id][subband][aarx] = (((int *)&pmi128_re)[0] + ((int *)&pmi128_re)[1] + ((int *)&pmi128_re)[2] + ((int *)&pmi128_re)[3])>>2;
-          ue->measurements.subband_pmi_im[eNB_id][subband][aarx] = (((int *)&pmi128_im)[0] + ((int *)&pmi128_im)[1] + ((int *)&pmi128_im)[2] + ((int *)&pmi128_im)[3])>>2;
-          ue->measurements.wideband_pmi_re[eNB_id][aarx] += ue->measurements.subband_pmi_re[eNB_id][subband][aarx];
-          ue->measurements.wideband_pmi_im[eNB_id][aarx] += ue->measurements.subband_pmi_im[eNB_id][subband][aarx];
-        } // subband loop
-      } // rx antenna loop
-    }  // if frame_parms->mode1_flag == 0
-    else {
-      // cqi information only for mode 1
-      for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-        dl_ch0    = &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][aarx][4];
-
-        for (subband=0; subband<7; subband++) {
-
-          // cqi
-          if (aarx==0)
-            ue->measurements.subband_cqi_tot[eNB_id][subband]=0;
-
-          if (subband<6) {
-            //      for (i=0;i<48;i++)
-            //        printf("subband %d (%d) : %d,%d\n",subband,i,((short *)dl_ch0)[2*i],((short *)dl_ch0)[1+(2*i)]);
-            ue->measurements.subband_cqi[eNB_id][aarx][subband] =
-              (signal_energy_nodc(dl_ch0,48) ) - ue->measurements.n0_power[aarx];
-
-            ue->measurements.subband_cqi_tot[eNB_id][subband] += ue->measurements.subband_cqi[eNB_id][aarx][subband];
-            ue->measurements.subband_cqi_dB[eNB_id][aarx][subband] = dB_fixed2(ue->measurements.subband_cqi[eNB_id][aarx][subband],
-                ue->measurements.n0_power[aarx]);
-          } else {
-            //      for (i=0;i<12;i++)
-            //        printf("subband %d (%d) : %d,%d\n",subband,i,((short *)dl_ch0)[2*i],((short *)dl_ch0)[1+(2*i)]);
-            ue->measurements.subband_cqi[eNB_id][aarx][subband] = (signal_energy_nodc(dl_ch0,12) ) - ue->measurements.n0_power[aarx];
-            ue->measurements.subband_cqi_tot[eNB_id][subband] += ue->measurements.subband_cqi[eNB_id][aarx][subband];
-            ue->measurements.subband_cqi_dB[eNB_id][aarx][subband] = dB_fixed2(ue->measurements.subband_cqi[eNB_id][aarx][subband],
-                ue->measurements.n0_power[aarx]);
-          }
-
-          dl_ch1+=48;
-          //    msg("subband_cqi[%d][%d][%d] => %d (%d dB)\n",eNB_id,aarx,subband,ue->measurements.subband_cqi[eNB_id][aarx][subband],ue->measurements.subband_cqi_dB[eNB_id][aarx][subband]);
-        }
-      }
-
-      for (subband=0; subband<nb_subbands; subband++) {
-        ue->measurements.subband_cqi_tot_dB[eNB_id][subband] = dB_fixed2(ue->measurements.subband_cqi_tot[eNB_id][subband],ue->measurements.n0_power_tot);
-      }
-    }
-
-    //ue->measurements.rank[eNB_id] = 0;
-
-    for (i=0; i<nb_subbands; i++) {
-      ue->measurements.selected_rx_antennas[eNB_id][i] = 0;
-
-      if (frame_parms->nb_antennas_rx>1) {
-        if (ue->measurements.subband_cqi_dB[eNB_id][0][i] >= ue->measurements.subband_cqi_dB[eNB_id][1][i])
-          ue->measurements.selected_rx_antennas[eNB_id][i] = 0;
-        else
-          ue->measurements.selected_rx_antennas[eNB_id][i] = 1;
-      } else
-        ue->measurements.selected_rx_antennas[eNB_id][i] = 0;
-    }
-
-    // if(eNB_id==0)
-    // printf("in lte_ue_measurements: selected rx_antenna[eNB_id==0]:%u\n", ue->measurements.selected_rx_antennas[eNB_id][i]);
-  }  // eNB_id loop
-
-#if defined(__x86_64__) || defined(__i386__)
-  _mm_empty();
-  _m_empty();
-#endif
-}
-
-
-void lte_ue_measurements_emul(PHY_VARS_UE *ue,uint8_t subframe,uint8_t eNB_id)
-{
-
-  msg("[PHY] EMUL UE lte_ue_measurements_emul subframe %d, eNB_id %d\n",subframe,eNB_id);
-}
-
-
-uint8_t rank_estimation_tm3_tm4 (int *dl_ch_estimates_00, // please respect the order of channel estimates
-                                 int *dl_ch_estimates_01,
-                                 int *dl_ch_estimates_10,
-                                 int *dl_ch_estimates_11,
-                                 unsigned short nb_rb)
-{
-
-  int i=0;
-  int rank=0;
-  int N_RB=nb_rb;
-  int *ch00_rank, *ch01_rank, *ch10_rank, *ch11_rank;
-
-  int32_t shift;
-  int avg_0[2];
-  int avg_1[2];
-
-  int count=0;
-
-  /* we need at least alignment to 16 bytes, let's put 32 to be sure
-   * (maybe not necessary but doesn't hurt)
-   */
-  int32_t conjch00_ch01[12*N_RB] __attribute__((aligned(32)));
-  int32_t conjch01_ch00[12*N_RB] __attribute__((aligned(32)));
-  int32_t conjch10_ch11[12*N_RB] __attribute__((aligned(32)));
-  int32_t conjch11_ch10[12*N_RB] __attribute__((aligned(32)));
-  int32_t conjch00_ch00[12*N_RB] __attribute__((aligned(32)));
-  int32_t conjch01_ch01[12*N_RB] __attribute__((aligned(32)));
-  int32_t conjch10_ch10[12*N_RB] __attribute__((aligned(32)));
-  int32_t conjch11_ch11[12*N_RB] __attribute__((aligned(32)));
-  int32_t af_mf_00[12*N_RB] __attribute__((aligned(32)));
-  int32_t af_mf_00_sq[12*N_RB] __attribute__((aligned(32)));
-  int32_t af_mf_01_sq[12*N_RB] __attribute__((aligned(32)));
-  int32_t af_mf_10_sq[12*N_RB] __attribute__((aligned(32)));
-  int32_t af_mf_11_sq[12*N_RB] __attribute__((aligned(32)));
-  int32_t af_mf_01[12*N_RB] __attribute__((aligned(32)));
-  int32_t af_mf_10[12*N_RB] __attribute__((aligned(32)));
-  int32_t af_mf_11[12*N_RB] __attribute__((aligned(32)));
-  int32_t determ_fin[12*N_RB] __attribute__((aligned(32)));
-  int32_t denum_db[12*N_RB] __attribute__((aligned(32)));
-  int32_t numer_fin[12*N_RB] __attribute__((aligned(32)));
-  int32_t numer_db[12*N_RB] __attribute__((aligned(32)));
-  int32_t cond_db[12*N_RB] __attribute__((aligned(32)));
-
-  ch00_rank = dl_ch_estimates_00;
-  ch01_rank = dl_ch_estimates_01;
-  ch10_rank = dl_ch_estimates_10;
-  ch11_rank = dl_ch_estimates_11;
-
-  dlsch_channel_level_TM34_meas(ch00_rank,
-                                ch01_rank,
-                                ch10_rank,
-                                ch11_rank,
-                                avg_0,
-                                avg_1,
-                                N_RB);
-
-  avg_0[0] = (log2_approx(avg_0[0])/2);
-  shift = cmax(avg_0[0],0);
-
-#ifdef DEBUG_RANK_EST
-  printf("\n shift %d \n" , shift);
-  printf("\n conj(ch00)ch01 \n");
-#endif
-
-  conjch0_mult_ch1(ch00_rank,
-                   ch01_rank,
-                   conjch00_ch01,
-                   N_RB,
-                   shift); // this is an arbitrary shift to avoid overflow. can be changed.
-
-#ifdef DEBUG_RANK_EST
-  printf("\n conj(ch01)ch00 \n");
-#endif
-
-  conjch0_mult_ch1(ch01_rank,
-                   ch00_rank,
-                   conjch01_ch00,
-                   N_RB,
-                   shift);
-
-#ifdef DEBUG_RANK_EST
-  printf("\n conj(ch10)ch11 \n");
-#endif
-
-
-  conjch0_mult_ch1(ch10_rank,
-                   ch11_rank,
-                   conjch10_ch11,
-                   N_RB,
-                   shift);
-
-#ifdef DEBUG_RANK_EST
-  printf("\n conj(ch11)ch10 \n");
-#endif
-
-  conjch0_mult_ch1(ch11_rank,
-                   ch10_rank,
-                   conjch11_ch10,
-                   N_RB,
-                   shift);
-
-#ifdef DEBUG_RANK_EST
-  printf("\n conj(ch00)ch00 \n");
-#endif
-
-  conjch0_mult_ch1(ch00_rank,
-                   ch00_rank,
-                   conjch00_ch00,
-                   N_RB,
-                   shift);
-
-#ifdef DEBUG_RANK_EST
-  printf("\n conj(ch01)ch01 \n");
-#endif
-
-  conjch0_mult_ch1(ch01_rank,
-                   ch01_rank,
-                   conjch01_ch01,
-                   N_RB,
-                   shift);
-
-#ifdef DEBUG_RANK_EST
-  printf("\n conj(ch10)ch10 \n");
-#endif
-
-  conjch0_mult_ch1(ch10_rank,
-                   ch10_rank,
-                   conjch10_ch10,
-                   N_RB,
-                   shift);
-#ifdef DEBUG_RANK_EST
-  printf("\n conj(ch11)ch11 \n");
-#endif
-
-  conjch0_mult_ch1(ch11_rank,
-                   ch11_rank,
-                   conjch11_ch11,
-                   N_RB,
-                   shift);
-
-  construct_HhH_elements(conjch00_ch00,
-                         conjch01_ch01,
-                         conjch11_ch11,
-                         conjch10_ch10,
-                         conjch00_ch01,
-                         conjch01_ch00,
-                         conjch10_ch11,
-                         conjch11_ch10,
-                         af_mf_00,
-                         af_mf_01,
-                         af_mf_10,
-                         af_mf_11,
-                         N_RB);
-#ifdef DEBUG_RANK_EST
-  printf("\n |HhH00|^2 \n");
-#endif
-
-  squared_matrix_element(af_mf_00,
-                         af_mf_00_sq,
-                         N_RB);
-
-#ifdef DEBUG_RANK_EST
-  printf("\n |HhH01|^2 \n");
-#endif
-
-  squared_matrix_element(af_mf_01,
-                         af_mf_01_sq,
-                         N_RB);
-
-#ifdef DEBUG_RANK_EST
-  printf("\n |HhH10|^2 \n");
-#endif
-
-  squared_matrix_element(af_mf_10,
-                         af_mf_10_sq,
-                         N_RB);
-
-#ifdef DEBUG_RANK_EST
-  printf("\n |HhH11|^2 \n");
-#endif
-
-  squared_matrix_element(af_mf_11,
-                         af_mf_11_sq,
-                         N_RB);
-
-  det_HhH(af_mf_00,
-          af_mf_01,
-          af_mf_10,
-          af_mf_11,
-          determ_fin,
-          N_RB);
-
-  numer(af_mf_00_sq,
-        af_mf_01_sq,
-        af_mf_10_sq,
-        af_mf_11_sq,
-        numer_fin,
-        N_RB);
-
-  for (i=1; i<12*N_RB; i++)
-  {
-    denum_db[i]=dB_fixed(determ_fin[i]);
-    numer_db[i]=dB_fixed(numer_fin[i]);
-    cond_db[i]=(numer_db[i]-denum_db[i]);
-    if (cond_db[i] < cond_num_threshold)
-      count++;
-#ifdef DEBUG_RANK_EST
-    printf("cond_num_threshold =%d \n", cond_num_threshold);
-    printf("i %d  numer_db[i] = %d \n", i, numer_db[i]);
-    printf("i %d  denum_db[i] = %d \n", i, denum_db[i]);
-    printf("i %d  cond_db[i] =  %d \n", i, cond_db[i]);
-    printf("i %d counter = %d \n", i, count);
-#endif
-  }
-
-  if (count >= 6*N_RB) // conditional number is lower 10dB in half on more Res Blocks
-    rank=1;
-
-#ifdef DEBUG_RANK_EST
-    printf(" rank = %d \n", rank);
-#endif
-   return(rank);
 }
 
 void conjch0_mult_ch1(int *ch0,
@@ -1297,10 +692,6 @@ void numer(int32_t *Hh_h_00_sq,
   _m_empty();
 }
 
-
-
-
-
 void dlsch_channel_level_TM34_meas(int *ch00,
                                    int *ch01,
                                    int *ch10,
@@ -1382,3 +773,615 @@ void dlsch_channel_level_TM34_meas(int *ch00,
 
 #endif
 }
+
+uint8_t rank_estimation_tm3_tm4 (int *dl_ch_estimates_00, // please respect the order of channel estimates
+                                 int *dl_ch_estimates_01,
+                                 int *dl_ch_estimates_10,
+                                 int *dl_ch_estimates_11,
+                                 unsigned short nb_rb)
+{
+
+  int i=0;
+  int rank=0;
+  int N_RB=nb_rb;
+  int *ch00_rank, *ch01_rank, *ch10_rank, *ch11_rank;
+
+  int32_t shift;
+  int avg_0[2];
+  int avg_1[2];
+
+  int count=0;
+
+  /* we need at least alignment to 16 bytes, let's put 32 to be sure
+   * (maybe not necessary but doesn't hurt)
+   */
+  int32_t conjch00_ch01[12*N_RB] __attribute__((aligned(32)));
+  int32_t conjch01_ch00[12*N_RB] __attribute__((aligned(32)));
+  int32_t conjch10_ch11[12*N_RB] __attribute__((aligned(32)));
+  int32_t conjch11_ch10[12*N_RB] __attribute__((aligned(32)));
+  int32_t conjch00_ch00[12*N_RB] __attribute__((aligned(32)));
+  int32_t conjch01_ch01[12*N_RB] __attribute__((aligned(32)));
+  int32_t conjch10_ch10[12*N_RB] __attribute__((aligned(32)));
+  int32_t conjch11_ch11[12*N_RB] __attribute__((aligned(32)));
+  int32_t af_mf_00[12*N_RB] __attribute__((aligned(32)));
+  int32_t af_mf_00_sq[12*N_RB] __attribute__((aligned(32)));
+  int32_t af_mf_01_sq[12*N_RB] __attribute__((aligned(32)));
+  int32_t af_mf_10_sq[12*N_RB] __attribute__((aligned(32)));
+  int32_t af_mf_11_sq[12*N_RB] __attribute__((aligned(32)));
+  int32_t af_mf_01[12*N_RB] __attribute__((aligned(32)));
+  int32_t af_mf_10[12*N_RB] __attribute__((aligned(32)));
+  int32_t af_mf_11[12*N_RB] __attribute__((aligned(32)));
+  int32_t determ_fin[12*N_RB] __attribute__((aligned(32)));
+  int32_t denum_db[12*N_RB] __attribute__((aligned(32)));
+  int32_t numer_fin[12*N_RB] __attribute__((aligned(32)));
+  int32_t numer_db[12*N_RB] __attribute__((aligned(32)));
+  int32_t cond_db[12*N_RB] __attribute__((aligned(32)));
+
+  ch00_rank = dl_ch_estimates_00;
+  ch01_rank = dl_ch_estimates_01;
+  ch10_rank = dl_ch_estimates_10;
+  ch11_rank = dl_ch_estimates_11;
+
+  dlsch_channel_level_TM34_meas(ch00_rank,
+                                ch01_rank,
+                                ch10_rank,
+                                ch11_rank,
+                                avg_0,
+                                avg_1,
+                                N_RB);
+
+  avg_0[0] = (log2_approx(avg_0[0])/2);
+  shift = cmax(avg_0[0],0);
+
+#ifdef DEBUG_RANK_EST
+  printf("\n shift %d \n" , shift);
+  printf("\n conj(ch00)ch01 \n");
+#endif
+
+  conjch0_mult_ch1(ch00_rank,
+                   ch01_rank,
+                   conjch00_ch01,
+                   N_RB,
+                   shift); // this is an arbitrary shift to avoid overflow. can be changed.
+
+#ifdef DEBUG_RANK_EST
+  printf("\n conj(ch01)ch00 \n");
+#endif
+
+  conjch0_mult_ch1(ch01_rank,
+                   ch00_rank,
+                   conjch01_ch00,
+                   N_RB,
+                   shift);
+
+#ifdef DEBUG_RANK_EST
+  printf("\n conj(ch10)ch11 \n");
+#endif
+
+
+  conjch0_mult_ch1(ch10_rank,
+                   ch11_rank,
+                   conjch10_ch11,
+                   N_RB,
+                   shift);
+
+#ifdef DEBUG_RANK_EST
+  printf("\n conj(ch11)ch10 \n");
+#endif
+
+  conjch0_mult_ch1(ch11_rank,
+                   ch10_rank,
+                   conjch11_ch10,
+                   N_RB,
+                   shift);
+
+#ifdef DEBUG_RANK_EST
+  printf("\n conj(ch00)ch00 \n");
+#endif
+
+  conjch0_mult_ch1(ch00_rank,
+                   ch00_rank,
+                   conjch00_ch00,
+                   N_RB,
+                   shift);
+
+#ifdef DEBUG_RANK_EST
+  printf("\n conj(ch01)ch01 \n");
+#endif
+
+  conjch0_mult_ch1(ch01_rank,
+                   ch01_rank,
+                   conjch01_ch01,
+                   N_RB,
+                   shift);
+
+#ifdef DEBUG_RANK_EST
+  printf("\n conj(ch10)ch10 \n");
+#endif
+
+  conjch0_mult_ch1(ch10_rank,
+                   ch10_rank,
+                   conjch10_ch10,
+                   N_RB,
+                   shift);
+#ifdef DEBUG_RANK_EST
+  printf("\n conj(ch11)ch11 \n");
+#endif
+
+  conjch0_mult_ch1(ch11_rank,
+                   ch11_rank,
+                   conjch11_ch11,
+                   N_RB,
+                   shift);
+
+  construct_HhH_elements(conjch00_ch00,
+                         conjch01_ch01,
+                         conjch11_ch11,
+                         conjch10_ch10,
+                         conjch00_ch01,
+                         conjch01_ch00,
+                         conjch10_ch11,
+                         conjch11_ch10,
+                         af_mf_00,
+                         af_mf_01,
+                         af_mf_10,
+                         af_mf_11,
+                         N_RB);
+#ifdef DEBUG_RANK_EST
+  printf("\n |HhH00|^2 \n");
+#endif
+
+  squared_matrix_element(af_mf_00,
+                         af_mf_00_sq,
+                         N_RB);
+
+#ifdef DEBUG_RANK_EST
+  printf("\n |HhH01|^2 \n");
+#endif
+
+  squared_matrix_element(af_mf_01,
+                         af_mf_01_sq,
+                         N_RB);
+
+#ifdef DEBUG_RANK_EST
+  printf("\n |HhH10|^2 \n");
+#endif
+
+  squared_matrix_element(af_mf_10,
+                         af_mf_10_sq,
+                         N_RB);
+
+#ifdef DEBUG_RANK_EST
+  printf("\n |HhH11|^2 \n");
+#endif
+
+  squared_matrix_element(af_mf_11,
+                         af_mf_11_sq,
+                         N_RB);
+
+  det_HhH(af_mf_00,
+          af_mf_01,
+          af_mf_10,
+          af_mf_11,
+          determ_fin,
+          N_RB);
+
+  numer(af_mf_00_sq,
+        af_mf_01_sq,
+        af_mf_10_sq,
+        af_mf_11_sq,
+        numer_fin,
+        N_RB);
+
+  for (i=1; i<12*N_RB; i++)
+  {
+    denum_db[i]=dB_fixed(determ_fin[i]);
+    numer_db[i]=dB_fixed(numer_fin[i]);
+    cond_db[i]=(numer_db[i]-denum_db[i]);
+    if (cond_db[i] < cond_num_threshold)
+      count++;
+#ifdef DEBUG_RANK_EST
+    printf("cond_num_threshold =%d \n", cond_num_threshold);
+    printf("i %d  numer_db[i] = %d \n", i, numer_db[i]);
+    printf("i %d  denum_db[i] = %d \n", i, denum_db[i]);
+    printf("i %d  cond_db[i] =  %d \n", i, cond_db[i]);
+    printf("i %d counter = %d \n", i, count);
+#endif
+  }
+
+  if (count >= 6*N_RB) // conditional number is lower 10dB in half on more Res Blocks
+    rank=1;
+
+#ifdef DEBUG_RANK_EST
+    printf(" rank = %d \n", rank);
+#endif
+   return(rank);
+}
+
+
+
+
+
+
+
+void lte_ue_measurements(PHY_VARS_UE *ue,
+                         unsigned int subframe_offset,
+                         unsigned char N0_symbol,
+                         unsigned char abstraction_flag,
+                         unsigned char rank_adaptation,
+                         uint8_t subframe)
+{
+
+
+  int aarx,aatx,eNB_id=0; //,gain_offset=0;
+  //int rx_power[NUMBER_OF_CONNECTED_eNB_MAX];
+  int i;
+  unsigned int limit,subband;
+#if defined(__x86_64__) || defined(__i386__)
+  __m128i *dl_ch0_128,*dl_ch1_128;
+#elif defined(__arm__)
+  int16x8_t *dl_ch0_128, *dl_ch1_128;
+#endif
+  int *dl_ch0,*dl_ch1;
+
+  LTE_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
+  int nb_subbands,subband_size,last_subband_size;
+  int N_RB_DL = frame_parms->N_RB_DL;
+
+
+  int rank_tm3_tm4;
+
+
+  ue->measurements.nb_antennas_rx = frame_parms->nb_antennas_rx;
+
+
+  switch (N_RB_DL) {
+  case 6:
+    nb_subbands = 6;
+    subband_size = 12;
+    last_subband_size = 0;
+    break;
+
+  default:
+  case 25:
+    nb_subbands = 7;
+    subband_size = 4*12;
+    last_subband_size = 12;
+    break;
+
+  case 50:
+    nb_subbands = 9;
+    subband_size = 6*12;
+    last_subband_size = 2*12;
+    break;
+
+  case 100:
+    nb_subbands = 13;
+    subband_size = 8*12;
+    last_subband_size = 4*12;
+    break;
+  }
+
+  // signal measurements
+  for (eNB_id=0; eNB_id<ue->n_connected_eNB; eNB_id++) {
+    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+      for (aatx=0; aatx<frame_parms->nb_antenna_ports_eNB; aatx++) {
+        ue->measurements.rx_spatial_power[eNB_id][aatx][aarx] =
+          (signal_energy_nodc(&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][(aatx<<1) + aarx][0],
+                              (N_RB_DL*12)));
+        //- ue->measurements.n0_power[aarx];
+
+        if (ue->measurements.rx_spatial_power[eNB_id][aatx][aarx]<0)
+          ue->measurements.rx_spatial_power[eNB_id][aatx][aarx] = 0; //ue->measurements.n0_power[aarx];
+
+        ue->measurements.rx_spatial_power_dB[eNB_id][aatx][aarx] = (unsigned short) dB_fixed(ue->measurements.rx_spatial_power[eNB_id][aatx][aarx]);
+
+        if (aatx==0)
+          ue->measurements.rx_power[eNB_id][aarx] = ue->measurements.rx_spatial_power[eNB_id][aatx][aarx];
+        else
+          ue->measurements.rx_power[eNB_id][aarx] += ue->measurements.rx_spatial_power[eNB_id][aatx][aarx];
+      } //aatx
+
+      ue->measurements.rx_power_dB[eNB_id][aarx] = (unsigned short) dB_fixed(ue->measurements.rx_power[eNB_id][aarx]);
+
+      if (aarx==0)
+        ue->measurements.rx_power_tot[eNB_id] = ue->measurements.rx_power[eNB_id][aarx];
+      else
+        ue->measurements.rx_power_tot[eNB_id] += ue->measurements.rx_power[eNB_id][aarx];
+    } //aarx
+
+    ue->measurements.rx_power_tot_dB[eNB_id] = (unsigned short) dB_fixed(ue->measurements.rx_power_tot[eNB_id]);
+
+  } //eNB_id
+
+  eNB_id=0;
+  if (ue->transmission_mode[0]==4 || ue->transmission_mode[0]==3){
+    if (rank_adaptation == 1)
+      rank_tm3_tm4 = rank_estimation_tm3_tm4(&ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][0][4],
+                                             &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][2][4],
+                                             &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][1][4],
+                                             &ue->common_vars.common_vars_rx_data_per_thread[subframe&0x1].dl_ch_estimates[eNB_id][3][4],
+                                             N_RB_DL);
+    else
+      rank_tm3_tm4=1;
+#ifdef DEBUG_RANK_EST
+  printf("rank tm3 or tm4 %d\n", rank_tm3_tm4);
+#endif
+  }
+
+  if (ue->transmission_mode[eNB_id]!=4 && ue->transmission_mode[eNB_id]!=3)
+    ue->measurements.rank[eNB_id] = 0;
+  else
+    ue->measurements.rank[eNB_id] = rank_tm3_tm4;
+  //  printf ("tx mode %d\n", ue->transmission_mode[eNB_id]);
+  //  printf ("rank %d\n", ue->PHY_measurements.rank[eNB_id]);
+
+  // filter to remove jitter
+  if (ue->init_averaging == 0) {
+    for (eNB_id = 0; eNB_id < ue->n_connected_eNB; eNB_id++)
+      ue->measurements.rx_power_avg[eNB_id] = (int)
+          (((k1*((long long int)(ue->measurements.rx_power_avg[eNB_id]))) +
+            (k2*((long long int)(ue->measurements.rx_power_tot[eNB_id]))))>>10);
+
+    //LOG_I(PHY,"Noise Power Computation: k1 %d k2 %d n0 avg %d n0 tot %d\n", k1, k2, ue->measurements.n0_power_avg,
+    //    ue->measurements.n0_power_tot);
+    ue->measurements.n0_power_avg = (int)
+        (((k1*((long long int) (ue->measurements.n0_power_avg))) +
+          (k2*((long long int) (ue->measurements.n0_power_tot))))>>10);
+  } else {
+    for (eNB_id = 0; eNB_id < ue->n_connected_eNB; eNB_id++)
+      ue->measurements.rx_power_avg[eNB_id] = ue->measurements.rx_power_tot[eNB_id];
+
+    ue->measurements.n0_power_avg = ue->measurements.n0_power_tot;
+    ue->init_averaging = 0;
+  }
+
+  for (eNB_id = 0; eNB_id < ue->n_connected_eNB; eNB_id++) {
+    ue->measurements.rx_power_avg_dB[eNB_id] = dB_fixed( ue->measurements.rx_power_avg[eNB_id]);
+    ue->measurements.wideband_cqi_tot[eNB_id] = dB_fixed2(ue->measurements.rx_power_tot[eNB_id],ue->measurements.n0_power_tot);
+    ue->measurements.wideband_cqi_avg[eNB_id] = dB_fixed2(ue->measurements.rx_power_avg[eNB_id],ue->measurements.n0_power_avg);
+    ue->measurements.rx_rssi_dBm[eNB_id] = ue->measurements.rx_power_avg_dB[eNB_id] - ue->rx_total_gain_dB;
+#ifdef DEBUG_MEAS_UE
+      LOG_I(PHY,"[eNB %d] Subframe %d, RSSI %d dBm, RSSI (digital) %d dB, WBandCQI %d dB, rxPwrAvg %d, n0PwrAvg %d\n",
+            eNB_id,
+            subframe,
+            ue->measurements.rx_rssi_dBm[eNB_id],
+            ue->measurements.rx_power_avg_dB[eNB_id],
+            ue->measurements.wideband_cqi_avg[eNB_id],
+            ue->measurements.rx_power_avg[eNB_id],
+            ue->measurements.n0_power_tot);
+#endif
+  }
+
+  ue->measurements.n0_power_avg_dB = dB_fixed( ue->measurements.n0_power_avg);
+
+  for (eNB_id = 0; eNB_id < ue->n_connected_eNB; eNB_id++) {
+    if (frame_parms->nb_antenna_ports_eNB!=1) {
+      // cqi/pmi information
+
+      for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+        dl_ch0    = &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][aarx][4];
+        dl_ch1    = &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][2+aarx][4];
+
+        for (subband=0; subband<nb_subbands; subband++) {
+
+          // cqi
+          if (aarx==0)
+            ue->measurements.subband_cqi_tot[eNB_id][subband]=0;
+
+          if ((subband<(nb_subbands-1))||(N_RB_DL==6)) {
+            /*for (i=0;i<48;i++)
+            msg("subband %d (%d) : %d,%d\n",subband,i,((short *)dl_ch0)[2*i],((short *)dl_ch0)[1+(2*i)]);
+            */
+            ue->measurements.subband_cqi[eNB_id][aarx][subband] =
+              (signal_energy_nodc(dl_ch0,subband_size) + signal_energy_nodc(dl_ch1,subband_size));
+
+            if ( ue->measurements.subband_cqi[eNB_id][aarx][subband] < 0)
+              ue->measurements.subband_cqi[eNB_id][aarx][subband]=0;
+
+            /*
+            else
+            ue->measurements.subband_cqi[eNB_id][aarx][subband]-=ue->measurements.n0_power[aarx];
+            */
+
+            ue->measurements.subband_cqi_tot[eNB_id][subband] += ue->measurements.subband_cqi[eNB_id][aarx][subband];
+            ue->measurements.subband_cqi_dB[eNB_id][aarx][subband] = dB_fixed2(ue->measurements.subband_cqi[eNB_id][aarx][subband],
+                ue->measurements.n0_power[aarx]);
+          } else { // this is for the last subband which is smaller in size
+            //      for (i=0;i<12;i++)
+            //        printf("subband %d (%d) : %d,%d\n",subband,i,((short *)dl_ch0)[2*i],((short *)dl_ch0)[1+(2*i)]);
+            ue->measurements.subband_cqi[eNB_id][aarx][subband] = (signal_energy_nodc(dl_ch0,last_subband_size) +
+                signal_energy_nodc(dl_ch1,last_subband_size)); // - ue->measurements.n0_power[aarx];
+            ue->measurements.subband_cqi_tot[eNB_id][subband] += ue->measurements.subband_cqi[eNB_id][aarx][subband];
+            ue->measurements.subband_cqi_dB[eNB_id][aarx][subband] = dB_fixed2(ue->measurements.subband_cqi[eNB_id][aarx][subband],
+                ue->measurements.n0_power[aarx]);
+          }
+
+          dl_ch1+=subband_size;
+          dl_ch0+=subband_size;
+          //    msg("subband_cqi[%d][%d][%d] => %d (%d dB)\n",eNB_id,aarx,subband,ue->measurements.subband_cqi[eNB_id][aarx][subband],ue->measurements.subband_cqi_dB[eNB_id][aarx][subband]);
+        }
+
+      }
+
+      for (subband=0; subband<nb_subbands; subband++) {
+        ue->measurements.subband_cqi_tot_dB[eNB_id][subband] = dB_fixed2(ue->measurements.subband_cqi_tot[eNB_id][subband],ue->measurements.n0_power_tot);
+        //    msg("subband_cqi_tot[%d][%d] => %d dB (n0 %d)\n",eNB_id,subband,ue->measurements.subband_cqi_tot_dB[eNB_id][subband],ue->measurements.n0_power_tot);
+      }
+
+      for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+        //printf("aarx=%d", aarx);
+        // skip the first 4 RE due to interpolation filter length of 5 (not possible to skip 5 due to 128i alignment, must be multiple of 128bit)
+
+#if defined(__x86_64__) || defined(__i386__)
+       __m128i pmi128_re,pmi128_im,mmtmpPMI0,mmtmpPMI1 /* ,mmtmpPMI2,mmtmpPMI3 */ ;
+
+        dl_ch0_128    = (__m128i *)&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][aarx][4];
+        dl_ch1_128    = (__m128i *)&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][2+aarx][4];
+#elif defined(__arm__)
+        int32x4_t pmi128_re,pmi128_im,mmtmpPMI0,mmtmpPMI1,mmtmpPMI0b,mmtmpPMI1b;
+
+        dl_ch0_128    = (int16x8_t *)&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][aarx][4];
+        dl_ch1_128    = (int16x8_t *)&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][2+aarx][4];
+
+#endif
+        for (subband=0; subband<nb_subbands; subband++) {
+
+
+          // pmi
+#if defined(__x86_64__) || defined(__i386__)
+
+          pmi128_re = _mm_xor_si128(pmi128_re,pmi128_re);
+          pmi128_im = _mm_xor_si128(pmi128_im,pmi128_im);
+#elif defined(__arm__)
+
+          pmi128_re = vdupq_n_s32(0);
+          pmi128_im = vdupq_n_s32(0);
+#endif
+          // limit is the number of groups of 4 REs in a subband (12 = 4 RBs, 3 = 1 RB)
+          // for 5 MHz channelization, there are 7 subbands, 6 of size 4 RBs and 1 of size 1 RB
+          if ((N_RB_DL==6) || (subband<(nb_subbands-1)))
+            limit = subband_size>>2;
+          else
+            limit = last_subband_size>>2;
+
+          for (i=0; i<limit; i++) {
+
+#if defined(__x86_64__) || defined(__i386__)
+              mmtmpPMI0 = _mm_xor_si128(mmtmpPMI0,mmtmpPMI0);
+              mmtmpPMI1 = _mm_xor_si128(mmtmpPMI1,mmtmpPMI1);
+
+            // For each RE in subband perform ch0 * conj(ch1)
+            // multiply by conjugated channel
+                //  print_ints("ch0",&dl_ch0_128[0]);
+                //  print_ints("ch1",&dl_ch1_128[0]);
+
+            mmtmpPMI0 = _mm_madd_epi16(dl_ch0_128[0],dl_ch1_128[0]);
+                 //  print_ints("re",&mmtmpPMI0);
+            mmtmpPMI1 = _mm_shufflelo_epi16(dl_ch1_128[0],_MM_SHUFFLE(2,3,0,1));
+              //  print_ints("_mm_shufflelo_epi16",&mmtmpPMI1);
+            mmtmpPMI1 = _mm_shufflehi_epi16(mmtmpPMI1,_MM_SHUFFLE(2,3,0,1));
+                //  print_ints("_mm_shufflehi_epi16",&mmtmpPMI1);
+            mmtmpPMI1 = _mm_sign_epi16(mmtmpPMI1,*(__m128i*)&conjugate[0]);
+               //  print_ints("_mm_sign_epi16",&mmtmpPMI1);
+            mmtmpPMI1 = _mm_madd_epi16(mmtmpPMI1,dl_ch0_128[0]);
+               //   print_ints("mm_madd_epi16",&mmtmpPMI1);
+            // mmtmpPMI1 contains imag part of 4 consecutive outputs (32-bit)
+            pmi128_re = _mm_add_epi32(pmi128_re,mmtmpPMI0);
+             //   print_ints(" pmi128_re 0",&pmi128_re);
+            pmi128_im = _mm_add_epi32(pmi128_im,mmtmpPMI1);
+               //   print_ints(" pmi128_im 0 ",&pmi128_im);
+
+          /*  mmtmpPMI0 = _mm_xor_si128(mmtmpPMI0,mmtmpPMI0);
+            mmtmpPMI1 = _mm_xor_si128(mmtmpPMI1,mmtmpPMI1);
+
+            mmtmpPMI0 = _mm_madd_epi16(dl_ch0_128[1],dl_ch1_128[1]);
+                 //  print_ints("re",&mmtmpPMI0);
+            mmtmpPMI1 = _mm_shufflelo_epi16(dl_ch1_128[1],_MM_SHUFFLE(2,3,0,1));
+              //  print_ints("_mm_shufflelo_epi16",&mmtmpPMI1);
+            mmtmpPMI1 = _mm_shufflehi_epi16(mmtmpPMI1,_MM_SHUFFLE(2,3,0,1));
+                //  print_ints("_mm_shufflehi_epi16",&mmtmpPMI1);
+            mmtmpPMI1 = _mm_sign_epi16(mmtmpPMI1,*(__m128i*)&conjugate);
+               //  print_ints("_mm_sign_epi16",&mmtmpPMI1);
+            mmtmpPMI1 = _mm_madd_epi16(mmtmpPMI1,dl_ch0_128[1]);
+               //   print_ints("mm_madd_epi16",&mmtmpPMI1);
+            // mmtmpPMI1 contains imag part of 4 consecutive outputs (32-bit)
+            pmi128_re = _mm_add_epi32(pmi128_re,mmtmpPMI0);
+                //  print_ints(" pmi128_re 1",&pmi128_re);
+            pmi128_im = _mm_add_epi32(pmi128_im,mmtmpPMI1);
+            //print_ints(" pmi128_im 1 ",&pmi128_im);*/
+
+#elif defined(__arm__)
+
+            mmtmpPMI0 = vmull_s16(((int16x4_t*)dl_ch0_128)[0], ((int16x4_t*)dl_ch1_128)[0]);
+            mmtmpPMI1 = vmull_s16(((int16x4_t*)dl_ch0_128)[1], ((int16x4_t*)dl_ch1_128)[1]);
+            pmi128_re = vqaddq_s32(pmi128_re,vcombine_s32(vpadd_s32(vget_low_s32(mmtmpPMI0),vget_high_s32(mmtmpPMI0)),vpadd_s32(vget_low_s32(mmtmpPMI1),vget_high_s32(mmtmpPMI1))));
+
+            mmtmpPMI0b = vmull_s16(vrev32_s16(vmul_s16(((int16x4_t*)dl_ch0_128)[0],*(int16x4_t*)conjugate)), ((int16x4_t*)dl_ch1_128)[0]);
+            mmtmpPMI1b = vmull_s16(vrev32_s16(vmul_s16(((int16x4_t*)dl_ch0_128)[1],*(int16x4_t*)conjugate)), ((int16x4_t*)dl_ch1_128)[1]);
+            pmi128_im = vqaddq_s32(pmi128_im,vcombine_s32(vpadd_s32(vget_low_s32(mmtmpPMI0b),vget_high_s32(mmtmpPMI0b)),vpadd_s32(vget_low_s32(mmtmpPMI1b),vget_high_s32(mmtmpPMI1b))));
+
+#endif
+            dl_ch0_128++;
+            dl_ch1_128++;
+          }
+
+          ue->measurements.subband_pmi_re[eNB_id][subband][aarx] = (((int *)&pmi128_re)[0] + ((int *)&pmi128_re)[1] + ((int *)&pmi128_re)[2] + ((int *)&pmi128_re)[3])>>2;
+          ue->measurements.subband_pmi_im[eNB_id][subband][aarx] = (((int *)&pmi128_im)[0] + ((int *)&pmi128_im)[1] + ((int *)&pmi128_im)[2] + ((int *)&pmi128_im)[3])>>2;
+          ue->measurements.wideband_pmi_re[eNB_id][aarx] += ue->measurements.subband_pmi_re[eNB_id][subband][aarx];
+          ue->measurements.wideband_pmi_im[eNB_id][aarx] += ue->measurements.subband_pmi_im[eNB_id][subband][aarx];
+        } // subband loop
+      } // rx antenna loop
+    }  // if frame_parms->mode1_flag == 0
+    else {
+      // cqi information only for mode 1
+      for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+        dl_ch0    = &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id][aarx][4];
+
+        for (subband=0; subband<7; subband++) {
+
+          // cqi
+          if (aarx==0)
+            ue->measurements.subband_cqi_tot[eNB_id][subband]=0;
+
+          if (subband<6) {
+            //      for (i=0;i<48;i++)
+            //        printf("subband %d (%d) : %d,%d\n",subband,i,((short *)dl_ch0)[2*i],((short *)dl_ch0)[1+(2*i)]);
+            ue->measurements.subband_cqi[eNB_id][aarx][subband] =
+              (signal_energy_nodc(dl_ch0,48) ) - ue->measurements.n0_power[aarx];
+
+            ue->measurements.subband_cqi_tot[eNB_id][subband] += ue->measurements.subband_cqi[eNB_id][aarx][subband];
+            ue->measurements.subband_cqi_dB[eNB_id][aarx][subband] = dB_fixed2(ue->measurements.subband_cqi[eNB_id][aarx][subband],
+                ue->measurements.n0_power[aarx]);
+          } else {
+            //      for (i=0;i<12;i++)
+            //        printf("subband %d (%d) : %d,%d\n",subband,i,((short *)dl_ch0)[2*i],((short *)dl_ch0)[1+(2*i)]);
+            ue->measurements.subband_cqi[eNB_id][aarx][subband] = (signal_energy_nodc(dl_ch0,12) ) - ue->measurements.n0_power[aarx];
+            ue->measurements.subband_cqi_tot[eNB_id][subband] += ue->measurements.subband_cqi[eNB_id][aarx][subband];
+            ue->measurements.subband_cqi_dB[eNB_id][aarx][subband] = dB_fixed2(ue->measurements.subband_cqi[eNB_id][aarx][subband],
+                ue->measurements.n0_power[aarx]);
+          }
+
+          dl_ch1+=48;
+          //    msg("subband_cqi[%d][%d][%d] => %d (%d dB)\n",eNB_id,aarx,subband,ue->measurements.subband_cqi[eNB_id][aarx][subband],ue->measurements.subband_cqi_dB[eNB_id][aarx][subband]);
+        }
+      }
+
+      for (subband=0; subband<nb_subbands; subband++) {
+        ue->measurements.subband_cqi_tot_dB[eNB_id][subband] = dB_fixed2(ue->measurements.subband_cqi_tot[eNB_id][subband],ue->measurements.n0_power_tot);
+      }
+    }
+
+    //ue->measurements.rank[eNB_id] = 0;
+
+    for (i=0; i<nb_subbands; i++) {
+      ue->measurements.selected_rx_antennas[eNB_id][i] = 0;
+
+      if (frame_parms->nb_antennas_rx>1) {
+        if (ue->measurements.subband_cqi_dB[eNB_id][0][i] >= ue->measurements.subband_cqi_dB[eNB_id][1][i])
+          ue->measurements.selected_rx_antennas[eNB_id][i] = 0;
+        else
+          ue->measurements.selected_rx_antennas[eNB_id][i] = 1;
+      } else
+        ue->measurements.selected_rx_antennas[eNB_id][i] = 0;
+    }
+
+    // if(eNB_id==0)
+    // printf("in lte_ue_measurements: selected rx_antenna[eNB_id==0]:%u\n", ue->measurements.selected_rx_antennas[eNB_id][i]);
+  }  // eNB_id loop
+
+#if defined(__x86_64__) || defined(__i386__)
+  _mm_empty();
+  _m_empty();
+#endif
+}
+
+
+void lte_ue_measurements_emul(PHY_VARS_UE *ue,uint8_t subframe,uint8_t eNB_id)
+{
+
+  LOG_D(PHY,"EMUL UE lte_ue_measurements_emul subframe %d, eNB_id %d\n",subframe,eNB_id);
+}
+
+
+

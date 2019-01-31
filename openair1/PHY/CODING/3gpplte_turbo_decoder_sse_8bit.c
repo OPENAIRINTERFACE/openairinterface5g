@@ -39,38 +39,39 @@
 #include "PHY/sse_intrin.h"
 
 #ifndef TEST_DEBUG
-#include "PHY/defs.h"
-#include "PHY/CODING/defs.h"
-#include "PHY/CODING/lte_interleaver_inline.h"
-#include "extern_3GPPinterleaver.h"
+  #include "PHY/defs_common.h"
+  #include "PHY/CODING/coding_defs.h"
+  #include "PHY/CODING/lte_interleaver_inline.h"
 #else
 
-#include "defs.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+  #include "defs.h"
+  #include <stdio.h>
+  #include <stdlib.h>
+  #include <string.h>
 #endif
 
 #ifdef MEX
-#include "mex.h"
+  #include "mex.h"
 #endif
 
+#include "common/ran_context.h"
+
 #define SHUFFLE16(a,b,c,d,e,f,g,h) _mm_set_epi8(h==-1?-1:h*2+1, \
-            h==-1?-1:h*2, \
-            g==-1?-1:g*2+1, \
-            g==-1?-1:g*2, \
-            f==-1?-1:f*2+1, \
-            f==-1?-1:f*2, \
-            e==-1?-1:e*2+1, \
-            e==-1?-1:e*2, \
-            d==-1?-1:d*2+1, \
-            d==-1?-1:d*2, \
-            c==-1?-1:c*2+1, \
-            c==-1?-1:c*2, \
-            b==-1?-1:b*2+1, \
-            b==-1?-1:b*2, \
-            a==-1?-1:a*2+1, \
-            a==-1?-1:a*2);
+    h==-1?-1:h*2, \
+    g==-1?-1:g*2+1, \
+    g==-1?-1:g*2, \
+    f==-1?-1:f*2+1, \
+    f==-1?-1:f*2, \
+    e==-1?-1:e*2+1, \
+    e==-1?-1:e*2, \
+    d==-1?-1:d*2+1, \
+    d==-1?-1:d*2, \
+    c==-1?-1:c*2+1, \
+    c==-1?-1:c*2, \
+    b==-1?-1:b*2+1, \
+    b==-1?-1:b*2, \
+    a==-1?-1:a*2+1, \
+    a==-1?-1:a*2);
 
 
 
@@ -85,32 +86,28 @@ typedef int8_t channel_t;
 #define MAX8 127
 
 
-void log_map8(llr_t* systematic,channel_t* y_parity, llr_t* m11, llr_t* m10, llr_t *alpha, llr_t *beta, llr_t* ext,unsigned short frame_length,unsigned char term_flag,unsigned char F,int offset8_flag,
+void log_map8(llr_t *systematic,channel_t *y_parity, llr_t *m11, llr_t *m10, llr_t *alpha, llr_t *beta, llr_t *ext,unsigned short frame_length,unsigned char term_flag,unsigned char F,int offset8_flag,
               time_stats_t *alpha_stats,time_stats_t *beta_stats,time_stats_t *gamma_stats,time_stats_t *ext_stats);
-void compute_gamma8(llr_t* m11,llr_t* m10,llr_t* systematic, channel_t* y_parity, unsigned short frame_length,unsigned char term_flag);
-void compute_alpha8(llr_t*alpha,llr_t *beta, llr_t* m11,llr_t* m10, unsigned short frame_length,unsigned char F);
-void compute_beta8(llr_t*alpha, llr_t* beta,llr_t* m11,llr_t* m10, unsigned short frame_length,unsigned char F,int offset8_flag);
-void compute_ext8(llr_t* alpha,llr_t* beta,llr_t* m11,llr_t* m10,llr_t* extrinsic, llr_t* ap, unsigned short frame_length);
+void compute_gamma8(llr_t *m11,llr_t *m10,llr_t *systematic, channel_t *y_parity, unsigned short frame_length,unsigned char term_flag);
+void compute_alpha8(llr_t *alpha,llr_t *beta, llr_t *m11,llr_t *m10, unsigned short frame_length,unsigned char F);
+void compute_beta8(llr_t *alpha, llr_t *beta,llr_t *m11,llr_t *m10, unsigned short frame_length,unsigned char F,int offset8_flag);
+void compute_ext8(llr_t *alpha,llr_t *beta,llr_t *m11,llr_t *m10,llr_t *extrinsic, llr_t *ap, unsigned short frame_length);
 
 
-void print_bytes(char *s, int8_t *x)
-{
-
-
+void print_bytes(char *s, int8_t *x) {
   printf("%s  : %d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",s,
          x[0],x[1],x[2],x[3],x[4],x[5],x[6],x[7],
          x[8],x[9],x[10],x[11],x[12],x[13],x[14],x[15]);
-
 }
 
 
-void log_map8(llr_t* systematic,
-              channel_t* y_parity,
-              llr_t* m11,
-              llr_t* m10,
+void log_map8(llr_t *systematic,
+              channel_t *y_parity,
+              llr_t *m11,
+              llr_t *m10,
               llr_t *alpha,
               llr_t *beta,
-              llr_t* ext,
+              llr_t *ext,
               unsigned short frame_length,
               unsigned char term_flag,
               unsigned char F,
@@ -118,32 +115,38 @@ void log_map8(llr_t* systematic,
               time_stats_t *alpha_stats,
               time_stats_t *beta_stats,
               time_stats_t *gamma_stats,
-              time_stats_t *ext_stats)
-{
-
+              time_stats_t *ext_stats) {
 #ifdef DEBUG_LOGMAP
-  msg("log_map, frame_length %d\n",frame_length);
+  printf("log_map, frame_length %d\n",frame_length);
 #endif
 
   if (gamma_stats) start_meas(gamma_stats) ;
+
   compute_gamma8(m11,m10,systematic,y_parity,frame_length,term_flag) ;
+
   if (gamma_stats) stop_meas(gamma_stats);
+
   if (alpha_stats) start_meas(alpha_stats) ;
+
   compute_alpha8(alpha,beta,m11,m10,frame_length,F)                  ;
+
   if (alpha_stats) stop_meas(alpha_stats);
+
   if (beta_stats) start_meas(beta_stats)  ;
+
   compute_beta8(alpha,beta,m11,m10,frame_length,F,offset8_flag)      ;
+
   if (beta_stats) stop_meas(beta_stats);
+
   if (ext_stats) start_meas(ext_stats)   ;
+
   compute_ext8(alpha,beta,m11,m10,ext,systematic,frame_length)       ;
+
   if (ext_stats) stop_meas(ext_stats);
-
-
 }
 
-void compute_gamma8(llr_t* m11,llr_t* m10,llr_t* systematic,channel_t* y_parity,
-                    unsigned short frame_length,unsigned char term_flag)
-{
+void compute_gamma8(llr_t *m11,llr_t *m10,llr_t *systematic,channel_t *y_parity,
+                    unsigned short frame_length,unsigned char term_flag) {
   int k,K1;
 #if defined(__x86_64__)||defined(__i386__)
   __m128i *systematic128 = (__m128i *)systematic;
@@ -156,11 +159,9 @@ void compute_gamma8(llr_t* m11,llr_t* m10,llr_t* systematic,channel_t* y_parity,
   int8x16_t *m10_128        = (int8x16_t *)m10;
   int8x16_t *m11_128        = (int8x16_t *)m11;
 #endif
-
 #ifdef DEBUG_LOGMAP
-  msg("compute_gamma, %p,%p,%p,%p,framelength %d\n",m11,m10,systematic,y_parity,frame_length);
+  printf("compute_gamma, %p,%p,%p,%p,framelength %d\n",m11,m10,systematic,y_parity,frame_length);
 #endif
-
 #if defined(__x86_64__) || defined(__i386__)
   register __m128i sl,sh,ypl,yph; //K128=_mm_set1_epi8(-128);
 #endif
@@ -180,11 +181,9 @@ void compute_gamma8(llr_t* m11,llr_t* m10,llr_t* systematic,channel_t* y_parity,
     m11_128[k] = vhaddq_s8(systematic128[k],y_parity128[k]);
     m10_128[k] = vhsubq_s8(systematic128[k],y_parity128[k]);
 #endif
-
   }
 
   // Termination
-
 #if defined(__x86_64__) || defined(__i386__)
   sl  = _mm_cvtepi8_epi16(systematic128[k+term_flag]);
   sh = _mm_cvtepi8_epi16(_mm_srli_si128(systematic128[k],8));
@@ -198,15 +197,12 @@ void compute_gamma8(llr_t* m11,llr_t* m10,llr_t* systematic,channel_t* y_parity,
   m11_128[k] = vhaddq_s8(systematic128[k+term_flag],y_parity128[k]);
   m10_128[k] = vhsubq_s8(systematic128[k+term_flag],y_parity128[k]);
 #endif
-
 }
 
 #define L 16
 
-void compute_alpha8(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned short frame_length,unsigned char F)
-{
+void compute_alpha8(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,unsigned short frame_length,unsigned char F) {
   int k,loopval,rerun_flag;
-
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *alpha128=(__m128i *)alpha,*alpha_ptr;
   __m128i *m11p,*m10p;
@@ -222,7 +218,6 @@ void compute_alpha8(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sh
 #endif
   // Set initial state: first colum is known
   // the other columns are unknown, so all states are set to same value
-
 #if defined(__x86_64__) || defined(__i386__)
   alpha128[0] = _mm_set_epi8(-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,0);
   alpha128[1] = _mm_set_epi8(-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2);
@@ -232,12 +227,11 @@ void compute_alpha8(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sh
   alpha128[5] = _mm_set_epi8(-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2);
   alpha128[6] = _mm_set_epi8(-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2);
   alpha128[7] = _mm_set_epi8(-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2,-MAX8/2);
+
   for (loopval=frame_length>>4, rerun_flag=0; rerun_flag<2; loopval=L, rerun_flag++) {
-
     alpha_ptr = &alpha128[0];
-
-    m11p = (__m128i*)m_11;
-    m10p = (__m128i*)m_10;
+    m11p = (__m128i *)m_11;
+    m10p = (__m128i *)m_10;
 
     for (k=0;  k<loopval;  k++) {
       m_b0 = _mm_adds_epi8(alpha_ptr[1],*m11p);  // m11
@@ -248,7 +242,6 @@ void compute_alpha8(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sh
       m_b6 = _mm_subs_epi8(alpha_ptr[5],*m10p);  // m01=-m10
       m_b3 = _mm_subs_epi8(alpha_ptr[7],*m11p);  // m00=-m11
       m_b7 = _mm_adds_epi8(alpha_ptr[7],*m11p);  // m11
-
       new0 = _mm_subs_epi8(alpha_ptr[0],*m11p);  // m00=-m11
       new4 = _mm_adds_epi8(alpha_ptr[0],*m11p);  // m11
       new1 = _mm_adds_epi8(alpha_ptr[2],*m10p);  // m10
@@ -257,7 +250,6 @@ void compute_alpha8(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sh
       new6 = _mm_adds_epi8(alpha_ptr[4],*m10p);  // m10
       new3 = _mm_adds_epi8(alpha_ptr[6],*m11p);  // m11
       new7 = _mm_subs_epi8(alpha_ptr[6],*m11p);  // m00=-m11
-
       alpha_ptr += 8;
       m11p++;
       m10p++;
@@ -269,7 +261,6 @@ void compute_alpha8(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sh
       alpha_ptr[5] = _mm_max_epi8(m_b5,new5);
       alpha_ptr[6] = _mm_max_epi8(m_b6,new6);
       alpha_ptr[7] = _mm_max_epi8(m_b7,new7);
-
       // compute and subtract maxima
       alpha_max = _mm_max_epi8(alpha_ptr[0],alpha_ptr[1]);
       alpha_max = _mm_max_epi8(alpha_max,alpha_ptr[2]);
@@ -278,7 +269,6 @@ void compute_alpha8(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sh
       alpha_max = _mm_max_epi8(alpha_max,alpha_ptr[5]);
       alpha_max = _mm_max_epi8(alpha_max,alpha_ptr[6]);
       alpha_max = _mm_max_epi8(alpha_max,alpha_ptr[7]);
-
       alpha_ptr[0] = _mm_subs_epi8(alpha_ptr[0],alpha_max);
       alpha_ptr[1] = _mm_subs_epi8(alpha_ptr[1],alpha_max);
       alpha_ptr[2] = _mm_subs_epi8(alpha_ptr[2],alpha_max);
@@ -307,8 +297,8 @@ void compute_alpha8(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sh
     alpha[80] = -MAX8/2;
     alpha[96] = -MAX8/2;
     alpha[112] = -MAX8/2;
-
   }
+
 #elif defined(__arm__)
   alpha128[0] = vdupq_n_s8(-MAX8/2);
   alpha128[0] = vsetq_lane_s8(0,alpha128[0],0);
@@ -319,12 +309,11 @@ void compute_alpha8(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sh
   alpha128[5] = vdupq_n_s8(-MAX8/2);
   alpha128[6] = vdupq_n_s8(-MAX8/2);
   alpha128[7] = vdupq_n_s8(-MAX8/2);
+
   for (loopval=frame_length>>4, rerun_flag=0; rerun_flag<2; loopval=L, rerun_flag++) {
-
     alpha_ptr = &alpha128[0];
-
-    m11p = (int8x16_t*)m_11;
-    m10p = (int8x16_t*)m_10;
+    m11p = (int8x16_t *)m_11;
+    m10p = (int8x16_t *)m_10;
 
     for (k=0;  k<loopval;  k++) {
       m_b0 = vqaddq_s8(alpha_ptr[1],*m11p);  // m11
@@ -335,7 +324,6 @@ void compute_alpha8(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sh
       m_b6 = vqsubq_s8(alpha_ptr[5],*m10p);  // m01=-m10
       m_b3 = vqsubq_s8(alpha_ptr[7],*m11p);  // m00=-m11
       m_b7 = vqaddq_s8(alpha_ptr[7],*m11p);  // m11
-
       new0 = vqsubq_s8(alpha_ptr[0],*m11p);  // m00=-m11
       new4 = vqaddq_s8(alpha_ptr[0],*m11p);  // m11
       new1 = vqaddq_s8(alpha_ptr[2],*m10p);  // m10
@@ -344,7 +332,6 @@ void compute_alpha8(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sh
       new6 = vqaddq_s8(alpha_ptr[4],*m10p);  // m10
       new3 = vqaddq_s8(alpha_ptr[6],*m11p);  // m11
       new7 = vqsubq_s8(alpha_ptr[6],*m11p);  // m00=-m11
-
       alpha_ptr += 8;
       m11p++;
       m10p++;
@@ -356,7 +343,6 @@ void compute_alpha8(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sh
       alpha_ptr[5] = vmaxq_s8(m_b5,new5);
       alpha_ptr[6] = vmaxq_s8(m_b6,new6);
       alpha_ptr[7] = vmaxq_s8(m_b7,new7);
-
       // compute and subtract maxima
       alpha_max = vmaxq_s8(alpha_ptr[0],alpha_ptr[1]);
       alpha_max = vmaxq_s8(alpha_max,alpha_ptr[2]);
@@ -365,7 +351,6 @@ void compute_alpha8(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sh
       alpha_max = vmaxq_s8(alpha_max,alpha_ptr[5]);
       alpha_max = vmaxq_s8(alpha_max,alpha_ptr[6]);
       alpha_max = vmaxq_s8(alpha_max,alpha_ptr[7]);
-
       alpha_ptr[0] = vqsubq_s8(alpha_ptr[0],alpha_max);
       alpha_ptr[1] = vqsubq_s8(alpha_ptr[1],alpha_max);
       alpha_ptr[2] = vqsubq_s8(alpha_ptr[2],alpha_max);
@@ -379,14 +364,22 @@ void compute_alpha8(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sh
     // Set intial state for next iteration from the last state
     // as a column end states are the first states of the next column
     int K1= frame_length>>1;
-    alpha128[0] = (int8x16_t)vshlq_n_s64((int64x2_t)alpha128[K1],8);   alpha128[0] = vsetq_lane_s8(alpha[8],alpha128[0],7);
-    alpha128[1] = (int8x16_t)vshlq_n_s64((int64x2_t)alpha128[1+K1],8); alpha128[1] = vsetq_lane_s8(alpha[24],alpha128[0],7);
-    alpha128[2] = (int8x16_t)vshlq_n_s64((int64x2_t)alpha128[2+K1],8); alpha128[2] = vsetq_lane_s8(alpha[40],alpha128[0],7);
-    alpha128[3] = (int8x16_t)vshlq_n_s64((int64x2_t)alpha128[3+K1],8); alpha128[3] = vsetq_lane_s8(alpha[56],alpha128[0],7);
-    alpha128[4] = (int8x16_t)vshlq_n_s64((int64x2_t)alpha128[4+K1],8); alpha128[4] = vsetq_lane_s8(alpha[72],alpha128[0],7);
-    alpha128[5] = (int8x16_t)vshlq_n_s64((int64x2_t)alpha128[5+K1],8); alpha128[5] = vsetq_lane_s8(alpha[88],alpha128[0],7);
-    alpha128[6] = (int8x16_t)vshlq_n_s64((int64x2_t)alpha128[6+K1],8); alpha128[6] = vsetq_lane_s8(alpha[104],alpha128[0],7);
-    alpha128[7] = (int8x16_t)vshlq_n_s64((int64x2_t)alpha128[7+K1],8); alpha128[7] = vsetq_lane_s8(alpha[120],alpha128[0],7);
+    alpha128[0] = (int8x16_t)vshlq_n_s64((int64x2_t)alpha128[K1],8);
+    alpha128[0] = vsetq_lane_s8(alpha[8],alpha128[0],7);
+    alpha128[1] = (int8x16_t)vshlq_n_s64((int64x2_t)alpha128[1+K1],8);
+    alpha128[1] = vsetq_lane_s8(alpha[24],alpha128[0],7);
+    alpha128[2] = (int8x16_t)vshlq_n_s64((int64x2_t)alpha128[2+K1],8);
+    alpha128[2] = vsetq_lane_s8(alpha[40],alpha128[0],7);
+    alpha128[3] = (int8x16_t)vshlq_n_s64((int64x2_t)alpha128[3+K1],8);
+    alpha128[3] = vsetq_lane_s8(alpha[56],alpha128[0],7);
+    alpha128[4] = (int8x16_t)vshlq_n_s64((int64x2_t)alpha128[4+K1],8);
+    alpha128[4] = vsetq_lane_s8(alpha[72],alpha128[0],7);
+    alpha128[5] = (int8x16_t)vshlq_n_s64((int64x2_t)alpha128[5+K1],8);
+    alpha128[5] = vsetq_lane_s8(alpha[88],alpha128[0],7);
+    alpha128[6] = (int8x16_t)vshlq_n_s64((int64x2_t)alpha128[6+K1],8);
+    alpha128[6] = vsetq_lane_s8(alpha[104],alpha128[0],7);
+    alpha128[7] = (int8x16_t)vshlq_n_s64((int64x2_t)alpha128[7+K1],8);
+    alpha128[7] = vsetq_lane_s8(alpha[120],alpha128[0],7);
     alpha[16] =  -MAX8/2;
     alpha[32] = -MAX8/2;
     alpha[48] = -MAX8/2;
@@ -394,97 +387,29 @@ void compute_alpha8(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,unsigned sh
     alpha[80] = -MAX8/2;
     alpha[96] = -MAX8/2;
     alpha[112] = -MAX8/2;
-
   }
+
 #endif
-
-
 }
 
 
-void compute_beta8(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned short frame_length,unsigned char F,int offset8_flag)
-{
-
+void compute_beta8(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,unsigned short frame_length,unsigned char F,int offset8_flag) {
   int k,rerun_flag, loopval;
 #if defined(__x86_64__) || defined(__i386__)
   __m128i m11_128,m10_128;
   __m128i m_b0,m_b1,m_b2,m_b3,m_b4,m_b5,m_b6,m_b7;
   __m128i new0,new1,new2,new3,new4,new5,new6,new7;
-
   __m128i *beta128,*alpha128,*beta_ptr;
   __m128i beta_max;
 #elif defined(__arm__)
   int8x16_t m11_128,m10_128;
   int8x16_t m_b0,m_b1,m_b2,m_b3,m_b4,m_b5,m_b6,m_b7;
   int8x16_t new0,new1,new2,new3,new4,new5,new6,new7;
-
   int8x16_t *beta128,*alpha128,*beta_ptr;
   int8x16_t beta_max;
 #endif
   llr_t beta0,beta1;
-
   llr_t beta2,beta3,beta4,beta5,beta6,beta7;
-
-
-#if 0
-  int16_t m11,m10;
-  int16_t beta0_16,beta1_16,beta2_16,beta3_16,beta4_16,beta5_16,beta6_16,beta7_16,beta0_2,beta1_2,beta2_2,beta3_2,beta_m;
-  __m128i beta_16;
-  // termination for beta initialization
-
-  m11=(int16_t)m_11[2+frame_length];
-  m10=(int16_t)m_10[2+frame_length];
-
-  beta0 = -m11;//M0T_TERM;
-  beta1 = m11;//M1T_TERM;
-  m11=(int16_t)m_11[1+frame_length];
-  m10=(int16_t)m_10[1+frame_length];
-
-  beta0_2 = beta0-m11;//+M0T_TERM;
-  beta1_2 = beta0+m11;//+M1T_TERM;
-  beta2_2 = beta1+m10;//M2T_TERM;
-  beta3_2 = beta1-m10;//+M3T_TERM;
-  m11=(int16_t)m_11[frame_length];
-  m10=(int16_t)m_10[frame_length];
-
-  beta0_16 = beta0_2-m11;//+M0T_TERM;
-  beta1_16 = beta0_2+m11;//+M1T_TERM;
-  beta2_16 = beta1_2+m10;//+M2T_TERM;
-  beta3_16 = beta1_2-m10;//+M3T_TERM;
-  beta4_16 = beta2_2-m10;//+M4T_TERM;
-  beta5_16 = beta2_2+m10;//+M5T_TERM;
-  beta6_16 = beta3_2+m11;//+M6T_TERM;
-  beta7_16 = beta3_2-m11;//+M7T_TERM;
-
-  beta_m = (beta0_16>beta1_16) ? beta0_16 : beta1_16;
-  beta_m = (beta_m>beta2_16) ? beta_m : beta2_16;
-  beta_m = (beta_m>beta3_16) ? beta_m : beta3_16;
-  beta_m = (beta_m>beta4_16) ? beta_m : beta4_16;
-  beta_m = (beta_m>beta5_16) ? beta_m : beta5_16;
-  beta_m = (beta_m>beta6_16) ? beta_m : beta6_16;
-  beta_m = (beta_m>beta7_16) ? beta_m : beta7_16;
-
-  beta0_16=beta0_16-beta_m;
-  beta1_16=beta1_16-beta_m;
-  beta2_16=beta2_16-beta_m;
-  beta3_16=beta3_16-beta_m;
-  beta4_16=beta4_16-beta_m;
-  beta5_16=beta5_16-beta_m;
-  beta6_16=beta6_16-beta_m;
-  beta7_16=beta7_16-beta_m;
-
-  beta_16 = _mm_set_epi16(beta7_16,beta6_16,beta5_16,beta4_16,beta3_16,beta2_16,beta1_16,beta0_16);
-  beta_16 = _mm_packs_epi16(beta_16,beta_16);
-  beta0 = _mm_extract_epi8(beta_16,0);
-  beta1 = _mm_extract_epi8(beta_16,1);
-  beta2 = _mm_extract_epi8(beta_16,2);
-  beta3 = _mm_extract_epi8(beta_16,3);
-  beta4 = _mm_extract_epi8(beta_16,4);
-  beta5 = _mm_extract_epi8(beta_16,5);
-  beta6 = _mm_extract_epi8(beta_16,6);
-  beta7 = _mm_extract_epi8(beta_16,7);
-
-#endif
 
   if (frame_length > 6144) {
     LOG_E(PHY,"compute_beta: frame_length %d\n",frame_length);
@@ -493,13 +418,12 @@ void compute_beta8(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sho
 
   // we are supposed to run compute_alpha just before compute_beta
   // so the initial states of backward computation can be set from last value of alpha states (forward computation)
-
 #if defined(__x86_64__) || defined(__i386__)
-  beta_ptr   = (__m128i*)&beta[frame_length<<3];
-  alpha128   = (__m128i*)&alpha[0];
+  beta_ptr   = (__m128i *)&beta[frame_length<<3];
+  alpha128   = (__m128i *)&alpha[0];
 #elif defined(__arm__)
-  beta_ptr   = (int8x16_t*)&beta[frame_length<<3];
-  alpha128   = (int8x16_t*)&alpha[0];
+  beta_ptr   = (int8x16_t *)&beta[frame_length<<3];
+  alpha128   = (int8x16_t *)&alpha[0];
 #endif
   beta_ptr[0] = alpha128[(frame_length>>1)];
   beta_ptr[1] = alpha128[1+(frame_length>>1)];
@@ -509,18 +433,15 @@ void compute_beta8(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sho
   beta_ptr[5] = alpha128[5+(frame_length>>1)];
   beta_ptr[6] = alpha128[6+(frame_length>>1)];
   beta_ptr[7] = alpha128[7+(frame_length>>1)];
-
   int overlap = (frame_length>>4)> L ? (frame_length>>4)-L : 0 ;
 
   for (rerun_flag=0, loopval=0;
        rerun_flag<2 ;
        loopval=overlap,rerun_flag++) {
-
     if (offset8_flag==0) {
       // FIXME! beta0-beta7 are used uninitialized. FIXME!
       // workaround: init with 0
       beta0 = beta1 = beta2 = beta3 = beta4 = beta5 = beta6 = beta7 = 0;
-
 #if defined(__x86_64__) || defined(__i386__)
       beta_ptr[0] = _mm_insert_epi8(beta_ptr[0],beta0,15);
       beta_ptr[1] = _mm_insert_epi8(beta_ptr[1],beta1,15);
@@ -543,16 +464,17 @@ void compute_beta8(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sho
     }
 
 #if defined(__x86_64__) || defined(__i386__)
-    beta_ptr = (__m128i*)&beta[frame_length<<3];
+    beta_ptr = (__m128i *)&beta[frame_length<<3];
 #elif defined(__arm__)
-    beta_ptr = (int8x16_t*)&beta[frame_length<<3];
+    beta_ptr = (int8x16_t *)&beta[frame_length<<3];
 #endif
+
     for (k=(frame_length>>4)-1;
          k>=loopval;
          k--) {
 #if defined(__x86_64__) || defined(__i386__)
-      m11_128=((__m128i*)m_11)[k];
-      m10_128=((__m128i*)m_10)[k];
+      m11_128=((__m128i *)m_11)[k];
+      m10_128=((__m128i *)m_10)[k];
       m_b0 = _mm_adds_epi8(beta_ptr[4],m11_128);  //m11
       m_b1 = _mm_subs_epi8(beta_ptr[4],m11_128);  //m00
       m_b2 = _mm_subs_epi8(beta_ptr[5],m10_128);  //m01
@@ -561,7 +483,6 @@ void compute_beta8(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sho
       m_b5 = _mm_subs_epi8(beta_ptr[6],m10_128);  //m01
       m_b6 = _mm_subs_epi8(beta_ptr[7],m11_128);  //m00
       m_b7 = _mm_adds_epi8(beta_ptr[7],m11_128);  //m11
-
       new0 = _mm_subs_epi8(beta_ptr[0],m11_128);  //m00
       new1 = _mm_adds_epi8(beta_ptr[0],m11_128);  //m11
       new2 = _mm_adds_epi8(beta_ptr[1],m10_128);  //m10
@@ -570,9 +491,7 @@ void compute_beta8(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sho
       new5 = _mm_adds_epi8(beta_ptr[2],m10_128);  //m10
       new6 = _mm_adds_epi8(beta_ptr[3],m11_128);  //m11
       new7 = _mm_subs_epi8(beta_ptr[3],m11_128);  //m00
-
       beta_ptr-=8;
-
       beta_ptr[0] = _mm_max_epi8(m_b0,new0);
       beta_ptr[1] = _mm_max_epi8(m_b1,new1);
       beta_ptr[2] = _mm_max_epi8(m_b2,new2);
@@ -581,7 +500,6 @@ void compute_beta8(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sho
       beta_ptr[5] = _mm_max_epi8(m_b5,new5);
       beta_ptr[6] = _mm_max_epi8(m_b6,new6);
       beta_ptr[7] = _mm_max_epi8(m_b7,new7);
-
       beta_max = _mm_max_epi8(beta_ptr[0],beta_ptr[1]);
       beta_max = _mm_max_epi8(beta_max   ,beta_ptr[2]);
       beta_max = _mm_max_epi8(beta_max   ,beta_ptr[3]);
@@ -589,7 +507,6 @@ void compute_beta8(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sho
       beta_max = _mm_max_epi8(beta_max   ,beta_ptr[5]);
       beta_max = _mm_max_epi8(beta_max   ,beta_ptr[6]);
       beta_max = _mm_max_epi8(beta_max   ,beta_ptr[7]);
-
       beta_ptr[0] = _mm_subs_epi8(beta_ptr[0],beta_max);
       beta_ptr[1] = _mm_subs_epi8(beta_ptr[1],beta_max);
       beta_ptr[2] = _mm_subs_epi8(beta_ptr[2],beta_max);
@@ -599,8 +516,8 @@ void compute_beta8(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sho
       beta_ptr[6] = _mm_subs_epi8(beta_ptr[6],beta_max);
       beta_ptr[7] = _mm_subs_epi8(beta_ptr[7],beta_max);
 #elif defined(__arm__)
-      m11_128=((int8x16_t*)m_11)[k];
-      m10_128=((int8x16_t*)m_10)[k];
+      m11_128=((int8x16_t *)m_11)[k];
+      m10_128=((int8x16_t *)m_10)[k];
       m_b0 = vqaddq_s8(beta_ptr[4],m11_128);  //m11
       m_b1 = vqsubq_s8(beta_ptr[4],m11_128);  //m00
       m_b2 = vqsubq_s8(beta_ptr[5],m10_128);  //m01
@@ -609,7 +526,6 @@ void compute_beta8(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sho
       m_b5 = vqsubq_s8(beta_ptr[6],m10_128);  //m01
       m_b6 = vqsubq_s8(beta_ptr[7],m11_128);  //m00
       m_b7 = vqaddq_s8(beta_ptr[7],m11_128);  //m11
-
       new0 = vqsubq_s8(beta_ptr[0],m11_128);  //m00
       new1 = vqaddq_s8(beta_ptr[0],m11_128);  //m11
       new2 = vqaddq_s8(beta_ptr[1],m10_128);  //m10
@@ -618,9 +534,7 @@ void compute_beta8(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sho
       new5 = vqaddq_s8(beta_ptr[2],m10_128);  //m10
       new6 = vqaddq_s8(beta_ptr[3],m11_128);  //m11
       new7 = vqsubq_s8(beta_ptr[3],m11_128);  //m00
-
       beta_ptr-=8;
-
       beta_ptr[0] = vmaxq_s8(m_b0,new0);
       beta_ptr[1] = vmaxq_s8(m_b1,new1);
       beta_ptr[2] = vmaxq_s8(m_b2,new2);
@@ -629,7 +543,6 @@ void compute_beta8(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sho
       beta_ptr[5] = vmaxq_s8(m_b5,new5);
       beta_ptr[6] = vmaxq_s8(m_b6,new6);
       beta_ptr[7] = vmaxq_s8(m_b7,new7);
-
       beta_max = vmaxq_s8(beta_ptr[0],beta_ptr[1]);
       beta_max = vmaxq_s8(beta_max   ,beta_ptr[2]);
       beta_max = vmaxq_s8(beta_max   ,beta_ptr[3]);
@@ -637,7 +550,6 @@ void compute_beta8(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sho
       beta_max = vmaxq_s8(beta_max   ,beta_ptr[5]);
       beta_max = vmaxq_s8(beta_max   ,beta_ptr[6]);
       beta_max = vmaxq_s8(beta_max   ,beta_ptr[7]);
-
       beta_ptr[0] = vqsubq_s8(beta_ptr[0],beta_max);
       beta_ptr[1] = vqsubq_s8(beta_ptr[1],beta_max);
       beta_ptr[2] = vqsubq_s8(beta_ptr[2],beta_max);
@@ -652,10 +564,9 @@ void compute_beta8(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sho
     // Set intial state for next iteration from the last state
     // as column last states are the first states of the next column
     // The initial state of column 0 is coming from tail bits (to be computed)
-
 #if defined(__x86_64__) || defined(__i386__)
-    beta128 = (__m128i*)&beta[0];
-    beta_ptr   = (__m128i*)&beta[frame_length<<3];
+    beta128 = (__m128i *)&beta[0];
+    beta_ptr   = (__m128i *)&beta[frame_length<<3];
     beta_ptr[0] = _mm_srli_si128(beta128[0],1);
     beta_ptr[1] = _mm_srli_si128(beta128[1],1);
     beta_ptr[2] = _mm_srli_si128(beta128[2],1);
@@ -665,23 +576,29 @@ void compute_beta8(llr_t* alpha,llr_t* beta,llr_t *m_11,llr_t* m_10,unsigned sho
     beta_ptr[6] = _mm_srli_si128(beta128[6],1);
     beta_ptr[7] = _mm_srli_si128(beta128[7],1);
 #elif defined(__arm__)
-    beta128 = (int8x16_t*)&beta[0];
-    beta_ptr   = (int8x16_t*)&beta[frame_length<<3];
-    beta_ptr[0] = (int8x16_t)vshrq_n_s64((int64x2_t)beta128[0],8);   beta_ptr[0] = vsetq_lane_s8(beta[7],beta_ptr[0],8);
-    beta_ptr[1] = (int8x16_t)vshrq_n_s64((int64x2_t)beta128[1],8);   beta_ptr[1] = vsetq_lane_s8(beta[23],beta_ptr[1],8);
-    beta_ptr[2] = (int8x16_t)vshrq_n_s64((int64x2_t)beta128[2],8);   beta_ptr[2] = vsetq_lane_s8(beta[39],beta_ptr[2],8);
-    beta_ptr[3] = (int8x16_t)vshrq_n_s64((int64x2_t)beta128[3],8);   beta_ptr[3] = vsetq_lane_s8(beta[55],beta_ptr[3],8);
-    beta_ptr[4] = (int8x16_t)vshrq_n_s64((int64x2_t)beta128[4],8);   beta_ptr[4] = vsetq_lane_s8(beta[71],beta_ptr[4],8);
-    beta_ptr[5] = (int8x16_t)vshrq_n_s64((int64x2_t)beta128[5],8);   beta_ptr[5] = vsetq_lane_s8(beta[87],beta_ptr[5],8);
-    beta_ptr[6] = (int8x16_t)vshrq_n_s64((int64x2_t)beta128[6],8);   beta_ptr[6] = vsetq_lane_s8(beta[103],beta_ptr[6],8);
-    beta_ptr[7] = (int8x16_t)vshrq_n_s64((int64x2_t)beta128[7],8);   beta_ptr[7] = vsetq_lane_s8(beta[119],beta_ptr[7],8);
+    beta128 = (int8x16_t *)&beta[0];
+    beta_ptr   = (int8x16_t *)&beta[frame_length<<3];
+    beta_ptr[0] = (int8x16_t)vshrq_n_s64((int64x2_t)beta128[0],8);
+    beta_ptr[0] = vsetq_lane_s8(beta[7],beta_ptr[0],8);
+    beta_ptr[1] = (int8x16_t)vshrq_n_s64((int64x2_t)beta128[1],8);
+    beta_ptr[1] = vsetq_lane_s8(beta[23],beta_ptr[1],8);
+    beta_ptr[2] = (int8x16_t)vshrq_n_s64((int64x2_t)beta128[2],8);
+    beta_ptr[2] = vsetq_lane_s8(beta[39],beta_ptr[2],8);
+    beta_ptr[3] = (int8x16_t)vshrq_n_s64((int64x2_t)beta128[3],8);
+    beta_ptr[3] = vsetq_lane_s8(beta[55],beta_ptr[3],8);
+    beta_ptr[4] = (int8x16_t)vshrq_n_s64((int64x2_t)beta128[4],8);
+    beta_ptr[4] = vsetq_lane_s8(beta[71],beta_ptr[4],8);
+    beta_ptr[5] = (int8x16_t)vshrq_n_s64((int64x2_t)beta128[5],8);
+    beta_ptr[5] = vsetq_lane_s8(beta[87],beta_ptr[5],8);
+    beta_ptr[6] = (int8x16_t)vshrq_n_s64((int64x2_t)beta128[6],8);
+    beta_ptr[6] = vsetq_lane_s8(beta[103],beta_ptr[6],8);
+    beta_ptr[7] = (int8x16_t)vshrq_n_s64((int64x2_t)beta128[7],8);
+    beta_ptr[7] = vsetq_lane_s8(beta[119],beta_ptr[7],8);
 #endif
   }
 }
 
-void compute_ext8(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, llr_t* systematic,unsigned short frame_length)
-{
-
+void compute_ext8(llr_t *alpha,llr_t *beta,llr_t *m_11,llr_t *m_10,llr_t *ext, llr_t *systematic,unsigned short frame_length) {
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *alpha128=(__m128i *)alpha;
   __m128i *beta128=(__m128i *)beta;
@@ -702,27 +619,20 @@ void compute_ext8(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, l
   int8x16_t m11_1,m11_2,m11_3,m11_4;
 #endif
   int k;
-
   //
   // LLR computation, 8 consequtive bits per loop
   //
-
 #ifdef DEBUG_LOGMAP
-  msg("compute_ext, %p, %p, %p, %p, %p, %p ,framelength %d\n",alpha,beta,m_11,m_10,ext,systematic,frame_length);
+  printf("compute_ext, %p, %p, %p, %p, %p, %p ,framelength %d\n",alpha,beta,m_11,m_10,ext,systematic,frame_length);
 #endif
-
   alpha_ptr = alpha128;
   beta_ptr = &beta128[8];
 
-
   for (k=0; k<(frame_length>>4); k++) {
-
 #if defined(__x86_64__) || defined(__i386__)
-
-    m11_128        = (__m128i*)&m_11[k<<4];
-    m10_128        = (__m128i*)&m_10[k<<4];
-    ext_128        = (__m128i*)&ext[k<<4];
-
+    m11_128        = (__m128i *)&m_11[k<<4];
+    m10_128        = (__m128i *)&m_10[k<<4];
+    ext_128        = (__m128i *)&ext[k<<4];
     m00_4 = _mm_adds_epi8(alpha_ptr[7],beta_ptr[3]); //ALPHA_BETA_4m00;
     m11_4 = _mm_adds_epi8(alpha_ptr[7],beta_ptr[7]); //ALPHA_BETA_4m11;
     m00_3 = _mm_adds_epi8(alpha_ptr[6],beta_ptr[7]); //ALPHA_BETA_3m00;
@@ -739,7 +649,6 @@ void compute_ext8(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, l
     m10_2 = _mm_adds_epi8(alpha_ptr[3],beta_ptr[5]); //ALPHA_BETA_2m10;
     m10_1 = _mm_adds_epi8(alpha_ptr[2],beta_ptr[1]); //ALPHA_BETA_1m10;
     m01_1 = _mm_adds_epi8(alpha_ptr[2],beta_ptr[5]); //ALPHA_BETA_1m01;
-
     m01_1 = _mm_max_epi8(m01_1,m01_2);
     m01_1 = _mm_max_epi8(m01_1,m01_3);
     m01_1 = _mm_max_epi8(m01_1,m01_4);
@@ -752,28 +661,19 @@ void compute_ext8(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, l
     m11_1 = _mm_max_epi8(m11_1,m11_2);
     m11_1 = _mm_max_epi8(m11_1,m11_3);
     m11_1 = _mm_max_epi8(m11_1,m11_4);
-
-
     m01_1 = _mm_subs_epi8(m01_1,*m10_128);
     m00_1 = _mm_subs_epi8(m00_1,*m11_128);
     m10_1 = _mm_adds_epi8(m10_1,*m10_128);
     m11_1 = _mm_adds_epi8(m11_1,*m11_128);
-
-
     m01_1 = _mm_max_epi8(m01_1,m00_1);
     m10_1 = _mm_max_epi8(m10_1,m11_1);
-
-
     *ext_128 = _mm_subs_epi8(m10_1,m01_1);
-
     alpha_ptr+=8;
     beta_ptr+=8;
 #elif defined(__arm__)
-
-    m11_128        = (int8x16_t*)&m_11[k<<4];
-    m10_128        = (int8x16_t*)&m_10[k<<4];
-    ext_128        = (int8x16_t*)&ext[k<<4];
-
+    m11_128        = (int8x16_t *)&m_11[k<<4];
+    m10_128        = (int8x16_t *)&m_10[k<<4];
+    ext_128        = (int8x16_t *)&ext[k<<4];
     m00_4 = vqaddq_s8(alpha_ptr[7],beta_ptr[3]); //ALPHA_BETA_4m00;
     m11_4 = vqaddq_s8(alpha_ptr[7],beta_ptr[7]); //ALPHA_BETA_4m11;
     m00_3 = vqaddq_s8(alpha_ptr[6],beta_ptr[7]); //ALPHA_BETA_3m00;
@@ -790,7 +690,6 @@ void compute_ext8(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, l
     m10_2 = vqaddq_s8(alpha_ptr[3],beta_ptr[5]); //ALPHA_BETA_2m10;
     m10_1 = vqaddq_s8(alpha_ptr[2],beta_ptr[1]); //ALPHA_BETA_1m10;
     m01_1 = vqaddq_s8(alpha_ptr[2],beta_ptr[5]); //ALPHA_BETA_1m01;
-
     m01_1 = vmaxq_s8(m01_1,m01_2);
     m01_1 = vmaxq_s8(m01_1,m01_3);
     m01_1 = vmaxq_s8(m01_1,m01_4);
@@ -803,27 +702,17 @@ void compute_ext8(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, l
     m11_1 = vmaxq_s8(m11_1,m11_2);
     m11_1 = vmaxq_s8(m11_1,m11_3);
     m11_1 = vmaxq_s8(m11_1,m11_4);
-
-
     m01_1 = vqsubq_s8(m01_1,*m10_128);
     m00_1 = vqsubq_s8(m00_1,*m11_128);
     m10_1 = vqaddq_s8(m10_1,*m10_128);
     m11_1 = vqaddq_s8(m11_1,*m11_128);
-
-
     m01_1 = vmaxq_s8(m01_1,m00_1);
     m10_1 = vmaxq_s8(m10_1,m11_1);
-
-
     *ext_128 = vqsubq_s8(m10_1,m01_1);
-
     alpha_ptr+=8;
     beta_ptr+=8;
-
 #endif
   }
-
-
 }
 
 
@@ -831,26 +720,26 @@ void compute_ext8(llr_t* alpha,llr_t* beta,llr_t* m_11,llr_t* m_10,llr_t* ext, l
 //int pi2[n],pi3[n+8],pi5[n+8],pi4[n+8],pi6[n+8],
 int *pi2tab8[188],*pi5tab8[188],*pi4tab8[188],*pi6tab8[188];
 
-void free_td8(void)
-{
+void free_td8(void) {
   int ind;
 
   for (ind=0; ind<188; ind++) {
-    free(pi2tab8[ind]);
-    free(pi5tab8[ind]);
-    free(pi4tab8[ind]);
-    free(pi6tab8[ind]);
+    free_and_zero(pi2tab8[ind]);
+    free_and_zero(pi5tab8[ind]);
+    free_and_zero(pi4tab8[ind]);
+    free_and_zero(pi6tab8[ind]);
   }
 }
 
-void init_td8()
-{
 
+
+extern RAN_CONTEXT_t RC;
+
+void init_td8(void) {
   int ind,i,j,n,n2,pi,pi3;
-  short * base_interleaver;
+  short *base_interleaver;
 
   for (ind=0; ind<188; ind++) {
-
     n = f1f2mat[ind].nb_bits;
     base_interleaver=il_tb+f1f2mat[ind].beg_index;
 #ifdef MEX
@@ -872,7 +761,6 @@ void init_td8()
       n2 = n;
 
     for (j=0,i=0; i<n2; i++,j+=16) {
-
       if (j>=n2)
         j-=(n2-1);
 
@@ -887,55 +775,43 @@ void init_td8()
       pi5tab8[ind][pi3] = pi2tab8[ind][i];
       pi6tab8[ind][pi] = pi2tab8[ind][i];
     }
-
   }
 }
 
-unsigned char phy_threegpplte_turbo_decoder8(short *y,
-    unsigned char *decoded_bytes,
-    unsigned short n,
-    unsigned short f1,
-    unsigned short f2,
-    unsigned char max_iterations,
-    unsigned char crc_type,
-    unsigned char F,
-    time_stats_t *init_stats,
-    time_stats_t *alpha_stats,
-    time_stats_t *beta_stats,
-    time_stats_t *gamma_stats,
-    time_stats_t *ext_stats,
-    time_stats_t *intl1_stats,
-    time_stats_t *intl2_stats)
-{
-
+uint8_t phy_threegpplte_turbo_decoder8(int16_t *y,
+                                       int16_t *y2,
+                                       uint8_t *decoded_bytes,
+                                       uint8_t *decoded_bytes2,
+                                       uint16_t n,
+                                       uint8_t max_iterations,
+                                       uint8_t crc_type,
+                                       uint8_t F,
+                                       time_stats_t *init_stats,
+                                       time_stats_t *alpha_stats,
+                                       time_stats_t *beta_stats,
+                                       time_stats_t *gamma_stats,
+                                       time_stats_t *ext_stats,
+                                       time_stats_t *intl1_stats,
+                                       time_stats_t *intl2_stats) {
   /*  y is a pointer to the input
       decoded_bytes is a pointer to the decoded output
       n is the size in bits of the coded block, with the tail */
-
   int n2;
-
   llr_t y8[3*(n+16)] __attribute__((aligned(16)));
-
-
   llr_t systematic0[n+16] __attribute__ ((aligned(16)));
   llr_t systematic1[n+16] __attribute__ ((aligned(16)));
   llr_t systematic2[n+16] __attribute__ ((aligned(16)));
   llr_t yparity1[n+16] __attribute__ ((aligned(16)));
   llr_t yparity2[n+16] __attribute__ ((aligned(16)));
-
   llr_t ext[n+128] __attribute__((aligned(16)));
   llr_t ext2[n+128] __attribute__((aligned(16)));
-
   llr_t alpha[(n+16)*8] __attribute__ ((aligned(16)));
   llr_t beta[(n+16)*8] __attribute__ ((aligned(16)));
   llr_t m11[n+16] __attribute__ ((aligned(16)));
   llr_t m10[n+16] __attribute__ ((aligned(16)));
-
-
   //  int *pi2_p,*pi4_p,*pi5_p,*pi6_p;
   int *pi4_p,*pi5_p,*pi6_p;
   llr_t *s,*s1,*s2,*yp1,*yp2,*yp;
-
   unsigned int i,j,iind;//,pi;
   unsigned char iteration_cnt=0;
   unsigned int crc,oldcrc,crc_len;
@@ -948,23 +824,19 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
   int8x16_t *yp128;
   int8x16_t tmp128[(n+8)>>3];
   int8x16_t tmp, zeros=vdupq_n_s8(0);
-  const uint8_t __attribute__ ((aligned (16))) _Powers[16]= 
-    { 1, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128 };
-  
+  const uint8_t __attribute__ ((aligned (16))) _Powers[16]=
+  { 1, 2, 4, 8, 16, 32, 64, 128, 1, 2, 4, 8, 16, 32, 64, 128 };
   // Set the powers of 2 (do it once for all, if applicable)
   uint8x16_t Powers= vld1q_u8(_Powers);
 #endif
-
   int offset8_flag=0;
 
   if (crc_type > 3) {
-    msg("Illegal crc length!\n");
+    printf("Illegal crc length!\n");
     return 255;
   }
 
-
   if (init_stats) start_meas(init_stats);
-
 
   if ((n&15)>0) {
     n2 = n+8;
@@ -972,40 +844,38 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
   } else
     n2 = n;
 
-
   for (iind=0; iind < 188 && f1f2mat[iind].nb_bits != n; iind++);
 
   if ( iind == 188 ) {
-    msg("Illegal frame length!\n");
+    printf("Illegal frame length!\n");
     return 255;
   }
 
   switch (crc_type) {
-  case CRC24_A:
-  case CRC24_B:
-    crc_len=3;
-    break;
+    case CRC24_A:
+    case CRC24_B:
+      crc_len=3;
+      break;
 
-  case CRC16:
-    crc_len=2;
-    break;
+    case CRC16:
+      crc_len=2;
+      break;
 
-  case CRC8:
-    crc_len=1;
-    break;
+    case CRC8:
+      crc_len=1;
+      break;
 
-  default:
-    crc_len=3;
+    default:
+      crc_len=3;
   }
 
 #if defined(__x86_64__) || defined(__i386__)
-
   // note: this makes valgrind freak
   __m128i avg=_mm_set1_epi32(0);
 
   for (i=0; i<(3*(n>>4))+1; i++) {
-    __m128i tmp=_mm_abs_epi16(_mm_unpackhi_epi16(((__m128i*)y)[i],((__m128i*)y)[i]));
-    avg=_mm_add_epi32(_mm_cvtepi16_epi32(_mm_abs_epi16(((__m128i*)y)[i])),avg);
+    __m128i tmp=_mm_abs_epi16(_mm_unpackhi_epi16(((__m128i *)y)[i],((__m128i *)y)[i]));
+    avg=_mm_add_epi32(_mm_cvtepi16_epi32(_mm_abs_epi16(((__m128i *)y)[i])),avg);
     avg=_mm_add_epi32(_mm_cvtepi16_epi32(tmp),avg);
   }
 
@@ -1029,15 +899,13 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
     for (i=0,j=0; i<(3*(n2>>4))+1; i++,j+=2)
       ((__m128i *)y8)[i] = _mm_packs_epi16(_mm_srai_epi16(((__m128i *)y)[j],3),_mm_srai_epi16(((__m128i *)y)[j+1],4));
 
-  yp128 = (__m128i*)y8;
-
+  yp128 = (__m128i *)y8;
 #elif defined(__arm__)
-
   int32x4_t avg=vdupq_n_s32(0);
 
   for (i=0; i<(3*(n>>4))+1; i++) {
-    int16x8_t tmp=vabsq_s16(((int16x8_t*)y)[i]);
-    avg = vqaddq_s32(avg,vaddl_s16(((int16x4_t*)&tmp)[0],((int16x4_t*)&tmp)[1]));
+    int16x8_t tmp=vabsq_s16(((int16x8_t *)y)[i]);
+    avg = vqaddq_s32(avg,vaddl_s16(((int16x4_t *)&tmp)[0],((int16x4_t *)&tmp)[1]));
   }
 
   int32_t round_avg=(vgetq_lane_s32(avg,0)+vgetq_lane_s32(avg,1)+vgetq_lane_s32(avg,2)+vgetq_lane_s32(avg,3))/(n*3);
@@ -1057,10 +925,8 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
     for (i=0,j=0; i<(3*(n2>>3))+1; i++,j+=2)
       ((int8x8_t *)y8)[i] = vqmovn_s16(vshrq_n_s16(((int16x8_t *)y)[j],3));
 
-  yp128 = (int8x16_t*)y8;
-
+  yp128 = (int8x16_t *)y8;
 #endif
-
   s = systematic0;
   s1 = systematic1;
   s2 = systematic2;
@@ -1078,211 +944,7 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
     }
 
 #endif
-#if 0
-
-  for (i=0; i<n2; i+=16) {
-    pi2_p = &pi2tab8[iind][i];
-
-    j=pi2_p[0];
-#if defined(__x86_64__) || defined(__i386__)
-    s[j]   = _mm_extract_epi8(yp128[0],0);
-    yp1[j] = _mm_extract_epi8(yp128[0],1);
-    yp2[j] = _mm_extract_epi8(yp128[0],2);
-
-
-    j=pi2_p[1];
-    s[j]   = _mm_extract_epi8(yp128[0],3);
-    yp1[j] = _mm_extract_epi8(yp128[0],4);
-    yp2[j] = _mm_extract_epi8(yp128[0],5);
-
-
-    j=pi2_p[2];
-    s[j]   = _mm_extract_epi8(yp128[0],6);
-    yp1[j] = _mm_extract_epi8(yp128[0],7);
-    yp2[j] = _mm_extract_epi8(yp128[0],8);
-
-
-    j=pi2_p[3];
-    s[j]   = _mm_extract_epi8(yp128[0],9);
-    yp1[j] = _mm_extract_epi8(yp128[0],10);
-    yp2[j] = _mm_extract_epi8(yp128[0],11);
-
-
-    j=pi2_p[4];
-    s[j]   = _mm_extract_epi8(yp128[0],12);
-    yp1[j] = _mm_extract_epi8(yp128[0],13);
-    yp2[j] = _mm_extract_epi8(yp128[0],14);
-
-
-    j=pi2_p[5];
-    s[j]   = _mm_extract_epi8(yp128[0],15);
-    yp1[j] = _mm_extract_epi8(yp128[1],0);
-    yp2[j] = _mm_extract_epi8(yp128[1],1);
-
-
-    j=pi2_p[6];
-    s[j]   = _mm_extract_epi8(yp128[1],2);
-    yp1[j] = _mm_extract_epi8(yp128[1],3);
-    yp2[j] = _mm_extract_epi8(yp128[1],4);
-
-
-    j=pi2_p[7];
-    s[j]   = _mm_extract_epi8(yp128[1],5);
-    yp1[j] = _mm_extract_epi8(yp128[1],6);
-    yp2[j] = _mm_extract_epi8(yp128[1],7);
-
-
-    j=pi2_p[8];
-    s[j]   = _mm_extract_epi8(yp128[1],8);
-    yp1[j] = _mm_extract_epi8(yp128[1],9);
-    yp2[j] = _mm_extract_epi8(yp128[1],10);
-
-
-    j=pi2_p[9];
-    s[j]   = _mm_extract_epi8(yp128[1],11);
-    yp1[j] = _mm_extract_epi8(yp128[1],12);
-    yp2[j] = _mm_extract_epi8(yp128[1],13);
-
-
-    j=pi2_p[10];
-    s[j]   = _mm_extract_epi8(yp128[1],14);
-    yp1[j] = _mm_extract_epi8(yp128[1],15);
-    yp2[j] = _mm_extract_epi8(yp128[2],0);
-
-
-    j=pi2_p[11];
-    s[j]   = _mm_extract_epi8(yp128[2],1);
-    yp1[j] = _mm_extract_epi8(yp128[2],2);
-    yp2[j] = _mm_extract_epi8(yp128[2],3);
-
-
-    j=pi2_p[12];
-    s[j]   = _mm_extract_epi8(yp128[2],4);
-    yp1[j] = _mm_extract_epi8(yp128[2],5);
-    yp2[j] = _mm_extract_epi8(yp128[2],6);
-
-
-    j=pi2_p[13];
-    s[j]   = _mm_extract_epi8(yp128[2],7);
-    yp1[j] = _mm_extract_epi8(yp128[2],8);
-    yp2[j] = _mm_extract_epi8(yp128[2],9);
-
-
-    j=pi2_p[14];
-    s[j]   = _mm_extract_epi8(yp128[2],10);
-    yp1[j] = _mm_extract_epi8(yp128[2],11);
-    yp2[j] = _mm_extract_epi8(yp128[2],12);
-
-
-    j=pi2_p[15];
-    s[j]   = _mm_extract_epi8(yp128[2],13);
-    yp1[j] = _mm_extract_epi8(yp128[2],14);
-    yp2[j] = _mm_extract_epi8(yp128[2],15);
-
-
-#elif defined(__arm__)
-    s[j]   = vgetq_lane_s8(yp128[0],0);
-    yp1[j] = vgetq_lane_s8(yp128[0],1);
-    yp2[j] = vgetq_lane_s8(yp128[0],2);
-
-
-    j=pi2_p[1];
-    s[j]   = vgetq_lane_s8(yp128[0],3);
-    yp1[j] = vgetq_lane_s8(yp128[0],4);
-    yp2[j] = vgetq_lane_s8(yp128[0],5);
-
-
-    j=pi2_p[2];
-    s[j]   = vgetq_lane_s8(yp128[0],6);
-    yp1[j] = vgetq_lane_s8(yp128[0],7);
-    yp2[j] = vgetq_lane_s8(yp128[0],8);
-
-
-    j=pi2_p[3];
-    s[j]   = vgetq_lane_s8(yp128[0],9);
-    yp1[j] = vgetq_lane_s8(yp128[0],10);
-    yp2[j] = vgetq_lane_s8(yp128[0],11);
-
-
-    j=pi2_p[4];
-    s[j]   = vgetq_lane_s8(yp128[0],12);
-    yp1[j] = vgetq_lane_s8(yp128[0],13);
-    yp2[j] = vgetq_lane_s8(yp128[0],14);
-
-
-    j=pi2_p[5];
-    s[j]   = vgetq_lane_s8(yp128[0],15);
-    yp1[j] = vgetq_lane_s8(yp128[1],0);
-    yp2[j] = vgetq_lane_s8(yp128[1],1);
-
-
-    j=pi2_p[6];
-    s[j]   = vgetq_lane_s8(yp128[1],2);
-    yp1[j] = vgetq_lane_s8(yp128[1],3);
-    yp2[j] = vgetq_lane_s8(yp128[1],4);
-
-
-    j=pi2_p[7];
-    s[j]   = vgetq_lane_s8(yp128[1],5);
-    yp1[j] = vgetq_lane_s8(yp128[1],6);
-    yp2[j] = vgetq_lane_s8(yp128[1],7);
-
-
-    j=pi2_p[8];
-    s[j]   = vgetq_lane_s8(yp128[1],8);
-    yp1[j] = vgetq_lane_s8(yp128[1],9);
-    yp2[j] = vgetq_lane_s8(yp128[1],10);
-
-
-    j=pi2_p[9];
-    s[j]   = vgetq_lane_s8(yp128[1],11);
-    yp1[j] = vgetq_lane_s8(yp128[1],12);
-    yp2[j] = vgetq_lane_s8(yp128[1],13);
-
-
-    j=pi2_p[10];
-    s[j]   = vgetq_lane_s8(yp128[1],14);
-    yp1[j] = vgetq_lane_s8(yp128[1],15);
-    yp2[j] = vgetq_lane_s8(yp128[2],0);
-
-
-    j=pi2_p[11];
-    s[j]   = vgetq_lane_s8(yp128[2],1);
-    yp1[j] = vgetq_lane_s8(yp128[2],2);
-    yp2[j] = vgetq_lane_s8(yp128[2],3);
-
-
-    j=pi2_p[12];
-    s[j]   = vgetq_lane_s8(yp128[2],4);
-    yp1[j] = vgetq_lane_s8(yp128[2],5);
-    yp2[j] = vgetq_lane_s8(yp128[2],6);
-
-
-    j=pi2_p[13];
-    s[j]   = vgetq_lane_s8(yp128[2],7);
-    yp1[j] = vgetq_lane_s8(yp128[2],8);
-    yp2[j] = vgetq_lane_s8(yp128[2],9);
-
-
-    j=pi2_p[14];
-    s[j]   = vgetq_lane_s8(yp128[2],10);
-    yp1[j] = vgetq_lane_s8(yp128[2],11);
-    yp2[j] = vgetq_lane_s8(yp128[2],12);
-
-
-    j=pi2_p[15];
-    s[j]   = vgetq_lane_s8(yp128[2],13);
-    yp1[j] = vgetq_lane_s8(yp128[2],14);
-    yp2[j] = vgetq_lane_s8(yp128[2],15);
-
-#endif
-    yp128+=3;
-
-  }
-
-#endif
-
-  yp=(llr_t*)yp128;
+  yp=(llr_t *)yp128;
 
   if (n2>n) {
     /*
@@ -1292,7 +954,7 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
     s1[n+4]=0;s1[n+5]=0;s1[n+6]=0;s1[n+7]=0;
     s2[n]=0;s2[n+1]=0;s2[n+2]=0;s2[n+3]=0;
     s2[n+4]=0;s2[n+5]=0;s2[n+6]=0;s2[n+7]=0;*/
-    yp=(llr_t*)(y8+n);
+    yp=(llr_t *)(y8+n);
   }
 
   //  printf("n=%d,n2=%d\n",n,n2);
@@ -1306,7 +968,7 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
     yp1[i] = *yp;
     yp++;
 #ifdef DEBUG_LOGMAP
-    msg("Term 1 (%d): %d %d\n",i,s[i],yp1[i]);
+    printf("Term 1 (%u): %d %d\n",i,s[i],yp1[i]);
 #endif //DEBUG_LOGMAP
   }
 
@@ -1318,75 +980,70 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
     yp2[i-16] = *yp;
     yp++;
 #ifdef DEBUG_LOGMAP
-    msg("Term 2 (%d): %d %d\n",i-16,s[i],yp2[i-16]);
+    printf("Term 2 (%u): %d %d\n",i-16,s[i],yp2[i-16]);
 #endif //DEBUG_LOGMAP
   }
 
 #ifdef DEBUG_LOGMAP
-  msg("\n");
+  printf("\n");
 #endif //DEBUG_LOGMAP
 
   if (init_stats) stop_meas(init_stats);
 
   // do log_map from first parity bit
-
   log_map8(systematic0,yparity1,m11,m10,alpha,beta,ext,n2,0,F,offset8_flag,alpha_stats,beta_stats,gamma_stats,ext_stats);
 
   while (iteration_cnt++ < max_iterations) {
-
 #ifdef DEBUG_LOGMAP
     printf("\n*******************ITERATION %d (n %d, n2 %d), ext %p\n\n",iteration_cnt,n,n2,ext);
 #endif //DEBUG_LOGMAP
 
     if (intl1_stats) start_meas(intl1_stats);
+
     pi4_p=pi4tab8[iind];
 
     for (i=0; i<(n2>>4); i++) { // steady-state portion
 #if defined(__x86_64__) || defined(__i386__)
-      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],0);
-      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],1);
-      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],2);
-      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],3);
-      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],4);
-      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],5);
-      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],6);
-      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],7);
-      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],8);
-      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],9);
-      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],10);
-      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],11);
-      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],12);
-      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],13);
-      tmp=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],14);
-      ((__m128i *)systematic2)[i]=_mm_insert_epi8(tmp,((llr_t*)ext)[*pi4_p++],15);
+      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],0);
+      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],1);
+      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],2);
+      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],3);
+      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],4);
+      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],5);
+      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],6);
+      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],7);
+      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],8);
+      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],9);
+      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],10);
+      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],11);
+      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],12);
+      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],13);
+      tmp=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],14);
+      ((__m128i *)systematic2)[i]=_mm_insert_epi8(tmp,((llr_t *)ext)[*pi4_p++],15);
 #elif defined(__arm__)
-      tmp=vsetq_lane_s8(((llr_t*)ext)[*pi4_p++],tmp,0);
-      tmp=vsetq_lane_s8(((llr_t*)ext)[*pi4_p++],tmp,1);
-      tmp=vsetq_lane_s8(((llr_t*)ext)[*pi4_p++],tmp,2);
-      tmp=vsetq_lane_s8(((llr_t*)ext)[*pi4_p++],tmp,3);
-      tmp=vsetq_lane_s8(((llr_t*)ext)[*pi4_p++],tmp,4);
-      tmp=vsetq_lane_s8(((llr_t*)ext)[*pi4_p++],tmp,5);
-      tmp=vsetq_lane_s8(((llr_t*)ext)[*pi4_p++],tmp,6);
-      tmp=vsetq_lane_s8(((llr_t*)ext)[*pi4_p++],tmp,7);
-      tmp=vsetq_lane_s8(((llr_t*)ext)[*pi4_p++],tmp,8);
-      tmp=vsetq_lane_s8(((llr_t*)ext)[*pi4_p++],tmp,9);
-      tmp=vsetq_lane_s8(((llr_t*)ext)[*pi4_p++],tmp,10);
-      tmp=vsetq_lane_s8(((llr_t*)ext)[*pi4_p++],tmp,11);
-      tmp=vsetq_lane_s8(((llr_t*)ext)[*pi4_p++],tmp,12);
-      tmp=vsetq_lane_s8(((llr_t*)ext)[*pi4_p++],tmp,13);
-      tmp=vsetq_lane_s8(((llr_t*)ext)[*pi4_p++],tmp,14);
-      ((int8x16_t *)systematic2)[i]=vsetq_lane_s8(((llr_t*)ext)[*pi4_p++],tmp,15);
+      tmp=vsetq_lane_s8(((llr_t *)ext)[*pi4_p++],tmp,0);
+      tmp=vsetq_lane_s8(((llr_t *)ext)[*pi4_p++],tmp,1);
+      tmp=vsetq_lane_s8(((llr_t *)ext)[*pi4_p++],tmp,2);
+      tmp=vsetq_lane_s8(((llr_t *)ext)[*pi4_p++],tmp,3);
+      tmp=vsetq_lane_s8(((llr_t *)ext)[*pi4_p++],tmp,4);
+      tmp=vsetq_lane_s8(((llr_t *)ext)[*pi4_p++],tmp,5);
+      tmp=vsetq_lane_s8(((llr_t *)ext)[*pi4_p++],tmp,6);
+      tmp=vsetq_lane_s8(((llr_t *)ext)[*pi4_p++],tmp,7);
+      tmp=vsetq_lane_s8(((llr_t *)ext)[*pi4_p++],tmp,8);
+      tmp=vsetq_lane_s8(((llr_t *)ext)[*pi4_p++],tmp,9);
+      tmp=vsetq_lane_s8(((llr_t *)ext)[*pi4_p++],tmp,10);
+      tmp=vsetq_lane_s8(((llr_t *)ext)[*pi4_p++],tmp,11);
+      tmp=vsetq_lane_s8(((llr_t *)ext)[*pi4_p++],tmp,12);
+      tmp=vsetq_lane_s8(((llr_t *)ext)[*pi4_p++],tmp,13);
+      tmp=vsetq_lane_s8(((llr_t *)ext)[*pi4_p++],tmp,14);
+      ((int8x16_t *)systematic2)[i]=vsetq_lane_s8(((llr_t *)ext)[*pi4_p++],tmp,15);
 #endif
     }
 
     if (intl1_stats) stop_meas(intl1_stats);
 
     // do log_map from second parity bit
-
     log_map8(systematic2,yparity2,m11,m10,alpha,beta,ext2,n2,1,F,offset8_flag,alpha_stats,beta_stats,gamma_stats,ext_stats);
-
-
-
     pi5_p=pi5tab8[iind];
     uint16_t decoded_bytes_interl[6144/16] __attribute__((aligned(16)));
 
@@ -1410,7 +1067,7 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
         tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],14);
         tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],15);
         decoded_bytes_interl[i]=(uint16_t) _mm_movemask_epi8(_mm_cmpgt_epi8(tmp,zeros));
-        ((__m128i *)systematic1)[i] = _mm_adds_epi8(_mm_subs_epi8(tmp,((__m128i*)ext)[i]),((__m128i *)systematic0)[i]);
+        ((__m128i *)systematic1)[i] = _mm_adds_epi8(_mm_subs_epi8(tmp,((__m128i *)ext)[i]),((__m128i *)systematic0)[i]);
 #elif defined(__arm__)
         tmp=vsetq_lane_s8(ext2[*pi5_p++],tmp,0);
         tmp=vsetq_lane_s8(ext2[*pi5_p++],tmp,1);
@@ -1428,13 +1085,12 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
         tmp=vsetq_lane_s8(ext2[*pi5_p++],tmp,13);
         tmp=vsetq_lane_s8(ext2[*pi5_p++],tmp,14);
         tmp=vsetq_lane_s8(ext2[*pi5_p++],tmp,15);
-	uint64x2_t Mask= vpaddlq_u32(vpaddlq_u16(vpaddlq_u8(vandq_u8(vcgtq_s8(tmp,zeros), Powers))));
-	vst1q_lane_u8(&((uint8_t*)&decoded_bytes[i])[0], (uint8x16_t)Mask, 0);
-	vst1q_lane_u8(&((uint8_t*)&decoded_bytes[i])[1], (uint8x16_t)Mask, 8);
-	((int8x16_t *)systematic1)[i] = vqaddq_s8(vqsubq_s8(tmp,((int8x16_t*)ext)[i]),((int8x16_t *)systematic0)[i]);
+        uint64x2_t Mask= vpaddlq_u32(vpaddlq_u16(vpaddlq_u8(vandq_u8(vcgtq_s8(tmp,zeros), Powers))));
+        vst1q_lane_u8(&((uint8_t *)&decoded_bytes[i])[0], (uint8x16_t)Mask, 0);
+        vst1q_lane_u8(&((uint8_t *)&decoded_bytes[i])[1], (uint8x16_t)Mask, 8);
+        ((int8x16_t *)systematic1)[i] = vqaddq_s8(vqsubq_s8(tmp,((int8x16_t *)ext)[i]),((int8x16_t *)systematic0)[i]);
 #endif
       }
-
     } else {
       for (i=0; i<(n2>>4); i++) {
 #if defined(__x86_64__) || defined(__i386__)
@@ -1455,8 +1111,7 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
         tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],14);
         tmp=_mm_insert_epi8(tmp,ext2[*pi5_p++],15);
         tmp128[i] = _mm_adds_epi8(((__m128i *)ext2)[i],((__m128i *)systematic2)[i]);
-
-        ((__m128i *)systematic1)[i] = _mm_adds_epi8(_mm_subs_epi8(tmp,((__m128i*)ext)[i]),((__m128i *)systematic0)[i]);
+        ((__m128i *)systematic1)[i] = _mm_adds_epi8(_mm_subs_epi8(tmp,((__m128i *)ext)[i]),((__m128i *)systematic0)[i]);
 #elif defined(__arm__)
         tmp=vsetq_lane_s8(ext2[*pi5_p++],tmp,0);
         tmp=vsetq_lane_s8(ext2[*pi5_p++],tmp,1);
@@ -1475,11 +1130,9 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
         tmp=vsetq_lane_s8(ext2[*pi5_p++],tmp,14);
         tmp=vsetq_lane_s8(ext2[*pi5_p++],tmp,15);
         tmp128[i] = vqaddq_s8(((int8x16_t *)ext2)[i],((int8x16_t *)systematic2)[i]);
-
-        ((int8x16_t *)systematic1)[i] = vqaddq_s8(vqsubq_s8(tmp,((int8x16_t*)ext)[i]),((int8x16_t *)systematic0)[i]);
-
-#endif 
-     }
+        ((int8x16_t *)systematic1)[i] = vqaddq_s8(vqsubq_s8(tmp,((int8x16_t *)ext)[i]),((int8x16_t *)systematic0)[i]);
+#endif
+      }
     }
 
     // Check if we decoded the block
@@ -1487,11 +1140,10 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
       if (intl2_stats) start_meas(intl2_stats);
 
       if ((n2&0x7f) == 0) {  // n2 is a multiple of 128 bits
-
         // re-order the decoded bits in theregular order
         // as it is presently ordered as 16 sequential columns
 #if defined(__x86_64__) || defined(__i386__)
-        __m128i* dbytes=(__m128i*)decoded_bytes_interl;
+        __m128i *dbytes=(__m128i *)decoded_bytes_interl;
         __m128i shuffle=SHUFFLE16(7,6,5,4,3,2,1,0);
         __m128i mask  __attribute__((aligned(16)));
         int n_128=n2>>7;
@@ -1501,10 +1153,9 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
           __m128i tmp __attribute__((aligned(16)));
           tmp=_mm_shuffle_epi8(dbytes[i],shuffle);
           __m128i tmp2 __attribute__((aligned(16))) ;
-
           tmp2=_mm_and_si128(tmp,mask);
           tmp2=_mm_cmpeq_epi16(tmp2,mask);
-	  //	  printf("decoded_bytes %p\n",decoded_bytes);
+          //    printf("decoded_bytes %p\n",decoded_bytes);
           decoded_bytes[n_128*0+i]=(uint8_t) _mm_movemask_epi8(_mm_packs_epi16(tmp2,zeros));
           int j;
 
@@ -1515,22 +1166,22 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
             decoded_bytes[n_128*j +i]=(uint8_t) _mm_movemask_epi8(_mm_packs_epi16(tmp2,zeros));
           }
         }
+
 #elif defined(__arm__)
-        uint8x16_t* dbytes=(uint8x16_t*)decoded_bytes_interl;
+        uint8x16_t *dbytes=(uint8x16_t *)decoded_bytes_interl;
         uint16x8_t mask  __attribute__((aligned(16)));
         int n_128=n2>>7;
 
         for (i=0; i<n_128; i++) {
           mask=vdupq_n_u16(1);
           uint8x16_t tmp __attribute__((aligned(16)));
-          tmp=vcombine_u8(vrev64_u8(((uint8x8_t*)&dbytes[i])[1]),vrev64_u8(((uint8x8_t*)&dbytes[i])[0]));
+          tmp=vcombine_u8(vrev64_u8(((uint8x8_t *)&dbytes[i])[1]),vrev64_u8(((uint8x8_t *)&dbytes[i])[0]));
           vst1q_lane_u8(&decoded_bytes[n_128*0+i],(uint8x16_t)vpaddlq_u32(vpaddlq_u16(vpaddlq_u8(vandq_u8(tmp, Powers)))),0);
-
           int j;
 
           for (j=1; j<16; j++) {
             mask=vshlq_n_u16(mask,1);
-	    vst1q_lane_u8(&decoded_bytes[n_128*0+i],(uint8x16_t)vpaddlq_u32(vpaddlq_u16(vpaddlq_u8(vandq_u8(tmp, Powers)))),0);
+            vst1q_lane_u8(&decoded_bytes[n_128*0+i],(uint8x16_t)vpaddlq_u32(vpaddlq_u16(vpaddlq_u8(vandq_u8(tmp, Powers)))),0);
           }
         }
 
@@ -1575,9 +1226,9 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
           tmp=vsetq_lane_s8(((llr_t *)tmp128)[*pi6_p++],tmp,10);
           tmp=vsetq_lane_s8(((llr_t *)tmp128)[*pi6_p++],tmp,9);
           tmp=vsetq_lane_s8(((llr_t *)tmp128)[*pi6_p++],tmp,8);
-	  uint64x2_t Mask= vpaddlq_u32(vpaddlq_u16(vpaddlq_u8(vandq_u8(vcgtq_s8(tmp,zeros), Powers))));
-	  vst1q_lane_u8(&((uint8_t*)&decoded_bytes[i])[0], (uint8x16_t)Mask, 0);
-	  vst1q_lane_u8(&((uint8_t*)&decoded_bytes[i])[1], (uint8x16_t)Mask, 8);
+          uint64x2_t Mask= vpaddlq_u32(vpaddlq_u16(vpaddlq_u8(vandq_u8(vcgtq_s8(tmp,zeros), Powers))));
+          vst1q_lane_u8(&((uint8_t *)&decoded_bytes[i])[0], (uint8x16_t)Mask, 0);
+          vst1q_lane_u8(&((uint8_t *)&decoded_bytes[i])[1], (uint8x16_t)Mask, 8);
 #endif
         }
       }
@@ -1586,41 +1237,40 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
       oldcrc= *((unsigned int *)(&decoded_bytes[(n>>3)-crc_len]));
 
       switch (crc_type) {
+        case CRC24_A:
+          oldcrc&=0x00ffffff;
+          crc = crc24a(&decoded_bytes[F>>3],
+                       n-24-F)>>8;
+          temp=((uint8_t *)&crc)[2];
+          ((uint8_t *)&crc)[2] = ((uint8_t *)&crc)[0];
+          ((uint8_t *)&crc)[0] = temp;
+          break;
 
-      case CRC24_A:
-        oldcrc&=0x00ffffff;
-        crc = crc24a(&decoded_bytes[F>>3],
-                     n-24-F)>>8;
-        temp=((uint8_t *)&crc)[2];
-        ((uint8_t *)&crc)[2] = ((uint8_t *)&crc)[0];
-        ((uint8_t *)&crc)[0] = temp;
-        break;
+        case CRC24_B:
+          oldcrc&=0x00ffffff;
+          crc = crc24b(decoded_bytes,
+                       n-24)>>8;
+          temp=((uint8_t *)&crc)[2];
+          ((uint8_t *)&crc)[2] = ((uint8_t *)&crc)[0];
+          ((uint8_t *)&crc)[0] = temp;
+          break;
 
-      case CRC24_B:
-        oldcrc&=0x00ffffff;
-        crc = crc24b(decoded_bytes,
-                     n-24)>>8;
-        temp=((uint8_t *)&crc)[2];
-        ((uint8_t *)&crc)[2] = ((uint8_t *)&crc)[0];
-        ((uint8_t *)&crc)[0] = temp;
-        break;
+        case CRC16:
+          oldcrc&=0x0000ffff;
+          crc = crc16(decoded_bytes,
+                      n-16)>>16;
+          break;
 
-      case CRC16:
-        oldcrc&=0x0000ffff;
-        crc = crc16(decoded_bytes,
-                    n-16)>>16;
-        break;
+        case CRC8:
+          oldcrc&=0x000000ff;
+          crc = crc8(decoded_bytes,
+                     n-8)>>24;
+          break;
 
-      case CRC8:
-        oldcrc&=0x000000ff;
-        crc = crc8(decoded_bytes,
-                   n-8)>>24;
-        break;
-
-      default:
-        printf("FATAL: 3gpplte_turbo_decoder_sse.c: Unknown CRC\n");
-        return(255);
-        break;
+        default:
+          printf("FATAL: 3gpplte_turbo_decoder_sse.c: Unknown CRC\n");
+          return(255);
+          break;
       }
 
       if (intl2_stats) stop_meas(intl2_stats);
@@ -1634,13 +1284,13 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
     if (iteration_cnt < max_iterations) {
       log_map8(systematic1,yparity1,m11,m10,alpha,beta,ext,n2,0,F,offset8_flag,alpha_stats,beta_stats,gamma_stats,ext_stats);
 #if defined(__x86_64__) || defined(__i386__)
-      __m128i* ext_128=(__m128i*) ext;
-      __m128i* s1_128=(__m128i*) systematic1;
-      __m128i* s0_128=(__m128i*) systematic0;
+      __m128i *ext_128=(__m128i *) ext;
+      __m128i *s1_128=(__m128i *) systematic1;
+      __m128i *s0_128=(__m128i *) systematic0;
 #elif defined(__arm__)
-      int8x16_t* ext_128=(int8x16_t*) ext;
-      int8x16_t* s1_128=(int8x16_t*) systematic1;
-      int8x16_t* s0_128=(int8x16_t*) systematic0;
+      int8x16_t *ext_128=(int8x16_t *) ext;
+      int8x16_t *s1_128=(int8x16_t *) systematic1;
+      int8x16_t *s0_128=(int8x16_t *) systematic0;
 #endif
       int myloop=n2>>4;
 
@@ -1656,5 +1306,4 @@ unsigned char phy_threegpplte_turbo_decoder8(short *y,
   }
 
   return(iteration_cnt);
-
 }

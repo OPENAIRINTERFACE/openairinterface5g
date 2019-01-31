@@ -19,14 +19,12 @@
  *      contact@openairinterface.org
  */
 
-#ifdef USER_MODE
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
-#endif
 
-#include  "defs.h"
+#include  "sim.h"
 
 static unsigned int seed, iy, ir[98];
 /*
@@ -44,7 +42,7 @@ void randominit(unsigned seed_init)
 {
   int i;
   // this need to be integrated with the existing rng, like taus: navid
-  msg("Initializing random number generator, seed %x\n",seed_init);
+  printf("Initializing random number generator, seed %x\n",seed_init);
 
   if (seed_init == 0) {
     srand((unsigned)time(NULL));
@@ -65,33 +63,6 @@ void randominit(unsigned seed_init)
 }
 #endif
 
-#if 0
-void randominit(unsigned seed_init)
-{
-  int i;
-  // this need to be integrated with the existing rng, like taus: navid
-  msg("Initializing random number generator, seed %x\n",seed_init);
-
-  seed_init = 62110;
-
-  if (seed_init == 0) {
-    srand((unsigned)time(NULL));
-
-    seed = (unsigned int) rand();
-  } else {
-    seed = seed_init;
-  }
-
-  if (seed % 2 == 0) seed += 1; /* seed and mod are relative prime */
-
-  for (i=1; i<=97; i++) {
-    seed = a*seed;                 /* mod 2**32  */
-    ir[i]= seed;                   /* initialize the shuffle table    */
-  }
-
-  iy=1;
-}
-#endif
 /*!\brief Uniform linear congruential random number generator on \f$[0,1)\f$.  Returns a double-precision floating-point number.*/
 
 double uniformrandom(void)

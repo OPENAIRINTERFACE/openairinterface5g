@@ -42,11 +42,4 @@ typedef struct MAC_Context_Info_t {
   unsigned int   subframesSinceCaptureStart;
 } MAC_Context_Info_t;
 
-pcap_hdr_t file_header = {
-  0xa1b2c3d4,   /* magic number */
-  2, 4,         /* version number is 2.4 */
-  0,            /* timezone */
-  0,            /* sigfigs - apparently all tools do this */
-  65535,        /* snaplen - this should be long enough */
-  MAC_LTE_DLT   /* Data Link Type (DLT).  Set as unused value 147 for now */
-};
+

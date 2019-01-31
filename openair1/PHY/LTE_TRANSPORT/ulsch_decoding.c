@@ -30,27 +30,22 @@
 * \warning
 */
 
-//#include "defs.h"
 
-#include "PHY/defs.h"
-#include "PHY/extern.h"
-#include "PHY/CODING/extern.h"
-#include "extern.h"
-#include "SCHED/extern.h"
-#ifdef OPENAIR2
-#include "LAYER2/MAC/defs.h"
-#include "LAYER2/MAC/extern.h"
-#include "RRC/LITE/extern.h"
-#include "PHY_INTERFACE/extern.h"
-#endif
+#include <syscall.h>
+#include "PHY/defs_eNB.h"
+#include "PHY/phy_extern.h"
+#include "PHY/CODING/coding_extern.h"
+#include "SCHED/sched_eNB.h"
+#include "LAYER2/MAC/mac.h"
+#include "RRC/LTE/rrc_extern.h"
+#include "PHY_INTERFACE/phy_interface.h"
 
-#ifdef PHY_ABSTRACTION
-#include "UTIL/OCG/OCG.h"
-#include "UTIL/OCG/OCG_extern.h"
-#endif
-
-#include "UTIL/LOG/vcd_signal_dumper.h"
+#include "common/utils/LOG/vcd_signal_dumper.h"
 //#define DEBUG_ULSCH_DECODING
+#include "targets/RT/USER/rt_wrapper.h"
+#include "transport_proto.h"
+
+extern WORKER_CONF_t get_thread_worker_conf(void);
 
 void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch)
 {
@@ -146,8 +141,6 @@ LTE_eNB_ULSCH_t *new_eNB_ulsch(uint8_t max_turbo_iterations,uint8_t N_RB_UL, uin
             else
               exit_flag=2;
           }
-
-          ulsch->harq_processes[i]->subframe_scheduling_flag = 0;
         }
       } else {
         exit_flag=1;
@@ -172,18 +165,35 @@ void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch)
   //ulsch = (LTE_eNB_ULSCH_t *)malloc16(sizeof(LTE_eNB_ULSCH_t));
   if (ulsch) {
     ulsch->rnti = 0;
+    ulsch->harq_mask = 0;
 
     for (i=0; i<8; i++) {
       if (ulsch->harq_processes[i]) {
         //    ulsch->harq_processes[i]->Ndi = 0;
         ulsch->harq_processes[i]->status = 0;
-        ulsch->harq_processes[i]->subframe_scheduling_flag = 0;
         //ulsch->harq_processes[i]->phich_active = 0; //this will be done later after transmission of PHICH
         ulsch->harq_processes[i]->phich_ACK = 0;
         ulsch->harq_processes[i]->round = 0;
+        ulsch->harq_processes[i]->rar_alloc = 0;
+        ulsch->harq_processes[i]->first_rb = 0;
+        ulsch->harq_processes[i]->nb_rb = 0;
+        ulsch->harq_processes[i]->TBS = 0;
+        ulsch->harq_processes[i]->Or1 = 0;
+        ulsch->harq_processes[i]->Or2 = 0;
+        for ( int j = 0; j < 2; j++ ) {
+          ulsch->harq_processes[i]->o_RI[j] = 0;
+        }
+        ulsch->harq_processes[i]->O_ACK = 0;
+        ulsch->harq_processes[i]->srs_active = 0;
+        ulsch->harq_processes[i]->rvidx = 0;
+        ulsch->harq_processes[i]->Msc_initial = 0;
+        ulsch->harq_processes[i]->Nsymb_initial = 0;
       }
     }
-
+    ulsch->beta_offset_cqi_times8 = 0;
+    ulsch->beta_offset_ri_times8 = 0;
+    ulsch->beta_offset_harqack_times8 = 0;
+    ulsch->Msg3_active = 0;
   }
 }
 
@@ -211,8 +221,6 @@ uint8_t extract_cqi_crc(uint8_t *cqi,uint8_t CQI_LENGTH)
 
 
 
-
-
 int ulsch_decoding_data_2thread0(td_params* tdp) {
 
   PHY_VARS_eNB *eNB = tdp->eNB;
@@ -220,39 +228,24 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
   int harq_pid      = tdp->harq_pid;
   int llr8_flag     = tdp->llr8_flag;
 
-  unsigned int r,r_offset=0,Kr,Kr_bytes,iind;
+  unsigned int r,r_offset=0,Kr,Kr_bytes;
   uint8_t crc_type;
   int offset = 0;
   int ret = 1;
   int16_t dummy_w[MAX_NUM_ULSCH_SEGMENTS][3*(6144+64)];
   LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[UE_id];
   LTE_UL_eNB_HARQ_t *ulsch_harq = ulsch->harq_processes[harq_pid];
-  int Q_m = get_Qm_ul(ulsch_harq->mcs);
+  int Q_m = ulsch_harq->Qm;
   int G = ulsch_harq->G;
-  uint32_t E;
+  uint32_t E=0;
   uint32_t Gp,GpmodC,Nl=1;
   uint32_t C = ulsch_harq->C;
-
-  uint8_t (*tc)(int16_t *y,
-                uint8_t *,
-                uint16_t,
-                uint16_t,
-                uint16_t,
-                uint8_t,
-                uint8_t,
-                uint8_t,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *);
+  decoder_if_t *tc;
 
   if (llr8_flag == 0)
-    tc = phy_threegpplte_turbo_decoder16;
+    tc = decoder16;
   else
-    tc = phy_threegpplte_turbo_decoder8;
+    tc = decoder8;
 
 
 
@@ -266,19 +259,6 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
       Kr = ulsch_harq->Kplus;
 
     Kr_bytes = Kr>>3;
-
-    if (Kr_bytes<=64)
-      iind = (Kr_bytes-5);
-    else if (Kr_bytes <=128)
-      iind = 59 + ((Kr_bytes-64)>>1);
-    else if (Kr_bytes <= 256)
-      iind = 91 + ((Kr_bytes-128)>>2);
-    else if (Kr_bytes <= 768)
-      iind = 123 + ((Kr_bytes-256)>>3);
-    else {
-      LOG_E(PHY,"ulsch_decoding: Illegal codeword size %d!!!\n",Kr_bytes);
-      return(-1);
-    }
 
     // This is stolen from rate-matching algorithm to get the value of E
     
@@ -312,23 +292,6 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
 
     Kr_bytes = Kr>>3;
 
-    if (Kr_bytes<=64)
-      iind = (Kr_bytes-5);
-    else if (Kr_bytes <=128)
-      iind = 59 + ((Kr_bytes-64)>>1);
-    else if (Kr_bytes <= 256)
-      iind = 91 + ((Kr_bytes-128)>>2);
-    else if (Kr_bytes <= 768)
-      iind = 123 + ((Kr_bytes-256)>>3);
-    else {
-      LOG_E(PHY,"ulsch_decoding: Illegal codeword size %d!!!\n",Kr_bytes);
-      return(-1);
-    }
-
-#ifdef DEBUG_ULSCH_DECODING
-    printf("f1 %d, f2 %d, F %d\n",f1f2mat_old[2*iind],f1f2mat_old[1+(2*iind)],(r==0) ? ulsch_harq->F : 0);
-#endif
-
     memset(&dummy_w[r][0],0,3*(6144+64)*sizeof(short));
     ulsch_harq->RTC[r] = generate_dummy_w(4+(Kr_bytes*8),
                                           (uint8_t*)&dummy_w[r][0],
@@ -355,7 +318,7 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
                                    1,
                                    ulsch_harq->rvidx,
                                    (ulsch_harq->round==0)?1:0,  // clear
-                                   get_Qm_ul(ulsch_harq->mcs),
+                                   ulsch_harq->Qm,
                                    1,
                                    r,
                                    &E)==-1) {
@@ -374,12 +337,12 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
     else
       crc_type = CRC24_B;
     
-    
+   
     ret = tc(&ulsch_harq->d[r][96],
+             NULL,
 	     ulsch_harq->c[r],
+             NULL,
 	     Kr,
-	     f1f2mat_old[iind*2],
-	     f1f2mat_old[(iind*2)+1],
 	     ulsch->max_turbo_iterations,//MAX_TURBO_ITERATIONS,
 	     crc_type,
 	     (r==0) ? ulsch_harq->F : 0,
@@ -418,13 +381,20 @@ int ulsch_decoding_data_2thread0(td_params* tdp) {
 
 extern int oai_exit;
 void *td_thread(void *param) {
-  pthread_setname_np( pthread_self(), "td processing");
   PHY_VARS_eNB *eNB = ((td_params*)param)->eNB;
-  eNB_proc_t *proc  = &eNB->proc;
+  L1_proc_t *proc  = &eNB->proc;
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+  
+  thread_top_init("td_thread",1,200000,250000,500000);
+  pthread_setname_np( pthread_self(),"td processing");
+  LOG_I(PHY,"thread td created id=%ld\n", syscall(__NR_gettid));
+  //wait_sync("td_thread");
 
   while (!oai_exit) {
 
     if (wait_on_condition(&proc->mutex_td,&proc->cond_td,&proc->instance_cnt_td,"td thread")<0) break;  
+    if(oai_exit) break;
 
     ((td_params*)param)->ret = ulsch_decoding_data_2thread0((td_params*)param);
 
@@ -442,34 +412,19 @@ void *td_thread(void *param) {
 
 int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) {
 
-  eNB_proc_t *proc = &eNB->proc;
-  unsigned int r,r_offset=0,Kr,Kr_bytes,iind;
+  L1_proc_t *proc = &eNB->proc;
+  unsigned int r,r_offset=0,Kr,Kr_bytes;
   uint8_t crc_type;
   int offset = 0;
   int ret = 1;
   int16_t dummy_w[MAX_NUM_ULSCH_SEGMENTS][3*(6144+64)];
   LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[UE_id];
   LTE_UL_eNB_HARQ_t *ulsch_harq = ulsch->harq_processes[harq_pid];
-  //int Q_m = get_Qm_ul(ulsch_harq->mcs);
+
   int G = ulsch_harq->G;
   unsigned int E;
   int Cby2;
-
-  uint8_t (*tc)(int16_t *y,
-                uint8_t *,
-                uint16_t,
-                uint16_t,
-                uint16_t,
-                uint8_t,
-                uint8_t,
-                uint8_t,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *);
+  decoder_if_t *tc;
 
   struct timespec wait;
 
@@ -478,9 +433,9 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
 
 
   if (llr8_flag == 0)
-    tc = phy_threegpplte_turbo_decoder16;
+    tc = decoder16;
   else
-    tc = phy_threegpplte_turbo_decoder8;
+    tc = decoder8;
 
   if (ulsch_harq->C>1) { // wakeup worker if more than 1 segment
     if (pthread_mutex_timedlock(&proc->mutex_td,&wait) != 0) {
@@ -530,23 +485,6 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
 
     Kr_bytes = Kr>>3;
 
-    if (Kr_bytes<=64)
-      iind = (Kr_bytes-5);
-    else if (Kr_bytes <=128)
-      iind = 59 + ((Kr_bytes-64)>>1);
-    else if (Kr_bytes <= 256)
-      iind = 91 + ((Kr_bytes-128)>>2);
-    else if (Kr_bytes <= 768)
-      iind = 123 + ((Kr_bytes-256)>>3);
-    else {
-      LOG_E(PHY,"ulsch_decoding: Illegal codeword size %d!!!\n",Kr_bytes);
-      return(-1);
-    }
-
-#ifdef DEBUG_ULSCH_DECODING
-    printf("f1 %d, f2 %d, F %d\n",f1f2mat_old[2*iind],f1f2mat_old[1+(2*iind)],(r==0) ? ulsch_harq->F : 0);
-#endif
-
     memset(&dummy_w[r][0],0,3*(6144+64)*sizeof(short));
     ulsch_harq->RTC[r] = generate_dummy_w(4+(Kr_bytes*8),
                                           (uint8_t*)&dummy_w[r][0],
@@ -574,7 +512,7 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
                                    1,
                                    ulsch_harq->rvidx,
                                    (ulsch_harq->round==0)?1:0,  // clear
-                                   get_Qm_ul(ulsch_harq->mcs),
+                                   ulsch_harq->Qm,
                                    1,
                                    r,
                                    &E)==-1) {
@@ -599,10 +537,10 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
     start_meas(&eNB->ulsch_turbo_decoding_stats);
     
     ret = tc(&ulsch_harq->d[r][96],
+             NULL,
 	     ulsch_harq->c[r],
+             NULL,
 	     Kr,
-	     f1f2mat_old[iind*2],
-	     f1f2mat_old[(iind*2)+1],
 	     ulsch->max_turbo_iterations,//MAX_TURBO_ITERATIONS,
 	     crc_type,
 	     (r==0) ? ulsch_harq->F : 0,
@@ -640,6 +578,7 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
       break;
     }
     stop_meas(&eNB->ulsch_turbo_decoding_stats);    
+  //printf("/////////////////////////////////////////**************************loop for %d time in ulsch_decoding main\n",r);
   }
 
    // wait for worker to finish
@@ -651,37 +590,22 @@ int ulsch_decoding_data_2thread(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr
 
 int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) {
 
-  unsigned int r,r_offset=0,Kr,Kr_bytes,iind;
+  unsigned int r,r_offset=0,Kr,Kr_bytes;
   uint8_t crc_type;
   int offset = 0;
   int ret = 1;
   int16_t dummy_w[MAX_NUM_ULSCH_SEGMENTS][3*(6144+64)];
   LTE_eNB_ULSCH_t *ulsch = eNB->ulsch[UE_id];
   LTE_UL_eNB_HARQ_t *ulsch_harq = ulsch->harq_processes[harq_pid];
-  //int Q_m = get_Qm_ul(ulsch_harq->mcs);
+
   int G = ulsch_harq->G;
   unsigned int E;
-
-  uint8_t (*tc)(int16_t *y,
-                uint8_t *,
-                uint16_t,
-                uint16_t,
-                uint16_t,
-                uint8_t,
-                uint8_t,
-                uint8_t,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *,
-                time_stats_t *);
+  decoder_if_t *tc;
 
   if (llr8_flag == 0)
-    tc = phy_threegpplte_turbo_decoder16;
+    tc = *decoder16;
   else
-    tc = phy_threegpplte_turbo_decoder8;
+    tc = *decoder8;
 
 
   for (r=0; r<ulsch_harq->C; r++) {
@@ -694,23 +618,6 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
       Kr = ulsch_harq->Kplus;
 
     Kr_bytes = Kr>>3;
-
-    if (Kr_bytes<=64)
-      iind = (Kr_bytes-5);
-    else if (Kr_bytes <=128)
-      iind = 59 + ((Kr_bytes-64)>>1);
-    else if (Kr_bytes <= 256)
-      iind = 91 + ((Kr_bytes-128)>>2);
-    else if (Kr_bytes <= 768)
-      iind = 123 + ((Kr_bytes-256)>>3);
-    else {
-      LOG_E(PHY,"ulsch_decoding: Illegal codeword size %d!!!\n",Kr_bytes);
-      return(-1);
-    }
-
-#ifdef DEBUG_ULSCH_DECODING
-    printf("f1 %d, f2 %d, F %d\n",f1f2mat_old[2*iind],f1f2mat_old[1+(2*iind)],(r==0) ? ulsch_harq->F : 0);
-#endif
 
     memset(&dummy_w[r][0],0,3*(6144+64)*sizeof(short));
     ulsch_harq->RTC[r] = generate_dummy_w(4+(Kr_bytes*8),
@@ -739,7 +646,7 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
                                    1,
                                    ulsch_harq->rvidx,
                                    (ulsch_harq->round==0)?1:0,  // clear
-                                   get_Qm_ul(ulsch_harq->mcs),
+                                   ulsch_harq->Qm,
                                    1,
                                    r,
                                    &E)==-1) {
@@ -760,14 +667,15 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
       crc_type = CRC24_A;
     else
       crc_type = CRC24_B;
-   
+  
+ 
     start_meas(&eNB->ulsch_turbo_decoding_stats);
     
     ret = tc(&ulsch_harq->d[r][96],
+             NULL,
 	     ulsch_harq->c[r],
+             NULL,
 	     Kr,
-	     f1f2mat_old[iind*2],
-	     f1f2mat_old[(iind*2)+1],
 	     ulsch->max_turbo_iterations,//MAX_TURBO_ITERATIONS,
 	     crc_type,
 	     (r==0) ? ulsch_harq->F : 0,
@@ -812,6 +720,20 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
   return(ret);
 }
 
+int ulsch_decoding_data_all(PHY_VARS_eNB *eNB,int UE_id,int harq_pid,int llr8_flag) 
+{
+  int ret = 0;
+  /*if(get_thread_worker_conf() == WORKER_ENABLE)
+  {
+    ret = ulsch_decoding_data_2thread(eNB,UE_id,harq_pid,llr8_flag);
+  }
+  else*/
+  {
+    ret = ulsch_decoding_data(eNB,UE_id,harq_pid,llr8_flag);
+  }
+  return ret;
+}
+
 static inline unsigned int lte_gold_unscram(unsigned int *x1, unsigned int *x2, unsigned char reset) __attribute__((always_inline));
 static inline unsigned int lte_gold_unscram(unsigned int *x1, unsigned int *x2, unsigned char reset)
 {
@@ -840,7 +762,7 @@ static inline unsigned int lte_gold_unscram(unsigned int *x1, unsigned int *x2, 
 
 }
   
-unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
+unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
                              uint8_t UE_id,
                              uint8_t control_only_flag,
                              uint8_t Nbundled,
@@ -868,7 +790,6 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   unsigned int Qprime_ACK,Qprime_RI,len_ACK=0,len_RI=0;
   //  uint8_t q_ACK[MAX_ACK_PAYLOAD],q_RI[MAX_RI_PAYLOAD];
   int metric,metric_new;
-  uint8_t o_flip[8];
   uint32_t x1, x2, s=0;
   int16_t ys,c;
   uint32_t wACK_idx;
@@ -876,15 +797,16 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   int16_t y[6*14*1200] __attribute__((aligned(32)));
   uint8_t ytag[14*1200];
   //  uint8_t ytag2[6*14*1200],*ytag2_ptr;
-  int16_t cseq[6*14*1200];
+  int16_t cseq[6*14*1200] __attribute__((aligned(32)));
   int off;
 
+  int frame = proc->frame_rx;
   int subframe = proc->subframe_rx;
   LTE_UL_eNB_HARQ_t *ulsch_harq;
 
 
 
-  harq_pid = subframe2harq_pid(frame_parms,proc->frame_rx,subframe);
+  harq_pid = subframe2harq_pid(frame_parms,frame,subframe);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_ULSCH_DECODING0+harq_pid,1);
 
@@ -892,17 +814,11 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   x2 = ((uint32_t)ulsch->rnti<<14) + ((uint32_t)subframe<<9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.3.1
   ulsch_harq = ulsch->harq_processes[harq_pid];
 
-  if (harq_pid==255) {
-    LOG_E(PHY, "FATAL ERROR: illegal harq_pid, returning\n");
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_ULSCH_DECODING0+harq_pid,0);
-    return -1;
-  }
+  AssertFatal(harq_pid!=255,
+              "FATAL ERROR: illegal harq_pid, returning\n");
 
-  if (ulsch_harq->Nsymb_pusch == 0) {
-      LOG_E(PHY, "FATAL ERROR: harq_pid %d, Nsymb 0!\n",harq_pid);
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_ULSCH_DECODING0+harq_pid,0); 
-      return 1+ulsch->max_turbo_iterations;
-  }
+  AssertFatal(ulsch_harq->Nsymb_pusch != 0,
+              "FATAL ERROR: harq_pid %d, Nsymb 0!\n",harq_pid);
 
 
   nb_rb = ulsch_harq->nb_rb;
@@ -910,23 +826,28 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   A = ulsch_harq->TBS;
 
 
-  Q_m = get_Qm_ul(ulsch_harq->mcs);
+  Q_m = ulsch_harq->Qm;
   G = nb_rb * (12 * Q_m) * ulsch_harq->Nsymb_pusch;
 
 
-#ifdef DEBUG_ULSCH_DECODING
-  printf("ulsch_decoding (Nid_cell %d, rnti %x, x2 %x): round %d, RV %d, mcs %d, O_RI %d, O_ACK %d, G %d, subframe %d\n",
-      frame_parms->Nid_cell,ulsch->rnti,x2,
-      ulsch_harq->round,
-      ulsch_harq->rvidx,
-      ulsch_harq->mcs,
-      ulsch_harq->O_RI,
-      ulsch_harq->O_ACK,
-      G,
-      subframe);
-#endif
-
-  if (ulsch_harq->round == 0) {
+  //#ifdef DEBUG_ULSCH_DECODING
+  LOG_D(PHY,"[PUSCH %d] Frame %d, Subframe %d: ulsch_decoding (Nid_cell %d, rnti %x, x2 %x): A %d, round %d, RV %d, O_r1 %d, O_RI %d, O_ACK %d, G %d, Q_m %d Nsymb_pusch %d nb_rb %d\n",
+      harq_pid,
+	proc->frame_rx,subframe,
+	frame_parms->Nid_cell,ulsch->rnti,x2,
+	A,
+	ulsch_harq->round,
+	ulsch_harq->rvidx,
+	ulsch_harq->Or1,
+	ulsch_harq->O_RI,
+	ulsch_harq->O_ACK,
+	G,
+        ulsch_harq->Qm,
+        ulsch_harq->Nsymb_pusch,
+        nb_rb);
+	
+  //#endif
+  //if (ulsch_harq->round == 0) { // delete for RB shortage pattern
     // This is a new packet, so compute quantities regarding segmentation
     ulsch_harq->B = A+24;
     lte_segmentation(NULL,
@@ -939,8 +860,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
                      &ulsch_harq->Kminus,
                      &ulsch_harq->F);
     //  CLEAR LLR's HERE for first packet in process
-  }
-
+  //}
   //  printf("after segmentation c[%d] = %p\n",0,ulsch_harq->c[0]);
 
   sumKr = 0;
@@ -954,21 +874,17 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
     sumKr += Kr;
   }
 
-  if (sumKr==0) {
-    LOG_N(PHY,"[eNB %d] ulsch_decoding.c: FATAL sumKr is 0!\n",eNB->Mod_id);
-    LOG_D(PHY,"ulsch_decoding (Nid_cell %d, rnti %x, x2 %x): harq_pid %d round %d, RV %d, mcs %d, O_RI %d, O_ACK %d, G %d, subframe %d\n",
-          frame_parms->Nid_cell,ulsch->rnti,x2,
-          harq_pid,
-          ulsch_harq->round,
-          ulsch_harq->rvidx,
-          ulsch_harq->mcs,
-          ulsch_harq->O_RI,
-          ulsch_harq->O_ACK,
-          G,
-          subframe);
-    mac_xface->macphy_exit("ulsch_decoding.c: FATAL sumKr is 0!");
-    return(-1);
-  }
+  AssertFatal(sumKr>0,
+	      "[eNB] ulsch_decoding.c: FATAL sumKr is 0! (Nid_cell %d, rnti %x, x2 %x): harq_pid %d round %d, RV %d, O_RI %d, O_ACK %d, G %d, subframe %d\n",
+	      frame_parms->Nid_cell,ulsch->rnti,x2,
+	      harq_pid,
+	      ulsch_harq->round,
+	      ulsch_harq->rvidx,
+	      ulsch_harq->O_RI,
+	      ulsch_harq->O_ACK,
+	      G,
+	      subframe);
+
 
   // Compute Q_ri
   Qprime = ulsch_harq->O_RI*ulsch_harq->Msc_initial*ulsch_harq->Nsymb_initial * ulsch->beta_offset_ri_times8;
@@ -1039,10 +955,8 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   G = G - Q_RI - Q_CQI;
   ulsch_harq->G = G;
 
-  if ((int)G < 0) {
-    LOG_E(PHY,"FATAL: ulsch_decoding.c G < 0 (%d) : Q_RI %d, Q_CQI %d\n",G,Q_RI,Q_CQI);
-    return(-1);
-  }
+  AssertFatal((int)G > 0,
+              "FATAL: ulsch_decoding.c G < 0 (%d) : Q_RI %d, Q_CQI %d\n",G,Q_RI,Q_CQI);
 
   H = G + Q_CQI;
   Hprime = H/Q_m;
@@ -1275,7 +1189,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
   }
 
   if (ulsch_harq->O_ACK > 2) {
-    LOG_E(PHY,"ulsch_decoding: FATAL, ACK cannot be more than 2 bits yet\n");
+    LOG_E(PHY,"ulsch_decoding: FATAL, ACK cannot be more than 2 bits yet O_ACK:%d SFN/SF:%04d%d UE_id:%d rnti:%x\n",ulsch_harq->O_ACK,proc->frame_rx,proc->subframe_rx,UE_id,ulsch->rnti);
     return(-1);
   }
 
@@ -1567,28 +1481,11 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
                                 &ulsch_harq->o_d[96],
                                 &ulsch_harq->o_w[0]);
 
-    memset(o_flip,0,1+((8+ulsch_harq->Or1)/8));
-    phy_viterbi_lte_sse2(ulsch_harq->o_d+96,o_flip,8+ulsch_harq->Or1);
+    memset(ulsch_harq->o,0,(7+8+ulsch_harq->Or1) / 8);
+    phy_viterbi_lte_sse2(ulsch_harq->o_d+96,ulsch_harq->o,8+ulsch_harq->Or1);
 
-    if (extract_cqi_crc(o_flip,ulsch_harq->Or1) == (crc8(o_flip,ulsch_harq->Or1)>>24))
+    if (extract_cqi_crc(ulsch_harq->o,ulsch_harq->Or1) == (crc8(ulsch_harq->o,ulsch_harq->Or1)>>24))
       ulsch_harq->cqi_crc_status = 1;
-
-    if (ulsch->harq_processes[harq_pid]->Or1<=32) {
-      ulsch_harq->o[3] = o_flip[0] ;
-      ulsch_harq->o[2] = o_flip[1] ;
-      ulsch_harq->o[1] = o_flip[2] ;
-      ulsch_harq->o[0] = o_flip[3] ;
-    } else {
-      ulsch_harq->o[7] = o_flip[0] ;
-      ulsch_harq->o[6] = o_flip[1] ;
-      ulsch_harq->o[5] = o_flip[2] ;
-      ulsch_harq->o[4] = o_flip[3] ;
-      ulsch_harq->o[3] = o_flip[4] ;
-      ulsch_harq->o[2] = o_flip[5] ;
-      ulsch_harq->o[1] = o_flip[6] ;
-      ulsch_harq->o[0] = o_flip[7] ;
-
-    }
 
 #ifdef DEBUG_ULSCH_DECODING
     printf("ulsch_decoding: Or1=%d\n",ulsch_harq->Or1);
@@ -1597,511 +1494,20 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,eNB_rxtx_proc_t *proc,
       printf("ulsch_decoding: O[%d] %d\n",i,ulsch_harq->o[i]);
 
     if (ulsch_harq->cqi_crc_status == 1)
-      printf("RX CQI CRC OK (%x)\n",extract_cqi_crc(o_flip,ulsch_harq->Or1));
+      printf("RX CQI CRC OK (%x)\n",extract_cqi_crc(ulsch_harq->o,ulsch_harq->Or1));
     else
-      printf("RX CQI CRC NOT OK (%x)\n",extract_cqi_crc(o_flip,ulsch_harq->Or1));
+      printf("RX CQI CRC NOT OK (%x)\n",extract_cqi_crc(ulsch_harq->o,ulsch_harq->Or1));
 
 #endif
   }
 
+  LOG_D(PHY,"frame %d subframe %d O_ACK:%d o_ACK[]=%d:%d:%d:%d\n",frame,subframe,ulsch_harq->O_ACK,ulsch_harq->o_ACK[0],ulsch_harq->o_ACK[1],ulsch_harq->o_ACK[2],ulsch_harq->o_ACK[3]);
 
   // Do ULSCH Decoding for data portion
 
-  ret = eNB->td(eNB,UE_id,harq_pid,llr8_flag);
+  ret = ulsch_decoding_data_all(eNB,UE_id,harq_pid,llr8_flag);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_ENB_ULSCH_DECODING0+harq_pid,0);
 
   return(ret);
 }
-
-#ifdef PHY_ABSTRACTION
-
-#ifdef PHY_ABSTRACTION_UL
-int ulsch_abstraction(double* sinr_dB, uint8_t TM, uint8_t mcs,uint16_t nrb, uint16_t frb)
-{
-
-  int index,ii;
-  double sinr_eff = 0;
-  int rb_count = 0;
-  int offset;
-  double bler = 0;
-  TM = TM-1;
-  sinr_eff = sinr_dB[frb]; //the single sinr_eff value we calculated with MMSE FDE formula in init_snr_up function
-
-
-  sinr_eff *= 10;
-  sinr_eff = floor(sinr_eff);
-  sinr_eff /= 10;
-
-  LOG_D(PHY,"[ABSTRACTION] sinr_eff after rounding = %f\n",sinr_eff);
-
-  for (index = 0; index < 16; index++) {
-    if(index == 0) {
-      if (sinr_eff < sinr_bler_map_up[mcs][0][index]) {
-        bler = 1;
-        break;
-      }
-    }
-
-    if (sinr_eff == sinr_bler_map_up[mcs][0][index]) {
-      bler = sinr_bler_map_up[mcs][1][index];
-    }
-  }
-
-#ifdef USER_MODE // need to be adapted for the emulation in the kernel space 
-
-  if (uniformrandom() < bler) {
-    LOG_I(OCM,"abstraction_decoding failed (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
-    return(0);
-  } else {
-    LOG_I(OCM,"abstraction_decoding successful (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
-    return(1);
-  }
-
-#endif
-}
-
-
-
-
-
-
-
-int ulsch_abstraction_MIESM(double* sinr_dB,uint8_t TM, uint8_t mcs,uint16_t nrb, uint16_t frb)
-{
-  int index;
-  double sinr_eff = 0;
-  double sinr_db1 = 0;
-  double sinr_db2 = 0;
-  double SI=0;
-  double RBIR=0;
-  int rb_count = 0;
-  int offset, M=0;
-  double bler = 0;
-  int start,middle,end;
-  TM = TM-1;
-
-  for (offset = frb; offset <= (frb + nrb -1); offset++) {
-
-    rb_count++;
-
-    //we need to do the table lookups here for the mutual information corresponding to the certain sinr_dB.
-
-    sinr_db1 = sinr_dB[offset*2];
-    sinr_db2 = sinr_dB[offset*2+1];
-
-    printf("sinr_db1=%f\n,sinr_db2=%f\n",sinr_db1,sinr_db2);
-
-    //rounding up for the table lookup
-    sinr_db1 *= 10;
-    sinr_db2 *= 10;
-
-    sinr_db1 = floor(sinr_db1);
-    sinr_db2 = floor(sinr_db2);
-
-    if ((int)sinr_db1%2) {
-      sinr_db1 += 1;
-    }
-
-    if ((int)sinr_db2%2) {
-      sinr_db2 += 1;
-    }
-
-    sinr_db1 /= 10;
-    sinr_db2 /= 10;
-
-    if(mcs<10) {
-      //for sinr_db1
-      for (index = 0; index < 162; index++) {
-        if (sinr_db1 < MI_map_4qam[0][0]) {
-          SI += (MI_map_4qam[1][0]/beta1_dlsch_MI[TM][mcs]);
-          M +=2;
-          break;
-        }
-
-        if (sinr_db1 > MI_map_4qam[0][161]) {
-          SI += (MI_map_4qam[1][161]/beta1_dlsch_MI[TM][mcs]);
-          M +=2;
-          break;
-        }
-
-        if (sinr_db1 == MI_map_4qam[0][index]) {
-          SI += (MI_map_4qam[1][index]/beta1_dlsch_MI[TM][mcs]);
-          M +=2;
-          break;
-        }
-      }
-
-      //for sinr_db2
-      for (index = 0; index < 162; index++) {
-        if (sinr_db2 < MI_map_4qam[0][0]) {
-          SI += (MI_map_4qam[1][0]/beta1_dlsch_MI[TM][mcs]);
-          M +=2;
-          break;
-        }
-
-        if (sinr_db2 > MI_map_4qam[0][161]) {
-          SI += (MI_map_4qam[1][161]/beta1_dlsch_MI[TM][mcs]);
-          M +=2;
-          break;
-        }
-
-        if (sinr_db2 == MI_map_4qam[0][index]) {
-          SI += (MI_map_4qam[1][index]/beta1_dlsch_MI[TM][mcs]);
-          M +=2;
-          break;
-        }
-      }
-
-    } else if(mcs>9 && mcs<17) {
-      //for sinr_db1
-      for (index = 0; index < 197; index++) {
-        if (sinr_db1 < MI_map_16qam[0][0]) {
-          SI += (MI_map_16qam[1][0]/beta1_dlsch_MI[TM][mcs]);
-          M +=4;
-          break;
-        }
-
-        if (sinr_db1 > MI_map_16qam[0][196]) {
-          SI += (MI_map_16qam[1][196]/beta1_dlsch_MI[TM][mcs]);
-          M +=4;
-          break;
-        }
-
-        if (sinr_db1 == MI_map_16qam[0][index]) {
-          SI += (MI_map_16qam[1][index]/beta1_dlsch_MI[TM][mcs]);
-          M +=4;
-          break;
-        }
-      }
-
-      //for sinr_db2
-      for (index = 0; index < 197; index++) {
-        if (sinr_db2 < MI_map_16qam[0][0]) {
-          SI += (MI_map_16qam[1][0]/beta1_dlsch_MI[TM][mcs]);
-          M +=4;
-          break;
-        }
-
-        if (sinr_db2 > MI_map_16qam[0][196]) {
-          SI += (MI_map_16qam[1][196]/beta1_dlsch_MI[TM][mcs]);
-          M +=4;
-          break;
-        }
-
-        if (sinr_db2 == MI_map_16qam[0][index]) {
-          SI += (MI_map_16qam[1][index]/beta1_dlsch_MI[TM][mcs]);
-          M +=4;
-          break;
-        }
-      }
-
-    } else if(mcs>16 && mcs<22) {
-      //for sinr_db1
-      for (index = 0; index < 227; index++) {
-        if (sinr_db1 < MI_map_64qam[0][0]) {
-          SI += (MI_map_64qam[1][0]/beta1_dlsch_MI[TM][mcs]);
-          M +=6;
-          break;
-        }
-
-        if (sinr_db1 > MI_map_64qam[0][226]) {
-          SI += (MI_map_64qam[1][226]/beta1_dlsch_MI[TM][mcs]);
-          M +=6;
-          break;
-        }
-
-        if (sinr_db1 == MI_map_64qam[0][index]) {
-          SI += (MI_map_64qam[1][index]/beta1_dlsch_MI[TM][mcs]);
-          M +=6;
-          break;
-        }
-      }
-
-      //for sinr_db2
-      for (index = 0; index < 227; index++) {
-        if (sinr_db2 < MI_map_64qam[0][0]) {
-          SI += (MI_map_64qam[1][0]/beta1_dlsch_MI[TM][mcs]);
-          M +=6;
-          break;
-        }
-
-        if (sinr_db2 > MI_map_64qam[0][226]) {
-          SI += (MI_map_64qam[1][226]/beta1_dlsch_MI[TM][mcs]);
-          M +=6;
-          break;
-        }
-
-        if (sinr_db2 == MI_map_64qam[0][index]) {
-          SI += (MI_map_64qam[1][index]/beta1_dlsch_MI[TM][mcs]);
-          M +=6;
-          break;
-        }
-      }
-    }
-  }
-
-  // }
-
-  RBIR = SI/M;
-
-  //Now RBIR->SINR_effective Mapping
-  //binary search method is performed here
-  if(mcs<10) {
-    start = 0;
-    end = 161;
-    middle = end/2;
-
-    if (RBIR <= MI_map_4qam[2][start]) {
-      sinr_eff =  MI_map_4qam[0][start];
-    } else {
-      if (RBIR >= MI_map_4qam[2][end])
-        sinr_eff =  MI_map_4qam[0][end];
-      else {
-        //while((end-start > 1) && (RBIR >= MI_map_4qam[2]))
-        if (RBIR < MI_map_4qam[2][middle]) {
-          end = middle;
-          middle = end/2;
-        } else {
-          start = middle;
-          middle = (end-middle)/2;
-        }
-      }
-
-      for (; end>start; end--) {
-        if ((RBIR < MI_map_4qam[2][end]) && (RBIR >  MI_map_4qam[2][end-2])) {
-          sinr_eff = MI_map_4qam[0][end-1];
-          break;
-        }
-      }
-    }
-
-    sinr_eff = sinr_eff * beta2_dlsch_MI[TM][mcs];
-  }
-
-
-
-  else if (mcs>9 && mcs<17) {
-
-    start = 0;
-    end = 196;
-    middle = end/2;
-
-    if (RBIR <= MI_map_16qam[2][start]) {
-      sinr_eff =  MI_map_16qam[0][start];
-    } else {
-      if (RBIR >= MI_map_16qam[2][end])
-        sinr_eff =  MI_map_16qam[0][end];
-      else {
-        //while((end-start > 1) && (RBIR >= MI_map_4qam[2]))
-        if (RBIR < MI_map_16qam[2][middle]) {
-          end = middle;
-          middle = end/2;
-        } else {
-          start = middle;
-          middle = (end-middle)/2;
-        }
-      }
-
-      for (; end>start; end--) {
-        if ((RBIR < MI_map_16qam[2][end]) && (RBIR >  MI_map_16qam[2][end-2])) {
-          sinr_eff = MI_map_16qam[0][end-1];
-          break;
-        }
-      }
-    }
-
-    sinr_eff = sinr_eff * beta2_dlsch_MI[TM][mcs];
-  } else if (mcs>16) {
-    start = 0;
-    end = 226;
-    middle = end/2;
-
-    if (RBIR <= MI_map_64qam[2][start]) {
-      sinr_eff =  MI_map_64qam[0][start];
-    } else {
-      if (RBIR >= MI_map_64qam[2][end])
-        sinr_eff =  MI_map_64qam[0][end];
-      else {
-        //while((end-start > 1) && (RBIR >= MI_map_4qam[2]))
-        if (RBIR < MI_map_64qam[2][middle]) {
-          end = middle;
-          middle = end/2;
-        } else {
-          start = middle;
-          middle = (end-middle)/2;
-        }
-      }
-
-      for (; end>start; end--) {
-        if ((RBIR < MI_map_64qam[2][end]) && (RBIR >  MI_map_64qam[2][end-2])) {
-          sinr_eff = MI_map_64qam[0][end-1];
-          break;
-        }
-      }
-    }
-
-    sinr_eff = sinr_eff * beta2_dlsch_MI[TM][mcs];
-  }
-
-  printf("SINR_Eff = %e\n",sinr_eff);
-
-  sinr_eff *= 10;
-  sinr_eff = floor(sinr_eff);
-  // if ((int)sinr_eff%2) {
-  //   sinr_eff += 1;
-  // }
-  sinr_eff /= 10;
-  printf("sinr_eff after rounding = %f\n",sinr_eff);
-
-  for (index = 0; index < 16; index++) {
-    if(index == 0) {
-      if (sinr_eff < sinr_bler_map_up[mcs][0][index]) {
-        bler = 1;
-        break;
-      }
-    }
-
-    if (sinr_eff == sinr_bler_map_up[mcs][0][index]) {
-      bler = sinr_bler_map_up[mcs][1][index];
-    }
-  }
-
-#ifdef USER_MODE // need to be adapted for the emulation in the kernel space 
-
-  if (uniformrandom() < bler) {
-    printf("abstraction_decoding failed (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
-    return(0);
-  } else {
-    printf("abstraction_decoding successful (mcs=%d, sinr_eff=%f, bler=%f)\n",mcs,sinr_eff,bler);
-    return(1);
-  }
-
-#endif
-
-}
-
-#endif
-
-uint32_t ulsch_decoding_emul(PHY_VARS_eNB *eNB, eNB_rxtx_proc_t *proc,
-                             uint8_t UE_index,
-                             uint16_t *crnti)
-{
-
-  uint8_t UE_id;
-  uint16_t rnti;
-  int subframe = proc->subframe_rx;
-  uint8_t harq_pid;
-  uint8_t CC_id = eNB->CC_id;
-
-  harq_pid = subframe2harq_pid(&eNB->frame_parms,proc->frame_rx,subframe);
-
-  rnti = eNB->ulsch[UE_index]->rnti;
-#ifdef DEBUG_PHY
-  LOG_D(PHY,"[eNB %d] ulsch_decoding_emul : subframe %d UE_index %d harq_pid %d rnti %x\n",eNB->Mod_id,subframe,UE_index,harq_pid,rnti);
-#endif
-
-  for (UE_id=0; UE_id<NB_UE_INST; UE_id++) {
-    if (rnti == PHY_vars_UE_g[UE_id][CC_id]->pdcch_vars[PHY_vars_UE_g[UE_id][CC_id]->current_thread_id[subframe]][0]->crnti)
-      break;
-
-  }
-
-  if (UE_id==NB_UE_INST) {
-    LOG_W(PHY,"[eNB %d] ulsch_decoding_emul: FATAL, didn't find UE with rnti %x (UE index %d)\n",
-          eNB->Mod_id, rnti, UE_index);
-    return(1+eNB->ulsch[UE_id]->max_turbo_iterations);
-  } else {
-    LOG_D(PHY,"[eNB %d] Found UE with rnti %x => UE_id %d\n",eNB->Mod_id, rnti, UE_id);
-  }
-
-  if (PHY_vars_UE_g[UE_id][CC_id]->ulsch[0]->harq_processes[harq_pid]->status == CBA_ACTIVE) {
-    *crnti = rnti;
-    PHY_vars_UE_g[UE_id][CC_id]->ulsch[0]->harq_processes[harq_pid]->status=IDLE;
-  } else
-    *crnti = 0x0;
-
-  // Do abstraction here to determine if packet it in error
-  /* if (ulsch_abstraction_MIESM(eNB->sinr_dB_eNB,1, eNB->ulsch[UE_id]->harq_processes[harq_pid]->mcs,eNB->ulsch[UE_id]->harq_processes[harq_pid]->nb_rb, eNB->ulsch[UE_id]->harq_processes[harq_pid]->first_rb) == 1)
-   flag = 1;
-   else flag = 0;*/
-
-
-  /*
-  //SINRdbPost = eNB->sinr_dB_eNB;
-  mcsPost = eNB->ulsch[UE_id]->harq_processes[harq_pid]->mcs,
-  nrbPost = eNB->ulsch[UE_id]->harq_processes[harq_pid]->nb_rb;
-  frbPost = eNB->ulsch[UE_id]->harq_processes[harq_pid]->first_rb;
-
-
-  if(nrbPost > 0)
-  {
-  SINRdbPost = eNB->sinr_dB_eNB;
-  ULflag1 = 1;
-  }
-  else
-  {
-   SINRdbPost = NULL  ;
-   ULflag1 = 0 ;
-  }*/
-
-  //
-  // write_output("postprocSINR.m","SINReNB",eNB->sinr_dB,301,1,7);
-
-
-  //Yazdir buraya her frame icin 300 eNb
-  // fprintf(SINRrx,"%e,%e,%e,%e;\n",SINRdbPost);
-  //fprintf(SINRrx,"%e\n",SINRdbPost);
-
-  // fprintf(csv_fd,"%e+i*(%e),",channelx,channely);
-
-  // if (ulsch_abstraction(eNB->sinr_dB,1, eNB->ulsch[UE_id]->harq_processes[harq_pid]->mcs,eNB->ulsch[UE_id]->harq_processes[harq_pid]->nb_rb, eNB->ulsch[UE_id]->harq_processes[harq_pid]->first_rb) == 1) {
-  if (1) {
-    LOG_D(PHY,"ulsch_decoding_emul abstraction successful\n");
-
-    memcpy(eNB->ulsch[UE_index]->harq_processes[harq_pid]->b,
-           PHY_vars_UE_g[UE_id][CC_id]->ulsch[0]->harq_processes[harq_pid]->b,
-           eNB->ulsch[UE_index]->harq_processes[harq_pid]->TBS>>3);
-
-    // get local ue's ack
-    if ((UE_index >= oai_emulation.info.first_ue_local) ||(UE_index <(oai_emulation.info.first_ue_local+oai_emulation.info.nb_ue_local))) {
-      get_ack(&eNB->frame_parms,
-              PHY_vars_UE_g[UE_id][CC_id]->dlsch[0][0][0]->harq_ack,
-              proc->subframe_tx,
-              proc->subframe_rx,
-              eNB->ulsch[UE_index]->harq_processes[harq_pid]->o_ACK,0);
-    } else { // get remote UEs' ack
-      eNB->ulsch[UE_index]->harq_processes[harq_pid]->o_ACK[0] = PHY_vars_UE_g[UE_id][CC_id]->ulsch[0]->o_ACK[0];
-      eNB->ulsch[UE_index]->harq_processes[harq_pid]->o_ACK[1] = PHY_vars_UE_g[UE_id][CC_id]->ulsch[0]->o_ACK[1];
-    }
-
-    // Do abstraction of PUSCH feedback
-#ifdef DEBUG_PHY
-    LOG_D(PHY,"[eNB %d][EMUL] ue index %d UE_id %d: subframe %d : o_ACK (%d %d), cqi (val %d, len %d)\n",
-          eNB->Mod_id,UE_index, UE_id, subframe,eNB->ulsch[UE_index]->harq_processes[harq_pid]->o_ACK[0],
-          eNB->ulsch[UE_index]->harq_processes[harq_pid]->o_ACK[1],
-          ((HLC_subband_cqi_rank1_2A_5MHz *)PHY_vars_UE_g[UE_id][CC_id]->ulsch[0]->o)->cqi1,
-          PHY_vars_UE_g[UE_id][CC_id]->ulsch[0]->O);
-#endif
-
-    eNB->ulsch[UE_index]->harq_processes[harq_pid]->Or1 = PHY_vars_UE_g[UE_id][CC_id]->ulsch[0]->O;
-    eNB->ulsch[UE_index]->harq_processes[harq_pid]->Or2 = PHY_vars_UE_g[UE_id][CC_id]->ulsch[0]->O;
-
-    eNB->ulsch[UE_index]->harq_processes[harq_pid]->uci_format = PHY_vars_UE_g[UE_id][CC_id]->ulsch[0]->uci_format;
-    memcpy(eNB->ulsch[UE_index]->harq_processes[harq_pid]->o,PHY_vars_UE_g[UE_id][CC_id]->ulsch[0]->o,MAX_CQI_BYTES);
-    memcpy(eNB->ulsch[UE_index]->harq_processes[harq_pid]->o_RI,PHY_vars_UE_g[UE_id][CC_id]->ulsch[0]->o_RI,2);
-
-    eNB->ulsch[UE_index]->harq_processes[harq_pid]->cqi_crc_status = 1;
-
-    return(1);
-  } else {
-    LOG_W(PHY,"[eNB %d] ulsch_decoding_emul abstraction failed for UE %d\n",eNB->Mod_id,UE_index);
-
-    eNB->ulsch[UE_index]->harq_processes[harq_pid]->cqi_crc_status = 0;
-
-    // retransmission
-    return(1+eNB->ulsch[UE_index]->max_turbo_iterations);
-  }
-
-}
-#endif

@@ -41,6 +41,7 @@
 #define S1AP_UE_CTXT_MODIFICATION_FAIL(mSGpTR)  (mSGpTR)->ittiMsg.s1ap_ue_ctxt_modification_fail
 #define S1AP_E_RAB_SETUP_RESP(mSGpTR)           (mSGpTR)->ittiMsg.s1ap_e_rab_setup_resp
 #define S1AP_E_RAB_SETUP_FAIL(mSGpTR)           (mSGpTR)->ittiMsg.s1ap_e_rab_setup_req_fail
+#define S1AP_E_RAB_MODIFY_RESP(mSGpTR)           (mSGpTR)->ittiMsg.s1ap_e_rab_modify_resp
 
 #define S1AP_DOWNLINK_NAS(mSGpTR)               (mSGpTR)->ittiMsg.s1ap_downlink_nas
 #define S1AP_INITIAL_CONTEXT_SETUP_REQ(mSGpTR)  (mSGpTR)->ittiMsg.s1ap_initial_context_setup_req
@@ -48,9 +49,12 @@
 #define S1AP_UE_CONTEXT_RELEASE_COMMAND(mSGpTR) (mSGpTR)->ittiMsg.s1ap_ue_release_command
 #define S1AP_UE_CONTEXT_RELEASE_COMPLETE(mSGpTR) (mSGpTR)->ittiMsg.s1ap_ue_release_complete
 #define S1AP_E_RAB_SETUP_REQ(mSGpTR)              (mSGpTR)->ittiMsg.s1ap_e_rab_setup_req
-#define S1AP_PAGIND_IND(mSGpTR)                 (mSGpTR)->ittiMsg.s1ap_paging_ind
+#define S1AP_E_RAB_MODIFY_REQ(mSGpTR)              (mSGpTR)->ittiMsg.s1ap_e_rab_modify_req
+#define S1AP_PAGING_IND(mSGpTR)                 (mSGpTR)->ittiMsg.s1ap_paging_ind
 
 #define S1AP_UE_CONTEXT_RELEASE_REQ(mSGpTR)     (mSGpTR)->ittiMsg.s1ap_ue_release_req
+#define S1AP_E_RAB_RELEASE_COMMAND(mSGpTR)      (mSGpTR)->ittiMsg.s1ap_e_rab_release_command
+#define S1AP_E_RAB_RELEASE_RESPONSE(mSGpTR)     (mSGpTR)->ittiMsg.s1ap_e_rab_release_resp
 
 //-------------------------------------------------------------------------------------------//
 /* Maximum number of e-rabs to be setup/deleted in a single message.
@@ -175,6 +179,11 @@ typedef struct s1ap_gummei_s {
   uint16_t mme_group_id;
 } s1ap_gummei_t;
 
+typedef struct s1ap_imsi_s {
+  uint8_t  buffer[S1AP_IMSI_LENGTH];
+  uint8_t  length;
+} s1ap_imsi_t;
+
 typedef struct s_tmsi_s {
   uint8_t  mme_code;
   uint32_t m_tmsi;
@@ -189,7 +198,7 @@ typedef enum ue_paging_identity_presenceMask_e {
 typedef struct ue_paging_identity_s {
   ue_paging_identity_presenceMask_t presenceMask;
   union {
-    char     imsi[S1AP_IMSI_LENGTH];
+    s1ap_imsi_t  imsi;
     s_tmsi_t s_tmsi;
   } choice;
 } ue_paging_identity_t;
@@ -260,11 +269,29 @@ typedef struct e_rab_setup_s {
   uint32_t gtp_teid;
 } e_rab_setup_t;
 
+typedef struct e_rab_modify_s {
+  /* Unique e_rab_id for the UE. */
+  uint8_t e_rab_id;
+} e_rab_modify_t;
+
+typedef enum S1ap_Cause_e {
+  S1AP_CAUSE_NOTHING,  /* No components present */
+  S1AP_CAUSE_RADIO_NETWORK,
+  S1AP_CAUSE_TRANSPORT,
+  S1AP_CAUSE_NAS,
+  S1AP_CAUSE_PROTOCOL,
+  S1AP_CAUSE_MISC,
+  /* Extensions may appear below */
+
+} s1ap_Cause_t;
+
 typedef struct e_rab_failed_s {
   /* Unique e_rab_id for the UE. */
   uint8_t e_rab_id;
   /* Cause of the failure */
   //     cause_t cause;
+  s1ap_Cause_t cause;
+  uint8_t cause_value;
 } e_rab_failed_t;
 
 typedef enum s1ap_ue_ctxt_modification_present_s {
@@ -298,12 +325,14 @@ typedef struct s1ap_register_enb_req_s {
   /* Tracking area code */
   uint16_t tac;
 
+#define PLMN_LIST_MAX_SIZE 6
   /* Mobile Country Code
    * Mobile Network Code
    */
-  uint16_t mcc;
-  uint16_t mnc;
-  uint8_t  mnc_digit_length;
+  uint16_t mcc[PLMN_LIST_MAX_SIZE];
+  uint16_t mnc[PLMN_LIST_MAX_SIZE];
+  uint8_t  mnc_digit_length[PLMN_LIST_MAX_SIZE];
+  uint8_t  num_plmn;
 
   /* Default Paging DRX of the eNB as defined in TS 36.304 */
   paging_drx_t default_drx;
@@ -315,6 +344,8 @@ typedef struct s1ap_register_enb_req_s {
   uint8_t          nb_mme;
   /* List of MME to connect to */
   net_ip_address_t mme_ip_address[S1AP_MAX_NB_MME_IP_ADDRESS];
+  uint8_t          broadcast_plmn_num[S1AP_MAX_NB_MME_IP_ADDRESS];
+  uint8_t          broadcast_plmn_index[S1AP_MAX_NB_MME_IP_ADDRESS][PLMN_LIST_MAX_SIZE];
 
   /* Number of SCTP streams used for a mme association */
   uint16_t sctp_in_streams;
@@ -344,6 +375,10 @@ typedef struct s1ap_deregistered_enb_ind_s {
 typedef struct s1ap_nas_first_req_s {
   /* UE id for initial connection to S1AP */
   uint16_t ue_initial_id;
+
+  /* the chosen PLMN identity as index, see TS 36.331 6.2.2 RRC Connection
+   * Setup Complete. This index here is zero-based, unlike the standard! */
+  int selected_plmn_identity;
 
   /* Establishment cause as sent by UE */
   rrc_establishment_cause_t establishment_cause;
@@ -460,6 +495,12 @@ typedef struct s1ap_initial_context_setup_req_s {
   e_rab_t  e_rab_param[S1AP_MAX_E_RAB];
 } s1ap_initial_context_setup_req_t;
 
+typedef struct tai_plmn_identity_s {
+  uint16_t mcc;
+  uint16_t mnc;
+  uint8_t  mnc_digit_length;
+} plmn_identity_t;
+
 typedef struct s1ap_paging_ind_s {
   /* UE identity index value.
    * Specified in 3GPP TS 36.304
@@ -471,6 +512,15 @@ typedef struct s1ap_paging_ind_s {
 
   /* Indicates origin of paging */
   cn_domain_t cn_domain;
+
+  /* PLMN_identity in TAI of Paging*/
+  plmn_identity_t plmn_identity[256];
+
+  /* TAC in TAIList of Paging*/
+  int16_t tac[256];
+
+  /* size of TAIList*/
+  int16_t tai_size;
 
   /* Optional fields */
   paging_drx_t paging_drx;
@@ -520,21 +570,85 @@ typedef struct s1ap_ue_release_command_s {
 
 
 //-------------------------------------------------------------------------------------------//
-typedef enum S1ap_Cause_e {
-  S1AP_CAUSE_NOTHING,  /* No components present */
-  S1AP_CAUSE_RADIO_NETWORK,
-  S1AP_CAUSE_TRANSPORT,
-  S1AP_CAUSE_NAS,
-  S1AP_CAUSE_PROTOCOL,
-  S1AP_CAUSE_MISC,
-  /* Extensions may appear below */
-
-} s1ap_Cause_t;
 // S1AP <-- RRC messages
 typedef struct s1ap_ue_release_req_s {
   unsigned      eNB_ue_s1ap_id:24;
   s1ap_Cause_t  cause;
   long          cause_value;
 } s1ap_ue_release_req_t, s1ap_ue_release_resp_t;
+
+typedef struct s1ap_e_rab_modify_req_s {
+  /* UE id for initial connection to S1AP */
+  uint16_t ue_initial_id;
+
+  /* MME UE id  */
+  uint16_t mme_ue_s1ap_id;
+
+  /* eNB ue s1ap id as initialized by S1AP layer */
+  unsigned eNB_ue_s1ap_id:24;
+
+  /* Number of e_rab to be modify in the list */
+  uint8_t nb_e_rabs_tomodify;
+
+  /* E RAB modify request */
+  e_rab_t e_rab_modify_params[S1AP_MAX_E_RAB];
+} s1ap_e_rab_modify_req_t;
+
+typedef struct s1ap_e_rab_modify_resp_s {
+  unsigned  eNB_ue_s1ap_id:24;
+
+  /* Number of e_rab modify-ed in the list */
+  uint8_t       nb_of_e_rabs;
+  /* list of e_rab modify-ed by RRC layers */
+  e_rab_modify_t e_rabs[S1AP_MAX_E_RAB];
+
+  /* Number of e_rab failed to be modify in list */
+  uint8_t        nb_of_e_rabs_failed;
+  /* list of e_rabs that failed to be modify */
+  e_rab_failed_t e_rabs_failed[S1AP_MAX_E_RAB];
+} s1ap_e_rab_modify_resp_t;
+
+typedef struct e_rab_release_s {
+  /* Unique e_rab_id for the UE. */
+  uint8_t                     e_rab_id;
+} e_rab_release_t;
+
+typedef struct s1ap_e_rab_release_command_s {
+  /* MME UE id  */
+  uint16_t mme_ue_s1ap_id;
+
+  /* eNB ue s1ap id as initialized by S1AP layer */
+  unsigned eNB_ue_s1ap_id:24;
+
+  /* The NAS PDU should be forwarded by the RRC layer to the NAS layer */
+  nas_pdu_t                   nas_pdu;
+
+  /* Number of e_rab to be released in the list */
+  uint8_t nb_e_rabs_torelease;
+
+  /* E RAB release command */
+  e_rab_release_t e_rab_release_params[S1AP_MAX_E_RAB];
+
+} s1ap_e_rab_release_command_t;
+
+typedef struct s1ap_e_rab_release_resp_s {
+  /* MME UE id  */
+  uint16_t mme_ue_s1ap_id;
+
+  /* eNB ue s1ap id as initialized by S1AP layer */
+  unsigned eNB_ue_s1ap_id:24;
+
+  /* Number of e_rab released in the list */
+  uint8_t       nb_of_e_rabs_released;
+
+  /* list of e_rabs released */
+  e_rab_release_t e_rab_release[S1AP_MAX_E_RAB];
+
+  /* Number of e_rab failed to be released in list */
+  uint8_t        nb_of_e_rabs_failed;
+  /* list of e_rabs that failed to be released */
+  e_rab_failed_t e_rabs_failed[S1AP_MAX_E_RAB];
+
+} s1ap_e_rab_release_resp_t;
 
 #endif /* S1AP_MESSAGES_TYPES_H_ */

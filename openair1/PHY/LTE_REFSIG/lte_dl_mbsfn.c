@@ -21,13 +21,13 @@
 
 // 6.10.2.2 MBSFN reference signals Mapping to resource elements
 
-#ifdef USER_MODE
 #include <stdio.h>
 #include <stdlib.h>
-#endif
 
-#include "defs.h"
-#include "PHY/defs.h"
+#include "lte_refsig.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/defs_UE.h"
+#include "PHY/impl_defs_top.h"
 
 //extern unsigned int lte_gold_table[10][3][42];
 //#define DEBUG_DL_MBSFN
@@ -64,7 +64,7 @@ int lte_dl_mbsfn(PHY_VARS_eNB *eNB, int32_t *output,
     else if (l==1)
       k = 1+(m<<1);
     else {
-      msg("lte_dl_mbsfn: l %d -> ERROR\n",l);
+      LOG_E(PHY,"lte_dl_mbsfn: l %d -> ERROR\n",l);
       return(-1);
     }
 
@@ -83,9 +83,9 @@ int lte_dl_mbsfn(PHY_VARS_eNB *eNB, int32_t *output,
 
 
 #ifdef DEBUG_DL_MBSFN
-    msg("subframe %d, l %d, m %d, mprime %d, mprime_dword %d, mprime_qpsk_symbol %d\n",
+    LOG_D(PHY,"subframe %d, l %d, m %d, mprime %d, mprime_dword %d, mprime_qpsk_symbol %d\n",
         subframe,l,m,mprime,mprime_dword,mprime_qpsk_symb);
-    msg("index = %d (k %d)(%x)\n",(eNB->lte_gold_mbsfn_table[subframe][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k,eNB->lte_gold_mbsfn_table[subframe][l][mprime_dword]);
+    LOG_D(PHY,"index = %d (k %d)(%x)\n",(eNB->lte_gold_mbsfn_table[subframe][l][mprime_dword]>>(2*mprime_qpsk_symb))&3,k,eNB->lte_gold_mbsfn_table[subframe][l][mprime_dword]);
 #endif
     mprime++;
 

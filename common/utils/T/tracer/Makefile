@@ -3,10 +3,11 @@ CFLAGS=-Wall -g -pthread -DT_TRACER -I.
 
 #CFLAGS += -O3 -ffast-math -fomit-frame-pointer
 
-LIBS=-lX11 -lm -lpng -lXft
+LIBS=-lm
+XLIBS=-lX11 -lpng -lXft
 
 all: record replay extract_config textlog enb ue vcd macpdu2wireshark \
-     extract_input_subframe
+     extract_input_subframe extract_output_subframe to_vcd extract multi
 
 record: utils.o record.o database.o config.o
 	$(CC) $(CFLAGS) -o record $^ $(LIBS)
@@ -21,43 +22,62 @@ extract_input_subframe: extract_input_subframe.o database.o event.o utils.o \
     config.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
+extract_output_subframe: extract_output_subframe.o database.o event.o utils.o \
+    config.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
+
+extract: extract.o database.o event.o utils.o config.o
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
+
 textlog: utils.o textlog.o database.o event.o handler.o config.o \
          event_selector.o view/view.a gui/gui.a logger/logger.a \
          filter/filter.a
-	$(CC) $(CFLAGS) -o textlog $^ $(LIBS)
+	$(CC) $(CFLAGS) -o textlog $^ $(LIBS) $(XLIBS)
 
 enb: utils.o enb.o database.o event.o handler.o config.o \
          event_selector.o view/view.a gui/gui.a logger/logger.a \
          filter/filter.a
-	$(CC) $(CFLAGS) -o enb $^ $(LIBS)
+	$(CC) $(CFLAGS) -o enb $^ $(LIBS) $(XLIBS)
 
 ue: utils.o ue.o database.o event.o handler.o config.o \
          event_selector.o view/view.a gui/gui.a logger/logger.a \
          filter/filter.a
-	$(CC) $(CFLAGS) -o ue $^ $(LIBS)
+	$(CC) $(CFLAGS) -o ue $^ $(LIBS) $(XLIBS)
 
 vcd: utils.o vcd.o database.o event.o handler.o config.o \
          event_selector.o view/view.a gui/gui.a logger/logger.a \
          filter/filter.a
-	$(CC) $(CFLAGS) -o vcd $^ $(LIBS)
+	$(CC) $(CFLAGS) -o vcd $^ $(LIBS) $(XLIBS)
+
+to_vcd: to_vcd.o database.o event.o handler.o utils.o config.o \
+         logger/logger.a filter/filter.a
+	$(CC) $(CFLAGS) -o to_vcd $^ $(LIBS)
 
 macpdu2wireshark: macpdu2wireshark.o database.o utils.o handler.o event.o \
                   config.o
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
+multi: multi.o utils.o database.o config.o
+	$(CC) $(CFLAGS) -o multi $^ $(LIBS)
+
+multi.o: ../T_IDs.h
+
+../T_IDs.h:
+	cd .. && $(MAKE)
+
 .PHONY: all gui/gui.a view/view.a logger/logger.a filter/filter.a
 
 gui/gui.a:
-	cd gui && make
+	cd gui && $(MAKE)
 
 view/view.a:
-	cd view && make
+	cd view && $(MAKE)
 
 logger/logger.a:
-	cd logger && make
+	cd logger && $(MAKE)
 
 filter/filter.a:
-	cd filter && make
+	cd filter && $(MAKE)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -65,8 +85,9 @@ filter/filter.a:
 clean:
 	rm -f *.o core tracer_remote textlog enb ue vcd record replay
 	rm -f extract_config macpdu2wireshark extract_input_subframe
-	cd gui && make clean
-	cd view && make clean
-	cd logger && make clean
-	cd filter && make clean
-	cd hacks && make clean
+	rm -f extract_output_subframe to_vcd extract multi
+	cd gui && $(MAKE) clean
+	cd view && $(MAKE) clean
+	cd logger && $(MAKE) clean
+	cd filter && $(MAKE) clean
+	cd hacks && $(MAKE) clean

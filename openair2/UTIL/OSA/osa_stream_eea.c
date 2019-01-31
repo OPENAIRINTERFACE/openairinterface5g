@@ -28,7 +28,7 @@
 #include <nettle/aes.h>
 #include <nettle/ctr.h>
 
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 
 #include "assertions.h"
 #include "osa_defs.h"

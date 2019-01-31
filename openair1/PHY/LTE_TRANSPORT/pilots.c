@@ -29,8 +29,8 @@
 * \note
 * \warning
 */
-//#include "defs.h"
-#include "PHY/defs.h"
+#include "PHY/defs_eNB.h"
+#include "PHY/LTE_REFSIG/lte_refsig.h"
 
 void generate_pilots(PHY_VARS_eNB *eNB,
                      int32_t **txdataF,
@@ -140,7 +140,7 @@ int generate_pilots_slot(PHY_VARS_eNB *eNB,
   uint8_t second_pilot;
 
   if (slot<0 || slot>= 20) {
-    msg("generate_pilots_slot: slot not in range (%d)\n",slot);
+    LOG_E(PHY,"generate_pilots_slot: slot not in range (%d)\n",slot);
     return(-1);
   }
 

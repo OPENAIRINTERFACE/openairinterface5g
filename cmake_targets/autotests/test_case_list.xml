@@ -955,21 +955,21 @@
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/dlsim</main_exec>
-      <main_exec_args> -m5 -gF -s-1 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70
-                       -m4 -gF -s0 -w1.0 -f.2 -n500 -B6 -c4 -z2 -O70
-                       -m15 -gF -s6.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70
-                       -m14 -gF -s6.7 -w1.0 -f.2 -n500 -B25 -c3 -z2 -O70
-                       -m15 -gG -s6.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O30
-                       -m14 -gG -s1.4 -w1.0 -f.2 -n500 -B25 -c3 -z2 -O30
-                       -m25 -gF -s17.4 -w1.0 -f.2 -n500 -B25 -c3 -z2 -O70
-                       -m25 -gF -s17.5 -w1.0 -f.2 -n500 -B25 -c3 -z2 -r1022 -O70
-                       -m26 -gF -s17.7 -w1.0 -f.2 -n500 -B50 -c2 -z2 -O70
-                       -m26 -gF -s17.6 -w1.0 -f.2 -n500 -B100 -c2 -z2 -O70
-                       -m26 -gF -s17.3 -w1.0 -f.2 -n500 -B100 -c2 -z2 -r1600 -O70
-                       -m26 -gF -s16.6 -w1.0 -f.2 -n500 -B100 -c2 -z2 -r1899 -O70
-		       -m14 -gF -s6.8  -w1.0 -f.2 -n500 -B50 -c2 -x2 -y2 -z2 -O70
-                       -m13 -gF -s5.9  -w1.0 -f.2 -n500 -B25 -c3 -x2 -y2 -z2 -O70</main_exec_args>
+      <main_exec> $OPENAIR_DIR/targets/bin/dlsim.Rel14</main_exec>
+      <main_exec_args> -m=5 -g=F -s=-1= -w=1.0 -f=.2 -n=500 -B=50 -c=2 -z=2 -O=60
+                        -m=4 -g=F -s=0 -w=1.0 -f=.2 -n=500 -B=6 -c=4 -z=2 -O=60
+                        -m=15 -g=F -s=6.7 -w=1.0 -f=.2 -n=500 -B=50 -c=2 -z=2 -O=60
+                        -m=15 -g=F -s=6.7 -w=1.0 -f=.2 -n=500 -B=25 -c=2 -z=2 -O=60
+                        -m=15 -g=G -s=1.4 -w=1.0 -f=.2 -n=500 -B=50 -c=2 -z=2 -O=25
+                        -m=15 -g=G -s=1.4 -w=1.0 -f=.2 -n=500 -B=25 -c=2 -z=2 -O=25
+                        -m=25 -g=F -s=17.4 -w=1.0 -f=.2 -n=500 -B=25 -c=3 -z=2 -O=60
+                        -m=25 -g=F -s=17.5 -w=1.0 -f=.2 -n=500 -B=25 -c=3 -z=2 -r=1022 -O=60
+                        -m=26 -g=F -s=17.7 -w=1.0 -f=.2 -n=500 -B=50 -c=2 -z=2 -O=60
+                        -m=26 -g=F -s=17.6 -w=1.0 -f=.2 -n=500 -B=100 -c=2 -z=2 -O=60
+                        -m=26 -g=F -s=17.3 -w=1.0 -f=.2 -n=500 -B=100 -c=2 -z=2 -r=1600 -O=60
+                        -m=26 -g=F -s=16.6 -w=1.0 -f=.2 -n=500 -B=100 -c=2 -z=2 -r=1899 -O=60
+                        -m=14 -g=F -s=6.8  -w=1.0 -f=.2 -n=500 -B=50 -c=2 -x=2 -y=2 -z=2 -O=60
+                        -m=13 -g=F -s=5.9  -w=1.0 -f=.2 -n=500 -B=25 -c=3 -x=2 -y=2 -z=2 -O=60</main_exec_args>
       <tags>dlsim.test1 dlsim.test5 dlsim.test6 dlsim.test6b dlsim.test7 dlsim.test7b dlsim.test10 dlsim.test10b dlsim.test11 dlsim.TM2_test1 dlsim.TM2_test1b</tags>
       <search_expr_true>"passed"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -989,13 +989,13 @@
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec> $OPENAIR_DIR/cmake_targets/lte-simulators/build/ulsim</main_exec>
-      <main_exec_args> -B25 -m5 -y1 -gN -x1 -s6 -w1.0 -e.1 -P -n500 -O70 -L
-                       -B25 -m16 -y1 -gN -x1 -s12 -w1.0 -e.1 -P -n500 -O70 -L
-                        -B50 -m5 -y1 -gN -x1 -s6 -w1.0 -e.1 -P -n500 -O70 -L 
-                       -B50 -m16 -y1 -gN -x1 -s12 -w1.0 -e.1 -P -n500 -O70 -L
-                        -B100 -m5 -y1 -gN -x1 -s6 -w1.0 -e.1 -P -n500 -O70 -L
-                       -B100 -m16 -y1 -gN -x1 -s12 -w1.0 -e.1 -P -n500 -O70 -L</main_exec_args>
+      <main_exec> $OPENAIR_DIR/targets/bin/ulsim.Rel14</main_exec>
+      <main_exec_args> -BnbRBs=25 -mcs=5 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=6 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70 
+                       -BnbRBs=25 -mcs=16 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=12 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70 
+                        -BnbRBs=50 -mcs=5 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=6 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70  
+                       -BnbRBs=50 -mcs=16 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=12 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70 
+                        -BnbRBs=100 -mcs=5 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=6 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70 
+                       -BnbRBs=100 -mcs=16 -yN_rx=1 -gchannel=N -xTransmission=1 -snr=12 -wsnrInterrupt=1.0 -e_snr_step=.1 -P -nb_frame=500 -Operf=70 </main_exec_args>
      <tags>ulsim.test1 ulsim.test2 ulsim.test3 ulsim.test4 ulsim.test5 ulsim.test6</tags>
       <search_expr_true>"passed"</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>

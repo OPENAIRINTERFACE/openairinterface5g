@@ -28,11 +28,11 @@
 #include "rlc_primitives.h"
 #include "list.h"
 #include "rrm_config_structs.h"
-#include "LAYER2/MAC/extern.h"
-#include "UTIL/LOG/log.h"
+#include "LAYER2/MAC/mac_extern.h"
+#include "common/utils/LOG/log.h"
 
 #include "rlc_um_control_primitives.h"
-#include "T-Reordering.h"
+#include "LTE_T-Reordering.h"
 #include "msc.h"
 
 //-----------------------------------------------------------------------------
@@ -78,10 +78,10 @@ void config_req_rlc_um (
   }
 }
 //-----------------------------------------------------------------------------
-#if defined(Rel14)
-const uint32_t const t_Reordering_tab[32] = {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200,1600};
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+const uint32_t t_Reordering_tab[32] = {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200,1600};
 #else
-const uint32_t const t_Reordering_tab[T_Reordering_spare1] = {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200};
+const uint32_t t_Reordering_tab[LTE_T_Reordering_spare1] = {0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100,110,120,130,140,150,160,170,180,190,200};
 #endif
 
 void config_req_rlc_um_asn1 (
@@ -90,10 +90,15 @@ void config_req_rlc_um_asn1 (
   const MBMS_flag_t         mbms_flagP,
   const mbms_session_id_t   mbms_session_idP,
   const mbms_service_id_t   mbms_service_idP,
-  const UL_UM_RLC_t       * const ul_rlc_pP,
-  const DL_UM_RLC_t       * const dl_rlc_pP,
+  const LTE_UL_UM_RLC_t   * const ul_rlc_pP,
+  const LTE_DL_UM_RLC_t   * const dl_rlc_pP,
   const rb_id_t             rb_idP,
-  const logical_chan_id_t   chan_idP)
+  const logical_chan_id_t   chan_idP
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+ ,const uint32_t            sourceL2Id
+ ,const uint32_t            destinationL2Id
+#endif
+                          )
 {
   uint32_t         ul_sn_FieldLength   = 0;
   uint32_t         dl_sn_FieldLength   = 0;
@@ -103,33 +108,56 @@ void config_req_rlc_um_asn1 (
   hash_key_t       key                 = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
   hashtable_rc_t   h_rc;
 
-#if defined(Rel10) || defined(Rel14)
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   if (mbms_flagP) {
-    AssertFatal(dl_rlc_pP, "No RLC UM DL config");
-    AssertFatal(ul_rlc_pP == NULL, "RLC UM UL config present");
+    //AssertFatal(dl_rlc_pP, "No RLC UM DL config");
+    if(dl_rlc_pP == NULL) {
+      LOG_E(RLC, "No RLC UM DL config\n");
+      return;
+    }
+    //AssertFatal(ul_rlc_pP == NULL, "RLC UM UL config present");
+    if(ul_rlc_pP != NULL) {
+      LOG_E(RLC, "RLC UM UL config present\n");
+      return;
+    }
+    
     key = RLC_COLL_KEY_MBMS_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, mbms_service_idP, mbms_session_idP);
     h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
-    AssertFatal (h_rc == HASH_TABLE_OK, "RLC NOT FOUND enb id %u rnti %i enb flag %u service id %u, session id %u",
-                 ctxt_pP->module_id,
-                 ctxt_pP->rnti,
-                 ctxt_pP->enb_flag,
-                 mbms_service_idP,
-                 mbms_session_idP);
+    //AssertFatal (h_rc == HASH_TABLE_OK, "RLC NOT FOUND enb id %u rnti %i enb flag %u service id %u, session id %u",
+    //             ctxt_pP->module_id,
+    //             ctxt_pP->rnti,
+    //             ctxt_pP->enb_flag,
+    //             mbms_service_idP,
+    //             mbms_session_idP);
+    if(h_rc != HASH_TABLE_OK) {
+      LOG_E(RLC, "RLC NOT FOUND enb id %u rnti %i enb flag %u service id %u, session id %u\n",
+        ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, mbms_service_idP, mbms_session_idP);
+      return;
+    }
+    
     rlc_p = &rlc_union_p->rlc.um;
+  }
+  if ((sourceL2Id >0 ) && (destinationL2Id >0)){
+     key = RLC_COLL_KEY_SOURCE_DEST_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, sourceL2Id, destinationL2Id, srb_flagP);
   } else
 #endif
   {
-    key  = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
-    h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
-    AssertFatal (h_rc == HASH_TABLE_OK, "RLC NOT FOUND enb id %u ue id %i enb flag %u rb id %u, srb flag %u",
-                 ctxt_pP->module_id,
-                 ctxt_pP->rnti,
-                 ctxt_pP->enb_flag,
-                 rb_idP,
-                 srb_flagP);
-    rlc_p = &rlc_union_p->rlc.um;
+     key  = RLC_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
   }
+    h_rc = hashtable_get(rlc_coll_p, key, (void**)&rlc_union_p);
+    //AssertFatal (h_rc == HASH_TABLE_OK, "RLC NOT FOUND enb id %u ue id %i enb flag %u rb id %u, srb flag %u",
+    //             ctxt_pP->module_id,
+    //             ctxt_pP->rnti,
+    //             ctxt_pP->enb_flag,
+    //             rb_idP,
+    //             srb_flagP);
+    if(h_rc != HASH_TABLE_OK) {
+      LOG_E(RLC, "RLC NOT FOUND enb id %u ue id %i enb flag %u rb id %u, srb flag %u\n",
+        ctxt_pP->module_id, ctxt_pP->rnti, ctxt_pP->enb_flag, rb_idP, srb_flagP);
+      return;
+    }
+    rlc_p = &rlc_union_p->rlc.um;
 
   //-----------------------------------------------------------------------------
   LOG_D(RLC, PROTOCOL_RLC_UM_CTXT_FMT"  CONFIG_REQ timer_reordering=%dms sn_field_length=   RB %u \n",
@@ -145,11 +173,11 @@ void config_req_rlc_um_asn1 (
 
     if (ul_rlc_pP != NULL) {
       switch (ul_rlc_pP->sn_FieldLength) {
-      case SN_FieldLength_size5:
+      case LTE_SN_FieldLength_size5:
         ul_sn_FieldLength = 5;
         break;
 
-      case SN_FieldLength_size10:
+      case LTE_SN_FieldLength_size10:
         ul_sn_FieldLength = 10;
         break;
 
@@ -173,11 +201,11 @@ void config_req_rlc_um_asn1 (
 
     if (dl_rlc_pP != NULL) {
       switch (dl_rlc_pP->sn_FieldLength) {
-      case SN_FieldLength_size5:
+      case LTE_SN_FieldLength_size5:
         dl_sn_FieldLength = 5;
         break;
 
-      case SN_FieldLength_size10:
+      case LTE_SN_FieldLength_size10:
         dl_sn_FieldLength = 10;
         break;
 
@@ -198,7 +226,7 @@ void config_req_rlc_um_asn1 (
         return;
       }
 
-#if defined(Rel14)
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
       if (dl_rlc_pP->t_Reordering<32) {
 #else
       if (dl_rlc_pP->t_Reordering<T_Reordering_spare1) {
@@ -269,7 +297,11 @@ rlc_um_init (
 )
 {
 
-  AssertFatal(rlc_pP, "Bad RLC UM pointer (NULL)");
+  //AssertFatal(rlc_pP, "Bad RLC UM pointer (NULL)");
+  if(rlc_pP == NULL) {
+    LOG_E(RLC, "Bad RLC UM pointer (NULL)\n");
+    return;
+  }
 
   if (rlc_pP->initialized) {
     LOG_D(RLC,PROTOCOL_RLC_UM_CTXT_FMT" [INIT] ALREADY DONE, DOING NOTHING\n",
@@ -343,6 +375,7 @@ rlc_um_cleanup (
 
   if ((rlc_pP->output_sdu_in_construction)) {
     free_mem_block (rlc_pP->output_sdu_in_construction, __func__);
+    rlc_pP->output_sdu_in_construction = NULL;
   }
 
   if (rlc_pP->dar_buffer) {

@@ -1,0 +1,164 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+-->
+<testCaseList>
+	<TestCaseRequestedList>010101 050101 060101 070101 030101 030201 050201 070201 060201</TestCaseRequestedList>
+	<TestCaseExclusionList>010102 030102 030103 030104 030105 030106</TestCaseExclusionList>
+
+	<!-- eNB class command references -->
+
+	<testCase id="010101">
+		<class>Build_eNB</class>
+		<desc>Build eNB (USRP)</desc>
+		<Build_eNB_args>-w USRP -c --eNB</Build_eNB_args>
+	</testCase>
+
+	<testCase id="010102">
+		<class>Build_eNB</class>
+		<desc>Build eNB (USRP)</desc>
+		<Build_eNB_args>-w BLADERF -c --eNB</Build_eNB_args>
+	</testCase>
+
+	<testCase id="030101">
+		<class>Initialize_eNB</class>
+		<desc>Initialize eNB (FDD/Band1/5MHz/info)</desc>
+		<Initialize_eNB_args>-O enb.band7.tm1.50PRB.usrpb210.conf</Initialize_eNB_args>
+	</testCase>
+
+	<testCase id="030102">
+		<class>Initialize_eNB</class>
+		<desc>Initialize eNB (FDD/Band1/10MHz/info)</desc>
+		<Initialize_eNB_args>-O 10M.band1.FDD.info.conf</Initialize_eNB_args>
+	</testCase>
+
+	<testCase id="030103">
+		<class>Initialize_eNB</class>
+		<desc>Initialize eNB (FDD/Band1/20MHz/info)</desc>
+		<Initialize_eNB_args>-O 20M.band1.FDD.info.conf</Initialize_eNB_args>
+	</testCase>
+
+	<testCase id="030104">
+		<class>Initialize_eNB</class>
+		<desc>Initialize eNB (TDD/Band38/5MHz/info)</desc>
+		<Initialize_eNB_args>-O 5M.band38.TDD.info.conf</Initialize_eNB_args>
+	</testCase>
+
+	<testCase id="030105">
+		<class>Initialize_eNB</class>
+		<desc>Initialize eNB (TDD/Band38/10MHz/info)</desc>
+		<Initialize_eNB_args>-O 10M.band38.TDD.info.conf</Initialize_eNB_args>
+	</testCase>
+
+	<testCase id="030106">
+		<class>Initialize_eNB</class>
+		<desc>Initialize eNB (TDD/Band38/20MHz/info)</desc>
+		<Initialize_eNB_args>-O 20M.band38.TDD.info.conf</Initialize_eNB_args>
+	</testCase>
+
+	<testCase id="030201">
+		<class>Terminate_eNB</class>
+		<desc>Terminate eNB</desc>
+	</testCase>
+
+	<!-- UE class command references -->
+
+	<testCase id="040101">
+		<class>Initialize_UE</class>
+		<desc>Initialize UE</desc>
+	</testCase>
+
+	<testCase id="040201">
+		<class>Terminate_UE</class>
+		<desc>Terminate UE</desc>
+	</testCase>
+
+	<testCase id="040301">
+		<class>Attach_UE</class>
+		<desc>Attach UE</desc>
+	</testCase>
+
+	<testCase id="040401">
+		<class>Detach_UE</class>
+		<desc>Detach UE</desc>
+	</testCase>
+
+
+	<testCase id="040701">
+		<class>Reboot_UE</class>
+		<desc>Reboot UE</desc>
+	</testCase>
+
+	<!-- CAT-M UE class command references -->
+
+	<testCase id="040102">
+		<class>Initialize_CatM_module</class>
+		<desc>Initialize CAT-M Module</desc>
+	</testCase>
+
+	<testCase id="040202">
+		<class>Terminate_CatM_module</class>
+		<desc>Terminate CAT-M Module</desc>
+	</testCase>
+
+	<testCase id="040302">
+		<class>Attach_CatM_module</class>
+		<desc>Attach CAT-M Module</desc>
+	</testCase>
+
+	<testCase id="040402">
+		<class>Detach_CatM_module</class>
+		<desc>Detach CAT-M Module</desc>
+	</testCase>
+
+	<!-- EPC class command references -->
+
+        <testCase id="050101">
+		<class>Initialize_HSS</class>
+		<desc>Initialize HSS</desc>
+        </testCase>
+
+        <testCase id="050201">
+		<class>Terminate_HSS</class>
+		<desc>Terminate HSS</desc>
+        </testCase>
+
+	<testCase id="060101">
+		<class>Initialize_MME</class>
+		<desc>Initialize MME</desc>
+	</testCase>
+
+	<testCase id="060201">
+		<class>Terminate_MME</class>
+		<desc>Terminate MME</desc>
+	</testCase>
+
+	<testCase id="070101">
+		<class>Initialize_SPGW</class>
+		<desc>Initialize SPGW</desc>
+	</testCase>
+
+	<testCase id="070201">
+		<class>Terminate_SPGW</class>
+		<desc>Terminate SPGW</desc>
+	</testCase>
+
+</testCaseList>

@@ -26,11 +26,13 @@
 #include <string.h>
 
 
-#include "PHY/TOOLS/defs.h"
-#include "defs.h"
+#include "PHY/TOOLS/tools_defs.h"
+#include "sim.h"
 #include "scm_corrmat.h"
-#include "UTIL/LOG/log.h"
+#include "common/utils/LOG/log.h"
 //#define DEBUG_CH
+
+#include "assertions.h"
 
 extern void print_shorts(char *s,__m128i *x);
 
@@ -1210,10 +1212,8 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
   struct complex anew[NB_ANTENNAS_TX*NB_ANTENNAS_RX],acorr[NB_ANTENNAS_TX*NB_ANTENNAS_RX];
   struct complex phase, alpha, beta;
 
-  if ((desc->nb_tx>NB_ANTENNAS_TX) || (desc->nb_rx > NB_ANTENNAS_RX)) {
-    msg("random_channel.c: Error: temporary buffer for channel not big enough (%d,%d)\n",desc->nb_tx,desc->nb_rx);
-    return(-1);
-  }
+  AssertFatal(desc->nb_tx<=NB_ANTENNAS_TX && desc->nb_rx <= NB_ANTENNAS_RX,
+	      "random_channel.c: Error: temporary buffer for channel not big enough (%d,%d)\n",desc->nb_tx,desc->nb_rx);
 
   start_meas(&desc->random_channel);
   for (i=0;i<(int)desc->nb_taps;i++) {
@@ -1372,8 +1372,7 @@ double N_RB2sampling_rate(uint16_t N_RB)
     break;
 
   default:
-    LOG_E(PHY,"Unknown N_PRB\n");
-    return(-1);
+    AssertFatal(1==0,"Unknown N_PRB %d",N_RB);
   }
 
   return(sampling_rate);
