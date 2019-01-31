@@ -27,6 +27,63 @@ $ ./lte-softmodem -O libconfig:<config>:dbgl1
 ```bash
 $ ./lte-uesoftmodem -O cmdlineonly:dbgl1
 ```
+To get help on supported parameters you can use specific options:
+*  ---help: print help for command line only parameters and for parameters not defined in a specific section 
+	*  ---help_< prefix > : print help for parameters defined under the section < prefix >
+
+```
+./lte-softmodem -O libconfig:/usr/local/oai/conf/enb.nbiot.band7.tm1.50PRB.usrpb210.conf   --help
+[CONFIG] get parameters from libconfig /usr/local/oai/conf/enb.nbiot.band7.tm1.50PRB.usrpb210.conf , debug flags: 0x00000000
+.............................................
+[LIBCONFIG] (root): 19/19 parameters successfully set, (16 to default value)
+
+-----Help for section (root section)            : 019 entries------
+    --rf-config-file: Configuration file for front-end (e.g. LMS7002M)
+    --ulsch-max-errors: set the eNodeB max ULSCH erros
+    --phy-test: test UE phy layer, mac disabled
+    --usim-test: use XOR autentication algo in case of test usim mode
+    --emulate-rf: Emulated RF enabled(disable by defult)
+    --clock: tells hardware to use a clock reference (0:internal, 1:external, 2:gpsdo)
+    --wait-for-sync: Help string not specified
+    --single-thread-enable: Disables single-thread mode in lte-softmodem
+    -C: Set the downlink frequency for all component carriers
+    -a: Channel id offset
+    -d: Enable soft scope and L1 and L2 stats (Xforms)
+    -q: Enable processing timing measurement of lte softmodem on per subframe basis 
+    -S: Skip the missed slots/subframes 
+    --numerology: adding numerology for 5G
+    --parallel-config: three config for level of parallelism 'PARALLEL_SINGLE_THREAD', 'PARALLEL_RU_L1_SPLIT', or 'PARALLEL_RU_L1_TRX_SPLIT'
+    --worker-config: two option for worker 'WORKER_DISABLE' or 'WORKER_ENABLE'
+    --nbiot-disable: disable nb-iot, even if defined in config
+    --noS1: Disable s1 interface
+    --nokrnmod: (noS1 only): Use tun instead of namesh module 
+--------------------------------------------------------------------
+
+[LIBCONFIG] (root): 4/4 parameters successfully set, (4 to default value)
+
+-----Help for section (root section)            : 004 entries------
+    -R: Enable online log 
+    -g: Set the global log level, valide options: (4:trace, 3:debug, 2:info, 1:warn, (0:error))
+    --telnetsrv: Start embedded telnet server 
+    --msc: Enable the MSC tracing utility 
+--------------------------------------------------------------------
+
+[LIBCONFIG] loader: 2/2 parameters successfully set, (2 to default value)
+[LIBCONFIG] loader.telnetsrv: 2/2 parameters successfully set, (1 to default value)
+[LOADER] library libtelnetsrv.so is not loaded: libtelnetsrv.so: cannot open shared object file: No such file or directory
+Getting ENBSParams
+[LIBCONFIG] (root): 3/3 parameters successfully set, (1 to default value)
+
+-----Help for section (root section)            : 003 entries------
+    --Asn1_verbosity: Help string not specified
+    --Active_eNBs: Help string not specified
+    --noS1: Help string not specified
+--------------------------------------------------------------------
+
+/usr/local/oai/issue390_configmodule_cmdlinebug/openairinterface5g/common/config/config_cmdline.c:224 config_process_cmdline() Exiting OAI softmodem: [CONFIG] Exiting after displaying help
+
+```
+
 For the lte-softmodem (the eNodeB) The config source parameter defaults to libconfig, preserving the initial -O option format. In this case you cannot specify the debug level.  
 
 ```bash
