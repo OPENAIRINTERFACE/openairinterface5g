@@ -39,6 +39,7 @@
 //#include "SCHED/extern.h"
 
 #include "common_lib.h"
+#include <math.h>
 
 #include "PHY/NR_REFSIG/pss_nr.h"
 #include "PHY/NR_REFSIG/sss_nr.h"
@@ -55,6 +56,8 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
 {
   NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   int ret =-1;
+  int ar, n;
+  double im, re;
 
 #ifdef DEBUG_INITIAL_SYNCH
   LOG_I(PHY,"[UE%d] Initial sync: starting PBCH detection (rx_offset %d)\n",ue->Mod_id,
@@ -64,6 +67,27 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
   // save the nb_prefix_samples0 since we are not synchronized to subframes yet and the SSB has all symbols with nb_prefix_samples
   int nb_prefix_samples0 = frame_parms->nb_prefix_samples0;
   frame_parms->nb_prefix_samples0 = frame_parms->nb_prefix_samples;
+
+  // digital compensation of FFO for PBCH symbols
+  if(abs(2*ue->common_vars.freq_offset)<frame_parms->subcarrier_spacing){  // this FFO compensation seems to work only for FFO between -0.5 and 0.5
+  
+   int size_wp = (frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples0);  // symbol size including prefix
+   double s_time = 1/(1.0e3*frame_parms->samples_per_subframe);  // sampling time
+   double off_angle = -2*M_PI*s_time*(ue->common_vars.freq_offset);  // offset rotation angle compensation per sample
+
+   int start = ue->ssb_offset + size_wp;  // start for offset correction is one symbol after ssb_offset (pss time position), including prefix
+   int end = start + (3*size_wp);  // loop over samples in 3 symbols, including prefix
+  
+   for(n=start; n<end; n++){  	
+	for (ar=0; ar<frame_parms->nb_antennas_rx; ar++) {
+		re = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n]);
+		im = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n+1]);
+		((short *)ue->common_vars.rxdata[ar])[2*n] = (short)(round(re*cos(n*off_angle) - im*sin(n*off_angle))); 
+		((short *)ue->common_vars.rxdata[ar])[2*n+1] = (short)(round(re*sin(n*off_angle) + im*cos(n*off_angle)));
+	}
+   }
+  }
+
 
   //symbol 1
   nr_slot_fep(ue,
@@ -183,14 +207,14 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   sync_pos = pss_synchro_nr(ue, NO_RATE_CHANGE);
 
   sync_pos_slot = (fp->samples_per_subframe/fp->slots_per_subframe) - 10*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
-  
+
   if (sync_pos >= fp->nb_prefix_samples){
     ue->ssb_offset = sync_pos - fp->nb_prefix_samples;}
   else{
     ue->ssb_offset = sync_pos + (fp->samples_per_subframe * 10) - fp->nb_prefix_samples;}
     
     ue->rx_offset = ue->ssb_offset - sync_pos_slot;
-  
+
   //write_output("rxdata1.m","rxd1",ue->common_vars.rxdata[0],10*fp->samples_per_subframe,1,1);
 
 #ifdef DEBUG_INITIAL_SYNCH
