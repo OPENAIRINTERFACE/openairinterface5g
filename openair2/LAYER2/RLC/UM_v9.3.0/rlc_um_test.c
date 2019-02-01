@@ -148,7 +148,8 @@ void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char *dataP, uns
         buffer_marker = 0;
       }
 
-      buffer_marker+=snprintf(&rlc_2_print_buffer[buffer_marker], RLC_2_PRINT_BUFFER_LEN - buffer_marker, " %04ld |", octet_index);
+      buffer_marker+=snprintf(&rlc_2_print_buffer[buffer_marker], RLC_2_PRINT_BUFFER_LEN - buffer_marker,
+                              " %04lu |", octet_index);
     }
 
     /*
@@ -382,7 +383,7 @@ void rlc_um_v9_3_0_test_mac_rlc_loop (struct mac_data_ind *data_indP,  struct ma
 
     if (tb_src != NULL) {
       tb_size = ((struct mac_tb_req *) (tb_src->data))->tb_size_in_bits >> 3;
-      printf("[RLC-LOOP] FOUND TB SIZE IN BITS %d IN BYTES %d sizeof (mac_rlc_max_rx_header_size_t) %d\n",
+      printf("[RLC-LOOP] FOUND TB SIZE IN BITS %d IN BYTES %u sizeof (mac_rlc_max_rx_header_size_t) %d\n",
              ((struct mac_tb_req *) (tb_src->data))->tb_size_in_bits,
              tb_size, sizeof (mac_rlc_max_rx_header_size_t));
       *tx_packetsP = *tx_packetsP + 1;

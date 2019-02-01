@@ -33,7 +33,7 @@ memleak:common/utils/hashtable/obj_hashtable.c
 //    suppress error about keys memory leak, free must be done by calling func 
 memleak:openair2/UTIL/OMG/omg_hashtable.c
 //-----------------------------------------------------------------------------
-//    suppress error about data memory leak. This is the buffer where 
+//     suppress error about data memory leak. This is the buffer where 
 //    _emm_as_encode function creates the encoded buffer
 //
 memleak:openair3/NAS/UE/EMM/SAP/emm_as.c

@@ -254,7 +254,7 @@ void load_pbch_desc(FILE *pbch_file_fd) {
   printf("PBCH polynomial : ");
 
   for (i=0; i<=pbch_polynomial_degree; i++) {
-    ret = fscanf(pbch_file_fd,"%s",dummy);
+    ret = fscanf(pbch_file_fd,"%24s",dummy);
 
     if (ret < 0) {
       printf("fscanf failed: %s\n", strerror(errno));

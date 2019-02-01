@@ -1902,7 +1902,7 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
 
   if ((frame_parms->frame_type==FDD) ||
       (bundling_flag==bundling)    ||
-      ((frame_parms->frame_type==TDD)&&(frame_parms->tdd_config==1)&&((subframe_tx!=2)||(subframe_tx!=7)))) {
+      ((frame_parms->frame_type==TDD)&&(frame_parms->tdd_config==1)&&((subframe_tx==2)||(subframe_tx==7)))) {
     format = pucch_format1a;
     //    LOG_D(PHY,"[UE] PUCCH 1a\n");
   } else {

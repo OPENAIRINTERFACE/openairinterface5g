@@ -1047,7 +1047,7 @@ int main(int argc, char **argv) {
           sigma2_dB = N0;//-10*log10(UE->frame_parms.ofdm_symbol_size/(UE->frame_parms.N_RB_DL*12));//10*log10((double)tx_lev)  +10*log10(UE->frame_parms.ofdm_symbol_size/(UE->frame_parms.N_RB_DL*12)) - SNR;
           sigma2 = pow(10,sigma2_dB/10);
           // compute tx_gain to achieve target SNR (per resource element!)
-          tx_gain = sqrt(pow(10.0,.1*(N0+SNR))/(double)tx_lev);//*(nb_rb*12/(double)UE->frame_parms.ofdm_symbol_size)/(double)tx_lev);
+          tx_gain = sqrt(pow(10.0,.1*(N0+SNR))/(double)tx_lev);// *(nb_rb*12/(double)UE->frame_parms.ofdm_symbol_size)/(double)tx_lev);
 
           if (n_frames==1)
             printf("tx_lev = %u (%u.%u dB,%f), gain %f\n",tx_lev,tx_lev_dB/10,tx_lev_dB,10*log10((double)tx_lev),10*log10(tx_gain));
@@ -1212,7 +1212,8 @@ int main(int argc, char **argv) {
 
               dump_ulsch(eNB,eNB->proc.frame_rx,subframe,0,round);
 
-              if (round == 4) exit(-1);
+              round=5;
+              
             }
 
             if (n_frames==1) printf("round %d errors %u/%u\n",round,errs[round],trials);

@@ -270,7 +270,7 @@ rrc_eNB_S1AP_get_ue_ids(
             } else {
               LOG_E(RRC, "[eNB %ld] Incoherence between RRC context and S1AP context (%d != %d) for UE RNTI %d or UE RRC context doesn't exist\n",
                     rrc_instance_pP - RC.rrc[0],
-                    ue_context_p->ue_context.eNB_ue_s1ap_id,
+                    (ue_context_p==NULL)?99999:ue_context_p->ue_context.eNB_ue_s1ap_id,
                     eNB_ue_s1ap_id,
                     result->ue_rnti);
             }
@@ -300,8 +300,7 @@ rrc_eNB_S1AP_remove_ue_ids(
 )
 //------------------------------------------------------------------------------
 {
-  const uint16_t ue_initial_id  = ue_ids_pP->ue_initial_id;
-  const uint32_t eNB_ue_s1ap_id = ue_ids_pP->eNB_ue_s1ap_id;
+
   hashtable_rc_t h_rc;
 
   if (rrc_instance_pP == NULL) {
@@ -313,7 +312,8 @@ rrc_eNB_S1AP_remove_ue_ids(
     LOG_E(RRC, "Trying to free a NULL S1AP UE IDs\n");
     return;
   }
-
+  const uint16_t ue_initial_id  = ue_ids_pP->ue_initial_id;
+  const uint32_t eNB_ue_s1ap_id = ue_ids_pP->eNB_ue_s1ap_id;
   if (eNB_ue_s1ap_id > 0) {
     h_rc = hashtable_remove(rrc_instance_pP->s1ap_id2_s1ap_ids, (hash_key_t)eNB_ue_s1ap_id);
 
