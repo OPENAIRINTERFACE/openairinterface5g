@@ -164,6 +164,10 @@ static inline int rxtx(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, char *thread_name
 
   // *******************************************************************
 
+#if defined(PRE_SCD_THREAD)
+    RU_t *ru = RC.ru[0];
+#endif
+
   if (nfapi_mode == 1) {
     // I am a PNF and I need to let nFAPI know that we have a (sub)frame tick
     uint16_t frame = proc->frame_rx;
@@ -218,6 +222,40 @@ static inline int rxtx(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, char *thread_name
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER, 1 );
 
+#if defined(PRE_SCD_THREAD)
+    if (nfapi_mode == 2){
+      new_dlsch_ue_select_tbl_in_use = dlsch_ue_select_tbl_in_use;
+      dlsch_ue_select_tbl_in_use = !dlsch_ue_select_tbl_in_use;
+
+// L2-emulator can work only one eNB.
+//      memcpy(&pre_scd_eNB_UE_stats,&RC.mac[ru->eNB_list[0]->Mod_id]->UE_list.eNB_UE_stats, sizeof(eNB_UE_STATS)*MAX_NUM_CCs*NUMBER_OF_UE_MAX);
+//      memcpy(&pre_scd_activeUE, &RC.mac[ru->eNB_list[0]->Mod_id]->UE_list.active, sizeof(boolean_t)*NUMBER_OF_UE_MAX);
+      memcpy(&pre_scd_eNB_UE_stats,&RC.mac[0]->UE_list.eNB_UE_stats, sizeof(eNB_UE_STATS)*MAX_NUM_CCs*NUMBER_OF_UE_MAX);
+      memcpy(&pre_scd_activeUE, &RC.mac[0]->UE_list.active, sizeof(boolean_t)*NUMBER_OF_UE_MAX);
+
+      if (pthread_mutex_lock(&ru->proc.mutex_pre_scd)!= 0) {
+          LOG_E( PHY, "[eNB] error locking proc mutex for eNB pre scd\n");
+          exit_fun("error locking mutex_time");
+      }
+
+      ru->proc.instance_pre_scd++;
+
+      if (ru->proc.instance_pre_scd == 0) {
+          if (pthread_cond_signal(&ru->proc.cond_pre_scd) != 0) {
+              LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB pre scd\n" );
+              exit_fun( "ERROR pthread_cond_signal cond_pre_scd" );
+          }
+      }else{
+          LOG_E( PHY, "[eNB] frame %d subframe %d rxtx busy instance_pre_scd %d\n",
+                 proc->frame_rx,proc->subframe_rx,ru->proc.instance_pre_scd );
+      }
+
+      if (pthread_mutex_unlock(&ru->proc.mutex_pre_scd)!= 0) {
+          LOG_E( PHY, "[eNB] error unlocking mutex_pre_scd mutex for eNB pre scd\n");
+          exit_fun("error unlocking mutex_pre_scd");
+      }
+    }
+#endif
 
   pthread_mutex_lock(&eNB->UL_INFO_mutex);
   eNB->UL_INFO.frame     = proc->frame_rx;
@@ -906,6 +944,12 @@ void init_eNB_proc(int inst) {
     if ((get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT || get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT) && nfapi_mode!=2) {
       pthread_create( &L1_proc->pthread, attr0, L1_thread, proc );
       pthread_create( &L1_proc_tx->pthread, attr1, L1_thread_tx, proc);
+    } else if (nfapi_mode == 2) { // this is neccesary in VNF or L2 FAPI simulator.
+      // Original Code from Fujitsu w/ old structure/field name
+      //pthread_create( &proc_rxtx[0].pthread_rxtx, attr0, eNB_thread_rxtx, &proc_rxtx[0] );
+      //pthread_create( &proc_rxtx[1].pthread_rxtx, attr1, eNB_thread_rxtx, &proc_rxtx[1] );
+      pthread_create( &L1_proc->pthread, attr0, L1_thread, L1_proc );
+      pthread_create( &L1_proc_tx->pthread, attr1, L1_thread, L1_proc_tx);
     }
 
     pthread_create( &proc->pthread_prach, attr_prach, eNB_thread_prach, eNB );

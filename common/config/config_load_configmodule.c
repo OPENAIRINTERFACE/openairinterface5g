@@ -36,11 +36,14 @@
 #include <unistd.h>
 #include <errno.h>
 #include <dlfcn.h>
+#include <platform_types.h>
 
 #define CONFIG_LOADCONFIG_MAIN
 #include "config_load_configmodule.h"
 #include "config_userapi.h"
+#include "../utils/LOG/log.h"
 #define CONFIG_SHAREDLIBFORMAT "libparams_%s.so"
+
 
 int load_config_sharedlib(configmodule_interface_t *cfgptr) {
   void *lib_handle;
@@ -198,7 +201,7 @@ configmodule_interface_t *load_configmodule(int argc, char **argv, uint32_t init
     }
 
     if ( strstr(argv[i], "help_config") != NULL  ) {
-      config_printhelp(Config_Params,CONFIG_PARAMLENGTH(Config_Params));
+      config_printhelp(Config_Params,CONFIG_PARAMLENGTH(Config_Params),CONFIG_SECTIONNAME);
       exit(0);
     }
 
@@ -304,7 +307,7 @@ configmodule_interface_t *load_configmodule(int argc, char **argv, uint32_t init
   if (cfgmode != NULL) free(cfgmode);
 
   if (CONFIG_ISFLAGSET(CONFIG_ABORT)) {
-    config_printhelp(Config_Params,CONFIG_PARAMLENGTH(Config_Params));
+    config_printhelp(Config_Params,CONFIG_PARAMLENGTH(Config_Params),CONFIG_SECTIONNAME );
     //       exit(-1);
   }
 
@@ -342,7 +345,7 @@ void free_configmodule(void) {
 
     if( cfgptr->cfgmode != NULL) free(cfgptr->cfgmode);
 
-    printf ("[CONFIG] free %u config parameter pointers\n",cfgptr->num_cfgP);
+    printf ("[CONFIG] free %i config parameter pointers\n",cfgptr->num_cfgP);
 
     for (int i=0; i<cfgptr->num_cfgP; i++) {
       if ( cfgptr->cfgP[i] != NULL) free(cfgptr->cfgP[i]);

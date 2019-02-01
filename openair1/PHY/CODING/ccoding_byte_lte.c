@@ -52,20 +52,16 @@ ccodelte_encode (int32_t numbits,
                  uint8_t add_crc,
                  uint8_t *inPtr,
                  uint8_t *outPtr,
-                 uint16_t rnti)
-{
+                 uint16_t rnti) {
   uint32_t             state;
-
   uint8_t              c, out, first_bit;
   int8_t shiftbit=0;
   uint16_t c16;
   uint16_t next_last_byte=0;
   uint32_t crc=0;
-
 #ifdef DEBUG_CCODE
   uint32_t  dummy=0;
 #endif //DEBUG_CCODE
-
   /* The input bit is shifted in position 8 of the state.
      Shiftbit will take values between 1 and 8 */
   state = 0;
@@ -137,16 +133,11 @@ ccodelte_encode (int32_t numbits,
 #endif //DEBUG_CCODE
   /* Do not increment inPtr until we read the next octet */
 
-
-
-
   while (numbits > 0) {
-
     c = *inPtr++;
 #ifdef DEBUG_CCODE
     printf("** %x **\n",c);
 #endif //DEBUG_CCODE
-
 
     //    for (shiftbit = 0; (shiftbit<8) && (numbits>0);shiftbit++,numbits--) {
     for (shiftbit = 7; (shiftbit>=0) && (numbits>0); shiftbit--,numbits--) {
@@ -157,23 +148,18 @@ ccodelte_encode (int32_t numbits,
       }
 
       out = ccodelte_table[state];
-
       *outPtr++ = out  & 1;
       *outPtr++ = (out>>1)&1;
       *outPtr++ = (out>>2)&1;
-
 #ifdef DEBUG_CCODE
       printf("numbits %d, input %d, outbit %d: %d -> %d (%d%d%d)\n",numbits,state>>6,dummy,state,out,out&1,(out>>1)&1,(out>>2)&1);
       dummy+=3;
 #endif //DEBUG_CCODE      
-
     }
-
   }
 
   // now code 8-bit CRC for UCI
   if (add_crc == 1) {
-
     c = (uint8_t)(crc>>24);
 
     //    for (shiftbit = 0; (shiftbit<8);shiftbit++) {
@@ -185,22 +171,18 @@ ccodelte_encode (int32_t numbits,
       }
 
       out = ccodelte_table[state];
-
       *outPtr++ = out  & 1;
       *outPtr++ = (out>>1)&1;
       *outPtr++ = (out>>2)&1;
-
 #ifdef DEBUG_CCODE
-      printf("crc bit %d input %d, outbit %d: %d -> %d (%d)\n",shiftbit,state>>6,dummy,state,out,ccodelte_table[state]);
+      printf("crc bit %d input %d, outbit %d: %d -> %d (%u)\n",shiftbit,state>>6,dummy,state,out,ccodelte_table[state]);
       dummy+=3;
 #endif //DEBUG_CCODE      
-
     }
   }
 
   // now code 16-bit CRC for DCI
   if (add_crc == 2) {
-
     c16 = (uint16_t)(crc>>16);
 
     //    for (shiftbit = 0; (shiftbit<16);shiftbit++) {
@@ -212,16 +194,13 @@ ccodelte_encode (int32_t numbits,
       }
 
       out = ccodelte_table[state];
-
       *outPtr++ = out  & 1;
       *outPtr++ = (out>>1)&1;
       *outPtr++ = (out>>2)&1;
-
 #ifdef DEBUG_CCODE
-      printf("crc bit %d input %d, outbit %d: %d -> %d (%d)\n",shiftbit,state>>6,dummy,state,out,ccodelte_table[state]);
+      printf("crc bit %d input %d, outbit %d: %d -> %d (%u)\n",shiftbit,state>>6,dummy,state,out,ccodelte_table[state]);
       dummy+=3;
 #endif //DEBUG_CCODE      
-
     }
   }
 }
@@ -238,8 +217,7 @@ ccodelte_encode (int32_t numbits,
 /* Basic code table initialization for constraint length 7 */
 /* Input in MSB, followed by state in 6 LSBs */
 
-void ccodelte_init(void)
-{
+void ccodelte_init(void) {
   unsigned int  i, j, k, sum;
 
   for (i = 0; i < 128; i++) {
@@ -260,8 +238,7 @@ void ccodelte_init(void)
 }
 
 /* Input in LSB, followed by state in 6 MSBs */
-void ccodelte_init_inv(void)
-{
+void ccodelte_init_inv(void) {
   unsigned int  i, j, k, sum;
 
   for (i = 0; i < 128; i++) {
@@ -281,8 +258,7 @@ void ccodelte_init_inv(void)
   }
 }
 
-void ccodedab_init(void)
-{
+void ccodedab_init(void) {
   unsigned int  i, j, k, sum;
 
   for (i = 0; i < 128; i++) {
@@ -303,8 +279,7 @@ void ccodedab_init(void)
 }
 
 /* Input in LSB, followed by state in 6 MSBs */
-void ccodedab_init_inv(void)
-{
+void ccodedab_init_inv(void) {
   unsigned int  i, j, k, sum;
 
   for (i = 0; i < 128; i++) {
@@ -334,21 +309,15 @@ void ccodedab_init_inv(void)
 #ifdef CCODE_MAIN
 #include <stdio.h>
 
-main()
-{
+main() {
   unsigned char test[] = "Thebigredfox";
   unsigned char output[512], *inPtr, *outPtr;
   unsigned int i;
-
   test[0] = 128;
   test[1] = 0;
-
-
   ccodelte_init();
-
   inPtr = test;
   outPtr = output;
-
   ccodelte_encode(21, inPtr, outPtr);
 
   for (i = 0; i < 21*3; i++) printf("%x ", output[i]);
