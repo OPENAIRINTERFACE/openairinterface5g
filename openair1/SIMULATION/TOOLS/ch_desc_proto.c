@@ -292,13 +292,13 @@ int main() {
     printf("\n     Ue_ix enb_ix  mcs5    mcs6    mcs7    mcs8    mcs9   mcs10   mcs11   mcs12   mcs13\
    mcs14   mcs15   mcs16   mcs17   mcs18   mcs19   mcs20   mcs21   mcs22\n");
     printf("SINR %4d   %4d  %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f\
-   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f\n",
+   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f\n",
            ue_index, att_enb_index, sinr_eff[ue_index][4], sinr_eff[ue_index][5], sinr_eff[ue_index][6], sinr_eff[ue_index][7],
            sinr_eff[ue_index][8], sinr_eff[ue_index][9], sinr_eff[ue_index][10], sinr_eff[ue_index][11], sinr_eff[ue_index][12],
            sinr_eff[ue_index][13], sinr_eff[ue_index][14], sinr_eff[ue_index][15], sinr_eff[ue_index][16], sinr_eff[ue_index][17],
            sinr_eff[ue_index][18], sinr_eff[ue_index][19], sinr_eff[ue_index][20], sinr_eff[ue_index][21], sinr_eff[ue_index][22]);
     printf("BLER %4d   %4d  %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f\
-   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f\n",
+   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f   %+4.2f  %+4.2f\n",
            ue_index, att_enb_index, bler[ue_index][4], bler[ue_index][5], bler[ue_index][6], bler[ue_index][7],
            bler[ue_index][8], bler[ue_index][9], bler[ue_index][10], bler[ue_index][11], bler[ue_index][12],
            bler[ue_index][13], bler[ue_index][14], bler[ue_index][15], bler[ue_index][16], bler[ue_index][17],

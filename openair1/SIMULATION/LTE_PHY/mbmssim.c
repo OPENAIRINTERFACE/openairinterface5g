@@ -460,7 +460,7 @@ int main(int argc, char **argv) {
                            0,0,0);
 
       if (n_frames==1)
-        printf("MCH decoding returns %d\n",ret);
+        printf("MCH decoding returns %u\n",ret);
 
       if (ret == (1+UE->dlsch_MCH[0]->max_turbo_iterations))
         errs[0]++;
@@ -469,15 +469,15 @@ int main(int argc, char **argv) {
       eNB->proc.proc_rxtx[0].frame_tx++;
     }
 
-    printf("errors %d/%d (Pe %e)\n",errs[round],trials,(double)errs[round]/trials);
+    printf("errors %u/%u (Pe %e)\n",errs[round],trials,(double)errs[round]/trials);
 
     if (awgn_flag==0)
-      fprintf(fd,"SNR_%d_%d = [SNR_%d_%d %f]; errs_mch_%d_%d =[errs_mch_%d_%d  %d]; mch_trials_%d_%d =[mch_trials_%d_%d  %d];\n",
+      fprintf(fd,"SNR_%d_%d = [SNR_%d_%d %f]; errs_mch_%d_%d =[errs_mch_%d_%d  %u]; mch_trials_%d_%d =[mch_trials_%d_%d  %u];\n",
               mcs,N_RB_DL,mcs,N_RB_DL,SNR,
               mcs,N_RB_DL,mcs,N_RB_DL,errs[0],
               mcs,N_RB_DL,mcs,N_RB_DL,trials);
     else
-      fprintf(fd,"SNR_awgn_%d = [SNR_awgn_%d %f]; errs_mch_awgn_%d =[errs_mch_awgn_%d  %d]; mch_trials_awgn_%d =[mch_trials_awgn_%d %d];\n",
+      fprintf(fd,"SNR_awgn_%d = [SNR_awgn_%d %f]; errs_mch_awgn_%d =[errs_mch_awgn_%d  %u]; mch_trials_awgn_%d =[mch_trials_awgn_%d %u];\n",
               N_RB_DL,N_RB_DL,SNR,
               N_RB_DL,N_RB_DL,errs[0],
               N_RB_DL,N_RB_DL,trials);

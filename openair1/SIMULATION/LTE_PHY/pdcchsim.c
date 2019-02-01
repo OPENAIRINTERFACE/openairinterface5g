@@ -721,7 +721,7 @@ int main(int argc, char **argv) {
     i=0;
 
     while (!feof(input_fd)) {
-      ret=fscanf(input_fd,"%s %s",input_val_str,input_val_str2);//&input_val1,&input_val2);
+      ret=fscanf(input_fd,"%49s %49s",input_val_str,input_val_str2);//&input_val1,&input_val2);
 
       if (ret != 2) {
         printf("%s:%d:%s: fscanf error, exiting\n", __FILE__, __LINE__, __FUNCTION__);

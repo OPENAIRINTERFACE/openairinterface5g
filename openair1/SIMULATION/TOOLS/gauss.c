@@ -35,7 +35,7 @@ unsigned int *generate_gauss_LUT(unsigned char Nbits,
   for (i=0; i<(1<<(Nbits-1)); i++) {
     LUT_ptr[i] = (unsigned int)((double)((unsigned int)(1<<31))*erf(i*L/(double)(1<<(Nbits-1))));
 #ifdef LUTDEBUG
-    printf("pos %d : LUT_ptr[%d]=%x (%f)\n",i,i,LUT_ptr[i],(double)(erf(i*L/(double)(1<<(Nbits-1)))));
+    printf("pos %u : LUT_ptr[%u]=%x (%f)\n",i,i,LUT_ptr[i],(double)(erf(i*L/(double)(1<<(Nbits-1)))));
 #endif //LUTDEBUG
   }
 
@@ -57,7 +57,7 @@ int gauss(unsigned int *gauss_LUT,
   s = u & 0x80000000;
   u &= 0x7fffffff;
 #ifdef DEBUG
-  printf("u = %x,s=%d\n",u,s);
+  printf("u = %x,s=%u\n",u,s);
 #endif //DEBUG
   search_pos = (1<<(Nbits-2));   // starting position of the binary search
   step_size  = search_pos;
@@ -68,7 +68,7 @@ int gauss(unsigned int *gauss_LUT,
     tmpm1 = gauss_LUT[search_pos-1];
     tmpp1 = gauss_LUT[search_pos+1];
 #ifdef DEBUG
-    printf("search_pos %d, step_size %d: t %x tm %x,tp %x\n",search_pos,step_size,tmp,tmpm1,tmpp1);
+    printf("search_pos %u, step_size %u: t %x tm %x,tp %x\n",search_pos,step_size,tmp,tmpm1,tmpp1);
 #endif //DEBUG
 
     if (u <= tmp)

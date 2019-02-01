@@ -845,7 +845,7 @@ void  add_log_label(unsigned int label, unsigned int *start_log_metric) {
           node_actif++;
 
         if (node_actif>0)
-          LOG_F(label,"%d->%d ", i, j);
+          LOG_F(label,"%u->%u ", i, j);
       }
     }
 

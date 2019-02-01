@@ -167,7 +167,7 @@ void plot_graphes_ul(int src, int dst, int ctime) { //UE -->eNB
       fl_set_xyplot_key_font(form_ul->throughput, FL_BOLD_STYLE, FL_HUGE_SIZE);
       fl_set_xyplot_key_position(form_ul->throughput, x_key_position,y_key_position , FL_ALIGN_BOTTOM_LEFT);
       otg_kpi_nb_loss_pkts();
-      sprintf(loss_rate, "%s%d","NB Loss pkts UL=", otg_info->total_loss_ul);
+      sprintf(loss_rate, "%s%u","NB Loss pkts UL=", otg_info->total_loss_ul);
       fl_set_object_label(form_ul->loss_ratio, loss_rate);
       sprintf(simu_time, "%s%d","Simulation Time(ms)=", ctime);
       fl_set_object_label(form_ul->simu_time, simu_time);
@@ -183,7 +183,7 @@ void plot_graphes_ul(int src, int dst, int ctime) { //UE -->eNB
       fl_set_xyplot_key(form_ul->throughput, 0, curve_label);
       fl_set_xyplot_key_position(form_ul->throughput, x_key_position,y_key_position , FL_ALIGN_BOTTOM_LEFT);
       otg_kpi_nb_loss_pkts();
-      sprintf(loss_rate, "%s%d","NB Loss pkts UL=",otg_info->total_loss_ul);
+      sprintf(loss_rate, "%s%u","NB Loss pkts UL=",otg_info->total_loss_ul);
       fl_set_object_label(form_ul->loss_ratio, loss_rate);
       sprintf(simu_time, "%s%d","Simulation Time(ms)=", ctime);
       fl_set_object_label(form_ul->simu_time, simu_time);
@@ -248,7 +248,7 @@ void plot_graphes_dl(int src, int dst, int ctime) { //eNB -->UE
       fl_set_xyplot_key(form_dl->throughput, 0, curve_label);
       fl_set_xyplot_key_position(form_dl->throughput, x_key_position,y_key_position,   FL_ALIGN_BOTTOM_LEFT);
       otg_kpi_nb_loss_pkts();
-      sprintf(loss_rate, "%s%d","NB Loss pkts DL=",otg_info->total_loss_dl);
+      sprintf(loss_rate, "%s%u","NB Loss pkts DL=",otg_info->total_loss_dl);
       fl_set_object_label(form_dl->loss_ratio, loss_rate);
       sprintf(simu_time, "%s%d","Simulation Time(ms)=", ctime);
       fl_set_object_label(form_dl->simu_time, simu_time);
@@ -264,7 +264,7 @@ void plot_graphes_dl(int src, int dst, int ctime) { //eNB -->UE
       fl_set_xyplot_key(form_dl->throughput, 0, curve_label);
       fl_set_xyplot_key_position(form_dl->throughput,x_key_position,y_key_position,   FL_ALIGN_BOTTOM_LEFT);
       otg_kpi_nb_loss_pkts();
-      sprintf(loss_rate, "%s%d","NB Loss pkts DL=",otg_info->total_loss_dl);
+      sprintf(loss_rate, "%s%u","NB Loss pkts DL=",otg_info->total_loss_dl);
       fl_set_object_label(form_dl->loss_ratio, loss_rate);
       sprintf(simu_time, "%s%d","Simulation Time(ms)=", ctime);
       fl_set_object_label(form_dl->simu_time, simu_time);

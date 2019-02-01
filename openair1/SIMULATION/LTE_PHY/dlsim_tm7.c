@@ -1916,7 +1916,7 @@ int main(int argc, char **argv) {
         i=0;
 
         while ((!feof(input_trch_fd)) && (i<input_buffer_length0<<3)) {
-          ret=fscanf(input_trch_fd,"%s",input_trch_val);
+          ret=fscanf(input_trch_fd,"%15s",input_trch_val);
 
           if (input_trch_val[0] == '1')
             input_buffer0[k][i>>3]+=(1<<(7-(i&7)));
@@ -2492,7 +2492,7 @@ PMI_FEEDBACK:
                 rate = (double)tbs/(double)coded_bits_per_codeword;
 
                 if ((SNR==snr0) && (trials==0) && (round==0))
-                  printf("User %d, cw %d: Rate = %f (%f bits/dim) (G %d, TBS %d, mod %d, pdcch_sym %d, ndi %d)\n",
+                  printf("User %d, cw %d: Rate = %f (%f bits/dim) (G %u, TBS %u, mod %d, pdcch_sym %d, ndi %d)\n",
                          k,cw,rate,rate*get_Qm(eNB->dlsch[k][0]->harq_processes[0]->mcs),
                          coded_bits_per_codeword,
                          tbs,
@@ -2764,7 +2764,7 @@ PMI_FEEDBACK:
             tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
 
             if (n_frames==1) {
-              printf("tx_lev = %d (%d dB)\n",tx_lev,tx_lev_dB);
+              printf("tx_lev = %u (%u dB)\n",tx_lev,tx_lev_dB);
               LOG_M("txsig0.m","txs0", &eNB->common_vars.txdata[eNB_id][0][subframe*eNB->frame_parms.samples_per_tti],eNB->frame_parms.samples_per_tti,1,1);
               // LOG_M("txsig0.m","txs0",&eNB->common_vars.txdata[eNB_id][0][0*eNB->frame_parms.samples_per_tti],eNB->frame_parms.samples_per_tti*10,1,1);
             }
@@ -3110,7 +3110,7 @@ PMI_FEEDBACK:
                       //round_trials[0]++;
 
                       if (n_frames==1)
-                        printf("DCI error trial %d errs[0] %d\n",trials,errs[0]);
+                        printf("DCI error trial %u errs[0] %u\n",trials,errs[0]);
                     }
 
                     //    for (i=1;i<=round;i++)
@@ -3153,7 +3153,7 @@ PMI_FEEDBACK:
                       rate = (double)dlsch_tbs25[get_I_TBS(UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[UE->dlsch[UE->current_thread_id[subframe]][0][0]->current_harq_pid]->mcs)][UE->dlsch[UE->current_thread_id[subframe]][0][0]->nb_rb-1]/(coded_bits_per_codeword);
                       rate*=get_Qm(UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[UE->dlsch[UE->current_thread_id[subframe]][0][0]->current_harq_pid]->mcs);
                       */
-                      printf("num_pdcch_symbols %d, G %d, TBS %d\n",UE->pdcch_vars[0]->num_pdcch_symbols,coded_bits_per_codeword,
+                      printf("num_pdcch_symbols %d, G %u, TBS %d\n",UE->pdcch_vars[0]->num_pdcch_symbols,coded_bits_per_codeword,
                              UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[UE->dlsch[UE->current_thread_id[subframe]][0][0]->current_harq_pid]->TBS);
                       dlsch_active = 1;
                     } else {
@@ -3166,10 +3166,6 @@ PMI_FEEDBACK:
                         round=5;
 
                         if (n_frames==1)
-<<<<<<< f8509a1bf61f8f3f798575e01db8e5d4807d9ce9
-                          printf("DCI misdetection trial %d\n",trials);
-
-=======
                           printf("DCI misdetection trial %u\n",trials);
 >>>>>>> new set of cppcheck fixes
                       }
@@ -3751,12 +3747,7 @@ PMI_FEEDBACK:
              SNR,
              (double)tx_lev_dB+10*log10(UE->frame_parms.ofdm_symbol_size/(NB_RB*12)),
              sigma2_dB);
-<<<<<<< f8509a1bf61f8f3f798575e01db8e5d4807d9ce9
-
-      printf("Errors (%d(%d)/%d %d/%d %d/%d %d/%d), Pe = (%e,%e,%e,%e), dci_errors %d/%d, Pe = %e => effective rate %f  (%2.1f%%,%f, %f), normalized delay %f (%f)\n",
-=======
       printf("Errors (%u(%u)/%u %u/%u %u/%u %u/%u), Pe = (%e,%e,%e,%e), dci_errors %u/%u, Pe = %e => effective rate %f  (%2.1f%%,%f, %f), normalized delay %f (%f)\n",
->>>>>>> new set of cppcheck fixes
              errs[0],
              errs2[0],
              round_trials[0],
@@ -3887,7 +3878,7 @@ PMI_FEEDBACK:
       }
 
       if ((transmission_mode != 3) && (transmission_mode != 4)) {
-        fprintf(bler_fd,"%f;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d\n",
+        fprintf(bler_fd,"%f;%d;%d;%f;%u;%u;%u;%u;%u;%u;%u;%u;%u\n",
                 SNR,
                 mcs1,
                 eNB->dlsch[0][0]->harq_processes[0]->TBS,
@@ -3902,7 +3893,7 @@ PMI_FEEDBACK:
                 round_trials[3],
                 dci_errors);
       } else {
-        fprintf(bler_fd,"%f;%d;%d;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d\n",
+        fprintf(bler_fd,"%f;%d;%d;%d;%d;%f;%u;%u;%u;%u;%u;%u;%u;%u;%u\n",
                 SNR,
                 mcs1,mcs2,
                 eNB->dlsch[0][0]->harq_processes[0]->TBS,
@@ -3935,7 +3926,7 @@ PMI_FEEDBACK:
       if ( (test_perf != 0) && (100 * effective_rate > test_perf )) {
         //fprintf(time_meas_fd,"SNR; MCS; TBS; rate; err0; trials0; err1; trials1; err2; trials2; err3; trials3; dci_err\n");
         if ((transmission_mode != 3) && (transmission_mode != 4)) {
-          fprintf(time_meas_fd,"%f;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d;",
+          fprintf(time_meas_fd,"%f;%d;%d;%f;%u;%u;%u;%u;%u;%u;%u;%u;%u;",
                   SNR,
                   mcs1,
                   eNB->dlsch[0][0]->harq_processes[0]->TBS,
@@ -3950,7 +3941,7 @@ PMI_FEEDBACK:
                   round_trials[3],
                   dci_errors);
           //fprintf(time_meas_fd,"SNR; MCS; TBS; rate; DL_DECOD_ITER; err0; trials0; err1; trials1; err2; trials2; err3; trials3; PE; dci_err;PE;ND;\n");
-          fprintf(time_meas_fd,"%f;%d;%d;%f; %2.1f%%;%f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%e;%e;%e;%e;%d;%d;%e;%f;%f;",
+          fprintf(time_meas_fd,"%f;%d;%d;%f; %2.1f%%;%f;%f;%u;%u;%u;%u;%u;%u;%u;%u;%e;%e;%e;%e;%u;%u;%e;%f;%f;",
                   SNR,
                   mcs1,
                   eNB->dlsch[0][0]->harq_processes[0]->TBS,
@@ -3977,7 +3968,7 @@ PMI_FEEDBACK:
                   (double)eNB->dlsch[0][0]->harq_processes[0]->TBS,
                   (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]));
         } else {
-          fprintf(time_meas_fd,"%f;%d;%d;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d;%d;",
+          fprintf(time_meas_fd,"%f;%d;%d;%d;%d;%f;%u;%u;%u;%u;%u;%u;%u;%u;%u;",
                   SNR,
                   mcs1,mcs2,
                   eNB->dlsch[0][0]->harq_processes[0]->TBS,
@@ -3993,7 +3984,7 @@ PMI_FEEDBACK:
                   round_trials[3],
                   dci_errors);
           //fprintf(time_meas_fd,"SNR; MCS; TBS; rate; DL_DECOD_ITER; err0; trials0; err1; trials1; err2; trials2; err3; trials3; PE; dci_err;PE;ND;\n");
-          fprintf(time_meas_fd,"%f;%d;%d;%d;%d;%f;%2.1f;%f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%e;%e;%e;%e;%d;%d;%e;%f;%f;",
+          fprintf(time_meas_fd,"%f;%d;%d;%d;%d;%f;%2.1f;%f;%f;%u;%u;%u;%u;%u;%u;%u;%u;%e;%e;%e;%e;%u;%u;%e;%f;%f;",
                   SNR,
                   mcs1,mcs2,
                   eNB->dlsch[0][0]->harq_processes[0]->TBS,

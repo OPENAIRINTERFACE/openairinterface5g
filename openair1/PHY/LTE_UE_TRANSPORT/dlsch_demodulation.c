@@ -2248,7 +2248,7 @@ void dlsch_channel_compensation_TM56(int **rxdataF_ext,
 
     for (rb=0; rb<nb_rb; rb++) {
 #ifdef DEBUG_DLSCH_DEMOD
-      printf("mode 6 prec: rb %d, pmi->%d\n",rb,pmi_ext[rb]);
+      printf("mode 6 prec: rb %d, pmi->%u\n",rb,pmi_ext[rb]);
 #endif
       prec2A_TM56_128(pmi_ext[rb],&dl_ch0_128b[0],&dl_ch1_128b[0]);
       prec2A_TM56_128(pmi_ext[rb],&dl_ch0_128b[1],&dl_ch1_128b[1]);
@@ -4771,7 +4771,7 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
     else {  // Odd number of RBs
       for (rb=0; rb<frame_parms->N_RB_DL>>1; rb++) {
 #ifdef DEBUG_DLSCH_DEMOD
-        printf("dlch_ext %d\n",dl_ch0_ext-&dl_ch_estimates_ext[aarx][0]);
+        printf("dlch_ext %u\n",dl_ch0_ext-&dl_ch_estimates_ext[aarx][0]);
 #endif
         skip_half=0;
 

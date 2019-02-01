@@ -527,7 +527,7 @@ int pnf_param_resp_cb(nfapi_vnf_config_t *config, int p5_idx, nfapi_pnf_param_re
 
     nfapi_vnf_pnf_config_req(config, p5_idx, &req);
   }
-
+}
 int pnf_start_resp_cb(nfapi_vnf_config_t* config, int p5_idx, nfapi_pnf_start_response_t* resp)
 {
 	printf("[VNF_SIM] pnf start response idx:%d\n", p5_idx);
@@ -596,7 +596,7 @@ int param_resp_cb(nfapi_vnf_config_t* config, int p5_idx, nfapi_param_response_t
 			// for now just 1
 			vnf_p7_info& p7_vnf = vnf->p7_vnfs[0];
 
-			printf("[VNF_SIM] %d.%d pnf p7 %s:%d timing %d %d %d %d\n", p5_idx, phy.id, phy.remote_addr.c_str(), phy.remote_port, p7_vnf.timing_window, p7_vnf.periodic_timing_period, p7_vnf.aperiodic_timing_enabled, p7_vnf.periodic_timing_period);
+			printf("[VNF_SIM] %d.%d pnf p7 %s:%d timing %u %u %u %u\n", p5_idx, phy.id, phy.remote_addr.c_str(), phy.remote_port, p7_vnf.timing_window, p7_vnf.periodic_timing_period, p7_vnf.aperiodic_timing_enabled, p7_vnf.periodic_timing_period);
 
 
 			nfapi_config_request_t req;

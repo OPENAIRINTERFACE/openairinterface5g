@@ -75,7 +75,6 @@ void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch) {
     }
 
     free16(ulsch,sizeof(LTE_eNB_ULSCH_t));
-    ulsch = NULL;
   }
 }
 
@@ -869,7 +868,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
   G = nb_rb * (12 * Q_m) * (ulsch_harq->Nsymb_pusch);
   Q_CQI = Q_m * Qprime;
 #ifdef DEBUG_ULSCH_DECODING
-  printf("ulsch_decoding: G %d, Q_RI %d, Q_CQI %d (L %d, Or1 %d) O_ACK %d\n",G,Q_RI,Q_CQI,L,ulsch_harq->Or1,ulsch_harq->O_ACK);
+  printf("ulsch_decoding: G %u, Q_RI %u, Q_CQI %u (L %u, Or1 %d) O_ACK %d\n",G,Q_RI,Q_CQI,L,ulsch_harq->Or1,ulsch_harq->O_ACK);
 #endif
   G = G - Q_RI - Q_CQI;
   ulsch_harq->G = G;
@@ -968,7 +967,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
     }
 
 #ifdef DEBUG_ULSCH_DECODING
-    printf("ulsch_decoding.c: ACK i %d, r %d, j %d, ColumnSet[j] %d\n",i,r,j,columnset[j]);
+    printf("ulsch_decoding.c: ACK i %u, r %d, j %u, ColumnSet[j] %d\n",i,r,j,columnset[j]);
 #endif
     j=(j+3)&3;
   }
@@ -1373,7 +1372,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
     printf("ulsch_decoding: Or1=%d\n",ulsch_harq->Or1);
 
     for (i=0; i<1+((8+ulsch_harq->Or1)/8); i++)
-      printf("ulsch_decoding: O[%d] %d\n",i,ulsch_harq->o[i]);
+      printf("ulsch_decoding: O[%u] %d\n",i,ulsch_harq->o[i]);
 
     if (ulsch_harq->cqi_crc_status == 1)
       printf("RX CQI CRC OK (%x)\n",extract_cqi_crc(ulsch_harq->o,ulsch_harq->Or1));

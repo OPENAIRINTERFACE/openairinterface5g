@@ -708,7 +708,7 @@ int main(int argc, char **argv) {
     i=0;
 
     while (!feof(input_fd)) {
-      if (fscanf(input_fd,"%s %s",input_val_str,input_val_str2) != 2) { //&input_val1,&input_val2);
+      if (fscanf(input_fd,"%49s %49s",input_val_str,input_val_str2) != 2) { //&input_val1,&input_val2);
         printf("%s:%d:%s: error with fscanf, exiting\n", __FILE__, __LINE__, __FUNCTION__);
         exit(1);
       }

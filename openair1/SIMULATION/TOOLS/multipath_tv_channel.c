@@ -43,7 +43,7 @@ void multipath_tv_channel(channel_desc_t *desc,
   int i,j,k,dd;
   dd = abs(desc->channel_offset);
 #ifdef DEBUG_CH
-  printf("[TV CHANNEL] keep = %d : path_loss = %g (%f), nb_rx %d, nb_tx %d, dd %d, len %d max_doppler %d\n",keep_channel,path_loss,desc->path_loss_dB,desc->nb_rx,desc->nb_tx,dd,desc->channel_length,
+  printf("[TV CHANNEL] keep = %d : path_loss = %g (%f), nb_rx %d, nb_tx %d, dd %d, len %d max_doppler %g\n",keep_channel,path_loss,desc->path_loss_dB,desc->nb_rx,desc->nb_tx,dd,desc->channel_length,
          desc->max_Doppler);
 #endif
   tx = (double complex **)malloc(desc->nb_tx*sizeof(double complex));

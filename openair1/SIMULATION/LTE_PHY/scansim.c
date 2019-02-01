@@ -105,15 +105,6 @@ int main(int argc, char **argv) {
   number_of_cards = 1;
   openair_daq_vars.rx_rf_mode = 1;
 
-  /*
-    rxdataF    = (int **)malloc16(2*sizeof(int*));
-    rxdataF[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
-    rxdataF[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
-
-    rxdata    = (int **)malloc16(2*sizeof(int*));
-    rxdata[0] = (int *)malloc16(FRAME_LENGTH_BYTES);
-    rxdata[1] = (int *)malloc16(FRAME_LENGTH_BYTES);
-  */
   while ((c = getopt (argc, argv, "f:hpf:g:n:s:S:t:x:y:z:N:F:GdP:")) != -1) {
     switch (c) {
       case 'f':
@@ -604,8 +595,14 @@ int main(int argc, char **argv) {
   }
 
   free(s_re);
+  free(s_re1);
+  free(s_re2);
   free(s_im);
+  free(s_im1);
+  free(s_im2);
   free(r_re);
+  free(r_re1);
+  free(r_re2);
   free(r_im);
   free(r_im1);
   free(r_im2);

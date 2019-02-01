@@ -746,7 +746,7 @@ int dlsch_encoding_SIC(PHY_VARS_UE *ue,
 
       Kr_bytes = Kr>>3;
 #ifdef DEBUG_DLSCH_CODING
-      printf("Generating Code Segment %d (%d bits)\n",r,Kr);
+      printf("Generating Code Segment %u (%u bits)\n",r,Kr);
       // generate codewords
       printf("bits_per_codeword (Kr)= %u, A %u\n",Kr,A);
       printf("N_RB = %d\n",nb_rb);

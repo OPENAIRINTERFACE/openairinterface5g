@@ -349,19 +349,6 @@ int main(int argc, char **argv) {
   char input_val_str[50],input_val_str2[50];
   //  FILE *rx_frame_file;
   FILE *csv_fdUL=NULL;
-  /*
-    FILE *fperen=NULL;
-    char fperen_name[512];
-
-    FILE *fmageren=NULL;
-    char fmageren_name[512];
-
-    FILE *flogeren=NULL;
-    char flogeren_name[512];
-  */
-  /* FILE *ftxlev;
-     char ftxlev_name[512];
-  */
   char csv_fname[512];
   static int n_frames=5000;
   static int n_ch_rlz = 1;
@@ -820,7 +807,7 @@ int main(int argc, char **argv) {
   if (cqi_flag == 1) coded_bits_per_codeword-=UE->ulsch[0]->O;
 
   rate = (double)dlsch_tbs25[get_I_TBS(mcs)][nb_rb-1]/(coded_bits_per_codeword);
-  printf("Rate = %f (mod %d), coded bits %d\n",rate,get_Qm_ul(mcs),coded_bits_per_codeword);
+  printf("Rate = %f (mod %d), coded bits %u\n",rate,get_Qm_ul(mcs),coded_bits_per_codeword);
 
   for (ch_realization=0; ch_realization<n_ch_rlz; ch_realization++) {
     /*
@@ -882,7 +869,7 @@ int main(int argc, char **argv) {
         i=0;
 
         while (!feof(input_fdUL)) {
-          ret=fscanf(input_fdUL,"%s %s",input_val_str,input_val_str2);//&input_val1,&input_val2);
+          ret=fscanf(input_fdUL,"%49s %49s",input_val_str,input_val_str2);//&input_val1,&input_val2);
 
           if (ret != 2) printf("ERROR: error reading file\n");
 
@@ -969,7 +956,7 @@ int main(int argc, char **argv) {
           eNB->ulsch[0]->harq_processes[harq_pid]->round=round;
           UE->ulsch[0]->harq_processes[harq_pid]->round=round;
 
-          if (n_frames==1) printf("filling ulsch: Trial %d : Round %d (subframe %d, frame %d)\n",trials,round,proc_rxtx_ue->subframe_tx,proc_rxtx_ue->frame_tx);
+          if (n_frames==1) printf("filling ulsch: Trial %u : Round %d (subframe %d, frame %d)\n",trials,round,proc_rxtx_ue->subframe_tx,proc_rxtx_ue->frame_tx);
 
           round_trials[round]++;
           UL_req.sfn_sf = (1<<4)+subframe;
@@ -1063,7 +1050,7 @@ int main(int argc, char **argv) {
           tx_gain = sqrt(pow(10.0,.1*(N0+SNR))/(double)tx_lev);//*(nb_rb*12/(double)UE->frame_parms.ofdm_symbol_size)/(double)tx_lev);
 
           if (n_frames==1)
-            printf("tx_lev = %d (%d.%d dB,%f), gain %f\n",tx_lev,tx_lev_dB/10,tx_lev_dB,10*log10((double)tx_lev),10*log10(tx_gain));
+            printf("tx_lev = %u (%u.%u dB,%f), gain %f\n",tx_lev,tx_lev_dB/10,tx_lev_dB,10*log10((double)tx_lev),10*log10(tx_gain));
 
           // fill measurement symbol (19) with noise
           for (i=0; i<OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; i++) {
@@ -1098,7 +1085,7 @@ int main(int argc, char **argv) {
                 // calculate freq domain representation to compute SINR
                 freq_channel(UE2eNB, N_RB_DL,12*N_RB_DL + 1);
                 // snr=pow(10.0,.1*SNR);
-                fprintf(csv_fdUL,"%f,%d,%d,%f,%f,%f,",SNR,tx_lev,tx_lev_dB,sigma2_dB,tx_gain,SNR2);
+                fprintf(csv_fdUL,"%f,%u,%u,%f,%f,%f,",SNR,tx_lev,tx_lev_dB,sigma2_dB,tx_gain,SNR2);
 
                 //fprintf(csv_fdUL,"%f,",SNR);
                 for (u=0; u<12*nb_rb; u++) {
@@ -1228,7 +1215,7 @@ int main(int argc, char **argv) {
               if (round == 4) exit(-1);
             }
 
-            if (n_frames==1) printf("round %d errors %d/%d\n",round,errs[round],trials);
+            if (n_frames==1) printf("round %d errors %u/%u\n",round,errs[round],trials);
 
             round++;
 
@@ -1286,7 +1273,7 @@ int main(int argc, char **argv) {
         LOG_UDUMPMSG(SIM,dataArray(table_rx),table_rx->size,LOG_DUMP_DOUBLE,"The receiver raw data: \n");
       }
 
-      printf("\n**********rb: %d ***mcs : %d  *********SNR = %f dB (%f): TX %d dB (gain %f dB), N0W %f dB, I0 %d dB, delta_IF %d [ (%d,%d) dB / (%d,%d) dB ]**************************\n",
+      printf("\n**********rb: %d ***mcs : %d  *********SNR = %f dB (%f): TX %u dB (gain %f dB), N0W %f dB, I0 %d dB, delta_IF %d [ (%d,%d) dB / (%d,%d) dB ]**************************\n",
              nb_rb,mcs,SNR,SNR2,
              tx_lev_dB,
              20*log10(tx_gain),
@@ -1298,7 +1285,7 @@ int main(int argc, char **argv) {
              eNB->measurements.n0_power_dB[0],
              eNB->measurements.n0_power_dB[1]);
       effective_rate = ((double)(round_trials[0])/((double)round_trials[0] + round_trials[1] + round_trials[2] + round_trials[3]));
-      printf("Errors (%d/%d %d/%d %d/%d %d/%d), Pe = (%e,%e,%e,%e) => effective rate %f (%3.1f%%,%f,%f), normalized delay %f (%f)\n",
+      printf("Errors (%u/%u %u/%u %u/%u %u/%u), Pe = (%e,%e,%e,%e) => effective rate %f (%3.1f%%,%f,%f), normalized delay %f (%f)\n",
              errs[0],
              round_trials[0],
              errs[1],
@@ -1320,16 +1307,16 @@ int main(int argc, char **argv) {
              (1.0*(round_trials[0]-errs[0])+2.0*(round_trials[1]-errs[1])+3.0*(round_trials[2]-errs[2])+4.0*(round_trials[3]-errs[3]))/((double)round_trials[0]));
 
       if (cqi_flag >0) {
-        printf("CQI errors %d/%d,false positives %d/%d, CQI false negatives %d/%d\n",
+        printf("CQI errors %d/%u,false positives %d/%u, CQI false negatives %d/%u\n",
                cqi_errors,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3],
                cqi_crc_falsepositives,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3],
                cqi_crc_falsenegatives,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3]);
       }
 
       if (eNB->ulsch[0]->harq_processes[harq_pid]->o_ACK[0] > 0)
-        printf("ACK/NAK errors %d/%d\n",ack_errors,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3]);
+        printf("ACK/NAK errors %d/%u\n",ack_errors,round_trials[0]+round_trials[1]+round_trials[2]+round_trials[3]);
 
-      fprintf(bler_fd,"%f;%d;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d\n",
+      fprintf(bler_fd,"%f;%d;%d;%d;%f;%u;%u;%u;%u;%u;%u;%u;%u\n",
               SNR,
               mcs,
               nb_rb,
@@ -1402,7 +1389,7 @@ int main(int argc, char **argv) {
 
       if ( (test_perf != 0) && (100 * effective_rate > test_perf )) {
         //fprintf(time_meas_fd,"SNR; MCS; TBS; rate; err0; trials0; err1; trials1; err2; trials2; err3; trials3\n");
-        fprintf(time_meas_fd,"%f;%d;%d;%f;%d;%d;%d;%d;%d;%d;%d;%d;",
+        fprintf(time_meas_fd,"%f;%d;%d;%f;%u;%u;%u;%u;%u;%u;%u;%u;",
                 SNR,
                 mcs,
                 eNB->ulsch[0]->harq_processes[harq_pid]->TBS,
@@ -1416,7 +1403,7 @@ int main(int argc, char **argv) {
                 errs[3],
                 round_trials[3]);
         //fprintf(time_meas_fd,"SNR; MCS; TBS; rate; err0; trials0; err1; trials1; err2; trials2; err3; trials3;ND;\n");
-        fprintf(time_meas_fd,"%f;%d;%d;%f;%2.1f;%f;%d;%d;%d;%d;%d;%d;%d;%d;%e;%e;%e;%e;%f;%f;",
+        fprintf(time_meas_fd,"%f;%d;%d;%f;%2.1f;%f;%u;%u;%u;%u;%u;%u;%u;%u;%e;%e;%e;%e;%f;%f;",
                 SNR,
                 mcs,
                 eNB->ulsch[0]->harq_processes[harq_pid]->TBS,
