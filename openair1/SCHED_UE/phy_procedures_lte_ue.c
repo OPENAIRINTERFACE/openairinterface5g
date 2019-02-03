@@ -1900,16 +1900,6 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   uint8_t isShortenPucch = (pSoundingrs_ul_config_dedicated->srsCellSubframe && frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission);
   bundling_flag = ue->pucch_config_dedicated[eNB_id].tdd_AckNackFeedbackMode;
 
-  if ((frame_parms->frame_type==FDD) ||
-      (bundling_flag==bundling)    ||
-      ((frame_parms->frame_type==TDD)&&(frame_parms->tdd_config==1)&&((subframe_tx==2)||(subframe_tx==7)))) {
-    format = pucch_format1a;
-    //    LOG_D(PHY,"[UE] PUCCH 1a\n");
-  } else {
-    format = pucch_format1b;
-    //    LOG_D(PHY,"[UE] PUCCH 1b\n");
-  }
-
   // Part - I
   // Collect feedback that should be transmitted at this subframe
   // - SR
