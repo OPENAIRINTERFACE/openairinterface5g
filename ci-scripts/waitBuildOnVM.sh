@@ -165,6 +165,10 @@ function check_on_vm_build {
         fi
     done
 
-    if [ $NB_PATTERN_FILES -ne $NB_FOUND_FILES ]; then STATUS=-1; fi
+    if [ $NB_PATTERN_FILES -ne $NB_FOUND_FILES ]
+    then
+        echo "Expecting $NB_PATTERN_FILES log files and found $NB_FOUND_FILES"
+        STATUS=-1
+    fi
 
 }
