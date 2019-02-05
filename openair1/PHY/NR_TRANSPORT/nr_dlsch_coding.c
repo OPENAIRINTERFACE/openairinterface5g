@@ -280,7 +280,7 @@ int nr_dlsch_encoding(unsigned char *a,
   uint32_t A, Z;
   uint32_t *pz = &Z;
   uint8_t mod_order = rel15.modulation_order;
-  uint16_t Kr=0,r,r_offset=0;//Kr_bytes
+  uint16_t Kr=0,r,r_offset=0,Kr_bytes;
   uint8_t *d_tmp[MAX_NUM_DLSCH_SEGMENTS];
   uint8_t kb,BG=1;
   uint32_t E;
@@ -346,7 +346,7 @@ int nr_dlsch_encoding(unsigned char *a,
 	}
 
     Kr = dlsch->harq_processes[harq_pid]->K;
-    //Kr_bytes = Kr>>3;
+    Kr_bytes = Kr>>3;
 
     //printf("segment Z %d kb %d k %d Kr %d BG %d\n", *pz,kb,dlsch->harq_processes[harq_pid]->K,Kr,BG);
 
@@ -403,7 +403,7 @@ int nr_dlsch_encoding(unsigned char *a,
 
     //start_meas(rm_stats);
 #ifdef DEBUG_DLSCH_CODING
-  printf("rvidx in encoding = %d\n", dlsch->harq_processes[harq_pid]->rvidx);
+  printf("rvidx in encoding = %d\n", rel15.redundancy_version);
 #endif
 
     E = nr_rate_matching_ldpc(Ilbrm,
@@ -421,7 +421,7 @@ int nr_dlsch_encoding(unsigned char *a,
 
 #ifdef DEBUG_DLSCH_CODING
     for (int i =0; i<16; i++)
-       	printf("output ratematching e[%d]= %d r_offset %d\n", i,dlsch->harq_processes[harq_pid]->e[i], r_offset);
+      printf("output ratematching e[%d]= %d r_offset %d\n", i,dlsch->harq_processes[harq_pid]->e[i+r_offset], r_offset);
 #endif
     //stop_meas(rm_stats);
 
@@ -432,18 +432,15 @@ int nr_dlsch_encoding(unsigned char *a,
 						dlsch->harq_processes[harq_pid]->f+r_offset);
     //stop_meas(i_stats);
 
-    r_offset += E;
 #ifdef DEBUG_DLSCH_CODING
     for (int i =0; i<16; i++)
-    	printf("output interleaving f[%d]= %d r_offset %d\n", i,dlsch->harq_processes[harq_pid]->f[i+r*r_offset], r_offset);
-#endif
-
-#ifdef DEBUG_DLSCH_CODING
+      printf("output interleaving f[%d]= %d r_offset %d\n", i,dlsch->harq_processes[harq_pid]->f[i+r_offset], r_offset);
 
     if (r==dlsch->harq_processes[harq_pid]->C-1)
-      write_output("enc_output.m","enc",dlsch->harq_processes[harq_pid]->f,r_offset,1,4);
-
+      write_output("enc_output.m","enc",dlsch->harq_processes[harq_pid]->f,G,1,4);
 #endif
+
+    r_offset += E;
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
