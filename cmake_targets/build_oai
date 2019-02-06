@@ -250,7 +250,7 @@ function main() {
        -w | --hardware)
             HW="$2" #"${i#*=}"
             # Use OAI_USRP  as the key word USRP is used inside UHD driver
-	    if [ "$HW" != "BLADERF" -a  "$HW" != "USRP" -a "$HW" != "LMSSDR" -a  "$HW" != "None" -a  "$HW" != "EXMIMO" -a  "$HW" != "ADRV9371_ZC706"  ] ; then 
+	    if [ "$HW" != "BLADERF" -a  "$HW" != "USRP" -a "$HW" != "LMSSDR" -a  "$HW" != "None" -a  "$HW" != "EXMIMO" -a  "$HW" != "ADRV9371_ZC706"  -a  "$HW" != "SIMU" ] ; then 
 		echo_fatal "Unknown HW type $HW will exit..."		
 	    else
 		if [ "$HW" == "USRP" ] ; then 
@@ -265,6 +265,9 @@ function main() {
 		if [ "$HW" == "LMSSDR" ] ; then 
 		    HW="OAI_LMSSDR"
 		fi 
+		if [ "$HW" == "SIMU" ] ; then
+                    HW="OAI_SIMU"
+                fi
 		echo_info "Setting hardware to: $HW"
 	    fi
             shift 2;;

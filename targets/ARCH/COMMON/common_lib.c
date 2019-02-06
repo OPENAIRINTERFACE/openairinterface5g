@@ -34,40 +34,42 @@
 #include <dlfcn.h>
 #include <errno.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "common_lib.h"
 #include "common/utils/load_module_shlib.h"
+#include <common/utils/LOG/log.h>
 
 int set_device(openair0_device *device) {
 
   switch (device->type) {
     
   case EXMIMO_DEV:
-    printf("[%s] has loaded EXPRESS MIMO device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
+    LOG_I(HW,"[%s] has loaded EXPRESS MIMO device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
     break;
   case USRP_B200_DEV:
-    printf("[%s] has loaded USRP B200 device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU")); 
+    LOG_I(HW,"[%s] has loaded USRP B200 device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU")); 
     break;
-case USRP_X300_DEV:
-    printf("[%s] has loaded USRP X300 device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU")); 
+  case USRP_X300_DEV:
+    LOG_I(HW,"[%s] has loaded USRP X300 device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU")); 
     break;
   case BLADERF_DEV:
-    printf("[%s] has loaded BLADERF device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU")); 
+    LOG_I(HW,"[%s] has loaded BLADERF device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU")); 
     break;
   case LMSSDR_DEV:
-    printf("[%s] has loaded LMSSDR device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU")); 
+    LOG_I(HW,"[%s] has loaded LMSSDR device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU")); 
     break;
   case NONE_DEV:
-    printf("[%s] has not loaded a HW device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
+    LOG_W(HW,"[%s] has not loaded a HW device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
     break;    
   case ADRV9371_ZC706_DEV:
-    printf("[%s] has loaded ADRV9371_ZC706 device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
+    LOG_I(HW,"[%s] has loaded ADRV9371_ZC706 device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
     break;
   case UEDv2_DEV:
-    printf("[%s] has loaded UEDv2 device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
+    LOG_I(HW,"[%s] has loaded UEDv2 device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
     break;
   default:
-    printf("[%s] invalid HW device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU")); 
+    LOG_E(HW,"[%s] invalid HW device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU")); 
     return -1;
   }
   return 0;
@@ -78,15 +80,15 @@ int set_transport(openair0_device *device) {
   switch (device->transp_type) {
     
   case ETHERNET_TP:
-    printf("[%s] has loaded ETHERNET trasport protocol.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
+    LOG_I(HW,"[%s] has loaded ETHERNET trasport protocol.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
     return 0;     
     break;
   case NONE_TP:
-    printf("[%s] has not loaded a transport protocol.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
+    LOG_W(HW,"[%s] has not loaded a transport protocol.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
     return 0; 
     break;    
   default:
-    printf("[%s] invalid transport protocol.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU")); 
+    LOG_E(HW,"[%s] invalid transport protocol.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU")); 
     return -1;
     break;
   }
@@ -100,6 +102,9 @@ int load_lib(openair0_device *device, openair0_config_t *openair0_cfg, eth_param
   int ret=0;
   char *libname;
   if (flag == RAU_LOCAL_RADIO_HEAD) {
+	  if (getenv("RFSIMULATOR") != NULL) 
+     	  libname="rfsimulator";
+	  else 
       libname=OAI_RF_LIBNAME;
       shlib_fdesc[0].fname="device_init";
     } else {
@@ -108,7 +113,7 @@ int load_lib(openair0_device *device, openair0_config_t *openair0_cfg, eth_param
     } 
   ret=load_module_shlib(libname,shlib_fdesc,1,NULL);
   if (ret < 0) {
-       fprintf(stderr,"Library %s couldn't be loaded\n",libname);
+       LOG_E(HW,"Library %s couldn't be loaded\n",libname);
   } else {
        ret=((devfunc_t)shlib_fdesc[0].fptr)(device,openair0_cfg,cfg);
   }    
@@ -124,7 +129,7 @@ int openair0_device_load(openair0_device *device, openair0_config_t *openair0_cf
 
   if ( rc >= 0) {       
 	if ( set_device(device) < 0) {
-      fprintf(stderr, "%s %d:Unsupported radio head\n",__FILE__, __LINE__);
+      LOG_E(HW,"Unsupported radio head\n");
       return -1;		   
     }   
   }
@@ -136,7 +141,7 @@ int openair0_transport_load(openair0_device *device, openair0_config_t *openair0
   rc=load_lib(device, openair0_cfg, eth_params, RAU_REMOTE_RADIO_HEAD);
   if ( rc >= 0) {       
     if ( set_transport(device) < 0) {
-      fprintf(stderr, "%s %d:Unsupported transport protocol\n",__FILE__, __LINE__);
+      LOG_E(HW,"Unsupported transport protocol\n");
       return -1;		   
       }   
   }

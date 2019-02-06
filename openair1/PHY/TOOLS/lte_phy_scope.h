@@ -25,7 +25,7 @@
 #define FD_lte_scope_h_
 
 #include <forms.h>
-#include "PHY/defs_eNB.h"
+#include "PHY/defs_gNB.h"
 #include "PHY/defs_UE.h"
 #include "PHY/impl_defs_top.h"
 
@@ -66,7 +66,7 @@ FD_lte_phy_scope_enb * create_lte_phy_scope_enb( void );
 FD_lte_phy_scope_ue * create_lte_phy_scope_ue( void );
 
 void phy_scope_eNB(FD_lte_phy_scope_enb *form,
-                   PHY_VARS_eNB *phy_vars_enb,
+                   PHY_VARS_gNB *phy_vars_gnb,
                    int UE_id);
 
 void phy_scope_UE(FD_lte_phy_scope_ue *form,

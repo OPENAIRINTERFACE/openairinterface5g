@@ -2885,10 +2885,10 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
 	      {
                 ue->dlsch[th_id][eNB_id][0]->g_pucch += delta_pucch;
 	      }
-            LOG_D(PHY,"update TPC for PUCCH %d.%d / pid %d delta_PUCCH %d g_pucch %d %d \n",frame_rx, subframe_rx,ue->dlsch[ue->current_thread_id[subframe_rx]][eNB_id][0]->current_harq_pid,
+            LOG_D(PHY,"update TPC for PUCCH %d.%d / pid %d delta_PUCCH %d g_pucch %d\n",
+			    frame_rx, subframe_rx,ue->dlsch[ue->current_thread_id[subframe_rx]][eNB_id][0]->current_harq_pid,
 		  delta_pucch,
-		  ue->dlsch[0][eNB_id][0]->g_pucch,
-		  ue->dlsch[1][eNB_id][0]->g_pucch
+		  ue->dlsch[0][eNB_id][0]->g_pucch
 		  //ue->dlsch[2][eNB_id][0]->g_pucch
 		  );
           }
