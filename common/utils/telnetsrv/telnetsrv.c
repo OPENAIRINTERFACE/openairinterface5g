@@ -58,7 +58,7 @@
 
 #include "telnetsrv_phycmd.h"
 #include "telnetsrv_proccmd.h"
-static char *telnet_defstatmod[] = {"softmodem","phy","loader"};
+static char *telnet_defstatmod[] = {"softmodem","phy","loader","measur"};
 static telnetsrv_params_t telnetparams;
 #define TELNETSRV_LISTENADDR 0
 #define TELNETSRV_LISTENPORT 1
@@ -500,11 +500,10 @@ int process_command(char *buf) {
       }/* else */
     }/* strncmp: module name test */
     else if (strncasecmp(modulename,"loop",4) == 0 ) {
-      int lc;
       int f = fcntl(telnetparams.new_socket,F_GETFL);
       fcntl (telnetparams.new_socket, F_SETFL, O_NONBLOCK | f);
 
-      for(lc=0; lc<telnetparams.loopcount; lc++) {
+      for(int lc=0; lc<telnetparams.loopcount; lc++) {
         char dummybuff[20];
         char tbuff[64];
         int rs;
