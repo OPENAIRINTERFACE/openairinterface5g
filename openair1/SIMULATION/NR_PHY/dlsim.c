@@ -395,7 +395,7 @@ int main(int argc, char **argv)
   frame_parms->N_RB_UL = N_RB_DL;
 
   // stub to configure frame_parms
-  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu);
+  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell);
   // call MAC to configure common parameters
 
   phy_init_nr_gNB(gNB,0,0);
