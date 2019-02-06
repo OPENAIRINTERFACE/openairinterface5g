@@ -56,8 +56,7 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
 {
   NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   int ret =-1;
-  int ar, n;
-  double im, re;
+
 
 #ifdef DEBUG_INITIAL_SYNCH
   LOG_I(PHY,"[UE%d] Initial sync: starting PBCH detection (rx_offset %d)\n",ue->Mod_id,
@@ -67,26 +66,6 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
   // save the nb_prefix_samples0 since we are not synchronized to subframes yet and the SSB has all symbols with nb_prefix_samples
   int nb_prefix_samples0 = frame_parms->nb_prefix_samples0;
   frame_parms->nb_prefix_samples0 = frame_parms->nb_prefix_samples;
-
-  // digital compensation of FFO for PBCH symbols
-  if(abs(2*ue->common_vars.freq_offset)<frame_parms->subcarrier_spacing){  // this FFO compensation seems to work only for FFO between -0.5 and 0.5
-  
-   int size_wp = (frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples0);  // symbol size including prefix
-   double s_time = 1/(1.0e3*frame_parms->samples_per_subframe);  // sampling time
-   double off_angle = -2*M_PI*s_time*(ue->common_vars.freq_offset);  // offset rotation angle compensation per sample
-
-   int start = ue->ssb_offset + size_wp;  // start for offset correction is one symbol after ssb_offset (pss time position), including prefix
-   int end = start + (3*size_wp);  // loop over samples in 3 symbols, including prefix
-  
-   for(n=start; n<end; n++){  	
-	for (ar=0; ar<frame_parms->nb_antennas_rx; ar++) {
-		re = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n]);
-		im = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n+1]);
-		((short *)ue->common_vars.rxdata[ar])[2*n] = (short)(round(re*cos(n*off_angle) - im*sin(n*off_angle))); 
-		((short *)ue->common_vars.rxdata[ar])[2*n+1] = (short)(round(re*sin(n*off_angle) + im*cos(n*off_angle)));
-	}
-   }
-  }
 
 
   //symbol 1
@@ -167,6 +146,7 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   int32_t sync_pos, sync_pos_slot; // k_ssb, N_ssb_crb, sync_pos2,
   int32_t metric_tdd_ncp=0;
   uint8_t phase_tdd_ncp;
+  double im, re;
 
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
   int ret=-1;
@@ -213,7 +193,7 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   else{
     ue->ssb_offset = sync_pos + (fp->samples_per_subframe * 10) - fp->nb_prefix_samples;}
     
-    ue->rx_offset = ue->ssb_offset - sync_pos_slot;
+  ue->rx_offset = ue->ssb_offset - sync_pos_slot;
 
   //write_output("rxdata1.m","rxd1",ue->common_vars.rxdata[0],10*fp->samples_per_subframe,1,1);
 
@@ -221,6 +201,23 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   LOG_I(PHY,"[UE%d] Initial sync : Estimated PSS position %d, Nid2 %d\n", ue->Mod_id, sync_pos,ue->common_vars.eNb_id);
   LOG_I(PHY,"sync_pos %d ssb_offset %d sync_pos_slot %d \n",sync_pos,ue->ssb_offset,sync_pos_slot);
 #endif
+
+  // digital compensation of FFO for SSB symbols  
+  double s_time = 1/(1.0e3*fp->samples_per_subframe);  // sampling time
+  double off_angle = -2*M_PI*s_time*(ue->common_vars.freq_offset);  // offset rotation angle compensation per sample
+
+  int start = ue->ssb_offset;  // start for offset correction is at ssb_offset (pss time position)
+  int end = start + 4*(fp->ofdm_symbol_size + fp->nb_prefix_samples);  // loop over samples in 4 symbols (ssb size), including prefix  
+
+  for(int n=start; n<end; n++){  	
+	for (int ar=0; ar<fp->nb_antennas_rx; ar++) {
+		re = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n]);
+		im = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n+1]);
+		((short *)ue->common_vars.rxdata[ar])[2*n] = (short)(round(re*cos(n*off_angle) - im*sin(n*off_angle))); 
+		((short *)ue->common_vars.rxdata[ar])[2*n+1] = (short)(round(re*sin(n*off_angle) + im*cos(n*off_angle)));
+	}
+  }
+
 
   /* check that SSS/PBCH block is continuous inside the received buffer */
   if (sync_pos < (NR_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_subframe - (NB_SYMBOLS_PBCH * fp->ofdm_symbol_size))) {
