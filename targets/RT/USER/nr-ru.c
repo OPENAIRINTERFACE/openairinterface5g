@@ -1286,7 +1286,7 @@ static void* ru_thread_tx( void* param ) {
   gNB_L1_rxtx_proc_t *L1_proc;
   NR_DL_FRAME_PARMS *fp      = ru->nr_frame_parms;
   char               filename[40];
-  int                print_frame = 2;
+  int                print_frame = 8;
   int                i = 0;
 
   cpu_set_t cpuset;
@@ -1403,7 +1403,7 @@ static void* ru_thread( void* param ) {
   int                slot = fp->slots_per_frame-1;
   int                frame    =1023; 
   char               filename[40],threadname[40];
-  int                print_frame = 2;
+  int                print_frame = 8;
   int                i = 0;
 
   // set default return value

@@ -254,3 +254,4 @@ int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){
 
   return 0;
 }
+

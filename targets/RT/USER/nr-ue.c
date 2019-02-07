@@ -671,6 +671,8 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 //        pickTime(current);
 //        updateTimes(proc->gotIQs, &t2, 10000, "Delay to wake up UE_Thread_Rx (case 2)");
 
+
+
         // Process Rx data for one sub-frame
         if (slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx) & NR_DOWNLINK_SLOT) {
 
@@ -685,8 +687,12 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 	    UE->dcireq.cc_id     = 0;
 	    UE->dcireq.frame     = proc->frame_rx;
 	    UE->dcireq.slot      = proc->nr_tti_rx;
-	    //UE->if_inst->dcireq(&UE->dcireq);
+	    nr_ue_dcireq(&UE->dcireq); //to be replaced with function pointer later
 
+	    NR_UE_MAC_INST_t *UE_mac = get_mac_inst(0);
+	    UE_mac->scheduled_response.dl_config = &UE->dcireq.dl_config_req;
+	    nr_ue_scheduled_response(&UE_mac->scheduled_response);
+	    
 #ifdef UE_SLOT_PARALLELISATION
             phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
@@ -705,68 +711,17 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 
             //  trigger L2 to run ue_scheduler thru IF module
             //  [TODO] mapping right after NR initial sync
-            if(1)
             if(UE->if_inst != NULL && UE->if_inst->ul_indication != NULL){
                 UE->ul_indication.module_id = 0;
                 UE->ul_indication.gNB_index = 0;
                 UE->ul_indication.cc_id = 0;
-                UE->ul_indication.slot = 0;     //  to be fill
-                UE->ul_indication.frame = 0;    //  to be fill
-                //  [TODO] mapping right after NR initial sync
                 UE->ul_indication.frame = proc->frame_rx; 
                 UE->ul_indication.slot = proc->nr_tti_rx;
                 
                 UE->if_inst->ul_indication(&UE->ul_indication);
             }
-
-
-
-#ifdef NEW_MAC
-          ret = mac_xface->ue_scheduler(UE->Mod_id,
-                                          proc->frame_rx,
-                                          proc->subframe_rx,
-                                          proc->nr_tti_rx,
-                                          proc->frame_tx,
-                                          proc->subframe_tx,
-                                          proc->nr_tti_tx%(UE->frame_parms.ttis_per_subframe),
-#ifndef NO_RAT_NR
-                                          slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx),
-#else
-                                          subframe_select(&UE->frame_parms,proc->subframe_tx),
-#endif
-                                          0,
-                                          0/*FIXME CC_id*/);
-#endif
-
-/*#else
-            ret = mac_xface->ue_scheduler(UE->Mod_id,
-                                          proc->frame_rx,
-                                          proc->subframe_rx,
-                                          proc->frame_tx,
-                                          proc->subframe_tx,
-                                          subframe_select(&UE->frame_parms,proc->subframe_tx),
-                                          0,  */
-//                                          0/*FIXME CC_id*/);
-//#endif
-            if ( ret != CONNECTION_OK) {
-                char *txt;
-                switch (ret) {
-                case CONNECTION_LOST:
-                    txt="RRC Connection lost, returning to PRACH";
-                    break;
-                case PHY_RESYNCH:
-                    txt="RRC Connection lost, trying to resynch";
-                    break;
-                case RESYNCH:
-                    txt="return to PRACH and perform a contention-free access";
-                    break;
-                default:
-                    txt="UNKNOWN RETURN CODE";
-                };
-                LOG_E( PHY, "[UE %"PRIu8"] Frame %"PRIu32", subframe %u %s\n",
-                       UE->Mod_id, proc->frame_rx, proc->subframe_tx,txt );
-            }
-        }
+	}
+    
 #if UE_TIMING_TRACE
         stop_meas(&UE->generic_stat);
 #endif
@@ -1130,23 +1085,41 @@ void *UE_thread(void *arg) {
 		    proc->nr_tti_tx %= NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
 		  }
 		  proc->subframe_tx=proc->nr_tti_tx;
-		  
-		  printf("Processing subframe %d\n",proc->subframe_rx);
+
+		  if (slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx) & NR_DOWNLINK_SLOT) {
+		    
+		    //clean previous FAPI MESSAGE
+		    UE->rx_ind.number_pdus = 0;
+		    UE->dci_ind.number_of_dcis = 0;
+		    //clean previous FAPI MESSAGE
+		    
+		    // call L2 for DL_CONFIG (DCI)
+		    UE->dcireq.module_id = UE->Mod_id;
+		    UE->dcireq.gNB_index = 0;
+		    UE->dcireq.cc_id     = 0;
+		    UE->dcireq.frame     = proc->frame_rx;
+		    UE->dcireq.slot      = proc->nr_tti_rx;
+		    nr_ue_dcireq(&UE->dcireq); //to be replaced with function pointer later
+
+		    NR_UE_MAC_INST_t *UE_mac = get_mac_inst(0);
+		    UE_mac->scheduled_response.dl_config = &UE->dcireq.dl_config_req;
+		    nr_ue_scheduled_response(&UE_mac->scheduled_response);
+
+		    
+		    printf("Processing subframe %d\n",proc->subframe_rx);
+		    phy_procedures_nrUE_RX( UE, proc, 0, 1, UE->mode);
+		  }
 		  
 		  if(UE->if_inst != NULL && UE->if_inst->ul_indication != NULL){
 		    UE->ul_indication.module_id = 0;
 		    UE->ul_indication.gNB_index = 0;
 		    UE->ul_indication.cc_id = 0;
-		    UE->ul_indication.slot = 0;     //  to be fill
-		    UE->ul_indication.frame = 0;    //  to be fill
-		    //  [TODO] mapping right after NR initial sync
 		    UE->ul_indication.frame = proc->frame_rx; 
 		    UE->ul_indication.slot = proc->nr_tti_rx;
 		    
 		    UE->if_inst->ul_indication(&UE->ul_indication);
 		  }
 		  
-		  phy_procedures_nrUE_RX( UE, proc, 0, 1, UE->mode);
 		  getchar();
 		} // else loop_through_memory
             } // start_rx_stream==1

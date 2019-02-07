@@ -395,7 +395,7 @@ int main(int argc, char **argv)
   frame_parms->N_RB_UL = N_RB_DL;
 
   // stub to configure frame_parms
-  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu);
+  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell);
   // call MAC to configure common parameters
 
   phy_init_nr_gNB(gNB,0,0);
@@ -622,7 +622,7 @@ int main(int argc, char **argv)
   
   uint32_t number_of_search_space_per_slot=1;
   uint32_t first_symbol_index=0;
-  uint32_t search_space_duration;  //  element of search space
+  uint32_t search_space_duration=0;  //  element of search space
   uint32_t coreset_duration;  //  element of coreset
   
   coreset_duration = num_symbols * number_of_search_space_per_slot;

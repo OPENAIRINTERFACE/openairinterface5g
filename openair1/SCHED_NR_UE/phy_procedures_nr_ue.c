@@ -56,7 +56,7 @@
 //#define DEBUG_PHY_PROC
 
 #define NR_PDCCH_SCHED
-//#define NR_PDCCH_SCHED_DEBUG
+#define NR_PDCCH_SCHED_DEBUG
 //#define NR_PUCCH_SCHED
 //#define NR_PUCCH_SCHED_DEBUG
 
@@ -3350,13 +3350,13 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
        ue->dci_ind.dci_list[i].dci_format = dci_alloc_rx[i].format;
        ue->dci_ind.dci_list[i].n_CCE = dci_alloc_rx[i].firstCCE;
        ue->dci_ind.dci_list[i].N_CCE = (int)dci_alloc_rx[i].L;
-       ue->dci_ind.number_of_dcis = ue->dci_ind.number_of_dcis + 1;
-        memcpy(&ue->dci_ind.dci_list[i].dci, &nr_dci_info_extracted, sizeof(fapi_nr_dci_pdu_rel15_t) );
+       memcpy(&ue->dci_ind.dci_list[i].dci, &nr_dci_info_extracted, sizeof(fapi_nr_dci_pdu_rel15_t) );
         
-        //  TODO: check where should we send up this message.
-        // ue->if_inst->dl_indication(&ue->dl_indication);
-
       } // end for loop dci_cnt
+
+    //  TODO: check where should we send up this message.
+    ue->if_inst->dl_indication(&ue->dl_indication);
+
 
 #if UE_TIMING_TRACE
   stop_meas(&ue->dlsch_rx_pdcch_stats);
@@ -5106,7 +5106,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
       
     }
     //set active for testing, to be removed
-    ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active = 1;
+    ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active = 0;
   }
   else 
     ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active = 0;

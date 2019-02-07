@@ -364,6 +364,7 @@ int main(int argc, char **argv)
   frame_parms->nb_antennas_rx = n_rx;
   frame_parms->N_RB_DL = N_RB_DL;
   frame_parms->N_RB_UL = N_RB_DL;
+  frame_parms->Nid_cell = Nid_cell;
 
   nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell);
   phy_init_nr_gNB(gNB,0,0);
@@ -537,9 +538,9 @@ int main(int argc, char **argv)
       //multipath_channel(gNB2UE,s_re,s_im,r_re,r_im,frame_length_complex_samples,0);
       
       //AWGN
-      sigma2_dB = 10*log10((double)txlev)-SNR;
+      sigma2_dB = 20*log10((double)AMP/4)-SNR;
       sigma2 = pow(10,sigma2_dB/10);
-      //      printf("sigma2 %f (%f dB)\n",sigma2,sigma2_dB);
+      //printf("sigma2 %f (%f dB), tx_lev %f (%f dB)\n",sigma2,sigma2_dB,txlev,10*log10((double)txlev));
 
       if(eps!=0.0)
         rf_rx(r_re,  // real part of txdata

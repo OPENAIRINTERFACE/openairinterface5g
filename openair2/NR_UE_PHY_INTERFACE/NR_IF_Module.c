@@ -33,6 +33,7 @@
 #include "NR_IF_Module.h"
 #include "mac_proto.h"
 #include "assertions.h"
+#include "LAYER2/NR_MAC_UE/mac_extern.h"
 
 #include <stdio.h>
 
@@ -134,7 +135,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
     for(i=0; i<dl_info->dci_ind->number_of_dcis; ++i){
       printf(">>>NR_IF_Module i=%d, dl_info->dci_ind->number_of_dcis=%d\n",i,dl_info->dci_ind->number_of_dcis);
       fapi_nr_dci_pdu_rel15_t *dci = &dl_info->dci_ind->dci_list[i].dci;
-
+      /*
       ret_mask |= (handle_dci(
 			      dl_info->module_id,
 			      dl_info->cc_id,
@@ -142,7 +143,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
 			      dci, 
 			      (dl_info->dci_ind->dci_list+i)->rnti, 
 			      (dl_info->dci_ind->dci_list+i)->dci_format)) << FAPI_NR_DCI_IND;
-
+      */
 
       /*switch((dl_info->dci_ind->dci_list+i)->dci_type){
 	case FAPI_NR_DCI_TYPE_0_0:
@@ -224,6 +225,9 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info){
     }
   }
 
+  //clean up nr_downlink_indication_t *dl_info
+  dl_info->rx_ind = NULL;
+  dl_info->dci_ind = NULL;
 
   AssertFatal( nr_ue_if_module_inst[module_id] != NULL, "IF module is void!\n" );
   nr_ue_if_module_inst[module_id]->scheduled_response(&mac->scheduled_response);
@@ -255,4 +259,53 @@ int nr_ue_if_module_kill(uint32_t module_id) {
     free(nr_ue_if_module_inst[module_id]);
   } 
   return 0;
+}
+
+int nr_ue_dcireq(nr_dcireq_t *dcireq) {
+  
+  fapi_nr_dl_config_request_t *dl_config=&dcireq->dl_config_req;
+  
+  //  Type0 PDCCH search space
+  dl_config->number_pdus =  1;
+  dl_config->dl_config_list[0].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.rnti = 0xaaaa;	//	to be set
+  
+  uint64_t mask = 0x0;
+  uint16_t num_rbs=48;
+  uint16_t rb_offset=47;
+  uint16_t cell_id=0;
+  uint16_t num_symbols=2;
+  for(int i=0; i<(num_rbs/6); ++i){   //  38.331 Each bit corresponds a group of 6 RBs
+    mask = mask >> 1;
+    mask = mask | 0x100000000000;
+  }
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.frequency_domain_resource = mask;
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.rb_offset = rb_offset;  //  additional parameter other than coreset
+  
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.duration = num_symbols;
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_mapping_type =CCE_REG_MAPPING_TYPE_INTERLEAVED;
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_interleaved_reg_bundle_size = 6;   //  L 38.211 7.3.2.2
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_interleaved_interleaver_size = 2;  //  R 38.211 7.3.2.2
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_interleaved_shift_index = cell_id;
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.precoder_granularity = PRECODER_GRANULARITY_SAME_AS_REG_BUNDLE;
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.pdcch_dmrs_scrambling_id = cell_id;
+  
+  uint32_t number_of_search_space_per_slot=1;
+  uint32_t first_symbol_index=0;
+  uint32_t search_space_duration=1;  //  element of search space
+  uint32_t coreset_duration;  //  element of coreset
+  
+  coreset_duration = num_symbols * number_of_search_space_per_slot;
+  
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.number_of_candidates[0] = table_38213_10_1_1_c2[0];
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.number_of_candidates[1] = table_38213_10_1_1_c2[1];
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.number_of_candidates[2] = table_38213_10_1_1_c2[2];   //  CCE aggregation level = 4
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.number_of_candidates[3] = table_38213_10_1_1_c2[3];   //  CCE aggregation level = 8
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.number_of_candidates[4] = table_38213_10_1_1_c2[4];   //  CCE aggregation level = 16
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.duration = search_space_duration;
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.monitoring_symbols_within_slot = (0x3fff << first_symbol_index) & (0x3fff >> (14-coreset_duration-first_symbol_index)) & 0x3fff;
+
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.N_RB_BWP = 106;
+
+  
 }
