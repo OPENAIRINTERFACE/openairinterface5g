@@ -406,18 +406,17 @@ int nr_dlsch_encoding(unsigned char *a,
   printf("rvidx in encoding = %d\n", rel15.redundancy_version);
 #endif
 
-    E = nr_rate_matching_ldpc(Ilbrm,
-        		 	 	 	 	 	 Tbslbrm,
-    								 BG,
-    								 *pz,
-        							 G,
-									 dlsch->harq_processes[harq_pid]->d[r],
-									 dlsch->harq_processes[harq_pid]->e+r_offset,
-									 dlsch->harq_processes[harq_pid]->C,
-									 rel15.redundancy_version,
-									 mod_order,
-									 rel15.nb_layers,
-    								 r);
+    E = nr_get_E(G, dlsch->harq_processes[harq_pid]->C, mod_order, rel15.nb_layers, r);
+
+    nr_rate_matching_ldpc(Ilbrm,
+                          Tbslbrm,
+                          BG,
+                          *pz,
+                          dlsch->harq_processes[harq_pid]->d[r],
+                          dlsch->harq_processes[harq_pid]->e+r_offset,
+                          dlsch->harq_processes[harq_pid]->C,
+                          rel15.redundancy_version,
+                          E);
 
 #ifdef DEBUG_DLSCH_CODING
     for (int i =0; i<16; i++)
