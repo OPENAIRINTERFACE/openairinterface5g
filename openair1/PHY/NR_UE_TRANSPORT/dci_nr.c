@@ -49,7 +49,7 @@
 
 //#define NR_LTE_PDCCH_DCI_SWITCH
 #define NR_PDCCH_DCI_RUN              // activates new nr functions
-#define NR_PDCCH_DCI_DEBUG            // activates NR_PDCCH_DCI_DEBUG logs
+//#define NR_PDCCH_DCI_DEBUG            // activates NR_PDCCH_DCI_DEBUG logs
 #define NR_NBR_CORESET_ACT_BWP 3      // The number of CoreSets per BWP is limited to 3 (including initial CORESET: ControlResourceId 0)
 #define NR_NBR_SEARCHSPACE_ACT_BWP 10 // The number of SearSpaces per BWP is limited to 10 (including initial SEARCHSPACE: SearchSpaceId 0)
 #define PDCCH_TEST_POLAR_TEMP_FIX
@@ -805,7 +805,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   // For each BWP the number of CORESETs is limited to 3 (including initial CORESET Id=0 -> ControlResourceSetId (0..maxNrofControlReourceSets-1) (0..12-1)
   //uint32_t n_BWP_start = 0;
   //uint32_t n_rb_offset = 0;
-  uint32_t n_rb_offset                                      = pdcch_vars2->coreset[nb_coreset_active].rb_offset+(int)floor(frame_parms->ssb_start_subcarrier/NR_NB_SC_PER_RB);
+  uint32_t n_rb_offset                                      = pdcch_vars2->coreset[nb_coreset_active].rb_offset/*+(int)floor(frame_parms->ssb_start_subcarrier/NR_NB_SC_PER_RB)*/;
   // start time position for CORESET
   // parameter symbol_mon is a 14 bits bitmap indicating monitoring symbols within a slot
   uint8_t start_symbol = 0;
@@ -1048,7 +1048,7 @@ void nr_pdcch_unscrambling(uint16_t crnti, NR_DL_FRAME_PARMS *frame_parms, uint8
   x2 = (((1<<16)*n_rnti)+n_id); //mod 2^31 is implicit //this is c_init in 38.211 v15.1.0 Section 7.3.2.3
   //	x2 = (nr_tti_rx << 9) + frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.8.2
 #ifdef NR_PDCCH_DCI_DEBUG
-  printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_unscrambling)->  (c_init=%d, n_id=%d, n_rnti=%d, length=%d)\n",x2,n_id,n_rnti,length);
+  //printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_unscrambling)->  (c_init=%d, n_id=%d, n_rnti=%d, length=%d)\n",x2,n_id,n_rnti,length);
 #endif
   for (i = 0; i < length; i++) {
     if ((i & 0x1f) == 0) {
@@ -1118,13 +1118,13 @@ void nr_dci_decoding_procedure0(int s,
 				uint32_t *CCEmap1,
 				uint32_t *CCEmap2) {
   
-  uint16_t crc, CCEind, nCCE[3];
+  uint32_t crc, CCEind, nCCE[3];
   uint32_t *CCEmap = NULL, CCEmap_mask = 0;
   uint8_t L2 = (1 << L);
   unsigned int Yk, nb_candidates = 0, i, m;
   unsigned int CCEmap_cand;
 
-  int8_t decoderState=0;
+  uint32_t decoderState=0;
   
   // A[p], p is the current active CORESET
   uint16_t A[3]={39827,39829,39839};
@@ -1361,17 +1361,17 @@ void nr_dci_decoding_procedure0(int s,
 #endif
       */
 
-      uint32_t dci_estimation[4]={0};
-
+      uint64_t dci_estimation[2]={0};
 
       nr_polar_init(&nrPolar_params, 1, sizeof_bits, L2);
 
-
       t_nrPolar_paramsPtr currentPtrDCI=nr_polar_params(nrPolar_params, 1, sizeof_bits, L2);
       decoderState = polar_decoder_int16(&pdcch_vars[eNB_id]->e_rx[CCEind*9*6*2],
-					 (uint64_t*)dci_estimation,
+					 dci_estimation,
 					 currentPtrDCI);
-      crc = decoderState;						   
+      crc = decoderState;
+
+
       //crc = (crc16(&dci_decoded_output[current_thread_id][0], sizeof_bits) >> 16) ^ extract_crc(&dci_decoded_output[current_thread_id][0], sizeof_bits);
 #ifdef NR_PDCCH_DCI_DEBUG
       printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> ... we end function dci_decoding() with crc=%x\n",crc);
@@ -2834,7 +2834,7 @@ uint8_t nr_dci_decoding_procedure(int s,
       printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> calculating dci format size for UE-specific searchSpaces with format uss_dci_format=%d, format_0_0_1_0_size_bits=%d, format_0_0_1_0_size_bytes=%d\n",
 	     css_dci_format,format_0_0_1_0_size_bits,format_0_0_1_0_size_bytes);
 #endif
-      for (int aggregationLevel = 0; aggregationLevel<5 ; aggregationLevel++) { // We fix aggregationLevel to 3 for testing=> nbr of CCE=8
+      for (int aggregationLevel = 3; aggregationLevel<4 ; aggregationLevel++) { // We fix aggregationLevel to 3 for testing=> nbr of CCE=8
 	//for (int aggregationLevel = 2; aggregationLevel<5 ; aggregationLevel++) {
 	// for aggregation level aggregationLevel. The number of candidates (for L2= 2^aggregationLevel) will be calculated in function nr_dci_decoding_procedure0
 #ifdef NR_PDCCH_DCI_DEBUG

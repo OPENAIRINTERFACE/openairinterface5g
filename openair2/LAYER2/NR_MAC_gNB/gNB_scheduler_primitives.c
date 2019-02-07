@@ -347,11 +347,12 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* p
 void nr_configure_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
                                             nfapi_nr_coreset_t* coreset,
                                             nfapi_nr_search_space_t* search_space,
-                                            nfapi_nr_config_request_t cfg) {
+                                            nfapi_nr_config_request_t cfg,
+                                            uint16_t N_RB) {
 /// coreset
 
   //ControlResourceSetId
-  pdcch_params->config_type = (coreset->coreset_id==0)?NFAPI_NR_CSET_CONFIG_MIB_SIB1: NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG;
+  pdcch_params->config_type = NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG;
   
   //frequencyDomainResources
   uint8_t count=0, start=0, start_set=0;
@@ -377,8 +378,8 @@ void nr_configure_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel1
     pdcch_params->interleaver_size = coreset->interleaver_size;
   }
   else {
-    pdcch_params->reg_bundle_size = 6;
-    pdcch_params->interleaver_size = 1;
+    pdcch_params->reg_bundle_size = 0;
+    pdcch_params->interleaver_size = 0;
   }
 
   //shift index
@@ -495,6 +496,7 @@ void nr_configure_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel1
         }
   }
 */
+  pdcch_params->n_RB_BWP = N_RB;
 }
 
 int nr_is_dci_opportunity(nfapi_nr_search_space_t search_space,

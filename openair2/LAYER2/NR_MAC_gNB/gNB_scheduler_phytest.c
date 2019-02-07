@@ -237,11 +237,11 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     dlsch_pdu_rel15->ndi = 1;
     dlsch_pdu_rel15->redundancy_version = 0;
 
-
     nr_configure_dci_from_pdcch_config(params_rel15,
                                        coreset,
                                        search_space,
-                                       cfg);
+                                       *cfg,
+                                       dl_carrier_bandwidth);
 
     pdu_rel15->frequency_domain_assignment = get_RIV(dlsch_pdu_rel15->start_prb, dlsch_pdu_rel15->n_prb, cfg->rf_config.dl_carrier_bandwidth.value);
     pdu_rel15->time_domain_assignment = get_SLIV(dlsch_pdu_rel15->start_symbol, dlsch_pdu_rel15->nb_symbols);
@@ -271,12 +271,14 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     params_rel15->rnti = rnti;
     params_rel15->rnti_type = NFAPI_NR_RNTI_C;
     params_rel15->dci_format = NFAPI_NR_DL_DCI_FORMAT_1_0;
+
     //params_rel15->aggregation_level = 1;
-    LOG_I(MAC, "DCI params: rnti %d, rnti_type %d, dci_format %d\n \
+    LOG_I(MAC, "DCI params: rnti %d, rnti_type %d, dci_format %d, config type %d\n \
                 coreset params: mux_pattern %d, n_rb %d, n_symb %d, rb_offset %d  \n \
                 ss params : first symb %d, ss type %d\n",
                 params_rel15->rnti,
                 params_rel15->rnti_type,
+                params_rel15->config_type,
                 params_rel15->dci_format,
                 params_rel15->mux_pattern,
                 params_rel15->n_rb,

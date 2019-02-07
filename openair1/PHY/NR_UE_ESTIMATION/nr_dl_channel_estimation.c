@@ -29,6 +29,7 @@
 #include "filt16a_32.h"
 #include "T.h"
 //#define DEBUG_PDSCH
+//#define DEBUG_PDCCH
 
 
 int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,

@@ -84,11 +84,11 @@ int nr_is_dci_opportunity(nfapi_nr_search_space_t search_space,
                                 uint16_t slot,
                                 nfapi_nr_config_request_t cfg);
 
-void nr_configure_css_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
+void nr_configure_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
                                             nfapi_nr_coreset_t* coreset,
                                             nfapi_nr_search_space_t* search_space,
                                             nfapi_nr_config_request_t cfg,
-                                            uint8_t pdcch_scs);
+                                            uint16_t N_RB);
 
 int get_dlscs(nfapi_nr_config_request_t *cfg);
 

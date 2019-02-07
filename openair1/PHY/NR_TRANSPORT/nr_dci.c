@@ -35,7 +35,6 @@
 //#define DEBUG_PDCCH_DMRS
 //#define DEBUG_DCI
 //#define DEBUG_CHANNEL_CODING
-#define PDCCH_TEST_POLAR_TEMP_FIX
 
 
 extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
@@ -154,7 +153,7 @@ void nr_pdcch_scrambling(uint32_t *in,
       }
     }
     (*out) ^= ((((*in)>>(i&0x1f))&1) ^ ((s>>(i&0x1f))&1))<<(i&0x1f);
-    //    printf("nr_pdcch_scrambling: in %d => out %d\n",((*in)>>(i&0x1f))&1,((*out)>>(i&0x1f))&1);
+        //printf("nr_pdcch_scrambling: in %d seq 0x%08x => out %d\n",((*in)>>(i&0x1f))&1,s,((*out)>>(i&0x1f))&1);
   }
 
 }
@@ -186,9 +185,10 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   * in frequency: the first subcarrier is obtained by adding the first CRB overlapping the SSB and the rb_offset for coreset 0
   * or the rb_offset for other coresets
   * in time: by its first slot and its first symbol*/
-  if (pdcch_params.config_type == NFAPI_NR_CSET_CONFIG_MIB_SIB1)
-    cset_start_sc = frame_parms.first_carrier_offset + frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB +
-    pdcch_params.rb_offset*NR_NB_SC_PER_RB;
+  if (pdcch_params.config_type == NFAPI_NR_CSET_CONFIG_MIB_SIB1){
+    cset_start_sc = frame_parms.first_carrier_offset + (frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB +
+    pdcch_params.rb_offset)*NR_NB_SC_PER_RB;
+  }
   else
     cset_start_sc = frame_parms.first_carrier_offset + pdcch_params.rb_offset*NR_NB_SC_PER_RB;
 
@@ -208,7 +208,8 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
     /*There is a need to shift from which index the pregenerated DMRS sequence is used
      * see 38211 r15.2.0 section 7.4.1.3.2: assumption is the reference point for k refers to the DMRS sequence*/
   if (pdcch_params.config_type == NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG) {
-    gold_pdcch_dmrs += (pdcch_params.rb_offset*3)>>5;
+    for (int symb=cset_start_symb; symb<cset_start_symb + pdcch_params.n_symb; symb++)
+      gold_pdcch_dmrs[symb] += (pdcch_params.rb_offset*3)>>5;
     dmrs_offset = (pdcch_params.rb_offset*3)&0x1f;
   LOG_I(PHY, "PDCCH DMRS offset %d\n", dmrs_offset);
   }
@@ -244,8 +245,7 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   /// DCI payload processing
     // CRC attachment + Scrambling + Channel coding + Rate matching
   uint32_t encoder_output[NR_MAX_DCI_SIZE_DWORD];
-  uint16_t n_RNTI = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)?
-  ((pdcch_params.scrambling_id)?pdcch_params.rnti:0) : 0;
+  uint16_t n_RNTI = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? pdcch_params.rnti:0;
   uint16_t Nid = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)?
   pdcch_params.scrambling_id : config.sch_config.physical_cell_id.value;
 
@@ -256,12 +256,12 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
 
 #ifdef DEBUG_CHANNEL_CODING
   printf("polar rnti %d\n",pdcch_params.rnti);
-  for (int i=0;i<54;i++) printf("Encoded Payload: [%d]->0x%08x \n", i,encoder_output[i]);
-
-  printf("DCI PDU: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
-    		  dci_alloc.dci_pdu[0], dci_alloc.dci_pdu[1], dci_alloc.dci_pdu[2], dci_alloc.dci_pdu[3]);
-  printf("Encoded Payload: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
-		  encoder_output[0], encoder_output[1], encoder_output[2], encoder_output[3]);
+  printf("DCI PDU: [0]->0x%lx \t [1]->0x%lx\n",
+    dci_alloc.dci_pdu[0], dci_alloc.dci_pdu[1]);
+  printf("Encoded Payload (length:%d dwords):\n", encoded_length>>5);
+  for (int i=0;i<encoded_length>>5;i++)
+    printf("[%d]->0x%08x \t", i,encoder_output[i]);
+  printf("\n");
 #endif
 
   /// Scrambling

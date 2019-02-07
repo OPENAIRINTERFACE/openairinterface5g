@@ -61,10 +61,11 @@ void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t* dci_alloc, uint16_t n_shift, uint8_t m
   else { //NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC
   }
 
-  uint8_t cond = N_reg%(bsize*R);
-  AssertFatal(cond==0, "CCE to REG interleaving: Invalid configuration leading to non integer C (N_reg %d, bsize %d R %d)\n",
-  N_reg, bsize, R);
-  C = N_reg/(bsize*R);
+  if (pdcch_params->cr_mapping_type == NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED) {
+    AssertFatal((N_reg%(bsize*R))==0, "CCE to REG interleaving: Invalid configuration leading to non integer C (N_reg %d, bsize %d R %d)\n",
+    N_reg, bsize, R);
+    C = N_reg/(bsize*R);
+  }
 
   tmp = L * (( Y + (m*N_cce)/(L*M_s_max) + n_CI ) % (N_cce/L));
 
@@ -190,14 +191,16 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
 #endif
       break;
 
-    case NFAPI_NR_RNTI_C:  
+    case NFAPI_NR_RNTI_C:
+
       // indicating a DL DCI format 1bit
       pos++;
       *dci_pdu |= (pdu_rel15->format_indicator&1)<<(dci_alloc->size-pos);
+
       // Freq domain assignment (275rb >> fsize = 16)
       fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
       pos+=fsize;
-      *dci_pdu |= ((pdu_rel15->frequency_domain_assignment&((1<<fsize)-1)) << (dci_alloc->size-pos)); 
+      *dci_pdu |= ((pdu_rel15->frequency_domain_assignment&((1<<fsize)-1)) << (dci_alloc->size-pos));
 
       if (((pdu_rel15->frequency_domain_assignment+1)&1) ==0) //fsize are all 1  38.212 p86
 	{
@@ -224,8 +227,7 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
 	// Time domain assignment 4bit
 
 	pos+=4;		   
-	*dci_pdu |= ((pdu_rel15->time_domain_assignment&0xf) << (dci_alloc->size-pos)); 
-
+	*dci_pdu |= ((pdu_rel15->time_domain_assignment&0xf) << (dci_alloc->size-pos));
       
 	// VRB to PRB mapping  1bit
 	pos++;
@@ -245,7 +247,7 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
       
 	// HARQ process number  4bit
 	pos+=4;
-	*dci_pdu  |= ((pdu_rel15->harq_pid&0xf)<<(dci_alloc->size-pos));      
+	*dci_pdu  |= ((pdu_rel15->harq_pid&0xf)<<(dci_alloc->size-pos));
  
 	// Downlink assignment index  2bit
 	pos+=2;
@@ -253,15 +255,15 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
 
 	// TPC command for scheduled PUCCH  2bit
 	pos+=2;
-	*dci_pdu |= ((pdu_rel15->tpc&3)<<(dci_alloc->size-pos));  
+	*dci_pdu |= ((pdu_rel15->tpc&3)<<(dci_alloc->size-pos));
 
 	// PUCCH resource indicator  3bit
 	pos+=3;
-	*dci_pdu |= ((pdu_rel15->pucch_resource_indicator&0x7)<<(dci_alloc->size-pos));      
+	*dci_pdu |= ((pdu_rel15->pucch_resource_indicator&0x7)<<(dci_alloc->size-pos));
 
 	// PDSCH-to-HARQ_feedback timing indicator 3bit
 	pos+=3;
-	*dci_pdu |= ((pdu_rel15->pdsch_to_harq_feedback_timing_indicator&0x7)<<(dci_alloc->size-pos)); 
+	*dci_pdu |= ((pdu_rel15->pdsch_to_harq_feedback_timing_indicator&0x7)<<(dci_alloc->size-pos));
 
       } //end else
       break;

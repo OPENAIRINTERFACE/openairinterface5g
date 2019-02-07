@@ -395,11 +395,11 @@ int main(int argc, char **argv)
   frame_parms->N_RB_UL = N_RB_DL;
 
   // stub to configure frame_parms
-  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu);
+  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell);
   // call MAC to configure common parameters
 
   phy_init_nr_gNB(gNB,0,0);
-
+  mac_top_init_gNB();
 
 
   double fs,bw;
@@ -501,6 +501,8 @@ int main(int argc, char **argv)
 
   nr_l2_init_ue();
   UE_mac = get_mac_inst(0);
+  
+  UE->pdcch_vars[0][0]->crnti = 0x1234;
 
   UE->if_inst = nr_ue_if_module_init(0);
   UE->if_inst->scheduled_response = nr_ue_scheduled_response;
@@ -517,7 +519,7 @@ int main(int argc, char **argv)
     gNB->pbch_configured = 1;
     for (int i=0;i<4;i++) gNB->pbch_pdu[i]=i+1;
 
-    nr_schedule_css_dlsch_phytest(0,frame,slot);
+    nr_schedule_uss_dlsch_phytest(0,frame,slot);
     Sched_INFO.module_id = 0;
     Sched_INFO.CC_id     = 0;
     Sched_INFO.frame     = frame;
@@ -598,7 +600,7 @@ int main(int argc, char **argv)
   //  Type0 PDCCH search space
   dl_config.number_pdus =  1;
   dl_config.dl_config_list[0].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
-  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.rnti = 3;	//	to be set
+  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.rnti = 0x1234;	//	to be set
   
   uint64_t mask = 0x0;
   uint16_t num_rbs=24;
@@ -613,9 +615,9 @@ int main(int argc, char **argv)
   dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.rb_offset = rb_offset;  //  additional parameter other than coreset
   
   dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.duration = num_symbols;
-  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_mapping_type =CCE_REG_MAPPING_TYPE_INTERLEAVED;
-  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_interleaved_reg_bundle_size = 6;   //  L 38.211 7.3.2.2
-  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_interleaved_interleaver_size = 2;  //  R 38.211 7.3.2.2
+  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_mapping_type =CCE_REG_MAPPING_TYPE_NON_INTERLEAVED;
+  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_interleaved_reg_bundle_size = 0;   //  L 38.211 7.3.2.2
+  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_interleaved_interleaver_size = 0;  //  R 38.211 7.3.2.2
   dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.cce_reg_interleaved_shift_index = cell_id;
   dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.precoder_granularity = PRECODER_GRANULARITY_SAME_AS_REG_BUNDLE;
   dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.coreset.pdcch_dmrs_scrambling_id = cell_id;
