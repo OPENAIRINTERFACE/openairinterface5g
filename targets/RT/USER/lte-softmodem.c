@@ -127,10 +127,7 @@ int config_sync_var=-1;
 uint16_t runtime_phy_rx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 100]
 uint16_t runtime_phy_tx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 100]
 
-#if defined(ENABLE_ITTI)
-  volatile int             start_eNB = 0;
-  volatile int             start_UE = 0;
-#endif
+
 volatile int             oai_exit = 0;
 
 uint32_t                 downlink_frequency[MAX_NUM_CCs][4];
@@ -305,9 +302,6 @@ void exit_function(const char *file, const char *function, const int line, const
   }
 
   sleep(1); //allow lte-softmodem threads to exit first
-#if defined(ENABLE_ITTI)
-  itti_terminate_tasks (TASK_UNKNOWN);
-#endif
   exit(1);
 }
 
@@ -382,61 +376,6 @@ static void *scope_thread(void *arg) {
 #endif
 
 
-
-
-#if defined(ENABLE_ITTI)
-void *l2l1_task(void *arg) {
-  MessageDef *message_p = NULL;
-  int         result;
-  itti_set_task_real_time(TASK_L2L1);
-  itti_mark_task_ready(TASK_L2L1);
-  /* Wait for the initialize message */
-  printf("Wait for the ITTI initialize message\n");
-
-  while (1) {
-    itti_receive_msg (TASK_L2L1, &message_p);
-
-    switch (ITTI_MSG_ID(message_p)) {
-      case INITIALIZE_MESSAGE:
-        /* Start eNB thread */
-        LOG_D(PHY, "L2L1 TASK received %s\n", ITTI_MSG_NAME(message_p));
-        start_eNB = 1;
-        break;
-
-      case TERMINATE_MESSAGE:
-        LOG_W(PHY, " *** Exiting L2L1 thread\n");
-        oai_exit=1;
-        start_eNB = 0;
-        itti_exit_task ();
-        break;
-
-      case ACTIVATE_MESSAGE:
-        start_UE = 1;
-        break;
-
-      case DEACTIVATE_MESSAGE:
-        start_UE = 0;
-        break;
-
-      case MESSAGE_TEST:
-        printf("Received %s\n", ITTI_MSG_NAME(message_p));
-        break;
-
-      default:
-        printf("Received unexpected message %s\n", ITTI_MSG_NAME(message_p));
-        break;
-    }
-
-    result = itti_free (ITTI_MSG_ORIGIN_ID(message_p), message_p);
-    AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-    message_p = NULL;
-  };
-
-  return NULL;
-}
-#endif
-
-
 static void get_options(void) {
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
   get_common_options();
@@ -449,7 +388,7 @@ static void get_options(void) {
     NB_eNB_INST = RC.nb_inst;
     printf("Configuration: nb_rrc_inst %d, nb_L1_inst %d, nb_ru %d\n",NB_eNB_INST,RC.nb_L1_inst,RC.nb_RU);
 
-    if (!SOFTMODEM_NONBIOT) {
+    if (!IS_SOFTMODEM_NONBIOT) {
       load_NB_IoT();
       printf("               nb_nbiot_rrc_inst %d, nb_nbiot_L1_inst %d, nb_nbiot_macrlc_inst %d\n",
              RC.nb_nb_iot_rrc_inst, RC.nb_nb_iot_L1_inst, RC.nb_nb_iot_macrlc_inst);
@@ -505,7 +444,8 @@ void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
 }
 
 void wait_RUs(void) {
-  LOG_I(PHY,"Waiting for RUs to be configured ... RC.ru_mask:%02lx\n", RC.ru_mask);
+  /* do not modify the following LOG_UI message, which is used by CI */
+  LOG_UI(ENB_APP,"Waiting for RUs to be configured ... RC.ru_mask:%02lx\n", RC.ru_mask);
   // wait for all RUs to be configured over fronthaul
   pthread_mutex_lock(&RC.ru_mutex);
 
@@ -567,7 +507,6 @@ int stop_L1L2(module_id_t enb_id) {
 
   /* these tasks need to pick up new configuration */
   terminate_task(enb_id, TASK_ENB_APP, TASK_RRC_ENB);
-  terminate_task(enb_id, TASK_ENB_APP, TASK_L2L1);
   oai_exit = 1;
   LOG_I(ENB_APP, "calling kill_RU_proc() for instance %d\n", enb_id);
   kill_RU_proc(RC.ru[enb_id]);
@@ -617,13 +556,6 @@ int restart_L1L2(module_id_t enb_id) {
     return -1;
   } else {
     LOG_I(RRC, "Re-created task for RRC eNB successfully\n");
-  }
-
-  if (itti_create_task (TASK_L2L1, l2l1_task, NULL) < 0) {
-    LOG_E(PDCP, "Create task for L2L1 failed\n");
-    return -1;
-  } else {
-    LOG_I(PDCP, "Re-created task for L2L1 successfully\n");
   }
 
   /* pass a reconfiguration request which will configure everything down to
@@ -678,7 +610,6 @@ int main( int argc, char **argv ) {
   set_latency_target();
   logInit();
   printf("Reading in command-line options\n");
-  CONFIG_SETRTFLAG(CONFIG_NOCHECKUNKOPT);
   get_options ();
 
   if (CONFIG_ISFLAGSET(CONFIG_ABORT) ) {
@@ -689,14 +620,6 @@ int main( int argc, char **argv ) {
 #if T_TRACER
   T_Config_Init();
 #endif
-  ret=config_check_unknown_cmdlineopt(NULL);
-
-  if (ret != 0) {
-    LOG_E(ENB_APP, "%i unknown options in command line\n",ret);
-    exit_fun("");
-  }
-
-  CONFIG_CLEARRTFLAG(CONFIG_NOCHECKUNKOPT);
   //randominit (0);
   set_taus_seed (0);
   printf("configuring for RAU/RRU\n");
@@ -717,12 +640,7 @@ int main( int argc, char **argv ) {
 
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
 #endif
-
-  if (opt_type != OPT_NONE) {
-    if (init_opt(in_path, in_ip) == -1)
-      LOG_E(OPT,"failed to run OPT \n");
-  }
-
+  init_opt();
 #ifdef PDCP_USE_NETLINK
   printf("PDCP netlink\n");
   netlink_init();
@@ -879,8 +797,14 @@ int main( int argc, char **argv ) {
 
   printf("NFAPI MODE:%s\n", nfapi_mode_str);
 
-  if (nfapi_mode==2) // VNF
+
+if (nfapi_mode==2) {// VNF
+#if defined(PRE_SCD_THREAD)
+    init_ru_vnf();  // ru pointer is necessary for pre_scd.
+#endif
     wait_nfapi_init("main?");
+  }
+
 
   printf("START MAIN THREADS\n");
   // start the main threads
@@ -896,13 +820,16 @@ int main( int argc, char **argv ) {
 
   printf("wait_eNBs()\n");
   wait_eNBs();
+
   printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
 
-  if (RC.nb_RU >0) {
+  // RU thread and some L1 procedure aren't necessary in VNF or L2 FAPI simulator.
+  // but RU thread deals with pre_scd and this is necessary in VNF and simulator.
+  // some initialization is necessary and init_ru_vnf do this.
+  if (RC.nb_RU >0 && nfapi_mode != 2) {
     printf("Initializing RU threads\n");
     init_RU(get_softmodem_params()->rf_config_file);
-
-    for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
+    for (ru_id=0;ru_id<RC.nb_RU;ru_id++) {
       RC.ru[ru_id]->rf_map.card=0;
       RC.ru[ru_id]->rf_map.chain=CC_id+(get_softmodem_params()->chain_offset);
     }
@@ -938,13 +865,7 @@ int main( int argc, char **argv ) {
   sync_var=0;
   pthread_cond_broadcast(&sync_cond);
   pthread_mutex_unlock(&sync_mutex);
-  ret=config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
-
-  if (ret != 0) {
-    LOG_E(ENB_APP, "%i unknown options in command line (invalid section name)\n",ret);
-    exit_fun("");
-  }
-
+  config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   // wait for end of program
   printf("TYPE <CTRL-C> TO TERMINATE\n");
   //getchar();
@@ -999,9 +920,7 @@ int main( int argc, char **argv ) {
   }
 
   free_lte_top();
-  printf("About to call end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
   end_configmodule();
-  printf("Called end_configmodule() from %s() %s:%d\n", __FUNCTION__, __FILE__, __LINE__);
   pthread_cond_destroy(&sync_cond);
   pthread_mutex_destroy(&sync_mutex);
   pthread_cond_destroy(&nfapi_sync_cond);
@@ -1020,9 +939,7 @@ int main( int argc, char **argv ) {
     }
   }
 
-  if (opt_enabled == 1)
-    terminate_opt();
-
+  terminate_opt();
   logClean();
   printf("Bye.\n");
   return 0;

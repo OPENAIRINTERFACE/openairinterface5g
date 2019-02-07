@@ -82,10 +82,13 @@ extern struct msghdr nas_msg_tx;
 extern struct msghdr nas_msg_rx;
 
 unsigned char pdcp_read_state_g = 0;
+extern uint8_t nfapi_mode;
+#ifdef UESIM_EXPANSION
+extern uint16_t inst_pdcp_list[NUMBER_OF_UE_MAX];
+#endif
 #endif
 
 extern Packet_OTG_List_t *otg_pdcp_buffer;
-
 #if defined(LINK_ENB_PDCP_TO_GTPV1U)
 #  include "gtpv1u_eNB_task.h"
 #  include "gtpv1u_eNB_defs.h"
@@ -168,7 +171,12 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
             ((pdcp_data_ind_header_t*) sdu_p->data)->inst,
             ((pdcp_data_ind_header_t *) sdu_p->data)->data_size);
 #else
-      //((pdcp_data_ind_header_t *)(sdu_p->data))->inst = 0;
+      // Raphael: was suppressed by Raymond --> should be suppressed?
+      // value of sdu_p->data->inst is set in pdcp_data_ind
+      // it's necessary to set 1 in case of UE with S1.
+      //if (ctxt_pP->enb_flag){
+      //  ((pdcp_data_ind_header_t *)(sdu_p->data))->inst = 0;
+      //}
 #endif
 
 #if defined(LINK_ENB_PDCP_TO_GTPV1U)
@@ -927,7 +935,15 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
             rab_id      = pdcp_read_header_g.rb_id % LTE_maxDRB;
             ctxt.rnti          = pdcp_eNB_UE_instance_to_rnti[pdcp_read_header_g.rb_id / LTE_maxDRB];
           } else {
-            ctxt.module_id = 0;
+            if (nfapi_mode == 3) {
+#ifdef UESIM_EXPANSION
+              ctxt.module_id = inst_pdcp_list[pdcp_read_header_g.inst];
+#else
+              ctxt.module_id = pdcp_read_header_g.inst;
+#endif
+            } else {
+              ctxt.module_id = 0;
+            }
             rab_id      = pdcp_read_header_g.rb_id % LTE_maxDRB;
             ctxt.rnti          = pdcp_UE_UE_module_id_to_rnti[ctxt.module_id];
           }
@@ -1072,7 +1088,22 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                                           pdcp_read_header_g.rb_id,
                                           rab_id,
                                           pdcp_read_header_g.data_size);
-
+                        if(nfapi_mode == 3){
+                        pdcp_data_req(
+                              &ctxt,
+                              SRB_FLAG_NO,
+                              rab_id,
+                              RLC_MUI_UNDEFINED,
+                              RLC_SDU_CONFIRM_NO,
+                              pdcp_read_header_g.data_size,
+                              (unsigned char *)NLMSG_DATA(nas_nlh_rx),
+                              PDCP_TRANSMISSION_MODE_DATA
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                              ,NULL
+                              ,NULL
+#endif
+                              );
+                        }else{
                         pdcp_data_req(
                               &ctxt,
                               SRB_FLAG_NO,
@@ -1087,6 +1118,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                               ,&pdcp_read_header_g.destinationL2Id
 #endif
                               );
+                        }
                      } else {
                         MSC_LOG_RX_DISCARDED_MESSAGE(
                               (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
@@ -1130,7 +1162,22 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                                        pdcp_read_header_g.rb_id,
                                        DEFAULT_RAB_ID,
                                        pdcp_read_header_g.data_size);
-
+                     if(nfapi_mode == 3){
+                     pdcp_data_req (
+                           &ctxt,
+                           SRB_FLAG_NO,
+                           DEFAULT_RAB_ID,
+                           RLC_MUI_UNDEFINED,
+                           RLC_SDU_CONFIRM_NO,
+                           pdcp_read_header_g.data_size,
+                           (unsigned char *)NLMSG_DATA(nas_nlh_rx),
+                           PDCP_TRANSMISSION_MODE_DATA
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                           ,NULL
+                           ,NULL
+#endif
+                               );
+                     }else{
                      pdcp_data_req (
                            &ctxt,
                            SRB_FLAG_NO,
@@ -1145,6 +1192,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                            ,&pdcp_read_header_g.destinationL2Id
 #endif
                            );
+                     }
                   }
                }
 

@@ -542,7 +542,7 @@ sdu_size_t             pdcp_input_sdu_remaining_size_to_read;
     (((hash_key_t)(sESSION_ID)) << 37) | \
     (((hash_key_t)(0x0000000000000001))  << 63))
 
-hash_table_t  *pdcp_coll_p;
+extern hash_table_t  *pdcp_coll_p;
 
 #endif
 /*@}*/

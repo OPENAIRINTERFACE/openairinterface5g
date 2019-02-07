@@ -69,6 +69,8 @@
 extern UL_IND_t *UL_INFO;
 
 extern uint8_t  nfapi_mode;
+extern int next_ra_frame;
+extern module_id_t next_Mod_id;
 
 /*
  *
@@ -2530,44 +2532,50 @@ ue_scheduler(const module_id_t module_idP,
 				   UE_mac_inst[module_idP].crnti, txFrameP,
 				   txSubframeP, eNB_indexP);
 #if defined(ENABLE_ITTI)
+    if(module_idP == 0){
+      do {
+	  // Checks if a message has been sent to MAC sub-task
+	  itti_poll_msg(TASK_MAC_UE, &msg_p);
 
-    do {
-	// Checks if a message has been sent to MAC sub-task
-	itti_poll_msg(TASK_MAC_UE, &msg_p);
+	    if (msg_p != NULL) {
 
-	if (msg_p != NULL) {
+	      switch (ITTI_MSG_ID(msg_p)) {
+	      case RRC_MAC_CCCH_DATA_REQ:
+		  LOG_I(MAC,
+		        "Received %s from %s: instance %d, frameP %d, eNB_index %d\n",
+		        ITTI_MSG_NAME(msg_p), ITTI_MSG_ORIGIN_NAME(msg_p), ITTI_MSG_INSTANCE(msg_p),
+		        RRC_MAC_CCCH_DATA_REQ(msg_p).frame,
+		        RRC_MAC_CCCH_DATA_REQ(msg_p).enb_index);
 
-	    switch (ITTI_MSG_ID(msg_p)) {
-	    case RRC_MAC_CCCH_DATA_REQ:
-		LOG_I(MAC,
-		      "Received %s from %s: instance %d, frameP %d, eNB_index %d\n",
-		      ITTI_MSG_NAME(msg_p), ITTI_MSG_ORIGIN_NAME(msg_p), ITTI_MSG_INSTANCE(msg_p),
-		      RRC_MAC_CCCH_DATA_REQ(msg_p).frame,
-		      RRC_MAC_CCCH_DATA_REQ(msg_p).enb_index);
-
-		// TODO process CCCH data req.
-		break;
+		  // TODO process CCCH data req.
+		  break;
 
 
-	    default:
-		LOG_E(MAC, "Received unexpected message %s\n", ITTI_MSG_NAME(msg_p));
-		break;
+	      default:
+		  LOG_E(MAC, "Received unexpected message %s\n", ITTI_MSG_NAME(msg_p));
+		  break;
+	      }
+
+	      result = itti_free(ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
+	      AssertFatal(result == EXIT_SUCCESS,
+			  "Failed to free memory (%d)!\n", result);
 	    }
-
-	    result = itti_free(ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
-	    AssertFatal(result == EXIT_SUCCESS,
-			"Failed to free memory (%d)!\n", result);
-	}
-    }
+      }
     while (msg_p != NULL);
-
+    }
 #endif
 
     //Mac_rlc_xface->frameP=frameP;
     //Rrc_xface->Frame_index=Mac_rlc_xface->frameP;
     //if (subframe%5 == 0)
     //LG#ifdef EXMIMO
-    pdcp_run(&ctxt);
+
+    // data to/from NETLINK is treated in pdcp_run.
+    // one socket is used in multiple UE's L2 FAPI simulator and
+    // only first UE need to do this.
+    if(module_idP == 0){
+      pdcp_run(&ctxt);
+    }
     //#endif
     UE_mac_inst[module_idP].txFrame = txFrameP;
     UE_mac_inst[module_idP].txSubframe = txSubframeP;

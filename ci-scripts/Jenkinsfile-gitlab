@@ -41,7 +41,7 @@ pipeline {
         disableConcurrentBuilds()
         timestamps()
         gitLabConnection('OAI GitLab')
-        gitlabBuilds(builds: ["Build eNb-USRP", "Build basic-sim", "Build phy-sim", "Build eNb-ethernet", "Build UE-ethernet", "Analysis with cppcheck", "Test phy-sim", "Test basic-sim", "Test-FDD-Band7", "Test-TDD-Band40", "Test-IF4p5-FDD-Band7", "Test-IF4p5-TDD-Band40"])
+        gitlabBuilds(builds: ["Build eNb-USRP", "Build basic-sim", "Build phy-sim", "Build eNb-ethernet", "Build UE-ethernet", "Analysis with cppcheck", "Test phy-sim", "Test basic-sim", "Test L2-sim", "Test-FDD-Band7", "Test-TDD-Band40", "Test-IF4p5-FDD-Band7", "Test-IF4p5-TDD-Band40"])
         ansiColor('xterm')
     }
 
@@ -166,6 +166,14 @@ pipeline {
             }
         }
 
+        stage ("Start VM -- L2-Sim") {
+            steps {
+                timeout (time: 5, unit: 'MINUTES') {
+                    sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant l2-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
+                }
+            }
+        }
+
         stage ("Start VM -- phy-sim") {
             steps {
                 timeout (time: 5, unit: 'MINUTES') {
@@ -215,7 +223,7 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build eNb-ethernet") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
                             }
                         }
                     }
@@ -224,9 +232,18 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build UE-ethernet") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
                             }
                         }
+                    }
+                }
+                stage ("Build L2-Simulator-eNB") {
+                    steps {
+                        //gitlabCommitStatus(name: "Build UE-ethernet") {
+                            timeout (time: 20, unit: 'MINUTES') {
+                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant l2-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                            }
+                        //}
                     }
                 }
                 stage ("Build physical simulators") {
@@ -309,6 +326,15 @@ pipeline {
                         gitlabCommitStatus(name: "Test basic-sim") {
                             timeout (time: 30, unit: 'MINUTES') {
                                 sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                            }
+                        }
+                    }
+                }
+                stage ("Test L2 simulator") {
+                    steps {
+                        gitlabCommitStatus(name: "Test L2-sim") {
+                            timeout (time: 30, unit: 'MINUTES') {
+                                sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant l2-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
                             }
                         }
                     }
@@ -508,7 +534,7 @@ pipeline {
                 always {
                     script {
                         dir ('archives') {
-                            sh "if [ -d basic_sim/test ] || [ -d phy_sim/test ]; then zip -r -qq vm_tests_logs.zip */test ; fi"
+                            sh "if [ -d basic_sim/test ] || [ -d phy_sim/test ] || [ -d l2_sim/test ]; then zip -r -qq vm_tests_logs.zip */test ; fi"
                         }
                         if(fileExists('archives/vm_tests_logs.zip')) {
                             archiveArtifacts artifacts: 'archives/vm_tests_logs.zip'

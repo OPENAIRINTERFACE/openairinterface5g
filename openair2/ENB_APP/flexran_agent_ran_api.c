@@ -375,14 +375,16 @@ void flexran_update_TA(mid_t mod_id, mid_t ue_id, uint8_t cc_id)
     ue_sched_ctl->ta_timer--;
     ue_sched_ctl->ta_update		      = 0;	// don't trigger a timing advance command      
   }
-*/
 #warning "Implement flexran_update_TA() in RAN API"
+*/
 }
 
 /* TODO needs to be revised, looks suspicious: why do we need UE stats? */
 int flexran_get_MAC_CE_bitmap_TA(mid_t mod_id, mid_t ue_id, uint8_t cc_id)
 {
+/*
 #warning "Implement flexran_get_MAC_CE_bitmap_TA() in RAN API"
+*/
   if (!phy_is_present(mod_id, cc_id)) return 0;
 
   /* UE_stats can not be null, they are an array in RC
@@ -476,7 +478,9 @@ int flexran_get_harq(mid_t       mod_id,
   /*   *status = 0; */
   /* } */
   /*return *round;*/
+/*
 #warning "Implement flexran_get_harq() in RAN API"
+*/
   return 0;
 }
 

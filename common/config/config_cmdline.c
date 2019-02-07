@@ -37,7 +37,7 @@
 #include <errno.h>
 #include <platform_types.h>
 #include "config_userapi.h"
-
+#include "../utils/LOG/log.h"
 
 int parse_stringlist(paramdef_t *cfgoptions, char *val) {
   char *atoken;
@@ -74,15 +74,15 @@ int processoption(paramdef_t *cfgoptions, char *value) {
 
   if ( value == NULL) {
     if( (cfgoptions->paramflags &PARAMFLAG_BOOL) == 0 ) { /* not a boolean, argument required */
-      fprintf(stderr,"[CONFIG] command line, option %s requires an argument\n",cfgoptions->optname);
-      exit_fun("[CONFIG] command line parsing fatal error");
-      return 0;
+      CONFIG_PRINTF_ERROR("[CONFIG] command line, option %s requires an argument\n",cfgoptions->optname);
     } else {        /* boolean value option without argument, set value to true*/
       tmpval = defbool;
     }
   }
 
   switch(cfgoptions->type) {
+      char *charptr;
+
     case TYPE_STRING:
       if (cfgoptions->numelt == 0 ) {
         config_check_valptr(cfgoptions, cfgoptions->strptr, strlen(tmpval)+1);
@@ -106,14 +106,24 @@ int processoption(paramdef_t *cfgoptions, char *value) {
     case TYPE_UINT8:
     case TYPE_INT8:
       config_check_valptr(cfgoptions, (char **)&(cfgoptions->iptr),sizeof(int32_t));
-      config_assign_int(cfgoptions,cfgoptions->optname,(int32_t)strtol(tmpval,NULL,0));
+      config_assign_int(cfgoptions,cfgoptions->optname,(int32_t)strtol(tmpval,&charptr,0));
+
+      if( *charptr != 0) {
+        CONFIG_PRINTF_ERROR("[CONFIG] command line, option %s requires an integer argument\n",cfgoptions->optname);
+      }
+
       optisset=1;
       break;
 
     case TYPE_UINT64:
     case TYPE_INT64:
       config_check_valptr(cfgoptions, (char **)&(cfgoptions->i64ptr),sizeof(uint64_t));
-      *(cfgoptions->i64ptr)=strtoll(tmpval,NULL,0);
+      *(cfgoptions->i64ptr)=strtoll(tmpval,&charptr,0);
+
+      if( *charptr != 0) {
+        CONFIG_PRINTF_ERROR("[CONFIG] command line, option %s requires an integer argument\n",cfgoptions->optname);
+      }
+
       printf_cmdl("[CONFIG] %s set to  %lli from command line\n", cfgoptions->optname, (long long)*(cfgoptions->i64ptr));
       optisset=1;
       break;
@@ -124,7 +134,12 @@ int processoption(paramdef_t *cfgoptions, char *value) {
 
     case TYPE_DOUBLE:
       config_check_valptr(cfgoptions, (char **)&(cfgoptions->dblptr),sizeof(double));
-      *(cfgoptions->dblptr) = strtof(tmpval,NULL);
+      *(cfgoptions->dblptr) = strtof(tmpval,&charptr);
+
+      if( *charptr != 0) {
+        CONFIG_PRINTF_ERROR("[CONFIG] command line, option %s requires a double argument\n",cfgoptions->optname);
+      }
+
       printf_cmdl("[CONFIG] %s set to  %lf from command line\n", cfgoptions->optname, *(cfgoptions->dblptr));
       optisset=1;
       break;
@@ -133,7 +148,7 @@ int processoption(paramdef_t *cfgoptions, char *value) {
       break;
 
     default:
-      fprintf(stderr,"[CONFIG] command line, %s type %i  not supported\n",cfgoptions->optname, cfgoptions->type);
+      CONFIG_PRINTF_ERROR("[CONFIG] command line, %s type %i  not supported\n",cfgoptions->optname, cfgoptions->type);
       break;
   } /* switch on param type */
 
@@ -149,14 +164,15 @@ int processoption(paramdef_t *cfgoptions, char *value) {
 */
 int config_check_unknown_cmdlineopt(char *prefix) {
   int unknowndetected=0;
-  char testprefix[CONFIG_MAXOPTLENGTH]="";
+  char testprefix[CONFIG_MAXOPTLENGTH];
   int finalcheck = 0;
 
+  memset(testprefix,0,sizeof(testprefix));
   if (prefix != NULL) {
     if (strcmp(prefix,CONFIG_CHECKALLSECTIONS) == 0)
       finalcheck = 1;
     else if (strlen(prefix) > 0) {
-      sprintf(testprefix,"--%s.",prefix);
+      sprintf(testprefix,"--%.*s.",CONFIG_MAXOPTLENGTH-1,prefix);
     }
   }
 
@@ -176,8 +192,11 @@ int config_check_unknown_cmdlineopt(char *prefix) {
     }
   }
 
-  printf_cmdl("[CONFIG] %i unknown option(s) in command line starting with %s (section %s)\n",
-              unknowndetected,testprefix,((prefix==NULL)?"":prefix));
+  if (unknowndetected > 0) {
+    CONFIG_PRINTF_ERROR("[CONFIG] %i unknown option(s) in command line starting with %s (section %s)\n",
+                        unknowndetected,testprefix,((prefix==NULL)?"":prefix));
+  }
+
   return unknowndetected;
 }  /* config_check_unknown_cmdlineopt */
 
@@ -200,7 +219,7 @@ int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix) 
 
       if (pp == NULL || strcasecmp(pp,config_get_if()->argv[i] ) == 0 ) {
         if( prefix == NULL) {
-          config_printhelp(cfgoptions,numoptions);
+          config_printhelp(cfgoptions,numoptions,"(root section)");
 
           if ( ! ( CONFIG_ISFLAGSET(CONFIG_NOEXITONHELP)))
             exit_fun("[CONFIG] Exiting after displaying help\n");
@@ -209,8 +228,7 @@ int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix) 
         pp=strtok_r(NULL, " ",&tokctx);
 
         if ( prefix != NULL && pp != NULL && strncasecmp(prefix,pp,strlen(pp)) == 0 ) {
-          printf ("Help for %s section:\n",prefix);
-          config_printhelp(cfgoptions,numoptions);
+          config_printhelp(cfgoptions,numoptions,prefix);
 
           if ( ! (CONFIG_ISFLAGSET(CONFIG_NOEXITONHELP))) {
             fprintf(stderr,"[CONFIG] %s %i section %s:", __FILE__, __LINE__, prefix);
@@ -273,16 +291,5 @@ int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix) 
   }   /* fin du while */
 
   printf_cmdl("[CONFIG] %s %i options set from command line\n",((prefix == NULL) ? "(root)":prefix),j);
-
-  if ( !(CONFIG_ISFLAGSET( CONFIG_NOCHECKUNKOPT )) ) {
-    i=config_check_unknown_cmdlineopt(prefix);
-
-    if (i > 0) {
-      fprintf(stderr,"[CONFIG] %i unknown options for section %s detected in command line\n",
-              i,((prefix==NULL)?"\"root section\"":prefix));
-      exit_fun(" Exiting after detecting errors in command line \n");
-    }
-  }
-
   return j;
 }  /* parse_cmdline*/

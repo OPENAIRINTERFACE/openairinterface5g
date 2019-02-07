@@ -43,6 +43,7 @@ conf_nvram_path=$OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf
 MSC_GEN=0
 XFORMS="True"
 UE_EXPANSION="False"
+UESIM_EXPANSION="False"
 PRINT_STATS="False"
 VCD_TIMING="False"
 DEADLINE_SCHEDULER_FLAG_USER="False"
@@ -217,6 +218,10 @@ function main() {
        --mu)
             UE_EXPANSION="True"
             echo_info "Will compile with UE_EXPANSION"
+            shift;;
+       --musim)
+            UESIM_EXPANSION="True"
+            echo_info "Will compile with UESIM_EXPANSION"
             shift;;
        --UE-conf-nvram)
             conf_nvram_path=$(readlink -f $2)
@@ -551,6 +556,7 @@ function main() {
     echo "set ( UE_EXPANSION $UE_EXPANSION )"      >>  $cmake_file
 #    echo "set ( PHY_TX_THREAD $UE_EXPANSION )"     >>  $cmake_file
     echo "set ( PRE_SCD_THREAD $UE_EXPANSION )"    >>  $cmake_file
+    echo "set ( UESIM_EXPANSION $UESIM_EXPANSION )"      >>  $cmake_file
     echo "set ( RRC_ASN1_VERSION \"${REL}\")"      >>  $cmake_file
     echo "set ( ENABLE_VCD_FIFO $VCD_TIMING )"     >>  $cmake_file
     echo "set ( RF_BOARD \"${HW}\")"               >>  $cmake_file

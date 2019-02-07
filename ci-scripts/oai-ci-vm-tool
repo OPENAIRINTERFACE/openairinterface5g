@@ -40,6 +40,7 @@ function variant_usage {
     echo "    --variant cppcheck     OR -v4"
     echo "    --variant enb-ethernet OR -v7"
     echo "    --variant ue-ethernet  OR -v8"
+    echo "    --variant l2-sim       OR -v9"
     echo "    --variant flexran-rtc  OR -v10"
 }
 
@@ -285,6 +286,18 @@ case $key in
     NBARGS=$[$NBARGS+256]
     shift
     ;;
+    -v9)
+    VM_NAME=ci-l2-sim
+    VM_MEMORY=8192
+    VM_CPU=8
+    ARCHIVES_LOC=l2_sim
+    LOG_PATTERN=.Rel14.txt
+    NB_PATTERN_FILES=4
+    BUILD_OPTIONS="--eNB -t ETHERNET"
+    RUN_OPTIONS="complex"
+    NBARGS=$[$NBARGS+256]
+    shift
+    ;;
     -v10)
     VM_NAME=ci-flexran-rtc
     ARCHIVES_LOC=flexran
@@ -348,6 +361,17 @@ case $key in
         LOG_PATTERN=.Rel14.txt
         NB_PATTERN_FILES=6
         BUILD_OPTIONS="--UE -t ETHERNET --noS1"
+        NBARGS=$[$NBARGS+256]
+        ;;
+        l2-sim)
+        VM_NAME=ci-l2-sim
+        VM_MEMORY=8192
+        VM_CPU=8
+        ARCHIVES_LOC=l2_sim
+        LOG_PATTERN=.Rel14.txt
+        NB_PATTERN_FILES=4
+        BUILD_OPTIONS="--eNB -t ETHERNET"
+        RUN_OPTIONS="complex"
         NBARGS=$[$NBARGS+256]
         ;;
         flexran-rtc)

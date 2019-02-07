@@ -219,7 +219,6 @@ void  log_getconfig(log_t *g_log) {
   paramdef_t logparams_logfile[MAX_LOG_PREDEF_COMPONENTS];
   paramdef_t logparams_debug[sizeof(log_maskmap)/sizeof(mapping)];
   paramdef_t logparams_dump[sizeof(log_maskmap)/sizeof(mapping)];
-  CONFIG_SETRTFLAG(CONFIG_NOCHECKUNKOPT);
   int ret = config_get( logparams_defaults,sizeof(logparams_defaults)/sizeof(paramdef_t),CONFIG_STRING_LOG_PREFIX);
 
   if (ret <0) {
@@ -305,8 +304,8 @@ void  log_getconfig(log_t *g_log) {
   }
 
   config_get( logparams_debug,(sizeof(log_maskmap)/sizeof(mapping)) - 1 ,CONFIG_STRING_LOG_PREFIX);
-  CONFIG_CLEARRTFLAG(CONFIG_NOCHECKUNKOPT);
   config_get( logparams_dump,(sizeof(log_maskmap)/sizeof(mapping)) - 1 ,CONFIG_STRING_LOG_PREFIX);
+  config_check_unknown_cmdlineopt(CONFIG_STRING_LOG_PREFIX);
 
   /* set the debug mask according to the debug parameters values */
   for (int i=0; log_maskmap[i].name != NULL ; i++) {

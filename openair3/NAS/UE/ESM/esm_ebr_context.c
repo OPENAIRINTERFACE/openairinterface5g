@@ -57,7 +57,13 @@ Description Defines functions used to handle EPS bearer contexts.
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
+#ifdef PDCP_USE_NETLINK
+#ifdef UESIM_EXPANSION
+  #include "openairinterface5g_limits.h"
+  extern uint16_t inst_pdcp_list[NUMBER_OF_UE_MAX];
+#endif
+#endif
+extern uint8_t  nfapi_mode;
 
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
@@ -208,7 +214,7 @@ int esm_ebr_context_create(
            char           broadcast[INET_ADDRSTRLEN];
            struct in_addr in_addr;
            char           command_line[500];
-           int            res;
+           int            res = -1;
 
            switch (pdn->type) {
            case NET_PDN_TYPE_IPV4V6:
@@ -272,7 +278,38 @@ int esm_ebr_context_create(
                strcpy(broadcast, ipv4_addr);
              }
 
-             res = sprintf(command_line,
+             if(nfapi_mode ==3){
+                // this is for L2 FAPI simulator.
+                // change for multiple UE's like 256UEs.
+                // if it's made too many tables , OS may crush so we use one table.
+#ifdef PDCP_USE_NETLINK
+#ifdef UESIM_EXPANSION
+                uint16_t inst_nic = (pdn->ip_addr[3] & 0x000000FF) - 2;
+                res = sprintf(command_line,
+                           "ifconfig oip%d %s netmask %s broadcast %s up && "
+                           "ip rule add from %s/24 table %d && "
+                           "ip rule add to %s/24 table %d && "
+                           "ip route add default dev oip%d table %d",
+                           inst_nic + 1, ipv4_addr, netmask, broadcast,
+                           ipv4_addr, 201,
+                           ipv4_addr, 201,
+                           inst_nic + 1, 201);
+
+               inst_pdcp_list[inst_nic] = ueid;
+#else
+               res = sprintf(command_line,
+                          "ifconfig oip%d %s netmask %s broadcast %s up && "
+                          "ip rule add from %s/32 table %d && "
+                          "ip rule add to %s/32 table %d && "
+                          "ip route add default dev oip%d table %d",
+                          ueid + 1, ipv4_addr, netmask, broadcast,
+                          ipv4_addr, ueid + 201,
+                          ipv4_addr, ueid + 201,
+                          ueid + 1, ueid + 201);
+#endif
+#endif
+             } else {
+               res = sprintf(command_line,
                            "ifconfig oip%d %s netmask %s broadcast %s up && "
                            "ip rule add from %s/32 table %d && "
                            "ip rule add to %s/32 table %d && "
@@ -281,6 +318,7 @@ int esm_ebr_context_create(
                            ipv4_addr, ueid + 201,
                            ipv4_addr, ueid + 201,
                            ueid + 1, ueid + 201);
+             }
              if ( res<0 ) {
                 LOG_TRACE(WARNING, "ESM-PROC  - Failed to system command string");
              }

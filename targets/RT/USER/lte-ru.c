@@ -118,7 +118,11 @@ static int DEFENBS[] = {0};
 #include "pdcp.h"
 
 extern volatile int                    oai_exit;
-
+extern int emulate_rf;
+extern int numerology;
+extern clock_source_t clock_source;
+extern uint8_t dlsch_ue_select_tbl_in_use;
+extern uint8_t nfapi_mode;
 
 extern PARALLEL_CONF_t get_thread_parallel_conf(void);
 extern WORKER_CONF_t   get_thread_worker_conf(void);
@@ -140,6 +144,11 @@ int attach_rru(RU_t *ru);
 int connect_rau(RU_t *ru);
 
 extern uint16_t sf_ahead;
+
+#if defined(PRE_SCD_THREAD)
+void init_ru_vnf(void);
+#endif
+
 
 /*************************************************************/
 /* Functions to attach and configure RRU                     */
@@ -1943,7 +1952,12 @@ void* pre_scd_thread( void* param ){
     int                     CC_id;
     int                     Mod_id;
     RU_t               *ru      = (RU_t*)param;
-    Mod_id = ru->eNB_list[0]->Mod_id;
+
+    // L2-emulator can work only one eNB
+    if( nfapi_mode == 2)
+       Mod_id = 0;
+    else 
+       Mod_id = ru->eNB_list[0]->Mod_id;
 
     frame = 0;
     subframe = 4;
@@ -2822,6 +2836,114 @@ void stop_RU(int nb_ru)
     kill_RU_proc(RC.ru[inst]);
   }
 }
+
+//Some of the member of ru pointer is used in pre_scd.
+//This funtion is for initializing ru pointer for L2 FAPI simulator.
+#if defined(PRE_SCD_THREAD)
+void init_ru_vnf(void) {
+  
+  int ru_id;
+  RU_t *ru;
+  RU_proc_t *proc;
+//  PHY_VARS_eNB *eNB0= (PHY_VARS_eNB *)NULL;
+  int i;
+  int CC_id;
+
+
+  dlsch_ue_select_tbl_in_use = 1;
+
+
+  // create status mask
+  RC.ru_mask = 0;
+  pthread_mutex_init(&RC.ru_mutex,NULL);
+  pthread_cond_init(&RC.ru_cond,NULL);
+
+  // read in configuration file)
+  printf("configuring RU from file\n");
+  RCconfig_RU();
+  LOG_I(PHY,"number of L1 instances %d, number of RU %d, number of CPU cores %d\n",RC.nb_L1_inst,RC.nb_RU,get_nprocs());
+
+  if (RC.nb_CC != 0)
+    for (i=0;i<RC.nb_L1_inst;i++) 
+      for (CC_id=0;CC_id<RC.nb_CC[i];CC_id++) RC.eNB[i][CC_id]->num_RU=0;
+
+  LOG_D(PHY,"Process RUs RC.nb_RU:%d\n",RC.nb_RU);
+  for (ru_id=0;ru_id<RC.nb_RU;ru_id++) {
+    LOG_D(PHY,"Process RC.ru[%d]\n",ru_id);
+    ru               = RC.ru[ru_id];
+//    ru->rf_config_file = rf_config_file;
+    ru->idx          = ru_id;              
+    ru->ts_offset    = 0;
+    // use eNB_list[0] as a reference for RU frame parameters
+    // NOTE: multiple CC_id are not handled here yet!
+
+    if (ru->num_eNB > 0) {
+//      LOG_D(PHY, "%s() RC.ru[%d].num_eNB:%d ru->eNB_list[0]:%p RC.eNB[0][0]:%p rf_config_file:%s\n", __FUNCTION__, ru_id, ru->num_eNB, ru->eNB_list[0], RC.eNB[0][0], ru->rf_config_file);
+
+      if (ru->eNB_list[0] == 0)
+      {
+        LOG_E(PHY,"%s() DJP - ru->eNB_list ru->num_eNB are not initialized - so do it manually\n", __FUNCTION__);
+        ru->eNB_list[0] = RC.eNB[0][0];
+        ru->num_eNB=1;
+      //
+      // DJP - feptx_prec() / feptx_ofdm() parses the eNB_list (based on num_eNB) and copies the txdata_F to txdata in RU
+      //
+      }
+      else
+      {
+        LOG_E(PHY,"DJP - delete code above this %s:%d\n", __FILE__, __LINE__);
+      }
+    }
+
+// frame_parms is not used in L2 FAPI simulator
+/*
+    eNB0             = ru->eNB_list[0];
+    LOG_D(PHY, "RU FUnction:%d ru->if_south:%d\n", ru->function, ru->if_south);
+    LOG_D(PHY, "eNB0:%p\n", eNB0);
+    if (eNB0)
+    {
+      if ((ru->function != NGFI_RRU_IF5) && (ru->function != NGFI_RRU_IF4p5))
+        AssertFatal(eNB0!=NULL,"eNB0 is null!\n");
+
+      if (eNB0) {
+        LOG_I(PHY,"Copying frame parms from eNB %d to ru %d\n",eNB0->Mod_id,ru->idx);
+        memcpy((void*)&ru->frame_parms,(void*)&eNB0->frame_parms,sizeof(LTE_DL_FRAME_PARMS));
+
+        // attach all RU to all eNBs in its list/
+        LOG_D(PHY,"ru->num_eNB:%d eNB0->num_RU:%d\n", ru->num_eNB, eNB0->num_RU);
+        for (i=0;i<ru->num_eNB;i++) {
+          eNB0 = ru->eNB_list[i];
+          eNB0->RU_list[eNB0->num_RU++] = ru;
+        }
+      }
+    }
+*/
+    LOG_I(PHY,"Initializing RRU descriptor %d : (%s,%s,%d)\n",ru_id,ru_if_types[ru->if_south],eNB_timing[ru->if_timing],ru->function);
+
+//    set_function_spec_param(ru);
+    LOG_I(PHY,"Starting ru_thread %d\n",ru_id);
+
+//    init_RU_proc(ru);
+  
+    proc = &ru->proc;
+    memset((void*)proc,0,sizeof(RU_proc_t));
+
+    proc->instance_pre_scd = -1;
+    pthread_mutex_init( &proc->mutex_pre_scd, NULL);
+    pthread_cond_init( &proc->cond_pre_scd, NULL);
+    pthread_create(&proc->pthread_pre_scd, NULL, pre_scd_thread, (void*)ru);
+    pthread_setname_np(proc->pthread_pre_scd, "pre_scd_thread");
+
+  } // for ru_id
+  
+
+
+  //  sleep(1);
+  LOG_D(HW,"[lte-softmodem.c] RU threads created\n");
+  
+
+}
+#endif
 
 
 /* --------------------------------------------------------*/
