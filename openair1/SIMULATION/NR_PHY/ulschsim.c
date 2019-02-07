@@ -483,7 +483,7 @@ int main(int argc, char **argv) {
 	double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384);
 	short *channel_output_fixed = malloc16(sizeof(short) * 16 * 68 * 384);
 	short *channel_output_uncoded = malloc16(sizeof(unsigned short) * 16 * 68 * 384);
-	double errors_bit_uncoded = 0;
+	unsigned int errors_bit_uncoded = 0;
 	unsigned char *estimated_output;
 	unsigned char *estimated_output_bit;
 	unsigned char *test_input_bit;
@@ -543,9 +543,13 @@ int main(int argc, char **argv) {
 				//SNR =10;
 				SNR_lin = pow(10, SNR / 10.0);
 				sigma = 1.0 / sqrt(2 * SNR_lin);
+#if 1
 				channel_output_fixed[i] = (short) quantize(sigma / 4.0 / 4.0,
 						modulated_input[i] + sigma * gaussdouble(0.0, 1.0),
 						qbits);
+#else
+				channel_output_fixed[i] = (short) quantize(0.01, modulated_input[i], qbits);
+#endif
 				//channel_output_fixed[i] = (char)quantize8bit(sigma/4.0,(2.0*modulated_input[i]) - 1.0 + sigma*gaussdouble(0.0,1.0));
 				//printf("llr[%d]=%d\n",i,channel_output_fixed[i]);
 				//printf("channel_output_fixed[%d]: %d\n",i,channel_output_fixed[i]);
@@ -565,7 +569,7 @@ int main(int argc, char **argv) {
 			}
 
 			//if (errors_bit_uncoded>10)
-			//printf("errors bits uncoded %f\n", errors_bit_uncoded);
+			printf("errors bits uncoded %u\n", errors_bit_uncoded);
 #ifdef DEBUG_CODER
 			printf("\n");
 			exit(-1);
