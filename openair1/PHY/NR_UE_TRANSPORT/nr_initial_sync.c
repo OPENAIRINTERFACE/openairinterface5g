@@ -202,19 +202,21 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   LOG_I(PHY,"sync_pos %d ssb_offset %d sync_pos_slot %d \n",sync_pos,ue->ssb_offset,sync_pos_slot);
 #endif
 
-  // digital compensation of FFO for SSB symbols  
-  double s_time = 1/(1.0e3*fp->samples_per_subframe);  // sampling time
-  double off_angle = -2*M_PI*s_time*(ue->common_vars.freq_offset);  // offset rotation angle compensation per sample
+  // digital compensation of FFO for SSB symbols
+  if (ue->UE_fo_compensation){  
+	double s_time = 1/(1.0e3*fp->samples_per_subframe);  // sampling time
+	double off_angle = -2*M_PI*s_time*(ue->common_vars.freq_offset);  // offset rotation angle compensation per sample
 
-  int start = ue->ssb_offset;  // start for offset correction is at ssb_offset (pss time position)
-  int end = start + 4*(fp->ofdm_symbol_size + fp->nb_prefix_samples);  // loop over samples in 4 symbols (ssb size), including prefix  
+	int start = ue->ssb_offset;  // start for offset correction is at ssb_offset (pss time position)
+  	int end = start + 4*(fp->ofdm_symbol_size + fp->nb_prefix_samples);  // loop over samples in 4 symbols (ssb size), including prefix  
 
-  for(int n=start; n<end; n++){  	
-	for (int ar=0; ar<fp->nb_antennas_rx; ar++) {
+	for(int n=start; n<end; n++){  	
+	  for (int ar=0; ar<fp->nb_antennas_rx; ar++) {
 		re = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n]);
 		im = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n+1]);
 		((short *)ue->common_vars.rxdata[ar])[2*n] = (short)(round(re*cos(n*off_angle) - im*sin(n*off_angle))); 
 		((short *)ue->common_vars.rxdata[ar])[2*n+1] = (short)(round(re*sin(n*off_angle) + im*cos(n*off_angle)));
+	  }
 	}
   }
 

@@ -137,6 +137,7 @@ int set_pss_nr(int ofdm_symbol_size);
 int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int rate_change);
 int pss_search_time_nr(int **rxdata, ///rx data in time domain
                        NR_DL_FRAME_PARMS *frame_parms,
+		       int fo_flag,
                        int *eNB_id,
 		       int *f_off);
 
