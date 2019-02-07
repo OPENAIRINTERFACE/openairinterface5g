@@ -56,12 +56,14 @@ typedef struct ltemeasurdef {
     unsigned int statemask;
 } telnet_ltemeasurdef_t;
 
-#define GROUP_LTEMACSTATS 0
+#define GROUP_LTESTATS    0
 #define GROUP_CPUSTATS    1
+typedef void(*measur_dislayfunc_t)(telnet_printfunc_t prnt);
 typedef struct mesurgroupdef {
     char groupname[TELNET_MAXMEASURNAME_LEN];
     unsigned char type;
     unsigned char size;
+    measur_dislayfunc_t displayfunc;
     union {
        telnet_cpumeasurdef_t *cpustats;
        telnet_ltemeasurdef_t *ltestats;
@@ -106,29 +108,29 @@ typedef struct mesurgroupdef {
 
 #define LTEMAC_UEMEASURE \
 { \
-  {"dlsch_mcs1",	   &(macstatptr->dlsch_mcs1),TELNET_VARTYPE_INT8,0},\
-  {"dlsch_mcs2",	   &(macstatptr->dlsch_mcs2),TELNET_VARTYPE_INT8,0},\
-  {"rbs_used",	           &(macstatptr->rbs_used),TELNET_VARTYPE_INT32,0},\
-  {"rbs_used_retx",	   &(macstatptr->rbs_used_retx),TELNET_VARTYPE_INT16,0},\
-  {"total_rbs_used",	   &(macstatptr->total_rbs_used),TELNET_VARTYPE_INT16,0},\
-  {"ncce_used",	           &(macstatptr->ncce_used),TELNET_VARTYPE_INT16,0},\
-  {"ncce_used_retx",	   &(macstatptr->ncce_used_retx),TELNET_VARTYPE_INT16,0},\
-  {"TBS",	           &(macstatptr->TBS),TELNET_VARTYPE_INT32,0},\
-  {"total_pdu_bytes",	   &(macstatptr->total_pdu_bytes),TELNET_VARTYPE_INT64,0},\
-  {"total_num_pdus",	   &(macstatptr->total_num_pdus),TELNET_VARTYPE_INT32,0},\
-  {"overhead_bytes",	   &(macstatptr->overhead_bytes),TELNET_VARTYPE_INT64,0},\
-  {"crnti",	           &(macstatptr->crnti),TELNET_VARTYPE_INT16,0},\
-  {"normalized_rx_power",  &(macstatptr->normalized_rx_power),TELNET_VARTYPE_INT32,0},\
-  {"target_rx_power",	   &(macstatptr->target_rx_power),TELNET_VARTYPE_INT32,0},\
-  {"ulsch_mcs1",	   &(macstatptr->ulsch_mcs1),TELNET_VARTYPE_INT8,0},\
-  {"ulsch_mcs2",	   &(macstatptr->ulsch_mcs2),TELNET_VARTYPE_INT8,0},\
-  {"rbs_used_rx",	   &(macstatptr->rbs_used_rx),TELNET_VARTYPE_INT32,0},\
-  {"rbs_used_retx_rx",	   &(macstatptr->rbs_used_retx_rx),TELNET_VARTYPE_INT32,0},\
-  {"total_rbs_used_rx",	   &(macstatptr->total_rbs_used_rx),TELNET_VARTYPE_INT32,0},\
-  {"ulsch_TBS",	           &(macstatptr->ulsch_TBS),TELNET_VARTYPE_INT32,0},\
-  {"total_pdu_bytes_rx",   &(macstatptr->total_pdu_bytes_rx),TELNET_VARTYPE_INT64,0},\
-  {"total_num_pdus_rx",	   &(macstatptr->total_num_pdus_rx),TELNET_VARTYPE_INT32,0},\
-  {"num_errors_rx",	   &(macstatptr->num_errors_rx),TELNET_VARTYPE_INT32,0},\
+  {"dlsch_mcs1",	   &(macuestatptr->dlsch_mcs1),TELNET_VARTYPE_INT8,0},\
+  {"dlsch_mcs2",	   &(macuestatptr->dlsch_mcs2),TELNET_VARTYPE_INT8,0},\
+  {"rbs_used",	           &(macuestatptr->rbs_used),TELNET_VARTYPE_INT32,0},\
+  {"rbs_used_retx",	   &(macuestatptr->rbs_used_retx),TELNET_VARTYPE_INT16,0},\
+  {"total_rbs_used",	   &(macuestatptr->total_rbs_used),TELNET_VARTYPE_INT16,0},\
+  {"ncce_used",	           &(macuestatptr->ncce_used),TELNET_VARTYPE_INT16,0},\
+  {"ncce_used_retx",	   &(macuestatptr->ncce_used_retx),TELNET_VARTYPE_INT16,0},\
+  {"TBS",	           &(macuestatptr->TBS),TELNET_VARTYPE_INT32,0},\
+  {"total_pdu_bytes",	   &(macuestatptr->total_pdu_bytes),TELNET_VARTYPE_INT64,0},\
+  {"total_num_pdus",	   &(macuestatptr->total_num_pdus),TELNET_VARTYPE_INT32,0},\
+  {"overhead_bytes",	   &(macuestatptr->overhead_bytes),TELNET_VARTYPE_INT64,0},\
+  {"crnti",	           &(macuestatptr->crnti),TELNET_VARTYPE_INT16,0},\
+  {"normalized_rx_power",  &(macuestatptr->normalized_rx_power),TELNET_VARTYPE_INT32,0},\
+  {"target_rx_power",	   &(macuestatptr->target_rx_power),TELNET_VARTYPE_INT32,0},\
+  {"ulsch_mcs1",	   &(macuestatptr->ulsch_mcs1),TELNET_VARTYPE_INT8,0},\
+  {"ulsch_mcs2",	   &(macuestatptr->ulsch_mcs2),TELNET_VARTYPE_INT8,0},\
+  {"rbs_used_rx",	   &(macuestatptr->rbs_used_rx),TELNET_VARTYPE_INT32,0},\
+  {"rbs_used_retx_rx",	   &(macuestatptr->rbs_used_retx_rx),TELNET_VARTYPE_INT32,0},\
+  {"total_rbs_used_rx",	   &(macuestatptr->total_rbs_used_rx),TELNET_VARTYPE_INT32,0},\
+  {"ulsch_TBS",	           &(macuestatptr->ulsch_TBS),TELNET_VARTYPE_INT32,0},\
+  {"total_pdu_bytes_rx",   &(macuestatptr->total_pdu_bytes_rx),TELNET_VARTYPE_INT64,0},\
+  {"total_num_pdus_rx",	   &(macuestatptr->total_num_pdus_rx),TELNET_VARTYPE_INT32,0},\
+  {"num_errors_rx",	   &(macuestatptr->num_errors_rx),TELNET_VARTYPE_INT32,0},\
 }
 
 #define LTE_RLCMEASURE \

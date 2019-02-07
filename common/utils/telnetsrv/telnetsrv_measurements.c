@@ -50,18 +50,27 @@
 #include "openair2/LAYER2/MAC/mac.h"
 #include "openair1/PHY/phy_extern.h"
 
-static telnet_measurgroupdef_t *measurgroups[TELNET_MAXMEASURGROUPS];
-static int                     telnet_num_measurgroups=0;
+void measurcmd_display_macstats(telnet_printfunc_t prnt);
+void measurcmd_display_macstats_ue(telnet_printfunc_t prnt);
+void measurcmd_display_rlcstats(telnet_printfunc_t prnt);
+static telnet_measurgroupdef_t measurgroups[] = {
+  {"enb",   GROUP_LTESTATS,0, measurcmd_display_macstats,   {NULL}},
+  {"enbues",GROUP_LTESTATS,0, measurcmd_display_macstats_ue,{NULL}}, 
+  {"rlc",   GROUP_LTESTATS,0, measurcmd_display_rlcstats,   {NULL}}, 
+};
+#define TELNET_NUM_MEASURGROUPS (sizeof(measurgroups)/sizeof(telnet_measurgroupdef_t))
+
 static int                     eNB_id =0;
-static char                    *grouptypes[] = {"ltemac","cpustats"};
+static char                    *grouptypes[] = {"ltestats","cpustats"};
+#define TELNET_NUM_MEASURTYPES (sizeof(grouptypes)/sizeof(char *))
 
 #define HDR "---------------------------------"
 
 void measurcmd_display_groups(telnet_printfunc_t prnt) {
    prnt("  %*s %10s %s\n",TELNET_MAXMEASURNAME_LEN-1,"name","type","nombre de mesures");
-   for(int i=0; i<telnet_num_measurgroups; i++)
-     prnt("%02d %*s %10s %i\n",i,TELNET_MAXMEASURNAME_LEN-1,measurgroups[i]->groupname,
-          grouptypes[measurgroups[i]->type], measurgroups[i]->size);
+   for(int i=0; i<TELNET_NUM_MEASURGROUPS; i++)
+     prnt("%02d %*s %10s %i\n",i,TELNET_MAXMEASURNAME_LEN-1,measurgroups[i].groupname,
+          grouptypes[measurgroups[i].type], measurgroups[i].size);
 } /* measurcmd_display_groups */
 
 uint64_t measurcmd_getstatvalue(telnet_ltemeasurdef_t *measur,telnet_printfunc_t prnt) {
@@ -105,7 +114,7 @@ void measurcmd_display_macstats_ue(telnet_printfunc_t prnt) {
     for (int i=0; i<UE_list->numactiveCCs[UE_id]; i++) {
       int CC_id = UE_list->ordered_CCids[i][UE_id];
       prnt("%s UE %i Id %i CCid %i %s\n",HDR,i,UE_id,CC_id,HDR);
-      eNB_UE_STATS *macstatptr = &(UE_list->eNB_UE_stats[CC_id][UE_id]);
+      eNB_UE_STATS *macuestatptr = &(UE_list->eNB_UE_stats[CC_id][UE_id]);
       telnet_ltemeasurdef_t  statsptr[]=LTEMAC_UEMEASURE;
       measurcmd_display_measures(prnt, statsptr, sizeof(statsptr)/sizeof(telnet_ltemeasurdef_t));
     }
@@ -178,18 +187,27 @@ int idx1, idx2;
   if (s>0) { 
     if ( strcmp(subcmd,"groups") == 0)
        measurcmd_display_groups(prnt);
-    else if ( strcmp(subcmd,"lte") == 0) {
-       measurcmd_display_macstats(prnt);
-       measurcmd_display_macstats_ue(prnt);
-       measurcmd_display_rlcstats(prnt);
+    else {
+       for (int i=0; i<TELNET_NUM_MEASURTYPES; i++) {
+         if(strcmp(subcmd,grouptypes[i]) == 0) {
+	   for(int j=0; j<TELNET_NUM_MEASURGROUPS; j++) {
+	     if(i == measurgroups[j].type) {
+               measurgroups[j].displayfunc(prnt);
+	     }
+	   } /* for j...*/
+         }
+       }/* for i...*/
+       for (int i=0; i<TELNET_NUM_MEASURGROUPS; i++) {
+         if(strcmp(subcmd,measurgroups[i].groupname) == 0) {
+           measurgroups[i].displayfunc(prnt);
+	 break;
+         }
+       }       
     }
-    else
-       prnt("%s: Unknown command\n",buf);
-    free(subcmd);
-    } 
+  free(subcmd);
+  } /* s>0 */
   return 0;
 } 
-
 
 /*-------------------------------------------------------------------------------------*/
 
