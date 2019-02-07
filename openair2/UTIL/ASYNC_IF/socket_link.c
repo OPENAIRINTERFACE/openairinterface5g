@@ -602,8 +602,8 @@ int main(void)
    */
   sleep(1);
   printf("... done\n");
-  if (link_send_packet(l, "hello\n", 6+1) ||
-      link_send_packet(l, "world\n", 6+1)) return 1;
+  if (link_send_packet(l, "hello\n", 6+1, NULL, 0) ||
+      link_send_packet(l, "world\n", 6+1, NULL, 0)) return 1;
   if (link_receive_packet(l, &data, &size)) return 1; printf("%s", (char *)data); free(data);
   if (link_receive_packet(l, &data, &size)) return 1; printf("%s", (char *)data); free(data);
   printf("stats:\n");
@@ -631,8 +631,8 @@ int main(void)
   printf("link is up\n");
   if (link_receive_packet(l, &data, &size)) return 1; printf("%s", (char *)data); free(data);
   if (link_receive_packet(l, &data, &size)) return 1; printf("%s", (char *)data); free(data);
-  if (link_send_packet(l, "bye\n", 4+1) ||
-      link_send_packet(l, "server\n", 7+1)) return 1;
+  if (link_send_packet(l, "bye\n", 4+1, NULL, 0) ||
+      link_send_packet(l, "server\n", 7+1, NULL, 0)) return 1;
   printf("stats:\n");
   printf("    sent packets %"PRIu64"\n", l->packets_sent);
   printf("    sent bytes %"PRIu64"\n", l->bytes_sent);
