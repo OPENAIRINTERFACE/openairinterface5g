@@ -33,11 +33,20 @@
 #define X2AP_HANDOVER_REQ_ACK(mSGpTR)           (mSGpTR)->ittiMsg.x2ap_handover_req_ack
 #define X2AP_REGISTER_ENB_CNF(mSGpTR)           (mSGpTR)->ittiMsg.x2ap_register_enb_cnf
 #define X2AP_DEREGISTERED_ENB_IND(mSGpTR)       (mSGpTR)->ittiMsg.x2ap_deregistered_enb_ind
+#define X2AP_UE_CONTEXT_RELEASE(mSGpTR)         (mSGpTR)->ittiMsg.x2ap_ue_context_release
 
 
 #define X2AP_MAX_NB_ENB_IP_ADDRESS 2
 
 // eNB application layer -> X2AP messages
+
+/* X2AP UE CONTEXT RELEASE */
+typedef struct x2ap_ue_context_release_s {
+  int old_eNB_ue_x2ap_id;
+  int new_eNB_ue_x2ap_id;
+  int target_mod_id;
+} x2ap_ue_context_release_t;
+
 typedef struct x2ap_register_enb_req_s {
   /* Unique eNB_id to identify the eNB within EPC.
    * For macro eNB ids this field should be 20 bits long.

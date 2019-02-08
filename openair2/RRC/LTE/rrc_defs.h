@@ -343,7 +343,8 @@ typedef enum HO_STATE_e {
   HO_COMPLETE, // initiated by the target eNB
   HO_REQUEST,
   HO_ACK,
-  HO_CONFIGURED
+  HO_CONFIGURED,
+  HO_RELEASE
 } HO_STATE_t;
 
 typedef enum SL_TRIGGER_e {

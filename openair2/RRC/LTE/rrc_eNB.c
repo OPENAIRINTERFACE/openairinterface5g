@@ -4223,6 +4223,42 @@ void rrc_eNB_process_handoverCommand(
   ue_context->ue_context.handover_info->size = size;
 }
 
+void rrc_eNB_handover_ue_context_release(
+protocol_ctxt_t *const ctxt_pP,
+struct rrc_eNB_ue_context_s *ue_context_p) {
+  int e_rab = 0;
+  //MessageDef *msg_release_p = NULL;
+  MessageDef *msg_delete_tunnels_p = NULL;
+  uint32_t eNB_ue_s1ap_id = ue_context_p->ue_context.eNB_ue_s1ap_id;
+
+  //msg_release_p = itti_alloc_new_message(TASK_RRC_ENB, S1AP_UE_CONTEXT_RELEASE);
+  //itti_send_msg_to_task(TASK_S1AP, ctxt_pP->module_id, msg_release_p);
+  s1ap_ue_context_release(ctxt_pP->instance, ue_context_p->ue_context.eNB_ue_s1ap_id);
+
+  //MSC_LOG_TX_MESSAGE(MSC_RRC_ENB, MSC_GTPU_ENB, NULL,0, "0 GTPV1U_ENB_DELETE_TUNNEL_REQ rnti %x ", eNB_ue_s1ap_id);
+  msg_delete_tunnels_p = itti_alloc_new_message(TASK_RRC_ENB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
+  memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p)));
+
+  GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).rnti = ue_context_p->ue_context.rnti;
+
+  for (e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
+    GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).eps_bearer_id[GTPV1U_ENB_DELETE_TUNNEL_REQ(msg_delete_tunnels_p).num_erab++] =
+      ue_context_p->ue_context.enb_gtp_ebi[e_rab];
+    // erase data
+    ue_context_p->ue_context.enb_gtp_teid[e_rab] = 0;
+    memset(&ue_context_p->ue_context.enb_gtp_addrs[e_rab], 0, sizeof(ue_context_p->ue_context.enb_gtp_addrs[e_rab]));
+    ue_context_p->ue_context.enb_gtp_ebi[e_rab] = 0;
+  }
+
+  itti_send_msg_to_task(TASK_GTPV1_U, ctxt_pP->module_id, msg_delete_tunnels_p);
+  struct rrc_ue_s1ap_ids_s *rrc_ue_s1ap_ids = NULL;
+  rrc_ue_s1ap_ids = rrc_eNB_S1AP_get_ue_ids(RC.rrc[ctxt_pP->module_id], 0, eNB_ue_s1ap_id);
+
+  if (rrc_ue_s1ap_ids != NULL) {
+    rrc_eNB_S1AP_remove_ue_ids(RC.rrc[ctxt_pP->module_id], rrc_ue_s1ap_ids);
+  }
+}
+
 #if 0
 //-----------------------------------------------------------------------------
 void
@@ -7990,6 +8026,14 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id)
       }
     }
 
+    if (ue_context_p->ue_context.handover_info != NULL) {
+      if (ue_context_p->ue_context.handover_info->state == HO_RELEASE) {
+        ue_to_be_removed = ue_context_p;
+        rrc_eNB_handover_ue_context_release(ctxt_pP, ue_context_p);
+        break; //break RB_FOREACH (why to break ?)
+      }
+    }
+
     pthread_mutex_lock(&rrc_release_freelist);
 
     if (rrc_release_info.num_UEs > 0) {
@@ -8161,6 +8205,9 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
   SRB_INFO                           *srb_info_p;
   int                                 CC_id;
   protocol_ctxt_t                     ctxt;
+
+//  memset(&ctxt, 0, sizeof(ctxt));
+
   // Wait for a message
   itti_receive_msg(TASK_RRC_ENB, &msg_p);
   msg_name_p = ITTI_MSG_NAME(msg_p);
@@ -8278,7 +8325,8 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
       //LOG_I(RRC, "[eNB %d] Received message %s, not processed because procedure not synched\n",
       //instance, msg_name_p);
       if (rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)
-          && rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_rrc > 0) {
+          && rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_rrc > 0
+          && rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.handover_info->state != HO_RELEASE) {
         rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_rrc =
           rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_thres_rrc;
       }
@@ -8307,6 +8355,19 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
 
       rrc_eNB_process_handoverCommand(instance, ue_context_p, &X2AP_HANDOVER_REQ_ACK(msg_p));
       ue_context_p->ue_context.handover_info->state = HO_PREPARE;
+      break;
+    }
+
+   case X2AP_UE_CONTEXT_RELEASE: {
+      struct rrc_eNB_ue_context_s        *ue_context_p = NULL;
+      ue_context_p = rrc_eNB_get_ue_context(RC.rrc[instance], ctxt.rnti);
+      LOG_I(RRC, "[eNB %d] source eNB receives the X2 UE CONTEXT RELEASE %s at frame %d subframe %d \n", instance, msg_name_p,
+            ctxt.frame,ctxt.subframe);
+      DevAssert(ue_context_p != NULL);
+
+      if (ue_context_p->ue_context.handover_info->state != HO_COMPLETE) abort();
+
+      ue_context_p->ue_context.handover_info->state = HO_RELEASE;
       break;
     }
 

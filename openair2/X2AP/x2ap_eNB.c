@@ -80,6 +80,11 @@ void x2ap_eNB_handle_handover_req_ack(instance_t instance,
                                       x2ap_handover_req_ack_t *x2ap_handover_req_ack);
 
 static
+void x2ap_eNB_handle_ue_context_release(instance_t instance,
+                                        x2ap_ue_context_release_t *x2ap_ue_context_release);
+
+
+static
 void x2ap_eNB_handle_sctp_data_ind(instance_t instance, sctp_data_ind_t *sctp_data_ind) {
   int result;
   DevAssert(sctp_data_ind != NULL);
@@ -423,6 +428,23 @@ void x2ap_eNB_handle_handover_req_ack(instance_t instance,
           //x2ap_handover_req_ack->rrc_buffer, x2ap_handover_req_ack->rrc_buffer_size);
 }
 
+static
+void x2ap_eNB_handle_ue_context_release(instance_t instance,
+                                        x2ap_ue_context_release_t *x2ap_ue_context_release)
+{
+  x2ap_eNB_instance_t *instance_p;
+  x2ap_eNB_data_t     *target;
+  int target_enb_id = x2ap_ue_context_release->target_mod_id;
+
+  instance_p = x2ap_eNB_get_instance(instance);
+  DevAssert(instance_p != NULL);
+
+  target = x2ap_is_eNB_id_in_list(target_enb_id);
+  DevAssert(target != NULL);
+
+  x2ap_eNB_generate_x2_ue_context_release(target, x2ap_ue_context_release);
+}
+
 void *x2ap_task(void *arg) {
   MessageDef *received_msg = NULL;
   int         result;
@@ -452,6 +474,11 @@ void *x2ap_task(void *arg) {
       case X2AP_HANDOVER_REQ_ACK:
         x2ap_eNB_handle_handover_req_ack(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                          &X2AP_HANDOVER_REQ_ACK(received_msg));
+        break;
+
+      case X2AP_UE_CONTEXT_RELEASE:
+        x2ap_eNB_handle_ue_context_release(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                                &X2AP_UE_CONTEXT_RELEASE(received_msg));
         break;
 
       case SCTP_INIT_MSG_MULTI_CNF:

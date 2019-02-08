@@ -53,6 +53,7 @@ int x2ap_eNB_generate_x2_handover_request (x2ap_eNB_data_t *x2ap_eNB_data_p,
 int x2ap_eNB_generate_x2_handover_request_ack (x2ap_eNB_data_t *x2ap_eNB_data_p,
                                                x2ap_handover_req_ack_t *x2ap_handover_req_ack);
 
-int x2ap_eNB_generate_x2_ue_context_release (x2ap_eNB_data_t *x2ap_eNB_data_p);
+int x2ap_eNB_generate_x2_ue_context_release (x2ap_eNB_data_t *x2ap_eNB_data_p,
+                                             x2ap_ue_context_release_t *x2ap_ue_context_release);
 #endif /*  X2AP_ENB_GENERATE_MESSAGES_H_ */
 

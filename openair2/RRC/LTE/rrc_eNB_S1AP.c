@@ -2087,9 +2087,60 @@ int rrc_eNB_process_S1AP_PATH_SWITCH_REQ_ACK (MessageDef *msg_p, const char *msg
     /* Security key */
     ue_context_p->ue_context.next_hop_chain_count=S1AP_PATH_SWITCH_REQ_ACK (msg_p).next_hop_chain_count;
     memcpy ( ue_context_p->ue_context.next_security_key,
-             S1AP_PATH_SWITCH_REQ_ACK (msg_p).next_security_key,
-             SECURITY_KEY_LENGTH);
+	     S1AP_PATH_SWITCH_REQ_ACK (msg_p).next_security_key,
+	     SECURITY_KEY_LENGTH);
+
+    rrc_eNB_send_X2AP_UE_CONTEXT_RELEASE(&ctxt, ue_context_p);
+
     return (0);
   }
 }
 
+int rrc_eNB_send_X2AP_UE_CONTEXT_RELEASE(const protocol_ctxt_t* const ctxt_pP, rrc_eNB_ue_context_t* const ue_context_pP) {
+
+  MessageDef      *msg_p         = NULL;
+
+  msg_p = itti_alloc_new_message (TASK_RRC_ENB, X2AP_UE_CONTEXT_RELEASE);
+
+  X2AP_UE_CONTEXT_RELEASE (msg_p).old_eNB_ue_x2ap_id = 0;
+  X2AP_UE_CONTEXT_RELEASE (msg_p).new_eNB_ue_x2ap_id = 0;
+  X2AP_UE_CONTEXT_RELEASE (msg_p).target_mod_id = ue_context_pP->ue_context.handover_info->modid_t;
+  itti_send_msg_to_task (TASK_X2AP, ctxt_pP->instance, msg_p);
+  return (0);
+}
+
+int s1ap_ue_context_release(instance_t instance, const uint32_t eNB_ue_s1ap_id){
+  s1ap_eNB_instance_t *s1ap_eNB_instance_p = NULL;
+  struct s1ap_eNB_ue_context_s *ue_context_p = NULL;
+
+  s1ap_eNB_instance_p = s1ap_eNB_get_instance(instance);
+  DevAssert(s1ap_eNB_instance_p != NULL);
+
+  if ((ue_context_p = s1ap_eNB_get_ue_context(s1ap_eNB_instance_p,
+                      eNB_ue_s1ap_id)) == NULL) {
+    /* The context for this eNB ue s1ap id doesn't exist in the map of eNB UEs */
+    LOG_W(RRC,"Failed to find ue context associated with eNB ue s1ap id: %u\n",
+              eNB_ue_s1ap_id);
+    return -1;
+  }
+
+  // release UE context
+  struct s1ap_eNB_ue_context_s *ue_context2_p = NULL;
+
+  if ((ue_context2_p = RB_REMOVE(s1ap_ue_map, &s1ap_eNB_instance_p->s1ap_ue_head, ue_context_p))
+      != NULL) {
+    LOG_W(RRC,"Removed UE context eNB_ue_s1ap_id %u\n",
+              ue_context2_p->eNB_ue_s1ap_id);
+    s1ap_eNB_free_ue_context(ue_context2_p);
+  } else {
+    LOG_W(RRC,"Removing UE context eNB_ue_s1ap_id %u: did not find context\n",
+              ue_context_p->eNB_ue_s1ap_id);
+  }
+  /*RB_FOREACH(ue_context_p, s1ap_ue_map, &s1ap_eNB_instance_p->s1ap_ue_head) {
+    S1AP_WARN("in s1ap_ue_map: UE context eNB_ue_s1ap_id %u mme_ue_s1ap_id %u state %u\n",
+        ue_context_p->eNB_ue_s1ap_id, ue_context_p->mme_ue_s1ap_id,
+        ue_context_p->ue_state);
+  }*/
+
+  return 0;
+}

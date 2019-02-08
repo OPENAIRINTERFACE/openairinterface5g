@@ -71,6 +71,12 @@ int x2ap_eNB_handle_handover_response (instance_t instance,
                                       uint32_t stream,
                                       X2AP_X2AP_PDU_t *pdu);
 
+static
+int x2ap_eNB_handle_ue_context_release (instance_t instance,
+                                        uint32_t assoc_id,
+                                        uint32_t stream,
+                                        X2AP_X2AP_PDU_t *pdu);
+
 /* Handlers matrix. Only eNB related procedure present here */
 x2ap_message_decoded_callback x2ap_messages_callback[][3] = {
   { x2ap_eNB_handle_handover_preparation, x2ap_eNB_handle_handover_response, 0 }, /* handoverPreparation */
@@ -78,7 +84,7 @@ x2ap_message_decoded_callback x2ap_messages_callback[][3] = {
   { 0, 0, 0 }, /* loadIndication */
   { 0, 0, 0 }, /* errorIndication */
   { 0, 0, 0 }, /* snStatusTransfer */
-  { 0, 0, 0 }, /* uEContextRelease */
+  { x2ap_eNB_handle_ue_context_release, 0, 0 }, /* uEContextRelease */
   { x2ap_eNB_handle_x2_setup_request, x2ap_eNB_handle_x2_setup_response, x2ap_eNB_handle_x2_setup_failure }, /* x2Setup */
   { 0, 0, 0 }, /* reset */
   { 0, 0, 0 }, /* eNBConfigurationUpdate */
@@ -724,5 +730,49 @@ int x2ap_eNB_handle_handover_response (instance_t instance,
   X2AP_HANDOVER_REQ_ACK(msg).rrc_buffer_size = c->size;
 
   itti_send_msg_to_task(TASK_RRC_ENB, x2ap_eNB_data->x2ap_eNB_instance->instance, msg);
+  return 0;
+}
+
+
+static
+int x2ap_eNB_handle_ue_context_release (instance_t instance,
+                                        uint32_t assoc_id,
+                                        uint32_t stream,
+                                        X2AP_X2AP_PDU_t *pdu)
+{
+  X2AP_UEContextRelease_t             *x2UEContextRelease;
+  X2AP_UEContextRelease_IEs_t         *ie;
+
+  x2ap_eNB_data_t                     *x2ap_eNB_data;
+  MessageDef                          *msg;
+
+  DevAssert (pdu != NULL);
+  x2UEContextRelease = &pdu->choice.initiatingMessage.value.choice.UEContextRelease;
+
+  if (stream == 0) {
+    X2AP_ERROR ("Received new x2 ue context release on stream == 0\n");
+    /* TODO: send a x2 failure response */
+    return 0;
+  }
+
+  X2AP_DEBUG ("Received a new X2 ue context release\n");
+
+  x2ap_eNB_data = x2ap_get_eNB(NULL, assoc_id, 0);
+  DevAssert(x2ap_eNB_data != NULL);
+
+  msg = itti_alloc_new_message(TASK_X2AP, X2AP_UE_CONTEXT_RELEASE);
+
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_UEContextRelease_IEs_t, ie, x2UEContextRelease,
+                             X2AP_ProtocolIE_ID_id_Old_eNB_UE_X2AP_ID, true);
+
+  X2AP_UE_CONTEXT_RELEASE(msg).old_eNB_ue_x2ap_id = ie->value.choice.UE_X2AP_ID;
+
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_UEContextRelease_IEs_t, ie, x2UEContextRelease,
+                             X2AP_ProtocolIE_ID_id_New_eNB_UE_X2AP_ID, true);
+
+  X2AP_UE_CONTEXT_RELEASE(msg).new_eNB_ue_x2ap_id = ie->value.choice.UE_X2AP_ID;
+
+  itti_send_msg_to_task(TASK_RRC_ENB, x2ap_eNB_data->x2ap_eNB_instance->instance, msg);
+
   return 0;
 }
