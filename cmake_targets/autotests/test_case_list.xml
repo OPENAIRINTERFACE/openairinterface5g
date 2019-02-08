@@ -1067,10 +1067,10 @@
       <main_exec> $OPENAIR_DIR/targets/bin/nr_pbchsim.Rel15</main_exec>
       <main_exec_args>-s0 -S1 -n1000 -R106
                       -s0 -S1 -n10 -I -R106
-		      -s0 -S1 -n1000 -R217 -N10
-                      -s0 -S1 -n10 -I -R217 -N10
-		      -s0 -S1 -n1000 -R273 -N20
-                      -s0 -S1 -n10 -I -R273 -N20</main_exec_args>
+		      -s0 -S1 -n1000 -R217
+                      -s0 -S1 -n10 -I -R217
+		      -s0 -S1 -n1000 -R273
+                      -s0 -S1 -n10 -I -R273</main_exec_args>
       <tags>nr_pbchsim.test1 nr_pbchsim.test2</tags>
       <search_expr_true>PBCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
