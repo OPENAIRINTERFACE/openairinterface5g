@@ -266,123 +266,33 @@ void nr_pbch_channel_compensation(int **rxdataF_ext,
 				  int **rxdataF_comp,
 				  NR_DL_FRAME_PARMS *frame_parms,
 				  uint32_t symbol,
-				  uint8_t output_shift)
-{
+				  uint8_t output_shift) {
 
-  short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
-  //short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
-#if defined(__x86_64__) || defined(__i386__)
-  __m128i mmtmpP0,mmtmpP1,mmtmpP2,mmtmpP3;
-#elif defined(__arm__)
-  int16x8_t mmtmpP0,mmtmpP1,mmtmpP2,mmtmpP3;
-#endif
-
-  uint16_t nb_re=180;
-  uint8_t aarx;
-
-#if defined(__x86_64__) || defined(__i386__)
-  __m128i *dl_ch128,*rxdataF128,*rxdataF_comp128;
-#elif defined(__arm__)
-
-#endif
-
+  const uint16_t nb_re=symbol == 2 ? 72 : 180;
+    
   AssertFatal((symbol > 0 && symbol < 4),
 	      "symbol %d is illegal for PBCH DM-RS\n",
 	      symbol);
-
-  if (symbol == 2) nb_re = 72;
-
+  
   //  printf("comp: symbol %d : nb_re %d\n",symbol,nb_re);
 
-  for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
+  for (int aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
     
-#if defined(__x86_64__) || defined(__i386__)
-    dl_ch128          = (__m128i *)&dl_ch_estimates_ext[aarx][symbol*20*12];
-    rxdataF128        = (__m128i *)&rxdataF_ext[aarx][symbol*20*12];
-    rxdataF_comp128   = (__m128i *)&rxdataF_comp[aarx][symbol*20*12];
+    vect128 *dl_ch128          = (vect128 *)&dl_ch_estimates_ext[aarx][symbol*20*12];
+    vect128 *rxdataF128        = (vect128 *)&rxdataF_ext[aarx][symbol*20*12];
+    vect128 *rxdataF_comp128   = (vect128 *)&rxdataF_comp[aarx][symbol*20*12];
     /*
     printf("ch compensation dl_ch ext addr %p \n", &dl_ch_estimates_ext[aarx][symbol*20*12]);
     printf("rxdataf ext addr %p symbol %d\n", &rxdataF_ext[aarx][symbol*20*12], symbol);
     printf("rxdataf_comp addr %p\n",&rxdataF_comp[aarx][symbol*20*12]); 
     */
-#elif defined(__arm__)
-// to be filled in
-#endif
 
     for (int re=0; re<nb_re; re+=12) {
-      //            printf("******re %d\n",re);
-#if defined(__x86_64__) || defined(__i386__)
-      // multiply by conjugated channel
-      mmtmpP0 = _mm_madd_epi16(dl_ch128[0],rxdataF128[0]);
-      //  print_ints("re",&mmtmpP0);
-      // mmtmpP0 contains real part of 4 consecutive outputs (32-bit)
-      mmtmpP1 = _mm_shufflelo_epi16(dl_ch128[0],_MM_SHUFFLE(2,3,0,1));
-      mmtmpP1 = _mm_shufflehi_epi16(mmtmpP1,_MM_SHUFFLE(2,3,0,1));
-      mmtmpP1 = _mm_sign_epi16(mmtmpP1,*(__m128i*)&conjugate[0]);
-      //  print_ints("im",&mmtmpP1);
-      mmtmpP1 = _mm_madd_epi16(mmtmpP1,rxdataF128[0]);
-      // mmtmpP1 contains imag part of 4 consecutive outputs (32-bit)
-      mmtmpP0 = _mm_srai_epi32(mmtmpP0,output_shift);
-      //  print_ints("re(shift)",&mmtmpP0);
-      mmtmpP1 = _mm_srai_epi32(mmtmpP1,output_shift);
-      //  print_ints("im(shift)",&mmtmpP1);
-      mmtmpP2 = _mm_unpacklo_epi32(mmtmpP0,mmtmpP1);
-      mmtmpP3 = _mm_unpackhi_epi32(mmtmpP0,mmtmpP1);
-      //      print_ints("c0",&mmtmpP2);
-      //  print_ints("c1",&mmtmpP3);
-      rxdataF_comp128[0] = _mm_packs_epi32(mmtmpP2,mmtmpP3);
-      /*
-        print_shorts("rx:",rxdataF128);
-        print_shorts("ch:",dl_ch128);
-        print_shorts("pack:",rxdataF_comp128);
-      */
-      // multiply by conjugated channel
-      mmtmpP0 = _mm_madd_epi16(dl_ch128[1],rxdataF128[1]);
-      // mmtmpP0 contains real part of 4 consecutive outputs (32-bit)
-      mmtmpP1 = _mm_shufflelo_epi16(dl_ch128[1],_MM_SHUFFLE(2,3,0,1));
-      mmtmpP1 = _mm_shufflehi_epi16(mmtmpP1,_MM_SHUFFLE(2,3,0,1));
-      mmtmpP1 = _mm_sign_epi16(mmtmpP1,*(__m128i*)&conjugate[0]);
-      mmtmpP1 = _mm_madd_epi16(mmtmpP1,rxdataF128[1]);
-      // mmtmpP1 contains imag part of 4 consecutive outputs (32-bit)
-      mmtmpP0 = _mm_srai_epi32(mmtmpP0,output_shift);
-      mmtmpP1 = _mm_srai_epi32(mmtmpP1,output_shift);
-      mmtmpP2 = _mm_unpacklo_epi32(mmtmpP0,mmtmpP1);
-      mmtmpP3 = _mm_unpackhi_epi32(mmtmpP0,mmtmpP1);
-      rxdataF_comp128[1] = _mm_packs_epi32(mmtmpP2,mmtmpP3);
-      //  print_shorts("rx:",rxdataF128+1);
-      //  print_shorts("ch:",dl_ch128+1);
-      //  print_shorts("pack:",rxdataF_comp128+1);
-      
-      // multiply by conjugated channel
-      mmtmpP0 = _mm_madd_epi16(dl_ch128[2],rxdataF128[2]);
-      // mmtmpP0 contains real part of 4 consecutive outputs (32-bit)
-      mmtmpP1 = _mm_shufflelo_epi16(dl_ch128[2],_MM_SHUFFLE(2,3,0,1));
-      mmtmpP1 = _mm_shufflehi_epi16(mmtmpP1,_MM_SHUFFLE(2,3,0,1));
-      mmtmpP1 = _mm_sign_epi16(mmtmpP1,*(__m128i*)&conjugate[0]);
-      mmtmpP1 = _mm_madd_epi16(mmtmpP1,rxdataF128[2]);
-      // mmtmpP1 contains imag part of 4 consecutive outputs (32-bit)
-      mmtmpP0 = _mm_srai_epi32(mmtmpP0,output_shift);
-      mmtmpP1 = _mm_srai_epi32(mmtmpP1,output_shift);
-      mmtmpP2 = _mm_unpacklo_epi32(mmtmpP0,mmtmpP1);
-      mmtmpP3 = _mm_unpackhi_epi32(mmtmpP0,mmtmpP1);
-      rxdataF_comp128[2] = _mm_packs_epi32(mmtmpP2,mmtmpP3);
-      //  print_shorts("rx:",rxdataF128+2);
-      //  print_shorts("ch:",dl_ch128+2);
-      //      print_shorts("pack:",rxdataF_comp128+2);
-      
-      dl_ch128+=3;
-      rxdataF128+=3;
-      rxdataF_comp128+=3;
-      
-#elif defined(__arm__)
-      // to be filled in
-#endif
+      *rxdataF_comp128++ = mulByConjugate128(rxdataF128++, dl_ch128++, output_shift);
+      *rxdataF_comp128++ = mulByConjugate128(rxdataF128++, dl_ch128++, output_shift);
+      *rxdataF_comp128++ = mulByConjugate128(rxdataF128++, dl_ch128++, output_shift);
     }
   }
-#if defined(__x86_64__) || defined(__i386__)
-  _mm_empty();
-  _m_empty();
-#endif
 }
 
 void nr_pbch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
