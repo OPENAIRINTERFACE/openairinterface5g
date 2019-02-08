@@ -49,7 +49,7 @@
 
 //#define NR_LTE_PDCCH_DCI_SWITCH
 #define NR_PDCCH_DCI_RUN              // activates new nr functions
-//#define NR_PDCCH_DCI_DEBUG            // activates NR_PDCCH_DCI_DEBUG logs
+#define NR_PDCCH_DCI_DEBUG            // activates NR_PDCCH_DCI_DEBUG logs
 #define NR_NBR_CORESET_ACT_BWP 3      // The number of CoreSets per BWP is limited to 3 (including initial CORESET: ControlResourceId 0)
 #define NR_NBR_SEARCHSPACE_ACT_BWP 10 // The number of SearSpaces per BWP is limited to 10 (including initial SEARCHSPACE: SearchSpaceId 0)
 #define PDCCH_TEST_POLAR_TEMP_FIX
@@ -2675,7 +2675,7 @@ uint8_t nr_dci_decoding_procedure(int s,
       printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> calculating dci format size for common searchSpaces with format css_dci_format=%d, format_0_0_1_0_size_bits=%d, format_0_0_1_0_size_bytes=%d\n",
 	     css_dci_format,format_0_0_1_0_size_bits,format_0_0_1_0_size_bytes);
 #endif
-      for (int aggregationLevel = 3; aggregationLevel<4 ; aggregationLevel++) { // We fix aggregationLevel to 3 for testing=> nbr of CCE=8
+      for (int aggregationLevel = 0; aggregationLevel<5 ; aggregationLevel++) { // We fix aggregationLevel to 3 for testing=> nbr of CCE=8
 	//for (int aggregationLevel = 2; aggregationLevel<5 ; aggregationLevel++) {
 	// for aggregation level aggregationLevel. The number of candidates (for L2= 2^aggregationLevel) will be calculated in function nr_dci_decoding_procedure0
 #ifdef NR_PDCCH_DCI_DEBUG
@@ -2834,7 +2834,7 @@ uint8_t nr_dci_decoding_procedure(int s,
       printf("\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure)-> calculating dci format size for UE-specific searchSpaces with format uss_dci_format=%d, format_0_0_1_0_size_bits=%d, format_0_0_1_0_size_bytes=%d\n",
 	     css_dci_format,format_0_0_1_0_size_bits,format_0_0_1_0_size_bytes);
 #endif
-      for (int aggregationLevel = 3; aggregationLevel<4 ; aggregationLevel++) { // We fix aggregationLevel to 3 for testing=> nbr of CCE=8
+      for (int aggregationLevel = 0; aggregationLevel<5 ; aggregationLevel++) { // We fix aggregationLevel to 3 for testing=> nbr of CCE=8
 	//for (int aggregationLevel = 2; aggregationLevel<5 ; aggregationLevel++) {
 	// for aggregation level aggregationLevel. The number of candidates (for L2= 2^aggregationLevel) will be calculated in function nr_dci_decoding_procedure0
 #ifdef NR_PDCCH_DCI_DEBUG
