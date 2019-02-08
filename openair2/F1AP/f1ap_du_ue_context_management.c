@@ -47,7 +47,7 @@
 #undef C_RNTI 
 
 extern f1ap_setup_req_t *f1ap_du_data;
-extern f1ap_cudu_ue_inst_t f1ap_du_ue[MAX_eNB];
+extern f1ap_cudu_inst_t f1ap_du_inst[MAX_eNB];
 extern RAN_CONTEXT_t RC;
 
 int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
@@ -585,7 +585,7 @@ int DU_send_UE_CONTEXT_RELEASE_REQUEST(instance_t instance,
   ie->id                             = F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID;
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_UEContextReleaseRequestIEs__value_PR_GNB_CU_UE_F1AP_ID;
-  ie->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(&f1ap_du_ue[instance], req->rnti);
+  ie->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(&f1ap_du_inst[instance], req->rnti);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* mandatory */
@@ -594,7 +594,7 @@ int DU_send_UE_CONTEXT_RELEASE_REQUEST(instance_t instance,
   ie->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_UEContextReleaseRequestIEs__value_PR_GNB_DU_UE_F1AP_ID;
-  ie->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(&f1ap_du_ue[instance], req->rnti);
+  ie->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(&f1ap_du_inst[instance], req->rnti);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* mandatory */
@@ -661,7 +661,7 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
   /* GNB_CU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCommandIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
-  ctxt.rnti = f1ap_get_rnti_by_cu_id(&f1ap_du_ue[instance], ie->value.choice.GNB_CU_UE_F1AP_ID);
+  ctxt.rnti = f1ap_get_rnti_by_cu_id(&f1ap_du_inst[instance], ie->value.choice.GNB_CU_UE_F1AP_ID);
   ctxt.module_id = instance;
   ctxt.instance  = instance;
   ctxt.enb_flag  = 1;
@@ -669,7 +669,7 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCommandIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
-  const rnti_t rnti = f1ap_get_rnti_by_du_id(&f1ap_du_ue[instance],
+  const rnti_t rnti = f1ap_get_rnti_by_du_id(&f1ap_du_inst[instance],
                                              ie->value.choice.GNB_DU_UE_F1AP_ID);
   AssertFatal(ctxt.rnti == rnti,
               "RNTI obtained through DU ID (%x) is different from CU ID (%x)\n",
@@ -789,7 +789,7 @@ int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance,
   ie->id                             = F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID;
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_UEContextReleaseCompleteIEs__value_PR_GNB_CU_UE_F1AP_ID;
-  ie->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(&f1ap_du_ue[instance], cplt->rnti);
+  ie->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(&f1ap_du_inst[instance], cplt->rnti);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* mandatory */
@@ -798,7 +798,7 @@ int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance,
   ie->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_UEContextReleaseCompleteIEs__value_PR_GNB_DU_UE_F1AP_ID;
-  ie->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(&f1ap_du_ue[instance], cplt->rnti);
+  ie->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(&f1ap_du_inst[instance], cplt->rnti);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* optional -> currently not used */
@@ -871,7 +871,7 @@ int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance,
       len,
       f1ap_du_data->default_sctp_stream_id);
 
-  f1ap_remove_ue(&f1ap_du_ue[instance], cplt->rnti);
+  f1ap_remove_ue(&f1ap_du_inst[instance], cplt->rnti);
   return 0;
 }
 

@@ -39,7 +39,7 @@
 extern RAN_CONTEXT_t RC;
 
 f1ap_setup_req_t *f1ap_du_data;
-f1ap_cudu_ue_inst_t f1ap_du_ue[MAX_eNB];
+f1ap_cudu_inst_t f1ap_du_inst[MAX_eNB];
 
 void du_task_send_sctp_association_req(instance_t instance, f1ap_setup_req_t *f1ap_setup_req) {
   

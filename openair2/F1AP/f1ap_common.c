@@ -62,37 +62,28 @@ uint8_t F1AP_get_next_transaction_identifier(module_id_t enb_mod_idP, module_id_
   return transaction_identifier[enb_mod_idP+cu_mod_idP];
 }
 
-module_id_t F1AP_get_UE_identifier(module_id_t enb_mod_idP, int CC_idP, int UE_id) {  
-  static module_id_t      UE_identifier[NUMBER_OF_eNB_MAX];
-  UE_identifier[enb_mod_idP+CC_idP+UE_id] = (UE_identifier[enb_mod_idP+CC_idP+UE_id] + 1) % F1AP_UE_IDENTIFIER_NUMBER;
-  //LOG_T(F1AP,"generated xid is %d\n",transaction_identifier[enb_mod_idP+du_mod_idP]);
-  return UE_identifier[enb_mod_idP+CC_idP+UE_id];
-}
-
-int f1ap_add_ue(f1ap_cudu_ue_inst_t *f1_ue_inst, 
+int f1ap_add_ue(f1ap_cudu_inst_t    *f1_inst,
                 module_id_t          module_idP,
                 int                  CC_idP,
                 int                  UE_id,
-                rnti_t               rntiP){
-
-  int i;
-  for (i=0; i < MAX_MOBILES_PER_ENB; i++){
-    if (f1_ue_inst->rnti[i] == rntiP) {
-       f1_ue_inst->f1ap_uid[i] = i; 
-       f1_ue_inst->mac_uid[i] = UE_id;    
-       LOG_I(F1AP, "Updating the index of UE with RNTI %x and du_ue_f1ap_id %d\n", f1_ue_inst->rnti[i], f1_ue_inst->du_ue_f1ap_id[i]);
-       return i;
+                rnti_t               rntiP) {
+  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+    if (f1_inst->f1ap_ue[i].rnti == rntiP) {
+      f1_inst->f1ap_ue[i].f1ap_uid = i;
+      f1_inst->f1ap_ue[i].mac_uid = UE_id;
+      LOG_I(F1AP, "Updating the index of UE with RNTI %x and du_ue_f1ap_id %d\n", f1_inst->f1ap_ue[i].rnti, f1_inst->f1ap_ue[i].du_ue_f1ap_id);
+      return i;
     }
   }
-  for (i=0; i < MAX_MOBILES_PER_ENB ; i++){
-    if (f1_ue_inst->rnti[i] == 0 ){
-       f1_ue_inst->rnti[i]=rntiP;
-       f1_ue_inst->f1ap_uid[i]=i;
-       f1_ue_inst->mac_uid[i]=UE_id;
-       f1_ue_inst->du_ue_f1ap_id[i] = F1AP_get_UE_identifier(module_idP, CC_idP, i);
-       f1_ue_inst->cu_ue_f1ap_id[i] = F1AP_get_UE_identifier(module_idP, CC_idP, i);
-       f1_ue_inst->num_ues++;
-       LOG_I(F1AP, "Adding a new UE with RNTI %x and cu/du ue_f1ap_id %d\n", f1_ue_inst->rnti[i], f1_ue_inst->du_ue_f1ap_id[i]);
+  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+    if (f1_inst->f1ap_ue[i].rnti == 0 ) {
+      f1_inst->f1ap_ue[i].rnti = rntiP;
+      f1_inst->f1ap_ue[i].f1ap_uid = i;
+      f1_inst->f1ap_ue[i].mac_uid = UE_id;
+      f1_inst->f1ap_ue[i].du_ue_f1ap_id = rntiP;
+      f1_inst->f1ap_ue[i].cu_ue_f1ap_id = rntiP;
+      f1_inst->num_ues++;
+      LOG_I(F1AP, "Adding a new UE with RNTI %x and cu/du ue_f1ap_id %d\n", f1_inst->f1ap_ue[i].rnti, f1_inst->f1ap_ue[i].du_ue_f1ap_id);
       return i;
     }
   }
@@ -100,122 +91,104 @@ int f1ap_add_ue(f1ap_cudu_ue_inst_t *f1_ue_inst,
 }
 
 
-int f1ap_remove_ue(f1ap_cudu_ue_inst_t *f1_ue_inst,
-                  rnti_t          rntiP){
-
-  int i;
-  for (i=0; i < MAX_MOBILES_PER_ENB; i++){
-    if (f1_ue_inst->rnti[i] == rntiP) {
-       f1_ue_inst->rnti[i] = 0;    
-       break;
+int f1ap_remove_ue(f1ap_cudu_inst_t *f1_inst,
+                   rnti_t            rntiP) {
+  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+    if (f1_inst->f1ap_ue[i].rnti == rntiP) {
+      f1_inst->f1ap_ue[i].rnti = 0;
+      break;
     }
   }
-  return 0 ;
+  f1_inst->num_ues--;
+  return 0;
 }
 
-int f1ap_get_du_ue_f1ap_id (f1ap_cudu_ue_inst_t *f1_ue_inst,
-                            rnti_t          rntiP){
-
-  int i;
-  for (i=0; i < MAX_MOBILES_PER_ENB; i++){
-    if (f1_ue_inst->rnti[i] == rntiP) {
-      return f1_ue_inst->du_ue_f1ap_id[i];
+int f1ap_get_du_ue_f1ap_id(f1ap_cudu_inst_t *f1_inst,
+                            rnti_t            rntiP) {
+  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+    if (f1_inst->f1ap_ue[i].rnti == rntiP) {
+      return f1_inst->f1ap_ue[i].du_ue_f1ap_id;
     }
- }
- return -1;
+  }
+  return -1;
 }
 
-int f1ap_get_cu_ue_f1ap_id (f1ap_cudu_ue_inst_t *f1_ue_inst,
-                            rnti_t          rntiP){
-
-  int i;
-  for (i=0; i < MAX_MOBILES_PER_ENB; i++){
-    if (f1_ue_inst->rnti[i] == rntiP) {
-      return f1_ue_inst->cu_ue_f1ap_id[i];
+int f1ap_get_cu_ue_f1ap_id(f1ap_cudu_inst_t *f1_inst,
+                            rnti_t            rntiP) {
+  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+    if (f1_inst->f1ap_ue[i].rnti == rntiP) {
+      return f1_inst->f1ap_ue[i].cu_ue_f1ap_id;
     }
- }
- return -1;
+  }
+  return -1;
 }
 
-int f1ap_get_rnti_by_du_id(f1ap_cudu_ue_inst_t *f1_ue_inst,
-                           module_id_t          du_ue_f1ap_id ){
-
-  int i;
-  for (i=0; i < MAX_MOBILES_PER_ENB; i++){
-    if (f1_ue_inst->du_ue_f1ap_id[i] == du_ue_f1ap_id) {
-      return f1_ue_inst->rnti[i];
-    } 
- }
- return -1;
+int f1ap_get_rnti_by_du_id(f1ap_cudu_inst_t *f1_inst,
+                           module_id_t       du_ue_f1ap_id ) {
+  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+    if (f1_inst->f1ap_ue[i].du_ue_f1ap_id == du_ue_f1ap_id) {
+      return f1_inst->f1ap_ue[i].rnti;
+    }
+  }
+  return -1;
 }
 
-int f1ap_get_rnti_by_cu_id(f1ap_cudu_ue_inst_t *f1_ue_inst,
-                           module_id_t          cu_ue_f1ap_id ){
-
-  int i;
-  for (i=0; i < MAX_MOBILES_PER_ENB; i++){
-    if (f1_ue_inst->cu_ue_f1ap_id[i] == cu_ue_f1ap_id) {
-      return f1_ue_inst->rnti[i];
-    } 
- }
- return -1;
+int f1ap_get_rnti_by_cu_id(f1ap_cudu_inst_t *f1_inst,
+                           module_id_t       cu_ue_f1ap_id ) {
+  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+    if (f1_inst->f1ap_ue[i].cu_ue_f1ap_id == cu_ue_f1ap_id) {
+      return f1_inst->f1ap_ue[i].rnti;
+    }
+  }
+  return -1;
 }
 
-int f1ap_get_du_uid(f1ap_cudu_ue_inst_t *f1_ue_inst,
-                    module_id_t      du_ue_f1ap_id ){
-
-  int i;
-  for (i=0; i < MAX_MOBILES_PER_ENB; i++){
-    if (f1_ue_inst->du_ue_f1ap_id[i] == du_ue_f1ap_id) {
+int f1ap_get_du_uid(f1ap_cudu_inst_t *f1_inst,
+                    module_id_t       du_ue_f1ap_id ) {
+  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+    if (f1_inst->f1ap_ue[i].du_ue_f1ap_id == du_ue_f1ap_id) {
       return i;
-    } 
- }
- return -1;
+    }
+  }
+  return -1;
 }
 
-
-int f1ap_get_cu_uid(f1ap_cudu_ue_inst_t *f1_ue_inst,
-                    module_id_t      cu_ue_f1ap_id ){
-
-  int i;
-  for (i=0; i < MAX_MOBILES_PER_ENB; i++){
-    if (f1_ue_inst->cu_ue_f1ap_id[i] == cu_ue_f1ap_id) {
+int f1ap_get_cu_uid(f1ap_cudu_inst_t *f1_inst,
+                    module_id_t       cu_ue_f1ap_id ) {
+  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+    if (f1_inst->f1ap_ue[i].cu_ue_f1ap_id == cu_ue_f1ap_id) {
       return i;
-    } 
- }
- return -1;
+    }
+  }
+  return -1;
 }
 
-int f1ap_get_uid_by_rnti(f1ap_cudu_ue_inst_t *f1_ue_inst,
-                         rnti_t          rntiP ){
-
-  int i;
-  for (i=0; i < MAX_MOBILES_PER_ENB; i++){
-    if (f1_ue_inst->rnti[i] == rntiP) {
+int f1ap_get_uid_by_rnti(f1ap_cudu_inst_t *f1_inst,
+                         rnti_t            rntiP ) {
+  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+    if (f1_inst->f1ap_ue[i].rnti == rntiP) {
       return i;
-    } 
- }
- return -1;
+    }
+  }
+  return -1;
 }
 
-int f1ap_du_add_cu_ue_id(f1ap_cudu_ue_inst_t *f1_ue_inst,
-                         module_id_t du_ue_f1ap_id,
-                         module_id_t cu_ue_f1ap_id){
-    module_id_t f1ap_uid = f1ap_get_du_uid(f1_ue_inst,du_ue_f1ap_id);
-    if (f1ap_uid < 0 )
-      return -1 ;
-    f1_ue_inst->cu_ue_f1ap_id[f1ap_uid]=cu_ue_f1ap_id;
-    LOG_I(F1AP, "Adding cu_ue_f1ap_id %d for UE with RNTI %x \n", cu_ue_f1ap_id, f1_ue_inst->rnti[f1ap_uid]);
-    return 0 ;
+int f1ap_du_add_cu_ue_id(f1ap_cudu_inst_t *f1_inst,
+                         module_id_t       du_ue_f1ap_id,
+                         module_id_t       cu_ue_f1ap_id) {
+  module_id_t f1ap_uid = f1ap_get_du_uid(f1_inst,du_ue_f1ap_id);
+  if (f1ap_uid < 0) return -1;
+  f1_inst->f1ap_ue[f1ap_uid].cu_ue_f1ap_id = cu_ue_f1ap_id;
+  LOG_I(F1AP, "Adding cu_ue_f1ap_id %d for UE with RNTI %x\n", cu_ue_f1ap_id, f1_inst->f1ap_ue[f1ap_uid].rnti);
+  return 0;
 }
 
-int f1ap_cu_add_du_ue_id(f1ap_cudu_ue_inst_t *f1_ue_inst,
-                         module_id_t cu_ue_f1ap_id,
-                         module_id_t du_ue_f1ap_id){
-    module_id_t f1ap_uid = f1ap_get_cu_uid(f1_ue_inst,cu_ue_f1ap_id);
-    if (f1ap_uid < 0 )
-      return -1 ;
-    f1_ue_inst->du_ue_f1ap_id[f1ap_uid]=du_ue_f1ap_id;
-    LOG_I(F1AP, "Adding du_ue_f1ap_id %d for UE with RNTI %x \n", du_ue_f1ap_id, f1_ue_inst->rnti[f1ap_uid]);
-    return 0 ;
+int f1ap_cu_add_du_ue_id(f1ap_cudu_inst_t *f1_inst,
+                         module_id_t       cu_ue_f1ap_id,
+                         module_id_t       du_ue_f1ap_id) {
+  module_id_t f1ap_uid = f1ap_get_cu_uid(f1_inst,cu_ue_f1ap_id);
+  if (f1ap_uid < 0) return -1;
+  f1_inst->f1ap_ue[f1ap_uid].du_ue_f1ap_id = du_ue_f1ap_id;
+  LOG_I(F1AP, "Adding du_ue_f1ap_id %d for UE with RNTI %x\n", du_ue_f1ap_id, f1_inst->f1ap_ue[f1ap_uid].rnti);
+  return 0;
 }

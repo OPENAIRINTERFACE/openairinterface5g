@@ -44,7 +44,7 @@
 #include "rrc_eNB_GTPV1U.h"
 
 extern f1ap_setup_req_t *f1ap_du_data_from_du;
-extern f1ap_cudu_ue_inst_t f1ap_cu_ue[MAX_eNB];
+extern f1ap_cudu_inst_t f1ap_cu_inst[MAX_eNB];
 extern RAN_CONTEXT_t RC;
 
 int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
@@ -787,13 +787,13 @@ int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t       instance,
   /* GNB_CU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseRequestIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
-  const rnti_t rnti = f1ap_get_rnti_by_cu_id(&f1ap_cu_ue[instance],
+  const rnti_t rnti = f1ap_get_rnti_by_cu_id(&f1ap_cu_inst[instance],
                                              ie->value.choice.GNB_CU_UE_F1AP_ID);
 
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseRequestIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
-  const rnti_t rnti2 = f1ap_get_rnti_by_du_id(&f1ap_cu_ue[instance],
+  const rnti_t rnti2 = f1ap_get_rnti_by_du_id(&f1ap_cu_inst[instance],
                                               ie->value.choice.GNB_DU_UE_F1AP_ID);
   AssertFatal(rnti == rnti2, "RNTI obtained through DU ID (%x) is different from CU ID (%x)\n",
               rnti2, rnti);
@@ -861,7 +861,7 @@ int CU_send_UE_CONTEXT_RELEASE_COMMAND(instance_t instance,
   ie->id                             = F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID;
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_UEContextReleaseCommandIEs__value_PR_GNB_CU_UE_F1AP_ID;
-  ie->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(&f1ap_cu_ue[instance], cmd->rnti);
+  ie->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(&f1ap_cu_inst[instance], cmd->rnti);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* mandatory */
@@ -870,7 +870,7 @@ int CU_send_UE_CONTEXT_RELEASE_COMMAND(instance_t instance,
   ie->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_UEContextReleaseCommandIEs__value_PR_GNB_DU_UE_F1AP_ID;
-  ie->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(&f1ap_cu_ue[instance], cmd->rnti);
+  ie->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(&f1ap_cu_inst[instance], cmd->rnti);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* mandatory */
@@ -939,13 +939,13 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
   /* GNB_CU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCompleteIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
-  const rnti_t rnti = f1ap_get_rnti_by_cu_id(&f1ap_cu_ue[instance],
+  const rnti_t rnti = f1ap_get_rnti_by_cu_id(&f1ap_cu_inst[instance],
                                              ie->value.choice.GNB_CU_UE_F1AP_ID);
 
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCompleteIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
-  const rnti_t rnti2 = f1ap_get_rnti_by_du_id(&f1ap_cu_ue[instance],
+  const rnti_t rnti2 = f1ap_get_rnti_by_du_id(&f1ap_cu_inst[instance],
                                               ie->value.choice.GNB_DU_UE_F1AP_ID);
   AssertFatal(rnti == rnti2, "RNTI obtained through DU ID (%x) is different from CU ID (%x)\n",
               rnti2, rnti);
@@ -1001,7 +1001,7 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
         instance, rnti, PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
 
   LOG_I(CU_F1AP, "Received UE CONTEXT RELEASE COMPLETE: Removing CU UE entry for RNTI %x\n", rnti);
-  f1ap_remove_ue(&f1ap_cu_ue[instance], rnti);
+  f1ap_remove_ue(&f1ap_cu_inst[instance], rnti);
   return 0;
 }
 

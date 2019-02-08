@@ -425,67 +425,64 @@ typedef int (*f1ap_message_decoded_callback)(
   F1AP_F1AP_PDU_t       *message_p
 );
 
-// instance and module_id are assumed to be the same 
 typedef struct f1ap_cudu_ue_inst_s {
   // used for eNB stats generation
-  rnti_t      rnti[MAX_MOBILES_PER_ENB];
-  module_id_t f1ap_uid[MAX_MOBILES_PER_ENB];
-  module_id_t mac_uid[MAX_MOBILES_PER_ENB];
-  module_id_t du_ue_f1ap_id[MAX_MOBILES_PER_ENB];
-  module_id_t cu_ue_f1ap_id[MAX_MOBILES_PER_ENB];
-  
+  rnti_t      rnti;
+  module_id_t f1ap_uid;
+  module_id_t mac_uid;
+  module_id_t du_ue_f1ap_id;
+  module_id_t cu_ue_f1ap_id;
+} f1ap_cudu_ue_t;
 
+typedef struct f1ap_cudu_inst_s {
   uint16_t num_ues;
-  
-} f1ap_cudu_ue_inst_t; 
+  f1ap_cudu_ue_t f1ap_ue[MAX_MOBILES_PER_ENB];
+} f1ap_cudu_inst_t;
 
 
 
 uint8_t F1AP_get_next_transaction_identifier(module_id_t enb_mod_idP, module_id_t cu_mod_idP);
-module_id_t F1AP_get_UE_identifier(module_id_t enb_mod_idP, int CC_idP, int UE_id);
 
 
-
-int f1ap_add_ue(f1ap_cudu_ue_inst_t *f1_ue_inst,
+int f1ap_add_ue(f1ap_cudu_inst_t *f1_inst,
                 module_id_t     module_idP,
                 int             CC_idP,
                 int             UE_id,
                 rnti_t          rntiP);
 
-int f1ap_remove_ue(f1ap_cudu_ue_inst_t *f1_ue_inst,
-                   rnti_t          rntiP);
+int f1ap_remove_ue(f1ap_cudu_inst_t *f1_inst,
+                   rnti_t            rntiP);
 
-int f1ap_get_du_ue_f1ap_id (f1ap_cudu_ue_inst_t *f1_ue_inst,
-                            rnti_t          rntiP);
+int f1ap_get_du_ue_f1ap_id (f1ap_cudu_inst_t *f1_inst,
+                            rnti_t            rntiP);
 
-int f1ap_get_cu_ue_f1ap_id (f1ap_cudu_ue_inst_t *f1_ue_inst,
-                            rnti_t          rntiP);
-//rnti
-
-
-int f1ap_get_rnti_by_du_id(f1ap_cudu_ue_inst_t *f1_ue_inst,
-                           module_id_t          du_ue_f1ap_id );
+int f1ap_get_cu_ue_f1ap_id (f1ap_cudu_inst_t *f1_inst,
+                            rnti_t            rntiP);
 
 
-int f1ap_get_rnti_by_cu_id(f1ap_cudu_ue_inst_t *f1_ue_inst,
-                           module_id_t          cu_ue_f1ap_id );
+int f1ap_get_rnti_by_du_id(f1ap_cudu_inst_t *f1_inst,
+                           module_id_t       du_ue_f1ap_id );
 
 
-int f1ap_get_du_uid(f1ap_cudu_ue_inst_t *f1_ue_inst,
-                    module_id_t      du_ue_f1ap_id );
+int f1ap_get_rnti_by_cu_id(f1ap_cudu_inst_t *f1_inst,
+                           module_id_t       cu_ue_f1ap_id );
 
-int f1ap_get_cu_uid(f1ap_cudu_ue_inst_t *f1_ue_inst,
-                    module_id_t      cu_ue_f1ap_id );
 
-int f1ap_get_uid_by_rnti(f1ap_cudu_ue_inst_t *f1_ue_inst,
-                         rnti_t          rntiP );
+int f1ap_get_du_uid(f1ap_cudu_inst_t *f1_inst,
+                    module_id_t       du_ue_f1ap_id );
 
-int f1ap_du_add_cu_ue_id(f1ap_cudu_ue_inst_t *f1_ue_inst,
-                         module_id_t du_ue_f1ap_id,
-                         module_id_t cu_ue_f1ap_id);
+int f1ap_get_cu_uid(f1ap_cudu_inst_t *f1_inst,
+                    module_id_t       cu_ue_f1ap_id );
 
-int f1ap_cu_add_du_ue_id(f1ap_cudu_ue_inst_t *f1_ue_inst,
-                         module_id_t cu_ue_f1ap_id,
-                         module_id_t du_ue_f1ap_id);
+int f1ap_get_uid_by_rnti(f1ap_cudu_inst_t *f1_inst,
+                         rnti_t            rntiP );
+
+int f1ap_du_add_cu_ue_id(f1ap_cudu_inst_t *f1_inst,
+                         module_id_t       du_ue_f1ap_id,
+                         module_id_t       cu_ue_f1ap_id);
+
+int f1ap_cu_add_du_ue_id(f1ap_cudu_inst_t *f1_inst,
+                         module_id_t       cu_ue_f1ap_id,
+                         module_id_t       du_ue_f1ap_id);
 
 #endif /* F1AP_COMMON_H_ */
