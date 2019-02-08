@@ -203,14 +203,14 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
                           gNB->nr_gold_pdcch_dmrs[slot],
                           gNB->common_vars.txdataF[0],
                           AMP, *fp, *cfg);
-      /*if (num_pdsch_rnti) {
+      if (num_pdsch_rnti) {
         LOG_I(PHY, "PDSCH generation started (%d)\n", num_pdsch_rnti);
         nr_generate_pdsch(*gNB->dlsch[0][0],
                           gNB->pdcch_vars.dci_alloc[0],
                           gNB->nr_gold_pdsch_dmrs[slot],
                           gNB->common_vars.txdataF,
                           AMP, slot, *fp, *cfg);
-      }*/
+      }
     }
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,0);
