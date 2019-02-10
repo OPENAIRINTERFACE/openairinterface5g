@@ -102,6 +102,7 @@ check_supported_distribution() {
         "ubuntu14.04") return 0 ;;
         "fedora24")    return 0 ;;
         "rhel7")       return 0 ;;
+	"rhel7.6")     return 0 ;; 
         "centos7")     return 0 ;;
     esac
     return 1
