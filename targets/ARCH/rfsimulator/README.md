@@ -46,6 +46,7 @@ $OPENAIR_DIR/targets/bin/conf2uedata -c $OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurec
 ```
 ## 5G case
 After regular build, add the simulation driver
+(don't use ./build_oai -w SIMU until we merge 4G and 5G branches)
 ```bash
 cd ran_build/build
 make rfsimulator
