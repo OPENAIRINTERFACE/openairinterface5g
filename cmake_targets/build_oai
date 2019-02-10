@@ -43,10 +43,10 @@ conf_nvram_path=$OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf
 MSC_GEN=0
 XFORMS="True"
 UE_EXPANSION="False"
+UESIM_EXPANSION="False"
 PRINT_STATS="False"
 VCD_TIMING="False"
-DEADLINE_SCHEDULER_FLAG_USER="False"
-FORCE_DEADLINE_SCHEDULER_FLAG_USER=""
+DEADLINE_SCHEDULER_FLAG_USER=""
 CPU_AFFINITY_FLAG_USER="False" #Only valid when lowlatecy flag is set to False
 REL="Rel15"
 NR_REL="NR_Rel15"
@@ -78,7 +78,7 @@ trap handle_ctrl_c INT
 function print_help() {
   echo_info "
 This program installs OpenAirInterface Software
-You should have ubuntu 14.xx, updated, and the Linux kernel >= 3.14
+You should have ubuntu 16.xx or 18.04 updated
 Options
 -h
    This help
@@ -116,7 +116,7 @@ Options
    Rel8 limits the implementation to 3GPP Release 8 version
    Rel10 limits the implementation to 3GPP Release 10 version
 -w | --hardware
-   EXMIMO, USRP, BLADERF, ETHERNET, LMSSDR, ADRV9371_ZC706, None (Default)
+   EXMIMO, USRP, BLADERF, ETHERNET, LMSSDR, ADRV9371_ZC706, SIMU, None (Default)
    Adds this RF board support (in external packages installation and in compilation)
 -t | --transport protocol
    ETHERNET , None
@@ -175,6 +175,9 @@ Options
 --basic-simulator
    Generates a basic [1 UE + 1 eNB + no channel] simulator.
    See targets/ARCH/tcp_bridge/README.tcp_bridge_oai for documentation.
+--rfsimulator
+   Generate virtual RF driver
+   to use it, set the environement variable RFSIMULATOR to \"enb\" in the eNB and to the eNB IP address in the UEs
 Usage (first build):
  NI/ETTUS B201  + COTS UE : ./build_oai -I  --eNB -x --install-system-files -w USRP
 Usage (Regular):
@@ -334,13 +337,13 @@ function main() {
 	    BUILD_DOXYGEN=1
             echo_info "Will build doxygen support"
             shift;;     
-       --disable-deadline)
-            FORCE_DEADLINE_SCHEDULER_FLAG_USER="False"
-            echo_info "Disabling the usage of deadline scheduler"
-            shift 1;;
-       --enable-deadline)
-            FORCE_DEADLINE_SCHEDULER_FLAG_USER="True"
-            echo_info "Enabling the usage of deadline scheduler"
+            --disable-deadline)
+                DEADLINE_SCHEDULER_FLAG_USER="False"
+                echo_info "Disabling the usage of deadline scheduler"
+                shift 1;;
+            --enable-deadline)
+                DEADLINE_SCHEDULER_FLAG_USER="True"
+                echo_info "Enabling the usage of deadline scheduler"
             shift 1;;
        --enable-cpu-affinity)
             CPU_AFFINITY_FLAG_USER="True"
@@ -403,7 +406,11 @@ function main() {
             BASIC_SIMULATOR=1
             echo_info "Compiling the basic simulator"
             shift 1;;
-        -h | --help)
+            --rfsimulator)
+                RFSIMULATOR=true
+                echo_info "Compiling the RF simulator"
+                shift 1;;
+            -h | --help)
             print_help
             exit 1;;
 	*)
@@ -444,33 +451,18 @@ function main() {
       fi
   fi
 
-  echo_info "RF HW set to $HW" 
-  #Now we set flags to enable deadline scheduler settings
-  #By default: USRP: disable, 
-  #By default: BLADERF: enable,
-  #By default: EXMIMO: enable
-  if [ "$FORCE_DEADLINE_SCHEDULER_FLAG_USER" = "" ]; then
-     if [ "$HW" = "EXMIMO" ] ; then 
-        DEADLINE_SCHEDULER_FLAG_USER="True"
-     elif [ "$HW" = "ETHERNET" ] ; then 
-        DEADLINE_SCHEDULER_FLAG_USER="False"
-     elif [ "$HW" = "OAI_USRP" ] ; then 
-        DEADLINE_SCHEDULER_FLAG_USER="False"
-     elif [ "$HW" = "OAI_ADRV9371_ZC706" ] ; then 
-        DEADLINE_SCHEDULER_FLAG_USER="False"
-     elif [ "$HW" = "OAI_BLADERF" ] ; then 
-        DEADLINE_SCHEDULER_FLAG_USER="False"
-     elif [ "$HW" = "OAI_LMSSDR" ] ; then 
-        DEADLINE_SCHEDULER_FLAG_USER="False"
-     elif [ "$HW" = "None" ] ; then 
-        DEADLINE_SCHEDULER_FLAG_USER="False"
-     else 
-        echo_error "Unknown HW type $HW. Exiting now..."
-        exit 
-     fi
-  else
-     DEADLINE_SCHEDULER_FLAG_USER=$FORCE_DEADLINE_SCHEDULER_FLAG_USER
-  fi
+    echo_info "RF HW set to $HW" 
+    # If the user doesn't specify the Linux scheduler to use, we set a value
+    if [ "$DEADLINE_SCHEDULER_FLAG_USER" = "" ]; then
+	case "$HW" in
+            "EXMIMO")
+		DEADLINE_SCHEDULER_FLAG_USER="True"
+		;;
+            *)
+		DEADLINE_SCHEDULER_FLAG_USER="False"
+		;;
+	esac
+    fi
 
   #Disable CPU Affinity for deadline scheduler
   if [ "$DEADLINE_SCHEDULER_FLAG_USER" = "True" ] ; then 
