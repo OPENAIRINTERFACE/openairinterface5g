@@ -534,6 +534,7 @@ config_sib2(int Mod_idP,
     cfg->emtc_config.prach_ce_level_3_enable.tl.tag=NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_3_ENABLE_TAG;
     cfg->num_tlv++;
 
+
     switch (prach_ParametersListCE_r13->list.count) {
     case 4:
       p = prach_ParametersListCE_r13->list.array[3];
@@ -549,15 +550,16 @@ config_sib2(int Mod_idP,
       cfg->emtc_config.prach_ce_level_3_frequency_offset.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_3_FREQUENCY_OFFSET_TAG;
       cfg->num_tlv++;
 
-      cfg->emtc_config.prach_ce_level_3_number_of_repetitions_per_attempt.value = p->numRepetitionPerPreambleAttempt_r13;
+      cfg->emtc_config.prach_ce_level_3_number_of_repetitions_per_attempt.value = 1<<p->numRepetitionPerPreambleAttempt_r13;
       cfg->emtc_config.prach_ce_level_3_number_of_repetitions_per_attempt.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_3_NUMBER_OF_REPETITIONS_PER_ATTEMPT_TAG;
       cfg->num_tlv++;
 
       if (p->prach_StartingSubframe_r13) {
-	cfg->emtc_config.prach_ce_level_3_starting_subframe_periodicity.value   = *p->prach_StartingSubframe_r13;
+	cfg->emtc_config.prach_ce_level_3_starting_subframe_periodicity.value   = 2<<*p->prach_StartingSubframe_r13;
         cfg->emtc_config.prach_ce_level_3_starting_subframe_periodicity.tl.tag  = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_3_STARTING_SUBFRAME_PERIODICITY_TAG;
         cfg->num_tlv++;
       }
+
 
       cfg->emtc_config.prach_ce_level_3_hopping_enable.value                    = p->prach_HoppingConfig_r13;
       cfg->emtc_config.prach_ce_level_3_hopping_enable.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_3_HOPPING_ENABLE_TAG;
@@ -581,12 +583,12 @@ config_sib2(int Mod_idP,
       cfg->emtc_config.prach_ce_level_2_frequency_offset.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_2_FREQUENCY_OFFSET_TAG;
       cfg->num_tlv++;
 
-      cfg->emtc_config.prach_ce_level_2_number_of_repetitions_per_attempt.value = p->numRepetitionPerPreambleAttempt_r13;
+      cfg->emtc_config.prach_ce_level_2_number_of_repetitions_per_attempt.value = 1<<p->numRepetitionPerPreambleAttempt_r13;
       cfg->emtc_config.prach_ce_level_2_number_of_repetitions_per_attempt.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_2_NUMBER_OF_REPETITIONS_PER_ATTEMPT_TAG;
       cfg->num_tlv++;
 
       if (p->prach_StartingSubframe_r13) {
-	cfg->emtc_config.prach_ce_level_2_starting_subframe_periodicity.value   = *p->prach_StartingSubframe_r13;
+	cfg->emtc_config.prach_ce_level_2_starting_subframe_periodicity.value   = 2<<*p->prach_StartingSubframe_r13;
         cfg->emtc_config.prach_ce_level_2_starting_subframe_periodicity.tl.tag  = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_2_STARTING_SUBFRAME_PERIODICITY_TAG;
         cfg->num_tlv++;
       }
@@ -613,12 +615,12 @@ config_sib2(int Mod_idP,
       cfg->emtc_config.prach_ce_level_1_frequency_offset.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_1_FREQUENCY_OFFSET_TAG;
       cfg->num_tlv++;
 
-      cfg->emtc_config.prach_ce_level_1_number_of_repetitions_per_attempt.value = p->numRepetitionPerPreambleAttempt_r13;
+      cfg->emtc_config.prach_ce_level_1_number_of_repetitions_per_attempt.value = 1<<p->numRepetitionPerPreambleAttempt_r13;
       cfg->emtc_config.prach_ce_level_1_number_of_repetitions_per_attempt.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_1_NUMBER_OF_REPETITIONS_PER_ATTEMPT_TAG;
       cfg->num_tlv++;
 
       if (p->prach_StartingSubframe_r13) {
-	cfg->emtc_config.prach_ce_level_1_starting_subframe_periodicity.value   = *p->prach_StartingSubframe_r13;
+	cfg->emtc_config.prach_ce_level_1_starting_subframe_periodicity.value   = 2<<*p->prach_StartingSubframe_r13;
         cfg->emtc_config.prach_ce_level_1_starting_subframe_periodicity.tl.tag  = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_1_STARTING_SUBFRAME_PERIODICITY_TAG;
         cfg->num_tlv++;
       }
@@ -645,12 +647,12 @@ config_sib2(int Mod_idP,
       cfg->emtc_config.prach_ce_level_0_frequency_offset.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_0_FREQUENCY_OFFSET_TAG;
       cfg->num_tlv++;
 
-      cfg->emtc_config.prach_ce_level_0_number_of_repetitions_per_attempt.value = p->numRepetitionPerPreambleAttempt_r13;
+      cfg->emtc_config.prach_ce_level_0_number_of_repetitions_per_attempt.value = 1<<p->numRepetitionPerPreambleAttempt_r13;
       cfg->emtc_config.prach_ce_level_0_number_of_repetitions_per_attempt.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_0_NUMBER_OF_REPETITIONS_PER_ATTEMPT_TAG;
       cfg->num_tlv++;
 
       if (p->prach_StartingSubframe_r13) {
-	cfg->emtc_config.prach_ce_level_0_starting_subframe_periodicity.value   = *p->prach_StartingSubframe_r13;
+	cfg->emtc_config.prach_ce_level_0_starting_subframe_periodicity.value   = 2<<*p->prach_StartingSubframe_r13;
         cfg->emtc_config.prach_ce_level_0_starting_subframe_periodicity.tl.tag  = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_0_STARTING_SUBFRAME_PERIODICITY_TAG;
         cfg->num_tlv++;
       }
@@ -663,6 +665,9 @@ config_sib2(int Mod_idP,
       cfg->emtc_config.prach_ce_level_0_hopping_offset.tl.tag = NFAPI_EMTC_CONFIG_PRACH_CE_LEVEL_0_HOPPING_OFFSET_TAG;
       cfg->num_tlv++;
     }
+
+
+    AssertFatal(cfg->emtc_config.prach_ce_level_0_enable.value>0,"CE_level0 is not enabled\n");
 
     struct LTE_FreqHoppingParameters_r13 *ext4_freqHoppingParameters = radioResourceConfigCommonP->ext4->freqHoppingParameters_r13;
     if ((ext4_freqHoppingParameters) &&
@@ -722,55 +727,54 @@ config_dedicated_scell(int Mod_idP,
 }
 
 
-int
-rrc_mac_config_req_eNB(module_id_t Mod_idP,
-		       int CC_idP,
-		       int physCellId,
-		       int p_eNB,
-		       int Ncp, int eutra_band, uint32_t dl_CarrierFreq,
+int rrc_mac_config_req_eNB(module_id_t Mod_idP,
+			   int CC_idP,
+			   int physCellId,
+			   int p_eNB,
+			   int Ncp, int eutra_band, uint32_t dl_CarrierFreq,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-		       int pbch_repetition,
+			   int pbch_repetition,
 #endif
-		       rnti_t rntiP,
-		       LTE_BCCH_BCH_Message_t * mib,
-		       LTE_RadioResourceConfigCommonSIB_t *
-		       radioResourceConfigCommon,
+			   rnti_t rntiP,
+			   LTE_BCCH_BCH_Message_t * mib,
+			   LTE_RadioResourceConfigCommonSIB_t *
+			   radioResourceConfigCommon,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-		       LTE_RadioResourceConfigCommonSIB_t *
-		       radioResourceConfigCommon_BR,
+			   LTE_RadioResourceConfigCommonSIB_t *
+			   radioResourceConfigCommon_BR,
 #endif
-		       struct LTE_PhysicalConfigDedicated
-		       *physicalConfigDedicated,
+			   struct LTE_PhysicalConfigDedicated
+			   *physicalConfigDedicated,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-		       LTE_SCellToAddMod_r10_t * sCellToAddMod_r10,
-		       //struct LTE_PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
+			   LTE_SCellToAddMod_r10_t * sCellToAddMod_r10,
+			   //struct LTE_PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
-		       LTE_MeasObjectToAddMod_t ** measObj,
-		       LTE_MAC_MainConfig_t * mac_MainConfig,
-		       long logicalChannelIdentity,
-		       LTE_LogicalChannelConfig_t * logicalChannelConfig,
-		       LTE_MeasGapConfig_t * measGapConfig,
-		       LTE_TDD_Config_t * tdd_Config,
-		       LTE_MobilityControlInfo_t * mobilityControlInfo,
-		       LTE_SchedulingInfoList_t * schedulingInfoList,
-		       uint32_t ul_CarrierFreq,
-		       long *ul_Bandwidth,
-		       LTE_AdditionalSpectrumEmission_t *
-		       additionalSpectrumEmission,
-		       struct LTE_MBSFN_SubframeConfigList
-		       *mbsfn_SubframeConfigList
+			   LTE_MeasObjectToAddMod_t ** measObj,
+			   LTE_MAC_MainConfig_t * mac_MainConfig,
+			   long logicalChannelIdentity,
+			   LTE_LogicalChannelConfig_t * logicalChannelConfig,
+			   LTE_MeasGapConfig_t * measGapConfig,
+			   LTE_TDD_Config_t * tdd_Config,
+			   LTE_MobilityControlInfo_t * mobilityControlInfo,
+			   LTE_SchedulingInfoList_t * schedulingInfoList,
+			   uint32_t ul_CarrierFreq,
+			   long *ul_Bandwidth,
+			   LTE_AdditionalSpectrumEmission_t *
+			   additionalSpectrumEmission,
+			   struct LTE_MBSFN_SubframeConfigList
+			   *mbsfn_SubframeConfigList
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-		       , uint8_t MBMS_Flag,
-		       LTE_MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList,
-		       LTE_PMCH_InfoList_r9_t * pmch_InfoList
+			   , uint8_t MBMS_Flag,
+			   LTE_MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList,
+			   LTE_PMCH_InfoList_r9_t * pmch_InfoList
 #endif
 #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-		       ,
-		       LTE_SystemInformationBlockType1_v1310_IEs_t *
-		       sib1_v13ext
+			   ,
+			   LTE_SystemInformationBlockType1_v1310_IEs_t *
+			   sib1_v13ext
 #endif
-                       ) {
-			   
+			   ) {
+  
   int i;
 
   int UE_id = -1;
@@ -869,21 +873,13 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
       AssertFatal(radioResourceConfigCommon->
 		  rach_ConfigCommon.maxHARQ_Msg3Tx > 0,
 		  "radioResourceconfigCommon %d == 0\n",
-		  (int) radioResourceConfigCommon->
-		  rach_ConfigCommon.maxHARQ_Msg3Tx);
+		  (int) radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx);
 
-      RC.mac[Mod_idP]->common_channels[CC_idP].
-	radioResourceConfigCommon = radioResourceConfigCommon;
-      if (ul_CarrierFreq > 0)
-	RC.mac[Mod_idP]->common_channels[CC_idP].ul_CarrierFreq =
-	  ul_CarrierFreq;
-      if (ul_Bandwidth)
-	RC.mac[Mod_idP]->common_channels[CC_idP].ul_Bandwidth =
-	  *ul_Bandwidth;
-      else
-	RC.mac[Mod_idP]->common_channels[CC_idP].ul_Bandwidth =
-	  RC.mac[Mod_idP]->common_channels[CC_idP].mib->message.
-	  dl_Bandwidth;
+      RC.mac[Mod_idP]->common_channels[CC_idP].radioResourceConfigCommon = radioResourceConfigCommon;
+      RC.mac[Mod_idP]->common_channels[CC_idP].radioResourceConfigCommon_BR = radioResourceConfigCommon_BR;
+      if (ul_CarrierFreq > 0) RC.mac[Mod_idP]->common_channels[CC_idP].ul_CarrierFreq        = ul_CarrierFreq;
+      if (ul_Bandwidth) 	RC.mac[Mod_idP]->common_channels[CC_idP].ul_Bandwidth        = *ul_Bandwidth;
+      else RC.mac[Mod_idP]->common_channels[CC_idP].ul_Bandwidth                             = RC.mac[Mod_idP]->common_channels[CC_idP].mib->message.dl_Bandwidth;
 
       config_sib2(Mod_idP, CC_idP, radioResourceConfigCommon,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
@@ -896,68 +892,52 @@ rrc_mac_config_req_eNB(module_id_t Mod_idP,
     }
   } // mib != NULL
 
+
   // SRB2_lchan_config->choice.explicitValue.ul_SpecificParameters->logicalChannelGroup
   if (logicalChannelConfig != NULL) {	// check for eMTC specific things
     UE_id = find_UE_id(Mod_idP, rntiP);
 
-    if (UE_id == -1) {
-      LOG_E(MAC, "%s:%d:%s: ERROR, UE_id == -1\n", __FILE__,
-	    __LINE__, __FUNCTION__);
-    } else {
-		if (logicalChannelConfig) {
-        UE_list->
-          UE_template[CC_idP][UE_id].lcgidmap
-          [logicalChannelIdentity] =
-          *logicalChannelConfig->
-			ul_SpecificParameters->logicalChannelGroup;
-		UE_list->
-          UE_template[CC_idP][UE_id].lcgidpriority
-          [logicalChannelIdentity]=
-			logicalChannelConfig->ul_SpecificParameters->priority;
-
-		} else
-			UE_list->
-				UE_template[CC_idP][UE_id].lcgidmap
-				[logicalChannelIdentity] = 0;
+    if (UE_id<0) { 
+      LOG_E(MAC,"Configuration received for unknown UE (%x), shouldn't happen\n",rntiP);
+      return(-1);
     }
+    if (logicalChannelConfig) {
+        UE_list->UE_template[CC_idP][UE_id].lcgidmap[logicalChannelIdentity]      = *logicalChannelConfig->ul_SpecificParameters->logicalChannelGroup;
+	UE_list->UE_template[CC_idP][UE_id].lcgidpriority[logicalChannelIdentity] =  logicalChannelConfig->ul_SpecificParameters->priority;
+    } else UE_list->UE_template[CC_idP][UE_id].lcgidmap[logicalChannelIdentity]   =  0;
   }
-
-
+  
   if (physicalConfigDedicated != NULL) {
     UE_id = find_UE_id(Mod_idP, rntiP);
-
-    if (UE_id == -1)
-      LOG_E(MAC, "%s:%d:%s: ERROR, UE_id == -1\n", __FILE__, __LINE__, __FUNCTION__);
-    else
-      UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated = physicalConfigDedicated;
+    if (UE_id<0) { 
+      LOG_E(MAC,"Configuration received for unknown UE (%x), shouldn't happen\n",rntiP);
+      return(-1);
+    }
+    UE_list->UE_template[CC_idP][UE_id].physicalConfigDedicated = physicalConfigDedicated;
+    LOG_I(MAC,"Added physicalConfigDedicated %p for %d.%d\n",physicalConfigDedicated,CC_idP,UE_id);
   }
 
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   if (sCellToAddMod_r10 != NULL) {
-    UE_id = find_UE_id(Mod_idP, rntiP);
-    if (UE_id == -1)
-      LOG_E(MAC, "%s:%d:%s: ERROR, UE_id == -1\n", __FILE__,
-	    __LINE__, __FUNCTION__);
-    else
-      config_dedicated_scell(Mod_idP, rntiP, sCellToAddMod_r10);
+    if (UE_id<0) { 
+      LOG_E(MAC,"Configuration received for unknown UE (%x), shouldn't happen\n",rntiP);
+      return(-1);
+    }
+    AssertFatal(UE_id>=0,"Configuration received for unknown UE (%x), shouldn't happen\n",rntiP);
+    config_dedicated_scell(Mod_idP, rntiP, sCellToAddMod_r10);
   }
 #endif
-
-
-
 
   if (mbsfn_SubframeConfigList != NULL) {
     LOG_I(MAC,
 	  "[eNB %d][CONFIG] Received %d subframe allocation pattern for MBSFN\n",
 	  Mod_idP, mbsfn_SubframeConfigList->list.count);
-    RC.mac[Mod_idP]->common_channels[0].num_sf_allocation_pattern =
-      mbsfn_SubframeConfigList->list.count;
+    RC.mac[Mod_idP]->common_channels[0].num_sf_allocation_pattern = mbsfn_SubframeConfigList->list.count;
 
     for (i = 0; i < mbsfn_SubframeConfigList->list.count; i++) {
-      RC.mac[Mod_idP]->common_channels[0].mbsfn_SubframeConfig[i] =
-	mbsfn_SubframeConfigList->list.array[i];
+      RC.mac[Mod_idP]->common_channels[0].mbsfn_SubframeConfig[i] = mbsfn_SubframeConfigList->list.array[i];
       LOG_I(MAC,
 	    "[eNB %d][CONFIG] MBSFN_SubframeConfig[%d] pattern is  %x\n",
 	    Mod_idP, i,

@@ -35,6 +35,8 @@
 #define ENB_CONFIG_STRING_ENB_LIST                      "eNBs"
 /* component carriers configuration section name */		
 #define ENB_CONFIG_STRING_COMPONENT_CARRIERS                            "component_carriers"		 
+#define ENB_CONFIG_STRING_COMPONENT_BR_PARAMETERS                       "br_parameters"
+
 
 #define ENB_CONFIG_STRING_FRAME_TYPE                                    "frame_type"
 #define ENB_CONFIG_STRING_PBCH_REPETITION                               "pbch_repetition"

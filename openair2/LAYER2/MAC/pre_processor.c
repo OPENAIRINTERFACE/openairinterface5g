@@ -1660,6 +1660,11 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
       rnti = UE_RNTI(module_idP, i);
       UE_id = i;
 
+
+    if (UE_list->UE_template[CC_id][UE_id].rach_resource_type > 0) continue;
+
+    rnti = UE_RNTI(module_idP,i);
+
       if (rnti == NOT_A_RNTI)
         continue;
 

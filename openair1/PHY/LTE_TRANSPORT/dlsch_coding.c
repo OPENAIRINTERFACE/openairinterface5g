@@ -615,6 +615,7 @@ int dlsch_encoding_all(PHY_VARS_eNB *eNB,
 		}
 	}
 
+
     if(get_thread_worker_conf() == WORKER_ENABLE)
     {
       if(C >= 8)//one main three worker
