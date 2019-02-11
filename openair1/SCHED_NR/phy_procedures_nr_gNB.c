@@ -76,28 +76,47 @@ int return_ssb_type(nfapi_config_request_t *cfg)
 
 }*/
 
+
 // First SSB starting symbol candidate is used and type B is chosen for 30kHz SCS
-int nr_get_ssb_start_symbol(nfapi_nr_config_request_t *cfg, NR_DL_FRAME_PARMS *fp)
+int nr_get_ssb_start_symbol(nfapi_nr_config_request_t *cfg, NR_DL_FRAME_PARMS *fp, uint8_t i_ssb)
 {
   int mu = cfg->subframe_config.numerology_index_mu.value;
   int symbol = 0;
+  uint8_t n, n_temp;
+  nr_ssb_type_e type = fp->ssb_type;
+  int case_AC[2] = {2,8};
+  int case_BD[4] = {4,8,16,20};
+  int case_E[8] = {8, 12, 16, 20, 32, 36, 40, 44};
+
 
   switch(mu) {
 
-  case NR_MU_0:
-    symbol = 2;
+  case NR_MU_0: // case A
+    n = i_ssb >> 1;
+    symbol = case_AC[i_ssb % 2] + 14*n;
     break;
 
-  case NR_MU_1: // case B
-    symbol = 4;
+  case NR_MU_1: 
+    if (type == 1){ // case B
+	n = i_ssb >> 2;
+    	symbol = case_BD[i_ssb % 4] + 28*n;
+    }
+    if (type == 2){ // case C
+	n = i_ssb >> 1;
+        symbol = case_AC[i_ssb % 2] + 14*n;
+    }
     break;
 
-  case NR_MU_3:
-    symbol = 4;
+  case NR_MU_3: // case D
+    n_temp = i_ssb >> 2; 
+    n = n_temp + (n_temp >> 2);
+    symbol = case_BD[i_ssb % 4] + 28*n;
     break;
 
-  case NR_MU_4:
-    symbol = 8;
+  case NR_MU_4:  // case E
+    n_temp = i_ssb >> 3; 
+    n = n_temp + (n_temp >> 2);
+    symbol = case_E[i_ssb % 8] + 56*n;
     break;
 
   default:
@@ -122,33 +141,46 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
   nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
   int **txdataF = gNB->common_vars.txdataF;
   uint8_t *pbch_pdu=&gNB->pbch_pdu[0];
-  int ss_slot = (cfg->sch_config.half_frame_index.value)? 10 : 0;
-  uint8_t Lmax, ssb_index=0, n_hf=0;
+  // to set a effective slot number between 0 to 9 in the half frame where the SSB is supposed to be
+  uint8_t Lmax, ssb_index, n_hf;
+  int ssb_start_symbol, rel_slot;
+
+  n_hf = cfg->sch_config.half_frame_index.value;
+  rel_slot = (n_hf)? (slot-10) : slot; 
+
+  Lmax = (fp->dl_CarrierFreq < 3e9)? 4:8;  // max number of ssb
+  
+  if (fp->L_ssb > Lmax)
+	AssertFatal(0==1, "Invalid number of SSB larger than %d \n", Lmax);
 
   LOG_D(PHY,"common_signal_procedures: frame %d, slot %d\n",frame,slot);
 
-  int ssb_start_symbol = nr_get_ssb_start_symbol(cfg, fp);
-  nr_set_ssb_first_subcarrier(cfg, fp);
-  Lmax = (fp->dl_CarrierFreq < 3e9)? 4:8;
-
-
-  if (slot == ss_slot)
+  if(rel_slot<10 && rel_slot>=0)
   {
-    // Current implementation is based on SSB in first half frame, first candidate
-    LOG_D(PHY,"SS TX: frame %d, slot %d, start_symbol %d\n",frame,slot, ssb_start_symbol);
+     for (int i=0; i<2; i++)  // max two SSB per frame
+     {
+	ssb_index = i + 2*rel_slot; // computing the ssb_index
+	if (ssb_index < (fp->L_ssb))  // generating the ssb only if the current ssb index is lower than number of SSB configured
+	{
+	  int ssb_start_symbol_abs = nr_get_ssb_start_symbol(cfg, fp, ssb_index); // computing the starting symbol for current ssb
+	  ssb_start_symbol = ssb_start_symbol_abs % 14;  // start symbol wrt slot
 
-    nr_generate_pss(gNB->d_pss, txdataF[0], AMP, ssb_start_symbol, cfg, fp);
-    nr_generate_sss(gNB->d_sss, txdataF[0], AMP, ssb_start_symbol, cfg, fp);
+	  nr_set_ssb_first_subcarrier(cfg, fp);
+	  
+    	  LOG_D(PHY,"SS TX: frame %d, slot %d, start_symbol %d\n",frame,slot, ssb_start_symbol);
 
-    if (!(frame&7)){
-      LOG_D(PHY,"%d.%d : pbch_configured %d\n",frame,slot,gNB->pbch_configured);
-      if (gNB->pbch_configured != 1)return;
-      gNB->pbch_configured = 0;
-    }
+    	  nr_generate_pss(gNB->d_pss, txdataF[0], AMP, ssb_start_symbol, cfg, fp);
+    	  nr_generate_sss(gNB->d_sss, txdataF[0], AMP, ssb_start_symbol, cfg, fp);
 
-    nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index],txdataF[0], AMP, ssb_start_symbol, cfg, fp);
+    	  if (!(frame&7)){
+      		LOG_D(PHY,"%d.%d : pbch_configured %d\n",frame,slot,gNB->pbch_configured);
+	        if (gNB->pbch_configured != 1)return;
+	        gNB->pbch_configured = 0;
+    	  }
 
-    nr_generate_pbch(&gNB->pbch,
+	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index],txdataF[0], AMP, ssb_start_symbol, cfg, fp);
+
+    	  nr_generate_pbch(&gNB->pbch,
                       gNB->nrPolar_params,
                       pbch_pdu,
                       gNB->nr_pbch_interleaver,
@@ -157,6 +189,8 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
                       ssb_start_symbol,
                       n_hf,Lmax,ssb_index,
                       frame, cfg, fp);
+	}
+     }
   }
 
 }

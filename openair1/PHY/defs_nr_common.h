@@ -303,11 +303,13 @@ typedef struct NR_DL_FRAME_PARMS {
   /// TDD configuration
   uint16_t tdd_uplink_nr[2*NR_MAX_SLOTS_PER_FRAME]; /* this is a bitmap of symbol of each slot given for 2 frames */
 
-   //SSB related params
+  //SSB related params
   /// Start in Subcarrier index of the SSB block
   uint16_t ssb_start_subcarrier;
   /// SSB type
   nr_ssb_type_e ssb_type;
+  /// Number of SSB
+  uint8_t L_ssb;
   /// PBCH polar encoder params
   t_nrPolar_params pbch_polar_params;
 
@@ -316,6 +318,5 @@ typedef struct NR_DL_FRAME_PARMS {
   NR_BWP_PARMS initial_bwp_ul;
 
 } NR_DL_FRAME_PARMS;
-
 
 #endif

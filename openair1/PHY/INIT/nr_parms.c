@@ -46,7 +46,10 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
   fp->numerology_index = mu;
   fp->Ncp = Ncp;
   fp->N_RB_DL = N_RB_DL;
+  fp->L_ssb = 8; // TODO get the number of SSB value from higher layers (and config file finally)
+  fp->ssb_type = nr_ssb_type_B; // TODO get the type from higher layers (and config file finally)
   
+
   switch(mu) {
 
     case NR_MU_0: //15kHz scs
