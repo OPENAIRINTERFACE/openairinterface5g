@@ -29,7 +29,7 @@
 #include "filt16a_32.h"
 #include "T.h"
 //#define DEBUG_PDSCH
-#define DEBUG_PDCCH
+//#define DEBUG_PDCCH
 
 
 int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
@@ -262,7 +262,7 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
 				unsigned short coreset_start_subcarrier,
 				unsigned short nb_rb_coreset)
 {
-  int pilot[300] __attribute__((aligned(16)));
+  int pilot[200] __attribute__((aligned(16)));
   unsigned char aarx,p;
   unsigned short k;
   unsigned int pilot_cnt;

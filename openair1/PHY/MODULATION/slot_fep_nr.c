@@ -55,8 +55,8 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   unsigned int frame_length_samples = frame_parms->samples_per_subframe * 10;
   unsigned int rx_offset;
   NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[Ns>>1]][0];
-  uint16_t coreset_start_subcarrier = frame_parms->first_carrier_offset + pdcch_vars->coreset[0].rb_offset*NR_NB_SC_PER_RB;//+((int)floor(frame_parms->ssb_start_subcarrier/NR_NB_SC_PER_RB)+pdcch_vars->coreset[0].rb_offset)*NR_NB_SC_PER_RB;
-  uint16_t nb_rb_coreset = pdcch_vars->coreset[0].rb_offset;
+  uint16_t coreset_start_subcarrier = frame_parms->first_carrier_offset;//+((int)floor(frame_parms->ssb_start_subcarrier/NR_NB_SC_PER_RB)+pdcch_vars->coreset[0].rb_offset)*NR_NB_SC_PER_RB;
+  uint16_t nb_rb_coreset = 24;
   uint16_t bwp_start_subcarrier = frame_parms->first_carrier_offset;//+516;
   uint16_t nb_rb_pdsch = 50;
   uint8_t p=0;

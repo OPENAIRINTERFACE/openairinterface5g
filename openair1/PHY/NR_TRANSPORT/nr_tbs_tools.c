@@ -21,7 +21,7 @@
 
 /*! \file PHY/LTE_TRANSPORT/dlsch_coding.c
 * \brief Top-level routines for implementing LDPC-coded (DLSCH) transport channels from 38-212, 15.2
-* \author H.Wang, Guy De Souza
+* \author H.Wang
 * \date 2018
 * \version 0.1
 * \company Eurecom

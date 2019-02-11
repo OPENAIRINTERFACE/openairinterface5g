@@ -604,7 +604,7 @@ int main(int argc, char **argv)
   
   uint64_t mask = 0x0;
   uint16_t num_rbs=24;
-  uint16_t rb_offset=24;
+  uint16_t rb_offset=0;
   uint16_t cell_id=0;
   uint16_t num_symbols=2;
   for(i=0; i<(num_rbs/6); ++i){   //  38.331 Each bit corresponds a group of 6 RBs
