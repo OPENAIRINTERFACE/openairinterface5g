@@ -231,6 +231,10 @@ mac_rrc_data_ind(
   const uint8_t        *sduP,
   const sdu_size_t      sdu_lenP,
   const uint8_t         mbsfn_sync_areaP
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  , const boolean_t		brOption
+#endif
+
 )
 //--------------------------------------------------------------------------
 {
@@ -247,8 +251,9 @@ mac_rrc_data_ind(
   if((srb_idP & RAB_OFFSET) == CCCH) {
     Srb_info = &RC.rrc[module_idP]->carrier[CC_id].Srb0;
     LOG_D(RRC,"[eNB %d] Received SDU for CCCH on SRB %d\n",module_idP,Srb_info->Srb_id);
-
-    //    msg("\n******INST %d Srb_info %p, Srb_id=%d****\n\n",Mod_id,Srb_info,Srb_info->Srb_id);
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+    ctxt.brOption = brOption;
+#endif    
     if (sdu_lenP > 0) {
       memcpy(Srb_info->Rx_buffer.Payload,sduP,sdu_lenP);
       Srb_info->Rx_buffer.payload_size = sdu_lenP;

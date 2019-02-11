@@ -1372,6 +1372,8 @@ set (MAC_SRC_UE
 set (ENB_APP_SRC
   ${OPENAIR2_DIR}/ENB_APP/enb_app.c
   ${OPENAIR2_DIR}/ENB_APP/enb_config.c
+  ${OPENAIR2_DIR}/ENB_APP/enb_config_SL.c
+  ${OPENAIR2_DIR}/ENB_APP/enb_config_eMTC.c
   ${OPENAIR2_DIR}/ENB_APP/RRC_config_tools.c
   )
 

@@ -150,6 +150,7 @@ void send_IF4p5(RU_t *ru, int frame, int subframe, uint16_t packet_type) {
 
 	for (element_id=0; element_id<db_halflength; element_id+=8) {
 	  i = (uint16_t*) &rx0[element_id];
+
           d = (uint16_t*) &data_block[element_id];
           d[0] = ((uint16_t) lin2alaw_if4p5[i[0]])  | ((uint16_t)(lin2alaw_if4p5[i[1]]<<8));
           d[1] = ((uint16_t) lin2alaw_if4p5[i[2]])  | ((uint16_t)(lin2alaw_if4p5[i[3]]<<8));
