@@ -312,9 +312,9 @@ install_usrp_uhd_driver() {
         $SUDO apt-get -y install uhd-host
     fi
     if [ -z $1 ]; then
-      $SUDO uhd_images_downloader
+      $SUDO /usr/local/bin/uhd_images_downloader
     else
-      $SUDO uhd_images_downloader -i $1
+      $SUDO /usr/local/bin/uhd_images_downloader -i $1
     fi
 }
 
