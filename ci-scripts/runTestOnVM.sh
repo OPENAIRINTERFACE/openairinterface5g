@@ -569,6 +569,7 @@ function start_l2_sim_enb {
         ENB_SYNC=1
         echo "L2-SIM eNB is sync'ed: waiting for UE(s) to connect"
     fi
+    sleep 10
 }
 
 function start_l2_sim_ue {
@@ -609,7 +610,7 @@ function start_l2_sim_ue {
         UE_SYNC=1
         echo "L2-SIM UE is sync'ed w/eNB"
     fi
-    sleep 10
+    sleep 20
 }
 
 function run_test_on_vm {
