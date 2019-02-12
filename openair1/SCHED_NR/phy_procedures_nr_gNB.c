@@ -141,11 +141,11 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
   nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
   int **txdataF = gNB->common_vars.txdataF;
   uint8_t *pbch_pdu=&gNB->pbch_pdu[0];
-  // to set a effective slot number between 0 to 9 in the half frame where the SSB is supposed to be
   uint8_t Lmax, ssb_index, n_hf;
   int ssb_start_symbol, rel_slot;
 
   n_hf = cfg->sch_config.half_frame_index.value;
+  // to set a effective slot number between 0 to 9 in the half frame where the SSB is supposed to be
   rel_slot = (n_hf)? (slot-10) : slot; 
 
   Lmax = (fp->dl_CarrierFreq < 3e9)? 4:8;  // max number of ssb
@@ -162,17 +162,11 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 	  int ssb_start_symbol_abs = nr_get_ssb_start_symbol(cfg, fp, ssb_index); // computing the starting symbol for current ssb
 	  ssb_start_symbol = ssb_start_symbol_abs % 14;  // start symbol wrt slot
 
-	  nr_set_ssb_first_subcarrier(cfg, fp);
+	  nr_set_ssb_first_subcarrier(cfg, fp);  // setting the first subcarrier
 	  
     	  LOG_D(PHY,"SS TX: frame %d, slot %d, start_symbol %d\n",frame,slot, ssb_start_symbol);
     	  nr_generate_pss(gNB->d_pss, txdataF[0], AMP, ssb_start_symbol, cfg, fp);
     	  nr_generate_sss(gNB->d_sss, txdataF[0], AMP, ssb_start_symbol, cfg, fp);
-
-    	  if (!(frame&7)){
-      		LOG_D(PHY,"%d.%d : pbch_configured %d\n",frame,slot,gNB->pbch_configured);
-	        if (gNB->pbch_configured != 1)return;
-	        gNB->pbch_configured = 0;
-    	  }
 
 	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index],txdataF[0], AMP, ssb_start_symbol, cfg, fp);
 
