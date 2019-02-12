@@ -605,12 +605,36 @@ function start_l2_sim_ue {
     if [ $i -lt 50 ]
     then
         UE_SYNC=0
-        echo "L2-SIM UE is NOT sync'ed w/eNB"
+        echo "L2-SIM UE is NOT sync'ed w/ eNB"
+        return
     else
         UE_SYNC=1
-        echo "L2-SIM UE is sync'ed w/eNB"
+        echo "L2-SIM UE is sync'ed w/ eNB"
     fi
-    sleep 20
+    # Checking oip1 interface has now an IP address
+    i="0"
+    echo "ifconfig oip1 | egrep -c \"inet addr\"" > $1
+    while [ $i -lt 10 ]
+    do
+        sleep 5
+        CONNECTED=`ssh -o StrictHostKeyChecking=no ubuntu@$LOC_VM_IP_ADDR < $1`
+        if [ $CONNECTED -eq 1 ]
+        then
+            i="100"
+        else
+            i=$[$i+1]
+        fi
+    done
+    rm $1
+    if [ $i -lt 50 ]
+    then
+        UE_SYNC=0
+        echo "L2-SIM UE oip1 is NOT sync'ed w/ EPC"
+    else
+        UE_SYNC=1
+        echo "L2-SIM UE oip1 is sync'ed w/ EPC"
+    fi
+    sleep 10
 }
 
 function run_test_on_vm {
