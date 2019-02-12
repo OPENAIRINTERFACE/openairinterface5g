@@ -340,11 +340,11 @@ case $key in
         ;;
         cppcheck)
         VM_NAME=ci-cppcheck
-        VM_MEMORY=8192
+        VM_MEMORY=4096
         ARCHIVES_LOC=cppcheck
         LOG_PATTERN=cppcheck.xml
         NB_PATTERN_FILES=1
-        BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2"
+        BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2 --suppressions-list=ci-scripts/cppcheck_suppressions.list"
         NBARGS=$[$NBARGS+256]
         ;;
         enb-ethernet)
