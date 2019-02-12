@@ -2321,13 +2321,8 @@ UE_is_to_be_scheduled(module_id_t module_idP, int CC_id, uint8_t UE_id) {
 uint8_t get_tmode(module_id_t module_idP, int CC_idP, int UE_idP) {
   eNB_MAC_INST *eNB = RC.mac[module_idP];
   COMMON_channels_t *cc = &eNB->common_channels[CC_idP];
-<<<<<<< HEAD
-
-
   struct LTE_PhysicalConfigDedicated *physicalConfigDedicated = eNB->UE_list.UE_template[CC_idP][UE_idP].physicalConfigDedicated;
-=======
-  LTE_PhysicalConfigDedicated_t *physicalConfigDedicated = eNB->UE_list.physicalConfigDedicated[CC_idP][UE_idP];
->>>>>>> new set of cppcheck fixes
+
 
   if (physicalConfigDedicated == NULL) {  // RRCConnectionSetup not received by UE yet
     AssertFatal(cc->p_eNB <= 2, "p_eNB is %d, should be <2\n",

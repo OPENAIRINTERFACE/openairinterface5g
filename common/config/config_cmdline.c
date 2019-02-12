@@ -173,7 +173,7 @@ int config_check_unknown_cmdlineopt(char *prefix) {
     if (strcmp(prefix,CONFIG_CHECKALLSECTIONS) == 0)
       finalcheck = 1;
     else if (strlen(prefix) > 0) {
-      sprintf(testprefix,"--%.*s.",CONFIG_MAXOPTLENGTH-1,prefix);
+      sprintf(testprefix,"--%.*s.",CONFIG_MAXOPTLENGTH-4,prefix);
     }
   }
 
