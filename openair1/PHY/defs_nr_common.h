@@ -309,7 +309,7 @@ typedef struct NR_DL_FRAME_PARMS {
   /// SSB type
   nr_ssb_type_e ssb_type;
   /// Number of SSB
-  uint8_t L_ssb;
+  uint64_t L_ssb;
   /// PBCH polar encoder params
   t_nrPolar_params pbch_polar_params;
 

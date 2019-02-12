@@ -150,9 +150,6 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 
   Lmax = (fp->dl_CarrierFreq < 3e9)? 4:8;  // max number of ssb
   
-  if (fp->L_ssb > Lmax)
-	AssertFatal(0==1, "Invalid number of SSB larger than %d \n", Lmax);
-
   LOG_D(PHY,"common_signal_procedures: frame %d, slot %d\n",frame,slot);
 
   if(rel_slot<10 && rel_slot>=0)
@@ -160,7 +157,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
      for (int i=0; i<2; i++)  // max two SSB per frame
      {
 	ssb_index = i + 2*rel_slot; // computing the ssb_index
-	if (ssb_index < (fp->L_ssb))  // generating the ssb only if the current ssb index is lower than number of SSB configured
+	if ((fp->L_ssb >> ssb_index) & 0x01)  // generating the ssb only if the bit of L_ssb at current ssb index is 1
 	{
 	  int ssb_start_symbol_abs = nr_get_ssb_start_symbol(cfg, fp, ssb_index); // computing the starting symbol for current ssb
 	  ssb_start_symbol = ssb_start_symbol_abs % 14;  // start symbol wrt slot
@@ -229,7 +226,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   num_dci = gNB->pdcch_vars.num_dci;
 
   num_pdsch_rnti = gNB->pdcch_vars.num_pdsch_rnti;
-  if (num_dci) {
+  /*if (num_dci) {
     LOG_I(PHY, "[gNB %d] Frame %d slot %d \
     Calling nr_generate_dci_top (number of DCI %d)\n", gNB->Mod_id, frame, slot, num_dci);
 
@@ -248,7 +245,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
                           AMP, slot, *fp, *cfg);
       }
     }
-  }
+  }*/
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,0);
 
 }
