@@ -165,7 +165,6 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
 	  nr_set_ssb_first_subcarrier(cfg, fp);
 	  
     	  LOG_D(PHY,"SS TX: frame %d, slot %d, start_symbol %d\n",frame,slot, ssb_start_symbol);
-
     	  nr_generate_pss(gNB->d_pss, txdataF[0], AMP, ssb_start_symbol, cfg, fp);
     	  nr_generate_sss(gNB->d_sss, txdataF[0], AMP, ssb_start_symbol, cfg, fp);
 
@@ -226,7 +225,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   num_dci = gNB->pdcch_vars.num_dci;
 
   num_pdsch_rnti = gNB->pdcch_vars.num_pdsch_rnti;
-  /*if (num_dci) {
+  if (num_dci) {
     LOG_I(PHY, "[gNB %d] Frame %d slot %d \
     Calling nr_generate_dci_top (number of DCI %d)\n", gNB->Mod_id, frame, slot, num_dci);
 
@@ -245,7 +244,7 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
                           AMP, slot, *fp, *cfg);
       }
     }
-  }*/
+  }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_ENB_TX+offset,0);
 
 }

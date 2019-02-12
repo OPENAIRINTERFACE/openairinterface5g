@@ -37,7 +37,7 @@ void nr_gold_pbch(PHY_VARS_NR_UE* ue)
 
     for (l = 0; l < Lmax ; l++) {
       i_ssb = l & (Lmax-1);
-      i_ssb2 = (i_ssb<<2) + n_hf;
+      i_ssb2 = i_ssb + (n_hf<<2);
 
       x1 = 1 + (1<<31);
       x2 = (1<<11) * (i_ssb2 + 1) * ((Nid>>2) + 1) + (1<<6) * (i_ssb2 + 1) + (Nid&3);
