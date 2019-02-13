@@ -144,7 +144,7 @@ int main(int argc, char **argv) {
 	//char input_val_str[50],input_val_str2[50];
 	//uint16_t NB_RB=25;
 	SCM_t channel_model = AWGN;  //Rayleigh1_anticorr;
-	uint16_t N_RB_DL = 106, mu = 1;
+	uint16_t N_RB_DL = 106, N_RB_UL = 106, mu = 1;
 	unsigned char frame_type = 0;
 	unsigned char pbch_phase = 0;
 	int frame = 0, subframe = 0;
@@ -291,6 +291,7 @@ int main(int argc, char **argv) {
 
 		case 'R':
 			N_RB_DL = atoi(optarg);
+			N_RB_UL = N_RB_DL;
 			break;
 
 		case 'F':
@@ -381,6 +382,7 @@ int main(int argc, char **argv) {
 	frame_parms->nb_antennas_tx = n_tx;
 	frame_parms->nb_antennas_rx = n_rx;
 	frame_parms->N_RB_DL = N_RB_DL;
+	frame_parms->N_RB_UL = N_RB_UL;
 	frame_parms->Ncp = extended_prefix_flag ? EXTENDED : NORMAL;
 	crcTableInit();
 	nr_phy_config_request_sim(gNB, N_RB_DL, N_RB_DL, mu, Nid_cell);
@@ -443,6 +445,13 @@ int main(int argc, char **argv) {
 
 			if (!UE->dlsch[sf][0][i]) {
 				printf("Can't get ue dlsch structures\n");
+				exit(-1);
+			}
+
+			UE->ulsch[sf][0][i] = new_nr_ue_ulsch(N_RB_UL, 8, 0);
+
+			if (!UE->ulsch[sf][0][i]) {
+				printf("Can't get ue ulsch structures\n");
 				exit(-1);
 			}
 
@@ -649,6 +658,7 @@ int main(int argc, char **argv) {
 		free_gNB_dlsch(gNB->dlsch[0][i]);
 		printf("UE %d\n", i);
 		free_nr_ue_dlsch(UE->dlsch[0][0][i]);
+		free_nr_ue_ulsch(UE->ulsch[0][0][i]);
 	}
 
 	for (i = 0; i < 2; i++) {

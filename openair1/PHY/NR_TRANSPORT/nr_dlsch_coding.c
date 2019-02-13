@@ -69,7 +69,7 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch)
 #endif
 
         if (dlsch->harq_processes[i]->b) {
-          free16(dlsch->harq_processes[i]->b,MAX_DLSCH_PAYLOAD_BYTES);
+          free16(dlsch->harq_processes[i]->b,MAX_DLSCH_PAYLOAD_BYTES); //this should be MAX_NR_DLSCH_PAYLOAD_BYTES
           dlsch->harq_processes[i]->b = NULL;
 #ifdef DEBUG_DLSCH_FREE
           printf("Freeing dlsch process %d b (%p)\n",i,dlsch->harq_processes[i]->b);
@@ -196,7 +196,7 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,
           for (r=0; r<MAX_NUM_NR_DLSCH_SEGMENTS/bw_scaling; r++) {
             // account for filler in first segment and CRCs for multiple segment case
             dlsch->harq_processes[i]->c[r] = (uint8_t*)malloc16(8448);
-            dlsch->harq_processes[i]->d[r] = (uint8_t*)malloc16(68*384);
+            dlsch->harq_processes[i]->d[r] = (uint8_t*)malloc16(68*384); //max size for coded output
             if (dlsch->harq_processes[i]->c[r]) {
               bzero(dlsch->harq_processes[i]->c[r],8448);
             } else {
