@@ -1,4 +1,5 @@
 cmake_targets/log/
 cmake_targets/ran_build/
+cmake_targets/*/build/
 targets/bin/
 
