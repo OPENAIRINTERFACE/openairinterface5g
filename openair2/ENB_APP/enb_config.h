@@ -44,6 +44,7 @@
 #include "rrc_messages_types.h"
 #include "RRC/LTE/rrc_defs.h"
 #include <intertask_interface.h>
+#include "enb_paramdef.h"
 
 #define IPV4_STR_ADDR_TO_INT_NWBO(AdDr_StR,NwBo,MeSsAgE ) do {\
             struct in_addr inp;\
@@ -103,6 +104,9 @@ void                          ru_config_display(void);
 int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc);
 int RCconfig_S1(MessageDef *msg_p, uint32_t i);
 int RCconfig_X2(MessageDef *msg_p, uint32_t i);
+
+void fill_SL_configuration(MessageDef *msg_p,  ccparams_sidelink_t *SLconfig,int cell_idx,int cc_idx,char *config_fname);
+void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, int cell_idx,int cc_idx,char *config_fname,char *brparamspath);
 
 #endif /* ENB_CONFIG_H_ */
 /** @} */

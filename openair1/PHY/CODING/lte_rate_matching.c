@@ -492,7 +492,7 @@ uint32_t lte_rate_matching_turbo(uint32_t RTC,
   Gp = G/Nl/Qm;
   GpmodC = Gp%C;
 #ifdef RM_DEBUG
-  printf("lte_rate_matching_turbo: Ncb %d, Kw %d, Nir/C %d, rvidx %d, G %d, Qm %d, Nl%d, r %d\n",Ncb,3*(RTC<<5),Nir/C,rvidx, G, Qm,Nl,r);
+  LOG_D(PHY,"lte_rate_matching_turbo: Ncb %d, Kw %d, Nir/C %d, rvidx %d, G %d, Qm %d, Nl%d, r %d\n",Ncb,3*(RTC<<5),Nir/C,rvidx, G, Qm,Nl,r);
 #endif
 
   if (r < (C-(GpmodC)))

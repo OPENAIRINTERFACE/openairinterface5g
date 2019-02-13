@@ -346,6 +346,7 @@ static void trx_usrp_end(openair0_device *device) {
 
   done = 1;
 
+
   if (u_sf_mode != 2) { // not subframes replay
 #endif
     usrp_state_t *s = (usrp_state_t *)device->priv;
@@ -435,6 +436,7 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
 #endif
     usrp_state_t *s = (usrp_state_t *)device->priv;
     int nsamps2;  // aligned to upper 32 or 16 byte boundary
+
 #if defined(__x86_64) || defined(__i386__)
 #ifdef __AVX2__
     nsamps2 = (nsamps+7)>>3;

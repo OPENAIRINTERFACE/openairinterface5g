@@ -236,6 +236,9 @@ typedef struct protocol_ctxt_s {
   sub_frame_t subframe;      /*!< \brief  LTE sub frame number.*/
   eNB_index_t eNB_index;     /*!< \brief  valid for UE indicating the index of connected eNB(s)      */
   boolean_t   configured;  /*!< \brief  flag indicating whether the instance is configured or not  */
+#ifdef Rel14
+  boolean_t		brOption;
+#endif
 } protocol_ctxt_t;
 // warning time hardcoded
 #define PROTOCOL_CTXT_TIME_MILLI_SECONDS(CtXt_h) ((CtXt_h)->frame*10+(CtXt_h)->subframe)

@@ -113,6 +113,12 @@ void schedule_ulsch_rnti(module_id_t module_idP, int slice_idx, frame_t frameP,
 			 unsigned char sched_subframe,
 			 uint16_t * first_rb);
 
+void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
+			      frame_t       frameP,
+			      sub_frame_t   subframeP,
+			      unsigned char sched_subframeP,
+			      int          *emtc_active);
+
 /** \brief Second stage of DLSCH scheduling, after schedule_SI, schedule_RA and schedule_dlsch have been called.  This routine first allocates random frequency assignments for SI and RA SDUs using distributed VRB allocations and adds the corresponding DCI SDU to the DCI buffer for PHY.  It then loops over the UE specific DCIs previously allocated and fills in the remaining DCI fields related to frequency allocation.  It assumes localized allocation of type 0 (DCI.rah=0).  The allocation is done for tranmission modes 1,2,4.
 @param Mod_id Instance of eNB
 @param frame Frame index
@@ -133,7 +139,9 @@ void schedule_dlsch(module_id_t module_idP, frame_t frameP,
 
 void schedule_ue_spec(module_id_t module_idP, int slice_idxP,
 		      frame_t frameP,sub_frame_t subframe, int *mbsfn_flag);
-
+void schedule_ue_spec_br(module_id_t   module_idP,
+			 frame_t       frameP,
+			 sub_frame_t   subframeP);
 void schedule_ue_spec_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,int *mbsfn_flag);
 void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP);
 

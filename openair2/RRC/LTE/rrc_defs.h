@@ -660,25 +660,26 @@ typedef struct {
   uint8_t                           *SIB23_BR;
   uint8_t                           sizeof_SIB23_BR;
 #endif
-  int                               physCellId;
-  int                               Ncp;
-  int                               p_eNB;
-  uint32_t                          dl_CarrierFreq;
-  uint32_t                          ul_CarrierFreq;
-  uint32_t                          eutra_band;
-  uint32_t                          N_RB_DL;
-  uint32_t                          pbch_repetition;
-  LTE_BCCH_BCH_Message_t            mib;
-  LTE_BCCH_DL_SCH_Message_t         siblock1;
-  LTE_BCCH_DL_SCH_Message_t         systemInformation;
-  //  SystemInformation_t           systemInformation;
-  LTE_SystemInformationBlockType1_t *sib1;
-  LTE_SystemInformationBlockType2_t *sib2;
-  LTE_SystemInformationBlockType3_t *sib3;
+  int                                   physCellId;
+  int                                   Ncp;
+  int                                   p_eNB;
+  uint32_t                              dl_CarrierFreq;
+  uint32_t                              ul_CarrierFreq;
+  uint32_t                              eutra_band;
+  uint32_t                              N_RB_DL;
+  uint32_t                              pbch_repetition;
+  LTE_BCCH_BCH_Message_t                mib;
+  LTE_BCCH_DL_SCH_Message_t             siblock1;
+  LTE_BCCH_DL_SCH_Message_t             siblock1_BR;
+  LTE_BCCH_DL_SCH_Message_t             systemInformation;
+  LTE_BCCH_DL_SCH_Message_t             systemInformation_BR;
+  //  SystemInformation_t               systemInformation;
+  LTE_SystemInformationBlockType1_t     *sib1;
+  LTE_SystemInformationBlockType2_t     *sib2;
+  LTE_SystemInformationBlockType3_t     *sib3;
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  LTE_SystemInformationBlockType1_t *sib1_BR;
-  LTE_SystemInformationBlockType2_t *sib2_BR;
-  LTE_SystemInformationBlockType2_t *sib3_BR;
+  LTE_SystemInformationBlockType1_t     *sib1_BR;
+  LTE_SystemInformationBlockType2_t     *sib2_BR;
 #endif
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   LTE_SystemInformationBlockType13_r9_t *sib13;

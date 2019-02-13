@@ -808,6 +808,8 @@ typedef struct {
   uint8_t harq_pid;
   /// Narrowband index
   uint8_t narrowband;
+  /// number of mdpcch repetitions
+  uint16_t reps;
   /// number of PRB pairs for MPDCCH
   uint8_t number_of_prb_pairs;
   /// mpdcch resource assignment (combinatorial index r)
@@ -822,8 +824,6 @@ typedef struct {
   uint16_t dmrs_scrambling_init;
   /// Absolute subframe of the initial transmission (0-10239)
   uint16_t i0;
-  /// number of mdpcch repetitions
-  uint16_t reps;
   /// current absolute subframe number
   uint16_t absSF;
   /// DCI pdu

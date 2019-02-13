@@ -413,9 +413,9 @@ int main(int argc, char **argv) {
   // enable these lines if you need debug info
   // however itti will catch all signals, so ctrl-c won't work anymore
   // alternatively you can disable ITTI completely in CMakeLists.txt
-  //itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, NULL);
-  //set_comp_log(PHY,LOG_DEBUG,LOG_MED,1);
-  //set_glog(LOG_DEBUG,LOG_MED);
+  //  itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, NULL);
+  //  set_comp_log(PHY,LOG_DEBUG,LOG_HIGH,1);
+  //  set_glog(LOG_DEBUG,LOG_HIGH);
   //hapZEbm:n:Y:X:x:s:w:e:q:d:D:O:c:r:i:f:y:c:oA:C:R:g:N:l:S:T:QB:PI:LF
   static paramdef_t options[] = {
     { "awgn", "Use AWGN channel and not multipath", PARAMFLAG_BOOL, strptr:NULL, defintval:0, TYPE_INT, 0, NULL, NULL },
