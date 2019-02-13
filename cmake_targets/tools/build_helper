@@ -311,15 +311,16 @@ install_usrp_uhd_driver() {
         # On newer kernels, it fails to install
         $SUDO apt-get -y install uhd-host
     fi
+    # quick workaround for RHE7.6
+    local distribution=$(get_distribution_release)
     if [ -z $1 ]; then
-      # quick workaround
-      if [[ "$OS_DISTRO" == "rhel7.6" ]]; then
+      if [[ "$distribution" == "rhel7.6" ]]; then
           $SUDO /usr/local/bin/uhd_images_downloader
       else
           $SUDO uhd_images_downloader
       fi
     else
-      if [[ "$OS_DISTRO" == "rhel7.6" ]]; then
+      if [[ "$distribution" == "rhel7.6" ]]; then
           $SUDO /usr/local/bin/uhd_images_downloader -i $1
       else
           $SUDO uhd_images_downloader -i $1

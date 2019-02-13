@@ -260,7 +260,7 @@ pipeline {
                         expression {doRedHatBuild}
                     }
                     steps {
-                        gitlabCommitStatus(name: "Build eNb-USRP-CentOS") {
+                        gitlabCommitStatus(name: "Build eNb-USRP-RHE") {
                             script {
                                 try {
                                     withCredentials([

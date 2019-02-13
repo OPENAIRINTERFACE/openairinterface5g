@@ -492,7 +492,7 @@ function report_build {
 
     if [ -e ./archives/red_hat ]
     then
-        echo "   <h2>Red Hat (CentOS Linux release 7.4.1708) -- Summary</h2>" >> ./build_results.html
+        echo "   <h2>Red Hat Enterprise Linux Server release 7.6) -- Summary</h2>" >> ./build_results.html
 
         summary_table_header "Red Hat -- OAI Build eNB -- USRP option" ./archives/red_hat
         summary_table_row "LTE SoftModem - Release 14" ./archives/red_hat/lte-softmodem.Rel14.txt "Built target lte-softmodem" ./enb_usrp_rh_row1.html
