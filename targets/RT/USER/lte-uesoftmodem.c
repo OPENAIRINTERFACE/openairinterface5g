@@ -815,8 +815,6 @@ int main( int argc, char **argv ) {
   } else init_openair0(frame_parms[0],(int)rx_gain[0][0]);
 
   if (simL1flag==1) {
-    AssertFatal(NULL!=config_mod,
-                "[SOFTMODEM] Error, configuration module init failed\n");
     RCConfig_sim();
   }
 
