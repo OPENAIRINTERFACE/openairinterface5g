@@ -67,7 +67,7 @@ void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t* dci_alloc, uint16_t n_shift, uint8_t m
     C = N_reg/(bsize*R);
   }
 
-  tmp = L * (( Y + (m*N_cce)/(L*M_s_max) + n_CI ) % (N_cce/L));
+  tmp = L * (( Y + (m*N_cce)/(L*M_s_max) + n_CI ) % CEILIDIV(N_cce,L));
 
   LOG_I(PHY, "CCE list generation for candidate %d: bundle size %d ilv size %d tmp %d\n", m, bsize, R, tmp);
   for (uint8_t cce_idx=0; cce_idx<L; cce_idx++) {
