@@ -375,14 +375,16 @@ void flexran_update_TA(mid_t mod_id, mid_t ue_id, uint8_t cc_id)
     ue_sched_ctl->ta_timer--;
     ue_sched_ctl->ta_update		      = 0;	// don't trigger a timing advance command      
   }
-*/
 #warning "Implement flexran_update_TA() in RAN API"
+*/
 }
 
 /* TODO needs to be revised, looks suspicious: why do we need UE stats? */
 int flexran_get_MAC_CE_bitmap_TA(mid_t mod_id, mid_t ue_id, uint8_t cc_id)
 {
+/*
 #warning "Implement flexran_get_MAC_CE_bitmap_TA() in RAN API"
+*/
   if (!phy_is_present(mod_id, cc_id)) return 0;
 
   /* UE_stats can not be null, they are an array in RC
@@ -476,7 +478,9 @@ int flexran_get_harq(mid_t       mod_id,
   /*   *status = 0; */
   /* } */
   /*return *round;*/
+/*
 #warning "Implement flexran_get_harq() in RAN API"
+*/
   return 0;
 }
 
@@ -670,13 +674,13 @@ uint8_t flexran_get_special_subframe_assignment(mid_t mod_id, uint8_t cc_id)
 long flexran_get_ra_ResponseWindowSize(mid_t mod_id, uint8_t cc_id)
 {
   if (!rrc_is_present(mod_id)) return 0;
-  return RC.rrc[mod_id]->configuration.rach_raResponseWindowSize[cc_id];
+  return RC.rrc[mod_id]->configuration.radioresourceconfig[cc_id].rach_raResponseWindowSize;
 }
 
 long flexran_get_mac_ContentionResolutionTimer(mid_t mod_id, uint8_t cc_id)
 {
   if (!rrc_is_present(mod_id)) return 0;
-  return RC.rrc[mod_id]->configuration.rach_macContentionResolutionTimer[cc_id];
+  return RC.rrc[mod_id]->configuration.radioresourceconfig[cc_id].rach_macContentionResolutionTimer;
 }
 
 Protocol__FlexDuplexMode flexran_get_duplex_mode(mid_t mod_id, uint8_t cc_id)
@@ -1131,7 +1135,7 @@ int8_t flexran_agent_get_operating_pdsch_refpower(mid_t mod_id, uint8_t cc_id)
 long flexran_agent_get_operating_pusch_p0(mid_t mod_id, uint8_t cc_id)
 {
   if (!rrc_is_present(mod_id)) return 0;
-  return RC.rrc[mod_id]->configuration.pusch_p0_Nominal[cc_id];
+  return RC.rrc[mod_id]->configuration.radioresourceconfig[cc_id].pusch_p0_Nominal;
 }
 
 void flexran_agent_set_operating_dl_freq(mid_t mod_id, uint8_t cc_id, uint32_t dl_freq_mhz)

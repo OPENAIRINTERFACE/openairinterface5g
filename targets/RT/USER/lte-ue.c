@@ -978,11 +978,15 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg) {
   uint16_t     ue_index = 0;
   uint16_t     ue_num = NB_UE_INST/NB_THREAD_INST+((NB_UE_INST%NB_THREAD_INST > ue_thread_id) ? 1 :0);
   module_id_t ue_Mod_id;
-  PHY_VARS_UE    *UE;   //= rtd->UE;
+  PHY_VARS_UE    *UE = NULL;
   int ret;
   uint8_t   end_flag;
   proc = &PHY_vars_UE_g[0][0]->proc.proc_rxtx[0];
   phy_stub_ticking->num_single_thread[ue_thread_id] = -1;
+
+  if (rtd != NULL) {
+    UE = rtd->UE;
+  }
 
   if(ue_thread_id == 0){
     phy_stub_ticking->ticking_var = -1;
@@ -1038,10 +1042,15 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg) {
     proc->frame_tx = proc->frame_rx + (proc->subframe_rx>(9-sf_ahead)?1:0);
     //oai_subframe_ind(proc->frame_rx, proc->subframe_rx);
 
-    if(UE->frame_parms.frame_type == FDD){
-    oai_subframe_ind(proc->frame_rx, proc->subframe_rx);
-    }else{
-    oai_subframe_ind(proc->frame_tx,proc->subframe_tx);
+    if (UE != NULL) {
+      if (UE->frame_parms.frame_type == FDD) {
+        oai_subframe_ind(proc->frame_rx, proc->subframe_rx);
+      } else {
+        oai_subframe_ind(proc->frame_tx, proc->subframe_tx);
+      }
+    } else {
+      // Default will be FDD
+      oai_subframe_ind(proc->frame_rx, proc->subframe_rx);
     }
 
     //Guessing that the next 4 lines are not needed for the phy_stub mode.

@@ -51,7 +51,6 @@
 #define CONFIG_PRINTPARAMS    1                 // print parameters values while processing
 #define CONFIG_DEBUGPTR       (1<<1)            // print memory allocation/free debug messages
 #define CONFIG_DEBUGCMDLINE   (1<<2)            // print command line processing messages
-#define CONFIG_NOCHECKUNKOPT  (1<<3)            // disable check unprocessed (so invalid) command line options 
 #define CONFIG_NOABORTONCHKF  (1<<4)            // disable abort execution when parameter checking function fails
 #define CONFIG_NOEXITONHELP   (1<<19)           // do not exit after printing help
 #define CONFIG_HELP           (1<<20)           // print help message
@@ -109,5 +108,7 @@ extern configmodule_interface_t *cfgptr;
 #define CONFIG_ENABLECMDLINEONLY  (1<<1)
 extern configmodule_interface_t *load_configmodule(int argc, char **argv, uint32_t initflags);
 extern void end_configmodule(void);
+#define CONFIG_PRINTF_ERROR(f, x... ) if (isLogInitDone ()) { LOG_E(ENB_APP,f,x);} else {printf(f,x);}; if ( !CONFIG_ISFLAGSET(CONFIG_NOABORTONCHKF) ) exit_fun("exit because configuration failed\n");
+
 
 #endif  /* INCLUDE_CONFIG_LOADCONFIGMODULE_H */

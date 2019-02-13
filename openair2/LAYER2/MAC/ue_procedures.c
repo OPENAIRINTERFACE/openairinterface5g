@@ -559,31 +559,34 @@ ue_send_sdu(module_id_t module_idP,
 		LOG_T(MAC, "\n");
 #endif
 
-		mac_rrc_data_ind_ue(module_idP,
-				 CC_id,
-				 frameP, subframeP,
-				 UE_mac_inst[module_idP].crnti,
-				 CCCH,
-				 (uint8_t *) payload_ptr,
-				 rx_lengths[i], eNB_index, 0);
+      mac_rrc_data_ind_ue(module_idP,
+			  CC_id,
+			  frameP,subframeP,
+			  UE_mac_inst[module_idP].crnti,
+			  CCCH,
+			  (uint8_t*)payload_ptr,
+			  rx_lengths[i],
+			  eNB_index,
+			  0
+			  );
 
-	    } else if ((rx_lcids[i] == DCCH) || (rx_lcids[i] == DCCH1)) {
-		LOG_D(MAC,
-		      "[UE %d] Frame %d : DLSCH -> DL-DCCH%d, RRC message (eNB %d, %d bytes)\n",
-		      module_idP, frameP, rx_lcids[i], eNB_index,
-		      rx_lengths[i]);
-		mac_rlc_data_ind(module_idP, UE_mac_inst[module_idP].crnti,
-				 eNB_index, frameP, ENB_FLAG_NO,
-				 MBMS_FLAG_NO, rx_lcids[i],
-				 (char *) payload_ptr, rx_lengths[i], 1,
-				 NULL);
-
-	    } else if ((rx_lcids[i] < NB_RB_MAX) && (rx_lcids[i] > DCCH1)) {
-
-		LOG_D(MAC,
-		      "[UE %d] Frame %d : DLSCH -> DL-DTCH%d (eNB %d, %d bytes)\n",
-		      module_idP, frameP, rx_lcids[i], eNB_index,
-		      rx_lengths[i]);
+    } else if ((rx_lcids[i] == DCCH) || (rx_lcids[i] == DCCH1)) {
+      LOG_D(MAC,"[UE %d] Frame %d : DLSCH -> DL-DCCH%d, RRC message (eNB %d, %d bytes)\n", module_idP, frameP, rx_lcids[i],eNB_index,rx_lengths[i]);
+      mac_rlc_data_ind(module_idP,
+                       UE_mac_inst[module_idP].crnti,
+		       eNB_index,
+                       frameP,
+                       ENB_FLAG_NO,
+                       MBMS_FLAG_NO,
+                       rx_lcids[i],
+                       (char *)payload_ptr,
+                       rx_lengths[i],
+                       1,
+                       NULL);
+ 
+    } else if ((rx_lcids[i]  < NB_RB_MAX) && (rx_lcids[i] > DCCH1 )) {
+      
+      LOG_D(MAC,"[UE %d] Frame %d : DLSCH -> DL-DTCH%d (eNB %d, %d bytes)\n", module_idP, frameP,rx_lcids[i], eNB_index,rx_lengths[i]);
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
 		int j;
@@ -622,6 +625,7 @@ ue_decode_si(module_id_t module_idP, int CC_id, frame_t frameP,
 #if UE_TIMING_TRACE
     start_meas(&UE_mac_inst[module_idP].rx_si);
 #endif
+
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
 	(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_SI, VCD_FUNCTION_IN);
 
@@ -634,6 +638,7 @@ ue_decode_si(module_id_t module_idP, int CC_id, frame_t frameP,
 		     0);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
 	(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_SI, VCD_FUNCTION_OUT);
+
 #if UE_TIMING_TRACE
     stop_meas(&UE_mac_inst[module_idP].rx_si);
 #endif
@@ -659,6 +664,7 @@ ue_decode_p(module_id_t module_idP, int CC_id, frame_t frameP,
 #if UE_TIMING_TRACE
     start_meas(&UE_mac_inst[module_idP].rx_p);
 #endif
+
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
 	(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_PCCH, VCD_FUNCTION_IN);
 
@@ -672,6 +678,7 @@ ue_decode_p(module_id_t module_idP, int CC_id, frame_t frameP,
 		     0);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
 	(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_PCCH, VCD_FUNCTION_OUT);
+
 #if UE_TIMING_TRACE
     stop_meas(&UE_mac_inst[module_idP].rx_p);
 #endif

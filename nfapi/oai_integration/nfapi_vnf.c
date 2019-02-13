@@ -270,6 +270,7 @@ int pnf_param_resp_cb(nfapi_vnf_config_t* config, int p5_idx, nfapi_pnf_param_re
   for(int i = 0; i < resp->pnf_phy.number_of_phys; ++i)
   {
     phy_info phy;
+    memset(&phy,0,sizeof(phy));
     phy.index = resp->pnf_phy.phy[i].phy_config_index;
 
     printf("[VNF] (PHY:%d) phy_config_idx:%d\n", i, resp->pnf_phy.phy[i].phy_config_index);
@@ -287,6 +288,7 @@ int pnf_param_resp_cb(nfapi_vnf_config_t* config, int p5_idx, nfapi_pnf_param_re
 
   for(int i = 0; i < resp->pnf_rf.number_of_rfs; ++i) {
     rf_info rf;
+    memset(&rf,0,sizeof(rf));
     rf.index = resp->pnf_rf.rf[i].rf_config_index;
 
     printf("[VNF] (RF:%d) rf_config_idx:%d\n", i, resp->pnf_rf.rf[i].rf_config_index);
@@ -897,7 +899,7 @@ int param_resp_cb(nfapi_vnf_config_t* config, int p5_idx, nfapi_param_response_t
 
   // for now just 1
 
-  printf("[VNF] %d.%d pnf p7 %s:%d timing %d %d %d %d\n", p5_idx, phy->id, phy->remote_addr, phy->remote_port, p7_vnf->timing_window, p7_vnf->periodic_timing_period, p7_vnf->aperiodic_timing_enabled, p7_vnf->periodic_timing_period);
+  printf("[VNF] %d.%d pnf p7 %s:%d timing %u %u %u %u\n", p5_idx, phy->id, phy->remote_addr, phy->remote_port, p7_vnf->timing_window, p7_vnf->periodic_timing_period, p7_vnf->aperiodic_timing_enabled, p7_vnf->periodic_timing_period);
 
   req->header.message_id = NFAPI_CONFIG_REQUEST;
   req->header.phy_id = phy->id;
@@ -919,7 +921,7 @@ int param_resp_cb(nfapi_vnf_config_t* config, int p5_idx, nfapi_param_response_t
 
   req->nfapi_config.timing_window.tl.tag = NFAPI_NFAPI_TIMING_WINDOW_TAG;
   req->nfapi_config.timing_window.value = p7_vnf->timing_window;
-  printf("[VNF] Timing window:%d\n", p7_vnf->timing_window);
+  printf("[VNF] Timing window:%u\n", p7_vnf->timing_window);
   req->num_tlv++;
 
   if(p7_vnf->periodic_timing_enabled || p7_vnf->aperiodic_timing_enabled) {

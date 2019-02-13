@@ -50,6 +50,7 @@
 
 
 
+
 typedef struct {
   /// Status Flag indicating for this DLSCH (idle,active,disabled)
   SCH_status_t status;
@@ -443,6 +444,10 @@ typedef struct {
 } LTE_eNB_UE_stats;
 
 typedef struct {
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  /// UE type (normal, CEModeA, CEModeB)
+  uint8_t ue_type;
+#endif
   /// HARQ process mask, indicates which processes are currently active
   uint16_t harq_mask;
   /// Pointers to 8 HARQ processes for the ULSCH

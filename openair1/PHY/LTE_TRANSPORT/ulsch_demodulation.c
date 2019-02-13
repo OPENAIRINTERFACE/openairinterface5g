@@ -1127,17 +1127,20 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
   int16_t *llrp;
   int subframe = proc->subframe_rx;
 
-  harq_pid = subframe2harq_pid(frame_parms,proc->frame_rx,subframe);
+#ifdef Rel14
+  if (ulsch[UE_id]->ue_type > 0) harq_pid =0;
+  else
+#endif
+    {
+      harq_pid = subframe2harq_pid(frame_parms,proc->frame_rx,subframe);
+    }
   Qm = ulsch[UE_id]->harq_processes[harq_pid]->Qm;
   if(LOG_DEBUGFLAG(DEBUG_ULSCH)) {
      LOG_I(PHY,"rx_ulsch: harq_pid %d, nb_rb %d first_rb %d\n",harq_pid,ulsch[UE_id]->harq_processes[harq_pid]->nb_rb,ulsch[UE_id]->harq_processes[harq_pid]->first_rb);
   }
 
-  if (ulsch[UE_id]->harq_processes[harq_pid]->nb_rb == 0) {
-    LOG_E(PHY,"PUSCH (%d/%x) nb_rb=0!\n", harq_pid,ulsch[UE_id]->rnti);
-    return;
-  }
-
+  AssertFatal(ulsch[UE_id]->harq_processes[harq_pid]->nb_rb > 0,
+	      "PUSCH (%d/%x) nb_rb=0!\n", harq_pid,ulsch[UE_id]->rnti);
   for (l=0; l<(frame_parms->symbols_per_tti-ulsch[UE_id]->harq_processes[harq_pid]->srs_active); l++) {
 
   if(LOG_DEBUGFLAG(DEBUG_ULSCH)) {

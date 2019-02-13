@@ -52,7 +52,6 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
 {
 
   int n;
-
   //  uint8_t reset;
   uint32_t x1, x2, s=0;
   uint8_t *dlsch_e=dlsch->harq_processes[harq_pid]->e;
