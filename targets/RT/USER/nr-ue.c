@@ -444,6 +444,7 @@ static void *UE_thread_synch(void *arg) {
 
 	      //write_output("txdata_sym.m", "txdata_sym", UE->common_vars.rxdata[0], (10*UE->frame_parms.samples_per_subframe), 1, 1);
 
+		freq_offset = UE->common_vars.freq_offset; // frequency offset computed with pss in initial sync
                 hw_slot_offset = (UE->rx_offset<<1) / UE->frame_parms.samples_per_subframe;
                 printf("Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %d (DL %u, UL %u), UE_scan_carrier %d\n",
                        hw_slot_offset,
@@ -457,16 +458,13 @@ static void *UE_thread_synch(void *arg) {
                     // rerun with new cell parameters and frequency-offset
                     for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
                         openair0_cfg[UE->rf_map.card].rx_gain[UE->rf_map.chain+i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
-			if (UE->UE_scan_carrier == 1) {
 			  if (freq_offset >= 0)
-                            openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] += abs(UE->common_vars.freq_offset);
+                            openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] += abs(freq_offset);
 			  else
-                            openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] -= abs(UE->common_vars.freq_offset);
+                            openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] -= abs(freq_offset);
 			  openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] =
                             openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i]+uplink_frequency_offset[CC_id][i];
 			  downlink_frequency[CC_id][i] = openair0_cfg[CC_id].rx_freq[i];
-			  freq_offset=0;
-			}
 		    }
 
                     // reconfigure for potentially different bandwidth
