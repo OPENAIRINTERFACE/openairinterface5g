@@ -602,7 +602,7 @@ static void *UE_thread_synch(void *arg) {
 	  
 	  phy_scope_UE(form_ue[0],
 		       PHY_vars_UE_g[0][0],
-		       0,0,7);
+		       0,0,1);
 	}
 #endif
 
