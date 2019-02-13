@@ -1,11 +1,12 @@
 ```c
-configmodule_interface_t *load_configmodule(int argc, char **argv)
+configmodule_interface_t *load_configmodule(int argc, char **argv, uint32_t initflags)
 ```
 * Parses the command line options, looking for the –O argument
 * Loads the `libparams_<configsource>.so` (today `libparams_libconfig.so`)  shared library
 * Looks for `config_<config source>_init` symbol and calls it , passing it an array of string corresponding to the « : » separated strings used in the –O option
 * Looks for `config_<config source>_get`, `config_<config source>_getlist` and  `config_<config source>_end` symbols which are the three functions a configuration library should implement. Get and getlist are mandatory, end is optional.
-* Stores all the necessary information in a `configmodule_interface_t structure`, which is of no use for caller as long as we only use one configuration source.  
+* Stores all the necessary information in a `configmodule_interface_t structure`, which is of no use for caller as long as we only use one configuration source.
+*  if the bit CONFIG_ENABLECMDLINEONLY is set in `initflags` then the module allows parameters to be set only via the command line. This is used for the oai UE.
 
 ```c
 void End_configmodule(void)

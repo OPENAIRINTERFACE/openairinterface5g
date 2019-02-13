@@ -25,8 +25,8 @@
    date: 21.10.2009
 */
 #ifdef MAIN
-#include <stdio.h>
-#include <stdlib.h>
+  #include <stdio.h>
+  #include <stdlib.h>
 #endif
 #include "PHY/defs_eNB.h"
 #include "PHY/LTE_TRANSPORT/transport_common.h"
@@ -42,9 +42,7 @@ static uint32_t bitrev_cc[32] = {1,17,9,25,5,21,13,29,3,19,11,27,7,23,15,31,0,16
 //#define RM_DEBUG2 1
 //#define RM_DEBUG_CC 1
 
-uint32_t sub_block_interleaving_turbo(uint32_t D, uint8_t *d,uint8_t *w)
-{
-
+uint32_t sub_block_interleaving_turbo(uint32_t D, uint8_t *d,uint8_t *w) {
   uint32_t RTC = (D>>5), ND, ND3;
   uint32_t row,col,Kpi;
   uint32_t index3,k,k2;
@@ -64,7 +62,6 @@ uint32_t sub_block_interleaving_turbo(uint32_t D, uint8_t *d,uint8_t *w)
   printf("RTC = %d, Kpi=%d, ND=%d\n",RTC,Kpi,ND);
 #endif
   ND3 = ND*3;
-
   // copy d02 to dD2 (for mod Kpi operation from clause (4), p.16 of 36.212
   d[(3*D)+2] = d[2];
   k=0;
@@ -80,12 +77,9 @@ uint32_t sub_block_interleaving_turbo(uint32_t D, uint8_t *d,uint8_t *w)
     index3 = bitrev_x3[col];//3*index;
 
     for (row=0; row<RTC; row++) {
-
       w[k]            =  d1[index3];//d[index3-ND3];
       w[Kpi+k2]       =  d2[index3];//d[index3-ND3+1];
       w[Kpi+1+k2]     =  d3[index3];//d[index3-ND3+5];
-
-
 #ifdef RM_DEBUG
       printf("row %d, index %d, index-Nd %d index-Nd+1 %d (k,Kpi+2k,Kpi+2k+1) (%d,%d,%d) w(%d,%d,%d)\n",row,index,index-ND,((index+1)%Kpi)-ND,k,Kpi+(k<<1),Kpi+(k<<1)+1,w[k],w[Kpi+(k<<1)],w[Kpi+1+(k<<1)]);
 
@@ -100,7 +94,8 @@ uint32_t sub_block_interleaving_turbo(uint32_t D, uint8_t *d,uint8_t *w)
 
 #endif
       index3+=96;
-      k++;k2+=2;
+      k++;
+      k2+=2;
     }
   }
 
@@ -120,9 +115,7 @@ uint32_t sub_block_interleaving_turbo(uint32_t D, uint8_t *d,uint8_t *w)
 }
 
 
-uint32_t sub_block_interleaving_cc(uint32_t D, uint8_t *d,uint8_t *w)
-{
-
+uint32_t sub_block_interleaving_cc(uint32_t D, uint8_t *d,uint8_t *w) {
   uint32_t RCC = (D>>5), ND, ND3;
   uint32_t row,col,Kpi,index;
   uint32_t index3,k;
@@ -141,7 +134,6 @@ uint32_t sub_block_interleaving_cc(uint32_t D, uint8_t *d,uint8_t *w)
   printf("RCC = %d, Kpi=%d, ND=%d\n",RCC,Kpi,ND);
 #endif
   ND3 = ND*3;
-
   k=0;
 
   for (col=0; col<32; col++) {
@@ -180,9 +172,7 @@ uint32_t sub_block_interleaving_cc(uint32_t D, uint8_t *d,uint8_t *w)
   return(RCC);
 }
 
-void sub_block_deinterleaving_turbo(uint32_t D,int16_t *d,int16_t *w)
-{
-
+void sub_block_deinterleaving_turbo(uint32_t D,int16_t *d,int16_t *w) {
   uint32_t RTC = (D>>5), ND, ND3;
   uint32_t row,col,Kpi,index;
   uint32_t index3,k,k2;
@@ -199,7 +189,6 @@ void sub_block_deinterleaving_turbo(uint32_t D,int16_t *d,int16_t *w)
   printf("RTC = %d, Kpi=%d, ND=%d\n",RTC,Kpi,ND);
 #endif
   ND3 = ND*3;
-
   // copy d02 to dD2 (for mod Kpi operation from clause (4), p.16 of 36.212
   k=0;
   k2=0;
@@ -215,7 +204,6 @@ void sub_block_deinterleaving_turbo(uint32_t D,int16_t *d,int16_t *w)
     index3 = bitrev_x3[col];//3*index;
 
     for (row=0; row<RTC; row++) {
-
       d1[index3]   = w[k];
       d2[index3]   = w[Kpi+k2];
       d3[index3]   = w[Kpi+1+k2];
@@ -229,12 +217,9 @@ void sub_block_deinterleaving_turbo(uint32_t D,int16_t *d,int16_t *w)
 
   //  if (ND>0)
   //    d[2] = LTE_NULL;//d[(3*D)+2];
-
 }
 
-void sub_block_deinterleaving_cc(uint32_t D,int8_t *d,int8_t *w)
-{
-
+void sub_block_deinterleaving_cc(uint32_t D,int8_t *d,int8_t *w) {
   //WANG_Hao uint32_t RCC = (D>>5), ND, ND3;
   uint32_t RCC = (D>>5);
   ptrdiff_t   ND, ND3;
@@ -251,10 +236,9 @@ void sub_block_deinterleaving_cc(uint32_t D,int8_t *d,int8_t *w)
   ND = Kpi - D;
 #ifdef RM_DEBUG2
   printf("sub_block_interleaving_cc : D = %d (%d), d %p, w %p\n",D,D*3,d,w);
-  printf("RCC = %d, Kpi=%d, ND=%d\n",RCC,Kpi,ND);
+  printf("RCC = %d, Kpi=%d, ND=%ld\n",RCC,Kpi,ND);
 #endif
   ND3 = ND*3;
-
   k=0;
 
   for (col=0; col<32; col++) {
@@ -265,24 +249,20 @@ void sub_block_deinterleaving_cc(uint32_t D,int8_t *d,int8_t *w)
     index3 = 3*index;
 
     for (row=0; row<RCC; row++) {
-
       d[index3-ND3]   = w[k];
       d[index3-ND3+1] = w[Kpi+k];
       d[index3-ND3+2] = w[(Kpi<<1)+k];
 #ifdef RM_DEBUG2
-      printf("row %d, index %d k %d index3-ND3 %d w(%d,%d,%d)\n",row,index,k,index3-ND3,w[k],w[Kpi+k],w[(Kpi<<1)+k]);
+      printf("row %d, index %d k %d index3-ND3 %ld w(%d,%d,%d)\n",row,index,k,index3-ND3,w[k],w[Kpi+k],w[(Kpi<<1)+k]);
 #endif
       index3+=96;
       index+=32;
       k++;
     }
   }
-
 }
 
-uint32_t generate_dummy_w(uint32_t D, uint8_t *w,uint8_t F)
-{
-
+uint32_t generate_dummy_w(uint32_t D, uint8_t *w,uint8_t F) {
   uint32_t RTC = (D>>5), ND;
   uint32_t col,Kpi,index;
   int32_t k,k2;
@@ -301,8 +281,6 @@ uint32_t generate_dummy_w(uint32_t D, uint8_t *w,uint8_t F)
   printf("dummy sub_block_interleaving_turbo : D = %d (%d)\n",D,D*3);
   printf("RTC = %d, Kpi=%d, ND=%d, F=%d (Nulled %d)\n",RTC,Kpi,ND,F,(2*F + 3*ND));
 #endif
-
-
   k=0;
   k2=0;
   wKpi = &w[Kpi];
@@ -371,9 +349,7 @@ uint32_t generate_dummy_w(uint32_t D, uint8_t *w,uint8_t F)
   return(RTC);
 }
 
-uint32_t generate_dummy_w_cc(uint32_t D, uint8_t *w)
-{
-
+uint32_t generate_dummy_w_cc(uint32_t D, uint8_t *w) {
   uint32_t RCC = (D>>5), ND;
   uint32_t col,Kpi,index;
   int32_t k;
@@ -392,7 +368,6 @@ uint32_t generate_dummy_w_cc(uint32_t D, uint8_t *w)
   printf("RCC = %d, Kpi=%d, ND=%d, (Nulled %d)\n",RCC,Kpi,ND,3*ND);
 #endif
   //  ND3 = ND*3;
-
   // copy d02 to dD2 (for mod Kpi operation from clause (4), p.16 of 36.212
   k=0;
 
@@ -466,8 +441,6 @@ uint32_t lte_rate_matching_turbo(uint32_t RTC,
                                  uint8_t nb_rb)
 //                                 uint8_t m)
 {
-
-
   uint32_t Nir,Ncb,Gp,GpmodC,E,Ncbmod,ind,k;
   //  int cnt=0;
   uint8_t *e2;
@@ -487,11 +460,11 @@ uint32_t lte_rate_matching_turbo(uint32_t RTC,
   if (Mdlharq>0) {  // Downlink
     Nir = Nsoft/Kmimo/cmin(8,Mdlharq);
     Ncb = cmin(Nir/C,3*(RTC<<5));
-  }
-  else {  // Uplink
+  } else { // Uplink
     Nir=0;
     Ncb = 3*(RTC<<5); // Kw
   }
+
 #ifdef RM_DEBUG_TX
 
   if (rvidx==0 && r==0) {
@@ -518,9 +491,8 @@ uint32_t lte_rate_matching_turbo(uint32_t RTC,
   AssertFatal(Qm>0,"Qm is 0\n");
   Gp = G/Nl/Qm;
   GpmodC = Gp%C;
-
 #ifdef RM_DEBUG
-  printf("lte_rate_matching_turbo: Ncb %d, Kw %d, Nir/C %d, rvidx %d, G %d, Qm %d, Nl%d, r %d\n",Ncb,3*(RTC<<5),Nir/C,rvidx, G, Qm,Nl,r);
+  LOG_D(PHY,"lte_rate_matching_turbo: Ncb %d, Kw %d, Nir/C %d, rvidx %d, G %d, Qm %d, Nl%d, r %d\n",Ncb,3*(RTC<<5),Nir/C,rvidx, G, Qm,Nl,r);
 #endif
 
   if (r < (C-(GpmodC)))
@@ -529,16 +501,12 @@ uint32_t lte_rate_matching_turbo(uint32_t RTC,
     E = Nl*Qm * ((GpmodC==0?0:1) + (Gp/C));
 
   Ncbmod = Ncb%(RTC<<3);
-
   ind = RTC * (2+(rvidx*(((Ncbmod==0)?0:1) + (Ncb/(RTC<<3)))*2));
-
 #ifdef RM_DEBUG_TX
   printf("lte_rate_matching_turbo: E %d, k0 %d, Ncbmod %d, Ncb/(RTC<<3) %d\n",E,ind,Ncbmod,Ncb/(RTC<<3));
 #endif
-
   //e2=e+(r*E);
   e2 = e;
-
   k=0;
 
   for (; (ind<Ncb)&&(k<E); ind++) {
@@ -633,25 +601,16 @@ uint32_t lte_rate_matching_turbo(uint32_t RTC,
 uint32_t lte_rate_matching_cc(uint32_t RCC,
                               uint16_t E,
                               uint8_t *w,
-                              uint8_t *e)
-{
-
-
+                              uint8_t *e) {
   uint32_t ind=0,k;
-
   uint16_t Kw = 3*(RCC<<5);
-
 #ifdef RM_DEBUG_CC
   uint32_t nulled=0;
-
   printf("lte_rate_matching_cc: Kw %d, E %d\n",Kw, E);
 #endif
 
   for (k=0; k<E; k++) {
-
-
     while(w[ind] == LTE_NULL) {
-
 #ifdef RM_DEBUG_CC
       nulled++;
       printf("RM_TX_CC : ind %d, NULL\n",ind);
@@ -661,7 +620,6 @@ uint32_t lte_rate_matching_cc(uint32_t RCC,
       if (ind==Kw)
         ind=0;
     }
-
 
     e[k] = w[ind];
 #ifdef RM_DEBUG_CC
@@ -695,10 +653,7 @@ int lte_rate_matching_turbo_rx(uint32_t RTC,
                                uint8_t Qm,
                                uint8_t Nl,
                                uint8_t r,
-                               uint32_t *E_out)
-{
-
-
+                               uint32_t *E_out) {
   uint32_t Nir,Ncb,Gp,GpmodC,E,Ncbmod,ind,k;
   int16_t *soft_input2;
   //   int32_t w_tmp;
@@ -708,15 +663,14 @@ int lte_rate_matching_turbo_rx(uint32_t RTC,
 
   if (Kmimo==0 || C==0 || Qm==0 || Nl==0) {
     printf("lte_rate_matching.c: invalid parameters (Kmimo %d, Mdlharq %d, C %d, Qm %d, Nl %d\n",
-        Kmimo,Mdlharq,C,Qm,Nl);
+           Kmimo,Mdlharq,C,Qm,Nl);
     return(-1);
   }
 
   if (Mdlharq>0) { // Downlink
     Nir = Nsoft/Kmimo/cmin(8,Mdlharq);
     Ncb = cmin(Nir/C,3*(RTC<<5));
-  }
-  else {  // Uplink
+  } else { // Uplink
     Nir=0;
     Ncb = 3*(RTC<<5);
   }
@@ -726,17 +680,13 @@ int lte_rate_matching_turbo_rx(uint32_t RTC,
   Gp = G/Nl/Qm;
   GpmodC = Gp%C;
 
-
-
   if (r < (C-(GpmodC)))
     E = Nl*Qm * (Gp/C);
   else
     E = Nl*Qm * ((GpmodC==0?0:1) + (Gp/C));
 
   Ncbmod = Ncb%(RTC<<3);
-
   ind = RTC * (2+(rvidx*(((Ncbmod==0)?0:1) + (Ncb/(RTC<<3)))*2));
-
 #ifdef RM_DEBUG
   printf("lte_rate_matching_turbo_rx: Clear %d, E %d, Ncb %d, Kw %d, rvidx %d, G %d, Qm %d, Nl%d, r %d\n",clear,E,Ncb,3*(RTC<<5),rvidx, G, Qm,Nl,r);
 #endif
@@ -751,8 +701,8 @@ int lte_rate_matching_turbo_rx(uint32_t RTC,
     if (dummy_w[ind] != LTE_NULL) {
       /*
       if ((w[ind]>0 && soft_input2[k]<0) ||
-	  (w[ind]<0 && soft_input2[k]>0))
-	  printf("ind %d: w %d => soft_in %d\n",ind,w[ind],soft_input2[k]);*/
+      (w[ind]<0 && soft_input2[k]>0))
+      printf("ind %d: w %d => soft_in %d\n",ind,w[ind],soft_input2[k]);*/
       w[ind] += soft_input2[k++];
 #ifdef RM_DEBUG
       printf("RM_RX k%d Ind: %d (%d)\n",k-1,ind,w[ind]);
@@ -831,10 +781,8 @@ int lte_rate_matching_turbo_rx(uint32_t RTC,
       ind=0;
   }
   */
-
   *E_out = E;
   return(0);
-
 }
 
 
@@ -842,28 +790,19 @@ void lte_rate_matching_cc_rx(uint32_t RCC,
                              uint16_t E,
                              int8_t *w,
                              uint8_t *dummy_w,
-                             int8_t *soft_input)
-{
-
-
-
+                             int8_t *soft_input) {
   uint32_t ind=0,k;
   uint16_t Kw = 3*(RCC<<5);
   uint32_t acc=1;
   int16_t w16[Kw];
 #ifdef RM_DEBUG_CC
   uint32_t nulled=0;
-
   printf("lte_rate_matching_cc_rx: Kw %d, E %d, w %p, soft_input %p\n",3*(RCC<<5),E,w,soft_input);
 #endif
-
-
   memset(w,0,Kw);
   memset(w16,0,Kw*sizeof(int16_t));
 
   for (k=0; k<E; k++) {
-
-
     while(dummy_w[ind] == LTE_NULL) {
 #ifdef RM_DEBUG_CC
       nulled++;
@@ -883,10 +822,7 @@ void lte_rate_matching_cc_rx(uint32_t RCC,
 #ifdef RM_DEBUG_CC
     printf("RM_RX_CC k %d (%d) ind: %d (%d)\n",k,soft_input[k],ind,w16[ind]);
 #endif
-
-
     w16[ind] += soft_input[k];
-
     ind++;
 
     if (ind==Kw) {
@@ -907,7 +843,6 @@ void lte_rate_matching_cc_rx(uint32_t RCC,
   }
 
 #ifdef RM_DEBUG_CC
-
   printf("Nulled %d\n",nulled);
 #endif
 }
@@ -915,8 +850,7 @@ void lte_rate_matching_cc_rx(uint32_t RCC,
 
 #ifdef MAIN
 
-void main()
-{
+void main() {
   uint8_t d[96+3+(3*6144)];
   uint8_t w[3*6144],e[12*6144];
   uint32_t RTC,G,rvidx;
@@ -924,7 +858,6 @@ void main()
   uint32_t mod_order = 4;
   uint32_t first_dlsch_symbol = 2;
   uint32_t i;
-
   G = ( nb_rb * (12 * mod_order) * (12-first_dlsch_symbol-3)) ;//( nb_rb * (12 * mod_order) * (14-first_dlsch_symbol-3)) :
 
   // initialize 96 first positions to "LTE_NULL"

@@ -195,7 +195,7 @@ void dlsch_scheduler_pre_ue_select_fairRR(
 
   // Initialization
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-    dlsch_ue_max_num[CC_id] = (uint16_t)RC.rrc[module_idP]->configuration.ue_multiple_max[CC_id];
+    dlsch_ue_max_num[CC_id] = (uint16_t)RC.rrc[module_idP]->configuration.radioresourceconfig[CC_id].ue_multiple_max;
     // save origin DL PDU number
     DL_req          = &eNB->DL_req[CC_id].dl_config_request_body;
     saved_dlsch_dci[CC_id] = DL_req->number_pdu;
@@ -1972,7 +1972,7 @@ void ulsch_scheduler_pre_ue_select_fairRR(
     //save ulsch dci number
     saved_ulsch_dci[CC_id] = eNB->HI_DCI0_req[CC_id][subframeP].hi_dci0_request_body.number_of_dci;
     // maximum multiplicity number
-    ulsch_ue_max_num[CC_id] =RC.rrc[module_idP]->configuration.ue_multiple_max[CC_id];
+    ulsch_ue_max_num[CC_id] =RC.rrc[module_idP]->configuration.radioresourceconfig[CC_id].ue_multiple_max;
     cc_id_flag[CC_id] = 0;
     ue_first_num[CC_id] = 0;
     ul_inactivity_num[CC_id] = 0;

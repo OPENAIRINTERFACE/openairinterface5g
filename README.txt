@@ -9,26 +9,36 @@ Please see NOTICE.txt for third party software that is included in the sources.
 The OpenAirInterface (OAI) software is composed of the following parts: 
 
 openairinterface5g
-├── cmake_targets: build utilities to compile (simulation, emulation and real-time platforms), and generated build files
-├── common : some common OAI utilities, other tools can be found at openair2/UTILS
+├── ci-scripts: Meta-scripts used by the OSA CI process. Contains also configuration files used day-to-day by CI.
+├── cmake_targets: Build utilities to compile (simulation, emulation and real-time platforms), and generated build files
+├── common : Some common OAI utilities, other tools can be found at openair2/UTILS
+├── doc : Contains an up-to-date feature set list
 ├── LICENSE
-├── maketags : script to generate emacs tags
-├── openair1 : 3GPP LTE Rel-10 PHY layer + PHY RF simulation and a subset of Rel 12 Features.
-├── openair2 :3GPP LTE Rel-10 RLC/MAC/PDCP/RRC/X2AP implementation. 
+├── maketags : Script to generate emacs tags
+├── nfapi : Contains the NFAPI code. A local Readme file provides more details.
+├── openair1 : 3GPP LTE Rel-10/12 PHY layer + PHY RF simulation. A local Readme file provides more details.
+├── openair2 : 3GPP LTE Rel-10 RLC/MAC/PDCP/RRC/X2AP implementation. 
+    ├── COMMON
+    ├── DOCS
+    ├── ENB_APP
     ├── LAYER2/RLC/ with the following subdirectories: UM_v9.3.0, TM_v9.3.0, and AM_v9.3.0. 
-    ├── LAYER2/PDCP/PDCP_v10.1.0. 
-    ├── RRC/LITE
+    ├── LAYER2/PDCP/PDCP_v10.1.0.
+    ├── NETWORK_DRIVER
     ├── PHY_INTERFACE
+    ├── RRC/LITE
+    ├── UTIL
     ├── X2AP
-    ├── ENB_APP 
 ├── openair3: 3GPP LTE Rel10 for S1AP, NAS GTPV1-U for both ENB and UE.
+    ├── COMMON
+    ├── DOCS
     ├── GTPV1-U
-    ├── NAS 
+    ├── NAS
     ├── S1AP
     ├── SCTP
     ├── SECU
     ├── UDP
-└── targets: top level wrapper for unitary simulation for PHY channels, system-level emulation (eNB-UE with and without S1), and realtime eNB and UE and RRH GW.
+    ├── UTILS
+└── targets: Top-level wrappers for unitary simulation for PHY channels, system-level emulation (eNB-UE with and without S1), and realtime eNB and UE and RRH GW.
 
 
 RELEASE NOTES:
@@ -44,3 +54,10 @@ v0.6 -> RRH functionality, UE greatly improved, better TDD support,
         a lot of bugs fixed. WARNING: oaisim in PHY abstraction mode does not
         work, you need to use v0.5.2 for that.
 v0.6.1 -> Mostly bugfixes. This is the last version without NFAPI.
+v1.0.0 -> January 2019. This version first implements the architectural split described in doc/oai_lte_enb_func_split_arch.png picture.
+            Only FAPI, nFAPI and IF4.5 interfaces are implemented.
+            Repository tree structure prepares future integrations of features such as LTE-M, nbIOT or 5G-NR.
+            Preliminary X2 support has been implemented.
+            S1-flex has been introduced.
+            New tools: config library, telnet server, ...
+            A lot of bugfixes and a proper automated Continuous Integration process validates contributions.

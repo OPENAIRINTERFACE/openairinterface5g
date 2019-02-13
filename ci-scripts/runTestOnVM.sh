@@ -148,6 +148,15 @@ function ping_ue_ip_addr {
     rm -f $1
 }
 
+function ping_epc_ip_addr {
+    echo "echo \"COMMAND IS: ping -I oip1 -c 20 $3\" > $4" > $1
+    echo "rm -f $4" >> $1
+    echo "ping -I oip1 -c 20 $3 | tee -a $4" >> $1
+    cat $1
+    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+    rm -f $1
+}
+
 function check_ping_result {
     local LOC_PING_FILE=$1
     local LOC_NB_PINGS=$2
@@ -157,16 +166,19 @@ function check_ping_result {
         if [ $FILE_COMPLETE -eq 0 ]
         then
             PING_STATUS=-1
+            echo "ping file incomplete"
         else
             local ALL_PACKET_RECEIVED=`egrep -c "$LOC_NB_PINGS received" $LOC_PING_FILE`
             if [ $ALL_PACKET_RECEIVED -eq 1 ]
             then
                 echo "got all ping packets"
             else
+                echo "got NOT all ping packets"
                 PING_STATUS=-1
             fi
         fi
     else
+        echo "ping file not present"
         PING_STATUS=-1
     fi
 }
@@ -533,8 +545,30 @@ function start_l2_sim_enb {
     echo "sudo -E daemon --inherit --unsafe --name=enb_daemon --chdir=/home/ubuntu/tmp/cmake_targets/lte_build_oai/build/ -o /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ./my-lte-softmodem-run.sh" >> $1
 
     ssh -o StrictHostKeyChecking=no ubuntu@$LOC_VM_IP_ADDR < $1
-    sleep 10
     rm $1
+
+    local i="0"
+    echo "egrep -c \"Waiting for PHY_config_req\" /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE" > $1
+    while [ $i -lt 10 ]
+    do
+        sleep 5
+        CONNECTED=`ssh -o StrictHostKeyChecking=no ubuntu@$LOC_VM_IP_ADDR < $1`
+        if [ $CONNECTED -ne 0 ]
+        then
+            i="100"
+        else
+            i=$[$i+1]
+        fi
+    done
+    rm $1
+    if [ $i -lt 50 ]
+    then
+        ENB_SYNC=0
+        echo "L2-SIM eNB is NOT sync'ed: process still alive?"
+    else
+        ENB_SYNC=1
+        echo "L2-SIM eNB is sync'ed: waiting for UE(s) to connect"
+    fi
 }
 
 function start_l2_sim_ue {
@@ -551,8 +585,31 @@ function start_l2_sim_ue {
     echo "sudo -E daemon --inherit --unsafe --name=ue_daemon --chdir=/home/ubuntu/tmp-ue/cmake_targets/lte_build_oai/build/ -o /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ./my-lte-softmodem-run.sh" >> $1
 
     ssh -o StrictHostKeyChecking=no ubuntu@$LOC_VM_IP_ADDR < $1
-    sleep 10
     rm $1
+
+    local i="0"
+    echo "egrep -c \"Received NFAPI_START_REQ\" /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE" > $1
+    while [ $i -lt 10 ]
+    do
+        sleep 5
+        CONNECTED=`ssh -o StrictHostKeyChecking=no ubuntu@$LOC_VM_IP_ADDR < $1`
+        if [ $CONNECTED -eq 1 ]
+        then
+            i="100"
+        else
+            i=$[$i+1]
+        fi
+    done
+    rm $1
+    if [ $i -lt 50 ]
+    then
+        UE_SYNC=0
+        echo "L2-SIM UE is NOT sync'ed w/eNB"
+    else
+        UE_SYNC=1
+        echo "L2-SIM UE is sync'ed w/eNB"
+    fi
+    sleep 10
 }
 
 function run_test_on_vm {
@@ -1197,10 +1254,24 @@ function run_test_on_vm {
         echo "############################################################"
         CURRENT_UE_LOG_FILE=fdd_05MHz_ue.log
         start_l2_sim_ue $VM_CMDS $VM_IP_ADDR $CURRENT_UE_LOG_FILE ue.nfapi.conf
+        if [ $UE_SYNC -eq 0 ]
+        then
+            echo "Problem w/ eNB and UE not syncing"
+            terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+            scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+            scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+            terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+            echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
+            exit -1
+        fi
 
-        sleep 30
-        echo "ping -I oip1 -c 20 $REAL_EPC_IP_ADDR" > $VM_CMDS
-        ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
+        echo "############################################################"
+        echo "Pinging the EPC from UE"
+        echo "############################################################"
+        PING_LOG_FILE=fdd_05MHz_ping_epc.txt
+        ping_epc_ip_addr $VM_CMDS $VM_IP_ADDR $REAL_EPC_IP_ADDR $PING_LOG_FILE
+        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
+        check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
 
         echo "############################################################"
         echo "Terminate enb/ue simulators"
@@ -1226,6 +1297,11 @@ function run_test_on_vm {
             ssh-keygen -R $EPC_VM_IP_ADDR
         fi
 
+        echo "############################################################"
+        echo "Checking run status"
+        echo "############################################################"
+
+        if [ $PING_STATUS -ne 0 ]; then STATUS=-1; fi
         if [ $STATUS -eq 0 ]
         then
             echo "TEST_OK" > $ARCHIVES_LOC/test_final_status.log

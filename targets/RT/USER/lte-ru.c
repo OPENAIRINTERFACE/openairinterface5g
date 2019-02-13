@@ -1429,6 +1429,7 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
     cfg->tx_gain[i] = (double)ru->att_tx;
     cfg->rx_gain[i] = ru->max_rxgain-(double)ru->att_rx;
 
+
     cfg->configFilename = rf_config_file;
     printf("channel %d, Setting tx_gain offset %f, rx_gain offset %f, tx_freq %f, rx_freq %f\n",
 	   i, cfg->tx_gain[i],
@@ -2772,6 +2773,7 @@ void init_RU(char *rf_config_file) {
     // use eNB_list[0] as a reference for RU frame parameters
     // NOTE: multiple CC_id are not handled here yet!
 
+
     if (ru->num_eNB > 0) {
       LOG_D(PHY, "%s() RC.ru[%d].num_eNB:%d ru->eNB_list[0]:%p RC.eNB[0][0]:%p rf_config_file:%s\n", __FUNCTION__, ru_id, ru->num_eNB, ru->eNB_list[0], RC.eNB[0][0], ru->rf_config_file);
 
@@ -2783,6 +2785,7 @@ void init_RU(char *rf_config_file) {
       //
       // DJP - feptx_prec() / feptx_ofdm() parses the eNB_list (based on num_eNB) and copies the txdata_F to txdata in RU
       //
+
       }
       else
       {
