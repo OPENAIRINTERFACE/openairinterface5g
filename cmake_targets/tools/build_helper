@@ -312,9 +312,18 @@ install_usrp_uhd_driver() {
         $SUDO apt-get -y install uhd-host
     fi
     if [ -z $1 ]; then
-      $SUDO /usr/local/bin/uhd_images_downloader
+      # quick workaround
+      if [[ "$OS_DISTRO" == "rhel7.6" ]]; then
+          $SUDO /usr/local/bin/uhd_images_downloader
+      else
+          $SUDO uhd_images_downloader
+      fi
     else
-      $SUDO /usr/local/bin/uhd_images_downloader -i $1
+      if [[ "$OS_DISTRO" == "rhel7.6" ]]; then
+          $SUDO /usr/local/bin/uhd_images_downloader -i $1
+      else
+          $SUDO uhd_images_downloader -i $1
+      fi
     fi
 }
 
