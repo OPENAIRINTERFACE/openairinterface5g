@@ -38,6 +38,7 @@ void mac_top_init_gNB(void);
 
 int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
                            int CC_id,
+			   int cellid,
                            int p_gNB,
                            int nr_bandP,
                            uint64_t dl_CarrierFreqP,
