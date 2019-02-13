@@ -693,9 +693,13 @@ int main( int argc, char **argv ) {
 #if defined (XFORMS)
   int ret;
 #endif
+  configmodule_interface_t *config_mod;
+
   start_background_system();
 
-  if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == NULL) {
+  config_mod = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY);
+
+  if (config_mod == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
 
@@ -811,7 +815,7 @@ int main( int argc, char **argv ) {
   } else init_openair0(frame_parms[0],(int)rx_gain[0][0]);
 
   if (simL1flag==1) {
-    AssertFatal(NULL!=load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY),
+    AssertFatal(NULL!=config_mod,
                 "[SOFTMODEM] Error, configuration module init failed\n");
     RCConfig_sim();
   }
