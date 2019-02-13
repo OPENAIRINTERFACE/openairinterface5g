@@ -781,7 +781,8 @@ rrc_eNB_free_mem_UE_context(
       ue_context_pP->ue_context.measGapConfig = NULL;
     }*/
   if (ue_context_pP->ue_context.handover_info) {
-    ASN_STRUCT_FREE(asn_DEF_LTE_Handover, ue_context_pP->ue_context.handover_info);
+    /* TODO: be sure free is enough here (check memory leaks) */
+    free(ue_context_pP->ue_context.handover_info);
     ue_context_pP->ue_context.handover_info = NULL;
   }
 
@@ -8319,19 +8320,17 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
       rrc_eNB_process_S1AP_UE_CONTEXT_RELEASE_COMMAND(msg_p, msg_name_p, instance);
       break;
 
-    case GTPV1U_ENB_DELETE_TUNNEL_RESP:
+    case GTPV1U_ENB_DELETE_TUNNEL_RESP: {
+      rrc_eNB_ue_context_t *ue = rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti);
 
-      /* Nothing to do. Apparently everything is done in S1AP processing */
-      //LOG_I(RRC, "[eNB %d] Received message %s, not processed because procedure not synched\n",
-      //instance, msg_name_p);
-      if (rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)
-          && rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_rrc > 0
-          && rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.handover_info->state != HO_RELEASE) {
-        rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_rrc =
-          rrc_eNB_get_ue_context(RC.rrc[instance], GTPV1U_ENB_DELETE_TUNNEL_RESP(msg_p).rnti)->ue_context.ue_release_timer_thres_rrc;
+      if (ue != NULL
+          && ue->ue_context.ue_release_timer_rrc > 0
+          && (ue->ue_context.handover_info == NULL || ue->ue_context.handover_info->state != HO_RELEASE)) {
+        ue->ue_context.ue_release_timer_rrc = ue->ue_context.ue_release_timer_thres_rrc;
       }
 
       break;
+    }
 
     case S1AP_PATH_SWITCH_REQ_ACK:
       LOG_I(RRC, "[eNB %d] received path switch ack %s\n", instance, msg_name_p);
