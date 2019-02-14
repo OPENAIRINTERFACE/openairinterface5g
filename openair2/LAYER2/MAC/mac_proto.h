@@ -67,6 +67,17 @@ void schedule_RA(module_id_t module_idP, frame_t frameP,
 void schedule_SI(module_id_t module_idP, frame_t frameP,
 		 sub_frame_t subframeP);
 
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+/** \brief First stage of SI Scheduling. Gets a SI SDU from RRC if available and computes the MCS required to transport it as a function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
+@param Mod_id Instance ID of eNB
+@param frame Frame index
+@param subframe Subframe number on which to act
+*/
+void schedule_SI_MBMS(module_id_t module_idP, frame_t frameP,
+                sub_frame_t subframeP);
+#endif
+
+
 /** \brief MBMS scheduling: Checking the position for MBSFN subframes. Create MSI, transfer MCCH from RRC to MAC, transfer MTCHs from RLC to MAC. Multiplexing MSI,MCCH&MTCHs. Return 1 if there are MBSFN data being allocated, otherwise return 0;
 @param Mod_id Instance ID of eNB
 @param frame Frame index
@@ -538,6 +549,11 @@ void mac_out_of_sync_ind(module_id_t module_idP, frame_t frameP,
 
 void ue_decode_si(module_id_t module_idP, int CC_id, frame_t frame,
 		  uint8_t CH_index, void *pdu, uint16_t len);
+
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+void ue_decode_si_mbms(module_id_t module_idP, int CC_id, frame_t frame,
+                 uint8_t CH_index, void *pdu, uint16_t len);
+#endif
 
 void ue_decode_p(module_id_t module_idP, int CC_id, frame_t frame,
 		 uint8_t CH_index, void *pdu, uint16_t len);

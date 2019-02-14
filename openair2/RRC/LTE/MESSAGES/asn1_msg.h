@@ -71,6 +71,15 @@ uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich
 	       );
 
 /**
+\brief Generate configuration for MIB (eNB).
+@param carrier pointer to Carrier information
+@param N_RB_DL Number of downlink PRBs
+@param additional Non MBSFN Subframes parameter
+@param frame radio frame number
+@return size of encoded bit stream in bytes*/
+uint8_t do_MIB_MBMS(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t additionalNonMBSFNSubframes, uint32_t frame);
+
+/**
 \brief Generate configuration for SIB1 (eNB).
 @param carrier pointer to Carrier information
 @param Mod_id Instance of eNB
@@ -87,6 +96,17 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,int Mod_id,int CC_id
                 ,RrcConfigurationReq *configuration
 #endif
                );
+
+/**
+\brief Generate configuration for SIB1 MBMS (eNB).
+@param carrier pointer to Carrier information
+@param Mod_id Instance of eNB
+@param Component carrier Component carrier to configure
+@param configuration Pointer Configuration Request structure
+@return size of encoded bit stream in bytes*/
+uint8_t do_SIB1_MBMS(rrc_eNB_carrier_data_t *carrier,int Mod_id,int CC_id, RrcConfigurationReq *configuration
+               );
+
 
 
 /**

@@ -635,6 +635,10 @@ typedef struct {
   uint8_t                           sizeof_SIB1_BR;
   uint8_t                           *SIB23_BR;
   uint8_t                           sizeof_SIB23_BR;
+  uint8_t                           *MIB_FeMBMS;
+  uint8_t                           sizeof_MIB_FeMBMS;
+  uint8_t                           *SIB1_MBMS;
+  uint8_t                           sizeof_SIB1_MBMS;
 #endif
   int                                   physCellId;
   int                                   Ncp;
@@ -648,12 +652,19 @@ typedef struct {
   LTE_BCCH_DL_SCH_Message_t             systemInformation;
   LTE_BCCH_DL_SCH_Message_t             systemInformation_BR;
   //  SystemInformation_t               systemInformation;
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  LTE_BCCH_BCH_Message_MBMS_t            mib_fembms;
+  LTE_BCCH_DL_SCH_Message_MBMS_t         siblock1_MBMS;
+  LTE_BCCH_DL_SCH_Message_MBMS_t         systemInformation_MBMS;
+#endif
   LTE_SystemInformationBlockType1_t     *sib1;
   LTE_SystemInformationBlockType2_t     *sib2;
   LTE_SystemInformationBlockType3_t     *sib3;
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   LTE_SystemInformationBlockType1_t     *sib1_BR;
   LTE_SystemInformationBlockType2_t     *sib2_BR;
+  LTE_SystemInformationBlockType1_MBMS_r14_t *sib1_MBMS;
+  LTE_SystemInformationBlockType13_r9_t *sib13_MBMS;
 #endif
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   LTE_SystemInformationBlockType13_r9_t *sib13;
@@ -743,6 +754,9 @@ typedef struct UE_RRC_INST_s {
   uint8_t SIB1Status[NB_CNX_UE];
   uint8_t SIStatus[NB_CNX_UE];
   LTE_SystemInformationBlockType1_t *sib1[NB_CNX_UE];
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  LTE_SystemInformationBlockType1_MBMS_r14_t *sib1_MBMS[NB_CNX_UE];
+#endif
   LTE_SystemInformation_t *si[NB_CNX_UE]; //!< Temporary storage for an SI message. Decoding happens in decode_SI().
   LTE_SystemInformationBlockType2_t *sib2[NB_CNX_UE];
   LTE_SystemInformationBlockType3_t *sib3[NB_CNX_UE];
@@ -784,6 +798,9 @@ typedef struct UE_RRC_INST_s {
   LTE_MBSFNAreaConfiguration_r9_t       *mcch_message[NB_CNX_UE];
   LTE_SystemInformationBlockType12_r9_t *sib12[NB_CNX_UE];
   LTE_SystemInformationBlockType13_r9_t *sib13[NB_CNX_UE];
+#endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  LTE_SystemInformationBlockType13_r9_t *sib13_MBMS[NB_CNX_UE];
 #endif
 #ifdef CBA
   uint8_t                         num_active_cba_groups;

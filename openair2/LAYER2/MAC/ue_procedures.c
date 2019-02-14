@@ -618,6 +618,45 @@ ue_send_sdu(module_id_t module_idP,
 #endif
 }
 
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+void
+ue_decode_si_mbms(module_id_t module_idP, int CC_id, frame_t frameP,
+            uint8_t eNB_index, void *pdu, uint16_t len)
+{
+#if UE_TIMING_TRACE
+    start_meas(&UE_mac_inst[module_idP].rx_si);
+#endif
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
+       (VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_SI, VCD_FUNCTION_IN);
+
+    LOG_D(MAC, "[UE %d] Frame %d Sending SI MBMS to RRC (LCID Id %d,len %d)\n",
+         module_idP, frameP, BCCH, len);
+
+    mac_rrc_data_ind_ue(module_idP, CC_id, frameP, 0,  // unknown subframe
+                    SI_RNTI,
+                    BCCH_SI_MBMS, (uint8_t *) pdu, len, eNB_index,
+                    0);
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
+       (VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_SI, VCD_FUNCTION_OUT);
+#if UE_TIMING_TRACE
+    stop_meas(&UE_mac_inst[module_idP].rx_si);
+#endif
+    if (opt_enabled == 1) {
+       trace_pdu(DIRECTION_UPLINK,
+                 (uint8_t *) pdu,
+                 len,
+                 module_idP,
+                 WS_SI_RNTI,
+                 0xffff,
+                 UE_mac_inst[module_idP].rxFrame,
+                 UE_mac_inst[module_idP].rxSubframe, 0, 0);
+       LOG_D(OPT,
+             "[UE %d][BCH] Frame %d trace pdu for CC_id %d rnti %x with size %d\n",
+             module_idP, frameP, CC_id, 0xffff, len);
+    }
+}
+#endif
+
 void
 ue_decode_si(module_id_t module_idP, int CC_id, frame_t frameP,
 	     uint8_t eNB_index, void *pdu, uint16_t len)

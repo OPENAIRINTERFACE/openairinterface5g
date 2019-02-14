@@ -831,6 +831,14 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
       RC.mac[Mod_idP]->common_channels[CC_idP].schedulingInfoList = schedulingInfoList;    
       config_sib1(Mod_idP,CC_idP,tdd_Config);
     }
+
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) //TODO MBMS this must be passed through function
+    /*if (schedulingInfoList_MBMS!=NULL)  {
+      RC.mac[Mod_idP]->common_channels[CC_idP].schedulingInfoList_MBMS = schedulingInfoList_MBMS;    
+      config_sib1_mbms(Mod_idP,CC_idP,tdd_Config);
+    }*/
+#endif
+    
 #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
     if (sib1_v13ext != NULL) {
       RC.mac[Mod_idP]->common_channels[CC_idP].sib1_v13ext = sib1_v13ext;

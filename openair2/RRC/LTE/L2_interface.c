@@ -75,6 +75,26 @@ mac_rrc_data_req(
   carrier = &rrc->carrier[0];
   mib     = &carrier->mib;
 
+  if(Srb_id == BCCH_SI_MBMS){
+    if (frameP%4 == 0){
+      memcpy(&buffer_pP[0],
+             RC.rrc[Mod_idP]->carrier[CC_id].SIB1_MBMS,
+             RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1_MBMS);
+
+      if (LOG_DEBUGFLAG(DEBUG_RRC)) {
+        LOG_T(RRC,"[eNB %d] Frame %d : BCCH request => SIB 1 MBMS\n",Mod_idP,frameP);
+
+        for (int i=0; i<RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1_MBMS; i++) {
+          LOG_T(RRC,"%x.",buffer_pP[i]);
+        }
+
+        LOG_T(RRC,"\n");
+      } /* LOG_DEBUGFLAG(DEBUG_RRC) */
+
+      return (RC.rrc[Mod_idP]->carrier[CC_id].sizeof_SIB1_MBMS);
+    }
+  }
+
   if((Srb_id & RAB_OFFSET) == BCCH) {
     if(RC.rrc[Mod_idP]->carrier[CC_id].SI.Active==0) {
       return 0;

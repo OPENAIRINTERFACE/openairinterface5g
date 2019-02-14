@@ -86,6 +86,13 @@
 #include "openair2/LAYER2/MAC/mac_extern.h"
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+   #include "LTE_BCCH-BCH-Message-MBMS.h"
+   #include "LTE_BCCH-DL-SCH-Message-MBMS.h"
+   #include "LTE_SystemInformationBlockType1-MBMS-r14.h"
+   #include "LTE_NonMBSFN-SubframeConfig-r14.h"
+#endif
+
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   #include "LTE_SL-Preconfiguration-r12.h"
 
   //for D2D
@@ -2597,6 +2604,109 @@ const char *SIB2nB( long value ) {
 }
 
 
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+int decode_BCCH_MBMS_DLSCH_Message(
+  const protocol_ctxt_t *const ctxt_pP,
+  const uint8_t                eNB_index,
+  uint8_t               *const Sdu,
+  const uint8_t                Sdu_len,
+  const uint8_t                rsrq,
+  const uint8_t                rsrp ) {
+  LTE_BCCH_DL_SCH_Message_MBMS_t *bcch_message = NULL;
+  LTE_SystemInformationBlockType1_MBMS_r14_t *sib1_mbms = UE_rrc_inst[ctxt_pP->module_id].sib1_MBMS[eNB_index];
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_BCCH, VCD_FUNCTION_IN );
+
+  /*if (((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&1) == 1) &&  // SIB1 received
+      (UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIcnt == sib1->schedulingInfoList.list.count)) {
+    // Avoid decoding  SystemInformationBlockType1_t* sib1 = UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index];
+    // to prevent memory bloating
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_BCCH, VCD_FUNCTION_OUT );
+    return 0;
+  }*/
+
+  LOG_W(PHY,"llega\n");
+  rrc_set_sub_state( ctxt_pP->module_id, RRC_SUB_STATE_IDLE_RECEIVING_SIB );
+
+  //if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    //xer_fprint(stdout, &asn_DEF_LTE_BCCH_DL_SCH_Message_MBMS,(void *)bcch_message );
+  //}
+
+  asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
+                            &asn_DEF_LTE_BCCH_DL_SCH_Message_MBMS,
+                            (void **)&bcch_message,
+                            (const void *)Sdu,
+                            Sdu_len );
+
+  if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+    LOG_E( RRC, "[UE %"PRIu8"] Failed to decode BCCH_DLSCH_MBMS_MESSAGE (%zu bits)\n",
+           ctxt_pP->module_id,
+           dec_rval.consumed );
+    log_dump(RRC, Sdu, Sdu_len, LOG_DUMP_CHAR,"   Received bytes:\n" );
+    // free the memory
+    SEQUENCE_free( &asn_DEF_LTE_BCCH_DL_SCH_Message_MBMS, (void *)bcch_message, 1 );
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_BCCH, VCD_FUNCTION_OUT );
+    return -1;
+  }
+
+  //if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+  //  xer_fprint(stdout, &asn_DEF_LTE_BCCH_DL_SCH_Message_MBMS,(void *)bcch_message );
+  //}
+
+  /*if (bcch_message->message.present == LTE_BCCH_DL_SCH_MessageType_PR_c1) {
+    switch (bcch_message->message.choice.c1.present) {
+      case LTE_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1:
+        if ((ctxt_pP->frame % 2) == 0) {
+          // even frame
+          if ((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&1) == 0) {
+            LTE_SystemInformationBlockType1_t *sib1 = UE_rrc_inst[ctxt_pP->module_id].sib1[eNB_index];
+            memcpy( (void *)sib1,
+                    (void *)&bcch_message->message.choice.c1.choice.systemInformationBlockType1,
+                    sizeof(LTE_SystemInformationBlockType1_t) );
+            LOG_D( RRC, "[UE %"PRIu8"] Decoding First SIB1\n", ctxt_pP->module_id );
+            decode_SIB1( ctxt_pP, eNB_index, rsrq, rsrp );
+          }
+        }
+
+        break;
+
+      case LTE_BCCH_DL_SCH_MessageType__c1_PR_systemInformation:
+        if ((UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus&1) == 1) {
+          // SIB1 with schedulingInfoList is available
+          LTE_SystemInformation_t *si = UE_rrc_inst[ctxt_pP->module_id].si[eNB_index];
+          memcpy( si,
+                  &bcch_message->message.choice.c1.choice.systemInformation,
+                  sizeof(LTE_SystemInformation_t) );
+          LOG_I( RRC, "[UE %"PRIu8"] Decoding SI for frameP %"PRIu32"\n",
+                 ctxt_pP->module_id,
+                 ctxt_pP->frame );
+          decode_SI( ctxt_pP, eNB_index );
+          //if (nfapi_mode == 3)
+          UE_mac_inst[ctxt_pP->module_id].SI_Decoded = 1;
+        }
+
+        break;
+
+      case LTE_BCCH_DL_SCH_MessageType__c1_PR_NOTHING:
+      default:
+        break;
+    }
+  }*/
+
+  /*if ((rrc_get_sub_state(ctxt_pP->module_id) == RRC_SUB_STATE_IDLE_SIB_COMPLETE)
+#if defined(ENABLE_USE_MME)
+      && (UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data != NULL)
+#endif
+     ) {
+    rrc_ue_generate_RRCConnectionRequest(ctxt_pP, 0);
+    rrc_set_sub_state( ctxt_pP->module_id, RRC_SUB_STATE_IDLE_CONNECTING );
+  }*/
+
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_BCCH, VCD_FUNCTION_OUT );
+  return 0;
+}
+
+#endif
+
 
 
 //-----------------------------------------------------------------------------
@@ -4347,6 +4457,22 @@ void *rrc_ue_task( void *args_p ) {
                                    RRC_MAC_BCCH_DATA_IND (msg_p).rsrq,
                                    RRC_MAC_BCCH_DATA_IND (msg_p).rsrp);
         break;
+
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+     case RRC_MAC_BCCH_MBMS_DATA_IND:
+        LOG_D(RRC, "[UE %d] Received %s: frameP %d, eNB %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p),
+              RRC_MAC_BCCH_MBMS_DATA_IND (msg_p).frame, RRC_MAC_BCCH_MBMS_DATA_IND (msg_p).enb_index);
+        //      PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, ENB_FLAG_NO, NOT_A_RNTI, RRC_MAC_BCCH_DATA_IND (msg_p).frame, 0);
+        PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, ENB_FLAG_NO, NOT_A_RNTI, RRC_MAC_BCCH_MBMS_DATA_IND (msg_p).frame, 0,RRC_MAC_BCCH_MBMS_DATA_IND (msg_p).enb_index);
+        decode_BCCH_MBMS_DLSCH_Message (&ctxt,
+                                   RRC_MAC_BCCH_MBMS_DATA_IND (msg_p).enb_index,
+                                   RRC_MAC_BCCH_MBMS_DATA_IND (msg_p).sdu,
+                                   RRC_MAC_BCCH_MBMS_DATA_IND (msg_p).sdu_size,
+                                   RRC_MAC_BCCH_MBMS_DATA_IND (msg_p).rsrq,
+                                   RRC_MAC_BCCH_MBMS_DATA_IND (msg_p).rsrp);
+        break;
+#endif
+
 
       case RRC_MAC_CCCH_DATA_CNF:
         LOG_D(RRC, "[UE %d] Received %s: eNB %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p),

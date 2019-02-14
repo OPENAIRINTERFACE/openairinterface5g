@@ -3413,12 +3413,31 @@ void ue_dlsch_procedures(PHY_VARS_UE *ue,
             break;
 
           case SI_PDSCH:
-            ue_decode_si(ue->Mod_id,
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+            if(subframe_rx == 0 /*&& fembms_flag*/) { //TODO MBMS //Just check SI at subframe 0 for FeMBMS
+               ue_decode_si_mbms(ue->Mod_id,
                          CC_id,
                          frame_rx,
                          eNB_id,
                          ue->dlsch_SI[eNB_id]->harq_processes[0]->b,
                          ue->dlsch_SI[eNB_id]->harq_processes[0]->TBS>>3);
+
+	    } else {
+            	ue_decode_si(ue->Mod_id,
+                         CC_id,
+                         frame_rx,
+                         eNB_id,
+                         ue->dlsch_SI[eNB_id]->harq_processes[0]->b,
+                         ue->dlsch_SI[eNB_id]->harq_processes[0]->TBS>>3);
+	    }
+#else
+       	ue_decode_si(ue->Mod_id,
+                         CC_id,
+                         frame_rx,
+                         eNB_id,
+                         ue->dlsch_SI[eNB_id]->harq_processes[0]->b,
+                         ue->dlsch_SI[eNB_id]->harq_processes[0]->TBS>>3);
+#endif
             break;
 
           case P_PDSCH:
