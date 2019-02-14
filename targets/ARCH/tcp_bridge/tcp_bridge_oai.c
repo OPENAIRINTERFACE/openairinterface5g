@@ -354,6 +354,29 @@ int tcp_bridge_ue_first_read(openair0_device *device, openair0_timestamp *timest
     abort();
   }
 
+  /* Due to some unknown bug in the eNB (or UE, or both), the first frames
+   * are not correctly generated (or handled), which leads to a bad behavior
+   * of the simulator in some cases (seen with 100 RBs: the UE reads a bad
+   * MIB and switches to 25 RBs, which results in a deadlock in this driver).
+   * Let's skip 10 frames to avoid this issue.
+   */
+  for (int i = 0; i < 10 * 10; i++) {
+    memset(b, 0, t->samples_per_subframe * 4);
+    n = fullwrite(t->sock, b, t->samples_per_subframe * 4);
+
+    if (n != t->samples_per_subframe * 4) {
+      printf("tcp_bridge: write error ret %d error %s\n", n, strerror(errno));
+      abort();
+    }
+
+    n = fullread(t->sock, b, t->samples_per_subframe * 4);
+
+    if (n != t->samples_per_subframe * 4) {
+      printf("tcp_bridge: read error ret %d error %s\n", n, strerror(errno));
+      abort();
+    }
+  }
+
   device->trx_read_func = tcp_bridge_read_ue;
   return tcp_bridge_read_ue(device, timestamp, buff, nsamps, cc);
 }

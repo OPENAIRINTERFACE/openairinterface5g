@@ -1237,11 +1237,11 @@ int pnf_connect(pnf_t* pnf)
 	}
 
 	struct addrinfo *p = servinfo;
-	int i = 0;
 	int connected = 0;
 
 	while(p != NULL && connected == 0)
 	{
+#ifdef NFAPI_TRACE_ENABLED
 		char* family = "Unknown";
 		char* address = "Unknown";
 		char _addr[128];
@@ -1260,7 +1260,8 @@ int pnf_connect(pnf_t* pnf)
 			address = inet_ntoa(addr->sin_addr);
 		}
 
-		//NFAPI_TRACE(NFAPI_TRACE_NOTE, "Host address info  %d Family:%s Address:%s\n", i++, family, address);
+		NFAPI_TRACE(NFAPI_TRACE_NOTE, "Host address info  %d Family:%s Address:%s\n", i++, family, address);
+#endif
 
 		if (pnf->sctp)
 		{

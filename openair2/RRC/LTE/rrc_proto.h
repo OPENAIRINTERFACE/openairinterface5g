@@ -432,6 +432,9 @@ mac_rrc_data_ind(
   const uint8_t*        sduP,
   const sdu_size_t      sdu_lenP,
   const uint8_t         mbsfn_sync_areaP
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  , const boolean_t		brOption
+#endif
 );
 
 int8_t

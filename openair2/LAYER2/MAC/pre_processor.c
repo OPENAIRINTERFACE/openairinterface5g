@@ -1652,7 +1652,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
   // step 2: calculate the average rb per UE
   LOG_D(MAC, "In ulsch_preprocessor: step2 \n");
   for (UE_id = UE_list->head_ul; UE_id >= 0; UE_id = UE_list->next_ul[UE_id]) {
-    // if (continueTable[UE_id]) continue;
+    if (UE_list->UE_template[CC_id][UE_id].rach_resource_type > 0) continue;
 
     LOG_D(MAC, "In ulsch_preprocessor: handling UE %d/%x\n", 
           UE_id,

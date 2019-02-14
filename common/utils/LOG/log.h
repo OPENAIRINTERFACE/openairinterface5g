@@ -145,6 +145,7 @@ extern "C" {
 #define DEBUG_CTRLSOCKET   (1<<10)
 #define DEBUG_SECURITY     (1<<11)
 #define DEBUG_NAS          (1<<12)
+#define DEBUG_RLC          (1<<13)
 #define UE_TIMING          (1<<20)
 
 
@@ -162,6 +163,7 @@ extern "C" {
     {"CTRLSOCKET",  DEBUG_CTRLSOCKET},\
     {"SECURITY",    DEBUG_SECURITY},\
     {"NAS",         DEBUG_NAS},\
+    {"RLC",         DEBUG_RLC},\
     {"UE_TIMING",   UE_TIMING},\
     {NULL,-1}\
   }
@@ -345,6 +347,8 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
   }
 
 #define LOG_OPTIONS_IDX   2
+
+
 /*----------------------------------------------------------------------------------*/
 /** @defgroup _debugging debugging macros
  *  @ingroup _macro

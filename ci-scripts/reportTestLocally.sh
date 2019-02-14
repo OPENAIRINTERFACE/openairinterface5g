@@ -417,6 +417,130 @@ function report_test {
         echo "   </div>" >> ./test_simulator_results.html
     fi
 
+    ARCHIVES_LOC=archives/l2_sim/test
+    if [ -d $ARCHIVES_LOC ]
+    then
+        echo "   <h3>L2-NFAPI Simulator Check</h3>" >> ./test_simulator_results.html
+
+        if [ -f $ARCHIVES_LOC/test_final_status.log ]
+        then
+            if [ `grep -c TEST_OK $ARCHIVES_LOC/test_final_status.log` -eq 1 ]
+            then
+                echo "   <div class=\"alert alert-success\">" >> ./test_simulator_results.html
+                echo "      <strong>TEST was SUCCESSFUL <span class=\"glyphicon glyphicon-ok-circle\"></span></strong>" >> ./test_simulator_results.html
+                echo "   </div>" >> ./test_simulator_results.html
+            else
+                echo "   <div class=\"alert alert-danger\">" >> ./test_simulator_results.html
+                echo "      <strong>TEST was a FAILURE! <span class=\"glyphicon glyphicon-ban-circle\"></span></strong>" >> ./test_simulator_results.html
+                echo "   </div>" >> ./test_simulator_results.html
+            fi
+        else
+            echo "   <div class=\"alert alert-danger\">" >> ./test_simulator_results.html
+            echo "      <strong>COULD NOT DETERMINE TEST FINAL STATUS! <span class=\"glyphicon glyphicon-ban-circle\"></span></strong>" >> ./test_simulator_results.html
+            echo "   </div>" >> ./test_simulator_results.html
+        fi
+
+        echo "   <button data-toggle=\"collapse\" data-target=\"#oai-l2-sim-test-details\">More details on L2-NFAPI Simulator test results</button>" >> ./test_simulator_results.html
+        echo "   <div id=\"oai-l2-sim-test-details\" class=\"collapse\">" >> ./test_simulator_results.html
+        echo "   <table border = \"1\">" >> ./test_simulator_results.html
+        echo "      <tr bgcolor = \"#33CCFF\" >" >> ./test_simulator_results.html
+        echo "        <th>Log File Name</th>" >> ./test_simulator_results.html
+        echo "        <th>Command</th>" >> ./test_simulator_results.html
+        echo "        <th>Status</th>" >> ./test_simulator_results.html
+        echo "        <th>Statistics</th>" >> ./test_simulator_results.html
+        echo "      </tr>" >> ./test_simulator_results.html
+
+        TRANS_MODES=("fdd")
+        BW_CASES=(05)
+        for TMODE in ${TRANS_MODES[@]}
+        do
+            for BW in ${BW_CASES[@]}
+            do
+                ENB_LOG=$ARCHIVES_LOC/${TMODE}_${BW}MHz_enb.log
+                UE_LOG=`echo $ENB_LOG | sed -e "s#enb#ue#"`
+                if [ -f $ENB_LOG ] && [ -f $UE_LOG ]
+                then
+                    NAME_ENB=`echo $ENB_LOG | sed -e "s#$ARCHIVES_LOC/##"`
+                    NAME_UE=`echo $UE_LOG | sed -e "s#$ARCHIVES_LOC/##"`
+                    echo "      <tr>" >> ./test_simulator_results.html
+                    echo "        <td>$NAME_ENB --- $NAME_UE</td>" >> ./test_simulator_results.html
+                    echo "        <td>N/A</td>" >> ./test_simulator_results.html
+                    NB_ENB_GOT_SYNC=`egrep -c "got sync" $ENB_LOG`
+                    NB_UE_GOT_SYNC=`egrep -c "got sync" $UE_LOG`
+                    NB_ENB_SYNCED_WITH_UE=`egrep -c "Sending NFAPI_START_RESPONSE" $UE_LOG`
+                    if [ $NB_ENB_GOT_SYNC -eq 1 ] && [ $NB_UE_GOT_SYNC -eq 3 ] && [ $NB_ENB_SYNCED_WITH_UE -eq 1 ]
+                    then
+                        echo "        <td bgcolor = \"green\" >OK</td>" >> ./test_simulator_results.html
+                    else
+                        echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
+                    fi
+                    echo "        <td><pre>" >> ./test_simulator_results.html
+                    if [ $NB_ENB_GOT_SYNC -eq 1 ]
+                    then
+                        echo "<font color = \"blue\">- eNB --> got sync</font>" >> ./test_simulator_results.html
+                    else
+                        echo "<font color = \"red\"><b>- eNB NEVER got sync</b></font>" >> ./test_simulator_results.html
+                    fi
+                    if [ $NB_UE_GOT_SYNC -eq 3 ]
+                    then
+                        echo "<font color = \"blue\">- UE --> got sync</font>" >> ./test_simulator_results.html
+                    else
+                        echo "<font color = \"red\"><b>- UE NEVER got sync</b></font>" >> ./test_simulator_results.html
+                    fi
+                    if [ $NB_ENB_SYNCED_WITH_UE -eq 1 ]
+                    then
+                        echo "<font color = \"blue\">- UE attached to eNB</font>" >> ./test_simulator_results.html
+                    else
+                        echo "<font color = \"red\"><b>- UE NEVER attached to eNB</b></font>" >> ./test_simulator_results.html
+                    fi
+                    echo "        </pre></td>" >> ./test_simulator_results.html
+                    echo "      </tr>" >> ./test_simulator_results.html
+                fi
+                PING_CASE=$ARCHIVES_LOC/${TMODE}_${BW}MHz_ping_epc.txt
+                if [ -f $PING_CASE ]
+                then
+                    echo "      <tr>" >> ./test_simulator_results.html
+                    NAME=`echo $PING_CASE | sed -e "s#$ARCHIVES_LOC/##"`
+                    echo "        <td>$NAME</td>" >> ./test_simulator_results.html
+                    CMD=`egrep "COMMAND IS" $PING_CASE | sed -e "s#COMMAND IS: ##"`
+                    echo "        <td>$CMD</td>" >> ./test_simulator_results.html
+                    FILE_COMPLETE=`egrep -c "ping statistics" $PING_CASE`
+                    if [ $FILE_COMPLETE -eq 0 ]
+                    then
+                        echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
+                        echo "        <td>N/A</td>" >> ./test_simulator_results.html
+                    else
+                        NB_TR_PACKETS=`egrep "packets transmitted" $PING_CASE | sed -e "s# packets transmitted.*##"`
+                        NB_RC_PACKETS=`egrep "packets transmitted" $PING_CASE | sed -e "s#^.*packets transmitted, ##" -e "s# received,.*##"`
+                        if [ $NB_TR_PACKETS -eq $NB_RC_PACKETS ]
+                        then
+                            echo "        <td bgcolor = \"green\" >OK</td>" >> ./test_simulator_results.html
+                        else
+                            echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
+                        fi
+                        echo "        <td>" >> ./test_simulator_results.html
+                        echo "            <pre>" >> ./test_simulator_results.html
+                        STATS=`egrep "packets transmitted" $PING_CASE | sed -e "s#^.*received, ##" -e "s#, time.*##" -e "s# packet loss##"`
+                        echo "Packet Loss : $STATS" >> ./test_simulator_results.html
+                        RTTMIN=`egrep "rtt min" $PING_CASE | awk '{split($4,a,"/"); print a[1] " " $5}'`
+                        echo "RTT Minimal : $RTTMIN" >> ./test_simulator_results.html
+                        RTTAVG=`egrep "rtt min" $PING_CASE | awk '{split($4,a,"/"); print a[2] " " $5}'`
+                        echo "RTT Average : $RTTAVG" >> ./test_simulator_results.html
+                        RTTMAX=`egrep "rtt min" $PING_CASE | awk '{split($4,a,"/"); print a[3] " " $5}'`
+                        echo "RTT Maximal : $RTTMAX" >> ./test_simulator_results.html
+                        echo "            </pre>" >> ./test_simulator_results.html
+                        echo "        </td>" >> ./test_simulator_results.html
+                    fi
+                    echo "      </tr>" >> ./test_simulator_results.html
+                fi
+
+            done
+        done
+
+        echo "   </table>" >> ./test_simulator_results.html
+        echo "   </div>" >> ./test_simulator_results.html
+    fi
+
     ARCHIVES_LOC=archives/phy_sim/test
     if [ -d $ARCHIVES_LOC ]
     then

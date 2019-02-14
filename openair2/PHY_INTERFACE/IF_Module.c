@@ -47,7 +47,10 @@ void handle_rach(UL_IND_t *UL_info) {
       AssertFatal(UL_info->rach_ind_br.rach_indication_body.preamble_list[i].preamble_rel13.rach_resource_type>0,
 		  "Got regular PRACH preamble, not BL/CE\n");
       LOG_D(MAC,"Frame %d, Subframe %d Calling initiate_ra_proc (CE_level %d)\n",UL_info->frame,UL_info->subframe,
+
 	    UL_info->rach_ind_br.rach_indication_body.preamble_list[i].preamble_rel13.rach_resource_type-1);
+      UL_info->rach_ind_br.rach_indication_body.number_of_preambles=0;
+
       initiate_ra_proc(UL_info->module_id,
 		       UL_info->CC_id,
 		       UL_info->frame,

@@ -443,6 +443,7 @@ clear_nfapi_information(eNB_MAC_INST * eNB, int CC_idP,
     DL_req[CC_idP].dl_config_request_body.number_pdu                          = 0;
     DL_req[CC_idP].dl_config_request_body.number_pdsch_rnti                   = 0;
     DL_req[CC_idP].dl_config_request_body.transmission_power_pcfich           = 6000;
+    DL_req[CC_idP].sfn_sf                                                     = subframeP + (frameP<<4);
 
     HI_DCI0_req->hi_dci0_request_body.sfnsf                                   = subframeP + (frameP<<4);
     HI_DCI0_req->hi_dci0_request_body.number_of_dci                           = 0;
@@ -657,7 +658,6 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
   }
 
   // This schedules MIB
-
   if ((subframeP == 0) && (frameP & 3) == 0)
       schedule_mib(module_idP, frameP, subframeP);
   if (get_softmodem_params()->phy_test == 0){
@@ -681,6 +681,10 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
     schedule_SR(module_idP, frameP, subframeP);
     // This schedules UCI_CSI in subframeP
     schedule_CSI(module_idP, frameP, subframeP);
+#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+    // This schedules DLSCH in subframeP
+    schedule_ue_spec_br(module_idP,frameP,subframeP);
+#endif
     // This schedules DLSCH in subframeP
     if (schedule_ue_spec_p != NULL) {
        schedule_ue_spec_p(module_idP, frameP, subframeP, mbsfn_status);
