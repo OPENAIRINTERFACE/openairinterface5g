@@ -135,7 +135,7 @@ void x2ap_eNB_handle_sctp_association_resp(instance_t instance, sctp_new_associa
               sctp_new_association_resp->sctp_state,
               instance,
               sctp_new_association_resp->ulp_cnx_id);
-    x2ap_handle_x2_setup_message(x2ap_enb_data_p,
+    x2ap_handle_x2_setup_message(instance_p, x2ap_enb_data_p,
                                  sctp_new_association_resp->sctp_state == SCTP_STATE_SHUTDOWN);
     return;
   }
@@ -386,20 +386,17 @@ void x2ap_eNB_handle_handover_req(instance_t instance,
   x2ap_eNB_instance_t *instance_p;
   x2ap_eNB_data_t     *target;
 
-  int target_enb_id = x2ap_handover_req->target_physCellId;
+  int target_pci = x2ap_handover_req->target_physCellId;
 
-  instance_p = x2ap_eNB_pci_get_instance(target_enb_id);
+  instance_p = x2ap_eNB_get_instance(instance);
   DevAssert(instance_p != NULL);
 
-  //instance_p = x2ap_eNB_get_instance(instance);
-  //DevAssert(instance_p != NULL);
-
-  target = x2ap_is_eNB_id_in_list(instance_p->eNB_id);
+  target = x2ap_is_eNB_pci_in_list(target_pci);
   DevAssert(target != NULL);
 
   /* store rnti at index 0 */
   //x2id_to_source_rnti[0] = x2ap_handover_req->source_rnti;
-  x2ap_eNB_generate_x2_handover_request(target, x2ap_handover_req);
+  x2ap_eNB_generate_x2_handover_request(instance_p, target, x2ap_handover_req);
 }
 
 static
@@ -415,15 +412,15 @@ void x2ap_eNB_handle_handover_req_ack(instance_t instance,
    */
   x2ap_eNB_instance_t *instance_p;
   x2ap_eNB_data_t     *target;
-  int target_enb_id = x2ap_handover_req_ack->target_mod_id;
+  int source_assoc_id = x2ap_handover_req_ack->source_assoc_id;
 
   instance_p = x2ap_eNB_get_instance(instance);
   DevAssert(instance_p != NULL);
 
-  target = x2ap_is_eNB_id_in_list(target_enb_id);
+  target = x2ap_get_eNB(NULL, source_assoc_id, 0);
   DevAssert(target != NULL);
 
-  x2ap_eNB_generate_x2_handover_request_ack(target, x2ap_handover_req_ack);
+  x2ap_eNB_generate_x2_handover_request_ack(instance_p, target, x2ap_handover_req_ack);
   //x2ap_eNB_generate_x2_handover_req_ack(instance_p, target, x2ap_handover_req_ack->source_x2id,
           //x2ap_handover_req_ack->rrc_buffer, x2ap_handover_req_ack->rrc_buffer_size);
 }
@@ -434,15 +431,15 @@ void x2ap_eNB_handle_ue_context_release(instance_t instance,
 {
   x2ap_eNB_instance_t *instance_p;
   x2ap_eNB_data_t     *target;
-  int target_enb_id = x2ap_ue_context_release->target_mod_id;
+  int source_assoc_id = x2ap_ue_context_release->source_assoc_id;
 
   instance_p = x2ap_eNB_get_instance(instance);
   DevAssert(instance_p != NULL);
 
-  target = x2ap_is_eNB_id_in_list(target_enb_id);
+  target = x2ap_get_eNB(NULL, source_assoc_id, 0);
   DevAssert(target != NULL);
 
-  x2ap_eNB_generate_x2_ue_context_release(target, x2ap_ue_context_release);
+  x2ap_eNB_generate_x2_ue_context_release(instance_p, target, x2ap_ue_context_release);
 }
 
 void *x2ap_task(void *arg) {

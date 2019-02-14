@@ -180,7 +180,7 @@ int x2ap_eNB_generate_x2_setup_request(
   return ret;
 }
 
-int x2ap_eNB_generate_x2_setup_response(x2ap_eNB_data_t *x2ap_eNB_data_p)
+int x2ap_eNB_generate_x2_setup_response(x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p)
 {
   X2AP_X2AP_PDU_t                     pdu;
   X2AP_X2SetupResponse_t              *out;
@@ -189,18 +189,12 @@ int x2ap_eNB_generate_x2_setup_response(x2ap_eNB_data_t *x2ap_eNB_data_p)
   ServedCells__Member                 *servedCellMember;
   X2AP_GU_Group_ID_t                  *gu;
 
-  x2ap_eNB_instance_t                 *instance_p;
-
   uint8_t  *buffer;
   uint32_t  len;
   int       ret = 0;
 
-  DevAssert(x2ap_eNB_data_p != NULL);
-
-  /* get the eNB instance */
-  instance_p = x2ap_eNB_data_p->x2ap_eNB_instance;
-
   DevAssert(instance_p != NULL);
+  DevAssert(x2ap_eNB_data_p != NULL);
 
   /* Prepare the X2AP message to encode */
   memset(&pdu, 0, sizeof(pdu));
@@ -414,7 +408,7 @@ int x2ap_eNB_set_cause (X2AP_Cause_t * cause_p,
   return 0;
 }
 
-int x2ap_eNB_generate_x2_handover_request (x2ap_eNB_data_t *x2ap_eNB_data_p,
+int x2ap_eNB_generate_x2_handover_request (x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p,
                                            x2ap_handover_req_t *x2ap_handover_req)
 {
 
@@ -425,19 +419,12 @@ int x2ap_eNB_generate_x2_handover_request (x2ap_eNB_data_t *x2ap_eNB_data_p,
   X2AP_E_RABs_ToBeSetup_Item_t        *e_RABs_ToBeSetup_Item;
   X2AP_LastVisitedCell_Item_t         *lastVisitedCell_Item;
 
-  x2ap_eNB_instance_t                 *instance_p;
-
   uint8_t  *buffer;
   uint32_t  len;
   int       ret = 0;
 
-  DevAssert(x2ap_eNB_data_p != NULL);
-
-  /* get the eNB instance */
-  instance_p = x2ap_eNB_data_p->x2ap_eNB_instance;
-
   DevAssert(instance_p != NULL);
-
+  DevAssert(x2ap_eNB_data_p != NULL);
 
   /* Prepare the X2AP handover message to encode */
   memset(&pdu, 0, sizeof(pdu));
@@ -471,7 +458,7 @@ int x2ap_eNB_generate_x2_handover_request (x2ap_eNB_data_t *x2ap_eNB_data_p,
   ie->value.present = X2AP_HandoverRequest_IEs__value_PR_ECGI;
   MCC_MNC_TO_PLMNID(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length,
                        &ie->value.choice.ECGI.pLMN_Identity);
-  MACRO_ENB_ID_TO_CELL_IDENTITY(instance_p->eNB_id, 0, &ie->value.choice.ECGI.eUTRANcellIdentifier);
+  MACRO_ENB_ID_TO_CELL_IDENTITY(x2ap_eNB_data_p->eNB_id, 0, &ie->value.choice.ECGI.eUTRANcellIdentifier);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* mandatory */
@@ -576,7 +563,7 @@ int x2ap_eNB_generate_x2_handover_request (x2ap_eNB_data_t *x2ap_eNB_data_p,
   return ret;
 }
 
-int x2ap_eNB_generate_x2_handover_request_ack (x2ap_eNB_data_t *x2ap_eNB_data_p,
+int x2ap_eNB_generate_x2_handover_request_ack (x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p,
                                                x2ap_handover_req_ack_t *x2ap_handover_req_ack)
 {
 
@@ -586,18 +573,12 @@ int x2ap_eNB_generate_x2_handover_request_ack (x2ap_eNB_data_t *x2ap_eNB_data_p,
   X2AP_E_RABs_Admitted_ItemIEs_t         *e_RABS_Admitted_ItemIEs;
   X2AP_E_RABs_Admitted_Item_t            *e_RABs_Admitted_Item;
 
-  x2ap_eNB_instance_t                 *instance_p;
-
   uint8_t  *buffer;
   uint32_t  len;
   int       ret = 0;
 
-  DevAssert(x2ap_eNB_data_p != NULL);
-
-  /* get the eNB instance */
-  instance_p = x2ap_eNB_data_p->x2ap_eNB_instance;
-
   DevAssert(instance_p != NULL);
+  DevAssert(x2ap_eNB_data_p != NULL);
 
   /* Prepare the X2AP handover message to encode */
   memset(&pdu, 0, sizeof(pdu));
@@ -668,25 +649,19 @@ int x2ap_eNB_generate_x2_handover_request_ack (x2ap_eNB_data_t *x2ap_eNB_data_p,
   return ret;
 }
 
-int x2ap_eNB_generate_x2_ue_context_release (x2ap_eNB_data_t *x2ap_eNB_data_p, x2ap_ue_context_release_t *x2ap_ue_context_release)
+int x2ap_eNB_generate_x2_ue_context_release (x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p, x2ap_ue_context_release_t *x2ap_ue_context_release)
 {
 
   X2AP_X2AP_PDU_t                pdu;
   X2AP_UEContextRelease_t        *out;
   X2AP_UEContextRelease_IEs_t    *ie;
 
-  x2ap_eNB_instance_t               *instance_p;
-
   uint8_t  *buffer;
   uint32_t  len;
   int       ret = 0;
 
-  DevAssert(x2ap_eNB_data_p != NULL);
-
-  /* get the eNB instance */
-  instance_p = x2ap_eNB_data_p->x2ap_eNB_instance;
-
   DevAssert(instance_p != NULL);
+  DevAssert(x2ap_eNB_data_p != NULL);
 
   /* Prepare the X2AP ue context relase message to encode */
   memset(&pdu, 0, sizeof(pdu));

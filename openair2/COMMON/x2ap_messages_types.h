@@ -45,6 +45,7 @@ typedef struct x2ap_ue_context_release_s {
   int old_eNB_ue_x2ap_id;
   int new_eNB_ue_x2ap_id;
   int target_mod_id;
+  int source_assoc_id;
 } x2ap_ue_context_release_t;
 
 typedef struct x2ap_register_enb_req_s {
@@ -178,6 +179,7 @@ typedef struct x2ap_handover_req_s {
 
   /* TODO: this parameter has to be removed */
   int target_mod_id;
+  int source_assoc_id;
 } x2ap_handover_req_t;
 
 typedef struct x2ap_handover_req_ack_s {
@@ -185,6 +187,7 @@ typedef struct x2ap_handover_req_ack_s {
   int source_x2id;                       /* TODO: to be fixed/remove */
   /* TODO: this parameter has to be removed */
   int target_mod_id;
+  int source_assoc_id;
 
   uint8_t nb_e_rabs_tobesetup;
 

@@ -2104,7 +2104,7 @@ int rrc_eNB_send_X2AP_UE_CONTEXT_RELEASE(const protocol_ctxt_t* const ctxt_pP, r
 
   X2AP_UE_CONTEXT_RELEASE (msg_p).old_eNB_ue_x2ap_id = 0;
   X2AP_UE_CONTEXT_RELEASE (msg_p).new_eNB_ue_x2ap_id = 0;
-  X2AP_UE_CONTEXT_RELEASE (msg_p).target_mod_id = ue_context_pP->ue_context.handover_info->modid_t;
+  X2AP_UE_CONTEXT_RELEASE (msg_p).source_assoc_id = ue_context_pP->ue_context.handover_info->source_assoc_id;
   itti_send_msg_to_task (TASK_X2AP, ctxt_pP->instance, msg_p);
   return (0);
 }

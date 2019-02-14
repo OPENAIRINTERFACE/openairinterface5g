@@ -451,6 +451,7 @@ typedef struct HANDOVER_INFO_s {
   HO_STATE_t state; //current state of handover
   uint32_t modid_s; //module_idP of serving cell
   uint32_t modid_t; //module_idP of target cell
+  int source_assoc_id;
   uint8_t ueid_s; //UE index in serving cell
   uint8_t ueid_t; //UE index in target cell
   LTE_AS_Config_t as_config; /* these two parameters are taken from 36.331 section 10.2.2: HandoverPreparationInformation-r8-IEs */

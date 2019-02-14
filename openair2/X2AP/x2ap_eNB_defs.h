@@ -114,6 +114,10 @@ typedef struct x2ap_eNB_data_s {
   /* SCTP association id */
   int32_t  assoc_id;
 
+  /* Nid cells */
+  uint32_t                Nid_cell[MAX_NUM_CCs];
+  int                     num_cc;
+
   /* Only meaningfull in virtual mode */
   struct x2ap_eNB_instance_s *x2ap_eNB_instance;
 } x2ap_eNB_data_t;
@@ -163,7 +167,6 @@ typedef struct x2ap_eNB_instance_s {
   uint32_t                downlink_frequency[MAX_NUM_CCs];
   int32_t                 uplink_frequency_offset[MAX_NUM_CCs];
   uint32_t                Nid_cell[MAX_NUM_CCs];
-  uint32_t                Nid_target_cell[MAX_NUM_CCs];
   int16_t                 N_RB_DL[MAX_NUM_CCs];
   lte_frame_type_t        frame_type[MAX_NUM_CCs];
   uint32_t                fdd_earfcn_DL[MAX_NUM_CCs];

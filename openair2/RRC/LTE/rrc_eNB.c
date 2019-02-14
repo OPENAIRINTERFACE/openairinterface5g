@@ -4113,8 +4113,9 @@ void rrc_eNB_process_handoverPreparationInformation(int mod_id, x2ap_handover_re
   ue_context_target_p->ue_context.Status = RRC_HO_EXECUTION;
   ue_context_target_p->ue_context.handover_info->state = HO_ACK;
   /* TODO: remove this hack */
+  ue_context_target_p->ue_context.handover_info->source_assoc_id = m->source_assoc_id;
   //ue_context_target_p->ue_context.handover_info->modid_t = mod_id;
-  ue_context_target_p->ue_context.handover_info->modid_t = m->target_mod_id;
+  //ue_context_target_p->ue_context.handover_info->modid_t = m->target_mod_id;
   //ue_context_target_p->ue_context.handover_info->modid_s = 1-mod_id;
   //ue_context_target_p->ue_context.handover_info->ueid_s  = m->source_rnti;
   memset (ue_context_target_p->ue_context.nh, 0, 32);
@@ -4328,8 +4329,10 @@ check_handovers(
         rrc_eNB_configure_rbs_handover(ue_context_p,ctxt_pP);
         /* TODO: remove this hack */
         //X2AP_HANDOVER_REQ_ACK(msg).target_mod_id = 1 - ctxt_pP->module_id;
-        X2AP_HANDOVER_REQ_ACK(msg).target_mod_id = ue_context_p->ue_context.handover_info->modid_t;
+        //X2AP_HANDOVER_REQ_ACK(msg).target_mod_id = ue_context_p->ue_context.handover_info->modid_t;
         //X2AP_HANDOVER_REQ_ACK(msg).source_x2id = ue_context_p->ue_context.handover_info->source_x2id;
+
+        X2AP_HANDOVER_REQ_ACK(msg).source_assoc_id = ue_context_p->ue_context.handover_info->source_assoc_id;
         /* Call admission control not implemented yet */
         X2AP_HANDOVER_REQ_ACK(msg).nb_e_rabs_tobesetup = ue_context_p->ue_context.setup_e_rabs;
 
