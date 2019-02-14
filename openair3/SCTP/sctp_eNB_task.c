@@ -1008,7 +1008,7 @@ sctp_eNB_read_from_socket(
                    sinfo.sinfo_assoc_id, sctp_cnx->sd, n, ntohs(addr.sin_port),
                    sinfo.sinfo_stream, ntohl(sinfo.sinfo_ppid));
 
-        sctp_itti_send_new_message_ind(sctp_cnx->task_id,
+        sctp_itti_send_new_message_ind(sctp_cnx->task_id, sctp_cnx->instance,
                                        sinfo.sinfo_assoc_id,
                                        buffer, n, sinfo.sinfo_stream);
     }
