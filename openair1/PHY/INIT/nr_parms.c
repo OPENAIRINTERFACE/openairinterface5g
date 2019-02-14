@@ -47,19 +47,28 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
   fp->Ncp = Ncp;
   fp->N_RB_DL = N_RB_DL;
   fp->L_ssb = 255; // TODO get the number of SSB value from higher layers (and config file finally)
-  fp->ssb_type = nr_ssb_type_B; // TODO get the type from higher layers (and config file finally)
-  
 
   switch(mu) {
 
     case NR_MU_0: //15kHz scs
       fp->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_0];
       fp->slots_per_subframe = nr_slots_per_subframe[NR_MU_0];
+      fp->ssb_type = nr_ssb_type_A;
       break;
 
     case NR_MU_1: //30kHz scs
       fp->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_1];
       fp->slots_per_subframe = nr_slots_per_subframe[NR_MU_1];
+
+      // selection of SS block pattern according to TS 38101-1 Table 5.4.3.3-1 for SCS 30kHz
+      if (fp->eutra_band == 5 || fp->eutra_band == 66) 
+	      fp->ssb_type = nr_ssb_type_B;
+      else{  
+      	if (fp->eutra_band == 41 || ( fp->eutra_band > 76 && fp->eutra_band < 80) )
+		fp->ssb_type = nr_ssb_type_C;
+	else
+		AssertFatal(1==0,"NR Operating Band n%d not available for SS block SCS with mu=%d\n", fp->eutra_band, mu);
+      }
 
       switch(N_RB_DL){
         case 11:
@@ -147,11 +156,13 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
     case NR_MU_3:
       fp->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_3];
       fp->slots_per_subframe = nr_slots_per_subframe[NR_MU_3];
+      fp->ssb_type = nr_ssb_type_D;
       break;
 
     case NR_MU_4:
       fp->subcarrier_spacing = nr_subcarrier_spacing[NR_MU_4];
       fp->slots_per_subframe = nr_slots_per_subframe[NR_MU_4];
+      fp->ssb_type = nr_ssb_type_E;
       break;
 
   default:
@@ -184,7 +195,8 @@ int nr_init_frame_parms(nfapi_nr_config_request_t* config,
                         NR_DL_FRAME_PARMS *fp)
 {
 
-
+  fp->eutra_band = config->nfapi_config.rf_bands.rf_band[0];
+  fp->frame_type = !(config->subframe_config.duplex_mode.value);
   return nr_init_frame_parms0(fp,
 			      config->subframe_config.numerology_index_mu.value,
 			      config->subframe_config.dl_cyclic_prefix_type.value,
