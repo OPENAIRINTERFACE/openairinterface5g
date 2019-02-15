@@ -39,10 +39,8 @@
 #include "PHY/defs_common.h"
 #include "PHY/impl_defs_top.h"
 #include "platform_types.h"
-
-#if defined(ENABLE_USE_MME)
 # include "s1ap_eNB.h"
-#endif
+
 
 #ifdef __cplusplus
 extern "C"
@@ -713,10 +711,7 @@ typedef struct {
   unsigned char transmission_mode[MAX_NUM_CCs];
   int max_predefined_traffic_config_index;
   int max_customized_traffic_config_index;
-
-#if defined(ENABLE_USE_MME)
   s1ap_eNB_config_t s1ap_config;
-#endif
 
   /* Per-Slot ISR
    * Interval between two ISR = 500usec

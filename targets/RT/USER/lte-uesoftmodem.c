@@ -443,6 +443,10 @@ static void get_options(void) {
 
   if (dumpframe  > 0)  mode = rx_dump_frame;
 
+# if BASIC_SIMULATOR
+  set_softmodem_optmask(SOFTMODEM_BASICSIM_BIT); //this BASIC_SIMULATOR should be a config option
+# endif
+
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
   }
@@ -712,6 +716,11 @@ int main( int argc, char **argv ) {
   for (int i=0; i<MAX_NUM_CCs; i++) tx_max_power[i]=23;
 
   get_options ();
+  if (is_nos1exec(argv[0]) )
+       set_softmodem_optmask(SOFTMODEM_NOS1_BIT);
+  EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
+
+
   printf("Running with %d UE instances\n",NB_UE_INST);
 
   if (NB_UE_INST > 1 && simL1flag != 1 && nfapi_mode != 3) {
@@ -764,13 +773,13 @@ int main( int argc, char **argv ) {
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
 #endif
   init_opt();
-#ifdef PDCP_USE_NETLINK
-  printf("PDCP netlink\n");
-  netlink_init();
-#if defined(PDCP_USE_NETLINK_QUEUES)
-  pdcp_netlink_init();
-#endif
-#endif
+  uint32_t pdcp_initmask = ((!IS_SOFTMODEM_NOS1) || IS_SOFTMODEM_NOKRNMOD)? LINK_ENB_PDCP_TO_GTPV1U_BIT : (LINK_ENB_PDCP_TO_GTPV1U_BIT | PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT);
+
+  if ( IS_SOFTMODEM_BASICSIM ) {
+    pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
+  }
+
+  pdcp_module_init( pdcp_initmask );
   //TTN for D2D
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   printf ("RRC control socket\n");
@@ -818,37 +827,6 @@ int main( int argc, char **argv ) {
     RCConfig_sim();
   }
 
-// source code written in below moved to later to avoid keeping waiting for nfapi_sync_cond in wait_nfapi_init.
-/*
-  // start the main UE threads
-  int eMBMS_active = 0;
-
-  if (nfapi_mode==3) { // UE-STUB-PNF
-    config_sync_var=0;
-    wait_nfapi_init("main?");
-    //Panos: Temporarily we will be using single set of threads for multiple UEs.
-    //init_UE_stub(1,eMBMS_active,uecap_xer_in,emul_iface);
-    init_UE_stub_single_thread(NB_UE_INST,eMBMS_active,uecap_xer_in,emul_iface);
-  } else {
-    init_UE(NB_UE_INST,eMBMS_active,uecap_xer_in,0,get_softmodem_params()->phy_test,UE_scan,UE_scan_carrier,mode,(int)rx_gain[0][0],tx_max_power[0],
-            frame_parms[0]);
-  }
-
-  if (get_softmodem_params()->phy_test==0) {
-    printf("Filling UE band info\n");
-    fill_ue_band_info();
-    dl_phy_sync_success (0, 0, 0, 1);
-  }
-
-  if (nfapi_mode!=3) {
-    number_of_cards = 1;
-
-    for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-      PHY_vars_UE_g[0][CC_id]->rf_map.card=0;
-      PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+(get_softmodem_params()->chain_offset);
-    }
-  }
-*/
   
   cpuf=get_cpu_freq_GHz();
 #ifndef DEADLINE_SCHEDULER

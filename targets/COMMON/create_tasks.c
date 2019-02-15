@@ -19,28 +19,17 @@
  *      contact@openairinterface.org
  */
 
-#if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
 # include "create_tasks.h"
 # include "common/utils/LOG/log.h"
 # include "targets/RT/USER/lte-softmodem.h"
 
 #ifdef OPENAIR2
-  #if defined(ENABLE_USE_MME)
     #include "sctp_eNB_task.h"
     #include "x2ap_eNB.h"
     #include "s1ap_eNB.h"
-    #include "nas_ue_task.h"
     #include "udp_eNB_task.h"
     #include "gtpv1u_eNB_task.h"
-    /* temporary warning removale while implementing noS1 */
-    /* as config option                                   */
-  #else
-    #ifdef EPC_MODE_ENABLED
-      #undef  EPC_MODE_ENABLED
-    #endif
-    #define EPC_MODE_ENABLED 0
-  #endif
   #if ENABLE_RAL
     #include "lteRALue.h"
     #include "lteRALenb.h"
@@ -62,7 +51,6 @@ int create_tasks(uint32_t enb_nb) {
     }
   }
 
-# if defined(ENABLE_USE_MME)
 
   if (EPC_MODE_ENABLED) {
     if (enb_nb > 0) {
@@ -95,7 +83,6 @@ int create_tasks(uint32_t enb_nb) {
     }
   } /* if (EPC_MODE_ENABLED) */
 
-#endif
 
   if (enb_nb > 0) {
     LOG_I(RRC,"Creating RRC eNB Task\n");
@@ -109,4 +96,4 @@ int create_tasks(uint32_t enb_nb) {
   itti_wait_ready(0);
   return 0;
 }
-#endif
+

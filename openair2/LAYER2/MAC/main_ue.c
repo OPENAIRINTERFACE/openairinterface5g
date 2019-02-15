@@ -51,13 +51,9 @@ void dl_phy_sync_success(module_id_t module_idP, frame_t frameP, unsigned char e
 {
     LOG_D(MAC, "[UE %d] Frame %d: PHY Sync to eNB_index %d successful \n",
 	  module_idP, frameP, eNB_index);
-#if defined(ENABLE_USE_MME)
-    int mme_enabled = 1;
-#else
-    int mme_enabled = 0;
-#endif
 
-    if (first_sync == 1 && !(mme_enabled == 1)) {
+
+    if (first_sync == 1 && !(EPC_MODE_ENABLED)) {
 	//layer2_init_UE(module_idP);
 	openair_rrc_ue_init(module_idP, eNB_index);
     } else {

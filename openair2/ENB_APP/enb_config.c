@@ -35,15 +35,9 @@
 #include "enb_config.h"
 #include "UTIL/OTG/otg.h"
 #include "UTIL/OTG/otg_externs.h"
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-  #if defined(ENABLE_USE_MME)
-    #include "s1ap_eNB.h"
-    #include "sctp_eNB_task.h"
-  #else
-    #define EPC_MODE_ENABLED 0
-  #endif
-#endif
+#include "intertask_interface.h"
+#include "s1ap_eNB.h"
+#include "sctp_eNB_task.h"
 #include "sctp_default_values.h"
 #include "LTE_SystemInformationBlockType2.h"
 #include "LAYER2/MAC/mac_extern.h"
@@ -83,14 +77,7 @@ void RCconfig_flexran() {
   uint16_t Nid_cell_tr = 0;
   uint32_t enb_id = 0;
 
-  /*
-  int32_t     srb1_timer_poll_retransmit    = 0;
-  int32_t     srb1_timer_reordering         = 0;
-  int32_t     srb1_timer_status_prohibit    = 0;
-  int32_t     srb1_poll_pdu                 = 0;
-  int32_t     srb1_poll_byte                = 0;
-  int32_t     srb1_max_retx_threshold       = 0;
-  */
+
 
 
   /* get number of eNBs */
@@ -2023,21 +2010,7 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
     CCsParams[I].chkPptr = &(config_check_CCparams[I]);
   }
 
-  /*#if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
-    if (strcasecmp( *(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr), ENB_CONFIG_STRING_ASN1_VERBOSITY_NONE) == 0) {
-    asn_debug      = 0;
-    asn1_xer_print = 0;
-    } else if (strcasecmp( *(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr), ENB_CONFIG_STRING_ASN1_VERBOSITY_INFO) == 0) {
-    asn_debug      = 1;
-    asn1_xer_print = 1;
-    } else if (strcasecmp(*(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr) , ENB_CONFIG_STRING_ASN1_VERBOSITY_ANNOYING) == 0) {
-    asn_debug      = 1;
-    asn1_xer_print = 2;
-    } else {
-    asn_debug      = 0;
-    asn1_xer_print = 0;
-    }
-    #endif */
+
   AssertFatal(i < ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt,
     "Failed to parse config file %s, %uth attribute %s \n",
     RC.config_file_name, i, ENB_CONFIG_STRING_ACTIVE_ENBS);
@@ -2050,13 +2023,13 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
       for (k = 0; k < ENBParamList.numelt; k++) {
 	if (ENBParamList.paramarray[k][ENB_ENB_ID_IDX].uptr == NULL) {
 	  // Calculate a default eNB ID
-# if defined(ENABLE_USE_MME)
-	  uint32_t hash;
-	  hash = s1ap_generate_eNB_id ();
-	  enb_id = k + (hash & 0xFFFF8);
-# else
-	  enb_id = k;
-# endif
+          if (EPC_MODE_ENABLED) {
+	    uint32_t hash;
+	    hash = s1ap_generate_eNB_id ();
+	    enb_id = k + (hash & 0xFFFF8);
+          } else {
+	    enb_id = k;
+          }
 	} else {
 	  enb_id = *(ENBParamList.paramarray[k][ENB_ENB_ID_IDX].uptr);
 	}
@@ -2181,12 +2154,13 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
 	    // SCTP SETTING
 	    X2AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = SCTP_OUT_STREAMS;
 	    X2AP_REGISTER_ENB_REQ (msg_p).sctp_in_streams  = SCTP_IN_STREAMS;
-# if defined(ENABLE_USE_MME)
-	    sprintf(aprefix,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,k,ENB_CONFIG_STRING_SCTP_CONFIG);
-	    config_get( SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix);
-	    X2AP_REGISTER_ENB_REQ (msg_p).sctp_in_streams = (uint16_t)*(SCTPParams[ENB_SCTP_INSTREAMS_IDX].uptr);
-	    X2AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = (uint16_t)*(SCTPParams[ENB_SCTP_OUTSTREAMS_IDX].uptr);
-#endif
+            if (EPC_MODE_ENABLED) {
+
+	      sprintf(aprefix,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,k,ENB_CONFIG_STRING_SCTP_CONFIG);
+	      config_get( SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix);
+	      X2AP_REGISTER_ENB_REQ (msg_p).sctp_in_streams = (uint16_t)*(SCTPParams[ENB_SCTP_INSTREAMS_IDX].uptr);
+	      X2AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = (uint16_t)*(SCTPParams[ENB_SCTP_OUTSTREAMS_IDX].uptr);
+            }
 	    sprintf(aprefix,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,k,ENB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
 	    // NETWORK_INTERFACES
 	    config_get( NETParams,sizeof(NETParams)/sizeof(paramdef_t),aprefix);
@@ -2255,9 +2229,9 @@ void RCConfig(void) {
   /* get global parameters, defined outside any section in the config file */
   printf("Getting ENBSParams\n");
   config_get( ENBSParams,sizeof(ENBSParams)/sizeof(paramdef_t),NULL);
-# if defined(ENABLE_USE_MME)
-  EPC_MODE_ENABLED = ((*ENBSParams[ENB_NOS1_IDX].uptr) == 0);
-#endif
+
+  //EPC_MODE_ENABLED = ((*ENBSParams[ENB_NOS1_IDX].uptr) == 0);
+
   RC.nb_inst = ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt;
 
   if (RC.nb_inst > 0) {

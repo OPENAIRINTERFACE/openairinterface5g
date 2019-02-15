@@ -33,13 +33,9 @@
 
 #include "common/utils/LOG/log.h"
 #include "assertions.h"
-#if defined(ENABLE_ITTI)
-# include "intertask_interface.h"
-# if defined(ENABLE_USE_MME)
-#   include "s1ap_eNB.h"
-#   include "sctp_eNB_task.h"
-# endif
-#endif
+#include "intertask_interface.h"
+#include "s1ap_eNB.h"
+#include "sctp_eNB_task.h"
 #include "LTE_SystemInformationBlockType2.h"
 #include "common/config/config_userapi.h"
 #include "RRC_config_tools.h"

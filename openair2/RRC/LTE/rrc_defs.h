@@ -284,21 +284,14 @@ void *send_UE_status_notification(void *);
   #include "rrc_rrm_interface.h"
 #endif
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
 
-/* TODO: be sure this include is correct.
- * It solves a problem of compilation of the RRH GW,
- * issue #186.
- */
-#if !defined(ENABLE_ITTI)
-  #include "as_message.h"
-#endif
+#include "intertask_interface.h"
 
-#if defined(ENABLE_USE_MME)
-  #include "commonDef.h"
-#endif
+
+
+
+#include "commonDef.h"
+
 
 //--------
 typedef unsigned int uid_t;
@@ -431,7 +424,7 @@ typedef struct UE_S_TMSI_s {
   m_tmsi_t   m_tmsi;
 } __attribute__ ((__packed__)) UE_S_TMSI;
 
-#if defined(ENABLE_ITTI)
+
 typedef enum e_rab_satus_e {
   E_RAB_STATUS_NEW,
   E_RAB_STATUS_DONE, // from the eNB perspective
@@ -448,7 +441,7 @@ typedef struct e_rab_param_s {
   s1ap_Cause_t cause;
   uint8_t cause_value;
 } __attribute__ ((__packed__)) e_rab_param_t;
-#endif
+
 
 /* Intermediate structure for Handover management. Associated per-UE in eNB_RRC_INST */
 typedef struct HANDOVER_INFO_s {
@@ -569,7 +562,7 @@ typedef struct eNB_RRC_UE_s {
   rnti_t                             rnti;
   uint64_t                           random_ue_identity;
 
-#if defined(ENABLE_ITTI)
+
   /* Information from UE RRC ConnectionRequest */
   UE_S_TMSI                          Initialue_identity_s_TMSI;
   LTE_EstablishmentCause_t           establishment_cause;
@@ -613,7 +606,6 @@ typedef struct eNB_RRC_UE_s {
   uint32_t                           enb_gtp_teid[S1AP_MAX_E_RAB];
   transport_layer_addr_t             enb_gtp_addrs[S1AP_MAX_E_RAB];
   rb_id_t                            enb_gtp_ebi[S1AP_MAX_E_RAB];
-#endif
   uint32_t                           ul_failure_timer;
   uint32_t                           ue_release_timer;
   uint32_t                           ue_release_timer_thres;
@@ -725,10 +717,7 @@ typedef struct eNB_RRC_INST_s {
 #endif
 
   //RRC configuration
-#if defined(ENABLE_ITTI)
   RrcConfigurationReq configuration;
-#endif
-
   // other RAN parameters
   int srb1_timer_poll_retransmit;
   int srb1_poll_pdu;
@@ -749,11 +738,9 @@ typedef struct OAI_UECapability_s {
 typedef struct UE_RRC_INST_s {
   Rrc_State_t     RrcState;
   Rrc_Sub_State_t RrcSubState;
-# if defined(ENABLE_USE_MME)
   plmn_t          plmnID;
   Byte_t          rat;
   as_nas_info_t   initialNasMsg;
-# endif
   OAI_UECapability_t *UECap;
   uint8_t *UECapability;
   uint8_t UECapability_size;

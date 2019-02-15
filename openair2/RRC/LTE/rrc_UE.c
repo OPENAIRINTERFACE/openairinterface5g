@@ -77,9 +77,8 @@
 #include "plmn_data.h"
 #include "msc.h"
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
+#include "intertask_interface.h"
+
 
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
@@ -156,12 +155,11 @@ uint8_t rrc_ue_generate_SidelinkUEInformation( const protocol_ctxt_t *const ctxt
 
 
 /*------------------------------------------------------------------------------*/
-/* to avoid gcc warnings when compiling with certain options */
-#if defined(ENABLE_USE_MME) || ENABLE_RAL
+
 static Rrc_State_t rrc_get_state (module_id_t ue_mod_idP) {
   return UE_rrc_inst[ue_mod_idP].RrcState;
 }
-#endif
+
 
 static Rrc_Sub_State_t rrc_get_sub_state (module_id_t ue_mod_idP) {
   return UE_rrc_inst[ue_mod_idP].RrcSubState;
@@ -181,26 +179,26 @@ static int rrc_set_state (module_id_t ue_mod_idP, Rrc_State_t state) {
 
 //-----------------------------------------------------------------------------
 static int rrc_set_sub_state( module_id_t ue_mod_idP, Rrc_Sub_State_t subState ) {
-#if (defined(ENABLE_ITTI) && (defined(ENABLE_USE_MME) || ENABLE_RAL))
 
-  switch (UE_rrc_inst[ue_mod_idP].RrcState) {
-    case RRC_STATE_INACTIVE:
-      AssertFatal ((RRC_SUB_STATE_INACTIVE_FIRST <= subState) && (subState <= RRC_SUB_STATE_INACTIVE_LAST),
-                   "Invalid sub state %d for state %d!\n", subState, UE_rrc_inst[ue_mod_idP].RrcState);
-      break;
+  if (EPC_MODE_ENABLED) {
+    switch (UE_rrc_inst[ue_mod_idP].RrcState) {
+      case RRC_STATE_INACTIVE:
+        AssertFatal ((RRC_SUB_STATE_INACTIVE_FIRST <= subState) && (subState <= RRC_SUB_STATE_INACTIVE_LAST),
+                     "Invalid sub state %d for state %d!\n", subState, UE_rrc_inst[ue_mod_idP].RrcState);
+        break;
 
-    case RRC_STATE_IDLE:
-      AssertFatal ((RRC_SUB_STATE_IDLE_FIRST <= subState) && (subState <= RRC_SUB_STATE_IDLE_LAST),
-                   "Invalid sub state %d for state %d!\n", subState, UE_rrc_inst[ue_mod_idP].RrcState);
-      break;
+      case RRC_STATE_IDLE:
+        AssertFatal ((RRC_SUB_STATE_IDLE_FIRST <= subState) && (subState <= RRC_SUB_STATE_IDLE_LAST),
+                     "Invalid sub state %d for state %d!\n", subState, UE_rrc_inst[ue_mod_idP].RrcState);
+        break;
 
-    case RRC_STATE_CONNECTED:
-      AssertFatal ((RRC_SUB_STATE_CONNECTED_FIRST <= subState) && (subState <= RRC_SUB_STATE_CONNECTED_LAST),
-                   "Invalid sub state %d for state %d!\n", subState, UE_rrc_inst[ue_mod_idP].RrcState);
-      break;
-  }
+      case RRC_STATE_CONNECTED:
+        AssertFatal ((RRC_SUB_STATE_CONNECTED_FIRST <= subState) && (subState <= RRC_SUB_STATE_CONNECTED_LAST),
+                     "Invalid sub state %d for state %d!\n", subState, UE_rrc_inst[ue_mod_idP].RrcState);
+        break;
+    }
+}
 
-#endif
 
   if (UE_rrc_inst[ue_mod_idP].RrcSubState != subState) {
     UE_rrc_inst[ue_mod_idP].RrcSubState = subState;
@@ -233,7 +231,7 @@ openair_rrc_on_ue(
 }
 
 //-----------------------------------------------------------------------------
-static void init_SI_UE( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index ) {
+static void init_SI_UE(  protocol_ctxt_t const *ctxt_pP, const uint8_t eNB_index ) {
   UE_rrc_inst[ctxt_pP->module_id].sizeof_SIB1[eNB_index] = 0;
   UE_rrc_inst[ctxt_pP->module_id].sizeof_SI[eNB_index] = 0;
   UE_rrc_inst[ctxt_pP->module_id].SIB1[eNB_index] = (uint8_t *)malloc16_clear( 32 );
@@ -534,9 +532,9 @@ void rrc_ue_generate_RRCConnectionRequest( const protocol_ctxt_t *const ctxt_pP,
 
 mui_t rrc_mui=0;
 
-#if !(defined(ENABLE_ITTI) && defined(ENABLE_USE_MME))
+
 /* NAS Attach request with IMSI */
-static const char const nas_attach_req_imsi[] = {
+static const char  nas_attach_req_imsi[] = {
   0x07, 0x41,
   /* EPS Mobile identity = IMSI */
   0x71, 0x08, 0x29, 0x80, 0x43, 0x21, 0x43, 0x65, 0x87,
@@ -548,7 +546,7 @@ static const char const nas_attach_req_imsi[] = {
   0x00, 0x00, 0x00, 0x0D, 0x00, 0x00, 0x0A, 0x00, 0x52, 0x12, 0xF2,
   0x01, 0x27, 0x11,
 };
-#endif /* !(defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)) */
+
 
 //-----------------------------------------------------------------------------
 void
@@ -596,13 +594,18 @@ static void rrc_ue_generate_RRCConnectionSetupComplete( const protocol_ctxt_t *c
   uint8_t    size;
   const char *nas_msg;
   int   nas_msg_length;
-#if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
-  nas_msg         = (char *) UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data;
-  nas_msg_length  = UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.length;
-#else
-  nas_msg         = nas_attach_req_imsi;
-  nas_msg_length  = sizeof(nas_attach_req_imsi);
-#endif
+
+
+  if (EPC_MODE_ENABLED) {
+    nas_msg         = (char *) UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data;
+    nas_msg_length  = UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.length;
+  } else {
+   
+    nas_msg         = nas_attach_req_imsi;
+    nas_msg_length  = sizeof(nas_attach_req_imsi);
+  }
+
+ 
   size = do_RRCConnectionSetupComplete(ctxt_pP->module_id, buffer, Transaction_id, nas_msg_length, nas_msg);
   LOG_I(RRC,"[UE %d][RAPROC] Frame %d : Logical Channel UL-DCCH (SRB1), Generating RRCConnectionSetupComplete (bytes%d, eNB %d)\n",
         ctxt_pP->module_id,ctxt_pP->frame, size, eNB_index);
@@ -800,13 +803,11 @@ rrc_ue_establish_drb(
 //-----------------------------------------------------------------------------
 {
   // add descriptor from RRC PDU
-#ifdef PDCP_USE_NETLINK
   int oip_ifup=0,ip_addr_offset3=0,ip_addr_offset4=0;
   /* avoid gcc warnings */
   (void)oip_ifup;
   (void)ip_addr_offset3;
   (void)ip_addr_offset4;
-#endif
   LOG_I(RRC,"[UE %d] Frame %d: processing RRCConnectionReconfiguration: reconfiguring DRB %ld/LCID %d\n",
         ue_mod_idP, frameP, DRB_config->drb_Identity, (int)*DRB_config->logicalChannelIdentity);
   /*
@@ -817,33 +818,33 @@ rrc_ue_establish_drb(
                     (eNB_index * NB_RB_MAX) + *DRB_config->logicalChannelIdentity,
                     RADIO_ACCESS_BEARER,Rlc_info_um);
    */
-#ifdef PDCP_USE_NETLINK
+  if(PDCP_USE_NETLINK) {
 #   if !defined(OAI_NW_DRIVER_TYPE_ETHERNET) && !defined(EXMIMO) && !defined(OAI_USRP) && !defined(OAI_BLADERF) && !defined(ETHERNET) && !defined(LINK_ENB_PDCP_TO_GTPV1U)
-  ip_addr_offset3 = 0;
-  ip_addr_offset4 = 1;
-  LOG_I(OIP,"[UE %d] trying to bring up the OAI interface oai%d, IP 10.0.%d.%d\n", ue_mod_idP, ip_addr_offset3+ue_mod_idP,
-        ip_addr_offset3+ue_mod_idP+1,ip_addr_offset4+ue_mod_idP+1);
-  oip_ifup=nas_config(ip_addr_offset3+ue_mod_idP,   // interface_id
-                      ip_addr_offset3+ue_mod_idP+1, // third_octet
-                      ip_addr_offset4+ue_mod_idP+1); // fourth_octet
+    ip_addr_offset3 = 0;
+    ip_addr_offset4 = 1;
+    LOG_I(OIP,"[UE %d] trying to bring up the OAI interface oai%d, IP 10.0.%d.%d\n", ue_mod_idP, ip_addr_offset3+ue_mod_idP,
+          ip_addr_offset3+ue_mod_idP+1,ip_addr_offset4+ue_mod_idP+1);
+    oip_ifup=nas_config(ip_addr_offset3+ue_mod_idP,   // interface_id
+                        ip_addr_offset3+ue_mod_idP+1, // third_octet
+                        ip_addr_offset4+ue_mod_idP+1); // fourth_octet
 
-  if (oip_ifup == 0 ) { // interface is up --> send a config the DRB
-    LOG_I(OIP,"[UE %d] Config the oai%d to send/receive pkt on DRB %ld to/from the protocol stack\n",
-          ue_mod_idP,
-          ip_addr_offset3+ue_mod_idP,
-          (long int)((eNB_index * maxDRB) + DRB_config->drb_Identity));
-    rb_conf_ipv4(0,//add
-                 ue_mod_idP,//cx align with the UE index
-                 ip_addr_offset3+ue_mod_idP,//inst num_enb+ue_index
-                 (eNB_index * maxDRB) + DRB_config->drb_Identity,//rb
-                 0,//dscp
-                 ipv4_address(ip_addr_offset3+ue_mod_idP+1,ip_addr_offset4+ue_mod_idP+1),//saddr
-                 ipv4_address(ip_addr_offset3+ue_mod_idP+1,eNB_index+1));//daddr
-    LOG_D(RRC,"[UE %d] State = Attached (eNB %d)\n",ue_mod_idP,eNB_index);
-  }
+    if (oip_ifup == 0 ) { // interface is up --> send a config the DRB
+      LOG_I(OIP,"[UE %d] Config the oai%d to send/receive pkt on DRB %ld to/from the protocol stack\n",
+            ue_mod_idP,
+            ip_addr_offset3+ue_mod_idP,
+            (long int)((eNB_index * maxDRB) + DRB_config->drb_Identity));
+      rb_conf_ipv4(0,//add
+                   ue_mod_idP,//cx align with the UE index
+                   ip_addr_offset3+ue_mod_idP,//inst num_enb+ue_index
+                   (eNB_index * maxDRB) + DRB_config->drb_Identity,//rb
+                   0,//dscp
+                   ipv4_address(ip_addr_offset3+ue_mod_idP+1,ip_addr_offset4+ue_mod_idP+1),//saddr
+                   ipv4_address(ip_addr_offset3+ue_mod_idP+1,eNB_index+1));//daddr
+      LOG_D(RRC,"[UE %d] State = Attached (eNB %d)\n",ue_mod_idP,eNB_index);
+    }
 
 #    endif
-#endif
+  }
   return(0);
 }
 
@@ -1906,7 +1907,7 @@ rrc_ue_process_rrcConnectionReconfiguration(
                      );
             }
       */
-#if defined(ENABLE_ITTI)
+
 
       /* Check if there is dedicated NAS information to forward to NAS */
       if (rrcConnectionReconfiguration_r8->dedicatedInfoNASList != NULL) {
@@ -1971,7 +1972,7 @@ rrc_ue_process_rrcConnectionReconfiguration(
         itti_send_msg_to_task (TASK_RAL_UE, ctxt_pP->instance, message_ral_p);
       }
 #endif
-#endif
+
     } // c1 present
   } // critical extensions present
 }
@@ -2134,9 +2135,7 @@ rrc_ue_decode_dcch(
   //  asn_dec_rval_t dec_rval;
   // int i;
   uint8_t target_eNB_index=0xFF;
-#if defined(ENABLE_ITTI)
   MessageDef *msg_p;
-#endif
 
   if (Srb_id != 1) {
     LOG_E(RRC,"[UE %d] Frame %d: Received message on DL-DCCH (SRB%d), should not have ...\n",
@@ -2166,7 +2165,6 @@ rrc_ue_decode_dcch(
           break;
 
         case LTE_DL_DCCH_MessageType__c1_PR_dlInformationTransfer: {
-#if defined(ENABLE_ITTI)
           LTE_DLInformationTransfer_t *dlInformationTransfer = &dl_dcch_msg->message.choice.c1.choice.dlInformationTransfer;
 
           if ((dlInformationTransfer->criticalExtensions.present == LTE_DLInformationTransfer__criticalExtensions_PR_c1)
@@ -2189,7 +2187,6 @@ rrc_ue_decode_dcch(
             itti_send_msg_to_task(TASK_NAS_UE, ctxt_pP->instance, msg_p);
           }
 
-#endif
           break;
         }
 
@@ -2244,7 +2241,7 @@ rrc_ue_decode_dcch(
             UE_rrc_inst[ctxt_pP->module_id].Info[target_eNB_index].State = RRC_RECONFIGURED;
             LOG_I(RRC, "[UE %d] State = RRC_RECONFIGURED during HO (eNB %d)\n",
                   ctxt_pP->module_id, target_eNB_index);
-#if defined(ENABLE_ITTI)
+
 #if ENABLE_RAL
             {
               MessageDef                                 *message_ral_p = NULL;
@@ -2289,7 +2286,7 @@ rrc_ue_decode_dcch(
               LOG_I(RRC, "Sending RRC_RAL_CONNECTION_RECONFIGURATION_HO_IND to mRAL\n");
               itti_send_msg_to_task (TASK_RAL_UE, ctxt_pP->instance, message_ral_p);
             }
-#endif
+
 #endif
           } else {
             rrc_ue_generate_RRCConnectionReconfigurationComplete(
@@ -2300,7 +2297,6 @@ rrc_ue_decode_dcch(
             LOG_I(RRC, "[UE %d] State = RRC_RECONFIGURED (eNB %d)\n",
                   ctxt_pP->module_id,
                   eNB_indexP);
-#if defined(ENABLE_ITTI)
 #if ENABLE_RAL
             {
               MessageDef                                 *message_ral_p = NULL;
@@ -2346,7 +2342,6 @@ rrc_ue_decode_dcch(
               itti_send_msg_to_task (TASK_RAL_UE, ctxt_pP->instance, message_ral_p);
             }
 #endif
-#endif
           }
 
           //TTN test D2D (should not be here - in reality, this message will be triggered from ProSeApp)
@@ -2369,7 +2364,6 @@ rrc_ue_decode_dcch(
           break;
 
         case LTE_DL_DCCH_MessageType__c1_PR_rrcConnectionRelease:
-#if defined(ENABLE_ITTI)
           msg_p = itti_alloc_new_message(TASK_RRC_UE, NAS_CONN_RELEASE_IND);
 
           if ((dl_dcch_msg->message.choice.c1.choice.rrcConnectionRelease.criticalExtensions.present
@@ -2385,7 +2379,6 @@ rrc_ue_decode_dcch(
           msg_p = itti_alloc_new_message(TASK_RRC_UE, RRC_RAL_CONNECTION_RELEASE_IND);
           RRC_RAL_CONNECTION_RELEASE_IND(msg_p).ue_id = ctxt_pP->module_id;
           itti_send_msg_to_task(TASK_RAL_UE, ctxt_pP->instance, msg_p);
-#endif
 #endif
           break;
 
@@ -2682,13 +2675,16 @@ int decode_BCCH_DLSCH_Message(
     }
   }
 
-  if ((rrc_get_sub_state(ctxt_pP->module_id) == RRC_SUB_STATE_IDLE_SIB_COMPLETE)
-#if defined(ENABLE_USE_MME)
-      && (UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data != NULL)
-#endif
-     ) {
-    rrc_ue_generate_RRCConnectionRequest(ctxt_pP, 0);
-    rrc_set_sub_state( ctxt_pP->module_id, RRC_SUB_STATE_IDLE_CONNECTING );
+  //  if ((rrc_get_sub_state(ctxt_pP->module_id) == RRC_SUB_STATE_IDLE_SIB_COMPLETE)
+  //#if defined(ENABLE_USE_MME)
+  //      && (UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data != NULL)
+  //#endif
+  //     ) {
+  if (rrc_get_sub_state(ctxt_pP->module_id) == RRC_SUB_STATE_IDLE_SIB_COMPLETE) {
+    if ( (UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data != NULL) || (!EPC_MODE_ENABLED)) {
+      rrc_ue_generate_RRCConnectionRequest(ctxt_pP, 0);
+      rrc_set_sub_state( ctxt_pP->module_id, RRC_SUB_STATE_IDLE_CONNECTING );
+    }
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_BCCH, VCD_FUNCTION_OUT );
@@ -2873,8 +2869,9 @@ int decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index, 
   LOG_I(RRC,"Setting SIStatus bit 0 to 1\n");
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIStatus = 1;
   UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].SIB1systemInfoValueTag = sib1->systemInfoValueTag;
-#if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
-  {
+
+  //#if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
+  if (EPC_MODE_ENABLED) {
     int cell_valid = 0;
 
     if (sib1->cellAccessRelatedInfo.cellBarred == LTE_SystemInformationBlockType1__cellAccessRelatedInfo__cellBarred_notBarred) {
@@ -2922,7 +2919,7 @@ int decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index, 
           cell_valid = 1;
           break;
         }
-      }
+      } /* for plmn = 0;... */
     }
 
     if (cell_valid == 0) {
@@ -2932,8 +2929,8 @@ int decode_SIB1( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index, 
       itti_send_msg_to_task(TASK_PHY_UE, ctxt_pP->instance, msg_p);
       LOG_E(RRC, "Synched with a cell, but PLMN doesn't match our SIM, the message PHY_FIND_NEXT_CELL_REQ is sent but lost in current UE implementation! \n");
     }
-  }
-#endif
+  }/* EPC_MODE_ENABLED */
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_UE_DECODE_SIB1, VCD_FUNCTION_OUT );
   return 0;
 }
@@ -3560,10 +3557,11 @@ int decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index ) {
 
           if (UE_rrc_inst[ctxt_pP->module_id].MBMS_flag < 3) // see -Q option
 #endif
-#if !(defined(ENABLE_ITTI) && defined(ENABLE_USE_MME))
-            rrc_ue_generate_RRCConnectionRequest( ctxt_pP, eNB_index );
+            if (EPC_MODE_ENABLED) {
+              rrc_ue_generate_RRCConnectionRequest( ctxt_pP, eNB_index );
+	    }
 
-#endif
+
 
           if (UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].State == RRC_IDLE) {
             LOG_I( RRC, "[UE %d] Received SIB1/SIB2/SIB3 Switching to RRC_SI_RECEIVED\n", ctxt_pP->module_id );
@@ -4291,7 +4289,6 @@ void decode_MBSFNAreaConfiguration( module_id_t ue_mod_idP, uint8_t eNB_index, f
 
 #endif // rel10
 
-#if defined(ENABLE_ITTI)
 //-----------------------------------------------------------------------------
 void *rrc_ue_task( void *args_p ) {
   MessageDef   *msg_p;
@@ -4315,6 +4312,7 @@ void *rrc_ue_task( void *args_p ) {
         break;
 
       case MESSAGE_TEST:
+        LOG_D(RRC, "[UE %d] Received %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
         break;
 
       /* MAC messages */
@@ -4419,7 +4417,6 @@ void *rrc_ue_task( void *args_p ) {
         result = itti_free (ITTI_MSG_ORIGIN_ID(msg_p), RRC_DCCH_DATA_IND (msg_p).sdu_p);
         AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
         break;
-# if defined(ENABLE_USE_MME)
 
       case NAS_KENB_REFRESH_REQ:
         memcpy((void *)UE_rrc_inst[ue_mod_id].kenb, (void *)NAS_KENB_REFRESH_REQ(msg_p).kenb, sizeof(UE_rrc_inst[ue_mod_id].kenb));
@@ -4570,7 +4567,6 @@ void *rrc_ue_task( void *args_p ) {
         break;
       }
 
-# endif
 # if ENABLE_RAL
 
       case RRC_RAL_SCAN_REQ:
@@ -4722,7 +4718,7 @@ void *rrc_ue_task( void *args_p ) {
     msg_p = NULL;
   }
 }
-#endif
+
 
 
 

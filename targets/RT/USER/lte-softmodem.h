@@ -33,15 +33,8 @@
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
 
 #include "flexran_agent.h"
-
-#if defined(ENABLE_ITTI)
-  #if defined(ENABLE_USE_MME)
-    #include "s1ap_eNB.h"
-    #ifdef PDCP_USE_NETLINK
-      #include "SIMULATION/ETH_TRANSPORT/proto.h"
-    #endif
-  #endif
-#endif
+#include "s1ap_eNB.h"
+#include "SIMULATION/ETH_TRANSPORT/proto.h"
 
 /* help strings definition for command line options, used in CMDLINE_XXX_DESC macros and printed when -h option is used */
 #define CONFIG_HLP_RFCFGF        "Configuration file for front-end (e.g. LMS7002M)\n"
@@ -245,31 +238,34 @@
 #define SOFTMODEM_NOS1_BIT            (1<<0)
 #define SOFTMODEM_NOKRNMOD_BIT        (1<<1)
 #define SOFTMODEM_NONBIOT_BIT         (1<<2)
+#define SOFTMODEM_BASICSIM_BIT        (1<<10)
+
 typedef struct {
-  uint64_t       optmask;
-  THREAD_STRUCT  thread_struct;
-  char           rf_config_file[1024];
-  int            phy_test;
-  uint8_t        usim_test;
-  int            emulate_rf;
-  int            wait_for_sync; //eNodeB only
-  int            single_thread_flag; //eNodeB only
-  int            chain_offset;
-  uint32_t       do_forms;
-  int            numerology;
-  unsigned int   start_msc;
-  uint32_t       clock_source;
-  int            hw_timing_advance;
+   uint64_t       optmask;
+   THREAD_STRUCT  thread_struct;
+   char           rf_config_file[1024];
+   int            phy_test;
+   uint8_t        usim_test;
+   int            emulate_rf;
+   int            wait_for_sync; //eNodeB only
+   int            single_thread_flag; //eNodeB only
+   int            chain_offset;
+   uint32_t       do_forms;
+   int            numerology;
+   unsigned int   start_msc;
+   uint32_t       clock_source;
+   int            hw_timing_advance;
 } softmodem_params_t;
 
 #define IS_SOFTMODEM_NOS1            ( get_softmodem_optmask() & SOFTMODEM_NOS1_BIT)
 #define IS_SOFTMODEM_NOKRNMOD        ( get_softmodem_optmask() & SOFTMODEM_NOKRNMOD_BIT)
 #define IS_SOFTMODEM_NONBIOT         ( get_softmodem_optmask() & SOFTMODEM_NONBIOT_BIT)
+#define IS_SOFTMODEM_BASICSIM        ( get_softmodem_optmask() & SOFTMODEM_BASICSIM_BIT)
 extern uint64_t get_softmodem_optmask(void);
 extern uint64_t set_softmodem_optmask(uint64_t bitmask);
 extern void get_common_options(void);
 extern softmodem_params_t *get_softmodem_params(void);
-
+extern unsigned int is_nos1exec(char *exepath) ;
 uint64_t get_pdcp_optmask(void);
 extern pthread_cond_t sync_cond;
 extern pthread_mutex_t sync_mutex;

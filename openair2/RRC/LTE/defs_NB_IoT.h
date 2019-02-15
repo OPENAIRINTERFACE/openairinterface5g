@@ -63,21 +63,9 @@
 #include "LTE_UE-Capability-NB-r13.h" //equivalent of UE-EUTRA-Capability.h
 //-------------------
 
-#if defined(ENABLE_ITTI)
 # include "intertask_interface.h"
-#endif
-
-/* TODO: be sure this include is correct.
- * It solves a problem of compilation of the RRH GW,
- * issue #186.
- */
-#if !defined(ENABLE_ITTI)
-# include "as_message.h"
-#endif
-
-#if defined(ENABLE_USE_MME)
 # include "commonDef.h"
-#endif
+
 
 #if ENABLE_RAL
 # include "collection/hashtable/obj_hashtable.h"
@@ -476,11 +464,9 @@ typedef struct OAI_UECapability_NB_IoT_s {
 typedef struct UE_RRC_INST_NB_IoT_s {
   Rrc_State_NB_IoT_t     RrcState;
   Rrc_Sub_State_NB_IoT_t RrcSubState;
-# if defined(ENABLE_USE_MME)
   plmn_t          plmnID;
   Byte_t          rat;
   as_nas_info_t   initialNasMsg;
-# endif
   OAI_UECapability_NB_IoT_t *UECap;
   uint8_t *UECapability;
   uint8_t UECapability_size;

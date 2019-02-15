@@ -41,7 +41,7 @@ Description Defines the EPS Mobility Management procedure call manager,
 
 #include "commonDef.h"
 #include "networkDef.h"
-#include "user_defs.h"
+#include "../user_defs.h"
 
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/

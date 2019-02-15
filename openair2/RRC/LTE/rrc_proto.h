@@ -39,13 +39,13 @@
 int rrc_init_global_param(void);
 int L3_xface_init(void);
 void openair_rrc_top_init(int eMBMS_active, char *uecap_xer, uint8_t cba_group_active,uint8_t HO_enabled);
-#if defined(ENABLE_ITTI)
+
 char
 openair_rrc_eNB_configuration(
   const module_id_t enb_mod_idP,
   RrcConfigurationReq* configuration
 );
-#endif
+
 char openair_rrc_eNB_init(
   const module_id_t module_idP);
 
@@ -344,7 +344,7 @@ void
 rrc_eNB_reconfigure_DRBs (const protocol_ctxt_t* const ctxt_pP,
 			  rrc_eNB_ue_context_t*  ue_context_pP);
 
-#if defined(ENABLE_ITTI)
+
 
 void  rrc_enb_init(void);
 void *rrc_enb_process_itti_msg(void *);
@@ -356,7 +356,7 @@ void *rrc_enb_task(void *args_p);
 /**\brief RRC UE task.
    \param void *args_p Pointer on arguments to start the task. */
 void *rrc_ue_task(void *args_p);
-#endif
+
 
 void rrc_eNB_process_handoverPreparationInformation(int mod_id, x2ap_handover_req_t *m);
 
@@ -612,7 +612,6 @@ rrc_ue_process_securityModeCommand(
                 );
 */
 
-#if !defined(ENABLE_USE_MME)
 void rrc_eNB_emulation_notify_ue_module_id(
   const module_id_t ue_module_idP,
   const rnti_t      rntiP,
@@ -620,7 +619,7 @@ void rrc_eNB_emulation_notify_ue_module_id(
   const uint8_t     cell_identity_byte1P,
   const uint8_t     cell_identity_byte2P,
   const uint8_t     cell_identity_byte3P);
-#endif
+
 
 
 void

@@ -31,13 +31,10 @@
 #ifndef RRC_ENB_S1AP_H_
 #define RRC_ENB_S1AP_H_
 
-# if defined(ENABLE_USE_MME)
-
 #include "LTE_UL-DCCH-Message.h"
 
 /* Up link procedures */
 
-#   if defined(ENABLE_ITTI)
 typedef struct rrc_ue_s1ap_ids_s {
   /* Tree related data */
   RB_ENTRY(rrc_ue_s1ap_ids_s) entries;
@@ -273,6 +270,4 @@ int rrc_eNB_send_PATH_SWITCH_REQ(const protocol_ctxt_t* const ctxt_pP,
 				  rrc_eNB_ue_context_t*          const ue_context_pP);
 int rrc_eNB_process_S1AP_PATH_SWITCH_REQ_ACK (MessageDef *msg_p, const char *msg_name, instance_t instance);
 
-#   endif
-# endif /* defined(ENABLE_USE_MME) */
 #endif /* RRC_ENB_S1AP_H_ */

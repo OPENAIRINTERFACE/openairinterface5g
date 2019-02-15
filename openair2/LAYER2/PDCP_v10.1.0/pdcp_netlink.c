@@ -70,7 +70,7 @@ extern struct iovec nas_iov_rx;
 extern int nas_sock_fd;
 extern struct msghdr nas_msg_rx;
 
-#if defined(PDCP_USE_NETLINK_QUEUES)
+
 static pthread_t pdcp_netlink_thread;
 
 /* We use lock-free queues between the User-plane driver running in kernel-space
@@ -104,25 +104,25 @@ pdcp_netlink_init(
   nb_inst_enb = 1;
   nb_inst_ue  = 1;
 
-#if defined(LINK_ENB_PDCP_TO_GTPV1U)
-  nb_inst_enb = 0;
-  LOG_I(PDCP, "[NETLINK] Creating 0 queues for eNB Netlink -> PDCP communication\n");
-#else
-#warning " LG: When there will be handover in, there will problems because dim is based on local nums of ues"
-  pdcp_netlink_queue_enb      = calloc(nb_inst_enb, sizeof(struct lfds611_queue_state*));
-  pdcp_netlink_nb_element_enb = malloc(nb_inst_enb * sizeof(uint32_t));
-  LOG_I(PDCP, "[NETLINK] Creating %d queues for eNB Netlink -> PDCP communication\n", nb_inst_enb);
+  if (LINK_ENB_PDCP_TO_GTPV1U) {
+    nb_inst_enb = 0;
+    LOG_I(PDCP, "[NETLINK] Creating 0 queues for eNB Netlink -> PDCP communication\n");
+  } else {
+/* #warning " LG: When there will be handover in, there will problems because dim is based on local nums of ues" */
+    pdcp_netlink_queue_enb      = calloc(nb_inst_enb, sizeof(struct lfds611_queue_state*));
+    pdcp_netlink_nb_element_enb = malloc(nb_inst_enb * sizeof(uint32_t));
+    LOG_I(PDCP, "[NETLINK] Creating %d queues for eNB Netlink -> PDCP communication\n", nb_inst_enb);
 
-  for (i = 0; i < nb_inst_enb; i++) {
-    pdcp_netlink_nb_element_enb[i] = 0;
+    for (i = 0; i < nb_inst_enb; i++) {
+      pdcp_netlink_nb_element_enb[i] = 0;
 
-    if (lfds611_queue_new(&pdcp_netlink_queue_enb[i], PDCP_QUEUE_NB_ELEMENTS) < 0) {
-      LOG_E(PDCP, "Failed to create new FIFO for eNB Netlink -> PDCP communcation instance %d\n", i);
-      exit(EXIT_FAILURE);
+      if (lfds611_queue_new(&pdcp_netlink_queue_enb[i], PDCP_QUEUE_NB_ELEMENTS) < 0) {
+        LOG_E(PDCP, "Failed to create new FIFO for eNB Netlink -> PDCP communcation instance %d\n", i);
+        exit(EXIT_FAILURE);
+      }
     }
   }
 
-#endif
 
   if (nb_inst_ue  > 0) {
     pdcp_netlink_queue_ue       = calloc(nb_inst_ue, sizeof(struct lfds611_queue_state*));
@@ -248,7 +248,7 @@ void *pdcp_netlink_thread_fct(void *arg)
                   new_data_p->pdcp_read_header.data_size);
           } else {
             LOG_E(PDCP, "[NETLINK_THREAD] WRONG size %d should be sizeof "
-                  "%d ((pdcp_data_req_header_t) + sizeof(struct nlmsghdr))\n",
+                  "%lu ((pdcp_data_req_header_t) + sizeof(struct nlmsghdr))\n",
                   nas_nlh_rx->nlmsg_len,
                   sizeof (pdcp_data_req_header_t) + sizeof(struct nlmsghdr));
           }
@@ -262,8 +262,8 @@ void *pdcp_netlink_thread_fct(void *arg)
           if (eNB_flag) {
             if (pdcp_netlink_nb_element_enb[module_id]
                 > PDCP_QUEUE_NB_ELEMENTS) {
-              LOG_E(PDCP, "[NETLINK_THREAD][Mod %02x] We reached maximum number of elements in eNB pdcp queue (%d)\n",
-                    module_id, pdcp_netlink_nb_element_enb);
+              LOG_E(PDCP, "[NETLINK_THREAD][Mod %02x] We reached maximum number of elements in eNB pdcp queue (%lu)\n",
+                    module_id, (intptr_t)pdcp_netlink_nb_element_enb);
             }
 
             LOG_I(PDCP,"[NETLINK_THREAD] IP->PDCP : En-queueing packet for eNB module id %d\n", module_id);
@@ -275,8 +275,8 @@ void *pdcp_netlink_thread_fct(void *arg)
           } else {
             if (pdcp_netlink_nb_element_ue[module_id]
                 > PDCP_QUEUE_NB_ELEMENTS) {
-              LOG_E(PDCP, "[NETLINK_THREAD][Mod %02x] We reached maximum number of elements in UE pdcp queue (%d)\n",
-                    module_id, pdcp_netlink_nb_element_ue);
+              LOG_E(PDCP, "[NETLINK_THREAD][Mod %02x] We reached maximum number of elements in UE pdcp queue (%lu)\n",
+                    module_id, (intptr_t)pdcp_netlink_nb_element_ue);
             }
 
             LOG_I(PDCP,"[NETLINK_THREAD] IP->PDCP : En-queueing packet for UE module id  %d\n", module_id);
@@ -293,4 +293,4 @@ void *pdcp_netlink_thread_fct(void *arg)
 
   return NULL;
 }
-#endif
+

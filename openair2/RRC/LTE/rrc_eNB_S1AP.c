@@ -27,7 +27,7 @@
  * \company Eurecom
  * \email: navid.nikaein@eurecom.fr
  */
-#if defined(ENABLE_USE_MME)
+
 # include "rrc_defs.h"
 # include "rrc_extern.h"
 # include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
@@ -41,16 +41,12 @@
 # include "s1ap_eNB_defs.h"
 # include "s1ap_eNB_management_procedures.h"
 # include "s1ap_eNB_ue_context.h"
+#include "asn1_conversions.h"
+#include "intertask_interface.h"
+#include "pdcp.h"
+#include "pdcp_primitives.h"
+#include "s1ap_eNB.h"
 
-#if defined(ENABLE_ITTI)
-  #include "asn1_conversions.h"
-  #include "intertask_interface.h"
-  #include "pdcp.h"
-  #include "pdcp_primitives.h"
-  #include "s1ap_eNB.h"
-#else
-  #include "../../S1AP/s1ap_eNB.h"
-#endif
 
 #if defined(ENABLE_SECURITY)
   #include "UTIL/OSA/osa_defs.h"
@@ -164,7 +160,7 @@ void extract_imsi(uint8_t *pdu_buf, uint32_t pdu_len, rrc_eNB_ue_context_t *ue_c
   }
 }
 
-# if defined(ENABLE_ITTI)
+
 //------------------------------------------------------------------------------
 /*
 * Get the UE S1 struct containing hashtables S1_id/UE_id.
@@ -628,7 +624,6 @@ rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP(
   S1AP_INITIAL_CONTEXT_SETUP_RESP (msg_p).nb_of_e_rabs_failed = e_rabs_failed;
   itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
 }
-# endif
 
 //------------------------------------------------------------------------------
 void
@@ -639,7 +634,6 @@ rrc_eNB_send_S1AP_UPLINK_NAS(
 )
 //------------------------------------------------------------------------------
 {
-#if defined(ENABLE_ITTI)
   {
     LTE_ULInformationTransfer_t *ulInformationTransfer = &ul_dcch_msg->message.choice.c1.choice.ulInformationTransfer;
 
@@ -666,36 +660,6 @@ rrc_eNB_send_S1AP_UPLINK_NAS(
       itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
     }
   }
-#else
-  {
-    LTE_ULInformationTransfer_t *ulInformationTransfer;
-    ulInformationTransfer =
-    &ul_dcch_msg->message.choice.c1.choice.
-    ulInformationTransfer;
-
-    if (ulInformationTransfer->criticalExtensions.present ==
-        LTE_ULInformationTransfer__criticalExtensions_PR_c1) {
-      if (ulInformationTransfer->criticalExtensions.choice.c1.present ==
-          LTE_ULInformationTransfer__criticalExtensions__c1_PR_ulInformationTransfer_r8) {
-        ULInformationTransfer_r8_IEs_t
-        *ulInformationTransferR8;
-        ulInformationTransferR8 =
-        &ulInformationTransfer->criticalExtensions.choice.
-        c1.choice.ulInformationTransfer_r8;
-
-        if (ulInformationTransferR8->dedicatedInfoType.present ==
-            LTE_ULInformationTransfer_r8_IEs__dedicatedInfoType_PR_dedicatedInfoNAS) {
-          extract_imsi(ulInformationTransferR8->dedicatedInfoType.choice.dedicatedInfoNAS.buf,
-                       ulInformationTransferR8->dedicatedInfoType.choice.dedicatedInfoNAS.size,
-                       ue_context_pP);
-          s1ap_eNB_new_data_request (mod_id, ue_index,
-                                     ulInformationTransferR8->dedicatedInfoType.choice.dedicatedInfoNAS.buf,
-                                     ulInformationTransferR8->dedicatedInfoType.choice.dedicatedInfoNAS.size);
-        }
-      }
-    }
-  }
-#endif
 }
 
 //------------------------------------------------------------------------------
@@ -758,7 +722,6 @@ rrc_eNB_send_S1AP_NAS_FIRST_REQ(
 //------------------------------------------------------------------------------
 {
   eNB_RRC_INST *rrc = RC.rrc[ctxt_pP->module_id];
-#if defined(ENABLE_ITTI)
   {
     MessageDef         *message_p         = NULL;
     rrc_ue_s1ap_ids_t  *rrc_ue_s1ap_ids_p = NULL;
@@ -870,20 +833,9 @@ rrc_eNB_send_S1AP_NAS_FIRST_REQ(
     } // end "Fill UE identities with available information" sub-part
     itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, message_p);
   }
-#else
-  {
-    s1ap_eNB_new_data_request (
-      ctxt_pP->module_id,
-      ue_context_pP,
-      rrcConnectionSetupComplete->dedicatedInfoNAS.
-      buf,
-      rrcConnectionSetupComplete->dedicatedInfoNAS.
-      size);
-  }
-#endif
 }
 
-# if defined(ENABLE_ITTI)
+
 //------------------------------------------------------------------------------
 int
 rrc_eNB_process_S1AP_DOWNLINK_NAS(
@@ -2172,5 +2124,3 @@ int rrc_eNB_process_S1AP_PATH_SWITCH_REQ_ACK (MessageDef *msg_p, const char *msg
   }
 }
 
-# endif /* defined(ENABLE_ITTI) */
-#endif /* defined(ENABLE_USE_MME) */

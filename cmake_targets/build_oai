@@ -547,9 +547,9 @@ function main() {
     mkdir -p $DIR/$lte_build_dir/build
     cmake_file=$DIR/$lte_build_dir/CMakeLists.txt
     echo "cmake_minimum_required(VERSION 2.8)"   >  $cmake_file
-    if [ "$NOS1" = "1" ] ; then
-	cat  $DIR/$lte_build_dir/CMakeLists.template >>  $cmake_file
-    fi
+#    if [ "$NOS1" = "1" ] ; then
+#	cat  $DIR/$lte_build_dir/CMakeLists.template >>  $cmake_file
+#    fi
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
     echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
     echo "set ( XFORMS $XFORMS )"                  >>  $cmake_file

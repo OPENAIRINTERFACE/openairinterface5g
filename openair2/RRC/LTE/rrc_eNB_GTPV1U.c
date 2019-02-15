@@ -27,19 +27,14 @@
  * \email: lionel.gauthier@eurecom.fr
  */
 
-#if defined(ENABLE_USE_MME)
 # include "rrc_defs.h"
 # include "rrc_extern.h"
 # include "RRC/LTE/MESSAGES/asn1_msg.h"
 # include "rrc_eNB_GTPV1U.h"
 # include "rrc_eNB_UE_context.h"
 # include "msc.h"
-
-# if defined(ENABLE_ITTI)
-#   include "asn1_conversions.h"
-#   include "intertask_interface.h"
-# endif
-
+# include "asn1_conversions.h"
+# include "intertask_interface.h"
 # include "common/ran_context.h"
 
 extern RAN_CONTEXT_t RC;
@@ -66,10 +61,6 @@ rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
                      ctxt_pP->rnti);
 
     for (i = 0; i < create_tunnel_resp_pP->num_tunnels; i++) {
-      
-//      ue_context_p->ue_context.enb_gtp_teid[i+ue_context_p->ue_context.setup_e_rabs]  = create_tunnel_resp_pP->enb_S1u_teid[i];
-//      ue_context_p->ue_context.enb_gtp_addrs[i+ue_context_p->ue_context.setup_e_rabs] = create_tunnel_resp_pP->enb_addr;
-//      ue_context_p->ue_context.enb_gtp_ebi[i+ue_context_p->ue_context.setup_e_rabs]   = create_tunnel_resp_pP->eps_bearer_id[i];
       ue_context_p->ue_context.enb_gtp_teid[inde_list[i]]  = create_tunnel_resp_pP->enb_S1u_teid[i];
       ue_context_p->ue_context.enb_gtp_addrs[inde_list[i]] = create_tunnel_resp_pP->enb_addr;
       ue_context_p->ue_context.enb_gtp_ebi[inde_list[i]]   = create_tunnel_resp_pP->eps_bearer_id[i];
@@ -98,4 +89,4 @@ rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
     return -1;
   }
 }
-#endif
+

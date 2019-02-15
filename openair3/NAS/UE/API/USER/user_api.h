@@ -44,7 +44,7 @@ Description Implements the API used by the NAS layer running in the UE
 #include "networkDef.h"
 #include "at_command.h"
 #include "user_api_defs.h"
-#include "user_defs.h"
+#include "../../user_defs.h"
 
 /****************************************************************************/
 /*********************  G L O B A L    C O N S T A N T S  *******************/

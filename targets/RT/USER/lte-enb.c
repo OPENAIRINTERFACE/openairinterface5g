@@ -80,14 +80,8 @@
   #include "UTIL/OTG/otg_extern.h"
 #endif
 
-#if defined(ENABLE_ITTI)
-  #if defined(ENABLE_USE_MME)
-    #include "s1ap_eNB.h"
-    #ifdef PDCP_USE_NETLINK
-      #include "SIMULATION/ETH_TRANSPORT/proto.h"
-    #endif
-  #endif
-#endif
+#include "s1ap_eNB.h"
+#include "SIMULATION/ETH_TRANSPORT/proto.h"
 
 #include "T.h"
 
@@ -104,11 +98,6 @@ struct timing_info_t {
 // Fix per CC openair rf/if device update
 // extern openair0_device openair0;
 
-
-#if defined(ENABLE_ITTI)
-  extern volatile int             start_eNB;
-  extern volatile int             start_UE;
-#endif
 extern volatile int                    oai_exit;
 
 extern int transmission_mode;

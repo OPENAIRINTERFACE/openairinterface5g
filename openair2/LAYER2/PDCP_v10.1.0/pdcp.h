@@ -51,6 +51,19 @@
 #include "LTE_PMCH-InfoList-r9.h"
 #endif
 
+#define PDCP_USE_NETLINK_BIT            (1<< 11)
+#define LINK_ENB_PDCP_TO_IP_DRIVER_BIT  (1<< 13)
+#define LINK_ENB_PDCP_TO_GTPV1U_BIT     (1<< 14)
+#define UE_NAS_USE_TUN_BIT              (1<< 15)
+typedef struct {
+  uint64_t optmask;
+} pdcp_params_t;
+
+#define PDCP_USE_NETLINK            ( get_pdcp_optmask() & PDCP_USE_NETLINK_BIT)
+#define LINK_ENB_PDCP_TO_IP_DRIVER  ( get_pdcp_optmask() & LINK_ENB_PDCP_TO_IP_DRIVER_BIT)
+#define LINK_ENB_PDCP_TO_GTPV1U     ( get_pdcp_optmask() & LINK_ENB_PDCP_TO_GTPV1U_BIT)
+#define UE_NAS_USE_TUN              ( get_pdcp_optmask() & UE_NAS_USE_TUN_BIT)
+uint64_t get_pdcp_optmask(void);
 
 extern pthread_t       pdcp_thread;
 extern pthread_attr_t  pdcp_thread_attr;
@@ -376,14 +389,10 @@ boolean_t pdcp_remove_UE(
 */
 void pdcp_run            (
               const protocol_ctxt_t* const  ctxt_pP);
-int pdcp_module_init     (void);
+uint64_t pdcp_module_init     (uint64_t pdcp_optmask);
 void pdcp_module_cleanup (void);
 void pdcp_layer_init     (void);
 void pdcp_layer_cleanup  (void);
-#if defined(PDCP_USE_NETLINK_QUEUES)
-int pdcp_netlink_init    (void);
-
-#endif
 #define PDCP2NW_DRIVER_FIFO 21
 #define NW_DRIVER2PDCP_FIFO 22
 
@@ -490,10 +499,7 @@ typedef struct {
 signed int             pdcp_2_nas_irq;
 pdcp_stats_t              UE_pdcp_stats[MAX_MOBILES_PER_ENB];
 pdcp_stats_t              eNB_pdcp_stats[NUMBER_OF_eNB_MAX];
-//pdcp_t                 pdcp_array_srb_ue[MAX_MOBILES_PER_ENB][2];
-//pdcp_t                 pdcp_array_drb_ue[MAX_MOBILES_PER_ENB][maxDRB];
-//pdcp_t                    pdcp_array_srb_eNB[NUMBER_OF_eNB_MAX][MAX_MOBILES_PER_ENB][2];
-//pdcp_t                 pdcp_array_drb_eNB[NUMBER_OF_eNB_MAX][MAX_MOBILES_PER_ENB][maxDRB];
+
 
 // for UE code conly
 rnti_t                 pdcp_UE_UE_module_id_to_rnti[MAX_MOBILES_PER_ENB];
