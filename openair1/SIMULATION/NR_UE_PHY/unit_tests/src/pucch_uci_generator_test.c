@@ -17,38 +17,37 @@
 #define TST_THREAD_ID                      (0)
 
 
-int test_pucch_generators(PHY_VARS_NR_UE *ue)
-{
+int test_pucch_generators(PHY_VARS_NR_UE *ue) {
   int gNB_id = TST_GNB_ID_0;
   int thread_number = TST_THREAD_ID;
   int TB_identifier = 0;
   int v_return = 0;
-
   pucch_format_nr_t format = pucch_format2_nr;
   uint8_t  starting_symbol_index;
   uint8_t nb_symbols_total = 4;
   uint16_t starting_prb = 0;;  /* it can be considered as first  hop on case of pucch hopping */
   uint16_t second_hop = 0;     /* second part for pucch for hopping */
   uint8_t  nb_of_prbs = 1;
-  switch (format){
-  case pucch_format0_nr:
-	  nb_symbols_total 		= 2;
-	  nb_of_prbs 			= 1;
-	  starting_symbol_index = 0;
-	  break;
-  case pucch_format1_nr:
-	  nb_symbols_total 		= 5;
-	  nb_of_prbs 			= 1;
-	  starting_symbol_index = 0;
-	  break;
-  case pucch_format2_nr:
-	  nb_symbols_total 		= 2;
-	  nb_of_prbs 			= 16;
-	  starting_symbol_index = 0;
 
-	  break;
+  switch (format) {
+    case pucch_format0_nr:
+      nb_symbols_total    = 2;
+      nb_of_prbs      = 1;
+      starting_symbol_index = 0;
+      break;
+
+    case pucch_format1_nr:
+      nb_symbols_total    = 5;
+      nb_of_prbs      = 1;
+      starting_symbol_index = 0;
+      break;
+
+    case pucch_format2_nr:
+      nb_symbols_total    = 2;
+      nb_of_prbs      = 16;
+      starting_symbol_index = 0;
+      break;
   }
-
 
   int m_0 = 0;                 /* format 0 only */
   int m_CS = 0;                /* for all format except for format 0 */
@@ -61,9 +60,9 @@ int test_pucch_generators(PHY_VARS_NR_UE *ue)
   int tx_amp = 512;
   int nr_tti_tx = 0;
   int N_UCI = 0;      /* size in bits for Uplink Control Information */
+
   switch(format) {
-    case pucch_format0_nr:
-    {
+    case pucch_format0_nr: {
       nr_generate_pucch0(ue,ue->common_vars.txdataF,
                          &ue->frame_parms,
                          &ue->pucch_config_dedicated_nr[gNB_id],
@@ -76,8 +75,8 @@ int test_pucch_generators(PHY_VARS_NR_UE *ue)
                          starting_prb);
       break;
     }
-    case pucch_format1_nr:
-    {
+
+    case pucch_format1_nr: {
       nr_generate_pucch1(ue,ue->common_vars.txdataF,
                          &ue->frame_parms,
                          &ue->pucch_config_dedicated_nr[gNB_id],
@@ -93,8 +92,8 @@ int test_pucch_generators(PHY_VARS_NR_UE *ue)
                          (uint8_t)N_UCI);
       break;
     }
-    case pucch_format2_nr:
-    {
+
+    case pucch_format2_nr: {
       nr_generate_pucch2(ue,
                          ue->pdcch_vars[ue->current_thread_id[nr_tti_tx]][gNB_id]->crnti,
                          ue->common_vars.txdataF,
@@ -110,9 +109,9 @@ int test_pucch_generators(PHY_VARS_NR_UE *ue)
                          (uint8_t)N_UCI);
       break;
     }
+
     case pucch_format3_nr:
-    case pucch_format4_nr:
-    {
+    case pucch_format4_nr: {
       nr_generate_pucch3_4(ue,
                            ue->pdcch_vars[ue->current_thread_id[nr_tti_tx]][gNB_id]->crnti,
                            ue->common_vars.txdataF,
@@ -138,8 +137,7 @@ int test_pucch_generators(PHY_VARS_NR_UE *ue)
 }
 
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   uint8_t transmission_mode = 1;
   uint8_t nb_antennas_tx = 1;
   uint8_t nb_antennas_rx = 1;
@@ -149,7 +147,6 @@ int main(int argc, char *argv[])
   int Nid_cell[] = {(3*1+3)};
   VOID_PARAMETER argc;
   VOID_PARAMETER argv;
-
   printf(" PUCCH TEST \n");
   printf("-----------\n");
 
@@ -160,12 +157,10 @@ int main(int argc, char *argv[])
 
   if (test_pucch_generators(PHY_vars_UE) != 0) {
     printf("\nTest PUCCH is fail \n");
-  }
-  else {
+  } else {
     printf("\nTest PUCCH is pass \n");
   }
 
   free_context_synchro_nr();
-
   return(0);
 }
