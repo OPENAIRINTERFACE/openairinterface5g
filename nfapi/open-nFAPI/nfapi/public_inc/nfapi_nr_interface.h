@@ -28,12 +28,12 @@ typedef struct {
 /*typedef struct {
 	nfapi_tl_t tl;
 	int64_t value;
-} nfapi_int64_tlv_t;
+} nfapi_int64_tlv_t;*/
 
 typedef struct {
 	nfapi_tl_t tl;
 	uint64_t value;
-} nfapi_uint64_tlv_t;*/
+} nfapi_uint64_tlv_t;
 
 // nFAPI enums
 typedef enum {
@@ -175,8 +175,8 @@ typedef struct {
   nfapi_uint16_tlv_t  physical_cell_id;
   nfapi_uint16_tlv_t  half_frame_index;
   nfapi_uint16_tlv_t  ssb_subcarrier_offset;
-  nfapi_uint16_tlv_t  ssb_sib1_position_in_burst;
-  nfapi_uint16_tlv_t  ssb_scg_position_in_burst;
+  nfapi_uint16_tlv_t  ssb_sib1_position_in_burst; // in sib1
+  nfapi_uint64_tlv_t  ssb_scg_position_in_burst;  // in servingcellconfigcommon 
   nfapi_uint16_tlv_t  ssb_periodicity;
   nfapi_uint16_tlv_t  ss_pbch_block_power;
   nfapi_uint16_tlv_t  n_ssb_crb;

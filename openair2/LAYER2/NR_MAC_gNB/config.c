@@ -186,7 +186,8 @@ void config_common(int Mod_idP,
                    int CC_idP,
 		   int cellid,
                    int nr_bandP,
-                   uint64_t dl_CarrierFreqP,
+                   uint64_t ssb_pattern,
+		   uint64_t dl_CarrierFreqP,
                    uint32_t dl_BandwidthP
                   ){
 
@@ -195,6 +196,7 @@ void config_common(int Mod_idP,
   int mu = 1;
 
   cfg->sch_config.physical_cell_id.value = cellid;
+  cfg->sch_config.ssb_scg_position_in_burst.value = ssb_pattern;
 
   // FDD
   cfg->subframe_config.duplex_mode.value                          = 1;
@@ -238,6 +240,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 			   int cellid,
                            int p_gNB,
                            int nr_bandP,
+			   uint64_t ssb_pattern,
                            uint64_t dl_CarrierFreqP,
                            int dl_BandwidthP,
                            NR_BCCH_BCH_Message_t *mib,
@@ -262,11 +265,15 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
                );
   }// END if( mib != NULL )
 
+
+
+
   if( servingcellconfigcommon != NULL ){
     config_common(Mod_idP, 
                   CC_idP,
 		  cellid,
                   nr_bandP,
+		  ssb_pattern,
                   dl_CarrierFreqP,
                   dl_BandwidthP
                   );  

@@ -101,7 +101,9 @@ int rrc_init_nr_global_param(void){return(0);}
 
 void config_common(int Mod_idP, 
                    int CC_idP,
+		   int Nid_cell,
                    int nr_bandP,
+		   uint64_t ssb_pattern,
                    uint64_t dl_CarrierFreqP,
                    uint32_t dl_BandwidthP
 		   );
@@ -150,6 +152,8 @@ int main(int argc, char **argv)
   double pbch_sinr;
   int pbch_tx_ant;
   int N_RB_DL=273,mu=1;
+
+  uint64_t ssb_pattern = 0;
 
   unsigned char frame_type = 0;
   unsigned char pbch_phase = 0;
@@ -496,7 +500,7 @@ int main(int argc, char **argv)
   mac_top_init_gNB();
   gNB_mac = RC.nrmac[0];
 
-  config_common(0,0,78,(uint64_t)3640000000L,N_RB_DL);
+  config_common(0,0,Nid_cell,78,ssb_pattern,(uint64_t)3640000000L,N_RB_DL);
   config_nr_mib(0,0,1,kHz30,0,0,0,0);
 
   nr_l2_init_ue();

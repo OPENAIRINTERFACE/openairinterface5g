@@ -261,12 +261,13 @@ static void init_NR_SI(const protocol_ctxt_t* const ctxt_pP,
   
   LOG_I(NR_RRC,"Done init_NR_SI\n");
   
-  
+  uint64_t ssb_pattern = 255;
   rrc_mac_config_req_gNB(ctxt_pP->module_id,
                          CC_id,
 			 RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].physCellId,
                          RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].p_gNB,
                          configuration->nr_band[CC_id],
+			 ssb_pattern,
                          RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].dl_CarrierFreq,
                          configuration->N_RB_DL[CC_id],
                          (NR_BCCH_BCH_Message_t *)&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].mib,

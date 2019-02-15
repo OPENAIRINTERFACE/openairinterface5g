@@ -46,7 +46,6 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
   fp->numerology_index = mu;
   fp->Ncp = Ncp;
   fp->N_RB_DL = N_RB_DL;
-  fp->L_ssb = 255; // TODO get the number of SSB value from higher layers (and config file finally)
 
   switch(mu) {
 
@@ -197,6 +196,7 @@ int nr_init_frame_parms(nfapi_nr_config_request_t* config,
 
   fp->eutra_band = config->nfapi_config.rf_bands.rf_band[0];
   fp->frame_type = !(config->subframe_config.duplex_mode.value);
+  fp->L_ssb = config->sch_config.ssb_scg_position_in_burst.value;
   return nr_init_frame_parms0(fp,
 			      config->subframe_config.numerology_index_mu.value,
 			      config->subframe_config.dl_cyclic_prefix_type.value,
