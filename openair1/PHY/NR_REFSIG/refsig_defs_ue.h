@@ -43,13 +43,12 @@ int nr_pdcch_dmrs_rx(PHY_VARS_NR_UE *ue,
 						unsigned short nb_rb_corset);
 
 int nr_pdsch_dmrs_rx(PHY_VARS_NR_UE *ue,
-						uint8_t eNB_offset,
 						unsigned int Ns,
-						unsigned int nr_gold_pdsch[2][20][2][21],
+						unsigned int *nr_gold_pdsch,
 						int32_t *output,
 						unsigned short p,
-						int length_dmrs,
-						unsigned short nb_rb_pdsch);
+						unsigned char lp,
+						unsigned short nb_pdsch_rb);
 
 void nr_gold_pbch(PHY_VARS_NR_UE* ue);
 

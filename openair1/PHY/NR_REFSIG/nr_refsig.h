@@ -37,6 +37,6 @@ void nr_init_pbch_dmrs(PHY_VARS_gNB* gNB);
 @param Nid is used for the initialization of x2, Physical cell Id by default or upper layer configured pdcch_scrambling_ID
  */
 void nr_init_pdcch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid);
-
+void nr_init_pdsch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid);
 
 #endif

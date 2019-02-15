@@ -29,13 +29,13 @@ typedef unsigned __int128 uint128_t;
 
 uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
                         nfapi_nr_rnti_type_e rnti_type,
-                        NR_BWP_PARMS* bwp,
+                        uint16_t N_RB,
                         nfapi_nr_config_request_t* config);
 
 uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
                             t_nrPolar_paramsPtr *nrPolar_params,
                             uint32_t **gold_pdcch_dmrs,
-                            int32_t** txdataF,
+                            int32_t* txdataF,
                             int16_t amp,
                             NR_DL_FRAME_PARMS frame_parms,
                             nfapi_nr_config_request_t config);
@@ -51,7 +51,8 @@ void nr_fill_dci_and_dlsch(PHY_VARS_gNB *gNB,
                            int subframe,
                            gNB_L1_rxtx_proc_t *proc,
                            NR_gNB_DCI_ALLOC_t *dci_alloc,
-                           nfapi_nr_dl_config_request_pdu_t *pdu);
+                           nfapi_nr_dl_config_dci_dl_pdu *pdu,
+                           nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu);
 
 void nr_fill_cce_list(NR_gNB_DCI_ALLOC_t* dci_alloc, uint16_t n_shift, uint8_t m);
 

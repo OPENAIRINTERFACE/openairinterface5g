@@ -118,8 +118,8 @@ extern openair0_config_t openair0_cfg[MAX_CARDS];
 
 extern int transmission_mode;
 
+uint16_t sl_ahead=4;
 uint16_t sf_ahead=4;
-
 //pthread_t                       main_gNB_thread;
 
 time_stats_t softmodem_stats_mt; // main thread
@@ -168,14 +168,14 @@ static inline int rxtx(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc, char *thread_
 
     // I am a PNF and I need to let nFAPI know that we have a (sub)frame tick
     uint16_t frame = proc->frame_rx;
-    uint16_t subframe = proc->subframe_rx;
+    uint16_t slot  = proc->slot_rx;
 
     //add_subframe(&frame, &subframe, 4);
 
     //oai_subframe_ind(proc->frame_tx, proc->subframe_tx);
     //LOG_D(PHY, "oai_subframe_ind(frame:%u, subframe:%d) - NOT CALLED ********\n", frame, subframe);
     start_meas(&nfapi_meas);
-    oai_subframe_ind(frame, subframe);
+    oai_subframe_ind(frame, slot);
     stop_meas(&nfapi_meas);
 
     if (gNB->UL_INFO.rx_ind.rx_indication_body.number_of_pdus||
@@ -190,8 +190,8 @@ static inline int rxtx(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc, char *thread_
           NFAPI_SFNSF2DEC(gNB->UL_INFO.crc_ind.sfn_sf),  gNB->UL_INFO.crc_ind.crc_indication_body.number_of_crcs, 
           NFAPI_SFNSF2DEC(gNB->UL_INFO.rach_ind.sfn_sf), gNB->UL_INFO.rach_ind.rach_indication_body.number_of_preambles,
           gNB->UL_INFO.cqi_ind.number_of_cqis, 
-          proc->frame_rx, proc->subframe_rx, 
-      proc->frame_tx, proc->subframe_tx);
+          proc->frame_rx, proc->slot_rx, 
+      proc->frame_tx, proc->slot_tx);
     }
   }
 
@@ -200,11 +200,11 @@ static inline int rxtx(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc, char *thread_
   // ****************************************
   // Common RX procedures subframe n
 
-  T(T_GNB_PHY_DL_TICK, T_INT(gNB->Mod_id), T_INT(proc->frame_tx), T_INT(proc->subframe_tx));
+  T(T_GNB_PHY_DL_TICK, T_INT(gNB->Mod_id), T_INT(proc->frame_tx), T_INT(proc->slot_tx));
 /*
   // if this is IF5 or 3GPP_gNB
   if (gNB && gNB->RU_list && gNB->RU_list[0] && gNB->RU_list[0]->function < NGFI_RAU_IF4p5) {
-    wakeup_prach_gNB(gNB,NULL,proc->frame_rx,proc->subframe_rx);
+    wakeup_prach_gNB(gNB,NULL,proc->frame_rx,proc->slot_rx);
   }
 
   // UE-specific RX processing for subframe n
@@ -215,7 +215,7 @@ static inline int rxtx(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc, char *thread_
   pthread_mutex_lock(&gNB->UL_INFO_mutex);
 
   gNB->UL_INFO.frame     = proc->frame_rx;
-  gNB->UL_INFO.subframe  = proc->subframe_rx;
+  gNB->UL_INFO.slot      = proc->slot_rx;
   gNB->UL_INFO.module_id = gNB->Mod_id;
   gNB->UL_INFO.CC_id     = gNB->CC_id;
 
@@ -225,7 +225,7 @@ static inline int rxtx(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc, char *thread_
 
 /// end
   // *****************************************
-  // TX processing for subframe n+sf_ahead
+  // TX processing for subframe n+sl_ahead
   // run PHY TX procedures the one after the other for all CCs to avoid race conditions
   // (may be relaxed in the future for performance reasons)
   // *****************************************
@@ -238,7 +238,7 @@ static inline int rxtx(PHY_VARS_gNB *gNB,gNB_L1_rxtx_proc_t *proc, char *thread_
 
   stop_meas( &softmodem_stats_rxtx_sf );
 
-  LOG_D(PHY,"%s() Exit proc[rx:%d%d tx:%d%d]\n", __FUNCTION__, proc->frame_rx, proc->subframe_rx, proc->frame_tx, proc->subframe_tx);
+  LOG_D(PHY,"%s() Exit proc[rx:%d%d tx:%d%d]\n", __FUNCTION__, proc->frame_rx, proc->slot_rx, proc->frame_tx, proc->slot_tx);
 
 #if 0
   LOG_D(PHY, "rxtx:%lld nfapi:%lld phy:%lld tx:%lld rx:%lld prach:%lld ofdm:%lld ",
@@ -311,8 +311,8 @@ static void* gNB_L1_thread_tx(void* param) {
     // (may be relaxed in the future for performance reasons)
     // *****************************************
     
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX1_GNB,proc->subframe_tx);
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX1_GNB,proc->subframe_rx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SLOT_NUMBER_TX1_GNB,proc->slot_tx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SLOT_NUMBER_RX1_GNB,proc->slot_rx);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX1_GNB,proc->frame_tx);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX1_GNB,proc->frame_rx);
 
@@ -364,8 +364,8 @@ static void* gNB_L1_thread( void* param ) {
     if (wait_on_condition(&proc->mutex,&proc->cond,&proc->instance_cnt,thread_name)<0) break;
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PROC_RXTX0, 1 );
 
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_GNB,proc->subframe_tx);
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_GNB,proc->subframe_rx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SLOT_NUMBER_TX0_GNB,proc->slot_tx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SLOT_NUMBER_RX0_GNB,proc->slot_rx);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_GNB,proc->frame_tx);
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_GNB,proc->frame_rx);
 
@@ -420,7 +420,7 @@ static void wait_system_ready (char *message, volatile int *start_flag) {
 
 
 
-void gNB_top(PHY_VARS_gNB *gNB, int frame_rx, int subframe_rx, char *string, struct RU_t_s *ru)
+void gNB_top(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, char *string, struct RU_t_s *ru)
 {
   gNB_L1_proc_t *proc           = &gNB->proc;
   gNB_L1_rxtx_proc_t *L1_proc = &proc->L1_proc;
@@ -428,20 +428,20 @@ void gNB_top(PHY_VARS_gNB *gNB, int frame_rx, int subframe_rx, char *string, str
   RU_proc_t *ru_proc=&ru->proc;
 
   proc->frame_rx    = frame_rx;
-  proc->subframe_rx = subframe_rx;
+  proc->slot_rx = slot_rx;
 
   if (!oai_exit) {
-    T(T_ENB_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx), T_INT(proc->subframe_rx));
+    T(T_ENB_MASTER_TICK, T_INT(0), T_INT(proc->frame_rx), T_INT(proc->slot_rx));
 
-    L1_proc->timestamp_tx = ru_proc->timestamp_rx + (sf_ahead*fp->samples_per_subframe);
+    L1_proc->timestamp_tx = ru_proc->timestamp_rx + (sl_ahead*fp->samples_per_slot);
     L1_proc->frame_rx     = ru_proc->frame_rx;
-    L1_proc->subframe_rx  = ru_proc->subframe_rx;
-    L1_proc->frame_tx     = (L1_proc->subframe_rx > (9-sf_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
-    L1_proc->subframe_tx  = (L1_proc->subframe_rx + sf_ahead)%10;
+    L1_proc->slot_rx      = ru_proc->tti_rx;
+    L1_proc->frame_tx     = (L1_proc->slot_rx > (fp->slots_per_frame-1-sl_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
+    L1_proc->slot_tx      = (L1_proc->slot_rx + sl_ahead)%fp->slots_per_frame;
 
     if (rxtx(gNB,L1_proc,string) < 0) LOG_E(PHY,"gNB %d CC_id %d failed during execution\n",gNB->Mod_id,gNB->CC_id);
     ru_proc->timestamp_tx = L1_proc->timestamp_tx;
-    ru_proc->subframe_tx  = L1_proc->subframe_tx;
+    ru_proc->tti_tx       = L1_proc->slot_tx;
     ru_proc->frame_tx     = L1_proc->frame_tx;
   }
 }
@@ -455,10 +455,10 @@ int wakeup_txfh(gNB_L1_rxtx_proc_t *proc,PHY_VARS_gNB *gNB) {
   struct timespec wait;
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
-//printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~inside wakeup_txfh %d.%d IC_RU = %d\n", proc->frame_tx, proc->subframe_tx, proc->instance_cnt_RUs);
+//printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~inside wakeup_txfh %d.%d IC_RU = %d\n", proc->frame_tx, proc->slot_tx, proc->instance_cnt_RUs);
 
   if(wait_on_condition(&proc->mutex_RUs,&proc->cond_RUs,&proc->instance_cnt_RUs,"wakeup_txfh")<0) {
-    LOG_E(PHY,"Frame %d, subframe %d: TX FH not ready\n", proc->frame_tx, proc->subframe_tx);
+    LOG_E(PHY,"Frame %d, subframe %d: TX FH not ready\n", proc->frame_tx, proc->slot_tx);
     return(-1);
   }
   pthread_mutex_lock(&gNB->proc.mutex_RU_tx);
@@ -471,21 +471,21 @@ int wakeup_txfh(gNB_L1_rxtx_proc_t *proc,PHY_VARS_gNB *gNB) {
     ru      = gNB->RU_list[i];
     ru_proc = &ru->proc;
     if (ru_proc->instance_cnt_gNBs == 0) {
-      LOG_E(PHY,"Frame %d, subframe %d: TX FH thread busy, dropping Frame %d, subframe %d\n", ru_proc->frame_tx, ru_proc->subframe_tx, proc->frame_rx, proc->subframe_rx);
+      LOG_E(PHY,"Frame %d, subframe %d: TX FH thread busy, dropping Frame %d, subframe %d\n", ru_proc->frame_tx, ru_proc->tti_tx, proc->frame_rx, proc->slot_rx);
       return(-1);
     }
     if (pthread_mutex_timedlock(&ru_proc->mutex_gNBs,&wait) != 0) {
-      LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB TX1 thread %d (IC %d)\n", ru_proc->subframe_rx&1,ru_proc->instance_cnt_gNBs );
+      LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB TX1 thread %d (IC %d)\n", ru_proc->tti_rx&1,ru_proc->instance_cnt_gNBs );
       exit_fun( "error locking mutex_gNB" );
       return(-1);
     }
 
     ru_proc->instance_cnt_gNBs = 0;
     ru_proc->timestamp_tx = proc->timestamp_tx;
-    ru_proc->subframe_tx  = proc->subframe_tx;
+    ru_proc->tti_tx       = proc->slot_tx;
     ru_proc->frame_tx     = proc->frame_tx;
 
-  
+    LOG_I(PHY,"Signaling tx_thread_fh for %d.%d\n",ru_proc->frame_tx,ru_proc->tti_tx);  
     // the thread can now be woken up
     if (pthread_cond_signal(&ru_proc->cond_gNBs) != 0) {
       LOG_E( PHY, "[gNB] ERROR pthread_cond_signal for gNB TXnp4 thread\n");
@@ -524,9 +524,9 @@ int wakeup_tx(PHY_VARS_gNB *gNB) {
   L1_proc_tx->instance_cnt = 0;
 
   
-  L1_proc_tx->subframe_rx   = L1_proc->subframe_rx;
+  L1_proc_tx->slot_rx   = L1_proc->slot_rx;
   L1_proc_tx->frame_rx      = L1_proc->frame_rx;
-  L1_proc_tx->subframe_tx   = L1_proc->subframe_tx;
+  L1_proc_tx->slot_tx   = L1_proc->slot_tx;
   L1_proc_tx->frame_tx      = L1_proc->frame_tx;
   L1_proc_tx->timestamp_tx  = L1_proc->timestamp_tx;
   
@@ -557,7 +557,7 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
     if (ru == gNB->RU_list[i]) {
       if ((proc->RU_mask&(1<<i)) > 0)
 	LOG_E(PHY,"gNB %d frame %d, subframe %d : previous information from RU %d (num_RU %d,mask %x) has not been served yet!\n",
-	      gNB->Mod_id,proc->frame_rx,proc->subframe_rx,ru->idx,gNB->num_RU,proc->RU_mask);
+	      gNB->Mod_id,proc->frame_rx,proc->slot_rx,ru->idx,gNB->num_RU,proc->RU_mask);
       proc->RU_mask |= (1<<i);
     }
   }
@@ -576,19 +576,19 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
   wait.tv_nsec=5000000L;
 
   /* accept some delay in processing - up to 5ms */
-  for (i = 0; i < 10 && L1_proc->instance_cnt == 0; i++) {
-    LOG_W( PHY,"[gNB] Frame %d Subframe %d, gNB RXn-TXnp4 thread busy!! (cnt %i)\n", L1_proc->frame_tx, L1_proc->subframe_tx, L1_proc->instance_cnt);
-    usleep(500);
+  for (i = 0; i < fp->slots_per_frame && L1_proc->instance_cnt == 0; i++) {
+    LOG_W( PHY,"[gNB] SFN.SL %d.%d, gNB RXn-TXnp4 thread busy!! (i %d, cnt %i)\n", L1_proc->frame_tx, L1_proc->slot_tx, i,L1_proc->instance_cnt);
+    usleep(100);
   }
   if (L1_proc->instance_cnt == 0) {
     exit_fun( "TX thread busy" );
     return(-1);
   }
 
-  // wake up TX for subframe n+sf_ahead
+  // wake up TX for subframe n+sl_ahead
   // lock the TX mutex and make sure the thread is ready
   if (pthread_mutex_timedlock(&L1_proc->mutex,&wait) != 0) {
-    LOG_E( PHY, "[gNB] ERROR pthread_mutex_lock for gNB RXTX thread %d (IC %d)\n", L1_proc->subframe_rx&1,L1_proc->instance_cnt );
+    LOG_E( PHY, "[gNB] ERROR pthread_mutex_lock for gNB RXTX thread %d (IC %d)\n", L1_proc->slot_rx&1,L1_proc->instance_cnt );
     exit_fun( "error locking mutex" );
     return(-1);
   }
@@ -599,15 +599,15 @@ int wakeup_rxtx(PHY_VARS_gNB *gNB,RU_t *ru) {
   // TS_rx is the last received timestamp (start of 1st slot), TS_tx is the desired 
   // transmitted timestamp of the next TX slot (first).
   // The last (TS_rx mod samples_per_frame) was n*samples_per_tti, 
-  // we want to generate subframe (n+sf_ahead), so TS_tx = TX_rx+sf_ahead*samples_per_tti,
-  // and proc->subframe_tx = proc->subframe_rx+sf_ahead
-  L1_proc->timestamp_tx = ru_proc->timestamp_rx + (sf_ahead*fp->samples_per_subframe);
+  // we want to generate subframe (n+sl_ahead), so TS_tx = TX_rx+sl_ahead*samples_per_tti,
+  // and proc->slot_tx = proc->slot_rx+sl_ahead
+  L1_proc->timestamp_tx = ru_proc->timestamp_rx + (sl_ahead*fp->samples_per_slot);
   L1_proc->frame_rx     = ru_proc->frame_rx;
-  L1_proc->subframe_rx  = ru_proc->subframe_rx;
-  L1_proc->frame_tx     = (L1_proc->subframe_rx > (9-sf_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
-  L1_proc->subframe_tx  = (L1_proc->subframe_rx + sf_ahead)%10;
+  L1_proc->slot_rx  = ru_proc->tti_rx;
+  L1_proc->frame_tx     = (L1_proc->slot_rx > (fp->slots_per_frame-1-sl_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
+  L1_proc->slot_tx  = (L1_proc->slot_rx + sl_ahead)%fp->slots_per_frame;
 
-//printf("~~~~~~~~~~~~~~~~~~~~~~passing parameter IC = %d, RX: %d.%d, TX: %d.%d to L1 sf_ahead = %d\n", L1_proc->instance_cnt, L1_proc->frame_rx, L1_proc->subframe_rx, L1_proc->frame_tx, L1_proc->subframe_tx, sf_ahead);
+  LOG_I(PHY,"wakeupL1: passing parameter IC = %d, RX: %d.%d, TX: %d.%d to L1 sl_ahead = %d\n", L1_proc->instance_cnt, L1_proc->frame_rx, L1_proc->slot_rx, L1_proc->frame_tx, L1_proc->slot_tx, sl_ahead);
 
   // the thread can now be woken up
   if (pthread_cond_signal(&L1_proc->cond) != 0) {
@@ -904,87 +904,7 @@ void print_opp_meas(void) {
     print_meas(&softmodem_stats_rx_sf,"[gNB][total_phy_proc_rx]",NULL,NULL);
   }
 }
-/*
-void free_transport(PHY_VARS_gNB *gNB)
-{
-  int i;
-  int j;
 
-  for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-    LOG_I(PHY, "Freeing Transport Channel Buffers for DLSCH, UE %d\n",i);
-    for (j=0; j<2; j++) free_gNB_dlsch(gNB->dlsch[i][j]);
-
-    LOG_I(PHY, "Freeing Transport Channel Buffer for ULSCH, UE %d\n",i);
-    free_gNB_ulsch(gNB->ulsch[1+i]);
-  }
-  free_gNB_ulsch(gNB->ulsch[0]);
-}*/
-
-/*
-void init_transport(PHY_VARS_gNB *gNB) {
-
-  int i;
-  int j;
-  NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
-
-  LOG_I(PHY, "Initialise transport\n");
-
-  for (i=0; i<NUMBER_OF_UE_MAX; i++) {
-    LOG_I(PHY,"Allocating Transport Channel Buffers for DLSCH, UE %d\n",i);
-    for (j=0; j<2; j++) {
-      gNB->dlsch[i][j] = new_gNB_dlsch(1,8,NSOFT,fp->N_RB_DL,0,fp);
-      if (!gNB->dlsch[i][j]) {
-	LOG_E(PHY,"Can't get gNB dlsch structures for UE %d \n", i);
-	exit(-1);
-      } else {
-	gNB->dlsch[i][j]->rnti=0;
-	LOG_D(PHY,"dlsch[%d][%d] => %p rnti:%d\n",i,j,gNB->dlsch[i][j], gNB->dlsch[i][j]->rnti);
-      }
-    }
-    
-    LOG_I(PHY,"Allocating Transport Channel Buffer for ULSCH, UE %d\n",i);
-    gNB->ulsch[1+i] = new_gNB_ulsch(MAX_TURBO_ITERATIONS,fp->N_RB_UL, 0);
-    
-    if (!gNB->ulsch[1+i]) {
-      LOG_E(PHY,"Can't get gNB ulsch structures\n");
-      exit(-1);
-    }
-    
-    // this is the transmission mode for the signalling channels
-    // this will be overwritten with the real transmission mode by the RRC once the UE is connected
-    gNB->transmission_mode[i] = fp->nb_antenna_ports_gNB==1 ? 1 : 2;
-  }
-  // ULSCH for RA
-  gNB->ulsch[0] = new_gNB_ulsch(MAX_TURBO_ITERATIONS, fp->N_RB_UL, 0);
-  
-  if (!gNB->ulsch[0]) {
-    LOG_E(PHY,"Can't get gNB ulsch structures\n");
-    exit(-1);
-  }
-  gNB->dlsch_SI  = new_gNB_dlsch(1,8,NSOFT,fp->N_RB_DL, 0, fp);
-  LOG_D(PHY,"gNB %d.%d : SI %p\n",gNB->Mod_id,gNB->CC_id,gNB->dlsch_SI);
-  gNB->dlsch_ra  = new_gNB_dlsch(1,8,NSOFT,fp->N_RB_DL, 0, fp);
-  LOG_D(PHY,"gNB %d.%d : RA %p\n",gNB->Mod_id,gNB->CC_id,gNB->dlsch_ra);
-  gNB->dlsch_MCH = new_gNB_dlsch(1,8,NSOFT,fp->N_RB_DL, 0, fp);
-  LOG_D(PHY,"gNB %d.%d : MCH %p\n",gNB->Mod_id,gNB->CC_id,gNB->dlsch_MCH);
-  
-  
-  gNB->rx_total_gain_dB=130;
-  
-  for(i=0; i<NUMBER_OF_UE_MAX; i++)
-    gNB->mu_mimo_mode[i].dl_pow_off = 2;
-  
-  gNB->check_for_total_transmissions = 0;
-  
-  gNB->check_for_MUMIMO_transmissions = 0;
-  
-  gNB->FULL_MUMIMO_transmissions = 0;
-  
-  gNB->check_for_SUMIMO_transmissions = 0;
-  
-  fp->pucch_config_common.deltaPUCCH_Shift = 1;
-    
-} */
 
 /// eNB kept in function name for nffapi calls, TO FIX
 void init_eNB_afterRU(void) {
@@ -1005,7 +925,6 @@ void init_eNB_afterRU(void) {
       // map antennas and PRACH signals to gNB RX
       if (0) AssertFatal(gNB->num_RU>0,"Number of RU attached to gNB %d is zero\n",gNB->Mod_id);
       LOG_I(PHY,"Mapping RX ports from %d RUs to gNB %d\n",gNB->num_RU,gNB->Mod_id);
-      gNB->gNB_config.rf_config.tx_antenna_ports.value  = 0;
 
       //LOG_I(PHY,"Overwriting gNB->prach_vars.rxsigF[0]:%p\n", gNB->prach_vars.rxsigF[0]);
 
@@ -1014,7 +933,6 @@ void init_eNB_afterRU(void) {
       LOG_I(PHY,"gNB->num_RU:%d\n", gNB->num_RU);
 
       for (ru_id=0,aa=0;ru_id<gNB->num_RU;ru_id++) {
-	gNB->gNB_config.rf_config.tx_antenna_ports.value    += gNB->RU_list[ru_id]->nb_rx;
 
 	AssertFatal(gNB->RU_list[ru_id]->common.rxdataF!=NULL,
 		    "RU %d : common.rxdataF is NULL\n",
@@ -1037,31 +955,7 @@ void init_eNB_afterRU(void) {
        * In monolithic mode, we come here with nb_antennas_rx == 0
        * (not tested in other modes).
        */
-      if (gNB->gNB_config.rf_config.tx_antenna_ports.value < 1)
-      {
-        LOG_I(PHY, "%s() ************* DJP ***** gNB->gNB_config.rf_config.tx_antenna_ports:%d - GOING TO HARD CODE TO 1", __FUNCTION__, gNB->gNB_config.rf_config.tx_antenna_ports.value);
-        gNB->gNB_config.rf_config.tx_antenna_ports.value = 1;
-      }
-      else
-      {
-        //LOG_I(PHY," Delete code\n");
-      }
 
-      if (gNB->gNB_config.rf_config.tx_antenna_ports.value < 1)
-      {
-        LOG_I(PHY, "%s() ************* DJP ***** gNB->gNB_config.rf_config.tx_antenna_ports:%d - GOING TO HARD CODE TO 1", __FUNCTION__, gNB->gNB_config.rf_config.tx_antenna_ports.value);
-        gNB->gNB_config.rf_config.tx_antenna_ports.value = 1;
-      }
-      else
-      {
-        //LOG_I(PHY," Delete code\n");
-      }
-
-      AssertFatal(gNB->gNB_config.rf_config.tx_antenna_ports.value >0,
-		  "inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,gNB->gNB_config.rf_config.tx_antenna_ports.value);
-      LOG_I(PHY,"inst %d, CC_id %d : nb_antennas_rx %d\n",inst,CC_id,gNB->gNB_config.rf_config.tx_antenna_ports.value);
-/// Transport init necessary for NR synchro
-      //init_transport(gNB);
       //init_precoding_weights(RC.gNB[inst][CC_id]);
     }
     init_gNB_proc(inst);

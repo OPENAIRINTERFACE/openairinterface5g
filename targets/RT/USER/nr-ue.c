@@ -226,7 +226,7 @@ PHY_VARS_NR_UE* init_nr_ue_vars(NR_DL_FRAME_PARMS *frame_parms,
   // initialize all signal buffers
   init_nr_ue_signal(ue,1,abstraction_flag);
   // intialize transport
-  //init_nr_ue_transport(ue,abstraction_flag);
+  init_nr_ue_transport(ue,abstraction_flag);
 
   return(ue);
 }
@@ -341,8 +341,8 @@ static void *UE_thread_synch(void *arg) {
 
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
-    if ( threads.iq != -1 )
-        CPU_SET(threads.iq, &cpuset);
+    if ( threads.sync != -1 )
+        CPU_SET(threads.sync, &cpuset);
     // this thread priority must be lower that the main acquisition thread
     sprintf(threadname, "sync UE %d", UE->Mod_id);
     init_thread(100000, 500000, FIFO_PRIORITY-1, &cpuset, threadname);
@@ -442,6 +442,9 @@ static void *UE_thread_synch(void *arg) {
 #endif
             if (nr_initial_sync( UE, UE->mode ) == 0) {
 
+	      //write_output("txdata_sym.m", "txdata_sym", UE->common_vars.rxdata[0], (10*UE->frame_parms.samples_per_subframe), 1, 1);
+
+		freq_offset = UE->common_vars.freq_offset; // frequency offset computed with pss in initial sync
                 hw_slot_offset = (UE->rx_offset<<1) / UE->frame_parms.samples_per_subframe;
                 printf("Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %d (DL %u, UL %u), UE_scan_carrier %d\n",
                        hw_slot_offset,
@@ -455,16 +458,13 @@ static void *UE_thread_synch(void *arg) {
                     // rerun with new cell parameters and frequency-offset
                     for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
                         openair0_cfg[UE->rf_map.card].rx_gain[UE->rf_map.chain+i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
-			if (UE->UE_scan_carrier == 1) {
 			  if (freq_offset >= 0)
-                            openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] += abs(UE->common_vars.freq_offset);
+                            openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] += abs(freq_offset);
 			  else
-                            openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] -= abs(UE->common_vars.freq_offset);
+                            openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] -= abs(freq_offset);
 			  openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] =
                             openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i]+uplink_frequency_offset[CC_id][i];
 			  downlink_frequency[CC_id][i] = openair0_cfg[CC_id].rx_freq[i];
-			  freq_offset=0;
-			}
 		    }
 
                     // reconfigure for potentially different bandwidth
@@ -594,16 +594,16 @@ static void *UE_thread_synch(void *arg) {
             break;
         }
 
-#ifdef XFORMS
+#if 0 //defined XFORMS
 	if (do_forms) {
 	  extern FD_lte_phy_scope_ue  *form_ue[NUMBER_OF_UE_MAX];
 	  
 	  phy_scope_UE(form_ue[0],
 		       PHY_vars_UE_g[0][0],
-		       0,0,7);
+		       0,0,1);
 	}
 #endif
-	
+
         AssertFatal ( 0== pthread_mutex_lock(&UE->proc.mutex_synch), "");
         // indicate readiness
         UE->proc.instance_cnt_synch--;
@@ -634,7 +634,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
     proc->instance_cnt_rxtx=-1;
     proc->subframe_rx=proc->sub_frame_start;
 
-	proc->dci_err_cnt=0;
+    proc->dci_err_cnt=0;
     char threadname[256];
     sprintf(threadname,"UE_%d_proc_%d", UE->Mod_id, proc->sub_frame_start);
     cpu_set_t cpuset;
@@ -671,6 +671,8 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 //        pickTime(current);
 //        updateTimes(proc->gotIQs, &t2, 10000, "Delay to wake up UE_Thread_Rx (case 2)");
 
+
+
         // Process Rx data for one sub-frame
         if (slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx) & NR_DOWNLINK_SLOT) {
 
@@ -679,11 +681,23 @@ static void *UE_thread_rxn_txnp4(void *arg) {
             UE->dci_ind.number_of_dcis = 0;
             //clean previous FAPI MESSAGE
 
+	    // call L2 for DL_CONFIG (DCI)
+	    UE->dcireq.module_id = UE->Mod_id;
+	    UE->dcireq.gNB_index = 0;
+	    UE->dcireq.cc_id     = 0;
+	    UE->dcireq.frame     = proc->frame_rx;
+	    UE->dcireq.slot      = proc->nr_tti_rx;
+	    nr_ue_dcireq(&UE->dcireq); //to be replaced with function pointer later
+
+	    NR_UE_MAC_INST_t *UE_mac = get_mac_inst(0);
+	    UE_mac->scheduled_response.dl_config = &UE->dcireq.dl_config_req;
+	    nr_ue_scheduled_response(&UE_mac->scheduled_response);
+	    
 #ifdef UE_SLOT_PARALLELISATION
-            phy_procedures_slot_parallelization_UE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
+            phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
-            phy_procedures_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay);
-            printf(">>> nr_ue_pdcch_procedures ended\n");
+            phy_procedures_nrUE_RX( UE, proc, 0, 1, UE->mode);
+	    //            printf(">>> nr_ue_pdcch_procedures ended\n");
 
 #endif
         }
@@ -691,78 +705,27 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 #if UE_TIMING_TRACE
         start_meas(&UE->generic_stat);
 #endif
-printf(">>> mac init\n");
+	//printf(">>> mac init\n");
 
         if (UE->mac_enabled==1) {
 
             //  trigger L2 to run ue_scheduler thru IF module
             //  [TODO] mapping right after NR initial sync
-            if(1)
             if(UE->if_inst != NULL && UE->if_inst->ul_indication != NULL){
                 UE->ul_indication.module_id = 0;
                 UE->ul_indication.gNB_index = 0;
                 UE->ul_indication.cc_id = 0;
-                UE->ul_indication.slot = 0;     //  to be fill
-                UE->ul_indication.frame = 0;    //  to be fill
-                //  [TODO] mapping right after NR initial sync
                 UE->ul_indication.frame = proc->frame_rx; 
                 UE->ul_indication.slot = proc->nr_tti_rx;
                 
                 UE->if_inst->ul_indication(&UE->ul_indication);
             }
-
-
-
-#ifdef NEW_MAC
-          ret = mac_xface->ue_scheduler(UE->Mod_id,
-                                          proc->frame_rx,
-                                          proc->subframe_rx,
-                                          proc->nr_tti_rx,
-                                          proc->frame_tx,
-                                          proc->subframe_tx,
-                                          proc->nr_tti_tx%(UE->frame_parms.ttis_per_subframe),
-#ifndef NO_RAT_NR
-                                          slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx),
-#else
-                                          subframe_select(&UE->frame_parms,proc->subframe_tx),
-#endif
-                                          0,
-                                          0/*FIXME CC_id*/);
-#endif
-
-/*#else
-            ret = mac_xface->ue_scheduler(UE->Mod_id,
-                                          proc->frame_rx,
-                                          proc->subframe_rx,
-                                          proc->frame_tx,
-                                          proc->subframe_tx,
-                                          subframe_select(&UE->frame_parms,proc->subframe_tx),
-                                          0,  */
-//                                          0/*FIXME CC_id*/);
-//#endif
-            if ( ret != CONNECTION_OK) {
-                char *txt;
-                switch (ret) {
-                case CONNECTION_LOST:
-                    txt="RRC Connection lost, returning to PRACH";
-                    break;
-                case PHY_RESYNCH:
-                    txt="RRC Connection lost, trying to resynch";
-                    break;
-                case RESYNCH:
-                    txt="return to PRACH and perform a contention-free access";
-                    break;
-                default:
-                    txt="UNKNOWN RETURN CODE";
-                };
-                LOG_E( PHY, "[UE %"PRIu8"] Frame %"PRIu32", subframe %u %s\n",
-                       UE->Mod_id, proc->frame_rx, proc->subframe_tx,txt );
-            }
-        }
+	}
+    
 #if UE_TIMING_TRACE
         stop_meas(&UE->generic_stat);
 #endif
-printf(">>> mac ended\n");
+	//printf(">>> mac ended\n");
 
         // Prepare the future Tx data
 #if 0
@@ -832,15 +795,15 @@ void *UE_thread(void *arg) {
 
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
-    if ( threads.iq != -1 )
-        CPU_SET(threads.iq, &cpuset);
-    init_thread(100000, 500000, FIFO_PRIORITY, &cpuset,
-                "UHD Threads");
+    if ( threads.main != -1 )
+        CPU_SET(threads.main, &cpuset);
+    sprintf(threadname, "Main UE %d", UE->Mod_id);
+    init_thread(100000, 500000, FIFO_PRIORITY, &cpuset,threadname);
+    
     if ((oaisim_flag == 0) && (UE->mode !=loop_through_memory))
         AssertFatal(0== openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]), "");
     UE->rfdevice.host_type = RAU_HOST;
-    sprintf(threadname, "Main UE %d", UE->Mod_id);
-    pthread_setname_np(pthread_self(), threadname);
+
     init_UE_threads(UE);
 
 #ifdef NAS_UE
@@ -866,13 +829,14 @@ void *UE_thread(void *arg) {
 	    usleep(500*1000);
 	  }
 #endif
+
             if (instance_cnt_synch < 0) {  // we can invoke the synch
                 // grab 10 ms of signal and wakeup synch thread
                 for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
                     rxp[i] = (void*)&UE->common_vars.rxdata[i][0];
 
                 if (UE->mode != loop_through_memory)
-                    AssertFatal( UE->frame_parms.samples_per_subframe*10 ==
+                    AssertFatal( UE->frame_parms.samples_per_subframe*10==
                                  UE->rfdevice.trx_read_func(&UE->rfdevice,
                                                             &timestamp,
                                                             rxp,
@@ -925,10 +889,10 @@ void *UE_thread(void *arg) {
                     }
                     UE->rx_offset=0;
                     UE->time_sync_cell=0;
-                    //UE->proc.proc_rxtx[0].frame_rx++;
+                    UE->proc.proc_rxtx[0].frame_rx++;
                     //UE->proc.proc_rxtx[1].frame_rx++;
-                    for (th_id=0; th_id < RX_NB_TH; th_id++) {
-                        UE->proc.proc_rxtx[th_id].frame_rx++;
+                    for (th_id=1; th_id < RX_NB_TH; th_id++) {
+                        UE->proc.proc_rxtx[th_id].frame_rx = UE->proc.proc_rxtx[0].frame_rx;
                     }
                     
                     //printf("first stream frame rx %d\n",UE->proc.proc_rxtx[0].frame_rx);
@@ -947,6 +911,10 @@ void *UE_thread(void *arg) {
                     rt_sleep_ns(1000*1000);
 
             } else {
+                thread_idx++;
+                if(thread_idx>=RX_NB_TH)
+                    thread_idx = 0;
+
                 subframe_nr++;
                 subframe_nr %= NR_NUMBER_OF_SUBFRAMES_PER_FRAME;               
                 UE_nr_rxtx_proc_t *proc = &UE->proc.proc_rxtx[thread_idx];
@@ -967,9 +935,6 @@ void *UE_thread(void *arg) {
 
                 LOG_D(PHY,"Process subframe %d thread Idx %d \n", subframe_nr, UE->current_thread_id[subframe_nr]);
 
-                thread_idx++;
-                if(thread_idx>=RX_NB_TH)
-                    thread_idx = 0;
 
                 if (UE->mode != loop_through_memory) {
                     for (i=0; i<UE->frame_parms.nb_antennas_rx; i++)
@@ -1038,10 +1003,10 @@ void *UE_thread(void *arg) {
                     // operate on thread sf mod 2
                     AssertFatal(pthread_mutex_lock(&proc->mutex_rxtx) ==0,"");
                     if(subframe_nr == 0) {
-                        //UE->proc.proc_rxtx[0].frame_rx++;
+                        UE->proc.proc_rxtx[0].frame_rx++;
                         //UE->proc.proc_rxtx[1].frame_rx++;
-                        for (th_id=0; th_id < RX_NB_TH; th_id++) {
-                            UE->proc.proc_rxtx[th_id].frame_rx++;
+                        for (th_id=1; th_id < RX_NB_TH; th_id++) {
+                            UE->proc.proc_rxtx[th_id].frame_rx = UE->proc.proc_rxtx[0].frame_rx;
                         }
 #ifdef SAIF_ENABLED
 			if (!(proc->frame_rx%4000))
@@ -1061,7 +1026,7 @@ void *UE_thread(void *arg) {
 
                     proc->nr_tti_rx=subframe_nr;
                     proc->subframe_rx=subframe_nr;
-
+		    
                     proc->frame_tx = proc->frame_rx;
                     proc->nr_tti_tx= subframe_nr + DURATION_RX_TO_TX;
                     if (proc->nr_tti_tx > NR_NUMBER_OF_SUBFRAMES_PER_FRAME) {
@@ -1106,42 +1071,60 @@ void *UE_thread(void *arg) {
 //                    pickStaticTime(lastTime);
                 } //UE->mode != loop_through_memory
                 else {
-                    proc->nr_tti_rx=subframe_nr;
-                    proc->subframe_rx=subframe_nr;
-		    if(subframe_nr == 0) {
-		      for (th_id=0; th_id < RX_NB_TH; th_id++) {
-			UE->proc.proc_rxtx[th_id].frame_rx++;
-		      }
+		  proc->nr_tti_rx=subframe_nr;
+		  proc->subframe_rx=subframe_nr;
+		  if(subframe_nr == 0) {
+		    for (th_id=0; th_id < RX_NB_TH; th_id++) {
+		      UE->proc.proc_rxtx[th_id].frame_rx++;
 		    }
-                    proc->frame_tx = proc->frame_rx;
-                    proc->nr_tti_tx= subframe_nr + DURATION_RX_TO_TX;
-                    if (proc->nr_tti_tx > NR_NUMBER_OF_SUBFRAMES_PER_FRAME) {
-                      proc->frame_tx = (proc->frame_tx + 1)%MAX_FRAME_NUMBER;
-                      proc->nr_tti_tx %= NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
-                    }
-                    proc->subframe_tx=proc->nr_tti_tx;
+		  }
+		  proc->frame_tx = proc->frame_rx;
+		  proc->nr_tti_tx= subframe_nr + DURATION_RX_TO_TX;
+		  if (proc->nr_tti_tx > NR_NUMBER_OF_SUBFRAMES_PER_FRAME) {
+		    proc->frame_tx = (proc->frame_tx + 1)%MAX_FRAME_NUMBER;
+		    proc->nr_tti_tx %= NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
+		  }
+		  proc->subframe_tx=proc->nr_tti_tx;
 
-                    printf("Processing subframe %d\n",proc->subframe_rx);
+		  if (slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx) & NR_DOWNLINK_SLOT) {
+		    
+		    //clean previous FAPI MESSAGE
+		    UE->rx_ind.number_pdus = 0;
+		    UE->dci_ind.number_of_dcis = 0;
+		    //clean previous FAPI MESSAGE
+		    
+		    // call L2 for DL_CONFIG (DCI)
+		    UE->dcireq.module_id = UE->Mod_id;
+		    UE->dcireq.gNB_index = 0;
+		    UE->dcireq.cc_id     = 0;
+		    UE->dcireq.frame     = proc->frame_rx;
+		    UE->dcireq.slot      = proc->nr_tti_rx;
+		    nr_ue_dcireq(&UE->dcireq); //to be replaced with function pointer later
 
-		    if(UE->if_inst != NULL && UE->if_inst->ul_indication != NULL){
-		      UE->ul_indication.module_id = 0;
-		      UE->ul_indication.gNB_index = 0;
-		      UE->ul_indication.cc_id = 0;
-		      UE->ul_indication.slot = 0;     //  to be fill
-		      UE->ul_indication.frame = 0;    //  to be fill
-		      //  [TODO] mapping right after NR initial sync
-		      UE->ul_indication.frame = proc->frame_rx; 
-		      UE->ul_indication.slot = proc->nr_tti_rx;
-		      
-		      UE->if_inst->ul_indication(&UE->ul_indication);
-		    }
+		    NR_UE_MAC_INST_t *UE_mac = get_mac_inst(0);
+		    UE_mac->scheduled_response.dl_config = &UE->dcireq.dl_config_req;
+		    nr_ue_scheduled_response(&UE_mac->scheduled_response);
 
-		    phy_procedures_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay);
-		    getchar();
+		    
+		    printf("Processing subframe %d\n",proc->subframe_rx);
+		    phy_procedures_nrUE_RX( UE, proc, 0, 1, UE->mode);
+		  }
+		  
+		  if(UE->if_inst != NULL && UE->if_inst->ul_indication != NULL){
+		    UE->ul_indication.module_id = 0;
+		    UE->ul_indication.gNB_index = 0;
+		    UE->ul_indication.cc_id = 0;
+		    UE->ul_indication.frame = proc->frame_rx; 
+		    UE->ul_indication.slot = proc->nr_tti_rx;
+		    
+		    UE->if_inst->ul_indication(&UE->ul_indication);
+		  }
+		  
+		  getchar();
 		} // else loop_through_memory
             } // start_rx_stream==1
         } // UE->is_synchronized==1
-
+	
     } // while !oai_exit
     return NULL;
 }
@@ -1186,11 +1169,11 @@ void init_UE_threads(PHY_VARS_NR_UE *UE) {
 #ifdef UE_DLSCH_PARALLELISATION
         pthread_mutex_init(&UE->proc.proc_rxtx[i].mutex_dlsch_td,NULL);
         pthread_cond_init(&UE->proc.proc_rxtx[i].cond_dlsch_td,NULL);
-        pthread_create(&UE->proc.proc_rxtx[i].pthread_dlsch_td,NULL,dlsch_decoding_2thread0, rtd);
+        pthread_create(&UE->proc.proc_rxtx[i].pthread_dlsch_td,NULL,nr_dlsch_decoding_2thread0, rtd);
         //thread 2
         pthread_mutex_init(&UE->proc.proc_rxtx[i].mutex_dlsch_td1,NULL);
         pthread_cond_init(&UE->proc.proc_rxtx[i].cond_dlsch_td1,NULL);
-        pthread_create(&UE->proc.proc_rxtx[i].pthread_dlsch_td1,NULL,dlsch_decoding_2thread1, rtd);
+        pthread_create(&UE->proc.proc_rxtx[i].pthread_dlsch_td1,NULL,nr_dlsch_decoding_2thread1, rtd);
 #endif
 
 #ifdef UE_SLOT_PARALLELISATION

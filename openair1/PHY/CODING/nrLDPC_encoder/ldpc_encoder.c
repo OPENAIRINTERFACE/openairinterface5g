@@ -68,7 +68,7 @@ int encode_parity_check_part_orig(unsigned char *c,unsigned char *d, short BG,sh
     printf("problem with BG\n");
     return(-1);
   }
-  
+
 
   no_punctured_columns=(int)((nrows-2)*Zc+block_length-block_length*3)/Zc;
 

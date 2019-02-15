@@ -40,6 +40,21 @@
 
 typedef struct {
     /// module id
+  module_id_t module_id;
+  /// gNB index
+  uint32_t gNB_index;
+  /// component carrier id
+  int cc_id;
+  /// frame 
+  frame_t frame;
+  /// slot
+  int slot;
+
+  fapi_nr_dl_config_request_t dl_config_req;
+} nr_dcireq_t;
+
+typedef struct {
+    /// module id
     module_id_t module_id;
     /// gNB index
     uint32_t gNB_index;
@@ -48,7 +63,7 @@ typedef struct {
     /// frame 
     frame_t frame;
     /// slot
-    uint8_t slot;
+    int slot;
 
     /// NR UE FAPI-like P7 message, direction: L1 to L2
     /// data reception indication structure
@@ -72,7 +87,7 @@ typedef struct {
     /// slot
     uint32_t slot;
     /// ssb_index, if ssb is not present in current TTI, thie value set to -1
-    int8_t ssb_index;
+    int ssb_index;
 } nr_uplink_indication_t;
 
 // Downlink subframe P7
@@ -82,13 +97,13 @@ typedef struct {
     /// module id
     module_id_t module_id; 
     /// component carrier id
-    uint8_t CC_id;
+    int CC_id;
     /// frame
     frame_t frame;
     /// subframe
     sub_frame_t subframe;
     /// slot
-    uint8_t slot;
+    int slot;
 
     /// NR UE FAPI-like P7 message, direction: L2 to L1
     /// downlink transmission configuration request structure
@@ -142,7 +157,7 @@ typedef int8_t (nr_ue_phy_config_request_f)(nr_phy_config_t *phy_config);
  *  -1: Failed to consume bytes. Abort the mission.
  * Non-negative return values indicate success, and ignored.
  */
-typedef int8_t (nr_ue_dl_indication_f)(nr_downlink_indication_t *dl_info);
+typedef int (nr_ue_dl_indication_f)(nr_downlink_indication_t *dl_info);
 
 /*
  * Generic type of an application-defined callback to return various
@@ -151,19 +166,21 @@ typedef int8_t (nr_ue_dl_indication_f)(nr_downlink_indication_t *dl_info);
  *  -1: Failed to consume bytes. Abort the mission.
  * Non-negative return values indicate success, and ignored.
  */
-typedef int8_t (nr_ue_ul_indication_f)(nr_uplink_indication_t *ul_info);
+typedef int (nr_ue_ul_indication_f)(nr_uplink_indication_t *ul_info);
+
+typedef int (nr_ue_dcireq_f)(nr_dcireq_t *ul_info);
 
 //  TODO check this stuff can be reuse of need modification
 typedef struct nr_ue_if_module_s {
-    nr_ue_scheduled_response_f *scheduled_response;
-    nr_ue_phy_config_request_f *phy_config_request;
-    nr_ue_dl_indication_f      *dl_indication;
-    nr_ue_ul_indication_f      *ul_indication;
-
-    uint32_t cc_mask;
-    uint32_t current_frame;
-    uint32_t current_slot;
-    //pthread_mutex_t nr_if_mutex;
+  nr_ue_scheduled_response_f *scheduled_response;
+  nr_ue_phy_config_request_f *phy_config_request;
+  nr_ue_dl_indication_f      *dl_indication;
+  nr_ue_ul_indication_f      *ul_indication;
+  //nr_ue_dcireq_f             *dcireq;
+  uint32_t cc_mask;
+  uint32_t current_frame;
+  uint32_t current_slot;
+  //pthread_mutex_t nr_if_mutex;
 } nr_ue_if_module_t;
 
 
@@ -174,14 +191,16 @@ nr_ue_if_module_t *nr_ue_if_module_init(uint32_t module_id);
 
 /**\brief done free of memory allocation by module_id and release to pointer pool.
    \param module_id module id*/
-int8_t nr_ue_if_module_kill(uint32_t module_id);
+int nr_ue_if_module_kill(uint32_t module_id);
 
 
 /**\brief interface between L1/L2, indicating the downlink related information, like dci_ind and rx_req
    \param dl_info including dci_ind and rx_request messages*/
-int8_t nr_ue_dl_indication(nr_downlink_indication_t *dl_info);
+int nr_ue_dl_indication(nr_downlink_indication_t *dl_info);
 
-int8_t nr_ue_ul_indication(nr_uplink_indication_t *ul_info);
+int nr_ue_ul_indication(nr_uplink_indication_t *ul_info);
+
+int nr_ue_dcireq(nr_dcireq_t *dcireq);
 
 //  TODO check
 /**\brief handle BCCH-BCH message from dl_indication
@@ -190,15 +209,15 @@ int8_t nr_ue_ul_indication(nr_uplink_indication_t *ul_info);
    \param ssb_index       SSB index within 0 - (L_ssb-1) corresponding to 38.331 ch.13 parameter i
    \param ssb_length      corresponding to L1 parameter L_ssb 
    \param cell_id         cell id */
-int8_t handle_bcch_bch(module_id_t module_id, int cc_id, uint8_t gNB_index, uint8_t *pduP, uint8_t additional_bits, uint32_t ssb_index, uint32_t ssb_length, uint16_t cell_id);
+int handle_bcch_bch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint8_t *pduP, unsigned int additional_bits, uint32_t ssb_index, uint32_t ssb_length, uint16_t cell_id);
 
 //  TODO check
 /**\brief handle BCCH-DL-SCH message from dl_indication
    \param pdu_len   length(bytes) of pdu
    \param pduP      pointer to pdu*/
-int8_t handle_bcch_dlsch(module_id_t module_id, int cc_id, uint8_t gNB_index, uint32_t sibs_mask, uint8_t *pduP, uint32_t pdu_len);
+int handle_bcch_dlsch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint32_t sibs_mask, uint8_t *pduP, uint32_t pdu_len);
 
-int8_t handle_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_type);
+int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, fapi_nr_dci_pdu_rel15_t *dci, uint16_t rnti, uint32_t dci_type);
 
 #endif
 

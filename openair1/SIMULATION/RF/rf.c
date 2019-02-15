@@ -107,10 +107,10 @@ void rf_rx(double **r_re,
     exit(-1);
   }
 
-  if (fabs(f_off) > 10000.0) {
+/*  if (fabs(f_off) > 10000.0) {
     printf("rf.c: Illegal f_off %f\n",f_off);
     exit(-1);
-  }
+  }*/
 
   if (fabs(drift) > 1000.0) {
     printf("rf.c: Illegal drift %f\n",drift);

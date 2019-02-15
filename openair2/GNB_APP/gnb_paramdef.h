@@ -602,12 +602,12 @@ typedef enum {
 /*   optname                                                                        helpstr   paramflags    XXXptr                                                                  defXXXval                       type         numelt  checked_param  */
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define NRCCPARAMS_DESC { \
-{GNB_CONFIG_STRING_FRAME_TYPE,                                                       NULL,        0,        strptr:&frame_type,                                                     defstrval:"FDD",                TYPE_STRING,     0},  \
+{GNB_CONFIG_STRING_FRAME_TYPE,                                                       NULL,        0,        strptr:&frame_type,                                                     defstrval:"TDD",                TYPE_STRING,     0},  \
 {GNB_CONFIG_STRING_DL_PREFIX_TYPE,                                                   NULL,        0,        strptr:&DL_prefix_type,                                                 defstrval:"NORMAL",             TYPE_STRING,     0},  \
 {GNB_CONFIG_STRING_UL_PREFIX_TYPE,                                                   NULL,        0,        strptr:&UL_prefix_type,                                                 defstrval:"NORMAL",             TYPE_STRING,     0},  \
-{GNB_CONFIG_STRING_EUTRA_BAND,                                                       NULL,        0,        iptr:&eutra_band,                                                       defintval:7,                    TYPE_UINT,       0},  \
-{GNB_CONFIG_STRING_DOWNLINK_FREQUENCY,                                               NULL,        0,        i64ptr:(int64_t *)&downlink_frequency,                                  defint64val:2680000000,         TYPE_UINT64,     0},  \
-{GNB_CONFIG_STRING_UPLINK_FREQUENCY_OFFSET,                                          NULL,        0,        iptr:&uplink_frequency_offset,                                          defintval:-120000000,           TYPE_INT,        0},  \
+{GNB_CONFIG_STRING_NR_BAND,                                                       NULL,        0,        iptr:&nr_band,                                                       defintval:78,                    TYPE_UINT,       0},  \
+{GNB_CONFIG_STRING_DOWNLINK_FREQUENCY,                                               NULL,        0,        i64ptr:(int64_t *)&downlink_frequency,                                  defint64val:3600000000,         TYPE_UINT64,     0},  \
+{GNB_CONFIG_STRING_UPLINK_FREQUENCY_OFFSET,                                          NULL,        0,        iptr:&uplink_frequency_offset,                                          defintval:0,                    TYPE_INT,        0},  \
 {GNB_CONFIG_STRING_NID_CELL,                                                         NULL,        0,        iptr:&Nid_cell,                                                         defintval:0,                    TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_N_RB_DL,                                                          NULL,        0,        iptr:&N_RB_DL,                                                          defintval:25,                   TYPE_UINT,       0},  \
 {GNB_CONFIG_STRING_NB_ANT_PORTS,                                                     NULL,        0,        iptr:&nb_antenna_ports,                                                 defintval:15,                   TYPE_UINT,       0},  \
@@ -751,7 +751,7 @@ typedef enum {
 #define GNB_CONFIG_FRAME_TYPE_IDX                                                   0
 #define GNB_CONFIG_DL_PREFIX_TYPE_IDX                                               1
 #define GNB_CONFIG_UL_PREFIX_TYPE_IDX                                               2
-#define GNB_CONFIG_EUTRA_BAND_IDX                                                   3
+#define GNB_CONFIG_NR_BAND_IDX                                                      3
 #define GNB_CONFIG_DOWNLINK_FREQUENCY_IDX                                           4
 #define GNB_CONFIG_UPLINK_FREQUENCY_OFFSET_IDX                                      5
 #define GNB_CONFIG_NID_CELL_IDX                                                     6

@@ -419,7 +419,7 @@ FD_lte_phy_scope_ue *create_lte_phy_scope_ue( void )
   fl_set_object_lcolor( fdui->pbch_llr, FL_WHITE ); // Label color
   fl_set_xyplot_symbolsize( fdui->pbch_llr,2);
   fl_set_xyplot_xgrid( fdui->pbch_llr,FL_GRID_MAJOR);
-  fl_set_xyplot_xbounds( fdui->pbch_llr,0,1920);
+  //fl_set_xyplot_xbounds( fdui->pbch_llr,0,1920);
 
   // I/Q PBCH comp
   fdui->pbch_comp = fl_add_xyplot( FL_POINTS_XYPLOT, 540, 260, 240, 100, "PBCH I/Q of MF Output" );
@@ -498,24 +498,33 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   float **rxsig_t_dB;
   float *time;
   float *corr;
-  /*
   int16_t **chest_t;
   int16_t **chest_f;
   int16_t *pdsch_llr;
   int16_t *pdsch_comp;
-  int16_t *pdsch_mag;
+  //int16_t *pdsch_mag;
   int8_t  *pdcch_llr;
   int16_t *pdcch_comp;
-  int8_t *pbch_llr;
+  int16_t *pbch_llr;
   int16_t *pbch_comp;
-  float Re,Im,ymax=1;
-  int num_pdcch_symbols=3;
-  float *llr, *bit, *chest_f_abs, llr_pbch[1920], bit_pbch[1920], *llr_pdcch, *bit_pdcch;
+  float llr_pbch[1920], bit_pbch[1920];
+  float *llr, *bit; 
+  float *llr_pdcch, *bit_pdcch;
   float *I, *Q;
+  int num_pdcch_symbols=2;
+  int num_re = 4500;
+  int Qm = 2;
+  int coded_bits_per_codeword = num_re*Qm;
+  int symbol, first_symbol,nb_re;
+  int nb_rb_pdsch =50;
+  float ymax=1;
   float **chest_t_abs;
-  float freq[nsymb_ce*nb_antennas_rx*nb_antennas_tx];
+  float Re,Im;
+  float *chest_f_abs;
+  float *freq;
+  static int overlay = 0;
+  /*
   int frame = phy_vars_ue->proc.proc_rxtx[0].frame_rx;
-  int coded_bits_per_codeword = 0;
   int mcs = 0;
   unsigned char harq_pid = 0;
   */
@@ -554,21 +563,24 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   } else {
     coded_bits_per_codeword = 0; //frame_parms->N_RB_DL*12*get_Qm(mcs)*(frame_parms->symbols_per_tti);
   }
+  */
+  I = (float*) calloc(frame_parms->ofdm_symbol_size*frame_parms->symbols_per_slot*2,sizeof(float));
+  Q = (float*) calloc(frame_parms->ofdm_symbol_size*frame_parms->symbols_per_slot*2,sizeof(float));
 
-  I = (float*) calloc(frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti*2,sizeof(float));
-  Q = (float*) calloc(frame_parms->ofdm_symbol_size*frame_parms->symbols_per_tti*2,sizeof(float));
   chest_t_abs = (float**) malloc(nb_antennas_rx*sizeof(float*));
 
   for (arx=0; arx<nb_antennas_rx; arx++) {
     chest_t_abs[arx] = (float*) calloc(frame_parms->ofdm_symbol_size,sizeof(float));
   }
 
-  chest_f_abs = (float*) calloc(nsymb_ce*nb_antennas_rx*nb_antennas_tx,sizeof(float));
+  chest_f_abs = (float*) calloc(frame_parms->ofdm_symbol_size,sizeof(float));
+  freq = (float*) calloc(frame_parms->ofdm_symbol_size,sizeof(float));
+
   llr = (float*) calloc(coded_bits_per_codeword,sizeof(float)); // init to zero
   bit = malloc(coded_bits_per_codeword*sizeof(float));
+
   llr_pdcch = (float*) calloc(12*frame_parms->N_RB_DL*num_pdcch_symbols*2,sizeof(float)); // init to zero
   bit_pdcch = (float*) calloc(12*frame_parms->N_RB_DL*num_pdcch_symbols*2,sizeof(float));
-  */
 
   rxsig_t = (int16_t**) phy_vars_ue->common_vars.rxdata;
   rxsig_t_dB = calloc(nb_antennas_rx,sizeof(float*));
@@ -577,19 +589,19 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   }
   time = calloc(samples_per_frame,sizeof(float));
   corr = calloc(samples_per_frame,sizeof(float));
-  
-  /*
+
   chest_t = (int16_t**) phy_vars_ue->common_vars.common_vars_rx_data_per_thread[phy_vars_ue->current_thread_id[subframe]].dl_ch_estimates_time[eNB_id];
   chest_f = (int16_t**) phy_vars_ue->common_vars.common_vars_rx_data_per_thread[phy_vars_ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id];
-  pbch_llr = (int8_t*) phy_vars_ue->pbch_vars[eNB_id]->llr;
+
+  pbch_llr = (int16_t*) phy_vars_ue->pbch_vars[eNB_id]->llr;
   pbch_comp = (int16_t*) phy_vars_ue->pbch_vars[eNB_id]->rxdataF_comp[0];
+
   pdcch_llr = (int8_t*) phy_vars_ue->pdcch_vars[phy_vars_ue->current_thread_id[subframe]][eNB_id]->llr;
   pdcch_comp = (int16_t*) phy_vars_ue->pdcch_vars[phy_vars_ue->current_thread_id[subframe]][eNB_id]->rxdataF_comp[0];
-  pdsch_llr = (int16_t*) phy_vars_ue->pdsch_vars[phy_vars_ue->current_thread_id[subframe]][eNB_id]->llr[0]; // stream 0
+   pdsch_llr = (int16_t*) phy_vars_ue->pdsch_vars[phy_vars_ue->current_thread_id[subframe]][eNB_id]->llr[0]; // stream 0
   //    pdsch_llr = (int16_t*) phy_vars_ue->lte_ue_pdsch_vars_SI[eNB_id]->llr[0]; // stream 0
   pdsch_comp = (int16_t*) phy_vars_ue->pdsch_vars[phy_vars_ue->current_thread_id[subframe]][eNB_id]->rxdataF_comp0[0];
-  pdsch_mag = (int16_t*) phy_vars_ue->pdsch_vars[phy_vars_ue->current_thread_id[subframe]][eNB_id]->dl_ch_mag0[0];
-  */
+  //pdsch_mag = (int16_t*) phy_vars_ue->pdsch_vars[phy_vars_ue->current_thread_id[subframe]][eNB_id]->dl_ch_mag0[0];
 
   // Received signal in time domain of receive antenna 0
   if (rxsig_t != NULL) {
@@ -615,29 +627,38 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     */
   }
 
-  for (ind=0;ind<3;ind++) {
-    if (pss_corr_ue[ind]) {
-      for (i=0; i<samples_per_frame; i++) {
-        corr[i] = (float) pss_corr_ue[ind][i];
-        time[i] = (float) i;
+  if (phy_vars_ue->is_synchronized==0) {
+    for (ind=0;ind<3;ind++) {
+      if (pss_corr_ue[ind]) {
+	for (i=0; i<samples_per_frame; i++) {
+	  corr[i] = (float) pss_corr_ue[ind][i];
+	  time[i] = (float) i;
+	}
+	
+	if (ind==0)
+	  fl_set_xyplot_data(form->chest_t,time,corr,samples_per_frame,"","","");
+	else
+	  fl_add_xyplot_overlay(form->chest_t,ind,time,corr,samples_per_frame,rx_antenna_colors[ind]);
+
+	overlay = 1;
       }
-
-      if (ind==0)
-	fl_set_xyplot_data(form->chest_t,time,corr,samples_per_frame,"","","");
-      else
-        fl_add_xyplot_overlay(form->chest_t,ind,time,corr,samples_per_frame,rx_antenna_colors[ind]);
     }
+  } 
+  else {
+	
+  if (overlay) { //there was a previous overlay
+    fl_clear_xyplot(form->chest_t);
+    overlay = 0;
   }
-    
 
-  /*
-  // Channel Impulse Response (still repeated format)
+  // Channel Impulse Response
   if (chest_t != NULL) {
     ymax = 0;
 
     if (chest_t[0] !=NULL) {
       for (i=0; i<(frame_parms->ofdm_symbol_size>>3); i++) {
-        chest_t_abs[0][i] = (float) (chest_t[0][4*i]*chest_t[0][4*i]+chest_t[0][4*i+1]*chest_t[0][4*i+1]);
+        chest_t_abs[0][i] = (float) (chest_t[0][2*i]*chest_t[0][2*i]+chest_t[0][2*i+1]*chest_t[0][2*i+1]);
+	time[i] = (float) i;
 
         if (chest_t_abs[0][i] > ymax)
           ymax = chest_t_abs[0][i];
@@ -645,7 +666,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
 
       fl_set_xyplot_data(form->chest_t,time,chest_t_abs[0],(frame_parms->ofdm_symbol_size>>3),"","","");
     }
-
+    /*
     for (arx=1; arx<nb_antennas_rx; arx++) {
       if (chest_t[arx] !=NULL) {
         for (i=0; i<(frame_parms->ofdm_symbol_size>>3); i++) {
@@ -659,10 +680,11 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
         fl_set_xyplot_overlay_type(form->chest_t,arx,FL_DASHED_XYPLOT);
       }
     }
-
+    */
     // Avoid flickering effect
     //        fl_get_xyplot_ybounds(form->chest_t,&ymin,&ymax); // Does not always work...
     fl_set_xyplot_ybounds(form->chest_t,0,(double) ymax);
+  }
   }
 
   // Channel Frequency Response (includes 5 complex sample for filter)
@@ -672,7 +694,7 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     for (atx=0; atx<nb_antennas_tx; atx++) {
       for (arx=0; arx<nb_antennas_rx; arx++) {
         if (chest_f[(atx<<1)+arx] != NULL) {
-          for (k=0; k<nsymb_ce; k++) {
+          for (k=0; k<frame_parms->ofdm_symbol_size; k++) {
             freq[ind] = (float)ind;
             Re = (float)(chest_f[(atx<<1)+arx][(2*k)]);
             Im = (float)(chest_f[(atx<<1)+arx][(2*k)+1]);
@@ -685,12 +707,13 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
     }
 
     // tx antenna 0
-    fl_set_xyplot_xbounds(form->chest_f,0,nb_antennas_rx*nb_antennas_tx*nsymb_ce);
+    //fl_set_xyplot_xbounds(form->chest_f,0,nb_antennas_rx*nb_antennas_tx*nsymb_ce);
     //fl_set_xyplot_xtics(form->chest_f,nb_antennas_rx*nb_antennas_tx*frame_parms->symbols_per_tti,2);
     //        fl_set_xyplot_xtics(form->chest_f,nb_antennas_rx*nb_antennas_tx*2,2);
-    fl_set_xyplot_xgrid(form->chest_f,FL_GRID_MAJOR);
-    fl_set_xyplot_data(form->chest_f,freq,chest_f_abs,nsymb_ce,"","","");
+    //fl_set_xyplot_xgrid(form->chest_f,FL_GRID_MAJOR);
+    fl_set_xyplot_data(form->chest_f,freq,chest_f_abs,frame_parms->ofdm_symbol_size,"","","");
 
+    /*
     for (arx=1; arx<nb_antennas_rx; arx++) {
       fl_add_xyplot_overlay(form->chest_f,1,&freq[arx*nsymb_ce],&chest_f_abs[arx*nsymb_ce],nsymb_ce,rx_antenna_colors[arx]);
     }
@@ -709,60 +732,53 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
         fl_add_xyplot_overlay(form->chest_f,atx,&freq[atx*nsymb_ce],&chest_f_abs[atx*nsymb_ce],nsymb_ce,rx_antenna_colors[arx]);
       }
     }
+    */
   }
-
+  
   // PBCH LLRs
   if (pbch_llr != NULL) {
-    for (i=0; i<1920; i++) {
+    for (i=0; i<864; i++) {
       llr_pbch[i] = (float) pbch_llr[i];
       bit_pbch[i] = (float) i;
     }
 
-    fl_set_xyplot_data(form->pbch_llr,bit_pbch,llr_pbch,1920,"","","");
+    fl_set_xyplot_data(form->pbch_llr,bit_pbch,llr_pbch,864,"","","");
   }
+
+  first_symbol=1;
 
   // PBCH I/Q of MF Output
   if (pbch_comp!=NULL) {
-    for (i=0; i<72*2; i++) {
-      I[i] = pbch_comp[2*i];
-      Q[i] = pbch_comp[2*i+1];
+    for (symbol=first_symbol; symbol<(first_symbol+3); symbol++) {
+      if (symbol == 2 || symbol == 6) 
+	nb_re = 72;
+      else
+	nb_re = 180;
+      for (i=0; i<nb_re; i++) {
+	I[i] = pbch_comp[2*symbol*20*12+2*i];
+	Q[i] = pbch_comp[2*symbol*20*12+2*i+1];
+      }
     }
-
-    fl_set_xyplot_data(form->pbch_comp,I,Q,72*2,"","","");
+    fl_set_xyplot_data(form->pbch_comp,I,Q,432,"","","");
   }
 
   // PDCCH LLRs
   if (pdcch_llr != NULL) {
-    for (i=0; i<12*frame_parms->N_RB_DL*2*num_pdcch_symbols; i++) {
-      llr_pdcch[i] = (float) pdcch_llr[i];
+    for (i=0; i<100; i++) { //12*frame_parms->N_RB_DL*2*num_pdcch_symbols
+      llr_pdcch[i] = (float) pdcch_llr[2*24*9 +i];
       bit_pdcch[i] = (float) i;
     }
 
-    fl_set_xyplot_xbounds(form->pdcch_llr,0,12*frame_parms->N_RB_DL*2*3);
-    if (frame_parms->N_RB_DL != 100)
-    {
-        fl_set_xyplot_data(form->pdcch_llr,bit_pdcch,llr_pdcch,12*frame_parms->N_RB_DL*2*num_pdcch_symbols,"","","");
-    }
-    else
-    {
-        LOG_D(PHY,"UE PDCCH LLR plot is bugged in 20 MHz BW, to be fixed !!!\n");
-    }
+    fl_set_xyplot_data(form->pdcch_llr,bit_pdcch,llr_pdcch,12*frame_parms->N_RB_DL*num_pdcch_symbols,"","","");
   }
 
   // PDCCH I/Q of MF Output
   if (pdcch_comp!=NULL) {
-    for (i=0; i<12*frame_parms->N_RB_DL*num_pdcch_symbols; i++) {
-      I[i] = pdcch_comp[2*i];
-      Q[i] = pdcch_comp[2*i+1];
+    for (i=0; i<100; i++) {
+      I[i] = pdcch_comp[2*50*12+2*i];
+      Q[i] = pdcch_comp[2*50*12+2*i+1];
     }
-    if (frame_parms->N_RB_DL != 100)
-    {
-        fl_set_xyplot_data(form->pdcch_comp,I,Q,12*frame_parms->N_RB_DL*num_pdcch_symbols,"","","");
-    }
-    else
-    {
-        LOG_D(PHY,"UE PDCCH COMP plot is bugged in 20 MHz BW, to be fixed !!!\n");
-    }
+    fl_set_xyplot_data(form->pdcch_comp,I,Q,12*frame_parms->N_RB_DL*num_pdcch_symbols,"","","");
   }
 
   // PDSCH LLRs
@@ -772,32 +788,20 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
       bit[i] = (float) i;
     }
 
-    fl_set_xyplot_xbounds(form->pdsch_llr,0,coded_bits_per_codeword);
-    if (frame_parms->N_RB_DL != 100)
-    {
-        fl_set_xyplot_data(form->pdsch_llr,bit,llr,coded_bits_per_codeword,"","","");
-    }
-    else
-    {
-        LOG_D(PHY,"UE PDSCH LLR plot is bugged in 20 MHz BW, to be fixed !!!\n");
-    }
+    //fl_set_xyplot_xbounds(form->pdsch_llr,0,coded_bits_per_codeword);
+    fl_set_xyplot_data(form->pdsch_llr,bit,llr,coded_bits_per_codeword,"","","");
   }
 
   // PDSCH I/Q of MF Output
   if (pdsch_comp!=NULL) {
-    ind=0;
-
-    for (k=0; k<frame_parms->symbols_per_tti; k++) {
-      for (i=0; i<12*frame_parms->N_RB_DL/2; i++) {
-    	int j = (2*frame_parms->N_RB_DL*12*k)+4*i;
-        I[ind] = (pdsch_mag[j  ]!=0? 1.0/pdsch_mag[j  ]: 0.0) * pdsch_comp[j  ]*1.0;
-        Q[ind] = (pdsch_mag[j+1]!=0? 1.0/pdsch_mag[j+1]: 0.0) * pdsch_comp[j+1]*1.0;
-        ind++;
-      }
+    for (i=0; i<nb_rb_pdsch*12; i++) {
+      I[i] = pdsch_comp[2*2*nb_rb_pdsch*12+2*i  ];
+      Q[i] = pdsch_comp[2*2*nb_rb_pdsch*12+2*i+1];
     }
-
-    fl_set_xyplot_data(form->pdsch_comp,I,Q,ind,"","","");
+    
+    fl_set_xyplot_data(form->pdsch_comp,I,Q,nb_rb_pdsch*12,"","","");
   }
+  /*
 
   // PDSCH Throughput
   memmove( tput_time_ue[UE_id], &tput_time_ue[UE_id][1], (TPUT_WINDOW_LENGTH-1)*sizeof(float) );
@@ -824,19 +828,18 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   }
   free(rxsig_t_dB);
 
-  /*
   free(I);
   free(Q);
-  free(chest_f_abs);
   free(llr);
   free(bit);
   free(bit_pdcch);
   free(llr_pdcch);
 
+  /*
+  free(chest_f_abs);
   for (arx=0; arx<nb_antennas_rx; arx++) {
     free(chest_t_abs[arx]);
   }
-
   free(chest_t_abs);
   */
 }

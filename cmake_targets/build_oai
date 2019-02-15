@@ -339,6 +339,10 @@ function main() {
             FORCE_DEADLINE_SCHEDULER_FLAG_USER="True"
             echo_info "Enabling the usage of deadline scheduler"
             shift 1;;
+       --enable-cpu-affinity)
+            CPU_AFFINITY_FLAG_USER="True"
+            echo_info "Enabling CPU Affinity (only valid when not using deadline scheduler)"
+            shift 1;;
        --disable-cpu-affinity)
             CPU_AFFINITY_FLAG_USER="False"
             echo_info "Disabling CPU Affinity (only valid when not using deadline scheduler)"
@@ -692,7 +696,7 @@ function main() {
     echo_info "Compiling unitary tests simulators"
     # TODO: fix: dlsim_tm4 pucchsim prachsim pdcchsim pbchsim mbmssim
     #simlist="dlsim_tm4 dlsim ulsim pucchsim prachsim pdcchsim pbchsim mbmssim"
-    simlist="dlsim ulsim polartest ldpctest nr_pbchsim"
+    simlist="dlsim ulsim polartest ldpctest nr_pbchsim nr_dlschsim nr_dlsim"
     for f in $simlist ; do
       compilations \
       phy_simulators $f \

@@ -127,5 +127,8 @@ void nr_ue_process_mac_pdu(
     uint8_t *pduP, 
     uint16_t mac_pdu_len, 
     uint8_t eNB_index);
+
+int8_t nr_ue_process_dlsch(module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_nr_dci_indication_t *dci_ind, void *pduP, uint32_t pdu_len);
+
 #endif
 /** @}*/

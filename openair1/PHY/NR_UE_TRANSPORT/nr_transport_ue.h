@@ -34,13 +34,10 @@
 #include <limits.h>
 #include "PHY/impl_defs_top.h"
 
-
+#include "PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
 
 //#include "PHY/defs_nr_UE.h"
-//#include "../LTE_TRANSPORT/dci.h"
-//#include "../LTE_TRANSPORT/mdci.h"
-//#include "../LTE_TRANSPORT/uci_common.h"
-//#include "../LTE_TRANSPORT/transport_common.h"
+#include "../NR_TRANSPORT/nr_transport_common_proto.h"
 #ifndef STANDALONE_COMPILE
 #include "UTIL/LISTS/list.h"
 #endif
@@ -117,39 +114,31 @@ typedef struct {
   uint8_t *b;
   /// Pointers to transport block segments
   uint8_t *c[MAX_NUM_ULSCH_SEGMENTS];
-  /// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)
-  uint32_t RTC[MAX_NUM_ULSCH_SEGMENTS];
   /// Index of current HARQ round for this ULSCH
   uint8_t round;
   /// MCS format of this ULSCH
   uint8_t mcs;
   /// Redundancy-version of the current sub-frame
   uint8_t rvidx;
-  /// Turbo-code outputs (36-212 V8.6 2009-03, p.12
-  uint8_t d[MAX_NUM_ULSCH_SEGMENTS][(96+3+(3*6144))];
-  /// Sub-block interleaver outputs (36-212 V8.6 2009-03, p.16-17)
-  uint8_t w[MAX_NUM_ULSCH_SEGMENTS][3*6144];
-  /// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)
+  /// LDPC-code outputs
+  uint8_t d[MAX_NUM_ULSCH_SEGMENTS][3*8448];
+  /// Interleaver outputs
+  uint8_t w[MAX_NUM_ULSCH_SEGMENTS][3*8448];
+  /// Number of code segments
   uint32_t C;
-  /// Number of "small" code segments (for definition see 36-212 V8.6 2009-03, p.10)
-  uint32_t Cminus;
-  /// Number of "large" code segments (for definition see 36-212 V8.6 2009-03, p.10)
-  uint32_t Cplus;
-  /// Number of bits in "small" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10)
-  uint32_t Kminus;
-  /// Number of bits in "large" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10)
-  uint32_t Kplus;
+  /// Number of bits in code segments
+  uint32_t K;
   /// Total number of bits across all segments
   uint32_t sumKr;
-  /// Number of "Filler" bits (for definition see 36-212 V8.6 2009-03, p.10)
+  /// Number of "Filler" bits
   uint32_t F;
-  /// Msc_initial, Initial number of subcarriers for ULSCH (36-212, v8.6 2009-03, p.26-27)
+  /// Msc_initial, Initial number of subcarriers for ULSCH
   uint16_t Msc_initial;
-  /// Nsymb_initial, Initial number of symbols for ULSCH (36-212, v8.6 2009-03, p.26-27)
+  /// Nsymb_initial, Initial number of symbols for ULSCH
   uint8_t Nsymb_initial;
-  /// n_DMRS  for cyclic shift of DMRS (36.213 Table 9.1.2-2)
+  /// n_DMRS  for cyclic shift of DMRS
   uint8_t n_DMRS;
-  /// n_DMRS2 for cyclic shift of DMRS (36.211 Table 5.5.1.1.-1)
+  /// n_DMRS2 for cyclic shift of DMRS
   uint8_t n_DMRS2;
   /// Flag to indicate that this is a control only ULSCH (i.e. no MAC SDU)
   uint8_t control_only;
@@ -261,9 +250,7 @@ typedef struct {
   /// Pointer to the payload
   uint8_t *b;
   /// Pointers to transport block segments
-  uint8_t *c[MAX_NUM_DLSCH_SEGMENTS];
-  /// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)
-  uint32_t RTC[MAX_NUM_DLSCH_SEGMENTS];
+  uint8_t *c[MAX_NUM_NR_DLSCH_SEGMENTS];
   /// Index of current HARQ round for this DLSCH
   uint8_t round;
   /// MCS format for this DLSCH
@@ -275,24 +262,22 @@ typedef struct {
   /// MIMO mode for this DLSCH
   MIMO_mode_t mimo_mode;
   /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
-  int16_t w[MAX_NUM_DLSCH_SEGMENTS][3*(6144+64)];
+  int16_t w[MAX_NUM_NR_DLSCH_SEGMENTS][3*8448];
   /// for abstraction soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
-  double w_abs[MAX_NUM_DLSCH_SEGMENTS][3*(6144+64)];
+  double w_abs[MAX_NUM_NR_DLSCH_SEGMENTS][3*8448];
   /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
-  int16_t *d[MAX_NUM_DLSCH_SEGMENTS];
-  /// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)
+  int16_t *d[MAX_NUM_NR_DLSCH_SEGMENTS];
+  /// LDPC processing buffers
+  t_nrLDPC_procBuf* p_nrLDPC_procBuf[MAX_NUM_DLSCH_SEGMENTS];
+  /// Number of code segments 
   uint32_t C;
-  /// Number of "small" code segments (for definition see 36-212 V8.6 2009-03, p.10)
-  uint32_t Cminus;
-  /// Number of "large" code segments (for definition see 36-212 V8.6 2009-03, p.10)
-  uint32_t Cplus;
-  /// Number of bits in "small" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10)
-  uint32_t Kminus;
-  /// Number of bits in "large" code segments (<6144) (for definition see 36-212 V8.6 2009-03, p.10)
-  uint32_t Kplus;
-  /// Number of "Filler" bits (for definition see 36-212 V8.6 2009-03, p.10)
+  /// Number of bits in code segments
+  uint32_t K;
+  /// Number of "Filler" bits 
   uint32_t F;
-  /// Number of MIMO layers (streams) (for definition see 36-212 V8.6 2009-03, p.17)
+  /// LDPC lifting factor
+  uint32_t Z;
+  /// Number of MIMO layers (streams) 
   uint8_t Nl;
   /// current delta_pucch
   int8_t delta_PUCCH;
@@ -353,29 +338,24 @@ typedef struct {
   uint32_t cqi_alloc2;
   /// saved subband PMI allocation from last PUSCH/PUCCH report
   uint16_t pmi_alloc;
-//#if defined(UPGRADE_RAT_NR)
-#if 1
   /// Pointers to up to HARQ processes
-  NR_DL_UE_HARQ_t harq_processes[NR_MAX_DLSCH_HARQ_PROCESSES];
+  NR_DL_UE_HARQ_t *harq_processes[NR_MAX_DLSCH_HARQ_PROCESSES];
   // DL number of harq processes
   uint8_t number_harq_processes_for_pdsch;
   /* higher layer parameter for reception of two transport blocks TS 38.213 9.1.3.1 Type-2 HARQ-ACK codebook dtermination */
   uint8_t Number_MCS_HARQ_DL_DCI;
   /* spatial bundling of PUCCH */
   uint8_t HARQ_ACK_spatial_bundling_PUCCH;
-#endif
   /// Maximum number of HARQ processes(for definition see 36-212 V8.6 2009-03, p.17
   uint8_t Mdlharq;
   /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
   uint8_t Kmimo;
   /// Nsoft parameter related to UE Category
   uint32_t Nsoft;
-  /// Maximum number of Turbo iterations
-  uint8_t max_turbo_iterations;
+  /// Maximum number of LDPC iterations
+  uint8_t max_ldpc_iterations;
   /// number of iterations used in last turbo decoding
-  uint8_t last_iteration_cnt;
-  
-
+  uint8_t last_iteration_cnt;  
 } NR_UE_DLSCH_t;
 
 typedef enum {format0_0,

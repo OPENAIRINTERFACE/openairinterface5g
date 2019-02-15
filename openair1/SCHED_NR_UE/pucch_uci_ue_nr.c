@@ -193,7 +193,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
 
   if (dl_harq_pid < ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->number_harq_processes_for_pdsch) {
     /* pucch indicator can be reseted in function get_downlink_ack so it should be get now */
-    pucch_resource_indicator = ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[dl_harq_pid].harq_ack.pucch_resource_indicator;
+    pucch_resource_indicator = ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[dl_harq_pid]->harq_ack.pucch_resource_indicator;
   }
 
   /* Part - I
@@ -292,7 +292,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   int occ_length = 0;
   int occ_Index = 0;
 
-  NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[dl_harq_pid].harq_ack;
+  NR_UE_HARQ_STATUS_t *harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][0]->harq_processes[dl_harq_pid]->harq_ack;
 
   if (select_pucch_resource(ue, gNB_id, N_UCI, pucch_resource_indicator, &initial_pucch_id, &pucch_resource_set,
                             &pucch_resource_id, harq_status) == TRUE) {
@@ -691,7 +691,7 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
 
     for (int dl_harq_pid = 0; dl_harq_pid < number_pid_dl; dl_harq_pid++) {
 
-      harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][code_word]->harq_processes[dl_harq_pid].harq_ack;
+      harq_status = &ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][code_word]->harq_processes[dl_harq_pid]->harq_ack;
 
       /* check if current tx slot should transmit downlink acknowlegment */
       if (harq_status->slot_for_feedback_ack == proc->nr_tti_tx) {

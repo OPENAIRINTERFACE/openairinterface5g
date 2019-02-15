@@ -453,13 +453,13 @@ void eNB_top(PHY_VARS_eNB *eNB, int frame_rx, int subframe_rx, char *string,RU_t
 
     proc_rxtx->timestamp_tx = ru_proc->timestamp_rx + (sf_ahead*fp->samples_per_tti);
     proc_rxtx->frame_rx     = ru_proc->frame_rx;
-    proc_rxtx->subframe_rx  = ru_proc->subframe_rx;
+    proc_rxtx->subframe_rx  = ru_proc->tti_rx;
     proc_rxtx->frame_tx     = (proc_rxtx->subframe_rx > (9-sf_ahead)) ? (proc_rxtx->frame_rx+1)&1023 : proc_rxtx->frame_rx;
     proc_rxtx->subframe_tx  = (proc_rxtx->subframe_rx + sf_ahead)%10;
 
     if (rxtx(eNB,proc_rxtx,string) < 0) LOG_E(PHY,"eNB %d CC_id %d failed during execution\n",eNB->Mod_id,eNB->CC_id);
     ru_proc->timestamp_tx = proc_rxtx->timestamp_tx;
-    ru_proc->subframe_tx  = proc_rxtx->subframe_tx;
+    ru_proc->tti_tx  = proc_rxtx->subframe_tx;
     ru_proc->frame_tx     = proc_rxtx->frame_tx;
   }
 }
@@ -474,24 +474,24 @@ int wakeup_txfh(eNB_rxtx_proc_t *proc,RU_proc_t *ru_proc) {
 
   
   if(wait_on_condition(&ru_proc->mutex_eNBs,&ru_proc->cond_eNBs,&ru_proc->ru_tx_ready,"wakeup_txfh")<0) {
-    LOG_E(PHY,"Frame %d, subframe %d: TX FH not ready\n", ru_proc->frame_tx, ru_proc->subframe_tx);
+    LOG_E(PHY,"Frame %d, subframe %d: TX FH not ready\n", ru_proc->frame_tx, ru_proc->tti_tx);
     return(-1);
   }
   if (release_thread(&ru_proc->mutex_eNBs,&ru_proc->ru_tx_ready,"wakeup_txfh")<0) return(-1);
   
   if (ru_proc->instance_cnt_eNBs == 0) {
-    LOG_E(PHY,"Frame %d, subframe %d: TX FH thread busy, dropping Frame %d, subframe %d\n", ru_proc->frame_tx, ru_proc->subframe_tx, proc->frame_rx, proc->subframe_rx);
+    LOG_E(PHY,"Frame %d, subframe %d: TX FH thread busy, dropping Frame %d, subframe %d\n", ru_proc->frame_tx, ru_proc->tti_tx, proc->frame_rx, proc->subframe_rx);
     return(-1);
   }
   if (pthread_mutex_timedlock(&ru_proc->mutex_eNBs,&wait) != 0) {
-    LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB TX1 thread %d (IC %d)\n", ru_proc->subframe_rx&1,ru_proc->instance_cnt_eNBs );
+    LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB TX1 thread %d (IC %d)\n", ru_proc->tti_rx&1,ru_proc->instance_cnt_eNBs );
     exit_fun( "error locking mutex_eNB" );
     return(-1);
   }
 
     ++ru_proc->instance_cnt_eNBs;
     ru_proc->timestamp_tx = proc->timestamp_tx;
-    ru_proc->subframe_tx  = proc->subframe_tx;
+    ru_proc->tti_tx  = proc->subframe_tx;
     ru_proc->frame_tx     = proc->frame_tx;
   
   // the thread can now be woken up
@@ -622,7 +622,7 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,RU_t *ru) {
   // and proc->subframe_tx = proc->subframe_rx+sf_ahead
   proc_rxtx0->timestamp_tx = ru_proc->timestamp_rx + (sf_ahead*fp->samples_per_tti);
   proc_rxtx0->frame_rx     = ru_proc->frame_rx;
-  proc_rxtx0->subframe_rx  = ru_proc->subframe_rx;
+  proc_rxtx0->subframe_rx  = ru_proc->tti_rx;
   proc_rxtx0->frame_tx     = (proc_rxtx0->subframe_rx > (9-sf_ahead)) ? (proc_rxtx0->frame_rx+1)&1023 : proc_rxtx0->frame_rx;
   proc_rxtx0->subframe_tx  = (proc_rxtx0->subframe_rx + sf_ahead)%10;
 

@@ -37,6 +37,7 @@
 #include "PHY/defs_nr_UE.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
+#include "PHY/NR_REFSIG/nr_mod_table.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/INIT/phy_init.h"
@@ -65,8 +66,8 @@ int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) { return(0
 
 int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req) {return(0);}
 
-uint32_t from_earfcn(int eutra_bandP,uint32_t dl_earfcn) {return(0);}
-int32_t get_uldl_offset(int eutra_bandP) {return(0);}
+uint32_t from_nrarfcn(int nr_bandP,uint32_t dl_nrarfcn) {return(0);}
+int32_t get_uldl_offset(int nr_bandP) {return(0);}
 
 NR_IF_Module_t *NR_IF_Module_init(int Mod_id){return(NULL);}
 
@@ -84,39 +85,43 @@ int main(int argc, char **argv)
 
   char c;
 
-  int i,l,aa;
+  int i,aa;//,l;
   double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1=2.0;
+  double cfo=0;
   uint8_t snr1set=0;
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
   double iqim = 0.0;
+  double ip =0.0;
   unsigned char pbch_pdu[6];
   //  int sync_pos, sync_pos_slot;
   //  FILE *rx_frame_file;
   FILE *output_fd = NULL;
   uint8_t write_output_file=0;
   //int result;
-  int freq_offset;
+  //int freq_offset;
   //  int subframe_offset;
   //  char fname[40], vname[40];
-  int trial,n_trials=1,n_errors,n_errors_payload;
+  int trial,n_trials=1,n_errors=0,n_errors_payload=0;
   uint8_t transmission_mode = 1,n_tx=1,n_rx=1;
   uint16_t Nid_cell=0;
 
   channel_desc_t *gNB2UE;
-  uint32_t nsymb,tx_lev,tx_lev1 = 0,tx_lev2 = 0;
+
   uint8_t extended_prefix_flag=0;
   int8_t interf1=-21,interf2=-21;
 
   FILE *input_fd=NULL,*pbch_file_fd=NULL;
-  char input_val_str[50],input_val_str2[50];
 
-  uint8_t frame_mod4,num_pdcch_symbols = 0;
+  //uint32_t nsymb,tx_lev,tx_lev1 = 0,tx_lev2 = 0;
+  //char input_val_str[50],input_val_str2[50];
+  //uint8_t frame_mod4,num_pdcch_symbols = 0;
+  //double pbch_sinr;
+  //int pbch_tx_ant;
 
   SCM_t channel_model=AWGN;//Rayleigh1_anticorr;
 
-  double pbch_sinr;
-  int pbch_tx_ant;
+
   int N_RB_DL=273,mu=1;
 
   unsigned char frame_type = 0;
@@ -143,7 +148,7 @@ int main(int argc, char **argv)
 
   randominit(0);
 
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:N:F:GR:dP:IL:")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:o:s:S:t:x:y:z:N:F:GR:dP:IL:")) != -1) {
     switch (c) {
     case 'f':
       write_output_file=1;
@@ -207,6 +212,11 @@ int main(int argc, char **argv)
 
     case 'n':
       n_trials = atoi(optarg);
+      break;
+
+    case 'o':
+      cfo = atof(optarg);
+      msg("Setting CFO to %f Hz\n",cfo);
       break;
 
     case 's':
@@ -322,6 +332,7 @@ int main(int argc, char **argv)
       printf("-z Number of RX antennas used in UE\n");
       printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
       printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
+      printf("-o Carrier frequency offset in Hz\n");
       printf("-N Nid_cell\n");
       printf("-R N_RB_DL\n");
       printf("-O oversampling factor (1,2,4,8,16)\n");
@@ -353,29 +364,48 @@ int main(int argc, char **argv)
   frame_parms->nb_antennas_rx = n_rx;
   frame_parms->N_RB_DL = N_RB_DL;
   frame_parms->N_RB_UL = N_RB_DL;
+  frame_parms->Nid_cell = Nid_cell;
 
-  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu);
+  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell);
   phy_init_nr_gNB(gNB,0,0);
 
-  double fs,bw;
+  double fs,bw,scs,eps;
 
   if (mu == 1 && N_RB_DL == 217) { 
     fs = 122.88e6;
     bw = 80e6;
+    scs = 30000;
   }					       
   else if (mu == 1 && N_RB_DL == 245) {
     fs = 122.88e6;
     bw = 90e6;
+    scs = 30000;
   }
   else if (mu == 1 && N_RB_DL == 273) {
     fs = 122.88e6;
     bw = 100e6;
+    scs = 30000;
   }
   else if (mu == 1 && N_RB_DL == 106) { 
     fs = 61.44e6;
     bw = 40e6;
+    scs = 30000;
   }
   else AssertFatal(1==0,"Unsupported numerology for mu %d, N_RB %d\n",mu, N_RB_DL);
+
+  // cfo with respect to sub-carrier spacing
+  eps = cfo/scs;
+
+  // computation of integer and fractional FO to compare with estimation results
+  int IFO;
+  if(eps!=0.0){
+	printf("Introducing a CFO of %lf relative to SCS of %d kHz\n",eps,(int)(scs/1000));
+	if (eps>0)	
+  	  IFO=(int)(eps+0.5);
+	else
+	  IFO=(int)(eps-0.5);
+	printf("FFO = %lf; IFO = %d\n",eps-IFO,IFO);
+  }
 
   gNB2UE = new_channel_desc_scm(n_tx,
                                 n_rx,
@@ -426,11 +456,14 @@ int main(int argc, char **argv)
   //configure UE
   UE = malloc(sizeof(PHY_VARS_NR_UE));
   memcpy(&UE->frame_parms,frame_parms,sizeof(NR_DL_FRAME_PARMS));
-  phy_init_nr_top(UE);
+  //phy_init_nr_top(UE); //called from init_nr_ue_signal
   if (run_initial_sync==1)  UE->is_synchronized = 0;
   else                      UE->is_synchronized = 1;
                       
   UE->perfect_ce = 0;
+
+  if(eps!=0.0)
+	UE->UE_fo_compensation = 1; // if a frequency offset is set then perform fo estimation and compensation
 
   if (init_nr_ue_signal(UE, 1, 0) != 0)
   {
@@ -473,7 +506,7 @@ int main(int argc, char **argv)
 	      frame_length_complex_samples,
 	      input_fd) != frame_length_complex_samples) {
       printf("error reading from file\n");
-      exit(-1);
+      //exit(-1);
     }
   }
 
@@ -488,6 +521,7 @@ int main(int argc, char **argv)
 			    frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
 
   //  printf("txlev %d (%f)\n",txlev,10*log10(txlev));
+
 
   for (i=0; i<frame_length_complex_samples; i++) {
     for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
@@ -507,10 +541,31 @@ int main(int argc, char **argv)
       //multipath_channel(gNB2UE,s_re,s_im,r_re,r_im,frame_length_complex_samples,0);
       
       //AWGN
-      sigma2_dB = 10*log10((double)txlev)-SNR;
+      sigma2_dB = 20*log10((double)AMP/4)-SNR;
       sigma2 = pow(10,sigma2_dB/10);
-      //      printf("sigma2 %f (%f dB)\n",sigma2,sigma2_dB);
+      //printf("sigma2 %f (%f dB), tx_lev %f (%f dB)\n",sigma2,sigma2_dB,txlev,10*log10((double)txlev));
 
+      if(eps!=0.0)
+        rf_rx(r_re,  // real part of txdata
+           r_im,  // imag part of txdata
+           NULL,  // interference real part
+           NULL, // interference imag part
+           0,  // interference power
+           frame_parms->nb_antennas_rx,  // number of rx antennas
+           frame_length_complex_samples,  // number of samples in frame
+           1.0e9/fs,   //sampling time (ns)
+           cfo,	// frequency offset in Hz
+           0.0, // drift (not implemented)
+           0.0, // noise figure (not implemented)
+           0.0, // rx gain in dB ?
+           200, // 3rd order non-linearity in dB ?
+           &ip, // initial phase
+           30.0e3,  // phase noise cutoff in kHz
+           -500.0, // phase noise amplitude in dBc
+           0.0,  // IQ imbalance (dB),
+	   0.0); // IQ phase imbalance (rad)
+
+   
       for (i=0; i<frame_length_complex_samples; i++) {
 	for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
 	  
@@ -520,10 +575,11 @@ int main(int argc, char **argv)
       }
 
       if (n_trials==1) {
-	LOG_M("rxsig0.m","rxs0", UE->common_vars.rxdata[0],frame_length_complex_samples,1,1);
+	LOG_M("rxsig0.m","rxs0", UE->common_vars.rxdata[0],frame_parms->samples_per_subframe,1,1);
 	if (gNB->frame_parms.nb_antennas_tx>1)
-	  LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1],frame_length_complex_samples,1,1);
+	  LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1],frame_parms->samples_per_subframe,1,1);
       }
+
       if (UE->is_synchronized == 0) {
 	ret = nr_initial_sync(UE, normal_txrx);
 	printf("nr_initial_sync1 returns %d\n",ret);
@@ -557,7 +613,7 @@ int main(int argc, char **argv)
 		    0,
 		    1,
 		    NR_PBCH_EST);
-	
+	 
 	ret = nr_rx_pbch(UE,
 			 &UE->proc.proc_rxtx[0],
 			 UE->pbch_vars[0],
@@ -584,7 +640,7 @@ int main(int argc, char **argv)
 	    n_errors_payload++;
 	}
 
-	if (ret<0) n_errors++;
+	if (ret!=0) n_errors++;
       }
     } //noise trials
 

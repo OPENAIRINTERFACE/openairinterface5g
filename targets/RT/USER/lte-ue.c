@@ -456,8 +456,8 @@ static void *UE_thread_synch(void *arg)
 
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
-  if ( threads.iq != -1 )
-    CPU_SET(threads.iq, &cpuset);
+  if ( threads.sync != -1 )
+    CPU_SET(threads.sync, &cpuset);
   // this thread priority must be lower that the main acquisition thread
   sprintf(threadname, "sync UE %d\n", UE->Mod_id);
   init_thread(100000, 500000, FIFO_PRIORITY-1, &cpuset, threadname);
@@ -1435,8 +1435,8 @@ void *UE_thread(void *arg) {
 
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
-  if ( threads.iq != -1 )
-    CPU_SET(threads.iq, &cpuset);
+  if ( threads.main != -1 )
+    CPU_SET(threads.main, &cpuset);
   init_thread(100000, 500000, FIFO_PRIORITY, &cpuset,
 	      "UHD Threads");
 

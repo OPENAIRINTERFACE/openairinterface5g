@@ -72,7 +72,7 @@ typedef struct
 
   // These TLVs are used by the VNF to configure the RF in the PNF
   // nfapi_uint16_tlv_t max_transmit_power;
-  nfapi_uint16_tlv_t earfcn;
+  nfapi_uint16_tlv_t nrarfcn;
 
   // nfapi_nmm_frequency_bands_t nmm_gsm_frequency_bands;
   // nfapi_nmm_frequency_bands_t nmm_umts_frequency_bands;
@@ -95,7 +95,7 @@ typedef struct
 #define NFAPI_NR_NFAPI_TIMING_INFO_MODE_TAG 0x511F
 #define NFAPI_NR_NFAPI_TIMING_INFO_PERIOD_TAG 0x5120
 #define NFAPI_NR_NFAPI_MAXIMUM_TRANSMIT_POWER_TAG 0x5128
-#define NFAPI_NR_NFAPI_EARFCN_TAG 0x5129
+#define NFAPI_NR_NFAPI_NRARFCN_TAG 0x5129
 #define NFAPI_NR_NFAPI_NMM_GSM_FREQUENCY_BANDS_TAG 0x5130
 #define NFAPI_NR_NFAPI_NMM_UMTS_FREQUENCY_BANDS_TAG 0x5131
 #define NFAPI_NR_NFAPI_NMM_LTE_FREQUENCY_BANDS_TAG 0x5132
@@ -149,8 +149,6 @@ typedef struct {
 #define NFAPI_NR_SUBFRAME_CONFIG_NUMEROLOGY_INDEX_MU_TAG 0x5006
 
 typedef struct {
-  nfapi_uint16_tlv_t  tx_antenna_ports;
-  nfapi_uint16_tlv_t  rx_antenna_ports; 
   nfapi_uint16_tlv_t  dl_carrier_bandwidth;
   nfapi_uint16_tlv_t  ul_carrier_bandwidth;
   nfapi_uint16_tlv_t  dl_bwp_subcarrierspacing;
@@ -161,18 +159,17 @@ typedef struct {
   nfapi_uint16_tlv_t  ul_absolutefrequencypointA;
   nfapi_uint16_tlv_t  dl_offsettocarrier;
   nfapi_uint16_tlv_t  ul_offsettocarrier;
-  nfapi_uint16_tlv_t  dl_scs_subcarrierspacing;
-  nfapi_uint16_tlv_t  ul_scs_subcarrierspacing;
-  nfapi_uint16_tlv_t  dl_scs_specificcarrier_k0;
-  nfapi_uint16_tlv_t  ul_scs_specificcarrier_k0;
+  nfapi_uint16_tlv_t  dl_subcarrierspacing;
+  nfapi_uint16_tlv_t  ul_subcarrierspacing;
+  nfapi_uint16_tlv_t  dl_specificcarrier_k0;
+  nfapi_uint16_tlv_t  ul_specificcarrier_k0;
   nfapi_uint16_tlv_t  NIA_subcarrierspacing;
 } nfapi_nr_rf_config_t;
 
-#define NFAPI_NR_RF_CONFIG_DL_CHANNEL_BANDWIDTH_TAG 0x500A
-#define NFAPI_NR_RF_CONFIG_UL_CHANNEL_BANDWIDTH_TAG 0x500B
-#define NFAPI_NR_RF_CONFIG_REFERENCE_SIGNAL_POWER_TAG 0x500C
-#define NFAPI_NR_RF_CONFIG_TX_ANTENNA_PORTS_TAG 0x500D
-#define NFAPI_NR_RF_CONFIG_RX_ANTENNA_PORTS_TAG 0x500E
+#define NFAPI_NR_RF_CONFIG_DL_CARRIER_BANDWIDTH_TAG 0x500A
+#define NFAPI_NR_RF_CONFIG_UL_CARRIER_BANDWIDTH_TAG 0x500B
+#define NFAPI_NR_RF_CONFIG_DL_SUBCARRIERSPACING_TAG 0x500C
+#define NFAPI_NR_RF_CONFIG_UL_SUBCARRIERSPACING_TAG 0x500D
 
 typedef struct {
   nfapi_uint16_tlv_t  physical_cell_id;
@@ -194,6 +191,27 @@ typedef struct {
 #define NFAPI_NR_SCH_CONFIG_SS_PBCH_BLOCK_POWER 0x5023
 #define NFAPI_NR_SCH_CONFIG_N_SSB_CRB 0x5024
 
+typedef struct {
+  nfapi_uint16_tlv_t  data_scrambling_id;
+  nfapi_uint16_tlv_t  dmrs_typeA_position;
+  nfapi_uint16_tlv_t  dmrs_additional_position;
+  nfapi_uint16_tlv_t  dmrs_type;
+  nfapi_uint16_tlv_t  dmrs_max_length;
+  nfapi_uint16_tlv_t  mapping_type;
+  nfapi_uint16_tlv_t  resource_allocation;
+  nfapi_uint16_tlv_t  time_allocation_list;
+  nfapi_uint16_tlv_t  mcs_table;
+  nfapi_uint16_tlv_t  aggregation_factor;
+  nfapi_uint16_tlv_t  prb_bundling_type;
+  nfapi_uint16_tlv_t  rbg_size;
+  nfapi_uint16_tlv_t  vrb_to_prb_interleaver;
+  nfapi_uint16_tlv_t  code_block_groug_transmission;
+  nfapi_uint16_tlv_t  x_overhead;
+  nfapi_uint16_tlv_t  max_dci_codewords;
+  
+} nfapi_nr_pdsch_config_t;
+#define NFAPI_NR_PDSCH_CONFIG_TAG
+
 
 typedef struct {
   nfapi_uint16_tlv_t  prach_RootSequenceIndex;                                        ///// L1 parameter 'PRACHRootSequenceIndex'
@@ -207,12 +225,6 @@ typedef struct {
   nfapi_uint16_tlv_t  zeroCorrelationZoneConfig;
   nfapi_uint16_tlv_t  preambleReceivedTargetPower;
 } nfapi_nr_rach_config_t;
-
-typedef struct {
-  nfapi_uint16_tlv_t  dmrs_TypeA_Position;                                            ///// Position of (first) DL DM-RS
-  nfapi_uint16_tlv_t  TimeDomainResourceAllocation_k0;                                ///// L1 parameter 'K0'
-  nfapi_uint16_tlv_t  TimeDomainResourceAllocation_mappingType;                       ///// L1 parameter 'Mapping-type'
-} nfapi_nr_pdsch_config_t;
 
 typedef struct {
   nfapi_uint16_tlv_t  groupHoppingEnabledTransformPrecoding;                          ///// L1 parameter 'Group-hopping-enabled-Transform-precoding'
@@ -272,8 +284,8 @@ typedef struct {
   nfapi_nr_subframe_config_t                subframe_config;
   nfapi_nr_rf_config_t                      rf_config;
   nfapi_nr_sch_config_t                     sch_config;
-  nfapi_nr_rach_config_t                    rach_config;
   nfapi_nr_pdsch_config_t                   pdsch_config;
+  nfapi_nr_rach_config_t                    rach_config;
   nfapi_nr_pusch_config_t                   pusch_config;
   nfapi_nr_pucch_config_t                   pucch_config;
   nfapi_nr_pdcch_config_t                   pdcch_config;
@@ -325,6 +337,13 @@ typedef enum {
 } nfapi_nr_search_space_type_e;
 
 typedef enum {
+  NFAPI_NR_COMMON_SEARCH_SPACE_TYPE_0=0,
+  NFAPI_NR_COMMON_SEARCH_SPACE_TYPE_0A,
+  NFAPI_NR_COMMON_SEARCH_SPACE_TYPE_1,
+  NFAPI_NR_COMMON_SEARCH_SPACE_TYPE_2
+} nfapi_nr_common_search_space_type_e;
+
+typedef enum {
   NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE1=0,
   NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE2,
   NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE3
@@ -344,6 +363,44 @@ typedef enum {
   NFAPI_NR_CSET_SAME_AS_REG_BUNDLE=0,
   NFAPI_NR_CSET_ALL_CONTIGUOUS_RBS
 } nfapi_nr_coreset_precoder_granularity_type_e;
+
+typedef enum {
+  NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_A=0,
+  NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_B,
+  NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_DEFAULT_C,
+  NFAPI_NR_PDSCH_TIME_DOMAIN_ALLOC_TYPE_ALLOC_LIST
+} nfapi_nr_pdsch_time_domain_alloc_type_e;
+
+typedef enum {
+  NFAPI_NR_PDSCH_MAPPING_TYPE_A=0,
+  NFAPI_NR_PDSCH_MAPPING_TYPE_B
+} nfapi_nr_pdsch_mapping_type_e;
+
+typedef enum {
+  NFAPI_NR_PDSCH_RBG_CONFIG_TYPE1=0,
+  NFAPI_NR_PDSCH_RBG_CONFIG_TYPE2
+} nfapi_nr_pdsch_rbg_config_type_e;
+
+typedef enum {
+  NFAPI_NR_PRG_GRANULARITY_2=2,
+  NFAPI_NR_PRG_GRANULARITY_4=4,
+  NFAPI_NR_PRG_GRANULARITY_WIDEBAND
+} nfapi_nr_prg_granularity_e;
+
+typedef enum {
+  NFAPI_NR_PRB_BUNDLING_TYPE_STATIC=0,
+  NFAPI_NR_PRB_BUNDLING_TYPE_DYNAMIC
+} nfapi_nr_prb_bundling_type_e;
+
+typedef enum {
+  NFAPI_NR_MCS_TABLE_QAM64_LOW_SE=0,
+  NFAPI_NR_MCS_TABLE_QAM256
+} nfapi_nr_pdsch_mcs_table_e;
+
+typedef enum {
+  NFAPI_NR_DMRS_TYPE1=0,
+  NFAPI_NR_DMRS_TYPE2
+} nfapi_nr_dmrs_type_e;
 
 // P7 Sub Structures
 
@@ -448,11 +505,14 @@ typedef struct{
 
 typedef struct {
   nfapi_tl_t tl;
-  uint8_t rnti;
+  uint16_t rnti;
   uint8_t rnti_type;
   uint8_t dci_format;
+  /// Number of CRB in BWP that this DCI configures 
+  uint16_t n_RB_BWP;
   uint8_t config_type;
-  uint8_t search_space_type;  
+  uint8_t search_space_type;
+  uint8_t common_search_space_type;  
   uint8_t aggregation_level;
   uint8_t n_rb;
   uint8_t n_symb;
@@ -485,14 +545,50 @@ typedef struct {
 } nfapi_nr_dl_config_bch_pdu;
 
 typedef struct {
-  nfapi_tl_t tl;
-  nfapi_nr_search_space_t           sib1searchSpace;
-  nfapi_nr_coreset_t   sib1ControlResourceSets;
-  nfapi_nr_search_space_t           sibssearchSpace;
-  nfapi_nr_coreset_t   sibsControlResourceSets; 
-  nfapi_nr_search_space_t           ra_SearchSpace;
-  nfapi_nr_coreset_t   ra_ControlResourceSets;
+	nfapi_tl_t tl;
+	uint16_t length;
+	uint8_t pdu_index;
+	uint16_t rnti;
+  uint16_t nb_mod_symbols;
+  uint8_t time_allocation_type;
+	uint8_t freq_allocation_type;
+  uint8_t start_prb;
+  uint8_t n_prb;
+  uint8_t start_symbol;
+  uint8_t nb_symbols;
+  uint8_t mcs_idx;
+  uint8_t ndi;
+  uint8_t nb_codewords;
+  uint8_t nb_layers;
+  uint16_t coding_rate;
+  uint8_t modulation;
+  uint8_t modulation_order;
+  uint16_t transport_block_size;
+  uint8_t nb_re_dmrs;
+  uint8_t time_alloc_list_flag;
+  uint8_t time_alloc_list;
+  uint8_t rbg_list;
+	uint8_t virtual_resource_block_assignment_flag;
+	uint32_t resource_block_coding;
+	uint8_t redundancy_version;
+	uint8_t transport_blocks;
+	uint8_t transmission_scheme;
+	uint8_t number_of_subbands;
+	uint8_t codebook_index[NFAPI_MAX_NUM_SUBBANDS];
+	uint8_t ue_category_capacity;
+	uint8_t pa;
+	uint8_t delta_power_offset_index;
+	uint8_t ngap;
+	uint8_t transmission_mode;
+	uint8_t num_bf_prb_per_subband;
+	uint8_t num_bf_vector;
+	nfapi_bf_vector_t bf_vector[NFAPI_MAX_BF_VECTORS];
 }nfapi_nr_dl_config_dlsch_pdu_rel15_t;
+#define NFAPI_NR_DL_CONFIG_REQUEST_DLSCH_PDU_REL15_TAG
+
+typedef struct {
+	nfapi_nr_dl_config_dlsch_pdu_rel15_t dlsch_pdu_rel15;
+} nfapi_nr_dl_config_dlsch_pdu;
 
 typedef struct {
   nfapi_tl_t tl;
@@ -502,15 +598,15 @@ typedef struct {
 
 typedef struct {
   
-} nfapi_nr_dl_config_nbch_pdu;
+} nfapi_nr_dl_config_nbch_pdu_rel15_t;
 
 typedef struct {
   
-} nfapi_nr_dl_config_npdcch_pdu;
+} nfapi_nr_dl_config_npdcch_pdu_rel15_t;
 
 typedef struct {
   
-} nfapi_nr_dl_config_ndlsch_pdu;
+} nfapi_nr_dl_config_ndlsch_pdu_rel15_t;
 
 typedef struct {
   nfapi_nr_dl_config_dci_dl_pdu_rel15_t     dci_dl_pdu_rel15;
@@ -525,11 +621,11 @@ typedef struct {
   union {
   nfapi_nr_dl_config_dci_dl_pdu             dci_dl_pdu;
   nfapi_nr_dl_config_bch_pdu_rel15_t        bch_pdu_rel15;
-  nfapi_nr_dl_config_dlsch_pdu_rel15_t      dlsch_pdu_rel15;
+  nfapi_nr_dl_config_dlsch_pdu              dlsch_pdu;
   nfapi_nr_dl_config_pch_pdu_rel15_t        pch_pdu_rel15;
-  //nfapi_nr_dl_config_nbch_pdu_rel15_t       nbch_pdu_rel15;
-  //nfapi_nr_dl_config_npdcch_pdu_rel15_t     npdcch_pdu_rel15;
-  //nfapi_nr_dl_config_ndlsch_pdu_rel15_t     ndlsch_pdu_rel15;
+  nfapi_nr_dl_config_nbch_pdu_rel15_t       nbch_pdu_rel15;
+  nfapi_nr_dl_config_npdcch_pdu_rel15_t     npdcch_pdu_rel15;
+  nfapi_nr_dl_config_ndlsch_pdu_rel15_t     ndlsch_pdu_rel15;
   };
 } nfapi_nr_dl_config_request_pdu_t;
  

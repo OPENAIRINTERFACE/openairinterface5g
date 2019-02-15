@@ -290,6 +290,8 @@ set(protobuf_generated_dir ${OPENAIR_BIN_DIR})
 
 add_list2_option(RRC_ASN1_VERSION "Rel15" "ASN.1 version of RRC interface" "Rel8" "Rel10" "Rel14" "CBA")
 
+Message("RRC_ASN1_VERSION is ${RRC_ASN1_VERSION}")
+
 if (${RRC_ASN1_VERSION} STREQUAL "Rel8")
   make_version(RRC_VERSION 8 6 0)
   set (RRC_GRAMMAR ${OPENAIR2_DIR}/RRC/LTE/MESSAGES/asn1c/ASN1_files/EUTRA-RRC-Definitions-86.asn)
@@ -366,9 +368,9 @@ execute_process(COMMAND mkdir -p ${NR_RRC_FULL_DIR}
 		OUTPUT_QUIET
 		ERROR_QUIET)
 
-if (NOT ${ret} STREQUAL 0)
-   message(FATAL_ERROR "${ret}: error")
-endif (NOT ${ret} STREQUAL 0)
+#if (NOT ${ret} STREQUAL 0)
+#   message(FATAL_ERROR "${ret}: error")
+#endif (NOT ${ret} STREQUAL 0)
 
 file(GLOB nr_rrc_source ${NR_RRC_FULL_DIR}/*.c)
 file(GLOB nr_rrc_h ${NR_RRC_FULL_DIR}/*.h)
@@ -961,7 +963,7 @@ set(UTIL_SRC
   ${OPENAIR_DIR}/common/utils/LOG/log.c
 #  ${OPENAIR2_DIR}/UTIL/LOG/vcd_signal_dumper.c
   ${OPENAIR2_DIR}/UTIL/MATH/oml.c
-  ${OPENAIR2_DIR}/UTIL/MEM/mem_block.c
+#  ${OPENAIR2_DIR}/UTIL/MEM/mem_block.c
 #  ${OPENAIR2_DIR}/UTIL/OCG/OCG.c
 #  ${OPENAIR2_DIR}/UTIL/OCG/OCG_create_dir.c
 #  ${OPENAIR2_DIR}/UTIL/OCG/OCG_detect_file.c
@@ -1184,6 +1186,7 @@ set(PHY_SRC_COMMON
   ${OPENAIR1_DIR}/PHY/CODING/lte_segmentation.c
   ${OPENAIR1_DIR}/PHY/CODING/nr_segmentation.c
   ${OPENAIR1_DIR}/PHY/CODING/nr_compute_tbs.c
+  ${OPENAIR1_DIR}/PHY/CODING/nr_rate_matching.c
   ${OPENAIR1_DIR}/PHY/CODING/ccoding_byte.c
   ${OPENAIR1_DIR}/PHY/CODING/ccoding_byte_lte.c
   ${OPENAIR1_DIR}/PHY/CODING/3gpplte_sse.c
@@ -1304,6 +1307,11 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_pbch.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_dci.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_dci_tools.c
+  ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_dlsch.c
+  ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_dlsch_tools.c
+  ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_dlsch_coding.c
+  ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_tbs_tools.c
+  ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_sch_dmrs.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_gold.c
   ${OPENAIR1_DIR}/PHY/TOOLS/file_output.c
   ${OPENAIR1_DIR}/PHY/TOOLS/cadd_vv.c
@@ -1333,6 +1341,10 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/dmrs_nr.c
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/nr_initial_sync.c
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/nr_pbch.c
+  ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/nr_dlsch_demodulation.c
+  ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/nr_dlsch_decoding.c
+  ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/nr_dlsch_llr_computation.c
+  ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_tbs_tools.c
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/nr_prach.c
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/srs_modulation_nr.c
@@ -1343,6 +1355,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_dmrs_rx.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_gold_ue.c
   ${OPENAIR1_DIR}/PHY/NR_UE_ESTIMATION/nr_dl_channel_estimation.c
+  ${OPENAIR1_DIR}/PHY/NR_UE_ESTIMATION/nr_adjust_synch_ue.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_ue_measurements.c
   ${OPENAIR1_DIR}/PHY/TOOLS/file_output.c
   ${OPENAIR1_DIR}/PHY/TOOLS/cadd_vv.c
@@ -1523,14 +1536,6 @@ set(NR_L2_SRC_UE
   ${NR_UE_RRC_DIR}/L2_interface_ue.c
   ${NR_UE_RRC_DIR}/main_ue.c
   ${NR_UE_RRC_DIR}/rrc_UE.c
-#  ${NR_UE_RRC_DIR}/mac_vars.c
-#${RRC_DIR}/rrc_UE.c
-  )
-
-set(L2_NR_SRC_UE
-  ${NR_UE_RRC_DIR}/L2_interface_ue.c
-  ${NR_UE_RRC_DIR}/main_ue.c
-  ${NR_UE_RRC_DIR}/rrc_UE.c
   )
 
 set (MAC_SRC
@@ -1636,26 +1641,27 @@ set ( NR_LTE_UE_REUSE_SRC
   ${OPENAIR1_DIR}/SCHED/phy_procedures_lte_common.c
   #${OPENAIR1_DIR}/SCHED_UE/phy_procedures_lte_ue.c
   ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/lte_mcs.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pmch_common.c
+  #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/pmch_common.c
 
-  ${OPENAIR1_DIR}/PHY/LTE_REFSIG/lte_dl_cell_spec.c
-  ${OPENAIR1_DIR}/PHY/CODING/lte_segmentation.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/prach_common.c
+  #${OPENAIR1_DIR}/PHY/LTE_REFSIG/lte_dl_cell_spec.c
+  #${OPENAIR1_DIR}/PHY/CODING/lte_segmentation.c
+  #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/prach_common.c
 #  ${OPENAIR1_DIR}/PHY/INIT/lte_init_ue.c
   ${OPENAIR1_DIR}/PHY/CODING/crc_byte.c
   ${OPENAIR1_DIR}/PHY/CODING/viterbi_lte.c
   ${OPENAIR1_DIR}/PHY/CODING/viterbi.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/phich_common.c
+  #${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/phich_common.c
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation.c
-  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dci_tools_common.c
-  ${OPENAIR1_DIR}/PHY/CODING/lte_rate_matching.c
+
+#  ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dci_tools_common.c
+#  ${OPENAIR1_DIR}/PHY/CODING/lte_rate_matching.c
   ${OPENAIR1_DIR}/PHY/CODING/ccoding_byte_lte.c
   ${OPENAIR1_DIR}/PHY/CODING/ccoding_byte.c
   ${OPENAIR1_DIR}/PHY/LTE_REFSIG/lte_gold.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_est_freq_offset.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_dl_channel_estimation.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_ue_measurements.c
-  ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_demodulation.c
+  #${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_demodulation.c
   #${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation_avx2.c
 )
 
@@ -2555,11 +2561,14 @@ target_link_libraries(polartest SIMU PHY PHY_NR PHY_COMMON m ${ATLAS_LIBRARIES})
 add_executable(ldpctest  ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c)
 target_link_libraries(ldpctest SIMU PHY PHY_NR m ${ATLAS_LIBRARIES})
 
+add_executable(nr_dlschsim  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlschsim.c ${T_SOURCE})
+target_link_libraries(nr_dlschsim -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
+
 add_executable(nr_pbchsim  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pbchsim.c ${T_SOURCE})
 target_link_libraries(nr_pbchsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
 
-add_executable(nr_dlsim  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlsim.c ${T_SOURCE})
-target_link_libraries(nr_dlsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR CONFIG_LIB -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
+add_executable(nr_dlsim  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlsim.c ${T_SOURCE})   
+target_link_libraries(nr_dlsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR RRC_LIB NR_RRC_LIB CONFIG_LIB L2_NR -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
 
 
 foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)

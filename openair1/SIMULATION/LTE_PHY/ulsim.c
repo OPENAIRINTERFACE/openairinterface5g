@@ -1158,7 +1158,7 @@ int main(int argc, char **argv) {
             eNB->proc.frame_rx = 1;
             eNB->proc.subframe_rx = subframe;
             ru->proc.frame_rx = 1;
-            ru->proc.subframe_rx = subframe;
+            ru->proc.tti_rx = subframe;
             proc_rxtx_ue->frame_tx = proc_rxtx->frame_rx;
             proc_rxtx_ue->frame_rx = proc_rxtx->frame_tx;
             proc_rxtx_ue->subframe_tx = proc_rxtx->subframe_rx;

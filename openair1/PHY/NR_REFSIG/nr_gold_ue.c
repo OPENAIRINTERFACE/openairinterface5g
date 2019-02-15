@@ -123,6 +123,8 @@ void nr_gold_pdsch(PHY_VARS_NR_UE* ue,unsigned short lbar,unsigned short *n_idDM
       nid = n_idDMRS[nscid];
     else
       nid = ue->frame_parms.Nid_cell;
+      
+      //printf("gold pdsch nid %d lbar %d\n",nid,lbar);
 
     for (ns=0; ns<20; ns++) {
 
@@ -130,6 +132,8 @@ void nr_gold_pdsch(PHY_VARS_NR_UE* ue,unsigned short lbar,unsigned short *n_idDM
 
     	x2tmp0 = ((14*ns+(lbar+l)+1)*((nid<<1)+1))<<17;
         x2 = (x2tmp0+(nid<<1)+nscid)%(1<<31);  //cinit
+        
+                //printf("ns %d gold pdsch x2 %d\n",ns,x2);
 
         x1 = 1+ (1<<31);
         x2=x2 ^ ((x2 ^ (x2>>1) ^ (x2>>2) ^ (x2>>3))<<31);
@@ -143,12 +147,13 @@ void nr_gold_pdsch(PHY_VARS_NR_UE* ue,unsigned short lbar,unsigned short *n_idDM
             //printf("x1 : %x, x2 : %x\n",x1,x2);
         }
 
-        for (n=0; n<14; n++) {
+        for (n=0; n<52; n++) {
           x1 = (x1>>1) ^ (x1>>4);
           x1 = x1 ^ (x1<<31) ^ (x1<<28);
           x2 = (x2>>1) ^ (x2>>2) ^ (x2>>3) ^ (x2>>4);
           x2 = x2 ^ (x2<<31) ^ (x2<<30) ^ (x2<<29) ^ (x2<<28);
           ue->nr_gold_pdsch[nscid][ns][l][n] = x1^x2;
+            // if ((ns==2)&&(l==0))
             //printf("n=%d : c %x\n",n,x1^x2);
         }
 

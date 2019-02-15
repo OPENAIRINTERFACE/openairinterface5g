@@ -32,6 +32,7 @@
 #define __NR_LDPC_DECODER__H__
 
 #include "nrLDPC_types.h"
+#include "nrLDPC_init_mem.h"
 
 /**
    \brief LDPC decoder
@@ -40,6 +41,6 @@
    \param p_llrOut Output vector
    \param p_profiler LDPC profiler statistics
 */
-int32_t nrLDPC_decoder(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_llrOut, t_nrLDPC_time_stats* p_profiler);
+int32_t nrLDPC_decoder(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_llrOut, t_nrLDPC_procBuf* p_procBuf, t_nrLDPC_time_stats* p_profiler);
 
 #endif

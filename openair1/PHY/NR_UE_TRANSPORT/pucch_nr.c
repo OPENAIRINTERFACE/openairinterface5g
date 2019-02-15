@@ -36,6 +36,7 @@
 //#include "PHY/extern.h" 
 //#include "LAYER2/MAC/extern.h"
 #include "PHY/NR_UE_TRANSPORT/pucch_nr.h"
+#include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
@@ -152,10 +153,10 @@ double nr_cyclic_shift_hopping(PHY_VARS_NR_UE *ue,
  */
   // alpha_init initialized to 2*PI/12=0.5235987756
   double alpha = 0.5235987756;
-  uint32_t c_init = ue->pucch_config_common_nr->hoppingId; // uint16_t causes error in generating gold sequence later
+  uint32_t c_init = ue->pucch_config_common_nr->hoppingId; // we initialize c_init again to calculate n_cs
 
   #ifdef DEBUG_NR_PUCCH_TX
-    // initialization to be removed
+    // initialization to be remo.ved
     c_init=10;
     printf("\t\t [nr_cyclic_shift_hopping] initialization c_init=%d -> variable initialization TO BE REMOVED\n",c_init);
   #endif
@@ -215,9 +216,9 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
   // alpha is cyclic shift
   double alpha;
   // lnormal is the OFDM symbol number in the PUCCH transmission where l=0 corresponds to the first OFDM symbol of the PUCCH transmission
-  uint8_t lnormal;
+  //uint8_t lnormal;
   // lprime is the index of the OFDM symbol in the slot that corresponds to the first OFDM symbol of the PUCCH transmission in the slot given by [5, TS 38.213]
-  uint8_t lprime;
+  //uint8_t lprime;
   // mcs is provided by TC 38.213 subclauses 9.2.3, 9.2.4, 9.2.5 FIXME!
   //uint8_t mcs;
 
@@ -232,7 +233,7 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
    * x(l*12+n) = r_u_v_alpha_delta(n)
    */
   // the value of u,v (delta always 0 for PUCCH) has to be calculated according to TS 38.211 Subclause 6.3.2.2.1
-  uint8_t u=0,v=0,delta=0;
+  uint8_t u=0,v=0;//,delta=0;
   // if frequency hopping is disabled by the higher-layer parameter PUCCH-frequency-hopping
   //              n_hop = 0
   // if frequency hopping is enabled by the higher-layer parameter PUCCH-frequency-hopping
@@ -270,8 +271,8 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
   /*
    * Implementing TS 38.211 Subclause 6.3.2.3.2 Mapping to physical resources FIXME!
    */
-  int32_t *txptr;
-  uint32_t re_offset;
+  //int32_t *txptr;
+  uint32_t re_offset=0;
   for (int l=0; l<nrofSymbols; l++) {
     if ((startingPRB <  (frame_parms->N_RB_DL>>1)) && ((frame_parms->N_RB_DL & 1) == 0)) { // if number RBs in bandwidth is even and current PRB is lower band
       re_offset = ((l+startingSymbolIndex)*frame_parms->ofdm_symbol_size) + (12*startingPRB) + frame_parms->first_carrier_offset;
@@ -288,7 +289,7 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
     if ((startingPRB == (frame_parms->N_RB_DL>>1)) && ((frame_parms->N_RB_DL & 1) == 1)) { // if number RBs in bandwidth is odd  and current PRB contains DC
       re_offset = ((l+startingSymbolIndex)*frame_parms->ofdm_symbol_size) + (12*startingPRB) + frame_parms->first_carrier_offset;
     }
-    txptr = &txdataF[0][re_offset];
+    //txptr = &txdataF[0][re_offset];
     for (int n=0; n<12; n++){
       if ((n==6) && (startingPRB == (frame_parms->N_RB_DL>>1)) && ((frame_parms->N_RB_DL & 1) == 1)) {
         // if number RBs in bandwidth is odd  and current PRB contains DC, we need to recalculate the offset when n=6 (for second half PRB)
@@ -333,7 +334,7 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
    *
    */
   // complex-valued symbol d_re, d_im containing complex-valued symbol d(0):
-  int16_t d_re, d_im;
+  int16_t d_re=0, d_im=0;
   if (nr_bit == 1) { // using BPSK if M_bit=1 according to TC 38.211 Subclause 5.1.2
     d_re = (payload&1)==0 ? (int16_t)(((int32_t)amp*ONE_OVER_SQRT2)>>15) : -(int16_t)(((int32_t)amp*ONE_OVER_SQRT2)>>15);
     d_im = (payload&1)==0 ? (int16_t)(((int32_t)amp*ONE_OVER_SQRT2)>>15) : -(int16_t)(((int32_t)amp*ONE_OVER_SQRT2)>>15);
@@ -366,7 +367,7 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
   // alpha is cyclic shift
   double alpha;
   // lnormal is the OFDM symbol number in the PUCCH transmission where l=0 corresponds to the first OFDM symbol of the PUCCH transmission
-  uint8_t lnormal = 0 ;
+  //uint8_t lnormal = 0 ;
   // lprime is the index of the OFDM symbol in the slot that corresponds to the first OFDM symbol of the PUCCH transmission in the slot given by [5, TS 38.213]
   uint8_t lprime = startingSymbolIndex;
   // mcs = 0 except for PUCCH format 0
@@ -384,7 +385,7 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
    * the complex-valued symbol d_0 shall be multiplied with a sequence r_u_v_alpha_delta(n): y(n) = d_0 * r_u_v_alpha_delta(n)
    */
   // the value of u,v (delta always 0 for PUCCH) has to be calculated according to TS 38.211 Subclause 6.3.2.2.1
-  uint8_t u=0,v=0,delta=0;
+  uint8_t u=0,v=0;//,delta=0;
   // if frequency hopping is disabled, intraSlotFrequencyHopping is not provided
   //              n_hop = 0
   // if frequency hopping is enabled,  intraSlotFrequencyHopping is     provided
@@ -405,8 +406,8 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
 /*
  * Implementing TS 38.211 Subclause 6.3.2.4.2 Mapping to physical resources
  */
-  int32_t *txptr;
-  uint32_t re_offset;
+  //int32_t *txptr;
+  uint32_t re_offset=0;
   int i=0;
   #define MAX_SIZE_Z 168 // this value has to be calculated from mprime*12*table_6_3_2_4_1_1_N_SF_mprime_PUCCH_1_noHop[pucch_symbol_length]+m*12+n
   int16_t z_re[MAX_SIZE_Z],z_im[MAX_SIZE_Z];
@@ -586,7 +587,7 @@ void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
     }
 
 
-    txptr = &txdataF[0][re_offset];
+    //txptr = &txdataF[0][re_offset];
     for (int n=0; n<12; n++){
       if ((n==6) && (startingPRB == (frame_parms->N_RB_DL>>1)) && ((frame_parms->N_RB_DL & 1) == 1)) {
         // if number RBs in bandwidth is odd  and current PRB contains DC, we need to recalculate the offset when n=6 (for second half PRB)
@@ -938,7 +939,7 @@ void nr_uci_encoding(uint64_t payload,
   // L is the CRC size
   uint8_t L;
   // E is the rate matching output sequence length as given in TS 38.212 subclause 6.3.1.4.1
-  uint16_t E,E_init;
+  uint16_t E=0,E_init;
   if (fmt == pucch_format2_nr) E = 16*nrofSymbols*nrofPRB;
   if (fmt == pucch_format3_nr){
     E_init = (is_pi_over_2_bpsk_enabled == 0) ? 24:12;
@@ -1095,11 +1096,11 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
   /*
    * Implementing TS 38.211 Subclause 6.3.2.5.3 Mapping to physical resources
    */
-  int32_t *txptr;
-  uint32_t re_offset;
+  //int32_t *txptr;
+  uint32_t re_offset=0;
   uint32_t x1, x2, s=0;
   int i=0;
-  int m;
+  int m=0;
   for (int l=0; l<nrofSymbols; l++) {
     x2 = (((1<<17)*((14*nr_tti_tx) + (l+startingSymbolIndex) + 1)*((2*n_id) + 1)) + (2*n_id))%(1<<31); // c_init calculation according to TS38.211 subclause
     s = lte_gold_generic(&x1, &x2, 1);
@@ -1121,7 +1122,7 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
       if (((rb+startingPRB) == (frame_parms->N_RB_DL>>1)) && ((frame_parms->N_RB_DL & 1) == 1)) { // if number RBs in bandwidth is odd  and current PRB contains DC
         re_offset = ((l+startingSymbolIndex)*frame_parms->ofdm_symbol_size) + (12*(rb+startingPRB)) + frame_parms->first_carrier_offset;
       }
-      txptr = &txdataF[0][re_offset];
+      //txptr = &txdataF[0][re_offset];
       int k=0;
       int kk=0;
       for (int n=0; n<12; n++){
@@ -1325,7 +1326,7 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
                                              {0, 0, 0,-1,-1,-1, 0, 0, 0, 1, 1, 1},
                                              {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
                                              {0, 0, 0, 1, 1, 1, 0, 0, 0,-1,-1,-1}};
-  uint8_t occ_Length = occ_length_format4; // higher layer parameter occ-Length
+  //uint8_t occ_Length = occ_length_format4; // higher layer parameter occ-Length
   uint8_t occ_Index  = occ_index_format4;  // higher layer parameter occ-Index
 //occ_Index = 1; //only for testing purposes; to be removed FIXME!!!
   if (fmt == pucch_format3_nr){ // no block-wise spreading for format 3
@@ -1416,7 +1417,7 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
    * Implementing TS 38.211 Subclauses 6.3.2.5.3 and 6.3.2.6.5 Mapping to physical resources
    */
   // the value of u,v (delta always 0 for PUCCH) has to be calculated according to TS 38.211 Subclause 6.3.2.2.1
-  uint8_t u=0,v=0,delta=0;
+  uint8_t u=0,v=0;//,delta=0;
   // if frequency hopping is disabled, intraSlotFrequencyHopping is not provided
   //              n_hop = 0
   // if frequency hopping is enabled,  intraSlotFrequencyHopping is     provided
@@ -1424,9 +1425,9 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
   //              n_hop = 1 for second hop
   uint8_t n_hop = 0;
   // lnormal is the OFDM symbol number in the PUCCH transmission where l=0 corresponds to the first OFDM symbol of the PUCCH transmission
-  uint8_t lnormal = 0 ;
+  //uint8_t lnormal = 0 ;
   // lprime is the index of the OFDM symbol in the slot that corresponds to the first OFDM symbol of the PUCCH transmission in the slot given by [5, TS 38.213]
-  uint8_t lprime = startingSymbolIndex;
+  //uint8_t lprime = startingSymbolIndex;
   // m0 is the cyclic shift index calculated depending on the Orthogonal sequence index n, according to table 6.4.1.3.3.1-1 from TS 38.211 subclause 6.4.1.3.3.1
   uint8_t m0;
   uint8_t mcs=0;
@@ -1443,13 +1444,13 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
   uint8_t N_ZC = 12*nrofPRB;
   int16_t *r_u_v_base_re        = malloc(sizeof(int16_t)*12*nrofPRB);
   int16_t *r_u_v_base_im        = malloc(sizeof(int16_t)*12*nrofPRB);
-  int16_t *r_u_v_alpha_delta_re = malloc(sizeof(int16_t)*12*nrofPRB);
-  int16_t *r_u_v_alpha_delta_im = malloc(sizeof(int16_t)*12*nrofPRB);
+  //int16_t *r_u_v_alpha_delta_re = malloc(sizeof(int16_t)*12*nrofPRB);
+  //int16_t *r_u_v_alpha_delta_im = malloc(sizeof(int16_t)*12*nrofPRB);
 
   // Next we proceed to mapping to physical resources according to TS 38.211, subclause 6.3.2.6.5 dor PUCCH formats 3 and 4 and subclause 6.4.1.3.3.2 for DM-RS
-  int32_t *txptr;
-  uint32_t re_offset;
-  uint32_t x1, x2, s=0;
+  //int32_t *txptr;
+  uint32_t re_offset=0;
+  //uint32_t x1, x2, s=0;
   // intraSlotFrequencyHopping
   // uint8_t intraSlotFrequencyHopping = 0;
   uint8_t table_6_4_1_3_3_2_1_dmrs_positions[11][14] ={
@@ -1552,7 +1553,7 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
       #ifdef DEBUG_NR_PUCCH_TX
         printf("re_offset=%d,(rb+startingPRB)=%d\n",re_offset,(rb+startingPRB));
       #endif
-      txptr = &txdataF[0][re_offset];
+      //txptr = &txdataF[0][re_offset];
       for (int n=0; n<12; n++){
         if ((n==6) && ((rb+startingPRB) == (frame_parms->N_RB_DL>>1)) && ((frame_parms->N_RB_DL & 1) == 1)) {
           // if number RBs in bandwidth is odd  and current PRB contains DC, we need to recalculate the offset when n=6 (for second half PRB)

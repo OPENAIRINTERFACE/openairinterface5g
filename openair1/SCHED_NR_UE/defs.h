@@ -112,7 +112,7 @@ int phy_procedures_RN_UE_RX(unsigned char last_slot, unsigned char next_slot, re
   @param mode calib/normal mode
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
 */
-void phy_procedures_UE_TX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,runmode_t mode,relaying_type_t r_type);
+void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,runmode_t mode,relaying_type_t r_type);
 /*! \brief Scheduling for UE RX procedures in normal subframes.
   @param last_slot Index of last slot (0-19)
   @param phy_vars_ue Pointer to UE variables on which to act
@@ -123,8 +123,9 @@ void phy_procedures_UE_TX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
   @param phy_vars_rn pointer to RN variables
 */
-int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,uint8_t do_pdcch_flag,runmode_t mode,relaying_type_t r_type);
-int phy_procedures_slot_parallelization_UE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,uint8_t do_pdcch_flag,runmode_t mode,relaying_type_t r_type);
+int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t do_pdcch_flag,runmode_t mode);
+int phy_procedures_slot_parallelization_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t abstraction_flag,uint8_t do_pdcch_flag,runmode_t mode,relaying_type_t r_type);
+
 
 #ifdef UE_SLOT_PARALLELISATION
 void *UE_thread_slot1_dl_processing(void *arg);
@@ -136,7 +137,7 @@ void *UE_thread_slot1_dl_processing(void *arg);
   @param abstraction_flag Indicator of PHY abstraction
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
 */
-void phy_procedures_UE_S_TX(PHY_VARS_NR_UE *ue,uint8_t eNB_id,uint8_t abstraction_flag,relaying_type_t r_type);
+//void phy_procedures_UE_S_TX(PHY_VARS_NR_UE *ue,uint8_t eNB_id,uint8_t abstraction_flag,relaying_type_t r_type);
 
 /*! \brief Scheduling for UE RX procedures in TDD S-subframes.
   @param phy_vars_ue Pointer to UE variables on which to act
@@ -144,7 +145,7 @@ void phy_procedures_UE_S_TX(PHY_VARS_NR_UE *ue,uint8_t eNB_id,uint8_t abstractio
   @param abstraction_flag Indicator of PHY abstraction
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
 */
-void phy_procedures_UE_S_RX(PHY_VARS_NR_UE *ue,uint8_t eNB_id,uint8_t abstraction_flag, relaying_type_t r_type);
+//void phy_procedures_UE_S_RX(PHY_VARS_NR_UE *ue,uint8_t eNB_id,uint8_t abstraction_flag, relaying_type_t r_type);
 
 
 /*! \brief Function to compute subframe type as a function of Frame type and TDD Configuration (implements Table 4.2.2 from 36.211, p.11 from version 8.6) and subframe index.
@@ -154,7 +155,7 @@ void phy_procedures_UE_S_RX(PHY_VARS_NR_UE *ue,uint8_t eNB_id,uint8_t abstractio
 */
 
 
-nr_subframe_t nr_subframe_select(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
+//nr_subframe_t nr_subframe_select(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
 
 
 /*! \brief Function to compute subframe type as a function of Frame type and TDD Configuration (implements Table 4.2.2 from 36.211, p.11 from version 8.6) and subframe index.  Same as nr_subframe_select, except that it uses the Mod_id and is provided as a service to the MAC scheduler.
@@ -367,6 +368,11 @@ void nr_dump_dlsch_ra(PHY_VARS_NR_UE *phy_vars_ue,UE_nr_rxtx_proc_t *proc,uint8_
 int nr_is_srs_occasion_common(NR_DL_FRAME_PARMS *frame_parms,int frame_tx,int subframe_tx);
 
 void nr_compute_srs_pos(lte_frame_type_t frameType,uint16_t isrs,uint16_t *psrsPeriodicity,uint16_t *psrsOffset);
+
+void set_tx_harq_id(NR_UE_ULSCH_t *ulsch, int harq_pid, int slot_tx);
+int get_tx_harq_id(NR_UE_ULSCH_t *ulsch, int slot_tx);
+
+
 
 /*@}*/
 

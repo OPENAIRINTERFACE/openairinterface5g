@@ -100,23 +100,7 @@
 #define NR_LDPC_MAX_NUM_LLR 26112
 
 // ==============================================================================
-// GLOBAL VARIABLES
-
-// Aligned on 32 bytes = 256 bits for AVX2
-/** CN processing buffer */
-static int8_t cnProcBuf   [NR_LDPC_SIZE_CN_PROC_BUF] __attribute__ ((aligned(32)));
-/** Buffer for CN processing results */
-static int8_t cnProcBufRes[NR_LDPC_SIZE_CN_PROC_BUF] __attribute__ ((aligned(32)));
-
-/** BN processing buffer */
-static int8_t bnProcBuf   [NR_LDPC_SIZE_BN_PROC_BUF] __attribute__ ((aligned(32)));
-/** Buffer for BN processing results */
-static int8_t bnProcBufRes[NR_LDPC_SIZE_BN_PROC_BUF] __attribute__ ((aligned(32)));
-
-/** Buffer for LLR results */
-static int8_t llrRes    [NR_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
-/** LLR processing buffer */
-static int8_t llrProcBuf[NR_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
+// GLOBAL CONSTANT VARIABLES
 
 /** Start addresses for the cnProcBuf for each CN group in BG1*/
 static const uint32_t lut_startAddrCnGroups_BG1[NR_LDPC_NUM_CN_GROUPS_BG1] = {0, 1152, 8832, 43392, 61824, 75264, 81408, 88320, 92160};

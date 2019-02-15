@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <errno.h>
+#include <math.h>
 
 #include "PHY/defs_nr_UE.h"
 
@@ -383,8 +384,8 @@ void init_context_pss_nr(NR_DL_FRAME_PARMS *frame_parms_ue)
       bzero( primary_synchro_nr[i], sizePss);
     }
     else {
-     msg("Fatal memory allocation problem \n");
-     assert(0);
+      LOG_E(PHY,"Fatal memory allocation problem \n");
+      assert(0);
     }
     p = malloc(LENGTH_PSS_NR*2);
     if (p != NULL) {
@@ -397,7 +398,7 @@ void init_context_pss_nr(NR_DL_FRAME_PARMS *frame_parms_ue)
       bzero( primary_synchro_time_nr[i], size);
     }
     else {
-     msg("Fatal memory allocation problem \n");
+      LOG_E(PHY,"Fatal memory allocation problem \n");
      assert(0);
     }
 
@@ -408,7 +409,7 @@ void init_context_pss_nr(NR_DL_FRAME_PARMS *frame_parms_ue)
       bzero( pss_corr_ue[i], size);
     }
     else {
-      msg("Fatal memory allocation problem \n");
+      LOG_E(PHY,"Fatal memory allocation problem \n");
       assert(0);
     }
 
@@ -437,7 +438,7 @@ void free_context_pss_nr(void)
       primary_synchro_time_nr[i] = NULL;
     }
     else {
-      msg("Fatal memory deallocation problem \n");
+      LOG_E(PHY,"Fatal memory deallocation problem \n");
       assert(0);
     }
 
@@ -446,7 +447,7 @@ void free_context_pss_nr(void)
       primary_synchro_nr[i] = NULL;
     }
     else {
-      msg("Fatal memory deallocation problem \n");
+      LOG_E(PHY,"Fatal memory deallocation problem \n");
       assert(0);
     }
 
@@ -455,7 +456,7 @@ void free_context_pss_nr(void)
       pss_corr_ue[i] = NULL;
     }
     else {
-      msg("Fatal memory deallocation problem \n");
+      LOG_E(PHY,"Fatal memory deallocation problem \n");
       assert(0);
     }
   }
@@ -480,13 +481,13 @@ void init_context_synchro_nr(NR_DL_FRAME_PARMS *frame_parms_ue)
   /* initialise global buffers for synchronisation */
   synchroF_tmp = malloc16(SYNCF_TMP_SIZE);
   if (synchroF_tmp == NULL) {
-    msg("Fatal memory allocation problem \n");
+    LOG_E(PHY,"Fatal memory allocation problem \n");
     assert(0);
   }
 
   synchro_tmp = malloc16(SYNC_TMP_SIZE);
   if (synchro_tmp == NULL) {
-    msg("Fatal memory allocation problem \n");
+    LOG_E(PHY,"Fatal memory allocation problem \n");
     assert(0);
   }
 
@@ -518,7 +519,7 @@ void free_context_synchro_nr(void)
     synchroF_tmp = NULL;
   }
   else {
-    msg("Fatal memory deallocation problem \n");
+    LOG_E(PHY,"Fatal memory deallocation problem \n");
     assert(0);
   }
 
@@ -527,7 +528,7 @@ void free_context_synchro_nr(void)
     synchro_tmp = NULL;
   }
   else {
-    msg("Fatal memory deallocation problem \n");
+    LOG_E(PHY,"Fatal memory deallocation problem \n");
     assert(0);
   }
 
@@ -662,6 +663,7 @@ int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int rate_change)
   NR_DL_FRAME_PARMS *frame_parms = &(PHY_vars_UE->frame_parms);
   int synchro_position;
   int **rxdata = NULL;
+  int fo_flag = PHY_vars_UE->UE_fo_compensation;  // flag to enable freq offset estimation and compensation
 
 #ifdef DBG_PSS_NR
 
@@ -705,7 +707,10 @@ int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int rate_change)
 
   synchro_position = pss_search_time_nr(rxdata,
                                         frame_parms,
-                                        (int *)&PHY_vars_UE->common_vars.eNb_id);
+					fo_flag,
+                                        (int *)&PHY_vars_UE->common_vars.eNb_id,
+					(int *)&PHY_vars_UE->common_vars.freq_offset);
+
 
 #if TEST_SYNCHRO_TIMING_PSS
 
@@ -750,6 +755,15 @@ static inline int64_t abs64(int64_t x)
 {
   return (((int64_t)((int32_t*)&x)[0])*((int64_t)((int32_t*)&x)[0]) + ((int64_t)((int32_t*)&x)[1])*((int64_t)((int32_t*)&x)[1]));
 }
+
+static inline double angle64(int64_t x)
+{
+
+  double re=((int32_t*)&x)[0];
+  double im=((int32_t*)&x)[1];
+  return (atan2(im,re));
+}
+
 
 /*******************************************************************
 *
@@ -805,12 +819,15 @@ static inline int64_t abs64(int64_t x)
 
 int pss_search_time_nr(int **rxdata, ///rx data in time domain
                        NR_DL_FRAME_PARMS *frame_parms,
-                       int *eNB_id)
+		       int fo_flag,
+                       int *eNB_id,
+		       int *f_off)
 {
   unsigned int n, ar, peak_position, pss_source;
   int64_t peak_value;
   int64_t result;
   int64_t avg[NUMBER_PSS_SEQUENCE];
+  double ffo_est=0;
 
 
   unsigned int length = (NR_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_subframe);  /* 1 frame for now, it should be 2 TODO_NR */
@@ -831,13 +848,13 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
     maxval = max(maxval,-primary_synchro_time_nr[1][i]);
     maxval = max(maxval,primary_synchro_time_nr[2][i]);
     maxval = max(maxval,-primary_synchro_time_nr[2][i]);
-
   }
   int shift = log2_approx(maxval);//*(frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples)*2);
 
   /* Search pss in the received buffer each 4 samples which ensures a memory alignment on 128 bits (32 bits x 4 ) */
   /* This is required by SIMD (single instruction Multiple Data) Extensions of Intel processors. */
   /* Correlation computation is based on a a dot product which is realized thank to SIMS extensions */
+
   for (int pss_index = 0; pss_index < NUMBER_PSS_SEQUENCE; pss_index++) {
     avg[pss_index]=0;
     memset(pss_corr_ue[pss_index],0,length*sizeof(int64_t)); 
@@ -858,15 +875,14 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
 				  frame_parms->ofdm_symbol_size, 
 				  shift);
 	  pss_corr_ue[pss_index][n] += abs64(result);
-	  
           //((short*)pss_corr_ue[pss_index])[2*n] += ((short*) &result)[0];   /* real part */
           //((short*)pss_corr_ue[pss_index])[2*n+1] += ((short*) &result)[1]; /* imaginary part */
-          //((short*)&synchro_out)[0] += ((short*) &result)[0];               /* real part */
-          //((short*)&synchro_out)[1] += ((short*) &result)[1];               /* imaginary part */
+          //((short*)&synchro_out)[0] += ((int*) &result)[0];               /* real part */
+          //((short*)&synchro_out)[1] += ((int*) &result)[1];               /* imaginary part */
 
         }
       }
-
+ 
       /* calculate the absolute value of sync_corr[n] */
       avg[pss_index]+=pss_corr_ue[pss_index][n];
       if (pss_corr_ue[pss_index][n] > peak_value) {
@@ -881,11 +897,45 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
     }
   }
 
+  if (fo_flag){
+	  // fractional frequency offser computation according to Cross-correlation Synchronization Algorithm Using PSS
+	  // Shoujun Huang, Yongtao Su, Ying He and Shan Tang, "Joint time and frequency offset estimation in LTE downlink," 7th International Conference on Communications and Networking in China, 2012.
+
+	  int64_t result1,result2;
+	  // Computing cross-correlation at peak on half the symbol size for first half of data
+	  result1  = dot_product64((short*)primary_synchro_time_nr[pss_source], 
+				  (short*) &(rxdata[0][peak_position]), 
+				  frame_parms->ofdm_symbol_size>>1, 
+				  shift);
+	  // Computing cross-correlation at peak on half the symbol size for data shifted by half symbol size 
+	  // as it is real and complex it is necessary to shift by a value equal to symbol size to obtain such shift
+	  result2  = dot_product64((short*)primary_synchro_time_nr[pss_source]+(frame_parms->ofdm_symbol_size), 
+				  (short*) &(rxdata[0][peak_position])+(frame_parms->ofdm_symbol_size), 
+				  frame_parms->ofdm_symbol_size>>1, 
+				  shift);
+
+	  int64_t re1,re2,im1,im2;
+	  re1=((int*) &result1)[0];
+	  re2=((int*) &result2)[0];
+	  im1=((int*) &result1)[1];
+	  im2=((int*) &result2)[1];
+
+ 	  // estimation of fractional frequency offset: angle[(result1)'*(result2)]/pi
+	  ffo_est=atan2(re1*im2-re2*im1,re1*re2+im1*im2)/M_PI;
+  
+#ifdef DBG_PSS_NR
+	  printf("ffo %lf\n",ffo_est);
+#endif
+  }
+
+  // computing absolute value of frequency offset
+  *f_off = ffo_est*frame_parms->subcarrier_spacing;  
+
   for (int pss_index = 0; pss_index < NUMBER_PSS_SEQUENCE; pss_index++) avg[pss_index]/=(length/4);
 
   *eNB_id = pss_source;
 
-  LOG_I(PHY,"[UE] nr_synchro_time: Sync source = %d, Peak found at pos %d, val = %llu (%d dB) avg %d dB\n", pss_source, peak_position, (unsigned long long)peak_value, dB_fixed64(peak_value),dB_fixed64(avg[pss_source]));
+  LOG_I(PHY,"[UE] nr_synchro_time: Sync source = %d, Peak found at pos %d, val = %llu (%d dB) avg %d dB, ffo %lf\n", pss_source, peak_position, (unsigned long long)peak_value, dB_fixed64(peak_value),dB_fixed64(avg[pss_source]),ffo_est);
 
   if (peak_value < 5*avg[pss_source])
     return(-1);

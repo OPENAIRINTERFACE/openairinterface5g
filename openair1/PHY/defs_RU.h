@@ -120,10 +120,10 @@ typedef struct RU_proc_t_s {
   openair0_timestamp timestamp_rx;
   /// timestamp to send to "slave rru"
   openair0_timestamp timestamp_tx;
-  /// subframe to act upon for reception
-  int subframe_rx;
-  /// subframe to act upon for transmission
-  int subframe_tx;
+  /// subframe (LTE) / slot (NR) to act upon for reception
+  int tti_rx;
+  /// subframe (LTE) / slot (NR) to act upon for transmission
+  int tti_tx;
   /// subframe to act upon for reception of prach
   int subframe_prach;
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
@@ -420,7 +420,7 @@ typedef struct RU_t_s{
 
   /// function pointer to NB entry routine
   void (*eNB_top)(struct PHY_VARS_eNB_s *eNB, int frame_rx, int subframe_rx, char *string, struct RU_t_s *ru);
-  void (*gNB_top)(struct PHY_VARS_gNB_s *gNB, int frame_rx, int subframe_rx, char *string, struct RU_t_s *ru);
+  void (*gNB_top)(struct PHY_VARS_gNB_s *gNB, int frame_rx, int slot_rx, char *string, struct RU_t_s *ru);
 
   /// Timing statistics
   time_stats_t ofdm_demod_stats;

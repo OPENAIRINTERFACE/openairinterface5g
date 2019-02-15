@@ -115,8 +115,16 @@ sudo cset shield --reset
 cd eur_oai_develop-nr/openairinterface5g/
 source oaienv
 
-sudo -E ./cmake_targets/build_oai -c --gNB -w ADRV9371_ZC706 -I
-sudo -E ./cmake_targets/build_oai -c --gNB -w ADRV9371_ZC706
+sudo -E ./cmake_targets/build_oai -c --gNB -w ADRV9371_ZC706 -I --enable-cpu-affinity
+
+/* CPU available shall be mapped on CPU2 to get_nprocs() number with hyperthreading disabled */
+/* because : */
+/* - cset shield leave CPU0 for system */
+/* - CPU1 is reserved for HwRxTx thread for I/Q acquisition ! */
+/* Note: "/usr/local/etc/syriq/cpu-irq.sh" shall be changed if more than 8 cores are used */
+/*   ie. "cset shield --force --kthread on -c 1-7" where "-c 1-7" reserves CPU1 to CPU7 for application (CPU0 is for system) */
+
+sudo -E ./cmake_targets/build_oai -c --gNB -w ADRV9371_ZC706 --enable-cpu-affinity
 
 
 

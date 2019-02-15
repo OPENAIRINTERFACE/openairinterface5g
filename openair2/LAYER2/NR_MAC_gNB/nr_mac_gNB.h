@@ -67,7 +67,7 @@ typedef struct {
     int physCellId;
     int p_gNB;
     int Ncp;
-    int eutra_band;
+    int nr_band;
     uint32_t dl_CarrierFreq;
     NR_BCCH_BCH_Message_t *mib;
     TDD_Config_t *tdd_Config;
@@ -107,8 +107,8 @@ typedef struct gNB_MAC_INST_s {
   module_id_t                     Mod_id;
   /// frame counter
   frame_t                         frame;
-  /// subframe counter
-  sub_frame_t                     subframe;  
+  /// slot counter
+  int                             slot;  
   /// Pointer to IF module instance for PHY
   NR_IF_Module_t                  *if_inst;
     /// Common cell resources

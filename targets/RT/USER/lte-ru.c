@@ -311,21 +311,21 @@ int connect_rau(RU_t *ru) {
 // southbound IF5 fronthaul for 16-bit OAI format
 static inline void fh_if5_south_out(RU_t *ru) {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
-  send_IF5(ru, ru->proc.timestamp_tx, ru->proc.subframe_tx, &ru->seqno, IF5_RRH_GW_DL);
+  send_IF5(ru, ru->proc.timestamp_tx, ru->proc.tti_tx, &ru->seqno, IF5_RRH_GW_DL);
 }
 
 // southbound IF5 fronthaul for Mobipass packet format
 static inline void fh_if5_mobipass_south_out(RU_t *ru) {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
-  send_IF5(ru, ru->proc.timestamp_tx, ru->proc.subframe_tx, &ru->seqno, IF5_MOBIPASS); 
+  send_IF5(ru, ru->proc.timestamp_tx, ru->proc.tti_tx, &ru->seqno, IF5_MOBIPASS); 
 }
 
 // southbound IF4p5 fronthaul
 static inline void fh_if4p5_south_out(RU_t *ru) {
   if (ru == RC.ru[0]) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, ru->proc.timestamp_tx&0xffffffff );
-  LOG_D(PHY,"Sending IF4p5 for frame %d subframe %d\n",ru->proc.frame_tx,ru->proc.subframe_tx);
-  if (subframe_select(ru->frame_parms,ru->proc.subframe_tx)!=SF_UL) 
-    send_IF4p5(ru,ru->proc.frame_tx, ru->proc.subframe_tx, IF4p5_PDLFFT);
+  LOG_D(PHY,"Sending IF4p5 for frame %d subframe %d\n",ru->proc.frame_tx,ru->proc.tti_tx);
+  if (subframe_select(ru->frame_parms,ru->proc.tti_tx)!=SF_UL) 
+    send_IF4p5(ru,ru->proc.frame_tx, ru->proc.tti_tx, IF4p5_PDLFFT);
 }
 
 /*************************************************************/
@@ -340,11 +340,11 @@ void fh_if5_south_in(RU_t *ru,int *frame, int *subframe) {
   recv_IF5(ru, &proc->timestamp_rx, *subframe, IF5_RRH_GW_UL); 
 
   proc->frame_rx    = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
-  proc->subframe_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
+  proc->tti_rx = (proc->timestamp_rx / fp->samples_per_tti)%10;
   
   if (proc->first_rx == 0) {
-    if (proc->subframe_rx != *subframe){
-      LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,*subframe);
+    if (proc->tti_rx != *subframe){
+      LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->tti_rx %d, subframe %d)\n",proc->tti_rx,*subframe);
       exit_fun("Exiting");
     }
     
@@ -355,7 +355,7 @@ void fh_if5_south_in(RU_t *ru,int *frame, int *subframe) {
   } else {
     proc->first_rx = 0;
     *frame = proc->frame_rx;
-    *subframe = proc->subframe_rx;        
+    *subframe = proc->tti_rx;        
   }      
   
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
@@ -396,16 +396,16 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
   } while(proc->symbol_mask[*subframe] != symbol_mask_full);    
 
   //caculate timestamp_rx, timestamp_tx based on frame and subframe
-  proc->subframe_rx  = sf;
+  proc->tti_rx  = sf;
   proc->frame_rx     = f;
-  proc->timestamp_rx = ((proc->frame_rx * 10)  + proc->subframe_rx ) * fp->samples_per_tti ;
+  proc->timestamp_rx = ((proc->frame_rx * 10)  + proc->tti_rx ) * fp->samples_per_tti ;
   //  proc->timestamp_tx = proc->timestamp_rx +  (4*fp->samples_per_tti);
-  proc->subframe_tx  = (sf+sf_ahead)%10;
+  proc->tti_tx  = (sf+sf_ahead)%10;
   proc->frame_tx     = (sf>(9-sf_ahead)) ? (f+1)&1023 : f;
  
   if (proc->first_rx == 0) {
-    if (proc->subframe_rx != *subframe){
-      LOG_E(PHY,"Received Timestamp (IF4p5) doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,*subframe);
+    if (proc->tti_rx != *subframe){
+      LOG_E(PHY,"Received Timestamp (IF4p5) doesn't correspond to the time we think it is (proc->tti_rx %d, subframe %d)\n",proc->tti_rx,*subframe);
       exit_fun("Exiting");
     }
     if (proc->frame_rx != *frame) {
@@ -415,14 +415,14 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
   } else {
     proc->first_rx = 0;
     *frame = proc->frame_rx;
-    *subframe = proc->subframe_rx;        
+    *subframe = proc->tti_rx;        
   }
 
   if (ru == RC.ru[0]) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_RU, f );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_RU, sf );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_RX0_RU, sf );
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, proc->subframe_tx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, proc->tti_tx );
   }
 
   proc->symbol_mask[sf] = 0;  
@@ -455,22 +455,22 @@ void fh_if5_south_asynch_in_mobipass(RU_t *ru,int *frame,int *subframe) {
   pthread_mutex_lock(&proc->mutex_asynch_rxtx);
   int offset_mobipass = 40120;
   pthread_mutex_lock(&proc->mutex_asynch_rxtx);
-  proc->subframe_rx = ((proc->timestamp_rx-offset_mobipass)/fp->samples_per_tti)%10;
+  proc->tti_rx = ((proc->timestamp_rx-offset_mobipass)/fp->samples_per_tti)%10;
   proc->frame_rx    = ((proc->timestamp_rx-offset_mobipass)/(fp->samples_per_tti*10))&1023;
 
-  proc->subframe_rx = (proc->timestamp_rx/fp->samples_per_tti)%10;
+  proc->tti_rx = (proc->timestamp_rx/fp->samples_per_tti)%10;
   proc->frame_rx    = (proc->timestamp_rx/(10*fp->samples_per_tti))&1023;
 
   if (proc->first_rx == 1) {
     proc->first_rx =2;
-    *subframe = proc->subframe_rx;
+    *subframe = proc->tti_rx;
     *frame    = proc->frame_rx; 
-    LOG_E(PHY,"[Mobipass]timestamp_rx:%llu, frame_rx %d, subframe: %d\n",(unsigned long long int)proc->timestamp_rx,proc->frame_rx,proc->subframe_rx);
+    LOG_E(PHY,"[Mobipass]timestamp_rx:%llu, frame_rx %d, subframe: %d\n",(unsigned long long int)proc->timestamp_rx,proc->frame_rx,proc->tti_rx);
   }
   else {
-    if (proc->subframe_rx != *subframe) {
+    if (proc->tti_rx != *subframe) {
         proc->first_rx++;
-	LOG_E(PHY,"[Mobipass]timestamp:%llu, subframe_rx %d is not what we expect %d, first_rx:%d\n",(unsigned long long int)proc->timestamp_rx, proc->subframe_rx,*subframe, proc->first_rx);
+	LOG_E(PHY,"[Mobipass]timestamp:%llu, tti_rx %d is not what we expect %d, first_rx:%d\n",(unsigned long long int)proc->timestamp_rx, proc->tti_rx,*subframe, proc->first_rx);
       //exit_fun("Exiting");
     }
     if (proc->frame_rx != *frame) {
@@ -479,7 +479,7 @@ void fh_if5_south_asynch_in_mobipass(RU_t *ru,int *frame,int *subframe) {
      // exit_fun("Exiting");
     }
     // temporary solution
-      *subframe = proc->subframe_rx;
+      *subframe = proc->tti_rx;
       *frame    = proc->frame_rx;
   }
 
@@ -503,15 +503,15 @@ void fh_if4p5_south_asynch_in(RU_t *ru,int *frame,int *subframe) {
   prach_rx      = 0;
 
   do {   // Blocking, we need a timeout on this !!!!!!!!!!!!!!!!!!!!!!!
-    recv_IF4p5(ru, &proc->frame_rx, &proc->subframe_rx, &packet_type, &symbol_number);
+    recv_IF4p5(ru, &proc->frame_rx, &proc->tti_rx, &packet_type, &symbol_number);
     // grab first prach information for this new subframe
     if (got_prach_info==0) {
-      prach_rx       = is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx);
+      prach_rx       = is_prach_subframe(fp, proc->frame_rx, proc->tti_rx);
       got_prach_info = 1;
     }
     if (proc->first_rx != 0) {
       *frame = proc->frame_rx;
-      *subframe = proc->subframe_rx;
+      *subframe = proc->tti_rx;
       proc->first_rx = 0;
     }
     else {
@@ -519,8 +519,8 @@ void fh_if4p5_south_asynch_in(RU_t *ru,int *frame,int *subframe) {
 	LOG_E(PHY,"frame_rx %d is not what we expect %d\n",proc->frame_rx,*frame);
 	exit_fun("Exiting");
       }
-      if (proc->subframe_rx != *subframe) {
-	LOG_E(PHY,"subframe_rx %d is not what we expect %d\n",proc->subframe_rx,*subframe);
+      if (proc->tti_rx != *subframe) {
+	LOG_E(PHY,"tti_rx %d is not what we expect %d\n",proc->tti_rx,*subframe);
 	exit_fun("Exiting");
       }
     }
@@ -564,7 +564,7 @@ void fh_if4p5_north_in(RU_t *ru,int *frame,int *subframe) {
   // dump VCD output for first RU in list
   if (ru == RC.ru[0]) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, *frame );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, *subframe );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, *subframe );
   }
 }
 
@@ -572,23 +572,23 @@ void fh_if5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
 
   LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
   RU_proc_t *proc        = &ru->proc;
-  int subframe_tx,frame_tx;
+  int tti_tx,frame_tx;
   openair0_timestamp timestamp_tx;
 
   recv_IF5(ru, &timestamp_tx, *subframe, IF5_RRH_GW_DL); 
-      //      printf("Received subframe %d (TS %llu) from RCC\n",subframe_tx,timestamp_tx);
+      //      printf("Received subframe %d (TS %llu) from RCC\n",tti_tx,timestamp_tx);
 
-  subframe_tx = (timestamp_tx/fp->samples_per_tti)%10;
+  tti_tx = (timestamp_tx/fp->samples_per_tti)%10;
   frame_tx    = (timestamp_tx/(fp->samples_per_tti*10))&1023;
 
   if (proc->first_tx != 0) {
-    *subframe = subframe_tx;
+    *subframe = tti_tx;
     *frame    = frame_tx;
     proc->first_tx = 0;
   }
   else {
-    AssertFatal(subframe_tx == *subframe,
-                "subframe_tx %d is not what we expect %d\n",subframe_tx,*subframe);
+    AssertFatal(tti_tx == *subframe,
+                "tti_tx %d is not what we expect %d\n",tti_tx,*subframe);
     AssertFatal(frame_tx == *frame, 
                 "frame_tx %d is not what we expect %d\n",frame_tx,*frame);
   }
@@ -601,28 +601,28 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
 
   uint16_t packet_type;
   uint32_t symbol_number,symbol_mask,symbol_mask_full;
-  int subframe_tx,frame_tx;
+  int tti_tx,frame_tx;
 
   LOG_D(PHY, "%s(ru:%p frame, subframe)\n", __FUNCTION__, ru);
   symbol_number = 0;
   symbol_mask = 0;
   symbol_mask_full = ((subframe_select(fp,*subframe) == SF_S) ? (1<<fp->dl_symbols_in_S_subframe) : (1<<fp->symbols_per_tti))-1;
   do {   
-    recv_IF4p5(ru, &frame_tx, &subframe_tx, &packet_type, &symbol_number);
-    if ((subframe_select(fp,subframe_tx) == SF_DL) && (symbol_number == 0)) start_meas(&ru->rx_fhaul);
+    recv_IF4p5(ru, &frame_tx, &tti_tx, &packet_type, &symbol_number);
+    if ((subframe_select(fp,tti_tx) == SF_DL) && (symbol_number == 0)) start_meas(&ru->rx_fhaul);
     LOG_D(PHY,"subframe %d (%d): frame %d, subframe %d, symbol %d\n",
-         *subframe,subframe_select(fp,*subframe),frame_tx,subframe_tx,symbol_number);
+         *subframe,subframe_select(fp,*subframe),frame_tx,tti_tx,symbol_number);
     if (proc->first_tx != 0) {
       *frame    = frame_tx;
-      *subframe = subframe_tx;
+      *subframe = tti_tx;
       proc->first_tx = 0;
       symbol_mask_full = ((subframe_select(fp,*subframe) == SF_S) ? (1<<fp->dl_symbols_in_S_subframe) : (1<<fp->symbols_per_tti))-1;
     }
     else {
       AssertFatal(frame_tx == *frame,
 	          "frame_tx %d is not what we expect %d\n",frame_tx,*frame);
-      AssertFatal(subframe_tx == *subframe,
-		  "subframe_tx %d is not what we expect %d\n",subframe_tx,*subframe);
+      AssertFatal(tti_tx == *subframe,
+		  "tti_tx %d is not what we expect %d\n",tti_tx,*subframe);
     }
     if (packet_type == IF4p5_PDLFFT) {
       symbol_mask = symbol_mask | (1<<symbol_number);
@@ -630,20 +630,20 @@ void fh_if4p5_north_asynch_in(RU_t *ru,int *frame,int *subframe) {
     else AssertFatal(1==0,"Illegal IF4p5 packet type (should only be IF4p5_PDLFFT%d\n",packet_type);
   } while (symbol_mask != symbol_mask_full);    
 
-  if (subframe_select(fp,subframe_tx) == SF_DL) stop_meas(&ru->rx_fhaul);
+  if (subframe_select(fp,tti_tx) == SF_DL) stop_meas(&ru->rx_fhaul);
 
-  proc->subframe_tx  = subframe_tx;
+  proc->tti_tx  = tti_tx;
   proc->frame_tx     = frame_tx;
 
-  if ((frame_tx == 0)&&(subframe_tx == 0)) proc->frame_tx_unwrap += 1024;
+  if ((frame_tx == 0)&&(tti_tx == 0)) proc->frame_tx_unwrap += 1024;
 
-  proc->timestamp_tx = ((((uint64_t)frame_tx + (uint64_t)proc->frame_tx_unwrap) * 10) + (uint64_t)subframe_tx) * (uint64_t)fp->samples_per_tti;
+  proc->timestamp_tx = ((((uint64_t)frame_tx + (uint64_t)proc->frame_tx_unwrap) * 10) + (uint64_t)tti_tx) * (uint64_t)fp->samples_per_tti;
 
-  LOG_D(PHY,"RU %d/%d TST %llu, frame %d, subframe %d\n",ru->idx,0,(long long unsigned int)proc->timestamp_tx,frame_tx,subframe_tx);
+  LOG_D(PHY,"RU %d/%d TST %llu, frame %d, subframe %d\n",ru->idx,0,(long long unsigned int)proc->timestamp_tx,frame_tx,tti_tx);
     // dump VCD output for first RU in list
   if (ru == RC.ru[0]) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, frame_tx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, subframe_tx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, tti_tx );
   }
 
   if (ru->feptx_ofdm) ru->feptx_ofdm(ru);
@@ -657,7 +657,7 @@ void fh_if5_north_out(RU_t *ru) {
 
   /// **** send_IF5 of rxdata to BBU **** ///       
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 1 );  
-  send_IF5(ru, proc->timestamp_rx, proc->subframe_rx, &seqno, IF5_RRH_GW_UL);
+  send_IF5(ru, proc->timestamp_rx, proc->tti_rx, &seqno, IF5_RRH_GW_UL);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_SEND_IF5, 0 );          
 
 }
@@ -667,17 +667,17 @@ void fh_if4p5_north_out(RU_t *ru) {
 
   RU_proc_t *proc=&ru->proc;
   LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
-  const int subframe     = proc->subframe_rx;
-  if (ru->idx==0) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_RU, proc->subframe_rx );
+  const int subframe     = proc->tti_rx;
+  if (ru->idx==0) VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_RX0_RU, proc->tti_rx );
 
   if ((fp->frame_type == TDD) && (subframe_select(fp,subframe)!=SF_UL)) {
     /// **** in TDD during DL send_IF4 of ULTICK to RCC **** ///
-    send_IF4p5(ru, proc->frame_rx, proc->subframe_rx, IF4p5_PULTICK);
+    send_IF4p5(ru, proc->frame_rx, proc->tti_rx, IF4p5_PULTICK);
     return;
   }
 
   start_meas(&ru->tx_fhaul);
-  send_IF4p5(ru, proc->frame_rx, proc->subframe_rx, IF4p5_PULFFT);
+  send_IF4p5(ru, proc->frame_rx, proc->tti_rx, IF4p5_PULFFT);
   stop_meas(&ru->tx_fhaul);
 
 }
@@ -780,38 +780,38 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
 
   }
   proc->frame_rx     = (proc->timestamp_rx / (fp->samples_per_tti*10))&1023;
-  proc->subframe_rx  = (proc->timestamp_rx / fp->samples_per_tti)%10;
+  proc->tti_rx  = (proc->timestamp_rx / fp->samples_per_tti)%10;
   // synchronize first reception to frame 0 subframe 0
 
 #ifdef PHY_TX_THREAD
   proc->timestamp_phy_tx = proc->timestamp_rx+((sf_ahead-1)*fp->samples_per_tti);
-  proc->subframe_phy_tx  = (proc->subframe_rx+(sf_ahead-1))%10;  
-  proc->frame_phy_tx     = (proc->subframe_rx>(9-(sf_ahead-1))) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
+  proc->subframe_phy_tx  = (proc->tti_rx+(sf_ahead-1))%10;  
+  proc->frame_phy_tx     = (proc->tti_rx>(9-(sf_ahead-1))) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
 #else
   proc->timestamp_tx = proc->timestamp_rx+(sf_ahead*fp->samples_per_tti);
-  proc->subframe_tx  = (proc->subframe_rx+sf_ahead)%10;
-  proc->frame_tx     = (proc->subframe_rx>(9-sf_ahead)) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
+  proc->tti_tx  = (proc->tti_rx+sf_ahead)%10;
+  proc->frame_tx     = (proc->tti_rx>(9-sf_ahead)) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
 #endif
 
   //proc->timestamp_tx = proc->timestamp_rx+(sf_ahead*fp->samples_per_tti);
-  //proc->subframe_tx  = (proc->subframe_rx+sf_ahead)%10;
-  //proc->frame_tx     = (proc->subframe_rx>(9-sf_ahead)) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
+  //proc->subframe_tx  = (proc->tti_rx+sf_ahead)%10;
+  //proc->frame_tx     = (proc->tti_rx>(9-sf_ahead)) ? (proc->frame_rx+1)&1023 : proc->frame_rx;
   
   LOG_D(PHY,"RU %d/%d TS %llu (off %d), frame %d, subframe %d\n",
 	ru->idx, 
 	0, 
 	(unsigned long long int)proc->timestamp_rx,
-	(int)ru->ts_offset,proc->frame_rx,proc->subframe_rx);
+	(int)ru->ts_offset,proc->frame_rx,proc->tti_rx);
 
     // dump VCD output for first RU in list
   if (ru == RC.ru[0]) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_RX0_RU, proc->frame_rx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_RX0_RU, proc->subframe_rx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_RX0_RU, proc->tti_rx );
   }
   
   if (proc->first_rx == 0) {
-    if (proc->subframe_rx != *subframe){
-      LOG_E(PHY,"Received Timestamp (%llu) doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",(long long unsigned int)proc->timestamp_rx,proc->subframe_rx,*subframe);
+    if (proc->tti_rx != *subframe){
+      LOG_E(PHY,"Received Timestamp (%llu) doesn't correspond to the time we think it is (proc->tti_rx %d, subframe %d)\n",(long long unsigned int)proc->timestamp_rx,proc->tti_rx,*subframe);
       exit_fun("Exiting");
     }
     
@@ -822,10 +822,10 @@ void rx_rf(RU_t *ru,int *frame,int *subframe) {
   } else {
     proc->first_rx = 0;
     *frame = proc->frame_rx;
-    *subframe = proc->subframe_rx;        
+    *subframe = proc->tti_rx;        
   }
   
-  //printf("timestamp_rx %lu, frame %d(%d), subframe %d(%d)\n",ru->timestamp_rx,proc->frame_rx,frame,proc->subframe_rx,subframe);
+  //printf("timestamp_rx %lu, frame %d(%d), subframe %d(%d)\n",ru->timestamp_rx,proc->frame_rx,frame,proc->tti_rx,subframe);
   
   VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TS, proc->timestamp_rx&0xffffffff );
   
@@ -849,12 +849,12 @@ void tx_rf(RU_t *ru) {
   unsigned int txs;
   int i;
 
-  T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(proc->frame_tx), T_INT(proc->subframe_tx),
-    T_INT(0), T_BUFFER(&ru->common.txdata[0][proc->subframe_tx * fp->samples_per_tti], fp->samples_per_tti * 4));
+  T(T_ENB_PHY_OUTPUT_SIGNAL, T_INT(0), T_INT(0), T_INT(proc->frame_tx), T_INT(proc->tti_tx),
+    T_INT(0), T_BUFFER(&ru->common.txdata[0][proc->tti_tx * fp->samples_per_tti], fp->samples_per_tti * 4));
 
-  lte_subframe_t SF_type     = subframe_select(fp,proc->subframe_tx%10);
-  lte_subframe_t prevSF_type = subframe_select(fp,(proc->subframe_tx+9)%10);
-  lte_subframe_t nextSF_type = subframe_select(fp,(proc->subframe_tx+1)%10);
+  lte_subframe_t SF_type     = subframe_select(fp,proc->tti_tx%10);
+  lte_subframe_t prevSF_type = subframe_select(fp,(proc->tti_tx+9)%10);
+  lte_subframe_t nextSF_type = subframe_select(fp,(proc->tti_tx+1)%10);
   int sf_extension = 0;
 
   if ((SF_type == SF_DL) ||
@@ -892,7 +892,7 @@ void tx_rf(RU_t *ru) {
 #endif
     
     for (i=0; i<ru->nb_tx; i++)
-      txp[i] = (void*)&ru->common.txdata[i][(proc->subframe_tx*fp->samples_per_tti)-sf_extension];
+      txp[i] = (void*)&ru->common.txdata[i][(proc->tti_tx*fp->samples_per_tti)-sf_extension];
 
     /* add fail safe for late command */
     if(late_control!=STATE_BURST_NORMAL){//stop burst
@@ -926,7 +926,7 @@ void tx_rf(RU_t *ru) {
     /* add fail safe for late command end */
 
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_TX0_RU, proc->frame_tx );
-    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_TX0_RU, proc->subframe_tx );
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TTI_NUMBER_TX0_RU, proc->tti_tx );
 
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_TST, (proc->timestamp_tx-ru->openair0_cfg.tx_sample_advance)&0xffffffff );
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 1 );
@@ -940,7 +940,7 @@ void tx_rf(RU_t *ru) {
 				      flags);
     
     LOG_D(PHY,"[TXPATH] RU %d tx_rf, writing to TS %llu, frame %d, unwrapped_frame %d, subframe %d\n",ru->idx,
-	  (long long unsigned int)proc->timestamp_tx,proc->frame_tx,proc->frame_tx_unwrap,proc->subframe_tx);
+	  (long long unsigned int)proc->timestamp_tx,proc->frame_tx,proc->frame_tx_unwrap,proc->tti_tx);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
     
     
@@ -1033,7 +1033,7 @@ void wakeup_slaves(RU_proc_t *proc) {
     
     int cnt_slave            = ++slave_proc->instance_cnt_FH;
     slave_proc->frame_rx     = proc->frame_rx;
-    slave_proc->subframe_rx  = proc->subframe_rx;
+    slave_proc->tti_rx  = proc->tti_rx;
     slave_proc->timestamp_rx = proc->timestamp_rx;
     slave_proc->timestamp_tx = proc->timestamp_tx; 
 
@@ -1263,7 +1263,7 @@ void wakeup_eNBs(RU_t *ru) {
     char string[20];
     sprintf(string,"Incoming RU %d",ru->idx);
     LOG_D(PHY,"RU %d Call eNB_top\n",ru->idx);
-    ru->eNB_top(eNB_list[0],ru->proc.frame_rx,ru->proc.subframe_rx,string,ru);
+    ru->eNB_top(eNB_list[0],ru->proc.frame_rx,ru->proc.tti_rx,string,ru);
     ru->proc.emulate_rf_busy = 0;
   }
   else {
@@ -1276,7 +1276,7 @@ void wakeup_eNBs(RU_t *ru) {
       eNB_list[i]->proc.ru_proc = &ru->proc;
       if (ru->wakeup_rxtx!=0 && ru->wakeup_rxtx(eNB_list[i],ru) < 0)
       {
-        LOG_E(PHY,"could not wakeup eNB rxtx process for subframe %d\n", ru->proc.subframe_rx);
+        LOG_E(PHY,"could not wakeup eNB rxtx process for subframe %d\n", ru->proc.tti_rx);
       }
       ru->proc.emulate_rf_busy = 0;
     }
@@ -1298,12 +1298,12 @@ static inline int wakeup_prach_ru(RU_t *ru) {
   if (ru->proc.instance_cnt_prach==-1) {
     ++ru->proc.instance_cnt_prach;
     ru->proc.frame_prach    = ru->proc.frame_rx;
-    ru->proc.subframe_prach = ru->proc.subframe_rx;
+    ru->proc.subframe_prach = ru->proc.tti_rx;
 
     // DJP - think prach_procedures() is looking at eNB frame_prach
     if (ru->eNB_list[0]) {
       ru->eNB_list[0]->proc.frame_prach = ru->proc.frame_rx;
-      ru->eNB_list[0]->proc.subframe_prach = ru->proc.subframe_rx;
+      ru->eNB_list[0]->proc.subframe_prach = ru->proc.tti_rx;
     }
     LOG_D(PHY,"RU %d: waking up PRACH thread\n",ru->idx);
     // the thread can now be woken up
@@ -1331,7 +1331,7 @@ static inline int wakeup_prach_ru_br(RU_t *ru) {
   if (ru->proc.instance_cnt_prach_br==-1) {
     ++ru->proc.instance_cnt_prach_br;
     ru->proc.frame_prach_br    = ru->proc.frame_rx;
-    ru->proc.subframe_prach_br = ru->proc.subframe_rx;
+    ru->proc.subframe_prach_br = ru->proc.tti_rx;
 
     LOG_D(PHY,"RU %d: waking up PRACH thread\n",ru->idx);
     // the thread can now be woken up
@@ -1571,10 +1571,10 @@ static void* ru_thread_tx( void* param ) {
     else {
       for (int i=0; i<ru->nb_tx; i++) {
 	if(proc->frame_tx == 2) {
-	  sprintf(filename,"txdataF%d_frame%d_sf%d.m",i,proc->frame_tx,proc->subframe_tx);
+	  sprintf(filename,"txdataF%d_frame%d_sf%d.m",i,proc->frame_tx,proc->tti_tx);
 	  LOG_M(filename,"txdataF_frame",ru->common.txdataF_BF[i],fp->symbols_per_tti*fp->ofdm_symbol_size, 1, 1);
 	}
-	if(proc->frame_tx == 2 && proc->subframe_tx==0){
+	if(proc->frame_tx == 2 && proc->tti_tx==0){
 	  sprintf(filename,"txdata%d_frame%d.m",i,proc->frame_tx);
 	  LOG_M(filename,"txdata_frame",ru->common.txdata[i],fp->samples_per_tti*10, 1, 1);
 	}
@@ -1748,13 +1748,13 @@ static void* ru_thread( void* param ) {
 
       LOG_D(PHY,"RU thread (do_prach %d, is_prach_subframe %d), received frame %d, subframe %d\n",
           ru->do_prach,
-          is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx),
-          proc->frame_rx,proc->subframe_rx);
-    if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)==1)) {
+          is_prach_subframe(fp, proc->frame_rx, proc->tti_rx),
+          proc->frame_rx,proc->tti_rx);
+    if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->tti_rx)==1)) {
       wakeup_prach_ru(ru);
     }
 #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-    else if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->subframe_rx)>1)) {
+    else if ((ru->do_prach>0) && (is_prach_subframe(fp, proc->frame_rx, proc->tti_rx)>1)) {
       wakeup_prach_ru_br(ru);
     }
 #endif
@@ -1817,10 +1817,10 @@ static void* ru_thread( void* param ) {
       else {
 	for (int i=0; i<ru->nb_tx; i++) {
 	  if(proc->frame_tx == 2) {
-	    sprintf(filename,"txdataF%d_frame%d_sf%d.m",i,proc->frame_tx,proc->subframe_tx);
+	    sprintf(filename,"txdataF%d_frame%d_sf%d.m",i,proc->frame_tx,proc->tti_tx);
 	    LOG_M(filename,"txdataF_frame",ru->common.txdataF_BF[i],fp->symbols_per_tti*fp->ofdm_symbol_size, 1, 1);
 	  }
-	  if(proc->frame_tx == 2 && proc->subframe_tx==0){
+	  if(proc->frame_tx == 2 && proc->tti_tx==0){
 	    sprintf(filename,"txdata%d_frame%d.m",i,proc->frame_tx);
 	    LOG_M(filename,"txdata_frame",ru->common.txdata[i],fp->samples_per_tti*10, 1, 1);
 	  }
@@ -2018,7 +2018,7 @@ static void* eNB_thread_phy_tx( void* param ) {
 
     LOG_D(PHY,"Running eNB phy tx procedures\n");
     if(ru->num_eNB == 1){
-       proc_rxtx.subframe_tx = proc->subframe_phy_tx;
+       proc_rxtx.tti_tx = proc->subframe_phy_tx;
        proc_rxtx.frame_tx = proc->frame_phy_tx;
        phy_procedures_eNB_TX(eNB_list[0], &proc_rxtx, 1);
        phy_tx_txdataF_end = 1;
@@ -2029,7 +2029,7 @@ static void* eNB_thread_phy_tx( void* param ) {
         if (ru->proc.instance_cnt_rf_tx==-1) {
           ++ru->proc.instance_cnt_rf_tx;
           ru->proc.frame_tx = proc->frame_phy_tx;
-          ru->proc.subframe_tx = proc->subframe_phy_tx;
+          ru->proc.tti_tx = proc->subframe_phy_tx;
           ru->proc.timestamp_tx = proc->timestamp_phy_tx;
 
           // the thread can now be woken up

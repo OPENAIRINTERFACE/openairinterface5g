@@ -67,7 +67,10 @@
 
 #include <pthread.h>
 
+#include "TOOLS/tools_defs.h"
+
 #include "targets/COMMON/openairinterface5g_limits.h"
+#include "common/utils/LOG/log.h"
 
 #include "types.h"
 #include "nfapi_interface.h"
@@ -102,6 +105,7 @@
 #ifdef OCP_FRAMEWORK
 #include "enums.h"
 #else
+
 typedef enum {TDD=1,FDD=0} lte_frame_type_t;
 
 typedef enum {EXTENDED=1,NORMAL=0} lte_prefix_type_t;

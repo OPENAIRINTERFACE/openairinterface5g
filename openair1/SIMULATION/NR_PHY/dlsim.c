@@ -37,6 +37,7 @@
 #include "PHY/defs_nr_UE.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
+#include "PHY/NR_REFSIG/nr_mod_table.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/INIT/phy_init.h"
@@ -52,6 +53,7 @@
 
 #include "NR_PHY_INTERFACE/NR_IF_Module.h"
 #include "NR_UE_PHY_INTERFACE/NR_IF_Module.h"
+
 
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
@@ -71,13 +73,14 @@ int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) { return(0
 
 int oai_nfapi_nr_dl_config_req(nfapi_nr_dl_config_request_t *dl_config_req) {return(0);}
 
-uint32_t from_earfcn(int eutra_bandP,uint32_t dl_earfcn) {return(0);}
-int32_t get_uldl_offset(int eutra_bandP) {return(0);}
+int32_t get_uldl_offset(int nr_bandP) {return(0);}
 
 NR_IF_Module_t *NR_IF_Module_init(int Mod_id){return(NULL);}
 
 int8_t dummy_nr_ue_dl_indication(nr_downlink_indication_t *dl_info){return(0);}
 int8_t dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info){return(0);}
+
+lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe) { return(SF_DL);}
 
 void exit_function(const char* file, const char* function, const int line,const char *s) { 
    const char * msg= s==NULL ? "no comment": s;
@@ -96,6 +99,12 @@ int rlc_module_init (void) {return(0);}
 void pdcp_layer_init(void) {}
 int rrc_init_nr_global_param(void){return(0);}
 
+void config_common(int Mod_idP, 
+                   int CC_idP,
+                   int nr_bandP,
+                   uint64_t dl_CarrierFreqP,
+                   uint32_t dl_BandwidthP
+		   );
 
 
 // needed for some functions
@@ -145,7 +154,7 @@ int main(int argc, char **argv)
   unsigned char frame_type = 0;
   unsigned char pbch_phase = 0;
 
-  int frame=0,subframe=1;
+  int frame=0,slot=1;
   int frame_length_complex_samples;
   int frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
@@ -375,6 +384,8 @@ int main(int argc, char **argv)
   RC.gNB = (PHY_VARS_gNB***) malloc(sizeof(PHY_VARS_gNB **));
   RC.gNB[0] = (PHY_VARS_gNB**) malloc(sizeof(PHY_VARS_gNB *));
   RC.gNB[0][0] = malloc(sizeof(PHY_VARS_gNB));
+  memset(RC.gNB[0][0],0,sizeof(PHY_VARS_gNB));
+
   gNB = RC.gNB[0][0];
   gNB_config = &gNB->gNB_config;
   frame_parms = &gNB->frame_parms; //to be initialized I suppose (maybe not necessary for PBCH)
@@ -383,8 +394,13 @@ int main(int argc, char **argv)
   frame_parms->N_RB_DL = N_RB_DL;
   frame_parms->N_RB_UL = N_RB_DL;
 
-  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu);
+  // stub to configure frame_parms
+  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell);
+  // call MAC to configure common parameters
+
   phy_init_nr_gNB(gNB,0,0);
+
+
 
   double fs,bw;
 
@@ -454,13 +470,14 @@ int main(int argc, char **argv)
 
   //configure UE
   UE = malloc(sizeof(PHY_VARS_NR_UE));
+  memset((void*)UE,0,sizeof(PHY_VARS_NR_UE));
   PHY_vars_UE_g = malloc(sizeof(PHY_VARS_NR_UE**));
   PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE*));
   PHY_vars_UE_g[0][0] = UE;
   memcpy(&UE->frame_parms,frame_parms,sizeof(NR_DL_FRAME_PARMS));
-  phy_init_nr_top(UE);
+
   if (run_initial_sync==1)  UE->is_synchronized = 0;
-  else                      UE->is_synchronized = 1;
+  else                      {UE->is_synchronized = 1; UE->UE_mode[0]=PUSCH;}
                       
   UE->perfect_ce = 0;
 
@@ -470,11 +487,17 @@ int main(int argc, char **argv)
     exit(-1);
   }
 
+  init_nr_ue_transport(UE,0);
+
   nr_gold_pbch(UE);
+  nr_gold_pdcch(UE,0,2);
 
   RC.nb_nr_macrlc_inst = 1;
   mac_top_init_gNB();
   gNB_mac = RC.nrmac[0];
+
+  config_common(0,0,78,(uint64_t)3640000000L,N_RB_DL);
+  config_nr_mib(0,0,1,kHz30,0,0,0,0);
 
   nr_l2_init_ue();
   UE_mac = get_mac_inst(0);
@@ -482,7 +505,7 @@ int main(int argc, char **argv)
   UE->if_inst = nr_ue_if_module_init(0);
   UE->if_inst->scheduled_response = nr_ue_scheduled_response;
   UE->if_inst->phy_config_request = nr_ue_phy_config_request;
-  UE->if_inst->dl_indication = dummy_nr_ue_dl_indication;
+  UE->if_inst->dl_indication = nr_ue_dl_indication;
   UE->if_inst->ul_indication = dummy_nr_ue_ul_indication;
   
 
@@ -494,11 +517,11 @@ int main(int argc, char **argv)
     gNB->pbch_configured = 1;
     for (int i=0;i<4;i++) gNB->pbch_pdu[i]=i+1;
 
-    nr_schedule_css_dlsch_phytest(0,frame,subframe);
+    nr_schedule_css_dlsch_phytest(0,frame,slot);
     Sched_INFO.module_id = 0;
     Sched_INFO.CC_id     = 0;
     Sched_INFO.frame     = frame;
-    Sched_INFO.subframe  = subframe;
+    Sched_INFO.slot      = slot;
     Sched_INFO.DL_req    = &gNB_mac->DL_req[0];
     Sched_INFO.UL_req    = NULL;
     Sched_INFO.HI_DCI0_req  = NULL;
@@ -506,7 +529,7 @@ int main(int argc, char **argv)
     nr_schedule_response(&Sched_INFO);
 
     gNB_proc.frame_tx = frame;
-    gNB_proc.subframe_tx = subframe;
+    gNB_proc.slot_tx  = slot;
     phy_procedures_gNB_TX(gNB,&gNB_proc,0);
     
     //nr_common_signal_procedures (gNB,frame,subframe);
@@ -562,7 +585,15 @@ int main(int argc, char **argv)
     }
   }
 
+
   //Configure UE
+  rrc_gNB_carrier_data_t carrier;
+  uint32_t pdcch_ConfigSIB1     = 0;
+  uint32_t ssb_SubcarrierOffset = 0;
+  carrier.MIB = (uint8_t*) malloc(4);
+  carrier.sizeof_MIB = do_MIB_NR(&carrier,0,ssb_SubcarrierOffset,pdcch_ConfigSIB1,30,2);
+
+  nr_rrc_mac_config_req_ue(0,0,0,carrier.mib.message.choice.mib,NULL,NULL,NULL);
   fapi_nr_dl_config_request_t dl_config; 
   //  Type0 PDCCH search space
   dl_config.number_pdus =  1;
@@ -591,7 +622,7 @@ int main(int argc, char **argv)
   
   uint32_t number_of_search_space_per_slot=1;
   uint32_t first_symbol_index=0;
-  uint32_t search_space_duration;  //  element of search space
+  uint32_t search_space_duration=0;  //  element of search space
   uint32_t coreset_duration;  //  element of coreset
   
   coreset_duration = num_symbols * number_of_search_space_per_slot;
@@ -603,8 +634,9 @@ int main(int argc, char **argv)
   dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.number_of_candidates[4] = table_38213_10_1_1_c2[4];   //  CCE aggregation level = 16
   dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.duration = search_space_duration;
   dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.monitoring_symbols_within_slot = (0x3fff << first_symbol_index) & (0x3fff >> (14-coreset_duration-first_symbol_index)) & 0x3fff;
-  	
-  
+
+  dl_config.dl_config_list[0].dci_config_pdu.dci_config_rel15.N_RB_BWP = N_RB_DL;
+
   for (SNR=snr0; SNR<snr1; SNR+=.2) {
 
     n_errors = 0;
@@ -643,19 +675,20 @@ int main(int argc, char **argv)
 	UE->rx_offset=0;
 
 	UE_proc.frame_rx = frame;
-	UE_proc.nr_tti_rx= subframe;
-	UE_proc.subframe_rx = subframe;
+	UE_proc.nr_tti_rx= slot;
+	UE_proc.subframe_rx = slot;
 	
 	UE_mac->scheduled_response.dl_config = &dl_config;
 	nr_ue_scheduled_response(&UE_mac->scheduled_response);
 
+	printf("Running phy procedures UE RX %d.%d\n",frame,slot);
+
 	phy_procedures_nrUE_RX(UE,
 			       &UE_proc,
 			       0,
-			       0,
 			       do_pdcch_flag,
-			       normal_txrx,
-			       no_relay);
+			       normal_txrx);
+
 		
 	if (UE->dci_ind.number_of_dcis==0) n_errors++;
       }

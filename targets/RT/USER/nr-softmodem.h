@@ -152,12 +152,6 @@
 {"external-clock",        	 CONFIG_HLP_EXCCLK,	PARAMFLAG_BOOL,   uptr:&clock_source,			defintval:0,			   TYPE_INT,	  0},			   \
 {"wait-for-sync",         	 NULL,  		PARAMFLAG_BOOL,   iptr:&wait_for_sync,  		defintval:0,			   TYPE_INT,	  0},			   \
 {"single-thread-disable", 	 CONFIG_HLP_NOSNGLT,	PARAMFLAG_BOOL,   iptr:&single_thread_flag,		defintval:1,			   TYPE_INT,	  0},			   \
-{"threadIQ",              	 NULL,  		0,		  iptr:&(threads.iq),			defintval:1,			   TYPE_INT,	  0},			   \
-{"threadOneSubframe",     	 NULL,  		0,		  iptr:&(threads.one),  		defintval:1,			   TYPE_INT,	  0},			   \
-{"threadTwoSubframe",    	 NULL,  		0,		  iptr:&(threads.two),  		defintval:1,			   TYPE_INT,	  0},			   \
-{"threadThreeSubframe",    	 NULL,  		0,		  iptr:&(threads.three),  		defintval:1,			   TYPE_INT,	  0},			   \
-{"threadSlot1ProcOne",     	 NULL,  		0,		  iptr:&(threads.slot1_proc_one),      	defintval:1,			   TYPE_INT,	  0},			   \
-{"threadSlot1ProcTwo",    	 NULL,  		0,		  iptr:&(threads.slot1_proc_two),      	defintval:1,			   TYPE_INT,	  0},			   \
 {"A" ,  		  	 CONFIG_HLP_TADV,	0,		  uptr:&timing_advance, 		defintval:0,			   TYPE_UINT,	  0},			   \
 {"C" ,  		  	 CONFIG_HLP_DLF,	0,		  uptr:&(downlink_frequency[0][0]),	defuintval:DEFAULT_DLF,  	   TYPE_UINT,	  0},			   \
 {"a" ,  		  	 CONFIG_HLP_CHOFF,	0,		  iptr:&chain_offset,			defintval:0,			   TYPE_INT,	  0},			   \

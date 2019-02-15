@@ -19,8 +19,8 @@
  *      contact@openairinterface.org
  */
 
-#ifndef __PHY_VARS_NR_H__
-#define __PHY_VARS_NR_H__
+#ifndef __PHY_VARS_NR_UE_H__
+#define __PHY_VARS_NR_UE_H__
 
 #include "PHY/types.h"
 #include "PHY/defs_nr_UE.h"
@@ -54,6 +54,9 @@ PHY_VARS_NR_UE * PHY_vars_UE_g[MAX_UE][MAX_NUM_CCs]={NULL};
 unsigned short rev[2048],rev_times4[8192],rev_half[1024];
 unsigned short rev256[256],rev512[512],rev1024[1024],rev4096[4096],rev2048[2048],rev8192[8192];
 
+
+short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
+short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
 
 
 #include "SIMULATION/ETH_TRANSPORT/vars.h"
@@ -143,5 +146,5 @@ int16_t unscrambling_lut[65536*16] __attribute__((aligned(32)));
 /// lookup table for scrambling in TX
 uint8_t scrambling_lut[65536*16] __attribute__((aligned(32)));
 
-uint8_t max_turbo_iterations=4;
+uint8_t max_ldpc_iterations=4;
 #endif /*__PHY_VARS_H__ */

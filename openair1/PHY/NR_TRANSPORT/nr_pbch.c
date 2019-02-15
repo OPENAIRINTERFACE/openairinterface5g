@@ -40,20 +40,20 @@
 //#define DEBUG_PBCH_ENCODING
 //#define DEBUG_PBCH_DMRS
 
-#include "PHY/NR_REFSIG/nr_mod_table.h"
+extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
 
 uint8_t nr_pbch_payload_interleaving_pattern[32] = {16, 23, 18, 17, 8, 30, 10, 6, 24, 7, 0, 5, 3, 2, 1, 4,
                                                 9, 11, 12, 13, 14, 15, 19, 20, 21, 22, 25, 26, 27, 28, 29, 31};
 
 int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
-                          int32_t **txdataF,
+                          int32_t *txdataF,
                           int16_t amp,
                           uint8_t ssb_start_symbol,
                           nfapi_nr_config_request_t* config,
                           NR_DL_FRAME_PARMS *frame_parms)
 {
   int k,l;
-  int16_t a;
+  //int16_t a;
   int16_t mod_dmrs[NR_PBCH_DMRS_LENGTH<<1];
   uint8_t idx=0;
   uint8_t nushift = config->sch_config.physical_cell_id.value &3;
@@ -72,10 +72,7 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
   }
 
   /// Resource mapping
-  a = (config->rf_config.tx_antenna_ports.value == 1) ? amp : (amp*ONE_OVER_SQRT2_Q15)>>15;
 
-  for (int aa = 0; aa < config->rf_config.tx_antenna_ports.value; aa++)
-  {
 
     // PBCH DMRS are mapped  within the SSB block on every fourth subcarrier starting from nushift of symbols 1, 2, 3
       ///symbol 1  [0+nushift:4:236+nushift] -- 60 mod symbols
@@ -86,12 +83,12 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 #ifdef DEBUG_PBCH_DMRS
   printf("m %d at k %d of l %d\n", m, k, l);
 #endif
-      ((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1] = (a * mod_dmrs[m<<1]) >> 15;
-      ((int16_t*)txdataF[aa])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (a * mod_dmrs[(m<<1) + 1]) >> 15;
+      ((int16_t*)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1]       = (amp * mod_dmrs[m<<1]) >> 15;
+      ((int16_t*)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (amp * mod_dmrs[(m<<1) + 1]) >> 15;
 #ifdef DEBUG_PBCH_DMRS
       printf("(%d,%d)\n",
-	((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1],
-	((int16_t*)txdataF[aa])[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
+	((int16_t*)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1],
+	((int16_t*)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
 #endif
       k+=4;
 
@@ -107,12 +104,12 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 #ifdef DEBUG_PBCH_DMRS
   printf("m %d at k %d of l %d\n", m, k, l);
 #endif
-      ((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1] = (a * mod_dmrs[m<<1]) >> 15;
-      ((int16_t*)txdataF[aa])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (a * mod_dmrs[(m<<1) + 1]) >> 15;
+      ((int16_t*)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1]       = (amp * mod_dmrs[m<<1]) >> 15;
+      ((int16_t*)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (amp * mod_dmrs[(m<<1) + 1]) >> 15;
 #ifdef DEBUG_PBCH_DMRS
       printf("(%d,%d)\n",
-	((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1],
-	((int16_t*)txdataF[aa])[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
+	((int16_t*)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1],
+	((int16_t*)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
 #endif
       k+=(m==71)?148:4; // Jump from 44+nu to 192+nu
 
@@ -128,12 +125,12 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
 #ifdef DEBUG_PBCH_DMRS
   printf("m %d at k %d of l %d\n", m, k, l);
 #endif
-      ((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1] = (a * mod_dmrs[m<<1]) >> 15;
-      ((int16_t*)txdataF[aa])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (a * mod_dmrs[(m<<1) + 1]) >> 15;
+      ((int16_t*)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1]       = (amp * mod_dmrs[m<<1]) >> 15;
+      ((int16_t*)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (amp * mod_dmrs[(m<<1) + 1]) >> 15;
 #ifdef DEBUG_PBCH_DMRS
       printf("(%d,%d)\n",
-	((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1],
-	((int16_t*)txdataF[aa])[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
+	((int16_t*)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1],
+	((int16_t*)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1)+1]);
 #endif
       k+=4;
 
@@ -141,7 +138,6 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
         k-=frame_parms->ofdm_symbol_size;
     }
 
-  }
 
 
 #ifdef DEBUG_PBCH_DMRS
@@ -225,13 +221,14 @@ void nr_init_pbch_interleaver(uint8_t *interleaver) {
       *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_hrf);
     else // Ssb bits:3
       *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_ssb++);
+
 }
 
 int nr_generate_pbch(NR_gNB_PBCH *pbch,
                      t_nrPolar_paramsPtr polar_params,
                      uint8_t *pbch_pdu,
                      uint8_t *interleaver,
-                     int32_t **txdataF,
+                     int32_t *txdataF,
                      int16_t amp,
                      uint8_t ssb_start_symbol,
                      uint8_t n_hf,
@@ -243,12 +240,13 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 {
 
   int k,l,m;
-  int16_t a;
+  //int16_t a;
   int16_t mod_pbch_e[NR_POLAR_PBCH_E];
   uint8_t idx=0;
   uint16_t M;
   uint8_t nushift;
   uint32_t unscrambling_mask;
+  uint64_t a_reversed=0;
 
   LOG_I(PHY, "PBCH generation started\n");
 
@@ -303,8 +301,13 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
   printf("pbch_a_prime: 0x%08x\n", pbch->pbch_a_prime);
 #endif
 
+// Encoder reversal
+  for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++)
+    a_reversed |= (((uint64_t)pbch->pbch_a_prime>>i)&1)<<(31-i);
+
+
   /// CRC, coding and rate matching
-  polar_encoder (&pbch->pbch_a_prime, pbch->pbch_e, polar_params);
+  polar_encoder_fast (&a_reversed, (uint32_t*)pbch->pbch_e, 0, polar_params);
 #ifdef DEBUG_PBCH_ENCODING
   printf("Channel coding:\n");
   for (int i=0; i<NR_POLAR_PBCH_E_DWORD; i++)
@@ -336,10 +339,7 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 
   /// Resource mapping
   nushift = config->sch_config.physical_cell_id.value &3;
-  a = (config->rf_config.tx_antenna_ports.value == 1) ? amp : (amp*ONE_OVER_SQRT2_Q15)>>15;
 
-  for (int aa = 0; aa < config->rf_config.tx_antenna_ports.value; aa++)
-  {
 
     // PBCH modulated symbols are mapped  within the SSB block on symbols 1, 2, 3 excluding the subcarriers used for the PBCH DMRS
       ///symbol 1  [0:239] -- 180 mod symbols
@@ -357,8 +357,8 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 #ifdef DEBUG_PBCH
   printf("m %d ssb_sc_idx %d at k %d of l %d\n", m, ssb_sc_idx, k, l);
 #endif
-        ((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1] = (a * mod_pbch_e[m<<1]) >> 15;
-        ((int16_t*)txdataF[aa])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (a * mod_pbch_e[(m<<1) + 1]) >> 15;
+        ((int16_t*)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1]       = (amp * mod_pbch_e[m<<1]) >> 15;
+        ((int16_t*)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (amp * mod_pbch_e[(m<<1) + 1]) >> 15;
         k++;
         m++;
       }
@@ -382,8 +382,8 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 #ifdef DEBUG_PBCH
   printf("m %d ssb_sc_idx %d at k %d of l %d\n", m, ssb_sc_idx, k, l);
 #endif
-        ((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1] = (a * mod_pbch_e[m<<1]) >> 15;
-        ((int16_t*)txdataF[aa])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (a * mod_pbch_e[(m<<1) + 1]) >> 15;
+        ((int16_t*)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1]       = (amp * mod_pbch_e[m<<1]) >> 15;
+        ((int16_t*)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (amp * mod_pbch_e[(m<<1) + 1]) >> 15;
         k++;
         m++;
       }
@@ -408,8 +408,8 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 #ifdef DEBUG_PBCH
   printf("m %d ssb_sc_idx %d at k %d of l %d\n", m, ssb_sc_idx, k, l);
 #endif
-        ((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1] = (a * mod_pbch_e[m<<1]) >> 15;
-        ((int16_t*)txdataF[aa])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (a * mod_pbch_e[(m<<1) + 1]) >> 15;
+        ((int16_t*)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1]       = (amp * mod_pbch_e[m<<1]) >> 15;
+        ((int16_t*)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (amp * mod_pbch_e[(m<<1) + 1]) >> 15;
         k++;
         m++;
       }
@@ -433,8 +433,8 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
 #ifdef DEBUG_PBCH
   printf("m %d ssb_sc_idx %d at k %d of l %d\n", m, ssb_sc_idx, k, l);
 #endif
-        ((int16_t*)txdataF[aa])[(l*frame_parms->ofdm_symbol_size + k)<<1] = (a * mod_pbch_e[m<<1]) >> 15;
-        ((int16_t*)txdataF[aa])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (a * mod_pbch_e[(m<<1) + 1]) >> 15;
+        ((int16_t*)txdataF)[(l*frame_parms->ofdm_symbol_size + k)<<1]       = (amp * mod_pbch_e[m<<1]) >> 15;
+        ((int16_t*)txdataF)[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (amp * mod_pbch_e[(m<<1) + 1]) >> 15;
         k++;
         m++;
       }
@@ -442,13 +442,6 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
       if (k >= frame_parms->ofdm_symbol_size)
         k-=frame_parms->ofdm_symbol_size;
     }
-
-  }
-
-
-#ifdef DEBUG_PBCH
-  write_output("txdataF_pbch.m", "txdataF_pbch", txdataF[0], frame_parms->samples_per_frame_wCP>>1, 1, 1);
-#endif
 
 
   return 0;

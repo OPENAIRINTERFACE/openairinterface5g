@@ -37,7 +37,7 @@
  */
 
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
-
+#include "assertions.h"
 
 int8_t polar_decoder(
 		double *input,
@@ -48,11 +48,11 @@ int8_t polar_decoder(
 {
 	//Assumes no a priori knowledge.
 
-	uint8_t ***bit = nr_alloc_uint8_t_3D_array(polarParams->N, (polarParams->n+1), 2*listSize);
-	uint8_t **bitUpdated = nr_alloc_uint8_t_2D_array(polarParams->N, (polarParams->n+1)); //0=False, 1=True
-	uint8_t **llrUpdated = nr_alloc_uint8_t_2D_array(polarParams->N, (polarParams->n+1)); //0=False, 1=True
+	uint8_t ***bit = nr_alloc_uint8_3D_array(polarParams->N, (polarParams->n+1), 2*listSize);
+	uint8_t **bitUpdated = nr_alloc_uint8_2D_array(polarParams->N, (polarParams->n+1)); //0=False, 1=True
+	uint8_t **llrUpdated = nr_alloc_uint8_2D_array(polarParams->N, (polarParams->n+1)); //0=False, 1=True
 	double ***llr = nr_alloc_double_3D_array(polarParams->N, (polarParams->n+1), 2*listSize);
-	uint8_t **crcChecksum = nr_alloc_uint8_t_2D_array(polarParams->crcParityBits, 2*listSize);
+	uint8_t **crcChecksum = nr_alloc_uint8_2D_array(polarParams->crcParityBits, 2*listSize);
 	double *pathMetric = malloc(sizeof(double)*(2*listSize));
 	uint8_t *crcState = malloc(sizeof(uint8_t)*(2*listSize)); //0=False, 1=True
 
@@ -231,9 +231,9 @@ int8_t polar_decoder(
 				free(d_tilde);
 				free(pathMetric);
 				free(crcState);
-				nr_free_uint8_t_3D_array(bit, polarParams->N, (polarParams->n+1));
+				nr_free_uint8_3D_array(bit, polarParams->N, (polarParams->n+1));
 				nr_free_double_3D_array(llr, polarParams->N, (polarParams->n+1));
-				nr_free_uint8_t_2D_array(crcChecksum, polarParams->crcParityBits);
+				nr_free_uint8_2D_array(crcChecksum, polarParams->crcParityBits);
 				return(-1);
 			}
 
@@ -256,6 +256,7 @@ int8_t polar_decoder(
 			//Deinterleaving (ĉ to b)
 			nr_polar_deinterleaver(polarParams->nr_polar_CPrime, polarParams->nr_polar_B, polarParams->interleaving_pattern, polarParams->K);
 
+			
 			//Remove the CRC (â)
 			for (int j = 0; j < polarParams->payloadBits; j++) polarParams->nr_polar_A[j]=polarParams->nr_polar_B[j];
 
@@ -266,11 +267,11 @@ int8_t polar_decoder(
 	free(d_tilde);
 	free(pathMetric);
 	free(crcState);
-	nr_free_uint8_t_3D_array(bit, polarParams->N, (polarParams->n+1));
+	nr_free_uint8_3D_array(bit, polarParams->N, (polarParams->n+1));
 	nr_free_double_3D_array(llr, polarParams->N, (polarParams->n+1));
-	nr_free_uint8_t_2D_array(crcChecksum, polarParams->crcParityBits);
-	nr_free_uint8_t_2D_array(extended_crc_generator_matrix, polarParams->K);
-	nr_free_uint8_t_2D_array(tempECGM, polarParams->K);
+	nr_free_uint8_2D_array(crcChecksum, polarParams->crcParityBits);
+	nr_free_uint8_2D_array(extended_crc_generator_matrix, polarParams->K);
+	nr_free_uint8_2D_array(tempECGM, polarParams->K);
 
 	/*
 	 * Return bits.
@@ -280,17 +281,17 @@ int8_t polar_decoder(
 }
 
 int8_t polar_decoder_aPriori(double *input,
-							 uint32_t *out,
-							 t_nrPolar_paramsPtr polarParams,
-							 uint8_t listSize,
-							 uint8_t pathMetricAppr,
-							 double *aPrioriPayload)
+			     uint32_t *out,
+			     t_nrPolar_paramsPtr polarParams,
+			     uint8_t listSize,
+			     uint8_t pathMetricAppr,
+			     double *aPrioriPayload)
 {
-	uint8_t ***bit = nr_alloc_uint8_t_3D_array(polarParams->N, (polarParams->n+1), 2*listSize);
-	uint8_t **bitUpdated = nr_alloc_uint8_t_2D_array(polarParams->N, (polarParams->n+1)); //0=False, 1=True
-	uint8_t **llrUpdated = nr_alloc_uint8_t_2D_array(polarParams->N, (polarParams->n+1)); //0=False, 1=True
+  uint8_t ***bit = nr_alloc_uint8_3D_array(polarParams->N, (polarParams->n+1), 2*listSize);
+	uint8_t **bitUpdated = nr_alloc_uint8_2D_array(polarParams->N, (polarParams->n+1)); //0=False, 1=True
+	uint8_t **llrUpdated = nr_alloc_uint8_2D_array(polarParams->N, (polarParams->n+1)); //0=False, 1=True
 	double ***llr = nr_alloc_double_3D_array(polarParams->N, (polarParams->n+1), 2*listSize);
-	uint8_t **crcChecksum = nr_alloc_uint8_t_2D_array(polarParams->crcParityBits, 2*listSize);
+	uint8_t **crcChecksum = nr_alloc_uint8_2D_array(polarParams->crcParityBits, 2*listSize);
 	double *pathMetric = malloc(sizeof(double)*(2*listSize));
 	uint8_t *crcState = malloc(sizeof(uint8_t)*(2*listSize)); //0=False, 1=True
 
@@ -483,9 +484,9 @@ int8_t polar_decoder_aPriori(double *input,
 				free(d_tilde);
 				free(pathMetric);
 				free(crcState);
-				nr_free_uint8_t_3D_array(bit, polarParams->N, (polarParams->n+1));
+				nr_free_uint8_3D_array(bit, polarParams->N, (polarParams->n+1));
 				nr_free_double_3D_array(llr, polarParams->N, (polarParams->n+1));
-				nr_free_uint8_t_2D_array(crcChecksum, polarParams->crcParityBits);
+				nr_free_uint8_2D_array(crcChecksum, polarParams->crcParityBits);
 				return(-1);
 			}
 
@@ -509,8 +510,8 @@ int8_t polar_decoder_aPriori(double *input,
 			nr_polar_deinterleaver(polarParams->nr_polar_CPrime, polarParams->nr_polar_B, polarParams->interleaving_pattern, polarParams->K);
 
 			//Remove the CRC (â)
-			for (int j = 0; j < polarParams->payloadBits; j++) polarParams->nr_polar_A[j]=polarParams->nr_polar_B[j];
-
+			for (int j = 0; j < polarParams->payloadBits; j++)
+			  polarParams->nr_polar_A[j]=polarParams->nr_polar_B[j];
 			break;
 		}
 	}
@@ -518,16 +519,17 @@ int8_t polar_decoder_aPriori(double *input,
 	free(d_tilde);
 	free(pathMetric);
 	free(crcState);
-	nr_free_uint8_t_3D_array(bit, polarParams->N, (polarParams->n+1));
+	nr_free_uint8_3D_array(bit, polarParams->N, (polarParams->n+1));
 	nr_free_double_3D_array(llr, polarParams->N, (polarParams->n+1));
-	nr_free_uint8_t_2D_array(crcChecksum, polarParams->crcParityBits);
-	nr_free_uint8_t_2D_array(extended_crc_generator_matrix, polarParams->K);
-	nr_free_uint8_t_2D_array(tempECGM, polarParams->K);
+	nr_free_uint8_2D_array(crcChecksum, polarParams->crcParityBits);
+	nr_free_uint8_2D_array(extended_crc_generator_matrix, polarParams->K);
+	nr_free_uint8_2D_array(tempECGM, polarParams->K);
 
 	/*
 	 * Return bits.
 	 */
 	nr_byte2bit_uint8_32_t(polarParams->nr_polar_A, polarParams->payloadBits, out);
+
 	return(0);
 
 }
@@ -544,11 +546,11 @@ int8_t polar_decoder_aPriori_timing(double *input,
 									FILE* logFile)
 {
 
-	uint8_t ***bit = nr_alloc_uint8_t_3D_array(polarParams->N, (polarParams->n+1), 2*listSize);
-	uint8_t **bitUpdated = nr_alloc_uint8_t_2D_array(polarParams->N, (polarParams->n+1)); //0=False, 1=True
-	uint8_t **llrUpdated = nr_alloc_uint8_t_2D_array(polarParams->N, (polarParams->n+1)); //0=False, 1=True
+	uint8_t ***bit = nr_alloc_uint8_3D_array(polarParams->N, (polarParams->n+1), 2*listSize);
+	uint8_t **bitUpdated = nr_alloc_uint8_2D_array(polarParams->N, (polarParams->n+1)); //0=False, 1=True
+	uint8_t **llrUpdated = nr_alloc_uint8_2D_array(polarParams->N, (polarParams->n+1)); //0=False, 1=True
 	double ***llr = nr_alloc_double_3D_array(polarParams->N, (polarParams->n+1), 2*listSize);
-	uint8_t **crcChecksum = nr_alloc_uint8_t_2D_array(polarParams->crcParityBits, 2*listSize);
+	uint8_t **crcChecksum = nr_alloc_uint8_2D_array(polarParams->crcParityBits, 2*listSize);
 	double *pathMetric = malloc(sizeof(double)*(2*listSize));
 	uint8_t *crcState = malloc(sizeof(uint8_t)*(2*listSize)); //0=False, 1=True
 
@@ -740,9 +742,9 @@ int8_t polar_decoder_aPriori_timing(double *input,
 				free(d_tilde);
 				free(pathMetric);
 				free(crcState);
-				nr_free_uint8_t_3D_array(bit, polarParams->N, (polarParams->n+1));
+				nr_free_uint8_3D_array(bit, polarParams->N, (polarParams->n+1));
 				nr_free_double_3D_array(llr, polarParams->N, (polarParams->n+1));
-				nr_free_uint8_t_2D_array(crcChecksum, polarParams->crcParityBits);
+				nr_free_uint8_2D_array(crcChecksum, polarParams->crcParityBits);
 				return(-1);
 			}
 
@@ -775,11 +777,11 @@ int8_t polar_decoder_aPriori_timing(double *input,
 	free(d_tilde);
 	free(pathMetric);
 	free(crcState);
-	nr_free_uint8_t_3D_array(bit, polarParams->N, (polarParams->n+1));
+	nr_free_uint8_3D_array(bit, polarParams->N, (polarParams->n+1));
 	nr_free_double_3D_array(llr, polarParams->N, (polarParams->n+1));
-	nr_free_uint8_t_2D_array(crcChecksum, polarParams->crcParityBits);
-	nr_free_uint8_t_2D_array(extended_crc_generator_matrix, polarParams->K);
-	nr_free_uint8_t_2D_array(tempECGM, polarParams->K);
+	nr_free_uint8_2D_array(crcChecksum, polarParams->crcParityBits);
+	nr_free_uint8_2D_array(extended_crc_generator_matrix, polarParams->K);
+	nr_free_uint8_2D_array(tempECGM, polarParams->K);
 
 	/*
 	 * Return bits.
@@ -797,11 +799,11 @@ int8_t polar_decoder_dci(double *input,
 						 uint16_t n_RNTI)
 {
 
-	uint8_t ***bit = nr_alloc_uint8_t_3D_array(polarParams->N, (polarParams->n+1), 2*listSize);
-	uint8_t **bitUpdated = nr_alloc_uint8_t_2D_array(polarParams->N, (polarParams->n+1)); //0=False, 1=True
-	uint8_t **llrUpdated = nr_alloc_uint8_t_2D_array(polarParams->N, (polarParams->n+1)); //0=False, 1=True
+	uint8_t ***bit = nr_alloc_uint8_3D_array(polarParams->N, (polarParams->n+1), 2*listSize);
+	uint8_t **bitUpdated = nr_alloc_uint8_2D_array(polarParams->N, (polarParams->n+1)); //0=False, 1=True
+	uint8_t **llrUpdated = nr_alloc_uint8_2D_array(polarParams->N, (polarParams->n+1)); //0=False, 1=True
 	double ***llr = nr_alloc_double_3D_array(polarParams->N, (polarParams->n+1), 2*listSize);
-	uint8_t **crcChecksum = nr_alloc_uint8_t_2D_array(polarParams->crcParityBits, 2*listSize);
+	uint8_t **crcChecksum = nr_alloc_uint8_2D_array(polarParams->crcParityBits, 2*listSize);
 	double *pathMetric = malloc(sizeof(double)*(2*listSize));
 	uint8_t *crcState = malloc(sizeof(uint8_t)*(2*listSize)); //0=False, 1=True
 	uint8_t extended_crc_scrambling_pattern[polarParams->crcParityBits];
@@ -989,9 +991,9 @@ int8_t polar_decoder_dci(double *input,
 				free(d_tilde);
 				free(pathMetric);
 				free(crcState);
-				nr_free_uint8_t_3D_array(bit, polarParams->N, (polarParams->n+1));
+				nr_free_uint8_3D_array(bit, polarParams->N, (polarParams->n+1));
 				nr_free_double_3D_array(llr, polarParams->N, (polarParams->n+1));
-				nr_free_uint8_t_2D_array(crcChecksum, polarParams->crcParityBits);
+				nr_free_uint8_2D_array(crcChecksum, polarParams->crcParityBits);
 				return(-1);
 			}
 
@@ -1024,11 +1026,11 @@ int8_t polar_decoder_dci(double *input,
 	free(d_tilde);
 	free(pathMetric);
 	free(crcState);
-	nr_free_uint8_t_3D_array(bit, polarParams->N, (polarParams->n+1));
+	nr_free_uint8_3D_array(bit, polarParams->N, (polarParams->n+1));
 	nr_free_double_3D_array(llr, polarParams->N, (polarParams->n+1));
-	nr_free_uint8_t_2D_array(crcChecksum, polarParams->crcParityBits);
-	nr_free_uint8_t_2D_array(extended_crc_generator_matrix, polarParams->K);
-	nr_free_uint8_t_2D_array(tempECGM, polarParams->K);
+	nr_free_uint8_2D_array(crcChecksum, polarParams->crcParityBits);
+	nr_free_uint8_2D_array(extended_crc_generator_matrix, polarParams->K);
+	nr_free_uint8_2D_array(tempECGM, polarParams->K);
 
 	/*
 	 * Return bits.
@@ -1037,49 +1039,130 @@ int8_t polar_decoder_dci(double *input,
 	return(0);
 }
 
+void init_polar_deinterleaver_table(t_nrPolar_params *polarParams) {
 
-int8_t polar_decoder_int16(int16_t *input,
-			   uint8_t *out,
-			   t_nrPolar_params *polarParams)
+  AssertFatal(polarParams->K > 32, "K = %d < 33, is not supported yet\n",polarParams->K);
+  AssertFatal(polarParams->K < 129, "K = %d > 128, is not supported yet\n",polarParams->K);
+  
+  int bit_i,ip,ipmod64;
+
+  int numbytes = polarParams->K>>3;
+  int residue = polarParams->K&7;
+  int numbits;
+  if (residue>0) numbytes++;
+  for (int byte=0;byte<numbytes;byte++) {
+    if (byte<(polarParams->K>>3)) numbits=8;
+    else numbits=residue;
+    for (int i=0;i<numbits;i++) {
+      // flip bit endian for B
+      ip=polarParams->K - 1 - polarParams->interleaving_pattern[(8*byte)+i];
+#if 0
+      printf("byte %d, i %d => ip %d\n",byte,i,ip);
+#endif
+      ipmod64 = ip&63;
+      AssertFatal(ip<128,"ip = %d\n",ip);
+      for (int val=0;val<256;val++) {
+	bit_i=(val>>i)&1;
+	if (ip<64) polarParams->B_tab0[byte][val] |= (((uint64_t)bit_i)<<ipmod64);
+	else       polarParams->B_tab1[byte][val] |= (((uint64_t)bit_i)<<ipmod64);
+      }
+    }
+  }
+ 
+}
+
+uint32_t polar_decoder_int16(int16_t *input,
+			     uint64_t *out,
+			     t_nrPolar_params *polarParams)
 {
   
 
   
   int16_t d_tilde[polarParams->N];// = malloc(sizeof(double) * polarParams->N);
+
   nr_polar_rate_matching_int16(input, d_tilde, polarParams->rate_matching_pattern, polarParams->K, polarParams->N, polarParams->encoderLength);
   for (int i=0;i<polarParams->N;i++) {
     if (d_tilde[i]<-128) d_tilde[i]=-128;
     else if (d_tilde[i]>127) d_tilde[i]=128;
   }
+
   memcpy((void*)&polarParams->tree.root->alpha[0],(void*)&d_tilde[0],sizeof(int16_t)*polarParams->N);
   
-  /*
-   * SCL polar decoder.
-   */
-
-
   generic_polar_decoder(polarParams,polarParams->tree.root);
 
 
   //Extract the information bits (û to ĉ)
-  nr_polar_info_bit_extraction(polarParams->nr_polar_U, polarParams->nr_polar_CPrime, polarParams->information_bit_pattern, polarParams->N);
+  uint64_t Cprime[4]={0,0,0,0};
+  uint64_t B[4]={0,0,0,0};
+  for (int i=0;i<polarParams->K;i++) Cprime[i>>6] = Cprime[i>>6] | ((uint64_t)polarParams->nr_polar_U[polarParams->Q_I_N[i]])<<(i&63);
 
   //Deinterleaving (ĉ to b)
-
-  nr_polar_deinterleaver(polarParams->nr_polar_CPrime, polarParams->nr_polar_B, polarParams->interleaving_pattern, polarParams->K);
-
-  //Remove the CRC (â)
-  //for (int j = 0; j < polarParams->payloadBits; j++) polarParams->nr_polar_A[j]=polarParams->nr_polar_B[j];  
-
-  // Check the CRC
-  for (int j=0;j<polarParams->crcParityBits;j++) {
-    int crcbit=0;
-    for (int i=0;i<polarParams->payloadBits;i++)
-      crcbit = crcbit ^ (polarParams->crc_generator_matrix[i][j] & polarParams->nr_polar_B[i]);
-    if (crcbit != polarParams->nr_polar_B[polarParams->payloadBits+j]) return(-1); 
+  uint8_t *Cprimebyte = (uint8_t*)Cprime;
+  if (polarParams->K<65) {
+    B[0] = polarParams->B_tab0[0][Cprimebyte[0]] |
+      polarParams->B_tab0[1][Cprimebyte[1]] |
+      polarParams->B_tab0[2][Cprimebyte[2]] |
+      polarParams->B_tab0[3][Cprimebyte[3]] |
+      polarParams->B_tab0[4][Cprimebyte[4]] |
+      polarParams->B_tab0[5][Cprimebyte[5]] |
+      polarParams->B_tab0[6][Cprimebyte[6]] |
+      polarParams->B_tab0[7][Cprimebyte[7]];
   }
-  // pack into ceil(payloadBits/32) 32 bit words, lowest index in MSB
-  //  nr_byte2bit_uint8_32_t(polarParams->nr_polar_A, polarParams->payloadBits, out);
-  nr_byte2bit_uint8_32_t(polarParams->nr_polar_B, polarParams->payloadBits, (unsigned int *)out);
-  return(0);
+  else if (polarParams->K<129) {
+    int len = polarParams->K/8;
+    if ((polarParams->K&7) > 0) len++;
+    for (int k=0;k<len;k++) {
+      B[0] |= polarParams->B_tab0[k][Cprimebyte[k]];
+      B[1] |= polarParams->B_tab1[k][Cprimebyte[k]];
+    }
+  }
+
+
+  int len=polarParams->payloadBits;
+  //int len_mod64=len&63;
+  int crclen = polarParams->crcParityBits;
+  uint64_t rxcrc=B[0]&((1<<crclen)-1);
+  uint32_t crc;
+  uint64_t Ar;
+
+  AssertFatal(len<65,"A must be less than 65 bits\n");
+  if (len<=32) {
+    Ar = (uint32_t)(B[0]>>crclen);
+    uint8_t A32_flip[4];
+    uint32_t Aprime= (uint32_t)(Ar<<(32-len));
+    A32_flip[0]=((uint8_t*)&Aprime)[3];
+    A32_flip[1]=((uint8_t*)&Aprime)[2];
+    A32_flip[2]=((uint8_t*)&Aprime)[1];
+    A32_flip[3]=((uint8_t*)&Aprime)[0];
+    crc = (uint64_t)(crc24c(A32_flip,len)>>8);
+  }
+  else if (len<=64) {
+    Ar = (B[0]>>crclen) | (B[1]<<(64-crclen));;
+    uint8_t A64_flip[8];
+    uint64_t Aprime= (uint32_t)(Ar<<(64-len));
+    A64_flip[0]=((uint8_t*)&Aprime)[7];
+    A64_flip[1]=((uint8_t*)&Aprime)[6];
+    A64_flip[2]=((uint8_t*)&Aprime)[5];
+    A64_flip[3]=((uint8_t*)&Aprime)[4];
+    A64_flip[4]=((uint8_t*)&Aprime)[3];
+    A64_flip[5]=((uint8_t*)&Aprime)[2];
+    A64_flip[6]=((uint8_t*)&Aprime)[1];
+    A64_flip[7]=((uint8_t*)&Aprime)[0];
+    crc = (uint64_t)(crc24c(A64_flip,len)>>8);
+  }
+
+#if 0
+  printf("A %llx B %llx|%llx Cprime %llx|%llx  (crc %x,rxcrc %llx %d)\n",
+	 Ar,
+	 B[1],B[0],Cprime[1],Cprime[0],crc,
+   	 rxcrc,polarParams->payloadBits);
+#endif
+
+  out[0]=Ar;
+
+
+  return(crc^rxcrc);
+  
+
+
 }

@@ -36,20 +36,27 @@
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 
+static int intcmp(const void *p1,const void *p2) {
+
+  return(*(int16_t*)p1 > *(int16_t*)p2);
+}
+
 void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
-				   int8_t messageType,
-				   uint16_t messageLength,
-				   uint8_t aggregation_level)
+		   int8_t messageType,
+		   uint16_t messageLength,
+		   uint8_t aggregation_level)
 {
 	t_nrPolar_paramsPtr currentPtr = *polarParams;
 	uint16_t aggregation_prime = nr_polar_aggregation_prime(aggregation_level);
 
 	//Parse the list. If the node is already created, return without initialization.
 	while (currentPtr != NULL) {
-		if (currentPtr->idx == (messageType * messageLength * aggregation_prime)) return;
-		else currentPtr = currentPtr->nextPtr;
+	  //printf("currentPtr->idx %d, (%d,%d)\n",currentPtr->idx,currentPtr->payloadBits,currentPtr->encoderLength);
+	  if (currentPtr->idx == (messageType * messageLength * aggregation_prime)) return;
+	  else currentPtr = currentPtr->nextPtr;
 	}
 
+	//	printf("currentPtr %p (polarParams %p)\n",currentPtr,polarParams);
 	//Else, initialize and add node to the end of the linked list.
 	t_nrPolar_paramsPtr newPolarInitNode = malloc(sizeof(t_nrPolar_params));
 
@@ -57,6 +64,7 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 
 		newPolarInitNode->idx = (messageType * messageLength * aggregation_prime);
 		newPolarInitNode->nextPtr = NULL;
+		//printf("newPolarInitNode->idx %d, (%d,%d,%d:%d)\n",newPolarInitNode->idx,messageType,messageLength,aggregation_prime,aggregation_level);
 
 		if (messageType == 0) { //PBCH
 			newPolarInitNode->n_max = NR_POLAR_PBCH_N_MAX;
@@ -70,6 +78,7 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 			newPolarInitNode->encoderLength = NR_POLAR_PBCH_E;
 			newPolarInitNode->crcCorrectionBits = NR_POLAR_PBCH_CRC_ERROR_CORRECTION_BITS;
 			newPolarInitNode->crc_generator_matrix = crc24c_generator_matrix(newPolarInitNode->payloadBits);//G_P
+			//printf("Initializing polar parameters for PBCH (K %d, E %d)\n",newPolarInitNode->payloadBits,newPolarInitNode->encoderLength);
 		} else if (messageType == 1) { //DCI
 			newPolarInitNode->n_max = NR_POLAR_DCI_N_MAX;
 			newPolarInitNode->i_il = NR_POLAR_DCI_I_IL;
@@ -82,6 +91,7 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 			newPolarInitNode->encoderLength = aggregation_level*108;
 			newPolarInitNode->crcCorrectionBits = NR_POLAR_DCI_CRC_ERROR_CORRECTION_BITS;
 			newPolarInitNode->crc_generator_matrix=crc24c_generator_matrix(newPolarInitNode->payloadBits+newPolarInitNode->crcParityBits);//G_P
+			//printf("Initializing polar parameters for DCI (K %d, E %d, L %d)\n",newPolarInitNode->payloadBits,newPolarInitNode->encoderLength,aggregation_level);
 		} else if (messageType == -1) { //UCI
 
 		} else {
@@ -115,6 +125,10 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 									  newPolarInitNode->i_il,
 									  newPolarInitNode->interleaving_pattern);
 
+		newPolarInitNode->deinterleaving_pattern = malloc(sizeof(uint16_t) * newPolarInitNode->K);
+		for (int i=0;i<newPolarInitNode->K;i++)
+		  newPolarInitNode->deinterleaving_pattern[newPolarInitNode->interleaving_pattern[i]] = i;
+
 		newPolarInitNode->rate_matching_pattern = malloc(sizeof(uint16_t) * newPolarInitNode->encoderLength);
 		uint16_t *J = malloc(sizeof(uint16_t) * newPolarInitNode->N);
 		nr_polar_rate_matching_pattern(newPolarInitNode->rate_matching_pattern,
@@ -139,7 +153,9 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 								  newPolarInitNode->N,
 								  newPolarInitNode->encoderLength,
 								  newPolarInitNode->n_pc);
-
+		// sort the Q_I_N array in ascending order (first K positions)
+		qsort((void*)newPolarInitNode->Q_I_N,newPolarInitNode->K,sizeof(int16_t),intcmp);
+ 
 		newPolarInitNode->channel_interleaver_pattern = malloc(sizeof(uint16_t) * newPolarInitNode->encoderLength);
 		nr_polar_channel_interleaver_pattern(newPolarInitNode->channel_interleaver_pattern,
 											 newPolarInitNode->i_bil,
@@ -148,6 +164,9 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 		free(J);
 
 		build_decoder_tree(newPolarInitNode);
+		build_polar_tables(newPolarInitNode);
+		init_polar_deinterleaver_table(newPolarInitNode);
+
 		//printf("decoder tree nodes %d\n",newPolarInitNode->tree.num_nodes);
 
 	} else {
@@ -159,13 +178,18 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 	if (currentPtr == NULL)
 	{
 		*polarParams = newPolarInitNode;
+		//printf("Creating first polarParams entry index %d, %p\n",newPolarInitNode->idx,*polarParams);
 		return;
 	}
 	//Else, add node to the end of the linked list.
 	while (currentPtr->nextPtr != NULL) {
-			currentPtr = currentPtr->nextPtr;
+	  currentPtr = currentPtr->nextPtr;
 	}
 	currentPtr->nextPtr= newPolarInitNode;
+	printf("Adding new polarParams entry to list index %d,%p\n",
+	       newPolarInitNode->idx,
+	       currentPtr->nextPtr);
+
 	return;
 }
 

@@ -260,7 +260,7 @@ extern char uecap_xer[1024];
 char uecap_xer_in=0;
 
 int oaisim_flag=0;
-threads_t threads= {-1,-1,-1,-1,-1,-1,-1};
+threads_t threads = {-1,-1,-1,-1,-1,-1,-1};
 
 /* see file openair2/LAYER2/MAC/main.c for why abstraction_flag is needed
  * this is very hackish - find a proper solution
@@ -1014,14 +1014,17 @@ printf("~~~~~~~~~~~~~~~~~~~~successfully get the parallel config[%d], worker con
   char cpu_affinity[1024];
   CPU_ZERO(&cpuset);
 #ifdef CPU_AFFINITY
+  int j;
   if (get_nprocs() > 2) {
-    CPU_SET(0, &cpuset);
+    for (j = 2; j < get_nprocs(); j++)
+      CPU_SET(j, &cpuset);
+    
     s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
     if (s != 0) {
       perror( "pthread_setaffinity_np");
       exit_fun("Error setting processor affinity");
     }
-    LOG_I(HW, "Setting the affinity of main function to CPU 0, for device library to use CPU 0 only!\n");
+    LOG_I(HW, "Setting the affinity of main function to all CPUs, for device library to use CPU 0 only!\n");
   }
 #endif
   

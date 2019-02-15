@@ -159,6 +159,8 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
   fp->symbols_per_slot = ((Ncp == NORMAL)? 14 : 12); // to redefine for different slot formats
   fp->samples_per_subframe_wCP = fp->ofdm_symbol_size * fp->symbols_per_slot * fp->slots_per_subframe;
   fp->samples_per_frame_wCP = 10 * fp->samples_per_subframe_wCP;
+  fp->samples_per_slot_wCP = fp->symbols_per_slot*fp->ofdm_symbol_size; 
+  fp->samples_per_slot = fp->nb_prefix_samples0 + ((fp->symbols_per_slot-1)*fp->nb_prefix_samples) + (fp->symbols_per_slot*fp->ofdm_symbol_size); 
   fp->samples_per_subframe = (fp->samples_per_subframe_wCP + (fp->nb_prefix_samples0 * fp->slots_per_subframe) +
                                       (fp->nb_prefix_samples * fp->slots_per_subframe * (fp->symbols_per_slot - 1)));
   fp->samples_per_frame = 10 * fp->samples_per_subframe;
@@ -176,7 +178,9 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
 }
 
 int nr_init_frame_parms(nfapi_nr_config_request_t* config,
-                        NR_DL_FRAME_PARMS *fp) {
+                        NR_DL_FRAME_PARMS *fp)
+{
+
 
   return nr_init_frame_parms0(fp,
 			      config->subframe_config.numerology_index_mu.value,
@@ -191,10 +195,9 @@ int nr_init_frame_parms_ue(NR_DL_FRAME_PARMS *fp,
 			   int n_ssb_crb,
 			   int ssb_subcarrier_offset) 
 {
-
+  /*n_ssb_crb and ssb_subcarrier_offset are given in 15kHz SCS*/
   nr_init_frame_parms0(fp,mu,Ncp,N_RB_DL);
-  int start_rb = n_ssb_crb / (1<<mu);
-  fp->ssb_start_subcarrier = 12 * start_rb + ssb_subcarrier_offset;
+  fp->ssb_start_subcarrier = (12 * n_ssb_crb + ssb_subcarrier_offset)/(1<<mu);
   return 0;
 }
 

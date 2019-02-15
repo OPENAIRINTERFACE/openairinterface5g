@@ -71,7 +71,7 @@ uint16_t nr_pdcch_order_table[6] = { 31, 31, 511, 2047, 2047, 8191 };
 void clear_nr_nfapi_information(gNB_MAC_INST * gNB, 
                                 int CC_idP,
                                 frame_t frameP, 
-                                sub_frame_t subframeP){
+                                sub_frame_t slotP){
 
   nfapi_nr_dl_config_request_t    *DL_req = &gNB->DL_req[0];
   nfapi_ul_config_request_t       *UL_req = &gNB->UL_req[0];
@@ -87,7 +87,7 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
     DL_req[CC_idP].dl_config_request_body.number_pdsch_rnti                   = 0;
     //DL_req[CC_idP].dl_config_request_body.transmission_power_pcfich           = 6000;
 
-    HI_DCI0_req[CC_idP].hi_dci0_request_body.sfnsf                            = subframeP + (frameP<<4);
+    HI_DCI0_req[CC_idP].hi_dci0_request_body.sfnsf                            = slotP + (frameP<<7);
     HI_DCI0_req[CC_idP].hi_dci0_request_body.number_of_dci                    = 0;
 
 
@@ -104,7 +104,7 @@ void check_nr_ul_failure(module_id_t module_idP,
                          int CC_id, 
                          int UE_id,
                          frame_t frameP, 
-                         sub_frame_t subframeP) {
+                         sub_frame_t slotP) {
 
   UE_list_t                     *UE_list  = &RC.nrmac[module_idP]->UE_list;
   nfapi_nr_dl_config_request_t  *DL_req   = &RC.nrmac[module_idP]->DL_req[0];
@@ -259,14 +259,14 @@ void schedule_nr_SRS(module_id_t module_idP, frame_t frameP, sub_frame_t subfram
   }
 }
 */
-void copy_nr_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
+void copy_nr_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 {
   int CC_id;
   gNB_MAC_INST *mac = RC.nrmac[module_idP];
 
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
 
-    nfapi_ul_config_request_t *ul_req_tmp             = &mac->UL_req_tmp[CC_id][subframeP];
+    nfapi_ul_config_request_t *ul_req_tmp             = &mac->UL_req_tmp[CC_id][slotP];
     nfapi_ul_config_request_t *ul_req                 = &mac->UL_req[CC_id];
     nfapi_ul_config_request_pdu_t *ul_req_pdu         = ul_req->ul_config_request_body.ul_config_pdu_list;
 
@@ -274,12 +274,12 @@ void copy_nr_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP
 
     // Restore the pointer
     ul_req->ul_config_request_body.ul_config_pdu_list = ul_req_pdu;
-    ul_req->sfn_sf                                    = (frameP<<4) + subframeP;
+    ul_req->sfn_sf                                    = (frameP<<7) + slotP;
     ul_req_tmp->ul_config_request_body.number_of_pdus = 0;
 
     if (ul_req->ul_config_request_body.number_of_pdus>0)
       {
-        LOG_D(PHY, "%s() active NOW (frameP:%d subframeP:%d) pdus:%d\n", __FUNCTION__, frameP, subframeP, ul_req->ul_config_request_body.number_of_pdus);
+        LOG_D(PHY, "%s() active NOW (frameP:%d slotP:%d) pdus:%d\n", __FUNCTION__, frameP, slotP, ul_req->ul_config_request_body.number_of_pdus);
       }
 
     memcpy((void*)ul_req->ul_config_request_body.ul_config_pdu_list,
@@ -290,7 +290,7 @@ void copy_nr_ulreq(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP
 
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP, 
                                frame_t frameP,
-                               sub_frame_t subframeP){
+                               sub_frame_t slotP){
   protocol_ctxt_t   ctxt;
 
   int               CC_id, i = -1;
@@ -303,7 +303,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
 
   RC.nrmac[module_idP]->frame    = frameP;
-  RC.nrmac[module_idP]->subframe = subframeP;
+  RC.nrmac[module_idP]->slot     = slotP;
+
 
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     //mbsfn_status[CC_id] = 0;
@@ -312,17 +313,20 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     memset(cc[CC_id].vrb_map, 0, 100);
     memset(cc[CC_id].vrb_map_UL, 0, 100);
 
-    clear_nr_nfapi_information(RC.nrmac[module_idP], CC_id, frameP, subframeP);
+    clear_nr_nfapi_information(RC.nrmac[module_idP], CC_id, frameP, slotP);
   }
 
   // refresh UE list based on UEs dropped by PHY in previous subframe
   for (i = 0; i < MAX_MOBILES_PER_GNB; i++) {
     if (UE_list->active[i]) {
 
+      nfapi_nr_config_request_t *cfg = &RC.nrmac[module_idP]->config[CC_id];
+
       rnti = UE_RNTI(module_idP, i);
       CC_id = UE_PCCID(module_idP, i);
-      
-      if (((frameP&127) == 0) && (subframeP == 0)) {
+      int spf = get_spf(cfg);
+  
+      if (((frameP&127) == 0) && (slotP == 0)) {
         LOG_I(MAC,
         "UE  rnti %x : %s, PHR %d dB DL CQI %d PUSCH SNR %d PUCCH SNR %d\n",
         rnti,
@@ -334,11 +338,11 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
         (UE_list->UE_sched_ctrl[i].pucch1_snr[CC_id] - 128) / 2);
       }
       
-      RC.gNB[module_idP][CC_id]->pusch_stats_bsr[i][(frameP * 10) + subframeP] = -63;
+      RC.gNB[module_idP][CC_id]->pusch_stats_bsr[i][to_absslot(cfg,frameP,slotP)] = -63;
       
       if (i == UE_list->head)
         VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BSR,RC.gNB[module_idP][CC_id]->
-                                                pusch_stats_bsr[i][(frameP * 10) + subframeP]);
+                                                pusch_stats_bsr[i][to_absslot(cfg,frameP,slotP)]);
       
       // increment this, it is cleared when we receive an sdu
       RC.nrmac[module_idP]->UE_list.UE_sched_ctrl[i].ul_inactivity_timer++;
@@ -407,19 +411,21 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     } //END if (UE_list->active[i])
   } //END for (i = 0; i < MAX_MOBILES_PER_GNB; i++)
   
-  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES,NOT_A_RNTI, frameP, subframeP,module_idP);
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES,NOT_A_RNTI, frameP, slotP,module_idP);
   
   pdcp_run(&ctxt);
 
   //rrc_rx_tx(&ctxt, CC_id);
 
   // This schedules MIB
-  if((subframeP == 0) && (frameP & 7) == 0){
-    schedule_nr_mib(module_idP, frameP, subframeP);
+  if((slotP == 0) && (frameP & 7) == 0){
+    schedule_nr_mib(module_idP, frameP, slotP);
   }
 
   // Phytest scheduling/ option not activated because of pending bug
-  nr_schedule_css_dlsch_phytest(module_idP, frameP, subframeP);
+
+  if (slotP==2)
+    nr_schedule_css_dlsch_phytest(module_idP, frameP, slotP);
 
 
   /*

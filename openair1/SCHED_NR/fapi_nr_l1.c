@@ -55,19 +55,20 @@ void handle_nr_nfapi_bch_pdu(PHY_VARS_gNB *gNB,
 
 
 void handle_nfapi_nr_dci_dl_pdu(PHY_VARS_gNB *gNB,
-                                int frame, int subframe,
+                                int frame, int slot,
                                 gNB_L1_rxtx_proc_t *proc,
-                                nfapi_nr_dl_config_request_pdu_t *dl_config_pdu)
+                                nfapi_nr_dl_config_request_pdu_t *dl_config_pdu,
+                                nfapi_nr_dl_config_request_pdu_t *dl_config_dlsch_pdu)
 {
-  int idx                        = subframe&1;
+  int idx                        = slot&1;
   NR_gNB_PDCCH *pdcch_vars       = &gNB->pdcch_vars;
 
-  LOG_D(PHY,"Frame %d, Subframe %d: DCI processing - populating pdcch_vars->dci_alloc[%d] proc:subframe_tx:%d idx:%d pdcch_vars->num_dci:%d\n",frame,subframe, pdcch_vars->num_dci, proc->subframe_tx, idx, pdcch_vars->num_dci);
+  LOG_I(PHY,"Frame %d, Slot %d: DCI processing - populating pdcch_vars->dci_alloc[%d] proc:slot_tx:%d idx:%d pdcch_vars->num_dci:%d\n",frame,slot, pdcch_vars->num_dci, proc->slot_tx, idx, pdcch_vars->num_dci);
 
   // copy dci configuration into gNB structure
-  nr_fill_dci_and_dlsch(gNB,frame,subframe,proc,&pdcch_vars->dci_alloc[pdcch_vars->num_dci],dl_config_pdu);
+  nr_fill_dci_and_dlsch(gNB,frame,slot,proc,&pdcch_vars->dci_alloc[pdcch_vars->num_dci],&dl_config_pdu->dci_dl_pdu,&dl_config_dlsch_pdu->dlsch_pdu);
 
-  LOG_D(PHY,"Frame %d, Subframe %d: DCI processing - populated pdcch_vars->dci_alloc[%d] proc:subframe_tx:%d idx:%d pdcch_vars->num_dci:%d\n",proc->frame_tx,proc->subframe_tx, pdcch_vars->num_dci, proc->subframe_tx, idx, pdcch_vars->num_dci);
+  LOG_I(PHY,"Frame %d, Slot %d: DCI processing - populated pdcch_vars->dci_alloc[%d] proc:slot_tx:%d idx:%d pdcch_vars->num_dci:%d\n",proc->frame_tx,proc->slot_tx, pdcch_vars->num_dci, proc->slot_tx, idx, pdcch_vars->num_dci);
 }
 
 
@@ -80,7 +81,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   nfapi_nr_dl_config_request_t  *DL_req      = Sched_INFO->DL_req;
   nfapi_tx_request_t            *TX_req      = Sched_INFO->TX_req;
   frame_t                       frame        = Sched_INFO->frame;
-  sub_frame_t                   subframe     = Sched_INFO->subframe;
+  sub_frame_t                   slot         = Sched_INFO->slot;
 
   AssertFatal(RC.gNB!=NULL,"RC.gNB is null\n");
   AssertFatal(RC.gNB[Mod_id]!=NULL,"RC.gNB[%d] is null\n",Mod_id);
@@ -92,20 +93,26 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
   uint8_t number_dl_pdu             = DL_req->dl_config_request_body.number_pdu;
 
   nfapi_nr_dl_config_request_pdu_t *dl_config_pdu;
+  nfapi_nr_dl_config_request_pdu_t *dl_config_dlsch_pdu;
  
   int i;
 
   LOG_D(PHY,"NFAPI: Sched_INFO:SFN/SF:%04d%d DL_req:SFN/SF:%04d%d:dl_pdu:%d tx_req:SFN/SF:%04d%d:pdus:%d \n",
-        frame,subframe,
+        frame,slot,
         NFAPI_SFNSF2SFN(DL_req->sfn_sf),NFAPI_SFNSF2SF(DL_req->sfn_sf),number_dl_pdu,
         NFAPI_SFNSF2SFN(TX_req->sfn_sf),NFAPI_SFNSF2SF(TX_req->sfn_sf),TX_req->tx_request_body.number_of_pdus);
 
   int do_oai =0;
   int dont_send =0;
+  gNB->pdcch_vars.num_dci = 0;
+  gNB->pdcch_vars.num_pdsch_rnti = 0;
+
+  gNB->pdcch_vars.num_dci=0;
 
   for (i=0;i<number_dl_pdu;i++) {
     dl_config_pdu = &DL_req->dl_config_request_body.dl_config_pdu_list[i];
-    //LOG_D(PHY,"NFAPI: dl_pdu %d : type %d\n",i,dl_config_pdu->pdu_type);
+    LOG_D(PHY,"NFAPI: dl_pdu %d : type %d\n",i,dl_config_pdu->pdu_type);
+    printf("NFAPI: dl_pdu %d : type %d\n",i,dl_config_pdu->pdu_type);
     switch (dl_config_pdu->pdu_type) {
       case NFAPI_NR_DL_CONFIG_BCH_PDU_TYPE:
         AssertFatal(dl_config_pdu->bch_pdu_rel15.pdu_index < TX_req->tx_request_body.number_of_pdus,
@@ -122,11 +129,14 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
       break;
 
       case NFAPI_NR_DL_CONFIG_DCI_DL_PDU_TYPE:
+        dl_config_dlsch_pdu = &DL_req->dl_config_request_body.dl_config_pdu_list[++i];
         handle_nfapi_nr_dci_dl_pdu(gNB,
-                                   frame, subframe,
+                                   frame, slot,
                                    proc,
-                                   dl_config_pdu);
+                                   dl_config_pdu,
+                                   dl_config_dlsch_pdu);
         gNB->pdcch_vars.num_dci++;
+        gNB->pdcch_vars.num_pdsch_rnti++;
         do_oai=1;
       break;
     }

@@ -62,8 +62,17 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                               uint8_t eNB_id,
                               uint8_t eNB_offset,
                               unsigned char Ns,
+                              unsigned short p,
                               unsigned char l,
                               unsigned char symbol,
 							  unsigned short bwp_start_subcarrier,
 							  unsigned short nb_rb_pdsch);
+							  
+void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
+                      PHY_VARS_NR_UE *ue,
+                      module_id_t eNB_id,
+					  uint8_t subframe,
+                      unsigned char clear,
+                      short coef);
+
 #endif

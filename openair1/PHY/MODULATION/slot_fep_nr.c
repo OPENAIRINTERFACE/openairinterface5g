@@ -29,6 +29,11 @@
 
 #define SOFFSET 0
 
+/*#ifdef LOG_I
+#undef LOG_I
+#define LOG_I(A,B...) printf(A)
+#endif*/
+
 int nr_slot_fep(PHY_VARS_NR_UE *ue,
 		unsigned char l,
 		unsigned char Ns,
@@ -44,21 +49,18 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   unsigned char symbol = l;//+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within sub-frame
   unsigned int nb_prefix_samples = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
   unsigned int nb_prefix_samples0 = (no_prefix ? 0 : frame_parms->nb_prefix_samples0);
-  unsigned int subframe_offset;//,subframe_offset_F;
+  //unsigned int subframe_offset;//,subframe_offset_F;
   unsigned int slot_offset;
   //int i;
   unsigned int frame_length_samples = frame_parms->samples_per_subframe * 10;
   unsigned int rx_offset;
-  //NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[Ns>>1]][0];
-  uint16_t coreset_start_subcarrier = frame_parms->first_carrier_offset+516;
+  NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[Ns>>1]][0];
+  uint16_t coreset_start_subcarrier = frame_parms->first_carrier_offset+((int)floor(frame_parms->ssb_start_subcarrier/NR_NB_SC_PER_RB)+pdcch_vars->coreset[0].rb_offset)*NR_NB_SC_PER_RB;
   uint16_t nb_rb_coreset = 24;
-  uint16_t bwp_start_subcarrier = frame_parms->first_carrier_offset;
-  uint16_t nb_rb_pdsch = 100;
-
-  /*LTE_UE_DLSCH_t **dlsch_ue = phy_vars_ue->dlsch_ue[eNB_id];
-  unsigned char harq_pid = dlsch_ue[0]->current_harq_pid;
-  LTE_DL_UE_HARQ_t *dlsch0_harq = dlsch_ue[0]->harq_processes[harq_pid];
-  int uespec_pilot[9][1200];*/
+  uint16_t bwp_start_subcarrier = frame_parms->first_carrier_offset+516;
+  uint16_t nb_rb_pdsch = 50;
+  uint8_t p=0;
+  uint8_t l0 = 2;
 
   void (*dft)(int16_t *,int16_t *, int);
   int tmp_dft_in[8192] __attribute__ ((aligned (32)));  // This is for misalignment issues for 6 and 15 PRBs
@@ -102,11 +104,9 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   }
 
   if (no_prefix) {
-    subframe_offset = frame_parms->ofdm_symbol_size * frame_parms->symbols_per_tti * (Ns>>1);
-    slot_offset = frame_parms->ofdm_symbol_size * (frame_parms->symbols_per_tti>>1) * (Ns%2);
+    slot_offset = frame_parms->ofdm_symbol_size * (frame_parms->symbols_per_slot*frame_parms->slots_per_subframe) * (Ns>>1);
   } else {
-    subframe_offset = frame_parms->samples_per_tti * (Ns>>1);
-    slot_offset = (frame_parms->samples_per_tti>>1) * (Ns%2);
+    slot_offset = (frame_parms->samples_per_subframe) * (Ns>>1);
   }
 
   /*if (l<0 || l>=7-frame_parms->Ncp) {
@@ -124,9 +124,15 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
     memset(&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].rxdataF[aa][frame_parms->ofdm_symbol_size*symbol],0,frame_parms->ofdm_symbol_size*sizeof(int));
 
-    rx_offset = sample_offset + slot_offset + nb_prefix_samples0 + subframe_offset - SOFFSET;
+    rx_offset = sample_offset + slot_offset + nb_prefix_samples0 - SOFFSET;
     // Align with 256 bit
     //    rx_offset = rx_offset&0xfffffff8;
+
+#ifdef DEBUG_FEP
+      //  if (ue->frame <100)
+    /*LOG_I(PHY,*/printf("slot_fep: frame %d: slot %d, symbol %d, nb_prefix_samples %d, nb_prefix_samples0 %d, slot_offset %d, sample_offset %d,rx_offset %d, frame_length_samples %d\n", ue->proc.proc_rxtx[(Ns>>1)&1].frame_rx,Ns, symbol,
+          nb_prefix_samples,nb_prefix_samples0,slot_offset,sample_offset,rx_offset,frame_length_samples);
+#endif
 
     if (l==0) {
 
@@ -156,12 +162,6 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
       rx_offset += (frame_parms->ofdm_symbol_size+nb_prefix_samples)*l;// +
       //                   (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1);
 
-#ifdef DEBUG_FEP
-      //  if (ue->frame <100)
-      LOG_I(PHY,"slot_fep: frame %d: slot %d, symbol %d, nb_prefix_samples %d, nb_prefix_samples0 %d, slot_offset %d, subframe_offset %d, sample_offset %d,rx_offset %d, frame_length_samples %d\n", ue->proc.proc_rxtx[(Ns>>1)&1].frame_rx,Ns, symbol,
-          nb_prefix_samples,nb_prefix_samples0,slot_offset,subframe_offset,sample_offset,rx_offset,frame_length_samples);
-#endif
-
       if (rx_offset > (frame_length_samples - frame_parms->ofdm_symbol_size))
         memcpy((void *)&common_vars->rxdata[aa][frame_length_samples],
                (void *)&common_vars->rxdata[aa][0],
@@ -190,7 +190,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 
     #ifdef DEBUG_FEP
         //  if (ue->frame <100)
-        printf("slot_fep: frame %d: symbol %d rx_offset %d\n", ue->proc.proc_rxtx[(Ns>>1)&1].frame_rx, symbol,rx_offset);
+        printf("slot_fep: frame %d: symbol %d rx_offset %d\n", ue->proc.proc_rxtx[(Ns)&1].frame_rx, symbol,rx_offset);
     #endif
   }
 
@@ -266,12 +266,18 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 #if UE_TIMING_TRACE
     start_meas(&ue->dlsch_channel_estimation_stats);
 #endif
+
+  ue->frame_parms.nushift =  (p>>1)&1;;
+
+    if (symbol ==l0)
     nr_pdsch_channel_estimation(ue,eNB_id,0,
 				Ns,
+				p,
 				l,
 				symbol,
 				bwp_start_subcarrier,
 				nb_rb_pdsch);
+				
 #if UE_TIMING_TRACE
     stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif

@@ -65,59 +65,175 @@ extern RAN_CONTEXT_t RC;
 
 extern int n_active_slices;
 
-int is_nr_UL_sf(NR_COMMON_channels_t * ccP, sub_frame_t subframeP){
-  // if FDD return dummy value
-  if (ccP->tdd_Config == NULL)
-    return (0);
+/// LUT for the number of symbols in the coreset indexed by coreset index (4 MSB rmsi_pdcch_config)
+uint8_t nr_coreset_nsymb_pdcch_type_0_b40Mhz[16] = {2,2,2,2,2,3,3,3,3,3,1,1,1,2,2,2}; // below 40Mhz bw
+uint8_t nr_coreset_nsymb_pdcch_type_0_a40Mhz[10] = {2,2,3,3,1,1,2,2,3,3}; // above 40Mhz bw
+/// LUT for the number of RBs in the coreset indexed by coreset index
+uint8_t nr_coreset_rb_offset_pdcch_type_0_b40Mhz[16] = {0,1,2,3,4,0,1,2,3,4,12,14,16,12,14,16};
+uint8_t nr_coreset_rb_offset_pdcch_type_0_a40Mhz[10] = {0,4,0,4,0,28,0,28,0,28};
+/// LUT for monitoring occasions param O indexed by ss index (4 LSB rmsi_pdcch_config)
+uint8_t nr_ss_param_O_type_0_mux1_FR1[16] = {0,0,2,2,5,5,7,7,0,5,0,0,2,2,5,5};
+uint8_t nr_ss_param_O_type_0_mux1_FR2[14] = {0,0,2.5,2.5,5,5,0,2.5,5,7.5,7.5,7.5,0,5};
+/// LUT for number of SS sets per slot indexed by ss index
+uint8_t nr_ss_sets_per_slot_type_0_FR1[16] = {1,2,1,2,1,2,1,2,1,1,1,1,1,1,1,1};
+uint8_t nr_ss_sets_per_slot_type_0_FR2[14] = {1,2,1,2,1,2,2,2,2,1,2,2,1,1};
+/// LUT for monitoring occasions param M indexed by ss index
+uint8_t nr_ss_param_M_type_0_mux1_FR1[16] = {1,0.5,1,0.5,1,0.5,1,0.5,2,2,1,1,1,1,1,1};
+uint8_t nr_ss_param_M_type_0_mux1_FR2[14] = {1,0.5,1,0.5,1,0.5,0.5,0.5,0.5,1,0.5,0.5,2,2};
+/// LUT for SS first symbol index indexed by ss index
+uint8_t nr_ss_first_symb_idx_type_0_mux1_FR1[8] = {0,0,1,2,1,2,1,2};
 
-  switch (ccP->tdd_Config->subframeAssignment) {
-  case 1:
-    switch (subframeP) {
-    case 0:
-    case 4:
-    case 5:
-    case 9:
-      return (0);
+int is_nr_UL_slot(NR_COMMON_channels_t * ccP, int slot){
+
+    return (0);
+}
+
+void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
+				  nr_scs_e scs_common,
+				  nr_scs_e pdcch_scs,
+				  nr_frequency_range_e freq_range,
+				  uint8_t rmsi_pdcch_config,
+				  uint8_t ssb_idx,
+				  uint16_t nb_slots_per_frame,
+				  uint16_t N_RB)
+{
+  uint8_t O, M;
+  uint8_t ss_idx = rmsi_pdcch_config&0xf;
+  uint8_t cset_idx = (rmsi_pdcch_config>>4)&0xf;
+  uint8_t mu;
+
+  /// Coreset params
+  switch(scs_common) {
+
+    case kHz15:
+      mu = 0;
       break;
-    case 2:
-    case 3:
-    case 7:
-    case 8:
-      return (1);
+
+    case kHz30:
+      mu = 1;
+
+      if (N_RB < 106) { // Minimum 40Mhz bandwidth not satisfied
+        switch(pdcch_scs) {
+          case kHz15:
+            AssertFatal(1==0,"kHz15 not supported yet\n");   
+            break;
+
+          case kHz30:
+            pdcch_params->mux_pattern = NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE1;
+            pdcch_params->n_rb = (cset_idx < 10)? 24 : 48;
+            pdcch_params->n_symb = nr_coreset_nsymb_pdcch_type_0_b40Mhz[cset_idx];
+            pdcch_params->rb_offset =  nr_coreset_rb_offset_pdcch_type_0_b40Mhz[cset_idx];
+            break;
+
+          default:
+            AssertFatal(1==0,"Invalid scs_common/pdcch_scs combination %d/%d \n", scs_common, pdcch_scs);
+        }
+      }
+
+      else {
+        AssertFatal(ss_idx<10 ,"Invalid scs_common/pdcch_scs combination %d/%d \n", scs_common, pdcch_scs);
+        switch(pdcch_scs) {
+          case kHz15:
+              AssertFatal(1==0,"15 kHz SCS not supported yet\n"); 
+            break;
+
+          case kHz30:
+            pdcch_params->mux_pattern = NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE1;
+            pdcch_params->n_rb = (cset_idx < 4)? 24 : 48;
+            pdcch_params->n_symb = nr_coreset_nsymb_pdcch_type_0_b40Mhz[cset_idx];
+            pdcch_params->rb_offset =  nr_coreset_rb_offset_pdcch_type_0_b40Mhz[cset_idx];
+            break;
+
+          default:
+            AssertFatal(1==0,"Invalid scs_common/pdcch_scs combination %d/%d \n", scs_common, pdcch_scs);
+        }
+      }
+
+    case kHz60:
+      mu = 2;
       break;
-    default:
-      return (0);
+
+    case kHz120:
+    mu = 3;
       break;
-    }
-    break;
-  case 3:
-    if ((subframeP <= 1) || (subframeP >= 5))
-      return (0);
-    else if ((subframeP > 1) && (subframeP < 5))
-      return (1);
-    else
-      AssertFatal(1 == 0, "Unknown subframe number\n");
-    break;
-  case 4:
-    if ((subframeP <= 1) || (subframeP >= 4))
-      return (0);
-    else if ((subframeP > 1) && (subframeP < 4))
-      return (1);
-    else
-      AssertFatal(1 == 0, "Unknown subframe number\n");
-    break;
-  case 5:
-    if ((subframeP <= 1) || (subframeP >= 3))
-      return (0);
-    else if ((subframeP > 1) && (subframeP < 3))
-      return (1);
-    else
-      AssertFatal(1 == 0, "Unknown subframe number\n");
-    break;
+
   default:
-    AssertFatal(1 == 0,
-    "subframe %d Unsupported TDD configuration %d\n",
-    subframeP, (int) ccP->tdd_Config->subframeAssignment);
-    break;
+    AssertFatal(1==0,"Invalid common subcarrier spacing %d\n", scs_common);
+
   }
+
+  /// Search space params
+  switch(pdcch_params->mux_pattern) {
+
+    case NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE1:
+      if (freq_range == nr_FR1) {
+        O = nr_ss_param_O_type_0_mux1_FR1[ss_idx];
+        pdcch_params->nb_ss_sets_per_slot = nr_ss_sets_per_slot_type_0_FR1[ss_idx];
+        M = nr_ss_param_M_type_0_mux1_FR1[ss_idx];
+        pdcch_params->first_symbol = (ss_idx < 8)? ( (ss_idx&1)? pdcch_params->n_symb : 0 ) : nr_ss_first_symb_idx_type_0_mux1_FR1[ss_idx - 8];
+      }
+
+      else {
+        AssertFatal(ss_idx<14 ,"Invalid search space index for multiplexing type 1 and FR2 %d\n", ss_idx);
+        O = nr_ss_param_O_type_0_mux1_FR2[ss_idx];
+        pdcch_params->nb_ss_sets_per_slot = nr_ss_sets_per_slot_type_0_FR2[ss_idx];
+        M = nr_ss_param_M_type_0_mux1_FR2[ss_idx];
+        pdcch_params->first_symbol = (ss_idx < 12)? ( (ss_idx&1)? 7 : 0 ) : 0;
+      }
+      pdcch_params->nb_slots = 2;
+      pdcch_params->sfn_mod2 = ((uint8_t)(floor( (O*pow(2, mu) + floor(ssb_idx*M)) / nb_slots_per_frame )) & 1)? 1 : 0;
+      pdcch_params->first_slot = (uint8_t)(O*pow(2, mu) + floor(ssb_idx*M)) % nb_slots_per_frame;
+
+      break;
+
+    case NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE2:
+      break;
+
+    case NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE3:
+      break;
+
+    default:
+      AssertFatal(1==0, "Invalid SSB and coreset multiplexing pattern %d\n", pdcch_params->mux_pattern);
+  }
+  pdcch_params->config_type = NFAPI_NR_CSET_CONFIG_MIB_SIB1;
+  pdcch_params->cr_mapping_type = NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED;
+  pdcch_params->precoder_granularity = NFAPI_NR_CSET_SAME_AS_REG_BUNDLE;
+  pdcch_params->reg_bundle_size = 6;
+  pdcch_params->interleaver_size = 2;
+  // set initial banwidth part to full bandwidth
+  pdcch_params->n_RB_BWP = N_RB;
+
+
+}
+
+void nr_configure_css_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
+                                            nfapi_nr_coreset_t* coreset,
+                                            nfapi_nr_search_space_t* search_space) {
+
+  
+}
+
+int get_dlscs(nfapi_nr_config_request_t *cfg) {
+
+  return(cfg->rf_config.dl_subcarrierspacing.value);
+}
+
+
+int get_ulscs(nfapi_nr_config_request_t *cfg) {
+
+  return(cfg->rf_config.ul_subcarrierspacing.value);
+} 
+
+int get_spf(nfapi_nr_config_request_t *cfg) {
+
+  int mu = cfg->rf_config.dl_subcarrierspacing.value;
+  AssertFatal(mu>=0&&mu<4,"Illegal scs %d\n",mu);
+
+  return(10 * (1<<mu));
+} 
+
+int to_absslot(nfapi_nr_config_request_t *cfg,int frame,int slot) {
+
+  return(get_spf(cfg)*frame) + slot; 
+
 }

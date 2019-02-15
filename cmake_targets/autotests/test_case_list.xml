@@ -1035,14 +1035,16 @@
 
     <testCase id="015103">
       <class>execution</class>
-      <desc>polartest Test cases. (Test1: PBCH polar test)</desc>
+      <desc>polartest Test cases. (Test1: PBCH polar test),
+                                  (Test2: DCI polar test)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec> $OPENAIR_DIR/targets/bin/polartest.Rel15</main_exec>
-      <main_exec_args>-q -s-10 -f0</main_exec_args>
+      <main_exec_args>-q -s-10 -f0
+                      -q -s-10 -f0 -m1</main_exec_args>
       <tags>polartest.test1</tags>
       <search_expr_true>BLER= 0.000000</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -1051,16 +1053,24 @@
 
      <testCase id="015104">
       <class>execution</class>
-      <desc>nr_pbchsim Test cases. (Test1: PBCH-only),
-             (Test2: PBCH and synchronization)</desc>
+      <desc>nr_pbchsim Test cases. (Test1: PBCH-only, 106 PRB),
+                                   (Test2: PBCH and synchronization, 106PBR),
+                                   (Test3: PBCH-only, 217 PRB),
+                                   (Test4: PBCH and synchronization, 217 RPB),
+                                   (Test5: PBCH-only, 217 PRB),
+                                   (Test6: PBCH and synchronization, 217 PRB)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
       <main_exec> $OPENAIR_DIR/targets/bin/nr_pbchsim.Rel15</main_exec>
-      <main_exec_args>-s-11 -S-10 -n1000
-                      -s-11 -S-10 -n10 -I</main_exec_args>
+      <main_exec_args>-s0 -S1 -n1000 -R106
+                      -s0 -S1 -n10 -I -R106
+		      -s0 -S1 -n1000 -R217
+                      -s0 -S1 -n10 -I -R217
+		      -s0 -S1 -n1000 -R273
+                      -s0 -S1 -n10 -I -R273</main_exec_args>
       <tags>nr_pbchsim.test1 nr_pbchsim.test2</tags>
       <search_expr_true>PBCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>

@@ -61,7 +61,7 @@ void feptx0(RU_t *ru,int slot) {
   unsigned int aa,slot_offset;
   int slot_sizeF = (fp->ofdm_symbol_size)*
                    ((fp->Ncp==1) ? 6 : 7);
-  int subframe = ru->proc.subframe_tx;
+  int subframe = ru->proc.tti_tx;
 
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPTX_OFDM+slot , 1 );
@@ -172,7 +172,7 @@ void feptx_ofdm_2thread(RU_t *ru) {
   LTE_DL_FRAME_PARMS *fp=ru->frame_parms;
   RU_proc_t *proc = &ru->proc;
   struct timespec wait;
-  int subframe = ru->proc.subframe_tx;
+  int subframe = ru->proc.tti_tx;
 
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
@@ -239,7 +239,7 @@ void feptx_ofdm(RU_t *ru) {
                    ((fp->Ncp==1) ? 6 : 7);
   int len,len2;
   int16_t *txdata;
-  int subframe = ru->proc.subframe_tx;
+  int subframe = ru->proc.tti_tx;
 
 //  int CC_id = ru->proc.CC_id;
 
@@ -374,7 +374,7 @@ void feptx_prec(RU_t *ru) {
   PHY_VARS_eNB **eNB_list = ru->eNB_list,*eNB;
   LTE_DL_FRAME_PARMS *fp;
   int32_t ***bw;
-  int subframe = ru->proc.subframe_tx;
+  int subframe = ru->proc.tti_tx;
 
   if (ru->num_eNB == 1) {
     eNB = eNB_list[0];
@@ -420,7 +420,7 @@ void fep0(RU_t *ru,int slot) {
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX+slot, 1);
 
-  remove_7_5_kHz(ru,(slot&1)+(proc->subframe_rx<<1));
+  remove_7_5_kHz(ru,(slot&1)+(proc->tti_rx<<1));
   for (l=0; l<fp->symbols_per_tti/2; l++) {
     slot_fep_ul(ru,
 		l,
@@ -537,7 +537,7 @@ void ru_fep_full_2thread(RU_t *ru) {
   LTE_DL_FRAME_PARMS *fp=ru->frame_parms;
 
   if ((fp->frame_type == TDD) &&
-     (subframe_select(fp,proc->subframe_rx) != SF_UL)) return;
+     (subframe_select(fp,proc->tti_rx) != SF_UL)) return;
 
   if (ru->idx == 0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX, 1 );
 
@@ -580,7 +580,7 @@ void ru_fep_full_2thread(RU_t *ru) {
   stop_meas(&ru->ofdm_demod_wait_stats);
   if(opp_enabled == 1 && ru->ofdm_demod_wakeup_stats.p_time>30*3000){
     print_meas_now(&ru->ofdm_demod_wakeup_stats,"fep wakeup",stderr);
-    printf("delay in fep wait on codition in frame_rx: %d  subframe_rx: %d \n",proc->frame_rx,proc->subframe_rx);
+    printf("delay in fep wait on codition in frame_rx: %d  subframe_rx: %d \n",proc->frame_rx,proc->tti_rx);
   }
 
   stop_meas(&ru->ofdm_demod_stats);
@@ -596,13 +596,13 @@ void fep_full(RU_t *ru) {
   LTE_DL_FRAME_PARMS *fp=ru->frame_parms;
 
   if ((fp->frame_type == TDD) && 
-     (subframe_select(fp,proc->subframe_rx) != SF_UL)) return;
+     (subframe_select(fp,proc->tti_rx) != SF_UL)) return;
 
   start_meas(&ru->ofdm_demod_stats);
   if (ru->idx == 0) VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_RU_FEPRX, 1 );
 
-  remove_7_5_kHz(ru,proc->subframe_rx<<1);
-  remove_7_5_kHz(ru,1+(proc->subframe_rx<<1));
+  remove_7_5_kHz(ru,proc->tti_rx<<1);
+  remove_7_5_kHz(ru,1+(proc->tti_rx<<1));
 
   for (l=0; l<fp->symbols_per_tti/2; l++) {
     slot_fep_ul(ru,

@@ -118,9 +118,9 @@ void RCconfig_nr_flexran()
             *SearchSpace_searchSpaceType, *ue_Specific__dci_Formats,
             *RateMatchPatternLTE_CRS_subframeAllocation_choice;
 
-  long long int  downlink_frequency;
+  uint64_t  downlink_frequency;
 
-  int32_t   eutra_band, uplink_frequency_offset, N_RB_DL, nb_antenna_ports,
+  int32_t   nr_band, uplink_frequency_offset, N_RB_DL, nb_antenna_ports,
             MIB_subCarrierSpacingCommon, MIB_ssb_SubcarrierOffset, MIB_dmrs_TypeA_Position,
             pdcch_ConfigSIB1, SIB1_ssb_PeriodicityServingCell, SIB1_ss_PBCH_BlockPower,
             absoluteFrequencySSB, DL_FreqBandIndicatorNR,
@@ -431,8 +431,8 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   char*                  DL_prefix_type                                                = NULL;
   char*                  UL_prefix_type                                                = NULL;
 
-  int32_t                eutra_band                                                    = 0;
-  long long int          downlink_frequency                                            = 0;
+  int32_t                nr_band                                                       = 0;
+  uint64_t               downlink_frequency                                            = 0;
   int32_t                uplink_frequency_offset                                       = 0;
   int32_t                Nid_cell                                                      = 0;
   int32_t                N_RB_DL                                                       = 0;
@@ -629,7 +629,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   paramdef_t GNBParams[]  = GNBPARAMS_DESC;
   paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
   ////////// Physical parameters
-  //checkedparam_t config_check_CCparams[] = NRCCPARAMS_CHECK;
+  checkedparam_t config_check_CCparams[] = NRCCPARAMS_CHECK;
   paramdef_t CCsParams[] = NRCCPARAMS_DESC;
   paramlist_def_t CCsParamList = {GNB_CONFIG_STRING_COMPONENT_CARRIERS,NULL,0};
   
@@ -788,8 +788,8 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
                            RC.config_file_name, i, UL_prefix_type);
             }            
 
-            NRRRC_CONFIGURATION_REQ (msg_p).eutra_band[j] = eutra_band;
-            NRRRC_CONFIGURATION_REQ (msg_p).downlink_frequency[j] = (uint32_t) downlink_frequency;
+            NRRRC_CONFIGURATION_REQ (msg_p).nr_band[j] = nr_band;
+            NRRRC_CONFIGURATION_REQ (msg_p).downlink_frequency[j] = (uint64_t) downlink_frequency;
             NRRRC_CONFIGURATION_REQ (msg_p).uplink_frequency_offset[j] = (unsigned int) uplink_frequency_offset;
             NRRRC_CONFIGURATION_REQ (msg_p).Nid_cell[j]= Nid_cell;
 
@@ -844,12 +844,12 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
                            RC.config_file_name, i, UL_prefix_type);
             }
 
-            NRRRC_CONFIGURATION_REQ (msg_p).eutra_band[j] = eutra_band;
-            NRRRC_CONFIGURATION_REQ (msg_p).downlink_frequency[j] = (uint32_t) downlink_frequency;
+            NRRRC_CONFIGURATION_REQ (msg_p).nr_band[j] = nr_band;
+            NRRRC_CONFIGURATION_REQ (msg_p).downlink_frequency[j] = (uint64_t) downlink_frequency;
             NRRRC_CONFIGURATION_REQ (msg_p).uplink_frequency_offset[j] = (unsigned int) uplink_frequency_offset;
         
             if (config_check_band_frequencies(j,
-              NRRRC_CONFIGURATION_REQ (msg_p).eutra_band[j],
+              NRRRC_CONFIGURATION_REQ (msg_p).nr_band[j],
               NRRRC_CONFIGURATION_REQ (msg_p).downlink_frequency[j],
               NRRRC_CONFIGURATION_REQ (msg_p).uplink_frequency_offset[j],
               NRRRC_CONFIGURATION_REQ (msg_p).frame_type[j])) {
