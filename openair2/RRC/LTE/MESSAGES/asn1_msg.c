@@ -52,6 +52,8 @@
 #include "LTE_RRCConnectionSetup.h"
 #include "LTE_SRB-ToAddModList.h"
 #include "LTE_DRB-ToAddModList.h"
+#include "LTE_HandoverPreparationInformation.h"
+#include "LTE_HandoverCommand.h"
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   #include "LTE_MCCH-Message.h"
   //#define MRB1 1
@@ -3414,6 +3416,7 @@ uint16_t do_RRCConnectionReconfiguration(const protocol_ctxt_t        *const ctx
 					 LTE_MAC_MainConfig_t                   *mac_MainConfig,
 					 LTE_MeasGapConfig_t                    *measGapConfig,
 					 LTE_MobilityControlInfo_t              *mobilityInfo,
+                                         LTE_SecurityConfigHO_t                 *securityConfigHO,
 					 struct LTE_MeasConfig__speedStatePars  *speedStatePars,
 					 LTE_RSRP_Range_t                       *rsrp,
 					 LTE_C_RNTI_t                           *cba_rnti,
@@ -3504,8 +3507,16 @@ uint16_t do_RRCConnectionReconfiguration(const protocol_ctxt_t        *const ctx
     rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.mobilityControlInfo  = NULL;
   }
 
+  if (securityConfigHO != NULL) {
+    rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.securityConfigHO     = CALLOC(1,
+        sizeof(*rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.securityConfigHO));
+    memcpy((void*)rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.securityConfigHO, (void*)securityConfigHO,
+           sizeof(LTE_SecurityConfigHO_t));
+  } else {
+    rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.securityConfigHO     = NULL;
+  }
+
   rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.dedicatedInfoNASList = dedicatedInfoNASList;
-  rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.securityConfigHO     = NULL;
 
   //TTN for D2D
   //allocate dedicated resource pools for SL communication (sl_CommConfig_r12)
@@ -4175,6 +4186,88 @@ uint8_t do_ULInformationTransfer(uint8_t **buffer, uint32_t pdu_length, uint8_t 
   ul_dcch_msg.message.choice.c1.choice.ulInformationTransfer.criticalExtensions.choice.c1.choice.ulInformationTransfer_r8.dedicatedInfoType.choice.dedicatedInfoNAS.buf = pdu_buffer;
   encoded = uper_encode_to_new_buffer (&asn_DEF_LTE_UL_DCCH_Message, NULL, (void *) &ul_dcch_msg, (void **) buffer);
   return encoded;
+}
+
+int do_HandoverPreparation(char *ho_buf, int ho_size, LTE_UE_EUTRA_Capability_t *ue_eutra_cap, int rrc_size)
+{
+  asn_enc_rval_t enc_rval;
+  LTE_HandoverPreparationInformation_t ho;
+  LTE_HandoverPreparationInformation_r8_IEs_t *ho_info;
+  LTE_UE_CapabilityRAT_Container_t *ue_cap_rat_container;
+
+  char rrc_buf[rrc_size];
+
+  memset(rrc_buf, 0, rrc_size);
+
+  enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_UE_EUTRA_Capability,
+                                   NULL,
+                                   ue_eutra_cap,
+                                   rrc_buf,
+                                   rrc_size);
+
+  /* TODO: free the OCTET_STRING */
+
+  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
+               enc_rval.failed_type->name, enc_rval.encoded);
+
+
+  memset(&ho, 0, sizeof(ho));
+
+  ho.criticalExtensions.present = LTE_HandoverPreparationInformation__criticalExtensions_PR_c1;
+  ho.criticalExtensions.choice.c1.present = LTE_HandoverPreparationInformation__criticalExtensions__c1_PR_handoverPreparationInformation_r8;
+
+  ho_info = &ho.criticalExtensions.choice.c1.choice.handoverPreparationInformation_r8;
+  {
+      ue_cap_rat_container = (LTE_UE_CapabilityRAT_Container_t *)calloc(1,sizeof(LTE_UE_CapabilityRAT_Container_t));
+      ue_cap_rat_container->rat_Type = LTE_RAT_Type_eutra;
+
+      AssertFatal (OCTET_STRING_fromBuf(
+                   &ue_cap_rat_container->ueCapabilityRAT_Container,
+                   rrc_buf, rrc_size) != -1, "fatal: OCTET_STRING_fromBuf failed\n");
+
+      ASN_SEQUENCE_ADD(&ho_info->ue_RadioAccessCapabilityInfo.list, ue_cap_rat_container);
+  }
+
+  enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_HandoverPreparationInformation,
+                                   NULL,
+                                   &ho,
+                                   ho_buf,
+                                   ho_size);
+
+  /* TODO: free the OCTET_STRING */
+
+  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
+               enc_rval.failed_type->name, enc_rval.encoded);
+
+  return((enc_rval.encoded+7)/8);
+}
+
+int do_HandoverCommand(char *ho_buf, int ho_size, char *rrc_buf, int rrc_size)
+{
+  asn_enc_rval_t enc_rval;
+  LTE_HandoverCommand_t ho;
+
+  memset(&ho, 0, sizeof(ho));
+
+  ho.criticalExtensions.present = LTE_HandoverCommand__criticalExtensions_PR_c1;
+  ho.criticalExtensions.choice.c1.present = LTE_HandoverCommand__criticalExtensions__c1_PR_handoverCommand_r8;
+
+  AssertFatal (OCTET_STRING_fromBuf(
+               &ho.criticalExtensions.choice.c1.choice.handoverCommand_r8.handoverCommandMessage,
+               rrc_buf, rrc_size) != -1, "fatal: OCTET_STRING_fromBuf failed\n");
+
+  enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_HandoverCommand,
+                                   NULL,
+                                   &ho,
+                                   ho_buf,
+                                   ho_size);
+
+  /* TODO: free the OCTET_STRING */
+
+  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
+               enc_rval.failed_type->name, enc_rval.encoded);
+
+  return((enc_rval.encoded+7)/8);
 }
 
 OAI_UECapability_t *fill_ue_capability(char *UE_EUTRA_Capability_xer_fname) {

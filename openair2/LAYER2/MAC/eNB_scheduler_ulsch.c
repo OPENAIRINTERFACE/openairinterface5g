@@ -409,66 +409,83 @@ rx_sdu(const module_id_t enb_mod_idP,
 
         /* Receiving CRNTI means that the current rnti has to go away */
         if (old_UE_id != -1) {
-          /* TODO: if the UE did random access (followed by a MAC uplink with
-           * CRNTI) because none of its scheduling request was granted, then
-           * according to 36.321 5.4.4 the UE's MAC will notify RRC to release
-           * PUCCH/SRS. According to 36.331 5.3.13 the UE will then apply
-           * default configuration for CQI reporting and scheduling requests,
-           * which basically means that the CQI requests won't work anymore and
-           * that the UE won't do any scheduling request anymore as long as the
-           * eNB doesn't reconfigure the UE.
-           * We have to take care of this. As the code is, nothing is done and
-           * the UE state in the eNB is wrong.
-           */
-          RA_id = find_RA_id(enb_mod_idP, CC_idP, current_rnti);
-
-          if (RA_id != -1) {
-            RA_t *ra = &(mac->common_channels[CC_idP].ra[RA_id]);
-
-            mac_rrc_data_ind(enb_mod_idP,
-                              CC_idP,
-                              frameP, subframeP,
-                              old_rnti,
-                              DCCH,
-                              (uint8_t *) payload_ptr,
-                              rx_lengths[i],
-                              0
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                			       ,ra->rach_resource_type > 0
-#endif
-			                        );
-
-            /* Prepare transmission of Msg4(RRCConnectionReconfiguration) */
-            ra->state = MSGCRNTI;
-
-            LOG_I(MAC, "[eNB %d] Frame %d, Subframe %d CC_id %d : (rnti %x UE_id %d) RRCConnectionReconfiguration(Msg4)\n",
-              enb_mod_idP, 
-              frameP, 
-              subframeP, 
-              CC_idP, 
-              old_rnti, 
-              old_UE_id);
-            
+          if (mac_eNB_get_rrc_status(enb_mod_idP,old_rnti) ==  RRC_HO_EXECUTION) {
+            LOG_I(MAC,
+                  "[eNB %d] Frame %d, Subframe %d CC_id %d : (rnti %x UE_id %d) Handover case\n",
+                  enb_mod_idP, frameP, subframeP, CC_idP, old_rnti, old_UE_id);
             UE_id = old_UE_id;
             current_rnti = old_rnti;
-            ra->rnti = old_rnti;
-            ra->crnti_rrc_mui = rrc_eNB_mui-1;
-            ra->crnti_harq_pid = -1;
-
-            /* Clear timer */
+            //clear timer
             UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer = 0;
             UE_list->UE_sched_ctrl[UE_id].ul_inactivity_timer = 0;
             UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 0;
 
             if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync > 0) {
               UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync = 0;
-              mac_eNB_rrc_ul_in_sync(enb_mod_idP, CC_idP, frameP, subframeP, old_rnti);
+              mac_eNB_rrc_ul_in_sync(enb_mod_idP, CC_idP, frameP,
+                                     subframeP, old_rnti);
             }
 
             UE_list->UE_template[CC_idP][UE_id].ul_SR = 1;
             UE_list->UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag = 1;
+            UE_list->UE_template[UE_PCCID(enb_mod_idP, UE_id)][UE_id].configured = 1;
+            cancel_ra_proc(enb_mod_idP, CC_idP, frameP,current_rnti);
+          } else {
+            /* TODO: if the UE did random access (followed by a MAC uplink with
+             * CRNTI) because none of its scheduling request was granted, then
+             * according to 36.321 5.4.4 the UE's MAC will notify RRC to release
+             * PUCCH/SRS. According to 36.331 5.3.13 the UE will then apply
+             * default configuration for CQI reporting and scheduling requests,
+             * which basically means that the CQI requests won't work anymore and
+             * that the UE won't do any scheduling request anymore as long as the
+             * eNB doesn't reconfigure the UE.
+             * We have to take care of this. As the code is, nothing is done and
+             * the UE state in the eNB is wrong.
+             */
+            RA_id = find_RA_id(enb_mod_idP, CC_idP, current_rnti);
 
-            // break;
+            if (RA_id != -1) {
+              RA_t *ra = &(mac->common_channels[CC_idP].ra[RA_id]);
+              mac_rrc_data_ind(enb_mod_idP,
+                               CC_idP,
+                               frameP, subframeP,
+                               old_rnti,
+                               DCCH,
+                               (uint8_t *) payload_ptr,
+                               rx_lengths[i],
+                               0
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                               ,ra->rach_resource_type > 0
+#endif
+                              );
+              /* Prepare transmission of Msg4(RRCConnectionReconfiguration) */
+              ra->state = MSGCRNTI;
+              LOG_I(MAC, "[eNB %d] Frame %d, Subframe %d CC_id %d : (rnti %x UE_id %d) RRCConnectionReconfiguration(Msg4)\n",
+                    enb_mod_idP,
+                    frameP,
+                    subframeP,
+                    CC_idP,
+                    old_rnti,
+                    old_UE_id);
+              UE_id = old_UE_id;
+              current_rnti = old_rnti;
+              ra->rnti = old_rnti;
+              ra->crnti_rrc_mui = rrc_eNB_mui-1;
+              ra->crnti_harq_pid = -1;
+              /* Clear timer */
+              UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer = 0;
+              UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer = 0;
+              UE_list->UE_sched_ctrl[UE_id].ul_inactivity_timer = 0;
+              UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 0;
+
+              if (UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync > 0) {
+                UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync = 0;
+                mac_eNB_rrc_ul_in_sync(enb_mod_idP, CC_idP, frameP, subframeP, old_rnti);
+              }
+
+              UE_list->UE_template[CC_idP][UE_id].ul_SR = 1;
+              UE_list->UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag = 1;
+              // break;
           }
         } else {
           cancel_ra_proc(enb_mod_idP, CC_idP, frameP, current_rnti);

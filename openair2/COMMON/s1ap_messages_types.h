@@ -42,6 +42,8 @@
 #define S1AP_E_RAB_SETUP_RESP(mSGpTR)           (mSGpTR)->ittiMsg.s1ap_e_rab_setup_resp
 #define S1AP_E_RAB_SETUP_FAIL(mSGpTR)           (mSGpTR)->ittiMsg.s1ap_e_rab_setup_req_fail
 #define S1AP_E_RAB_MODIFY_RESP(mSGpTR)           (mSGpTR)->ittiMsg.s1ap_e_rab_modify_resp
+#define S1AP_PATH_SWITCH_REQ(mSGpTR)            (mSGpTR)->ittiMsg.s1ap_path_switch_req
+#define S1AP_PATH_SWITCH_REQ_ACK(mSGpTR)        (mSGpTR)->ittiMsg.s1ap_path_switch_req_ack
 
 #define S1AP_DOWNLINK_NAS(mSGpTR)               (mSGpTR)->ittiMsg.s1ap_downlink_nas
 #define S1AP_INITIAL_CONTEXT_SETUP_REQ(mSGpTR)  (mSGpTR)->ittiMsg.s1ap_initial_context_setup_req
@@ -269,6 +271,17 @@ typedef struct e_rab_setup_s {
   uint32_t gtp_teid;
 } e_rab_setup_t;
 
+typedef struct e_rab_tobeswitched_s {
+  /* Unique e_rab_id for the UE. */
+  uint8_t e_rab_id;
+
+  /* The transport layer address for the IP packets */
+  transport_layer_addr_t sgw_addr;
+
+  /* S-GW Tunnel endpoint identifier */
+  uint32_t gtp_teid;
+} e_rab_tobeswitched_t;
+
 typedef struct e_rab_modify_s {
   /* Unique e_rab_id for the UE. */
   uint8_t e_rab_id;
@@ -480,6 +493,8 @@ typedef struct s1ap_initial_context_setup_req_s {
   /* eNB ue s1ap id as initialized by S1AP layer */
   unsigned eNB_ue_s1ap_id:24;
 
+  uint32_t mme_ue_s1ap_id;
+
   /* UE aggregate maximum bitrate */
   ambr_t ue_ambr;
 
@@ -533,7 +548,7 @@ typedef struct s1ap_e_rab_setup_req_s {
   uint16_t ue_initial_id;
 
   /* MME UE id  */
-  uint16_t mme_ue_s1ap_id;
+  uint32_t mme_ue_s1ap_id;
 
   /* eNB ue s1ap id as initialized by S1AP layer */
   unsigned eNB_ue_s1ap_id:24;
@@ -560,6 +575,58 @@ typedef struct s1ap_e_rab_setup_resp_s {
   e_rab_failed_t e_rabs_failed[S1AP_MAX_E_RAB];
 } s1ap_e_rab_setup_resp_t;
 
+typedef struct s1ap_path_switch_req_s {
+
+  unsigned  eNB_ue_s1ap_id:24;
+
+  /* Number of e_rab setup-ed in the list */
+  uint8_t       nb_of_e_rabs;
+
+  /* list of e_rab setup-ed by RRC layers */
+  e_rab_setup_t e_rabs_tobeswitched[S1AP_MAX_E_RAB];
+
+  /* MME UE id  */
+  uint32_t mme_ue_s1ap_id;
+
+  s1ap_gummei_t ue_gummei;
+
+  uint16_t ue_initial_id;
+
+   /* Security algorithms */
+  security_capabilities_t security_capabilities;
+
+} s1ap_path_switch_req_t;
+
+typedef struct s1ap_path_switch_req_ack_s {
+
+  /* UE id for initial connection to S1AP */
+  uint16_t ue_initial_id;
+
+  unsigned  eNB_ue_s1ap_id:24;
+
+  /* MME UE id  */
+  uint32_t mme_ue_s1ap_id;
+
+  /* UE aggregate maximum bitrate */
+  ambr_t ue_ambr;
+
+  /* Number of e_rab setup-ed in the list */
+  uint8_t       nb_e_rabs_tobeswitched;
+
+  /* list of e_rab to be switched by RRC layers */
+  e_rab_tobeswitched_t e_rabs_tobeswitched[S1AP_MAX_E_RAB];
+
+  /* Number of e_rabs to be released by RRC */
+  uint8_t        nb_e_rabs_tobereleased;
+
+  /* list of e_rabs to be released */
+  e_rab_failed_t e_rabs_tobereleased[S1AP_MAX_E_RAB];
+
+  /* Security key */
+  int     next_hop_chain_count;
+  uint8_t next_security_key[SECURITY_KEY_LENGTH];
+
+} s1ap_path_switch_req_ack_t;
 
 // S1AP --> RRC messages
 typedef struct s1ap_ue_release_command_s {
@@ -582,7 +649,7 @@ typedef struct s1ap_e_rab_modify_req_s {
   uint16_t ue_initial_id;
 
   /* MME UE id  */
-  uint16_t mme_ue_s1ap_id;
+  uint32_t mme_ue_s1ap_id;
 
   /* eNB ue s1ap id as initialized by S1AP layer */
   unsigned eNB_ue_s1ap_id:24;
@@ -615,7 +682,7 @@ typedef struct e_rab_release_s {
 
 typedef struct s1ap_e_rab_release_command_s {
   /* MME UE id  */
-  uint16_t mme_ue_s1ap_id;
+  uint32_t mme_ue_s1ap_id;
 
   /* eNB ue s1ap id as initialized by S1AP layer */
   unsigned eNB_ue_s1ap_id:24;
@@ -633,7 +700,7 @@ typedef struct s1ap_e_rab_release_command_s {
 
 typedef struct s1ap_e_rab_release_resp_s {
   /* MME UE id  */
-  uint16_t mme_ue_s1ap_id;
+  uint32_t mme_ue_s1ap_id;
 
   /* eNB ue s1ap id as initialized by S1AP layer */
   unsigned eNB_ue_s1ap_id:24;

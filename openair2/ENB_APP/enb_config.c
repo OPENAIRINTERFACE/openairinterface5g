@@ -1927,7 +1927,9 @@ int RCconfig_S1(
 
               if (strcmp(*(S1ParamList.paramarray[l][ENB_MME_IP_ADDRESS_PREFERENCE_IDX].strptr), "ipv4") == 0) {
                 S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[l].ipv4 = 1;
+                S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[l].ipv6 = 0;
               } else if (strcmp(*(S1ParamList.paramarray[l][ENB_MME_IP_ADDRESS_PREFERENCE_IDX].strptr), "ipv6") == 0) {
+                S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[l].ipv4 = 0;
                 S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[l].ipv6 = 1;
               } else if (strcmp(*(S1ParamList.paramarray[l][ENB_MME_IP_ADDRESS_PREFERENCE_IDX].strptr), "no") == 0) {
                 S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[l].ipv4 = 1;

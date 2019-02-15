@@ -892,6 +892,19 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
     }
   } // mib != NULL
 
+  if (mobilityControlInfo !=NULL){
+     if ((UE_id = add_new_ue(Mod_idP, CC_idP,
+                             rntiP, -1
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                             ,
+                             -1
+#endif
+                             )) == -1)
+     {
+       LOG_E(MAC, "%s:%d: fatal\n", __FILE__, __LINE__);
+       abort();
+     }
+  }
 
   // SRB2_lchan_config->choice.explicitValue.ul_SpecificParameters->logicalChannelGroup
   if (logicalChannelConfig != NULL) {	// check for eMTC specific things

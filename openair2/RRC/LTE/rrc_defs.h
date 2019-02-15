@@ -344,10 +344,13 @@ typedef enum UE_STATE_e {
 
 typedef enum HO_STATE_e {
   HO_IDLE=0,
-  HO_MEASURMENT,
+  HO_MEASUREMENT,
   HO_PREPARE,
   HO_CMD, // initiated by the src eNB
-  HO_COMPLETE // initiated by the target eNB
+  HO_COMPLETE, // initiated by the target eNB
+  HO_REQUEST,
+  HO_ACK,
+  HO_CONFIGURED
 } HO_STATE_t;
 
 typedef enum SL_TRIGGER_e {
@@ -433,6 +436,7 @@ typedef enum e_rab_satus_e {
   E_RAB_STATUS_NEW,
   E_RAB_STATUS_DONE, // from the eNB perspective
   E_RAB_STATUS_ESTABLISHED, // get the reconfigurationcomplete form UE
+  E_RAB_STATUS_REESTABLISHED, // after HO
   E_RAB_STATUS_FAILED,
   E_RAB_STATUS_TORELEASE  // to release DRB between eNB and UE
 } e_rab_status_t;
@@ -446,14 +450,13 @@ typedef struct e_rab_param_s {
 } __attribute__ ((__packed__)) e_rab_param_t;
 #endif
 
-
-
 /* Intermediate structure for Handover management. Associated per-UE in eNB_RRC_INST */
 typedef struct HANDOVER_INFO_s {
   uint8_t ho_prepare;
   uint8_t ho_complete;
-  uint8_t modid_s; //module_idP of serving cell
-  uint8_t modid_t; //module_idP of target cell
+  HO_STATE_t state; //current state of handover
+  uint32_t modid_s; //module_idP of serving cell
+  uint32_t modid_t; //module_idP of target cell
   uint8_t ueid_s; //UE index in serving cell
   uint8_t ueid_t; //UE index in target cell
   LTE_AS_Config_t as_config; /* these two parameters are taken from 36.331 section 10.2.2: HandoverPreparationInformation-r8-IEs */
@@ -511,6 +514,14 @@ typedef struct HANDOVER_INFO_UE_s {
   uint8_t measFlag;
 } HANDOVER_INFO_UE;
 
+typedef struct rrc_gummei_s {
+  uint16_t mcc;
+  uint16_t mnc;
+  uint8_t  mnc_len;
+  uint8_t  mme_code;
+  uint16_t mme_group_id;
+} rrc_gummei_t;
+
 typedef struct eNB_RRC_UE_s {
   uint8_t                            primaryCC_id;
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
@@ -537,8 +548,10 @@ typedef struct eNB_RRC_UE_s {
   LTE_MeasConfig_t                  *measConfig;
   HANDOVER_INFO                     *handover_info;
   LTE_MeasResults_t                 *measResults;
+  LTE_MobilityControlInfo_t         *mobilityInfo;
 
   LTE_UE_EUTRA_Capability_t         *UE_Capability;
+  int                                UE_Capability_size;
   ImsiMobileIdentity_t               imsi;
 
 #if defined(ENABLE_SECURITY)
@@ -570,7 +583,14 @@ typedef struct eNB_RRC_UE_s {
   /* Information from S1AP initial_context_setup_req */
   uint32_t                           eNB_ue_s1ap_id :24;
 
+  uint32_t                           mme_ue_s1ap_id;
+  rrc_gummei_t                       ue_gummei;
+
   security_capabilities_t            security_capabilities;
+
+  int                                next_hop_chain_count;
+
+  uint8_t                            next_security_key[SECURITY_KEY_LENGTH];
 
   /* Total number of e_rab already setup in the list */
   uint8_t                            setup_e_rabs;
@@ -582,8 +602,12 @@ typedef struct eNB_RRC_UE_s {
   e_rab_param_t                      modify_e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
   /* list of e_rab to be setup by RRC layers */
   e_rab_param_t                      e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
+  /* UE aggregate maximum bitrate */
+  ambr_t ue_ambr;
   //release e_rabs
   uint8_t                            nb_release_of_e_rabs;
+  /* list of e_rab to be released by RRC layers */
+  uint8_t                            e_rabs_tobereleased[NB_RB_MAX];
   e_rab_failed_t                     e_rabs_release_failed[S1AP_MAX_E_RAB];
   // LG: For GTPV1 TUNNELS
   uint32_t                           enb_gtp_teid[S1AP_MAX_E_RAB];
@@ -641,6 +665,8 @@ typedef struct {
   int                                   p_eNB;
   uint32_t                              dl_CarrierFreq;
   uint32_t                              ul_CarrierFreq;
+  uint32_t                              eutra_band;
+  uint32_t                              N_RB_DL;
   uint32_t                              pbch_repetition;
   LTE_BCCH_BCH_Message_t                mib;
   LTE_BCCH_DL_SCH_Message_t             siblock1;

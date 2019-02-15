@@ -812,7 +812,7 @@ int gtpv1u_update_s1u_tunnel(
 }
 
 //-----------------------------------------------------------------------------
-static int gtpv1u_delete_s1u_tunnel(
+int gtpv1u_delete_s1u_tunnel(
   const instance_t                             instanceP,
   const gtpv1u_enb_delete_tunnel_req_t * const req_pP)
 {

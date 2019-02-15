@@ -131,6 +131,54 @@ do {                                            \
 #define M_TMSI_TO_OCTET_STRING   INT32_TO_OCTET_STRING
 #define MME_GID_TO_OCTET_STRING  INT16_TO_OCTET_STRING
 
+#define ENCRALG_TO_BIT_STRING(encralg, bitstring)    \
+    do {                        \
+    (bitstring)->size=2;                \
+    (bitstring)->bits_unused=0;            \
+    (bitstring)->buf=calloc (1, sizeof (uint8_t));    \
+    (bitstring)->buf[0] = (encralg) >> 8;         \
+    (bitstring)->buf[1] = (encralg);        \
+    }while(0)
+
+#define INTPROTALG_TO_BIT_STRING(intprotalg, bitstring)    \
+do {                                \
+    (bitstring)->size=2;                    \
+    (bitstring)->bits_unused=0;                \
+    (bitstring)->buf=calloc (2, sizeof (uint8_t));        \
+    (bitstring)->buf[0] = (intprotalg) >> 8;         \
+    (bitstring)->buf[1] = (intprotalg);            \
+}while(0)
+
+#define KENB_STAR_TO_BIT_STRING(kenbstar, bitstring)    \
+do {                            \
+    (bitstring)->size=32;                \
+    (bitstring)->bits_unused=0;            \
+    (bitstring)->buf= calloc (32, sizeof (uint8_t));\
+    memcpy((bitstring)->buf, kenbstar, 32*sizeof(uint8_t));            \
+}while(0)
+
+#define UEAGMAXBITRTD_TO_ASN_PRIMITIVES(uegmaxbitrtd, asnprimitives)        \
+do {                                         \
+    (asnprimitives)->size=5;                        \
+    (asnprimitives)->buf=calloc (5, sizeof (uint8_t));            \
+    (asnprimitives)->buf[0] = (uegmaxbitrtd) >> 32;                \
+    (asnprimitives)->buf[1] = (uegmaxbitrtd) >> 24;                \
+    (asnprimitives)->buf[2] = (uegmaxbitrtd) >> 16;                \
+    (asnprimitives)->buf[3] = (uegmaxbitrtd) >> 8;                \
+    (asnprimitives)->buf[4] = (uegmaxbitrtd);                \
+ }while(0)
+
+#define UEAGMAXBITRTU_TO_ASN_PRIMITIVES(uegmaxbitrtu, asnprimitives)        \
+do {                                         \
+    (asnprimitives)->size=5;                        \
+    (asnprimitives)->buf=calloc (5, sizeof (uint8_t));            \
+    (asnprimitives)->buf[0] = (uegmaxbitrtu) >> 32;                \
+    (asnprimitives)->buf[1] = (uegmaxbitrtu) >> 24;                \
+    (asnprimitives)->buf[2] = (uegmaxbitrtu) >> 16;                \
+    (asnprimitives)->buf[3] = (uegmaxbitrtu) >> 8;                \
+    (asnprimitives)->buf[4] = (uegmaxbitrtu);                \
+ }while(0)
+
 #define OCTET_STRING_TO_INT8(aSN, x)    \
 do {                                    \
     DevCheck((aSN)->size == 1, (aSN)->size, 0, 0);           \

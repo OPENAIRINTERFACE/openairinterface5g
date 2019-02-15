@@ -892,6 +892,11 @@ nwGtpv1uProcessUdpReq( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
     ret = nwGtpv1uProcessGpdu(thiz, udpData, udpDataLen, peerIp);
     break;
 
+  case NW_GTP_END_MARKER:
+    GTPU_DEBUG("NW_GTP_END_MARKER\n");
+    ret = NW_GTPV1U_OK;
+    break;
+
   default:
     ret = NW_GTPV1U_FAILURE;
     NW_ASSERT(0);

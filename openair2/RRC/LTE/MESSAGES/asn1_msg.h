@@ -247,6 +247,7 @@ do_RRCConnectionReconfiguration(
   LTE_MAC_MainConfig_t                   *mac_MainConfig,
   LTE_MeasGapConfig_t                    *measGapConfig,
   LTE_MobilityControlInfo_t              *mobilityInfo,
+  LTE_SecurityConfigHO_t                 *securityConfigHO,
   struct LTE_MeasConfig__speedStatePars  *speedStatePars,
   LTE_RSRP_Range_t                       *rsrp,
   LTE_C_RNTI_t                           *cba_rnti,
@@ -336,6 +337,10 @@ uint8_t do_DLInformationTransfer(uint8_t Mod_id, uint8_t **buffer, uint8_t trans
 uint8_t do_Paging(uint8_t Mod_id, uint8_t *buffer, ue_paging_identity_t ue_paging_identity, cn_domain_t cn_domain);
 
 uint8_t do_ULInformationTransfer(uint8_t **buffer, uint32_t pdu_length, uint8_t *pdu_buffer);
+
+int do_HandoverPreparation(char *ho_buf, int ho_size, LTE_UE_EUTRA_Capability_t *ue_eutra_cap, int rrc_size);
+
+int do_HandoverCommand(char *ho_buf, int ho_size, char *rrc_buf, int rrc_size);
 
 OAI_UECapability_t *fill_ue_capability(char *LTE_UE_EUTRA_Capability_xer);
 
