@@ -486,6 +486,7 @@ rx_sdu(const module_id_t enb_mod_idP,
               UE_list->UE_template[CC_idP][UE_id].ul_SR = 1;
               UE_list->UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag = 1;
               // break;
+            }
           }
         } else {
           cancel_ra_proc(enb_mod_idP, CC_idP, frameP, current_rnti);
