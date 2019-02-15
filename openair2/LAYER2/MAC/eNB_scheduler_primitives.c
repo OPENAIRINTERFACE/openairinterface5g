@@ -2905,7 +2905,7 @@ allocate_CCEs(int module_idP, int CC_idP, frame_t frameP, sub_frame_t subframeP,
 	"Allocate CCEs subframe %d, test %d : (DL PDU %d, DL DCI %d, UL %d)\n",
 	subframeP, test_onlyP, DL_req->number_pdu, DL_req->number_dci,
 	HI_DCI0_req->number_of_dci);
-  DL_req->number_pdcch_ofdm_symbols = 1;
+  DL_req->number_pdcch_ofdm_symbols = 2;
 
  try_again:
   init_CCE_table(module_idP, CC_idP);

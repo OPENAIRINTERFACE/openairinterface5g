@@ -81,6 +81,7 @@ schedule_SIB1_MBMS(module_id_t module_idP,
 		 frame_t frameP, sub_frame_t subframeP)
 //------------------------------------------------------------------------------
 {
+#ifdef SCHEDULE_SIB1_MBMS
     int8_t bcch_sdu_length;
     int CC_id;
     eNB_MAC_INST *eNB = RC.mac[module_idP];
@@ -299,6 +300,7 @@ schedule_SIB1_MBMS(module_id_t module_idP,
 		  frameP, CC_id, bcch_sdu_length);
 	}
     }
+#endif
 }
 
 
@@ -924,7 +926,7 @@ schedule_SI_MBMS(module_id_t module_idP, frame_t frameP,
 			  "[eNB] Frame %d : Scheduling BCCH->DLSCH (TDD) for CC_id %d SI %d bytes (mcs %d, rb 3)\n",
 			  frameP, CC_id, bcch_sdu_length, mcs);
 		} else {
-		    LOG_D(MAC, "[eNB] Frame %d : Scheduling BCCH->DLSCH (FDD) for CC_id %d SI %d bytes (mcs %d, rb 3)\n", frameP, CC_id, bcch_sdu_length, mcs);
+		    LOG_D(MAC, "[eNB] Frame %d : Scheduling BCCH-MBMS->DLSCH (FDD) for CC_id %d SI %d bytes (mcs %d, rb 3)\n", frameP, CC_id, bcch_sdu_length, mcs);
 		}
 
 
