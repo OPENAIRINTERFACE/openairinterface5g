@@ -599,7 +599,7 @@ uint8_t do_SIB1_MBMS(rrc_eNB_carrier_data_t *carrier,
 
 
   //if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-    //xer_fprint(stdout, &asn_DEF_LTE_BCCH_DL_SCH_Message_MBMS, (void *)bcch_message);
+    xer_fprint(stdout, &asn_DEF_LTE_BCCH_DL_SCH_Message_MBMS, (void *)bcch_message);
   //}
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_BCCH_DL_SCH_Message_MBMS,

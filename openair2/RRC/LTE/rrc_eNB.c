@@ -155,6 +155,9 @@ init_SI(
 #endif
   LOG_D(RRC,"%s()\n\n\n\n",__FUNCTION__);
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].MIB = (uint8_t *) malloc16(4);
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].MIB_FeMBMS = (uint8_t *) malloc16(4);
+#endif
   // copy basic parameters
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].physCellId      = configuration->Nid_cell[CC_id];
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB           = configuration->nb_antenna_ports[CC_id];
@@ -180,7 +183,100 @@ init_SI(
 	 ,configuration->schedulingInfoSIB1_BR_r13[CC_id]
 #endif
 	 );
+
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  LOG_I(RRC, "Configuring MIB FeMBMS (N_RB_DL %d)\n",
+        (int)configuration->N_RB_DL[CC_id]);
+  do_MIB_FeMBMS(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],
+#ifdef ENABLE_ITTI
+         configuration->N_RB_DL[CC_id],
+         0 //additionalNonMBSFN
+#else
+         50,0
+#endif
+         ,0);
+#endif
   
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1_MBMS = 0;
+  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1_MBMS = (uint8_t *) malloc16(32);
+  AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1_MBMS!=NULL,PROTOCOL_RRC_CTXT_FMT" init_SI: FATAL, no memory for SIB1_MBMS allocated\n",
+              PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
+  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1_MBMS = do_SIB1_MBMS(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],ctxt_pP->module_id,CC_id
+#if defined(ENABLE_ITTI)
+      , configuration
+#endif
+									     );
+
+ LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" Contents of SIB1-MBMS\n",
+          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP)
+	);
+   LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB1-MBMS freqBandIndicator_r14 %d\n",
+          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+		RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_MBMS->freqBandIndicator_r14
+	);
+
+   for (i = 0; i < RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_MBMS->schedulingInfoList_MBMS_r14.list.count; i++) {
+   	LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB1-MBMS contents for Scheduling Info List %d/%d(partial)\n",
+            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+            i,
+            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_MBMS->schedulingInfoList_MBMS_r14.list.count);
+   }
+   LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB1-MBMS SIB13-r14 contents for MBSFN subframe allocation (partial)\n",
+          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP)
+	);
+
+    for (i = 0; i < RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_MBMS->systemInformationBlockType13_r14->mbsfn_AreaInfoList_r9.list.count; i++) {
+	LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB1-MBMS SIB13-r14 contents for MBSFN sync area %d/%d (partial)\n",
+            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+            i,
+            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_MBMS->systemInformationBlockType13_r14->mbsfn_AreaInfoList_r9.list.count);
+	LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB1-MBMS MCCH Repetition Period: %ld (just index number, not real value)\n",
+            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_MBMS->systemInformationBlockType13_r14->mbsfn_AreaInfoList_r9.list.array[i]->mcch_Config_r9.mcch_RepetitionPeriod_r9);
+        LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB1-MBMS MCCH Offset: %ld\n",
+            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_MBMS->systemInformationBlockType13_r14->mbsfn_AreaInfoList_r9.list.array[i]->mcch_Config_r9.mcch_Offset_r9);
+        LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB1-MBMS MCCH Modification Period: %ld\n",
+            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_MBMS->systemInformationBlockType13_r14->mbsfn_AreaInfoList_r9.list.array[i]->mcch_Config_r9.mcch_ModificationPeriod_r9);
+        LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB1-MBMS MCCH Signalling MCS: %ld\n",
+            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_MBMS->systemInformationBlockType13_r14->mbsfn_AreaInfoList_r9.list.array[i]->mcch_Config_r9.signallingMCS_r9);
+	LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB1-MBMS SIB13 sf_AllocInfo is = %s\n",
+            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+            i,
+            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_MBMS->systemInformationBlockType13_r14->mbsfn_AreaInfoList_r9.list.array[i]->mcch_Config_r9.sf_AllocInfo_r9.buf);
+
+        if(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_MBMS->systemInformationBlockType13_r14->mbsfn_AreaInfoList_r9.list.array[i]->ext1) {
+	LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB1-MBMS Subcarrier Spacing MBMS: %s\n",
+            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+            (*RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_MBMS->systemInformationBlockType13_r14->mbsfn_AreaInfoList_r9.list.array[i]->ext1->subcarrierSpacingMBMS_r14 == LTE_MBSFN_AreaInfo_r9__ext1__subcarrierSpacingMBMS_r14_khz_1dot25 ? "khz_1dot25": "khz_7dot5"));
+        }
+    }
+
+
+
+    if(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_MBMS->nonMBSFN_SubframeConfig_r14) {
+    	LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB1-MBMS non MBSFN Subframe Config radioFrameAllocationPeriod-r14 %d\n",
+          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+		RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_MBMS->nonMBSFN_SubframeConfig_r14->radioFrameAllocationPeriod_r14
+	);
+ 	LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB1-MBMS non MBSFN Subframe Config radioFrameAllocationOffset-r14 %d\n",
+          PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+		RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_MBMS->nonMBSFN_SubframeConfig_r14->radioFrameAllocationOffset_r14
+	);
+	LOG_I(RRC, PROTOCOL_RRC_CTXT_FMT" SIB1-MBMS non MBSFN Subframe Config subframeAllocation-r14 is = %s\n",
+            PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
+            RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sib1_MBMS->nonMBSFN_SubframeConfig_r14->subframeAllocation_r14.buf);
+
+
+
+    }
+
+
+  //AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1 != 255,"FATAL, RC.rrc[enb_mod_idP].carrier[CC_id].sizeof_SIB1 == 255");
+#endif
 
 
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1 = 0;
