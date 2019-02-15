@@ -37,7 +37,7 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
 #if DISABLE_LOG_X
   printf("Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB_DL, Ncp);
 #else
-  //LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB_DL, Ncp);
+  LOG_I(PHY,"Initializing frame parms for mu %d, N_RB %d, Ncp %d\n",mu, N_RB_DL, Ncp);
 #endif
 
   if (Ncp == NFAPI_CP_EXTENDED)
