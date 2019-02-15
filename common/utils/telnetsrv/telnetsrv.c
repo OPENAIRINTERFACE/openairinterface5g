@@ -58,7 +58,7 @@
 
 #include "telnetsrv_phycmd.h"
 #include "telnetsrv_proccmd.h"
-static char *telnet_defstatmod[] = {"softmodem","phy","loader"};
+static char *telnet_defstatmod[] = {"softmodem","phy","loader","measur"};
 static telnetsrv_params_t telnetparams;
 #define TELNETSRV_LISTENADDR 0
 #define TELNETSRV_LISTENPORT 1
@@ -500,23 +500,32 @@ int process_command(char *buf) {
       }/* else */
     }/* strncmp: module name test */
     else if (strncasecmp(modulename,"loop",4) == 0 ) {
-      int lc;
       int f = fcntl(telnetparams.new_socket,F_GETFL);
-      fcntl (telnetparams.new_socket, F_SETFL, O_NONBLOCK | f);
+      int f1=fcntl (telnetparams.new_socket, F_SETFL, O_NONBLOCK | f);
 
-      for(lc=0; lc<telnetparams.loopcount; lc++) {
+      if (f<0 || f1 <0) {
+        client_printf( " Loop won't be cancelable: %s\n",strerror(errno) );
+      }
+
+      for(int lc=0; lc<telnetparams.loopcount; lc++) {
         char dummybuff[20];
         char tbuff[64];
-        int rs;
         client_printf(CSI "1J" CSI "1;10H         " STDFMT "%s %i/%i\n",
                       get_time(tbuff,sizeof(tbuff)),lc,telnetparams.loopcount );
         process_command(bufbck+strlen("loop")+1);
-        usleep(telnetparams.loopdelay * 1000);
-        rs = read(telnetparams.new_socket,dummybuff,sizeof(dummybuff));
+        errno=0;
+        int rs = read(telnetparams.new_socket,dummybuff,sizeof(dummybuff));
 
-        if ( rs > 0 ) {
+        if (telnetparams.telnetdbg > 0)
+          client_printf("Received \"%s\" status %d, errno %s while running loop\n",dummybuff,rs,strerror(errno));
+
+        if ( errno != EAGAIN && errno != EWOULDBLOCK) {
+          client_printf( STDFMT " Loop canceled, iteration %i/%i\n",lc,telnetparams.loopcount );
+          lc=telnetparams.loopcount;
           break;
         }
+
+        usleep(telnetparams.loopdelay * 1000);
       }
 
       fcntl (telnetparams.new_socket, F_SETFL, f);
