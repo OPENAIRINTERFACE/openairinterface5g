@@ -155,16 +155,15 @@ init_SI(
 #endif
   LOG_D(RRC,"%s()\n\n\n\n",__FUNCTION__);
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].MIB = (uint8_t *) malloc16(4);
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].MIB_FeMBMS = (uint8_t *) malloc16(4);
-#endif
   // copy basic parameters
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].physCellId      = configuration->Nid_cell[CC_id];
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB           = configuration->nb_antenna_ports[CC_id];
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Ncp             = configuration->prefix_type[CC_id];
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].dl_CarrierFreq  = configuration->downlink_frequency[CC_id];
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].ul_CarrierFreq  = configuration->downlink_frequency[CC_id]+ configuration->uplink_frequency_offset[CC_id];
+
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+if(configuration->radioresourceconfig[CC_id].mbms_dedicated_serving_cell == TRUE){
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].pbch_repetition = configuration->pbch_repetition[CC_id];
 #endif
   LOG_I(RRC, "Configuring MIB (N_RB_DL %d,phich_Resource %d,phich_Duration %d)\n", 
@@ -187,6 +186,7 @@ init_SI(
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   LOG_I(RRC, "Configuring MIB FeMBMS (N_RB_DL %d)\n",
         (int)configuration->N_RB_DL[CC_id]);
+  RC.rrc[ctxt_pP->module_id]->carrier[CC_id].MIB_FeMBMS = (uint8_t *) malloc16(4);
   do_MIB_FeMBMS(&RC.rrc[ctxt_pP->module_id]->carrier[CC_id],
 #ifdef ENABLE_ITTI
          configuration->N_RB_DL[CC_id],
@@ -195,9 +195,7 @@ init_SI(
          50,0
 #endif
          ,0);
-#endif
   
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1_MBMS = 0;
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1_MBMS = (uint8_t *) malloc16(32);
   AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1_MBMS!=NULL,PROTOCOL_RRC_CTXT_FMT" init_SI: FATAL, no memory for SIB1_MBMS allocated\n",
@@ -276,7 +274,9 @@ init_SI(
 
 
   //AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1 != 255,"FATAL, RC.rrc[enb_mod_idP].carrier[CC_id].sizeof_SIB1 == 255");
+}
 #endif
+
 
 
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1 = 0;

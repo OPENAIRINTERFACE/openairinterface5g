@@ -365,6 +365,10 @@ typedef enum {
 #define ENB_CONFIG_STRING_UETIMERS_N311                                 "ue_TimersAndConstants_n311"
 #define ENB_CONFIG_STRING_UE_TRANSMISSION_MODE                          "ue_TransmissionMode"
 #define ENB_CONFIG_STRING_UE_MULTIPLE_MAX                               "ue_multiple_max"
+//SIB1-MBMS 
+#define ENB_CONFIG_STRING_MBMS_DEDICATED_SERVING_CELL  			"mbms_dedicated_serving_cell"
+
+
 
 #define ENB_CONFIG_STRING_PDSCH_MAX_NUM_REPETITION_CE_MODE_A_R13        "pdsch_maxNumRepetitionCEmodeA_r13"
 #define ENB_CONFIG_STRING_PDSCH_MAX_NUM_REPETITION_CE_MODE_B_R13        "pdsch_maxNumRepetitionCEmodeB_r13"
@@ -417,7 +421,6 @@ typedef enum {
 #define ENB_CONFIG_STRING_DISCRXPOOLPS_RC_SFBITMAP_CHOICE_BS_BUF              "DISCRXPOOLPS_ResourceConfig_subframeBitmap_choice_bs_buf"
 #define ENB_CONFIG_STRING_DISCRXPOOLPS_RC_SFBITMAP_CHOICE_BS_SIZE             "DISCRXPOOLPS_ResourceConfig_subframeBitmap_choice_bs_size"
 #define ENB_CONFIG_STRING_DISCRXPOOLPS_RC_SFBITMAP_CHOICE_BS_ASN_BITS_UNUSED  "DISCRXPOOLPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused"
-
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                     component carriers configuration parameters                                                                                                     */
@@ -497,6 +500,7 @@ typedef struct ccparams_lte_s {
   int32_t           ue_TimersAndConstants_n311;
   int32_t           ue_TransmissionMode;
   int32_t           ue_multiple_max;
+  char             *mbms_dedicated_serving_cell;
   int32_t           srb1_timer_poll_retransmit;
   int32_t           srb1_timer_reordering;
   int32_t           srb1_timer_status_prohibit;
@@ -612,6 +616,7 @@ typedef struct ccparams_lte_s {
                           { .s5= {NULL }} ,						     \
                           { .s5= {NULL }} ,						     \
                           { .s5= {NULL }} ,						     \
+			  { .s5= {NULL }} ,				\
 			  { .s5= {NULL }}				\
 }
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
@@ -688,7 +693,8 @@ typedef struct ccparams_lte_s {
 {ENB_CONFIG_STRING_UETIMERS_N310,                                NULL,   0,           iptr:&ccparams.ue_TimersAndConstants_n310,               defintval:20,              TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_UETIMERS_N311,                                NULL,   0,           iptr:&ccparams.ue_TimersAndConstants_n311,               defintval:1,               TYPE_UINT,       0},  \
 {ENB_CONFIG_STRING_UE_TRANSMISSION_MODE,                         NULL,   0,           iptr:&ccparams.ue_TransmissionMode,                      defintval:1,               TYPE_UINT,       0},  \
-{ENB_CONFIG_STRING_UE_MULTIPLE_MAX,                              NULL,   0,           iptr:&ccparams.ue_multiple_max,                          defintval:4,               TYPE_UINT,       0}  \
+{ENB_CONFIG_STRING_UE_MULTIPLE_MAX,                              NULL,   0,           iptr:&ccparams.ue_multiple_max,                          defintval:4,               TYPE_UINT,       0},  \
+{ENB_CONFIG_STRING_MBMS_DEDICATED_SERVING_CELL,                  NULL,   0,           iptr:&ccparams.mbms_dedicated_serving_cell,  defstrval:"DISABLE",       TYPE_STRING,       0}  \
 }
 
 
@@ -761,6 +767,7 @@ typedef struct ccparams_lte_s {
 #define ENB_CONFIG_UETIMERS_N310_IDX			     65
 #define ENB_CONFIG_UETIMERS_N311_IDX			     66
 #define ENB_CONFIG_UE_TRANSMISSION_MODE_IDX		     67
+#define ENB_CONFIG_MBMS_DEDICATED_SERVING_CELL_IDX	     68
 
 /*------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /* SRB1 configuration parameters section name */

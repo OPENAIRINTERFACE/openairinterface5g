@@ -1351,6 +1351,25 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 
             RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_multiple_max= ccparams_lte.ue_multiple_max;
 
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+
+            if (!ccparams_lte.mbms_dedicated_serving_cell)
+              AssertFatal (0,
+                           "Failed to parse eNB configuration file %s, enb %d define %s: TRUE,FALSE!\n",
+                           RC.config_file_name, i, ENB_CONFIG_STRING_MBMS_DEDICATED_SERVING_CELL);
+            else if (strcmp(ccparams_lte.mbms_dedicated_serving_cell, "ENABLE") == 0) {
+              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].mbms_dedicated_serving_cell = TRUE;
+            } else  if (strcmp(ccparams_lte.mbms_dedicated_serving_cell, "DISABLE") == 0) {
+              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].mbms_dedicated_serving_cell  = FALSE;
+            } else {
+              AssertFatal (0,
+                           "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for mbms_dedicated_serving_cell choice: TRUE or FALSE !\n",
+                           RC.config_file_name, i, ccparams_lte.mbms_dedicated_serving_cell);
+            }
+
+#endif
+
+
             switch (ccparams_lte.N_RB_DL) {
 	    case 25:
 	      if ((ccparams_lte.ue_multiple_max < 1) || 
