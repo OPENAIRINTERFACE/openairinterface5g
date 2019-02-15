@@ -1401,16 +1401,12 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
     }
   }
 
-  SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[next_xid];
-  DRB_configList2 = &ue_context_pP->ue_context.DRB_configList2[next_xid];
+  SRB_configList2 = &(ue_context_pP->ue_context.SRB_configList2[next_xid]);
+  DRB_configList2 = &(ue_context_pP->ue_context.DRB_configList2[next_xid]);
 
-  if(SRB_configList2!=NULL) {
-    if (*SRB_configList2) {
-      free(*SRB_configList2);
-      LOG_D(RRC, "free(ue_context_pP->ue_context.SRB_configList2[%d])\n", next_xid);
-    }
-  } else {
-    LOG_E(RRC, "SRB_configList2 is null\n");
+  if (*SRB_configList2) {
+    free(*SRB_configList2);
+    LOG_D(RRC, "free(ue_context_pP->ue_context.SRB_configList2[%d])\n", next_xid);
   }
 
   *SRB_configList2 = CALLOC(1, sizeof(**SRB_configList2));
@@ -1428,13 +1424,9 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
     LOG_W(RRC,"SRB2 configuration does not exist in SRB configuration list\n");
   }
 
-  if(DRB_configList2!=NULL) {
-    if (*DRB_configList2) {
-      free(*DRB_configList2);
-      LOG_D(RRC, "free(ue_context_pP->ue_context.DRB_configList2[%d])\n", next_xid);
-    }
-  } else {
-    LOG_E(RRC, "DRB_configList2 is null\n");
+  if (*DRB_configList2) {
+    free(*DRB_configList2);
+    LOG_D(RRC, "free(ue_context_pP->ue_context.DRB_configList2[%d])\n", next_xid);
   }
 
   *DRB_configList2 = CALLOC(1, sizeof(**DRB_configList2));

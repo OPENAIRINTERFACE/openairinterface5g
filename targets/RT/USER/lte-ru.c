@@ -1456,7 +1456,7 @@ int setup_RU_buffers(RU_t *ru) {
     frame_parms = &ru->frame_parms;
     printf("setup_RU_buffers: frame_parms = %p\n",frame_parms);
   } else {
-    printf("RU[%d] not initialized\n", ru->idx);
+    printf("RU not initialized (NULL pointer)\n");
     return(-1);
   }
   
@@ -2469,8 +2469,8 @@ void configure_ru(int idx,
 
 
   if (capabilities->FH_fmt < MAX_FH_FMTs) LOG_I(PHY, "RU FH options %s\n",rru_format_options[capabilities->FH_fmt]);
-
-  AssertFatal((ret=check_capabilities(ru,capabilities)) == 0,
+  ret=check_capabilities(ru,capabilities);
+  AssertFatal((ret == 0),
 	      "Cannot configure RRU %d, check_capabilities returned %d\n", idx,ret);
   // take antenna capabilities of RRU
   ru->nb_tx                      = capabilities->nb_tx[0];

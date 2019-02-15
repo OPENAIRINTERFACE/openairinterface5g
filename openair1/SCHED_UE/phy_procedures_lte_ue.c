@@ -1900,16 +1900,6 @@ void ue_pucch_procedures(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uin
   uint8_t isShortenPucch = (pSoundingrs_ul_config_dedicated->srsCellSubframe && frame_parms->soundingrs_ul_config_common.ackNackSRS_SimultaneousTransmission);
   bundling_flag = ue->pucch_config_dedicated[eNB_id].tdd_AckNackFeedbackMode;
 
-  if ((frame_parms->frame_type==FDD) ||
-      (bundling_flag==bundling)    ||
-      ((frame_parms->frame_type==TDD)&&(frame_parms->tdd_config==1)&&((subframe_tx!=2)||(subframe_tx!=7)))) {
-    format = pucch_format1a;
-    //    LOG_D(PHY,"[UE] PUCCH 1a\n");
-  } else {
-    format = pucch_format1b;
-    //    LOG_D(PHY,"[UE] PUCCH 1b\n");
-  }
-
   // Part - I
   // Collect feedback that should be transmitted at this subframe
   // - SR
@@ -3000,7 +2990,7 @@ void ue_pdsch_procedures(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc, int eNB_id, PDSC
   int i_mod,eNB_id_i,dual_stream_UE;
   int first_symbol_flag=0;
 
-  if (dlsch0->active == 0)
+  if (dlsch0 && dlsch0->active == 0)
     return;
 
   for (m=s0; m<=s1; m++) {
@@ -4209,7 +4199,7 @@ int phy_procedures_slot_parallelization_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *pr
     ue->dlsch_ra[eNB_id]->active = 0;
   }
 
-  if (LOG_DEBUGFLAG(UE_TIMING)
+  if (LOG_DEBUGFLAG(UE_TIMING)) {
       stop_meas(&ue->dlsch_procedures_stat[ue->current_thread_id[subframe_rx]]);
       LOG_I(PHY, "[AbsSFN %d.%d] Channel Decoder: %5.2f \n",frame_rx,subframe_rx,ue->dlsch_procedures_stat[ue->current_thread_id[subframe_rx]].p_time/(cpuf*1000.0));
 }

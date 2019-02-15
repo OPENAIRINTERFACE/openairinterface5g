@@ -108,12 +108,9 @@ int NAS_RALconnect(void)
 void IAL_NAS_ioctl_init(int inst)
 //---------------------------------------------------------------------------
 {
-
   struct nas_msg_statistic_reply *msgrep;
   int err;
-
   sprintf(gifr.name, "oai%d",inst);
-
   // Get an UDP IPv6 socket ??
   fd=socket(AF_INET6, SOCK_DGRAM, 0);
 
@@ -123,7 +120,6 @@ void IAL_NAS_ioctl_init(int inst)
   }
 
   sprintf(gifr.name, "oai%d",inst);
-
   gifr.type =  NAS_MSG_STATISTIC_REQUEST;
   memset ((void *)dummy_buffer,0,800);
   gifr.msg= &(dummy_buffer[0]);
@@ -139,8 +135,6 @@ void IAL_NAS_ioctl_init(int inst)
   printf("tx_bytes = %u, rx_bytes = %u\n", msgrep->tx_bytes, msgrep->rx_bytes);
   printf("tx_errors = %u, rx_errors = %u\n", msgrep->tx_errors, msgrep->rx_errors);
   printf("tx_dropped = %u, rx_dropped = %u\n", msgrep->tx_dropped, msgrep->rx_dropped);
-
-
 }
 
 
@@ -160,11 +154,7 @@ int main(int argc,char **argv)
   in_addr_t saddr_ipv4 = 0,daddr_ipv4 = 0;
   struct in6_addr saddr_ipv6,daddr_ipv6;
   unsigned int mpls_outlabel=0,mpls_inlabel=0;
-
   char addr_str[46];
-
-
-
   // scan options
   rb[0] = '\0';
   cx[0] = '\0';
@@ -174,88 +164,86 @@ int main(int argc,char **argv)
 
   while ((c = getopt (argc, argv, "adr:i:c:l:m:s:t:x:y:z:")) != -1)
     switch (c) {
-    case 'a':
-      action = ADD_RB;
-      break;
+      case 'a':
+        action = ADD_RB;
+        break;
 
-    case 'd':
-      action = DEL_RB;
-      break;
+      case 'd':
+        action = DEL_RB;
+        break;
 
-    case 'r':
-      strcpy(rb,optarg);
-      rbset = 1;
-      break;
+      case 'r':
+        strcpy(rb,optarg);
+        rbset = 1;
+        break;
 
-    case 'i':
-      strcpy(inst,optarg);
-      instset = 1;
-      break;
+      case 'i':
+        strcpy(inst,optarg);
+        instset = 1;
+        break;
 
-    case 'c':
-      strcpy(cx,optarg);
-      cxset = 1;
-      break;
+      case 'c':
+        strcpy(cx,optarg);
+        cxset = 1;
+        break;
 
-    case 'l':
-      strcpy(mpls_outgoinglabel,optarg);
-      mpls_outlabelset=1;
-      break;
+      case 'l':
+        strcpy(mpls_outgoinglabel,optarg);
+        mpls_outlabelset=1;
+        break;
 
-    case 'm':
-      strcpy(mpls_incominglabel,optarg);
-      mpls_inlabelset=1;
-      break;
+      case 'm':
+        strcpy(mpls_incominglabel,optarg);
+        mpls_inlabelset=1;
+        break;
 
-    case 's': {
-      struct in_addr a;
-      inet_aton(optarg,&a);
-      saddr_ipv4 = a.s_addr;
-      saddr_ipv4set = 1;
-      break;
+      case 's': {
+        struct in_addr a;
+        inet_aton(optarg,&a);
+        saddr_ipv4 = a.s_addr;
+        saddr_ipv4set = 1;
+        break;
+      }
+
+      case 't': {
+        struct in_addr a;
+        inet_aton(optarg,&a);
+        daddr_ipv4 = a.s_addr;
+        daddr_ipv4set = 1;
+        break;
+      }
+
+      case 'x':
+        printf("IPv6: %s\n",optarg);
+        inet_pton(AF_INET6,optarg,(void *)&saddr_ipv6);
+        saddr_ipv6set = 1;
+        break;
+
+      case 'y':
+        inet_pton(AF_INET6,optarg,(void *)&daddr_ipv6);
+        daddr_ipv6set = 1;
+        break;
+
+      case 'z':
+        dscpset=1;
+        strcpy(dscp,optarg);
+        break;
+
+      case '?':
+        if (isprint (optopt))
+          fprintf (stderr, "Unknown option `-%c'.\n", optopt);
+        else
+          fprintf (stderr,
+                   "Unknown option character `\\x%x'.\n",
+                   optopt);
+
+        return 1;
+
+      default:
+        abort ();
     }
-
-    case 't': {
-      struct in_addr a;
-      inet_aton(optarg,&a);
-      daddr_ipv4 = a.s_addr;
-      daddr_ipv4set = 1;
-      break;
-    }
-
-    case 'x':
-      printf("IPv6: %s\n",optarg);
-      inet_pton(AF_INET6,optarg,(void *)&saddr_ipv6);
-      saddr_ipv6set = 1;
-      break;
-
-    case 'y':
-      inet_pton(AF_INET6,optarg,(void *)&daddr_ipv6);
-      daddr_ipv6set = 1;
-      break;
-
-    case 'z':
-      dscpset=1;
-      strcpy(dscp,optarg);
-      break;
-
-    case '?':
-      if (isprint (optopt))
-        fprintf (stderr, "Unknown option `-%c'.\n", optopt);
-      else
-        fprintf (stderr,
-                 "Unknown option character `\\x%x'.\n",
-                 optopt);
-
-      return 1;
-
-    default:
-      abort ();
-    }
-
 
   printf ("action = %d, rb = %s,cx = %s\n", action, rb, cx);
-
 
   if (rbset==0) {
     printf("ERROR: Specify a RAB id!!\n");
@@ -293,31 +281,27 @@ int main(int argc,char **argv)
   }
 
   IAL_NAS_ioctl_init(atoi(inst));
-
   msgreq = (struct nas_msg_rb_establishment_request *)(gifr.msg);
   msgreq->rab_id = atoi(rb);
   msgreq->lcr = atoi(cx);
   msgreq->qos = 0;
 
-
   if (action == ADD_RB) {
     gifr.type =  NAS_MSG_RB_ESTABLISHMENT_REQUEST;
     err=ioctl(fd, NAS_IOCTL_RRM, &gifr);
-    if (err == -1) perror("ioctl");
 
+    if (err == -1) perror("ioctl");
 
     if (saddr_ipv4set == 1) {
       msgreq_class = (struct nas_msg_class_add_request *)(gifr.msg);
       msgreq_class->rab_id = atoi(rb);
       msgreq_class->lcr = atoi(cx);
       msgreq_class->version = 4;
-
       msgreq_class->classref = 0 + (msgreq_class->lcr<<3);
       msgreq_class->dir = NAS_DIRECTION_SEND;
       msgreq_class->fct = NAS_FCT_QOS_SEND;
       msgreq_class->saddr.ipv4 = saddr_ipv4;
       msgreq_class->daddr.ipv4 = daddr_ipv4;
-
       // TO BE FIXED WHEN WE CAN SPECIFY A PROTOCOL-based rule
       msgreq_class->protocol = NAS_PROTOCOL_DEFAULT;
 
@@ -326,21 +310,20 @@ int main(int argc,char **argv)
       else
         msgreq_class->dscp=atoi(dscp);
 
-
       gifr.type =  NAS_MSG_CLASS_ADD_REQUEST;
       err=ioctl(fd, NAS_IOCTL_RRM, &gifr);
+
       if (err == -1) perror("ioctl");
+
       msgreq_class->rab_id = atoi(rb);
       msgreq_class->lcr = atoi(cx);
-
       msgreq_class->classref = 1+(msgreq_class->lcr<<3);
       msgreq_class->dir = NAS_DIRECTION_RECEIVE;
-
-
       msgreq_class->daddr.ipv4 = saddr_ipv4;
       msgreq_class->saddr.ipv4 = daddr_ipv4;
       gifr.type =  NAS_MSG_CLASS_ADD_REQUEST;
       err=ioctl(fd, NAS_IOCTL_RRM, &gifr);
+
       if (err == -1) perror("ioctl");
     }
 
@@ -358,38 +341,32 @@ int main(int argc,char **argv)
       msgreq_class->classref = 2+(msgreq_class->lcr<<3);
       msgreq_class->dir=NAS_DIRECTION_SEND;
       msgreq_class->fct=NAS_FCT_QOS_SEND;
-
       // TO BE FIXED WHEN WE CAN SPECIFY A PROTOCOL-based rule
       msgreq_class->protocol = NAS_PROTOCOL_DEFAULT;
-
       memcpy(&msgreq_class->saddr.ipv6,&saddr_ipv6,16);
       memcpy(&msgreq_class->daddr.ipv6,&daddr_ipv6,16);
-
       inet_ntop(AF_INET6,(void *)&saddr_ipv6,addr_str,46);
       printf("IPV6: Source %s\n",addr_str);
       inet_ntop(AF_INET6,(void *)&daddr_ipv6,addr_str,46);
       printf("IPV6: Dest %s\n",addr_str);
-
       gifr.type =  NAS_MSG_CLASS_ADD_REQUEST;
       err=ioctl(fd, NAS_IOCTL_RRM, &gifr);
+
       if (err == -1) perror("ioctl");
 
       msgreq_class->rab_id = atoi(rb);
       msgreq_class->lcr = atoi(cx);
-
       msgreq_class->classref = 3+(msgreq_class->lcr<<3);
       msgreq_class->dir=NAS_DIRECTION_RECEIVE;
       memcpy(&msgreq_class->daddr.ipv6,&saddr_ipv6,16);
       memcpy(&msgreq_class->saddr.ipv6,&daddr_ipv6,16);
       gifr.type =  NAS_MSG_CLASS_ADD_REQUEST;
       err=ioctl(fd, NAS_IOCTL_RRM, &gifr);
+
       if (err == -1) perror("ioctl");
-
-
     }
 
     if (mpls_inlabelset == 1) {
-
       msgreq_class = (struct nas_msg_class_add_request *)(gifr.msg);
       msgreq_class->rab_id = atoi(rb);
       msgreq_class->lcr = atoi(cx);
@@ -403,50 +380,34 @@ int main(int argc,char **argv)
       msgreq_class->classref = 4 + (msgreq_class->lcr<<3);
       msgreq_class->dir=NAS_DIRECTION_SEND;
       msgreq_class->fct=NAS_FCT_QOS_SEND;
-
       // TO BE FIXED WHEN WE CAN SPECIFY A PROTOCOL-based rule
       msgreq_class->protocol = NAS_PROTOCOL_DEFAULT;
-
       mpls_outlabel = atoi(mpls_outgoinglabel);
-
-      printf("Setting MPLS outlabel %d with exp %d\n",mpls_outlabel,msgreq_class->dscp);
-
+      printf("Setting MPLS outlabel %u with exp %d\n",mpls_outlabel,msgreq_class->dscp);
       msgreq_class->daddr.mpls_label = mpls_outlabel;
-
       gifr.type =  NAS_MSG_CLASS_ADD_REQUEST;
       err=ioctl(fd, NAS_IOCTL_RRM, &gifr);
+
       if (err == -1) perror("ioctl");
 
       msgreq_class->rab_id = atoi(rb);
       msgreq_class->lcr = atoi(cx);
-
       msgreq_class->classref = 5 + (msgreq_class->lcr<<3);
       msgreq_class->dir=NAS_DIRECTION_RECEIVE;
-
-
       // TO BE FIXED WHEN WE CAN SPECIFY A PROTOCOL-based rule
       msgreq_class->protocol = NAS_PROTOCOL_DEFAULT;
-
       mpls_inlabel  = atoi(mpls_incominglabel);
-
-      printf("Setting MPLS inlabel %d with exp %d\n",mpls_inlabel,msgreq_class->dscp);
-
+      printf("Setting MPLS inlabel %u with exp %d\n",mpls_inlabel,msgreq_class->dscp);
       msgreq_class->daddr.mpls_label = mpls_inlabel;
-
       gifr.type =  NAS_MSG_CLASS_ADD_REQUEST;
       err=ioctl(fd, NAS_IOCTL_RRM, &gifr);
+
       if (err == -1) perror("ioctl");
-
-
     }
   } else if (action == DEL_RB) {
     gifr.type =  NAS_MSG_RB_RELEASE_REQUEST;
     err=ioctl(fd, NAS_IOCTL_RRM, &gifr);
+
     if (err == -1) perror("ioctl");
   }
-
-
-
-
-
 }

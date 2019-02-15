@@ -166,7 +166,8 @@ int input_text(char *file,char *sdu)
     printf("byte %d: %x (%s%s)\n",b_ind,byte,binary_table[byte>>4],binary_table[byte&0xf]);
     b_ind++;
   }
-
+  if (fd)
+    fclose(fd);
   return(b_ind);
 }
 
@@ -220,14 +221,14 @@ int parse_args(int argc, char** argv, args_t* args)
     case 'I':
       strcpy(args->input1_file,optarg);
       args->input1_sdu_len = input_text(args->input1_file,args->input1_sdu);
-      printf("Got sdu1 of length %d bytes\n",args->input1_sdu_len);
+      printf("Got sdu1 of length %u bytes\n",args->input1_sdu_len);
       args->input1_sdu_flag=1;
       break;
 
     case 'J':
       strcpy(args->input2_file,optarg);
       args->input2_sdu_len = input_text(args->input2_file,args->input2_sdu);
-      printf("Got sdu2 of length %d bytes\n",args->input2_sdu_len);
+      printf("Got sdu2 of length %u bytes\n",args->input2_sdu_len);
       args->input2_sdu_flag=1;
       break;
 
@@ -530,7 +531,8 @@ int main (int argc, char **argv)
   if (args.input_sib == 0) {
     openair_rrc_lite_eNB_init(0);
   } else {
-    printf("Got SI from files (%d,%d,%d,%d,%d)\n",args.input_sib,args.input1_sdu_flag,args.input2_sdu_flag);
+    printf("Got SI from files (%d,%d,%d)\n",
+            args.input_sib,args.input1_sdu_flag,args.input2_sdu_flag);
   }
 
   openair_rrc_on(0,0);

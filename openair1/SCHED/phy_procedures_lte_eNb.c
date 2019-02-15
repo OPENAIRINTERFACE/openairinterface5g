@@ -1670,7 +1670,12 @@ int getM(PHY_VARS_eNB *eNB,int frame,int subframe) {
 					       subframe,
 					       m);
     frame_tx =  ul_ACK_subframe2_dl_frame(&eNB->frame_parms,frame,
-					  subframe,subframe_tx);
+                                          subframe,subframe_tx);
+    if (dlsch0 == NULL || dlsch1 == NULL) {
+        LOG_E(PHY, "dlsch0 and/or dlsch1 NULL, getM frame %i, subframe %i\n",frame,subframe);
+	return Mtx;
+    }
+
     harq_pid = dlsch0->harq_ids[frame_tx%2][subframe_tx];
     
     if (harq_pid>=0 && harq_pid<10) {

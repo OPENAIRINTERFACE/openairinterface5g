@@ -236,7 +236,7 @@ void sub_block_deinterleaving_cc(uint32_t D,int8_t *d,int8_t *w) {
   ND = Kpi - D;
 #ifdef RM_DEBUG2
   printf("sub_block_interleaving_cc : D = %d (%d), d %p, w %p\n",D,D*3,d,w);
-  printf("RCC = %d, Kpi=%d, ND=%ld\n",RCC,Kpi,ND);
+  printf("RCC = %d, Kpi=%d, ND=%ld\n",RCC,Kpi,(long)ND);
 #endif
   ND3 = ND*3;
   k=0;
@@ -253,7 +253,8 @@ void sub_block_deinterleaving_cc(uint32_t D,int8_t *d,int8_t *w) {
       d[index3-ND3+1] = w[Kpi+k];
       d[index3-ND3+2] = w[(Kpi<<1)+k];
 #ifdef RM_DEBUG2
-      printf("row %d, index %d k %d index3-ND3 %ld w(%d,%d,%d)\n",row,index,k,index3-ND3,w[k],w[Kpi+k],w[(Kpi<<1)+k]);
+      printf("row %d, index %d k %d index3-ND3 %ld w(%d,%d,%d)\n",
+             row,index,k,(long)(index3-ND3),w[k],w[Kpi+k],w[(Kpi<<1)+k]);
 #endif
       index3+=96;
       index+=32;
@@ -453,7 +454,6 @@ uint32_t lte_rate_matching_turbo(uint32_t RTC,
   int threed =0;
   uint32_t nulled=0;
   static unsigned char *counter_buffer[MAX_NUM_DLSCH_SEGMENTS][4];
-  FILE *counter_fd;
   char fname[512];
 #endif
 
@@ -476,7 +476,6 @@ uint32_t lte_rate_matching_turbo(uint32_t RTC,
   } else if(rvidx==3) {
     sprintf(fname, "mcs%d_rate_matching_RB_%d.txt", m, nb_rb);
     // sprintf(fname,"mcs0_rate_matching_RB_6.txt");
-    counter_fd = fopen(fname,"w");
   }
 
 #endif

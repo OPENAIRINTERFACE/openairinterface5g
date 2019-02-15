@@ -46,22 +46,22 @@
 
 
 #define NIPADDR(addr) \
-        (uint8_t)(addr & 0x000000FF), \
-        (uint8_t)((addr & 0x0000FF00) >> 8), \
-        (uint8_t)((addr & 0x00FF0000) >> 16), \
-        (uint8_t)((addr & 0xFF000000) >> 24)
+  (uint8_t)(addr & 0x000000FF), \
+  (uint8_t)((addr & 0x0000FF00) >> 8), \
+  (uint8_t)((addr & 0x00FF0000) >> 16), \
+  (uint8_t)((addr & 0xFF000000) >> 24)
 
 
 
 #define NIP6ADDR(addr) \
-        ntohs((addr)->s6_addr16[0]), \
-        ntohs((addr)->s6_addr16[1]), \
-        ntohs((addr)->s6_addr16[2]), \
-        ntohs((addr)->s6_addr16[3]), \
-        ntohs((addr)->s6_addr16[4]), \
-        ntohs((addr)->s6_addr16[5]), \
-        ntohs((addr)->s6_addr16[6]), \
-        ntohs((addr)->s6_addr16[7])
+  ntohs((addr)->s6_addr16[0]), \
+  ntohs((addr)->s6_addr16[1]), \
+  ntohs((addr)->s6_addr16[2]), \
+  ntohs((addr)->s6_addr16[3]), \
+  ntohs((addr)->s6_addr16[4]), \
+  ntohs((addr)->s6_addr16[5]), \
+  ntohs((addr)->s6_addr16[6]), \
+  ntohs((addr)->s6_addr16[7])
 
 
 // Global variables
@@ -76,12 +76,9 @@ struct oai_nw_drv_ioctl gifr;
 void IAL_NAS_ioctl_init(int inst)
 //---------------------------------------------------------------------------
 {
-
   struct oai_nw_drv_msg_statistic_reply *msgrep;
   int err,rc;
-
   sprintf(gifr.name, "oai%d",inst);
-
   // Get an UDP IPv6 socket ??
   fd=socket(AF_INET6, SOCK_DGRAM, 0);
 
@@ -91,7 +88,6 @@ void IAL_NAS_ioctl_init(int inst)
   }
 
   sprintf(gifr.name, "oai%d",inst);
-
   gifr.type =  OAI_NW_DRV_MSG_STATISTIC_REQUEST;
   memset ((void *)dummy_buffer,0,800);
   gifr.msg= &(dummy_buffer[0]);
@@ -160,7 +156,6 @@ int main(int argc,char **argv)
   char                                     addr_str[46];
   char                                     mask_len_delims[] = "/";
   char                                     *result;
-
   // scan options
   rb[0] = '\0';
   cx[0] = '\0';
@@ -171,155 +166,154 @@ int main(int argc,char **argv)
 
   while ((c = getopt (argc, argv, "adr:i:c:f:l:m:s:t:x:y:z:")) != -1)
     switch (c) {
-    case 'a':
-      action = ADD_RB;
-      break;
-
-    case 'd':
-      action = DEL_RB;
-      break;
-
-    case 'r':
-      strcpy(rb,optarg);
-      rbset = 1;
-      break;
-
-    case 'i':
-      strcpy(inst,optarg);
-      instset = 1;
-      break;
-
-    case 'c':
-      strcpy(cx,optarg);
-      cxset = 1;
-      break;
-
-    case 'f':
-      strcpy(classref,optarg);
-      classrefset = 1;
-      break;
-
-    case 'l':
-      strcpy(mpls_outgoinglabel,optarg);
-      mpls_outlabelset=1;
-      break;
-
-    case 'm':
-      strcpy(mpls_incominglabel,optarg);
-      mpls_inlabelset=1;
-      break;
-
-    case 's':
-      result = strtok( optarg, mask_len_delims );
-
-      if ( result != NULL ) {
-        inet_aton(result,&saddr_ipv4);
-        printf("Arg Source Addr IPv4 string: %s\n",result);
-        saddr_ipv4set = 1;
-      } else {
-        printf("Arg Source Addr IPv4 string: ERROR\n");
+      case 'a':
+        action = ADD_RB;
         break;
-      }
 
-      result = strtok( NULL, mask_len_delims );
-
-      if ( result != NULL ) {
-        splen = atoi(result);
-      } else {
-        splen = 32;
-      }
-
-      printf("Arg Source Addr IPv4 mask len: %d\n",splen);
-      break;
-
-    case 't':
-      result = strtok( optarg, mask_len_delims );
-
-      if ( result != NULL ) {
-        inet_aton(result,&daddr_ipv4);
-        printf("Arg Dest Addr IPv4 string: %s\n",result);
-        daddr_ipv4set = 1;
-      } else {
-        printf("Arg Dest Addr IPv4 string: ERROR\n");
+      case 'd':
+        action = DEL_RB;
         break;
-      }
 
-      result = strtok( NULL, mask_len_delims );
-
-      if ( result != NULL ) {
-        dplen = atoi(result);
-      } else {
-        dplen = 32;
-      }
-
-      printf("Arg Dest Addr IPv4 mask len: %d\n",dplen);
-      break;
-
-    case 'x':
-      result = strtok( optarg, mask_len_delims );
-
-      if ( result != NULL ) {
-        printf("Arg Source Addr IPv6 string: %s\n",result);
-        inet_pton(AF_INET6,result,(void *)&saddr_ipv6);
-        saddr_ipv6set = 1;
-      } else {
-        printf("Arg Source Addr IPv6 string: ERROR\n");
+      case 'r':
+        strcpy(rb,optarg);
+        rbset = 1;
         break;
-      }
 
-      result = strtok( NULL, mask_len_delims );
-
-      if ( result != NULL ) {
-        splen = atoi(result);
-      } else {
-        splen = 128;
-      }
-
-      printf("Arg Source Addr IPv6 mask len: %d\n",splen);
-      break;
-
-    case 'y':
-      result = strtok( optarg, mask_len_delims );
-
-      if ( result != NULL ) {
-        printf("Arg Dest Addr IPv6 string: %s\n",result);
-        inet_pton(AF_INET6,result,(void *)&daddr_ipv6);
-        daddr_ipv6set = 1;
-      } else {
-        printf("Arg Dest Addr IPv6 string: ERROR\n");
+      case 'i':
+        strcpy(inst,optarg);
+        instset = 1;
         break;
-      }
 
-      result = strtok( NULL, mask_len_delims );
+      case 'c':
+        strcpy(cx,optarg);
+        cxset = 1;
+        break;
 
-      if ( result != NULL ) {
-        dplen = atoi(result);
-      } else {
-        dplen = 128;
-      }
+      case 'f':
+        strcpy(classref,optarg);
+        classrefset = 1;
+        break;
 
-      printf("Arg Dest Addr IPv6 mask len: %d\n",dplen);
-      break;
+      case 'l':
+        strcpy(mpls_outgoinglabel,optarg);
+        mpls_outlabelset=1;
+        break;
 
-    case 'z':
-      dscpset=1;
-      strcpy(dscp,optarg);
-      break;
+      case 'm':
+        strcpy(mpls_incominglabel,optarg);
+        mpls_inlabelset=1;
+        break;
 
-    case '?':
-      if (isprint (optopt))
-        fprintf (stderr, "Unknown option `-%c'.\n", optopt);
-      else
-        fprintf (stderr,
-                 "Unknown option character `\\x%x'.\n",
-                 optopt);
+      case 's':
+        result = strtok( optarg, mask_len_delims );
 
-      return 1;
+        if ( result != NULL ) {
+          inet_aton(result,&saddr_ipv4);
+          printf("Arg Source Addr IPv4 string: %s\n",result);
+          saddr_ipv4set = 1;
+        } else {
+          printf("Arg Source Addr IPv4 string: ERROR\n");
+          break;
+        }
 
-    default:
-      abort ();
+        result = strtok( NULL, mask_len_delims );
+
+        if ( result != NULL ) {
+          splen = atoi(result);
+        } else {
+          splen = 32;
+        }
+
+        printf("Arg Source Addr IPv4 mask len: %d\n",splen);
+        break;
+
+      case 't':
+        result = strtok( optarg, mask_len_delims );
+
+        if ( result != NULL ) {
+          inet_aton(result,&daddr_ipv4);
+          printf("Arg Dest Addr IPv4 string: %s\n",result);
+          daddr_ipv4set = 1;
+        } else {
+          printf("Arg Dest Addr IPv4 string: ERROR\n");
+          break;
+        }
+
+        result = strtok( NULL, mask_len_delims );
+
+        if ( result != NULL ) {
+          dplen = atoi(result);
+        } else {
+          dplen = 32;
+        }
+
+        printf("Arg Dest Addr IPv4 mask len: %d\n",dplen);
+        break;
+
+      case 'x':
+        result = strtok( optarg, mask_len_delims );
+
+        if ( result != NULL ) {
+          printf("Arg Source Addr IPv6 string: %s\n",result);
+          inet_pton(AF_INET6,result,(void *)&saddr_ipv6);
+          saddr_ipv6set = 1;
+        } else {
+          printf("Arg Source Addr IPv6 string: ERROR\n");
+          break;
+        }
+
+        result = strtok( NULL, mask_len_delims );
+
+        if ( result != NULL ) {
+          splen = atoi(result);
+        } else {
+          splen = 128;
+        }
+
+        printf("Arg Source Addr IPv6 mask len: %d\n",splen);
+        break;
+
+      case 'y':
+        result = strtok( optarg, mask_len_delims );
+
+        if ( result != NULL ) {
+          printf("Arg Dest Addr IPv6 string: %s\n",result);
+          inet_pton(AF_INET6,result,(void *)&daddr_ipv6);
+          daddr_ipv6set = 1;
+        } else {
+          printf("Arg Dest Addr IPv6 string: ERROR\n");
+          break;
+        }
+
+        result = strtok( NULL, mask_len_delims );
+
+        if ( result != NULL ) {
+          dplen = atoi(result);
+        } else {
+          dplen = 128;
+        }
+
+        printf("Arg Dest Addr IPv6 mask len: %d\n",dplen);
+        break;
+
+      case 'z':
+        dscpset=1;
+        strcpy(dscp,optarg);
+        break;
+
+      case '?':
+        if (isprint (optopt))
+          fprintf (stderr, "Unknown option `-%c'.\n", optopt);
+        else
+          fprintf (stderr,
+                   "Unknown option character `\\x%x'.\n",
+                   optopt);
+
+        return 1;
+
+      default:
+        abort ();
     }
-
 
   printf ("action = %d, rb = %s,cx = %s\n", action, rb, cx);
 
@@ -364,12 +358,10 @@ int main(int argc,char **argv)
   }
 
   IAL_NAS_ioctl_init(atoi(inst));
-
   msgreq = (struct oai_nw_drv_msg_rb_establishment_request *)(gifr.msg);
   msgreq->rab_id = atoi(rb);
   msgreq->lcr = atoi(cx);
   msgreq->qos = 0;
-
 
   if (action == ADD_RB) {
     gifr.type =  OAI_NW_DRV_MSG_RB_ESTABLISHMENT_REQUEST;
@@ -405,8 +397,6 @@ int main(int argc,char **argv)
       printf(" IPV4: Dest    = %d.%d.%d.%d/%d\n", NIPADDR(msgreq_class->daddr.ipv4), msgreq_class->dplen);
       gifr.type                = OAI_NW_DRV_MSG_CLASS_ADD_REQUEST;
       err=ioctl(fd, OAI_NW_DRV_IOCTL_RRM, &gifr);
-
-
       msgreq_class->rab_id     = atoi(rb);
       msgreq_class->lcr        = atoi(cx);
       msgreq_class->version    = 4;
@@ -420,7 +410,6 @@ int main(int argc,char **argv)
       printf("OAI_NW_DRV_MSG_CLASS_ADD_REQUEST: OAI_NW_DRV_DIRECTION_RECEIVE RB %d LCR %d ClassRef %d ", msgreq_class->rab_id, msgreq_class->lcr, msgreq_class->classref);
       printf("IPV4: Source  = %d.%d.%d.%d/%d ", NIPADDR(msgreq_class->saddr.ipv4), msgreq_class->splen);
       printf("IPV4: Dest    = %d.%d.%d.%d/%d\n", NIPADDR(msgreq_class->daddr.ipv4), msgreq_class->dplen);
-
       gifr.type =  OAI_NW_DRV_MSG_CLASS_ADD_REQUEST;
       err=ioctl(fd, OAI_NW_DRV_IOCTL_RRM, &gifr);
     }
@@ -443,7 +432,6 @@ int main(int argc,char **argv)
       msgreq_class->fct        = OAI_NW_DRV_FCT_QOS_SEND;
       // TO BE FIXED WHEN WE CAN SPECIFY A PROTOCOL-based rule
       msgreq_class->protocol   = OAI_NW_DRV_PROTOCOL_DEFAULT;
-
       memcpy(&msgreq_class->saddr.ipv6,&saddr_ipv6,16);
       memcpy(&msgreq_class->daddr.ipv6,&daddr_ipv6,16);
       printf("OAI_NW_DRV_MSG_CLASS_ADD_REQUEST: OAI_NW_DRV_DIRECTION_SEND RB %d LCR %d ClassRef %d ", msgreq_class->rab_id, msgreq_class->lcr, msgreq_class->classref);
@@ -451,7 +439,6 @@ int main(int argc,char **argv)
       printf("IPV6: Dest    = %x:%x:%x:%x:%x:%x:%x:%x/%d\n", NIP6ADDR(&msgreq_class->daddr.ipv6), msgreq_class->dplen);
       gifr.type =  OAI_NW_DRV_MSG_CLASS_ADD_REQUEST;
       err=ioctl(fd, OAI_NW_DRV_IOCTL_RRM, &gifr);
-
       msgreq_class->rab_id     = atoi(rb);
       msgreq_class->lcr        = atoi(cx);
       msgreq_class->dplen      = splen;
@@ -468,7 +455,6 @@ int main(int argc,char **argv)
     }
 
     if (mpls_inlabelset == 1) {
-
       msgreq_class = (struct oai_nw_drv_msg_class_add_request *)(gifr.msg);
       msgreq_class->rab_id = atoi(rb);
       msgreq_class->lcr = atoi(cx);
@@ -483,40 +469,26 @@ int main(int argc,char **argv)
       //msgreq_class->classref = 4 + (msgreq_class->lcr<<3);
       msgreq_class->dir=OAI_NW_DRV_DIRECTION_SEND;
       msgreq_class->fct=OAI_NW_DRV_FCT_QOS_SEND;
-
       // TO BE FIXED WHEN WE CAN SPECIFY A PROTOCOL-based rule
       msgreq_class->protocol = OAI_NW_DRV_PROTOCOL_DEFAULT;
-
       mpls_outlabel = atoi(mpls_outgoinglabel);
-
-      printf("Setting MPLS outlabel %d with exp %d\n",mpls_outlabel,msgreq_class->dscp);
-
+      printf("Setting MPLS outlabel %u with exp %d\n",mpls_outlabel,msgreq_class->dscp);
       msgreq_class->daddr.mpls_label = mpls_outlabel;
-
       gifr.type =  OAI_NW_DRV_MSG_CLASS_ADD_REQUEST;
       err=ioctl(fd, OAI_NW_DRV_IOCTL_RRM, &gifr);
-
       msgreq_class->rab_id = atoi(rb);
       msgreq_class->lcr = atoi(cx);
-
       msgreq_class->classref = atoi(classref) + 1 + (msgreq_class->lcr<<8);
       //msgreq_class->classref = 5 + (msgreq_class->lcr<<3);
       msgreq_class->dir=OAI_NW_DRV_DIRECTION_RECEIVE;
-
-
       // TO BE FIXED WHEN WE CAN SPECIFY A PROTOCOL-based rule
       msgreq_class->protocol = OAI_NW_DRV_PROTOCOL_DEFAULT;
-
       mpls_inlabel  = atoi(mpls_incominglabel);
-
-      printf("Setting MPLS inlabel %d with exp %d\n",mpls_inlabel,msgreq_class->dscp);
-
+      printf("Setting MPLS inlabel %u with exp %d\n",mpls_inlabel,msgreq_class->dscp);
       msgreq_class->daddr.mpls_label = mpls_inlabel;
-
       gifr.type =  OAI_NW_DRV_MSG_CLASS_ADD_REQUEST;
       err=ioctl(fd, OAI_NW_DRV_IOCTL_RRM, &gifr);
     }
-
   } else if (action == DEL_RB) {
     gifr.type =  OAI_NW_DRV_MSG_RB_RELEASE_REQUEST;
     err=ioctl(fd, OAI_NW_DRV_IOCTL_RRM, &gifr);

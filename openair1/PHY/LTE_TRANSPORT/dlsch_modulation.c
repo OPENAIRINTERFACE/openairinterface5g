@@ -1960,6 +1960,10 @@ int allocate_REs_in_RB_MCH(int32_t **txdataF,
 
       case 4:  //16QAM
 
+    if (qam_table_s == NULL) {
+      LOG_E(PHY,"qam table pointer is NULL\n");
+      return -1;
+    }
     qam16_table_offset_re = 0;
     qam16_table_offset_im = 0;
 
@@ -2029,7 +2033,9 @@ int allocate_REs_in_RB_MCH(int32_t **txdataF,
     ((int16_t *)&txdataF[4][tti_offset])[1]=qam_table_s[qam64_table_offset_im];//(int16_t)(((int32_t)amp*qam64_table[qam64_table_offset_im])>>15);
 
     break;
-
+    default:
+        LOG_E(PHY,"Invalid modulation order %i_n",mod_order); 
+    break;
     }
   }
 

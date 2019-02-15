@@ -303,27 +303,31 @@ x2ap_eNB_handle_x2_setup_request(instance_t instance,
 
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_X2SetupRequest_IEs_t, ie, x2SetupRequest,
                              X2AP_ProtocolIE_ID_id_GlobalENB_ID, true);
-
-  if (ie->value.choice.GlobalENB_ID.eNB_ID.present == X2AP_ENB_ID_PR_home_eNB_ID) {
-    // Home eNB ID = 28 bits
-    uint8_t  *eNB_id_buf = ie->value.choice.GlobalENB_ID.eNB_ID.choice.home_eNB_ID.buf;
-
-    if (ie->value.choice.GlobalENB_ID.eNB_ID.choice.macro_eNB_ID.size != 28) {
-      //TODO: handle case were size != 28 -> notify ? reject ?
-    }
-
-    eNB_id = (eNB_id_buf[0] << 20) + (eNB_id_buf[1] << 12) + (eNB_id_buf[2] << 4) + ((eNB_id_buf[3] & 0xf0) >> 4);
-    X2AP_DEBUG("Home eNB id: %07x\n", eNB_id);
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    return -1;
   } else {
+    if (ie->value.choice.GlobalENB_ID.eNB_ID.present == X2AP_ENB_ID_PR_home_eNB_ID) {
+    // Home eNB ID = 28 bits
+      uint8_t  *eNB_id_buf = ie->value.choice.GlobalENB_ID.eNB_ID.choice.home_eNB_ID.buf;
+
+      if (ie->value.choice.GlobalENB_ID.eNB_ID.choice.macro_eNB_ID.size != 28) {
+      //TODO: handle case were size != 28 -> notify ? reject ?
+      }
+
+      eNB_id = (eNB_id_buf[0] << 20) + (eNB_id_buf[1] << 12) + (eNB_id_buf[2] << 4) + ((eNB_id_buf[3] & 0xf0) >> 4);
+      X2AP_DEBUG("Home eNB id: %07x\n", eNB_id);
+    } else {
     // Macro eNB = 20 bits
-    uint8_t *eNB_id_buf = ie->value.choice.GlobalENB_ID.eNB_ID.choice.macro_eNB_ID.buf;
+      uint8_t *eNB_id_buf = ie->value.choice.GlobalENB_ID.eNB_ID.choice.macro_eNB_ID.buf;
 
-    if (ie->value.choice.GlobalENB_ID.eNB_ID.choice.macro_eNB_ID.size != 20) {
+      if (ie->value.choice.GlobalENB_ID.eNB_ID.choice.macro_eNB_ID.size != 20) {
       //TODO: handle case were size != 20 -> notify ? reject ?
-    }
+      }
 
-    eNB_id = (eNB_id_buf[0] << 12) + (eNB_id_buf[1] << 4) + ((eNB_id_buf[2] & 0xf0) >> 4);
-    X2AP_DEBUG("macro eNB id: %05x\n", eNB_id);
+      eNB_id = (eNB_id_buf[0] << 12) + (eNB_id_buf[1] << 4) + ((eNB_id_buf[2] & 0xf0) >> 4);
+      X2AP_DEBUG("macro eNB id: %05x\n", eNB_id);
+    }
   }
 
   X2AP_DEBUG("Adding eNB to the list of associated eNBs\n");
@@ -418,6 +422,10 @@ int x2ap_eNB_handle_x2_setup_response(instance_t instance,
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_X2SetupResponse_IEs_t, ie, x2SetupResponse,
                              X2AP_ProtocolIE_ID_id_GlobalENB_ID, true);
 
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    return -1;
+  } 
   if (ie->value.choice.GlobalENB_ID.eNB_ID.present == X2AP_ENB_ID_PR_home_eNB_ID) {
     // Home eNB ID = 28 bits
     uint8_t  *eNB_id_buf = ie->value.choice.GlobalENB_ID.eNB_ID.choice.home_eNB_ID.buf;
@@ -523,7 +531,10 @@ int x2ap_eNB_handle_x2_setup_failure(instance_t instance,
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_X2SetupFailure_IEs_t, ie, x2SetupFailure,
                              X2AP_ProtocolIE_ID_id_Cause, true);
 
-
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    return -1;
+  } 
   // need a FSM to handle all cases
   if ((ie->value.choice.Cause.present == X2AP_Cause_PR_misc) &&
       (ie->value.choice.Cause.choice.misc == X2AP_CauseMisc_unspecified)) {
