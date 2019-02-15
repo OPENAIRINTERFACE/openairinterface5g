@@ -104,6 +104,7 @@ pipeline {
                     } else {
                         echo "Git Branch      is ${GIT_BRANCH}"
                         echo "Git Commit      is ${GIT_COMMIT}"
+                        sh "git log -n1 --pretty=format:\"%s\" > .git/CI_COMMIT_MSG"
 
                         sh "zip -r -qq localZip.zip ."
                         // Running astyle options on all C/H files in the repository
@@ -572,6 +573,10 @@ OAI CI Team''',
                      replyTo: 'no-reply@openairinterface.org',
                      subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!',
                      to: env.gitlabUserEmail
+
+                if (fileExists('.git/CI_COMMIT_MSG')) {
+                    sh "rm -f .git/CI_COMMIT_MSG"
+                }
             }
         }
         success {
