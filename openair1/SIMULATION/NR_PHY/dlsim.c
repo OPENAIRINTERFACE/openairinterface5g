@@ -42,10 +42,11 @@
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/INIT/phy_init.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
-#include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
+//#include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 
 #include "SCHED_NR/sched_nr.h"
 #include "SCHED_NR_UE/fapi_nr_ue_l1.h"
+#include "SCHED_NR/fapi_nr_l1.h"
 
 #include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include "LAYER2/NR_MAC_UE/mac_defs.h"
@@ -53,6 +54,10 @@
 
 #include "NR_PHY_INTERFACE/NR_IF_Module.h"
 #include "NR_UE_PHY_INTERFACE/NR_IF_Module.h"
+
+#include "LAYER2/NR_MAC_UE/mac_proto.h"
+#include "LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "RRC/NR/MESSAGES/asn1_msg.h"
 
 
 PHY_VARS_gNB *gNB;
@@ -78,7 +83,7 @@ int32_t get_uldl_offset(int nr_bandP) {return(0);}
 NR_IF_Module_t *NR_IF_Module_init(int Mod_id){return(NULL);}
 
 int8_t dummy_nr_ue_dl_indication(nr_downlink_indication_t *dl_info){return(0);}
-int8_t dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info){return(0);}
+int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info){return(0);}
 
 lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe) { return(SF_DL);}
 
@@ -99,13 +104,6 @@ int rlc_module_init (void) {return(0);}
 void pdcp_layer_init(void) {}
 int rrc_init_nr_global_param(void){return(0);}
 
-void config_common(int Mod_idP, 
-                   int CC_idP,
-                   int nr_bandP,
-                   uint64_t dl_CarrierFreqP,
-                   uint32_t dl_BandwidthP
-		   );
-
 
 // needed for some functions
 PHY_VARS_NR_UE ***PHY_vars_UE_g;
@@ -115,40 +113,39 @@ int main(int argc, char **argv)
 {
 
   char c;
-
-  int i,l,aa;
+  int i,aa;
   double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1=2.0;
   uint8_t snr1set=0;
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
-  double iqim = 0.0;
-  unsigned char pbch_pdu[6];
+  //double iqim = 0.0;
+  //unsigned char pbch_pdu[6];
   //  int sync_pos, sync_pos_slot;
   //  FILE *rx_frame_file;
   FILE *output_fd = NULL;
   uint8_t write_output_file=0;
   //int result;
-  int freq_offset;
-  //  int subframe_offset;
+  //  int freq_offset, subframe_offset;
   //  char fname[40], vname[40];
-  int trial,n_trials=1,n_errors,n_errors2,n_alamouti;
+  int trial,n_trials=1,n_errors=0;
+  //int n_errors2=0,n_alamouti=0;
   uint8_t transmission_mode = 1,n_tx=1,n_rx=1;
   uint16_t Nid_cell=0;
 
   channel_desc_t *gNB2UE;
-  uint32_t nsymb,tx_lev,tx_lev1 = 0,tx_lev2 = 0;
+  //uint32_t nsymb,tx_lev,tx_lev1 = 0,tx_lev2 = 0;
   uint8_t extended_prefix_flag=0;
   int8_t interf1=-21,interf2=-21;
 
   FILE *input_fd=NULL,*pbch_file_fd=NULL;
-  char input_val_str[50],input_val_str2[50];
+  //char input_val_str[50],input_val_str2[50];
 
-  uint8_t frame_mod4,num_pdcch_symbols = 0;
+  //uint8_t frame_mod4, num_pdcch_symbols = 0;
 
   SCM_t channel_model=AWGN;//Rayleigh1_anticorr;
 
-  double pbch_sinr;
-  int pbch_tx_ant;
+  //double pbch_sinr;
+  //int pbch_tx_ant;
   int N_RB_DL=273,mu=1;
 
   unsigned char frame_type = 0;
@@ -358,8 +355,8 @@ int main(int argc, char **argv)
       printf("-x Transmission mode (1,2,6 for the moment)\n");
       printf("-y Number of TX antennas used in eNB\n");
       printf("-z Number of RX antennas used in UE\n");
-      printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
-      printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
+      printf("-i Relative strength of first interfering eNB (in dB) - cell_id mod 3 = 1\n");
+      printf("-j Relative strength of second interfering eNB (in dB) - cell_id mod 3 = 2\n");
       printf("-N Nid_cell\n");
       printf("-R N_RB_DL\n");
       printf("-O oversampling factor (1,2,4,8,16)\n");
@@ -497,7 +494,7 @@ int main(int argc, char **argv)
   gNB_mac = RC.nrmac[0];
 
   config_common(0,0,78,(uint64_t)3640000000L,N_RB_DL);
-  config_nr_mib(0,0,1,kHz30,0,0,0,0);
+  config_nr_mib(0,0,1,kHz30,0,0,0,0,0);
 
   nr_l2_init_ue();
   UE_mac = get_mac_inst(0);
@@ -640,8 +637,8 @@ int main(int argc, char **argv)
   for (SNR=snr0; SNR<snr1; SNR+=.2) {
 
     n_errors = 0;
-    n_errors2 = 0;
-    n_alamouti = 0;
+    //n_errors2 = 0;
+    //n_alamouti = 0;
 
     for (trial=0; trial<n_trials; trial++) {
 

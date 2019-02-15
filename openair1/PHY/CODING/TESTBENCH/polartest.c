@@ -11,10 +11,36 @@
 #include "PHY/CODING/nrPolar_tools/nr_polar_uci_defs.h"
 #include "PHY/CODING/coding_defs.h"
 #include "SIMULATION/TOOLS/sim.h"
+//#include "PHY/NR_TRANSPORT/nr_transport.h"
+//#include "common/utils/LOG/log.h"
 
 //#define DEBUG_DCI_POLAR_PARAMS
 //#define DEBUG_POLAR_TIMING
 //#define DEBUG_CRC
+//#define DEBUG_POLARTEST
+
+uint8_t nr_pbch_payload_interleaving_pattern[32] = {16, 23, 18, 17, 8, 30, 10, 6, 24, 7, 0, 5, 3, 2, 1, 4,
+                                                9, 11, 12, 13, 14, 15, 19, 20, 21, 22, 25, 26, 27, 28, 29, 31};
+
+void nr_init_pbch_interleaver(uint8_t *interleaver) {
+  uint8_t j_sfn=0, j_hrf=10, j_ssb=11, j_other=14;
+  memset((void*)interleaver,0, NR_POLAR_PBCH_PAYLOAD_BITS);
+
+  for (uint8_t i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++)
+    if (!i) // choice bit:1
+     *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_other++);
+    else if (i<7) //Sfn bits:6
+      *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_sfn++);
+    else if (i<24) // other:17
+      *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_other++);
+    else if (i<28) // Sfn:4
+      *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_sfn++);
+    else if (i==28) // Hrf bit:1
+      *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_hrf);
+    else // Ssb bits:3
+      *(interleaver+i) = *(nr_pbch_payload_interleaving_pattern+j_ssb++);
+
+}
 
 int main(int argc, char *argv[]) {
 
@@ -37,9 +63,9 @@ int main(int argc, char *argv[]) {
 	uint32_t decoderState=0, blockErrorState=0; //0 = Success, -1 = Decoding failed, 1 = Block Error.
 	uint16_t testLength = 0, coderLength = 0, blockErrorCumulative=0, bitErrorCumulative=0;
 	double timeEncoderCumulative = 0, timeDecoderCumulative = 0;
-	uint8_t aggregation_level = 8, decoderListSize = 8, pathMetricAppr = 0;
+	uint8_t aggregation_level = 8, decoderListSize = 8, pathMetricAppr = 0, matlabDebug = 0;
 
-	while ((arguments = getopt (argc, argv, "s:d:f:m:i:l:a:hqg")) != -1)
+	while ((arguments = getopt (argc, argv, "s:d:f:c:i:l:a:hqgm")) != -1)
 	switch (arguments)
 	{
 		case 's':
@@ -54,7 +80,7 @@ int main(int argc, char *argv[]) {
 			SNRstop = atof(optarg);
 			break;
 
-		case 'm':
+		case 'c':
 			polarMessageType = atoi(optarg);
 			break;
 
@@ -74,6 +100,11 @@ int main(int argc, char *argv[]) {
 			decoder_int16 = 1;
 			break;
 
+		case 'm':
+			matlabDebug = 1;
+			//#define DEBUG_POLAR_MATLAB
+			break;
+
 		case 'g':
 			iterations = 1;
 			SNRstart = -6.0;
@@ -82,7 +113,7 @@ int main(int argc, char *argv[]) {
 			break;
 
 		case 'h':
-			printf("./polartest -s SNRstart -d SNRinc -f SNRstop -m [0=PBCH|1=DCI|2=UCI] -i iterations -l decoderListSize -a pathMetricAppr\n");
+			printf("./polartest -s SNRstart -d SNRinc -f SNRstop -c [0=PBCH|1=DCI|2=UCI] -i iterations -l decoderListSize -a pathMetricAppr -m Matlab Debug\n");
 			exit(-1);
 
 		default:
@@ -91,7 +122,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	if (polarMessageType == 0) { //PBCH
-	  testLength = 64;//NR_POLAR_PBCH_PAYLOAD_BITS;
+		testLength = NR_POLAR_PBCH_PAYLOAD_BITS;
 		coderLength = NR_POLAR_PBCH_E;
 		aggregation_level = NR_POLAR_PBCH_AGGREGATION_LEVEL;
 	} else if (polarMessageType == 1) { //DCI
@@ -320,20 +351,87 @@ int main(int argc, char *argv[]) {
 				testInput[i] |= ( ((uint32_t) (rand()%2)) &1);
 			}
 
-			/*printf("testInput: [0]->0x%08x\n", testInput[0]);
-			for (int i=0; i<32; i++)
-				printf("%d\n",(testInput[0]>>i)&1);*/
+#ifdef DEBUG_POLARTEST
+			printf("testInput: ");
+			for (int i = 0; i < testArrayLength; i++) printf("[%d]->0x%08x\t",i, testInput[i]);
+			printf("\n");
 
-
+			printf("testInput[0]: ");
+			for (int i=0; i<32; i++) printf("[%d]=%d-",i,(testInput[0]>>i)&1);
+			printf("\n");
+			printf("testInput[1]: ");
+			for (int i=0; i<32; i++) printf("[%d]=%d-",i,(testInput[1]>>i)&1);
+			printf("\n");
+#endif
 
 			int len_mod64=currentPtr->payloadBits&63;
 			((uint64_t*)testInput)[currentPtr->payloadBits/64]&=((((uint64_t)1)<<len_mod64)-1);
 
+#ifdef DEBUG_POLARTEST
+			printf("testInput: ");
+			for (int i = 0; i < testArrayLength; i++) printf("[%d]->0x%08x\t",i, testInput[i]);
+			printf("\n");
+
+			printf("testInput[0]: ");
+			for (int i=0; i<32; i++) printf("[%d]=%d-",i,(testInput[0]>>i)&1);
+			printf("\n");
+			printf("testInput[1]: ");
+			for (int i=0; i<32; i++) printf("[%d]=%d-",i,(testInput[1]>>i)&1);
+			printf("\n");
+#endif
+
+			if (matlabDebug == 1){
+				memset(testInput,0,sizeof(uint32_t) * testArrayLength);
+				/*testInput[0] |= ((uint32_t)1 << 31); testInput[0] |= ((uint32_t)1 << 28);	testInput[0] |= ((uint32_t)1 << 26);
+				testInput[0] |= ((uint32_t)1 << 25); testInput[0] |= ((uint32_t)1 << 22); testInput[0] |= ((uint32_t)1 << 21);
+				testInput[0] |= ((uint32_t)1 << 19); testInput[0] |= ((uint32_t)1 << 17); testInput[0] |= ((uint32_t)1 << 15);
+				testInput[0] |= ((uint32_t)1 << 14); testInput[0] |= ((uint32_t)1 << 12); testInput[0] |= ((uint32_t)1 << 10);
+				testInput[0] |= ((uint32_t)1 << 8); testInput[0] |= ((uint32_t)1 << 5); testInput[0] |= ((uint32_t)1 << 3);
+				testInput[0] |= ((uint32_t)1 << 2); testInput[0] |= ((uint32_t)1 << 1);*/
+
+
+
+				testInput[0] |= ((uint32_t)1 << 30); testInput[0] |= ((uint32_t)1 << 29); testInput[0] |= ((uint32_t)1 << 28);
+				testInput[0] |= ((uint32_t)1 << 26); testInput[0] |= ((uint32_t)1 << 23); testInput[0] |= ((uint32_t)1 << 21);
+				testInput[0] |= ((uint32_t)1 << 19); testInput[0] |= ((uint32_t)1 << 17); testInput[0] |= ((uint32_t)1 << 16);
+				testInput[0] |= ((uint32_t)1 << 14); testInput[0] |= ((uint32_t)1 << 12); testInput[0] |= ((uint32_t)1 << 10);
+				testInput[0] |= ((uint32_t)1 << 9); testInput[0] |= ((uint32_t)1 << 6); testInput[0] |= ((uint32_t)1 << 5);
+				testInput[0] |= ((uint32_t)1 << 3); testInput[0] |= ((uint32_t)1);
+
+
+				/*printf("testInput (a_31,..., a_0): ");
+				for (int i=31; i>=0; i--) printf("%d-",(testInput[0]>>i)&1); //a_31, a_30, ..., a_0
+				printf("testInput = 0x%llx\n", testInput[0]);
+				printf("\n");*/
+
+
+				/*for (int i=0;i<32;i++){
+					memset(testInput,0,sizeof(uint32_t) * testArrayLength);
+					testInput[0] |= ((uint32_t)1 << i);
+					int crc = crc24c(testInput,32);
+					printf("[i=%d]testInput = 0x%08lx, crc = 0x%lx\n", i,testInput[0], crc);
+				}
+				memset(testInput,0,sizeof(uint32_t) * testArrayLength);
+				int crc = crc24c(testInput,32);
+				printf("testInput = 0x%08lx, crc = 0x%lx\n", testInput[0], crc);*/
+
+			}
+
+			uint8_t nr_pbch_interleaver[NR_POLAR_PBCH_PAYLOAD_BITS];
+			memset((void*)nr_pbch_interleaver,0, NR_POLAR_PBCH_PAYLOAD_BITS);
+			nr_init_pbch_interleaver(nr_pbch_interleaver);
+			for (int i=0; i<=31;i++)
+				printf("nr_pbch_interleaver[%d]=%d\n",i,nr_pbch_interleaver[i]);
+
+			  for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++)
+				  printf("nr_pbch_interleaver_operation[%d]=%d\n",i,(*(nr_pbch_interleaver+i)));
+
+
 			start_meas(&timeEncoder);
-			if (decoder_int16==0)
-			  polar_encoder(testInput, encoderOutput, currentPtr);
+			if (decoder_int16==1)
+				polar_encoder_fast((uint64_t*)testInput, encoderOutput, 0, currentPtr);
 			else
-				polar_encoder_fast((uint64_t*)testInput, encoderOutput,0, currentPtr);
+				polar_encoder(testInput, encoderOutput, currentPtr);
 			  //polar_encoder_fast((uint64_t*)testInput, (uint64_t*)encoderOutput,0, currentPtr);
 			stop_meas(&timeEncoder);
 			/*printf("encoderOutput: [0]->0x%08x\n", encoderOutput[0]);

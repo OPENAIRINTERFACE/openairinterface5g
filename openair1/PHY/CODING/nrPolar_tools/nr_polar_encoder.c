@@ -33,6 +33,7 @@
 //#define DEBUG_POLAR_ENCODER
 //#define DEBUG_POLAR_ENCODER_DCI
 //#define DEBUG_POLAR_ENCODER_TIMING
+#define DEBUG_POLAR_MATLAB
 
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 #include "assertions.h"
@@ -336,8 +337,8 @@ void build_polar_tables(t_nrPolar_paramsPtr polarParams) {
     if (polarParams->information_bit_pattern[i] > 0) {
       polarParams->G_N_tab[k] = (uint64_t*)memalign(32,(polarParams->N/64)*sizeof(uint64_t));
       memset((void*)polarParams->G_N_tab[k],0,(polarParams->N/64)*sizeof(uint64_t));
-      for (int j=0;j<polarParams->N;j++) 
-	polarParams->G_N_tab[k][j/64] |= ((uint64_t)polarParams->G_N[i][j])<<(j&63);
+      for (int j=0;j<polarParams->N;j++)
+    	  polarParams->G_N_tab[k][j/64] |= ((uint64_t)polarParams->G_N[i][j])<<(j&63);
 #ifdef DEBUG_POLAR_ENCODER
       printf("Bit %d Selecting row %d of G : ",k,i);
       for (int j=0;j<polarParams->N;j+=4) printf("%1x",polarParams->G_N[i][j]+(polarParams->G_N[i][j+1]*2)+(polarParams->G_N[i][j+2]*4)+(polarParams->G_N[i][j+3]*8));
@@ -385,7 +386,7 @@ void build_polar_tables(t_nrPolar_paramsPtr polarParams) {
     
 }
 
-void polar_encoder_fast(uint64_t *A,
+void polar_encoder_fast(uint64_t *Aprime,
 			uint32_t *out,
 			int32_t crcmask,
 			t_nrPolar_paramsPtr polarParams) {
@@ -394,8 +395,12 @@ void polar_encoder_fast(uint64_t *A,
   AssertFatal(polarParams->K < 129, "K = %d > 128, is not supported yet\n",polarParams->K);
   AssertFatal(polarParams->payloadBits < 65, "payload bits = %d > 64, is not supported yet\n",polarParams->payloadBits);
 
-  uint64_t B[4]={0,0,0,0},Cprime[4]={0,0,0,0};
+  uint64_t B[4]={0,0,0,0}, Cprime[4]={0,0,0,0};
   int bitlen = polarParams->payloadBits;
+
+#ifdef DEBUG_POLAR_MATLAB
+  if (polarParams->K<65) printf("[polar_encoder_fast]A[0] = 0x%llx\n", (unsigned long long)(Aprime[0])); //(unsigned long long)(Aprime[0]&(((uint64_t)1<<bitlen)-1)),
+#endif
 
   // append crc
  
@@ -406,45 +411,65 @@ void polar_encoder_fast(uint64_t *A,
 
   uint64_t tcrc=0;
 
-  // A bitstring should be stored as a_{N-1} a_{N-2} ... a_{N-A} 0 .... 0, where N=64,128,192,..., N is smallest multiple of 64 greater than or equal to A
+  // A bit string should be stored as 0, 0, ..., 0, a'_0, a'_1, ..., a'_A-1,
+  //???a'_{N-1} a'_{N-2} ... a'_{N-A} 0 .... 0, where N=64,128,192,..., N is smallest multiple of 64 greater than or equal to A
 
   // First flip A bitstring byte endian for CRC routines (optimized for DLSCH/ULSCH, not PBCH/PDCCH)
-  // CRC reads in each byte in bit positions 7 downto 0, for PBCH/PDCCH we need to read in a_{A-1} downto a_{0}, A = length of bit string (e.g. 32 for PBCH)
+  // CRC reads in each byte in bit positions 7 down to 0, for PBCH/PDCCH we need to read in a_{A-1} down to a_{0}, A = length of bit string (e.g. 32 for PBCH)
   if (bitlen<=32) {
     uint8_t A32_flip[4];
-    uint32_t Aprime= (uint32_t)(((uint32_t)*A)<<(32-bitlen));
-    A32_flip[0]=((uint8_t*)&Aprime)[3];
-    A32_flip[1]=((uint8_t*)&Aprime)[2];
-    A32_flip[2]=((uint8_t*)&Aprime)[1];
-    A32_flip[3]=((uint8_t*)&Aprime)[0];
+    uint32_t AprimeTmp= (uint32_t)(((uint32_t)*Aprime)<<(32-bitlen));
+    A32_flip[0]=((uint8_t*)&AprimeTmp)[3]; //a'_0, a'_1, ..., a'_7
+    A32_flip[1]=((uint8_t*)&AprimeTmp)[2];
+    A32_flip[2]=((uint8_t*)&AprimeTmp)[1];
+    A32_flip[3]=((uint8_t*)&AprimeTmp)[0];
     tcrc = (uint64_t)((crcmask^(crc24c(A32_flip,bitlen)>>8)));
   }
   else if (bitlen<=64) {
     uint8_t A64_flip[8];
-    uint64_t Aprime= (uint32_t)(((uint64_t)*A)<<(64-bitlen));
-    A64_flip[0]=((uint8_t*)&Aprime)[7];
-    A64_flip[1]=((uint8_t*)&Aprime)[6];
-    A64_flip[2]=((uint8_t*)&Aprime)[5];
-    A64_flip[3]=((uint8_t*)&Aprime)[4];
-    A64_flip[4]=((uint8_t*)&Aprime)[3];
-    A64_flip[5]=((uint8_t*)&Aprime)[2];
-    A64_flip[6]=((uint8_t*)&Aprime)[1];
-    A64_flip[7]=((uint8_t*)&Aprime)[0];
+    uint64_t AprimeTmp= (uint32_t)(((uint64_t)*Aprime)<<(64-bitlen));
+    A64_flip[0]=((uint8_t*)&AprimeTmp)[7];
+    A64_flip[1]=((uint8_t*)&AprimeTmp)[6];
+    A64_flip[2]=((uint8_t*)&AprimeTmp)[5];
+    A64_flip[3]=((uint8_t*)&AprimeTmp)[4];
+    A64_flip[4]=((uint8_t*)&AprimeTmp)[3];
+    A64_flip[5]=((uint8_t*)&AprimeTmp)[2];
+    A64_flip[6]=((uint8_t*)&AprimeTmp)[1];
+    A64_flip[7]=((uint8_t*)&AprimeTmp)[0];
     tcrc = (uint64_t)((crcmask^(crc24c(A64_flip,bitlen)>>8)));
+  }
+  else if (bitlen<=128) {
+	  uint8_t A128_flip[16];
+	  uint128_t AprimeTmp= (uint32_t)(((uint128_t)*Aprime)<<(128-bitlen));
+	  A128_flip[0]=((uint8_t*)&AprimeTmp)[15];	  A128_flip[1]=((uint8_t*)&AprimeTmp)[14];
+	  A128_flip[2]=((uint8_t*)&AprimeTmp)[13];	  A128_flip[3]=((uint8_t*)&AprimeTmp)[12];
+	  A128_flip[4]=((uint8_t*)&AprimeTmp)[11];	  A128_flip[5]=((uint8_t*)&AprimeTmp)[10];
+	  A128_flip[6] =((uint8_t*)&AprimeTmp)[9];	  A128_flip[7] =((uint8_t*)&AprimeTmp)[8];
+	  A128_flip[8] =((uint8_t*)&AprimeTmp)[7];	  A128_flip[9] =((uint8_t*)&AprimeTmp)[6];
+	  A128_flip[10]=((uint8_t*)&AprimeTmp)[5];	  A128_flip[11]=((uint8_t*)&AprimeTmp)[4];
+	  A128_flip[12]=((uint8_t*)&AprimeTmp)[3];	  A128_flip[13]=((uint8_t*)&AprimeTmp)[2];
+	  A128_flip[14]=((uint8_t*)&AprimeTmp)[1];	  A128_flip[15]=((uint8_t*)&AprimeTmp)[0];
+	  tcrc = (uint64_t)((crcmask^(crc24c(A128_flip,bitlen)>>8)));
   }
 
   int n;
-  // this is number of quadwords in the bit string
-  int quadwlen = (polarParams->K>>6);
+  int quadwlen = (polarParams->K>>6); // this is number of quadwords (64-bits) in the bit string
   if ((polarParams->K&63) > 0) quadwlen++;
 
-  // Create the B bitstring as
-  // b_{N'-1} b_{N'-2} ... b_{N'-A} b_{N'-A-1} ... b_{N'-A-Nparity} = a_{N-1} a_{N-2} ... a_{N-A} p_{N_parity-1} ... p_0
+  // Create the B bit string as
+  // 0, 0, ..., 0, a'_0, a'_1, ..., a'_A-1, p_0, p_1, ..., p_{N_parity-1}
 
-  for (n=0;n<quadwlen;n++) if (n==0) B[n] = (A[n] << polarParams->crcParityBits) | tcrc;
-                           else      B[n] = (A[n] << polarParams->crcParityBits) | (A[n-1]>>(64-polarParams->crcParityBits));
+  //??? b_{N'-1} b_{N'-2} ... b_{N'-A} b_{N'-A-1} ... b_{N'-A-Nparity} = a_{N-1} a_{N-2} ... a_{N-A} p_{N_parity-1} ... p_0
+
+
+  for (n=0;n<quadwlen;n++) if (n==0) B[n] = (Aprime[n] << polarParams->crcParityBits) | tcrc;
+                           else      B[n] = (Aprime[n] << polarParams->crcParityBits) | (Aprime[n-1]>>(64-polarParams->crcParityBits));
   
-    
+#ifdef DEBUG_POLAR_MATLAB
+  // B = pbchB
+  for (int i = 0; i < quadwlen; i++) printf("[polar_encoder_fast]B[%d] = 0x%llx\n", i, (unsigned long long)(B[i]));
+#endif
+
   uint8_t *Bbyte = (uint8_t*)B;
   // for each byte of B, lookup in corresponding table for 64-bit word corresponding to that byte and its position
   if (polarParams->K<65) 
@@ -464,10 +489,15 @@ void polar_encoder_fast(uint64_t *A,
     }
   }
 
+#ifdef DEBUG_POLAR_MATLAB
+  // Cprime = pbchCprime
+  for (int i = 0; i < quadwlen; i++) printf("[polar_encoder_fast]C'[%d]= 0x%llx\n", i, (unsigned long long)(Cprime[i]));
+#endif
+
 #ifdef DEBUG_POLAR_ENCODER
   if (polarParams->K<65) 
     printf("A %llx B %llx Cprime %llx (payload bits %d,crc %x)\n",
-	   (unsigned long long)(A[0]&(((uint64_t)1<<bitlen)-1)),
+	   (unsigned long long)(Aprime[0]&(((uint64_t)1<<bitlen)-1)),
 	   (unsigned long long)(B[0]),
 	   (unsigned long long)(Cprime[0]),
 	   polarParams->payloadBits,
@@ -475,52 +505,35 @@ void polar_encoder_fast(uint64_t *A,
   else if (polarParams->K<129) {
     if (bitlen<64)
       printf("A %llx B %llx|%llx Cprime %llx|%llx (payload bits %d,crc %x)\n",
-	     (unsigned long long)(A[0]&(((uint64_t)1<<bitlen)-1)),
+	     (unsigned long long)(Aprime[0]&(((uint64_t)1<<bitlen)-1)),
 	     (unsigned long long)(B[1]),(unsigned long long)(B[0]),
 	     (unsigned long long)(Cprime[1]),(unsigned long long)(Cprime[0]),
 	     polarParams->payloadBits,
 	     tcrc);
     else 
       printf("A %llx|%llx B %llx|%llx Cprime %llx|%llx (payload bits %d,crc %x)\n",
-	     (unsigned long long)(A[1]&(((uint64_t)1<<(bitlen-64))-1)),(unsigned long long)(A[0]),
+	     (unsigned long long)(Aprime[1]&(((uint64_t)1<<(bitlen-64))-1)),(unsigned long long)(Aprime[0]),
 	     (unsigned long long)(B[1]),(unsigned long long)(B[0]),
 	     (unsigned long long)(Cprime[1]),(unsigned long long)(Cprime[0]),
 	     polarParams->payloadBits,
-	     crc24c((uint8_t*)A,bitlen)>>8);
+	     crc24c((uint8_t*)Aprime,bitlen)>>8);
   }
 #endif
-  /*  printf("Bbytes : %x.%x.%x.%x.%x.%x.%x.%x\n",Bbyte[0],Bbyte[1],Bbyte[2],Bbyte[3],Bbyte[4],Bbyte[5],Bbyte[6],Bbyte[7]);
-  printf("%llx,%llx,%llx,%llx,%llx,%llx,%llx,%llx\n",polarParams->cprime_tab[0][Bbyte[0]] , 
-		  polarParams->cprime_tab[1][Bbyte[1]] , 
-		  polarParams->cprime_tab[2][Bbyte[2]] , 
-		  polarParams->cprime_tab[3][Bbyte[3]] , 
-		  polarParams->cprime_tab[4][Bbyte[4]] , 
-		  polarParams->cprime_tab[5][Bbyte[5]] , 
-		  polarParams->cprime_tab[6][Bbyte[6]] , 
-		  polarParams->cprime_tab[7][Bbyte[7]]);*/
   
   // now do Gu product (here using 64-bit XORs, we can also do with SIMD after)
   // here we're reading out the bits LSB -> MSB, is this correct w.r.t. 3GPP ?
 
   uint64_t Cprime_i;
-  /*  printf("%llx Cprime_0 (%llx) G %llx,%llx,%llx,%llx,%llx,%llx,%llx,%llx\n",Cprime_i,Cprime &1,
-	 polarParams->G_N_tab[0][0],
-	 polarParams->G_N_tab[0][1],
-	 polarParams->G_N_tab[0][2],
-	 polarParams->G_N_tab[0][3],
-	 polarParams->G_N_tab[0][4],
-	 polarParams->G_N_tab[0][5],
-	 polarParams->G_N_tab[0][6],
-	 polarParams->G_N_tab[0][7]);*/
   uint64_t D[8]={0,0,0,0,0,0,0,0};
   int off=0;
   int len=polarParams->K;
+
   for (int j=0;j<(1+(polarParams->K>>6));j++,off+=64,len-=64) {
     for (int i=0;i<((len>63) ? 64 : len);i++) {
 
       Cprime_i = -((Cprime[j]>>i)&1); // this converts bit 0 as, 0 => 0000x00, 1 => 1111x11
-      /*
-#ifdef DEBUG_POLAR_ENCODER
+
+      #ifdef DEBUG_POLAR_ENCODER
       printf("%llx Cprime_%d (%llx) G %llx,%llx,%llx,%llx,%llx,%llx,%llx,%llx\n",
 	     Cprime_i,off+i,(Cprime[j]>>i) &1,
 	     polarParams->G_N_tab[off+i][0],
@@ -531,8 +544,8 @@ void polar_encoder_fast(uint64_t *A,
 	     polarParams->G_N_tab[off+i][5],
 	     polarParams->G_N_tab[off+i][6],
 	     polarParams->G_N_tab[off+i][7]);
-#endif
-      */
+      #endif
+
       uint64_t *Gi=polarParams->G_N_tab[off+i];
       D[0] ^= (Cprime_i & Gi[0]);
       D[1] ^= (Cprime_i & Gi[1]);
@@ -545,17 +558,17 @@ void polar_encoder_fast(uint64_t *A,
     }
   }
 #ifdef DEBUG_POLAR_ENCODER
-  printf("D %llx,%llx,%llx,%llx,%llx,%llx,%llx,%llx\n",
-	 D[0],
-	 D[1],
-	 D[2],
-	 D[3],
-	 D[4],
-	 D[5],
-	 D[6],
-	 D[7]);
+  printf("D %llx,%llx,%llx,%llx,%llx,%llx,%llx,%llx\n", D[0], D[1], D[2], D[3], D[4], D[5], D[6], D[7]);
 #endif
 
-  polar_rate_matching(polarParams,(void*)D,(void*)out);  
+#ifdef DEBUG_POLAR_MATLAB
+  // D = pbchD
+  for (int i = 0; i < 8; i++) printf("[polar_encoder_fast]D[%d] = 0x%016llx\n", i, (unsigned long long)(D[i]));
+#endif
 
+  polar_rate_matching(polarParams,(void*)D,(void*)out);
+#ifdef DEBUG_POLAR_MATLAB
+  // out = pbchF
+  for (int i = 0; i < (NR_POLAR_PBCH_E/32); i++) printf("[polar_encoder_fast]F[%d] = 0x%08lx\n", i, (unsigned long)(out[i]));
+#endif
 }

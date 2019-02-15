@@ -30,6 +30,8 @@
 #include <stdint.h>
 #include <PHY/defs_common.h>
 
+typedef unsigned __int128 uint128_t;
+
 #define CRC24_A 0
 #define CRC24_B 1
 #define CRC16 2

@@ -68,7 +68,7 @@ int8_t nr_ue_process_dlsch(module_id_t module_id, int cc_id, uint8_t gNB_index, 
 
     NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
     fapi_nr_ul_config_request_t *ul_config = &mac->ul_config_request;
-    fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
+    //fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
     nr_phy_config_t *phy_config = &mac->phy_config;
 
     //ul_config->ul_config_list[ul_config->number_pdus].ulsch_config_pdu.rnti = rnti;

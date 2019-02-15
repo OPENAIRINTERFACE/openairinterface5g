@@ -703,7 +703,7 @@ int dlsch_encoding_all(PHY_VARS_eNB *eNB,
 
 
 int dlsch_encoding(PHY_VARS_eNB *eNB,
-		unsigned char *a,
+				   unsigned char *a,
                    uint8_t num_pdcch_symbols,
                    LTE_eNB_DLSCH_t *dlsch,
                    int frame,

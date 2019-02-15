@@ -145,8 +145,7 @@ int main(int argc, char **argv) {
 	//uint16_t NB_RB=25;
 	SCM_t channel_model = AWGN;  //Rayleigh1_anticorr;
 	uint8_t N_RB_DL = 106, mu = 1;
-	unsigned char frame_type = 0;
-	unsigned char pbch_phase = 0;
+	unsigned char frame_type = 0, pbch_phase = 0;
 	int frame = 0, subframe = 0;
 	int frame_length_complex_samples;
 	//int frame_length_complex_samples_no_prefix;
@@ -341,8 +340,8 @@ int main(int argc, char **argv) {
 			printf("-x Transmission mode (1,2,6 for the moment)\n");
 			printf("-y Number of TX antennas used in eNB\n");
 			printf("-z Number of RX antennas used in UE\n");
-			printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
-			printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
+			printf("-i Relative strength of first interfering eNB (in dB) - cell_id mod 3 = 1\n");
+			printf("-j Relative strength of second interfering eNB (in dB) - cell_id mod 3 = 2\n");
 			printf("-N Nid_cell\n");
 			printf("-R N_RB_DL\n");
 			printf("-O oversampling factor (1,2,4,8,16)\n");
@@ -482,13 +481,10 @@ int main(int argc, char **argv) {
 	short *channel_output_fixed = malloc16(sizeof(short) * 16 * 68 * 384);
 	short *channel_output_uncoded = malloc16(sizeof(unsigned short) * 16 * 68 * 384);
 	double errors_bit_uncoded = 0;
-	unsigned char *estimated_output;
-	unsigned char *estimated_output_bit;
-	unsigned char *test_input_bit;
+	//unsigned char *estimated_output = malloc16(sizeof(unsigned char) * 16 * 68 * 384);
+	unsigned char *estimated_output_bit = malloc16(sizeof(unsigned char) * 16 * 68 * 384);
+	unsigned char *test_input_bit = malloc16(sizeof(unsigned char) * 16 * 68 * 384);
 	unsigned int errors_bit = 0;
-	test_input_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
-	estimated_output = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
-	estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
 	NR_UE_DLSCH_t *dlsch0_ue = UE->dlsch[UE->current_thread_id[subframe]][0][0];
 	NR_DL_UE_HARQ_t *harq_process = dlsch0_ue->harq_processes[harq_pid];
 	harq_process->mcs = Imcs;
@@ -503,7 +499,7 @@ int main(int argc, char **argv) {
 	for (i = 0; i < TBS / 8; i++)
 		test_input[i] = (unsigned char) rand();
 
-	estimated_output = harq_process->b;
+	//estimated_output = harq_process->b;
 
 #ifdef DEBUG_DLSCHSIM
 	for (i = 0; i < TBS / 8; i++) printf("test_input[i]=%d \n",test_input[i]);

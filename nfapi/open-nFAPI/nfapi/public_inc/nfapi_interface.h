@@ -583,7 +583,7 @@ typedef struct {
 } nfapi_pnf_phy_rf_config_t;
 #define NFAPI_PNF_PHY_RF_TAG 0x1003
 
-// Generic strucutre for single tlv value.
+// Generic structure for single tlv value.
 typedef struct {
 	nfapi_tl_t tl;
 	uint16_t value;
