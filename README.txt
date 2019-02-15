@@ -61,3 +61,4 @@ v1.0.0 -> January 2019. This version first implements the architectural split de
             S1-flex has been introduced.
             New tools: config library, telnet server, ...
             A lot of bugfixes and a proper automated Continuous Integration process validates contributions.
+v1.0.1 -> February 2019: Bug fix for the UE L1 simulator.
