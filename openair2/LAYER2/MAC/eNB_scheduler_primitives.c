@@ -820,11 +820,12 @@ void
 get_csi_params(COMMON_channels_t *cc,
                struct LTE_CQI_ReportPeriodic *cqi_ReportPeriodic,
                uint16_t *Npd, uint16_t *N_OFFSET_CQI, int *H) {
+  AssertFatal(cqi_ReportPeriodic != NULL,
+              "cqi_ReportPeriodic is null!\n");
+
   uint16_t cqi_PMI_ConfigIndex =
     cqi_ReportPeriodic->choice.setup.cqi_pmi_ConfigIndex;
   uint8_t Jtab[6] = { 0, 2, 2, 3, 4, 4 };
-  AssertFatal(cqi_ReportPeriodic != NULL,
-              "cqi_ReportPeriodic is null!\n");
 
   if (cc->tdd_Config == NULL) { //FDD
     if (cqi_PMI_ConfigIndex <= 1) { // 2 ms CQI_PMI period
@@ -2601,6 +2602,7 @@ int get_nb_subband(int N_RB_DL) {
 
     case 15:
       nb_sb = 4;    // sb_size =4
+      break;
 
     case 25:
       nb_sb = 7;    // sb_size =4, 1 sb with 1PRB, 6 with 2 RBG, each has 2 PRBs
@@ -2772,7 +2774,7 @@ dump_CCE_table(int *CCE_table, const int nCCE,
       break;
   }
 
-  printf("rnti %x, Yk*L = %d, nCCE %d (nCCE/L %d),nb_cand*L %d\n", rnti,
+  printf("rnti %x, Yk*L = %u, nCCE %d (nCCE/L %d),nb_cand*L %d\n", rnti,
          Yk * L, nCCE, nCCE / L, nb_candidates * L);
 }
 

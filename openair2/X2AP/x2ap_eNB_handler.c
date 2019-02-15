@@ -374,7 +374,11 @@ x2ap_eNB_handle_x2_setup_request(instance_t instance,
   /* Set proper pci */
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_X2SetupRequest_IEs_t, ie, x2SetupRequest,
                              X2AP_ProtocolIE_ID_id_ServedCells, true);
-  if (ie->value.choice.ServedCells.list.count > 0) {
+
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    return -1;
+  } else if (ie->value.choice.ServedCells.list.count > 0) {
     x2ap_eNB_data->x2ap_eNB_instance->num_cc = ie->value.choice.ServedCells.list.count;
     for (int i=0; i<ie->value.choice.ServedCells.list.count;i++) {
       servedCellMember = (ServedCells__Member *)ie->value.choice.ServedCells.list.array[i];
@@ -474,7 +478,11 @@ int x2ap_eNB_handle_x2_setup_response(instance_t instance,
   /* Set proper pci */
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_X2SetupResponse_IEs_t, ie, x2SetupResponse,
                              X2AP_ProtocolIE_ID_id_ServedCells, true);
-  if (ie->value.choice.ServedCells.list.count > 0) {
+
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    return -1;
+  } else if (ie->value.choice.ServedCells.list.count > 0) {
     x2ap_eNB_data->x2ap_eNB_instance->num_cc = ie->value.choice.ServedCells.list.count;
     for (int i=0; i<ie->value.choice.ServedCells.list.count;i++) {
       servedCellMember = (ServedCells__Member *)ie->value.choice.ServedCells.list.array[i];
@@ -585,7 +593,12 @@ int x2ap_eNB_handle_handover_preparation (instance_t instance,
                              X2AP_ProtocolIE_ID_id_Old_eNB_UE_X2AP_ID, true);
   //X2AP_HANDOVER_REQ(msg).source_rnti = ctxt_pP->rnti;
   //X2AP_HANDOVER_REQ(m).source_x2id = x2HandoverRequest->old_eNB_UE_X2AP_ID;
-  X2AP_HANDOVER_REQ(msg).old_eNB_ue_x2ap_id = ie->value.choice.UE_X2AP_ID;
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    return -1;
+  } else {
+    X2AP_HANDOVER_REQ(msg).old_eNB_ue_x2ap_id = ie->value.choice.UE_X2AP_ID;
+  }
 
   //X2AP_HANDOVER_REQ(msg).target_physCellId = measResults2->measResultNeighCells->choice.
                                                //measResultListEUTRA.list.array[ncell_index]->physCellId;
@@ -600,10 +613,13 @@ int x2ap_eNB_handle_handover_preparation (instance_t instance,
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_HandoverRequest_IEs_t, ie, x2HandoverRequest,
                              X2AP_ProtocolIE_ID_id_UE_ContextInformation, true);
 
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    return -1;
+  }
+
   X2AP_HANDOVER_REQ(msg).mme_ue_s1ap_id = ie->value.choice.UE_ContextInformation.mME_UE_S1AP_ID;
-
   X2AP_HANDOVER_REQ(msg).target_mod_id = x2ap_eNB_data->x2ap_eNB_instance->eNB_id;
-
   X2AP_HANDOVER_REQ(msg).security_capabilities.encryption_algorithms =
     BIT_STRING_to_uint16(&ie->value.choice.UE_ContextInformation.uESecurityCapabilities.encryptionAlgorithms);
   X2AP_HANDOVER_REQ(msg).security_capabilities.integrity_algorithms =

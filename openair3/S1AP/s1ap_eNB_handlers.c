@@ -1542,6 +1542,12 @@ int s1ap_eNB_handle_s1_path_switch_request_ack(uint32_t               assoc_id,
   /* mandatory */
   S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_PathSwitchRequestAcknowledgeIEs_t, ie, pathSwitchRequestAcknowledge,
                              S1AP_ProtocolIE_ID_id_eNB_UE_S1AP_ID, true);
+  if (ie == NULL) {
+    S1AP_ERROR("[SCTP %d] Received path switch request ack for non "
+               "ie context is NULL\n", assoc_id);
+    return -1;
+  }
+
   S1AP_PATH_SWITCH_REQ_ACK(message_p).eNB_ue_s1ap_id = ie->value.choice.ENB_UE_S1AP_ID;
 
   if ((ue_desc_p = s1ap_eNB_get_ue_context(mme_desc_p->s1ap_eNB_instance,
@@ -1556,6 +1562,13 @@ int s1ap_eNB_handle_s1_path_switch_request_ack(uint32_t               assoc_id,
   /* mandatory */
   S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_PathSwitchRequestAcknowledgeIEs_t, ie, pathSwitchRequestAcknowledge,
                              S1AP_ProtocolIE_ID_id_MME_UE_S1AP_ID, true);
+
+  if (ie == NULL) {
+    S1AP_ERROR("[SCTP %d] Received path switch request ack for non "
+               "ie context is NULL\n", assoc_id);
+    return -1;
+  }
+
   S1AP_PATH_SWITCH_REQ_ACK(message_p).mme_ue_s1ap_id = ie->value.choice.MME_UE_S1AP_ID;
 
   if ( ue_desc_p->mme_ue_s1ap_id != ie->value.choice.MME_UE_S1AP_ID) {
@@ -1566,6 +1579,13 @@ int s1ap_eNB_handle_s1_path_switch_request_ack(uint32_t               assoc_id,
   /* mandatory */
   S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_PathSwitchRequestAcknowledgeIEs_t, ie, pathSwitchRequestAcknowledge,
                              S1AP_ProtocolIE_ID_id_SecurityContext, true);
+
+  if (ie == NULL) {
+    S1AP_ERROR("[SCTP %d] Received path switch request ack for non "
+               "ie context is NULL\n", assoc_id);
+    return -1;
+  }
+
   S1AP_PATH_SWITCH_REQ_ACK(message_p).next_hop_chain_count =
     ie->value.choice.SecurityContext.nextHopChainingCount;
   memcpy(&S1AP_PATH_SWITCH_REQ_ACK(message_p).next_security_key,
@@ -1675,6 +1695,12 @@ int s1ap_eNB_handle_s1_path_switch_request_failure(uint32_t               assoc_
 
   S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_PathSwitchRequestFailureIEs_t, ie, pathSwitchRequestFailure,
                              S1AP_ProtocolIE_ID_id_Cause, true);
+
+  if (ie == NULL) {
+    S1AP_ERROR("[SCTP %d] Received S1 path switch request failure for non existing "
+               "ie context is NULL\n", assoc_id);
+    return -1;
+  }
 
   switch(ie->value.choice.Cause.present) {
     case S1AP_Cause_PR_NOTHING:

@@ -1683,7 +1683,7 @@ int s1ap_eNB_path_switch_req(instance_t instance,
 
     if ((collision_p = RB_INSERT(s1ap_ue_map, &s1ap_eNB_instance_p->s1ap_ue_head, ue_context_p))
         == NULL) {
-      S1AP_DEBUG("Found usable eNB_ue_s1ap_id: 0x%06x %d(10)\n",
+      S1AP_DEBUG("Found usable eNB_ue_s1ap_id: 0x%06x %u(10)\n",
                  ue_context_p->eNB_ue_s1ap_id,
                  ue_context_p->eNB_ue_s1ap_id);
       /* Break the loop as the id is not already used by another UE */

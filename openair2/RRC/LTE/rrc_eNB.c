@@ -5140,7 +5140,7 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
         ctxt_pP->module_id, // get_adjacent_cell_mod_id(mobilityInfo->targetPhysCellId),
         ue_context_pP->ue_context.rnti);
   mobilityInfo->additionalSpectrumEmission = CALLOC(1, sizeof(*mobilityInfo->additionalSpectrumEmission));
-  *mobilityInfo->additionalSpectrumEmission = 1;  //Check this value!
+  *mobilityInfo->additionalSpectrumEmission = (LTE_AdditionalSpectrumEmission_t) 1;  //Check this value!
   mobilityInfo->t304 = LTE_MobilityControlInfo__t304_ms200;    // need to configure an appropriate value here
   // New UE Identity (C-RNTI) to identify an UE uniquely in a cell
   mobilityInfo->newUE_Identity.size = 2;
