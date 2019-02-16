@@ -163,7 +163,6 @@ init_SI(
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].ul_CarrierFreq  = configuration->downlink_frequency[CC_id]+ configuration->uplink_frequency_offset[CC_id];
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-if(configuration->radioresourceconfig[CC_id].mbms_dedicated_serving_cell == TRUE){
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].pbch_repetition = configuration->pbch_repetition[CC_id];
 #endif
   LOG_I(RRC, "Configuring MIB (N_RB_DL %d,phich_Resource %d,phich_Duration %d)\n", 
@@ -183,6 +182,7 @@ if(configuration->radioresourceconfig[CC_id].mbms_dedicated_serving_cell == TRUE
 #endif
 	 );
 
+if(configuration->radioresourceconfig[CC_id].mbms_dedicated_serving_cell == TRUE){
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   LOG_I(RRC, "Configuring MIB FeMBMS (N_RB_DL %d)\n",
         (int)configuration->N_RB_DL[CC_id]);
@@ -195,7 +195,6 @@ if(configuration->radioresourceconfig[CC_id].mbms_dedicated_serving_cell == TRUE
          50,0
 #endif
          ,0);
-  
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_SIB1_MBMS = 0;
   RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1_MBMS = (uint8_t *) malloc16(32);
   AssertFatal(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].SIB1_MBMS!=NULL,PROTOCOL_RRC_CTXT_FMT" init_SI: FATAL, no memory for SIB1_MBMS allocated\n",
