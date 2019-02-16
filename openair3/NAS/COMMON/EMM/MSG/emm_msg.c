@@ -44,9 +44,8 @@ Description Defines EPS Mobility Management messages
 #include "TLVDecoder.h"
 #include "TLVEncoder.h"
 
-#if ((defined(NAS_BUILT_IN_EPC) && defined(NAS_MME)) || (defined(ENABLE_NAS_UE_LOGGING) && defined(NAS_BUILT_IN_UE) && defined(NAS_UE)))
-# include "nas_itti_messaging.h"
-#endif
+
+#include "nas_itti_messaging.h"
 
 /****************************************************************************/
 /****************  E X T E R N A L    D E F I N I T I O N S  ****************/
@@ -89,8 +88,6 @@ int emm_msg_decode(EMM_msg *msg, uint8_t *buffer, uint32_t len)
 
   int header_result;
   int decode_result;
-
-#if ((defined(NAS_BUILT_IN_EPC) && defined(NAS_MME)) || (defined(ENABLE_NAS_UE_LOGGING) && defined(NAS_BUILT_IN_UE) && defined(NAS_UE)))
   uint8_t *buffer_log = buffer;
   uint32_t len_log = len;
   int down_link;
@@ -100,7 +97,7 @@ int emm_msg_decode(EMM_msg *msg, uint8_t *buffer, uint32_t len)
 # else
   down_link = 1;
 # endif
-#endif
+
 
   /* First decode the EMM message header */
   header_result = _emm_msg_decode_header(&msg->header, buffer, len);
@@ -291,7 +288,7 @@ int emm_msg_encode(EMM_msg *msg, uint8_t *buffer, uint32_t len)
   int header_result;
   int encode_result;
 
-#if ((defined(NAS_BUILT_IN_EPC) && defined(NAS_MME)) || (defined(ENABLE_NAS_UE_LOGGING) && defined(NAS_BUILT_IN_UE) && defined(NAS_UE)))
+
   uint8_t *buffer_log = buffer;
   int down_link;
 
@@ -300,7 +297,7 @@ int emm_msg_encode(EMM_msg *msg, uint8_t *buffer, uint32_t len)
 # else
   down_link = 0;
 # endif
-#endif
+
 
   /* First encode the EMM message header */
   header_result = _emm_msg_encode_header(&msg->header, buffer, len);

@@ -936,7 +936,7 @@ fi
     echo "set (LINUX True )"                          >>  $cmake_file
     echo "set (PDCP_USE_NETLINK True )"               >>  $cmake_file
     echo "set (BASIC_SIMULATOR \"True\" )"            >>  $cmake_file
-    echo "set (UE_NAS_USE_TUN \"True\" )"             >>  $cmake_file
+#    echo "set (UE_NAS_USE_TUN \"True\" )"             >>  $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../../CMakeLists.txt)' >> $cmake_file
 
     echo_info "Build UE"

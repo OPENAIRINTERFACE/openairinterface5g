@@ -48,20 +48,16 @@ Description Defines functions used to handle EPS bearer contexts.
 
 #include "emm_sap.h"
 #include "system.h"
-
-#if defined(ENABLE_ITTI)
-# include "assertions.h"
-#endif
+#include "assertions.h"
+#include "pdcp.h"
 
 
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#ifdef PDCP_USE_NETLINK
 #ifdef UESIM_EXPANSION
   #include "openairinterface5g_limits.h"
   extern uint16_t inst_pdcp_list[NUMBER_OF_UE_MAX];
-#endif
 #endif
 extern uint8_t  nfapi_mode;
 
@@ -282,10 +278,10 @@ int esm_ebr_context_create(
                 // this is for L2 FAPI simulator.
                 // change for multiple UE's like 256UEs.
                 // if it's made too many tables , OS may crush so we use one table.
-#ifdef PDCP_USE_NETLINK
+                if(PDCP_USE_NETLINK) {
 #ifdef UESIM_EXPANSION
-                uint16_t inst_nic = (pdn->ip_addr[3] & 0x000000FF) - 2;
-                res = sprintf(command_line,
+                  uint16_t inst_nic = (pdn->ip_addr[3] & 0x000000FF) - 2;
+                  res = sprintf(command_line,
                            "ifconfig oip%d %s netmask %s broadcast %s up && "
                            "ip rule add from %s/24 table %d && "
                            "ip rule add to %s/24 table %d && "
@@ -295,9 +291,9 @@ int esm_ebr_context_create(
                            ipv4_addr, 201,
                            inst_nic + 1, 201);
 
-               inst_pdcp_list[inst_nic] = ueid;
+                 inst_pdcp_list[inst_nic] = ueid;
 #else
-               res = sprintf(command_line,
+                 res = sprintf(command_line,
                           "ifconfig oip%d %s netmask %s broadcast %s up && "
                           "ip rule add from %s/32 table %d && "
                           "ip rule add to %s/32 table %d && "
@@ -307,7 +303,7 @@ int esm_ebr_context_create(
                           ipv4_addr, ueid + 201,
                           ueid + 1, ueid + 201);
 #endif
-#endif
+               } // PDCP_USE_NETLINK
              } else {
                res = sprintf(command_line,
                            "ifconfig oip%d %s netmask %s broadcast %s up && "
