@@ -41,21 +41,20 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
                                   unsigned char Ns) {
   RU_t *ru;
   ru = RC.ru[UE_id];
-  LTE_DL_FRAME_PARMS *frame_parms = (eNB==NULL) ? &eNB->frame_parms : &ru->frame_parms;
-  //LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
-  LTE_eNB_PUSCH *pusch_vars = eNB->pusch_vars[UE_id];
+  LTE_DL_FRAME_PARMS *frame_parms = (eNB!=NULL) ? &eNB->frame_parms : &ru->frame_parms;
+  LTE_eNB_PUSCH *pusch_vars = (eNB!=NULL) ? eNB->pusch_vars[UE_id] : NULL;
   RU_CALIBRATION *calibration = &ru->calibration;
-  //int32_t **ul_ch_estimates=pusch_vars->drs_ch_estimates;
-  int32_t **ul_ch_estimates = (eNB==NULL) ? pusch_vars->drs_ch_estimates : calibration->drs_ch_estimates;
+  int32_t **ul_ch_estimates = (eNB!=NULL) ? pusch_vars->drs_ch_estimates : calibration->drs_ch_estimates;
 
-  //int32_t **ul_ch_estimates_time=  pusch_vars->drs_ch_estimates_time;
-  int32_t **ul_ch_estimates_time = (eNB==NULL) ? pusch_vars->drs_ch_estimates_time : calibration->drs_ch_estimates_time;
-  
-  //int32_t **rxdataF_ext=  pusch_vars->rxdataF_ext;
-  int32_t **rxdataF_ext = (eNB==NULL) ? pusch_vars->rxdataF_ext : calibration->rxdataF_ext;
+  AssertFatal(ul_ch_estimates != NULL, "ul_ch_estimates is null (eNB %p, pusch %p, pusch->drs_ch_estimates %p, pusch->drs_ch_estimates[0] %p ul_ch_estimates %p UE_id %d)\n",eNB,pusch_vars,pusch_vars->drs_ch_estimates,pusch_vars->drs_ch_estimates[0],ul_ch_estimates,UE_id);
 
-  int subframe = (eNB==NULL) ? proc->subframe_rx : ru->proc.subframe_rx;
-  //int subframe = proc->subframe_rx;
+  int32_t **ul_ch_estimates_time = (eNB!=NULL) ? pusch_vars->drs_ch_estimates_time : calibration->drs_ch_estimates_time;
+ 
+  AssertFatal(ul_ch_estimates_time != NULL, "ul_ch_estimates_time is null\n");
+ 
+  int32_t **rxdataF_ext = (eNB!=NULL) ? pusch_vars->rxdataF_ext : calibration->rxdataF_ext;
+
+  int subframe = (eNB!=NULL) ? proc->subframe_rx : ru->proc.subframe_rx;
 
   uint8_t harq_pid = subframe2harq_pid(frame_parms,proc->frame_rx,subframe);
 
@@ -122,14 +121,11 @@ int32_t temp_in_ifft_0[2048*2] __attribute__((aligned(32)));
 
 #endif
 
-
   if (l == (3 - frame_parms->Ncp)) {
 
     symbol_offset = frame_parms->N_RB_UL*12*(l+((7-frame_parms->Ncp)*(Ns&1)));
 
     for (aa=0; aa<nb_antennas_rx; aa++) {
-      //           msg("Componentwise prod aa %d, symbol_offset %d,ul_ch_estimates %p,ul_ch_estimates[aa] %p,ul_ref_sigs_rx[0][0][Msc_RS_idx] %p\n",aa,symbol_offset,ul_ch_estimates,ul_ch_estimates[aa],ul_ref_sigs_rx[0][0][Msc_RS_idx]);
-
 #if defined(__x86_64__) || defined(__i386__)
       rxdataF128 = (__m128i *)&rxdataF_ext[aa][symbol_offset];
       ul_ch128   = (__m128i *)&ul_ch_estimates[aa][symbol_offset];

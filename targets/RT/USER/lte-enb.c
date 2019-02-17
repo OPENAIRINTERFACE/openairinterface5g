@@ -436,9 +436,10 @@ static void* L1_thread( void* param ) {
       if (rxtx(eNB,proc,thread_name) < 0) break;
     }
 
-    LOG_D(PHY,"L1_thread: RX done\n");
+    LOG_D(PHY,"L1_thread: RX done in %d.%d\n",proc->frame_rx,proc->subframe_rx);
     if(get_thread_parallel_conf() == PARALLEL_RU_L1_SPLIT)              phy_procedures_eNB_TX(eNB, proc, 1);
     if (release_thread(&proc->mutex,&proc->instance_cnt,thread_name)<0) break;
+    LOG_D(PHY,"L1_thread: IC %d\n",proc->instance_cnt);
 VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_L1_PROC_IC,proc->instance_cnt);
     if (nfapi_mode!=2){
     	if(get_thread_parallel_conf() == PARALLEL_RU_L1_TRX_SPLIT)      wakeup_tx(eNB);
@@ -589,18 +590,13 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,RU_t *ru) {
   L1_rxtx_proc_t *L1_proc=&proc->L1_proc;
   LTE_DL_FRAME_PARMS *fp = &eNB->frame_parms;
   
-  LOG_D(PHY,"ENTERED wakeup_rxtx\n");
+  LOG_D(PHY,"ENTERED wakeup_rxtx, %d.%d\n",ru_proc->frame_rx,ru_proc->subframe_rx);
   
   int i;
   struct timespec wait;
   
   wait.tv_sec=0;
   wait.tv_nsec=5000000L;
-
-  if (L1_proc->instance_cnt == 0) {
-    LOG_E(PHY,"Frame %d, subframe %d: RXTX0 thread busy, dropping\n",L1_proc->frame_rx,L1_proc->subframe_rx);
-    return(-1);
-  }
 
   // wake up TX for subframe n+sf_ahead
   // lock the TX mutex and make sure the thread is ready
@@ -609,9 +605,14 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,RU_t *ru) {
     exit_fun( "error locking mutex_rxtx" );
     return(-1);
   }
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_L1_PROC_IC,L1_proc->instance_cnt);
-  ++L1_proc->instance_cnt;
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_L1_PROC_IC,L1_proc->instance_cnt);
+  if (L1_proc->instance_cnt == 0) {
+    LOG_E(PHY,"Frame %d, subframe %d: RXTX0 thread busy, dropping\n",ru_proc->frame_rx,ru_proc->subframe_rx);
+    abort();
+  }
+  else {
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_L1_PROC_IC,L1_proc->instance_cnt);
+    ++L1_proc->instance_cnt;
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_L1_PROC_IC,L1_proc->instance_cnt);
 
   // We have just received and processed the common part of a subframe, say n. 
   // TS_rx is the last received timestamp (start of 1st slot), TS_tx is the desired 
@@ -619,26 +620,26 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,RU_t *ru) {
   // The last (TS_rx mod samples_per_frame) was n*samples_per_tti,
   // we want to generate subframe (n+sf_ahead), so TS_tx = TX_rx+sf_ahead*samples_per_tti,
   // and proc->subframe_tx = proc->subframe_rx+sf_ahead
-  L1_proc->timestamp_tx = ru_proc->timestamp_rx + (sf_ahead*fp->samples_per_tti);
-  L1_proc->frame_rx     = ru_proc->frame_rx;
-  L1_proc->subframe_rx  = ru_proc->subframe_rx;
-  L1_proc->frame_tx     = (L1_proc->subframe_rx > (9-sf_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
-  L1_proc->subframe_tx  = (L1_proc->subframe_rx + sf_ahead)%10;
+    L1_proc->timestamp_tx = ru_proc->timestamp_rx + (sf_ahead*fp->samples_per_tti);
+    L1_proc->frame_rx     = ru_proc->frame_rx;
+    L1_proc->subframe_rx  = ru_proc->subframe_rx;
+    L1_proc->frame_tx     = (L1_proc->subframe_rx > (9-sf_ahead)) ? (L1_proc->frame_rx+1)&1023 : L1_proc->frame_rx;
+    L1_proc->subframe_tx  = (L1_proc->subframe_rx + sf_ahead)%10;
 
-  //printf("wakeup_rxtx: L1_proc->subframe_rx %d, L1_proc->subframe_tx %d, RU %d\n",L1_proc->subframe_rx,L1_proc->subframe_tx,ru->idx);
+    LOG_D(PHY,"wakeup_rxtx: L1_proc->subframe_rx %d, L1_proc->subframe_tx %d, RU %d\n",L1_proc->subframe_rx,L1_proc->subframe_tx,ru->idx);
 
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_WAKEUP_RXTX_RX_RU+ru->idx, L1_proc->frame_rx);
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_WAKEUP_RXTX_RX_RU+ru->idx, L1_proc->subframe_rx);
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_WAKEUP_RXTX_TX_RU+ru->idx, L1_proc->frame_tx);
-  VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_WAKEUP_RXTX_TX_RU+ru->idx, L1_proc->subframe_tx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_WAKEUP_RXTX_RX_RU+ru->idx, L1_proc->frame_rx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_WAKEUP_RXTX_RX_RU+ru->idx, L1_proc->subframe_rx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_FRAME_NUMBER_WAKEUP_RXTX_TX_RU+ru->idx, L1_proc->frame_tx);
+    VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_SUBFRAME_NUMBER_WAKEUP_RXTX_TX_RU+ru->idx, L1_proc->subframe_tx);
 
   // the thread can now be woken up
-  if (pthread_cond_signal(&L1_proc->cond) != 0) {
-    LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB RXn-TXnp4 thread\n");
-    exit_fun( "ERROR pthread_cond_signal" );
-    return(-1);
+    if (pthread_cond_signal(&L1_proc->cond) != 0) {
+      LOG_E( PHY, "[eNB] ERROR pthread_cond_signal for eNB RXn-TXnp4 thread\n");
+      exit_fun( "ERROR pthread_cond_signal" );
+      return(-1);
+    }
   }
-
   pthread_mutex_unlock( &L1_proc->mutex);
   return(0);
 }
