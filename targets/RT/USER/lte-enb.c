@@ -606,10 +606,16 @@ int wakeup_rxtx(PHY_VARS_eNB *eNB,RU_t *ru) {
     return(-1);
   }
   if (L1_proc->instance_cnt == 0) {
-    LOG_E(PHY,"Frame %d, subframe %d: RXTX0 thread busy, dropping\n",ru_proc->frame_rx,ru_proc->subframe_rx);
-    abort();
+    pthread_mutex_unlock(&L1_proc->mutex);
+    usleep(200);
+    if (pthread_mutex_lock(&L1_proc->mutex) != 0) {
+      LOG_E( PHY, "[eNB] ERROR pthread_mutex_lock for eNB RXTX thread %d (IC %d)\n", L1_proc->subframe_rx&1,L1_proc->instance_cnt );
+      exit_fun( "error locking mutex_rxtx" );
+      return(-1);
+    }
+    if (L1_proc->instance_cnt == 0) LOG_E(PHY,"Frame %d, subframe %d: RXTX0 thread busy, dropping\n",ru_proc->frame_rx,ru_proc->subframe_rx);
   }
-  else {
+  if (L1_proc->instance_cnt == -1) {
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_L1_PROC_IC,L1_proc->instance_cnt);
     ++L1_proc->instance_cnt;
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_L1_PROC_IC,L1_proc->instance_cnt);

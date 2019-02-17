@@ -240,9 +240,11 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
        else if (packet_type == IF4p5_PULTICK) {           
          proc->symbol_mask[sf] = symbol_mask_full;
          pultick_received++;
+/*
          if ((proc->first_rx==0) && (f!=*frame)) LOG_E(PHY,"rx_fh_if4p5: PULTICK received frame %d != expected %d (RU %d) \n",f,*frame, ru->idx);       
          else if ((proc->first_rx==0) && (sf!=*subframe)) LOG_E(PHY,"rx_fh_if4p5: PULTICK received subframe %d != expected %d (first_rx %d)\n",sf,*subframe,proc->first_rx);       
-         else break;
+         else break; */
+         if (f==*frame || sf==*subframe) break;
        } else if (packet_type == IF4p5_PRACH) {
       // nothing in RU for RAU
        }
