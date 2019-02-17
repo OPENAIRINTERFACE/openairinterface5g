@@ -444,7 +444,7 @@ static void *watchdog_thread(void *arg) {
 	  (diff > 16)&&
 	  (first_acquisition==0))  {// we're too late so exit
 	exm->watchdog_exit = 1;
-        printf("exiting, too late to keep up - diff = %d\n", diff);
+        printf("exiting, too late to keep up - diff = %u\n", diff);
       }
       first_acquisition=0;
 
@@ -625,7 +625,7 @@ int trx_exmimo_read(openair0_device *device, openair0_timestamp *ptimestamp, voi
     if (cfg->mmapped_dma == 0) {  // if buff is not the dma buffer, do a memcpy, otherwise do nothing
       for (i=0;i<cc;i++) {
 #ifdef DEBUG_EXMIMO
-	printf("copying to %p (%lu), from %llu\n",buff[i]+(ntot*sizeof(int)),ntot*sizeof(int),(exm->last_ts_rx % exm->samples_per_frame));
+	printf("copying to %p (%zu), from %llu\n",buff[i]+(ntot*sizeof(int)),ntot*sizeof(int),(exm->last_ts_rx % exm->samples_per_frame));
 #endif
 	if ((n+(exm->last_ts_rx%exm->samples_per_frame))<exm->samples_per_frame) {
 	  memcpy(buff[i]+(ntot*sizeof(int)),
@@ -733,7 +733,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
 
     if (ret == -3)
       printf("Error mapping RX or TX buffer");
-
+    free(exm);
     return(ret);
   }
 
@@ -752,6 +752,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
     // check if the software matches firmware
     if (p_exmimo_id->board_swrev!=BOARD_SWREV_CNTL2) {
       printf("Software revision %d and firmware revision %d do not match. Please update either the firmware or the software!\n",BOARD_SWREV_CNTL2,p_exmimo_id->board_swrev);
+      free(exm);
       return(-1);
     }
   }
@@ -905,7 +906,7 @@ int openair0_config(openair0_config_t *openair0_cfg, int UE_flag)
 	    p_exmimo_config->rf.rx_gain[ant][0] = 30 - (rxg_max[ant] - (int)openair0_cfg[card].rx_gain[ant]); //was measured at rxgain=30;
 	  }
 	  else {
-	    printf("openair0: RX RF gain too high, reduce by %d dB\n", (int)openair0_cfg[card].rx_gain[ant]-rxg_max[ant]);
+	    printf("openair0: RX RF gain too high, reduce by %u dB\n", (int)openair0_cfg[card].rx_gain[ant]-rxg_max[ant]);
 	    exit(-1);
 	  }
           break;
@@ -916,7 +917,7 @@ int openair0_config(openair0_config_t *openair0_cfg, int UE_flag)
 	    p_exmimo_config->rf.rx_gain[ant][0] = 30 - (rxg_med[ant] - (int)openair0_cfg[card].rx_gain[ant]); //was measured at rxgain=30;
 	  }
 	  else {
-	    printf("openair0: RX RF gain too high, reduce by %d dB\n", (int)openair0_cfg[card].rx_gain[ant]-rxg_med[ant]);
+	    printf("openair0: RX RF gain too high, reduce by %u dB\n", (int)openair0_cfg[card].rx_gain[ant]-rxg_med[ant]);
 	    exit(-1);
 	  }
           break;
@@ -927,7 +928,7 @@ int openair0_config(openair0_config_t *openair0_cfg, int UE_flag)
 	    p_exmimo_config->rf.rx_gain[ant][0] = 30 - (rxg_byp[ant] - (int)openair0_cfg[card].rx_gain[ant]); //was measured at rxgain=30;
 	  }
 	  else {
-	    printf("openair0: RX RF gain too high, reduce by %d dB\n", (int)openair0_cfg[card].rx_gain[ant]-rxg_byp[ant]);
+	    printf("openair0: RX RF gain too high, reduce by %u dB\n", (int)openair0_cfg[card].rx_gain[ant]-rxg_byp[ant]);
 	    exit(-1);
 	  }
           break;

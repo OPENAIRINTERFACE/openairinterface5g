@@ -110,7 +110,7 @@ int ue_ip_netlink_init(void)
 # if LINUX_VERSION_CODE < KERNEL_VERSION(3,8,0)
                 THIS_MODULE,
 # endif
-                &cfg
+                &cfg);
 #else /* LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0) */
   nas_nl_sk = netlink_kernel_create(
                 &init_net,
@@ -120,7 +120,7 @@ int ue_ip_netlink_init(void)
                 &nasmesh_mutex, // NULL
                 THIS_MODULE);
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0) */
-              );
+             
 
 
   if (nas_nl_sk == NULL) {

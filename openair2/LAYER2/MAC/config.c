@@ -134,42 +134,37 @@ static const eutra_bandentry_t eutra_bandtable[] = {
   {68, 6980, 7280, 7530, 7830, 67536}
 };
 
-uint32_t to_earfcn(int eutra_bandP, uint32_t dl_CarrierFreq, uint32_t bw)
-{
 
+#define BANDTABLE_SIZE (sizeof(eutra_bandtable)/sizeof(eutra_bandentry_t))
+
+uint32_t to_earfcn(int eutra_bandP, uint32_t dl_CarrierFreq, uint32_t bw) {
   uint32_t dl_CarrierFreq_by_100k = dl_CarrierFreq / 100000;
   int bw_by_100 = bw / 100;
-
   int i;
-
   AssertFatal(eutra_bandP < 69, "eutra_band %d > 68\n", eutra_bandP);
-  for (i = 0; i < 69 && eutra_bandtable[i].band != eutra_bandP; i++);
+
+  for (i = 0; i < BANDTABLE_SIZE && eutra_bandtable[i].band != eutra_bandP; i++);
 
   AssertFatal(dl_CarrierFreq_by_100k >= eutra_bandtable[i].dl_min,
-	      "Band %d, bw %u : DL carrier frequency %u Hz < %u\n",
-	      eutra_bandP, bw, dl_CarrierFreq,
-	      eutra_bandtable[i].dl_min);
+              "Band %d, bw %u : DL carrier frequency %u Hz < %u\n",
+              eutra_bandP, bw, dl_CarrierFreq,
+              eutra_bandtable[i].dl_min);
   AssertFatal(dl_CarrierFreq_by_100k <=
-	      (eutra_bandtable[i].dl_max - bw_by_100),
-	      "Band %d, bw %u: DL carrier frequency %u Hz > %d\n",
-	      eutra_bandP, bw, dl_CarrierFreq,
-	      eutra_bandtable[i].dl_max - bw_by_100);
-
-
+              (eutra_bandtable[i].dl_max - bw_by_100),
+              "Band %d, bw %u: DL carrier frequency %u Hz > %d\n",
+              eutra_bandP, bw, dl_CarrierFreq,
+              eutra_bandtable[i].dl_max - bw_by_100);
   return (dl_CarrierFreq_by_100k - eutra_bandtable[i].dl_min +
-	  (eutra_bandtable[i].N_OFFs_DL / 10));
+          (eutra_bandtable[i].N_OFFs_DL / 10));
 }
 
-uint32_t to_earfcn_DL(int eutra_bandP, long long int dl_CarrierFreq, uint32_t bw)
-{
-
+uint32_t to_earfcn_DL(int eutra_bandP, long long int dl_CarrierFreq, uint32_t bw) {
   uint32_t dl_CarrierFreq_by_100k = dl_CarrierFreq / 100000;
   int bw_by_100 = bw / 100;
-
   int i;
-
   AssertFatal(eutra_bandP < 69, "eutra_band %d > 68\n", eutra_bandP);
-  for (i = 0; i < 69 && eutra_bandtable[i].band != eutra_bandP; i++);
+
+  for (i = 0; i < BANDTABLE_SIZE && eutra_bandtable[i].band != eutra_bandP; i++);
 
   AssertFatal(dl_CarrierFreq_by_100k >= eutra_bandtable[i].dl_min,
               "Band %d, bw %u : DL carrier frequency %lld Hz < %u\n",
@@ -180,22 +175,17 @@ uint32_t to_earfcn_DL(int eutra_bandP, long long int dl_CarrierFreq, uint32_t bw
               "Band %d, bw %u : DL carrier frequency %lld Hz > %d\n",
               eutra_bandP, bw, dl_CarrierFreq,
               eutra_bandtable[i].dl_max - bw_by_100);
-
-
   return (dl_CarrierFreq_by_100k - eutra_bandtable[i].dl_min +
           (eutra_bandtable[i].N_OFFs_DL / 10));
 }
 
-uint32_t to_earfcn_UL(int eutra_bandP, long long int ul_CarrierFreq, uint32_t bw)
-{
-
+uint32_t to_earfcn_UL(int eutra_bandP, long long int ul_CarrierFreq, uint32_t bw) {
   uint32_t ul_CarrierFreq_by_100k = ul_CarrierFreq / 100000;
   int bw_by_100 = bw / 100;
-
   int i;
-
   AssertFatal(eutra_bandP < 69, "eutra_band %d > 68\n", eutra_bandP);
-  for (i = 0; i < 69 && eutra_bandtable[i].band != eutra_bandP; i++);
+
+  for (i = 0; i < BANDTABLE_SIZE && eutra_bandtable[i].band != eutra_bandP; i++);
 
   AssertFatal(ul_CarrierFreq_by_100k >= eutra_bandtable[i].ul_min,
               "Band %d, bw %u : UL carrier frequency %lld Hz < %u\n",
@@ -206,30 +196,26 @@ uint32_t to_earfcn_UL(int eutra_bandP, long long int ul_CarrierFreq, uint32_t bw
               "Band %d, bw %u : UL carrier frequency %lld Hz > %d\n",
               eutra_bandP, bw, ul_CarrierFreq,
               eutra_bandtable[i].ul_max - bw_by_100);
-
-
   return (ul_CarrierFreq_by_100k - eutra_bandtable[i].ul_min +
           ((eutra_bandtable[i].N_OFFs_DL + 180000) / 10));
 }
 
-uint32_t from_earfcn(int eutra_bandP, uint32_t dl_earfcn)
-{
-
+uint32_t from_earfcn(int eutra_bandP, uint32_t dl_earfcn) {
   int i;
-
   AssertFatal(eutra_bandP < 69, "eutra_band %d > 68\n", eutra_bandP);
-  for (i = 0; i < 69 && eutra_bandtable[i].band != eutra_bandP; i++);
+
+  for (i = 0; i < BANDTABLE_SIZE && eutra_bandtable[i].band != eutra_bandP; i++);
 
   return (eutra_bandtable[i].dl_min +
-	  (dl_earfcn - (eutra_bandtable[i].N_OFFs_DL / 10))) * 100000;
+          (dl_earfcn - (eutra_bandtable[i].N_OFFs_DL / 10))) * 100000;
 }
 
 
-int32_t get_uldl_offset(int eutra_bandP)
-{
+int32_t get_uldl_offset(int eutra_bandP) {
   int i;
 
-  for (i = 0; i < 69 && eutra_bandtable[i].band != eutra_bandP; i++);
+  for (i = 0; i < BANDTABLE_SIZE && eutra_bandtable[i].band != eutra_bandP; i++);
+
   return (eutra_bandtable[i].dl_min - eutra_bandtable[i].ul_min);
 }
 
@@ -892,6 +878,19 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
     }
   } // mib != NULL
 
+  if (mobilityControlInfo !=NULL){
+     if ((UE_id = add_new_ue(Mod_idP, CC_idP,
+                             rntiP, -1
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                             ,
+                             -1
+#endif
+                             )) == -1)
+     {
+       LOG_E(MAC, "%s:%d: fatal\n", __FILE__, __LINE__);
+       abort();
+     }
+  }
 
   // SRB2_lchan_config->choice.explicitValue.ul_SpecificParameters->logicalChannelGroup
   if (logicalChannelConfig != NULL) {	// check for eMTC specific things

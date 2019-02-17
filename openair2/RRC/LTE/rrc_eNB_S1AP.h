@@ -269,6 +269,10 @@ int rrc_eNB_process_S1AP_E_RAB_RELEASE_COMMAND(MessageDef *msg_p, const char *ms
  */
 int rrc_eNB_send_S1AP_E_RAB_RELEASE_RESPONSE(const protocol_ctxt_t* const ctxt_pP, rrc_eNB_ue_context_t*  const ue_context_pP, uint8_t xid );
 
+int rrc_eNB_send_PATH_SWITCH_REQ(const protocol_ctxt_t* const ctxt_pP,
+				  rrc_eNB_ue_context_t*          const ue_context_pP);
+int rrc_eNB_process_S1AP_PATH_SWITCH_REQ_ACK (MessageDef *msg_p, const char *msg_name, instance_t instance);
+
 #   endif
 # endif /* defined(ENABLE_USE_MME) */
 #endif /* RRC_ENB_S1AP_H_ */

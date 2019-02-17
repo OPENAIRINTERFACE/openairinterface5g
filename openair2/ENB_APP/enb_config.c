@@ -1909,7 +1909,7 @@ int RCconfig_S1(
 
               default: {
                 LOG_E(S1AP, "Default I-DRX value in conf file is invalid (%i). Should be 32, 64, 128 or 256. \
-           Default DRX set to 32 in MME configuration\n",
+                             Default DRX set to 32 in MME configuration\n",
                       ccparams_lte.pcch_defaultPagingCycle);
                 S1AP_REGISTER_ENB_REQ(msg_p).default_drx = 0;
               }
@@ -1927,7 +1927,9 @@ int RCconfig_S1(
 
               if (strcmp(*(S1ParamList.paramarray[l][ENB_MME_IP_ADDRESS_PREFERENCE_IDX].strptr), "ipv4") == 0) {
                 S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[l].ipv4 = 1;
+                S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[l].ipv6 = 0;
               } else if (strcmp(*(S1ParamList.paramarray[l][ENB_MME_IP_ADDRESS_PREFERENCE_IDX].strptr), "ipv6") == 0) {
+                S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[l].ipv4 = 0;
                 S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[l].ipv6 = 1;
               } else if (strcmp(*(S1ParamList.paramarray[l][ENB_MME_IP_ADDRESS_PREFERENCE_IDX].strptr), "no") == 0) {
                 S1AP_REGISTER_ENB_REQ (msg_p).mme_ip_address[l].ipv4 = 1;

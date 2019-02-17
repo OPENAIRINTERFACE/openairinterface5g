@@ -363,6 +363,14 @@ function report_build {
         echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-tag\"></span> Commit ID</td>" >> ./build_results.html
         echo "        <td>$SOURCE_COMMIT_ID</td>" >> ./build_results.html
         echo "      </tr>" >> ./build_results.html
+        if [ -e .git/CI_COMMIT_MSG ]
+        then
+            echo "      <tr>" >> ./build_results.html
+            echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-comment\"></span> Commit Message</td>" >> ./build_results.html
+            MSG=`cat .git/CI_COMMIT_MSG`
+            echo "        <td>$MSG</td>" >> ./build_results.html
+            echo "      </tr>" >> ./build_results.html
+        fi
     fi
     if [ $MR_TRIG -eq 1 ]
     then
@@ -374,6 +382,14 @@ function report_build {
         echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-tag\"></span> Source Commit ID</td>" >> ./build_results.html
         echo "        <td>$SOURCE_COMMIT_ID</td>" >> ./build_results.html
         echo "      </tr>" >> ./build_results.html
+        if [ -e .git/CI_COMMIT_MSG ]
+        then
+            echo "      <tr>" >> ./build_results.html
+            echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-comment\"></span> Source Commit Message</td>" >> ./build_results.html
+            MSG=`cat .git/CI_COMMIT_MSG`
+            echo "        <td>$MSG</td>" >> ./build_results.html
+            echo "      </tr>" >> ./build_results.html
+        fi
         echo "      <tr>" >> ./build_results.html
         echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-log-in\"></span> Target Branch</td>" >> ./build_results.html
         echo "        <td>$TARGET_BRANCH</td>" >> ./build_results.html
@@ -492,7 +508,7 @@ function report_build {
 
     if [ -e ./archives/red_hat ]
     then
-        echo "   <h2>Red Hat (CentOS Linux release 7.4.1708) -- Summary</h2>" >> ./build_results.html
+        echo "   <h2>Red Hat Enterprise Linux Server release 7.6) -- Summary</h2>" >> ./build_results.html
 
         summary_table_header "Red Hat -- OAI Build eNB -- USRP option" ./archives/red_hat
         summary_table_row "LTE SoftModem - Release 14" ./archives/red_hat/lte-softmodem.Rel14.txt "Built target lte-softmodem" ./enb_usrp_rh_row1.html

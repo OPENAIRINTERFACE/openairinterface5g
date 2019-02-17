@@ -124,6 +124,9 @@ The X2AP layer is based on **3GPP 36.423** v14.6.0 and implements the following 
 
  - X2 Setup Request
  - X2 Setup Response 
+ - X2 Setup Failure
+ - Handover Request 
+ - Handover Request Acknowledge
 
 ## eNB Advanced Features ##
 

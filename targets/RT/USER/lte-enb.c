@@ -167,7 +167,10 @@ static inline int rxtx(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, char *thread_name
 #if defined(PRE_SCD_THREAD)
     RU_t *ru = RC.ru[0];
 #endif
-
+  if (eNB ==NULL) {
+      LOG_D(PHY,"%s:%d: rxtx invalid argument, eNB pointer is NULL",__FILE__,__LINE__); 
+      return -1;     
+  }
   if (nfapi_mode == 1) {
     // I am a PNF and I need to let nFAPI know that we have a (sub)frame tick
     uint16_t frame = proc->frame_rx;
@@ -206,7 +209,7 @@ static inline int rxtx(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc, char *thread_name
   T(T_ENB_PHY_DL_TICK, T_INT(eNB->Mod_id), T_INT(proc->frame_tx), T_INT(proc->subframe_tx));
 
   // if this is IF5 or 3GPP_eNB
-  if (eNB && eNB->RU_list && eNB->RU_list[0] && eNB->RU_list[0]->function < NGFI_RAU_IF4p5) {
+  if (eNB->RU_list && eNB->RU_list[0] && eNB->RU_list[0]->function < NGFI_RAU_IF4p5) {
     wakeup_prach_eNB(eNB,NULL,proc->frame_rx,proc->subframe_rx);
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     wakeup_prach_eNB_br(eNB,NULL,proc->frame_rx,proc->subframe_rx);

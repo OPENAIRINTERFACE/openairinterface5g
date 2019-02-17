@@ -971,6 +971,10 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg) {
 	//int init_ra_UE = -1; // This counter is used to initiate the RA of each UE in different SFrames
   static __thread int UE_thread_rxtx_retval;
   struct rx_tx_thread_data *rtd = arg;
+  if (rtd == NULL) {
+      LOG_E( MAC, "[SCHED][UE] rx_tx_thread_data *rtd: NULL pointer\n" );
+      exit_fun("nothing to add");    
+  }
   UE_rxtx_proc_t *proc = rtd->proc;
 
   // settings for nfapi-L2-emulator mode
@@ -984,9 +988,8 @@ static void *UE_phy_stub_single_thread_rxn_txnp4(void *arg) {
   proc = &PHY_vars_UE_g[0][0]->proc.proc_rxtx[0];
   phy_stub_ticking->num_single_thread[ue_thread_id] = -1;
 
-  if (rtd != NULL) {
-    UE = rtd->UE;
-  }
+  UE = rtd->UE;
+ 
 
   if(ue_thread_id == 0){
     phy_stub_ticking->ticking_var = -1;

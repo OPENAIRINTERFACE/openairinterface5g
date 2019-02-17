@@ -32,7 +32,7 @@
  */
 
 #include "RRC/LTE/rrc_defs.h"
-
+#include "x2ap_messages_types.h"
 #include "flexran_agent_extern.h"
 
 //main.c
@@ -309,6 +309,15 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(
 							     const uint8_t ho_state,
 							     agent_reconf_rrc * trig_param
 							     );
+void
+rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t* const ctxt_pP,
+                                                 rrc_eNB_ue_context_t*  const ue_context_pP,
+                                                 uint8_t*               buffer,
+                                                 int                    *_size
+                                                 //const uint8_t        ho_state
+                                                 );
+void
+rrc_eNB_configure_rbs_handover(struct rrc_eNB_ue_context_s* ue_context_p, protocol_ctxt_t* const ctxt_pP);
 
 int freq_to_arfcn10(int band, unsigned long freq);
 
@@ -348,6 +357,8 @@ void *rrc_enb_task(void *args_p);
    \param void *args_p Pointer on arguments to start the task. */
 void *rrc_ue_task(void *args_p);
 #endif
+
+void rrc_eNB_process_handoverPreparationInformation(int mod_id, x2ap_handover_req_t *m);
 
 /**\brief Generate/decode the handover RRCConnectionReconfiguration at eNB
    \param module_idP Instance ID for eNB/CH
@@ -580,9 +591,11 @@ rrc_eNB_process_MeasurementReport(
 
 void
 rrc_eNB_generate_HandoverPreparationInformation(
-  const protocol_ctxt_t* const ctxt_pP,
+  //const protocol_ctxt_t* const ctxt_pP,
   rrc_eNB_ue_context_t*          const ue_context_pP,
-  LTE_PhysCellId_t targetPhyId
+  uint8_t*                     buffer,
+  int                          *_size
+  //LTE_PhysCellId_t targetPhyId
 );
 
 void
