@@ -130,6 +130,7 @@ static char                    *itti_dump_file = NULL;
 
 int UE_scan = 0;
 int UE_scan_carrier = 0;
+int UE_fo_compensation = 0;
 runmode_t mode = normal_txrx;
 
 FILE *input_fd=NULL;
@@ -978,6 +979,7 @@ int main( int argc, char **argv ) {
     
     UE[CC_id]->UE_scan = UE_scan;
     UE[CC_id]->UE_scan_carrier = UE_scan_carrier;
+    UE[CC_id]->UE_fo_compensation = UE_fo_compensation;
     UE[CC_id]->mode    = mode;
     printf("UE[%d]->mode = %d\n",CC_id,mode);
     

@@ -28,7 +28,7 @@
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "filt16a_32.h"
 #include "T.h"
-//#define DEBUG_PDSCH
+//#define DEBUG_PDCCH
 
 
 int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
@@ -297,7 +297,7 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
 
 
   // generate pilot 
-  nr_pdcch_dmrs_rx(ue,eNB_offset,Ns,ue->nr_gold_pdcch[eNB_offset][Ns][symbol], &pilot[0],2000,nb_rb_coreset);
+  nr_pdcch_dmrs_rx(ue,eNB_offset,Ns,ue->nr_gold_pdcch[eNB_offset][Ns>>1][symbol], &pilot[0],2000,nb_rb_coreset);
 
 
   for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
@@ -459,7 +459,7 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
     break;
   }
 
-  if( (Ns== 2) && (l == 0))
+  //if( (Ns== 2) && (l == 0))
   {
       // do ifft of channel estimate
       for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++)

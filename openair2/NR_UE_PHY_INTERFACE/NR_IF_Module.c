@@ -268,11 +268,11 @@ int nr_ue_dcireq(nr_dcireq_t *dcireq) {
   //  Type0 PDCCH search space
   dl_config->number_pdus =  1;
   dl_config->dl_config_list[0].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
-  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.rnti = 0xaaaa;	//	to be set
+  dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.rnti = 0x1234;	//	to be set
   
   uint64_t mask = 0x0;
-  uint16_t num_rbs=48;
-  uint16_t rb_offset=47;
+  uint16_t num_rbs=24;
+  uint16_t rb_offset=0;
   uint16_t cell_id=0;
   uint16_t num_symbols=2;
   for(int i=0; i<(num_rbs/6); ++i){   //  38.331 Each bit corresponds a group of 6 RBs
@@ -292,7 +292,7 @@ int nr_ue_dcireq(nr_dcireq_t *dcireq) {
   
   uint32_t number_of_search_space_per_slot=1;
   uint32_t first_symbol_index=0;
-  uint32_t search_space_duration=1;  //  element of search space
+  uint32_t search_space_duration=0;  //  element of search space
   uint32_t coreset_duration;  //  element of coreset
   
   coreset_duration = num_symbols * number_of_search_space_per_slot;

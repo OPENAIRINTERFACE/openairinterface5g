@@ -63,54 +63,38 @@ void nr_deinterleaving_ldpc(uint32_t E, uint8_t Qm, int16_t *e,int16_t *f)
 }
 
 
-uint32_t nr_rate_matching_ldpc(uint8_t Ilbrm,
-							   uint32_t Tbslbrm,
-							   uint8_t BG,
-							   uint16_t Z,
-                               uint32_t G,
-                               uint8_t *w,
-                               uint8_t *e,
-                               uint8_t C,
-                               uint8_t rvidx,
-                               uint8_t Qm,
-                               uint8_t Nl,
-                               uint8_t r)
+int nr_rate_matching_ldpc(uint8_t Ilbrm,
+                          uint32_t Tbslbrm,
+                          uint8_t BG,
+                          uint16_t Z,
+                          uint8_t *w,
+                          uint8_t *e,
+                          uint8_t C,
+                          uint8_t rvidx,
+                          uint32_t E)
 {
-  uint8_t Cprime;
-  uint32_t Ncb,E,ind,k,Nref,N;
-  //uint8_t *e2;
+  uint32_t Ncb,ind,k,Nref,N;
 
-  AssertFatal(Nl>0,"Nl is 0\n");
-  AssertFatal(Qm>0,"Qm is 0\n");
+  if (C==0) {
+    printf("nr_rate_matching: invalid parameters (C %d\n",C);
+    return -1;
+  }
 
   //Bit selection
   N = (BG==1)?(66*Z):(50*Z);
 
   if (Ilbrm == 0)
-	  Ncb = N;
+      Ncb = N;
   else {
       Nref = 3*Tbslbrm/(2*C); //R_LBRM = 2/3
       Ncb = min(N, Nref);
   }
 
-#ifdef RM_DEBUG
-  printf("nr_rate_matching: Ncb %d, rvidx %d, G %d, Qm %d, Nl%d, r %d\n",Ncb,rvidx, G, Qm,Nl,r);
-#endif
-
-  Cprime = C; //assume CBGTI not present
-
-  if (r <= Cprime - ((G/(Nl*Qm))%Cprime) - 1)
-      E = Nl*Qm*(G/(Nl*Qm*Cprime));
-  else
-	  E = Nl*Qm*((G/(Nl*Qm*Cprime))+1);
-
   ind = (index_k0[BG-1][rvidx]*Ncb/N)*Z;
 
 #ifdef RM_DEBUG
-  printf("nr_rate_matching: E %d, k0 %d Cprime %d modcprime %d\n",E,ind, Cprime,((G/(Nl*Qm))%Cprime));
+  printf("nr_rate_matching_ldpc: E %d, k0 %d, Ncb %d, rvidx %d\n", E, ind, Ncb, rvidx);
 #endif
-
-  //e2 = e;
 
   k=0;
 
@@ -120,7 +104,6 @@ uint32_t nr_rate_matching_ldpc(uint8_t Ilbrm,
     printf("RM_TX k%d Ind: %d (%d)\n",k,ind,w[ind]);
 #endif
 
-    //if (w[ind] != NR_NULL) e2[k++]=w[ind];
     if (w[ind] != NR_NULL) e[k++]=w[ind];
   }
 
@@ -131,79 +114,60 @@ uint32_t nr_rate_matching_ldpc(uint8_t Ilbrm,
       printf("RM_TX k%d Ind: %d (%d)\n",k,ind,w[ind]);
 #endif
 
-      //if (w[ind] != NR_NULL) e2[k++]=w[ind];
       if (w[ind] != NR_NULL) e[k++]=w[ind];
     }
   }
 
 
-  return(E);
+  return 0;
 }
 
 int nr_rate_matching_ldpc_rx(uint8_t Ilbrm,
-		 	 	 	 	 	 uint32_t Tbslbrm,
-							 uint8_t BG,
-							 uint16_t Z,
-							 uint32_t G,
+                             uint32_t Tbslbrm,
+                             uint8_t BG,
+                             uint16_t Z,
                              int16_t *w,
                              int16_t *soft_input,
                              uint8_t C,
                              uint8_t rvidx,
                              uint8_t clear,
-                             uint8_t Qm,
-                             uint8_t Nl,
-                             uint8_t r,
-                             uint32_t *E_out)
+                             uint32_t E)
 {
-  uint8_t Cprime;
-  uint32_t Ncb,E,ind,k,Nref,N;
-
-  int16_t *soft_input2;
+  uint32_t Ncb,ind,k,Nref,N;
 
 #ifdef RM_DEBUG
   int nulled=0;
 #endif
 
-  if (C==0 || Qm==0 || Nl==0) {
-    printf("nr_rate_matching: invalid parameters (C %d, Qm %d, Nl %d\n",C,Qm,Nl);
-    return(-1);
+  if (C==0) {
+    printf("nr_rate_matching: invalid parameters (C %d\n",C);
+    return -1;
   }
-
-  AssertFatal(Nl>0,"Nl is 0\n");
-  AssertFatal(Qm>0,"Qm is 0\n");
 
   //Bit selection
   N = (BG==1)?(66*Z):(50*Z);
 
   if (Ilbrm == 0)
-	  Ncb = N;
+      Ncb = N;
   else {
       Nref = (3*Tbslbrm/(2*C)); //R_LBRM = 2/3
       Ncb = min(N, Nref);
   }
 
-  Cprime = C; //assume CBGTI not present
-
-  if (r <= Cprime - ((G/(Nl*Qm))%Cprime) - 1)
-      E = Nl*Qm*(G/(Nl*Qm*Cprime));
-  else
-	  E = Nl*Qm*((G/(Nl*Qm*Cprime))+1);
-
   ind = (index_k0[BG-1][rvidx]*Ncb/N)*Z;
 
 #ifdef RM_DEBUG
-  printf("nr_rate_matching_ldpc_rx: Clear %d, E %d, Ncb %d,rvidx %d, G %d, Qm %d, Nl%d, r %d\n",clear,E,Ncb,rvidx, G, Qm,Nl,r);
+  printf("nr_rate_matching_ldpc_rx: Clear %d, E %d, k0 %d, Ncb %d, rvidx %d\n", clear, E, ind, Ncb, rvidx);
 #endif
 
   if (clear==1)
     memset(w,0,Ncb*sizeof(int16_t));
 
-  soft_input2 = soft_input;
   k=0;
 
   for (; (ind<Ncb)&&(k<E); ind++) {
-    if (soft_input2[ind] != NR_NULL) {
-      w[ind] += soft_input2[k++];
+    if (soft_input[ind] != NR_NULL) {
+      w[ind] += soft_input[k++];
 #ifdef RM_DEBUG
       printf("RM_RX k%d Ind: %d (%d)\n",k-1,ind,w[ind]);
 #endif
@@ -220,10 +184,10 @@ int nr_rate_matching_ldpc_rx(uint8_t Ilbrm,
 
   while(k<E) {
     for (ind=0; (ind<Ncb)&&(k<E); ind++) {
-      if (soft_input2[ind] != NR_NULL) {
-        w[ind] += soft_input2[k++];
+      if (soft_input[ind] != NR_NULL) {
+        w[ind] += soft_input[k++];
 #ifdef RM_DEBUG
-        printf("RM_RX k%d Ind: %d (%d)(soft in %d)\n",k-1,ind,w[ind],soft_input2[k-1]);
+        printf("RM_RX k%d Ind: %d (%d)(soft in %d)\n",k-1,ind,w[ind],soft_input[k-1]);
 #endif
       }
 
@@ -237,7 +201,5 @@ int nr_rate_matching_ldpc_rx(uint8_t Ilbrm,
     }
   }
 
-  *E_out = E;
-  return(0);
-
+  return 0;
 }
