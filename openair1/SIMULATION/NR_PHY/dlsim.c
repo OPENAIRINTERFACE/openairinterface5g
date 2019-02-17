@@ -56,7 +56,8 @@
 #include "NR_UE_PHY_INTERFACE/NR_IF_Module.h"
 
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
-#include "LAYER2/NR_MAC_gNB/mac_proto.h"
+//#include "LAYER2/NR_MAC_gNB/mac_proto.h"
+//#include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
 #include "RRC/NR/MESSAGES/asn1_msg.h"
 
 
@@ -107,7 +108,7 @@ int rrc_init_nr_global_param(void){return(0);}
 
 // needed for some functions
 PHY_VARS_NR_UE ***PHY_vars_UE_g;
-uint16_t conjugate[8]__attribute__((aligned(32))) = {-1,1,-1,1,-1,1,-1,1};
+short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
 
 int main(int argc, char **argv)
 {

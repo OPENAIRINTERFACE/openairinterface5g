@@ -148,7 +148,7 @@ int16_t get_pucch_tx_power_ue(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_pro
     }
   }
 
-  int l = 0;
+  //int l = 0;
   int k2;
 
   if (power_config->twoPUCCH_PC_AdjustmentStates > 1) {

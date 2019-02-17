@@ -629,7 +629,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
   paramdef_t GNBParams[]  = GNBPARAMS_DESC;
   paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
   ////////// Physical parameters
-  checkedparam_t config_check_CCparams[] = NRCCPARAMS_CHECK;
+  //checkedparam_t config_check_CCparams[] = NRCCPARAMS_CHECK;
   paramdef_t CCsParams[] = NRCCPARAMS_DESC;
   paramlist_def_t CCsParamList = {GNB_CONFIG_STRING_COMPONENT_CARRIERS,NULL,0};
   

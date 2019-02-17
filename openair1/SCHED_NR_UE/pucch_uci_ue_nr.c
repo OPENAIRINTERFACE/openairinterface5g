@@ -36,7 +36,7 @@
 
 #include "PHY/NR_REFSIG/ss_pbch_nr.h"
 #include "PHY/defs_nr_UE.h"
-#include "PHY/NR_UE_TRANSPORT/pucch_nr.h"
+//#include "PHY/NR_UE_TRANSPORT/pucch_nr.h"
 
 #ifndef NO_RAT_NR
 
