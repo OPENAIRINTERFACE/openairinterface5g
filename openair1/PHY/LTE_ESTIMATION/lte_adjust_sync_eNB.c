@@ -119,13 +119,10 @@ int lte_est_timing_advance_pusch(PHY_VARS_eNB *eNB,module_id_t UE_id)
 
   RU_t *ru;
   ru = RC.ru[UE_id];
-  //LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;
   LTE_DL_FRAME_PARMS *frame_parms = (eNB==NULL) ? &ru->frame_parms : &eNB->frame_parms;
   LTE_eNB_PUSCH *eNB_pusch_vars = eNB->pusch_vars[UE_id];
   RU_CALIBRATION *calibration = &ru->calibration;
-  //int32_t **ul_ch_estimates_time=  eNB_pusch_vars->drs_ch_estimates_time;
-  int32_t **ul_ch_estimates_time = calibration->drs_ch_estimates_time;
-  //int32_t **ul_ch_estimates_time = (eNB==NULL) ? calibration->drs_ch_estimates_time : eNB_pusch_vars->drs_ch_estimates_time;
+  int32_t **ul_ch_estimates_time = (eNB==NULL) ? calibration->drs_ch_estimates_time : eNB_pusch_vars->drs_ch_estimates_time;
   uint8_t cyclic_shift = 0;
   int sync_pos = (frame_parms->ofdm_symbol_size-cyclic_shift*frame_parms->ofdm_symbol_size/12)%(frame_parms->ofdm_symbol_size);
   

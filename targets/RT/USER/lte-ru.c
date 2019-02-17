@@ -224,28 +224,35 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
   uint16_t packet_type;
   uint32_t symbol_number=0;
   uint32_t symbol_mask_full;
+  int pultick_received=0;
 
   if ((fp->frame_type == TDD) && (subframe_select(fp,*subframe)==SF_S))  
     symbol_mask_full = (1<<fp->ul_symbols_in_S_subframe)-1;   
   else     
     symbol_mask_full = (1<<fp->symbols_per_tti)-1; 
-  LOG_D(PHY,"fh_if4p5_south_in: RU %d, frame %d, subframe %d, ru %d\n",ru->idx,*frame,*subframe,ru->idx);
-  AssertFatal(proc->symbol_mask[*subframe]==0,"rx_fh_if4p5: proc->symbol_mask[%d] = %x\n",*subframe,proc->symbol_mask[*subframe]);
-  do {
-    recv_IF4p5(ru, &f, &sf, &packet_type, &symbol_number);
-    if (oai_exit == 1 || ru->cmd== STOP_RU) break;
-    if (packet_type == IF4p5_PULFFT) proc->symbol_mask[sf] = proc->symbol_mask[sf] | (1<<symbol_number);
-    else if (packet_type == IF4p5_PULTICK) {           
-      if ((proc->first_rx==0) && (f!=*frame)) LOG_E(PHY,"rx_fh_if4p5: PULTICK received frame %d != expected %d (RU %d)\n",f,*frame, ru->idx);       
-      if ((proc->first_rx==0) && (sf!=*subframe)) LOG_E(PHY,"rx_fh_if4p5: PULTICK received subframe %d != expected %d (first_rx %d)\n",sf,*subframe,proc->first_rx);       
-      break;     
-      
-    } else if (packet_type == IF4p5_PRACH) {
+  LOG_D(PHY,"fh_if4p5_south_in: RU %d, frame %d, subframe %d, ru %d, mask %x\n",ru->idx,*frame,*subframe,ru->idx,proc->symbol_mask[*subframe]);
+  AssertFatal(proc->symbol_mask[*subframe]==0 || proc->symbol_mask[*subframe]==symbol_mask_full,"rx_fh_if4p5: proc->symbol_mask[%d] = %x\n",*subframe,proc->symbol_mask[*subframe]);
+  if (proc->symbol_mask[*subframe]==0) { // this is normal case, if not true then we received a PULTICK before the previous subframe was finished 
+     do {
+       recv_IF4p5(ru, &f, &sf, &packet_type, &symbol_number);
+       if (oai_exit == 1 || ru->cmd== STOP_RU) break;
+       if (packet_type == IF4p5_PULFFT) proc->symbol_mask[sf] = proc->symbol_mask[sf] | (1<<symbol_number);
+       else if (packet_type == IF4p5_PULTICK) {           
+         proc->symbol_mask[sf] = symbol_mask_full;
+         pultick_received++;
+         if ((proc->first_rx==0) && (f!=*frame)) LOG_E(PHY,"rx_fh_if4p5: PULTICK received frame %d != expected %d (RU %d) \n",f,*frame, ru->idx);       
+         else if ((proc->first_rx==0) && (sf!=*subframe)) LOG_E(PHY,"rx_fh_if4p5: PULTICK received subframe %d != expected %d (first_rx %d)\n",sf,*subframe,proc->first_rx);       
+         else break;
+       } else if (packet_type == IF4p5_PRACH) {
       // nothing in RU for RAU
-    }
-    LOG_D(PHY,"rx_fh_if4p5: subframe %d symbol mask %x\n",*subframe,proc->symbol_mask[*subframe]);
-  } while(proc->symbol_mask[*subframe] != symbol_mask_full);    
-
+       }
+       LOG_D(PHY,"rx_fh_if4p5: subframe %d symbol mask %x\n",*subframe,proc->symbol_mask[*subframe]);
+     } while(proc->symbol_mask[*subframe] != symbol_mask_full);    
+  }
+  else {
+   f = *frame;
+   sf = *subframe;
+  }
   //calculate timestamp_rx, timestamp_tx based on frame and subframe
   proc->subframe_rx  = sf;
   proc->frame_rx     = f;
@@ -255,14 +262,17 @@ void fh_if4p5_south_in(RU_t *ru,int *frame,int *subframe) {
      proc->frame_tx     = (sf>(9-sf_ahead)) ? (f+1)&1023 : f;
   }
 
+  LOG_D(PHY,"Setting proc for (%d,%d)\n",sf,f);
+
   if (proc->first_rx == 0) {
    if (proc->subframe_rx != *subframe){
-      LOG_E(PHY,"Received Timestamp (IF4p5) doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d)\n",proc->subframe_rx,*subframe);
-      exit_fun("Exiting");
+      LOG_E(PHY,"Received Timestamp (IF4p5) doesn't correspond to the time we think it is (proc->subframe_rx %d, subframe %d, symbol_mask %x)\n",proc->subframe_rx,*subframe,proc->symbol_mask[*subframe]);
+      *subframe=sf; 
+      //exit_fun("Exiting");
     }
     if (ru->cmd != WAIT_RESYNCH && proc->frame_rx != *frame) {
-      LOG_E(PHY,"Received Timestamp (IF4p5) doesn't correspond to the time we think it is (proc->frame_rx %d frame %d)\n",proc->frame_rx,*frame);
-      exit_fun("Exiting");
+      LOG_E(PHY,"Received Timestamp (IF4p5) doesn't correspond to the time we think it is (proc->frame_rx %d frame %d,symbol_mask %x\n",proc->frame_rx,*frame,proc->symbol_mask[*subframe]);
+      //exit_fun("Exiting");
     }
     else if (ru->cmd == WAIT_RESYNCH && proc->frame_rx != *frame){
        ru->cmd=EMPTY;
