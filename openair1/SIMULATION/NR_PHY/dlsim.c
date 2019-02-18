@@ -154,9 +154,10 @@ int main(int argc, char **argv)
   unsigned char frame_type = 0;
   unsigned char pbch_phase = 0;
 
-  int frame=0,slot=1;
+  int frame=0,slot=0;
   int frame_length_complex_samples;
   int frame_length_complex_samples_no_prefix;
+  int slot_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
   nfapi_nr_config_request_t *gNB_config;
   gNB_L1_rxtx_proc_t gNB_proc;
@@ -437,7 +438,8 @@ int main(int argc, char **argv)
   }
 
   frame_length_complex_samples = frame_parms->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
-  frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP;
+  frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
+  slot_length_complex_samples_no_prefix = frame_parms->samples_per_slot_wCP;
 
   s_re = malloc(2*sizeof(double*));
   s_im = malloc(2*sizeof(double*));
@@ -480,6 +482,7 @@ int main(int argc, char **argv)
   else                      {UE->is_synchronized = 1; UE->UE_mode[0]=PUSCH;}
                       
   UE->perfect_ce = 0;
+  for (i=0;i<10;i++) UE->current_thread_id[i] = 0;
 
   if (init_nr_ue_signal(UE, 1, 0) != 0)
   {
@@ -536,9 +539,9 @@ int main(int argc, char **argv)
     
     //nr_common_signal_procedures (gNB,frame,subframe);
 
-	LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],frame_length_complex_samples_no_prefix,1,1);
-	if (gNB->frame_parms.nb_antennas_tx>1)
-	LOG_M("txsigF1.m","txsF1", gNB->common_vars.txdataF[1],frame_length_complex_samples_no_prefix,1,1);
+    LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],frame_length_complex_samples_no_prefix,1,1);
+    if (gNB->frame_parms.nb_antennas_tx>1)
+      LOG_M("txsigF1.m","txsF1", gNB->common_vars.txdataF[1],frame_length_complex_samples_no_prefix,1,1);
 
     //TODO: loop over slots
     for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
@@ -564,7 +567,7 @@ int main(int argc, char **argv)
 	      frame_length_complex_samples,
 	      input_fd) != frame_length_complex_samples) {
       printf("error reading from file\n");
-      exit(-1);
+      //exit(-1);
     }
   }
 
@@ -665,7 +668,7 @@ int main(int argc, char **argv)
 
       if (n_trials==1) {
 	LOG_M("rxsig0.m","rxs0", UE->common_vars.rxdata[0],frame_length_complex_samples,1,1);
-	if (gNB->frame_parms.nb_antennas_tx>1)
+	if (UE->frame_parms.nb_antennas_rx>1)
 	  LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1],frame_length_complex_samples,1,1);
       }
       if (UE->is_synchronized == 0) {
@@ -691,7 +694,12 @@ int main(int argc, char **argv)
 			       do_pdcch_flag,
 			       normal_txrx);
 
-		
+	if (n_trials==1) {
+	  LOG_M("rxsigF0.m","rxsF0", UE->common_vars.common_vars_rx_data_per_thread[0].rxdataF[0],slot_length_complex_samples_no_prefix,1,1);
+	  if (UE->frame_parms.nb_antennas_rx>1)
+	    LOG_M("rxsigF1.m","rxsF1", UE->common_vars.common_vars_rx_data_per_thread[0].rxdataF[1],slot_length_complex_samples_no_prefix,1,1);
+	}
+	
 	if (UE->dci_ind.number_of_dcis==0) n_errors++;
       }
     } //noise trials

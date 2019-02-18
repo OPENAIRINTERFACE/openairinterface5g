@@ -5055,8 +5055,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 #ifdef NR_PDCCH_SCHED
   //nr_gold_pdcch(ue,0, 2);
   
-  if (nr_tti_rx==1){
-   for (uint16_t l=0; l<nb_symb_pdcch; l++) {
+  //if (nr_tti_rx==1){
+  for (uint16_t l=0; l<nb_symb_pdcch; l++) {
     
 #if UE_TIMING_TRACE
     start_meas(&ue->ofdm_demod_stats);
@@ -5083,7 +5083,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
     LOG_E(PHY,"[UE  %d] Frame %d, nr_tti_rx %d: Error in pdcch procedures\n",ue->Mod_id,frame_rx,nr_tti_rx);
     return(-1);
   }
- }
+  //}
 #endif //NR_PDCCH_SCHED
 
   LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
