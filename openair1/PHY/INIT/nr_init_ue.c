@@ -670,7 +670,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
 
   // many memory allocation sizes are hard coded
   AssertFatal( fp->nb_antennas_rx <= 2, "hard coded allocation for ue_common_vars->dl_ch_estimates[eNB_id]" );
-  AssertFatal( ue->n_connected_eNB <= NUMBER_OF_CONNECTED_eNB_MAX, "n_connected_eNB is too large" );
+  AssertFatal( nb_connected_eNB <= NUMBER_OF_CONNECTED_eNB_MAX, "n_connected_eNB is too large" );
   // init phy_vars_ue
 
   for (i=0; i<4; i++) {
@@ -922,7 +922,7 @@ void init_nr_ue_transport(PHY_VARS_NR_UE *ue,int abstraction_flag) {
       for (k=0; k<RX_NB_TH_MAX; k++) {
 	AssertFatal((ue->dlsch[k][i][j]  = new_nr_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_LDPC_ITERATIONS,ue->frame_parms.N_RB_DL, abstraction_flag))!=NULL,"Can't get ue dlsch structures\n");
 
-	LOG_D(PHY,"dlsch[%d][%d][%d] => %p\n",k,i,j,ue->dlsch[i][j]);
+	LOG_D(PHY,"dlsch[%d][%d][%d] => %p\n",k,i,j,ue->dlsch[k][i][j]);
       }
     }
 

@@ -126,7 +126,7 @@ else
 
   } else {
     //msg("nr_segmentation.c: Illegal codeword size !!!\n");
-    return(-1);
+    return -1;
   }
   *Zout = *K;
   *K = *K*Kb;
@@ -140,10 +140,11 @@ else
 
   if ((input_buffer) && (output_buffers)) {
 
-    s=0;
+    s = 0;
 
     for (r=0; r<*C; r++) {
 
+      k = 0;
       Kprime = Bprime_by_C;
 
       while (k<((Kprime - L)>>3)) {
@@ -153,10 +154,11 @@ else
         s++;
       }
 
-      if (*F>0)
-      for (k=Kprime>>3; k<(*K)>>3; k++) {
+      if (*F>0) {
+        for (k=Kprime>>3; k<(*K)>>3; k++) {
           output_buffers[r][k] = NR_NULL;
           //printf("r %d filler bits [%d] = %d Kprime %d \n", r,k, output_buffers[r][k], Kprime);
+        }
       }
 
       if (*C > 1) { // add CRC
@@ -165,12 +167,10 @@ else
         output_buffers[r][1+((Kprime-L)>>3)] = ((uint8_t*)&crc)[1];
         output_buffers[r][2+((Kprime-L)>>3)] = ((uint8_t*)&crc)[0];
       }
-
-      k=0;
     }
   }
 
-  return(0);
+  return 0;
 }
 
 

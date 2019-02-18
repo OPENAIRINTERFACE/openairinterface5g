@@ -156,6 +156,9 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
   }
 
   fp->slots_per_frame = 10* fp->slots_per_subframe;
+
+  fp->nb_antenna_ports_eNB = 1; // default value until overwritten by RRCConnectionReconfiguration
+
   fp->symbols_per_slot = ((Ncp == NORMAL)? 14 : 12); // to redefine for different slot formats
   fp->samples_per_subframe_wCP = fp->ofdm_symbol_size * fp->symbols_per_slot * fp->slots_per_subframe;
   fp->samples_per_frame_wCP = 10 * fp->samples_per_subframe_wCP;

@@ -381,6 +381,7 @@ int main(int argc, char **argv) {
 	frame_parms->nb_antennas_tx = n_tx;
 	frame_parms->nb_antennas_rx = n_rx;
 	frame_parms->N_RB_DL = N_RB_DL;
+	frame_parms->Ncp = extended_prefix_flag ? EXTENDED : NORMAL;
 	crcTableInit();
 	nr_phy_config_request_sim(gNB, N_RB_DL, N_RB_DL, mu, Nid_cell);
 	phy_init_nr_gNB(gNB, 0, 0);
@@ -490,7 +491,7 @@ int main(int argc, char **argv) {
 	test_input_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
 	estimated_output = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
 	estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
-	NR_UE_DLSCH_t *dlsch0_ue = UE->dlsch[UE->current_thread_id[subframe]][0][0];
+	NR_UE_DLSCH_t *dlsch0_ue = UE->dlsch[0][0][0];
 	NR_DL_UE_HARQ_t *harq_process = dlsch0_ue->harq_processes[harq_pid];
 	harq_process->mcs = Imcs;
 	harq_process->Nl = Nl;
@@ -643,7 +644,7 @@ int main(int argc, char **argv) {
 		printf("gNB %d\n", i);
 		free_gNB_dlsch(gNB->dlsch[0][i]);
 		printf("UE %d\n", i);
-		free_nr_ue_dlsch(UE->dlsch[UE->current_thread_id[subframe]][0][i]);
+		free_nr_ue_dlsch(UE->dlsch[0][0][i]);
 	}
 
 	for (i = 0; i < 2; i++) {
