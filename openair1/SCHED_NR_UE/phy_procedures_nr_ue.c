@@ -56,7 +56,7 @@
 //#define DEBUG_PHY_PROC
 
 #define NR_PDCCH_SCHED
-#define NR_PDCCH_SCHED_DEBUG
+//#define NR_PDCCH_SCHED_DEBUG
 //#define NR_PUCCH_SCHED
 //#define NR_PUCCH_SCHED_DEBUG
 
@@ -3081,6 +3081,8 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
   // Higher layers have updated the number of searchSpaces with are active in the current slot and this value is stored in variable nb_searchspace_total
   int nb_searchspace_total = pdcch_vars2->nb_search_space;
 
+  pdcch_vars[eNB_id]->crnti = 0x1234; //to be check how to set when using loop memory
+
   uint16_t c_rnti=pdcch_vars[eNB_id]->crnti;
   uint16_t cs_rnti,new_rnti,tc_rnti;
   uint16_t p_rnti=P_RNTI;
@@ -5075,7 +5077,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 #endif
     
     //printf("phy procedure pdcch start measurement l =%d\n",l);
-    nr_ue_measurement_procedures(l,ue,proc,eNB_id,(nr_tti_rx<<1),mode);
+    nr_ue_measurement_procedures(l,ue,proc,eNB_id,(nr_tti_rx),mode);
       
   }
 

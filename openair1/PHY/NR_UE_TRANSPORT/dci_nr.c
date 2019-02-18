@@ -49,7 +49,7 @@
 
 //#define NR_LTE_PDCCH_DCI_SWITCH
 #define NR_PDCCH_DCI_RUN              // activates new nr functions
-#define NR_PDCCH_DCI_DEBUG            // activates NR_PDCCH_DCI_DEBUG logs
+//#define NR_PDCCH_DCI_DEBUG            // activates NR_PDCCH_DCI_DEBUG logs
 #define NR_NBR_CORESET_ACT_BWP 3      // The number of CoreSets per BWP is limited to 3 (including initial CORESET: ControlResourceId 0)
 #define NR_NBR_SEARCHSPACE_ACT_BWP 10 // The number of SearSpaces per BWP is limited to 10 (including initial SEARCHSPACE: SearchSpaceId 0)
 #define PDCCH_TEST_POLAR_TEMP_FIX
@@ -1451,12 +1451,12 @@ void nr_dci_decoding_procedure0(int s,
 	dci_alloc[*dci_cnt].dci_pdu[1] = dci_estimation[1];
 	dci_alloc[*dci_cnt].dci_pdu[2] = dci_estimation[2];
 	dci_alloc[*dci_cnt].dci_pdu[3] = dci_estimation[3];
-#ifdef NR_PDCCH_DCI_DEBUG
+//#ifdef NR_PDCCH_DCI_DEBUG
 	printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> rnti matches -> DCI FOUND !!! crc =>%x, sizeof_bits %d, sizeof_bytes %d \n",
 		dci_alloc[*dci_cnt].rnti, dci_alloc[*dci_cnt].dci_length, sizeof_bytes);
 	printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> dci_cnt %d (format_css %d crc_scrambled %d) L %d, firstCCE %d pdu[0] %x pdu[1] %x pdu[2] %x pdu[3] %x \n",
 		*dci_cnt, format_css,*crc_scrambled,dci_alloc[*dci_cnt].L, dci_alloc[*dci_cnt].firstCCE,dci_alloc[*dci_cnt].dci_pdu[0],dci_alloc[*dci_cnt].dci_pdu[1],dci_alloc[*dci_cnt].dci_pdu[2],dci_alloc[*dci_cnt].dci_pdu[3]);
-#endif
+//#endif
 	if ((format_css == cformat0_0_and_1_0) || (format_uss == uformat0_0_and_1_0)){
 	  if ((*crc_scrambled == _p_rnti) || (*crc_scrambled == _si_rnti) || (*crc_scrambled == _ra_rnti)){
 	    dci_alloc[*dci_cnt].format = format1_0;
