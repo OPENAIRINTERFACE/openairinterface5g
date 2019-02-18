@@ -689,9 +689,9 @@ nwGtpv1uInitialize( NW_INOUT NwGtpv1uStackHandleT *hGtpuStackHandle, uint32_t st
   NwGtpv1uStackT *thiz;
 
   thiz = (NwGtpv1uStackT *) malloc( sizeof(NwGtpv1uStackT));
-  memset(thiz, 0, sizeof(NwGtpv1uStackT));
 
   if(thiz) {
+    memset(thiz, 0, sizeof(NwGtpv1uStackT));
     thiz->id    = (NwPtrT)thiz;
     thiz->stackType = stackType;
     thiz->seq   = (uint16_t) ((uintptr_t)thiz) ; // FIXME interesting casts... don't know what this is good for...
@@ -890,6 +890,11 @@ nwGtpv1uProcessUdpReq( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
     GTPU_DEBUG("NW_GTP_GPDU: DATA COMING FROM UDP\n");
 #endif
     ret = nwGtpv1uProcessGpdu(thiz, udpData, udpDataLen, peerIp);
+    break;
+
+  case NW_GTP_END_MARKER:
+    GTPU_DEBUG("NW_GTP_END_MARKER\n");
+    ret = NW_GTPV1U_OK;
     break;
 
   default:

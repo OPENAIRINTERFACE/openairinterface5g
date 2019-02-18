@@ -19,6 +19,13 @@
  *      contact@openairinterface.org
  */
 
+/*! \file x2ap_eNB.c
+ * \brief x2ap tasks for eNB
+ * \author Konstantinos Alexandris <Konstantinos.Alexandris@eurecom.fr>, Cedric Roux <Cedric.Roux@eurecom.fr>, Navid Nikaein <Navid.Nikaein@eurecom.fr>
+ * \date 2018
+ * \version 1.0
+ */
+
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -64,6 +71,13 @@ void x2ap_eNB_register_eNB(x2ap_eNB_instance_t *instance_p,
                            uint32_t             enb_port_for_X2C,
                            int                  multi_sd);
 
+static
+void x2ap_eNB_handle_handover_req(instance_t instance,
+                                  x2ap_handover_req_t *x2ap_handover_req);
+
+static
+void x2ap_eNB_handle_handover_req_ack(instance_t instance,
+                                      x2ap_handover_req_ack_t *x2ap_handover_req_ack);
 
 static
 void x2ap_eNB_handle_sctp_data_ind(instance_t instance, sctp_data_ind_t *sctp_data_ind) {
@@ -353,6 +367,62 @@ void x2ap_eNB_handle_sctp_init_msg_multi_cnf(
   }
 }
 
+static
+void x2ap_eNB_handle_handover_req(instance_t instance,
+                                  x2ap_handover_req_t *x2ap_handover_req)
+{
+  /* TODO: remove this hack (the goal is to find the correct
+   * eNodeB structure for the target) - we need a proper way for RRC
+   * and X2AP to identify eNodeBs
+   * RRC knows about mod_id and X2AP knows about eNB_id (eNB_ID in
+   * the configuration file)
+   * as far as I understand.. CROUX
+   */
+  x2ap_eNB_instance_t *instance_p;
+  x2ap_eNB_data_t     *target;
+
+  int target_enb_id = x2ap_handover_req->target_physCellId;
+
+  instance_p = x2ap_eNB_pci_get_instance(target_enb_id);
+  DevAssert(instance_p != NULL);
+
+  //instance_p = x2ap_eNB_get_instance(instance);
+  //DevAssert(instance_p != NULL);
+
+  target = x2ap_is_eNB_id_in_list(instance_p->eNB_id);
+  DevAssert(target != NULL);
+
+  /* store rnti at index 0 */
+  //x2id_to_source_rnti[0] = x2ap_handover_req->source_rnti;
+  x2ap_eNB_generate_x2_handover_request(target, x2ap_handover_req);
+}
+
+static
+void x2ap_eNB_handle_handover_req_ack(instance_t instance,
+                                      x2ap_handover_req_ack_t *x2ap_handover_req_ack)
+{
+  /* TODO: remove this hack (the goal is to find the correct
+   * eNodeB structure for the other end) - we need a proper way for RRC
+   * and X2AP to identify eNodeBs
+   * RRC knows about mod_id and X2AP knows about eNB_id (eNB_ID in
+   * the configuration file)
+   * as far as I understand.. CROUX
+   */
+  x2ap_eNB_instance_t *instance_p;
+  x2ap_eNB_data_t     *target;
+  int target_enb_id = x2ap_handover_req_ack->target_mod_id;
+
+  instance_p = x2ap_eNB_get_instance(instance);
+  DevAssert(instance_p != NULL);
+
+  target = x2ap_is_eNB_id_in_list(target_enb_id);
+  DevAssert(target != NULL);
+
+  x2ap_eNB_generate_x2_handover_request_ack(target, x2ap_handover_req_ack);
+  //x2ap_eNB_generate_x2_handover_req_ack(instance_p, target, x2ap_handover_req_ack->source_x2id,
+          //x2ap_handover_req_ack->rrc_buffer, x2ap_handover_req_ack->rrc_buffer_size);
+}
+
 void *x2ap_task(void *arg) {
   MessageDef *received_msg = NULL;
   int         result;
@@ -372,6 +442,16 @@ void *x2ap_task(void *arg) {
       case X2AP_REGISTER_ENB_REQ:
         x2ap_eNB_handle_register_eNB(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                      &X2AP_REGISTER_ENB_REQ(received_msg));
+        break;
+
+      case X2AP_HANDOVER_REQ:
+        x2ap_eNB_handle_handover_req(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                     &X2AP_HANDOVER_REQ(received_msg));
+        break;
+
+      case X2AP_HANDOVER_REQ_ACK:
+        x2ap_eNB_handle_handover_req_ack(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                         &X2AP_HANDOVER_REQ_ACK(received_msg));
         break;
 
       case SCTP_INIT_MSG_MULTI_CNF:

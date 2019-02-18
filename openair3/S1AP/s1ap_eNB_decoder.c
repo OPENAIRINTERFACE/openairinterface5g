@@ -107,6 +107,11 @@ static int s1ap_eNB_decode_successful_outcome(S1AP_S1AP_PDU_t *pdu) {
       free(res.buffer);
       break;
 
+    case S1AP_ProcedureCode_id_PathSwitchRequest:
+      res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_S1AP_S1AP_PDU, pdu);
+      free(res.buffer);
+      break;
+
     default:
       S1AP_ERROR("Unknown procedure ID (%d) for successfull outcome message\n",
                  (int)pdu->choice.successfulOutcome.procedureCode);
@@ -122,6 +127,10 @@ static int s1ap_eNB_decode_unsuccessful_outcome(S1AP_S1AP_PDU_t *pdu) {
 
   switch(pdu->choice.unsuccessfulOutcome.procedureCode) {
     case S1AP_ProcedureCode_id_S1Setup:
+      res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_S1AP_S1AP_PDU, pdu);
+      free(res.buffer);
+      break;
+   case S1AP_ProcedureCode_id_PathSwitchRequest:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_S1AP_S1AP_PDU, pdu);
       free(res.buffer);
       break;

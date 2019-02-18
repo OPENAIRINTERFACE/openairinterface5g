@@ -112,7 +112,7 @@ add_msg3(module_id_t module_idP, int CC_id, RA_t * ra, frame_t frameP,
     nfapi_hi_dci0_request_body_t   *hi_dci0_req_body;
     nfapi_hi_dci0_request_pdu_t    *hi_dci0_pdu;
     uint8_t sf_ahead_dl;
-    uint8_t rvseq[4] = { 0, 2, 3, 1 };
+    uint8_t rvseq[4] = {0, 2, 3, 1};
 
 
     ul_req = &mac->UL_req_tmp[CC_id][ra->Msg3_subframe];
@@ -1536,14 +1536,14 @@ cancel_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP,
 	  module_idP, CC_id, frameP, rnti);
 
     for (i = 0; i < NB_RA_PROC_MAX; i++) {
-	if (rnti == ra[i].rnti) {
-	  ra[i].state = IDLE;
-	  ra[i].timing_offset = 0;
-	  ra[i].RRC_timer = 20;
-	  ra[i].rnti = 0;
-	  ra[i].msg3_round = 0;
-    LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Canceled RA procedure for UE rnti %x\n", module_idP, CC_id, frameP, rnti);
-	}
+      if (rnti == ra[i].rnti) {
+        ra[i].state = IDLE;
+        ra[i].timing_offset = 0;
+        ra[i].RRC_timer = 20;
+        ra[i].rnti = 0;
+        ra[i].msg3_round = 0;
+        LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Canceled RA procedure for UE rnti %x\n", module_idP, CC_id, frameP, rnti);
+      }
     }
 }
 

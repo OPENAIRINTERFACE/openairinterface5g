@@ -308,7 +308,7 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
 
 #ifdef DEBUG_PBCH
     if (frame_mod4==0) {
-      LOG_M"pbch_e.m","pbch_e",
+      LOG_M("pbch_e.m","pbch_e",
                    eNB_pbch->pbch_e,
                    pbch_E,
                    1,
@@ -325,7 +325,7 @@ int generate_pbch(LTE_eNB_PBCH *eNB_pbch,
                     pbch_E);
 #ifdef DEBUG_PBCH
     if (frame_mod4==0) {
-      LOG_M"pbch_e_s.m","pbch_e_s",
+      LOG_M("pbch_e_s.m","pbch_e_s",
                    eNB_pbch->pbch_e,
                    pbch_E,
                    1,

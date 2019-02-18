@@ -249,7 +249,7 @@ int et_hex2data(unsigned char * const data, const unsigned char * const hexstrin
   char *endptr = NULL;
   size_t count = 0;
 
-  fprintf(stdout, "%s(%s,%d)\n", __FUNCTION__, hexstring, len);
+  fprintf(stdout, "%s(%s,%u)\n", __FUNCTION__, hexstring, len);
 
   if ((len > 1) && (strlen((const char*)hexstring) % 2)) {
     //or hexstring has an odd length
@@ -1103,7 +1103,7 @@ et_config_parse_opt_line (
             fprintf(stderr, "Please provide a valid -D/--delay-on-exit argument, %s is not a valid value\n", delay_on_exit);
             exit(1);
           }
-          printf("Delay on exit is %d\n", delay_on_exit);
+          printf("Delay on exit is %u\n", delay_on_exit);
         }
         break;
 

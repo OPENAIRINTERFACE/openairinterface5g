@@ -22,6 +22,7 @@
 #ifndef X2AP_MESSAGES_TYPES_H_
 #define X2AP_MESSAGES_TYPES_H_
 
+#include "s1ap_messages_types.h"
 #include "LTE_PhysCellId.h"
 
 //-------------------------------------------------------------------------------------------//
@@ -132,7 +133,7 @@ typedef struct x2ap_handover_req_s {
   int source_rnti;                       /* TODO: to be fixed/remove */
   int source_x2id;                       /* TODO: to be fixed/remove */
 
-  unsigned  old_eNB_ue_s1ap_id:24;
+  int old_eNB_ue_x2ap_id;
 
   LTE_PhysCellId_t target_physCellId;
 
@@ -158,9 +159,13 @@ typedef struct x2ap_handover_req_s {
  /* list of e_rab setup-ed by RRC layers */
   e_rab_setup_t e_rabs_tobesetup[S1AP_MAX_E_RAB];
 
-  /* ue_context_pP->ue_context.e_rab[i].param.sgw_addr; */
+  /* list of e_rab to be setup by RRC layers */
+  e_rab_t  e_rab_param[S1AP_MAX_E_RAB];
 
   x2ap_lastvisitedcell_info_t lastvisitedcell_info;
+
+  uint8_t rrc_buffer[1024 /* arbitrary, big enough */];
+  int rrc_buffer_size;
 
   /* TODO: this parameter has to be removed */
   int target_mod_id;
@@ -171,6 +176,15 @@ typedef struct x2ap_handover_req_ack_s {
   int source_x2id;                       /* TODO: to be fixed/remove */
   /* TODO: this parameter has to be removed */
   int target_mod_id;
+
+  uint8_t nb_e_rabs_tobesetup;
+
+ /* list of e_rab setup-ed by RRC layers */
+  e_rab_setup_t e_rabs_tobesetup[S1AP_MAX_E_RAB];
+
+  /* list of e_rab to be setup by RRC layers */
+  e_rab_t  e_rab_param[S1AP_MAX_E_RAB];
+
   uint8_t rrc_buffer[1024 /* arbitrary, big enough */];
   int rrc_buffer_size;
 

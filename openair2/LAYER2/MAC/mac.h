@@ -995,6 +995,7 @@ typedef struct {
     uint8_t crnti_reconfigurationcomplete_flag;
     uint8_t cqi_req_flag;
 } UE_sched_ctrl;
+
 /*! \brief eNB template for the Random access information */
 typedef struct {
   /// Flag to indicate this process is active

@@ -64,6 +64,7 @@ int smbv_init_config(const char* fname, uint16_t sequence_length)
 
   if (sequence_length>4) {
     msg("ERROR invalid sequence length: %d, maximum is 4\n", sequence_length);
+    fclose(f_ptr);
     return -1;
   } else
     slen = sequence_length;
@@ -447,13 +448,6 @@ int smbv_send_config (const char* fname, char* smbv_ip)
   char *id_msg = "*IDN?\n";
   int bytes_sent, status, sockfd;
   char buf[BUFFER_LENGTH];
-
-  if (fopen(fname,"r")!=NULL) {
-    msg("Configuration file: %s\n",fname);
-  } else {
-    msg("ERROR: can't open SMBV config file: %s\n",fname);
-    return -1;
-  }
 
   memset(buf,0,BUFFER_LENGTH);
 

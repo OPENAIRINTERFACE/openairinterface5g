@@ -96,7 +96,7 @@ int main (int argc, const char* argv[])
   /* Start NB_TIMERS_MAX timers to expire at time interval of 1s */
   for (int i=0; i < NB_TIMERS_MAX; i++) {
     if (_start(&timer[i], i) != RETURNok) {
-      printf("ERROR: timer_start(i=%u) failed\n", i);
+      printf("ERROR: timer_start(i=%d) failed\n", i);
     }
   }
 

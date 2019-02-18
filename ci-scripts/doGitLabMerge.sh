@@ -121,6 +121,7 @@ git config user.email "jenkins@openairinterface.org"
 git config user.name "OAI Jenkins"
 
 git checkout -f $SOURCE_COMMIT_ID
+git log -n1 --pretty=format:\"%s\" > .git/CI_COMMIT_MSG
 
 git merge --ff $TARGET_COMMIT_ID -m "Temporary merge for CI"
 

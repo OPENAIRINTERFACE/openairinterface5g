@@ -54,7 +54,7 @@ void et_print_hex_octets(const unsigned char * const byte_stream, const unsigned
         fprintf(stdout, " |\n");
       }
 
-      fprintf(stdout, " %04ld |", octet_index);
+      fprintf(stdout, " %04lu |", octet_index);
     }
 
     /*

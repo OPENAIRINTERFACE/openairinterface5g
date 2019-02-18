@@ -36,6 +36,7 @@
 # include "rrc_eNB_S1AP.h"
 # include "enb_config.h"
 # include "common/ran_context.h"
+# include "gtpv1u.h"
 
 # include "s1ap_eNB_defs.h"
 # include "s1ap_eNB_management_procedures.h"
@@ -66,6 +67,11 @@
 #include "flexran_agent_common_internal.h"
 
 extern RAN_CONTEXT_t RC;
+
+extern int
+gtpv1u_delete_s1u_tunnel(
+  const instance_t instanceP,
+  const gtpv1u_enb_delete_tunnel_req_t * const req_pP);
 
 /* Value to indicate an invalid UE initial id */
 static const uint16_t UE_INITIAL_ID_INVALID = 0;
@@ -270,7 +276,7 @@ rrc_eNB_S1AP_get_ue_ids(
             } else {
               LOG_E(RRC, "[eNB %ld] Incoherence between RRC context and S1AP context (%d != %d) for UE RNTI %d or UE RRC context doesn't exist\n",
                     rrc_instance_pP - RC.rrc[0],
-                    ue_context_p->ue_context.eNB_ue_s1ap_id,
+                    (ue_context_p==NULL)?99999:ue_context_p->ue_context.eNB_ue_s1ap_id,
                     eNB_ue_s1ap_id,
                     result->ue_rnti);
             }
@@ -300,8 +306,7 @@ rrc_eNB_S1AP_remove_ue_ids(
 )
 //------------------------------------------------------------------------------
 {
-  const uint16_t ue_initial_id  = ue_ids_pP->ue_initial_id;
-  const uint32_t eNB_ue_s1ap_id = ue_ids_pP->eNB_ue_s1ap_id;
+
   hashtable_rc_t h_rc;
 
   if (rrc_instance_pP == NULL) {
@@ -313,7 +318,8 @@ rrc_eNB_S1AP_remove_ue_ids(
     LOG_E(RRC, "Trying to free a NULL S1AP UE IDs\n");
     return;
   }
-
+  const uint16_t ue_initial_id  = ue_ids_pP->ue_initial_id;
+  const uint32_t eNB_ue_s1ap_id = ue_ids_pP->eNB_ue_s1ap_id;
   if (eNB_ue_s1ap_id > 0) {
     h_rc = hashtable_remove(rrc_instance_pP->s1ap_id2_s1ap_ids, (hash_key_t)eNB_ue_s1ap_id);
 
@@ -840,6 +846,13 @@ rrc_eNB_send_S1AP_NAS_FIRST_REQ(
 
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mme_code     = BIT_STRING_to_uint8 (&r_mme->mmec);
         S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mme_group_id = BIT_STRING_to_uint16 (&r_mme->mmegi);
+
+        ue_context_pP->ue_context.ue_gummei.mcc = S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mcc;
+        ue_context_pP->ue_context.ue_gummei.mnc = S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc;
+        ue_context_pP->ue_context.ue_gummei.mnc_len = S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mnc_len;
+        ue_context_pP->ue_context.ue_gummei.mme_code = S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mme_code;
+        ue_context_pP->ue_context.ue_gummei.mme_group_id = S1AP_NAS_FIRST_REQ (message_p).ue_identity.gummei.mme_group_id;
+
         MSC_LOG_TX_MESSAGE(MSC_S1AP_ENB,
                            MSC_S1AP_MME,
                            (const char *)&message_p->ittiMsg.s1ap_nas_first_req,
@@ -996,6 +1009,8 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
   } else {
     PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, ENB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0);
     ue_context_p->ue_context.eNB_ue_s1ap_id = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).eNB_ue_s1ap_id;
+    ue_context_p->ue_context.mme_ue_s1ap_id = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).mme_ue_s1ap_id;
+
     /* Save e RAB information for later */
     {
       int i;
@@ -1929,6 +1944,232 @@ int rrc_eNB_process_PAGING_IND(MessageDef *msg_p, const char *msg_name, instance
   }
 
   return (0);
+}
+
+/*NN: careful about the typcast of xid (long -> uint8_t*/
+int rrc_eNB_send_PATH_SWITCH_REQ(const protocol_ctxt_t* const ctxt_pP,
+				  rrc_eNB_ue_context_t*          const ue_context_pP){
+
+  MessageDef      *msg_p         = NULL;
+  int e_rab = 0;
+  int e_rabs_done = 0;
+
+  rrc_ue_s1ap_ids_t*  rrc_ue_s1ap_ids_p = NULL;
+  hashtable_rc_t      h_rc;
+
+  gtpv1u_enb_create_tunnel_req_t  create_tunnel_req;
+  gtpv1u_enb_create_tunnel_resp_t create_tunnel_resp;
+
+  uint8_t inde_list[ue_context_pP->ue_context.nb_of_e_rabs];
+  memset(inde_list, 0, ue_context_pP->ue_context.nb_of_e_rabs*sizeof(uint8_t));
+
+  msg_p = itti_alloc_new_message (TASK_RRC_ENB, S1AP_PATH_SWITCH_REQ);
+
+  ue_context_pP->ue_context.ue_initial_id = get_next_ue_initial_id (ctxt_pP->module_id);
+  S1AP_PATH_SWITCH_REQ (msg_p).ue_initial_id = ue_context_pP->ue_context.ue_initial_id;
+
+  rrc_ue_s1ap_ids_p = malloc(sizeof(*rrc_ue_s1ap_ids_p));
+  rrc_ue_s1ap_ids_p->ue_initial_id  = ue_context_pP->ue_context.ue_initial_id;
+  rrc_ue_s1ap_ids_p->eNB_ue_s1ap_id = UE_INITIAL_ID_INVALID;
+  rrc_ue_s1ap_ids_p->ue_rnti        = ctxt_pP->rnti;
+
+  h_rc = hashtable_insert(RC.rrc[ctxt_pP->module_id]->initial_id2_s1ap_ids,
+		               (hash_key_t)ue_context_pP->ue_context.ue_initial_id,
+                               rrc_ue_s1ap_ids_p);
+  if (h_rc != HASH_TABLE_OK) {
+    LOG_E(S1AP, "[eNB %d] Error while hashtable_insert in initial_id2_s1ap_ids ue_initial_id %u\n",
+	  ctxt_pP->module_id, ue_context_pP->ue_context.ue_initial_id);
+  }
+
+  S1AP_PATH_SWITCH_REQ (msg_p).eNB_ue_s1ap_id = ue_context_pP->ue_context.eNB_ue_s1ap_id;
+
+  S1AP_PATH_SWITCH_REQ (msg_p).mme_ue_s1ap_id = ue_context_pP->ue_context.mme_ue_s1ap_id;
+
+  S1AP_PATH_SWITCH_REQ (msg_p).ue_gummei.mcc = ue_context_pP->ue_context.ue_gummei.mcc;
+  S1AP_PATH_SWITCH_REQ (msg_p).ue_gummei.mnc = ue_context_pP->ue_context.ue_gummei.mnc;
+  S1AP_PATH_SWITCH_REQ (msg_p).ue_gummei.mnc_len = ue_context_pP->ue_context.ue_gummei.mnc_len;
+  S1AP_PATH_SWITCH_REQ (msg_p).ue_gummei.mme_code = ue_context_pP->ue_context.ue_gummei.mme_code;
+  S1AP_PATH_SWITCH_REQ (msg_p).ue_gummei.mme_group_id = ue_context_pP->ue_context.ue_gummei.mme_group_id;
+
+  S1AP_PATH_SWITCH_REQ (msg_p).security_capabilities.encryption_algorithms=ue_context_pP->ue_context.security_capabilities.encryption_algorithms;
+  S1AP_PATH_SWITCH_REQ (msg_p).security_capabilities.integrity_algorithms=ue_context_pP->ue_context.security_capabilities.integrity_algorithms;
+
+  LOG_I (RRC,"Path switch request: nb nb_of_e_rabs %u status %u\n",
+          ue_context_pP->ue_context.nb_of_e_rabs,
+          ue_context_pP->ue_context.e_rab[e_rab].status);
+
+  memset(&create_tunnel_req, 0 , sizeof(create_tunnel_req));
+  // the context for UE to be handovered is obtained through ho_req message
+  for (e_rab = 0; e_rab <  ue_context_pP->ue_context.nb_of_e_rabs ; e_rab++) {
+
+    if (ue_context_pP->ue_context.e_rab[e_rab].status == E_RAB_STATUS_ESTABLISHED) {
+
+      create_tunnel_req.eps_bearer_id[e_rabs_done]       = ue_context_pP->ue_context.e_rab[e_rab].param.e_rab_id;
+      create_tunnel_req.sgw_S1u_teid[e_rabs_done]        = ue_context_pP->ue_context.e_rab[e_rab].param.gtp_teid;
+      memcpy(&create_tunnel_req.sgw_addr[e_rabs_done],
+             &ue_context_pP->ue_context.e_rab[e_rab].param.sgw_addr,
+             sizeof(transport_layer_addr_t));
+
+      inde_list[e_rabs_done] = e_rab;
+      e_rabs_done++;
+    }
+  }
+
+  S1AP_PATH_SWITCH_REQ (msg_p).nb_of_e_rabs = e_rabs_done;
+
+  create_tunnel_req.rnti           = ue_context_pP->ue_context.rnti;
+  create_tunnel_req.num_tunnels    = e_rabs_done;
+
+  gtpv1u_create_s1u_tunnel(
+      ctxt_pP->instance,
+      &create_tunnel_req,
+      &create_tunnel_resp);
+
+  rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
+        ctxt_pP,
+        &create_tunnel_resp,
+        &inde_list[0]);
+
+  for (e_rab = 0; e_rab < e_rabs_done; e_rab++) {
+
+      S1AP_PATH_SWITCH_REQ (msg_p).e_rabs_tobeswitched[e_rab].e_rab_id = create_tunnel_resp.eps_bearer_id[e_rab];
+      S1AP_PATH_SWITCH_REQ (msg_p).e_rabs_tobeswitched[e_rab].gtp_teid = create_tunnel_resp.enb_S1u_teid[e_rab];
+      S1AP_PATH_SWITCH_REQ (msg_p).e_rabs_tobeswitched[e_rab].eNB_addr = create_tunnel_resp.enb_addr;
+
+      LOG_I (RRC,"enb_gtp_addr (msg index %d, e_rab index %d, status %d): nb_of_e_rabs %d,  e_rab_id %d, teid: %u, addr: %d.%d.%d.%d \n ",
+	     e_rabs_done,  e_rab, ue_context_pP->ue_context.e_rab[inde_list[e_rab]].status,
+	     ue_context_pP->ue_context.nb_of_e_rabs,
+	     S1AP_PATH_SWITCH_REQ (msg_p).e_rabs_tobeswitched[e_rab].e_rab_id,
+	     S1AP_PATH_SWITCH_REQ (msg_p).e_rabs_tobeswitched[e_rab].gtp_teid,
+	     S1AP_PATH_SWITCH_REQ (msg_p).e_rabs_tobeswitched[e_rab].eNB_addr.buffer[0],
+	     S1AP_PATH_SWITCH_REQ (msg_p).e_rabs_tobeswitched[e_rab].eNB_addr.buffer[1],
+	     S1AP_PATH_SWITCH_REQ (msg_p).e_rabs_tobeswitched[e_rab].eNB_addr.buffer[2],
+	     S1AP_PATH_SWITCH_REQ (msg_p).e_rabs_tobeswitched[e_rab].eNB_addr.buffer[3]);
+  }
+
+    // NN: add conditions for e_rabs_failed
+    if (e_rabs_done > 0) {
+
+      LOG_I(RRC,"S1AP_PATH_SWITCH_REQ: sending the message: nb_of_erabstobeswitched %d, total e_rabs %d, index %d\n",
+	    ue_context_pP->ue_context.nb_of_e_rabs, ue_context_pP->ue_context.setup_e_rabs, e_rab);
+
+      MSC_LOG_TX_MESSAGE(
+			 MSC_RRC_ENB,
+			 MSC_S1AP_ENB,
+			 (const char *)&S1AP_PATH_SWITCH_REQ (msg_p),
+			 sizeof(s1ap_path_switch_req_t),
+			 MSC_AS_TIME_FMT" PATH_SWITCH_REQ UE %X eNB_ue_s1ap_id %u e_rabs:%u succ",
+			 MSC_AS_TIME_ARGS(ctxt_pP),
+			 ue_context_pP->ue_id_rnti,
+			 S1AP_PATH_SWITCH_REQ (msg_p).eNB_ue_s1ap_id,
+			 e_rabs_done);
+
+
+	itti_send_msg_to_task (TASK_S1AP, ctxt_pP->instance, msg_p);
+     }
+
+  return 0;
+}
+
+int rrc_eNB_process_S1AP_PATH_SWITCH_REQ_ACK (MessageDef *msg_p, const char *msg_name, instance_t instance)
+{
+  uint16_t                        ue_initial_id;
+  uint32_t                        eNB_ue_s1ap_id;
+  //gtpv1u_enb_create_tunnel_req_t  create_tunnel_req;
+  //gtpv1u_enb_create_tunnel_resp_t create_tunnel_resp;
+
+  gtpv1u_enb_delete_tunnel_req_t  delete_tunnel_req;
+
+  struct rrc_eNB_ue_context_s* ue_context_p = NULL;
+  protocol_ctxt_t              ctxt;
+  int i;
+
+  ue_initial_id  = S1AP_PATH_SWITCH_REQ_ACK (msg_p).ue_initial_id;
+  eNB_ue_s1ap_id = S1AP_PATH_SWITCH_REQ_ACK (msg_p).eNB_ue_s1ap_id;
+  ue_context_p   = rrc_eNB_get_ue_context_from_s1ap_ids(instance, ue_initial_id, eNB_ue_s1ap_id);
+  LOG_I(RRC, "[eNB %d] Received %s: ue_initial_id %d, eNB_ue_s1ap_id %d, nb_of_e_rabs %d\n",
+        instance, msg_name, ue_initial_id, eNB_ue_s1ap_id, S1AP_E_RAB_SETUP_REQ (msg_p).nb_e_rabs_tosetup);
+
+  if (ue_context_p == NULL) {
+    /* Can not associate this message to an UE index, send a failure to S1AP and discard it! */
+    //MessageDef *msg_fail_p = NULL;
+
+    LOG_W(RRC, "[eNB %d] In S1AP_PATH_SWITCH_REQ_ACK: unknown UE from S1AP ids (%d, %d)\n", instance, ue_initial_id, eNB_ue_s1ap_id);
+
+    //msg_fail_p = itti_alloc_new_message (TASK_RRC_ENB, S1AP_PATH_SWITCH_REQ_ACK_FAIL);
+    //S1AP_PATH_SWITCH_REQ_ACK  (msg_fail_p).eNB_ue_s1ap_id = eNB_ue_s1ap_id;
+
+    // TODO add failure cause when defined!
+
+    //itti_send_msg_to_task (TASK_S1AP, instance, msg_fail_p);
+    return (-1);
+  } else {
+
+    PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, ENB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0);
+    ue_context_p->ue_context.eNB_ue_s1ap_id = S1AP_PATH_SWITCH_REQ_ACK (msg_p).eNB_ue_s1ap_id;
+    ue_context_p->ue_context.mme_ue_s1ap_id = S1AP_PATH_SWITCH_REQ_ACK (msg_p).mme_ue_s1ap_id;
+
+    /* Save e RAB information for later */
+    {
+      for (i = 0;
+	   i < ue_context_p->ue_context.setup_e_rabs; // go over total number of e_rabs received through x2_ho_req msg
+	   i++) {
+	// assume that we are releasing all the DRBs
+	ue_context_p->ue_context.e_rab[i].status =  E_RAB_STATUS_TORELEASE;
+      }
+
+      //memset(&create_tunnel_req, 0 , sizeof(create_tunnel_req));
+      //uint8_t nb_e_rabs_tobeswitched = S1AP_PATH_SWITCH_REQ_ACK (msg_p).nb_e_rabs_tobeswitched;
+
+      // keep the previous bearer
+      // the index for the rec
+      for (i = 0;
+	   i < 1;//nb_e_rabs_tobeswitched; // go over total number of e_rabs received through x2_ho_req msg
+	   i++) {
+        LOG_I(RRC,"Bearer re-established with ID: %d\n", ue_context_p->ue_context.e_rab[i].param.e_rab_id);
+	/* Harmonize with enb_gtp_teid, enb_gtp_addrs, and enb_gtp_rbi vars in the top level structure */
+	ue_context_p->ue_context.e_rab[i].status =  E_RAB_STATUS_REESTABLISHED;
+	//ue_context_p->ue_context.e_rab[i].param.e_rab_id = S1AP_PATH_SWITCH_REQ_ACK (msg_p).e_rabs_tobeswitched[i].e_rab_id;
+	//ue_context_p->ue_context.e_rab[i].param.sgw_addr= S1AP_PATH_SWITCH_REQ_ACK (msg_p).e_rabs_tobeswitched[i].sgw_addr;
+	//ue_context_p->ue_context.e_rab[i].param.gtp_teid = S1AP_PATH_SWITCH_REQ_ACK (msg_p).e_rabs_tobeswitched[i].gtp_teid;
+	/* Tunnel must have been already created in X2_HO_REQ procedure */
+      }
+
+      ue_context_p->ue_context.setup_e_rabs=i;
+      ue_context_p->ue_context.nb_of_e_rabs=i;
+    }
+
+    ue_context_p->ue_context.ue_ambr=S1AP_PATH_SWITCH_REQ_ACK (msg_p).ue_ambr;
+
+
+    ue_context_p->ue_context.nb_release_of_e_rabs = S1AP_PATH_SWITCH_REQ_ACK (msg_p).nb_e_rabs_tobereleased;
+    memset(&delete_tunnel_req, 0 , sizeof(delete_tunnel_req));
+    for (i = 0;
+	 i < ue_context_p->ue_context.nb_release_of_e_rabs;
+	 i++) {
+      LOG_I(RRC,"Bearer released with ID: %d\n", ue_context_p->ue_context.e_rab[i].param.e_rab_id);
+      ue_context_p->ue_context.e_rabs_tobereleased[i]=S1AP_PATH_SWITCH_REQ_ACK (msg_p).e_rabs_tobereleased[i].e_rab_id;
+      delete_tunnel_req.eps_bearer_id[i]       = S1AP_PATH_SWITCH_REQ_ACK (msg_p).e_rabs_tobereleased[i].e_rab_id;
+
+    }
+    if (ue_context_p->ue_context.nb_release_of_e_rabs>0){
+      delete_tunnel_req.rnti= ue_context_p->ue_context.rnti;
+      delete_tunnel_req.num_erab= ue_context_p->ue_context.nb_release_of_e_rabs;
+      /* this could also be done through ITTI message */
+      gtpv1u_delete_s1u_tunnel(instance,
+			       &delete_tunnel_req);
+      /* TBD: release the DRB not admitted */
+      //rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(&ctxt, ue_context_p, 0);
+    }
+
+    /* Security key */
+    ue_context_p->ue_context.next_hop_chain_count=S1AP_PATH_SWITCH_REQ_ACK (msg_p).next_hop_chain_count;
+    memcpy ( ue_context_p->ue_context.next_security_key,
+	     S1AP_PATH_SWITCH_REQ_ACK (msg_p).next_security_key,
+	     SECURITY_KEY_LENGTH);
+
+    return (0);
+  }
 }
 
 # endif /* defined(ENABLE_ITTI) */

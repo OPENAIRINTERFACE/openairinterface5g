@@ -124,7 +124,8 @@ int lte_segmentation(unsigned char *input_buffer,
               Bprime,*Cplus,*Kplus,*Cminus,*Kminus);
   *F = ((*Cplus)*(*Kplus) + (*Cminus)*(*Kminus) - (Bprime));
 #ifdef DEBUG_SEGMENTATION
-  printf("C %u, Cplus %u, Cminus %u, Kplus %u, Kminus %u, Bprime_bytes %u, Bprime %u, F %u\n",*C,*Cplus,*Cminus,*Kplus,*Kminus,Bprime>>3,Bprime,*F);
+  printf("C %u, Cplus %u, Cminus %u, Kplus %u, Kminus %u, Bprime_bytes %u, Bprime %u, F %u\n",
+         *C,*Cplus,*Cminus,*Kplus,*Kminus,Bprime>>3,Bprime,*F);
 #endif
 
   if ((input_buffer) && (output_buffers)) {
