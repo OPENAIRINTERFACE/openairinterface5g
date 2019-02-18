@@ -2529,24 +2529,37 @@ target_link_libraries (dlsim_tm4
   pthread m rt ${CONFIG_LIBRARIES} ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${T_LIB}
   )
 
-add_executable(polartest ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/polartest.c)
+add_executable(polartest 
+  ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/polartest.c
+  ${OPENAIR_DIR}/common/utils/backtrace.c)
 target_link_libraries(polartest SIMU PHY PHY_NR PHY_COMMON m ${ATLAS_LIBRARIES})
 
-add_executable(ldpctest  ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c)
+add_executable(ldpctest  
+  ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c
+  ${OPENAIR_DIR}/common/utils/backtrace.c)
 target_link_libraries(ldpctest SIMU PHY PHY_NR m ${ATLAS_LIBRARIES})
 
-add_executable(nr_dlschsim  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlschsim.c ${T_SOURCE})
+add_executable(nr_dlschsim  
+  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlschsim.c 
+  ${OPENAIR_DIR}/common/utils/backtrace.c
+  ${T_SOURCE})
 target_link_libraries(nr_dlschsim -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
 
-add_executable(nr_pbchsim  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pbchsim.c ${T_SOURCE})
+add_executable(nr_pbchsim  
+  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pbchsim.c 
+  ${OPENAIR_DIR}/common/utils/backtrace.c
+  ${T_SOURCE})
 target_link_libraries(nr_pbchsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
 
-add_executable(nr_dlsim  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlsim.c ${T_SOURCE})   
+add_executable(nr_dlsim
+  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlsim.c 
+  ${OPENAIR_DIR}/common/utils/backtrace.c
+  ${T_SOURCE})   
 target_link_libraries(nr_dlsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR RRC_LIB NR_RRC_LIB CONFIG_LIB L2_NR -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
 
 
 foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)
-
+  
   add_executable(${myExe}
     ${OPENAIR1_DIR}/SIMULATION/LTE_PHY/${myExe}.c
     ${OPENAIR_DIR}/common/utils/backtrace.c
@@ -2556,7 +2569,6 @@ foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim pr
     ${SHLIB_LOADER_SOURCES}
     )
   target_link_libraries (${myExe}
-
     -Wl,--start-group SIMU UTIL SCHED_LIB SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY PHY_UE PHY_RU LFDS ${ITTI_LIB} LFDS7 -Wl,--end-group
     pthread m rt ${CONFIG_LIBRARIES} ${ATLAS_LIBRARIES} ${XFORMS_LIBRARIES} ${T_LIB} dl 
     )
