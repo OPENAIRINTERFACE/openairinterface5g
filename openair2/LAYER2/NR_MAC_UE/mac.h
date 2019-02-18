@@ -65,7 +65,7 @@ typedef struct {
 } __attribute__ ((__packed__)) NR_MAC_SUBHEADER_LONG;
 
 typedef struct {
-    uint8_t LCID:5;     // octet 1 [5:0]
+    uint8_t LCID:6;     // octet 1 [5:0]
     uint8_t R:2;        // octet 1 [7:6]
 } __attribute__ ((__packed__)) NR_MAC_SUBHEADER_FIXED;
 

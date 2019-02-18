@@ -322,10 +322,10 @@ void ra_failed(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
 
   // if contention resolution fails, go back to PRACH
   PHY_vars_UE_g[Mod_id][CC_id]->UE_mode[eNB_index] = PRACH;
-  PHY_vars_UE_g[Mod_id][CC_id]->pdcch_vars[0][eNB_index]->crnti_is_temporary = 0;
-  PHY_vars_UE_g[Mod_id][CC_id]->pdcch_vars[0][eNB_index]->crnti = 0;
-  PHY_vars_UE_g[Mod_id][CC_id]->pdcch_vars[1][eNB_index]->crnti_is_temporary = 0;
-  PHY_vars_UE_g[Mod_id][CC_id]->pdcch_vars[1][eNB_index]->crnti = 0;
+  for (int i=0; i <RX_NB_TH_MAX; i++ ) {
+    PHY_vars_UE_g[Mod_id][CC_id]->pdcch_vars[i][eNB_index]->crnti_is_temporary = 0;
+    PHY_vars_UE_g[Mod_id][CC_id]->pdcch_vars[i][eNB_index]->crnti = 0;
+  }
   LOG_E(PHY,"[UE %d] Random-access procedure fails, going back to PRACH, setting SIStatus = 0, discard temporary C-RNTI and State RRC_IDLE\n",Mod_id);
 }
 
@@ -336,16 +336,18 @@ void ra_succeeded(uint8_t Mod_id,uint8_t CC_id,uint8_t eNB_index)
 
   LOG_I(PHY,"[UE %d][RAPROC] Random-access procedure succeeded. Set C-RNTI = Temporary C-RNTI\n",Mod_id);
 
-  PHY_vars_UE_g[Mod_id][CC_id]->pdcch_vars[0][eNB_index]->crnti_is_temporary = 0;
-  PHY_vars_UE_g[Mod_id][CC_id]->pdcch_vars[1][eNB_index]->crnti_is_temporary = 0;
+  for (int i=0; i <RX_NB_TH_MAX; i++ ) {
+    PHY_vars_UE_g[Mod_id][CC_id]->pdcch_vars[i][eNB_index]->crnti_is_temporary = 0;
+  }
   PHY_vars_UE_g[Mod_id][CC_id]->ulsch_Msg3_active[eNB_index] = 0;
   PHY_vars_UE_g[Mod_id][CC_id]->UE_mode[eNB_index] = PUSCH;
 
   for (i=0; i<8; i++) {
     if (PHY_vars_UE_g[Mod_id][CC_id]->ulsch[eNB_index]->harq_processes[i]) {
       PHY_vars_UE_g[Mod_id][CC_id]->ulsch[eNB_index]->harq_processes[i]->status=SCH_IDLE;
-      PHY_vars_UE_g[Mod_id][CC_id]->dlsch[0][eNB_index][0]->harq_processes[i]->round=0;
-      PHY_vars_UE_g[Mod_id][CC_id]->dlsch[1][eNB_index][0]->harq_processes[i]->round=0;
+      for (int i=0; i <RX_NB_TH_MAX; i++ ) {
+        PHY_vars_UE_g[Mod_id][CC_id]->dlsch[i][eNB_index][0]->harq_processes[i]->round=0;
+      }
       PHY_vars_UE_g[Mod_id][CC_id]->ulsch[eNB_index]->harq_processes[i]->subframe_scheduling_flag=0;
     }
   }

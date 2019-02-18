@@ -785,9 +785,8 @@ void *UE_thread(void *arg) {
     int i;
     char threadname[128];
     int th_id;
-    UE->proc.proc_rxtx[0].counter_decoder = 0;
-    UE->proc.proc_rxtx[1].counter_decoder = 0;
-    UE->proc.proc_rxtx[2].counter_decoder = 0;
+    for (int i=0; i<  RX_NB_TH_MAX; i++ ) 
+       UE->proc.proc_rxtx[i].counter_decoder = 0;
 
     static uint8_t thread_idx = 0;
 
@@ -827,7 +826,7 @@ void *UE_thread(void *arg) {
 	    usleep(500*1000);
 	  }
 #endif
-
+	  LOG_W(PHY,"is_synchro %d\n" ,  is_synchronized );
             if (instance_cnt_synch < 0) {  // we can invoke the synch
                 // grab 10 ms of signal and wakeup synch thread
 	if (UE->mode != loop_through_memory) {
@@ -843,14 +842,6 @@ void *UE_thread(void *arg) {
 						    rxp,
 						    UE->frame_parms.samples_per_subframe,
 						    UE->frame_parms.nb_antennas_rx), "");
-	    AssertFatal( UE->frame_parms.samples_per_subframe ==
-			 UE->rfdevice.trx_write_func(&UE->rfdevice,
-						     timestamp+(2*UE->frame_parms.samples_per_subframe) -
-						     openair0_cfg[0].tx_sample_advance,
-						     dummy_tx,
-						     UE->frame_parms.samples_per_subframe,
-						     UE->frame_parms.nb_antennas_tx,
-						     1),"");
 	  }
 	  for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
 	    free(dummy_tx[i]);
@@ -875,15 +866,7 @@ void *UE_thread(void *arg) {
 				       dummy_rx,
 				       UE->frame_parms.samples_per_subframe,
 				       UE->frame_parms.nb_antennas_rx);
-	  AssertFatal( UE->frame_parms.samples_per_subframe ==
-		       UE->rfdevice.trx_write_func(&UE->rfdevice,
-						   timestamp+(2*UE->frame_parms.samples_per_subframe) -
-						   openair0_cfg[0].tx_sample_advance,
-						   dummy_tx,
-						   UE->frame_parms.samples_per_subframe,
-						   UE->frame_parms.nb_antennas_tx,
-						   1),"");
-	   usleep(9000); // this sleep improves in the case of simulated RF and doesn't harm with true radio
+	   usleep(500); // this sleep improves in the case of simulated RF and doesn't harm with true radio
 	  
 	  }
 	  for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
@@ -911,14 +894,6 @@ void *UE_thread(void *arg) {
 							     (void**)UE->common_vars.rxdata,
 							     unitTransfer,
 							     UE->frame_parms.nb_antennas_rx),"");
-		      AssertFatal( unitTransfer == 
-				   UE->rfdevice.trx_write_func(&UE->rfdevice,
-							       timestamp+(2*UE->frame_parms.samples_per_subframe) -
-							       openair0_cfg[0].tx_sample_advance,
-							       dummy_tx,
-							       unitTransfer,
-							       UE->frame_parms.nb_antennas_tx,
-							       1),"");
 		    }
 		    for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
 		      free(dummy_tx[i]);
@@ -995,9 +970,13 @@ void *UE_thread(void *arg) {
                                 UE->rx_offset < 10*UE->frame_parms.samples_per_subframe )
                             UE->rx_offset_diff = 1;
 
-                        LOG_E(PHY,"AbsSubframe %d.%d TTI SET rx_off_diff to %d rx_offset %d \n",proc->frame_rx,subframe_nr,UE->rx_offset_diff,UE->rx_offset);
-		        if ( getenv("RFSIMULATOR") != 0)
-			   UE->rx_offset_diff=0;	
+
+		        
+                        if ( getenv("RFSIMULATOR") != 0) {
+                           LOG_E(PHY,"AbsSubframe %d.%d TTI SET rx_off_diff to %d rx_offset %d \n",
+                           proc->frame_rx,subframe_nr,UE->rx_offset_diff,UE->rx_offset);
+			   //UE->rx_offset_diff=0;	
+                        }
                         readBlockSize=UE->frame_parms.samples_per_subframe -
                                       UE->frame_parms.ofdm_symbol_size -
                                       UE->frame_parms.nb_prefix_samples0 -

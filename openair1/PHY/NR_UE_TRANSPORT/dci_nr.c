@@ -421,6 +421,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
 #ifdef NR_PDCCH_DCI_DEBUG
       printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_pdcch_extract_rbs_single)-> c_rb=%d\n",c_rb);
 #endif
+      rxF=NULL;
       // first we set initial conditions for pointer to rxdataF depending on the situation of the first RB within the CORESET (c_rb = n_BWP_start)
       if ((c_rb < (frame_parms->N_RB_DL >> 1)) && ((frame_parms->N_RB_DL & 1) == 0)) {
         //if RB to be treated is lower than middle system bandwidth then rxdataF pointed at (offset + c_br + symbol * ofdm_symbol_size): even case

@@ -39,7 +39,7 @@ typedef struct {
 
 typedef struct buffer_s {
   int conn_sock;
-  bool alreadyWrote;
+  bool alreadyRead;
   uint64_t lastReceivedTS;
   bool headerMode;
   transferHeader th;
@@ -48,7 +48,6 @@ typedef struct buffer_s {
   char *circularBufEnd;
   sample_t *circularBuf;
 } buffer_t;
-
 
 typedef struct {
   int listen_sock, epollfd;
@@ -90,32 +89,9 @@ For this, export RFSIMULATOR=enb (eNB case) or \n\
                  RFSIMULATOR=<an ip address> (UE case)\n\
 \x1b[m"
 
-int fullwrite(int fd, void *_buf, int count) {
-  char *buf = _buf;
-  int ret = 0;
-  int l;
-
-  while (count) {
-    l = write(fd, buf, count);
-
-    if (l <= 0) {
-      if(errno==EAGAIN || errno==EINTR)
-        continue;
-      else
-        return -1;
-    }
-
-    count -= l;
-    buf += l;
-    ret += l;
-  }
-
-  return ret;
-}
-
 enum  blocking_t {
-  blocking,
-  notBlocking
+  notBlocking,
+  blocking
 };
 
 void setblocking(int sock, enum blocking_t active) {
@@ -128,6 +104,36 @@ void setblocking(int sock, enum blocking_t active) {
     opts = opts | O_NONBLOCK;
 
   AssertFatal(fcntl(sock, F_SETFL, opts) >= 0, "");
+}
+
+static bool flushInput(rfsimulator_state_t *t);
+
+int fullwrite(int fd, void *_buf, int count, rfsimulator_state_t *t) {
+  char *buf = _buf;
+  int ret = 0;
+  int l;
+    
+  setblocking(fd, notBlocking);
+
+  while (count) {
+    l = write(fd, buf, count);
+    if (l <= 0) {
+      if (errno==EINTR)
+        continue;
+      if(errno==EAGAIN) {
+	flushInput(t);
+	continue;
+      }
+      else
+        return -1;
+    }
+
+    count -= l;
+    buf += l;
+    ret += l;
+  }
+
+  return ret;
 }
 
 int server_start(openair0_device *device) {
@@ -177,7 +183,7 @@ int start_ue(openair0_device *device) {
 
   setblocking(sock, notBlocking);
   allocCirBuf(t, sock);
-  t->buf[sock].alreadyWrote=true; //+=t->initialAhead; // UE is slave
+  t->buf[sock].alreadyRead=true; // UE will start blocking on read
   return 0;
 }
 
@@ -188,10 +194,9 @@ int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, voi
     buffer_t *ptr=&t->buf[i];
 
     if (ptr->conn_sock >= 0 ) {
-      setblocking(ptr->conn_sock, blocking);
       transferHeader header= {t->typeStamp, nsamps, nbAnt, timestamp};
       int n=-1;
-      AssertFatal( fullwrite(ptr->conn_sock,&header, sizeof(header)) == sizeof(header), "");
+      AssertFatal( fullwrite(ptr->conn_sock,&header, sizeof(header), t) == sizeof(header), "");
       sample_t tmpSamples[nsamps][nbAnt];
 
       for(int a=0; a<nbAnt; a++) {
@@ -201,15 +206,13 @@ int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, voi
           tmpSamples[s][a]=in[s];
       }
 
-      n = fullwrite(ptr->conn_sock, (void *)tmpSamples, sampleToByte(nsamps,nbAnt));
+      n = fullwrite(ptr->conn_sock, (void *)tmpSamples, sampleToByte(nsamps,nbAnt), t);
 
       if (n != sampleToByte(nsamps,nbAnt) ) {
         LOG_E(HW,"rfsimulator: write error ret %d (wanted %ld) error %s\n", n, sampleToByte(nsamps,nbAnt), strerror(errno));
         abort();
       }
 
-      ptr->alreadyWrote=true; //+=nsamps;
-      setblocking(ptr->conn_sock, notBlocking);
     }
   }
 
@@ -218,7 +221,7 @@ int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, voi
   return nsamps;
 }
 
-bool flushInput(rfsimulator_state_t *t) {
+static bool flushInput(rfsimulator_state_t *t) {
   // Process all incoming events on sockets
   // store the data in lists
   struct epoll_event events[FD_SETSIZE]= {0};
@@ -237,6 +240,8 @@ bool flushInput(rfsimulator_state_t *t) {
     if (events[nbEv].events & EPOLLIN && fd == t->listen_sock) {
       int conn_sock;
       AssertFatal( (conn_sock = accept(t->listen_sock,NULL,NULL)) != -1, "");
+      setblocking(conn_sock, notBlocking);
+      
       allocCirBuf(t, conn_sock);
       LOG_I(HW,"A ue connected\n");
     } else {
@@ -287,7 +292,7 @@ bool flushInput(rfsimulator_state_t *t) {
         AssertFatal( (t->typeStamp == MAGICUE  && b->th.magic==MAGICeNB) ||
                      (t->typeStamp == MAGICeNB && b->th.magic==MAGICUE), "Socket Error in protocol");
         b->headerMode=false;
-
+	b->alreadyRead=true;
         if ( b->lastReceivedTS != b->th.timestamp) {
           int nbAnt= b->th.nbAnt;
 
@@ -347,13 +352,6 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
       t->nextTimestamp+=nsamps;
       LOG_W(HW,"Generated void samples for Rx: %ld\n", t->nextTimestamp);
 
-      for (int a=0; a<nbAnt; a++) {
-        sample_t *out=(sample_t *)samplesVoid[a];
-
-        for ( int i=0; i < nsamps; i++ )
-          out[i]=0;
-      }
-
       *ptimestamp = t->nextTimestamp-nsamps;
       return nsamps;
     }
@@ -365,7 +363,7 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
 
       for ( int sock=0; sock<FD_SETSIZE; sock++)
         if ( t->buf[sock].circularBuf &&
-             t->buf[sock].alreadyWrote && //>= t->initialAhead &&
+             t->buf[sock].alreadyRead && //>= t->initialAhead &&
              (t->nextTimestamp+nsamps) > t->buf[sock].lastReceivedTS ) {
           have_to_wait=true;
           break;
@@ -381,18 +379,14 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
   }
 
   // Clear the output buffer
-  for (int a=0; a<nbAnt; a++) {
-    sample_t *out=(sample_t *)samplesVoid[a];
-
-    for ( int i=0; i < nsamps; i++ )
-      out[i]=0;
-  }
+  for (int a=0; a<nbAnt; a++)
+    memset(samplesVoid[a],0,sampleToByte(nsamps,1));
 
   // Add all input signal in the output buffer
   for (int sock=0; sock<FD_SETSIZE; sock++) {
     buffer_t *ptr=&t->buf[sock];
 
-    if ( ptr->circularBuf && ptr->alreadyWrote ) {
+    if ( ptr->circularBuf && ptr->alreadyRead ) {
       for (int a=0; a<nbAnt; a++) {
         sample_t *out=(sample_t *)samplesVoid[a];
 
@@ -440,8 +434,7 @@ int rfsimulator_set_gains(openair0_device *device, openair0_config_t *openair0_c
 
 __attribute__((__visibility__("default")))
 int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
-  set_log(HW,OAILOG_DEBUG);
-  set_log(PHY,OAILOG_DEBUG);
+  //set_log(HW,OAILOG_DEBUG);
   rfsimulator_state_t *rfsimulator = (rfsimulator_state_t *)calloc(sizeof(rfsimulator_state_t),1);
 
   if ((rfsimulator->ip=getenv("RFSIMULATOR")) == NULL ) {

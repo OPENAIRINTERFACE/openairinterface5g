@@ -1595,22 +1595,10 @@ void ue_ulsch_uespec_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8
   int harq_pid;
   int frame_tx=proc->frame_tx;
   int nr_tti_tx=proc->nr_tti_tx;
-  int Mod_id = ue->Mod_id;
-  int CC_id = ue->CC_id;
-  uint8_t Msg3_flag=0;
-  uint16_t first_rb, nb_rb;
   unsigned int input_buffer_length;
   int i;
   int aa;
   int tx_amp;
-  uint8_t ulsch_input_buffer[5477] __attribute__ ((aligned(32)));
-  uint8_t access_mode;
-  uint8_t Nbundled=0;
-  uint8_t NbundledCw1=0;
-  uint8_t ack_status_cw0=0;
-  uint8_t ack_status_cw1=0;
-  uint8_t cqi_status = 0;
-  uint8_t ri_status  = 0;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_ULSCH_UESPEC,VCD_FUNCTION_IN);
 
   /* reset harq for tx of current rx slot because it is sure that transmission has already been achieved for this slot */
@@ -1621,6 +1609,18 @@ void ue_ulsch_uespec_procedures(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8
 
 #if 0
 
+  int Mod_id = ue->Mod_id;
+  int CC_id = ue->CC_id;
+  uint8_t Msg3_flag=0;
+  uint16_t first_rb, nb_rb;
+  uint8_t ulsch_input_buffer[5477] __attribute__ ((aligned(32)));
+  uint8_t access_mode;
+  uint8_t Nbundled=0;
+  uint8_t NbundledCw1=0;
+  uint8_t ack_status_cw0=0;
+  uint8_t ack_status_cw1=0;
+  uint8_t cqi_status = 0;
+  uint8_t ri_status  = 0;
   if (ue->mac_enabled == 1) {
     if ((ue->ulsch_Msg3_active[eNB_id] == 1) &&
 	(ue->ulsch_Msg3_frame[eNB_id] == frame_tx) &&
@@ -3079,7 +3079,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
   int nb_searchspace_total = pdcch_vars2->nb_search_space;
 
   uint16_t c_rnti=pdcch_vars[eNB_id]->crnti;
-  uint16_t cs_rnti,new_rnti,tc_rnti;
+  uint16_t cs_rnti=0,new_rnti=0,tc_rnti;
   uint16_t p_rnti=P_RNTI;
   uint16_t si_rnti=SI_RNTI;
   uint16_t ra_rnti=99;
