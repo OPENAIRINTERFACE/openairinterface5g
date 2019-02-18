@@ -122,7 +122,7 @@ char quantize(double D, double x, unsigned char B) {
 
 int main(int argc, char **argv) {
 	char c;
-	int i; //,j,l,aa;
+	int i,sf; //,j,l,aa;
 	double SNR, SNR_lin, snr0 = -2.0, snr1 = 2.0;
 	double snr_step = 0.1;
 	uint8_t snr1set = 0;
@@ -438,7 +438,7 @@ int main(int argc, char **argv) {
 
 	//nr_init_frame_parms_ue(&UE->frame_parms);
 	//init_nr_ue_transport(UE, 0);
-	for (int sf = 0; sf < 2; sf++) {
+	for (sf = 0; sf < 2; sf++) {
 		for (i = 0; i < 2; i++) {
 			UE->dlsch[sf][0][i] = new_nr_ue_dlsch(Kmimo, 8, Nsoft, 5, N_RB_DL,
 					0);
@@ -464,6 +464,9 @@ int main(int argc, char **argv) {
 	unsigned char harq_pid = 0; //dlsch->harq_ids[subframe];
 	NR_gNB_DLSCH_t *dlsch = gNB->dlsch[0][0];
 	nfapi_nr_dl_config_dlsch_pdu_rel15_t *rel15 = &dlsch->harq_processes[harq_pid]->dlsch_pdu.dlsch_pdu_rel15;
+
+	NR_UE_ULSCH_t *ulsch = UE->ulsch[0][0][0];
+
 	//time_stats_t *rm_stats, *te_stats, *i_stats;
 	uint8_t is_crnti = 0, llr8_flag = 0;
 	unsigned int TBS = 8424;
@@ -474,6 +477,7 @@ int main(int argc, char **argv) {
 	uint8_t Nl = 1;
 	uint8_t rvidx = 0;
 	dlsch->rnti = 1;
+	ulsch->nb_re_dmrs = nb_re_dmrs; //[adk] A HOT FIX until cearting nfapi_nr_ul_config_ulsch_pdu_rel15_t
 	/*dlsch->harq_processes[0]->mcs = Imcs;
 	 dlsch->harq_processes[0]->rvidx = rvidx;*/
 	//printf("dlschsim harqid %d nb_rb %d, mscs %d\n",dlsch->harq_ids[subframe],
@@ -497,9 +501,13 @@ int main(int argc, char **argv) {
 	unsigned char *estimated_output_bit;
 	unsigned char *test_input_bit;
 	unsigned int errors_bit = 0;
+
 	test_input_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
+
 	estimated_output = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
+
 	estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
+
 	NR_UE_DLSCH_t *dlsch0_ue = UE->dlsch[0][0][0];
 	NR_DL_UE_HARQ_t *harq_process = dlsch0_ue->harq_processes[harq_pid];
 	harq_process->mcs = Imcs;
@@ -516,6 +524,26 @@ int main(int argc, char **argv) {
 
 	estimated_output = harq_process->b;
 
+
+	/////////////////////////[adk] preparing UL harq_process parameters/////////////////////////
+	///////////
+	NR_UL_UE_HARQ_t *harq_process_ul_ue = ulsch->harq_processes[harq_pid];
+
+	if (harq_process_ul_ue){
+
+		harq_process_ul_ue->mcs = Imcs;
+		harq_process_ul_ue->Nl = Nl;
+		harq_process_ul_ue->nb_rb = nb_rb;
+		harq_process_ul_ue->nb_symbols = nb_symb_sch;
+		harq_process_ul_ue->rvidx = rvidx;
+		harq_process_ul_ue->TBS = TBS;
+		harq_process_ul_ue->a = &test_input[0];
+
+	}
+	///////////
+	////////////////////////////////////////////////////////////////////////////////////////////
+
+
 #ifdef DEBUG_DLSCHSIM
 	for (i = 0; i < TBS / 8; i++) printf("test_input[i]=%d \n",test_input[i]);
 #endif
@@ -527,6 +555,7 @@ int main(int argc, char **argv) {
 	// generate signal
 	if (input_fd == NULL) {
 		nr_dlsch_encoding(test_input, subframe, dlsch, frame_parms);
+		nr_ulsch_encoding(ulsch, frame_parms);
 	}
 
 	for (SNR = snr0; SNR < snr1; SNR += snr_step) {
@@ -540,10 +569,14 @@ int main(int argc, char **argv) {
 				if ((i&0xf)==0)
 				printf("\ne %d..%d:    ",i,i+15);
 #endif
+			/*
+				if (i<16){
+				   printf("dlsch_encoder output f[%d] = %d\n",i,dlsch->harq_processes[0]->f[i]);
+				   printf("ulsch_encoder output f[%d] = %d\n",i,ulsch->harq_processes[0]->f[i]);
 
-				//if (i<16)
-				//   printf("encoder output f[%d] = %d\n",i,dlsch->harq_processes[0]->f[i]);
-				if (dlsch->harq_processes[0]->f[i] == 0)
+				}
+			*/
+				if (ulsch->harq_processes[0]->f[i] == 0)
 					modulated_input[i] = 1.0;        ///sqrt(2);  //QPSK
 				else
 					modulated_input[i] = -1.0;        ///sqrt(2);
@@ -594,7 +627,7 @@ int main(int argc, char **argv) {
 			errors_bit = 0;
 
 			for (i = 0; i < TBS; i++) {
-				estimated_output_bit[i] = (dlsch0_ue->harq_processes[0]->b[i / 8] & (1 << (i & 7))) >> (i & 7);
+				estimated_output_bit[i] = (ulsch->harq_processes[0]->b[i / 8] & (1 << (i & 7))) >> (i & 7);
 				test_input_bit[i] = (test_input[i / 8] & (1 << (i & 7))) >> (i & 7); // Further correct for multiple segments
 
 				if (estimated_output_bit[i] != test_input_bit[i]) {
@@ -653,12 +686,24 @@ int main(int argc, char **argv) {
 	 }
 	 }*/
 
+
 	for (i = 0; i < 2; i++) {
+
 		printf("gNB %d\n", i);
-		free_gNB_dlsch(gNB->dlsch[0][i]);
-		printf("UE %d\n", i);
-		free_nr_ue_dlsch(UE->dlsch[0][0][i]);
-		free_nr_ue_ulsch(UE->ulsch[0][0][i]);
+
+		if (gNB->dlsch[0][i])
+			free_gNB_dlsch(gNB->dlsch[0][i]);
+
+		for (sf = 0; sf < 2; sf++) {
+
+			printf("UE %d\n", i);
+
+			if (UE->dlsch[sf][0][i])
+				free_nr_ue_dlsch(UE->dlsch[sf][0][i]);
+
+			if (UE->ulsch[sf][0][i])
+				free_nr_ue_ulsch(UE->ulsch[sf][0][i]);
+		}
 	}
 
 	for (i = 0; i < 2; i++) {

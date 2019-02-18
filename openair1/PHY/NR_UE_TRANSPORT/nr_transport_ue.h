@@ -102,6 +102,8 @@ typedef struct {
   uint16_t first_rb;
   /// Current Number of RBs
   uint16_t nb_rb;
+  /// number of layers
+  uint8_t Nl;
   /// Last TPC command
   uint8_t TPC;
   /// Transport block size
@@ -117,17 +119,17 @@ typedef struct {
   /// Redundancy-version of the current sub-frame
   uint8_t rvidx;
   /// pointer to pdu from MAC interface (TS 36.212 V15.4.0, Sec 5.1 p. 8)
-  uint8_t *a;
+  unsigned char *a;
   /// Pointer to the payload + CRC 
   uint8_t *b;
   /// Pointers to transport block segments
   uint8_t *c[MAX_NUM_NR_ULSCH_SEGMENTS];
+  /// LDPC-code outputs
+  uint8_t *d[MAX_NUM_NR_ULSCH_SEGMENTS];
   /// LDPC-code outputs (TS 36.212 V15.4.0, Sec 5.3.2 p. 17)
-  uint8_t *d[MAX_NUM_NR_ULSCH_SEGMENTS]; // 66*Z_c is the maximum LDPC block length. We use 68 for internal manipulation of the buffer
-  /// Rate matching (Bit selection) outputs (TS 36.212 V15.4.0, Sec 5.4.2.1 p. 28)
-  uint8_t *e[MAX_NUM_NR_ULSCH_SEGMENTS]; 
+  uint8_t e[MAX_NUM_NR_CHANNEL_BITS] __attribute__((aligned(32))); 
   /// Rate matching (Interleaving) outputs (TS 36.212 V15.4.0, Sec 5.4.2.2 p. 30)
-  uint8_t *f[MAX_NUM_NR_ULSCH_SEGMENTS]; 
+  uint8_t f[MAX_NUM_NR_CHANNEL_BITS] __attribute__((aligned(32))); 
   /// Number of code segments
   uint32_t C;
   /// Number of bits in code segments
@@ -162,6 +164,8 @@ typedef struct {
 typedef struct {
   /// Current Number of Symbols
   uint8_t Nsymb_pusch;
+  /// number of DMRS resource elements
+  uint8_t nb_re_dmrs;
   /// SRS active flag
   uint8_t srs_active; 
 //#if defined(UPGRADE_RAT_NR)

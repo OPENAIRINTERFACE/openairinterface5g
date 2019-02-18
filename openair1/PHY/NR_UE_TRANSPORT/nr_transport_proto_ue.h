@@ -1006,6 +1006,9 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                          uint8_t is_crnti,
                          uint8_t llr8_flag);
 
+int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
+                     NR_DL_FRAME_PARMS* frame_parms);
+
 uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 						 UE_nr_rxtx_proc_t *proc,
                          int eNB_id,

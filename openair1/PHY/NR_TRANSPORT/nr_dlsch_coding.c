@@ -272,7 +272,7 @@ int nr_dlsch_encoding(unsigned char *a,
 
   unsigned int G;
   unsigned int crc=1;
-
+  int i;
   uint8_t harq_pid = dlsch->harq_ids[slot];
   nfapi_nr_dl_config_dlsch_pdu_rel15_t rel15 = dlsch->harq_processes[harq_pid]->dlsch_pdu.dlsch_pdu_rel15;
   uint16_t nb_rb = rel15.n_prb;
@@ -302,7 +302,9 @@ int nr_dlsch_encoding(unsigned char *a,
   A = rel15.transport_block_size;
 
   G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs,mod_order,rel15.nb_layers);
+
   LOG_D(PHY,"dlsch coding A %d G %d mod_order %d\n", A,G, mod_order);
+  
 
   Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0, rel15.nb_layers);
 
@@ -328,7 +330,12 @@ int nr_dlsch_encoding(unsigned char *a,
 
     dlsch->harq_processes[harq_pid]->B = A+24;
     //    dlsch->harq_processes[harq_pid]->b = a;
+    
     memcpy(dlsch->harq_processes[harq_pid]->b,a,(A/8)+4);
+
+     //write_output("enc_b.m","enc_in0",&dlsch->harq_processes[harq_pid]->b[0],(A/8)+4,1,4);
+    //for(i=0;i<10;i++)
+      //printf("dlsch->harq_processes[harq_pid]->b %d\n", dlsch->harq_processes[harq_pid]->b[i]);
 
     nr_segmentation(dlsch->harq_processes[harq_pid]->b,
 		    dlsch->harq_processes[harq_pid]->c,
@@ -351,6 +358,7 @@ int nr_dlsch_encoding(unsigned char *a,
     Kr = dlsch->harq_processes[harq_pid]->K;
     Kr_bytes = Kr>>3;
 
+    //write_output("enc_input0.m","enc_in0",&dlsch->harq_processes[harq_pid]->c[0][0],Kr_bytes,1,4);
     //printf("segment Z %d k %d Kr %d BG %d\n", *pz,dlsch->harq_processes[harq_pid]->K,Kr,BG);
 
     //start_meas(te_stats);
@@ -388,6 +396,7 @@ int nr_dlsch_encoding(unsigned char *a,
     //stop_meas(te_stats);
     //printf("end ldpc encoder -- output\n");
 
+    //write_output("enc_input0.m","enc_in0",&dlsch->harq_processes[harq_pid]->c[0][0],Kr_bytes,1,4);
 #ifdef DEBUG_DLSCH_CODING
       write_output("enc_input0.m","enc_in0",&dlsch->harq_processes[harq_pid]->c[0][0],Kr_bytes,1,4);
       write_output("enc_output0.m","enc0",&dlsch->harq_processes[harq_pid]->d[0][0],(3*8*Kr_bytes)+12,1,4);
@@ -429,6 +438,7 @@ int nr_dlsch_encoding(unsigned char *a,
                           rel15.redundancy_version,
                           E);
 
+    
 #ifdef DEBUG_DLSCH_CODING
     for (int i =0; i<16; i++)
       printf("output ratematching e[%d]= %d r_offset %d\n", i,dlsch->harq_processes[harq_pid]->e[i+r_offset], r_offset);
@@ -441,6 +451,7 @@ int nr_dlsch_encoding(unsigned char *a,
 						dlsch->harq_processes[harq_pid]->e+r_offset,
 						dlsch->harq_processes[harq_pid]->f+r_offset);
     //stop_meas(i_stats);
+
 
 #ifdef DEBUG_DLSCH_CODING
     for (int i =0; i<16; i++)
