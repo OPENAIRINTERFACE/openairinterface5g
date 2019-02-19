@@ -273,6 +273,6 @@ void PUTX2(OBUF *o, int i) {
 
 void PUTUL(OBUF *o, unsigned long l) {
   char s[128];
-  sprintf(s, "%ld", l);
+  sprintf(s, "%lu", l);
   PUTS(o, s);
 }

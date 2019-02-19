@@ -1103,7 +1103,7 @@ et_config_parse_opt_line (
             fprintf(stderr, "Please provide a valid -D/--delay-on-exit argument, %s is not a valid value\n", delay_on_exit);
             exit(1);
           }
-          printf("Delay on exit is %u\n", delay_on_exit);
+          printf("Delay on exit is %d\n", (int) delay_on_exit);
         }
         break;
 
