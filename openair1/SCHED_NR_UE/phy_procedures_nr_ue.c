@@ -4969,10 +4969,9 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
+  NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][0];
   uint16_t nb_symb_sch = 8; // to be updated by higher layer
-  uint8_t nb_symb_pdcch =2; 
-  //proc->decoder_switch = 0;
-  //int counter_decoder = 0;
+  uint8_t nb_symb_pdcch = pdcch_vars->coreset[0].duration;
   
   LOG_D(PHY," ****** start RX-Chain for AbsSubframe %d.%d ******  \n", frame_rx%1024, nr_tti_rx);
 

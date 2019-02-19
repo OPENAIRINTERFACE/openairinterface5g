@@ -693,6 +693,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 
 	    NR_UE_MAC_INST_t *UE_mac = get_mac_inst(0);
 	    UE_mac->scheduled_response.dl_config = &UE->dcireq.dl_config_req;
+	    UE_mac->scheduled_response.slot = proc->nr_tti_rx;
 	    nr_ue_scheduled_response(&UE_mac->scheduled_response);
 	    
 #ifdef UE_SLOT_PARALLELISATION
@@ -920,7 +921,7 @@ void *UE_thread(void *arg) {
                 if(thread_idx>=RX_NB_TH)
                     thread_idx = 0;
 
-                printf("slot_nr %d nb slot frame %d\n",slot_nr, nb_slot_frame);
+                //printf("slot_nr %d nb slot frame %d\n",slot_nr, nb_slot_frame);
 
                 slot_nr++;
                 slot_nr %= nb_slot_frame;               
@@ -1110,6 +1111,7 @@ void *UE_thread(void *arg) {
 
 		    NR_UE_MAC_INST_t *UE_mac = get_mac_inst(0);
 		    UE_mac->scheduled_response.dl_config = &UE->dcireq.dl_config_req;
+		    UE_mac->scheduled_response.slot = proc->nr_tti_rx;
 		    nr_ue_scheduled_response(&UE_mac->scheduled_response);
 		    
 		    //write_output("uerxdata_frame.m", "uerxdata_frame", UE->common_vars.rxdata[0], UE->frame_parms.samples_per_frame, 1, 1);

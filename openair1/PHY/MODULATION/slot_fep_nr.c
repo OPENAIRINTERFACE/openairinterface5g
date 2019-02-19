@@ -56,11 +56,17 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   unsigned int rx_offset;
   NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[Ns]][0];
   uint16_t coreset_start_subcarrier = frame_parms->first_carrier_offset;//+((int)floor(frame_parms->ssb_start_subcarrier/NR_NB_SC_PER_RB)+pdcch_vars->coreset[0].rb_offset)*NR_NB_SC_PER_RB;
-  uint16_t nb_rb_coreset = 24;
+  uint16_t nb_rb_coreset = 0;
   uint16_t bwp_start_subcarrier = frame_parms->first_carrier_offset;//+516;
   uint16_t nb_rb_pdsch = 50;
   uint8_t p=0;
-  uint8_t l0 = 2;
+  uint8_t l0 = pdcch_vars->coreset[0].duration;
+  uint64_t coreset_freq_dom  = pdcch_vars->coreset[0].frequencyDomainResources;
+  for (int i = 0; i < 45; i++) {
+    if (((coreset_freq_dom & 0x1FFFFFFFFFFF) >> i) & 0x1) nb_rb_coreset++;
+  }
+  nb_rb_coreset = 6 * nb_rb_coreset; 
+  //printf("corset duration %d nb_rb_coreset %d\n", l0, nb_rb_coreset);
 
   void (*dft)(int16_t *,int16_t *, int);
   int tmp_dft_in[8192] __attribute__ ((aligned (32)));  // This is for misalignment issues for 6 and 15 PRBs
