@@ -3048,7 +3048,7 @@ dump_CCE_table(int *CCE_table,
       break;
   }
 
-  printf("rnti %x, Yk*L = %d, nCCE %d (nCCE/L %d),nb_cand*L %d\n", 
+  LOG_I(PHY, "rnti %x, Yk*L = %u, nCCE %d (nCCE/L %d),nb_cand*L %d\n", 
          rnti,
          Yk * L, 
          nCCE, 

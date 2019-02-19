@@ -1710,15 +1710,16 @@ schedule_ue_spec(module_id_t module_idP,
             UE_id);
       continue_flag = 0; // reset the flag to allow allocation for the remaining UEs
       rnti = UE_RNTI(module_idP, UE_id);
-      eNB_UE_stats = &UE_list->eNB_UE_stats[CC_id][UE_id];
       ue_sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
       ue_template = &UE_list->UE_template[CC_id][UE_id];
 
-      if (UE_list->UE_template[CC_id][UE_id].rach_resource_type > 0) continue_flag=1;
+      if (ue_template->rach_resource_type > 0) continue_flag = 1;
 	
-      if (eNB_UE_stats == NULL) {
+      if (&(UE_list->eNB_UE_stats[CC_id][UE_id]) == NULL) {
         LOG_D(MAC, "[eNB] Cannot find eNB_UE_stats\n");
         continue_flag = 1;
+      } else {
+        eNB_UE_stats = &(UE_list->eNB_UE_stats[CC_id][UE_id]);
       }
 
       if (continue_flag != 1) {
@@ -1795,8 +1796,7 @@ schedule_ue_spec(module_id_t module_idP,
                                              subframeP);
       round = ue_sched_ctrl->round[CC_id][harq_pid];
       eNB_UE_stats->crnti = rnti;
-      eNB_UE_stats->rrc_status = mac_eNB_get_rrc_status(module_idP, 
-                                                        rnti);
+      eNB_UE_stats->rrc_status = mac_eNB_get_rrc_status(module_idP, rnti);
       eNB_UE_stats->harq_pid = harq_pid;
       eNB_UE_stats->harq_round = round;
 
@@ -2009,7 +2009,6 @@ schedule_ue_spec(module_id_t module_idP,
           eNB_UE_stats->num_retransmission += 1;
           eNB_UE_stats->rbs_used_retx = nb_rb;
           eNB_UE_stats->total_rbs_used_retx += nb_rb;
-          eNB_UE_stats->dlsch_mcs1 = eNB_UE_stats->dlsch_mcs1;
           eNB_UE_stats->dlsch_mcs2 = eNB_UE_stats->dlsch_mcs1;
         } else {
           LOG_D(MAC,
@@ -2529,7 +2528,6 @@ schedule_ue_spec(module_id_t module_idP,
           eNB_UE_stats->rbs_used = nb_rb;
           eNB_UE_stats->num_mac_sdu_tx = num_sdus;
           eNB_UE_stats->total_rbs_used += nb_rb;
-          eNB_UE_stats->dlsch_mcs1 = eNB_UE_stats->dlsch_mcs1;
           eNB_UE_stats->dlsch_mcs2 = mcs;
           eNB_UE_stats->TBS = TBS;
           eNB_UE_stats->overhead_bytes = TBS - sdu_length_total;
