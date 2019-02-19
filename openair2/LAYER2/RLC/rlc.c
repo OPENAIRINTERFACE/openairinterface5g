@@ -640,8 +640,6 @@ rlc_module_init (void) {
   }
 
   for (module_id1=0; module_id1 < MAX_MOBILES_PER_ENB; module_id1++) {
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-
     for (k=0; k < RLC_MAX_MBMS_LC; k++) {
       rlc_mbms_lcid2service_session_id_ue[module_id1][k].service_id = 0;
       rlc_mbms_lcid2service_session_id_ue[module_id1][k].session_id = 0;
@@ -650,23 +648,15 @@ rlc_module_init (void) {
     for (k=0; k < NB_RB_MBMS_MAX; k++) {
       rlc_mbms_rbid2lcid_ue[module_id1][k] = RLC_LC_UNALLOCATED;
     }
-
-#endif
   }
 
-  for (module_id1=0; module_id1 < NUMBER_OF_eNB_MAX; module_id1++) {
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+  for (k=0; k < RLC_MAX_MBMS_LC; k++) {
+      rlc_mbms_lcid2service_session_id_eNB[0][k].service_id = 0;
+      rlc_mbms_lcid2service_session_id_eNB[0][k].session_id = 0;
+  }
 
-    for (k=0; k < RLC_MAX_MBMS_LC; k++) {
-      rlc_mbms_lcid2service_session_id_eNB[module_id1][k].service_id = 0;
-      rlc_mbms_lcid2service_session_id_eNB[module_id1][k].session_id = 0;
-    }
-
-    for (k=0; k < NB_RB_MBMS_MAX; k++) {
-      rlc_mbms_rbid2lcid_eNB[module_id1][k] = RLC_LC_UNALLOCATED;
-    }
-
-#endif
+  for (k=0; k < NB_RB_MBMS_MAX; k++) {
+      rlc_mbms_rbid2lcid_eNB[0][k] = RLC_LC_UNALLOCATED;
   }
 
   pool_buffer_init();

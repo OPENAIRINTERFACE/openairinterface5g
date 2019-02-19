@@ -282,37 +282,43 @@ int esm_ebr_context_create(
 #ifdef UESIM_EXPANSION
                   uint16_t inst_nic = (pdn->ip_addr[3] & 0x000000FF) - 2;
                   res = sprintf(command_line,
-                           "ifconfig oip%d %s netmask %s broadcast %s up && "
+                           "ifconfig %s%d %s netmask %s broadcast %s up && "
                            "ip rule add from %s/24 table %d && "
                            "ip rule add to %s/24 table %d && "
-                           "ip route add default dev oip%d table %d",
+                           "ip route add default dev %s%d table %d",
+                           UE_NAS_USE_TUN?"oaitun_ue":"oip",
                            inst_nic + 1, ipv4_addr, netmask, broadcast,
                            ipv4_addr, 201,
                            ipv4_addr, 201,
+                           UE_NAS_USE_TUN?"oaitun_ue":"oip",
                            inst_nic + 1, 201);
 
                  inst_pdcp_list[inst_nic] = ueid;
 #else
                  res = sprintf(command_line,
-                          "ifconfig oip%d %s netmask %s broadcast %s up && "
+                          "ifconfig %s%d %s netmask %s broadcast %s up && "
                           "ip rule add from %s/32 table %d && "
                           "ip rule add to %s/32 table %d && "
-                          "ip route add default dev oip%d table %d",
+                          "ip route add default dev %s%d table %d",
+                          UE_NAS_USE_TUN?"oaitun_ue":"oip",
                           ueid + 1, ipv4_addr, netmask, broadcast,
                           ipv4_addr, ueid + 201,
                           ipv4_addr, ueid + 201,
+                          UE_NAS_USE_TUN?"oaitun_ue":"oip",
                           ueid + 1, ueid + 201);
 #endif
                } // PDCP_USE_NETLINK
              } else {
                res = sprintf(command_line,
-                           "ifconfig oip%d %s netmask %s broadcast %s up && "
+                           "ifconfig %s%d %s netmask %s broadcast %s up && "
                            "ip rule add from %s/32 table %d && "
                            "ip rule add to %s/32 table %d && "
-                           "ip route add default dev oip%d table %d",
+                           "ip route add default dev %s%d table %d",
+                           UE_NAS_USE_TUN?"oaitun_ue":"oip",
                            ueid + 1, ipv4_addr, netmask, broadcast,
                            ipv4_addr, ueid + 201,
                            ipv4_addr, ueid + 201,
+                           UE_NAS_USE_TUN?"oaitun_ue":"oip",
                            ueid + 1, ueid + 201);
              }
              if ( res<0 ) {

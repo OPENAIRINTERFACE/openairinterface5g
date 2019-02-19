@@ -74,16 +74,16 @@ extern struct nlmsghdr *nas_nlh_rx;
 extern struct iovec nas_iov_tx;
 extern struct iovec nas_iov_rx;
 
-extern int nas_sock_fd;
+extern int nas_sock_fd[MAX_MOBILES_PER_ENB];
 
 extern struct msghdr nas_msg_tx;
 extern struct msghdr nas_msg_rx;
 
 
-  extern uint8_t nfapi_mode;
-  #ifdef UESIM_EXPANSION
+extern uint8_t nfapi_mode;
+#ifdef UESIM_EXPANSION
     extern uint16_t inst_pdcp_list[NUMBER_OF_UE_MAX];
-  #endif
+#endif
 
 extern Packet_OTG_List_t *otg_pdcp_buffer;
 
@@ -124,11 +124,11 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
       ret = sendto(pdcp_pc5_sockfd, &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),
                    sizeof(sidelink_pc5s_element), 0, (struct sockaddr *)&prose_pdcp_addr,sizeof(prose_pdcp_addr) );
     } else if (UE_NAS_USE_TUN) {
-      ret = write(nas_sock_fd, &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
+      ret = write(nas_sock_fd[ctxt_pP->module_id], &(sdu_p->data[sizeof(pdcp_data_ind_header_t)]),sizeToWrite );
     } else if (PDCP_USE_NETLINK) {//UE_NAS_USE_TUN
       memcpy(NLMSG_DATA(nas_nlh_tx), (uint8_t *) sdu_p->data,  sizeToWrite);
       nas_nlh_tx->nlmsg_len = sizeToWrite;
-      ret = sendmsg(nas_sock_fd,&nas_msg_tx,0);
+      ret = sendmsg(nas_sock_fd[0],&nas_msg_tx,0);
     }  //  PDCP_USE_NETLINK
 
     AssertFatal(ret >= 0,"[PDCP_FIFOS] pdcp_fifo_flush_sdus (errno: %d %s)\n", errno, strerror(errno));
@@ -155,7 +155,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t *const  ctxt_pP) {
     do {
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ, 1 );
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ_BUFFER, 1 );
-      len = read(nas_sock_fd, &nl_rx_buf, NL_MAX_PAYLOAD);
+      len = read(nas_sock_fd[ctxt_pP->module_id], &nl_rx_buf, NL_MAX_PAYLOAD);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ_BUFFER, 0 );
 
       if (len<=0) continue;
@@ -180,9 +180,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t *const  ctxt_pP) {
         pdcp_data_req(&ctxt, SRB_FLAG_NO, rab_id, RLC_MUI_UNDEFINED,
                       RLC_SDU_CONFIRM_NO, len, (unsigned char *)nl_rx_buf,
                       PDCP_TRANSMISSION_MODE_DATA
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                       , NULL, NULL
-#endif
                      );
       } else {
         MSC_LOG_RX_DISCARDED_MESSAGE(
@@ -214,7 +212,6 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t *const  ctxt_pP) {
       module_id_t                    ue_id     = 0;
       pdcp_t                        *pdcp_p    = NULL;
   //TTN for D2D (PC5S)
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
       int prose_addr_len;
       char send_buf[BUFSIZE], receive_buf[BUFSIZE];
   //int optval;
@@ -225,14 +222,12 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t *const  ctxt_pP) {
   //uint32_t groupL2Id;
   //module_id_t         module_id = 0;
       pc5s_header_t *pc5s_header;
-#endif
       static unsigned char pdcp_read_state_g =0;
       int              len = 1;
       int  msg_len;
       rb_id_t          rab_id  = 0;
       int rlc_data_req_flag = 3;
   //TTN for D2D (PC5S)
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
       prose_addr_len = sizeof(prose_pdcp_addr);
   // receive a message from ProSe App
       memset(receive_buf, 0, BUFSIZE);
@@ -368,11 +363,9 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t *const  ctxt_pP) {
                 RLC_SDU_CONFIRM_NO,
                 pc5s_header->data_size,
                 (unsigned char *)receive_buf,
-                PDCP_TRANSMISSION_MODE_DATA
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                ,&pc5s_header->sourceL2Id
-                ,&pc5s_header->destinationL2Id
-#endif
+                PDCP_TRANSMISSION_MODE_DATA,
+                &pc5s_header->sourceL2Id,
+                &pc5s_header->destinationL2Id
               );
             } else {
               MSC_LOG_RX_DISCARDED_MESSAGE(
@@ -425,11 +418,9 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t *const  ctxt_pP) {
               RLC_SDU_CONFIRM_NO,
               pc5s_header->data_size,
               (unsigned char *)receive_buf,
-              PDCP_TRANSMISSION_MODE_DATA
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-              ,&pc5s_header->sourceL2Id
-              ,&pc5s_header->destinationL2Id
-#endif
+              PDCP_TRANSMISSION_MODE_DATA,
+              &pc5s_header->sourceL2Id,
+              &pc5s_header->destinationL2Id
             );
           }
         }
@@ -439,12 +430,11 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t *const  ctxt_pP) {
       }
     }
 
-#endif
 
     while ((len > 0) && (rlc_data_req_flag !=0))  {
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ, 1 );
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ_BUFFER, 1 );
-      len = recvmsg(nas_sock_fd, &nas_msg_rx, 0);
+      len = recvmsg(nas_sock_fd[0], &nas_msg_rx, 0);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_FIFO_READ_BUFFER, 0 );
 
       if (len<=0) {
@@ -570,9 +560,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t *const  ctxt_pP) {
                                 pdcp_read_header_g.data_size,
                                 (unsigned char *)NLMSG_DATA(nas_nlh_rx),
                                 PDCP_TRANSMISSION_MODE_DATA
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                 ,NULL, NULL
-#endif
                                );
                 } else {
                   LOG_D(PDCP, "[FRAME %5u][eNB][IP][INSTANCE %u][RB %u][--- PDCP_DATA_REQ / %d Bytes ---X][PDCP][MOD %u][UE %u][RB %u] NON INSTANCIATED INSTANCE, DROPPED\n",
@@ -607,9 +595,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t *const  ctxt_pP) {
                       pdcp_read_header_g.data_size,
                       (unsigned char *)NLMSG_DATA(nas_nlh_rx),
                       PDCP_TRANSMISSION_MODE_DATA
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                       ,NULL, NULL
-#endif
                     );
                   }
                 }
@@ -672,11 +658,9 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t *const  ctxt_pP) {
                       RLC_SDU_CONFIRM_NO,
                       pdcp_read_header_g.data_size,
                       (unsigned char *)NLMSG_DATA(nas_nlh_rx),
-                      PDCP_TRANSMISSION_MODE_DATA
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                      ,NULL
-                      ,NULL
-#endif
+                      PDCP_TRANSMISSION_MODE_DATA,
+                      NULL,
+                      NULL
                     );
                   } else {
                     pdcp_data_req(
@@ -687,11 +671,9 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t *const  ctxt_pP) {
                       RLC_SDU_CONFIRM_NO,
                       pdcp_read_header_g.data_size,
                       (unsigned char *)NLMSG_DATA(nas_nlh_rx),
-                      PDCP_TRANSMISSION_MODE_DATA
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                      ,&pdcp_read_header_g.sourceL2Id
-                      ,&pdcp_read_header_g.destinationL2Id
-#endif
+                      PDCP_TRANSMISSION_MODE_DATA,
+                      &pdcp_read_header_g.sourceL2Id,
+                      &pdcp_read_header_g.destinationL2Id
                     );
                   }
                 } else {
@@ -747,11 +729,9 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t *const  ctxt_pP) {
                     RLC_SDU_CONFIRM_NO,
                     pdcp_read_header_g.data_size,
                     (unsigned char *)NLMSG_DATA(nas_nlh_rx),
-                    PDCP_TRANSMISSION_MODE_DATA
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                    ,NULL
-                    ,NULL
-#endif
+                    PDCP_TRANSMISSION_MODE_DATA,
+                    NULL,
+                    NULL
                   );
                 } else {
                   pdcp_data_req (
@@ -762,11 +742,9 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t *const  ctxt_pP) {
                     RLC_SDU_CONFIRM_NO,
                     pdcp_read_header_g.data_size,
                     (unsigned char *)NLMSG_DATA(nas_nlh_rx),
-                    PDCP_TRANSMISSION_MODE_DATA
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                    ,&pdcp_read_header_g.sourceL2Id
-                    ,&pdcp_read_header_g.destinationL2Id
-#endif
+                    PDCP_TRANSMISSION_MODE_DATA,
+                    &pdcp_read_header_g.sourceL2Id,
+                    &pdcp_read_header_g.destinationL2Id
                     );
                   }
                 }
@@ -808,7 +786,6 @@ void pdcp_fifo_read_input_sdus_from_otg (const protocol_ctxt_t *const  ctxt_pP) 
 }
 
 //TTN for D2D (PC5S)
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
 void
 pdcp_pc5_socket_init() {
@@ -841,4 +818,3 @@ pdcp_pc5_socket_init() {
   }
 }
 
-#endif

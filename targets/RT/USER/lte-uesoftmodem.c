@@ -772,7 +772,7 @@ int main( int argc, char **argv ) {
   init_opt();
   uint32_t pdcp_initmask = ((!IS_SOFTMODEM_NOS1) || IS_SOFTMODEM_NOKRNMOD)? LINK_ENB_PDCP_TO_GTPV1U_BIT : (LINK_ENB_PDCP_TO_GTPV1U_BIT | PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT);
 
-  if ( IS_SOFTMODEM_BASICSIM ) {
+  if ( IS_SOFTMODEM_BASICSIM || (nfapi_mode == 3) ) {
     pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
   }
 

@@ -100,11 +100,9 @@ boolean_t pdcp_data_req(
   const confirm_t      confirmP,
   const sdu_size_t     sdu_buffer_sizeP,
   unsigned char *const sdu_buffer_pP,
-  const pdcp_transmission_mode_t modeP
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  ,const uint32_t *const sourceL2Id
-  ,const uint32_t *const destinationL2Id
-#endif
+  const pdcp_transmission_mode_t modeP,
+  const uint32_t *const sourceL2Id,
+  const uint32_t *const destinationL2Id
 )
 //-----------------------------------------------------------------------------
 {
@@ -189,19 +187,12 @@ boolean_t pdcp_data_req(
         LOG_UI(PDCP, "Before rlc_data_req 1, srb_flagP: %d, rb_idP: %d \n", srb_flagP, rb_idP);
       }
       rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_YES, rb_idP, muiP, confirmP, sdu_buffer_sizeP, pdcp_pdu_p
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                 ,NULL, NULL
-#endif
                                );
     } else {
       rlc_status = RLC_OP_STATUS_OUT_OF_RESSOURCES;
-      LOG_W(PDCP,PROTOCOL_CTXT_FMT" PDCP_DATA_REQ SDU DROPPED, OUT OF MEMORY \n",
+      LOG_E(PDCP,PROTOCOL_CTXT_FMT" PDCP_DATA_REQ SDU DROPPED, OUT OF MEMORY \n",
             PROTOCOL_CTXT_ARGS(ctxt_pP));
-#if defined(STOP_ON_IP_TRAFFIC_OVERLOAD)
-      AssertFatal(0, PROTOCOL_CTXT_FMT"[RB %u] PDCP_DATA_REQ SDU DROPPED, OUT OF MEMORY \n",
-                  PROTOCOL_CTXT_ARGS(ctxt_pP),
-                  rb_idP);
-#endif
     }
   } else {
     // calculate the pdcp header and trailer size
@@ -344,14 +335,11 @@ boolean_t pdcp_data_req(
         stop_meas(&UE_pdcp_stats[ctxt_pP->module_id].data_req);
       }
 
-#if defined(STOP_ON_IP_TRAFFIC_OVERLOAD)
-      AssertFatal(0, "[FRAME %5u][%s][PDCP][MOD %u/%u][RB %u] PDCP_DATA_REQ SDU DROPPED, OUT OF MEMORY \n",
+      LOG_E(PDCP,  "[FRAME %5u][%s][PDCP][MOD %u][RB %u] PDCP_DATA_REQ SDU DROPPED, OUT OF MEMORY \n",
                   ctxt_pP->frame,
                   (ctxt_pP->enb_flag) ? "eNB" : "UE",
-                  ctxt_pP->enb_module_id,
-                  ctxt_pP->ue_module_id,
+                  ctxt_pP->module_id,
                   rb_idP);
-#endif
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_DATA_REQ,VCD_FUNCTION_OUT);
       return FALSE;
     }
@@ -364,10 +352,8 @@ boolean_t pdcp_data_req(
                 "[MSG] PDCP DL %s PDU on rb_id %d\n",(srb_flagP)? "CONTROL" : "DATA", rb_idP);
     LOG_D(PDCP, "Before rlc_data_req 2, srb_flagP: %d, rb_idP: %d \n", srb_flagP, rb_idP);
     rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                               ,sourceL2Id
                               ,destinationL2Id
-#endif
                              );
   }
 
@@ -832,19 +818,15 @@ pdcp_data_ind(
     Pdcp_stats_rx_bytes_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=(sdu_buffer_sizeP  - payload_offset);
     Pdcp_stats_rx_sn[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=sequence_number;
 
-    if (oo_flag == 1 )
+    if (oo_flag == 1 ){
       Pdcp_stats_rx_outoforder[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
-
+    } else {
+      LOG_E(PDCP, PROTOCOL_PDCP_CTXT_FMT" PDCP_DATA_IND SDU DROPPED, OUT OF ORDER \n",
+                  PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p));
+    }
     Pdcp_stats_rx_aiat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (pdcp_enb[ctxt_pP->module_id].sfn - Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
     Pdcp_stats_rx_aiat_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=(pdcp_enb[ctxt_pP->module_id].sfn - Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
     Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=pdcp_enb[ctxt_pP->module_id].sfn;
-#if defined(STOP_ON_IP_TRAFFIC_OVERLOAD)
-    else {
-      AssertFatal(0, PROTOCOL_PDCP_CTXT_FMT" PDCP_DATA_IND SDU DROPPED, OUT OF MEMORY \n",
-                  PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p));
-    }
-
-#endif
   }
 
   free_mem_block(sdu_buffer_pP, __func__);
@@ -962,10 +944,8 @@ pdcp_run (
                                   RRC_DCCH_DATA_REQ (msg_p).confirmp,
                                   RRC_DCCH_DATA_REQ (msg_p).sdu_size,
                                   RRC_DCCH_DATA_REQ (msg_p).sdu_p,
-                                  RRC_DCCH_DATA_REQ (msg_p).mode
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                  , NULL, NULL
-#endif
+                                  RRC_DCCH_DATA_REQ (msg_p).mode,
+                                  NULL, NULL
                                  );
 
           if (result != TRUE)
@@ -1117,11 +1097,9 @@ rrc_pdcp_config_asn1_req (
   const uint8_t                   security_modeP,
   uint8_t                  *const kRRCenc_pP,
   uint8_t                  *const kRRCint_pP,
-  uint8_t                  *const kUPenc_pP
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-  ,LTE_PMCH_InfoList_r9_t  *const pmch_InfoList_r9_pP
-#endif
-  ,rb_id_t                 *const defaultDRB
+  uint8_t                  *const kUPenc_pP,
+  LTE_PMCH_InfoList_r9_t  *const pmch_InfoList_r9_pP,
+  rb_id_t                 *const defaultDRB
 )
 //-----------------------------------------------------------------------------
 {
@@ -1144,11 +1122,10 @@ rrc_pdcp_config_asn1_req (
   hashtable_rc_t  h_rc;
   hash_key_t      key_defaultDRB = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t  h_defaultDRB_rc;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   int i,j;
   LTE_MBMS_SessionInfoList_r9_t *mbms_SessionInfoList_r9_p = NULL;
   LTE_MBMS_SessionInfo_r9_t     *MBMS_SessionInfo_p        = NULL;
-#endif
+
   LOG_T(PDCP, PROTOCOL_CTXT_FMT" %s() SRB2ADD %p DRB2ADD %p DRB2RELEASE %p\n",
         PROTOCOL_CTXT_ARGS(ctxt_pP),
         __FUNCTION__,
@@ -1438,7 +1415,6 @@ rrc_pdcp_config_asn1_req (
     }
   }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 
   if (pmch_InfoList_r9_pP != NULL) {
     for (i=0; i<pmch_InfoList_r9_pP->list.count; i++) {
@@ -1501,7 +1477,6 @@ rrc_pdcp_config_asn1_req (
     }
   }
 
-#endif
   return 0;
 }
 
@@ -1665,7 +1640,6 @@ pdcp_config_req_asn1 (
 
       memset(pdcp_pP, 0, sizeof(pdcp_t));
       break;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
     case CONFIG_ACTION_MBMS_ADD:
     case CONFIG_ACTION_MBMS_MODIFY:
@@ -1685,7 +1659,6 @@ pdcp_config_req_asn1 (
       }
 
       break;
-#endif
 
     case CONFIG_ACTION_SET_SECURITY_MODE:
       pdcp_config_set_security(
@@ -1958,10 +1931,9 @@ void pdcp_layer_init(void)
 {
   module_id_t       instance;
   int i,j;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
   mbms_session_id_t session_id;
   mbms_service_id_t service_id;
-#endif
+
   /*
    * Initialize SDU list
    */
@@ -1970,7 +1942,6 @@ void pdcp_layer_init(void)
   AssertFatal(pdcp_coll_p != NULL, "UNRECOVERABLE error, PDCP hashtable_create failed");
 
   for (instance = 0; instance < MAX_MOBILES_PER_ENB; instance++) {
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
     for (service_id = 0; service_id < LTE_maxServiceCount; service_id++) {
       for (session_id = 0; session_id < LTE_maxSessionPerPMCH; session_id++) {
@@ -1978,22 +1949,17 @@ void pdcp_layer_init(void)
       }
     }
 
-#endif
     pdcp_eNB_UE_instance_to_rnti[instance] = NOT_A_RNTI;
   }
 
   pdcp_eNB_UE_instance_to_rnti_index = 0;
 
   for (instance = 0; instance < NUMBER_OF_eNB_MAX; instance++) {
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-
     for (service_id = 0; service_id < LTE_maxServiceCount; service_id++) {
       for (session_id = 0; session_id < LTE_maxSessionPerPMCH; session_id++) {
         memset(&pdcp_mbms_array_eNB[instance][service_id][session_id], 0, sizeof(pdcp_mbms_t));
       }
     }
-
-#endif
   }
 
 #ifdef MBMS_MULTICAST_OUT
