@@ -84,11 +84,8 @@ function start_basic_sim_enb {
     echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/basic_simulator" >> $1
     echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/basic_simulator/enb/" >> $1
     echo "cd /home/ubuntu/tmp/cmake_targets/basic_simulator/enb/" >> $1
-    echo 'echo MY NUMBER: $?' >> $1
     echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE\" > ./my-lte-softmodem-run.sh " >> $1
-    echo 'echo MY NUMBER: $?' >> $1
     echo "chmod 775 ./my-lte-softmodem-run.sh" >> $1
-    echo 'echo MY NUMBER: $?' >> $1
     echo "cat ./my-lte-softmodem-run.sh" >> $1
     echo "if [ -e /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ]; then sudo sudo rm -f /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE; fi" >> $1
     echo "sudo -E daemon --inherit --unsafe --name=enb_daemon --chdir=/home/ubuntu/tmp/cmake_targets/basic_simulator/enb -o /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ./my-lte-softmodem-run.sh" >> $1
@@ -376,10 +373,8 @@ function start_nos1_sim_ue {
     echo "if [ \`lsmod | grep -c nasmesh\` -eq 0 ]; then sudo -E ./init_nas_nos1 UE; fi" >> $1
     echo "echo \"cd /home/ubuntu/tmp/cmake_targets/lte_noS1_build_oai/build/\"" >> $1
     echo "cd /home/ubuntu/tmp/cmake_targets/lte_noS1_build_oai/build/" >> $1
-    echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem-nos1 -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE -r $LOC_NB_RBS --siml1\" > ./my-lte-uesoftmodem-run.sh " >> $1
-    echo 'echo MY NUMBER: $?' >> $1
-    echo "chmod 775 ./my-lte-uesoftmodem-run.sh" >> $1
-    echo 'echo MY NUMBER: $?' >> $1
+    echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem-nos1 -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE -r $LOC_NB_RBS --siml1\" | sudo tee -a ./my-lte-uesoftmodem-run.sh " >> $1 
+    echo "sudo chmod 775 ./my-lte-uesoftmodem-run.sh" >> $1
     echo "cat ./my-lte-uesoftmodem-run.sh" >> $1
     echo "sudo -E daemon --inherit --unsafe --name=ue_daemon --chdir=/home/ubuntu/tmp/cmake_targets/lte_noS1_build_oai/build -o /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ./my-lte-uesoftmodem-run.sh" >> $1
 
