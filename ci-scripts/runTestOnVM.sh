@@ -84,8 +84,11 @@ function start_basic_sim_enb {
     echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/basic_simulator" >> $1
     echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/basic_simulator/enb/" >> $1
     echo "cd /home/ubuntu/tmp/cmake_targets/basic_simulator/enb/" >> $1
+    echo 'echo MY NUMBER: $?' >> $1
     echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE\" > ./my-lte-softmodem-run.sh " >> $1
+    echo 'echo MY NUMBER: $?' >> $1
     echo "chmod 775 ./my-lte-softmodem-run.sh" >> $1
+    echo 'echo MY NUMBER: $?' >> $1
     echo "cat ./my-lte-softmodem-run.sh" >> $1
     echo "if [ -e /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ]; then sudo sudo rm -f /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE; fi" >> $1
     echo "sudo -E daemon --inherit --unsafe --name=enb_daemon --chdir=/home/ubuntu/tmp/cmake_targets/basic_simulator/enb -o /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ./my-lte-softmodem-run.sh" >> $1
@@ -103,6 +106,12 @@ function start_basic_sim_ue {
     echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/basic_simulator/ue" >> $1
     echo "cd /home/ubuntu/tmp/cmake_targets/basic_simulator/ue" >> $1
     echo "echo \"./lte-uesoftmodem -C ${LOC_FREQUENCY}000000 -r $LOC_NB_RBS --ue-rxgain 140\" > ./my-lte-uesoftmodem-run.sh" >> $1
+    FILE=./my-lte-uesoftmodem-run.sh     
+    if [ -f $FILE ]; then
+    	echo "File $FILE exists."
+    else
+	echo "File $FILE does not exist."
+    fi
     echo "chmod 775 ./my-lte-uesoftmodem-run.sh" >> $1
     echo "cat ./my-lte-uesoftmodem-run.sh" >> $1
     echo "if [ -e /home/ubuntu/tmp/cmake_targets/log/$LOC_UE_LOG_FILE ]; then sudo sudo rm -f /home/ubuntu/tmp/cmake_targets/log/$LOC_UE_LOG_FILE; fi" >> $1
@@ -291,6 +300,115 @@ function recover_core_dump {
         rm -f $1
     fi
 }
+
+function start_nos1_sim_enb {
+    local LOC_VM_IP_ADDR=$2
+    local LOC_UE_IP_ADDR=$3
+    local LOC_LOG_FILE=$4
+    local LOC_NB_RBS=$5
+    local LOC_CONF_FILE=$6
+    echo "cd /home/ubuntu/tmp" > $1
+    echo "echo \"sudo apt-get --yes --quiet install daemon \"" >> $1
+    echo "sudo apt-get --yes install daemon >> /home/ubuntu/tmp/cmake_targets/log/daemon-install.txt 2>&1" >> $1
+    echo "echo \"source oaienv\"" >> $1
+    echo "source oaienv" >> $1
+    echo "cd ci-scripts/conf_files/" >> $1
+    echo "cp $LOC_CONF_FILE ci-$LOC_CONF_FILE" >> $1
+    echo "sed -i -e 's#N_RB_DL.*=.*;#N_RB_DL                                         = $LOC_NB_RBS;#' -e 's#CI_UE_IP_ADDR#$LOC_UE_IP_ADDR#' -e 's#CI_ENB_IP_ADDR#$LOC_VM_IP_ADDR#' ci-$LOC_CONF_FILE" >> $1
+    echo "echo \"grep N_RB_DL ci-$LOC_CONF_FILE\"" >> $1
+    echo "grep N_RB_DL ci-$LOC_CONF_FILE | sed -e 's#N_RB_DL.*=#N_RB_DL =#'" >> $1
+    echo "echo \"cd /home/ubuntu/tmp/cmake_targets/tools\"" >> $1
+    echo "cd /home/ubuntu/tmp/cmake_targets/tools/" >> $1
+    echo "echo \"if [ \`lsmod | grep -c nasmesh\` -eq 0 ]; then sudo -E ./init_nas_nos1 eNB; fi\"" >> $1
+    echo "if [ \`lsmod | grep -c nasmesh\` -eq 0 ]; then sudo -E ./init_nas_nos1 eNB; fi" >> $1
+    echo "echo \"cd /home/ubuntu/tmp/cmake_targets/lte_noS1_build_oai/build/\"" >> $1
+    echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/lte_noS1_build_oai/build" >> $1
+    echo "cd /home/ubuntu/tmp/cmake_targets/lte_noS1_build_oai/build/" >> $1
+    echo "echo \"ulimit -c unlimited && ./lte-softmodem-nos1 -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE\" > ./my-lte-softmodem-run.sh " >> $1
+    echo "chmod 775 ./my-lte-softmodem-run.sh" >> $1
+    echo "cat ./my-lte-softmodem-run.sh" >> $1
+    echo "sudo -E daemon --inherit --unsafe --name=enb_daemon --chdir=/home/ubuntu/tmp/cmake_targets/lte_noS1_build_oai/build -o /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ./my-lte-softmodem-run.sh" >> $1
+
+    ssh -o StrictHostKeyChecking=no ubuntu@$LOC_VM_IP_ADDR < $1
+    sleep 10
+    rm $1
+}
+
+function stop_nos1_sim_enb {
+    local LOC_VM_IP_ADDR=$2
+    echo "NB_OAI_PROCESSES=\`ps -aux | grep modem | grep -v grep | grep -c softmodem\`" > $1
+    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then echo \"sudo daemon --name=enb_daemon --stop\"; fi" >> $1
+    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sudo daemon --name=enb_daemon --stop; fi" >> $1
+    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then echo \"sudo killall --signal SIGINT lte-softmodem-nos1\"; fi" >> $1
+    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sudo killall --signal SIGINT lte-softmodem-nos1; fi" >> $1
+    echo "sleep 1" >> $1
+    echo "echo \"ps -aux | grep softmodem\"" >> $1
+    echo "ps -aux | grep softmodem | grep -v grep" >> $1
+    echo "NB_OAI_PROCESSES=\`ps -aux | grep modem | grep -v grep | grep -c softmodem\`" >> $1
+    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then echo \"sudo killall --signal SIGKILL lte-softmodem-nos1\"; fi" >> $1
+    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sudo killall --signal SIGKILL lte-softmodem-nos1; fi" >> $1
+    echo "sleep 1" >> $1
+    echo "echo \"ps -aux | grep softmodem\"" >> $1
+    echo "ps -aux | grep softmodem | grep -v grep" >> $1
+
+    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+    rm -f $1
+}
+
+function start_nos1_sim_ue {
+# start_nos1_sim_ue $UE_VM_CMDS $VM_IP_ADDR $UE_VM_IP_ADDR $CURRENT_UE_LOG_FILE 25 rru.band7.nos1.simulator.conf
+    local LOC_VM_IP_ADDR=$2
+    local LOC_UE_IP_ADDR=$3
+    local LOC_LOG_FILE=$4
+    local LOC_NB_RBS=$5
+    local LOC_CONF_FILE=$6
+    echo "cd /home/ubuntu/tmp" > $1
+    echo "echo \"sudo apt-get --yes --quiet install daemon \"" >> $1
+    echo "sudo apt-get --yes install daemon >> /home/ubuntu/tmp/cmake_targets/log/daemon-install.txt 2>&1" >> $1
+    echo "echo \"source oaienv\"" >> $1
+    echo "source oaienv" >> $1
+    echo "cd ci-scripts/conf_files/" >> $1
+    echo "cp $LOC_CONF_FILE ci-$LOC_CONF_FILE" >> $1
+    echo "sed -i -e 's#CI_UE_IP_ADDR#$LOC_UE_IP_ADDR#' -e 's#CI_ENB_IP_ADDR#$LOC_VM_IP_ADDR#' ci-$LOC_CONF_FILE" >> $1
+    echo "echo \"cd /home/ubuntu/tmp/cmake_targets/tools\"" >> $1
+    echo "cd /home/ubuntu/tmp/cmake_targets/tools/" >> $1
+    echo "echo \"if [ \`lsmod | grep -c nasmesh\` -eq 0 ]; then sudo -E ./init_nas_nos1 UE; fi\"" >> $1
+    echo "if [ \`lsmod | grep -c nasmesh\` -eq 0 ]; then sudo -E ./init_nas_nos1 UE; fi" >> $1
+    echo "echo \"cd /home/ubuntu/tmp/cmake_targets/lte_noS1_build_oai/build/\"" >> $1
+    echo "cd /home/ubuntu/tmp/cmake_targets/lte_noS1_build_oai/build/" >> $1
+    echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem-nos1 -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE -r $LOC_NB_RBS --siml1\" > ./my-lte-uesoftmodem-run.sh " >> $1
+    echo 'echo MY NUMBER: $?' >> $1
+    echo "chmod 775 ./my-lte-uesoftmodem-run.sh" >> $1
+    echo 'echo MY NUMBER: $?' >> $1
+    echo "cat ./my-lte-uesoftmodem-run.sh" >> $1
+    echo "sudo -E daemon --inherit --unsafe --name=ue_daemon --chdir=/home/ubuntu/tmp/cmake_targets/lte_noS1_build_oai/build -o /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ./my-lte-uesoftmodem-run.sh" >> $1
+
+    ssh -o StrictHostKeyChecking=no ubuntu@$LOC_UE_IP_ADDR < $1
+    sleep 10
+    rm $1
+}
+
+function stop_nos1_sim_ue {
+    local LOC_VM_IP_ADDR=$2
+    echo "NB_OAI_PROCESSES=\`ps -aux | grep modem | grep -v grep | grep -c softmodem\`" > $1
+    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then echo \"sudo daemon --name=ue_daemon --stop\"; fi" >> $1
+    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sudo daemon --name=ue_daemon --stop; fi" >> $1
+    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then echo \"sudo killall --signal SIGINT lte-uesoftmodem-nos1\"; fi" >> $1
+    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sudo killall --signal SIGINT lte-uesoftmodem-nos1; fi" >> $1
+    echo "sleep 1" >> $1
+    echo "echo \"ps -aux | grep softmodem\"" >> $1
+    echo "ps -aux | grep softmodem | grep -v grep" >> $1
+    echo "NB_OAI_PROCESSES=\`ps -aux | grep modem | grep -v grep | grep -c softmodem\`" >> $1
+    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then echo \"sudo killall --signal SIGKILL lte-uesoftmodem-nos1\"; fi" >> $1
+    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sudo killall --signal SIGKILL lte-uesoftmodem-nos1; fi" >> $1
+    echo "sleep 1" >> $1
+    echo "echo \"ps -aux | grep softmodem\"" >> $1
+    echo "ps -aux | grep softmodem | grep -v grep" >> $1
+
+    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
+    rm -f $1
+}
+
 
 function install_epc_on_vm {
     local LOC_EPC_VM_NAME=$1
@@ -1339,5 +1457,54 @@ function run_test_on_vm {
         else
             echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
         fi
+    fi
+
+    if [[ "$RUN_OPTIONS" == "complex" ]] && [[ $VM_NAME =~ .*-ethernet.* ]]
+    then
+        if [ -d $ARCHIVES_LOC ]
+        then
+            rm -Rf $ARCHIVES_LOC
+        fi
+        mkdir --parents $ARCHIVES_LOC
+
+        UE_VM_NAME=`echo $VM_NAME | sed -e "s#enb#ue#"`
+        UE_VM_CMDS=${UE_VM_NAME}_cmds.txt
+        echo "UE_VM_NAME          = $UE_VM_NAME"
+        echo "UE_VM_CMD_FILE      = $UE_VM_CMDS"
+
+        echo "############################################################"
+        echo "Waiting for UE VM to be started"
+        echo "############################################################"
+        uvt-kvm wait $UE_VM_NAME --insecure
+
+        UE_VM_IP_ADDR=`uvt-kvm ip $UE_VM_NAME`
+        echo "$UE_VM_NAME has for IP addr = $UE_VM_IP_ADDR"
+
+        echo "############################################################"
+        echo "Starting the eNB in FDD-5MHz mode"
+        echo "############################################################"
+        CURRENT_ENB_LOG_FILE=fdd_05MHz_enb.log
+        start_nos1_sim_enb $VM_CMDS $VM_IP_ADDR $UE_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 5 rcc.band7.nos1.simulator.conf
+
+        echo "############################################################"
+        echo "Starting the UE in FDD-5MHz mode"
+        echo "############################################################"
+        CURRENT_UE_LOG_FILE=fdd_05MHz_ue.log
+        start_nos1_sim_ue $UE_VM_CMDS $VM_IP_ADDR $UE_VM_IP_ADDR $CURRENT_UE_LOG_FILE 5 rru.band7.nos1.simulator.conf
+
+        sleep 30
+        echo "############################################################"
+        echo "Stopping the UE in FDD-5MHz mode"
+        echo "############################################################"
+        stop_nos1_sim_ue $UE_VM_CMDS $UE_VM_IP_ADDR
+
+        echo "############################################################"
+        echo "Stopping the eNB in FDD-5MHz mode"
+        echo "############################################################"
+        stop_nos1_sim_enb $VM_CMDS $VM_IP_ADDR
+
+        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+        scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+
     fi
 }
