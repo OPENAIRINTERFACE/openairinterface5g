@@ -1057,8 +1057,8 @@
                                    (Test2: PBCH and synchronization, 106PBR),
                                    (Test3: PBCH-only, 217 PRB),
                                    (Test4: PBCH and synchronization, 217 RPB),
-                                   (Test5: PBCH-only, 217 PRB),
-                                   (Test6: PBCH and synchronization, 217 PRB)</desc>
+                                   (Test5: PBCH-only, 273 PRB),
+                                   (Test6: PBCH and synchronization, 273 PRB)</desc>
       <pre_compile_prog></pre_compile_prog>
       <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
@@ -1071,12 +1071,51 @@
                       -s0 -S1 -n10 -I -R217
 		      -s0 -S1 -n1000 -R273
                       -s0 -S1 -n10 -I -R273</main_exec_args>
-      <tags>nr_pbchsim.test1 nr_pbchsim.test2</tags>
+      <tags>nr_pbchsim.test1 nr_pbchsim.test2 nr_pbchsim.test3 nr_pbchsim.test4 nr_pbchsim.test5 nr_pbchsim.test6</tags>
       <search_expr_true>PBCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
     </testCase> 
+
+     <testCase id="015105">
+      <class>execution</class>
+      <desc>nr_dlsim Test cases. (Test1: 106 PRB),
+                                 (Test2: 217 PRB),
+                                 (Test3: 273 PRB)</desc>
+      <pre_compile_prog></pre_compile_prog>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
+      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+      <pre_exec_args></pre_exec_args>
+      <main_exec> $OPENAIR_DIR/targets/bin/nr_dlsim.Rel15</main_exec>
+      <main_exec_args>-n100 -R106
+		      -n100 -R217
+		      -n100 -R273</main_exec_args>
+      <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3</tags>
+      <search_expr_true>PDCCH test OK</search_expr_true>
+      <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <nruns>3</nruns>
+    </testCase> 
  
+     <testCase id="015106">
+      <class>execution</class>
+      <desc>nr_dlschsim Test cases. (Test1: 106 PRB),
+                                 (Test2: 217 PRB),
+                                 (Test3: 273 PRB)</desc>
+      <pre_compile_prog></pre_compile_prog>
+      <compile_prog>$OPENAIR_DIR/cmake_targets/build_oai</compile_prog>
+      <compile_prog_args> --phy_simulators  -c </compile_prog_args>
+      <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
+      <pre_exec_args></pre_exec_args>
+      <main_exec> $OPENAIR_DIR/targets/bin/nr_dlsim.Rel15</main_exec>
+      <main_exec_args>-R 106 -m9 -s13 -n100
+                      -R 217 -m15 -s15 -n100
+                      -R 273 -m19 -s20 -n100</main_exec_args>
+      <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3</tags>
+      <search_expr_true>PDSCH test OK</search_expr_true>
+      <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
+      <nruns>3</nruns>
+    </testCase> 
     
     <testCase id="015110">
       <class>execution</class>

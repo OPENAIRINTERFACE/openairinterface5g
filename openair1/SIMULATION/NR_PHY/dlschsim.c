@@ -144,7 +144,7 @@ int main(int argc, char **argv) {
 	//char input_val_str[50],input_val_str2[50];
 	//uint16_t NB_RB=25;
 	SCM_t channel_model = AWGN;  //Rayleigh1_anticorr;
-	uint8_t N_RB_DL = 106, mu = 1;
+	uint16_t N_RB_DL = 106, mu = 1;
 	unsigned char frame_type = 0;
 	unsigned char pbch_phase = 0;
 	int frame = 0, subframe = 0;
@@ -362,9 +362,10 @@ int main(int argc, char **argv) {
 	if (snr1set == 0)
 		snr1 = snr0 + 10;
 
-	gNB2UE = new_channel_desc_scm(n_tx, n_rx, channel_model, 61.44e6, //N_RB2sampling_rate(N_RB_DL),
-			40e6, //N_RB2channel_bandwidth(N_RB_DL),
-			0, 0, 0);
+	gNB2UE = new_channel_desc_scm(n_tx, n_rx, channel_model, 
+				      61.44e6, //N_RB2sampling_rate(N_RB_DL),
+				      40e6, //N_RB2channel_bandwidth(N_RB_DL),
+				      0, 0, 0);
 
 	if (gNB2UE == NULL) {
 		msg("Problem generating channel model. Exiting.\n");
@@ -599,8 +600,10 @@ int main(int argc, char **argv) {
 				(float) n_errors / (float) n_trials,
 				(float) n_false_positive / (float) n_trials);
 
-		if ((float) n_errors / (float) n_trials < target_error_rate)
-			break;
+		if ((float) n_errors / (float) n_trials < target_error_rate) {
+		  printf("PDSCH test OK\n");
+		  break;
+		}
 	}
 
 	/*LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],frame_length_complex_samples_no_prefix,1,1);
