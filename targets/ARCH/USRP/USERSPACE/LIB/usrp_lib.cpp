@@ -28,7 +28,12 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <uhd/version.hpp>
+#if UHD_VERSION < 3110000
 #include <uhd/utils/thread_priority.hpp>
+#else
+#include <uhd/utils/thread.hpp>
+#endif
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/version.hpp>
 #include <boost/lexical_cast.hpp>
@@ -183,7 +188,7 @@ static int sync_to_gps(openair0_device *device) {
         num_gps_locked++;
         std::cout << boost::format("GPS Locked\n");
       } else {
-        std::cerr << "WARNING:  GPS not locked - time will not be accurate until locked" << std::endl;
+        LOG_W(HW,"WARNING:  GPS not locked - time will not be accurate until locked\n");
       }
 
       //Set to GPS time
@@ -720,6 +725,7 @@ void *freq_thread(void *arg) {
   usrp_state_t *s = (usrp_state_t *)device->priv;
   s->usrp->set_tx_freq(device->openair0_cfg[0].tx_freq[0]);
   s->usrp->set_rx_freq(device->openair0_cfg[0].rx_freq[0]);
+  return NULL;
 }
 /*! \brief Set frequencies (TX/RX). Spawns a thread to handle the frequency change to not block the calling thread
  * \param device the hardware to use
@@ -1069,16 +1075,16 @@ extern "C" {
       uhd::device_addrs_t device_adds = uhd::device::find(args);
 
       if (device_adds.size() == 0) {
-        std::cerr<<"No USRP Device Found. " << std::endl;
+        LOG_E(HW,"No USRP Device Found.\n ");
         free(s);
         return -1;
       } else if (device_adds.size() > 1) {
-        std::cerr<<"More than one USRP Device Found. Please specify device more precisely in config file." << std::endl;
+        LOG_E(HW,"More than one USRP Device Found. Please specify device more precisely in config file.\n");
 	free(s);
 	return -1;
       }
 
-      std::cerr << "Found USRP " << device_adds[0].get("type") << "\n";
+      LOG_I(HW,"Found USRP %s\n", device_adds[0].get("type").c_str());
       double usrp_master_clock;
 
       if (device_adds[0].get("type") == "b200") {
@@ -1086,7 +1092,6 @@ extern "C" {
         device->type = USRP_B200_DEV;
         usrp_master_clock = 30.72e6;
         args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
-        args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=15360, recv_frame_size=15360" ;
       }
 
       if (device_adds[0].get("type") == "n3xx") {
@@ -1283,8 +1288,9 @@ extern "C" {
       samples/=10000;
       LOG_I(PHY,"RF board max packet size %u, size for 100µs jitter %d \n", max, samples);
 
-      if ( samples < max )
+      if ( samples < max ) {
         stream_args_rx.args["spp"] = str(boost::format("%d") % samples );
+      }
 
       LOG_I(PHY,"rx_max_num_samps %zu\n",
             s->usrp->get_rx_stream(stream_args_rx)->get_max_num_samps());
