@@ -437,7 +437,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   /*if (slotP==2)
     nr_schedule_css_dlsch_phytest(module_idP, frameP, slotP);*/
 
-  if (slotP==2)
+  if (slotP==1)
   nr_schedule_uss_dlsch_phytest(module_idP, frameP, slotP);
 
   /*

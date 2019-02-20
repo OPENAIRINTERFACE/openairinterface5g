@@ -33,8 +33,8 @@
 #include "nr_dci.h"
 
 //#define DEBUG_PDCCH_DMRS
-#define DEBUG_DCI
-#define DEBUG_CHANNEL_CODING
+//#define DEBUG_DCI
+//#define DEBUG_CHANNEL_CODING
 
 
 extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
