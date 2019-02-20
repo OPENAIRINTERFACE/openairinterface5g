@@ -272,7 +272,6 @@ int nr_dlsch_encoding(unsigned char *a,
 
   unsigned int G;
   unsigned int crc=1;
-  int i;
   uint8_t harq_pid = dlsch->harq_ids[slot];
   nfapi_nr_dl_config_dlsch_pdu_rel15_t rel15 = dlsch->harq_processes[harq_pid]->dlsch_pdu.dlsch_pdu_rel15;
   uint16_t nb_rb = rel15.n_prb;
@@ -333,10 +332,6 @@ int nr_dlsch_encoding(unsigned char *a,
     
     memcpy(dlsch->harq_processes[harq_pid]->b,a,(A/8)+4);
 
-     //write_output("enc_b.m","enc_in0",&dlsch->harq_processes[harq_pid]->b[0],(A/8)+4,1,4);
-    //for(i=0;i<10;i++)
-      //printf("dlsch->harq_processes[harq_pid]->b %d\n", dlsch->harq_processes[harq_pid]->b[i]);
-
     nr_segmentation(dlsch->harq_processes[harq_pid]->b,
 		    dlsch->harq_processes[harq_pid]->c,
 		    dlsch->harq_processes[harq_pid]->B,
@@ -358,7 +353,6 @@ int nr_dlsch_encoding(unsigned char *a,
     Kr = dlsch->harq_processes[harq_pid]->K;
     Kr_bytes = Kr>>3;
 
-    //write_output("enc_input0.m","enc_in0",&dlsch->harq_processes[harq_pid]->c[0][0],Kr_bytes,1,4);
     //printf("segment Z %d k %d Kr %d BG %d\n", *pz,dlsch->harq_processes[harq_pid]->K,Kr,BG);
 
     //start_meas(te_stats);
@@ -466,5 +460,5 @@ int nr_dlsch_encoding(unsigned char *a,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
 
-  return(0);
+  return 0;
 }

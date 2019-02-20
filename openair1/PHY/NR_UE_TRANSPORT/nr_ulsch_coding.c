@@ -284,12 +284,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
     memcpy(harq_process->b,harq_process->a,(A/8)+4);
 
-    //write_output("ulsch_b.m","enc_in0",&harq_process->b[0],(A/8)+4,1,4);
-    //for(i=0;i<10;i++)
-      //printf("harq_process->b %d\n", harq_process->b[i]);
-
-
-
 ///////////
 ///////////////////////////////////////////////////////////////////////////
 
@@ -315,7 +309,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
     Kr = harq_process->K;
     Kr_bytes = Kr>>3;
 
-    write_output("ulsch_enc_input0.m","enc_in0",&harq_process->c[0][0],Kr_bytes,1,4);
 
 ///////////
 /////////////////////////////////////////////////////////////////////////////////////

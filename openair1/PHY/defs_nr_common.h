@@ -87,10 +87,10 @@
 #define NR_MAX_CSET_DURATION 3
 
 #define NR_MAX_NB_RBG 18
-#define NR_MAX_NB_LAYERS 8
+#define NR_MAX_NB_LAYERS 8 // SU-MIMO (3GPP TS 38.211 V15.4.0 section 7.3.1.3)
 #define NR_MAX_NB_CODEWORDS 2
 #define NR_MAX_NB_HARQ_PROCESSES 16
-#define NR_MAX_PDSCH_ENCODED_LENGTH 950984
+#define NR_MAX_PDSCH_ENCODED_LENGTH NR_MAX_NB_RB*NR_SYMBOLS_PER_SLOT*NR_NB_SC_PER_RB*8*NR_MAX_NB_LAYERS // 8 is the maximum modulation order (it was 950984 before !!) 
 #define NR_MAX_PDSCH_TBS 3824
 
 typedef enum {
