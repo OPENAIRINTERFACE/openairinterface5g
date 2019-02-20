@@ -261,7 +261,6 @@ int main(int n, char **v)
       if (fds == NULL) { perror("calloc"); exit(1); }
     }
     i = 0;
-    if (fds == NULL) { perror("null fds pointer"); exit(1); }
     fds[i].fd = l;
     fds[i].events = POLLIN;
     i++;

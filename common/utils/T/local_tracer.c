@@ -240,8 +240,7 @@ again:
 
     if (len <= 0) goto dead;
 
-    if (buf != NULL)
-      PUT(t);
+    PUT(t);
 
     switch (t) {
       case 0:
