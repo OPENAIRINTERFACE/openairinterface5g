@@ -138,20 +138,22 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
     LOG_D(PHY,"SS TX: frame %d, slot %d, start_symbol %d\n",frame,slot, ssb_start_symbol);
 
     nr_generate_pss(gNB->d_pss, txdataF[0], AMP, ssb_start_symbol, cfg, fp);
-    nr_generate_sss(gNB->d_sss, txdataF[0], AMP_OVER_2, ssb_start_symbol, cfg, fp);
+    nr_generate_sss(gNB->d_sss, txdataF[0], AMP, ssb_start_symbol, cfg, fp);
 
     if (!(frame&7)){
       LOG_D(PHY,"%d.%d : pbch_configured %d\n",frame,slot,gNB->pbch_configured);
       if (gNB->pbch_configured != 1)return;
       gNB->pbch_configured = 0;
     }
-    nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index],txdataF[0], AMP_OVER_2, ssb_start_symbol, cfg, fp);
+
+    nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index],txdataF[0], AMP, ssb_start_symbol, cfg, fp);
+
     nr_generate_pbch(&gNB->pbch,
                       gNB->nrPolar_params,
                       pbch_pdu,
                       gNB->nr_pbch_interleaver,
                       txdataF[0],
-                      AMP_OVER_2,
+                      AMP,
                       ssb_start_symbol,
                       n_hf,Lmax,ssb_index,
                       frame, cfg, fp);

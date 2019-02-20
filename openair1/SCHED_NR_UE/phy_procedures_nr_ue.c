@@ -2781,8 +2781,6 @@ void nr_ue_measurement_procedures(
 */
     eNB_id = 0;
 
-
-		
       LOG_D(PHY,"start adjust sync l = %d slot = %d no timing %d\n",l, slot, ue->no_timing_correction);
       if (ue->no_timing_correction==0)
 	nr_adjust_synch_ue(&ue->frame_parms,
@@ -2791,7 +2789,6 @@ void nr_ue_measurement_procedures(
 			   nr_tti_rx,
 			   0,
 			   16384);
-
     
   }
 
@@ -5065,7 +5062,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_IN);
     nr_slot_fep(ue,
 		l,
-		nr_tti_rx,
+		nr_tti_rx<<1,
 		0,
 		0,
 		1,
@@ -5107,7 +5104,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
       
     }
     //set active for testing, to be removed
-    ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active = 1;
+    ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active = 0;
   }
   else 
     ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active = 0;

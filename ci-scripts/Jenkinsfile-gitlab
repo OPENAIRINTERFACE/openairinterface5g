@@ -212,7 +212,7 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build eNb-ethernet") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
                             }
                         }
                     }
@@ -221,7 +221,7 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build UE-ethernet") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
                             }
                         }
                     }

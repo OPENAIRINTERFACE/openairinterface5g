@@ -983,6 +983,8 @@ typedef struct {
   int UE_scan;
   /// \brief Indicator that UE should perform coarse scanning around carrier
   int UE_scan_carrier;
+  /// \brief Indicator that UE should enable estimation and compensation of frequency offset
+  int UE_fo_compensation;
   /// \brief Indicator that UE is synchronized to an eNB
   int is_synchronized;
   /// Data structure for UE process scheduling

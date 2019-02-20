@@ -821,8 +821,8 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   
 #ifdef NR_PDCCH_DCI_DEBUG
   printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> symbol_mon=(%d) and start_symbol=(%d)\n",symbol_mon,start_symbol);
-  printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> coreset_freq_dom=(%ld) n_rb_offset=(%d) coreset_time_dur=(%d) n_shift=(%d) reg_bundle_size_L=(%d) coreset_interleaver_size_R=(%d) \n",
-	 coreset_freq_dom,n_rb_offset,coreset_time_dur,n_shift,reg_bundle_size_L,coreset_interleaver_size_R);
+  printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> coreset_freq_dom=(%ld) n_rb_offset=(%d) coreset_time_dur=(%d) n_shift=(%d) reg_bundle_size_L=(%d) coreset_interleaver_size_R=(%d) scrambling_ID=(%d) \n",
+	 coreset_freq_dom,n_rb_offset,coreset_time_dur,n_shift,reg_bundle_size_L,coreset_interleaver_size_R,pdcch_DMRS_scrambling_id);
 #endif
 
   //
