@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <errno.h>
+#include <math.h>
 
 #include "PHY/defs_nr_UE.h"
 
@@ -662,6 +663,7 @@ int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int rate_change)
   NR_DL_FRAME_PARMS *frame_parms = &(PHY_vars_UE->frame_parms);
   int synchro_position;
   int **rxdata = NULL;
+  int fo_flag = PHY_vars_UE->UE_fo_compensation;  // flag to enable freq offset estimation and compensation
 
 #ifdef DBG_PSS_NR
 
@@ -705,7 +707,10 @@ int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int rate_change)
 
   synchro_position = pss_search_time_nr(rxdata,
                                         frame_parms,
-                                        (int *)&PHY_vars_UE->common_vars.eNb_id);
+					fo_flag,
+                                        (int *)&PHY_vars_UE->common_vars.eNb_id,
+					(int *)&PHY_vars_UE->common_vars.freq_offset);
+
 
 #if TEST_SYNCHRO_TIMING_PSS
 
@@ -750,6 +755,15 @@ static inline int64_t abs64(int64_t x)
 {
   return (((int64_t)((int32_t*)&x)[0])*((int64_t)((int32_t*)&x)[0]) + ((int64_t)((int32_t*)&x)[1])*((int64_t)((int32_t*)&x)[1]));
 }
+
+static inline double angle64(int64_t x)
+{
+
+  double re=((int32_t*)&x)[0];
+  double im=((int32_t*)&x)[1];
+  return (atan2(im,re));
+}
+
 
 /*******************************************************************
 *
@@ -803,47 +817,28 @@ static inline int64_t abs64(int64_t x)
 
 #define DOT_PRODUCT_SCALING_SHIFT    (17)
 
-int max3(int64_t a, int64_t b, int64_t c) {
-  if (a>b) {
-    if (a>c) {
-      return(0);
-    }
-    else {
-      return(2);
-    }
-  }
-  else {
-    if (b>c) {
-      return(1);
-    }
-    else {
-      return(2);
-    }
-  }
-}
-    
-
 int pss_search_time_nr(int **rxdata, ///rx data in time domain
                        NR_DL_FRAME_PARMS *frame_parms,
-                       int *eNB_id)
+		       int fo_flag,
+                       int *eNB_id,
+		       int *f_off)
 {
-  uint8_t L_max = 4;
-  unsigned int m, n, ar, n_peaks=0;
-  unsigned int peak_position[3*L_max], pss_source[3*L_max];
-  int64_t peak_value, threshold;
+  unsigned int n, ar, peak_position, pss_source;
+  int64_t peak_value;
   int64_t result;
   int64_t avg[NUMBER_PSS_SEQUENCE];
-  uint8_t found_peak=0;
+  double ffo_est=0;
+
 
   unsigned int length = (NR_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_subframe);  /* 1 frame for now, it should be 2 TODO_NR */
 
   AssertFatal(length>0,"illegal length %d\n",length);
   for (int i = 0; i < NUMBER_PSS_SEQUENCE; i++) AssertFatal(pss_corr_ue[i] != NULL,"pss_corr_ue[%d] not yet allocated! Exiting.\n", i);
 
-  for (int i=0;i<4;i++) {
-    peak_position[i] = length; //max possible value
-    pss_source[i] = 0;
-  }
+    
+  peak_value = 0;
+  peak_position = 0;
+  pss_source = 0;
 
   int maxval=0;
   for (int i=0;i<2*(frame_parms->ofdm_symbol_size);i++) {
@@ -853,7 +848,6 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
     maxval = max(maxval,-primary_synchro_time_nr[1][i]);
     maxval = max(maxval,primary_synchro_time_nr[2][i]);
     maxval = max(maxval,-primary_synchro_time_nr[2][i]);
-
   }
   int shift = log2_approx(maxval);//*(frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples)*2);
 
@@ -866,9 +860,9 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
     memset(pss_corr_ue[pss_index],0,length*sizeof(int64_t)); 
   }
 
-  for (int pss_index = 0; pss_index < NUMBER_PSS_SEQUENCE; pss_index++) {
+  for (n=0; n < length; n+=4) { //
 
-    for (n=0; n < length; n+=4) { //
+    for (int pss_index = 0; pss_index < NUMBER_PSS_SEQUENCE; pss_index++) {
 
       if ( n < (length - frame_parms->ofdm_symbol_size)) {
 
@@ -881,7 +875,6 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
 				  frame_parms->ofdm_symbol_size, 
 				  shift);
 	  pss_corr_ue[pss_index][n] += abs64(result);
-	  
           //((short*)pss_corr_ue[pss_index])[2*n] += ((short*) &result)[0];   /* real part */
           //((short*)pss_corr_ue[pss_index])[2*n+1] += ((short*) &result)[1]; /* imaginary part */
           //((short*)&synchro_out)[0] += ((int*) &result)[0];               /* real part */
@@ -889,43 +882,64 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
 
         }
       }
-
+ 
       /* calculate the absolute value of sync_corr[n] */
       avg[pss_index]+=pss_corr_ue[pss_index][n];
-    }
-  
-    avg[pss_index]/=(length/4);
-  }
-  
-  threshold = 10*avg[max3(avg[0],avg[1],avg[2])];
-  peak_value = threshold;
-  
-  for (n=0; n < length; n+=4) {
-    
-    m = max3(pss_corr_ue[0][n],pss_corr_ue[1][n],pss_corr_ue[2][n]);
-    
-    if (pss_corr_ue[m][n] > peak_value) {
-      peak_value = pss_corr_ue[m][n];
-      peak_position[n_peaks] = n;
-      pss_source[n_peaks] = m;
-      found_peak = 1;
-    }
-    
-    if ((peak_position[n_peaks]+4*(frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples)<n) &&
-	(found_peak==1)) {
-      //#ifdef DEBUG_PSS_NR
-      printf("peak %d found at pss_index %d, n %6d, peak_value %15llu\n", n_peaks, pss_source[n_peaks], peak_position[n_peaks], (unsigned long long)pss_corr_ue[ pss_source[n_peaks]][peak_position[n_peaks]]);
-      //#endif
-      peak_value = threshold;
-      found_peak = 0;
-      n_peaks++;
-      //if (n_peaks==L_max) break;
+      if (pss_corr_ue[pss_index][n] > peak_value) {
+        peak_value = pss_corr_ue[pss_index][n];
+        peak_position = n;
+        pss_source = pss_index;
+
+#ifdef DEBUG_PSS_NR
+        printf("pss_index %d: n %6d peak_value %15llu\n", pss_index, n, (unsigned long long)pss_corr_ue[pss_index][n]);
+#endif
+      }
     }
   }
 
-  *eNB_id = pss_source[0];
+  if (fo_flag){
+	  // fractional frequency offser computation according to Cross-correlation Synchronization Algorithm Using PSS
+	  // Shoujun Huang, Yongtao Su, Ying He and Shan Tang, "Joint time and frequency offset estimation in LTE downlink," 7th International Conference on Communications and Networking in China, 2012.
 
-  //LOG_I(PHY,"[UE] nr_synchro_time: Sync source = %d, Peak found at pos %d, val = %llu (%d dB) avg %d dB\n", pss_source, peak_position, (unsigned long long)peak_value, dB_fixed64(peak_value),dB_fixed64(avg[pss_source]));
+	  int64_t result1,result2;
+	  // Computing cross-correlation at peak on half the symbol size for first half of data
+	  result1  = dot_product64((short*)primary_synchro_time_nr[pss_source], 
+				  (short*) &(rxdata[0][peak_position]), 
+				  frame_parms->ofdm_symbol_size>>1, 
+				  shift);
+	  // Computing cross-correlation at peak on half the symbol size for data shifted by half symbol size 
+	  // as it is real and complex it is necessary to shift by a value equal to symbol size to obtain such shift
+	  result2  = dot_product64((short*)primary_synchro_time_nr[pss_source]+(frame_parms->ofdm_symbol_size), 
+				  (short*) &(rxdata[0][peak_position])+(frame_parms->ofdm_symbol_size), 
+				  frame_parms->ofdm_symbol_size>>1, 
+				  shift);
+
+	  int64_t re1,re2,im1,im2;
+	  re1=((int*) &result1)[0];
+	  re2=((int*) &result2)[0];
+	  im1=((int*) &result1)[1];
+	  im2=((int*) &result2)[1];
+
+ 	  // estimation of fractional frequency offset: angle[(result1)'*(result2)]/pi
+	  ffo_est=atan2(re1*im2-re2*im1,re1*re2+im1*im2)/M_PI;
+  
+#ifdef DBG_PSS_NR
+	  printf("ffo %lf\n",ffo_est);
+#endif
+  }
+
+  // computing absolute value of frequency offset
+  *f_off = ffo_est*frame_parms->subcarrier_spacing;  
+
+  for (int pss_index = 0; pss_index < NUMBER_PSS_SEQUENCE; pss_index++) avg[pss_index]/=(length/4);
+
+  *eNB_id = pss_source;
+
+  LOG_I(PHY,"[UE] nr_synchro_time: Sync source = %d, Peak found at pos %d, val = %llu (%d dB) avg %d dB, ffo %lf\n", pss_source, peak_position, (unsigned long long)peak_value, dB_fixed64(peak_value),dB_fixed64(avg[pss_source]),ffo_est);
+
+  if (peak_value < 5*avg[pss_source])
+    return(-1);
+
 
 #ifdef DBG_PSS_NR
 
@@ -942,6 +956,6 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
 
 #endif
 
-  return(peak_position[0]);
+  return(peak_position);
 }
 

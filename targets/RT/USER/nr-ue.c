@@ -444,6 +444,7 @@ static void *UE_thread_synch(void *arg) {
 
 	      //write_output("txdata_sym.m", "txdata_sym", UE->common_vars.rxdata[0], (10*UE->frame_parms.samples_per_slot), 1, 1);
 
+		freq_offset = UE->common_vars.freq_offset; // frequency offset computed with pss in initial sync
                 hw_slot_offset = (UE->rx_offset<<1) / UE->frame_parms.samples_per_slot;
                 printf("Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %d (DL %u, UL %u), UE_scan_carrier %d\n",
                        hw_slot_offset,
@@ -457,16 +458,13 @@ static void *UE_thread_synch(void *arg) {
                     // rerun with new cell parameters and frequency-offset
                     for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
                         openair0_cfg[UE->rf_map.card].rx_gain[UE->rf_map.chain+i] = UE->rx_total_gain_dB;//-USRP_GAIN_OFFSET;
-			if (UE->UE_scan_carrier == 1) {
 			  if (freq_offset >= 0)
-                            openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] += abs(UE->common_vars.freq_offset);
+                            openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] += abs(freq_offset);
 			  else
-                            openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] -= abs(UE->common_vars.freq_offset);
+                            openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] -= abs(freq_offset);
 			  openair0_cfg[UE->rf_map.card].tx_freq[UE->rf_map.chain+i] =
                             openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i]+uplink_frequency_offset[CC_id][i];
 			  downlink_frequency[CC_id][i] = openair0_cfg[CC_id].rx_freq[i];
-			  freq_offset=0;
-			}
 		    }
 
                     // reconfigure for potentially different bandwidth
@@ -602,7 +600,7 @@ static void *UE_thread_synch(void *arg) {
 	  
 	  phy_scope_UE(form_ue[0],
 		       PHY_vars_UE_g[0][0],
-		       0,0,7);
+		       0,0,1);
 	}
 #endif
 
@@ -693,6 +691,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 
 	    NR_UE_MAC_INST_t *UE_mac = get_mac_inst(0);
 	    UE_mac->scheduled_response.dl_config = &UE->dcireq.dl_config_req;
+	    UE_mac->scheduled_response.slot = proc->nr_tti_rx;
 	    nr_ue_scheduled_response(&UE_mac->scheduled_response);
 	    
 #ifdef UE_SLOT_PARALLELISATION
@@ -920,7 +919,7 @@ void *UE_thread(void *arg) {
                 if(thread_idx>=RX_NB_TH)
                     thread_idx = 0;
 
-                printf("slot_nr %d nb slot frame %d\n",slot_nr, nb_slot_frame);
+                //printf("slot_nr %d nb slot frame %d\n",slot_nr, nb_slot_frame);
 
                 slot_nr++;
                 slot_nr %= nb_slot_frame;               
@@ -1110,6 +1109,7 @@ void *UE_thread(void *arg) {
 
 		    NR_UE_MAC_INST_t *UE_mac = get_mac_inst(0);
 		    UE_mac->scheduled_response.dl_config = &UE->dcireq.dl_config_req;
+		    UE_mac->scheduled_response.slot = proc->nr_tti_rx;
 		    nr_ue_scheduled_response(&UE_mac->scheduled_response);
 		    
 		    //write_output("uerxdata_frame.m", "uerxdata_frame", UE->common_vars.rxdata[0], UE->frame_parms.samples_per_frame, 1, 1);

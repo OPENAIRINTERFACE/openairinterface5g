@@ -39,6 +39,7 @@
 //#include "SCHED/extern.h"
 
 #include "common_lib.h"
+#include <math.h>
 
 #include "PHY/NR_REFSIG/pss_nr.h"
 #include "PHY/NR_REFSIG/sss_nr.h"
@@ -56,6 +57,7 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
   NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   int ret =-1;
 
+
 #ifdef DEBUG_INITIAL_SYNCH
   LOG_I(PHY,"[UE%d] Initial sync: starting PBCH detection (rx_offset %d)\n",ue->Mod_id,
         ue->rx_offset);
@@ -64,6 +66,7 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
   // save the nb_prefix_samples0 since we are not synchronized to subframes yet and the SSB has all symbols with nb_prefix_samples
   int nb_prefix_samples0 = frame_parms->nb_prefix_samples0;
   frame_parms->nb_prefix_samples0 = frame_parms->nb_prefix_samples;
+
 
   //symbol 1
   nr_slot_fep(ue,
@@ -143,6 +146,7 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   int32_t sync_pos, sync_pos_slot; // k_ssb, N_ssb_crb, sync_pos2,
   int32_t metric_tdd_ncp=0;
   uint8_t phase_tdd_ncp;
+  double im, re;
 
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
   int ret=-1;
@@ -183,20 +187,39 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   sync_pos = pss_synchro_nr(ue, NO_RATE_CHANGE);
 
   sync_pos_slot = (fp->samples_per_subframe/fp->slots_per_subframe) - 10*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
-  
+
   if (sync_pos >= fp->nb_prefix_samples){
     ue->ssb_offset = sync_pos - fp->nb_prefix_samples;}
   else{
     ue->ssb_offset = sync_pos + (fp->samples_per_subframe * 10) - fp->nb_prefix_samples;}
     
-    ue->rx_offset = ue->ssb_offset - sync_pos_slot;
-  
+  ue->rx_offset = ue->ssb_offset - sync_pos_slot;
+
   //write_output("rxdata1.m","rxd1",ue->common_vars.rxdata[0],10*fp->samples_per_subframe,1,1);
 
 #ifdef DEBUG_INITIAL_SYNCH
   LOG_I(PHY,"[UE%d] Initial sync : Estimated PSS position %d, Nid2 %d\n", ue->Mod_id, sync_pos,ue->common_vars.eNb_id);
   LOG_I(PHY,"sync_pos %d ssb_offset %d sync_pos_slot %d \n",sync_pos,ue->ssb_offset,sync_pos_slot);
 #endif
+
+  // digital compensation of FFO for SSB symbols
+  if (ue->UE_fo_compensation){  
+	double s_time = 1/(1.0e3*fp->samples_per_subframe);  // sampling time
+	double off_angle = -2*M_PI*s_time*(ue->common_vars.freq_offset);  // offset rotation angle compensation per sample
+
+	int start = ue->ssb_offset;  // start for offset correction is at ssb_offset (pss time position)
+  	int end = start + 4*(fp->ofdm_symbol_size + fp->nb_prefix_samples);  // loop over samples in 4 symbols (ssb size), including prefix  
+
+	for(int n=start; n<end; n++){  	
+	  for (int ar=0; ar<fp->nb_antennas_rx; ar++) {
+		re = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n]);
+		im = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n+1]);
+		((short *)ue->common_vars.rxdata[ar])[2*n] = (short)(round(re*cos(n*off_angle) - im*sin(n*off_angle))); 
+		((short *)ue->common_vars.rxdata[ar])[2*n+1] = (short)(round(re*sin(n*off_angle) + im*cos(n*off_angle)));
+	  }
+	}
+  }
+
 
   /* check that SSS/PBCH block is continuous inside the received buffer */
   if (sync_pos < (NR_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_subframe - (NB_SYMBOLS_PBCH * fp->ofdm_symbol_size))) {
@@ -244,7 +267,8 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 	  ret = -1;
   }
 
-  /* Consider this is a false detection if the offset is > 1000 Hz */
+  /* Consider this is a false detection if the offset is > 1000 Hz 
+     Not to be used now that offest estimation is in place
   if( (abs(ue->common_vars.freq_offset) > 150) && (ret == 0) )
   {
 	  ret=-1;
@@ -253,7 +277,7 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 #else
 	  LOG_E(HW, "Ignore MIB with high freq offset [%d Hz] estimation \n",ue->common_vars.freq_offset);
 #endif
-  }
+  }*/
 
   if (ret==0) {  // PBCH found so indicate sync to higher layers and configure frame parameters
 
@@ -329,13 +353,13 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
     printf("[UE %d] Frame %d Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",
 	  ue->Mod_id,
 	  ue->proc.proc_rxtx[0].frame_rx,
-	  openair0_cfg[0].rx_freq[0]-ue->common_vars.freq_offset,
+	  openair0_cfg[0].rx_freq[0]+ue->common_vars.freq_offset,
 	  ue->common_vars.freq_offset);
 #  else
     LOG_I(PHY, "[UE %d] Frame %d Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",
 	  ue->Mod_id,
 	  ue->proc.proc_rxtx[0].frame_rx,
-	  openair0_cfg[0].rx_freq[0]-ue->common_vars.freq_offset,
+	  openair0_cfg[0].rx_freq[0]+ue->common_vars.freq_offset,
 	  ue->common_vars.freq_offset);
 #  endif
 #endif

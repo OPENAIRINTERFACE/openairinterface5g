@@ -49,6 +49,35 @@ function create_usage {
     echo ""
 }
 
+function acquire_vm_create_lock {
+    local FlockFile="/tmp/vmclone.lck"
+    local unlocked="0"
+    touch ${FlockFile} 2>/dev/null
+    if [[ $? -ne 0 ]]
+    then
+        echo "Cannot access lock file ${FlockFile}"
+        exit 2
+    fi
+    while [ $unlocked -eq 0 ]
+    do
+        exec 5>${FlockFile}
+        flock -nx 5
+        if [[ $? -ne 0 ]]
+        then
+            echo "Another instance of VM creation is running"
+            sleep 10
+        else
+            unlocked="1"
+        fi
+    done
+    chmod 666 ${FlockFile} 2>/dev/null
+}
+
+function release_vm_create_lock {
+    local FlockFile="/tmp/vmclone.lck"
+    rm -Rf ${FlockFile}
+}
+
 function create_vm {
     echo "############################################################"
     echo "OAI CI VM script"
@@ -60,10 +89,12 @@ function create_vm {
     echo "############################################################"
     echo "Creating VM ($VM_NAME) on Ubuntu Cloud Image base"
     echo "############################################################"
+    acquire_vm_create_lock
     uvt-kvm create $VM_NAME release=xenial --memory $VM_MEMORY --cpu $VM_CPU --unsafe-caching --template ci-scripts/template-host.xml
     echo "Waiting for VM to be started"
     uvt-kvm wait $VM_NAME --insecure
 
     VM_IP_ADDR=`uvt-kvm ip $VM_NAME`
     echo "$VM_NAME has for IP addr = $VM_IP_ADDR"
+    release_vm_create_lock
 }

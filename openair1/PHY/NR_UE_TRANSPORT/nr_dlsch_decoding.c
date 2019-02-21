@@ -376,6 +376,22 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   for (r=0; r<harq_process->C; r++) {
 
     //printf("start rx segment %d\n",r);
+    E = nr_get_E(G, harq_process->C, harq_process->Qm, harq_process->Nl, r);
+
+#if UE_TIMING_TRACE
+    start_meas(dlsch_deinterleaving_stats);
+#endif
+    nr_deinterleaving_ldpc(E,
+                           harq_process->Qm,
+                           harq_process->w[r],
+                           dlsch_llr+r_offset);
+
+    //for (int i =0; i<16; i++)
+    //        	printf("rx output deinterleaving w[%d]= %d r_offset %d\n", i,harq_process->w[r][i], r_offset);
+
+#if UE_TIMING_TRACE
+    stop_meas(dlsch_deinterleaving_stats);
+#endif
 
 #if UE_TIMING_TRACE
     start_meas(dlsch_rate_unmatching_stats);
@@ -394,20 +410,15 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 #endif
 
     if (nr_rate_matching_ldpc_rx(Ilbrm,
-    		 	 	 	 	 	 Tbslbrm,
-								 p_decParams->BG,
-								 p_decParams->Z,
-    							 G,
-								 harq_process->w[r],
-								 dlsch_llr+r_offset,
-								 harq_process->C,
-								 harq_process->rvidx,
-								 (harq_process->round==0)?1:0,
-								 harq_process->Qm,
-								 harq_process->Nl,
-								 r,
-								 &E)==-1) {
-
+                                 Tbslbrm,
+                                 p_decParams->BG,
+                                 p_decParams->Z,
+                                 harq_process->d[r],
+                                 harq_process->w[r],
+                                 harq_process->C,
+                                 harq_process->rvidx,
+                                 (harq_process->round==0)?1:0,
+                                 E)==-1) {
 #if UE_TIMING_TRACE
       stop_meas(dlsch_rate_unmatching_stats);
 #endif
@@ -419,27 +430,13 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
       stop_meas(dlsch_rate_unmatching_stats);
 #endif
     }
+
+    //for (int i =0; i<16; i++)
+    //    	printf("rx output ratematching d[%d]= %d r_offset %d\n", i,harq_process->d[r][i], r_offset);
+
     r_offset += E;
 
-    //for (int i =0; i<16; i++)
-    //    	printf("rx output ratematching w[%d]= %d r_offset %d\n", i,harq_process->w[r][i], r_offset);
-
-#if UE_TIMING_TRACE
-    start_meas(dlsch_deinterleaving_stats);
-#endif
-    nr_deinterleaving_ldpc(E,
-    					   harq_process->Qm,
-                           harq_process->d[r],
-                           harq_process->w[r]);
-
-    //for (int i =0; i<16; i++)
-    //        	printf("rx output interleaving d[%d]= %d r_offset %d\n", i,harq_process->d[r][i], r_offset);
-
-#if UE_TIMING_TRACE
-    stop_meas(dlsch_deinterleaving_stats);
-#endif
 #ifdef DEBUG_DLSCH_DECODING
-
     if (r==0) {
               write_output("decoder_llr.m","decllr",dlsch_llr,G,1,0);
               write_output("decoder_in.m","dec",&harq_process->d[0][0],(3*8*Kr_bytes)+12,1,0);
@@ -979,6 +976,30 @@ if (harq_process->C>1) { // wakeup worker if more than 1 segment
 
     Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0, harq_process->Nl);
 
+    E = nr_get_E(G, harq_process->C, harq_process->Qm, harq_process->Nl, r);
+
+    /*
+    printf("Subblock deinterleaving, dlsch_llr %p, w %p\n",
+     dlsch_llr+r_offset,
+     &harq_process->w[r]);
+    */
+#if UE_TIMING_TRACE
+    start_meas(dlsch_deinterleaving_stats);
+#endif
+    nr_deinterleaving_ldpc(E,
+                           harq_process->Qm,
+                           harq_process->w[r],
+                           dlsch_llr+r_offset);
+
+#ifdef DEBUG_DLSCH_DECODING
+        for (int i =0; i<16; i++)
+              printf("rx output deinterleaving w[%d]= %d r_offset %d\n", i,harq_process->w[r][i], r_offset);
+#endif
+
+#if UE_TIMING_TRACE
+    stop_meas(dlsch_deinterleaving_stats);
+#endif
+
 #if UE_TIMING_TRACE
     start_meas(dlsch_rate_unmatching_stats);
 #endif
@@ -995,23 +1016,16 @@ if (harq_process->C>1) { // wakeup worker if more than 1 segment
           harq_process->round);
 #endif
 
-#ifdef DEBUG_DLSCH_DECODING
-    printf(" in decoding dlsch->harq_processes[harq_pid]->rvidx = %d\n", dlsch->harq_processes[harq_pid]->rvidx);
-#endif
     if (nr_rate_matching_ldpc_rx(Ilbrm,
-         	 	 	 Tbslbrm,
-    				 p_decParams->BG,
-    				 p_decParams->Z,
-        			 G,
-    				 harq_process->w[r],
-    				 dlsch_llr+r_offset,
-    				 harq_process->C,
-    				 harq_process->rvidx,
-    				 (harq_process->round==0)?1:0,
-    				 harq_process->Qm,
-    				 harq_process->Nl,
-    				 r,
-    				 &E)==-1) {
+                                 Tbslbrm,
+                                 p_decParams->BG,
+                                 p_decParams->Z,
+                                 harq_process->d[r],
+                                 harq_process->w[r],
+                                 harq_process->C,
+                                 harq_process->rvidx,
+                                 (harq_process->round==0)?1:0,
+                                 E)==-1) {
 #if UE_TIMING_TRACE
       stop_meas(dlsch_rate_unmatching_stats);
 #endif
@@ -1023,34 +1037,18 @@ if (harq_process->C>1) { // wakeup worker if more than 1 segment
       stop_meas(dlsch_rate_unmatching_stats);
 #endif
     }
+
+    //for (int i =0; i<16; i++)
+    //    	printf("rx output ratematching d[%d]= %d r_offset %d\n", i,harq_process->d[r][i], r_offset);
+
     //r_offset += E;
     //printf("main thread r_offset %d\n",r_offset);
  
 #ifdef DEBUG_DLSCH_DECODING   
     for (int i =0; i<16; i++)
-             printf("rx output ratematching w[%d]= %d r_offset %d\n", i,harq_process->w[r][i], r_offset);
+             printf("rx output ratematching d[%d]= %d r_offset %d\n", i,harq_process->d[r][i], r_offset);
 #endif
 
-    /*
-    printf("Subblock deinterleaving, d %p w %p\n",
-     harq_process->d[r],
-     harq_process->w);
-    */
-#if UE_TIMING_TRACE
-    start_meas(dlsch_deinterleaving_stats);
-#endif
-    nr_deinterleaving_ldpc(E,
-        		   harq_process->Qm,
-                           harq_process->d[r],
-                           harq_process->w[r]);
-#ifdef DEBUG_DLSCH_DECODING                           
-        for (int i =0; i<16; i++)
-              printf("rx output interleaving d[%d]= %d r_offset %d\n", i,harq_process->d[r][i], r_offset);
-#endif
-
-#if UE_TIMING_TRACE
-    stop_meas(dlsch_deinterleaving_stats);
-#endif
 #ifdef DEBUG_DLSCH_DECODING
 
     if (r==0) {
@@ -1526,6 +1524,23 @@ void *nr_dlsch_decoding_2thread0(void *arg)
 
   Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0, harq_process->Nl);
 
+    E = nr_get_E(G, harq_process->C, harq_process->Qm, harq_process->Nl, r);
+
+#if UE_TIMING_TRACE
+    start_meas(dlsch_deinterleaving_stats);
+#endif
+    nr_deinterleaving_ldpc(E,
+                           harq_process->Qm,
+                           harq_process->w[r],
+                           dlsch_llr+r_offset);
+
+    //for (int i =0; i<16; i++)
+    //        	printf("rx output deinterleaving w[%d]= %d r_offset %d\n", i,harq_process->w[r][i], r_offset);
+
+#if UE_TIMING_TRACE
+    stop_meas(dlsch_deinterleaving_stats);
+#endif
+
 #if UE_TIMING_TRACE
     start_meas(dlsch_rate_unmatching_stats);
 #endif
@@ -1542,23 +1557,16 @@ void *nr_dlsch_decoding_2thread0(void *arg)
           harq_process->round);
 #endif
 
-#ifdef DEBUG_DLSCH_DECODING
-    printf(" in decoding dlsch->harq_processes[harq_pid]->rvidx = %d\n", dlsch->harq_processes[harq_pid]->rvidx);
-#endif
     if (nr_rate_matching_ldpc_rx(Ilbrm,
-    	 	 	 	 Tbslbrm,
-				 p_decParams->BG,
-				 p_decParams->Z,
-				 G,
-				 harq_process->w[r],
-				 dlsch_llr+r_offset,
-				 harq_process->C,
-				 harq_process->rvidx,
-				 (harq_process->round==0)?1:0,
-				 harq_process->Qm,
-				 harq_process->Nl,
-				 r,
-				 &E)==-1) {
+                                 Tbslbrm,
+                                 p_decParams->BG,
+                                 p_decParams->Z,
+                                 harq_process->d[r],
+                                 harq_process->w[r],
+                                 harq_process->C,
+                                 harq_process->rvidx,
+                                 (harq_process->round==0)?1:0,
+                                 E)==-1) {
 #if UE_TIMING_TRACE
       stop_meas(dlsch_rate_unmatching_stats);
 #endif
@@ -1570,23 +1578,13 @@ void *nr_dlsch_decoding_2thread0(void *arg)
       stop_meas(dlsch_rate_unmatching_stats);
 #endif
     }
-    //r_offset += E;
 
     //for (int i =0; i<16; i++)
-    //    	printf("rx output ratematching w[%d]= %d r_offset %d\n", i,harq_process->w[r][i], r_offset);
+    //    	printf("rx output ratematching d[%d]= %d r_offset %d\n", i,harq_process->d[r][i], r_offset);
 
-#if UE_TIMING_TRACE
-    start_meas(dlsch_deinterleaving_stats);
-#endif
-    nr_deinterleaving_ldpc(E,
-    			   harq_process->Qm,
-                           harq_process->d[r],
-                           harq_process->w[r]);
-#if UE_TIMING_TRACE
-    stop_meas(dlsch_deinterleaving_stats);
-#endif
+    //r_offset += E;
+
 #ifdef DEBUG_DLSCH_DECODING
-
     if (r==0) {
               write_output("decoder_llr.m","decllr",dlsch_llr,G,1,0);
               write_output("decoder_in.m","dec",&harq_process->d[0][0],(3*8*Kr_bytes)+12,1,0);
@@ -2043,6 +2041,28 @@ void *nr_dlsch_decoding_2thread1(void *arg)
 
   	  Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0, harq_process->Nl);
 
+    E = nr_get_E(G, harq_process->C, harq_process->Qm, harq_process->Nl, r);
+
+    /*
+    printf("Subblock deinterleaving, d %p w %p\n",
+     harq_process->d[r],
+     harq_process->w);
+    */
+#if UE_TIMING_TRACE
+    start_meas(dlsch_deinterleaving_stats);
+#endif
+    nr_deinterleaving_ldpc(E,
+                           harq_process->Qm,
+                           harq_process->w[r],
+                           dlsch_llr+r_offset);
+
+    //for (int i =0; i<16; i++)
+    //        	printf("rx output deinterleaving w[%d]= %d r_offset %d\n", i,harq_process->w[r][i], r_offset);
+
+#if UE_TIMING_TRACE
+    stop_meas(dlsch_deinterleaving_stats);
+#endif
+
 #if UE_TIMING_TRACE
     start_meas(dlsch_rate_unmatching_stats);
 #endif
@@ -2059,23 +2079,16 @@ void *nr_dlsch_decoding_2thread1(void *arg)
           harq_process->round);
 #endif
 
-#ifdef DEBUG_DLSCH_DECODING
-    printf(" in decoding dlsch->harq_processes[harq_pid]->rvidx = %d\n", dlsch->harq_processes[harq_pid]->rvidx);
-#endif
     if (nr_rate_matching_ldpc_rx(Ilbrm,
      	 	 	 	 Tbslbrm,
 				 p_decParams->BG,
 				 p_decParams->Z,
-    				 G,
+				 harq_process->d[r],
 				 harq_process->w[r],
-				 dlsch_llr+r_offset,
 				 harq_process->C,
 				 harq_process->rvidx,
 				 (harq_process->round==0)?1:0,
-				 harq_process->Qm,
-				 harq_process->Nl,
-				 r,
-				 &E)==-1) {
+				 E)==-1) {
 #if UE_TIMING_TRACE
       stop_meas(dlsch_rate_unmatching_stats);
 #endif
@@ -2087,23 +2100,12 @@ void *nr_dlsch_decoding_2thread1(void *arg)
       stop_meas(dlsch_rate_unmatching_stats);
 #endif
     }
+
+    //for (int i =0; i<16; i++)
+    //    	printf("rx output ratematching d[%d]= %d r_offset %d\n", i,harq_process->d[r][i], r_offset);
+
     //r_offset += E;
 
-    /*
-    printf("Subblock deinterleaving, d %p w %p\n",
-     harq_process->d[r],
-     harq_process->w);
-    */
-#if UE_TIMING_TRACE
-    start_meas(dlsch_deinterleaving_stats);
-#endif
-    nr_deinterleaving_ldpc(E,
-    			   harq_process->Qm,
-                           harq_process->d[r],
-                           harq_process->w[r]);
-#if UE_TIMING_TRACE
-    stop_meas(dlsch_deinterleaving_stats);
-#endif
 #ifdef DEBUG_DLSCH_DECODING
     if (r==0) {
               write_output("decoder_llr.m","decllr",dlsch_llr,G,1,0);
