@@ -308,6 +308,8 @@ typedef struct NR_DL_FRAME_PARMS {
   uint16_t ssb_start_subcarrier;
   /// SSB type
   nr_ssb_type_e ssb_type;
+  /// Max number of SSB in frame
+  uint8_t Lmax;
   /// SS block pattern (max 64 ssb, each bit is on/off ssb)
   uint64_t L_ssb;
   /// PBCH polar encoder params

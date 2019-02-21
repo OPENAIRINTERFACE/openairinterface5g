@@ -141,14 +141,13 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
   nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
   int **txdataF = gNB->common_vars.txdataF;
   uint8_t *pbch_pdu=&gNB->pbch_pdu[0];
-  uint8_t Lmax, ssb_index, n_hf;
+  uint8_t ssb_index, n_hf;
   int ssb_start_symbol, rel_slot;
 
   n_hf = cfg->sch_config.half_frame_index.value;
   // to set a effective slot number between 0 to 9 in the half frame where the SSB is supposed to be
   rel_slot = (n_hf)? (slot-10) : slot; 
 
-  Lmax = (fp->dl_CarrierFreq < 3e9)? 4:8;  // max number of ssb
   
   LOG_D(PHY,"common_signal_procedures: frame %d, slot %d\n",frame,slot);
 
@@ -177,7 +176,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
                       txdataF[0],
                       AMP,
                       ssb_start_symbol,
-                      n_hf,Lmax,ssb_index,
+                      n_hf,fp->Lmax,ssb_index,
                       frame, cfg, fp);
 	}
      }

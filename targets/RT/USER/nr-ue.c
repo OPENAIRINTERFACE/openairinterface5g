@@ -175,35 +175,38 @@ typedef struct band_info_s {
 band_info_t bands_to_scan;
 
 static const eutra_band_t eutra_bands[] = {
-    { 1, 1920    * MHz, 1980    * MHz, 2110    * MHz, 2170    * MHz, FDD},
-    { 2, 1850    * MHz, 1910    * MHz, 1930    * MHz, 1990    * MHz, FDD},
-    { 3, 1710    * MHz, 1785    * MHz, 1805    * MHz, 1880    * MHz, FDD},
-    { 4, 1710    * MHz, 1755    * MHz, 2110    * MHz, 2155    * MHz, FDD},
-    { 5,  824    * MHz,  849    * MHz,  869    * MHz,  894    * MHz, FDD},
-    { 6,  830    * MHz,  840    * MHz,  875    * MHz,  885    * MHz, FDD},
-    { 7, 2500    * MHz, 2570    * MHz, 2620    * MHz, 2690    * MHz, FDD},
-    { 8,  880    * MHz,  915    * MHz,  925    * MHz,  960    * MHz, FDD},
-    { 9, 1749900 * KHz, 1784900 * KHz, 1844900 * KHz, 1879900 * KHz, FDD},
-    {10, 1710    * MHz, 1770    * MHz, 2110    * MHz, 2170    * MHz, FDD},
-    {11, 1427900 * KHz, 1452900 * KHz, 1475900 * KHz, 1500900 * KHz, FDD},
-    {12,  698    * MHz,  716    * MHz,  728    * MHz,  746    * MHz, FDD},
-    {13,  777    * MHz,  787    * MHz,  746    * MHz,  756    * MHz, FDD},
-    {14,  788    * MHz,  798    * MHz,  758    * MHz,  768    * MHz, FDD},
-    {17,  704    * MHz,  716    * MHz,  734    * MHz,  746    * MHz, FDD},
-    {20,  832    * MHz,  862    * MHz,  791    * MHz,  821    * MHz, FDD},
-    {22, 3510    * MHz, 3590    * MHz, 3410    * MHz, 3490    * MHz, FDD},
-    {33, 1900    * MHz, 1920    * MHz, 1900    * MHz, 1920    * MHz, TDD},
-    {34, 2010    * MHz, 2025    * MHz, 2010    * MHz, 2025    * MHz, TDD},
-    {35, 1850    * MHz, 1910    * MHz, 1850    * MHz, 1910    * MHz, TDD},
-    {36, 1930    * MHz, 1990    * MHz, 1930    * MHz, 1990    * MHz, TDD},
-    {37, 1910    * MHz, 1930    * MHz, 1910    * MHz, 1930    * MHz, TDD},
-    {38, 2570    * MHz, 2620    * MHz, 2570    * MHz, 2630    * MHz, TDD},
-    {39, 1880    * MHz, 1920    * MHz, 1880    * MHz, 1920    * MHz, TDD},
-    {40, 2300    * MHz, 2400    * MHz, 2300    * MHz, 2400    * MHz, TDD},
-    {41, 2496    * MHz, 2690    * MHz, 2496    * MHz, 2690    * MHz, TDD},
-    {42, 3400    * MHz, 3600    * MHz, 3400    * MHz, 3600    * MHz, TDD},
-    {43, 3600    * MHz, 3800    * MHz, 3600    * MHz, 3800    * MHz, TDD},
-    {44, 703    * MHz, 803    * MHz, 703    * MHz, 803    * MHz, TDD},
+  {1,  1920000, 1980000, 2110000, 2170000, FDD},
+  {2,  1850000, 1910000, 1930000, 1990000, FDD},
+  {3,  1710000, 1785000, 1805000, 1880000, FDD},
+  {5,   824000,  849000,  869000,  894000, FDD},
+  {7,  2500000, 2570000, 2620000, 2690000, FDD},
+  {8,   880000,  915000,  925000,  960000, FDD},
+  {12,  698000,  716000,  728000,  746000, FDD},
+  {20,  832000,  862000,  791000,  821000, FDD},
+  {25, 1850000, 1915000, 1930000, 1995000, FDD},
+  {28,  703000,  758000,  758000,  813000, FDD},
+  {34, 2010000, 2025000, 2010000, 2025000, TDD},
+  {38, 2570000, 2620000, 2570000, 2630000, TDD},
+  {39, 1880000, 1920000, 1880000, 1920000, TDD},
+  {40, 2300000, 2400000, 2300000, 2400000, TDD},
+  {41, 2496000, 2690000, 2496000, 2690000, TDD},
+  {50, 1432000, 1517000, 1432000, 1517000, TDD},
+  {51, 1427000, 1432000, 1427000, 1432000, TDD},
+  {66, 1710000, 1780000, 2110000, 2200000, FDD},
+  {70, 1695000, 1710000, 1995000, 2020000, FDD},
+  {71,  663000,  698000,  617000,  652000, FDD},
+  {74, 1427000, 1470000, 1475000, 1518000, FDD},
+  {75,     000,     000, 1432000, 1517000, FDD},
+  {76,     000,     000, 1427000, 1432000, FDD},
+  {77, 3300000, 4200000, 3300000, 4200000, TDD},
+  {78, 3300000, 3800000, 3300000, 3800000, TDD},
+  {79, 4400000, 5000000, 4400000, 5000000, TDD},
+  {80, 1710000, 1785000,     000,     000, FDD},
+  {81,  860000,  915000,     000,     000, FDD},
+  {82,  832000,  862000,     000,     000, FDD},
+  {83,  703000,  748000,     000,     000, FDD},
+  {84, 1920000, 1980000,     000,     000, FDD},
+  {86, 1710000, 1785000,     000,     000, FDD}
 };
 
 PHY_VARS_NR_UE* init_nr_ue_vars(NR_DL_FRAME_PARMS *frame_parms,
@@ -333,6 +336,7 @@ static void *UE_thread_synch(void *arg) {
     int i, hw_slot_offset;
     PHY_VARS_NR_UE *UE = (PHY_VARS_NR_UE*) arg;
     int current_band = 0;
+    lte_frame_type_t current_type;
     int current_offset = 0;
     sync_mode_t sync_mode = pbch;
     int CC_id = UE->CC_id;
@@ -351,18 +355,21 @@ static void *UE_thread_synch(void *arg) {
 
     if (UE->UE_scan == 0) {
         int ind;
-        for ( ind=0;
-                ind < sizeof(eutra_bands) / sizeof(eutra_bands[0]);
-                ind++) {
+	int64_t dl_freq_khz = downlink_frequency[0][0]/1000;
+        for ( ind=0; ind < sizeof(eutra_bands) / sizeof(eutra_bands[0]); ind++) {
             current_band = eutra_bands[ind].band;
+	    current_type = eutra_bands[ind].frame_type;
             LOG_D(PHY, "Scanning band %d, dl_min %"PRIu32", ul_min %"PRIu32"\n", current_band, eutra_bands[ind].dl_min,eutra_bands[ind].ul_min);
-            if ( eutra_bands[ind].dl_min <= downlink_frequency[0][0] && eutra_bands[ind].dl_max >= downlink_frequency[0][0] ) {
+            if ( eutra_bands[ind].dl_min <= dl_freq_khz && eutra_bands[ind].dl_max >= dl_freq_khz ) {
                 for (i=0; i<4; i++)
-                    uplink_frequency_offset[CC_id][i] = eutra_bands[ind].ul_min - eutra_bands[ind].dl_min;
+                    uplink_frequency_offset[CC_id][i] = (eutra_bands[ind].ul_min - eutra_bands[ind].dl_min) *1000;
                 break;
             }
         }
         AssertFatal( ind < sizeof(eutra_bands) / sizeof(eutra_bands[0]), "Can't find EUTRA band for frequency");
+
+	UE->frame_parms.eutra_band = current_band;
+	UE->frame_parms.frame_type = current_type;
 
         LOG_I( PHY, "[SCHED][UE] Check absolute frequency DL %"PRIu32", UL %"PRIu32" (oai_exit %d, rx_num_channels %d)\n",
                downlink_frequency[0][0], downlink_frequency[0][0]+uplink_frequency_offset[0][0],

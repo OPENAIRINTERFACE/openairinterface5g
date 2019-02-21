@@ -531,7 +531,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   uint8_t *decoded_output = nr_ue_pbch_vars->decoded_output;
   uint8_t nushift;
   uint16_t M;
-  uint8_t Lmax=8; //to update
+  uint8_t Lmax=frame_parms->Lmax; 
   uint8_t ssb_index=0;
   //uint16_t crc;
   //unsigned short idx_demod =0;

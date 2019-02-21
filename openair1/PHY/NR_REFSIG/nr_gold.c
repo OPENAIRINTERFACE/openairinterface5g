@@ -32,7 +32,7 @@ void nr_init_pbch_dmrs(PHY_VARS_gNB* gNB)
 
   Nid = cfg->sch_config.physical_cell_id.value;
 
-  Lmax = (fp->dl_CarrierFreq < 3e9)? 4:8;
+  Lmax = fp->Lmax;
   N_hf = (Lmax == 4)? 2:1;
 
   for (n_hf = 0; n_hf < N_hf; n_hf++) {

@@ -179,6 +179,16 @@ int nr_init_frame_parms0(NR_DL_FRAME_PARMS *fp,
   fp->samples_per_frame = 10 * fp->samples_per_subframe;
   fp->freq_range = (fp->dl_CarrierFreq < 6e9)? nr_FR1 : nr_FR2;
 
+  // definition of Lmax according to ts 38.213 section 4.1
+  if (fp->dl_CarrierFreq < 6e9){
+	if(fp->frame_type && (fp->ssb_type==2))
+		fp->Lmax = (fp->dl_CarrierFreq < 2.4e9)? 4 : 8;
+	else
+		fp->Lmax = (fp->dl_CarrierFreq < 3e9)? 4 : 8;
+  }  
+  else
+    fp->Lmax = 64;
+
   // Initial bandwidth part configuration -- full carrier bandwidth
   fp->initial_bwp_dl.bwp_id = 0;
   fp->initial_bwp_dl.scs = fp->subcarrier_spacing;
