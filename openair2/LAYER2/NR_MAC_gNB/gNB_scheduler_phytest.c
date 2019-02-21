@@ -100,7 +100,7 @@ void nr_schedule_css_dlsch_phytest(module_id_t   module_idP,
     params_rel15->first_slot = 0;
 
     pdu_rel15->frequency_domain_assignment = get_RIV(dlsch_pdu_rel15->start_prb, dlsch_pdu_rel15->n_prb, cfg->rf_config.dl_carrier_bandwidth.value);
-    pdu_rel15->time_domain_assignment = get_SLIV(dlsch_pdu_rel15->start_symbol, dlsch_pdu_rel15->nb_symbols);
+    pdu_rel15->time_domain_assignment = 3; // row index used here instead of SLIV
     pdu_rel15->vrb_to_prb_mapping = 1;
     pdu_rel15->mcs = 9;
     pdu_rel15->tb_scaling = 1;
@@ -229,7 +229,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
     dlsch_pdu_rel15->start_prb = 0;
     dlsch_pdu_rel15->n_prb = 50;
     dlsch_pdu_rel15->start_symbol = 2;
-    dlsch_pdu_rel15->nb_symbols = 8;
+    dlsch_pdu_rel15->nb_symbols = 9;
     dlsch_pdu_rel15->rnti = rnti;
     dlsch_pdu_rel15->nb_layers =1;
     dlsch_pdu_rel15->nb_codewords = 1;
@@ -244,7 +244,7 @@ void nr_schedule_uss_dlsch_phytest(module_id_t   module_idP,
                                        dl_carrier_bandwidth);
 
     pdu_rel15->frequency_domain_assignment = get_RIV(dlsch_pdu_rel15->start_prb, dlsch_pdu_rel15->n_prb, cfg->rf_config.dl_carrier_bandwidth.value);
-    pdu_rel15->time_domain_assignment = get_SLIV(dlsch_pdu_rel15->start_symbol, dlsch_pdu_rel15->nb_symbols);
+    pdu_rel15->time_domain_assignment = 3; // row index used here instead of SLIV;
     pdu_rel15->vrb_to_prb_mapping = 1;
     pdu_rel15->mcs = 9;
     pdu_rel15->tb_scaling = 1;
