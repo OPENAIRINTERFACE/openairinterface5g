@@ -1439,10 +1439,10 @@ void nr_dci_decoding_procedure0(int s,
 	*crc_scrambled =_tpc_srs_rnti;
 	*format_found=_format_2_3_found;
       }
-#ifdef NR_PDCCH_DCI_DEBUG
+//#ifdef NR_PDCCH_DCI_DEBUG
       printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> format_found=%d\n",*format_found);
       printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> crc_scrambled=%d\n",*crc_scrambled);
-#endif
+//#endif
       if (*format_found!=255) {
 	dci_alloc[*dci_cnt].dci_length = sizeof_bits;
 	dci_alloc[*dci_cnt].rnti = crc;
@@ -1453,10 +1453,10 @@ void nr_dci_decoding_procedure0(int s,
 	dci_alloc[*dci_cnt].dci_pdu[2] = dci_estimation[2];
 	dci_alloc[*dci_cnt].dci_pdu[3] = dci_estimation[3];
 //#ifdef NR_PDCCH_DCI_DEBUG
-	printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> rnti matches -> DCI FOUND !!! crc =>%x, sizeof_bits %d, sizeof_bytes %d \n",
+	printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> rnti matches -> DCI FOUND !!! crc =>0x%x, sizeof_bits %d, sizeof_bytes %d \n",
 		dci_alloc[*dci_cnt].rnti, dci_alloc[*dci_cnt].dci_length, sizeof_bytes);
-	printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> dci_cnt %d (format_css %d crc_scrambled %d) L %d, firstCCE %d pdu[0] %x pdu[1] %x pdu[2] %x pdu[3] %x \n",
-		*dci_cnt, format_css,*crc_scrambled,dci_alloc[*dci_cnt].L, dci_alloc[*dci_cnt].firstCCE,dci_alloc[*dci_cnt].dci_pdu[0],dci_alloc[*dci_cnt].dci_pdu[1],dci_alloc[*dci_cnt].dci_pdu[2],dci_alloc[*dci_cnt].dci_pdu[3]);
+	printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> dci_cnt %d (format_css %d crc_scrambled %d) L %d, firstCCE %d pdu[0] 0x%lx pdu[1] 0x%lx \n",
+		*dci_cnt, format_css,*crc_scrambled,dci_alloc[*dci_cnt].L, dci_alloc[*dci_cnt].firstCCE,dci_alloc[*dci_cnt].dci_pdu[0],dci_alloc[*dci_cnt].dci_pdu[1]);
 //#endif
 	if ((format_css == cformat0_0_and_1_0) || (format_uss == uformat0_0_and_1_0)){
 	  if ((*crc_scrambled == _p_rnti) || (*crc_scrambled == _si_rnti) || (*crc_scrambled == _ra_rnti)){

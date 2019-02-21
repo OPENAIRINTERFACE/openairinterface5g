@@ -394,7 +394,7 @@ typedef struct {
   /// search space
   dci_space_t search_space;
   /// DCI pdu
-  uint32_t dci_pdu[4];
+  uint64_t dci_pdu[2];
 //#if defined(UPGRADE_RAT_NR)
 #if 1
   /// harq information
