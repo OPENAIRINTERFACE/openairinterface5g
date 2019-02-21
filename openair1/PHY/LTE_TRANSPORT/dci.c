@@ -98,10 +98,11 @@ void dci_encoding(uint8_t *a,
 #endif
   RCC = sub_block_interleaving_cc(D,d+96,w);
 
-#ifdef DEBUG_DCI_ENCODING
-  printf("Doing DCI rate matching for %d channel bits, RCC %d, e %p\n",E,RCC,e);
-#endif
+  //#ifdef DEBUG_DCI_ENCODING
+  if (E>1000) printf("Doing DCI rate matching for %d channel bits, RCC %d, e %p\n",E,RCC,e);
+  //#endif
   lte_rate_matching_cc(RCC,E,w,e);
+
 
 
 }
@@ -110,30 +111,11 @@ void dci_encoding(uint8_t *a,
 uint8_t *generate_dci0(uint8_t *dci,
                        uint8_t *e,
                        uint8_t DCI_LENGTH,
-                       uint8_t aggregation_level,
+		       uint16_t coded_bits,
                        uint16_t rnti)
 {
 
-  uint16_t coded_bits;
   uint8_t dci_flip[8];
-
-  AssertFatal((aggregation_level==1) ||
-	      (aggregation_level==2) ||
-	      (aggregation_level==4) ||
-	      (aggregation_level==8)
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0)) // Added for EPDCCH/MPDCCH
-	      ||
-	      (aggregation_level==16) ||
-	      (aggregation_level==24) ||
-	      (aggregation_level==32)
-#endif
-	      ,
-	      "generate_dci FATAL, illegal aggregation_level %d\n",aggregation_level);
-
-
-  coded_bits = 72 * aggregation_level;
-
-
 
   #ifdef DEBUG_DCI_ENCODING
   for (int i=0;i<1+((DCI_LENGTH+16)/8);i++)
@@ -387,7 +369,7 @@ uint8_t generate_dci_top(uint8_t num_pdcch_symbols,
           e_ptr = generate_dci0(dci_alloc[i].dci_pdu,
                                 e+(72*dci_alloc[i].firstCCE),
                                 dci_alloc[i].dci_length,
-                                dci_alloc[i].L,
+                                72*dci_alloc[i].L,
                                 dci_alloc[i].rnti);
         }
       }

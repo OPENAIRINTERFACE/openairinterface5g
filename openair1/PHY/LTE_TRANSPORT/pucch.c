@@ -718,7 +718,11 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 		  uint8_t *payload,
 		  int     frame,
 		  uint8_t subframe,
-		  uint8_t pucch1_thres)
+		  uint8_t pucch1_thres
+#ifdef Rel14
+		  ,uint8_t br_flag
+#endif
+		  )
 {
 
 
@@ -727,7 +731,8 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   LTE_DL_FRAME_PARMS *frame_parms                    = &eNB->frame_parms;
   //  PUCCH_CONFIG_DEDICATED *pucch_config_dedicated = &eNB->pucch_config_dedicated[UE_id];
 
-  int8_t sigma2_dB                                   = 20;//eNB->measurements.n0_subband_power_tot_dB[0]-10;
+  int8_t sigma2_dB                                   = max(eNB->measurements.n0_subband_power_tot_dB[0],
+                                                           eNB->measurements.n0_subband_power_tot_dB[eNB->frame_parms.N_RB_UL-1]);
 
   uint32_t u,v,n,aa;
   uint32_t z[12*14];
@@ -984,14 +989,25 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 
     //for (j=0,l=0;l<(nsymb-1);l++) {
     for (j=0,l=0; l<nsymb; l++) {
-      if ((l<(nsymb>>1)) && ((m&1) == 0))
-        re_offset = (m*6) + frame_parms->first_carrier_offset;
-      else if ((l<(nsymb>>1)) && ((m&1) == 1))
-        re_offset = frame_parms->first_carrier_offset + (frame_parms->N_RB_DL - (m>>1) - 1)*12;
-      else if ((m&1) == 0)
-        re_offset = frame_parms->first_carrier_offset + (frame_parms->N_RB_DL - (m>>1) - 1)*12;
+#ifdef Rel14
+      if (br_flag > 0 ) {
+        if ((m&1) == 0)
+          re_offset = (m*6) + frame_parms->first_carrier_offset;
+	else
+	  re_offset = frame_parms->first_carrier_offset + (frame_parms->N_RB_DL - (m>>1) - 1)*12;
+      }
       else
-        re_offset = ((m-1)*6) + frame_parms->first_carrier_offset;
+#endif
+      {
+        if ((l<(nsymb>>1)) && ((m&1) == 0))
+          re_offset = (m*6) + frame_parms->first_carrier_offset;
+        else if ((l<(nsymb>>1)) && ((m&1) == 1))
+          re_offset = frame_parms->first_carrier_offset + (frame_parms->N_RB_DL - (m>>1) - 1)*12;
+        else if ((m&1) == 0)
+          re_offset = frame_parms->first_carrier_offset + (frame_parms->N_RB_DL - (m>>1) - 1)*12;
+        else
+          re_offset = ((m-1)*6) + frame_parms->first_carrier_offset;
+      }
 
       if (re_offset > frame_parms->ofdm_symbol_size)
         re_offset -= (frame_parms->ofdm_symbol_size);
@@ -1302,7 +1318,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 #endif
 	  }
 	  
-      
+
 
 #ifdef DEBUG_PUCCH_RX
           printf("[eNB] PUCCH subframe %d chest1[%d][%d] => (%d,%d)\n",subframe,aa,re,

@@ -54,7 +54,7 @@ int flexran_agent_destroy_ue_state_change(Protocol__FlexranMessage *msg);
 // void flexran_agent_send_update_rrc_stats(mid_t mod_id);
 
 /* this is called by RRC as a part of rrc xface  . The controller previously requested  this*/ 
-void flexran_trigger_rrc_measurements (mid_t mod_id, MeasResults_t *);
+void flexran_trigger_rrc_measurements (mid_t mod_id, LTE_MeasResults_t *);
 
 /* Statistics reply protocol message constructor and destructor */
 int flexran_agent_rrc_stats_reply(mid_t mod_id, const report_config_t *report_config, Protocol__FlexUeStatsReport **ue_report, Protocol__FlexCellStatsReport **cell_report);

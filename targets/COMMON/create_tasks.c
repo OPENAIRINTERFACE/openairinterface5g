@@ -23,34 +23,41 @@
 # include "intertask_interface.h"
 # include "create_tasks.h"
 # include "common/utils/LOG/log.h"
+# include "targets/RT/USER/lte-softmodem.h"
 # include "common/ran_context.h"
 
-# ifdef OPENAIR2
-#   if defined(ENABLE_USE_MME)
-#     include "sctp_eNB_task.h"
-#     include "x2ap_eNB.h"
-#     include "s1ap_eNB.h"
-#     include "nas_ue_task.h"
-#     include "udp_eNB_task.h"
-#     include "gtpv1u_eNB_task.h"
-#   else
-#     define EPC_MODE_ENABLED 0
-#   endif
-#   include "RRC/LTE/rrc_defs.h"
-# endif
-# include "sctp_eNB_task.h"
+#ifdef OPENAIR2
+  #if defined(ENABLE_USE_MME)
+    #include "sctp_eNB_task.h"
+    #include "x2ap_eNB.h"
+    #include "s1ap_eNB.h"
+    #include "nas_ue_task.h"
+    #include "udp_eNB_task.h"
+    #include "gtpv1u_eNB_task.h"
+    /* temporary warning removale while implementing noS1 */
+    /* as config option                                   */
+  #else
+    #ifdef EPC_MODE_ENABLED
+      #undef  EPC_MODE_ENABLED
+    #endif
+    #define EPC_MODE_ENABLED 0
+  #endif
+  #if ENABLE_RAL
+    #include "lteRALue.h"
+    #include "lteRALenb.h"
+  #endif
+  #include "RRC/LTE/rrc_defs.h"
+#endif
 # include "f1ap_cu_task.h"
 # include "f1ap_du_task.h"
 # include "enb_app.h"
 
 extern RAN_CONTEXT_t RC;
-extern int emulate_rf;
 
-int create_tasks(uint32_t enb_nb)
-{
+int create_tasks(uint32_t enb_nb) {
+  LOG_D(ENB_APP, "%s(enb_nb:%d\n", __FUNCTION__, enb_nb);
   ngran_node_t type = RC.rrc[0]->node_type;
   int rc;
-
   itti_wait_ready(1);
 
   if (enb_nb > 0) {
@@ -66,7 +73,7 @@ int create_tasks(uint32_t enb_nb)
     }
   }
 
-  if (enb_nb > 0) {
+  if (EPC_MODE_ENABLED && enb_nb > 0) {
     /* this task needs not be started if:
      * * there is no CU/DU split
      * * ENABLE_USE_MME is not defined
@@ -87,29 +94,23 @@ int create_tasks(uint32_t enb_nb)
     if (enb_nb > 0) {
       rc = itti_create_task(TASK_CU_F1, F1AP_CU_task, NULL);
       AssertFatal(rc >= 0, "Create task for CU F1AP failed\n");
-      //RS/BK: Fix me!
-      rc = itti_create_task (TASK_L2L1, l2l1_task, NULL);
-      AssertFatal(rc >= 0, "Create task for L2L1 failed\n");
-
     }
     /* fall through */
   case ngran_eNB:
   case ngran_ng_eNB:
   case ngran_gNB:
 #if defined(ENABLE_USE_MME)
-    if (enb_nb > 0) {
+    if (EPC_MODE_ENABLED && enb_nb > 0) {
       rc = itti_create_task(TASK_S1AP, s1ap_eNB_task, NULL);
       AssertFatal(rc >= 0, "Create task for S1AP failed\n");
-      if (!emulate_rf){
+      if (!(get_softmodem_params()->emulate_rf)){
         rc = itti_create_task(TASK_UDP, udp_eNB_task, NULL);
         AssertFatal(rc >= 0, "Create task for UDP failed\n");
       }
       rc = itti_create_task(TASK_GTPV1_U, gtpv1u_eNB_task, NULL);
       AssertFatal(rc >= 0, "Create task for GTPV1U failed\n");
-      if (EPC_MODE_ENABLED) {
-        rc = itti_create_task(TASK_X2AP, x2ap_task, NULL);
-        AssertFatal(rc >= 0, "Create task for X2AP failed\n");
-      }
+      rc = itti_create_task(TASK_X2AP, x2ap_task, NULL);
+      AssertFatal(rc >= 0, "Create task for X2AP failed\n");
     }
 #endif
     break;
@@ -117,23 +118,10 @@ int create_tasks(uint32_t enb_nb)
     /* intentionally left blank */
     break;
   }
-  switch (type) {
-  case ngran_eNB_DU:
-  case ngran_gNB_DU:
-    if (enb_nb > 0) {
-      rc = itti_create_task(TASK_DU_F1, F1AP_DU_task, NULL);
-      AssertFatal(rc >= 0, "Create task for DU F1AP failed\n");
-    }
-    /* fall through */
-  case ngran_eNB:
-  case ngran_ng_eNB:
-  case ngran_gNB:
-    rc = itti_create_task (TASK_L2L1, l2l1_task, NULL);
-    AssertFatal(rc >= 0, "Create task for L2L1 failed\n");
-    break;
-  default:
-    /* intentioally left blank */
-    break;
+
+  if ((type == ngran_eNB_DU || type == ngran_gNB_DU) && (enb_nb > 0)) {
+    rc = itti_create_task(TASK_DU_F1, F1AP_DU_task, NULL);
+    AssertFatal(rc >= 0, "Create task for DU F1AP failed\n");
   }
 
   itti_wait_ready(0);

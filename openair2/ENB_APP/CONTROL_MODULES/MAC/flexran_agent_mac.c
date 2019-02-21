@@ -772,10 +772,6 @@ int flexran_agent_mac_destroy_stats_reply(Protocol__FlexStatsReply *reply) {
   }
 
   return 0;
-
- error:
-  //LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
-  return -1;
 }
 
 int flexran_agent_mac_sr_info(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {

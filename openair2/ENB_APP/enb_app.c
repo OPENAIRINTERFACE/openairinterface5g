@@ -44,14 +44,15 @@
 #   include "s1ap_eNB.h"
 #   include "sctp_eNB_task.h"
 #   include "gtpv1u_eNB_task.h"
-# else
-#    define EPC_MODE_ENABLED 0
-# endif
-
-#if defined(FLEXRAN_AGENT_SB_IF)
 #   include "flexran_agent.h"
-#endif
-
+/* temporary warning removale while implementing noS1 */
+/* as config option                                   */
+#   else
+#     ifdef EPC_MODE_ENABLED
+#       undef  EPC_MODE_ENABLED
+#     endif
+#     define EPC_MODE_ENABLED 0
+#   endif
 #   include "x2ap_eNB.h"
 #   include "x2ap_messages_types.h"
 #   define X2AP_ENB_REGISTER_RETRY_DELAY   10
@@ -147,7 +148,6 @@ void *eNB_app_task(void *args_p)
   uint32_t                        x2_register_enb_pending;
   uint32_t                        x2_registered_enb;
   long                            x2_enb_register_retry_timer_id;
-  uint32_t                        enb_id;
   MessageDef                     *msg_p           = NULL;
   instance_t                      instance;
   int                             result;

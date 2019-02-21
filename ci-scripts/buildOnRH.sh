@@ -198,12 +198,18 @@ do
     fi
 done
 
-if [ $NB_PATTERN_FILES -ne $NB_FOUND_FILES ]; then STATUS=-1; fi
+if [ $NB_PATTERN_FILES -ne $NB_FOUND_FILES ]
+then
+    echo "Expecting $NB_PATTERN_FILES log files and found $NB_FOUND_FILES"
+    STATUS=-1
+fi
 
 if [ $STATUS -eq 0 ]
 then
+    echo "BUILD_OK" > $ARCHIVES_LOC/build_final_status.log
     echo "STATUS seems OK"
 else
+    echo "BUILD_KO" > $ARCHIVES_LOC/build_final_status.log
     echo "STATUS failed?"
 fi
 exit $STATUS

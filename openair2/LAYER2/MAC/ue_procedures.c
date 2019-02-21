@@ -65,11 +65,12 @@
 #define DEBUG_HEADER_PARSING 1
 #define ENABLE_MAC_PAYLOAD_DEBUG 1
 
-extern uint8_t usim_test;
 
 extern UL_IND_t *UL_INFO;
 
 extern uint8_t  nfapi_mode;
+extern int next_ra_frame;
+extern module_id_t next_Mod_id;
 
 /*
  *
@@ -96,22 +97,22 @@ void ue_init_mac(module_id_t module_idP)
     LOG_I(MAC, "[UE%d] Applying default macMainConfig\n", module_idP);
     //UE_mac_inst[module_idP].scheduling_info.macConfig=NULL;
     UE_mac_inst[module_idP].scheduling_info.retxBSR_Timer =
-	RetxBSR_Timer_r12_sf10240;
+	LTE_RetxBSR_Timer_r12_sf10240;
     UE_mac_inst[module_idP].scheduling_info.periodicBSR_Timer =
-	PeriodicBSR_Timer_r12_infinity;
+	LTE_PeriodicBSR_Timer_r12_infinity;
     UE_mac_inst[module_idP].scheduling_info.periodicPHR_Timer =
-	MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf20;
+	LTE_MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf20;
     UE_mac_inst[module_idP].scheduling_info.prohibitPHR_Timer =
-	MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf20;
+	LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf20;
     UE_mac_inst[module_idP].scheduling_info.PathlossChange_db =
-	MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB1;
+	LTE_MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB1;
     UE_mac_inst[module_idP].PHR_state =
-	MAC_MainConfig__phr_Config_PR_setup;
+	LTE_MAC_MainConfig__phr_Config_PR_setup;
     UE_mac_inst[module_idP].scheduling_info.SR_COUNTER = 0;
     UE_mac_inst[module_idP].scheduling_info.sr_ProhibitTimer = 0;
     UE_mac_inst[module_idP].scheduling_info.sr_ProhibitTimer_Running = 0;
     UE_mac_inst[module_idP].scheduling_info.maxHARQ_Tx =
-	MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
+	LTE_MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
     UE_mac_inst[module_idP].scheduling_info.ttiBundling = 0;
     UE_mac_inst[module_idP].scheduling_info.extendedBSR_Sizes_r10 = 0;
     UE_mac_inst[module_idP].scheduling_info.extendedPHR_r10 = 0;
@@ -304,14 +305,14 @@ ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP,
     // determin the measurement gap
     if (UE_mac_inst[module_idP].measGapConfig != NULL) {
 	if (UE_mac_inst[module_idP].measGapConfig->choice.setup.
-	    gapOffset.present == MeasGapConfig__setup__gapOffset_PR_gp0) {
+	    gapOffset.present == LTE_MeasGapConfig__setup__gapOffset_PR_gp0) {
 	    MGRP = 40;
 	    gapOffset =
 		UE_mac_inst[module_idP].measGapConfig->choice.
 		setup.gapOffset.choice.gp0;
 	} else if (UE_mac_inst[module_idP].measGapConfig->choice.
 		   setup.gapOffset.present ==
-		   MeasGapConfig__setup__gapOffset_PR_gp1) {
+		   LTE_MeasGapConfig__setup__gapOffset_PR_gp1) {
 	    MGRP = 80;
 	    gapOffset =
 		UE_mac_inst[module_idP].measGapConfig->choice.
@@ -558,31 +559,34 @@ ue_send_sdu(module_id_t module_idP,
 		LOG_T(MAC, "\n");
 #endif
 
-		mac_rrc_data_ind_ue(module_idP,
-				 CC_id,
-				 frameP, subframeP,
-				 UE_mac_inst[module_idP].crnti,
-				 CCCH,
-				 (uint8_t *) payload_ptr,
-				 rx_lengths[i], eNB_index, 0);
+      mac_rrc_data_ind_ue(module_idP,
+			  CC_id,
+			  frameP,subframeP,
+			  UE_mac_inst[module_idP].crnti,
+			  CCCH,
+			  (uint8_t*)payload_ptr,
+			  rx_lengths[i],
+			  eNB_index,
+			  0
+			  );
 
-	    } else if ((rx_lcids[i] == DCCH) || (rx_lcids[i] == DCCH1)) {
-		LOG_D(MAC,
-		      "[UE %d] Frame %d : DLSCH -> DL-DCCH%d, RRC message (eNB %d, %d bytes)\n",
-		      module_idP, frameP, rx_lcids[i], eNB_index,
-		      rx_lengths[i]);
-		mac_rlc_data_ind(module_idP, UE_mac_inst[module_idP].crnti,
-				 eNB_index, frameP, ENB_FLAG_NO,
-				 MBMS_FLAG_NO, rx_lcids[i],
-				 (char *) payload_ptr, rx_lengths[i], 1,
-				 NULL);
+    } else if ((rx_lcids[i] == DCCH) || (rx_lcids[i] == DCCH1)) {
+      LOG_D(MAC,"[UE %d] Frame %d : DLSCH -> DL-DCCH%d, RRC message (eNB %d, %d bytes)\n", module_idP, frameP, rx_lcids[i],eNB_index,rx_lengths[i]);
+      mac_rlc_data_ind(module_idP,
+                       UE_mac_inst[module_idP].crnti,
+		       eNB_index,
+                       frameP,
+                       ENB_FLAG_NO,
+                       MBMS_FLAG_NO,
+                       rx_lcids[i],
+                       (char *)payload_ptr,
+                       rx_lengths[i],
+                       1,
+                       NULL);
 
-	    } else if ((rx_lcids[i] < NB_RB_MAX) && (rx_lcids[i] > DCCH1)) {
+    } else if ((rx_lcids[i]  < NB_RB_MAX) && (rx_lcids[i] > DCCH1 )) {
 
-		LOG_D(MAC,
-		      "[UE %d] Frame %d : DLSCH -> DL-DTCH%d (eNB %d, %d bytes)\n",
-		      module_idP, frameP, rx_lcids[i], eNB_index,
-		      rx_lengths[i]);
+      LOG_D(MAC,"[UE %d] Frame %d : DLSCH -> DL-DTCH%d (eNB %d, %d bytes)\n", module_idP, frameP,rx_lcids[i], eNB_index,rx_lengths[i]);
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
 		int j;
@@ -621,6 +625,7 @@ ue_decode_si(module_id_t module_idP, int CC_id, frame_t frameP,
 #if UE_TIMING_TRACE
     start_meas(&UE_mac_inst[module_idP].rx_si);
 #endif
+
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
 	(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_SI, VCD_FUNCTION_IN);
 
@@ -633,6 +638,7 @@ ue_decode_si(module_id_t module_idP, int CC_id, frame_t frameP,
 		     0);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
 	(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_SI, VCD_FUNCTION_OUT);
+
 #if UE_TIMING_TRACE
     stop_meas(&UE_mac_inst[module_idP].rx_si);
 #endif
@@ -658,6 +664,7 @@ ue_decode_p(module_id_t module_idP, int CC_id, frame_t frameP,
 #if UE_TIMING_TRACE
     start_meas(&UE_mac_inst[module_idP].rx_p);
 #endif
+
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
 	(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_PCCH, VCD_FUNCTION_IN);
 
@@ -671,6 +678,7 @@ ue_decode_p(module_id_t module_idP, int CC_id, frame_t frameP,
 		     0);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
 	(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_PCCH, VCD_FUNCTION_OUT);
+
 #if UE_TIMING_TRACE
     stop_meas(&UE_mac_inst[module_idP].rx_p);
 #endif
@@ -689,7 +697,7 @@ ue_decode_p(module_id_t module_idP, int CC_id, frame_t frameP,
     }
 }
 
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 unsigned char *parse_mch_header(unsigned char *mac_header,
 				unsigned char *num_sdu,
 				unsigned char *rx_lcids,
@@ -1017,7 +1025,7 @@ int ue_query_p_mch(module_id_t module_idP, uint32_t frameP, uint32_t subframe, i
     if (UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[i] == NULL)
       continue;
 
-    if (UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[i]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) // one-frameP format
+    if (UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[i]->subframeAllocation.present == LTE_MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) // one-frameP format
       continue;
 
     // four-frameP format
@@ -1032,7 +1040,7 @@ int ue_query_p_mch(module_id_t module_idP, uint32_t frameP, uint32_t subframe, i
     if (UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[i] == NULL)
       continue;
 
-    if (UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[i]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) // one-frameP format
+    if (UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[i]->subframeAllocation.present == LTE_MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) // one-frameP format
       continue;
 
     // four-frameP format
@@ -1167,7 +1175,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
       break;
     }
 
-    if (UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->subframeAllocation.present == MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) { // one-frameP format
+    if (UE_mac_inst[module_idP].mbsfn_SubframeConfig[j]->subframeAllocation.present == LTE_MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) { // one-frameP format
       if (frameP % mbsfn_period == mbsfn_alloc_offset) { // MBSFN frameP
 
         if (UE_mac_inst[module_idP].pmch_Config[0]) {
@@ -1372,7 +1380,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
           if (UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[i] == NULL)
             continue;
 
-          if (UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[i]->subframeAllocation.present != MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame)
+          if (UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[i]->subframeAllocation.present != LTE_MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame)
             continue;
 
           uint32_t common_mbsfn_SubframeConfig = UE_mac_inst[module_idP].commonSF_Alloc_r9_mbsfn_SubframeConfig[i]->subframeAllocation.choice.oneFrame.buf[0];
@@ -1919,7 +1927,7 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
     }
     // periodicBSR-Timer expires, trigger BSR
     if ((UE_mac_inst[module_idP].scheduling_info.periodicBSR_Timer !=
-	 PeriodicBSR_Timer_r12_infinity)
+	  LTE_PeriodicBSR_Timer_r12_infinity)
 	&& (UE_mac_inst[module_idP].scheduling_info.periodicBSR_SF == 0)) {
 	// Trigger BSR Periodic
 	UE_mac_inst[module_idP].BSR_reporting_active |=
@@ -2020,7 +2028,7 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
 	    {
 
 		// Workaround for issue in OAI eNB or EPC which are not able to process SRB2 message multiplexed with SRB1 on the same MAC PDU
-		if ((usim_test == 0) && (lcid == DCCH1)
+		if (( get_softmodem_params()->usim_test == 0) && (lcid == DCCH1)
 		    && (lcid_rlc_pdu_count == 0) && (num_sdus)) {
 
 		    // Skip SRB2 multiplex if at least one SRB1 SDU is already multiplexed
@@ -2055,7 +2063,7 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
 							 lcid,
 							 buflen_remain,
 							 (char *)&ulsch_buff[sdu_length_total]
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 							 ,0,
                               0
 #endif
@@ -2071,7 +2079,7 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
 		if (sdu_lengths[num_sdus]) {
 		    sdu_length_total += sdu_lengths[num_sdus];
 		    sdu_lcids[num_sdus] = lcid;
-		    LOG_D(MAC,
+		    LOG_I(MAC,
 			  "[UE %d] TX Multiplex RLC PDU TX Got %d bytes for LcId%d\n",
 			  module_idP, sdu_lengths[num_sdus], lcid);
 
@@ -2447,7 +2455,7 @@ ue_get_sdu(module_id_t module_idP, int CC_id, frame_t frameP,
 	// Reset Periodic Timer except when BSR is truncated
 	if ((bsr_t == NULL)
 	    && (UE_mac_inst[module_idP].scheduling_info.
-		periodicBSR_Timer != PeriodicBSR_Timer_r12_infinity)) {
+		periodicBSR_Timer != LTE_PeriodicBSR_Timer_r12_infinity)) {
 	    UE_mac_inst[module_idP].scheduling_info.periodicBSR_SF =
 		get_sf_periodicBSRTimer(UE_mac_inst
 					[module_idP].scheduling_info.
@@ -2506,8 +2514,8 @@ ue_scheduler(const module_id_t module_idP,
     int bucketsizeduration_max = -1;
     // mac_rlc_status_resp_t rlc_status[MAX_NUM_LCGID]; // 4
     // int8_t lcg_id;
-    struct RACH_ConfigCommon *rach_ConfigCommon =
-	(struct RACH_ConfigCommon *) NULL;
+    struct LTE_RACH_ConfigCommon *rach_ConfigCommon =
+	(struct LTE_RACH_ConfigCommon *) NULL;
     protocol_ctxt_t ctxt;
 
 #if defined(ENABLE_ITTI)
@@ -2524,44 +2532,50 @@ ue_scheduler(const module_id_t module_idP,
 				   UE_mac_inst[module_idP].crnti, txFrameP,
 				   txSubframeP, eNB_indexP);
 #if defined(ENABLE_ITTI)
+    if(module_idP == 0){
+      do {
+	  // Checks if a message has been sent to MAC sub-task
+	  itti_poll_msg(TASK_MAC_UE, &msg_p);
 
-    do {
-	// Checks if a message has been sent to MAC sub-task
-	itti_poll_msg(TASK_MAC_UE, &msg_p);
+	    if (msg_p != NULL) {
 
-	if (msg_p != NULL) {
+	      switch (ITTI_MSG_ID(msg_p)) {
+	      case RRC_MAC_CCCH_DATA_REQ:
+		  LOG_I(MAC,
+		        "Received %s from %s: instance %d, frameP %d, eNB_index %d\n",
+		        ITTI_MSG_NAME(msg_p), ITTI_MSG_ORIGIN_NAME(msg_p), ITTI_MSG_INSTANCE(msg_p),
+		        RRC_MAC_CCCH_DATA_REQ(msg_p).frame,
+		        RRC_MAC_CCCH_DATA_REQ(msg_p).enb_index);
 
-	    switch (ITTI_MSG_ID(msg_p)) {
-	    case RRC_MAC_CCCH_DATA_REQ:
-		LOG_I(MAC,
-		      "Received %s from %s: instance %d, frameP %d, eNB_index %d\n",
-		      ITTI_MSG_NAME(msg_p), ITTI_MSG_ORIGIN_NAME(msg_p), ITTI_MSG_INSTANCE(msg_p),
-		      RRC_MAC_CCCH_DATA_REQ(msg_p).frame,
-		      RRC_MAC_CCCH_DATA_REQ(msg_p).enb_index);
-
-		// TODO process CCCH data req.
-		break;
+		  // TODO process CCCH data req.
+		  break;
 
 
-	    default:
-		LOG_E(MAC, "Received unexpected message %s\n", ITTI_MSG_NAME(msg_p));
-		break;
+	      default:
+		  LOG_E(MAC, "Received unexpected message %s\n", ITTI_MSG_NAME(msg_p));
+		  break;
+	      }
+
+	      result = itti_free(ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
+	      AssertFatal(result == EXIT_SUCCESS,
+			  "Failed to free memory (%d)!\n", result);
 	    }
-
-	    result = itti_free(ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
-	    AssertFatal(result == EXIT_SUCCESS,
-			"Failed to free memory (%d)!\n", result);
-	}
-    }
+      }
     while (msg_p != NULL);
-
+    }
 #endif
 
     //Mac_rlc_xface->frameP=frameP;
     //Rrc_xface->Frame_index=Mac_rlc_xface->frameP;
     //if (subframe%5 == 0)
     //LG#ifdef EXMIMO
-    pdcp_run(&ctxt);
+
+    // data to/from NETLINK is treated in pdcp_run.
+    // one socket is used in multiple UE's L2 FAPI simulator and
+    // only first UE need to do this.
+    if(module_idP == 0){
+      pdcp_run(&ctxt);
+    }
     //#endif
     UE_mac_inst[module_idP].txFrame = txFrameP;
     UE_mac_inst[module_idP].txSubframe = txSubframeP;
@@ -2600,7 +2614,7 @@ ue_scheduler(const module_id_t module_idP,
 	      eNB_indexP);
 	//Invalid...need to add another MAC UE state for re-connection procedure
 	phy_config_afterHO_ue(module_idP, 0, eNB_indexP,
-			      (MobilityControlInfo_t *) NULL, 1);
+			      (LTE_MobilityControlInfo_t *) NULL, 1);
 	//return(3);
 	break;
 
@@ -2765,7 +2779,7 @@ ue_scheduler(const module_id_t module_idP,
 	 physicalConfigDedicated->schedulingRequestConfig == NULL)
 	|| (UE_mac_inst[module_idP].
 	    physicalConfigDedicated->schedulingRequestConfig->present ==
-	    SchedulingRequestConfig_PR_release)) {
+	    LTE_SchedulingRequestConfig_PR_release)) {
 
 	// initiate RA with CRNTI included in msg3 (no contention) as descibed in 36.321 sec 5.1.5
 
@@ -2776,7 +2790,7 @@ ue_scheduler(const module_id_t module_idP,
     }
     // Put this in a function
     // Call PHR procedure as described in Section 5.4.6 in 36.321
-    if (UE_mac_inst[module_idP].PHR_state == MAC_MainConfig__phr_Config_PR_setup) {	// normal operation
+    if (UE_mac_inst[module_idP].PHR_state == LTE_MAC_MainConfig__phr_Config_PR_setup) {	// normal operation
 
 	if (UE_mac_inst[module_idP].PHR_reconfigured == 1) {	// upon (re)configuration of the power headroom reporting functionality by upper layers
 	    UE_mac_inst[module_idP].PHR_reporting_active = 1;
@@ -3037,7 +3051,7 @@ update_bsr(module_id_t module_idP, frame_t frameP,
 		    rlc_status = mac_rlc_status_ind(module_idP, UE_mac_inst[module_idP].crnti,eNB_index,frameP,subframeP,ENB_FLAG_NO,MBMS_FLAG_NO,
 		                                    lcid,
 		                                    0xFFFF //TBS is not used in RLC at this step, set a special value for debug
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                           ,0, 0
 #endif
                                           );
@@ -3182,63 +3196,63 @@ int get_sf_periodicBSRTimer(uint8_t sf_offset)
 {
 
     switch (sf_offset) {
-    case PeriodicBSR_Timer_r12_sf5:
+    case LTE_PeriodicBSR_Timer_r12_sf5:
 	return 5;
 	break;
 
-    case PeriodicBSR_Timer_r12_sf10:
+    case LTE_PeriodicBSR_Timer_r12_sf10:
 	return 10;
 	break;
 
-    case PeriodicBSR_Timer_r12_sf16:
+    case LTE_PeriodicBSR_Timer_r12_sf16:
 	return 16;
 	break;
 
-    case PeriodicBSR_Timer_r12_sf20:
+    case LTE_PeriodicBSR_Timer_r12_sf20:
 	return 20;
 	break;
 
-    case PeriodicBSR_Timer_r12_sf32:
+    case LTE_PeriodicBSR_Timer_r12_sf32:
 	return 32;
 	break;
 
-    case PeriodicBSR_Timer_r12_sf40:
+    case LTE_PeriodicBSR_Timer_r12_sf40:
 	return 40;
 	break;
 
-    case PeriodicBSR_Timer_r12_sf64:
+    case LTE_PeriodicBSR_Timer_r12_sf64:
 	return 64;
 	break;
 
-    case PeriodicBSR_Timer_r12_sf80:
+    case LTE_PeriodicBSR_Timer_r12_sf80:
 	return 80;
 	break;
 
-    case PeriodicBSR_Timer_r12_sf128:
+    case LTE_PeriodicBSR_Timer_r12_sf128:
 	return 128;
 	break;
 
-    case PeriodicBSR_Timer_r12_sf160:
+    case LTE_PeriodicBSR_Timer_r12_sf160:
 	return 160;
 	break;
 
-    case PeriodicBSR_Timer_r12_sf320:
+    case LTE_PeriodicBSR_Timer_r12_sf320:
 	return 320;
 	break;
 
-    case PeriodicBSR_Timer_r12_sf640:
+    case LTE_PeriodicBSR_Timer_r12_sf640:
 	return 640;
 	break;
 
-    case PeriodicBSR_Timer_r12_sf1280:
+    case LTE_PeriodicBSR_Timer_r12_sf1280:
 	return 1280;
 	break;
 
-    case PeriodicBSR_Timer_r12_sf2560:
+    case LTE_PeriodicBSR_Timer_r12_sf2560:
 	return 2560;
 	break;
 
-    case PeriodicBSR_Timer_r12_infinity:
+    case LTE_PeriodicBSR_Timer_r12_infinity:
     default:
 	return 0xFFFF;
 	break;
@@ -3249,27 +3263,27 @@ int get_sf_retxBSRTimer(uint8_t sf_offset)
 {
 
     switch (sf_offset) {
-    case RetxBSR_Timer_r12_sf320:
+    case LTE_RetxBSR_Timer_r12_sf320:
 	return 320;
 	break;
 
-    case RetxBSR_Timer_r12_sf640:
+    case LTE_RetxBSR_Timer_r12_sf640:
 	return 640;
 	break;
 
-    case RetxBSR_Timer_r12_sf1280:
+    case LTE_RetxBSR_Timer_r12_sf1280:
 	return 1280;
 	break;
 
-    case RetxBSR_Timer_r12_sf2560:
+    case LTE_RetxBSR_Timer_r12_sf2560:
 	return 2560;
 	break;
 
-    case RetxBSR_Timer_r12_sf5120:
+    case LTE_RetxBSR_Timer_r12_sf5120:
 	return 5120;
 	break;
 
-    case RetxBSR_Timer_r12_sf10240:
+    case LTE_RetxBSR_Timer_r12_sf10240:
 	return 10240;
 	break;
 
@@ -3283,32 +3297,32 @@ int get_ms_bucketsizeduration(uint8_t bucketsizeduration)
 {
 
     switch (bucketsizeduration) {
-    case LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50:
+    case LTE_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms50:
 	return
 	    50;
 	break;
 
-    case LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms100:
+    case LTE_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms100:
 	return
 	    100;
 	break;
 
-    case LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms150:
+    case LTE_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms150:
 	return
 	    150;
 	break;
 
-    case LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms300:
+    case LTE_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms300:
 	return
 	    300;
 	break;
 
-    case LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms500:
+    case LTE_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms500:
 	return
 	    500;
 	break;
 
-    case LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms1000:
+    case LTE_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms1000:
 	return
 	    1000;
 	break;
@@ -3369,19 +3383,19 @@ int get_sf_prohibitPHR_Timer(uint8_t prohibitPHR_Timer)
 int get_db_dl_PathlossChange(uint8_t dl_PathlossChange)
 {
     switch (dl_PathlossChange) {
-    case MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB1:
+    case LTE_MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB1:
 	return 1;
 	break;
 
-    case MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB3:
+    case LTE_MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB3:
 	return 3;
 	break;
 
-    case MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB6:
+    case LTE_MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB6:
 	return 6;
 	break;
 
-    case MAC_MainConfig__phr_Config__setup__dl_PathlossChange_infinity:
+    case LTE_MAC_MainConfig__phr_Config__setup__dl_PathlossChange_infinity:
     default:
 	return -1;
 	break;
@@ -3478,7 +3492,7 @@ SLSCH_t *ue_get_slsch(module_id_t module_idP,int CC_id,frame_t frameP,sub_frame_
                ue->slsch_lcid,
                req,
                (char*)(ue->slsch_pdu.payload + sizeof(SLSCH_SUBHEADER_24_Bit_DST_LONG))
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                ,ue->sourceL2Id,
                ue->destinationL2Id
 #endif

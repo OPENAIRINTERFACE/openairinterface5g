@@ -35,7 +35,7 @@ static int16_t ru_90c[2*128] = {32767, 0,32766, -402,32758, -804,32746, -1206,32
 #define SCALE 0x3FFF
 
 int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
-				  eNB_rxtx_proc_t *proc,
+				  L1_rxtx_proc_t *proc,
                                   module_id_t UE_id,
                                   unsigned char l,
                                   unsigned char Ns) {
@@ -46,12 +46,12 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
   int32_t **ul_ch_estimates_time=  pusch_vars->drs_ch_estimates_time;
   int32_t **rxdataF_ext=  pusch_vars->rxdataF_ext;
   int subframe = proc->subframe_rx;
-  uint8_t harq_pid = subframe2harq_pid(frame_parms,proc->frame_rx,subframe);
+  uint8_t harq_pid;
   int16_t delta_phase = 0;
   int16_t *ru1 = ru_90;
   int16_t *ru2 = ru_90;
   int16_t current_phase1,current_phase2;
-  uint16_t N_rb_alloc = eNB->ulsch[UE_id]->harq_processes[harq_pid]->nb_rb;
+
   uint16_t aa,Msc_RS,Msc_RS_idx;
   uint16_t * Msc_idx_ptr;
   int k,pilot_pos1 = 3 - frame_parms->Ncp, pilot_pos2 = 10 - 2*frame_parms->Ncp;
@@ -65,7 +65,7 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
   uint32_t alpha_ind;
   uint32_t u=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[Ns+(subframe<<1)];
   uint32_t v=frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[Ns+(subframe<<1)];
-  int32_t tmp_estimates[N_rb_alloc*12] __attribute__((aligned(16)));
+
 
   int symbol_offset,i;
 
@@ -83,7 +83,19 @@ int32_t lte_ul_channel_estimation(PHY_VARS_eNB *eNB,
   int32x4_t mmtmp0,mmtmp1,mmtmp_re,mmtmp_im;
 #endif
 
-int32_t temp_in_ifft_0[2048*2] __attribute__((aligned(32)));
+  int32_t temp_in_ifft_0[2048*2] __attribute__((aligned(32)));
+
+
+#ifdef Rel14
+  if (eNB->ulsch[UE_id]->ue_type > 0) harq_pid = 0;
+  else
+#endif
+    {
+      harq_pid = subframe2harq_pid(frame_parms,proc->frame_rx,subframe);
+    }
+
+  uint16_t N_rb_alloc = eNB->ulsch[UE_id]->harq_processes[harq_pid]->nb_rb;
+  int32_t tmp_estimates[N_rb_alloc*12] __attribute__((aligned(16)));
 
   Msc_RS = N_rb_alloc*12;
 

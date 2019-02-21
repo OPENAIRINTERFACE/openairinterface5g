@@ -47,8 +47,7 @@ static inline int s1ap_eNB_encode_successfull_outcome(S1AP_S1AP_PDU_t *pdu,
 static inline int s1ap_eNB_encode_unsuccessfull_outcome(S1AP_S1AP_PDU_t *pdu,
     uint8_t **buffer, uint32_t *len);
 
-int s1ap_eNB_encode_pdu(S1AP_S1AP_PDU_t *pdu, uint8_t **buffer, uint32_t *len)
-{
+int s1ap_eNB_encode_pdu(S1AP_S1AP_PDU_t *pdu, uint8_t **buffer, uint32_t *len) {
   int ret = -1;
   DevAssert(pdu != NULL);
   DevAssert(buffer != NULL);
@@ -79,71 +78,43 @@ int s1ap_eNB_encode_pdu(S1AP_S1AP_PDU_t *pdu, uint8_t **buffer, uint32_t *len)
 
 static inline
 int s1ap_eNB_encode_initiating(S1AP_S1AP_PDU_t *pdu,
-                               uint8_t **buffer, uint32_t *len)
-{
-  MessageDef *message_p;
-  MessagesIds message_id;
+                               uint8_t **buffer, uint32_t *len) {
   asn_encode_to_new_buffer_result_t res = { NULL, {0, NULL, NULL} };
   DevAssert(pdu != NULL);
 
   switch(pdu->choice.initiatingMessage.procedureCode) {
     case S1AP_ProcedureCode_id_S1Setup:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_S1AP_S1AP_PDU, pdu);
-      message_id = S1AP_S1_SETUP_LOG;
-      message_p = itti_alloc_new_message_sized(TASK_S1AP, message_id, res.result.encoded + sizeof (IttiMsgText));
-      message_p->ittiMsg.s1ap_s1_setup_log.size = res.result.encoded;
-      memcpy(&message_p->ittiMsg.s1ap_s1_setup_log.text, res.buffer, res.result.encoded);
-      itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
       free(res.buffer);
       break;
 
     case S1AP_ProcedureCode_id_uplinkNASTransport:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_S1AP_S1AP_PDU, pdu);
-      message_id = S1AP_UPLINK_NAS_LOG;
-      message_p = itti_alloc_new_message_sized(TASK_S1AP, message_id, res.result.encoded + sizeof (IttiMsgText));
-      message_p->ittiMsg.s1ap_uplink_nas_log.size = res.result.encoded;
-      memcpy(&message_p->ittiMsg.s1ap_uplink_nas_log.text, res.buffer, res.result.encoded);
-      itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
       free(res.buffer);
       break;
 
     case S1AP_ProcedureCode_id_UECapabilityInfoIndication:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_S1AP_S1AP_PDU, pdu);
-      message_id = S1AP_UE_CAPABILITY_IND_LOG;
-      message_p = itti_alloc_new_message_sized(TASK_S1AP, message_id, res.result.encoded + sizeof (IttiMsgText));
-      message_p->ittiMsg.s1ap_ue_capability_ind_log.size = res.result.encoded;
-      memcpy(&message_p->ittiMsg.s1ap_ue_capability_ind_log.text, res.buffer, res.result.encoded);
-      itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
       free(res.buffer);
       break;
 
     case S1AP_ProcedureCode_id_initialUEMessage:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_S1AP_S1AP_PDU, pdu);
-      message_id = S1AP_INITIAL_UE_MESSAGE_LOG;
-      message_p = itti_alloc_new_message_sized(TASK_S1AP, message_id, res.result.encoded + sizeof (IttiMsgText));
-      message_p->ittiMsg.s1ap_initial_ue_message_log.size = res.result.encoded;
-      memcpy(&message_p->ittiMsg.s1ap_initial_ue_message_log.text, res.buffer, res.result.encoded);
-      itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
       free(res.buffer);
       break;
 
     case S1AP_ProcedureCode_id_NASNonDeliveryIndication:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_S1AP_S1AP_PDU, pdu);
-      message_id = S1AP_NAS_NON_DELIVERY_IND_LOG;
-      message_p = itti_alloc_new_message_sized(TASK_S1AP, message_id, res.result.encoded + sizeof (IttiMsgText));
-      message_p->ittiMsg.s1ap_nas_non_delivery_ind_log.size = res.result.encoded;
-      memcpy(&message_p->ittiMsg.s1ap_nas_non_delivery_ind_log.text, res.buffer, res.result.encoded);
-      itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
       free(res.buffer);
       break;
 
     case S1AP_ProcedureCode_id_UEContextReleaseRequest:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_S1AP_S1AP_PDU, pdu);
-      message_id = S1AP_UE_CONTEXT_RELEASE_REQ_LOG;
-      message_p = itti_alloc_new_message_sized(TASK_S1AP, message_id, res.result.encoded + sizeof (IttiMsgText));
-      message_p->ittiMsg.s1ap_ue_context_release_req_log.size = res.result.encoded;
-      memcpy(&message_p->ittiMsg.s1ap_ue_context_release_req_log.text, res.buffer, res.result.encoded);
-      itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
+      free(res.buffer);
+      break;
+
+    case S1AP_ProcedureCode_id_PathSwitchRequest:
+      res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_S1AP_S1AP_PDU, pdu);
       free(res.buffer);
       break;
 
@@ -166,78 +137,37 @@ int s1ap_eNB_encode_initiating(S1AP_S1AP_PDU_t *pdu,
 
 static inline
 int s1ap_eNB_encode_successfull_outcome(S1AP_S1AP_PDU_t *pdu,
-                                        uint8_t **buffer, uint32_t *len)
-{
-  MessageDef *message_p;
-  MessagesIds message_id;
+                                        uint8_t **buffer, uint32_t *len) {
   asn_encode_to_new_buffer_result_t res = { NULL, {0, NULL, NULL} };
   DevAssert(pdu != NULL);
 
   switch(pdu->choice.successfulOutcome.procedureCode) {
     case S1AP_ProcedureCode_id_InitialContextSetup:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_S1AP_S1AP_PDU, pdu);
-      if (res.result.encoded<=0) LOG_E(RRC,"S1AP_ProcedureCode_id_InitialContextSetup: res.result.encoded<=0\n");
-      else {
-        message_id = S1AP_INITIAL_CONTEXT_SETUP_LOG;
-        message_p = itti_alloc_new_message_sized(TASK_S1AP, message_id, res.result.encoded + sizeof (IttiMsgText));
-        message_p->ittiMsg.s1ap_initial_context_setup_log.size = res.result.encoded;
-        memcpy(&message_p->ittiMsg.s1ap_initial_context_setup_log.text, res.buffer, res.result.encoded);
-        itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
-        free(res.buffer);
-      }
+      free(res.buffer);
       break;
 
     case S1AP_ProcedureCode_id_UEContextRelease:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_S1AP_S1AP_PDU, pdu);
-      if (res.result.encoded<=0) LOG_E(RRC,"S1AP_ProcedureCode_id_UEContextRelease: res.result.encoded<=0\n");
-      else {
-        message_id = S1AP_UE_CONTEXT_RELEASE_COMPLETE_LOG;
-        message_p = itti_alloc_new_message_sized(TASK_S1AP, message_id, res.result.encoded + sizeof (IttiMsgText));
-        message_p->ittiMsg.s1ap_ue_context_release_complete_log.size = res.result.encoded;
-        memcpy(&message_p->ittiMsg.s1ap_ue_context_release_complete_log.text, res.buffer, res.result.encoded);
-        itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
-        free(res.buffer);
-      }
+      free(res.buffer);
       break;
 
     case S1AP_ProcedureCode_id_E_RABSetup:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_S1AP_S1AP_PDU, pdu);
-      AssertFatal(res.result.encoded>0,"res.result.encoded<=0\n");
-      message_id = S1AP_E_RAB_SETUP_RESPONSE_LOG;
-      message_p = itti_alloc_new_message_sized(TASK_S1AP, message_id, res.result.encoded + sizeof (IttiMsgText));
-      message_p->ittiMsg.s1ap_e_rab_setup_response_log.size = res.result.encoded;
-      memcpy(&message_p->ittiMsg.s1ap_e_rab_setup_response_log.text, res.buffer, res.result.encoded);
-      itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
       free(res.buffer);
       S1AP_INFO("E_RABSetup successful message\n");
       break;
 
     case S1AP_ProcedureCode_id_E_RABModify:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_S1AP_S1AP_PDU, pdu);
-      if (res.result.encoded<=0) LOG_E(RRC,"S1AP_ProcedureCode_id_E_RABModify: res.result.encoded<=0\n");
-      else {
-        message_id = S1AP_E_RAB_MODIFY_RESPONSE_LOG;
-        message_p = itti_alloc_new_message_sized(TASK_S1AP, message_id, res.result.encoded + sizeof (IttiMsgText));
-        message_p->ittiMsg.s1ap_e_rab_modify_response_log.size = res.result.encoded;
-        memcpy(&message_p->ittiMsg.s1ap_e_rab_modify_response_log.text, res.buffer, res.result.encoded);
-        itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
-        free(res.buffer);
-        S1AP_INFO("E_RABModify successful message\n");
-      }
+      free(res.buffer);
+      S1AP_INFO("E_RABModify successful message\n");
       break;
 
     case S1AP_ProcedureCode_id_E_RABRelease:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_S1AP_S1AP_PDU, pdu);
-      if (res.result.encoded<=0) LOG_E(RRC,"S1AP_ProcedureCode_id_E_RABRelease: res.result.encoded<=0\n");
-      else {
-        message_id = S1AP_E_RAB_RELEASE_RESPONSE_LOG;
-        message_p = itti_alloc_new_message_sized(TASK_S1AP, message_id, res.result.encoded + sizeof (IttiMsgText));
-        message_p->ittiMsg.s1ap_e_rab_release_response_log.size = res.result.encoded;
-        memcpy(&message_p->ittiMsg.s1ap_e_rab_release_response_log.text, res.buffer, res.result.encoded);
-        itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
-        free(res.buffer);
-        S1AP_INFO("E_RAB Release successful message\n");
-      }
+      free(res.buffer);
+      S1AP_INFO("E_RAB Release successful message\n");
       break;
 
     default:
@@ -259,21 +189,13 @@ int s1ap_eNB_encode_successfull_outcome(S1AP_S1AP_PDU_t *pdu,
 
 static inline
 int s1ap_eNB_encode_unsuccessfull_outcome(S1AP_S1AP_PDU_t *pdu,
-    uint8_t **buffer, uint32_t *len)
-{
-  MessageDef *message_p;
-  MessagesIds message_id;
+    uint8_t **buffer, uint32_t *len) {
   asn_encode_to_new_buffer_result_t res = { NULL, {0, NULL, NULL} };
   DevAssert(pdu != NULL);
 
   switch(pdu->choice.unsuccessfulOutcome.procedureCode) {
     case S1AP_ProcedureCode_id_InitialContextSetup:
       res = asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_S1AP_S1AP_PDU, pdu);
-      message_id = S1AP_INITIAL_CONTEXT_SETUP_LOG;
-      message_p = itti_alloc_new_message_sized(TASK_S1AP, message_id, res.result.encoded + sizeof (IttiMsgText));
-      message_p->ittiMsg.s1ap_initial_context_setup_log.size = res.result.encoded;
-      memcpy(&message_p->ittiMsg.s1ap_initial_context_setup_log.text, res.buffer, res.result.encoded);
-      itti_send_msg_to_task(TASK_UNKNOWN, INSTANCE_DEFAULT, message_p);
       free(res.buffer);
       break;
 

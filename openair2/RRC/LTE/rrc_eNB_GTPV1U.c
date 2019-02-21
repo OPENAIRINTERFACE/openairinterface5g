@@ -109,12 +109,9 @@ void rrc_eNB_send_GTPV1U_ENB_DELETE_TUNNEL_REQ(
     return;
   }
 
-  MSC_LOG_TX_MESSAGE(
-      MSC_RRC_ENB,
-      MSC_GTPU_ENB,
-      NULL,
-      0,
-      "0 GTPV1U_ENB_DELETE_TUNNEL_REQ rnti %x ", ue_context_pP->ue_context.rnti);
+  MSC_LOG_TX_MESSAGE(MSC_RRC_ENB, MSC_GTPU_ENB, NULL, 0,
+                     "0 GTPV1U_ENB_DELETE_TUNNEL_REQ rnti %x ",
+                     ue_context_pP->ue_context.eNB_ue_s1ap_id);
 
   MessageDef *msg = itti_alloc_new_message(TASK_RRC_ENB, GTPV1U_ENB_DELETE_TUNNEL_REQ);
   memset(&GTPV1U_ENB_DELETE_TUNNEL_REQ(msg), 0, sizeof(GTPV1U_ENB_DELETE_TUNNEL_REQ(msg)));

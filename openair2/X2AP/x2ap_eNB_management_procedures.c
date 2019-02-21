@@ -19,6 +19,13 @@
  *      contact@openairinterface.org
  */
 
+/*! \file x2ap_eNB_management_procedures.c
+ * \brief x2ap tasks for eNB
+ * \author Konstantinos Alexandris <Konstantinos.Alexandris@eurecom.fr>, Cedric Roux <Cedric.Roux@eurecom.fr>, Navid Nikaein <Navid.Nikaein@eurecom.fr>
+ * \date 2018
+ * \version 1.0
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -162,6 +169,22 @@ x2ap_eNB_instance_t *x2ap_eNB_get_instance(instance_t instance)
   return NULL;
 }
 
+x2ap_eNB_instance_t *x2ap_eNB_pci_get_instance(uint32_t pci)
+{
+  x2ap_eNB_instance_t *temp = NULL;
+
+  STAILQ_FOREACH(temp, &x2ap_eNB_internal_data.x2ap_eNB_instances_head,
+                 x2ap_eNB_entries) {
+    for (int i=0; i<temp->num_cc;i++) {
+      if (temp->Nid_target_cell[i] == pci) {
+        /* Matching occurence */
+        return temp;
+      }
+    }
+  }
+
+  return NULL;
+}
 
 /// utility functions
 

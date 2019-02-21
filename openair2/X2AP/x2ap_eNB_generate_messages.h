@@ -19,6 +19,13 @@
  *      contact@openairinterface.org
  */
 
+/*! \file x2ap_eNB_generate_messages.h
+ * \brief x2ap procedures for eNB
+ * \author Konstantinos Alexandris <Konstantinos.Alexandris@eurecom.fr>, Cedric Roux <Cedric.Roux@eurecom.fr>, Navid Nikaein <Navid.Nikaein@eurecom.fr>
+ * \date 2018
+ * \version 1.0
+ */
+
 #ifndef X2AP_ENB_GENERATE_MESSAGES_H_
 #define X2AP_ENB_GENERATE_MESSAGES_H_
 
@@ -26,9 +33,9 @@
 #include "x2ap_common.h"
 
 int x2ap_eNB_generate_x2_setup_request(x2ap_eNB_instance_t *instance_p,
-				       x2ap_eNB_data_t *x2ap_enb_data_p);
+				       x2ap_eNB_data_t *x2ap_eNB_data_p);
 
-int x2ap_eNB_generate_x2_setup_response(x2ap_eNB_data_t *x2ap_enb_data_p);
+int x2ap_eNB_generate_x2_setup_response(x2ap_eNB_data_t *x2ap_eNB_data_p);
 
 int x2ap_eNB_generate_x2_setup_failure(instance_t instance,
                                        uint32_t assoc_id,
@@ -40,4 +47,11 @@ int x2ap_eNB_set_cause (X2AP_Cause_t * cause_p,
                         X2AP_Cause_PR cause_type,
                         long cause_value);
 
+int x2ap_eNB_generate_x2_handover_request (x2ap_eNB_data_t *x2ap_eNB_data_p,
+                                           x2ap_handover_req_t *x2ap_handover_req);
+
+int x2ap_eNB_generate_x2_handover_request_ack (x2ap_eNB_data_t *x2ap_eNB_data_p,
+                                               x2ap_handover_req_ack_t *x2ap_handover_req_ack);
+
+int x2ap_eNB_generate_x2_ue_context_release (x2ap_eNB_data_t *x2ap_eNB_data_p);
 #endif /*  X2AP_ENB_GENERATE_MESSAGES_H_ */

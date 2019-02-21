@@ -346,6 +346,7 @@ static void trx_usrp_end(openair0_device *device) {
 
   done = 1;
 
+
   if (u_sf_mode != 2) { // not subframes replay
 #endif
     usrp_state_t *s = (usrp_state_t *)device->priv;
@@ -435,17 +436,20 @@ static int trx_usrp_write(openair0_device *device, openair0_timestamp timestamp,
 #endif
     usrp_state_t *s = (usrp_state_t *)device->priv;
     int nsamps2;  // aligned to upper 32 or 16 byte boundary
+
 #if defined(__x86_64) || defined(__i386__)
-#ifdef __AVX2__
-    nsamps2 = (nsamps+7)>>3;
-    __m256i buff_tx[2][nsamps2];
-#else
+  #ifdef __AVX2__
+      nsamps2 = (nsamps+7)>>3;
+      __m256i buff_tx[2][nsamps2];
+  #else
     nsamps2 = (nsamps+3)>>2;
     __m128i buff_tx[2][nsamps2];
-#endif
+  #endif
 #elif defined(__arm__)
     nsamps2 = (nsamps+3)>>2;
     int16x8_t buff_tx[2][nsamps2];
+#else
+    #error Unsupported CPU architecture, USRP device cannot be built
 #endif
 
     // bring RX data into 12 LSBs for softmodem RX

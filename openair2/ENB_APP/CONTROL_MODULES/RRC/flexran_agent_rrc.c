@@ -128,7 +128,7 @@ int flexran_agent_destroy_ue_state_change(Protocol__FlexranMessage *msg) {
 }
 
 /* this is called by RRC as a part of rrc xface  . The controller previously requested  this*/ 
-void flexran_trigger_rrc_measurements (mid_t mod_id, MeasResults_t*  measResults) {
+void flexran_trigger_rrc_measurements (mid_t mod_id, LTE_MeasResults_t*  measResults) {
 
   // int                   priority = 0; // Warning Preventing
   // void                  *data;

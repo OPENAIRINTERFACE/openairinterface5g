@@ -33,7 +33,7 @@
 
 # if defined(ENABLE_USE_MME)
 
-#include "UL-DCCH-Message.h"
+#include "LTE_UL-DCCH-Message.h"
 
 /* Up link procedures */
 
@@ -106,7 +106,7 @@ void
 rrc_eNB_send_S1AP_UPLINK_NAS(
   const protocol_ctxt_t*    const ctxt_pP,
   rrc_eNB_ue_context_t*          const ue_context_pP,
-  UL_DCCH_Message_t* const ul_dcch_msg
+  LTE_UL_DCCH_Message_t* const ul_dcch_msg
 );
 
 /*! \fn void rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(const protocol_ctxt_t   * const ctxt_pP, eNB_RRC_UE_t * const ue_context_pP, UL_DCCH_Message_t *ul_dcch_msg)
@@ -118,7 +118,7 @@ rrc_eNB_send_S1AP_UPLINK_NAS(
 void rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(
   const protocol_ctxt_t* const ctxt_pP,
   rrc_eNB_ue_context_t*          const ue_context_pP,
-  UL_DCCH_Message_t* ul_dcch_msg
+  LTE_UL_DCCH_Message_t* ul_dcch_msg
 );
 
 /*! \fn rrc_eNB_send_S1AP_NAS_FIRST_REQ(const protocol_ctxt_t* const ctxt_pP,eNB_RRC_UE_t *const ue_context_pP, RRCConnectionSetupComplete_r8_IEs_t *rrcConnectionSetupComplete)
@@ -132,7 +132,7 @@ void
 rrc_eNB_send_S1AP_NAS_FIRST_REQ(
   const protocol_ctxt_t* const ctxt_pP,
   rrc_eNB_ue_context_t*          const ue_context_pP,
-  RRCConnectionSetupComplete_r8_IEs_t* rrcConnectionSetupComplete
+  LTE_RRCConnectionSetupComplete_r8_IEs_t* rrcConnectionSetupComplete
 );
 
 
@@ -278,6 +278,10 @@ int rrc_eNB_process_S1AP_E_RAB_RELEASE_COMMAND(MessageDef *msg_p, const char *ms
  *\return 0 when successful, -1 if the UE index can not be retrieved.
  */
 int rrc_eNB_send_S1AP_E_RAB_RELEASE_RESPONSE(const protocol_ctxt_t* const ctxt_pP, rrc_eNB_ue_context_t*  const ue_context_pP, uint8_t xid );
+
+int rrc_eNB_send_PATH_SWITCH_REQ(const protocol_ctxt_t* const ctxt_pP,
+				  rrc_eNB_ue_context_t*          const ue_context_pP);
+int rrc_eNB_process_S1AP_PATH_SWITCH_REQ_ACK (MessageDef *msg_p, const char *msg_name, instance_t instance);
 
 #   endif
 # endif /* defined(ENABLE_USE_MME) */

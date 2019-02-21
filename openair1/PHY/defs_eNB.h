@@ -85,7 +85,7 @@ typedef struct RU_proc_t_s {
   int subframe_tx;
   /// subframe to act upon for reception of prach
   int subframe_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// subframe to act upon for reception of prach BL/CE UEs
   int subframe_prach_br;
 #endif
@@ -97,7 +97,7 @@ typedef struct RU_proc_t_s {
   int frame_tx_unwrap;
   /// frame to act upon for reception of prach
   int frame_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// frame to act upon for reception of prach
   int frame_prach_br;
 #endif
@@ -109,7 +109,7 @@ typedef struct RU_proc_t_s {
   int instance_cnt_FH1;
   /// \internal This variable is protected by \ref mutex_prach.
   int instance_cnt_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// \internal This variable is protected by \ref mutex_prach.
   int instance_cnt_prach_br;
 #endif
@@ -131,7 +131,7 @@ typedef struct RU_proc_t_s {
   pthread_t pthread_FH1;
   /// pthread structure for RU prach processing thread
   pthread_t pthread_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// pthread structure for RU prach processing thread BL/CE UEs
   pthread_t pthread_prach_br;
 #endif
@@ -154,7 +154,7 @@ typedef struct RU_proc_t_s {
   pthread_attr_t attr_FH1;
   /// pthread attributes for RU prach
   pthread_attr_t attr_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// pthread attributes for RU prach BL/CE UEs
   pthread_attr_t attr_prach_br;
 #endif
@@ -173,7 +173,7 @@ typedef struct RU_proc_t_s {
   struct sched_param sched_param_FH1;
   /// scheduling parameters for RU prach thread
   struct sched_param sched_param_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// scheduling parameters for RU prach thread BL/CE UEs
   struct sched_param sched_param_prach_br;
 #endif
@@ -186,7 +186,7 @@ typedef struct RU_proc_t_s {
   pthread_cond_t cond_FH1;
   /// condition variable for RU prach thread
   pthread_cond_t cond_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// condition variable for RU prach thread BL/CE UEs
   pthread_cond_t cond_prach_br;
 #endif
@@ -207,7 +207,7 @@ typedef struct RU_proc_t_s {
   pthread_mutex_t mutex_FH1;
   /// mutex for RU prach
   pthread_mutex_t mutex_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// mutex for RU prach BL/CE UEs
   pthread_mutex_t mutex_prach_br;
 #endif
@@ -257,9 +257,6 @@ typedef struct RU_proc_t_s {
   pthread_mutex_t mutex_pre_scd;
   int instance_pre_scd;
 #endif
-  /// pipeline ready state
-  int ru_rx_ready;
-  int ru_tx_ready;
   int emulate_rf_busy;
 } RU_proc_t;
 
@@ -359,7 +356,7 @@ typedef struct RU_t_s{
   int (*wakeup_rxtx)(struct PHY_VARS_eNB_s *eNB, struct RU_t_s *ru);
   /// function pointer to wakeup routine in lte-enb.
   void (*wakeup_prach_eNB)(struct PHY_VARS_eNB_s *eNB,struct RU_t_s *ru,int frame,int subframe);
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// function pointer to wakeup routine in lte-enb.
   void (*wakeup_prach_eNB_br)(struct PHY_VARS_eNB_s *eNB,struct RU_t_s *ru,int frame,int subframe);
 #endif
@@ -484,7 +481,7 @@ typedef struct RRU_config_s {
   int prach_FreqOffset[MAX_BANDS_PER_RRU];
   /// prach_ConfigIndex for IF4p5
   int prach_ConfigIndex[MAX_BANDS_PER_RRU];
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   int emtc_prach_CElevel_enable[MAX_BANDS_PER_RRU][4];
   /// emtc_prach_FreqOffset for IF4p5 per CE Level
   int emtc_prach_FreqOffset[MAX_BANDS_PER_RRU][4];
@@ -619,7 +616,7 @@ typedef struct {
   int32_t **prach_ifft[4];
 
   /// repetition number
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// indicator of first frame in a group of PRACH repetitions
   int first_frame[4];
   /// current repetition for each CE level
@@ -648,20 +645,25 @@ typedef struct {
   int frame_rx;
   /// \brief Instance count for RXn-TXnp4 processing thread.
   /// \internal This variable is protected by \ref mutex_rxtx.
-  int instance_cnt_rxtx;
+  int instance_cnt;
   /// pthread structure for RXn-TXnp4 processing thread
-  pthread_t pthread_rxtx;
+  pthread_t pthread;
   /// pthread attributes for RXn-TXnp4 processing thread
-  pthread_attr_t attr_rxtx;
+  pthread_attr_t attr;
   /// condition variable for tx processing thread
-  pthread_cond_t cond_rxtx;
+  pthread_cond_t cond;
   /// mutex for RXn-TXnp4 processing thread
-  pthread_mutex_t mutex_rxtx;
+  pthread_mutex_t mutex;
   /// scheduling parameters for RXn-TXnp4 thread
   struct sched_param sched_param_rxtx;
-  /// pipeline ready state
-  int pipe_ready;
-} eNB_rxtx_proc_t;
+
+  /// \internal This variable is protected by \ref mutex_RUs.
+  int instance_cnt_RUs;
+  /// condition variable for tx processing thread
+  pthread_cond_t cond_RUs;
+  /// mutex for RXn-TXnp4 processing thread
+  pthread_mutex_t mutex_RUs;
+} L1_rxtx_proc_t;
 
 typedef struct {
   struct PHY_VARS_eNB_s *eNB;
@@ -693,7 +695,7 @@ typedef struct {
 } te_params;
 
 /// Context data structure for eNB subframe processing
-typedef struct eNB_proc_t_s {
+typedef struct L1_proc_t_s {
   /// Component Carrier index
   uint8_t              CC_id;
   /// thread index
@@ -706,7 +708,7 @@ typedef struct eNB_proc_t_s {
   int subframe_rx;
   /// subframe to act upon for PRACH
   int subframe_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// subframe to act upon for reception of prach BL/CE UEs
   int subframe_prach_br;
 #endif
@@ -716,7 +718,7 @@ typedef struct eNB_proc_t_s {
   int frame_tx;
   /// frame to act upon for PRACH
   int frame_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// frame to act upon for PRACH BL/CE UEs
   int frame_prach_br;
 #endif
@@ -726,7 +728,7 @@ typedef struct eNB_proc_t_s {
   int instance_cnt_te;
   /// \internal This variable is protected by \ref mutex_prach.
   int instance_cnt_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// \internal This variable is protected by \ref mutex_prach for BL/CE UEs.
   int instance_cnt_prach_br;
 #endif
@@ -748,7 +750,7 @@ typedef struct eNB_proc_t_s {
   pthread_attr_t attr_single;
   /// pthread attributes for prach processing thread
   pthread_attr_t attr_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// pthread attributes for prach processing thread BL/CE UEs
   pthread_attr_t attr_prach_br;
 #endif
@@ -762,7 +764,7 @@ typedef struct eNB_proc_t_s {
   struct sched_param sched_param_single;
   /// scheduling parameters for prach thread
   struct sched_param sched_param_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// scheduling parameters for prach thread
   struct sched_param sched_param_prach_br;
 #endif
@@ -774,7 +776,7 @@ typedef struct eNB_proc_t_s {
   pthread_t pthread_te;
   /// pthread structure for PRACH thread
   pthread_t pthread_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// pthread structure for PRACH thread BL/CE UEs
   pthread_t pthread_prach_br;
 #endif
@@ -784,7 +786,7 @@ typedef struct eNB_proc_t_s {
   pthread_cond_t cond_te;
   /// condition variable for PRACH processing thread;
   pthread_cond_t cond_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// condition variable for PRACH processing thread BL/CE UEs;
   pthread_cond_t cond_prach_br;
 #endif
@@ -796,7 +798,7 @@ typedef struct eNB_proc_t_s {
   pthread_mutex_t mutex_te;
   /// mutex for PRACH thread
   pthread_mutex_t mutex_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// mutex for PRACH thread for BL/CE UEs
   pthread_mutex_t mutex_prach_br;
 #endif
@@ -804,15 +806,19 @@ typedef struct eNB_proc_t_s {
   pthread_mutex_t mutex_asynch_rxtx;
   /// mutex for RU access to eNB processing (PDSCH/PUSCH)
   pthread_mutex_t mutex_RU;
+  /// mutex for eNB processing to access RU TX (PDSCH/PUSCH)
+  pthread_mutex_t mutex_RU_tx;
   /// mutex for RU access to eNB processing (PRACH)
   pthread_mutex_t mutex_RU_PRACH;
   /// mutex for RU access to eNB processing (PRACH BR)
   pthread_mutex_t mutex_RU_PRACH_br;
   /// mask for RUs serving eNB (PDSCH/PUSCH)
   int RU_mask;
+  /// mask for RUs serving eNB (PDSCH/PUSCH)
+  int RU_mask_tx;
   /// mask for RUs serving eNB (PRACH)
   int RU_mask_prach;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// mask for RUs serving eNB (PRACH)
   int RU_mask_prach_br;
 #endif
@@ -821,12 +827,10 @@ typedef struct eNB_proc_t_s {
   /// parameters for turbo-encoding worker thread
   te_params tep[3];
   /// set of scheduling variables RXn-TXnp4 threads
-  eNB_rxtx_proc_t proc_rxtx[2];
+  L1_rxtx_proc_t L1_proc,L1_proc_tx;
   /// stats thread pthread descriptor
   pthread_t process_stats_thread;
-  /// for waking up tx procedure
-  RU_proc_t *ru_proc;
-} eNB_proc_t;
+} L1_proc_t;
 
 
 
@@ -894,7 +898,7 @@ typedef struct PHY_VARS_eNB_s {
   module_id_t          Mod_id;
   uint8_t              CC_id;
   uint8_t              configured;
-  eNB_proc_t           proc;
+  L1_proc_t            proc;
   int                  single_thread_flag;
   int                  abstraction_flag;
   int                  num_RU;
@@ -904,8 +908,6 @@ typedef struct PHY_VARS_eNB_s {
   /// Ethernet parameters for fronthaul interface
   eth_params_t         eth_params;
   int                  rx_total_gain_dB;
-  int                  (*td)(struct PHY_VARS_eNB_s *eNB,int UE_id,int harq_pid,int llr8_flag);
-  int                  (*te)(struct PHY_VARS_eNB_s *,uint8_t *,uint8_t,LTE_eNB_DLSCH_t *,int,uint8_t,time_stats_t *,time_stats_t *,time_stats_t *,time_stats_t *,time_stats_t *,time_stats_t *,time_stats_t *);
   int                  (*start_if)(struct RU_t_s *ru,struct PHY_VARS_eNB_s *eNB);
   uint8_t              local_flag;
   LTE_DL_FRAME_PARMS   frame_parms;
@@ -927,14 +929,14 @@ typedef struct PHY_VARS_eNB_s {
   nfapi_cqi_indication_raw_pdu_t cqi_raw_pdu_list[NFAPI_CQI_IND_MAX_PDU];
   /// NFAPI PRACH information
   nfapi_preamble_pdu_t preamble_list[MAX_NUM_RX_PRACH_PREAMBLES];
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// NFAPI PRACH information BL/CE UEs
   nfapi_preamble_pdu_t preamble_list_br[MAX_NUM_RX_PRACH_PREAMBLES];
 #endif
   Sched_Rsp_t          Sched_INFO;
   LTE_eNB_PDCCH        pdcch_vars[2];
   LTE_eNB_PHICH        phich_vars[2];
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   LTE_eNB_EPDCCH       epdcch_vars[2];
   LTE_eNB_MPDCCH       mpdcch_vars[2];
   LTE_eNB_PRACH        prach_vars_br;
@@ -966,7 +968,7 @@ typedef struct PHY_VARS_eNB_s {
   uint32_t         lte_gold_mbsfn_table[10][3][42];
 
   uint32_t X_u[64][839];
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uint32_t X_u_br[4][64][839];
 #endif
   uint8_t pbch_configured;
@@ -1037,7 +1039,7 @@ typedef struct PHY_VARS_eNB_s {
   uint8_t cba_last_reception[4];
 
   // Pointers for active physicalConfigDedicated to be applied in current subframe
-  struct PhysicalConfigDedicated *physicalConfigDedicated[NUMBER_OF_UE_MAX];
+  struct LTE_PhysicalConfigDedicated *physicalConfigDedicated[NUMBER_OF_UE_MAX];
 
 
   uint32_t rb_mask_ul[4];
@@ -1074,12 +1076,13 @@ typedef struct PHY_VARS_eNB_s {
 
   int hw_timing_advance;
 
-  time_stats_t phy_proc;
   time_stats_t phy_proc_tx;
   time_stats_t phy_proc_rx;
   time_stats_t rx_prach;
 
   time_stats_t ofdm_mod_stats;
+  time_stats_t dlsch_common_and_dci;
+  time_stats_t dlsch_ue_specific;
   time_stats_t dlsch_encoding_stats;
   time_stats_t dlsch_modulation_stats;
   time_stats_t dlsch_scrambling_stats;

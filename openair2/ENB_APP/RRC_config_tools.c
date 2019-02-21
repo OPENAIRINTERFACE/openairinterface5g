@@ -40,11 +40,11 @@
 #   include "sctp_eNB_task.h"
 # endif
 #endif
-#include "SystemInformationBlockType2.h"
+#include "LTE_SystemInformationBlockType2.h"
 #include "common/config/config_userapi.h"
 #include "RRC_config_tools.h"
-#include "DL-GapConfig-NB-r13.h"
-#include "NPRACH-Parameters-NB-r13.h"
+#include "LTE_DL-GapConfig-NB-r13.h"
+#include "LTE_NPRACH-Parameters-NB-r13.h"
 
 static const eutra_band_t eutra_bands[] = {
   { 1, 1920    * MHz, 1980    * MHz, 2110    * MHz, 2170    * MHz, FDD},

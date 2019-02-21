@@ -19,6 +19,13 @@
  *      contact@openairinterface.org
  */
 
+/*! \file x2ap_eNB_management_procedures.h
+ * \brief x2ap tasks for eNB
+ * \author Konstantinos Alexandris <Konstantinos.Alexandris@eurecom.fr>, Cedric Roux <Cedric.Roux@eurecom.fr>, Navid Nikaein <Navid.Nikaein@eurecom.fr>
+ * \date 2018
+ * \version 1.0
+ */
+
 #ifndef X2AP_ENB_MANAGEMENT_PROCEDURES_H_
 #define X2AP_ENB_MANAGEMENT_PROCEDURES_H
 
@@ -29,6 +36,8 @@ void dump_trees(void);
 void x2ap_eNB_insert_new_instance(x2ap_eNB_instance_t *new_instance_p);
 
 x2ap_eNB_instance_t *x2ap_eNB_get_instance(uint8_t mod_id);
+
+x2ap_eNB_instance_t *x2ap_eNB_pci_get_instance(uint32_t pci);
 
 uint16_t x2ap_eNB_fetch_add_global_cnx_id(void);
 

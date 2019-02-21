@@ -47,60 +47,60 @@ int s1ap_eNB_handle_overload_start(uint32_t         assoc_id,
                                    uint32_t         stream,
                                    S1AP_S1AP_PDU_t *pdu)
 {
-  s1ap_eNB_mme_data_t     *mme_desc_p;
-  S1AP_OverloadStart_t    *container;
-  S1AP_OverloadStartIEs_t *ie;
+    s1ap_eNB_mme_data_t     *mme_desc_p;
+    S1AP_OverloadStart_t    *container;
+    S1AP_OverloadStartIEs_t *ie;
 
-  DevAssert(pdu != NULL);
+    DevAssert(pdu != NULL);
 
-  container = &pdu->choice.initiatingMessage.value.choice.OverloadStart;
+    container = &pdu->choice.initiatingMessage.value.choice.OverloadStart;
 
-  S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_OverloadStartIEs_t, ie, container,
-                             S1AP_ProtocolIE_ID_id_OverloadResponse, true);
+    S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_OverloadStartIEs_t, ie, container,
+                               S1AP_ProtocolIE_ID_id_OverloadResponse, true);
+    if (ie != NULL) {
+        DevCheck(ie->value.choice.OverloadResponse.present ==
+                 S1AP_OverloadResponse_PR_overloadAction,
+                 S1AP_OverloadResponse_PR_overloadAction, 0, 0);
+    }
+    /* Non UE-associated signalling -> stream 0 */
+    DevCheck(stream == 0, stream, 0, 0);
 
-  DevCheck(ie->value.choice.OverloadResponse.present ==
-           S1AP_OverloadResponse_PR_overloadAction,
-           S1AP_OverloadResponse_PR_overloadAction, 0, 0);
+    if ((mme_desc_p = s1ap_eNB_get_MME(NULL, assoc_id, 0)) == NULL) {
+        /* No MME context associated */
+        return -1;
+    }
 
-  /* Non UE-associated signalling -> stream 0 */
-  DevCheck(stream == 0, stream, 0, 0);
+    /* Mark the MME as overloaded and set the overload state according to
+     * the value received.
+     */
+    mme_desc_p->state = S1AP_ENB_OVERLOAD;
+    mme_desc_p->overload_state =
+        ie->value.choice.OverloadResponse.choice.overloadAction;
 
-  if ((mme_desc_p = s1ap_eNB_get_MME(NULL, assoc_id, 0)) == NULL) {
-    /* No MME context associated */
-    return -1;
-  }
-
-  /* Mark the MME as overloaded and set the overload state according to
-   * the value received.
-   */
-  mme_desc_p->state = S1AP_ENB_OVERLOAD;
-  mme_desc_p->overload_state =
-    ie->value.choice.OverloadResponse.choice.overloadAction;
-
-  return 0;
+    return 0;
 }
 
 int s1ap_eNB_handle_overload_stop(uint32_t         assoc_id,
                                   uint32_t         stream,
                                   S1AP_S1AP_PDU_t *pdu)
 {
-  /* We received Overload stop message, meaning that the MME is no more
-   * overloaded. This is an empty message, with only message header and no
-   * Information Element.
-   */
-  DevAssert(pdu != NULL);
+    /* We received Overload stop message, meaning that the MME is no more
+     * overloaded. This is an empty message, with only message header and no
+     * Information Element.
+     */
+    DevAssert(pdu != NULL);
 
-  s1ap_eNB_mme_data_t *mme_desc_p;
+    s1ap_eNB_mme_data_t *mme_desc_p;
 
-  /* Non UE-associated signalling -> stream 0 */
-  DevCheck(stream == 0, stream, 0, 0);
+    /* Non UE-associated signalling -> stream 0 */
+    DevCheck(stream == 0, stream, 0, 0);
 
-  if ((mme_desc_p = s1ap_eNB_get_MME(NULL, assoc_id, 0)) == NULL) {
-    /* No MME context associated */
-    return -1;
-  }
+    if ((mme_desc_p = s1ap_eNB_get_MME(NULL, assoc_id, 0)) == NULL) {
+        /* No MME context associated */
+        return -1;
+    }
 
-  mme_desc_p->state = S1AP_ENB_STATE_CONNECTED;
-  mme_desc_p->overload_state = S1AP_NO_OVERLOAD;
-  return 0;
+    mme_desc_p->state = S1AP_ENB_STATE_CONNECTED;
+    mme_desc_p->overload_state = S1AP_NO_OVERLOAD;
+    return 0;
 }

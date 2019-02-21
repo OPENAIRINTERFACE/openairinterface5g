@@ -94,7 +94,7 @@ void et_parse_s1ap(xmlDocPtr doc, const xmlNode const *s1ap_node, et_s1ap_t * co
             xml_char = xmlGetProp((xmlNode *)cur_node, (const xmlChar *)"value");
             if (NULL != xml_char) {
               xml_char2 = xmlGetProp((xmlNode *)cur_node, (const xmlChar *)"name");
-              fprintf(stdout, "s1ap %p field name %s  size %d value %s\n",s1ap, xml_char2, size, xml_char);
+              fprintf(stdout, "s1ap %p field name %s  size %u value %s\n",s1ap, xml_char2, size, xml_char);
               xmlFree(xml_char2);
               // if success to get value, do not parse children
               //AssertFatal ((xmlStrlen(xml_char) == size), "ERROR %s() mismatch in size %d and strlen %d\n", __FUNCTION__, size, xmlStrlen(xml_char));

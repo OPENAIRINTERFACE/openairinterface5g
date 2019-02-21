@@ -38,7 +38,7 @@
 
 UE_PF_PO_t UE_PF_PO[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
 pthread_mutex_t ue_pf_po_mutex;
-UE_RRC_INST *UE_rrc_inst;
+UE_RRC_INST *UE_rrc_inst = NULL;
 #include "LAYER2/MAC/mac_extern.h"
 #define MAX_U32 0xFFFFFFFF
 
@@ -47,34 +47,34 @@ uint8_t DRB2LCHAN[8];
 long logicalChannelGroup0 = 0;
 long  logicalChannelSR_Mask_r9=0;
 
-struct LogicalChannelConfig__ul_SpecificParameters LCSRB1 =  {1,
-         LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity,
+struct LTE_LogicalChannelConfig__ul_SpecificParameters LCSRB1 =  {1,
+         LTE_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity,
          0,
          &logicalChannelGroup0
 };
-struct LogicalChannelConfig__ul_SpecificParameters LCSRB2 =  {3,
-         LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity,
+struct LTE_LogicalChannelConfig__ul_SpecificParameters LCSRB2 =  {3,
+         LTE_LogicalChannelConfig__ul_SpecificParameters__prioritisedBitRate_infinity,
          0,
          &logicalChannelGroup0
 };
 
 
-#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-struct LogicalChannelConfig__ext1 logicalChannelSR_Mask_r9_ext1 = {
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+struct LTE_LogicalChannelConfig__ext1 logicalChannelSR_Mask_r9_ext1 = {
          logicalChannelSR_Mask_r9: &logicalChannelSR_Mask_r9
 };
 #endif
 
 // These are the default SRB configurations from 36.331 (Chapter 9, p. 176-179 in v8.6)
-LogicalChannelConfig_t  SRB1_logicalChannelConfig_defaultValue = {ul_SpecificParameters: &LCSRB1
-#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+LTE_LogicalChannelConfig_t  SRB1_logicalChannelConfig_defaultValue = {ul_SpecificParameters: &LCSRB1
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                                                                   ,
                                                                   ext1: &logicalChannelSR_Mask_r9_ext1
 #endif
                                                                  };
 
-LogicalChannelConfig_t SRB2_logicalChannelConfig_defaultValue = {ul_SpecificParameters: &LCSRB2
-#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+LTE_LogicalChannelConfig_t SRB2_logicalChannelConfig_defaultValue = {ul_SpecificParameters: &LCSRB2
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
                                                                  ,
                                                                  ext1: &logicalChannelSR_Mask_r9_ext1
 #endif

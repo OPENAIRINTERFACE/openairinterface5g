@@ -18,6 +18,14 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
+
+/*! \file x2ap_eNB_handler.c
+ * \brief x2ap handler procedures for eNB
+ * \author Konstantinos Alexandris <Konstantinos.Alexandris@eurecom.fr>, Cedric Roux <Cedric.Roux@eurecom.fr>, Navid Nikaein <Navid.Nikaein@eurecom.fr>
+ * \date 2018
+ * \version 1.0
+ */
+
 #include <stdint.h>
 
 #include "intertask_interface.h"
@@ -52,9 +60,20 @@ int x2ap_eNB_handle_x2_setup_failure (instance_t instance,
                                       uint32_t stream,
                                       X2AP_X2AP_PDU_t *pdu);
 
+static
+int x2ap_eNB_handle_handover_preparation (instance_t instance,
+                                          uint32_t assoc_id,
+                                          uint32_t stream,
+                                          X2AP_X2AP_PDU_t *pdu);
+static
+int x2ap_eNB_handle_handover_response (instance_t instance,
+                                      uint32_t assoc_id,
+                                      uint32_t stream,
+                                      X2AP_X2AP_PDU_t *pdu);
+
 /* Handlers matrix. Only eNB related procedure present here */
 x2ap_message_decoded_callback x2ap_messages_callback[][3] = {
-  { 0, 0, 0 }, /* handoverPreparation */
+  { x2ap_eNB_handle_handover_preparation, x2ap_eNB_handle_handover_response, 0 }, /* handoverPreparation */
   { 0, 0, 0 }, /* handoverCancel */
   { 0, 0, 0 }, /* loadIndication */
   { 0, 0, 0 }, /* errorIndication */
@@ -143,41 +162,105 @@ int x2ap_eNB_handle_message(instance_t instance, uint32_t assoc_id, int32_t stre
                                 const uint8_t *const data, const uint32_t data_length)
 {
   X2AP_X2AP_PDU_t pdu;
-  int ret;
+  int ret = 0;
 
   DevAssert(data != NULL);
 
   memset(&pdu, 0, sizeof(pdu));
+
+  //printf("Data length received: %d\n", data_length);
 
   if (x2ap_eNB_decode_pdu(&pdu, data, data_length) < 0) {
     X2AP_ERROR("Failed to decode PDU\n");
     return -1;
   }
 
-  /* Checking procedure Code and direction of message */
-  if (pdu.choice.initiatingMessage.procedureCode > sizeof(x2ap_messages_callback) / (3 * sizeof(
-        x2ap_message_decoded_callback))
-      || (pdu.present > X2AP_X2AP_PDU_PR_unsuccessfulOutcome)) {
-    X2AP_ERROR("[SCTP %d] Either procedureCode %ld or direction %d exceed expected\n",
-               assoc_id, pdu.choice.initiatingMessage.procedureCode, pdu.present);
-    ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_X2AP_X2AP_PDU, &pdu);
-    return -1;
-  }
+  switch (pdu.present) {
 
-  /* No handler present.
-   * This can mean not implemented or no procedure for eNB (wrong direction).
-   */
-  if (x2ap_messages_callback[pdu.choice.initiatingMessage.procedureCode][pdu.present - 1] == NULL) {
-    X2AP_ERROR("[SCTP %d] No handler for procedureCode %ld in %s\n",
-                assoc_id, pdu.choice.initiatingMessage.procedureCode,
-               x2ap_direction2String(pdu.present - 1));
-    ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_X2AP_X2AP_PDU, &pdu);
-    return -1;
-  }
+  case X2AP_X2AP_PDU_PR_initiatingMessage:
+    /* Checking procedure Code and direction of message */
+    if (pdu.choice.initiatingMessage.procedureCode > sizeof(x2ap_messages_callback) / (3 * sizeof(
+          x2ap_message_decoded_callback))) {
+        //|| (pdu.present > X2AP_X2AP_PDU_PR_unsuccessfulOutcome)) {
+      X2AP_ERROR("[SCTP %d] Either procedureCode %ld exceed expected\n",
+                 assoc_id, pdu.choice.initiatingMessage.procedureCode);
+      ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_X2AP_X2AP_PDU, &pdu);
+      return -1;
+    }
 
-  /* Calling the right handler */
-  ret = (*x2ap_messages_callback[pdu.choice.initiatingMessage.procedureCode][pdu.present - 1])
+    /* No handler present.
+     * This can mean not implemented or no procedure for eNB (wrong direction).
+     */
+    if (x2ap_messages_callback[pdu.choice.initiatingMessage.procedureCode][pdu.present - 1] == NULL) {
+      X2AP_ERROR("[SCTP %d] No handler for procedureCode %ld in %s\n",
+                  assoc_id, pdu.choice.initiatingMessage.procedureCode,
+                 x2ap_direction2String(pdu.present - 1));
+      ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_X2AP_X2AP_PDU, &pdu);
+      return -1;
+    }
+    /* Calling the right handler */
+    ret = (*x2ap_messages_callback[pdu.choice.initiatingMessage.procedureCode][pdu.present - 1])
         (instance, assoc_id, stream, &pdu);
+    break;
+
+  case X2AP_X2AP_PDU_PR_successfulOutcome:
+    /* Checking procedure Code and direction of message */
+    if (pdu.choice.successfulOutcome.procedureCode > sizeof(x2ap_messages_callback) / (3 * sizeof(
+          x2ap_message_decoded_callback))) {
+        //|| (pdu.present > X2AP_X2AP_PDU_PR_unsuccessfulOutcome)) {
+      X2AP_ERROR("[SCTP %d] Either procedureCode %ld exceed expected\n",
+                 assoc_id, pdu.choice.successfulOutcome.procedureCode);
+      ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_X2AP_X2AP_PDU, &pdu);
+      return -1;
+    }
+
+    /* No handler present.
+     * This can mean not implemented or no procedure for eNB (wrong direction).
+     */
+    if (x2ap_messages_callback[pdu.choice.successfulOutcome.procedureCode][pdu.present - 1] == NULL) {
+      X2AP_ERROR("[SCTP %d] No handler for procedureCode %ld in %s\n",
+                  assoc_id, pdu.choice.successfulOutcome.procedureCode,
+                 x2ap_direction2String(pdu.present - 1));
+      ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_X2AP_X2AP_PDU, &pdu);
+      return -1;
+    }
+    /* Calling the right handler */
+    ret = (*x2ap_messages_callback[pdu.choice.successfulOutcome.procedureCode][pdu.present - 1])
+        (instance, assoc_id, stream, &pdu);
+    break;
+
+  case X2AP_X2AP_PDU_PR_unsuccessfulOutcome:
+    /* Checking procedure Code and direction of message */
+    if (pdu.choice.unsuccessfulOutcome.procedureCode > sizeof(x2ap_messages_callback) / (3 * sizeof(
+          x2ap_message_decoded_callback))) {
+        //|| (pdu.present > X2AP_X2AP_PDU_PR_unsuccessfulOutcome)) {
+      X2AP_ERROR("[SCTP %d] Either procedureCode %ld exceed expected\n",
+                 assoc_id, pdu.choice.unsuccessfulOutcome.procedureCode);
+      ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_X2AP_X2AP_PDU, &pdu);
+      return -1;
+    }
+
+    /* No handler present.
+     * This can mean not implemented or no procedure for eNB (wrong direction).
+     */
+    if (x2ap_messages_callback[pdu.choice.unsuccessfulOutcome.procedureCode][pdu.present - 1] == NULL) {
+      X2AP_ERROR("[SCTP %d] No handler for procedureCode %ld in %s\n",
+                  assoc_id, pdu.choice.unsuccessfulOutcome.procedureCode,
+                  x2ap_direction2String(pdu.present - 1));
+      ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_X2AP_X2AP_PDU, &pdu);
+      return -1;
+    }
+    /* Calling the right handler */
+    ret = (*x2ap_messages_callback[pdu.choice.unsuccessfulOutcome.procedureCode][pdu.present - 1])
+        (instance, assoc_id, stream, &pdu);
+    break;
+
+  default:
+    X2AP_ERROR("[SCTP %d] Direction %d exceed expected\n",
+               assoc_id, pdu.present);
+    break;
+  }
+
   ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_X2AP_X2AP_PDU, &pdu);
   return ret;
 }
@@ -191,6 +274,7 @@ x2ap_eNB_handle_x2_setup_request(instance_t instance,
 
   X2AP_X2SetupRequest_t              *x2SetupRequest;
   X2AP_X2SetupRequest_IEs_t          *ie;
+  ServedCells__Member                *servedCellMember;
 
   x2ap_eNB_data_t                    *x2ap_eNB_data;
   uint32_t                           eNB_id = 0;
@@ -219,27 +303,31 @@ x2ap_eNB_handle_x2_setup_request(instance_t instance,
 
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_X2SetupRequest_IEs_t, ie, x2SetupRequest,
                              X2AP_ProtocolIE_ID_id_GlobalENB_ID, true);
-
-  if (ie->value.choice.GlobalENB_ID.eNB_ID.present == X2AP_ENB_ID_PR_home_eNB_ID) {
-    // Home eNB ID = 28 bits
-    uint8_t  *eNB_id_buf = ie->value.choice.GlobalENB_ID.eNB_ID.choice.home_eNB_ID.buf;
-
-    if (ie->value.choice.GlobalENB_ID.eNB_ID.choice.macro_eNB_ID.size != 28) {
-      //TODO: handle case were size != 28 -> notify ? reject ?
-    }
-
-    eNB_id = (eNB_id_buf[0] << 20) + (eNB_id_buf[1] << 12) + (eNB_id_buf[2] << 4) + ((eNB_id_buf[3] & 0xf0) >> 4);
-    X2AP_DEBUG("Home eNB id: %07x\n", eNB_id);
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    return -1;
   } else {
+    if (ie->value.choice.GlobalENB_ID.eNB_ID.present == X2AP_ENB_ID_PR_home_eNB_ID) {
+    // Home eNB ID = 28 bits
+      uint8_t  *eNB_id_buf = ie->value.choice.GlobalENB_ID.eNB_ID.choice.home_eNB_ID.buf;
+
+      if (ie->value.choice.GlobalENB_ID.eNB_ID.choice.macro_eNB_ID.size != 28) {
+      //TODO: handle case were size != 28 -> notify ? reject ?
+      }
+
+      eNB_id = (eNB_id_buf[0] << 20) + (eNB_id_buf[1] << 12) + (eNB_id_buf[2] << 4) + ((eNB_id_buf[3] & 0xf0) >> 4);
+      X2AP_DEBUG("Home eNB id: %07x\n", eNB_id);
+    } else {
     // Macro eNB = 20 bits
-    uint8_t *eNB_id_buf = ie->value.choice.GlobalENB_ID.eNB_ID.choice.macro_eNB_ID.buf;
+      uint8_t *eNB_id_buf = ie->value.choice.GlobalENB_ID.eNB_ID.choice.macro_eNB_ID.buf;
 
-    if (ie->value.choice.GlobalENB_ID.eNB_ID.choice.macro_eNB_ID.size != 20) {
+      if (ie->value.choice.GlobalENB_ID.eNB_ID.choice.macro_eNB_ID.size != 20) {
       //TODO: handle case were size != 20 -> notify ? reject ?
-    }
+      }
 
-    eNB_id = (eNB_id_buf[0] << 12) + (eNB_id_buf[1] << 4) + ((eNB_id_buf[2] & 0xf0) >> 4);
-    X2AP_DEBUG("macro eNB id: %05x\n", eNB_id);
+      eNB_id = (eNB_id_buf[0] << 12) + (eNB_id_buf[1] << 4) + ((eNB_id_buf[2] & 0xf0) >> 4);
+      X2AP_DEBUG("macro eNB id: %05x\n", eNB_id);
+    }
   }
 
   X2AP_DEBUG("Adding eNB to the list of associated eNBs\n");
@@ -283,6 +371,21 @@ x2ap_eNB_handle_x2_setup_request(instance_t instance,
      */
   }
 
+  /* Set proper pci */
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_X2SetupRequest_IEs_t, ie, x2SetupRequest,
+                             X2AP_ProtocolIE_ID_id_ServedCells, true);
+
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    return -1;
+  } else if (ie->value.choice.ServedCells.list.count > 0) {
+    x2ap_eNB_data->x2ap_eNB_instance->num_cc = ie->value.choice.ServedCells.list.count;
+    for (int i=0; i<ie->value.choice.ServedCells.list.count;i++) {
+      servedCellMember = (ServedCells__Member *)ie->value.choice.ServedCells.list.array[i];
+      x2ap_eNB_data->x2ap_eNB_instance->Nid_target_cell[i] = servedCellMember->servedCellInfo.pCI;
+    }
+  }
+
   return x2ap_eNB_generate_x2_setup_response(x2ap_eNB_data);
 }
 
@@ -295,6 +398,7 @@ int x2ap_eNB_handle_x2_setup_response(instance_t instance,
 
   X2AP_X2SetupResponse_t              *x2SetupResponse;
   X2AP_X2SetupResponse_IEs_t          *ie;
+  ServedCells__Member                 *servedCellMember;
 
   x2ap_eNB_data_t                     *x2ap_eNB_data;
   uint32_t                            eNB_id = 0;
@@ -322,6 +426,10 @@ int x2ap_eNB_handle_x2_setup_response(instance_t instance,
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_X2SetupResponse_IEs_t, ie, x2SetupResponse,
                              X2AP_ProtocolIE_ID_id_GlobalENB_ID, true);
 
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    return -1;
+  }
   if (ie->value.choice.GlobalENB_ID.eNB_ID.present == X2AP_ENB_ID_PR_home_eNB_ID) {
     // Home eNB ID = 28 bits
     uint8_t  *eNB_id_buf = ie->value.choice.GlobalENB_ID.eNB_ID.choice.home_eNB_ID.buf;
@@ -365,6 +473,21 @@ int x2ap_eNB_handle_x2_setup_response(instance_t instance,
     /*
      * TODO: call the reset procedure
      */
+  }
+
+  /* Set proper pci */
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_X2SetupResponse_IEs_t, ie, x2SetupResponse,
+                             X2AP_ProtocolIE_ID_id_ServedCells, true);
+
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    return -1;
+  } else if (ie->value.choice.ServedCells.list.count > 0) {
+    x2ap_eNB_data->x2ap_eNB_instance->num_cc = ie->value.choice.ServedCells.list.count;
+    for (int i=0; i<ie->value.choice.ServedCells.list.count;i++) {
+      servedCellMember = (ServedCells__Member *)ie->value.choice.ServedCells.list.array[i];
+      x2ap_eNB_data->x2ap_eNB_instance->Nid_target_cell[i] = servedCellMember->servedCellInfo.pCI;
+    }
   }
 
   /* Optionaly set the target eNB name */
@@ -416,7 +539,10 @@ int x2ap_eNB_handle_x2_setup_failure(instance_t instance,
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_X2SetupFailure_IEs_t, ie, x2SetupFailure,
                              X2AP_ProtocolIE_ID_id_Cause, true);
 
-
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    return -1;
+  }
   // need a FSM to handle all cases
   if ((ie->value.choice.Cause.present == X2AP_Cause_PR_misc) &&
       (ie->value.choice.Cause.choice.misc == X2AP_CauseMisc_unspecified)) {
@@ -428,5 +554,175 @@ int x2ap_eNB_handle_x2_setup_failure(instance_t instance,
   x2ap_eNB_data->state = X2AP_ENB_STATE_WAITING;
   x2ap_handle_x2_setup_message(x2ap_eNB_data, 0);
 
+  return 0;
+}
+
+static
+int x2ap_eNB_handle_handover_preparation (instance_t instance,
+                                          uint32_t assoc_id,
+                                          uint32_t stream,
+                                          X2AP_X2AP_PDU_t *pdu)
+{
+
+  X2AP_HandoverRequest_t             *x2HandoverRequest;
+  X2AP_HandoverRequest_IEs_t         *ie;
+
+  X2AP_E_RABs_ToBeSetup_ItemIEs_t    *e_RABS_ToBeSetup_ItemIEs;
+  X2AP_E_RABs_ToBeSetup_Item_t       *e_RABs_ToBeSetup_Item;
+
+  x2ap_eNB_data_t                    *x2ap_eNB_data;
+  MessageDef                         *msg;
+
+  DevAssert (pdu != NULL);
+  x2HandoverRequest = &pdu->choice.initiatingMessage.value.choice.HandoverRequest;
+
+  if (stream == 0) {
+    X2AP_ERROR ("Received new x2 handover request on stream == 0\n");
+    /* TODO: send a x2 failure response */
+    return 0;
+  }
+
+  X2AP_DEBUG ("Received a new X2 handover request\n");
+
+  x2ap_eNB_data = x2ap_get_eNB(NULL, assoc_id, 0);
+  DevAssert(x2ap_eNB_data != NULL);
+
+  msg = itti_alloc_new_message(TASK_X2AP, X2AP_HANDOVER_REQ);
+
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_HandoverRequest_IEs_t, ie, x2HandoverRequest,
+                             X2AP_ProtocolIE_ID_id_Old_eNB_UE_X2AP_ID, true);
+  //X2AP_HANDOVER_REQ(msg).source_rnti = ctxt_pP->rnti;
+  //X2AP_HANDOVER_REQ(m).source_x2id = x2HandoverRequest->old_eNB_UE_X2AP_ID;
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    return -1;
+  } else {
+    X2AP_HANDOVER_REQ(msg).old_eNB_ue_x2ap_id = ie->value.choice.UE_X2AP_ID;
+  }
+
+  //X2AP_HANDOVER_REQ(msg).target_physCellId = measResults2->measResultNeighCells->choice.
+                                               //measResultListEUTRA.list.array[ncell_index]->physCellId;
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_HandoverRequest_IEs_t, ie, x2HandoverRequest,
+                             X2AP_ProtocolIE_ID_id_GUMMEI_ID, true);
+
+  TBCD_TO_MCC_MNC(&ie->value.choice.ECGI.pLMN_Identity, X2AP_HANDOVER_REQ(msg).ue_gummei.mcc,
+                  X2AP_HANDOVER_REQ(msg).ue_gummei.mnc, X2AP_HANDOVER_REQ(msg).ue_gummei.mnc_len);
+  OCTET_STRING_TO_INT8(&ie->value.choice.GUMMEI.mME_Code, X2AP_HANDOVER_REQ(msg).ue_gummei.mme_code);
+  OCTET_STRING_TO_INT16(&ie->value.choice.GUMMEI.gU_Group_ID.mME_Group_ID, X2AP_HANDOVER_REQ(msg).ue_gummei.mme_group_id);
+
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_HandoverRequest_IEs_t, ie, x2HandoverRequest,
+                             X2AP_ProtocolIE_ID_id_UE_ContextInformation, true);
+
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    return -1;
+  }
+
+  X2AP_HANDOVER_REQ(msg).mme_ue_s1ap_id = ie->value.choice.UE_ContextInformation.mME_UE_S1AP_ID;
+  X2AP_HANDOVER_REQ(msg).target_mod_id = x2ap_eNB_data->x2ap_eNB_instance->eNB_id;
+  X2AP_HANDOVER_REQ(msg).security_capabilities.encryption_algorithms =
+    BIT_STRING_to_uint16(&ie->value.choice.UE_ContextInformation.uESecurityCapabilities.encryptionAlgorithms);
+  X2AP_HANDOVER_REQ(msg).security_capabilities.integrity_algorithms =
+    BIT_STRING_to_uint16(&ie->value.choice.UE_ContextInformation.uESecurityCapabilities.integrityProtectionAlgorithms);
+
+  //X2AP_HANDOVER_REQ(msg).ue_ambr=ue_context_pP->ue_context.ue_ambr;
+
+  if ((ie->value.choice.UE_ContextInformation.aS_SecurityInformation.key_eNodeB_star.buf) &&
+          (ie->value.choice.UE_ContextInformation.aS_SecurityInformation.key_eNodeB_star.size == 32)) {
+    memcpy(X2AP_HANDOVER_REQ(msg).kenb, ie->value.choice.UE_ContextInformation.aS_SecurityInformation.key_eNodeB_star.buf, 32);
+    X2AP_HANDOVER_REQ(msg).kenb_ncc = ie->value.choice.UE_ContextInformation.aS_SecurityInformation.nextHopChainingCount;
+  } else {
+    X2AP_WARN ("Size of eNB key star does not match the expected value\n");
+  }
+
+  if (ie->value.choice.UE_ContextInformation.e_RABs_ToBeSetup_List.list.count > 0) {
+
+    X2AP_HANDOVER_REQ(msg).nb_e_rabs_tobesetup = ie->value.choice.UE_ContextInformation.e_RABs_ToBeSetup_List.list.count;
+
+    for (int i=0;i<ie->value.choice.UE_ContextInformation.e_RABs_ToBeSetup_List.list.count;i++) {
+      e_RABS_ToBeSetup_ItemIEs = (X2AP_E_RABs_ToBeSetup_ItemIEs_t *) ie->value.choice.UE_ContextInformation.e_RABs_ToBeSetup_List.list.array[i];
+      e_RABs_ToBeSetup_Item = &e_RABS_ToBeSetup_ItemIEs->value.choice.E_RABs_ToBeSetup_Item;
+
+      X2AP_HANDOVER_REQ(msg).e_rabs_tobesetup[i].e_rab_id = e_RABs_ToBeSetup_Item->e_RAB_ID ;
+
+      memcpy(X2AP_HANDOVER_REQ(msg).e_rabs_tobesetup[i].eNB_addr.buffer,
+                     e_RABs_ToBeSetup_Item->uL_GTPtunnelEndpoint.transportLayerAddress.buf,
+                     e_RABs_ToBeSetup_Item->uL_GTPtunnelEndpoint.transportLayerAddress.size);
+
+      X2AP_HANDOVER_REQ(msg).e_rabs_tobesetup[i].eNB_addr.length =
+                      e_RABs_ToBeSetup_Item->uL_GTPtunnelEndpoint.transportLayerAddress.size * 8 - e_RABs_ToBeSetup_Item->uL_GTPtunnelEndpoint.transportLayerAddress.bits_unused;
+
+      OCTET_STRING_TO_INT32(&e_RABs_ToBeSetup_Item->uL_GTPtunnelEndpoint.gTP_TEID,
+                                                X2AP_HANDOVER_REQ(msg).e_rabs_tobesetup[i].gtp_teid);
+
+      X2AP_HANDOVER_REQ(msg).e_rab_param[i].qos.qci = e_RABs_ToBeSetup_Item->e_RAB_Level_QoS_Parameters.qCI;
+      X2AP_HANDOVER_REQ(msg).e_rab_param[i].qos.allocation_retention_priority.priority_level = e_RABs_ToBeSetup_Item->e_RAB_Level_QoS_Parameters.allocationAndRetentionPriority.priorityLevel;
+      X2AP_HANDOVER_REQ(msg).e_rab_param[i].qos.allocation_retention_priority.pre_emp_capability = e_RABs_ToBeSetup_Item->e_RAB_Level_QoS_Parameters.allocationAndRetentionPriority.pre_emptionCapability;
+      X2AP_HANDOVER_REQ(msg).e_rab_param[i].qos.allocation_retention_priority.pre_emp_vulnerability = e_RABs_ToBeSetup_Item->e_RAB_Level_QoS_Parameters.allocationAndRetentionPriority.pre_emptionVulnerability;
+    }
+
+  }
+  else {
+    X2AP_ERROR ("Can't decode the e_RABs_ToBeSetup_List \n");
+  }
+
+  X2AP_RRC_Context_t *c = &ie->value.choice.UE_ContextInformation.rRC_Context;
+
+  if (c->size > 1024 /* TODO: this is the size of rrc_buffer in struct x2ap_handover_req_ack_s*/)
+    { printf("%s:%d: fatal: buffer too big\n", __FILE__, __LINE__); abort(); }
+
+  memcpy(X2AP_HANDOVER_REQ_ACK(msg).rrc_buffer, c->buf, c->size);
+  X2AP_HANDOVER_REQ_ACK(msg).rrc_buffer_size = c->size;
+
+  itti_send_msg_to_task(TASK_RRC_ENB, x2ap_eNB_data->x2ap_eNB_instance->instance, msg);
+
+  return 0;
+}
+
+static
+int x2ap_eNB_handle_handover_response (instance_t instance,
+                                       uint32_t assoc_id,
+                                       uint32_t stream,
+                                       X2AP_X2AP_PDU_t *pdu)
+{
+  X2AP_HandoverRequestAcknowledge_t             *x2HandoverRequestAck;
+  X2AP_HandoverRequestAcknowledge_IEs_t         *ie;
+
+  x2ap_eNB_data_t                               *x2ap_eNB_data;
+  MessageDef                                    *msg;
+
+  DevAssert (pdu != NULL);
+  x2HandoverRequestAck = &pdu->choice.successfulOutcome.value.choice.HandoverRequestAcknowledge;
+
+  if (stream == 0) {
+    X2AP_ERROR ("Received new x2 handover response on stream == 0\n");
+    /* TODO: send a x2 failure response */
+    return 0;
+  }
+
+  X2AP_DEBUG ("Received a new X2 handover response\n");
+
+  x2ap_eNB_data = x2ap_get_eNB(NULL, assoc_id, 0);
+  DevAssert(x2ap_eNB_data != NULL);
+
+
+  msg = itti_alloc_new_message(TASK_X2AP, X2AP_HANDOVER_REQ_ACK);
+  /* TODO: fill the message */
+  //extern int x2id_to_source_rnti[1];
+  //X2AP_HANDOVER_REQ_ACK(m).source_x2id = x2HandoverRequestAck->old_eNB_UE_X2AP_ID;
+  //X2AP_HANDOVER_REQ_ACK(m).source_rnti = x2id_to_source_rnti[x2HandoverRequestAck->old_eNB_UE_X2AP_ID];
+
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_HandoverRequestAcknowledge_IEs_t, ie, x2HandoverRequestAck,
+                             X2AP_ProtocolIE_ID_id_TargeteNBtoSource_eNBTransparentContainer, true);
+
+  X2AP_TargeteNBtoSource_eNBTransparentContainer_t *c = &ie->value.choice.TargeteNBtoSource_eNBTransparentContainer;
+
+  if (c->size > 1024 /* TODO: this is the size of rrc_buffer in struct x2ap_handover_req_ack_s*/)
+    { printf("%s:%d: fatal: buffer too big\n", __FILE__, __LINE__); abort(); }
+
+  memcpy(X2AP_HANDOVER_REQ_ACK(msg).rrc_buffer, c->buf, c->size);
+  X2AP_HANDOVER_REQ_ACK(msg).rrc_buffer_size = c->size;
+
+  itti_send_msg_to_task(TASK_RRC_ENB, x2ap_eNB_data->x2ap_eNB_instance->instance, msg);
   return 0;
 }

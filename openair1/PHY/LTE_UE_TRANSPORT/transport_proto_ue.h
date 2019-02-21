@@ -1361,6 +1361,10 @@ void init_ul_hopping(LTE_DL_FRAME_PARMS *frame_parms);
   @param nB nB from 36.304 (0=4T,1=2T,2=T,3=T/2,4=T/4,5=T/8,6=T/16,7=T/32*/
 int init_ue_paging_info(PHY_VARS_UE *ue, long defaultPagingCycle, long nB);
 
+#ifdef Rel14
+void init_mpdcch(PHY_VARS_eNB *eNB);
+#endif
+
 int32_t compareints (const void * a, const void * b);
 
 
@@ -1437,8 +1441,6 @@ uint8_t rx_pcfich(LTE_DL_FRAME_PARMS *frame_parms,
 
 void generate_phich_reg_mapping(LTE_DL_FRAME_PARMS *frame_parms);
 
-
-void init_transport_channels(uint8_t);
 
 void generate_RIV_tables(void);
 
@@ -1607,7 +1609,6 @@ void generate_pucch3x(int32_t **txdataF,
                     int16_t amp,
                     uint8_t subframe,
                     uint16_t rnti);
-
 
 void init_ulsch_power_LUT(void);
 

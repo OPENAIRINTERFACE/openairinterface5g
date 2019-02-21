@@ -33,16 +33,16 @@
 #include "COMMON/platform_types.h"
 #include "COMMON/platform_constants.h"
 #include "SCHED_UE/sched_UE.h"
-#include "SystemInformationBlockType2.h"
+#include "LTE_SystemInformationBlockType2.h"
 //#include "RadioResourceConfigCommonSIB.h"
-#include "RadioResourceConfigDedicated.h"
-#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
-#include "PRACH-ConfigSIB-v1310.h"
+#include "LTE_RadioResourceConfigDedicated.h"
+#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
+#include "LTE_PRACH-ConfigSIB-v1310.h"
 #endif
-#include "MeasGapConfig.h"
-#include "MeasObjectToAddModList.h"
-#include "TDD-Config.h"
-#include "MAC-MainConfig.h"
+#include "LTE_MeasGapConfig.h"
+#include "LTE_MeasObjectToAddModList.h"
+#include "LTE_TDD-Config.h"
+#include "LTE_MAC-MainConfig.h"
 #include "mac.h"
 #include "mac_proto.h"
 #include "mac_extern.h"
@@ -51,11 +51,11 @@
 #include "PHY/INIT/phy_init.h"
 
 #include "common/ran_context.h"
-#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-#include "MBSFN-AreaInfoList-r9.h"
-#include "MBSFN-AreaInfo-r9.h"
-#include "MBSFN-SubframeConfigList.h"
-#include "PMCH-InfoList-r9.h"
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+#include "LTE_MBSFN-AreaInfoList-r9.h"
+#include "LTE_MBSFN-AreaInfo-r9.h"
+#include "LTE_MBSFN-SubframeConfigList.h"
+#include "LTE_PMCH-InfoList-r9.h"
 #endif
 
 extern void mac_init_cell_params(int Mod_idP,int CC_idP);
@@ -107,38 +107,38 @@ int
 rrc_mac_config_req_ue(module_id_t Mod_idP,
 		      int CC_idP,
 		      uint8_t eNB_index,
-		      RadioResourceConfigCommonSIB_t *
+		      LTE_RadioResourceConfigCommonSIB_t *
 		      radioResourceConfigCommon,
-		      struct PhysicalConfigDedicated
+		      struct LTE_PhysicalConfigDedicated
 		      *physicalConfigDedicated,
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-		      SCellToAddMod_r10_t * sCellToAddMod_r10,
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+		      LTE_SCellToAddMod_r10_t * sCellToAddMod_r10,
 		      //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
-		      MeasObjectToAddMod_t ** measObj,
-		      MAC_MainConfig_t * mac_MainConfig,
+		      LTE_MeasObjectToAddMod_t ** measObj,
+		      LTE_MAC_MainConfig_t * mac_MainConfig,
 		      long logicalChannelIdentity,
-		      LogicalChannelConfig_t * logicalChannelConfig,
-		      MeasGapConfig_t * measGapConfig,
-		      TDD_Config_t * tdd_Config,
-		      MobilityControlInfo_t * mobilityControlInfo,
+		      LTE_LogicalChannelConfig_t * logicalChannelConfig,
+		      LTE_MeasGapConfig_t * measGapConfig,
+		      LTE_TDD_Config_t * tdd_Config,
+		      LTE_MobilityControlInfo_t * mobilityControlInfo,
 		      uint8_t * SIwindowsize,
 		      uint16_t * SIperiod,
-		      ARFCN_ValueEUTRA_t * ul_CarrierFreq,
+		      LTE_ARFCN_ValueEUTRA_t * ul_CarrierFreq,
 		      long *ul_Bandwidth,
-		      AdditionalSpectrumEmission_t *
+		      LTE_AdditionalSpectrumEmission_t *
 		      additionalSpectrumEmission,
-		      struct MBSFN_SubframeConfigList
+		      struct LTE_MBSFN_SubframeConfigList
 		      *mbsfn_SubframeConfigList
-#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 		      , uint8_t MBMS_Flag,
-		      MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList,
-		      PMCH_InfoList_r9_t * pmch_InfoList
+		      LTE_MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList,
+		      LTE_PMCH_InfoList_r9_t * pmch_InfoList
 #endif
 #ifdef CBA
 		      , uint8_t num_active_cba_groups, uint16_t cba_rnti
 #endif
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   ,config_action_t  config_action
   ,const uint32_t * const sourceL2Id
   ,const uint32_t * const destinationL2Id
@@ -219,11 +219,11 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 	  mac_MainConfig->ul_SCH_Config->periodicBSR_Timer;
       } else {
 	UE_mac_inst[Mod_idP].scheduling_info.periodicBSR_Timer =
-#if (RRC_VERSION < MAKE_VERSION(12, 0, 0))
+#if (LTE_RRC_VERSION < MAKE_VERSION(12, 0, 0))
 	  (uint16_t)
-	  MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity
+	  LTE_MAC_MainConfig__ul_SCH_Config__periodicBSR_Timer_infinity
 #else
-	  (uint16_t) PeriodicBSR_Timer_r12_infinity;
+	  (uint16_t) LTE_PeriodicBSR_Timer_r12_infinity;
 #endif
 	;
       }
@@ -234,7 +234,7 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
       } else {
 	UE_mac_inst[Mod_idP].scheduling_info.maxHARQ_Tx =
 	  (uint16_t)
-	  MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
+	  LTE_MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
       }
       if(nfapi_mode!=3)
         phy_config_harq_ue(Mod_idP, 0, eNB_index,
@@ -246,17 +246,17 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 	  (uint16_t) mac_MainConfig->ul_SCH_Config->
 	  retxBSR_Timer;
       } else {
-#if (RRC_VERSION < MAKE_VERSION(12, 0, 0))
+#if (LTE_RRC_VERSION < MAKE_VERSION(12, 0, 0))
 	UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer =
 	  (uint16_t)
-	  MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf2560;
+	  LTE_MAC_MainConfig__ul_SCH_Config__retxBSR_Timer_sf2560;
 #else
 	UE_mac_inst[Mod_idP].scheduling_info.retxBSR_Timer =
-	  (uint16_t) RetxBSR_Timer_r12_sf2560;
+	  (uint16_t) LTE_RetxBSR_Timer_r12_sf2560;
 #endif
       }
     }
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
     if (mac_MainConfig->ext1
 	&& mac_MainConfig->ext1->sr_ProhibitTimer_r9) {
@@ -326,13 +326,13 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
     } else {
       UE_mac_inst[Mod_idP].PHR_reconfigured = 0;
       UE_mac_inst[Mod_idP].PHR_state =
-	MAC_MainConfig__phr_Config_PR_setup;
+	LTE_MAC_MainConfig__phr_Config_PR_setup;
       UE_mac_inst[Mod_idP].scheduling_info.periodicPHR_Timer =
-	MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf20;
+	LTE_MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf20;
       UE_mac_inst[Mod_idP].scheduling_info.prohibitPHR_Timer =
-	MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf20;
+	LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf20;
       UE_mac_inst[Mod_idP].scheduling_info.PathlossChange =
-	MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB1;
+	LTE_MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB1;
     }
 
     UE_mac_inst[Mod_idP].scheduling_info.periodicPHR_SF =
@@ -362,7 +362,7 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 			      physicalConfigDedicated);
     UE_mac_inst[Mod_idP].physicalConfigDedicated = physicalConfigDedicated;	// for SR proc
   }
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   if (sCellToAddMod_r10 != NULL) {
 
@@ -374,7 +374,9 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 #endif
 
   if (measObj != NULL) {
-    if (measObj[0] != NULL) {
+    if (measObj[0] != NULL &&
+        measObj[0]->measObject.present == LTE_MeasObjectToAddMod__measObject_PR_measObjectEUTRA &&
+        measObj[0]->measObject.choice.measObjectEUTRA.cellsToAddModList != NULL) {
       UE_mac_inst[Mod_idP].n_adj_cells =
 	measObj[0]->measObject.choice.
 	measObjectEUTRA.cellsToAddModList->list.count;
@@ -410,14 +412,14 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 	     rach_ConfigCommon,
 	     (void *) mobilityControlInfo->
 	     radioResourceConfigCommon.rach_ConfigCommon,
-	     sizeof(RACH_ConfigCommon_t));
+	     sizeof(LTE_RACH_ConfigCommon_t));
     }
 
     memcpy((void *) &UE_mac_inst[Mod_idP].
 	   radioResourceConfigCommon->prach_Config.prach_ConfigInfo,
 	   (void *) mobilityControlInfo->
 	   radioResourceConfigCommon.prach_Config.prach_ConfigInfo,
-	   sizeof(PRACH_ConfigInfo_t));
+	   sizeof(LTE_PRACH_ConfigInfo_t));
     UE_mac_inst[Mod_idP].radioResourceConfigCommon->
       prach_Config.rootSequenceIndex =
       mobilityControlInfo->radioResourceConfigCommon.
@@ -430,19 +432,19 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 	     pdsch_ConfigCommon,
 	     (void *) mobilityControlInfo->
 	     radioResourceConfigCommon.pdsch_ConfigCommon,
-	     sizeof(PDSCH_ConfigCommon_t));
+	     sizeof(LTE_PDSCH_ConfigCommon_t));
     }
     // not a pointer: mobilityControlInfo->radioResourceConfigCommon.pusch_ConfigCommon
     memcpy((void *) &UE_mac_inst[Mod_idP].
 	   radioResourceConfigCommon->pusch_ConfigCommon,
 	   (void *) &mobilityControlInfo->
 	   radioResourceConfigCommon.pusch_ConfigCommon,
-	   sizeof(PUSCH_ConfigCommon_t));
+	   sizeof(LTE_PUSCH_ConfigCommon_t));
 
     if (mobilityControlInfo->radioResourceConfigCommon.phich_Config) {
       /* memcpy((void *)&UE_mac_inst[Mod_idP].radioResourceConfigCommon->phich_Config,
 	 (void *)mobilityControlInfo->radioResourceConfigCommon.phich_Config,
-	 sizeof(PHICH_Config_t)); */
+	 sizeof(LTE_PHICH_Config_t)); */
     }
 
     if (mobilityControlInfo->radioResourceConfigCommon.
@@ -452,7 +454,7 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 	     pucch_ConfigCommon,
 	     (void *) mobilityControlInfo->
 	     radioResourceConfigCommon.pucch_ConfigCommon,
-	     sizeof(PUCCH_ConfigCommon_t));
+	     sizeof(LTE_PUCCH_ConfigCommon_t));
     }
 
     if (mobilityControlInfo->
@@ -462,7 +464,7 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 	     soundingRS_UL_ConfigCommon,
 	     (void *) mobilityControlInfo->
 	     radioResourceConfigCommon.soundingRS_UL_ConfigCommon,
-	     sizeof(SoundingRS_UL_ConfigCommon_t));
+	     sizeof(LTE_SoundingRS_UL_ConfigCommon_t));
     }
 
     if (mobilityControlInfo->
@@ -472,7 +474,7 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 	     uplinkPowerControlCommon,
 	     (void *) mobilityControlInfo->
 	     radioResourceConfigCommon.uplinkPowerControlCommon,
-	     sizeof(UplinkPowerControlCommon_t));
+	     sizeof(LTE_UplinkPowerControlCommon_t));
     }
     //configure antennaInfoCommon somewhere here..
     if (mobilityControlInfo->radioResourceConfigCommon.p_Max) {
@@ -491,7 +493,7 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
 	     ul_CyclicPrefixLength,
 	     (void *) mobilityControlInfo->
 	     radioResourceConfigCommon.ul_CyclicPrefixLength,
-	     sizeof(UL_CyclicPrefixLength_t));
+	     sizeof(LTE_UL_CyclicPrefixLength_t));
     }
     // store the previous rnti in case of failure, and set thenew rnti
     UE_mac_inst[Mod_idP].crnti_before_ho = UE_mac_inst[Mod_idP].crnti;
@@ -532,7 +534,7 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
       //    UE_mac_inst[Mod_idP].mbsfn_SubframeConfig[i]->subframeAllocation.choice.oneFrame.buf[0]);
     }
   }
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   if (mbsfn_AreaInfoList != NULL) {
     LOG_I(MAC, "[UE %d][CONFIG] Received %d MBSFN Area Info\n",
@@ -590,7 +592,7 @@ rrc_mac_config_req_ue(module_id_t Mod_idP,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
     (VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);
   //for D2D
-  #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+  #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
     switch (config_action) {
     case CONFIG_ACTION_ADD:
        if (sourceL2Id){

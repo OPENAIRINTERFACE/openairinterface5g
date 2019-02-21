@@ -41,14 +41,11 @@
 #include "PHY/defs_eNB.h"
 #include "s1ap_messages_types.h"
 #include "f1ap_messages_types.h"
-#ifdef CMAKER
-#include "SystemInformationBlockType2.h"
+#include "LTE_SystemInformationBlockType2.h"
 #include "rrc_messages_types.h"
-#else
-#include "RRC/LTE/MESSAGES/SystemInformationBlockType2.h"
-#endif
 #include "RRC/LTE/rrc_defs.h"
 #include <intertask_interface.h>
+#include "enb_paramdef.h"
 
 #define IPV4_STR_ADDR_TO_INT_NWBO(AdDr_StR,NwBo,MeSsAgE ) do {\
             struct in_addr inp;\
@@ -120,6 +117,9 @@ int RCconfig_S1(MessageDef *msg_p, uint32_t i);
 
 void read_config_and_init(void);
 int RCconfig_X2(MessageDef *msg_p, uint32_t i);
+
+void fill_SL_configuration(MessageDef *msg_p,  ccparams_sidelink_t *SLconfig,int cell_idx,int cc_idx,char *config_fname);
+void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, int cell_idx,int cc_idx,char *config_fname,char *brparamspath);
 
 #endif /* ENB_CONFIG_H_ */
 /** @} */

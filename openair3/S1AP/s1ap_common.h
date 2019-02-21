@@ -90,6 +90,7 @@ extern int asn1_xer_print;
 # define S1AP_DEBUG(x, args...) do { fprintf(stdout, "[S1AP][D]"x, ##args); } while(0)
 #endif
 
+
 #define S1AP_FIND_PROTOCOLIE_BY_ID(IE_TYPE, ie, container, IE_ID, mandatory) \
   do {\
     IE_TYPE **ptr; \
@@ -102,15 +103,17 @@ extern int asn1_xer_print;
         break; \
       } \
     } \
-    if (mandatory) DevAssert(ie != NULL); \
+    if (ie == NULL ) { \
+      S1AP_ERROR("S1AP_FIND_PROTOCOLIE_BY_ID: %s %d: ie is NULL\n",__FILE__,__LINE__);\
+      if (mandatory)  _Assert_Exit_ \
+    } \
   } while(0)
-
 /** \brief Function callback prototype.
  **/
 typedef int (*s1ap_message_decoded_callback)(
-  uint32_t         assoc_id,
-  uint32_t         stream,
-  S1AP_S1AP_PDU_t *pdu
+    uint32_t         assoc_id,
+    uint32_t         stream,
+    S1AP_S1AP_PDU_t *pdu
 );
 
 /** \brief Handle criticality

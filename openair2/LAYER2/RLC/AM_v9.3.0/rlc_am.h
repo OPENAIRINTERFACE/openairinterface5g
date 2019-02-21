@@ -55,7 +55,7 @@
 #        include "rlc_am_rx_list.h"
 #        include "rlc_am_reassembly.h"
 #        include "rlc_am_init.h"
-#        include "RLC-Config.h"
+#        include "LTE_RLC-Config.h"
 #        include "assertions.h"
 //#        include "rlc_am_test.h"
 
@@ -138,7 +138,7 @@ config_req_rlc_am (
 void config_req_rlc_am_asn1 (
                 const protocol_ctxt_t* const ctxtP,
                 const srb_flag_t srb_flagP,
-                const struct RLC_Config__am * const config_amP,
+                const struct LTE_RLC_Config__am * const config_amP,
                 const rb_id_t rb_idP,
                 const logical_chan_id_t chan_idP);
 

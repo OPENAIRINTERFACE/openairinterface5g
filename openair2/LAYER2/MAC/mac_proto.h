@@ -113,6 +113,12 @@ void schedule_ulsch_rnti(module_id_t module_idP, int slice_idx, frame_t frameP,
 			 unsigned char sched_subframe,
 			 uint16_t * first_rb);
 
+void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
+			      frame_t       frameP,
+			      sub_frame_t   subframeP,
+			      unsigned char sched_subframeP,
+			      int          *emtc_active);
+
 /** \brief Second stage of DLSCH scheduling, after schedule_SI, schedule_RA and schedule_dlsch have been called.  This routine first allocates random frequency assignments for SI and RA SDUs using distributed VRB allocations and adds the corresponding DCI SDU to the DCI buffer for PHY.  It then loops over the UE specific DCIs previously allocated and fills in the remaining DCI fields related to frequency allocation.  It assumes localized allocation of type 0 (DCI.rah=0).  The allocation is done for tranmission modes 1,2,4.
 @param Mod_id Instance of eNB
 @param frame Frame index
@@ -133,7 +139,9 @@ void schedule_dlsch(module_id_t module_idP, frame_t frameP,
 
 void schedule_ue_spec(module_id_t module_idP, int slice_idxP,
 		      frame_t frameP,sub_frame_t subframe, int *mbsfn_flag);
-
+void schedule_ue_spec_br(module_id_t   module_idP,
+			 frame_t       frameP,
+			 sub_frame_t   subframeP);
 void schedule_ue_spec_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t subframe,int *mbsfn_flag);
 void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t subframeP);
 
@@ -290,7 +298,7 @@ void eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP, sub_frame
 void initiate_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP,
 		      sub_frame_t subframeP, uint16_t preamble_index,
 		      int16_t timing_offset, uint16_t rnti
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 		      , uint8_t rach_resource_type
 #endif
     );
@@ -309,7 +317,7 @@ unsigned short fill_rar(const module_id_t module_idP,
 			const uint16_t N_RB_UL,
 			const uint8_t input_buffer_length);
 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 unsigned short fill_rar_br(eNB_MAC_INST * eNB,
 			   int CC_id,
 			   RA_t * ra,
@@ -444,7 +452,7 @@ uint8_t get_aggregation(uint8_t bw_index, uint8_t cqi, uint8_t dci_fmt);
 
 int8_t find_active_UEs_with_traffic(module_id_t module_idP);
 
-void init_CCE_table(int module_idP, int CC_idP);
+void init_CCE_table(int *CCE_table);
 
 int get_nCCE_offset(int *CCE_table,
 		    const unsigned char L,
@@ -465,7 +473,7 @@ void set_ue_dai(sub_frame_t subframeP,
 		int UE_id,
 		uint8_t CC_id, uint8_t tdd_config, UE_list_t * UE_list);
 
-uint8_t frame_subframe2_dl_harq_pid(TDD_Config_t *tdd_Config, int abs_frameP, sub_frame_t subframeP);
+uint8_t frame_subframe2_dl_harq_pid(LTE_TDD_Config_t *tdd_Config, int abs_frameP, sub_frame_t subframeP);
 /** \brief First stage of PCH Scheduling. Gets a PCH SDU from RRC if available and computes the MCS required to transport it as a function of the SDU length.  It assumes a length less than or equal to 64 bytes (MCS 6, 3 PRBs).
 @param Mod_id Instance ID of eNB
 @param frame Frame index
@@ -549,7 +557,7 @@ void ue_send_sl_sdu(module_id_t module_idP,
 	       sl_discovery_flag_t sl_discovery_flag
 		    );
 
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 /* \brief Called by PHY to transfer MCH transport block to ue MAC.
 @param Mod_id Index of module instance
 @param frame Frame index
@@ -694,12 +702,11 @@ int to_prb(int);
 int to_rbg(int);
 int mac_init(void);
 int add_new_ue(module_id_t Mod_id, int CC_id, rnti_t rnti, int harq_pid
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 	       , uint8_t rach_resource_type
 #endif
     );
 int rrc_mac_remove_ue(module_id_t Mod_id, rnti_t rntiP);
-void rrc_mac_signal_ue_release(module_id_t Mod_id, rnti_t rntiP);
 
 void store_dlsch_buffer(module_id_t Mod_id, int slice_idx, frame_t frameP, sub_frame_t subframeP);
 void assign_rbs_required(module_id_t Mod_id, int slice_idx, frame_t frameP, sub_frame_t subframe, uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB], int min_rb_unit[NFAPI_CC_MAX]);
@@ -727,7 +734,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP, int slice_idx, int fr
 				   uint16_t * first_rb);
 void store_ulsch_buffer(module_id_t module_idP, int frameP,
 			sub_frame_t subframeP);
-void sort_ue_ul(module_id_t module_idP, int frameP, sub_frame_t subframeP);
+void sort_ue_ul(module_id_t module_idP, int slice_idx, int frameP, sub_frame_t subframeP, rnti_t *rntiTable);
 void assign_max_mcs_min_rb(module_id_t module_idP, int slice_idx, int frameP,
 			   sub_frame_t subframeP, uint16_t * first_rb);
 void adjust_bsr_info(int buffer_occupancy, uint16_t TBS,
@@ -957,46 +964,46 @@ int rrc_mac_config_req_eNB(module_id_t module_idP,
 			   int p_eNB,
 			   int Ncp,
 			   int eutra_band, uint32_t dl_CarrierFreq,
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 			   int pbch_repetition,
 #endif
 			   rnti_t rntiP,
-			   BCCH_BCH_Message_t * mib,
-			   RadioResourceConfigCommonSIB_t *
+			   LTE_BCCH_BCH_Message_t * mib,
+			   LTE_RadioResourceConfigCommonSIB_t *
 			   radioResourceConfigCommon,
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-			   RadioResourceConfigCommonSIB_t *
-			   radioResourceConfigCommon_BR,
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+			   LTE_RadioResourceConfigCommonSIB_t *
+			   LTE_radioResourceConfigCommon_BR,
 #endif
-			   struct PhysicalConfigDedicated
+			   struct LTE_PhysicalConfigDedicated
 			   *physicalConfigDedicated,
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-			   SCellToAddMod_r10_t * sCellToAddMod_r10,
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+			   LTE_SCellToAddMod_r10_t * sCellToAddMod_r10,
 			   //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
-			   MeasObjectToAddMod_t ** measObj,
-			   MAC_MainConfig_t * mac_MainConfig,
+			   LTE_MeasObjectToAddMod_t ** measObj,
+			   LTE_MAC_MainConfig_t * mac_MainConfig,
 			   long logicalChannelIdentity,
-			   LogicalChannelConfig_t * logicalChannelConfig,
-			   MeasGapConfig_t * measGapConfig,
-			   TDD_Config_t * tdd_Config,
-			   MobilityControlInfo_t * mobilityControlInfo,
-			   SchedulingInfoList_t * schedulingInfoList,
+			   LTE_LogicalChannelConfig_t * logicalChannelConfig,
+			   LTE_MeasGapConfig_t * measGapConfig,
+			   LTE_TDD_Config_t * tdd_Config,
+			   LTE_MobilityControlInfo_t * mobilityControlInfo,
+			   LTE_SchedulingInfoList_t * schedulingInfoList,
 			   uint32_t ul_CarrierFreq,
 			   long *ul_Bandwidth,
-			   AdditionalSpectrumEmission_t *
+			   LTE_AdditionalSpectrumEmission_t *
 			   additionalSpectrumEmission,
-			   struct MBSFN_SubframeConfigList
+			   struct LTE_MBSFN_SubframeConfigList
 			   *mbsfn_SubframeConfigList
-#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 			   ,
 			   uint8_t MBMS_Flag,
-			   MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList,
-			   PMCH_InfoList_r9_t * pmch_InfoList
+			   LTE_MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList,
+			   LTE_PMCH_InfoList_r9_t * pmch_InfoList
 #endif
-#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 			   ,
-			   SystemInformationBlockType1_v1310_IEs_t *
+			   LTE_SystemInformationBlockType1_v1310_IEs_t *
 			   sib1_ext_r13
 #endif
     );
@@ -1024,40 +1031,40 @@ int rrc_mac_config_req_eNB(module_id_t module_idP,
 int rrc_mac_config_req_ue(module_id_t module_idP,
 			  int CC_id,
 			  uint8_t eNB_index,
-			  RadioResourceConfigCommonSIB_t *
+			  LTE_RadioResourceConfigCommonSIB_t *
 			  radioResourceConfigCommon,
-			  struct PhysicalConfigDedicated
+			  struct LTE_PhysicalConfigDedicated
 			  *physicalConfigDedicated,
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-			  SCellToAddMod_r10_t * sCellToAddMod_r10,
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+			  LTE_SCellToAddMod_r10_t * sCellToAddMod_r10,
 			  //struct PhysicalConfigDedicatedSCell_r10 *physicalConfigDedicatedSCell_r10,
 #endif
-			  MeasObjectToAddMod_t ** measObj,
-			  MAC_MainConfig_t * mac_MainConfig,
+			  LTE_MeasObjectToAddMod_t ** measObj,
+			  LTE_MAC_MainConfig_t * mac_MainConfig,
 			  long logicalChannelIdentity,
-			  LogicalChannelConfig_t * logicalChannelConfig,
-			  MeasGapConfig_t * measGapConfig,
-			  TDD_Config_t * tdd_Config,
-			  MobilityControlInfo_t * mobilityControlInfo,
+			  LTE_LogicalChannelConfig_t * logicalChannelConfig,
+			  LTE_MeasGapConfig_t * measGapConfig,
+			  LTE_TDD_Config_t * tdd_Config,
+			  LTE_MobilityControlInfo_t * mobilityControlInfo,
 			  uint8_t * SIwindowsize,
 			  uint16_t * SIperiod,
-			  ARFCN_ValueEUTRA_t * ul_CarrierFreq,
+			  LTE_ARFCN_ValueEUTRA_t * ul_CarrierFreq,
 			  long *ul_Bandwidth,
-			  AdditionalSpectrumEmission_t *
+			  LTE_AdditionalSpectrumEmission_t *
 			  additionalSpectrumEmission,
-			  struct MBSFN_SubframeConfigList
+			  struct LTE_MBSFN_SubframeConfigList
 			  *mbsfn_SubframeConfigList
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 			  ,
 			  uint8_t MBMS_Flag,
-			  MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList,
-			  PMCH_InfoList_r9_t * pmch_InfoList
+			  LTE_MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList,
+			  LTE_PMCH_InfoList_r9_t * pmch_InfoList
 #endif
 #ifdef CBA
 			  ,
 			  uint8_t num_active_cba_groups, uint16_t cba_rnti
 #endif
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 			  ,config_action_t config_action
 			  ,const uint32_t * const sourceL2Id
 			  ,const uint32_t * const destinationL2Id
@@ -1085,11 +1092,11 @@ uint16_t mac_computeRIV(uint16_t N_RB_DL, uint16_t RBstart,
 
 int get_phich_resource_times6(COMMON_channels_t * cc);
 
-uint8_t frame_subframe2_dl_harq_pid(TDD_Config_t *tdd_Config, int abs_frameP, sub_frame_t subframeP);
+uint8_t frame_subframe2_dl_harq_pid(LTE_TDD_Config_t *tdd_Config, int abs_frameP, sub_frame_t subframeP);
 
 uint8_t ul_subframe2_k_phich(COMMON_channels_t * cc, sub_frame_t ul_subframe);
 
-unsigned char ul_ACK_subframe2M(TDD_Config_t *tdd_Config,unsigned char subframe);
+unsigned char ul_ACK_subframe2M(LTE_TDD_Config_t *tdd_Config,unsigned char subframe);
 
 int to_rbg(int dl_Bandwidth);
 
@@ -1114,17 +1121,17 @@ void get_srs_pos(COMMON_channels_t * cc, uint16_t isrs,
 		 uint16_t * psrsPeriodicity, uint16_t * psrsOffset);
 
 void get_csi_params(COMMON_channels_t * cc,
-		    struct CQI_ReportPeriodic *cqi_PMI_ConfigIndex,
+		    struct LTE_CQI_ReportPeriodic *cqi_PMI_ConfigIndex,
 		    uint16_t * Npd, uint16_t * N_OFFSET_CQI, int *H);
 
 uint8_t get_rel8_dl_cqi_pmi_size(UE_sched_ctrl * sched_ctl, int CC_idP,
 				 COMMON_channels_t * cc, uint8_t tmode,
-				 struct CQI_ReportPeriodic
+				 struct LTE_CQI_ReportPeriodic
 				 *cqi_ReportPeriodic);
 
 uint8_t get_dl_cqi_pmi_size_pusch(COMMON_channels_t * cc, uint8_t tmode,
 				  uint8_t ri,
-				  CQI_ReportModeAperiodic_t *
+				  LTE_CQI_ReportModeAperiodic_t *
 				  cqi_ReportModeAperiodic);
 void extract_pucch_csi(module_id_t mod_idP, int CC_idP, int UE_id,
 		       frame_t frameP, sub_frame_t subframeP,
@@ -1141,7 +1148,7 @@ uint16_t fill_nfapi_tx_req(nfapi_tx_request_body_t * tx_req_body,
 void fill_nfapi_ulsch_config_request_rel8(nfapi_ul_config_request_pdu_t *
 					  ul_config_pdu, uint8_t cqi_req,
 					  COMMON_channels_t * cc,
-					  struct PhysicalConfigDedicated
+					  struct LTE_PhysicalConfigDedicated
 					  *physicalConfigDedicated,
 					  uint8_t tmode, uint32_t handle,
 					  uint16_t rnti,
@@ -1160,7 +1167,7 @@ void fill_nfapi_ulsch_config_request_rel8(nfapi_ul_config_request_pdu_t *
 					  uint8_t current_tx_nb,
 					  uint8_t n_srs, uint16_t size);
 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 void fill_nfapi_ulsch_config_request_emtc(nfapi_ul_config_request_pdu_t *
 					  ul_config_pdu, uint8_t ue_type,
 					  uint16_t
@@ -1237,7 +1244,7 @@ uint8_t get_tmode(module_id_t module_idP, int CC_idP, int UE_idP);
 uint8_t get_ul_req_index(module_id_t module_idP, int CC_idP,
 			 sub_frame_t subframeP);
 
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 int get_numnarrowbandbits(long dl_Bandwidth);
 
 int mpdcch_sf_condition(eNB_MAC_INST * eNB, int CC_id, frame_t frameP,

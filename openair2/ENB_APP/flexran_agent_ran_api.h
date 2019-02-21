@@ -324,7 +324,7 @@ int flexran_get_rrc_rnti_list(mid_t mod_id, rnti_t *list, int max_list);
 /* Get timer in subframes. Controls the synchronization
    status of the UE, not the actual timing 
    advance procedure. See TS 36.321 */
-TimeAlignmentTimer_t flexran_get_time_alignment_timer(mid_t mod_id, rnti_t rnti);
+LTE_TimeAlignmentTimer_t flexran_get_time_alignment_timer(mid_t mod_id, rnti_t rnti);
 
 /* Get measurement gap configuration. See TS 36.133 */
 Protocol__FlexMeasGapConfigPattern flexran_get_meas_gap_config(mid_t mod_id, rnti_t rnti);
@@ -499,7 +499,7 @@ uint32_t flexran_get_pdcp_rx_oo(mid_t mod_id, uint16_t uid, lcid_t lcid);
 
 /*********************RRC**********************/
 /*Get primary cell measuremeant id flexRAN*/
-MeasId_t flexran_get_rrc_pcell_measid(mid_t mod_id, rnti_t rnti);
+LTE_MeasId_t flexran_get_rrc_pcell_measid(mid_t mod_id, rnti_t rnti);
 
 /*Get primary cell RSRP measurement flexRAN*/  
 float flexran_get_rrc_pcell_rsrp(mid_t mod_id, rnti_t rnti);

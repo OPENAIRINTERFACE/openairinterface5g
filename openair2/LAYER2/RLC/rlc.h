@@ -44,19 +44,19 @@
 #    include "rlc_am_structs.h"
 #    include "rlc_tm_structs.h"
 #    include "rlc_um_structs.h"
-#    include "asn_constant.h"
+#    include "LTE_asn_constant.h"
 #    include "common/utils/LOG/log.h"
 #    include "mem_block.h"
 //#    include "PHY/defs.h"
-#    include "RLC-Config.h"
-#    include "DRB-ToAddMod.h"
-#    include "DRB-ToAddModList.h"
-#    include "SRB-ToAddMod.h"
-#    include "SRB-ToAddModList.h"
-#    include "DRB-ToReleaseList.h"
+#    include "LTE_RLC-Config.h"
+#    include "LTE_DRB-ToAddMod.h"
+#    include "LTE_DRB-ToAddModList.h"
+#    include "LTE_SRB-ToAddMod.h"
+#    include "LTE_SRB-ToAddModList.h"
+#    include "LTE_DRB-ToReleaseList.h"
 
-#if defined(Rel10) || defined(Rel14)
-#include "PMCH-InfoList-r9.h"
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+#include "LTE_PMCH-InfoList-r9.h"
 #endif
 
 typedef uint64_t hash_key_t;
@@ -132,8 +132,8 @@ typedef struct {
 //   PRIVATE INTERNALS OF RLC
 //-----------------------------------------------------------------------------
 
-#define  RLC_MAX_MBMS_LC (maxSessionPerPMCH * maxServiceCount)
-#define  RLC_MAX_LC  ((max_val_DRB_Identity+1)* MAX_MOBILES_PER_ENB)
+#define  RLC_MAX_MBMS_LC (LTE_maxSessionPerPMCH * LTE_maxServiceCount)
+#define  RLC_MAX_LC  ((max_val_LTE_DRB_Identity+1)* MAX_MOBILES_PER_ENB)
 
 void (*rlc_rrc_data_ind)(
                 const protocol_ctxt_t* const ctxtP,
@@ -183,7 +183,7 @@ typedef struct rlc_mbms_id_s {
   mbms_session_id_t       session_id;
 } rlc_mbms_id_t;
 
-#if (RRC_VERSION < MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION < MAKE_VERSION(10, 0, 0))
 #    if !defined(maxServiceCount)
 //unused arrays rlc_mbms_array_ue rlc_mbms_array_eNB
 #        define maxServiceCount 1
@@ -285,7 +285,7 @@ struct mac_data_ind   mac_rlc_deserialize_tb (char*, tb_size_t, num_tb_t, crc_t 
 //-----------------------------------------------------------------------------
 //   PUBLIC INTERFACE WITH RRC
 //-----------------------------------------------------------------------------
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 /*! \fn rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t* const ctxtP, const srb_flag_t srb_flagP, const SRB_ToAddMod_t* const srb2addmod, const DRB_ToAddModList_t* const drb2add_listP, const DRB_ToReleaseList_t*  const drb2release_listP, const PMCH_InfoList_r9_t * const pmch_info_listP)
 * \brief  Function for RRC to configure a Radio Bearer.
 * \param[in]  ctxtP              Running context.
@@ -297,10 +297,10 @@ struct mac_data_ind   mac_rlc_deserialize_tb (char*, tb_size_t, num_tb_t, crc_t 
 */
 rlc_op_status_t rrc_rlc_config_asn1_req (
                   const protocol_ctxt_t* const,
-                  const SRB_ToAddModList_t* const ,
-                  const DRB_ToAddModList_t* const ,
-                  const DRB_ToReleaseList_t* const ,
-                  const PMCH_InfoList_r9_t * const pmch_info_listP ,
+                  const LTE_SRB_ToAddModList_t* const ,
+                  const LTE_DRB_ToAddModList_t* const ,
+                  const LTE_DRB_ToReleaseList_t* const ,
+                  const LTE_PMCH_InfoList_r9_t * const pmch_info_listP ,
                   const uint32_t ,
                   const uint32_t );
 #else
@@ -314,9 +314,9 @@ rlc_op_status_t rrc_rlc_config_asn1_req (
 */
 rlc_op_status_t rrc_rlc_config_asn1_req (
                   const protocol_ctxt_t* const,
-                  const SRB_ToAddModList_t* const ,
-                  const DRB_ToAddModList_t* const ,
-                  const DRB_ToReleaseList_t* const );
+                  const LTE_SRB_ToAddModList_t* const ,
+                  const LTE_DRB_ToAddModList_t* const ,
+                  const LTE_DRB_ToReleaseList_t* const );
 #endif
 
 
@@ -358,7 +358,7 @@ rlc_op_status_t rrc_rlc_remove_rlc   (const protocol_ctxt_t* const, const srb_fl
 * \return     A status about the processing, OK or error code.
 */
 rlc_union_t*  rrc_rlc_add_rlc      (const protocol_ctxt_t* const, const srb_flag_t,  const  MBMS_flag_t MBMS_flagP, const  rb_id_t, logical_chan_id_t, rlc_mode_t
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   ,const uint32_t  sourceL2Id,
   const uint32_t  destinationL2Id
 #endif
@@ -424,7 +424,7 @@ void rrc_rlc_register_rrc (rrc_data_ind_cb_t rrc_data_indP, rrc_data_conf_cb_t r
 * \return     A status about the processing, OK or error code.
 */
 tbs_size_t            mac_rlc_data_req     (const module_id_t, const rnti_t, const eNB_index_t, const frame_t, const  eNB_flag_t, const  MBMS_flag_t, logical_chan_id_t, const tb_size_t,char*
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                                            ,const uint32_t sourceL2Id
                                                            ,const uint32_t destinationL2Id
 #endif
@@ -459,7 +459,7 @@ void                  mac_rlc_data_ind     (const module_id_t, const rnti_t, con
 * \return     The maximum number of bytes that the RLC instance can send in the next transmission sequence.
 */
 mac_rlc_status_resp_t mac_rlc_status_ind   (const module_id_t, const rnti_t, const eNB_index_t, const frame_t, const sub_frame_t, const  eNB_flag_t, const  MBMS_flag_t, logical_chan_id_t, tb_size_t
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                                            ,const uint32_t sourceL2Id
                                                            ,const uint32_t destinationL2Id
 #endif
@@ -514,7 +514,7 @@ rlc_op_status_t rlc_data_req     (
              const confirm_t ,
              const sdu_size_t ,
              mem_block_t * const
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
              ,const uint32_t * const
              ,const uint32_t * const
 #endif

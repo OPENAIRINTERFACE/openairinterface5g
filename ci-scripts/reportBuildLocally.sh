@@ -20,14 +20,13 @@
 # *      contact@openairinterface.org
 # */
 
-function usage {
-    echo "OAI Local Build Report script"
+function report_build_usage {
+    echo "OAI CI VM script"
     echo "   Original Author: Raphael Defosseux"
     echo ""
     echo "Usage:"
     echo "------"
-    echo ""
-    echo "    reportBuildLocally.sh [OPTIONS]"
+    echo "    oai-ci-vm-tool report-build [OPTIONS]"
     echo ""
     echo "Options:"
     echo "--------"
@@ -46,6 +45,9 @@ function usage {
     echo ""
     echo "    --build-id #### OR -id ####"
     echo "    Specify the build ID of the Jenkins job."
+    echo ""
+    echo "    --workspace #### OR -ws ####"
+    echo "    Specify the workspace."
     echo ""
     echo "    --trigger merge-request OR -mr"
     echo "    --trigger push          OR -pu"
@@ -79,7 +81,7 @@ function usage {
 }
 
 function trigger_usage {
-    echo "OAI Local Build Report script"
+    echo "OAI CI VM script"
     echo "   Original Author: Raphael Defosseux"
     echo ""
     echo "    --trigger merge-request OR -mr"
@@ -103,7 +105,7 @@ function details_table {
     COMPLETE_MESSAGE="start"
     for MESSAGE in $LIST_MESSAGES
     do
-        if [[ $MESSAGE == *"/home/ubuntu/tmp"* ]]
+        if [[ $MESSAGE == *"/home/ubuntu/tmp"* ]] || [[  $MESSAGE == *"/tmp/CI-eNB"* ]]
         then
             FILENAME=`echo $MESSAGE | sed -e "s#^/home/ubuntu/tmp/##" -e "s#^.*/tmp/CI-eNB/##" | awk -F ":" '{print $1}'`
             LINENB=`echo $MESSAGE | awk -F ":" '{print $2}'`
@@ -139,6 +141,23 @@ function details_table {
 
 function summary_table_header {
     echo "   <h3>$1</h3>" >> ./build_results.html
+    if [ -f $2/build_final_status.log ]
+    then
+        if [ `grep -c BUILD_OK $2/build_final_status.log` -eq 1 ]
+        then
+            echo "   <div class=\"alert alert-success\">" >> ./build_results.html
+            echo "      <strong>BUILD was SUCCESSFUL <span class=\"glyphicon glyphicon-ok-circle\"></span></strong>" >> ./build_results.html
+            echo "   </div>" >> ./build_results.html
+        else
+            echo "   <div class=\"alert alert-danger\">" >> ./build_results.html
+            echo "      <strong>BUILD was a FAILURE! <span class=\"glyphicon glyphicon-ban-circle\"></span></strong>" >> ./build_results.html
+            echo "   </div>" >> ./build_results.html
+        fi
+    else
+        echo "   <div class=\"alert alert-danger\">" >> ./build_results.html
+        echo "      <strong>COULD NOT DETERMINE BUILD FINAL STATUS! <span class=\"glyphicon glyphicon-ban-circle\"></span></strong>" >> ./build_results.html
+        echo "   </div>" >> ./build_results.html
+    fi
     echo "   <table border = \"1\">" >> ./build_results.html
     echo "      <tr bgcolor = \"#33CCFF\" >" >> ./build_results.html
     echo "        <th>Element</th>" >> ./build_results.html
@@ -153,8 +172,8 @@ function summary_table_row {
     echo "        <td bgcolor = \"lightcyan\" >$1</th>" >> ./build_results.html
     if [ -f $2 ]
     then
-        STATUS=`egrep -c "$3" $2`
-        if [ $STATUS -eq 1 ]
+        BUILD_STATUS=`egrep -c "$3" $2`
+        if [ $BUILD_STATUS -eq 1 ]
         then
             echo "        <td bgcolor = \"green\" >OK</th>" >> ./build_results.html
         else
@@ -196,7 +215,28 @@ function summary_table_footer {
 }
 
 function sca_summary_table_header {
-    echo "   <h3>$1</h3>" >> ./build_results.html
+    echo "   <h3>$2</h3>" >> ./build_results.html
+    NB_ERRORS=`egrep -c "severity=\"error\"" $1`
+    NB_WARNINGS=`egrep -c "severity=\"warning\"" $1`
+    if [ $NB_ERRORS -eq 0 ] && [ $NB_WARNINGS -eq 0 ]
+    then
+        echo "   <div class=\"alert alert-success\">" >> ./build_results.html
+        echo "      <strong>CPPCHECK found NO error and NO warning <span class=\"glyphicon glyphicon-ok-circle\"></span></strong>" >> ./build_results.html
+        echo "   </div>" >> ./build_results.html
+    else
+        if [ $NB_ERRORS -eq 0 ]
+        then
+            echo "   <div class=\"alert alert-warning\">" >> ./build_results.html
+            echo "      <strong>CPPCHECK found NO error and $NB_WARNINGS warnings <span class=\"glyphicon glyphicon-warning-sign\"></span></strong>" >> ./build_results.html
+            echo "   </div>" >> ./build_results.html
+        else
+            echo "   <div class=\"alert alert-danger\">" >> ./build_results.html
+            echo "      <strong>CPPCHECK found $NB_ERRORS errors and $NB_WARNINGS warnings <span class=\"glyphicon glyphicon-ban-circle\"></span></strong>" >> ./build_results.html
+            echo "   </div>" >> ./build_results.html
+        fi
+    fi
+    echo "   <button data-toggle=\"collapse\" data-target=\"#oai-cppcheck-details\">More details on CPPCHECK results</button>" >> ./build_results.html
+    echo "   <div id=\"oai-cppcheck-details\" class=\"collapse\">" >> ./build_results.html
     echo "   <table border = \"1\">" >> ./build_results.html
     echo "      <tr bgcolor = \"#33CCFF\" >" >> ./build_results.html
     echo "        <th>Error / Warning Type</th>" >> ./build_results.html
@@ -261,344 +301,268 @@ function sca_summary_table_footer {
     echo "   </table>" >> ./build_results.html
     echo "   <p>Full details in zipped artifact (cppcheck/cppcheck.xml) </p>" >> ./build_results.html
     echo "   <p style=\"margin-left: 30px\">Graphical Interface tool : <strong><code>cppcheck-gui -l cppcheck/cppcheck.xml</code></strong></p>" >> ./build_results.html
+    echo "   </div>" >> ./build_results.html
 }
 
-jb_checker=0
-mr_checker=0
-pu_checker=0
-MR_TRIG=0
-PU_TRIG=0
-while [[ $# -gt 0 ]]
-do
-key="$1"
+function report_build {
+    echo "############################################################"
+    echo "OAI CI VM script"
+    echo "############################################################"
 
-case $key in
-    -h|--help)
-    shift
-    usage
-    exit 0
-    ;;
-    -gu|--git-url)
-    GIT_URL="$2"
-    let "jb_checker|=0x1"
-    shift
-    shift
-    ;;
-    -jn|--job-name)
-    JOB_NAME="$2"
-    let "jb_checker|=0x2"
-    shift
-    shift
-    ;;
-    -id|--build-id)
-    BUILD_ID="$2"
-    let "jb_checker|=0x4"
-    shift
-    shift
-    ;;
-    --trigger)
-    TRIG="$2"
-    case $TRIG in
-        merge-request)
-        MR_TRIG=1
-        ;;
-        push)
-        PU_TRIG=1
-        ;;
-        *)
-        echo ""
-        echo "Syntax Error: Invalid Trigger option -> $TRIG"
-        echo ""
-        trigger_usage
-        exit
-        ;;
-    esac
-    let "jb_checker|=0x8"
-    shift
-    shift
-    ;;
-    -mr)
-    MR_TRIG=1
-    let "jb_checker|=0x8"
-    shift
-    ;;
-    -pu)
-    PU_TRIG=1
-    let "jb_checker|=0x8"
-    shift
-    ;;
-    -sb|--src-branch)
-    SOURCE_BRANCH="$2"
-    let "mr_checker|=0x1"
-    shift
-    shift
-    ;;
-    -sc|--src-commit)
-    SOURCE_COMMIT_ID="$2"
-    let "mr_checker|=0x2"
-    shift
-    shift
-    ;;
-    -tb|--target-branch)
-    TARGET_BRANCH="$2"
-    let "mr_checker|=0x4"
-    shift
-    shift
-    ;;
-    -tc|--target-commit)
-    TARGET_COMMIT_ID="$2"
-    let "mr_checker|=0x8"
-    shift
-    shift
-    ;;
-    -br|--branch)
-    SOURCE_BRANCH="$2"
-    let "pu_checker|=0x1"
-    shift
-    shift
-    ;;
-    -co|--commit)
-    SOURCE_COMMIT_ID="$2"
-    let "pu_checker|=0x2"
-    shift
-    shift
-    ;;
-    *)
-    echo "Syntax Error: unknown option: $key"
-    echo ""
-    usage
-    exit 1
-    ;;
-esac
+    echo "JENKINS_WKSP        = $JENKINS_WKSP"
+    echo "GIT_URL             = $GIT_URL"
 
-done
-
-if [ $jb_checker -ne 15 ]
-then
-    echo ""
-    echo "Syntax Error: missing job information."
-    # TODO : list missing info
-    echo ""
-    exit 1
-fi
-
-if [ $PU_TRIG -eq 1 ] && [ $MR_TRIG -eq 1 ]
-then
-    echo ""
-    echo "Syntax Error: trigger action incoherent."
-    echo ""
-    trigger_usage
-    exit 1
-fi
-
-if [ $PU_TRIG -eq 1 ]
-then
-    if [ $pu_checker -ne 3 ]
+    cd ${JENKINS_WKSP}
+    echo "<!DOCTYPE html>" > ./build_results.html
+    echo "<html class=\"no-js\" lang=\"en-US\">" >> ./build_results.html
+    echo "<head>" >> ./build_results.html
+    echo "  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">" >> ./build_results.html
+    echo "  <link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css\">" >> ./build_results.html
+    echo "  <script src=\"https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js\"></script>" >> ./build_results.html
+    echo "  <script src=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js\"></script>" >> ./build_results.html
+    echo "  <title>Build Results for $JOB_NAME job build #$BUILD_ID</title>" >> ./build_results.html
+    echo "  <base href = \"http://www.openairinterface.org/\" />" >> ./build_results.html
+    echo "</head>" >> ./build_results.html
+    echo "<body><div class=\"container\">" >> ./build_results.html
+    echo "  <br>" >> ./build_results.html
+    echo "  <table style=\"border-collapse: collapse; border: none;\">" >> ./build_results.html
+    echo "    <tr style=\"border-collapse: collapse; border: none;\">" >> ./build_results.html
+    echo "      <td style=\"border-collapse: collapse; border: none;\">" >> ./build_results.html
+    echo "        <a href=\"http://www.openairinterface.org/\">" >> ./build_results.html
+    echo "           <img src=\"/wp-content/uploads/2016/03/cropped-oai_final_logo2.png\" alt=\"\" border=\"none\" height=50 width=150>" >> ./build_results.html
+    echo "           </img>" >> ./build_results.html
+    echo "        </a>" >> ./build_results.html
+    echo "      </td>" >> ./build_results.html
+    echo "      <td style=\"border-collapse: collapse; border: none; vertical-align: center;\">" >> ./build_results.html
+    echo "        <b><font size = \"6\">Job Summary -- Job: $JOB_NAME -- Build-ID: $BUILD_ID</font></b>" >> ./build_results.html
+    echo "      </td>" >> ./build_results.html
+    echo "    </tr>" >> ./build_results.html
+    echo "  </table>" >> ./build_results.html
+    echo "  <br>" >> ./build_results.html
+    echo "   <table border = \"1\">" >> ./build_results.html
+    echo "      <tr>" >> ./build_results.html
+    echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-time\"></span> Build Start Time (UTC)</td>" >> ./build_results.html
+    echo "        <td>TEMPLATE_BUILD_TIME</td>" >> ./build_results.html
+    echo "      </tr>" >> ./build_results.html
+    echo "      <tr>" >> ./build_results.html
+    echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-cloud-upload\"></span> GIT Repository</td>" >> ./build_results.html
+    echo "        <td><a href=\"$GIT_URL\">$GIT_URL</a></td>" >> ./build_results.html
+    echo "      </tr>" >> ./build_results.html
+    echo "      <tr>" >> ./build_results.html
+    echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-wrench\"></span> Job Trigger</td>" >> ./build_results.html
+    if [ $PU_TRIG -eq 1 ]; then echo "        <td>Push Event</td>" >> ./build_results.html; fi
+    if [ $MR_TRIG -eq 1 ]; then echo "        <td>Merge-Request</td>" >> ./build_results.html; fi
+    echo "      </tr>" >> ./build_results.html
+    if [ $PU_TRIG -eq 1 ]
     then
-        echo ""
-        echo "Syntax Error: missing push information."
-        # TODO : list missing info
-        echo ""
-        exit 1
+        echo "      <tr>" >> ./build_results.html
+        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-tree-deciduous\"></span> Branch</td>" >> ./build_results.html
+        echo "        <td>$SOURCE_BRANCH</td>" >> ./build_results.html
+        echo "      </tr>" >> ./build_results.html
+        echo "      <tr>" >> ./build_results.html
+        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-tag\"></span> Commit ID</td>" >> ./build_results.html
+        echo "        <td>$SOURCE_COMMIT_ID</td>" >> ./build_results.html
+        echo "      </tr>" >> ./build_results.html
+        if [ -e .git/CI_COMMIT_MSG ]
+        then
+            echo "      <tr>" >> ./build_results.html
+            echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-comment\"></span> Commit Message</td>" >> ./build_results.html
+            MSG=`cat .git/CI_COMMIT_MSG`
+            echo "        <td>$MSG</td>" >> ./build_results.html
+            echo "      </tr>" >> ./build_results.html
+        fi
     fi
-fi
-
-if [ $MR_TRIG -eq 1 ]
-then
-    if [ $mr_checker -ne 15 ]
+    if [ $MR_TRIG -eq 1 ]
     then
-        echo ""
-        echo "Syntax Error: missing merge-request information."
-        # TODO : list missing info
-        echo ""
-        exit 1
+        echo "      <tr>" >> ./build_results.html
+        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-log-out\"></span> Source Branch</td>" >> ./build_results.html
+        echo "        <td>$SOURCE_BRANCH</td>" >> ./build_results.html
+        echo "      </tr>" >> ./build_results.html
+        echo "      <tr>" >> ./build_results.html
+        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-tag\"></span> Source Commit ID</td>" >> ./build_results.html
+        echo "        <td>$SOURCE_COMMIT_ID</td>" >> ./build_results.html
+        echo "      </tr>" >> ./build_results.html
+        if [ -e .git/CI_COMMIT_MSG ]
+        then
+            echo "      <tr>" >> ./build_results.html
+            echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-comment\"></span> Source Commit Message</td>" >> ./build_results.html
+            MSG=`cat .git/CI_COMMIT_MSG`
+            echo "        <td>$MSG</td>" >> ./build_results.html
+            echo "      </tr>" >> ./build_results.html
+        fi
+        echo "      <tr>" >> ./build_results.html
+        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-log-in\"></span> Target Branch</td>" >> ./build_results.html
+        echo "        <td>$TARGET_BRANCH</td>" >> ./build_results.html
+        echo "      </tr>" >> ./build_results.html
+        echo "      <tr>" >> ./build_results.html
+        echo "        <td bgcolor = \"lightcyan\" > <span class=\"glyphicon glyphicon-tag\"></span> Target Commit ID</td>" >> ./build_results.html
+        echo "        <td>$TARGET_COMMIT_ID</td>" >> ./build_results.html
+        echo "      </tr>" >> ./build_results.html
     fi
-fi
+    echo "   </table>" >> ./build_results.html
+    echo "   <h2>Build Summary</h2>" >> ./build_results.html
 
-echo "<!DOCTYPE html>" > ./build_results.html
-echo "<html class=\"no-js\" lang=\"en-US\">" >> ./build_results.html
-echo "<head>" >> ./build_results.html
-echo "  <title>Build Results for $JOB_NAME job build #$BUILD_ID</title>" >> ./build_results.html
-echo "  <base href = \"http://www.openairinterface.org/\" />" >> ./build_results.html
-echo "</head>" >> ./build_results.html
-echo "<body>" >> ./build_results.html
-echo "  <table style=\"border-collapse: collapse; border: none;\">" >> ./build_results.html
-echo "    <tr style=\"border-collapse: collapse; border: none;\">" >> ./build_results.html
-echo "      <td style=\"border-collapse: collapse; border: none;\">" >> ./build_results.html
-echo "        <a href=\"http://www.openairinterface.org/\">" >> ./build_results.html
-echo "           <img src=\"/wp-content/uploads/2016/03/cropped-oai_final_logo2.png\" alt=\"\" border=\"none\" height=50 width=150>" >> ./build_results.html
-echo "           </img>" >> ./build_results.html
-echo "        </a>" >> ./build_results.html
-echo "      </td>" >> ./build_results.html
-echo "      <td style=\"border-collapse: collapse; border: none; vertical-align: center;\">" >> ./build_results.html
-echo "        <b><font size = \"6\">Job Summary -- Job: $JOB_NAME -- Build-ID: $BUILD_ID</font></b>" >> ./build_results.html
-echo "      </td>" >> ./build_results.html
-echo "    </tr>" >> ./build_results.html
-echo "  </table>" >> ./build_results.html
-echo "  <br>" >> ./build_results.html
-echo "   <table border = \"1\">" >> ./build_results.html
-echo "      <tr>" >> ./build_results.html
-echo "        <td bgcolor = \"lightcyan\" >Build Start Time (UTC)</td>" >> ./build_results.html
-echo "        <td>TEMPLATE_BUILD_TIME</td>" >> ./build_results.html
-echo "      </tr>" >> ./build_results.html
-echo "      <tr>" >> ./build_results.html
-echo "        <td bgcolor = \"lightcyan\" >GIT Repository</td>" >> ./build_results.html
-echo "        <td>$GIT_URL</td>" >> ./build_results.html
-echo "      </tr>" >> ./build_results.html
-echo "      <tr>" >> ./build_results.html
-echo "        <td bgcolor = \"lightcyan\" >Job Trigger</td>" >> ./build_results.html
-if [ $PU_TRIG -eq 1 ]; then echo "        <td>Push Event</td>" >> ./build_results.html; fi
-if [ $MR_TRIG -eq 1 ]; then echo "        <td>Merge-Request</td>" >> ./build_results.html; fi
-echo "      </tr>" >> ./build_results.html
-if [ $PU_TRIG -eq 1 ]
-then
-    echo "      <tr>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightcyan\" >Branch</td>" >> ./build_results.html
-    echo "        <td>$SOURCE_BRANCH</td>" >> ./build_results.html
-    echo "      </tr>" >> ./build_results.html
-    echo "      <tr>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightcyan\" >Commit ID</td>" >> ./build_results.html
-    echo "        <td>$SOURCE_COMMIT_ID</td>" >> ./build_results.html
-    echo "      </tr>" >> ./build_results.html
-fi
-if [ $MR_TRIG -eq 1 ]
-then
-    echo "      <tr>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightcyan\" >Source Branch</td>" >> ./build_results.html
-    echo "        <td>$SOURCE_BRANCH</td>" >> ./build_results.html
-    echo "      </tr>" >> ./build_results.html
-    echo "      <tr>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightcyan\" >Source Commit ID</td>" >> ./build_results.html
-    echo "        <td>$SOURCE_COMMIT_ID</td>" >> ./build_results.html
-    echo "      </tr>" >> ./build_results.html
-    echo "      <tr>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightcyan\" >Target Branch</td>" >> ./build_results.html
-    echo "        <td>$TARGET_BRANCH</td>" >> ./build_results.html
-    echo "      </tr>" >> ./build_results.html
-    echo "      <tr>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightcyan\" >Target Commit ID</td>" >> ./build_results.html
-    echo "        <td>$TARGET_COMMIT_ID</td>" >> ./build_results.html
-    echo "      </tr>" >> ./build_results.html
-fi
-echo "   </table>" >> ./build_results.html
-echo "   <h2>Build Summary</h2>" >> ./build_results.html
-
-if [ -f ./oai_rules_result.txt ]
-then
-    echo "   <h3>OAI Coding / Formatting Guidelines Check</h3>" >> ./build_results.html
-    echo "   <table border = "1">" >> ./build_results.html
-    echo "      <tr>" >> ./build_results.html
-    echo "        <td bgcolor = \"lightcyan\" >Result:</td>" >> ./build_results.html
-    NB_FILES=`cat ./oai_rules_result.txt`
-    if [ $NB_FILES = "0" ]
-    then 
-        if [ $PU_TRIG -eq 1 ]; then echo "        <td bgcolor = \"green\">All files in repository follow OAI rules. </td>" >> ./build_results.html; fi
-        if [ $MR_TRIG -eq 1 ]; then echo "        <td bgcolor = \"green\">All modified files in Merge-Request follow OAI rules.</td>" >> ./build_results.html; fi
-        echo "      </tr>" >> ./build_results.html
-        echo "   </table>" >> ./build_results.html
-    else
-        if [ $PU_TRIG -eq 1 ]; then echo "        <td bgcolor = \"orange\">$NB_FILES files in repository DO NOT follow OAI rules. </td>" >> ./build_results.html; fi
-        if [ $MR_TRIG -eq 1 ]; then echo "        <td bgcolor = \"orange\">$NB_FILES modified files in Merge-Request DO NOT follow OAI rules.</td>" >> ./build_results.html; fi
-        echo "      </tr>" >> ./build_results.html
+    if [ -f ./oai_rules_result.txt ]
+    then
+        echo "   <h3>OAI Coding / Formatting Guidelines Check</h3>" >> ./build_results.html
+        NB_FILES=`cat ./oai_rules_result.txt`
+        if [ $NB_FILES = "0" ]
+        then
+            echo "   <div class=\"alert alert-success\">" >> ./build_results.html
+            if [ $PU_TRIG -eq 1 ]; then echo "      <strong>All files in repository follow OAI rules. <span class=\"glyphicon glyphicon-ok-circle\"></span></strong>" >> ./build_results.html; fi
+            if [ $MR_TRIG -eq 1 ]; then echo "      <strong>All modified files in Merge-Request follow OAI rules. <span class=\"glyphicon glyphicon-ok-circle\"></span></strong>" >> ./build_results.html; fi
+            echo "   </div>" >> ./build_results.html
+        else
+            echo "   <div class=\"alert alert-warning\">" >> ./build_results.html
+            if [ $PU_TRIG -eq 1 ]; then echo "      <strong>$NB_FILES files in repository DO NOT follow OAI rules. <span class=\"glyphicon glyphicon-warning-sign\"></span></strong>" >> ./build_results.html; fi
+            if [ $MR_TRIG -eq 1 ]; then echo "      <strong>$NB_FILES modified files in Merge-Request DO NOT follow OAI rules. <span class=\"glyphicon glyphicon-warning-sign\"></span></strong>" >> ./build_results.html; fi
+            echo "   </div>" >> ./build_results.html
+        fi
         if [ -f ./oai_rules_result_list.txt ]
         then
-            awk '{print "      <tr><td></td><td>"$1"</td></tr>"}' ./oai_rules_result_list.txt >> ./build_results.html
+            echo "   <button data-toggle=\"collapse\" data-target=\"#oai-formatting-details\">More details on formatting check</button>" >> ./build_results.html
+            echo "   <div id=\"oai-formatting-details\" class=\"collapse\">" >> ./build_results.html
+            echo "   <p>Please apply the following command to this(ese) file(s): </p>" >> ./build_results.html
+            echo "   <p style=\"margin-left: 30px\"><strong><code>astyle --options=ci-scripts/astyle-options.txt filename(s)</code></strong></p>" >> ./build_results.html
+            echo "   <table border = 1>" >> ./build_results.html
+            echo "      <tr>" >> ./build_results.html
+            echo "        <th bgcolor = \"lightcyan\" >Filename</th>" >> ./build_results.html
+            echo "      </tr>" >> ./build_results.html
+            awk '{print "      <tr><td>"$1"</td></tr>"}' ./oai_rules_result_list.txt >> ./build_results.html
+            echo "   </table>" >> ./build_results.html
+            echo "   </div>" >> ./build_results.html
         fi
-        echo "   </table>" >> ./build_results.html
-        echo "   <p>Please apply the following command to this(ese) file(s): </p>" >> ./build_results.html
-        echo "   <p style=\"margin-left: 30px\"><strong><code>astyle --options=ci-scripts/astyle-options.txt filename(s)</code></strong></p>" >> ./build_results.html
     fi
-fi
 
-echo "   <h2>Ubuntu 16.04 LTS -- Summary</h2>" >> ./build_results.html
+    echo "   <h2>Ubuntu 16.04 LTS -- Summary</h2>" >> ./build_results.html
 
-sca_summary_table_header "OAI Static Code Analysis with CPPCHECK"
-sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Uninitialized variable" uninitvar
-sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Uninitialized struct member" uninitStructMember
-sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Memory leak" memleak
-sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Memory is freed twice" doubleFree
-sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Resource leak" resourceLeak
-sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Possible null pointer dereference" nullPointer
-sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Array access  out of bounds" arrayIndexOutOfBounds
-sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Buffer is accessed out of bounds" bufferAccessOutOfBounds
-sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Expression depends on order of evaluation of side effects" unknownEvaluationOrder
-sca_summary_table_footer ./archives/cppcheck/cppcheck.xml
+    sca_summary_table_header ./archives/cppcheck/cppcheck.xml "OAI Static Code Analysis with CPPCHECK"
+    sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Uninitialized variable" uninitvar
+    sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Uninitialized struct member" uninitStructMember
+    sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Memory leak" memleak
+    sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Memory is freed twice" doubleFree
+    sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Resource leak" resourceLeak
+    sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Possible null pointer dereference" nullPointer
+    sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Array access  out of bounds" arrayIndexOutOfBounds
+    sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Buffer is accessed out of bounds" bufferAccessOutOfBounds
+    sca_summary_table_row ./archives/cppcheck/cppcheck.xml "Expression depends on order of evaluation of side effects" unknownEvaluationOrder
+    sca_summary_table_footer ./archives/cppcheck/cppcheck.xml
 
-summary_table_header "OAI Build eNB -- USRP option"
-summary_table_row "LTE SoftModem - Release 14" ./archives/enb_usrp/lte-softmodem.Rel14.txt "Built target lte-softmodem" ./enb_usrp_row1.html
-summary_table_row "Coding - Release 14" ./archives/enb_usrp/coding.Rel14.txt "Built target coding" ./enb_usrp_row2.html
-summary_table_row "OAI USRP device if - Release 14" ./archives/enb_usrp/oai_usrpdevif.Rel14.txt "Built target oai_usrpdevif" ./enb_usrp_row3.html
-summary_table_row "Parameters Lib Config - Release 14" ./archives/enb_usrp/params_libconfig.Rel14.txt "Built target params_libconfig" ./enb_usrp_row4.html
-summary_table_footer
+    summary_table_header "OAI Build eNB -- USRP option" ./archives/enb_usrp
+    summary_table_row "LTE SoftModem - Release 14" ./archives/enb_usrp/lte-softmodem.Rel14.txt "Built target lte-softmodem" ./enb_usrp_row1.html
+    summary_table_row "Coding - Release 14" ./archives/enb_usrp/coding.Rel14.txt "Built target coding" ./enb_usrp_row2.html
+    summary_table_row "OAI USRP device if - Release 14" ./archives/enb_usrp/oai_usrpdevif.Rel14.txt "Built target oai_usrpdevif" ./enb_usrp_row3.html
+    summary_table_row "Parameters Lib Config - Release 14" ./archives/enb_usrp/params_libconfig.Rel14.txt "Built target params_libconfig" ./enb_usrp_row4.html
+    summary_table_footer
 
-summary_table_header "OAI Build basic simulator option"
-summary_table_row "Basic Simulator eNb - Release 14" ./archives/basic_sim/basic_simulator_enb.txt "Built target lte-softmodem" ./basic_sim_row1.html
-summary_table_row "Basic Simulator UE - Release 14" ./archives/basic_sim/basic_simulator_ue.txt "Built target lte-uesoftmodem" ./basic_sim_row2.html
-summary_table_row "Conf 2 UE data - Release 14" ./archives/basic_sim/conf2uedata.Rel14.txt "Built target conf2uedata" ./basic_sim_row3.html
-summary_table_footer
+    summary_table_header "OAI Build basic simulator option" ./archives/basic_sim
+    summary_table_row "Basic Simulator eNb - Release 14" ./archives/basic_sim/basic_simulator_enb.txt "Built target lte-softmodem" ./basic_sim_row1.html
+    summary_table_row "Basic Simulator UE - Release 14" ./archives/basic_sim/basic_simulator_ue.txt "Built target lte-uesoftmodem" ./basic_sim_row2.html
+    summary_table_row "Conf 2 UE data - Release 14" ./archives/basic_sim/conf2uedata.Rel14.txt "Built target conf2uedata" ./basic_sim_row3.html
+    summary_table_footer
 
-summary_table_header "OAI Build Physical simulators option"
-summary_table_row "DL Simulator - Release 14" ./archives/phy_sim/dlsim.Rel14.txt "Built target dlsim" ./phy_sim_row1.html
-summary_table_row "UL Simulator - Release 14" ./archives/phy_sim/ulsim.Rel14.txt "Built target ulsim" ./phy_sim_row2.html
-summary_table_row "Coding - Release 14" ./archives/phy_sim/coding.Rel14.txt "Built target coding" ./phy_sim_row3.html
-summary_table_footer
+    summary_table_header "OAI Build Physical simulators option" ./archives/phy_sim
+    summary_table_row "DL Simulator - Release 14" ./archives/phy_sim/dlsim.Rel14.txt "Built target dlsim" ./phy_sim_row1.html
+    summary_table_row "UL Simulator - Release 14" ./archives/phy_sim/ulsim.Rel14.txt "Built target ulsim" ./phy_sim_row2.html
+    summary_table_row "Coding - Release 14" ./archives/phy_sim/coding.Rel14.txt "Built target coding" ./phy_sim_row3.html
+    summary_table_footer
 
-summary_table_header "OAI Build eNB -- ETHERNET transport option"
-summary_table_row "LTE SoftModem w/o S1 - Release 14" ./archives/enb_eth/lte-softmodem-nos1.Rel14.txt "Built target lte-softmodem" ./enb_eth_row1.html
-summary_table_row "Coding - Release 14" ./archives/enb_eth/coding.Rel14.txt "Built target coding" ./enb_eth_row2.html
-summary_table_row "OAI ETHERNET transport - Release 14" ./archives/enb_eth/oai_eth_transpro.Rel14.txt "Built target oai_eth_transpro" ./enb_eth_row3.html
-summary_table_row "Parameters Lib Config - Release 14" ./archives/enb_eth/params_libconfig.Rel14.txt "Built target params_libconfig" ./enb_eth_row4.html
-summary_table_row "RB Tools - Release 14" ./archives/enb_eth/rb_tool.Rel14.txt "Built target rb_tool" ./enb_eth_row5.html
-summary_table_row "NAS Mesh - Release 14" ./archives/enb_eth/nasmesh.Rel14.txt "Built target nasmesh" ./enb_eth_row6.html
-summary_table_footer
 
-summary_table_header "OAI Build UE -- ETHERNET transport option"
-summary_table_row "LTE UE SoftModem w/o S1 - Release 14" ./archives/ue_eth/lte-uesoftmodem-nos1.Rel14.txt "Built target lte-uesoftmodem" ./ue_eth_row1.html
-summary_table_row "Coding - Release 14" ./archives/ue_eth/coding.Rel14.txt "Built target coding" ./ue_eth_row2.html
-summary_table_row "OAI ETHERNET transport - Release 14" ./archives/ue_eth/oai_eth_transpro.Rel14.txt "Built target oai_eth_transpro" ./ue_eth_row3.html
-summary_table_row "Parameters Lib Config - Release 14" ./archives/ue_eth/params_libconfig.Rel14.txt "Built target params_libconfig" ./ue_eth_row4.html
-summary_table_row "RB Tools - Release 14" ./archives/ue_eth/rb_tool.Rel14.txt "Built target rb_tool" ./ue_eth_row5.html
-summary_table_row "NAS Mesh - Release 14" ./archives/ue_eth/nasmesh.Rel14.txt "Built target nasmesh" ./ue_eth_row6.html
-summary_table_footer
+    if [ -f archives/gnb_usrp/nr-softmodem.Rel14.txt ]
+    then
+        summary_table_header "OAI Build gNB -- USRP option" ./archives/gnb_usrp
+        summary_table_row "LTE SoftModem - Release 14" ./archives/gnb_usrp/nr-softmodem.Rel14.txt "Built target nr-softmodem" ./gnb_usrp_row1.html
+        summary_table_row "Coding - Release 14" ./archives/gnb_usrp/coding.Rel14.txt "Built target coding" ./gnb_usrp_row2.html
+        summary_table_row "OAI USRP device if - Release 14" ./archives/gnb_usrp/oai_usrpdevif.Rel14.txt "Built target oai_usrpdevif" ./gnb_usrp_row3.html
+        summary_table_row "Parameters Lib Config - Release 14" ./archives/gnb_usrp/params_libconfig.Rel14.txt "Built target params_libconfig" ./gnb_usrp_row4.html
+        summary_table_footer
+    fi
 
-echo "   <h2>Red Hat (CentOS Linux release 7.4.1708) -- Summary</h2>" >> ./build_results.html
+    if [ -f archives/nrue_usrp/nr-uesoftmodem.Rel14.txt ]
+    then
+        summary_table_header "OAI Build 5G NR UE -- USRP option" ./archives/nrue_usrp
+        summary_table_row "UE SoftModem - Release 14" ./archives/nrue_usrp/nr-uesoftmodem.Rel14.txt "Built target nr-uesoftmodem" ./nrue_usrp_row1.html
+        summary_table_row "Coding - Release 14" ./archives/nrue_usrp/coding.Rel14.txt "Built target coding" ./nrue_usrp_row2.html
+        summary_table_row "OAI USRP device if - Release 14" ./archives/nrue_usrp/oai_usrpdevif.Rel14.txt "Built target oai_usrpdevif" ./nrue_usrp_row3.html
+        summary_table_row "Parameters Lib Config - Release 14" ./archives/nrue_usrp/params_libconfig.Rel14.txt "Built target params_libconfig" ./nrue_usrp_row4.html
+        summary_table_footer
+    fi
 
-summary_table_header "Red Hat -- OAI Build eNB -- USRP option"
-summary_table_row "LTE SoftModem - Release 14" ./archives/red_hat/lte-softmodem.Rel14.txt "Built target lte-softmodem" ./enb_usrp_rh_row1.html
-summary_table_row "Coding - Release 14" ./archives/red_hat/coding.Rel14.txt "Built target coding" ./enb_usrp_rh_row2.html
-summary_table_row "OAI USRP device if - Release 14" ./archives/red_hat/oai_usrpdevif.Rel14.txt "Built target oai_usrpdevif" ./enb_usrp_rh_row3.html
-summary_table_row "Parameters Lib Config - Release 14" ./archives/red_hat/params_libconfig.Rel14.txt "Built target params_libconfig" ./enb_usrp_rh_row4.html
-summary_table_footer
+    summary_table_header "OAI Build eNB -- ETHERNET transport option" ./archives/enb_eth
+    summary_table_row "LTE SoftModem w/o S1 - Release 14" ./archives/enb_eth/lte-softmodem-nos1.Rel14.txt "Built target lte-softmodem" ./enb_eth_row1.html
+    summary_table_row "Coding - Release 14" ./archives/enb_eth/coding.Rel14.txt "Built target coding" ./enb_eth_row2.html
+    summary_table_row "OAI ETHERNET transport - Release 14" ./archives/enb_eth/oai_eth_transpro.Rel14.txt "Built target oai_eth_transpro" ./enb_eth_row3.html
+    summary_table_row "Parameters Lib Config - Release 14" ./archives/enb_eth/params_libconfig.Rel14.txt "Built target params_libconfig" ./enb_eth_row4.html
+    summary_table_row "RB Tools - Release 14" ./archives/enb_eth/rb_tool.Rel14.txt "Built target rb_tool" ./enb_eth_row5.html
+    summary_table_row "NAS Mesh - Release 14" ./archives/enb_eth/nasmesh.Rel14.txt "Built target nasmesh" ./enb_eth_row6.html
+    summary_table_footer
 
-echo "   <h3>Details</h3>" >> ./build_results.html
+    summary_table_header "OAI Build UE -- ETHERNET transport option" ./archives/ue_eth
+    summary_table_row "LTE UE SoftModem w/o S1 - Release 14" ./archives/ue_eth/lte-uesoftmodem-nos1.Rel14.txt "Built target lte-uesoftmodem" ./ue_eth_row1.html
+    summary_table_row "Coding - Release 14" ./archives/ue_eth/coding.Rel14.txt "Built target coding" ./ue_eth_row2.html
+    summary_table_row "OAI ETHERNET transport - Release 14" ./archives/ue_eth/oai_eth_transpro.Rel14.txt "Built target oai_eth_transpro" ./ue_eth_row3.html
+    summary_table_row "Parameters Lib Config - Release 14" ./archives/ue_eth/params_libconfig.Rel14.txt "Built target params_libconfig" ./ue_eth_row4.html
+    summary_table_row "RB Tools - Release 14" ./archives/ue_eth/rb_tool.Rel14.txt "Built target rb_tool" ./ue_eth_row5.html
+    summary_table_row "NAS Mesh - Release 14" ./archives/ue_eth/nasmesh.Rel14.txt "Built target nasmesh" ./ue_eth_row6.html
+    summary_table_footer
 
-for DETAILS_TABLE in `ls ./enb_usrp_row*.html`
-do
-    cat $DETAILS_TABLE >> ./build_results.html
-done
-for DETAILS_TABLE in `ls ./basic_sim_row*.html`
-do
-    cat $DETAILS_TABLE >> ./build_results.html
-done
-for DETAILS_TABLE in `ls ./phy_sim_row*.html`
-do
-    cat $DETAILS_TABLE >> ./build_results.html
-done
-for DETAILS_TABLE in `ls ./enb_eth_row*.html`
-do
-    cat $DETAILS_TABLE >> ./build_results.html
-done
-for DETAILS_TABLE in `ls ./ue_eth_row*.html`
-do
-    cat $DETAILS_TABLE >> ./build_results.html
-done
-for DETAILS_TABLE in `ls ./enb_usrp_rh_row*.html`
-do
-    cat $DETAILS_TABLE >> ./build_results.html
-done
-rm -f ./enb_usrp_row*.html ./basic_sim_row*.html ./phy_sim_row*.html ./enb_eth_row*.html ./ue_eth_row*.html ./enb_usrp_rh_row*.html
+    if [ -e ./archives/red_hat ]
+    then
+        echo "   <h2>Red Hat Enterprise Linux Server release 7.6) -- Summary</h2>" >> ./build_results.html
 
-echo "</body>" >> ./build_results.html
-echo "</html>" >> ./build_results.html
+        summary_table_header "Red Hat -- OAI Build eNB -- USRP option" ./archives/red_hat
+        summary_table_row "LTE SoftModem - Release 14" ./archives/red_hat/lte-softmodem.Rel14.txt "Built target lte-softmodem" ./enb_usrp_rh_row1.html
+        summary_table_row "Coding - Release 14" ./archives/red_hat/coding.Rel14.txt "Built target coding" ./enb_usrp_rh_row2.html
+        summary_table_row "OAI USRP device if - Release 14" ./archives/red_hat/oai_usrpdevif.Rel14.txt "Built target oai_usrpdevif" ./enb_usrp_rh_row3.html
+        summary_table_row "Parameters Lib Config - Release 14" ./archives/red_hat/params_libconfig.Rel14.txt "Built target params_libconfig" ./enb_usrp_rh_row4.html
+        summary_table_footer
+    fi
 
-exit 0
+    echo "   <h3>Details</h3>" >> ./build_results.html
+    echo "   <button data-toggle=\"collapse\" data-target=\"#oai-compilation-details\">Details for Compilation Errors and Warnings </button>" >> ./build_results.html
+    echo "   <div id=\"oai-compilation-details\" class=\"collapse\">" >> ./build_results.html
+
+    for DETAILS_TABLE in `ls ./enb_usrp_row*.html`
+    do
+        cat $DETAILS_TABLE >> ./build_results.html
+    done
+    for DETAILS_TABLE in `ls ./basic_sim_row*.html`
+    do
+        cat $DETAILS_TABLE >> ./build_results.html
+    done
+    for DETAILS_TABLE in `ls ./phy_sim_row*.html`
+    do
+        cat $DETAILS_TABLE >> ./build_results.html
+    done
+
+    for DETAILS_TABLE in `ls ./gnb_usrp_row*.html`
+    do
+        cat $DETAILS_TABLE >> ./build_results.html
+    done
+    for DETAILS_TABLE in `ls ./nrue_usrp_row*.html`
+    do
+        cat $DETAILS_TABLE >> ./build_results.html
+    done
+    for DETAILS_TABLE in `ls ./enb_eth_row*.html`
+    do
+        cat $DETAILS_TABLE >> ./build_results.html
+    done
+    for DETAILS_TABLE in `ls ./ue_eth_row*.html`
+    do
+        cat $DETAILS_TABLE >> ./build_results.html
+    done
+    if [ -e ./archives/red_hat ]
+    then
+    for DETAILS_TABLE in `ls ./enb_usrp_rh_row*.html`
+    do
+        cat $DETAILS_TABLE >> ./build_results.html
+    done
+    fi
+    rm -f ./*_row*.html
+
+    echo "   </div>" >> ./build_results.html
+    echo "   <p></p>" >> ./build_results.html
+    echo "   <div class=\"well well-lg\">End of Build Report -- Copyright <span class=\"glyphicon glyphicon-copyright-mark\"></span> 2018 <a href=\"http://www.openairinterface.org/\">OpenAirInterface</a>. All Rights Reserved.</div>" >> ./build_results.html
+    echo "</div></body>" >> ./build_results.html
+    echo "</html>" >> ./build_results.html
+}

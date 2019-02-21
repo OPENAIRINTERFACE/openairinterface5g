@@ -211,10 +211,11 @@ int main(void)
   sprintf(s, "hello");
   if (message_put(q, s, 6, 0)) goto error;
   destroy_message_queue(q);
-
+  free(s);
   return 0;
 
 error:
+  free(s);
   printf("error\n");
   return 1;
 }

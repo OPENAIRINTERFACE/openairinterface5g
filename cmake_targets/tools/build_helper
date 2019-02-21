@@ -32,8 +32,8 @@ OS_DISTRO=$(grep "^ID=" /etc/os-release | sed "s/ID=//" | sed "s/\"//g")
 OS_RELEASE=$(grep "^VERSION_ID=" /etc/os-release | sed "s/VERSION_ID=//" | sed "s/\"//g")
 case "$OS_DISTRO" in
   fedora) OS_BASEDISTRO="fedora"; INSTALLER="dnf"; CMAKE="cmake" ;;
-  rhel)   OS_BASEDISTRO="fedora"; INSTALLER="yum"; CMAKE="cmake3" ;;
-  centos) OS_BASEDISTRO="fedora"; INSTALLER="yum"; CMAKE="cmake3" ;;
+  rhel)   OS_BASEDISTRO="fedora"; INSTALLER="yum --skip-broken"; CMAKE="cmake3" ;;
+  centos) OS_BASEDISTRO="fedora"; INSTALLER="yum --skip-broken"; CMAKE="cmake3" ;;
   debian) OS_BASEDISTRO="debian"; INSTALLER="apt-get"; CMAKE="cmake" ;;
   ubuntu) OS_BASEDISTRO="debian"; INSTALLER="apt-get"; CMAKE="cmake" ;;
 esac
@@ -102,7 +102,7 @@ check_supported_distribution() {
         "ubuntu14.04") return 0 ;;
         "fedora24")    return 0 ;;
         "rhel7")       return 0 ;;
-	"rhel7.5")     return 0 ;;
+	"rhel7.6")     return 0 ;;
         "centos7")     return 0 ;;
     esac
     return 1
@@ -253,7 +253,7 @@ install_usrp_uhd_driver_from_source(){
     rm -rf /tmp/uhd
     git clone https://github.com/EttusResearch/uhd.git
     cd uhd
-    git checkout tags/release_003_010_001_001
+    git checkout tags/v3.13.0.2
     mkdir -p host/build
     cd host/build
     $CMAKE ../
@@ -311,10 +311,20 @@ install_usrp_uhd_driver() {
         # On newer kernels, it fails to install
         $SUDO apt-get -y install uhd-host
     fi
+    # quick workaround for RHE7.6
+    local distribution=$(get_distribution_release)
     if [ -z $1 ]; then
-      $SUDO uhd_images_downloader
+      if [[ "$distribution" == "rhel7.6" ]]; then
+          $SUDO /usr/local/bin/uhd_images_downloader
+      else
+          $SUDO uhd_images_downloader
+      fi
     else
-      $SUDO uhd_images_downloader -i $1
+      if [[ "$distribution" == "rhel7.6" ]]; then
+          $SUDO /usr/local/bin/uhd_images_downloader -i $1
+      else
+          $SUDO uhd_images_downloader -i $1
+      fi
     fi
 }
 
@@ -373,10 +383,78 @@ check_install_lmssdr_driver(){
         else
                 echo_error "lmssdr support implies installing lmssdr drivers and tools" \
                            " from sources. check:"
-                echo_info "https://open-cells.com/index.php/2017/05/10/limesdr-installation/"
+                echo_info "https://wiki.myriadrf.org/Lime_Suite"
                 echo_fatal "Cannot compile lmssdr device"
 	fi
 
+
+}
+
+install_soapy_from_source(){
+    soapy_install_log=$OPENAIR_DIR/cmake_targets/log/soapy_install_log.txt
+    echo_info "\nInstalling Soapy EcoSystem from source. The log file for Soapy installation is here: $soapy_install_log "
+    (
+    cd /tmp
+    echo "Downloading SoapySDR"
+    rm -rf /tmp/soapysdr
+    git clone -b soapy-sdr-0.7.0 --single-branch https://github.com/pothosware/SoapySDR.git
+    cd SoapySDR
+    #git checkout tags/release_003_010_001_001
+    mkdir -p build
+    cd build
+    $CMAKE ../
+    echo "Compiling SoapySDR"
+    make -j`nproc`
+    $SUDO make install
+    $SUDO ldconfig
+    cd /tmp
+    echo "Downloading SoapyRemote"
+    rm -rf /tmp/soapyremote
+    git clone -b soapy-remote-0.5.0 --single-branch https://github.com/pothosware/SoapyRemote.git
+    cd SoapyRemote
+    #git checkout tags/release_003_010_001_001
+    mkdir -p build
+    cd build
+    cmake ../
+    echo "Compiling SoapyRemote"
+    make -j`nproc`
+    $SUDO make install
+    $SUDO ldconfig
+    ) >& $soapy_install_log
+}
+
+install_soapy_iris_from_source(){
+    iris_install_log=$OPENAIR_DIR/cmake_targets/log/iris_install_log.txt
+    echo_info "\nInstalling Iris driver from source. The log file for Iris driver installation is here: $iris_install_log "
+    (
+    cd /tmp
+    echo "Downloading SoapyIris"
+    rm -rf /tmp/sklk-soapyiris
+    git clone -b soapy-iris-2018.08.0.1 --single-branch https://github.com/skylarkwireless/sklk-soapyiris.git
+    cd sklk-soapyiris
+    mkdir -p build
+    cd build
+    cmake ../
+    echo "Compiling SoapyIris"
+    make -j`nproc`
+    $SUDO make install
+    $SUDO ldconfig
+    ) >& $iris_install_log
+}
+
+check_install_soapy () {
+    #if [[ "$OS_DISTRO" == "ubuntu" ]]; then
+        #first we remove old installation
+    $SUDO apt-get remove -y soapysdr soapysdr-server libsoapysdr-dev python-soapysdr python3-soapysdr soapysdr-module-remote || true
+        #$SUDO add-apt-repository -y ppa:myriadrf/drivers
+        #$SUDO apt-get update
+        #$SUDO apt-get install -y soapysdr soapysdr-server libsoapysdr-dev python-soapysdr python3-soapysdr soapysdr-module-remote
+
+    #elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
+    #    $SUDO $INSTALLER -y install software-properties-common python3-software-properties python-software-properties subversion git python3 python-numpy python3-numpy cmake swig python-dev
+    install_soapy_from_source
+    #fi
+    install_soapy_iris_from_source
 
 }
 
@@ -678,7 +756,7 @@ install_asn1c_from_source(){
     # better to use a given commit than a branch in case the branch
     # is updated and requires modifications in the source of OAI
     #git checkout velichkov_s1ap_plus_option_group
-    git checkout d3aed06bb2bec7df1b5c6d0333f8c7dfc5993372
+    git checkout 0a7524184f16e7093990a31d8d4db487a16e5782
     autoreconf -iv
     ./configure
     make -j`nproc`

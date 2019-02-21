@@ -38,9 +38,9 @@
 #include "f1ap_du_rrc_message_transfer.h"
 
 
-#include "DL-CCCH-Message.h"
-#include "DL-DCCH-Message.h"
-#include "UL-DCCH-Message.h"
+#include "LTE_DL-CCCH-Message.h"
+#include "LTE_DL-DCCH-Message.h"
+#include "LTE_UL-DCCH-Message.h"
 
 // for SRB1_logicalChannelConfig_defaultValue
 #include "rrc_extern.h"
@@ -77,8 +77,8 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   uint64_t        srb_id;
   int             executeDuplication;
   sdu_size_t      rrc_dl_sdu_len;
-  uint64_t        subscriberProfileIDforRFP;
-  uint64_t        rAT_FrequencySelectionPriority;
+  //uint64_t        subscriberProfileIDforRFP;
+  //uint64_t        rAT_FrequencySelectionPriority;
 
   DevAssert(pdu != NULL);
 
@@ -159,10 +159,10 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 
     switch(ie->value.choice.RAT_FrequencyPriorityInformation.present) {
       case F1AP_RAT_FrequencyPriorityInformation_PR_subscriberProfileIDforRFP:
-        subscriberProfileIDforRFP = ie->value.choice.RAT_FrequencyPriorityInformation.choice.subscriberProfileIDforRFP;
+        //subscriberProfileIDforRFP = ie->value.choice.RAT_FrequencyPriorityInformation.choice.subscriberProfileIDforRFP;
         break;
       case F1AP_RAT_FrequencyPriorityInformation_PR_rAT_FrequencySelectionPriority:
-        rAT_FrequencySelectionPriority = ie->value.choice.RAT_FrequencyPriorityInformation.choice.rAT_FrequencySelectionPriority;
+        //rAT_FrequencySelectionPriority = ie->value.choice.RAT_FrequencyPriorityInformation.choice.rAT_FrequencySelectionPriority;
         break;
       default:
         LOG_W(DU_F1AP, "unhandled IE RAT_FrequencyPriorityInformation.present\n");
@@ -184,35 +184,36 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                                                 ctxt.rnti);
 
   if (srb_id == 0) {
-    DL_CCCH_Message_t* dl_ccch_msg=NULL;
+    LTE_DL_CCCH_Message_t* dl_ccch_msg=NULL;
     asn_dec_rval_t dec_rval;
     dec_rval = uper_decode(NULL,
-         &asn_DEF_DL_CCCH_Message,
+         &asn_DEF_LTE_DL_CCCH_Message,
          (void**)&dl_ccch_msg,
          ie->value.choice.RRCContainer.buf,
          rrc_dl_sdu_len,0,0);
+    AssertFatal(dec_rval.code == RC_OK, "could not decode F1AP message\n");
     switch (dl_ccch_msg->message.choice.c1.present) {
 
-      case DL_CCCH_MessageType__c1_PR_NOTHING:
+      case LTE_DL_CCCH_MessageType__c1_PR_NOTHING:
         LOG_I(DU_F1AP, "Received PR_NOTHING on DL-CCCH-Message\n");
         break;
 
-      case DL_CCCH_MessageType__c1_PR_rrcConnectionReestablishment:
+      case LTE_DL_CCCH_MessageType__c1_PR_rrcConnectionReestablishment:
         LOG_I(DU_F1AP,
         "Logical Channel DL-CCCH (SRB0), Received RRCConnectionReestablishment\n");
         break;
 
-      case DL_CCCH_MessageType__c1_PR_rrcConnectionReestablishmentReject:
+      case LTE_DL_CCCH_MessageType__c1_PR_rrcConnectionReestablishmentReject:
         LOG_I(DU_F1AP,
         "Logical Channel DL-CCCH (SRB0), Received RRCConnectionReestablishmentReject\n");
         break;
 
-      case DL_CCCH_MessageType__c1_PR_rrcConnectionReject:
+      case LTE_DL_CCCH_MessageType__c1_PR_rrcConnectionReject:
         LOG_I(DU_F1AP,
         "Logical Channel DL-CCCH (SRB0), Received RRCConnectionReject \n");
         break;
 
-      case DL_CCCH_MessageType__c1_PR_rrcConnectionSetup:
+      case LTE_DL_CCCH_MessageType__c1_PR_rrcConnectionSetup:
       {
         LOG_I(DU_F1AP,
           "Logical Channel DL-CCCH (SRB0), Received RRCConnectionSetup DU_ID %lx/RNTI %x\n",
@@ -220,14 +221,14 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
           f1ap_get_rnti_by_du_id(&f1ap_du_inst[instance], du_ue_f1ap_id));
           // Get configuration
 
-        RRCConnectionSetup_t* rrcConnectionSetup = &dl_ccch_msg->message.choice.c1.choice.rrcConnectionSetup;
+        LTE_RRCConnectionSetup_t* rrcConnectionSetup = &dl_ccch_msg->message.choice.c1.choice.rrcConnectionSetup;
         AssertFatal(rrcConnectionSetup!=NULL,"rrcConnectionSetup is null\n");
-        RadioResourceConfigDedicated_t* radioResourceConfigDedicated = &rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated;
+        LTE_RadioResourceConfigDedicated_t* radioResourceConfigDedicated = &rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated;
 
         // get SRB logical channel information
-        SRB_ToAddModList_t *SRB_configList;
-        SRB_ToAddMod_t *SRB1_config;
-        LogicalChannelConfig_t *SRB1_logicalChannelConfig;  //,*SRB2_logicalChannelConfig;
+        LTE_SRB_ToAddModList_t *SRB_configList;
+        LTE_SRB_ToAddMod_t *SRB1_config;
+        LTE_LogicalChannelConfig_t *SRB1_logicalChannelConfig;  //,*SRB2_logicalChannelConfig;
         SRB_configList                 = radioResourceConfigDedicated->srb_ToAddModList;
 
         AssertFatal(SRB_configList!=NULL,"SRB_configList is null\n");
@@ -237,7 +238,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 
             if (SRB1_config->logicalChannelConfig) {
               if (SRB1_config->logicalChannelConfig->present ==
-                SRB_ToAddMod__logicalChannelConfig_PR_explicitValue) {
+                LTE_SRB_ToAddMod__logicalChannelConfig_PR_explicitValue) {
                 SRB1_logicalChannelConfig = &SRB1_config->logicalChannelConfig->choice.explicitValue;
               } else {
                 SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
@@ -249,10 +250,10 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
         } // for
         rrc_rlc_config_asn1_req(&ctxt,
           SRB_configList,
-          (DRB_ToAddModList_t*) NULL,
-          (DRB_ToReleaseList_t*) NULL
-#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-          , (PMCH_InfoList_r9_t *) NULL,
+          (LTE_DRB_ToAddModList_t*) NULL,
+          (LTE_DRB_ToReleaseList_t*) NULL
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+          , (LTE_PMCH_InfoList_r9_t *) NULL,
           0,0
 #   endif
           );
@@ -276,35 +277,35 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
           ctxt.module_id,
           0, //primaryCC_id,
           0,0,0,0,0,
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
           0,
 #endif
           ctxt.rnti,
-          (BCCH_BCH_Message_t *) NULL,
-          (RadioResourceConfigCommonSIB_t *) NULL,
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-          (RadioResourceConfigCommonSIB_t *) NULL,
+          (LTE_BCCH_BCH_Message_t *) NULL,
+          (LTE_RadioResourceConfigCommonSIB_t *) NULL,
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+          (LTE_RadioResourceConfigCommonSIB_t *) NULL,
 #endif
           radioResourceConfigDedicated->physicalConfigDedicated,
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-          (SCellToAddMod_r10_t *)NULL,
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+          (LTE_SCellToAddMod_r10_t *)NULL,
           //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
-          (MeasObjectToAddMod_t **) NULL,
+          (LTE_MeasObjectToAddMod_t **) NULL,
           radioResourceConfigDedicated->mac_MainConfig,
           1,
           SRB1_logicalChannelConfig,
           NULL, // measGapConfig,
-          (TDD_Config_t *) NULL,
+          (LTE_TDD_Config_t *) NULL,
           NULL,
-          (SchedulingInfoList_t *) NULL,
-          0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
-#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-          , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
+          (LTE_SchedulingInfoList_t *) NULL,
+          0, NULL, NULL, (LTE_MBSFN_SubframeConfigList_t *) NULL
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+          , 0, (LTE_MBSFN_AreaInfoList_r9_t *) NULL, (LTE_PMCH_InfoList_r9_t *) NULL
 #endif
-#if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
           ,
-          (SystemInformationBlockType1_v1310_IEs_t *)NULL
+          (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL
 #endif
           );
           break;
@@ -318,10 +319,10 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
     return(0);
   } else if (srb_id == 1) { 
 
-    DL_DCCH_Message_t* dl_dcch_msg=NULL;
+    LTE_DL_DCCH_Message_t* dl_dcch_msg=NULL;
     asn_dec_rval_t dec_rval;
     dec_rval = uper_decode(NULL,
-         &asn_DEF_DL_DCCH_Message,
+         &asn_DEF_LTE_DL_DCCH_Message,
          (void**)&dl_dcch_msg,
          &ie->value.choice.RRCContainer.buf[1], // buf[0] includes the pdcp header
          rrc_dl_sdu_len,0,0);
@@ -332,38 +333,38 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
       LOG_D(DU_F1AP, "Received message: present %d and c1 present %d\n", 
         dl_dcch_msg->message.present, dl_dcch_msg->message.choice.c1.present);
 
-    if (dl_dcch_msg->message.present == DL_DCCH_MessageType_PR_c1) {
+    if (dl_dcch_msg->message.present == LTE_DL_DCCH_MessageType_PR_c1) {
      
       switch (dl_dcch_msg->message.choice.c1.present) {
 	
-      case DL_DCCH_MessageType__c1_PR_NOTHING:
+      case LTE_DL_DCCH_MessageType__c1_PR_NOTHING:
         LOG_I(DU_F1AP, "Received PR_NOTHING on DL-DCCH-Message\n");
         return 0;
-      case DL_DCCH_MessageType__c1_PR_dlInformationTransfer:
+      case LTE_DL_DCCH_MessageType__c1_PR_dlInformationTransfer:
         LOG_I(DU_F1AP,"Received NAS DL Information Transfer\n");
         break;	
-      case DL_DCCH_MessageType__c1_PR_csfbParametersResponseCDMA2000:
+      case LTE_DL_DCCH_MessageType__c1_PR_csfbParametersResponseCDMA2000:
         LOG_I(DU_F1AP,"Received NAS sfbParametersResponseCDMA2000\n");
         break;  
-      case DL_DCCH_MessageType__c1_PR_handoverFromEUTRAPreparationRequest:
+      case LTE_DL_DCCH_MessageType__c1_PR_handoverFromEUTRAPreparationRequest:
         LOG_I(DU_F1AP,"Received NAS andoverFromEUTRAPreparationRequest\n");
         break;  
-      case DL_DCCH_MessageType__c1_PR_mobilityFromEUTRACommand:
+      case LTE_DL_DCCH_MessageType__c1_PR_mobilityFromEUTRACommand:
         LOG_I(DU_F1AP,"Received NAS mobilityFromEUTRACommand\n");
         break;
-      case DL_DCCH_MessageType__c1_PR_rrcConnectionReconfiguration:
+      case LTE_DL_DCCH_MessageType__c1_PR_rrcConnectionReconfiguration:
 	     // handle RRCConnectionReconfiguration
         LOG_I(DU_F1AP,
 	       "Logical Channel DL-DCCH (SRB1), Received RRCConnectionReconfiguration DU_ID %lx/RNTI %x\n",
 	       du_ue_f1ap_id,
 	       f1ap_get_rnti_by_du_id(&f1ap_du_inst[instance], du_ue_f1ap_id));
 	
-        RRCConnectionReconfiguration_t* rrcConnectionReconfiguration = &dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration;
+        LTE_RRCConnectionReconfiguration_t* rrcConnectionReconfiguration = &dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration;
 
-        if (rrcConnectionReconfiguration->criticalExtensions.present == RRCConnectionReconfiguration__criticalExtensions_PR_c1) {
+        if (rrcConnectionReconfiguration->criticalExtensions.present == LTE_RRCConnectionReconfiguration__criticalExtensions_PR_c1) {
 	        if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.present ==
-	         RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8) {
-	          RRCConnectionReconfiguration_r8_IEs_t* rrcConnectionReconfiguration_r8 =
+	         LTE_RRCConnectionReconfiguration__criticalExtensions__c1_PR_rrcConnectionReconfiguration_r8) {
+	          LTE_RRCConnectionReconfiguration_r8_IEs_t* rrcConnectionReconfiguration_r8 =
 	          &rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8;
 	    
             if (rrcConnectionReconfiguration_r8->mobilityControlInfo) {
@@ -379,19 +380,19 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
       	      uint8_t DRB2LCHAN[8];
               long drb_id;
               int i;
-      	      DRB_ToAddModList_t*                 DRB_configList = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->drb_ToAddModList;
-              SRB_ToAddModList_t*                 SRB_configList = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->srb_ToAddModList;
-              DRB_ToReleaseList_t*                DRB_ReleaseList = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->drb_ToReleaseList;
-              MAC_MainConfig_t                    *mac_MainConfig = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->mac_MainConfig;
-              MeasGapConfig_t                    *measGapConfig = NULL;
-              struct PhysicalConfigDedicated**    physicalConfigDedicated = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->physicalConfigDedicated;
+              LTE_DRB_ToAddModList_t  *DRB_configList  = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->drb_ToAddModList;
+              LTE_SRB_ToAddModList_t  *SRB_configList  = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->srb_ToAddModList;
+              LTE_DRB_ToReleaseList_t *DRB_ReleaseList = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->drb_ToReleaseList;
+              LTE_MAC_MainConfig_t    *mac_MainConfig  = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->mac_MainConfig;
+              LTE_MeasGapConfig_t     *measGapConfig   = NULL;
+              struct LTE_PhysicalConfigDedicated**    physicalConfigDedicated = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->physicalConfigDedicated;
               rrc_rlc_config_asn1_req(
                 &ctxt,
                 SRB_configList, // NULL,  //LG-RK 14/05/2014 SRB_configList,
                 DRB_configList,
                 DRB_ReleaseList
-      #if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-                , (PMCH_InfoList_r9_t *) NULL
+      #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+                , (LTE_PMCH_InfoList_r9_t *) NULL
                 , 0, 0
       #endif
                 );
@@ -433,35 +434,35 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                     rrc_mac_config_req_eNB(
                       ctxt.module_id,
                       0,0,0,0,0,0,
-        #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+        #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                    0,
         #endif
                    ue_context_p->ue_context.rnti,
-                   (BCCH_BCH_Message_t *) NULL,
-                   (RadioResourceConfigCommonSIB_t *) NULL,
-        #if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                   (RadioResourceConfigCommonSIB_t *) NULL,
+                   (LTE_BCCH_BCH_Message_t *) NULL,
+                   (LTE_RadioResourceConfigCommonSIB_t *) NULL,
+        #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                   (LTE_RadioResourceConfigCommonSIB_t *) NULL,
         #endif
                    physicalConfigDedicated,
-        #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-                   (SCellToAddMod_r10_t *)NULL,
+        #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+                   (LTE_SCellToAddMod_r10_t *)NULL,
                    //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
         #endif
-                   (MeasObjectToAddMod_t **) NULL,
+                   (LTE_MeasObjectToAddMod_t **) NULL,
                    mac_MainConfig,
                    DRB2LCHAN[i],
                    DRB_configList->list.array[i]->logicalChannelConfig,
                    measGapConfig,
-                   (TDD_Config_t *) NULL,
+                   (LTE_TDD_Config_t *) NULL,
                    NULL,
-                   (SchedulingInfoList_t *) NULL,
-                   0, NULL, NULL, (MBSFN_SubframeConfigList_t *) NULL
-        #if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-                   , 0, (MBSFN_AreaInfoList_r9_t *) NULL, (PMCH_InfoList_r9_t *) NULL
+                   (LTE_SchedulingInfoList_t *) NULL,
+                   0, NULL, NULL, (LTE_MBSFN_SubframeConfigList_t *) NULL
+        #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+                   , 0, (LTE_MBSFN_AreaInfoList_r9_t *) NULL, (LTE_PMCH_InfoList_r9_t *) NULL
         #endif
-        #if (RRC_VERSION >= MAKE_VERSION(13, 0, 0))
+        #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
                    ,
-                   (SystemInformationBlockType1_v1310_IEs_t *)NULL
+                   (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL
         #endif
                    );
                   }
@@ -475,32 +476,32 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
          }
        }
 	    break;
-  	  case DL_DCCH_MessageType__c1_PR_rrcConnectionRelease:
+      case LTE_DL_DCCH_MessageType__c1_PR_rrcConnectionRelease:
   	    // handle RRCConnectionRelease
             LOG_I(DU_F1AP,"Received RRCConnectionRelease\n");
   	    break;
-  	  case DL_DCCH_MessageType__c1_PR_securityModeCommand:
+      case LTE_DL_DCCH_MessageType__c1_PR_securityModeCommand:
          LOG_I(DU_F1AP,"Received securityModeCommand\n");
           break; 
-  	  case DL_DCCH_MessageType__c1_PR_ueCapabilityEnquiry:
+      case LTE_DL_DCCH_MessageType__c1_PR_ueCapabilityEnquiry:
         LOG_I(DU_F1AP,"Received ueCapabilityEnquiry\n");
           break;
-  	  case DL_DCCH_MessageType__c1_PR_counterCheck:
-  #if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-  	  case DL_DCCH_MessageType__c1_PR_loggedMeasurementConfiguration_r10:
-  	  case DL_DCCH_MessageType__c1_PR_rnReconfiguration_r10:
+      case LTE_DL_DCCH_MessageType__c1_PR_counterCheck:
+  #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+      case LTE_DL_DCCH_MessageType__c1_PR_loggedMeasurementConfiguration_r10:
+      case LTE_DL_DCCH_MessageType__c1_PR_rnReconfiguration_r10:
   #endif
-  	  case DL_DCCH_MessageType__c1_PR_spare1:
-  	  case DL_DCCH_MessageType__c1_PR_spare2:
-  	  case DL_DCCH_MessageType__c1_PR_spare3:
-  #if (RRC_VERSION < MAKE_VERSION(14, 0, 0))
-  	  case DL_DCCH_MessageType__c1_PR_spare4:
+      case LTE_DL_DCCH_MessageType__c1_PR_spare1:
+      case LTE_DL_DCCH_MessageType__c1_PR_spare2:
+      case LTE_DL_DCCH_MessageType__c1_PR_spare3:
+  #if (LTE_RRC_VERSION < MAKE_VERSION(14, 0, 0))
+      case LTE_DL_DCCH_MessageType__c1_PR_spare4:
   #endif
   	    break;
-      case DL_DCCH_MessageType__c1_PR_ueInformationRequest_r9:
+      case LTE_DL_DCCH_MessageType__c1_PR_ueInformationRequest_r9:
         LOG_I(DU_F1AP, "Received ueInformationRequest_r9\n");
         break;
-      case DL_DCCH_MessageType__c1_PR_rrcConnectionResume_r13:
+      case LTE_DL_DCCH_MessageType__c1_PR_rrcConnectionResume_r13:
         LOG_I(DU_F1AP, "Received rrcConnectionResume_r13\n");
 	   } 
 	 }	
@@ -542,7 +543,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                                 );
       switch (rlc_status) {
         case RLC_OP_STATUS_OK:
-          LOG_I(DU_F1AP, "Data sending request over RLC succeeded!\n");
+          //LOG_I(DU_F1AP, "Data sending request over RLC succeeded!\n");
           ret=TRUE;
           break;
 
@@ -591,8 +592,8 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(const protocol_ctxt_t* const ctxt_pP,
   uint32_t  len;
 
 
- LOG_I(DU_F1AP,"[DU %d] Received UL_RRC_MESSAGE_TRANSFER : size %d UE RNTI %x in SRB %d\n", 
-        ctxt_pP->module_id, sdu_sizeP, rnti, rb_idP);
+  LOG_I(DU_F1AP,"[DU %d] %s: size %d UE RNTI %x in SRB %d\n",
+        ctxt_pP->module_id, __func__, sdu_sizeP, rnti, rb_idP);
 
   /* Create */
   /* 0. Message Type */
@@ -651,10 +652,10 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(const protocol_ctxt_t* const ctxt_pP,
                                                 rnti);
 
    
-    UL_DCCH_Message_t* ul_dcch_msg=NULL;
+    LTE_UL_DCCH_Message_t* ul_dcch_msg=NULL;
     asn_dec_rval_t dec_rval;
     dec_rval = uper_decode(NULL,
-         &asn_DEF_UL_DCCH_Message,
+         &asn_DEF_LTE_UL_DCCH_Message,
          (void**)&ul_dcch_msg,
          &ie->value.choice.RRCContainer.buf[1], // buf[0] includes the pdcp header
          sdu_sizeP,0,0);
@@ -665,25 +666,25 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(const protocol_ctxt_t* const ctxt_pP,
       LOG_I(DU_F1AP, "Received message: present %d and c1 present %d\n", 
         ul_dcch_msg->message.present, ul_dcch_msg->message.choice.c1.present);
 
-    if (ul_dcch_msg->message.present == UL_DCCH_MessageType_PR_c1) {
+    if (ul_dcch_msg->message.present == LTE_UL_DCCH_MessageType_PR_c1) {
 
       switch (ul_dcch_msg->message.choice.c1.present) {
-      case UL_DCCH_MessageType__c1_PR_NOTHING:   /* No components present */
+      case LTE_UL_DCCH_MessageType__c1_PR_NOTHING:   /* No components present */
         break;
 
-      case UL_DCCH_MessageType__c1_PR_csfbParametersRequestCDMA2000:
+      case LTE_UL_DCCH_MessageType__c1_PR_csfbParametersRequestCDMA2000:
         break;
 
-      case UL_DCCH_MessageType__c1_PR_measurementReport:
+      case LTE_UL_DCCH_MessageType__c1_PR_measurementReport:
         break;
 
-      case UL_DCCH_MessageType__c1_PR_rrcConnectionReconfigurationComplete:
+      case LTE_UL_DCCH_MessageType__c1_PR_rrcConnectionReconfigurationComplete:
         break;
 
-      case UL_DCCH_MessageType__c1_PR_rrcConnectionReestablishmentComplete:
+      case LTE_UL_DCCH_MessageType__c1_PR_rrcConnectionReestablishmentComplete:
         break;
 
-      case UL_DCCH_MessageType__c1_PR_rrcConnectionSetupComplete:
+      case LTE_UL_DCCH_MessageType__c1_PR_rrcConnectionSetupComplete:
         LOG_I(DU_F1AP,"[MSG] RRC UL rrcConnectionSetupComplete \n");
        if(!ue_context_p){
           LOG_E(DU_F1AP, "Did not find the UE context associated with UE RNTOI %x, ue_context_p is NULL\n", ctxt_pP->rnti);
@@ -693,43 +694,43 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(const protocol_ctxt_t* const ctxt_pP,
         }
 
         break;
-      case UL_DCCH_MessageType__c1_PR_securityModeComplete:
+      case LTE_UL_DCCH_MessageType__c1_PR_securityModeComplete:
          LOG_I(DU_F1AP,"[MSG] RRC securityModeComplete \n");
         break;
 
-      case UL_DCCH_MessageType__c1_PR_securityModeFailure:
+      case LTE_UL_DCCH_MessageType__c1_PR_securityModeFailure:
         break;
 
-      case UL_DCCH_MessageType__c1_PR_ueCapabilityInformation:
+      case LTE_UL_DCCH_MessageType__c1_PR_ueCapabilityInformation:
            LOG_I(DU_F1AP,"[MSG] RRC ueCapabilityInformation \n");
         break;
 
-      case UL_DCCH_MessageType__c1_PR_ulHandoverPreparationTransfer:
+      case LTE_UL_DCCH_MessageType__c1_PR_ulHandoverPreparationTransfer:
         break;
 
-      case UL_DCCH_MessageType__c1_PR_ulInformationTransfer:
+      case LTE_UL_DCCH_MessageType__c1_PR_ulInformationTransfer:
         LOG_I(DU_F1AP,"[MSG] RRC UL Information Transfer \n");
         break;
 
-      case UL_DCCH_MessageType__c1_PR_counterCheckResponse:
+      case LTE_UL_DCCH_MessageType__c1_PR_counterCheckResponse:
         break;
 
-#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
 
-      case UL_DCCH_MessageType__c1_PR_ueInformationResponse_r9:
+      case LTE_UL_DCCH_MessageType__c1_PR_ueInformationResponse_r9:
         break;
-      case UL_DCCH_MessageType__c1_PR_proximityIndication_r9:
+      case LTE_UL_DCCH_MessageType__c1_PR_proximityIndication_r9:
        break;
 #endif
 
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-      case UL_DCCH_MessageType__c1_PR_rnReconfigurationComplete_r10:
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+      case LTE_UL_DCCH_MessageType__c1_PR_rnReconfigurationComplete_r10:
         break;
 
-      case UL_DCCH_MessageType__c1_PR_mbmsCountingResponse_r10:
+      case LTE_UL_DCCH_MessageType__c1_PR_mbmsCountingResponse_r10:
        break;
 
-      case UL_DCCH_MessageType__c1_PR_interFreqRSTDMeasurementIndication_r10:
+      case LTE_UL_DCCH_MessageType__c1_PR_interFreqRSTDMeasurementIndication_r10:
        break;
 #endif
 
@@ -741,7 +742,6 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(const protocol_ctxt_t* const ctxt_pP,
     LOG_E(DU_F1AP, "Failed to encode F1 setup request\n");
     return -1;
   }
-  LOG_W(DU_F1AP, "DU_send_UL_RRC_MESSAGE_TRANSFER on SRB %d for UE %x \n", rb_idP, rnti);
 
   du_f1ap_itti_send_sctp_data_req(instance, f1ap_du_data->assoc_id, buffer, len, f1ap_du_data->default_sctp_stream_id);
   return 0;

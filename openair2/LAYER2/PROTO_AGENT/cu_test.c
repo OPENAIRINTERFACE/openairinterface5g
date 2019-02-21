@@ -126,7 +126,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t* const ctxt_pP,
                                   confirm_t    confirmP,
                                   sdu_size_t   sdu_sizeP,
                                   mem_block_t *sdu_pP
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                   ,const uint32_t * const sourceL2Id
                                   ,const uint32_t * const destinationL2Id
 #endif

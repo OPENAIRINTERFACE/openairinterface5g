@@ -36,7 +36,7 @@
 void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
                       PHY_VARS_UE *ue,
                       module_id_t eNB_id,
-					  uint8_t subframe,
+		      uint8_t subframe,
                       unsigned char clear,
                       short coef)
 {
@@ -96,6 +96,7 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
       else
           count_max_pos_ok = 0;
 
+
       if(count_max_pos_ok > 10 && first_time == 1)
       {
           first_time = 0;
@@ -103,7 +104,7 @@ void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
           if (ue->mac_enabled==1) {
               LOG_I(PHY,"[UE%d] Sending synch status to higher layers\n",ue->Mod_id);
               //mac_resynch();
-              dl_phy_sync_success(ue->Mod_id,ue->proc.proc_rxtx[0].frame_rx,0,1);//ue->common_vars.eNb_id);
+              //dl_phy_sync_success(ue->Mod_id,ue->proc.proc_rxtx[0].frame_rx,0,1);//ue->common_vars.eNb_id);
               ue->UE_mode[0] = PRACH;
           }
           else {

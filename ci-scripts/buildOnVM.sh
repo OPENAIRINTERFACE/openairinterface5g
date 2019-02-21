@@ -20,8 +20,8 @@
 # *      contact@openairinterface.org
 # */
 
-function usage {
-    echo "OAI VM Build Check script"
+function build_usage {
+    echo "OAI CI VM script"
     echo "   Original Author: Raphael Defosseux"
     echo "   Requirements:"
     echo "     -- uvtool uvtool-libvirt apt-cacher"
@@ -31,9 +31,9 @@ function usage {
     echo ""
     echo "Usage:"
     echo "------"
-    echo "    buildOnVM.sh [OPTIONS]"
+    echo "    oai-ci-vm-tool build [OPTIONS]"
     echo ""
-    echo "Options:"
+    echo "Mandatory Options:"
     echo "--------"
     echo "    --job-name #### OR -jn ####"
     echo "    Specify the name of the Jenkins job."
@@ -44,356 +44,168 @@ function usage {
     echo "    --workspace #### OR -ws ####"
     echo "    Specify the workspace."
     echo ""
-    echo "    --variant enb-usrp     OR -v1"
-    echo "    --variant basic-sim    OR -v2"
-    echo "    --variant phy-sim      OR -v3"
-    echo "    --variant cppcheck     OR -v4"
-    echo "    --variant enb-ethernet OR -v7"
-    echo "    --variant ue-ethernet  OR -v8"
+    echo "Options:"
+    echo "--------"
+    variant_usage
     echo "    Specify the variant to build."
     echo ""
     echo "    --keep-vm-alive OR -k"
     echo "    Keep the VM alive after the build."
+    echo ""
+    echo "    --daemon OR -D"
+    echo "    Run as daemon"
     echo ""
     echo "    --help OR -h"
     echo "    Print this help message."
     echo ""
 }
 
-function variant_usage {
-    echo "OAI VM Build Check script"
-    echo "   Original Author: Raphael Defosseux"
-    echo ""
-    echo "    --variant enb-usrp     OR -v1"
-    echo "    --variant basic-sim    OR -v2"
-    echo "    --variant phy-sim      OR -v3"
-    echo "    --variant cppcheck     OR -v4"
-    echo "    --variant enb-ethernet OR -v7"
-    echo "    --variant ue-ethernet  OR -v8"
-    echo ""
-}
-
-if [ $# -lt 1 ] || [ $# -gt 9 ]
-then
-    echo "Syntax Error: not the correct number of arguments"
-    echo ""
-    usage
-    exit 1
-fi
-
-VM_TEMPLATE=ci-
-JOB_NAME=XX
-BUILD_ID=XX
-VM_NAME=ci-enb-usrp
-VM_MEMORY=2048
-VM_CPU=4
-ARCHIVES_LOC=enb_usrp
-LOG_PATTERN=.Rel14.txt
-NB_PATTERN_FILES=4
-BUILD_OPTIONS="--eNB -w USRP"
-KEEP_VM_ALIVE=0
-
-while [[ $# -gt 0 ]]
-do
-key="$1"
-
-case $key in
-    -h|--help)
-    shift
-    usage
-    exit 0
-    ;;
-    -jn|--job-name)
-    JOB_NAME="$2"
-    shift
-    shift
-    ;;
-    -id|--build-id)
-    BUILD_ID="$2"
-    shift
-    shift
-    ;;
-    -ws|--workspace)
-    JENKINS_WKSP="$2"
-    shift
-    shift
-    ;;
-    -k|--keep-vm-alive)
-    KEEP_VM_ALIVE=1
-    shift
-    ;;
-    -v1)
-    VM_NAME=ci-enb-usrp
-    ARCHIVES_LOC=enb_usrp
-    LOG_PATTERN=.Rel14.txt
-    NB_PATTERN_FILES=4
-    BUILD_OPTIONS="--eNB -w USRP --mu"
-    shift
-    ;;
-    -v2)
-    VM_NAME=ci-basic-sim
-    ARCHIVES_LOC=basic_sim
-    LOG_PATTERN=basic_simulator
-    NB_PATTERN_FILES=2
-    BUILD_OPTIONS="--basic-simulator"
-    VM_MEMORY=8192
-    VM_CPU=4
-    shift
-    ;;
-    -v3)
-    VM_NAME=ci-phy-sim
-    ARCHIVES_LOC=phy_sim
-    LOG_PATTERN=.Rel14.txt
-    NB_PATTERN_FILES=3
-    BUILD_OPTIONS="--phy_simulators"
-    shift
-    ;;
-    -v4)
-    VM_NAME=ci-cppcheck
-    VM_MEMORY=4096
-    ARCHIVES_LOC=cppcheck
-    LOG_PATTERN=cppcheck.xml
-    NB_PATTERN_FILES=1
-    BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2"
-    shift
-    ;;
-    -v7)
-    VM_NAME=ci-enb-ethernet
-    ARCHIVES_LOC=enb_eth
-    LOG_PATTERN=.Rel14.txt
-    NB_PATTERN_FILES=6
-    BUILD_OPTIONS="--eNB -t ETHERNET --noS1"
-    shift
-    ;;
-    -v8)
-    VM_NAME=ci-ue-ethernet
-    ARCHIVES_LOC=ue_eth
-    LOG_PATTERN=.Rel14.txt
-    NB_PATTERN_FILES=6
-    BUILD_OPTIONS="--UE -t ETHERNET --noS1"
-    shift
-    ;;
-    --variant)
-    variant="$2"
-    case $variant in
-        enb-usrp)
-        VM_NAME=ci-enb-usrp
-        ARCHIVES_LOC=enb_usrp
-        LOG_PATTERN=.Rel14.txt
-        NB_PATTERN_FILES=4
-        BUILD_OPTIONS="--eNB -w USRP --mu"
-        ;;
-        basic-sim)
-        VM_NAME=ci-basic-sim
-        ARCHIVES_LOC=basic_sim
-        LOG_PATTERN=basic_simulator
-        NB_PATTERN_FILES=2
-        BUILD_OPTIONS="--basic-simulator"
-        VM_MEMORY=8192
-        VM_CPU=4
-        ;;
-        phy-sim)
-        VM_NAME=ci-phy-sim
-        ARCHIVES_LOC=phy_sim
-        LOG_PATTERN=.Rel14.txt
-        NB_PATTERN_FILES=3
-        BUILD_OPTIONS="--phy_simulators"
-        ;;
-        cppcheck)
-        VM_NAME=ci-cppcheck
-        VM_MEMORY=4096
-        ARCHIVES_LOC=cppcheck
-        LOG_PATTERN=cppcheck.xml
-        NB_PATTERN_FILES=1
-        BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2"
-        ;;
-        enb-ethernet)
-        VM_NAME=ci-enb-ethernet
-        ARCHIVES_LOC=enb_eth
-        LOG_PATTERN=.Rel14.txt
-        NB_PATTERN_FILES=6
-        BUILD_OPTIONS="--eNB -t ETHERNET --noS1"
-        ;;
-        ue-ethernet)
-        VM_NAME=ci-ue-ethernet
-        ARCHIVES_LOC=ue_eth
-        LOG_PATTERN=.Rel14.txt
-        NB_PATTERN_FILES=6
-        BUILD_OPTIONS="--UE -t ETHERNET --noS1"
-        ;;
-        *)
-        echo ""
-        echo "Syntax Error: Invalid Variant option -> $variant"
-        echo ""
-        variant_usage
-        exit 1
-    esac
-    shift
-    shift
-    ;;
-    *)
-    echo "Syntax Error: unknown option: $key"
-    echo ""
-    usage
-    exit 1
-esac
-done
-
-if [ ! -f $JENKINS_WKSP/localZip.zip ]
-then
-    echo "Missing localZip.zip file!"
-    exit 1
-fi
-if [ ! -f /etc/apt/apt.conf.d/01proxy ]
-then
-    echo "Missing /etc/apt/apt.conf.d/01proxy file!"
-    echo "Is apt-cacher installed and configured?"
-    exit 1
-fi
-
-if [ "$JOB_NAME" == "XX" ] || [ "$BUILD_ID" == "XX" ]
-then
-    VM_TEMPLATE=ci-
-else
-    VM_TEMPLATE=${JOB_NAME}-b${BUILD_ID}-
-fi
-
-VM_NAME=`echo $VM_NAME | sed -e "s#ci-#$VM_TEMPLATE#"`
-VM_CMDS=${VM_NAME}_cmds.txt
-ARCHIVES_LOC=${JENKINS_WKSP}/archives/${ARCHIVES_LOC}
-
-echo "VM_NAME             = $VM_NAME"
-echo "VM_CMD_FILE         = $VM_CMDS"
-echo "JENKINS_WKSP        = $JENKINS_WKSP"
-echo "ARCHIVES_LOC        = $ARCHIVES_LOC"
-echo "BUILD_OPTIONS       = $BUILD_OPTIONS"
-
-IS_VM_ALIVE=`uvt-kvm list | grep -c $VM_NAME`
-
-if [ $IS_VM_ALIVE -eq 0 ]
-then
-    echo "############################################################"
-    echo "Creating VM ($VM_NAME) on Ubuntu Cloud Image base"
-    echo "############################################################"
-    uvt-kvm create $VM_NAME release=xenial --memory $VM_MEMORY --cpu $VM_CPU --unsafe-caching --template ci-scripts/template-host.xml
-fi
-
-echo "Waiting for VM to be started"
-uvt-kvm wait $VM_NAME --insecure
-
-VM_IP_ADDR=`uvt-kvm ip $VM_NAME`
-echo "$VM_NAME has for IP addr = $VM_IP_ADDR"
-
-echo "############################################################"
-echo "Copying GIT repo into VM ($VM_NAME)" 
-echo "############################################################"
-scp -o StrictHostKeyChecking=no localZip.zip ubuntu@$VM_IP_ADDR:/home/ubuntu
-scp -o StrictHostKeyChecking=no /etc/apt/apt.conf.d/01proxy ubuntu@$VM_IP_ADDR:/home/ubuntu
-
-echo "############################################################"
-echo "Running install and build script on VM ($VM_NAME)"
-echo "############################################################"
-echo "sudo cp 01proxy /etc/apt/apt.conf.d/" > $VM_CMDS
-echo "touch /home/ubuntu/.hushlogin" >> $VM_CMDS
-if [[ "$VM_NAME" == *"-cppcheck"* ]]
-then
-    echo "echo \"sudo apt-get --yes --quiet install zip cppcheck \"" >> $VM_CMDS
-    echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
-    echo "sudo apt-get --yes install zip cppcheck >> zip-install.txt 2>&1" >> $VM_CMDS
-else
-    echo "echo \"sudo apt-get --yes --quiet install zip subversion libboost-dev \"" >> $VM_CMDS
-    echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
-    echo "sudo apt-get --yes install zip subversion libboost-dev >> zip-install.txt 2>&1" >> $VM_CMDS
-fi
-echo "mkdir tmp" >> $VM_CMDS
-echo "cd tmp" >> $VM_CMDS
-echo "echo \"unzip -qq -DD ../localZip.zip\"" >> $VM_CMDS
-echo "unzip -qq -DD ../localZip.zip" >> $VM_CMDS
-if [[ "$VM_NAME" == *"-cppcheck"* ]]
-then
-    echo "mkdir cmake_targets/log" >> $VM_CMDS
-    echo "cp /home/ubuntu/zip-install.txt cmake_targets/log" >> $VM_CMDS
-    echo "echo \"cppcheck $BUILD_OPTIONS . \"" >> $VM_CMDS
-    echo "cppcheck $BUILD_OPTIONS . 2> cmake_targets/log/cppcheck.xml 1> cmake_targets/log/cppcheck_build.txt" >> $VM_CMDS
-else
-    echo "echo \"source oaienv\"" >> $VM_CMDS
-    echo "source oaienv" >> $VM_CMDS
-    echo "cd cmake_targets/" >> $VM_CMDS
-    echo "mkdir log" >> $VM_CMDS
-    echo "cp /home/ubuntu/zip-install.txt log" >> $VM_CMDS
-    echo "echo \"./build_oai -I $BUILD_OPTIONS \"" >> $VM_CMDS
-    echo "./build_oai -I $BUILD_OPTIONS > log/install-build.txt 2>&1" >> $VM_CMDS
-fi
-ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
-
-echo "############################################################"
-echo "Creating a tmp folder to store results and artifacts"
-echo "############################################################"
-if [ ! -d $JENKINS_WKSP/archives ]
-then
-    mkdir $JENKINS_WKSP/archives
-fi
-
-if [ ! -d $ARCHIVES_LOC ]
-then
-    mkdir $ARCHIVES_LOC
-fi
-
-scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/*.txt $ARCHIVES_LOC
-if [[ "$VM_NAME" == *"-cppcheck"* ]]
-then
-    scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/*.xml $ARCHIVES_LOC
-fi
-
-if [ $KEEP_VM_ALIVE -eq 0 ]
-then
-    echo "############################################################"
-    echo "Destroying VM"
-    echo "############################################################"
-    uvt-kvm destroy $VM_NAME
-    ssh-keygen -R $VM_IP_ADDR
-fi
-rm -f $VM_CMDS
-
-echo "############################################################"
-echo "Checking build status" 
-echo "############################################################"
-
-LOG_FILES=`ls $ARCHIVES_LOC/*.txt $ARCHIVES_LOC/*.xml`
-STATUS=0
-NB_FOUND_FILES=0
-
-for FULLFILE in $LOG_FILES 
-do
-    if [[ $FULLFILE == *"$LOG_PATTERN"* ]]
+function build_on_vm {
+    if [ ! -f $JENKINS_WKSP/localZip.zip ]
     then
-        filename=$(basename -- "$FULLFILE")
-        if [ "$LOG_PATTERN" == ".Rel14.txt" ]
-        then
-            PASS_PATTERN=`echo $filename | sed -e "s#$LOG_PATTERN##"`
-        fi
-        if [ "$LOG_PATTERN" == "basic_simulator" ]
-        then
-            PASS_PATTERN="lte-"
-        fi
-        if [ "$LOG_PATTERN" == "cppcheck.xml" ]
-        then
-            PASS_PATTERN="results version"
-            LOCAL_STAT=`egrep -c "$PASS_PATTERN" $FULLFILE`
-        else
-            LOCAL_STAT=`egrep -c "Built target $PASS_PATTERN" $FULLFILE`
-        fi
-        if [ $LOCAL_STAT -eq 0 ]; then STATUS=-1; fi
-        NB_FOUND_FILES=$((NB_FOUND_FILES + 1))
+        echo "Missing localZip.zip file!"
+        STATUS=1
+        return
     fi
-done
+    if [ ! -f /etc/apt/apt.conf.d/01proxy ]
+    then
+        echo "Missing /etc/apt/apt.conf.d/01proxy file!"
+        echo "Is apt-cacher installed and configured?"
+        STATUS=1
+        return
+    fi
 
-if [ $NB_PATTERN_FILES -ne $NB_FOUND_FILES ]; then STATUS=-1; fi
+    echo "############################################################"
+    echo "OAI CI VM script"
+    echo "############################################################"
 
-if [ $STATUS -eq 0 ]
-then
-    echo "STATUS seems OK"
-else
-    echo "STATUS failed?"
-fi
-exit $STATUS
+    echo "VM_NAME             = $VM_NAME"
+    echo "VM_CMD_FILE         = $VM_CMDS"
+    echo "JENKINS_WKSP        = $JENKINS_WKSP"
+    echo "ARCHIVES_LOC        = $ARCHIVES_LOC"
+    echo "BUILD_OPTIONS       = $BUILD_OPTIONS"
+
+    IS_VM_ALIVE=`uvt-kvm list | grep -c $VM_NAME`
+
+    if [ $IS_VM_ALIVE -eq 0 ]
+    then
+        echo "VM_MEMORY           = $VM_MEMORY MBytes"
+        echo "VM_CPU              = $VM_CPU"
+        echo "############################################################"
+        echo "Creating VM ($VM_NAME) on Ubuntu Cloud Image base"
+        echo "############################################################"
+        uvt-kvm create $VM_NAME release=xenial --memory $VM_MEMORY --cpu $VM_CPU --unsafe-caching --template ci-scripts/template-host.xml
+    fi
+
+    echo "Waiting for VM to be started"
+    uvt-kvm wait $VM_NAME --insecure
+
+    VM_IP_ADDR=`uvt-kvm ip $VM_NAME`
+    echo "$VM_NAME has for IP addr = $VM_IP_ADDR"
+
+    echo "############################################################"
+    echo "Copying GIT repo into VM ($VM_NAME)"
+    echo "############################################################"
+    if [[ "$VM_NAME" == *"-flexran-rtc"* ]]
+    then
+        scp -o StrictHostKeyChecking=no $JENKINS_WKSP/flexran/flexran.zip ubuntu@$VM_IP_ADDR:/home/ubuntu/localZip.zip
+    else
+        scp -o StrictHostKeyChecking=no $JENKINS_WKSP/localZip.zip ubuntu@$VM_IP_ADDR:/home/ubuntu
+    fi
+    scp -o StrictHostKeyChecking=no /etc/apt/apt.conf.d/01proxy ubuntu@$VM_IP_ADDR:/home/ubuntu
+
+    echo "############################################################"
+    echo "Running install and build script on VM ($VM_NAME)"
+    echo "############################################################"
+    echo "sudo cp 01proxy /etc/apt/apt.conf.d/" > $VM_CMDS
+    echo "touch /home/ubuntu/.hushlogin" >> $VM_CMDS
+    if [[ "$VM_NAME" == *"-cppcheck"* ]]
+    then
+        if [ $DAEMON -eq 0 ]
+        then
+            echo "echo \"sudo apt-get --yes --quiet install zip cppcheck \"" >> $VM_CMDS
+            echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
+            echo "sudo apt-get --yes install zip cppcheck >> zip-install.txt 2>&1" >> $VM_CMDS
+        else
+            echo "echo \"sudo apt-get --yes --quiet install zip daemon cppcheck \"" >> $VM_CMDS
+            echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
+            echo "sudo apt-get --yes install zip daemon cppcheck >> zip-install.txt 2>&1" >> $VM_CMDS
+        fi
+    fi
+    if [[ "$VM_NAME" == *"-flexran-rtc"* ]]
+    then
+        if [ $DAEMON -eq 0 ]
+        then
+            echo "echo \"sudo apt-get --yes --quiet install zip curl jq \"" >> $VM_CMDS
+            echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
+            echo "sudo apt-get --yes install zip curl jq >> zip-install.txt 2>&1" >> $VM_CMDS
+        else
+            echo "echo \"sudo apt-get --yes --quiet install zip daemon curl jq \"" >> $VM_CMDS
+            echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
+            echo "sudo apt-get --yes install zip daemon curl jq >> zip-install.txt 2>&1" >> $VM_CMDS
+        fi
+    fi
+    if [[ "$VM_NAME" != *"-cppcheck"* ]] && [[ "$VM_NAME" != *"-flexran-rtc"* ]]
+    then
+        if [ $DAEMON -eq 0 ]
+        then
+            echo "echo \"sudo apt-get --yes --quiet install zip subversion libboost-dev \"" >> $VM_CMDS
+            echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
+            echo "sudo apt-get --yes install zip subversion libboost-dev >> zip-install.txt 2>&1" >> $VM_CMDS
+        else
+            echo "echo \"sudo apt-get --yes --quiet install zip daemon subversion libboost-dev \"" >> $VM_CMDS
+            echo "sudo apt-get update > zip-install.txt 2>&1" >> $VM_CMDS
+            echo "sudo apt-get --yes install zip daemon subversion libboost-dev >> zip-install.txt 2>&1" >> $VM_CMDS
+        fi
+    fi
+    echo "mkdir tmp" >> $VM_CMDS
+    echo "cd tmp" >> $VM_CMDS
+    echo "echo \"unzip -qq -DD ../localZip.zip\"" >> $VM_CMDS
+    echo "unzip -qq -DD ../localZip.zip" >> $VM_CMDS
+    if [[ "$VM_NAME" == *"-cppcheck"* ]]
+    then
+        echo "mkdir cmake_targets/log" >> $VM_CMDS
+        echo "chmod 777 cmake_targets/log" >> $VM_CMDS
+        echo "cp /home/ubuntu/zip-install.txt cmake_targets/log" >> $VM_CMDS
+        echo "echo \"cppcheck $BUILD_OPTIONS . \"" >> $VM_CMDS
+        if [ $DAEMON -eq 0 ]
+        then
+            echo "cppcheck $BUILD_OPTIONS . 2> cmake_targets/log/cppcheck.xml 1> cmake_targets/log/cppcheck_build.txt" >> $VM_CMDS
+        else
+            echo "echo \"cppcheck $BUILD_OPTIONS .\" > ./my-vm-build.sh" >> $VM_CMDS
+            echo "chmod 775 ./my-vm-build.sh " >> $VM_CMDS
+            echo "sudo -E daemon --inherit --unsafe --name=build_daemon --chdir=/home/ubuntu/tmp -O /home/ubuntu/tmp/cmake_targets/log/cppcheck_build.txt -E /home/ubuntu/tmp/cmake_targets/log/cppcheck.xml ./my-vm-build.sh" >> $VM_CMDS
+        fi
+    fi
+    if [[ "$VM_NAME" == *"-flexran-rtc"* ]]
+    then
+        echo "mkdir -p cmake_targets/log" >> $VM_CMDS
+        echo "chmod 777 cmake_targets/log" >> $VM_CMDS
+        echo "cp /home/ubuntu/zip-install.txt cmake_targets/log" >> $VM_CMDS
+        echo "echo \"./tools/install_dependencies \"" >> $VM_CMDS
+        echo "./tools/install_dependencies > cmake_targets/log/install-build.txt 2>&1" >> $VM_CMDS
+        echo "echo \"$BUILD_OPTIONS \"" >> $VM_CMDS
+        echo "$BUILD_OPTIONS > cmake_targets/log/rt_controller.Rel14.txt 2>&1" >> $VM_CMDS
+    fi
+    if [[ "$VM_NAME" != *"-cppcheck"* ]] && [[ "$VM_NAME" != *"-flexran-rtc"* ]]
+    then
+        echo "echo \"source oaienv\"" >> $VM_CMDS
+        echo "source oaienv" >> $VM_CMDS
+        echo "cd cmake_targets/" >> $VM_CMDS
+        echo "mkdir log" >> $VM_CMDS
+        echo "chmod 777 log" >> $VM_CMDS
+        echo "cp /home/ubuntu/zip-install.txt log" >> $VM_CMDS
+        if [ $DAEMON -eq 0 ]
+        then
+            echo "echo \"./build_oai -I $BUILD_OPTIONS \"" >> $VM_CMDS
+            echo "./build_oai -I $BUILD_OPTIONS > log/install-build.txt 2>&1" >> $VM_CMDS
+        else
+            echo "echo \"./build_oai -I $BUILD_OPTIONS\" > ./my-vm-build.sh" >> $VM_CMDS
+            echo "chmod 775 ./my-vm-build.sh " >> $VM_CMDS
+            echo "echo \"sudo -E daemon --inherit --unsafe --name=build_daemon --chdir=/home/ubuntu/tmp/cmake_targets -o /home/ubuntu/tmp/cmake_targets/log/install-build.txt ./my-vm-build.sh\"" >> $VM_CMDS
+            echo "sudo -E daemon --inherit --unsafe --name=build_daemon --chdir=/home/ubuntu/tmp/cmake_targets -o /home/ubuntu/tmp/cmake_targets/log/install-build.txt ./my-vm-build.sh" >> $VM_CMDS
+        fi
+    fi
+    ssh -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR < $VM_CMDS
+    rm -f $VM_CMDS
+}

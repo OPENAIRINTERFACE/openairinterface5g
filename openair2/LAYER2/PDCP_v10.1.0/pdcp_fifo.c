@@ -82,10 +82,13 @@ extern struct msghdr nas_msg_tx;
 extern struct msghdr nas_msg_rx;
 
 unsigned char pdcp_read_state_g = 0;
+extern uint8_t nfapi_mode;
+#ifdef UESIM_EXPANSION
+extern uint16_t inst_pdcp_list[NUMBER_OF_UE_MAX];
+#endif
 #endif
 
 extern Packet_OTG_List_t *otg_pdcp_buffer;
-
 #if defined(LINK_ENB_PDCP_TO_GTPV1U)
 #  include "gtpv1u_eNB_task.h"
 #  include "gtpv1u_eNB_defs.h"
@@ -168,7 +171,12 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
             ((pdcp_data_ind_header_t*) sdu_p->data)->inst,
             ((pdcp_data_ind_header_t *) sdu_p->data)->data_size);
 #else
-      ((pdcp_data_ind_header_t *)(sdu_p->data))->inst = 0;
+      // Raphael: was suppressed by Raymond --> should be suppressed?
+      // value of sdu_p->data->inst is set in pdcp_data_ind
+      // it's necessary to set 1 in case of UE with S1.
+      //if (ctxt_pP->enb_flag){
+      //  ((pdcp_data_ind_header_t *)(sdu_p->data))->inst = 0;
+      //}
 #endif
 
 #if defined(LINK_ENB_PDCP_TO_GTPV1U)
@@ -178,7 +186,7 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
          LOG_D(PDCP,"Sending to GTPV1U %d bytes\n", ((pdcp_data_ind_header_t *)(sdu_p->data))->data_size);
          gtpv1u_new_data_req(
                ctxt_pP->module_id, //gtpv1u_data_t *gtpv1u_data_p,
-               ctxt_pP->rnti,//rb_id/maxDRB, TO DO UE ID
+               ctxt_pP->rnti,//rb_id/LTE_maxDRB, TO DO UE ID
                ((pdcp_data_ind_header_t *)(sdu_p->data))->rb_id + 4,
                &(((uint8_t *) sdu_p->data)[sizeof (pdcp_data_ind_header_t)]),
                ((pdcp_data_ind_header_t *)(sdu_p->data))->data_size,
@@ -195,14 +203,14 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t* const  ctxt_pP)
 
 #endif /* defined(ENABLE_USE_MME) */
 #ifdef PDCP_DEBUG
-      LOG_D(PDCP, "PDCP->IP TTI %d INST %d: Preparing %d Bytes of data from rab %d to Nas_mesh\n",
+      LOG_I(PDCP, "PDCP->IP TTI %d INST %d: Preparing %d Bytes of data from rab %d to Nas_mesh\n",
             ctxt_pP->frame, ((pdcp_data_ind_header_t *)(sdu_p->data))->inst,
             ((pdcp_data_ind_header_t *)(sdu_p->data))->data_size, ((pdcp_data_ind_header_t *)(sdu_p->data))->rb_id);
 #endif //PDCP_DEBUG
       cont = 0;
 
 //TTN - for D2D (PC5S)
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
       sidelink_pc5s_element *sl_pc5s_msg_recv = NULL;
       char send_buf[BUFSIZE];
       int rb_id = ((pdcp_data_ind_header_t *)(sdu_p->data))->rb_id;
@@ -452,7 +460,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
       pdcp_data_req(&ctxt, SRB_FLAG_NO, rab_id, RLC_MUI_UNDEFINED,
                     RLC_SDU_CONFIRM_NO, len, (unsigned char *)nl_rx_buf,
                     PDCP_TRANSMISSION_MODE_DATA
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                     , NULL, NULL
 #endif
                    );
@@ -488,7 +496,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
    pdcp_t*                        pdcp_p    = NULL;
 
 //TTN for D2D (PC5S)
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
    int prose_addr_len;
    char send_buf[BUFSIZE], receive_buf[BUFSIZE];
    //int optval;
@@ -509,7 +517,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
 
    while (pdcp_netlink_dequeue_element(ctxt_pP, &data_p) != 0) {
       DevAssert(data_p != NULL);
-      rab_id = data_p->pdcp_read_header.rb_id % maxDRB;
+      rab_id = data_p->pdcp_read_header.rb_id % LTE_maxDRB;
       // ctxt_pP->rnti is NOT_A_RNTI
       ctxt_cpy.rnti = pdcp_module_id_to_rnti[ctxt_cpy.module_id][data_p->pdcp_read_header.inst];
       key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_cpy.rnti, ctxt_pP->enb_flag, rab_id, SRB_FLAG_NO);
@@ -526,7 +534,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
 
       CHECK_CTXT_ARGS(&ctxt_cpy);
 
-      AssertFatal (rab_id    < maxDRB,                       "RB id is too high (%u/%d)!\n", rab_id, maxDRB);
+      AssertFatal (rab_id    < LTE_maxDRB,                       "RB id is too high (%u/%d)!\n", rab_id, LTE_maxDRB);
 
       if (rab_id != 0) {
          LOG_D(PDCP, "[FRAME %05d][%s][IP][INSTANCE %u][RB %u][--- PDCP_DATA_REQ "
@@ -543,7 +551,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
          if ((data_p->pdcp_read_header.traffic_type == TRAFFIC_IPV6_TYPE_MULTICAST) /*TRAFFIC_IPV6_TYPE_MULTICAST */ ||
                (data_p->pdcp_read_header.traffic_type == TRAFFIC_IPV4_TYPE_MULTICAST) /*TRAFFIC_IPV4_TYPE_MULTICAST */ ||
                (data_p->pdcp_read_header.traffic_type == TRAFFIC_IPV4_TYPE_BROADCAST) /*TRAFFIC_IPV4_TYPE_BROADCAST */ ) {
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
             PDCP_TRANSMISSION_MODE_TRANSPARENT;
 #else
             pdcp_mode= PDCP_TRANSMISSION_MODE_DATA;
@@ -561,13 +569,13 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
 #endif
          pdcp_data_req(&ctxt_cpy,
                SRB_FLAG_NO,
-               rab_id % maxDRB,
+               rab_id % LTE_maxDRB,
                RLC_MUI_UNDEFINED,
                RLC_SDU_CONFIRM_NO,
                data_p->pdcp_read_header.data_size,
                data_p->data,
                pdcp_mode
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                ,NULL, NULL
 #endif
                );
@@ -595,7 +603,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                      data_p->pdcp_read_header.data_size,
                      data_p->data,
                      PDCP_TRANSMISSION_MODE_DATA
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                      ,NULL, NULL
 #endif
                      );
@@ -612,7 +620,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                data_p->pdcp_read_header.data_size,
                data_p->data,
                PDCP_TRANSMISSION_MODE_DATA
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                ,NULL, NULL
 #endif
                );
@@ -632,7 +640,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
 
 
 //TTN for D2D (PC5S)
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
    prose_addr_len = sizeof(prose_pdcp_addr);
    // receive a message from ProSe App
    memset(receive_buf, 0, BUFSIZE);
@@ -680,18 +688,18 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
             ctxt.frame         = ctxt_cpy.frame;
             ctxt.enb_flag      = ENB_FLAG_YES;
             ctxt.module_id     = pc5s_header.inst  +  oai_emulation.info.first_enb_local;
-            ctxt.rnti          = oai_emulation.info.eNB_ue_module_id_to_rnti[ctxt.module_id ][pc5s_header->rb_id / maxDRB + oai_emulation.info.first_ue_local];
-            rab_id    = pc5s_header->rb_id % maxDRB;
+            ctxt.rnti          = oai_emulation.info.eNB_ue_module_id_to_rnti[ctxt.module_id ][pc5s_header->rb_id / LTE_maxDRB + oai_emulation.info.first_ue_local];
+            rab_id    = pc5s_header->rb_id % LTE_maxDRB;
          } else {
             ctxt.frame         = ctxt_cpy.frame;
             ctxt.enb_flag      = ENB_FLAG_NO;
             ctxt.module_id     = pc5s_header->inst - oai_emulation.info.nb_enb_local + oai_emulation.info.first_ue_local;
             ctxt.rnti          = pdcp_UE_UE_module_id_to_rnti[ctxt.module_id];
-            rab_id    = pc5s_header->rb_id % maxDRB;
+            rab_id    = pc5s_header->rb_id % LTE_maxDRB;
          }
 
          CHECK_CTXT_ARGS(&ctxt);
-         AssertFatal (rab_id    < maxDRB,                       "RB id is too high (%u/%d)!\n", rab_id, maxDRB);
+         AssertFatal (rab_id    < LTE_maxDRB,                       "RB id is too high (%u/%d)!\n", rab_id, LTE_maxDRB);
          /*LGpdcp_read_header.inst = (pc5s_header.inst >= oai_emulation.info.nb_enb_local) ? \
                   pc5s_header.inst - oai_emulation.info.nb_enb_local+ NB_eNB_INST + oai_emulation.info.first_ue_local :
                   pc5s_header.inst +  oai_emulation.info.first_enb_local;*/
@@ -706,11 +714,11 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
 
          if (ctxt_cpy.enb_flag) {
             ctxt.module_id = 0;
-            rab_id      = pc5s_header->rb_id % maxDRB;
+            rab_id      = pc5s_header->rb_id % LTE_maxDRB;
             ctxt.rnti          = pdcp_eNB_UE_instance_to_rnti[pdcp_eNB_UE_instance_to_rnti_index];
          } else {
             ctxt.module_id = 0;
-            rab_id      = pc5s_header->rb_id % maxDRB;
+            rab_id      = pc5s_header->rb_id % LTE_maxDRB;
             ctxt.rnti          = pdcp_UE_UE_module_id_to_rnti[ctxt.module_id];
          }
 #endif
@@ -719,14 +727,14 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
          if (!ctxt.enb_flag) {
             if (rab_id != 0) {
                if (rab_id == UE_IP_DEFAULT_RAB_ID) {
-                  LOG_I(PDCP, "PDCP_COLL_KEY_DEFAULT_DRB_VALUE(module_id=%d, rnti=%x, enb_flag=%d)\n",
+                  LOG_D(PDCP, "PDCP_COLL_KEY_DEFAULT_DRB_VALUE(module_id=%d, rnti=%x, enb_flag=%d)\n",
                         ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
                   key = PDCP_COLL_KEY_DEFAULT_DRB_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
                   h_rc = hashtable_get(pdcp_coll_p, key, (void**)&pdcp_p);
-                  LOG_I(PDCP,"request key %x : (%d,%x,%d,%d)\n",
+                  LOG_D(PDCP,"request key %x : (%d,%x,%d,%d)\n",
                         (uint8_t)key,ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id);
                } else {
-                  rab_id = rab_id % maxDRB;
+                  rab_id = rab_id % LTE_maxDRB;
                   LOG_I(PDCP, "PDCP_COLL_KEY_VALUE(module_id=%d, rnti=%x, enb_flag=%d, rab_id=%d, SRB_FLAG=%d)\n",
                         ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id, SRB_FLAG_NO);
                   key = PDCP_COLL_KEY_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id, SRB_FLAG_NO);
@@ -774,7 +782,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                         pc5s_header->data_size,
                         (unsigned char *)receive_buf,
                         PDCP_TRANSMISSION_MODE_DATA
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                         ,&pc5s_header->sourceL2Id
                         ,&pc5s_header->destinationL2Id
 #endif
@@ -832,7 +840,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                      pc5s_header->data_size,
                      (unsigned char *)receive_buf,
                      PDCP_TRANSMISSION_MODE_DATA
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                      ,&pc5s_header->sourceL2Id
                      ,&pc5s_header->destinationL2Id
 #endif
@@ -897,18 +905,18 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                   ctxt.frame         = ctxt_cpy.frame;
                   ctxt.enb_flag      = ENB_FLAG_YES;
                   ctxt.module_id     = pdcp_read_header_g.inst  +  oai_emulation.info.first_enb_local;
-                  ctxt.rnti          = oai_emulation.info.eNB_ue_module_id_to_rnti[ctxt.module_id ][pdcp_read_header_g.rb_id / maxDRB + oai_emulation.info.first_ue_local];
-                  rab_id    = pdcp_read_header_g.rb_id % maxDRB;
+                  ctxt.rnti          = oai_emulation.info.eNB_ue_module_id_to_rnti[ctxt.module_id ][pdcp_read_header_g.rb_id / LTE_maxDRB + oai_emulation.info.first_ue_local];
+                  rab_id    = pdcp_read_header_g.rb_id % LTE_maxDRB;
                } else {
                   ctxt.frame         = ctxt_cpy.frame;
                   ctxt.enb_flag      = ENB_FLAG_NO;
                   ctxt.module_id     = pdcp_read_header_g.inst - oai_emulation.info.nb_enb_local + oai_emulation.info.first_ue_local;
                   ctxt.rnti          = pdcp_UE_UE_module_id_to_rnti[ctxt.module_id];
-                  rab_id    = pdcp_read_header_g.rb_id % maxDRB;
+                  rab_id    = pdcp_read_header_g.rb_id % LTE_maxDRB;
                }
 
                CHECK_CTXT_ARGS(&ctxt);
-               AssertFatal (rab_id    < maxDRB,                       "RB id is too high (%u/%d)!\n", rab_id, maxDRB);
+               AssertFatal (rab_id    < LTE_maxDRB,                       "RB id is too high (%u/%d)!\n", rab_id, LTE_maxDRB);
                /*LGpdcp_read_header.inst = (pdcp_read_header_g.inst >= oai_emulation.info.nb_enb_local) ? \
                   pdcp_read_header_g.inst - oai_emulation.info.nb_enb_local+ NB_eNB_INST + oai_emulation.info.first_ue_local :
                   pdcp_read_header_g.inst +  oai_emulation.info.first_enb_local;*/
@@ -924,11 +932,19 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
 #endif
           if (ctxt_cpy.enb_flag) {
             ctxt.module_id = 0;
-            rab_id      = pdcp_read_header_g.rb_id % maxDRB;
-            ctxt.rnti          = pdcp_eNB_UE_instance_to_rnti[pdcp_read_header_g.rb_id / maxDRB];
+            rab_id      = pdcp_read_header_g.rb_id % LTE_maxDRB;
+            ctxt.rnti          = pdcp_eNB_UE_instance_to_rnti[pdcp_read_header_g.rb_id / LTE_maxDRB];
           } else {
-            ctxt.module_id = 0;
-            rab_id      = pdcp_read_header_g.rb_id % maxDRB;
+            if (nfapi_mode == 3) {
+#ifdef UESIM_EXPANSION
+              ctxt.module_id = inst_pdcp_list[pdcp_read_header_g.inst];
+#else
+              ctxt.module_id = pdcp_read_header_g.inst;
+#endif
+            } else {
+              ctxt.module_id = 0;
+            }
+            rab_id      = pdcp_read_header_g.rb_id % LTE_maxDRB;
             ctxt.rnti          = pdcp_UE_UE_module_id_to_rnti[ctxt.module_id];
           }
 
@@ -936,7 +952,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
 
           if (ctxt.enb_flag) {
             if (rab_id != 0) {
-              rab_id = rab_id % maxDRB;
+              rab_id = rab_id % LTE_maxDRB;
               key = PDCP_COLL_KEY_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id, SRB_FLAG_NO);
               h_rc = hashtable_get(pdcp_coll_p, key, (void**)&pdcp_p);
 
@@ -979,7 +995,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                               pdcp_read_header_g.data_size,
                               (unsigned char *)NLMSG_DATA(nas_nlh_rx),
                               PDCP_TRANSMISSION_MODE_DATA
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                               ,NULL, NULL
 #endif
                               );
@@ -1016,7 +1032,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                                  pdcp_read_header_g.data_size,
                                  (unsigned char *)NLMSG_DATA(nas_nlh_rx),
                                  PDCP_TRANSMISSION_MODE_DATA
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                 ,NULL, NULL
 #endif
                                 );
@@ -1033,7 +1049,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                         LOG_D(PDCP,"request key %x : (%d,%x,%d,%d)\n",
                         		(uint8_t)key,ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id);
                      } else {
-                        rab_id = rab_id % maxDRB;
+                        rab_id = rab_id % LTE_maxDRB;
                         LOG_D(PDCP, "PDCP_COLL_KEY_VALUE(module_id=%d, rnti=%x, enb_flag=%d, rab_id=%d, SRB_FLAG=%d)\n",
                               ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id, SRB_FLAG_NO);
                         key = PDCP_COLL_KEY_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id, SRB_FLAG_NO);
@@ -1072,7 +1088,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                                           pdcp_read_header_g.rb_id,
                                           rab_id,
                                           pdcp_read_header_g.data_size);
-
+                        if(nfapi_mode == 3){
                         pdcp_data_req(
                               &ctxt,
                               SRB_FLAG_NO,
@@ -1082,11 +1098,27 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                               pdcp_read_header_g.data_size,
                               (unsigned char *)NLMSG_DATA(nas_nlh_rx),
                               PDCP_TRANSMISSION_MODE_DATA
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                              ,NULL
+                              ,NULL
+#endif
+                              );
+                        }else{
+                        pdcp_data_req(
+                              &ctxt,
+                              SRB_FLAG_NO,
+                              rab_id,
+                              RLC_MUI_UNDEFINED,
+                              RLC_SDU_CONFIRM_NO,
+                              pdcp_read_header_g.data_size,
+                              (unsigned char *)NLMSG_DATA(nas_nlh_rx),
+                              PDCP_TRANSMISSION_MODE_DATA
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                               ,&pdcp_read_header_g.sourceL2Id
                               ,&pdcp_read_header_g.destinationL2Id
 #endif
                               );
+                        }
                      } else {
                         MSC_LOG_RX_DISCARDED_MESSAGE(
                               (ctxt_pP->enb_flag == ENB_FLAG_YES) ? MSC_PDCP_ENB:MSC_PDCP_UE,
@@ -1130,7 +1162,7 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                                        pdcp_read_header_g.rb_id,
                                        DEFAULT_RAB_ID,
                                        pdcp_read_header_g.data_size);
-
+                     if(nfapi_mode == 3){
                      pdcp_data_req (
                            &ctxt,
                            SRB_FLAG_NO,
@@ -1140,11 +1172,27 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t* const  ctxt_pP)
                            pdcp_read_header_g.data_size,
                            (unsigned char *)NLMSG_DATA(nas_nlh_rx),
                            PDCP_TRANSMISSION_MODE_DATA
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                           ,NULL
+                           ,NULL
+#endif
+                               );
+                     }else{
+                     pdcp_data_req (
+                           &ctxt,
+                           SRB_FLAG_NO,
+                           DEFAULT_RAB_ID,
+                           RLC_MUI_UNDEFINED,
+                           RLC_SDU_CONFIRM_NO,
+                           pdcp_read_header_g.data_size,
+                           (unsigned char *)NLMSG_DATA(nas_nlh_rx),
+                           PDCP_TRANSMISSION_MODE_DATA
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                            ,&pdcp_read_header_g.sourceL2Id
                            ,&pdcp_read_header_g.destinationL2Id
 #endif
                            );
+                     }
                   }
                }
 
@@ -1189,7 +1237,7 @@ void pdcp_fifo_read_input_sdus_from_otg (const protocol_ctxt_t* const  ctxt_pP) 
 
 
 //TTN for D2D (PC5S)
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
 void
 pdcp_pc5_socket_init() {

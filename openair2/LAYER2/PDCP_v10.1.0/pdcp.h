@@ -42,13 +42,13 @@
 #include "RRC/LTE/rrc_defs.h"
 #include "COMMON/platform_constants.h"
 #include "COMMON/platform_types.h"
-#include "DRB-ToAddMod.h"
-#include "DRB-ToAddModList.h"
-#include "SRB-ToAddMod.h"
-#include "SRB-ToAddModList.h"
-#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-#include "MBMS-SessionInfoList-r9.h"
-#include "PMCH-InfoList-r9.h"
+#include "LTE_DRB-ToAddMod.h"
+#include "LTE_DRB-ToAddModList.h"
+#include "LTE_SRB-ToAddMod.h"
+#include "LTE_SRB-ToAddModList.h"
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+#include "LTE_MBMS-SessionInfoList-r9.h"
+#include "LTE_PMCH-InfoList-r9.h"
 #endif
 
 
@@ -195,7 +195,7 @@ typedef struct pdcp_s {
 
 } pdcp_t;
 
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 typedef struct pdcp_mbms_s {
   boolean_t instanciated_instance;
   rb_id_t   rb_id;
@@ -232,7 +232,7 @@ boolean_t pdcp_data_req(
               const sdu_size_t sdu_buffer_size,
               unsigned char* const sdu_buffer,
               const pdcp_transmission_mode_t mode
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
               ,const uint32_t * const sourceL2Id
               ,const uint32_t * const destinationL2Id
 #endif
@@ -292,15 +292,15 @@ void rrc_pdcp_config_req (
 */
 boolean_t rrc_pdcp_config_asn1_req (
     const protocol_ctxt_t* const  ctxt_pP,
-    SRB_ToAddModList_t  *const srb2add_list,
-    DRB_ToAddModList_t  *const drb2add_list,
-    DRB_ToReleaseList_t *const drb2release_list,
+    LTE_SRB_ToAddModList_t  *const srb2add_list,
+    LTE_DRB_ToAddModList_t  *const drb2add_list,
+    LTE_DRB_ToReleaseList_t *const drb2release_list,
     const uint8_t                   security_modeP,
     uint8_t                  *const kRRCenc,
     uint8_t                  *const kRRCint,
     uint8_t                  *const kUPenc
-#if (RRC_VERSION >= MAKE_VERSION(9, 0, 0))
-    ,PMCH_InfoList_r9_t  *pmch_InfoList_r9
+#if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
+    ,LTE_PMCH_InfoList_r9_t  *pmch_InfoList_r9
 #endif
     ,rb_id_t                 *const defaultDRB 
   );
@@ -404,7 +404,7 @@ typedef struct pdcp_data_req_header_s {
   sdu_size_t          data_size;
   signed int          inst;
   ip_traffic_type_t   traffic_type;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uint32_t sourceL2Id;
   uint32_t destinationL2Id;
 #endif
@@ -415,7 +415,7 @@ typedef struct pdcp_data_ind_header_s {
   sdu_size_t          data_size;
   signed int          inst;
   ip_traffic_type_t   dummy_traffic_type;
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uint32_t sourceL2Id;
   uint32_t destinationL2Id;
 #endif
@@ -429,7 +429,7 @@ struct pdcp_netlink_element_s {
 };
 
 //TTN for D2D (PC5S)
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 #define PDCP_SOCKET_PORT_NO 9999 //temporary value
 #define PC5_SIGNALLING_PAYLOAD_SIZE   100  //should be updated with a correct value
 int pdcp_pc5_sockfd;
@@ -499,9 +499,9 @@ pdcp_stats_t              eNB_pdcp_stats[NUMBER_OF_eNB_MAX];
 rnti_t                 pdcp_UE_UE_module_id_to_rnti[MAX_MOBILES_PER_ENB];
 rnti_t                 pdcp_eNB_UE_instance_to_rnti[MAX_MOBILES_PER_ENB]; // for noS1 mode
 unsigned int           pdcp_eNB_UE_instance_to_rnti_index;
-#if (RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-pdcp_mbms_t               pdcp_mbms_array_ue[MAX_MOBILES_PER_ENB][maxServiceCount][maxSessionPerPMCH];   // some constants from openair2/RRC/LTE/MESSAGES/asn1_constants.h
-pdcp_mbms_t               pdcp_mbms_array_eNB[NUMBER_OF_eNB_MAX][maxServiceCount][maxSessionPerPMCH]; // some constants from openair2/RRC/LTE/MESSAGES/asn1_constants.h
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+pdcp_mbms_t               pdcp_mbms_array_ue[MAX_MOBILES_PER_ENB][LTE_maxServiceCount][LTE_maxSessionPerPMCH];   // some constants from openair2/RRC/LTE/MESSAGES/asn1_constants.h
+pdcp_mbms_t               pdcp_mbms_array_eNB[NUMBER_OF_eNB_MAX][LTE_maxServiceCount][LTE_maxSessionPerPMCH]; // some constants from openair2/RRC/LTE/MESSAGES/asn1_constants.h
 #endif
 sdu_size_t             pdcp_output_sdu_bytes_to_write;
 sdu_size_t             pdcp_output_header_bytes_to_write;
@@ -542,7 +542,7 @@ sdu_size_t             pdcp_input_sdu_remaining_size_to_read;
     (((hash_key_t)(sESSION_ID)) << 37) | \
     (((hash_key_t)(0x0000000000000001))  << 63))
 
-hash_table_t  *pdcp_coll_p;
+extern hash_table_t  *pdcp_coll_p;
 
 #endif
 /*@}*/

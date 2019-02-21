@@ -31,16 +31,10 @@ void init_ocm(double snr_dB,double sinr_dB);
 
 void update_ocm(double snr_dB,double sinr_dB);
 
-extern pthread_mutex_t async_server_lock;
-extern pthread_cond_t async_server_notify;
-extern int async_server_shutdown;
+//extern pthread_mutex_t async_server_lock;
+//extern pthread_cond_t async_server_notify;
+//extern int async_server_shutdown;
 
-#if !defined(LOG_NO_THREAD)
-extern LOG_params log_list[2000];
-extern pthread_mutex_t log_lock;
-extern pthread_cond_t log_notify;
-extern int log_shutdown;
-#endif
 void init_channel_vars(void);
 
 #endif 

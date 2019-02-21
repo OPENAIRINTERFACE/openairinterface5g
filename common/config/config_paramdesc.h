@@ -38,7 +38,7 @@
 
 
 #define MAX_OPTNAME_SIZE 64
-
+#define CONFIG_MAXOPTLENGTH 512 /* max full option length, full option name exemple: (prefix1.[<index>].prefix2.optname */
 
 
 /* parameter flags definitions */
@@ -55,83 +55,81 @@
 #define PARAMFLAG_PARAMSET                (1 << 16)        // parameter has been explicitely set in get functions
 #define PARAMFLAG_PARAMSETDEF             (1 << 17)        // parameter has been set to default value in get functions
 
-
 /* checkedparam_t is possibly used in paramdef_t for specific parameter value validation */
 #define CONFIG_MAX_NUMCHECKVAL            20
 typedef struct paramdef paramdef_t;
 typedef union checkedparam {
-        struct  { 
-               int  (*f1)(paramdef_t *param);   /* check an integer against a list of authorized values */
-               int okintval[CONFIG_MAX_NUMCHECKVAL];                        /* integer array, store possible values  */
-               int num_okintval;                                            /* number of valid values in the checkingval array */
-        } s1;
-        struct  { 
-               int  (*f1a)(paramdef_t *param);   /* check an integer against a list of authorized values and set param value */
-                                                 /* to the corresponding item in setintval array (mainly for RRC params)     */
-               int okintval[CONFIG_MAX_NUMCHECKVAL];                        /* integer array, store possible values in config file */
-               int setintval[CONFIG_MAX_NUMCHECKVAL];                        /* integer array, values set in the paramdef structure */
-               int num_okintval;                                            /* number of valid values in the checkingval array */
-        } s1a;
-        struct { 
-               int  (*f2)(paramdef_t *param);  /* check an integer against an authorized range, defined by its min and max value */
-               int okintrange[CONFIG_MAX_NUMCHECKVAL];  /* integer array, store  min and max values  */
-   
-        } s2;
-        struct {
-               int  (*f3)(paramdef_t *param); /* check a string against a list of authorized values */
-               char *okstrval[CONFIG_MAX_NUMCHECKVAL];                      /* string array, store possible values  */
-               int  num_okstrval;                                           /* number of valid values in the checkingval array */
-        } s3;
-        struct {
-               int  (*f3a)(paramdef_t *param); /* check a string against a list of authorized values and set param value */
-                                                 /* to the corresponding item in setintval array (mainly for RRC params) */
-               char *okstrval[CONFIG_MAX_NUMCHECKVAL];                      /* string array, store possible values  */
-               int  setintval[CONFIG_MAX_NUMCHECKVAL];                      /* integer array, values set in the paramdef structure */
-               int  num_okstrval;                                           /* number of valid values in the checkingval array */
-        } s3a;
-        struct {
-               int  (*f4)(paramdef_t *param); /* generic check function, no arguments but the param description */
-               
-        } s4;
-        struct { 
-                void (*checkfunc)(void) ; 
-        } s5;
+  struct  {
+    int  (*f1)(paramdef_t *param);   /* check an integer against a list of authorized values */
+    int okintval[CONFIG_MAX_NUMCHECKVAL];                        /* integer array, store possible values  */
+    int num_okintval;                                            /* number of valid values in the checkingval array */
+  } s1;
+  struct  {
+    int  (*f1a)(paramdef_t *param);   /* check an integer against a list of authorized values and set param value */
+    /* to the corresponding item in setintval array (mainly for RRC params)     */
+    int okintval[CONFIG_MAX_NUMCHECKVAL];                        /* integer array, store possible values in config file */
+    int setintval[CONFIG_MAX_NUMCHECKVAL];                        /* integer array, values set in the paramdef structure */
+    int num_okintval;                                            /* number of valid values in the checkingval array */
+  } s1a;
+  struct {
+    int  (*f2)(paramdef_t *param);  /* check an integer against an authorized range, defined by its min and max value */
+    int okintrange[CONFIG_MAX_NUMCHECKVAL];  /* integer array, store  min and max values  */
+
+  } s2;
+  struct {
+    int  (*f3)(paramdef_t *param); /* check a string against a list of authorized values */
+    char *okstrval[CONFIG_MAX_NUMCHECKVAL];                      /* string array, store possible values  */
+    int  num_okstrval;                                           /* number of valid values in the checkingval array */
+  } s3;
+  struct {
+    int  (*f3a)(paramdef_t *param); /* check a string against a list of authorized values and set param value */
+    /* to the corresponding item in setintval array (mainly for RRC params) */
+    char *okstrval[CONFIG_MAX_NUMCHECKVAL];                      /* string array, store possible values  */
+    int  setintval[CONFIG_MAX_NUMCHECKVAL];                      /* integer array, values set in the paramdef structure */
+    int  num_okstrval;                                           /* number of valid values in the checkingval array */
+  } s3a;
+  struct {
+    int  (*f4)(paramdef_t *param); /* generic check function, no arguments but the param description */
+
+  } s4;
+  struct {
+    void (*checkfunc)(void) ;
+  } s5;
 } checkedparam_t;
 
 /* paramdef is used to describe a parameter, array of paramdef_t strustures is used as the main parameter in */
 /* config apis used to retrieve parameters values  */
-typedef struct paramdef
-{
-   char         optname[MAX_OPTNAME_SIZE]; /* parameter name, can be used as long command line option */
-   char         *helpstr;                  /* help string */
-   unsigned int paramflags;                /* value is a "ored" combination of above PARAMFLAG_XXXX values */
-   union {                                 /* pointer to the parameter value, completed by the config module */
-     char **strptr;
-     char **strlistptr;
-     uint8_t   *u8ptr;
-     int8_t    *i8ptr;     
-     uint16_t  *u16ptr;
-     int16_t   *i16ptr;
-     uint32_t  *uptr;
-     int32_t   *iptr;
-     uint64_t  *u64ptr;
-     int64_t   *i64ptr;
-     double    *dblptr;
-     void      *voidptr;
-     } ;
-   union {                                /* default parameter value, to be used when PARAMFLAG_MANDATORY is not specified */
-     char      *defstrval;
-     char      **defstrlistval;
-     uint32_t  defuintval;
-     int       defintval;
-     uint64_t  defint64val;
-     int       *defintarrayval;
-     double    defdblval;
-     } ;   
-   char type;                              /* parameter value type, as listed below as TYPE_XXXX macro */
-   int numelt;                             /* number of elements in a list or array parameters or max size of string value */ 
-   checkedparam_t   *chkPptr;              /* possible pointer to the structure containing the info used to check parameter values */
-   int *processedvalue;                    /* used to store integer values computed from string original value */
+typedef struct paramdef {
+  char         optname[MAX_OPTNAME_SIZE]; /* parameter name, can be used as long command line option */
+  char         *helpstr;                  /* help string */
+  unsigned int paramflags;                /* value is a "ored" combination of above PARAMFLAG_XXXX values */
+  union {                                 /* pointer to the parameter value, completed by the config module */
+    char **strptr;
+    char **strlistptr;
+    uint8_t   *u8ptr;
+    int8_t    *i8ptr;
+    uint16_t  *u16ptr;
+    int16_t   *i16ptr;
+    uint32_t  *uptr;
+    int32_t   *iptr;
+    uint64_t  *u64ptr;
+    int64_t   *i64ptr;
+    double    *dblptr;
+    void      *voidptr;
+  } ;
+  union {                                /* default parameter value, to be used when PARAMFLAG_MANDATORY is not specified */
+    char      *defstrval;
+    char      **defstrlistval;
+    uint32_t  defuintval;
+    int       defintval;
+    uint64_t  defint64val;
+    int       *defintarrayval;
+    double    defdblval;
+  } ;
+  char type;                              /* parameter value type, as listed below as TYPE_XXXX macro */
+  int numelt;                             /* number of elements in a list or array parameters or max size of string value */
+  checkedparam_t   *chkPptr;              /* possible pointer to the structure containing the info used to check parameter values */
+  int *processedvalue;                    /* used to store integer values computed from string original value */
 } paramdef_t;
 
 #define TYPE_INT        TYPE_INT32
@@ -161,9 +159,9 @@ typedef struct paramdef
 #define ANY_IPV4ADDR_STRING "0.0.0.0"
 
 typedef struct paramlist_def {
-    char listname[MAX_OPTNAME_SIZE];
-    paramdef_t **paramarray;
-    int numelt ;
+  char listname[MAX_OPTNAME_SIZE];
+  paramdef_t **paramarray;
+  int numelt ;
 } paramlist_def_t;
 
 /* macro helpers for module users */

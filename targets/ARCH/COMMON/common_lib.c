@@ -48,7 +48,7 @@ int set_device(openair0_device *device) {
   case USRP_B200_DEV:
     printf("[%s] has loaded USRP B200 device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU")); 
     break;
-case USRP_X300_DEV:
+  case USRP_X300_DEV:
     printf("[%s] has loaded USRP X300 device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU")); 
     break;
   case BLADERF_DEV:
@@ -56,6 +56,9 @@ case USRP_X300_DEV:
     break;
   case LMSSDR_DEV:
     printf("[%s] has loaded LMSSDR device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU")); 
+    break;
+  case IRIS_DEV:
+    printf("[%s] has loaded Iris device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
     break;
   case NONE_DEV:
     printf("[%s] has not loaded a HW device.\n",((device->host_type == RAU_HOST) ? "RAU": "RRU"));
