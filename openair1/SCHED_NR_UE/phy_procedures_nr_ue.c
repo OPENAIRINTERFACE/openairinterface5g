@@ -3354,7 +3354,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
       } // end for loop dci_cnt
 
     //  TODO: check where should we send up this message.
-    ue->if_inst->dl_indication(&ue->dl_indication);
+    //ue->if_inst->dl_indication(&ue->dl_indication);
 
 
 #if UE_TIMING_TRACE
