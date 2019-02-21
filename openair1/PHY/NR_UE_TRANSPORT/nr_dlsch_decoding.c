@@ -516,7 +516,8 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                            p_nrLDPC_procBuf[r],
                            p_procTime);
 
-		if (check_crc(llrProcBuf,harq_process->B,harq_process->F,crc_type)) {
+		// Fixme: correct type is unsigned, but nrLDPC_decoder and all called behind use signed int
+		if (check_crc((uint8_t*)llrProcBuf,harq_process->B,harq_process->F,crc_type)) {
 		  printf("CRC OK\n");
 		  ret = 2;
 		}

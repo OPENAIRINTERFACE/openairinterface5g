@@ -36,6 +36,8 @@
 
 #include "PHY/NR_REFSIG/ss_pbch_nr.h"
 #include "PHY/defs_nr_UE.h"
+#include <openair1/SCHED/sched_common.h>
+#include <openair1/PHY/NR_UE_TRANSPORT/pucch_nr.h>
 
 #ifndef NO_RAT_NR
 
@@ -278,7 +280,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
   /* Part - III */
   /* Choice PUCCH format and its related parameters */
   pucch_format_nr_t format = pucch_format0_nr;
-  uint8_t  starting_symbol_index;
+  uint8_t  starting_symbol_index=0;
   uint8_t nb_symbols_total = 0;
   uint8_t  nb_symbols = 0;
   uint16_t starting_prb = 0;;  /* it can be considered as first  hop on case of pucch hopping */
@@ -558,7 +560,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     {
       nr_generate_pucch0(ue,ue->common_vars.txdataF,
                          &ue->frame_parms,
-                         &ue->pucch_config_dedicated_nr[gNB_id],
+                         &ue->pucch_config_dedicated[gNB_id],
                          tx_amp,
                          nr_tti_tx,
                          (uint8_t)m_0,
@@ -572,7 +574,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
     {
       nr_generate_pucch1(ue,ue->common_vars.txdataF,
                          &ue->frame_parms,
-                         &ue->pucch_config_dedicated_nr[gNB_id],
+                         &ue->pucch_config_dedicated[gNB_id],
                          pucch_payload,
                          tx_amp,
                          nr_tti_tx,
@@ -591,7 +593,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                          ue->pdcch_vars[ue->current_thread_id[proc->nr_tti_rx]][gNB_id]->crnti,
                          ue->common_vars.txdataF,
                          &ue->frame_parms,
-                         &ue->pucch_config_dedicated_nr[gNB_id],
+                         &ue->pucch_config_dedicated[gNB_id],
                          pucch_payload,
                          tx_amp,
                          nr_tti_tx,
@@ -610,7 +612,7 @@ bool pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, uint8_t gNB_id, UE_nr_rxtx_proc_
                            ue->common_vars.txdataF,
                            &ue->frame_parms,
                            format,
-                           &ue->pucch_config_dedicated_nr[gNB_id],
+                           &ue->pucch_config_dedicated[gNB_id],
                            pucch_payload,
                            tx_amp,
                            nr_tti_tx,
@@ -729,7 +731,7 @@ uint8_t get_downlink_ack(PHY_VARS_NR_UE *ue, uint8_t gNB_id,  UE_nr_rxtx_proc_t 
         }
       }
       if (do_reset == TRUE) {
-        init_downlink_harq_status(&ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][code_word]->harq_processes[dl_harq_pid]);
+        init_downlink_harq_status(ue->dlsch[ue->current_thread_id[proc->nr_tti_rx]][gNB_id][code_word]->harq_processes[dl_harq_pid]);
       }
     }
   }

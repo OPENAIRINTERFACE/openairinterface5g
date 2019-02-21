@@ -58,6 +58,7 @@
 #endif
 
 #include "assertions.h"
+#include <openair1/PHY/LTE_TRANSPORT/transport_proto.h>
 
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_eNB_SCHEDULER 1
@@ -392,7 +393,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
           }
 
           for (int ii=0; ii<MAX_MOBILES_PER_GNB; ii++) {
-            LTE_eNB_DLSCH_t *dlsch = RC.gNB[module_idP][CC_id]->dlsch[ii][0];
+            NR_gNB_DLSCH_t *dlsch = RC.gNB[module_idP][CC_id]->dlsch[ii][0];
             if((dlsch != NULL) && (dlsch->rnti == rnti)){
               LOG_I(MAC, "clean_eNb_dlsch UE %x \n", rnti);
               clean_eNb_dlsch(dlsch);

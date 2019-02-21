@@ -32,6 +32,7 @@
 #include "PHY/defs_nr_UE.h"
 #include "SCHED_NR_UE/pucch_uci_ue_nr.h"
 #include "SCHED_NR_UE/pucch_power_control_ue_nr.h"
+#include <openair1/PHY/LTE_ESTIMATION/lte_estimation.h>
 
 /**************** defines **************************************/
 

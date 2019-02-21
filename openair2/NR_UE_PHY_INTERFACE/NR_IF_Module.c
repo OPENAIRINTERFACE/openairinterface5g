@@ -74,7 +74,7 @@ int8_t handle_dlsch (module_id_t module_id, int cc_id, uint8_t gNB_index, fapi_n
   return nr_ue_process_dlsch( module_id,
 			      cc_id,
 			      gNB_index,
-			      &dci_ind,
+			      dci_ind,
 			      pduP,
 			      pdu_len);
 
@@ -308,4 +308,5 @@ int nr_ue_dcireq(nr_dcireq_t *dcireq) {
   dl_config->dl_config_list[0].dci_config_pdu.dci_config_rel15.N_RB_BWP = 106;
 
   
+  return 0;
 }
