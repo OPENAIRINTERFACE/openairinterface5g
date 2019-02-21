@@ -980,7 +980,7 @@ void *UE_thread(void *arg) {
 		        
                         if ( getenv("RFSIMULATOR") != 0) {
                            LOG_E(PHY,"AbsSubframe %d.%d TTI SET rx_off_diff to %d rx_offset %d \n",
-                           proc->frame_rx,subframe_nr,UE->rx_offset_diff,UE->rx_offset);
+                           proc->frame_rx,slot_nr,UE->rx_offset_diff,UE->rx_offset);
 			   //UE->rx_offset_diff=0;	
                         }
                         readBlockSize=UE->frame_parms.samples_per_slot -

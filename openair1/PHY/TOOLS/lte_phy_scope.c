@@ -151,12 +151,12 @@ FD_lte_phy_scope_enb *create_lte_phy_scope_enb( void )
 }
 
 void phy_scope_eNB(FD_lte_phy_scope_enb *form,
-                   PHY_VARS_gNB *phy_vars_enb,
+                   PHY_VARS_eNB *phy_vars_enb,
                    int UE_id)
 {
   int eNB_id = 0;
   int i,i2,arx,atx,ind,k;
-  NR_DL_FRAME_PARMS *frame_parms = &phy_vars_enb->frame_parms;
+  LTE_DL_FRAME_PARMS *frame_parms = &phy_vars_enb->frame_parms;
   int nsymb_ce = 12*frame_parms->N_RB_UL*frame_parms->symbols_per_tti;
   uint8_t nb_antennas_rx = frame_parms->nb_antennas_rx;
   uint8_t nb_antennas_tx = 1; // frame_parms->nb_antennas_tx; // in LTE Rel. 8 and 9 only a single transmit antenna is assumed at the UE
@@ -178,7 +178,7 @@ void phy_scope_eNB(FD_lte_phy_scope_enb *form,
   float time[FRAME_LENGTH_COMPLEX_SAMPLES];
   float time2[2048];
   float freq[nsymb_ce*nb_antennas_rx*nb_antennas_tx];
-  int frame = phy_vars_enb->proc.L1_proc_tx.frame_tx;
+  int frame = phy_vars_enb->proc.proc_rxtx[0].frame_tx;
   uint32_t total_dlsch_bitrate = phy_vars_enb->total_dlsch_bitrate;
   int coded_bits_per_codeword = 0;
   uint8_t harq_pid; // in TDD config 3 it is sf-2, i.e., can be 0,1,2
