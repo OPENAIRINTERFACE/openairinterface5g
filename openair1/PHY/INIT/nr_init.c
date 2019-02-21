@@ -387,7 +387,7 @@ void install_schedule_handlers(IF_Module_t *if_inst)
 
 /// this function is a temporary addition for NR configuration
 
-void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu,int Nid_cell)
+void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu,int Nid_cell,uint64_t position_in_burst)
 {
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   nfapi_nr_config_request_t *gNB_config = &gNB->gNB_config;
@@ -404,7 +404,7 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu,
   gNB_config->sch_config.n_ssb_crb.value = (N_RB_DL-20);
   gNB_config->sch_config.ssb_subcarrier_offset.value = 0;
   gNB_config->sch_config.physical_cell_id.value=Nid_cell;
-
+  gNB_config->sch_config.ssb_scg_position_in_burst.value=position_in_burst;
 
   gNB->mac_enabled     = 1;
 
