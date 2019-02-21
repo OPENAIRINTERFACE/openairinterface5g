@@ -105,6 +105,7 @@ int main(int argc, char **argv)
   int trial,n_trials=1,n_errors=0,n_errors_payload=0;
   uint8_t transmission_mode = 1,n_tx=1,n_rx=1;
   uint16_t Nid_cell=0;
+  uint64_t SSB_positions=0x01;
 
   channel_desc_t *gNB2UE;
 
@@ -280,6 +281,10 @@ int main(int argc, char **argv)
 
       break;
 
+    case 'M':
+      SSB_positions = atoi(optarg);
+      break;
+
     case 'N':
       Nid_cell = atoi(optarg);
       break;
@@ -333,6 +338,7 @@ int main(int argc, char **argv)
       printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
       printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
       printf("-o Carrier frequency offset in Hz\n");
+      printf("-M Multiple SSB positions in burst\n");
       printf("-N Nid_cell\n");
       printf("-R N_RB_DL\n");
       printf("-O oversampling factor (1,2,4,8,16)\n");
@@ -366,32 +372,34 @@ int main(int argc, char **argv)
   frame_parms->N_RB_UL = N_RB_DL;
   frame_parms->Nid_cell = Nid_cell;
 
-  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell);
+  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
   phy_init_nr_gNB(gNB,0,0);
 
   double fs,bw,scs,eps;
-
-  if (mu == 1 && N_RB_DL == 217) { 
-    fs = 122.88e6;
-    bw = 80e6;
-    scs = 30000;
-  }					       
-  else if (mu == 1 && N_RB_DL == 245) {
-    fs = 122.88e6;
-    bw = 90e6;
-    scs = 30000;
+  
+  switch (mu) {
+    case 1:
+	scs = 30000;
+	if (N_RB_DL == 217) { 
+	    fs = 122.88e6;
+	    bw = 80e6;
+	    
+	}					       
+	else if (N_RB_DL == 245) {
+	    fs = 122.88e6;
+	    bw = 90e6;
+	}
+	else if (N_RB_DL == 273) {
+	    fs = 122.88e6;
+	    bw = 100e6;
+	}
+	else if (N_RB_DL == 106) { 
+	    fs = 61.44e6;
+	    bw = 40e6;
+	}
+	else AssertFatal(1==0,"Unsupported numerology for mu %d, N_RB %d\n",mu, N_RB_DL);
+	break;
   }
-  else if (mu == 1 && N_RB_DL == 273) {
-    fs = 122.88e6;
-    bw = 100e6;
-    scs = 30000;
-  }
-  else if (mu == 1 && N_RB_DL == 106) { 
-    fs = 61.44e6;
-    bw = 40e6;
-    scs = 30000;
-  }
-  else AssertFatal(1==0,"Unsupported numerology for mu %d, N_RB %d\n",mu, N_RB_DL);
 
   // cfo with respect to sub-carrier spacing
   eps = cfo/scs;
@@ -476,6 +484,7 @@ int main(int argc, char **argv)
   if (input_fd==NULL) {
     gNB->pbch_configured = 1;
     for (int i=0;i<4;i++) gNB->pbch_pdu[i]=i+1;
+
     nr_common_signal_procedures (gNB,frame,subframe);
 
 	LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],frame_length_complex_samples_no_prefix,1,1);
