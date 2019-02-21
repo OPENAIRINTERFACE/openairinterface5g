@@ -1107,11 +1107,11 @@
       <compile_prog_args> --phy_simulators  -c </compile_prog_args>
       <pre_exec>$OPENAIR_DIR/cmake_targets/autotests/tools/free_mem.bash</pre_exec>
       <pre_exec_args></pre_exec_args>
-      <main_exec> $OPENAIR_DIR/targets/bin/nr_dlsim.Rel15</main_exec>
+      <main_exec> $OPENAIR_DIR/targets/bin/nr_dlschsim.Rel15</main_exec>
       <main_exec_args>-R 106 -m9 -s13 -n100
                       -R 217 -m15 -s15 -n100
                       -R 273 -m19 -s20 -n100</main_exec_args>
-      <tags>nr_dlsim.test1 nr_dlsim.test2 nr_dlsim.test3</tags>
+      <tags>nr_dlschsim.test1 nr_dlschsim.test2 nr_dlschsim.test3</tags>
       <search_expr_true>PDSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
