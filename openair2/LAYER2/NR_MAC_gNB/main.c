@@ -44,6 +44,34 @@
 extern RAN_CONTEXT_t RC;
 
 
+void nr_init_coreset(nfapi_nr_coreset_t *coreset) {
+
+  coreset->coreset_id = 1;
+  coreset->frequency_domain_resources = 0x1E0000000000;//0x1FFFE0000000; // 96 RB starting from CRB0
+  coreset->duration = 2;
+  coreset->cce_reg_mapping_type = NFAPI_NR_CCE_REG_MAPPING_NON_INTERLEAVED;
+  coreset->reg_bundle_size = 6;
+  coreset->interleaver_size = 2;
+  coreset->precoder_granularity = NFAPI_NR_CSET_SAME_AS_REG_BUNDLE;
+  coreset->tci_present_in_dci = 0;
+  coreset->dmrs_scrambling_id = 0;
+}
+
+void nr_init_search_space(nfapi_nr_search_space_t *search_space) {
+
+  search_space->search_space_id = 1;
+  search_space->coreset_id = 1;
+  search_space->search_space_type = NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC;
+  search_space->duration = 5;
+  search_space->slot_monitoring_periodicity = NFAPI_NR_SS_PERIODICITY_SL10;
+  search_space->slot_monitoring_offset = 1;
+  search_space->monitoring_symbols_in_slot = 0xC0000000; // first 2 ofdm symbols
+  search_space->css_formats_0_0_and_1_0 = 1;
+  search_space->uss_dci_formats = 0; // enum to be defined-- formats 0.0 and 1.0
+  for (int i=0; i<NFAPI_NR_MAX_NB_CCE_AGGREGATION_LEVELS; i++)
+    search_space->number_of_candidates[i] = 4; // TODO
+}
+
 void mac_top_init_gNB(void)
 {
   module_id_t     i,j;
@@ -56,24 +84,24 @@ void mac_top_init_gNB(void)
   if (RC.nb_nr_macrlc_inst > 0) {
     
     RC.nrmac = (gNB_MAC_INST **) malloc16(RC.nb_nr_macrlc_inst *sizeof(gNB_MAC_INST *));
-     
+
     AssertFatal(RC.nrmac != NULL,"can't ALLOCATE %zu Bytes for %d gNB_MAC_INST with size %zu \n",
                 RC.nb_nr_macrlc_inst * sizeof(gNB_MAC_INST *),
                 RC.nb_nr_macrlc_inst, sizeof(gNB_MAC_INST));
   
     for (i = 0; i < RC.nb_nr_macrlc_inst; i++) {
         RC.nrmac[i] = (gNB_MAC_INST *) malloc16(sizeof(gNB_MAC_INST));
-        
+
         AssertFatal(RC.nrmac != NULL,"can't ALLOCATE %zu Bytes for %d gNB_MAC_INST with size %zu \n",
                     RC.nb_nr_macrlc_inst * sizeof(gNB_MAC_INST *),
                     RC.nb_nr_macrlc_inst, sizeof(gNB_MAC_INST));
         
         LOG_D(MAC,"[MAIN] ALLOCATE %zu Bytes for %d gNB_MAC_INST @ %p\n",sizeof(gNB_MAC_INST), RC.nb_nr_macrlc_inst, RC.mac);
-       
+
         bzero(RC.nrmac[i], sizeof(gNB_MAC_INST));
-        
+
         RC.nrmac[i]->Mod_id = i;
-        
+
         
         for (j = 0; j < MAX_NUM_CCs; j++) {
           RC.nrmac[i]->DL_req[j].dl_config_request_body.dl_config_pdu_list = RC.nrmac[i]->dl_config_pdu_list[j];
@@ -84,7 +112,11 @@ void mac_top_init_gNB(void)
         
         RC.nrmac[i]->HI_DCI0_req[j].hi_dci0_request_body.hi_dci0_pdu_list = RC.nrmac[i]->hi_dci0_pdu_list[j];
         RC.nrmac[i]->TX_req[j].tx_request_body.tx_pdu_list =                RC.nrmac[i]->tx_request_pdu[j];
-        RC.nrmac[i]->ul_handle = 0;     
+        RC.nrmac[i]->ul_handle = 0;
+
+        // Init PDCCH structures
+        nr_init_coreset(&RC.nrmac[i]->coreset[j][1]);
+        nr_init_search_space(&RC.nrmac[i]->search_space[j][1]);
         }
         
 

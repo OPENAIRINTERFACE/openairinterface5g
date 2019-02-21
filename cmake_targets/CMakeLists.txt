@@ -2651,7 +2651,7 @@ if (${T_TRACER})
         #all "add_executable" definitions (except tests, rb_tool, updatefw)
         lte-softmodem lte-softmodem-nos1 lte-uesoftmodem lte-uesoftmodem-nos1
         nr-softmodem nr-softmodem-nos1 nr-uesoftmodem nr-uesoftmodem-nos1
-        dlsim_tm4 dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim
+        dlsim_tm4 nr_dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim
         pdcchsim pucchsim prachsim syncsim ulsim
 	ldpctest polartest
         #all "add_library" definitions

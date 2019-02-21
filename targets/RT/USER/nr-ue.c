@@ -442,10 +442,10 @@ static void *UE_thread_synch(void *arg) {
 #endif
             if (nr_initial_sync( UE, UE->mode ) == 0) {
 
-	      //write_output("txdata_sym.m", "txdata_sym", UE->common_vars.rxdata[0], (10*UE->frame_parms.samples_per_subframe), 1, 1);
+	      //write_output("txdata_sym.m", "txdata_sym", UE->common_vars.rxdata[0], (10*UE->frame_parms.samples_per_slot), 1, 1);
 
 		freq_offset = UE->common_vars.freq_offset; // frequency offset computed with pss in initial sync
-                hw_slot_offset = (UE->rx_offset<<1) / UE->frame_parms.samples_per_subframe;
+                hw_slot_offset = (UE->rx_offset<<1) / UE->frame_parms.samples_per_slot;
                 printf("Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %d (DL %u, UL %u), UE_scan_carrier %d\n",
                        hw_slot_offset,
                        freq_offset,
@@ -691,6 +691,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 
 	    NR_UE_MAC_INST_t *UE_mac = get_mac_inst(0);
 	    UE_mac->scheduled_response.dl_config = &UE->dcireq.dl_config_req;
+	    UE_mac->scheduled_response.slot = proc->nr_tti_rx;
 	    nr_ue_scheduled_response(&UE_mac->scheduled_response);
 	    
 #ifdef UE_SLOT_PARALLELISATION
@@ -792,6 +793,8 @@ void *UE_thread(void *arg) {
     UE->proc.proc_rxtx[2].counter_decoder = 0;
 
     static uint8_t thread_idx = 0;
+    uint16_t table_sf_slot[20] = {0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9};
+
 
     cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
@@ -812,7 +815,8 @@ void *UE_thread(void *arg) {
     //itti_send_msg_to_task (TASK_NAS_UE, UE->Mod_id + NB_eNB_INST, message_p);
 #endif
 
-    int subframe_nr=-1;
+	int nb_slot_frame = 10*UE->frame_parms.slots_per_subframe;
+    int slot_nr=-1;
     //int cumulated_shift=0;
     if ((oaisim_flag == 0) && (UE->mode != loop_through_memory))
       AssertFatal(UE->rfdevice.trx_start_func(&UE->rfdevice) == 0, "Could not start the device\n");
@@ -915,11 +919,13 @@ void *UE_thread(void *arg) {
                 if(thread_idx>=RX_NB_TH)
                     thread_idx = 0;
 
-                subframe_nr++;
-                subframe_nr %= NR_NUMBER_OF_SUBFRAMES_PER_FRAME;               
+                //printf("slot_nr %d nb slot frame %d\n",slot_nr, nb_slot_frame);
+
+                slot_nr++;
+                slot_nr %= nb_slot_frame;               
                 UE_nr_rxtx_proc_t *proc = &UE->proc.proc_rxtx[thread_idx];
                 // update thread index for received subframe
-                UE->current_thread_id[subframe_nr] = thread_idx;
+                UE->current_thread_id[slot_nr] = thread_idx;
 
 #if BASIC_SIMULATOR
                 {
@@ -933,38 +939,38 @@ void *UE_thread(void *arg) {
                 }
 #endif
 
-                LOG_D(PHY,"Process subframe %d thread Idx %d \n", subframe_nr, UE->current_thread_id[subframe_nr]);
+                LOG_D(PHY,"Process slot %d thread Idx %d \n", slot_nr, UE->current_thread_id[slot_nr]);
 
 
                 if (UE->mode != loop_through_memory) {
                     for (i=0; i<UE->frame_parms.nb_antennas_rx; i++)
                         rxp[i] = (void*)&UE->common_vars.rxdata[i][UE->frame_parms.ofdm_symbol_size+
                                  UE->frame_parms.nb_prefix_samples0+
-                                 subframe_nr*UE->frame_parms.samples_per_subframe];
+                                 slot_nr*UE->frame_parms.samples_per_slot];
                     for (i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-		      txp[i] = (void*)&UE->common_vars.txdata[i][((subframe_nr+2)%NR_NUMBER_OF_SUBFRAMES_PER_FRAME)*UE->frame_parms.samples_per_subframe];
+		      txp[i] = (void*)&UE->common_vars.txdata[i][((slot_nr+2)%NR_NUMBER_OF_SUBFRAMES_PER_FRAME)*UE->frame_parms.samples_per_slot];
 
                     int readBlockSize, writeBlockSize;
-                    if (subframe_nr<(NR_NUMBER_OF_SUBFRAMES_PER_FRAME - 1)) {
-                        readBlockSize=UE->frame_parms.samples_per_subframe;
-                        writeBlockSize=UE->frame_parms.samples_per_subframe;
+                    if (slot_nr<(nb_slot_frame - 1)) {
+                        readBlockSize=UE->frame_parms.samples_per_slot;
+                        writeBlockSize=UE->frame_parms.samples_per_slot;
                     } else {
                         // set TO compensation to zero
                         UE->rx_offset_diff = 0;
                         // compute TO compensation that should be applied for this frame
-                        if ( UE->rx_offset < 5*UE->frame_parms.samples_per_subframe  &&
+                        if ( UE->rx_offset < 5*UE->frame_parms.samples_per_slot  &&
                                 UE->rx_offset > 0 )
                             UE->rx_offset_diff = -1 ;
-                        if ( UE->rx_offset > 5*UE->frame_parms.samples_per_subframe &&
-                                UE->rx_offset < 10*UE->frame_parms.samples_per_subframe )
+                        if ( UE->rx_offset > 5*UE->frame_parms.samples_per_slot &&
+                                UE->rx_offset < 10*UE->frame_parms.samples_per_slot )
                             UE->rx_offset_diff = 1;
 
-                        LOG_D(PHY,"AbsSubframe %d.%d TTI SET rx_off_diff to %d rx_offset %d \n",proc->frame_rx,subframe_nr,UE->rx_offset_diff,UE->rx_offset);
-                        readBlockSize=UE->frame_parms.samples_per_subframe -
+                        LOG_D(PHY,"AbsSubframe %d.%d TTI SET rx_off_diff to %d rx_offset %d \n",proc->frame_rx,slot_nr,UE->rx_offset_diff,UE->rx_offset);
+                        readBlockSize=UE->frame_parms.samples_per_slot -
                                       UE->frame_parms.ofdm_symbol_size -
                                       UE->frame_parms.nb_prefix_samples0 -
                                       UE->rx_offset_diff;
-                        writeBlockSize=UE->frame_parms.samples_per_subframe -
+                        writeBlockSize=UE->frame_parms.samples_per_slot -
                                        UE->rx_offset_diff;
                     }
 
@@ -977,7 +983,7 @@ void *UE_thread(void *arg) {
                     AssertFatal( writeBlockSize ==
                                  UE->rfdevice.trx_write_func(&UE->rfdevice,
                                          timestamp+
-                                         (2*UE->frame_parms.samples_per_subframe) -
+                                         (2*UE->frame_parms.samples_per_slot) -
                                          UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0 -
                                          openair0_cfg[0].tx_sample_advance,
                                          txp,
@@ -985,7 +991,7 @@ void *UE_thread(void *arg) {
                                          UE->frame_parms.nb_antennas_tx,
                                          1),"");
 		    
-                    if( subframe_nr==(NR_NUMBER_OF_SUBFRAMES_PER_FRAME-1)) {
+                    if( slot_nr==(nb_slot_frame-1)) {
                         // read in first symbol of next frame and adjust for timing drift
                         int first_symbols=writeBlockSize-readBlockSize;
                         if ( first_symbols > 0 )
@@ -1002,7 +1008,7 @@ void *UE_thread(void *arg) {
                     pickTime(gotIQs);
                     // operate on thread sf mod 2
                     AssertFatal(pthread_mutex_lock(&proc->mutex_rxtx) ==0,"");
-                    if(subframe_nr == 0) {
+                    if(slot_nr == 0) {
                         UE->proc.proc_rxtx[0].frame_rx++;
                         //UE->proc.proc_rxtx[1].frame_rx++;
                         for (th_id=1; th_id < RX_NB_TH; th_id++) {
@@ -1024,18 +1030,18 @@ void *UE_thread(void *arg) {
                         UE->proc.proc_rxtx[th_id].gotIQs=readTime(gotIQs);
                     }
 
-                    proc->nr_tti_rx=subframe_nr;
-                    proc->subframe_rx=subframe_nr;
+                    proc->nr_tti_rx=slot_nr;
+                    proc->subframe_rx=table_sf_slot[slot_nr];
 		    
                     proc->frame_tx = proc->frame_rx;
-                    proc->nr_tti_tx= subframe_nr + DURATION_RX_TO_TX;
-                    if (proc->nr_tti_tx > NR_NUMBER_OF_SUBFRAMES_PER_FRAME) {
+                    proc->nr_tti_tx= slot_nr + DURATION_RX_TO_TX;
+                    if (proc->nr_tti_tx > nb_slot_frame) {
                       proc->frame_tx = (proc->frame_tx + 1)%MAX_FRAME_NUMBER;
-                      proc->nr_tti_tx %= NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
+                      proc->nr_tti_tx %= nb_slot_frame;
                     }
                     proc->subframe_tx=proc->nr_tti_rx;
                     proc->timestamp_tx = timestamp+
-                                         (DURATION_RX_TO_TX*UE->frame_parms.samples_per_subframe)-
+                                         (DURATION_RX_TO_TX*UE->frame_parms.samples_per_slot)-
                                          UE->frame_parms.ofdm_symbol_size-UE->frame_parms.nb_prefix_samples0;
 
                     proc->instance_cnt_rxtx++;
@@ -1055,7 +1061,7 @@ void *UE_thread(void *arg) {
                         char exit_fun_string[256];
                         sprintf(exit_fun_string,"[SCHED][UE %d] !!! UE instance_cnt_rxtx > 2 (IC %d) (Proc %d)!!",
                         			UE->Mod_id, proc->instance_cnt_rxtx,
-                        			UE->current_thread_id[subframe_nr]);
+                        			UE->current_thread_id[slot_nr]);
           				printf("%s\n",exit_fun_string);
           				fflush(stdout);
           				sleep(1);
@@ -1071,20 +1077,20 @@ void *UE_thread(void *arg) {
 //                    pickStaticTime(lastTime);
                 } //UE->mode != loop_through_memory
                 else {
-		  proc->nr_tti_rx=subframe_nr;
-		  proc->subframe_rx=subframe_nr;
-		  if(subframe_nr == 0) {
+		  proc->nr_tti_rx=slot_nr;
+		  proc->subframe_rx=table_sf_slot[slot_nr];
+		  if(slot_nr == 0) {
 		    for (th_id=0; th_id < RX_NB_TH; th_id++) {
 		      UE->proc.proc_rxtx[th_id].frame_rx++;
 		    }
 		  }
 		  proc->frame_tx = proc->frame_rx;
-		  proc->nr_tti_tx= subframe_nr + DURATION_RX_TO_TX;
-		  if (proc->nr_tti_tx > NR_NUMBER_OF_SUBFRAMES_PER_FRAME) {
+		  proc->nr_tti_tx= slot_nr + DURATION_RX_TO_TX;
+		  if (proc->nr_tti_tx > nb_slot_frame) {
 		    proc->frame_tx = (proc->frame_tx + 1)%MAX_FRAME_NUMBER;
-		    proc->nr_tti_tx %= NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
+		    proc->nr_tti_tx %= nb_slot_frame;
 		  }
-		  proc->subframe_tx=proc->nr_tti_tx;
+		  proc->subframe_tx=table_sf_slot[proc->nr_tti_tx];
 
 		  if (slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx) & NR_DOWNLINK_SLOT) {
 		    
@@ -1103,10 +1109,12 @@ void *UE_thread(void *arg) {
 
 		    NR_UE_MAC_INST_t *UE_mac = get_mac_inst(0);
 		    UE_mac->scheduled_response.dl_config = &UE->dcireq.dl_config_req;
+		    UE_mac->scheduled_response.slot = proc->nr_tti_rx;
 		    nr_ue_scheduled_response(&UE_mac->scheduled_response);
-
 		    
-		    printf("Processing subframe %d\n",proc->subframe_rx);
+		    //write_output("uerxdata_frame.m", "uerxdata_frame", UE->common_vars.rxdata[0], UE->frame_parms.samples_per_frame, 1, 1);
+
+		    printf("Processing slot %d\n",proc->nr_tti_rx);
 		    phy_procedures_nrUE_RX( UE, proc, 0, 1, UE->mode);
 		  }
 		  

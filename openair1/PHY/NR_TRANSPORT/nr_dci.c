@@ -20,7 +20,7 @@
  */
 
 /*! \file PHY/NR_TRANSPORT/nr_dci.c
-* \brief Implements DCI encoding and PDCCH TX procedures (38.212/38.213/38.214). V15.2.0 2018-06.
+* \brief Implements DCI encoding and PDCCH TX procedures (38.212/38.213/38.214). V15.4.0 2019-01.
 * \author Guy De Souza
 * \date 2018
 * \version 0.1
@@ -35,7 +35,6 @@
 //#define DEBUG_PDCCH_DMRS
 //#define DEBUG_DCI
 //#define DEBUG_CHANNEL_CODING
-#define PDCCH_TEST_POLAR_TEMP_FIX
 
 
 extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
@@ -154,7 +153,7 @@ void nr_pdcch_scrambling(uint32_t *in,
       }
     }
     (*out) ^= ((((*in)>>(i&0x1f))&1) ^ ((s>>(i&0x1f))&1))<<(i&0x1f);
-    //    printf("nr_pdcch_scrambling: in %d => out %d\n",((*in)>>(i&0x1f))&1,((*out)>>(i&0x1f))&1);
+        //printf("nr_pdcch_scrambling: in %d seq 0x%08x => out %d\n",((*in)>>(i&0x1f))&1,s,((*out)>>(i&0x1f))&1);
   }
 
 }
@@ -169,8 +168,10 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
 {
 
   int16_t mod_dmrs[NR_MAX_CSET_DURATION][NR_MAX_PDCCH_DMRS_LENGTH>>1]; // 3 for the max coreset duration
-  uint8_t idx=0;
-  //uint16_t a;
+  uint32_t dmrs_seq[NR_MAX_PDCCH_DMRS_INIT_LENGTH_DWORD];
+  uint16_t dmrs_offset=0;
+  uint16_t cset_start_sc;
+  uint8_t cset_start_symb, cset_nsymb;
   int k,l,k_prime,dci_idx, dmrs_idx;
   nr_cce_t cce;
   nr_reg_t reg;
@@ -179,62 +180,88 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   /*First iteration: single DCI*/
   NR_gNB_DCI_ALLOC_t dci_alloc = pdcch_vars.dci_alloc[0];
   nfapi_nr_dl_config_pdcch_parameters_rel15_t pdcch_params = dci_alloc.pdcch_params;
-  uint16_t dmrs_length = dci_alloc.L*36; //2(QPSK)*3(per RB)*6(REG per CCE)
-  uint16_t encoded_length = dci_alloc.L*108; //2(QPSK)*9(per RB)*6(REG per CCE)
 
   /*The coreset is initialised
-  * in frequency: the first subcarrier is obtained by adding the first CRB overlapping the SSB and the rb_offset
+  * in frequency: the first subcarrier is obtained by adding the first CRB overlapping the SSB and the rb_offset for coreset 0
+  * or the rb_offset for other coresets
   * in time: by its first slot and its first symbol*/
-  uint16_t cset_start_sc = frame_parms.first_carrier_offset + ((int)floor(frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB)+pdcch_params.rb_offset)*NR_NB_SC_PER_RB;
-  //  uint8_t cset_start_symb = pdcch_params.first_slot*frame_parms.symbols_per_slot + pdcch_params.first_symbol;
-  uint8_t cset_start_symb = pdcch_params.first_symbol;
-  uint8_t cset_nsymb = pdcch_params.n_symb;
+  if (pdcch_params.config_type == NFAPI_NR_CSET_CONFIG_MIB_SIB1){
+    cset_start_sc = frame_parms.first_carrier_offset + (frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB +
+    pdcch_params.rb_offset)*NR_NB_SC_PER_RB;
+  }
+  else
+    cset_start_sc = frame_parms.first_carrier_offset + pdcch_params.rb_offset*NR_NB_SC_PER_RB;
+
+  cset_start_symb = pdcch_params.first_symbol;
+  cset_nsymb = pdcch_params.n_symb;
   dci_idx = 0;
+  LOG_I(PHY, "Coreset starting subcarrier %d on symbol %d (%d symbols)\n", cset_start_sc, cset_start_symb, cset_nsymb);
+
+  // DMRS length is per OFDM symbol
+  uint16_t dmrs_length = (pdcch_params.precoder_granularity == NFAPI_NR_CSET_ALL_CONTIGUOUS_RBS)?
+  (pdcch_params.n_rb*6) : (dci_alloc.L*36/cset_nsymb); //2(QPSK)*3(per RB)*6(REG per CCE)
+  uint16_t encoded_length = dci_alloc.L*108; //2(QPSK)*9(per RB)*6(REG per CCE)
+  LOG_I(PHY, "DMRS length per symbol %d\t DCI encoded length %d\n", dmrs_length, encoded_length);
 
 
   /// DMRS QPSK modulation
     /*There is a need to shift from which index the pregenerated DMRS sequence is used
      * see 38211 r15.2.0 section 7.4.1.3.2: assumption is the reference point for k refers to the DMRS sequence*/
-  if (pdcch_params.config_type == NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG)
-    gold_pdcch_dmrs += ((int)floor(frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB)+pdcch_params.rb_offset)*3/32;
+  if (pdcch_params.config_type == NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG) {
+    for (int symb=cset_start_symb; symb<cset_start_symb + pdcch_params.n_symb; symb++)
+      gold_pdcch_dmrs[symb] += (pdcch_params.rb_offset*3)>>5;
+    dmrs_offset = (pdcch_params.rb_offset*3)&0x1f;
+  LOG_I(PHY, "PDCCH DMRS offset %d\n", dmrs_offset);
+  }
 
   for (int symb=cset_start_symb; symb<cset_start_symb + pdcch_params.n_symb; symb++) {
-    for (int i=0; i<dmrs_length>>1; i++) {
-      idx = ((((gold_pdcch_dmrs[symb][(i<<1)>>5])>>((i<<1)&0x1f))&1)<<1) ^ (((gold_pdcch_dmrs[symb][((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1);
-      mod_dmrs[symb][i<<1] = nr_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
-      mod_dmrs[symb][(i<<1)+1] = nr_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
-  #ifdef DEBUG_PDCCH_DMRS
-    printf("symb %d i %d idx %d gold seq %u b0-b1 %d-%d mod_dmrs %d %d\n", symb, i, idx, gold_pdcch_dmrs[symb][(i<<1)>>5],
-    (((gold_pdcch_dmrs[symb][(i<<1)>>5])>>((i<<1)&0x1f))&1), (((gold_pdcch_dmrs[symb][((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1),
-     mod_dmrs[symb][(i<<1)], mod_dmrs[symb][(i<<1)+1]);
-  #endif
+    if (dmrs_offset) {
+      // a non zero offset requires the DMRS sequence to be rearranged
+      memset(dmrs_seq,0, NR_MAX_PDCCH_DMRS_INIT_LENGTH_DWORD*sizeof(uint32_t));
+      for (int i=0; i<dmrs_length; i++) {
+        dmrs_seq[(i>>5)] |= ((gold_pdcch_dmrs[symb][(i+dmrs_offset)>>5]>>((i+dmrs_offset)&0x1f))&1)<<(i&0x1f);
+#ifdef DEBUG_PDCCH_DMRS
+  //printf("out 0x%08x in 0x%08x \n", dmrs_seq[(i>>5)], gold_pdcch_dmrs[symb][(i+dmrs_offset)>>5]);
+#endif
+      }
+      nr_modulation(dmrs_seq, dmrs_length, MOD_QPSK, mod_dmrs[symb]);
     }
+    else
+      nr_modulation(gold_pdcch_dmrs[symb], dmrs_length, MOD_QPSK, mod_dmrs[symb]);
+
+#ifdef DEBUG_PDCCH_DMRS
+  for (int i=0; i<dmrs_length>>1; i++)
+    if (dmrs_offset)
+      printf("symb %d i %d gold seq 0x%08x mod_dmrs %d %d\n", symb, i, dmrs_seq[i>>5],
+      mod_dmrs[symb][i<<1], mod_dmrs[symb][(i<<1)+1] );
+    else
+      printf("symb %d i %d gold seq 0x%08x mod_dmrs %d %d\n", symb, i,
+      gold_pdcch_dmrs[symb][i>>5], mod_dmrs[symb][i<<1], mod_dmrs[symb][(i<<1)+1] );
+#endif
+
   }
+
 
   /// DCI payload processing
     // CRC attachment + Scrambling + Channel coding + Rate matching
   uint32_t encoder_output[NR_MAX_DCI_SIZE_DWORD];
-  uint16_t n_RNTI = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? ((pdcch_params.scrambling_id)?pdcch_params.rnti:0) : 0;
-  uint16_t Nid = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? pdcch_params.scrambling_id : config.sch_config.physical_cell_id.value;
-//#ifdef PDCCH_TEST_POLAR_TEMP_FIX
-//  nr_polar_init(&currentPtr, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
-//  t_nrPolar_paramsPtr currentPtr = nr_polar_params(*nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
-//#else 
+  uint16_t n_RNTI = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)? pdcch_params.rnti:0;
+  uint16_t Nid = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)?
+  pdcch_params.scrambling_id : config.sch_config.physical_cell_id.value;
+
   nr_polar_init(nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
   t_nrPolar_paramsPtr currentPtr = nr_polar_params(*nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
-//#endif
 
-  //polar_encoder_dci(dci_alloc.dci_pdu, encoder_output, currentPtr, pdcch_params.rnti);
   polar_encoder_fast(dci_alloc.dci_pdu, encoder_output, pdcch_params.rnti,currentPtr);
 
 #ifdef DEBUG_CHANNEL_CODING
   printf("polar rnti %d\n",pdcch_params.rnti);
-  for (int i=0;i<54;i++) printf("Encoded Payload: [%d]->0x%08x \n", i,encoder_output[i]);
-
-  printf("DCI PDU: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
-    		  dci_alloc.dci_pdu[0], dci_alloc.dci_pdu[1], dci_alloc.dci_pdu[2], dci_alloc.dci_pdu[3]);
-  printf("Encoded Payload: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
-		  encoder_output[0], encoder_output[1], encoder_output[2], encoder_output[3]);
+  printf("DCI PDU: [0]->0x%lx \t [1]->0x%lx\n",
+    dci_alloc.dci_pdu[0], dci_alloc.dci_pdu[1]);
+  printf("Encoded Payload (length:%d dwords):\n", encoded_length>>5);
+  for (int i=0;i<encoded_length>>5;i++)
+    printf("[%d]->0x%08x \t", i,encoder_output[i]);
+  printf("\n");
 #endif
 
   /// Scrambling
@@ -247,17 +274,13 @@ printf("scrambled output: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%0
 		  scrambled_output[6], scrambled_output[7], scrambled_output[8], scrambled_output[9], scrambled_output[10],scrambled_output[11] );	
 #endif
 
-    // QPSK modulation
+  /// QPSK modulation
   int16_t mod_dci[NR_MAX_DCI_SIZE>>1];
-  for (int i=0; i<encoded_length>>1; i++) {
-    idx = ((((scrambled_output[(i<<1)>>5])>>((i<<1)&0x1f))&1)<<1) ^ (((scrambled_output[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1);
-    mod_dci[i<<1] = nr_mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
-    mod_dci[(i<<1)+1] = nr_mod_table[((NR_MOD_TABLE_QPSK_OFFSET + idx)<<1) + 1];
+  nr_modulation(scrambled_output, encoded_length, MOD_QPSK, mod_dci);
 #ifdef DEBUG_DCI
-  printf("i %d idx %d b0-b1 %d-%d mod_dci %d %d\n", i, idx, (((scrambled_output[(i<<1)>>5])>>((i<<1)&0x1f))&1),
-  (((scrambled_output[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1), mod_dci[(i<<1)], mod_dci[(i<<1)+1]);
+  for (int i=0; i<encoded_length>>1; i++)
+    printf("i %d mod_dci %d %d\n", i, mod_dci[i<<1], mod_dci[(i<<1)+1] );
 #endif
-  }
 
   /// Resource mapping
 
@@ -289,10 +312,11 @@ printf("scrambled output: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%0
         dmrs_idx = 0;
         k = cset_start_sc + 1;
         while (dmrs_idx<3*pdcch_params.n_rb) {
-          ((int16_t*)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1]       = (amp * mod_dmrs[l][dmrs_idx<<1]) >> 15;
-          ((int16_t*)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (amp * mod_dmrs[l][(dmrs_idx<<1) + 1]) >> 15;
+          ((int16_t*)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1]       = ((amp>>1) * mod_dmrs[l][dmrs_idx<<1]) >> 15;
+          ((int16_t*)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = ((amp>>1) * mod_dmrs[l][(dmrs_idx<<1) + 1]) >> 15;
 #ifdef DEBUG_PDCCH_DMRS
-	  printf("symbol %d position %d => (%d,%d)\n",l,k,((int16_t*)txdataF[aa])[(l*frame_parms.ofdm_symbol_size + k)<<1] , ((int16_t*)txdataF[aa])[((l*frame_parms.ofdm_symbol_size + k)<<1)+1]); 
+  printf("symbol %d position %d => (%d,%d)\n",l,k,((int16_t*)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1] ,
+  ((int16_t*)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1)+1]);
 #endif
           k+=4;
           if (k >= frame_parms.ofdm_symbol_size)
@@ -315,19 +339,23 @@ printf("scrambled output: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%0
       for (int m=0; m<NR_NB_SC_PER_RB; m++) {
         if ( m == (k_prime<<2)+1) { // DMRS if not already mapped
           if (pdcch_params.precoder_granularity == NFAPI_NR_CSET_SAME_AS_REG_BUNDLE) {
-            ((int16_t*)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1]       = (amp * mod_dmrs[l][dmrs_idx<<1]) >> 15;
-            ((int16_t*)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (amp * mod_dmrs[l][(dmrs_idx<<1) + 1]) >> 15;
+            ((int16_t*)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1]       = ((amp>>1) * mod_dmrs[l][dmrs_idx<<1]) >> 15;
+            ((int16_t*)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = ((amp>>1) * mod_dmrs[l][(dmrs_idx<<1) + 1]) >> 15;
 #ifdef DEBUG_PDCCH_DMRS
-	    printf("l %d position %d => (%d,%d)\n",l,k,((int16_t*)txdataF[aa])[(l*frame_parms.ofdm_symbol_size + k)<<1] , ((int16_t*)txdataF[aa])[((l*frame_parms.ofdm_symbol_size + k)<<1)+1]); 
+  printf("l %d position %d => (%d,%d)\n",l,k,((int16_t*)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1] ,
+  ((int16_t*)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1)+1]);
 #endif
-            k_prime++;
             dmrs_idx++;
           }
+          k_prime++;
         }
         else { // DCI payload
           ((int16_t*)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1]       = (amp * mod_dci[dci_idx<<1]) >> 15;
           ((int16_t*)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1) + 1] = (amp * mod_dci[(dci_idx<<1) + 1]) >> 15;
-          //printf("dci output %d %d\n",(a * mod_dci[dci_idx<<1]) >> 15, (a * mod_dci[(dci_idx<<1) + 1]) >> 15);
+#ifdef DEBUG_DCI
+  printf("l %d position %d => (%d,%d)\n",l,k,((int16_t*)txdataF)[(l*frame_parms.ofdm_symbol_size + k)<<1] ,
+  ((int16_t*)txdataF)[((l*frame_parms.ofdm_symbol_size + k)<<1)+1]);
+#endif
           dci_idx++;
         }
         k++;

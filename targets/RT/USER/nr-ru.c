@@ -1333,7 +1333,7 @@ static void* ru_thread_tx( void* param ) {
       {
         for (i=0; i<ru->nb_tx; i++)
         {
-          sprintf(filename,"tx%ddataF_frame%d_sf%d.m", i, print_frame, proc->tti_tx);
+          sprintf(filename,"tx%ddataF_frame%d_sl%d.m", i, print_frame, proc->tti_tx);
           LOG_M(filename,"txdataF_frame",&ru->common.txdataF_BF[i][0],fp->samples_per_subframe_wCP, 1, 1);
           if(proc->tti_tx == 9)
           {
@@ -1554,7 +1554,7 @@ static void* ru_thread( void* param ) {
         {
           for (i=0; i<ru->nb_tx; i++)
           {
-            sprintf(filename,"tx%ddataF_frame%d_sf%d.m", i, print_frame, proc->tti_tx);
+            sprintf(filename,"tx%ddataF_frame%d_sl%d.m", i, print_frame, proc->tti_tx);
             LOG_M(filename,"txdataF_frame",&ru->common.txdataF_BF[i][0],fp->samples_per_slot_wCP, 1, 1);
             if(proc->tti_tx == 9)
             {
