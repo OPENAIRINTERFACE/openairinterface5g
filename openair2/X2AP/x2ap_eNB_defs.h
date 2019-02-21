@@ -33,6 +33,8 @@
 
 #include "sctp_eNB_defs.h"
 
+#include "x2ap_ids.h"
+
 #ifndef X2AP_ENB_DEFS_H_
 #define X2AP_ENB_DEFS_H_
 
@@ -180,6 +182,8 @@ typedef struct x2ap_eNB_instance_s {
   uint16_t         sctp_out_streams;
   uint32_t         enb_port_for_X2C;
   int              multi_sd;
+
+  x2ap_id_manager  id_manager;
 } x2ap_eNB_instance_t;
 
 typedef struct {

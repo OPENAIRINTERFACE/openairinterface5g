@@ -2102,9 +2102,8 @@ int rrc_eNB_send_X2AP_UE_CONTEXT_RELEASE(const protocol_ctxt_t* const ctxt_pP, r
 
   msg_p = itti_alloc_new_message (TASK_RRC_ENB, X2AP_UE_CONTEXT_RELEASE);
 
-  X2AP_UE_CONTEXT_RELEASE (msg_p).old_eNB_ue_x2ap_id = 0;
-  X2AP_UE_CONTEXT_RELEASE (msg_p).new_eNB_ue_x2ap_id = 0;
-  X2AP_UE_CONTEXT_RELEASE (msg_p).source_assoc_id = ue_context_pP->ue_context.handover_info->source_assoc_id;
+  X2AP_UE_CONTEXT_RELEASE (msg_p).rnti = ue_context_pP->ue_context.rnti;
+  X2AP_UE_CONTEXT_RELEASE (msg_p).source_assoc_id = ue_context_pP->ue_context.handover_info->assoc_id;
   itti_send_msg_to_task (TASK_X2AP, ctxt_pP->instance, msg_p);
   return (0);
 }

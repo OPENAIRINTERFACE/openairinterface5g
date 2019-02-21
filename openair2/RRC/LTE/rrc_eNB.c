@@ -3924,8 +3924,7 @@ rrc_eNB_process_MeasurementReport(
       ue_context_pP,
       X2AP_HANDOVER_REQ(msg).rrc_buffer,
       &X2AP_HANDOVER_REQ(msg).rrc_buffer_size);
-    X2AP_HANDOVER_REQ(msg).source_rnti = ctxt_pP->rnti;
-    X2AP_HANDOVER_REQ(msg).old_eNB_ue_x2ap_id = 0;
+    X2AP_HANDOVER_REQ(msg).rnti = ctxt_pP->rnti;
     X2AP_HANDOVER_REQ(msg).target_physCellId = measResults2->measResultNeighCells->choice.
         measResultListEUTRA.list.array[ncell_index]->physCellId;
     X2AP_HANDOVER_REQ(msg).ue_gummei.mcc = ue_context_pP->ue_context.ue_gummei.mcc;
@@ -3982,105 +3981,6 @@ rrc_eNB_generate_HandoverPreparationInformation(
   *_size = ho_size;
 }
 
-#if 0
-//-----------------------------------------------------------------------------
-void
-rrc_eNB_generate_HandoverPreparationInformation(
-  const protocol_ctxt_t *const ctxt_pP,
-  rrc_eNB_ue_context_t *const ue_context_pP,
-  LTE_PhysCellId_t            targetPhyId
-)
-//-----------------------------------------------------------------------------
-{
-  struct rrc_eNB_ue_context_s        *ue_context_target_p = NULL;
-  //uint8_t                             UE_id_target        = -1;
-  uint8_t                             mod_id_target = get_adjacent_cell_mod_id(targetPhyId);
-  HANDOVER_INFO                      *handoverInfo = CALLOC(1, sizeof(*handoverInfo));
-  /*
-     uint8_t buffer[100];
-     uint8_t size;
-     struct LTE_PhysicalConfigDedicated  **physicalConfigDedicated = &RC.rrc[enb_mod_idP]->physicalConfigDedicated[ue_mod_idP];
-     RadioResourceConfigDedicated_t *radioResourceConfigDedicated = CALLOC(1,sizeof(RadioResourceConfigDedicated_t));
-   */
-  T(T_ENB_RRC_HANDOVER_PREPARATION_INFORMATION, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
-    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
-  handoverInfo->as_config.antennaInfoCommon.antennaPortsCount = 0;    //Not used 0- but check value
-  handoverInfo->as_config.sourceDl_CarrierFreq = 36090;   //Verify!
-  memcpy((void *)&handoverInfo->as_config.sourceMasterInformationBlock,
-         (void *)&RC.rrc[ctxt_pP->module_id]->carrier[0] /* CROUX TBC */.mib, sizeof(LTE_MasterInformationBlock_t));
-  memcpy((void *)&handoverInfo->as_config.sourceMeasConfig,
-         (void *)ue_context_pP->ue_context.measConfig, sizeof(LTE_MeasConfig_t));
-  // FIXME handoverInfo not used...
-  free( handoverInfo );
-  handoverInfo = 0;
-  //to be configured
-  memset((void *)&ue_context_pP->ue_context.handover_info->as_config.sourceSecurityAlgorithmConfig,
-         0, sizeof(LTE_SecurityAlgorithmConfig_t));
-  memcpy((void *)&ue_context_pP->ue_context.handover_info->as_config.sourceSystemInformationBlockType1,
-         (void *)&RC.rrc[ctxt_pP->module_id]->carrier[0] /* CROUX TBC */.SIB1, sizeof(LTE_SystemInformationBlockType1_t));
-  memcpy((void *)&ue_context_pP->ue_context.handover_info->as_config.sourceSystemInformationBlockType2,
-         (void *)&RC.rrc[ctxt_pP->module_id]->carrier[0] /* CROUX TBC */.SIB23, sizeof(LTE_SystemInformationBlockType2_t));
-  ue_context_pP->ue_context.handover_info->as_context.reestablishmentInfo =
-    CALLOC(1, sizeof(LTE_ReestablishmentInfo_t));
-  ue_context_pP->ue_context.handover_info->as_context.reestablishmentInfo->sourcePhysCellId =
-    RC.rrc[ctxt_pP->module_id]->carrier[0] /* CROUX TBC */.physCellId;
-  ue_context_pP->ue_context.handover_info->as_context.reestablishmentInfo->targetCellShortMAC_I.buf = NULL;  // Check values later
-  ue_context_pP->ue_context.handover_info->as_context.reestablishmentInfo->targetCellShortMAC_I.size = 0;
-  ue_context_pP->ue_context.handover_info->as_context.reestablishmentInfo->targetCellShortMAC_I.bits_unused = 0;
-  ue_context_pP->ue_context.handover_info->as_context.reestablishmentInfo->additionalReestabInfoList = NULL;
-  ue_context_pP->ue_context.handover_info->ho_prepare = 0xFF;    //0xF0;
-  ue_context_pP->ue_context.handover_info->ho_complete = 0;
-
-  if (mod_id_target != 0xFF) {
-    //UE_id_target = rrc_find_free_ue_index(modid_target);
-    ue_context_target_p =
-      rrc_eNB_get_ue_context(
-        RC.rrc[mod_id_target],
-        ue_context_pP->ue_context.rnti);
-
-    /*UE_id_target = rrc_eNB_get_next_free_UE_index(
-                    mod_id_target,
-                    RC.rrc[ctxt_pP->module_id]->Info.UE_list[ue_mod_idP]);  //this should return a new index*/
-
-    if (ue_context_target_p == NULL) { // if not already in target cell
-      ue_context_target_p = rrc_eNB_allocate_new_UE_context(RC.rrc[ctxt_pP->module_id]);
-      ue_context_target_p->ue_id_rnti      = ue_context_pP->ue_context.rnti;             // LG: should not be the same
-      ue_context_target_p->ue_context.rnti = ue_context_target_p->ue_id_rnti; // idem
-      LOG_I(RRC,
-            "[eNB %d] Frame %d : Emulate sending HandoverPreparationInformation msg from eNB source %d to eNB target %ld: source UE_id %x target UE_id %x source_modId: %d target_modId: %d\n",
-            ctxt_pP->module_id,
-            ctxt_pP->frame,
-            RC.rrc[ctxt_pP->module_id]->carrier[0] /* CROUX TBC */.physCellId,
-            targetPhyId,
-            ue_context_pP->ue_context.rnti,
-            ue_context_target_p->ue_id_rnti,
-            ctxt_pP->module_id,
-            mod_id_target);
-      ue_context_target_p->ue_context.handover_info =
-        CALLOC(1, sizeof(*(ue_context_target_p->ue_context.handover_info)));
-      memcpy((void *)&ue_context_target_p->ue_context.handover_info->as_context,
-             (void *)&ue_context_pP->ue_context.handover_info->as_context,
-             sizeof(LTE_AS_Context_t));
-      memcpy((void *)&ue_context_target_p->ue_context.handover_info->as_config,
-             (void *)&ue_context_pP->ue_context.handover_info->as_config,
-             sizeof(LTE_AS_Config_t));
-      ue_context_target_p->ue_context.handover_info->ho_prepare = 0x00;// 0xFF;
-      ue_context_target_p->ue_context.handover_info->ho_complete = 0;
-      ue_context_pP->ue_context.handover_info->modid_t = mod_id_target;
-      ue_context_pP->ue_context.handover_info->ueid_s  = ue_context_pP->ue_context.rnti;
-      ue_context_pP->ue_context.handover_info->modid_s = ctxt_pP->module_id;
-      ue_context_target_p->ue_context.handover_info->modid_t = mod_id_target;
-      ue_context_target_p->ue_context.handover_info->modid_s = ctxt_pP->module_id;
-      ue_context_target_p->ue_context.handover_info->ueid_t  = ue_context_target_p->ue_context.rnti;
-    } else {
-      LOG_E(RRC, "\nError in obtaining free UE id in target eNB %ld for handover \n", targetPhyId);
-    }
-  } else {
-    LOG_E(RRC, "\nError in obtaining Module ID of target eNB for handover \n");
-  }
-}
-#endif
-
 void rrc_eNB_process_handoverPreparationInformation(int mod_id, x2ap_handover_req_t *m) {
   struct rrc_eNB_ue_context_s        *ue_context_target_p = NULL;
   /* TODO: get proper UE rnti */
@@ -4109,15 +4009,10 @@ void rrc_eNB_process_handoverPreparationInformation(int mod_id, x2ap_handover_re
   RB_INSERT(rrc_ue_tree_s, &RC.rrc[mod_id]->rrc_ue_head, ue_context_target_p);
   LOG_D(RRC, "eNB %d: Created new UE context uid %u\n", mod_id, ue_context_target_p->local_uid);
   ue_context_target_p->ue_context.handover_info = CALLOC(1, sizeof(*(ue_context_target_p->ue_context.handover_info)));
-  //ue_context_target_p->ue_context.handover_info->source_x2id = m->source_x2id;
   ue_context_target_p->ue_context.Status = RRC_HO_EXECUTION;
   ue_context_target_p->ue_context.handover_info->state = HO_ACK;
-  /* TODO: remove this hack */
-  ue_context_target_p->ue_context.handover_info->source_assoc_id = m->source_assoc_id;
-  //ue_context_target_p->ue_context.handover_info->modid_t = mod_id;
-  //ue_context_target_p->ue_context.handover_info->modid_t = m->target_mod_id;
-  //ue_context_target_p->ue_context.handover_info->modid_s = 1-mod_id;
-  //ue_context_target_p->ue_context.handover_info->ueid_s  = m->source_rnti;
+  ue_context_target_p->ue_context.handover_info->x2_id = m->x2_id;
+  ue_context_target_p->ue_context.handover_info->assoc_id = m->target_assoc_id;
   memset (ue_context_target_p->ue_context.nh, 0, 32);
   ue_context_target_p->ue_context.nh_ncc = -1;
   memcpy (ue_context_target_p->ue_context.kenb, m->kenb, 32);
@@ -4261,28 +4156,6 @@ struct rrc_eNB_ue_context_s *ue_context_p) {
   }
 }
 
-#if 0
-//-----------------------------------------------------------------------------
-void
-rrc_eNB_process_handoverPreparationInformation(
-  const protocol_ctxt_t *const ctxt_pP,
-  rrc_eNB_ue_context_t           *const ue_context_pP
-)
-//-----------------------------------------------------------------------------
-{
-  T(T_ENB_RRC_HANDOVER_PREPARATION_INFORMATION, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
-    T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
-  LOG_I(RRC,
-        "[eNB %d] Frame %d : Logical Channel UL-DCCH, processing RRCHandoverPreparationInformation, sending LTE_RRCConnectionReconfiguration to UE %d \n",
-        ctxt_pP->module_id, ctxt_pP->frame, ue_context_pP->ue_context.rnti);
-  rrc_eNB_generate_RRCConnectionReconfiguration_handover(
-    ctxt_pP,
-    ue_context_pP,
-    NULL,
-    0);
-}
-#endif
-
 void
 check_handovers(
   protocol_ctxt_t *const ctxt_pP
@@ -4327,12 +4200,10 @@ check_handovers(
         rrc_eNB_generate_HO_RRCConnectionReconfiguration(ctxt_pP, ue_context_p, X2AP_HANDOVER_REQ_ACK(msg).rrc_buffer,
             &X2AP_HANDOVER_REQ_ACK(msg).rrc_buffer_size);
         rrc_eNB_configure_rbs_handover(ue_context_p,ctxt_pP);
-        /* TODO: remove this hack */
-        //X2AP_HANDOVER_REQ_ACK(msg).target_mod_id = 1 - ctxt_pP->module_id;
-        //X2AP_HANDOVER_REQ_ACK(msg).target_mod_id = ue_context_p->ue_context.handover_info->modid_t;
-        //X2AP_HANDOVER_REQ_ACK(msg).source_x2id = ue_context_p->ue_context.handover_info->source_x2id;
 
-        X2AP_HANDOVER_REQ_ACK(msg).source_assoc_id = ue_context_p->ue_context.handover_info->source_assoc_id;
+        X2AP_HANDOVER_REQ_ACK(msg).rnti = ue_context_p->ue_context.rnti;
+        X2AP_HANDOVER_REQ_ACK(msg).x2_id_target = ue_context_p->ue_context.handover_info->x2_id;
+        X2AP_HANDOVER_REQ_ACK(msg).source_assoc_id = ue_context_p->ue_context.handover_info->assoc_id;
         /* Call admission control not implemented yet */
         X2AP_HANDOVER_REQ_ACK(msg).nb_e_rabs_tobesetup = ue_context_p->ue_context.setup_e_rabs;
 
@@ -4346,70 +4217,6 @@ check_handovers(
     }
   }
 }
-
-#if 0
-//-----------------------------------------------------------------------------
-void
-check_handovers(
-  protocol_ctxt_t *const ctxt_pP
-)
-//-----------------------------------------------------------------------------
-{
-  int                                 result;
-  struct rrc_eNB_ue_context_s        *ue_context_p;
-  RB_FOREACH(ue_context_p, rrc_ue_tree_s, &RC.rrc[ctxt_pP->module_id]->rrc_ue_head) {
-    ctxt_pP->rnti  = ue_context_p->ue_id_rnti;
-
-    if (ue_context_p->ue_context.handover_info != NULL) {
-      if (ue_context_p->ue_context.handover_info->ho_prepare == 0xFF) {
-        LOG_D(RRC,
-              "[eNB %d] Frame %d: Incoming handover detected for new UE_idx %d (source eNB %d->target eNB %d) \n",
-              ctxt_pP->module_id,
-              ctxt_pP->frame,
-              ctxt_pP->rnti,
-              ctxt_pP->module_id,
-              ue_context_p->ue_context.handover_info->modid_t);
-        // source eNB generates LTE_RRCConnectionreconfiguration to prepare the HO
-        rrc_eNB_process_handoverPreparationInformation(
-          ctxt_pP,
-          ue_context_p);
-        ue_context_p->ue_context.handover_info->ho_prepare = 0xF1;
-      }
-
-      if (ue_context_p->ue_context.handover_info->ho_complete == 0xF1) {
-        LOG_D(RRC,
-              "[eNB %d] Frame %d: handover Command received for new UE_id  %x current eNB %d target eNB: %d \n",
-              ctxt_pP->module_id,
-              ctxt_pP->frame,
-              ctxt_pP->rnti,
-              ctxt_pP->module_id,
-              ue_context_p->ue_context.handover_info->modid_t);
-        //rrc_eNB_process_handoverPreparationInformation(enb_mod_idP,frameP,i);
-        result = pdcp_data_req(ctxt_pP,
-                               SRB_FLAG_YES,
-                               DCCH,
-                               rrc_eNB_mui++,
-                               SDU_CONFIRM_NO,
-                               ue_context_p->ue_context.handover_info->size,
-                               ue_context_p->ue_context.handover_info->buf,
-                               PDCP_TRANSMISSION_MODE_CONTROL
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                               ,NULL, NULL
-#endif
-                              );
-
-        //AssertFatal(result == TRUE, "PDCP data request failed!\n");
-        if(result != TRUE) {
-          LOG_I(RRC, "PDCP data request failed!\n");
-          return;
-        }
-
-        ue_context_p->ue_context.handover_info->ho_complete = 0xF2;
-      }
-    }
-  }
-}
-#endif
 
 void
 rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ctxt_pP,
@@ -8210,7 +8017,7 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
   int                                 CC_id;
   protocol_ctxt_t                     ctxt;
 
-//  memset(&ctxt, 0, sizeof(ctxt));
+  memset(&ctxt, 0, sizeof(ctxt));
 
   // Wait for a message
   itti_receive_msg(TASK_RRC_ENB, &msg_p);
@@ -8341,16 +8148,20 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
       break;
 
     case X2AP_HANDOVER_REQ:
-      LOG_I(RRC, "[eNB %d] target eNB Receives X2 HO Req %s at frame %d subframe %d\n", instance, msg_name_p,
-            ctxt.frame, ctxt.subframe);
+      LOG_I(RRC, "[eNB %d] target eNB Receives X2 HO Req %s\n", instance, msg_name_p);
       rrc_eNB_process_handoverPreparationInformation(instance, &X2AP_HANDOVER_REQ(msg_p));
       break;
 
     case X2AP_HANDOVER_REQ_ACK: {
       struct rrc_eNB_ue_context_s        *ue_context_p = NULL;
-      ue_context_p = rrc_eNB_get_ue_context(RC.rrc[instance], ctxt.rnti);
-      LOG_I(RRC, "[eNB %d] source eNB receives the X2 HO ACK %s at frame %d subframe %d \n", instance, msg_name_p,
-            ctxt.frame,ctxt.subframe);
+      ue_context_p = rrc_eNB_get_ue_context(RC.rrc[instance], X2AP_HANDOVER_REQ_ACK(msg_p).rnti);
+      if (ue_context_p == NULL) {
+        /* is it possible? */
+        LOG_E(RRC, "could not find UE (rnti %x) while processing X2AP_HANDOVER_REQ_ACK\n",
+              X2AP_HANDOVER_REQ_ACK(msg_p).rnti);
+        exit(1);
+      }
+      LOG_I(RRC, "[eNB %d] source eNB receives the X2 HO ACK %s\n", instance, msg_name_p);
       DevAssert(ue_context_p != NULL);
 
       if (ue_context_p->ue_context.handover_info->state != HO_REQUEST) abort();
@@ -8362,9 +8173,8 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
 
    case X2AP_UE_CONTEXT_RELEASE: {
       struct rrc_eNB_ue_context_s        *ue_context_p = NULL;
-      ue_context_p = rrc_eNB_get_ue_context(RC.rrc[instance], ctxt.rnti);
-      LOG_I(RRC, "[eNB %d] source eNB receives the X2 UE CONTEXT RELEASE %s at frame %d subframe %d \n", instance, msg_name_p,
-            ctxt.frame,ctxt.subframe);
+      ue_context_p = rrc_eNB_get_ue_context(RC.rrc[instance], X2AP_UE_CONTEXT_RELEASE(msg_p).rnti);
+      LOG_I(RRC, "[eNB %d] source eNB receives the X2 UE CONTEXT RELEASE %s\n", instance, msg_name_p);
       DevAssert(ue_context_p != NULL);
 
       if (ue_context_p->ue_context.handover_info->state != HO_COMPLETE) abort();

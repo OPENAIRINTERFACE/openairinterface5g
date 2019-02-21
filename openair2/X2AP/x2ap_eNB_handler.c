@@ -36,6 +36,7 @@
 #include "x2ap_eNB_defs.h"
 #include "x2ap_eNB_handler.h"
 #include "x2ap_eNB_decoder.h"
+#include "x2ap_ids.h"
 
 #include "x2ap_eNB_management_procedures.h"
 #include "x2ap_eNB_generate_messages.h"
@@ -593,6 +594,7 @@ int x2ap_eNB_handle_handover_preparation (instance_t instance,
   x2ap_eNB_instance_t                *instance_p;
   x2ap_eNB_data_t                    *x2ap_eNB_data;
   MessageDef                         *msg;
+  int                                ue_id;
 
   DevAssert (pdu != NULL);
   x2HandoverRequest = &pdu->choice.initiatingMessage.value.choice.HandoverRequest;
@@ -608,18 +610,29 @@ int x2ap_eNB_handle_handover_preparation (instance_t instance,
   x2ap_eNB_data = x2ap_get_eNB(NULL, assoc_id, 0);
   DevAssert(x2ap_eNB_data != NULL);
 
+  instance_p = x2ap_eNB_get_instance(instance);
+  DevAssert(instance_p != NULL);
+
   msg = itti_alloc_new_message(TASK_X2AP, X2AP_HANDOVER_REQ);
 
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_HandoverRequest_IEs_t, ie, x2HandoverRequest,
                              X2AP_ProtocolIE_ID_id_Old_eNB_UE_X2AP_ID, true);
-  //X2AP_HANDOVER_REQ(msg).source_rnti = ctxt_pP->rnti;
-  //X2AP_HANDOVER_REQ(m).source_x2id = x2HandoverRequest->old_eNB_UE_X2AP_ID;
   if (ie == NULL ) {
     X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
     return -1;
-  } else {
-    X2AP_HANDOVER_REQ(msg).old_eNB_ue_x2ap_id = ie->value.choice.UE_X2AP_ID;
   }
+
+  /* allocate a new X2AP UE ID */
+  ue_id = x2ap_allocate_new_id(&instance_p->id_manager);
+  if (ue_id == -1) {
+    X2AP_ERROR("could not allocate a new X2AP UE ID\n");
+    /* TODO: cancel handover: send HO preparation failure to source eNB */
+    exit(1);
+  }
+  /* rnti is unknown yet, must not be set to -1, 0 is fine */
+  x2ap_set_ids(&instance_p->id_manager, ue_id, 0, ie->value.choice.UE_X2AP_ID, ue_id);
+
+  X2AP_HANDOVER_REQ(msg).x2_id = ue_id;
 
   //X2AP_HANDOVER_REQ(msg).target_physCellId = measResults2->measResultNeighCells->choice.
                                                //measResultListEUTRA.list.array[ncell_index]->physCellId;
@@ -643,7 +656,7 @@ int x2ap_eNB_handle_handover_preparation (instance_t instance,
 
   /* TODO: properly store Target Cell ID */
 
-  X2AP_HANDOVER_REQ(msg).source_assoc_id = assoc_id;
+  X2AP_HANDOVER_REQ(msg).target_assoc_id = assoc_id;
 
   X2AP_HANDOVER_REQ(msg).security_capabilities.encryption_algorithms =
     BIT_STRING_to_uint16(&ie->value.choice.UE_ContextInformation.uESecurityCapabilities.encryptionAlgorithms);
@@ -699,9 +712,6 @@ int x2ap_eNB_handle_handover_preparation (instance_t instance,
   memcpy(X2AP_HANDOVER_REQ(msg).rrc_buffer, c->buf, c->size);
   X2AP_HANDOVER_REQ(msg).rrc_buffer_size = c->size;
 
-  instance_p = x2ap_eNB_get_instance(instance);
-  DevAssert(instance_p != NULL);
-
   itti_send_msg_to_task(TASK_RRC_ENB, instance_p->instance, msg);
 
   return 0;
@@ -719,6 +729,10 @@ int x2ap_eNB_handle_handover_response (instance_t instance,
   x2ap_eNB_instance_t                           *instance_p;
   x2ap_eNB_data_t                               *x2ap_eNB_data;
   MessageDef                                    *msg;
+  int                                           ue_id;
+  int                                           id_source;
+  int                                           id_target;
+  int                                           rnti;
 
   DevAssert (pdu != NULL);
   x2HandoverRequestAck = &pdu->choice.successfulOutcome.value.choice.HandoverRequestAcknowledge;
@@ -734,12 +748,32 @@ int x2ap_eNB_handle_handover_response (instance_t instance,
   x2ap_eNB_data = x2ap_get_eNB(NULL, assoc_id, 0);
   DevAssert(x2ap_eNB_data != NULL);
 
+  instance_p = x2ap_eNB_get_instance(instance);
+  DevAssert(instance_p != NULL);
 
   msg = itti_alloc_new_message(TASK_X2AP, X2AP_HANDOVER_REQ_ACK);
-  /* TODO: fill the message */
-  //extern int x2id_to_source_rnti[1];
-  //X2AP_HANDOVER_REQ_ACK(m).source_x2id = x2HandoverRequestAck->old_eNB_UE_X2AP_ID;
-  //X2AP_HANDOVER_REQ_ACK(m).source_rnti = x2id_to_source_rnti[x2HandoverRequestAck->old_eNB_UE_X2AP_ID];
+
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_HandoverRequestAcknowledge_IEs_t, ie, x2HandoverRequestAck,
+                             X2AP_ProtocolIE_ID_id_Old_eNB_UE_X2AP_ID, true);
+  id_source = ie->value.choice.UE_X2AP_ID;
+
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_HandoverRequestAcknowledge_IEs_t, ie, x2HandoverRequestAck,
+                             X2AP_ProtocolIE_ID_id_New_eNB_UE_X2AP_ID, true);
+  id_target = ie->value.choice.UE_X2AP_ID_1;
+
+  ue_id = id_source;
+
+  if (id_source != x2ap_id_get_id_source(&instance_p->id_manager, ue_id)) {
+    X2AP_ERROR("incorrect X2AP IDs for UE (old ID %d new ID %d)\n", id_source, id_target);
+    exit(1);
+  }
+
+  rnti = x2ap_id_get_rnti(&instance_p->id_manager, ue_id);
+
+  /* id_target is a new information, store it */
+  x2ap_set_ids(&instance_p->id_manager, ue_id, rnti, id_source, id_target);
+
+  X2AP_HANDOVER_REQ_ACK(msg).rnti = rnti;
 
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_HandoverRequestAcknowledge_IEs_t, ie, x2HandoverRequestAck,
                              X2AP_ProtocolIE_ID_id_TargeteNBtoSource_eNBTransparentContainer, true);
@@ -751,9 +785,6 @@ int x2ap_eNB_handle_handover_response (instance_t instance,
 
   memcpy(X2AP_HANDOVER_REQ_ACK(msg).rrc_buffer, c->buf, c->size);
   X2AP_HANDOVER_REQ_ACK(msg).rrc_buffer_size = c->size;
-
-  instance_p = x2ap_eNB_get_instance(instance);
-  DevAssert(instance_p != NULL);
 
   itti_send_msg_to_task(TASK_RRC_ENB, instance_p->instance, msg);
   return 0;
@@ -772,6 +803,9 @@ int x2ap_eNB_handle_ue_context_release (instance_t instance,
   x2ap_eNB_instance_t                 *instance_p;
   x2ap_eNB_data_t                     *x2ap_eNB_data;
   MessageDef                          *msg;
+  int                                 ue_id;
+  int                                 id_source;
+  int                                 id_target;
 
   DevAssert (pdu != NULL);
   x2UEContextRelease = &pdu->choice.initiatingMessage.value.choice.UEContextRelease;
@@ -787,22 +821,36 @@ int x2ap_eNB_handle_ue_context_release (instance_t instance,
   x2ap_eNB_data = x2ap_get_eNB(NULL, assoc_id, 0);
   DevAssert(x2ap_eNB_data != NULL);
 
+  instance_p = x2ap_eNB_get_instance(instance);
+  DevAssert(instance_p != NULL);
+
   msg = itti_alloc_new_message(TASK_X2AP, X2AP_UE_CONTEXT_RELEASE);
 
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_UEContextRelease_IEs_t, ie, x2UEContextRelease,
                              X2AP_ProtocolIE_ID_id_Old_eNB_UE_X2AP_ID, true);
 
-  X2AP_UE_CONTEXT_RELEASE(msg).old_eNB_ue_x2ap_id = ie->value.choice.UE_X2AP_ID;
+  id_source = ie->value.choice.UE_X2AP_ID;
 
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_UEContextRelease_IEs_t, ie, x2UEContextRelease,
                              X2AP_ProtocolIE_ID_id_New_eNB_UE_X2AP_ID, true);
 
-  X2AP_UE_CONTEXT_RELEASE(msg).new_eNB_ue_x2ap_id = ie->value.choice.UE_X2AP_ID;
+  id_target = ie->value.choice.UE_X2AP_ID_1;
 
-  instance_p = x2ap_eNB_get_instance(instance);
-  DevAssert(instance_p != NULL);
+  ue_id = id_source;
+
+  if (id_target != x2ap_id_get_id_target(&instance_p->id_manager, ue_id)) {
+    X2AP_ERROR("UE context release: bad id_target for UE %x (id_source %d) expected %d got %d\n",
+               x2ap_id_get_rnti(&instance_p->id_manager, ue_id),
+               id_source,
+               x2ap_id_get_id_target(&instance_p->id_manager, ue_id),
+               id_target);
+  }
+
+  X2AP_UE_CONTEXT_RELEASE(msg).rnti = x2ap_id_get_rnti(&instance_p->id_manager, ue_id);
 
   itti_send_msg_to_task(TASK_RRC_ENB, instance_p->instance, msg);
+
+  x2ap_release_id(&instance_p->id_manager, ue_id);
 
   return 0;
 }

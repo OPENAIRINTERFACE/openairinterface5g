@@ -35,6 +35,7 @@
 #include "x2ap_eNB_generate_messages.h"
 #include "x2ap_eNB_encoder.h"
 #include "x2ap_eNB_decoder.h"
+#include "x2ap_ids.h"
 
 #include "x2ap_eNB_itti_messaging.h"
 
@@ -409,7 +410,7 @@ int x2ap_eNB_set_cause (X2AP_Cause_t * cause_p,
 }
 
 int x2ap_eNB_generate_x2_handover_request (x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p,
-                                           x2ap_handover_req_t *x2ap_handover_req)
+                                           x2ap_handover_req_t *x2ap_handover_req, int ue_id)
 {
 
   X2AP_X2AP_PDU_t                     pdu;
@@ -439,7 +440,7 @@ int x2ap_eNB_generate_x2_handover_request (x2ap_eNB_instance_t *instance_p, x2ap
   ie->id = X2AP_ProtocolIE_ID_id_Old_eNB_UE_X2AP_ID;
   ie->criticality = X2AP_Criticality_reject;
   ie->value.present = X2AP_HandoverRequest_IEs__value_PR_UE_X2AP_ID;
-  ie->value.choice.UE_X2AP_ID = x2ap_handover_req->old_eNB_ue_x2ap_id;
+  ie->value.choice.UE_X2AP_ID = x2ap_id_get_id_source(&instance_p->id_manager, ue_id);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* mandatory */
@@ -572,6 +573,9 @@ int x2ap_eNB_generate_x2_handover_request_ack (x2ap_eNB_instance_t *instance_p, 
   X2AP_HandoverRequestAcknowledge_IEs_t  *ie;
   X2AP_E_RABs_Admitted_ItemIEs_t         *e_RABS_Admitted_ItemIEs;
   X2AP_E_RABs_Admitted_Item_t            *e_RABs_Admitted_Item;
+  int                                    ue_id;
+  int                                    id_source;
+  int                                    id_target;
 
   uint8_t  *buffer;
   uint32_t  len;
@@ -579,6 +583,10 @@ int x2ap_eNB_generate_x2_handover_request_ack (x2ap_eNB_instance_t *instance_p, 
 
   DevAssert(instance_p != NULL);
   DevAssert(x2ap_eNB_data_p != NULL);
+
+  ue_id     = x2ap_handover_req_ack->x2_id_target;
+  id_source = x2ap_id_get_id_source(&instance_p->id_manager, ue_id);
+  id_target = ue_id;
 
   /* Prepare the X2AP handover message to encode */
   memset(&pdu, 0, sizeof(pdu));
@@ -593,7 +601,7 @@ int x2ap_eNB_generate_x2_handover_request_ack (x2ap_eNB_instance_t *instance_p, 
   ie->id = X2AP_ProtocolIE_ID_id_Old_eNB_UE_X2AP_ID;
   ie->criticality = X2AP_Criticality_ignore;
   ie->value.present = X2AP_HandoverRequestAcknowledge_IEs__value_PR_UE_X2AP_ID;
-  ie->value.choice.UE_X2AP_ID = 0;
+  ie->value.choice.UE_X2AP_ID = id_source;
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* mandatory */
@@ -601,7 +609,7 @@ int x2ap_eNB_generate_x2_handover_request_ack (x2ap_eNB_instance_t *instance_p, 
   ie->id = X2AP_ProtocolIE_ID_id_New_eNB_UE_X2AP_ID;
   ie->criticality = X2AP_Criticality_ignore;
   ie->value.present = X2AP_HandoverRequestAcknowledge_IEs__value_PR_UE_X2AP_ID_1;
-  ie->value.choice.UE_X2AP_ID_1 = 0;
+  ie->value.choice.UE_X2AP_ID_1 = id_target;
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* mandatory */
@@ -655,6 +663,9 @@ int x2ap_eNB_generate_x2_ue_context_release (x2ap_eNB_instance_t *instance_p, x2
   X2AP_X2AP_PDU_t                pdu;
   X2AP_UEContextRelease_t        *out;
   X2AP_UEContextRelease_IEs_t    *ie;
+  int                            ue_id;
+  int                            id_source;
+  int                            id_target;
 
   uint8_t  *buffer;
   uint32_t  len;
@@ -662,6 +673,14 @@ int x2ap_eNB_generate_x2_ue_context_release (x2ap_eNB_instance_t *instance_p, x2
 
   DevAssert(instance_p != NULL);
   DevAssert(x2ap_eNB_data_p != NULL);
+
+  ue_id = x2ap_find_id_from_rnti(&instance_p->id_manager, x2ap_ue_context_release->rnti);
+  if (ue_id == -1) {
+    X2AP_ERROR("could not find UE %x\n", x2ap_ue_context_release->rnti);
+    exit(1);
+  }
+  id_source = x2ap_id_get_id_source(&instance_p->id_manager, ue_id);
+  id_target = ue_id;
 
   /* Prepare the X2AP ue context relase message to encode */
   memset(&pdu, 0, sizeof(pdu));
@@ -676,7 +695,7 @@ int x2ap_eNB_generate_x2_ue_context_release (x2ap_eNB_instance_t *instance_p, x2
   ie->id = X2AP_ProtocolIE_ID_id_Old_eNB_UE_X2AP_ID;
   ie->criticality = X2AP_Criticality_reject;
   ie->value.present = X2AP_UEContextRelease_IEs__value_PR_UE_X2AP_ID;
-  ie->value.choice.UE_X2AP_ID = x2ap_ue_context_release->old_eNB_ue_x2ap_id;
+  ie->value.choice.UE_X2AP_ID = id_source;
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* mandatory */
@@ -684,7 +703,7 @@ int x2ap_eNB_generate_x2_ue_context_release (x2ap_eNB_instance_t *instance_p, x2
   ie->id = X2AP_ProtocolIE_ID_id_New_eNB_UE_X2AP_ID;
   ie->criticality = X2AP_Criticality_reject;
   ie->value.present = X2AP_UEContextRelease_IEs__value_PR_UE_X2AP_ID_1;
-  ie->value.choice.UE_X2AP_ID_1 = x2ap_ue_context_release->new_eNB_ue_x2ap_id;
+  ie->value.choice.UE_X2AP_ID_1 = id_target;
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   if (x2ap_eNB_encode_pdu(&pdu, &buffer, &len) < 0) {

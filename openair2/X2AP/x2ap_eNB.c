@@ -40,6 +40,7 @@
 #include "x2ap_eNB_handler.h"
 #include "x2ap_eNB_generate_messages.h"
 #include "x2ap_common.h"
+#include "x2ap_ids.h"
 
 #include "queue.h"
 #include "assertions.h"
@@ -80,8 +81,8 @@ void x2ap_eNB_handle_handover_req_ack(instance_t instance,
                                       x2ap_handover_req_ack_t *x2ap_handover_req_ack);
 
 static
-void x2ap_eNB_handle_ue_context_release(instance_t instance,
-                                        x2ap_ue_context_release_t *x2ap_ue_context_release);
+void x2ap_eNB_ue_context_release(instance_t instance,
+                                 x2ap_ue_context_release_t *x2ap_ue_context_release);
 
 
 static
@@ -299,6 +300,8 @@ void x2ap_eNB_handle_register_eNB(instance_t instance,
     new_instance->mnc_digit_length = x2ap_register_eNB->mnc_digit_length;
     new_instance->num_cc           = x2ap_register_eNB->num_cc;
 
+    x2ap_id_manager_init(&new_instance->id_manager);
+
     for (int i = 0; i< x2ap_register_eNB->num_cc; i++) {
       new_instance->eutra_band[i]              = x2ap_register_eNB->eutra_band[i];
       new_instance->downlink_frequency[i]      = x2ap_register_eNB->downlink_frequency[i];
@@ -376,15 +379,10 @@ static
 void x2ap_eNB_handle_handover_req(instance_t instance,
                                   x2ap_handover_req_t *x2ap_handover_req)
 {
-  /* TODO: remove this hack (the goal is to find the correct
-   * eNodeB structure for the target) - we need a proper way for RRC
-   * and X2AP to identify eNodeBs
-   * RRC knows about mod_id and X2AP knows about eNB_id (eNB_ID in
-   * the configuration file)
-   * as far as I understand.. CROUX
-   */
   x2ap_eNB_instance_t *instance_p;
   x2ap_eNB_data_t     *target;
+  x2ap_id_manager     *id_manager;
+  int                 ue_id;
 
   int target_pci = x2ap_handover_req->target_physCellId;
 
@@ -394,9 +392,18 @@ void x2ap_eNB_handle_handover_req(instance_t instance,
   target = x2ap_is_eNB_pci_in_list(target_pci);
   DevAssert(target != NULL);
 
-  /* store rnti at index 0 */
-  //x2id_to_source_rnti[0] = x2ap_handover_req->source_rnti;
-  x2ap_eNB_generate_x2_handover_request(instance_p, target, x2ap_handover_req);
+  /* allocate x2ap ID */
+  id_manager = &instance_p->id_manager;
+  ue_id = x2ap_allocate_new_id(id_manager);
+  if (ue_id == -1) {
+    X2AP_ERROR("could not allocate a new X2AP UE ID\n");
+    /* TODO: cancel handover: send (to be defined) message to RRC */
+    exit(1);
+  }
+  /* id_source is ue_id, id_target is unknown yet */
+  x2ap_set_ids(id_manager, ue_id, x2ap_handover_req->rnti, ue_id, -1);
+
+  x2ap_eNB_generate_x2_handover_request(instance_p, target, x2ap_handover_req, ue_id);
 }
 
 static
@@ -413,6 +420,9 @@ void x2ap_eNB_handle_handover_req_ack(instance_t instance,
   x2ap_eNB_instance_t *instance_p;
   x2ap_eNB_data_t     *target;
   int source_assoc_id = x2ap_handover_req_ack->source_assoc_id;
+  int                 ue_id;
+  int                 id_source;
+  int                 id_target;
 
   instance_p = x2ap_eNB_get_instance(instance);
   DevAssert(instance_p != NULL);
@@ -420,19 +430,23 @@ void x2ap_eNB_handle_handover_req_ack(instance_t instance,
   target = x2ap_get_eNB(NULL, source_assoc_id, 0);
   DevAssert(target != NULL);
 
+  /* rnti is a new information, save it */
+  ue_id     = x2ap_handover_req_ack->x2_id_target;
+  id_source = x2ap_id_get_id_source(&instance_p->id_manager, ue_id);
+  id_target = ue_id;
+  x2ap_set_ids(&instance_p->id_manager, ue_id, x2ap_handover_req_ack->rnti, id_source, id_target);
+
   x2ap_eNB_generate_x2_handover_request_ack(instance_p, target, x2ap_handover_req_ack);
-  //x2ap_eNB_generate_x2_handover_req_ack(instance_p, target, x2ap_handover_req_ack->source_x2id,
-          //x2ap_handover_req_ack->rrc_buffer, x2ap_handover_req_ack->rrc_buffer_size);
 }
 
 static
-void x2ap_eNB_handle_ue_context_release(instance_t instance,
-                                        x2ap_ue_context_release_t *x2ap_ue_context_release)
+void x2ap_eNB_ue_context_release(instance_t instance,
+                                 x2ap_ue_context_release_t *x2ap_ue_context_release)
 {
   x2ap_eNB_instance_t *instance_p;
   x2ap_eNB_data_t     *target;
   int source_assoc_id = x2ap_ue_context_release->source_assoc_id;
-
+  int ue_id;
   instance_p = x2ap_eNB_get_instance(instance);
   DevAssert(instance_p != NULL);
 
@@ -440,6 +454,14 @@ void x2ap_eNB_handle_ue_context_release(instance_t instance,
   DevAssert(target != NULL);
 
   x2ap_eNB_generate_x2_ue_context_release(instance_p, target, x2ap_ue_context_release);
+
+  /* free the X2AP UE ID */
+  ue_id = x2ap_find_id_from_rnti(&instance_p->id_manager, x2ap_ue_context_release->rnti);
+  if (ue_id == -1) {
+    X2AP_ERROR("could not find UE %x\n", x2ap_ue_context_release->rnti);
+    exit(1);
+  }
+  x2ap_release_id(&instance_p->id_manager, ue_id);
 }
 
 void *x2ap_task(void *arg) {
@@ -474,7 +496,7 @@ void *x2ap_task(void *arg) {
         break;
 
       case X2AP_UE_CONTEXT_RELEASE:
-        x2ap_eNB_handle_ue_context_release(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+        x2ap_eNB_ue_context_release(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                                 &X2AP_UE_CONTEXT_RELEASE(received_msg));
         break;
 

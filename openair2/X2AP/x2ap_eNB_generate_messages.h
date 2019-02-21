@@ -48,7 +48,7 @@ int x2ap_eNB_set_cause (X2AP_Cause_t * cause_p,
                         long cause_value);
 
 int x2ap_eNB_generate_x2_handover_request (x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p,
-                                           x2ap_handover_req_t *x2ap_handover_req);
+                                           x2ap_handover_req_t *x2ap_handover_req, int ue_id);
 
 int x2ap_eNB_generate_x2_handover_request_ack (x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p,
                                                x2ap_handover_req_ack_t *x2ap_handover_req_ack);

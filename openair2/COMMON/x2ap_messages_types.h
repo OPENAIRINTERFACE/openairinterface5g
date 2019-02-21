@@ -42,9 +42,9 @@
 
 /* X2AP UE CONTEXT RELEASE */
 typedef struct x2ap_ue_context_release_s {
-  int old_eNB_ue_x2ap_id;
-  int new_eNB_ue_x2ap_id;
-  int target_mod_id;
+  /* used for X2AP->RRC in source and RRC->X2AP in target */
+  int rnti;
+
   int source_assoc_id;
 } x2ap_ue_context_release_t;
 
@@ -138,12 +138,12 @@ typedef struct x2ap_lastvisitedcell_info_s {
   uint64_t time_UE_StayedInCell;
 }x2ap_lastvisitedcell_info_t;
 
-//used for src
 typedef struct x2ap_handover_req_s {
-  int source_rnti;                       /* TODO: to be fixed/remove */
-  int source_x2id;                       /* TODO: to be fixed/remove */
+  /* used for RRC->X2AP in source eNB */
+  int rnti;
 
-  int old_eNB_ue_x2ap_id;
+  /* used for X2AP->RRC in target eNB */
+  int x2_id;
 
   LTE_PhysCellId_t target_physCellId;
 
@@ -177,16 +177,16 @@ typedef struct x2ap_handover_req_s {
   uint8_t rrc_buffer[1024 /* arbitrary, big enough */];
   int rrc_buffer_size;
 
-  /* TODO: this parameter has to be removed */
-  int target_mod_id;
-  int source_assoc_id;
+  int target_assoc_id;
 } x2ap_handover_req_t;
 
 typedef struct x2ap_handover_req_ack_s {
-  int source_rnti;                       /* TODO: to be fixed/remove */
-  int source_x2id;                       /* TODO: to be fixed/remove */
-  /* TODO: this parameter has to be removed */
-  int target_mod_id;
+  /* used for RRC->X2AP in target and X2AP->RRC in source */
+  int rnti;
+
+  /* used for RRC->X2AP in target */
+  int x2_id_target;
+
   int source_assoc_id;
 
   uint8_t nb_e_rabs_tobesetup;
