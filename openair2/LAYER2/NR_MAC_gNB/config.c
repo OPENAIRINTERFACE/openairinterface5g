@@ -266,8 +266,6 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
   }// END if( mib != NULL )
 
 
-
-
   if( servingcellconfigcommon != NULL ){
     config_common(Mod_idP, 
                   CC_idP,
