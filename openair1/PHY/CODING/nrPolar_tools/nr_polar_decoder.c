@@ -1160,7 +1160,6 @@ uint32_t polar_decoder_int16(int16_t *input,
 
   out[0]=Ar;
 
-
   return(crc^rxcrc);
   
 

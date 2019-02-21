@@ -618,10 +618,10 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
 #ifdef DEBUG_PBCH
  printf("xtra_byte %x payload %x\n", xtra_byte, payload);
-  for (i=0; i<(NR_POLAR_PBCH_PAYLOAD_BITS>>3); i++){
-    //  	  printf("unscrambling pbch_a[%d] = %x \n", i,pbch_a[i]);
-  	  printf("[PBCH] decoder payload[%d] = %x\n",i,decoded_output[i]);
-  }
+ for (int i=0; i<(NR_POLAR_PBCH_PAYLOAD_BITS>>3); i++){
+   //  	  printf("unscrambling pbch_a[%d] = %x \n", i,pbch_a[i]);
+   printf("[PBCH] decoder payload[%d] = %x\n",i,decoded_output[i]);
+ }
 #endif
 
     ue->dl_indication.rx_ind = &ue->rx_ind; //  hang on rx_ind instance

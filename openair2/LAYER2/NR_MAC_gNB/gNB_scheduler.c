@@ -323,6 +323,16 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
       nfapi_nr_config_request_t *cfg = &RC.nrmac[module_idP]->config[CC_id];
 
+      nfapi_nr_coreset_t coreset = RC.nrmac[module_idP]->coreset[CC_id][1];
+      nfapi_nr_search_space_t search_space = RC.nrmac[module_idP]->search_space[CC_id][1];
+
+      if (nr_is_dci_opportunity(search_space,
+                                    coreset,
+                                    frameP,
+                                    slotP,
+                                    *cfg))
+          nr_schedule_uss_dlsch_phytest(module_idP, frameP, slotP);
+
       rnti = UE_RNTI(module_idP, i);
       CC_id = UE_PCCID(module_idP, i);
       int spf = get_spf(cfg);
@@ -425,9 +435,11 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
 
   // Phytest scheduling/ option not activated because of pending bug
 
-  if (slotP==2)
-    nr_schedule_css_dlsch_phytest(module_idP, frameP, slotP);
+  /*if (slotP==2)
+    nr_schedule_css_dlsch_phytest(module_idP, frameP, slotP);*/
 
+  if (slotP==1)
+  nr_schedule_uss_dlsch_phytest(module_idP, frameP, slotP);
 
   /*
   // Allocate CCEs for good after scheduling is done

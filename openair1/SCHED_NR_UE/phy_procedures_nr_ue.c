@@ -56,7 +56,7 @@
 //#define DEBUG_PHY_PROC
 
 #define NR_PDCCH_SCHED
-#define NR_PDCCH_SCHED_DEBUG
+//#define NR_PDCCH_SCHED_DEBUG
 //#define NR_PUCCH_SCHED
 //#define NR_PUCCH_SCHED_DEBUG
 
@@ -3078,6 +3078,8 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
   // Higher layers have updated the number of searchSpaces with are active in the current slot and this value is stored in variable nb_searchspace_total
   int nb_searchspace_total = pdcch_vars2->nb_search_space;
 
+  pdcch_vars[eNB_id]->crnti = 0x1234; //to be check how to set when using loop memory
+
   uint16_t c_rnti=pdcch_vars[eNB_id]->crnti;
   uint16_t cs_rnti=0,new_rnti=0,tc_rnti;
   uint16_t p_rnti=P_RNTI;
@@ -3153,7 +3155,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
                                                                                                   // FIXME! A table of five enum elements
       // searchSpaceType indicates whether this is a common search space or a UE-specific search space
       //int searchSpaceType                             = pdcch_vars2->searchSpace[nb_searchspace_active].searchSpaceType.type;
-      NR_SEARCHSPACE_TYPE_t searchSpaceType                             = common;
+      NR_SEARCHSPACE_TYPE_t searchSpaceType                             = ue_specific;//common;
       #ifdef NR_PDCCH_SCHED_DEBUG
         printf("<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> searchSpaceType=%d is hardcoded THIS HAS TO BE FIXED!!!\n",
                 searchSpaceType);
@@ -4964,96 +4966,21 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
+  NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][0];
   uint16_t nb_symb_sch = 8; // to be updated by higher layer
-  uint8_t nb_symb_pdcch =2; 
-  //proc->decoder_switch = 0;
-  //int counter_decoder = 0;
+  uint8_t nb_symb_pdcch = pdcch_vars->coreset[0].duration;
   
-  LOG_D(PHY," ****** start RX-Chain for AbsSubframe %d.%d ******  \n", frame_rx%1024, nr_tti_rx);
+  LOG_D(PHY," ****** start RX-Chain for Frame.Slot %d.%d ******  \n", frame_rx%1024, nr_tti_rx);
 
   uint8_t next1_thread_id = ue->current_thread_id[nr_tti_rx]== (RX_NB_TH-1) ? 0:(ue->current_thread_id[nr_tti_rx]+1);
   uint8_t next2_thread_id = next1_thread_id== (RX_NB_TH-1) ? 0:(next1_thread_id+1);
 
-#if 0
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_RX, VCD_FUNCTION_IN);
-
-#if T_TRACER
-  T(T_UE_PHY_DL_TICK, T_INT(ue->Mod_id), T_INT(frame_rx%1024), T_INT(nr_tti_rx));
-
-  T(T_UE_PHY_INPUT_SIGNAL, T_INT(ue->Mod_id), T_INT(frame_rx%1024), T_INT(nr_tti_rx), T_INT(0),
-    T_BUFFER(&ue->common_vars.rxdata[0][nr_tti_rx*ue->frame_parms.samples_per_subframe],
-             ue->frame_parms.samples_per_subframe * 4));
-#endif
-
-  // start timers
-  //#ifdef UE_DEBUG_TRACE
-  LOG_I(PHY," ****** start RX-Chain for AbsSubframe %d.%d ******  \n", frame_rx%1024, nr_tti_rx);
-  //#endif
-
-#if UE_TIMING_TRACE
-  start_meas(&ue->phy_proc_rx[ue->current_thread_id[nr_tti_rx]]);
-  start_meas(&ue->generic_stat);
-#endif
-
-  if (do_pdcch_flag) {
-    // deactivate reception until we scan pdcch
-    if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0])
-      ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active = 0;
-    if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][1])
-      ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][1]->active = 0;
-
-    if (ue->dlsch_SI[eNB_id])
-      ue->dlsch_SI[eNB_id]->active = 0;
-    if (ue->dlsch_p[eNB_id])
-      ue->dlsch_p[eNB_id]->active = 0;
-    if (ue->dlsch_ra[eNB_id])
-      ue->dlsch_ra[eNB_id]->active = 0;
-  }
-
-#ifdef DEBUG_PHY_PROC
-  LOG_D(PHY,"[%s %d] Frame %d nr_tti_rx %d: Doing phy_procedures_UE_RX\n",
-	(r_type == multicast_relay) ? "RN/UE" : "UE",
-	ue->Mod_id,frame_rx, nr_tti_rx);
-#endif
-
-
-  if (ue->frame_parms.Ncp == 0) {  // normal prefix
-    pilot1 = 4;
-  } else { // extended prefix
-    pilot1 = 3;
-  }
-
-  /*
-  if (nr_subframe_select(&ue->frame_parms,nr_tti_rx) == SF_S) { // S-subframe, do first 5 symbols only
-    l2 = 5;
-    } else */
-  { // normal nr_tti_rx, last symbol to be processed is the first of the second slot
-    l2 = (ue->frame_parms.symbols_per_tti/2)-1;
-  }
-
-  int prev_nr_tti_rx = (nr_tti_rx - 1)<0? 9: (nr_tti_rx - 1);/*
-  if (nr_subframe_select(&ue->frame_parms,prev_nr_tti_rx) != SF_DL) {
-    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    // RX processing of symbols l=0...l2
-    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    l=0;
-    } else */
-  {
-    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    // RX processing of symbols l=1...l2 (l=0 is done in last scheduling epoch)
-    //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    l=1;
-  }
-
-  LOG_D(PHY," ------ slot 0 Processing: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
-  LOG_D(PHY," ------  --> FFT/ChannelEst/PDCCH slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
-#endif
-
 #ifdef NR_PDCCH_SCHED
-  //nr_gold_pdcch(ue,0, 2);
+  nr_gold_pdcch(ue,0, 2);
   
-  if (nr_tti_rx==1){
-   for (uint16_t l=0; l<nb_symb_pdcch; l++) {
+  //if (nr_tti_rx==1){
+  LOG_D(PHY," ------ --> PDCCH ChannelComp/LLR Frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
+  for (uint16_t l=0; l<nb_symb_pdcch; l++) {
     
 #if UE_TIMING_TRACE
     start_meas(&ue->ofdm_demod_stats);
@@ -5061,7 +4988,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_IN);
     nr_slot_fep(ue,
 		l,
-		nr_tti_rx<<1,
+		nr_tti_rx,
 		0,
 		0,
 		1,
@@ -5072,7 +4999,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 #endif
     
     //printf("phy procedure pdcch start measurement l =%d\n",l);
-    nr_ue_measurement_procedures(l,ue,proc,eNB_id,(nr_tti_rx<<1),mode);
+    nr_ue_measurement_procedures(l,ue,proc,eNB_id,(nr_tti_rx),mode);
       
   }
 
@@ -5080,19 +5007,19 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
     LOG_E(PHY,"[UE  %d] Frame %d, nr_tti_rx %d: Error in pdcch procedures\n",ue->Mod_id,frame_rx,nr_tti_rx);
     return(-1);
   }
- }
+  //}
 #endif //NR_PDCCH_SCHED
 
-  LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
   
   if (nr_tti_rx==1){
+    LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR Frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
     //to update from pdsch config
     nr_gold_pdsch(ue,nb_symb_pdcch,0, 1);
     
     for (uint16_t m=nb_symb_pdcch;m<=(nb_symb_sch+nb_symb_pdcch-1) ; m++){
       nr_slot_fep(ue,
 		  m,  //to be updated from higher layer
-		  nr_tti_rx<<1,
+		  nr_tti_rx,
 		  0,
 		  0,
 		  1,
@@ -5126,7 +5053,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
   }
 
-  LOG_D(PHY," ------ end PDSCH ChannelComp/LLR slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
   // do procedures for SI-RNTI
   if ((ue->dlsch_SI[eNB_id]) && (ue->dlsch_SI[eNB_id]->active == 1)) {
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_SI, VCD_FUNCTION_IN);
@@ -5168,62 +5094,12 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 			   ue->frame_parms.symbols_per_tti>>1);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_RA, VCD_FUNCTION_OUT);
   }
-//#if 0
-  LOG_D(PHY," ------ slot 1 Processing: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
-  LOG_D(PHY," ------  --> FFT/ChannelEst/PDCCH slot 1: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
 
-  /*if (nr_subframe_select(&ue->frame_parms,nr_tti_rx) != SF_S)*/ 
-    {  // do front-end processing for second slot, and first symbol of next nr_tti_rx
-    for (l=1; l<ue->frame_parms.symbols_per_tti>>1; l++) {
-#if UE_TIMING_TRACE
-          start_meas(&ue->ofdm_demod_stats);
-#endif
-	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_IN);
-	/*nr_slot_fep(ue,
-		 l,
-		 1+(nr_tti_rx<<1),
-		 0,
-		 0,
-		 0,
-		 NR_PDSCH_EST);*/
-	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_OUT);
 
-#if UE_TIMING_TRACE
-      stop_meas(&ue->ofdm_demod_stats);
-#endif
-    
-
-    //ue_measurement_procedures(l-1,ue,proc,eNB_id,1+(nr_tti_rx<<1),abstraction_flag,mode);
-
-  } // for l=1..l2
-
-    // do first symbol of next downlink nr_tti_rx for channel estimation
-  int next_nr_tti_rx = (1+nr_tti_rx)%10;
-  /*  if (nr_subframe_select(&ue->frame_parms,next_nr_tti_rx) != SF_UL)*/
-    {
-      /*nr_slot_fep(ue,
-         0,
-         (next_nr_tti_rx<<1),
-         0,
-         0,
-         0,
-	 NR_PDSCH_EST);*/
-    }
-  } // not an S-subframe
-#if UE_TIMING_TRACE
-  stop_meas(&ue->generic_stat);
-#if DISABLE_LOG_X
-  printf("[SFN %d] Slot1: FFT + Channel Estimate + Pdsch Proc Slot0 %5.2f \n",nr_tti_rx,ue->generic_stat.p_time/(cpuf*1000.0));
-#else
-  LOG_D(PHY, "[SFN %d] Slot1: FFT + Channel Estimate + Pdsch Proc Slot0 %5.2f \n",nr_tti_rx,ue->generic_stat.p_time/(cpuf*1000.0));
-#endif
-  
-#endif
-
-  //LOG_D(PHY," ------  end FFT/ChannelEst/PDCCH slot 1: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
 
   if ( (nr_tti_rx == 0) && (ue->decode_MIB == 1))
     {
+      LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
       for (int i=0; i<3; i++)
 	nr_slot_fep(ue,
 		    (5+i), //mu=1 case B
@@ -5237,7 +5113,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
     }
   
   // do procedures for C-RNTI
-  LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR slot 0: AbsSubframe %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
   if (ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->active == 1) {
     
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);

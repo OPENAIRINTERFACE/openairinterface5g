@@ -192,11 +192,10 @@ int load_module_shlib(char *modname,loader_shlibfunc_t *farray, int numf) { retu
 
 void * get_shlibmodule_fptr(char *modname, char *fname) { return(NULL) ; }
 
-void exit_fun(const char* s)
-{
+/*void exit_fun (const char *s) {
   VOID_PARAMETER s;
   undefined_function(__FUNCTION__);
-}
+}*/
 
 uint32_t ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP,
 		          uint8_t eNB_id, rnti_t rnti, sub_frame_t subframe){
