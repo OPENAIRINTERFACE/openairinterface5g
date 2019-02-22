@@ -42,7 +42,7 @@
 
 void polar_encoder(uint32_t *in,
 		   uint32_t *out,
-		   t_nrPolar_paramsPtr polarParams)
+		   t_nrPolar_params * polarParams)
 {
   if (polarParams->idx == 0){//PBCH
     /*
@@ -151,7 +151,7 @@ nr_bit2byte_uint32_8_t((uint32_t*)&B, polarParams->K, polarParams->nr_polar_B);*
 
 void polar_encoder_dci(uint32_t *in,
 		       uint32_t *out,
-		       t_nrPolar_paramsPtr polarParams,
+		       t_nrPolar_params * polarParams,
 		       uint16_t n_RNTI)
 {
 #ifdef DEBUG_POLAR_ENCODER_DCI
@@ -284,9 +284,9 @@ void polar_encoder_dci(uint32_t *in,
 #endif
 }
 
-static inline void polar_rate_matching(t_nrPolar_paramsPtr polarParams,void *in,void *out) __attribute__((always_inline));
+static inline void polar_rate_matching(t_nrPolar_params * polarParams,void *in,void *out) __attribute__((always_inline));
 
-static inline void polar_rate_matching(t_nrPolar_paramsPtr polarParams,void *in,void *out) {
+static inline void polar_rate_matching(t_nrPolar_params * polarParams,void *in,void *out) {
 
   if (polarParams->groupsize == 8) 
     for (int i=0;i<polarParams->encoderLength>>3;i++) ((uint8_t*)out)[i] = ((uint8_t *)in)[polarParams->rm_tab[i]];
@@ -296,7 +296,7 @@ static inline void polar_rate_matching(t_nrPolar_paramsPtr polarParams,void *in,
     }
 }
 
-void build_polar_tables(t_nrPolar_paramsPtr polarParams) {
+void build_polar_tables(t_nrPolar_params * polarParams) {
   
   // build table b -> c'
 
@@ -388,7 +388,7 @@ void build_polar_tables(t_nrPolar_paramsPtr polarParams) {
 void polar_encoder_fast(uint64_t *A,
 			uint32_t *out,
 			int32_t crcmask,
-			t_nrPolar_paramsPtr polarParams) {
+			t_nrPolar_params * polarParams) {
 
   AssertFatal(polarParams->K > 32, "K = %d < 33, is not supported yet\n",polarParams->K);
   AssertFatal(polarParams->K < 129, "K = %d > 128, is not supported yet\n",polarParams->K);

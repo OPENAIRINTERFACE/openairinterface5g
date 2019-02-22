@@ -158,9 +158,7 @@ int main(int argc, char *argv[]) {
 
 	int16_t channelOutput_int16[coderLength];
  
-	t_nrPolar_paramsPtr nrPolar_params = NULL, currentPtr = NULL;
-	nr_polar_init(&nrPolar_params, polarMessageType, testLength, aggregation_level);
-	currentPtr = nr_polar_params(nrPolar_params, polarMessageType, testLength, aggregation_level);
+	t_nrPolar_params currentPtr = nr_polar_params(polarMessageType, testLength, aggregation_level);
 
 #ifdef DEBUG_DCI_POLAR_PARAMS
 	uint32_t dci_pdu[4];
@@ -173,8 +171,7 @@ int main(int argc, char *argv[]) {
 	uint16_t size=41;
 	uint16_t rnti=3;
 	aggregation_level=8;
-	nr_polar_init(&nrPolar_params, 1, size, aggregation_level);
-	t_nrPolar_paramsPtr currentPtrDCI=nr_polar_params(nrPolar_params, 1, size, aggregation_level);
+	t_nrPolar_params * currentPtrDCI=nr_polar_params(1, size, aggregation_level);
 
 	polar_encoder_dci(dci_pdu, encoder_output, currentPtrDCI, rnti);
 	for (int i=0;i<54;i++)

@@ -892,7 +892,6 @@ typedef struct {
   //Check for specific DCIFormat and AgregationLevel
   uint8_t dciFormat;
   uint8_t agregationLevel;
-  t_nrPolar_paramsPtr nrPolar_params;
   #ifdef NR_PDCCH_DEFS_NR_UE
   int nb_searchSpaces;
   // CORESET structure, where maximum number of CORESETs to be handled is 3 (according to 38.331 V15.1.0)
@@ -933,8 +932,6 @@ typedef struct {
   /// \brief Pointer to PBCH decoded output.
   /// - first index: ? [0..63] (hard coded)
   uint8_t *decoded_output;
-  /// polar decoder parameters
-  t_nrPolar_paramsPtr nrPolar_params;
   /// \brief Total number of PDU errors.
   uint32_t pdu_errors;
   /// \brief Total number of PDU errors 128 frames ago.

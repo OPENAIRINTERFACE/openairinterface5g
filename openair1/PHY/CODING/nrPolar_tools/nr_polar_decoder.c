@@ -42,7 +42,7 @@
 int8_t polar_decoder(
 		double *input,
 		uint8_t *out,
-		t_nrPolar_paramsPtr polarParams,
+		t_nrPolar_params * polarParams,
 		uint8_t listSize,
 		uint8_t pathMetricAppr)
 {
@@ -282,7 +282,7 @@ int8_t polar_decoder(
 
 int8_t polar_decoder_aPriori(double *input,
 			     uint32_t *out,
-			     t_nrPolar_paramsPtr polarParams,
+			     t_nrPolar_params * polarParams,
 			     uint8_t listSize,
 			     uint8_t pathMetricAppr,
 			     double *aPrioriPayload)
@@ -538,7 +538,7 @@ int8_t polar_decoder_aPriori(double *input,
 
 int8_t polar_decoder_aPriori_timing(double *input,
 									uint32_t *out,
-									t_nrPolar_paramsPtr polarParams,
+									t_nrPolar_params * polarParams,
 									uint8_t listSize,
 									uint8_t pathMetricAppr,
 									double *aPrioriPayload,
@@ -793,7 +793,7 @@ int8_t polar_decoder_aPriori_timing(double *input,
 
 int8_t polar_decoder_dci(double *input,
 						 uint32_t *out,
-						 t_nrPolar_paramsPtr polarParams,
+						 t_nrPolar_params * polarParams,
 						 uint8_t listSize,
 						 uint8_t pathMetricAppr,
 						 uint16_t n_RNTI)
@@ -1073,7 +1073,7 @@ void init_polar_deinterleaver_table(t_nrPolar_params *polarParams) {
 
 uint32_t polar_decoder_int16(int16_t *input,
 			     uint64_t *out,
-			     t_nrPolar_params *polarParams)
+			     const t_nrPolar_params *polarParams)
 {
   
 

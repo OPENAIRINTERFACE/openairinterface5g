@@ -1136,7 +1136,6 @@ void nr_dci_decoding_procedure0(int s,
   
   int coreset_nbr_cce_per_symbol=0;
 
-  t_nrPolar_paramsPtr nrPolar_params = pdcch_vars[eNB_id]->nrPolar_params;
   
 #ifdef NR_PDCCH_DCI_DEBUG
   printf("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> format_found is %d \n", *format_found);
@@ -1364,9 +1363,7 @@ void nr_dci_decoding_procedure0(int s,
 
       uint64_t dci_estimation[2]={0};
 
-      nr_polar_init(&nrPolar_params, 1, sizeof_bits, L2);
-
-      t_nrPolar_paramsPtr currentPtrDCI=nr_polar_params(nrPolar_params, 1, sizeof_bits, L2);
+      const t_nrPolar_params* currentPtrDCI=nr_polar_params(1, sizeof_bits, L2);
       decoderState = polar_decoder_int16(&pdcch_vars[eNB_id]->e_rx[CCEind*9*6*2],
 					 dci_estimation,
 					 currentPtrDCI);

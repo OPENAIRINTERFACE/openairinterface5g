@@ -126,11 +126,6 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   nr_init_pbch_dmrs(gNB);
   // Polar encoder init for PBCH
   
-  nr_polar_init(&gNB->nrPolar_params,
-		NR_POLAR_PBCH_MESSAGE_TYPE,
-		NR_POLAR_PBCH_PAYLOAD_BITS,
-		NR_POLAR_PBCH_AGGREGATION_LEVEL);
-
   //PDCCH DMRS init
   gNB->nr_gold_pdcch_dmrs = (uint32_t ***)malloc16(fp->slots_per_frame*sizeof(uint32_t**));
   uint32_t ***pdcch_dmrs             = gNB->nr_gold_pdcch_dmrs;

@@ -136,42 +136,41 @@ struct nrPolar_params {
   decoder_tree_t tree;
 } __attribute__ ((__packed__));
 typedef struct nrPolar_params t_nrPolar_params;
-typedef t_nrPolar_params *t_nrPolar_paramsPtr;
 
 void polar_encoder(uint32_t *input,
 				   uint32_t *output,
-				   t_nrPolar_paramsPtr polarParams);
+				   t_nrPolar_params* polarParams);
 
 void polar_encoder_dci(uint32_t *in,
 					   uint32_t *out,
-					   t_nrPolar_paramsPtr polarParams,
+					   t_nrPolar_params* polarParams,
 					   uint16_t n_RNTI);
 
 void polar_encoder_fast(uint64_t *A,
 			uint32_t *out,
 			int32_t crcmask,
-			t_nrPolar_paramsPtr polarParams);
+			t_nrPolar_params* polarParams);
 
 int8_t polar_decoder(double *input,
 		 	 	 	 uint8_t *output,
-					 t_nrPolar_paramsPtr polarParams,
+					 t_nrPolar_params* polarParams,
 					 uint8_t listSize,
 					 uint8_t pathMetricAppr);
 
 uint32_t polar_decoder_int16(int16_t *input,
 			     uint64_t *out,
-			     t_nrPolar_params *polarParams);
+			     const t_nrPolar_params *polarParams);
 
 int8_t polar_decoder_aPriori(double *input,
 							 uint32_t *output,
-							 t_nrPolar_paramsPtr polarParams,
+							 t_nrPolar_params* polarParams,
 							 uint8_t listSize,
 							 uint8_t pathMetricAppr,
 							 double *aPrioriPayload);
 
 int8_t polar_decoder_aPriori_timing(double *input,
 									uint32_t *output,
-									t_nrPolar_paramsPtr polarParams,
+									t_nrPolar_params* polarParams,
 									uint8_t listSize,
 									uint8_t pathMetricAppr,
 									double *aPrioriPayload,
@@ -180,7 +179,7 @@ int8_t polar_decoder_aPriori_timing(double *input,
 
 int8_t polar_decoder_dci(double *input,
 						 uint32_t *out,
-						 t_nrPolar_paramsPtr polarParams,
+						 t_nrPolar_params* polarParams,
 						 uint8_t listSize,
 						 uint8_t pathMetricAppr,
 						 uint16_t n_RNTI);
@@ -189,18 +188,12 @@ void generic_polar_decoder(t_nrPolar_params *,
 		decoder_node_t *);
 
 void build_decoder_tree(t_nrPolar_params *pp);
-void build_polar_tables(t_nrPolar_paramsPtr polarParams);
+void build_polar_tables(t_nrPolar_params* polarParams);
 void init_polar_deinterleaver_table(t_nrPolar_params *polarParams);
 
-void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
-				   int8_t messageType,
-				   uint16_t messageLength,
-				   uint8_t aggregation_level);
+void nr_polar_print_polarParams(t_nrPolar_params* polarParams);
 
-void nr_polar_print_polarParams(t_nrPolar_paramsPtr polarParams);
-
-t_nrPolar_paramsPtr nr_polar_params (t_nrPolar_paramsPtr polarParams,
-									 int8_t messageType,
+t_nrPolar_params * nr_polar_params ( int8_t messageType,
 									 uint16_t messageLength,
 									 uint8_t aggregation_level);
 

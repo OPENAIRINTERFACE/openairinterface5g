@@ -41,12 +41,12 @@ static int intcmp(const void *p1,const void *p2) {
   return(*(int16_t*)p1 > *(int16_t*)p2);
 }
 
-void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
+static void nr_polar_init(t_nrPolar_params * *polarParams,
 		   int8_t messageType,
 		   uint16_t messageLength,
 		   uint8_t aggregation_level)
 {
-	t_nrPolar_paramsPtr currentPtr = *polarParams;
+	t_nrPolar_params * currentPtr = *polarParams;
 	uint16_t aggregation_prime = nr_polar_aggregation_prime(aggregation_level);
 
 	//Parse the list. If the node is already created, return without initialization.
@@ -58,7 +58,7 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 
 	//	printf("currentPtr %p (polarParams %p)\n",currentPtr,polarParams);
 	//Else, initialize and add node to the end of the linked list.
-	t_nrPolar_paramsPtr newPolarInitNode = malloc(sizeof(t_nrPolar_params));
+	t_nrPolar_params * newPolarInitNode = malloc(sizeof(t_nrPolar_params));
 
 	if (newPolarInitNode != NULL) {
 
@@ -170,30 +170,15 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 		//printf("decoder tree nodes %d\n",newPolarInitNode->tree.num_nodes);
 
 	} else {
-		AssertFatal(1 == 0, "[nr_polar_init] New t_nrPolar_paramsPtr could not be created");
+		AssertFatal(1 == 0, "[nr_polar_init] New t_nrPolar_params * could not be created");
 	}
 
-	currentPtr = *polarParams;
-	//If polarParams is empty:
-	if (currentPtr == NULL)
-	{
-		*polarParams = newPolarInitNode;
-		//printf("Creating first polarParams entry index %d, %p\n",newPolarInitNode->idx,*polarParams);
-		return;
-	}
-	//Else, add node to the end of the linked list.
-	while (currentPtr->nextPtr != NULL) {
-	  currentPtr = currentPtr->nextPtr;
-	}
-	currentPtr->nextPtr= newPolarInitNode;
-	printf("Adding new polarParams entry to list index %d,%p\n",
-	       newPolarInitNode->idx,
-	       currentPtr->nextPtr);
-
+	newPolarInitNode->nextPtr=*polarParams;
+	*polarParams=newPolarInitNode;
 	return;
 }
 
-void nr_polar_print_polarParams(t_nrPolar_paramsPtr polarParams)
+void nr_polar_print_polarParams(t_nrPolar_params * polarParams)
 {
 	uint8_t i = 0;
 	if (polarParams == NULL) {
@@ -208,23 +193,22 @@ void nr_polar_print_polarParams(t_nrPolar_paramsPtr polarParams)
 	return;
 }
 
-t_nrPolar_paramsPtr nr_polar_params (t_nrPolar_paramsPtr polarParams,
-				     int8_t messageType,
+t_nrPolar_params * nr_polar_params ( int8_t messageType,
 				     uint16_t messageLength,
 				     uint8_t aggregation_level)
 {
-	t_nrPolar_paramsPtr currentPtr = NULL;
-
+	static t_nrPolar_params * polarList = NULL;
+	nr_polar_init(&polarList, messageType,messageLength,aggregation_level);
+        t_nrPolar_params * polarParams=polarList;
+	const int tag=messageType * messageLength * nr_polar_aggregation_prime(aggregation_level);
 	while (polarParams != NULL) {
-		if (polarParams->idx ==
-				(messageType * messageLength * (nr_polar_aggregation_prime(aggregation_level)) )) {
-			currentPtr = polarParams;
-			break;
-		} else {
+		if (polarParams->idx == tag)
+		return polarParams;
 			polarParams = polarParams->nextPtr;
+
 		}
-	}
-	return currentPtr;
+		AssertFatal(false,"Polar Init tables internal failure\n");
+	return NULL;
 }
 
 uint16_t nr_polar_aggregation_prime (uint8_t aggregation_level)

@@ -159,7 +159,6 @@ void nr_pdcch_scrambling(uint32_t *in,
 }
 
 uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
-			    t_nrPolar_paramsPtr *nrPolar_params,
                             uint32_t **gold_pdcch_dmrs,
                             int32_t* txdataF,
                             int16_t amp,
@@ -249,8 +248,7 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
   uint16_t Nid = (pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_UE_SPECIFIC)?
   pdcch_params.scrambling_id : config.sch_config.physical_cell_id.value;
 
-  nr_polar_init(nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
-  t_nrPolar_paramsPtr currentPtr = nr_polar_params(*nrPolar_params, NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
+  t_nrPolar_params * currentPtr = nr_polar_params(NR_POLAR_DCI_MESSAGE_TYPE, dci_alloc.size, dci_alloc.L);
 
   polar_encoder_fast(dci_alloc.dci_pdu, encoder_output, pdcch_params.rnti,currentPtr);
 
