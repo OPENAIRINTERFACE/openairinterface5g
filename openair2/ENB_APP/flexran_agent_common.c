@@ -593,9 +593,11 @@ int flexran_agent_ue_config_reply(mid_t mod_id, const void *params, Protocol__Fl
 
   if (flexran_agent_get_rrc_xface(mod_id) && flexran_agent_get_mac_xface(mod_id)
       && flexran_get_rrc_num_ues(mod_id) != flexran_get_mac_num_ues(mod_id)) {
-    LOG_E(FLEXRAN_AGENT, "different numbers of UEs in RRC (%d) and MAC (%d)\n",
-        flexran_get_rrc_num_ues(mod_id), flexran_get_mac_num_ues(mod_id));
-    goto error;
+    const int nrrc = flexran_get_rrc_num_ues(mod_id);
+    const int nmac = flexran_get_mac_num_ues(mod_id);
+    ue_config_reply_msg->n_ue_config = nrrc < nmac ? nrrc : nmac;
+    LOG_E(FLEXRAN_AGENT, "%s(): different numbers of UEs in RRC (%d) and MAC (%d), reporting for %lu UEs\n",
+        __func__, nrrc, nmac, ue_config_reply_msg->n_ue_config);
   }
 
   Protocol__FlexUeConfig **ue_config;
