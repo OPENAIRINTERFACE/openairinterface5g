@@ -7364,13 +7364,12 @@ rrc_eNB_decode_ccch(
 
               ue_context_p = rrc_eNB_get_next_free_ue_context(ctxt_pP, random_value);
 
-              // TODO MERGE
-              //ue_context_p->ue_context.Srb0.Srb_id=0;
-              //ue_context_p->ue_context.Srb0.Active=1;
-              //memcpy(ue_context_p->ue_context.Srb0.Rx_buffer.Payload,
-              //     buffer,
-              //     buffer_length);
-              //ue_context_p->ue_context.Srb0.Rx_buffer.payload_size=buffer_length;
+              ue_context_p->ue_context.Srb0.Srb_id = 0;
+              ue_context_p->ue_context.Srb0.Active = 1;
+              memcpy(ue_context_p->ue_context.Srb0.Rx_buffer.Payload,
+                     buffer,
+                     buffer_length);
+              ue_context_p->ue_context.Srb0.Rx_buffer.payload_size = buffer_length;
 
             } else if (LTE_InitialUE_Identity_PR_s_TMSI == rrcConnectionRequest->ue_Identity.present) {
               /* Save s-TMSI */
@@ -7992,7 +7991,6 @@ rrc_eNB_decode_dcch(
           if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.choice.c1.
               present ==
               LTE_RRCConnectionSetupComplete__criticalExtensions__c1_PR_rrcConnectionSetupComplete_r8) {
-            /* TODO MERGE: test, was if with empty DU clause */
             AssertFatal(RC.rrc[ctxt_pP->module_id]->node_type != ngran_eNB_DU && RC.rrc[ctxt_pP->module_id]->node_type != ngran_gNB_DU,
                         "should not be reached in DU\n");
             rrc_eNB_process_RRCConnectionSetupComplete(
