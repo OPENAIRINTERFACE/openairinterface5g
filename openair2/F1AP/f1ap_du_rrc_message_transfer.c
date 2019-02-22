@@ -581,25 +581,19 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   
 }
 
-int DU_send_UL_RRC_MESSAGE_TRANSFER(const protocol_ctxt_t* const ctxt_pP,
-				    const rb_id_t     rb_idP,
-				    const sdu_size_t  sdu_sizeP,
-				    const uint8_t     *sdu_pP
-                                    ) {
-
-
-  rnti_t     rnti      = ctxt_pP->rnti;
+int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance, const f1ap_ul_rrc_message_t *msg) {
+  const rnti_t rnti = msg->rnti;
 
   F1AP_F1AP_PDU_t                pdu;
   F1AP_ULRRCMessageTransfer_t    *out;
   F1AP_ULRRCMessageTransferIEs_t *ie;
 
-  uint8_t  *buffer;
-  uint32_t  len;
+  uint8_t *buffer = NULL;
+  uint32_t len;
 
 
   LOG_I(F1AP, "[DU %d] %s: size %d UE RNTI %x in SRB %d\n",
-        ctxt_pP->module_id, __func__, sdu_sizeP, rnti, rb_idP);
+        instance, __func__, msg->rrc_container_length, rnti, msg->srb_id);
 
   /* Create */
   /* 0. Message Type */
@@ -617,8 +611,6 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(const protocol_ctxt_t* const ctxt_pP,
   ie->id                             = F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID;
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_ULRRCMessageTransferIEs__value_PR_GNB_CU_UE_F1AP_ID;
-
-  instance_t instance = ctxt_pP->module_id;
 
   ie->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(&f1ap_du_inst[instance], rnti);
 
@@ -639,7 +631,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(const protocol_ctxt_t* const ctxt_pP,
   ie->id                            = F1AP_ProtocolIE_ID_id_SRBID;
   ie->criticality                   = F1AP_Criticality_reject;
   ie->value.present                 = F1AP_ULRRCMessageTransferIEs__value_PR_SRBID;
-  ie->value.choice.SRBID            = rb_idP;
+  ie->value.choice.SRBID            = msg->srb_id;
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   // issue in here
@@ -649,13 +641,13 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(const protocol_ctxt_t* const ctxt_pP,
   ie->id                            = F1AP_ProtocolIE_ID_id_RRCContainer;
   ie->criticality                   = F1AP_Criticality_reject;
   ie->value.present                 = F1AP_ULRRCMessageTransferIEs__value_PR_RRCContainer;
-  OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, (const char *)sdu_pP, sdu_sizeP);
+  OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer,
+                       (const char *) msg->rrc_container,
+                       msg->rrc_container_length);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
-  if (rb_idP == 1 || rb_idP == 2) { 
-    struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(
-                                                RC.rrc[ctxt_pP->module_id],
-                                                rnti);
+  if (msg->srb_id == 1 || msg->srb_id == 2) {
+    struct rrc_eNB_ue_context_s* ue_context_p = rrc_eNB_get_ue_context(RC.rrc[instance], rnti);
 
    
     LTE_UL_DCCH_Message_t* ul_dcch_msg=NULL;
@@ -664,7 +656,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(const protocol_ctxt_t* const ctxt_pP,
          &asn_DEF_LTE_UL_DCCH_Message,
          (void**)&ul_dcch_msg,
          &ie->value.choice.RRCContainer.buf[1], // buf[0] includes the pdcp header
-         sdu_sizeP,0,0);
+         msg->rrc_container_length, 0, 0);
     
     if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) 
       LOG_E(F1AP, " Failed to decode UL-DCCH (%zu bytes)\n",dec_rval.consumed);
@@ -693,7 +685,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(const protocol_ctxt_t* const ctxt_pP,
       case LTE_UL_DCCH_MessageType__c1_PR_rrcConnectionSetupComplete:
         LOG_I(F1AP, "[MSG] RRC UL rrcConnectionSetupComplete \n");
        if(!ue_context_p){
-          LOG_E(F1AP, "Did not find the UE context associated with UE RNTOI %x, ue_context_p is NULL\n", ctxt_pP->rnti);
+          LOG_E(F1AP, "Did not find the UE context associated with UE RNTOI %x, ue_context_p is NULL\n", rnti);
         }else {
           LOG_I(F1AP, "Processing RRCConnectionSetupComplete UE %x\n", rnti);
           ue_context_p->ue_context.Status = RRC_CONNECTED;

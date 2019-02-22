@@ -39,14 +39,8 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                                       uint32_t         stream,
                                       F1AP_F1AP_PDU_t *pdu);
 
-int DU_send_UL_RRC_MESSAGE_TRANSFER(const protocol_ctxt_t* const ctxt_p,
-				    const rb_id_t     rb_id,
-				    const sdu_size_t  sdu_size,
-				    const uint8_t     *sdu_p);
-/*
-				    instance_t                instance,
-                                    f1ap_ul_rrc_message_t    *f1ap_ul_rrc);
-*/
+int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance, const f1ap_ul_rrc_message_t *msg);
+
 int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
                                             int             CC_idP,
                                             int             UE_id,

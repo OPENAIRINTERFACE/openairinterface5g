@@ -34,6 +34,7 @@
 #include "f1ap_handlers.h"
 #include "f1ap_du_interface_management.h"
 #include "f1ap_du_ue_context_management.h"
+#include "f1ap_du_rrc_message_transfer.h"
 #include "f1ap_du_task.h"
 #include "proto_agent.h"
 
@@ -176,9 +177,8 @@ void *F1AP_DU_task(void *arg) {
 
      case F1AP_UL_RRC_MESSAGE: // from rrc
         LOG_I(F1AP, "DU Task Received F1AP_UL_RRC_MESSAGE\n");
-        AssertFatal (1 == 0, "Should not be here!\n" );
-        //DU_send_UL_RRC_MESSAGE_TRANSFER(ITTI_MESSAGE_GET_INSTANCE(received_msg),
-         //                               &F1AP_UL_RRC_MESSAGE(received_msg));
+        DU_send_UL_RRC_MESSAGE_TRANSFER(ITTI_MESSAGE_GET_INSTANCE(received_msg),
+                                        &F1AP_UL_RRC_MESSAGE(received_msg));
         break;
 
       case F1AP_UE_CONTEXT_RELEASE_REQ: // from MAC

@@ -619,11 +619,12 @@ void rlc_data_ind     (
        case ngran_eNB_DU:
        case ngran_gNB_DU:
          if (srb_flagP == 1) {
-           /* TODO do ITTI message */
-           DU_send_UL_RRC_MESSAGE_TRANSFER(ctxt_pP,
-	  				   rb_idP,
-					     sdu_sizeP,
-					     sdu_pP->data);
+           MessageDef *msg = itti_alloc_new_message(TASK_RLC_ENB, F1AP_UL_RRC_MESSAGE);
+           F1AP_UL_RRC_MESSAGE(msg).rnti = ctxt_pP->rnti;
+           F1AP_UL_RRC_MESSAGE(msg).srb_id = rb_idP;
+           F1AP_UL_RRC_MESSAGE(msg).rrc_container = sdu_pP->data;
+           F1AP_UL_RRC_MESSAGE(msg).rrc_container_length = sdu_sizeP;
+           itti_send_msg_to_task(TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id), msg);
          }
          else
            proto_agent_send_pdcp_data_ind (
