@@ -90,7 +90,8 @@ Protocol__FlexranMessage* flexran_agent_handle_message (mid_t mod_id,
 							uint8_t *data, 
 							uint32_t size){
   
-  Protocol__FlexranMessage *decoded_message, *reply_message;
+  Protocol__FlexranMessage *decoded_message = NULL;
+  Protocol__FlexranMessage *reply_message = NULL;
   err_code_t err_code;
   DevAssert(data != NULL);
 
