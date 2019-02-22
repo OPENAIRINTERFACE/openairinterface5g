@@ -479,7 +479,7 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
        LOG_D(F1AP, "F1AP: Activating %d cells\n",num_cells_to_activate);
        for (int i=0;i<num_cells_to_activate;i++) {
 	 
-	 F1AP_Cells_to_be_Activated_List_ItemIEs_t *cells_to_be_activated_list_item_ies = ie->value.choice.Cells_to_be_Activated_List.list.array[i];
+	 F1AP_Cells_to_be_Activated_List_ItemIEs_t *cells_to_be_activated_list_item_ies = (F1AP_Cells_to_be_Activated_List_ItemIEs_t *) ie->value.choice.Cells_to_be_Activated_List.list.array[i];
 
 	 AssertFatal(cells_to_be_activated_list_item_ies->id == F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List_Item,
 		   "cells_to_be_activated_list_item_ies->id != F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List_Item");
@@ -502,7 +502,7 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
 					F1AP_SETUP_RESP (msg_p).nr_cellid[i]);
 	 F1AP_SETUP_RESP (msg_p).nrpci[i] = *cell->nRPCI;
 
-	 F1AP_ProtocolExtensionContainer_160P9_t *ext = cell->iE_Extensions;
+	 F1AP_ProtocolExtensionContainer_160P9_t *ext = (F1AP_ProtocolExtensionContainer_160P9_t *)cell->iE_Extensions;
 	 AssertFatal(ext!=NULL,"Extension for SI is null\n");
 	 F1AP_SETUP_RESP (msg_p).num_SI[i] = ext->list.count;
 	 AssertFatal(ext->list.count==1,"At least one SI message should be there, and only 1 for now!\n");
@@ -634,7 +634,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
 
         /* - fiveGS_TAC */
         OCTET_STRING_fromBuf(&served_cell_information.fiveGS_TAC,
-                             &f1ap_du_data->tac[i],
+                             (const char *) &f1ap_du_data->tac[i],
                              3);
 
         /* - Configured_EPS_TAC */
@@ -800,7 +800,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
 
         /* - fiveGS_TAC */
         OCTET_STRING_fromBuf(&served_cell_information.fiveGS_TAC,
-                             &f1ap_du_data->tac[i],
+                             (const char *) &f1ap_du_data->tac[i],
                              3);
 
         /* - Configured_EPS_TAC */

@@ -121,5 +121,8 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i);
 void fill_SL_configuration(MessageDef *msg_p,  ccparams_sidelink_t *SLconfig,int cell_idx,int cc_idx,char *config_fname);
 void fill_eMTC_configuration(MessageDef *msg_p,  ccparams_eMTC_t *eMTCconfig, int cell_idx,int cc_idx,char *config_fname,char *brparamspath);
 
+int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i);
+void handle_f1ap_setup_resp(f1ap_setup_resp_t *resp);
+
 #endif /* ENB_CONFIG_H_ */
 /** @} */

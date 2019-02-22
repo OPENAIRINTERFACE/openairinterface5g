@@ -34,6 +34,7 @@
 #include "enb_config.h"
 #include "assertions.h"
 #include "common/ran_context.h"
+#include "targets/RT/USER/lte-softmodem.h"
 
 #include "common/utils/LOG/log.h"
 
@@ -145,8 +146,8 @@ void *eNB_app_task(void *args_p)
   uint32_t                        registered_enb;
   long                            enb_register_retry_timer_id;
 # endif
-  uint32_t                        x2_register_enb_pending;
-  uint32_t                        x2_registered_enb;
+  uint32_t                        x2_register_enb_pending = 0;
+  uint32_t                        x2_registered_enb = 0;
   long                            x2_enb_register_retry_timer_id;
   MessageDef                     *msg_p           = NULL;
   instance_t                      instance;
@@ -168,7 +169,6 @@ void *eNB_app_task(void *args_p)
 #endif
 
   /* Try to register each eNB with each other */
- // x2_registered_enb = 0;
   if (RC.rrc[0]->node_type == ngran_eNB) { // CU or DU do not need
     x2_register_enb_pending = eNB_app_register_x2 (enb_id_start, enb_id_end);
   }

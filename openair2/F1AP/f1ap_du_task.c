@@ -33,6 +33,7 @@
 #include "f1ap_common.h"
 #include "f1ap_handlers.h"
 #include "f1ap_du_interface_management.h"
+#include "f1ap_du_ue_context_management.h"
 #include "f1ap_du_task.h"
 #include "proto_agent.h"
 

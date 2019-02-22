@@ -228,7 +228,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
         // get SRB logical channel information
         LTE_SRB_ToAddModList_t *SRB_configList;
         LTE_SRB_ToAddMod_t *SRB1_config;
-        LTE_LogicalChannelConfig_t *SRB1_logicalChannelConfig;  //,*SRB2_logicalChannelConfig;
+        LTE_LogicalChannelConfig_t *SRB1_logicalChannelConfig = NULL;
         SRB_configList                 = radioResourceConfigDedicated->srb_ToAddModList;
 
         AssertFatal(SRB_configList!=NULL,"SRB_configList is null\n");
@@ -273,6 +273,10 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 
       ue_p->Srb0.Tx_buffer.payload_size = rrc_dl_sdu_len;
 
+      LTE_MAC_MainConfig_t    *mac_MainConfig  = NULL;
+      if (radioResourceConfigDedicated->mac_MainConfig)
+        mac_MainConfig = &radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue;
+
       rrc_mac_config_req_eNB(
           ctxt.module_id,
           0, //primaryCC_id,
@@ -292,7 +296,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
           //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
 #endif
           (LTE_MeasObjectToAddMod_t **) NULL,
-          radioResourceConfigDedicated->mac_MainConfig,
+          mac_MainConfig,
           1,
           SRB1_logicalChannelConfig,
           NULL, // measGapConfig,
@@ -383,9 +387,11 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
               LTE_DRB_ToAddModList_t  *DRB_configList  = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->drb_ToAddModList;
               LTE_SRB_ToAddModList_t  *SRB_configList  = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->srb_ToAddModList;
               LTE_DRB_ToReleaseList_t *DRB_ReleaseList = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->drb_ToReleaseList;
-              LTE_MAC_MainConfig_t    *mac_MainConfig  = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->mac_MainConfig;
+              LTE_MAC_MainConfig_t    *mac_MainConfig  = NULL;
+              if (rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->mac_MainConfig)
+                mac_MainConfig = &rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue;
               LTE_MeasGapConfig_t     *measGapConfig   = NULL;
-              struct LTE_PhysicalConfigDedicated**    physicalConfigDedicated = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->physicalConfigDedicated;
+              struct LTE_PhysicalConfigDedicated* physicalConfigDedicated = rrcConnectionReconfiguration_r8->radioResourceConfigDedicated->physicalConfigDedicated;
               rrc_rlc_config_asn1_req(
                 &ctxt,
                 SRB_configList, // NULL,  //LG-RK 14/05/2014 SRB_configList,
@@ -643,7 +649,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(const protocol_ctxt_t* const ctxt_pP,
   ie->id                            = F1AP_ProtocolIE_ID_id_RRCContainer;
   ie->criticality                   = F1AP_Criticality_reject;
   ie->value.present                 = F1AP_ULRRCMessageTransferIEs__value_PR_RRCContainer;
-  OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, sdu_pP, sdu_sizeP);
+  OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, (const char *)sdu_pP, sdu_sizeP);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   if (rb_idP == 1 || rb_idP == 2) { 
@@ -819,7 +825,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
   ie->id                            = F1AP_ProtocolIE_ID_id_RRCContainer;
   ie->criticality                   = F1AP_Criticality_reject;
   ie->value.present                 = F1AP_InitialULRRCMessageTransferIEs__value_PR_RRCContainer;
-  OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, sduP, sdu_lenP);
+  OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, (const char *)sduP, sdu_lenP);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
   /* optional */

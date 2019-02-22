@@ -247,6 +247,7 @@ mac_rrc_data_ind(
     LOG_W(RRC,"[DU %d][RAPROC] Received SDU for CCCH on SRB %d length %d for UE id %d RNTI %x \n",
             module_idP, srb_idP, sdu_lenP, UE_id, rntiP);
   
+    /* do ITTI message */
     DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(
       module_idP,
       CC_id,
@@ -258,7 +259,7 @@ mac_rrc_data_ind(
     return(0);
   } 
 
-  SRB_INFO *Srb_info;
+  //SRB_INFO *Srb_info;
   protocol_ctxt_t ctxt;
   sdu_size_t      sdu_size = 0;
   /* for no gcc warnings */
@@ -269,7 +270,7 @@ mac_rrc_data_ind(
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, rntiP, frameP, sub_frameP,0);
 
   if((srb_idP & RAB_OFFSET) == CCCH) {
-    LOG_D(RRC,"[eNB %d] Received SDU for CCCH on SRB %d\n",module_idP,Srb_info->Srb_id);
+    LOG_D(RRC, "[eNB %d] Received SDU for CCCH on SRB %d\n", module_idP, srb_idP);
     /*Srb_info = &RC.rrc[module_idP]->carrier[CC_id].Srb0;
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     ctxt.brOption = brOption;

@@ -618,11 +618,13 @@ void rlc_data_ind     (
          break;
        case ngran_eNB_DU:
        case ngran_gNB_DU:
-         if (srb_flagP == 1)
+         if (srb_flagP == 1) {
+           /* TODO do ITTI message */
            DU_send_UL_RRC_MESSAGE_TRANSFER(ctxt_pP,
 	  				   rb_idP,
 					     sdu_sizeP,
 					     sdu_pP->data);
+         }
          else
            proto_agent_send_pdcp_data_ind (
              ctxt_pP,

@@ -224,7 +224,7 @@ uint8_t rrc_eNB_get_next_transaction_identifier(module_id_t module_idP);
    \param CC_id component carrier index*/
 
 int rrc_eNB_decode_ccch(protocol_ctxt_t* const ctxt_pP,
-			uint8_t                *buffer,
+                        const uint8_t         *buffer,
 			int                    buffer_length,
 			const int              CC_id
 			);
