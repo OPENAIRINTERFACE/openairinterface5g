@@ -107,7 +107,7 @@ int s1ap_eNB_handle_trace_start(uint32_t         assoc_id,
 {
     S1AP_TraceStart_t            *container;
     S1AP_TraceStartIEs_t         *ie;
-    struct s1ap_eNB_ue_context_s *ue_desc_p;
+    struct s1ap_eNB_ue_context_s *ue_desc_p = NULL;
     struct s1ap_eNB_mme_data_s   *mme_ref_p;
 
     DevAssert(pdu != NULL);

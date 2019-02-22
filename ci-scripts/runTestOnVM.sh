@@ -317,11 +317,18 @@ function install_epc_on_vm {
         echo "############################################################"
         echo "Creating test EPC VM ($LOC_EPC_VM_NAME) on Ubuntu Cloud Image base"
         echo "############################################################"
+        acquire_vm_create_lock
         uvt-kvm create $LOC_EPC_VM_NAME release=xenial --unsafe-caching
+        echo "Waiting for VM to be started"
+        uvt-kvm wait $LOC_EPC_VM_NAME --insecure
+        release_vm_create_lock
+    else
+        echo "Waiting for VM to be started"
+        uvt-kvm wait $LOC_EPC_VM_NAME --insecure
     fi
 
-    uvt-kvm wait $LOC_EPC_VM_NAME --insecure
     local LOC_EPC_VM_IP_ADDR=`uvt-kvm ip $LOC_EPC_VM_NAME`
+
     echo "$LOC_EPC_VM_NAME has for IP addr = $LOC_EPC_VM_IP_ADDR"
     scp -o StrictHostKeyChecking=no /etc/apt/apt.conf.d/01proxy ubuntu@$LOC_EPC_VM_IP_ADDR:/home/ubuntu
 
