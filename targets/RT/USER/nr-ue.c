@@ -992,20 +992,21 @@ void *UE_thread(void *arg) {
       proc->frame_tx = (proc->frame_tx + 1)%MAX_FRAME_NUMBER;
       proc->nr_tti_tx %= nb_slot_frame;
     }
+
     if(slot_nr == 0) {
       UE->proc.proc_rxtx[0].frame_rx++;
-      
+
       //UE->proc.proc_rxtx[1].frame_rx++;
       for (th_id=1; th_id < RX_NB_TH; th_id++) {
-	UE->proc.proc_rxtx[th_id].frame_rx = UE->proc.proc_rxtx[0].frame_rx;
+        UE->proc.proc_rxtx[th_id].frame_rx = UE->proc.proc_rxtx[0].frame_rx;
       }
     }
-    
+
     if (UE->mode != loop_through_memory) {
       for (i=0; i<UE->frame_parms.nb_antennas_rx; i++)
         rxp[i] = (void *)&UE->common_vars.rxdata[i][UE->frame_parms.ofdm_symbol_size+
-						    UE->frame_parms.nb_prefix_samples0+
-						    slot_nr*UE->frame_parms.samples_per_slot];
+                 UE->frame_parms.nb_prefix_samples0+
+                 slot_nr*UE->frame_parms.samples_per_slot];
 
       for (i=0; i<UE->frame_parms.nb_antennas_tx; i++)
         txp[i] = (void *)&UE->common_vars.txdata[i][((slot_nr+2)%NR_NUMBER_OF_SUBFRAMES_PER_FRAME)*UE->frame_parms.samples_per_slot];
@@ -1060,17 +1061,14 @@ void *UE_thread(void *arg) {
       pickTime(gotIQs);
       // operate on thread sf mod 2
       AssertFatal(pthread_mutex_lock(&proc->mutex_rxtx) ==0,"");
-
-
-
 #ifdef SAIF_ENABLED
 
-        if (!(proc->frame_rx%4000)) {
-          printf("frame_rx=%d rx_thread_busy=%ld - rate %8.3f\n",
-                 proc->frame_rx, g_ue_rx_thread_busy,
-                 (float)g_ue_rx_thread_busy/(proc->frame_rx*10+1)*100.0);
-          fflush(stdout);
-        }
+      if (!(proc->frame_rx%4000)) {
+        printf("frame_rx=%d rx_thread_busy=%ld - rate %8.3f\n",
+               proc->frame_rx, g_ue_rx_thread_busy,
+               (float)g_ue_rx_thread_busy/(proc->frame_rx*10+1)*100.0);
+        fflush(stdout);
+      }
 
 #endif
 
@@ -1114,7 +1112,6 @@ void *UE_thread(void *arg) {
       //                    pickStaticTime(lastTime);
     } //UE->mode != loop_through_memory
     else {
-
       processSubframeRX(UE,proc);
       getchar();
     } // else loop_through_memory
@@ -1142,6 +1139,7 @@ void init_UE_threads(PHY_VARS_NR_UE *UE) {
   pthread_mutex_init(&UE->proc.mutex_synch,NULL);
   pthread_cond_init(&UE->proc.cond_synch,NULL);
   UE->proc.instance_cnt_synch = -1;
+
   // the threads are not yet active, therefore access is allowed without locking
   for (int i=0; i<RX_NB_TH; i++) {
     rtd = calloc(1, sizeof(struct nr_rxtx_thread_data));
