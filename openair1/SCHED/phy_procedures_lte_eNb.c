@@ -274,7 +274,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
 
   if (dlsch->rnti == 0x02) {//frame < 200) {
 
-    LOG_D(PHY,
+    LOG_I(PHY,
 	  "[eNB %"PRIu8"][PDSCH %"PRIx16"/%"PRIu8"] Frame %d, subframe %d: Generating PDSCH/DLSCH with input size = %"PRIu16", pdsch_start %d, G %d, nb_rb %"PRIu16", rb0 %x, rb1 %x, TBS %"PRIu16", pmi_alloc %"PRIx64", rv %"PRIu8" (round %"PRIu8")\n",
 	  eNB->Mod_id, dlsch->rnti,harq_pid,
 	  frame, subframe, dlsch_harq->TBS/8, dlsch_harq->pdsch_start,
@@ -334,7 +334,7 @@ void pdsch_procedures(PHY_VARS_eNB *eNB,
   }
 
 
-  LOG_D(PHY,"Generating DLSCH/PDSCH pdu:%p pdsch_start:%d frame:%d subframe:%d nb_rb:%d rb_alloc:%d Qm:%d Nl:%d round:%d\n",
+  if (dlsch->rnti!=0xffff) LOG_I(PHY,"Generating DLSCH/PDSCH pdu:%p pdsch_start:%d frame:%d subframe:%d nb_rb:%d rb_alloc:%d Qm:%d Nl:%d round:%d\n",
 	dlsch_harq->pdu,dlsch_harq->pdsch_start,frame,subframe,dlsch_harq->nb_rb,dlsch_harq->rb_alloc[0],dlsch_harq->Qm,dlsch_harq->Nl,dlsch_harq->round);
   // 36-212 
   if (nfapi_mode == 0 || nfapi_mode == 1) { // monolthic OR PNF - do not need turbo encoding on VNF
@@ -568,7 +568,15 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
       
       if (harq_pid>=8)
 	{
-	  LOG_E(PHY,"harq_pid:%d corrupt must be 0-7 UE_id:%d frame:%d subframe:%d rnti:%x\n", harq_pid,UE_id,frame,subframe,dlsch0->rnti);
+	  LOG_E(PHY,"harq_pid:%d corrupt must be 0-7 UE_id:%d frame:%d subframe:%d rnti:%x [ %1d.%1d.%1d.%1d.%1d.%1d.%1d.%1d\n", harq_pid,UE_id,frame,subframe,dlsch0->rnti,
+                dlsch0->harq_ids[frame%2][0],
+                dlsch0->harq_ids[frame%2][1],
+                dlsch0->harq_ids[frame%2][2],
+                dlsch0->harq_ids[frame%2][3],
+                dlsch0->harq_ids[frame%2][4],
+                dlsch0->harq_ids[frame%2][5],
+                dlsch0->harq_ids[frame%2][6],
+                dlsch0->harq_ids[frame%2][7]);
 	}
       else
 	{
