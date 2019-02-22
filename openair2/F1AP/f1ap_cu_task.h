@@ -19,8 +19,8 @@
  *      contact@openairinterface.org
  */
 
-#ifndef CU_F1AP_TASK_H_
-#define CU_F1AP_TASK_H_
+#ifndef F1AP_CU_TASK_H_
+#define F1AP_CU_TASK_H_
 
 void cu_task_handle_sctp_association_ind(instance_t instance, sctp_new_association_ind_t *sctp_new_association_ind);
 void cu_task_handle_sctp_association_resp(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp);
@@ -29,4 +29,4 @@ void cu_task_send_sctp_init_req(instance_t enb_id);
 
 void *F1AP_CU_task(void *arg);
 
-#endif /* CU_F1AP_TASK_H_ */
+#endif /* F1AP_CU_TASK_H_ */

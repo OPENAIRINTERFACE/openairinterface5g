@@ -64,7 +64,7 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
                                               uint32_t               stream,
                                               F1AP_F1AP_PDU_t       *pdu) {
 
-  LOG_D(CU_F1AP, "CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER\n");
+  LOG_D(F1AP, "CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER\n");
   // decode the F1 message
   // get the rrc message from the contauiner 
   // call func rrc_eNB_decode_ccch: <-- needs some update here
@@ -80,8 +80,8 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   DevAssert(pdu != NULL);
   
   if (stream != 0) {
-    LOG_E(CU_F1AP, "[SCTP %d] Received F1 on stream != 0 (%d)\n",
-               assoc_id, stream);
+    LOG_E(F1AP, "[SCTP %d] Received F1 on stream != 0 (%d)\n",
+          assoc_id, stream);
     return -1;
   }
   // TODO: use context 
@@ -94,7 +94,7 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
   du_ue_f1ap_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
-  LOG_D(CU_F1AP, "du_ue_f1ap_id %lu \n", du_ue_f1ap_id);
+  LOG_D(F1AP, "du_ue_f1ap_id %lu \n", du_ue_f1ap_id);
 
   /* NRCGI 
   * TODO: process NRCGI
@@ -122,9 +122,10 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   memcpy(RRC_MAC_CCCH_DATA_IND (message_p).sdu, ie->value.choice.RRCContainer.buf,
          ccch_sdu_len);
   #ifdef F1AP_DEBUG
-  LOG_I(CU_F1AP, "RRCContainer(CCCH) :");
-  for (int i=0;i<ie->value.choice.RRCContainer.size;i++) printf("%2x ",RRC_MAC_CCCH_DATA_IND (message_p).sdu[i]);
-  LOG_I(CU_F1AP, "\n");
+  LOG_I(F1AP, "RRCContainer (CCCH):");
+  for (int i = 0; i < ie->value.choice.RRCContainer.size; i++)
+    printf("%2x ", RRC_MAC_CCCH_DATA_IND (message_p).sdu[i]);
+  printf("\n");
 #endif 
   // Find instance from nr_cellid
   int rrc_inst = -1;
@@ -140,7 +141,7 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
 
   int f1ap_uid = f1ap_add_ue(&f1ap_cu_inst[rrc_inst], rrc_inst, CC_id, 0, rnti);
   if (f1ap_uid  < 0 ) {
-    LOG_E(CU_F1AP, "Failed to add UE \n");
+    LOG_E(F1AP, "Failed to add UE \n");
     return -1;
   }
   f1ap_cu_inst[rrc_inst].f1ap_ue[f1ap_uid].du_ue_f1ap_id = du_ue_f1ap_id;
@@ -194,8 +195,8 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
   ie->value.present                  = F1AP_DLRRCMessageTransferIEs__value_PR_GNB_CU_UE_F1AP_ID;
   ie->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(&f1ap_cu_inst[instance], f1ap_dl_rrc->rnti);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-  LOG_I(CU_F1AP, "Setting GNB_CU_UE_F1AP_ID %llu associated with UE RNTI %x (instance %d)\n", 
-                  (unsigned long long int)ie->value.choice.GNB_CU_UE_F1AP_ID, f1ap_dl_rrc->rnti, instance);
+  LOG_I(F1AP, "Setting GNB_CU_UE_F1AP_ID %llu associated with UE RNTI %x (instance %d)\n",
+        (unsigned long long int)ie->value.choice.GNB_CU_UE_F1AP_ID, f1ap_dl_rrc->rnti, instance);
 
 
   /* mandatory */
@@ -206,7 +207,7 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
   ie->value.present                  = F1AP_DLRRCMessageTransferIEs__value_PR_GNB_DU_UE_F1AP_ID;
   ie->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(&f1ap_cu_inst[instance], f1ap_dl_rrc->rnti);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-  LOG_I(CU_F1AP, "GNB_DU_UE_F1AP_ID %llu associated with UE RNTI %x \n", (unsigned long long int)ie->value.choice.GNB_DU_UE_F1AP_ID, f1ap_dl_rrc->rnti);
+  LOG_I(F1AP, "GNB_DU_UE_F1AP_ID %llu associated with UE RNTI %x \n", (unsigned long long int)ie->value.choice.GNB_DU_UE_F1AP_ID, f1ap_dl_rrc->rnti);
 
   /* optional */
   /* c3. oldgNB_DU_UE_F1AP_ID */
@@ -268,7 +269,7 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
  
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    LOG_E(CU_F1AP, "Failed to encode F1 setup request\n");
+    LOG_E(F1AP, "Failed to encode F1 setup request\n");
     return -1;
   }
 
@@ -286,7 +287,7 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                                       uint32_t         stream,
                                       F1AP_F1AP_PDU_t *pdu) {
 
-  LOG_D(CU_F1AP, "CU_handle_UL_RRC_MESSAGE_TRANSFER \n");
+  LOG_D(F1AP, "CU_handle_UL_RRC_MESSAGE_TRANSFER \n");
   
   F1AP_ULRRCMessageTransfer_t    *container;
   F1AP_ULRRCMessageTransferIEs_t *ie;
@@ -311,14 +312,14 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
   cu_ue_f1ap_id = ie->value.choice.GNB_CU_UE_F1AP_ID;
-  LOG_D(CU_F1AP, "cu_ue_f1ap_id %lu associated with RNTI %x\n", cu_ue_f1ap_id, f1ap_get_rnti_by_cu_id(&f1ap_cu_inst[instance], cu_ue_f1ap_id));
+  LOG_D(F1AP, "cu_ue_f1ap_id %lu associated with RNTI %x\n", cu_ue_f1ap_id, f1ap_get_rnti_by_cu_id(&f1ap_cu_inst[instance], cu_ue_f1ap_id));
 
 
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
   du_ue_f1ap_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
-  LOG_D(CU_F1AP, "du_ue_f1ap_id %lu associated with RNTI %x\n", du_ue_f1ap_id, f1ap_get_rnti_by_cu_id(&f1ap_cu_inst[instance], du_ue_f1ap_id));
+  LOG_D(F1AP, "du_ue_f1ap_id %lu associated with RNTI %x\n", du_ue_f1ap_id, f1ap_get_rnti_by_cu_id(&f1ap_cu_inst[instance], du_ue_f1ap_id));
 
 
   /* mandatory */
@@ -327,9 +328,9 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                              F1AP_ProtocolIE_ID_id_SRBID, true);
   srb_id = ie->value.choice.SRBID;
   if (srb_id < 1 ) 
-    LOG_E(CU_F1AP, "Unexpected UL RRC MESSAGE for srb_id %lu \n", srb_id);
+    LOG_E(F1AP, "Unexpected UL RRC MESSAGE for srb_id %lu \n", srb_id);
   else  
-    LOG_D(CU_F1AP, "UL RRC MESSAGE for srb_id %lu in DCCH \n", srb_id);
+    LOG_D(F1AP, "UL RRC MESSAGE for srb_id %lu in DCCH \n", srb_id);
 
 
   // issue in here
@@ -364,7 +365,7 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   ctxt.enb_flag = 1;
   mem_block_t *mb = get_free_mem_block(ie->value.choice.RRCContainer.size,__func__);
   memcpy((void*)mb->data,(void*)ie->value.choice.RRCContainer.buf,ie->value.choice.RRCContainer.size);
-  LOG_I(CU_F1AP, "Calling pdcp_data_ind for UE RNTI %x srb_id %lu with size %ld (DCCH) \n", ctxt.rnti, srb_id, ie->value.choice.RRCContainer.size);
+  LOG_I(F1AP, "Calling pdcp_data_ind for UE RNTI %x srb_id %lu with size %ld (DCCH) \n", ctxt.rnti, srb_id, ie->value.choice.RRCContainer.size);
   pdcp_data_ind (&ctxt,
      1, // srb_flag
      0, // embms_flag

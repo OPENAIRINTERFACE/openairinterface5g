@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file openair2/F1AP/CU_F1AP.c
+/*! \file openair2/F1AP/f1ap_cu_task.c
 * \brief data structures for F1 interface modules
 * \author EURECOM/NTUST
 * \date 2018
@@ -98,7 +98,7 @@ void cu_task_send_sctp_init_req(instance_t enb_id) {
   // 2. use RC.rrc[enb_id] to fill the sctp_init_t with the ip, port
   // 3. creat an itti message to init
 
-  LOG_I(CU_F1AP, "F1AP_CU_SCTP_REQ(create socket)\n");
+  LOG_I(F1AP, "F1AP_CU_SCTP_REQ(create socket)\n");
   MessageDef  *message_p = NULL;
 
   message_p = itti_alloc_new_message (TASK_CU_F1, SCTP_INIT_MSG);
@@ -124,7 +124,7 @@ void *F1AP_CU_task(void *arg) {
   MessageDef *received_msg = NULL;
   int         result;
 
-  LOG_I(CU_F1AP,"Starting F1AP at CU\n");
+  LOG_I(F1AP, "Starting F1AP at CU\n");
 
   // no RLC in CU, initialize mem pool for PDCP
   pool_buffer_init();
@@ -138,25 +138,28 @@ void *F1AP_CU_task(void *arg) {
     switch (ITTI_MSG_ID(received_msg)) {
 
       case SCTP_NEW_ASSOCIATION_IND:
-        LOG_I(CU_F1AP, "CU Task Received SCTP_NEW_ASSOCIATION_IND for instance %d\n",ITTI_MESSAGE_GET_INSTANCE(received_msg));
+        LOG_I(F1AP, "CU Task Received SCTP_NEW_ASSOCIATION_IND for instance %d\n",
+              ITTI_MESSAGE_GET_INSTANCE(received_msg));
         cu_task_handle_sctp_association_ind(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                          &received_msg->ittiMsg.sctp_new_association_ind);
         break;
 
       case SCTP_NEW_ASSOCIATION_RESP:
-        LOG_I(CU_F1AP, "CU Task Received SCTP_NEW_ASSOCIATION_RESP for instance %d\n",ITTI_MESSAGE_GET_INSTANCE(received_msg));
+        LOG_I(F1AP, "CU Task Received SCTP_NEW_ASSOCIATION_RESP for instance %d\n",
+              ITTI_MESSAGE_GET_INSTANCE(received_msg));
         cu_task_handle_sctp_association_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                          &received_msg->ittiMsg.sctp_new_association_resp);
         break;
 
       case SCTP_DATA_IND:
-        LOG_I(CU_F1AP, "CU Task Received SCTP_DATA_IND for Instance %d\n",ITTI_MESSAGE_GET_INSTANCE(received_msg));
+        LOG_I(F1AP, "CU Task Received SCTP_DATA_IND for Instance %d\n",
+              ITTI_MESSAGE_GET_INSTANCE(received_msg));
         cu_task_handle_sctp_data_ind(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                         &received_msg->ittiMsg.sctp_data_ind);
         break;
 
       case F1AP_SETUP_RESP: // from rrc
-        LOG_I(CU_F1AP, "CU Task Received F1AP_SETUP_RESP\n");
+        LOG_I(F1AP, "CU Task Received F1AP_SETUP_RESP\n");
         // CU_send_f1setup_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
         //                                       &F1AP_SETUP_RESP(received_msg));
         CU_send_F1_SETUP_RESPONSE(ITTI_MESSAGE_GET_INSTANCE(received_msg),
@@ -164,13 +167,13 @@ void *F1AP_CU_task(void *arg) {
         break;
 
      case F1AP_DL_RRC_MESSAGE: // from rrc
-        LOG_I(CU_F1AP, "CU Task Received F1AP_DL_RRC_MESSAGE\n");
+        LOG_I(F1AP, "CU Task Received F1AP_DL_RRC_MESSAGE\n");
         CU_send_DL_RRC_MESSAGE_TRANSFER(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                                &F1AP_DL_RRC_MESSAGE(received_msg));
         break;
 
      case F1AP_UE_CONTEXT_RELEASE_CMD: // from rrc
-        LOG_I(CU_F1AP, "CU Task Received F1AP_UE_CONTEXT_RELEASE_CMD\n");
+        LOG_I(F1AP, "CU Task Received F1AP_UE_CONTEXT_RELEASE_CMD\n");
         CU_send_UE_CONTEXT_RELEASE_COMMAND(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                            &F1AP_UE_CONTEXT_RELEASE_CMD(received_msg));
         break;
@@ -184,13 +187,13 @@ void *F1AP_CU_task(void *arg) {
 //       break;
 
       case TERMINATE_MESSAGE:
-        LOG_W(CU_F1AP, " *** Exiting CU_F1AP thread\n");
+        LOG_W(F1AP, " *** Exiting F1AP thread\n");
         itti_exit_task();
         break;
 
       default:
-        LOG_E(CU_F1AP, "CU Received unhandled message: %d:%s\n",
-                  ITTI_MSG_ID(received_msg), ITTI_MSG_NAME(received_msg));
+        LOG_E(F1AP, "CU Received unhandled message: %d:%s\n",
+              ITTI_MSG_ID(received_msg), ITTI_MSG_NAME(received_msg));
         break;
     } // switch
     result = itti_free (ITTI_MSG_ORIGIN_ID(received_msg), received_msg);

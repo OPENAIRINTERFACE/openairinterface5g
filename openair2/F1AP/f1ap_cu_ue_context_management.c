@@ -752,7 +752,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    LOG_E(CU_F1AP, "Failed to encode F1 setup request\n");
+    LOG_E(F1AP, "Failed to encode F1 setup request\n");
     return -1;
   }
 
@@ -823,7 +823,7 @@ int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t       instance,
   }
   */
 
-  LOG_I(CU_F1AP, "Received UE CONTEXT RELEASE REQUEST: Trigger RRC for RNTI %x\n", rnti);
+  LOG_I(F1AP, "Received UE CONTEXT RELEASE REQUEST: Trigger RRC for RNTI %x\n", rnti);
   struct rrc_eNB_ue_context_s *ue_context_pP;
   ue_context_pP = rrc_eNB_get_ue_context(RC.rrc[instance], rnti);
   rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(
@@ -917,7 +917,7 @@ int CU_send_UE_CONTEXT_RELEASE_COMMAND(instance_t instance,
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    LOG_E(DU_F1AP, "Failed to encode F1 context release command\n");
+    LOG_E(F1AP, "Failed to encode F1 context release command\n");
     return -1;
   }
 
@@ -1000,7 +1000,7 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
     flexran_agent_get_rrc_xface(instance)->flexran_agent_notify_ue_state_change(
         instance, rnti, PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
 
-  LOG_I(CU_F1AP, "Received UE CONTEXT RELEASE COMPLETE: Removing CU UE entry for RNTI %x\n", rnti);
+  LOG_I(F1AP, "Received UE CONTEXT RELEASE COMPLETE: Removing CU UE entry for RNTI %x\n", rnti);
   f1ap_remove_ue(&f1ap_cu_inst[instance], rnti);
   return 0;
 }
@@ -1469,7 +1469,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance) {
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    LOG_E(CU_F1AP, "Failed to encode F1 setup request\n");
+    LOG_E(F1AP, "Failed to encode F1 setup request\n");
     return -1;
   }
 

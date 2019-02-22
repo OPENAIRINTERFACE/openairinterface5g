@@ -406,8 +406,6 @@ int logInit (void) {
   register_log_component("GTPV1U","",GTPU);
   register_log_component("S1AP","",S1AP);
   register_log_component("F1AP","",F1AP);
-  register_log_component("CU_F1AP","",CU_F1AP);
-  register_log_component("DU_F1AP","",DU_F1AP);
   register_log_component("X2AP","",X2AP);
   register_log_component("SCTP","",SCTP);
   register_log_component("X2AP","",X2AP);

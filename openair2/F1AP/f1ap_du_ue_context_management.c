@@ -547,7 +547,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance) {
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    LOG_E(DU_F1AP, "Failed to encode F1 setup request\n");
+    LOG_E(F1AP, "Failed to encode F1 setup request\n");
     return -1;
   }
 
@@ -631,7 +631,7 @@ int DU_send_UE_CONTEXT_RELEASE_REQUEST(instance_t instance,
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    LOG_E(DU_F1AP, "Failed to encode F1 context release request\n");
+    LOG_E(F1AP, "Failed to encode F1 context release request\n");
     return -1;
   }
 
@@ -712,16 +712,16 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
       case RLC_OP_STATUS_OK:
         break;
       case RLC_OP_STATUS_BAD_PARAMETER:
-        LOG_W(DU_F1AP, "Data sending request over RLC failed with 'Bad Parameter' reason!\n");
+        LOG_W(F1AP, "Data sending request over RLC failed with 'Bad Parameter' reason!\n");
         break;
       case RLC_OP_STATUS_INTERNAL_ERROR:
-        LOG_W(DU_F1AP, "Data sending request over RLC failed with 'Internal Error' reason!\n");
+        LOG_W(F1AP, "Data sending request over RLC failed with 'Internal Error' reason!\n");
         break;
       case RLC_OP_STATUS_OUT_OF_RESSOURCES:
-        LOG_W(DU_F1AP, "Data sending request over RLC failed with 'Out of Resources' reason!\n");
+        LOG_W(F1AP, "Data sending request over RLC failed with 'Out of Resources' reason!\n");
         break;
       default:
-        LOG_W(DU_F1AP, "RLC returned an unknown status code after DU_F1AP placed "
+        LOG_W(F1AP, "RLC returned an unknown status code after F1AP placed "
               "the order to send some data (Status Code:%d)\n", rlc_status);
         break;
     }
@@ -740,7 +740,7 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
         else
           rrc_release_info.RRC_release_ctrl[release_num].flag = 2;
         rrc_release_info.RRC_release_ctrl[release_num].rnti = ctxt.rnti;
-        LOG_W(DU_F1AP, "add rrc_release_info RNTI %x\n", ctxt.rnti);
+        LOG_D(F1AP, "add rrc_release_info RNTI %x\n", ctxt.rnti);
         // TODO: how to provide the correct MUI?
         rrc_release_info.RRC_release_ctrl[release_num].rrc_eNB_mui = 0;
         rrc_release_info.num_UEs++;
@@ -755,7 +755,7 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
     /* UE exists and is out of sync, drop the connection */
     mac_eNB_rrc_ul_failure(instance, 0, 0, 0, rnti);
   } else {
-    LOG_E(DU_F1AP, "no ue_context for RNTI %x, acknowledging release\n", rnti);
+    LOG_E(F1AP, "no ue_context for RNTI %x, acknowledging release\n", rnti);
   }
   
   /* TODO send this once the connection has really been released */
@@ -861,7 +861,7 @@ int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance,
   uint8_t  *buffer;
   uint32_t  len;
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    LOG_E(DU_F1AP, "Failed to encode F1 context release complete\n");
+    LOG_E(F1AP, "Failed to encode F1 context release complete\n");
     return -1;
   }
 
@@ -1267,7 +1267,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance) {
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    LOG_E(DU_F1AP, "Failed to encode F1 setup request\n");
+    LOG_E(F1AP, "Failed to encode F1 setup request\n");
     return -1;
   }
 

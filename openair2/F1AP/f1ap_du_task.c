@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file openair2/F1AP/DU_F1AP.c
+/*! \file openair2/F1AP/f1ap_du_task.c
 * \brief data structures for F1 interface modules
 * \author EURECOM/NTUST
 * \date 2018
@@ -132,7 +132,7 @@ void *F1AP_DU_task(void *arg) {
   MessageDef *received_msg = NULL;
   int         result;
 
-  LOG_I(DU_F1AP, "Starting F1AP at DU\n");
+  LOG_I(F1AP, "Starting F1AP at DU\n");
 
   //f1ap_eNB_prepare_internal_data();
 
@@ -153,7 +153,7 @@ void *F1AP_DU_task(void *arg) {
         // 1. save the itti msg so that you can use it to sen f1ap_setup_req, fill the f1ap_setup_req message, 
         // 2. store the message in f1ap context, that is also stored in RC
         // 2. send a sctp_association req
-        LOG_I(DU_F1AP, "DU Task Received F1AP_SETUP_REQ\n");
+        LOG_I(F1AP, "DU Task Received F1AP_SETUP_REQ\n");
         du_task_send_sctp_association_req(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                               &F1AP_SETUP_REQ(received_msg));
         break;
@@ -161,39 +161,39 @@ void *F1AP_DU_task(void *arg) {
       case SCTP_NEW_ASSOCIATION_RESP:
         // 1. store the respon
         // 2. send the f1setup_req
-        LOG_I(DU_F1AP, "DU Task Received SCTP_NEW_ASSOCIATION_RESP\n");
+        LOG_I(F1AP, "DU Task Received SCTP_NEW_ASSOCIATION_RESP\n");
         du_task_handle_sctp_association_resp(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                       &received_msg->ittiMsg.sctp_new_association_resp);
         break;
 
       case SCTP_DATA_IND: 
         // ex: any F1 incoming message for DU ends here
-        LOG_I(DU_F1AP, "DU Task Received SCTP_DATA_IND\n");
+        LOG_I(F1AP, "DU Task Received SCTP_DATA_IND\n");
         du_task_handle_sctp_data_ind(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                     &received_msg->ittiMsg.sctp_data_ind);
         break;
 
      case F1AP_UL_RRC_MESSAGE: // from rrc
-        LOG_I(DU_F1AP, "DU Task Received F1AP_UL_RRC_MESSAGE\n");
+        LOG_I(F1AP, "DU Task Received F1AP_UL_RRC_MESSAGE\n");
         AssertFatal (1 == 0, "Should not be here!\n" );
         //DU_send_UL_RRC_MESSAGE_TRANSFER(ITTI_MESSAGE_GET_INSTANCE(received_msg),
          //                               &F1AP_UL_RRC_MESSAGE(received_msg));
         break;
 
       case F1AP_UE_CONTEXT_RELEASE_REQ: // from MAC
-        LOG_I(DU_F1AP, "DU Task Received F1AP_UE_CONTEXT_RELEASE_REQ\n");
+        LOG_I(F1AP, "DU Task Received F1AP_UE_CONTEXT_RELEASE_REQ\n");
         DU_send_UE_CONTEXT_RELEASE_REQUEST(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                            &F1AP_UE_CONTEXT_RELEASE_REQ(received_msg));
         break;
 
       case TERMINATE_MESSAGE:
-        LOG_W(DU_F1AP, " *** Exiting DU_F1AP thread\n");
+        LOG_W(F1AP, " *** Exiting F1AP thread\n");
         itti_exit_task();
         break;
 
       default:
-        LOG_E(DU_F1AP, "DU Received unhandled message: %d:%s\n",
-                  ITTI_MSG_ID(received_msg), ITTI_MSG_NAME(received_msg));
+        LOG_E(F1AP, "DU Received unhandled message: %d:%s\n",
+              ITTI_MSG_ID(received_msg), ITTI_MSG_NAME(received_msg));
         break;
     } // switch
     result = itti_free (ITTI_MSG_ORIGIN_ID(received_msg), received_msg);

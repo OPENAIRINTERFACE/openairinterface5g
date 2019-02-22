@@ -84,7 +84,7 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
                                uint32_t stream,
                                F1AP_F1AP_PDU_t *pdu)
 {
-  LOG_D(CU_F1AP, "CU_handle_F1_SETUP_REQUEST\n");
+  LOG_D(F1AP, "CU_handle_F1_SETUP_REQUEST\n");
   
   MessageDef                         *message_p;
   F1AP_F1SetupRequest_t              *container;
@@ -112,7 +112,7 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_F1SetupRequestIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_ID, true);
   asn_INTEGER2ulong(&ie->value.choice.GNB_DU_ID, &F1AP_SETUP_REQ(message_p).gNB_DU_id);
-  LOG_D(CU_F1AP, "F1AP_SETUP_REQ(message_p).gNB_DU_id %lu \n", F1AP_SETUP_REQ(message_p).gNB_DU_id);
+  LOG_D(F1AP, "F1AP_SETUP_REQ(message_p).gNB_DU_id %lu \n", F1AP_SETUP_REQ(message_p).gNB_DU_id);
 
   /* gNB_DU_name */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_F1SetupRequestIEs_t, ie, container,
@@ -122,13 +122,14 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
          ie->value.choice.GNB_DU_Name.size);
   /* Convert the mme name to a printable string */
   F1AP_SETUP_REQ(message_p).gNB_DU_name[ie->value.choice.GNB_DU_Name.size] = '\0';
-  LOG_D(CU_F1AP, "F1AP_SETUP_REQ(message_p).gNB_DU_name %s \n", F1AP_SETUP_REQ(message_p).gNB_DU_name);
+  LOG_D(F1AP, "F1AP_SETUP_REQ(message_p).gNB_DU_name %s \n", F1AP_SETUP_REQ(message_p).gNB_DU_name);
 
   /* GNB_DU_Served_Cells_List */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_F1SetupRequestIEs_t, ie, container,
                               F1AP_ProtocolIE_ID_id_gNB_DU_Served_Cells_List, true);
   F1AP_SETUP_REQ(message_p).num_cells_available = ie->value.choice.GNB_DU_Served_Cells_List.list.count;
-  LOG_D(CU_F1AP, "F1AP_SETUP_REQ(message_p).num_cells_available %d \n", F1AP_SETUP_REQ(message_p).num_cells_available);
+  LOG_D(F1AP, "F1AP_SETUP_REQ(message_p).num_cells_available %d \n",
+        F1AP_SETUP_REQ(message_p).num_cells_available);
 
   int num_cells_available = F1AP_SETUP_REQ(message_p).num_cells_available;
 
@@ -139,7 +140,8 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     
     /* tac */
     OCTET_STRING_TO_INT16(&(served_celles_item_p->served_Cell_Information.fiveGS_TAC), F1AP_SETUP_REQ(message_p).tac[i]);
-    LOG_D(CU_F1AP, "F1AP_SETUP_REQ(message_p).tac[%d] %d \n", i, F1AP_SETUP_REQ(message_p).tac[i]);
+    LOG_D(F1AP, "F1AP_SETUP_REQ(message_p).tac[%d] %d \n",
+          i, F1AP_SETUP_REQ(message_p).tac[i]);
 
     /* - nRCGI */
     TBCD_TO_MCC_MNC(&(served_celles_item_p->served_Cell_Information.nRCGI.pLMN_Identity), F1AP_SETUP_REQ(message_p).mcc[i],
@@ -150,19 +152,20 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     // NR cellID
     BIT_STRING_TO_NR_CELL_IDENTITY(&served_celles_item_p->served_Cell_Information.nRCGI.nRCellIdentity,
 				   F1AP_SETUP_REQ(message_p).nr_cellid[i]);
-    LOG_D(CU_F1AP, "[SCTP %d] Received nRCGI: MCC %d, MNC %d, CELL_ID %llu\n", assoc_id,
-               F1AP_SETUP_REQ(message_p).mcc[i],
-               F1AP_SETUP_REQ(message_p).mnc[i],
-               (long long unsigned int)F1AP_SETUP_REQ(message_p).nr_cellid[i]);
-    LOG_D(CU_F1AP, "nr_cellId : %x %x %x %x %x\n",
-	   served_celles_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[0],
-	   served_celles_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[1],
-	   served_celles_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[2],
-	   served_celles_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[3],
-	   served_celles_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[4]);    
+    LOG_D(F1AP, "[SCTP %d] Received nRCGI: MCC %d, MNC %d, CELL_ID %llu\n", assoc_id,
+          F1AP_SETUP_REQ(message_p).mcc[i],
+          F1AP_SETUP_REQ(message_p).mnc[i],
+          (long long unsigned int)F1AP_SETUP_REQ(message_p).nr_cellid[i]);
+    LOG_D(F1AP, "nr_cellId : %x %x %x %x %x\n",
+          served_celles_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[0],
+          served_celles_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[1],
+          served_celles_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[2],
+          served_celles_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[3],
+          served_celles_item_p->served_Cell_Information.nRCGI.nRCellIdentity.buf[4]);
     /* - nRPCI */
     F1AP_SETUP_REQ(message_p).nr_pci[i] = served_celles_item_p->served_Cell_Information.nRPCI;
-    LOG_D(CU_F1AP, "F1AP_SETUP_REQ(message_p).nr_pci[%d] %d \n", i, F1AP_SETUP_REQ(message_p).nr_pci[i]);
+    LOG_D(F1AP, "F1AP_SETUP_REQ(message_p).nr_pci[%d] %d \n",
+          i, F1AP_SETUP_REQ(message_p).nr_pci[i]);
   
     // System Information
     /* mib */
@@ -172,7 +175,8 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     /* Convert the mme name to a printable string */
     F1AP_SETUP_REQ(message_p).mib[i][served_celles_item_p->gNB_DU_System_Information->mIB_message.size] = '\0';
     F1AP_SETUP_REQ(message_p).mib_length[i] = served_celles_item_p->gNB_DU_System_Information->mIB_message.size;
-    LOG_D(CU_F1AP, "F1AP_SETUP_REQ(message_p).mib[%d] %s , len = %d \n", i, F1AP_SETUP_REQ(message_p).mib[i], F1AP_SETUP_REQ(message_p).mib_length[i]);
+    LOG_D(F1AP, "F1AP_SETUP_REQ(message_p).mib[%d] %s , len = %d \n",
+          i, F1AP_SETUP_REQ(message_p).mib[i], F1AP_SETUP_REQ(message_p).mib_length[i]);
 
     /* sib1 */
     F1AP_SETUP_REQ(message_p).sib1[i] = calloc(served_celles_item_p->gNB_DU_System_Information->sIB1_message.size + 1, sizeof(char));
@@ -181,7 +185,8 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     /* Convert the mme name to a printable string */
     F1AP_SETUP_REQ(message_p).sib1[i][served_celles_item_p->gNB_DU_System_Information->sIB1_message.size] = '\0';
     F1AP_SETUP_REQ(message_p).sib1_length[i] = served_celles_item_p->gNB_DU_System_Information->sIB1_message.size;
-    LOG_D(CU_F1AP, "F1AP_SETUP_REQ(message_p).sib1[%d] %s , len = %d \n", i, F1AP_SETUP_REQ(message_p).sib1[i], F1AP_SETUP_REQ(message_p).sib1_length[i]);
+    LOG_D(F1AP, "F1AP_SETUP_REQ(message_p).sib1[%d] %s , len = %d \n",
+          i, F1AP_SETUP_REQ(message_p).sib1[i], F1AP_SETUP_REQ(message_p).sib1_length[i]);
   }
 
   
@@ -305,7 +310,7 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
   ie->value.present             = F1AP_F1SetupResponseIEs__value_PR_Cells_to_be_Activated_List;
 
   int num_cells_to_activate = f1ap_setup_resp->num_cells_to_activate;
-  LOG_D(CU_F1AP, "num_cells_to_activate = %d \n", num_cells_to_activate);
+  LOG_D(F1AP, "num_cells_to_activate = %d \n", num_cells_to_activate);
   for (i=0;
        i<num_cells_to_activate;
        i++) {
@@ -346,15 +351,16 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
 
       F1AP_GNB_CUSystemInformation_t *gNB_CUSystemInformation = (F1AP_GNB_CUSystemInformation_t *)calloc(1, sizeof(F1AP_GNB_CUSystemInformation_t));
 #ifdef F1AP_DEBUG
-      LOG_D(CU_F1AP, "SI %d: ",i);
-      for (int n=0;n<f1ap_setup_resp->SI_container_length[i][0];n++) printf("%2x ",f1ap_setup_resp->SI_container[i][0][n]);
-      LOG_D(CU_F1AP, "\n");
+      LOG_I(F1AP, "SI %d: ", i);
+      for (int n = 0; n < f1ap_setup_resp->SI_container_length[i][0]; n++)
+        printf("%2x ", f1ap_setup_resp->SI_container[i][0][n]);
+      printf("\n");
 #endif 
       OCTET_STRING_fromBuf(&gNB_CUSystemInformation->sImessage,
                            (const char*)f1ap_setup_resp->SI_container[i][0], 
                            f1ap_setup_resp->SI_container_length[i][0]);
 
-      LOG_D(CU_F1AP, "f1ap_setup_resp->SI_container_length = %d \n" , f1ap_setup_resp->SI_container_length[0][0]);
+      LOG_D(F1AP, "f1ap_setup_resp->SI_container_length = %d \n", f1ap_setup_resp->SI_container_length[0][0]);
       cells_to_be_activated_list_itemExtIEs->extensionValue.choice.GNB_CUSystemInformation = *gNB_CUSystemInformation;
 
 
@@ -375,7 +381,7 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    LOG_E(CU_F1AP, "Failed to encode F1 setup request\n");
+    LOG_E(F1AP, "Failed to encode F1 setup request\n");
     return -1;
   }
 
@@ -385,7 +391,7 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
 }
 
 int CU_send_F1_SETUP_FAILURE(instance_t instance) {
-  LOG_D(CU_F1AP, "CU_send_F1_SETUP_FAILURE\n");
+  LOG_D(F1AP, "CU_send_F1_SETUP_FAILURE\n");
   
   module_id_t enb_mod_idP;
   module_id_t cu_mod_idP;
@@ -461,7 +467,7 @@ int CU_send_F1_SETUP_FAILURE(instance_t instance) {
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    LOG_E(CU_F1AP, "Failed to encode F1 setup request\n");
+    LOG_E(F1AP, "Failed to encode F1 setup request\n");
     return -1;
   }
 
@@ -865,7 +871,7 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, module_id_t du_mod_
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    LOG_E(CU_F1AP, "Failed to encode F1 setup request\n");
+    LOG_E(F1AP, "Failed to encode F1 setup request\n");
     return -1;
   }
 

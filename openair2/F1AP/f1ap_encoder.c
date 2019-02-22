@@ -93,8 +93,6 @@ int f1ap_encode_pdu(F1AP_F1AP_PDU_t *pdu, uint8_t **buffer, uint32_t *length)
 
   *length = encoded;
 
-  /* Is the following needed? I moved the code here from CU_F1AP.c/DU_F1AP.c */
-  // ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_F1AP_F1AP_PDU, pdu);
   return encoded;
 }
 

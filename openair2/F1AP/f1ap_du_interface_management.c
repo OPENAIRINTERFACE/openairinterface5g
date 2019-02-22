@@ -145,7 +145,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
   ie->value.present             = F1AP_F1SetupRequestIEs__value_PR_GNB_DU_Served_Cells_List;
 
   int num_cells_available = f1ap_du_data->num_cells_available;
-  LOG_D(DU_F1AP, "num_cells_available = %d \n", num_cells_available);
+  LOG_D(F1AP, "num_cells_available = %d \n", num_cells_available);
   for (i=0;
        i<num_cells_available;
        i++) {
@@ -170,16 +170,17 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
         /* - nRCGI */
         F1AP_NRCGI_t nRCGI;
         MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i], &nRCGI.pLMN_Identity);
-	LOG_D(DU_F1AP, "plmn: (%d,%d)\n",f1ap_du_data->mcc[i],f1ap_du_data->mnc[i]);
+        LOG_D(F1AP, "plmn: (%d,%d)\n",f1ap_du_data->mcc[i],f1ap_du_data->mnc[i]);
         //MCC_MNC_TO_PLMNID(208, 95, 2, &nRCGI.pLMN_Identity);
 
         NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[i], &nRCGI.nRCellIdentity);
-	LOG_D(DU_F1AP, "nRCellIdentity (%llx): %x.%x.%x.%x.%x\n",(long long unsigned int)f1ap_du_data->nr_cellid[i],
-	       nRCGI.nRCellIdentity.buf[0],
-	       nRCGI.nRCellIdentity.buf[1],
-	       nRCGI.nRCellIdentity.buf[2],
-	       nRCGI.nRCellIdentity.buf[3],
-	       nRCGI.nRCellIdentity.buf[4]);
+        LOG_D(F1AP, "nRCellIdentity (%llx): %x.%x.%x.%x.%x\n",
+              (long long unsigned int)f1ap_du_data->nr_cellid[i],
+              nRCGI.nRCellIdentity.buf[0],
+              nRCGI.nRCellIdentity.buf[1],
+              nRCGI.nRCellIdentity.buf[2],
+              nRCGI.nRCellIdentity.buf[3],
+              nRCGI.nRCellIdentity.buf[4]);
 
         served_cell_information.nRCGI = nRCGI;
 
@@ -202,7 +203,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
         /* - broadcast PLMNs */
         // RK: add the num_available_broadcast_PLMNs to the message 
         int num_available_broadcast_PLMNs = 1; //f1ap_du_data->num_available_broadcast_PLMNs;
-        LOG_D(DU_F1AP, "num_available_broadcast_PLMNs = %d \n", num_available_broadcast_PLMNs);
+        LOG_D(F1AP, "num_available_broadcast_PLMNs = %d \n", num_available_broadcast_PLMNs);
         for (j=0;
             j<num_available_broadcast_PLMNs;    // num_available_broadcast_PLMNs
             j++) {
@@ -235,7 +236,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
 
             /* FDD.1.3 freqBandListNr */
             int fdd_ul_num_available_freq_Bands = f1ap_du_data->nr_mode_info[i].fdd.ul_num_frequency_bands;
-            LOG_D(DU_F1AP, "fdd_ul_num_available_freq_Bands = %d \n", fdd_ul_num_available_freq_Bands);
+            LOG_D(F1AP, "fdd_ul_num_available_freq_Bands = %d \n", fdd_ul_num_available_freq_Bands);
             int fdd_ul_j;
             for (fdd_ul_j=0;
                  fdd_ul_j<fdd_ul_num_available_freq_Bands;
@@ -248,7 +249,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
 
                   /* FDD.1.3.2 supportedSULBandList*/
                   int num_available_supported_SULBands = f1ap_du_data->nr_mode_info[i].fdd.ul_num_sul_frequency_bands;
-                  LOG_D(DU_F1AP, "num_available_supported_SULBands = %d \n", num_available_supported_SULBands);
+                  LOG_D(F1AP, "num_available_supported_SULBands = %d \n", num_available_supported_SULBands);
                   int fdd_ul_k;
                   for (fdd_ul_k=0;
                        fdd_ul_k<num_available_supported_SULBands;
@@ -277,7 +278,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
 
             /* FDD.2.3 freqBandListNr */
             int fdd_dl_num_available_freq_Bands = f1ap_du_data->nr_mode_info[i].fdd.dl_num_frequency_bands;
-            LOG_D(DU_F1AP, "fdd_dl_num_available_freq_Bands = %d \n", fdd_dl_num_available_freq_Bands);
+            LOG_D(F1AP, "fdd_dl_num_available_freq_Bands = %d \n", fdd_dl_num_available_freq_Bands);
             int fdd_dl_j;
             for (fdd_dl_j=0;
                  fdd_dl_j<fdd_dl_num_available_freq_Bands;
@@ -290,7 +291,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
 
                   /* FDD.2.3.2 supportedSULBandList*/
                   int num_available_supported_SULBands = f1ap_du_data->nr_mode_info[i].fdd.dl_num_sul_frequency_bands;
-                  LOG_D(DU_F1AP, "num_available_supported_SULBands = %d \n", num_available_supported_SULBands);
+                  LOG_D(F1AP, "num_available_supported_SULBands = %d \n", num_available_supported_SULBands);
                   int fdd_dl_k;
                   for (fdd_dl_k=0;
                        fdd_dl_k<num_available_supported_SULBands;
@@ -331,7 +332,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
 
             /* TDD.1.3 freqBandListNr */
             int tdd_num_available_freq_Bands = f1ap_du_data->nr_mode_info[i].tdd.num_frequency_bands;
-            LOG_D(DU_F1AP, "tdd_num_available_freq_Bands = %d \n", tdd_num_available_freq_Bands);
+            LOG_D(F1AP, "tdd_num_available_freq_Bands = %d \n", tdd_num_available_freq_Bands);
             int j;
             for (j=0;
                  j<tdd_num_available_freq_Bands;
@@ -344,7 +345,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
 
                   /* TDD.1.3.2 supportedSULBandList*/
                   int num_available_supported_SULBands = f1ap_du_data->nr_mode_info[i].tdd.num_sul_frequency_bands;
-                  LOG_D(DU_F1AP, "num_available_supported_SULBands = %d \n", num_available_supported_SULBands);
+                  LOG_D(F1AP, "num_available_supported_SULBands = %d \n", num_available_supported_SULBands);
                   int k;
                   for (k=0;
                        k<num_available_supported_SULBands;
@@ -399,7 +400,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    LOG_E(DU_F1AP, "Failed to encode F1 setup request\n");
+    LOG_E(F1AP, "Failed to encode F1 setup request\n");
     return -1;
   }
 
@@ -423,7 +424,7 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
 				F1AP_F1AP_PDU_t       *pdu)
 {
 
-   LOG_D(DU_F1AP, "DU_handle_F1_SETUP_RESPONSE\n");
+   LOG_D(F1AP, "DU_handle_F1_SETUP_RESPONSE\n");
 
    AssertFatal(pdu->present == F1AP_F1AP_PDU_PR_successfulOutcome,
 	       "pdu->present != F1AP_F1AP_PDU_PR_successfulOutcome\n");
@@ -444,8 +445,8 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
 
    MessageDef *msg_p = itti_alloc_new_message (TASK_DU_F1, F1AP_SETUP_RESP);
 
-   LOG_D(DU_F1AP, "F1AP: F1Setup-Resp: protocolIEs.list.count %d\n",
-	  in->protocolIEs.list.count);
+   LOG_D(F1AP, "F1AP: F1Setup-Resp: protocolIEs.list.count %d\n",
+         in->protocolIEs.list.count);
    for (int i=0;i < in->protocolIEs.list.count; i++) {
      ie = in->protocolIEs.list.array[i];
      switch (ie->id) {
@@ -455,8 +456,8 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
        AssertFatal(ie->value.present == F1AP_F1SetupResponseIEs__value_PR_TransactionID,
 		   "ie->value.present != F1AP_F1SetupResponseIEs__value_PR_TransactionID\n");
        TransactionId=ie->value.choice.TransactionID;
-       LOG_D(DU_F1AP, "F1AP: F1Setup-Resp: TransactionId %d\n",
-	     TransactionId);
+       LOG_D(F1AP, "F1AP: F1Setup-Resp: TransactionId %d\n",
+             TransactionId);
        break;
      case F1AP_ProtocolIE_ID_id_gNB_CU_Name:
        AssertFatal(ie->criticality == F1AP_Criticality_ignore,
@@ -466,8 +467,8 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
        F1AP_SETUP_RESP (msg_p).gNB_CU_name = malloc(ie->value.choice.GNB_CU_Name.size+1);
        memcpy(F1AP_SETUP_RESP (msg_p).gNB_CU_name,ie->value.choice.GNB_CU_Name.buf,ie->value.choice.GNB_CU_Name.size);
        F1AP_SETUP_RESP (msg_p).gNB_CU_name[ie->value.choice.GNB_CU_Name.size]='\0';
-       LOG_D(DU_F1AP, "F1AP: F1Setup-Resp: gNB_CU_name %s\n",
-	      F1AP_SETUP_RESP (msg_p).gNB_CU_name);
+       LOG_D(F1AP, "F1AP: F1Setup-Resp: gNB_CU_name %s\n",
+             F1AP_SETUP_RESP (msg_p).gNB_CU_name);
        break;
      case F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List:
        AssertFatal(ie->criticality == F1AP_Criticality_reject,
@@ -475,7 +476,7 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
        AssertFatal(ie->value.present == F1AP_F1SetupResponseIEs__value_PR_Cells_to_be_Activated_List,
 		   "ie->value.present != F1AP_F1SetupResponseIEs__value_PR_Cells_to_be_Activated_List\n");
        num_cells_to_activate = ie->value.choice.Cells_to_be_Activated_List.list.count;
-       LOG_D(DU_F1AP, "F1AP: Activating %d cells\n",num_cells_to_activate);
+       LOG_D(F1AP, "F1AP: Activating %d cells\n",num_cells_to_activate);
        for (int i=0;i<num_cells_to_activate;i++) {
 	 
 	 F1AP_Cells_to_be_Activated_List_ItemIEs_t *cells_to_be_activated_list_item_ies = ie->value.choice.Cells_to_be_Activated_List.list.array[i];
@@ -491,12 +492,12 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
 
 	 TBCD_TO_MCC_MNC(&cell->nRCGI.pLMN_Identity, F1AP_SETUP_RESP (msg_p).mcc[i], F1AP_SETUP_RESP (msg_p).mnc[i], F1AP_SETUP_RESP (msg_p).mnc_digit_length[i]);
 	 AssertFatal(cell->nRPCI != NULL, "nRPCI is null\n");
-	 LOG_D(DU_F1AP, "nr_cellId : %x %x %x %x %x\n",
-		cell->nRCGI.nRCellIdentity.buf[0],
-		cell->nRCGI.nRCellIdentity.buf[1],
-		cell->nRCGI.nRCellIdentity.buf[2],
-		cell->nRCGI.nRCellIdentity.buf[3],
-		cell->nRCGI.nRCellIdentity.buf[4]);
+	 LOG_D(F1AP, "nr_cellId : %x %x %x %x %x\n",
+         cell->nRCGI.nRCellIdentity.buf[0],
+         cell->nRCGI.nRCellIdentity.buf[1],
+         cell->nRCGI.nRCellIdentity.buf[2],
+         cell->nRCGI.nRCellIdentity.buf[3],
+         cell->nRCGI.nRCellIdentity.buf[4]);
 	 BIT_STRING_TO_NR_CELL_IDENTITY(&cell->nRCGI.nRCellIdentity,
 					F1AP_SETUP_RESP (msg_p).nr_cellid[i]);
 	 F1AP_SETUP_RESP (msg_p).nrpci[i] = *cell->nRPCI;
@@ -505,13 +506,13 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
 	 AssertFatal(ext!=NULL,"Extension for SI is null\n");
 	 F1AP_SETUP_RESP (msg_p).num_SI[i] = ext->list.count;
 	 AssertFatal(ext->list.count==1,"At least one SI message should be there, and only 1 for now!\n");
-         LOG_D(DU_F1AP, "F1AP: F1Setup-Resp Cell %d MCC %d MNC %d NRCellid %lx num_si %d\n",
-             i, F1AP_SETUP_RESP (msg_p).mcc[i], F1AP_SETUP_RESP (msg_p).mnc[i],
-             F1AP_SETUP_RESP (msg_p).nr_cellid[i], F1AP_SETUP_RESP (msg_p).num_SI[i]);
+   LOG_D(F1AP, "F1AP: F1Setup-Resp Cell %d MCC %d MNC %d NRCellid %lx num_si %d\n",
+         i, F1AP_SETUP_RESP (msg_p).mcc[i], F1AP_SETUP_RESP (msg_p).mnc[i],
+         F1AP_SETUP_RESP (msg_p).nr_cellid[i], F1AP_SETUP_RESP (msg_p).num_SI[i]);
 	 for (int si =0;si < ext->list.count;si++) {
 	   size_t size = ext->list.array[si]->extensionValue.choice.GNB_CUSystemInformation.sImessage.size;
 	   F1AP_SETUP_RESP (msg_p).SI_container_length[i][si] = size;
-           LOG_D(DU_F1AP, "F1AP: F1Setup-Resp SI_container_length[%d][%d] %ld bytes\n", i, si, size);
+     LOG_D(F1AP, "F1AP: F1Setup-Resp SI_container_length[%d][%d] %ld bytes\n", i, si, size);
 	   F1AP_SETUP_RESP (msg_p).SI_container[i][si] = malloc(F1AP_SETUP_RESP (msg_p).SI_container_length[i][si]);
 
 	   memcpy((void*)F1AP_SETUP_RESP (msg_p).SI_container[i][si],
@@ -538,8 +539,8 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
     0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
     assoc_id);
  
-   LOG_D(DU_F1AP, "Sending F1AP_SETUP_RESP ITTI message to ENB_APP with assoc_id (%d->%d)\n",
-	  assoc_id,ENB_MODULE_ID_TO_INSTANCE(assoc_id));
+   LOG_D(F1AP, "Sending F1AP_SETUP_RESP ITTI message to ENB_APP with assoc_id (%d->%d)\n",
+         assoc_id,ENB_MODULE_ID_TO_INSTANCE(assoc_id));
    itti_send_msg_to_task(TASK_ENB_APP, ENB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
 
    return 0;
@@ -550,7 +551,7 @@ int DU_handle_F1_SETUP_FAILURE(instance_t instance,
                                uint32_t assoc_id,
                                uint32_t stream,
                                F1AP_F1AP_PDU_t *pdu) {
-  LOG_E(DU_F1AP, "DU_handle_F1_SETUP_FAILURE\n");
+  LOG_E(F1AP, "DU_handle_F1_SETUP_FAILURE\n");
   return 0;
 }
 
@@ -619,12 +620,12 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
         /* - nRCGI */
         F1AP_NRCGI_t nRCGI;
         MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i], &nRCGI.pLMN_Identity);
-	LOG_D(DU_F1AP, "nr_cellId : %x %x %x %x %x\n",
-	       nRCGI.nRCellIdentity.buf[0],
-	       nRCGI.nRCellIdentity.buf[1],
-	       nRCGI.nRCellIdentity.buf[2],
-	       nRCGI.nRCellIdentity.buf[3],
-	       nRCGI.nRCellIdentity.buf[4]);
+        LOG_D(F1AP, "nr_cellId : %x %x %x %x %x\n",
+              nRCGI.nRCellIdentity.buf[0],
+              nRCGI.nRCellIdentity.buf[1],
+              nRCGI.nRCellIdentity.buf[2],
+              nRCGI.nRCellIdentity.buf[3],
+              nRCGI.nRCellIdentity.buf[4]);
         NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[i], &nRCGI.nRCellIdentity);
         served_cell_information.nRCGI = nRCGI;
 
@@ -994,7 +995,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
 
 
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    LOG_E(DU_F1AP, "Failed to encode F1 setup request\n");
+    LOG_E(F1AP, "Failed to encode F1 setup request\n");
     return -1;
   }
 
