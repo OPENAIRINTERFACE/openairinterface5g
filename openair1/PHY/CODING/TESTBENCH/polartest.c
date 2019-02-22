@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
   double modulatedInput[coderLength]; //channel input
   double channelOutput[coderLength];  //add noise
   int16_t channelOutput_int16[coderLength];
-  t_nrPolar_params currentPtr = nr_polar_params(polarMessageType, testLength, aggregation_level);
+  t_nrPolar_params *currentPtr = nr_polar_params(polarMessageType, testLength, aggregation_level);
 #ifdef DEBUG_DCI_POLAR_PARAMS
   uint32_t dci_pdu[4];
   memset(dci_pdu,0,sizeof(uint32_t)*4);
