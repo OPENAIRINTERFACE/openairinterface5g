@@ -1247,16 +1247,17 @@ check_Msg4_retransmission(module_id_t module_idP, int CC_idP,
     dl_config_pdu = &dl_req_body->dl_config_pdu_list[dl_req_body->number_pdu];
     N_RB_DL = to_prb(cc[CC_idP].mib->message.dl_Bandwidth);
 
-    LOG_D(MAC,
+    LOG_I(MAC,
 	  "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Checking if Msg4 for harq_pid %d was acknowledged (round %d), UE_id: %d \n",
 	  module_idP, CC_idP, frameP, subframeP, ra->harq_pid, round, UE_id);
 
     if (round != 8) {
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-	if (ra->rach_resource_type > 0) {
+	if (ra->rach_resource_type > 0 && round > 0) {
 	    AssertFatal(1 == 0,
-			"Msg4 Retransmissions not handled yet for BL/CE UEs\n");
+			"Msg4 Retransmissions not handled yet for BL/CE UEs, Frame %d, subframeP %d harq_pid %d round %d, UE_id: %d \n",
+                        frameP, subframeP, ra->harq_pid, round, UE_id);
 	} else
 #endif
 	{

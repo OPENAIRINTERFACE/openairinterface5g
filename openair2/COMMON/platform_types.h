@@ -236,7 +236,7 @@ typedef struct protocol_ctxt_s {
   sub_frame_t subframe;      /*!< \brief  LTE sub frame number.*/
   eNB_index_t eNB_index;     /*!< \brief  valid for UE indicating the index of connected eNB(s)      */
   boolean_t   configured;  /*!< \brief  flag indicating whether the instance is configured or not  */
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   boolean_t		brOption;
 #endif
 } protocol_ctxt_t;

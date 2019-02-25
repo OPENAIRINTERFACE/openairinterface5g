@@ -719,7 +719,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 		  int     frame,
 		  uint8_t subframe,
 		  uint8_t pucch1_thres
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) 
 		  ,uint8_t br_flag
 #endif
 		  )
@@ -989,7 +989,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 
     //for (j=0,l=0;l<(nsymb-1);l++) {
     for (j=0,l=0; l<nsymb; l++) {
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
       if (br_flag > 0 ) {
         if ((m&1) == 0)
           re_offset = (m*6) + frame_parms->first_carrier_offset;
@@ -1226,9 +1226,9 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
     } //phase
 
     stat_max/=(12);  //normalize to energy per symbol and RE
-#ifdef DEBUG_PUCCH_RX
-    printf("[eNB] PUCCH fmt1a/b:  stat_max : %d, phase_max : %d\n",stat_max,phase_max);
-#endif
+//#ifdef DEBUG_PUCCH_RX
+    LOG_I(PHY,"[eNB] PUCCH fmt1a/b:  stat_max : %d (%d : sigma2 %d), phase_max : %d\n",stat_max,dB_fixed(stat_max),sigma2_dB,phase_max);
+//#endif
 
     stat_re=0;
     stat_im=0;
@@ -1385,7 +1385,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 #if defined(USRP_REC_PLAY)
       LOG_D(PHY,"PUCCH 1a/b: NAK subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);
 #else
-      LOG_D(PHY,"PUCCH 1a/b: subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);
+      LOG_I(PHY,"PUCCH 1a/b: subframe %d : sigma2_dB %d, stat_max %d, pucch1_thres %d\n",subframe,sigma2_dB,dB_fixed(stat_max),pucch1_thres);
 #endif      
       *payload = 4;  // DTX
       ((int16_t*)&eNB->pucch1ab_stats[UE_id][(subframe<<10) + (eNB->pucch1ab_stats_cnt[UE_id][subframe])])[0] = (int16_t)(stat_re);
