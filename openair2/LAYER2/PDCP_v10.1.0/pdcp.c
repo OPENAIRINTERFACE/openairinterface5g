@@ -769,7 +769,11 @@ pdcp_data_ind(
          */
           if (nfapi_mode == 3) {
 #ifdef UESIM_EXPANSION
-            ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = 0;
+            if (UE_NAS_USE_TUN) {
+              ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = ctxt_pP->module_id;
+            } else {
+              ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = 0;
+            }
 #else
             ((pdcp_data_ind_header_t*) new_sdu_p->data)->inst  = ctxt_pP->module_id;
 #endif

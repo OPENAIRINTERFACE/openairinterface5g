@@ -109,7 +109,7 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
   int              pdcp_nb_sdu_sent = 0;
   int              ret=0;
 
-  while ((sdu_p = list_get_head (&pdcp_sdu_list)) != NULL) {
+  while ((sdu_p = list_get_head (&pdcp_sdu_list)) != NULL && ((pdcp_data_ind_header_t *)(sdu_p->data))->inst == ctxt_pP->module_id) {
     ((pdcp_data_ind_header_t *)(sdu_p->data))->inst = 0;
     int rb_id = ((pdcp_data_ind_header_t *)(sdu_p->data))->rb_id;
     int sizeToWrite= sizeof (pdcp_data_ind_header_t) +
