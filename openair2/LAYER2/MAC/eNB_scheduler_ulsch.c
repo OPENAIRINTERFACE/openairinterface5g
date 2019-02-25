@@ -1916,7 +1916,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
                               frame_t       frameP,
                               sub_frame_t   subframeP,
-                              int           sched_subframeP,
+                              unsigned char sched_subframeP,
                               int          *emtc_active)
 //-----------------------------------------------------------------------------
 {
