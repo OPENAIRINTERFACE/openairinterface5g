@@ -616,104 +616,115 @@ void generate_Msg2(module_id_t module_idP,
 	}			// Msg2 frame/subframe condition
     }				// else BL/CE
 }
-void
-generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
-	      sub_frame_t subframeP, RA_t * ra)
-{
 
-  
+//------------------------------------------------------------------------------
+/*
+ * Generate message 4 of RA procedure (RRC connection setup)
+ */
+void
+generate_Msg4(module_id_t module_idP, 
+              int CC_idP, 
+              frame_t frameP,
+	            sub_frame_t subframeP, 
+              RA_t * ra)
+//------------------------------------------------------------------------------
+{  
   eNB_MAC_INST *mac = RC.mac[module_idP];
   COMMON_channels_t *cc = mac->common_channels;
-  int16_t rrc_sdu_length;
+  UE_list_t *UE_list = &(mac->UE_list);
+
+  int16_t rrc_sdu_length = 0;
+  uint16_t msg4_padding = 0;
+  uint16_t msg4_post_padding = 0;
+  uint16_t msg4_header = 0;
   int UE_id = -1;
-  uint16_t msg4_padding;
-  uint16_t msg4_post_padding;
-  uint16_t msg4_header;
+  int first_rb = 0;
+  int N_RB_DL = 0;
+  uint8_t lcid = 0;
+  uint8_t offset = 0;
+  uint8_t *vrb_map = NULL;
   
-  uint8_t                         *vrb_map;
-  int                             first_rb;
-  int                             N_RB_DL;
-  nfapi_dl_config_request_pdu_t   *dl_config_pdu;
-  nfapi_ul_config_request_pdu_t   *ul_config_pdu;
-  nfapi_tx_request_pdu_t          *TX_req;
-  UE_list_t                       *UE_list=&mac->UE_list;
-  nfapi_dl_config_request_t      *dl_req;
-  nfapi_dl_config_request_body_t *dl_req_body;
-  nfapi_ul_config_request_body_t *ul_req_body;
-  uint8_t                         lcid;
-  uint8_t                         offset;
+  nfapi_dl_config_request_pdu_t   *dl_config_pdu = NULL;
+  nfapi_ul_config_request_pdu_t   *ul_config_pdu = NULL;
+  nfapi_tx_request_pdu_t          *TX_req = NULL;
 
-
+  nfapi_dl_config_request_t      *dl_req = NULL;
+  nfapi_dl_config_request_body_t *dl_req_body = NULL;
+  nfapi_ul_config_request_body_t *ul_req_body = NULL;
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  int             rmax = 0;
-  int             rep = 0;
-  int             reps = 0;
-
+  int rmax = 0;
+  int rep = 0;
+  int reps = 0;
 
   first_rb = 0;
-  struct LTE_PRACH_ConfigSIB_v1310 *ext4_prach;
-  struct LTE_PUCCH_ConfigCommon_v1310 *ext4_pucch;
-  LTE_PRACH_ParametersListCE_r13_t *prach_ParametersListCE_r13;
-  struct LTE_N1PUCCH_AN_InfoList_r13 *pucch_N1PUCCH_AN_InfoList_r13;
+
+  struct LTE_PRACH_ConfigSIB_v1310 *ext4_prach = NULL;
+  struct LTE_PUCCH_ConfigCommon_v1310 *ext4_pucch = NULL;
+  LTE_PRACH_ParametersListCE_r13_t *prach_ParametersListCE_r13 = NULL;
+  struct LTE_N1PUCCH_AN_InfoList_r13 *pucch_N1PUCCH_AN_InfoList_r13 = NULL;
   LTE_PRACH_ParametersCE_r13_t *p[4] = { NULL, NULL, NULL, NULL };
   int             pucchreps[4] = { 1, 1, 1, 1 };
   int             n1pucchan[4] = { 0, 0, 0, 0 };
 
-  if (cc[CC_idP].mib->message.schedulingInfoSIB1_BR_r13 > 0 && 
-      cc[CC_idP].radioResourceConfigCommon_BR) {
+  if (cc[CC_idP].mib->message.schedulingInfoSIB1_BR_r13 > 0 && cc[CC_idP].radioResourceConfigCommon_BR) {
 
     ext4_prach = cc[CC_idP].radioResourceConfigCommon_BR->ext4->prach_ConfigCommon_v1310;
-    ext4_pucch = cc[CC_idP].radioResourceConfigCommon_BR->ext4->pucch_ConfigCommon_v1310;
     prach_ParametersListCE_r13 = &ext4_prach->prach_ParametersListCE_r13;
+
+    ext4_pucch = cc[CC_idP].radioResourceConfigCommon_BR->ext4->pucch_ConfigCommon_v1310;
     pucch_N1PUCCH_AN_InfoList_r13 = ext4_pucch->n1PUCCH_AN_InfoList_r13;
+    
     AssertFatal (prach_ParametersListCE_r13 != NULL, "prach_ParametersListCE_r13 is null\n");
     AssertFatal (pucch_N1PUCCH_AN_InfoList_r13 != NULL, "pucch_N1PUCCH_AN_InfoList_r13 is null\n");
-    // check to verify CE-Level compatibility in SIB2_BR
+    
+    /* Check to verify CE-Level compatibility in SIB2_BR */
     AssertFatal (prach_ParametersListCE_r13->list.count == pucch_N1PUCCH_AN_InfoList_r13->list.count, "prach_ParametersListCE_r13->list.count!= pucch_N1PUCCH_AN_InfoList_r13->list.count\n");
 
     switch (prach_ParametersListCE_r13->list.count) {
-    case 4:
-      p[3] = prach_ParametersListCE_r13->list.array[3];
-      n1pucchan[3] = *pucch_N1PUCCH_AN_InfoList_r13->list.array[3];
-      AssertFatal (ext4_pucch->pucch_NumRepetitionCE_Msg4_Level3_r13 != NULL, "pucch_NumRepetitionCE_Msg4_Level3 shouldn't be NULL\n");
-      pucchreps[3] = (int) (4 << *ext4_pucch->pucch_NumRepetitionCE_Msg4_Level3_r13);
+      case 4:
+        p[3] = prach_ParametersListCE_r13->list.array[3];
+        n1pucchan[3] = *pucch_N1PUCCH_AN_InfoList_r13->list.array[3];
+        AssertFatal(ext4_pucch->pucch_NumRepetitionCE_Msg4_Level3_r13 != NULL, "pucch_NumRepetitionCE_Msg4_Level3 shouldn't be NULL\n");
+        pucchreps[3] = (int) (4 << *ext4_pucch->pucch_NumRepetitionCE_Msg4_Level3_r13);
 
-    case 3:
-      p[2] = prach_ParametersListCE_r13->list.array[2];
-      n1pucchan[2] = *pucch_N1PUCCH_AN_InfoList_r13->list.array[2];
-      AssertFatal (ext4_pucch->pucch_NumRepetitionCE_Msg4_Level2_r13 != NULL, "pucch_NumRepetitionCE_Msg4_Level2 shouldn't be NULL\n");
-      pucchreps[2] = (int) (4 << *ext4_pucch->pucch_NumRepetitionCE_Msg4_Level2_r13);
-    case 2:
-      p[1] = prach_ParametersListCE_r13->list.array[1];
-      n1pucchan[1] = *pucch_N1PUCCH_AN_InfoList_r13->list.array[1];
-      AssertFatal (ext4_pucch->pucch_NumRepetitionCE_Msg4_Level1_r13 != NULL, "pucch_NumRepetitionCE_Msg4_Level1 shouldn't be NULL\n");
-      pucchreps[1] = (int) (1 << *ext4_pucch->pucch_NumRepetitionCE_Msg4_Level1_r13);
-    case 1:
-      p[0] = prach_ParametersListCE_r13->list.array[0];
-      n1pucchan[0] = *pucch_N1PUCCH_AN_InfoList_r13->list.array[0];
-      AssertFatal (ext4_pucch->pucch_NumRepetitionCE_Msg4_Level0_r13 != NULL, "pucch_NumRepetitionCE_Msg4_Level0 shouldn't be NULL\n");
-      pucchreps[0] = (int) (1 << *ext4_pucch->pucch_NumRepetitionCE_Msg4_Level0_r13);
-      break;
-    default:
-      AssertFatal (1 == 0, "Illegal count for prach_ParametersListCE_r13 %d\n", prach_ParametersListCE_r13->list.count);
-
+      case 3:
+        p[2] = prach_ParametersListCE_r13->list.array[2];
+        n1pucchan[2] = *pucch_N1PUCCH_AN_InfoList_r13->list.array[2];
+        AssertFatal(ext4_pucch->pucch_NumRepetitionCE_Msg4_Level2_r13 != NULL, "pucch_NumRepetitionCE_Msg4_Level2 shouldn't be NULL\n");
+        pucchreps[2] = (int) (4 << *ext4_pucch->pucch_NumRepetitionCE_Msg4_Level2_r13);
+      case 2:
+        p[1] = prach_ParametersListCE_r13->list.array[1];
+        n1pucchan[1] = *pucch_N1PUCCH_AN_InfoList_r13->list.array[1];
+        AssertFatal(ext4_pucch->pucch_NumRepetitionCE_Msg4_Level1_r13 != NULL, "pucch_NumRepetitionCE_Msg4_Level1 shouldn't be NULL\n");
+        pucchreps[1] = (int) (1 << *ext4_pucch->pucch_NumRepetitionCE_Msg4_Level1_r13);
+      case 1:
+        p[0] = prach_ParametersListCE_r13->list.array[0];
+        n1pucchan[0] = *pucch_N1PUCCH_AN_InfoList_r13->list.array[0];
+        AssertFatal(ext4_pucch->pucch_NumRepetitionCE_Msg4_Level0_r13 != NULL, "pucch_NumRepetitionCE_Msg4_Level0 shouldn't be NULL\n");
+        pucchreps[0] = (int) (1 << *ext4_pucch->pucch_NumRepetitionCE_Msg4_Level0_r13);
+        break;
+      default:
+        AssertFatal(1 == 0, "Illegal count for prach_ParametersListCE_r13 %d\n", prach_ParametersListCE_r13->list.count);
     }
   }
 
 #endif
-
 
     vrb_map = cc[CC_idP].vrb_map;
 
     dl_req        = &mac->DL_req[CC_idP];
     dl_req_body   = &dl_req->dl_config_request_body;
     dl_config_pdu = &dl_req_body->dl_config_pdu_list[dl_req_body->number_pdu];
+    
     N_RB_DL = to_prb(cc[CC_idP].mib->message.dl_Bandwidth);
 
     UE_id = find_UE_id(module_idP, ra->rnti);
+    
     if (UE_id < 0) {
-      LOG_E(MAC,"Can't find UE for t-crnti %x, kill RA procedure for this UE\n",ra->rnti);
+      LOG_E(MAC, "Can't find UE for t-crnti %x, kill RA procedure for this UE\n",
+            ra->rnti);
+            
       cancel_ra_proc(module_idP, CC_idP, frameP, ra->rnti);
       return;
     }
