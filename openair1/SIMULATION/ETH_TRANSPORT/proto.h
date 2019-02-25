@@ -34,7 +34,7 @@
 #define EMU_PROTO_H_
 
 void init_bypass (void);
-void bypass_init ( unsigned int (*tx_handlerP) (unsigned char,char*, unsigned int*, unsigned int*),unsigned int (*rx_handlerP) (unsigned char,char*,unsigned int));
+void bypass_init ( unsigned int (*tx_handlerP) (unsigned char,char *, unsigned int *, unsigned int *),unsigned int (*rx_handlerP) (unsigned char,char *,unsigned int));
 int bypass_rx_data(unsigned int frame, unsigned int last_slot,
                    unsigned int next_slot, uint8_t is_master);
 void  bypass_signal_mac_phy(unsigned int frame, unsigned int last_slot,
@@ -43,7 +43,7 @@ void bypass_tx_data (emu_transport_info_t Type, unsigned int frame, unsigned int
 
 void emulation_tx_rx(void);
 
-unsigned int emul_tx_handler(unsigned char Mode,char *Tx_buffer,unsigned int* Nbytes,unsigned int *Nb_flows);
+unsigned int emul_tx_handler(unsigned char Mode,char *Tx_buffer,unsigned int *Nbytes,unsigned int *Nb_flows);
 unsigned int emul_rx_handler(unsigned char Mode,char *rx_buffer, unsigned int Nbytes);
 
 unsigned int emul_rx_data(void);

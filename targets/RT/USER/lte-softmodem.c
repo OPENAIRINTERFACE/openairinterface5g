@@ -608,9 +608,12 @@ int main( int argc, char **argv ) {
   logInit();
   printf("Reading in command-line options\n");
   get_options ();
+
   if (is_nos1exec(argv[0]) )
-       set_softmodem_optmask(SOFTMODEM_NOS1_BIT);
+    set_softmodem_optmask(SOFTMODEM_NOS1_BIT);
+
   EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
+
   if (CONFIG_ISFLAGSET(CONFIG_ABORT) ) {
     fprintf(stderr,"Getting configuration failed\n");
     exit(-1);
@@ -628,8 +631,7 @@ int main( int argc, char **argv ) {
   }
 
   cpuf=get_cpu_freq_GHz();
-  
-  printf("ITTI init, useMME: %i\n" ,EPC_MODE_ENABLED);
+  printf("ITTI init, useMME: %i\n",EPC_MODE_ENABLED);
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
   // initialize mscgen log after ITTI
@@ -638,7 +640,6 @@ int main( int argc, char **argv ) {
   }
 
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
-
   init_opt();
   // to make a graceful exit when ctrl-c is pressed
   signal(SIGSEGV, signal_handler);
@@ -654,6 +655,7 @@ int main( int argc, char **argv ) {
   fill_modeled_runtime_table(runtime_phy_rx,runtime_phy_tx);
   pdcp_module_init( ( IS_SOFTMODEM_NOS1 && !(IS_SOFTMODEM_NOKRNMOD))? (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT);
 #
+
   if (RC.nb_inst > 0)  {
     // don't create if node doesn't connect to RRC/S1/GTP
     if (create_tasks(1) < 0) {
@@ -666,6 +668,7 @@ int main( int argc, char **argv ) {
     printf("No ITTI, Initializing L1\n");
     RCconfig_L1();
   }
+
   /* Start the agent. If it is turned off in the configuration, it won't start */
   RCconfig_flexran();
 
@@ -745,8 +748,7 @@ int main( int argc, char **argv ) {
 
   LOG_I(ENB_APP,"NFAPI MODE:%s\n", nfapi_mode_str);
 
-
-if (nfapi_mode==2) {// VNF
+  if (nfapi_mode==2) {// VNF
 #if defined(PRE_SCD_THREAD)
     init_ru_vnf();  // ru pointer is necessary for pre_scd.
 #endif
@@ -767,7 +769,6 @@ if (nfapi_mode==2) {// VNF
 
   printf("wait_eNBs()\n");
   wait_eNBs();
-
   printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
 
   // RU thread and some L1 procedure aren't necessary in VNF or L2 FAPI simulator.
@@ -776,7 +777,8 @@ if (nfapi_mode==2) {// VNF
   if (RC.nb_RU >0 && nfapi_mode != 2) {
     printf("Initializing RU threads\n");
     init_RU(get_softmodem_params()->rf_config_file);
-    for (ru_id=0;ru_id<RC.nb_RU;ru_id++) {
+
+    for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
       RC.ru[ru_id]->rf_map.card=0;
       RC.ru[ru_id]->rf_map.chain=CC_id+(get_softmodem_params()->chain_offset);
     }

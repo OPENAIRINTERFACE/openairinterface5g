@@ -98,7 +98,9 @@ void get_common_options(void) {
 unsigned int is_nos1exec(char *exepath) {
   if ( strcmp( basename(exepath), "lte-softmodem-nos1") == 0)
     return 1;
+
   if ( strcmp( basename(exepath), "lte-uesoftmodem-nos1") == 0)
     return 1;
+
   return 0;
 }

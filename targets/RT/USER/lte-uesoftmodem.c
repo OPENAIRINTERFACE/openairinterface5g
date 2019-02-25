@@ -111,7 +111,7 @@ int nfapi_sync_var=-1; //!< protected by mutex \ref nfapi_sync_mutex
 
 uint8_t nfapi_mode = 0;
 #ifdef UESIM_EXPANSION
-uint16_t inst_pdcp_list[NUMBER_OF_UE_MAX];
+  uint16_t inst_pdcp_list[NUMBER_OF_UE_MAX];
 #endif
 uint16_t sf_ahead=2;
 int tddflag;
@@ -450,7 +450,7 @@ static void get_options(void) {
   }
 
   UE_scan=0;
-   
+
   if (tddflag > 0) {
     for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
       frame_parms[CC_id]->frame_type = TDD;
@@ -683,10 +683,9 @@ int main( int argc, char **argv ) {
 #endif
   int CC_id;
   uint8_t  abstraction_flag=0;
-#ifdef UESIM_EXPANSION  
-    memset(inst_pdcp_list, 0, sizeof(inst_pdcp_list));
+#ifdef UESIM_EXPANSION
+  memset(inst_pdcp_list, 0, sizeof(inst_pdcp_list));
 #endif
-
   // Default value for the number of UEs. It will hold,
   // if not changed from the command line option --num-ues
   NB_UE_INST=1;
@@ -695,9 +694,7 @@ int main( int argc, char **argv ) {
   int ret;
 #endif
   configmodule_interface_t *config_mod;
-
   start_background_system();
-
   config_mod = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY);
 
   if (config_mod == NULL) {
@@ -713,11 +710,11 @@ int main( int argc, char **argv ) {
   for (int i=0; i<MAX_NUM_CCs; i++) tx_max_power[i]=23;
 
   get_options ();
+
   if (is_nos1exec(argv[0]) )
-       set_softmodem_optmask(SOFTMODEM_NOS1_BIT);
+    set_softmodem_optmask(SOFTMODEM_NOS1_BIT);
+
   EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
-
-
   printf("Running with %d UE instances\n",NB_UE_INST);
 
   if (NB_UE_INST > 1 && simL1flag != 1 && nfapi_mode != 3) {
@@ -728,15 +725,17 @@ int main( int argc, char **argv ) {
   printf("NFAPI_MODE value: %d \n", nfapi_mode);
 
   // Checking option of nums_ue_thread.
-  if(NB_THREAD_INST < 1){
+  if(NB_THREAD_INST < 1) {
     printf("Running with 0 UE rxtx thread, exiting.\n");
     abort();
   }
+
   // Checking option's relation between nums_ue_thread and num-ues
-  if(NB_UE_INST <NB_THREAD_INST ){
+  if(NB_UE_INST <NB_THREAD_INST ) {
     printf("Number of UEs < number of UE rxtx threads, exiting.\n");
     abort();
   }
+
   // Not sure if the following is needed here
   /*if (CONFIG_ISFLAGSET(CONFIG_ABORT)) {
       if (UE_flag == 0) {
@@ -748,8 +747,6 @@ int main( int argc, char **argv ) {
         nfapi_mode = 4;
       }
     }*/
-
-
 #if T_TRACER
   T_Config_Init();
 #endif
@@ -824,7 +821,6 @@ int main( int argc, char **argv ) {
     RCConfig_sim();
   }
 
-  
   cpuf=get_cpu_freq_GHz();
 #ifndef DEADLINE_SCHEDULER
   printf("NO deadline scheduler\n");
@@ -856,7 +852,7 @@ int main( int argc, char **argv ) {
     exit_fun("Error getting processor affinity ");
   }
 
-  memset(cpu_affinity, 0 , sizeof(cpu_affinity));
+  memset(cpu_affinity, 0, sizeof(cpu_affinity));
 
   for (int j = 0; j < CPU_SETSIZE; j++) {
     if (CPU_ISSET(j, &cpuset)) {
@@ -869,6 +865,7 @@ int main( int argc, char **argv ) {
   LOG_I(HW, "CPU Affinity of main() function is... %s\n", cpu_affinity);
 #endif
 #if defined(ENABLE_ITTI)
+
   if (create_tasks_ue(NB_UE_INST) < 0) {
     printf("cannot create ITTI tasks\n");
     exit(-1); // need a softer mode
@@ -914,19 +911,16 @@ int main( int argc, char **argv ) {
 
   printf("NFAPI MODE:%s\n", nfapi_mode_str);
 
-  if (nfapi_mode==3) // UE-STUB-PNF
-  {
-      config_sync_var=0;
-      wait_nfapi_init("main?");
-      //Panos: Temporarily we will be using single set of threads for multiple UEs.
-      //init_UE_stub(1,eMBMS_active,uecap_xer_in,emul_iface);
-      init_UE_stub_single_thread(NB_UE_INST,eMBMS_active,uecap_xer_in,emul_iface);
+  if (nfapi_mode==3) { // UE-STUB-PNF
+    config_sync_var=0;
+    wait_nfapi_init("main?");
+    //Panos: Temporarily we will be using single set of threads for multiple UEs.
+    //init_UE_stub(1,eMBMS_active,uecap_xer_in,emul_iface);
+    init_UE_stub_single_thread(NB_UE_INST,eMBMS_active,uecap_xer_in,emul_iface);
+  } else {
+    init_UE(NB_UE_INST,eMBMS_active,uecap_xer_in,0,get_softmodem_params()->phy_test,UE_scan,UE_scan_carrier,mode,(int)rx_gain[0][0],tx_max_power[0],
+            frame_parms[0]);
   }
-  else {
-      init_UE(NB_UE_INST,eMBMS_active,uecap_xer_in,0,get_softmodem_params()->phy_test,UE_scan,UE_scan_carrier,mode,(int)rx_gain[0][0],tx_max_power[0],
-              frame_parms[0]);
-  }
-
 
   if (get_softmodem_params()->phy_test==0) {
     printf("Filling UE band info\n");
@@ -934,13 +928,15 @@ int main( int argc, char **argv ) {
     dl_phy_sync_success (0, 0, 0, 1);
   }
 
-  if (nfapi_mode!=3){
-      number_of_cards = 1;
-      for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-              PHY_vars_UE_g[0][CC_id]->rf_map.card=0;
-              PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+(get_softmodem_params()->chain_offset);
-      }
+  if (nfapi_mode!=3) {
+    number_of_cards = 1;
+
+    for(CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
+      PHY_vars_UE_g[0][CC_id]->rf_map.card=0;
+      PHY_vars_UE_g[0][CC_id]->rf_map.chain=CC_id+(get_softmodem_params()->chain_offset);
+    }
   }
+
   // connect the TX/RX buffers
 
   /*

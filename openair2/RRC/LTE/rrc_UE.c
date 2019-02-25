@@ -179,7 +179,6 @@ static int rrc_set_state (module_id_t ue_mod_idP, Rrc_State_t state) {
 
 //-----------------------------------------------------------------------------
 static int rrc_set_sub_state( module_id_t ue_mod_idP, Rrc_Sub_State_t subState ) {
-
   if (EPC_MODE_ENABLED) {
     switch (UE_rrc_inst[ue_mod_idP].RrcState) {
       case RRC_STATE_INACTIVE:
@@ -197,8 +196,7 @@ static int rrc_set_sub_state( module_id_t ue_mod_idP, Rrc_Sub_State_t subState )
                      "Invalid sub state %d for state %d!\n", subState, UE_rrc_inst[ue_mod_idP].RrcState);
         break;
     }
-}
-
+  }
 
   if (UE_rrc_inst[ue_mod_idP].RrcSubState != subState) {
     UE_rrc_inst[ue_mod_idP].RrcSubState = subState;
@@ -595,17 +593,14 @@ static void rrc_ue_generate_RRCConnectionSetupComplete( const protocol_ctxt_t *c
   const char *nas_msg;
   int   nas_msg_length;
 
-
   if (EPC_MODE_ENABLED) {
     nas_msg         = (char *) UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data;
     nas_msg_length  = UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.length;
   } else {
-   
     nas_msg         = nas_attach_req_imsi;
     nas_msg_length  = sizeof(nas_attach_req_imsi);
   }
 
- 
   size = do_RRCConnectionSetupComplete(ctxt_pP->module_id, buffer, Transaction_id, nas_msg_length, nas_msg);
   LOG_I(RRC,"[UE %d][RAPROC] Frame %d : Logical Channel UL-DCCH (SRB1), Generating RRCConnectionSetupComplete (bytes%d, eNB %d)\n",
         ctxt_pP->module_id,ctxt_pP->frame, size, eNB_index);
@@ -810,6 +805,7 @@ rrc_ue_establish_drb(
   (void)ip_addr_offset4;
   LOG_I(RRC,"[UE %d] Frame %d: processing RRCConnectionReconfiguration: reconfiguring DRB %ld/LCID %d\n",
         ue_mod_idP, frameP, DRB_config->drb_Identity, (int)*DRB_config->logicalChannelIdentity);
+
   /*
   rrc_pdcp_config_req (ue_mod_idP+NB_eNB_INST, frameP, 0, CONFIG_ACTION_ADD,
                              (eNB_index * NB_RB_MAX) + *DRB_config->logicalChannelIdentity, UNDEF_SECURITY_MODE);
@@ -845,6 +841,7 @@ rrc_ue_establish_drb(
 
 #    endif
   }
+
   return(0);
 }
 
@@ -1908,7 +1905,6 @@ rrc_ue_process_rrcConnectionReconfiguration(
             }
       */
 
-
       /* Check if there is dedicated NAS information to forward to NAS */
       if (rrcConnectionReconfiguration_r8->dedicatedInfoNASList != NULL) {
         int list_count;
@@ -1972,7 +1968,6 @@ rrc_ue_process_rrcConnectionReconfiguration(
         itti_send_msg_to_task (TASK_RAL_UE, ctxt_pP->instance, message_ral_p);
       }
 #endif
-
     } // c1 present
   } // critical extensions present
 }
@@ -2241,7 +2236,6 @@ rrc_ue_decode_dcch(
             UE_rrc_inst[ctxt_pP->module_id].Info[target_eNB_index].State = RRC_RECONFIGURED;
             LOG_I(RRC, "[UE %d] State = RRC_RECONFIGURED during HO (eNB %d)\n",
                   ctxt_pP->module_id, target_eNB_index);
-
 #if ENABLE_RAL
             {
               MessageDef                                 *message_ral_p = NULL;
@@ -2286,7 +2280,6 @@ rrc_ue_decode_dcch(
               LOG_I(RRC, "Sending RRC_RAL_CONNECTION_RECONFIGURATION_HO_IND to mRAL\n");
               itti_send_msg_to_task (TASK_RAL_UE, ctxt_pP->instance, message_ral_p);
             }
-
 #endif
           } else {
             rrc_ue_generate_RRCConnectionReconfigurationComplete(
@@ -3497,8 +3490,7 @@ int decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index ) {
 #endif
     LOG_D( RRC, "[UE] (*si)->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.count %d\n",
            (*si)->criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list.count );
-  }
-  else {
+  } else {
     LOG_D( RRC, "[UE] Unknown criticalExtension version (not Rel8)\n" );
     return -1;
   }
@@ -3559,9 +3551,7 @@ int decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index ) {
 #endif
             if (EPC_MODE_ENABLED) {
               rrc_ue_generate_RRCConnectionRequest( ctxt_pP, eNB_index );
-	    }
-
-
+            }
 
           if (UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].State == RRC_IDLE) {
             LOG_I( RRC, "[UE %d] Received SIB1/SIB2/SIB3 Switching to RRC_SI_RECEIVED\n", ctxt_pP->module_id );
@@ -3825,7 +3815,7 @@ int decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t eNB_index ) {
           sib1->schedulingInfoList.list.count);
   }
 
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_UE_DECODE_SI  , VCD_FUNCTION_OUT);
+  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_UE_DECODE_SI, VCD_FUNCTION_OUT);
   return 0;
 }
 
@@ -4093,7 +4083,7 @@ uint8_t check_trigger_meas_event(
   uint8_t eNB_offset;
   //  uint8_t currentCellIndex = frame_parms->Nid_cell;
   uint8_t tmp_offset;
-  LOG_I(RRC,"[UE %d] ofn(%ld) ocn(%ld) hys(%ld) ofs(%ld) ocs(%ld) a3_offset(%ld) ttt(%ld) rssi %3.1f\n",
+  LOG_D(RRC,"[UE %d] ofn(%ld) ocn(%ld) hys(%ld) ofs(%ld) ocs(%ld) a3_offset(%ld) ttt(%ld) rssi %3.1f\n",
         ue_mod_idP,
         ofn,ocn,hys,ofs,ocs,a3_offset,ttt,
         10*log10(get_RSSI(ue_mod_idP,0))-get_rx_total_gain_dB(ue_mod_idP,0));
@@ -5024,7 +5014,7 @@ rrc_control_socket_init() {
   //      error("ERROR: Failed on opening socket");
   optval = 1;
   setsockopt(ctrl_sock_fd, SOL_SOCKET, SO_REUSEADDR,
-             (const void *)&optval , sizeof(int));
+             (const void *)&optval, sizeof(int));
   //build the server's  address
   bzero((char *) &rrc_ctrl_socket_addr, sizeof(rrc_ctrl_socket_addr));
   rrc_ctrl_socket_addr.sin_family = AF_INET;

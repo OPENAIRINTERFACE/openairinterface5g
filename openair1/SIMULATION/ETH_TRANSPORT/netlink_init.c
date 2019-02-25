@@ -126,10 +126,10 @@ int netlink_init_tun(void) {
     nas_dest_addr.nl_family = AF_NETLINK;
     nas_dest_addr.nl_pid = 0;   /* For Linux Kernel */
     nas_dest_addr.nl_groups = 0; /* unicast */
-  // TX PART
+    // TX PART
     nas_nlh_tx=(struct nlmsghdr *)malloc(NLMSG_SPACE(NL_MAX_PAYLOAD));
     memset(nas_nlh_tx, 0, NLMSG_SPACE(NL_MAX_PAYLOAD));
-  /* Fill the netlink message header */
+    /* Fill the netlink message header */
     nas_nlh_tx->nlmsg_len = NLMSG_SPACE(NL_MAX_PAYLOAD);
     nas_nlh_tx->nlmsg_pid = 1;//getpid();  /* self pid */
     nas_nlh_tx->nlmsg_flags = 0;
@@ -140,13 +140,14 @@ int netlink_init_tun(void) {
     nas_msg_tx.msg_namelen = sizeof(nas_dest_addr);
     nas_msg_tx.msg_iov = &nas_iov_tx;
     nas_msg_tx.msg_iovlen = 1;
-  // RX PART
+    // RX PART
     memset(&nas_msg_rx,0,sizeof(nas_msg_rx));
     nas_msg_rx.msg_name = (void *)&nas_src_addr;
     nas_msg_rx.msg_namelen = sizeof(nas_src_addr);
     nas_msg_rx.msg_iov = &nas_iov_rx;
     nas_msg_rx.msg_iovlen = 1;
   } /* for */
+
   return 1;
 }
 

@@ -25,11 +25,11 @@
 # include "targets/RT/USER/lte-softmodem.h"
 
 #ifdef OPENAIR2
-    #include "sctp_eNB_task.h"
-    #include "x2ap_eNB.h"
-    #include "s1ap_eNB.h"
-    #include "udp_eNB_task.h"
-    #include "gtpv1u_eNB_task.h"
+  #include "sctp_eNB_task.h"
+  #include "x2ap_eNB.h"
+  #include "s1ap_eNB.h"
+  #include "udp_eNB_task.h"
+  #include "gtpv1u_eNB_task.h"
   #if ENABLE_RAL
     #include "lteRALue.h"
     #include "lteRALenb.h"
@@ -50,7 +50,6 @@ int create_tasks(uint32_t enb_nb) {
       return -1;
     }
   }
-
 
   if (EPC_MODE_ENABLED) {
     if (enb_nb > 0) {
@@ -82,7 +81,6 @@ int create_tasks(uint32_t enb_nb) {
       }
     }
   } /* if (EPC_MODE_ENABLED) */
-
 
   if (enb_nb > 0) {
     LOG_I(RRC,"Creating RRC eNB Task\n");

@@ -43,7 +43,7 @@
 
 /* Bugfix for version of GCC = 4.4.3 (Ubuntu 10.04) */
 #if GCC_VERSION <= 40403
-# include <sys/socket.h>
+  #include <sys/socket.h>
 #endif
 
 #include <linux/netlink.h>
@@ -93,13 +93,11 @@ pdcp_netlink_init(
 )
 //-----------------------------------------------------------------------------
 {
-
   int                i;
   int                nb_inst_enb;
   int                nb_inst_ue;
   pthread_attr_t     attr;
   struct sched_param sched_param;
-
   reset_meas(&ip_pdcp_stats_tmp);
   nb_inst_enb = 1;
   nb_inst_ue  = 1;
@@ -108,8 +106,8 @@ pdcp_netlink_init(
     nb_inst_enb = 0;
     LOG_I(PDCP, "[NETLINK] Creating 0 queues for eNB Netlink -> PDCP communication\n");
   } else {
-/* #warning " LG: When there will be handover in, there will problems because dim is based on local nums of ues" */
-    pdcp_netlink_queue_enb      = calloc(nb_inst_enb, sizeof(struct lfds611_queue_state*));
+    /* #warning " LG: When there will be handover in, there will problems because dim is based on local nums of ues" */
+    pdcp_netlink_queue_enb      = calloc(nb_inst_enb, sizeof(struct lfds611_queue_state *));
     pdcp_netlink_nb_element_enb = malloc(nb_inst_enb * sizeof(uint32_t));
     LOG_I(PDCP, "[NETLINK] Creating %d queues for eNB Netlink -> PDCP communication\n", nb_inst_enb);
 
@@ -123,11 +121,9 @@ pdcp_netlink_init(
     }
   }
 
-
   if (nb_inst_ue  > 0) {
-    pdcp_netlink_queue_ue       = calloc(nb_inst_ue, sizeof(struct lfds611_queue_state*));
+    pdcp_netlink_queue_ue       = calloc(nb_inst_ue, sizeof(struct lfds611_queue_state *));
     pdcp_netlink_nb_element_ue  = malloc(nb_inst_ue * sizeof(uint32_t));
-
     LOG_I(PDCP, "[NETLINK] Creating %d queues for UE Netlink -> PDCP communication\n", nb_inst_ue);
 
     for (i = 0; i < nb_inst_ue; i++) {
@@ -148,7 +144,6 @@ pdcp_netlink_init(
     }
 
     sched_param.sched_priority = 10;
-
     pthread_attr_setschedpolicy(&attr, SCHED_RR);
     pthread_attr_setschedparam(&attr, &sched_param);
 
@@ -171,21 +166,21 @@ pdcp_netlink_init(
 //-----------------------------------------------------------------------------
 int
 pdcp_netlink_dequeue_element(
-  const protocol_ctxt_t* const  ctxt_pP,
-  struct pdcp_netlink_element_s** data_ppP
+  const protocol_ctxt_t *const  ctxt_pP,
+  struct pdcp_netlink_element_s **data_ppP
 )
 //-----------------------------------------------------------------------------
 {
   int ret = 0;
 
   if (ctxt_pP->enb_flag) {
-    ret = lfds611_queue_dequeue(pdcp_netlink_queue_enb[ctxt_pP->module_id], (void**)data_ppP);
+    ret = lfds611_queue_dequeue(pdcp_netlink_queue_enb[ctxt_pP->module_id], (void **)data_ppP);
 
     if (ret != 0) {
       LOG_D(PDCP,"[NETLINK]De-queueing packet for eNB instance %d\n", ctxt_pP->module_id);
     }
   } else {
-    ret = lfds611_queue_dequeue(pdcp_netlink_queue_ue[ctxt_pP->module_id], (void**)data_ppP);
+    ret = lfds611_queue_dequeue(pdcp_netlink_queue_ue[ctxt_pP->module_id], (void **)data_ppP);
 
     if (ret != 0) {
       LOG_D(PDCP, "[NETLINK]De-queueing packet for UE instance %d\n", ctxt_pP->module_id);
@@ -209,8 +204,8 @@ void *pdcp_netlink_thread_fct(void *arg)
   memset(nl_rx_buf, 0, NL_MAX_PAYLOAD);
   LOG_I(PDCP, "[NETLINK_THREAD] binding to fd  %d\n",nas_sock_fd);
   MSC_START_USE();
-  while (1) {
 
+  while (1) {
     len = recvmsg(nas_sock_fd, &nas_msg_rx, 0);
 
     if (len == 0) {
@@ -267,7 +262,6 @@ void *pdcp_netlink_thread_fct(void *arg)
             }
 
             LOG_I(PDCP,"[NETLINK_THREAD] IP->PDCP : En-queueing packet for eNB module id %d\n", module_id);
-
             /* Enqueue the element in the right queue */
             lfds611_queue_guaranteed_enqueue(pdcp_netlink_queue_enb[module_id], new_data_p);
             stop_meas(&ip_pdcp_stats_tmp);
@@ -280,7 +274,6 @@ void *pdcp_netlink_thread_fct(void *arg)
             }
 
             LOG_I(PDCP,"[NETLINK_THREAD] IP->PDCP : En-queueing packet for UE module id  %d\n", module_id);
-
             /* Enqueue the element in the right queue */
             lfds611_queue_guaranteed_enqueue(pdcp_netlink_queue_ue[module_id], new_data_p);
             stop_meas(&ip_pdcp_stats_tmp);

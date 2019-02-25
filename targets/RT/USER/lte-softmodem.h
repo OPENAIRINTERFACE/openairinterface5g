@@ -241,20 +241,20 @@
 #define SOFTMODEM_BASICSIM_BIT        (1<<10)
 
 typedef struct {
-   uint64_t       optmask;
-   THREAD_STRUCT  thread_struct;
-   char           rf_config_file[1024];
-   int            phy_test;
-   uint8_t        usim_test;
-   int            emulate_rf;
-   int            wait_for_sync; //eNodeB only
-   int            single_thread_flag; //eNodeB only
-   int            chain_offset;
-   uint32_t       do_forms;
-   int            numerology;
-   unsigned int   start_msc;
-   uint32_t       clock_source;
-   int            hw_timing_advance;
+  uint64_t       optmask;
+  THREAD_STRUCT  thread_struct;
+  char           rf_config_file[1024];
+  int            phy_test;
+  uint8_t        usim_test;
+  int            emulate_rf;
+  int            wait_for_sync; //eNodeB only
+  int            single_thread_flag; //eNodeB only
+  int            chain_offset;
+  uint32_t       do_forms;
+  int            numerology;
+  unsigned int   start_msc;
+  uint32_t       clock_source;
+  int            hw_timing_advance;
 } softmodem_params_t;
 
 #define IS_SOFTMODEM_NOS1            ( get_softmodem_optmask() & SOFTMODEM_NOS1_BIT)
