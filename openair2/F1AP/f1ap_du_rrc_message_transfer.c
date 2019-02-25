@@ -147,9 +147,11 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   rrc_dl_sdu_len = ie->value.choice.RRCContainer.size;
   //  memcpy(RRC_MAC_CCCH_DATA_IND (message_p).sdu, ie->value.choice.RRCContainer.buf,
   //         ccch_sdu_len);
-  printf ("RRCContainer :");
-  for (int i=0;i<ie->value.choice.RRCContainer.size;i++) printf("%2x ",ie->value.choice.RRCContainer.buf[i]);
-  printf("\n");
+
+  //LOG_I(F1AP, "%s() RRCContainer size %lu: ", __func__, ie->value.choice.RRCContainer.size);
+  //for (int i = 0;i < ie->value.choice.RRCContainer.size; i++)
+  //  printf("%02x ", ie->value.choice.RRCContainer.buf[i]);
+  //printf("\n");
 
   /* optional */
   /* RAT_FrequencyPriorityInformation */
@@ -523,15 +525,15 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   pdcp_pdu_p = get_free_mem_block(rrc_dl_sdu_len, __func__);
   memset(pdcp_pdu_p->data, 0, rrc_dl_sdu_len);
   memcpy(&pdcp_pdu_p->data[0], ie->value.choice.RRCContainer.buf, rrc_dl_sdu_len);
-#ifdef DEBUG_MSG
-  printf ("PRRCContainer size %d:", ie->value.choice.RRCContainer.size);
-  for (int i=0;i<ie->value.choice.RRCContainer.size;i++) printf("%2x ",ie->value.choice.RRCContainer.buf[i]);
-  printf("\n");
 
-  printf ("PDCP PDU size %d:", rrc_dl_sdu_len);
-  for (int i=0;i<rrc_dl_sdu_len;i++) printf("%2x ",pdcp_pdu_p->data[i]);
-  printf("\n");
-#endif 
+  //LOG_I(F1AP, "PRRCContainer size %lu:", ie->value.choice.RRCContainer.size);
+  //for (int i = 0; i < ie->value.choice.RRCContainer.size; i++)
+  //  printf("%02x ", ie->value.choice.RRCContainer.buf[i]);
+
+  //printf (", PDCP PDU size %d:", rrc_dl_sdu_len);
+  //for (int i=0;i<rrc_dl_sdu_len;i++) printf("%2x ",pdcp_pdu_p->data[i]);
+  //printf("\n");
+
 
     if (pdcp_pdu_p != NULL) {
       rlc_status = rlc_data_req(&ctxt
@@ -594,6 +596,11 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance, const f1ap_ul_rrc_messa
 
   LOG_I(F1AP, "[DU %d] %s: size %d UE RNTI %x in SRB %d\n",
         instance, __func__, msg->rrc_container_length, rnti, msg->srb_id);
+
+  //LOG_I(F1AP, "%s() RRCContainer size %d: ", __func__, msg->rrc_container_length);
+  //for (int i = 0;i < msg->rrc_container_length; i++)
+  //  printf("%02x ", msg->rrc_container[i]);
+  //printf("\n");
 
   /* Create */
   /* 0. Message Type */

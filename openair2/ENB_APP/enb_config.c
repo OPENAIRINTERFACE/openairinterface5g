@@ -2652,9 +2652,10 @@ void handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
 	   resp->nrpci[j] == carrier->physCellId)) {
 	// copy system information and decode it 
 	for (si_ind=0;si_ind<resp->num_SI[j];si_ind++)  {
-	  printf("SI %d: ",si_ind);
-	  for (int n=0;n<resp->SI_container_length[j][si_ind];n++) printf("%2x ",resp->SI_container[j][si_ind][n]);
-	  printf("\n");
+          //printf("SI %d size %d: ", si_ind, resp->SI_container_length[j][si_ind]);
+          //for (int n=0;n<resp->SI_container_length[j][si_ind];n++)
+          //  printf("%02x ",resp->SI_container[j][si_ind][n]);
+          //printf("\n");
 	  extract_and_decode_SI(i,
 				si_ind,
 				resp->SI_container[j][si_ind],

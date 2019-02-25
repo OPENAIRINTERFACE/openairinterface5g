@@ -350,12 +350,10 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
       cells_to_be_activated_list_itemExtIEs->extensionValue.present = F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_GNB_CUSystemInformation;
 
       F1AP_GNB_CUSystemInformation_t *gNB_CUSystemInformation = (F1AP_GNB_CUSystemInformation_t *)calloc(1, sizeof(F1AP_GNB_CUSystemInformation_t));
-#ifdef F1AP_DEBUG
-      LOG_I(F1AP, "SI %d: ", i);
-      for (int n = 0; n < f1ap_setup_resp->SI_container_length[i][0]; n++)
-        printf("%2x ", f1ap_setup_resp->SI_container[i][0][n]);
-      printf("\n");
-#endif 
+      //LOG_I(F1AP, "%s() SI %d size %d: ", __func__, i, f1ap_setup_resp->SI_container_length[i][0]);
+      //for (int n = 0; n < f1ap_setup_resp->SI_container_length[i][0]; n++)
+      //  printf("%02x ", f1ap_setup_resp->SI_container[i][0][n]);
+      //printf("\n");
       OCTET_STRING_fromBuf(&gNB_CUSystemInformation->sImessage,
                            (const char*)f1ap_setup_resp->SI_container[i][0], 
                            f1ap_setup_resp->SI_container_length[i][0]);

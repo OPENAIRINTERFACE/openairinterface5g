@@ -121,12 +121,13 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   ccch_sdu_len = ie->value.choice.RRCContainer.size;
   memcpy(RRC_MAC_CCCH_DATA_IND (message_p).sdu, ie->value.choice.RRCContainer.buf,
          ccch_sdu_len);
-  #ifdef F1AP_DEBUG
-  LOG_I(F1AP, "RRCContainer (CCCH):");
-  for (int i = 0; i < ie->value.choice.RRCContainer.size; i++)
-    printf("%2x ", RRC_MAC_CCCH_DATA_IND (message_p).sdu[i]);
-  printf("\n");
-#endif 
+
+  //LOG_I(F1AP, "%s() RRCContainer (CCCH) size %ld: ", __func__,
+  //      ie->value.choice.RRCContainer.size);
+  //for (int i = 0; i < ie->value.choice.RRCContainer.size; i++)
+  //  printf("%02x ", RRC_MAC_CCCH_DATA_IND (message_p).sdu[i]);
+  //printf("\n");
+
   // Find instance from nr_cellid
   int rrc_inst = -1;
   for (int i=0;i<RC.nb_inst;i++) {
@@ -250,6 +251,11 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
   OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer, (const char*)f1ap_dl_rrc->rrc_container, f1ap_dl_rrc->rrc_container_length);
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
 
+  //LOG_I(F1AP, "%s() RRCContainer size %d: ", __func__, f1ap_dl_rrc->rrc_container_length);
+  //for (int i = 0; i < ie->value.choice.RRCContainer.size; i++)
+  //  printf("%02x ", f1ap_dl_rrc->rrc_container[i]);
+  //printf("\n");
+
   /* optional */
   /* c7. RAT_FrequencyPriorityInformation */
   /* TODO */ 
@@ -366,6 +372,12 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   mem_block_t *mb = get_free_mem_block(ie->value.choice.RRCContainer.size,__func__);
   memcpy((void*)mb->data,(void*)ie->value.choice.RRCContainer.buf,ie->value.choice.RRCContainer.size);
   LOG_I(F1AP, "Calling pdcp_data_ind for UE RNTI %x srb_id %lu with size %ld (DCCH) \n", ctxt.rnti, srb_id, ie->value.choice.RRCContainer.size);
+
+  //LOG_I(F1AP, "%s() RRCContainer size %lu: ", __func__, ie->value.choice.RRCContainer.size);
+  //for (int i = 0; i < ie->value.choice.RRCContainer.size; i++)
+  //  printf("%02x ", mb->data[i]);
+  //printf("\n");
+
   pdcp_data_ind (&ctxt,
      1, // srb_flag
      0, // embms_flag
