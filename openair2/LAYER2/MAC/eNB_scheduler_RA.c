@@ -351,14 +351,8 @@ void generate_Msg2(module_id_t module_idP,
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mpdcch_tansmission_type = 1;   // imposed (9.1.5 in 213) for Type 2 Common search space  
       
       AssertFatal (cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 != NULL, "cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13 is null\n");
-      
-      LOG_E(MAC, "first_rb = %d, getRIV(N_RB_DL, first_rb, 6) = %d ; N_RB_DL = %d\n", first_rb, getRIV(N_RB_DL, first_rb, 6), N_RB_DL);
-      LOG_E(MAC, "ra->msg2_narrowband = %d, getRIV(6, 0, 6) | (ra->msg2_narrowband<<5) = %d ; N_RB_DL = %d\n", ra->msg2_narrowband, getRIV(6, 0, 6) | (ra->msg2_narrowband<<5));
 
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.start_symbol = cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->startSymbolBR_r13;
-      
-      LOG_E(MAC, "start_symbol = %d \n", dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.start_symbol);
-
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.ecce_index = 0;        // Note: this should be dynamic
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.aggregation_level = 24;        // OK for CEModeA r1-3 (9.1.5-1b) or CEModeB r1-4
       dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.rnti_type = 2; // RA-RNTI
@@ -441,8 +435,6 @@ void generate_Msg2(module_id_t module_idP,
         dl_config_pdu = &dl_req_body->dl_config_pdu_list[dl_req_body->number_pdu];
         
         memset ((void *) dl_config_pdu, 0, sizeof (nfapi_dl_config_request_pdu_t));
-
-        LOG_E(MAC, "first_rb = %d, getRIV(N_RB_DL, first_rb, 6) = %d ; N_RB_DL = %d\n", first_rb, getRIV(N_RB_DL, first_rb, 6), N_RB_DL);
         
         dl_config_pdu->pdu_type = NFAPI_DL_CONFIG_DLSCH_PDU_TYPE;
         dl_config_pdu->pdu_size = (uint8_t) (2 + sizeof (nfapi_dl_config_dlsch_pdu));
@@ -471,8 +463,6 @@ void generate_Msg2(module_id_t module_idP,
 
         /* Rel10 fields */
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel10.pdsch_start = cc[CC_idP].sib1_v13ext->bandwidthReducedAccessRelatedInfo_r13->startSymbolBR_r13;
-        
-        LOG_E(MAC, "start_symbol = %d \n", dl_config_pdu->dlsch_pdu.dlsch_pdu_rel10.pdsch_start);
 
         /* Rel13 fields */
         dl_config_pdu->dlsch_pdu.dlsch_pdu_rel13.ue_type = (ra->rach_resource_type < 3) ? 1 : 2;;
