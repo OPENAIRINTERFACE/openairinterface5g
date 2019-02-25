@@ -3101,8 +3101,10 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t *cons
   memset((void *)MeasObj, 0, sizeof(*MeasObj));
   MeasObj->measObjectId = 1;
   MeasObj->measObject.present = LTE_MeasObjectToAddMod__measObject_PR_measObjectEUTRA;
-  MeasObj->measObject.choice.measObjectEUTRA.carrierFreq = (LTE_ARFCN_ValueEUTRA_t)to_earfcn_DL(RC.rrc[ctxt_pP->module_id]->carrier[0].eutra_band, RC.rrc[ctxt_pP->module_id]->carrier[0].dl_CarrierFreq,
-      RC.rrc[ctxt_pP->module_id]->carrier[0].N_RB_DL);
+  MeasObj->measObject.choice.measObjectEUTRA.carrierFreq =
+      to_earfcn_DL(RC.rrc[ctxt_pP->module_id]->configuration.eutra_band[0],
+                   RC.rrc[ctxt_pP->module_id]->configuration.downlink_frequency[0],
+                   RC.rrc[ctxt_pP->module_id]->configuration.N_RB_DL[0]);
   MeasObj->measObject.choice.measObjectEUTRA.allowedMeasBandwidth = LTE_AllowedMeasBandwidth_mbw25;
   MeasObj->measObject.choice.measObjectEUTRA.presenceAntennaPort1 = 1;
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.buf = CALLOC(1, sizeof(uint8_t));
@@ -5070,8 +5072,10 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
   memset((void *)MeasObj, 0, sizeof(*MeasObj));
   MeasObj->measObjectId = 1;
   MeasObj->measObject.present = LTE_MeasObjectToAddMod__measObject_PR_measObjectEUTRA;
-  MeasObj->measObject.choice.measObjectEUTRA.carrierFreq = (LTE_ARFCN_ValueEUTRA_t)to_earfcn_DL(RC.rrc[ctxt_pP->module_id]->carrier[0].eutra_band, RC.rrc[ctxt_pP->module_id]->carrier[0].dl_CarrierFreq,
-      RC.rrc[ctxt_pP->module_id]->carrier[0].N_RB_DL);
+  MeasObj->measObject.choice.measObjectEUTRA.carrierFreq =
+      to_earfcn_DL(RC.rrc[ctxt_pP->module_id]->configuration.eutra_band[0],
+                   RC.rrc[ctxt_pP->module_id]->configuration.downlink_frequency[0],
+                   RC.rrc[ctxt_pP->module_id]->configuration.N_RB_DL[0]);
   MeasObj->measObject.choice.measObjectEUTRA.allowedMeasBandwidth = LTE_AllowedMeasBandwidth_mbw25;
   MeasObj->measObject.choice.measObjectEUTRA.presenceAntennaPort1 = 1;
   MeasObj->measObject.choice.measObjectEUTRA.neighCellConfig.buf = CALLOC(1, sizeof(uint8_t));
@@ -5299,8 +5303,10 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
     rrc_inst->carrier[0] /* CROUX TBC */.sib2->radioResourceConfigCommon.ul_CyclicPrefixLength;
   //End of configuration of radioResourceConfigCommon
   mobilityInfo->carrierFreq = CALLOC(1, sizeof(*mobilityInfo->carrierFreq));  //CALLOC(1,sizeof(CarrierFreqEUTRA_t)); 36090
-  mobilityInfo->carrierFreq->dl_CarrierFreq = (LTE_ARFCN_ValueEUTRA_t)to_earfcn_DL(RC.rrc[ctxt_pP->module_id]->carrier[0].eutra_band, RC.rrc[ctxt_pP->module_id]->carrier[0].dl_CarrierFreq,
-      RC.rrc[ctxt_pP->module_id]->carrier[0].N_RB_DL);
+  mobilityInfo->carrierFreq->dl_CarrierFreq =
+      to_earfcn_DL(RC.rrc[ctxt_pP->module_id]->configuration.eutra_band[0],
+                   RC.rrc[ctxt_pP->module_id]->configuration.downlink_frequency[0],
+                   RC.rrc[ctxt_pP->module_id]->configuration.N_RB_DL[0]);
   mobilityInfo->carrierFreq->ul_CarrierFreq = NULL;
   mobilityInfo->carrierBandwidth = CALLOC(1, sizeof(
       *mobilityInfo->carrierBandwidth));    //CALLOC(1,sizeof(struct CarrierBandwidthEUTRA));  AllowedMeasBandwidth_mbw25
