@@ -270,7 +270,7 @@ static void enb_config_display(void)
   printf( " ENB CONFIG FILE CONTENT LOADED:\n");
   printf( "----------------------------------------------------------------------\n");
   for (i = 0; i < g_enb_properties.number; i++) {
-    printf( "ENB CONFIG for instance %u:\n\n", i);
+    printf( "ENB CONFIG for instance %d:\n\n", i);
     printf( "\teNB name:           \t%s\n",g_enb_properties.properties[i]->eNB_name);
     printf( "\teNB ID:             \t%"PRIu32"\n",g_enb_properties.properties[i]->eNB_id);
     printf( "\tCell type:          \t%s\n",g_enb_properties.properties[i]->cell_type == CELL_MACRO_ENB ? "CELL_MACRO_ENB":"CELL_HOME_ENB");

@@ -46,7 +46,7 @@ void unregister_notifier(gui *_g, unsigned long notifier_id) {
     if (g->notifiers[i].id == notifier_id) break;
 
   if (i == g->notifiers_count)
-    ERR("%s:%d: notifier_id %ld not found\n", __FILE__,__LINE__,notifier_id);
+    ERR("%s:%d: notifier_id %lu not found\n", __FILE__,__LINE__,notifier_id);
 
   free(g->notifiers[i].notification);
   memmove(g->notifiers + i, g->notifiers + i + 1,
