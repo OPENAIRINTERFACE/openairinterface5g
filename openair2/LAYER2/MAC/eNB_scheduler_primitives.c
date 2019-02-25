@@ -1950,17 +1950,7 @@ find_UE_id(module_id_t mod_idP,
   UE_list_t *UE_list = &RC.mac[mod_idP]->UE_list;
 
   for (UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++) {
-
-    LOG_E(MAC, "in find_UE_id(): for UE_id = %d\n", UE_id);
-
     if (UE_list->active[UE_id] == TRUE) {
-
-      LOG_E(MAC, "in find_UE_id(): UE_list->active[UE_id]\n");
-      LOG_E(MAC, "in find_UE_id(): UE_PCCID(mod_idP, UE_id) = %d ; UE_template.rnti = %d ; rntiP = %d\n", 
-            UE_PCCID(mod_idP, UE_id), 
-            UE_list->UE_template[UE_PCCID(mod_idP, UE_id)][UE_id].rnti,
-            rntiP);
-
       if (UE_list->UE_template[UE_PCCID(mod_idP, UE_id)][UE_id].rnti == rntiP) {
         return UE_id;
       }
@@ -2144,13 +2134,8 @@ add_new_ue(module_id_t mod_idP,
   dump_ue_list(UE_list, 0);
 
   for (i = 0; i < MAX_MOBILES_PER_ENB; i++) {
-
-    LOG_E(MAC, "In add_new_ue() UE_id = %d\n", i);
-
     if (UE_list->active[i] == TRUE)
       continue;
-
-    LOG_E(MAC, "In add_new_ue() Not active\n");
 
     UE_id = i;
     memset(&UE_list->UE_template[cc_idP][UE_id], 0, sizeof(UE_TEMPLATE));
@@ -2164,8 +2149,6 @@ add_new_ue(module_id_t mod_idP,
     UE_list->ordered_ULCCids[0][UE_id] = cc_idP;
     UE_list->num_UEs++;
     UE_list->active[UE_id] = TRUE;
-
-    LOG_E(MAC, "In add_new_ue() rnti = %d for CC_id = %d\n", rntiP, cc_idP);
 
 #if defined(USRP_REC_PLAY) // not specific to record/playback ?
     UE_list->UE_template[cc_idP][UE_id].pre_assigned_mcs_ul = 0;
