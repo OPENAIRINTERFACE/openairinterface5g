@@ -1987,14 +1987,6 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
       continue;
     }
 
-    /* CDRX LTE-M */
-    UE_sched_ctrl = &(UE_list->UE_sched_ctrl[UE_id]);
-    if (UE_sched_ctrl->cdrx_configured == TRUE) {
-      if ((UE_sched_ctrl->bypass_cdrx == FALSE) && (UE_sched_ctrl->in_active_time == FALSE)) {
-        continue;
-      }
-    }
-
     /* Loop over all active UL CC_ids for this UE */
     for (n = 0; n < UE_list->numactiveULCCs[UE_id]; n++) {
       /* This is the actual CC_id in the list */
@@ -2091,13 +2083,6 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
 
         /* New transmission */
         if (round_UL == 0) {
-
-          /* CDRX LTE-M */
-          if (UE_sched_ctrl->cdrx_configured == TRUE) {
-            UE_sched_ctrl->drx_inactivity_timer = 1; // reset drx inactivity timer when new transmission
-            VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_DRX_INACTIVITY, (unsigned long) UE_sched_ctrl->drx_inactivity_timer);
-          }
-
           ndi = 1 - UE_template->oldNDI_UL[harq_pid];
           
           UE_template->oldNDI_UL[harq_pid] = ndi;

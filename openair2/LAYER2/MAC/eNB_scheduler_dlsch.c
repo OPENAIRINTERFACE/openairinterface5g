@@ -1983,13 +1983,6 @@ schedule_ue_spec_br(module_id_t module_idP,
       continue;
     }
 
-    /* CDRX LTE-M */
-    if (ue_sched_ctl->cdrx_configured == TRUE) {
-      if ((ue_sched_ctl->bypass_cdrx == FALSE) && (ue_sched_ctl->in_active_time == FALSE)) {
-        continue;
-      }
-    }
-
     round_DL = ue_sched_ctl->round[CC_id][harq_pid];
 
     AssertFatal (UE_template->physicalConfigDedicated != NULL, "UE_template->physicalConfigDedicated is null\n");
