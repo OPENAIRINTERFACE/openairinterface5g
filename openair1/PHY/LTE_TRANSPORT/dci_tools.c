@@ -300,7 +300,8 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t 
   dlsch0 = eNB->dlsch[UE_id][0];
   dlsch1 = eNB->dlsch[UE_id][1];
 
-    
+  dlsch0->ue_type = 0;
+  dlsch1->ue_type = 0; 
   beamforming_mode                          = eNB->transmission_mode[(uint8_t)UE_id]<7?0:eNB->transmission_mode[(uint8_t)UE_id];
   dlsch0_harq                               = dlsch0->harq_processes[rel8->harq_process];
   dlsch0_harq->codeword                     = 0;
@@ -1559,7 +1560,6 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,mDCI_ALLOC_t *dc
 
   case 10:                     // Format 6-1A
     dci_alloc->format = format6_1A;
-    dlsch0->active = 1;
     switch (fp->N_RB_DL) {
 
     case 25:
@@ -1630,7 +1630,6 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,mDCI_ALLOC_t *dc
     break;
   case 11:                     // Format 6-1B
     dci_alloc->format = format6_1B;
-    dlsch0->active = 1;
     switch (fp->N_RB_DL) {
 
     case 25:
@@ -1670,7 +1669,6 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,mDCI_ALLOC_t *dc
     }
   case 12:                     // Format 6-2
     dci_alloc->format = format6_2;
-    dlsch0->active = 1;
     switch (fp->N_RB_DL) {
     case 25:
       dci_alloc->dci_length = sizeof_DCI6_2_5MHz_t;
@@ -1718,6 +1716,8 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,mDCI_ALLOC_t *dc
     }
   }
   AssertFatal (rel13->harq_process < 8, "ERROR: Format 6_1A: harq_pid=%d >= 8\n", rel13->harq_process);
+
+  dlsch0->ue_type = rel13->ce_mode;
 
   dlsch0_harq = dlsch0->harq_processes[rel13->harq_process];
   dlsch0_harq->codeword = 0;

@@ -652,7 +652,7 @@ void handle_uci_harq_pdu(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_request_pdu
 
   if (nfapi_mode==2) return;
 
-  LOG_D(PHY,"Frame %d, Subframe %d: Programming UCI_HARQ process (type %d)\n",frame,subframe,HARQ);
+  LOG_I(PHY,"Frame %d, Subframe %d: Programming UCI_HARQ process (type %d)\n",frame,subframe,HARQ);
   uci->frame             = frame;
   uci->subframe          = subframe;
   uci->rnti              = ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti;
@@ -744,7 +744,7 @@ rel8->resource_block_start,rel8->number_of_resource_blocks);
     AssertFatal((UE_id = find_uci(ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti,
                                   proc->frame_tx,proc->subframe_tx,eNB,SEARCH_EXIST_OR_FREE))>=0,
                 "No available UE UCI for rnti %x\n",ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti);
-    LOG_D(PHY,"Applying UL UCI_HARQ config for UE %d, rnti %x for frame %d, subframe %d\n",
+    LOG_I(PHY,"Applying UL UCI_HARQ config for UE %d, rnti %x for frame %d, subframe %d\n",
           UE_id,ul_config_pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti,frame,subframe);
 
     handle_uci_harq_pdu(eNB,UE_id,ul_config_pdu,frame,subframe,srs_present);

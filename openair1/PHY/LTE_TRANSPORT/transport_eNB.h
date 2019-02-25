@@ -153,6 +153,8 @@ typedef struct {
 #else
   uint8_t active;
 #endif
+  /// indicator of UE type (0 = LTE, 1,2 = Cat-M)
+  int ue_type;
   /// HARQ process mask, indicates which processes are currently active
   uint16_t harq_mask;
   /// Indicator of TX activation per subframe.  Used during PUCCH detection for ACK/NAK.

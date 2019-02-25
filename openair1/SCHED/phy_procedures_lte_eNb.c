@@ -566,8 +566,11 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
       harq_pid = dlsch0->harq_ids[frame%2][subframe];
       AssertFatal(harq_pid>=0,"harq_pid is negative\n");
       
-      if (harq_pid>=8)
-	{
+      if (harq_pid>=8) {
+
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+        if (dlsch0->ue_type==0) 
+#endif
 	  LOG_E(PHY,"harq_pid:%d corrupt must be 0-7 UE_id:%d frame:%d subframe:%d rnti:%x [ %1d.%1d.%1d.%1d.%1d.%1d.%1d.%1d\n", harq_pid,UE_id,frame,subframe,dlsch0->rnti,
                 dlsch0->harq_ids[frame%2][0],
                 dlsch0->harq_ids[frame%2][1],
@@ -577,9 +580,8 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
                 dlsch0->harq_ids[frame%2][5],
                 dlsch0->harq_ids[frame%2][6],
                 dlsch0->harq_ids[frame%2][7]);
-	}
-      else
-	{
+      } else
+      {
 	  // generate pdsch
 	  
 	  pdsch_procedures(eNB,
@@ -589,7 +591,7 @@ void phy_procedures_eNB_TX(PHY_VARS_eNB *eNB,
 			   dlsch1,
 			   &eNB->UE_stats[(uint32_t)UE_id],
 			   0);
-	}
+      }
       
       
     }
@@ -743,7 +745,11 @@ void uci_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc)
 			     &SR_payload,
 			     frame,
 			     subframe,
-			     PUCCH1_THRES);
+			     PUCCH1_THRES
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) 
+			     ,uci->ue_type
+#endif
+                             );
 	LOG_D(PHY,"[eNB %d][SR %x] Frame %d subframe %d Checking SR is %d (uci.type %d SR n1pucch is %d)\n",
 	      eNB->Mod_id,
 	      uci->rnti,
@@ -763,7 +769,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc)
 	}
       case HARQ:
 	if (fp->frame_type == FDD) {
-	  LOG_D(PHY,"Frame %d Subframe %d Demodulating PUCCH (UCI %d) for ACK/NAK (uci->pucch_fmt %d,uci->type %d.uci->frame %d, uci->subframe %d): n1_pucch0 %d SR_payload %d\n",
+	  LOG_I(PHY,"Frame %d Subframe %d Demodulating PUCCH (UCI %d) for ACK/NAK (uci->pucch_fmt %d,uci->type %d.uci->frame %d, uci->subframe %d): n1_pucch0 %d SR_payload %d\n",
 		frame,subframe,i,
 		uci->pucch_fmt,uci->type,
 		uci->frame,uci->subframe,uci->n_pucch_1[0][0],
@@ -778,7 +784,12 @@ void uci_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc)
 			       pucch_b0b1[0],
 			       frame,
 			       subframe,
-			       PUCCH1a_THRES);
+			       PUCCH1a_THRES
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) 
+                               ,uci->ue_type
+#endif
+                               );
+
 	  
 	  
 	  /* cancel SR detection if reception on n1_pucch0 is better than on SR PUCCH resource index, otherwise send it up to MAC */
@@ -798,11 +809,15 @@ void uci_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc)
 			       pucch_b0b1[0],
 			       frame,
 			       subframe,
-			       PUCCH1a_THRES);
+			       PUCCH1a_THRES
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) 
+                               ,uci->ue_type
+#endif
+                               );
 	  }
 	  
 	  
-	  LOG_D(PHY,"[eNB %d][PDSCH %x] Frame %d subframe %d pucch1a (FDD) payload %d (metric %d)\n",
+	  LOG_I(PHY,"[eNB %d][PDSCH %x] Frame %d subframe %d pucch1a (FDD) payload %d (metric %d)\n",
 		eNB->Mod_id,
 		uci->rnti,
 		frame,subframe,
@@ -828,7 +843,12 @@ void uci_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc)
 			       pucch_b0b1[0],
 			       frame,
 			       subframe,
-			       PUCCH1a_THRES);
+			       PUCCH1a_THRES
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) 
+                               ,uci->ue_type
+#endif
+                               );
+
 	  if (uci->type==HARQ_SR && metric[0] > metric_SR) SR_payload = 0;
 	  else if (SR_payload == 1) fill_sr_indication(eNB,uci->rnti,frame,subframe,metric_SR);
 	  
@@ -843,7 +863,12 @@ void uci_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc)
 				 pucch_b0b1[0],
 				 frame,
 				 subframe,
-				 PUCCH1a_THRES);
+				 PUCCH1a_THRES
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) 
+                                ,uci->ue_type
+#endif
+                                 );
+
 	  }
 #else
 	  // if SR was detected, use the n1_pucch from SR
@@ -1289,7 +1314,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc)
       
       stop_meas(&eNB->ulsch_decoding_stats);
       
-      LOG_D(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d RNTI %x RX power (%d,%d) N0 (%d,%d) dB ACK (%d,%d), decoding iter %d ulsch_harq->cqi_crc_status:%d ackBits:%d ulsch_decoding_stats[t:%lld max:%lld]\n",
+      LOG_I(PHY,"[eNB %d][PUSCH %d] frame %d subframe %d RNTI %x RX power (%d,%d) N0 (%d,%d) dB ACK (%d,%d), decoding iter %d ulsch_harq->cqi_crc_status:%d ackBits:%d ulsch_decoding_stats[t:%lld max:%lld]\n",
 	    eNB->Mod_id,harq_pid,
 	    frame,subframe,
 	    ulsch->rnti,
