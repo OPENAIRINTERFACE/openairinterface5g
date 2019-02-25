@@ -94,14 +94,21 @@ function build_on_vm {
         echo "############################################################"
         echo "Creating VM ($VM_NAME) on Ubuntu Cloud Image base"
         echo "############################################################"
+        acquire_vm_create_lock
         uvt-kvm create $VM_NAME release=xenial --memory $VM_MEMORY --cpu $VM_CPU --unsafe-caching --template ci-scripts/template-host.xml
+        echo "Waiting for VM to be started"
+        uvt-kvm wait $VM_NAME --insecure
+
+        VM_IP_ADDR=`uvt-kvm ip $VM_NAME`
+        echo "$VM_NAME has for IP addr = $VM_IP_ADDR"
+        release_vm_create_lock
+    else
+        echo "Waiting for VM to be started"
+        uvt-kvm wait $VM_NAME --insecure
+
+        VM_IP_ADDR=`uvt-kvm ip $VM_NAME`
+        echo "$VM_NAME has for IP addr = $VM_IP_ADDR"
     fi
-
-    echo "Waiting for VM to be started"
-    uvt-kvm wait $VM_NAME --insecure
-
-    VM_IP_ADDR=`uvt-kvm ip $VM_NAME`
-    echo "$VM_NAME has for IP addr = $VM_IP_ADDR"
 
     echo "############################################################"
     echo "Copying GIT repo into VM ($VM_NAME)"

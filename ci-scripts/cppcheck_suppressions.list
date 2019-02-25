@@ -67,6 +67,15 @@ syntaxError:openair1/SIMULATION/LTE_PHY/dlsim_tm4.c
 // omg, otg commented out in cmakelist to be cleaned up definitely?
 arrayIndexOutOfBounds:openair2/UTIL/OMG/omg.c
 uninitvar:openair2/UTIL/OTG/otg_rx_socket.c
+//-----------------------------------------------------------------------------
+// cppcheck is not able to understand that buf is initialized at the first
+// iteration of the loop.
+nullPointer:common/utils/T/local_tracer.c:243
+//-----------------------------------------------------------------------------
+// once again cppcheck is not to understand that fds is initialized in the
+// first iteration of the loop
+nullPointer:common/utils/T/tracer/multi.c:264
+nullPointer:common/utils/T/tracer/multi.c:265
 //
 //*****************************************************************************
 //

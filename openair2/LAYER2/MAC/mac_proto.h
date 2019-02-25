@@ -441,7 +441,7 @@ void init_ue_sched_info(void);
 void add_ue_ulsch_info(module_id_t module_idP, int CC_id, int UE_id,
 		       sub_frame_t subframe, UE_ULSCH_STATUS status);
 void add_ue_dlsch_info(module_id_t module_idP, int CC_id, int UE_id,
-		       sub_frame_t subframe, UE_DLSCH_STATUS status);
+		                   sub_frame_t subframe, UE_DLSCH_STATUS status, rnti_t rnti);
 int find_UE_id(module_id_t module_idP, rnti_t rnti);
 int find_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP);
 rnti_t UE_RNTI(module_id_t module_idP, int UE_id);
@@ -1209,7 +1209,6 @@ void fill_nfapi_dlsch_config(eNB_MAC_INST * eNB,
 void fill_nfapi_harq_information(module_id_t module_idP,
 				 int CC_idP,
 				 uint16_t rntiP,
-				 uint16_t absSFP,
 				 nfapi_ul_config_harq_information *
 				 harq_information, uint8_t cce_idxP);
 
@@ -1221,9 +1220,10 @@ void fill_nfapi_ulsch_harq_information(module_id_t module_idP,
 				       sub_frame_t subframeP);
 
 uint16_t fill_nfapi_uci_acknak(module_id_t module_idP,
-			       int CC_idP,
-			       uint16_t rntiP,
-			       uint16_t absSFP, uint8_t cce_idxP);
+							int CC_idP,
+							uint16_t rntiP,
+							uint16_t absSFP,
+							uint8_t cce_idxP);
 
 void fill_nfapi_dl_dci_1A(nfapi_dl_config_request_pdu_t * dl_config_pdu,
 			  uint8_t aggregation_level,
