@@ -82,6 +82,17 @@ void removeCirBuf(rfsimulator_state_t *bridge, int sock) {
   bridge->buf[sock].conn_sock=-1;
 }
 
+void socketError(rfsimulator_state_t *bridge, int sock) {
+  if (bridge->buf[sock].conn_sock!=-1) {
+    LOG_W(HW,"Lost socket \n");
+    removeCirBuf(bridge, sock);
+
+    if (bridge->typeStamp==MAGICUE)
+      exit(1);
+  }
+}
+
+
 #define helpTxt "\
 \x1b[31m\
 rfsimulator: error: you have to run one UE and one eNB\n\
@@ -108,32 +119,28 @@ void setblocking(int sock, enum blocking_t active) {
 
 static bool flushInput(rfsimulator_state_t *t);
 
-int fullwrite(int fd, void *_buf, int count, rfsimulator_state_t *t) {
+void fullwrite(int fd, void *_buf, int count, rfsimulator_state_t *t) {
   char *buf = _buf;
-  int ret = 0;
   int l;
-    
   setblocking(fd, notBlocking);
 
   while (count) {
     l = write(fd, buf, count);
+
     if (l <= 0) {
       if (errno==EINTR)
         continue;
+
       if(errno==EAGAIN) {
-	flushInput(t);
-	continue;
-      }
-      else
-        return -1;
+        flushInput(t);
+        continue;
+      } else
+        return;
     }
 
     count -= l;
     buf += l;
-    ret += l;
   }
-
-  return ret;
 }
 
 int server_start(openair0_device *device) {
@@ -143,9 +150,12 @@ int server_start(openair0_device *device) {
   int enable = 1;
   AssertFatal(setsockopt(t->listen_sock, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) == 0, "");
   struct sockaddr_in addr = {
-  sin_family: AF_INET,
-  sin_port: htons(PORT),
-  sin_addr: { s_addr: INADDR_ANY }
+sin_family:
+    AF_INET,
+sin_port:
+    htons(PORT),
+sin_addr:
+    { s_addr: INADDR_ANY }
   };
   bind(t->listen_sock, (struct sockaddr *)&addr, sizeof(addr));
   AssertFatal(listen(t->listen_sock, 5) == 0, "");
@@ -162,9 +172,12 @@ int start_ue(openair0_device *device) {
   int sock;
   AssertFatal((sock = socket(AF_INET, SOCK_STREAM, 0)) >= 0, "");
   struct sockaddr_in addr = {
-  sin_family: AF_INET,
-  sin_port: htons(PORT),
-  sin_addr: { s_addr: INADDR_ANY }
+sin_family:
+    AF_INET,
+sin_port:
+    htons(PORT),
+sin_addr:
+    { s_addr: INADDR_ANY }
   };
   addr.sin_addr.s_addr = inet_addr(t->ip);
   bool connected=false;
@@ -195,8 +208,7 @@ int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, voi
 
     if (ptr->conn_sock >= 0 ) {
       transferHeader header= {t->typeStamp, nsamps, nbAnt, timestamp};
-      int n=-1;
-      AssertFatal( fullwrite(ptr->conn_sock,&header, sizeof(header), t) == sizeof(header), "");
+      fullwrite(ptr->conn_sock,&header, sizeof(header), t);
       sample_t tmpSamples[nsamps][nbAnt];
 
       for(int a=0; a<nbAnt; a++) {
@@ -206,13 +218,8 @@ int rfsimulator_write(openair0_device *device, openair0_timestamp timestamp, voi
           tmpSamples[s][a]=in[s];
       }
 
-      n = fullwrite(ptr->conn_sock, (void *)tmpSamples, sampleToByte(nsamps,nbAnt), t);
-
-      if (n != sampleToByte(nsamps,nbAnt) ) {
-        LOG_E(HW,"rfsimulator: write error ret %d (wanted %ld) error %s\n", n, sampleToByte(nsamps,nbAnt), strerror(errno));
-        abort();
-      }
-
+      if (ptr->conn_sock >= 0 )
+        fullwrite(ptr->conn_sock, (void *)tmpSamples, sampleToByte(nsamps,nbAnt), t);
     }
   }
 
@@ -241,17 +248,11 @@ static bool flushInput(rfsimulator_state_t *t) {
       int conn_sock;
       AssertFatal( (conn_sock = accept(t->listen_sock,NULL,NULL)) != -1, "");
       setblocking(conn_sock, notBlocking);
-      
       allocCirBuf(t, conn_sock);
       LOG_I(HW,"A ue connected\n");
     } else {
       if ( events[nbEv].events & (EPOLLHUP | EPOLLERR | EPOLLRDHUP) ) {
-        LOG_W(HW,"Lost socket\n");
-        removeCirBuf(t, fd);
-
-        if (t->typeStamp==MAGICUE)
-          exit(1);
-
+        socketError(t,fd);
         continue;
       }
 
@@ -292,7 +293,8 @@ static bool flushInput(rfsimulator_state_t *t) {
         AssertFatal( (t->typeStamp == MAGICUE  && b->th.magic==MAGICeNB) ||
                      (t->typeStamp == MAGICeNB && b->th.magic==MAGICUE), "Socket Error in protocol");
         b->headerMode=false;
-	b->alreadyRead=true;
+        b->alreadyRead=true;
+
         if ( b->lastReceivedTS != b->th.timestamp) {
           int nbAnt= b->th.nbAnt;
 
@@ -331,7 +333,10 @@ static bool flushInput(rfsimulator_state_t *t) {
 }
 
 int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, void **samplesVoid, int nsamps, int nbAnt) {
-  if (nbAnt != 1) { LOG_E(HW, "rfsimulator: only 1 antenna tested\n"); exit(1); }
+  if (nbAnt != 1) {
+    LOG_E(HW, "rfsimulator: only 1 antenna tested\n");
+    exit(1);
+  }
 
   rfsimulator_state_t *t = device->priv;
   LOG_D(HW, "Enter rfsimulator_read, expect %d samples, will release at TS: %ld\n", nsamps, t->nextTimestamp+nsamps);
@@ -351,7 +356,6 @@ int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimestamp, vo
 
       t->nextTimestamp+=nsamps;
       LOG_W(HW,"Generated void samples for Rx: %ld\n", t->nextTimestamp);
-
       *ptimestamp = t->nextTimestamp-nsamps;
       return nsamps;
     }
@@ -443,8 +447,8 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
   }
 
   rfsimulator->typeStamp = strncasecmp(rfsimulator->ip,"enb",3) == 0 ?
-                          MAGICeNB:
-                          MAGICUE;
+                           MAGICeNB:
+                           MAGICUE;
   LOG_I(HW,"rfsimulator: running as %s\n", rfsimulator-> typeStamp == MAGICeNB ? "eNB" : "UE");
   device->trx_start_func       = rfsimulator->typeStamp == MAGICeNB ?
                                  server_start :

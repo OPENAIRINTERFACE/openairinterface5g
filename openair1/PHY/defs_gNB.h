@@ -391,7 +391,6 @@ typedef struct PHY_VARS_gNB_s {
   Sched_Rsp_t         Sched_INFO;
   NR_gNB_PDCCH        pdcch_vars;
   NR_gNB_PBCH         pbch;
-  t_nrPolar_paramsPtr nrPolar_params;
   LTE_eNB_PHICH       phich_vars[2];
 
   NR_gNB_COMMON       common_vars;

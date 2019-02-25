@@ -37,7 +37,7 @@
 #include "CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 
 
-#define _GNU_SOURCE 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <malloc.h>
@@ -49,28 +49,28 @@
 //#include <complex.h>
 #include "assertions.h"
 #ifdef MEX
-# define msg mexPrintf
+  #define msg mexPrintf
 #else
-# ifdef OPENAIR2
-#   if ENABLE_RAL
-#     include "collection/hashtable/hashtable.h"
-#     include "COMMON/ral_messages_types.h"
-#     include "UTIL/queue.h"
-#   endif
-#   define msg(aRGS...) LOG_D(PHY, ##aRGS)
-# else
-#   define msg printf
-# endif
+  #ifdef OPENAIR2
+    #if ENABLE_RAL
+      #include "collection/hashtable/hashtable.h"
+      #include "COMMON/ral_messages_types.h"
+      #include "UTIL/queue.h"
+    #endif
+    #define msg(aRGS...) LOG_D(PHY, ##aRGS)
+  #else
+    #define msg printf
+  #endif
 #endif
 //use msg in the real-time thread context
 #define msg_nrt printf
 //use msg_nrt in the non real-time context (for initialization, ...)
 #ifndef malloc16
-#  ifdef __AVX2__
-#    define malloc16(x) memalign(32,x)
-#  else
-#    define malloc16(x) memalign(16,x)
-#  endif
+  #ifdef __AVX2__
+    #define malloc16(x) memalign(32,x)
+  #else
+    #define malloc16(x) memalign(16,x)
+  #endif
 #endif
 #define free16(y,x) free(y)
 #define bigmalloc malloc
@@ -146,7 +146,7 @@
 
 #if defined(UPGRADE_RAT_NR)
 
-#include "PHY/NR_REFSIG/ss_pbch_nr.h"
+  #include "PHY/NR_REFSIG/ss_pbch_nr.h"
 
 #endif
 
@@ -167,12 +167,12 @@ typedef struct {
   uint8_t              CC_id;
   /// timestamp transmitted to HW
   openair0_timestamp timestamp_tx;
-//#ifdef UE_NR_PHY_DEMO
+  //#ifdef UE_NR_PHY_DEMO
   /// NR TTI index within subframe_tx [0 .. ttis_per_subframe - 1] to act upon for transmission
   int nr_tti_tx;
   /// NR TTI index within subframe_rx [0 .. ttis_per_subframe - 1] to act upon for reception
   int nr_tti_rx;
-//#endif
+  //#endif
   /// subframe to act upon for transmission
   int subframe_tx;
   /// subframe to act upon for reception
@@ -202,7 +202,7 @@ typedef struct {
   //pthread_t pthread_slot0_dl_processing;
   pthread_t pthread_slot1_dl_processing;
   /// pthread attributes for fep_slot1 processing thread
- // pthread_attr_t attr_slot0_dl_processing;
+  // pthread_attr_t attr_slot0_dl_processing;
   pthread_attr_t attr_slot1_dl_processing;
   /// condition variable for UE fep_slot1 thread;
   //pthread_cond_t cond_slot0_dl_processing;
@@ -216,7 +216,7 @@ typedef struct {
   //pthread_t pthread_slot0_dl_processing;
   pthread_t pthread_dlsch_td;
   /// pthread attributes for fep_slot1 processing thread
- // pthread_attr_t attr_slot0_dl_processing;
+  // pthread_attr_t attr_slot0_dl_processing;
   pthread_attr_t attr_dlsch_td;
   /// condition variable for UE fep_slot1 thread;
   //pthread_cond_t cond_slot0_dl_processing;
@@ -250,7 +250,7 @@ typedef struct {
   //pthread_t pthread_slot0_dl_processing;
   pthread_t pthread_dlsch_td1;
   /// pthread attributes for fep_slot1 processing thread
- // pthread_attr_t attr_slot0_dl_processing;
+  // pthread_attr_t attr_slot0_dl_processing;
   pthread_attr_t attr_dlsch_td1;
   /// condition variable for UE fep_slot1 thread;
   //pthread_cond_t cond_slot0_dl_processing;
@@ -394,23 +394,23 @@ typedef struct {
 
 typedef struct {
 
-	  /// \brief Holds the received data in the frequency domain.
-	  /// - first index: rx antenna [0..nb_antennas_rx[
-	  /// - second index: symbol [0..28*ofdm_symbol_size[
-	  int32_t **rxdataF;
+  /// \brief Holds the received data in the frequency domain.
+  /// - first index: rx antenna [0..nb_antennas_rx[
+  /// - second index: symbol [0..28*ofdm_symbol_size[
+  int32_t **rxdataF;
 
-	  /// \brief Hold the channel estimates in frequency domain.
-	  /// - first index: eNB id [0..6] (hard coded)
-	  /// - second index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-	  /// - third index: samples? [0..symbols_per_tti*(ofdm_symbol_size+LTE_CE_FILTER_LENGTH)[
-	  int32_t **dl_ch_estimates[7];
+  /// \brief Hold the channel estimates in frequency domain.
+  /// - first index: eNB id [0..6] (hard coded)
+  /// - second index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - third index: samples? [0..symbols_per_tti*(ofdm_symbol_size+LTE_CE_FILTER_LENGTH)[
+  int32_t **dl_ch_estimates[7];
 
-	  /// \brief Hold the channel estimates in time domain (used for tracking).
-	  /// - first index: eNB id [0..6] (hard coded)
-	  /// - second index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
-	  /// - third index: samples? [0..2*ofdm_symbol_size[
-	  int32_t **dl_ch_estimates_time[7];
-}NR_UE_COMMON_PER_THREAD;
+  /// \brief Hold the channel estimates in time domain (used for tracking).
+  /// - first index: eNB id [0..6] (hard coded)
+  /// - second index: ? [0..7] (hard coded) FIXME! accessed via \c nb_antennas_rx
+  /// - third index: samples? [0..2*ofdm_symbol_size[
+  int32_t **dl_ch_estimates_time[7];
+} NR_UE_COMMON_PER_THREAD;
 
 typedef struct {
   /// \brief Holds the transmit data in time domain.
@@ -512,9 +512,9 @@ typedef struct {
   int16_t *llr[2];
   /// \f$\log_2(\max|H_i|^2)\f$
   int16_t log2_maxh;
-    /// \f$\log_2(\max|H_i|^2)\f$ //this is for TM3-4 layer1 channel compensation
+  /// \f$\log_2(\max|H_i|^2)\f$ //this is for TM3-4 layer1 channel compensation
   int16_t log2_maxh0;
-    /// \f$\log_2(\max|H_i|^2)\f$ //this is for TM3-4 layer2 channel commpensation
+  /// \f$\log_2(\max|H_i|^2)\f$ //this is for TM3-4 layer2 channel commpensation
   int16_t log2_maxh1;
   /// \brief LLR shifts for subband scaling.
   /// - first index: ? [0..168*N_RB_DL[
@@ -663,7 +663,8 @@ typedef enum {
   _format_2_0_found=4,
   _format_2_1_found=5,
   _format_2_2_found=6,
-  _format_2_3_found=7} format_found_t;
+  _format_2_3_found=7
+} format_found_t;
 #define TOTAL_NBR_SCRAMBLED_VALUES 13
 #define _C_RNTI_           0
 #define _CS_RNTI_          1
@@ -678,20 +679,21 @@ typedef enum {
 #define _TPC_PUSCH_RNTI_  10
 #define _TPC_PUCCH_RNTI_  11
 #define _TPC_SRS_RNTI_    12
-  typedef enum {                          /* see 38.321  Table 7.1-2  RNTI usage */
-      _c_rnti         = _C_RNTI_,         /* Cell RNTI */
-      _cs_rnti        = _CS_RNTI_,        /* Configured Scheduling RNTI */
-      _new_rnti       = _NEW_RNTI_,       /* ? */
-      _tc_rnti        = _TC_RNTI_,        /* Temporary C-RNTI */
-      _p_rnti         = _P_RNTI_,         /* Paging RNTI */
-      _si_rnti        = _SI_RNTI_,        /* System information RNTI */
-      _ra_rnti        = _RA_RNTI_,        /* Random Access RNTI */
-      _sp_csi_rnti    = _SP_CSI_RNTI_,    /* Semipersistent CSI reporting on PUSCH */
-      _sfi_rnti       = _SFI_RNTI_,       /* Slot Format Indication on the given cell */
-      _int_rnti       = _INT_RNTI_,       /* Indication pre-emption in DL */
-      _tpc_pusch_rnti = _TPC_PUSCH_RNTI_, /* PUSCH power control */
-      _tpc_pucch_rnti = _TPC_PUCCH_RNTI_, /* PUCCH power control */
-      _tpc_srs_rnti   = _TPC_SRS_RNTI_} crc_scrambled_t;
+typedef enum {                          /* see 38.321  Table 7.1-2  RNTI usage */
+  _c_rnti         = _C_RNTI_,         /* Cell RNTI */
+  _cs_rnti        = _CS_RNTI_,        /* Configured Scheduling RNTI */
+  _new_rnti       = _NEW_RNTI_,       /* ? */
+  _tc_rnti        = _TC_RNTI_,        /* Temporary C-RNTI */
+  _p_rnti         = _P_RNTI_,         /* Paging RNTI */
+  _si_rnti        = _SI_RNTI_,        /* System information RNTI */
+  _ra_rnti        = _RA_RNTI_,        /* Random Access RNTI */
+  _sp_csi_rnti    = _SP_CSI_RNTI_,    /* Semipersistent CSI reporting on PUSCH */
+  _sfi_rnti       = _SFI_RNTI_,       /* Slot Format Indication on the given cell */
+  _int_rnti       = _INT_RNTI_,       /* Indication pre-emption in DL */
+  _tpc_pusch_rnti = _TPC_PUSCH_RNTI_, /* PUSCH power control */
+  _tpc_pucch_rnti = _TPC_PUCCH_RNTI_, /* PUCCH power control */
+  _tpc_srs_rnti   = _TPC_SRS_RNTI_
+} crc_scrambled_t;
 
 typedef enum {bundle_n2=2,bundle_n3=3,bundle_n6=6} NR_UE_CORESET_REG_bundlesize_t;
 
@@ -712,33 +714,33 @@ typedef struct {
   /*
    * define CORESET structure according to 38.331
    *
-   * controlResourceSetId: 		Corresponds to L1 parameter 'CORESET-ID'
-   * 							Value 0 identifies the common CORESET configured in MIB and in ServingCellConfigCommon
-   *                       		Values 1..maxNrofControlResourceSets-1 identify CORESETs configured by dedicated signalling
-   * frequencyDomainResources: 	BIT STRING (SIZE (45))
-   * 							Corresponds to L1 parameter 'CORESET-freq-dom'(see 38.211, section 7.3.2.2)
-   * 							Frequency domain resources for the CORESET. Each bit corresponds a group of 6 RBs, with grouping starting from PRB 0,
-   * 							which is fully contained in the bandwidth part within which the CORESET is configured.
-   * duration:					INTEGER (1..maxCoReSetDuration)
-   * 							Corresponds to L1 parameter 'CORESET-time-duration' (see 38.211, section 7.3.2.2FFS_Section)
-   * 							Contiguous time duration of the CORESET in number of symbols
-   * cce-REG-MappingType:		interleaved
-   *								reg-BundleSize: ENUMERATED {n2, n3, n6}
-   *								interleaverSize: ENUMERATED {n2, n3, n6}
-   *								shiftIndex: INTEGER
-   *							nonInterleaved NULL
-   * precoderGranularity:		ENUMERATED {sameAsREG-bundle, allContiguousRBs}
-   * 							Corresponds to L1 parameter 'CORESET-precoder-granuality' (see 38.211, sections 7.3.2.2 and 7.4.1.3.2)
-   * tci-StatesPDCCH:			SEQUENCE(SIZE (1..maxNrofTCI-StatesPDCCH)) OF TCI-StateId OPTIONAL
-   * 							A subset of the TCI states defined in TCI-States used for providing QCL relationships between the DL RS(s)
-   * 							in one RS Set (TCI-State) and the PDCCH DMRS ports.
-   * 							Corresponds to L1 parameter 'TCI-StatesPDCCH' (see 38.214, section FFS_Section)
-   * tci-PresentInDCI:			ENUMERATED {enabled} OPTIONAL
-   * 							Corresponds to L1 parameter 'TCI-PresentInDCI' (see 38,213, section 5.1.5)
-   * pdcch-DMRS-ScramblingID:	BIT STRING (SIZE (16)) OPTIONAL
-   * 							PDCCH DMRS scrambling initalization.
-   * 							Corresponds to L1 parameter 'PDCCH-DMRS-Scrambling-ID' (see 38.214, section 5.1)
-   * 							When the field is absent the UE applies the value '0'.
+   * controlResourceSetId:    Corresponds to L1 parameter 'CORESET-ID'
+   *              Value 0 identifies the common CORESET configured in MIB and in ServingCellConfigCommon
+   *                          Values 1..maxNrofControlResourceSets-1 identify CORESETs configured by dedicated signalling
+   * frequencyDomainResources:  BIT STRING (SIZE (45))
+   *              Corresponds to L1 parameter 'CORESET-freq-dom'(see 38.211, section 7.3.2.2)
+   *              Frequency domain resources for the CORESET. Each bit corresponds a group of 6 RBs, with grouping starting from PRB 0,
+   *              which is fully contained in the bandwidth part within which the CORESET is configured.
+   * duration:          INTEGER (1..maxCoReSetDuration)
+   *              Corresponds to L1 parameter 'CORESET-time-duration' (see 38.211, section 7.3.2.2FFS_Section)
+   *              Contiguous time duration of the CORESET in number of symbols
+   * cce-REG-MappingType:   interleaved
+   *                reg-BundleSize: ENUMERATED {n2, n3, n6}
+   *                interleaverSize: ENUMERATED {n2, n3, n6}
+   *                shiftIndex: INTEGER
+   *              nonInterleaved NULL
+   * precoderGranularity:   ENUMERATED {sameAsREG-bundle, allContiguousRBs}
+   *              Corresponds to L1 parameter 'CORESET-precoder-granuality' (see 38.211, sections 7.3.2.2 and 7.4.1.3.2)
+   * tci-StatesPDCCH:     SEQUENCE(SIZE (1..maxNrofTCI-StatesPDCCH)) OF TCI-StateId OPTIONAL
+   *              A subset of the TCI states defined in TCI-States used for providing QCL relationships between the DL RS(s)
+   *              in one RS Set (TCI-State) and the PDCCH DMRS ports.
+   *              Corresponds to L1 parameter 'TCI-StatesPDCCH' (see 38.214, section FFS_Section)
+   * tci-PresentInDCI:      ENUMERATED {enabled} OPTIONAL
+   *              Corresponds to L1 parameter 'TCI-PresentInDCI' (see 38,213, section 5.1.5)
+   * pdcch-DMRS-ScramblingID: BIT STRING (SIZE (16)) OPTIONAL
+   *              PDCCH DMRS scrambling initalization.
+   *              Corresponds to L1 parameter 'PDCCH-DMRS-Scrambling-ID' (see 38.214, section 5.1)
+   *              When the field is absent the UE applies the value '0'.
    */
   int controlResourceSetId;
   uint64_t frequencyDomainResources;
@@ -762,21 +764,21 @@ typedef enum {uformat0_0_and_1_0=0,uformat0_1_and_1_1=1} NR_UE_SEARCHSPACE_USS_D
 // Corresponds to L1 parameter 'SRS-Num-PDCCH-cand' (see 38.212, 38.213, section 7.3.1, 11.3)
 typedef enum {mp1=1,mp2=2,mp4=4,mp5=5,mp8=8,mp10=10,mp16=16,mp20=20} NR_UE_SEARCHSPACE_MON_PERIOD_t;
 //typedef enum {n1=1,n2=2} NR_UE_SEARCHSPACE_nbrCAND_2_3_t;
-             // The number of PDCCH candidates for DCI format 2-3 for the configured aggregation level.
-             // Corresponds to L1 parameter 'SRS-Num-PDCCH-cand' (see 38.212, 38.213, section 7.3.1, 11.3)
+// The number of PDCCH candidates for DCI format 2-3 for the configured aggregation level.
+// Corresponds to L1 parameter 'SRS-Num-PDCCH-cand' (see 38.212, 38.213, section 7.3.1, 11.3)
 typedef enum {common=0,ue_specific=1} NR_SEARCHSPACE_TYPE_t;
 
 typedef struct {
 
-/*
- * searchSpaceType:      Indicates whether this is a common search space (present) or a UE specific search space (CHOICE)
- *                       as well as DCI formats to monitor for (description in struct NR_UE_PDCCH_SEARCHSPACE_TYPE
- *      common:          Configures this search space as common search space (CSS) and DCI formats to monitor
- *      ue-Specific:     Configures this search space as UE specific search space (USS)
- *                       The UE monitors the DCI format with CRC scrambled by
- *                       C-RNTI, CS-RNTI (if configured), TC-RNTI (if a certain condition is met),
- *                       and SP-CSI-RNTI (if configured)
- */
+  /*
+   * searchSpaceType:      Indicates whether this is a common search space (present) or a UE specific search space (CHOICE)
+   *                       as well as DCI formats to monitor for (description in struct NR_UE_PDCCH_SEARCHSPACE_TYPE
+   *      common:          Configures this search space as common search space (CSS) and DCI formats to monitor
+   *      ue-Specific:     Configures this search space as UE specific search space (USS)
+   *                       The UE monitors the DCI format with CRC scrambled by
+   *                       C-RNTI, CS-RNTI (if configured), TC-RNTI (if a certain condition is met),
+   *                       and SP-CSI-RNTI (if configured)
+   */
 
   NR_SEARCHSPACE_TYPE_t type;
   NR_UE_SEARCHSPACE_CSS_DCI_FORMAT_t  common_dci_formats;
@@ -793,32 +795,32 @@ typedef struct {
 } NR_UE_PDCCH_SEARCHSPACE_TYPE;
 
 typedef struct {
-/*
- * define SearchSpace structure according to 38.331
- *
- * searchSpaceId:        Identity of the search space. SearchSpaceId = 0 identifies the SearchSpace configured via PBCH (MIB)
- *                       The searchSpaceId is unique among the BWPs of a Serving Cell
- * controlResourceSetId: CORESET applicable for this SearchSpace
- *                       0 identifies the common CORESET configured in MIB
- *                       1..maxNrofControlResourceSets-1 identify CORESETs configured by dedicated signalling
- * monitoringSlotPeriodicityAndOffset:
- *                       Slots for PDCCH Monitoring configured as periodicity and offset.
- *                       Corresponds to L1 parameters 'Montoring-periodicity-PDCCH-slot' and
- *                       'Montoring-offset-PDCCH-slot' (see 38.213, section 10)
- * monitoringSymbolsWithinSlot:
- *                       Symbols for PDCCH monitoring in the slots configured for PDCCH monitoring
- *                       The most significant (left) bit represents the first OFDM in a slot
- *
- * nrofCandidates:       Number of PDCCH candidates per aggregation level
- *
- * searchSpaceType:      Indicates whether this is a common search space (present) or a UE specific search space
- *                       as well as DCI formats to monitor for (description in struct NR_UE_PDCCH_SEARCHSPACE_TYPE
- *      common:          Configures this search space as common search space (CSS) and DCI formats to monitor
- *      ue-Specific:     Configures this search space as UE specific search space (USS)
- *                       The UE monitors the DCI format with CRC scrambled by
- *                       C-RNTI, CS-RNTI (if configured), TC-RNTI (if a certain condition is met),
- *                       and SP-CSI-RNTI (if configured)
- */
+  /*
+   * define SearchSpace structure according to 38.331
+   *
+   * searchSpaceId:        Identity of the search space. SearchSpaceId = 0 identifies the SearchSpace configured via PBCH (MIB)
+   *                       The searchSpaceId is unique among the BWPs of a Serving Cell
+   * controlResourceSetId: CORESET applicable for this SearchSpace
+   *                       0 identifies the common CORESET configured in MIB
+   *                       1..maxNrofControlResourceSets-1 identify CORESETs configured by dedicated signalling
+   * monitoringSlotPeriodicityAndOffset:
+   *                       Slots for PDCCH Monitoring configured as periodicity and offset.
+   *                       Corresponds to L1 parameters 'Montoring-periodicity-PDCCH-slot' and
+   *                       'Montoring-offset-PDCCH-slot' (see 38.213, section 10)
+   * monitoringSymbolsWithinSlot:
+   *                       Symbols for PDCCH monitoring in the slots configured for PDCCH monitoring
+   *                       The most significant (left) bit represents the first OFDM in a slot
+   *
+   * nrofCandidates:       Number of PDCCH candidates per aggregation level
+   *
+   * searchSpaceType:      Indicates whether this is a common search space (present) or a UE specific search space
+   *                       as well as DCI formats to monitor for (description in struct NR_UE_PDCCH_SEARCHSPACE_TYPE
+   *      common:          Configures this search space as common search space (CSS) and DCI formats to monitor
+   *      ue-Specific:     Configures this search space as UE specific search space (USS)
+   *                       The UE monitors the DCI format with CRC scrambled by
+   *                       C-RNTI, CS-RNTI (if configured), TC-RNTI (if a certain condition is met),
+   *                       and SP-CSI-RNTI (if configured)
+   */
   // INTEGER (0..maxNrofSearchSpaces-1) (0..40-1)
   int searchSpaceId;
   int controlResourceSetId;
@@ -892,18 +894,17 @@ typedef struct {
   //Check for specific DCIFormat and AgregationLevel
   uint8_t dciFormat;
   uint8_t agregationLevel;
-  t_nrPolar_paramsPtr nrPolar_params;
-  #ifdef NR_PDCCH_DEFS_NR_UE
+#ifdef NR_PDCCH_DEFS_NR_UE
   int nb_searchSpaces;
   // CORESET structure, where maximum number of CORESETs to be handled is 3 (according to 38.331 V15.1.0)
   NR_UE_PDCCH_CORESET coreset[NR_NBR_CORESET_ACT_BWP];
   // SEARCHSPACE structure, where maximum number of SEARCHSPACEs to be handled is 10 (according to 38.331 V15.1.0)
-  // Each SearchSpace is associated with one ControlResourceSet 
+  // Each SearchSpace is associated with one ControlResourceSet
   NR_UE_PDCCH_SEARCHSPACE searchSpace[NR_NBR_SEARCHSPACE_ACT_BWP];
 
   int n_RB_BWP[NR_NBR_SEARCHSPACE_ACT_BWP];
   uint32_t nb_search_space;
-  #endif
+#endif
 } NR_UE_PDCCH;
 
 #define PBCH_A 24
@@ -933,8 +934,6 @@ typedef struct {
   /// \brief Pointer to PBCH decoded output.
   /// - first index: ? [0..63] (hard coded)
   uint8_t *decoded_output;
-  /// polar decoder parameters
-  t_nrPolar_paramsPtr nrPolar_params;
   /// \brief Total number of PDU errors.
   uint32_t pdu_errors;
   /// \brief Total number of PDU errors 128 frames ago.
@@ -1192,7 +1191,7 @@ typedef struct {
 
   PUCCH_CONFIG_DEDICATED pucch_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
 
-//#if defined(UPGRADE_RAT_NR)
+  //#if defined(UPGRADE_RAT_NR)
 #if 1
 
   SystemInformationBlockType1_nr_t systemInformationBlockType1_nr;
@@ -1234,7 +1233,7 @@ typedef struct {
   /// Scheduling Request Config
   SCHEDULING_REQUEST_CONFIG scheduling_request_config[NUMBER_OF_CONNECTED_eNB_MAX];
 
-//#if defined(UPGRADE_RAT_NR)
+  //#if defined(UPGRADE_RAT_NR)
 #if 1
   scheduling_request_config_t scheduling_request_config_nr[NUMBER_OF_CONNECTED_eNB_MAX];
 
