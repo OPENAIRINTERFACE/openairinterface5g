@@ -686,7 +686,7 @@ rx_sdu(const module_id_t enb_mod_idP,
               rx_lengths[i],
               payload_ptr - sduP);
 
-            if ((UE_id = add_new_ue(enb_mod_idP, CC_idP, mac->common_channels[CC_idP].ra->rnti, harq_pid
+            if ((UE_id = add_new_ue(enb_mod_idP, CC_idP, ra->rnti, harq_pid
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                     , mac->common_channels[CC_idP].ra->rach_resource_type
 #endif
@@ -1916,7 +1916,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
                               frame_t       frameP,
                               sub_frame_t   subframeP,
-                              int           sched_subframeP,
+                              unsigned char sched_subframeP,
                               int          *emtc_active)
 //-----------------------------------------------------------------------------
 {
