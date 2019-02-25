@@ -6619,17 +6619,18 @@ void rrc_eNB_generate_RRCConnectionSetup(const protocol_ctxt_t *const ctxt_pP,
 			    rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
 			    SRB_configList,
 			    &ue_context_pP->ue_context.physicalConfigDedicated);
-    LOG_DUMPMSG(RRC,DEBUG_RRC,
-		(char *)(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload),
-		RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size,
-		"[MSG] RRC Connection Setup\n");
+  }
+  LOG_DUMPMSG(RRC,DEBUG_RRC,
+	(char *)(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload),
+	RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size,
+	"[MSG] RRC Connection Setup\n");
     
     // configure SRB1/SRB2, PhysicalConfigDedicated, LTE_MAC_MainConfig for UE
     
-    if (*SRB_configList != NULL) {
-      for (cnt = 0; cnt < (*SRB_configList)->list.count; cnt++) {
-	if ((*SRB_configList)->list.array[cnt]->srb_Identity == 1) {
-	  SRB1_config = (*SRB_configList)->list.array[cnt];
+  if (*SRB_configList != NULL) {
+    for (cnt = 0; cnt < (*SRB_configList)->list.count; cnt++) {
+      if ((*SRB_configList)->list.array[cnt]->srb_Identity == 1) {
+          SRB1_config = (*SRB_configList)->list.array[cnt];
 	  
 	  if (SRB1_config->logicalChannelConfig) {
 	    if (SRB1_config->logicalChannelConfig->present ==
@@ -6683,7 +6684,6 @@ void rrc_eNB_generate_RRCConnectionSetup(const protocol_ctxt_t *const ctxt_pP,
 	  break;
 	}
       }
-    }
     
     MSC_LOG_TX_MESSAGE(
 		       MSC_RRC_ENB,
