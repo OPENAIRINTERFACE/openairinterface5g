@@ -978,7 +978,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   m = (n1_pucch < thres) ? NRB2 : (((n1_pucch-thres)/(12*c/deltaPUCCH_Shift))+NRB2+((deltaPUCCH_Shift*Ncs1_div_deltaPUCCH_Shift)>>3)+rem);
 
 #ifdef DEBUG_PUCCH_RX
-  printf("[eNB] PUCCH: m %d\n",m);
+  printf("[eNB] PUCCH: m %d, thres %d, NRB2 %d\n",m,thres,NRB2);
 #endif
   nsymb = N_UL_symb<<1;
 

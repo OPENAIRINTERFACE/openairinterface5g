@@ -1351,7 +1351,7 @@ check_Msg4_retransmission(module_id_t module_idP, int CC_idP,
 	    }			// Msg4 frame/subframe
 	}			// regular LTE case
     } else {
-	LOG_D(MAC,
+	LOG_I(MAC,
 	      "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d : Msg4 acknowledged\n",
 	      module_idP, CC_idP, frameP, subframeP);
 	ra->state = IDLE;

@@ -789,7 +789,7 @@ void uci_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc)
                                ,uci->ue_type
 #endif
                                );
-
+          //dump_ulsch(eNB,frame,subframe,0,0); exit(-1);
 	  
 	  
 	  /* cancel SR detection if reception on n1_pucch0 is better than on SR PUCCH resource index, otherwise send it up to MAC */
