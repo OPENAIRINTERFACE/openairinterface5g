@@ -59,6 +59,7 @@ import re		# reg
 import pexpect		# pexpect
 import time		# sleep
 import os
+import subprocess
 import xml.etree.ElementTree as ET
 import logging
 import datetime
@@ -1962,7 +1963,16 @@ class SSHConnection():
 			self.command('cp /opt/ltebox/var/log/xGwLog.0 .', '\$', 5)
 			self.command('zip spgw.log.zip xGwLog.0', '\$', 60)
 		self.close()
+
 	def RetrieveSystemVersion(self):
+		if self.eNBIPAddress == 'none':
+			self.eNBOsVersion = 'Ubuntu 16.04.5 LTS'
+			self.eNBKernelVersion = '4.15.0-45-generic'
+			self.eNBUhdVersion = '3.13.0.1-0'
+			self.eNBCpuNb = '4'
+			self.eNBCpuModel = 'Intel(R) Core(TM) i5-6200U'
+			self.eNBCpuMHz = '2399.996 MHz'
+			return
 		if self.eNBIPAddress == '' or self.eNBUserName == '' or self.eNBPassword == '':
 			Usage()
 			sys.exit('Insufficient Parameter')
@@ -2055,6 +2065,16 @@ class SSHConnection():
 				self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-tag"></span> Commit ID </td>\n')
 			self.htmlFile.write('       <td>' + self.eNBCommitID + '</td>\n')
 			self.htmlFile.write('     </tr>\n')
+			if self.eNB_AllowMerge != '':
+				commit_message = subprocess.check_output("git log -n1 --pretty=format:\"%s\" " + self.eNBCommitID, shell=True, universal_newlines=True)
+				commit_message = commit_message.strip()
+				self.htmlFile.write('     <tr>\n')
+				if (self.eNB_AllowMerge):
+					self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-comment"></span> Source Commit Message </td>\n')
+				else:
+					self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-comment"></span> Commit Message </td>\n')
+				self.htmlFile.write('       <td>' + commit_message + '</td>\n')
+				self.htmlFile.write('     </tr>\n')
 			if (self.eNB_AllowMerge):
 				self.htmlFile.write('     <tr>\n')
 				self.htmlFile.write('       <td bgcolor = "lightcyan" > <span class="glyphicon glyphicon-log-in"></span> Target Branch </td>\n')
