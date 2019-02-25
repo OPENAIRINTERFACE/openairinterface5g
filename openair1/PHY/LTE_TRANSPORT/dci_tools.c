@@ -1776,8 +1776,8 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,mDCI_ALLOC_t *dc
   dlsch0_harq->frame    = (subframe >= 8) ? ((frame + 1) & 1023) : frame;
   dlsch0_harq->subframe = (subframe + 2) % 10;
 
-  LOG_I(PHY,"Setting DLSCH harq_ids[%d] to %d\n",dlsch0_harq->subframe,dlsch0->harq_ids[frame%2][dlsch0_harq->subframe]);
-  dlsch0->harq_ids[frame%2][dlsch0_harq->subframe] = rel13->harq_process;
+  LOG_I(PHY,"Setting DLSCH UEid %d harq_ids[%d] from %d to %d\n",UE_id,dlsch0_harq->subframe,dlsch0->harq_ids[frame%2][dlsch0_harq->subframe],rel13->harq_process);
+  dlsch0->harq_ids[dlsch0_harq->frame%2][dlsch0_harq->subframe] = rel13->harq_process;
   dlsch0_harq->pdsch_start = rel13->start_symbol;
 
   LOG_I(PHY,"Setting DLSCH harq %d round %d to active for %d.%d\n",rel13->harq_process,dlsch0_harq->round,dlsch0_harq->frame,dlsch0_harq->subframe);
