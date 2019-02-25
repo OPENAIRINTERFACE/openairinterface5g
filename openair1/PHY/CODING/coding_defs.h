@@ -467,33 +467,26 @@ void nr_interleaving_ldpc(uint32_t E, uint8_t Qm, uint8_t *e,uint8_t *f);
 
 void nr_deinterleaving_ldpc(uint32_t E, uint8_t Qm, int16_t *e,int16_t *f);
 
-uint32_t nr_rate_matching_ldpc(uint8_t Ilbrm,
-							   uint32_t Tbslbrm,
-							   uint8_t BG,
-							   uint16_t Z,
-                               uint32_t G,
-                               uint8_t *w,
-                               uint8_t *e,
-                               uint8_t C,
-                               uint8_t rvidx,
-                               uint8_t Qm,
-                               uint8_t Nl,
-                               uint8_t r);
+int nr_rate_matching_ldpc(uint8_t Ilbrm,
+                          uint32_t Tbslbrm,
+                          uint8_t BG,
+                          uint16_t Z,
+                          uint8_t *w,
+                          uint8_t *e,
+                          uint8_t C,
+                          uint8_t rvidx,
+                          uint32_t E);
 
 int nr_rate_matching_ldpc_rx(uint8_t Ilbrm,
-		 	 	 	 	 	 uint32_t Tbslbrm,
-							 uint8_t BG,
-							 uint16_t Z,
-							 uint32_t G,
+                             uint32_t Tbslbrm,
+                             uint8_t BG,
+                             uint16_t Z,
                              int16_t *w,
                              int16_t *soft_input,
                              uint8_t C,
                              uint8_t rvidx,
                              uint8_t clear,
-                             uint8_t Qm,
-                             uint8_t Nl,
-                             uint8_t r,
-                             uint32_t *E_out);
+                             uint32_t E);
 
 decoder_if_t phy_threegpplte_turbo_decoder;
 decoder_if_t phy_threegpplte_turbo_decoder8;

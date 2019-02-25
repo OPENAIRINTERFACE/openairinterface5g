@@ -74,13 +74,23 @@ void nr_configure_css_dci_initial(nfapi_nr_dl_config_pdcch_parameters_rel15_t* p
 				  nr_frequency_range_e freq_range,
 				  uint8_t rmsi_pdcch_config,
 				  uint8_t ssb_idx,
+          uint8_t k_ssb,
+          uint16_t sfn_ssb,
+          uint8_t n_ssb,
 				  uint16_t nb_slots_per_frame,
 				  uint16_t N_RB);
 
+int nr_is_dci_opportunity(nfapi_nr_search_space_t search_space,
+                                nfapi_nr_coreset_t coreset,
+                                uint16_t frame,
+                                uint16_t slot,
+                                nfapi_nr_config_request_t cfg);
 
-void nr_configure_css_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
+void nr_configure_dci_from_pdcch_config(nfapi_nr_dl_config_pdcch_parameters_rel15_t* pdcch_params,
                                             nfapi_nr_coreset_t* coreset,
-                                            nfapi_nr_search_space_t* search_space);
+                                            nfapi_nr_search_space_t* search_space,
+                                            nfapi_nr_config_request_t cfg,
+                                            uint16_t N_RB);
 
 int get_dlscs(nfapi_nr_config_request_t *cfg);
 
@@ -89,5 +99,7 @@ int get_ulscs(nfapi_nr_config_request_t *cfg);
 int get_spf(nfapi_nr_config_request_t *cfg);
 
 int to_absslot(nfapi_nr_config_request_t *cfg,int frame,int slot);
+
+int get_symbolsperslot(nfapi_nr_config_request_t *cfg);
 
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

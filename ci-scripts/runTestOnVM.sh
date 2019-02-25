@@ -441,10 +441,16 @@ function run_test_on_vm {
             echo "############################################################"
             echo "Creating test EPC VM ($EPC_VM_NAME) on Ubuntu Cloud Image base"
             echo "############################################################"
+            acquire_vm_create_lock
             uvt-kvm create $EPC_VM_NAME release=xenial --unsafe-caching
+            echo "Waiting for VM to be started"
+            uvt-kvm wait $EPC_VM_NAME --insecure
+            release_vm_create_lock
+        else
+            echo "Waiting for VM to be started"
+            uvt-kvm wait $EPC_VM_NAME --insecure
         fi
 
-        uvt-kvm wait $EPC_VM_NAME --insecure
         EPC_VM_IP_ADDR=`uvt-kvm ip $EPC_VM_NAME`
         echo "$EPC_VM_NAME has for IP addr = $EPC_VM_IP_ADDR"
         scp -o StrictHostKeyChecking=no /etc/apt/apt.conf.d/01proxy ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu

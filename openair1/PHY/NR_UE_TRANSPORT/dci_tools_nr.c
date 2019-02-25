@@ -64,17 +64,10 @@ int8_t *nr_delta_PUCCH_lut = nr_delta_PUSCH_acc;
 
 #ifdef NR_PDCCH_DCI_TOOLS
 
-uint16_t nr_dci_field(uint32_t dci_pdu[4],
+uint16_t nr_dci_field(uint64_t dci_pdu[2],
                       uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS],
                       uint8_t dci_field)
 {
-  //  uint16_t field_value  = 0 ;
-  // first_bit_position contains the position of the first bit of the corresponding field within the dci pdu payload
-
-  // last_bit_position contains the position of the last bit of the corresponding field within the dci pdu payload
-  //  uint16_t last_bit_position = 0;
-  //  uint8_t bit=0;
-  //printf("\tdci_field=%d, \tsize=%d \t|",dci_field,dci_fields_sizes[dci_field]);
   int dci_size=0;
 
   for (int i=0;i<NBR_NR_DCI_FIELDS;i++) dci_size+=dci_fields_sizes[i];
@@ -87,25 +80,13 @@ uint16_t nr_dci_field(uint32_t dci_pdu[4],
   for (int i=0; i<=dci_field ; i++){
     first_bit_position = first_bit_position - dci_fields_sizes[i];
   }
-  //  last_bit_position = first_bit_position + dci_fields_sizes[dci_field];
-  //printf("\tfirst_bit=%d,\tlast_bit=%d",first_bit_position,last_bit_position);
-  /*
-  for (int i=0; i<4; i++)
-    for (int j=0; j<32; j++){
-      if ((((i*32)+j) >= first_bit_position) && (((i*32)+j) < last_bit_position)){
-        bit = (dci_pdu[i]<<(31-j))>>31;
-        field_value = (field_value<<1) + bit;
-        //printf(" bit(%d)=%d[%d] ",(i*32)+j,bit,field_value);
-      }
-    }
-  */
 
-  uint64_t *dci_pdu64=(uint64_t*)&dci_pdu[0];
-  /*
-    printf("pdu %llx, field %d, pos %d, size %d => %u\n",(long long unsigned int)*dci_pdu64,dci_field,first_bit_position,dci_fields_sizes[dci_field],
-    (unsigned int)((*dci_pdu64>>first_bit_position)&((1<<dci_fields_sizes[dci_field])-1)));*/
+  /*uint16_t tmp1 = ((*dci_pdu>>first_bit_position)&((1<<dci_fields_sizes[dci_field])-1));
+  uint16_t tmp2 = 0;
+  for (int i=0; i<dci_fields_sizes[dci_field]; i++)
+    tmp2 |= ((tmp1>>i)&1)<<(dci_fields_sizes[dci_field]-i-1);*/
 
-  return (uint16_t)((*dci_pdu64>>first_bit_position)&((1<<dci_fields_sizes[dci_field])-1));
+  return ((uint16_t)(*dci_pdu>>first_bit_position)&((1<<dci_fields_sizes[dci_field])-1));
 }
 
 int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
@@ -113,7 +94,7 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
         lte_frame_type_t frame_type,
         uint8_t dci_length,
         uint16_t rnti,
-        uint32_t dci_pdu[4],
+        uint64_t dci_pdu[2],
         NR_DCI_INFO_EXTRACTED_t *nr_pdci_info_extracted,
         uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS],
         NR_DL_UE_HARQ_t *pdlsch0_harq,
@@ -125,7 +106,7 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
         uint16_t n_RB_DLBWP,
         uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES])
 {
-	
+
 /*
  * This function will extract the different elements of the dci pdu and interpret the values extracted to update correctly the parameters in:
  *                                                NR_DL_UE_HARQ_t *pdlsch0_harq,
@@ -312,8 +293,8 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
 //  uint8_t sizes_count=0;
 //  uint8_t left_shift=0;
   #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
-    printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> Entering function nr_extract_dci_info() with dci_pdu=%x %x %x %x dci_length=%d\n",
-            dci_pdu[0],dci_pdu[1],dci_pdu[2],dci_pdu[3], dci_length);
+    printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> Entering function nr_extract_dci_info() with dci_pdu=%lx %lx dci_length=%d\n",
+            dci_pdu[0],dci_pdu[1], dci_length);
     printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> for format %d, dci_fields_sizes {",dci_format);
     for (int i=0; i<NBR_NR_DCI_FIELDS; i++) printf("%d ",dci_fields_sizes[i][dci_format]);
     printf("}\n");
@@ -1040,7 +1021,7 @@ int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
         uint8_t eNB_id,
         int frame,
         uint8_t nr_tti_rx,
-        uint32_t dci_pdu[4],
+        uint64_t dci_pdu[2],
         uint16_t rnti,
         uint8_t dci_length,
         NR_DCI_format_t dci_format,
@@ -1074,8 +1055,8 @@ int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
   
   uint8_t status=0;
   #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
-    printf("\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> dci_format=%d, rnti=%d, dci_length=%d, dci_pdu[0]=%x, dci_pdu[2]=%x, dci_pdu[2]=%x, dci_pdu[3]=%x\n",
-             dci_format,rnti,dci_length,dci_pdu[0],dci_pdu[1],dci_pdu[2],dci_pdu[3]);
+    printf("\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> dci_format=%d, rnti=%d, dci_length=%d, dci_pdu[0]=0x%lx, dci_pdu[1]=0x%lx\n",
+             dci_format,rnti,dci_length,dci_pdu[0],dci_pdu[1]);
   #endif
 
   

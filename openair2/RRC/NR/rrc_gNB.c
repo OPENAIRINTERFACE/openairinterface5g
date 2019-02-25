@@ -332,7 +332,7 @@ char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigu
           gnb_mod_idP, RC.nrrrc[ctxt.module_id]->carrier[CC_id].cba_rnti[0],
           RC.nrrrc[ctxt.module_id]->carrier[CC_id].cba_rnti[1],
           RC.nrrrc[ctxt.module_id]->carrier[CC_id].cba_rnti[2],
-          RC.nrrrc[ctxt.module_id]->caNRRRC_CONFIGURATION_REQrrier[CC_id].cba_rnti[3],
+          RC.nrrrc[ctxt.module_id]->carrier[CC_id].cba_rnti[3],
           RC.nrrrc[ctxt.module_id]->carrier[CC_id].num_active_cba_groups);
   }
 
