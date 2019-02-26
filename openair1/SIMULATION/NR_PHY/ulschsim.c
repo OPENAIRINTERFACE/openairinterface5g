@@ -52,7 +52,7 @@
 //#include "UTIL/LISTS/list.h"
 //#include "common/ran_context.h"
 
-//#define DEBUG_DLSCHSIM
+//#define DEBUG_ULSCHSIM
 
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
@@ -544,7 +544,7 @@ int main(int argc, char **argv) {
 	////////////////////////////////////////////////////////////////////////////////////////////
 
 
-#ifdef DEBUG_DLSCHSIM
+#ifdef DEBUG_ULSCHSIM
 	for (i = 0; i < TBS / 8; i++) printf("test_input[i]=%d \n",test_input[i]);
 #endif
 
@@ -553,9 +553,13 @@ int main(int argc, char **argv) {
 
 	//printf("crc32: [0]->0x%08x\n",crc24c(test_input, 32));
 	// generate signal
+
+	/////////////////////////[adk] ULSCH coding/////////////////////////
+	///////////
+
 	if (input_fd == NULL) {
 		nr_dlsch_encoding(test_input, subframe, dlsch, frame_parms);
-		nr_ulsch_encoding(ulsch, frame_parms);
+		nr_ulsch_encoding(ulsch, frame_parms, harq_pid);
 	}
 
 	for (SNR = snr0; SNR < snr1; SNR += snr_step) {

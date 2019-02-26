@@ -1007,7 +1007,23 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                          uint8_t llr8_flag);
 
 int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
-                     NR_DL_FRAME_PARMS* frame_parms);
+                     NR_DL_FRAME_PARMS* frame_parms,
+                     uint8_t harq_pid);
+
+/*! \brief Perform PUSCH scrambling. TS 38.211 V15.4.0 subclause 6.3.1.1
+  @param[in] in Pointer to input bits
+  @param[in] size of input bits
+  @param[in] Nid cell id
+  @param[in] n_RNTI CRNTI
+  @param[out] out the scrambled bits
+*/
+
+void nr_pusch_codeword_scrambling(uint8_t *in,
+                         uint16_t size,
+                         uint32_t Nid,
+                         uint32_t n_RNTI,
+                         uint32_t* out);
+
 
 uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 						 UE_nr_rxtx_proc_t *proc,

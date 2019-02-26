@@ -189,14 +189,14 @@ NR_UE_ULSCH_t *new_nr_ue_ulsch(unsigned char N_RB_UL, int number_of_harq_pids, u
 
 
 int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
-                     NR_DL_FRAME_PARMS* frame_parms)
+                     NR_DL_FRAME_PARMS* frame_parms,
+                     uint8_t harq_pid)
 {
 
 /////////////////////////parameters and variables declaration/////////////////////////
 ///////////
 
   unsigned int G,crc;
-  uint8_t harq_pid;
   NR_UL_UE_HARQ_t *harq_process; 
   uint16_t nb_rb ;
   uint8_t nb_symb_sch ;
@@ -221,7 +221,6 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 ///////////
 
   crc = 1;
-  harq_pid = 0;
   harq_process = ulsch->harq_processes[harq_pid];
   nb_rb = harq_process->nb_rb;
   nb_symb_sch = harq_process->nb_symbols;
