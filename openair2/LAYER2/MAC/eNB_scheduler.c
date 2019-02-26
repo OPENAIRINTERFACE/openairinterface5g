@@ -678,7 +678,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
     schedule_SR(module_idP, frameP, subframeP);
     // This schedules UCI_CSI in subframeP
     schedule_CSI(module_idP, frameP, subframeP);
-#if (RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     // This schedules DLSCH in subframeP
     schedule_ue_spec_br(module_idP,frameP,subframeP);
 #endif
