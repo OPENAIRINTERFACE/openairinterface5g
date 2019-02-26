@@ -688,7 +688,7 @@ rx_sdu(const module_id_t enb_mod_idP,
 
             if ((UE_id = add_new_ue(enb_mod_idP, CC_idP, ra->rnti, harq_pid
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                    , mac->common_channels[CC_idP].ra->rach_resource_type
+                                    , ra->rach_resource_type
 #endif
                                     )) == -1) {
               LOG_E(MAC,"[MAC][eNB] Max user count reached\n");
@@ -1385,6 +1385,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
     if (!ue_ul_slice_membership(module_idP, UE_id, slice_idx)) {
       continue;
     }
+    if (UE_list->UE_template[UE_PCCID(module_idP, UE_id)][UE_id].rach_resource_type > 0)  continue;
 
     // don't schedule if Msg5 is not received yet
     if (UE_list->UE_template[UE_PCCID(module_idP, UE_id)][UE_id].configured == FALSE) {
@@ -1961,9 +1962,7 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
     UE_template = &(UE_list->UE_template[UE_PCCID(module_idP, UE_id)][UE_id]);
 
     /* LTE-M device */
-    if (UE_template->rach_resource_type == 0) {
-      continue;
-    }
+    if (UE_template->rach_resource_type == 0) continue;
 
     /* Don't schedule if Msg4 is not received yet */
     if (UE_template->configured == FALSE) {
@@ -1994,6 +1993,8 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
       N_RB_UL = to_prb(cc[CC_id].ul_Bandwidth);
 
       UE_template   = &(UE_list->UE_template[CC_id][UE_id]);
+      UE_sched_ctrl = &UE_list->UE_sched_ctrl[UE_id];
+
       harq_pid      = 0;
       round_UL      = UE_sched_ctrl->round_UL[CC_id][harq_pid];
 
@@ -2024,7 +2025,7 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
          * or we want to schedule a periodic feedback every frame
          */
         
-        LOG_I(MAC,"[eNB %d][PUSCH %d] Frame %d subframe %d Scheduling UE %d/%x in round_UL %d(SR %d,UL_inactivity timer %d,UL_failure timer %d,cqi_req_timer %d)\n",
+        LOG_D(MAC,"[eNB %d][PUSCH %d] Frame %d subframe %d Scheduling UE %d/%x in round_UL %d(SR %d,UL_inactivity timer %d,UL_failure timer %d,cqi_req_timer %d)\n",
               module_idP,
               harq_pid,
               frameP,
@@ -2146,7 +2147,7 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
           AssertFatal(epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310->present == LTE_EPDCCH_SetConfig_r11__ext2__numberPRB_Pairs_v1310_PR_setup, 
                       "epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310->present is not setup\n");
 
-          LOG_I(MAC,"[PUSCH %d] Frame %d, Subframe %d: Adding UL 6-0A MPDCCH for BL/CE UE %d/%x, ulsch_frame %d, ulsch_subframe %d, UESS MPDCCH Narrowband %d\n",
+          LOG_D(MAC,"[PUSCH %d] Frame %d, Subframe %d: Adding UL 6-0A MPDCCH for BL/CE UE %d/%x, ulsch_frame %d, ulsch_subframe %d, UESS MPDCCH Narrowband %d\n",
                 harq_pid,
                 frameP,
                 subframeP,
@@ -2207,7 +2208,7 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
 
           hi_dci0_req->number_of_dci++;
 
-          LOG_I(MAC,"[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG. Request for BL/CE UE %d/%x, ulsch_frame %d, ulsch_subframe %d, UESS mpdcch narrowband %d\n",
+          LOG_D(MAC,"[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG. Request for BL/CE UE %d/%x, ulsch_frame %d, ulsch_subframe %d, UESS mpdcch narrowband %d\n",
                 harq_pid,
                 frameP,
                 subframeP,
@@ -2295,7 +2296,7 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
           AssertFatal(epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310->present == LTE_EPDCCH_SetConfig_r11__ext2__numberPRB_Pairs_v1310_PR_setup, 
                       "epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310->present is not setup\n");
 
-          LOG_I(MAC,"[PUSCH %d] Frame %d, Subframe %d: Adding UL 6-0A MPDCCH for BL/CE UE %d/%x, ulsch_frame %d, ulsch_subframe %d,UESS MPDCCH Narrowband %d\n",
+          LOG_D(MAC,"[PUSCH %d] Frame %d, Subframe %d: Adding UL 6-0A MPDCCH for BL/CE UE %d/%x, ulsch_frame %d, ulsch_subframe %d,UESS MPDCCH Narrowband %d\n",
                       harq_pid,
                       frameP,
                       subframeP,

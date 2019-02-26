@@ -98,9 +98,9 @@ void dci_encoding(uint8_t *a,
 #endif
   RCC = sub_block_interleaving_cc(D,d+96,w);
 
-  //#ifdef DEBUG_DCI_ENCODING
+#ifdef DEBUG_DCI_ENCODING
   if (E>1000) printf("Doing DCI rate matching for %d channel bits, RCC %d, e %p\n",E,RCC,e);
-  //#endif
+#endif
   lte_rate_matching_cc(RCC,E,w,e);
 
 
