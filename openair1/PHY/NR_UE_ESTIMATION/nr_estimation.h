@@ -43,7 +43,6 @@
 \param symbol symbol within frame
 */
 int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
-				uint8_t eNB_id,
 				uint8_t eNB_offset,
 				unsigned char Ns,
 				unsigned char l,
@@ -52,14 +51,11 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
 				unsigned short nb_rb_coreset);
 
 int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
-                              uint8_t eNB_id,
                               uint8_t eNB_offset,
                               unsigned char Ns,
-                              unsigned char l,
                               unsigned char symbol);
 
 int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
-                              uint8_t eNB_id,
                               uint8_t eNB_offset,
                               unsigned char Ns,
                               unsigned short p,

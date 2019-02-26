@@ -39,12 +39,10 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 		unsigned char Ns,
 		int sample_offset,
 		int no_prefix,
-		int reset_freq_est,
 		NR_CHANNEL_EST_t channel)
 {
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   NR_UE_COMMON *common_vars   = &ue->common_vars;
-  uint8_t eNB_id = 0;//ue_common_vars->eNb_id;
   unsigned char aa;
   unsigned char symbol = l;//+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within sub-frame
   unsigned int nb_prefix_samples = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
@@ -204,56 +202,17 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 
   switch(channel){
   case NR_PBCH_EST:
-
-#ifdef DEBUG_FEP
-    printf("Channel estimation eNB %d, slot %d, symbol %d\n",eNB_id,Ns,l);
-#endif
-#if UE_TIMING_TRACE
-    start_meas(&ue->dlsch_channel_estimation_stats);
-#endif
-    nr_pbch_channel_estimation(ue,eNB_id,0,
-			       Ns,
-			       l,
-			       symbol);
-      //}
-#if UE_TIMING_TRACE
-        stop_meas(&ue->dlsch_channel_estimation_stats);
-#endif
-
-      // do frequency offset estimation here!
-      // use channel estimates from current symbol (=ch_t) and last symbol (ch_{t-1})
-#ifdef DEBUG_FEP
-      printf("Frequency offset estimation\n");
-#endif
-
-      if (l==(4-frame_parms->Ncp)) {
-
-#if UE_TIMING_TRACE
-          start_meas(&ue->dlsch_freq_offset_estimation_stats);
-#endif
-
-        /*lte_est_freq_offset(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].dl_ch_estimates[0],
-                            frame_parms,
-                            l,
-                            &common_vars->freq_offset,
-			    reset_freq_est);*/
-#if UE_TIMING_TRACE
-        stop_meas(&ue->dlsch_freq_offset_estimation_stats);
-#endif
-
-      }
-
   break;
 
   case NR_PDCCH_EST:
 
 #ifdef DEBUG_FEP
-    printf("PDCCH Channel estimation eNB %d, aatx %d, slot %d, symbol %d start_sc %d\n",eNB_id,aa,Ns,l,coreset_start_subcarrier);
+    printf("PDCCH Channel estimation aatx %d, slot %d, symbol %d start_sc %d\n",aa,Ns,l,coreset_start_subcarrier);
 #endif
 #if UE_TIMING_TRACE
     start_meas(&ue->dlsch_channel_estimation_stats);
 #endif
-    nr_pdcch_channel_estimation(ue,eNB_id,0,
+    nr_pdcch_channel_estimation(ue,0,
 				Ns,
 				l,
 				symbol,
@@ -267,7 +226,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
     
   case NR_PDSCH_EST:
 #ifdef DEBUG_FEP
-    printf("Channel estimation eNB %d, aatx %d, slot %d, symbol %d\n",eNB_id,aa,Ns,l);
+    printf("Channel estimation aatx %d, slot %d, symbol %d\n",aa,Ns,l);
 #endif
 #if UE_TIMING_TRACE
     start_meas(&ue->dlsch_channel_estimation_stats);
@@ -276,7 +235,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   ue->frame_parms.nushift =  (p>>1)&1;;
 
     if (symbol ==l0)
-    nr_pdsch_channel_estimation(ue,eNB_id,0,
+    nr_pdsch_channel_estimation(ue,0,
 				Ns,
 				p,
 				l,

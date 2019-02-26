@@ -443,24 +443,6 @@ int rx_sss_nr(PHY_VARS_NR_UE *ue, int32_t *tot_metric,uint8_t *phase_max)
   // For now, symbol 0 = PSS/PBCH and it is never in symbol 0 or 7*2^mu (i.e. always shorter prefix)
   frame_parms->nb_prefix_samples0 = frame_parms->nb_prefix_samples;
 
-  // Do FFTs for SSS/PSS
-  // SSS
-  nr_slot_fep(ue,
-	      SSS_SYMBOL_NB-PSS_SYMBOL_NB,      // symbol number w.r.t. PSS
-	      0,                  // Ns slot number
-	      ue->ssb_offset,      // sample_offset of int16_t
-	      0,                  // no_prefix
-	      1,                  // reset frequency estimation
-	      NR_SSS_EST);
-
-  // PSS
-  nr_slot_fep(ue,
-	      0,
-	      0,
-	      ue->ssb_offset,
-	      0,
-	      1,
-	      NR_SSS_EST);
 
   frame_parms->nb_prefix_samples0 = nb_prefix_samples0;
 

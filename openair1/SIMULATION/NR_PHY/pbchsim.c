@@ -43,6 +43,7 @@
 #include "PHY/INIT/phy_init.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
+#include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 
 #include "SCHED_NR/sched_nr.h"
 
@@ -371,6 +372,7 @@ int main(int argc, char **argv)
   frame_parms->N_RB_DL = N_RB_DL;
   frame_parms->N_RB_UL = N_RB_DL;
   frame_parms->Nid_cell = Nid_cell;
+  frame_parms->ssb_type = nr_ssb_type_B;
 
   nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
   phy_init_nr_gNB(gNB,0,0);
@@ -545,7 +547,6 @@ int main(int argc, char **argv)
     n_errors_payload = 0;
 
     for (trial=0; trial<n_trials; trial++) {
-
       // multipath channel
       //multipath_channel(gNB2UE,s_re,s_im,r_re,r_im,frame_length_complex_samples,0);
       
@@ -596,32 +597,17 @@ int main(int argc, char **argv)
       }
       else {
 	UE->rx_offset=0;
-	//symbol 1
-	nr_slot_fep(UE,
-		    5,
-		    0,
-		    0,
-		    0,
-		    1,
-		    NR_PBCH_EST);
-	
-	//symbol 2
-	nr_slot_fep(UE,
-		    6,
-		    0,
-		    0,
-		    0,
-		    1,
-		    NR_PBCH_EST);
-	
-	//symbol 3
-	nr_slot_fep(UE,
-		    7,
-		    0,
-		    0,
-		    0,
-		    1,
-		    NR_PBCH_EST);
+
+	for (int i=5; i<8; i++) {
+	  nr_slot_fep(UE,
+	  	      i,
+		      0,
+		      0,
+		      0,
+		      NR_PBCH_EST);
+
+          nr_pbch_channel_estimation(UE,0,0,i);
+        }
 	 
 	ret = nr_rx_pbch(UE,
 			 &UE->proc.proc_rxtx[0],

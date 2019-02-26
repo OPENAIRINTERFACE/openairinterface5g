@@ -33,10 +33,8 @@
 
 
 int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
-			       uint8_t eNB_id,
 			       uint8_t eNB_offset,
 			       unsigned char Ns,
-			       unsigned char l,
 			       unsigned char symbol)
 {
   int pilot[200] __attribute__((aligned(16)));
@@ -78,8 +76,8 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   k = nushift;
 
 #ifdef DEBUG_CH
-  printf("PBCH Channel Estimation : ThreadId %d, eNB_offset %d ch_offset %d, OFDM size %d, Ncp=%d, l=%d, Ns=%d, k=%d symbol %d\n",ue->current_thread_id[Ns>>1], eNB_offset,ch_offset,ue->frame_parms.ofdm_symbol_size,
-         ue->frame_parms.Ncp,l,Ns,k, symbol);
+  printf("PBCH Channel Estimation : ThreadId %d, eNB_offset %d ch_offset %d, OFDM size %d, Ncp=%d, Ns=%d, k=%d symbol %d\n",ue->current_thread_id[Ns>>1], eNB_offset,ch_offset,ue->frame_parms.ofdm_symbol_size,
+         ue->frame_parms.Ncp,Ns,k, symbol);
 #endif
 
   switch (k) {
@@ -254,7 +252,6 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
 }
 
 int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
-				uint8_t eNB_id,
 				uint8_t eNB_offset,
 				unsigned char Ns,
 				unsigned char l,
@@ -478,7 +475,6 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
 }
 
 int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
-                              uint8_t eNB_id,
                               uint8_t eNB_offset,
                               unsigned char Ns,
                               unsigned short p,

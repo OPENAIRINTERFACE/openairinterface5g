@@ -53,8 +53,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *phy_vars_ue,
              unsigned char Ns,
              int sample_offset,
              int no_prefix,
-	     int reset_freq_est,
-			 NR_CHANNEL_EST_t channel);
+             NR_CHANNEL_EST_t channel);
 
 int slot_fep_mbsfn(PHY_VARS_UE *phy_vars_ue,
                    unsigned char l,

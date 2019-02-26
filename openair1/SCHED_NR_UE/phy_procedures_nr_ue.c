@@ -4991,7 +4991,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 		nr_tti_rx,
 		0,
 		0,
-		1,
 		NR_PDCCH_EST);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_OUT);
 #if UE_TIMING_TRACE
@@ -5022,7 +5021,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 		  nr_tti_rx,
 		  0,
 		  0,
-		  1,
 		  NR_PDSCH_EST);
       
       //printf("phy procedure pdsch start measurement\n"); 
@@ -5106,7 +5104,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 		    nr_tti_rx,
 		    0,
 		    0,
-		    1,
 		    NR_PBCH_EST);
       
       nr_ue_pbch_procedures(eNB_id,ue,proc,0);

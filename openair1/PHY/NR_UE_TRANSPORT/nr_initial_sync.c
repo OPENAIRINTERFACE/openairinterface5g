@@ -35,6 +35,7 @@
 #include "PHY/INIT/phy_init.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "nr_transport_proto_ue.h"
+#include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
 //#include "SCHED/defs.h"
 //#include "SCHED/extern.h"
 
@@ -68,32 +69,18 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
   frame_parms->nb_prefix_samples0 = frame_parms->nb_prefix_samples;
 
 
-  //symbol 1
-  nr_slot_fep(ue,
-	      1,
-	      0,
-	      ue->ssb_offset,
-	      0,
-	      1,
-	      NR_PBCH_EST);
-  
-  //symbol 2
-  nr_slot_fep(ue,
-	      2,
-	      0,
-	      ue->ssb_offset,
-	      0,
-	      1,
-	      NR_PBCH_EST);
-
-  //symbol 3
-  nr_slot_fep(ue,
-	      3,
-	      0,
-	      ue->ssb_offset,
-	      0,
-	      1,
-	      NR_PBCH_EST);
+  for(int i=1; i<4;i++) {
+ 
+#if UE_TIMING_TRACE
+    start_meas(&ue->dlsch_channel_estimation_stats);
+#endif
+    nr_pbch_channel_estimation(ue,0,
+			       0,
+			       i);
+#if UE_TIMING_TRACE
+    stop_meas(&ue->dlsch_channel_estimation_stats);
+#endif
+  }
 
   //put back nb_prefix_samples0
   frame_parms->nb_prefix_samples0 = nb_prefix_samples0;
@@ -224,6 +211,15 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   /* check that SSS/PBCH block is continuous inside the received buffer */
   if (sync_pos < (NR_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_subframe - (NB_SYMBOLS_PBCH * fp->ofdm_symbol_size))) {
 
+
+    for(int i=0; i<4;i++)
+      nr_slot_fep(ue,
+	          i,
+	          0,
+	          ue->ssb_offset,
+	          0,
+	          NR_PBCH_EST);
+
 #ifdef DEBUG_INITIAL_SYNCH
     LOG_I(PHY,"Calling sss detection (normal CP)\n");
 #endif
@@ -241,8 +237,8 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
     int nb_prefix_samples0 = fp->nb_prefix_samples0;
     fp->nb_prefix_samples0 = fp->nb_prefix_samples;
 	  
-    nr_slot_fep(ue,0, 0, ue->ssb_offset, 0, 1, NR_PDCCH_EST);
-    nr_slot_fep(ue,1, 0, ue->ssb_offset, 0, 1, NR_PDCCH_EST);
+    nr_slot_fep(ue,0, 0, ue->ssb_offset, 0, NR_PDCCH_EST);
+    nr_slot_fep(ue,1, 0, ue->ssb_offset, 0, NR_PDCCH_EST);
     fp->nb_prefix_samples0 = nb_prefix_samples0;	
 
     LOG_I(PHY,"[UE  %d] AUTOTEST Cell Sync : frame = %d, rx_offset %d, freq_offset %d \n",

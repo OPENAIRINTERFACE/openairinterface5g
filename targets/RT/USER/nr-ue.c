@@ -965,7 +965,7 @@ void *UE_thread(void *arg) {
                                                 UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0,
                                                 UE->frame_parms.nb_antennas_rx),"");
         //write_output("txdata_sym.m", "txdata_sym", UE->common_vars.rxdata[0], (UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0), 1, 1);
-        //nr_slot_fep(UE,0, 0, 0, 1, 1, NR_PDCCH_EST);
+        //nr_slot_fep(UE,0, 0, 0, 1, NR_PDCCH_EST);
       } //UE->mode != loop_through_memory
       else
         rt_sleep_ns(1000*1000);

@@ -363,7 +363,7 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu,
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   nfapi_nr_config_request_t *gNB_config = &gNB->gNB_config;
   //overwrite for new NR parameters
-  gNB_config->nfapi_config.rf_bands.rf_band[0] = 78;
+  gNB_config->nfapi_config.rf_bands.rf_band[0] = 5;
   gNB_config->nfapi_config.nrarfcn.value = 620000;
   gNB_config->subframe_config.numerology_index_mu.value = mu;
   gNB_config->subframe_config.duplex_mode.value = TDD;
