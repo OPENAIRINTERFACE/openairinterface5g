@@ -2007,6 +2007,8 @@ schedule_ue_spec_br(module_id_t module_idP,
            
     /* Simple scheduler for 1 repetition, 1 HARQ */
     if (subframeP == 5) { // MPDCCH
+      LOG_I(MAC, "MPDCCH round_DL = %d in frame %d subframe %d\n", round_DL, frameP, subframeP);
+
       if (round_DL == 8) {
         rlc_status.bytes_in_buffer = 0;
 
@@ -2035,7 +2037,7 @@ schedule_ue_spec_br(module_id_t module_idP,
         header_len_dcch = 2; // 2 bytes DCCH SDU subheader
 
         if (TBS - ta_len-header_len_dcch > 0 ) {
-          LOG_I(MAC,"Calling mac_rlc_status_ind for DCCH\n");
+          LOG_D(MAC, "Calling mac_rlc_status_ind for DCCH\n");
           
           rlc_status = mac_rlc_status_ind(module_idP,
                                           rnti,
@@ -2080,7 +2082,7 @@ schedule_ue_spec_br(module_id_t module_idP,
               T_INT(DCCH), 
               T_INT(sdu_lengths[0]));
 
-            LOG_I(MAC,"[eNB %d][DCCH] CC_id %d Got %d bytes from RLC\n",
+            LOG_D(MAC,"[eNB %d][DCCH] CC_id %d Got %d bytes from RLC\n",
                   module_idP,
                   CC_id,
                   sdu_lengths[0]);
@@ -2223,7 +2225,7 @@ schedule_ue_spec_br(module_id_t module_idP,
               T_INT(lcid), 
               T_INT(sdu_lengths[num_sdus]));
 
-            LOG_I(MAC,"[eNB %d][USER-PLANE DEFAULT DRB] Got %d bytes for DTCH %d \n",
+            LOG_D(MAC,"[eNB %d][USER-PLANE DEFAULT DRB] Got %d bytes for DTCH %d \n",
                   module_idP,
                   sdu_lengths[num_sdus],
                   lcid);
@@ -2475,17 +2477,18 @@ schedule_ue_spec_br(module_id_t module_idP,
       UE_template->mcs[harq_pid] = dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mcs;
     }
   } else if ((subframeP == 7) && (round_DL < 8)) { // DLSCH
+    LOG_I(MAC, "DLSCH round_DL = %d in frame %d subframe %d\n", round_DL, frameP, subframeP);
 	  
 	  int absSF = (frameP * 10) + subframeP;
 	  
 	  /* Have to check that MPDCCH was generated */
-	  LOG_I (MAC, "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating DLSCH (ce_level %d RNTI %x)\n",
-	         module_idP, 
-           CC_id, 
-           frameP, 
-           subframeP, 
-           UE_template->rach_resource_type - 1,
-           rnti);
+	  LOG_I(MAC, "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating DLSCH (ce_level %d RNTI %x)\n",
+	        module_idP, 
+          CC_id, 
+          frameP, 
+          subframeP, 
+          UE_template->rach_resource_type - 1,
+          rnti);
 	  
 	  first_rb = narrowband_to_first_rb(&cc[CC_id], epdcch_setconfig_r11->ext2->mpdcch_config_r13->choice.setup.mpdcch_Narrowband_r13 - 1);
 

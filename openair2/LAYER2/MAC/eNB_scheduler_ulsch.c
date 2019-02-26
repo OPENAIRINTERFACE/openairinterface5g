@@ -2017,6 +2017,7 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
       RC.eNB[module_idP][CC_id]->pusch_stats_BO[UE_id][(frameP*10)+subframeP] = UE_template->estimated_ul_buffer;
       VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_BO, UE_template->estimated_ul_buffer);
       
+      //if ((UE_is_to_be_scheduled(module_idP, CC_id, UE_id) > 0) && (subframeP == 5)) {
       if ((UE_template->ul_SR > 0 || round_UL > 0 || status < RRC_CONNECTED) && (subframeP == 5)) {
         /* 
          * if there is information on bsr of DCCH, DTCH,

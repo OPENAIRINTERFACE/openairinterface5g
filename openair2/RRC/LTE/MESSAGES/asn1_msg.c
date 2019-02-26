@@ -3083,6 +3083,27 @@ uint8_t do_RRCConnectionSetup_BR(
   physicalConfigDedicated2->ext7->csi_RS_ConfigNZPToReleaseListExt_r13 = NULL;
 
 
+  rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.mac_MainConfig = CALLOC(1,sizeof(struct LTE_RadioResourceConfigDedicated__mac_MainConfig));
+  rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.mac_MainConfig->present = LTE_RadioResourceConfigDedicated__mac_MainConfig_PR_explicitValue;
+  LTE_MAC_MainConfig_t *mac_MainConfig = &rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.mac_MainConfig->choice.explicitValue;
+  mac_MainConfig->ul_SCH_Config = CALLOC(1, sizeof(*mac_MainConfig->ul_SCH_Config));
+  //long *maxHARQ_Tx = CALLOC(1, sizeof(long));
+  //*maxHARQ_Tx = LTE_MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
+  long *periodicBSR_Timer = CALLOC(1, sizeof(long));
+  *periodicBSR_Timer = LTE_PeriodicBSR_Timer_r12_sf64;
+  //mac_MainConfig->ul_SCH_Config->maxHARQ_Tx = maxHARQ_Tx;
+  mac_MainConfig->ul_SCH_Config->periodicBSR_Timer = periodicBSR_Timer;
+  mac_MainConfig->ul_SCH_Config->retxBSR_Timer = LTE_RetxBSR_Timer_r12_sf320;
+  mac_MainConfig->ul_SCH_Config->ttiBundling = 0; // FALSE
+  mac_MainConfig->timeAlignmentTimerDedicated = LTE_TimeAlignmentTimer_infinity;
+  mac_MainConfig->drx_Config = NULL;
+  mac_MainConfig->phr_Config = CALLOC(1, sizeof(*mac_MainConfig->phr_Config));
+  mac_MainConfig->phr_Config->present = LTE_MAC_MainConfig__phr_Config_PR_setup;
+  mac_MainConfig->phr_Config->choice.setup.periodicPHR_Timer = LTE_MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf20; // sf20 = 20 subframes
+  mac_MainConfig->phr_Config->choice.setup.prohibitPHR_Timer = LTE_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf20; // sf20 = 20 subframes
+  mac_MainConfig->phr_Config->choice.setup.dl_PathlossChange = LTE_MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB3;  // Value dB1 =1 dB, dB3 = 3 dB
+
+
   rrcConnectionSetup->rrc_TransactionIdentifier = Transaction_id;
   rrcConnectionSetup->criticalExtensions.present = LTE_RRCConnectionSetup__criticalExtensions_PR_c1;
   rrcConnectionSetup->criticalExtensions.choice.c1.present =LTE_RRCConnectionSetup__criticalExtensions__c1_PR_rrcConnectionSetup_r8 ;
@@ -3091,7 +3112,7 @@ uint8_t do_RRCConnectionSetup_BR(
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.drb_ToReleaseList = NULL;
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.sps_Config = NULL;
   rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.physicalConfigDedicated = physicalConfigDedicated2;
-  rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.mac_MainConfig = NULL;
+  // rrcConnectionSetup->criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated.mac_MainConfig = NULL;
 
 #ifdef XER_PRINT
   xer_fprint(stdout, &asn_DEF_DL_CCCH_Message, (void*)&dl_ccch_msg);

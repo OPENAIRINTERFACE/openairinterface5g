@@ -680,7 +680,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
     schedule_CSI(module_idP, frameP, subframeP);
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     // This schedules DLSCH in subframeP
-    schedule_ue_spec_br(module_idP,frameP,subframeP);
+    schedule_ue_spec_br(module_idP, frameP, subframeP);
 #endif
     // This schedules DLSCH in subframeP
     if (schedule_ue_spec_p != NULL) {
