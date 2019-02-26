@@ -531,7 +531,7 @@ int main(int argc, char **argv) {
     harq_process_ul_ue->mcs = Imcs;
     harq_process_ul_ue->Nl = Nl;
     harq_process_ul_ue->nb_rb = nb_rb;
-    harq_process_ul_ue->nb_symbols = nb_symb_sch;
+    harq_process_ul_ue->number_of_symbols = nb_symb_sch;
     harq_process_ul_ue->rvidx = rvidx;
     harq_process_ul_ue->TBS = TBS;
     harq_process_ul_ue->a = &test_input[0];

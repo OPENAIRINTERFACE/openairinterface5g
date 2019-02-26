@@ -43,6 +43,9 @@
 #define MAX_NUM_NR_CHANNEL_BITS (14*273*12*6)  // 14 symbols, 273 RB
 #define MAX_NUM_NR_RE (14*273*12)
 
+#define NR_PUSCH_x 2 // UCI placeholder bit TS 38.212 V15.4.0 subclause 5.3.3.1
+#define NR_PUSCH_y 3 // UCI placeholder bit 
+
 // Functions below implement minor procedures from 38-214
 
 /** \brief Computes Q based on I_MCS PDSCH and when 'MCS-Table-PDSCH' is set to "256QAM". Implements Table 5.1.3.1-2 from 38.214.

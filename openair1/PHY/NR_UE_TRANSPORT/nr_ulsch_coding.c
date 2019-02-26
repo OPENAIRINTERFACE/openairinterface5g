@@ -224,7 +224,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
   crc = 1;
   harq_process = ulsch->harq_processes[harq_pid];
   nb_rb = harq_process->nb_rb;
-  nb_symb_sch = harq_process->nb_symbols;
+  nb_symb_sch = harq_process->number_of_symbols;
   A = harq_process->TBS;
   pz = &Z;
   mod_order = nr_get_Qm(harq_process->mcs,1);

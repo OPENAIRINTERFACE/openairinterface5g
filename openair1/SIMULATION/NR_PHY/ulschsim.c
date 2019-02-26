@@ -138,7 +138,7 @@ int main(int argc, char **argv) {
   //  int subframe_offset;
   //  char fname[40], vname[40];
   int trial, n_trials = 1, n_errors = 0, n_false_positive = 0;
-  uint8_t n_tx = 1, n_rx = 1;
+  uint8_t n_tx = 1, n_rx = 1, nb_codewords = 1;
   //uint8_t transmission_mode = 1;
   uint16_t Nid_cell = 0;
   channel_desc_t *gNB2UE;
@@ -475,6 +475,8 @@ int main(int argc, char **argv) {
   unsigned int available_bits;
   uint8_t nb_re_dmrs = 6;
   uint16_t length_dmrs = 1;
+  uint8_t N_PRB_oh;
+  uint16_t N_RE_prime;
   unsigned char mod_order;
   uint8_t Nl = 1;
   uint8_t rvidx = 0;
@@ -484,8 +486,6 @@ int main(int argc, char **argv) {
   nfapi_nr_ul_config_ulsch_pdu_rel15_t *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu.ulsch_pdu_rel15;
 
   NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[0][0][0];
-
-  ulsch_ue->nb_re_dmrs = nb_re_dmrs; //[adk] A HOT FIX until cearting nfapi_nr_ul_config_ulsch_pdu_rel15_t
 
   mod_order = nr_get_Qm(Imcs, 1);
   available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
@@ -522,16 +522,28 @@ int main(int argc, char **argv) {
 
   // estimated_output = ulsch_gNB->harq_processes[harq_pid]->b;
 
+  /////////////////////////[adk] preparing NR_UE_ULSCH_t parameters///////////////////////// A HOT FIX until creating nfapi_nr_ul_config_ulsch_pdu_rel15_t
+  ///////////
+  ulsch_ue->nb_re_dmrs = nb_re_dmrs;
+  ulsch_ue->length_dmrs =  length_dmrs;
+  ulsch_ue->rnti = n_rnti;
+  ///////////
+  ////////////////////////////////////////////////////////////////////////////////////////////
+
   /////////////////////////[adk] preparing UL harq_process parameters/////////////////////////
   ///////////
   NR_UL_UE_HARQ_t *harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
+
+  N_PRB_oh = 0; // higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
+  N_RE_prime = NR_NB_SC_PER_RB*nb_symb_sch - nb_re_dmrs - N_PRB_oh;
 
   if (harq_process_ul_ue) {
 
     harq_process_ul_ue->mcs = Imcs;
     harq_process_ul_ue->Nl = Nl;
     harq_process_ul_ue->nb_rb = nb_rb;
-    harq_process_ul_ue->nb_symbols = nb_symb_sch;
+    harq_process_ul_ue->number_of_symbols = nb_symb_sch;
+    harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*nb_rb*nb_codewords;
     harq_process_ul_ue->rvidx = rvidx;
     harq_process_ul_ue->TBS = TBS;
     harq_process_ul_ue->a = &test_input[0];
@@ -560,6 +572,27 @@ int main(int argc, char **argv) {
   ///////////
   ////////////////////////////////////////////////////////////////////
 
+  /////////////////////////[adk] ULSCH scrambling/////////////////////////
+  ///////////
+
+  uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
+  uint16_t encoded_length;
+
+  encoded_length = harq_process_ul_ue->num_of_mod_symbols*mod_order;
+
+  for (int q=0; q<nb_codewords; q++){
+      memset((void*)scrambled_output[q], 0, (encoded_length>>5)*sizeof(uint32_t));
+  }
+
+  nr_pusch_codeword_scrambling(ulsch_ue->g,
+                               encoded_length,
+                               Nid_cell,
+                               ulsch_ue->rnti,
+                               scrambled_output[0]); // assume one codeword for the moment
+
+
+  /////////////
+  //////////////////////////////////////////////////////////////////////////
 
   for (SNR = snr0; SNR < snr1; SNR += snr_step) {
     n_errors = 0;

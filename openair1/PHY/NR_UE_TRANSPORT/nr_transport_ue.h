@@ -152,11 +152,12 @@ typedef struct {
   //  int calibration_flag;
   /// Number of soft channel bits
   uint32_t G;
-  // number of symbols
-  uint8_t nb_symbols;
-  // first symbol in the slot
+  // Number of modulated symbols carrying data
+  uint8_t num_of_mod_symbols;
+  // This is "L" in  TS 38.214 V15.4.0 subclause 6.1.2.1
+  uint8_t number_of_symbols;
+  // This is "S" in  TS 38.214 V15.4.0 subclause 6.1.2.1
   uint8_t start_symbol;
-
   // decode phich
   uint8_t decode_phich;
 } NR_UL_UE_HARQ_t;
@@ -166,6 +167,8 @@ typedef struct {
   uint8_t Nsymb_pusch;
   /// number of DMRS resource elements
   uint8_t nb_re_dmrs;
+  /// DMRS length
+  uint8_t length_dmrs;
   /// SRS active flag
   uint8_t srs_active; 
 //#if defined(UPGRADE_RAT_NR)
