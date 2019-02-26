@@ -2003,7 +2003,7 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
                   UE_id,
                   rnti);
 
-      LOG_I(MAC,"[eNB %d] frame %d subframe %d,Checking PUSCH %d for BL/CE UE %d/%x CC %d : aggregation level %d, N_RB_UL %d\n",
+      LOG_D(MAC,"[eNB %d] frame %d subframe %d,Checking PUSCH %d for BL/CE UE %d/%x CC %d : aggregation level %d, N_RB_UL %d\n",
             module_idP,
             frameP,
             subframeP,
@@ -2025,7 +2025,7 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
          * or we want to schedule a periodic feedback every frame
          */
         
-        LOG_I(MAC,"[eNB %d][PUSCH %d] Frame %d subframe %d Scheduling UE %d/%x in round_UL %d(SR %d,UL_inactivity timer %d,UL_failure timer %d,cqi_req_timer %d)\n",
+        LOG_D(MAC,"[eNB %d][PUSCH %d] Frame %d subframe %d Scheduling UE %d/%x in round_UL %d(SR %d,UL_inactivity timer %d,UL_failure timer %d,cqi_req_timer %d)\n",
               module_idP,
               harq_pid,
               frameP,
@@ -2147,7 +2147,7 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
           AssertFatal(epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310->present == LTE_EPDCCH_SetConfig_r11__ext2__numberPRB_Pairs_v1310_PR_setup, 
                       "epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310->present is not setup\n");
 
-          LOG_I(MAC,"[PUSCH %d] Frame %d, Subframe %d: Adding UL 6-0A MPDCCH for BL/CE UE %d/%x, ulsch_frame %d, ulsch_subframe %d, UESS MPDCCH Narrowband %d\n",
+          LOG_D(MAC,"[PUSCH %d] Frame %d, Subframe %d: Adding UL 6-0A MPDCCH for BL/CE UE %d/%x, ulsch_frame %d, ulsch_subframe %d, UESS MPDCCH Narrowband %d\n",
                 harq_pid,
                 frameP,
                 subframeP,
@@ -2208,7 +2208,7 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
 
           hi_dci0_req->number_of_dci++;
 
-          LOG_I(MAC,"[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG. Request for BL/CE UE %d/%x, ulsch_frame %d, ulsch_subframe %d, UESS mpdcch narrowband %d\n",
+          LOG_D(MAC,"[PUSCH %d] Frame %d, Subframe %d: Adding UL CONFIG. Request for BL/CE UE %d/%x, ulsch_frame %d, ulsch_subframe %d, UESS mpdcch narrowband %d\n",
                 harq_pid,
                 frameP,
                 subframeP,
@@ -2296,7 +2296,7 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
           AssertFatal(epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310->present == LTE_EPDCCH_SetConfig_r11__ext2__numberPRB_Pairs_v1310_PR_setup, 
                       "epdcch_setconfig_r11->ext2->numberPRB_Pairs_v1310->present is not setup\n");
 
-          LOG_I(MAC,"[PUSCH %d] Frame %d, Subframe %d: Adding UL 6-0A MPDCCH for BL/CE UE %d/%x, ulsch_frame %d, ulsch_subframe %d,UESS MPDCCH Narrowband %d\n",
+          LOG_D(MAC,"[PUSCH %d] Frame %d, Subframe %d: Adding UL 6-0A MPDCCH for BL/CE UE %d/%x, ulsch_frame %d, ulsch_subframe %d,UESS MPDCCH Narrowband %d\n",
                       harq_pid,
                       frameP,
                       subframeP,

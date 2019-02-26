@@ -1226,9 +1226,9 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
     } //phase
 
     stat_max/=(12);  //normalize to energy per symbol and RE
-//#ifdef DEBUG_PUCCH_RX
+#ifdef DEBUG_PUCCH_RX
     LOG_I(PHY,"[eNB] PUCCH fmt1a/b:  stat_max : %d (%d : sigma2 %d), phase_max : %d\n",stat_max,dB_fixed(stat_max),sigma2_dB,phase_max);
-//#endif
+#endif
 
     stat_re=0;
     stat_im=0;

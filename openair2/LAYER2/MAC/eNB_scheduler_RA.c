@@ -122,9 +122,9 @@ add_msg3(module_id_t module_idP, int CC_id, RA_t * ra, frame_t frameP,
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   if (ra->rach_resource_type > 0) {
-    LOG_I (MAC, "[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d CE level %d is active, Msg3 in (%d,%d)\n",
+    LOG_D (MAC, "[eNB %d][RAPROC] Frame %d, Subframe %d : CC_id %d CE level %d is active, Msg3 in (%d,%d)\n",
            module_idP, frameP, subframeP, CC_id, ra->rach_resource_type - 1, ra->Msg3_frame, ra->Msg3_subframe);
-    LOG_I (MAC, "Frame %d, Subframe %d Adding Msg3 UL Config Request for (%d,%d) : (%d,%d)\n",
+    LOG_D (MAC, "Frame %d, Subframe %d Adding Msg3 UL Config Request for (%d,%d) : (%d,%d)\n",
            frameP, subframeP, ra->Msg3_frame, ra->Msg3_subframe, ra->msg3_nb_rb, ra->msg3_round);
 
     ul_config_pdu = &ul_req_body->ul_config_pdu_list[ul_req_body->number_of_pdus];
@@ -333,7 +333,7 @@ void generate_Msg2(module_id_t module_idP,
       ra->msg2_mpdcch_done = 0;
 
       /* MPDCCH configuration for RAR */
-      LOG_I(MAC, "[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2 for CE Level %d, Programming MPDCCH %d repetitions\n", 
+      LOG_D(MAC, "[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2 for CE Level %d, Programming MPDCCH %d repetitions\n", 
             module_idP, 
             frameP, 
             subframeP, 
@@ -406,7 +406,7 @@ void generate_Msg2(module_id_t module_idP,
             ra->Msg2_frame = frameP;
             ra->Msg2_subframe = (subframeP + 2) % 10; // +2 is the "n+x" from Section 7.1.11  in 36.213
           
-          LOG_I(MAC, "[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2, programmed Msg2 for %d.%d\n", 
+          LOG_D(MAC, "[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2, programmed Msg2 for %d.%d\n", 
                 module_idP, 
                 frameP, 
                 subframeP, 
@@ -416,7 +416,7 @@ void generate_Msg2(module_id_t module_idP,
           AssertFatal(1 == 0, "TDD case not done yet\n");
         }
       } else if (ra->msg2_mpdcch_done == 0) {  // mpdcch_repetition_count != reps
-        LOG_I(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2, MPDCCH repetition %d\n", 
+        LOG_D(MAC,"[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2, MPDCCH repetition %d\n", 
                module_idP, 
                frameP, 
                subframeP, 
@@ -427,7 +427,7 @@ void generate_Msg2(module_id_t module_idP,
 
       if((ra->Msg2_frame == frameP) && (ra->Msg2_subframe == subframeP)) {
         /* Program PDSCH */
-        LOG_I(MAC, "[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2, Programming PDSCH\n", 
+        LOG_D(MAC, "[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2, Programming PDSCH\n", 
               module_idP, 
               frameP, 
               subframeP);
@@ -480,7 +480,7 @@ void generate_Msg2(module_id_t module_idP,
 	      ra->state = WAITMSG3;
 
         /* DL request */
-        LOG_I(MAC, "[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2, Programming TX Req\n", 
+        LOG_D(MAC, "[eNB %d][RAPROC] Frame %d, Subframe %d : In generate_Msg2, Programming TX Req\n", 
               module_idP, 
               frameP, 
               subframeP);
@@ -771,7 +771,7 @@ generate_Msg4(module_id_t module_idP,
       AssertFatal (ra->msg4_rrc_sdu_length > 0, "[MAC][eNB Scheduler] CCCH not allocated\n");
       
       
-      LOG_I (MAC, "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: UE_id %d, rrc_sdu_length %d, dl_req->num_pdu %d\n", module_idP, CC_idP, frameP, subframeP, UE_id, ra->msg4_rrc_sdu_length,dl_req_body->number_pdu);
+      LOG_D (MAC, "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: UE_id %d, rrc_sdu_length %d, dl_req->num_pdu %d\n", module_idP, CC_idP, frameP, subframeP, UE_id, ra->msg4_rrc_sdu_length,dl_req_body->number_pdu);
       
       // MPDCCH configuration for Msg4
       ra->msg4_mpdcch_done=0;
@@ -829,7 +829,7 @@ generate_Msg4(module_id_t module_idP,
     
     if ((ra->msg4_mpdcch_repetition_cnt > 0)&&
 	(ra->msg4_mpdcch_done==0)) {     // we're in a stream of repetitions
-      LOG_I(MAC,"SFN.SF %d.%d : msg4 mpdcch repetition number %d/%d\n",
+      LOG_D(MAC,"SFN.SF %d.%d : msg4 mpdcch repetition number %d/%d\n",
 	    frameP,subframeP,ra->msg4_mpdcch_repetition_cnt,reps);
       if (ra->msg4_mpdcch_repetition_cnt == reps) {    // this is the last mpdcch repetition
         ra->msg4_mpdcch_done = 1;
@@ -840,7 +840,7 @@ generate_Msg4(module_id_t module_idP,
           else
             ra->Msg4_frame = frameP;
           ra->Msg4_subframe = (subframeP + 2) % 10;
-	  LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Set Msg4 PDSCH in %d.%d\n",
+	  LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Set Msg4 PDSCH in %d.%d\n",
 		module_idP, CC_idP, frameP, subframeP, ra->Msg4_frame,ra->Msg4_subframe);
         } else {
           AssertFatal (1 == 0, "TDD case not done yet\n");
@@ -854,7 +854,7 @@ generate_Msg4(module_id_t module_idP,
       
       // Program PDSCH
       
-      LOG_I (MAC, "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating Msg4 BR with RRC Piggyback (ce_level %d RNTI %x)\n",
+      LOG_D (MAC, "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating Msg4 BR with RRC Piggyback (ce_level %d RNTI %x)\n",
 	     module_idP, CC_idP, frameP, subframeP, ra->rach_resource_type - 1, ra->rnti);
       
       
@@ -910,7 +910,7 @@ generate_Msg4(module_id_t module_idP,
 	msg4_post_padding = ra->msg4_TBsize - ra->msg4_rrc_sdu_length - msg4_header - 1;
       }
       
-      LOG_I (MAC, "[eNB %d][RAPROC] CC_id %d Frame %d subframeP %d Msg4 : TBS %d, sdu_len %d, msg4_header %d, msg4_padding %d, msg4_post_padding %d\n",
+      LOG_D (MAC, "[eNB %d][RAPROC] CC_id %d Frame %d subframeP %d Msg4 : TBS %d, sdu_len %d, msg4_header %d, msg4_padding %d, msg4_post_padding %d\n",
 	     module_idP, CC_idP, frameP, subframeP, ra->msg4_TBsize, ra->msg4_rrc_sdu_length, msg4_header, msg4_padding, msg4_post_padding);
       DevAssert (UE_id != UE_INDEX_INVALID);  // FIXME not sure how to gracefully return
       // CHECK THIS: &cc[CC_idP].CCCH_pdu.payload[0]
@@ -1247,7 +1247,7 @@ check_Msg4_retransmission(module_id_t module_idP, int CC_idP,
     dl_config_pdu = &dl_req_body->dl_config_pdu_list[dl_req_body->number_pdu];
     N_RB_DL = to_prb(cc[CC_idP].mib->message.dl_Bandwidth);
 
-    LOG_I(MAC,
+    LOG_D(MAC,
 	  "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Checking if Msg4 for harq_pid %d was acknowledged (round %d), UE_id: %d \n",
 	  module_idP, CC_idP, frameP, subframeP, ra->harq_pid, round, UE_id);
 
@@ -1351,7 +1351,7 @@ check_Msg4_retransmission(module_id_t module_idP, int CC_idP,
 	    }			// Msg4 frame/subframe
 	}			// regular LTE case
     } else {
-	LOG_I(MAC,
+	LOG_D(MAC,
 	      "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d : Msg4 acknowledged\n",
 	      module_idP, CC_idP, frameP, subframeP);
 	ra->state = IDLE;
@@ -1589,7 +1589,7 @@ cancel_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP,
         ra[i].RRC_timer = 20;
         ra[i].rnti = 0;
         ra[i].msg3_round = 0;
-        LOG_I(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Canceled RA procedure for UE rnti %x\n", module_idP, CC_id, frameP, rnti);
+        LOG_D(MAC,"[eNB %d][RAPROC] CC_id %d Frame %d Canceled RA procedure for UE rnti %x\n", module_idP, CC_id, frameP, rnti);
       }
     }
 }
