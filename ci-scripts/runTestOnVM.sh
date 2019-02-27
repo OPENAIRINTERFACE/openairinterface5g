@@ -84,12 +84,11 @@ function start_basic_sim_enb {
     echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/basic_simulator" >> $1
     echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/basic_simulator/enb/" >> $1
     echo "cd /home/ubuntu/tmp/cmake_targets/basic_simulator/enb/" >> $1
-    echo "echo \"ulimit -c unlimited && ./lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE\" > ./my-lte-softmodem-run.sh " >> $1
+    echo "echo \"ulimit -c unlimited && tdbuf -o0 /lte-softmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE\" > ./my-lte-softmodem-run.sh " >> $1
     echo "chmod 775 ./my-lte-softmodem-run.sh" >> $1
     echo "cat ./my-lte-softmodem-run.sh" >> $1
     echo "if [ -e /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ]; then sudo sudo rm -f /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE; fi" >> $1
     echo "sudo -E daemon --inherit --unsafe --name=enb_daemon --chdir=/home/ubuntu/tmp/cmake_targets/basic_simulator/enb -o /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ./my-lte-softmodem-run.sh" >> $1
-
     ssh -o StrictHostKeyChecking=no ubuntu@$LOC_VM_IP_ADDR < $1
     sleep 10
     rm $1
@@ -142,7 +141,7 @@ function get_ue_ip_addr {
 
 function ping_ue_ip_addr {
     echo "CALL ping_ue_ip_addr"
-    echo '$@' $@
+    #echo '$@' $@
     echo "echo \"COMMAND IS: ping -c 20 $3\" > $4" > $1
     echo "rm -f $4" >> $1
     echo "echo \"ping -c 20 $3\"" >> $1
@@ -157,7 +156,7 @@ function ping_ue_ip_addr {
 
 function ping_no_s1_ue_ip_addr {
     echo "CALL ping_ue_ip_addr"
-    echo '$@' $@
+    #echo '$@' $@
     echo "echo \"COMMAND IS: ping -I oai0 -c 20 $3\" > $4" > $1
     echo "rm -f $4" >> $1
     echo "ping -I oai0 -c 20 $UE_REAL_IP_ADDR | tee -a $4" >> $1
@@ -314,13 +313,15 @@ function recover_core_dump {
 }
 
 function start_nos1_sim_enb {
-    # start_nos1_sim_enb $ENB_VM_CMDS $ENB_VM_IP_ADDR $UE_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 25 rcc.band7.nos1.simulator.conf
+    # start_nos1_sim_enb $ENB_VM_CMDa $ENB_VM_IP_ADDR $UE_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 25 rcc.band7.nos1.simulator.conf
+    local LOC_ENB_VM_CMDS=$1
     local LOC_VM_IP_ADDR=$2
     local LOC_UE_IP_ADDR=$3
     local LOC_LOG_FILE=$4
     local LOC_NB_RBS=$5
     local LOC_CONF_FILE=$6
     echo "cd /home/ubuntu/tmp" > $1
+    #echo "echo '$@' $@" >> $1
     echo "echo \"sudo apt-get --yes --quiet install daemon \"" >> $1
     echo "sudo apt-get --yes install daemon >> /home/ubuntu/tmp/cmake_targets/log/daemon-install.txt 2>&1" >> $1
     echo "echo \"source oaienv\"" >> $1
@@ -340,19 +341,40 @@ function start_nos1_sim_enb {
     echo "echo \"ulimit -c unlimited && ./lte-softmodem-nos1 -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE\" > ./my-lte-softmodem-run.sh " >> $1
     echo "chmod 775 ./my-lte-softmodem-run.sh" >> $1
     echo "cat ./my-lte-softmodem-run.sh" >> $1
-    echo "sudo rm -f /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE" >> $1
+    echo "if [ -e /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ]; then sudo sudo rm -f /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE; fi" >> $1
     echo "sudo -E daemon --inherit --unsafe --name=enb_daemon --chdir=/home/ubuntu/tmp/cmake_targets/lte_noS1_build_oai/build -o /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ./my-lte-softmodem-run.sh" >> $1
-#    echo " ========================================================"
-#    echo "BEGIN start_nos1_sim_enb command"
-#    cat $1
-#    echo "END start_nos1_sim_enb command"
-#    echo " ========================================================"
+    echo "log file path = /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE"
     ssh -o StrictHostKeyChecking=no ubuntu@$LOC_VM_IP_ADDR < $1
-    echo " ========================================================"
-    sleep 20
+    sleep 15
+    echo "if [ -e /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ]; then echo \"FILE EXISTS\"; else echo \"FILE DOES NOT EXIST\"; fi" > $LOC_ENB_VM_CMDS 
+    ssh -o StrictHostKeyChecking=no ubuntu@$LOC_VM_IP_ADDR < $1
+    # Check that marker is "eNB L1 are configured"
+    echo "ls /home/ubuntu/tmp/cmake_targets/log" > $LOC_ENB_VM_CMDS
+    ssh -o StrictHostKeyChecking=no ubuntu@$LOC_VM_IP_ADDR < $1
+    echo "egrep -c \"eNB L1 are configured\" /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE" > $LOC_ENB_VM_CMDS
+    cat $LOC_ENB_VM_CMDS
+    local i="0"
+    while [ $i -lt 10 ]
+    do
+        RESPONSE=`ssh -o StrictHostKeyChecking=no ubuntu@$LOC_VM_IP_ADDR < $LOC_ENB_VM_CMDS`
+        if [ $RESPONSE -ne 0 ]
+        then
+            i="100"
+        else
+            sleep 10
+            i=$[$i+1]
+        fi
+    done
+
+if [ $i -eq 100 ] 
+then
+    echo "Syncro succeeded"
+    SYNC=1
+else
+    echo "Syncro failed"
+    SYNC=0
+fi
     rm $1
-    echo " ========================================================"
-# marker is "eNB L1 are configured"
 }
 
 function stop_nos1_sim_enb {
@@ -378,6 +400,8 @@ function stop_nos1_sim_enb {
 
 function start_nos1_sim_ue {
 # start_nos1_sim_ue $UE_VM_CMDS $UE_VM_IP_ADDR $ENB_VM_IP_ADDR $CURRENT_UE_LOG_FILE 25 rru.band7.nos1.simulator.conf
+    #echo '$@' $@
+    local LOC_UE_VM_CMDS=$1    
     local LOC_UE_IP_ADDR=$2
     local LOC_ENB_IP_ADDR=$3
     local LOC_LOG_FILE=$4
@@ -410,7 +434,29 @@ function start_nos1_sim_ue {
     sleep 40
     rm $1
     echo " ========================================================"
-# marker is "Generating RRCConnectionReconfigurationComplete"
+# Check that marker is "Generating RRCConnectionReconfigurationComplete"
+    echo "egrep -c \"Generating RRCConnectionReconfigurationComplete\" /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE" > $LOC_UE_VM_CMDS
+    cat $LOC_UE_VM_CMDS
+    local i="0" 
+    while [ $i -lt 10 ]
+    do
+        RESPONSE=`ssh -o StrictHostKeyChecking=no ubuntu@$LOC_UE_IP_ADDR < $LOC_UE_VM_CMDS`
+        if [ $RESPONSE -ne 0 ]
+        then
+            i="100"
+        else
+            sleep 10
+            i=$[$i+1]
+        fi
+    done
+    if [ $i -eq 100 ]
+    then
+        echo "Syncro succeeded"
+        UE_SYNC=1
+    else
+        echo "Syncro failed"
+        UE_SYNC=0
+    fi
 }
 
 function stop_nos1_sim_ue {
