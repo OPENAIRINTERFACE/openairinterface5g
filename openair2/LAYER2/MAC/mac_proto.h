@@ -972,6 +972,12 @@ int generate_dlsch_header(unsigned char *mac_header,
 @param mbsfn_AreaInfoList pointer to MBSFN Area Info list from SIB13
 @param pmch_InfoList pointer to PMCH_InfoList from MBSFNAreaConfiguration Message (MCCH Message)
 @param sib1_ext_r13 SI Scheduling information for SI-BR UEs         
+@param mib_fembms pointer to FeMBMS MIB
+@param FeMBMS_Flag indicates FeMBMS transmission
+@param schedulingInfo_fembms pointer to FeMBMS SI Scheduling Information
+@param non_MBSFN_SubframeConfig pointer to FeMBMS Non MBSFN Subframe Config 
+@param sib1_mbms_r14_fembms pointer SI Scheduling infomration for SI-MBMS
+@param mbsfn_AreaInfoList_fembms pointer to FeMBMS MBSFN Area Info list from SIB1-MBMS
 */
 
 int rrc_mac_config_req_eNB(module_id_t module_idP,
@@ -1021,6 +1027,15 @@ int rrc_mac_config_req_eNB(module_id_t module_idP,
 			   ,
 			   LTE_SystemInformationBlockType1_v1310_IEs_t *
 			   sib1_ext_r13
+#endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                           ,
+                           uint8_t FeMBMS_Flag,
+                           LTE_BCCH_DL_SCH_Message_MBMS_t * mib_fembms,
+                           LTE_SchedulingInfo_MBMS_r14_t * schedulingInfo_fembms,
+                           struct LTE_NonMBSFN_SubframeConfig_r14 * nonMBSFN_SubframeConfig,
+                           LTE_SystemInformationBlockType1_MBMS_r14_t *  sib1_mbms_r14_fembms,
+                           LTE_MBSFN_AreaInfoList_r9_t * mbsfn_AreaInfoList_fembms
 #endif
     );
 

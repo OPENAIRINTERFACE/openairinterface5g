@@ -1317,6 +1317,7 @@ typedef struct {
 #endif
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     BCCH_PDU BCCH_MBMS_pdu;
+    uint8_t FeMBMS_flag;
 #endif
 
 } COMMON_channels_t;
