@@ -69,6 +69,7 @@ UE_TIMING_TRACE="False"
 DISABLE_LOG_X="False"
 USRP_REC_PLAY="False"
 BUILD_ECLIPSE=0
+BUILD_CODEBLOCKS=0
 UE_NAS_USE_TUN="False"
 BASIC_SIMULATOR=0
 trap handle_ctrl_c INT
@@ -156,6 +157,8 @@ Options
    Disable all LOG_* macros
 --build-eclipse
    Build eclipse project files. Paths are auto corrected by fixprj.sh
+--build-codeblocks
+   Build CodeBlocks project files.
 --build-telnet
    Build telnet server, specify --telnetsrv on command line to start it (eNB only)
 --build-msc
@@ -353,6 +356,11 @@ function main() {
             BUILD_ECLIPSE=1
             CMAKE_CMD="$CMAKE_CMD"' -DCMAKE_ECLIPSE_GENERATE_SOURCE_PROJECT=TRUE -G"Eclipse CDT4 - Unix Makefiles"'
             echo_info "Enabling build eclipse project support"
+            shift 1;;
+       --build-codeblocks)
+            BUILD_CODEBLOCKS=1
+            CMAKE_CMD="$CMAKE_CMD"' -DCMAKE_CODEBLOCKS_GENERATE_SOURCE_PROJECT=TRUE -G"CodeBlocks - Unix Makefiles"'
+            echo_info "Enabling build CodeBlocks project support"
             shift 1;;
        --build-telnetsrv)
             BUILD_TELNETSRV=1

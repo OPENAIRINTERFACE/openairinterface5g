@@ -337,6 +337,11 @@ int lte_sync_time(int **rxdata, ///rx data in time domain
                   int *eNB_id)
 {
 
+// [IRTMS debug]
+
+    static int num_calles=0;
+    printf("[IRTMS]lte_sync_time called %d times\n", num_calles);
+
 
 
   // perform a time domain correlation using the oversampled sync sequence

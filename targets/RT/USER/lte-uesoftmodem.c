@@ -693,11 +693,27 @@ int main( int argc, char **argv ) {
 #if defined (XFORMS)
   int ret;
 #endif
+
+  // [IRTMS] fix, see Merge branch 'issue-399-master-ue-hot-fix' into 'master'
+  configmodule_interface_t *config_mod;
+  // [IRTMS]  end fix
+
   start_background_system();
 
+  // [IRTMS] fix, see Merge branch 'issue-399-master-ue-hot-fix' into 'master'
+  /*
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
+  */
+  config_mod = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY);
+
+  if (config_mod == NULL) {
+
+    exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
+  }
+  // [IRTMS] end fix
+
 
   mode = normal_txrx;
   memset(&openair0_cfg[0],0,sizeof(openair0_config_t)*MAX_CARDS);
@@ -714,6 +730,10 @@ int main( int argc, char **argv ) {
     printf("Running with more than 1 UE instance and simL1 is not active, this will result in undefined behaviour for now, exiting.\n");
     abort();
   }
+
+  printf("\n[IRTMS] Hello from main\n");
+
+
 
   printf("NFAPI_MODE value: %d \n", nfapi_mode);
 
@@ -811,8 +831,12 @@ int main( int argc, char **argv ) {
   } else init_openair0(frame_parms[0],(int)rx_gain[0][0]);
 
   if (simL1flag==1) {
+  // [IRTRMS] fix, see Merge branch 'issue-399-master-ue-hot-fix' into 'master'
+  /*
     AssertFatal(NULL!=load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY),
                 "[SOFTMODEM] Error, configuration module init failed\n");
+  */
+  // [IRTMS] end fix
     RCConfig_sim();
   }
 
