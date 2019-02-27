@@ -554,13 +554,11 @@ typedef struct eNB_RRC_UE_s {
   int                                UE_Capability_size;
   ImsiMobileIdentity_t               imsi;
 
-#if defined(ENABLE_SECURITY)
   /* KeNB as derived from KASME received from EPC */
   uint8_t kenb[32];
   int8_t  kenb_ncc;
   uint8_t nh[32];
   int8_t  nh_ncc;
-#endif
   /* Used integrity/ciphering algorithms */
   LTE_CipheringAlgorithm_r12_t                          ciphering_algorithm;
   e_LTE_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm;
@@ -838,12 +836,10 @@ typedef struct UE_RRC_INST_s {
   float                           rsrq_db[7];
   float                           rsrp_db_filtered[7];
   float                           rsrq_db_filtered[7];
-#if defined(ENABLE_SECURITY)
   /* KeNB as computed from parameters within USIM card */
   uint8_t kenb[32];
   uint8_t nh[32];
   int8_t  nh_ncc;
-#endif
 
   /* Used integrity/ciphering algorithms */
   LTE_CipheringAlgorithm_r12_t                          ciphering_algorithm;

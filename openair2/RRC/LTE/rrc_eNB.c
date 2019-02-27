@@ -75,9 +75,7 @@
 #include "OCG.h"
 #include "OCG_extern.h"
 
-#if defined(ENABLE_SECURITY)
-  #include "UTIL/OSA/osa_defs.h"
-#endif
+#include "UTIL/OSA/osa_defs.h"
 
 #if defined(ENABLE_USE_MME)
   #include "rrc_eNB_S1AP.h"
@@ -844,9 +842,7 @@ rrc_eNB_free_mem_UE_context(
   }
 
   //HANDOVER_INFO                     *handover_info;
-#if defined(ENABLE_SECURITY)
   //uint8_t kenb[32];
-#endif
   //e_SecurityAlgorithmConfig__cipheringAlgorithm     ciphering_algorithm;
   //e_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm;
   //uint8_t                            Status;
@@ -6312,7 +6308,6 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
   LTE_DRB_Identity_t                     *drb_id_p      = NULL;
   T(T_ENB_RRC_CONNECTION_RECONFIGURATION_COMPLETE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
-#if defined(ENABLE_SECURITY)
 
   /* Derive the keys from kenb */
   if (DRB_configList != NULL) {
@@ -6324,7 +6319,6 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                      ue_context_pP->ue_context.kenb, &kRRCenc);
   derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
                      ue_context_pP->ue_context.kenb, &kRRCint);
-#endif
   // Refresh SRBs/DRBs
   MSC_LOG_TX_MESSAGE(
     MSC_RRC_ENB,

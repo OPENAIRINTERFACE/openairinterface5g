@@ -69,9 +69,7 @@
   #include "rrc_UE_ral.h"
 #endif
 
-#if defined(ENABLE_SECURITY)
-  #include "UTIL/OSA/osa_defs.h"
-#endif
+#include "UTIL/OSA/osa_defs.h"
 
 #include "pdcp.h"
 #include "plmn_data.h"
@@ -428,7 +426,6 @@ void init_SL_preconfig(UE_RRC_INST *UE, const uint8_t eNB_index ) {
 
 //-----------------------------------------------------------------------------
 void openair_rrc_ue_init_security( const protocol_ctxt_t *const ctxt_pP ) {
-#if defined(ENABLE_SECURITY)
   //    uint8_t *kRRCenc;
   //    uint8_t *kRRCint;
   char ascii_buffer[65];
@@ -442,7 +439,6 @@ void openair_rrc_ue_init_security( const protocol_ctxt_t *const ctxt_pP ) {
   LOG_T(RRC, PROTOCOL_RRC_CTXT_FMT"[OSA] kenb    = %s\n",
         PROTOCOL_RRC_CTXT_ARGS(ctxt_pP),
         ascii_buffer);
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1309,12 +1305,10 @@ rrc_ue_process_radioResourceConfigDedicated(
   if (radioResourceConfigDedicated->srb_ToAddModList) {
     uint8_t *kRRCenc = NULL;
     uint8_t *kRRCint = NULL;
-#if defined(ENABLE_SECURITY)
     derive_key_rrc_enc(UE_rrc_inst[ctxt_pP->module_id].ciphering_algorithm,
                        UE_rrc_inst[ctxt_pP->module_id].kenb, &kRRCenc);
     derive_key_rrc_int(UE_rrc_inst[ctxt_pP->module_id].integrity_algorithm,
                        UE_rrc_inst[ctxt_pP->module_id].kenb, &kRRCint);
-#endif
     // Refresh SRBs
     rrc_pdcp_config_asn1_req(ctxt_pP,
                              radioResourceConfigDedicated->srb_ToAddModList,
@@ -1487,10 +1481,8 @@ rrc_ue_process_radioResourceConfigDedicated(
     }
 
     uint8_t *kUPenc = NULL;
-#if defined(ENABLE_SECURITY)
     derive_key_up_enc(UE_rrc_inst[ctxt_pP->module_id].integrity_algorithm,
                       UE_rrc_inst[ctxt_pP->module_id].kenb, &kUPenc);
-#endif
     MSC_LOG_TX_MESSAGE(
       MSC_RRC_UE,
       MSC_PDCP_UE,
@@ -1665,7 +1657,6 @@ rrc_ue_process_securityModeCommand(
     ul_dcch_msg.message.choice.c1.present = LTE_UL_DCCH_MessageType__c1_PR_securityModeFailure;
   }
 
-#if defined(ENABLE_SECURITY)
   uint8_t *kRRCenc = NULL;
   uint8_t *kUPenc = NULL;
   uint8_t *kRRCint = NULL;
@@ -1714,8 +1705,6 @@ rrc_ue_process_securityModeCommand(
   } else {
     LOG_I(RRC, "Could not get PDCP instance where key=0x%ld\n", key);
   }
-
-#endif //#if defined(ENABLE_SECURITY)
 
   if (securityModeCommand->criticalExtensions.present == LTE_SecurityModeCommand__criticalExtensions_PR_c1) {
     if (securityModeCommand->criticalExtensions.choice.c1.present != LTE_SecurityModeCommand__criticalExtensions__c1_PR_securityModeCommand_r8)
