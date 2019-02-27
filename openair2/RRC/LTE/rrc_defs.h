@@ -665,6 +665,7 @@ typedef struct {
   LTE_SystemInformationBlockType2_t     *sib2_BR;
   LTE_SystemInformationBlockType1_MBMS_r14_t *sib1_MBMS;
   LTE_SystemInformationBlockType13_r9_t *sib13_MBMS;
+  uint8_t				FeMBMS_flag;
 #endif
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   LTE_SystemInformationBlockType13_r9_t *sib13;
@@ -801,6 +802,7 @@ typedef struct UE_RRC_INST_s {
 #endif
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   LTE_SystemInformationBlockType13_r9_t *sib13_MBMS[NB_CNX_UE];
+  uint8_t 			  	FeMBMS_flag;
 #endif
 #ifdef CBA
   uint8_t                         num_active_cba_groups;

@@ -61,6 +61,12 @@
 #include "LTE_SL-CommConfig-r12.h"
 #include "LTE_PeriodicBSR-Timer-r12.h"
 #include "LTE_RetxBSR-Timer-r12.h"
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+   #include "LTE_BCCH-BCH-Message-MBMS.h"
+   #include "LTE_BCCH-DL-SCH-Message-MBMS.h"
+   #include "LTE_SystemInformationBlockType1-MBMS-r14.h"
+   #include "LTE_NonMBSFN-SubframeConfig-r14.h"
+#endif
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
 #include "T.h"
@@ -565,6 +571,15 @@ if(configuration->radioresourceconfig[CC_id].mbms_dedicated_serving_cell == TRUE
                          ,
                          sib1_v13ext
 #endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                        ,
+                        RC.rrc[ctxt_pP->module_id]->carrier[CC_id].FeMBMS_flag,
+                        (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
+                        (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
+                        (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
+                        (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
+                        (LTE_MBSFN_AreaInfoList_r9_t *) NULL
+#endif
                         );
 }
 
@@ -649,6 +664,15 @@ init_MCCH(
 #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
                          ,
                          (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL
+#endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                        ,
+                        0,
+                        (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
+                        (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
+                        (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
+                        (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
+                        (LTE_MBSFN_AreaInfoList_r9_t *) NULL
 #endif
                         );
   //LOG_I(RRC,"DUY: lcid after rrc_mac_config_req is %02d\n",RC.rrc[enb_mod_idP]->mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->logicalChannelIdentity_r9);
@@ -1389,6 +1413,15 @@ rrc_eNB_generate_RRCConnectionReestablishment(
 #endif
 #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
                                ,(LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL
+#endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                        ,
+                        0,
+                        (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
+                        (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
+                        (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
+                        (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
+                        (LTE_MBSFN_AreaInfoList_r9_t *) NULL
 #endif
                               );
         break;
@@ -4519,6 +4552,15 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
     ,
     (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL
 #endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                        ,
+                        0,
+                        (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
+                        (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
+                        (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
+                        (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
+                        (LTE_MBSFN_AreaInfoList_r9_t *) NULL
+#endif
   );
   // Configure target eNB SRB2
   /// SRB2
@@ -5016,6 +5058,15 @@ rrc_eNB_generate_RRCConnectionReconfiguration_handover(
     ,
     (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL
 #endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                        ,
+                        0,
+                        (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
+                        (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
+                        (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
+                        (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
+                        (LTE_MBSFN_AreaInfoList_r9_t *) NULL
+#endif
   );
   /*
      handoverCommand.criticalExtensions.present = HandoverCommand__criticalExtensions_PR_c1;
@@ -5283,6 +5334,15 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
             ,
             (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL
 #endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                        ,
+                        0,
+                        (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
+                        (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
+                        (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
+                        (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
+                        (LTE_MBSFN_AreaInfoList_r9_t *) NULL
+#endif
           );
         } else {        // remove LCHAN from MAC/PHY
           if (ue_context_pP->ue_context.DRB_active[drb_id] == 1) {
@@ -5335,6 +5395,15 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
 #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
                                  ,
                                  (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL
+#endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                        ,
+                        0,
+                        (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
+                        (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
+                        (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
+                        (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
+                        (LTE_MBSFN_AreaInfoList_r9_t *) NULL
 #endif
                                 );
         }
@@ -5464,6 +5533,15 @@ void rrc_eNB_generate_RRCConnectionSetup(const protocol_ctxt_t *const ctxt_pP,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 				 ,
 				 (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL
+#endif
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+                        ,
+                        0,
+                        (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
+                        (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
+                        (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
+                        (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
+                        (LTE_MBSFN_AreaInfoList_r9_t *) NULL
 #endif
 				 );
 	  break;
