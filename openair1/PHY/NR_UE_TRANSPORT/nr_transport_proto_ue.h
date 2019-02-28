@@ -1056,11 +1056,11 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
                      uint8_t harq_pid);
 
 /*! \brief Perform PUSCH scrambling. TS 38.211 V15.4.0 subclause 6.3.1.1
-  @param[in] in Pointer to input bits
-  @param[in] size of input bits
-  @param[in] Nid cell id
-  @param[in] n_RNTI CRNTI
-  @param[out] out the scrambled bits
+  @param[in] in, Pointer to input bits
+  @param[in] size, of input bits
+  @param[in] Nid, cell id
+  @param[in] n_RNTI, CRNTI
+  @param[out] out, the scrambled bits
 */
 
 void nr_pusch_codeword_scrambling(uint8_t *in,
@@ -1068,6 +1068,19 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
                          uint32_t Nid,
                          uint32_t n_RNTI,
                          uint32_t* out);
+
+
+/*! \brief Perform PUSCH modulation. TS 38.211 V15.4.0 subclause 6.3.1.2
+  @param[in] in, Pointer to input bits
+  @param[in] Qm, modulation order
+  @param[in] length, size of input bits
+  @param[out] out, complex valued modulated symbols
+*/
+
+void nr_pusch_codeword_modulation(uint32_t *in,
+                         uint8_t  Qm,
+                         uint32_t length,
+                         int16_t *out);
 
 
 uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
@@ -1115,7 +1128,7 @@ uint32_t dlsch_decoding_emul(PHY_VARS_NR_UE *phy_vars_ue,
     @param first_symbol_flag set to 1 on first DLSCH symbol
     @param rx_type. rx_type=RX_IC_single_stream will enable interference cancellation of a second stream when decoding the first stream. In case of TM1, 2, 5, and this can cancel interference from a neighbouring cell given by eNB_id_i. In case of TM5, eNB_id_i should be set to n_connected_eNB to perform multi-user interference cancellation. In case of TM3, eNB_id_i should be set to eNB_id to perform co-channel interference cancellation; this option should be used together with an interference cancellation step [...]. In case of TM3, if rx_type=RX_IC_dual_stream, both streams will be decoded by applying the IC single stream receiver twice.
     @param i_mod Modulation order of the interfering stream
-*/
+
 int32_t nr_rx_pdsch(PHY_VARS_NR_UE *phy_vars_ue,
                  PDSCH_t type,
                  uint8_t eNB_id,
@@ -1127,7 +1140,7 @@ int32_t nr_rx_pdsch(PHY_VARS_NR_UE *phy_vars_ue,
                  RX_type_t rx_type,
                  uint8_t i_mod,
                  uint8_t harq_pid);
-
+*/
 int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                     uint32_t frame,
                     uint8_t nr_tti_rx,

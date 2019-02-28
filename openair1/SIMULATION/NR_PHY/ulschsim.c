@@ -562,7 +562,7 @@ int main(int argc, char **argv) {
   //printf("crc32: [0]->0x%08x\n",crc24c(test_input, 32));
   // generate signal
 
-  /////////////////////////[adk] ULSCH coding/////////////////////////
+  /////////////////////////ULSCH coding/////////////////////////
   ///////////
 
   if (input_fd == NULL) {
@@ -572,7 +572,7 @@ int main(int argc, char **argv) {
   ///////////
   ////////////////////////////////////////////////////////////////////
 
-  /////////////////////////[adk] ULSCH scrambling/////////////////////////
+  /////////////////////////ULSCH scrambling/////////////////////////
   ///////////
 
   uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
@@ -593,6 +593,18 @@ int main(int argc, char **argv) {
 
   /////////////
   //////////////////////////////////////////////////////////////////////////
+
+  /////////////////////////ULSCH modulation/////////////////////////
+  ///////////
+
+  nr_pusch_codeword_modulation(scrambled_output[0], // assume one codeword for the moment
+                               mod_order,
+                               encoded_length,
+                               ulsch_ue->d);
+
+
+  ///////////
+  ////////////////////////////////////////////////////////////////////////
 
   for (SNR = snr0; SNR < snr1; SNR += snr_step) {
     n_errors = 0;

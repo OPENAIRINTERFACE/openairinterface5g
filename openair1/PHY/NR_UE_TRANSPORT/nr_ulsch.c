@@ -30,7 +30,11 @@
 * \warning
 */
 #include <stdint.h>
+#include "common/utils/assertions.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
+#include "PHY/defs_nr_common.h"
+
+extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
 
 
 
@@ -63,4 +67,29 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
     //printf("i %d b_idx %d in %d s 0x%08x out 0x%08x\n", i, b_idx, in[i], s, *out);
   }
 
+}
+
+// This function is copied from PHY/NR_TRANSPORT/nr_dlsch.c
+void nr_pusch_codeword_modulation(uint32_t *in,
+                         uint8_t  Qm,
+                         uint32_t length,
+                         int16_t *out) {
+
+  uint16_t offset = (Qm==2)? NR_MOD_TABLE_QPSK_OFFSET : (Qm==4)? NR_MOD_TABLE_QAM16_OFFSET : \
+                    (Qm==6)? NR_MOD_TABLE_QAM64_OFFSET: (Qm==8)? NR_MOD_TABLE_QAM256_OFFSET : 0;
+  AssertFatal(offset, "Invalid modulation order %d\n", Qm);
+
+  for (int i=0; i<length/Qm; i++) {
+    uint8_t idx = 0, b_idx;
+
+    for (int j=0; j<Qm; j++) {
+      b_idx = (i*Qm+j)&0x1f;
+      if (i && (!b_idx))
+        in++;
+      idx ^= (((*in)>>b_idx)&1)<<(Qm-j-1);
+    }
+
+    out[i<<1] = nr_mod_table[(offset+idx)<<1];
+    out[(i<<1)+1] = nr_mod_table[((offset+idx)<<1)+1];
+  }
 }
