@@ -48,9 +48,7 @@
 #include "s1ap_eNB.h"
 
 
-#if defined(ENABLE_SECURITY)
-  #include "UTIL/OSA/osa_defs.h"
-#endif
+#include "UTIL/OSA/osa_defs.h"
 #include "msc.h"
 
 #include "LTE_UERadioAccessCapabilityInformation.h"
@@ -486,7 +484,6 @@ static void process_eNB_security_key (
 )
 //------------------------------------------------------------------------------
 {
-#if defined(ENABLE_SECURITY)
   char ascii_buffer[65];
   uint8_t i;
   /* Saves the security key */
@@ -500,7 +497,6 @@ static void process_eNB_security_key (
 
   ascii_buffer[2 * i] = '\0';
   LOG_I (RRC, "[eNB %d][UE %x] Saved security key %s\n", ctxt_pP->module_id, ue_context_pP->ue_context.rnti, ascii_buffer);
-#endif
 }
 
 
@@ -513,7 +509,6 @@ rrc_pdcp_config_security(
 )
 //------------------------------------------------------------------------------
 {
-#if defined(ENABLE_SECURITY)
   LTE_SRB_ToAddModList_t             *SRB_configList = ue_context_pP->ue_context.SRB_configList;
   uint8_t                            *kRRCenc = NULL;
   uint8_t                            *kRRCint = NULL;
@@ -571,8 +566,6 @@ rrc_pdcp_config_security(
           PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
           DCCH);
   }
-
-#endif
 }
 
 //------------------------------------------------------------------------------

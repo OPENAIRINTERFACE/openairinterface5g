@@ -177,13 +177,12 @@ typedef struct pdcp_s {
    */
   pdcp_sn_t next_pdcp_tx_sn;
   pdcp_sn_t next_pdcp_rx_sn;
-  pdcp_sn_t next_pdcp_rx_sn_before_integrity;
+  pdcp_sn_t maximum_pdcp_rx_sn;
   /*
    * TX and RX Hyper Frame Numbers
    */
   pdcp_hfn_t tx_hfn;
   pdcp_hfn_t rx_hfn;
-  pdcp_hfn_offset_t rx_hfn_offset; // related to sn mismatch
 
   /*
    * SN of the last PDCP SDU delivered to upper layers
@@ -487,14 +486,6 @@ typedef struct {
 #define REORDERING_WINDOW_SN_5BIT 16
 #define REORDERING_WINDOW_SN_7BIT 64
 #define REORDERING_WINDOW_SN_12BIT 2048
-
-/*
- * SN size
- */
-#define PDCP_SN_5BIT  5
-#define PDCP_SN_7BIT  7
-#define PDCP_SN_12BIT 12
-
 
 signed int             pdcp_2_nas_irq;
 pdcp_stats_t              UE_pdcp_stats[MAX_MOBILES_PER_ENB];

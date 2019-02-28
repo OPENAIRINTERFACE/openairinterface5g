@@ -75,9 +75,7 @@
 #include "OCG.h"
 #include "OCG_extern.h"
 
-#if defined(ENABLE_SECURITY)
-  #include "UTIL/OSA/osa_defs.h"
-#endif
+#include "UTIL/OSA/osa_defs.h"
 
 #include "rrc_eNB_S1AP.h"
 #include "rrc_eNB_GTPV1U.h"
@@ -797,6 +795,29 @@ rrc_eNB_free_mem_UE_context(
     ASN_STRUCT_FREE(asn_DEF_LTE_MeasConfig, ue_context_pP->ue_context.measConfig);
     ue_context_pP->ue_context.measConfig = NULL;
   }
+
+#if 0
+  //HANDOVER_INFO                     *handover_info;
+  //uint8_t kenb[32];
+  //e_SecurityAlgorithmConfig__cipheringAlgorithm     ciphering_algorithm;
+  //e_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm;
+  //uint8_t                            Status;
+  //rnti_t                             rnti;
+  //uint64_t                           random_ue_identity;
+#if defined(ENABLE_ITTI)
+  //UE_S_TMSI                          Initialue_identity_s_TMSI;
+  //EstablishmentCause_t               establishment_cause;
+  //ReestablishmentCause_t             reestablishment_cause;
+  //uint16_t                           ue_initial_id;
+  //uint32_t                           eNB_ue_s1ap_id :24;
+  //security_capabilities_t            security_capabilities;
+  //uint8_t                            nb_of_e_rabs;
+  //e_rab_param_t                      e_rab[S1AP_MAX_E_RAB];
+  //uint32_t                           enb_gtp_teid[S1AP_MAX_E_RAB];
+  //transport_layer_addr_t             enb_gtp_addrs[S1AP_MAX_E_RAB];
+  //rb_id_t                            enb_gtp_ebi[S1AP_MAX_E_RAB];
+#endif
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -6142,7 +6163,6 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
   LTE_DRB_Identity_t                     *drb_id_p      = NULL;
   T(T_ENB_RRC_CONNECTION_RECONFIGURATION_COMPLETE, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->frame),
     T_INT(ctxt_pP->subframe), T_INT(ctxt_pP->rnti));
-#if defined(ENABLE_SECURITY)
 
   /* Derive the keys from kenb */
   if (DRB_configList != NULL) {
@@ -6154,7 +6174,6 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                      ue_context_pP->ue_context.kenb, &kRRCenc);
   derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
                      ue_context_pP->ue_context.kenb, &kRRCint);
-#endif
   // Refresh SRBs/DRBs
   MSC_LOG_TX_MESSAGE(
     MSC_RRC_ENB,

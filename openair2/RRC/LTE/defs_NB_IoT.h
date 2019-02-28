@@ -261,10 +261,8 @@ typedef struct eNB_RRC_UE_NB_IoT_s {
   SRB_INFO_TABLE_ENTRY_NB_IoT               Srb1;
   SRB_INFO_TABLE_ENTRY_NB_IoT               Srb1bis;
 
-#if defined(ENABLE_SECURITY)
   /* KeNB as derived from KASME received from EPC */
   uint8_t kenb[32];
-#endif
 
   /* Used integrity/ciphering algorithms--> maintained the same for NB-IoT */
   e_LTE_CipheringAlgorithm_r12     ciphering_algorithm; //Specs. TS 36.331 V14.1.0 pag 432 Change position of chipering enumerative w.r.t previous version
