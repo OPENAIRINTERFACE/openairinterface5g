@@ -580,6 +580,15 @@ typedef struct {
   int mbsfn_SubframeConfig;
 } MBSFN_config_t;
 
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+typedef struct {
+  int radioframeAllocationPeriod;
+  int radioframeAllocationOffset;
+  int non_mbsfn_SubframeConfig;
+} NonMBSFN_config_t;
+#endif
+
+
 typedef struct {
   /// Number of resource blocks (RB) in DL
   uint8_t N_RB_DL;
@@ -665,6 +674,10 @@ typedef struct {
   int num_MBSFN_config;
   /// Array of MBSFN Configurations (max 8 (maxMBSFN-Allocations) elements as per 36.331)
   MBSFN_config_t MBSFN_config[8];
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  uint8_t NonMBSFN_config_flag;
+  NonMBSFN_config_t NonMBSFN_config;
+#endif
   /// Maximum Number of Retransmissions of RRCConnectionRequest (from 36-331 RRC Spec)
   uint8_t maxHARQ_Msg3Tx;
   /// Size of SI windows used for repetition of one SI message (in frames)
@@ -679,6 +692,9 @@ typedef struct {
   uint16_t phich_reg[MAX_NUM_PHICH_GROUPS][3];
 
   struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[MAX_MBSFN_AREA];
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  struct NonMBSFN_SubframeConfig *non_mbsfn_SubframeConfig;
+#endif
   /// for fair RR scheduler
   uint32_t ue_multiple_max;
 } LTE_DL_FRAME_PARMS;

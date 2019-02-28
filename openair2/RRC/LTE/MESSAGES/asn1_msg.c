@@ -588,10 +588,11 @@ uint8_t do_SIB1_MBMS(rrc_eNB_carrier_data_t *carrier,
     (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14 =                             CALLOC(1,sizeof(struct LTE_NonMBSFN_SubframeConfig_r14));
     memset((*sib1_MBMS)->nonMBSFN_SubframeConfig_r14,0,sizeof(struct LTE_NonMBSFN_SubframeConfig_r14));
     (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->radioFrameAllocationPeriod_r14 = LTE_NonMBSFN_SubframeConfig_r14__radioFrameAllocationPeriod_r14_rf8;
-    (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->radioFrameAllocationOffset_r14 = LTE_NonMBSFN_SubframeConfig_r14__radioFrameAllocationPeriod_r14_rf64;
+    (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->radioFrameAllocationOffset_r14 = 0;
     (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->subframeAllocation_r14.buf = MALLOC(2); 
-    (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->subframeAllocation_r14.buf[0] = 0x20<<0;
-    (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->subframeAllocation_r14.buf[1] = 0x20<<7;
+    //100000001 byte(0)=10000000 byte(1)=xxxxxxx1
+    (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->subframeAllocation_r14.buf[0] = 0x80<<0;
+    (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->subframeAllocation_r14.buf[1] = 0x1<<7;
     (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->subframeAllocation_r14.size = 2; 
     (*sib1_MBMS)->nonMBSFN_SubframeConfig_r14->subframeAllocation_r14.bits_unused = 7; 
   }

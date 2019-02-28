@@ -967,6 +967,39 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
     RC.mac[Mod_idP]->common_channels[0].MBMS_flag = MBMS_Flag;
 #endif
   }
+
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+ if (nonMBSFN_SubframeConfig != NULL){
+         LOG_D(MAC,
+          "[eNB %d][CONFIG] Received a non MBSFN subframe allocation pattern (%x,%x):%x for FeMBMS-CAS\n",
+          Mod_idP, nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0],nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[1],nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0]<<1 | nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[1]>>7 );
+         RC.mac[Mod_idP]->common_channels[0].non_mbsfn_SubframeConfig = (nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0]<<1 | nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[1]>>7);
+
+        nfapi_config_request_t *cfg = &RC.mac[Mod_idP]->config[CC_idP];
+        cfg->fembms_config.non_mbsfn_config_flag.value   = 1;
+        cfg->fembms_config.non_mbsfn_config_flag.tl.tag = NFAPI_FEMBMS_CONFIG_NON_MBSFN_FLAG_TAG;
+        cfg->num_tlv++;
+
+        cfg->fembms_config.non_mbsfn_subframeconfig.value = (nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0]<<1 | nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[1]>>7);
+        cfg->fembms_config.non_mbsfn_subframeconfig.tl.tag = NFAPI_FEMBMS_CONFIG_NON_MBSFN_SUBFRAMECONFIG_TAG;
+        cfg->num_tlv++;
+
+        cfg->fembms_config.radioframe_allocation_period.value   = nonMBSFN_SubframeConfig->radioFrameAllocationPeriod_r14;
+        cfg->fembms_config.radioframe_allocation_period.tl.tag = NFAPI_FEMBMS_CONFIG_RADIOFRAME_ALLOCATION_PERIOD_TAG;
+        cfg->num_tlv++;
+
+        cfg->fembms_config.radioframe_allocation_offset.value   = nonMBSFN_SubframeConfig->radioFrameAllocationOffset_r14;
+        cfg->fembms_config.radioframe_allocation_offset.tl.tag = NFAPI_FEMBMS_CONFIG_RADIOFRAME_ALLOCATION_OFFSET_TAG;
+        cfg->num_tlv++;
+
+
+
+        //We need to reuse current MCH scheduler 
+        //TOCHECK whether we can simply reuse current mbsfn_SubframeConfig stuff
+  }
+#endif
+
+
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   if (mbsfn_AreaInfoList != NULL) {

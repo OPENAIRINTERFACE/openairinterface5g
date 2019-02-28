@@ -1283,6 +1283,9 @@ typedef struct {
     uint8_t vrb_map_UL[100];
     /// MBSFN SubframeConfig
     struct LTE_MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+    struct LTE_NonMBSFN_SubframeConfig_r14 *non_mbsfn_SubframeConfig;
+#endif
     /// number of subframe allocation pattern available for MBSFN sync area
     uint8_t num_sf_allocation_pattern;
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
@@ -1628,6 +1631,9 @@ typedef struct {
 
     /// MBSFN_Subframe Configuration
     struct LTE_MBSFN_SubframeConfig *mbsfn_SubframeConfig[8];	// FIXME replace 8 by MAX_MBSFN_AREA?
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+    struct LTE_NonMBSFN_SubframeConfig_r14 *non_mbsfn_SubframeConfig;
+#endif
     /// number of subframe allocation pattern available for MBSFN sync area
     uint8_t num_sf_allocation_pattern;
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
