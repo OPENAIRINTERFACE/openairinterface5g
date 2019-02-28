@@ -171,7 +171,6 @@ int netlink_init(void)
 {
   int ret;
 
-  printf("[IRTMS] Opening socket...\n");
 
   nas_sock_fd = socket(PF_NETLINK, SOCK_RAW,GRAAL_NETLINK_ID);
 
