@@ -2007,7 +2007,7 @@ schedule_ue_spec_br(module_id_t module_idP,
            
     /* Simple scheduler for 1 repetition, 1 HARQ */
     if (subframeP == 5) { // MPDCCH
-      LOG_I(MAC, "MPDCCH round_DL = %d in frame %d subframe %d\n", round_DL, frameP, subframeP);
+      if (round_DL < 8) LOG_D(MAC, "MPDCCH round_DL = %d in frame %d subframe %d\n", round_DL, frameP, subframeP);
 
       if (round_DL == 8) {
         rlc_status.bytes_in_buffer = 0;
@@ -2054,7 +2054,7 @@ schedule_ue_spec_br(module_id_t module_idP,
           sdu_lengths[0] = 0;
 
           if (rlc_status.bytes_in_buffer > 0) {  // There is DCCH to transmit
-            LOG_I(MAC, "[eNB %d] Frame %d, DL-DCCH->DLSCH CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
+            LOG_D(MAC, "[eNB %d] Frame %d, DL-DCCH->DLSCH CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
                   module_idP,
                   frameP,
                   CC_id,
@@ -2115,7 +2115,7 @@ schedule_ue_spec_br(module_id_t module_idP,
           sdu_lengths[num_sdus] = 0;
 	  
           if (rlc_status.bytes_in_buffer > 0) {
-            LOG_I(MAC,"[eNB %d], Frame %d, DCCH1->DLSCH, CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
+            LOG_D(MAC,"[eNB %d], Frame %d, DCCH1->DLSCH, CC_id %d, Requesting %d bytes from RLC (RRC message)\n",
                   module_idP,
                   frameP,
                   CC_id,
@@ -2196,7 +2196,7 @@ schedule_ue_spec_br(module_id_t module_idP,
                     rnti);
             }
             
-            LOG_I(MAC,"[eNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting %d bytes from RLC (lcid %d total hdr len %d)\n",
+            LOG_D(MAC,"[eNB %d][USER-PLANE DEFAULT DRB] Frame %d : DTCH->DLSCH, Requesting %d bytes from RLC (lcid %d total hdr len %d)\n",
                       module_idP,
                       frameP,
                       TBS - header_len_dcch - sdu_length_total - header_len_dtch,
@@ -2281,7 +2281,7 @@ schedule_ue_spec_br(module_id_t module_idP,
         TBS = get_TBS_DL(mcs,6);
       }
 
-      LOG_I(MAC, "[eNB %d] CC_id %d Generated DLSCH header (mcs %d, TBS %d, nb_rb %d)\n",
+      LOG_D(MAC, "[eNB %d] CC_id %d Generated DLSCH header (mcs %d, TBS %d, nb_rb %d)\n",
             module_idP,
             CC_id,
             mcs,
@@ -2477,12 +2477,12 @@ schedule_ue_spec_br(module_id_t module_idP,
       UE_template->mcs[harq_pid] = dl_config_pdu->mpdcch_pdu.mpdcch_pdu_rel13.mcs;
     }
   } else if ((subframeP == 7) && (round_DL < 8)) { // DLSCH
-    LOG_I(MAC, "DLSCH round_DL = %d in frame %d subframe %d\n", round_DL, frameP, subframeP);
+    LOG_D(MAC, "DLSCH round_DL = %d in frame %d subframe %d\n", round_DL, frameP, subframeP);
 	  
 	  int absSF = (frameP * 10) + subframeP;
 	  
 	  /* Have to check that MPDCCH was generated */
-	  LOG_I(MAC, "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating DLSCH (ce_level %d RNTI %x)\n",
+	  LOG_D(MAC, "[eNB %d][RAPROC] CC_id %d Frame %d, subframeP %d: Generating DLSCH (ce_level %d RNTI %x)\n",
 	        module_idP, 
           CC_id, 
           frameP, 

@@ -4074,7 +4074,7 @@ extract_harq(module_id_t mod_idP,
             }
           }
 
-          LOG_I(PHY, "In extract_harq(): pdu[0] = %d for harq_pid = %d\n", pdu[0], harq_pid);
+          LOG_D(MAC, "In extract_harq(): pdu[0] = %d for harq_pid = %d\n", pdu[0], harq_pid);
 
           if (pdu[0] == 1) {  // ACK
             sched_ctl->round[CC_idP][harq_pid] = 8; // release HARQ process
