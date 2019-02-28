@@ -755,10 +755,22 @@ int x2ap_eNB_handle_handover_response (instance_t instance,
 
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_HandoverRequestAcknowledge_IEs_t, ie, x2HandoverRequestAck,
                              X2AP_ProtocolIE_ID_id_Old_eNB_UE_X2AP_ID, true);
+
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    return -1;
+  }
+
   id_source = ie->value.choice.UE_X2AP_ID;
 
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_HandoverRequestAcknowledge_IEs_t, ie, x2HandoverRequestAck,
                              X2AP_ProtocolIE_ID_id_New_eNB_UE_X2AP_ID, true);
+
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    return -1;
+  }
+
   id_target = ie->value.choice.UE_X2AP_ID_1;
 
   ue_id = id_source;
@@ -829,10 +841,20 @@ int x2ap_eNB_handle_ue_context_release (instance_t instance,
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_UEContextRelease_IEs_t, ie, x2UEContextRelease,
                              X2AP_ProtocolIE_ID_id_Old_eNB_UE_X2AP_ID, true);
 
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    return -1;
+  }
+
   id_source = ie->value.choice.UE_X2AP_ID;
 
   X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_UEContextRelease_IEs_t, ie, x2UEContextRelease,
                              X2AP_ProtocolIE_ID_id_New_eNB_UE_X2AP_ID, true);
+
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    return -1;
+  }
 
   id_target = ie->value.choice.UE_X2AP_ID_1;
 
