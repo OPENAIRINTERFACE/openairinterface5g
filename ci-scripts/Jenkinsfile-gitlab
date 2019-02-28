@@ -271,7 +271,7 @@ pipeline {
                                         }
                                     }
                                 } catch (Exception e) {
-                                    echo "Red Hat build failed not an error now"
+                                    echo "Red Hat build failed but we could keep running pipeline if all ubuntu-based build passed"
                                 }
                             }
                         }
@@ -312,40 +312,68 @@ pipeline {
 
         stage ("Variant Tests") {
             parallel {
-                stage ("Test physical simulators") {
-                    steps {
-                        gitlabCommitStatus(name: "Test phy-sim") {
-                            timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                stage ("VM-based tests") {
+                    stages {
+                        stage ("Test physical simulators") {
+                            steps {
+                                script {
+                                    gitlabCommitStatus(name: "Test phy-sim") {
+                                        timeout (time: 20, unit: 'MINUTES') {
+                                            try {
+                                                sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                                            } catch (Exception e) {
+                                              currentBuild.result = 'FAILURE'
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
-                    }
-                }
-                stage ("Test basic simulator") {
-                    steps {
-                        gitlabCommitStatus(name: "Test basic-sim") {
-                            timeout (time: 30, unit: 'MINUTES') {
-                                sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                        stage ("Build Flexran Controller") {
+                            when {
+                                expression {doFlexranCtrlTest}
+                            }
+                            steps {
+                                script {
+                                    timeout (time: 20, unit: 'MINUTES') {
+                                        try {
+                                            sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant flexran-rtc --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                                        } catch (Exception e) {
+                                          currentBuild.result = 'FAILURE'
+                                        }
+                                    }
+                                }
                             }
                         }
-                    }
-                }
-                stage ("Test L2 simulator") {
-                    steps {
-                        gitlabCommitStatus(name: "Test L2-sim") {
-                            timeout (time: 30, unit: 'MINUTES') {
-                                sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant l2-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                        stage ("Test basic simulator") {
+                            steps {
+                                script {
+                                    gitlabCommitStatus(name: "Test basic-sim") {
+                                        timeout (time: 30, unit: 'MINUTES') {
+                                            try {
+                                                sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                                            } catch (Exception e) {
+                                              currentBuild.result = 'FAILURE'
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
-                    }
-                }
-                stage ("Build Flexran Controller") {
-                    when {
-                        expression {doFlexranCtrlTest}
-                    }
-                    steps {
-                        timeout (time: 20, unit: 'MINUTES') {
-                            sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant flexran-rtc --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                        stage ("Test L2 simulator") {
+                            steps {
+                                script {
+                                    gitlabCommitStatus(name: "Test L2-sim") {
+                                        timeout (time: 30, unit: 'MINUTES') {
+                                            try {
+                                                sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant l2-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                                            } catch (Exception e) {
+                                                currentBuild.result = 'FAILURE'
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
