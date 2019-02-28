@@ -957,9 +957,12 @@ generate_Msg4(module_id_t module_idP,
                              1, // tpc, none
                              getRIV(N_RB_DL, first_rb, 4),  // resource_block_coding
                              ra->msg4_mcs,  // mcs
-                             1, // ndi
+				 1 - UE_list->UE_template[CC_idP][UE_id].oldNDI[ra->harq_pid],
                              0, // rv
                              0);  // vrb_flag
+    	
+    	UE_list->UE_template[CC_idP][UE_id].oldNDI[ra->harq_pid] = 1 - UE_list->UE_template[CC_idP][UE_id].oldNDI[ra->harq_pid];
+
         LOG_D(MAC,
               "Frame %d, subframe %d: Msg4 DCI pdu_num %d (rnti %x,rnti_type %d,harq_pid %d, resource_block_coding (%p) %d\n",
               frameP, subframeP, dl_req_body->number_pdu,
@@ -1194,7 +1197,7 @@ check_Msg4_retransmission(module_id_t module_idP, int CC_idP,
                              1, // tpc, none
                              getRIV(N_RB_DL, first_rb, 4),  // resource_block_coding
                              ra->msg4_mcs,  // mcs
-                             1, // ndi
+				     UE_list->UE_template[CC_idP][UE_id].oldNDI[ra->harq_pid],
                              round & 3, // rv
                              0);  // vrb_flag
 
