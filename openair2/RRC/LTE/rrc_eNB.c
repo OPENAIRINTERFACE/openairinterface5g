@@ -850,7 +850,9 @@ rrc_eNB_free_UE(
       LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ sent for RNTI %x, cause 21, radio connection with ue lost\n",
             enb_mod_idP,
             rnti);
+#if defined(ENABLE_USE_MME)
       rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(enb_mod_idP, ue_context_pP, S1AP_CAUSE_RADIO_NETWORK, 21);
+#endif
       // send cause 21: radio connection with ue lost
       /* From 3GPP 36300v10 p129 : 19.2.2.2.2 S1 UE Context Release Request (eNB triggered)
         * If the E-UTRAN internal reason is a radio link failure detected in the eNB, the eNB shall wait a sufficient time before
@@ -866,7 +868,9 @@ rrc_eNB_free_UE(
       LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ sent for RNTI %x, cause 20, user inactivity\n",
             enb_mod_idP,
             rnti);
+#if defined(ENABLE_USE_MME)
       rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(enb_mod_idP, ue_context_pP, S1AP_CAUSE_RADIO_NETWORK, 20);
+#endif
       // send cause 20: user inactivity
       return;
     }
@@ -1039,7 +1043,9 @@ rrc_eNB_process_RRCConnectionSetupComplete(
 
   if (EPC_MODE_ENABLED == 1) {
     // Forward message to S1AP layer
+#if defined(ENABLE_USE_MME)
     rrc_eNB_send_S1AP_NAS_FIRST_REQ(ctxt_pP, ue_context_pP, rrcConnectionSetupComplete);
+#endif
   } else {
     // RRC loop back (no S1AP), send SecurityModeCommand to UE
     rrc_eNB_generate_SecurityModeCommand(ctxt_pP, ue_context_pP);
@@ -4120,6 +4126,7 @@ void rrc_eNB_process_handoverCommand(
   ue_context->ue_context.handover_info->size = size;
 }
 
+#if defined(ENABLE_USE_MME)
 void rrc_eNB_handover_ue_context_release(
 protocol_ctxt_t *const ctxt_pP,
 struct rrc_eNB_ue_context_s *ue_context_p) {
@@ -4155,6 +4162,7 @@ struct rrc_eNB_ue_context_s *ue_context_p) {
     rrc_eNB_S1AP_remove_ue_ids(RC.rrc[ctxt_pP->module_id], rrc_ue_s1ap_ids);
   }
 }
+#endif /* defined(ENABLE_USE_MME) */
 
 void
 check_handovers(
@@ -5160,6 +5168,7 @@ rrc_eNB_configure_rbs_handover(struct rrc_eNB_ue_context_s *ue_context_p, protoc
                           , 0, 0
 #endif
                          );
+#if defined(ENABLE_USE_MME)
   rrc_eNB_process_security (
     ctxt_pP,
     ue_context_p,
@@ -5172,6 +5181,7 @@ rrc_eNB_configure_rbs_handover(struct rrc_eNB_ue_context_s *ue_context_p, protoc
     ctxt_pP,
     ue_context_p,
     FALSE);
+#endif
 
   // Add a new user (called during the HO procedure)
   LOG_I(RRC, "rrc_eNB_target_add_ue_handover module_id %d rnti %d\n", ctxt_pP->module_id, ctxt_pP->rnti);
@@ -7576,9 +7586,11 @@ rrc_eNB_decode_dcch(
 
         if (EPC_MODE_ENABLED) {
           if (EPC_MODE_ENABLED == 1) {
+#if defined(ENABLE_USE_MME)
             rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(ctxt_pP,
                                                   ue_context_p,
                                                   ul_dcch_msg);
+#endif
           }
         } else {
           ue_context_p->ue_context.nb_of_e_rabs = 1;
@@ -7626,9 +7638,11 @@ rrc_eNB_decode_dcch(
           sdu_sizeP);
 
         if (EPC_MODE_ENABLED == 1) {
+#if defined(ENABLE_USE_MME)
           rrc_eNB_send_S1AP_UPLINK_NAS(ctxt_pP,
                                        ue_context_p,
                                        ul_dcch_msg);
+#endif
         }
 
         break;
@@ -7837,6 +7851,7 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id)
       }
     }
 
+#if defined(ENABLE_USE_MME)
     if (ue_context_p->ue_context.handover_info != NULL) {
       if (ue_context_p->ue_context.handover_info->state == HO_RELEASE) {
         ue_to_be_removed = ue_context_p;
@@ -7844,6 +7859,7 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id)
         break; //break RB_FOREACH (why to break ?)
       }
     }
+#endif
 
     pthread_mutex_lock(&rrc_release_freelist);
 
