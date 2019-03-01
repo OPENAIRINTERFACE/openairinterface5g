@@ -1143,6 +1143,8 @@ typedef struct {
   uint8_t               decode_MIB;
   /// temporary offset during cell search prior to MIB decoding
   int              ssb_offset;
+  uint8_t          i_ssb;
+  uint8_t          n_hf;
   int              rx_offset; /// Timing offset
   int              rx_offset_diff; /// Timing adjustment for ofdm symbol0 on HW USRP
   int              time_sync_cell;
@@ -1306,6 +1308,7 @@ typedef struct {
 #endif
 
 } PHY_VARS_NR_UE;
+
 
 /* this structure is used to pass both UE phy vars and
  * proc to the function UE_thread_rxn_txnp4

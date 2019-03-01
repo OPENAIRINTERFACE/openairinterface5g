@@ -5098,14 +5098,23 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   if ( (nr_tti_rx == 0) && (ue->decode_MIB == 1))
     {
       LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
-      for (int i=0; i<3; i++)
+      for (int i=0; i<3; i++) {
 	nr_slot_fep(ue,
 		    (5+i), //mu=1 case B
 		    nr_tti_rx,
 		    0,
 		    0,
 		    NR_PBCH_EST);
+
+#if UE_TIMING_TRACE
+  	start_meas(&ue->dlsch_channel_estimation_stats);
+#endif
+   	nr_pbch_channel_estimation(ue,0,0,5+i);
+#if UE_TIMING_TRACE
+  	stop_meas(&ue->dlsch_channel_estimation_stats);
+#endif
       
+      }
       nr_ue_pbch_procedures(eNB_id,ue,proc,0);
     }
   

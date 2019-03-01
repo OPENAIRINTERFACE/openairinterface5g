@@ -363,7 +363,7 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu,
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   nfapi_nr_config_request_t *gNB_config = &gNB->gNB_config;
   //overwrite for new NR parameters
-  gNB_config->nfapi_config.rf_bands.rf_band[0] = 5;
+  gNB_config->nfapi_config.rf_bands.rf_band[0] = 78;
   gNB_config->nfapi_config.nrarfcn.value = 620000;
   gNB_config->subframe_config.numerology_index_mu.value = mu;
   gNB_config->subframe_config.duplex_mode.value = TDD;
@@ -377,12 +377,13 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu,
   gNB_config->sch_config.ssb_scg_position_in_burst.value=position_in_burst;
 
   gNB->mac_enabled     = 1;
-  fp->dl_CarrierFreq = from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
-  fp->ul_CarrierFreq = fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
+  fp->dl_CarrierFreq = 3500000000;//from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
+  fp->ul_CarrierFreq = 3500000000;//fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
   fp->threequarter_fs                    = 0;
   nr_init_frame_parms(gNB_config, fp);
   gNB->configured                                   = 1;
   LOG_I(PHY,"gNB configured\n");
+
 }
 
 

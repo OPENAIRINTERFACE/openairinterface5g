@@ -372,7 +372,8 @@ int main(int argc, char **argv)
   frame_parms->N_RB_DL = N_RB_DL;
   frame_parms->N_RB_UL = N_RB_DL;
   frame_parms->Nid_cell = Nid_cell;
-  frame_parms->ssb_type = nr_ssb_type_B;
+  frame_parms->nushift = Nid_cell%4;
+  frame_parms->ssb_type = nr_ssb_type_C;
 
   nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
   phy_init_nr_gNB(gNB,0,0);
@@ -605,17 +606,9 @@ int main(int argc, char **argv)
 		      0,
 		      0,
 		      NR_PBCH_EST);
-
-          nr_pbch_channel_estimation(UE,0,0,i);
         }
-	 
-	ret = nr_rx_pbch(UE,
-			 &UE->proc.proc_rxtx[0],
-			 UE->pbch_vars[0],
-			 frame_parms,
-			 0,
-			 SISO,
-			 UE->high_speed_flag);
+
+	ret = nr_pbch_detection(UE,5,0); // start pbch detection from symbol 5 and mode 0
 
 	if (ret==0) {
 	  //UE->rx_ind.rx_indication_body->mib_pdu.ssb_index;  //not yet detected automatically

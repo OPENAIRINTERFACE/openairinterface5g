@@ -1125,6 +1125,10 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 		     MIMO_mode_t mimo_mode,
 		     uint32_t high_speed_flag);
 
+int nr_pbch_detection(PHY_VARS_NR_UE *ue,
+		      int pbch_initial_symbol,
+		      runmode_t mode);
+
 uint16_t rx_pbch_emul(PHY_VARS_NR_UE *phy_vars_ue,
                       uint8_t eNB_id,
                       uint8_t pbch_phase);

@@ -426,7 +426,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   uint8_t nushift;
   uint16_t M;
   uint8_t Lmax=frame_parms->Lmax; 
-  uint8_t ssb_index=0;
+  uint8_t ssb_index=ue->i_ssb;
   //uint16_t crc;
   //unsigned short idx_demod =0;
   uint32_t decoderState=0;

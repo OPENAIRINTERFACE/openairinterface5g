@@ -53,48 +53,48 @@ int cnt=0;
 
 #define DEBUG_INITIAL_SYNCH
 
-int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
+
+int nr_pbch_detection(PHY_VARS_NR_UE *ue, int pbch_initial_symbol, runmode_t mode)
 {
   NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   int ret =-1;
-
 
 #ifdef DEBUG_INITIAL_SYNCH
   LOG_I(PHY,"[UE%d] Initial sync: starting PBCH detection (rx_offset %d)\n",ue->Mod_id,
         ue->rx_offset);
 #endif
 
-  // save the nb_prefix_samples0 since we are not synchronized to subframes yet and the SSB has all symbols with nb_prefix_samples
-  int nb_prefix_samples0 = frame_parms->nb_prefix_samples0;
-  frame_parms->nb_prefix_samples0 = frame_parms->nb_prefix_samples;
+  uint8_t  N_L = (frame_parms->Lmax == 4)? 4:8;
+  uint8_t  N_hf = (frame_parms->Lmax == 4)? 2:1;
 
+  // loops over possible pbch dmrs cases to retrive best estimated i_ssb (and n_hf for Lmax=4) for multiple ssb detection
+  for (int hf = 0; hf < N_hf; hf++) {
+    for (int l = 0; l < N_L ; l++) {
+      if (ret !=0) {
+        ue->i_ssb = l;
+        ue->n_hf = hf;
 
-  for(int i=1; i<4;i++) {
- 
 #if UE_TIMING_TRACE
-    start_meas(&ue->dlsch_channel_estimation_stats);
+        start_meas(&ue->dlsch_channel_estimation_stats);
 #endif
-    nr_pbch_channel_estimation(ue,0,
-			       0,
-			       i);
+        for(int i=pbch_initial_symbol; i<pbch_initial_symbol+3;i++)
+          nr_pbch_channel_estimation(ue,0,0,i);
 #if UE_TIMING_TRACE
-    stop_meas(&ue->dlsch_channel_estimation_stats);
+        stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif
+
+        ret = nr_rx_pbch(ue,
+	                 &ue->proc.proc_rxtx[0],
+		         ue->pbch_vars[0],
+		         frame_parms,
+		         0,
+                         SISO,
+		         ue->high_speed_flag);
+
+      }
+    }
   }
 
-  //put back nb_prefix_samples0
-  frame_parms->nb_prefix_samples0 = nb_prefix_samples0;
-  
-  
-  ret = nr_rx_pbch(ue,
-		   &ue->proc.proc_rxtx[0],
-		   ue->pbch_vars[0],
-		   frame_parms,
-		   0,
-		   SISO,
-		   ue->high_speed_flag);
-  
-  
   if (ret==0) {
     
     frame_parms->nb_antenna_ports_eNB = 1; //pbch_tx_ant;
@@ -211,6 +211,14 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
   /* check that SSS/PBCH block is continuous inside the received buffer */
   if (sync_pos < (NR_NUMBER_OF_SUBFRAMES_PER_FRAME*fp->samples_per_subframe - (NB_SYMBOLS_PBCH * fp->ofdm_symbol_size))) {
 
+    /* slop_fep function works for lte and takes into account begining of frame with prefix for subframe 0 */
+    /* for NR this is not the case but slot_fep is still used for computing FFT of samples */
+    /* in order to achieve correct processing for NR prefix samples is forced to 0 and then restored after function call */
+    /* symbol number are from beginning of SS/PBCH blocks as below:  */
+    /*    Signal            PSS  PBCH  SSS  PBCH                     */
+    /*    symbol number      0     1    2    3                       */
+    /* time samples in buffer rxdata are used as input of FFT -> FFT results are stored in the frequency buffer rxdataF */
+    /* rxdataF stores SS/PBCH from beginning of buffers in the same symbol order as in time domain */
 
     for(int i=0; i<4;i++)
       nr_slot_fep(ue,
@@ -230,7 +238,7 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
     //nr_init_frame_parms_ue(fp,NR_MU_1,NORMAL,n_ssb_crb,0);
 
     nr_gold_pbch(ue);
-    ret = nr_pbch_detection(ue,mode);
+    ret = nr_pbch_detection(ue,1,mode);  // start pbch detection at first symbol after pss
     
     nr_gold_pdcch(ue,0, 2);
     /*

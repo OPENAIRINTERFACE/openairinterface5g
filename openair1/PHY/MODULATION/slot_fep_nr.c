@@ -45,8 +45,16 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   NR_UE_COMMON *common_vars   = &ue->common_vars;
   unsigned char aa;
   unsigned char symbol = l;//+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within sub-frame
-  unsigned int nb_prefix_samples = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
-  unsigned int nb_prefix_samples0 = (no_prefix ? 0 : frame_parms->nb_prefix_samples0);
+  unsigned int nb_prefix_samples;
+  unsigned int nb_prefix_samples0;
+  if (ue->is_synchronized) {
+    nb_prefix_samples = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
+    nb_prefix_samples0 = (no_prefix ? 0 : frame_parms->nb_prefix_samples0);
+  }
+  else {
+    nb_prefix_samples = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
+    nb_prefix_samples0 = (no_prefix ? 0 : frame_parms->nb_prefix_samples);
+  }
   //unsigned int subframe_offset;//,subframe_offset_F;
   unsigned int slot_offset;
   //int i;

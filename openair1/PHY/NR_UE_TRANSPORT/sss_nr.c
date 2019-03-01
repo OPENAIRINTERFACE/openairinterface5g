@@ -430,21 +430,6 @@ int rx_sss_nr(PHY_VARS_NR_UE *ue, int32_t *tot_metric,uint8_t *phase_max)
   int32_t metric, metric_re;
   int16_t *d;
 
-  /* slop_fep function works for lte and takes into account begining of frame with prefix for subframe 0 */
-  /* for NR this is not the case but slot_fep is still used for computing FFT of samples */
-  /* in order to achieve correct processing for NR prefix samples is forced to 0 and then restored after function call */
-  /* symbol number are from beginning of SS/PBCH blocks as below:  */
-  /*    Signal            PSS  PBCH  SSS  PBCH                     */
-  /*    symbol number      0     1    2    3                       */
-  /* time samples in buffer rxdata are used as input of FFT -> FFT results are stored in the frequency buffer rxdataF */
-  /* rxdataF stores SS/PBCH from beginning of buffers in the same symbol order as in time domain */
-
-  int nb_prefix_samples0 = frame_parms->nb_prefix_samples0;
-  // For now, symbol 0 = PSS/PBCH and it is never in symbol 0 or 7*2^mu (i.e. always shorter prefix)
-  frame_parms->nb_prefix_samples0 = frame_parms->nb_prefix_samples;
-
-
-  frame_parms->nb_prefix_samples0 = nb_prefix_samples0;
 
   // pss sss extraction
   pss_sss_extract_nr(ue,
