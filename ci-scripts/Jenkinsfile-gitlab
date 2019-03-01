@@ -290,6 +290,17 @@ pipeline {
                         }
                         if ("MERGE".equals(env.gitlabActionType)) {
                             sh "./ci-scripts/oai-ci-vm-tool report-build --workspace $WORKSPACE --git-url ${GIT_URL} --job-name ${JOB_NAME} --build-id ${BUILD_ID} --trigger merge-request --src-branch ${env.gitlabSourceBranch} --src-commit ${env.gitlabMergeRequestLastCommit} --target-branch ${env.gitlabTargetBranch} --target-commit ${GIT_COMMIT}"
+                            // If the merge request has introduced more CPPCHECK errors or warnings, notifications in GitLab
+                            if (fileExists('oai_cppcheck_added_errors.txt')) {
+                                def ret=readFile('./oai_cppcheck_added_errors.txt').trim();
+                                if ("0".equals(ret)) {
+                                    echo "No added cppcheck warnings/errors in this merge request"
+                                } else {
+                                    def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): Some modified files in Merge Request MAY have INTRODUCED up to " + ret + " CPPCHECK errors/warnings"
+                                    addGitLabMRComment comment: message
+                                }
+                            }
+                            // If the merge request has introduced compilation warnings, notifications in GitLab
                             sh "./ci-scripts/checkAddedWarnings.sh --src-branch ${env.gitlabSourceBranch} --target-branch ${env.gitlabTargetBranch}"
                             def res=readFile('./oai_warning_files.txt').trim();
                             if ("0".equals(res)) {
