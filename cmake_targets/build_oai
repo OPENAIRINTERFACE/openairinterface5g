@@ -547,9 +547,9 @@ function main() {
     mkdir -p $DIR/$lte_build_dir/build
     cmake_file=$DIR/$lte_build_dir/CMakeLists.txt
     echo "cmake_minimum_required(VERSION 2.8)"   >  $cmake_file
-    if [ "$NOS1" = "1" ] ; then
-	cat  $DIR/$lte_build_dir/CMakeLists.template >>  $cmake_file
-    fi
+#    if [ "$NOS1" = "1" ] ; then
+#	cat  $DIR/$lte_build_dir/CMakeLists.template >>  $cmake_file
+#    fi
     echo "set ( CMAKE_BUILD_TYPE $CMAKE_BUILD_TYPE )" >> $cmake_file
     echo "set ( CFLAGS_PROCESSOR_USER \"$CFLAGS_PROCESSOR_USER\" )" >>  $cmake_file
     echo "set ( XFORMS $XFORMS )"                  >>  $cmake_file
@@ -936,7 +936,7 @@ fi
     echo "set (LINUX True )"                          >>  $cmake_file
     echo "set (PDCP_USE_NETLINK True )"               >>  $cmake_file
     echo "set (BASIC_SIMULATOR \"True\" )"            >>  $cmake_file
-    echo "set (UE_NAS_USE_TUN \"True\" )"             >>  $cmake_file
+#    echo "set (UE_NAS_USE_TUN \"True\" )"             >>  $cmake_file
     echo 'include(${CMAKE_CURRENT_SOURCE_DIR}/../../CMakeLists.txt)' >> $cmake_file
 
     echo_info "Build UE"

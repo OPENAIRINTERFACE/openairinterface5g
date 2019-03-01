@@ -27,8 +27,9 @@
 
 #   define TASK_ORIGIN  TASK_NAS_UE
 
+
 #if (defined(ENABLE_NAS_UE_LOGGING) && defined(NAS_BUILT_IN_UE) )
-static const uint8_t emm_message_ids[] = {
+__attribute__ ((unused)) static const uint8_t emm_message_ids[] = {
   ATTACH_REQUEST,
   ATTACH_ACCEPT,
   ATTACH_COMPLETE,
@@ -60,7 +61,7 @@ static const uint8_t emm_message_ids[] = {
   CS_SERVICE_NOTIFICATION,
 };
 
-static const uint8_t esm_message_ids[] = {
+__attribute__ ((unused)) static const uint8_t esm_message_ids[] = {
   ACTIVATE_DEFAULT_EPS_BEARER_CONTEXT_REQUEST,
   ACTIVATE_DEFAULT_EPS_BEARER_CONTEXT_ACCEPT,
   ACTIVATE_DEFAULT_EPS_BEARER_CONTEXT_REJECT,

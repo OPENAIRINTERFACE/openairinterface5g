@@ -112,7 +112,7 @@ function start_basic_sim_ue {
     rm $1
 
     local i="0"
-    echo "ifconfig oip1 | egrep -c \"inet addr\"" > $1
+    echo "ifconfig oaitun_ue1 | egrep -c \"inet addr\"" > $1
     while [ $i -lt 10 ]
     do
         sleep 5
@@ -134,7 +134,7 @@ function start_basic_sim_ue {
 }
 
 function get_ue_ip_addr {
-    echo "ifconfig oip1 | egrep \"inet addr\" | sed -e 's#^.*inet addr:##' -e 's#  P-t-P:.*\$##'" > $1
+    echo "ifconfig oaitun_ue1 | egrep \"inet addr\" | sed -e 's#^.*inet addr:##' -e 's#  P-t-P:.*\$##'" > $1
     UE_IP_ADDR=`ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1`
     echo "UE IP Address for EPC is : $UE_IP_ADDR"
     rm $1
@@ -149,9 +149,9 @@ function ping_ue_ip_addr {
 }
 
 function ping_epc_ip_addr {
-    echo "echo \"COMMAND IS: ping -I oip1 -c 20 $3\" > $4" > $1
+    echo "echo \"COMMAND IS: ping -I oaitun_ue1 -c 20 $3\" > $4" > $1
     echo "rm -f $4" >> $1
-    echo "ping -I oip1 -c 20 $3 | tee -a $4" >> $1
+    echo "ping -I oaitun_ue1 -c 20 $3 | tee -a $4" >> $1
     cat $1
     ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
     rm -f $1
@@ -618,9 +618,9 @@ function start_l2_sim_ue {
         UE_SYNC=1
         echo "L2-SIM UE is sync'ed w/ eNB"
     fi
-    # Checking oip1 interface has now an IP address
+    # Checking oaitun_ue1 interface has now an IP address
     i="0"
-    echo "ifconfig oip1 | egrep -c \"inet addr\"" > $1
+    echo "ifconfig oaitun_ue1 | egrep -c \"inet addr\"" > $1
     while [ $i -lt 10 ]
     do
         sleep 5
@@ -636,10 +636,10 @@ function start_l2_sim_ue {
     if [ $i -lt 50 ]
     then
         UE_SYNC=0
-        echo "L2-SIM UE oip1 is NOT sync'ed w/ EPC"
+        echo "L2-SIM UE oaitun_ue1 is NOT sync'ed w/ EPC"
     else
         UE_SYNC=1
-        echo "L2-SIM UE oip1 is sync'ed w/ EPC"
+        echo "L2-SIM UE oaitun_ue1 is sync'ed w/ EPC"
     fi
     sleep 10
 }
