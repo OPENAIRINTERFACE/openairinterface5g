@@ -195,6 +195,9 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(unsigned char Kmimo,
         if (abstraction_flag==0) {
           for (r=0; r<MAX_NUM_NR_DLSCH_SEGMENTS/bw_scaling; r++) {
             // account for filler in first segment and CRCs for multiple segment case
+            // [hna] 8448 is the maximum CB size in NR
+            //       68*348 = 68*(maximum size of Zc)
+            //       In section 5.3.2 in 38.212, the for loop is up to N + 2*Zc (maximum size of N is 66*Zc, therefore 68*Zc)
             dlsch->harq_processes[i]->c[r] = (uint8_t*)malloc16(8448);
             dlsch->harq_processes[i]->d[r] = (uint8_t*)malloc16(68*384); //max size for coded output
             if (dlsch->harq_processes[i]->c[r]) {
@@ -337,7 +340,7 @@ int nr_dlsch_encoding(unsigned char *a,
 		    dlsch->harq_processes[harq_pid]->B,
 		    &dlsch->harq_processes[harq_pid]->C,
 		    &dlsch->harq_processes[harq_pid]->K,
-		    pz,
+		    pz, // [hna] pz is Zc
 		    &dlsch->harq_processes[harq_pid]->F);
 
     F = dlsch->harq_processes[harq_pid]->F;
