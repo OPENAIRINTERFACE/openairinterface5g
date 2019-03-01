@@ -5109,7 +5109,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 #if UE_TIMING_TRACE
   	start_meas(&ue->dlsch_channel_estimation_stats);
 #endif
-   	nr_pbch_channel_estimation(ue,0,0,5+i);
+   	nr_pbch_channel_estimation(ue,0,0,5+i,i);
 #if UE_TIMING_TRACE
   	stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif

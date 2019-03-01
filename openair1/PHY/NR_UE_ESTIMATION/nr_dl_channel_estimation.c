@@ -36,7 +36,8 @@
 int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
 			       uint8_t eNB_offset,
 			       unsigned char Ns,
-			       unsigned char symbol)
+			       unsigned char symbol,
+			       int dmrss)
 {
   int pilot[200] __attribute__((aligned(16)));
   unsigned char aarx;
@@ -44,7 +45,6 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   unsigned int pilot_cnt;
   int16_t ch[2],*pil,*rxF,*dl_ch,*fl,*fm,*fr;
   int ch_offset,symbol_offset;
-  int dmrss;
 
   //uint16_t Nid_cell = (eNB_offset == 0) ? ue->frame_parms.Nid_cell : ue->measurements.adj_cell_id[eNB_offset-1];
 
@@ -59,18 +59,14 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   unsigned int  ssb_offset = ue->frame_parms.first_carrier_offset + ue->frame_parms.ssb_start_subcarrier;
   if (ssb_offset>= ue->frame_parms.ofdm_symbol_size) ssb_offset-=ue->frame_parms.ofdm_symbol_size;
 
-  if (ue->is_synchronized ==0 ) dmrss = symbol-1;
-  else dmrss = symbol-5;
-
   if (ue->high_speed_flag == 0) // use second channel estimate position for temporary storage
     ch_offset     = ue->frame_parms.ofdm_symbol_size ;
   else
     ch_offset     = ue->frame_parms.ofdm_symbol_size*symbol;
 
-  AssertFatal((symbol > 0 && symbol < 4 && ue->is_synchronized == 0) || 
-	      (symbol > 4 && symbol < 8 && ue->is_synchronized == 1),
-	      "symbol %d is illegal for PBCH DM-RS (is_synchronized %d)\n",
-	      symbol,ue->is_synchronized);
+  AssertFatal(dmrss >= 0 && dmrss < 3,
+	      "symbol %d is illegal for PBCH DM-RS \n",
+	      dmrss);
 
   symbol_offset = ue->frame_parms.ofdm_symbol_size*symbol;
 

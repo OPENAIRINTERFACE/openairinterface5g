@@ -378,6 +378,8 @@ int main(int argc, char **argv)
   nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
   phy_init_nr_gNB(gNB,0,0);
 
+  uint8_t n_hf = gNB_config->sch_config.half_frame_index.value;
+
   double fs,bw,scs,eps;
   
   switch (mu) {
@@ -494,7 +496,6 @@ int main(int argc, char **argv)
       
       nr_common_signal_procedures (gNB,frame,slot);
       
-      //TODO: loop over slots
       for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
 	if (gNB_config->subframe_config.dl_cyclic_prefix_type.value == 1) {
 	  PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
@@ -605,8 +606,12 @@ int main(int argc, char **argv)
       }
       else {
 	UE->rx_offset=0;
+	
+	uint8_t ssb_index = 0;
+        while (!((SSB_positions >> ssb_index) & 0x01)) ssb_index++;  // to select the first transmitted ssb
 
-	for (int i=5; i<8; i++) {
+	int start_symbol = nr_get_ssb_start_symbol(frame_parms, ssb_index, n_hf);
+	for (int i=start_symbol+1; i<start_symbol+4; i++) {
 	  nr_slot_fep(UE,
 	  	      i,
 		      0,
@@ -615,7 +620,7 @@ int main(int argc, char **argv)
 		      NR_PBCH_EST);
         }
 
-	ret = nr_pbch_detection(UE,5,0); // start pbch detection from symbol 5 and mode 0
+	ret = nr_pbch_detection(UE,start_symbol+1,0);
 
 	if (ret==0) {
 	  //UE->rx_ind.rx_indication_body->mib_pdu.ssb_index;  //not yet detected automatically

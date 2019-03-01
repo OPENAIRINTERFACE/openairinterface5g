@@ -34,6 +34,7 @@
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/sse_intrin.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
+#include "PHY/INIT/phy_init.h"
 
 //#define DEBUG_PBCH 1
 //#define DEBUG_PBCH_ENCODING
@@ -442,7 +443,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   int symbol_offset=1;
 
   if (ue->is_synchronized > 0)
-    symbol_offset=4;
+    symbol_offset=2;
   else
     symbol_offset=0;
 
