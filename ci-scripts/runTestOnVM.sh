@@ -235,32 +235,6 @@ function iperf_dl {
     rm $1
 }
 
-function nos1_iperf {
-    # nos1_iperf $REAL_SERVER_IP_ADDRESS $VM_SERVER_IP_ADDRESS $VM_SERVER_CMDS $VM_CLIENT_IP_ADDRESS $VM_CLIENT_CMDS bandwitch log_file
-    echo $@
-    local REAL_SERVER_IP_ADDRESS=$1
-    local REQ_BANDWIDTH=$6
-    local BASE_LOG_FILE=$7
-    echo "echo \"iperf -u -s -i 1\"" > $3
-    echo "echo \"COMMAND IS: iperf -u -s -i 1\" > tmp/cmake_targets/log/${BASE_LOG_FILE}_server.txt" > $3
-    echo "nohup iperf -u -s -i 1 >> tmp/cmake_targets/log/${BASE_LOG_FILE}_server.txt &" >> $3
-    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $3
-    cat $3
-    rm $3
-
-    echo "echo \"iperf -c $REAL_SERVER_IP_ADDRESS -u -t 30 -b ${REQ_BANDWIDTH}M -i 1\"" > $5
-    echo "echo \"COMMAND IS: iperf -c $UE_IP_ADDR -u -t 30 -b ${REQ_BANDWIDTH}M -i 1\" > ${BASE_LOG_FILE}_client.txt" > $5
-    echo "iperf -c $REAL_SERVER_IP_ADDRESS -u -t 29 -b ${REQ_BANDWIDTH}M -i 1 | tee -a ${BASE_LOG_FILE}_client.txt" >> $5
-    ssh -o StrictHostKeyChecking=no ubuntu@$4 < $5
-    cat $5
-    rm -f $5
-
-    echo "killall --signal SIGKILL iperf" >> $3
-    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $3
-    cat $3
-    rm $3
-}
-
 function iperf_ul {
     local REQ_BANDWIDTH=$5
     local BASE_LOG_FILE=$6
@@ -278,6 +252,30 @@ function iperf_ul {
 
     echo "killall --signal SIGKILL iperf" >> $3
     ssh -o StrictHostKeyChecking=no ubuntu@$4 < $3
+    rm $3
+}
+
+function nos1_iperf {
+    # nos1_iperf $REAL_SERVER_IP_ADDRESS $VM_SERVER_IP_ADDRESS $VM_SERVER_CMDS $VM_CLIENT_IP_ADDRESS $VM_CLIENT_CMDS bandwitch log_file
+    echo $@
+    local REAL_SERVER_IP_ADDRESS=$1
+    local REQ_BANDWIDTH=$6
+    local BASE_LOG_FILE=$7
+    echo "echo \"COMMAND IS: iperf -u -s -i 1 -fm \" > tmp/cmake_targets/log/${BASE_LOG_FILE}_server.txt" > $3
+    echo "nohup iperf -u -s -i 1 -fm >> tmp/cmake_targets/log/${BASE_LOG_FILE}_server.txt &" >> $3
+    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $3
+    cat $3
+    rm $3
+
+    echo "echo \"COMMAND IS: iperf -c $REAL_SERVER_IP_ADDRESS -u -t 30 -b ${REQ_BANDWIDTH}M -i 1 -fm \" > ${BASE_LOG_FILE}_client.txt" > $5
+    echo "iperf -c $REAL_SERVER_IP_ADDRESS -u -t 30 -b ${REQ_BANDWIDTH}M -i 1 -fm | tee -a ${BASE_LOG_FILE}_client.txt" >> $5
+    ssh -o StrictHostKeyChecking=no ubuntu@$4 < $5
+    cat $5
+    rm -f $5
+
+    echo "killall --signal SIGKILL iperf" >> $3
+    ssh -o StrictHostKeyChecking=no ubuntu@$2 < $3
+    cat $3
     rm $3
 }
 
@@ -460,10 +458,10 @@ function start_nos1_sim_ue {
     echo "sudo rm -f /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE" >> $1
     echo "sudo -E daemon --inherit --unsafe --name=ue_daemon --chdir=/home/ubuntu/tmp/cmake_targets/lte_noS1_build_oai/build -o /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ./my-lte-uesoftmodem-run.sh" >> $1
     ssh -o StrictHostKeyChecking=no ubuntu@$LOC_UE_IP_ADDR < $1
-    sleep 30
+    sleep 10
     rm $1
-# Check that marker is "Generating RRCConnectionReconfigurationComplete"
-    echo "egrep -c \"Generating RRCConnectionReconfigurationComplete\" /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE" > $LOC_UE_VM_CMDS
+# Check that marker is "Generating RRCConnectionRequest"
+    echo "egrep -c \"Generating RRCConnectionRequest\" /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE" > $LOC_UE_VM_CMDS
     cat $LOC_UE_VM_CMDS
     local i="0" 
     while [ $i -lt 30 ]
@@ -477,6 +475,7 @@ function start_nos1_sim_ue {
             i=$[$i+1]
         fi
     done
+    sleep 10
     if [ $i -eq 100 ]
     then
         echo "Syncro succeeded"
@@ -506,7 +505,6 @@ function stop_nos1_sim_ue {
     ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
     rm -f $1
 }
-
 
 function install_epc_on_vm {
     local LOC_EPC_VM_NAME=$1
@@ -1615,6 +1613,16 @@ function run_test_on_vm {
         echo "ifconfig oai0 | egrep \"inet addr\" | sed -e 's#^.*addr:##' -e 's#  Bcast.*##'" > $UE_VM_CMDS
         UE_REAL_IP_ADDR=`ssh -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR < $UE_VM_CMDS`
         echo "UE oai0 interface IP addr: $UE_REAL_IP_ADDR"
+        if [ $UE_SYNC -eq 0 ]
+        then
+            echo "Problem w/ eNB and UE not syncing"
+            stop_nos1_sim_enb $VM_CMDS $VM_IP_ADDR
+            stop_nos1_sim_ue $UE_VM_CMDS $UE_VM_IP_ADDR
+            scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+            scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+            echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
+            exit -1
+        fi
 
         echo "############################################################"
         echo "Pinging the UE from the eNB"
@@ -1653,6 +1661,18 @@ function run_test_on_vm {
         echo "############################################################"
 
         echo "############################################################"
+        echo "Iperf UL (the server is the eNB and the client is the UE)" 
+        echo "############################################################"
+        CURR_IPERF_LOG_BASE=fdd_05MHz_iperf_ul
+        nos1_iperf $ENB_REAL_IP_ADDR $ENB_VM_IP_ADDR $ENB_VM_CMDS $UE_VM_IP_ADDR $UE_VM_CMDS 1 $CURR_IPERF_LOG_BASE
+        scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_client.txt $ARCHIVES_LOC
+        scp -o StrictHostKeyChecking=no ubuntu@$ENB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/${CURR_IPERF_LOG_BASE}_server.txt $ARCHIVES_LOC
+        check_iperf $ARCHIVES_LOC/$CURR_IPERF_LOG_BASE 1
+        echo "############################################################"
+        echo "END OF Iperf UL"
+        echo "############################################################"
+
+        echo "############################################################"
         echo "Stopping the UE in FDD-5MHz mode"
         echo "############################################################"
         stop_nos1_sim_ue $UE_VM_CMDS $UE_VM_IP_ADDR
@@ -1660,10 +1680,25 @@ function run_test_on_vm {
         echo "############################################################"
         echo "Stopping the eNB in FDD-5MHz mode"
         echo "############################################################"
+        echo "VM_CMDS = $VM_CMDS"
+        echo "VM_IP_ADDR = $VM_IP_ADDR"
         stop_nos1_sim_enb $VM_CMDS $VM_IP_ADDR
 
         scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
         scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
 
+        echo "############################################################"
+        echo "Checking run status"
+        echo "############################################################"
+
+        if [ $PING_STATUS -ne 0 ]; then STATUS=-1; fi
+        # iperf failures are ignored
+        #if [ $IPERF_STATUS -ne 0 ]; then STATUS=-1; fi
+        if [ $STATUS -eq 0 ]
+        then
+            echo "TEST_OK" > $ARCHIVES_LOC/test_final_status.log
+        else
+            echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
+        fi
     fi
 }
