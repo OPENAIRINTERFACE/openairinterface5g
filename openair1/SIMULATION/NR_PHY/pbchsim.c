@@ -488,28 +488,35 @@ int main(int argc, char **argv)
     gNB->pbch_configured = 1;
     for (int i=0;i<4;i++) gNB->pbch_pdu[i]=i+1;
 
-    nr_common_signal_procedures (gNB,frame,subframe);
-
-	LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],frame_length_complex_samples_no_prefix,1,1);
-	if (gNB->frame_parms.nb_antennas_tx>1)
-	LOG_M("txsigF1.m","txsF1", gNB->common_vars.txdataF[1],frame_length_complex_samples_no_prefix,1,1);
-
-    //TODO: loop over slots
-    for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
-      if (gNB_config->subframe_config.dl_cyclic_prefix_type.value == 1) {
-	PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
-		     txdata[aa],
-		     frame_parms->ofdm_symbol_size,
-		     12,
-		     frame_parms->nb_prefix_samples,
-		     CYCLIC_PREFIX);
-      } else {
-	nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
-			     txdata[aa],
-			     14,
-			     frame_parms);
+    for (int slot=0;slot<frame_parms->slots_per_frame;slot++) {
+      for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++)
+	memset(gNB->common_vars.txdataF[aa],0,frame_parms->samples_per_slot_wCP*sizeof(int32_t));
+      
+      nr_common_signal_procedures (gNB,frame,slot);
+      
+      //TODO: loop over slots
+      for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
+	if (gNB_config->subframe_config.dl_cyclic_prefix_type.value == 1) {
+	  PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
+		       &txdata[aa][slot*frame_parms->samples_per_slot],
+		       frame_parms->ofdm_symbol_size,
+		       12,
+		       frame_parms->nb_prefix_samples,
+		       CYCLIC_PREFIX);
+	} else {
+	  nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
+			       &txdata[aa][slot*frame_parms->samples_per_slot],
+			       14,
+			       frame_parms);
+	}
       }
     }
+
+    LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],frame_length_complex_samples_no_prefix,1,1);
+    if (gNB->frame_parms.nb_antennas_tx>1)
+      LOG_M("txsigF1.m","txsF1", gNB->common_vars.txdataF[1],frame_length_complex_samples_no_prefix,1,1);
+
+
   } else {
     printf("Reading %d samples from file to antenna buffer %d\n",frame_length_complex_samples,0);
     
