@@ -6533,7 +6533,6 @@ void rrc_eNB_generate_RRCConnectionSetup(const protocol_ctxt_t *const ctxt_pP,
           break;
         }
       }
-    }
     
     MSC_LOG_TX_MESSAGE(
       MSC_RRC_ENB,
