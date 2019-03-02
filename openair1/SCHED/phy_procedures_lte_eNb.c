@@ -1245,12 +1245,12 @@ void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc)
   const int subframe = proc->subframe_rx;
   const int frame    = proc->frame_rx;
   
-  harq_pid = subframe2harq_pid(&eNB->frame_parms,frame,subframe);
+  uint32_t harq_pid0 = subframe2harq_pid(&eNB->frame_parms,frame,subframe);
 
   
   for (i = 0; i < NUMBER_OF_UE_MAX; i++) {
     ulsch = eNB->ulsch[i];
-    if (ulsch->ue_type > 0) harq_pid = 0;
+    if (ulsch->ue_type > 0) harq_pid = 0; else harq_pid=harq_pid0;
     
     ulsch_harq = ulsch->harq_processes[harq_pid];
     
