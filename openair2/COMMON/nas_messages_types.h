@@ -29,7 +29,7 @@
 #ifndef NAS_MESSAGES_TYPES_H_
 #define NAS_MESSAGES_TYPES_H_
 
-# if defined(ENABLE_USE_MME) && defined(ENABLE_NAS_UE_LOGGING)
+
 
 #include "nas_message.h"
 
@@ -142,5 +142,4 @@ typedef struct nas_esm_protected_msg_s {
   ESM_msg                         choice;
 } nas_esm_protected_msg_t;
 
-# endif  /* ENABLE_USE_MME */
 #endif /* NAS_MESSAGES_TYPES_H_ */

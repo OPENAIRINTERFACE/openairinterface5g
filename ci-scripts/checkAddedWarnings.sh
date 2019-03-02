@@ -95,7 +95,7 @@ fi
 
 # Merge request scenario
 
-MERGE_COMMMIT=`git log -n1 | grep commit | sed -e "s@commit @@"`
+MERGE_COMMMIT=`git log -n1 --pretty=format:%H`
 TARGET_INIT_COMMIT=`cat .git/refs/remotes/origin/$TARGET_BRANCH`
 
 echo " ---- Checking the modified files by the merge request ----"

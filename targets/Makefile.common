@@ -45,7 +45,6 @@ ifeq ($(OPENSSL_FOUND), 0)
 @(warning "openssl library is not installed on your system, openssl lib needed, continuing with security disabled")
 SECU=0
 else
-CFLAGS += -DENABLE_SECURITY
 LIBS += $(OPENSSL_LIBS) $(NETTLE_LIBS)
 endif
 endif

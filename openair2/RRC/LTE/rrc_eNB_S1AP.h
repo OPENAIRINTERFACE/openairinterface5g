@@ -31,13 +31,10 @@
 #ifndef RRC_ENB_S1AP_H_
 #define RRC_ENB_S1AP_H_
 
-# if defined(ENABLE_USE_MME)
-
 #include "LTE_UL-DCCH-Message.h"
 
 /* Up link procedures */
 
-#   if defined(ENABLE_ITTI)
 typedef struct rrc_ue_s1ap_ids_s {
   /* Tree related data */
   RB_ENTRY(rrc_ue_s1ap_ids_s) entries;
@@ -52,38 +49,38 @@ typedef struct rrc_ue_s1ap_ids_s {
 
 int
 rrc_eNB_S1AP_compare_ue_ids(
-  struct rrc_ue_s1ap_ids_s* c1_pP,
-  struct rrc_ue_s1ap_ids_s* c2_pP
+  struct rrc_ue_s1ap_ids_s *c1_pP,
+  struct rrc_ue_s1ap_ids_s *c2_pP
 );
 
 struct rrc_rnti_tree_s;
 
 RB_PROTOTYPE(rrc_rnti_tree_s, rrc_ue_s1ap_ids_s, entries, rrc_eNB_S1AP_compare_ue_ids);
 
-struct rrc_ue_s1ap_ids_s*
+struct rrc_ue_s1ap_ids_s *
 rrc_eNB_S1AP_get_ue_ids(
-  eNB_RRC_INST* const rrc_instance_pP,
+  eNB_RRC_INST *const rrc_instance_pP,
   const uint16_t ue_initial_id,
   const uint32_t eNB_ue_s1ap_id
 );
 
 void
 rrc_eNB_S1AP_remove_ue_ids(
-  eNB_RRC_INST*              const rrc_instance_pP,
-  struct rrc_ue_s1ap_ids_s* const ue_ids_pP
+  eNB_RRC_INST              *const rrc_instance_pP,
+  struct rrc_ue_s1ap_ids_s *const ue_ids_pP
 );
 
 void
-rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* const ctxt_pP,
-                                                     rrc_eNB_ue_context_t*          const ue_context_pP,
-                                                     const uint8_t                ho_state
-                                                     );
+rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t *const ctxt_pP,
+    rrc_eNB_ue_context_t          *const ue_context_pP,
+    const uint8_t                ho_state
+                                                      );
 
 int
-rrc_eNB_modify_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* const ctxt_pP,
-                                                     rrc_eNB_ue_context_t*          const ue_context_pP,
-                                                     const uint8_t                ho_state
-                                                     );
+rrc_eNB_modify_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t *const ctxt_pP,
+    rrc_eNB_ue_context_t          *const ue_context_pP,
+    const uint8_t                ho_state
+                                                    );
 
 /*! \fn void rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP(uint8_t mod_id, uint8_t ue_index)
  *\brief create a S1AP_INITIAL_CONTEXT_SETUP_RESP for S1AP.
@@ -92,8 +89,8 @@ rrc_eNB_modify_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t* cons
  */
 void
 rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP(
-  const protocol_ctxt_t* const ctxt_pP,
-  rrc_eNB_ue_context_t*          const ue_context_pP
+  const protocol_ctxt_t *const ctxt_pP,
+  rrc_eNB_ue_context_t          *const ue_context_pP
 );
 
 /*! \fn void rrc_eNB_send_S1AP_UPLINK_NAS(const protocol_ctxt_t   * const ctxt_pP, eNB_RRC_UE_t * const ue_context_pP, UL_DCCH_Message_t * const ul_dcch_msg)
@@ -104,9 +101,9 @@ rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP(
  */
 void
 rrc_eNB_send_S1AP_UPLINK_NAS(
-  const protocol_ctxt_t*    const ctxt_pP,
-  rrc_eNB_ue_context_t*          const ue_context_pP,
-  LTE_UL_DCCH_Message_t* const ul_dcch_msg
+  const protocol_ctxt_t    *const ctxt_pP,
+  rrc_eNB_ue_context_t          *const ue_context_pP,
+  LTE_UL_DCCH_Message_t *const ul_dcch_msg
 );
 
 /*! \fn void rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(const protocol_ctxt_t   * const ctxt_pP, eNB_RRC_UE_t * const ue_context_pP, UL_DCCH_Message_t *ul_dcch_msg)
@@ -116,9 +113,9 @@ rrc_eNB_send_S1AP_UPLINK_NAS(
  *\param ul_dcch_msg The message receive by RRC holding the NAS message.
  */
 void rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(
-  const protocol_ctxt_t* const ctxt_pP,
-  rrc_eNB_ue_context_t*          const ue_context_pP,
-  LTE_UL_DCCH_Message_t* ul_dcch_msg
+  const protocol_ctxt_t *const ctxt_pP,
+  rrc_eNB_ue_context_t          *const ue_context_pP,
+  LTE_UL_DCCH_Message_t *ul_dcch_msg
 );
 
 /*! \fn rrc_eNB_send_S1AP_NAS_FIRST_REQ(const protocol_ctxt_t* const ctxt_pP,eNB_RRC_UE_t *const ue_context_pP, RRCConnectionSetupComplete_r8_IEs_t *rrcConnectionSetupComplete)
@@ -130,9 +127,9 @@ void rrc_eNB_send_S1AP_UE_CAPABILITIES_IND(
  */
 void
 rrc_eNB_send_S1AP_NAS_FIRST_REQ(
-  const protocol_ctxt_t* const ctxt_pP,
-  rrc_eNB_ue_context_t*          const ue_context_pP,
-  LTE_RRCConnectionSetupComplete_r8_IEs_t* rrcConnectionSetupComplete
+  const protocol_ctxt_t *const ctxt_pP,
+  rrc_eNB_ue_context_t          *const ue_context_pP,
+  LTE_RRCConnectionSetupComplete_r8_IEs_t *rrcConnectionSetupComplete
 );
 
 
@@ -146,7 +143,7 @@ the UE-associated S1-logical connection over the S1 interface. .
  */
 void rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ (
   const module_id_t                        enb_mod_idP,
-  const rrc_eNB_ue_context_t*        const ue_context_pP,
+  const rrc_eNB_ue_context_t        *const ue_context_pP,
   const s1ap_Cause_t                       causeP,
   const long                               cause_valueP
 );
@@ -186,10 +183,10 @@ int rrc_eNB_process_S1AP_E_RAB_SETUP_REQ(MessageDef *msg_p, const char *msg_name
  *\brief send a S1AP dedicated E_RAB setup response
  *\param ctxt_pP contxt infirmation
  *\param e_contxt_pP ue specific context at the eNB
- *\param xid transaction identifier 
+ *\param xid transaction identifier
  *\return 0 when successful, -1 if the UE index can not be retrieved.
  */
-int rrc_eNB_send_S1AP_E_RAB_SETUP_RESP(const protocol_ctxt_t* const ctxt_pP, rrc_eNB_ue_context_t*  const ue_context_pP, uint8_t xid );  
+int rrc_eNB_send_S1AP_E_RAB_SETUP_RESP(const protocol_ctxt_t *const ctxt_pP, rrc_eNB_ue_context_t  *const ue_context_pP, uint8_t xid );
 
 /*! \fn rrc_eNB_process_S1AP_E_RAB_MODIFY_REQ(MessageDef *msg_p, const char *msg_name, instance_t instance);
  *\brief process a S1AP dedicated E_RAB modify request message received from S1AP.
@@ -207,7 +204,7 @@ int rrc_eNB_process_S1AP_E_RAB_MODIFY_REQ(MessageDef *msg_p, const char *msg_nam
  *\param xid transaction identifier
  *\return 0 when successful, -1 if the UE index can not be retrieved.
  */
-int rrc_eNB_send_S1AP_E_RAB_MODIFY_RESP(const protocol_ctxt_t* const ctxt_pP, rrc_eNB_ue_context_t*  const ue_context_pP, uint8_t xid );
+int rrc_eNB_send_S1AP_E_RAB_MODIFY_RESP(const protocol_ctxt_t *const ctxt_pP, rrc_eNB_ue_context_t  *const ue_context_pP, uint8_t xid );
 
 /*! \fn rrc_eNB_process_S1AP_UE_CTXT_MODIFICATION_REQ(MessageDef *msg_p, const char *msg_name, instance_t instance)
  *\brief process a S1AP_UE_CTXT_MODIFICATION_REQ message received from S1AP.
@@ -247,8 +244,8 @@ int rrc_eNB_process_PAGING_IND(MessageDef *msg_p, const char *msg_name, instance
 
 void
 rrc_pdcp_config_security(
-  const protocol_ctxt_t* const ctxt_pP,
-  rrc_eNB_ue_context_t*          const ue_context_pP,
+  const protocol_ctxt_t *const ctxt_pP,
+  rrc_eNB_ue_context_t          *const ue_context_pP,
   const uint8_t send_security_mode_command
 );
 /*! \fn rrc_eNB_process_S1AP_E_RAB_RELEASE_COMMAND(MessageDef *msg_p, const char *msg_name, instance_t instance);
@@ -267,12 +264,10 @@ int rrc_eNB_process_S1AP_E_RAB_RELEASE_COMMAND(MessageDef *msg_p, const char *ms
  *\param xid transaction identifier
  *\return 0 when successful, -1 if the UE index can not be retrieved.
  */
-int rrc_eNB_send_S1AP_E_RAB_RELEASE_RESPONSE(const protocol_ctxt_t* const ctxt_pP, rrc_eNB_ue_context_t*  const ue_context_pP, uint8_t xid );
+int rrc_eNB_send_S1AP_E_RAB_RELEASE_RESPONSE(const protocol_ctxt_t *const ctxt_pP, rrc_eNB_ue_context_t  *const ue_context_pP, uint8_t xid );
 
-int rrc_eNB_send_PATH_SWITCH_REQ(const protocol_ctxt_t* const ctxt_pP,
-				  rrc_eNB_ue_context_t*          const ue_context_pP);
+int rrc_eNB_send_PATH_SWITCH_REQ(const protocol_ctxt_t *const ctxt_pP,
+                                 rrc_eNB_ue_context_t          *const ue_context_pP);
 int rrc_eNB_process_S1AP_PATH_SWITCH_REQ_ACK (MessageDef *msg_p, const char *msg_name, instance_t instance);
 
-#   endif
-# endif /* defined(ENABLE_USE_MME) */
 #endif /* RRC_ENB_S1AP_H_ */

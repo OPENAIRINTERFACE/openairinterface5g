@@ -35,15 +35,9 @@
 #include "enb_config.h"
 #include "UTIL/OTG/otg.h"
 #include "UTIL/OTG/otg_externs.h"
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-  #if defined(ENABLE_USE_MME)
-    #include "s1ap_eNB.h"
-    #include "sctp_eNB_task.h"
-  #else
-    #define EPC_MODE_ENABLED 0
-  #endif
-#endif
+#include "intertask_interface.h"
+#include "s1ap_eNB.h"
+#include "sctp_eNB_task.h"
 #include "sctp_default_values.h"
 #include "LTE_SystemInformationBlockType2.h"
 #include "LAYER2/MAC/mac_extern.h"
@@ -82,17 +76,6 @@ void RCconfig_flexran() {
   int32_t Nid_cell = 0;
   uint16_t Nid_cell_tr = 0;
   uint32_t enb_id = 0;
-
-  /*
-  int32_t     srb1_timer_poll_retransmit    = 0;
-  int32_t     srb1_timer_reordering         = 0;
-  int32_t     srb1_timer_status_prohibit    = 0;
-  int32_t     srb1_poll_pdu                 = 0;
-  int32_t     srb1_poll_byte                = 0;
-  int32_t     srb1_max_retx_threshold       = 0;
-  */
-
-
   /* get number of eNBs */
   paramdef_t ENBSParams[] = ENBSPARAMS_DESC;
   config_get(ENBSParams, sizeof(ENBSParams)/sizeof(paramdef_t), NULL);
@@ -103,7 +86,7 @@ void RCconfig_flexran() {
   /* for Nid_cell */
   checkedparam_t config_check_CCparams[] = CCPARAMS_CHECK;
   ccparams_lte_t ccparams_lte;
-  memset((void*)&ccparams_lte,0,sizeof(ccparams_lte_t));
+  memset((void *)&ccparams_lte,0,sizeof(ccparams_lte_t));
   paramdef_t CCsParams[] = CCPARAMS_DESC(ccparams_lte);
   paramlist_def_t CCsParamList = {ENB_CONFIG_STRING_COMPONENT_CARRIERS, NULL, 0};
 
@@ -187,9 +170,9 @@ void RCconfig_flexran() {
     /* assume for the moment the monolithic case, i.e. agent can provide
        information for all layers */
     RC.flexran[i]->capability_mask = FLEXRAN_CAP_LOPHY | FLEXRAN_CAP_HIPHY
-      | FLEXRAN_CAP_LOMAC | FLEXRAN_CAP_HIMAC
-      | FLEXRAN_CAP_RLC   | FLEXRAN_CAP_PDCP
-      | FLEXRAN_CAP_SDAP  | FLEXRAN_CAP_RRC;
+                                     | FLEXRAN_CAP_LOMAC | FLEXRAN_CAP_HIMAC
+                                     | FLEXRAN_CAP_RLC   | FLEXRAN_CAP_PDCP
+                                     | FLEXRAN_CAP_SDAP  | FLEXRAN_CAP_RRC;
   }
 }
 
@@ -293,7 +276,6 @@ void RCconfig_macrlc() {
     mac_top_init_eNB();
     RC.nb_mac_CC = (int *)malloc(RC.nb_macrlc_inst*sizeof(int));
 
-
     for (j=0; j<RC.nb_macrlc_inst; j++) {
       RC.mac[j]->puSch10xSnr = *(MacRLC_ParamList.paramarray[j][MACRLC_PUSCH10xSNR_IDX ].iptr);
       RC.mac[j]->puCch10xSnr = *(MacRLC_ParamList.paramarray[j][MACRLC_PUCCH10xSNR_IDX ].iptr);
@@ -352,7 +334,6 @@ void RCconfig_macrlc() {
 }
 
 int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
-
   int               num_enbs                      = 0;
   int               j,k                           = 0;
   int32_t           enb_id                        = 0;
@@ -360,35 +341,26 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
   ccparams_lte_t ccparams_lte;
   ccparams_sidelink_t SLconfig;
   ccparams_eMTC_t eMTCconfig;
-
-  memset((void*)&ccparams_lte,0,sizeof(ccparams_lte_t));
-  memset((void*)&SLconfig,0,sizeof(ccparams_sidelink_t));
-  memset((void*)&eMTCconfig,0,sizeof(ccparams_eMTC_t));
-
-
+  memset((void *)&ccparams_lte,0,sizeof(ccparams_lte_t));
+  memset((void *)&SLconfig,0,sizeof(ccparams_sidelink_t));
+  memset((void *)&eMTCconfig,0,sizeof(ccparams_eMTC_t));
   paramdef_t ENBSParams[] = ENBSPARAMS_DESC;
   paramdef_t ENBParams[]  = ENBPARAMS_DESC;
   paramlist_def_t ENBParamList = {ENB_CONFIG_STRING_ENB_LIST,NULL,0};
   checkedparam_t config_check_CCparams[] = CCPARAMS_CHECK;
   paramdef_t CCsParams[] = CCPARAMS_DESC(ccparams_lte);
   paramlist_def_t CCsParamList = {ENB_CONFIG_STRING_COMPONENT_CARRIERS,NULL,0};
-
   paramdef_t eMTCParams[]              = EMTCPARAMS_DESC((&eMTCconfig));
   checkedparam_t config_check_eMTCparams[] = EMTCPARAMS_CHECK;
-
   srb1_params_t srb1_params;
-  memset((void*)&srb1_params,0,sizeof(srb1_params_t));
+  memset((void *)&srb1_params,0,sizeof(srb1_params_t));
   paramdef_t SRB1Params[] = SRB1PARAMS_DESC(srb1_params);
-
-
   paramdef_t SLParams[]              = CCPARAMS_SIDELINK_DESC(SLconfig);
-
 
   /* map parameter checking array instances to parameter definition array instances */
   for (int I=0; I< ( sizeof(CCsParams)/ sizeof(paramdef_t)  ) ; I++) {
     CCsParams[I].chkPptr = &(config_check_CCparams[I]);
   }
-
 
   for (int I = 0; I < (sizeof(CCsParams) / sizeof(paramdef_t)); I++) {
     eMTCParams[I].chkPptr = &(config_check_eMTCparams[I]);
@@ -489,7 +461,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
             config_get( CCsParams,sizeof(CCsParams)/sizeof(paramdef_t),ccspath);
             //printf("Component carrier %d\n",component_carrier);
             nb_cc++;
-
             RRC_CONFIGURATION_REQ (msg_p).tdd_config[j] = ccparams_lte.tdd_config;
             AssertFatal (ccparams_lte.tdd_config <= LTE_TDD_Config__subframeAssignment_sa6,
                          "Failed to parse eNB configuration file %s, enb %d illegal tdd_config %d (should be 0-%d)!",
@@ -498,6 +469,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
             AssertFatal (ccparams_lte.tdd_config_s <= LTE_TDD_Config__specialSubframePatterns_ssp8,
                          "Failed to parse eNB configuration file %s, enb %d illegal tdd_config_s %d (should be 0-%d)!",
                          RC.config_file_name, i, ccparams_lte.tdd_config_s, LTE_TDD_Config__specialSubframePatterns_ssp8);
+
             if (!ccparams_lte.prefix_type)
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d define %s: NORMAL,EXTENDED!\n",
@@ -532,8 +504,6 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
             RRC_CONFIGURATION_REQ (msg_p).eutra_band[j] = ccparams_lte.eutra_band;
             RRC_CONFIGURATION_REQ (msg_p).downlink_frequency[j] = (uint32_t) ccparams_lte.downlink_frequency;
             RRC_CONFIGURATION_REQ (msg_p).uplink_frequency_offset[j] = (unsigned int) ccparams_lte.uplink_frequency_offset;
-
-
             RRC_CONFIGURATION_REQ (msg_p).Nid_cell[j]= ccparams_lte.Nid_cell;
 
             if (ccparams_lte.Nid_cell>503) {
@@ -544,12 +514,12 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 
             RRC_CONFIGURATION_REQ (msg_p).N_RB_DL[j]= ccparams_lte.N_RB_DL;
 
-            if ((ccparams_lte.N_RB_DL!=6) && 
-		(ccparams_lte.N_RB_DL!=15) && 
-		(ccparams_lte.N_RB_DL!=25) && 
-		(ccparams_lte.N_RB_DL!=50) && 
-		(ccparams_lte.N_RB_DL!=75) && 
-		(ccparams_lte.N_RB_DL!=100)) {
+            if ((ccparams_lte.N_RB_DL!=6) &&
+                (ccparams_lte.N_RB_DL!=15) &&
+                (ccparams_lte.N_RB_DL!=25) &&
+                (ccparams_lte.N_RB_DL!=50) &&
+                (ccparams_lte.N_RB_DL!=75) &&
+                (ccparams_lte.N_RB_DL!=100)) {
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for N_RB_DL choice: 6,15,25,50,75,100 !\n",
                            RC.config_file_name, i, ccparams_lte.N_RB_DL);
@@ -573,16 +543,13 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
               AssertFatal(0, "error calling enb_check_band_frequencies\n");
             }
 
-
             if ((ccparams_lte.nb_antenna_ports <1) || (ccparams_lte.nb_antenna_ports > 2))
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for nb_antenna_ports choice: 1..2 !\n",
                            RC.config_file_name, i, ccparams_lte.nb_antenna_ports);
 
             RRC_CONFIGURATION_REQ (msg_p).nb_antenna_ports[j] = ccparams_lte.nb_antenna_ports;
-
-	    // Radio Resource Configuration (SIB2)
-
+            // Radio Resource Configuration (SIB2)
             RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].prach_root =  ccparams_lte.prach_root;
 
             if ((ccparams_lte.prach_root <0) || (ccparams_lte.prach_root > 1023))
@@ -612,50 +579,49 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 
             RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].prach_zero_correlation = ccparams_lte.prach_zero_correlation;
 
-            if ((ccparams_lte.prach_zero_correlation <0) || 
-		(ccparams_lte.prach_zero_correlation > 15))
+            if ((ccparams_lte.prach_zero_correlation <0) ||
+                (ccparams_lte.prach_zero_correlation > 15))
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for prach_zero_correlation choice: 0..15!\n",
                            RC.config_file_name, i, ccparams_lte.prach_zero_correlation);
 
             RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].prach_freq_offset = ccparams_lte.prach_freq_offset;
 
-            if ((ccparams_lte.prach_freq_offset <0) || 
-		(ccparams_lte.prach_freq_offset > 94))
+            if ((ccparams_lte.prach_freq_offset <0) ||
+                (ccparams_lte.prach_freq_offset > 94))
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for prach_freq_offset choice: 0..94!\n",
                            RC.config_file_name, i, ccparams_lte.prach_freq_offset);
 
             RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_delta_shift = ccparams_lte.pucch_delta_shift-1;
 
-            if ((ccparams_lte.pucch_delta_shift <1) || 
-		(ccparams_lte.pucch_delta_shift > 3))
+            if ((ccparams_lte.pucch_delta_shift <1) ||
+                (ccparams_lte.pucch_delta_shift > 3))
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_delta_shift choice: 1..3!\n",
                            RC.config_file_name, i, ccparams_lte.pucch_delta_shift);
 
             RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_nRB_CQI = ccparams_lte.pucch_nRB_CQI;
 
-            if ((ccparams_lte.pucch_nRB_CQI <0) || 
-		(ccparams_lte.pucch_nRB_CQI > 98))
+            if ((ccparams_lte.pucch_nRB_CQI <0) ||
+                (ccparams_lte.pucch_nRB_CQI > 98))
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_nRB_CQI choice: 0..98!\n",
                            RC.config_file_name, i, ccparams_lte.pucch_nRB_CQI);
 
             RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_nCS_AN = ccparams_lte.pucch_nCS_AN;
 
-            if ((ccparams_lte.pucch_nCS_AN <0) || 
-		(ccparams_lte.pucch_nCS_AN > 7))
+            if ((ccparams_lte.pucch_nCS_AN <0) ||
+                (ccparams_lte.pucch_nCS_AN > 7))
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_nCS_AN choice: 0..7!\n",
                            RC.config_file_name, i, ccparams_lte.pucch_nCS_AN);
 
-
             //#if (LTE_RRC_VERSION < MAKE_VERSION(10, 0, 0))
             RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_n1_AN = ccparams_lte.pucch_n1_AN;
 
-            if ((ccparams_lte.pucch_n1_AN <0) || 
-		(ccparams_lte.pucch_n1_AN > 2047))
+            if ((ccparams_lte.pucch_n1_AN <0) ||
+                (ccparams_lte.pucch_n1_AN > 2047))
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_n1_AN choice: 0..2047!\n",
                            RC.config_file_name, i, ccparams_lte.pucch_n1_AN);
@@ -663,24 +629,24 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
             //#endif
             RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pdsch_referenceSignalPower = ccparams_lte.pdsch_referenceSignalPower;
 
-            if ((ccparams_lte.pdsch_referenceSignalPower <-60) || 
-		(ccparams_lte.pdsch_referenceSignalPower > 50))
+            if ((ccparams_lte.pdsch_referenceSignalPower <-60) ||
+                (ccparams_lte.pdsch_referenceSignalPower > 50))
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pdsch_referenceSignalPower choice:-60..50!\n",
                            RC.config_file_name, i, ccparams_lte.pdsch_referenceSignalPower);
 
             RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pdsch_p_b = ccparams_lte.pdsch_p_b;
 
-            if ((ccparams_lte.pdsch_p_b <0) || 
-		(ccparams_lte.pdsch_p_b > 3))
+            if ((ccparams_lte.pdsch_p_b <0) ||
+                (ccparams_lte.pdsch_p_b > 3))
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pdsch_p_b choice: 0..3!\n",
                            RC.config_file_name, i, ccparams_lte.pdsch_p_b);
 
             RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_n_SB = ccparams_lte.pusch_n_SB;
 
-            if ((ccparams_lte.pusch_n_SB <1) || 
-		(ccparams_lte.pusch_n_SB > 4))
+            if ((ccparams_lte.pusch_n_SB <1) ||
+                (ccparams_lte.pusch_n_SB > 4))
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pusch_n_SB choice: 1..4!\n",
                            RC.config_file_name, i, ccparams_lte.pusch_n_SB);
@@ -689,11 +655,9 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d define %s: interSubframe,intraAndInterSubframe!\n",
                            RC.config_file_name, i, ENB_CONFIG_STRING_PUSCH_HOPPINGMODE);
-
             else if (strcmp(ccparams_lte.pusch_hoppingMode,"interSubFrame")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_hoppingMode = LTE_PUSCH_ConfigCommon__pusch_ConfigBasic__hoppingMode_interSubFrame;
-            }  
-	    else if (strcmp(ccparams_lte.pusch_hoppingMode,"intraAndInterSubFrame")==0) {
+            } else if (strcmp(ccparams_lte.pusch_hoppingMode,"intraAndInterSubFrame")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_hoppingMode = LTE_PUSCH_ConfigCommon__pusch_ConfigBasic__hoppingMode_intraAndInterSubFrame;
             } else
               AssertFatal (0,
@@ -702,8 +666,8 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 
             RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_hoppingOffset = ccparams_lte.pusch_hoppingOffset;
 
-            if ((ccparams_lte.pusch_hoppingOffset<0) || 
-		(ccparams_lte.pusch_hoppingOffset>98))
+            if ((ccparams_lte.pusch_hoppingOffset<0) ||
+                (ccparams_lte.pusch_hoppingOffset>98))
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pusch_hoppingOffset choice: 0..98!\n",
                            RC.config_file_name, i, ccparams_lte.pusch_hoppingMode);
@@ -714,11 +678,9 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                            RC.config_file_name, i, ENB_CONFIG_STRING_PUSCH_ENABLE64QAM);
             else if (strcmp(ccparams_lte.pusch_enable64QAM, "ENABLE") == 0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_enable64QAM = TRUE;
-            }  
-	    else if (strcmp(ccparams_lte.pusch_enable64QAM, "DISABLE") == 0) {
+            } else if (strcmp(ccparams_lte.pusch_enable64QAM, "DISABLE") == 0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_enable64QAM = FALSE;
-            } 
-	    else
+            } else
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pusch_enable64QAM choice: ENABLE,DISABLE!\n",
                            RC.config_file_name, i, ccparams_lte.pusch_enable64QAM);
@@ -729,11 +691,9 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                            RC.config_file_name, i, ENB_CONFIG_STRING_PUSCH_GROUP_HOPPING_EN);
             else if (strcmp(ccparams_lte.pusch_groupHoppingEnabled, "ENABLE") == 0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_groupHoppingEnabled = TRUE;
-            }  
-	    else if (strcmp(ccparams_lte.pusch_groupHoppingEnabled, "DISABLE") == 0) {
+            } else if (strcmp(ccparams_lte.pusch_groupHoppingEnabled, "DISABLE") == 0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_groupHoppingEnabled= FALSE;
-            } 
-	    else
+            } else
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pusch_groupHoppingEnabled choice: ENABLE,DISABLE!\n",
                            RC.config_file_name, i, ccparams_lte.pusch_groupHoppingEnabled);
@@ -741,7 +701,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
             RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_groupAssignment = ccparams_lte.pusch_groupAssignment;
 
             if ((ccparams_lte.pusch_groupAssignment<0)||
-		(ccparams_lte.pusch_groupAssignment>29))
+                (ccparams_lte.pusch_groupAssignment>29))
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pusch_groupAssignment choice: 0..29!\n",
                            RC.config_file_name, i, ccparams_lte.pusch_groupAssignment);
@@ -752,8 +712,7 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
                            RC.config_file_name, i, ENB_CONFIG_STRING_PUSCH_SEQUENCE_HOPPING_EN);
             else if (strcmp(ccparams_lte.pusch_sequenceHoppingEnabled, "ENABLE") == 0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_sequenceHoppingEnabled = TRUE;
-            }  
-	    else if (strcmp(ccparams_lte.pusch_sequenceHoppingEnabled, "DISABLE") == 0) {
+            } else if (strcmp(ccparams_lte.pusch_sequenceHoppingEnabled, "DISABLE") == 0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_sequenceHoppingEnabled = FALSE;
             } else
               AssertFatal (0,
@@ -762,12 +721,11 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 
             RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_nDMRS1= ccparams_lte.pusch_nDMRS1;  //cyclic_shift in RRC!
 
-            if ((ccparams_lte.pusch_nDMRS1 <0) || 
-		(ccparams_lte.pusch_nDMRS1>7))
+            if ((ccparams_lte.pusch_nDMRS1 <0) ||
+                (ccparams_lte.pusch_nDMRS1>7))
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pusch_nDMRS1 choice: 0..7!\n",
                            RC.config_file_name, i, ccparams_lte.pusch_nDMRS1);
-
 
             if (strcmp(ccparams_lte.phich_duration,"NORMAL")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].phich_duration= LTE_PHICH_Config__phich_Duration_normal;
@@ -780,17 +738,13 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 
             if (strcmp(ccparams_lte.phich_resource,"ONESIXTH")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].phich_resource= LTE_PHICH_Config__phich_Resource_oneSixth ;
-            } 
-	    else if (strcmp(ccparams_lte.phich_resource,"HALF")==0) {
+            } else if (strcmp(ccparams_lte.phich_resource,"HALF")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].phich_resource= LTE_PHICH_Config__phich_Resource_half;
-            } 
-	    else if (strcmp(ccparams_lte.phich_resource,"ONE")==0) {
+            } else if (strcmp(ccparams_lte.phich_resource,"ONE")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].phich_resource= LTE_PHICH_Config__phich_Resource_one;
-            } 
-	    else if (strcmp(ccparams_lte.phich_resource,"TWO")==0) {
+            } else if (strcmp(ccparams_lte.phich_resource,"TWO")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].phich_resource= LTE_PHICH_Config__phich_Resource_two;
-            } 
-	    else
+            } else
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for phich_resource choice: ONESIXTH,HALF,ONE,TWO!\n",
                            RC.config_file_name, i, ccparams_lte.phich_resource);
@@ -801,11 +755,9 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 
             if (strcmp(ccparams_lte.srs_enable, "ENABLE") == 0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].srs_enable= TRUE;
-            } 
-	    else if (strcmp(ccparams_lte.srs_enable, "DISABLE") == 0) {
+            } else if (strcmp(ccparams_lte.srs_enable, "DISABLE") == 0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].srs_enable= FALSE;
-            } 
-	    else
+            } else
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for srs_BandwidthConfig choice: ENABLE,DISABLE !\n",
                            RC.config_file_name, i, ccparams_lte.srs_enable);
@@ -813,23 +765,22 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
             if (RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].srs_enable== TRUE) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].srs_BandwidthConfig= ccparams_lte.srs_BandwidthConfig;
 
-              if ((ccparams_lte.srs_BandwidthConfig < 0) || 
-		  (ccparams_lte.srs_BandwidthConfig >7))
+              if ((ccparams_lte.srs_BandwidthConfig < 0) ||
+                  (ccparams_lte.srs_BandwidthConfig >7))
                 AssertFatal (0, "Failed to parse eNB configuration file %s, enb %d unknown value %d for srs_BandwidthConfig choice: 0...7\n",
                              RC.config_file_name, i, ccparams_lte.srs_BandwidthConfig);
 
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].srs_SubframeConfig= ccparams_lte.srs_SubframeConfig;
 
-              if ((ccparams_lte.srs_SubframeConfig<0) || 
-		  (ccparams_lte.srs_SubframeConfig>15))
+              if ((ccparams_lte.srs_SubframeConfig<0) ||
+                  (ccparams_lte.srs_SubframeConfig>15))
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for srs_SubframeConfig choice: 0..15 !\n",
                              RC.config_file_name, i, ccparams_lte.srs_SubframeConfig);
 
               if (strcmp(ccparams_lte.srs_ackNackST, "ENABLE") == 0) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].srs_ackNackST= TRUE;
-              } 
-	      else if (strcmp(ccparams_lte.srs_ackNackST, "DISABLE") == 0) {
+              } else if (strcmp(ccparams_lte.srs_ackNackST, "DISABLE") == 0) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].srs_ackNackST= FALSE;
               } else
                 AssertFatal (0,
@@ -838,11 +789,9 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 
               if (strcmp(ccparams_lte.srs_MaxUpPts, "ENABLE") == 0) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].srs_MaxUpPts= TRUE;
-              } 
-	      else if (strcmp(ccparams_lte.srs_MaxUpPts, "DISABLE") == 0) {
+              } else if (strcmp(ccparams_lte.srs_MaxUpPts, "DISABLE") == 0) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].srs_MaxUpPts= FALSE;
-              } 
-	      else
+              } else
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for srs_MaxUpPts choice: ENABLE,DISABLE !\n",
                              RC.config_file_name, i, ccparams_lte.srs_MaxUpPts);
@@ -850,8 +799,8 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 
             RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_p0_Nominal= ccparams_lte.pusch_p0_Nominal;
 
-            if ((ccparams_lte.pusch_p0_Nominal<-126) || 
-		(ccparams_lte.pusch_p0_Nominal>24))
+            if ((ccparams_lte.pusch_p0_Nominal<-126) ||
+                (ccparams_lte.pusch_p0_Nominal>24))
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pusch_p0_Nominal choice: -126..24 !\n",
                            RC.config_file_name, i, ccparams_lte.pusch_p0_Nominal);
@@ -860,26 +809,19 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 
             if (strcmp(ccparams_lte.pusch_alpha,"AL0")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_alpha= LTE_UplinkPowerControlCommon__alpha_al0;
-            } 
-	    else if (strcmp(ccparams_lte.pusch_alpha,"AL04")==0) {
+            } else if (strcmp(ccparams_lte.pusch_alpha,"AL04")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_alpha= LTE_UplinkPowerControlCommon__alpha_al04;
-            } 
-	    else if (strcmp(ccparams_lte.pusch_alpha,"AL05")==0) {
+            } else if (strcmp(ccparams_lte.pusch_alpha,"AL05")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_alpha= LTE_UplinkPowerControlCommon__alpha_al05;
-            } 
-	    else if (strcmp(ccparams_lte.pusch_alpha,"AL06")==0) {
+            } else if (strcmp(ccparams_lte.pusch_alpha,"AL06")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_alpha= LTE_UplinkPowerControlCommon__alpha_al06;
-            } 
-	    else if (strcmp(ccparams_lte.pusch_alpha,"AL07")==0) {
+            } else if (strcmp(ccparams_lte.pusch_alpha,"AL07")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_alpha= LTE_UplinkPowerControlCommon__alpha_al07;
-            } 
-	    else if (strcmp(ccparams_lte.pusch_alpha,"AL08")==0) {
+            } else if (strcmp(ccparams_lte.pusch_alpha,"AL08")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_alpha= LTE_UplinkPowerControlCommon__alpha_al08;
-            } 
-	    else if (strcmp(ccparams_lte.pusch_alpha,"AL09")==0) {
+            } else if (strcmp(ccparams_lte.pusch_alpha,"AL09")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_alpha= LTE_UplinkPowerControlCommon__alpha_al09;
-            } 
-	    else if (strcmp(ccparams_lte.pusch_alpha,"AL1")==0) {
+            } else if (strcmp(ccparams_lte.pusch_alpha,"AL1")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_alpha= LTE_UplinkPowerControlCommon__alpha_al1;
             }
 
@@ -888,26 +830,19 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 
             if (strcmp(ccparams_lte.pusch_alpha,"AL0")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_alpha= LTE_Alpha_r12_al0;
-            } 
-	    else if (strcmp(ccparams_lte.pusch_alpha,"AL04")==0) {
+            } else if (strcmp(ccparams_lte.pusch_alpha,"AL04")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_alpha= LTE_Alpha_r12_al04;
-            } 
-	    else if (strcmp(ccparams_lte.pusch_alpha,"AL05")==0) {
+            } else if (strcmp(ccparams_lte.pusch_alpha,"AL05")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_alpha= LTE_Alpha_r12_al05;
-            } 
-	    else if (strcmp(ccparams_lte.pusch_alpha,"AL06")==0) {
+            } else if (strcmp(ccparams_lte.pusch_alpha,"AL06")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_alpha= LTE_Alpha_r12_al06;
-            } 
-	    else if (strcmp(ccparams_lte.pusch_alpha,"AL07")==0) {
+            } else if (strcmp(ccparams_lte.pusch_alpha,"AL07")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_alpha= LTE_Alpha_r12_al07;
-            } 
-	    else if (strcmp(ccparams_lte.pusch_alpha,"AL08")==0) {
+            } else if (strcmp(ccparams_lte.pusch_alpha,"AL08")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_alpha= LTE_Alpha_r12_al08;
-            } 
-	    else if (strcmp(ccparams_lte.pusch_alpha,"AL09")==0) {
+            } else if (strcmp(ccparams_lte.pusch_alpha,"AL09")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_alpha= LTE_Alpha_r12_al09;
-            } 
-	    else if (strcmp(ccparams_lte.pusch_alpha,"AL1")==0) {
+            } else if (strcmp(ccparams_lte.pusch_alpha,"AL1")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_alpha= LTE_Alpha_r12_al1;
             }
 
@@ -919,58 +854,49 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 
             RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_p0_Nominal= ccparams_lte.pucch_p0_Nominal;
 
-            if ((ccparams_lte.pucch_p0_Nominal<-127) || 
-		(ccparams_lte.pucch_p0_Nominal>-96))
+            if ((ccparams_lte.pucch_p0_Nominal<-127) ||
+                (ccparams_lte.pucch_p0_Nominal>-96))
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pucch_p0_Nominal choice: -127..-96 !\n",
                            RC.config_file_name, i, ccparams_lte.pucch_p0_Nominal);
 
             RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].msg3_delta_Preamble= ccparams_lte.msg3_delta_Preamble;
 
-            if ((ccparams_lte.msg3_delta_Preamble<-1) || 
-		(ccparams_lte.msg3_delta_Preamble>6))
+            if ((ccparams_lte.msg3_delta_Preamble<-1) ||
+                (ccparams_lte.msg3_delta_Preamble>6))
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for msg3_delta_Preamble choice: -1..6 !\n",
                            RC.config_file_name, i, ccparams_lte.msg3_delta_Preamble);
 
             if (strcmp(ccparams_lte.pucch_deltaF_Format1,"deltaF_2")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format1= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format1_deltaF_2;
-            } 
-	    else if (strcmp(ccparams_lte.pucch_deltaF_Format1,"deltaF0")==0) {
+            } else if (strcmp(ccparams_lte.pucch_deltaF_Format1,"deltaF0")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format1= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format1_deltaF0;
-            } 
-	    else if (strcmp(ccparams_lte.pucch_deltaF_Format1,"deltaF2")==0) {
+            } else if (strcmp(ccparams_lte.pucch_deltaF_Format1,"deltaF2")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format1= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format1_deltaF2;
-            } 
-	    else
+            } else
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pucch_deltaF_Format1 choice: deltaF_2,dltaF0,deltaF2!\n",
                            RC.config_file_name, i, ccparams_lte.pucch_deltaF_Format1);
 
             if (strcmp(ccparams_lte.pucch_deltaF_Format1b,"deltaF1")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format1b= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format1b_deltaF1;
-            } 
-	    else if (strcmp(ccparams_lte.pucch_deltaF_Format1b,"deltaF3")==0) {
+            } else if (strcmp(ccparams_lte.pucch_deltaF_Format1b,"deltaF3")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format1b= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format1b_deltaF3;
-            } 
-	    else if (strcmp(ccparams_lte.pucch_deltaF_Format1b,"deltaF5")==0) {
+            } else if (strcmp(ccparams_lte.pucch_deltaF_Format1b,"deltaF5")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format1b= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format1b_deltaF5;
-            } 
-	    else
+            } else
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pucch_deltaF_Format1b choice: deltaF1,dltaF3,deltaF5!\n",
                            RC.config_file_name, i, ccparams_lte.pucch_deltaF_Format1b);
 
             if (strcmp(ccparams_lte.pucch_deltaF_Format2,"deltaF_2")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format2= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF_2;
-            } 
-	    else if (strcmp(ccparams_lte.pucch_deltaF_Format2,"deltaF0")==0) {
+            } else if (strcmp(ccparams_lte.pucch_deltaF_Format2,"deltaF0")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format2= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF0;
-            } 
-	    else if (strcmp(ccparams_lte.pucch_deltaF_Format2,"deltaF1")==0) {
+            } else if (strcmp(ccparams_lte.pucch_deltaF_Format2,"deltaF1")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format2= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF1;
-            } 
-	    else if (strcmp(ccparams_lte.pucch_deltaF_Format2,"deltaF2")==0) {
+            } else if (strcmp(ccparams_lte.pucch_deltaF_Format2,"deltaF2")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format2= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF2;
             } else
               AssertFatal (0,
@@ -979,37 +905,31 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 
             if (strcmp(ccparams_lte.pucch_deltaF_Format2a,"deltaF_2")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format2a= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2a_deltaF_2;
-            }
-	    else if (strcmp(ccparams_lte.pucch_deltaF_Format2a,"deltaF0")==0) {
+            } else if (strcmp(ccparams_lte.pucch_deltaF_Format2a,"deltaF0")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format2a= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2a_deltaF0;
-            } 
-	    else if (strcmp(ccparams_lte.pucch_deltaF_Format2a,"deltaF2")==0) {
+            } else if (strcmp(ccparams_lte.pucch_deltaF_Format2a,"deltaF2")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format2a= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2a_deltaF2;
-            } 
-	    else
+            } else
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pucch_deltaF_Format2a choice: deltaF_2,dltaF0,deltaF2!\n",
                            RC.config_file_name, i, ccparams_lte.pucch_deltaF_Format2a);
 
             if (strcmp(ccparams_lte.pucch_deltaF_Format2b,"deltaF_2")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format2b= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2b_deltaF_2;
-            } 
-	    else if (strcmp(ccparams_lte.pucch_deltaF_Format2b,"deltaF0")==0) {
+            } else if (strcmp(ccparams_lte.pucch_deltaF_Format2b,"deltaF0")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format2b= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2b_deltaF0;
-            } 
-	    else if (strcmp(ccparams_lte.pucch_deltaF_Format2b,"deltaF2")==0) {
+            } else if (strcmp(ccparams_lte.pucch_deltaF_Format2b,"deltaF2")==0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format2b= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2b_deltaF2;
-            } 
-	    else
+            } else
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pucch_deltaF_Format2b choice: deltaF_2,dltaF0,deltaF2!\n",
                            RC.config_file_name, i, ccparams_lte.pucch_deltaF_Format2b);
 
             RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_numberOfRA_Preambles= (ccparams_lte.rach_numberOfRA_Preambles/4)-1;
 
-            if ((ccparams_lte.rach_numberOfRA_Preambles <4) || 
-		(ccparams_lte.rach_numberOfRA_Preambles>64) || 
-		((ccparams_lte.rach_numberOfRA_Preambles&3)!=0))
+            if ((ccparams_lte.rach_numberOfRA_Preambles <4) ||
+                (ccparams_lte.rach_numberOfRA_Preambles>64) ||
+                ((ccparams_lte.rach_numberOfRA_Preambles&3)!=0))
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for rach_numberOfRA_Preambles choice: 4,8,12,...,64!\n",
                            RC.config_file_name, i, ccparams_lte.rach_numberOfRA_Preambles);
@@ -1018,62 +938,54 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preamblesGroupAConfig= TRUE;
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_sizeOfRA_PreamblesGroupA= (ccparams_lte.rach_sizeOfRA_PreamblesGroupA/4)-1;
 
-              if ((ccparams_lte.rach_numberOfRA_Preambles <4) || 
-		  (ccparams_lte.rach_numberOfRA_Preambles>60) || 
-		  ((ccparams_lte.rach_numberOfRA_Preambles&3)!=0))
+              if ((ccparams_lte.rach_numberOfRA_Preambles <4) ||
+                  (ccparams_lte.rach_numberOfRA_Preambles>60) ||
+                  ((ccparams_lte.rach_numberOfRA_Preambles&3)!=0))
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for rach_sizeOfRA_PreamblesGroupA choice: 4,8,12,...,60!\n",
                              RC.config_file_name, i, ccparams_lte.rach_sizeOfRA_PreamblesGroupA);
 
               switch (ccparams_lte.rach_messageSizeGroupA) {
-	      case 56:
-		RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messageSizeGroupA= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messageSizeGroupA_b56;
-		break;
+                case 56:
+                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messageSizeGroupA= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messageSizeGroupA_b56;
+                  break;
 
-	      case 144:
-		RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messageSizeGroupA= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messageSizeGroupA_b144;
-		break;
+                case 144:
+                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messageSizeGroupA= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messageSizeGroupA_b144;
+                  break;
 
-	      case 208:
-		RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messageSizeGroupA= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messageSizeGroupA_b208;
-		break;
+                case 208:
+                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messageSizeGroupA= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messageSizeGroupA_b208;
+                  break;
 
-	      case 256:
-		RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messageSizeGroupA= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messageSizeGroupA_b256;
-		break;
+                case 256:
+                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messageSizeGroupA= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messageSizeGroupA_b256;
+                  break;
 
-	      default:
-		AssertFatal (0,
-			     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for rach_messageSizeGroupA choice: 56,144,208,256!\n",
-			     RC.config_file_name, i, ccparams_lte.rach_messageSizeGroupA);
-		break;
+                default:
+                  AssertFatal (0,
+                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for rach_messageSizeGroupA choice: 56,144,208,256!\n",
+                               RC.config_file_name, i, ccparams_lte.rach_messageSizeGroupA);
+                  break;
               }
 
               if (strcmp(ccparams_lte.rach_messagePowerOffsetGroupB,"minusinfinity")==0) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messagePowerOffsetGroupB= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB_minusinfinity;
-              } 
-	      else if (strcmp(ccparams_lte.rach_messagePowerOffsetGroupB,"dB0")==0) {
+              } else if (strcmp(ccparams_lte.rach_messagePowerOffsetGroupB,"dB0")==0) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messagePowerOffsetGroupB= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB_dB0;
-              } 
-	      else if (strcmp(ccparams_lte.rach_messagePowerOffsetGroupB,"dB5")==0) {
+              } else if (strcmp(ccparams_lte.rach_messagePowerOffsetGroupB,"dB5")==0) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messagePowerOffsetGroupB= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB_dB5;
-              } 
-	      else if (strcmp(ccparams_lte.rach_messagePowerOffsetGroupB,"dB8")==0) {
+              } else if (strcmp(ccparams_lte.rach_messagePowerOffsetGroupB,"dB8")==0) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messagePowerOffsetGroupB= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB_dB8;
-              } 
-	      else if (strcmp(ccparams_lte.rach_messagePowerOffsetGroupB,"dB10")==0) {
+              } else if (strcmp(ccparams_lte.rach_messagePowerOffsetGroupB,"dB10")==0) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messagePowerOffsetGroupB= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB_dB10;
-              } 
-	      else if (strcmp(ccparams_lte.rach_messagePowerOffsetGroupB,"dB12")==0) {
+              } else if (strcmp(ccparams_lte.rach_messagePowerOffsetGroupB,"dB12")==0) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messagePowerOffsetGroupB= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB_dB12;
-              } 
-	      else if (strcmp(ccparams_lte.rach_messagePowerOffsetGroupB,"dB15")==0) {
+              } else if (strcmp(ccparams_lte.rach_messagePowerOffsetGroupB,"dB15")==0) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messagePowerOffsetGroupB= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB_dB15;
-              } 
-	      else if (strcmp(ccparams_lte.rach_messagePowerOffsetGroupB,"dB18")==0) {
+              } else if (strcmp(ccparams_lte.rach_messagePowerOffsetGroupB,"dB18")==0) {
                 RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messagePowerOffsetGroupB= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB_dB18;
-              } 
-	      else
+              } else
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for rach_messagePowerOffsetGroupB choice: minusinfinity,dB0,dB5,dB8,dB10,dB12,dB15,dB18!\n",
                              RC.config_file_name, i, ccparams_lte.rach_messagePowerOffsetGroupB);
@@ -1086,18 +998,18 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
 
             RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleInitialReceivedTargetPower= (ccparams_lte.rach_preambleInitialReceivedTargetPower+120)/2;
 
-            if ((ccparams_lte.rach_preambleInitialReceivedTargetPower<-120) || 
-		(ccparams_lte.rach_preambleInitialReceivedTargetPower>-90) || 
-		((ccparams_lte.rach_preambleInitialReceivedTargetPower&1)!=0))
+            if ((ccparams_lte.rach_preambleInitialReceivedTargetPower<-120) ||
+                (ccparams_lte.rach_preambleInitialReceivedTargetPower>-90) ||
+                ((ccparams_lte.rach_preambleInitialReceivedTargetPower&1)!=0))
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for rach_preambleInitialReceivedTargetPower choice: -120,-118,...,-90 !\n",
                            RC.config_file_name, i, ccparams_lte.rach_preambleInitialReceivedTargetPower);
 
             RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_powerRampingStep= ccparams_lte.rach_powerRampingStep/2;
 
-            if ((ccparams_lte.rach_powerRampingStep<0) || 
-		(ccparams_lte.rach_powerRampingStep>6) || 
-		((ccparams_lte.rach_powerRampingStep&1)!=0))
+            if ((ccparams_lte.rach_powerRampingStep<0) ||
+                (ccparams_lte.rach_powerRampingStep>6) ||
+                ((ccparams_lte.rach_powerRampingStep&1)!=0))
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for rach_powerRampingStep choice: 0,2,4,6 !\n",
                            RC.config_file_name, i, ccparams_lte.rach_powerRampingStep);
@@ -1105,205 +1017,196 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
             switch (ccparams_lte.rach_preambleTransMax) {
 #if (LTE_RRC_VERSION < MAKE_VERSION(14, 0, 0))
 
-	    case 3:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n3;
-	      break;
+              case 3:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n3;
+                break;
 
-	    case 4:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n4;
-	      break;
+              case 4:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n4;
+                break;
 
-	    case 5:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n5;
-	      break;
+              case 5:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n5;
+                break;
 
-	    case 6:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n6;
-	      break;
+              case 6:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n6;
+                break;
 
-	    case 7:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n7;
-	      break;
+              case 7:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n7;
+                break;
 
-	    case 8:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n8;
-	      break;
+              case 8:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n8;
+                break;
 
-	    case 10:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n10;
-	      break;
+              case 10:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n10;
+                break;
 
-	    case 20:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n20;
-	      break;
+              case 20:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n20;
+                break;
 
-	    case 50:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n50;
-	      break;
+              case 50:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n50;
+                break;
 
-	    case 100:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n100;
-	      break;
+              case 100:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n100;
+                break;
 
-	    case 200:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n200;
-	      break;
+              case 200:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_RACH_ConfigCommon__ra_SupervisionInfo__preambleTransMax_n200;
+                break;
 #else
 
-	    case 3:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n3;
-	      break;
+              case 3:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n3;
+                break;
 
-	    case 4:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n4;
-	      break;
+              case 4:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n4;
+                break;
 
-	    case 5:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n5;
-	      break;
+              case 5:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n5;
+                break;
 
-	    case 6:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n6;
-	      break;
+              case 6:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n6;
+                break;
 
-	    case 7:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n7;
-	      break;
+              case 7:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n7;
+                break;
 
-	    case 8:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n8;
-	      break;
+              case 8:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n8;
+                break;
 
-	    case 10:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n10;
-	      break;
+              case 10:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n10;
+                break;
 
-	    case 20:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n20;
-	      break;
+              case 20:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n20;
+                break;
 
-	    case 50:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n50;
-	      break;
+              case 50:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n50;
+                break;
 
-	    case 100:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n100;
-	      break;
+              case 100:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n100;
+                break;
 
-	    case 200:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n200;
-	      break;
-
+              case 200:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n200;
+                break;
 #endif
 
-	    default:
-	      AssertFatal (0,
-			   "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for rach_preambleTransMax choice: 3,4,5,6,7,8,10,20,50,100,200!\n",
-			   RC.config_file_name, i, ccparams_lte.rach_preambleTransMax);
-	      break;
+              default:
+                AssertFatal (0,
+                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for rach_preambleTransMax choice: 3,4,5,6,7,8,10,20,50,100,200!\n",
+                             RC.config_file_name, i, ccparams_lte.rach_preambleTransMax);
+                break;
             }
 
             RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_raResponseWindowSize=  (ccparams_lte.rach_raResponseWindowSize==10)?7:ccparams_lte.rach_raResponseWindowSize-2;
 
             if ((ccparams_lte.rach_raResponseWindowSize<0)||
-		(ccparams_lte.rach_raResponseWindowSize==9)||
-		(ccparams_lte.rach_raResponseWindowSize>10))
+                (ccparams_lte.rach_raResponseWindowSize==9)||
+                (ccparams_lte.rach_raResponseWindowSize>10))
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for rach_raResponseWindowSize choice: 2,3,4,5,6,7,8,10!\n",
                            RC.config_file_name, i, ccparams_lte.rach_preambleTransMax);
 
             RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_macContentionResolutionTimer= (ccparams_lte.rach_macContentionResolutionTimer/8)-1;
 
-            if ((ccparams_lte.rach_macContentionResolutionTimer<8) || 
-		(ccparams_lte.rach_macContentionResolutionTimer>64) || 
-		((ccparams_lte.rach_macContentionResolutionTimer&7)!=0))
+            if ((ccparams_lte.rach_macContentionResolutionTimer<8) ||
+                (ccparams_lte.rach_macContentionResolutionTimer>64) ||
+                ((ccparams_lte.rach_macContentionResolutionTimer&7)!=0))
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for rach_macContentionResolutionTimer choice: 8,16,...,56,64!\n",
                            RC.config_file_name, i, ccparams_lte.rach_preambleTransMax);
 
             RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_maxHARQ_Msg3Tx= ccparams_lte.rach_maxHARQ_Msg3Tx;
 
-            if ((ccparams_lte.rach_maxHARQ_Msg3Tx<0) || 
-		(ccparams_lte.rach_maxHARQ_Msg3Tx>8))
+            if ((ccparams_lte.rach_maxHARQ_Msg3Tx<0) ||
+                (ccparams_lte.rach_maxHARQ_Msg3Tx>8))
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for rach_maxHARQ_Msg3Tx choice: 1..8!\n",
                            RC.config_file_name, i, ccparams_lte.rach_preambleTransMax);
 
             switch (ccparams_lte.pcch_defaultPagingCycle) {
-	    case 32:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_defaultPagingCycle= LTE_PCCH_Config__defaultPagingCycle_rf32;
-	      break;
+              case 32:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_defaultPagingCycle= LTE_PCCH_Config__defaultPagingCycle_rf32;
+                break;
 
-	    case 64:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_defaultPagingCycle= LTE_PCCH_Config__defaultPagingCycle_rf64;
-	      break;
+              case 64:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_defaultPagingCycle= LTE_PCCH_Config__defaultPagingCycle_rf64;
+                break;
 
-	    case 128:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_defaultPagingCycle= LTE_PCCH_Config__defaultPagingCycle_rf128;
-	      break;
+              case 128:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_defaultPagingCycle= LTE_PCCH_Config__defaultPagingCycle_rf128;
+                break;
 
-	    case 256:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_defaultPagingCycle= LTE_PCCH_Config__defaultPagingCycle_rf256;
-	      break;
+              case 256:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_defaultPagingCycle= LTE_PCCH_Config__defaultPagingCycle_rf256;
+                break;
 
-	    default:
-	      AssertFatal (0,
-			   "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pcch_defaultPagingCycle choice: 32,64,128,256!\n",
-			   RC.config_file_name, i, ccparams_lte.pcch_defaultPagingCycle);
-	      break;
+              default:
+                AssertFatal (0,
+                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for pcch_defaultPagingCycle choice: 32,64,128,256!\n",
+                             RC.config_file_name, i, ccparams_lte.pcch_defaultPagingCycle);
+                break;
             }
 
             if (strcmp(ccparams_lte.pcch_nB, "fourT") == 0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_fourT;
-            } 
-	    else if (strcmp(ccparams_lte.pcch_nB, "twoT") == 0) {
+            } else if (strcmp(ccparams_lte.pcch_nB, "twoT") == 0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_twoT;
-            } 
-	    else if (strcmp(ccparams_lte.pcch_nB, "oneT") == 0) {
- 	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_oneT;
-            } 
-	    else if (strcmp(ccparams_lte.pcch_nB, "halfT") == 0) {
- 	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_halfT;
-            } 
-	    else if (strcmp(ccparams_lte.pcch_nB, "quarterT") == 0) {
+            } else if (strcmp(ccparams_lte.pcch_nB, "oneT") == 0) {
+              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_oneT;
+            } else if (strcmp(ccparams_lte.pcch_nB, "halfT") == 0) {
+              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_halfT;
+            } else if (strcmp(ccparams_lte.pcch_nB, "quarterT") == 0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_quarterT;
-            } 
-	    else if (strcmp(ccparams_lte.pcch_nB, "oneEighthT") == 0) {
+            } else if (strcmp(ccparams_lte.pcch_nB, "oneEighthT") == 0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_oneEighthT;
-            } 
-	    else if (strcmp(ccparams_lte.pcch_nB, "oneSixteenthT") == 0) {
+            } else if (strcmp(ccparams_lte.pcch_nB, "oneSixteenthT") == 0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_oneSixteenthT;
-            } 
-	    else if (strcmp(ccparams_lte.pcch_nB, "oneThirtySecondT") == 0) {
+            } else if (strcmp(ccparams_lte.pcch_nB, "oneThirtySecondT") == 0) {
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_oneThirtySecondT;
-            } 
-	    else
+            } else
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for pcch_nB choice: fourT,twoT,oneT,halfT,quarterT,oneighthT,oneSixteenthT,oneThirtySecondT !\n",
                            RC.config_file_name, i, ccparams_lte.pcch_nB);
 
             switch (ccparams_lte.bcch_modificationPeriodCoeff) {
-	    case 2:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].bcch_modificationPeriodCoeff= LTE_BCCH_Config__modificationPeriodCoeff_n2;
-	      break;
+              case 2:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].bcch_modificationPeriodCoeff= LTE_BCCH_Config__modificationPeriodCoeff_n2;
+                break;
 
-	    case 4:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].bcch_modificationPeriodCoeff= LTE_BCCH_Config__modificationPeriodCoeff_n4;
-	      break;
+              case 4:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].bcch_modificationPeriodCoeff= LTE_BCCH_Config__modificationPeriodCoeff_n4;
+                break;
 
-	    case 8:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].bcch_modificationPeriodCoeff= LTE_BCCH_Config__modificationPeriodCoeff_n8;
-	      break;
+              case 8:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].bcch_modificationPeriodCoeff= LTE_BCCH_Config__modificationPeriodCoeff_n8;
+                break;
 
-	    case 16:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].bcch_modificationPeriodCoeff= LTE_BCCH_Config__modificationPeriodCoeff_n16;
-	      break;
+              case 16:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].bcch_modificationPeriodCoeff= LTE_BCCH_Config__modificationPeriodCoeff_n16;
+                break;
 
-	    default:
-	      AssertFatal (0,
-			   "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for bcch_modificationPeriodCoeff choice: 2,4,8,16",
-			   RC.config_file_name, i, ccparams_lte.bcch_modificationPeriodCoeff);
-	      break;
+              default:
+                AssertFatal (0,
+                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for bcch_modificationPeriodCoeff choice: 2,4,8,16",
+                             RC.config_file_name, i, ccparams_lte.bcch_modificationPeriodCoeff);
+                break;
             }
 
             RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TimersAndConstants_t300= ccparams_lte.ue_TimersAndConstants_t300;
@@ -1314,410 +1217,406 @@ int RCconfig_RRC(MessageDef *msg_p, uint32_t i, eNB_RRC_INST *rrc) {
             RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TimersAndConstants_n311= ccparams_lte.ue_TimersAndConstants_n311;
 
             switch (ccparams_lte.ue_TransmissionMode) {
-	    case 1:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TransmissionMode= LTE_AntennaInfoDedicated__transmissionMode_tm1;
-	      break;
+              case 1:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TransmissionMode= LTE_AntennaInfoDedicated__transmissionMode_tm1;
+                break;
 
-	    case 2:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TransmissionMode= LTE_AntennaInfoDedicated__transmissionMode_tm2;
-	      break;
+              case 2:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TransmissionMode= LTE_AntennaInfoDedicated__transmissionMode_tm2;
+                break;
 
-	    case 3:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TransmissionMode= LTE_AntennaInfoDedicated__transmissionMode_tm3;
-	      break;
+              case 3:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TransmissionMode= LTE_AntennaInfoDedicated__transmissionMode_tm3;
+                break;
 
-	    case 4:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TransmissionMode= LTE_AntennaInfoDedicated__transmissionMode_tm4;
-	      break;
+              case 4:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TransmissionMode= LTE_AntennaInfoDedicated__transmissionMode_tm4;
+                break;
 
-	    case 5:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TransmissionMode= LTE_AntennaInfoDedicated__transmissionMode_tm5;
-	      break;
+              case 5:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TransmissionMode= LTE_AntennaInfoDedicated__transmissionMode_tm5;
+                break;
 
-	    case 6:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TransmissionMode= LTE_AntennaInfoDedicated__transmissionMode_tm6;
-	      break;
+              case 6:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TransmissionMode= LTE_AntennaInfoDedicated__transmissionMode_tm6;
+                break;
 
-	    case 7:
-	      RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TransmissionMode= LTE_AntennaInfoDedicated__transmissionMode_tm7;
-	      break;
+              case 7:
+                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TransmissionMode= LTE_AntennaInfoDedicated__transmissionMode_tm7;
+                break;
 
-	    default:
-	      AssertFatal (0,
-			   "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_TransmissionMode choice: 1,2,3,4,5,6,7",
-			   RC.config_file_name, i, ccparams_lte.ue_TransmissionMode);
-	      break;
+              default:
+                AssertFatal (0,
+                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_TransmissionMode choice: 1,2,3,4,5,6,7",
+                             RC.config_file_name, i, ccparams_lte.ue_TransmissionMode);
+                break;
             }
 
             RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_multiple_max= ccparams_lte.ue_multiple_max;
 
             switch (ccparams_lte.N_RB_DL) {
-	    case 25:
-	      if ((ccparams_lte.ue_multiple_max < 1) || 
-		  (ccparams_lte.ue_multiple_max > 4))
-		AssertFatal (0,
-			     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..4!\n",
-			     RC.config_file_name, i, ccparams_lte.ue_multiple_max);
+              case 25:
+                if ((ccparams_lte.ue_multiple_max < 1) ||
+                    (ccparams_lte.ue_multiple_max > 4))
+                  AssertFatal (0,
+                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..4!\n",
+                               RC.config_file_name, i, ccparams_lte.ue_multiple_max);
 
-	      break;
+                break;
 
-	    case 50:
-	      if ((ccparams_lte.ue_multiple_max < 1) || 
-		  (ccparams_lte.ue_multiple_max > 8))
-		AssertFatal (0,
-			     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..8!\n",
-			     RC.config_file_name, i, ccparams_lte.ue_multiple_max);
+              case 50:
+                if ((ccparams_lte.ue_multiple_max < 1) ||
+                    (ccparams_lte.ue_multiple_max > 8))
+                  AssertFatal (0,
+                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..8!\n",
+                               RC.config_file_name, i, ccparams_lte.ue_multiple_max);
 
-	      break;
+                break;
 
-	    case 100:
-	      if ((ccparams_lte.ue_multiple_max < 1) || 
-		  (ccparams_lte.ue_multiple_max > 16))
-		AssertFatal (0,
-			     "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..16!\n",
-			     RC.config_file_name, i, ccparams_lte.ue_multiple_max);
+              case 100:
+                if ((ccparams_lte.ue_multiple_max < 1) ||
+                    (ccparams_lte.ue_multiple_max > 16))
+                  AssertFatal (0,
+                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for ue_multiple_max choice: 1..16!\n",
+                               RC.config_file_name, i, ccparams_lte.ue_multiple_max);
 
-	      break;
+                break;
 
-	    default:
-	      AssertFatal (0,
-			   "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for N_RB_DL choice: 25,50,100 !\n",
-			   RC.config_file_name, i, ccparams_lte.N_RB_DL);
-	      break;
+              default:
+                AssertFatal (0,
+                             "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for N_RB_DL choice: 25,50,100 !\n",
+                             RC.config_file_name, i, ccparams_lte.N_RB_DL);
+                break;
             }
 
-	    // eMBMS configuration
-	    RRC_CONFIGURATION_REQ(msg_p).eMBMS_configured = 0;
-	    printf("No eMBMS configuration, skipping it\n");
+            // eMBMS configuration
+            RRC_CONFIGURATION_REQ(msg_p).eMBMS_configured = 0;
+            printf("No eMBMS configuration, skipping it\n");
+            // eMTC configuration
+            char brparamspath[MAX_OPTNAME_SIZE*2 + 16];
+            sprintf(brparamspath,"%s.%s", ccspath, ENB_CONFIG_STRING_EMTC_PARAMETERS);
+            config_get(eMTCParams, sizeof(eMTCParams)/sizeof(paramdef_t), brparamspath);
+            RRC_CONFIGURATION_REQ(msg_p).eMTC_configured = eMTCconfig.eMTC_configured&1;
 
-	    // eMTC configuration
-	    char brparamspath[MAX_OPTNAME_SIZE*2 + 16];
-	    sprintf(brparamspath,"%s.%s", ccspath, ENB_CONFIG_STRING_EMTC_PARAMETERS);
-	    config_get(eMTCParams, sizeof(eMTCParams)/sizeof(paramdef_t), brparamspath);
-	    RRC_CONFIGURATION_REQ(msg_p).eMTC_configured = eMTCconfig.eMTC_configured&1;
+            if (eMTCconfig.eMTC_configured > 0) fill_eMTC_configuration(msg_p,&eMTCconfig, i,j,RC.config_file_name,brparamspath);
+            else                            printf("No eMTC configuration, skipping it\n");
 
-	    if (eMTCconfig.eMTC_configured > 0) fill_eMTC_configuration(msg_p,&eMTCconfig, i,j,RC.config_file_name,brparamspath); 
-	    else   	                        printf("No eMTC configuration, skipping it\n");
-	    
+            // Sidelink configuration
+            char SLparamspath[MAX_OPTNAME_SIZE*2 + 16];
+            sprintf(SLparamspath,"%s.%s", ccspath, ENB_CONFIG_STRING_SL_PARAMETERS);
+            config_get( SLParams, sizeof(SLParams)/sizeof(paramdef_t), SLparamspath);
+            // Sidelink Resource pool information
+            RRC_CONFIGURATION_REQ (msg_p).SL_configured=SLconfig.sidelink_configured&1;
 
-	    // Sidelink configuration
-	    char SLparamspath[MAX_OPTNAME_SIZE*2 + 16];
-	    sprintf(SLparamspath,"%s.%s", ccspath, ENB_CONFIG_STRING_SL_PARAMETERS);
-	    config_get( SLParams, sizeof(SLParams)/sizeof(paramdef_t), SLparamspath);
-
-	    // Sidelink Resource pool information
-	    RRC_CONFIGURATION_REQ (msg_p).SL_configured=SLconfig.sidelink_configured&1;
-	    if (SLconfig.sidelink_configured==1) fill_SL_configuration(msg_p,&SLconfig,i,j,RC.config_file_name);
-	    else                                 printf("No SL configuration skipping it\n");
-	  }
-	}
+            if (SLconfig.sidelink_configured==1) fill_SL_configuration(msg_p,&SLconfig,i,j,RC.config_file_name);
+            else                                 printf("No SL configuration skipping it\n");
+          }
+        }
 
         char srb1path[MAX_OPTNAME_SIZE*2 + 8];
         sprintf(srb1path,"%s.%s",enbpath,ENB_CONFIG_STRING_SRB1);
         config_get( SRB1Params,sizeof(SRB1Params)/sizeof(paramdef_t), srb1path);
 
+        switch (srb1_params.srb1_max_retx_threshold) {
+          case 1:
+            rrc->srb1_max_retx_threshold = LTE_UL_AM_RLC__maxRetxThreshold_t1;
+            break;
 
-	switch (srb1_params.srb1_max_retx_threshold) {
-	case 1:
-	  rrc->srb1_max_retx_threshold = LTE_UL_AM_RLC__maxRetxThreshold_t1;
-	  break;
-	  
-	case 2:
-	  rrc->srb1_max_retx_threshold = LTE_UL_AM_RLC__maxRetxThreshold_t2;
-	  break;
-	  
-	case 3:
-	  rrc->srb1_max_retx_threshold = LTE_UL_AM_RLC__maxRetxThreshold_t3;
-	  break;
-	  
-	case 4:
-	  rrc->srb1_max_retx_threshold = LTE_UL_AM_RLC__maxRetxThreshold_t4;
-	  break;
-	  
-	case 6:
-	  rrc->srb1_max_retx_threshold = LTE_UL_AM_RLC__maxRetxThreshold_t6;
-	  break;
-	  
-	case 8:
-	  rrc->srb1_max_retx_threshold = LTE_UL_AM_RLC__maxRetxThreshold_t8;
-	  break;
-	  
-	case 16:
-	  rrc->srb1_max_retx_threshold = LTE_UL_AM_RLC__maxRetxThreshold_t16;
-	  break;
-	  
-	case 32:
-	  rrc->srb1_max_retx_threshold = LTE_UL_AM_RLC__maxRetxThreshold_t32;
-	  break;
-	  
-	default:
-	  AssertFatal (0,
-		       "Bad config value when parsing eNB configuration file %s, enb %d  srb1_max_retx_threshold %u!\n",
-		       RC.config_file_name, i, srb1_params.srb1_max_retx_threshold);
-	}
-	
-	switch (srb1_params.srb1_poll_pdu) {
-	case 4:
-	  rrc->srb1_poll_pdu = LTE_PollPDU_p4;
-	  break;
-	  
-	case 8:
-	  rrc->srb1_poll_pdu = LTE_PollPDU_p8;
-	  break;
-	  
-	case 16:
-	  rrc->srb1_poll_pdu = LTE_PollPDU_p16;
-	  break;
-	  
-	case 32:
-	  rrc->srb1_poll_pdu = LTE_PollPDU_p32;
-	  break;
-	  
-	case 64:
-	  rrc->srb1_poll_pdu = LTE_PollPDU_p64;
-	  break;
-	  
-	case 128:
-	  rrc->srb1_poll_pdu = LTE_PollPDU_p128;
-	  break;
-	  
-	case 256:
-	  rrc->srb1_poll_pdu = LTE_PollPDU_p256;
-	  break;
-	  
-	default:
-	  if (srb1_params.srb1_poll_pdu >= 10000)
-	    rrc->srb1_poll_pdu = LTE_PollPDU_pInfinity;
-	  else
-	    AssertFatal (0,
-			 "Bad config value when parsing eNB configuration file %s, enb %d  srb1_poll_pdu %u!\n",
-			 RC.config_file_name, i, srb1_params.srb1_poll_pdu);
-	}
-	
-	rrc->srb1_poll_byte             = srb1_params.srb1_poll_byte;
-	
-	switch (srb1_params.srb1_poll_byte) {
-	case 25:
-	  rrc->srb1_poll_byte = LTE_PollByte_kB25;
-	  break;
-	  
-	case 50:
-	  rrc->srb1_poll_byte = LTE_PollByte_kB50;
-	  break;
-	  
-	case 75:
-	  rrc->srb1_poll_byte = LTE_PollByte_kB75;
-	  break;
-	  
-	case 100:
-	  rrc->srb1_poll_byte = LTE_PollByte_kB100;
-	  break;
-	  
-	case 125:
-	  rrc->srb1_poll_byte = LTE_PollByte_kB125;
-	  break;
-	  
-	case 250:
-	  rrc->srb1_poll_byte = LTE_PollByte_kB250;
-	  break;
-	  
-	case 375:
-	  rrc->srb1_poll_byte = LTE_PollByte_kB375;
-	  break;
-	  
-	case 500:
-	  rrc->srb1_poll_byte = LTE_PollByte_kB500;
-	  break;
-	  
-	case 750:
-	  rrc->srb1_poll_byte = LTE_PollByte_kB750;
-	  break;
-	  
-	case 1000:
-	  rrc->srb1_poll_byte = LTE_PollByte_kB1000;
-	  break;
-	  
-	case 1250:
-	  rrc->srb1_poll_byte = LTE_PollByte_kB1250;
-	  break;
-	  
-	case 1500:
-	  rrc->srb1_poll_byte = LTE_PollByte_kB1500;
-	  break;
-	  
-	case 2000:
-	  rrc->srb1_poll_byte = LTE_PollByte_kB2000;
-	  break;
-	  
-	case 3000:
-	  rrc->srb1_poll_byte = LTE_PollByte_kB3000;
-	  break;
-	  
-	default:
-	  if (srb1_params.srb1_poll_byte >= 10000)
-	    rrc->srb1_poll_byte = LTE_PollByte_kBinfinity;
-	  else
-	    AssertFatal (0,
-			 "Bad config value when parsing eNB configuration file %s, enb %d  srb1_poll_byte %u!\n",
-			 RC.config_file_name, i, srb1_params.srb1_poll_byte);
-	}
-	
-	if (srb1_params.srb1_timer_poll_retransmit <= 250) {
-	  rrc->srb1_timer_poll_retransmit = (srb1_params.srb1_timer_poll_retransmit - 5)/5;
-	} else if (srb1_params.srb1_timer_poll_retransmit <= 500) {
-	  rrc->srb1_timer_poll_retransmit = (srb1_params.srb1_timer_poll_retransmit - 300)/50 + 50;
-	} else {
-	  AssertFatal (0,
-		       "Bad config value when parsing eNB configuration file %s, enb %d  srb1_timer_poll_retransmit %u!\n",
-		       RC.config_file_name, i, srb1_params.srb1_timer_poll_retransmit);
-	}
-	
-	if (srb1_params.srb1_timer_status_prohibit <= 250) {
-	  rrc->srb1_timer_status_prohibit = srb1_params.srb1_timer_status_prohibit/5;
-	} else if ((srb1_params.srb1_timer_poll_retransmit >= 300) && (srb1_params.srb1_timer_poll_retransmit <= 500)) {
-	  rrc->srb1_timer_status_prohibit = (srb1_params.srb1_timer_status_prohibit - 300)/50 + 51;
-	} else {
-	  AssertFatal (0,
-		       "Bad config value when parsing eNB configuration file %s, enb %d  srb1_timer_status_prohibit %u!\n",
-		       RC.config_file_name, i, srb1_params.srb1_timer_status_prohibit);
-	}
-	
-	switch (srb1_params.srb1_timer_reordering) {
-	case 0:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms0;
-	  break;
-	  
-	case 5:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms5;
-	  break;
-	  
-	case 10:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms10;
-	  break;
-	  
-	case 15:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms15;
-	  break;
-	  
-	case 20:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms20;
-	  break;
-	  
-	case 25:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms25;
-	  break;
-	  
-	case 30:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms30;
-	  break;
-	  
-	case 35:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms35;
-	  break;
-	  
-	case 40:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms40;
-	  break;
-	  
-	case 45:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms45;
-	  break;
-	  
-	case 50:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms50;
-	  break;
-	  
-	case 55:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms55;
-	  break;
-	  
-	case 60:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms60;
-	  break;
-	  
-	case 65:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms65;
-	  break;
-	  
-	case 70:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms70;
-	  break;
-	  
-	case 75:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms75;
-	  break;
-	  
-	case 80:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms80;
-	  break;
-	  
-	case 85:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms85;
-	  break;
-	  
-	case 90:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms90;
-	  break;
-	  
-	case 95:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms95;
-	  break;
-	  
-	case 100:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms100;
-	  break;
-	  
-	case 110:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms110;
-	  break;
-	  
-	case 120:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms120;
-	  break;
-	  
-	case 130:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms130;
-	  break;
-	  
-	case 140:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms140;
-	  break;
-	  
-	case 150:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms150;
-	  break;
-	  
-	case 160:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms160;
-	  break;
-	  
-	case 170:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms170;
-	  break;
-	  
-	case 180:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms180;
-	  break;
-	  
-	case 190:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms190;
-	  break;
-	  
-	case 200:
-	  rrc->srb1_timer_reordering = LTE_T_Reordering_ms200;
-	  break;
-	  
-	default:
-	  AssertFatal (0,
-		       "Bad config value when parsing eNB configuration file %s, enb %d  srb1_timer_reordering %u!\n",
-		       RC.config_file_name, i, srb1_params.srb1_timer_reordering);
-	}
+          case 2:
+            rrc->srb1_max_retx_threshold = LTE_UL_AM_RLC__maxRetxThreshold_t2;
+            break;
+
+          case 3:
+            rrc->srb1_max_retx_threshold = LTE_UL_AM_RLC__maxRetxThreshold_t3;
+            break;
+
+          case 4:
+            rrc->srb1_max_retx_threshold = LTE_UL_AM_RLC__maxRetxThreshold_t4;
+            break;
+
+          case 6:
+            rrc->srb1_max_retx_threshold = LTE_UL_AM_RLC__maxRetxThreshold_t6;
+            break;
+
+          case 8:
+            rrc->srb1_max_retx_threshold = LTE_UL_AM_RLC__maxRetxThreshold_t8;
+            break;
+
+          case 16:
+            rrc->srb1_max_retx_threshold = LTE_UL_AM_RLC__maxRetxThreshold_t16;
+            break;
+
+          case 32:
+            rrc->srb1_max_retx_threshold = LTE_UL_AM_RLC__maxRetxThreshold_t32;
+            break;
+
+          default:
+            AssertFatal (0,
+                         "Bad config value when parsing eNB configuration file %s, enb %d  srb1_max_retx_threshold %u!\n",
+                         RC.config_file_name, i, srb1_params.srb1_max_retx_threshold);
+        }
+
+        switch (srb1_params.srb1_poll_pdu) {
+          case 4:
+            rrc->srb1_poll_pdu = LTE_PollPDU_p4;
+            break;
+
+          case 8:
+            rrc->srb1_poll_pdu = LTE_PollPDU_p8;
+            break;
+
+          case 16:
+            rrc->srb1_poll_pdu = LTE_PollPDU_p16;
+            break;
+
+          case 32:
+            rrc->srb1_poll_pdu = LTE_PollPDU_p32;
+            break;
+
+          case 64:
+            rrc->srb1_poll_pdu = LTE_PollPDU_p64;
+            break;
+
+          case 128:
+            rrc->srb1_poll_pdu = LTE_PollPDU_p128;
+            break;
+
+          case 256:
+            rrc->srb1_poll_pdu = LTE_PollPDU_p256;
+            break;
+
+          default:
+            if (srb1_params.srb1_poll_pdu >= 10000)
+              rrc->srb1_poll_pdu = LTE_PollPDU_pInfinity;
+            else
+              AssertFatal (0,
+                           "Bad config value when parsing eNB configuration file %s, enb %d  srb1_poll_pdu %u!\n",
+                           RC.config_file_name, i, srb1_params.srb1_poll_pdu);
+        }
+
+        rrc->srb1_poll_byte             = srb1_params.srb1_poll_byte;
+
+        switch (srb1_params.srb1_poll_byte) {
+          case 25:
+            rrc->srb1_poll_byte = LTE_PollByte_kB25;
+            break;
+
+          case 50:
+            rrc->srb1_poll_byte = LTE_PollByte_kB50;
+            break;
+
+          case 75:
+            rrc->srb1_poll_byte = LTE_PollByte_kB75;
+            break;
+
+          case 100:
+            rrc->srb1_poll_byte = LTE_PollByte_kB100;
+            break;
+
+          case 125:
+            rrc->srb1_poll_byte = LTE_PollByte_kB125;
+            break;
+
+          case 250:
+            rrc->srb1_poll_byte = LTE_PollByte_kB250;
+            break;
+
+          case 375:
+            rrc->srb1_poll_byte = LTE_PollByte_kB375;
+            break;
+
+          case 500:
+            rrc->srb1_poll_byte = LTE_PollByte_kB500;
+            break;
+
+          case 750:
+            rrc->srb1_poll_byte = LTE_PollByte_kB750;
+            break;
+
+          case 1000:
+            rrc->srb1_poll_byte = LTE_PollByte_kB1000;
+            break;
+
+          case 1250:
+            rrc->srb1_poll_byte = LTE_PollByte_kB1250;
+            break;
+
+          case 1500:
+            rrc->srb1_poll_byte = LTE_PollByte_kB1500;
+            break;
+
+          case 2000:
+            rrc->srb1_poll_byte = LTE_PollByte_kB2000;
+            break;
+
+          case 3000:
+            rrc->srb1_poll_byte = LTE_PollByte_kB3000;
+            break;
+
+          default:
+            if (srb1_params.srb1_poll_byte >= 10000)
+              rrc->srb1_poll_byte = LTE_PollByte_kBinfinity;
+            else
+              AssertFatal (0,
+                           "Bad config value when parsing eNB configuration file %s, enb %d  srb1_poll_byte %u!\n",
+                           RC.config_file_name, i, srb1_params.srb1_poll_byte);
+        }
+
+        if (srb1_params.srb1_timer_poll_retransmit <= 250) {
+          rrc->srb1_timer_poll_retransmit = (srb1_params.srb1_timer_poll_retransmit - 5)/5;
+        } else if (srb1_params.srb1_timer_poll_retransmit <= 500) {
+          rrc->srb1_timer_poll_retransmit = (srb1_params.srb1_timer_poll_retransmit - 300)/50 + 50;
+        } else {
+          AssertFatal (0,
+                       "Bad config value when parsing eNB configuration file %s, enb %d  srb1_timer_poll_retransmit %u!\n",
+                       RC.config_file_name, i, srb1_params.srb1_timer_poll_retransmit);
+        }
+
+        if (srb1_params.srb1_timer_status_prohibit <= 250) {
+          rrc->srb1_timer_status_prohibit = srb1_params.srb1_timer_status_prohibit/5;
+        } else if ((srb1_params.srb1_timer_poll_retransmit >= 300) && (srb1_params.srb1_timer_poll_retransmit <= 500)) {
+          rrc->srb1_timer_status_prohibit = (srb1_params.srb1_timer_status_prohibit - 300)/50 + 51;
+        } else {
+          AssertFatal (0,
+                       "Bad config value when parsing eNB configuration file %s, enb %d  srb1_timer_status_prohibit %u!\n",
+                       RC.config_file_name, i, srb1_params.srb1_timer_status_prohibit);
+        }
+
+        switch (srb1_params.srb1_timer_reordering) {
+          case 0:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms0;
+            break;
+
+          case 5:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms5;
+            break;
+
+          case 10:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms10;
+            break;
+
+          case 15:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms15;
+            break;
+
+          case 20:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms20;
+            break;
+
+          case 25:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms25;
+            break;
+
+          case 30:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms30;
+            break;
+
+          case 35:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms35;
+            break;
+
+          case 40:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms40;
+            break;
+
+          case 45:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms45;
+            break;
+
+          case 50:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms50;
+            break;
+
+          case 55:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms55;
+            break;
+
+          case 60:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms60;
+            break;
+
+          case 65:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms65;
+            break;
+
+          case 70:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms70;
+            break;
+
+          case 75:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms75;
+            break;
+
+          case 80:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms80;
+            break;
+
+          case 85:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms85;
+            break;
+
+          case 90:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms90;
+            break;
+
+          case 95:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms95;
+            break;
+
+          case 100:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms100;
+            break;
+
+          case 110:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms110;
+            break;
+
+          case 120:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms120;
+            break;
+
+          case 130:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms130;
+            break;
+
+          case 140:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms140;
+            break;
+
+          case 150:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms150;
+            break;
+
+          case 160:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms160;
+            break;
+
+          case 170:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms170;
+            break;
+
+          case 180:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms180;
+            break;
+
+          case 190:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms190;
+            break;
+
+          case 200:
+            rrc->srb1_timer_reordering = LTE_T_Reordering_ms200;
+            break;
+
+          default:
+            AssertFatal (0,
+                         "Bad config value when parsing eNB configuration file %s, enb %d  srb1_timer_reordering %u!\n",
+                         RC.config_file_name, i, srb1_params.srb1_timer_reordering);
+        }
       }
     }
   }
 
   return 0;
-
 }
 
 int RCconfig_gtpu(void ) {
@@ -1769,12 +1668,8 @@ int RCconfig_S1(
   const char *active_enb[MAX_ENB];
   char *address = NULL;
   char *cidr    = NULL;
-
   ccparams_lte_t ccparams_lte;
-
-  memset((void*)&ccparams_lte,0,sizeof(ccparams_lte_t));
-
-
+  memset((void *)&ccparams_lte,0,sizeof(ccparams_lte_t));
   // for no gcc warnings
   (void)my_int;
   memset((char *)active_enb, 0, MAX_ENB * sizeof(char *));
@@ -1909,7 +1804,7 @@ int RCconfig_S1(
 
               default: {
                 LOG_E(S1AP, "Default I-DRX value in conf file is invalid (%i). Should be 32, 64, 128 or 256. \
-                             Default DRX set to 32 in MME configuration\n",
+                           Default DRX set to 32 in MME configuration\n",
                       ccparams_lte.pcch_defaultPagingCycle);
                 S1AP_REGISTER_ENB_REQ(msg_p).default_drx = 0;
               }
@@ -2002,18 +1897,13 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
   int   enb_id;
   char *address = NULL;
   char *cidr    = NULL;
-
   ccparams_lte_t ccparams_lte;
-
-  memset((void*)&ccparams_lte,0,sizeof(ccparams_lte_t));
-
-
+  memset((void *)&ccparams_lte,0,sizeof(ccparams_lte_t));
   paramdef_t ENBSParams[] = ENBSPARAMS_DESC;
   paramdef_t ENBParams[]  = ENBPARAMS_DESC;
   paramlist_def_t ENBParamList = {ENB_CONFIG_STRING_ENB_LIST,NULL,0};
   /* get global parameters, defined outside any section in the config file */
   config_get( ENBSParams,sizeof(ENBSParams)/sizeof(paramdef_t),NULL);
-
   checkedparam_t config_check_CCparams[] = CCPARAMS_CHECK;
   paramdef_t CCsParams[] = CCPARAMS_DESC(ccparams_lte);
   paramlist_def_t CCsParamList = {ENB_CONFIG_STRING_COMPONENT_CARRIERS, NULL, 0};
@@ -2023,224 +1913,207 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
     CCsParams[I].chkPptr = &(config_check_CCparams[I]);
   }
 
-  /*#if defined(ENABLE_ITTI) && defined(ENABLE_USE_MME)
-    if (strcasecmp( *(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr), ENB_CONFIG_STRING_ASN1_VERBOSITY_NONE) == 0) {
-    asn_debug      = 0;
-    asn1_xer_print = 0;
-    } else if (strcasecmp( *(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr), ENB_CONFIG_STRING_ASN1_VERBOSITY_INFO) == 0) {
-    asn_debug      = 1;
-    asn1_xer_print = 1;
-    } else if (strcasecmp(*(ENBSParams[ENB_ASN1_VERBOSITY_IDX].strptr) , ENB_CONFIG_STRING_ASN1_VERBOSITY_ANNOYING) == 0) {
-    asn_debug      = 1;
-    asn1_xer_print = 2;
-    } else {
-    asn_debug      = 0;
-    asn1_xer_print = 0;
-    }
-    #endif */
   AssertFatal(i < ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt,
-    "Failed to parse config file %s, %uth attribute %s \n",
-    RC.config_file_name, i, ENB_CONFIG_STRING_ACTIVE_ENBS);
+              "Failed to parse config file %s, %uth attribute %s \n",
+              RC.config_file_name, i, ENB_CONFIG_STRING_ACTIVE_ENBS);
 
   if (ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt > 0) {
     // Output a list of all eNBs.
     config_getlist( &ENBParamList,ENBParams,sizeof(ENBParams)/sizeof(paramdef_t),NULL);
-    
+
     if (ENBParamList.numelt > 0) {
       for (k = 0; k < ENBParamList.numelt; k++) {
-	if (ENBParamList.paramarray[k][ENB_ENB_ID_IDX].uptr == NULL) {
-	  // Calculate a default eNB ID
-# if defined(ENABLE_USE_MME)
-	  uint32_t hash;
-	  hash = s1ap_generate_eNB_id ();
-	  enb_id = k + (hash & 0xFFFF8);
-# else
-	  enb_id = k;
-# endif
-	} else {
-	  enb_id = *(ENBParamList.paramarray[k][ENB_ENB_ID_IDX].uptr);
-	}
-	
-	// search if in active list
-	for (j = 0; j < ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt; j++) {
-	  if (strcmp(ENBSParams[ENB_ACTIVE_ENBS_IDX].strlistptr[j], *(ENBParamList.paramarray[k][ENB_ENB_NAME_IDX].strptr)) == 0) {
-	    paramdef_t PLMNParams[] = PLMNPARAMS_DESC;
-	    paramlist_def_t PLMNParamList = {ENB_CONFIG_STRING_PLMN_LIST, NULL, 0};
-	    /* map parameter checking array instances to parameter definition array instances */
-	    checkedparam_t config_check_PLMNParams [] = PLMNPARAMS_CHECK;
-	    
-	    for (int I = 0; I < sizeof(PLMNParams) / sizeof(paramdef_t); ++I)
-	      PLMNParams[I].chkPptr = &(config_check_PLMNParams[I]);
-	    
-	    paramdef_t X2Params[]  = X2PARAMS_DESC;
-	    paramlist_def_t X2ParamList = {ENB_CONFIG_STRING_TARGET_ENB_X2_IP_ADDRESS,NULL,0};
-	    paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
-	    paramdef_t NETParams[]  =  NETPARAMS_DESC;
-	    /* TODO: fix the size - if set lower we have a crash (MAX_OPTNAME_SIZE was 64 when this code was written) */
-	    /* this is most probably a problem with the config module */
-	    char aprefix[MAX_OPTNAME_SIZE*80 + 8];
-	    sprintf(aprefix,"%s.[%i]",ENB_CONFIG_STRING_ENB_LIST,k);
-	    /* Some default/random parameters */
-	    X2AP_REGISTER_ENB_REQ (msg_p).eNB_id = enb_id;
-	    
-	    if (strcmp(*(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr), "CELL_MACRO_ENB") == 0) {
-	      X2AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_MACRO_ENB;
-	    } else  if (strcmp(*(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr), "CELL_HOME_ENB") == 0) {
-	      X2AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_HOME_ENB;
-	    } else {
-	      AssertFatal (0,
-			   "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for cell_type choice: CELL_MACRO_ENB or CELL_HOME_ENB !\n",
-			   RC.config_file_name, i, *(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr));
-	    }
-	    
-	    X2AP_REGISTER_ENB_REQ (msg_p).eNB_name         = strdup(*(ENBParamList.paramarray[k][ENB_ENB_NAME_IDX].strptr));
-	    X2AP_REGISTER_ENB_REQ (msg_p).tac              = *ENBParamList.paramarray[k][ENB_TRACKING_AREA_CODE_IDX].uptr;
-	    config_getlist(&PLMNParamList, PLMNParams, sizeof(PLMNParams)/sizeof(paramdef_t), aprefix);
-	    
-	    if (PLMNParamList.numelt < 1 || PLMNParamList.numelt > 6)
-	      AssertFatal(0, "The number of PLMN IDs must be in [1,6], but is %d\n",
-			  PLMNParamList.numelt);
-	    
-	    
-	    if (PLMNParamList.numelt > 1)
-	      LOG_W(X2AP, "X2AP currently handles only one PLMN, ignoring the others!\n");
-	    
-	    X2AP_REGISTER_ENB_REQ (msg_p).mcc = *PLMNParamList.paramarray[0][ENB_MOBILE_COUNTRY_CODE_IDX].uptr;
-	    X2AP_REGISTER_ENB_REQ (msg_p).mnc = *PLMNParamList.paramarray[0][ENB_MOBILE_NETWORK_CODE_IDX].uptr;
-	    X2AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length = *PLMNParamList.paramarray[0][ENB_MNC_DIGIT_LENGTH].u8ptr;
-	    AssertFatal(X2AP_REGISTER_ENB_REQ(msg_p).mnc_digit_length == 3
-			|| X2AP_REGISTER_ENB_REQ(msg_p).mnc < 100,
-			"MNC %d cannot be encoded in two digits as requested (change mnc_digit_length to 3)\n",
-			X2AP_REGISTER_ENB_REQ(msg_p).mnc);
-	    /* CC params */
-	    config_getlist(&CCsParamList, NULL, 0, aprefix);
-	    X2AP_REGISTER_ENB_REQ (msg_p).num_cc = CCsParamList.numelt;
-	    
-	    if (CCsParamList.numelt > 0) {
-	      //char ccspath[MAX_OPTNAME_SIZE*2 + 16];
-	      for (J = 0; J < CCsParamList.numelt ; J++) {
-		sprintf(aprefix, "%s.[%i].%s.[%i]", ENB_CONFIG_STRING_ENB_LIST, k, ENB_CONFIG_STRING_COMPONENT_CARRIERS, J);
-		config_get(CCsParams, sizeof(CCsParams)/sizeof(paramdef_t), aprefix);
-		X2AP_REGISTER_ENB_REQ (msg_p).eutra_band[J] = ccparams_lte.eutra_band;
-		X2AP_REGISTER_ENB_REQ (msg_p).downlink_frequency[J] = (uint32_t) ccparams_lte.downlink_frequency;
-		X2AP_REGISTER_ENB_REQ (msg_p).uplink_frequency_offset[J] = (unsigned int) ccparams_lte.uplink_frequency_offset;
-		X2AP_REGISTER_ENB_REQ (msg_p).Nid_cell[J]= ccparams_lte.Nid_cell;
-		
-		if (ccparams_lte.Nid_cell>503) {
-		  AssertFatal (0,
-			       "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for Nid_cell choice: 0...503 !\n",
-			       RC.config_file_name, k, ccparams_lte.Nid_cell);
-		}
-		
-		X2AP_REGISTER_ENB_REQ (msg_p).N_RB_DL[J]= ccparams_lte.N_RB_DL;
-		
-		if ((ccparams_lte.N_RB_DL!=6) && (ccparams_lte.N_RB_DL!=15) && (ccparams_lte.N_RB_DL!=25) && (ccparams_lte.N_RB_DL!=50) && (ccparams_lte.N_RB_DL!=75) && (ccparams_lte.N_RB_DL!=100)) {
-		  AssertFatal (0,
-			       "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for N_RB_DL choice: 6,15,25,50,75,100 !\n",
-			       RC.config_file_name, k, ccparams_lte.N_RB_DL);
-		}
-		
-		if (strcmp(ccparams_lte.frame_type, "FDD") == 0) {
-		  X2AP_REGISTER_ENB_REQ (msg_p).frame_type[J] = FDD;
-		} else  if (strcmp(ccparams_lte.frame_type, "TDD") == 0) {
-		  X2AP_REGISTER_ENB_REQ (msg_p).frame_type[J] = TDD;
-		} else {
-		  AssertFatal (0,
-			       "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for frame_type choice: FDD or TDD !\n",
-			       RC.config_file_name, k, ccparams_lte.frame_type);
-		}
-		
-		X2AP_REGISTER_ENB_REQ (msg_p).fdd_earfcn_DL[J] = to_earfcn_DL(ccparams_lte.eutra_band, ccparams_lte.downlink_frequency, ccparams_lte.N_RB_DL);
-		X2AP_REGISTER_ENB_REQ (msg_p).fdd_earfcn_UL[J] = to_earfcn_UL(ccparams_lte.eutra_band, ccparams_lte.downlink_frequency + ccparams_lte.uplink_frequency_offset, ccparams_lte.N_RB_DL);
-	      }
-	    }
-	    
-	    sprintf(aprefix,"%s.[%i]",ENB_CONFIG_STRING_ENB_LIST,k);
-	    config_getlist( &X2ParamList,X2Params,sizeof(X2Params)/sizeof(paramdef_t),aprefix);
-	    AssertFatal(X2ParamList.numelt <= X2AP_MAX_NB_ENB_IP_ADDRESS,
-			"value of X2ParamList.numelt %d must be lower than X2AP_MAX_NB_ENB_IP_ADDRESS %d value: reconsider to increase X2AP_MAX_NB_ENB_IP_ADDRESS\n",
-			X2ParamList.numelt,X2AP_MAX_NB_ENB_IP_ADDRESS);
-	    X2AP_REGISTER_ENB_REQ (msg_p).nb_x2 = 0;
-	    
-	    for (l = 0; l < X2ParamList.numelt; l++) {
-	      X2AP_REGISTER_ENB_REQ (msg_p).nb_x2 += 1;
-	      strcpy(X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4_address,*(X2ParamList.paramarray[l][ENB_X2_IPV4_ADDRESS_IDX].strptr));
-	      strcpy(X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6_address,*(X2ParamList.paramarray[l][ENB_X2_IPV6_ADDRESS_IDX].strptr));
-	      
-	      if (strcmp(*(X2ParamList.paramarray[l][ENB_X2_IP_ADDRESS_PREFERENCE_IDX].strptr), "ipv4") == 0) {
-		X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4 = 1;
-	      } else if (strcmp(*(X2ParamList.paramarray[l][ENB_X2_IP_ADDRESS_PREFERENCE_IDX].strptr), "ipv6") == 0) {
-		X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6 = 1;
-	      } else if (strcmp(*(X2ParamList.paramarray[l][ENB_X2_IP_ADDRESS_PREFERENCE_IDX].strptr), "no") == 0) {
-		X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4 = 1;
-		X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6 = 1;
-	      }
-	    }
-	    
-	    
-	    // SCTP SETTING
-	    X2AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = SCTP_OUT_STREAMS;
-	    X2AP_REGISTER_ENB_REQ (msg_p).sctp_in_streams  = SCTP_IN_STREAMS;
-# if defined(ENABLE_USE_MME)
-	    sprintf(aprefix,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,k,ENB_CONFIG_STRING_SCTP_CONFIG);
-	    config_get( SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix);
-	    X2AP_REGISTER_ENB_REQ (msg_p).sctp_in_streams = (uint16_t)*(SCTPParams[ENB_SCTP_INSTREAMS_IDX].uptr);
-	    X2AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = (uint16_t)*(SCTPParams[ENB_SCTP_OUTSTREAMS_IDX].uptr);
-#endif
-	    sprintf(aprefix,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,k,ENB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
-	    // NETWORK_INTERFACES
-	    config_get( NETParams,sizeof(NETParams)/sizeof(paramdef_t),aprefix);
-	    X2AP_REGISTER_ENB_REQ (msg_p).enb_port_for_X2C = (uint32_t)*(NETParams[ENB_PORT_FOR_X2C_IDX].uptr);
-	    
-	    if ((NETParams[ENB_IPV4_ADDR_FOR_X2C_IDX].strptr == NULL) || (X2AP_REGISTER_ENB_REQ (msg_p).enb_port_for_X2C == 0)) {
-	      LOG_E(RRC,"Add eNB IPv4 address and/or port for X2C in the CONF file!\n");
-	      exit(1);
-	    }
-	    
-	    cidr = *(NETParams[ENB_IPV4_ADDR_FOR_X2C_IDX].strptr);
-	    address = strtok(cidr, "/");
-	    X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv6 = 0;
-	    X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv4 = 1;
-	    strcpy(X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv4_address, address);
-	  }
-	}
+        if (ENBParamList.paramarray[k][ENB_ENB_ID_IDX].uptr == NULL) {
+          // Calculate a default eNB ID
+          if (EPC_MODE_ENABLED) {
+            uint32_t hash;
+            hash = s1ap_generate_eNB_id ();
+            enb_id = k + (hash & 0xFFFF8);
+          } else {
+            enb_id = k;
+          }
+        } else {
+          enb_id = *(ENBParamList.paramarray[k][ENB_ENB_ID_IDX].uptr);
+        }
+
+        // search if in active list
+        for (j = 0; j < ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt; j++) {
+          if (strcmp(ENBSParams[ENB_ACTIVE_ENBS_IDX].strlistptr[j], *(ENBParamList.paramarray[k][ENB_ENB_NAME_IDX].strptr)) == 0) {
+            paramdef_t PLMNParams[] = PLMNPARAMS_DESC;
+            paramlist_def_t PLMNParamList = {ENB_CONFIG_STRING_PLMN_LIST, NULL, 0};
+            /* map parameter checking array instances to parameter definition array instances */
+            checkedparam_t config_check_PLMNParams [] = PLMNPARAMS_CHECK;
+
+            for (int I = 0; I < sizeof(PLMNParams) / sizeof(paramdef_t); ++I)
+              PLMNParams[I].chkPptr = &(config_check_PLMNParams[I]);
+
+            paramdef_t X2Params[]  = X2PARAMS_DESC;
+            paramlist_def_t X2ParamList = {ENB_CONFIG_STRING_TARGET_ENB_X2_IP_ADDRESS,NULL,0};
+            paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
+            paramdef_t NETParams[]  =  NETPARAMS_DESC;
+            /* TODO: fix the size - if set lower we have a crash (MAX_OPTNAME_SIZE was 64 when this code was written) */
+            /* this is most probably a problem with the config module */
+            char aprefix[MAX_OPTNAME_SIZE*80 + 8];
+            sprintf(aprefix,"%s.[%i]",ENB_CONFIG_STRING_ENB_LIST,k);
+            /* Some default/random parameters */
+            X2AP_REGISTER_ENB_REQ (msg_p).eNB_id = enb_id;
+
+            if (strcmp(*(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr), "CELL_MACRO_ENB") == 0) {
+              X2AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_MACRO_ENB;
+            } else  if (strcmp(*(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr), "CELL_HOME_ENB") == 0) {
+              X2AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_HOME_ENB;
+            } else {
+              AssertFatal (0,
+                           "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for cell_type choice: CELL_MACRO_ENB or CELL_HOME_ENB !\n",
+                           RC.config_file_name, i, *(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr));
+            }
+
+            X2AP_REGISTER_ENB_REQ (msg_p).eNB_name         = strdup(*(ENBParamList.paramarray[k][ENB_ENB_NAME_IDX].strptr));
+            X2AP_REGISTER_ENB_REQ (msg_p).tac              = *ENBParamList.paramarray[k][ENB_TRACKING_AREA_CODE_IDX].uptr;
+            config_getlist(&PLMNParamList, PLMNParams, sizeof(PLMNParams)/sizeof(paramdef_t), aprefix);
+
+            if (PLMNParamList.numelt < 1 || PLMNParamList.numelt > 6)
+              AssertFatal(0, "The number of PLMN IDs must be in [1,6], but is %d\n",
+                          PLMNParamList.numelt);
+
+            if (PLMNParamList.numelt > 1)
+              LOG_W(X2AP, "X2AP currently handles only one PLMN, ignoring the others!\n");
+
+            X2AP_REGISTER_ENB_REQ (msg_p).mcc = *PLMNParamList.paramarray[0][ENB_MOBILE_COUNTRY_CODE_IDX].uptr;
+            X2AP_REGISTER_ENB_REQ (msg_p).mnc = *PLMNParamList.paramarray[0][ENB_MOBILE_NETWORK_CODE_IDX].uptr;
+            X2AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length = *PLMNParamList.paramarray[0][ENB_MNC_DIGIT_LENGTH].u8ptr;
+            AssertFatal(X2AP_REGISTER_ENB_REQ(msg_p).mnc_digit_length == 3
+                        || X2AP_REGISTER_ENB_REQ(msg_p).mnc < 100,
+                        "MNC %d cannot be encoded in two digits as requested (change mnc_digit_length to 3)\n",
+                        X2AP_REGISTER_ENB_REQ(msg_p).mnc);
+            /* CC params */
+            config_getlist(&CCsParamList, NULL, 0, aprefix);
+            X2AP_REGISTER_ENB_REQ (msg_p).num_cc = CCsParamList.numelt;
+
+            if (CCsParamList.numelt > 0) {
+              //char ccspath[MAX_OPTNAME_SIZE*2 + 16];
+              for (J = 0; J < CCsParamList.numelt ; J++) {
+                sprintf(aprefix, "%s.[%i].%s.[%i]", ENB_CONFIG_STRING_ENB_LIST, k, ENB_CONFIG_STRING_COMPONENT_CARRIERS, J);
+                config_get(CCsParams, sizeof(CCsParams)/sizeof(paramdef_t), aprefix);
+                X2AP_REGISTER_ENB_REQ (msg_p).eutra_band[J] = ccparams_lte.eutra_band;
+                X2AP_REGISTER_ENB_REQ (msg_p).downlink_frequency[J] = (uint32_t) ccparams_lte.downlink_frequency;
+                X2AP_REGISTER_ENB_REQ (msg_p).uplink_frequency_offset[J] = (unsigned int) ccparams_lte.uplink_frequency_offset;
+                X2AP_REGISTER_ENB_REQ (msg_p).Nid_cell[J]= ccparams_lte.Nid_cell;
+
+                if (ccparams_lte.Nid_cell>503) {
+                  AssertFatal (0,
+                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for Nid_cell choice: 0...503 !\n",
+                               RC.config_file_name, k, ccparams_lte.Nid_cell);
+                }
+
+                X2AP_REGISTER_ENB_REQ (msg_p).N_RB_DL[J]= ccparams_lte.N_RB_DL;
+
+                if ((ccparams_lte.N_RB_DL!=6) && (ccparams_lte.N_RB_DL!=15) && (ccparams_lte.N_RB_DL!=25) && (ccparams_lte.N_RB_DL!=50) && (ccparams_lte.N_RB_DL!=75) && (ccparams_lte.N_RB_DL!=100)) {
+                  AssertFatal (0,
+                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for N_RB_DL choice: 6,15,25,50,75,100 !\n",
+                               RC.config_file_name, k, ccparams_lte.N_RB_DL);
+                }
+
+                if (strcmp(ccparams_lte.frame_type, "FDD") == 0) {
+                  X2AP_REGISTER_ENB_REQ (msg_p).frame_type[J] = FDD;
+                } else  if (strcmp(ccparams_lte.frame_type, "TDD") == 0) {
+                  X2AP_REGISTER_ENB_REQ (msg_p).frame_type[J] = TDD;
+                } else {
+                  AssertFatal (0,
+                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for frame_type choice: FDD or TDD !\n",
+                               RC.config_file_name, k, ccparams_lte.frame_type);
+                }
+
+                X2AP_REGISTER_ENB_REQ (msg_p).fdd_earfcn_DL[J] = to_earfcn_DL(ccparams_lte.eutra_band, ccparams_lte.downlink_frequency, ccparams_lte.N_RB_DL);
+                X2AP_REGISTER_ENB_REQ (msg_p).fdd_earfcn_UL[J] = to_earfcn_UL(ccparams_lte.eutra_band, ccparams_lte.downlink_frequency + ccparams_lte.uplink_frequency_offset, ccparams_lte.N_RB_DL);
+              }
+            }
+
+            sprintf(aprefix,"%s.[%i]",ENB_CONFIG_STRING_ENB_LIST,k);
+            config_getlist( &X2ParamList,X2Params,sizeof(X2Params)/sizeof(paramdef_t),aprefix);
+            AssertFatal(X2ParamList.numelt <= X2AP_MAX_NB_ENB_IP_ADDRESS,
+                        "value of X2ParamList.numelt %d must be lower than X2AP_MAX_NB_ENB_IP_ADDRESS %d value: reconsider to increase X2AP_MAX_NB_ENB_IP_ADDRESS\n",
+                        X2ParamList.numelt,X2AP_MAX_NB_ENB_IP_ADDRESS);
+            X2AP_REGISTER_ENB_REQ (msg_p).nb_x2 = 0;
+
+            for (l = 0; l < X2ParamList.numelt; l++) {
+              X2AP_REGISTER_ENB_REQ (msg_p).nb_x2 += 1;
+              strcpy(X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4_address,*(X2ParamList.paramarray[l][ENB_X2_IPV4_ADDRESS_IDX].strptr));
+              strcpy(X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6_address,*(X2ParamList.paramarray[l][ENB_X2_IPV6_ADDRESS_IDX].strptr));
+
+              if (strcmp(*(X2ParamList.paramarray[l][ENB_X2_IP_ADDRESS_PREFERENCE_IDX].strptr), "ipv4") == 0) {
+                X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4 = 1;
+              } else if (strcmp(*(X2ParamList.paramarray[l][ENB_X2_IP_ADDRESS_PREFERENCE_IDX].strptr), "ipv6") == 0) {
+                X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6 = 1;
+              } else if (strcmp(*(X2ParamList.paramarray[l][ENB_X2_IP_ADDRESS_PREFERENCE_IDX].strptr), "no") == 0) {
+                X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4 = 1;
+                X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6 = 1;
+              }
+            }
+
+            // SCTP SETTING
+            X2AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = SCTP_OUT_STREAMS;
+            X2AP_REGISTER_ENB_REQ (msg_p).sctp_in_streams  = SCTP_IN_STREAMS;
+
+            if (EPC_MODE_ENABLED) {
+              sprintf(aprefix,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,k,ENB_CONFIG_STRING_SCTP_CONFIG);
+              config_get( SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix);
+              X2AP_REGISTER_ENB_REQ (msg_p).sctp_in_streams = (uint16_t)*(SCTPParams[ENB_SCTP_INSTREAMS_IDX].uptr);
+              X2AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = (uint16_t)*(SCTPParams[ENB_SCTP_OUTSTREAMS_IDX].uptr);
+            }
+
+            sprintf(aprefix,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,k,ENB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
+            // NETWORK_INTERFACES
+            config_get( NETParams,sizeof(NETParams)/sizeof(paramdef_t),aprefix);
+            X2AP_REGISTER_ENB_REQ (msg_p).enb_port_for_X2C = (uint32_t)*(NETParams[ENB_PORT_FOR_X2C_IDX].uptr);
+
+            if ((NETParams[ENB_IPV4_ADDR_FOR_X2C_IDX].strptr == NULL) || (X2AP_REGISTER_ENB_REQ (msg_p).enb_port_for_X2C == 0)) {
+              LOG_E(RRC,"Add eNB IPv4 address and/or port for X2C in the CONF file!\n");
+              exit(1);
+            }
+
+            cidr = *(NETParams[ENB_IPV4_ADDR_FOR_X2C_IDX].strptr);
+            address = strtok(cidr, "/");
+            X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv6 = 0;
+            X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv4 = 1;
+            strcpy(X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv4_address, address);
+          }
+        }
       }
     }
   }
-  
+
   return 0;
 }
 
 int RCconfig_parallel(void) {
   char *parallel_conf = NULL;
   char *worker_conf   = NULL;
-  
-
   paramdef_t ThreadParams[]  = THREAD_CONF_DESC;
   paramlist_def_t THREADParamList = {THREAD_CONFIG_STRING_THREAD_STRUCT,NULL,0};
   config_getlist( &THREADParamList,NULL,0,NULL);
 
-  if(parallel_config == NULL){
+  if(parallel_config == NULL) {
     if(THREADParamList.numelt>0) {
       config_getlist( &THREADParamList,ThreadParams,sizeof(ThreadParams)/sizeof(paramdef_t),NULL);
       parallel_conf = strdup(*(THREADParamList.paramarray[0][THREAD_PARALLEL_IDX].strptr));
     } else {
       parallel_conf = strdup("PARALLEL_RU_L1_TRX_SPLIT");
     }
+
     set_parallel_conf(parallel_conf);
   }
 
-  if(worker_config == NULL){
+  if(worker_config == NULL) {
     if(THREADParamList.numelt>0) {
       config_getlist( &THREADParamList,ThreadParams,sizeof(ThreadParams)/sizeof(paramdef_t),NULL);
       worker_conf   = strdup(*(THREADParamList.paramarray[0][THREAD_WORKER_IDX].strptr));
     } else {
       worker_conf   = strdup("WORKER_ENABLE");
     }
+
     set_worker_conf(worker_conf);
   }
-
-
 
   return 0;
 }
@@ -2255,13 +2128,12 @@ void RCConfig(void) {
   /* get global parameters, defined outside any section in the config file */
   printf("Getting ENBSParams\n");
   config_get( ENBSParams,sizeof(ENBSParams)/sizeof(paramdef_t),NULL);
-# if defined(ENABLE_USE_MME)
-  EPC_MODE_ENABLED = ((*ENBSParams[ENB_NOS1_IDX].uptr) == 0);
-#endif
+  //EPC_MODE_ENABLED = ((*ENBSParams[ENB_NOS1_IDX].uptr) == 0);
   RC.nb_inst = ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt;
 
   if (RC.nb_inst > 0) {
     RC.nb_CC = (int *)malloc((1+RC.nb_inst)*sizeof(int));
+
     for (int i=0; i<RC.nb_inst; i++) {
       sprintf(aprefix,"%s.[%i]",ENB_CONFIG_STRING_ENB_LIST,i);
       config_getlist( &CCsParamList,NULL,0, aprefix);
