@@ -224,7 +224,7 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build eNb-ethernet") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                             }
                         }
                     }
@@ -233,7 +233,7 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build UE-ethernet") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
                             }
                         }
                     }
@@ -368,6 +368,21 @@ pipeline {
                                         timeout (time: 30, unit: 'MINUTES') {
                                             try {
                                                 sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant l2-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                                            } catch (Exception e) {
+                                                currentBuild.result = 'FAILURE'
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        stage ("Test L1 simulator") {
+                            steps {
+                                script {
+                                    gitlabCommitStatus(name: "Test L1-sim") {
+                                        timeout (time: 30, unit: 'MINUTES') {
+                                            try {
+                                                sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
                                             } catch (Exception e) {
                                                 currentBuild.result = 'FAILURE'
                                             }

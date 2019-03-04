@@ -1683,6 +1683,17 @@ function run_test_on_vm {
         scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
         scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
 
+        if [ $KEEP_VM_ALIVE -eq 0 ]
+        then
+            echo "############################################################"
+            echo "Destroying VMs"
+            echo "############################################################"
+            uvt-kvm destroy $ENB_VM_NAME
+            ssh-keygen -R $ENB_VM_IP_ADDR
+            uvt-kvm destroy $UE_VM_NAME
+            ssh-keygen -R $UE_VM_IP_ADDR
+        fi
+
         echo "############################################################"
         echo "Checking run status"
         echo "############################################################"
