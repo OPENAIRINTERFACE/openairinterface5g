@@ -44,7 +44,7 @@
 
 #include "nas_config.h"
 #include "common/utils/LOG/log.h"
-
+#include "targets/RT/USER/lte-softmodem.h"
 
 //default values according to the examples,
 
@@ -236,18 +236,20 @@ int NAS_config(char *interfaceName, char *ipAddress, char *networkMask, char *br
 }
 
 // non blocking full configuration of the interface (address, and the two lest octets of the address)
-int nas_config(int interface_id, int thirdOctet, int fourthOctet)
+int nas_config(int interface_id, int thirdOctet, int fourthOctet, char *ifsuffix)
 {
   //char buf[5];
   char ipAddress[20];
   char broadcastAddress[20];
-  char interfaceName[8];
+  char interfaceName[20];
   int returnValue;
   sprintf(ipAddress, "10.0.%d.%d", thirdOctet,fourthOctet);
 
   sprintf(broadcastAddress, "10.0.%d.255", thirdOctet);
 
-  sprintf(interfaceName, "oai%d", interface_id);
+
+  sprintf(interfaceName, "%s%s%d", UE_NAS_USE_TUN?"oaitun_":"oip",
+          UE_NAS_USE_TUN?ifsuffix:"",interface_id);
 
   bringInterfaceUp(interfaceName, 0);
   // sets the machine address

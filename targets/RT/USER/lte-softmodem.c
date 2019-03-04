@@ -653,7 +653,7 @@ int main( int argc, char **argv ) {
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
   printf("Runtime table\n");
   fill_modeled_runtime_table(runtime_phy_rx,runtime_phy_tx);
-  pdcp_module_init( ( IS_SOFTMODEM_NOS1 && !(IS_SOFTMODEM_NOKRNMOD))? (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT);
+  pdcp_module_init( ( IS_SOFTMODEM_NOS1 && !(IS_SOFTMODEM_NOKRNMOD))? ( PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT);
 #
 
   if (RC.nb_inst > 0)  {

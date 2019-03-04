@@ -38,6 +38,7 @@
 //#include "defs.h"
 #include "PHY/defs_eNB.h"
 #include "PHY/phy_extern.h"
+#include "targets/RT/USER/lte-softmodem.h"
 
 int generate_pss(int32_t **txdataF,
                  short amp,
@@ -75,10 +76,9 @@ int generate_pss(int32_t **txdataF,
   a = (frame_parms->nb_antenna_ports_eNB == 1) ? amp: (amp*ONE_OVER_SQRT2_Q15)>>15;
   //printf("[PSS] amp=%d, a=%d\n",amp,a);
 
-#if BASIC_SIMULATOR
+  if (IS_SOFTMODEM_BASICSIM)
   /* a hack to remove at some point (the UE doesn't synch with 100 RBs) */
-  a = (frame_parms->nb_antenna_ports_eNB == 1) ? 4*amp: (amp*ONE_OVER_SQRT2_Q15)>>15;
-#endif
+    a = (frame_parms->nb_antenna_ports_eNB == 1) ? 4*amp: (amp*ONE_OVER_SQRT2_Q15)>>15;
 
   Nsymb = (frame_parms->Ncp==NORMAL)?14:12;
 

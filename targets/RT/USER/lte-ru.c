@@ -1381,12 +1381,12 @@ int setup_RU_buffers(RU_t *ru) {
     else if (frame_parms->N_RB_DL == 50)  ru->N_TA_offset = 624/2;
     else if (frame_parms->N_RB_DL == 25)  ru->N_TA_offset = 624/4;
 
-#if BASIC_SIMULATOR
+  if(IS_SOFTMODEM_BASICSIM)
     /* this is required for the basic simulator in TDD mode
      * TODO: find a proper cleaner solution
      */
     ru->N_TA_offset = 0;
-#endif
+
   }
 
   if (ru->openair0_cfg.mmapped_dma == 1) {

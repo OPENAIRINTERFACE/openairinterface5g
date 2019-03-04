@@ -810,32 +810,33 @@ rrc_ue_establish_drb(
                     (eNB_index * NB_RB_MAX) + *DRB_config->logicalChannelIdentity,
                     RADIO_ACCESS_BEARER,Rlc_info_um);
    */
-  if(PDCP_USE_NETLINK) {
-#   if !defined(OAI_NW_DRIVER_TYPE_ETHERNET) && !defined(EXMIMO) && !defined(OAI_USRP) && !defined(OAI_BLADERF) && !defined(ETHERNET) && !defined(LINK_ENB_PDCP_TO_GTPV1U)
+  if(!EPC_MODE_ENABLED) {
+//#   if !defined(OAI_NW_DRIVER_TYPE_ETHERNET) && !defined(EXMIMO) && !defined(OAI_USRP) && !defined(OAI_BLADERF) && !defined(ETHERNET) && !defined(LINK_ENB_PDCP_TO_GTPV1U)
     ip_addr_offset3 = 0;
     ip_addr_offset4 = 1;
     LOG_I(OIP,"[UE %d] trying to bring up the OAI interface oai%d, IP 10.0.%d.%d\n", ue_mod_idP, ip_addr_offset3+ue_mod_idP,
           ip_addr_offset3+ue_mod_idP+1,ip_addr_offset4+ue_mod_idP+1);
-    oip_ifup=nas_config(ip_addr_offset3+ue_mod_idP,   // interface_id
+    oip_ifup=nas_config(ip_addr_offset3+ue_mod_idP+1,   // interface_id
                         ip_addr_offset3+ue_mod_idP+1, // third_octet
-                        ip_addr_offset4+ue_mod_idP+1); // fourth_octet
+                        ip_addr_offset4+ue_mod_idP+1, // fourth_octet
+                        "ue");                        // interface suffix
 
-    if (oip_ifup == 0 ) { // interface is up --> send a config the DRB
-      LOG_I(OIP,"[UE %d] Config the oai%d to send/receive pkt on DRB %ld to/from the protocol stack\n",
+    if (oip_ifup == 0 && (!IS_SOFTMODEM_NOKRNMOD)) { // interface is up --> send a config the DRB
+      LOG_I(OIP,"[UE %d] Config the ue net interface %d to send/receive pkt on DRB %ld to/from the protocol stack\n",
             ue_mod_idP,
             ip_addr_offset3+ue_mod_idP,
-            (long int)((eNB_index * maxDRB) + DRB_config->drb_Identity));
+            (long int)((eNB_index * LTE_maxDRB) + DRB_config->drb_Identity));
       rb_conf_ipv4(0,//add
                    ue_mod_idP,//cx align with the UE index
                    ip_addr_offset3+ue_mod_idP,//inst num_enb+ue_index
-                   (eNB_index * maxDRB) + DRB_config->drb_Identity,//rb
+                   (eNB_index * LTE_maxDRB) + DRB_config->drb_Identity,//rb
                    0,//dscp
                    ipv4_address(ip_addr_offset3+ue_mod_idP+1,ip_addr_offset4+ue_mod_idP+1),//saddr
                    ipv4_address(ip_addr_offset3+ue_mod_idP+1,eNB_index+1));//daddr
       LOG_D(RRC,"[UE %d] State = Attached (eNB %d)\n",ue_mod_idP,eNB_index);
     }
 
-#    endif
+//#    endif
   }
 
   return(0);
@@ -1930,7 +1931,7 @@ rrc_ue_process_rrcConnectionReconfiguration(
 
           for (i=0; (
                  i<rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->drb_ToAddModList->list.count)
-               && (i < maxDRB); i++) {
+               && (i < LTE_maxDRB); i++) {
             // why minus 1 in RRC code for drb_identity ?
             connection_reestablishment_ind.drb_id[i]   =
               rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->drb_Identity;
@@ -2241,7 +2242,7 @@ rrc_ue_decode_dcch(
 
                 for (i=0; (
                        i<dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration.criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->drb_ToAddModList->list.count)
-                     && (i < maxDRB); i++) {
+                     && (i < LTE_maxDRB); i++) {
                   // why minus 1 in RRC code for drb_identity ?
                   connection_reconfiguration_ho_ind.drb_id[i]   =
                     dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration.criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->drb_Identity;
@@ -2295,7 +2296,7 @@ rrc_ue_decode_dcch(
 
                 for (i=0; (
                        i<dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration.criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->drb_ToAddModList->list.count)
-                     && (i < maxDRB); i++) {
+                     && (i < LTE_maxDRB); i++) {
                   // why minus 1 in RRC code for drb_identity ?
                   connection_reconfiguration_ind.drb_id[i]   =
                     dl_dcch_msg->message.choice.c1.choice.rrcConnectionReconfiguration.criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->drb_ToAddModList->list.array[i]->drb_Identity;

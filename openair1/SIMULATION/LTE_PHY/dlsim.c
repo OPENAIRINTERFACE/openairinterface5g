@@ -2139,5 +2139,7 @@ int main(int argc, char **argv) {
   else
     return(0);
 }
-
-
+/* temporary dummy implem of get_softmodem_optmask, till basic simulators implemented as device */
+uint64_t get_softmodem_optmask(void) {
+  return 0;
+}

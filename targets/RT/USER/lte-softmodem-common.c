@@ -58,6 +58,8 @@ void get_common_options(void) {
   uint32_t noS1;
   uint32_t nokrnmod;
   uint32_t nonbiot;
+  uint32_t rfsim;
+  uint32_t basicsim;
   paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
   paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
   checkedparam_t cmdline_log_CheckParams[] = CMDLINE_LOGPARAMS_CHECK_DESC;
@@ -90,6 +92,16 @@ void get_common_options(void) {
     set_softmodem_optmask(SOFTMODEM_NONBIOT_BIT);
   }
 
+  if (rfsim) {
+    set_softmodem_optmask(SOFTMODEM_RFSIM_BIT);
+  }
+
+  if (basicsim) {
+    set_softmodem_optmask(SOFTMODEM_BASICSIM_BIT);
+  }
+#if BASIC_SIMULATOR
+    set_softmodem_optmask(SOFTMODEM_BASICSIM_BIT);
+#endif
   if(parallel_config != NULL) set_parallel_conf(parallel_config);
 
   if(worker_config != NULL)   set_worker_conf(worker_config);

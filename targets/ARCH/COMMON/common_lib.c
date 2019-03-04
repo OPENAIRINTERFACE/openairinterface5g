@@ -37,6 +37,7 @@
 
 #include "common_lib.h"
 #include "common/utils/load_module_shlib.h"
+#include "targets/RT/USER/lte-softmodem.h"
 
 int set_device(openair0_device *device) {
 
@@ -96,13 +97,20 @@ int load_lib(openair0_device *device, openair0_config_t *openair0_cfg, eth_param
   loader_shlibfunc_t shlib_fdesc[1];
   int ret=0;
   char *libname;
-  if (flag == RAU_LOCAL_RADIO_HEAD) {
+  if ( IS_SOFTMODEM_BASICSIM ) {
+      libname=OAI_BASICSIM_LIBNAME;
+      shlib_fdesc[0].fname="device_init";
+  } else 
+  if ( IS_SOFTMODEM_RFSIM ) {
+      libname=OAI_RFSIM_LIBNAME;
+      shlib_fdesc[0].fname="device_init";
+  } else if (flag == RAU_LOCAL_RADIO_HEAD) {
       libname=OAI_RF_LIBNAME;
       shlib_fdesc[0].fname="device_init";
-    } else {
+  } else {
       libname=OAI_TP_LIBNAME;
       shlib_fdesc[0].fname="transport_init";      
-    } 
+  } 
   ret=load_module_shlib(libname,shlib_fdesc,1,NULL);
   if (ret < 0) {
        fprintf(stderr,"Library %s couldn't be loaded\n",libname);
