@@ -1631,28 +1631,28 @@ class SSHConnection():
 			if foundAssertion and (msgLine < 3):
 				msgLine += 1
 				msgAssertion += str(line)
-			result = re.search('Generating LTE_RRCConnectionSetup', str(line))
+			result = re.search('Generating LTE_RRCConnectionSetup|Generating RRCConnectionSetup', str(line))
 			if result is not None:
 				rrcSetupRequest += 1
-			result = re.search('LTE_RRCConnectionSetupComplete from UE', str(line))
+			result = re.search('LTE_RRCConnectionSetupComplete from UE|RRCConnectionSetupComplete from UE', str(line))
 			if result is not None:
 				rrcSetupComplete += 1
-			result = re.search('Generate LTE_RRCConnectionRelease', str(line))
+			result = re.search('Generate LTE_RRCConnectionRelease|Generate RRCConnectionRelease', str(line))
 			if result is not None:
 				rrcReleaseRequest += 1
-			result = re.search('Generate LTE_RRCConnectionReconfiguration', str(line))
+			result = re.search('Generate LTE_RRCConnectionReconfiguration|Generate RRCConnectionReconfiguration', str(line))
 			if result is not None:
 				rrcReconfigRequest += 1
-			result = re.search('LTE_RRCConnectionReconfigurationComplete from UE rnti', str(line))
+			result = re.search('LTE_RRCConnectionReconfigurationComplete from UE rnti|RRCConnectionReconfigurationComplete from UE rnti', str(line))
 			if result is not None:
 				rrcReconfigComplete += 1
-			result = re.search('LTE_RRCConnectionReestablishmentRequest', str(line))
+			result = re.search('LTE_RRCConnectionReestablishmentRequest|RRCConnectionReestablishmentRequest', str(line))
 			if result is not None:
 				rrcReestablishRequest += 1
-			result = re.search('LTE_RRCConnectionReestablishmentComplete', str(line))
+			result = re.search('LTE_RRCConnectionReestablishmentComplete|RRCConnectionReestablishmentComplete', str(line))
 			if result is not None:
 				rrcReestablishComplete += 1
-			result = re.search('LTE_RRCConnectionReestablishmentReject', str(line))
+			result = re.search('LTE_RRCConnectionReestablishmentReject|RRCConnectionReestablishmentReject', str(line))
 			if result is not None:
 				rrcReestablishReject += 1
 			result = re.search('uci->stat', str(line))
