@@ -375,6 +375,7 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu,
   gNB_config->sch_config.ssb_subcarrier_offset.value = 0;
   gNB_config->sch_config.physical_cell_id.value=Nid_cell;
   gNB_config->sch_config.ssb_scg_position_in_burst.value=position_in_burst;
+  gNB_config->subframe_config.dl_cyclic_prefix_type.value = (fp->Ncp == NORMAL) ? NFAPI_CP_NORMAL : NFAPI_CP_EXTENDED;
 
   gNB->mac_enabled     = 1;
   fp->dl_CarrierFreq = 3500000000;//from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
