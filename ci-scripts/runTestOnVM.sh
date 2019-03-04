@@ -149,8 +149,6 @@ function ping_ue_ip_addr {
 }
 
 function ping_nos1_ue_ip_addr {
-    echo "CALL ping_nos1_ue_ip_addr"
-    #echo '$@' $@
     echo "echo \"COMMAND IS: ping -I oai0 -c 20 $3\" > $4" > $1
     echo "rm -f $4" >> $1
     echo "ping -I oai0 -c 20 $UE_REAL_IP_ADDR | tee -a $4" >> $1
@@ -163,8 +161,6 @@ function ping_nos1_ue_ip_addr {
 }
 
 function ping_nos1_enb_ip_addr {
-    echo "CALL ping_nos1_enb_ip_addr"
-    #echo '$@' $@
     echo "echo \"COMMAND IS: ping -I oai0 -c 20 $3\" > $4" > $1
     echo "rm -f $4" >> $1
     echo "ping -I oai0 -c 20 $ENB_REAL_IP_ADDR | tee -a $4" >> $1
