@@ -424,6 +424,7 @@ function stop_nos1_sim_enb {
 
     ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
     rm -f $1
+
 }
 
 function start_nos1_sim_ue {
