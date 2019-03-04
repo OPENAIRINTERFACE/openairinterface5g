@@ -399,7 +399,8 @@ pipeline {
                                            string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
                                            string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
                                            string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: true)
+                                           booleanParam(name: 'eNB_mergeRequest', value: true),
+                                           string(name: 'eNB_TargetBranch', value: String.valueOf(env.gitlabTargetBranch))
                                        ]
                                 }
                             } else {
@@ -444,7 +445,8 @@ pipeline {
                                            string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
                                            string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
                                            string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: true)
+                                           booleanParam(name: 'eNB_mergeRequest', value: true),
+                                           string(name: 'eNB_TargetBranch', value: String.valueOf(env.gitlabTargetBranch))
                                        ]
                                 }
                             } else {
@@ -489,7 +491,8 @@ pipeline {
                                            string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
                                            string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
                                            string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: true)
+                                           booleanParam(name: 'eNB_mergeRequest', value: true),
+                                           string(name: 'eNB_TargetBranch', value: String.valueOf(env.gitlabTargetBranch))
                                        ]
                                 }
                             } else {
@@ -534,7 +537,8 @@ pipeline {
                                            string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
                                            string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
                                            string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
-                                           booleanParam(name: 'eNB_mergeRequest', value: true)
+                                           booleanParam(name: 'eNB_mergeRequest', value: true),
+                                           string(name: 'eNB_TargetBranch', value: String.valueOf(env.gitlabTargetBranch))
                                        ]
                                 }
                             } else {
