@@ -37,7 +37,9 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
 			       uint8_t eNB_offset,
 			       unsigned char Ns,
 			       unsigned char symbol,
-			       int dmrss)
+			       int dmrss,
+			       uint8_t ssb_index,
+			       uint8_t n_hf)
 {
   int pilot[200] __attribute__((aligned(16)));
   unsigned char aarx;
@@ -49,8 +51,6 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   //uint16_t Nid_cell = (eNB_offset == 0) ? ue->frame_parms.Nid_cell : ue->measurements.adj_cell_id[eNB_offset-1];
 
   uint8_t nushift;
-  uint8_t ssb_index=ue->i_ssb;
-  uint8_t n_hf=ue->n_hf;  
   int **dl_ch_estimates  =ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].dl_ch_estimates[eNB_offset];
   int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].rxdataF;
 

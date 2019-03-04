@@ -54,7 +54,9 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
                                uint8_t eNB_offset,
                                unsigned char Ns,
                                unsigned char symbol,
-			       int dmrss);
+			       int dmrss,
+			       uint8_t ssb_index,
+			       uint8_t n_hf);
 
 int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                               uint8_t eNB_offset,

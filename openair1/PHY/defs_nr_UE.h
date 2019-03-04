@@ -1143,8 +1143,7 @@ typedef struct {
   uint8_t               decode_MIB;
   /// temporary offset during cell search prior to MIB decoding
   int              ssb_offset;
-  uint8_t          i_ssb;
-  uint8_t          n_hf;
+  uint16_t	   symbol_offset; // offset in terms of symbols for detected ssb in sync
   int              rx_offset; /// Timing offset
   int              rx_offset_diff; /// Timing adjustment for ofdm symbol0 on HW USRP
   int              time_sync_cell;

@@ -129,7 +129,7 @@ int main(int argc, char **argv)
   unsigned char frame_type = 0;
   unsigned char pbch_phase = 0;
 
-  int frame=0,subframe=0;
+  int frame=0;
   int frame_length_complex_samples;
   int frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
@@ -610,8 +610,8 @@ int main(int argc, char **argv)
 	uint8_t ssb_index = 0;
         while (!((SSB_positions >> ssb_index) & 0x01)) ssb_index++;  // to select the first transmitted ssb
 
-	int start_symbol = nr_get_ssb_start_symbol(frame_parms, ssb_index, n_hf);
-	for (int i=start_symbol+1; i<start_symbol+4; i++) {
+	UE->symbol_offset = nr_get_ssb_start_symbol(frame_parms, ssb_index, n_hf);
+	for (int i=UE->symbol_offset+1; i<UE->symbol_offset+4; i++) {
 	  nr_slot_fep(UE,
 	  	      i,
 		      0,
@@ -620,7 +620,7 @@ int main(int argc, char **argv)
 		      NR_PBCH_EST);
         }
 
-	ret = nr_pbch_detection(UE,start_symbol+1,0);
+	ret = nr_pbch_detection(UE,UE->symbol_offset+1,0);
 
 	if (ret==0) {
 	  //UE->rx_ind.rx_indication_body->mib_pdu.ssb_index;  //not yet detected automatically
