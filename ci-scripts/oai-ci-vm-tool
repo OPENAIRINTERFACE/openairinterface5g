@@ -275,6 +275,7 @@ case $key in
     NB_PATTERN_FILES=6
     BUILD_OPTIONS="--eNB -t ETHERNET --noS1"
     NBARGS=$[$NBARGS+256]
+    RUN_OPTIONS="complex"
     shift
     ;;
     -v8)
@@ -353,6 +354,7 @@ case $key in
         LOG_PATTERN=.Rel14.txt
         NB_PATTERN_FILES=6
         BUILD_OPTIONS="--eNB -t ETHERNET --noS1"
+        RUN_OPTIONS="complex"
         NBARGS=$[$NBARGS+256]
         ;;
         ue-ethernet)
