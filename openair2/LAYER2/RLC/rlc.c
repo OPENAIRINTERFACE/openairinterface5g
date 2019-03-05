@@ -625,6 +625,7 @@ void rlc_data_ind     (
            F1AP_UL_RRC_MESSAGE(msg).rrc_container_length = sdu_sizeP;
            itti_send_msg_to_task(TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id), msg);
          }
+#ifndef UETARGET
          else
            proto_agent_send_pdcp_data_ind (
              ctxt_pP,
@@ -633,6 +634,7 @@ void rlc_data_ind     (
              rb_idP,
              sdu_sizeP,
              sdu_pP);
+#endif
      
        break;
 

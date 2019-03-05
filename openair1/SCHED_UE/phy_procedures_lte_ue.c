@@ -73,7 +73,6 @@
 
 extern double cpuf;
 
-
 void Msg1_transmitted(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id);
 void Msg3_transmitted(module_id_t module_idP,uint8_t CC_id,frame_t frameP, uint8_t eNB_id);
 
@@ -2628,6 +2627,8 @@ int ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint
         // we received a CRNTI, so we're in PUSCH
         if (ue->UE_mode[eNB_id] != PUSCH) {
           if (LOG_DEBUGFLAG(DEBUG_UE_PHYPROC)) {
+            LOG_D(PHY,"[UE  %d] Frame %d, subframe %d: Received DCI with CRNTI %x => Mode PUSCH\n",ue->Mod_id,frame_rx,subframe_rx,ue->pdcch_vars[subframe_rx&1][eNB_id]->crnti);
+          }
 
           //dump_dci(&ue->frame_parms, &dci_alloc_rx[i]);
           ue->UE_mode[eNB_id] = PUSCH;

@@ -60,7 +60,9 @@
 #  include "gtpv1u.h"
 
 #include "ENB_APP/enb_config.h"
+#ifndef UETARGET
 #include "LAYER2/PROTO_AGENT/proto_agent.h"
+#endif
 
 extern int otg_enabled;
 extern uint8_t nfapi_mode;
@@ -188,6 +190,7 @@ boolean_t pdcp_data_req(
                                   sdu_buffer_sizeP);
         LOG_UI(PDCP, "Before rlc_data_req 1, srb_flagP: %d, rb_idP: %d \n", srb_flagP, rb_idP);
       }
+#ifndef UETARGET
       if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB_CU
           || RC.rrc[ctxt_pP->module_id]->node_type == ngran_ng_eNB_CU
           || RC.rrc[ctxt_pP->module_id]->node_type == ngran_gNB_CU) {
@@ -197,7 +200,9 @@ boolean_t pdcp_data_req(
         /* assume good status */
         rlc_status = RLC_OP_STATUS_OK;
 
-      } else {
+      } else
+#endif
+      {
         rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_YES, rb_idP, muiP,
                                   confirmP, sdu_buffer_sizeP, pdcp_pdu_p
                                   ,NULL, NULL
@@ -368,6 +373,7 @@ boolean_t pdcp_data_req(
        LOG_D(PDCP, "pdcp data req on drb %d, size %d, rnti %x, node_type %d \n", 
             rb_idP, pdcp_pdu_size, ctxt_pP->rnti, RC.rrc[ctxt_pP->module_id]->node_type);
 
+#ifndef UETARGET
        if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB_CU
            || RC.rrc[ctxt_pP->module_id]->node_type == ngran_ng_eNB_CU
            || RC.rrc[ctxt_pP->module_id]->node_type == ngran_gNB_CU) {
@@ -384,9 +390,9 @@ boolean_t pdcp_data_req(
           || RC.rrc[ctxt_pP->module_id]->node_type == ngran_gNB_DU){
         LOG_E(PDCP, "Can't be DU, bad node type %d \n", RC.rrc[ctxt_pP->module_id]->node_type);
         ret=FALSE;
-      } 
-      else {
-
+      } else
+#endif
+      {
         rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP,
                                   confirmP, pdcp_pdu_size, pdcp_pdu_p, sourceL2Id,
                                   destinationL2Id
@@ -418,8 +424,6 @@ boolean_t pdcp_data_req(
               break;
           } // switch case 
       } /* end if node_type is CU */
-    
-      rlc_status = ack_result;
     }
     else // SRB
     {
