@@ -277,17 +277,18 @@ int nr_dlsch_encoding(unsigned char *a,
   nfapi_nr_dl_config_dlsch_pdu_rel15_t rel15 = dlsch->harq_processes[harq_pid]->dlsch_pdu.dlsch_pdu_rel15;
   uint16_t nb_rb = rel15.n_prb;
   uint8_t nb_symb_sch = rel15.nb_symbols;
-  uint32_t A, Z;
+  uint32_t A, Z, F=0;
   uint32_t *pz = &Z;
   uint8_t mod_order = rel15.modulation_order;
   uint16_t Kr=0,r,r_offset=0,Kr_bytes;
   uint8_t *d_tmp[MAX_NUM_DLSCH_SEGMENTS];
-  uint8_t kb,BG=1;
+  uint8_t BG=1;
   uint32_t E;
   uint8_t Ilbrm = 0;
   uint32_t Tbslbrm = 950984; //max tbs
   uint8_t nb_re_dmrs = rel15.nb_re_dmrs;
   uint16_t length_dmrs = 1;
+  float Coderate = 0.0;
 
   /*
   uint8_t *channel_input[MAX_NUM_DLSCH_SEGMENTS]; //unsigned char
@@ -337,18 +338,20 @@ int nr_dlsch_encoding(unsigned char *a,
 		    pz,
 		    &dlsch->harq_processes[harq_pid]->F);
 
-    kb = dlsch->harq_processes[harq_pid]->K/(*pz);
-    if ( kb==22){
-		BG = 1;
+    F = dlsch->harq_processes[harq_pid]->F;
+    Coderate = (float) A /(float) G;
+
+    if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
+		BG = 2;
 	}
 	else{
-		BG = 2;
+		BG = 1;
 	}
 
     Kr = dlsch->harq_processes[harq_pid]->K;
     Kr_bytes = Kr>>3;
 
-    //printf("segment Z %d kb %d k %d Kr %d BG %d\n", *pz,kb,dlsch->harq_processes[harq_pid]->K,Kr,BG);
+    //printf("segment Z %d k %d Kr %d BG %d\n", *pz,dlsch->harq_processes[harq_pid]->K,Kr,BG);
 
     //start_meas(te_stats);
     for (r=0; r<dlsch->harq_processes[harq_pid]->C; r++) {
@@ -393,6 +396,14 @@ int nr_dlsch_encoding(unsigned char *a,
   }
 
   for (r=0; r<dlsch->harq_processes[harq_pid]->C; r++) {
+
+	  	  if (dlsch->harq_processes[harq_pid]->F>0) {
+	          for (int k=(Kr-F-2*(*pz)); k<Kr-2*(*pz); k++) {
+	        	  dlsch->harq_processes[harq_pid]->d[r][k] = NR_NULL;
+	        	  //if (k<(Kr-F+8))
+	            //printf("r %d filler bits [%d] = %d \n", r,k, dlsch->harq_processes[harq_pid]->d[r][k]);
+	          }
+	  }
 #ifdef DEBUG_DLSCH_CODING
     printf("Rate Matching, Code segment %d (coded bits (G) %d,unpunctured/repeated bits per code segment %d,mod_order %d, nb_rb %d)...\n",
         r,

@@ -182,6 +182,7 @@ int nr_rate_matching_ldpc_rx(uint8_t Ilbrm,
 #endif
   }
 
+  if (rvidx !=0){
   while(k<E) {
     for (ind=0; (ind<Ncb)&&(k<E); ind++) {
       if (soft_input[ind] != NR_NULL) {
@@ -199,6 +200,7 @@ int nr_rate_matching_ldpc_rx(uint8_t Ilbrm,
 
 #endif
     }
+  }
   }
 
   return 0;
