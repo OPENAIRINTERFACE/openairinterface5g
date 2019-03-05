@@ -583,9 +583,9 @@ ue_send_sdu(module_id_t module_idP,
                        rx_lengths[i],
                        1,
                        NULL);
-
+ 
     } else if ((rx_lcids[i]  < NB_RB_MAX) && (rx_lcids[i] > DCCH1 )) {
-
+      
       LOG_D(MAC,"[UE %d] Frame %d : DLSCH -> DL-DTCH%d (eNB %d, %d bytes)\n", module_idP, frameP,rx_lcids[i], eNB_index,rx_lengths[i]);
 
 #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
@@ -2573,8 +2573,12 @@ ue_scheduler(const module_id_t module_idP,
     // data to/from NETLINK is treated in pdcp_run.
     // one socket is used in multiple UE's L2 FAPI simulator and
     // only first UE need to do this.
-    if(module_idP == 0){
+    if (UE_NAS_USE_TUN) {
       pdcp_run(&ctxt);
+    } else {
+      if(module_idP == 0){
+        pdcp_run(&ctxt);
+      }
     }
     //#endif
     UE_mac_inst[module_idP].txFrame = txFrameP;

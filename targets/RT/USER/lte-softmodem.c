@@ -82,9 +82,9 @@ unsigned short config_frames[4] = {2,9,11,13};
   #include "UTIL/OTG/otg_vars.h"
 #endif
 
-#if defined(ENABLE_ITTI)
-  #include "create_tasks.h"
-#endif
+
+#include "create_tasks.h"
+
 
 #include "PHY/INIT/phy_init.h"
 
@@ -107,9 +107,6 @@ unsigned short config_frames[4] = {2,9,11,13};
   static pthread_t                forms_thread; //xforms
 #endif //XFORMS
 
-#ifndef ENABLE_USE_MME
-  #define EPC_MODE_ENABLED 0
-#endif
 
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
@@ -482,7 +479,7 @@ void wait_eNBs(void) {
   printf("eNB L1 are configured\n");
 }
 
-#if defined(ENABLE_ITTI)
+
 /*
  * helper function to terminate a certain ITTI task
  */
@@ -578,7 +575,7 @@ int restart_L1L2(module_id_t enb_id) {
   pthread_mutex_unlock(&sync_mutex);
   return 0;
 }
-#endif
+
 
 static  void wait_nfapi_init(char *thread_name) {
   printf( "waiting for NFAPI PNF connection and population of global structure (%s)\n",thread_name);
@@ -612,6 +609,11 @@ int main( int argc, char **argv ) {
   printf("Reading in command-line options\n");
   get_options ();
 
+  if (is_nos1exec(argv[0]) )
+    set_softmodem_optmask(SOFTMODEM_NOS1_BIT);
+
+  EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
+
   if (CONFIG_ISFLAGSET(CONFIG_ABORT) ) {
     fprintf(stderr,"Getting configuration failed\n");
     exit(-1);
@@ -629,8 +631,7 @@ int main( int argc, char **argv ) {
   }
 
   cpuf=get_cpu_freq_GHz();
-#if defined(ENABLE_ITTI)
-  printf("ITTI init, useMME: %i\n" ,EPC_MODE_ENABLED);
+  printf("ITTI init, useMME: %i\n",EPC_MODE_ENABLED);
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
   // initialize mscgen log after ITTI
@@ -639,15 +640,7 @@ int main( int argc, char **argv ) {
   }
 
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
-#endif
   init_opt();
-#ifdef PDCP_USE_NETLINK
-  printf("PDCP netlink\n");
-  netlink_init();
-#if defined(PDCP_USE_NETLINK_QUEUES)
-  pdcp_netlink_init();
-#endif
-#endif
   // to make a graceful exit when ctrl-c is pressed
   signal(SIGSEGV, signal_handler);
   signal(SIGINT, signal_handler);
@@ -660,48 +653,6 @@ int main( int argc, char **argv ) {
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
   printf("Runtime table\n");
   fill_modeled_runtime_table(runtime_phy_rx,runtime_phy_tx);
-#ifndef DEADLINE_SCHEDULER
-  printf("NO deadline scheduler\n");
-  /* Currently we set affinity for UHD to CPU 0 for eNB/UE and only if number of CPUS >2 */
-  cpu_set_t cpuset;
-  int s;
-  char cpu_affinity[1024];
-  CPU_ZERO(&cpuset);
-#ifdef CPU_AFFINITY
-
-  if (get_nprocs() > 2) {
-    CPU_SET(0, &cpuset);
-    s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-
-    if (s != 0) {
-      perror( "pthread_setaffinity_np");
-      exit_fun("Error setting processor affinity");
-    }
-
-    LOG_I(HW, "Setting the affinity of main function to CPU 0, for device library to use CPU 0 only!\n");
-  }
-
-#endif
-  /* Check the actual affinity mask assigned to the thread */
-  s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-
-  if (s != 0) {
-    perror( "pthread_getaffinity_np");
-    exit_fun("Error getting processor affinity ");
-  }
-
-  memset(cpu_affinity, 0 , sizeof(cpu_affinity));
-
-  for (int j = 0; j < CPU_SETSIZE; j++) {
-    if (CPU_ISSET(j, &cpuset)) {
-      char temp[1024];
-      sprintf(temp, " CPU_%d ", j);
-      strcat(cpu_affinity, temp);
-    }
-  }
-
-  LOG_I(HW, "CPU Affinity of main() function is... %s\n", cpu_affinity);
-#endif
 
   /* Read configuration */
   if (RC.nb_inst > 0)
@@ -712,7 +663,9 @@ int main( int argc, char **argv ) {
   for (i = 0; i < RC.nb_inst; i++) {
     flexran_agent_start(i);
   }
-    
+
+  pdcp_module_init( ( IS_SOFTMODEM_NOS1 && !(IS_SOFTMODEM_NOKRNMOD))? (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT);
+
   if (RC.nb_inst > 0)  {
 
     if (create_tasks(1) < 0) {
@@ -722,6 +675,7 @@ int main( int argc, char **argv ) {
 
     for (int enb_id = 0; enb_id < RC.nb_inst; enb_id++) {
       MessageDef *msg_p = itti_alloc_new_message (TASK_ENB_APP, RRC_CONFIGURATION_REQ);
+      RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[enb_id]->configuration;
       itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
     }
   }
@@ -788,7 +742,7 @@ int main( int argc, char **argv ) {
     rt_sleep_ns(10*100000000ULL);
 
     if (nfapi_mode) {
-      printf("NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
+    LOG_I(ENB_APP,"NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
       pthread_cond_init(&sync_cond,NULL);
       pthread_mutex_init(&sync_mutex, NULL);
     }
@@ -812,8 +766,8 @@ int main( int argc, char **argv ) {
       nfapi_mode_str = "<UNKNOWN NFAPI MODE>";
       break;
     }
-  printf("NFAPI MODE:%s\n", nfapi_mode_str);
 
+    LOG_I(ENB_APP,"NFAPI MODE:%s\n", nfapi_mode_str);
 
     if (nfapi_mode==2) {// VNF
 #if defined(PRE_SCD_THREAD)
@@ -822,8 +776,7 @@ int main( int argc, char **argv ) {
       wait_nfapi_init("main?");
     }
 
-
-    printf("START MAIN THREADS\n");
+  LOG_I(ENB_APP,"START MAIN THREADS\n");
     // start the main threads
     number_of_cards = 1;
     printf("RC.nb_L1_inst:%d\n", RC.nb_L1_inst);
@@ -837,7 +790,6 @@ int main( int argc, char **argv ) {
 
     printf("wait_eNBs()\n");
     wait_eNBs();
-
     printf("About to Init RU threads RC.nb_RU:%d\n", RC.nb_RU);
 
     // RU thread and some L1 procedure aren't necessary in VNF or L2 FAPI simulator.
@@ -846,7 +798,8 @@ int main( int argc, char **argv ) {
     if (RC.nb_RU >0 && nfapi_mode != 2) {
       printf("Initializing RU threads\n");
       init_RU(get_softmodem_params()->rf_config_file);
-      for (ru_id=0;ru_id<RC.nb_RU;ru_id++) {
+
+    for (ru_id=0; ru_id<RC.nb_RU; ru_id++) {
         RC.ru[ru_id]->rf_map.card=0;
         RC.ru[ru_id]->rf_map.chain=CC_id+(get_softmodem_params()->chain_offset);
       }
@@ -862,22 +815,21 @@ int main( int argc, char **argv ) {
     fflush(stdout);
     fflush(stderr);
     wait_RUs();
-    printf("ALL RUs READY!\n");
-    printf("RC.nb_RU:%d\n", RC.nb_RU);
+  LOG_I(ENB_APP,"RC.nb_RU:%d\n", RC.nb_RU);
     // once all RUs are ready intiailize the rest of the eNBs ((dependence on final RU parameters after configuration)
     printf("ALL RUs ready - init eNBs\n");
 
     if (nfapi_mode != 1 && nfapi_mode != 2) {
-      printf("Not NFAPI mode - call init_eNB_afterRU()\n");
+    LOG_I(ENB_APP,"Not NFAPI mode - call init_eNB_afterRU()\n");
       init_eNB_afterRU();
     } else {
-      printf("NFAPI mode - DO NOT call init_eNB_afterRU()\n");
+    LOG_I(ENB_APP,"NFAPI mode - DO NOT call init_eNB_afterRU()\n");
     }
 
-    printf("ALL RUs ready - ALL eNBs ready\n");
+  LOG_UI(ENB_APP,"ALL RUs ready - ALL eNBs ready\n");
     // connect the TX/RX buffers
     sleep(1); /* wait for thread activation */
-    printf("Sending sync to all threads\n");
+  LOG_I(ENB_APP,"Sending sync to all threads\n");
     pthread_mutex_lock(&sync_mutex);
     sync_var=0;
     pthread_cond_broadcast(&sync_cond);
@@ -886,21 +838,11 @@ int main( int argc, char **argv ) {
   }
 
   // wait for end of program
-  printf("TYPE <CTRL-C> TO TERMINATE\n");
+  LOG_UI(ENB_APP,"TYPE <CTRL-C> TO TERMINATE\n");
   //getchar();
-#if defined(ENABLE_ITTI)
-  printf("Entering ITTI signals handler\n");
   itti_wait_tasks_end();
-  printf("Returned from ITTI signal handler\n");
   oai_exit=1;
-  printf("oai_exit=%d\n",oai_exit);
-#else
-
-  while (oai_exit==0)
-    rt_sleep_ns(100000000ULL);
-
-  printf("Terminating application - oai_exit=%d\n",oai_exit);
-#endif
+  LOG_I(ENB_APP,"oai_exit=%d\n",oai_exit);
   // stop threads
 
 
@@ -926,8 +868,7 @@ int main( int argc, char **argv ) {
     }
 #endif
 
-    printf("stopping MODEM threads\n");
-
+    LOG_I(ENB_APP,"stopping MODEM threads\n");
     stop_eNB(NB_eNB_INST);
     stop_RU(RC.nb_RU);
     /* release memory used by the RU/eNB threads (incomplete), after all
@@ -961,10 +902,7 @@ int main( int argc, char **argv ) {
     }
   }
 
-  
-  if (opt_enabled == 1)
-    terminate_opt();
-  
+  terminate_opt();
   logClean();
   printf("Bye.\n");
   return 0;

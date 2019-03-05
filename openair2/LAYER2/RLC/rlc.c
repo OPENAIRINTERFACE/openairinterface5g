@@ -384,7 +384,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
 
   //DevCheck(sdu_sizeP > 0, sdu_sizeP, 0, 0);
   if(sdu_sizeP <= 0) {
-    LOG_E(RLC, "sdu_sizeP %d, file %s, line %d\n", sdu_sizeP, __FILE__ ,__LINE__);
+    LOG_E(RLC, "sdu_sizeP %d, file %s, line %d\n", sdu_sizeP, __FILE__,__LINE__);
     return RLC_OP_STATUS_BAD_PARAMETER;
   }
 
@@ -573,8 +573,7 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
   }
 
 #else
-  }
-  else { /* MBMS_flag != 0 */
+  } else { /* MBMS_flag != 0 */
     free_mem_block(sdu_pP, __func__);
     LOG_E(RLC, "MBMS_flag != 0 while Rel10/Rel14 is not defined...\n");
     //handle_event(ERROR,"FILE %s FONCTION rlc_data_req() LINE %s : parameter module_id out of bounds :%d\n", __FILE__, __LINE__, module_idP);
@@ -659,7 +658,7 @@ void rlc_data_conf     (const protocol_ctxt_t *const ctxt_pP,
   //-----------------------------------------------------------------------------
   if (srb_flagP) {
     if (rlc_rrc_data_conf != NULL) {
-      rlc_rrc_data_conf (ctxt_pP, rb_idP , muiP, statusP);
+      rlc_rrc_data_conf (ctxt_pP, rb_idP, muiP, statusP);
     }
   }
 }
@@ -683,8 +682,6 @@ rlc_module_init (void) {
   }
 
   for (module_id1=0; module_id1 < MAX_MOBILES_PER_ENB; module_id1++) {
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-
     for (k=0; k < RLC_MAX_MBMS_LC; k++) {
       rlc_mbms_lcid2service_session_id_ue[module_id1][k].service_id = 0;
       rlc_mbms_lcid2service_session_id_ue[module_id1][k].session_id = 0;
@@ -693,23 +690,15 @@ rlc_module_init (void) {
     for (k=0; k < NB_RB_MBMS_MAX; k++) {
       rlc_mbms_rbid2lcid_ue[module_id1][k] = RLC_LC_UNALLOCATED;
     }
-
-#endif
   }
 
-  for (module_id1=0; module_id1 < NUMBER_OF_eNB_MAX; module_id1++) {
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
-
     for (k=0; k < RLC_MAX_MBMS_LC; k++) {
-      rlc_mbms_lcid2service_session_id_eNB[module_id1][k].service_id = 0;
-      rlc_mbms_lcid2service_session_id_eNB[module_id1][k].session_id = 0;
+    rlc_mbms_lcid2service_session_id_eNB[0][k].service_id = 0;
+    rlc_mbms_lcid2service_session_id_eNB[0][k].session_id = 0;
     }
 
     for (k=0; k < NB_RB_MBMS_MAX; k++) {
-      rlc_mbms_rbid2lcid_eNB[module_id1][k] = RLC_LC_UNALLOCATED;
-    }
-
-#endif
+    rlc_mbms_rbid2lcid_eNB[0][k] = RLC_LC_UNALLOCATED;
   }
 
   pool_buffer_init();

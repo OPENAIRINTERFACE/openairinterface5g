@@ -179,7 +179,7 @@ uint8_t get_adjacent_cell_mod_id(uint16_t phyCellId) {
 
 
 uint8_t do_MIB(rrc_eNB_carrier_data_t *carrier, uint32_t N_RB_DL, uint32_t phich_Resource, uint32_t phich_duration, uint32_t frame
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) 
 	       , uint32_t schedulingInfoSIB1
 #endif
 	       ) {
@@ -654,7 +654,7 @@ uint8_t do_SIB1(rrc_eNB_carrier_data_t *carrier,
           }
           else
           {
-              sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13 = NULL;
+              sib1_1310->bandwidthReducedAccessRelatedInfo_r13->fdd_UplinkSubframeBitmapBR_r13 = NULL; 
           }
 
 
@@ -949,7 +949,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
       sib2     = &RC.rrc[Mod_id]->carrier[CC_id].sib2;
       rrconfig = &configuration->radioresourceconfig[CC_id];
     }
-
+    
   LTE_SystemInformationBlockType3_t       **sib3        = &RC.rrc[Mod_id]->carrier[CC_id].sib3;
 #if (LTE_RRC_VERSION >= MAKE_VERSION(9, 0, 0))
   LTE_SystemInformationBlockType13_r9_t   **sib13       = &RC.rrc[Mod_id]->carrier[CC_id].sib13;
@@ -1011,11 +1011,11 @@ uint8_t do_SIB23(uint8_t Mod_id,
     memset(sib18_part,0,sizeof(struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
     memset(sib19_part,0,sizeof(struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
     memset(sib21_part,0,sizeof(struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
-
+    
     sib18_part->present = LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib18_v1250;
     sib19_part->present = LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib19_v1250;
     sib21_part->present = LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib21_v1430;
-
+    
     *sib18 = &sib18_part->choice.sib18_v1250;
     *sib19 = &sib19_part->choice.sib19_v1250;
     *sib21 = &sib21_part->choice.sib21_v1430;
@@ -1052,13 +1052,13 @@ uint8_t do_SIB23(uint8_t Mod_id,
   if (eMTC_configured>0) {
     (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1 = calloc(1, sizeof(struct LTE_RACH_ConfigCommon__ext1));
     memset((*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1, 0, sizeof(struct LTE_RACH_ConfigCommon__ext1));
-
+    
     if (rrconfig->preambleTransMax_CE_r13) {
       (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1->preambleTransMax_CE_r13 = calloc(1, sizeof(LTE_PreambleTransMax_t));
       *(*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1->preambleTransMax_CE_r13 = *rrconfig->preambleTransMax_CE_r13; // to be re-initialized when we find the enum
     }
     else (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1->preambleTransMax_CE_r13 = NULL;
-
+  
 
     (*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1->rach_CE_LevelInfoList_r13 = calloc(1, sizeof(LTE_RACH_CE_LevelInfoList_r13_t));
     memset((*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1->rach_CE_LevelInfoList_r13, 0, sizeof(LTE_RACH_CE_LevelInfoList_r13_t));
@@ -1209,14 +1209,14 @@ uint8_t do_SIB23(uint8_t Mod_id,
       }
     }
     else (*sib2)->radioResourceConfigCommon.ext4->pcch_Config_v1310 = NULL;
+ 
 
 
-
-
+  
     if (configuration->sib2_freq_hoppingParameters_r13_exists[CC_id]) {
 
       (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13 = CALLOC(1, sizeof(LTE_FreqHoppingParameters_r13_t));
-
+  
       if (configuration->sib2_interval_ULHoppingConfigCommonModeA_r13[CC_id]) {
           (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_ULHoppingConfigCommonModeA_r13
                   = CALLOC(1, sizeof(struct LTE_FreqHoppingParameters_r13__interval_ULHoppingConfigCommonModeA_r13));
@@ -1237,7 +1237,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
           }
       }
       else (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_ULHoppingConfigCommonModeA_r13 = NULL;
-
+      
 
       if (configuration->sib2_interval_ULHoppingConfigCommonModeB_r13[CC_id]) {
           (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_ULHoppingConfigCommonModeB_r13
@@ -1255,7 +1255,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
                       = configuration->sib2_interval_ULHoppingConfigCommonModeB_r13_val[CC_id];
           }
       }
-      else (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_ULHoppingConfigCommonModeB_r13 = NULL;
+      else (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13->interval_ULHoppingConfigCommonModeB_r13 = NULL;     
     }
     else (*sib2)->radioResourceConfigCommon.ext4->freqHoppingParameters_r13 = NULL;
   // pdsch_ConfigCommon_v1310
@@ -1342,7 +1342,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
           *(*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->prach_HoppingOffset_r13 = *rrconfig->prach_HoppingOffset_r13;
       }
       else (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310->prach_HoppingOffset_r13 = NULL;
-
+       
       LTE_PRACH_ParametersCE_r13_t *prach_parametersce_r13;
 
       int num_prach_parameters_ce = configuration->prach_parameters_list_size[CC_id];
@@ -1362,14 +1362,14 @@ uint8_t do_SIB23(uint8_t Mod_id,
               *prach_parametersce_r13->prach_StartingSubframe_r13 = *configuration->prach_StartingSubframe_r13[CC_id][prach_parameters_index];
           }
           else prach_parametersce_r13->prach_StartingSubframe_r13 = NULL;
-
+        
 
           if (configuration->maxNumPreambleAttemptCE_r13[CC_id][prach_parameters_index]) {
               prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = CALLOC(1, sizeof(long));
               *prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = *configuration->maxNumPreambleAttemptCE_r13[CC_id][prach_parameters_index];
           }
           else prach_parametersce_r13->maxNumPreambleAttemptCE_r13 = NULL;
-
+         
           prach_parametersce_r13->numRepetitionPerPreambleAttempt_r13 = configuration->numRepetitionPerPreambleAttempt_r13[CC_id][prach_parameters_index];
           prach_parametersce_r13->mpdcch_NumRepetition_RA_r13 = configuration->mpdcch_NumRepetition_RA_r13[CC_id][prach_parameters_index];
           prach_parametersce_r13->prach_HoppingConfig_r13 = configuration->prach_HoppingConfig_r13[CC_id][prach_parameters_index];
@@ -1393,7 +1393,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
       }
     }
     else (*sib2)->radioResourceConfigCommon.ext4->prach_ConfigCommon_v1310 = NULL;
-
+  
 
 
     (*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310 = calloc(1, sizeof(LTE_PUCCH_ConfigCommon_v1310_t));
@@ -1407,7 +1407,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
       pucch_info_value = CALLOC(1, sizeof(long));
       if (configuration->pucch_info_value_size[CC_id]) *pucch_info_value = configuration->pucch_info_value[CC_id][pucch_index];
       else                                             *pucch_info_value = 0;
-
+      
       ASN_SEQUENCE_ADD(&(*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->n1PUCCH_AN_InfoList_r13->list, pucch_info_value);
     }
 
@@ -1422,7 +1422,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
       *(*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level1_r13 =  *configuration->pucch_NumRepetitionCE_Msg4_Level1_r13[CC_id];
     }
     else (*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level1_r13 = NULL;
-
+  
 
     if (configuration->pucch_NumRepetitionCE_Msg4_Level2_r13[CC_id]) {
       (*sib2)->radioResourceConfigCommon.ext4->pucch_ConfigCommon_v1310->pucch_NumRepetitionCE_Msg4_Level2_r13  = CALLOC(1, sizeof(long));
@@ -1481,7 +1481,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
   rach_ce_levelinfo_r13->rar_HoppingConfig_r13 = LTE_RACH_CE_LevelInfo_r13__rar_HoppingConfig_r13_off;
 
   ASN_SEQUENCE_ADD(&(*sib2)->radioResourceConfigCommon.rach_ConfigCommon.ext1->rach_CE_LevelInfoList_r13->list, rach_ce_levelinfo_r13);
-
+ 
   // BCCH-Config
   (*sib2)->radioResourceConfigCommon.bcch_Config.modificationPeriodCoeff=LTE_BCCH_Config__modificationPeriodCoeff_n2;
 
@@ -1733,15 +1733,15 @@ uint8_t do_SIB23(uint8_t Mod_id,
     SL_CommResourcePool->sc_TF_ResourceConfig_r12.prb_Start_r12 = configuration->rxPool_ResourceConfig_prb_Start[CC_id];
     SL_CommResourcePool->sc_TF_ResourceConfig_r12.prb_End_r12 = configuration->rxPool_ResourceConfig_prb_End[CC_id];
     SL_CommResourcePool->sc_TF_ResourceConfig_r12.offsetIndicator_r12.present = configuration->rxPool_ResourceConfig_offsetIndicator_present[CC_id];
-
+    
     if (SL_CommResourcePool->sc_TF_ResourceConfig_r12.offsetIndicator_r12.present == LTE_SL_OffsetIndicator_r12_PR_small_r12 ) {
       SL_CommResourcePool->sc_TF_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12 = configuration->rxPool_ResourceConfig_offsetIndicator_choice[CC_id] ;
     } else if (SL_CommResourcePool->sc_TF_ResourceConfig_r12.offsetIndicator_r12.present == LTE_SL_OffsetIndicator_r12_PR_large_r12 ) {
       SL_CommResourcePool->sc_TF_ResourceConfig_r12.offsetIndicator_r12.choice.large_r12 = configuration->rxPool_ResourceConfig_offsetIndicator_choice[CC_id] ;
     }
-
+    
     SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.present = configuration->rxPool_ResourceConfig_subframeBitmap_present[CC_id];
-
+    
     if (SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.present == LTE_SubframeBitmapSL_r12_PR_bs4_r12) {
       //for BS4
       SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.size = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
@@ -1778,7 +1778,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
       SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs42_r12.buf  = (uint8_t *)configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
       SL_CommResourcePool->sc_TF_ResourceConfig_r12.subframeBitmap_r12.choice.bs42_r12.bits_unused = configuration->rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
     }
-
+    
     //dataHoppingConfig_r12
     SL_CommResourcePool->dataHoppingConfig_r12.hoppingParameter_r12 = 0;
     SL_CommResourcePool->dataHoppingConfig_r12.numSubbands_r12  =  LTE_SL_HoppingConfigComm_r12__numSubbands_r12_ns1;
@@ -1839,15 +1839,15 @@ uint8_t do_SIB23(uint8_t Mod_id,
     SL_DiscResourcePool->tf_ResourceConfig_r12.prb_Start_r12 = configuration->discRxPool_ResourceConfig_prb_Start[CC_id];
     SL_DiscResourcePool->tf_ResourceConfig_r12.prb_End_r12 = configuration->discRxPool_ResourceConfig_prb_End[CC_id];
     SL_DiscResourcePool->tf_ResourceConfig_r12.offsetIndicator_r12.present = configuration->discRxPool_ResourceConfig_offsetIndicator_present[CC_id];
-
+    
     if (SL_DiscResourcePool->tf_ResourceConfig_r12.offsetIndicator_r12.present == LTE_SL_OffsetIndicator_r12_PR_small_r12 ) {
       SL_DiscResourcePool->tf_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12 = configuration->discRxPool_ResourceConfig_offsetIndicator_choice[CC_id] ;
     } else if (SL_DiscResourcePool->tf_ResourceConfig_r12.offsetIndicator_r12.present == LTE_SL_OffsetIndicator_r12_PR_large_r12 ) {
       SL_DiscResourcePool->tf_ResourceConfig_r12.offsetIndicator_r12.choice.large_r12 = configuration->discRxPool_ResourceConfig_offsetIndicator_choice[CC_id] ;
     }
-
+    
     SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.present = configuration->discRxPool_ResourceConfig_subframeBitmap_present[CC_id];
-
+    
     if (SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.present == LTE_SubframeBitmapSL_r12_PR_bs4_r12) {
       //for BS4
       SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs4_r12.size = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_size[CC_id];
@@ -1884,36 +1884,36 @@ uint8_t do_SIB23(uint8_t Mod_id,
       SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs42_r12.buf  = (uint8_t *)configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
       SL_DiscResourcePool->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs42_r12.bits_unused = configuration->discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
     }
-
+    
     //add SL_DiscResourcePool to SL_DiscRxPoolList
     ASN_SEQUENCE_ADD(&SL_DiscRxPoolList->list,SL_DiscResourcePool);
     /*
     //for DiscRxPoolPS
     (*sib19)->ext1 = CALLOC (1, sizeof(*(*sib19)->ext1));
     (*sib19)->ext1->discConfigPS_13 = CALLOC (1, sizeof(*((*sib19)->ext1->discConfigPS_13)));
-
+    
     SL_DiscRxPoolPSList = &(*sib19)->ext1->discConfigPS_13->discRxPoolPS_r13;
     memset(SL_DiscRxPoolPSList,0,sizeof(*SL_DiscRxPoolPSList));
     //fill SL_DiscResourcePool
     SL_DiscResourcePoolPS = CALLOC(1, sizeof(*SL_DiscResourcePoolPS));
-
+    
     SL_DiscResourcePoolPS->cp_Len_r12 = configuration->discRxPoolPS_cp_Len[CC_id];
     SL_DiscResourcePoolPS->discPeriod_r12 = configuration->discRxPoolPS_discPeriod[CC_id];
     //sc_TF_ResourceConfig_r12
     SL_DiscResourcePoolPS->numRetx_r12 = configuration->discRxPoolPS_numRetx[CC_id];
     SL_DiscResourcePoolPS->numRepetition_r12 =  configuration->discRxPoolPS_numRepetition[CC_id];
-
+    
     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.prb_Num_r12 = configuration->discRxPoolPS_ResourceConfig_prb_Num[CC_id];
     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.prb_Start_r12 = configuration->discRxPoolPS_ResourceConfig_prb_Start[CC_id];
     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.prb_End_r12 = configuration->discRxPoolPS_ResourceConfig_prb_End[CC_id];
-
+    
     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.offsetIndicator_r12.present = configuration->discRxPoolPS_ResourceConfig_offsetIndicator_present[CC_id];
     if (SL_DiscResourcePoolPS->tf_ResourceConfig_r12.offsetIndicator_r12.present == SL_OffsetIndicator_r12_PR_small_r12 ) {
     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.offsetIndicator_r12.choice.small_r12 = configuration->discRxPoolPS_ResourceConfig_offsetIndicator_choice[CC_id] ;
     } else if (SL_DiscResourcePoolPS->tf_ResourceConfig_r12.offsetIndicator_r12.present == SL_OffsetIndicator_r12_PR_large_r12 ){
     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.offsetIndicator_r12.choice.large_r12 = configuration->discRxPoolPS_ResourceConfig_offsetIndicator_choice[CC_id] ;
     }
-
+    
     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.present = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_present[CC_id];
     if (SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.present == SubframeBitmapSL_r12_PR_bs4_r12){
     //for BS4
@@ -1951,7 +1951,7 @@ uint8_t do_SIB23(uint8_t Mod_id,
     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs42_r12.buf  = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf[CC_id];;
     SL_DiscResourcePoolPS->tf_ResourceConfig_r12.subframeBitmap_r12.choice.bs42_r12.bits_unused = configuration->discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused[CC_id];
     }
-
+    
     //add SL_DiscResourcePool to SL_DiscRxPoolList
     ASN_SEQUENCE_ADD(&SL_DiscRxPoolPSList->list,SL_DiscResourcePoolPS);
     */
@@ -2883,7 +2883,7 @@ uint8_t do_RRCConnectionSetup_BR(
   physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->present = LTE_CQI_ReportPeriodic_PR_release;
   physicalConfigDedicated2->cqi_ReportConfig->cqi_ReportPeriodic->choice.release = (NULL_t)0;
 
-
+    
   /// TODO to be reviewed
   if (rrc->srs_enable[CC_id]) {
       physicalConfigDedicated2->soundingRS_UL_ConfigDedicated->present = LTE_SoundingRS_UL_ConfigDedicated_PR_setup;
@@ -3724,7 +3724,6 @@ do_RRCConnectionReestablishment(
         rrc->carrier[CC_id].dl_CarrierFreq,
         earfcn_dl,
         is_rel8_only == true ? "true": "false");
-#if defined(ENABLE_SECURITY)
 
   if (ue_context_pP->ue_context.nh_ncc >= 0) {
     derive_keNB_star(ue_context_pP->ue_context.nh, pci, earfcn_dl, is_rel8_only, KeNB_star);
@@ -3738,9 +3737,6 @@ do_RRCConnectionReestablishment(
   // copy KeNB_star to ue_context_pP->ue_context.kenb
   memcpy (ue_context_pP->ue_context.kenb, KeNB_star, 32);
   ue_context_pP->ue_context.kenb_ncc = 0;
-#else
-  rrcConnectionReestablishment->criticalExtensions.choice.c1.choice.rrcConnectionReestablishment_r8.nextHopChainingCount = 0;
-#endif
   rrcConnectionReestablishment->criticalExtensions.choice.c1.choice.rrcConnectionReestablishment_r8.nonCriticalExtension = NULL;
 
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {

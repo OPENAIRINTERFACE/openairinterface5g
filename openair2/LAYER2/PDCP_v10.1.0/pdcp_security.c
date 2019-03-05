@@ -40,13 +40,6 @@
 #include "msc.h"
 #include "pdcp_primitives.h"
 
-#if defined(ENABLE_SECURITY)
-
-static
-uint32_t pdcp_get_next_count_tx(pdcp_t *const pdcp_pP, const srb_flag_t srb_flagP, const uint16_t pdcp_sn);
-static
-uint32_t pdcp_get_next_count_rx(pdcp_t *const pdcp_pP, const srb_flag_t srb_flagP, const uint16_t pdcp_sn);
-
 //-----------------------------------------------------------------------------
 static
 uint32_t pdcp_get_next_count_tx(
@@ -79,26 +72,25 @@ static
 uint32_t pdcp_get_next_count_rx(
   pdcp_t * const pdcp_pP,
   const srb_flag_t srb_flagP,
-  const uint16_t pdcp_sn)
+  const uint32_t hfn,
+  const int sn)
 {
   uint32_t count;
 
   /* For RX COUNT = RX_HFN << length of SN | pdcp SN of received PDU */
   if (srb_flagP) {
     /* 5 bits length SN */
-    count = (((pdcp_pP->rx_hfn + pdcp_pP->rx_hfn_offset) << 5)  | (pdcp_sn & 0x001F));
+    count = (hfn << 5)  | (sn & 0x001F);
   } else {
-    if (pdcp_pP->seq_num_size == LTE_PDCP_Config__rlc_UM__pdcp_SN_Size_len7bits) {
+    if (pdcp_pP->seq_num_size == 7) {
       /* 7 bits length SN */
-      count = (((pdcp_pP->rx_hfn + pdcp_pP->rx_hfn_offset) << 7) | (pdcp_sn & 0x007F));
+      count = (hfn << 7) | (sn & 0x007F);
     } else { // default
       /* 12 bits length SN */
-      count = (((pdcp_pP->rx_hfn + pdcp_pP->rx_hfn_offset) << 12) | (pdcp_sn & 0x0FFF));
+      count = (hfn << 12) | (sn & 0x0FFF);
     }
   }
 
-  // reset the hfn offset
-  pdcp_pP->rx_hfn_offset =0;
   LOG_D(PDCP, "[OSA] RX COUNT = 0x%08x\n", count);
 
   return count;
@@ -182,7 +174,8 @@ pdcp_validate_security(
   const srb_flag_t     srb_flagP,
   const rb_id_t        rb_id,
   const uint8_t        pdcp_header_len,
-  const uint16_t       current_sn,
+  const uint32_t       hfn,
+  const int            sn,
   uint8_t       *const pdcp_pdu_buffer,
   const uint16_t       sdu_buffer_size
 )
@@ -201,7 +194,7 @@ pdcp_validate_security(
 
   decrypt_params.direction  = (pdcp_pP->is_ue == 1) ? SECU_DIRECTION_DOWNLINK : SECU_DIRECTION_UPLINK ;
   decrypt_params.bearer     = rb_id - 1;
-  decrypt_params.count      = pdcp_get_next_count_rx(pdcp_pP, srb_flagP, current_sn);
+  decrypt_params.count      = pdcp_get_next_count_rx(pdcp_pP, srb_flagP, hfn, sn);
   decrypt_params.message    = &pdcp_pdu_buffer[pdcp_header_len];
   decrypt_params.blength    = (sdu_buffer_size - pdcp_header_len) << 3;
   decrypt_params.key_length = 16;
@@ -246,5 +239,3 @@ pdcp_validate_security(
 
   return 0;
 }
-
-#endif /* ENABLE_SECURITY */

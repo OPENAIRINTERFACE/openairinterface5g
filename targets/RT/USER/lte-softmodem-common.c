@@ -94,3 +94,13 @@ void get_common_options(void) {
 
   if(worker_config != NULL)   set_worker_conf(worker_config);
 }
+
+unsigned int is_nos1exec(char *exepath) {
+  if ( strcmp( basename(exepath), "lte-softmodem-nos1") == 0)
+    return 1;
+
+  if ( strcmp( basename(exepath), "lte-uesoftmodem-nos1") == 0)
+    return 1;
+
+  return 0;
+}

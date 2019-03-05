@@ -285,21 +285,14 @@ void *send_UE_status_notification(void *);
   #include "rrc_rrm_interface.h"
 #endif
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
 
-/* TODO: be sure this include is correct.
- * It solves a problem of compilation of the RRH GW,
- * issue #186.
- */
-#if !defined(ENABLE_ITTI)
-  #include "as_message.h"
-#endif
+#include "intertask_interface.h"
 
-#if defined(ENABLE_USE_MME)
-  #include "commonDef.h"
-#endif
+
+
+
+#include "commonDef.h"
+
 
 //--------
 typedef unsigned int uid_t;
@@ -432,7 +425,7 @@ typedef struct UE_S_TMSI_s {
   m_tmsi_t   m_tmsi;
 } __attribute__ ((__packed__)) UE_S_TMSI;
 
-#if defined(ENABLE_ITTI)
+
 typedef enum e_rab_satus_e {
   E_RAB_STATUS_NEW,
   E_RAB_STATUS_DONE, // from the eNB perspective
@@ -449,7 +442,7 @@ typedef struct e_rab_param_s {
   s1ap_Cause_t cause;
   uint8_t cause_value;
 } __attribute__ ((__packed__)) e_rab_param_t;
-#endif
+
 
 /* Intermediate structure for Handover management. Associated per-UE in eNB_RRC_INST */
 typedef struct HANDOVER_INFO_s {
@@ -555,13 +548,11 @@ typedef struct eNB_RRC_UE_s {
   int                                UE_Capability_size;
   ImsiMobileIdentity_t               imsi;
 
-#if defined(ENABLE_SECURITY)
   /* KeNB as derived from KASME received from EPC */
   uint8_t kenb[32];
   int8_t  kenb_ncc;
   uint8_t nh[32];
   int8_t  nh_ncc;
-#endif
   /* Used integrity/ciphering algorithms */
   LTE_CipheringAlgorithm_r12_t                          ciphering_algorithm;
   e_LTE_SecurityAlgorithmConfig__integrityProtAlgorithm integrity_algorithm;
@@ -570,7 +561,7 @@ typedef struct eNB_RRC_UE_s {
   rnti_t                             rnti;
   uint64_t                           random_ue_identity;
 
-#if defined(ENABLE_ITTI)
+
   /* Information from UE RRC ConnectionRequest */
   UE_S_TMSI                          Initialue_identity_s_TMSI;
   LTE_EstablishmentCause_t           establishment_cause;
@@ -614,7 +605,6 @@ typedef struct eNB_RRC_UE_s {
   uint32_t                           enb_gtp_teid[S1AP_MAX_E_RAB];
   transport_layer_addr_t             enb_gtp_addrs[S1AP_MAX_E_RAB];
   rb_id_t                            enb_gtp_ebi[S1AP_MAX_E_RAB];
-#endif
   uint32_t                           ul_failure_timer;
   uint32_t                           ue_release_timer;
   uint32_t                           ue_release_timer_thres;
@@ -731,9 +721,7 @@ typedef struct eNB_RRC_INST_s {
 #endif
 
   //RRC configuration
-#if defined(ENABLE_ITTI)
   RrcConfigurationReq configuration;
-#endif
 
   /// NR cell id
   uint64_t nr_cellid;
@@ -763,11 +751,9 @@ typedef struct OAI_UECapability_s {
 typedef struct UE_RRC_INST_s {
   Rrc_State_t     RrcState;
   Rrc_Sub_State_t RrcSubState;
-# if defined(ENABLE_USE_MME)
   plmn_t          plmnID;
   Byte_t          rat;
   as_nas_info_t   initialNasMsg;
-# endif
   OAI_UECapability_t *UECap;
   uint8_t *UECapability;
   uint8_t UECapability_size;
@@ -852,12 +838,10 @@ typedef struct UE_RRC_INST_s {
   float                           rsrq_db[7];
   float                           rsrp_db_filtered[7];
   float                           rsrq_db_filtered[7];
-#if defined(ENABLE_SECURITY)
   /* KeNB as computed from parameters within USIM card */
   uint8_t kenb[32];
   uint8_t nh[32];
   int8_t  nh_ncc;
-#endif
 
   /* Used integrity/ciphering algorithms */
   LTE_CipheringAlgorithm_r12_t                          ciphering_algorithm;
