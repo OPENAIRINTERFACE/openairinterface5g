@@ -145,7 +145,7 @@ int main(int argc, char **argv) {
   uint16_t N_RB_DL = 106, N_RB_UL = 106, mu = 1;
   //unsigned char frame_type = 0;
   unsigned char pbch_phase = 0;
-  int frame = 0, subframe = 0;
+  int frame = 0, subframe = 0, slot = 1;
   int frame_length_complex_samples;
   NR_DL_FRAME_PARMS *frame_parms;
   uint32_t Nsoft = 0;
@@ -158,6 +158,12 @@ int main(int argc, char **argv) {
   uint16_t nb_symb_sch = 12;
   uint16_t nb_rb = 50;
   uint8_t Imcs = 9;
+  uint16_t n_dmrs;
+  uint8_t dmrs_TypeA_Position;
+  int l0;
+  uint32_t ***pusch_dmrs;
+
+ PUSCH_TimeDomainResourceAllocation_t pusch_time_alloc;
 
   cpuf = get_cpu_freq_GHz();
 
@@ -453,6 +459,12 @@ int main(int argc, char **argv) {
   TBS = nr_compute_tbs(Imcs, nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, Nl);
   printf("available bits %d TBS %d mod_order %d\n", available_bits, TBS, mod_order);
 
+  /////////// setting PUSCH_TimeDomainResourceAllocation_t parameters ///////////
+
+  pusch_time_alloc.mappingType = typeA;
+  
+  ///////////////////////////////////////////////////  
+
   /////////// setting rel15_ul parameters ///////////
   rel15_ul->number_rbs     = nb_rb;
   rel15_ul->number_symbols = nb_symb_sch;
@@ -565,9 +577,23 @@ int main(int argc, char **argv) {
   ///////////
   ////////////////////////////////////////////////////////////////////////
 
-  for (SNR = snr0; SNR < snr1; SNR += snr_step) {
-    n_errors = 0;
-    n_false_positive = 0;
+  /////////////////////////PUSCH DMRS/////////////////////////
+  ///////////
+
+  pusch_dmrs = UE->nr_gold_pusch_dmrs[slot];  
+  dmrs_TypeA_Position = 2; // This parameter is given by dmrs_TypeA_Position which is located in MIB.
+  n_dmrs = nb_re_dmrs<<1;
+  int16_t mod_dmrs[n_dmrs<<1];
+  
+  l0 = get_l0(pusch_time_alloc.mappingType, dmrs_TypeA_Position);//config.pdsch_config.dmrs_typeA_position.value);
+  nr_modulation(pusch_dmrs[l0][0], n_dmrs, MOD_QPSK, mod_dmrs); // currently only codeword 0 is modulated
+
+  ///////////
+  ////////////////////////////////////////////////////////////////////////
+
+	for (SNR = snr0; SNR < snr1; SNR += snr_step) {
+		n_errors = 0;
+		n_false_positive = 0;
 
     for (trial = 0; trial < n_trials; trial++) {
 

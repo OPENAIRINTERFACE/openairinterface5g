@@ -294,8 +294,11 @@ for (int l=0; l<rel15->nb_layers; l++)
   uint16_t n_dmrs = (rel15->n_prb*rel15->nb_re_dmrs)<<1;
   int16_t mod_dmrs[n_dmrs<<1];
   uint8_t dmrs_type = config.pdsch_config.dmrs_type.value;
-  l0 = get_l0(dmrs_type, 2);//config.pdsch_config.dmrs_typeA_position.value);
+  uint8_t mapping_type = config.pdsch_config.mapping_type.value;
+
+  l0 = get_l0(mapping_type, 2);//config.pdsch_config.dmrs_typeA_position.value);
   nr_modulation(pdsch_dmrs[l0][0], n_dmrs, MOD_QPSK, mod_dmrs); // currently only codeword 0 is modulated
+  
 #ifdef DEBUG_DLSCH
 printf("DMRS modulation (single symbol %d, %d symbols, type %d):\n", l0, n_dmrs>>1, dmrs_type);
 for (int i=0; i<n_dmrs>>4; i++) {

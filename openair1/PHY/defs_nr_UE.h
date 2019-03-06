@@ -983,6 +983,9 @@ typedef struct {
   /// PDCCH DMRS
   uint32_t nr_gold_pdcch[7][20][3][52];
 
+  /// PUSCH DMRS sequence
+  uint32_t ****nr_gold_pusch_dmrs;
+
   uint32_t X_u[64][839];
 
   uint32_t high_speed_flag;

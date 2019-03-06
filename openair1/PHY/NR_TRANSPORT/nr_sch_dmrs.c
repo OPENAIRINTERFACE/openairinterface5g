@@ -84,6 +84,6 @@ uint8_t get_delta(uint8_t ap, uint8_t config) {
   return ((config==NFAPI_NR_DMRS_TYPE1)?(pdsch_dmrs_1[ap][2]):(pdsch_dmrs_2[ap][2]));
 }
 
-uint8_t get_l0(uint8_t config, uint8_t dmrs_typeA_position) {
-  return ((config==NFAPI_NR_DMRS_TYPE1)?dmrs_typeA_position:0);
+uint8_t get_l0(uint8_t mapping_type, uint8_t dmrs_typeA_position) {
+  return ((mapping_type==NFAPI_NR_PDSCH_MAPPING_TYPE_A)?dmrs_typeA_position:0);
 }

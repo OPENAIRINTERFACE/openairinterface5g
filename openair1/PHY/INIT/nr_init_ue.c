@@ -662,11 +662,14 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
 
 
 
-  int i,j,k,l;
+  int i,j,k,l,slot,symb,q;
   int eNB_id;
   int th_id;
   int n_ssb_crb=(fp->N_RB_DL-20);
   int k_ssb=0;
+  uint32_t ****pusch_dmrs;
+  int N_n_scid[2] = {0,1}; // [HOTFIX] This is a temporary implementation of scramblingID0 and scramblingID1 which are given by DMRS-UplinkConfig 
+  int n_scid;
   abstraction_flag = 0;
   fp->nb_antennas_tx = 1;
   fp->nb_antennas_rx=1;
@@ -697,6 +700,37 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     ue->bitrate[eNB_id] = 0;
     ue->total_received_bits[eNB_id] = 0;
   }
+
+/////////////////////////PUSCH DMRS init/////////////////////////
+///////////
+
+  // default values until overwritten by RRCConnectionReconfiguration
+  //------------- config DMRS parameters--------------// 
+  ue->dmrs_UplinkConfig.pusch_dmrs_type = pusch_dmrs_type1;
+  ue->dmrs_UplinkConfig.pusch_dmrs_AdditionalPosition = pusch_dmrs_pos0;
+  ue->dmrs_UplinkConfig.pusch_maxLength = pusch_len1;
+  //-------------------------------------------------//
+
+   ue->nr_gold_pusch_dmrs = (uint32_t ****)malloc16(fp->slots_per_frame*sizeof(uint32_t***));
+   pusch_dmrs             = ue->nr_gold_pusch_dmrs;
+   n_scid = 0; // This quantity is indicated by higher layer parameter dmrs-SeqInitialization 
+
+   for (slot=0; slot<fp->slots_per_frame; slot++) {
+    pusch_dmrs[slot] = (uint32_t ***)malloc16(fp->symbols_per_slot*sizeof(uint32_t**));
+    AssertFatal(pusch_dmrs[slot]!=NULL, "init_nr_ue_signal: pusch_dmrs for slot %d - malloc failed\n", slot);
+    for (symb=0; symb<fp->symbols_per_slot; symb++){
+      pusch_dmrs[slot][symb] = (uint32_t **)malloc16(NR_MAX_NB_CODEWORDS*sizeof(uint32_t*));
+      AssertFatal(pusch_dmrs[slot][symb]!=NULL, "init_nr_ue_signal: pusch_dmrs for slot %d symbol %d - malloc failed\n", slot, symb);
+      for (q=0; q<NR_MAX_NB_CODEWORDS; q++) {
+        pusch_dmrs[slot][symb][q] = (uint32_t*)malloc16(NR_MAX_PDSCH_DMRS_INIT_LENGTH_DWORD*sizeof(uint32_t));
+        AssertFatal(pusch_dmrs[slot][symb][q]!=NULL, "init_nr_ue_signal: pusch_dmrs for slot %d symbol %d codeword %d - malloc failed\n", slot, symb, q);
+      }
+    }
+  }
+
+  nr_init_pusch_dmrs(ue, N_n_scid, n_scid);
+///////////
+////////////////////////////////////////////////////////////////////////////////////////////
 
   for (i=0;i<10;i++)
     ue->tx_power_dBm[i]=-127;
@@ -895,6 +929,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     ue->pdsch_config_dedicated->p_a = dBm3;
   else
     ue->pdsch_config_dedicated->p_a = dB0;
+  
 
   // set channel estimation to do linear interpolation in time
   ue->high_speed_flag = 1;
