@@ -143,13 +143,21 @@ function summary_table_header {
     echo "   <h3>$1</h3>" >> ./build_results.html
     if [ -f $2/build_final_status.log ]
     then
+        if [ `grep -c COMMAND $2/build_final_status.log` -eq 1 ]
+        then
+            COMMAND=`grep COMMAND $2/build_final_status.log | sed -e "s#COMMAND: ##"`
+        else
+            COMMAND="Unknown"
+        fi
         if [ `grep -c BUILD_OK $2/build_final_status.log` -eq 1 ]
         then
             echo "   <div class=\"alert alert-success\">" >> ./build_results.html
+            echo "      <span class=\"glyphicon glyphicon-expand\"></span> $COMMAND <span class=\"glyphicon glyphicon-arrow-right\"></span> " >> ./build_results.html
             echo "      <strong>BUILD was SUCCESSFUL <span class=\"glyphicon glyphicon-ok-circle\"></span></strong>" >> ./build_results.html
             echo "   </div>" >> ./build_results.html
         else
             echo "   <div class=\"alert alert-danger\">" >> ./build_results.html
+            echo "      <span class=\"glyphicon glyphicon-expand\"></span> $COMMAND <span class=\"glyphicon glyphicon-arrow-right\"></span> " >> ./build_results.html
             echo "      <strong>BUILD was a FAILURE! <span class=\"glyphicon glyphicon-ban-circle\"></span></strong>" >> ./build_results.html
             echo "   </div>" >> ./build_results.html
         fi
@@ -220,6 +228,13 @@ function sca_summary_table_header {
     NB_WARNINGS=`egrep -c "severity=\"warning\"" $1`
     ADDED_ERRORS="0"
     ADDED_WARNINGS="0"
+    FINAL_LOG=`echo $1 | sed -e "s#cppcheck\.xml#build_final_status.log#"`
+    if [ `grep -c COMMAND $FINAL_LOG` -eq 1 ]
+    then
+        COMMAND=`grep COMMAND $FINAL_LOG | sed -e "s#COMMAND: ##"`
+    else
+        COMMAND="Unknown"
+    fi
     if [ $MR_TRIG -eq 1 ]
     then
         if [ -d ../../cppcheck_archives ]
@@ -237,12 +252,14 @@ function sca_summary_table_header {
     if [ $NB_ERRORS -eq 0 ] && [ $NB_WARNINGS -eq 0 ]
     then
         echo "   <div class=\"alert alert-success\">" >> ./build_results.html
+        echo "      <span class=\"glyphicon glyphicon-expand\"></span> $COMMAND <br><br>" >> ./build_results.html
         echo "      <strong>CPPCHECK found NO error and NO warning <span class=\"glyphicon glyphicon-ok-circle\"></span></strong>" >> ./build_results.html
         echo "   </div>" >> ./build_results.html
     else
         if [ $NB_ERRORS -eq 0 ]
         then
             echo "   <div class=\"alert alert-warning\">" >> ./build_results.html
+            echo "      <span class=\"glyphicon glyphicon-expand\"></span> $COMMAND <br><br>" >> ./build_results.html
             if [ $PU_TRIG -eq 1 ]
             then
                 echo "      <strong>CPPCHECK found NO error and $NB_WARNINGS warnings <span class=\"glyphicon glyphicon-warning-sign\"></span></strong>" >> ./build_results.html
@@ -259,6 +276,7 @@ function sca_summary_table_header {
             echo "   </div>" >> ./build_results.html
         else
             echo "   <div class=\"alert alert-danger\">" >> ./build_results.html
+            echo "      <span class=\"glyphicon glyphicon-expand\"></span> $COMMAND <br><br>" >> ./build_results.html
             if [ $PU_TRIG -eq 1 ]
             then
                 echo "      <strong>CPPCHECK found $NB_ERRORS errors and $NB_WARNINGS warnings <span class=\"glyphicon glyphicon-ban-circle\"></span></strong>" >> ./build_results.html
