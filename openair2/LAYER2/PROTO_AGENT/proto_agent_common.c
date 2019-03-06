@@ -85,7 +85,7 @@ int f1u_serialize_message(Protocol__F1uMessage *msg, void **buf,int *size)
   *size = protocol__f1u_message__get_packed_size(msg);
 
   *buf = malloc(*size);
-  if (buf == NULL)
+  if (!(*buf))
     goto error;
 
   protocol__f1u_message__pack(msg, *buf);
@@ -181,7 +181,7 @@ int proto_agent_serialize_message(Protocol__FlexsplitMessage *msg, uint8_t **buf
   *size = protocol__flexsplit_message__get_packed_size(msg);
 
   *buf = malloc(*size);
-  if (buf == NULL)
+  if (!(*buf))
     goto error;
 
   protocol__flexsplit_message__pack(msg, *buf);

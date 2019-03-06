@@ -83,6 +83,7 @@ int main(int argc, char *argv[])
   pool_buffer_init();
   if (proto_agent_start(0, &params) != 0) {
     fprintf(stderr, "error on proto_agent_start()\n");
+    fclose(f);
     return 3;
   }
   atexit(close_proto_agent);
@@ -102,7 +103,7 @@ int main(int argc, char *argv[])
   gettimeofday(&t_end, NULL);
   fclose(f);
   long us = uelapsed(&t_start, &t_end);
-  fprintf(stderr, "read %ld bytes in %ld ms -> %.3fMB/s, %.3fMbps\n",
+  fprintf(stderr, "read %zu bytes in %ld ms -> %.3fMB/s, %.3fMbps\n",
           totsize, us / 1000, ((float) totsize ) / us,
           ((float) totsize) / us * 8);
   fprintf(stderr, "check files using 'diff afile bfile'\n");
