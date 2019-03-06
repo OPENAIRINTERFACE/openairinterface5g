@@ -222,7 +222,7 @@ socket_link_t *new_link_udp_client(const char *server, int port){
   ret = calloc(1, sizeof(socket_link_t));
   if (ret == NULL) {
     LOG_E(MAC, "%s:%d: out of memory\n", __FILE__, __LINE__);
-    //goto error;
+    goto error;
   }
   ret->socket_fd = -1;
 
@@ -253,8 +253,10 @@ socket_link_t *new_link_udp_client(const char *server, int port){
  
   return ret;
 error:
-  if (ret != NULL) close(ret->socket_fd);
-  free(ret);
+  if (ret != NULL) {
+    close(ret->socket_fd);
+    free(ret);
+  }
   LOG_E(MAC, "ERROR in new_link_udp_client (see above), returning NULL\n");
   return NULL;
 }
