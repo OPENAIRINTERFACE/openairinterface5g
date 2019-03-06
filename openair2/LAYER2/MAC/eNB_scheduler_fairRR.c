@@ -2434,6 +2434,13 @@ void ulsch_scheduler_pre_processor_fairRR(module_id_t module_idP,
               UE_list->UE_template[CC_id][UE_id].pre_assigned_mcs_ul = mcs;
             }
           } else {
+            if (mac_eNB_get_rrc_status(module_idP,UE_RNTI(module_idP, UE_id)) < RRC_CONNECTED){
+              // assigne RBS( 6 RBs)
+              first_rb[CC_id] = first_rb[CC_id] + 6;
+              UE_list->UE_template[CC_id][UE_id].pre_allocated_nb_rb_ul[0] = 6;
+              UE_list->UE_template[CC_id][UE_id].pre_allocated_rb_table_index_ul = 5;
+              UE_list->UE_template[CC_id][UE_id].pre_assigned_mcs_ul = 10;
+            }else{
             // assigne RBS( 3 RBs)
             first_rb[CC_id] = first_rb[CC_id] + 3;
             UE_list->UE_template[CC_id][UE_id].pre_allocated_nb_rb_ul[0] = 3;
