@@ -1112,35 +1112,7 @@ uint32_t dlsch_decoding_emul(PHY_VARS_NR_UE *phy_vars_ue,
                              PDSCH_t dlsch_id,
                              uint8_t eNB_id);
 
-/** \brief This function is the top-level entry point to PDSCH demodulation, after frequency-domain transformation and channel estimation.  It performs
-    - RB extraction (signal and channel estimates)
-    - channel compensation (matched filtering)
-    - RE extraction (pilot, PBCH, synch. signals)
-    - antenna combining (MRC, Alamouti, cycling)
-    - LLR computation
-    This function supports TM1, 2, 3, 5, and 6.
-    @param PHY_VARS_NR_UE Pointer to PHY variables
-    @param type Type of PDSCH (SI_PDSCH,RA_PDSCH,PDSCH,PMCH)
-    @param eNB_id eNb index (Nid1) 0,1,2
-    @param eNB_id_i Interfering eNB index (Nid1) 0,1,2, or 3 in case of MU-MIMO IC receiver
-    @param subframe Subframe number
-    @param symbol Symbol on which to act (within sub-frame)
-    @param first_symbol_flag set to 1 on first DLSCH symbol
-    @param rx_type. rx_type=RX_IC_single_stream will enable interference cancellation of a second stream when decoding the first stream. In case of TM1, 2, 5, and this can cancel interference from a neighbouring cell given by eNB_id_i. In case of TM5, eNB_id_i should be set to n_connected_eNB to perform multi-user interference cancellation. In case of TM3, eNB_id_i should be set to eNB_id to perform co-channel interference cancellation; this option should be used together with an interference cancellation step [...]. In case of TM3, if rx_type=RX_IC_dual_stream, both streams will be decoded by applying the IC single stream receiver twice.
-    @param i_mod Modulation order of the interfering stream
 
-int32_t nr_rx_pdsch(PHY_VARS_NR_UE *phy_vars_ue,
-                 PDSCH_t type,
-                 uint8_t eNB_id,
-                 uint8_t eNB_id_i,
-                 uint32_t frame,
-                 uint8_t subframe,
-                 uint8_t symbol,
-                 uint8_t first_symbol_flag,
-                 RX_type_t rx_type,
-                 uint8_t i_mod,
-                 uint8_t harq_pid);
-*/
 int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                     uint32_t frame,
                     uint8_t nr_tti_rx,
@@ -1778,6 +1750,24 @@ int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
         uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES],
 	NR_DCI_INFO_EXTRACTED_t *nr_dci_info_extracted);
 
+/** \brief This function is the top-level entry point to PDSCH demodulation, after frequency-domain transformation and channel estimation.  It performs
+    - RB extraction (signal and channel estimates)
+    - channel compensation (matched filtering)
+    - RE extraction (pilot, PBCH, synch. signals)
+    - antenna combining (MRC, Alamouti, cycling)
+    - LLR computation
+    This function supports TM1, 2, 3, 5, and 6.
+    @param ue Pointer to PHY variables
+    @param type Type of PDSCH (SI_PDSCH,RA_PDSCH,PDSCH,PMCH)
+    @param eNB_id eNb index (Nid1) 0,1,2
+    @param eNB_id_i Interfering eNB index (Nid1) 0,1,2, or 3 in case of MU-MIMO IC receiver
+    @param frame Frame number
+    @param nr_tti_rx Subframe number
+    @param symbol Symbol on which to act (within sub-frame)
+    @param first_symbol_flag set to 1 on first DLSCH symbol
+    @param rx_type. rx_type=RX_IC_single_stream will enable interference cancellation of a second stream when decoding the first stream. In case of TM1, 2, 5, and this can cancel interference from a neighbouring cell given by eNB_id_i. In case of TM5, eNB_id_i should be set to n_connected_eNB to perform multi-user interference cancellation. In case of TM3, eNB_id_i should be set to eNB_id to perform co-channel interference cancellation; this option should be used together with an interference cancellation step [...]. In case of TM3, if rx_type=RX_IC_dual_stream, both streams will be decoded by applying the IC single stream receiver twice.
+    @param i_mod Modulation order of the interfering stream
+*/
 int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
              PDSCH_t type,
              unsigned char eNB_id,
