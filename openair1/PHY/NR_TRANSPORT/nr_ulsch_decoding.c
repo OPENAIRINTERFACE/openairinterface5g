@@ -187,7 +187,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   uint32_t A,E;
   uint32_t G;
   uint32_t ret,offset;
-  int32_t no_iteration_ldpc;
+  int32_t no_iteration_ldpc, length_dec;
   uint32_t r,r_offset=0,Kr=8424,Kr_bytes,K_bytes_F,err_flag=0;
   uint8_t crc_type;
   int8_t llrProcBuf[OAI_UL_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
@@ -206,12 +206,13 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   int16_t z [68*384];
   int8_t l [68*384];
   int16_t inv_d [68*384];
-  uint8_t kb, kc;
+  uint8_t kc;
   uint8_t Ilbrm        = 0;
   uint32_t Tbslbrm     = 950984;
   uint16_t nb_rb       = 30; //to update
   uint8_t nb_re_dmrs   = 6;
   uint16_t length_dmrs = 1;
+  double Coderate = 0.0;
 
   uint32_t i,j;
 
@@ -249,6 +250,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   LOG_I(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_symb_sch %d nb_rb %d\n",harq_pid,A,G, nfapi_ulsch_pdu_rel15->mcs, nfapi_ulsch_pdu_rel15->n_layers, nb_symb_sch,nb_rb);
 
   if (harq_process->round == 0) {
+
     // This is a new packet, so compute quantities regarding segmentation
     harq_process->B = A+24;
 
@@ -270,20 +272,43 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 #endif
   }
 
-  kb = harq_process->K/harq_process->Z;
+  Coderate = (float) A /(float) G;
 
-  if ( kb==22) {
-    p_decParams->BG = 1;
-    p_decParams->R = 13;
-    kc = 68;
-  } else {
+  if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
     p_decParams->BG = 2;
-    p_decParams->R = 13;
-    kc = 52;
+    if (Coderate < 0.3333) {
+      p_decParams->R = 15;
+      kc = 52;
+    }
+    else if (Coderate <0.6667) {
+      p_decParams->R = 13;
+      kc = 32;
+    }
+    else {
+      p_decParams->R = 23;
+      kc = 17;
+    }
+  } else {
+    p_decParams->BG = 1;
+    if (Coderate < 0.6667) {
+      p_decParams->R = 13;
+      kc = 68;
+    }
+    else if (Coderate <0.8889) {
+      p_decParams->R = 23;
+      kc = 35;
+    }
+    else {
+      p_decParams->R = 89;
+      kc = 27;
+    }
   }
 
+  //printf("coderate %f kc %d \n", Coderate, kc);
+
+
+
   p_decParams->numMaxIter = ulsch->max_ldpc_iterations;
-  Kr = p_decParams->Z*kb;
   p_decParams->outMode= 0;
 
   err_flag = 0;
@@ -410,10 +435,14 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     memset(harq_process->c[r],0,Kr_bytes);
 
     //    printf("done\n");
-    if (harq_process->C == 1)
+    if (harq_process->C == 1) {
       crc_type = CRC24_A;
-    else
+      length_dec = harq_process->B;
+    }
+    else {
       crc_type = CRC24_B;
+      length_dec = (harq_process->B+24*harq_process->C)/harq_process->C;
+    }
 
     if (err_flag == 0) {
 
@@ -421,19 +450,18 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       start_meas(ulsch_turbo_decoding_stats);
 #endif
 
-      for (int cnt =0; cnt < (kc-2)*p_decParams->Z; cnt++) {
-        inv_d[cnt] = (1)*harq_process->d[r][cnt];
-      }
+      //LOG_E(PHY,"AbsSubframe %d.%d Start LDPC segment %d/%d A %d ",frame%1024,nr_tti_rx,r,harq_process->C-1, A);
 
+      
       memset(pv,0,2*harq_process->Z*sizeof(int16_t));
       memset((pv+K_bytes_F),127,harq_process->F*sizeof(int16_t));
 
-      for (i=((2*p_decParams->Z)>>3), j = 0; i < K_bytes_F+((2*p_decParams->Z)>>3); i++, j++) {
-        pv[i]= _mm_loadu_si128((__m128i*)(&inv_d[8*j]));
+      for (i=((2*p_decParams->Z)>>3), j = 0; i < K_bytes_F; i++, j++) {
+        pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
       }
 
-      for (i=Kr_bytes+((2*p_decParams->Z)>>3),j=Kr_bytes; i < ((kc*p_decParams->Z)>>3); i++, j++) {
-        pv[i]= _mm_loadu_si128((__m128i*)(&inv_d[8*j]));
+      for (i=Kr_bytes,j=K_bytes_F-((2*p_decParams->Z)>>3); i < ((kc*p_decParams->Z)>>3); i++, j++) {
+        pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
       }
     
       for (i=0, j=0; j < ((kc*p_decParams->Z)>>4);  i+=2, j++) {
@@ -455,8 +483,8 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                                          p_nrLDPC_procBuf[r],
                                          p_procTime);
 
-      if (check_crc(llrProcBuf,harq_process->B,harq_process->F,crc_type)) {
-        printf("CRC OK\n");
+      if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {
+        printf("Segment %d CRC OK\n",r);
         ret = 2;
       } else {
         printf("CRC NOK\n");
