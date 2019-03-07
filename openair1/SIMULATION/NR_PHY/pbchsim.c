@@ -412,7 +412,6 @@ int main(int argc, char **argv)
   // computation of integer and fractional FO to compare with estimation results
   int IFO;
   if(eps!=0.0){
-        UE->UE_fo_compensation = 1;
 	printf("Introducing a CFO of %lf relative to SCS of %d kHz\n",eps,(int)(scs/1000));
 	if (eps>0)	
   	  IFO=(int)(eps+0.5);
@@ -644,11 +643,11 @@ int main(int argc, char **argv)
 	if (ret!=0) n_errors++;
       }
     } //noise trials
-
     printf("SNR %f: trials %d, n_errors_crc = %d, n_errors_payload %d\n", SNR,n_trials,n_errors,n_errors_payload);
 
     if (((float)n_errors/(float)n_trials <= target_error_rate) && (n_errors_payload==0)) {
       printf("PBCH test OK\n");
+      printf("Synchronization obtained for i_ssb = %d\n",UE->rx_ind.rx_indication_body[0].mib_pdu.ssb_index);
       break;
     }
       
