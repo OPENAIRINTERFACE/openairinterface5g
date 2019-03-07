@@ -30,9 +30,10 @@
 * \warning
 */
 
-#include "PHY/defs_gNB.h"
+#ifndef __NR_DLSCH__H
+#define __NR_DLSCH__H
 
-extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
+#include "PHY/defs_gNB.h"
 
 void nr_get_time_domain_allocation_type(nfapi_nr_config_request_t config,
                                         nfapi_nr_dl_config_dci_dl_pdu dci_pdu,
@@ -66,16 +67,6 @@ void nr_pdsch_codeword_scrambling(uint8_t *in,
                          uint32_t Nid,
                          uint32_t n_RNTI,
                          uint32_t* out);
-
-void nr_modulation(uint32_t *in,
-                   uint16_t length,
-                   nr_mod_t modulation_type,
-                   int16_t *out);
-
-void nr_pdsch_codeword_modulation(uint32_t *in,
-                         uint8_t  Qm,
-                         uint32_t length,
-                         int16_t *out);
 
 void nr_pdsch_layer_mapping(int16_t **mod_symbs,
                          uint8_t n_layers,
@@ -120,3 +111,4 @@ int nr_dlsch_encoding(unsigned char *a,int frame,
 
 void nr_emulate_dlsch_payload(uint8_t* payload, uint16_t size);
 
+#endif

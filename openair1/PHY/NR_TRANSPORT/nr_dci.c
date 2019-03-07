@@ -32,13 +32,12 @@
 
 #include "nr_dci.h"
 #include "nr_dlsch.h"
+#include "PHY/MODULATION/nr_modulation.h"
 
 //#define DEBUG_PDCCH_DMRS
 //#define DEBUG_DCI
 //#define DEBUG_CHANNEL_CODING
 
-
-extern short nr_mod_table[NR_MOD_TABLE_SIZE_SHORT];
 
 uint16_t nr_get_dci_size(nfapi_nr_dci_format_e format,
                          nfapi_nr_rnti_type_e rnti_type,
@@ -217,9 +216,9 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
 #endif
       }
 
-      nr_modulation(dmrs_seq, dmrs_length, MOD_QPSK, mod_dmrs[symb]);
+      nr_modulation(dmrs_seq, dmrs_length, 2, mod_dmrs[symb]); //Qm = 2 as DMRS is QPSK modulated
     } else
-      nr_modulation(gold_pdcch_dmrs[symb], dmrs_length, MOD_QPSK, mod_dmrs[symb]);
+      nr_modulation(gold_pdcch_dmrs[symb], dmrs_length, 2, mod_dmrs[symb]); //Qm = 2 as DMRS is QPSK modulated
 
 #ifdef DEBUG_PDCCH_DMRS
 
@@ -264,7 +263,7 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
 #endif
   /// QPSK modulation
   int16_t mod_dci[NR_MAX_DCI_SIZE>>1];
-  nr_modulation(scrambled_output, encoded_length, MOD_QPSK, mod_dci);
+  nr_modulation(scrambled_output, encoded_length, 2, mod_dci); //Qm = 2 as DMRS is QPSK modulated
 #ifdef DEBUG_DCI
 
   for (int i=0; i<encoded_length>>1; i++)

@@ -33,12 +33,10 @@
 #include "nr_dlsch.h"
 #include "nr_dci.h"
 #include "nr_sch_dmrs.h"
+#include "PHY/MODULATION/nr_modulation.h"
 
 //#define DEBUG_DLSCH
 //#define DEBUG_DLSCH_MAPPING
-
-uint8_t mod_order[5] = {1, 2, 4, 6, 8};
-uint16_t mod_offset[5] = {1,3,7,23,87};
 
 void nr_pdsch_codeword_scrambling(uint8_t *in,
                          uint16_t size,
@@ -67,54 +65,6 @@ void nr_pdsch_codeword_scrambling(uint8_t *in,
 
 }
 
-void nr_modulation(uint32_t *in,
-                   uint16_t length,
-                   nr_mod_t modulation_type,
-                   int16_t *out) {
-
-  uint16_t offset;
-	uint16_t order;
-	order = mod_order[modulation_type];
-	offset = mod_offset[modulation_type];
-   
-  for (int i=0; i<length/order; i++) {
-    uint8_t idx = 0, b_idx;
-
-    for (int j=0; j<order; j++) {
-      b_idx = (i*order+j)&0x1f;
-      if (i && (!b_idx))
-        in++;
-      idx ^= (((*in)>>b_idx)&1)<<(order-j-1);
-    }
-
-    out[i<<1] = nr_mod_table[(offset+idx)<<1];
-    out[(i<<1)+1] = nr_mod_table[((offset+idx)<<1)+1];
-  }
-}
-
-void nr_pdsch_codeword_modulation(uint32_t *in,
-                         uint8_t  Qm,
-                         uint32_t length,
-                         int16_t *out) {
-
-  uint16_t offset = (Qm==2)? NR_MOD_TABLE_QPSK_OFFSET : (Qm==4)? NR_MOD_TABLE_QAM16_OFFSET : \
-                    (Qm==6)? NR_MOD_TABLE_QAM64_OFFSET: (Qm==8)? NR_MOD_TABLE_QAM256_OFFSET : 0;
-  AssertFatal(offset, "Invalid modulation order %d\n", Qm);
-
-  for (int i=0; i<length/Qm; i++) {
-    uint8_t idx = 0, b_idx;
-
-    for (int j=0; j<Qm; j++) {
-      b_idx = (i*Qm+j)&0x1f;
-      if (i && (!b_idx))
-        in++;
-      idx ^= (((*in)>>b_idx)&1)<<(Qm-j-1);
-    }
-
-    out[i<<1] = nr_mod_table[(offset+idx)<<1];
-    out[(i<<1)+1] = nr_mod_table[((offset+idx)<<1)+1];
-  }
-}
 
 void nr_pdsch_layer_mapping(int16_t **mod_symbs,
                          uint8_t n_layers,
@@ -255,10 +205,11 @@ for (int i=0; i<encoded_length>>8; i++) {
 #endif
  
   /// Modulation
+
   for (int q=0; q<rel15->nb_codewords; q++)
-    nr_pdsch_codeword_modulation(scrambled_output[q],
-                         Qm,
+    nr_modulation(scrambled_output[q],
                          encoded_length,
+                         Qm,
                          mod_symbs[q]);
 #ifdef DEBUG_DLSCH
 printf("PDSCH Modulation: Qm %d(%d)\n", Qm, nb_symbols);
@@ -297,8 +248,8 @@ for (int l=0; l<rel15->nb_layers; l++)
   uint8_t mapping_type = config.pdsch_config.mapping_type.value;
 
   l0 = get_l0(mapping_type, 2);//config.pdsch_config.dmrs_typeA_position.value);
-  nr_modulation(pdsch_dmrs[l0][0], n_dmrs, MOD_QPSK, mod_dmrs); // currently only codeword 0 is modulated
-  
+  nr_modulation(pdsch_dmrs[l0][0], n_dmrs, 2, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
+
 #ifdef DEBUG_DLSCH
 printf("DMRS modulation (single symbol %d, %d symbols, type %d):\n", l0, n_dmrs>>1, dmrs_type);
 for (int i=0; i<n_dmrs>>4; i++) {

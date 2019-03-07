@@ -1070,18 +1070,6 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
                          uint32_t* out);
 
 
-/*! \brief Perform PUSCH modulation. TS 38.211 V15.4.0 subclause 6.3.1.2
-  @param[in] in, Pointer to input bits
-  @param[in] Qm, modulation order
-  @param[in] length, size of input bits
-  @param[out] out, complex valued modulated symbols
-*/
-
-void nr_pusch_codeword_modulation(uint32_t *in,
-                         uint8_t  Qm,
-                         uint32_t length,
-                         int16_t *out);
-
 
 uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 						 UE_nr_rxtx_proc_t *proc,

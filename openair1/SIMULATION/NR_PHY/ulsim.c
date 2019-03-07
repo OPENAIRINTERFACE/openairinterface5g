@@ -40,6 +40,7 @@
 #include "PHY/INIT/phy_init.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "PHY/NR_REFSIG/nr_mod_table.h"
+#include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/NR_TRANSPORT/nr_transport.h"
@@ -569,10 +570,10 @@ int main(int argc, char **argv) {
   /////////////////////////ULSCH modulation/////////////////////////
   ///////////
 
-  nr_pusch_codeword_modulation(scrambled_output[0], // assume one codeword for the moment
-                               mod_order,
-                               encoded_length,
-                               ulsch_ue->d);
+  nr_modulation(scrambled_output[0], // assume one codeword for the moment
+                encoded_length,
+                mod_order,
+                ulsch_ue->d);
 
   ///////////
   ////////////////////////////////////////////////////////////////////////
