@@ -563,7 +563,7 @@ int DU_handle_F1_SETUP_FAILURE(instance_t instance,
 //void DU_send_gNB_DU_CONFIGURATION_UPDATE(F1AP_GNBDUConfigurationUpdate_t *GNBDUConfigurationUpdate) {
 int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
                                          instance_t du_mod_idP,
-                                         f1ap_setup_req_t *f1ap_du_data) {
+                                         f1ap_setup_req_t *f1ap_setup_req) {
   F1AP_F1AP_PDU_t                     pdu;
   F1AP_GNBDUConfigurationUpdate_t     *out;
   F1AP_GNBDUConfigurationUpdateIEs_t  *ie;
@@ -619,22 +619,22 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
         memset((void *)&served_cell_information, 0, sizeof(F1AP_Served_Cell_Information_t));
         /* - nRCGI */
         F1AP_NRCGI_t nRCGI;
-        MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i], &nRCGI.pLMN_Identity);
+        MCC_MNC_TO_PLMNID(f1ap_setup_req->mcc[i], f1ap_setup_req->mnc[i], f1ap_setup_req->mnc_digit_length[i], &nRCGI.pLMN_Identity);
         LOG_D(F1AP, "nr_cellId : %x %x %x %x %x\n",
               nRCGI.nRCellIdentity.buf[0],
               nRCGI.nRCellIdentity.buf[1],
               nRCGI.nRCellIdentity.buf[2],
               nRCGI.nRCellIdentity.buf[3],
               nRCGI.nRCellIdentity.buf[4]);
-        NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[i], &nRCGI.nRCellIdentity);
+        NR_CELL_ID_TO_BIT_STRING(f1ap_setup_req->nr_cellid[i], &nRCGI.nRCellIdentity);
         served_cell_information.nRCGI = nRCGI;
 
         /* - nRPCI */
-        served_cell_information.nRPCI = f1ap_du_data->nr_pci[i];  // int 0..1007
+        served_cell_information.nRPCI = f1ap_setup_req->nr_pci[i];  // int 0..1007
 
         /* - fiveGS_TAC */
         OCTET_STRING_fromBuf(&served_cell_information.fiveGS_TAC,
-                             (const char *) &f1ap_du_data->tac[i],
+                             (const char *) &f1ap_setup_req->tac[i],
                              3);
 
         /* - Configured_EPS_TAC */
@@ -653,14 +653,14 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
             /* > PLMN BroadcastPLMNs Item */
             F1AP_BroadcastPLMNs_Item_t *broadcastPLMNs_Item = (F1AP_BroadcastPLMNs_Item_t *)calloc(1, sizeof(F1AP_BroadcastPLMNs_Item_t));
             //memset((void *)&broadcastPLMNs_Item, 0, sizeof(F1AP_BroadcastPLMNs_Item_t));
-            MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i], &broadcastPLMNs_Item->pLMN_Identity);
+            MCC_MNC_TO_PLMNID(f1ap_setup_req->mcc[i], f1ap_setup_req->mnc[i], f1ap_setup_req->mnc_digit_length[i], &broadcastPLMNs_Item->pLMN_Identity);
             ASN_SEQUENCE_ADD(&served_cell_information.servedPLMNs.list, broadcastPLMNs_Item);
         }
 
         // // /* - CHOICE NR-MODE-Info */
         F1AP_NR_Mode_Info_t nR_Mode_Info;
 
-        if ("FDD") {
+        if (f1ap_setup_req->fdd_flag) {
           nR_Mode_Info.present = F1AP_NR_Mode_Info_PR_fDD;
           /* > FDD >> FDD Info */
           F1AP_FDD_Info_t *fDD_Info = (F1AP_FDD_Info_t *)calloc(1, sizeof(F1AP_FDD_Info_t));
@@ -778,9 +778,9 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
 
         /* 3.1 oldNRCGI */
         F1AP_NRCGI_t oldNRCGI;
-        MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i],
+        MCC_MNC_TO_PLMNID(f1ap_setup_req->mcc[i], f1ap_setup_req->mnc[i], f1ap_setup_req->mnc_digit_length[i],
                                          &oldNRCGI.pLMN_Identity);
-        NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[i], &oldNRCGI.nRCellIdentity);
+        NR_CELL_ID_TO_BIT_STRING(f1ap_setup_req->nr_cellid[i], &oldNRCGI.nRCellIdentity);
         served_cells_to_modify_item.oldNRCGI = oldNRCGI;
 
 
@@ -790,17 +790,17 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
 
         /* - nRCGI */
         F1AP_NRCGI_t nRCGI;
-        MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i],
+        MCC_MNC_TO_PLMNID(f1ap_setup_req->mcc[i], f1ap_setup_req->mnc[i], f1ap_setup_req->mnc_digit_length[i],
                                          &nRCGI.pLMN_Identity);
-        NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[i], &nRCGI.nRCellIdentity);
+        NR_CELL_ID_TO_BIT_STRING(f1ap_setup_req->nr_cellid[i], &nRCGI.nRCellIdentity);
         served_cell_information.nRCGI = nRCGI;
 
         /* - nRPCI */
-        served_cell_information.nRPCI = f1ap_du_data->nr_pci[i];  // int 0..1007
+        served_cell_information.nRPCI = f1ap_setup_req->nr_pci[i];  // int 0..1007
 
         /* - fiveGS_TAC */
         OCTET_STRING_fromBuf(&served_cell_information.fiveGS_TAC,
-                             (const char *) &f1ap_du_data->tac[i],
+                             (const char *) &f1ap_setup_req->tac[i],
                              3);
 
         /* - Configured_EPS_TAC */
@@ -819,14 +819,14 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
             /* > PLMN BroadcastPLMNs Item */
             F1AP_BroadcastPLMNs_Item_t *broadcastPLMNs_Item = (F1AP_BroadcastPLMNs_Item_t *)calloc(1, sizeof(F1AP_BroadcastPLMNs_Item_t));
             //memset((void *)&broadcastPLMNs_Item, 0, sizeof(F1AP_BroadcastPLMNs_Item_t));
-            MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i], &broadcastPLMNs_Item->pLMN_Identity);
+            MCC_MNC_TO_PLMNID(f1ap_setup_req->mcc[i], f1ap_setup_req->mnc[i], f1ap_setup_req->mnc_digit_length[i], &broadcastPLMNs_Item->pLMN_Identity);
             ASN_SEQUENCE_ADD(&served_cell_information.servedPLMNs.list, broadcastPLMNs_Item);
         }
 
         // // /* - CHOICE NR-MODE-Info */
         F1AP_NR_Mode_Info_t nR_Mode_Info;
 
-        if ("FDD") {
+        if (f1ap_setup_req->fdd_flag) {
           nR_Mode_Info.present = F1AP_NR_Mode_Info_PR_fDD;
           /* > FDD >> FDD Info */
           F1AP_FDD_Info_t *fDD_Info = (F1AP_FDD_Info_t *)calloc(1, sizeof(F1AP_FDD_Info_t));
@@ -944,9 +944,9 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
 
         /* 3.1 oldNRCGI */
         F1AP_NRCGI_t oldNRCGI;
-        MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i],
+        MCC_MNC_TO_PLMNID(f1ap_setup_req->mcc[i], f1ap_setup_req->mnc[i], f1ap_setup_req->mnc_digit_length[i],
                                          &oldNRCGI.pLMN_Identity);
-        NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[i], &oldNRCGI.nRCellIdentity);
+        NR_CELL_ID_TO_BIT_STRING(f1ap_setup_req->nr_cellid[i], &oldNRCGI.nRCellIdentity);
         served_cells_to_delete_item.oldNRCGI = oldNRCGI;
 
         /* ADD */
@@ -980,9 +980,9 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
 
         /* 3.1 oldNRCGI */
         F1AP_NRCGI_t nRCGI;
-        MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i],
+        MCC_MNC_TO_PLMNID(f1ap_setup_req->mcc[i], f1ap_setup_req->mnc[i], f1ap_setup_req->mnc_digit_length[i],
                                          &nRCGI.pLMN_Identity);
-        NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[i], &nRCGI.nRCellIdentity);
+        NR_CELL_ID_TO_BIT_STRING(f1ap_setup_req->nr_cellid[i], &nRCGI.nRCellIdentity);
         active_cells_item.nRCGI = nRCGI;
         
         /* ADD */

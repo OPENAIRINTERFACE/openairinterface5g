@@ -301,8 +301,8 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance) {
      
      /* OPTIONAL */
      /* lCID */
-     drbs_setup_item.lCID = (F1AP_LCID_t *)calloc(1, sizeof(F1AP_LCID_t));
-     drbs_setup_item.lCID = 0L;
+     //drbs_setup_item.lCID = (F1AP_LCID_t *)calloc(1, sizeof(F1AP_LCID_t));
+     //drbs_setup_item.lCID = 1L;
 
      for (j=0;
        j<1;

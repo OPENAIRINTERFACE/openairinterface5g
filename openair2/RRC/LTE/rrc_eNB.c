@@ -1179,7 +1179,7 @@ rrc_eNB_generate_SecurityModeCommand(
     rrc_eNB_mui,
     size);
 
-  if ((RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_DU) ||
+  if ((RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_DU) &&
       (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_DU)) {
     LOG_I(RRC,"calling rrc_data_req :securityModeCommand\n");
 
@@ -6507,8 +6507,8 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
             /*      rrc_pdcp_config_req (ctxt_pP->module_id, frameP, 1, CONFIG_ACTION_REMOVE,
                (ue_mod_idP * NB_RB_MAX) + DRB2LCHAN[i],UNDEF_SECURITY_MODE);
              */
-          if ( (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) ||
-             (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU) ||
+          if ( (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) &&
+             (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU) &&
              (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_CU)   ) {
             rrc_rlc_config_req(ctxt_pP,
                                SRB_FLAG_NO,
@@ -7210,8 +7210,8 @@ rrc_eNB_decode_ccch(
               if ((ue_context_p = rrc_eNB_ue_context_stmsi_exist(ctxt_pP, mme_code, m_tmsi))) {
                 LOG_I(RRC," S-TMSI exists, ue_context_p %p, old rnti %x => %x\n",ue_context_p,ue_context_p->ue_context.rnti,ctxt_pP->rnti);
 
-                if ((RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) ||
-                    (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU) ||
+                if ((RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) &&
+                    (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU) &&
                     (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_CU)   ) {
                   rrc_mac_remove_ue(ctxt_pP->module_id, ue_context_p->ue_context.rnti);
                 }

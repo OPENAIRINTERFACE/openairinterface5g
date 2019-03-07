@@ -522,8 +522,6 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   boolean_t          ret             = TRUE;
   mem_block_t       *pdcp_pdu_p      = NULL; 
   pdcp_pdu_p = get_free_mem_block(rrc_dl_sdu_len, __func__);
-  memset(pdcp_pdu_p->data, 0, rrc_dl_sdu_len);
-  memcpy(&pdcp_pdu_p->data[0], ie->value.choice.RRCContainer.buf, rrc_dl_sdu_len);
 
   //LOG_I(F1AP, "PRRCContainer size %lu:", ie->value.choice.RRCContainer.size);
   //for (int i = 0; i < ie->value.choice.RRCContainer.size; i++)
@@ -534,7 +532,9 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   //printf("\n");
 
 
-    if (pdcp_pdu_p != NULL) {
+  if (pdcp_pdu_p != NULL) {
+    memset(pdcp_pdu_p->data, 0, rrc_dl_sdu_len);
+    memcpy(&pdcp_pdu_p->data[0], ie->value.choice.RRCContainer.buf, rrc_dl_sdu_len);
       rlc_status = rlc_data_req(&ctxt
                                 , 1
                                 , MBMS_FLAG_NO

@@ -965,35 +965,36 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
 
   struct rrc_eNB_ue_context_s *ue_context_p =
       rrc_eNB_get_ue_context(RC.rrc[instance], rnti);
-
-  /* The following is normally done in the function rrc_rx_tx() */
-  rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_CPLT(instance,
-      ue_context_p->ue_context.eNB_ue_s1ap_id);
-
-  rrc_eNB_send_GTPV1U_ENB_DELETE_TUNNEL_REQ(instance, ue_context_p);
-  // erase data of GTP tunnels in UE context
-  for (int e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
-    ue_context_p->ue_context.enb_gtp_teid[e_rab] = 0;
-    memset(&ue_context_p->ue_context.enb_gtp_addrs[e_rab],
-           0, sizeof(ue_context_p->ue_context.enb_gtp_addrs[e_rab]));
-    ue_context_p->ue_context.enb_gtp_ebi[e_rab]  = 0;
-  }
-
-  struct rrc_ue_s1ap_ids_s *rrc_ue_s1ap_ids =
-      rrc_eNB_S1AP_get_ue_ids(RC.rrc[instance], 0,
-                              ue_context_p->ue_context.eNB_ue_s1ap_id);
-  if (rrc_ue_s1ap_ids)
-      rrc_eNB_S1AP_remove_ue_ids(RC.rrc[instance], rrc_ue_s1ap_ids);
-
-  /* The following is normally done in the function release_UE_in_freeList() */
-  /* remove PDCP entry */
   protocol_ctxt_t ctxt;
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, instance, ENB_FLAG_YES, rnti, 0, 0, instance);
-  pdcp_remove_UE(&ctxt);
 
-  /* trigger UE release in RRC */
-  if (ue_context_p)
+  if (ue_context_p) {
+    /* The following is normally done in the function rrc_rx_tx() */
+    rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_CPLT(instance,
+        ue_context_p->ue_context.eNB_ue_s1ap_id);
+
+    rrc_eNB_send_GTPV1U_ENB_DELETE_TUNNEL_REQ(instance, ue_context_p);
+    // erase data of GTP tunnels in UE context
+    for (int e_rab = 0; e_rab < ue_context_p->ue_context.nb_of_e_rabs; e_rab++) {
+      ue_context_p->ue_context.enb_gtp_teid[e_rab] = 0;
+      memset(&ue_context_p->ue_context.enb_gtp_addrs[e_rab],
+             0, sizeof(ue_context_p->ue_context.enb_gtp_addrs[e_rab]));
+      ue_context_p->ue_context.enb_gtp_ebi[e_rab]  = 0;
+    }
+
+    struct rrc_ue_s1ap_ids_s *rrc_ue_s1ap_ids =
+        rrc_eNB_S1AP_get_ue_ids(RC.rrc[instance], 0,
+                                ue_context_p->ue_context.eNB_ue_s1ap_id);
+    if (rrc_ue_s1ap_ids)
+        rrc_eNB_S1AP_remove_ue_ids(RC.rrc[instance], rrc_ue_s1ap_ids);
+
+    /* trigger UE release in RRC */
     rrc_eNB_remove_ue_context(&ctxt, RC.rrc[instance], ue_context_p);
+  } else {
+    LOG_E(F1AP, "could not find ue_context of UE RNTI %x\n", rnti);
+  }
+
+  pdcp_remove_UE(&ctxt);
 
   /* notify the agent */
   if (flexran_agent_get_rrc_xface(instance))
