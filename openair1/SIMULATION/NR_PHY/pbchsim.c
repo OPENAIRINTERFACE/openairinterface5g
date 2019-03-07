@@ -412,6 +412,7 @@ int main(int argc, char **argv)
   // computation of integer and fractional FO to compare with estimation results
   int IFO;
   if(eps!=0.0){
+        UE->UE_fo_compensation = 1;
 	printf("Introducing a CFO of %lf relative to SCS of %d kHz\n",eps,(int)(scs/1000));
 	if (eps>0)	
   	  IFO=(int)(eps+0.5);
@@ -520,7 +521,7 @@ int main(int argc, char **argv)
 
   } else {
     printf("Reading %d samples from file to antenna buffer %d\n",frame_length_complex_samples,0);
-    
+    UE->UE_fo_compensation = 1; // perform fo compensation when samples from file are used
     if (fread(txdata[0],
 	      sizeof(int32_t),
 	      frame_length_complex_samples,
@@ -594,9 +595,9 @@ int main(int argc, char **argv)
       }
 
       if (n_trials==1) {
-	LOG_M("rxsig0.m","rxs0", UE->common_vars.rxdata[0],frame_parms->samples_per_subframe,1,1);
+	LOG_M("rxsig0.m","rxs0", UE->common_vars.rxdata[0],frame_parms->samples_per_frame,1,1);
 	if (gNB->frame_parms.nb_antennas_tx>1)
-	  LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1],frame_parms->samples_per_subframe,1,1);
+	  LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1],frame_parms->samples_per_frame,1,1);
       }
 
       if (UE->is_synchronized == 0) {

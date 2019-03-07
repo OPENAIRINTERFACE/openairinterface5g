@@ -899,7 +899,7 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
 
   if (fo_flag){
 
-	  // fractional frequency offser computation according to Cross-correlation Synchronization Algorithm Using PSS
+	  // fractional frequency offset computation according to Cross-correlation Synchronization Algorithm Using PSS
 	  // Shoujun Huang, Yongtao Su, Ying He and Shan Tang, "Joint time and frequency offset estimation in LTE downlink," 7th International Conference on Communications and Networking in China, 2012.
 
 	  int64_t result1,result2;
