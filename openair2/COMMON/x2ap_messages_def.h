@@ -40,3 +40,6 @@ MESSAGE_DEF(X2AP_DEREGISTERED_ENB_IND           , MESSAGE_PRIORITY_MED, x2ap_der
 /* handover messages X2AP <-> RRC */
 MESSAGE_DEF(X2AP_HANDOVER_REQ                   , MESSAGE_PRIORITY_MED, x2ap_handover_req_t              , x2ap_handover_req)
 MESSAGE_DEF(X2AP_HANDOVER_REQ_ACK               , MESSAGE_PRIORITY_MED, x2ap_handover_req_ack_t          , x2ap_handover_req_ack)
+
+/* handover messages X2AP <-> S1AP */
+MESSAGE_DEF(X2AP_UE_CONTEXT_RELEASE             , MESSAGE_PRIORITY_MED, x2ap_ue_context_release_t        , x2ap_ue_context_release)

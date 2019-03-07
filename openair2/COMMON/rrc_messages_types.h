@@ -81,6 +81,8 @@
 #define NAS_UPLINK_DATA_CNF(mSGpTR)     (mSGpTR)->ittiMsg.nas_ul_data_cnf
 #define NAS_DOWNLINK_DATA_IND(mSGpTR)   (mSGpTR)->ittiMsg.nas_dl_data_ind
 
+#define RRC_SUBFRAME_PROCESS(mSGpTR)    (mSGpTR)->ittiMsg.rrc_subframe_process
+
 //-------------------------------------------------------------------------------------------//
 typedef struct RrcStateInd_s {
   Rrc_State_t     state;
@@ -398,5 +400,11 @@ typedef nas_establish_cnf_t     NasConnEstabCnf;
 typedef nas_release_ind_t       NasConnReleaseInd;
 typedef ul_info_transfer_cnf_t  NasUlDataCnf;
 typedef dl_info_transfer_ind_t  NasDlDataInd;
+
+// eNB: realtime -> RRC messages
+typedef struct rrc_subframe_process_s {
+  protocol_ctxt_t ctxt;
+  int             CC_id;
+} RrcSubframeProcess;
 
 #endif /* RRC_MESSAGES_TYPES_H_ */
