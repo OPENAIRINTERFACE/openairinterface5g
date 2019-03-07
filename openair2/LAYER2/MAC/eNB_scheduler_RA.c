@@ -717,8 +717,9 @@ generate_Msg4(module_id_t module_idP, int CC_idP, frame_t frameP,
 
     if ((ra->msg4_mpdcch_repetition_cnt == 0) && (mpdcch_sf_condition (mac, CC_idP, frameP, subframeP, rmax, TYPE2, -1) > 0)) {
       // Get RRCConnectionSetup for Piggyback
-      ra->msg4_rrc_sdu_length = mac_rrc_data_req (module_idP, CC_idP, frameP, CCCH, ra->rnti, 1,       // 1 transport block
-							   &cc[CC_idP].CCCH_pdu.payload[0], 0);     // not used in this case
+      ra->msg4_rrc_sdu_length = mac_rrc_data_req (module_idP, CC_idP, frameP, CCCH,
+                                                  UE_RNTI(module_idP, UE_id), 1,        // 1 transport block
+                                                  &cc[CC_idP].CCCH_pdu.payload[0], 0);  // not used in this case
 
       AssertFatal (ra->msg4_rrc_sdu_length > 0, "[MAC][eNB Scheduler] CCCH not allocated\n");
 
