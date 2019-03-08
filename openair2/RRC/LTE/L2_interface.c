@@ -271,10 +271,10 @@ mac_rrc_data_ind(
 
   if((srb_idP & RAB_OFFSET) == CCCH) {
     LOG_D(RRC, "[eNB %d] Received SDU for CCCH on SRB %d\n", module_idP, srb_idP);
-    /*Srb_info = &RC.rrc[module_idP]->carrier[CC_id].Srb0;
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     ctxt.brOption = brOption;
 #endif
+    /*Srb_info = &RC.rrc[module_idP]->carrier[CC_id].Srb0;
     if (sdu_lenP > 0) {
       memcpy(Srb_info->Rx_buffer.Payload,sduP,sdu_lenP);
       Srb_info->Rx_buffer.payload_size = sdu_lenP;
