@@ -68,11 +68,6 @@ void nr_pdsch_codeword_scrambling(uint8_t *in,
                          uint32_t n_RNTI,
                          uint32_t* out);
 
-void nr_pdsch_layer_mapping(int16_t **mod_symbs,
-                         uint8_t n_layers,
-                         uint16_t n_symbs,
-                         int16_t **tx_layers);
-
 void nr_fill_dlsch(PHY_VARS_gNB *gNB,
                    int frame,
                    int slot,
