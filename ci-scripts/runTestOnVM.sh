@@ -664,7 +664,7 @@ function run_test_on_vm {
     if [ "$RUN_OPTIONS" == "none" ]
     then
         echo "No run on VM testing for this variant currently"
-        exit $STATUS
+        return
     fi
 
     if [[ $RUN_OPTIONS =~ .*run_exec_autotests.* ]]
@@ -823,7 +823,8 @@ function run_test_on_vm {
             recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
             echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
-            exit -1
+            STATUS=-1
+            return
         fi
         get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
 
@@ -882,7 +883,8 @@ function run_test_on_vm {
             recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
             echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
-            exit -1
+            STATUS=-1
+            return
         fi
         get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
 
@@ -941,7 +943,8 @@ function run_test_on_vm {
             recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
             echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
-            exit -1
+            STATUS=-1
+            return
         fi
         get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
 
@@ -993,7 +996,8 @@ function run_test_on_vm {
                 echo "ERROR: compiling flexran controller on vm went wrong"
                 terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
                 echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
-                exit -1
+                STATUS=-1
+                return
             fi
             FLEXRAN_CTL_VM_NAME=`echo $VM_NAME | sed -e "s#basic-sim#flexran-rtc#"`
             FLEXRAN_CTL_VM_CMDS=`echo $VM_CMDS | sed -e "s#cmds#flexran-rtc-cmds#"`
@@ -1003,7 +1007,8 @@ function run_test_on_vm {
                 echo "ERROR: Flexran Ctl VM is not alive"
                 terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
                 echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
-                exit -1
+                STATUS=-1
+                return
             fi
             uvt-kvm wait $FLEXRAN_CTL_VM_NAME --insecure
             FLEXRAN_CTL_VM_IP_ADDR=`uvt-kvm ip $FLEXRAN_CTL_VM_NAME`
@@ -1038,7 +1043,8 @@ function run_test_on_vm {
                 terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
                 stop_flexran_ctrl $FLEXRAN_CTL_VM_CMDS $FLEXRAN_CTL_VM_IP_ADDR
                 echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
-                exit -1
+                STATUS=-1
+                return
             fi
             query_flexran_ctrl_status $FLEXRAN_CTL_VM_CMDS $FLEXRAN_CTL_VM_IP_ADDR 03_enb_ue_connected
             get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
@@ -1080,7 +1086,8 @@ function run_test_on_vm {
             recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
             echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
-            exit -1
+            STATUS=-1
+            return
         fi
         get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
 
@@ -1131,7 +1138,8 @@ function run_test_on_vm {
             recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
             echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
-            exit -1
+            STATUS=-1
+            return
         fi
         get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
 
@@ -1182,7 +1190,8 @@ function run_test_on_vm {
 #            recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
 #            terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
 #            echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
-#            exit -1
+#            STATUS=-1
+#            return
 #        fi
 #        get_ue_ip_addr $VM_CMDS $VM_IP_ADDR
 #
@@ -1294,7 +1303,8 @@ function run_test_on_vm {
             scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
             terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
             echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
-            exit -1
+            STATUS=-1
+            return
         fi
 
         echo "############################################################"
