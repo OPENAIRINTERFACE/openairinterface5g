@@ -91,12 +91,20 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
   uint8_t *pbch_pdu=&gNB->pbch_pdu[0];
   uint8_t ssb_index, n_hf;
   int ssb_start_symbol, rel_slot;
-
+  printf("Frame %d\n",frame);
   n_hf = cfg->sch_config.half_frame_index.value;
+
+  // if SSB periodicity is 5ms, they are transmitted in both half frames
+  if ( cfg->sch_config.ssb_periodicity.value == 5) {
+    if (slot<10)
+      n_hf=0;
+    else
+      n_hf=1;
+  }
+
   // to set a effective slot number between 0 to 9 in the half frame where the SSB is supposed to be
   rel_slot = (n_hf)? (slot-10) : slot; 
 
-  
   LOG_D(PHY,"common_signal_procedures: frame %d, slot %d\n",frame,slot);
 
   if(rel_slot<10 && rel_slot>=0)  {
@@ -114,7 +122,10 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
     	  nr_generate_pss(gNB->d_pss, txdataF[0], AMP, ssb_start_symbol, cfg, fp);
     	  nr_generate_sss(gNB->d_sss, txdataF[0], AMP, ssb_start_symbol, cfg, fp);
 
-	  nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index],txdataF[0], AMP, ssb_start_symbol, cfg, fp);
+	  if (fp->Lmax == 4)
+	    nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[n_hf][ssb_index],txdataF[0], AMP, ssb_start_symbol, cfg, fp);
+	  else
+	    nr_generate_pbch_dmrs(gNB->nr_gold_pbch_dmrs[0][ssb_index],txdataF[0], AMP, ssb_start_symbol, cfg, fp);
 
     	  nr_generate_pbch(&gNB->pbch,
                       pbch_pdu,
@@ -139,6 +150,12 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
   nfapi_nr_config_request_t *cfg = &gNB->gNB_config;
   int offset = gNB->CC_id;
+  uint8_t ssb_frame_periodicity;  // every how many frames SSB are generated
+
+  if (cfg->sch_config.ssb_periodicity.value < 20)
+    ssb_frame_periodicity = 1;
+  else 
+    ssb_frame_periodicity = (cfg->sch_config.ssb_periodicity.value)/10 ;  // 10ms is the frame length
 
   if ((cfg->subframe_config.duplex_mode.value == TDD) && (nr_slot_select(cfg,slot)==SF_UL)) return;
 
@@ -151,10 +168,9 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
     memset(gNB->common_vars.txdataF[aa],0,fp->samples_per_slot_wCP*sizeof(int32_t));
   }
 
-  if (nfapi_mode == 0 || nfapi_mode == 1) {
-    nr_common_signal_procedures(gNB,frame, slot);
-    //if (frame == 9)
-    //write_output("txdataF.m","txdataF",gNB->common_vars.txdataF[aa],fp->samples_per_frame_wCP, 1, 1);
+  if (nfapi_mode == 0 || nfapi_mode == 1) { 
+    if (!(frame%ssb_frame_periodicity))  // generate SSB only for given frames according to SSB periodicity
+      nr_common_signal_procedures(gNB,frame, slot);
   }
 
   num_dci = gNB->pdcch_vars.num_dci;

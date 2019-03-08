@@ -197,6 +197,7 @@ void config_common(int Mod_idP,
 
   cfg->sch_config.physical_cell_id.value = cellid;
   cfg->sch_config.ssb_scg_position_in_burst.value = ssb_pattern;
+  cfg->sch_config.ssb_periodicity.value = 20;
 
   // FDD
   cfg->subframe_config.duplex_mode.value                          = 1;
