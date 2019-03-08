@@ -289,7 +289,7 @@ void usage(void) {
     "    -max-sib <n>              report at maximum n SIBs\n"
     "    -live                     run live\n"
     "    -live-ip <IP address>     tracee's IP address (default %s)\n"
-    "    -live-port <por>          tracee's port (default %d)\n"
+    "    -live-port <port>         tracee's port (default %d)\n"
     "-i and -live are mutually exclusive options. One of them must be provided\n"
     "but not both.\n",
     DEFAULT_IP,
