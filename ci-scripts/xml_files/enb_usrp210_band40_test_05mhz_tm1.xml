@@ -65,7 +65,7 @@
                 <class>Ping</class>
                 <desc>ping (5MHz - 20 sec)</desc>
                 <ping_args>-c 20</ping_args>
-                <ping_packetloss_threshold>25</ping_packetloss_threshold>
+                <ping_packetloss_threshold>50</ping_packetloss_threshold>
         </testCase>
 
         <testCase id="040601">
