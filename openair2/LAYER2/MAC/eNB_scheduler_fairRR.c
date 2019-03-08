@@ -1291,9 +1291,9 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
                                               ,0, 0
 #endif
                                              );
-            pthread_mutex_lock(&rrc_release_freelist);
 
-            if((rrc_release_info.num_UEs > 0) && (rlc_am_mui.rrc_mui_num > 0)) {
+            if((rrc_release_info.num_UEs > 0) && (rlc_am_mui.rrc_mui_num > 0)){
+              pthread_mutex_lock(&rrc_release_freelist);
               uint16_t release_total = 0;
 
               for(uint16_t release_num = 0; release_num < NUMBER_OF_UE_MAX; release_num++) {
@@ -1330,9 +1330,9 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
                 if(release_total >= rrc_release_info.num_UEs)
                   break;
               }
+              pthread_mutex_unlock(&rrc_release_freelist);
             }
 
-            pthread_mutex_unlock(&rrc_release_freelist);
             RA_t *ra = &eNB->common_channels[CC_id].ra[0];
 
             for (uint8_t ra_ii = 0; ra_ii < NB_RA_PROC_MAX; ra_ii++) {

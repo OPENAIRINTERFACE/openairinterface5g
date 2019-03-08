@@ -2319,9 +2319,8 @@ rrc_mac_remove_ue(module_id_t mod_idP,
                    rntiP);
   }
 
+  if(rrc_release_info.num_UEs > 0){
   pthread_mutex_lock(&rrc_release_freelist);
-
-  if (rrc_release_info.num_UEs > 0) {
     uint16_t release_total = 0;
 
     for (uint16_t release_num = 0; release_num < NUMBER_OF_UE_MAX; release_num++) {
@@ -2341,6 +2340,7 @@ rrc_mac_remove_ue(module_id_t mod_idP,
         break;
       }
     }
+    pthread_mutex_unlock(&rrc_release_freelist);
   }
 
   pthread_mutex_unlock(&rrc_release_freelist);
