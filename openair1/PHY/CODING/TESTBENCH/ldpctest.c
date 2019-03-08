@@ -382,12 +382,12 @@ int test_ldpc(short No_iteration,
 
         //Uncoded BER
         if (channel_output_fixed[j][i]<0)
-            channel_output_uncoded[j][i]=1;  //QPSK demod
-	else
-            channel_output_uncoded[j][i]=0;
+        	channel_output_uncoded[j][i]=1;  //QPSK demod
+        else
+        	channel_output_uncoded[j][i]=0;
 
         if (channel_output_uncoded[j][i] != channel_input[j][i-2*Zc])
-	  *errors_bit_uncoded = (*errors_bit_uncoded) + 1;
+        	*errors_bit_uncoded = (*errors_bit_uncoded) + 1;
 
 	}
       } // End segments

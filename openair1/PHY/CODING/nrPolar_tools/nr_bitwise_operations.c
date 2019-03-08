@@ -21,7 +21,7 @@
 
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 
-void nr_bit2byte_uint32_8_t(uint32_t *in, uint16_t arraySize, uint8_t *out) {
+void nr_bit2byte_uint32_8(uint32_t *in, uint16_t arraySize, uint8_t *out) {
 	uint8_t arrayInd = ceil(arraySize / 32.0);
 	for (int i = 0; i < (arrayInd-1); i++) {
 		for (int j = 0; j < 32; j++) {
@@ -32,7 +32,7 @@ void nr_bit2byte_uint32_8_t(uint32_t *in, uint16_t arraySize, uint8_t *out) {
 	for (int j = 0; j < arraySize - ((arrayInd-1) * 32); j++) out[j + ((arrayInd-1) * 32)] = (in[(arrayInd-1)] >> j) & 1;
 }
 
-void nr_byte2bit_uint8_32_t(uint8_t *in, uint16_t arraySize, uint32_t *out) {
+void nr_byte2bit_uint8_32(uint8_t *in, uint16_t arraySize, uint32_t *out) {
 	uint8_t arrayInd = ceil(arraySize / 32.0);
 	for (int i = 0; i < arrayInd; i++) {
 		out[i]=0;
@@ -44,7 +44,7 @@ void nr_byte2bit_uint8_32_t(uint8_t *in, uint16_t arraySize, uint32_t *out) {
 	}
 }
 
-void nr_crc_bit2bit_uint32_8_t(uint32_t *in, uint16_t arraySize, uint8_t *out) {
+void nr_crc_bit2bit_uint32_8(uint32_t *in, uint16_t arraySize, uint8_t *out) {
 	out[0]=0xff;
 	out[1]=0xff;
 	out[2]=0xff;

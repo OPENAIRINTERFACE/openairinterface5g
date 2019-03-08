@@ -42,9 +42,9 @@ static int intcmp(const void *p1,const void *p2) {
 }
 
 void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
-		   int8_t messageType,
-		   uint16_t messageLength,
-		   uint8_t aggregation_level)
+				   int8_t messageType,
+				   uint16_t messageLength,
+				   uint8_t aggregation_level)
 {
 	t_nrPolar_paramsPtr currentPtr = *polarParams;
 	uint16_t aggregation_prime = nr_polar_aggregation_prime(aggregation_level);
@@ -63,7 +63,8 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 	if (newPolarInitNode != NULL) {
 
 		newPolarInitNode->idx = (messageType * messageLength * aggregation_prime);
-		newPolarInitNode->nextPtr = NULL;
+		newPolarInitNode->nextPtr = (t_nrPolar_params *)NULL;
+
 		//printf("newPolarInitNode->idx %d, (%d,%d,%d:%d)\n",newPolarInitNode->idx,messageType,messageLength,aggregation_prime,aggregation_level);
 
 		if (messageType == 0) { //PBCH
@@ -186,9 +187,7 @@ void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
 	  currentPtr = currentPtr->nextPtr;
 	}
 	currentPtr->nextPtr= newPolarInitNode;
-	printf("Adding new polarParams entry to list index %d,%p\n",
-	       newPolarInitNode->idx,
-	       currentPtr->nextPtr);
+	printf("Adding new polarParams entry to list index %d,%p\n", newPolarInitNode->idx, currentPtr->nextPtr);
 
 	return;
 }
@@ -209,9 +208,9 @@ void nr_polar_print_polarParams(t_nrPolar_paramsPtr polarParams)
 }
 
 t_nrPolar_paramsPtr nr_polar_params (t_nrPolar_paramsPtr polarParams,
-				     int8_t messageType,
-				     uint16_t messageLength,
-				     uint8_t aggregation_level)
+									 int8_t messageType,
+									 uint16_t messageLength,
+									 uint8_t aggregation_level)
 {
 	t_nrPolar_paramsPtr currentPtr = NULL;
 

@@ -37,15 +37,15 @@
 //#define DEBUG_NEW_IMPL 1
 
 void updateLLR(double ***llr,
-	       uint8_t **llrU,
-	       uint8_t ***bit,
-	       uint8_t **bitU,
-	       uint8_t listSize,
-	       uint16_t row,
-	       uint16_t col,
-	       uint16_t xlen,
-	       uint8_t ylen,
-	       uint8_t approximation)
+			   uint8_t **llrU,
+			   uint8_t ***bit,
+			   uint8_t **bitU,
+			   uint8_t listSize,
+			   uint16_t row,
+			   uint16_t col,
+			   uint16_t xlen,
+			   uint8_t ylen,
+		   	   uint8_t approximation)
 {
 	uint16_t offset = (xlen/(pow(2,(ylen-col-1))));
 	for (uint8_t i=0; i<listSize; i++) {
@@ -73,7 +73,6 @@ void updateBit(uint8_t ***bit,
 			   uint16_t xlen,
 			   uint8_t ylen)
 {
-
 	uint16_t offset = ( xlen/(pow(2,(ylen-col))) );
 
 	for (uint8_t i=0; i<listSize; i++) {
@@ -107,7 +106,6 @@ void updatePathMetric(double *pathMetric,
 	}
 }
 
-
 void updatePathMetric2(double *pathMetric,
 					   double ***llr,
 					   uint8_t listSize,
@@ -139,10 +137,7 @@ void updatePathMetric2(double *pathMetric,
 	}
 
 	free(tempPM);
-
-
-
-  }
+}
 
 void computeLLR(double ***llr,
 				uint16_t row,
@@ -161,8 +156,6 @@ void computeLLR(double ***llr,
 	} else { //eq. (8a)
 		llr[row][col][i] = log((exp(a + b) + 1) / (exp(a) + exp(b)));
 	}
-
-
 }
 
 void updateCrcChecksum(uint8_t **crcChecksum,
@@ -191,9 +184,16 @@ void updateCrcChecksum2(uint8_t **crcChecksum,
 	}
 }
 
+void build_decoder_tree(t_nrPolar_params *polarParams)
+{
+  polarParams->tree.num_nodes=0;
+  polarParams->tree.root = add_nodes(polarParams->n,0,polarParams);
+#ifdef DEBUG_NEW_IMPL
+  printf("root : left %p, right %p\n",polarParams->tree.root->left,polarParams->tree.root->right);
+#endif
+}
 
-
-decoder_node_t *new_decoder_node(int first_leaf_index,int level) {
+decoder_node_t *new_decoder_node(int first_leaf_index, int level) {
 
   decoder_node_t *node=(decoder_node_t *)malloc(sizeof(decoder_node_t));
 
@@ -208,32 +208,34 @@ decoder_node_t *new_decoder_node(int first_leaf_index,int level) {
   node->beta   = (int16_t*)malloc16(node->Nv*sizeof(int16_t));
   memset((void*)node->beta,-1,node->Nv*sizeof(int16_t));
   
-
   return(node);
 }
 
-decoder_node_t *add_nodes(int level,int first_leaf_index,t_nrPolar_params *pp) {
+decoder_node_t *add_nodes(int level, int first_leaf_index, t_nrPolar_params *polarParams) {
 
-  int all_frozen_below=1;
+  int all_frozen_below = 1;
   int Nv = 1<<level;
-  decoder_node_t *new_node = new_decoder_node(first_leaf_index,level);
+  decoder_node_t *new_node = new_decoder_node(first_leaf_index, level);
 #ifdef DEBUG_NEW_IMPL
-  printf("New node %d order %d, level %d\n",pp->tree.num_nodes,Nv,level);
+  printf("New node %d order %d, level %d\n",polarParams->tree.num_nodes,Nv,level);
 #endif
-  pp->tree.num_nodes++;
+  polarParams->tree.num_nodes++;
   if (level==0) {
 #ifdef DEBUG_NEW_IMPL
-    printf("leaf %d (%s)\n",first_leaf_index,pp->information_bit_pattern[first_leaf_index]==1 ? "information or crc" : "frozen");
+    printf("leaf %d (%s)\n", first_leaf_index, polarParams->information_bit_pattern[first_leaf_index]==1 ? "information or crc" : "frozen");
 #endif
     new_node->leaf=1;
-    new_node->all_frozen = pp->information_bit_pattern[first_leaf_index]==0 ? 1 : 0;
+    new_node->all_frozen = polarParams->information_bit_pattern[first_leaf_index]==0 ? 1 : 0;
     return new_node; // this is a leaf node
   }
 
   for (int i=0;i<Nv;i++) {
-    if (pp->information_bit_pattern[i+first_leaf_index]>0) all_frozen_below=0; 
+    if (polarParams->information_bit_pattern[i+first_leaf_index]>0)
+    	all_frozen_below=0;
   }
-  if (all_frozen_below==0) new_node->left=add_nodes(level-1,first_leaf_index,pp);
+
+  if (all_frozen_below==0)
+	  new_node->left=add_nodes(level-1, first_leaf_index, polarParams);
   else {
 #ifdef DEBUG_NEW_IMPL
     printf("aggregating frozen bits %d ... %d at level %d (%s)\n",first_leaf_index,first_leaf_index+Nv-1,level,((first_leaf_index/Nv)&1)==0?"left":"right");
@@ -241,22 +243,14 @@ decoder_node_t *add_nodes(int level,int first_leaf_index,t_nrPolar_params *pp) {
     new_node->leaf=1;
     new_node->all_frozen=1;
   }
-  if (all_frozen_below==0) new_node->right=add_nodes(level-1,first_leaf_index+(Nv/2),pp);
+  if (all_frozen_below==0)
+	  new_node->right=add_nodes(level-1,first_leaf_index+(Nv/2),polarParams);
 
 #ifdef DEBUG_NEW_IMPL
   printf("new_node (%d): first_leaf_index %d, left %p, right %p\n",Nv,first_leaf_index,new_node->left,new_node->right);
-#endif  
-  return(new_node);
-}
-
-
-void build_decoder_tree(t_nrPolar_params *pp) {
-
-  pp->tree.num_nodes=0;
-  pp->tree.root = add_nodes(pp->n,0,pp);
-#ifdef DEBUG_NEW_IMPL
-  printf("root : left %p, right %p\n",pp->tree.root->left,pp->tree.root->right);
 #endif
+
+  return(new_node);
 }
 
 #if defined(__arm__) || defined(__aarch64__)
@@ -271,7 +265,7 @@ void build_decoder_tree(t_nrPolar_params *pp) {
 #define _mm_subs_pi16(a,b) vsub_s16(a,b)
 #endif
 
-void applyFtoleft(t_nrPolar_params *pp,decoder_node_t *node) {
+void applyFtoleft(t_nrPolar_params *pp, decoder_node_t *node) {
   int16_t *alpha_v=node->alpha;
   int16_t *alpha_l=node->left->alpha;
   int16_t *betal = node->left->beta;
@@ -370,16 +364,16 @@ void applyFtoleft(t_nrPolar_params *pp,decoder_node_t *node) {
 #endif
     { // equvalent scalar code to above, activated only on non x86/ARM architectures
       for (int i=0;i<node->Nv/2;i++) {
-	a=alpha_v[i];
-	b=alpha_v[i+(node->Nv/2)];
-	maska=a>>15;
-	maskb=b>>15;
-	absa=(a+maska)^maska;
-	absb=(b+maskb)^maskb;
-	minabs = absa<absb ? absa : absb;
-	alpha_l[i] = (maska^maskb)==0 ? minabs : -minabs;
-	//	printf("alphal[%d] %d (%d,%d)\n",i,alpha_l[i],a,b);
-      }
+    	  a=alpha_v[i];
+    	  b=alpha_v[i+(node->Nv/2)];
+    	  maska=a>>15;
+    	  maskb=b>>15;
+    	  absa=(a+maska)^maska;
+    	  absb=(b+maskb)^maskb;
+    	  minabs = absa<absb ? absa : absb;
+    	  alpha_l[i] = (maska^maskb)==0 ? minabs : -minabs;
+    	  //	printf("alphal[%d] %d (%d,%d)\n",i,alpha_l[i],a,b);
+    	  }
     }
     if (node->Nv == 2) { // apply hard decision on left node
       betal[0] = (alpha_l[0]>0) ? -1 : 1;
@@ -463,11 +457,7 @@ void applyGtoright(t_nrPolar_params *pp,decoder_node_t *node) {
   }
 }
 
-
-int16_t all1[16] = {1,1,1,1,
-		    1,1,1,1,
-		    1,1,1,1,
-		    1,1,1,1};
+int16_t all1[16] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
 
 void computeBeta(t_nrPolar_params *pp,decoder_node_t *node) {
 
@@ -504,38 +494,35 @@ void computeBeta(t_nrPolar_params *pp,decoder_node_t *node) {
       int ssr4len = node->Nv/2/8;
       register __m128i allones=*((__m128i*)all1);
       for (int i=0;i<sse4len;i++) {
-      ((__m256i*)betav)[i] = _mm_or_si128(_mm_cmpeq_epi16(((__m128i*)betar)[i],
-							  ((__m128i*)betal)[i]),allones));
+      ((__m256i*)betav)[i] = _mm_or_si128(_mm_cmpeq_epi16(((__m128i*)betar)[i], ((__m128i*)betal)[i]),allones));
       }
     }
     else if (sse4mod == 4) {
-      ((__m64*)betav)[0] = _mm_or_si64(_mm_cmpeq_pi16(((__m64*)betar)[0],
-						      ((__m64*)betal)[0]),*((__m64*)all1));
+      ((__m64*)betav)[0] = _mm_or_si64(_mm_cmpeq_pi16(((__m64*)betar)[0], ((__m64*)betal)[0]),*((__m64*)all1));
     }
     else
 #endif
       {
 	for (int i=0;i<node->Nv/2;i++) {
-	  betav[i] = (betal[i] != betar[i]) ? 1 : -1;
+		betav[i] = (betal[i] != betar[i]) ? 1 : -1;
 	}
       }
   }
   else memcpy((void*)&betav[0],betar,(node->Nv/2)*sizeof(int16_t));
   memcpy((void*)&betav[node->Nv/2],betar,(node->Nv/2)*sizeof(int16_t));
-  
 }
 
-void generic_polar_decoder(t_nrPolar_params *pp,decoder_node_t *node) {
-
+void generic_polar_decoder(t_nrPolar_params *polarParams, decoder_node_t *node) {
 
   // Apply F to left
-  applyFtoleft(pp,node);
+  applyFtoleft(polarParams, node);
   // if left is not a leaf recurse down to the left
-  if (node->left->leaf==0) generic_polar_decoder(pp,node->left);
+  if (node->left->leaf==0)
+	  generic_polar_decoder(polarParams, node->left);
 
-  applyGtoright(pp,node);
-  if (node->right->leaf==0) generic_polar_decoder(pp,node->right);	
+  applyGtoright(polarParams, node);
+  if (node->right->leaf==0) generic_polar_decoder(polarParams, node->right);
 
-  computeBeta(pp,node);
+  computeBeta(polarParams, node);
 
 } 

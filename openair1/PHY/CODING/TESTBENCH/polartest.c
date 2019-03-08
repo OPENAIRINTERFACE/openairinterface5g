@@ -62,7 +62,6 @@ int main(int argc, char *argv[]) {
 	int16_t nBitError = 0; // -1 = Decoding failed (All list entries have failed the CRC checks).
 	uint32_t decoderState=0, blockErrorState=0; //0 = Success, -1 = Decoding failed, 1 = Block Error.
 	uint16_t testLength = 0, coderLength = 0, blockErrorCumulative=0, bitErrorCumulative=0;
-	double timeEncoderCumulative = 0, timeDecoderCumulative = 0;
 	uint8_t aggregation_level = 8, decoderListSize = 8, pathMetricAppr = 0, matlabDebug = 0;
 
 	while ((arguments = getopt (argc, argv, "s:d:f:c:i:l:a:hqgm")) != -1)
@@ -217,7 +216,7 @@ int main(int argc, char *argv[]) {
 	memset(dci_estimation,0,sizeof(uint32_t)*4);
 	printf("dci_estimation: [0]->0x%08x \t [1]->0x%08x \t [2]->0x%08x \t [3]->0x%08x\n",
 			dci_estimation[0], dci_estimation[1], dci_estimation[2], dci_estimation[3]);
-	nr_bit2byte_uint32_8_t(encoder_output, currentPtrDCI->encoderLength, encoder_outputByte);
+	nr_bit2byte_uint32_8(encoder_output, currentPtrDCI->encoderLength, encoder_outputByte);
 	printf("[polartest] encoder_outputByte: ");
 	for (int i = 0; i < currentPtrDCI->encoderLength; i++) printf("%d-", encoder_outputByte[i]);
 	printf("\n");
@@ -257,7 +256,7 @@ int main(int argc, char *argv[]) {
 	uint32_t testInputcrc2=0x00291880;
 
 	uint8_t testInputCRC2[8];
-	nr_crc_bit2bit_uint32_8_t(testInputCRC, 32, testInputCRC2);
+	nr_crc_bit2bit_uint32_8(testInputCRC, 32, testInputCRC2);
 	printf("testInputCRC2: [0]->%x \t [1]->%x \t [2]->%x \t [3]->%x\n"
 		   "            [4]->%x \t [5]->%x \t [6]->%x \t [7]->%x\n",
 				testInputCRC2[0], testInputCRC2[1], testInputCRC2[2], testInputCRC2[3],
@@ -339,7 +338,7 @@ int main(int argc, char *argv[]) {
 	for (int i=0; i<currentPtr->payloadBits; i++) aPrioriArray[i] = NAN;
 
 	for (SNR = SNRstart; SNR <= SNRstop; SNR += SNRinc) {
-	  printf("SNR %f\n",SNR);
+		printf("SNR %f\n",SNR);
 		SNR_lin = pow(10, SNR/10);
 		for (itr = 1; itr <= iterations; itr++) {
 
@@ -420,11 +419,11 @@ int main(int argc, char *argv[]) {
 			uint8_t nr_pbch_interleaver[NR_POLAR_PBCH_PAYLOAD_BITS];
 			memset((void*)nr_pbch_interleaver,0, NR_POLAR_PBCH_PAYLOAD_BITS);
 			nr_init_pbch_interleaver(nr_pbch_interleaver);
-			for (int i=0; i<=31;i++)
+			/*for (int i=0; i<=31;i++)
 				printf("nr_pbch_interleaver[%d]=%d\n",i,nr_pbch_interleaver[i]);
 
 			  for (int i=0; i<NR_POLAR_PBCH_PAYLOAD_BITS; i++)
-				  printf("nr_pbch_interleaver_operation[%d]=%d\n",i,(*(nr_pbch_interleaver+i)));
+				  printf("nr_pbch_interleaver_operation[%d]=%d\n",i,(*(nr_pbch_interleaver+i)));*/
 
 
 			start_meas(&timeEncoder);
@@ -438,25 +437,28 @@ int main(int argc, char *argv[]) {
 			printf("encoderOutput: [1]->0x%08x\n", encoderOutput[1]);*/
 
 			//Bit-to-byte:
-			nr_bit2byte_uint32_8_t(encoderOutput, coderLength, encoderOutputByte);
+			nr_bit2byte_uint32_8(encoderOutput, coderLength, encoderOutputByte);
 
 			//BPSK modulation
 			for(int i=0; i<coderLength; i++) {
 				if (encoderOutputByte[i] == 0)
-					modulatedInput[i]=1/sqrt(2);
+					modulatedInput[i]=1;
+				    //modulatedInput[i]=1/sqrt(2);
 				else
-					modulatedInput[i]=(-1)/sqrt(2);
+					modulatedInput[i]=(-1);
+					//modulatedInput[i]=((-1)/sqrt(2));
 
-				channelOutput[i] = modulatedInput[i] + (gaussdouble(0.0,1.0) * (1/sqrt(2*SNR_lin)));
+				channelOutput[i] = modulatedInput[i] + (gaussdouble(0.0,1.0) * (1/sqrt(SNR_lin)));
+				//channelOutput[i] = modulatedInput[i] + (gaussdouble(0.0,1.0) * (1/sqrt(2*SNR_lin)));
 
-				
 				if (decoder_int16==1) {
-				  if (channelOutput[i] > 15) channelOutput_int16[i] = 127;
-				  else if (channelOutput[i] < -16) channelOutput_int16[i] = -128;
-				  else channelOutput_int16[i] = (int16_t) (8*channelOutput[i]);
+					if (channelOutput[i] > 15)
+						channelOutput_int16[i] = 127;
+					else if (channelOutput[i] < -16)
+						channelOutput_int16[i] = -128;
+					else
+						channelOutput_int16[i] = (int16_t) (8*channelOutput[i]);
 				}
-
-
 			}
 
 			start_meas(&timeDecoder);
@@ -466,44 +468,38 @@ int main(int argc, char *argv[]) {
 									 	 NR_POLAR_DECODER_LISTSIZE,
 									 	 aPrioriArray,
 									 	 NR_POLAR_DECODER_PATH_METRIC_APPROXIMATION);*/
-			if (decoder_int16==0)
-			  decoderState = polar_decoder_aPriori(channelOutput,
-							       estimatedOutput,
-							       currentPtr,
-							       NR_POLAR_DECODER_LISTSIZE,
-							       NR_POLAR_DECODER_PATH_METRIC_APPROXIMATION,
-							       aPrioriArray);
-			else 
-			  decoderState = polar_decoder_int16(channelOutput_int16,
-							     (uint64_t*)estimatedOutput,
-							     currentPtr);
-
+			if (decoder_int16 == 1)
+				decoderState = polar_decoder_int16(channelOutput_int16,
+												   (uint64_t*) estimatedOutput,
+												   currentPtr);
+			else
+				decoderState = polar_decoder_aPriori(channelOutput,
+													 estimatedOutput, currentPtr,
+													 NR_POLAR_DECODER_LISTSIZE,
+													 NR_POLAR_DECODER_PATH_METRIC_APPROXIMATION,
+													 aPrioriArray);
 			  
 			stop_meas(&timeDecoder);
 			/*printf("testInput: [0]->0x%08x\n", testInput[0]);
 			printf("estimatedOutput: [0]->0x%08x\n", estimatedOutput[0]);*/
-
 
 			//calculate errors
 			if (decoderState!=0) {
 				blockErrorState=-1;
 				nBitError=-1;
 			} else {
-			  for (int j = 0; j < currentPtr->payloadBits; j++) {
-			    if (((estimatedOutput[0]>>j) & 1) != ((testInput[0]>>j) & 1)) nBitError++;
+				for (int j = 0; j < currentPtr->payloadBits; j++) {
+					if (((estimatedOutput[0]>>j) & 1) != ((testInput[0]>>j) & 1))
+						nBitError++;
 			    //			    printf("bit %d: %d => %d\n",j,(testInput[0]>>j)&1,(estimatedOutput[0]>>j)&1);
-			  }
-			
-
-			  if (nBitError>0) { 
-			    blockErrorState=1; 
-			    //			    printf("Error: Input %x, Output %x\n",testInput[0],estimatedOutput[0]);
-			  }
+					}
+				if (nBitError>0) {
+					blockErrorState=1;
+			        //printf("Error: Input %x, Output %x\n",testInput[0],estimatedOutput[0]);
+					}
 			}
 
 			//Iteration times are in microseconds.
-			timeEncoderCumulative+=(timeEncoder.diff/(cpu_freq_GHz*1000.0));
-			timeDecoderCumulative+=(timeDecoder.diff/(cpu_freq_GHz*1000.0));
 			fprintf(logFile,",%f,%d,%d,%f,%f\n", SNR, nBitError, blockErrorState,
 					(timeEncoder.diff/(cpu_freq_GHz*1000.0)), (timeDecoder.diff/(cpu_freq_GHz*1000.0)));
 
@@ -521,17 +517,16 @@ int main(int argc, char *argv[]) {
 
 		}
 		//Calculate error statistics for the SNR.
-		printf("[ListSize=%d, Appr=%d] SNR=%+8.3f, BLER=%9.6f, BER=%12.9f, t_Encoder=%9.3fus, t_Decoder=%9.3fus\n",
+		printf("[ListSize=%d, Appr=%d] SNR=%+8.3f, BLER=%9.6f, BER=%12.9f, t_Encoder=%12.6fus, t_Decoder=%12.6fus\n",
 				decoderListSize, pathMetricAppr, SNR, ((double)blockErrorCumulative/iterations),
 				((double)bitErrorCumulative / (iterations*testLength)),
-		       (double)timeEncoder.diff/timeEncoder.trials/(cpu_freq_GHz*1000.0),(double)timeDecoder.diff/timeDecoder.trials/(cpu_freq_GHz*1000.0));
-		       //(timeEncoderCumulative/iterations),timeDecoderCumulative/iterations);
+				(double)timeEncoder.diff/timeEncoder.trials/(cpu_freq_GHz*1000.0),
+				(double)timeDecoder.diff/timeDecoder.trials/(cpu_freq_GHz*1000.0));
 
 		if (blockErrorCumulative==0 && bitErrorCumulative==0)
 		  break;
 
 		blockErrorCumulative = 0; bitErrorCumulative = 0;
-		timeEncoderCumulative = 0; timeDecoderCumulative = 0;
 	}
 
 	print_meas(&timeEncoder,"polar_encoder",NULL,NULL);

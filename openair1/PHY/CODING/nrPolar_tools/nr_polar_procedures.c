@@ -33,12 +33,12 @@
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 
 void nr_polar_bit_insertion(uint8_t *input,
-			    uint8_t *output,
-			    uint16_t N,
-			    uint16_t K,
-			    int16_t *Q_I_N,
-			    int16_t *Q_PC_N,
-			    uint8_t n_PC)
+			    			uint8_t *output,
+							uint16_t N,
+							uint16_t K,
+							int16_t *Q_I_N,
+							int16_t *Q_PC_N,
+							uint8_t n_PC)
 {
   uint16_t k=0;
   uint8_t flag;
@@ -256,8 +256,13 @@ void nr_polar_info_bit_extraction(uint8_t *input,
 }
 
 
-void nr_polar_rate_matching_pattern(uint16_t *rmp, uint16_t *J, const uint8_t *P_i_, uint16_t K, uint16_t N, uint16_t E){
-
+void nr_polar_rate_matching_pattern(uint16_t *rmp,
+									uint16_t *J,
+									const uint8_t *P_i_,
+									uint16_t K,
+									uint16_t N,
+									uint16_t E)
+{
 	uint8_t i;
 	uint16_t *d, *y, ind;
 	d = (uint16_t *)malloc(sizeof(uint16_t) * N);
@@ -293,8 +298,13 @@ void nr_polar_rate_matching_pattern(uint16_t *rmp, uint16_t *J, const uint8_t *P
 }
 
 
-void nr_polar_rate_matching(double *input, double *output, uint16_t *rmp, uint16_t K, uint16_t N, uint16_t E){
-
+void nr_polar_rate_matching(double *input,
+							double *output,
+							uint16_t *rmp,
+							uint16_t K,
+							uint16_t N,
+							uint16_t E)
+{
 	if (E>=N) { //repetition
 		for (int i=0; i<=N-1; i++) output[i]=0;
 		for (int i=0; i<=E-1; i++){
@@ -311,11 +321,15 @@ void nr_polar_rate_matching(double *input, double *output, uint16_t *rmp, uint16
 			output[rmp[i]]=input[i];
 		}
 	}
-
 }
 
-void nr_polar_rate_matching_int16(int16_t *input, int16_t *output, uint16_t *rmp, uint16_t K, uint16_t N, uint16_t E){
-
+void nr_polar_rate_matching_int16(int16_t *input,
+								  int16_t *output,
+								  uint16_t *rmp,
+								  uint16_t K,
+								  uint16_t N,
+								  uint16_t E)
+{
 	if (E>=N) { //repetition
 		for (int i=0; i<=N-1; i++) output[i]=0;
 		for (int i=0; i<=E-1; i++){
@@ -332,6 +346,4 @@ void nr_polar_rate_matching_int16(int16_t *input, int16_t *output, uint16_t *rmp
 			output[rmp[i]]=input[i];
 		}
 	}
-
 }
-

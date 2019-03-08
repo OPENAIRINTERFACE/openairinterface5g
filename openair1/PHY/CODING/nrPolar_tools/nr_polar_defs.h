@@ -54,8 +54,7 @@
 #define NR_POLAR_AGGREGATION_LEVEL_8_PRIME 163 //uint16_t
 #define NR_POLAR_AGGREGATION_LEVEL_16_PRIME 167 //uint16_t
 
-static const uint8_t nr_polar_subblock_interleaver_pattern[32] = { 0, 1, 2, 4, 3, 5, 6, 7, 8, 16, 9, 17, 10, 18, 11, 19, 12, 20, 13, 21, 14, 22, 15, 23, 24, 25, 26, 28, 27, 29, 30, 31 };
-
+static const uint8_t nr_polar_subblock_interleaver_pattern[32] = {0,1,2,4,3,5,6,7,8,16,9,17,10,18,11,19,12,20,13,21,14,22,15,23,24,25,26,28,27,29,30,31};
 
 #define Nmax 1024
 #define nmax 10
@@ -112,7 +111,7 @@ struct nrPolar_params {
   uint8_t **G_N;
   uint64_t **G_N_tab;
   int groupsize;
-  int     *rm_tab;
+  int *rm_tab;
   uint64_t cprime_tab0[32][256];
   uint64_t cprime_tab1[32][256];
   uint64_t B_tab0[32][256];
@@ -148,19 +147,15 @@ void polar_encoder_dci(uint32_t *in,
 					   uint16_t n_RNTI);
 
 void polar_encoder_fast(uint64_t *Aprime,
-			uint32_t *out,
-			int32_t crcmask,
-			t_nrPolar_paramsPtr polarParams);
+						uint32_t *out,
+						int32_t crcmask,
+						t_nrPolar_paramsPtr polarParams);
 
 int8_t polar_decoder(double *input,
 		 	 	 	 uint8_t *output,
 					 t_nrPolar_paramsPtr polarParams,
 					 uint8_t listSize,
 					 uint8_t pathMetricAppr);
-
-uint32_t polar_decoder_int16(int16_t *input,
-			     uint64_t *out,
-			     t_nrPolar_params *polarParams);
 
 int8_t polar_decoder_aPriori(double *input,
 							 uint32_t *output,
@@ -169,15 +164,6 @@ int8_t polar_decoder_aPriori(double *input,
 							 uint8_t pathMetricAppr,
 							 double *aPrioriPayload);
 
-int8_t polar_decoder_aPriori_timing(double *input,
-									uint32_t *output,
-									t_nrPolar_paramsPtr polarParams,
-									uint8_t listSize,
-									uint8_t pathMetricAppr,
-									double *aPrioriPayload,
-									double cpuFreqGHz,
-									FILE* logFile);
-
 int8_t polar_decoder_dci(double *input,
 						 uint32_t *out,
 						 t_nrPolar_paramsPtr polarParams,
@@ -185,11 +171,28 @@ int8_t polar_decoder_dci(double *input,
 						 uint8_t pathMetricAppr,
 						 uint16_t n_RNTI);
 
-void generic_polar_decoder(t_nrPolar_params *,
-		decoder_node_t *);
+uint32_t polar_decoder_int16(int16_t *input,
+							 uint64_t *out,
+							 t_nrPolar_params *polarParams);
 
-void build_decoder_tree(t_nrPolar_params *pp);
+void generic_polar_decoder(t_nrPolar_params *, decoder_node_t *);
+
+void applyFtoleft(t_nrPolar_params *polarParams, decoder_node_t *node);
+
+void applyGtoright(t_nrPolar_params *polarParams, decoder_node_t *node);
+
+void computeBeta(t_nrPolar_params *polarParams, decoder_node_t *node);
+
+
+void build_decoder_tree(t_nrPolar_params *polarParams);
+
+decoder_node_t *new_decoder_node(int first_leaf_index, int level);
+
+decoder_node_t *add_nodes(int level, int first_leaf_index, t_nrPolar_params *polarParams);
+
+
 void build_polar_tables(t_nrPolar_paramsPtr polarParams);
+
 void init_polar_deinterleaver_table(t_nrPolar_params *polarParams);
 
 void nr_polar_init(t_nrPolar_paramsPtr *polarParams,
@@ -216,168 +219,143 @@ const uint16_t* nr_polar_sequence_pattern(uint8_t n);
  * @param E
  * @param n_max */
 uint32_t nr_polar_output_length(uint16_t K,
-		uint16_t E,
-		uint8_t n_max);
+								uint16_t E,
+								uint8_t n_max);
 
 void nr_polar_channel_interleaver_pattern(uint16_t *cip,
-		uint8_t I_BIL,
-		uint16_t E);
+										  uint8_t I_BIL,
+										  uint16_t E);
 
 void nr_polar_rate_matching_pattern(uint16_t *rmp,
-		uint16_t *J,
-		const uint8_t *P_i_,
-		uint16_t K,
-		uint16_t N,
-		uint16_t E);
+									uint16_t *J,
+									const uint8_t *P_i_,
+									uint16_t K,
+									uint16_t N,
+									uint16_t E);
 
 void nr_polar_rate_matching(double *input,
-		double *output,
-		uint16_t *rmp,
-		uint16_t K,
-		uint16_t N,
-		uint16_t E);
+							double *output,
+							uint16_t *rmp,
+							uint16_t K,
+							uint16_t N,
+							uint16_t E);
 
 void nr_polar_rate_matching_int16(int16_t *input,
-		int16_t *output,
-		uint16_t *rmp,
-		uint16_t K,
-		uint16_t N,
-		uint16_t E);
+								  int16_t *output,
+								  uint16_t *rmp,
+								  uint16_t K,
+								  uint16_t N,
+								  uint16_t E);
 
-void nr_polar_interleaving_pattern(uint16_t K,
-		uint8_t I_IL,
-		uint16_t *PI_k_);
+void nr_polar_interleaving_pattern(uint16_t K, uint8_t I_IL, uint16_t *PI_k_);
 
 void nr_polar_info_bit_pattern(uint8_t *ibp,
-		int16_t *Q_I_N,
-		int16_t *Q_F_N,
-		uint16_t *J,
-		const uint16_t *Q_0_Nminus1,
-		uint16_t K,
-		uint16_t N,
-		uint16_t E,
-		uint8_t n_PC);
+							   int16_t *Q_I_N,
+							   int16_t *Q_F_N,
+							   uint16_t *J,
+							   const uint16_t *Q_0_Nminus1,
+							   uint16_t K,
+							   uint16_t N,
+							   uint16_t E,
+							   uint8_t n_PC);
 
 void nr_polar_info_bit_extraction(uint8_t *input,
-		uint8_t *output,
-		uint8_t *pattern,
-		uint16_t size);
+								  uint8_t *output,
+								  uint8_t *pattern,
+								  uint16_t size);
 
-void nr_bit2byte_uint32_8_t(uint32_t *in,
-		uint16_t arraySize,
-		uint8_t *out);
+void nr_bit2byte_uint32_8(uint32_t *in, uint16_t arraySize, uint8_t *out);
 
-void nr_byte2bit_uint8_32_t(uint8_t *in,
-		uint16_t arraySize,
-		uint32_t *out);
+void nr_byte2bit_uint8_32(uint8_t *in, uint16_t arraySize, uint32_t *out);
 
-void nr_crc_bit2bit_uint32_8_t(uint32_t *in,
-		uint16_t arraySize,
-		uint8_t *out);
+void nr_crc_bit2bit_uint32_8(uint32_t *in, uint16_t arraySize, uint8_t *out);
 
 void nr_polar_bit_insertion(uint8_t *input,
-		uint8_t *output,
-		uint16_t N,
-		uint16_t K,
-		int16_t *Q_I_N,
-		int16_t *Q_PC_N,
-		uint8_t n_PC);
+							uint8_t *output,
+							uint16_t N,
+							uint16_t K,
+							int16_t *Q_I_N,
+							int16_t *Q_PC_N,
+							uint8_t n_PC);
 
 void nr_matrix_multiplication_uint8_1D_uint8_2D(uint8_t *matrix1,
-		uint8_t **matrix2,
-		uint8_t *output,
-		uint16_t row,
-		uint16_t col);
+												uint8_t **matrix2,
+												uint8_t *output,
+												uint16_t row,
+												uint16_t col);
 
-uint8_t ***nr_alloc_uint8_3D_array(uint16_t xlen,
-		uint16_t ylen,
-		uint16_t zlen);
+uint8_t ***nr_alloc_uint8_3D_array(uint16_t xlen, uint16_t ylen, uint16_t zlen);
 
-uint8_t **nr_alloc_uint8_2D_array(uint16_t xlen,
-		uint16_t ylen);
+uint8_t **nr_alloc_uint8_2D_array(uint16_t xlen, uint16_t ylen);
 
-double ***nr_alloc_double_3D_array(uint16_t xlen,
-		uint16_t ylen,
-		uint16_t zlen);
+double ***nr_alloc_double_3D_array(uint16_t xlen, uint16_t ylen, uint16_t zlen);
 
-double **nr_alloc_double_2D_array(uint16_t xlen,
-		uint16_t ylen);
+double **nr_alloc_double_2D_array(uint16_t xlen, uint16_t ylen);
 
-void nr_free_double_3D_array(double ***input,
-		uint16_t xlen,
-		uint16_t ylen);
-
-void nr_free_double_2D_array(double **input,
-		uint16_t xlen);
-
-void nr_free_uint8_3D_array(uint8_t ***input,
-		uint16_t xlen,
-		uint16_t ylen);
-
-void nr_free_uint8_2D_array(uint8_t **input,
-		uint16_t xlen);
-
-void nr_sort_asc_double_1D_array_ind(double *matrix,
-		uint8_t *ind,
-		uint8_t len);
-
-void nr_sort_asc_int16_1D_array_ind(int32_t *matrix,
-		int *ind,
-		int len);
+void nr_free_double_3D_array(double ***input, uint16_t xlen, uint16_t ylen);
 
 void nr_free_double_2D_array(double **input, uint16_t xlen);
 
+void nr_free_uint8_3D_array(uint8_t ***input, uint16_t xlen, uint16_t ylen);
+
+void nr_free_uint8_2D_array(uint8_t **input, uint16_t xlen);
+
+void nr_sort_asc_double_1D_array_ind(double *matrix, uint8_t *ind, uint8_t len);
+
+void nr_sort_asc_int16_1D_array_ind(int32_t *matrix, int *ind, int len);
+
+void nr_free_double_2D_array(double **input, uint16_t xlen);
 
 void updateLLR(double ***llr,
-		uint8_t **llrU,
-		uint8_t ***bit,
-		uint8_t **bitU,
-		uint8_t listSize,
-		uint16_t row,
-		uint16_t col,
-		uint16_t xlen,
-		uint8_t ylen,
-		uint8_t approximation);
+			   uint8_t **llrU,
+			   uint8_t ***bit,
+			   uint8_t **bitU,
+			   uint8_t listSize,
+			   uint16_t row,
+			   uint16_t col,
+			   uint16_t xlen,
+			   uint8_t ylen,
+			   uint8_t approximation);
 
 void updateBit(uint8_t ***bit,
-		uint8_t **bitU,
-		uint8_t listSize,
-		uint16_t row,
-		uint16_t col,
-		uint16_t xlen,
-		uint8_t ylen);
+			   uint8_t **bitU,
+			   uint8_t listSize,
+			   uint16_t row,
+			   uint16_t col,
+			   uint16_t xlen,
+			   uint8_t ylen);
 
 void updatePathMetric(double *pathMetric,
-		double ***llr,
-		uint8_t listSize,
-		uint8_t bitValue,
-		uint16_t row,
-		uint8_t approximation);
+					  double ***llr,
+					  uint8_t listSize,
+					  uint8_t bitValue,
+					  uint16_t row,
+					  uint8_t approximation);
 
 void updatePathMetric2(double *pathMetric,
-		double ***llr,
-		uint8_t listSize,
-		uint16_t row,
-		uint8_t approximation);
+					   double ***llr,
+					   uint8_t listSize,
+					   uint16_t row,
+					   uint8_t approximation);
 
 void computeLLR(double ***llr,
-		uint16_t row,
-		uint16_t col,
-		uint8_t i,
-		uint16_t offset,
-		uint8_t approximation);
+				uint16_t row,
+				uint16_t col,
+				uint8_t i,
+				uint16_t offset,
+				uint8_t approximation);
 
 void updateCrcChecksum(uint8_t **crcChecksum,
-		uint8_t **crcGen,
-		uint8_t listSize,
-		uint32_t i2,
-		uint8_t len);
+					   uint8_t **crcGen,
+					   uint8_t listSize,
+					   uint32_t i2,
+					   uint8_t len);
 
 void updateCrcChecksum2(uint8_t **crcChecksum,
-		uint8_t **crcGen,
-		uint8_t listSize,
-		uint32_t i2,
-		uint8_t len);
+					    uint8_t **crcGen,
+						uint8_t listSize,
+						uint32_t i2,
+						uint8_t len);
 
 uint8_t **crc24c_generator_matrix(uint16_t payloadSizeBits);
 
@@ -386,24 +364,14 @@ uint8_t **crc11_generator_matrix(uint16_t payloadSizeBits);
 uint8_t **crc6_generator_matrix(uint16_t payloadSizeBits);
 
 //Also nr_polar_rate_matcher
-static inline void nr_polar_interleaver(uint8_t *input,
-					uint8_t *output,
-					uint16_t *pattern,
-					uint16_t size)
-{
-  for (int i=0; i<size; i++) output[i]=input[pattern[i]];
+static inline void nr_polar_interleaver(uint8_t *input,	uint8_t *output, uint16_t *pattern,	uint16_t size){
+  for (int i=0; i<size; i++)
+	  output[i]=input[pattern[i]];
 }
 
-static inline void nr_polar_deinterleaver(uint8_t *input,
-					  uint8_t *output,
-					  uint16_t *pattern,
-					  uint16_t size)
-{
-  for (int i=0; i<size; i++) {
-    output[pattern[i]]=input[i];
-  }
+static inline void nr_polar_deinterleaver(uint8_t *input, uint8_t *output, uint16_t *pattern, uint16_t size){
+  for (int i=0; i<size; i++)
+	  output[pattern[i]]=input[i];
 }
-
-void build_decoder_tree(t_nrPolar_params *pp);
 
 #endif

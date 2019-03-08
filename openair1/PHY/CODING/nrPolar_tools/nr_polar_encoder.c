@@ -33,7 +33,7 @@
 //#define DEBUG_POLAR_ENCODER
 //#define DEBUG_POLAR_ENCODER_DCI
 //#define DEBUG_POLAR_ENCODER_TIMING
-#define DEBUG_POLAR_MATLAB
+//#define DEBUG_POLAR_MATLAB
 
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 #include "assertions.h"
@@ -51,9 +51,9 @@ void polar_encoder(uint32_t *in,
 #ifdef DEBUG_POLAR_ENCODER
     printf("polar_B %llx (crc %x)\n",B,crc24c((uint8_t*)in,polarParams->payloadBits)>>8);
 #endif
-nr_bit2byte_uint32_8_t((uint32_t*)&B, polarParams->K, polarParams->nr_polar_B);*/
+nr_bit2byte_uint32_8((uint32_t*)&B, polarParams->K, polarParams->nr_polar_B);*/
 
-    nr_bit2byte_uint32_8_t((uint32_t*)in, polarParams->payloadBits, polarParams->nr_polar_A);
+    nr_bit2byte_uint32_8((uint32_t*)in, polarParams->payloadBits, polarParams->nr_polar_A);
     /*
      * Bytewise operations
      */
@@ -147,7 +147,7 @@ nr_bit2byte_uint32_8_t((uint32_t*)&B, polarParams->K, polarParams->nr_polar_B);*
   for (int i=0; i< polarParams->encoderLength;i++) printf("f[%d]=%d\n", i, polarParams->nr_polar_E[i]);
 #endif
 
-  nr_byte2bit_uint8_32_t(polarParams->nr_polar_E, polarParams->encoderLength, out);
+  nr_byte2bit_uint8_32(polarParams->nr_polar_E, polarParams->encoderLength, out);
 }
 
 void polar_encoder_dci(uint32_t *in,
@@ -163,7 +163,7 @@ void polar_encoder_dci(uint32_t *in,
    * Bytewise operations
    */
   //(a to a')
-  nr_bit2byte_uint32_8_t(in, polarParams->payloadBits, polarParams->nr_polar_A);
+  nr_bit2byte_uint32_8(in, polarParams->payloadBits, polarParams->nr_polar_A);
   for (int i=0; i<polarParams->crcParityBits; i++) polarParams->nr_polar_APrime[i]=1;
   for (int i=0; i<polarParams->payloadBits; i++) polarParams->nr_polar_APrime[i+(polarParams->crcParityBits)]=polarParams->nr_polar_A[i];
 #ifdef DEBUG_POLAR_ENCODER_DCI
@@ -202,7 +202,7 @@ void polar_encoder_dci(uint32_t *in,
   }
 
   /*	//(a to a')
-	nr_crc_bit2bit_uint32_8_t(in, polarParams->payloadBits, polarParams->nr_polar_aPrime);
+	nr_crc_bit2bit_uint32_8(in, polarParams->payloadBits, polarParams->nr_polar_aPrime);
 	//Parity bits computation (p)
 	polarParams->crcBit = crc24c(polarParams->nr_polar_aPrime, (polarParams->payloadBits+polarParams->crcParityBits));
 	#ifdef DEBUG_POLAR_ENCODER_DCI
@@ -273,7 +273,7 @@ void polar_encoder_dci(uint32_t *in,
   /*
    * Return bits.
    */
-  nr_byte2bit_uint8_32_t(polarParams->nr_polar_E, polarParams->encoderLength, out);
+  nr_byte2bit_uint8_32(polarParams->nr_polar_E, polarParams->encoderLength, out);
 #ifdef DEBUG_POLAR_ENCODER_DCI
   printf("[polar_encoder_dci] E: ");
   for (int i = 0; i < polarParams->encoderLength; i++) printf("%d-", polarParams->nr_polar_E[i]);
