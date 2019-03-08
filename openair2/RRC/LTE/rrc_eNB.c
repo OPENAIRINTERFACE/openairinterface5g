@@ -2236,8 +2236,9 @@ rrc_eNB_generate_RRCConnectionRelease(
     ue_context_pP->ue_context.rnti,
     rrc_eNB_mui,
     size);
-  pthread_mutex_lock(&rrc_release_freelist);
-
+  while (pthread_mutex_trylock(&rrc_release_freelist)) {
+    /* spin... */
+  }
   for (uint16_t release_num = 0; release_num < NUMBER_OF_UE_MAX; release_num++) {
     if (rrc_release_info.RRC_release_ctrl[release_num].flag == 0) {
       if (ue_context_pP->ue_context.ue_release_timer_s1 > 0) {
