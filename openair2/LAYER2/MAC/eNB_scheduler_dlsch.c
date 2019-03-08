@@ -3089,11 +3089,9 @@ schedule_PCH(module_id_t module_idP,
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.dci_format                  = NFAPI_DL_DCI_FORMAT_1A;
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.harq_process                = 0;
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.tpc                         = 1; // no TPC
-        dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1        = 1;
-        dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_1        = 1;
-        dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding       = getRIV(n_rb_dl,
-            first_rb,
-            4);
+	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.new_data_indicator_1        = 0;
+	    dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.redundancy_version_1        = 0;
+        dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.resource_block_coding = getRIV(n_rb_dl, first_rb, 4);
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.virtual_resource_block_assignment_flag = 0;
 #endif
         dl_config_pdu->dci_dl_pdu.dci_dl_pdu_rel8.aggregation_level           = 4;
