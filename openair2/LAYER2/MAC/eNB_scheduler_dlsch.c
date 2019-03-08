@@ -717,9 +717,12 @@ schedule_ue_spec(module_id_t module_idP,
       eNB_UE_stats->harq_pid = harq_pid;
       eNB_UE_stats->harq_round = round_DL;
 
+      if (eNB_UE_stats->rrc_status < RRC_RECONFIGURED) {
+        ue_sched_ctrl->uplane_inactivity_timer = 0;
+      }
+
       if (eNB_UE_stats->rrc_status < RRC_CONNECTED) {
-        LOG_D(MAC, "UE %d is not in RRC_CONNECTED\n",
-              UE_id);
+        LOG_D(MAC, "UE %d is not in RRC_CONNECTED\n", UE_id);
         continue;
       }
 

@@ -1001,6 +1001,10 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
       UE_list->eNB_UE_stats[CC_id][UE_id].harq_pid = harq_pid;
       UE_list->eNB_UE_stats[CC_id][UE_id].harq_round = round;
 
+      if (UE_list->eNB_UE_stats[CC_id][UE_id].rrc_status < RRC_RECONFIGURED) {
+        UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer = 0;
+      }
+
       if (UE_list->eNB_UE_stats[CC_id][UE_id].rrc_status <
           RRC_CONNECTED)
         continue;

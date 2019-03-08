@@ -797,6 +797,10 @@ rx_sdu(const module_id_t enb_mod_idP,
           mac_rlc_data_ind(enb_mod_idP, current_rnti, enb_mod_idP, frameP, ENB_FLAG_YES, MBMS_FLAG_NO, rx_lcids[i], (char *) payload_ptr, rx_lengths[i], 1, NULL);  //(unsigned int*)crc_status);
           UE_list->eNB_UE_stats[CC_idP][UE_id].num_pdu_rx[rx_lcids[i]] += 1;
           UE_list->eNB_UE_stats[CC_idP][UE_id].num_bytes_rx[rx_lcids[i]] += rx_lengths[i];
+        
+          if (mac_eNB_get_rrc_status(enb_mod_idP, current_rnti) < RRC_RECONFIGURED) {
+            UE_list->UE_sched_ctrl[UE_id].uplane_inactivity_timer = 0;
+          }
         }
 
         break;
