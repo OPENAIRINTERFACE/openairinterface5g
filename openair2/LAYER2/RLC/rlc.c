@@ -607,49 +607,28 @@ void rlc_data_ind     (
     T(T_ENB_RLC_UL, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->rnti), T_INT(rb_idP), T_INT(sdu_sizeP));
 
 #endif
-   if (ctxt_pP->enb_flag == 1)
-   {
-     switch (RC.rrc[ctxt_pP->module_id]->node_type){
-       case ngran_eNB_CU:
-       case ngran_ng_eNB_CU:
-       case ngran_gNB_CU:
-         LOG_E(RLC, "Can't be CU, Bad Node type %d\n",RC.rrc[ctxt_pP->module_id]->node_type);
-         break;
-       case ngran_eNB_DU:
-       case ngran_gNB_DU:
-         if (srb_flagP == 1) {
-           MessageDef *msg = itti_alloc_new_message(TASK_RLC_ENB, F1AP_UL_RRC_MESSAGE);
-           F1AP_UL_RRC_MESSAGE(msg).rnti = ctxt_pP->rnti;
-           F1AP_UL_RRC_MESSAGE(msg).srb_id = rb_idP;
-           F1AP_UL_RRC_MESSAGE(msg).rrc_container = sdu_pP->data;
-           F1AP_UL_RRC_MESSAGE(msg).rrc_container_length = sdu_sizeP;
-           itti_send_msg_to_task(TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id), msg);
-         }
+
 #ifndef UETARGET
-         else
-           proto_agent_send_pdcp_data_ind (
-             ctxt_pP,
-             srb_flagP,
-             MBMS_flagP,
-             rb_idP,
-             sdu_sizeP,
-             sdu_pP);
-#endif
-     
-       break;
+  const ngran_node_t type = RC.rrc[ctxt_pP->module_id]->node_type;
+  AssertFatal(type != ngran_eNB_CU && type != ngran_ng_eNB_CU && type != ngran_gNB_CU,
+              "Can't be CU, bad node type %d\n", type);
 
-       default:
-         pdcp_data_ind (
-           ctxt_pP,
-           srb_flagP,
-           MBMS_flagP,
-           rb_idP,
-           sdu_sizeP,
-           sdu_pP);
-         break;
+  if (type == ngran_eNB_DU || type == ngran_gNB_DU) {
+     if (srb_flagP == 1) {
+       MessageDef *msg = itti_alloc_new_message(TASK_RLC_ENB, F1AP_UL_RRC_MESSAGE);
+       F1AP_UL_RRC_MESSAGE(msg).rnti = ctxt_pP->rnti;
+       F1AP_UL_RRC_MESSAGE(msg).srb_id = rb_idP;
+       F1AP_UL_RRC_MESSAGE(msg).rrc_container = sdu_pP->data;
+       F1AP_UL_RRC_MESSAGE(msg).rrc_container_length = sdu_sizeP;
+       itti_send_msg_to_task(TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id), msg);
+     } else {
+       proto_agent_send_pdcp_data_ind (ctxt_pP, srb_flagP, MBMS_flagP, rb_idP, sdu_sizeP, sdu_pP);
      }
-
-   }
+  } else
+#endif
+  { // case monolithic eNodeB or UE
+    pdcp_data_ind(ctxt_pP, srb_flagP, MBMS_flagP, rb_idP, sdu_sizeP, sdu_pP);
+  }
 }
 //-----------------------------------------------------------------------------
 void rlc_data_conf     (const protocol_ctxt_t *const ctxt_pP,

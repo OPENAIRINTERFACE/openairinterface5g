@@ -370,10 +370,10 @@ boolean_t pdcp_data_req(
     if ((pdcp_pdu_p!=NULL) && (srb_flagP == 0) && (ctxt_pP->enb_flag == 1))
     {
 
+#ifndef UETARGET
        LOG_D(PDCP, "pdcp data req on drb %d, size %d, rnti %x, node_type %d \n", 
             rb_idP, pdcp_pdu_size, ctxt_pP->rnti, RC.rrc[ctxt_pP->module_id]->node_type);
 
-#ifndef UETARGET
        if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB_CU
            || RC.rrc[ctxt_pP->module_id]->node_type == ngran_ng_eNB_CU
            || RC.rrc[ctxt_pP->module_id]->node_type == ngran_gNB_CU) {
@@ -428,6 +428,7 @@ boolean_t pdcp_data_req(
     else // SRB
     {
 
+#ifndef UETARGET
       if ((RC.rrc[ctxt_pP->module_id]->node_type  == ngran_eNB_CU)   ||
         (RC.rrc[ctxt_pP->module_id]->node_type   == ngran_ng_eNB_CU)||
         (RC.rrc[ctxt_pP->module_id]->node_type   == ngran_gNB_CU)  ) {
@@ -449,7 +450,9 @@ boolean_t pdcp_data_req(
         LOG_I(PDCP, "Send F1AP_DL_RRC_MESSAGE with ITTI\n");
         ret=TRUE;
 
-      } else{
+      } else
+#endif
+      {
         rlc_status = rlc_data_req(ctxt_pP
                                   , srb_flagP
                                   , MBMS_FLAG_NO
