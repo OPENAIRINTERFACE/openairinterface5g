@@ -810,18 +810,18 @@ rrc_ue_establish_drb(
                     (eNB_index * NB_RB_MAX) + *DRB_config->logicalChannelIdentity,
                     RADIO_ACCESS_BEARER,Rlc_info_um);
    */
-  if(!EPC_MODE_ENABLED) {
+//  if(!EPC_MODE_ENABLED) {
 //#   if !defined(OAI_NW_DRIVER_TYPE_ETHERNET) && !defined(EXMIMO) && !defined(OAI_USRP) && !defined(OAI_BLADERF) && !defined(ETHERNET) && !defined(LINK_ENB_PDCP_TO_GTPV1U)
     ip_addr_offset3 = 0;
     ip_addr_offset4 = 1;
-    LOG_I(OIP,"[UE %d] trying to bring up the OAI interface oai%d, IP 10.0.%d.%d\n", ue_mod_idP, ip_addr_offset3+ue_mod_idP,
+    LOG_I(OIP,"[UE %d] trying to bring up the OAI interface oip%d, IP 10.0.%d.%d\n", ue_mod_idP, ip_addr_offset3+ue_mod_idP,
           ip_addr_offset3+ue_mod_idP+1,ip_addr_offset4+ue_mod_idP+1);
     oip_ifup=nas_config(ip_addr_offset3+ue_mod_idP+1,   // interface_id
                         ip_addr_offset3+ue_mod_idP+1, // third_octet
                         ip_addr_offset4+ue_mod_idP+1, // fourth_octet
-                        "ue");                        // interface suffix
+                        "oip");                        // interface suffix
 
-    if (oip_ifup == 0 && (!IS_SOFTMODEM_NOKRNMOD)) { // interface is up --> send a config the DRB
+    if (oip_ifup == 0 && (!UE_NAS_USE_TUN)) { // interface is up --> send a config the DRB
       LOG_I(OIP,"[UE %d] Config the ue net interface %d to send/receive pkt on DRB %ld to/from the protocol stack\n",
             ue_mod_idP,
             ip_addr_offset3+ue_mod_idP,
@@ -837,7 +837,7 @@ rrc_ue_establish_drb(
     }
 
 //#    endif
-  }
+//  }
 
   return(0);
 }

@@ -51,7 +51,7 @@
 #include "targets/COMMON/openairinterface5g_limits.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
 #include "UTIL/OSA/osa_defs.h"
-
+#include "openair2/RRC/NAS/nas_config.h"
 # include "intertask_interface.h"
 
 
@@ -1145,9 +1145,10 @@ pdcp_run (
   } while(msg_p != NULL);
 
   // IP/NAS -> PDCP traffic : TX, read the pkt from the upper layer buffer
-  if (LINK_ENB_PDCP_TO_GTPV1U && ctxt_pP->enb_flag == ENB_FLAG_NO) {
-    pdcp_fifo_read_input_sdus(ctxt_pP);
-  }
+//  if (LINK_ENB_PDCP_TO_GTPV1U && ctxt_pP->enb_flag == ENB_FLAG_NO) {
+    if (!EPC_MODE_ENABLED || ctxt_pP->enb_flag == ENB_FLAG_NO ) {
+      pdcp_fifo_read_input_sdus(ctxt_pP);
+    }
 
   // PDCP -> NAS/IP traffic: RX
   if (ctxt_pP->enb_flag) {
@@ -2027,9 +2028,6 @@ rrc_pdcp_config_req (
   }
 }
 
-
-//-----------------------------------------------------------------------------
-
 uint64_t pdcp_module_init( uint64_t pdcp_optmask ) {
   /* temporary enforce netlink when UE_NAS_USE_TUN is set,
      this is while switching from noS1 as build option
@@ -2045,14 +2043,21 @@ uint64_t pdcp_module_init( uint64_t pdcp_optmask ) {
 
   if (PDCP_USE_NETLINK) {
     if(UE_NAS_USE_TUN) {
-      netlink_init_tun();
+      netlink_init_tun("ue");
+      LOG_I(PDCP, "UE pdcp will use tun interface\n");
+    } else if(ENB_NAS_USE_TUN) {
+      netlink_init_tun("enb");
+      nas_config(1, 1, 1, "enb");
+      LOG_I(PDCP, "ENB pdcp will use tun interface\n");
     } else {
+      LOG_I(PDCP, "pdcp will use kernel modules\n");
       netlink_init();
     }
   }
 
   return pdcp_params.optmask ;
 }
+
 
 //-----------------------------------------------------------------------------
 void

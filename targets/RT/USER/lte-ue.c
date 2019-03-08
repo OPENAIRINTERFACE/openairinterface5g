@@ -578,11 +578,7 @@ static void *UE_thread_synch(void *arg)
 
     case pbch:
 
-#if DISABLE_LOG_X
-      printf("[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
-#else
       LOG_I(PHY, "[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
-#endif
       if (initial_sync( UE, UE->mode ) == 0) {
 
 	LOG_I( HW, "Got synch: hw_slot_offset %d, carrier off %d Hz, rxgain %d (DL %u, UL %u), UE_scan_carrier %d\n",
@@ -702,19 +698,11 @@ static void *UE_thread_synch(void *arg)
 	    return &UE_thread_synch_retval; // not reached
 	  }
 	}
-#if DISABLE_LOG_X
-	printf("[initial_sync] trying carrier off %d Hz, rxgain %d (DL %u, UL %u)\n",
-	       freq_offset,
-	       UE->rx_total_gain_dB,
-	       downlink_frequency[0][0]+freq_offset,
-	       downlink_frequency[0][0]+uplink_frequency_offset[0][0]+freq_offset );
-#else
 	LOG_I(PHY, "[initial_sync] trying carrier off %d Hz, rxgain %d (DL %u, UL %u)\n",
 	      freq_offset,
 	      UE->rx_total_gain_dB,
 	      downlink_frequency[0][0]+freq_offset,
 	      downlink_frequency[0][0]+uplink_frequency_offset[0][0]+freq_offset );
-#endif
 
 	for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
 	  openair0_cfg[UE->rf_map.card].rx_freq[UE->rf_map.chain+i] = downlink_frequency[CC_id][i]+freq_offset;
@@ -793,11 +781,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
       // most of the time, the thread is waiting here
       pthread_cond_wait( &proc->cond_rxtx, &proc->mutex_rxtx );
     }
-    if (pthread_mutex_unlock(&proc->mutex_rxtx) != 0) {
-      LOG_E( PHY, "[SCHED][UE] error unlocking mutex for UE RXn_TXnp4\n" );
-      exit_fun("nothing to add");
-    }
-
+    //printf("Processing sub frqme %d in %s\n", proc->subframe_rx, threadname);
     initRefTimes(t2);
     initRefTimes(t3);
     pickTime(current);
@@ -870,12 +854,8 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 	phy_procedures_UE_S_TX(UE,0,0);
     updateTimes(current, &t3, 10000, "Delay to process sub-frame (case 3)");
 
-    if (pthread_mutex_lock(&proc->mutex_rxtx) != 0) {
-      LOG_E( PHY, "[SCHED][UE] error locking mutex for UE RXTX\n" );
-      exit_fun("noting to add");
-    }
     proc->instance_cnt_rxtx--;
-    if ( IS_SOFTMODEM_BASICSIM ) {
+    if ( IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM ) {
       if (pthread_cond_signal(&proc->cond_rxtx) != 0) abort(); 
     }
     if (pthread_mutex_unlock(&proc->mutex_rxtx) != 0) {
@@ -1665,7 +1645,7 @@ void *UE_thread(void *arg) {
                 // update thread index for received subframe
                 UE->current_thread_id[sub_frame] = thread_idx;
 
-                if (IS_SOFTMODEM_BASICSIM) {
+                if (IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM ) {
 		  int t;
 		  for (t = 0; t < 2; t++) {
 			UE_rxtx_proc_t *proc = &UE->proc.proc_rxtx[t];
@@ -1748,8 +1728,21 @@ void *UE_thread(void *arg) {
                             LOG_E(PHY,"can't compensate: diff =%d\n", first_symbols);
                     }
                     pickTime(gotIQs);
+		    struct timespec tv={0};
+		    tv.tv_nsec=10*1000;
+		    if( IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM)
+		      tv.tv_sec=INT_MAX;
                     // operate on thread sf mod 2
-                    AssertFatal(pthread_mutex_lock(&proc->mutex_rxtx) ==0,"");
+                    if (pthread_mutex_timedlock(&proc->mutex_rxtx, &tv) !=0) {
+		      if ( errno == ETIMEDOUT) {
+			LOG_E(PHY,"Missed real time\n");
+			continue;
+		      } else {
+			LOG_E(PHY,"System error\n");
+			abort();
+		      }
+		    }
+		    //usleep(3000);
                     if(sub_frame == 0) {
                         //UE->proc.proc_rxtx[0].frame_rx++;
                         //UE->proc.proc_rxtx[1].frame_rx++;
@@ -1771,11 +1764,6 @@ void *UE_thread(void *arg) {
 
                     proc->instance_cnt_rxtx++;
                     LOG_D( PHY, "[SCHED][UE %d] UE RX instance_cnt_rxtx %d subframe %d !!\n", UE->Mod_id, proc->instance_cnt_rxtx,proc->subframe_rx);
-                    if (proc->instance_cnt_rxtx != 0) {
-                      LOG_E( PHY, "[SCHED][UE %d] UE RX thread busy (IC %d)!!\n", UE->Mod_id, proc->instance_cnt_rxtx);
-                      if (proc->instance_cnt_rxtx > 2)
-                        exit_fun("instance_cnt_rxtx > 2");
-                    }
 
                     AssertFatal (pthread_cond_signal(&proc->cond_rxtx) ==0 ,"");
                     AssertFatal(pthread_mutex_unlock(&proc->mutex_rxtx) ==0,"");

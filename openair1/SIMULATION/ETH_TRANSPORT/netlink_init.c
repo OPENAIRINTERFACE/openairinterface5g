@@ -93,12 +93,12 @@ static int tun_alloc(char *dev) {
   return fd;
 }
 
-int netlink_init_tun(void) {
+int netlink_init_tun(char *ifprefix) {
   int ret;
   char ifname[64];
 
   for (int i = 0; i < NUMBER_OF_UE_MAX; i++) {
-    sprintf(ifname, "oaitun_ue%d",i+1);
+    sprintf(ifname, "oaitun_%.3s%d",ifprefix,i+1);
     nas_sock_fd[i] = tun_alloc(ifname);
 
     if (nas_sock_fd[i] == -1) {
