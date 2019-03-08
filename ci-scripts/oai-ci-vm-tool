@@ -231,7 +231,7 @@ case $key in
     VM_NAME=ci-enb-usrp
     ARCHIVES_LOC=enb_usrp
     LOG_PATTERN=.Rel14.txt
-    NB_PATTERN_FILES=4
+    NB_PATTERN_FILES=6
     BUILD_OPTIONS="--eNB -w USRP --mu"
     NBARGS=$[$NBARGS+256]
     shift
@@ -272,7 +272,7 @@ case $key in
     VM_NAME=ci-enb-ethernet
     ARCHIVES_LOC=enb_eth
     LOG_PATTERN=.Rel14.txt
-    NB_PATTERN_FILES=6
+    NB_PATTERN_FILES=7
     BUILD_OPTIONS="--eNB -t ETHERNET --noS1"
     NBARGS=$[$NBARGS+256]
     shift
@@ -281,7 +281,7 @@ case $key in
     VM_NAME=ci-ue-ethernet
     ARCHIVES_LOC=ue_eth
     LOG_PATTERN=.Rel14.txt
-    NB_PATTERN_FILES=6
+    NB_PATTERN_FILES=7
     BUILD_OPTIONS="--UE -t ETHERNET --noS1"
     NBARGS=$[$NBARGS+256]
     shift
@@ -292,7 +292,7 @@ case $key in
     VM_CPU=8
     ARCHIVES_LOC=l2_sim
     LOG_PATTERN=.Rel14.txt
-    NB_PATTERN_FILES=4
+    NB_PATTERN_FILES=7
     BUILD_OPTIONS="--eNB -t ETHERNET"
     RUN_OPTIONS="complex"
     NBARGS=$[$NBARGS+256]
@@ -314,7 +314,7 @@ case $key in
         VM_NAME=ci-enb-usrp
         ARCHIVES_LOC=enb_usrp
         LOG_PATTERN=.Rel14.txt
-        NB_PATTERN_FILES=4
+        NB_PATTERN_FILES=6
         BUILD_OPTIONS="--eNB -w USRP --mu"
         NBARGS=$[$NBARGS+256]
         ;;
@@ -351,7 +351,7 @@ case $key in
         VM_NAME=ci-enb-ethernet
         ARCHIVES_LOC=enb_eth
         LOG_PATTERN=.Rel14.txt
-        NB_PATTERN_FILES=6
+        NB_PATTERN_FILES=7
         BUILD_OPTIONS="--eNB -t ETHERNET --noS1"
         NBARGS=$[$NBARGS+256]
         ;;
@@ -359,7 +359,7 @@ case $key in
         VM_NAME=ci-ue-ethernet
         ARCHIVES_LOC=ue_eth
         LOG_PATTERN=.Rel14.txt
-        NB_PATTERN_FILES=6
+        NB_PATTERN_FILES=7
         BUILD_OPTIONS="--UE -t ETHERNET --noS1"
         NBARGS=$[$NBARGS+256]
         ;;
@@ -369,7 +369,7 @@ case $key in
         VM_CPU=8
         ARCHIVES_LOC=l2_sim
         LOG_PATTERN=.Rel14.txt
-        NB_PATTERN_FILES=4
+        NB_PATTERN_FILES=5
         BUILD_OPTIONS="--eNB -t ETHERNET"
         RUN_OPTIONS="complex"
         NBARGS=$[$NBARGS+256]

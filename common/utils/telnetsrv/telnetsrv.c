@@ -77,17 +77,17 @@ paramdef_t telnetoptions[] = {
   /*                                            configuration parameters for telnet utility                                                                             */
   /*   optname                     helpstr                paramflags           XXXptr                               defXXXval               type                 numelt */
   /*--------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-  {"listenaddr",    "<listen ip address>",         0,                 uptr:&telnetparams.listenaddr,        defstrval:"0.0.0.0",            TYPE_IPV4ADDR,  0 },
-  {"listenport",    "<local port>",                0,                 uptr:&(telnetparams.listenport),      defuintval:9090,                TYPE_UINT,      0 },
-  {"priority",      "<scheduling policy (0-99)",   0,                 iptr:&telnetparams.priority,          defuintval:0,                   TYPE_INT,       0 },
-  {"debug",         "<debug level>",               0,                 uptr:NULL,                            defuintval:0,                   TYPE_UINT,      0 },
-  {"loopcount",     "<loop command iterations>",   0,                 uptr:&(telnetparams.loopcount),       defuintval:10,                  TYPE_UINT,      0 },
-  {"loopdelay",     "<loop command delay (ms)>",   0,                 uptr:&(telnetparams.loopdelay),       defuintval:5000,                TYPE_UINT,      0 },
-  {"histfile",      "<history file name>",         PARAMFLAG_NOFREE,  strptr:&(telnetparams.histfile),      defstrval:"oaitelnet.history",  TYPE_STRING,    0 },
-  {"histsize",      "<history sizes>",             0,                 iptr:&(telnetparams.histsize),        defuintval:50,                  TYPE_INT,       0 },
-  {"phypbsize",     "<phy dump buff size (bytes)>",0,                 uptr:&(telnetparams.phyprntbuff_size),defuintval:65000,               TYPE_UINT,      0 },
-  {"staticmod",     "<static modules selection>",  0,                 strlistptr:NULL,                      defstrlistval:telnet_defstatmod,TYPE_STRINGLIST,(sizeof(telnet_defstatmod)/sizeof(char *))},
-  {"shrmod",        "<dynamic modules selection>", 0,                 strlistptr:NULL,                      defstrlistval:NULL,TYPE_STRINGLIST,0 }
+  {"listenaddr",    "<listen ip address>\n",         0,                 uptr:&telnetparams.listenaddr,        defstrval:"0.0.0.0",            TYPE_IPV4ADDR,  0 },
+  {"listenport",    "<local port>\n",                0,                 uptr:&(telnetparams.listenport),      defuintval:9090,                TYPE_UINT,      0 },
+  {"priority",      "<scheduling policy (0-99)\n",   0,                 iptr:&telnetparams.priority,          defuintval:0,                   TYPE_INT,       0 },
+  {"debug",         "<debug level>\n",               0,                 uptr:NULL,                            defuintval:0,                   TYPE_UINT,      0 },
+  {"loopcount",     "<loop command iterations>\n",   0,                 uptr:&(telnetparams.loopcount),       defuintval:10,                  TYPE_UINT,      0 },
+  {"loopdelay",     "<loop command delay (ms)>\n",   0,                 uptr:&(telnetparams.loopdelay),       defuintval:5000,                TYPE_UINT,      0 },
+  {"histfile",      "<history file name>\n",         PARAMFLAG_NOFREE,  strptr:&(telnetparams.histfile),      defstrval:"oaitelnet.history",  TYPE_STRING,    0 },
+  {"histsize",      "<history sizes>\n",             0,                 iptr:&(telnetparams.histsize),        defuintval:50,                  TYPE_INT,       0 },
+  {"phypbsize",     "<phy dump buff size (bytes)>\n",0,                 uptr:&(telnetparams.phyprntbuff_size),defuintval:65000,               TYPE_UINT,      0 },
+  {"staticmod",     "<static modules selection>\n",  0,                 strlistptr:NULL,                      defstrlistval:telnet_defstatmod,TYPE_STRINGLIST,(sizeof(telnet_defstatmod)/sizeof(char *))},
+  {"shrmod",        "<dynamic modules selection>\n", 0,                 strlistptr:NULL,                      defstrlistval:NULL,TYPE_STRINGLIST,0 }
 };
 
 int get_phybsize(void) {
@@ -355,7 +355,7 @@ int setgetvar(int moduleindex,char getorset,char *params) {
   char varname[TELNET_CMD_MAXSIZE];
   char *varval=NULL;
   memset(varname,0,sizeof(varname));
-  n = sscanf(params,"%19s %ms",varname,&varval);
+  n = sscanf(params,"%s %ms",varname,&varval);
 
   for ( i=0 ; telnetparams.CmdParsers[moduleindex].var[i].varvalptr != NULL ; i++) {
     if ( strncasecmp(telnetparams.CmdParsers[moduleindex].var[i].varname,varname,strlen(telnetparams.CmdParsers[moduleindex].var[i].varname)) == 0) {
@@ -475,7 +475,7 @@ int process_command(char *buf) {
   memset(cmdb,0,sizeof(cmdb));
   bufbck=strdup(buf);
   rt=CMDSTATUS_NOTFOUND;
-  j = sscanf(buf,"%9s %9s %2000[^\t\n]",modulename,cmd,cmdb);
+  j = sscanf(buf,"%9s %9s %[^\t\n]",modulename,cmd,cmdb);
 
   if (telnetparams.telnetdbg > 0)
     printf("process_command: %i words, module=%s cmd=%s, parameters= %s\n",j,modulename,cmd,cmdb);
