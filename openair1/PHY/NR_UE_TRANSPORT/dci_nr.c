@@ -1418,11 +1418,11 @@ void nr_dci_decoding_procedure0(int s,
         *format_found=_format_2_3_found;
       }
 
-      //#ifdef NR_PDCCH_DCI_DEBUG
+#ifdef NR_PDCCH_DCI_DEBUG
       printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> format_found=%d\n",*format_found);
       printf ("\t\t<-NR_PDCCH_DCI_DEBUG (nr_dci_decoding_procedure0)-> crc_scrambled=%d\n",*crc_scrambled);
+      #endif
 
-      //#endif
       if (*format_found!=255) {
         dci_alloc[*dci_cnt].dci_length = sizeof_bits;
         dci_alloc[*dci_cnt].rnti = crc;
