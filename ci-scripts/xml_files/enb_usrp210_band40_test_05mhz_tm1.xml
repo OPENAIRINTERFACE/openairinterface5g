@@ -112,7 +112,7 @@
 		<class>Iperf</class>
 		<desc>iperf (5MHz - UL/2Mbps/UDP)(30 sec)(unbalanced)</desc>
 		<iperf_args>-u -b 2M -t 30 -i 1 -R</iperf_args>
-		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+		<iperf_packetloss_threshold>80</iperf_packetloss_threshold>
 		<iperf_profile>unbalanced</iperf_profile>
 	</testCase>
 
