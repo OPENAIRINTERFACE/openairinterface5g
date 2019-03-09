@@ -63,7 +63,6 @@ struct msghdr nas_msg_rx;
 
 #define GRAAL_NETLINK_ID 31
 
-
 static int tun_alloc(char *dev) {
   struct ifreq ifr;
   int fd, err;

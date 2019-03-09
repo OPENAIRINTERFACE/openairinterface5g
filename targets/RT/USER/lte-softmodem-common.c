@@ -99,9 +99,11 @@ void get_common_options(void) {
   if (basicsim) {
     set_softmodem_optmask(SOFTMODEM_BASICSIM_BIT);
   }
+
 #if BASIC_SIMULATOR
-    set_softmodem_optmask(SOFTMODEM_BASICSIM_BIT);
+  set_softmodem_optmask(SOFTMODEM_BASICSIM_BIT);
 #endif
+
   if(parallel_config != NULL) set_parallel_conf(parallel_config);
 
   if(worker_config != NULL)   set_worker_conf(worker_config);

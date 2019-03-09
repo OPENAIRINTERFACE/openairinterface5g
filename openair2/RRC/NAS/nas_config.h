@@ -31,6 +31,13 @@
 
 #include <netinet/in.h>
 
+/*! \fn void void nas_getparams(void)(void)
+ * \brief This function get parameters used to configure network interface when running in noS1 mode
+ * \note
+ * @ingroup  ?????
+ */
+void nas_getparams(void);
+
 /*! \fn int  NAS_config(char*, char*, char*, char*)
  * \brief This function initializes the nasmesh interface
  * \param[in] interfaceName, the name of the interface, e.g. nasmesh0 or nasmesh1
@@ -98,7 +105,7 @@ int set_gateway(char *interfaceName, char *gateway);
  * \note
  * @ingroup  ?????
  */
-void setBaseNetAddress(char* baseAddr);
+void setBaseNetAddress(char *baseAddr);
 
 /*! \fn char*  getBaseNetAddress()
  * \brief This function returns the basic network address used
@@ -106,7 +113,7 @@ void setBaseNetAddress(char* baseAddr);
  * \note
  * @ingroup  ?????
  */
-char* getBaseNetAddress(void);
+char *getBaseNetAddress(void);
 
 /*! \fn void  setNetMask(char*)
  * \brief This function sets the new default network mask used
@@ -114,7 +121,7 @@ char* getBaseNetAddress(void);
  * \note
  * @ingroup  ?????
  */
-void setNetMask(char* baseAddr);
+void setNetMask(char *baseAddr);
 
 /*! \fn char*  getNetMask()
  * \brief This function returns the network mask address in use
@@ -122,7 +129,7 @@ void setNetMask(char* baseAddr);
  * \note
  * @ingroup  ?????
  */
-char* getNetMask(void);
+char *getNetMask(void);
 
 /*! \fn coid setBroadcastAddress(char*)
  * \brief This function sets the new broadcast address used
@@ -130,7 +137,7 @@ char* getNetMask(void);
  * \note
  * @ingroup  ?????
  */
-void setBroadcastAddress(char* baseAddr);
+void setBroadcastAddress(char *baseAddr);
 
 /*! \fn char*  getBroadcastAddress()
  * \brief This function returns the broadcast address in use
@@ -138,7 +145,7 @@ void setBroadcastAddress(char* baseAddr);
  * \note
  * @ingroup  ?????
  */
-char* getBroadcastAddress(void);
+char *getBroadcastAddress(void);
 
 int bringInterfaceUp(char *interfaceName, int up);
 

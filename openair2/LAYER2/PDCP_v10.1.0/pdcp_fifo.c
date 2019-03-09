@@ -145,7 +145,6 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const  ctxt_pP) {
 //-----------------------------------------------------------------------------
 int pdcp_fifo_read_input_sdus (const protocol_ctxt_t *const  ctxt_pP) {
   pdcp_data_req_header_t pdcp_read_header_g;
-  
 
   if (UE_NAS_USE_TUN || ENB_NAS_USE_TUN) {
     protocol_ctxt_t ctxt = *ctxt_pP;
@@ -163,21 +162,19 @@ int pdcp_fifo_read_input_sdus (const protocol_ctxt_t *const  ctxt_pP) {
 
       if (len<=0) continue;
 
- 
       if (UE_NAS_USE_TUN) {
-         key = PDCP_COLL_KEY_DEFAULT_DRB_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
-         h_rc = hashtable_get(pdcp_coll_p, key, (void **)&pdcp_p);
+        key = PDCP_COLL_KEY_DEFAULT_DRB_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
+        h_rc = hashtable_get(pdcp_coll_p, key, (void **)&pdcp_p);
       } else {
-           ctxt.rnti=pdcp_eNB_UE_instance_to_rnti[0];
-           ctxt.enb_flag=ENB_FLAG_YES;
-           ctxt.module_id=0;
-           key = PDCP_COLL_KEY_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id, SRB_FLAG_YES);
-           h_rc = hashtable_get(pdcp_coll_p, key, (void **)&pdcp_p);
+        ctxt.rnti=pdcp_eNB_UE_instance_to_rnti[0];
+        ctxt.enb_flag=ENB_FLAG_YES;
+        ctxt.module_id=0;
+        key = PDCP_COLL_KEY_VALUE(ctxt.module_id, ctxt.rnti, ctxt.enb_flag, rab_id, SRB_FLAG_YES);
+        h_rc = hashtable_get(pdcp_coll_p, key, (void **)&pdcp_p);
       }
-     LOG_D(PDCP, "PDCP_COLL_KEY_DEFAULT_DRB_VALUE(module_id=%d, rnti=%x, enb_flag=%d)\n",
+
+      LOG_D(PDCP, "PDCP_COLL_KEY_DEFAULT_DRB_VALUE(module_id=%d, rnti=%x, enb_flag=%d)\n",
             ctxt.module_id, ctxt.rnti, ctxt.enb_flag);
-
-
 
       if (h_rc == HASH_TABLE_OK) {
         LOG_D(PDCP, "[FRAME %5u][UE][NETLINK][IP->PDCP] INST %d: Received socket with length %d on Rab %d \n",

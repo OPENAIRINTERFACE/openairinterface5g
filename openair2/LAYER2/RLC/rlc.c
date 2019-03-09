@@ -584,14 +584,12 @@ void rlc_data_ind     (
   const sdu_size_t  sdu_sizeP,
   mem_block_t      *sdu_pP) {
   //-----------------------------------------------------------------------------
-
   LOG_D(RLC, PROTOCOL_CTXT_FMT"[%s %u] Display of rlc_data_ind: size %u\n",
         PROTOCOL_CTXT_ARGS(ctxt_pP),
         (srb_flagP) ? "SRB" : "DRB",
         rb_idP,
         sdu_sizeP);
   rlc_util_print_hex_octets(RLC, (unsigned char *)sdu_pP->data, sdu_sizeP);
-
 #if T_TRACER
 
   if (ctxt_pP->enb_flag)

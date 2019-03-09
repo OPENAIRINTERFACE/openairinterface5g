@@ -760,22 +760,22 @@ int main( int argc, char **argv ) {
   }
 
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
-
   init_opt();
   uint32_t pdcp_initmask = (!IS_SOFTMODEM_NOS1 )? LINK_ENB_PDCP_TO_GTPV1U_BIT : (LINK_ENB_PDCP_TO_GTPV1U_BIT | PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT);
 
   if ( IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM || (nfapi_mode == 3) ) {
     pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
   }
+
   if ( IS_SOFTMODEM_NOKRNMOD)
     pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
+
   pdcp_module_init( pdcp_initmask );
   //TTN for D2D
   printf ("RRC control socket\n");
   rrc_control_socket_init();
   printf ("PDCP PC5S socket\n");
   pdcp_pc5_socket_init();
-
   // to make a graceful exit when ctrl-c is pressed
   signal(SIGSEGV, signal_handler);
   signal(SIGINT, signal_handler);

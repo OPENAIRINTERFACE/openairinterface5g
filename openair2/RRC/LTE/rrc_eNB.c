@@ -6269,6 +6269,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
           LOG_D(RRC,
                 "[eNB %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n",
                 ctxt_pP->module_id, ctxt_pP->frame, (int)DRB_configList->list.array[i]->drb_Identity);
+
           if (!EPC_MODE_ENABLED && !ENB_NAS_USE_TUN) {
             LOG_I(OIP, "[eNB %d] trying to bring up the OAI interface oai%d\n",
                   ctxt_pP->module_id,
@@ -6278,6 +6279,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                          ctxt_pP->module_id + 1,   // thrid octet
                          ctxt_pP->module_id + 1,   // fourth octet
                          "oai");
+
             if (oip_ifup == 0) {    // interface is up --> send a config the DRB
               module_id_t ue_module_id;
               dest_ip_offset = 8;
