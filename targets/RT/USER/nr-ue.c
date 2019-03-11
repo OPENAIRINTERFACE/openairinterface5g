@@ -638,7 +638,7 @@ static void *UE_thread_synch(void *arg) {
   return &UE_thread_synch_retval;
 }
 
-void processSubframeRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
+void processSlotRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
   // Process Rx data for one sub-frame
   if (slot_select_nr(&UE->frame_parms, proc->frame_tx, proc->nr_tti_tx) & NR_DOWNLINK_SLOT) {
     //clean previous FAPI MESSAGE
@@ -661,7 +661,7 @@ void processSubframeRX( PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
 #ifdef UE_SLOT_PARALLELISATION
     phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, UE->mode, no_relay, NULL );
 #else
-    phy_procedures_nrUE_RX( UE, proc, 0, 1, UE->mode);
+    phy_procedures_nrUE_RX( UE, proc, 0, 1, UE->mode, UE_mac->phy_config.config_req.pbch_config);
     //            printf(">>> nr_ue_pdcch_procedures ended\n");
 #endif
   }
@@ -725,7 +725,7 @@ static void *UE_thread_rxn_txnp4(void *arg) {
     }
 
     AssertFatal ( 0== pthread_mutex_unlock(&proc->mutex_rxtx), "[SCHED][UE] error unlocking mutex for UE RXn_TXnp4\n" );
-    processSubframeRX(UE, proc);
+    processSlotRX(UE, proc);
     //printf(">>> mac ended\n");
     // Prepare the future Tx data
 #if 0
@@ -1123,7 +1123,7 @@ void *UE_thread(void *arg) {
       //                    pickStaticTime(lastTime);
     } //UE->mode != loop_through_memory
     else {
-      processSubframeRX(UE,proc);
+      processSlotRX(UE,proc);
       getchar();
     } // else loop_through_memory
   } // while !oai_exit

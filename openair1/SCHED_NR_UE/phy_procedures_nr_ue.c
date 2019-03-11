@@ -4958,18 +4958,20 @@ int phy_procedures_slot_parallelization_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_pr
 
 
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eNB_id,
-			   uint8_t do_pdcch_flag,runmode_t mode) {
+			   uint8_t do_pdcch_flag,runmode_t mode,
+			   fapi_nr_pbch_config_t pbch_config) {
 
 
 
   int l,l2;
   int pilot1;
-
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
   NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][0];
   uint16_t nb_symb_sch = 8; // to be updated by higher layer
   uint8_t nb_symb_pdcch = pdcch_vars->coreset[0].duration;
+  uint8_t ssb_periodicity = 20; // TODO hardcoded to be taken from upper layers?
+  uint8_t ssb_frame_periodicity;  
   
   LOG_D(PHY," ****** start RX-Chain for Frame.Slot %d.%d ******  \n", frame_rx%1024, nr_tti_rx);
 
@@ -5094,18 +5096,16 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_RA, VCD_FUNCTION_OUT);
   }
 
+  ssb_frame_periodicity = ssb_periodicity/10 ;  // 10ms is the frame length
 
-
-  if ( (nr_tti_rx == 0) && (ue->decode_MIB == 1))
+  // looking for pbch only in frames according to ssb periodicity
+  if ( (nr_tti_rx == 0) && (ue->decode_MIB == 1) && !((frame_rx-(pbch_config.system_frame_number))%ssb_frame_periodicity))
     {
       LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
 
-      uint8_t i_ssb = ue->rx_ind.rx_indication_body[0].mib_pdu.ssb_index;
-      uint8_t n_hf = (((ue->rx_ind.rx_indication_body[0].mib_pdu.additional_bits)>>4)&0x01);
-
       for (int i=1; i<4; i++) {
 	nr_slot_fep(ue,
-		    (ue->symbol_offset+i), //mu=1 case B
+		    (ue->symbol_offset+i),
 		    nr_tti_rx,
 		    0,
 		    0,
@@ -5114,7 +5114,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 #if UE_TIMING_TRACE
   	start_meas(&ue->dlsch_channel_estimation_stats);
 #endif
-   	nr_pbch_channel_estimation(ue,0,0,ue->symbol_offset+i,i-1,i_ssb,n_hf);
+   	nr_pbch_channel_estimation(ue,0,0,ue->symbol_offset+i,i-1,(pbch_config.ssb_index)&7,pbch_config.half_frame_bit);
 #if UE_TIMING_TRACE
   	stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif
@@ -5183,7 +5183,7 @@ start_meas(&ue->generic_stat);
   if(nr_tti_rx==5 &&  ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->harq_processes[ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->current_harq_pid]->nb_rb > 20){
        //write_output("decoder_llr.m","decllr",dlsch_llr,G,1,0);
        //write_output("llr.m","llr",  &ue->pdsch_vars[eNB_id]->llr[0][0],(14*nb_rb*12*dlsch1_harq->Qm) - 4*(nb_rb*4*dlsch1_harq->Qm),1,0);
-
+openair1/SCHED_NR/phy_procedures_nr_gNB.c
        write_output("rxdataF0_current.m"    , "rxdataF0", &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF[0][0],14*ue->frame_parms.ofdm_symbol_size,1,1);
        //write_output("rxdataF0_previous.m"    , "rxdataF0_prev_sss", &ue->common_vars.common_vars_rx_data_per_thread[next_thread_id].rxdataF[0][0],14*ue->frame_parms.ofdm_symbol_size,1,1);
 
