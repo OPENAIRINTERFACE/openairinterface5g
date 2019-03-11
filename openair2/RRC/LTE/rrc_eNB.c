@@ -6027,9 +6027,6 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
   int                                 i, drb_id;
   int                                 oip_ifup = 0;
   int                                 dest_ip_offset = 0;
-  /* avoid gcc warnings */
-  (void)oip_ifup;
-  (void)dest_ip_offset;
   uint8_t                            *kRRCenc = NULL;
   uint8_t                            *kRRCint = NULL;
   uint8_t                            *kUPenc = NULL;
@@ -6150,16 +6147,15 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                 "[eNB %d] Frame %d: Establish RLC UM Bidirectional, DRB %d Active\n",
                 ctxt_pP->module_id, ctxt_pP->frame, (int)DRB_configList->list.array[i]->drb_Identity);
 
-          if (PDCP_USE_NETLINK && (!LINK_ENB_PDCP_TO_GTPV1U)) {
-            // can mean also IPV6 since ether -> ipv6 autoconf
-#   if !defined(OAI_NW_DRIVER_TYPE_ETHERNET) && !defined(EXMIMO) && !defined(OAI_USRP) && !defined(OAI_BLADERF) && !defined(ETHERNET)
+          if (!EPC_MODE_ENABLED && !ENB_NAS_USE_TUN) {
             LOG_I(OIP, "[eNB %d] trying to bring up the OAI interface oai%d\n",
                   ctxt_pP->module_id,
                   ctxt_pP->module_id);
             oip_ifup = nas_config(
                          ctxt_pP->module_id,   // interface index
-                         ctxtReportConfigToAddMod__reportConfig_PR_reportConfigEUTRA_pP->module_id + 1,   // thrid octet
-                         ctxt_pP->module_id + 1);  // fourth octet
+                         ctxt_pP->module_id + 1,   // thrid octet
+                         ctxt_pP->module_id + 1,   // fourth octet
+                         "oai");
 
             if (oip_ifup == 0) {    // interface is up --> send a config the DRB
               module_id_t ue_module_id;
@@ -6167,21 +6163,19 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
               LOG_I(OIP,
                     "[eNB %d] Config the oai%d to send/receive pkt on DRB %ld to/from the protocol stack\n",
                     ctxt_pP->module_id, ctxt_pP->module_id,
-                    (long int)((ue_context_pP->local_uid * maxDRB) + DRB_configList->list.array[i]->drb_Identity));
+                    (long int)((ue_context_pP->local_uid * LTE_maxDRB) + DRB_configList->list.array[i]->drb_Identity));
               ue_module_id = oai_emulation.info.eNB_ue_local_uid_to_ue_module_id[ctxt_pP->module_id][ue_context_pP->local_uid];
               rb_conf_ipv4(0, //add
                            ue_module_id,  //cx
                            ctxt_pP->module_id,    //inst
-                           (ue_module_id * maxDRB) + DRB_configList->list.array[i]->drb_Identity, // RB
+                           (ue_module_id * LTE_maxDRB) + DRB_configList->list.array[i]->drb_Identity, // RB
                            0,    //dscp
                            ipv4_address(ctxt_pP->module_id + 1, ctxt_pP->module_id + 1),  //saddr
                            ipv4_address(ctxt_pP->module_id + 1, dest_ip_offset + ue_module_id + 1));  //daddr
               LOG_D(RRC, "[eNB %d] State = Attached (UE rnti %x module id %u)\n",
                     ctxt_pP->module_id, ue_context_pP->ue_context.rnti, ue_module_id);
-            }
-
-#   endif
-          }
+            } /* oip_ifup */
+          } /* !EPC_MODE_ENABLED && ENB_NAS_USE_TUN*/
 
           LOG_D(RRC,
                 PROTOCOL_RRC_CTXT_UE_FMT" RRC_eNB --- MAC_CONFIG_REQ  (DRB) ---> MAC_eNB\n",
