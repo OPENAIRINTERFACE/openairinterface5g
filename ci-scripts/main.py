@@ -1,4 +1,3 @@
-#/*
 # * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
 # * contributor license agreements.  See the NOTICE file distributed with
 # * this work for additional information regarding copyright ownership.
@@ -132,17 +131,17 @@ class SSHConnection():
 		#self.UECpuNb = ''
 		#self.UECpuModel = ''
 		self.UEIPAddress = ''
-		self.UERepository = ''
 		self.UEBranch = ''
 		#self.UE_AllowMerge = False
 		self.UECommitID = ''
 		#self.UETargetBranch = ''
 		self.UEUserName = ''
 		self.UEPassword = ''
+		self.UE_instance = ''
 		#self.UESourceCodePath = ''
 		#self.UECpuMHz = ''
-		self.Build_eNB_args = ''
-		self.Initialize_eNB_args = ''
+		self.Build_OAI_UE_args = ''
+		self.Initialize_OAI_UE_args = ''
 
 
 	def open(self, ipaddress, username, password):
@@ -345,40 +344,41 @@ class SSHConnection():
 		self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
 
 	def BuildOAIUE(self):
-		if self.UEIPAddress == '' or self.UERepository == '' or self.UEBranch == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
+		return
+		if self.UEIPAddress == '' or self.eNBRepository == '' or self.eNBBranch == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
 			Usage()
 			sys.exit('Insufficient Parameter')
 		self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		self.command('mkdir -p ' + self.UESourceCodePath, '\$', 5)
 		self.command('cd ' + self.UESourceCodePath, '\$', 5)
-		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.UERepository + ' .; else stdbuf -o0 git fetch; fi', '\$', 600)
+		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.eNBRepository + ' .; else stdbuf -o0 git fetch; fi', '\$', 600)
 		# here add a check if git clone or git fetch went smoothly
 		self.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 		self.command('git config user.name "OAI Jenkins"', '\$', 5)
 		self.command('echo ' + self.UEPassword + ' | sudo -S git clean -x -d -ff', '\$', 30)
 		# if the commit ID is provided use it to point to it
-		if self.UECommitID != '':
-			self.command('git checkout -f ' + self.UECommitID, '\$', 5)
+		if self.eNBCommitID != '':
+			self.command('git checkout -f ' + self.eNBCommitID, '\$', 5)
 		# if the branch is not develop, then it is a merge request and we need to do 
 		# the potential merge. Note that merge conflicts should already been checked earlier
-		if (self.UE_AllowMerge):
-			if self.UETargetBranch == '':
-				if (self.UEBranch != 'develop') and (self.UEBranch != 'origin/develop'):
+		if (self.eNB_AllowMerge):
+			if self.eNBTargetBranch == '':
+				if (self.eNBBranch != 'develop') and (self.eNBBranch != 'origin/develop'):
 					self.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
 			else:
-				logging.debug('Merging with the target branch: ' + self.UETargetBranch)
-				self.command('git merge --ff origin/' + self.UETargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
+				logging.debug('Merging with the target branch: ' + self.eNBTargetBranch)
+				self.command('git merge --ff origin/' + self.eNBTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
 		self.command('mkdir -p log', '\$', 5)
 		self.command('chmod 777 log', '\$', 5)
 		# no need to remove in log (git clean did the trick)
-		self.command('stdbuf -o0 ./build_oai ' + self.Build_UE_args + ' 2>&1 | stdbuf -o0 tee -a compile_oai_ue.log', 'Bypassing the Tests', 600)
+		self.command('stdbuf -o0 ./build_oai ' + self.Build_OAI_UE_args + ' 2>&1 | stdbuf -o0 tee -a compile_oai_ue.log', 'Bypassing the Tests', 600)
 		self.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
 		self.command('mv log/* ' + 'build_log_' + self.testCase_id, '\$', 5)
 		self.command('mv compile_oai_ue.log ' + 'build_log_' + self.testCase_id, '\$', 5)
 		self.close()
-		self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
+		self.CreateHtmlTestRow(self.Build_OAI_UE_args, 'OK', ALL_PROCESSES_OK)
 
 
 	def InitializeHSS(self):
@@ -493,8 +493,8 @@ class SSHConnection():
 		# Launch eNB with the modified config file
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
-		self.command('echo "ulimit -c unlimited && ./lte_build_oai/build/lte-softmodem -O ' + self.eNBSourceCodePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh ', '\$', 5)
-		self.command('chmod 775 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh ', '\$', 5)
+		self.command('echo "ulimit -c unlimited && ./lte_build_oai/build/lte-softmodem -O ' + self.eNBSourceCodePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+		self.command('chmod 775 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		self.command('echo ' + self.eNBPassword + ' | sudo -S rm -Rf enb_' + self.testCase_id + '.log', '\$', 5)
 		self.command('echo ' + self.eNBPassword + ' | sudo -S -E daemon --inherit --unsafe --name=enb' + str(self.eNB_instance) + '_daemon --chdir=' + self.eNBSourceCodePath + '/cmake_targets -o ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '.log ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		if not rruCheck:
@@ -561,7 +561,6 @@ class SSHConnection():
 	def InitializeUE(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			Usage()
-			print('InitializeUE')
 			sys.exit('Insufficient Parameter')
 		multi_jobs = []
 		for device_id in self.UEDevices:
@@ -576,92 +575,84 @@ class SSHConnection():
 	def InitializeOAIUE(self):
 		if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
 			Usage()
-			print('DEBUG InitializeOAIUE 1')
 			sys.exit('Insufficient Parameter')
-		initialize_UE_flag = True
-		pStatus = self.CheckProcessExist(initialize_UE_flag)
-		if (pStatus < 0):
-			self.CreateHtmlTestRow(self.Initialize_UE_args, 'KO', pStatus)
-			self.CreateHtmlTabFooter(False)
-			sys.exit(1)
+		#initialize_OAI_UE_flag = True
+		#pStatus = self.CheckOAIUEProcessExist(initialize_OAI_UE_flag)
+		#if (pStatus < 0):
+		#	self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', pStatus)
+		#	self.CreateHtmlTabFooter(False)
+		#	sys.exit(1)
 		self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		self.command('cd ' + self.UESourceCodePath, '\$', 5)
-		# Initialize_UE_args usually start with -O and followed by the location in repository
-		full_config_file = self.Initialize_UE_args.replace('-O ','')
-		extIdx = full_config_file.find('.conf')
-		if (extIdx > 0):
-			extra_options = full_config_file[extIdx + 5:]
-			# if tracer options is on, compiling and running T Tracer
-			result = re.search('T_stdout', str(extra_options))
-			if result is not None:
-				logging.debug('\u001B[1m Compiling and launching T Tracer\u001B[0m')
-				self.command('cd common/utils/T/tracer', '\$', 5)
-				self.command('make', '\$', 10)
-				self.command('echo $USER; nohup ./record -d ../T_messages.txt -o ' + self.UESourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '_record.raw -ON -off VCD -off HEAVY -off LEGACY_GROUP_TRACE -off LEGACY_GROUP_DEBUG > ' + self.UESourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '_record.log 2>&1 &', self.UEUserName, 5)
-				self.command('cd ' + self.UESourceCodePath, '\$', 5)
-			full_config_file = full_config_file[:extIdx + 5]
-			config_path, config_file = os.path.split(full_config_file)
-		else:
-			print('DEBUG InitializeOAIUE 2')
-			sys.exit('Insufficient Parameter')
-		ci_full_config_file = config_path + '/ci-' + config_file
-		rruCheck = False
-		result = re.search('rru', str(config_file))
-		if result is not None:
-			rruCheck = True
-		# Make a copy and adapt to EPC / UE IP addresses
-		self.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
-		self.command('sed -i -e \'s/CI_UE_IP_ADDR/' + self.UEIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
+		# Initialize_OAI_UE_args usually start with -C and followed by the location in repository
+		#full_config_file = self.Initialize_OAI_UE_args.replace('-O ','')
+		#extIdx = full_config_file.find('.conf')
+		#if (extIdx > 0):
+		#	extra_options = full_config_file[extIdx + 5:]
+		#	# if tracer options is on, compiling and running T Tracer
+		#	result = re.search('T_stdout', str(extra_options))
+		##	if result is not None:
+		#		logging.debug('\u001B[1m Compiling and launching T Tracer\u001B[0m')
+		#		self.command('cd common/utils/T/tracer', '\$', 5)
+		#		self.command('make', '\$', 10)
+		#		self.command('echo $USER; nohup ./record -d ../T_messages.txt -o ' + self.UESourceCodePath + '/cmake_targets/ue_' + self.testCase_id + '_record.raw -ON -off VCD -off HEAVY -off LEGACY_GROUP_TRACE -off LEGACY_GROUP_DEBUG > ' + self.UESourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '_record.log 2>&1 &', self.UEUserName, 5)
+		#		self.command('cd ' + self.UESourceCodePath, '\$', 5)
+		#	full_config_file = full_config_file[:extIdx + 5]
+		#	config_path, config_file = os.path.split(full_config_file)
+		#ci_full_config_file = config_path + '/ci-' + config_file
+		#rruCheck = False
+		#result = re.search('rru', str(config_file))
+		#if result is not None:
+		#	rruCheck = True
+		## Make a copy and adapt to EPC / UE IP addresses
+		#self.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
+		#self.command('sed -i -e \'s/CI_UE_IP_ADDR/' + self.UEIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
 		# Launch UE with the modified config file
 		self.command('source oaienv', '\$', 5)
-		self.command('cd cmake_targets', '\$', 5)
-		self.command('echo "ulimit -c unlimited && ./lte_build_oai/build/lte-softmodem -O ' + self.UESourceCodePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.UE_instance) + '.sh ', '\$', 5)
-		self.command('chmod 775 ./my-lte-softmodem-run' + str(self.UE_instance) + '.sh ', '\$', 5)
-		self.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf ue_' + self.testCase_id + '.log', '\$', 5)
-		self.command('echo ' + self.UEPassword + ' | sudo -S -E daemon --inherit --unsafe --name=ue' + str(self.UE_instance) + '_daemon --chdir=' + self.UESourceCodePath + '/cmake_targets -o ' + self.UESourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '.log ./my-lte-softmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
-		if not rruCheck:
-			self.UELogFile = 'enb_' + self.testCase_id + '.log'
+		self.command('cd cmake_targets/lte_build_oai/build', '\$', 5)
+		self.command('echo "ulimit -c unlimited && ./lte-uesoftmodem ' + self.Initialize_OAI_UE_args + '" > ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
+		self.command('chmod 775 ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
+		self.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf ' + self.UESourceCodePath + '/cmake_targets/ue_' + self.testCase_id + '.log', '\$', 5)
+		self.command('echo ' + self.UEPassword + ' | sudo -S -E daemon --inherit --unsafe --name=ue' + str(self.UE_instance) + '_daemon --chdir=' + self.UESourceCodePath + '/cmake_targets/lte_build_oai/build -o ' + self.UESourceCodePath + '/cmake_targets/ue_' + self.testCase_id + '.log ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
+		self.UELogFile = 'ue_' + self.testCase_id + '.log'
 		time.sleep(6)
+		self.command('cd ../..', '\$', 5)
 		doLoop = True
 		loopCounter = 10
 		while (doLoop):
 			loopCounter = loopCounter - 1
 			if (loopCounter == 0):
 				# In case of T tracer recording, we may need to kill it
-				result = re.search('T_stdout', str(self.Initialize_UE_args))
-				if result is not None:
-					self.command('killall --signal SIGKILL record', '\$', 5)
+				#result = re.search('T_stdout', str(self.Initialize_OAI_UE_args))
+				#if result is not None:
+				#	self.command('killall --signal SIGKILL record', '\$', 5)
 				self.close()
 				doLoop = False
 				logging.error('\u001B[1;37;41m UE logging system did not show got sync! \u001B[0m')
-				self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'KO', ALL_PROCESSES_OK)
+				self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', ALL_PROCESSES_OK)
 				self.CreateHtmlTabFooter(False)
-				# In case of T tracer recording, we need to kill tshark on EPC side
-				result = re.search('T_stdout', str(self.Initialize_UE_args))
-				if result is not None:
-					self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
-					logging.debug('\u001B[1m Stopping tshark \u001B[0m')
-					self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
-					self.close()
-					time.sleep(1)
-					pcap_log_file = 'enb_' + self.testCase_id + '_s1log.pcap'
-					copyin_res = self.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, '/tmp/' + pcap_log_file, '.')
-					if (copyin_res == 0):
-						self.copyout(self.UEIPAddress, self.UEUserName, self.UEPassword, pcap_log_file, self.UESourceCodePath + '/cmake_targets/.')
+				## In case of T tracer recording, we need to kill tshark on EPC side
+				#result = re.search('T_stdout', str(self.Initialize_OAI_UE_args))
+				#if result is not None:
+				#	self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+				#	logging.debug('\u001B[1m Stopping tshark \u001B[0m')
+				#	self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
+				#	self.close()
+				#	time.sleep(1)
+				#	pcap_log_file = 'enb_' + self.testCase_id + '_s1log.pcap'
+				#	copyin_res = self.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, '/tmp/' + pcap_log_file, '.')
+				#	if (copyin_res == 0):
+				#		self.copyout(self.UEIPAddress, self.UEUserName, self.UEPassword, pcap_log_file, self.UESourceCodePath + '/cmake_targets/.')
 				sys.exit(1)
 			else:
-				self.command('stdbuf -o0 cat enb_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync"', '\$', 4)
-				if rruCheck:
-					result = re.search('wait RUs', str(self.ssh.before))
-				else:
-					result = re.search('got sync', str(self.ssh.before))
+				self.command('stdbuf -o0 cat ue_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync"', '\$', 4)
+				result = re.search('got sync', str(self.ssh.before))
 				if result is None:
 					time.sleep(6)
 				else:
 					doLoop = False
-					self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'OK', ALL_PROCESSES_OK)
-					logging.debug('\u001B[1m Initialize UE Completed\u001B[0m')
-
+					self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'OK', ALL_PROCESSES_OK)
+					logging.debug('\u001B[1m Initialize OAI UE Completed\u001B[0m')
 		self.close()
 
 	def checkDevTTYisUnlocked(self):
@@ -1674,6 +1665,48 @@ class SSHConnection():
 						result = logStatus
 			return result
 
+	def CheckOAIUEProcessExist(self, initialize_OAI_UE_flag):
+		multi_jobs = []
+		status_queue = SimpleQueue()
+		if initialize_OAI_UE_flag == False:
+			p = Process(target = SSH.CheckOAIUEProcess, args = (status_queue,))
+			p.daemon = True
+			p.start()
+			multi_jobs.append(p)
+		for job in multi_jobs:
+			job.join()
+
+		if (status_queue.empty()):
+			return -15
+		else:
+			result = 0
+			while (not status_queue.empty()):
+				status = status_queue.get()
+				if (status < 0):
+					result = status
+			if result == OAI_UE_PROCESS_FAILED:
+				fileCheck = re.search('enb_', str(self.UELogFile))
+				if fileCheck is not None:
+					self.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/' + self.UELogFile, '.')
+					logStatus = self.AnalyzeLogFile_UE(self.UELogFile)
+					if logStatus < 0:
+						result = logStatus
+			return result
+
+	def CheckOAIUEProcess(self, status_queue):
+		try:
+			self.open(self.OAIUEIPAddress, self.OAIUEUserName, self.OAIUEPassword)
+			self.command('stdbuf -o0 ps -aux | grep -v grep | grep --color=never lte-uesoftmodem', '\$', 5)
+			result = re.search('lte-uesoftmodem', str(self.ssh.before))
+			if result is None:
+				logging.debug('\u001B[1;37;41m OAI UE Process Not Found! \u001B[0m')
+				status_queue.put(OAI_UE_PROCESS_FAILED)
+			else:
+				status_queue.put(OAI_UE_PROCESS_OK)
+			self.close()
+		except:
+			os.kill(os.getppid(),signal.SIGUSR1)
+
 	def CheckeNBProcess(self, status_queue):
 		try:
 			self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
@@ -1881,6 +1914,162 @@ class SSHConnection():
 			return ENB_PROCESS_REALTIME_ISSUE
 		return 0
 
+	def AnalyzeLogFile_UE(self, UElogFile):
+		if (not os.path.isfile('./' + UElogFile)):
+			return -1
+		ue_log_file = open('./' + UElogFile, 'r')
+		foundAssertion = False
+		msgAssertion = ''
+		msgLine = 0
+		foundSegFault = False
+		foundRealTimeIssue = False
+		rrcSetupRequest = 0
+		rrcSetupComplete = 0
+		rrcReleaseRequest = 0
+		rrcReconfigRequest = 0
+		rrcReconfigComplete = 0
+		rrcReestablishRequest = 0
+		rrcReestablishComplete = 0
+		rrcReestablishReject = 0
+		rlcDiscardBuffer = 0
+		rachCanceledProcedure = 0
+		uciStatMsgCount = 0
+		pdcpFailure = 0
+		ulschFailure = 0
+		for line in ue_log_file.readlines():
+			result = re.search('[Ss]egmentation [Ff]ault', str(line))
+			if result is not None:
+				foundSegFault = True
+			result = re.search('[Cc]ore [dD]ump', str(line))
+			if result is not None:
+				foundSegFault = True
+			result = re.search('[Aa]ssertion', str(line))
+			if result is not None:
+				foundAssertion = True
+			result = re.search('LLL', str(line))
+			if result is not None:
+				foundRealTimeIssue = True
+			if foundAssertion and (msgLine < 3):
+				msgLine += 1
+				msgAssertion += str(line)
+			result = re.search('uci->stat', str(line))
+			if result is not None:
+				uciStatMsgCount += 1
+			# full pattern
+			# No cell synchronization found, abandoning
+
+			# MIB Information => FDD, NORMAL, NidCell 421, N_RB_DL 50, PHICH DURATION 0, PHICH RESOURCE 1/6, TX_ANT 2
+			# mask --> FDD  NORMAl 421 50  0 1/6 2
+			# Measured Carrier Frequency 816000688 Hz (offset 12 Hz)
+			# mask --> 816000688
+			# Found Orange FR (name from internal table)
+			# mask Orange FR
+			# SIB5 InterFreqCarrierFreq element 0/3
+			# mask -- 0 and 3
+			# DL Carrier Frequency/ARFCN : 2645000000/3000
+			# mask 2645000000
+			# AllowedMeasBandwidth : 100
+			# mask 100
+			result = re.search('Generating LTE_RRCConnectionSetup', str(line))
+			if result is not None:
+				rrcSetupRequest += 1
+			result = re.search('LTE_RRCConnectionSetupComplete from UE', str(line))
+			if result is not None:
+				rrcSetupComplete += 1
+			result = re.search('Generate LTE_RRCConnectionRelease', str(line))
+			if result is not None:
+				rrcReleaseRequest += 1
+			result = re.search('Generate LTE_RRCConnectionReconfiguration', str(line))
+			if result is not None:
+				rrcReconfigRequest += 1
+			result = re.search('LTE_RRCConnectionReconfigurationComplete from UE rnti', str(line))
+			if result is not None:
+				rrcReconfigComplete += 1
+			result = re.search('LTE_RRCConnectionReestablishmentRequest', str(line))
+			if result is not None:
+				rrcReestablishRequest += 1
+			result = re.search('LTE_RRCConnectionReestablishmentComplete', str(line))
+			if result is not None:
+				rrcReestablishComplete += 1
+			result = re.search('LTE_RRCConnectionReestablishmentReject', str(line))
+			if result is not None:
+				rrcReestablishReject += 1
+			result = re.search('PDCP.*Out of Resources.*reason', str(line))
+			if result is not None:
+				pdcpFailure += 1
+			result = re.search('ULSCH in error in round', str(line))
+			if result is not None:
+				ulschFailure += 1
+			result = re.search('BAD all_segments_received', str(line))
+			if result is not None:
+				rlcDiscardBuffer += 1
+			result = re.search('Canceled RA procedure for UE rnti', str(line))
+			if result is not None:
+				rachCanceledProcedure += 1
+		ue_log_file.close()
+		self.htmlUEFailureMsg = ''
+		if uciStatMsgCount > 0:
+			statMsg = 'UE showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
+			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			self.htmlUEFailureMsg += statMsg + '\n'
+		if pdcpFailure > 0:
+			statMsg = 'UE showed ' + str(pdcpFailure) + ' "PDCP Out of Resources" message(s)'
+			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			self.htmlUEFailureMsg += statMsg + '\n'
+		if ulschFailure > 0:
+			statMsg = 'UE showed ' + str(ulschFailure) + ' "ULSCH in error in round" message(s)'
+			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			self.htmlUEFailureMsg += statMsg + '\n'
+		if rrcSetupRequest > 0 or rrcSetupComplete > 0:
+			rrcMsg = 'UE requested ' + str(rrcSetupRequest) + ' RRC Connection Setup(s)'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmlUEFailureMsg += rrcMsg + '\n'
+			rrcMsg = ' -- ' + str(rrcSetupComplete) + ' were completed'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmlUEFailureMsg += rrcMsg + '\n'
+		if rrcReleaseRequest > 0:
+			rrcMsg = 'UE requested ' + str(rrcReleaseRequest) + ' RRC Connection Release(s)'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmlUEFailureMsg += rrcMsg + '\n'
+		if rrcReconfigRequest > 0 or rrcReconfigComplete > 0:
+			rrcMsg = 'UE requested ' + str(rrcReconfigRequest) + ' RRC Connection Reconfiguration(s)'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmlUEFailureMsg += rrcMsg + '\n'
+			rrcMsg = ' -- ' + str(rrcReconfigComplete) + ' were completed'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmlUEFailureMsg += rrcMsg + '\n'
+		if rrcReestablishRequest > 0 or rrcReestablishComplete > 0 or rrcReestablishReject > 0:
+			rrcMsg = 'UE requested ' + str(rrcReestablishRequest) + ' RRC Connection Reestablishment(s)'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmlUEFailureMsg += rrcMsg + '\n'
+			rrcMsg = ' -- ' + str(rrcReestablishComplete) + ' were completed'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmlUEFailureMsg += rrcMsg + '\n'
+			rrcMsg = ' -- ' + str(rrcReestablishReject) + ' were rejected'
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			self.htmlUEFailureMsg += rrcMsg + '\n'
+		if rachCanceledProcedure > 0:
+			rachMsg = 'UE cancelled ' + str(rachCanceledProcedure) + ' RA procedure(s)'
+			logging.debug('\u001B[1;30;43m ' + rachMsg + ' \u001B[0m')
+			self.htmlUEFailureMsg += rachMsg + '\n'
+		if foundSegFault:
+			logging.debug('\u001B[1;37;41m UE ended with a Segmentation Fault! \u001B[0m')
+			return ENB_PROCESS_SEG_FAULT
+		if foundAssertion:
+			logging.debug('\u001B[1;37;41m UE ended with an assertion! \u001B[0m')
+			self.htmlUEFailureMsg += msgAssertion
+			return ENB_PROCESS_ASSERTION
+		if foundRealTimeIssue:
+			logging.debug('\u001B[1;37;41m UE faced real time issues! \u001B[0m')
+			self.htmlUEFailureMsg += 'UE faced real time issues!\n'
+			#return ENB_PROCESS_REALTIME_ISSUE
+		if rlcDiscardBuffer > 0:
+			rlcMsg = 'UE RLC discarded ' + str(rlcDiscardBuffer) + ' buffer(s)'
+			logging.debug('\u001B[1;37;41m ' + rlcMsg + ' \u001B[0m')
+			self.htmlUEFailureMsg += rlcMsg + '\n'
+			return ENB_PROCESS_REALTIME_ISSUE
+		return 0
+
 	def TerminateeNB(self):
 		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 		self.command('cd ' + self.eNBSourceCodePath + '/cmake_targets', '\$', 5)
@@ -2035,7 +2224,7 @@ class SSHConnection():
 			time.sleep(5)
 		self.close()
 		# If tracer options is on, stopping tshark on EPC side
-		result = re.search('T_stdout', str(self.Initialize_UE_args))
+		result = re.search('T_stdout', str(self.Initialize_OAI_UE_args))
 		if result is not None:
 			self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 			logging.debug('\u001B[1m Stopping tshark \u001B[0m')
@@ -2063,7 +2252,7 @@ class SSHConnection():
 			self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 			self.UELogFile = ''
 		else:
-			result = re.search('enb_', str(self.UELogFile))
+			result = re.search('ue_', str(self.UELogFile))
 			if result is not None:
 				copyin_res = self.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/' + self.UELogFile, '.')
 				if (copyin_res == -1):
@@ -2528,7 +2717,7 @@ def Usage():
 	print('------------------------------------------------------------')
 
 def CheckClassValidity(action,id):
-	if action != 'Build_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW'  and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module' and action != 'IdleSleep':
+	if action != 'Build_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Build_OAI_UE' and action != 'Initialize_OAI_UE' and action != 'Terminate_OAI_UE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW'  and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module' and action != 'IdleSleep':
 		logging.debug('ERROR: test-case ' + id + ' has wrong class ' + action)
 		return False
 	return True
@@ -2554,6 +2743,20 @@ def GetParametersFromXML(action):
 			SSH.nbMaxUEtoAttach = -1
 		else:
 			SSH.nbMaxUEtoAttach = int(nbMaxUEtoAttach)
+
+	if action == 'Build_OAI_UE':
+		SSH.Build_OAI_UE_args = test.findtext('Build_OAI_UE_args')
+
+	if action == 'Initialize_OAI_UE':
+		SSH.Initialize_OAI_UE_args = test.findtext('Initialize_OAI_UE_args')
+		SSH.UE_instance = test.findtext('UE_instance')
+		if (SSH.UE_instance is None):
+			SSH.UE_instance = '0'
+
+	if action == 'Terminate_OAI_UE':
+		SSH.eNB_instance = test.findtext('UE_instance')
+		if (SSH.UE_instance is None):
+			SSH.UE_instance = '0'
 
 	if action == 'Ping':
 		SSH.ping_args = test.findtext('ping_args')
@@ -2672,9 +2875,6 @@ while len(argvs) > 1:
 	elif re.match('^\-\-UEIPAddress=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-UEIPAddress=(.+)$', myArgv, re.IGNORECASE)
 		SSH.UEIPAddress = matchReg.group(1)
-	elif re.match('^\-\-UERepository=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-UERepository=(.+)$', myArgv, re.IGNORECASE)
-		SSH.UERepository = matchReg.group(1)
 	elif re.match('^\-\-UEUserName=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-UEUserName=(.+)$', myArgv, re.IGNORECASE)
 		SSH.UEUserName = matchReg.group(1)
@@ -2684,12 +2884,6 @@ while len(argvs) > 1:
 	elif re.match('^\-\-UESourceCodePath=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-UESourceCodePath=(.+)$', myArgv, re.IGNORECASE)
 		SSH.UESourceCodePath = matchReg.group(1)
-	elif re.match('^\-\-UEBranch=(.+)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-UEBranch=(.+)$', myArgv, re.IGNORECASE)
-		SSH.UEBranch = matchReg.group(1)
-	elif re.match('^\-\-UECommitID=(.*)$', myArgv, re.IGNORECASE):
-		matchReg = re.match('^\-\-UECommitID=(.*)$', myArgv, re.IGNORECASE)
-		SSH.UECommitID = matchReg.group(1)
 	elif re.match('^\-\-finalStatus=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-finalStatus=(.+)$', myArgv, re.IGNORECASE)
 		finalStatus = matchReg.group(1)
@@ -2705,6 +2899,12 @@ if re.match('^TerminateeNB$', mode, re.IGNORECASE):
 		sys.exit('Insufficient Parameter')
 	SSH.TerminateeNB()
 elif re.match('^TerminateUE$', mode, re.IGNORECASE):
+	if SSH.UEIPAddress == '' or SSH.UEUserName == '' or SSH.UEPassword == '':
+		Usage()
+		sys.exit('Insufficient Parameter')
+	signal.signal(signal.SIGUSR1, receive_signal)
+	SSH.TerminateUE()
+elif re.match('^TerminateOAIUE$', mode, re.IGNORECASE):
 	if SSH.UEIPAddress == '' or SSH.UEUserName == '' or SSH.UEPassword == '':
 		Usage()
 		sys.exit('Insufficient Parameter')
@@ -2761,7 +2961,7 @@ elif re.match('^LogCollectIperf$', mode, re.IGNORECASE):
 		sys.exit('Insufficient Parameter')
 	SSH.LogCollectIperf()
 elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
-	if SSH.ADBIPAddress == '' or SSH.ADBUserName == '' or SSH.ADBPassword == '':
+	if (SSH.ADBIPAddress == '' or SSH.ADBUserName == '' or SSH.ADBPassword == '') and (SSH.UEIPAddress == '' or SSH.UEUserName == '' or SSH.UEPassword == ''):
 		Usage()
 		sys.exit('Insufficient Parameter')
 	count = 0
@@ -2782,17 +2982,11 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 			Usage()
 			sys.exit('Insufficient Parameter')
 
-		if (SSH.EPCIPAddress != 'none'):
+		if (SSH.EPCIPAddress != ''):
 			SSH.copyout(SSH.EPCIPAddress, SSH.EPCUserName, SSH.EPCPassword, sys.path[0] + "/tcp_iperf_stats.awk", "/tmp")
 			SSH.copyout(SSH.EPCIPAddress, SSH.EPCUserName, SSH.EPCPassword, sys.path[0] + "/active_net_interfaces.awk", "/tmp")
 	else:
-		print('SSH.UEIPAddress=' + SSH.UEIPAddress)
-		print('SSH.UERepository=' + SSH.UERepository)
-		print('SSH.UEBranch=' + SSH.UEBranch)
-		print('SSH.UEUserName=' + SSH.UEUserName)
-		print('SSH.UEPassword=' + SSH.UEPassword)
-		print('SSH.UESourceCodePath=' + SSH.UESourceCodePath)
-		if SSH.UEIPAddress == '' or SSH.UERepository == '' or SSH.UEBranch == '' or SSH.UEUserName == '' or SSH.UEPassword == '' or SSH.UESourceCodePath == '':
+		if SSH.UEIPAddress == '' or SSH.eNBRepository == '' or SSH.eNBBranch == '' or SSH.UEUserName == '' or SSH.UEPassword == '' or SSH.UESourceCodePath == '':
 			Usage()
 			sys.exit('UE: Insufficient Parameter')
 
@@ -2878,6 +3072,12 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				SSH.AttachUE()
 			elif action == 'Detach_UE':
 				SSH.DetachUE()
+			elif action == 'Build_OAI_UE':
+				SSH.BuildOAIUE()
+			elif action == 'Initialize_OAI_UE':
+				SSH.InitializeOAIUE()
+			elif action == 'Terminate_OAI_UE':
+				SSH.TerminateOAIUE()
 			elif action == 'Initialize_CatM_module':
 				SSH.InitializeCatM()
 			elif action == 'Terminate_CatM_module':
