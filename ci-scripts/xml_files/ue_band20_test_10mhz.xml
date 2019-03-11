@@ -21,9 +21,9 @@
 
 -->
 <testCaseList>
-	<TestCaseRequestedList>010101</TestCaseRequestedList>
+	<TestCaseRequestedList>080101</TestCaseRequestedList>
 
-	<testCase id="010101i">
+	<testCase id="080101">
 		<class>IdleSleep</class>
 		<desc>Sleep OAI UE</desc>
 		<nbMaxUEtoAttach>1</nbMaxUEtoAttach>       

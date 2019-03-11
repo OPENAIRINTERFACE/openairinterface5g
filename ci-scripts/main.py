@@ -126,7 +126,6 @@ class SSHConnection():
 		self.eNBCpuNb = ''
 		self.eNBCpuModel = ''
 		self.eNBCpuMHz = ''
-
 		#self.UEOsVersion = ''
 		#self.UEKernelVersion = ''
 		#self.UEUhdVersion = ''
@@ -142,6 +141,9 @@ class SSHConnection():
 		self.UEPassword = ''
 		#self.UESourceCodePath = ''
 		#self.UECpuMHz = ''
+		self.Build_eNB_args = ''
+		self.Initialize_eNB_args = ''
+
 
 	def open(self, ipaddress, username, password):
 		count = 0
@@ -347,6 +349,37 @@ class SSHConnection():
 			Usage()
 			sys.exit('Insufficient Parameter')
 		self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
+		self.command('mkdir -p ' + self.UESourceCodePath, '\$', 5)
+		self.command('cd ' + self.UESourceCodePath, '\$', 5)
+		self.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + self.UERepository + ' .; else stdbuf -o0 git fetch; fi', '\$', 600)
+		# here add a check if git clone or git fetch went smoothly
+		self.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
+		self.command('git config user.name "OAI Jenkins"', '\$', 5)
+		self.command('echo ' + self.UEPassword + ' | sudo -S git clean -x -d -ff', '\$', 30)
+		# if the commit ID is provided use it to point to it
+		if self.UECommitID != '':
+			self.command('git checkout -f ' + self.UECommitID, '\$', 5)
+		# if the branch is not develop, then it is a merge request and we need to do 
+		# the potential merge. Note that merge conflicts should already been checked earlier
+		if (self.UE_AllowMerge):
+			if self.UETargetBranch == '':
+				if (self.UEBranch != 'develop') and (self.UEBranch != 'origin/develop'):
+					self.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
+			else:
+				logging.debug('Merging with the target branch: ' + self.UETargetBranch)
+				self.command('git merge --ff origin/' + self.UETargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
+		self.command('source oaienv', '\$', 5)
+		self.command('cd cmake_targets', '\$', 5)
+		self.command('mkdir -p log', '\$', 5)
+		self.command('chmod 777 log', '\$', 5)
+		# no need to remove in log (git clean did the trick)
+		self.command('stdbuf -o0 ./build_oai ' + self.Build_UE_args + ' 2>&1 | stdbuf -o0 tee -a compile_oai_ue.log', 'Bypassing the Tests', 600)
+		self.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
+		self.command('mv log/* ' + 'build_log_' + self.testCase_id, '\$', 5)
+		self.command('mv compile_oai_ue.log ' + 'build_log_' + self.testCase_id, '\$', 5)
+		self.close()
+		self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
+
 
 	def InitializeHSS(self):
 		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '' or self.EPCSourceCodePath == '' or self.EPCType == '':
@@ -528,6 +561,7 @@ class SSHConnection():
 	def InitializeUE(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			Usage()
+			print('InitializeUE')
 			sys.exit('Insufficient Parameter')
 		multi_jobs = []
 		for device_id in self.UEDevices:
@@ -542,6 +576,7 @@ class SSHConnection():
 	def InitializeOAIUE(self):
 		if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
 			Usage()
+			print('DEBUG InitializeOAIUE 1')
 			sys.exit('Insufficient Parameter')
 		initialize_UE_flag = True
 		pStatus = self.CheckProcessExist(initialize_UE_flag)
@@ -549,22 +584,10 @@ class SSHConnection():
 			self.CreateHtmlTestRow(self.Initialize_UE_args, 'KO', pStatus)
 			self.CreateHtmlTabFooter(False)
 			sys.exit(1)
-		# If tracer options is on, running tshark on EPC side and capture traffic b/ EPC and eNB
-		result = re.search('T_stdout', str(self.Initialize_eNB_args))
-		if result is not None:
-			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
-			self.command('ip addr show | awk -f /tmp/active_net_interfaces.awk | egrep -v "lo|tun"', '\$', 5)
-			result = re.search('interfaceToUse=(?P<eth_interface>[a-zA-Z0-9\-\_]+)done', str(self.ssh.before))
-			if result is not None:
-				eth_interface = result.group('eth_interface')
-				logging.debug('\u001B[1m Launching tshark on interface ' + eth_interface + '\u001B[0m')
-				self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f /tmp/enb_' + self.testCase_id + '_s1log.pcap', '\$', 5)
-				self.command('echo $USER; nohup sudo tshark -f "host ' + self.eNBIPAddress +'" -i ' + eth_interface + ' -w /tmp/enb_' + self.testCase_id + '_s1log.pcap > /tmp/tshark.log 2>&1 &', self.EPCUserName, 5)
-			self.close()
-		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
-		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
-		# Initialize_eNB_args usually start with -O and followed by the location in repository
-		full_config_file = self.Initialize_eNB_args.replace('-O ','')
+		self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
+		self.command('cd ' + self.UESourceCodePath, '\$', 5)
+		# Initialize_UE_args usually start with -O and followed by the location in repository
+		full_config_file = self.Initialize_UE_args.replace('-O ','')
 		extIdx = full_config_file.find('.conf')
 		if (extIdx > 0):
 			extra_options = full_config_file[extIdx + 5:]
@@ -574,30 +597,30 @@ class SSHConnection():
 				logging.debug('\u001B[1m Compiling and launching T Tracer\u001B[0m')
 				self.command('cd common/utils/T/tracer', '\$', 5)
 				self.command('make', '\$', 10)
-				self.command('echo $USER; nohup ./record -d ../T_messages.txt -o ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '_record.raw -ON -off VCD -off HEAVY -off LEGACY_GROUP_TRACE -off LEGACY_GROUP_DEBUG > ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '_record.log 2>&1 &', self.eNBUserName, 5)
-				self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
+				self.command('echo $USER; nohup ./record -d ../T_messages.txt -o ' + self.UESourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '_record.raw -ON -off VCD -off HEAVY -off LEGACY_GROUP_TRACE -off LEGACY_GROUP_DEBUG > ' + self.UESourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '_record.log 2>&1 &', self.UEUserName, 5)
+				self.command('cd ' + self.UESourceCodePath, '\$', 5)
 			full_config_file = full_config_file[:extIdx + 5]
 			config_path, config_file = os.path.split(full_config_file)
 		else:
+			print('DEBUG InitializeOAIUE 2')
 			sys.exit('Insufficient Parameter')
 		ci_full_config_file = config_path + '/ci-' + config_file
 		rruCheck = False
 		result = re.search('rru', str(config_file))
 		if result is not None:
 			rruCheck = True
-		# Make a copy and adapt to EPC / eNB IP addresses
+		# Make a copy and adapt to EPC / UE IP addresses
 		self.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
-		self.command('sed -i -e \'s/CI_MME_IP_ADDR/' + self.EPCIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
-		self.command('sed -i -e \'s/CI_ENB_IP_ADDR/' + self.eNBIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
-		# Launch eNB with the modified config file
+		self.command('sed -i -e \'s/CI_UE_IP_ADDR/' + self.UEIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
+		# Launch UE with the modified config file
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
-		self.command('echo "ulimit -c unlimited && ./lte_build_oai/build/lte-softmodem -O ' + self.eNBSourceCodePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh ', '\$', 5)
-		self.command('chmod 775 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh ', '\$', 5)
-		self.command('echo ' + self.eNBPassword + ' | sudo -S rm -Rf enb_' + self.testCase_id + '.log', '\$', 5)
-		self.command('echo ' + self.eNBPassword + ' | sudo -S -E daemon --inherit --unsafe --name=enb' + str(self.eNB_instance) + '_daemon --chdir=' + self.eNBSourceCodePath + '/cmake_targets -o ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '.log ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+		self.command('echo "ulimit -c unlimited && ./lte_build_oai/build/lte-softmodem -O ' + self.UESourceCodePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.UE_instance) + '.sh ', '\$', 5)
+		self.command('chmod 775 ./my-lte-softmodem-run' + str(self.UE_instance) + '.sh ', '\$', 5)
+		self.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf ue_' + self.testCase_id + '.log', '\$', 5)
+		self.command('echo ' + self.UEPassword + ' | sudo -S -E daemon --inherit --unsafe --name=ue' + str(self.UE_instance) + '_daemon --chdir=' + self.UESourceCodePath + '/cmake_targets -o ' + self.UESourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '.log ./my-lte-softmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
 		if not rruCheck:
-			self.eNBLogFile = 'enb_' + self.testCase_id + '.log'
+			self.UELogFile = 'enb_' + self.testCase_id + '.log'
 		time.sleep(6)
 		doLoop = True
 		loopCounter = 10
@@ -605,16 +628,16 @@ class SSHConnection():
 			loopCounter = loopCounter - 1
 			if (loopCounter == 0):
 				# In case of T tracer recording, we may need to kill it
-				result = re.search('T_stdout', str(self.Initialize_eNB_args))
+				result = re.search('T_stdout', str(self.Initialize_UE_args))
 				if result is not None:
 					self.command('killall --signal SIGKILL record', '\$', 5)
 				self.close()
 				doLoop = False
-				logging.error('\u001B[1;37;41m eNB logging system did not show got sync! \u001B[0m')
+				logging.error('\u001B[1;37;41m UE logging system did not show got sync! \u001B[0m')
 				self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'KO', ALL_PROCESSES_OK)
 				self.CreateHtmlTabFooter(False)
 				# In case of T tracer recording, we need to kill tshark on EPC side
-				result = re.search('T_stdout', str(self.Initialize_eNB_args))
+				result = re.search('T_stdout', str(self.Initialize_UE_args))
 				if result is not None:
 					self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
 					logging.debug('\u001B[1m Stopping tshark \u001B[0m')
@@ -624,7 +647,7 @@ class SSHConnection():
 					pcap_log_file = 'enb_' + self.testCase_id + '_s1log.pcap'
 					copyin_res = self.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, '/tmp/' + pcap_log_file, '.')
 					if (copyin_res == 0):
-						self.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, pcap_log_file, self.eNBSourceCodePath + '/cmake_targets/.')
+						self.copyout(self.UEIPAddress, self.UEUserName, self.UEPassword, pcap_log_file, self.UESourceCodePath + '/cmake_targets/.')
 				sys.exit(1)
 			else:
 				self.command('stdbuf -o0 cat enb_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync"', '\$', 4)
@@ -637,7 +660,7 @@ class SSHConnection():
 				else:
 					doLoop = False
 					self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'OK', ALL_PROCESSES_OK)
-					logging.debug('\u001B[1m Initialize eNB Completed\u001B[0m')
+					logging.debug('\u001B[1m Initialize UE Completed\u001B[0m')
 
 		self.close()
 
@@ -1998,6 +2021,69 @@ class SSHConnection():
 			job.join()
 		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
+	def TerminateOAIUE(self):
+		self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
+		self.command('cd ' + self.UESourceCodePath + '/cmake_targets', '\$', 5)
+		self.command('echo ' + self.UEPassword + ' | sudo -S daemon --name=ue' + str(self.UE_instance) + '_daemon --stop', '\$', 5)
+		self.command('rm -f my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
+		self.command('echo ' + self.UEPassword + ' | sudo -S killall --signal SIGINT lte-uesoftmodem || true', '\$', 5)
+		time.sleep(5)
+		self.command('stdbuf -o0  ps -aux | grep -v grep | grep lte-uesoftmodem', '\$', 5)
+		result = re.search('lte-uesoftmodem', str(self.ssh.before))
+		if result is not None:
+			self.command('echo ' + self.UEPassword + ' | sudo -S killall --signal SIGKILL lte-uesoftmodem || true', '\$', 5)
+			time.sleep(5)
+		self.close()
+		# If tracer options is on, stopping tshark on EPC side
+		result = re.search('T_stdout', str(self.Initialize_UE_args))
+		if result is not None:
+			self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
+			logging.debug('\u001B[1m Stopping tshark \u001B[0m')
+			self.command('echo ' + self.UEPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
+			time.sleep(1)
+			pcap_log_file = self.UELogFile.replace('.log', '_s1log.pcap')
+			self.command('echo ' + self.UEPassword + ' | sudo -S chmod 666 /tmp/' + pcap_log_file, '\$', 5)
+			self.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, '/tmp/' + pcap_log_file, '.')
+			self.copyout(self.UEIPAddress, self.UEUserName, self.UEPassword, pcap_log_file, self.UESourceCodePath + '/cmake_targets/.')
+			self.close()
+			logging.debug('\u001B[1m Replaying RAW record file\u001B[0m')
+			self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
+			self.command('cd ' + self.UESourceCodePath + '/common/utils/T/tracer/', '\$', 5)
+			raw_record_file = self.UELogFile.replace('.log', '_record.raw')
+			replay_log_file = self.UELogFile.replace('.log', '_replay.log')
+			extracted_txt_file = self.UELogFile.replace('.log', '_extracted_messages.txt')
+			extracted_log_file = self.UELogFile.replace('.log', '_extracted_messages.log')
+			self.command('./extract_config -i ' + self.UESourceCodePath + '/cmake_targets/' + raw_record_file + ' > ' + self.UESourceCodePath + '/cmake_targets/' + extracted_txt_file, '\$', 5)
+			self.command('echo $USER; nohup ./replay -i ' + self.UESourceCodePath + '/cmake_targets/' + raw_record_file + ' > ' + self.UESourceCodePath + '/cmake_targets/' + replay_log_file + ' 2>&1 &', self.UEUserName, 5)
+			self.command('./textlog -d ' +  self.UESourceCodePath + '/cmake_targets/' + extracted_txt_file + ' -no-gui -ON -full > ' + self.UESourceCodePath + '/cmake_targets/' + extracted_log_file, '\$', 5)
+			self.close()
+			self.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/' + extracted_log_file, '.')
+			logging.debug('\u001B[1m Analyzing UE replay logfile \u001B[0m')
+			logStatus = self.AnalyzeLogFile_UE(extracted_log_file)
+			self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+			self.UELogFile = ''
+		else:
+			result = re.search('enb_', str(self.UELogFile))
+			if result is not None:
+				copyin_res = self.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/' + self.UELogFile, '.')
+				if (copyin_res == -1):
+					logging.debug('\u001B[1;37;41m Could not copy UE logfile to analyze it! \u001B[0m')
+					self.htmlUEFailureMsg = 'Could not copy UE logfile to analyze it!'
+					self.CreateHtmlTestRow('N/A', 'KO', ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
+					self.UELogFile = ''
+					return
+				logging.debug('\u001B[1m Analyzing UE logfile \u001B[0m')
+				logStatus = self.AnalyzeLogFile_UE(self.UELogFile)
+				if (logStatus < 0):
+					self.CreateHtmlTestRow('N/A', 'KO', logStatus)
+					self.CreateHtmlTabFooter(False)
+					sys.exit(1)
+				else:
+					self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+				self.UELogFile = ''
+			else:
+				self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+
 	def AutoTerminateUEandeNB(self):
 		self.testCase_id = 'AUTO-KILL-UE'
 		self.desc = 'Automatic Termination of UE'
@@ -2213,10 +2299,6 @@ class SSHConnection():
 			if (self.ADBIPAddress != 'none'):
 				self.GetAllUEDevices(terminate_ue_flag)
 				self.GetAllCatMDevices(terminate_ue_flag)
-			else:
-				self.UEDevices.append('doughq9rehg')
-				self.UEDevices.append('dnsgiuahgia')
-				self.UEDevices.append('uehgieng9')
 			self.htmlUEConnected = len(self.UEDevices)
 
 			self.htmlFile.write('  <h2><span class="glyphicon glyphicon-phone"></span> <span class="glyphicon glyphicon-menu-right"></span> ' + str(len(self.UEDevices)) + ' UE(s) is(are) connected to ADB bench server</h2>\n')
@@ -2259,10 +2341,6 @@ class SSHConnection():
 				if (self.ADBIPAddress != 'none'):
 					self.GetAllUEDevices(terminate_ue_flag)
 					self.GetAllCatMDevices(terminate_ue_flag)
-				else:
-					self.UEDevices.append('doughq9rehg')
-					self.UEDevices.append('dnsgiuahgia')
-					self.UEDevices.append('uehgieng9')
 				self.htmlUEConnected = len(self.UEDevices)
 
 			i = 0
@@ -2593,14 +2671,25 @@ while len(argvs) > 1:
 		SSH.nbTestXMLfiles += 1
 	elif re.match('^\-\-UEIPAddress=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-UEIPAddress=(.+)$', myArgv, re.IGNORECASE)
-		SSH.testXMLfiles.append(matchReg.group(1))
-		SSH.nbTestXMLfiles += 1
+		SSH.UEIPAddress = matchReg.group(1)
+	elif re.match('^\-\-UERepository=(.+)$', myArgv, re.IGNORECASE):
+		matchReg = re.match('^\-\-UERepository=(.+)$', myArgv, re.IGNORECASE)
+		SSH.UERepository = matchReg.group(1)
 	elif re.match('^\-\-UEUserName=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-UEUserName=(.+)$', myArgv, re.IGNORECASE)
 		SSH.UEUserName = matchReg.group(1)
 	elif re.match('^\-\-UEPassword=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-UEPassword=(.+)$', myArgv, re.IGNORECASE)
 		SSH.UEPassword = matchReg.group(1)
+	elif re.match('^\-\-UESourceCodePath=(.+)$', myArgv, re.IGNORECASE):
+		matchReg = re.match('^\-\-UESourceCodePath=(.+)$', myArgv, re.IGNORECASE)
+		SSH.UESourceCodePath = matchReg.group(1)
+	elif re.match('^\-\-UEBranch=(.+)$', myArgv, re.IGNORECASE):
+		matchReg = re.match('^\-\-UEBranch=(.+)$', myArgv, re.IGNORECASE)
+		SSH.UEBranch = matchReg.group(1)
+	elif re.match('^\-\-UECommitID=(.*)$', myArgv, re.IGNORECASE):
+		matchReg = re.match('^\-\-UECommitID=(.*)$', myArgv, re.IGNORECASE)
+		SSH.UECommitID = matchReg.group(1)
 	elif re.match('^\-\-finalStatus=(.+)$', myArgv, re.IGNORECASE):
 		matchReg = re.match('^\-\-finalStatus=(.+)$', myArgv, re.IGNORECASE)
 		finalStatus = matchReg.group(1)
@@ -2616,7 +2705,7 @@ if re.match('^TerminateeNB$', mode, re.IGNORECASE):
 		sys.exit('Insufficient Parameter')
 	SSH.TerminateeNB()
 elif re.match('^TerminateUE$', mode, re.IGNORECASE):
-	if SSH.ADBIPAddress == '' or SSH.ADBUserName == '' or SSH.ADBPassword == '':
+	if SSH.UEIPAddress == '' or SSH.UEUserName == '' or SSH.UEPassword == '':
 		Usage()
 		sys.exit('Insufficient Parameter')
 	signal.signal(signal.SIGUSR1, receive_signal)
@@ -2687,14 +2776,26 @@ elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
 	SSH.CreateHtmlHeader()
 elif re.match('^FinalizeHtml$', mode, re.IGNORECASE):
 	SSH.CreateHtmlFooter(SSH.finalStatus)
-elif re.match('^TesteNB$', mode, re.IGNORECASE):
-	if SSH.eNBIPAddress == '' or SSH.eNBRepository == '' or SSH.eNBBranch == '' or SSH.eNBUserName == '' or SSH.eNBPassword == '' or SSH.eNBSourceCodePath == '' or SSH.EPCIPAddress == '' or SSH.EPCUserName == '' or SSH.EPCPassword == '' or SSH.EPCType == '' or SSH.EPCSourceCodePath == '' or SSH.ADBIPAddress == '' or SSH.ADBUserName == '' or SSH.ADBPassword == '':
-		Usage()
-		sys.exit('Insufficient Parameter')
+elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re.IGNORECASE):
+	if re.match('^TesteNB$', mode, re.IGNORECASE):
+		if SSH.eNBIPAddress == '' or SSH.eNBRepository == '' or SSH.eNBBranch == '' or SSH.eNBUserName == '' or SSH.eNBPassword == '' or SSH.eNBSourceCodePath == '' or SSH.EPCIPAddress == '' or SSH.EPCUserName == '' or SSH.EPCPassword == '' or SSH.EPCType == '' or SSH.EPCSourceCodePath == '' or SSH.ADBIPAddress == '' or SSH.ADBUserName == '' or SSH.ADBPassword == '':
+			Usage()
+			sys.exit('Insufficient Parameter')
 
-	if (SSH.EPCIPAddress != 'none'):
-		SSH.copyout(SSH.EPCIPAddress, SSH.EPCUserName, SSH.EPCPassword, sys.path[0] + "/tcp_iperf_stats.awk", "/tmp")
-		SSH.copyout(SSH.EPCIPAddress, SSH.EPCUserName, SSH.EPCPassword, sys.path[0] + "/active_net_interfaces.awk", "/tmp")
+		if (SSH.EPCIPAddress != 'none'):
+			SSH.copyout(SSH.EPCIPAddress, SSH.EPCUserName, SSH.EPCPassword, sys.path[0] + "/tcp_iperf_stats.awk", "/tmp")
+			SSH.copyout(SSH.EPCIPAddress, SSH.EPCUserName, SSH.EPCPassword, sys.path[0] + "/active_net_interfaces.awk", "/tmp")
+	else:
+		print('SSH.UEIPAddress=' + SSH.UEIPAddress)
+		print('SSH.UERepository=' + SSH.UERepository)
+		print('SSH.UEBranch=' + SSH.UEBranch)
+		print('SSH.UEUserName=' + SSH.UEUserName)
+		print('SSH.UEPassword=' + SSH.UEPassword)
+		print('SSH.UESourceCodePath=' + SSH.UESourceCodePath)
+		if SSH.UEIPAddress == '' or SSH.UERepository == '' or SSH.UEBranch == '' or SSH.UEUserName == '' or SSH.UEPassword == '' or SSH.UESourceCodePath == '':
+			Usage()
+			sys.exit('UE: Insufficient Parameter')
+
 	#read test_case_list.xml file
         # if no parameters for XML file, use default value
 	if (SSH.nbTestXMLfiles != 1):
@@ -2809,62 +2910,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE):
 				sys.exit('Invalid action')
 
 	SSH.CreateHtmlTabFooter(True)
-elif re.match('^TestUE$', mode, re.IGNORECASE):
-	if SSH.UEIPAddress == '' or SSH.UERepository == '' or SSH.UEBranch == '' or SSH.UEUserName == '' or SSH.UEPassword == '' or SSH.UESourceCodePath == '':
-		Usage()
-		sys.exit('Insufficient Parameter')
-	#read test_case_list.xml file
-	# if no parameters for XML file, use default value
-	if (SSH.nbTestXMLfiles != 1):
-		xml_test_file = sys.path[0] + "/test_case_list.xml"
-	else:
-		xml_test_file = sys.path[0] + "/" + SSH.testXMLfiles[0]
-
-	xmlTree = ET.parse(xml_test_file)
-	xmlRoot = xmlTree.getroot()
-
-	exclusion_tests=xmlRoot.findtext('TestCaseExclusionList',default='')
-	requested_tests=xmlRoot.findtext('TestCaseRequestedList',default='')
-	if (SSH.nbTestXMLfiles == 1):
-		SSH.htmlTabRefs.append(xmlRoot.findtext('htmlTabRef',default='test-tab-0'))
-	all_tests=xmlRoot.findall('testCase')
-
-	exclusion_tests=exclusion_tests.split()
-	requested_tests=requested_tests.split()
-
-	#check that exclusion tests are well formatted
-	#(6 digits or less than 6 digits followed by +)
-	for test in exclusion_tests:
-		if     (not re.match('^[0-9]{6}$', test) and
-                                not re.match('^[0-9]{1,5}\+$', test)):
-			logging.debug('ERROR: exclusion test is invalidly formatted: ' + test)
-			sys.exit(1)
-		else:
-			logging.debug(test)
-
-        #check that requested tests are well formatted
-        #(6 digits or less than 6 digits followed by +)
-        #be verbose
-	for test in requested_tests:
-		if     (re.match('^[0-9]{6}$', test) or
-                                re.match('^[0-9]{1,5}\+$', test)):
-			logging.debug('INFO: test group/case requested: ' + test)
-		else:
-			logging.debug('ERROR: requested test is invalidly formatted: ' + test)
-			sys.exit(1)
-
-        #get the list of tests to be done
-	todo_tests=[]
-	for test in requested_tests:
-		if    (test_in_list(test, exclusion_tests)):
-                        logging.debug('INFO: test will be skipped: ' + test)
-		else:
-                        #logging.debug('INFO: test will be run: ' + test)
-			todo_tests.append(test)
-
-	signal.signal(signal.SIGUSR1, receive_signal)
-
-	SSH.CreateHtmlTabHeader()
 else:
 	Usage()
 	sys.exit('Invalid mode')
