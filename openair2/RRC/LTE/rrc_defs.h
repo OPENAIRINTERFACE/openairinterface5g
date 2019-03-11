@@ -344,7 +344,8 @@ typedef enum HO_STATE_e {
   HO_REQUEST,
   HO_ACK,
   HO_CONFIGURED,
-  HO_RELEASE
+  HO_RELEASE,
+  HO_CANCEL
 } HO_STATE_t;
 
 typedef enum SL_TRIGGER_e {

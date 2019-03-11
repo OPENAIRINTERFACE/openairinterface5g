@@ -53,10 +53,13 @@ int create_tasks(uint32_t enb_nb) {
 
   if (EPC_MODE_ENABLED) {
     if (enb_nb > 0) {
-      if (itti_create_task (TASK_X2AP, x2ap_task, NULL) < 0) {
-        LOG_E(X2AP, "Create task for X2AP failed\n");
-        return -1;
-      }
+      if (is_x2ap_enabled()) {
+        if (itti_create_task (TASK_X2AP, x2ap_task, NULL) < 0) {
+          LOG_E(X2AP, "Create task for X2AP failed\n");
+          return -1;
+        }
+      } else
+        LOG_I(X2AP, "X2AP is disabled.\n");
 
       if (itti_create_task (TASK_SCTP, sctp_eNB_task, NULL) < 0) {
         LOG_E(SCTP, "Create task for SCTP failed\n");

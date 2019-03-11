@@ -718,3 +718,87 @@ int x2ap_eNB_generate_x2_ue_context_release (x2ap_eNB_instance_t *instance_p, x2
 
   return ret;
 }
+
+int x2ap_eNB_generate_x2_handover_cancel (x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p,
+                                          int x2_ue_id,
+                                          x2ap_handover_cancel_cause_t cause)
+{
+  X2AP_X2AP_PDU_t              pdu;
+  X2AP_HandoverCancel_t        *out;
+  X2AP_HandoverCancel_IEs_t    *ie;
+  int                          ue_id;
+  int                          id_source;
+  int                          id_target;
+
+  uint8_t  *buffer;
+  uint32_t  len;
+  int       ret = 0;
+
+  DevAssert(instance_p != NULL);
+  DevAssert(x2ap_eNB_data_p != NULL);
+
+  ue_id = x2_ue_id;
+  id_source = ue_id;
+  id_target = x2ap_id_get_id_target(&instance_p->id_manager, ue_id);
+
+  /* Prepare the X2AP handover cancel message to encode */
+  memset(&pdu, 0, sizeof(pdu));
+  pdu.present = X2AP_X2AP_PDU_PR_initiatingMessage;
+  pdu.choice.initiatingMessage.procedureCode = X2AP_ProcedureCode_id_handoverCancel;
+  pdu.choice.initiatingMessage.criticality = X2AP_Criticality_ignore;
+  pdu.choice.initiatingMessage.value.present = X2AP_InitiatingMessage__value_PR_HandoverCancel;
+  out = &pdu.choice.initiatingMessage.value.choice.HandoverCancel;
+
+  /* mandatory */
+  ie = (X2AP_HandoverCancel_IEs_t *)calloc(1, sizeof(X2AP_HandoverCancel_IEs_t));
+  ie->id = X2AP_ProtocolIE_ID_id_Old_eNB_UE_X2AP_ID;
+  ie->criticality = X2AP_Criticality_reject;
+  ie->value.present = X2AP_HandoverCancel_IEs__value_PR_UE_X2AP_ID;
+  ie->value.choice.UE_X2AP_ID = id_source;
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* optional */
+  if (id_target != -1) {
+    ie = (X2AP_HandoverCancel_IEs_t *)calloc(1, sizeof(X2AP_HandoverCancel_IEs_t));
+    ie->id = X2AP_ProtocolIE_ID_id_New_eNB_UE_X2AP_ID;
+    ie->criticality = X2AP_Criticality_ignore;
+    ie->value.present = X2AP_HandoverCancel_IEs__value_PR_UE_X2AP_ID_1;
+    ie->value.choice.UE_X2AP_ID_1 = id_target;
+    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  }
+
+  /* mandatory */
+  ie = (X2AP_HandoverCancel_IEs_t *)calloc(1, sizeof(X2AP_HandoverCancel_IEs_t));
+  ie->id = X2AP_ProtocolIE_ID_id_Cause;
+  ie->criticality = X2AP_Criticality_ignore;
+  ie->value.present = X2AP_HandoverCancel_IEs__value_PR_Cause;
+  switch (cause) {
+  case X2AP_T_RELOC_PREP_TIMEOUT:
+    ie->value.choice.Cause.present = X2AP_Cause_PR_radioNetwork;
+    ie->value.choice.Cause.choice.radioNetwork =
+      X2AP_CauseRadioNetwork_trelocprep_expiry;
+    break;
+  case X2AP_TX2_RELOC_OVERALL_TIMEOUT:
+    ie->value.choice.Cause.present = X2AP_Cause_PR_radioNetwork;
+    ie->value.choice.Cause.choice.radioNetwork =
+      X2AP_CauseRadioNetwork_tx2relocoverall_expiry;
+    break;
+  default:
+    /* we can't come here */
+    X2AP_ERROR("unhandled cancel cause\n");
+    exit(1);
+  }
+  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  if (x2ap_eNB_encode_pdu(&pdu, &buffer, &len) < 0) {
+    X2AP_ERROR("Failed to encode X2 Handover Cancel\n");
+    abort();
+    return -1;
+  }
+
+  MSC_LOG_TX_MESSAGE (MSC_X2AP_SRC_ENB, MSC_X2AP_TARGET_ENB, NULL, 0, "0 X2HandoverCancel/initiatingMessage assoc_id %u", x2ap_eNB_data_p->assoc_id);
+
+  x2ap_eNB_itti_send_sctp_data_req(instance_p->instance, x2ap_eNB_data_p->assoc_id, buffer, len, 1);
+
+  return ret;
+}

@@ -34,6 +34,7 @@
 #define X2AP_REGISTER_ENB_CNF(mSGpTR)           (mSGpTR)->ittiMsg.x2ap_register_enb_cnf
 #define X2AP_DEREGISTERED_ENB_IND(mSGpTR)       (mSGpTR)->ittiMsg.x2ap_deregistered_enb_ind
 #define X2AP_UE_CONTEXT_RELEASE(mSGpTR)         (mSGpTR)->ittiMsg.x2ap_ue_context_release
+#define X2AP_HANDOVER_CANCEL(mSGpTR)            (mSGpTR)->ittiMsg.x2ap_handover_cancel
 
 
 #define X2AP_MAX_NB_ENB_IP_ADDRESS 2
@@ -47,6 +48,16 @@ typedef struct x2ap_ue_context_release_s {
 
   int source_assoc_id;
 } x2ap_ue_context_release_t;
+
+typedef enum {
+  X2AP_T_RELOC_PREP_TIMEOUT,
+  X2AP_TX2_RELOC_OVERALL_TIMEOUT
+} x2ap_handover_cancel_cause_t;
+
+typedef struct x2ap_handover_cancel_s {
+  int rnti;
+  x2ap_handover_cancel_cause_t cause;
+} x2ap_handover_cancel_t;
 
 typedef struct x2ap_register_enb_req_s {
   /* Unique eNB_id to identify the eNB within EPC.
@@ -105,7 +116,15 @@ typedef struct x2ap_register_enb_req_s {
 
   /* eNB port for X2C*/
   uint32_t enb_port_for_X2C;
+
+  /* timers (unit: millisecond) */
+  int t_reloc_prep;
+  int tx2_reloc_overall;
 } x2ap_register_enb_req_t;
+
+typedef struct x2ap_subframe_process_s {
+  /* nothing, we simply use the module ID in the header */
+} x2ap_subframe_process_t;
 
 //-------------------------------------------------------------------------------------------//
 // X2AP -> eNB application layer messages

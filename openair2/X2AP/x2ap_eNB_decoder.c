@@ -48,7 +48,13 @@ static int x2ap_eNB_decode_initiating_message(X2AP_X2AP_PDU_t *pdu)
       //asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_X2AP_X2AP_PDU, pdu);
       X2AP_INFO("x2ap_eNB_decode_initiating_message!\n");
       break;
+
     case X2AP_ProcedureCode_id_uEContextRelease:
+      //asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_X2AP_X2AP_PDU, pdu);
+      X2AP_INFO("x2ap_eNB_decode_initiating_message!\n");
+      break;
+
+    case X2AP_ProcedureCode_id_handoverCancel:
       //asn_encode_to_new_buffer(NULL, ATS_CANONICAL_XER, &asn_DEF_X2AP_X2AP_PDU, pdu);
       X2AP_INFO("x2ap_eNB_decode_initiating_message!\n");
       break;
