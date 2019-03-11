@@ -91,7 +91,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame, int slot) {
   uint8_t *pbch_pdu=&gNB->pbch_pdu[0];
   uint8_t ssb_index, n_hf;
   int ssb_start_symbol, rel_slot;
-  printf("Frame %d\n",frame);
+
   n_hf = cfg->sch_config.half_frame_index.value;
 
   // if SSB periodicity is 5ms, they are transmitted in both half frames
