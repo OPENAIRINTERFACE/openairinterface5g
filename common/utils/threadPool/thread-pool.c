@@ -1,3 +1,8 @@
+/*
+  Author: Laurent THOMAS, Open Cells
+  copyleft: OpenAirInterface Software Alliance and it's licence
+*/
+
 #define _GNU_SOURCE
 #include <sched.h>
 #include <sys/types.h>

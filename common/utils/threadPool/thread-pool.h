@@ -1,3 +1,8 @@
+/*
+  Author: Laurent THOMAS, Open Cells
+  copyleft: OpenAirInterface Software Alliance and it's licence
+*/
+
 #ifndef THREAD_POOL_H
 #define THREAD_POOL_H
 #include <stdbool.h>

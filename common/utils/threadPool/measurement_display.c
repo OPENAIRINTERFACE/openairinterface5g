@@ -1,3 +1,8 @@
+/*
+  Author: Laurent THOMAS, Open Cells
+  copyleft: OpenAirInterface Software Alliance and it's licence
+*/
+
 #define __USE_GNU
 #define _GNU_SOURCE
 #include <stdio.h>

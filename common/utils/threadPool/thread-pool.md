@@ -9,6 +9,10 @@ A selective abort allows to cancel parallel jobs (usage: a client pushed jobs, b
 
 All the thread pool functions are thread safe, nevertheless the working functions are implemented by the thread pool client, so the client has to tackle the parallel execution of his functions called "processingFunc" hereafter.
 
+## license
+Author: Laurent Thomas, Open cells project 
+The owner share the code usage to Openairsoftware alliance as per OSA license terms
+
 # jobs
 
 A job is a message (notifiedFIFO_elt_t):
