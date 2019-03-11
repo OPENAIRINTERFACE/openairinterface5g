@@ -141,15 +141,13 @@ int main(int argc, char **argv) {
   channel_desc_t *gNB2UE;
   uint8_t extended_prefix_flag = 0;
   //int8_t interf1 = -21, interf2 = -21;
-  FILE *input_fd = NULL, *pbch_file_fd = NULL;
+  FILE *input_fd = NULL;
   SCM_t channel_model = AWGN;  //Rayleigh1_anticorr;
   uint16_t N_RB_DL = 106, N_RB_UL = 106, mu = 1;
   //unsigned char frame_type = 0;
-  unsigned char pbch_phase = 0;
-  int frame = 0, subframe = 0, slot = 1;
+  int frame = 0, subframe = 0;
   int frame_length_complex_samples;
   NR_DL_FRAME_PARMS *frame_parms;
-  uint32_t Nsoft = 0;
   double sigma;
   unsigned char qbits = 8;
   int ret;
@@ -159,12 +157,6 @@ int main(int argc, char **argv) {
   uint16_t nb_symb_sch = 12;
   uint16_t nb_rb = 50;
   uint8_t Imcs = 9;
-  uint16_t n_dmrs;
-  uint8_t dmrs_TypeA_Position;
-  int l0;
-  uint32_t ***pusch_dmrs;
-
- PUSCH_TimeDomainResourceAllocation_t pusch_time_alloc;
 
   cpuf = get_cpu_freq_GHz();
 
@@ -441,12 +433,12 @@ int main(int argc, char **argv) {
   uint8_t is_crnti = 0, llr8_flag = 0;
   unsigned int TBS = 8424;
   unsigned int available_bits;
-  uint8_t nb_re_dmrs = 6;
+  uint8_t  nb_re_dmrs  = 6;
   uint16_t length_dmrs = 1;
-  uint8_t N_PRB_oh;
+  uint8_t  N_PRB_oh;
   uint16_t N_RE_prime;
   unsigned char mod_order;
-  uint8_t Nl = 1;
+  uint8_t Nl    = 1;
   uint8_t rvidx = 0;
   uint8_t UE_id = 1;
 
@@ -455,16 +447,11 @@ int main(int argc, char **argv) {
 
   NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[0][0][0];
 
-  mod_order = nr_get_Qm(Imcs, 1);
+  mod_order      = nr_get_Qm(Imcs, 1);
   available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
-  TBS = nr_compute_tbs(Imcs, nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, Nl);
+  TBS            = nr_compute_tbs(Imcs, nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, Nl);
+
   printf("available bits %d TBS %d mod_order %d\n", available_bits, TBS, mod_order);
-
-  /////////// setting PUSCH_TimeDomainResourceAllocation_t parameters ///////////
-
-  pusch_time_alloc.mappingType = typeA;
-  
-  ///////////////////////////////////////////////////  
 
   /////////// setting rel15_ul parameters ///////////
   rel15_ul->number_rbs     = nb_rb;
@@ -475,26 +462,30 @@ int main(int argc, char **argv) {
   rel15_ul->n_layers       = Nl;
   ///////////////////////////////////////////////////
 
-  double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
-  short *channel_output_fixed = malloc16(sizeof(short) * 16 * 68 * 384);
-  short *channel_output_uncoded = malloc16(sizeof(unsigned short) * 16 * 68 * 384);
-  unsigned int errors_bit_uncoded = 0;
-  // unsigned char *estimated_output;
+
+  double *modulated_input        = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
+  short  *channel_output_fixed   = malloc16(sizeof(short) * 16 * 68 * 384);
+  short  *channel_output_uncoded = malloc16(sizeof(unsigned short) * 16 * 68 * 384);
+
+  uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
   unsigned char *estimated_output_bit;
   unsigned char *test_input_bit;
-  unsigned int errors_bit = 0;
-
-  test_input_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
-  // estimated_output = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
-  estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
-
   unsigned char *test_input;
-  test_input = (unsigned char *) malloc16(sizeof(unsigned char) * TBS / 8);
+  unsigned int errors_bit_uncoded;
+  unsigned int errors_bit;
+  uint8_t  bit_index;
+  uint32_t errors_scrambling;
+  uint32_t scrambling_index;
+
+
+  test_input           = (unsigned char *) malloc16(sizeof(unsigned char) * TBS / 8);
+  test_input_bit       = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
+  estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
+  
 
   for (i = 0; i < TBS / 8; i++)
-    test_input[i] = (unsigned char) rand();
+    test_input[i] = 1;//(unsigned char) rand();
 
-  // estimated_output = ulsch_gNB->harq_processes[harq_pid]->b;
 
   /////////////////////////[adk] preparing NR_UE_ULSCH_t parameters///////////////////////// A HOT FIX until creating nfapi_nr_ul_config_ulsch_pdu_rel15_t
   ///////////
@@ -503,6 +494,7 @@ int main(int argc, char **argv) {
   ulsch_ue->rnti = n_rnti;
   ///////////
   ////////////////////////////////////////////////////////////////////////////////////////////
+
 
   /////////////////////////[adk] preparing UL harq_process parameters/////////////////////////
   ///////////
@@ -530,11 +522,6 @@ int main(int argc, char **argv) {
   for (i = 0; i < TBS / 8; i++) printf("test_input[i]=%d \n",test_input[i]);
 #endif
 
-  /*for (int i=0; i<TBS/8; i++)
-   printf("test input[%d]=%d \n",i,test_input[i]);*/
-
-  //printf("crc32: [0]->0x%08x\n",crc24c(test_input, 32));
-  // generate signal
 
   /////////////////////////ULSCH coding/////////////////////////
   ///////////
@@ -546,23 +533,20 @@ int main(int argc, char **argv) {
   ///////////
   ////////////////////////////////////////////////////////////////////
 
+
   /////////////////////////ULSCH scrambling/////////////////////////
   ///////////
 
-  uint32_t scrambled_output[NR_MAX_NB_CODEWORDS][NR_MAX_PDSCH_ENCODED_LENGTH>>5];
-  uint16_t encoded_length;
-
-  encoded_length = harq_process_ul_ue->num_of_mod_symbols*mod_order;
-
   for (int q=0; q<nb_codewords; q++){
-      memset((void*)scrambled_output[q], 0, (encoded_length>>5)*sizeof(uint32_t));
+      memset(scrambled_output[q], 0, ((available_bits>>5)+1)*sizeof(uint32_t));
   }
-
+  
   nr_pusch_codeword_scrambling(ulsch_ue->g,
-                               encoded_length,
+                               available_bits,
                                Nid_cell,
                                ulsch_ue->rnti,
                                scrambled_output[0]); // assume one codeword for the moment
+  
 
   /////////////
   //////////////////////////////////////////////////////////////////////////
@@ -571,34 +555,25 @@ int main(int argc, char **argv) {
   ///////////
 
   nr_modulation(scrambled_output[0], // assume one codeword for the moment
-                encoded_length,
+                available_bits,
                 mod_order,
                 ulsch_ue->d);
 
   ///////////
   ////////////////////////////////////////////////////////////////////////
 
-  /////////////////////////PUSCH DMRS/////////////////////////
-  ///////////
 
-  pusch_dmrs = UE->nr_gold_pusch_dmrs[slot];  
-  dmrs_TypeA_Position = 2; // This parameter is given by dmrs_TypeA_Position which is located in MIB.
-  n_dmrs = nb_re_dmrs<<1;
-  int16_t mod_dmrs[n_dmrs<<1];
-  
-  l0 = get_l0(pusch_time_alloc.mappingType, dmrs_TypeA_Position);//config.pdsch_config.dmrs_typeA_position.value);
-  nr_modulation(pusch_dmrs[l0][0], n_dmrs, MOD_QPSK, mod_dmrs); // currently only codeword 0 is modulated
+  for (SNR = snr0; SNR < snr1; SNR += snr_step) {
 
-  ///////////
-  ////////////////////////////////////////////////////////////////////////
-
-	for (SNR = snr0; SNR < snr1; SNR += snr_step) {
-		n_errors = 0;
-		n_false_positive = 0;
-
+    n_errors = 0;
+    n_false_positive = 0;
+    
     for (trial = 0; trial < n_trials; trial++) {
 
       errors_bit_uncoded = 0;
+      errors_scrambling  = 0;
+      errors_bit         = 0;
+      scrambling_index   = 0;
 
       for (i = 0; i < available_bits; i++) {
 
@@ -606,22 +581,27 @@ int main(int argc, char **argv) {
         if ((i&0xf)==0)
           printf("\ne %d..%d:    ",i,i+15);
 #endif
-        /*
-            if (i<16){
-               printf("ulsch_encoder output f[%d] = %d\n",i,ulsch_ue->harq_processes[0]->f[i]);
-            }
-        */
 
-        if (ulsch_ue->harq_processes[0]->f[i] == 0)
-          modulated_input[i] = 1.0;        ///sqrt(2);  //QPSK
+
+////////////////////////////////////////////
+// Modulate bit-wise the scrambled output //
+////////////////////////////////////////////
+
+        bit_index = i & 0x1f;
+
+        if ((bit_index == 0) && (i != 0)) {
+        	scrambling_index++;
+        }
+
+        if(((scrambled_output[0][scrambling_index] >> bit_index) & 1) == 0)
+            modulated_input[i] = 1.0;     ///sqrt(2);  //QPSK
         else
-          modulated_input[i] = -1.0;        ///sqrt(2);
-  
-        //if (i<16) printf("modulated_input[%d] = %d\n",i,modulated_input[i]);
-        //SNR =10;
+        	modulated_input[i] = -1.0;    ///sqrt(2);
 
+////////////////////////////////////////////
+  
         SNR_lin = pow(10, SNR / 10.0);
-        sigma = 1.0 / sqrt(2 * SNR_lin);
+        sigma   = 1.0 / sqrt(2 * SNR_lin);
 #if 1
         channel_output_fixed[i] = (short) quantize(sigma / 4.0 / 4.0,
                                                    modulated_input[i] + sigma * gaussdouble(0.0, 1.0),
@@ -634,38 +614,69 @@ int main(int argc, char **argv) {
 
         //Uncoded BER
         if (channel_output_fixed[i] < 0)
-          channel_output_uncoded[i] = 1;  //QPSK demod
+            channel_output_uncoded[i] = 1;  //QPSK demod
         else
-          channel_output_uncoded[i] = 0;
+            channel_output_uncoded[i] = 0;
 
-        if (channel_output_uncoded[i] != ulsch_ue->harq_processes[harq_pid]->f[i])
-          errors_bit_uncoded = errors_bit_uncoded + 1;
+        if (channel_output_uncoded[i] != ((scrambled_output[0][scrambling_index] >> bit_index) & 1)) {
+            errors_bit_uncoded = errors_bit_uncoded + 1;
+        }
       }
 
-      printf("errors bits uncoded %u\n", errors_bit_uncoded);
+      printf("errors bits uncoded = %u\n", errors_bit_uncoded);
+
 
 #ifdef DEBUG_CODER
       printf("\n");
       exit(-1);
 #endif
+      
 
-      ret = nr_ulsch_decoding(gNB, UE_id, channel_output_fixed, frame_parms,
-                              frame, nb_symb_sch, subframe, harq_pid, is_crnti, llr8_flag);
+      ////////////////////////////////////////////////////////////
+      //////////////////// ULSCH unscrambling ////////////////////
+      ////////////////////////////////////////////////////////////
+
+      nr_ulsch_unscrambling(channel_output_fixed, available_bits, 0, Nid_cell, n_rnti);
+
+      ////////////////////////////////////////////////////////////
+      ////////////////////////////////////////////////////////////
+
+
+      ////////////////////////////////////////////////////////////
+      ////////////////////// ULSCH decoding //////////////////////
+      ////////////////////////////////////////////////////////////
+
+      ret = nr_ulsch_decoding(gNB, UE_id, channel_output_fixed, frame_parms, frame,
+                              nb_symb_sch, subframe, harq_pid, is_crnti, llr8_flag);
 
       if (ret > ulsch_gNB->max_ldpc_iterations)
         n_errors++;
 
-      //count errors
-      errors_bit = 0;
+      ////////////////////////////////////////////////////////////
+      ////////////////////////////////////////////////////////////
+
+
+      ////////////////////////////////////////////////////////////
+      /////////////////////// count errors ///////////////////////
+      ////////////////////////////////////////////////////////////      
 
       for (i = 0; i < TBS; i++) {
+        
+      	if(((ulsch_ue->g[i] == 0) && (channel_output_fixed[i] < 0)) || ((ulsch_ue->g[i] == 1) && (channel_output_fixed[i] >= 0))) {
+        	errors_scrambling++;
+        }
+
         estimated_output_bit[i] = (ulsch_gNB->harq_processes[harq_pid]->b[i/8] & (1 << (i & 7))) >> (i & 7);
-        test_input_bit[i] = (test_input[i / 8] & (1 << (i & 7))) >> (i & 7); // Further correct for multiple segments
+        test_input_bit[i]       = (test_input[i / 8] & (1 << (i & 7))) >> (i & 7); // Further correct for multiple segments
 
         if (estimated_output_bit[i] != test_input_bit[i]) {
           errors_bit++;
         }
+        
       }
+
+      ////////////////////////////////////////////////////////////
+      ////////////////////////////////////////////////////////////
 
       if (errors_bit > 0) {
         n_false_positive++;

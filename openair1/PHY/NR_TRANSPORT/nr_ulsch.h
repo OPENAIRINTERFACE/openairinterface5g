@@ -36,6 +36,19 @@ void free_gNB_ulsch(NR_gNB_ULSCH_t *ulsch);
 
 NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations,uint8_t N_RB_UL, uint8_t abstraction_flag);
 
+
+/*! \brief Perform PUSCH decoding. TS 38.212 V15.4.0 subclause 6.2
+  @param phy_vars_gNB, Pointer to PHY data structure for gNB
+  @param UE_id, ID of UE transmitting this PUSCH
+  @param ulsch_llr, Pointer to received llr in ulsch
+  @param frame_parms, Pointer to frame descriptor structure
+  @param nb_symb_sch, number of symbols used in the uplink shared channel
+  @param nr_tti_rx, current received TTI
+  @param harq_pid, harq process id
+  @param is_crnti
+  @param llr8_flag If 1, indicate that the 8-bit decoder should be used
+*/
+
 uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                            uint8_t UE_id,
                            short *ulsch_llr,
@@ -46,4 +59,19 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
                            uint8_t harq_pid,
                            uint8_t is_crnti,
                            uint8_t llr8_flag);
+
+
+/*! \brief Perform PUSCH unscrambling. TS 38.211 V15.4.0 subclause 6.3.1.1
+  @param llr, Pointer to llr bits
+  @param size, length of llr bits
+  @param q, codeword index (0,1)
+  @param Nid, cell id
+  @param n_RNTI, CRNTI
+*/
+
+void nr_ulsch_unscrambling(int16_t* llr,
+                         uint32_t size,
+                         uint8_t q,
+                         uint32_t Nid,
+                         uint32_t n_RNTI);
 
