@@ -446,7 +446,7 @@ int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
 
   }
 
-  memcpy(ulsch->g,harq_process->f,G>>3); // g is the concatenated code block
+  memcpy(ulsch->g,harq_process->f,G); // g is the concatenated code block
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_ENCODING, VCD_FUNCTION_OUT);
 

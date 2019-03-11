@@ -153,7 +153,7 @@ typedef struct {
   /// Number of soft channel bits
   uint32_t G;
   // Number of modulated symbols carrying data
-  uint8_t num_of_mod_symbols;
+  uint32_t num_of_mod_symbols;
   // This is "L" in  TS 38.214 V15.4.0 subclause 6.1.2.1
   uint8_t number_of_symbols;
   // This is "S" in  TS 38.214 V15.4.0 subclause 6.1.2.1

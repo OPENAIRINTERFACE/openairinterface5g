@@ -138,9 +138,7 @@ int main(int argc, char **argv) {
   uint16_t N_RB_DL = 106, N_RB_UL = 106, mu = 1;
   //unsigned char frame_type = 0;
   int frame = 0, subframe = 0;
-  int frame_length_complex_samples;
   NR_DL_FRAME_PARMS *frame_parms;
-  uint32_t Nsoft = 0;
   double sigma;
   unsigned char qbits = 8;
   int ret;
@@ -374,8 +372,6 @@ int main(int argc, char **argv) {
 
   phy_init_nr_gNB(gNB, 0, 0);
 
-  frame_length_complex_samples = frame_parms->samples_per_subframe;
-
   //configure UE
   UE = malloc(sizeof(PHY_VARS_NR_UE));
   memcpy(&UE->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
@@ -513,7 +509,7 @@ int main(int argc, char **argv) {
             }
         */
 
-        if (ulsch_ue->harq_processes[0]->f[i] == 0)
+        if (ulsch_ue->g[i] == 0)
           modulated_input[i] = 1.0;        ///sqrt(2);  //QPSK
         else
           modulated_input[i] = -1.0;        ///sqrt(2);

@@ -301,16 +301,15 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   t_nrLDPC_time_stats* p_procTime     = &procTime ;
   t_nrLDPC_procBuf** p_nrLDPC_procBuf = harq_process->p_nrLDPC_procBuf;
 
-  int16_t z [68*384];
-  int8_t l [68*384];
-  //int16_t inv_d [68*384];
-  uint8_t kc;
-  uint8_t Ilbrm        = 0;
+  int16_t  z [68*384];
+  int8_t   l [68*384];
+  uint8_t  kc;
+  uint8_t  Ilbrm        = 0;
   uint32_t Tbslbrm     = 950984;
   uint16_t nb_rb       = 30; //to update
-  uint8_t nb_re_dmrs   = 6;
+  uint8_t  nb_re_dmrs  = 6;
   uint16_t length_dmrs = 1;
-  double Coderate = 0.0;
+  double   Coderate    = 0.0;
 
   uint32_t i,j;
 
