@@ -157,6 +157,7 @@ int main(int argc, char **argv) {
   uint16_t nb_symb_sch = 12;
   uint16_t nb_rb = 50;
   uint8_t Imcs = 9;
+  int eNB_id = 0;
 
   cpuf = get_cpu_freq_GHz();
 
@@ -441,11 +442,14 @@ int main(int argc, char **argv) {
   uint8_t Nl    = 1;
   uint8_t rvidx = 0;
   uint8_t UE_id = 1;
+  uint8_t cwd;
 
   NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id][0];
   nfapi_nr_ul_config_ulsch_pdu_rel15_t *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu.ulsch_pdu_rel15;
 
-  NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[0][0][0];
+  NR_UE_PUSCH *pusch_ue = UE->pusch_vars[0][eNB_id];
+  NR_UE_ULSCH_t **ulsch_ue = UE->ulsch[0][0];
+  NR_UL_UE_HARQ_t *harq_process_ul_ue;
 
   mod_order      = nr_get_Qm(Imcs, 1);
   available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
@@ -476,6 +480,8 @@ int main(int argc, char **argv) {
   uint8_t  bit_index;
   uint32_t errors_scrambling;
   uint32_t scrambling_index;
+  int16_t **tx_layers;
+  int32_t *mod_symbols[MAX_NUM_NR_RE];
 
 
   test_input           = (unsigned char *) malloc16(sizeof(unsigned char) * TBS / 8);
@@ -486,82 +492,99 @@ int main(int argc, char **argv) {
   for (i = 0; i < TBS / 8; i++)
     test_input[i] = 1;//(unsigned char) rand();
 
+  for (cwd=0; cwd<nb_codewords; cwd++) {
 
-  /////////////////////////[adk] preparing NR_UE_ULSCH_t parameters///////////////////////// A HOT FIX until creating nfapi_nr_ul_config_ulsch_pdu_rel15_t
-  ///////////
-  ulsch_ue->nb_re_dmrs = nb_re_dmrs;
-  ulsch_ue->length_dmrs =  length_dmrs;
-  ulsch_ue->rnti = n_rnti;
-  ///////////
-  ////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////[adk] preparing NR_UE_ULSCH_t parameters///////////////////////// A HOT FIX until creating nfapi_nr_ul_config_ulsch_pdu_rel15_t
+    ///////////
+    ulsch_ue[cwd]->nb_re_dmrs = nb_re_dmrs;
+    ulsch_ue[cwd]->length_dmrs =  length_dmrs;
+    ulsch_ue[cwd]->rnti = n_rnti;
+    ///////////
+    ////////////////////////////////////////////////////////////////////////////////////////////
 
 
-  /////////////////////////[adk] preparing UL harq_process parameters/////////////////////////
-  ///////////
-  NR_UL_UE_HARQ_t *harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
+    /////////////////////////[adk] preparing UL harq_process parameters/////////////////////////
+    ///////////
+    harq_process_ul_ue = ulsch_ue[cwd]->harq_processes[harq_pid];
 
-  N_PRB_oh   = 0; // higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
-  N_RE_prime = NR_NB_SC_PER_RB*nb_symb_sch - nb_re_dmrs - N_PRB_oh;
+    N_PRB_oh   = 0; // higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
+    N_RE_prime = NR_NB_SC_PER_RB*nb_symb_sch - nb_re_dmrs - N_PRB_oh;
 
-  if (harq_process_ul_ue) {
+    if (harq_process_ul_ue) {
 
-    harq_process_ul_ue->mcs = Imcs;
-    harq_process_ul_ue->Nl = Nl;
-    harq_process_ul_ue->nb_rb = nb_rb;
-    harq_process_ul_ue->number_of_symbols = nb_symb_sch;
-    harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*nb_rb*nb_codewords;
-    harq_process_ul_ue->rvidx = rvidx;
-    harq_process_ul_ue->TBS = TBS;
-    harq_process_ul_ue->a = &test_input[0];
+      harq_process_ul_ue->mcs = Imcs;
+      harq_process_ul_ue->Nl = Nl;
+      harq_process_ul_ue->nb_rb = nb_rb;
+      harq_process_ul_ue->number_of_symbols = nb_symb_sch;
+      harq_process_ul_ue->num_of_mod_symbols = N_RE_prime*nb_rb*nb_codewords;
+      harq_process_ul_ue->rvidx = rvidx;
+      harq_process_ul_ue->TBS = TBS;
+      harq_process_ul_ue->a = &test_input[0];
+
+    }
+    ///////////
+    ////////////////////////////////////////////////////////////////////////////////////////////
+
+    #ifdef DEBUG_ULSCHSIM
+      for (i = 0; i < TBS / 8; i++) printf("test_input[i]=%d \n",test_input[i]);
+    #endif
+
+
+    /////////////////////////ULSCH coding/////////////////////////
+    ///////////
+
+    if (input_fd == NULL) {
+      nr_ulsch_encoding(ulsch_ue[cwd], frame_parms, harq_pid);
+    }
+
+    ///////////
+    ////////////////////////////////////////////////////////////////////
+
+
+    /////////////////////////ULSCH scrambling/////////////////////////
+    ///////////
+
+    memset(scrambled_output[cwd], 0, ((available_bits>>5)+1)*sizeof(uint32_t));
+
+    nr_pusch_codeword_scrambling(ulsch_ue[cwd]->g,
+                                 available_bits,
+                                 Nid_cell,
+                                 ulsch_ue[cwd]->rnti,
+                                 scrambled_output[cwd]); // assume one codeword for the moment
+
+
+    /////////////
+    //////////////////////////////////////////////////////////////////////////
+
+    /////////////////////////ULSCH modulation/////////////////////////
+    ///////////
+
+    nr_modulation(scrambled_output[cwd], // assume one codeword for the moment
+                  available_bits,
+                  mod_order,
+                  ulsch_ue[cwd]->d_mod);
+
+    ///////////
+    ////////////////////////////////////////////////////////////////////////
+
+    mod_symbols[cwd] = (int32_t *)malloc16((NR_MAX_PUSCH_ENCODED_LENGTH)*sizeof(int32_t*));
+
+    memcpy(mod_symbols[cwd],ulsch_ue[cwd]->d_mod,(available_bits/mod_order)*sizeof(int32_t));
 
   }
-  ///////////
-  ////////////////////////////////////////////////////////////////////////////////////////////
 
-#ifdef DEBUG_ULSCHSIM
-  for (i = 0; i < TBS / 8; i++) printf("test_input[i]=%d \n",test_input[i]);
-#endif
-
-
-  /////////////////////////ULSCH coding/////////////////////////
+  /////////////////////////ULSCH layer mapping/////////////////////////
   ///////////
 
-  if (input_fd == NULL) {
-    nr_ulsch_encoding(ulsch_ue, frame_parms, harq_pid);
-  }
+  tx_layers = (int16_t **)pusch_ue->txdataF_layers;
 
-  ///////////
-  ////////////////////////////////////////////////////////////////////
-
-
-  /////////////////////////ULSCH scrambling/////////////////////////
-  ///////////
-
-  for (int q=0; q<nb_codewords; q++){
-      memset(scrambled_output[q], 0, ((available_bits>>5)+1)*sizeof(uint32_t));
-  }
-  
-  nr_pusch_codeword_scrambling(ulsch_ue->g,
-                               available_bits,
-                               Nid_cell,
-                               ulsch_ue->rnti,
-                               scrambled_output[0]); // assume one codeword for the moment
-  
-
-  /////////////
-  //////////////////////////////////////////////////////////////////////////
-
-  /////////////////////////ULSCH modulation/////////////////////////
-  ///////////
-
-  nr_modulation(scrambled_output[0], // assume one codeword for the moment
-                available_bits,
-                mod_order,
-                ulsch_ue->d);
+  nr_layer_mapping((int16_t **)mod_symbols,
+                   Nl,
+                   available_bits/mod_order,
+                   tx_layers);
 
   ///////////
   ////////////////////////////////////////////////////////////////////////
-
 
   for (SNR = snr0; SNR < snr1; SNR += snr_step) {
 
@@ -662,7 +685,7 @@ int main(int argc, char **argv) {
 
       for (i = 0; i < TBS; i++) {
         
-      	if(((ulsch_ue->g[i] == 0) && (channel_output_fixed[i] < 0)) || ((ulsch_ue->g[i] == 1) && (channel_output_fixed[i] >= 0))) {
+        if(((ulsch_ue[0]->g[i] == 0) && (channel_output_fixed[i] < 0)) || ((ulsch_ue[0]->g[i] == 1) && (channel_output_fixed[i] >= 0))) {
         	errors_scrambling++;
         }
 

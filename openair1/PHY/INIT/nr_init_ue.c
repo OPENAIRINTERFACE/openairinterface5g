@@ -644,6 +644,26 @@ void phy_init_nr_ue__PDSCH( NR_UE_PDSCH* const pdsch, const NR_DL_FRAME_PARMS* c
   }
 }
 
+void phy_init_nr_ue_PUSCH( NR_UE_PUSCH* const pusch, const NR_DL_FRAME_PARMS* const fp )
+{
+
+  int i;
+  AssertFatal( pusch, "pusch==0" );
+
+  pusch->txdata  = (int32_t**)malloc16( fp->nb_antennas_tx*sizeof(int32_t*) );
+  pusch->txdataF = (int32_t **)malloc16( fp->nb_antennas_tx*sizeof(int32_t*) );
+
+  for (i=0; i<fp->nb_antennas_tx; i++) {
+
+    pusch->txdata[i]  = (int32_t*)malloc16_clear( fp->samples_per_subframe*10*sizeof(int32_t) );
+    pusch->txdataF[i] = (int32_t *)malloc16_clear( fp->ofdm_symbol_size*fp->symbols_per_slot*10*sizeof(int32_t) );
+  }
+
+  for (i=0; i<NR_MAX_NB_LAYERS; i++)
+    pusch->txdataF_layers[i] = (int32_t *)malloc16((NR_MAX_PUSCH_ENCODED_LENGTH)*sizeof(int32_t*));
+
+}
+
 int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
 		       int nb_connected_eNB,
 		       uint8_t abstraction_flag)
@@ -655,14 +675,15 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   NR_UE_PDSCH** const pdsch_vars_ra      = ue->pdsch_vars_ra;
   NR_UE_PDSCH** const pdsch_vars_p       = ue->pdsch_vars_p;
   NR_UE_PDSCH** const pdsch_vars_mch     = ue->pdsch_vars_MCH;
-  NR_UE_PDSCH* (*pdsch_vars_th)[][NUMBER_OF_CONNECTED_eNB_MAX+1] = &ue->pdsch_vars;
-  NR_UE_PDCCH* (*pdcch_vars_th)[][NUMBER_OF_CONNECTED_eNB_MAX]   = &ue->pdcch_vars;
+  NR_UE_PDSCH* (*const pdsch_vars_th)[][NUMBER_OF_CONNECTED_eNB_MAX+1] = ue->pdsch_vars;
+  NR_UE_PDCCH* (*const pdcch_vars_th)[][NUMBER_OF_CONNECTED_eNB_MAX]   = ue->pdcch_vars;
   NR_UE_PBCH** const pbch_vars           = ue->pbch_vars;
   NR_UE_PRACH** const prach_vars         = ue->prach_vars;
+  NR_UE_PUSCH* (*const pusch_vars)[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_eNB_MAX] = ue->pusch_vars;
 
 
 
-  int i,j,k,l,slot,symb,q;
+  int i,j,k,l,slot,symb,q,layer;
   int eNB_id;
   int th_id;
   int n_ssb_crb=(fp->N_RB_DL-20);
@@ -700,6 +721,20 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     ue->bitrate[eNB_id] = 0;
     ue->total_received_bits[eNB_id] = 0;
   }
+
+/////////////////////////PUSCH init/////////////////////////
+///////////
+  for (th_id = 0; th_id < RX_NB_TH_MAX; th_id++){
+    for (eNB_id = 0; eNB_id < ue->n_connected_eNB; eNB_id++){
+
+      (*pusch_vars)[th_id][eNB_id] = (NR_UE_PUSCH *)malloc16(sizeof(NR_UE_PUSCH));
+      phy_init_nr_ue_PUSCH( (*pusch_vars)[th_id][eNB_id], fp );
+
+    }
+  }
+
+///////////
+////////////////////////////////////////////////////////////////////////////////////////////
 
 /////////////////////////PUSCH DMRS init/////////////////////////
 ///////////
