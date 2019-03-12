@@ -510,13 +510,16 @@ else
     fi
 fi
 
-# Checking uvt-kvm is installed
-UVT_KVM_PATH=`which uvt-kvm | grep -c uvt-kvm`
-if [ $UVT_KVM_PATH -eq 0 ]
+if [ $REPORT_BUILD_CMD -ne 1 ] && [ $REPORT_TEST_CMD -ne 1 ]
 then
-    echo "Error: uvt-kvm is not installed"
-    top_usage
-    exit 1
+    # Checking uvt-kvm is installed
+    UVT_KVM_PATH=`which uvt-kvm | grep -c uvt-kvm`
+    if [ $UVT_KVM_PATH -eq 0 ]
+    then
+        echo "Error: uvt-kvm is not installed"
+        top_usage
+        exit 1
+    fi
 fi
 
 if [ "$JOB_NAME" == "XX" ] || [ "$BUILD_ID" == "XX" ]

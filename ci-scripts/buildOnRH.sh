@@ -180,7 +180,7 @@ echo "Checking build status"
 echo "############################################################"
 
 LOG_PATTERN=.Rel14.txt
-NB_PATTERN_FILES=4
+NB_PATTERN_FILES=7
 
 LOG_FILES=`ls $ARCHIVES_LOC/*.txt`
 STATUS=0

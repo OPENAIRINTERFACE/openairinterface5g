@@ -228,6 +228,7 @@ function check_iperf {
     local LOC_REQ_BW=$2
     local LOC_REQ_BW_MINUS_ONE=`echo "$LOC_REQ_BW - 1" | bc -l`
     local LOC_REQ_BW_MINUS_TWO=`echo "$LOC_REQ_BW - 2" | bc -l`
+    local LOC_REQ_BW_MINUS_THREE=`echo "$LOC_REQ_BW - 3" | bc -l`
     local LOC_IS_DL=`echo $LOC_BASE_LOG | grep -c _dl`
     local LOC_IS_BASIC_SIM=`echo $LOC_BASE_LOG | grep -c basic_sim`
     if [ -f ${LOC_BASE_LOG}_client.txt ]
@@ -240,7 +241,7 @@ function check_iperf {
             local EFFECTIVE_BANDWIDTH=`tail -n3 ${LOC_BASE_LOG}_client.txt | egrep "Mbits/sec" | sed -e "s#^.*MBytes *##" -e "s#sec.*#sec#"`
             if [ $LOC_IS_DL -eq 1 ] && [ $LOC_IS_BASIC_SIM -eq 1 ]
             then
-                if [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW}.*Mbits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW_MINUS_ONE}.*Mbits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW_MINUS_TWO}.*Mbits.* ]]
+                if [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW}.*Mbits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW_MINUS_ONE}.*Mbits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW_MINUS_TWO}.*Mbits.* ]] || [[ $EFFECTIVE_BANDWIDTH =~ .*${LOC_REQ_BW_MINUS_THREE}.*Mbits.* ]]
                 then
                     echo "got requested DL bandwidth: $EFFECTIVE_BANDWIDTH"
                 else
@@ -959,10 +960,10 @@ function run_test_on_vm {
         echo "Iperf DL"
         echo "############################################################"
         CURR_IPERF_LOG_BASE=fdd_20MHz_iperf_dl
-        iperf_dl $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 15 $CURR_IPERF_LOG_BASE
+        iperf_dl $VM_CMDS $VM_IP_ADDR $EPC_VM_CMDS $EPC_VM_IP_ADDR 12 $CURR_IPERF_LOG_BASE
         scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/${CURR_IPERF_LOG_BASE}_client.txt $ARCHIVES_LOC
         scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/${CURR_IPERF_LOG_BASE}_server.txt $ARCHIVES_LOC
-        check_iperf $ARCHIVES_LOC/$CURR_IPERF_LOG_BASE 15
+        check_iperf $ARCHIVES_LOC/$CURR_IPERF_LOG_BASE 12
 
         echo "############################################################"
         echo "Terminate enb/ue simulators"
