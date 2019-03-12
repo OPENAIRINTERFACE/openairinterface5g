@@ -950,6 +950,15 @@ typedef struct {
   int16_t *prach;
 } NR_UE_PRACH;
 
+// structure used for multiple SSB detection
+typedef struct NR_UE_SSB {
+  uint8_t i_ssb;   // i_ssb between 0 and 7 (it corresponds to ssb_index only for Lmax=4,8)
+  uint8_t n_hf;    // n_hf = 0,1 for Lmax =4 or n_hf = 0 for Lmax =8,64
+  uint32_t metric; // metric to order SSB hypothesis
+  uint32_t c_re;
+  uint32_t c_im;
+} NR_UE_SSB;
+
 /*typedef enum {
   /// do not detect any DCIs in the current subframe
   NO_DCI = 0x0,

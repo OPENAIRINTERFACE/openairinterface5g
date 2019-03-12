@@ -58,6 +58,11 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, int pbch_initial_symbol, runmode_t mod
 {
   NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   int ret =-1;
+  uint8_t best_ssb =0;
+  uint8_t n_hf =0;
+  uint32_t best_metric =0;
+
+  NR_UE_SSB *current_ssb = malloc(sizeof(NR_UE_SSB));
 
 #ifdef DEBUG_INITIAL_SYNCH
   LOG_I(PHY,"[UE%d] Initial sync: starting PBCH detection (rx_offset %d)\n",ue->Mod_id,
@@ -70,29 +75,52 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, int pbch_initial_symbol, runmode_t mod
   // loops over possible pbch dmrs cases to retrive best estimated i_ssb (and n_hf for Lmax=4) for multiple ssb detection
   for (int hf = 0; hf < N_hf; hf++) {
     for (int l = 0; l < N_L ; l++) {
-      if (ret !=0) {
+
+      // initialization of structure parameters
+      current_ssb->n_hf = hf;
+      current_ssb->i_ssb = l;
+      current_ssb->c_re = 0;
+      current_ssb->c_im = 0;
 
 #if UE_TIMING_TRACE
-        start_meas(&ue->dlsch_channel_estimation_stats);
+      start_meas(&ue->dlsch_channel_estimation_stats);
 #endif
-        for(int i=pbch_initial_symbol; i<pbch_initial_symbol+3;i++)
-          nr_pbch_channel_estimation(ue,0,0,i,i-pbch_initial_symbol,l,hf);
+      // computing correlation between received DMRS symbols and transmitted sequence for current i_ssb and n_hf
+      for(int i=pbch_initial_symbol; i<pbch_initial_symbol+3;i++)
+          nr_pbch_dmrs_correlation(ue,0,0,i,current_ssb);
 #if UE_TIMING_TRACE
-        stop_meas(&ue->dlsch_channel_estimation_stats);
+      stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif
-
-        ret = nr_rx_pbch(ue,
-	                 &ue->proc.proc_rxtx[0],
-		         ue->pbch_vars[0],
-		         frame_parms,
-		         0,
-			 l,
-                         SISO,
-		         ue->high_speed_flag);
-
+      
+      current_ssb->metric = current_ssb->c_re*current_ssb->c_re + current_ssb->c_im+current_ssb->c_re;
+      
+      if(current_ssb->metric > best_metric) { // if metric of current structure is higher than the best one
+        best_metric = current_ssb->metric;
+        best_ssb = l;
+        n_hf = hf;
       }
+
     }
   }
+
+#if UE_TIMING_TRACE
+  start_meas(&ue->dlsch_channel_estimation_stats);
+#endif
+  // computing channel estimation for selected best ssb
+  for(int i=pbch_initial_symbol; i<pbch_initial_symbol+3;i++)
+    nr_pbch_channel_estimation(ue,0,0,i,i-pbch_initial_symbol,best_ssb,n_hf);
+#if UE_TIMING_TRACE
+  stop_meas(&ue->dlsch_channel_estimation_stats);
+#endif
+
+  ret = nr_rx_pbch(ue,
+	           &ue->proc.proc_rxtx[0],
+		   ue->pbch_vars[0],
+		   frame_parms,
+		   0,
+		   best_ssb,
+                   SISO,
+		   ue->high_speed_flag);
 
   if (ret==0) {
     
@@ -116,6 +144,7 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, int pbch_initial_symbol, runmode_t mod
 #ifdef DEBUG_INITIAL_SYNCH
     LOG_I(PHY,"[UE%d] Initial sync: pbch decoded sucessfully\n",ue->Mod_id);
 #endif
+
     return(0);
   } else {
     return(-1);
