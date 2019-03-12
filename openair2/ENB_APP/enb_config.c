@@ -236,6 +236,16 @@ void RCconfig_L1(void) {
                             RC.eNB[j][0]->eth_params_n     .remote_portd);
       } else { // other midhaul
       }
+      // PRACH/PUCCH parameters
+
+      RC.eNB[j][0]->prach_DTX_threshold    = *(L1_ParamList.paramarray[j][L1_PRACH_DTX_THRESHOLD_IDX].iptr);
+      RC.eNB[j][0]->pucch1_DTX_threshold   = *(L1_ParamList.paramarray[j][L1_PUCCH1_DTX_THRESHOLD_IDX].iptr);
+      RC.eNB[j][0]->pucch1ab_DTX_threshold = *(L1_ParamList.paramarray[j][L1_PUCCH1AB_DTX_THRESHOLD_IDX].iptr);
+      for (int ce_level=0;ce_level<4;ce_level++) {
+	RC.eNB[j][0]->prach_DTX_threshold_emtc[ce_level]    = *(L1_ParamList.paramarray[j][L1_PRACH_DTX_EMTC0_THRESHOLD_IDX+ce_level].iptr);
+	RC.eNB[j][0]->pucch1_DTX_threshold_emtc[ce_level]   = *(L1_ParamList.paramarray[j][L1_PUCCH1_DTX_EMTC0_THRESHOLD_IDX+ce_level].iptr);
+	RC.eNB[j][0]->pucch1ab_DTX_threshold_emtc[ce_level] = *(L1_ParamList.paramarray[j][L1_PUCCH1AB_DTX_EMTC0_THRESHOLD_IDX+ce_level].iptr);
+      }
     }// j=0..num_inst
 
     LOG_I(ENB_APP,"Initializing northbound interface for L1\n");

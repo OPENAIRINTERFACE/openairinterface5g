@@ -735,127 +735,77 @@ void uci_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc)
       switch (uci->type) {
       case SR:
       case HARQ_SR:
-	
-	metric_SR = rx_pucch(eNB,
-			     uci->pucch_fmt,
-			     i,
-			     uci->n_pucch_1_0_sr[0],
-			     0, // n2_pucch
-			     uci->srs_active, // shortened format
-			     &SR_payload,
-			     frame,
-			     subframe,
-			     PUCCH1_THRES
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) 
-			     ,uci->ue_type
-#endif
-                             );
-	LOG_D(PHY,"[eNB %d][SR %x] Frame %d subframe %d Checking SR is %d (uci.type %d SR n1pucch is %d)\n",
-	      eNB->Mod_id,
-	      uci->rnti,
-	      frame,
-	      subframe,
-	      SR_payload,
-	      uci->type,
-	      uci->n_pucch_1_0_sr[0]);
-	if (uci->type == SR) {
-	  if (SR_payload == 1) {
-	    fill_sr_indication(eNB,uci->rnti,frame,subframe,metric_SR);
-	    break;
-	  }
-	  else {
-	    break;
-	  }
-	}
-      case HARQ:
-	if (fp->frame_type == FDD) {
-	  LOG_D(PHY,"Frame %d Subframe %d Demodulating PUCCH (UCI %d) for ACK/NAK (uci->pucch_fmt %d,uci->type %d.uci->frame %d, uci->subframe %d): n1_pucch0 %d SR_payload %d\n",
-		frame,subframe,i,
-		uci->pucch_fmt,uci->type,
-		uci->frame,uci->subframe,uci->n_pucch_1[0][0],
-		SR_payload);
-	  
-	  metric[0] = rx_pucch(eNB,
-			       uci->pucch_fmt,
-			       i,
-			       uci->n_pucch_1[0][0],
-			       0, //n2_pucch
-			       uci->srs_active, // shortened format
-			       pucch_b0b1[0],
-			       frame,
-			       subframe,
-			       PUCCH1a_THRES
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) 
-                               ,uci->ue_type
-#endif
-                               );
-          //dump_ulsch(eNB,frame,subframe,0,0); exit(-1);
-	  
-	  
-	  /* cancel SR detection if reception on n1_pucch0 is better than on SR PUCCH resource index, otherwise send it up to MAC */
-	  if (uci->type==HARQ_SR && metric[0] > metric_SR) SR_payload = 0;
-	  else if (SR_payload == 1) fill_sr_indication(eNB,uci->rnti,frame,subframe,metric_SR);
-	  
-	  if (uci->type==HARQ_SR && metric[0] <= metric_SR) {
-	    /* when transmitting ACK/NACK on SR PUCCH resource index, SR payload is always 1 */
-	    SR_payload = 1;
-	    
-	    metric[0]=rx_pucch(eNB,
+        {
+	  int pucch1_thres = (uci->ue_type == 0) ? eNB->pucch1_DTX_threshold : eNB->pucch1_DTX_threshold_emtc[0];
+	  metric_SR = rx_pucch(eNB,
 			       uci->pucch_fmt,
 			       i,
 			       uci->n_pucch_1_0_sr[0],
-			       0, //n2_pucch
+			       0, // n2_pucch
 			       uci->srs_active, // shortened format
-			       pucch_b0b1[0],
+			       &SR_payload,
 			       frame,
 			       subframe,
-			       PUCCH1a_THRES
+			       pucch1_thres
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) 
-                               ,uci->ue_type
+			       ,uci->ue_type
 #endif
-                               );
-	  }
-	  
-	  
-	  LOG_D(PHY,"[eNB %d][PDSCH %x] Frame %d subframe %d pucch1a (FDD) payload %d (metric %d)\n",
+			       );
+	  LOG_D(PHY,"[eNB %d][SR %x] Frame %d subframe %d Checking SR is %d (uci.type %d SR n1pucch is %d)\n",
 		eNB->Mod_id,
 		uci->rnti,
-		frame,subframe,
-		pucch_b0b1[0][0],metric[0]);
-	  
-	  uci->stat = metric[0]; 	  
-	  fill_uci_harq_indication(eNB,uci,frame,subframe,pucch_b0b1[0],0,0xffff);
-	  
+		frame,
+		subframe,
+		SR_payload,
+		uci->type,
+		uci->n_pucch_1_0_sr[0]);
+	  if (uci->type == SR) {
+	    if (SR_payload == 1) {
+	      fill_sr_indication(eNB,uci->rnti,frame,subframe,metric_SR);
+	      break;
+	    }
+	    else {
+	      break;
+	    }
+	  }
 	}
-	else { // frame_type == TDD
-	  LOG_D(PHY,"Frame %d Subframe %d Demodulating PUCCH (UCI %d) for ACK/NAK (uci->pucch_fmt %d,uci->type %d.uci->frame %d, uci->subframe %d): n1_pucch0 %d SR_payload %d\n",
-		frame,subframe,i,
-		uci->pucch_fmt,uci->type,
-		uci->frame,uci->subframe,uci->n_pucch_1[0][0],
-		SR_payload);
-#if 1
-	  metric[0] = rx_pucch(eNB,
-			       uci->pucch_fmt,
-			       i,
-			       uci->n_pucch_1[0][0],
-			       0, //n2_pucch
-			       uci->srs_active, // shortened format
-			       pucch_b0b1[0],
-			       frame,
-			       subframe,
-			       PUCCH1a_THRES
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) 
-                               ,uci->ue_type
-#endif
-                               );
-
-	  if (uci->type==HARQ_SR && metric[0] > metric_SR) SR_payload = 0;
-	  else if (SR_payload == 1) fill_sr_indication(eNB,uci->rnti,frame,subframe,metric_SR);
-	  
-	  if (uci->type==HARQ_SR && metric[0] <= metric_SR) {
-	    SR_payload = 1;
+      case HARQ:
+	{
+	  int pucch1ab_thres = (uci->ue_type == 0) ? eNB->pucch1ab_DTX_threshold : eNB->pucch1ab_DTX_threshold_emtc[0];	  
+	  if (fp->frame_type == FDD) {
+	    LOG_D(PHY,"Frame %d Subframe %d Demodulating PUCCH (UCI %d) for ACK/NAK (uci->pucch_fmt %d,uci->type %d.uci->frame %d, uci->subframe %d): n1_pucch0 %d SR_payload %d\n",
+		  frame,subframe,i,
+		  uci->pucch_fmt,uci->type,
+		  uci->frame,uci->subframe,uci->n_pucch_1[0][0],
+		  SR_payload);
+	    
 	    metric[0] = rx_pucch(eNB,
-				 pucch_format1b,
+				 uci->pucch_fmt,
+				 i,
+				 uci->n_pucch_1[0][0],
+				 0, //n2_pucch
+				 uci->srs_active, // shortened format
+				 pucch_b0b1[0],
+				 frame,
+				 subframe,
+				 pucch1ab_thres
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) 
+				 ,uci->ue_type
+#endif
+				 );
+	    //dump_ulsch(eNB,frame,subframe,0,0); exit(-1);
+	    
+	    
+	    /* cancel SR detection if reception on n1_pucch0 is better than on SR PUCCH resource index, otherwise send it up to MAC */
+	    if (uci->type==HARQ_SR && metric[0] > metric_SR) SR_payload = 0;
+	    else if (SR_payload == 1) fill_sr_indication(eNB,uci->rnti,frame,subframe,metric_SR);
+	    
+	    if (uci->type==HARQ_SR && metric[0] <= metric_SR) {
+	      /* when transmitting ACK/NACK on SR PUCCH resource index, SR payload is always 1 */
+	      SR_payload = 1;
+	      
+	      metric[0]=rx_pucch(eNB,
+				 uci->pucch_fmt,
 				 i,
 				 uci->n_pucch_1_0_sr[0],
 				 0, //n2_pucch
@@ -863,370 +813,427 @@ void uci_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc)
 				 pucch_b0b1[0],
 				 frame,
 				 subframe,
-				 PUCCH1a_THRES
+				 pucch1ab_thres
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) 
-                                ,uci->ue_type
+				 ,uci->ue_type
 #endif
-                                 );
-
+				 );
+	    }
+	    
+	    
+	    LOG_D(PHY,"[eNB %d][PDSCH %x] Frame %d subframe %d pucch1a (FDD) payload %d (metric %d)\n",
+		  eNB->Mod_id,
+		  uci->rnti,
+		  frame,subframe,
+		  pucch_b0b1[0][0],metric[0]);
+	    
+	    uci->stat = metric[0]; 	  
+	    fill_uci_harq_indication(eNB,uci,frame,subframe,pucch_b0b1[0],0,0xffff);
+	    
 	  }
+	  else { // frame_type == TDD
+	    LOG_D(PHY,"Frame %d Subframe %d Demodulating PUCCH (UCI %d) for ACK/NAK (uci->pucch_fmt %d,uci->type %d.uci->frame %d, uci->subframe %d): n1_pucch0 %d SR_payload %d\n",
+		  frame,subframe,i,
+		  uci->pucch_fmt,uci->type,
+		  uci->frame,uci->subframe,uci->n_pucch_1[0][0],
+		  SR_payload);
+#if 1
+	    metric[0] = rx_pucch(eNB,
+				 uci->pucch_fmt,
+				 i,
+				 uci->n_pucch_1[0][0],
+				 0, //n2_pucch
+				 uci->srs_active, // shortened format
+				 pucch_b0b1[0],
+				 frame,
+				 subframe,
+				 pucch1ab_thres
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) 
+				 ,uci->ue_type
+#endif
+				 );
+	    
+	    if (uci->type==HARQ_SR && metric[0] > metric_SR) SR_payload = 0;
+	    else if (SR_payload == 1) fill_sr_indication(eNB,uci->rnti,frame,subframe,metric_SR);
+	    
+	    if (uci->type==HARQ_SR && metric[0] <= metric_SR) {
+	      SR_payload = 1;
+	      metric[0] = rx_pucch(eNB,
+				   pucch_format1b,
+				   i,
+				   uci->n_pucch_1_0_sr[0],
+				   0, //n2_pucch
+				   uci->srs_active, // shortened format
+				   pucch_b0b1[0],
+				   frame,
+				   subframe,
+				   pucch1ab_thres
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) 
+				   ,uci->ue_type
+#endif
+				   );
+	      
+	    }
 #else
-	  // if SR was detected, use the n1_pucch from SR
-	  if (SR_payload==1) {
+	    // if SR was detected, use the n1_pucch from SR
+	    if (SR_payload==1) {
 #ifdef DEBUG_PHY_PROC
-	    LOG_D (PHY, "[eNB %d][PDSCH %x] Frame %d subframe %d Checking ACK/NAK (%d,%d,%d,%d) format %d with SR\n", eNB->Mod_id,
-		   eNB->dlsch[UE_id][0]->rnti, frame, subframe, n1_pucch0, n1_pucch1, n1_pucch2, n1_pucch3, format);
+	      LOG_D (PHY, "[eNB %d][PDSCH %x] Frame %d subframe %d Checking ACK/NAK (%d,%d,%d,%d) format %d with SR\n", eNB->Mod_id,
+		     eNB->dlsch[UE_id][0]->rnti, frame, subframe, n1_pucch0, n1_pucch1, n1_pucch2, n1_pucch3, format);
 #endif
-	    
-	    metric[0] = rx_pucch (eNB, pucch_format1b, i, uci->n_pucch_1_0_sr[0], 0,    //n2_pucch
-				  uci->srs_active,      // shortened format
-				  pucch_b0b1[0], frame, subframe, PUCCH1a_THRES
+	      
+	      metric[0] = rx_pucch (eNB, pucch_format1b, i, uci->n_pucch_1_0_sr[0], 0,    //n2_pucch
+				    uci->srs_active,      // shortened format
+				    pucch_b0b1[0], frame, subframe, 
+				    pucch1ab_thres
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-				  ,uci->ue_type
+				    ,uci->ue_type
 #endif
-				  );
-	  } else {              //using assigned pucch resources
+				    );
+	    } else {              //using assigned pucch resources
 #ifdef DEBUG_PHY_PROC
-	    LOG_D (PHY, "[eNB %d][PDSCH %x] Frame %d subframe %d Checking ACK/NAK M=%d (%d,%d,%d,%d) format %d\n", eNB->Mod_id,
-		   eNB->dlsch[UE_id][0]->rnti,
-		   frame, subframe, uci->num_pucch_resources, uci->n_pucch_1[res][0], uci->n_pucch_1[res][1], uci->n_pucch_1[res][2], uci->n_pucch_1[res][3], uci->pucch_fmt);
+	      LOG_D (PHY, "[eNB %d][PDSCH %x] Frame %d subframe %d Checking ACK/NAK M=%d (%d,%d,%d,%d) format %d\n", eNB->Mod_id,
+		     eNB->dlsch[UE_id][0]->rnti,
+		     frame, subframe, uci->num_pucch_resources, uci->n_pucch_1[res][0], uci->n_pucch_1[res][1], uci->n_pucch_1[res][2], uci->n_pucch_1[res][3], uci->pucch_fmt);
 #endif
-	    for (res = 0; res < uci->num_pucch_resources; res++)
-	      metric[res] = rx_pucch (eNB, uci->pucch_fmt, i, uci->n_pucch_1[res][0], 0,        // n2_pucch
-				      uci->srs_active,  // shortened format
-				      pucch_b0b1[res], frame, subframe, PUCCH1a_THRES
+	      for (res = 0; res < uci->num_pucch_resources; res++)
+		metric[res] = rx_pucch (eNB, uci->pucch_fmt, i, uci->n_pucch_1[res][0], 0,        // n2_pucch
+					uci->srs_active,  // shortened format
+					pucch_b0b1[res], frame, subframe, 
+					pucch1ab_thres
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-				      ,uci->ue_type
+					,uci->ue_type
 #endif		  
-				      );
-	    for (res=0;res<uci->num_pucch_resources;res++)
-	      metric[res] = rx_pucch(eNB,
-				     uci->pucch_fmt,
-				     i,
-				     uci->n_pucch_1[res][0],
-				     0, // n2_pucch
-				     uci->srs_active, // shortened format
-				     pucch_b0b1[res],
-				     frame,
-				     subframe,
-				     PUCCH1a_THRES,
+					);
+	      for (res=0;res<uci->num_pucch_resources;res++)
+		metric[res] = rx_pucch(eNB,
+				       uci->pucch_fmt,
+				       i,
+				       uci->n_pucch_1[res][0],
+				       0, // n2_pucch
+				       uci->srs_active, // shortened format
+				       pucch_b0b1[res],
+				       frame,
+				       subframe,
+				       pucch1ab_thres
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-				     ,uci->ue_type
+				       ,uci->ue_type
 #endif		  
-				     );
-	  }
+				       );
+	    }
 #ifdef DEBUG_PHY_PROC
-	  LOG_D(PHY,"RNTI %x type %d SR_payload %d  Frame %d Subframe %d  pucch_b0b1[0][0] %d pucch_b0b1[0][1] %d pucch_b0b1[1][0] %d pucch_b0b1[1][1] %d  \n",
-		uci->rnti,uci->type,SR_payload,frame,subframe,pucch_b0b1[0][0],pucch_b0b1[0][1],pucch_b0b1[1][0],pucch_b0b1[1][1]);
+	    LOG_D(PHY,"RNTI %x type %d SR_payload %d  Frame %d Subframe %d  pucch_b0b1[0][0] %d pucch_b0b1[0][1] %d pucch_b0b1[1][0] %d pucch_b0b1[1][1] %d  \n",
+		  uci->rnti,uci->type,SR_payload,frame,subframe,pucch_b0b1[0][0],pucch_b0b1[0][1],pucch_b0b1[1][0],pucch_b0b1[1][1]);
 #endif
 #endif
-	  if (SR_payload == 1) { // this implements Table 7.3.1 from 36.213
-	    if (pucch_b0b1[0][0] == 4) { // there isn't a likely transmission
-	      harq_ack[0] = 4; // DTX
-	    }
-	    else if (pucch_b0b1[0][0] == 1 && pucch_b0b1[0][1] == 1) { // 1/4/7 ACKs
-	      harq_ack[0] = 1;
-	    }
-	    else if (pucch_b0b1[0][0] == 1 && pucch_b0b1[0][1] != 1) { // 2/5/8 ACKs
-	      harq_ack[0] = 2;
-	    }
-	    else if (pucch_b0b1[0][0] != 1 && pucch_b0b1[0][1] == 1) { // 3/6/9 ACKs
-	      harq_ack[0] = 3;
-	    }
-	    else if (pucch_b0b1[0][0] != 1 && pucch_b0b1[0][1] != 1) { // 0 ACKs, or at least one DL assignment missed
-	      harq_ack[0] = 0;
-	    }
-	    uci->stat = metric[0];
-	    fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,2,0xffff); // special_bundling mode
-	  } 
-	  else if ((uci->tdd_bundling == 0) && (uci->num_pucch_resources==2)){ // multiplexing + no SR, implement Table 10.1.3-5 (Rel14) for multiplexing with M=2
-	    if (pucch_b0b1[0][0] == 4 ||
-		pucch_b0b1[1][0] == 4) { // there isn't a likely transmission
-	      harq_ack[0] = 4; // DTX
-	      harq_ack[1] = 6; // NACK/DTX
-	    } 
-	    else {
-	      if (metric[1]>metric[0]) {
-		if (pucch_b0b1[1][0] == 1 && pucch_b0b1[1][1] != 1){
-		  harq_ack[0] = 1; // ACK
-		  harq_ack[1] = 1; // ACK
-		  tdd_multiplexing_mask = 0x3;
-		}
-		else if (pucch_b0b1[1][0] != 1 && pucch_b0b1[1][1] == 1){
-		  harq_ack[0] = 6; // NACK/DTX
-		  harq_ack[1] = 1; // ACK
-		  tdd_multiplexing_mask = 0x2;
-		}
-		else {
-		  harq_ack[0] = 4; // DTX
-		  harq_ack[1] = 4; // DTX
-		}
+	    if (SR_payload == 1) { // this implements Table 7.3.1 from 36.213
+	      if (pucch_b0b1[0][0] == 4) { // there isn't a likely transmission
+		harq_ack[0] = 4; // DTX
 	      }
+	      else if (pucch_b0b1[0][0] == 1 && pucch_b0b1[0][1] == 1) { // 1/4/7 ACKs
+		harq_ack[0] = 1;
+	      }
+	      else if (pucch_b0b1[0][0] == 1 && pucch_b0b1[0][1] != 1) { // 2/5/8 ACKs
+		harq_ack[0] = 2;
+	      }
+	      else if (pucch_b0b1[0][0] != 1 && pucch_b0b1[0][1] == 1) { // 3/6/9 ACKs
+		harq_ack[0] = 3;
+	      }
+	      else if (pucch_b0b1[0][0] != 1 && pucch_b0b1[0][1] != 1) { // 0 ACKs, or at least one DL assignment missed
+		harq_ack[0] = 0;
+	      }
+	      uci->stat = metric[0];
+	      fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,2,0xffff); // special_bundling mode
+	    } 
+	    else if ((uci->tdd_bundling == 0) && (uci->num_pucch_resources==2)){ // multiplexing + no SR, implement Table 10.1.3-5 (Rel14) for multiplexing with M=2
+	      if (pucch_b0b1[0][0] == 4 ||
+		  pucch_b0b1[1][0] == 4) { // there isn't a likely transmission
+		harq_ack[0] = 4; // DTX
+		harq_ack[1] = 6; // NACK/DTX
+	      } 
 	      else {
-		if (pucch_b0b1[0][0] == 1 && pucch_b0b1[0][1] == 1){
-		  harq_ack[0] = 1; // ACK
-		  harq_ack[1] = 6; // NACK/DTX
-		  tdd_multiplexing_mask = 0x1;
-		}
-		else if (pucch_b0b1[0][0] != 1 && pucch_b0b1[0][1] != 1){
-		  harq_ack[0] = 2; // NACK
-		  harq_ack[1] = 6; // NACK/DTX
+		if (metric[1]>metric[0]) {
+		  if (pucch_b0b1[1][0] == 1 && pucch_b0b1[1][1] != 1){
+		    harq_ack[0] = 1; // ACK
+		    harq_ack[1] = 1; // ACK
+		    tdd_multiplexing_mask = 0x3;
+		  }
+		  else if (pucch_b0b1[1][0] != 1 && pucch_b0b1[1][1] == 1){
+		    harq_ack[0] = 6; // NACK/DTX
+		    harq_ack[1] = 1; // ACK
+		    tdd_multiplexing_mask = 0x2;
+		  }
+		  else {
+		    harq_ack[0] = 4; // DTX
+		    harq_ack[1] = 4; // DTX
+		  }
 		}
 		else {
-		  harq_ack[0] = 4; // DTX
-		  harq_ack[1] = 4; // DTX
+		  if (pucch_b0b1[0][0] == 1 && pucch_b0b1[0][1] == 1){
+		    harq_ack[0] = 1; // ACK
+		    harq_ack[1] = 6; // NACK/DTX
+		    tdd_multiplexing_mask = 0x1;
+		  }
+		  else if (pucch_b0b1[0][0] != 1 && pucch_b0b1[0][1] != 1){
+		    harq_ack[0] = 2; // NACK
+		    harq_ack[1] = 6; // NACK/DTX
+		  }
+		  else {
+		    harq_ack[0] = 4; // DTX
+		    harq_ack[1] = 4; // DTX
+		  }
 		}
 	      }
-	    }
-	    uci->stat = max(metric[0],metric[1]);
-	    fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,1,tdd_multiplexing_mask); // multiplexing mode
-	  } //else if ((uci->tdd_bundling == 0) && (res==2))
-	  else if ((uci->tdd_bundling == 0) && (uci->num_pucch_resources==3)){ // multiplexing + no SR, implement Table 10.1.3-6 (Rel14) for multiplexing with M=3
-	    
-	    if (harq_ack[0] == 4 ||
-		harq_ack[1] == 4 ||
-		harq_ack[2] == 4) { // there isn't a likely transmission
-	      harq_ack[0] = 4; // DTX
-	      harq_ack[1] = 6; // NACK/DTX
-	      harq_ack[2] = 6; // NACK/DTX
-	      max_metric = 0;
-	    } 
-	    else {
+	      uci->stat = max(metric[0],metric[1]);
+	      fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,1,tdd_multiplexing_mask); // multiplexing mode
+	    } //else if ((uci->tdd_bundling == 0) && (res==2))
+	    else if ((uci->tdd_bundling == 0) && (uci->num_pucch_resources==3)){ // multiplexing + no SR, implement Table 10.1.3-6 (Rel14) for multiplexing with M=3
 	      
-	      max_metric = max(metric[0],max(metric[1],metric[2]));
-	      
-	      if (metric[0]==max_metric) {
-		if (pucch_b0b1[0][0] == 1 && pucch_b0b1[0][1] == 1){
-		  harq_ack[0] = 1; // ACK
-		  harq_ack[1] = 6; // NACK/DTX
-		  harq_ack[2] = 6; // NACK/DTX
-		  tdd_multiplexing_mask = 0x1;
-		}
-		else if (pucch_b0b1[0][0] != 1 && pucch_b0b1[0][1] != 1){
-		  harq_ack[0] = 2; // NACK
-		  harq_ack[1] = 6; // NACK/DTX
-		  harq_ack[2] = 6; // NACK/DTX
-		}
-		else {
-		  harq_ack[0] = 4; // DTX
-		  harq_ack[1] = 4; // DTX
-		  harq_ack[2] = 4; // DTX
-		}
-	      } // if (metric[0]==max_metric) {
-	      else if (metric[1]==max_metric) {
+	      if (harq_ack[0] == 4 ||
+		  harq_ack[1] == 4 ||
+		  harq_ack[2] == 4) { // there isn't a likely transmission
+		harq_ack[0] = 4; // DTX
+		harq_ack[1] = 6; // NACK/DTX
+		harq_ack[2] = 6; // NACK/DTX
+		max_metric = 0;
+	      } 
+	      else {
 		
-		if (pucch_b0b1[1][0] == 1 && pucch_b0b1[1][1] != 1){
-		  harq_ack[0] = 1; // ACK
-		  harq_ack[1] = 1; // ACK
-		  harq_ack[2] = 6; // NACK/DTX
-		  tdd_multiplexing_mask = 0x3;
-		}
-		else if (pucch_b0b1[1][0] != 1 && pucch_b0b1[1][1] == 1 ) {
-		  harq_ack[0] = 6; // NACK/DTX
-		  harq_ack[1] = 1; // ACK
-		  harq_ack[2] = 6; // NACK/DTX
-		  tdd_multiplexing_mask = 0x2;
-		}
+		max_metric = max(metric[0],max(metric[1],metric[2]));
+		
+		if (metric[0]==max_metric) {
+		  if (pucch_b0b1[0][0] == 1 && pucch_b0b1[0][1] == 1){
+		    harq_ack[0] = 1; // ACK
+		    harq_ack[1] = 6; // NACK/DTX
+		    harq_ack[2] = 6; // NACK/DTX
+		    tdd_multiplexing_mask = 0x1;
+		  }
+		  else if (pucch_b0b1[0][0] != 1 && pucch_b0b1[0][1] != 1){
+		    harq_ack[0] = 2; // NACK
+		    harq_ack[1] = 6; // NACK/DTX
+		    harq_ack[2] = 6; // NACK/DTX
+		  }
+		  else {
+		    harq_ack[0] = 4; // DTX
+		    harq_ack[1] = 4; // DTX
+		    harq_ack[2] = 4; // DTX
+		  }
+		} // if (metric[0]==max_metric) {
+		else if (metric[1]==max_metric) {
+		  
+		  if (pucch_b0b1[1][0] == 1 && pucch_b0b1[1][1] != 1){
+		    harq_ack[0] = 1; // ACK
+		    harq_ack[1] = 1; // ACK
+		    harq_ack[2] = 6; // NACK/DTX
+		    tdd_multiplexing_mask = 0x3;
+		  }
+		  else if (pucch_b0b1[1][0] != 1 && pucch_b0b1[1][1] == 1 ) {
+		    harq_ack[0] = 6; // NACK/DTX
+		    harq_ack[1] = 1; // ACK
+		    harq_ack[2] = 6; // NACK/DTX
+		    tdd_multiplexing_mask = 0x2;
+		  }
+		  else {
+		    harq_ack[0] = 4; // DTX
+		    harq_ack[1] = 4; // DTX
+		    harq_ack[2] = 4; // DTX
+		  }
+		} // if (metric[1]==max_metric) {
 		else {
-		  harq_ack[0] = 4; // DTX
-		  harq_ack[1] = 4; // DTX
-		  harq_ack[2] = 4; // DTX
+		  if (pucch_b0b1[2][0] == 1 && pucch_b0b1[2][1] == 1){
+		    harq_ack[0] = 1; // ACK
+		    harq_ack[1] = 1; // ACK
+		    harq_ack[2] = 1; // ACK
+		    tdd_multiplexing_mask = 0x7;
+		  }
+		  else if (pucch_b0b1[2][0] == 1 && pucch_b0b1[2][1] != 1 ) {
+		    harq_ack[0] = 1; // ACK
+		    harq_ack[1] = 6; // NACK/DTX
+		    harq_ack[2] = 1; // ACK
+		    tdd_multiplexing_mask = 0x5;
+		  }
+		  else if (pucch_b0b1[2][0] != 1 && pucch_b0b1[2][1] == 1 ) {
+		    harq_ack[0] = 6; // NACK/DTX
+		    harq_ack[1] = 1; // ACK
+		    harq_ack[2] = 1; // ACK
+		    tdd_multiplexing_mask = 0x6;
+		  }
+		  else if (pucch_b0b1[2][0] != 1 && pucch_b0b1[2][1] != 1 ) {
+		    harq_ack[0] = 6; // NACK/DTX
+		    harq_ack[1] = 6; // NACK/DTX
+		    harq_ack[2] = 1; // ACK
+		    tdd_multiplexing_mask = 0x4;
+		  }
 		}
-	      } // if (metric[1]==max_metric) {
-	      else {
-		if (pucch_b0b1[2][0] == 1 && pucch_b0b1[2][1] == 1){
-		  harq_ack[0] = 1; // ACK
-		  harq_ack[1] = 1; // ACK
-		  harq_ack[2] = 1; // ACK
-		  tdd_multiplexing_mask = 0x7;
-		}
-		else if (pucch_b0b1[2][0] == 1 && pucch_b0b1[2][1] != 1 ) {
-		  harq_ack[0] = 1; // ACK
-		  harq_ack[1] = 6; // NACK/DTX
-		  harq_ack[2] = 1; // ACK
-		  tdd_multiplexing_mask = 0x5;
-		}
-		else if (pucch_b0b1[2][0] != 1 && pucch_b0b1[2][1] == 1 ) {
-		  harq_ack[0] = 6; // NACK/DTX
-		  harq_ack[1] = 1; // ACK
-		  harq_ack[2] = 1; // ACK
-		  tdd_multiplexing_mask = 0x6;
-		}
-		else if (pucch_b0b1[2][0] != 1 && pucch_b0b1[2][1] != 1 ) {
-		  harq_ack[0] = 6; // NACK/DTX
-		  harq_ack[1] = 6; // NACK/DTX
-		  harq_ack[2] = 1; // ACK
-		  tdd_multiplexing_mask = 0x4;
+		uci->stat = max_metric;
+		fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,1,tdd_multiplexing_mask); // multiplexing mode
+	      }
+	    } //else if ((uci->tdd_bundling == 0) && (res==3)) 
+	    else if ((uci->tdd_bundling == 0) && (uci->num_pucch_resources==4)){ // multiplexing + no SR, implement Table 10.1.3-7 (Rel14) for multiplexing with M=4
+	      if (pucch_b0b1[0][0] == 4 ||
+		  pucch_b0b1[1][0] == 4 ||
+		  pucch_b0b1[2][0] == 4 ||
+		  pucch_b0b1[3][0] == 4) { // there isn't a likely transmission
+		harq_ack[0] = 4; // DTX
+		harq_ack[1] = 6; // NACK/DTX
+		harq_ack[2] = 6; // NACK/DTX
+		harq_ack[3] = 6; // NACK/DTX
+		max_metric = 0;
+	      } else {
+		
+		max_metric = max(metric[0],max(metric[1],max(metric[2],metric[3])));
+		
+		if (metric[0]==max_metric) {
+		  if (pucch_b0b1[0][0] == 1 && pucch_b0b1[0][1] != 1){
+		    harq_ack[0] = 2; // NACK
+		    harq_ack[1] = 4; // DTX
+		    harq_ack[2] = 4; // DTX
+		    harq_ack[3] = 4; // DTX
+		  }
+		  else if (pucch_b0b1[0][0] != 1 && pucch_b0b1[0][1] == 1){
+		    harq_ack[0] = 1; // ACK
+		    harq_ack[1] = 6; // NACK/DTX
+		    harq_ack[2] = 6; // NACK/DTX
+		    harq_ack[3] = 1; // ACK
+		    tdd_multiplexing_mask = 0x9;
+		  }
+		  else if (pucch_b0b1[0][0] == 1 && pucch_b0b1[0][1] == 1){
+		    harq_ack[0] = 1; // ACK
+		    harq_ack[1] = 6; // NACK/DTX
+		    harq_ack[2] = 6; // NACK/DTX
+		    harq_ack[3] = 6; // NACK/DTX
+		    tdd_multiplexing_mask = 0x1;
+		  }
+		  else if (pucch_b0b1[0][0] != 1 && pucch_b0b1[0][1] != 1){
+		    harq_ack[0] = 2; // NACK
+		    harq_ack[1] = 6; // NACK/DTX
+		    harq_ack[2] = 6; // NACK/DTX
+		    harq_ack[3] = 6; // NACK/DTX
+		  }
+		  
+		} 
+		else if (metric[1]==max_metric) {
+		  if (pucch_b0b1[1][0] == 1 && pucch_b0b1[1][1] == 1){
+		    harq_ack[0] = 1; // ACK
+		    harq_ack[1] = 1; // ACK
+		    harq_ack[2] = 1; // ACK
+		    harq_ack[3] = 1; // ACK
+		    tdd_multiplexing_mask = 0xF;
+		  }
+		  else if (pucch_b0b1[1][0] == 1 && pucch_b0b1[1][1] != 1 ) {
+		    harq_ack[0] = 1; // ACK
+		    harq_ack[1] = 1; // ACK
+		    harq_ack[2] = 6; // NACK/DTX
+		    harq_ack[3] = 6; // NACK/DTX
+		    tdd_multiplexing_mask = 0x3;
+		  }
+		  else if (pucch_b0b1[1][0] != 1 && pucch_b0b1[1][1] != 1 ) {
+		    harq_ack[0] = 6; // NACK/DTX
+		    harq_ack[1] = 1; // ACK
+		    harq_ack[2] = 1; // ACK
+		    harq_ack[3] = 1; // ACK
+		    tdd_multiplexing_mask = 0xE;
+		  }
+		  else if (pucch_b0b1[1][0] != 1 && pucch_b0b1[1][1] == 1 ) {
+		    harq_ack[0] = 6; // NACK/DTX
+		    harq_ack[1] = 1; // ACK
+		    harq_ack[2] = 6; // NACK/DTX
+		    harq_ack[3] = 6; // NACK/DTX
+		    tdd_multiplexing_mask = 0x2;
+		  }
+		} 
+		else if (metric[2]==max_metric) {
+		  if (pucch_b0b1[2][0] == 1 && pucch_b0b1[2][1] == 1){
+		    harq_ack[0] = 1; // ACK
+		    harq_ack[1] = 1; // ACK
+		    harq_ack[2] = 1; // ACK
+		    harq_ack[3] = 6; // NACK/DTX
+		    tdd_multiplexing_mask = 0x7;
+		  }
+		  else if (pucch_b0b1[2][0] == 1 && pucch_b0b1[2][1] != 1 ) {
+		    harq_ack[0] = 1; // ACK
+		    harq_ack[1] = 6; // NACK/DTX
+		    harq_ack[2] = 1; // ACK
+		    harq_ack[3] = 6; // NACK/DTX
+		    tdd_multiplexing_mask = 0x5;
+		  }
+		  else if (pucch_b0b1[2][0] != 1 && pucch_b0b1[2][1] == 1 ) {
+		    harq_ack[0] = 4; // NACK/DTX
+		    harq_ack[1] = 1; // ACK
+		    harq_ack[2] = 1; // ACK
+		    harq_ack[3] = 4; // NACK/DTX
+		    tdd_multiplexing_mask = 0x6;
+		  }
+		  else if (pucch_b0b1[2][0] != 1 && pucch_b0b1[2][1] != 1 ) {
+		    harq_ack[0] = 4; // NACK/DTX
+		    harq_ack[1] = 4; // NACK/DTX
+		    harq_ack[2] = 1; // ACK
+		    harq_ack[3] = 4; // NACK/DTX
+		    tdd_multiplexing_mask = 0x4;
+		  }
+		} 
+		else { // max_metric[3]=max_metric
+		  if (pucch_b0b1[2][0] == 1 && pucch_b0b1[2][1] == 1){
+		    harq_ack[0] = 1; // ACK
+		    harq_ack[1] = 6; // NACK/DTX
+		    harq_ack[2] = 1; // ACK
+		    harq_ack[3] = 1; // ACK
+		    tdd_multiplexing_mask = 0xD;
+		  }
+		  else if (pucch_b0b1[2][0] == 1 && pucch_b0b1[2][1] != 1 ) {
+		    harq_ack[0] = 6; // NACK/DTX
+		    harq_ack[1] = 1; // ACK
+		    harq_ack[2] = 6; // NACK/DTX
+		    harq_ack[3] = 1; // ACK
+		    tdd_multiplexing_mask = 0xA;
+		  }
+		  else if (pucch_b0b1[2][0] != 1 && pucch_b0b1[2][1] == 1 ) {
+		    harq_ack[0] = 6; // NACK/DTX
+		    harq_ack[1] = 6; // NACK/DTX
+		    harq_ack[2] = 1; // ACK
+		    harq_ack[3] = 1; // ACK
+		    tdd_multiplexing_mask = 0xC;
+		  }
+		  else if (pucch_b0b1[2][0] != 1 && pucch_b0b1[2][1] != 1 ) {
+		    harq_ack[0] = 6; // NACK/DTX
+		    harq_ack[1] = 6; // NACK/DTX
+		    harq_ack[2] = 6; // NACK/DTX
+		    harq_ack[3] = 1; // ACK
+		    tdd_multiplexing_mask = 0x8;
+		  }
 		}
 	      }
 	      uci->stat = max_metric;
 	      fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,1,tdd_multiplexing_mask); // multiplexing mode
+	    } // else if ((uci->tdd_bundling == 0) && (res==4))
+	    else { // bundling
+	      harq_ack[0] = pucch_b0b1[0][0];
+	      harq_ack[1] = pucch_b0b1[0][1];
+	      uci->stat = metric[0];
+	      LOG_D(PHY,"bundling: (%d,%d), metric %d\n",harq_ack[0],harq_ack[1],uci->stat);
+	      fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,0,0xffff); // special_bundling mode
 	    }
-	  } //else if ((uci->tdd_bundling == 0) && (res==3)) 
-	  else if ((uci->tdd_bundling == 0) && (uci->num_pucch_resources==4)){ // multiplexing + no SR, implement Table 10.1.3-7 (Rel14) for multiplexing with M=4
-	    if (pucch_b0b1[0][0] == 4 ||
-		pucch_b0b1[1][0] == 4 ||
-		pucch_b0b1[2][0] == 4 ||
-		pucch_b0b1[3][0] == 4) { // there isn't a likely transmission
-	      harq_ack[0] = 4; // DTX
-	      harq_ack[1] = 6; // NACK/DTX
-	      harq_ack[2] = 6; // NACK/DTX
-	      harq_ack[3] = 6; // NACK/DTX
-	      max_metric = 0;
-	    } else {
-	      
-	      max_metric = max(metric[0],max(metric[1],max(metric[2],metric[3])));
-	      
-	      if (metric[0]==max_metric) {
-		if (pucch_b0b1[0][0] == 1 && pucch_b0b1[0][1] != 1){
-		  harq_ack[0] = 2; // NACK
-		  harq_ack[1] = 4; // DTX
-		  harq_ack[2] = 4; // DTX
-		  harq_ack[3] = 4; // DTX
-		}
-		else if (pucch_b0b1[0][0] != 1 && pucch_b0b1[0][1] == 1){
-		  harq_ack[0] = 1; // ACK
-		  harq_ack[1] = 6; // NACK/DTX
-		  harq_ack[2] = 6; // NACK/DTX
-		  harq_ack[3] = 1; // ACK
-		  tdd_multiplexing_mask = 0x9;
-		}
-		else if (pucch_b0b1[0][0] == 1 && pucch_b0b1[0][1] == 1){
-		  harq_ack[0] = 1; // ACK
-		  harq_ack[1] = 6; // NACK/DTX
-		  harq_ack[2] = 6; // NACK/DTX
-		  harq_ack[3] = 6; // NACK/DTX
-		  tdd_multiplexing_mask = 0x1;
-		}
-		else if (pucch_b0b1[0][0] != 1 && pucch_b0b1[0][1] != 1){
-		  harq_ack[0] = 2; // NACK
-		  harq_ack[1] = 6; // NACK/DTX
-		  harq_ack[2] = 6; // NACK/DTX
-		  harq_ack[3] = 6; // NACK/DTX
-		}
-		
-	      } 
-	      else if (metric[1]==max_metric) {
-		if (pucch_b0b1[1][0] == 1 && pucch_b0b1[1][1] == 1){
-		  harq_ack[0] = 1; // ACK
-		  harq_ack[1] = 1; // ACK
-		  harq_ack[2] = 1; // ACK
-		  harq_ack[3] = 1; // ACK
-		  tdd_multiplexing_mask = 0xF;
-		}
-		else if (pucch_b0b1[1][0] == 1 && pucch_b0b1[1][1] != 1 ) {
-		  harq_ack[0] = 1; // ACK
-		  harq_ack[1] = 1; // ACK
-		  harq_ack[2] = 6; // NACK/DTX
-		  harq_ack[3] = 6; // NACK/DTX
-		  tdd_multiplexing_mask = 0x3;
-		}
-		else if (pucch_b0b1[1][0] != 1 && pucch_b0b1[1][1] != 1 ) {
-		  harq_ack[0] = 6; // NACK/DTX
-		  harq_ack[1] = 1; // ACK
-		  harq_ack[2] = 1; // ACK
-		  harq_ack[3] = 1; // ACK
-		  tdd_multiplexing_mask = 0xE;
-		}
-		else if (pucch_b0b1[1][0] != 1 && pucch_b0b1[1][1] == 1 ) {
-		  harq_ack[0] = 6; // NACK/DTX
-		  harq_ack[1] = 1; // ACK
-		  harq_ack[2] = 6; // NACK/DTX
-		  harq_ack[3] = 6; // NACK/DTX
-		  tdd_multiplexing_mask = 0x2;
-		}
-	      } 
-	      else if (metric[2]==max_metric) {
-		if (pucch_b0b1[2][0] == 1 && pucch_b0b1[2][1] == 1){
-		  harq_ack[0] = 1; // ACK
-		  harq_ack[1] = 1; // ACK
-		  harq_ack[2] = 1; // ACK
-		  harq_ack[3] = 6; // NACK/DTX
-		  tdd_multiplexing_mask = 0x7;
-		}
-		else if (pucch_b0b1[2][0] == 1 && pucch_b0b1[2][1] != 1 ) {
-		  harq_ack[0] = 1; // ACK
-		  harq_ack[1] = 6; // NACK/DTX
-		  harq_ack[2] = 1; // ACK
-		  harq_ack[3] = 6; // NACK/DTX
-		  tdd_multiplexing_mask = 0x5;
-		}
-		else if (pucch_b0b1[2][0] != 1 && pucch_b0b1[2][1] == 1 ) {
-		  harq_ack[0] = 4; // NACK/DTX
-		  harq_ack[1] = 1; // ACK
-		  harq_ack[2] = 1; // ACK
-		  harq_ack[3] = 4; // NACK/DTX
-		  tdd_multiplexing_mask = 0x6;
-		}
-		else if (pucch_b0b1[2][0] != 1 && pucch_b0b1[2][1] != 1 ) {
-		  harq_ack[0] = 4; // NACK/DTX
-		  harq_ack[1] = 4; // NACK/DTX
-		  harq_ack[2] = 1; // ACK
-		  harq_ack[3] = 4; // NACK/DTX
-		  tdd_multiplexing_mask = 0x4;
-		}
-	      } 
-	      else { // max_metric[3]=max_metric
-		if (pucch_b0b1[2][0] == 1 && pucch_b0b1[2][1] == 1){
-		  harq_ack[0] = 1; // ACK
-		  harq_ack[1] = 6; // NACK/DTX
-		  harq_ack[2] = 1; // ACK
-		  harq_ack[3] = 1; // ACK
-		  tdd_multiplexing_mask = 0xD;
-		}
-		else if (pucch_b0b1[2][0] == 1 && pucch_b0b1[2][1] != 1 ) {
-		  harq_ack[0] = 6; // NACK/DTX
-		  harq_ack[1] = 1; // ACK
-		  harq_ack[2] = 6; // NACK/DTX
-		  harq_ack[3] = 1; // ACK
-		  tdd_multiplexing_mask = 0xA;
-		}
-		else if (pucch_b0b1[2][0] != 1 && pucch_b0b1[2][1] == 1 ) {
-		  harq_ack[0] = 6; // NACK/DTX
-		  harq_ack[1] = 6; // NACK/DTX
-		  harq_ack[2] = 1; // ACK
-		  harq_ack[3] = 1; // ACK
-		  tdd_multiplexing_mask = 0xC;
-		}
-		else if (pucch_b0b1[2][0] != 1 && pucch_b0b1[2][1] != 1 ) {
-		  harq_ack[0] = 6; // NACK/DTX
-		  harq_ack[1] = 6; // NACK/DTX
-		  harq_ack[2] = 6; // NACK/DTX
-		  harq_ack[3] = 1; // ACK
-		  tdd_multiplexing_mask = 0x8;
-		}
-	      }
-	    }
-	    uci->stat = max_metric;
-	    fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,1,tdd_multiplexing_mask); // multiplexing mode
-	  } // else if ((uci->tdd_bundling == 0) && (res==4))
-	  else { // bundling
-	    harq_ack[0] = pucch_b0b1[0][0];
-	    harq_ack[1] = pucch_b0b1[0][1];
-	    uci->stat = metric[0];
-	    LOG_D(PHY,"bundling: (%d,%d), metric %d\n",harq_ack[0],harq_ack[1],uci->stat);
-	    fill_uci_harq_indication(eNB,uci,frame,subframe,harq_ack,0,0xffff); // special_bundling mode
-	  }
-	  
+	    
 #ifdef DEBUG_PHY_PROC
-	  LOG_D (PHY, "[eNB %d][PDSCH %x] Frame %d subframe %d ACK/NAK metric 0 %d, metric 1 %d, (%d,%d)\n", eNB->Mod_id,
-		 eNB->dlsch[UE_id][0]->rnti, frame, subframe, metric0, metric1, pucch_b0b1[0], pucch_b0b1[1]);
+	    LOG_D (PHY, "[eNB %d][PDSCH %x] Frame %d subframe %d ACK/NAK metric 0 %d, metric 1 %d, (%d,%d)\n", eNB->Mod_id,
+		   eNB->dlsch[UE_id][0]->rnti, frame, subframe, metric0, metric1, pucch_b0b1[0], pucch_b0b1[1]);
 #endif
+	  }
+	  break;
+	default:
+	  AssertFatal (1 == 0, "Unsupported UCI type %d\n", uci->type);
+	  break;
 	}
-	break;
-      default:
-	AssertFatal (1 == 0, "Unsupported UCI type %d\n", uci->type);
-	break;
-      }
-      
-      if (SR_payload == 1) {
-	LOG_D (PHY, "[eNB %d][SR %x] Frame %d subframe %d Got SR for PUSCH, transmitting to MAC\n", eNB->Mod_id, uci->rnti, frame, subframe);
 	
-	if (eNB->first_sr[i] == 1) {    // this is the first request for uplink after Connection Setup, so clear HARQ process 0 use for Msg4
-	  eNB->first_sr[i] = 0;
-	  eNB->dlsch[i][0]->harq_processes[0]->round = 0;
-	  eNB->dlsch[i][0]->harq_processes[0]->status = SCH_IDLE;
-	  LOG_D (PHY, "[eNB %d][SR %x] Frame %d subframe %d First SR\n", eNB->Mod_id, eNB->ulsch[i]->rnti, frame, subframe);
+	if (SR_payload == 1) {
+	  LOG_D (PHY, "[eNB %d][SR %x] Frame %d subframe %d Got SR for PUSCH, transmitting to MAC\n", eNB->Mod_id, uci->rnti, frame, subframe);
+	  
+	  if (eNB->first_sr[i] == 1) {    // this is the first request for uplink after Connection Setup, so clear HARQ process 0 use for Msg4
+	    eNB->first_sr[i] = 0;
+	    eNB->dlsch[i][0]->harq_processes[0]->round = 0;
+	    eNB->dlsch[i][0]->harq_processes[0]->status = SCH_IDLE;
+	    LOG_D (PHY, "[eNB %d][SR %x] Frame %d subframe %d First SR\n", eNB->Mod_id, eNB->ulsch[i]->rnti, frame, subframe);
+	  }
 	}
       }
     }
