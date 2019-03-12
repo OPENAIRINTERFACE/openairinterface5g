@@ -2231,9 +2231,9 @@ if (${T_TRACER})
         oai_exmimodevif oai_usrpdevif oai_bladerfdevif oai_lmssdrdevif
         oai_eth_transpro
         FLPT_MSG ASYNC_IF FLEXRAN_AGENT HASHTABLE MSC UTIL OMG_SUMO SECU_OSA
-        SECU_CN SCHED_LIB PHY L2 default_sched remote_sched RAL CN_UTILS
-        GTPV1U SCTP_CLIENT UDP LIB_NAS_UE LFDS LFDS7 SIMU OPENAIR0_LIB PHY_MEX
-        coding)
+        SECU_CN SCHED_LIB SCHED_RU_LIB SCHED_UE_LIB PHY L2 default_sched
+        remote_sched RAL CN_UTILS GTPV1U SCTP_CLIENT UDP LIB_NAS_UE LFDS
+        LFDS7 SIMU OPENAIR0_LIB PHY_MEX coding)
     if (TARGET ${i})
       add_dependencies(${i} generate_T)
     endif()
