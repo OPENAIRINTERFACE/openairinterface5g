@@ -650,7 +650,7 @@ class SSHConnection():
 		html_queue = SimpleQueue()
 		self.checkDevTTYisUnlocked()
 		if attach_status:
-			html_cell = '<pre style="background-color:white">CAT-M module\nAttach Attach Completed in ' + str(attach_cnt+4) + ' seconds'
+			html_cell = '<pre style="background-color:white">CAT-M module\nAttachment Completed in ' + str(attach_cnt+4) + ' seconds'
 			if (nRSRQ is not None) and (nRSRP is not None):
 				html_cell += '\n   RSRQ = ' + str(-20+(nRSRQ/2)) + ' dB'
 				html_cell += '\n   RSRP = ' + str(-140+nRSRP) + ' dBm</pre>'
@@ -659,7 +659,7 @@ class SSHConnection():
 			html_queue.put(html_cell)
 			self.CreateHtmlTestRowQueue('N/A', 'OK', 1, html_queue)
 		else:
-			html_cell = '<pre style="background-color:white">CAT-M module\nAttach Failed</pre>'
+			html_cell = '<pre style="background-color:white">CAT-M module\nAttachment Failed</pre>'
 			html_queue.put(html_cell)
 			self.CreateHtmlTestRowQueue('N/A', 'KO', 1, html_queue)
 
@@ -2333,11 +2333,11 @@ class SSHConnection():
 			self.htmlFile.write('        <td></td>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('      <tr>\n')
-			self.htmlFile.write('        <th colspan=4 bgcolor = "#33CCFF">Final Status</th>\n')
+			self.htmlFile.write('        <th colspan=5 bgcolor = "#33CCFF">Final Status</th>\n')
 			if passStatus:
-				self.htmlFile.write('        <th colspan=2 bgcolor="green"><font color="white">PASS <span class="glyphicon glyphicon-ok"></span></font></th>\n')
+				self.htmlFile.write('        <th colspan=3 bgcolor="green"><font color="white">PASS <span class="glyphicon glyphicon-ok"></span></font></th>\n')
 			else:
-				self.htmlFile.write('        <th colspan=2 bgcolor="red"><font color="white">FAIL <span class="glyphicon glyphicon-remove"></span> </font></th>\n')
+				self.htmlFile.write('        <th colspan=3 bgcolor="red"><font color="white">FAIL <span class="glyphicon glyphicon-remove"></span> </font></th>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('  </table>\n')
 			self.htmlFile.write('  <p></p>\n')

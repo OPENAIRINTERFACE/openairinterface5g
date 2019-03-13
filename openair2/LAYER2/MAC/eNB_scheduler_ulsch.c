@@ -458,9 +458,9 @@ rx_sdu(const module_id_t enb_mod_idP,
                                ,ra->rach_resource_type > 0
 #endif
                               );
-              /* Prepare transmission of Msg4(RRCConnectionReconfiguration) */
+              /* Received a new rnti */
               ra->state = MSGCRNTI;
-              LOG_I(MAC, "[eNB %d] Frame %d, Subframe %d CC_id %d : (rnti %x UE_id %d) RRCConnectionReconfiguration(Msg4)\n",
+              LOG_I(MAC, "[eNB %d] Frame %d, Subframe %d CC_id %d : (rnti %x UE_id %d) Received rnti(Msg4)\n",
                     enb_mod_idP,
                     frameP,
                     subframeP,

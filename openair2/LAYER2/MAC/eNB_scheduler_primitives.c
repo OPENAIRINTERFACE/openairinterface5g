@@ -2505,8 +2505,8 @@ UE_is_to_be_scheduled(module_id_t module_idP,
 
   if (UE_template->scheduled_ul_bytes < UE_template->estimated_ul_buffer ||
       UE_template->ul_SR > 0 || // uplink scheduling request
-      (UE_sched_ctl->ul_inactivity_timer > 200 && UE_sched_ctl->ul_scheduled == 0) ||  // every 2 frames when RRC_CONNECTED
-      (UE_sched_ctl->ul_inactivity_timer > 100 && 
+      (UE_sched_ctl->ul_inactivity_timer > 20 && UE_sched_ctl->ul_scheduled == 0) ||  // every 2 frames when RRC_CONNECTED
+      (UE_sched_ctl->ul_inactivity_timer > 10 && 
        UE_sched_ctl->ul_scheduled == 0 && 
        mac_eNB_get_rrc_status(module_idP, 
                               ue_rnti) < RRC_CONNECTED)) { // every Frame when not RRC_CONNECTED
