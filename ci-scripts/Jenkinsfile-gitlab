@@ -433,6 +433,11 @@ pipeline {
                                 }
                             }
                         }
+                        failure {
+                            script {
+                                currentBuild.result = 'FAILURE'
+                            }
+                        }
                     }
                 }
                 stage ("Test TDD - Band 40 - B210") {
@@ -477,6 +482,11 @@ pipeline {
                                         archiveArtifacts artifacts: 'test_results-eNB-CI-TDD-Band40-B210.html'
                                     }
                                 }
+                            }
+                        }
+                        failure {
+                            script {
+                                currentBuild.result = 'FAILURE'
                             }
                         }
                     }
@@ -525,6 +535,11 @@ pipeline {
                                 }
                             }
                         }
+                        failure {
+                            script {
+                                currentBuild.result = 'FAILURE'
+                            }
+                        }
                     }
                 }
                 stage ("Test IF4p5 - TDD - Band 40 - B210") {
@@ -569,6 +584,11 @@ pipeline {
                                         archiveArtifacts artifacts: 'test_results-eNB-CI-IF4p5-TDD-Band40-B210.html'
                                     }
                                 }
+                            }
+                        }
+                        failure {
+                            script {
+                                currentBuild.result = 'FAILURE'
                             }
                         }
                     }
