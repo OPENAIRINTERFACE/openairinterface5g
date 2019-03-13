@@ -441,10 +441,6 @@ static void get_options(void) {
 
   if (dumpframe  > 0)  mode = rx_dump_frame;
 
-# if BASIC_SIMULATOR
-  set_softmodem_optmask(SOFTMODEM_BASICSIM_BIT); //this BASIC_SIMULATOR should be a config option
-# endif
-
   for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
     frame_parms[CC_id]->dl_CarrierFreq = downlink_frequency[0][0];
   }
@@ -755,7 +751,6 @@ int main( int argc, char **argv ) {
   cpuf=get_cpu_freq_GHz();
   pthread_cond_init(&sync_cond,NULL);
   pthread_mutex_init(&sync_mutex, NULL);
-#if defined(ENABLE_ITTI)
   printf("ITTI init\n");
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);
 
@@ -765,22 +760,22 @@ int main( int argc, char **argv ) {
   }
 
   MSC_INIT(MSC_E_UTRAN, THREAD_MAX+TASK_MAX);
-#endif
   init_opt();
-  uint32_t pdcp_initmask = ((!IS_SOFTMODEM_NOS1) || IS_SOFTMODEM_NOKRNMOD)? LINK_ENB_PDCP_TO_GTPV1U_BIT : (LINK_ENB_PDCP_TO_GTPV1U_BIT | PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT);
+  uint32_t pdcp_initmask = (!IS_SOFTMODEM_NOS1 )? LINK_ENB_PDCP_TO_GTPV1U_BIT : (LINK_ENB_PDCP_TO_GTPV1U_BIT | PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT);
 
-  if ( IS_SOFTMODEM_BASICSIM || (nfapi_mode == 3) ) {
+  if ( IS_SOFTMODEM_BASICSIM || IS_SOFTMODEM_RFSIM || (nfapi_mode == 3) ) {
     pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
   }
 
+  if ( IS_SOFTMODEM_NOKRNMOD)
+    pdcp_initmask = pdcp_initmask | UE_NAS_USE_TUN_BIT;
+
   pdcp_module_init( pdcp_initmask );
   //TTN for D2D
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   printf ("RRC control socket\n");
   rrc_control_socket_init();
   printf ("PDCP PC5S socket\n");
   pdcp_pc5_socket_init();
-#endif
   // to make a graceful exit when ctrl-c is pressed
   signal(SIGSEGV, signal_handler);
   signal(SIGINT, signal_handler);

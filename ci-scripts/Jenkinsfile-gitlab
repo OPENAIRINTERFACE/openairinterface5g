@@ -329,13 +329,13 @@ pipeline {
                         stage ("Test physical simulators") {
                             steps {
                                 script {
-                                    gitlabCommitStatus(name: "Test phy-sim") {
-                                        timeout (time: 20, unit: 'MINUTES') {
-                                            try {
+                                    timeout (time: 20, unit: 'MINUTES') {
+                                        try {
+                                            gitlabCommitStatus(name: "Test phy-sim") {
                                                 sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-                                            } catch (Exception e) {
-                                              currentBuild.result = 'FAILURE'
                                             }
+                                        } catch (Exception e) {
+                                          currentBuild.result = 'FAILURE'
                                         }
                                     }
                                 }
@@ -360,13 +360,13 @@ pipeline {
                         stage ("Test basic simulator") {
                             steps {
                                 script {
-                                    gitlabCommitStatus(name: "Test basic-sim") {
-                                        timeout (time: 30, unit: 'MINUTES') {
-                                            try {
+                                    timeout (time: 30, unit: 'MINUTES') {
+                                        try {
+                                            gitlabCommitStatus(name: "Test basic-sim") {
                                                 sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-                                            } catch (Exception e) {
-                                              currentBuild.result = 'FAILURE'
                                             }
+                                        } catch (Exception e) {
+                                          currentBuild.result = 'FAILURE'
                                         }
                                     }
                                 }
@@ -375,13 +375,13 @@ pipeline {
                         stage ("Test L2 simulator") {
                             steps {
                                 script {
-                                    gitlabCommitStatus(name: "Test L2-sim") {
-                                        timeout (time: 30, unit: 'MINUTES') {
-                                            try {
+                                    timeout (time: 30, unit: 'MINUTES') {
+                                        try {
+                                            gitlabCommitStatus(name: "Test L2-sim") {
                                                 sh "./ci-scripts/oai-ci-vm-tool test --workspace $WORKSPACE --variant l2-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-                                            } catch (Exception e) {
-                                                currentBuild.result = 'FAILURE'
                                             }
+                                        } catch (Exception e) {
+                                            currentBuild.result = 'FAILURE'
                                         }
                                     }
                                 }

@@ -19,8 +19,8 @@
  *      contact@openairinterface.org
  */
 
-/*! \file common_lib.h 
- * \brief common APIs for different RF frontend device 
+/*! \file common_lib.h
+ * \brief common APIs for different RF frontend device
  * \author HongliangXU, Navid Nikaein
  * \date 2015
  * \version 0.2
@@ -39,19 +39,22 @@
 #define OAI_RF_LIBNAME        "oai_device"
 /* name of shared library implementing the transport */
 #define OAI_TP_LIBNAME        "oai_transpro"
-
+/* name of shared library implementing the basic/rf simulator */
+#define OAI_RFSIM_LIBNAME        "rfsimulator"
+/* name of shared library implementing the basic/rf simulator */
+#define OAI_BASICSIM_LIBNAME        "tcp_bridge_oai"
 /* flags for BBU to determine whether the attached radio head is local or remote */
 #define RAU_LOCAL_RADIO_HEAD  0
 #define RAU_REMOTE_RADIO_HEAD 1
 
 #ifndef MAX_CARDS
-#define MAX_CARDS 8
+  #define MAX_CARDS 8
 #endif
 
 typedef int64_t openair0_timestamp;
 typedef volatile int64_t openair0_vtimestamp;
 
- 
+
 /*!\brief structrue holds the parameters to configure USRP devices*/
 typedef struct openair0_device_t openair0_device;
 
@@ -120,16 +123,16 @@ typedef enum {
 /*!\brief  openair0 device host type */
 typedef enum {
   MIN_HOST_TYPE = 0,
- /*!\brief device functions within a RAU */
+  /*!\brief device functions within a RAU */
   RAU_HOST,
- /*!\brief device functions within a RRU */
+  /*!\brief device functions within a RRU */
   RRU_HOST,
   MAX_HOST_TYPE
 
-}host_type_t;
+} host_type_t;
 
 
-/*! \brief RF Gain clibration */ 
+/*! \brief RF Gain clibration */
 typedef struct {
   //! Frequency for which RX chain was calibrated
   double freq;
@@ -157,7 +160,7 @@ typedef struct {
   duplex_mode_t duplex_mode;
   //! number of downlink resource blocks
   int num_rb_dl;
-  //! number of samples per frame 
+  //! number of samples per frame
   unsigned int  samples_per_frame;
   //! the sample rate for both transmit and receive.
   double sample_rate;
@@ -172,9 +175,9 @@ typedef struct {
   //! number of TX channels (=TX antennas)
   int tx_num_channels;
   //! \brief RX base addresses for mmapped_dma
-  int32_t* rxbase[4];
+  int32_t *rxbase[4];
   //! \brief TX base addresses for mmapped_dma
-  int32_t* txbase[4];
+  int32_t *txbase[4];
   //! \brief Center frequency in Hz for RX.
   //! index: [0..rx_num_channels[
   double rx_freq[4];
@@ -185,7 +188,7 @@ typedef struct {
   //! \brief Pointer to Calibration table for RX gains
   rx_gain_calib_table_t *rx_gain_calib_table;
 
-  //! mode for rxgain (ExpressMIMO2) 
+  //! mode for rxgain (ExpressMIMO2)
   rx_gain_t rxg_mode[4];
   //! \brief Gain for RX in dB.
   //! index: [0..rx_num_channels]
@@ -199,14 +202,14 @@ typedef struct {
   double rx_bw;
   //! TX bandwidth in Hz
   double tx_bw;
-  //! clock source 
+  //! clock source
   clock_source_t clock_source;
   //! Manual SDR IP address
   char *sdr_addrs;
   //! Auto calibration flag
   int autocal[4];
   //! rf devices work with x bits iqs when oai have its own iq format
-  //! the two following parameters are used to convert iqs 
+  //! the two following parameters are used to convert iqs
   int iq_txshift;
   int iq_rxrescale;
   //! Configuration file for LMS7002M
@@ -219,10 +222,10 @@ typedef struct {
   unsigned int   sf_read_delay;     // read delay in replay mode
   unsigned int   sf_write_delay;    // write delay in replay mode
   unsigned int   eth_mtu;           // ethernet MTU
-#endif  
+#endif
 } openair0_config_t;
 
-/*! \brief RF mapping */ 
+/*! \brief RF mapping */
 typedef struct {
   //! card id
   int card;
@@ -269,14 +272,14 @@ struct openair0_device_t {
 
   /*!brief Component Carrier ID of this device */
   int CC_id;
-  
+
   /*!brief Type of this device */
   dev_type_t type;
 
   /*!brief Transport protocol type that the device suppports (in case I/Q samples need to be transported) */
   transport_type_t transp_type;
 
-   /*!brief Type of the device's host (RAU/RRU) */
+  /*!brief Type of the device's host (RAU/RRU) */
   host_type_t host_type;
 
   /* !brief RF frontend parameters set by application */
@@ -298,25 +301,25 @@ struct openair0_device_t {
   /*! \brief Called to send a request message between RAU-RRU on control port
       @param device pointer to the device structure specific to the RF hardware target
       @param msg pointer to the message structure passed between RAU-RRU
-      @param msg_len length of the message  
-  */  
+      @param msg_len length of the message
+  */
   int (*trx_ctlsend_func)(openair0_device *device, void *msg, ssize_t msg_len);
 
   /*! \brief Called to receive a reply  message between RAU-RRU on control port
       @param device pointer to the device structure specific to the RF hardware target
       @param msg pointer to the message structure passed between RAU-RRU
-      @param msg_len length of the message  
-  */  
+      @param msg_len length of the message
+  */
   int (*trx_ctlrecv_func)(openair0_device *device, void *msg, ssize_t msg_len);
 
   /*! \brief Called to send samples to the RF target
       @param device pointer to the device structure specific to the RF hardware target
-      @param timestamp The timestamp at whicch the first sample MUST be sent 
+      @param timestamp The timestamp at whicch the first sample MUST be sent
       @param buff Buffer which holds the samples
       @param nsamps number of samples to be sent
       @param antenna_id index of the antenna if the device has multiple anteannas
       @param flags flags must be set to TRUE if timestamp parameter needs to be applied
-  */   
+  */
   int (*trx_write_func)(openair0_device *device, openair0_timestamp timestamp, void **buff, int nsamps,int antenna_id, int flags);
 
   /*! \brief Receive samples from hardware.
@@ -332,55 +335,55 @@ struct openair0_device_t {
    */
   int (*trx_read_func)(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps,int antenna_id);
 
-  /*! \brief print the device statistics  
+  /*! \brief print the device statistics
    * \param device the hardware to use
    * \returns  0 on success
    */
   int (*trx_get_stats_func)(openair0_device *device);
 
-  /*! \brief Reset device statistics  
+  /*! \brief Reset device statistics
    * \param device the hardware to use
-   * \returns 0 in success 
+   * \returns 0 in success
    */
   int (*trx_reset_stats_func)(openair0_device *device);
 
-  /*! \brief Terminate operation of the transceiver -- free all associated resources 
+  /*! \brief Terminate operation of the transceiver -- free all associated resources
    * \param device the hardware to use
    */
   void (*trx_end_func)(openair0_device *device);
 
-  /*! \brief Stop operation of the transceiver 
+  /*! \brief Stop operation of the transceiver
    */
   int (*trx_stop_func)(openair0_device *device);
 
   /* Functions API related to UE*/
 
-  /*! \brief Set RX feaquencies 
+  /*! \brief Set RX feaquencies
    * \param device the hardware to use
    * \param openair0_cfg RF frontend parameters set by application
-   * \param exmimo_dump_config  dump EXMIMO configuration 
-   * \returns 0 in success 
+   * \param exmimo_dump_config  dump EXMIMO configuration
+   * \returns 0 in success
    */
-  int (*trx_set_freq_func)(openair0_device* device, openair0_config_t *openair0_cfg,int exmimo_dump_config);
-  
+  int (*trx_set_freq_func)(openair0_device *device, openair0_config_t *openair0_cfg,int exmimo_dump_config);
+
   /*! \brief Set gains
    * \param device the hardware to use
    * \param openair0_cfg RF frontend parameters set by application
-   * \returns 0 in success 
+   * \returns 0 in success
    */
-  int (*trx_set_gains_func)(openair0_device* device, openair0_config_t *openair0_cfg);
+  int (*trx_set_gains_func)(openair0_device *device, openair0_config_t *openair0_cfg);
 
   /*! \brief RRU Configuration callback
    * \param idx RU index
    * \param arg pointer to capabilities or configuration
    */
-  void (*configure_rru)(int idx, void* arg);
+  void (*configure_rru)(int idx, void *arg);
 };
 
 /* type of device init function, implemented in shared lib */
 typedef int(*oai_device_initfunc_t)(openair0_device *device, openair0_config_t *openair0_cfg);
 /* type of transport init function, implemented in shared lib */
-typedef int(*oai_transport_initfunc_t)(openair0_device *device, openair0_config_t *openair0_cfg, eth_params_t * eth_params);
+typedef int(*oai_transport_initfunc_t)(openair0_device *device, openair0_config_t *openair0_cfg, eth_params_t *eth_params);
 
 #ifdef __cplusplus
 extern "C"
@@ -388,23 +391,23 @@ extern "C"
 #endif
 
 
-  /*! \brief Initialize openair RF target. It returns 0 if OK */
-  int openair0_device_load(openair0_device *device, openair0_config_t *openair0_cfg);  
-  /*! \brief Initialize transport protocol . It returns 0 if OK */
-  int openair0_transport_load(openair0_device *device, openair0_config_t *openair0_cfg, eth_params_t * eth_params);
+/*! \brief Initialize openair RF target. It returns 0 if OK */
+int openair0_device_load(openair0_device *device, openair0_config_t *openair0_cfg);
+/*! \brief Initialize transport protocol . It returns 0 if OK */
+int openair0_transport_load(openair0_device *device, openair0_config_t *openair0_cfg, eth_params_t *eth_params);
 
-  
- /*! \brief Get current timestamp of USRP
-  * \param device the hardware to use
-  */
-  openair0_timestamp get_usrp_time(openair0_device *device);
 
- /*! \brief Set RX frequencies 
-  * \param device the hardware to use
-  * \param openair0_cfg RF frontend parameters set by application
-  * \returns 0 in success 
-  */
-  int openair0_set_rx_frequencies(openair0_device* device, openair0_config_t *openair0_cfg);
+/*! \brief Get current timestamp of USRP
+ * \param device the hardware to use
+ */
+openair0_timestamp get_usrp_time(openair0_device *device);
+
+/*! \brief Set RX frequencies
+ * \param device the hardware to use
+ * \param openair0_cfg RF frontend parameters set by application
+ * \returns 0 in success
+ */
+int openair0_set_rx_frequencies(openair0_device *device, openair0_config_t *openair0_cfg);
 
 /*@}*/
 

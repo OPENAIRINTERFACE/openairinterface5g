@@ -561,7 +561,8 @@ function report_build {
     summary_table_row "LTE SoftModem - Release 14" ./archives/enb_usrp/lte-softmodem.Rel14.txt "Built target lte-softmodem" ./enb_usrp_row1.html
     summary_table_row "Coding - Release 14" ./archives/enb_usrp/coding.Rel14.txt "Built target coding" ./enb_usrp_row2.html
     summary_table_row "OAI USRP device if - Release 14" ./archives/enb_usrp/oai_usrpdevif.Rel14.txt "Built target oai_usrpdevif" ./enb_usrp_row3.html
-    summary_table_row "Parameters Lib Config - Release 14" ./archives/enb_usrp/params_libconfig.Rel14.txt "Built target params_libconfig" ./enb_usrp_row4.html
+    summary_table_row "OAI ETHERNET transport - Release 14" ./archives/enb_usrp/oai_eth_transpro.Rel14.txt "Built target oai_eth_transpro" ./enb_usrp_row4.html
+    summary_table_row "Parameters Lib Config - Release 14" ./archives/enb_usrp/params_libconfig.Rel14.txt "Built target params_libconfig" ./enb_usrp_row5.html
     summary_table_footer
 
     summary_table_header "OAI Build basic simulator option" ./archives/basic_sim
@@ -604,6 +605,8 @@ function report_build {
     summary_table_row "Parameters Lib Config - Release 14" ./archives/enb_eth/params_libconfig.Rel14.txt "Built target params_libconfig" ./enb_eth_row4.html
     summary_table_row "RB Tools - Release 14" ./archives/enb_eth/rb_tool.Rel14.txt "Built target rb_tool" ./enb_eth_row5.html
     summary_table_row "NAS Mesh - Release 14" ./archives/enb_eth/nasmesh.Rel14.txt "Built target nasmesh" ./enb_eth_row6.html
+    summary_table_row "RF Simulator - Release 14" ./archives/enb_eth/rfsimulator.Rel14.txt "Built target rfsimulator" ./enb_eth_row7.html
+    summary_table_row "TCP OAI Bridge - Release 14" ./archives/enb_eth/tcp_bridge_oai.Rel14.txt "Built target tcp_bridge_oai" ./enb_eth_row8.html
     summary_table_footer
 
     summary_table_header "OAI Build UE -- ETHERNET transport option" ./archives/ue_eth
@@ -613,6 +616,8 @@ function report_build {
     summary_table_row "Parameters Lib Config - Release 14" ./archives/ue_eth/params_libconfig.Rel14.txt "Built target params_libconfig" ./ue_eth_row4.html
     summary_table_row "RB Tools - Release 14" ./archives/ue_eth/rb_tool.Rel14.txt "Built target rb_tool" ./ue_eth_row5.html
     summary_table_row "NAS Mesh - Release 14" ./archives/ue_eth/nasmesh.Rel14.txt "Built target nasmesh" ./ue_eth_row6.html
+    summary_table_row "RF Simulator - Release 14" ./archives/ue_eth/rfsimulator.Rel14.txt "Built target rfsimulator" ./ue_eth_row7.html
+    summary_table_row "TCP OAI Bridge - Release 14" ./archives/ue_eth/tcp_bridge_oai.Rel14.txt "Built target tcp_bridge_oai" ./ue_eth_row8.html
     summary_table_footer
 
     if [ -e ./archives/red_hat ]
@@ -623,7 +628,8 @@ function report_build {
         summary_table_row "LTE SoftModem - Release 14" ./archives/red_hat/lte-softmodem.Rel14.txt "Built target lte-softmodem" ./enb_usrp_rh_row1.html
         summary_table_row "Coding - Release 14" ./archives/red_hat/coding.Rel14.txt "Built target coding" ./enb_usrp_rh_row2.html
         summary_table_row "OAI USRP device if - Release 14" ./archives/red_hat/oai_usrpdevif.Rel14.txt "Built target oai_usrpdevif" ./enb_usrp_rh_row3.html
-        summary_table_row "Parameters Lib Config - Release 14" ./archives/red_hat/params_libconfig.Rel14.txt "Built target params_libconfig" ./enb_usrp_rh_row4.html
+        summary_table_row "OAI ETHERNET transport - Release 14" ./archives/red_hat/oai_eth_transpro.Rel14.txt "Built target oai_eth_transpro" ./enb_usrp_rh_row4.html
+        summary_table_row "Parameters Lib Config - Release 14" ./archives/red_hat/params_libconfig.Rel14.txt "Built target params_libconfig" ./enb_usrp_rh_row5.html
         summary_table_footer
     fi
 
