@@ -185,10 +185,16 @@ function check_on_vm_build {
         fi
     fi
 
+    if [[ "$VM_NAME" == *"-cppcheck"* ]]
+    then
+        echo "COMMAND: cppcheck $BUILD_OPTIONS . 2> cppcheck.xml" > $ARCHIVES_LOC/build_final_status.log
+    else
+        echo "COMMAND: build_oai -I $BUILD_OPTIONS" > $ARCHIVES_LOC/build_final_status.log
+    fi
     if [[ $STATUS -eq 0 ]]
     then
-        echo "BUILD_OK" > $ARCHIVES_LOC/build_final_status.log
+        echo "BUILD_OK" >> $ARCHIVES_LOC/build_final_status.log
     else
-        echo "BUILD_KO" > $ARCHIVES_LOC/build_final_status.log
+        echo "BUILD_KO" >> $ARCHIVES_LOC/build_final_status.log
     fi
 }

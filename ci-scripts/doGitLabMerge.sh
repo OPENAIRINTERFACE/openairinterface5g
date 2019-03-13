@@ -103,6 +103,11 @@ esac
 
 done
 
+if [[ $TARGET_COMMIT_ID == "latest" ]]
+then
+    TARGET_COMMIT_ID=`git log -n1 --pretty=format:%H origin/$TARGET_BRANCH`
+fi
+
 echo "Source Branch is    : $SOURCE_BRANCH"
 echo "Source Commit ID is : $SOURCE_COMMIT_ID"
 echo "Target Branch is    : $TARGET_BRANCH"

@@ -1933,162 +1933,164 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
 
     if (ENBParamList.numelt > 0) {
       for (k = 0; k < ENBParamList.numelt; k++) {
-        if (ENBParamList.paramarray[k][ENB_ENB_ID_IDX].uptr == NULL) {
-          // Calculate a default eNB ID
+	if (ENBParamList.paramarray[k][ENB_ENB_ID_IDX].uptr == NULL) {
+	  // Calculate a default eNB ID
           if (EPC_MODE_ENABLED) {
-            uint32_t hash;
-            hash = s1ap_generate_eNB_id ();
-            enb_id = k + (hash & 0xFFFF8);
+	    uint32_t hash;
+	    hash = s1ap_generate_eNB_id ();
+	    enb_id = k + (hash & 0xFFFF8);
           } else {
-            enb_id = k;
+	    enb_id = k;
           }
-        } else {
-          enb_id = *(ENBParamList.paramarray[k][ENB_ENB_ID_IDX].uptr);
-        }
-
-        // search if in active list
-        for (j = 0; j < ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt; j++) {
-          if (strcmp(ENBSParams[ENB_ACTIVE_ENBS_IDX].strlistptr[j], *(ENBParamList.paramarray[k][ENB_ENB_NAME_IDX].strptr)) == 0) {
-            paramdef_t PLMNParams[] = PLMNPARAMS_DESC;
-            paramlist_def_t PLMNParamList = {ENB_CONFIG_STRING_PLMN_LIST, NULL, 0};
-            /* map parameter checking array instances to parameter definition array instances */
-            checkedparam_t config_check_PLMNParams [] = PLMNPARAMS_CHECK;
-
-            for (int I = 0; I < sizeof(PLMNParams) / sizeof(paramdef_t); ++I)
-              PLMNParams[I].chkPptr = &(config_check_PLMNParams[I]);
-
-            paramdef_t X2Params[]  = X2PARAMS_DESC;
-            paramlist_def_t X2ParamList = {ENB_CONFIG_STRING_TARGET_ENB_X2_IP_ADDRESS,NULL,0};
-            paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
-            paramdef_t NETParams[]  =  NETPARAMS_DESC;
-            /* TODO: fix the size - if set lower we have a crash (MAX_OPTNAME_SIZE was 64 when this code was written) */
-            /* this is most probably a problem with the config module */
-            char aprefix[MAX_OPTNAME_SIZE*80 + 8];
-            sprintf(aprefix,"%s.[%i]",ENB_CONFIG_STRING_ENB_LIST,k);
-            /* Some default/random parameters */
-            X2AP_REGISTER_ENB_REQ (msg_p).eNB_id = enb_id;
-
-            if (strcmp(*(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr), "CELL_MACRO_ENB") == 0) {
-              X2AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_MACRO_ENB;
-            } else  if (strcmp(*(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr), "CELL_HOME_ENB") == 0) {
-              X2AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_HOME_ENB;
-            } else {
-              AssertFatal (0,
-                           "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for cell_type choice: CELL_MACRO_ENB or CELL_HOME_ENB !\n",
-                           RC.config_file_name, i, *(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr));
-            }
-
-            X2AP_REGISTER_ENB_REQ (msg_p).eNB_name         = strdup(*(ENBParamList.paramarray[k][ENB_ENB_NAME_IDX].strptr));
-            X2AP_REGISTER_ENB_REQ (msg_p).tac              = *ENBParamList.paramarray[k][ENB_TRACKING_AREA_CODE_IDX].uptr;
-            config_getlist(&PLMNParamList, PLMNParams, sizeof(PLMNParams)/sizeof(paramdef_t), aprefix);
-
-            if (PLMNParamList.numelt < 1 || PLMNParamList.numelt > 6)
-              AssertFatal(0, "The number of PLMN IDs must be in [1,6], but is %d\n",
-                          PLMNParamList.numelt);
-
-            if (PLMNParamList.numelt > 1)
-              LOG_W(X2AP, "X2AP currently handles only one PLMN, ignoring the others!\n");
-
-            X2AP_REGISTER_ENB_REQ (msg_p).mcc = *PLMNParamList.paramarray[0][ENB_MOBILE_COUNTRY_CODE_IDX].uptr;
-            X2AP_REGISTER_ENB_REQ (msg_p).mnc = *PLMNParamList.paramarray[0][ENB_MOBILE_NETWORK_CODE_IDX].uptr;
-            X2AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length = *PLMNParamList.paramarray[0][ENB_MNC_DIGIT_LENGTH].u8ptr;
-            AssertFatal(X2AP_REGISTER_ENB_REQ(msg_p).mnc_digit_length == 3
-                        || X2AP_REGISTER_ENB_REQ(msg_p).mnc < 100,
-                        "MNC %d cannot be encoded in two digits as requested (change mnc_digit_length to 3)\n",
-                        X2AP_REGISTER_ENB_REQ(msg_p).mnc);
-            /* CC params */
-            config_getlist(&CCsParamList, NULL, 0, aprefix);
-            X2AP_REGISTER_ENB_REQ (msg_p).num_cc = CCsParamList.numelt;
-
-            if (CCsParamList.numelt > 0) {
-              //char ccspath[MAX_OPTNAME_SIZE*2 + 16];
-              for (J = 0; J < CCsParamList.numelt ; J++) {
-                sprintf(aprefix, "%s.[%i].%s.[%i]", ENB_CONFIG_STRING_ENB_LIST, k, ENB_CONFIG_STRING_COMPONENT_CARRIERS, J);
-                config_get(CCsParams, sizeof(CCsParams)/sizeof(paramdef_t), aprefix);
-                X2AP_REGISTER_ENB_REQ (msg_p).eutra_band[J] = ccparams_lte.eutra_band;
-                X2AP_REGISTER_ENB_REQ (msg_p).downlink_frequency[J] = (uint32_t) ccparams_lte.downlink_frequency;
-                X2AP_REGISTER_ENB_REQ (msg_p).uplink_frequency_offset[J] = (unsigned int) ccparams_lte.uplink_frequency_offset;
-                X2AP_REGISTER_ENB_REQ (msg_p).Nid_cell[J]= ccparams_lte.Nid_cell;
-
-                if (ccparams_lte.Nid_cell>503) {
-                  AssertFatal (0,
-                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for Nid_cell choice: 0...503 !\n",
-                               RC.config_file_name, k, ccparams_lte.Nid_cell);
-                }
-
-                X2AP_REGISTER_ENB_REQ (msg_p).N_RB_DL[J]= ccparams_lte.N_RB_DL;
-
-                if ((ccparams_lte.N_RB_DL!=6) && (ccparams_lte.N_RB_DL!=15) && (ccparams_lte.N_RB_DL!=25) && (ccparams_lte.N_RB_DL!=50) && (ccparams_lte.N_RB_DL!=75) && (ccparams_lte.N_RB_DL!=100)) {
-                  AssertFatal (0,
-                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for N_RB_DL choice: 6,15,25,50,75,100 !\n",
-                               RC.config_file_name, k, ccparams_lte.N_RB_DL);
-                }
-
-                if (strcmp(ccparams_lte.frame_type, "FDD") == 0) {
-                  X2AP_REGISTER_ENB_REQ (msg_p).frame_type[J] = FDD;
-                } else  if (strcmp(ccparams_lte.frame_type, "TDD") == 0) {
-                  X2AP_REGISTER_ENB_REQ (msg_p).frame_type[J] = TDD;
-                } else {
-                  AssertFatal (0,
-                               "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for frame_type choice: FDD or TDD !\n",
-                               RC.config_file_name, k, ccparams_lte.frame_type);
-                }
-
-                X2AP_REGISTER_ENB_REQ (msg_p).fdd_earfcn_DL[J] = to_earfcn_DL(ccparams_lte.eutra_band, ccparams_lte.downlink_frequency, ccparams_lte.N_RB_DL);
-                X2AP_REGISTER_ENB_REQ (msg_p).fdd_earfcn_UL[J] = to_earfcn_UL(ccparams_lte.eutra_band, ccparams_lte.downlink_frequency + ccparams_lte.uplink_frequency_offset, ccparams_lte.N_RB_DL);
-              }
-            }
-
-            sprintf(aprefix,"%s.[%i]",ENB_CONFIG_STRING_ENB_LIST,k);
-            config_getlist( &X2ParamList,X2Params,sizeof(X2Params)/sizeof(paramdef_t),aprefix);
-            AssertFatal(X2ParamList.numelt <= X2AP_MAX_NB_ENB_IP_ADDRESS,
-                        "value of X2ParamList.numelt %d must be lower than X2AP_MAX_NB_ENB_IP_ADDRESS %d value: reconsider to increase X2AP_MAX_NB_ENB_IP_ADDRESS\n",
-                        X2ParamList.numelt,X2AP_MAX_NB_ENB_IP_ADDRESS);
-            X2AP_REGISTER_ENB_REQ (msg_p).nb_x2 = 0;
-
-            for (l = 0; l < X2ParamList.numelt; l++) {
-              X2AP_REGISTER_ENB_REQ (msg_p).nb_x2 += 1;
-              strcpy(X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4_address,*(X2ParamList.paramarray[l][ENB_X2_IPV4_ADDRESS_IDX].strptr));
-              strcpy(X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6_address,*(X2ParamList.paramarray[l][ENB_X2_IPV6_ADDRESS_IDX].strptr));
-
-              if (strcmp(*(X2ParamList.paramarray[l][ENB_X2_IP_ADDRESS_PREFERENCE_IDX].strptr), "ipv4") == 0) {
-                X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4 = 1;
-              } else if (strcmp(*(X2ParamList.paramarray[l][ENB_X2_IP_ADDRESS_PREFERENCE_IDX].strptr), "ipv6") == 0) {
-                X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6 = 1;
-              } else if (strcmp(*(X2ParamList.paramarray[l][ENB_X2_IP_ADDRESS_PREFERENCE_IDX].strptr), "no") == 0) {
-                X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4 = 1;
-                X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6 = 1;
-              }
-            }
-
-            // SCTP SETTING
-            X2AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = SCTP_OUT_STREAMS;
-            X2AP_REGISTER_ENB_REQ (msg_p).sctp_in_streams  = SCTP_IN_STREAMS;
+	} else {
+	  enb_id = *(ENBParamList.paramarray[k][ENB_ENB_ID_IDX].uptr);
+	}
+	
+	// search if in active list
+	for (j = 0; j < ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt; j++) {
+	  if (strcmp(ENBSParams[ENB_ACTIVE_ENBS_IDX].strlistptr[j], *(ENBParamList.paramarray[k][ENB_ENB_NAME_IDX].strptr)) == 0) {
+	    paramdef_t PLMNParams[] = PLMNPARAMS_DESC;
+	    paramlist_def_t PLMNParamList = {ENB_CONFIG_STRING_PLMN_LIST, NULL, 0};
+	    /* map parameter checking array instances to parameter definition array instances */
+	    checkedparam_t config_check_PLMNParams [] = PLMNPARAMS_CHECK;
+	    
+	    for (int I = 0; I < sizeof(PLMNParams) / sizeof(paramdef_t); ++I)
+	      PLMNParams[I].chkPptr = &(config_check_PLMNParams[I]);
+	    
+	    paramdef_t X2Params[]  = X2PARAMS_DESC;
+	    paramlist_def_t X2ParamList = {ENB_CONFIG_STRING_TARGET_ENB_X2_IP_ADDRESS,NULL,0};
+	    paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
+	    paramdef_t NETParams[]  =  NETPARAMS_DESC;
+	    /* TODO: fix the size - if set lower we have a crash (MAX_OPTNAME_SIZE was 64 when this code was written) */
+	    /* this is most probably a problem with the config module */
+	    char aprefix[MAX_OPTNAME_SIZE*80 + 8];
+	    sprintf(aprefix,"%s.[%i]",ENB_CONFIG_STRING_ENB_LIST,k);
+	    /* Some default/random parameters */
+	    X2AP_REGISTER_ENB_REQ (msg_p).eNB_id = enb_id;
+	    
+	    if (strcmp(*(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr), "CELL_MACRO_ENB") == 0) {
+	      X2AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_MACRO_ENB;
+	    } else  if (strcmp(*(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr), "CELL_HOME_ENB") == 0) {
+	      X2AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_HOME_ENB;
+	    } else {
+	      AssertFatal (0,
+			   "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for cell_type choice: CELL_MACRO_ENB or CELL_HOME_ENB !\n",
+			   RC.config_file_name, i, *(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr));
+	    }
+	    
+	    X2AP_REGISTER_ENB_REQ (msg_p).eNB_name         = strdup(*(ENBParamList.paramarray[k][ENB_ENB_NAME_IDX].strptr));
+	    X2AP_REGISTER_ENB_REQ (msg_p).tac              = *ENBParamList.paramarray[k][ENB_TRACKING_AREA_CODE_IDX].uptr;
+	    config_getlist(&PLMNParamList, PLMNParams, sizeof(PLMNParams)/sizeof(paramdef_t), aprefix);
+	    
+	    if (PLMNParamList.numelt < 1 || PLMNParamList.numelt > 6)
+	      AssertFatal(0, "The number of PLMN IDs must be in [1,6], but is %d\n",
+			  PLMNParamList.numelt);
+	    
+	    if (PLMNParamList.numelt > 1)
+	      LOG_W(X2AP, "X2AP currently handles only one PLMN, ignoring the others!\n");
+	    
+	    X2AP_REGISTER_ENB_REQ (msg_p).mcc = *PLMNParamList.paramarray[0][ENB_MOBILE_COUNTRY_CODE_IDX].uptr;
+	    X2AP_REGISTER_ENB_REQ (msg_p).mnc = *PLMNParamList.paramarray[0][ENB_MOBILE_NETWORK_CODE_IDX].uptr;
+	    X2AP_REGISTER_ENB_REQ (msg_p).mnc_digit_length = *PLMNParamList.paramarray[0][ENB_MNC_DIGIT_LENGTH].u8ptr;
+	    AssertFatal(X2AP_REGISTER_ENB_REQ(msg_p).mnc_digit_length == 3
+			|| X2AP_REGISTER_ENB_REQ(msg_p).mnc < 100,
+			"MNC %d cannot be encoded in two digits as requested (change mnc_digit_length to 3)\n",
+			X2AP_REGISTER_ENB_REQ(msg_p).mnc);
+	    /* CC params */
+	    config_getlist(&CCsParamList, NULL, 0, aprefix);
+	    X2AP_REGISTER_ENB_REQ (msg_p).num_cc = CCsParamList.numelt;
+	    
+	    if (CCsParamList.numelt > 0) {
+	      //char ccspath[MAX_OPTNAME_SIZE*2 + 16];
+	      for (J = 0; J < CCsParamList.numelt ; J++) {
+		sprintf(aprefix, "%s.[%i].%s.[%i]", ENB_CONFIG_STRING_ENB_LIST, k, ENB_CONFIG_STRING_COMPONENT_CARRIERS, J);
+		config_get(CCsParams, sizeof(CCsParams)/sizeof(paramdef_t), aprefix);
+		X2AP_REGISTER_ENB_REQ (msg_p).eutra_band[J] = ccparams_lte.eutra_band;
+		X2AP_REGISTER_ENB_REQ (msg_p).downlink_frequency[J] = (uint32_t) ccparams_lte.downlink_frequency;
+		X2AP_REGISTER_ENB_REQ (msg_p).uplink_frequency_offset[J] = (unsigned int) ccparams_lte.uplink_frequency_offset;
+		X2AP_REGISTER_ENB_REQ (msg_p).Nid_cell[J]= ccparams_lte.Nid_cell;
+		
+		if (ccparams_lte.Nid_cell>503) {
+		  AssertFatal (0,
+			       "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for Nid_cell choice: 0...503 !\n",
+			       RC.config_file_name, k, ccparams_lte.Nid_cell);
+		}
+		
+		X2AP_REGISTER_ENB_REQ (msg_p).N_RB_DL[J]= ccparams_lte.N_RB_DL;
+		
+		if ((ccparams_lte.N_RB_DL!=6) && (ccparams_lte.N_RB_DL!=15) && (ccparams_lte.N_RB_DL!=25) && (ccparams_lte.N_RB_DL!=50) && (ccparams_lte.N_RB_DL!=75) && (ccparams_lte.N_RB_DL!=100)) {
+		  AssertFatal (0,
+			       "Failed to parse eNB configuration file %s, enb %d unknown value \"%d\" for N_RB_DL choice: 6,15,25,50,75,100 !\n",
+			       RC.config_file_name, k, ccparams_lte.N_RB_DL);
+		}
+		
+		if (strcmp(ccparams_lte.frame_type, "FDD") == 0) {
+		  X2AP_REGISTER_ENB_REQ (msg_p).frame_type[J] = FDD;
+		} else  if (strcmp(ccparams_lte.frame_type, "TDD") == 0) {
+		  X2AP_REGISTER_ENB_REQ (msg_p).frame_type[J] = TDD;
+		} else {
+		  AssertFatal (0,
+			       "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for frame_type choice: FDD or TDD !\n",
+			       RC.config_file_name, k, ccparams_lte.frame_type);
+		}
+		
+		X2AP_REGISTER_ENB_REQ (msg_p).fdd_earfcn_DL[J] = to_earfcn_DL(ccparams_lte.eutra_band, ccparams_lte.downlink_frequency, ccparams_lte.N_RB_DL);
+		X2AP_REGISTER_ENB_REQ (msg_p).fdd_earfcn_UL[J] = to_earfcn_UL(ccparams_lte.eutra_band, ccparams_lte.downlink_frequency + ccparams_lte.uplink_frequency_offset, ccparams_lte.N_RB_DL);
+	      }
+	    }
+	    
+	    sprintf(aprefix,"%s.[%i]",ENB_CONFIG_STRING_ENB_LIST,k);
+	    config_getlist( &X2ParamList,X2Params,sizeof(X2Params)/sizeof(paramdef_t),aprefix);
+	    AssertFatal(X2ParamList.numelt <= X2AP_MAX_NB_ENB_IP_ADDRESS,
+			"value of X2ParamList.numelt %d must be lower than X2AP_MAX_NB_ENB_IP_ADDRESS %d value: reconsider to increase X2AP_MAX_NB_ENB_IP_ADDRESS\n",
+			X2ParamList.numelt,X2AP_MAX_NB_ENB_IP_ADDRESS);
+	    X2AP_REGISTER_ENB_REQ (msg_p).nb_x2 = 0;
+	    
+	    for (l = 0; l < X2ParamList.numelt; l++) {
+	      X2AP_REGISTER_ENB_REQ (msg_p).nb_x2 += 1;
+	      strcpy(X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4_address,*(X2ParamList.paramarray[l][ENB_X2_IPV4_ADDRESS_IDX].strptr));
+	      strcpy(X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6_address,*(X2ParamList.paramarray[l][ENB_X2_IPV6_ADDRESS_IDX].strptr));
+	      
+	      if (strcmp(*(X2ParamList.paramarray[l][ENB_X2_IP_ADDRESS_PREFERENCE_IDX].strptr), "ipv4") == 0) {
+		X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4 = 1;
+		X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6 = 0;
+	      } else if (strcmp(*(X2ParamList.paramarray[l][ENB_X2_IP_ADDRESS_PREFERENCE_IDX].strptr), "ipv6") == 0) {
+		X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4 = 0;
+		X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6 = 1;
+	      } else if (strcmp(*(X2ParamList.paramarray[l][ENB_X2_IP_ADDRESS_PREFERENCE_IDX].strptr), "no") == 0) {
+		X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv4 = 1;
+		X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6 = 1;
+	      }
+	    }
+	    
+	    // SCTP SETTING
+	    X2AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = SCTP_OUT_STREAMS;
+	    X2AP_REGISTER_ENB_REQ (msg_p).sctp_in_streams  = SCTP_IN_STREAMS;
 
             if (EPC_MODE_ENABLED) {
-              sprintf(aprefix,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,k,ENB_CONFIG_STRING_SCTP_CONFIG);
-              config_get( SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix);
-              X2AP_REGISTER_ENB_REQ (msg_p).sctp_in_streams = (uint16_t)*(SCTPParams[ENB_SCTP_INSTREAMS_IDX].uptr);
-              X2AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = (uint16_t)*(SCTPParams[ENB_SCTP_OUTSTREAMS_IDX].uptr);
+	      sprintf(aprefix,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,k,ENB_CONFIG_STRING_SCTP_CONFIG);
+	      config_get( SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix);
+	      X2AP_REGISTER_ENB_REQ (msg_p).sctp_in_streams = (uint16_t)*(SCTPParams[ENB_SCTP_INSTREAMS_IDX].uptr);
+	      X2AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = (uint16_t)*(SCTPParams[ENB_SCTP_OUTSTREAMS_IDX].uptr);
             }
 
-            sprintf(aprefix,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,k,ENB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
-            // NETWORK_INTERFACES
-            config_get( NETParams,sizeof(NETParams)/sizeof(paramdef_t),aprefix);
-            X2AP_REGISTER_ENB_REQ (msg_p).enb_port_for_X2C = (uint32_t)*(NETParams[ENB_PORT_FOR_X2C_IDX].uptr);
-
-            if ((NETParams[ENB_IPV4_ADDR_FOR_X2C_IDX].strptr == NULL) || (X2AP_REGISTER_ENB_REQ (msg_p).enb_port_for_X2C == 0)) {
-              LOG_E(RRC,"Add eNB IPv4 address and/or port for X2C in the CONF file!\n");
-              exit(1);
-            }
-
-            cidr = *(NETParams[ENB_IPV4_ADDR_FOR_X2C_IDX].strptr);
-            address = strtok(cidr, "/");
-            X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv6 = 0;
-            X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv4 = 1;
-            strcpy(X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv4_address, address);
-          }
-        }
+	    sprintf(aprefix,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,k,ENB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
+	    // NETWORK_INTERFACES
+	    config_get( NETParams,sizeof(NETParams)/sizeof(paramdef_t),aprefix);
+	    X2AP_REGISTER_ENB_REQ (msg_p).enb_port_for_X2C = (uint32_t)*(NETParams[ENB_PORT_FOR_X2C_IDX].uptr);
+	    
+	    if ((NETParams[ENB_IPV4_ADDR_FOR_X2C_IDX].strptr == NULL) || (X2AP_REGISTER_ENB_REQ (msg_p).enb_port_for_X2C == 0)) {
+	      LOG_E(RRC,"Add eNB IPv4 address and/or port for X2C in the CONF file!\n");
+	      exit(1);
+	    }
+	    
+	    cidr = *(NETParams[ENB_IPV4_ADDR_FOR_X2C_IDX].strptr);
+	    address = strtok(cidr, "/");
+	    X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv6 = 0;
+	    X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv4 = 1;
+	    strcpy(X2AP_REGISTER_ENB_REQ (msg_p).enb_x2_ip_address.ipv4_address, address);
+	  }
+	}
       }
     }
   }

@@ -51,7 +51,7 @@
 #include "targets/COMMON/openairinterface5g_limits.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
 #include "UTIL/OSA/osa_defs.h"
-
+#include "openair2/RRC/NAS/nas_config.h"
 # include "intertask_interface.h"
 
 
@@ -440,7 +440,6 @@ pdcp_data_ind(
   uint32_t    rx_hfn_for_count;
   int         pdcp_sn_for_count;
   int         security_ok;
-
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_DATA_IND,VCD_FUNCTION_IN);
   LOG_DUMPMSG(PDCP,DEBUG_PDCP,(char *)sdu_buffer_pP->data,sdu_buffer_sizeP,
               "[MSG] PDCP UL %s PDU on rb_id %d\n", (srb_flagP)? "CONTROL" : "DATA", rb_idP);
@@ -567,6 +566,7 @@ pdcp_data_ind(
     }
 
 #if 0
+
     /* Removed by Cedric */
     if (pdcp_is_rx_seq_number_valid(sequence_number, pdcp_p, srb_flagP) == TRUE) {
       LOG_T(PDCP, "Incoming PDU has a sequence number (%d) in accordance with RX window\n", sequence_number);
@@ -588,6 +588,7 @@ pdcp_data_ind(
       free_mem_block(sdu_buffer_pP, __func__);
       return FALSE;
     }
+
 #endif
 
     // SRB1/2: control-plane data
@@ -678,158 +679,156 @@ pdcp_data_ind(
     payload_offset=pdcp_header_len;// PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE;
 
     switch (pdcp_p->rlc_mode) {
-    case RLC_MODE_AM: {
-      /* process as described in 36.323 5.1.2.1.2 */
-      int reordering_window;
+      case RLC_MODE_AM: {
+        /* process as described in 36.323 5.1.2.1.2 */
+        int reordering_window;
 
-      if (pdcp_p->seq_num_size == 7)
-        reordering_window = REORDERING_WINDOW_SN_7BIT;
-      else
-        reordering_window = REORDERING_WINDOW_SN_12BIT;
+        if (pdcp_p->seq_num_size == 7)
+          reordering_window = REORDERING_WINDOW_SN_7BIT;
+        else
+          reordering_window = REORDERING_WINDOW_SN_12BIT;
 
-      if (sequence_number - pdcp_p->last_submitted_pdcp_rx_sn > reordering_window ||
-          (pdcp_p->last_submitted_pdcp_rx_sn - sequence_number >= 0 &&
-           pdcp_p->last_submitted_pdcp_rx_sn - sequence_number < reordering_window)) {
-        /* TODO: specs say to decipher and do header decompression */
-        LOG_W(PDCP,
-              PROTOCOL_PDCP_CTXT_FMT"discard PDU, out of\n",
-              PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p));
-        LOG_W(PDCP, "Ignoring PDU...\n");
-        free_mem_block(sdu_buffer_pP, __func__);
-        /* TODO: indicate integrity verification failure to upper layer */
-        return FALSE;
+        if (sequence_number - pdcp_p->last_submitted_pdcp_rx_sn > reordering_window ||
+            (pdcp_p->last_submitted_pdcp_rx_sn - sequence_number >= 0 &&
+             pdcp_p->last_submitted_pdcp_rx_sn - sequence_number < reordering_window)) {
+          /* TODO: specs say to decipher and do header decompression */
+          LOG_W(PDCP,
+                PROTOCOL_PDCP_CTXT_FMT"discard PDU, out of\n",
+                PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p));
+          LOG_W(PDCP, "Ignoring PDU...\n");
+          free_mem_block(sdu_buffer_pP, __func__);
+          /* TODO: indicate integrity verification failure to upper layer */
+          return FALSE;
+        } else if (pdcp_p->next_pdcp_rx_sn - sequence_number > reordering_window) {
+          pdcp_p->rx_hfn++;
+          rx_hfn_for_count  = pdcp_p->rx_hfn;
+          pdcp_sn_for_count = sequence_number;
+          pdcp_p->next_pdcp_rx_sn = sequence_number + 1;
+        } else if (sequence_number - pdcp_p->next_pdcp_rx_sn >= reordering_window) {
+          rx_hfn_for_count  = pdcp_p->rx_hfn - 1;
+          pdcp_sn_for_count = sequence_number;
+        } else if (sequence_number >= pdcp_p->next_pdcp_rx_sn) {
+          rx_hfn_for_count  = pdcp_p->rx_hfn;
+          pdcp_sn_for_count = sequence_number;
+          pdcp_p->next_pdcp_rx_sn = sequence_number + 1;
 
-      } else if (pdcp_p->next_pdcp_rx_sn - sequence_number > reordering_window) {
-        pdcp_p->rx_hfn++;
+          if (pdcp_p->next_pdcp_rx_sn > pdcp_p->maximum_pdcp_rx_sn) {
+            pdcp_p->next_pdcp_rx_sn = 0;
+            pdcp_p->rx_hfn++;
+          }
+        } else { /* sequence_number < pdcp_p->next_pdcp_rx_sn */
+          rx_hfn_for_count  = pdcp_p->rx_hfn;
+          pdcp_sn_for_count = sequence_number;
+        }
+
+        if (pdcp_p->security_activated == 1) {
+          if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
+            start_meas(&eNB_pdcp_stats[ctxt_pP->module_id].validate_security);
+          } else {
+            start_meas(&UE_pdcp_stats[ctxt_pP->module_id].validate_security);
+          }
+
+          security_ok = pdcp_validate_security(ctxt_pP,
+                                               pdcp_p,
+                                               srb_flagP,
+                                               rb_idP,
+                                               pdcp_header_len,
+                                               rx_hfn_for_count,
+                                               pdcp_sn_for_count,
+                                               sdu_buffer_pP->data,
+                                               sdu_buffer_sizeP - pdcp_tailer_len) == 0;
+
+          if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
+            stop_meas(&eNB_pdcp_stats[ctxt_pP->module_id].validate_security);
+          } else {
+            stop_meas(&UE_pdcp_stats[ctxt_pP->module_id].validate_security);
+          }
+        } else {
+          security_ok = 1;
+        }
+
+        if (security_ok == 0) {
+          LOG_W(PDCP,
+                PROTOCOL_PDCP_CTXT_FMT"security not validated for incoming PDPC DRB RLC/AM PDU\n",
+                PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p));
+          LOG_W(PDCP, "Ignoring PDU...\n");
+          free_mem_block(sdu_buffer_pP, __func__);
+          /* TODO: indicate integrity verification failure to upper layer */
+          return FALSE;
+        }
+
+        /* TODO: specs say we have to store this PDU in a list and then deliver
+         *       stored packets to upper layers according to a well defined
+         *       procedure. The code below that deals with delivery is today
+         *       too complex to do this properly, so we only send the current
+         *       received packet. This is not correct and has to be fixed
+         *       some day.
+         *       In the meantime, let's pretend the last submitted PDCP SDU
+         *       is the current one.
+         * TODO: we also have to deal with re-establishment PDU (control PDUs)
+         *       that contain no SDU.
+         */
+        pdcp_p->last_submitted_pdcp_rx_sn = sequence_number;
+        break;
+        } /* case RLC_MODE_AM */
+
+      case RLC_MODE_UM:
+
+        /* process as described in 36.323 5.1.2.1.3 */
+        if (sequence_number < pdcp_p->next_pdcp_rx_sn) {
+          pdcp_p->rx_hfn++;
+        }
+
         rx_hfn_for_count  = pdcp_p->rx_hfn;
         pdcp_sn_for_count = sequence_number;
         pdcp_p->next_pdcp_rx_sn = sequence_number + 1;
 
-      } else if (sequence_number - pdcp_p->next_pdcp_rx_sn >= reordering_window) {
-        rx_hfn_for_count  = pdcp_p->rx_hfn - 1;
-        pdcp_sn_for_count = sequence_number;
-
-      } else if (sequence_number >= pdcp_p->next_pdcp_rx_sn) {
-        rx_hfn_for_count  = pdcp_p->rx_hfn;
-        pdcp_sn_for_count = sequence_number;
-        pdcp_p->next_pdcp_rx_sn = sequence_number + 1;
         if (pdcp_p->next_pdcp_rx_sn > pdcp_p->maximum_pdcp_rx_sn) {
           pdcp_p->next_pdcp_rx_sn = 0;
           pdcp_p->rx_hfn++;
         }
 
-      } else { /* sequence_number < pdcp_p->next_pdcp_rx_sn */
-        rx_hfn_for_count  = pdcp_p->rx_hfn;
-        pdcp_sn_for_count = sequence_number;
-      }
+        if (pdcp_p->security_activated == 1) {
+          if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
+            start_meas(&eNB_pdcp_stats[ctxt_pP->module_id].validate_security);
+          } else {
+            start_meas(&UE_pdcp_stats[ctxt_pP->module_id].validate_security);
+          }
 
-      if (pdcp_p->security_activated == 1) {
-        if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
-          start_meas(&eNB_pdcp_stats[ctxt_pP->module_id].validate_security);
+          security_ok = pdcp_validate_security(ctxt_pP,
+                                               pdcp_p,
+                                               srb_flagP,
+                                               rb_idP,
+                                               pdcp_header_len,
+                                               rx_hfn_for_count,
+                                               pdcp_sn_for_count,
+                                               sdu_buffer_pP->data,
+                                               sdu_buffer_sizeP - pdcp_tailer_len) == 0;
+
+          if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
+            stop_meas(&eNB_pdcp_stats[ctxt_pP->module_id].validate_security);
+          } else {
+            stop_meas(&UE_pdcp_stats[ctxt_pP->module_id].validate_security);
+          }
         } else {
-          start_meas(&UE_pdcp_stats[ctxt_pP->module_id].validate_security);
+          security_ok = 1;
         }
 
-        security_ok = pdcp_validate_security(ctxt_pP,
-                                             pdcp_p,
-                                             srb_flagP,
-                                             rb_idP,
-                                             pdcp_header_len,
-                                             rx_hfn_for_count,
-                                             pdcp_sn_for_count,
-                                             sdu_buffer_pP->data,
-                                             sdu_buffer_sizeP - pdcp_tailer_len) == 0;
-
-        if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
-          stop_meas(&eNB_pdcp_stats[ctxt_pP->module_id].validate_security);
-        } else {
-          stop_meas(&UE_pdcp_stats[ctxt_pP->module_id].validate_security);
-        }
-      } else {
-        security_ok = 1;
-      }
-
-      if (security_ok == 0) {
-        LOG_W(PDCP,
-              PROTOCOL_PDCP_CTXT_FMT"security not validated for incoming PDPC DRB RLC/AM PDU\n",
-              PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p));
-        LOG_W(PDCP, "Ignoring PDU...\n");
-        free_mem_block(sdu_buffer_pP, __func__);
-        /* TODO: indicate integrity verification failure to upper layer */
-        return FALSE;
-      }
-
-      /* TODO: specs say we have to store this PDU in a list and then deliver
-       *       stored packets to upper layers according to a well defined
-       *       procedure. The code below that deals with delivery is today
-       *       too complex to do this properly, so we only send the current
-       *       received packet. This is not correct and has to be fixed
-       *       some day.
-       *       In the meantime, let's pretend the last submitted PDCP SDU
-       *       is the current one.
-       * TODO: we also have to deal with re-establishment PDU (control PDUs)
-       *       that contain no SDU.
-       */
-
-      pdcp_p->last_submitted_pdcp_rx_sn = sequence_number;
-
-      break;
-    } /* case RLC_MODE_AM */
-
-    case RLC_MODE_UM:
-      /* process as described in 36.323 5.1.2.1.3 */
-      if (sequence_number < pdcp_p->next_pdcp_rx_sn) {
-        pdcp_p->rx_hfn++;
-      }
-      rx_hfn_for_count  = pdcp_p->rx_hfn;
-      pdcp_sn_for_count = sequence_number;
-      pdcp_p->next_pdcp_rx_sn = sequence_number + 1;
-      if (pdcp_p->next_pdcp_rx_sn > pdcp_p->maximum_pdcp_rx_sn) {
-        pdcp_p->next_pdcp_rx_sn = 0;
-        pdcp_p->rx_hfn++;
-      }
-
-      if (pdcp_p->security_activated == 1) {
-        if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
-          start_meas(&eNB_pdcp_stats[ctxt_pP->module_id].validate_security);
-        } else {
-          start_meas(&UE_pdcp_stats[ctxt_pP->module_id].validate_security);
+        if (security_ok == 0) {
+          LOG_W(PDCP,
+                PROTOCOL_PDCP_CTXT_FMT"security not validated for incoming PDPC DRB RLC/UM PDU\n",
+                PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p));
+          LOG_W(PDCP, "Ignoring PDU...\n");
+          free_mem_block(sdu_buffer_pP, __func__);
+          /* TODO: indicate integrity verification failure to upper layer */
+          return FALSE;
         }
 
-        security_ok = pdcp_validate_security(ctxt_pP,
-                                             pdcp_p,
-                                             srb_flagP,
-                                             rb_idP,
-                                             pdcp_header_len,
-                                             rx_hfn_for_count,
-                                             pdcp_sn_for_count,
-                                             sdu_buffer_pP->data,
-                                             sdu_buffer_sizeP - pdcp_tailer_len) == 0;
+        break;
 
-        if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
-          stop_meas(&eNB_pdcp_stats[ctxt_pP->module_id].validate_security);
-        } else {
-          stop_meas(&UE_pdcp_stats[ctxt_pP->module_id].validate_security);
-        }
-      } else {
-        security_ok = 1;
-      }
-
-      if (security_ok == 0) {
-        LOG_W(PDCP,
-              PROTOCOL_PDCP_CTXT_FMT"security not validated for incoming PDPC DRB RLC/UM PDU\n",
-              PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p));
-        LOG_W(PDCP, "Ignoring PDU...\n");
-        free_mem_block(sdu_buffer_pP, __func__);
-        /* TODO: indicate integrity verification failure to upper layer */
-        return FALSE;
-      }
-
-      break;
-
-    default:
-      LOG_E(PDCP, "bad RLC mode, cannot happen.\n");
-      exit(1);
+      default:
+        LOG_E(PDCP, "bad RLC mode, cannot happen.\n");
+        exit(1);
     } /* switch (pdcp_p->rlc_mode) */
   } else { /* MBMS_flagP == 0 */
     payload_offset=0;
@@ -1145,7 +1144,8 @@ pdcp_run (
   } while(msg_p != NULL);
 
   // IP/NAS -> PDCP traffic : TX, read the pkt from the upper layer buffer
-  if (LINK_ENB_PDCP_TO_GTPV1U && ctxt_pP->enb_flag == ENB_FLAG_NO) {
+  //  if (LINK_ENB_PDCP_TO_GTPV1U && ctxt_pP->enb_flag == ENB_FLAG_NO) {
+  if (!EPC_MODE_ENABLED || ctxt_pP->enb_flag == ENB_FLAG_NO ) {
     pdcp_fifo_read_input_sdus(ctxt_pP);
   }
 
@@ -2027,9 +2027,6 @@ rrc_pdcp_config_req (
   }
 }
 
-
-//-----------------------------------------------------------------------------
-
 uint64_t pdcp_module_init( uint64_t pdcp_optmask ) {
   /* temporary enforce netlink when UE_NAS_USE_TUN is set,
      this is while switching from noS1 as build option
@@ -2044,15 +2041,24 @@ uint64_t pdcp_module_init( uint64_t pdcp_optmask ) {
         ((PDCP_USE_NETLINK)?"usenetlink":""));
 
   if (PDCP_USE_NETLINK) {
+    nas_getparams();
+
     if(UE_NAS_USE_TUN) {
-      netlink_init_tun();
+      netlink_init_tun("ue");
+      LOG_I(PDCP, "UE pdcp will use tun interface\n");
+    } else if(ENB_NAS_USE_TUN) {
+      netlink_init_tun("enb");
+      nas_config(1, 1, 1, "enb");
+      LOG_I(PDCP, "ENB pdcp will use tun interface\n");
     } else {
+      LOG_I(PDCP, "pdcp will use kernel modules\n");
       netlink_init();
     }
   }
 
   return pdcp_params.optmask ;
 }
+
 
 //-----------------------------------------------------------------------------
 void

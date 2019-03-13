@@ -87,6 +87,7 @@
 #define CONFIG_HLP_PARALLEL_CMD  "three config for level of parallelism 'PARALLEL_SINGLE_THREAD', 'PARALLEL_RU_L1_SPLIT', or 'PARALLEL_RU_L1_TRX_SPLIT'\n"
 #define CONFIG_HLP_WORKER_CMD    "two option for worker 'WORKER_DISABLE' or 'WORKER_ENABLE'\n"
 #define CONFIG_HLP_NOS1          "Disable s1 interface\n"
+#define CONFIG_HLP_RFSIM         "Run in rf simulator mode (also known as basic simulator)\n"
 #define CONFIG_HLP_NOKRNMOD      "(noS1 only): Use tun instead of namesh module \n"
 #define CONFIG_HLP_DISABLNBIOT   "disable nb-iot, even if defined in config\n"
 
@@ -199,7 +200,9 @@
     {"numerology" ,             CONFIG_HLP_NUMEROLOGY,  PARAMFLAG_BOOL,         iptr:&NUMEROLOGY,                   defintval:0,                    TYPE_INT,       0},                     \
     {"parallel-config",         CONFIG_HLP_PARALLEL_CMD,0,                      strptr:(char **)&parallel_config,   defstrval:NULL,                 TYPE_STRING,    0},                     \
     {"worker-config",           CONFIG_HLP_WORKER_CMD,  0,                      strptr:(char **)&worker_config,     defstrval:NULL,                 TYPE_STRING,    0},                     \
-    {"noS1",                    CONFIG_HLP_NOS1,        PARAMFLAG_BOOL,         uptr:&noS1,             defintval:0,      TYPE_INT, 0},                     \
+    {"noS1",                    CONFIG_HLP_NOS1,        PARAMFLAG_BOOL,         uptr:&noS1,         defintval:0,      TYPE_INT, 0},                     \
+    {"rfsim",                   CONFIG_HLP_RFSIM,       PARAMFLAG_BOOL,         uptr:&rfsim,        defintval:0,      TYPE_INT, 0},                     \
+    {"basicsim",                CONFIG_HLP_RFSIM,       PARAMFLAG_BOOL,         uptr:&basicsim,     defintval:0,      TYPE_INT, 0},                     \
     {"nokrnmod",                CONFIG_HLP_NOKRNMOD,    PARAMFLAG_BOOL,         uptr:&nokrnmod,     defintval:0,      TYPE_INT, 0},                     \
     {"nbiot-disable",           CONFIG_HLP_DISABLNBIOT, PARAMFLAG_BOOL,         uptr:&nonbiot,      defuintval:0,                   TYPE_INT,       0},                     \
   }
@@ -238,8 +241,8 @@
 #define SOFTMODEM_NOS1_BIT            (1<<0)
 #define SOFTMODEM_NOKRNMOD_BIT        (1<<1)
 #define SOFTMODEM_NONBIOT_BIT         (1<<2)
-#define SOFTMODEM_BASICSIM_BIT        (1<<10)
-
+#define SOFTMODEM_RFSIM_BIT           (1<<10)
+#define SOFTMODEM_BASICSIM_BIT        (1<<11)
 typedef struct {
   uint64_t       optmask;
   THREAD_STRUCT  thread_struct;
@@ -260,6 +263,7 @@ typedef struct {
 #define IS_SOFTMODEM_NOS1            ( get_softmodem_optmask() & SOFTMODEM_NOS1_BIT)
 #define IS_SOFTMODEM_NOKRNMOD        ( get_softmodem_optmask() & SOFTMODEM_NOKRNMOD_BIT)
 #define IS_SOFTMODEM_NONBIOT         ( get_softmodem_optmask() & SOFTMODEM_NONBIOT_BIT)
+#define IS_SOFTMODEM_RFSIM           ( get_softmodem_optmask() & SOFTMODEM_RFSIM_BIT)
 #define IS_SOFTMODEM_BASICSIM        ( get_softmodem_optmask() & SOFTMODEM_BASICSIM_BIT)
 extern uint64_t get_softmodem_optmask(void);
 extern uint64_t set_softmodem_optmask(uint64_t bitmask);
