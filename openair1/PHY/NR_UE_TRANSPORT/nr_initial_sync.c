@@ -54,15 +54,61 @@ int cnt=0;
 #define DEBUG_INITIAL_SYNCH
 
 
+// create a new node of SSB structure
+NR_UE_SSB* create_ssb_node(uint8_t  i, uint8_t  h) {
+
+  NR_UE_SSB *new_node = (NR_UE_SSB*)malloc(sizeof(NR_UE_SSB));
+  new_node->i_ssb = i;
+  new_node->n_hf = h;
+  new_node->c_re = 0;
+  new_node->c_im = 0;
+  new_node->metric = 0;
+  new_node->next_ssb = NULL;
+
+  return new_node;
+}
+
+
+// insertion of the structure in the ordered list (highest metric first)
+NR_UE_SSB* insert_into_list(NR_UE_SSB *head, NR_UE_SSB *node) {
+
+  if (node->metric > head->metric) {
+    node->next_ssb = head;
+    head = node;
+    return head;
+  }
+
+  NR_UE_SSB *current = head;
+  while (current->next_ssb !=NULL) {
+    NR_UE_SSB *temp=current->next_ssb;
+    if(node->metric > current->metric) {
+      node->next_ssb = temp;
+      current->next_ssb = node;
+      return head;
+    }
+    else
+      current = temp;
+  }
+  current->next_ssb = node;
+
+  return head;
+}
+
+
+void free_list(NR_UE_SSB *node) {
+  if (node->next_ssb != NULL)
+    free_list(node->next_ssb);
+  free(node);
+}
+
+
 int nr_pbch_detection(PHY_VARS_NR_UE *ue, int pbch_initial_symbol, runmode_t mode)
 {
   NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   int ret =-1;
-  uint8_t best_ssb =0;
-  uint8_t n_hf =0;
-  uint32_t best_metric =0;
 
-  NR_UE_SSB *current_ssb = malloc(sizeof(NR_UE_SSB));
+  NR_UE_SSB *best_ssb = NULL;
+  NR_UE_SSB *current_ssb;
 
 #ifdef DEBUG_INITIAL_SYNCH
   LOG_I(PHY,"[UE%d] Initial sync: starting PBCH detection (rx_offset %d)\n",ue->Mod_id,
@@ -76,11 +122,8 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, int pbch_initial_symbol, runmode_t mod
   for (int hf = 0; hf < N_hf; hf++) {
     for (int l = 0; l < N_L ; l++) {
 
-      // initialization of structure parameters
-      current_ssb->n_hf = hf;
-      current_ssb->i_ssb = l;
-      current_ssb->c_re = 0;
-      current_ssb->c_im = 0;
+      // initialization of structure
+      current_ssb = create_ssb_node(l,hf);
 
 #if UE_TIMING_TRACE
       start_meas(&ue->dlsch_channel_estimation_stats);
@@ -94,34 +137,42 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, int pbch_initial_symbol, runmode_t mod
       
       current_ssb->metric = current_ssb->c_re*current_ssb->c_re + current_ssb->c_im+current_ssb->c_re;
       
-      if(current_ssb->metric > best_metric) { // if metric of current structure is higher than the best one
-        best_metric = current_ssb->metric;
-        best_ssb = l;
-        n_hf = hf;
-      }
+      // generate a list of SSB structures
+      if (best_ssb == NULL)
+        best_ssb = current_ssb;
+      else
+        best_ssb = insert_into_list(best_ssb,current_ssb);
 
     }
   }
 
+  NR_UE_SSB *temp_ptr=best_ssb;
+  while (ret!=0 && temp_ptr != NULL) {
+
 #if UE_TIMING_TRACE
-  start_meas(&ue->dlsch_channel_estimation_stats);
+    start_meas(&ue->dlsch_channel_estimation_stats);
 #endif
   // computing channel estimation for selected best ssb
-  for(int i=pbch_initial_symbol; i<pbch_initial_symbol+3;i++)
-    nr_pbch_channel_estimation(ue,0,0,i,i-pbch_initial_symbol,best_ssb,n_hf);
+    for(int i=pbch_initial_symbol; i<pbch_initial_symbol+3;i++)
+      nr_pbch_channel_estimation(ue,0,0,i,i-pbch_initial_symbol,best_ssb->i_ssb,best_ssb->n_hf);
 #if UE_TIMING_TRACE
-  stop_meas(&ue->dlsch_channel_estimation_stats);
+    stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif
 
-  ret = nr_rx_pbch(ue,
-	           &ue->proc.proc_rxtx[0],
-		   ue->pbch_vars[0],
-		   frame_parms,
-		   0,
-		   best_ssb,
-                   SISO,
-		   ue->high_speed_flag);
+    ret = nr_rx_pbch(ue,
+	             &ue->proc.proc_rxtx[0],
+		     ue->pbch_vars[0],
+		     frame_parms,
+		     0,
+		     temp_ptr->i_ssb,
+                     SISO,
+                     ue->high_speed_flag);
 
+  temp_ptr=temp_ptr->next_ssb;
+  }
+
+  free_list(best_ssb);
+  
   if (ret==0) {
     
     frame_parms->nb_antenna_ports_eNB = 1; //pbch_tx_ant;
@@ -144,7 +195,6 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, int pbch_initial_symbol, runmode_t mod
 #ifdef DEBUG_INITIAL_SYNCH
     LOG_I(PHY,"[UE%d] Initial sync: pbch decoded sucessfully\n",ue->Mod_id);
 #endif
-
     return(0);
   } else {
     return(-1);
