@@ -154,7 +154,7 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, int pbch_initial_symbol, runmode_t mod
 #endif
   // computing channel estimation for selected best ssb
     for(int i=pbch_initial_symbol; i<pbch_initial_symbol+3;i++)
-      nr_pbch_channel_estimation(ue,0,0,i,i-pbch_initial_symbol,best_ssb->i_ssb,best_ssb->n_hf);
+      nr_pbch_channel_estimation(ue,0,0,i,i-pbch_initial_symbol,temp_ptr->i_ssb,temp_ptr->n_hf);
 #if UE_TIMING_TRACE
     stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif
