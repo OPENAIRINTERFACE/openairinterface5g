@@ -3204,7 +3204,7 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t *cons
   }
 
   LOG_I(RRC,
-        "[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate LTE_RRCConnectionReconfiguration (bytes %d, UE id %x)\n",
+        "[eNB %d] Frame %d, Hello there! Logical Channel DL-DCCH, Generate LTE_RRCConnectionReconfiguration (bytes %d, UE id %x)\n",
         ctxt_pP->module_id, ctxt_pP->frame, size, ue_context_pP->ue_context.rnti);
   LOG_D(RRC,
         "[FRAME %05d][RRC_eNB][MOD %u][][--- PDCP_DATA_REQ/%d Bytes (rrcConnectionReconfiguration to UE %x MUI %d) --->][PDCP][MOD %u][RB %u]\n",
@@ -5175,7 +5175,7 @@ rrc_eNB_configure_rbs_handover(struct rrc_eNB_ue_context_s *ue_context_p, protoc
                            NULL,
                            NULL,
                            NULL
-#if defined(Rel10) || defined(Rel14)
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
                            , (LTE_PMCH_InfoList_r9_t *) NULL
 #endif
                            , NULL);
@@ -5183,7 +5183,7 @@ rrc_eNB_configure_rbs_handover(struct rrc_eNB_ue_context_s *ue_context_p, protoc
                           ue_context_p->ue_context.SRB_configList,
                           (LTE_DRB_ToAddModList_t *) NULL,
                           (LTE_DRB_ToReleaseList_t *) NULL
-#if defined(Rel10) || defined(Rel14)
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
                           , (LTE_PMCH_InfoList_r9_t *) NULL
                           , 0, 0
 #endif
@@ -5571,43 +5571,44 @@ void rrc_eNB_generate_RRCConnectionSetup(const protocol_ctxt_t *const ctxt_pP,
   {
     RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size =
       do_RRCConnectionSetup(ctxt_pP,
-                            ue_context_pP,
-                            CC_id,
-                            (uint8_t *) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload,
-                            (uint8_t) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
-                            rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
-                            SRB_configList,
-                            &ue_context_pP->ue_context.physicalConfigDedicated);
-    LOG_DUMPMSG(RRC,DEBUG_RRC,
-                (char *)(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload),
-                RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size,
-                "[MSG] RRC Connection Setup\n");
-
+			    ue_context_pP,
+			    CC_id,
+			    (uint8_t *) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload,
+			    (uint8_t) RC.rrc[ctxt_pP->module_id]->carrier[CC_id].p_eNB, //at this point we do not have the UE capability information, so it can only be TM1 or TM2
+			    rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),
+			    SRB_configList,
+			    &ue_context_pP->ue_context.physicalConfigDedicated);
+  }
+  LOG_DUMPMSG(RRC,DEBUG_RRC,
+	(char *)(RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.Payload),
+	RC.rrc[ctxt_pP->module_id]->carrier[CC_id].Srb0.Tx_buffer.payload_size,
+	"[MSG] RRC Connection Setup\n");
+    
     // configure SRB1/SRB2, PhysicalConfigDedicated, LTE_MAC_MainConfig for UE
-
-    if (*SRB_configList != NULL) {
-      for (cnt = 0; cnt < (*SRB_configList)->list.count; cnt++) {
-        if ((*SRB_configList)->list.array[cnt]->srb_Identity == 1) {
+    
+  if (*SRB_configList != NULL) {
+    for (cnt = 0; cnt < (*SRB_configList)->list.count; cnt++) {
+      if ((*SRB_configList)->list.array[cnt]->srb_Identity == 1) {
           SRB1_config = (*SRB_configList)->list.array[cnt];
-
-          if (SRB1_config->logicalChannelConfig) {
-            if (SRB1_config->logicalChannelConfig->present ==
-                LTE_SRB_ToAddMod__logicalChannelConfig_PR_explicitValue) {
-              SRB1_logicalChannelConfig = &SRB1_config->logicalChannelConfig->choice.explicitValue;
-            } else {
-              SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
-            }
-          } else {
-            SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
-          }
-
-          LOG_D(RRC,
-                PROTOCOL_RRC_CTXT_UE_FMT" RRC_eNB --- MAC_CONFIG_REQ  (SRB1) ---> MAC_eNB\n",
-                PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
-          rrc_mac_config_req_eNB(
-            ctxt_pP->module_id,
-            ue_context_pP->ue_context.primaryCC_id,
-            0,0,0,0,0,
+	  
+	  if (SRB1_config->logicalChannelConfig) {
+	    if (SRB1_config->logicalChannelConfig->present ==
+		LTE_SRB_ToAddMod__logicalChannelConfig_PR_explicitValue) {
+	      SRB1_logicalChannelConfig = &SRB1_config->logicalChannelConfig->choice.explicitValue;
+	    } else {
+	      SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
+	    }
+	  } else {
+	    SRB1_logicalChannelConfig = &SRB1_logicalChannelConfig_defaultValue;
+	  }
+	  
+	  LOG_D(RRC,
+		PROTOCOL_RRC_CTXT_UE_FMT" RRC_eNB --- MAC_CONFIG_REQ  (SRB1) ---> MAC_eNB\n",
+		PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
+	  rrc_mac_config_req_eNB(
+				 ctxt_pP->module_id,
+				 ue_context_pP->ue_context.primaryCC_id,
+				 0,0,0,0,0,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
             0,
 #endif
@@ -5642,8 +5643,7 @@ void rrc_eNB_generate_RRCConnectionSetup(const protocol_ctxt_t *const ctxt_pP,
           break;
         }
       }
-    }
-
+    
     MSC_LOG_TX_MESSAGE(
       MSC_RRC_ENB,
       MSC_RRC_UE,
@@ -7332,7 +7332,7 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
                                     RRC_DCCH_DATA_IND(msg_p).rnti,
                                     msg_p->ittiMsgHeader.lte_time.frame,
                                     msg_p->ittiMsgHeader.lte_time.slot);
-      LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Received on DCCH %d %s\n",
+      LOG_D(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Received on DCCH %d %s\n",
             PROTOCOL_RRC_CTXT_UE_ARGS(&ctxt),
             RRC_DCCH_DATA_IND(msg_p).dcch_index,
             msg_name_p);

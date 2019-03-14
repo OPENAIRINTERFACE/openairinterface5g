@@ -71,28 +71,24 @@ void dci_encoding(uint8_t *a,
   uint8_t w[3*3*(MAX_DCI_SIZE_BITS+16)];
 #ifdef DEBUG_DCI_ENCODING
   int32_t i;
-#endif
-  // encode dci
-#ifdef DEBUG_DCI_ENCODING
   printf("Doing DCI encoding for %d bits, e %p, rnti %x, E %d\n",A,e,rnti,E);
 #endif
+  // encode dci
   memset((void *)d,LTE_NULL,96);
   ccodelte_encode(A,2,a,d+96,rnti);
 #ifdef DEBUG_DCI_ENCODING
 
   for (i=0; i<16+A; i++)
     printf("%d : (%d,%d,%d)\n",i,*(d+96+(3*i)),*(d+97+(3*i)),*(d+98+(3*i)));
-
-#endif
-#ifdef DEBUG_DCI_ENCODING
   printf("Doing DCI interleaving for %d coded bits, e %p\n",D*3,e);
 #endif
+
   RCC = sub_block_interleaving_cc(D,d+96,w);
 
-  //#ifdef DEBUG_DCI_ENCODING
+#ifdef DEBUG_DCI_ENCODING
   if (E>1000) printf("Doing DCI rate matching for %d channel bits, RCC %d, e %p\n",E,RCC,e);
+#endif
 
-  //#endif
   lte_rate_matching_cc(RCC,E,w,e);
 }
 

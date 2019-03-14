@@ -123,6 +123,7 @@ class SSHConnection():
 		self.eNBOsVersion = ''
 		self.eNBKernelVersion = ''
 		self.eNBUhdVersion = ''
+		self.eNBUsrpBoard = ''
 		self.eNBCpuNb = ''
 		self.eNBCpuModel = ''
 		self.eNBCpuMHz = ''
@@ -408,11 +409,6 @@ class SSHConnection():
 				self.command('echo $USER; nohup sudo tshark -f "host ' + self.eNBIPAddress +'" -i ' + eth_interface + ' -w /tmp/enb_' + self.testCase_id + '_s1log.pcap > /tmp/tshark.log 2>&1 &', self.EPCUserName, 5)
 			self.close()
 		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
-		self.command('echo ' + self.eNBPassword + ' | sudo -S uhd_find_devices', '\$', 5)
-		result = re.search('type: b200', str(self.ssh.before))
-		if result is not None:
-			logging.debug('Found a B2xx device --> resetting it')
-			self.command('echo ' + self.eNBPassword + ' | sudo -S sudo b2xx_fx3_utils --reset-device', '\$', 5)
 		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 		# Initialize_eNB_args usually start with -O and followed by the location in repository
 		full_config_file = self.Initialize_eNB_args.replace('-O ','')
@@ -436,6 +432,16 @@ class SSHConnection():
 		result = re.search('rru', str(config_file))
 		if result is not None:
 			rruCheck = True
+		# do not reset board twice in IF4.5 case
+		result = re.search('rru|enb', str(config_file))
+		if result is not None:
+			self.command('echo ' + self.eNBPassword + ' | sudo -S uhd_find_devices', '\$', 5)
+			result = re.search('type: b200', str(self.ssh.before))
+			if result is not None:
+				logging.debug('Found a B2xx device --> resetting it')
+				self.command('echo ' + self.eNBPassword + ' | sudo -S sudo b2xx_fx3_utils --reset-device', '\$', 5)
+				# Reloading FGPA bin firmware
+				self.command('echo ' + self.eNBPassword + ' | sudo -S uhd_find_devices', '\$', 5)
 		# Make a copy and adapt to EPC / eNB IP addresses
 		self.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
 		self.command('sed -i -e \'s/CI_MME_IP_ADDR/' + self.EPCIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
@@ -609,21 +615,150 @@ class SSHConnection():
 		time.sleep(4)
 		# We should check if we register
 		count = 0
-		while count < 3:
+		attach_cnt = 0
+		attach_status = False
+		while count < 5:
 			self.command('AT+CEREG?', 'OK', 5)
-			result = re.search('CEREG: 2,(?P<state>[0-9\-]+)', str(self.ssh.before))
+			result = re.search('CEREG: 2,(?P<state>[0-9\-]+),', str(self.ssh.before))
 			if result is not None:
 				mDataConnectionState = int(result.group('state'))
 				if mDataConnectionState is not None:
-					logging.debug('+CEREG: 2,' + str(mDataConnectionState))
+					if mDataConnectionState == 1:
+						count = 10
+						attach_status = True
+						result = re.search('CEREG: 2,1,"(?P<networky>[0-9A-Z]+)","(?P<networkz>[0-9A-Z]+)"', str(self.ssh.before))
+						if result is not None:
+							networky = result.group('networky')
+							networkz = result.group('networkz')
+							logging.debug('\u001B[1m CAT-M module attached to eNB (' + str(networky) + '/' + str(networkz) + ')\u001B[0m')
+						else:
+							logging.debug('\u001B[1m CAT-M module attached to eNB\u001B[0m')
+					else:
+						logging.debug('+CEREG: 2,' + str(mDataConnectionState))
+						attach_cnt = attach_cnt + 1
 			else:
 				logging.debug(str(self.ssh.before))
+				attach_cnt = attach_cnt + 1
 			count = count + 1
 			time.sleep(1)
+		if attach_status:
+			self.command('AT+CESQ', 'OK', 5)
+			result = re.search('CESQ: 99,99,255,255,(?P<rsrq>[0-9]+),(?P<rsrp>[0-9]+)', str(self.ssh.before))
+			if result is not None:
+				nRSRQ = int(result.group('rsrq'))
+				nRSRP = int(result.group('rsrp'))
+				if (nRSRQ is not None) and (nRSRP is not None):
+					logging.debug('    RSRQ = ' + str(-20+(nRSRQ/2)) + ' dB')
+					logging.debug('    RSRP = ' + str(-140+nRSRP) + ' dBm')
 		self.close()
 		self.picocom_closure = False
-		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+		html_queue = SimpleQueue()
 		self.checkDevTTYisUnlocked()
+		if attach_status:
+			html_cell = '<pre style="background-color:white">CAT-M module\nAttachment Completed in ' + str(attach_cnt+4) + ' seconds'
+			if (nRSRQ is not None) and (nRSRP is not None):
+				html_cell += '\n   RSRQ = ' + str(-20+(nRSRQ/2)) + ' dB'
+				html_cell += '\n   RSRP = ' + str(-140+nRSRP) + ' dBm</pre>'
+			else:
+				html_cell += '</pre>'
+			html_queue.put(html_cell)
+			self.CreateHtmlTestRowQueue('N/A', 'OK', 1, html_queue)
+		else:
+			html_cell = '<pre style="background-color:white">CAT-M module\nAttachment Failed</pre>'
+			html_queue.put(html_cell)
+			self.CreateHtmlTestRowQueue('N/A', 'KO', 1, html_queue)
+
+	def PingCatM(self):
+		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '' or self.EPCSourceCodePath == '':
+			Usage()
+			sys.exit('Insufficient Parameter')
+		initialize_eNB_flag = False
+		pStatus = self.CheckProcessExist(initialize_eNB_flag)
+		if (pStatus < 0):
+			self.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
+			self.CreateHtmlTabFooter(False)
+			sys.exit(1)
+		try:
+			statusQueue = SimpleQueue()
+			lock = Lock()
+			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+			self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
+			self.command('cd scripts', '\$', 5)
+			if re.match('OAI', self.EPCType, re.IGNORECASE):
+				logging.debug('Using the OAI EPC HSS: not implemented yet')
+				self.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
+				self.CreateHtmlTabFooter(False)
+				sys.exit(1)
+			else:
+				self.command('egrep --color=never "Allocated ipv4 addr" /opt/ltebox/var/log/xGwLog.0', '\$', 5)
+				result = re.search('Allocated ipv4 addr: (?P<ipaddr>[0-9\.]+) from Pool', str(self.ssh.before))
+				if result is not None:
+					moduleIPAddr = result.group('ipaddr')
+				else:
+					return
+			ping_time = re.findall("-c (\d+)",str(self.ping_args))
+			device_id = 'catm'
+			ping_status = self.command('stdbuf -o0 ping ' + self.ping_args + ' ' + str(moduleIPAddr) + ' 2>&1 | stdbuf -o0 tee -a ping_' + self.testCase_id + '_' + device_id + '.log', '\$', int(ping_time[0])*1.5)
+			# TIMEOUT CASE
+			if ping_status < 0:
+				message = 'Ping with UE (' + str(moduleIPAddr) + ') crashed due to TIMEOUT!'
+				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				self.ping_iperf_wrong_exit(lock, moduleIPAddr, device_id, statusQueue, message)
+				return
+			result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', str(self.ssh.before))
+			if result is None:
+				message = 'Packet Loss Not Found!'
+				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				self.ping_iperf_wrong_exit(lock, moduleIPAddr, device_id, statusQueue, message)
+				return
+			packetloss = result.group('packetloss')
+			if float(packetloss) == 100:
+				message = 'Packet Loss is 100%'
+				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				self.ping_iperf_wrong_exit(lock, moduleIPAddr, device_id, statusQueue, message)
+				return
+			result = re.search('rtt min\/avg\/max\/mdev = (?P<rtt_min>[0-9\.]+)\/(?P<rtt_avg>[0-9\.]+)\/(?P<rtt_max>[0-9\.]+)\/[0-9\.]+ ms', str(self.ssh.before))
+			if result is None:
+				message = 'Ping RTT_Min RTT_Avg RTT_Max Not Found!'
+				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				self.ping_iperf_wrong_exit(lock, moduleIPAddr, device_id, statusQueue, message)
+				return
+			rtt_min = result.group('rtt_min')
+			rtt_avg = result.group('rtt_avg')
+			rtt_max = result.group('rtt_max')
+			pal_msg = 'Packet Loss : ' + packetloss + '%'
+			min_msg = 'RTT(Min)    : ' + rtt_min + ' ms'
+			avg_msg = 'RTT(Avg)    : ' + rtt_avg + ' ms'
+			max_msg = 'RTT(Max)    : ' + rtt_max + ' ms'
+			lock.acquire()
+			logging.debug('\u001B[1;37;44m ping result (' + moduleIPAddr + ') \u001B[0m')
+			logging.debug('\u001B[1;34m    ' + pal_msg + '\u001B[0m')
+			logging.debug('\u001B[1;34m    ' + min_msg + '\u001B[0m')
+			logging.debug('\u001B[1;34m    ' + avg_msg + '\u001B[0m')
+			logging.debug('\u001B[1;34m    ' + max_msg + '\u001B[0m')
+			qMsg = pal_msg + '\n' + min_msg + '\n' + avg_msg + '\n' + max_msg
+			packetLossOK = True
+			if packetloss is not None:
+				if float(packetloss) > float(self.ping_packetloss_threshold):
+					qMsg += '\nPacket Loss too high'
+					logging.debug('\u001B[1;37;41m Packet Loss too high \u001B[0m')
+					packetLossOK = False
+				elif float(packetloss) > 0:
+					qMsg += '\nPacket Loss is not 0%'
+					logging.debug('\u001B[1;30;43m Packet Loss is not 0% \u001B[0m')
+			lock.release()
+			self.close()
+			html_cell = '<pre style="background-color:white">CAT-M module\nIP Address  : ' + moduleIPAddr + '\n' + qMsg + '</pre>'
+			statusQueue.put(html_cell)
+			if (packetLossOK):
+				self.CreateHtmlTestRowQueue(self.ping_args, 'OK', 1, statusQueue)
+			else:
+				self.CreateHtmlTestRowQueue(self.ping_args, 'KO', 1, statusQueue)
+				self.AutoTerminateUEandeNB()
+				self.CreateHtmlTabFooter(False)
+				sys.exit(1)
+		except:
+			os.kill(os.getppid(),signal.SIGUSR1)
 
 	def AttachUE_common(self, device_id, statusQueue, lock):
 		try:
@@ -1974,6 +2109,7 @@ class SSHConnection():
 			self.eNBOsVersion = 'Ubuntu 16.04.5 LTS'
 			self.eNBKernelVersion = '4.15.0-45-generic'
 			self.eNBUhdVersion = '3.13.0.1-0'
+			self.eNBUsrpBoard = 'B210'
 			self.eNBCpuNb = '4'
 			self.eNBCpuModel = 'Intel(R) Core(TM) i5-6200U'
 			self.eNBCpuMHz = '2399.996 MHz'
@@ -1997,6 +2133,11 @@ class SSHConnection():
 		if result is not None:
 			self.eNBUhdVersion = result.group('uhd_version')
 			logging.debug('UHD Version is: ' + self.eNBUhdVersion)
+		self.command('echo ' + self.eNBPassword + ' | sudo -S uhd_find_devices', '\$', 5)
+		result = re.search('product: (?P<usrp_board>[0-9A-Za-z]+)\\\\r\\\\n', str(self.ssh.before))
+		if result is not None:
+			self.eNBUsrpBoard = result.group('usrp_board')
+			logging.debug('USRP Board  is: ' + self.eNBUsrpBoard)
 		self.command('lscpu', '\$', 5)
 		result = re.search('CPU\(s\): *(?P<nb_cpus>[0-9]+).*Model name: *(?P<model>[a-zA-Z0-9\-\_\.\ \(\)]+).*CPU MHz: *(?P<cpu_mhz>[0-9\.]+)', str(self.ssh.before))
 		if result is not None:
@@ -2174,7 +2315,7 @@ class SSHConnection():
 			self.htmlFile.write('  <p></p>\n')
 			self.htmlFile.write('  <table class="table table-condensed">\n')
 			self.htmlFile.write('      <tr>\n')
-			self.htmlFile.write('        <th colspan=6>eNB Server Characteristics</th>\n')
+			self.htmlFile.write('        <th colspan=8>eNB Server Characteristics</th>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('      <tr>\n')
 			self.htmlFile.write('        <td>OS Version</td>\n')
@@ -2183,6 +2324,8 @@ class SSHConnection():
 			self.htmlFile.write('        <td><span class="label label-default">' + self.eNBKernelVersion + '</span></td>\n')
 			self.htmlFile.write('        <td>UHD Version</td>\n')
 			self.htmlFile.write('        <td><span class="label label-default">' + self.eNBUhdVersion + '</span></td>\n')
+			self.htmlFile.write('        <td>USRP Board</td>\n')
+			self.htmlFile.write('        <td><span class="label label-default">' + self.eNBUsrpBoard + '</span></td>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('      <tr>\n')
 			self.htmlFile.write('        <td>Nb CPUs</td>\n')
@@ -2191,13 +2334,15 @@ class SSHConnection():
 			self.htmlFile.write('        <td><span class="label label-default">' + self.eNBCpuModel + '</span></td>\n')
 			self.htmlFile.write('        <td>CPU Frequency</td>\n')
 			self.htmlFile.write('        <td><span class="label label-default">' + self.eNBCpuMHz + '</span></td>\n')
+			self.htmlFile.write('        <td></td>\n')
+			self.htmlFile.write('        <td></td>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('      <tr>\n')
-			self.htmlFile.write('        <th colspan=4 bgcolor = "#33CCFF">Final Status</th>\n')
+			self.htmlFile.write('        <th colspan=5 bgcolor = "#33CCFF">Final Status</th>\n')
 			if passStatus:
-				self.htmlFile.write('        <th colspan=2 bgcolor="green"><font color="white">PASS <span class="glyphicon glyphicon-ok"></span></font></th>\n')
+				self.htmlFile.write('        <th colspan=3 bgcolor="green"><font color="white">PASS <span class="glyphicon glyphicon-ok"></span></font></th>\n')
 			else:
-				self.htmlFile.write('        <th colspan=2 bgcolor="red"><font color="white">FAIL <span class="glyphicon glyphicon-remove"></span> </font></th>\n')
+				self.htmlFile.write('        <th colspan=3 bgcolor="red"><font color="white">FAIL <span class="glyphicon glyphicon-remove"></span> </font></th>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('  </table>\n')
 			self.htmlFile.write('  <p></p>\n')
@@ -2331,7 +2476,7 @@ def Usage():
 	print('------------------------------------------------------------')
 
 def CheckClassValidity(action,id):
-	if action != 'Build_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW'  and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module' and action != 'IdleSleep':
+	if action != 'Build_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW'  and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module' and action != 'Ping_CatM_module' and action != 'IdleSleep':
 		logging.debug('ERROR: test-case ' + id + ' has wrong class ' + action)
 		return False
 	return True
@@ -2358,7 +2503,7 @@ def GetParametersFromXML(action):
 		else:
 			SSH.nbMaxUEtoAttach = int(nbMaxUEtoAttach)
 
-	if action == 'Ping':
+	if action == 'Ping' or action == 'Ping_CatM_module':
 		SSH.ping_args = test.findtext('ping_args')
 		SSH.ping_packetloss_threshold = test.findtext('ping_packetloss_threshold')
 
@@ -2656,6 +2801,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE):
 				SSH.AttachCatM()
 			elif action == 'Detach_CatM_module':
 				SSH.TerminateCatM()
+			elif action == 'Ping_CatM_module':
+				SSH.PingCatM()
 			elif action == 'Ping':
 				SSH.Ping()
 			elif action == 'Iperf':

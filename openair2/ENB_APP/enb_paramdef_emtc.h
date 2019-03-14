@@ -67,7 +67,7 @@
 #define ENB_CONFIG_STRING_LAST_PREAMBLE_R13                                "lastPreamble_r13"
 #define ENB_CONFIG_STRING_RA_RESPONSE_WINDOW_SIZE_R13                      "ra_ResponseWindowSize_r13"
 #define ENB_CONFIG_STRING_MAC_CONTENTION_RESOLUTION_TIMER_R13              "mac_ContentionResolutionTimer_r13"
-#define ENB_CONFIG_STRING_RAR_HOPPING_CONFIG_R13                           "rar_HoppingConfig_r13  "
+#define ENB_CONFIG_STRING_RAR_HOPPING_CONFIG_R13                           "rar_HoppingConfig_r13"
 #define ENB_CONFIG_STRING_RACH_CE_LEVELINFOLIST_R13                        "rach_CE_LevelInfoList_r13"
 #define ENB_CONFIG_STRING_PRACH_CONFIG_INDEX_BR                            "prach_config_index_br"
 #define ENB_CONFIG_STRING_PRACH_FREQ_OFFSET_BR                             "prach_freq_offset_br"
