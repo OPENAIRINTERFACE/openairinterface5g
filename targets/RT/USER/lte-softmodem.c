@@ -688,7 +688,8 @@ int main( int argc, char **argv ) {
     RCconfig_L1();
   }
 
-  if (RC.rrc[0]->node_type == ngran_eNB_CU || RC.rrc[0]->node_type == ngran_ng_eNB_CU) {
+  if (RC.nb_inst > 0
+      && (RC.rrc[0]->node_type == ngran_eNB_CU || RC.rrc[0]->node_type == ngran_ng_eNB_CU)) {
     protocol_ctxt_t ctxt;
     ctxt.module_id = 0 ;
     ctxt.instance = 0;
