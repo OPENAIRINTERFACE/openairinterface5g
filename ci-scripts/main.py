@@ -100,6 +100,8 @@ class SSHConnection():
 		self.Initialize_eNB_args = ''
 		self.eNBLogFile = ''
 		self.eNB_instance = ''
+		self.eNBOptions = ''
+		self.rruOptions = ''
 		self.ping_args = ''
 		self.ping_packetloss_threshold = ''
 		self.iperf_args = ''
@@ -412,6 +414,7 @@ class SSHConnection():
 		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 		# Initialize_eNB_args usually start with -O and followed by the location in repository
 		full_config_file = self.Initialize_eNB_args.replace('-O ','')
+		extra_options = ''
 		extIdx = full_config_file.find('.conf')
 		if (extIdx > 0):
 			extra_options = full_config_file[extIdx + 5:]
@@ -455,6 +458,8 @@ class SSHConnection():
 		self.command('echo ' + self.eNBPassword + ' | sudo -S -E daemon --inherit --unsafe --name=enb' + str(self.eNB_instance) + '_daemon --chdir=' + self.eNBSourceCodePath + '/cmake_targets -o ' + self.eNBSourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '.log ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		if not rruCheck:
 			self.eNBLogFile = 'enb_' + self.testCase_id + '.log'
+			if extra_options != '':
+				self.eNBOptions = extra_options
 		time.sleep(6)
 		doLoop = True
 		loopCounter = 10
@@ -493,6 +498,8 @@ class SSHConnection():
 					time.sleep(6)
 				else:
 					doLoop = False
+					if rruCheck and extra_options != '':
+						self.rruOptions = extra_options
 					self.CreateHtmlTestRow('-O ' + config_file + extra_options, 'OK', ALL_PROCESSES_OK)
 					logging.debug('\u001B[1m Initialize eNB Completed\u001B[0m')
 
@@ -1755,7 +1762,18 @@ class SSHConnection():
 		uciStatMsgCount = 0
 		pdcpFailure = 0
 		ulschFailure = 0
+		self.htmleNBFailureMsg = ''
 		for line in enb_log_file.readlines():
+			if self.rruOptions != '':
+				res1 = re.search('max_rxgain (?P<requested_option>[0-9]+)', self.rruOptions)
+				res2 = re.search('max_rxgain (?P<applied_option>[0-9]+)',  str(line))
+				if res1 is not None and res2 is not None:
+					requested_option = int(res1.group('requested_option'))
+					applied_option = int(res2.group('applied_option'))
+					if requested_option == applied_option:
+						self.htmleNBFailureMsg += '<span class="glyphicon glyphicon-ok-circle"></span> Command line option(s) correctly applied <span class="glyphicon glyphicon-arrow-right"></span> ' + self.rruOptions + '\n\n'
+					else:
+						self.htmleNBFailureMsg += '<span class="glyphicon glyphicon-ban-circle"></span> Command line option(s) NOT applied <span class="glyphicon glyphicon-arrow-right"></span> ' + self.rruOptions + '\n\n'
 			result = re.search('[Ss]egmentation [Ff]ault', str(line))
 			if result is not None:
 				foundSegFault = True
@@ -1811,7 +1829,6 @@ class SSHConnection():
 			if result is not None:
 				rachCanceledProcedure += 1
 		enb_log_file.close()
-		self.htmleNBFailureMsg = ''
 		if uciStatMsgCount > 0:
 			statMsg = 'eNB showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
