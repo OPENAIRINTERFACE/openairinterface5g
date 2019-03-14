@@ -471,6 +471,7 @@ add_library(X2AP_ENB
   ${X2AP_DIR}/x2ap_eNB_management_procedures.c
   ${X2AP_DIR}/x2ap_eNB_generate_messages.c
   ${X2AP_DIR}/x2ap_ids.c
+  ${X2AP_DIR}/x2ap_timers.c
  )
 add_dependencies(X2AP_ENB rrc_flag x2_flag)
 
