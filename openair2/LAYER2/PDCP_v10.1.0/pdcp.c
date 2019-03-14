@@ -52,7 +52,7 @@
 #include "targets/COMMON/openairinterface5g_limits.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
 #include "UTIL/OSA/osa_defs.h"
-
+#include "openair2/RRC/NAS/nas_config.h"
 # include "intertask_interface.h"
 
 
@@ -556,7 +556,6 @@ pdcp_data_ind(
   uint32_t    rx_hfn_for_count;
   int         pdcp_sn_for_count;
   int         security_ok;
-
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_DATA_IND,VCD_FUNCTION_IN);
   LOG_DUMPMSG(PDCP,DEBUG_PDCP,(char *)sdu_buffer_pP->data,sdu_buffer_sizeP,
               "[MSG] PDCP UL %s PDU on rb_id %d\n", (srb_flagP)? "CONTROL" : "DATA", rb_idP);
@@ -683,6 +682,7 @@ pdcp_data_ind(
     }
 
 #if 0
+
     /* Removed by Cedric */
     if (pdcp_is_rx_seq_number_valid(sequence_number, pdcp_p, srb_flagP) == TRUE) {
       LOG_T(PDCP, "Incoming PDU has a sequence number (%d) in accordance with RX window\n", sequence_number);
@@ -704,6 +704,7 @@ pdcp_data_ind(
       free_mem_block(sdu_buffer_pP, __func__);
       return FALSE;
     }
+
 #endif
 
     // SRB1/2: control-plane data
@@ -814,26 +815,23 @@ pdcp_data_ind(
         free_mem_block(sdu_buffer_pP, __func__);
         /* TODO: indicate integrity verification failure to upper layer */
         return FALSE;
-
       } else if (pdcp_p->next_pdcp_rx_sn - sequence_number > reordering_window) {
         pdcp_p->rx_hfn++;
         rx_hfn_for_count  = pdcp_p->rx_hfn;
         pdcp_sn_for_count = sequence_number;
         pdcp_p->next_pdcp_rx_sn = sequence_number + 1;
-
       } else if (sequence_number - pdcp_p->next_pdcp_rx_sn >= reordering_window) {
         rx_hfn_for_count  = pdcp_p->rx_hfn - 1;
         pdcp_sn_for_count = sequence_number;
-
       } else if (sequence_number >= pdcp_p->next_pdcp_rx_sn) {
         rx_hfn_for_count  = pdcp_p->rx_hfn;
         pdcp_sn_for_count = sequence_number;
         pdcp_p->next_pdcp_rx_sn = sequence_number + 1;
+
         if (pdcp_p->next_pdcp_rx_sn > pdcp_p->maximum_pdcp_rx_sn) {
           pdcp_p->next_pdcp_rx_sn = 0;
           pdcp_p->rx_hfn++;
         }
-
       } else { /* sequence_number < pdcp_p->next_pdcp_rx_sn */
         rx_hfn_for_count  = pdcp_p->rx_hfn;
         pdcp_sn_for_count = sequence_number;
@@ -886,20 +884,21 @@ pdcp_data_ind(
        * TODO: we also have to deal with re-establishment PDU (control PDUs)
        *       that contain no SDU.
        */
-
       pdcp_p->last_submitted_pdcp_rx_sn = sequence_number;
-
       break;
     } /* case RLC_MODE_AM */
 
     case RLC_MODE_UM:
+
       /* process as described in 36.323 5.1.2.1.3 */
       if (sequence_number < pdcp_p->next_pdcp_rx_sn) {
         pdcp_p->rx_hfn++;
       }
+
       rx_hfn_for_count  = pdcp_p->rx_hfn;
       pdcp_sn_for_count = sequence_number;
       pdcp_p->next_pdcp_rx_sn = sequence_number + 1;
+
       if (pdcp_p->next_pdcp_rx_sn > pdcp_p->maximum_pdcp_rx_sn) {
         pdcp_p->next_pdcp_rx_sn = 0;
         pdcp_p->rx_hfn++;
@@ -1275,7 +1274,8 @@ pdcp_run (
   } while(msg_p != NULL);
 
   // IP/NAS -> PDCP traffic : TX, read the pkt from the upper layer buffer
-  if (LINK_ENB_PDCP_TO_GTPV1U && ctxt_pP->enb_flag == ENB_FLAG_NO) {
+  //  if (LINK_ENB_PDCP_TO_GTPV1U && ctxt_pP->enb_flag == ENB_FLAG_NO) {
+  if (!EPC_MODE_ENABLED || ctxt_pP->enb_flag == ENB_FLAG_NO ) {
     pdcp_fifo_read_input_sdus(ctxt_pP);
   }
 
@@ -2193,9 +2193,6 @@ rrc_pdcp_config_req (
   }
 }
 
-
-//-----------------------------------------------------------------------------
-
 uint64_t pdcp_module_init( uint64_t pdcp_optmask ) {
   /* temporary enforce netlink when UE_NAS_USE_TUN is set,
      this is while switching from noS1 as build option
@@ -2210,15 +2207,24 @@ uint64_t pdcp_module_init( uint64_t pdcp_optmask ) {
         ((PDCP_USE_NETLINK)?"usenetlink":""));
 
   if (PDCP_USE_NETLINK) {
+    nas_getparams();
+
     if(UE_NAS_USE_TUN) {
-      netlink_init_tun();
-  } else {
+      netlink_init_tun("ue");
+      LOG_I(PDCP, "UE pdcp will use tun interface\n");
+    } else if(ENB_NAS_USE_TUN) {
+      netlink_init_tun("enb");
+      nas_config(1, 1, 1, "enb");
+      LOG_I(PDCP, "ENB pdcp will use tun interface\n");
+    } else {
+      LOG_I(PDCP, "pdcp will use kernel modules\n");
       netlink_init();
     }
   }
 
   return pdcp_params.optmask ;
 }
+
 
 //-----------------------------------------------------------------------------
 void

@@ -169,23 +169,6 @@ x2ap_eNB_instance_t *x2ap_eNB_get_instance(instance_t instance)
   return NULL;
 }
 
-x2ap_eNB_instance_t *x2ap_eNB_pci_get_instance(uint32_t pci)
-{
-  x2ap_eNB_instance_t *temp = NULL;
-
-  STAILQ_FOREACH(temp, &x2ap_eNB_internal_data.x2ap_eNB_instances_head,
-                 x2ap_eNB_entries) {
-    for (int i=0; i<temp->num_cc;i++) {
-      if (temp->Nid_target_cell[i] == pci) {
-        /* Matching occurence */
-        return temp;
-      }
-    }
-  }
-
-  return NULL;
-}
-
 /// utility functions
 
 void x2ap_dump_eNB (x2ap_eNB_data_t  * eNB_ref);
@@ -222,6 +205,22 @@ void x2ap_dump_eNB (x2ap_eNB_data_t  * eNB_ref) {
   indent--;
 }
 
+x2ap_eNB_data_t  * x2ap_is_eNB_pci_in_list (const uint32_t pci)
+{
+  x2ap_eNB_instance_t    *inst;
+  struct x2ap_eNB_data_s *elm;
+
+  STAILQ_FOREACH(inst, &x2ap_eNB_internal_data.x2ap_eNB_instances_head, x2ap_eNB_entries) {
+    RB_FOREACH(elm, x2ap_enb_map, &inst->x2ap_enb_head) {
+      for (int i = 0; i<elm->num_cc; i++) {
+        if (elm->Nid_cell[i] == pci) {
+          return elm;
+        }
+      }
+    }
+  }
+  return NULL;
+}
 
 x2ap_eNB_data_t  * x2ap_is_eNB_id_in_list (const uint32_t eNB_id)
 {

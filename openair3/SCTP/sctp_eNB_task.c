@@ -324,7 +324,12 @@ sctp_handle_new_association_req_multi(
         }
     }
 
-    ns = sctp_peeloff(sd,assoc_id);
+    ns = sctp_peeloff(sd, assoc_id);
+    if (ns == -1) {
+      perror("sctp_peeloff");
+      printf("sctp_peeloff: sd=%d assoc_id=%d\n", sd, assoc_id);
+      exit(1);
+    }
 
     sctp_cnx = calloc(1, sizeof(*sctp_cnx));
 
@@ -1006,7 +1011,9 @@ sctp_eNB_read_from_socket(
         sctp_itti_send_new_message_ind(sctp_cnx->task_id,
                                        sctp_cnx->instance,
                                        sinfo.sinfo_assoc_id,
-                                       buffer, n, sinfo.sinfo_stream);
+                                       buffer,
+                                       n,
+                                       sinfo.sinfo_stream);
     }
 }
 

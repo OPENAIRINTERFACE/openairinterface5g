@@ -19,21 +19,29 @@
  *      contact@openairinterface.org
  */
 
-/*! \file x2ap_eNB_handler.h
- * \brief x2ap handler procedures for eNB
- * \author Konstantinos Alexandris <Konstantinos.Alexandris@eurecom.fr>, Cedric Roux <Cedric.Roux@eurecom.fr>, Navid Nikaein <Navid.Nikaein@eurecom.fr>
- * \date 2018
- * \version 1.0
- */
+#ifndef X2AP_IDS_H_
+#define X2AP_IDS_H_
 
-#ifndef X2AP_ENB_HANDLERS_H_
-#define X2AP_ENB_HANDLERS_H_
+#define X2AP_MAX_IDS	16
 
-#include "x2ap_eNB_defs.h"
+typedef struct {
+  int rnti;             /* -1 when free */
+  int id_source;
+  int id_target;
+} x2ap_id;
 
-void x2ap_handle_x2_setup_message(x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *eNB_desc_p, int sctp_shutdown);
+typedef struct {
+  x2ap_id ids[X2AP_MAX_IDS];
+} x2ap_id_manager;
 
-int x2ap_eNB_handle_message(instance_t instance, uint32_t assoc_id, int32_t stream,
-                            const uint8_t * const data, const uint32_t data_length);
+void x2ap_id_manager_init(x2ap_id_manager *m);
+int x2ap_allocate_new_id(x2ap_id_manager *m);
+void x2ap_release_id(x2ap_id_manager *m, int id);
+int x2ap_find_id(x2ap_id_manager *, int id_source, int id_target);
+int x2ap_find_id_from_rnti(x2ap_id_manager *, int rnti);
+void x2ap_set_ids(x2ap_id_manager *m, int ue_id, int rnti, int id_source, int id_target);
+int x2ap_id_get_id_source(x2ap_id_manager *m, int ue_id);
+int x2ap_id_get_id_target(x2ap_id_manager *m, int ue_id);
+int x2ap_id_get_rnti(x2ap_id_manager *m, int ue_id);
 
-#endif /* X2AP_ENB_HANDLERS_H_ */
+#endif /* X2AP_IDS_H_ */

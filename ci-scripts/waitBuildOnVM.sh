@@ -133,7 +133,7 @@ function check_on_vm_build {
     rm -f $VM_CMDS
 
     echo "############################################################"
-    echo "Checking build status"
+    echo "Checking build status" 
     echo "############################################################"
 
     if [[ "$VM_NAME" == *"-cppcheck"* ]]
@@ -145,7 +145,7 @@ function check_on_vm_build {
     STATUS=0
     NB_FOUND_FILES=0
 
-    for FULLFILE in $LOG_FILES
+    for FULLFILE in $LOG_FILES 
     do
         if [[ $FULLFILE == *"$LOG_PATTERN"* ]]
         then
@@ -185,10 +185,16 @@ function check_on_vm_build {
         fi
     fi
 
+    if [[ "$VM_NAME" == *"-cppcheck"* ]]
+    then
+        echo "COMMAND: cppcheck $BUILD_OPTIONS . 2> cppcheck.xml" > $ARCHIVES_LOC/build_final_status.log
+    else
+        echo "COMMAND: build_oai -I $BUILD_OPTIONS" > $ARCHIVES_LOC/build_final_status.log
+    fi
     if [[ $STATUS -eq 0 ]]
     then
-        echo "BUILD_OK" > $ARCHIVES_LOC/build_final_status.log
+        echo "BUILD_OK" >> $ARCHIVES_LOC/build_final_status.log
     else
-        echo "BUILD_KO" > $ARCHIVES_LOC/build_final_status.log
+        echo "BUILD_KO" >> $ARCHIVES_LOC/build_final_status.log
     fi
 }

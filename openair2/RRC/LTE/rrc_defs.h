@@ -344,7 +344,8 @@ typedef enum HO_STATE_e {
   HO_COMPLETE, // initiated by the target eNB
   HO_REQUEST,
   HO_ACK,
-  HO_CONFIGURED
+  HO_CONFIGURED,
+  HO_RELEASE
 } HO_STATE_t;
 
 typedef enum SL_TRIGGER_e {
@@ -451,12 +452,14 @@ typedef struct HANDOVER_INFO_s {
   HO_STATE_t state; //current state of handover
   uint32_t modid_s; //module_idP of serving cell
   uint32_t modid_t; //module_idP of target cell
+  int assoc_id;
   uint8_t ueid_s; //UE index in serving cell
   uint8_t ueid_t; //UE index in target cell
   LTE_AS_Config_t as_config; /* these two parameters are taken from 36.331 section 10.2.2: HandoverPreparationInformation-r8-IEs */
   LTE_AS_Context_t as_context; /* They are mandatory for HO */
   uint8_t buf[RRC_BUF_SIZE];  /* ASN.1 encoded handoverCommandMessage */
   int size;   /* size of above message in bytes */
+  int x2_id;   /* X2AP UE ID in the target eNB */
 } HANDOVER_INFO;
 
 #define RRC_HEADER_SIZE_MAX 64

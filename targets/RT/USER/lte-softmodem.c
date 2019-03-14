@@ -664,7 +664,11 @@ int main( int argc, char **argv ) {
     flexran_agent_start(i);
   }
 
-  pdcp_module_init( ( IS_SOFTMODEM_NOS1 && !(IS_SOFTMODEM_NOKRNMOD))? (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT);
+  uint32_t pdcp_initmask = ( IS_SOFTMODEM_NOS1 )? ( PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
+  if ( IS_SOFTMODEM_NOS1)
+    pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT  ;
+
+  pdcp_module_init(pdcp_initmask);
 
   if (RC.nb_inst > 0)  {
 

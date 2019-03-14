@@ -316,7 +316,7 @@ function report_test {
                     fi
                     echo "      </tr>" >> ./test_simulator_results.html
                 fi
-
+        
                 if [ -f $ARCHIVES_LOC/${TMODE}_${BW}*iperf*dl*client*txt ]
                 then
                     IPERF_TESTS=`ls $ARCHIVES_LOC/${TMODE}_${BW}*iperf*client*txt`
@@ -377,7 +377,7 @@ function report_test {
                         fi
                         PERF=`echo "100 * $FLOAT_EFF_BITRATE / $FLOAT_REQ_BITRATE" | bc -l | awk '{printf "%.2f", $0}'`
                         PERF_INT=`echo "100 * $FLOAT_EFF_BITRATE / $FLOAT_REQ_BITRATE" | bc -l | awk '{printf "%.0f", $0}'`
-                        if [[ $PERF_INT -lt 90 ]]
+                        if [[ $PERF_INT -lt 70 ]]
                         then
                             echo "        <td bgcolor = \"red\" >KO</td>" >> ./test_simulator_results.html
                         else
