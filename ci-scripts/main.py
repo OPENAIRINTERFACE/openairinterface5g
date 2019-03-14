@@ -409,11 +409,6 @@ class SSHConnection():
 				self.command('echo $USER; nohup sudo tshark -f "host ' + self.eNBIPAddress +'" -i ' + eth_interface + ' -w /tmp/enb_' + self.testCase_id + '_s1log.pcap > /tmp/tshark.log 2>&1 &', self.EPCUserName, 5)
 			self.close()
 		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
-		self.command('echo ' + self.eNBPassword + ' | sudo -S uhd_find_devices', '\$', 5)
-		result = re.search('type: b200', str(self.ssh.before))
-		if result is not None:
-			logging.debug('Found a B2xx device --> resetting it')
-			self.command('echo ' + self.eNBPassword + ' | sudo -S sudo b2xx_fx3_utils --reset-device', '\$', 5)
 		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 		# Initialize_eNB_args usually start with -O and followed by the location in repository
 		full_config_file = self.Initialize_eNB_args.replace('-O ','')
@@ -437,6 +432,16 @@ class SSHConnection():
 		result = re.search('rru', str(config_file))
 		if result is not None:
 			rruCheck = True
+		# do not reset board twice in IF4.5 case
+		result = re.search('rru|enb', str(config_file))
+		if result is not None:
+			self.command('echo ' + self.eNBPassword + ' | sudo -S uhd_find_devices', '\$', 5)
+			result = re.search('type: b200', str(self.ssh.before))
+			if result is not None:
+				logging.debug('Found a B2xx device --> resetting it')
+				self.command('echo ' + self.eNBPassword + ' | sudo -S sudo b2xx_fx3_utils --reset-device', '\$', 5)
+				# Reloading FGPA bin firmware
+				self.command('echo ' + self.eNBPassword + ' | sudo -S uhd_find_devices', '\$', 5)
 		# Make a copy and adapt to EPC / eNB IP addresses
 		self.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
 		self.command('sed -i -e \'s/CI_MME_IP_ADDR/' + self.EPCIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
