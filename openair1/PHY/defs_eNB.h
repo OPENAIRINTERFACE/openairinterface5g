@@ -312,6 +312,8 @@ typedef struct RU_t_s{
   LTE_DL_FRAME_PARMS frame_parms;
   ///timing offset used in TDD
   int              N_TA_offset; 
+  /// SF extension used in TDD (unit: number of samples at 30.72MHz) (this is an expert option)
+  int              sf_extension;
   /// RF device descriptor
   openair0_device rfdevice;
   /// HW configuration

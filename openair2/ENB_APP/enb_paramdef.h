@@ -101,6 +101,7 @@ typedef enum {
 #define CONFIG_STRING_RU_NBIOTRRC_LIST            "NbIoT_RRC_instances"
 #define CONFIG_STRING_RU_SDR_ADDRS                "sdr_addrs"
 #define CONFIG_STRING_RU_SDR_CLK_SRC              "clock_src"
+#define CONFIG_STRING_RU_SF_EXTENSION             "sf_extension"
 
 #define RU_LOCAL_IF_NAME_IDX          0
 #define RU_LOCAL_ADDRESS_IDX          1
@@ -122,6 +123,7 @@ typedef enum {
 #define RU_NBIOTRRC_LIST_IDX          17
 #define RU_SDR_ADDRS                  18
 #define RU_SDR_CLK_SRC                19
+#define RU_SF_EXTENSION_IDX           20
 
 
 
@@ -149,7 +151,8 @@ typedef enum {
 {CONFIG_STRING_RU_ATT_RX,                   	 NULL,       0,       uptr:NULL,       defintval:0,		TYPE_UINT,	  0}, \
 {CONFIG_STRING_RU_NBIOTRRC_LIST,                 NULL,       0,       uptr:NULL,       defintarrayval:DEFENBS,  TYPE_INTARRAY,    1}, \
 {CONFIG_STRING_RU_SDR_ADDRS,                 	 NULL,       0,       strptr:NULL,     defstrval:"type=b200",   TYPE_STRING,      0}, \
-{CONFIG_STRING_RU_SDR_CLK_SRC,               	 NULL,       0,       strptr:NULL,     defstrval:"internal",   TYPE_STRING,      0}, \
+{CONFIG_STRING_RU_SDR_CLK_SRC,               	 NULL,       0,       strptr:NULL,     defstrval:"internal",    TYPE_STRING,      0}, \
+{CONFIG_STRING_RU_SF_EXTENSION,                  NULL,       0,       uptr:NULL,       defuintval:312,          TYPE_UINT,        0}, \
 }
 
 /*---------------------------------------------------------------------------------------------------------------------------------------*/

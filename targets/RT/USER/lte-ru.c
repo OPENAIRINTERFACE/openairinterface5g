@@ -835,7 +835,7 @@ void tx_rf(RU_t *ru) {
         (prevSF_type == SF_UL) &&
         (nextSF_type == SF_DL)) {
       flags = 2; // start of burst
-      sf_extension = ru->N_TA_offset;
+      sf_extension = ru->sf_extension;
     }
 
     if ((fp->frame_type == TDD) &&
@@ -843,7 +843,7 @@ void tx_rf(RU_t *ru) {
         (prevSF_type == SF_UL) &&
         (nextSF_type == SF_UL)) {
       flags = 4; // start of burst and end of burst (only one DL SF between two UL)
-      sf_extension = ru->N_TA_offset;
+      sf_extension = ru->sf_extension;
     }
 
 #if defined(__x86_64) || defined(__i386__)
@@ -1386,6 +1386,14 @@ int setup_RU_buffers(RU_t *ru) {
        * TODO: find a proper cleaner solution
        */
       ru->N_TA_offset = 0;
+
+    if      (frame_parms->N_RB_DL == 100) /* no scaling to do */;
+    else if (frame_parms->N_RB_DL == 50)  ru->sf_extension /= 2;
+    else if (frame_parms->N_RB_DL == 25)  ru->sf_extension /= 4;
+    else { printf("not handled, todo\n"); exit(1); }
+  } else {
+    ru->N_TA_offset = 0;
+    ru->sf_extension = 0;
   }
 
   if (ru->openair0_cfg.mmapped_dma == 1) {
@@ -2883,6 +2891,8 @@ void RCconfig_RU(void) {
         RC.ru[j]->max_pdschReferenceSignalPower     = *(RUParamList.paramarray[j][RU_MAX_RS_EPRE_IDX].uptr);;
         RC.ru[j]->max_rxgain                        = *(RUParamList.paramarray[j][RU_MAX_RXGAIN_IDX].uptr);
         RC.ru[j]->num_bands                         = RUParamList.paramarray[j][RU_BAND_LIST_IDX].numelt;
+        /* sf_extension is in unit of samples for 30.72MHz here, has to be scaled later */
+        RC.ru[j]->sf_extension                      = *(RUParamList.paramarray[j][RU_SF_EXTENSION_IDX].uptr);
 
         for (i=0; i<RC.ru[j]->num_bands; i++) RC.ru[j]->band[i] = RUParamList.paramarray[j][RU_BAND_LIST_IDX].iptr[i];
       } //strcmp(local_rf, "yes") == 0
