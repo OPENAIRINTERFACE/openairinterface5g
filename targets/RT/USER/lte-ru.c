@@ -826,7 +826,8 @@ void tx_rf(RU_t *ru) {
     int siglen=fp->samples_per_tti,flags=1;
 
     if (SF_type == SF_S) {
-      siglen = fp->dl_symbols_in_S_subframe*(fp->ofdm_symbol_size+fp->nb_prefix_samples0);
+      siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0)
+               + (fp->dl_symbols_in_S_subframe - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
       flags=3; // end of burst
     }
 
