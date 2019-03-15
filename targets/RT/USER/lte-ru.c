@@ -818,7 +818,6 @@ void tx_rf(RU_t *ru) {
     T_INT(0), T_BUFFER(&ru->common.txdata[0][proc->subframe_tx * fp->samples_per_tti], fp->samples_per_tti * 4));
   lte_subframe_t SF_type     = subframe_select(fp,proc->subframe_tx%10);
   lte_subframe_t prevSF_type = subframe_select(fp,(proc->subframe_tx+9)%10);
-  lte_subframe_t nextSF_type = subframe_select(fp,(proc->subframe_tx+1)%10);
   int sf_extension = 0;
 
   if ((SF_type == SF_DL) ||
@@ -831,19 +830,10 @@ void tx_rf(RU_t *ru) {
       flags=3; // end of burst
     }
 
-    if ((fp->frame_type == TDD) &&
-        (SF_type == SF_DL)&&
-        (prevSF_type == SF_UL) &&
-        (nextSF_type == SF_DL)) {
+    if (fp->frame_type == TDD &&
+        SF_type == SF_DL &&
+        prevSF_type == SF_UL) {
       flags = 2; // start of burst
-      sf_extension = ru->sf_extension;
-    }
-
-    if ((fp->frame_type == TDD) &&
-        (SF_type == SF_DL)&&
-        (prevSF_type == SF_UL) &&
-        (nextSF_type == SF_UL)) {
-      flags = 4; // start of burst and end of burst (only one DL SF between two UL)
       sf_extension = ru->sf_extension;
     }
 
