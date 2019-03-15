@@ -825,8 +825,16 @@ void tx_rf(RU_t *ru) {
     int siglen=fp->samples_per_tti,flags=1;
 
     if (SF_type == SF_S) {
+      /* end_of_burst_delay is used to stop TX only "after a while".
+       * If we stop right after effective signal, with USRP B210 and
+       * B200mini, we observe a high EVM on the S subframe (on the
+       * PSS).
+       * A value of 400 (for 30.72MHz) solves this issue. This is
+       * the default.
+       */
       siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0)
-               + (fp->dl_symbols_in_S_subframe - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples);
+               + (fp->dl_symbols_in_S_subframe - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples)
+               + ru->end_of_burst_delay;
       flags=3; // end of burst
     }
 
@@ -1379,12 +1387,20 @@ int setup_RU_buffers(RU_t *ru) {
       ru->N_TA_offset = 0;
 
     if      (frame_parms->N_RB_DL == 100) /* no scaling to do */;
-    else if (frame_parms->N_RB_DL == 50)  ru->sf_extension /= 2;
-    else if (frame_parms->N_RB_DL == 25)  ru->sf_extension /= 4;
-    else { printf("not handled, todo\n"); exit(1); }
+    else if (frame_parms->N_RB_DL == 50) {
+      ru->sf_extension       /= 2;
+      ru->end_of_burst_delay /= 2;
+    } else if (frame_parms->N_RB_DL == 25) {
+      ru->sf_extension       /= 4;
+      ru->end_of_burst_delay /= 4;
+    } else {
+      printf("not handled, todo\n");
+      exit(1);
+    }
   } else {
     ru->N_TA_offset = 0;
     ru->sf_extension = 0;
+    ru->end_of_burst_delay = 0;
   }
 
   if (ru->openair0_cfg.mmapped_dma == 1) {
@@ -2884,6 +2900,7 @@ void RCconfig_RU(void) {
         RC.ru[j]->num_bands                         = RUParamList.paramarray[j][RU_BAND_LIST_IDX].numelt;
         /* sf_extension is in unit of samples for 30.72MHz here, has to be scaled later */
         RC.ru[j]->sf_extension                      = *(RUParamList.paramarray[j][RU_SF_EXTENSION_IDX].uptr);
+        RC.ru[j]->end_of_burst_delay                = *(RUParamList.paramarray[j][RU_END_OF_BURST_DELAY_IDX].uptr);
 
         for (i=0; i<RC.ru[j]->num_bands; i++) RC.ru[j]->band[i] = RUParamList.paramarray[j][RU_BAND_LIST_IDX].iptr[i];
       } //strcmp(local_rf, "yes") == 0
