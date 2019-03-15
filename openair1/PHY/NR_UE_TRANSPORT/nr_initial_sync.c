@@ -81,7 +81,7 @@ NR_UE_SSB* insert_into_list(NR_UE_SSB *head, NR_UE_SSB *node) {
   NR_UE_SSB *current = head;
   while (current->next_ssb !=NULL) {
     NR_UE_SSB *temp=current->next_ssb;
-    if(node->metric > current->metric) {
+    if(node->metric > temp->metric) {
       node->next_ssb = temp;
       current->next_ssb = node;
       return head;
