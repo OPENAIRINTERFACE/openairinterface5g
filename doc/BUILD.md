@@ -113,3 +113,9 @@ After completing the build, the binaries are available in the `cmake_targets/lte
 | --rfsimulator                                               | maintained                                  | builds the rf simulator device. Now of little interest as this device build is enforced when building the eNodeB and it can be used at run time with the `--rfsim` option. |
 |                                                             |                                             |                                                              |
 
+[oai wiki home](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/home)
+
+[oai softmodem features](FEATURE_SET.md)
+
+[running the oai softmodem ](RUNMODEM.md)
+
