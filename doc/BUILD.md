@@ -10,7 +10,7 @@ the main oai binaries, which are tested by the Continuous Integration process ar
 -  The LTE eNodeB: `lte-softmodem`
 - The PHY simulators: `dlsim` and `ulsim`
 
-The build system for OAI uses [cmake](https://cmake.org/) which is a common tool to -generate makefiles. The `build_oai` script is a wrapper using cmake, make and standard linux shell commands to ease the oai build and use . The file describing how to build the executables from source files is the [CMakeLists.txt](../cmake_targets/CMakeLists.txt), it is used as input by cmake to generate the makefiles.
+The build system for OAI uses [cmake](https://cmake.org/) which is a  tool to generate makefiles. The `build_oai` script is a wrapper using cmake, make and standard linux shell commands to ease the oai build and use . The file describing how to build the executables from source files is the [CMakeLists.txt](../cmake_targets/CMakeLists.txt), it is used as input by cmake to generate the makefiles.
 
 The oai softmodem supports many use cases, and new ones are regularly added. Most of them are accessible using the configuration file or the command line options and continuous effort is done to avoid introducing build options as it makes tests and usage more complicated than run-time options. The following functionalities, originally requiring a specific build are now accessible by configuration or command line options:
 
@@ -18,9 +18,12 @@ The oai softmodem supports many use cases, and new ones are regularly added. Mos
 
 - all simulators, with exception of PHY simulators, which are distinct executables.
 
-  
 
-Calling the build_oai script with the -h option gives the list of all available options, but a process to simplify and check the requirements of all these options is ongoing. Check the table at the end of this page to know the status of `buid_oai` options which are not described hereafter.
+Calling the `build_oai` script with the -h option gives the list of all available options, but a process to simplify and check the requirements of all these options is on-going. Check the 
+
+[table]: BUILD.md	"`build_oai` options"
+
+ at the end of this page to know the status of `buid_oai` options which are not described hereafter.
 
 
 
@@ -54,7 +57,7 @@ After completing the build, the binaries are available in the `cmake_targets/lte
 
 ​	The telnet server can be built  with the --build-telnet option, after building the softmodem or while building it.
 
-`./build_oai -I -w USRP --eNB --UE --build-telnet`srv
+`./build_oai -I -w USRP --eNB --UE --build-telnetsrv`
 
 ​	or
 
