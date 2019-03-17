@@ -34,9 +34,12 @@ By default the noS1 mode is using linux tun interfaces to send or receive ip pac
 
 noS1 code has been revisited, it has been tested with the rf simulator, and tun interfaces. More tests are on going and CI will soon include noS1 tests.
 
-## Using USRP radio head
+## Running with a true radio head
 
-[Monolithic eNodeB](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/HowToConnectCOTSUEwithOAIeNBNew)
+oai supports [number of deployment](FEATURE_SET.md) model, the following are tested in the CI:
+
+1.  [Monolithic eNodeB](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/HowToConnectCOTSUEwithOAIeNBNew) where the whole signal processing is performed in a single process
+2. if4p5 mode, where frequency domain samples are carried over ethernet, from the RRU which implement part of L1(FFT,IFFT,part of PRACH),  to a RAU
 
 
 
