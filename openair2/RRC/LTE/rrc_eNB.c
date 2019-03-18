@@ -1241,6 +1241,34 @@ void release_UE_in_freeList(module_id_t mod_id) {
   }
 }
 
+int rrc_eNB_previous_SRB2(rrc_eNB_ue_context_t*         ue_context_pP)
+{
+  struct SRB_ToAddMod                *SRB2_config = NULL;
+  uint8_t i;
+  SRB_ToAddModList_t*                 SRB_configList = ue_context_pP->ue_context.SRB_configList;
+  SRB_ToAddModList_t**                SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[ue_context_pP->ue_context.reestablishment_xid];
+  if (*SRB_configList2 != NULL) {
+    if((*SRB_configList2)->list.count!=0){
+      LOG_D(RRC, "rrc_eNB_previous_SRB2 SRB_configList2(%p) count is %d\n           SRB_configList2->list.array[0] addr is %p",
+              SRB_configList2, (*SRB_configList2)->list.count,  (*SRB_configList2)->list.array[0]);
+    }
+    for (i = 0; (i < (*SRB_configList2)->list.count) && (i < 3); i++) {
+      if ((*SRB_configList2)->list.array[i]->srb_Identity == 2 ){
+        SRB2_config = (*SRB_configList2)->list.array[i];
+        break;
+      }
+    }
+  }else{
+    LOG_E(RRC, "rrc_eNB_previous_SRB2 SRB_configList2 NULL\n");
+  }
+
+  if (SRB2_config != NULL) {
+    ASN_SEQUENCE_ADD(&SRB_configList->list, SRB2_config);
+  }else{
+    LOG_E(RRC, "rrc_eNB_previous_SRB2 SRB2_config NULL\n");
+  }
+  return 0;
+}
 //-----------------------------------------------------------------------------
 /*
 * Process the rrc connection setup complete message from UE (SRB1 Active)
@@ -7009,6 +7037,7 @@ rrc_eNB_decode_ccch(
                PROTOCOL_RRC_CTXT_UE_FMT" RCConnectionReestablishmentComplete(Previous) don't receive, delete the c-rnti UE\n",
                PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
          RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1000;
+         rrc_eNB_previous_SRB2(ue_context_p);
       }
       //previous rnti
       rnti_t previous_rnti = 0;
@@ -7033,6 +7062,7 @@ rrc_eNB_decode_ccch(
                   PROTOCOL_RRC_CTXT_UE_FMT" RCConnectionReestablishmentComplete(Previous) don't receive, delete the Previous UE\n",
                   PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
             RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1000;
+          rrc_eNB_previous_SRB2(ue_context_p);
         }
           }
 
@@ -7749,6 +7779,7 @@ rrc_eNB_decode_dcch(
           }
 
           RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 0;
+          ue_context_p->ue_context.reestablishment_xid = -1;
 
           if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionReestablishmentComplete.criticalExtensions.present ==
               LTE_RRCConnectionReestablishmentComplete__criticalExtensions_PR_rrcConnectionReestablishmentComplete_r8) {
