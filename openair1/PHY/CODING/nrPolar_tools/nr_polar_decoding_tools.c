@@ -525,7 +525,7 @@ void computeBeta(t_nrPolar_params *pp,decoder_node_t *node) {
   
 }
 
-void generic_polar_decoder(t_nrPolar_params *pp,decoder_node_t *node) {
+void generic_polar_decoder(const t_nrPolar_params *pp,decoder_node_t *node) {
 
 
   // Apply F to left

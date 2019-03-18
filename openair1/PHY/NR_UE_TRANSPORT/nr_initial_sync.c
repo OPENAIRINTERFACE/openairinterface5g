@@ -100,7 +100,7 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
   
   
   ret = nr_rx_pbch(ue,
-		   &ue->proc.proc_rxtx[0],
+		   0,
 		   ue->pbch_vars[0],
 		   frame_parms,
 		   0,

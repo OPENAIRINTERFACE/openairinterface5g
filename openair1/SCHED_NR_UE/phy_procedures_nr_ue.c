@@ -123,7 +123,7 @@ int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
 					    uint8_t eNB_id,
 					    int frame,
 					    uint8_t nr_tti_rx,
-					    uint32_t dci_pdu[4],
+					    uint64_t dci_pdu[2],
 					    uint16_t rnti,
 					    uint8_t dci_length,
 					    NR_DCI_format_t dci_format,
@@ -2969,7 +2969,7 @@ void nr_ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCH_PROCEDURES, VCD_FUNCTION_IN);
 
   //LOG_I(PHY,"[UE  %d] Frame %d, Trying PBCH %d (NidCell %d, eNB_id %d)\n",ue->Mod_id,frame_rx,pbch_phase,ue->frame_parms.Nid_cell,eNB_id);
-  ret = nr_rx_pbch(ue, proc,
+  ret = nr_rx_pbch(ue, proc->subframe_rx,
 		   ue->pbch_vars[eNB_id],
 		   &ue->frame_parms,
 		   eNB_id,
@@ -3085,7 +3085,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
   uint16_t p_rnti=P_RNTI;
   uint16_t si_rnti=SI_RNTI;
   uint16_t ra_rnti=99;
-  uint16_t sp_csi_rnti,sfi_rnti,int_rnti,tpc_pusch_rnti,tpc_pucch_rnti,tpc_srs_rnti; //FIXME
+  uint16_t sp_csi_rnti=0,sfi_rnti=0,int_rnti=0,tpc_pusch_rnti=0,tpc_pucch_rnti=0,tpc_srs_rnti=0; //FIXME
   uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES] =
     {c_rnti,cs_rnti,new_rnti,tc_rnti,p_rnti,si_rnti,ra_rnti,sp_csi_rnti,sfi_rnti,int_rnti,tpc_pusch_rnti,tpc_pucch_rnti,tpc_srs_rnti};
   #ifdef NR_PDCCH_SCHED_DEBUG
