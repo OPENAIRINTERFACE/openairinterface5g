@@ -507,7 +507,7 @@ int dump_ue_stats(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,char* buffer, int length
       len += sprintf(&buffer[len], "[UE PROC] DLSCH Total %d, Error %d, FER %d\n",ue->dlsch_received[0],ue->dlsch_errors[0],ue->dlsch_fer[0]);
       len += sprintf(&buffer[len], "[UE PROC] DLSCH (SI) Total %d, Error %d\n",ue->dlsch_SI_received[0],ue->dlsch_SI_errors[0]);
       len += sprintf(&buffer[len], "[UE PROC] DLSCH (RA) Total %d, Error %d\n",ue->dlsch_ra_received[0],ue->dlsch_ra_errors[0]);
-#if defined(Rel10) || defined(Rel14)
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
       int i=0;
 
       //len += sprintf(&buffer[len], "[UE PROC] MCH  Total %d\n", ue->dlsch_mch_received[0]);

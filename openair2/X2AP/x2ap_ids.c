@@ -60,6 +60,16 @@ int x2ap_find_id(x2ap_id_manager *m, int id_source, int id_target)
   return -1;
 }
 
+int x2ap_find_id_from_id_source(x2ap_id_manager *m, int id_source)
+{
+  int i;
+  for (i = 0; i < X2AP_MAX_IDS; i++)
+    if (m->ids[i].rnti != -1 &&
+        m->ids[i].id_source == id_source)
+      return i;
+  return -1;
+}
+
 int x2ap_find_id_from_rnti(x2ap_id_manager *m, int rnti)
 {
   int i;
@@ -76,6 +86,27 @@ void x2ap_set_ids(x2ap_id_manager *m, int ue_id, int rnti, int id_source, int id
   m->ids[ue_id].id_target = id_target;
 }
 
+/* real type of target is x2ap_eNB_data_t * */
+void x2ap_id_set_target(x2ap_id_manager *m, int ue_id, void *target)
+{
+  m->ids[ue_id].target = target;
+}
+
+void x2ap_id_set_state(x2ap_id_manager *m, int ue_id, x2id_state_t state)
+{
+  m->ids[ue_id].state = state;
+}
+
+void x2ap_set_reloc_prep_timer(x2ap_id_manager *m, int ue_id, uint64_t time)
+{
+  m->ids[ue_id].t_reloc_prep_start = time;
+}
+
+void x2ap_set_reloc_overall_timer(x2ap_id_manager *m, int ue_id, uint64_t time)
+{
+  m->ids[ue_id].tx2_reloc_overall_start = time;
+}
+
 int x2ap_id_get_id_source(x2ap_id_manager *m, int ue_id)
 {
   return m->ids[ue_id].id_source;
@@ -89,4 +120,9 @@ int x2ap_id_get_id_target(x2ap_id_manager *m, int ue_id)
 int x2ap_id_get_rnti(x2ap_id_manager *m, int ue_id)
 {
   return m->ids[ue_id].rnti;
+}
+
+void *x2ap_id_get_target(x2ap_id_manager *m, int ue_id)
+{
+  return m->ids[ue_id].target;
 }

@@ -1361,7 +1361,7 @@ void init_ul_hopping(LTE_DL_FRAME_PARMS *frame_parms);
   @param nB nB from 36.304 (0=4T,1=2T,2=T,3=T/2,4=T/4,5=T/8,6=T/16,7=T/32*/
 int init_ue_paging_info(PHY_VARS_UE *ue, long defaultPagingCycle, long nB);
 
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 void init_mpdcch(PHY_VARS_eNB *eNB);
 #endif
 

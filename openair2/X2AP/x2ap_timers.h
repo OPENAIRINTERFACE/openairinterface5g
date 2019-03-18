@@ -19,37 +19,27 @@
  *      contact@openairinterface.org
  */
 
-/*! \file x2ap_eNB.h
- * \brief x2ap tasks for eNB
- * \author Konstantinos Alexandris <Konstantinos.Alexandris@eurecom.fr>, Cedric Roux <Cedric.Roux@eurecom.fr>, Navid Nikaein <Navid.Nikaein@eurecom.fr>
- * \date 2018
- * \version 1.0
- */
+#ifndef X2AP_TIMERS_H_
+#define X2AP_TIMERS_H_
 
-#include <stdio.h>
 #include <stdint.h>
+#include "platform_types.h"
 
-/** @defgroup _x2ap_impl_ X2AP Layer Reference Implementation
- * @ingroup _ref_implementation_
- * @{
- */
+typedef struct {
+  /* incremented every TTI (every millisecond when in realtime).
+   * Used to check timers.
+   * 64 bits gives us more than 500 million years of (realtime) processing.
+   * It should be enough.
+   */
+  uint64_t tti;
 
-#ifndef X2AP_H_
-#define X2AP_H_
+  /* timer values (unit: TTI, ie. millisecond when in realtime) */
+  int      t_reloc_prep;
+  int      tx2_reloc_overall;
+} x2ap_timers_t;
 
-#define X2AP_SCTP_PPID   (27)    ///< X2AP SCTP Payload Protocol Identifier (PPID)
-#include "x2ap_eNB_defs.h"
+void x2ap_timers_init(x2ap_timers_t *t, int t_reloc_prep, int tx2_reloc_overall);
+void x2ap_check_timers(instance_t instance);
+uint64_t x2ap_timer_get_tti(x2ap_timers_t *t);
 
-int x2ap_eNB_init_sctp (x2ap_eNB_instance_t *instance_p,
-                        net_ip_address_t    *local_ip_addr,
-                        uint32_t enb_port_for_X2C);
-
-void *x2ap_task(void *arg);
-
-int is_x2ap_enabled(void);
-
-#endif /* X2AP_H_ */
-
-/**
- * @}
- */
+#endif /* X2AP_TIMERS_H_ */

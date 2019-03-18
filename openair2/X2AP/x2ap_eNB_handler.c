@@ -78,10 +78,16 @@ int x2ap_eNB_handle_ue_context_release (instance_t instance,
                                         uint32_t stream,
                                         X2AP_X2AP_PDU_t *pdu);
 
+static
+int x2ap_eNB_handle_handover_cancel (instance_t instance,
+                                     uint32_t assoc_id,
+                                     uint32_t stream,
+                                     X2AP_X2AP_PDU_t *pdu);
+
 /* Handlers matrix. Only eNB related procedure present here */
 x2ap_message_decoded_callback x2ap_messages_callback[][3] = {
   { x2ap_eNB_handle_handover_preparation, x2ap_eNB_handle_handover_response, 0 }, /* handoverPreparation */
-  { 0, 0, 0 }, /* handoverCancel */
+  { x2ap_eNB_handle_handover_cancel, 0, 0 }, /* handoverCancel */
   { 0, 0, 0 }, /* loadIndication */
   { 0, 0, 0 }, /* errorIndication */
   { 0, 0, 0 }, /* snStatusTransfer */
@@ -631,6 +637,7 @@ int x2ap_eNB_handle_handover_preparation (instance_t instance,
   }
   /* rnti is unknown yet, must not be set to -1, 0 is fine */
   x2ap_set_ids(&instance_p->id_manager, ue_id, 0, ie->value.choice.UE_X2AP_ID, ue_id);
+  x2ap_id_set_state(&instance_p->id_manager, ue_id, X2ID_STATE_TARGET);
 
   X2AP_HANDOVER_REQ(msg).x2_id = ue_id;
 
@@ -775,15 +782,19 @@ int x2ap_eNB_handle_handover_response (instance_t instance,
 
   ue_id = id_source;
 
-  if (id_source != x2ap_id_get_id_source(&instance_p->id_manager, ue_id)) {
-    X2AP_ERROR("incorrect X2AP IDs for UE (old ID %d new ID %d)\n", id_source, id_target);
-    exit(1);
+  if (ue_id != x2ap_find_id_from_id_source(&instance_p->id_manager, id_source)) {
+    X2AP_WARN("incorrect/unknown X2AP IDs for UE (old ID %d new ID %d), ignoring handover response\n",
+              id_source, id_target);
+    return 0;
   }
 
   rnti = x2ap_id_get_rnti(&instance_p->id_manager, ue_id);
 
   /* id_target is a new information, store it */
   x2ap_set_ids(&instance_p->id_manager, ue_id, rnti, id_source, id_target);
+  x2ap_id_set_state(&instance_p->id_manager, ue_id, X2ID_STATE_SOURCE_OVERALL);
+  x2ap_set_reloc_overall_timer(&instance_p->id_manager, ue_id,
+                               x2ap_timer_get_tti(&instance_p->timers));
 
   X2AP_HANDOVER_REQ_ACK(msg).rnti = rnti;
 
@@ -859,16 +870,130 @@ int x2ap_eNB_handle_ue_context_release (instance_t instance,
   id_target = ie->value.choice.UE_X2AP_ID_1;
 
   ue_id = id_source;
+  if (ue_id != x2ap_find_id_from_id_source(&instance_p->id_manager, id_source)) {
+    X2AP_WARN("incorrect/unknown X2AP IDs for UE (old ID %d new ID %d), ignoring UE context release\n",
+              id_source, id_target);
+    return 0;
+  }
 
   if (id_target != x2ap_id_get_id_target(&instance_p->id_manager, ue_id)) {
-    X2AP_ERROR("UE context release: bad id_target for UE %x (id_source %d) expected %d got %d\n",
+    X2AP_ERROR("UE context release: bad id_target for UE %x (id_source %d) expected %d got %d, ignoring message\n",
                x2ap_id_get_rnti(&instance_p->id_manager, ue_id),
                id_source,
                x2ap_id_get_id_target(&instance_p->id_manager, ue_id),
                id_target);
+    return 0;
   }
 
   X2AP_UE_CONTEXT_RELEASE(msg).rnti = x2ap_id_get_rnti(&instance_p->id_manager, ue_id);
+
+  itti_send_msg_to_task(TASK_RRC_ENB, instance_p->instance, msg);
+
+  x2ap_release_id(&instance_p->id_manager, ue_id);
+
+  return 0;
+}
+
+static
+int x2ap_eNB_handle_handover_cancel (instance_t instance,
+                                     uint32_t assoc_id,
+                                     uint32_t stream,
+                                     X2AP_X2AP_PDU_t *pdu)
+{
+  X2AP_HandoverCancel_t             *x2HandoverCancel;
+  X2AP_HandoverCancel_IEs_t         *ie;
+
+  x2ap_eNB_instance_t               *instance_p;
+  x2ap_eNB_data_t                   *x2ap_eNB_data;
+  MessageDef                        *msg;
+  int                               ue_id;
+  int                               id_source;
+  int                               id_target;
+  x2ap_handover_cancel_cause_t      cause;
+
+  DevAssert (pdu != NULL);
+  x2HandoverCancel = &pdu->choice.initiatingMessage.value.choice.HandoverCancel;
+
+  if (stream == 0) {
+    X2AP_ERROR ("Received new x2 handover cancel on stream == 0\n");
+    return 0;
+  }
+
+  X2AP_DEBUG ("Received a new X2 handover cancel\n");
+
+  x2ap_eNB_data = x2ap_get_eNB(NULL, assoc_id, 0);
+  DevAssert(x2ap_eNB_data != NULL);
+
+  instance_p = x2ap_eNB_get_instance(instance);
+  DevAssert(instance_p != NULL);
+
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_HandoverCancel_IEs_t, ie, x2HandoverCancel,
+                             X2AP_ProtocolIE_ID_id_Old_eNB_UE_X2AP_ID, true);
+
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    return -1;
+  }
+
+  id_source = ie->value.choice.UE_X2AP_ID;
+
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_HandoverCancel_IEs_t, ie, x2HandoverCancel,
+                             X2AP_ProtocolIE_ID_id_New_eNB_UE_X2AP_ID, false);
+
+  if (ie == NULL ) {
+    X2AP_INFO("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    id_target = -1;
+  } else
+    id_target = ie->value.choice.UE_X2AP_ID_1;
+
+  X2AP_FIND_PROTOCOLIE_BY_ID(X2AP_HandoverCancel_IEs_t, ie, x2HandoverCancel,
+                             X2AP_ProtocolIE_ID_id_Cause, true);
+
+  if (ie == NULL ) {
+    X2AP_ERROR("%s %d: ie is a NULL pointer \n",__FILE__,__LINE__);
+    return -1;
+  }
+
+  if (ie->value.present != X2AP_HandoverCancel_IEs__value_PR_Cause ||
+      ie->value.choice.Cause.present != X2AP_Cause_PR_radioNetwork ||
+      !(ie->value.choice.Cause.choice.radioNetwork ==
+            X2AP_CauseRadioNetwork_trelocprep_expiry ||
+        ie->value.choice.Cause.choice.radioNetwork ==
+            X2AP_CauseRadioNetwork_tx2relocoverall_expiry)) {
+    X2AP_ERROR("%s %d: Cause not supported (only T_reloc_prep and TX2_reloc_overall handled)\n",__FILE__,__LINE__);
+    return -1;
+  }
+
+  switch (ie->value.choice.Cause.choice.radioNetwork) {
+  case X2AP_CauseRadioNetwork_trelocprep_expiry:
+    cause = X2AP_T_RELOC_PREP_TIMEOUT;
+    break;
+  case X2AP_CauseRadioNetwork_tx2relocoverall_expiry:
+    cause = X2AP_TX2_RELOC_OVERALL_TIMEOUT;
+    break;
+  default: /* can't come here */ exit(1);
+  }
+
+  ue_id = x2ap_find_id_from_id_source(&instance_p->id_manager, id_source);
+  if (ue_id == -1) {
+    X2AP_WARN("Handover cancel: UE not found (id_source = %d), ignoring message\n", id_source);
+    return 0;
+  }
+
+  if (id_target != -1 &&
+      id_target != x2ap_id_get_id_target(&instance_p->id_manager, ue_id)) {
+    X2AP_ERROR("Handover cancel: bad id_target for UE %x (id_source %d) expected %d got %d\n",
+               x2ap_id_get_rnti(&instance_p->id_manager, ue_id),
+               id_source,
+               x2ap_id_get_id_target(&instance_p->id_manager, ue_id),
+               id_target);
+    exit(1);
+  }
+
+  msg = itti_alloc_new_message(TASK_X2AP, X2AP_HANDOVER_CANCEL);
+
+  X2AP_HANDOVER_CANCEL(msg).rnti = x2ap_id_get_rnti(&instance_p->id_manager, ue_id);
+  X2AP_HANDOVER_CANCEL(msg).cause = cause;
 
   itti_send_msg_to_task(TASK_RRC_ENB, instance_p->instance, msg);
 
