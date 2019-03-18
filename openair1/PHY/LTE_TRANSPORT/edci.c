@@ -117,7 +117,6 @@ void init_mpdcch5ss1tab_normal_regular_subframe_evenNRBDL(PHY_VARS_eNB * eNB)
       if (((l != 5) && (l != 6) && (l != 12) && (l != 13)) || (kmod == 2) || (kmod == 3) || (kmod == 4) || (kmod == 7) || (kmod == 8) || (kmod == 9)) {
 	mpdcch5ss1tab[re] = (l * eNB->frame_parms.ofdm_symbol_size) + k;
 	re++;
-	printf("l %d, k %d (kmod %d) => re %d\n", l, k, kmod, re);
       } else if ((kmod == 0) || (kmod == 5) || (kmod == 10)) {
 	mpdcch5ss1tab[re++] = (l * eNB->frame_parms.ofdm_symbol_size) + k;
       }
