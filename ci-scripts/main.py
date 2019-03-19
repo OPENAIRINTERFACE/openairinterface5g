@@ -1923,19 +1923,13 @@ class SSHConnection():
 		msgLine = 0
 		foundSegFault = False
 		foundRealTimeIssue = False
-		rrcSetupRequest = 0
-		rrcSetupComplete = 0
-		rrcReleaseRequest = 0
-		rrcReconfigRequest = 0
-		rrcReconfigComplete = 0
-		rrcReestablishRequest = 0
-		rrcReestablishComplete = 0
-		rrcReestablishReject = 0
 		rlcDiscardBuffer = 0
 		rachCanceledProcedure = 0
 		uciStatMsgCount = 0
 		pdcpFailure = 0
 		ulschFailure = 0
+		no_cell_sync_found = False
+		marker1 = False
 		for line in ue_log_file.readlines():
 			result = re.search('[Ss]egmentation [Ff]ault', str(line))
 			if result is not None:
@@ -1957,55 +1951,29 @@ class SSHConnection():
 				uciStatMsgCount += 1
 			# full pattern
 			# No cell synchronization found, abandoning
-
+			result = re.search('No cell synchronization found, abandoning', str(line))
+			if result is not None:
+				no_cell_sync_found = True
 			# MIB Information => FDD, NORMAL, NidCell 421, N_RB_DL 50, PHICH DURATION 0, PHICH RESOURCE 1/6, TX_ANT 2
 			# mask --> FDD  NORMAl 421 50  0 1/6 2
+			result = re.search("MIB Information => ([a-zA-Z]{1,10}), ([a-zA-Z]{1,10}), NidCell (?P<nidcell>\d{1,3}), N_RB_DL (?P<n_rb_dl>\d{1,3}), PHICH DURATION (?P<phich_duration>\d), PHICH RESOURCE (?P<phich_resource>\d/\d), TX_ANT (?P<tx_ant>\d)", str(line))
+			if result is not None:
+				if result.group(0) != 'FDD' or result.group(1) != 'NORMAL' or result.group('nidcell') != '421' or result.group('n_rb_dl') != '421' or result.group('phich_duration') != '0' or result.group('phich_resource') != '1/6' or result.group('tx_ant') != '2':
+					marker1 = True					
 			# Measured Carrier Frequency 816000688 Hz (offset 12 Hz)
-			# mask --> 816000688
+			# mask --> 816000688i
+
 			# Found Orange FR (name from internal table)
 			# mask Orange FR
+
 			# SIB5 InterFreqCarrierFreq element 0/3
 			# mask -- 0 and 3
+
 			# DL Carrier Frequency/ARFCN : 2645000000/3000
 			# mask 2645000000
+
 			# AllowedMeasBandwidth : 100
 			# mask 100
-			result = re.search('Generating LTE_RRCConnectionSetup', str(line))
-			if result is not None:
-				rrcSetupRequest += 1
-			result = re.search('LTE_RRCConnectionSetupComplete from UE', str(line))
-			if result is not None:
-				rrcSetupComplete += 1
-			result = re.search('Generate LTE_RRCConnectionRelease', str(line))
-			if result is not None:
-				rrcReleaseRequest += 1
-			result = re.search('Generate LTE_RRCConnectionReconfiguration', str(line))
-			if result is not None:
-				rrcReconfigRequest += 1
-			result = re.search('LTE_RRCConnectionReconfigurationComplete from UE rnti', str(line))
-			if result is not None:
-				rrcReconfigComplete += 1
-			result = re.search('LTE_RRCConnectionReestablishmentRequest', str(line))
-			if result is not None:
-				rrcReestablishRequest += 1
-			result = re.search('LTE_RRCConnectionReestablishmentComplete', str(line))
-			if result is not None:
-				rrcReestablishComplete += 1
-			result = re.search('LTE_RRCConnectionReestablishmentReject', str(line))
-			if result is not None:
-				rrcReestablishReject += 1
-			result = re.search('PDCP.*Out of Resources.*reason', str(line))
-			if result is not None:
-				pdcpFailure += 1
-			result = re.search('ULSCH in error in round', str(line))
-			if result is not None:
-				ulschFailure += 1
-			result = re.search('BAD all_segments_received', str(line))
-			if result is not None:
-				rlcDiscardBuffer += 1
-			result = re.search('Canceled RA procedure for UE rnti', str(line))
-			if result is not None:
-				rachCanceledProcedure += 1
 		ue_log_file.close()
 		self.htmlUEFailureMsg = ''
 		if uciStatMsgCount > 0:
@@ -2020,34 +1988,6 @@ class SSHConnection():
 			statMsg = 'UE showed ' + str(ulschFailure) + ' "ULSCH in error in round" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 			self.htmlUEFailureMsg += statMsg + '\n'
-		if rrcSetupRequest > 0 or rrcSetupComplete > 0:
-			rrcMsg = 'UE requested ' + str(rrcSetupRequest) + ' RRC Connection Setup(s)'
-			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
-			self.htmlUEFailureMsg += rrcMsg + '\n'
-			rrcMsg = ' -- ' + str(rrcSetupComplete) + ' were completed'
-			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
-			self.htmlUEFailureMsg += rrcMsg + '\n'
-		if rrcReleaseRequest > 0:
-			rrcMsg = 'UE requested ' + str(rrcReleaseRequest) + ' RRC Connection Release(s)'
-			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
-			self.htmlUEFailureMsg += rrcMsg + '\n'
-		if rrcReconfigRequest > 0 or rrcReconfigComplete > 0:
-			rrcMsg = 'UE requested ' + str(rrcReconfigRequest) + ' RRC Connection Reconfiguration(s)'
-			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
-			self.htmlUEFailureMsg += rrcMsg + '\n'
-			rrcMsg = ' -- ' + str(rrcReconfigComplete) + ' were completed'
-			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
-			self.htmlUEFailureMsg += rrcMsg + '\n'
-		if rrcReestablishRequest > 0 or rrcReestablishComplete > 0 or rrcReestablishReject > 0:
-			rrcMsg = 'UE requested ' + str(rrcReestablishRequest) + ' RRC Connection Reestablishment(s)'
-			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
-			self.htmlUEFailureMsg += rrcMsg + '\n'
-			rrcMsg = ' -- ' + str(rrcReestablishComplete) + ' were completed'
-			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
-			self.htmlUEFailureMsg += rrcMsg + '\n'
-			rrcMsg = ' -- ' + str(rrcReestablishReject) + ' were rejected'
-			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
-			self.htmlUEFailureMsg += rrcMsg + '\n'
 		if rachCanceledProcedure > 0:
 			rachMsg = 'UE cancelled ' + str(rachCanceledProcedure) + ' RA procedure(s)'
 			logging.debug('\u001B[1;30;43m ' + rachMsg + ' \u001B[0m')
@@ -2068,6 +2008,8 @@ class SSHConnection():
 			logging.debug('\u001B[1;37;41m ' + rlcMsg + ' \u001B[0m')
 			self.htmlUEFailureMsg += rlcMsg + '\n'
 			return ENB_PROCESS_REALTIME_ISSUE
+		if marker1:
+			logging.debug('\u001B[1;37;41m Wrong MIB Information line! \u001B[0m') 
 		return 0
 
 	def TerminateeNB(self):
@@ -2800,6 +2742,7 @@ SSH = SSHConnection()
 
 argvs = sys.argv
 argc = len(argvs)
+cwd = os.getcwd()
 
 while len(argvs) > 1:
 	myArgv = argvs.pop(1)	# 0th is this file's name
@@ -2966,7 +2909,7 @@ elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
 		sys.exit('Insufficient Parameter')
 	count = 0
 	while (count < SSH.nbTestXMLfiles):
-		xml_test_file = sys.path[0] + "/" + SSH.testXMLfiles[count]
+		xml_test_file = cwd + "/" + SSH.testXMLfiles[count]
 		xmlTree = ET.parse(xml_test_file)
 		xmlRoot = xmlTree.getroot()
 		SSH.htmlTabRefs.append(xmlRoot.findtext('htmlTabRef',default='test-tab-' + str(count)))
@@ -2983,8 +2926,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 			sys.exit('Insufficient Parameter')
 
 		if (SSH.EPCIPAddress != ''):
-			SSH.copyout(SSH.EPCIPAddress, SSH.EPCUserName, SSH.EPCPassword, sys.path[0] + "/tcp_iperf_stats.awk", "/tmp")
-			SSH.copyout(SSH.EPCIPAddress, SSH.EPCUserName, SSH.EPCPassword, sys.path[0] + "/active_net_interfaces.awk", "/tmp")
+			SSH.copyout(SSH.EPCIPAddress, SSH.EPCUserName, SSH.EPCPassword, cwd + "/tcp_iperf_stats.awk", "/tmp")
+			SSH.copyout(SSH.EPCIPAddress, SSH.EPCUserName, SSH.EPCPassword, cwd + "/active_net_interfaces.awk", "/tmp")
 	else:
 		if SSH.UEIPAddress == '' or SSH.eNBRepository == '' or SSH.eNBBranch == '' or SSH.UEUserName == '' or SSH.UEPassword == '' or SSH.UESourceCodePath == '':
 			Usage()
@@ -2993,9 +2936,9 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 	#read test_case_list.xml file
         # if no parameters for XML file, use default value
 	if (SSH.nbTestXMLfiles != 1):
-		xml_test_file = sys.path[0] + "/test_case_list.xml"
+		xml_test_file = cwd + "/test_case_list.xml"
 	else:
-		xml_test_file = sys.path[0] + "/" + SSH.testXMLfiles[0]
+		xml_test_file = cwd + "/" + SSH.testXMLfiles[0]
 
 	xmlTree = ET.parse(xml_test_file)
 	xmlRoot = xmlTree.getroot()
