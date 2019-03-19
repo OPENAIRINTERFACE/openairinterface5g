@@ -1877,7 +1877,7 @@ class SSHConnection():
 			self.htmleNBFailureMsg += rrcMsg + '\n'
 		if rrcReconfigRequest > 0 or rrcReconfigComplete > 0:
 			rrcMsg = 'eNB requested ' + str(rrcReconfigRequest) + ' RRC Connection Reconfiguration(s)'
-			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
+			logging.debug('\u001B[1;30;43m ' + rrcMsig + ' \u001B[0m')
 			self.htmleNBFailureMsg += rrcMsg + '\n'
 			rrcMsg = ' -- ' + str(rrcReconfigComplete) + ' were completed'
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
@@ -1929,7 +1929,6 @@ class SSHConnection():
 		pdcpFailure = 0
 		ulschFailure = 0
 		no_cell_sync_found = False
-		marker1 = False
 		for line in ue_log_file.readlines():
 			result = re.search('[Ss]egmentation [Ff]ault', str(line))
 			if result is not None:
@@ -1955,25 +1954,58 @@ class SSHConnection():
 			if result is not None:
 				no_cell_sync_found = True
 			# MIB Information => FDD, NORMAL, NidCell 421, N_RB_DL 50, PHICH DURATION 0, PHICH RESOURCE 1/6, TX_ANT 2
-			# mask --> FDD  NORMAl 421 50  0 1/6 2
-			result = re.search("MIB Information => ([a-zA-Z]{1,10}), ([a-zA-Z]{1,10}), NidCell (?P<nidcell>\d{1,3}), N_RB_DL (?P<n_rb_dl>\d{1,3}), PHICH DURATION (?P<phich_duration>\d), PHICH RESOURCE (?P<phich_resource>\d/\d), TX_ANT (?P<tx_ant>\d)", str(line))
+			# mask --> FDD  NORMAL 421 50  0 1/6 2
+			result = re.search("MIB Information => ([a-zA-Z]{1,10}), ([a-zA-Z]{1,10}), NidCell (?P<nidcell>\d{1,3}), N_RB_DL (?P<n_rb_dl>\d{1,3}), PHICH DURATION (?P<phich_duration>\d), PHICH RESOURCE (?P<phich_resource>.{1,4}), TX_ANT (?P<tx_ant>\d)", str(line))
 			if result is not None:
-				if result.group(0) != 'FDD' or result.group(1) != 'NORMAL' or result.group('nidcell') != '421' or result.group('n_rb_dl') != '421' or result.group('phich_duration') != '0' or result.group('phich_resource') != '1/6' or result.group('tx_ant') != '2':
-					marker1 = True					
+				try:
+					print('\033[94m' + "MIB Information: " + result.group(1) + ', ' + result.group(2) + '\033[0m')
+					print('\033[94m' + "nidcell = " + result.group('nidcell') + '\033[0m')
+					print('\033[94m' + "n_rb_dl = " + result.group('n_rb_dl') + '\033[0m')
+					print('\033[94m' + "phich_duration = " + result.group('phich_duration') + '\033[0m')
+					print('\033[94m' + "phich_resource = " + result.group('phich_resource') + '\033[0m')
+					print('\033[94m' + "tx_ant = " + result.group('tx_ant') + '\033[0m')
+				except Exception as e:
+					print('\033[91m' + "a marker was not found" + '\033[0m')
 			# Measured Carrier Frequency 816000688 Hz (offset 12 Hz)
 			# mask --> 816000688i
-
+			result = re.search("Measured Carrier Frequency (?P<measured_carrier_frequency>\d{1,15}) Hz", str(line))
+			if result is not None:
+				try:
+					print('\033[94m' + "Measured Carrier Frequency = " + result.group('measured_carrier_frequency') + '\033[0m')
+				except Exception as e:
+					print('\033[91m' + "Measured Carrier Frequency not found" + '\033[0m')
 			# Found Orange FR (name from internal table)
 			# mask Orange FR
-
+			result = re.search("Found (?P<operator>[\w,\s]{1,15}) \(name from internal table\)", str(line))
+			if result is not None:
+				try:
+					print('\033[94m' + "The operator is: " + result.group('operator') + '\033[0m')
+				except Exception as e:
+					print('\033[91m' + "Operator name not found" + '\033[0m')
 			# SIB5 InterFreqCarrierFreq element 0/3
 			# mask -- 0 and 3
-
+			result = re.search("SIB5 InterFreqCarrierFreq element (.{1,4})/(.{1,4})", str(line))
+			if result is not None:
+				try:
+					print('\033[94m' + "SIB5 InterFreqCarrierFreq element " + result.group(1) + '/' + result.group(2) + '\033[0m')
+				except Exception as e:
+					print('\033[91m' + "SIB5 InterFreqCarrierFreq element not found" + '\033[0m')
 			# DL Carrier Frequency/ARFCN : 2645000000/3000
 			# mask 2645000000
-
+			result = re.search("DL Carrier Frequency/ARFCN : (?P<carrier_frequency>)\d{1,15}/\d{1,4}", str(line))
+			if result is not None:
+				try:
+					print('\033[94m' + "DL Carrier Frequency is: " + result.group('carrier_frequency') + '\033[0m')
+				except Exception as e:
+					print('\033[91m' + "DL Carrier Frequency not found" + '\033[0m')
 			# AllowedMeasBandwidth : 100
 			# mask 100
+			result = re.search("AllowedMeasBandwidth : (?P<allowed_bandwidth>\d{1,7})", str(line))
+			if result is not None:
+				try:
+					print('\033[94m' + "AllowedMeasBandwidth: " + result.group('allowed_bandwidth') + '\033[0m')
+				except Exception as e:
+					print('\033[91m' + "AllowedMeasBandwidth not found" + '\033[0m')
 		ue_log_file.close()
 		self.htmlUEFailureMsg = ''
 		if uciStatMsgCount > 0:
@@ -2008,8 +2040,6 @@ class SSHConnection():
 			logging.debug('\u001B[1;37;41m ' + rlcMsg + ' \u001B[0m')
 			self.htmlUEFailureMsg += rlcMsg + '\n'
 			return ENB_PROCESS_REALTIME_ISSUE
-		if marker1:
-			logging.debug('\u001B[1;37;41m Wrong MIB Information line! \u001B[0m') 
 		return 0
 
 	def TerminateeNB(self):
