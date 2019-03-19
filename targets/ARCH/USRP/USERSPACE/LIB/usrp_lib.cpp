@@ -597,10 +597,10 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
 
         for (int i=0; i<cc; i++) buff_ptrs.push_back(buff[i]);
 
-        samples_received = s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md);
+        samples_received = s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md,1.0);
       } else {
         // receive a single channel (e.g. from connector RF A)
-        samples_received = s->rx_stream->recv(buff[0], nsamps, s->rx_md);
+        samples_received = s->rx_stream->recv(buff[0], nsamps, s->rx_md,1.0);
       }
     }
 
