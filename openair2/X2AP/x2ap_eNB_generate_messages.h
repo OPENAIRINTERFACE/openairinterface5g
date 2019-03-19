@@ -55,4 +55,9 @@ int x2ap_eNB_generate_x2_handover_request_ack (x2ap_eNB_instance_t *instance_p, 
 
 int x2ap_eNB_generate_x2_ue_context_release (x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p,
                                              x2ap_ue_context_release_t *x2ap_ue_context_release);
+
+int x2ap_eNB_generate_x2_handover_cancel (x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *x2ap_eNB_data_p,
+                                          int x2_ue_id,
+                                          x2ap_handover_cancel_cause_t cause);
+
 #endif /*  X2AP_ENB_GENERATE_MESSAGES_H_ */

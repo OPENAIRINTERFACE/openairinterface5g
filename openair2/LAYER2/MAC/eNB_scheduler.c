@@ -261,12 +261,9 @@ schedule_SR(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
       ul_req_body   = &ul_req->ul_config_request_body;
 
       // drop the allocation if the UE hasn't send RRCConnectionSetupComplete yet
-      if (mac_eNB_get_rrc_status(module_idP, UE_RNTI(module_idP, UE_id)) < RRC_CONNECTED) continue;
+      //if (mac_eNB_get_rrc_status(module_idP, UE_RNTI(module_idP, UE_id)) < RRC_CONNECTED) continue;
 
-      AssertFatal(UE_list->
-		  UE_template[CC_id][UE_id].physicalConfigDedicated!= NULL,
-		  "physicalConfigDedicated is null for UE %d\n",
-		  UE_id);
+      if (UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated== NULL) continue;
 
       if ((SRconfig = UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated->schedulingRequestConfig) != NULL) {
 	if (SRconfig->present == LTE_SchedulingRequestConfig_PR_setup) {
@@ -687,7 +684,7 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
     schedule_CSI(module_idP, frameP, subframeP);
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     // This schedules DLSCH in subframeP
-    schedule_ue_spec_br(module_idP,frameP,subframeP);
+    schedule_ue_spec_br(module_idP, frameP, subframeP);
 #endif
     // This schedules DLSCH in subframeP
     if (schedule_ue_spec_p != NULL) {

@@ -45,15 +45,15 @@ The Physical layer implements **3GPP 36.211**, **36.212**, **36.213** and provid
 FDD DL: 5 MHz, 25 PRBS/ MCS 28   | 16 - 17 Mbit/s          | TM1: 17.0 Mbits/s       | COTS-UE Cat 4 (150/50 Mbps)
 FDD DL: 10 MHz, 50 PRBS/ MCS 28  | 34 - 35 Mbit/s          | TM1: 32.8 Mbits/s       | COTS-UE Cat 4 (150/50 Mbps)
 FDD DL: 20 MHz, 100 PRBS/ MCS 28 | 70 Mbit/s               | TM1: 69.9 Mbits/s       | COTS-UE Cat 4 (150/50 Mbps)
- |  |  |
+ |  |  | 
 FDD UL: 5 MHz, 25 PRBS/ MCS 20   | 9 Mbit/s                | TM1: 8.28 Mbits/s       | COTS-UE Cat 4 (150/50 Mbps)
 FDD UL: 10 MHz, 50 PRBS/ MCS 20  | 17 Mbit/s               | TM1: 15.2 Mbits/s       | COTS-UE Cat 4 (150/50 Mbps)
 FDD UL: 20 MHz, 100 PRBS/ MCS 20 | 35 Mbit/s               | TM1: 18.6 Mbits/s       | COTS-UE Cat 4 (150/50 Mbps)
- |  |
+ |  | 
 TDD DL: 5 MHz, 25 PRBS/ MCS **XX**   | **TBC** Mbit/s | 3.33 Mbits/s | COTS-UE Cat 4 (150/50 Mbps)
 TDD DL: 10 MHz, 50 PRBS/ MCS **XX**  | **TBC** Mbit/s | 8.90 Mbits/s | COTS-UE Cat 4 (150/50 Mbps)
 TDD DL: 20 MHz, 100 PRBS/ MCS **XX** | **TBC** Mbit/s | N/A | COTS-UE Cat 4 (150/50 Mbps)
- |  | |
+ |  | | 
 TDD UL: 5 MHz, 25 PRBS/ MCS **XX**   | **TBC** Mbit/s | 1.66 Mbits/s | COTS-UE Cat 4 (150/50 Mbps)
 TDD UL: 10 MHz, 50 PRBS/ MCS **XX**  | **TBC** Mbit/s | 1.89 Mbits/s | COTS-UE Cat 4 (150/50 Mbps)
 TDD UL: 20 MHz, 100 PRBS/ MCS **XX** | **TBC** Mbit/s | N/A | COTS-UE Cat 4 (150/50 Mbps)
@@ -62,7 +62,7 @@ TDD UL: 20 MHz, 100 PRBS/ MCS **XX** | **TBC** Mbit/s | N/A | COTS-UE Cat 4 (150
 
 ## eNB MAC Layer ##
 
-The MAC layer implements a subset of the **3GPP 36.321** release v8.6 in support of BCH, DLSCH, RACH, and ULSCH channels.
+The MAC layer implements a subset of the **3GPP 36.321** release v8.6 in support of BCH, DLSCH, RACH, and ULSCH channels. 
 
 - RRC interface for CCCH, DCCH, and DTCH
 - Proportional fair scheduler (round robin scheduler soon)
@@ -77,16 +77,16 @@ The MAC layer implements a subset of the **3GPP 36.321** release v8.6 in support
 
 The RLC layer implements a full specification of the 3GPP 36.322 release v9.3.
 
-- RLC TM (mainly used for BCCH and CCCH)
+- RLC TM (mainly used for BCCH and CCCH) 
   * Neither segment nor concatenate RLC SDUs
   * Do not include a RLC header in the RLC PDU
   * Delivery of received RLC PDUs to upper layers
-- RLC UM (mainly used for DTCH)
+- RLC UM (mainly used for DTCH) 
   * Segment or concatenate RLC SDUs according to the TB size selected by MAC
   * Include a RLC header in the RLC PDU
   * Duplication detection
   * PDU reordering and reassembly
-- RLC AM, compatible with 9.3
+- RLC AM, compatible with 9.3 
   * Segmentation, re-segmentation, concatenation, and reassembly
   * Padding
   * Data transfer to the user
@@ -123,10 +123,13 @@ The RRC layer is based on **3GPP 36.331** v14.3.0 and implements the following f
 The X2AP layer is based on **3GPP 36.423** v14.6.0 and implements the following functions:
 
  - X2 Setup Request
- - X2 Setup Response
+ - X2 Setup Response 
  - X2 Setup Failure
- - Handover Request
+ - Handover Request 
  - Handover Request Acknowledge
+ - UE Context Release
+ - X2 timers (t_reloc_prep, tx2_reloc_overall)
+ - Handover Cancel
 
 ## eNB Advanced Features ##
 
@@ -162,7 +165,7 @@ The Physical layer implements **3GPP 36.211**, **36.212**, **36.213** and provid
 
 ## LTE UE MAC Layer ##
 
-The MAC layer implements a subset of the **3GPP 36.321** release v8.6 in support of BCH, DLSCH, RACH, and ULSCH channels.
+The MAC layer implements a subset of the **3GPP 36.321** release v8.6 in support of BCH, DLSCH, RACH, and ULSCH channels. 
 
 - RRC interface for CCCH, DCCH, and DTCH
 - HARQ Support

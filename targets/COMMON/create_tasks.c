@@ -83,8 +83,12 @@ int create_tasks(uint32_t enb_nb) {
       }
       rc = itti_create_task(TASK_GTPV1_U, gtpv1u_eNB_task, NULL);
       AssertFatal(rc >= 0, "Create task for GTPV1U failed\n");
-      rc = itti_create_task(TASK_X2AP, x2ap_task, NULL);
-      AssertFatal(rc >= 0, "Create task for X2AP failed\n");
+      if (is_x2ap_enabled()) {
+        rc = itti_create_task(TASK_X2AP, x2ap_task, NULL);
+        AssertFatal(rc >= 0, "Create task for X2AP failed\n");
+      } else {
+        LOG_I(X2AP, "X2AP is disabled.\n");
+      }
     }
     break;
   default:

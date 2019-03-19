@@ -20,7 +20,7 @@
  */
 
 /*! \file openair2/ENB_APP/enb_paramdef_emtc.h
- * \brief definition of configuration parameters for emtc eNodeB modules
+ * \brief definition of configuration parameters for emtc eNodeB modules 
  * \author Raymond KNOPP
  * \date 2018
  * \version 0.1
@@ -67,7 +67,7 @@
 #define ENB_CONFIG_STRING_LAST_PREAMBLE_R13                                "lastPreamble_r13"
 #define ENB_CONFIG_STRING_RA_RESPONSE_WINDOW_SIZE_R13                      "ra_ResponseWindowSize_r13"
 #define ENB_CONFIG_STRING_MAC_CONTENTION_RESOLUTION_TIMER_R13              "mac_ContentionResolutionTimer_r13"
-#define ENB_CONFIG_STRING_RAR_HOPPING_CONFIG_R13                           "rar_HoppingConfig_r13  "
+#define ENB_CONFIG_STRING_RAR_HOPPING_CONFIG_R13                           "rar_HoppingConfig_r13"
 #define ENB_CONFIG_STRING_RACH_CE_LEVELINFOLIST_R13                        "rach_CE_LevelInfoList_r13"
 #define ENB_CONFIG_STRING_PRACH_CONFIG_INDEX_BR                            "prach_config_index_br"
 #define ENB_CONFIG_STRING_PRACH_FREQ_OFFSET_BR                             "prach_freq_offset_br"
@@ -77,11 +77,11 @@
 #define ENB_CONFIG_STRING_MPDCCH_NUM_REPETITION_RA_R13                     "mpdcch_NumRepetition_RA_r13"
 #define ENB_CONFIG_STRING_PRACH_HOPPING_CONFIG_R13                         "prach_HoppingConfig_r13"
 #define ENB_CONFIG_SRING_MAX_AVAILABLE_NARROW_BAND                         "max_available_narrow_band"
-#define ENB_CONFIG_STRING_PRACH_PARAMETERS_CE_R13                          "prach_parameters_ce_r13"
+#define ENB_CONFIG_STRING_PRACH_PARAMETERS_CE_R13                          "prach_parameters_ce_r13"							
 #define ENB_CONFIG_STRING_PUCCH_INFO_VALUE                                 "pucch_info_value"
 #define ENB_CONFIG_STRING_N1PUCCH_AN_INFOLIST_R13                          "n1PUCCH_AN_InfoList_r13"
 #define ENB_CONFIG_STRING_PCCH_CONFIG_V1310                                "pcch_config_v1310"
-#define ENB_CONFIG_STRING_SIB2_FREQ_HOPPINGPARAMETERS_R13                  "sib2_freq_hoppingParameters_r13"
+#define ENB_CONFIG_STRING_SIB2_FREQ_HOPPINGPARAMETERS_R13                  "sib2_freq_hoppingParameters_r13" 
 
 typedef struct ccparams_eMTC_s {
   /// indicator that eMTC is configured for this cell

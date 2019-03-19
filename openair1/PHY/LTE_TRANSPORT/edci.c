@@ -84,7 +84,7 @@ void mpdcch_scrambling(LTE_DL_FRAME_PARMS * frame_parms, mDCI_ALLOC_t * mdci, ui
 
   // rule for BL/CE UEs from Section 6.8.B2 in 36.211
   x2 = ((((j0 + j) * Nacc) % 10) << 9) + mdci->dmrs_scrambling_init;
-  LOG_I(PHY,"MPDCCH cinit = %x (mdci->dmrs_scrambling_init = %d), scrambling %d encoded DCI bits\n",
+  LOG_D(PHY,"MPDCCH cinit = %x (mdci->dmrs_scrambling_init = %d), scrambling %d encoded DCI bits\n",
 	x2,mdci->dmrs_scrambling_init,length);
   for (n = 0; n < length; n++) {
     if ((n & 0x1f) == 0) {
@@ -109,7 +109,7 @@ void init_mpdcch5ss1tab_normal_regular_subframe_evenNRBDL(PHY_VARS_eNB * eNB)
 {
   int             l, k, kmod, re=0;
 
-  LOG_I(PHY, "Inititalizing mpdcchss15tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
+  LOG_D(PHY, "Inititalizing mpdcchss15tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
 
   for (l = 1; l < 14; l++) {
     for (k = 0; k < 72; k++) {
@@ -117,7 +117,6 @@ void init_mpdcch5ss1tab_normal_regular_subframe_evenNRBDL(PHY_VARS_eNB * eNB)
       if (((l != 5) && (l != 6) && (l != 12) && (l != 13)) || (kmod == 2) || (kmod == 3) || (kmod == 4) || (kmod == 7) || (kmod == 8) || (kmod == 9)) {
 	mpdcch5ss1tab[re] = (l * eNB->frame_parms.ofdm_symbol_size) + k;
 	re++;
-	printf("l %d, k %d (kmod %d) => re %d\n", l, k, kmod, re);
       } else if ((kmod == 0) || (kmod == 5) || (kmod == 10)) {
 	mpdcch5ss1tab[re++] = (l * eNB->frame_parms.ofdm_symbol_size) + k;
       }
@@ -139,16 +138,16 @@ void init_mpdcch5ss2tab_normal_regular_subframe_evenNRBDL(PHY_VARS_eNB * eNB)
   int nushift = eNB->frame_parms.Nid_cell % 6;
   int nushiftp3 = (eNB->frame_parms.Nid_cell+3) % 6;
   // NOTE : THIS IS FOR TM1 ONLY FOR NOW!!!!!!!
-  LOG_I(PHY, "Inititalizing mpdcch5ss2tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
+  LOG_D(PHY, "Inititalizing mpdcch5ss2tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
   for (l = 2; l < 14; l++) {
     for (k = 0; k < 72; k++) {
       kmod = k % 12;
-      if ((((l == 4)||(l==11)) && (kmod != nushiftp3) && (kmod != (nushiftp3+6))) ||
+      if ((((l == 4)||(l==11)) && (kmod != nushiftp3) && (kmod != (nushiftp3+6))) || 
 	  ((l == 7) && (kmod != nushift) &&(kmod != (nushift+6)))) {  // CS RS
 	mpdcch5ss2tab[re] = (l * eNB->frame_parms.ofdm_symbol_size) + k;
 	re++;
       }
-      if (((l!=4)&&(l!=7)&&(l!=11)) &&
+      if (((l!=4)&&(l!=7)&&(l!=11)) && 
 	  (((l != 5) && (l != 6) && (l != 12) && (l != 13)) || (kmod == 2) || (kmod == 3) || (kmod == 4) || (kmod == 7) || (kmod == 8) || (kmod == 9))) {
 	mpdcch5ss2tab[re] = (l * eNB->frame_parms.ofdm_symbol_size) + k;
 	re++;
@@ -168,7 +167,7 @@ void init_mpdcch5ss3tab_normal_regular_subframe_evenNRBDL(PHY_VARS_eNB * eNB)
 {
   int             l, k, kmod, re=0;
 
-  LOG_I(PHY, "Inititalizing mpdcch5ss3tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
+  LOG_D(PHY, "Inititalizing mpdcch5ss3tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
   for (l = 3; l < 14; l++) {
     for (k = 0; k < 72; k++) {
       kmod = k % 12;
@@ -194,7 +193,7 @@ void init_mpdcch3ss1tab_normal_regular_subframe_evenNRBDL(PHY_VARS_eNB * eNB)
 {
   int             l, k, kmod, re=0;
 
-  LOG_I(PHY, "Inititalizing mpdcch3ss1tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
+  LOG_D(PHY, "Inititalizing mpdcch3ss1tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
   for (l = 1, re = 0; l < 14; l++) {
     for (k = 0; k < 48; k++) {
       kmod = k % 12;
@@ -218,7 +217,7 @@ void init_mpdcch2ss1tab_normal_regular_subframe_evenNRBDL(PHY_VARS_eNB * eNB)
 {
   int             l, k, kmod, re=0;
 
-  LOG_I(PHY, "Inititalizing mpdcch2ss1tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
+  LOG_D(PHY, "Inititalizing mpdcch2ss1tab for normal prefix, normal prefix, no PSS/SSS/PBCH, even N_RB_DL\n");
   for (l = 1, re = 0; l < 14; l++) {
     for (k = 0; k < 24; k++) {
       kmod = k % 12;
@@ -288,7 +287,7 @@ void generate_mdci_top(PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp,
   int wp[2][4] = {{1,1,1,1},{1,-1,1,-1}};
   int *w;
 
-  LOG_I(PHY, "generate_mdci_top: num_dci %d\n", mpdcch->num_dci);
+  LOG_D(PHY, "generate_mdci_top: num_dci %d\n", mpdcch->num_dci);
 
   for (i = 0; i < mpdcch->num_dci; i++) {
     mdci = &mpdcch->mdci_alloc[i];
@@ -320,10 +319,10 @@ void generate_mdci_top(PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp,
     } else
       AssertFatal(1 == 0, "Illegal combination start_symbol %d, a_index %d\n", mdci->start_symbol, a_index);
 
-    LOG_I(PHY, "mdci %d, length %d: rnti %x, L %d, prb_pairs %d, ce_mode %d, transmission type %s, i0 %d, ss %d ,coded_bits %d\n",
-	  i, mdci->dci_length,mdci->rnti,
-	  mdci->L, mdci->number_of_prb_pairs,
-	  mdci->ce_mode,
+    LOG_D(PHY, "mdci %d, length %d: rnti %x, L %d, prb_pairs %d, ce_mode %d, transmission type %s, i0 %d, ss %d ,coded_bits %d\n", 
+	  i, mdci->dci_length,mdci->rnti, 
+	  mdci->L, mdci->number_of_prb_pairs, 
+	  mdci->ce_mode, 
 	  mdci->transmission_type == 1? "dist" : "loc",
 	  mdci->i0, mdci->start_symbol,
 	  coded_bits);
@@ -340,7 +339,7 @@ void generate_mdci_top(PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp,
     AssertFatal(absSF < 10240, "Absolute subframe %d = %d*10 + %d > 10239\n", absSF, frame, subframe);
 
     mpdcch_scrambling(fp, mdci, absSF, mpdcch->e, coded_bits);
-
+    
     // Modulation for PDCCH
     if (fp->nb_antenna_ports_eNB == 1)
       gain_lin_QPSK = (int16_t) ((amp * ONE_OVER_SQRT2_Q15) >> 15);
@@ -389,7 +388,7 @@ void generate_mdci_top(PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp,
       ((int16_t *) & yIQ)[1] = (*e_ptr == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
       e_ptr++;
       txF[mpdcchtab[i]] = yIQ;
-      /*
+      /*      
       LOG_I(PHY,"Frame %d, subframe %d: mpdcch pos %d (%d,%d) => (%d,%d)\n",
 	    frame,subframe,i,mpdcchtab[i]+re_offset,mpdcchtab[i]/fp->ofdm_symbol_size,
 	    ((int16_t *) & yIQ)[0],((int16_t *) & yIQ)[1]);*/
@@ -422,7 +421,7 @@ void generate_mdci_top(PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp,
     uint32_t        b = ((mdci->dmrs_scrambling_init << 1) + 1) << 16;
     x2 = a * b;
     x2 = x2 + 2;
-    LOG_I(PHY, "mpdcch_dmrs cinit %x (a=%d,b=%d,i0=%d,j0=%d)\n", x2,a,b,i0,j0);
+    LOG_D(PHY, "mpdcch_dmrs cinit %x (a=%d,b=%d,i0=%d,j0=%d)\n", x2,a,b,i0,j0);
 
     // add MPDCCH pilots
     int             reset = 1;
@@ -441,14 +440,14 @@ void generate_mdci_top(PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp,
 	  txF = &txdataF[0][symbol_offset + re_offset + fp->ofdm_symbol_size*soffset[lprime]];
 	}
 	for (int mprime=0;mprime<3;mprime++,i+=2) {
-
+	
 	  if ((i & 0x1f) == 0) {
 	    s = lte_gold_generic(&x1, &x2, reset);
 	    reset = 0;
 	  }
 
 	  // select PRBs corresponding to narrowband
-	  if ((nprb>= first_prb) &&
+	  if ((nprb>= first_prb) && 
 	      (nprb<= last_prb)) {
 	    ((int16_t *) & yIQ)[0] = (((s >> (i & 0x1f)) & 1) == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
 	    ((int16_t *) & yIQ)[1] = (((s >> ((i + 1) & 0x1f)) & 1) == 1) ? -gain_lin_QPSK : gain_lin_QPSK;
@@ -459,15 +458,15 @@ void generate_mdci_top(PHY_VARS_eNB * eNB, int frame, int subframe, int16_t amp,
 	    }
 	    else { // put on selected antenna port with w sequence
 
-	      if (((mprime+nprb)&1) == 0)
+	      if (((mprime+nprb)&1) == 0) 
 		txF[off+(5*mprime)] = yIQ*w[lprime];
 	      else
 		txF[off+(5*mprime)] = yIQ*w[3-lprime];
 	    }
 	    /*
-	    LOG_I(PHY, "mpdcch_dmrs pos (dist %d, l %d,nprb %d,mprime %d) %d  => (%d,%d)\n",
+	    LOG_I(PHY, "mpdcch_dmrs pos (dist %d, l %d,nprb %d,mprime %d) %d  => (%d,%d)\n", 
 		  mdci->transmission_type, soffset[lprime],nprb,mprime,
-		  re_offset + fp->ofdm_symbol_size*soffset[lprime]+(5*mprime),
+		  re_offset + fp->ofdm_symbol_size*soffset[lprime]+(5*mprime), 
 		  ((int16_t *) & yIQ)[0], ((int16_t *) & yIQ)[1]);*/
 	  } // narrowband condition
 	} // RE (m') loop

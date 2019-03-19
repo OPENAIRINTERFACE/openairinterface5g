@@ -739,6 +739,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
   LTE_UL_eNB_HARQ_t *ulsch_harq;
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+  LOG_D(PHY,"ue_type %d\n",ulsch->ue_type);
   if (ulsch->ue_type>0)     harq_pid = 0;
   else
 #endif

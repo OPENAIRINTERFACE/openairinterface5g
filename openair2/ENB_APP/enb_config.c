@@ -167,6 +167,16 @@ void RCconfig_L1(void) {
                             RC.eNB[j][0]->eth_params_n     .remote_portd);
       } else { // other midhaul
       }
+      // PRACH/PUCCH parameters
+
+      RC.eNB[j][0]->prach_DTX_threshold    = *(L1_ParamList.paramarray[j][L1_PRACH_DTX_THRESHOLD_IDX].iptr);
+      RC.eNB[j][0]->pucch1_DTX_threshold   = *(L1_ParamList.paramarray[j][L1_PUCCH1_DTX_THRESHOLD_IDX].iptr);
+      RC.eNB[j][0]->pucch1ab_DTX_threshold = *(L1_ParamList.paramarray[j][L1_PUCCH1AB_DTX_THRESHOLD_IDX].iptr);
+      for (int ce_level=0;ce_level<4;ce_level++) {
+	RC.eNB[j][0]->prach_DTX_threshold_emtc[ce_level]    = *(L1_ParamList.paramarray[j][L1_PRACH_DTX_EMTC0_THRESHOLD_IDX+ce_level].iptr);
+	RC.eNB[j][0]->pucch1_DTX_threshold_emtc[ce_level]   = *(L1_ParamList.paramarray[j][L1_PUCCH1_DTX_EMTC0_THRESHOLD_IDX+ce_level].iptr);
+	RC.eNB[j][0]->pucch1ab_DTX_threshold_emtc[ce_level] = *(L1_ParamList.paramarray[j][L1_PUCCH1AB_DTX_EMTC0_THRESHOLD_IDX+ce_level].iptr);
+      }
     }// j=0..num_inst
 
     LOG_I(ENB_APP,"Initializing northbound interface for L1\n");
@@ -2197,6 +2207,28 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
 		X2AP_REGISTER_ENB_REQ (msg_p).target_enb_x2_ip_address[l].ipv6 = 1;
 	      }
 	    }
+
+            // timers
+            {
+              int t_reloc_prep = 0;
+              int tx2_reloc_overall = 0;
+
+              paramdef_t p[] = {
+                { "t_reloc_prep", "t_reloc_prep", 0, iptr:&t_reloc_prep, defintval:0, TYPE_INT, 0 },
+                { "tx2_reloc_overall", "tx2_reloc_overall", 0, iptr:&tx2_reloc_overall, defintval:0, TYPE_INT, 0 }
+              };
+
+              config_get(p, sizeof(p)/sizeof(paramdef_t), aprefix);
+
+              if (t_reloc_prep <= 0 || t_reloc_prep > 10000 ||
+                  tx2_reloc_overall <= 0 || tx2_reloc_overall > 20000) {
+                LOG_E(X2AP, "timers in configuration file have wrong values. We must have [0 < t_reloc_prep <= 10000] and [0 < tx2_reloc_overall <= 20000]\n");
+                exit(1);
+              }
+
+	      X2AP_REGISTER_ENB_REQ (msg_p).t_reloc_prep = t_reloc_prep;
+	      X2AP_REGISTER_ENB_REQ (msg_p).tx2_reloc_overall = tx2_reloc_overall;
+            }
 
 	    // SCTP SETTING
 	    X2AP_REGISTER_ENB_REQ (msg_p).sctp_out_streams = SCTP_OUT_STREAMS;

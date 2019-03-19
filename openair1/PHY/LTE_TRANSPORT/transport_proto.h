@@ -553,7 +553,11 @@ uint32_t rx_pucch(PHY_VARS_eNB *phy_vars_eNB,
                   uint8_t *payload,
                   int     frame,
                   uint8_t subframe,
-                  uint8_t pucch1_thres);
+                  uint8_t pucch1_thres
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) 
+                  ,int     br_flag                  
+#endif
+                  );
 
 
 /*!

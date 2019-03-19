@@ -41,6 +41,7 @@
 #include "x2ap_eNB_generate_messages.h"
 #include "x2ap_common.h"
 #include "x2ap_ids.h"
+#include "x2ap_timers.h"
 
 #include "queue.h"
 #include "assertions.h"
@@ -301,6 +302,9 @@ void x2ap_eNB_handle_register_eNB(instance_t instance,
     new_instance->num_cc           = x2ap_register_eNB->num_cc;
 
     x2ap_id_manager_init(&new_instance->id_manager);
+    x2ap_timers_init(&new_instance->timers,
+                     x2ap_register_eNB->t_reloc_prep,
+                     x2ap_register_eNB->tx2_reloc_overall);
 
     for (int i = 0; i< x2ap_register_eNB->num_cc; i++) {
       new_instance->eutra_band[i]              = x2ap_register_eNB->eutra_band[i];
@@ -402,6 +406,10 @@ void x2ap_eNB_handle_handover_req(instance_t instance,
   }
   /* id_source is ue_id, id_target is unknown yet */
   x2ap_set_ids(id_manager, ue_id, x2ap_handover_req->rnti, ue_id, -1);
+  x2ap_id_set_state(id_manager, ue_id, X2ID_STATE_SOURCE_PREPARE);
+  x2ap_set_reloc_prep_timer(id_manager, ue_id,
+                            x2ap_timer_get_tti(&instance_p->timers));
+  x2ap_id_set_target(id_manager, ue_id, target);
 
   x2ap_eNB_generate_x2_handover_request(instance_p, target, x2ap_handover_req, ue_id);
 }
@@ -480,6 +488,10 @@ void *x2ap_task(void *arg) {
         itti_exit_task();
         break;
 
+      case X2AP_SUBFRAME_PROCESS:
+        x2ap_check_timers(ITTI_MESSAGE_GET_INSTANCE(received_msg));
+        break;
+
       case X2AP_REGISTER_ENB_REQ:
         x2ap_eNB_handle_register_eNB(ITTI_MESSAGE_GET_INSTANCE(received_msg),
                                      &X2AP_REGISTER_ENB_REQ(received_msg));
@@ -532,4 +544,40 @@ void *x2ap_task(void *arg) {
   }
 
   return NULL;
+}
+
+#include "common/config/config_userapi.h"
+
+int is_x2ap_enabled(void)
+{
+  static volatile int config_loaded = 0;
+  static volatile int enabled = 0;
+  static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+  if (pthread_mutex_lock(&mutex)) goto mutex_error;
+
+  if (config_loaded) {
+    if (pthread_mutex_unlock(&mutex)) goto mutex_error;
+    return enabled;
+  }
+
+  char *enable_x2 = NULL;
+  paramdef_t p[] = {
+   { "enable_x2", "yes/no", 0, strptr:&enable_x2, defstrval:"", TYPE_STRING, 0 }
+  };
+
+  /* TODO: do it per module - we check only first eNB */
+  config_get(p, sizeof(p)/sizeof(paramdef_t), "eNBs.[0]");
+  if (enable_x2 != NULL && strcmp(enable_x2, "yes") == 0)
+    enabled = 1;
+
+  config_loaded = 1;
+
+  if (pthread_mutex_unlock(&mutex)) goto mutex_error;
+
+  return enabled;
+
+mutex_error:
+  LOG_E(X2AP, "mutex error\n");
+  exit(1);
 }

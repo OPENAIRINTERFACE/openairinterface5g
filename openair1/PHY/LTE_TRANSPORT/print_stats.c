@@ -62,7 +62,7 @@ int dump_ue_stats(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,char* buffer, int length
     len += sprintf(&buffer[len], "[UE_PROC] UE %d, RNTI %x\n",ue->Mod_id, ue->pdcch_vars[0][0]->crnti);
      len += sprintf(&buffer[len],"[UE PROC] RSRP[0] %.2f dBm/RE, RSSI %.2f dBm, RSRQ[0] %.2f dB, N0 %d dBm/RE (NF %.1f dB)\n",
 		    10*log10(ue->measurements.rsrp[0])-ue->rx_total_gain_dB,
-		    10*log10(ue->measurements.rssi)-ue->rx_total_gain_dB,
+		    10*log10(ue->measurements.rssi)-ue->rx_total_gain_dB, 
 		    10*log10(ue->measurements.rsrq[0]),
 		    ue->measurements.n0_power_tot_dBm,
 		    (double)ue->measurements.n0_power_tot_dBm+132.24);
@@ -99,12 +99,12 @@ int dump_ue_stats(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,char* buffer, int length
     len += sprintf(&buffer[len], "[UE PROC] UE mode = %s (%d)\n",mode_string[ue->UE_mode[0]],ue->UE_mode[0]);
     len += sprintf(&buffer[len], "[UE PROC] timing_advance = %d\n",ue->timing_advance);
     if (ue->UE_mode[0]==PUSCH) {
-      len += sprintf(&buffer[len], "[UE PROC] Po_PUSCH = %d dBm (PL %d dB, Po_NOMINAL_PUSCH %d dBm, PHR %d dB)\n",
+      len += sprintf(&buffer[len], "[UE PROC] Po_PUSCH = %d dBm (PL %d dB, Po_NOMINAL_PUSCH %d dBm, PHR %d dB)\n", 
 		     ue->ulsch[0]->Po_PUSCH,
 		     get_PL(ue->Mod_id,ue->CC_id,0),
 		     ue->frame_parms.ul_power_control_config_common.p0_NominalPUSCH,
 		     ue->ulsch[0]->PHR);
-      len += sprintf(&buffer[len], "[UE PROC] Po_PUCCH = %d dBm (Po_NOMINAL_PUCCH %d dBm, g_pucch %d dB)\n",
+      len += sprintf(&buffer[len], "[UE PROC] Po_PUCCH = %d dBm (Po_NOMINAL_PUCCH %d dBm, g_pucch %d dB)\n", 
 		     get_PL(ue->Mod_id,ue->CC_id,0)+
 		     ue->frame_parms.ul_power_control_config_common.p0_NominalPUCCH+
 		     ue->dlsch[0][0][0]->g_pucch,
@@ -471,7 +471,7 @@ int dump_ue_stats(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,char* buffer, int length
       len += sprintf(&buffer[len],"[UE PROC] RRC status = %d\n",RRC_status);
 #endif
 
-
+ 
       len += sprintf(&buffer[len], "[UE PROC] Transmission Mode %d \n",ue->transmission_mode[eNB]);
       len += sprintf(&buffer[len], "[UE PROC] PBCH err conseq %d, PBCH error total %d, PBCH FER %d\n",
                      ue->pbch_vars[eNB]->pdu_errors_conseq,
@@ -507,7 +507,7 @@ int dump_ue_stats(PHY_VARS_UE *ue, UE_rxtx_proc_t *proc,char* buffer, int length
       len += sprintf(&buffer[len], "[UE PROC] DLSCH Total %d, Error %d, FER %d\n",ue->dlsch_received[0],ue->dlsch_errors[0],ue->dlsch_fer[0]);
       len += sprintf(&buffer[len], "[UE PROC] DLSCH (SI) Total %d, Error %d\n",ue->dlsch_SI_received[0],ue->dlsch_SI_errors[0]);
       len += sprintf(&buffer[len], "[UE PROC] DLSCH (RA) Total %d, Error %d\n",ue->dlsch_ra_received[0],ue->dlsch_ra_errors[0]);
-#if defined(Rel10) || defined(Rel14)
+#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
       int i=0;
 
       //len += sprintf(&buffer[len], "[UE PROC] MCH  Total %d\n", ue->dlsch_mch_received[0]);
@@ -588,7 +588,7 @@ int dump_eNB_stats(PHY_VARS_eNB *eNB, char* buffer, int length)
     for (i=0; i<eNB->frame_parms.N_RB_UL; i++) {
       len += sprintf(&buffer[len],"%4d ",
                      eNB->measurements.n0_subband_power_tot_dBm[i]);
-      if ((i>0) && ((i%25) == 0))
+      if ((i>0) && ((i%25) == 0)) 
 	len += sprintf(&buffer[len],"\n");
     }
     len += sprintf(&buffer[len],"\n");
@@ -599,25 +599,25 @@ int dump_eNB_stats(PHY_VARS_eNB *eNB, char* buffer, int length)
 	  (eNB->dlsch!=NULL) &&
 	  (eNB->dlsch[(uint8_t)UE_id]!=NULL) &&
 	  (eNB->dlsch[(uint8_t)UE_id][0]->rnti>0)&&
-	  (eNB->UE_stats[UE_id].mode == PUSCH)) {
+	  (eNB->UE_stats[UE_id].mode == PUSCH)) {	
 
         eNB->total_dlsch_bitrate = eNB->UE_stats[UE_id].dlsch_bitrate + eNB->total_dlsch_bitrate;
         eNB->total_transmitted_bits = eNB->UE_stats[UE_id].total_TBS + eNB->total_transmitted_bits;
 
         //eNB->total_system_throughput = eNB->UE_stats[UE_id].total_transmitted_bits + eNB->total_system_throughput;
-
+         
 	for (i=0; i<8; i++)
 	  success = success + (eNB->UE_stats[UE_id].dlsch_trials[i][0] - eNB->UE_stats[UE_id].dlsch_l2_errors[i]);
 
-
-
+    
+	
 	len += sprintf(&buffer[len],"Total DLSCH %d kbits / %d frames ",(eNB->total_transmitted_bits/1000),proc->frame_tx+1);
 	len += sprintf(&buffer[len],"Total DLSCH throughput %d kbps ",(eNB->total_dlsch_bitrate/1000));
 	len += sprintf(&buffer[len],"Total DLSCH trans %d / %d frames\n",success,proc->frame_tx+1);
 	//len += sprintf(&buffer[len],"[eNB PROC] FULL MU-MIMO Transmissions/Total Transmissions = %d/%d\n",eNB->FULL_MUMIMO_transmissions,eNB->check_for_total_transmissions);
 	//len += sprintf(&buffer[len],"[eNB PROC] MU-MIMO Transmissions/Total Transmissions = %d/%d\n",eNB->check_for_MUMIMO_transmissions,eNB->check_for_total_transmissions);
 	//len += sprintf(&buffer[len],"[eNB PROC] SU-MIMO Transmissions/Total Transmissions = %d/%d\n",eNB->check_for_SUMIMO_transmissions,eNB->check_for_total_transmissions);
-
+	
 	len += sprintf(&buffer[len],"UE %d (%x) Power: (%d,%d) dB, Po_PUSCH: (%d,%d) dBm, Po_PUCCH (%d/%d) dBm, Po_PUCCH1 (%d,%d) dBm,  PUCCH1 Thres %d dBm \n",
 		       UE_id,
 		       eNB->UE_stats[UE_id].crnti,
@@ -630,17 +630,17 @@ int dump_eNB_stats(PHY_VARS_eNB *eNB, char* buffer, int length)
 		       dB_fixed(eNB->UE_stats[UE_id].Po_PUCCH1_below/eNB->frame_parms.N_RB_UL)-eNB->rx_total_gain_dB,
 		       dB_fixed(eNB->UE_stats[UE_id].Po_PUCCH1_above/eNB->frame_parms.N_RB_UL)-eNB->rx_total_gain_dB,
 		       PUCCH1_THRES+eNB->measurements.n0_power_tot_dBm-dB_fixed(eNB->frame_parms.N_RB_UL));
-
+	
 	len+= sprintf(&buffer[len],"DL mcs %d, UL mcs %d, UL rb %d, delta_TF %d, ",
 		      eNB->dlsch[(uint8_t)UE_id][0]->harq_processes[0]->mcs,
 		      eNB->ulsch[(uint8_t)UE_id]->harq_processes[0]->mcs,
 		      eNB->ulsch[(uint8_t)UE_id]->harq_processes[0]->nb_rb,
 		      eNB->ulsch[(uint8_t)UE_id]->harq_processes[0]->delta_TF);
-
+	
 	len += sprintf(&buffer[len],"Wideband CQI: (%d,%d) dB\n",
 		       eNB->measurements.wideband_cqi_dB[UE_id][0],
 		       eNB->measurements.wideband_cqi_dB[UE_id][1]);
-
+	
 	len += sprintf(&buffer[len],"DL TM %d, DL_cqi %d, DL_pmi_single %jx ",
 		       eNB->transmission_mode[UE_id],
 		       eNB->UE_stats[UE_id].DL_cqi[0],
@@ -650,23 +650,23 @@ int dump_eNB_stats(PHY_VARS_eNB *eNB, char* buffer, int length)
 		       eNB->UE_stats[UE_id].UE_timing_offset,
 		       eNB->UE_stats[UE_id].UE_timing_offset>>2,
 		       eNB->UE_stats[UE_id].timing_advance_update);
-
+	
 	len += sprintf(&buffer[len],"Mode = %s(%d) ",
 		       mode_string[eNB->UE_stats[UE_id].mode],
 		       eNB->UE_stats[UE_id].mode);
 	UE_id_mac = find_UE_id(eNB->Mod_id,eNB->dlsch[(uint8_t)UE_id][0]->rnti);
-
+	
 	if (UE_id_mac != -1) {
 	  RRC_status = mac_eNB_get_rrc_status(eNB->Mod_id,eNB->dlsch[(uint8_t)UE_id][0]->rnti);
 	  len += sprintf(&buffer[len],"UE_id_mac = %d, RRC status = %d\n",UE_id_mac,RRC_status);
 	} else
 	  len += sprintf(&buffer[len],"UE_id_mac = -1\n");
-
+	
         len += sprintf(&buffer[len],"SR received/total: %d/%d (diff %d)\n",
                        eNB->UE_stats[UE_id].sr_received,
                        eNB->UE_stats[UE_id].sr_total,
                        eNB->UE_stats[UE_id].sr_total-eNB->UE_stats[UE_id].sr_received);
-
+	
 	len += sprintf(&buffer[len],"DL Subband CQI: ");
 
 	int nb_sb;
@@ -691,12 +691,12 @@ int dump_eNB_stats(PHY_VARS_eNB *eNB, char* buffer, int length)
 	default:
 	  nb_sb=0;
 	  break;
-	}
+	}	
 	for (i=0; i<nb_sb; i++)
 	  len += sprintf(&buffer[len],"%2d ",
 			 eNB->UE_stats[UE_id].DL_subband_cqi[0][i]);
 	len += sprintf(&buffer[len],"\n");
-
+	
 
 
         ulsch_errors = 0;
@@ -724,7 +724,7 @@ int dump_eNB_stats(PHY_VARS_eNB *eNB, char* buffer, int length)
                          eNB->UE_stats[UE_id].ulsch_decoding_attempts[i][3]);
 	  if ((i&1) == 1)
 	    len += sprintf(&buffer[len],"\n");
-
+	    
           ulsch_errors+=eNB->UE_stats[UE_id].ulsch_errors[i];
 
           for (j=0; j<4; j++) {
@@ -796,9 +796,9 @@ int dump_eNB_stats(PHY_VARS_eNB *eNB, char* buffer, int length)
 
     len += sprintf(&buffer[len],"\n");
   }
-
+  
   len += sprintf(&buffer[len],"EOF\n");
-
+  
   return len;
 }
 */

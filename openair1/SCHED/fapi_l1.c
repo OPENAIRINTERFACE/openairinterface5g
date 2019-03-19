@@ -220,7 +220,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_pro
   // compute DL power control parameters
   eNB->pdsch_config_dedicated[UE_id].p_a = rel8->pa;
 
-#ifdef PHY_TX_THREAD
+#ifdef PHY_TX_THREAD 
   if (dlsch0->active[proc->subframe_tx]){
 # else
   if (dlsch0->active){
@@ -273,14 +273,14 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_pro
     UE_id = find_dlsch(rel8->rnti,eNB,SEARCH_EXIST_OR_FREE);
     AssertFatal(UE_id!=-1,"no free or exiting dlsch_context\n");
     AssertFatal(UE_id<NUMBER_OF_UE_MAX,"returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n",UE_id,NUMBER_OF_UE_MAX);
-
+ 
     dlsch0 = eNB->dlsch[UE_id][0];
-    dlsch0->harq_mask = 1;
+    dlsch0->harq_mask = 1; 
     dlsch0_harq     = dlsch0->harq_processes[0];
     dlsch0_harq->pdu                    = sdu;
 
     if (proc->frame_tx < 200) LOG_D(PHY,"NFAPI: frame %d, subframe %d (TX %d.%d): Programming SI-BR (%d) => %d\n",frame,subframe,proc->frame_tx,proc->subframe_tx,rel13->pdsch_payload_type,UE_id);
-
+ 
     dlsch0->rnti             = 0xFFFF;
     dlsch0->Kmimo            = 1;
     dlsch0->Mdlharq          = 4;
@@ -345,7 +345,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_pro
   }
   else
 #endif
-  {
+  { 
     UE_id = find_dlsch(rel8->rnti,eNB,SEARCH_EXIST_OR_FREE);
     AssertFatal(UE_id!=-1,"no free or exiting dlsch_context\n");
     AssertFatal(UE_id<NUMBER_OF_UE_MAX,"returned UE_id %d >= %d(NUMBER_OF_UE_MAX)\n",UE_id,NUMBER_OF_UE_MAX);
@@ -390,17 +390,19 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_pro
     if (dlsch0->active){
       computeRhoA_eNB(rel8->pa,dlsch0,dlsch0_harq->dl_power_off, eNB->frame_parms.nb_antenna_ports_eNB);
       computeRhoB_eNB(rel8->pa,eNB->frame_parms.pdsch_config_common.p_b,eNB->frame_parms.nb_antenna_ports_eNB,dlsch0,dlsch0_harq->dl_power_off);
-    }
+    }  
     if (dlsch1->active){
       computeRhoA_eNB(rel8->pa, dlsch1,dlsch1_harq->dl_power_off, eNB->frame_parms.nb_antenna_ports_eNB);
       computeRhoB_eNB(rel8->pa,eNB->frame_parms.pdsch_config_common.p_b,eNB->frame_parms.nb_antenna_ports_eNB,dlsch1,dlsch1_harq->dl_power_off);
     }
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-    dlsch0_harq->pdsch_start = eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols;
-#else
-    dlsch0_harq->pdsch_start = rel10->pdsch_start;
+    if (rel13->ue_type>0)
+      dlsch0_harq->pdsch_start = rel10->pdsch_start;
+    else
 #endif
+      dlsch0_harq->pdsch_start = eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols;
+
     if (dlsch0_harq->round==0) {  //get pointer to SDU if this a new SDU
       AssertFatal(sdu!=NULL,"NFAPI: frame %d, subframe %d: programming dlsch for round 0, rnti %x, UE_id %d, harq_pid %d : sdu is null for pdu_index %d\n",
                   proc->frame_tx,proc->subframe_tx,rel8->rnti,UE_id,harq_pid,
@@ -704,9 +706,12 @@ void handle_nfapi_ul_pdu(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,
   // check if we have received a dci for this ue and ulsch descriptor is configured
 
   if (ul_config_pdu->pdu_type == NFAPI_UL_CONFIG_ULSCH_PDU_TYPE) {
+    //if (UE_id == find_ulsch(ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE)<0)
+       //for (int i=0;i<16;i++) if (eNB->ulsch[i]->harq_mask>0) LOG_I(PHY,"rnti %x, mask %x\n",eNB->ulsch[i]->rnti,eNB->ulsch[i]->harq_mask >0); 
     AssertFatal((UE_id = find_ulsch(ul_config_pdu->ulsch_pdu.ulsch_pdu_rel8.rnti,eNB,SEARCH_EXIST_OR_FREE))>=0,
                 "No existing UE ULSCH for rnti %x\n",rel8->rnti);
-    LOG_D(PHY,"Applying UL config for UE %d, rnti %x for frame %d, subframe %d, modulation %d, rvidx %d\n", UE_id,rel8->rnti,frame,subframe,rel8->modulation_type,rel8->redundancy_version);
+    LOG_D(PHY,"Applying UL config for UE %d, rnti %x for frame %d, subframe %d, modulation %d, rvidx %d, first_rb %d, nb_rb %d\n", UE_id,rel8->rnti,frame,subframe,rel8->modulation_type,rel8->redundancy_version,
+rel8->resource_block_start,rel8->number_of_resource_blocks);
 
     fill_ulsch(eNB,UE_id,&ul_config_pdu->ulsch_pdu,frame,subframe);
 
@@ -985,11 +990,11 @@ void schedule_response(Sched_Rsp_t *Sched_INFO)
     switch (hi_dci0_req_pdu->pdu_type) {
 
     case NFAPI_HI_DCI0_DCI_PDU_TYPE:
-
+      
       handle_nfapi_hi_dci0_dci_pdu(eNB,NFAPI_SFNSF2SFN(HI_DCI0_req->sfn_sf),NFAPI_SFNSF2SF(HI_DCI0_req->sfn_sf),proc,hi_dci0_req_pdu);
       eNB->pdcch_vars[NFAPI_SFNSF2SF(HI_DCI0_req->sfn_sf)&1].num_dci++;
       break;
-
+      
     case NFAPI_HI_DCI0_MPDCCH_DCI_PDU_TYPE:
       handle_nfapi_hi_dci0_mpdcch_dci_pdu(eNB,proc,hi_dci0_req_pdu);
       eNB->mpdcch_vars[subframe&1].num_dci++;

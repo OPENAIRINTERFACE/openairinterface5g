@@ -33,15 +33,18 @@ def sendSocialMediaMessage(pipeChannel, pipeColor, pipeMessage) {
 def doRedHatBuild = false
 def doFlexranCtrlTest = false
 
+// Location of the executor node
+def nodeExecutor = params.nodeExecutor
+
 pipeline {
     agent {
-        label 'bellatrix'
+        label nodeExecutor
     }
     options {
         disableConcurrentBuilds()
         timestamps()
         gitLabConnection('OAI GitLab')
-        gitlabBuilds(builds: ["Build eNb-USRP", "Build basic-sim", "Build phy-sim", "Build eNb-ethernet", "Build UE-ethernet", "Analysis with cppcheck", "Test phy-sim", "Test basic-sim", "Test L2-sim", "Test-FDD-Band7", "Test-TDD-Band40", "Test-IF4p5-FDD-Band7", "Test-IF4p5-TDD-Band40"])
+        gitlabBuilds(builds: ["Build eNb-USRP", "Build basic-sim", "Build phy-sim", "Build eNb-ethernet", "Build UE-ethernet", "Analysis with cppcheck", "Test phy-sim", "Test basic-sim", "Test L2-sim", "Test-Mono-FDD-Band7", "Test-Mono-TDD-Band40", "Test-IF4p5-FDD-Band7", "Test-IF4p5-TDD-Band40", "Test-Mono-FDD-Band13"])
         ansiColor('xterm')
     }
 
@@ -393,7 +396,7 @@ pipeline {
                     steps {
                         script {
                             if ("MERGE".equals(env.gitlabActionType)) {
-                                gitlabCommitStatus(name: "Test-FDD-Band7") {
+                                gitlabCommitStatus(name: "Test-Mono-FDD-Band7") {
                                     build job: 'eNB-CI-FDD-Band7-B210',
                                        parameters: [
                                            string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
@@ -404,7 +407,7 @@ pipeline {
                                        ]
                                 }
                             } else {
-                                gitlabCommitStatus(name: "Test-FDD-Band7") {
+                                gitlabCommitStatus(name: "Test-Mono-FDD-Band7") {
                                     build job: 'eNB-CI-FDD-Band7-B210',
                                        parameters: [
                                            string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
@@ -433,13 +436,18 @@ pipeline {
                                 }
                             }
                         }
+                        failure {
+                            script {
+                                currentBuild.result = 'FAILURE'
+                            }
+                        }
                     }
                 }
                 stage ("Test TDD - Band 40 - B210") {
                     steps {
                         script {
                             if ("MERGE".equals(env.gitlabActionType)) {
-                                gitlabCommitStatus(name: "Test-TDD-Band40") {
+                                gitlabCommitStatus(name: "Test-Mono-TDD-Band40") {
                                     build job: 'eNB-CI-TDD-Band40-B210',
                                        parameters: [
                                            string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
@@ -450,7 +458,7 @@ pipeline {
                                        ]
                                 }
                             } else {
-                                gitlabCommitStatus(name: "Test-TDD-Band40") {
+                                gitlabCommitStatus(name: "Test-Mono-TDD-Band40") {
                                     build job: 'eNB-CI-TDD-Band40-B210',
                                        parameters: [
                                            string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
@@ -477,6 +485,11 @@ pipeline {
                                         archiveArtifacts artifacts: 'test_results-eNB-CI-TDD-Band40-B210.html'
                                     }
                                 }
+                            }
+                        }
+                        failure {
+                            script {
+                                currentBuild.result = 'FAILURE'
                             }
                         }
                     }
@@ -525,6 +538,11 @@ pipeline {
                                 }
                             }
                         }
+                        failure {
+                            script {
+                                currentBuild.result = 'FAILURE'
+                            }
+                        }
                     }
                 }
                 stage ("Test IF4p5 - TDD - Band 40 - B210") {
@@ -569,6 +587,62 @@ pipeline {
                                         archiveArtifacts artifacts: 'test_results-eNB-CI-IF4p5-TDD-Band40-B210.html'
                                     }
                                 }
+                            }
+                        }
+                        failure {
+                            script {
+                                currentBuild.result = 'FAILURE'
+                            }
+                        }
+                    }
+                }
+                stage ("Test MONOLITHIC - FDD - Band 13 - B210") {
+                    steps {
+                        script {
+                            if ("MERGE".equals(env.gitlabActionType)) {
+                                gitlabCommitStatus(name: "Test-Mono-FDD-Band13") {
+                                    build job: 'eNB-CI-MONO-FDD-Band13-B210',
+                                       parameters: [
+                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+                                           string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
+                                           string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
+                                           booleanParam(name: 'eNB_mergeRequest', value: true),
+                                           string(name: 'eNB_TargetBranch', value: String.valueOf(env.gitlabTargetBranch))
+                                       ]
+                                }
+                            } else {
+                                gitlabCommitStatus(name: "Test-Mono-FDD-Band13") {
+                                    build job: 'eNB-CI-MONO-FDD-Band13-B210',
+                                       parameters: [
+                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+                                           string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
+                                           string(name: 'eNB_CommitID', value: String.valueOf(GIT_COMMIT)),
+                                           booleanParam(name: 'eNB_mergeRequest', value: false)
+                                       ]
+                                }
+                            }
+                        }
+                    }
+                    post {
+                        // In case of any non-success, we are retrieving the HTML report of the last completed
+                        // slave job.
+                        // The only drop-back is that we may retrieve the HTML report of a previous build
+                        always {
+                            script {
+                                if (!fileExists('test_results-eNB-CI-MONO-FDD-Band13-B210.html')) {
+                                    copyArtifacts(projectName: 'eNB-CI-MONO-FDD-Band13-B210',
+                                                  filter: 'test_results*.html',
+                                                  selector: lastCompleted())
+                                    if (fileExists('test_results-eNB-CI-MONO-FDD-Band13-B210.html')) {
+                                        sh "sed -i -e 's#TEMPLATE_BUILD_TIME#${JOB_TIMESTAMP}#' test_results-eNB-CI-MONO-FDD-Band13-B210.html"
+                                        archiveArtifacts artifacts: 'test_results-eNB-CI-MONO-FDD-Band13-B210.html'
+                                    }
+                                }
+                            }
+                        }
+                        failure {
+                            script {
+                                currentBuild.result = 'FAILURE'
                             }
                         }
                     }

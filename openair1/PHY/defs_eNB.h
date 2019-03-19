@@ -967,6 +967,22 @@ typedef struct PHY_VARS_eNB_s {
   /// mbsfn reference symbols
   uint32_t         lte_gold_mbsfn_table[10][3][42];
 
+  // PRACH energy detection parameters
+  /// Detection threshold for LTE PRACH
+  int              prach_DTX_threshold;
+  /// Detection threshold for LTE-M PRACH per CE-level
+  int              prach_DTX_threshold_emtc[4];
+  /// counter to average prach energh over first 100 prach opportunities
+  int              prach_energy_counter;
+  // PUCCH1 energy detection parameters
+  int              pucch1_DTX_threshold;
+  // PUCCH1 energy detection parameters for eMTC per CE-level
+  int              pucch1_DTX_threshold_emtc[4];
+  // PUCCH1a/b energy detection parameters
+  int              pucch1ab_DTX_threshold;
+  // PUCCH1a/b energy detection parameters for eMTC per CE-level
+  int              pucch1ab_DTX_threshold_emtc[4];
+
   uint32_t X_u[64][839];
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uint32_t X_u_br[4][64][839];
@@ -1003,8 +1019,7 @@ typedef struct PHY_VARS_eNB_s {
 
   /// if ==0 enables phy only test mode
   int mac_enabled;
-  /// counter to average prach energh over first 100 prach opportunities
-  int prach_energy_counter;
+
 
   // PDSCH Varaibles
   PDSCH_CONFIG_DEDICATED pdsch_config_dedicated[NUMBER_OF_UE_MAX];
