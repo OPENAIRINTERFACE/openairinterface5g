@@ -26,9 +26,31 @@
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<TestCaseRequestedList>
  040101
- 030101 040301 040501 040603 040604 040605 040606 040607 040641 040642 040643 040644 040401 040201 030201
+ 030101 040301 040501 000010 040302 000001 000011 040303 000002 040502 040603 040604 040605 040606 040607 040641 040642 040643 040644 040401 040201 030201
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
+
+        <testCase id="000001">
+                <class>IdleSleep</class>
+                <desc>Waiting for 35 seconds</desc>
+                <idle_sleep_time_in_sec>35</idle_sleep_time_in_sec>
+        </testCase>
+
+        <testCase id="000002">
+                <class>IdleSleep</class>
+                <desc>Waiting for 5 seconds</desc>
+                <idle_sleep_time_in_sec>5</idle_sleep_time_in_sec>
+        </testCase>
+
+        <testCase id="000010">
+                <class>CheckStatusUE</class>
+                <desc>Check UE(s) status before data disabling</desc>
+        </testCase>
+
+        <testCase id="000011">
+                <class>CheckStatusUE</class>
+                <desc>Check UE(s) status after data disabling</desc>
+        </testCase>
 
 	<testCase id="030101">
 		<class>Initialize_eNB</class>
@@ -61,7 +83,24 @@
                 <desc>Detach UE</desc>
         </testCase>
 
+        <testCase id="040302">
+                <class>DataDisable_UE</class>
+                <desc>Disabling Data Service on UE</desc>
+        </testCase>
+
+        <testCase id="040303">
+                <class>DataEnable_UE</class>
+                <desc>Enabling Data Service on UE</desc>
+        </testCase>
+
         <testCase id="040501">
+                <class>Ping</class>
+                <desc>ping (5MHz - 20 sec)</desc>
+                <ping_args>-c 20</ping_args>
+                <ping_packetloss_threshold>5</ping_packetloss_threshold>
+        </testCase>
+
+        <testCase id="040502">
                 <class>Ping</class>
                 <desc>ping (5MHz - 20 sec)</desc>
                 <ping_args>-c 20</ping_args>

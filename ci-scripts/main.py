@@ -509,6 +509,9 @@ class SSHConnection():
 		logging.debug('send adb commands')
 		try:
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+			# enable data service
+			self.command('stdbuf -o0 adb -s ' + device_id + ' shell svc data enable', '\$', 60)
+
 			# The following commands are deprecated since we no longer work on Android 7+
 			# self.command('stdbuf -o0 adb -s ' + device_id + ' shell settings put global airplane_mode_on 1', '\$', 10)
 			# self.command('stdbuf -o0 adb -s ' + device_id + ' shell am broadcast -a android.intent.action.AIRPLANE_MODE --ez state true', '\$', 60)
@@ -963,6 +966,54 @@ class SSHConnection():
 			job.join()
 		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
+	def DataDisableUE_common(self, device_id):
+		try:
+			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+			# enable data service
+			self.command('stdbuf -o0 adb -s ' + device_id + ' shell svc data disable', '\$', 60)
+			logging.debug('\u001B[1mUE (' + device_id + ') Disabled Data Service\u001B[0m')
+			self.close()
+		except:
+			os.kill(os.getppid(),signal.SIGUSR1)
+
+	def DataDisableUE(self):
+		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
+			Usage()
+			sys.exit('Insufficient Parameter')
+		multi_jobs = []
+		for device_id in self.UEDevices:
+			p = Process(target = self.DataDisableUE_common, args = (device_id,))
+			p.daemon = True
+			p.start()
+			multi_jobs.append(p)
+		for job in multi_jobs:
+			job.join()
+		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+
+	def DataEnableUE_common(self, device_id):
+		try:
+			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+			# enable data service
+			self.command('stdbuf -o0 adb -s ' + device_id + ' shell svc data enable', '\$', 60)
+			logging.debug('\u001B[1mUE (' + device_id + ') Enabled Data Service\u001B[0m')
+			self.close()
+		except:
+			os.kill(os.getppid(),signal.SIGUSR1)
+
+	def DataEnableUE(self):
+		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
+			Usage()
+			sys.exit('Insufficient Parameter')
+		multi_jobs = []
+		for device_id in self.UEDevices:
+			p = Process(target = self.DataEnableUE_common, args = (device_id,))
+			p.daemon = True
+			p.start()
+			multi_jobs.append(p)
+		for job in multi_jobs:
+			job.join()
+		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+
 	def GetAllUEDevices(self, terminate_ue_flag):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			Usage()
@@ -988,6 +1039,68 @@ class SSHConnection():
 				logging.debug('\u001B[1;37;41m CAT-M UE Not Found! \u001B[0m')
 				sys.exit(1)
 		self.close()
+
+	def CheckUEStatus_common(self, lock, device_id, statusQueue):
+		try:
+			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+			lock.acquire()
+			logging.debug('\u001B[1;37;44m Status Check (' + str(device_id) + ') \u001B[0m')
+			#logging.debug('\u001B[1;34m    ' + pal_msg + '\u001B[0m')
+			#logging.debug('\u001B[1;34m    ' + min_msg + '\u001B[0m')
+			#logging.debug('\u001B[1;34m    ' + avg_msg + '\u001B[0m')
+			#logging.debug('\u001B[1;34m    ' + max_msg + '\u001B[0m')
+			statusQueue.put(0)
+			statusQueue.put(device_id)
+			statusQueue.put('Nothing for the moment')
+			lock.release()
+			self.close()
+		except:
+			os.kill(os.getppid(),signal.SIGUSR1)
+
+	def CheckStatusUE(self):
+		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
+			Usage()
+			sys.exit('Insufficient Parameter')
+		initialize_eNB_flag = False
+		pStatus = self.CheckProcessExist(initialize_eNB_flag)
+		if (pStatus < 0):
+			self.CreateHtmlTestRow('N/A', 'KO', pStatus)
+			self.CreateHtmlTabFooter(False)
+			sys.exit(1)
+		multi_jobs = []
+		lock = Lock()
+		status_queue = SimpleQueue()
+		for device_id in self.UEDevices:
+			p = Process(target = self.CheckUEStatus_common, args = (lock,device_id,status_queue,))
+			p.daemon = True
+			p.start()
+			multi_jobs.append(p)
+		for job in multi_jobs:
+			job.join()
+
+		if (status_queue.empty()):
+			self.CreateHtmlTestRow('N/A', 'KO', ALL_PROCESSES_OK)
+			self.AutoTerminateUEandeNB()
+			self.CreateHtmlTabFooter(False)
+			sys.exit(1)
+		else:
+			check_status = True
+			html_queue = SimpleQueue()
+			while (not status_queue.empty()):
+				count = status_queue.get()
+				if (count < 0):
+					check_status = False
+				device_id = status_queue.get()
+				message = status_queue.get()
+				html_cell = '<pre style="background-color:white">UE (' + device_id + ')\n' + message + '</pre>'
+				html_queue.put(html_cell)
+			if (check_status):
+				self.CreateHtmlTestRowQueue('N/A', 'OK', len(self.UEDevices), html_queue)
+			else:
+				self.CreateHtmlTestRowQueue('N/A', 'KO', len(self.UEDevices), html_queue)
+				self.AutoTerminateUEandeNB()
+				self.CreateHtmlTabFooter(False)
+				sys.exit(1)
 
 	def GetAllUEIPAddresses(self):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
@@ -1795,7 +1908,7 @@ class SSHConnection():
 			result = re.search('LTE_RRCConnectionSetupComplete from UE', str(line))
 			if result is not None:
 				rrcSetupComplete += 1
-			result = re.search('Generate LTE_RRCConnectionRelease', str(line))
+			result = re.search('Generate LTE_RRCConnectionRelease|Generate RRCConnectionRelease', str(line))
 			if result is not None:
 				rrcReleaseRequest += 1
 			result = re.search('Generate LTE_RRCConnectionReconfiguration', str(line))
@@ -2006,6 +2119,7 @@ class SSHConnection():
 	def TerminateUE_common(self, device_id):
 		try:
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+			# back in airplane mode on (ie radio off)
 			self.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/off', '\$', 60)
 			logging.debug('\u001B[1mUE (' + device_id + ') Detach Completed\u001B[0m')
 
@@ -2493,7 +2607,7 @@ def Usage():
 	print('------------------------------------------------------------')
 
 def CheckClassValidity(action,id):
-	if action != 'Build_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW'  and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module' and action != 'Ping_CatM_module' and action != 'IdleSleep':
+	if action != 'Build_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'DataDisable_UE' and action != 'DataEnable_UE' and action != 'CheckStatusUE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW'  and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module' and action != 'Ping_CatM_module' and action != 'IdleSleep':
 		logging.debug('ERROR: test-case ' + id + ' has wrong class ' + action)
 		return False
 	return True
@@ -2793,7 +2907,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE):
 				continue
 			SSH.ShowTestID()
 			GetParametersFromXML(action)
-			if action == 'Initialize_UE' or action == 'Attach_UE' or action == 'Detach_UE' or action == 'Ping' or action == 'Iperf' or action == 'Reboot_UE':
+			if action == 'Initialize_UE' or action == 'Attach_UE' or action == 'Detach_UE' or action == 'Ping' or action == 'Iperf' or action == 'Reboot_UE' or action == 'DataDisable_UE' or action == 'DataEnable_UE' or action == 'CheckStatusUE':
 				terminate_ue_flag = False
 				SSH.GetAllUEDevices(terminate_ue_flag)
 			if action == 'Build_eNB':
@@ -2810,6 +2924,12 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE):
 				SSH.AttachUE()
 			elif action == 'Detach_UE':
 				SSH.DetachUE()
+			elif action == 'DataDisable_UE':
+				SSH.DataDisableUE()
+			elif action == 'DataEnable_UE':
+				SSH.DataEnableUE()
+			elif action == 'CheckStatusUE':
+				SSH.CheckStatusUE()
 			elif action == 'Initialize_CatM_module':
 				SSH.InitializeCatM()
 			elif action == 'Terminate_CatM_module':
