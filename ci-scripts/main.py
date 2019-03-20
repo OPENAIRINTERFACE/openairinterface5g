@@ -129,6 +129,9 @@ class SSHConnection():
 		self.eNBCpuNb = ''
 		self.eNBCpuModel = ''
 		self.eNBCpuMHz = ''
+		self.flexranCtrlInstalled = False
+		self.flexranCtrlStarted = False
+		self.expectedNbOfConnectedUEs = 0
 
 	def open(self, ipaddress, username, password):
 		count = 0
@@ -388,6 +391,37 @@ class SSHConnection():
 		self.close()
 		self.CreateHtmlTestRow(self.EPCType, 'OK', ALL_PROCESSES_OK)
 
+	def CheckFlexranCtrlInstallation(self):
+		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '':
+			return
+		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+		self.command('ls -ls /opt/flexran_rtc/*/rt_controller', '\$', 5)
+		result = re.search('/opt/flexran_rtc/build/rt_controller', str(self.ssh.before))
+		if result is not None:
+			self.flexranCtrlInstalled = True
+			logging.debug('Flexran Controller is installed')
+		self.close()
+
+	def InitializeFlexranCtrl(self):
+		if self.flexranCtrlInstalled == False:
+			return
+		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '':
+			Usage()
+			sys.exit('Insufficient Parameter')
+		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+		self.command('cd /opt/flexran_rtc', '\$', 5)
+		self.command('echo ' + self.EPCPassword + ' | sudo -S rm -f log/*.log', '\$', 5)
+		self.command('echo ' + self.EPCPassword + ' | sudo -S echo "build/rt_controller -c log_config/basic_log" > ./my-flexran-ctl.sh', '\$', 5)
+		self.command('echo ' + self.EPCPassword + ' | sudo -S chmod 755 ./my-flexran-ctl.sh', '\$', 5)
+		self.command('echo ' + self.EPCPassword + ' | sudo -S daemon --unsafe --name=flexran_rtc_daemon --chdir=/opt/flexran_rtc -o /opt/flexran_rtc/log/flexranctl_' + self.testCase_id + '.log ././my-flexran-ctl.sh', '\$', 5)
+		self.command('ps -aux | grep --color=never rt_controller', '\$', 5)
+		result = re.search('rt_controller -c ', str(self.ssh.before))
+		if result is not None:
+			logging.debug('\u001B[1m Initialize FlexRan Controller Completed\u001B[0m')
+			self.flexranCtrlStarted = True
+		self.close()
+		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+
 	def InitializeeNB(self):
 		if self.eNBIPAddress == '' or self.eNBUserName == '' or self.eNBPassword == '' or self.eNBSourceCodePath == '':
 			Usage()
@@ -449,6 +483,8 @@ class SSHConnection():
 		self.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
 		self.command('sed -i -e \'s/CI_MME_IP_ADDR/' + self.EPCIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
 		self.command('sed -i -e \'s/CI_ENB_IP_ADDR/' + self.eNBIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
+		if self.flexranCtrlInstalled == False or self.flexranCtrlStarted == False:
+			self.command('sed -i -e \'s/FLEXRAN_ENABLED.*;/FLEXRAN_ENABLED        = "no";/\' ' + ci_full_config_file, '\$', 2);
 		# Launch eNB with the modified config file
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
@@ -1077,9 +1113,28 @@ class SSHConnection():
 			multi_jobs.append(p)
 		for job in multi_jobs:
 			job.join()
+		if self.flexranCtrlInstalled and self.flexranCtrlStarted:
+			self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+			self.command('cd /opt/flexran_rtc', '\$', 5)
+			self.command('curl http://localhost:9999/stats | jq \'.\' > log/check_status_' + self.testCase_id + '.log 2>&1', '\$', 5)
+			self.command('cat log/check_status_' + self.testCase_id + '.log | jq \'.eNB_config[0].UE\' | grep -c rnti | sed -e "s#^#Nb Connected UE = #"', '\$', 5)
+			result = re.search('Nb Connected UE = (?P<nb_ues>[0-9]+)', str(self.ssh.before))
+			passStatus = True
+			if result is not None:
+				nb_ues = int(result.group('nb_ues'))
+				htmlOptions = 'Nb Connected UE(s) to eNB = ' + str(nb_ues)
+				logging.debug(htmlOptions)
+				if self.expectedNbOfConnectedUEs > -1:
+					if nb_ues != self.expectedNbOfConnectedUEs:
+						passStatus = False
+			else:
+				htmlOptions = 'N/A'
+			self.close()
+		else:
+			htmlOptions = 'N/A'
 
 		if (status_queue.empty()):
-			self.CreateHtmlTestRow('N/A', 'KO', ALL_PROCESSES_OK)
+			self.CreateHtmlTestRow(htmlOptions, 'KO', ALL_PROCESSES_OK)
 			self.AutoTerminateUEandeNB()
 			self.CreateHtmlTabFooter(False)
 			sys.exit(1)
@@ -1094,10 +1149,10 @@ class SSHConnection():
 				message = status_queue.get()
 				html_cell = '<pre style="background-color:white">UE (' + device_id + ')\n' + message + '</pre>'
 				html_queue.put(html_cell)
-			if (check_status):
-				self.CreateHtmlTestRowQueue('N/A', 'OK', len(self.UEDevices), html_queue)
+			if check_status and passStatus:
+				self.CreateHtmlTestRowQueue(htmlOptions, 'OK', len(self.UEDevices), html_queue)
 			else:
-				self.CreateHtmlTestRowQueue('N/A', 'KO', len(self.UEDevices), html_queue)
+				self.CreateHtmlTestRowQueue(htmlOptions, 'KO', len(self.UEDevices), html_queue)
 				self.AutoTerminateUEandeNB()
 				self.CreateHtmlTabFooter(False)
 				sys.exit(1)
@@ -1785,6 +1840,8 @@ class SSHConnection():
 					logStatus = self.AnalyzeLogFile_eNB(self.eNBLogFile)
 					if logStatus < 0:
 						result = logStatus
+				if self.flexranCtrlInstalled and self.flexranCtrlStarted:
+					self.TerminateFlexranCtrl()
 			return result
 
 	def CheckeNBProcess(self, status_queue):
@@ -2079,7 +2136,6 @@ class SSHConnection():
 		else:
 			self.command('cd ' + self.EPCSourceCodePath, '\$', 5)
 			self.command('cd scripts', '\$', 5)
-			self.command('rm -f ./kill_hss.sh', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S daemon --name=simulated_hss --stop', '\$', 5)
 			time.sleep(1)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL hss_sim', '\$', 5)
@@ -2114,6 +2170,21 @@ class SSHConnection():
 			self.command('cd /opt/ltebox/tools', '\$', 5)
 			self.command('echo ' + self.EPCPassword + ' | sudo -S ./stop_xGw', '\$', 5)
 		self.close()
+		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+
+	def TerminateFlexranCtrl(self):
+		if self.flexranCtrlInstalled == False or self.flexranCtrlStarted == False:
+			return
+		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '':
+			Usage()
+			sys.exit('Insufficient Parameter')
+		self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
+		self.command('echo ' + self.EPCPassword + ' | sudo -S daemon --name=flexran_rtc_daemon --stop', '\$', 5)
+		time.sleep(1)
+		self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL rt_controller', '\$', 5)
+		time.sleep(1)
+		self.close()
+		self.flexranCtrlStarted = False
 		self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
 	def TerminateUE_common(self, device_id):
@@ -2607,7 +2678,7 @@ def Usage():
 	print('------------------------------------------------------------')
 
 def CheckClassValidity(action,id):
-	if action != 'Build_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'DataDisable_UE' and action != 'DataEnable_UE' and action != 'CheckStatusUE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW'  and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module' and action != 'Ping_CatM_module' and action != 'IdleSleep':
+	if action != 'Build_eNB' and action != 'Initialize_eNB' and action != 'Terminate_eNB' and action != 'Initialize_UE' and action != 'Terminate_UE' and action != 'Attach_UE' and action != 'Detach_UE' and action != 'DataDisable_UE' and action != 'DataEnable_UE' and action != 'CheckStatusUE' and action != 'Ping' and action != 'Iperf' and action != 'Reboot_UE' and action != 'Initialize_FlexranCtrl' and action != 'Terminate_FlexranCtrl' and action != 'Initialize_HSS' and action != 'Terminate_HSS' and action != 'Initialize_MME' and action != 'Terminate_MME' and action != 'Initialize_SPGW' and action != 'Terminate_SPGW'  and action != 'Initialize_CatM_module' and action != 'Terminate_CatM_module' and action != 'Attach_CatM_module' and action != 'Detach_CatM_module' and action != 'Ping_CatM_module' and action != 'IdleSleep':
 		logging.debug('ERROR: test-case ' + id + ' has wrong class ' + action)
 		return False
 	return True
@@ -2633,6 +2704,13 @@ def GetParametersFromXML(action):
 			SSH.nbMaxUEtoAttach = -1
 		else:
 			SSH.nbMaxUEtoAttach = int(nbMaxUEtoAttach)
+
+	if action == 'CheckStatusUE':
+		expectedNBUE = test.findtext('expectedNbOfConnectedUEs')
+		if (expectedNBUE is None):
+			SSH.expectedNbOfConnectedUEs = -1
+		else:
+			SSH.expectedNbOfConnectedUEs = int(expectedNBUE)
 
 	if action == 'Ping' or action == 'Ping_CatM_module':
 		SSH.ping_args = test.findtext('ping_args')
@@ -2881,6 +2959,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE):
 		else:
 			logging.debug('ERROR: requested test is invalidly formatted: ' + test)
 			sys.exit(1)
+	SSH.CheckFlexranCtrlInstallation()
 
 	#get the list of tests to be done
 	todo_tests=[]
@@ -2958,6 +3037,10 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE):
 				SSH.InitializeSPGW()
 			elif action == 'Terminate_SPGW':
 				SSH.TerminateSPGW()
+			elif action == 'Initialize_FlexranCtrl':
+				SSH.InitializeFlexranCtrl()
+			elif action == 'Terminate_FlexranCtrl':
+				SSH.TerminateFlexranCtrl()
 			elif action == 'IdleSleep':
 				SSH.IdleSleep()
 			else:
