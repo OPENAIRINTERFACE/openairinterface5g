@@ -396,6 +396,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
             NR_gNB_DLSCH_t *dlsch = RC.gNB[module_idP][CC_id]->dlsch[ii][0];
             if((dlsch != NULL) && (dlsch->rnti == rnti)){
               LOG_I(MAC, "clean_eNb_dlsch UE %x \n", rnti);
+	      LOG_E(PHY,"Calling with wrong paramter type\n");
               clean_eNb_dlsch(dlsch);
             }
           }

@@ -123,7 +123,7 @@ int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
 					    uint8_t eNB_id,
 					    int frame,
 					    uint8_t nr_tti_rx,
-					    uint32_t dci_pdu[4],
+					    uint64_t dci_pdu[2],
 					    uint16_t rnti,
 					    uint8_t dci_length,
 					    NR_DCI_format_t dci_format,
@@ -2760,37 +2760,6 @@ void nr_ue_measurement_procedures(
 
   }
 #endif
-  // accumulate and filter timing offset estimation every nr_tti_rx (instead of every frame)
-  if (( slot == 2) && (l==(1-frame_parms->Ncp))) {
-
-    // AGC
-/*
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL, VCD_FUNCTION_IN);
-
-#ifndef OAI_USRP
-#ifndef OAI_BLADERF
-#ifndef OAI_LMSSDR
-#ifndef OAI_ADRV9371_ZC706
-    phy_adjust_gain (ue,dB_fixed(ue->measurements.rssi),0);
-#endif
-#endif
-#endif
-#endif
-
-    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_GAIN_CONTROL, VCD_FUNCTION_OUT);
-*/
-    eNB_id = 0;
-
-      LOG_D(PHY,"start adjust sync l = %d slot = %d no timing %d\n",l, slot, ue->no_timing_correction);
-      if (ue->no_timing_correction==0)
-	nr_adjust_synch_ue(&ue->frame_parms,
-			   ue,
-			   eNB_id,
-			   nr_tti_rx,
-			   0,
-			   16384);
-    
-  }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_MEASUREMENT_PROCEDURES, VCD_FUNCTION_OUT);
 }
@@ -2969,7 +2938,7 @@ void nr_ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCH_PROCEDURES, VCD_FUNCTION_IN);
 
   //LOG_I(PHY,"[UE  %d] Frame %d, Trying PBCH %d (NidCell %d, eNB_id %d)\n",ue->Mod_id,frame_rx,pbch_phase,ue->frame_parms.Nid_cell,eNB_id);
-  ret = nr_rx_pbch(ue, proc,
+  ret = nr_rx_pbch(ue, proc->subframe_rx,
 		   ue->pbch_vars[eNB_id],
 		   &ue->frame_parms,
 		   eNB_id,
@@ -3085,7 +3054,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
   uint16_t p_rnti=P_RNTI;
   uint16_t si_rnti=SI_RNTI;
   uint16_t ra_rnti=99;
-  uint16_t sp_csi_rnti,sfi_rnti,int_rnti,tpc_pusch_rnti,tpc_pucch_rnti,tpc_srs_rnti; //FIXME
+  uint16_t sp_csi_rnti=0,sfi_rnti=0,int_rnti=0,tpc_pusch_rnti=0,tpc_pucch_rnti=0,tpc_srs_rnti=0; //FIXME
   uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES] =
     {c_rnti,cs_rnti,new_rnti,tc_rnti,p_rnti,si_rnti,ra_rnti,sp_csi_rnti,sfi_rnti,int_rnti,tpc_pusch_rnti,tpc_pucch_rnti,tpc_srs_rnti};
   #ifdef NR_PDCCH_SCHED_DEBUG
@@ -3364,7 +3333,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
 
 
   } // end for loop nb_searchspace_active
-  return(0);
+  return(dci_cnt);
 }
 #endif // NR_PDCCH_SCHED
 
@@ -4969,6 +4938,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][0];
   uint16_t nb_symb_sch = 8; // to be updated by higher layer
   uint8_t nb_symb_pdcch = pdcch_vars->coreset[0].duration;
+  uint8_t dci_cnt = 0;
   
   LOG_D(PHY," ****** start RX-Chain for Frame.Slot %d.%d ******  \n", frame_rx%1024, nr_tti_rx);
 
@@ -4978,7 +4948,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 #ifdef NR_PDCCH_SCHED
   nr_gold_pdcch(ue,0, 2);
   
-  //if (nr_tti_rx==1){
+
   LOG_D(PHY," ------ --> PDCCH ChannelComp/LLR Frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
   for (uint16_t l=0; l<nb_symb_pdcch; l++) {
     
@@ -4999,15 +4969,29 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 #endif
     
     //printf("phy procedure pdcch start measurement l =%d\n",l);
-    nr_ue_measurement_procedures(l,ue,proc,eNB_id,(nr_tti_rx),mode);
+    //nr_ue_measurement_procedures(l,ue,proc,eNB_id,(nr_tti_rx),mode);
       
   }
 
-  if (nr_ue_pdcch_procedures(eNB_id,ue,proc) == -1) {
-    LOG_E(PHY,"[UE  %d] Frame %d, nr_tti_rx %d: Error in pdcch procedures\n",ue->Mod_id,frame_rx,nr_tti_rx);
-    return(-1);
+  dci_cnt = nr_ue_pdcch_procedures(eNB_id,ue,proc);
+
+  if (dci_cnt > 0) {
+
+    LOG_I(PHY,"[UE  %d] Frame %d, nr_tti_rx %d: found %d DCIs\n",ue->Mod_id,frame_rx,nr_tti_rx,dci_cnt);
+    
+    if (0/*ue->no_timing_correction==0*/) {
+      LOG_I(PHY,"start adjust sync slot = %d no timing %d\n", nr_tti_rx, ue->no_timing_correction);
+      nr_adjust_synch_ue(&ue->frame_parms,
+			 ue,
+			 eNB_id,
+			 nr_tti_rx,
+			 0,
+			 16384);
+    }
   }
-  //}
+  else {
+    LOG_D(PHY,"[UE  %d] Frame %d, nr_tti_rx %d: No DCIs found\n",ue->Mod_id,frame_rx,nr_tti_rx);
+  }
 #endif //NR_PDCCH_SCHED
 
   

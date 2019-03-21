@@ -50,8 +50,8 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   //uint16_t Nid_cell = (eNB_offset == 0) ? ue->frame_parms.Nid_cell : ue->measurements.adj_cell_id[eNB_offset-1];
 
   uint8_t nushift, ssb_index=0, n_hf=0;
-  int **dl_ch_estimates  =ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].dl_ch_estimates[eNB_offset];
-  int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].rxdataF;
+  int **dl_ch_estimates  =ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].dl_ch_estimates[eNB_offset];
+  int **rxdataF=ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].rxdataF;
 
   nushift =  ue->frame_parms.Nid_cell%4;
   ue->frame_parms.nushift = nushift;
@@ -78,7 +78,7 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   k = nushift;
 
 #ifdef DEBUG_CH
-  printf("PBCH Channel Estimation : ThreadId %d, eNB_offset %d ch_offset %d, OFDM size %d, Ncp=%d, l=%d, Ns=%d, k=%d symbol %d\n",ue->current_thread_id[Ns>>1], eNB_offset,ch_offset,ue->frame_parms.ofdm_symbol_size,
+  printf("PBCH Channel Estimation : ThreadId %d, eNB_offset %d ch_offset %d, OFDM size %d, Ncp=%d, l=%d, Ns=%d, k=%d symbol %d\n",ue->current_thread_id[Ns], eNB_offset,ch_offset,ue->frame_parms.ofdm_symbol_size,
          ue->frame_parms.Ncp,l,Ns,k, symbol);
 #endif
 
