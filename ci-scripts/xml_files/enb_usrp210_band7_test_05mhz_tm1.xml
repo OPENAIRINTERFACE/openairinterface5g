@@ -28,7 +28,7 @@
  040101
  030101 040301 040501 040603 040604 040605 040606 040607 040641 040642 040643 040644 040401 040201 030201
  050102
- 030102 040301 040502 000010 040302 000001 000011 040303 000002 000012 040503 040401 040201 030201
+ 030102 000010 040301 040502 000011 040302 000001 000012 040303 000002 000013 040503 040401 040201 030201
  050202
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
@@ -47,17 +47,23 @@
 
         <testCase id="000010">
                 <class>CheckStatusUE</class>
+                <desc>Check UE(s) status before attachment</desc>
+		<expectedNbOfConnectedUEs>0</expectedNbOfConnectedUEs>
+        </testCase>
+
+        <testCase id="000011">
+                <class>CheckStatusUE</class>
                 <desc>Check UE(s) status before data disabling</desc>
 		<expectedNbOfConnectedUEs>2</expectedNbOfConnectedUEs>
         </testCase>
 
-        <testCase id="000011">
+        <testCase id="000012">
                 <class>CheckStatusUE</class>
                 <desc>Check UE(s) status after data disabling</desc>
 		<expectedNbOfConnectedUEs>0</expectedNbOfConnectedUEs>
         </testCase>
 
-        <testCase id="000012">
+        <testCase id="000013">
                 <class>CheckStatusUE</class>
                 <desc>Check UE(s) status after data re-enabling</desc>
 		<expectedNbOfConnectedUEs>2</expectedNbOfConnectedUEs>

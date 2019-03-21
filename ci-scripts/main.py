@@ -1079,15 +1079,44 @@ class SSHConnection():
 	def CheckUEStatus_common(self, lock, device_id, statusQueue):
 		try:
 			self.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+			self.command('stdbuf -o0 adb -s ' + device_id + ' shell dumpsys telephony.registry', '\$', 15)
+			result = re.search('mServiceState=(?P<serviceState>[0-9]+)', str(self.ssh.before))
+			serviceState = 'Service State: UNKNOWN'
+			if result is not None:
+				lServiceState = int(result.group('serviceState'))
+				if lServiceState == 3:
+					serviceState = 'Service State: RADIO_POWERED_OFF'
+				if lServiceState == 1:
+					serviceState = 'Service State: OUT_OF_SERVICE'
+				if lServiceState == 0:
+					serviceState = 'Service State: IN_SERVICE'
+				if lServiceState == 2:
+					serviceState = 'Service State: EMERGENCY_ONLY'
+			result = re.search('mDataConnectionState=(?P<dataConnectionState>[0-9]+)', str(self.ssh.before))
+			dataConnectionState = 'Data State:    UNKNOWN'
+			if result is not None:
+				lDataConnectionState = int(result.group('dataConnectionState'))
+				if lDataConnectionState == 0:
+					dataConnectionState = 'Data State:    DISCONNECTED'
+				if lDataConnectionState == 1:
+					dataConnectionState = 'Data State:    CONNECTING'
+				if lDataConnectionState == 2:
+					dataConnectionState = 'Data State:    CONNECTED'
+				if lDataConnectionState == 3:
+					dataConnectionState = 'Data State:    SUSPENDED'
+			result = re.search('mDataConnectionReason=(?P<dataConnectionReason>[0-9a-zA-Z_]+)', str(self.ssh.before))
+			dataConnectionReason = 'Data Reason:   UNKNOWN'
+			if result is not None:
+				dataConnectionReason = 'Data Reason:   ' + result.group('dataConnectionReason')
 			lock.acquire()
 			logging.debug('\u001B[1;37;44m Status Check (' + str(device_id) + ') \u001B[0m')
-			#logging.debug('\u001B[1;34m    ' + pal_msg + '\u001B[0m')
-			#logging.debug('\u001B[1;34m    ' + min_msg + '\u001B[0m')
-			#logging.debug('\u001B[1;34m    ' + avg_msg + '\u001B[0m')
-			#logging.debug('\u001B[1;34m    ' + max_msg + '\u001B[0m')
+			logging.debug('\u001B[1;34m    ' + serviceState + '\u001B[0m')
+			logging.debug('\u001B[1;34m    ' + dataConnectionState + '\u001B[0m')
+			logging.debug('\u001B[1;34m    ' + dataConnectionReason + '\u001B[0m')
 			statusQueue.put(0)
 			statusQueue.put(device_id)
-			statusQueue.put('Nothing for the moment')
+			qMsg = serviceState + '\n' + dataConnectionState + '\n' + dataConnectionReason
+			statusQueue.put(qMsg)
 			lock.release()
 			self.close()
 		except:
@@ -1123,7 +1152,7 @@ class SSHConnection():
 			if result is not None:
 				nb_ues = int(result.group('nb_ues'))
 				htmlOptions = 'Nb Connected UE(s) to eNB = ' + str(nb_ues)
-				logging.debug(htmlOptions)
+				logging.debug('\u001B[1;37;44m ' + htmlOptions + ' \u001B[0m')
 				if self.expectedNbOfConnectedUEs > -1:
 					if nb_ues != self.expectedNbOfConnectedUEs:
 						passStatus = False
