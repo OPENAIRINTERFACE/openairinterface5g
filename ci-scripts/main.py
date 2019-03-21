@@ -2640,8 +2640,8 @@ class SSHConnection():
 				self.htmlFile.write('     </tr>\n')
 			self.htmlFile.write('  </table>\n')
 
-			terminate_ue_flag = True
 			if (self.ADBIPAddress != 'none'):
+				terminate_ue_flag = True
 				self.GetAllUEDevices(terminate_ue_flag)
 				self.GetAllCatMDevices(terminate_ue_flag)
 				self.htmlUEConnected = len(self.UEDevices)
@@ -3121,7 +3121,7 @@ elif re.match('^LogCollectIperf$', mode, re.IGNORECASE):
 		sys.exit('Insufficient Parameter')
 	SSH.LogCollectIperf()
 elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
-	if (SSH.ADBIPAddress == '' or SSH.ADBUserName == '' or SSH.ADBPassword == '') and (SSH.UEIPAddress == '' or SSH.UEUserName == '' or SSH.UEPassword == ''):
+	if (SSH.ADBIPAddress == '' or SSH.ADBUserName == '' or SSH.ADBPassword == ''):
 		Usage()
 		sys.exit('Insufficient Parameter')
 	count = 0
