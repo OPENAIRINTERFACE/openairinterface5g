@@ -267,27 +267,6 @@ typedef struct {
   uint8_t              CC_id;
   /// Last RX timestamp
   openair0_timestamp timestamp_rx;
-  /// pthread attributes for main UE thread
-  pthread_attr_t attr_ue;
-  /// scheduling parameters for main UE thread
-  struct sched_param sched_param_ue;
-  /// pthread descriptor main UE thread
-  pthread_t pthread_ue;
-  /// \brief Instance count for synch thread.
-  /// \internal This variable is protected by \ref mutex_synch.
-  int instance_cnt_synch;
-  /// pthread attributes for synch processing thread
-  pthread_attr_t attr_synch;
-  /// scheduling parameters for synch thread
-  struct sched_param sched_param_synch;
-  /// pthread descriptor synch thread
-  pthread_t pthread_synch;
-  /// condition variable for UE synch thread;
-  pthread_cond_t cond_synch;
-  /// mutex for UE synch thread
-  pthread_mutex_t mutex_synch;
-  /// set of scheduling variables RXn-TXnp4 threads
-  UE_nr_rxtx_proc_t proc_rxtx[RX_NB_TH];
 } UE_nr_proc_t;
 
 typedef enum {

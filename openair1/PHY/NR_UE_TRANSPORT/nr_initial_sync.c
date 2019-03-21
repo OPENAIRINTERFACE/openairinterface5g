@@ -122,11 +122,6 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, runmode_t mode)
     //    ue->pbch_vars[0]->decoded_output[0] = ue->pbch_vars[0]->decoded_output[2];
     //    ue->pbch_vars[0]->decoded_output[2] = dummy;
 
-    for(int i=0; i<RX_NB_TH;i++)
-    {
-
-        ue->proc.proc_rxtx[i].frame_tx = ue->proc.proc_rxtx[0].frame_rx;
-    }
 #ifdef DEBUG_INITIAL_SYNCH
     LOG_I(PHY,"[UE%d] Initial sync: pbch decoded sucessfully\n",ue->Mod_id);
 #endif
@@ -292,9 +287,8 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
     if (ue->UE_scan_carrier == 0) {
 
     #if UE_AUTOTEST_TRACE
-      LOG_I(PHY,"[UE  %d] AUTOTEST Cell Sync : frame = %d, rx_offset %d, freq_offset %d \n",
+      LOG_I(PHY,"[UE  %d] AUTOTEST Cell Sync : rx_offset %d, freq_offset %d \n",
               ue->Mod_id,
-              ue->proc.proc_rxtx[0].frame_rx,
               ue->rx_offset,
               ue->common_vars.freq_offset );
     #endif
@@ -305,30 +299,7 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 
     }
 
-#if DISABLE_LOG_X
-    printf("[UE %d] Frame %d RRC Measurements => rssi %3.1f dBm (dig %3.1f dB, gain %d), N0 %d dBm,  rsrp %3.1f dBm/RE, rsrq %3.1f dB\n",ue->Mod_id,
-	  ue->proc.proc_rxtx[0].frame_rx,
-	  10*log10(ue->measurements.rssi)-ue->rx_total_gain_dB,
-	  10*log10(ue->measurements.rssi),
-	  ue->rx_total_gain_dB,
-	  ue->measurements.n0_power_tot_dBm,
-	  10*log10(ue->measurements.rsrp[0])-ue->rx_total_gain_dB,
-	  (10*log10(ue->measurements.rsrq[0])));
-
-
-    printf("[UE %d] Frame %d MIB Information => %s, %s, NidCell %d, N_RB_DL %d, PHICH DURATION %d, PHICH RESOURCE %s, TX_ANT %d\n",
-	  ue->Mod_id,
-	  ue->proc.proc_rxtx[0].frame_rx,
-	  duplex_string[fp->frame_type],
-	  prefix_string[fp->Ncp],
-	  fp->Nid_cell,
-	  fp->N_RB_DL,
-	  fp->phich_config_common.phich_duration,
-	  phich_string[fp->phich_config_common.phich_resource],
-	  fp->nb_antenna_ports_eNB);
-#else
-    LOG_I(PHY, "[UE %d] Frame %d RRC Measurements => rssi %3.1f dBm (dig %3.1f dB, gain %d), N0 %d dBm,  rsrp %3.1f dBm/RE, rsrq %3.1f dB\n",ue->Mod_id,
-	  ue->proc.proc_rxtx[0].frame_rx,
+    LOG_I(PHY, "[UE %d] RRC Measurements => rssi %3.1f dBm (dig %3.1f dB, gain %d), N0 %d dBm,  rsrp %3.1f dBm/RE, rsrq %3.1f dB\n",ue->Mod_id,
 	  10*log10(ue->measurements.rssi)-ue->rx_total_gain_dB,
 	  10*log10(ue->measurements.rssi),
 	  ue->rx_total_gain_dB,
@@ -346,22 +317,12 @@ int nr_initial_sync(PHY_VARS_NR_UE *ue, runmode_t mode)
 	  fp->phich_config_common.phich_duration,
 	  phich_string[fp->phich_config_common.phich_resource],
 	  fp->nb_antenna_ports_eNB);*/
-#endif
 
 #if defined(OAI_USRP) || defined(EXMIMO) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
-#  if DISABLE_LOG_X
-    printf("[UE %d] Frame %d Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",
+    LOG_I(PHY, "[UE %d] Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",
 	  ue->Mod_id,
-	  ue->proc.proc_rxtx[0].frame_rx,
 	  openair0_cfg[0].rx_freq[0]+ue->common_vars.freq_offset,
 	  ue->common_vars.freq_offset);
-#  else
-    LOG_I(PHY, "[UE %d] Frame %d Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",
-	  ue->Mod_id,
-	  ue->proc.proc_rxtx[0].frame_rx,
-	  openair0_cfg[0].rx_freq[0]+ue->common_vars.freq_offset,
-	  ue->common_vars.freq_offset);
-#  endif
 #endif
   } else {
 #ifdef DEBUG_INITIAL_SYNC
