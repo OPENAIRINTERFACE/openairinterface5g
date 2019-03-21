@@ -709,7 +709,7 @@ int main( int argc, char **argv ) {
   set_taus_seed (0);
   tpool_t pool;
   Tpool = &pool;
-  char params[]="1,2,3,u";
+  char params[]="-1,-1,-1,-1";
   initTpool(params, Tpool, false);
   cpuf=get_cpu_freq_GHz();
   itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info);

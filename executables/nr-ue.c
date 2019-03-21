@@ -19,16 +19,6 @@
  *      contact@openairinterface.org
  */
 
-/*! \file lte-ue.c
- * \brief threads and support functions for real-time LTE UE target
- * \author R. Knopp, F. Kaltenberger, Navid Nikaein
- * \date 2015
- * \version 0.1
- * \company Eurecom
- * \email: knopp@eurecom.fr,florian.kaltenberger@eurecom.fr, navid.nikaein@eurecom.fr
- * \note
- * \warning
- */
 #include "executables/nr-uesoftmodem.h"
 
 #include "LAYER2/NR_MAC_UE/mac.h"
@@ -140,10 +130,6 @@ typedef enum {
   pbch=1,
   si=2
 } sync_mode_t;
-
-
-int32_t **rxdata;
-int32_t **txdata;
 
 #define KHz (1000UL)
 #define MHz (1000*KHz)
