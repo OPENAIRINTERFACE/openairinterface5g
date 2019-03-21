@@ -119,17 +119,12 @@ class SSHConnection():
 		self.htmlTabNames = []
 		self.htmlTabIcons = []
 		self.finalStatus = False
-		self.eNBOsVersion = ''
-		self.eNBKernelVersion = ''
-		self.eNBUhdVersion = ''
-		self.eNBCpuNb = ''
-		self.eNBCpuModel = ''
-		self.eNBCpuMHz = ''
-		#self.UEOsVersion = ''
-		#self.UEKernelVersion = ''
-		#self.UEUhdVersion = ''
-		#self.UECpuNb = ''
-		#self.UECpuModel = ''
+		self.OsVersion = ''
+		self.KernelVersion = ''
+		self.UhdVersion = ''
+		self.CpuNb = ''
+		self.CpuModel = ''
+		self.CpuMHz = ''
 		self.UEIPAddress = ''
 		self.UEBranch = ''
 		#self.UE_AllowMerge = False
@@ -344,6 +339,7 @@ class SSHConnection():
 		self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
 
 	def BuildOAIUE(self):
+		return
 		if self.UEIPAddress == '' or self.eNBRepository == '' or self.eNBBranch == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
 			Usage()
 			sys.exit('Insufficient Parameter')
@@ -582,6 +578,16 @@ class SSHConnection():
 		#	self.CreateHtmlTabFooter(False)
 		#	sys.exit(1)
 		self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
+		# b2xx_fx3_utils reset procedure
+		self.command('echo ' + self.UEPassword + ' | sudo -S uhd_find_devices', '\$', 5)
+		result = re.search('type: b200', str(self.ssh.before))
+		if result is not None:
+			logging.debug('Found a B2xx device --> resetting it')
+			self.command('echo ' + self.UEPassword + ' | sudo -S sudo b2xx_fx3_utils --reset-device', '\$', 5)
+			# Reloading FGPA bin firmware
+			self.command('echo ' + self.UEPassword + ' | sudo -S uhd_find_devices', '\$', 5)
+		else:
+			logging.debug('Did not find any B2xx device')		
 		self.command('cd ' + self.UESourceCodePath, '\$', 5)
 		# Initialize_OAI_UE_args usually start with -C and followed by the location in repository
 		#full_config_file = self.Initialize_OAI_UE_args.replace('-O ','')
@@ -2336,41 +2342,52 @@ class SSHConnection():
 
 	def RetrieveSystemVersion(self):
 		if self.eNBIPAddress == 'none':
-			self.eNBOsVersion = 'Ubuntu 16.04.5 LTS'
-			self.eNBKernelVersion = '4.15.0-45-generic'
-			self.eNBUhdVersion = '3.13.0.1-0'
-			self.eNBCpuNb = '4'
-			self.eNBCpuModel = 'Intel(R) Core(TM) i5-6200U'
-			self.eNBCpuMHz = '2399.996 MHz'
+			self.OsVersion = 'Ubuntu 16.04.5 LTS'
+			self.KernelVersion = '4.15.0-45-generic'
+			self.UhdVersion = '3.13.0.1-0'
+			self.CpuNb = '4'
+			self.CpuModel = 'Intel(R) Core(TM) i5-6200U'
+			self.CpuMHz = '2399.996 MHz'
 			return
-		if self.eNBIPAddress == '' or self.eNBUserName == '' or self.eNBPassword == '':
+		machine = None
+		if self.eNBIPAddress != '' and self.eNBUserName != '' and self.eNBPassword != '':
+			machine = 'eNB'
+			self.IPAddress = self.eNBIPAddress
+			self.UserName = self.eNBUserName
+			self.Password = self.eNBPassword	
+		if self.UEIPAddress != '' and self.UEUserName != '' and self.UEPassword != '':
+			machine = 'UE'
+			self.IPAddress = self.UEIPAddress
+			self.UserName = self.UEUserName
+			self.Password = self.UEPassword
+		if machine is None:
 			Usage()
 			sys.exit('Insufficient Parameter')
-		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
+		self.open(self.IPAddress, self.UserName, self.Password)
 		self.command('lsb_release -a', '\$', 5)
 		result = re.search('Description:\\\\t(?P<os_type>[a-zA-Z0-9\-\_\.\ ]+)', str(self.ssh.before))
 		if result is not None:
-			self.eNBOsVersion = result.group('os_type')
-			logging.debug('OS is: ' + self.eNBOsVersion)
+			self.OsVersion = result.group('os_type')
+			logging.debug('OS is: ' + self.OsVersion)
 		self.command('uname -r', '\$', 5)
 		result = re.search('uname -r\\\\r\\\\n(?P<kernel_version>[a-zA-Z0-9\-\_\.]+)', str(self.ssh.before))
 		if result is not None:
-			self.eNBKernelVersion = result.group('kernel_version')
-			logging.debug('Kernel Version is: ' + self.eNBKernelVersion)
+			self.KernelVersion = result.group('kernel_version')
+			logging.debug('Kernel Version is: ' + self.KernelVersion)
 		self.command('dpkg --list | egrep --color=never libuhd003', '\$', 5)
 		result = re.search('libuhd003:amd64 *(?P<uhd_version>[0-9\.]+)', str(self.ssh.before))
 		if result is not None:
-			self.eNBUhdVersion = result.group('uhd_version')
-			logging.debug('UHD Version is: ' + self.eNBUhdVersion)
+			self.UhdVersion = result.group('uhd_version')
+			logging.debug('UHD Version is: ' + self.UhdVersion)
 		self.command('lscpu', '\$', 5)
 		result = re.search('CPU\(s\): *(?P<nb_cpus>[0-9]+).*Model name: *(?P<model>[a-zA-Z0-9\-\_\.\ \(\)]+).*CPU MHz: *(?P<cpu_mhz>[0-9\.]+)', str(self.ssh.before))
 		if result is not None:
-			self.eNBCpuNb = result.group('nb_cpus')
-			logging.debug('nb_cpus: ' + self.eNBCpuNb)
-			self.eNBCpuModel = result.group('model')
-			logging.debug('model: ' + self.eNBCpuModel)
-			self.eNBCpuMHz = result.group('cpu_mhz') + ' MHz'
-			logging.debug('cpu_mhz: ' + self.eNBCpuMHz)
+			self.CpuNb = result.group('nb_cpus')
+			logging.debug('nb_cpus: ' + self.CpuNb)
+			self.CpuModel = result.group('model')
+			logging.debug('model: ' + self.CpuModel)
+			self.CpuMHz = result.group('cpu_mhz') + ' MHz'
+			logging.debug('cpu_mhz: ' + self.CpuMHz)
 		self.close()
 
 #-----------------------------------------------------------
@@ -2459,10 +2476,9 @@ class SSHConnection():
 			if (self.ADBIPAddress != 'none'):
 				self.GetAllUEDevices(terminate_ue_flag)
 				self.GetAllCatMDevices(terminate_ue_flag)
-			self.htmlUEConnected = len(self.UEDevices)
-
-			self.htmlFile.write('  <h2><span class="glyphicon glyphicon-phone"></span> <span class="glyphicon glyphicon-menu-right"></span> ' + str(len(self.UEDevices)) + ' UE(s) is(are) connected to ADB bench server</h2>\n')
-			self.htmlFile.write('  <h2><span class="glyphicon glyphicon-phone"></span> <span class="glyphicon glyphicon-menu-right"></span> ' + str(len(self.CatMDevices)) + ' CAT-M UE(s) is(are) connected to bench server</h2>\n')
+				self.htmlUEConnected = len(self.UEDevices)
+				self.htmlFile.write('  <h2><span class="glyphicon glyphicon-phone"></span> <span class="glyphicon glyphicon-menu-right"></span> ' + str(len(self.UEDevices)) + ' UE(s) is(are) connected to ADB bench server</h2>\n')
+				self.htmlFile.write('  <h2><span class="glyphicon glyphicon-phone"></span> <span class="glyphicon glyphicon-menu-right"></span> ' + str(len(self.CatMDevices)) + ' CAT-M UE(s) is(are) connected to bench server</h2>\n')
 			self.htmlFile.write('  <br>\n')
 			self.htmlFile.write('  <ul class="nav nav-pills">\n')
 			count = 0
@@ -2535,19 +2551,19 @@ class SSHConnection():
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('      <tr>\n')
 			self.htmlFile.write('        <td>OS Version</td>\n')
-			self.htmlFile.write('        <td><span class="label label-default">' + self.eNBOsVersion + '</span></td>\n')
+			self.htmlFile.write('        <td><span class="label label-default">' + self.OsVersion + '</span></td>\n')
 			self.htmlFile.write('        <td>Kernel Version</td>\n')
-			self.htmlFile.write('        <td><span class="label label-default">' + self.eNBKernelVersion + '</span></td>\n')
+			self.htmlFile.write('        <td><span class="label label-default">' + self.KernelVersion + '</span></td>\n')
 			self.htmlFile.write('        <td>UHD Version</td>\n')
-			self.htmlFile.write('        <td><span class="label label-default">' + self.eNBUhdVersion + '</span></td>\n')
+			self.htmlFile.write('        <td><span class="label label-default">' + self.UhdVersion + '</span></td>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('      <tr>\n')
 			self.htmlFile.write('        <td>Nb CPUs</td>\n')
-			self.htmlFile.write('        <td><span class="label label-default">' + self.eNBCpuNb + '</span></td>\n')
+			self.htmlFile.write('        <td><span class="label label-default">' + self.CpuNb + '</span></td>\n')
 			self.htmlFile.write('        <td>CPU Model Name</td>\n')
-			self.htmlFile.write('        <td><span class="label label-default">' + self.eNBCpuModel + '</span></td>\n')
+			self.htmlFile.write('        <td><span class="label label-default">' + self.CpuModel + '</span></td>\n')
 			self.htmlFile.write('        <td>CPU Frequency</td>\n')
-			self.htmlFile.write('        <td><span class="label label-default">' + self.eNBCpuMHz + '</span></td>\n')
+			self.htmlFile.write('        <td><span class="label label-default">' + self.CpuMHz + '</span></td>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('      <tr>\n')
 			self.htmlFile.write('        <th colspan=4 bgcolor = "#33CCFF">Final Status</th>\n')
