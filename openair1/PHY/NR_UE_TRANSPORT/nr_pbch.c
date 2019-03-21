@@ -409,7 +409,7 @@ unsigned char sign(int8_t x) {
 uint8_t pbch_deinterleaving_pattern[32] = {28,0,31,30,7,29,25,27,5,8,24,9,10,11,12,13,1,4,3,14,15,16,17,2,26,18,19,20,21,22,6,23};
 
 int nr_rx_pbch( PHY_VARS_NR_UE *ue,
-                UE_nr_rxtx_proc_t *proc,
+                int subframe_rx,
                 NR_UE_PBCH *nr_ue_pbch_vars,
                 NR_DL_FRAME_PARMS *frame_parms,
                 uint8_t eNB_id,
@@ -435,7 +435,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   //time_stats_t path_metric,sorting,update_LLR;
   memset(&pbch_a[0], 0, sizeof(uint8_t) * NR_POLAR_PBCH_PAYLOAD_BITS);
   //printf("nr_pbch_ue nid_cell %d\n",frame_parms->Nid_cell);
-  int subframe_rx = proc->subframe_rx;
+
   pbch_e_rx = &nr_ue_pbch_vars->llr[0];
   // clear LLR buffer
   memset(nr_ue_pbch_vars->llr,0,NR_POLAR_PBCH_E);
