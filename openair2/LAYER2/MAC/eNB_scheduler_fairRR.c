@@ -1451,7 +1451,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
                                             MBMS_FLAG_NO,
                                             lcid,
                                             TBS - ta_len - header_len_dcch - sdu_length_total - header_len_dtch
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                             , 0, 0
 #endif
                                            );
@@ -1472,7 +1472,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
                                       lcid,
                                       TBS,  //not used
                                       (char *)&dlsch_buffer[sdu_length_total]
-#ifdef Rel14
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                                       , 0, 0
 #endif
                                                       );

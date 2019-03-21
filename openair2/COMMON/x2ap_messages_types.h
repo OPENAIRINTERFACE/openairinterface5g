@@ -33,11 +33,32 @@
 #define X2AP_HANDOVER_REQ_ACK(mSGpTR)           (mSGpTR)->ittiMsg.x2ap_handover_req_ack
 #define X2AP_REGISTER_ENB_CNF(mSGpTR)           (mSGpTR)->ittiMsg.x2ap_register_enb_cnf
 #define X2AP_DEREGISTERED_ENB_IND(mSGpTR)       (mSGpTR)->ittiMsg.x2ap_deregistered_enb_ind
+#define X2AP_UE_CONTEXT_RELEASE(mSGpTR)         (mSGpTR)->ittiMsg.x2ap_ue_context_release
+#define X2AP_HANDOVER_CANCEL(mSGpTR)            (mSGpTR)->ittiMsg.x2ap_handover_cancel
 
 
 #define X2AP_MAX_NB_ENB_IP_ADDRESS 2
 
 // eNB application layer -> X2AP messages
+
+/* X2AP UE CONTEXT RELEASE */
+typedef struct x2ap_ue_context_release_s {
+  /* used for X2AP->RRC in source and RRC->X2AP in target */
+  int rnti;
+
+  int source_assoc_id;
+} x2ap_ue_context_release_t;
+
+typedef enum {
+  X2AP_T_RELOC_PREP_TIMEOUT,
+  X2AP_TX2_RELOC_OVERALL_TIMEOUT
+} x2ap_handover_cancel_cause_t;
+
+typedef struct x2ap_handover_cancel_s {
+  int rnti;
+  x2ap_handover_cancel_cause_t cause;
+} x2ap_handover_cancel_t;
+
 typedef struct x2ap_register_enb_req_s {
   /* Unique eNB_id to identify the eNB within EPC.
    * For macro eNB ids this field should be 20 bits long.
@@ -95,7 +116,15 @@ typedef struct x2ap_register_enb_req_s {
 
   /* eNB port for X2C*/
   uint32_t enb_port_for_X2C;
+
+  /* timers (unit: millisecond) */
+  int t_reloc_prep;
+  int tx2_reloc_overall;
 } x2ap_register_enb_req_t;
+
+typedef struct x2ap_subframe_process_s {
+  /* nothing, we simply use the module ID in the header */
+} x2ap_subframe_process_t;
 
 //-------------------------------------------------------------------------------------------//
 // X2AP -> eNB application layer messages
@@ -128,12 +157,12 @@ typedef struct x2ap_lastvisitedcell_info_s {
   uint64_t time_UE_StayedInCell;
 }x2ap_lastvisitedcell_info_t;
 
-//used for src
 typedef struct x2ap_handover_req_s {
-  int source_rnti;                       /* TODO: to be fixed/remove */
-  int source_x2id;                       /* TODO: to be fixed/remove */
+  /* used for RRC->X2AP in source eNB */
+  int rnti;
 
-  int old_eNB_ue_x2ap_id;
+  /* used for X2AP->RRC in target eNB */
+  int x2_id;
 
   LTE_PhysCellId_t target_physCellId;
 
@@ -167,15 +196,17 @@ typedef struct x2ap_handover_req_s {
   uint8_t rrc_buffer[1024 /* arbitrary, big enough */];
   int rrc_buffer_size;
 
-  /* TODO: this parameter has to be removed */
-  int target_mod_id;
+  int target_assoc_id;
 } x2ap_handover_req_t;
 
 typedef struct x2ap_handover_req_ack_s {
-  int source_rnti;                       /* TODO: to be fixed/remove */
-  int source_x2id;                       /* TODO: to be fixed/remove */
-  /* TODO: this parameter has to be removed */
-  int target_mod_id;
+  /* used for RRC->X2AP in target and X2AP->RRC in source */
+  int rnti;
+
+  /* used for RRC->X2AP in target */
+  int x2_id_target;
+
+  int source_assoc_id;
 
   uint8_t nb_e_rabs_tobesetup;
 

@@ -883,7 +883,7 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
                              rntiP, -1
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
                              ,
-                             -1
+                             0
 #endif
                              )) == -1)
      {

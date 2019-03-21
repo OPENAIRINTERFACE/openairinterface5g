@@ -34,7 +34,7 @@
 	<testCase id="030104">
 		<class>Initialize_eNB</class>
 		<desc>Initialize RRU (TDD/Band40)</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/rru.tdd.band40.conf</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/rru.tdd.band40.conf --RUs.[0].max_rxgain 125</Initialize_eNB_args>
 		<eNB_instance>0</eNB_instance>
 	</testCase>
 	
@@ -81,7 +81,7 @@
                 <class>Ping</class>
                 <desc>ping (5MHz - 20 sec)</desc>
                 <ping_args>-c 20</ping_args>
-                <ping_packetloss_threshold>25</ping_packetloss_threshold>
+                <ping_packetloss_threshold>50</ping_packetloss_threshold>
         </testCase>
 
         <testCase id="040602">

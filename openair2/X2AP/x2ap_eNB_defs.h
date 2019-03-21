@@ -33,6 +33,9 @@
 
 #include "sctp_eNB_defs.h"
 
+#include "x2ap_ids.h"
+#include "x2ap_timers.h"
+
 #ifndef X2AP_ENB_DEFS_H_
 #define X2AP_ENB_DEFS_H_
 
@@ -60,7 +63,6 @@ typedef enum {
   /* Max number of states available */
   X2AP_ENB_STATE_MAX,
 } x2ap_eNB_state_t;
-
 
 /* Served PLMN identity element */
 struct plmn_identity_s {
@@ -114,6 +116,10 @@ typedef struct x2ap_eNB_data_s {
   /* SCTP association id */
   int32_t  assoc_id;
 
+  /* Nid cells */
+  uint32_t                Nid_cell[MAX_NUM_CCs];
+  int                     num_cc;
+
   /* Only meaningfull in virtual mode */
   struct x2ap_eNB_instance_s *x2ap_eNB_instance;
 } x2ap_eNB_data_t;
@@ -163,7 +169,6 @@ typedef struct x2ap_eNB_instance_s {
   uint32_t                downlink_frequency[MAX_NUM_CCs];
   int32_t                 uplink_frequency_offset[MAX_NUM_CCs];
   uint32_t                Nid_cell[MAX_NUM_CCs];
-  uint32_t                Nid_target_cell[MAX_NUM_CCs];
   int16_t                 N_RB_DL[MAX_NUM_CCs];
   lte_frame_type_t        frame_type[MAX_NUM_CCs];
   uint32_t                fdd_earfcn_DL[MAX_NUM_CCs];
@@ -177,6 +182,9 @@ typedef struct x2ap_eNB_instance_s {
   uint16_t         sctp_out_streams;
   uint32_t         enb_port_for_X2C;
   int              multi_sd;
+
+  x2ap_id_manager  id_manager;
+  x2ap_timers_t    timers;
 } x2ap_eNB_instance_t;
 
 typedef struct {
