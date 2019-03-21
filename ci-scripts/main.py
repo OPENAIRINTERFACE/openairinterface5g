@@ -348,7 +348,6 @@ class SSHConnection():
 		self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
 
 	def BuildOAIUE(self):
-		return
 		if self.UEIPAddress == '' or self.eNBRepository == '' or self.eNBBranch == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
 			Usage()
 			sys.exit('Insufficient Parameter')
@@ -2543,7 +2542,7 @@ class SSHConnection():
 		if result is not None:
 			self.UhdVersion = result.group('uhd_version')
 			logging.debug('UHD Version is: ' + self.UhdVersion)
-		self.command('echo ' + self.eNBPassword + ' | sudo -S uhd_find_devices', '\$', 5)
+		self.command('echo ' + self.Password + ' | sudo -S uhd_find_devices', '\$', 5)
 		result = re.search('product: (?P<usrp_board>[0-9A-Za-z]+)\\\\r\\\\n', str(self.ssh.before))
 		if result is not None:
 			self.UsrpBoard = result.group('usrp_board')
