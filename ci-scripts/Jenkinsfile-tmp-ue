@@ -221,7 +221,7 @@ pipeline {
                             for (xmlFile in myXmlTestSuite) {
                             if (fileExists(xmlFile)) {
                                 try {
-                                    sh "python3 main.py --mode=TestUE --UEIPAddress=${params.UE_IPAddress} --eNBRepository=${eNB_Repository} --eNBBranch=${eNB_Branch} --eNBCommitID=${eNB_CommitID} --eNB_AllowMerge=${eNB_AllowMergeRequestProcess} --eNBTargetBranch=${eNB_TargetBranch} --UEUserName=${UE_Username} --eNBPassword=${UE_Password} --UESourceCodePath=${params.UE_SourceCodePath} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --XMLTestFile=${xmlFile}"
+                                    sh "python3 main.py --mode=TestUE --UEIPAddress=${params.UE_IPAddress} --eNBRepository=${eNB_Repository} --eNBBranch=${eNB_Branch} --eNBCommitID=${eNB_CommitID} --eNB_AllowMerge=${eNB_AllowMergeRequestProcess} --eNBTargetBranch=${eNB_TargetBranch} --UEUserName=${UE_Username} --UEPassword=${UE_Password} --UESourceCodePath=${params.UE_SourceCodePath} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --XMLTestFile=${xmlFile}"
                                 } catch (Exception e) {
                                     currentBuild.result = 'FAILURE'
                                     buildStageStatus = false
