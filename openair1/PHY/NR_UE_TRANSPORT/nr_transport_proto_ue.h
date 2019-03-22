@@ -1118,7 +1118,7 @@ int rx_sss(PHY_VARS_NR_UE *phy_vars_ue,int32_t *tot_metric,uint8_t *flip_max,uin
   \returns number of tx antennas or -1 if error
 */
 int nr_rx_pbch( PHY_VARS_NR_UE *ue,
-		     UE_nr_rxtx_proc_t *proc,
+		     int subframe_rx,
 		     NR_UE_PBCH *nr_ue_pbch_vars,
 		     NR_DL_FRAME_PARMS *frame_parms,
 		     uint8_t eNB_id,
@@ -1680,7 +1680,7 @@ int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
         uint8_t eNB_id,
         int frame,
         uint8_t nr_tti_rx,
-        uint32_t dci_pdu[4],
+        uint64_t dci_pdu[2],
         uint16_t rnti,
         uint8_t dci_length,
         NR_DCI_format_t dci_format,

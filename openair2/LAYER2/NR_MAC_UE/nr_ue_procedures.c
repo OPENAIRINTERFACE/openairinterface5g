@@ -1754,7 +1754,7 @@ printf("\n>>> nr_ue_process_dci at MAC layer with dci_format=%d\n",dci_format);
                     dci->time_dom_resource_assignment,
                     dlsch_config_pdu_1_0->number_symbols,
                     dlsch_config_pdu_1_0->start_symbol);
-            printf(">>> (nr_ue_procedures.c) vrb_to_prb_mapping=%d \n>>> mcs=%d\n>>> ndi=%d\n>>> rv=%d\n>>> harq_process_nbr=%d\n>>> dai=%d\n>>> scaling_factor_S=%d\n>>> tpc_pucch=%d\n>>> pucch_res_ind=%d\n>>> pdsch_to_harq_feedback_time_ind=%d\n",
+            printf(">>> (nr_ue_procedures.c) vrb_to_prb_mapping=%d \n>>> mcs=%d\n>>> ndi=%d\n>>> rv=%d\n>>> harq_process_nbr=%d\n>>> dai=%d\n>>> scaling_factor_S=%f\n>>> tpc_pucch=%d\n>>> pucch_res_ind=%d\n>>> pdsch_to_harq_feedback_time_ind=%d\n",
                   dlsch_config_pdu_1_0->vrb_to_prb_mapping,
                   dlsch_config_pdu_1_0->mcs,
                   dlsch_config_pdu_1_0->ndi,

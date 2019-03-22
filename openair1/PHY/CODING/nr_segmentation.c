@@ -156,7 +156,7 @@ else
 
       if (*F>0) {
         for (k=Kprime>>3; k<(*K)>>3; k++) {
-          output_buffers[r][k] = NR_NULL;
+          output_buffers[r][k] = 0;
           //printf("r %d filler bits [%d] = %d Kprime %d \n", r,k, output_buffers[r][k], Kprime);
         }
       }

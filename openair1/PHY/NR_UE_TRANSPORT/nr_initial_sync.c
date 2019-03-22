@@ -160,7 +160,7 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, int pbch_initial_symbol, runmode_t mod
 #endif
 
     ret = nr_rx_pbch(ue,
-	             &ue->proc.proc_rxtx[0],
+	             0,
 		     ue->pbch_vars[0],
 		     frame_parms,
 		     0,
@@ -168,10 +168,11 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, int pbch_initial_symbol, runmode_t mod
                      SISO,
                      ue->high_speed_flag);
 
-  temp_ptr=temp_ptr->next_ssb;
+    temp_ptr=temp_ptr->next_ssb;
   }
 
   free_list(best_ssb);
+
   
   if (ret==0) {
     

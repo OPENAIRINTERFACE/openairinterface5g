@@ -462,6 +462,3 @@ int get_symbolsperslot(nfapi_nr_config_request_t *cfg) {
 
 }
 
-int nr_schedule_dci() {
-  
-}
