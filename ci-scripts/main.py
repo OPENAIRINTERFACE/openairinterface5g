@@ -2195,8 +2195,8 @@ class SSHConnection():
 			logging.debug('\u001B[1;37;41m UE ended with a Segmentation Fault! \u001B[0m')
 			return ENB_PROCESS_SEG_FAULT
 		if foundAssertion:
-			logging.debug('\u001B[1;37;41m UE ended with an assertion! \u001B[0m')
-			self.htmlUEFailureMsg += msgAssertion
+			logging.debug('\u001B[1;37;43m UE ended with an assertion! \u001B[0m')
+			self.htmlUEFailureMsg += msgAssertion  
 			return ENB_PROCESS_ASSERTION
 		if foundRealTimeIssue:
 			logging.debug('\u001B[1;37;41m UE faced real time issues! \u001B[0m')
@@ -2428,7 +2428,15 @@ class SSHConnection():
 		self.CreateHtmlTestRow(str(self.idle_sleep_time) + ' sec', 'OK', ALL_PROCESSES_OK)
 
 	def LogCollectBuild(self):
-		self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
+		if (self.eNBIPAddress != '' and self.eNBUserName != '' and self.eNBPassword != ''):
+			self.IPAddress = self.eNBIPAddress
+			self.UserName = self.eNBUserName
+			self.Password = self.eNBPassword
+		elif (self.UEIPAddress != '' and self.UEUserName != '' and self.UEPassword != ''):
+			self.IPAddress = self.UEIPAddress
+			self.UserName = self.UEUserName
+			self.Password = self.UEPassword
+		self.open(self.IPAddress, self.UserName, self.Password)
 		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
 		self.command('rm -f build.log.zip', '\$', 5)
@@ -2500,6 +2508,15 @@ class SSHConnection():
 		else:
 			self.command('cp /opt/ltebox/var/log/xGwLog.0 .', '\$', 5)
 			self.command('zip spgw.log.zip xGwLog.0', '\$', 60)
+		self.close()
+
+	def LogCollectOAIUE(self):
+		self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
+		self.command('cd ' + self.UESourceCodePath, '\$', 5)
+		self.command('cd cmake_targets', '\$', 5)
+		self.command('echo ' + self.UEPassword + ' | sudo -S rm -f ue.log.zip', '\$', 5)
+		self.command('echo ' + self.UEPassword + ' | sudo -S zip ue.log.zip ue*.log core* ue_*record.raw ue_*.pcap ue_*txt', '\$', 60)
+		self.command('echo ' + self.UEPassword + ' | sudo -S rm ue*.log core* ue_*record.raw ue_*.pcap ue_*txt', '\$', 5)
 		self.close()
 
 	def RetrieveSystemVersion(self):
@@ -3086,7 +3103,7 @@ elif re.match('^TerminateSPGW$', mode, re.IGNORECASE):
 		sys.exit('Insufficient Parameter')
 	SSH.TerminateSPGW()
 elif re.match('^LogCollectBuild$', mode, re.IGNORECASE):
-	if SSH.eNBIPAddress == '' or SSH.eNBUserName == '' or SSH.eNBPassword == '' or SSH.eNBSourceCodePath == '':
+	if (SSH.eNBIPAddress == '' or SSH.eNBUserName == '' or SSH.eNBPassword == '' or SSH.eNBSourceCodePath == '') and (SSH.UEIPAddress == '' or SSH.UEUserName == '' or SSH.UEPassword == '' or SSH.UESourceCodePath == ''):
 		Usage()
 		sys.exit('Insufficient Parameter')
 	SSH.LogCollectBuild()
@@ -3120,6 +3137,11 @@ elif re.match('^LogCollectIperf$', mode, re.IGNORECASE):
 		Usage()
 		sys.exit('Insufficient Parameter')
 	SSH.LogCollectIperf()
+elif re.match('^LogCollectOAIUE$', mode, re.IGNORECASE):
+        if SSH.UEIPAddress == '' or SSH.UEUserName == '' or SSH.UEPassword == '' or SSH.UESourceCodePath == '':
+                Usage()
+                sys.exit('Insufficient Parameter')
+        SSH.LogCollectOAIUE()
 elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
 	if (SSH.ADBIPAddress == '' or SSH.ADBUserName == '' or SSH.ADBPassword == ''):
 		Usage()
