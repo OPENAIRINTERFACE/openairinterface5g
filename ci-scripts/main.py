@@ -2388,9 +2388,6 @@ class SSHConnection():
 			self.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/' + extracted_log_file, '.')
 			logging.debug('\u001B[1m Analyzing UE replay logfile \u001B[0m')
 			logStatus = self.AnalyzeLogFile_UE(extracted_log_file)
-			html_cell = '<pre style="background-color:white">BLA\nBLA BLA '
-			html_cell += '</pre>'
-			html_queue.put(html_cell)
 			self.CreateHtmlTestRow(html_queue, 'OK', ALL_PROCESSES_OK)
 			self.UELogFile = ''
 		else:
@@ -2410,10 +2407,10 @@ class SSHConnection():
 					self.CreateHtmlTabFooter(False)
 					sys.exit(1)
 				else:
-					self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+					self.CreateHtmlTestRow('<pre style="background-color:white">sniffing successful/pre>', 'OK', ALL_PROCESSES_OK)
 				self.UELogFile = ''
 			else:
-				self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+				self.CreateHtmlTestRow('<pre style="background-color:white">sniffing successful/pre>', 'OK', ALL_PROCESSES_OK)
 
 	def AutoTerminateUEandeNB(self):
 		self.testCase_id = 'AUTO-KILL-UE'
