@@ -2407,10 +2407,10 @@ class SSHConnection():
 					self.CreateHtmlTabFooter(False)
 					sys.exit(1)
 				else:
-					self.CreateHtmlTestRow('<pre style="background-color:white">sniffing successful/pre>', 'OK', ALL_PROCESSES_OK)
+					self.CreateHtmlTestRow('<pre style="background-color:white">sniffing successful</pre>', 'OK', ALL_PROCESSES_OK)
 				self.UELogFile = ''
 			else:
-				self.CreateHtmlTestRow('<pre style="background-color:white">sniffing successful/pre>', 'OK', ALL_PROCESSES_OK)
+				self.CreateHtmlTestRow('<pre style="background-color:white">sniffing successful</pre>', 'OK', ALL_PROCESSES_OK)
 
 	def AutoTerminateUEandeNB(self):
 		self.testCase_id = 'AUTO-KILL-UE'
