@@ -157,43 +157,6 @@ int32_t **txdata;
 #endif
 
 
-band_info_t bands_to_scan;
-
-static const eutra_band_t eutra_bands[] = {
-  {1,  1920000, 1980000, 2110000, 2170000, FDD},
-  {2,  1850000, 1910000, 1930000, 1990000, FDD},
-  {3,  1710000, 1785000, 1805000, 1880000, FDD},
-  {5,   824000,  849000,  869000,  894000, FDD},
-  {7,  2500000, 2570000, 2620000, 2690000, FDD},
-  {8,   880000,  915000,  925000,  960000, FDD},
-  {12,  698000,  716000,  728000,  746000, FDD},
-  {20,  832000,  862000,  791000,  821000, FDD},
-  {25, 1850000, 1915000, 1930000, 1995000, FDD},
-  {28,  703000,  758000,  758000,  813000, FDD},
-  {34, 2010000, 2025000, 2010000, 2025000, TDD},
-  {38, 2570000, 2620000, 2570000, 2630000, TDD},
-  {39, 1880000, 1920000, 1880000, 1920000, TDD},
-  {40, 2300000, 2400000, 2300000, 2400000, TDD},
-  {41, 2496000, 2690000, 2496000, 2690000, TDD},
-  {50, 1432000, 1517000, 1432000, 1517000, TDD},
-  {51, 1427000, 1432000, 1427000, 1432000, TDD},
-  {66, 1710000, 1780000, 2110000, 2200000, FDD},
-  {70, 1695000, 1710000, 1995000, 2020000, FDD},
-  {71,  663000,  698000,  617000,  652000, FDD},
-  {74, 1427000, 1470000, 1475000, 1518000, FDD},
-  {75,     000,     000, 1432000, 1517000, FDD},
-  {76,     000,     000, 1427000, 1432000, FDD},
-  {77, 3300000, 4200000, 3300000, 4200000, TDD},
-  {78, 3300000, 3800000, 3300000, 3800000, TDD},
-  {79, 4400000, 5000000, 4400000, 5000000, TDD},
-  {80, 1710000, 1785000,     000,     000, FDD},
-  {81,  860000,  915000,     000,     000, FDD},
-  {82,  832000,  862000,     000,     000, FDD},
-  {83,  703000,  748000,     000,     000, FDD},
-  {84, 1920000, 1980000,     000,     000, FDD},
-  {86, 1710000, 1785000,     000,     000, FDD}
-};
-
 PHY_VARS_NR_UE *init_nr_ue_vars(NR_DL_FRAME_PARMS *frame_parms,
                                 uint8_t UE_id,
                                 uint8_t abstraction_flag)
@@ -364,7 +327,8 @@ static void *UE_thread_synch(void *arg) {
     sync_mode = pbch;
   } else {
     current_band=0;
-
+    LOG_E(PHY,"Fixme!\n");
+    /*
     for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
       downlink_frequency[UE->rf_map.card][UE->rf_map.chain+i] = bands_to_scan.band_info[CC_id].dl_min;
       uplink_frequency_offset[UE->rf_map.card][UE->rf_map.chain+i] =
@@ -374,6 +338,7 @@ static void *UE_thread_synch(void *arg) {
         downlink_frequency[CC_id][i]+uplink_frequency_offset[CC_id][i];
       openair0_cfg[UE->rf_map.card].rx_gain[UE->rf_map.chain+i] = UE->rx_total_gain_dB;
     }
+    */
   }
 
   //    AssertFatal(UE->rfdevice.trx_start_func(&UE->rfdevice) == 0, "Could not start the device\n");
@@ -388,6 +353,7 @@ static void *UE_thread_synch(void *arg) {
     AssertFatal ( 0== pthread_mutex_unlock(&UE->proc.mutex_synch), "");
 
     switch (sync_mode) {
+      /*
       case pss:
         LOG_I(PHY,"[SCHED][UE] Scanning band %d (%d), freq %u\n",bands_to_scan.band_info[current_band].band, current_band,bands_to_scan.band_info[current_band].dl_min+current_offset);
         //lte_sync_timefreq(UE,current_band,bands_to_scan.band_info[current_band].dl_min+current_offset);
@@ -416,7 +382,7 @@ static void *UE_thread_synch(void *arg) {
         }
 
         break;
-
+      */
       case pbch:
 #if DISABLE_LOG_X
         printf("[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
