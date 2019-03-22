@@ -456,7 +456,7 @@ static void *UE_thread_synch(void *arg) {
 #else
         LOG_I(PHY, "[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
 #endif
-
+	UE->trashed_frames = 0;
         if (nr_initial_sync( UE, UE->mode ) == 0) {
           //write_output("txdata_sym.m", "txdata_sym", UE->common_vars.rxdata[0], (10*UE->frame_parms.samples_per_slot), 1, 1);
           freq_offset = UE->common_vars.freq_offset; // frequency offset computed with pss in initial sync
@@ -936,6 +936,7 @@ void *UE_thread(void *arg) {
         } else {
           // grab 10 ms of signal into dummy buffer to wait result of sync detection
           trashFrame(UE, &timestamp);
+	  UE->trashed_frames++;
         }
       }
 
@@ -949,12 +950,12 @@ void *UE_thread(void *arg) {
         syncInFrame(UE, &timestamp);
         UE->rx_offset=0;
         UE->time_sync_cell=0;
-        UE->proc.proc_rxtx[0].frame_rx++;
+        /*UE->proc.proc_rxtx[0].frame_rx++;
 
         //UE->proc.proc_rxtx[1].frame_rx++;
         for (th_id=1; th_id < RX_NB_TH; th_id++) {
           UE->proc.proc_rxtx[th_id].frame_rx = UE->proc.proc_rxtx[0].frame_rx;
-        }
+        }*/
 
         //printf("first stream frame rx %d\n",UE->proc.proc_rxtx[0].frame_rx);
         // read in first symbol

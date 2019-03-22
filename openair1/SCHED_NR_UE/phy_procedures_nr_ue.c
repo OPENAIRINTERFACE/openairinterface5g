@@ -2978,6 +2978,8 @@ void nr_ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
 		   ue->high_speed_flag);
 
   if (ret==0) {
+
+    ue->trashed_frames = 0;
     ue->pbch_vars[eNB_id]->pdu_errors_conseq = 0;
 
 
@@ -5098,6 +5100,8 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 
   ssb_frame_periodicity = ssb_periodicity/10 ;  // 10ms is the frame length
 
+  frame_rx += ue->trashed_frames;
+
   // looking for pbch only in frames according to ssb periodicity
   if ( (nr_tti_rx == 0) && (ue->decode_MIB == 1) && !((frame_rx-(pbch_config.system_frame_number))%ssb_frame_periodicity))
     {
@@ -5183,7 +5187,7 @@ start_meas(&ue->generic_stat);
   if(nr_tti_rx==5 &&  ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->harq_processes[ue->dlsch[ue->current_thread_id[nr_tti_rx]][eNB_id][0]->current_harq_pid]->nb_rb > 20){
        //write_output("decoder_llr.m","decllr",dlsch_llr,G,1,0);
        //write_output("llr.m","llr",  &ue->pdsch_vars[eNB_id]->llr[0][0],(14*nb_rb*12*dlsch1_harq->Qm) - 4*(nb_rb*4*dlsch1_harq->Qm),1,0);
-openair1/SCHED_NR/phy_procedures_nr_gNB.c
+
        write_output("rxdataF0_current.m"    , "rxdataF0", &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF[0][0],14*ue->frame_parms.ofdm_symbol_size,1,1);
        //write_output("rxdataF0_previous.m"    , "rxdataF0_prev_sss", &ue->common_vars.common_vars_rx_data_per_thread[next_thread_id].rxdataF[0][0],14*ue->frame_parms.ofdm_symbol_size,1,1);
 
