@@ -321,4 +321,21 @@ typedef struct NR_DL_FRAME_PARMS {
 
 } NR_DL_FRAME_PARMS;
 
+#define KHz (1000UL)
+#define MHz (1000*KHz)
+
+typedef struct eutra_band_s {
+  int16_t band;
+  uint32_t ul_min;
+  uint32_t ul_max;
+  uint32_t dl_min;
+  uint32_t dl_max;
+  lte_frame_type_t frame_type;
+} eutra_band_t;
+
+typedef struct band_info_s {
+  int nbands;
+  eutra_band_t band_info[100];
+} band_info_t;
+
 #endif

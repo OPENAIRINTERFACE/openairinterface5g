@@ -150,27 +150,12 @@ void init_UE(int nb_inst);
 int32_t **rxdata;
 int32_t **txdata;
 
-#define KHz (1000UL)
-#define MHz (1000*KHz)
 #define SAIF_ENABLED
 
 #ifdef SAIF_ENABLED
   uint64_t  g_ue_rx_thread_busy = 0;
 #endif
 
-typedef struct eutra_band_s {
-  int16_t band;
-  uint32_t ul_min;
-  uint32_t ul_max;
-  uint32_t dl_min;
-  uint32_t dl_max;
-  lte_frame_type_t frame_type;
-} eutra_band_t;
-
-typedef struct band_info_s {
-  int nbands;
-  eutra_band_t band_info[100];
-} band_info_t;
 
 band_info_t bands_to_scan;
 
@@ -354,29 +339,11 @@ static void *UE_thread_synch(void *arg) {
   init_thread(100000, 500000, FIFO_PRIORITY-1, &cpuset, threadname);
   UE->is_synchronized = 0;
 
+  printf("UE_scan %d\n",UE->UE_scan);
+
   if (UE->UE_scan == 0) {
-    int ind;
-    int64_t dl_freq_khz = downlink_frequency[0][0]/1000;
-    for ( ind=0;
-          ind < sizeof(eutra_bands) / sizeof(eutra_bands[0]);
-          ind++) {
-      current_band = eutra_bands[ind].band;
-      current_type = eutra_bands[ind].frame_type;
-      LOG_D(PHY, "Scanning band %d, dl_min %"PRIu32", ul_min %"PRIu32"\n", current_band, eutra_bands[ind].dl_min,eutra_bands[ind].ul_min);
 
-      if ( eutra_bands[ind].dl_min <= dl_freq_khz && eutra_bands[ind].dl_max >= dl_freq_khz ) {
-        for (i=0; i<4; i++)
-          uplink_frequency_offset[CC_id][i] = (eutra_bands[ind].ul_min - eutra_bands[ind].dl_min)*1000;
-
-        break;
-      }
-    }
-
-
-    AssertFatal( ind < sizeof(eutra_bands) / sizeof(eutra_bands[0]), "Can't find EUTRA band for frequency");
-
-    UE->frame_parms.eutra_band = current_band;
-    UE->frame_parms.frame_type = current_type;
+    get_band(downlink_frequency[CC_id][0], &UE->frame_parms.eutra_band,   &uplink_frequency_offset[CC_id][0], &UE->frame_parms.frame_type);
 
     LOG_I( PHY, "[SCHED][UE] Check absolute frequency DL %"PRIu32", UL %"PRIu32" (oai_exit %d, rx_num_channels %d)\n",
            downlink_frequency[0][0], downlink_frequency[0][0]+uplink_frequency_offset[0][0],
