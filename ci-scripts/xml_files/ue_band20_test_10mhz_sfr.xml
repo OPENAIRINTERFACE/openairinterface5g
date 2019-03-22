@@ -26,9 +26,10 @@
         <htmlTabIcon>tasks</htmlTabIcon>
 	<TestCaseRequestedList>
 090101
-090102 000001 090104
-090103 000001 090104
+090104 000001 090109
+090105 000001 090109
 	</TestCaseRequestedList>
+	<TestCaseExclusionList>090101</TestCaseExclusionList>
 
 	<testCase id="090101">
 		<class>Build_OAI_UE</class>
@@ -36,13 +37,13 @@
 		<Build_OAI_UE_args>-w USRP --UE</Build_OAI_UE_args>
 	</testCase>
 
-	<testCase id="090102">
+	<testCase id="090104">
 		<class>Initialize_OAI_UE</class>
 		<desc>Initialize OAI UE -- sniffing SFR frequency</desc>
 		<Initialize_OAI_UE_args>-C 806000000 -r 50 --ue-rxgain 120 --ue-scan-carrier --no-L2-connect</Initialize_OAI_UE_args>
 	</testCase>
 
-	<testCase id="090103">
+	<testCase id="090105">
 		<class>Initialize_OAI_UE</class>
 		<desc>Initialize OAI UE -- sniffing SFR frequency</desc>
 		<Initialize_OAI_UE_args>-C 802000000 -r 50 --ue-rxgain 120 --ue-scan-carrier --no-L2-connect</Initialize_OAI_UE_args>
@@ -54,7 +55,7 @@
 		<idle_sleep_time_in_sec>30</idle_sleep_time_in_sec>
 	</testCase>
 
-	<testCase id="090104">
+	<testCase id="090109">
 		<class>Terminate_OAI_UE</class>
 		<desc>Terminate OAI UE</desc>
 	</testCase>
