@@ -21,9 +21,13 @@
 
 -->
 <testCaseList>
+	<htmlTabRef>build-tab</htmlTabRef>
+	<htmlTabName>Build</htmlTabName>
+	<htmlTabIcon>wrench</htmlTabIcon>
 	<TestCaseRequestedList>
 090101
 	</TestCaseRequestedList>
+	<TestCaseExclusionList></TestCaseExclusionList>
 
 	<testCase id="090101">
 		<class>Build_OAI_UE</class>

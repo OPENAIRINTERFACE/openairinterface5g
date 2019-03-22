@@ -133,6 +133,7 @@ pipeline {
                     script {
                         def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): Merge Conflicts -- Cannot perform CI"
                         addGitLabMRComment comment: message
+                        currentBuild.result = 'FAILURE'
                     }
                 }
             }
@@ -283,6 +284,11 @@ pipeline {
                 }
             }
             post {
+                failure {
+                    script {
+                        currentBuild.result = 'FAILURE'
+                    }
+                }
                 always {
                     script {
                         dir ('archives') {

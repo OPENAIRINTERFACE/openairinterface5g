@@ -27,7 +27,6 @@
 	<TestCaseRequestedList>
 090101
 090102 000001 090109
-090103 000001 090109
 	</TestCaseRequestedList>
 	<TestCaseExclusionList>090101</TestCaseExclusionList>
 
@@ -41,12 +40,6 @@
 		<class>Initialize_OAI_UE</class>
 		<desc>Initialize OAI UE -- sniffing Orange frequency</desc>
 		<Initialize_OAI_UE_args>-C 816000000 -r 50 --ue-rxgain 120 --ue-scan-carrier --no-L2-connect</Initialize_OAI_UE_args>
-	</testCase>
-
-	<testCase id="090103">
-		<class>Initialize_OAI_UE</class>
-		<desc>Initialize OAI UE -- sniffing Orange frequency</desc>
-		<Initialize_OAI_UE_args>-C 812000000 -r 50 --ue-rxgain 120 --ue-scan-carrier --no-L2-connect</Initialize_OAI_UE_args>
 	</testCase>
 
 	<testCase id="000001">
