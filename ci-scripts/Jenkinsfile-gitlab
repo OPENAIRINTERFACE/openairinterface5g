@@ -398,7 +398,7 @@ pipeline {
                         }
                     }
                 }
-                stage ("Test FDD - Band 7 - B210") {
+                stage ("Test MONOLITHIC - FDD - Band 7 - B210") {
                     steps {
                         script {
                             if ("MERGE".equals(env.gitlabActionType)) {
@@ -449,7 +449,7 @@ pipeline {
                         }
                     }
                 }
-                stage ("Test TDD - Band 40 - B210") {
+                stage ("Test MONOLITHIC - TDD - Band 40 - B210") {
                     steps {
                         script {
                             if ("MERGE".equals(env.gitlabActionType)) {
@@ -642,6 +642,57 @@ pipeline {
                                     if (fileExists('test_results-eNB-CI-MONO-FDD-Band13-B210.html')) {
                                         sh "sed -i -e 's#TEMPLATE_BUILD_TIME#${JOB_TIMESTAMP}#' test_results-eNB-CI-MONO-FDD-Band13-B210.html"
                                         archiveArtifacts artifacts: 'test_results-eNB-CI-MONO-FDD-Band13-B210.html'
+                                    }
+                                }
+                            }
+                        }
+                        failure {
+                            script {
+                                currentBuild.result = 'FAILURE'
+                            }
+                        }
+                    }
+                }
+                stage ("Test OAI UE Sniffing - FDD - Band 20 - B200") {
+                    steps {
+                        script {
+                            if ("MERGE".equals(env.gitlabActionType)) {
+                                //gitlabCommitStatus(name: "Test-OAI-UE-FDD-Band20") {
+                                    build job: 'UE-CI-FDD-Band20-B200',
+                                       parameters: [
+                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+                                           string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
+                                           string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
+                                           booleanParam(name: 'eNB_mergeRequest', value: true),
+                                           string(name: 'eNB_TargetBranch', value: String.valueOf(env.gitlabTargetBranch))
+                                       ]
+                                //}
+                            } else {
+                                //gitlabCommitStatus(name: "Test-OAI-UE-FDD-Band20") {
+                                    build job: 'UE-CI-FDD-Band20-B200',
+                                       parameters: [
+                                           string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+                                           string(name: 'eNB_Branch', value: String.valueOf(GIT_BRANCH)),
+                                           string(name: 'eNB_CommitID', value: String.valueOf(GIT_COMMIT)),
+                                           booleanParam(name: 'eNB_mergeRequest', value: false)
+                                       ]
+                                //}
+                            }
+                        }
+                    }
+                    post {
+                        // In case of any non-success, we are retrieving the HTML report of the last completed
+                        // slave job.
+                        // The only drop-back is that we may retrieve the HTML report of a previous build
+                        always {
+                            script {
+                                if (!fileExists('test_results-UE-CI-FDD-Band20-B200.html')) {
+                                    copyArtifacts(projectName: 'UE-CI-FDD-Band20-B200',
+                                                  filter: 'test_results*.html',
+                                                  selector: lastCompleted())
+                                    if (fileExists('test_results-UE-CI-FDD-Band20-B200.html')) {
+                                        sh "sed -i -e 's#TEMPLATE_BUILD_TIME#${JOB_TIMESTAMP}#' test_results-UE-CI-FDD-Band20-B200.html"
+                                        archiveArtifacts artifacts: 'test_results-UE-CI-FDD-Band20-B200.html'
                                     }
                                 }
                             }
