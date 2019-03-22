@@ -188,11 +188,11 @@ void phy_procedures_gNB_TX(PHY_VARS_gNB *gNB,
       if (num_pdsch_rnti) {
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,1);
         LOG_D(PHY, "PDSCH generation started (%d)\n", num_pdsch_rnti);
-        nr_generate_pdsch(*gNB->dlsch[0][0],
-                          gNB->pdcch_vars.dci_alloc[0],
+        nr_generate_pdsch(gNB->dlsch[0][0],
+                          &gNB->pdcch_vars.dci_alloc[0],
                           gNB->nr_gold_pdsch_dmrs[slot],
                           gNB->common_vars.txdataF,
-                          AMP, frame,slot, *fp, *cfg);
+                          AMP, frame, slot, fp, cfg);
 	VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_GENERATE_DLSCH,0);
       }
     }

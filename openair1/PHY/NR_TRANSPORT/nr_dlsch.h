@@ -74,15 +74,15 @@ void nr_fill_dlsch(PHY_VARS_gNB *gNB,
                    nfapi_nr_dl_config_dlsch_pdu *dlsch_pdu,
                    unsigned char *sdu); 
 
-uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
-                          NR_gNB_DCI_ALLOC_t dci_alloc,
+uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
+                          NR_gNB_DCI_ALLOC_t *dci_alloc,
                           uint32_t ***pdsch_dmrs,
                           int32_t** txdataF,
                           int16_t amp,
                           int frame,
                           uint8_t slot,
-                          NR_DL_FRAME_PARMS frame_parms,
-                          nfapi_nr_config_request_t config);
+                          NR_DL_FRAME_PARMS *frame_parms,
+                          nfapi_nr_config_request_t *config);
 
 /** \brief Computes available bits G.
     @param nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs */
