@@ -270,26 +270,28 @@ case $key in
     ;;
     -v7)
     VM_NAME=ci-enb-ethernet
+    VM_MEMORY=4096
+    VM_CPU=4
     ARCHIVES_LOC=enb_eth
     LOG_PATTERN=.Rel14.txt
-    NB_PATTERN_FILES=8
-    BUILD_OPTIONS="--eNB -t ETHERNET --noS1"
+    NB_PATTERN_FILES=6
+    BUILD_OPTIONS="--eNB -t ETHERNET"
     NBARGS=$[$NBARGS+256]
     shift
     ;;
     -v8)
     VM_NAME=ci-ue-ethernet
+    VM_MEMORY=4096
+    VM_CPU=4
     ARCHIVES_LOC=ue_eth
     LOG_PATTERN=.Rel14.txt
-    NB_PATTERN_FILES=8
-    BUILD_OPTIONS="--UE -t ETHERNET --noS1"
+    NB_PATTERN_FILES=10
+    BUILD_OPTIONS="--UE -t ETHERNET"
     NBARGS=$[$NBARGS+256]
     shift
     ;;
     -v9)
     VM_NAME=ci-l2-sim
-    VM_MEMORY=8192
-    VM_CPU=8
     ARCHIVES_LOC=l2_sim
     LOG_PATTERN=.Rel14.txt
     NB_PATTERN_FILES=6
@@ -349,24 +351,26 @@ case $key in
         ;;
         enb-ethernet)
         VM_NAME=ci-enb-ethernet
+        VM_MEMORY=4096
+        VM_CPU=4
         ARCHIVES_LOC=enb_eth
         LOG_PATTERN=.Rel14.txt
-        NB_PATTERN_FILES=8
-        BUILD_OPTIONS="--eNB -t ETHERNET --noS1"
+        NB_PATTERN_FILES=6
+        BUILD_OPTIONS="--eNB -t ETHERNET"
         NBARGS=$[$NBARGS+256]
         ;;
         ue-ethernet)
         VM_NAME=ci-ue-ethernet
+        VM_MEMORY=4096
+        VM_CPU=4
         ARCHIVES_LOC=ue_eth
         LOG_PATTERN=.Rel14.txt
-        NB_PATTERN_FILES=8
-        BUILD_OPTIONS="--UE -t ETHERNET --noS1"
+        NB_PATTERN_FILES=10
+        BUILD_OPTIONS="--UE -t ETHERNET"
         NBARGS=$[$NBARGS+256]
         ;;
         l2-sim)
         VM_NAME=ci-l2-sim
-        VM_MEMORY=8192
-        VM_CPU=8
         ARCHIVES_LOC=l2_sim
         LOG_PATTERN=.Rel14.txt
         NB_PATTERN_FILES=6

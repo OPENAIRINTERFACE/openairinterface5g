@@ -536,11 +536,12 @@ function build_ue_on_separate_folder {
 }
 
 function start_l2_sim_enb {
-    local LOC_VM_IP_ADDR=$2
+    local LOC_ENB_VM_IP_ADDR=$2
     local LOC_EPC_IP_ADDR=$3
-    local LOC_LOG_FILE=$4
-    local LOC_NB_RBS=$5
-    local LOC_CONF_FILE=$6
+    local LOC_UE_VM_IP_ADDR=$4
+    local LOC_LOG_FILE=$5
+    local LOC_NB_RBS=$6
+    local LOC_CONF_FILE=$7
     echo "cd /home/ubuntu/tmp" > $1
     echo "echo \"sudo apt-get --yes --quiet install daemon \"" >> $1
     echo "sudo apt-get --yes install daemon >> /home/ubuntu/tmp/cmake_targets/log/daemon-install.txt 2>&1" >> $1
@@ -548,7 +549,7 @@ function start_l2_sim_enb {
     echo "source oaienv" >> $1
     echo "cd ci-scripts/conf_files/" >> $1
     echo "cp $LOC_CONF_FILE ci-$LOC_CONF_FILE" >> $1
-    echo "sed -i -e 's#N_RB_DL.*=.*;#N_RB_DL                                         = $LOC_NB_RBS;#' -e 's#CI_MME_IP_ADDR#$LOC_EPC_IP_ADDR#' -e 's#CI_ENB_IP_ADDR#$LOC_VM_IP_ADDR#' ci-$LOC_CONF_FILE" >> $1
+    echo "sed -i -e 's#N_RB_DL.*=.*;#N_RB_DL                                         = $LOC_NB_RBS;#' -e 's#CI_MME_IP_ADDR#$LOC_EPC_IP_ADDR#' -e 's#CI_ENB_IP_ADDR#$LOC_ENB_VM_IP_ADDR#' -e 's#CI_UE_IP_ADDR#$LOC_UE_VM_IP_ADDR#' ci-$LOC_CONF_FILE" >> $1
     echo "echo \"grep N_RB_DL ci-$LOC_CONF_FILE\"" >> $1
     echo "grep N_RB_DL ci-$LOC_CONF_FILE | sed -e 's#N_RB_DL.*=#N_RB_DL =#'" >> $1
     echo "echo \"cd /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/\"" >> $1
@@ -560,7 +561,7 @@ function start_l2_sim_enb {
     echo "if [ -e /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ]; then sudo sudo rm -f /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE; fi" >> $1
     echo "sudo -E daemon --inherit --unsafe --name=enb_daemon --chdir=/home/ubuntu/tmp/cmake_targets/lte_build_oai/build/ -o /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ./my-lte-softmodem-run.sh" >> $1
 
-    ssh -o StrictHostKeyChecking=no ubuntu@$LOC_VM_IP_ADDR < $1
+    ssh -o StrictHostKeyChecking=no ubuntu@$LOC_ENB_VM_IP_ADDR < $1
     rm $1
 
     local i="0"
@@ -568,7 +569,7 @@ function start_l2_sim_enb {
     while [ $i -lt 10 ]
     do
         sleep 5
-        CONNECTED=`ssh -o StrictHostKeyChecking=no ubuntu@$LOC_VM_IP_ADDR < $1`
+        CONNECTED=`ssh -o StrictHostKeyChecking=no ubuntu@$LOC_ENB_VM_IP_ADDR < $1`
         if [ $CONNECTED -ne 0 ]
         then
             i="100"
@@ -589,19 +590,25 @@ function start_l2_sim_enb {
 }
 
 function start_l2_sim_ue {
-    local LOC_VM_IP_ADDR=$2
-    local LOC_LOG_FILE=$3
-    local LOC_CONF_FILE=$4
-    echo "echo \"cd /home/ubuntu/tmp-ue/cmake_targets/lte_build_oai/build/\"" >> $1
-    echo "sudo chmod 777 /home/ubuntu/tmp-ue/cmake_targets/lte_build_oai/build/" >> $1
-    echo "cd /home/ubuntu/tmp-ue/cmake_targets/lte_build_oai/build/" >> $1
-    echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -O /home/ubuntu/tmp-ue/ci-scripts/conf_files/$LOC_CONF_FILE --L2-emul 3 --num-ues 1\" > ./my-lte-softmodem-run.sh " >> $1
+    local LOC_UE_VM_IP_ADDR=$2
+    local LOC_ENB_VM_IP_ADDR=$3
+    local LOC_LOG_FILE=$4
+    local LOC_CONF_FILE=$5
+    echo "echo \"sudo apt-get --yes --quiet install daemon \"" > $1
+    echo "sudo apt-get --yes install daemon >> /home/ubuntu/tmp/cmake_targets/log/daemon-install.txt 2>&1" >> $1
+    echo "cd /home/ubuntu/tmp/ci-scripts/conf_files/" >> $1
+    echo "cp $LOC_CONF_FILE ci-$LOC_CONF_FILE" >> $1
+    echo "sed -i -e 's#CI_ENB_IP_ADDR#$LOC_ENB_VM_IP_ADDR#' -e 's#CI_UE_IP_ADDR#$LOC_UE_VM_IP_ADDR#' ci-$LOC_CONF_FILE" >> $1
+    echo "echo \"cd /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/\"" >> $1
+    echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/" >> $1
+    echo "cd /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/" >> $1
+    echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --L2-emul 3 --num-ues 1\" > ./my-lte-softmodem-run.sh " >> $1
     echo "chmod 775 ./my-lte-softmodem-run.sh" >> $1
     echo "cat ./my-lte-softmodem-run.sh" >> $1
     echo "if [ -e /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ]; then sudo sudo rm -f /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE; fi" >> $1
-    echo "sudo -E daemon --inherit --unsafe --name=ue_daemon --chdir=/home/ubuntu/tmp-ue/cmake_targets/lte_build_oai/build/ -o /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ./my-lte-softmodem-run.sh" >> $1
+    echo "sudo -E daemon --inherit --unsafe --name=ue_daemon --chdir=/home/ubuntu/tmp/cmake_targets/lte_build_oai/build/ -o /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ./my-lte-softmodem-run.sh" >> $1
 
-    ssh -o StrictHostKeyChecking=no ubuntu@$LOC_VM_IP_ADDR < $1
+    ssh -o StrictHostKeyChecking=no ubuntu@$LOC_UE_VM_IP_ADDR < $1
     rm $1
 
     local i="0"
@@ -609,7 +616,7 @@ function start_l2_sim_ue {
     while [ $i -lt 10 ]
     do
         sleep 5
-        CONNECTED=`ssh -o StrictHostKeyChecking=no ubuntu@$LOC_VM_IP_ADDR < $1`
+        CONNECTED=`ssh -o StrictHostKeyChecking=no ubuntu@$LOC_UE_VM_IP_ADDR < $1`
         if [ $CONNECTED -eq 1 ]
         then
             i="100"
@@ -633,7 +640,7 @@ function start_l2_sim_ue {
     while [ $i -lt 10 ]
     do
         sleep 5
-        CONNECTED=`ssh -o StrictHostKeyChecking=no ubuntu@$LOC_VM_IP_ADDR < $1`
+        CONNECTED=`ssh -o StrictHostKeyChecking=no ubuntu@$LOC_UE_VM_IP_ADDR < $1`
         if [ $CONNECTED -eq 1 ]
         then
             i="100"
@@ -657,18 +664,49 @@ function run_test_on_vm {
     echo "############################################################"
     echo "OAI CI VM script"
     echo "############################################################"
-    echo "VM_NAME             = $VM_NAME"
-    echo "VM_CMD_FILE         = $VM_CMDS"
+    if [[ "$RUN_OPTIONS" == "complex" ]] && [[ $VM_NAME =~ .*-l2-sim.* ]]
+    then
+        ENB_VM_NAME=`echo $VM_NAME | sed -e "s#l2-sim#enb-ethernet#"`
+        ENB_VM_CMDS=${ENB_VM_NAME}_cmds.txt
+        echo "ENB_VM_NAME         = $ENB_VM_NAME"
+        echo "ENB_VM_CMD_FILE     = $ENB_VM_CMDS"
+        UE_VM_NAME=`echo $VM_NAME | sed -e "s#l2-sim#ue-ethernet#"`
+        UE_VM_CMDS=${UE_VM_NAME}_cmds.txt
+        echo "ENB_VM_NAME         = $ENB_VM_NAME"
+        echo "ENB_VM_CMD_FILE     = $ENB_VM_CMDS"
+    else
+        echo "VM_NAME             = $VM_NAME"
+        echo "VM_CMD_FILE         = $VM_CMDS"
+    fi
     echo "JENKINS_WKSP        = $JENKINS_WKSP"
     echo "ARCHIVES_LOC        = $ARCHIVES_LOC"
 
-    echo "############################################################"
-    echo "Waiting for VM to be started"
-    echo "############################################################"
-    uvt-kvm wait $VM_NAME --insecure
+    if [[ "$RUN_OPTIONS" == "complex" ]] && [[ $VM_NAME =~ .*-l2-sim.* ]]
+    then
+        echo "############################################################"
+        echo "Waiting for ENB VM to be started"
+        echo "############################################################"
+        uvt-kvm wait $ENB_VM_NAME --insecure
 
-    VM_IP_ADDR=`uvt-kvm ip $VM_NAME`
-    echo "$VM_NAME has for IP addr = $VM_IP_ADDR"
+        ENB_VM_IP_ADDR=`uvt-kvm ip $ENB_VM_NAME`
+        echo "$ENB_VM_NAME has for IP addr = $ENB_VM_IP_ADDR"
+
+        echo "############################################################"
+        echo "Waiting for UE VM to be started"
+        echo "############################################################"
+        uvt-kvm wait $UE_VM_NAME --insecure
+
+        UE_VM_IP_ADDR=`uvt-kvm ip $UE_VM_NAME`
+        echo "$UE_VM_NAME has for IP addr = $UE_VM_IP_ADDR"
+    else
+        echo "############################################################"
+        echo "Waiting for VM to be started"
+        echo "############################################################"
+        uvt-kvm wait $VM_NAME --insecure
+
+        VM_IP_ADDR=`uvt-kvm ip $VM_NAME`
+        echo "$VM_NAME has for IP addr = $VM_IP_ADDR"
+    fi
 
     if [ "$RUN_OPTIONS" == "none" ]
     then
@@ -1270,7 +1308,7 @@ function run_test_on_vm {
         mkdir --parents $ARCHIVES_LOC
 
         # Building UE elsewhere in VM
-        build_ue_on_separate_folder $VM_CMDS $VM_IP_ADDR
+        #build_ue_on_separate_folder $VM_CMDS $VM_IP_ADDR
 
         # Creating a VM for EPC and installing SW
         EPC_VM_NAME=`echo $VM_NAME | sed -e "s#l2-sim#l2-epc#"`
@@ -1289,19 +1327,20 @@ function run_test_on_vm {
         echo "Starting the eNB in FDD-5MHz mode"
         echo "############################################################"
         CURRENT_ENB_LOG_FILE=fdd_05MHz_enb.log
-        start_l2_sim_enb $VM_CMDS $VM_IP_ADDR $EPC_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 25 rcc.band7.tm1.nfapi.conf
+        start_l2_sim_enb $ENB_VM_CMDS $ENB_VM_IP_ADDR $EPC_VM_IP_ADDR $UE_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 25 rcc.band7.tm1.nfapi.conf
 
         echo "############################################################"
         echo "Starting the UEs"
         echo "############################################################"
         CURRENT_UE_LOG_FILE=fdd_05MHz_ue.log
-        start_l2_sim_ue $VM_CMDS $VM_IP_ADDR $CURRENT_UE_LOG_FILE ue.nfapi.conf
+        start_l2_sim_ue $UE_VM_CMDS $UE_VM_IP_ADDR $ENB_VM_IP_ADDR $CURRENT_UE_LOG_FILE ue.nfapi.conf
         if [ $UE_SYNC -eq 0 ]
         then
             echo "Problem w/ eNB and UE not syncing"
-            terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
-            scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
-            scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+            terminate_enb_ue_basic_sim $ENB_VM_CMDS $ENB_VM_IP_ADDR
+            terminate_enb_ue_basic_sim $UE_VM_CMDS $UE_VM_IP_ADDR
+            scp -o StrictHostKeyChecking=no ubuntu@$ENB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+            scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
             terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
             echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
             STATUS=-1
@@ -1312,21 +1351,21 @@ function run_test_on_vm {
         echo "Pinging the EPC from UE"
         echo "############################################################"
         PING_LOG_FILE=fdd_05MHz_ping_epc.txt
-        ping_epc_ip_addr $VM_CMDS $VM_IP_ADDR $REAL_EPC_IP_ADDR $PING_LOG_FILE
-        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
+        ping_epc_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR $REAL_EPC_IP_ADDR $PING_LOG_FILE
+        scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
         check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
 
         echo "############################################################"
         echo "Terminate enb/ue simulators"
         echo "############################################################"
-        terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
-        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
-        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+        terminate_enb_ue_basic_sim $ENB_VM_CMDS $ENB_VM_IP_ADDR
+        terminate_enb_ue_basic_sim $UE_VM_CMDS $UE_VM_IP_ADDR
+        scp -o StrictHostKeyChecking=no ubuntu@$ENB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+        scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
 
         echo "############################################################"
         echo "Terminate EPC"
         echo "############################################################"
-
         terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
 
         if [ $KEEP_VM_ALIVE -eq 0 ]
@@ -1334,8 +1373,10 @@ function run_test_on_vm {
             echo "############################################################"
             echo "Destroying VMs"
             echo "############################################################"
-            uvt-kvm destroy $VM_NAME
-            ssh-keygen -R $VM_IP_ADDR
+            uvt-kvm destroy $ENB_VM_NAME
+            ssh-keygen -R $ENB_VM_IP_ADDR
+            uvt-kvm destroy $UE_VM_NAME
+            ssh-keygen -R $UE_VM_IP_ADDR
             uvt-kvm destroy $EPC_VM_NAME
             ssh-keygen -R $EPC_VM_IP_ADDR
         fi
