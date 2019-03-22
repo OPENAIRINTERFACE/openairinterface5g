@@ -2432,16 +2432,20 @@ class SSHConnection():
 			self.IPAddress = self.eNBIPAddress
 			self.UserName = self.eNBUserName
 			self.Password = self.eNBPassword
+			self.SourceCodePath = self.eNBSourceCodePath
 		elif (self.UEIPAddress != '' and self.UEUserName != '' and self.UEPassword != ''):
 			self.IPAddress = self.UEIPAddress
 			self.UserName = self.UEUserName
 			self.Password = self.UEPassword
+			self.SourceCodePath = self.UESourceCodePath
+		else:
+			sys.exit('Insufficient Parameter')
 		self.open(self.IPAddress, self.UserName, self.Password)
-		self.command('cd ' + self.eNBSourceCodePath, '\$', 5)
+		self.command('cd ' + self.SourceCodePath, '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
 		self.command('rm -f build.log.zip', '\$', 5)
 		self.command('zip build.log.zip build_log_*/*', '\$', 60)
-		self.command('echo ' + self.eNBPassword + ' | sudo -S rm -rf build_log_*', '\$', 5)
+		self.command('echo ' + self.Password + ' | sudo -S rm -rf build_log_*', '\$', 5)
 		self.close()
 
 	def LogCollecteNB(self):
