@@ -381,7 +381,7 @@ class SSHConnection():
 		self.command('mv log/* ' + 'build_log_' + self.testCase_id, '\$', 5)
 		self.command('mv compile_oai_ue.log ' + 'build_log_' + self.testCase_id, '\$', 5)
 		self.close()
-		self.CreateHtmlTestRow(self.Build_OAI_UE_args, 'OK', ALL_PROCESSES_OK)
+		self.CreateHtmlTestRow(self.Build_OAI_UE_args, 'OK', ALL_PROCESSES_OK, 'OAI UE')
 
 
 	def InitializeHSS(self):
@@ -657,7 +657,7 @@ class SSHConnection():
 				self.close()
 				doLoop = False
 				logging.error('\u001B[1;37;41m UE logging system did not show got sync! \u001B[0m')
-				self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', ALL_PROCESSES_OK)
+				self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', ALL_PROCESSES_OK, 'OAI UE')
 				self.CreateHtmlTabFooter(False)
 				## In case of T tracer recording, we need to kill tshark on EPC side
 				#result = re.search('T_stdout', str(self.Initialize_OAI_UE_args))
@@ -679,7 +679,7 @@ class SSHConnection():
 					time.sleep(6)
 				else:
 					doLoop = False
-					self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'OK', ALL_PROCESSES_OK)
+					self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'OK', ALL_PROCESSES_OK, 'OAI UE')
 					logging.debug('\u001B[1m Initialize OAI UE Completed\u001B[0m')
 		self.close()
 
@@ -2388,7 +2388,10 @@ class SSHConnection():
 			self.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/' + extracted_log_file, '.')
 			logging.debug('\u001B[1m Analyzing UE replay logfile \u001B[0m')
 			logStatus = self.AnalyzeLogFile_UE(extracted_log_file)
-			self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
+			html_cell = '<pre style="background-color:white">BLA\nBLA BLA '
+			html_cell += '</pre>'
+			html_queue.put(html_cell)
+			self.CreateHtmlTestRow(html_queue, 'OK', ALL_PROCESSES_OK)
 			self.UELogFile = ''
 		else:
 			result = re.search('ue_', str(self.UELogFile))
@@ -2772,7 +2775,7 @@ class SSHConnection():
 			self.htmlFile.write('</html>\n')
 			self.htmlFile.close()
 
-	def CreateHtmlTestRow(self, options, status, processesStatus):
+	def CreateHtmlTestRow(self, options, status, processesStatus, machine='eNB'):
 		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
 			self.htmlFile.write('      <tr>\n')
 			self.htmlFile.write('        <td bgcolor = "lightcyan" >' + self.testCase_id  + '</td>\n')
@@ -2784,13 +2787,13 @@ class SSHConnection():
 				if (processesStatus == 0):
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >' + str(status)  + '</td>\n')
 				elif (processesStatus == ENB_PROCESS_FAILED):
-					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - eNB process not found</td>\n')
+					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' process not found</td>\n')
 				elif (processesStatus == ENB_PROCESS_SEG_FAULT):
-					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - eNB process ended in Segmentation Fault</td>\n')
+					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' process ended in Segmentation Fault</td>\n')
 				elif (processesStatus == ENB_PROCESS_ASSERTION):
-					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - eNB process ended in Assertion</td>\n')
+					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' process ended in Assertion</td>\n')
 				elif (processesStatus == ENB_PROCESS_REALTIME_ISSUE):
-					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - eNB process faced Real Time issue(s)</td>\n')
+					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' process faced Real Time issue(s)</td>\n')
 				elif (processesStatus == ENB_PROCESS_NOLOGFILE_TO_ANALYZE):
 					self.htmlFile.write('        <td bgcolor = "orange" >OK</td>\n')
 				elif (processesStatus == HSS_PROCESS_FAILED):
