@@ -221,7 +221,7 @@ pipeline {
                             for (xmlFile in myXmlTestSuite) {
                             if (fileExists(xmlFile)) {
                                 try {
-                                    sh "python3 main.py --mode=TestUE --UEIPAddress=${params.UE_IPAddress} --eNBRepository=${eNB_Repository} --eNBBranch=${eNB_Branch} --eNBCommitID=${eNB_CommitID} --eNB_AllowMerge=${eNB_AllowMergeRequestProcess} --eNBTargetBranch=${eNB_TargetBranch} --UEUserName=${UE_Username} --eNBPassword=${UE_Password} --UESourceCodePath=${params.UE_SourceCodePath} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --XMLTestFile=${xmlFile}"
+                                    sh "python3 main.py --mode=TestUE --UEIPAddress=${params.UE_IPAddress} --eNBRepository=${eNB_Repository} --eNBBranch=${eNB_Branch} --eNBCommitID=${eNB_CommitID} --eNB_AllowMerge=${eNB_AllowMergeRequestProcess} --eNBTargetBranch=${eNB_TargetBranch} --UEUserName=${UE_Username} --UEPassword=${UE_Password} --UESourceCodePath=${params.UE_SourceCodePath} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --XMLTestFile=${xmlFile}"
                                 } catch (Exception e) {
                                     currentBuild.result = 'FAILURE'
                                     buildStageStatus = false
@@ -239,21 +239,19 @@ pipeline {
                 stage('Log Collection (eNB - Build)') {
                     steps {
                         echo '\u2705 \u001B[32mLog Collection (eNB - Build)\u001B[0m'
-/*
-                        withCredentials([
-                             [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password']
-                        ]) {
-                            sh "python3 ci-scripts/main.py --mode=LogCollectBuild --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath}"
-
-                            echo '\u2705 \u001B[32mLog Transfer (eNB - Build)\u001B[0m'
-                            sh "sshpass -p \'${eNB_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${eNB_Username}@${params.eNB_IPAddress}:${eNB_SourceCodePath}/cmake_targets/build.log.zip ./build.log.${env.BUILD_ID}.zip || true"
-                        }
-                        script {
-                            if(fileExists("build.log.${env.BUILD_ID}.zip")) {
-                                archiveArtifacts "build.log.${env.BUILD_ID}.zip"
-                            }
-*/
-                        }
+//                        withCredentials([
+//                             [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password']
+//                        ]) {
+//                            sh "python3 ci-scripts/main.py --mode=LogCollectBuild --eNBIPAddress=${params.eNB_IPAddress} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath}"
+//
+//                            echo '\u2705 \u001B[32mLog Transfer (eNB - Build)\u001B[0m'
+//                            sh "sshpass -p \'${eNB_Password}\' scp -o 'StrictHostKeyChecking no' -o 'ConnectTimeout 10' ${eNB_Username}@${params.eNB_IPAddress}:${eNB_SourceCodePath}/cmake_targets/build.log.zip ./build.log.${env.BUILD_ID}.zip || true"
+//                        }
+//                        script {
+//                            if(fileExists("build.log.${env.BUILD_ID}.zip")) {
+//                                archiveArtifacts "build.log.${env.BUILD_ID}.zip"
+//                            }
+//                        }
                     }
                 }
                 stage('Log Collection (eNB - Run)') {
