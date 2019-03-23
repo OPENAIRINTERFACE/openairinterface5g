@@ -34,6 +34,8 @@
 #ifndef F1AP_DU_RRC_MESSAGE_TRANSFER_H_
 #define F1AP_DU_RRC_MESSAGE_TRANSFER_H_
 
+#include "f1ap_common.h"
+
 int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                                       uint32_t         assoc_id,
                                       uint32_t         stream,
@@ -45,7 +47,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
                                             int             CC_idP,
                                             int             UE_id,
                                             rnti_t          rntiP,
-                                            uint8_t        *sduP,
+                                            const uint8_t   *sduP,
                                             sdu_size_t      sdu_lenP);
 
 #endif /* F1AP_DU_RRC_MESSAGE_TRANSFER_H_ */

@@ -756,7 +756,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
                                             int             CC_idP,
                                             int             UE_id,
                                             rnti_t          rntiP,
-                                            uint8_t        *sduP,
+                                            const uint8_t   *sduP,
                                             sdu_size_t      sdu_lenP) {
   F1AP_F1AP_PDU_t                       pdu;
   F1AP_InitialULRRCMessageTransfer_t    *out;
