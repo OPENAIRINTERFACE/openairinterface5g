@@ -7628,8 +7628,6 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
   const char                         *msg_name_p;
   instance_t                          instance;
   int                                 result;
-  SRB_INFO                           *srb_info_p;
-  int                                 CC_id;
   protocol_ctxt_t                     ctxt;
 
   memset(&ctxt, 0, sizeof(ctxt));
@@ -7662,7 +7660,10 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
                                     msg_p->ittiMsgHeader.lte_time.slot);
 
       LOG_I(RRC,"Decoding CCCH : inst %d, CC_id %d, ctxt %p, sib_info_p->Rx_buffer.payload_size %d\n",
-            instance,CC_id,&ctxt, RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
+            instance,
+            RRC_MAC_CCCH_DATA_IND(msg_p).CC_id,
+            &ctxt,
+            RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size);
 
       if (RRC_MAC_CCCH_DATA_IND(msg_p).sdu_size >= RRC_BUFFER_SIZE_MAX) {
         LOG_I(RRC, "CCCH message has size %d > %d\n",
