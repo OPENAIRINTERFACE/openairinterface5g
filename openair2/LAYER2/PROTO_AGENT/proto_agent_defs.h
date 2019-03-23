@@ -41,10 +41,9 @@
 #include <pthread.h>
 #include <string.h>
 
+#include "openairinterface5g_limits.h"
 #include "UTIL/ASYNC_IF/link_manager.h"
 
-#define NUM_MAX_ENB 10
-#define NUM_MAX_UE 2048
 #define DEFAULT_PROTO_AGENT_IPv4_ADDRESS "127.0.0.1"
 #define DEFAULT_PROTO_AGENT_PORT          2210
 #define DEFAULT_PROTO_AGENT_CACHE        "/mnt/oai_agent_cache"
@@ -108,8 +107,8 @@ typedef struct {
   uint32_t total_rx_msg;
   uint32_t total_tx_msg;
    
-  uint32_t rx_msg[NUM_MAX_ENB];
-  uint32_t tx_msg[NUM_MAX_ENB];
+  uint32_t rx_msg[NUMBER_OF_eNB_MAX];
+  uint32_t tx_msg[NUMBER_OF_eNB_MAX];
 
 } proto_agent_info_t;
 

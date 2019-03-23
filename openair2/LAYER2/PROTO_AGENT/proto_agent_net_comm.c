@@ -37,7 +37,7 @@
 #include "proto_agent_net_comm.h"
 #include "common/utils/LOG/log.h"
 
-proto_agent_channel_t *proto_channel[NUM_MAX_ENB][ENB_AGENT_MAX];
+proto_agent_channel_t *proto_channel[NUMBER_OF_eNB_MAX][ENB_AGENT_MAX];
 proto_agent_channel_instance_t channel_instance;
 int proto_agent_channel_id = 0;
 
@@ -106,7 +106,7 @@ int proto_agent_destroy_channel(int channel_id) {
   }
 
   /*Unregister the channel from all agents*/
-  for (i = 0; i < NUM_MAX_ENB; i++) {
+  for (i = 0; i < NUMBER_OF_eNB_MAX; i++) {
     for (j = 0; j < ENB_AGENT_MAX; j++) {
       if (proto_channel[i][j] != NULL) {
 	if (proto_channel[i][j]->channel_id == e->channel_id) {
@@ -130,7 +130,7 @@ err_code_t proto_agent_init_channel_container(void) {
 
   RB_INIT(&channel_instance.proto_agent_head);
 
-  for (i = 0; i < NUM_MAX_ENB; i++) {
+  for (i = 0; i < NUMBER_OF_eNB_MAX; i++) {
     for (j = 0; j < ENB_AGENT_MAX; j++) {
     proto_channel[i][j] = NULL;
     }

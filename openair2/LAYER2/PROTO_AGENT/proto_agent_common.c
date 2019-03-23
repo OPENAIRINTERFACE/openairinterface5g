@@ -39,8 +39,6 @@
 #include <time.h>
 
 #include "PHY/phy_extern.h"
-/* avoid warnings */
-#undef NUM_MAX_ENB
 #include "proto_agent_common.h"
 #include "common/utils/LOG/log.h"
 
