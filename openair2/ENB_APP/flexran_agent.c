@@ -177,8 +177,8 @@ int flexran_agent_start(mid_t mod_id)
   /* Register and initialize the control modules depending on capabilities.
    * After registering, calling flexran_agent_get_*_xface() tells whether a
    * control module is operational */
-  uint16_t caps = flexran_get_capabilities_mask(mod_id);
-  LOG_I(FLEXRAN_AGENT, "Agent handles BS ID %ld, capabilities=0x%x => handling%s%s%s%s%s%s%s%s\n",
+  uint32_t caps = flexran_get_capabilities_mask(mod_id);
+  LOG_I(FLEXRAN_AGENT, "Agent handles BS ID %ld, capabilities=0x%x => handling%s%s%s%s%s%s%s%s%s\n",
         flexran_get_bs_id(mod_id), caps,
         FLEXRAN_CAP_LOPHY(caps) ? " LOPHY" : "",
         FLEXRAN_CAP_HIPHY(caps) ? " HIPHY" : "",
@@ -187,7 +187,8 @@ int flexran_agent_start(mid_t mod_id)
         FLEXRAN_CAP_RLC(caps)   ? " RLC"   : "",
         FLEXRAN_CAP_PDCP(caps)  ? " PDCP"  : "",
         FLEXRAN_CAP_SDAP(caps)  ? " SDAP"  : "",
-        FLEXRAN_CAP_RRC(caps)   ? " RRC"   : "");
+        FLEXRAN_CAP_RRC(caps)   ? " RRC"   : "",
+        FLEXRAN_CAP_S1AP(caps)  ? " S1AP"  : "");
 
   if (FLEXRAN_CAP_LOPHY(caps) || FLEXRAN_CAP_HIPHY(caps)) {
     flexran_agent_register_phy_xface(mod_id);
@@ -208,6 +209,11 @@ int flexran_agent_start(mid_t mod_id)
   if (FLEXRAN_CAP_PDCP(caps)) {
     flexran_agent_register_pdcp_xface(mod_id);
     LOG_I(FLEXRAN_AGENT, "registered PDCP interface/CM for eNB %d\n", mod_id);
+  }
+
+  if (FLEXRAN_CAP_S1AP(caps)) {
+    flexran_agent_register_s1ap_xface(mod_id);
+    LOG_I(FLEXRAN_AGENT, "registered S1AP interface/CM for eNB %d\n", mod_id);
   }
 
   /* 

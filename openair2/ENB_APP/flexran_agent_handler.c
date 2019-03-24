@@ -31,6 +31,7 @@
 #include "flexran_agent_mac.h"
 #include "flexran_agent_rrc.h"
 #include "flexran_agent_pdcp.h"
+#include "flexran_agent_s1ap.h"
 #include "flexran_agent_timer.h"
 #include "flexran_agent_ran_api.h"
 #include "common/utils/LOG/log.h"
@@ -324,6 +325,14 @@ int flexran_agent_stats_reply(mid_t enb_id,
     goto error;
   }
 
+  /* S1AP statistics, depends on RRC to find S1AP ID */
+  if (flexran_agent_get_rrc_xface(enb_id)
+      && flexran_agent_get_s1ap_xface(enb_id)
+      && flexran_agent_s1ap_stats_reply(enb_id, ue_report, n_ue, ue_flags) < 0) {
+    err_code = PROTOCOL__FLEXRAN_ERR__MSG_BUILD;
+    goto error;
+  }
+
   if (flexran_create_header(xid, PROTOCOL__FLEX_TYPE__FLPT_STATS_REPLY, &header) != 0) {
     goto error;
   }
@@ -523,6 +532,8 @@ int flexran_agent_destroy_stats_reply(Protocol__FlexranMessage *msg)
   flexran_agent_mac_destroy_stats_reply(msg->stats_reply_msg);
   flexran_agent_rrc_destroy_stats_reply(msg->stats_reply_msg);
   flexran_agent_pdcp_destroy_stats_reply(msg->stats_reply_msg);
+  flexran_agent_rrc_gtp_destroy_stats_reply(msg->stats_reply_msg);
+  flexran_agent_s1ap_destroy_stats_reply(msg->stats_reply_msg);
   for (int i = 0; i < msg->stats_reply_msg->n_cell_report; ++i)
     free(msg->stats_reply_msg->cell_report[i]);
   for (int i = 0; i < msg->stats_reply_msg->n_ue_report; ++i)

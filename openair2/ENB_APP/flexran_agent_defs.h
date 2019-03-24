@@ -116,6 +116,7 @@ typedef int32_t  err_code_t;
 #define FLEXRAN_CAP_PDCP(cApS)  (((cApS) & (1 << PROTOCOL__FLEX_BS_CAPABILITY__PDCP))  > 0)
 #define FLEXRAN_CAP_SDAP(cApS)  (((cApS) & (1 << PROTOCOL__FLEX_BS_CAPABILITY__SDAP))  > 0)
 #define FLEXRAN_CAP_RRC(cApS)   (((cApS) & (1 << PROTOCOL__FLEX_BS_CAPABILITY__RRC))   > 0)
+#define FLEXRAN_CAP_S1AP(cApS)  (((cApS) & (1 << PROTOCOL__FLEX_BS_CAPABILITY__S1AP))  > 0)
 
 typedef enum {
   ENB_NORMAL_OPERATION = 0x0,

@@ -21,7 +21,7 @@
 
 /*! \file flexran_agent_common.c
  * \brief common primitives for all agents
- * \author Xenofon Foukas, Mohamed Kassem and Navid Nikaein, shahab SHARIAT BAGHERI
+ * \author Xenofon Foukas, Mohamed Kassem and Navid Nikaein
  * \date 2017
  * \version 0.1
  */
@@ -38,6 +38,7 @@
 #include "flexran_agent_phy.h"
 #include "flexran_agent_mac.h"
 #include "flexran_agent_rrc.h"
+#include "flexran_agent_s1ap.h"
 //#include "PHY/extern.h"
 #include "common/utils/LOG/log.h"
 #include "flexran_agent_mac_internal.h"
@@ -339,6 +340,9 @@ int flexran_agent_destroy_enb_config_reply(Protocol__FlexranMessage *msg) {
 
     free(reply->cell_config[i]);
   }
+  
+  if (reply->s1ap)
+    flexran_agent_free_s1ap_cell_config(&reply->s1ap);
 
   free(reply->cell_config);
   free(reply);
@@ -757,9 +761,12 @@ int flexran_agent_enb_config_reply(mid_t mod_id, const void *params, Protocol__F
       cell_conf[i]->carrier_index = i;
       cell_conf[i]->has_carrier_index = 1;
     }
-
+    
     enb_config_reply_msg->cell_config=cell_conf;
   }
+  
+  if (flexran_agent_get_s1ap_xface(mod_id))
+    flexran_agent_fill_s1ap_cell_config(mod_id, &enb_config_reply_msg->s1ap);
 
   *msg = malloc(sizeof(Protocol__FlexranMessage));
 

@@ -75,6 +75,7 @@ enum flex_bs_capability {
     PDCP  = 5;
     SDAP  = 6;
     RRC   = 7;
+    S1AP  = 8;
 }
 
 enum flex_bs_split {
