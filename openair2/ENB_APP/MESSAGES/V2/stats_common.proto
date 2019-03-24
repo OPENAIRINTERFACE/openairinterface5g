@@ -1,6 +1,8 @@
 syntax = "proto2";
 package protocol;
 
+import "config_common.proto"; // for flex_plmn
+
 //
 // UE related statistics
 //
@@ -218,23 +220,14 @@ message flex_eutra_cgi_measurements {
 	// Tracking area code of the neighbor cell.
 	optional uint32 tracking_area_code = 2;
 	// Public land mobile network identifiers of neighbor cell.
-	repeated flex_plmn_identity plmn_id = 3;
+	repeated flex_plmn plmn = 3;
 }
 
 message flex_cell_global_eutra_id {
 	// Public land mobile network identifier of neighbor cell.
-	optional flex_plmn_identity plmn_id = 1;
+	optional flex_plmn plmn = 1;
 	// Cell identifier of neighbor cell.
 	optional uint32 cell_id = 2;
-}
-
-message flex_plmn_identity {
-	// Mobile Network Code (MNC).
-	repeated uint32 mnc = 1;
-	// Mobile Country Code (MCC).
-	repeated uint32 mcc = 2;
-	// tracking area code 
-	repeated uint32 tac = 3;
 }
 
 message flex_eutra_ref_signal_meas {
