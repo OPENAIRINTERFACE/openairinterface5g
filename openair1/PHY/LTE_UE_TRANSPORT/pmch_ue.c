@@ -152,7 +152,7 @@ void mch_extract_rbs_khz_1dot25(int **rxdataF,
   numext=0;
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
       for (i=0,j=0; i<frame_parms->N_RB_DL*72; i++) {
-                if( (i%6) != 0 ){
+                if( ((i-offset)%6) != 0 ){
                         rxdataF_ext[aarx][j+0] = rxdataF[aarx][i+4344 +0];
                         rxdataF_ext[aarx][(frame_parms->N_RB_DL*60)+j+0] = rxdataF[aarx][i+1+0]; //DC
                         dl_ch_estimates_ext[aarx][j+0] = dl_ch_estimates[aarx][i+0];
