@@ -42,6 +42,7 @@ ENB_PROCESS_SEG_FAULT = -11
 ENB_PROCESS_ASSERTION = -12
 ENB_PROCESS_REALTIME_ISSUE = -13
 ENB_PROCESS_NOLOGFILE_TO_ANALYZE = -14
+UE_PROCESS_NOLOGFILE_TO_ANALYZE = -20
 HSS_PROCESS_FAILED = -2
 HSS_PROCESS_OK = +2
 MME_PROCESS_FAILED = -3
@@ -129,24 +130,13 @@ class SSHConnection():
 		self.CpuModel = ''
 		self.CpuMHz = ''
 		self.UEIPAddress = ''
-		self.UEBranch = ''
-		#self.UE_AllowMerge = False
-		self.UECommitID = ''
-		#self.UETargetBranch = ''
 		self.UEUserName = ''
 		self.UEPassword = ''
 		self.UE_instance = ''
-		#self.UESourceCodePath = ''
-		#self.UECpuMHz = ''
+		self.UESourceCodePath = ''
 		self.Build_OAI_UE_args = ''
 		self.Initialize_OAI_UE_args = ''
 		self.eNBOsVersion = ''
-		#self.eNBKernelVersion = ''
-		#self.eNBUsrpBoard = ''
-		#self.eNBUhdVersion = ''
-		#self.eNBCpuNb = ''
-		#self.eNBCpuModel = ''
-		#self.eNBCpuMHz = ''
 
 	def open(self, ipaddress, username, password):
 		count = 0
@@ -610,7 +600,7 @@ class SSHConnection():
 			# Reloading FGPA bin firmware
 			self.command('echo ' + self.UEPassword + ' | sudo -S uhd_find_devices', '\$', 5)
 		else:
-			logging.debug('Did not find any B2xx device')		
+			logging.debug('Did not find any B2xx device')
 		self.command('cd ' + self.UESourceCodePath, '\$', 5)
 		# Initialize_OAI_UE_args usually start with -C and followed by the location in repository
 		#full_config_file = self.Initialize_OAI_UE_args.replace('-O ','')
@@ -2044,7 +2034,7 @@ class SSHConnection():
 			self.htmleNBFailureMsg += rrcMsg + '\n'
 		if rrcReconfigRequest > 0 or rrcReconfigComplete > 0:
 			rrcMsg = 'eNB requested ' + str(rrcReconfigRequest) + ' RRC Connection Reconfiguration(s)'
-			logging.debug('\u001B[1;30;43m ' + rrcMsig + ' \u001B[0m')
+			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
 			self.htmleNBFailureMsg += rrcMsg + '\n'
 			rrcMsg = ' -- ' + str(rrcReconfigComplete) + ' were completed'
 			logging.debug('\u001B[1;30;43m ' + rrcMsg + ' \u001B[0m')
@@ -2397,7 +2387,7 @@ class SSHConnection():
 				if (copyin_res == -1):
 					logging.debug('\u001B[1;37;41m Could not copy UE logfile to analyze it! \u001B[0m')
 					self.htmlUEFailureMsg = 'Could not copy UE logfile to analyze it!'
-					self.CreateHtmlTestRow('N/A', 'KO', ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
+					self.CreateHtmlTestRow('N/A', 'KO', UE_PROCESS_NOLOGFILE_TO_ANALYZE)
 					self.UELogFile = ''
 					return
 				logging.debug('\u001B[1m Analyzing UE logfile \u001B[0m')
@@ -2429,23 +2419,23 @@ class SSHConnection():
 
 	def LogCollectBuild(self):
 		if (self.eNBIPAddress != '' and self.eNBUserName != '' and self.eNBPassword != ''):
-			self.IPAddress = self.eNBIPAddress
-			self.UserName = self.eNBUserName
-			self.Password = self.eNBPassword
-			self.SourceCodePath = self.eNBSourceCodePath
+			IPAddress = self.eNBIPAddress
+			UserName = self.eNBUserName
+			Password = self.eNBPassword
+			SourceCodePath = self.eNBSourceCodePath
 		elif (self.UEIPAddress != '' and self.UEUserName != '' and self.UEPassword != ''):
-			self.IPAddress = self.UEIPAddress
-			self.UserName = self.UEUserName
-			self.Password = self.UEPassword
-			self.SourceCodePath = self.UESourceCodePath
+			IPAddress = self.UEIPAddress
+			UserName = self.UEUserName
+			Password = self.UEPassword
+			SourceCodePath = self.UESourceCodePath
 		else:
 			sys.exit('Insufficient Parameter')
-		self.open(self.IPAddress, self.UserName, self.Password)
-		self.command('cd ' + self.SourceCodePath, '\$', 5)
+		self.open(IPAddress, UserName, Password)
+		self.command('cd ' + SourceCodePath, '\$', 5)
 		self.command('cd cmake_targets', '\$', 5)
 		self.command('rm -f build.log.zip', '\$', 5)
 		self.command('zip build.log.zip build_log_*/*', '\$', 60)
-		self.command('echo ' + self.Password + ' | sudo -S rm -rf build_log_*', '\$', 5)
+		self.command('echo ' + Password + ' | sudo -S rm -rf build_log_*', '\$', 5)
 		self.close()
 
 	def LogCollecteNB(self):
@@ -2536,18 +2526,18 @@ class SSHConnection():
 		machine = None
 		if self.eNBIPAddress != '' and self.eNBUserName != '' and self.eNBPassword != '':
 			machine = 'eNB'
-			self.IPAddress = self.eNBIPAddress
-			self.UserName = self.eNBUserName
-			self.Password = self.eNBPassword	
-		if self.UEIPAddress != '' and self.UEUserName != '' and self.UEPassword != '':
+			IPAddress = self.eNBIPAddress
+			UserName = self.eNBUserName
+			Password = self.eNBPassword
+		elif self.UEIPAddress != '' and self.UEUserName != '' and self.UEPassword != '':
 			machine = 'UE'
-			self.IPAddress = self.UEIPAddress
-			self.UserName = self.UEUserName
-			self.Password = self.UEPassword
+			IPAddress = self.UEIPAddress
+			UserName = self.UEUserName
+			Password = self.UEPassword
 		if machine is None:
 			Usage()
 			sys.exit('Insufficient Parameter')
-		self.open(self.IPAddress, self.UserName, self.Password)
+		self.open(IPAddress, UserName, Password)
 		self.command('lsb_release -a', '\$', 5)
 		result = re.search('Description:\\\\t(?P<os_type>[a-zA-Z0-9\-\_\.\ ]+)', str(self.ssh.before))
 		if result is not None:
@@ -2563,7 +2553,7 @@ class SSHConnection():
 		if result is not None:
 			self.UhdVersion = result.group('uhd_version')
 			logging.debug('UHD Version is: ' + self.UhdVersion)
-		self.command('echo ' + self.Password + ' | sudo -S uhd_find_devices', '\$', 5)
+		self.command('echo ' + Password + ' | sudo -S uhd_find_devices', '\$', 5)
 		result = re.search('product: (?P<usrp_board>[0-9A-Za-z]+)\\\\r\\\\n', str(self.ssh.before))
 		if result is not None:
 			self.UsrpBoard = result.group('usrp_board')
@@ -2791,7 +2781,7 @@ class SSHConnection():
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' process ended in Assertion</td>\n')
 				elif (processesStatus == ENB_PROCESS_REALTIME_ISSUE):
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' process faced Real Time issue(s)</td>\n')
-				elif (processesStatus == ENB_PROCESS_NOLOGFILE_TO_ANALYZE):
+				elif (processesStatus == ENB_PROCESS_NOLOGFILE_TO_ANALYZE) or (processesStatus == UE_PROCESS_NOLOGFILE_TO_ANALYZE):
 					self.htmlFile.write('        <td bgcolor = "orange" >OK</td>\n')
 				elif (processesStatus == HSS_PROCESS_FAILED):
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - HSS process not found</td>\n')
@@ -3080,7 +3070,7 @@ if re.match('^TerminateeNB$', mode, re.IGNORECASE):
 		sys.exit('Insufficient Parameter')
 	SSH.TerminateeNB()
 elif re.match('^TerminateUE$', mode, re.IGNORECASE):
-	if SSH.UEIPAddress == '' or SSH.UEUserName == '' or SSH.UEPassword == '':
+	if (SSH.ADBIPAddress == '' or SSH.ADBUserName == '' or SSH.ADBPassword == ''):
 		Usage()
 		sys.exit('Insufficient Parameter')
 	signal.signal(signal.SIGUSR1, receive_signal)
