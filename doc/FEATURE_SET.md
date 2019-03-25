@@ -127,6 +127,9 @@ The X2AP layer is based on **3GPP 36.423** v14.6.0 and implements the following 
  - X2 Setup Failure
  - Handover Request 
  - Handover Request Acknowledge
+ - UE Context Release
+ - X2 timers (t_reloc_prep, tx2_reloc_overall)
+ - Handover Cancel
 
 ## eNB Advanced Features ##
 

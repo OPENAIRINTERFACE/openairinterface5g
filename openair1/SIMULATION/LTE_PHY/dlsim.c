@@ -782,13 +782,15 @@ int main(int argc, char **argv) {
         break;
 
       case 'u':
-        dual_stream_UE=1; 
-	if (UE != NULL)
-           UE->use_ia_receiver = 1;
+        dual_stream_UE=1;
+
+        if (UE != NULL)
+          UE->use_ia_receiver = 1;
         else {
           printf("UE  is NULL\n");
-          exit(-1);	
-	}
+          exit(-1);
+        }
+
         if ((n_tx_port!=2) || (transmission_mode!=5)) {
           printf("IA receiver only supported for TM5!");
           exit(-1);
@@ -951,8 +953,8 @@ int main(int argc, char **argv) {
         fl_set_object_label(form_ue->button_0, "IA Receiver ON");
         fl_set_object_color(form_ue->button_0, FL_GREEN, FL_GREEN);
       } else {
-          printf("UE  is NULL\n");
-          exit(-1);	
+        printf("UE  is NULL\n");
+        exit(-1);
       }
     }
   }
@@ -2139,5 +2141,7 @@ int main(int argc, char **argv) {
   else
     return(0);
 }
-
-
+/* temporary dummy implem of get_softmodem_optmask, till basic simulators implemented as device */
+uint64_t get_softmodem_optmask(void) {
+  return 0;
+}

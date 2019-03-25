@@ -47,7 +47,8 @@
 #define NAS_INET6_ADDRSTRLEN 46
 #define NAS_INET_ADDRSTRLEN 16
 
-#define NAS_CX_MAX 128 // 32  //Identical to RRC constant
+#define NAS_CX_MAX 32 //128   //Identical to RRC constant: no you cannot
+/* increase to 128  without risking stack problems: KEEP ATTENTION TO COMPILATION WARNINGS */
 //#define NAS_CX_MULTICAST_ALLNODE 2
 
 #define NAS_RETRY_LIMIT_DEFAULT 5

@@ -1951,8 +1951,7 @@ find_UE_id(module_id_t mod_idP,
 
   for (UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++) {
     if (UE_list->active[UE_id] == TRUE) {
-      if (UE_list->UE_template[UE_PCCID(mod_idP, 
-                                        UE_id)][UE_id].rnti == rntiP) {
+      if (UE_list->UE_template[UE_PCCID(mod_idP, UE_id)][UE_id].rnti == rntiP) {
         return UE_id;
       }
     }
@@ -4074,6 +4073,8 @@ extract_harq(module_id_t mod_idP,
               break;
             }
           }
+
+          LOG_D(MAC, "In extract_harq(): pdu[0] = %d for harq_pid = %d\n", pdu[0], harq_pid);
 
           if (pdu[0] == 1) {  // ACK
             sched_ctl->round[CC_idP][harq_pid] = 8; // release HARQ process

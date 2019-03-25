@@ -34,7 +34,7 @@
 	<testCase id="030111">
 		<class>Initialize_eNB</class>
 		<desc>Initialize RRU (FDD/Band7)</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/rru.fdd.band7.conf</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/rru.fdd.band7.conf --RUs.[0].max_rxgain 120</Initialize_eNB_args>
 		<eNB_instance>1</eNB_instance>
 	</testCase>
 

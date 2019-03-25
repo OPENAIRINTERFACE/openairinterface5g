@@ -1211,9 +1211,7 @@ int main(int argc, char **argv) {
               }
 
               dump_ulsch(eNB,eNB->proc.frame_rx,subframe,0,round);
-
               round=5;
-              
             }
 
             if (n_frames==1) printf("round %d errors %u/%u\n",round,errs[round],trials);
@@ -1509,5 +1507,7 @@ int main(int argc, char **argv) {
   return(0);
 }
 
-
-
+/* temporary dummy implem of get_softmodem_optmask, till basic simulators implemented as device */
+uint64_t get_softmodem_optmask(void) {
+  return 0;
+}
