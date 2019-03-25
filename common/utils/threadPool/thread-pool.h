@@ -10,7 +10,7 @@
 #include <pthread.h>
 #include <sys/syscall.h>
 #include <assertions.h>
-#include <log.h>
+#include <LOG/log.h>
 
 #ifdef DEBUG
   #define THREADINIT   PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP
@@ -52,8 +52,7 @@ static inline notifiedFIFO_elt_t *newNotifiedFIFO_elt(int size,
     notifiedFIFO_t *reponseFifo,
     void (*processingFunc)(void *)) {
   notifiedFIFO_elt_t *ret;
-  size_t sz=sizeof(notifiedFIFO_elt_t)+size;
-  AssertFatal( NULL != (ret=(notifiedFIFO_elt_t *) malloc((sz/32+1)*32)), "");
+  AssertFatal( NULL != (ret=(notifiedFIFO_elt_t *) malloc(sizeof(notifiedFIFO_elt_t)+size+32)), "");
   ret->next=NULL;
   ret->key=key;
   ret->reponseFifo=reponseFifo;
@@ -69,8 +68,6 @@ static inline void *NotifiedFifoData(notifiedFIFO_elt_t *elt) {
 }
 
 static inline void delNotifiedFIFO_elt(notifiedFIFO_elt_t *elt) {
-  bool tmp=elt->malloced;
-
   if (elt->malloced) {
     elt->malloced=false;
     free(elt);
@@ -121,9 +118,10 @@ static inline  notifiedFIFO_elt_t *pullNotifiedFIFO(notifiedFIFO_t *nf) {
 
 static inline  notifiedFIFO_elt_t *pollNotifiedFIFO(notifiedFIFO_t *nf) {
   int tmp=mutextrylock(nf->lockF);
+
   if (tmp != 0 )
     return NULL;
-  
+
   notifiedFIFO_elt_t *ret=nf->outF;
 
   if (ret!=NULL)
@@ -194,21 +192,22 @@ static inline notifiedFIFO_elt_t *pullTpool(notifiedFIFO_t *responseFifo, tpool_
     msg->returnTime=rdtsc();
 
   if (t->traceFd)
-    (void)write(t->traceFd, msg, sizeof(*msg));
+    if(write(t->traceFd, msg, sizeof(*msg)));
 
   return msg;
 }
 
 static inline notifiedFIFO_elt_t *tryPullTpool(notifiedFIFO_t *responseFifo, tpool_t *t) {
-  notifiedFIFO_elt_t *msg= pullNotifiedFIFO(responseFifo);
+  notifiedFIFO_elt_t *msg= pollNotifiedFIFO(responseFifo);
+
   if (msg == NULL)
     return NULL;
-  
+
   if (t->measurePerf)
     msg->returnTime=rdtsc();
 
   if (t->traceFd)
-    (void)write(t->traceFd, msg, sizeof(*msg));
+    if(write(t->traceFd, msg, sizeof(*msg)));
 
   return msg;
 }
@@ -240,5 +239,6 @@ static inline void abortTpool(tpool_t *t, uint64_t key) {
 
   mutexunlock(nf->lockF);
 }
+void initTpool(char *params,tpool_t *pool, bool performanceMeas);
 
 #endif

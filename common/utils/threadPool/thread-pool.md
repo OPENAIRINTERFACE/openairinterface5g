@@ -11,7 +11,7 @@ All the thread pool functions are thread safe, nevertheless the working function
 
 ## license
 Author: Laurent Thomas, Open cells project 
-The owner share the code usage to Openairsoftware alliance as per OSA license terms
+The owner share this piece code to Openairsoftware alliance as per OSA license terms
 
 # jobs
 
@@ -41,6 +41,8 @@ abort_notifiedFIFO() allows the customer to delete all waiting jobs that match w
 The clients can create one or more thread pools with init_tpool()
 the params string structure: describes a list of cores, separated by "," that run a worker thread
 
+If the core exists on the CPU, the thread pool initialization sets the affinity between this thread and the related code (use negative values is allowed, so the thread will never be mapped on a specific core).
+
 The threads are all Linux real time scheduler, their name is set automatically is "Tpool_<core id>"
 
 ## adding jobs
@@ -66,4 +68,4 @@ A performance measurement is integrated: the pool will automacillay fill timesta
 if you set the environement variable: thread-pool-measurements to a valid file name
 These measurements will be wrote to this Linux pipe.
 
-A tool to read the linux fifo and display it in ascii will be provided (TBD)
+A tool to read the linux fifo and display it in ascii is provided: see the local directory Makefile for this tool and to compile the thread pool unitary tests.

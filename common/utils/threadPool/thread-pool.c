@@ -10,7 +10,9 @@
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
-#include <thread-pool.h>
+#include <ctype.h>
+#include <sys/sysinfo.h>
+#include <threadPool/thread-pool.h>
 
 void displayList(notifiedFIFO_t *nf) {
   int n=0;
@@ -46,12 +48,16 @@ static inline  notifiedFIFO_elt_t *pullNotifiedFifoRemember( notifiedFIFO_t *nf,
 void *one_thread(void *arg) {
   struct  one_thread *myThread=(struct  one_thread *) arg;
   struct  thread_pool *tp=myThread->pool;
+
   // configure the thread core assignment
   // TBD: reserve the core for us exclusively
-  cpu_set_t cpuset;
-  CPU_ZERO(&cpuset);
-  CPU_SET(myThread->coreID, &cpuset);
-  pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  if ( myThread->coreID >= 0 &&  myThread->coreID < get_nprocs_conf()) {
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(myThread->coreID, &cpuset);
+    pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  }
+
   //Configure the thread scheduler policy for Linux
   struct sched_param sparam= {0};
   sparam.sched_priority = sched_get_priority_max(SCHED_RR);
@@ -112,22 +118,27 @@ void initTpool(char *params,tpool_t *pool, bool performanceMeas) {
   curptr=strtok_r(params,",",&saveptr);
 
   while ( curptr!=NULL ) {
-    if (curptr[0] == 'u' || curptr[0] == 'U') {
-      pool->restrictRNTI=true;
-    } else if ( curptr[0]>='0' && curptr[0]<='9' ) {
-      struct one_thread *tmp=pool->allthreads;
-      pool->allthreads=(struct one_thread *)malloc(sizeof(struct one_thread));
-      pool->allthreads->next=tmp;
-      printf("create a thread for core %d\n", atoi(curptr));
-      pool->allthreads->coreID=atoi(curptr);
-      pool->allthreads->id=pool->nbThreads;
-      pool->allthreads->pool=pool;
-      pthread_create(&pool->allthreads->threadID, NULL, one_thread, (void *)pool->allthreads);
-      pool->nbThreads++;
-    } else if (curptr[0] == 'n' || curptr[0] == 'N') {
-      pool->activated=false;
-    } else
-      printf("Error in options for thread pool: %s\n",curptr);
+    int c=toupper(curptr[0]);
+
+    switch (c) {
+      case 'U':
+        pool->restrictRNTI=true;
+        break;
+
+      case 'N':
+        pool->activated=false;
+        break;
+
+      default:
+        pool->allthreads=(struct one_thread *)malloc(sizeof(struct one_thread));
+        pool->allthreads->next=pool->allthreads;
+        printf("create a thread for core %d\n", atoi(curptr));
+        pool->allthreads->coreID=atoi(curptr);
+        pool->allthreads->id=pool->nbThreads;
+        pool->allthreads->pool=pool;
+        pthread_create(&pool->allthreads->threadID, NULL, one_thread, (void *)pool->allthreads);
+        pool->nbThreads++;
+    }
 
     curptr=strtok_r(NULL,",",&saveptr);
   }
