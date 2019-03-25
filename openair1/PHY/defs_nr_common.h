@@ -334,7 +334,7 @@ typedef struct nr_bandentry_s {
   uint64_t step_size;
 } nr_bandentry_t;
 
-typedef struct band_info_s {
+typedef struct nr_band_info_s {
   int nbands;
   nr_bandentry_t band_info[100];
 } nr_band_info_t;
