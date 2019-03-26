@@ -36,6 +36,7 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
 			       uint8_t eNB_offset,
 			       unsigned char Ns,
 			       unsigned char symbol,
+                               int dmrss,
 			       NR_UE_SSB *current_ssb)
 {
   int pilot[200] __attribute__((aligned(16)));
@@ -44,7 +45,7 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
   unsigned int pilot_cnt;
   int16_t ch[2],*pil,*rxF;
   int symbol_offset;
-  int dmrss;
+
 
   uint8_t nushift;
   uint8_t ssb_index=current_ssb->i_ssb;
@@ -56,13 +57,9 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
   unsigned int  ssb_offset = ue->frame_parms.first_carrier_offset + ue->frame_parms.ssb_start_subcarrier;
   if (ssb_offset>= ue->frame_parms.ofdm_symbol_size) ssb_offset-=ue->frame_parms.ofdm_symbol_size;
 
-  if (ue->is_synchronized ==0 ) dmrss = symbol-1;
-  else dmrss = symbol-5;
-
-  AssertFatal((symbol > 0 && symbol < 4 && ue->is_synchronized == 0) || 
-	      (symbol > 4 && symbol < 8 && ue->is_synchronized == 1),
-	      "symbol %d is illegal for PBCH DM-RS (is_synchronized %d)\n",
-	      symbol,ue->is_synchronized);
+  AssertFatal(dmrss >= 0 && dmrss < 3,
+	      "symbol %d is illegal for PBCH DM-RS \n",
+	      dmrss);
 
   symbol_offset = ue->frame_parms.ofdm_symbol_size*symbol;
 

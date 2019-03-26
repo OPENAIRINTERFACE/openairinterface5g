@@ -130,7 +130,7 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, int pbch_initial_symbol, runmode_t mod
 #endif
       // computing correlation between received DMRS symbols and transmitted sequence for current i_ssb and n_hf
       for(int i=pbch_initial_symbol; i<pbch_initial_symbol+3;i++)
-          nr_pbch_dmrs_correlation(ue,0,0,i,current_ssb);
+          nr_pbch_dmrs_correlation(ue,0,0,i,i-pbch_initial_symbol,current_ssb);
 #if UE_TIMING_TRACE
       stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif
