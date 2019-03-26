@@ -756,10 +756,6 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 
 void readFrame(PHY_VARS_NR_UE *UE,  openair0_timestamp *timestamp) {
   void *rxp[NB_ANTENNAS_RX];
-  void *dummy_tx[UE->frame_parms.nb_antennas_tx];
-
-  for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-    dummy_tx[i]=malloc16_clear(UE->frame_parms.samples_per_subframe*4);
 
   for(int x=0; x<10; x++) {
     for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
@@ -770,36 +766,27 @@ void readFrame(PHY_VARS_NR_UE *UE,  openair0_timestamp *timestamp) {
                                             timestamp,
                                             rxp,
                                             UE->frame_parms.samples_per_subframe,
-                                            UE->frame_parms.nb_antennas_rx), "");
+                                            UE->frame_parms.nb_antennas_rx), "readFrame error");
   }
 
-  for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-    free(dummy_tx[i]);
 }
 
 void trashFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
-  void *dummy_tx[UE->frame_parms.nb_antennas_tx];
-
-  for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-    dummy_tx[i]=malloc16_clear(UE->frame_parms.samples_per_subframe*4);
-
   void *dummy_rx[UE->frame_parms.nb_antennas_rx];
 
   for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
     dummy_rx[i]=malloc16(UE->frame_parms.samples_per_subframe*4);
 
   for (int sf=0; sf<NR_NUMBER_OF_SUBFRAMES_PER_FRAME; sf++) {
-    //      printf("Reading dummy sf %d\n",sf);
-    UE->rfdevice.trx_read_func(&UE->rfdevice,
-                               timestamp,
-                               dummy_rx,
-                               UE->frame_parms.samples_per_subframe,
-                               UE->frame_parms.nb_antennas_rx);
-    usleep(500); // this sleep improves in the case of simulated RF and doesn't harm with true radio
+    //printf("Reading dummy sf %d\n",sf);
+    AssertFatal( UE->frame_parms.samples_per_subframe ==
+		 UE->rfdevice.trx_read_func(&UE->rfdevice,
+					    timestamp,
+					    dummy_rx,
+					    UE->frame_parms.samples_per_subframe,
+					    UE->frame_parms.nb_antennas_rx), "trashFrame error");
+    //usleep(500); // this sleep improves in the case of simulated RF and doesn't harm with true radio
   }
-
-  for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-    free(dummy_tx[i]);
 
   for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
     free(dummy_rx[i]);
@@ -808,10 +795,6 @@ void trashFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
 void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
   if (UE->no_timing_correction==0) {
     LOG_I(PHY,"Resynchronizing RX by %d samples (mode = %d)\n",UE->rx_offset,UE->mode);
-    void *dummy_tx[UE->frame_parms.nb_antennas_tx];
-
-    for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-      dummy_tx[i]=malloc16_clear(UE->frame_parms.samples_per_subframe*4);
 
     for ( int size=UE->rx_offset ; size > 0 ; size -= UE->frame_parms.samples_per_subframe ) {
       int unitTransfer=size>UE->frame_parms.samples_per_subframe ? UE->frame_parms.samples_per_subframe : size ;
@@ -820,11 +803,8 @@ void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
                                              timestamp,
                                              (void **)UE->common_vars.rxdata,
                                              unitTransfer,
-                                             UE->frame_parms.nb_antennas_rx),"");
+                                             UE->frame_parms.nb_antennas_rx),"syncInFrame error");
     }
-
-    for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-      free(dummy_tx[i]);
   }
 }
 
@@ -952,7 +932,7 @@ void *UE_thread(void *arg) {
                                                 &timestamp,
                                                 (void **)UE->common_vars.rxdata,
                                                 UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0,
-                                                UE->frame_parms.nb_antennas_rx),"");
+                                                UE->frame_parms.nb_antennas_rx),"first symbol read error");
         //write_output("txdata_sym.m", "txdata_sym", UE->common_vars.rxdata[0], (UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0), 1, 1);
         //nr_slot_fep(UE,0, 0, 0, 1, 1, NR_PDCCH_EST);
       } //UE->mode != loop_through_memory
@@ -1031,7 +1011,7 @@ void *UE_thread(void *arg) {
                                              &timestamp,
                                              rxp,
                                              readBlockSize,
-                                             UE->frame_parms.nb_antennas_rx),"");
+                                             UE->frame_parms.nb_antennas_rx),"read error");
       AssertFatal( writeBlockSize ==
                    UE->rfdevice.trx_write_func(&UE->rfdevice,
                        timestamp+
@@ -1041,7 +1021,7 @@ void *UE_thread(void *arg) {
                        txp,
                        writeBlockSize,
                        UE->frame_parms.nb_antennas_tx,
-                       1),"");
+                       1),"write error");
 
       if( slot_nr==(nb_slot_frame-1)) {
         // read in first symbol of next frame and adjust for timing drift
@@ -1053,7 +1033,7 @@ void *UE_thread(void *arg) {
                                                  &timestamp,
                                                  (void **)UE->common_vars.rxdata,
                                                  first_symbols,
-                                                 UE->frame_parms.nb_antennas_rx),"");
+                                                 UE->frame_parms.nb_antennas_rx),"first symbols read error");
         else
           LOG_E(PHY,"can't compensate: diff =%d\n", first_symbols);
       }

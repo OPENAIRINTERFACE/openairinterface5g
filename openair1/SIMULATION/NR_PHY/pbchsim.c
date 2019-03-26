@@ -615,7 +615,7 @@ int main(int argc, char **argv)
 		    NR_PBCH_EST);
 	 
 	ret = nr_rx_pbch(UE,
-			 &UE->proc.proc_rxtx[0],
+			 0,
 			 UE->pbch_vars[0],
 			 frame_parms,
 			 0,
