@@ -130,7 +130,9 @@ int main(int argc, char **argv) {
   double SNR, SNR_lin, snr0 = -2.0, snr1 = 2.0;
   double snr_step = 0.1;
   uint8_t snr1set = 0;
+  int slot = 0;
   int **txdata;
+  int32_t **txdataF;
   double **s_re, **s_im, **r_re, **r_im;
   FILE *output_fd = NULL;
   //uint8_t write_output_file = 0;
@@ -155,9 +157,11 @@ int main(int argc, char **argv) {
   float target_error_rate = 0.01;
   uint64_t SSB_positions=0x01;
   uint16_t nb_symb_sch = 12;
+  int start_symbol = 14 - nb_symb_sch;
   uint16_t nb_rb = 50;
   uint8_t Imcs = 9;
   int eNB_id = 0;
+  int ap;
 
   cpuf = get_cpu_freq_GHz();
 
@@ -434,7 +438,7 @@ int main(int argc, char **argv) {
   uint8_t is_crnti = 0, llr8_flag = 0;
   unsigned int TBS = 8424;
   unsigned int available_bits;
-  uint8_t  nb_re_dmrs  = 6;
+  uint8_t  nb_re_dmrs  = UE->dmrs_UplinkConfig.pusch_maxLength*(UE->dmrs_UplinkConfig.pusch_dmrs_type == pusch_dmrs_type1)?6:4;
   uint16_t length_dmrs = 1;
   uint8_t  N_PRB_oh;
   uint16_t N_RE_prime;
@@ -443,6 +447,10 @@ int main(int argc, char **argv) {
   uint8_t rvidx = 0;
   uint8_t UE_id = 1;
   uint8_t cwd;
+  uint16_t start_sc, start_rb;
+  int8_t Wf[2], Wt[2], l0, l_prime[2], delta;
+  uint32_t ***pusch_dmrs;
+
 
   NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id][0];
   nfapi_nr_ul_config_ulsch_pdu_rel15_t *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu.ulsch_pdu_rel15;
@@ -482,6 +490,10 @@ int main(int argc, char **argv) {
   uint32_t scrambling_index;
   int16_t **tx_layers;
   int32_t *mod_symbols[MAX_NUM_NR_RE];
+  uint16_t n_dmrs;
+  uint8_t dmrs_type;
+  uint8_t mapping_type;
+  int amp;
 
 
   test_input           = (unsigned char *) malloc16(sizeof(unsigned char) * TBS / 8);
@@ -573,15 +585,95 @@ int main(int argc, char **argv) {
 
   }
 
+  /////////////////////////DMRS Modulation/////////////////////////
+  ///////////
+
+  pusch_dmrs = UE->nr_gold_pusch_dmrs[slot];
+  n_dmrs = (nb_rb*nb_re_dmrs);
+  int16_t mod_dmrs[n_dmrs<<1];
+  dmrs_type = UE->dmrs_UplinkConfig.pusch_dmrs_type;
+  mapping_type = UE->pusch_config.pusch_TimeDomainResourceAllocation[0]->mappingType;
+
+  l0 = get_l0(mapping_type, 2, 1);
+  nr_modulation(pusch_dmrs[l0][0], n_dmrs, 2, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
+
+
+  ///////////
+  ////////////////////////////////////////////////////////////////////////
+
   /////////////////////////ULSCH layer mapping/////////////////////////
   ///////////
 
   tx_layers = (int16_t **)pusch_ue->txdataF_layers;
 
   nr_layer_mapping((int16_t **)mod_symbols,
-                   Nl,
+                   harq_process_ul_ue->Nl,
                    available_bits/mod_order,
                    tx_layers);
+
+  ///////////
+  ////////////////////////////////////////////////////////////////////////
+
+  /////////////////////////ULSCH RE mapping/////////////////////////
+  ///////////
+
+  txdataF = UE->common_vars.txdataF;
+  amp = AMP;
+
+  start_rb = 10;
+  start_sc = frame_parms->first_carrier_offset + start_rb*NR_NB_SC_PER_RB;
+
+  if (start_sc >= frame_parms->ofdm_symbol_size)
+    start_sc -= frame_parms->ofdm_symbol_size;
+
+
+
+  for (ap=0; ap<harq_process_ul_ue->Nl; ap++) {
+
+    // DMRS params for this ap
+    get_Wt(Wt, ap, dmrs_type);
+    get_Wf(Wf, ap, dmrs_type);
+    delta = get_delta(ap, dmrs_type);
+    l_prime[0] = 0; // single symbol ap 0
+    uint8_t dmrs_symbol = l0+l_prime[0]; // Assuming dmrs-AdditionalPosition = 0
+
+    uint8_t k_prime=0, l;
+    uint16_t m=0, n=0, dmrs_idx=0, k=0;
+
+    for (l=start_symbol; l<start_symbol+nb_symb_sch; l++) {
+      k = start_sc;
+      for (i=0; i<nb_rb*NR_NB_SC_PER_RB; i++) {
+        if ((l == dmrs_symbol) && (k == ((start_sc+get_dmrs_freq_idx(n, k_prime, delta, dmrs_type))%(frame_parms->ofdm_symbol_size)))) {
+          ((int16_t*)txdataF[ap])[(l*frame_parms->ofdm_symbol_size + k)<<1] = (Wt[l_prime[0]]*Wf[k_prime]*amp*mod_dmrs[dmrs_idx<<1]) >> 15;
+          ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (Wt[l_prime[0]]*Wf[k_prime]*amp*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
+#ifdef DEBUG_PUSCH_MAPPING
+printf("dmrs_idx %d\t l %d \t k %d \t k_prime %d \t n %d \t txdataF: %d %d\n",
+dmrs_idx, l, k, k_prime, n, ((int16_t*)txdataF[ap])[(l*frame_parms->ofdm_symbol_size + k)<<1],
+((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1]);
+#endif
+          dmrs_idx++;
+          k_prime++;
+          k_prime&=1;
+          n+=(k_prime)?0:1;
+        }
+
+        else {
+
+          ((int16_t*)txdataF[ap])[(l*frame_parms->ofdm_symbol_size + k)<<1] = (amp * tx_layers[ap][m<<1]) >> 15;
+          ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (amp * tx_layers[ap][(m<<1) + 1]) >> 15;
+#ifdef DEBUG_PUSCH_MAPPING
+printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
+m, l, k, ((int16_t*)txdataF[ap])[(l*frame_parms->ofdm_symbol_size + k)<<1],
+((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1]);
+#endif
+          m++;
+        }
+        if (++k >= frame_parms->ofdm_symbol_size)
+          k -= frame_parms->ofdm_symbol_size;
+      }
+    }
+  }
+
 
   ///////////
   ////////////////////////////////////////////////////////////////////////

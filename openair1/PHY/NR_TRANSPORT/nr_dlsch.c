@@ -65,10 +65,6 @@ void nr_pdsch_codeword_scrambling(uint8_t *in,
 
 }
 
-static inline uint16_t get_pdsch_dmrs_idx(uint8_t n, uint8_t k_prime, uint8_t delta, uint8_t dmrs_type) {
-  uint16_t dmrs_idx = (dmrs_type)? (6*n+k_prime+delta):((n<<2)+(k_prime<<1)+delta);
-  return dmrs_idx;
-}
 
 uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t *dlsch,
                           NR_gNB_DCI_ALLOC_t *dci_alloc,
@@ -176,7 +172,7 @@ for (int l=0; l<rel15->nb_layers; l++)
   uint8_t dmrs_type = config->pdsch_config.dmrs_type.value;
   uint8_t mapping_type = config->pdsch_config.mapping_type.value;
 
-  l0 = get_l0(mapping_type, 2);//config->pdsch_config.dmrs_typeA_position.value);
+  l0 = get_l0(mapping_type, 2, 0);//config->pdsch_config.dmrs_typeA_position.value);
   nr_modulation(pdsch_dmrs[l0][0], n_dmrs, 2, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
 
 #ifdef DEBUG_DLSCH
@@ -220,7 +216,7 @@ ap, Wt[0], Wt[1], Wf[0], Wf[1], delta, l_prime[0], l0, dmrs_symbol);
     for (int l=rel15->start_symbol; l<rel15->start_symbol+rel15->nb_symbols; l++) {
       k = start_sc;
       for (int i=0; i<rel15->n_prb*NR_NB_SC_PER_RB; i++) {
-        if ((l == dmrs_symbol) && (k == ((start_sc+get_pdsch_dmrs_idx(n, k_prime, delta, dmrs_type))%(frame_parms->ofdm_symbol_size)))) {
+        if ((l == dmrs_symbol) && (k == ((start_sc+get_dmrs_freq_idx(n, k_prime, delta, dmrs_type))%(frame_parms->ofdm_symbol_size)))) {
           ((int16_t*)txdataF[ap])[(l*frame_parms->ofdm_symbol_size + k)<<1] = (Wt[l_prime[0]]*Wf[k_prime]*amp*mod_dmrs[dmrs_idx<<1]) >> 15;
           ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (Wt[l_prime[0]]*Wf[k_prime]*amp*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
 #ifdef DEBUG_DLSCH_MAPPING
