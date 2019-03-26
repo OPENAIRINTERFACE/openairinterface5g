@@ -1297,7 +1297,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
             } // node_type!=ngran_eNB_DU
           }
 
-          if ( (rrc->node_type == ngran_eNB_CU) || (rrc->node_type == ngran_ng_eNB_CU) || (rrc->node_type == ngran_gNB_CU) ) {
+          if (rrc->node_type == ngran_eNB || rrc->node_type == ngran_eNB_CU || rrc->node_type == ngran_ng_eNB_CU || rrc->node_type == ngran_gNB_CU) {
             char srb1path[MAX_OPTNAME_SIZE*2 + 8];
             sprintf(srb1path,"%s.%s",enbpath,ENB_CONFIG_STRING_SRB1);
             config_get( SRB1Params,sizeof(SRB1Params)/sizeof(paramdef_t), srb1path);
