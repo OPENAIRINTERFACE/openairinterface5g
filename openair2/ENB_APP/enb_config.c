@@ -441,7 +441,8 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
             //printf("Component carrier %d\n",component_carrier);
             nb_cc++;
 
-            if ( (rrc->node_type != ngran_eNB_CU) || (rrc->node_type != ngran_ng_eNB_CU) || (rrc->node_type != ngran_gNB_CU) ) {
+            if (rrc->node_type != ngran_eNB_CU && rrc->node_type != ngran_ng_eNB_CU && rrc->node_type != ngran_gNB_CU) {
+              // Cell params, MIB/SIB1 in DU
               RRC_CONFIGURATION_REQ (msg_p).tdd_config[j] = ccparams_lte.tdd_config;
               AssertFatal (ccparams_lte.tdd_config <= LTE_TDD_Config__subframeAssignment_sa6,
                            "Failed to parse eNB configuration file %s, enb %d illegal tdd_config %d (should be 0-%d)!",
