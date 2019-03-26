@@ -43,7 +43,7 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
                          uint32_t* out) {
 
   uint8_t reset, b_idx;
-  uint32_t x1, x2, s=0;
+  uint32_t x1, x2, s=0, temp_out;
 
   reset = 1;
   x2 = (n_RNTI<<15) + Nid;
@@ -58,8 +58,16 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
     }
     if (in[i]==NR_PUSCH_x)
       *out ^= 1<<b_idx;
-    else if (in[i]==NR_PUSCH_y)
-      *out ^= (*out & (1<<b_idx-1))<<b_idx;
+    else if (in[i]==NR_PUSCH_y){
+      if (b_idx!=0)
+        *out ^= (*out & (1<<(b_idx-1)))<<1;
+      else{
+
+        temp_out = *(out-1);
+        *out ^= temp_out>>31;
+
+      }
+    }
     else
       *out ^= (((in[i])&1) ^ ((s>>b_idx)&1))<<b_idx;
     //printf("i %d b_idx %d in %d s 0x%08x out 0x%08x\n", i, b_idx, in[i], s, *out);

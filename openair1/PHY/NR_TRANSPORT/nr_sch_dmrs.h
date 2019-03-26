@@ -34,6 +34,7 @@
 
 #define NR_PDSCH_DMRS_ANTENNA_PORT0 1000
 #define NR_PDSCH_DMRS_NB_ANTENNA_PORTS 12
+#define DMRS_MOD_ORDER 2
 
 void get_l_prime(uint8_t *l_prime, uint8_t n_symbs);
 

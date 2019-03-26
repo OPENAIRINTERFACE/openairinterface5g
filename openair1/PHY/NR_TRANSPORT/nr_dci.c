@@ -32,6 +32,7 @@
 
 #include "nr_dci.h"
 #include "nr_dlsch.h"
+#include "nr_sch_dmrs.h"
 #include "PHY/MODULATION/nr_modulation.h"
 
 //#define DEBUG_PDCCH_DMRS
@@ -216,9 +217,9 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
 #endif
       }
 
-      nr_modulation(dmrs_seq, dmrs_length, 2, mod_dmrs[symb]); //Qm = 2 as DMRS is QPSK modulated
+      nr_modulation(dmrs_seq, dmrs_length, DMRS_MOD_ORDER, mod_dmrs[symb]); //Qm = 2 as DMRS is QPSK modulated
     } else
-      nr_modulation(gold_pdcch_dmrs[symb], dmrs_length, 2, mod_dmrs[symb]); //Qm = 2 as DMRS is QPSK modulated
+      nr_modulation(gold_pdcch_dmrs[symb], dmrs_length, DMRS_MOD_ORDER, mod_dmrs[symb]); //Qm = 2 as DMRS is QPSK modulated
 
 #ifdef DEBUG_PDCCH_DMRS
 
@@ -263,7 +264,7 @@ uint8_t nr_generate_dci_top(NR_gNB_PDCCH pdcch_vars,
 #endif
   /// QPSK modulation
   int16_t mod_dci[NR_MAX_DCI_SIZE>>1];
-  nr_modulation(scrambled_output, encoded_length, 2, mod_dci); //Qm = 2 as DMRS is QPSK modulated
+  nr_modulation(scrambled_output, encoded_length, DMRS_MOD_ORDER, mod_dci); //Qm = 2 as DMRS is QPSK modulated
 #ifdef DEBUG_DCI
 
   for (int i=0; i<encoded_length>>1; i++)

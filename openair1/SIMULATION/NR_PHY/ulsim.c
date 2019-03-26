@@ -46,6 +46,7 @@
 #include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
+#include "PHY/NR_TRANSPORT/nr_sch_dmrs.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 
 #include "SCHED_NR/sched_nr.h"
@@ -595,7 +596,7 @@ int main(int argc, char **argv) {
   mapping_type = UE->pusch_config.pusch_TimeDomainResourceAllocation[0]->mappingType;
 
   l0 = get_l0(mapping_type, 2, 1);
-  nr_modulation(pusch_dmrs[l0][0], n_dmrs, 2, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
+  nr_modulation(pusch_dmrs[l0][0], n_dmrs, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
 
 
   ///////////
