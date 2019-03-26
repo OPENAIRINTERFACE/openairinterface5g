@@ -44,6 +44,8 @@
 //#define RRC_DATA_REQ_DEBUG
 //#define DEBUG_RRC 1
 
+extern RAN_CONTEXT_t RC;
+
 //------------------------------------------------------------------------------
 uint8_t
 rrc_data_req(
@@ -106,8 +108,11 @@ rrc_data_req(
       ctxt_pP->instance,
       message_p);
     LOG_I(RRC,"sent RRC_DCCH_DATA_REQ to TASK_PDCP_ENB\n");
-    // RS/BK: Fix ME
-    pdcp_run(ctxt_pP);
+    /* Hack: only trigger PDCP if in CU, otherwise it is triggered by RU threads
+     * Ideally, PDCP would not neet to be triggered like this but react to ITTI
+     * messages automatically */
+    if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB_CU || RC.rrc[ctxt_pP->module_id]->node_type == ngran_ng_eNB_CU || RC.rrc[ctxt_pP->module_id]->node_type == ngran_gNB_CU)
+      pdcp_run(ctxt_pP);
 
     return TRUE; // TODO should be changed to a CNF message later, currently RRC lite does not used the returned value anyway.
 
