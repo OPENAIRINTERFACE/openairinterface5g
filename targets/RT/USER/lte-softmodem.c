@@ -688,8 +688,7 @@ int main( int argc, char **argv ) {
     RCconfig_L1();
   }
 
-  if (RC.nb_inst > 0
-      && (RC.rrc[0]->node_type == ngran_eNB_CU || RC.rrc[0]->node_type == ngran_ng_eNB_CU)) {
+  if (RC.nb_inst > 0 && NODE_IS_CU(RC.rrc[0]->node_type)) {
     protocol_ctxt_t ctxt;
     ctxt.module_id = 0 ;
     ctxt.instance = 0;
@@ -699,8 +698,7 @@ int main( int argc, char **argv ) {
   }
 
   /* start threads if only L1 or not a CU */
-  if (RC.nb_inst == 0 ||
-      !(RC.rrc[0]->node_type == ngran_eNB_CU || RC.rrc[0]->node_type == ngran_ng_eNB_CU)) {
+  if (RC.nb_inst == 0 || !NODE_IS_CU(RC.rrc[0]->node_type)) {
     // init UE_PF_PO and mutex lock
     pthread_mutex_init(&ue_pf_po_mutex, NULL);
     memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*MAX_MOBILES_PER_ENB*MAX_NUM_CCs);
@@ -851,8 +849,7 @@ int main( int argc, char **argv ) {
   // stop threads
 
 
-  if (RC.nb_inst == 0 ||
-      !(RC.rrc[0]->node_type == ngran_eNB_CU || RC.rrc[0]->node_type == ngran_ng_eNB_CU)) {
+  if (RC.nb_inst == 0 || !NODE_IS_CU(RC.rrc[0]->node_type)) {
     int UE_id;
 #ifdef XFORMS
     printf("waiting for XFORMS thread\n");

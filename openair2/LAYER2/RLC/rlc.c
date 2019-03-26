@@ -611,7 +611,7 @@ void rlc_data_ind     (
   AssertFatal(type != ngran_eNB_CU && type != ngran_ng_eNB_CU && type != ngran_gNB_CU,
               "Can't be CU, bad node type %d\n", type);
 
-  if (type == ngran_eNB_DU || type == ngran_gNB_DU) {
+  if (NODE_IS_DU(type)) {
      if (srb_flagP == 1) {
        MessageDef *msg = itti_alloc_new_message(TASK_RLC_ENB, F1AP_UL_RRC_MESSAGE);
        F1AP_UL_RRC_MESSAGE(msg).rnti = ctxt_pP->rnti;

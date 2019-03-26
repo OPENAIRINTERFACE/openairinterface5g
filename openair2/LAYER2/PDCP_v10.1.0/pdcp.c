@@ -191,9 +191,7 @@ boolean_t pdcp_data_req(
         LOG_UI(PDCP, "Before rlc_data_req 1, srb_flagP: %d, rb_idP: %d \n", srb_flagP, rb_idP);
       }
 #ifndef UETARGET
-      if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB_CU
-          || RC.rrc[ctxt_pP->module_id]->node_type == ngran_ng_eNB_CU
-          || RC.rrc[ctxt_pP->module_id]->node_type == ngran_gNB_CU) {
+      if (NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
         /* currently, there is no support to send also the source/destinationL2Id */
         proto_agent_send_rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP,
                                       confirmP, sdu_buffer_sizeP, pdcp_pdu_p);
@@ -374,9 +372,7 @@ boolean_t pdcp_data_req(
        LOG_D(PDCP, "pdcp data req on drb %d, size %d, rnti %x, node_type %d \n", 
             rb_idP, pdcp_pdu_size, ctxt_pP->rnti, RC.rrc[ctxt_pP->module_id]->node_type);
 
-       if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB_CU
-           || RC.rrc[ctxt_pP->module_id]->node_type == ngran_ng_eNB_CU
-           || RC.rrc[ctxt_pP->module_id]->node_type == ngran_gNB_CU) {
+       if (NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
          /* currently, there is no support to send also the source/destinationL2Id */
          proto_agent_send_rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP,
                                        confirmP, pdcp_pdu_size, pdcp_pdu_p);
@@ -386,8 +382,7 @@ boolean_t pdcp_data_req(
          LOG_D(PDCP, "proto_agent_send_rlc_data_req for UE RNTI %x, rb %d, pdu size %d \n", 
                ctxt_pP->rnti, rb_idP, pdcp_pdu_size);
 
-      } else if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB_DU
-          || RC.rrc[ctxt_pP->module_id]->node_type == ngran_gNB_DU){
+      } else if (NODE_IS_DU(RC.rrc[ctxt_pP->module_id]->node_type)){
         LOG_E(PDCP, "Can't be DU, bad node type %d \n", RC.rrc[ctxt_pP->module_id]->node_type);
         ret=FALSE;
       } else
@@ -429,9 +424,7 @@ boolean_t pdcp_data_req(
     {
 
 #ifndef UETARGET
-      if ((RC.rrc[ctxt_pP->module_id]->node_type  == ngran_eNB_CU)   ||
-        (RC.rrc[ctxt_pP->module_id]->node_type   == ngran_ng_eNB_CU)||
-        (RC.rrc[ctxt_pP->module_id]->node_type   == ngran_gNB_CU)  ) {
+      if (NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
         // DL transfer
         MessageDef                            *message_p;
         // Note: the acyual task must be TASK_PDCP_ENB, but this task is not created

@@ -441,7 +441,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
             //printf("Component carrier %d\n",component_carrier);
             nb_cc++;
 
-            if (rrc->node_type != ngran_eNB_CU && rrc->node_type != ngran_ng_eNB_CU && rrc->node_type != ngran_gNB_CU) {
+            if (!NODE_IS_CU(rrc->node_type)) {
               // Cell params, MIB/SIB1 in DU
               RRC_CONFIGURATION_REQ (msg_p).tdd_config[j] = ccparams_lte.tdd_config;
               AssertFatal (ccparams_lte.tdd_config <= LTE_TDD_Config__subframeAssignment_sa6,
@@ -533,7 +533,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               RRC_CONFIGURATION_REQ (msg_p).nb_antenna_ports[j] = ccparams_lte.nb_antenna_ports;
             }
 
-            if (rrc->node_type != ngran_eNB_DU) {//this is CU or eNB, SIB2-20 in CU
+            if (!NODE_IS_DU(rrc->node_type)) { //this is CU or eNB, SIB2-20 in CU
               // Radio Resource Configuration (SIB2)
               RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].prach_root =  ccparams_lte.prach_root;
 
@@ -1295,10 +1295,10 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
 
               if (SLconfig.sidelink_configured==1) fill_SL_configuration(msg_p,&SLconfig,i,j,RC.config_file_name);
               else                                 printf("No SL configuration skipping it\n");
-            } // node_type!=ngran_eNB_DU
+            } // !NODE_IS_DU(node_type)
           }
 
-          if (rrc->node_type == ngran_eNB || rrc->node_type == ngran_eNB_CU || rrc->node_type == ngran_ng_eNB_CU || rrc->node_type == ngran_gNB_CU) {
+          if (!NODE_IS_DU(rrc->node_type)) {
             char srb1path[MAX_OPTNAME_SIZE*2 + 8];
             sprintf(srb1path,"%s.%s",enbpath,ENB_CONFIG_STRING_SRB1);
             config_get( SRB1Params,sizeof(SRB1Params)/sizeof(paramdef_t), srb1path);
@@ -2618,6 +2618,6 @@ void read_config_and_init(void)
     RCconfig_RRC(enb_id, RC.rrc[enb_id],macrlc_has_f1[enb_id]);
   }
 
-  if (RC.rrc[0]->node_type != ngran_eNB_DU)
+  if (!NODE_IS_DU(RC.rrc[0]->node_type))
     pdcp_layer_init();
 }

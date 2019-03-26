@@ -64,39 +64,29 @@ int create_tasks(uint32_t enb_nb) {
   }
 
 
-  switch (type) {
-  case ngran_eNB_CU:
-  case ngran_ng_eNB_CU:
-  case ngran_gNB_CU:
-    rc = itti_create_task(TASK_CU_F1, F1AP_CU_task, NULL);
-    AssertFatal(rc >= 0, "Create task for CU F1AP failed\n");
-    /* fall through */
-  case ngran_eNB:
-  case ngran_ng_eNB:
-  case ngran_gNB:
-    if (EPC_MODE_ENABLED) {
-      rc = itti_create_task(TASK_S1AP, s1ap_eNB_task, NULL);
-      AssertFatal(rc >= 0, "Create task for S1AP failed\n");
-      if (!(get_softmodem_params()->emulate_rf)){
-        rc = itti_create_task(TASK_UDP, udp_eNB_task, NULL);
-        AssertFatal(rc >= 0, "Create task for UDP failed\n");
-      }
-      rc = itti_create_task(TASK_GTPV1_U, gtpv1u_eNB_task, NULL);
-      AssertFatal(rc >= 0, "Create task for GTPV1U failed\n");
-      if (is_x2ap_enabled()) {
-        rc = itti_create_task(TASK_X2AP, x2ap_task, NULL);
-        AssertFatal(rc >= 0, "Create task for X2AP failed\n");
-      } else {
-        LOG_I(X2AP, "X2AP is disabled.\n");
-      }
+  if (EPC_MODE_ENABLED && !NODE_IS_DU(type)) {
+    rc = itti_create_task(TASK_S1AP, s1ap_eNB_task, NULL);
+    AssertFatal(rc >= 0, "Create task for S1AP failed\n");
+    if (!(get_softmodem_params()->emulate_rf)){
+      rc = itti_create_task(TASK_UDP, udp_eNB_task, NULL);
+      AssertFatal(rc >= 0, "Create task for UDP failed\n");
     }
-    break;
-  default:
-    /* intentionally left blank */
-    break;
+    rc = itti_create_task(TASK_GTPV1_U, gtpv1u_eNB_task, NULL);
+    AssertFatal(rc >= 0, "Create task for GTPV1U failed\n");
+    if (is_x2ap_enabled()) {
+      rc = itti_create_task(TASK_X2AP, x2ap_task, NULL);
+      AssertFatal(rc >= 0, "Create task for X2AP failed\n");
+    } else {
+      LOG_I(X2AP, "X2AP is disabled.\n");
+    }
   }
 
-  if (type == ngran_eNB_DU || type == ngran_gNB_DU) {
+  if (NODE_IS_CU(type)) {
+    rc = itti_create_task(TASK_CU_F1, F1AP_CU_task, NULL);
+    AssertFatal(rc >= 0, "Create task for CU F1AP failed\n");
+  }
+
+  if (NODE_IS_DU(type)) {
     rc = itti_create_task(TASK_DU_F1, F1AP_DU_task, NULL);
     AssertFatal(rc >= 0, "Create task for DU F1AP failed\n");
   }

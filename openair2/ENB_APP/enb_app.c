@@ -69,7 +69,7 @@ static uint32_t eNB_app_register(ngran_node_t node_type,uint32_t enb_id_start, u
 
   for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
     {
-      if (node_type == ngran_eNB_DU) { // F1AP registration
+      if (NODE_IS_DU(node_type)) { // F1AP registration
         // configure F1AP here for F1C
         LOG_I(ENB_APP,"ngran_eNB_DU: Allocating ITTI message for F1AP_SETUP_REQ\n");
         msg_p = itti_alloc_new_message (TASK_ENB_APP, F1AP_SETUP_REQ);
@@ -143,7 +143,7 @@ void *eNB_app_task(void *args_p) {
   }
 
     /* Try to register each eNB with each other */
-  if (is_x2ap_enabled() && RC.rrc[0]->node_type == ngran_eNB) { // CU or DU do not need
+  if (is_x2ap_enabled() && !NODE_IS_DU(RC.rrc[0]->node_type)) {
     x2_register_enb_pending = eNB_app_register_x2 (enb_id_start, enb_id_end);
   }
 
@@ -167,7 +167,7 @@ void *eNB_app_task(void *args_p) {
       break;
 
     case S1AP_REGISTER_ENB_CNF:
-      AssertFatal(RC.rrc[0]->node_type != ngran_eNB_DU, "Should not have received S1AP_REGISTER_ENB_CNF\n");
+      AssertFatal(!NODE_IS_DU(RC.rrc[0]->node_type), "Should not have received S1AP_REGISTER_ENB_CNF\n");
         if (EPC_MODE_ENABLED) {
           LOG_I(ENB_APP, "[eNB %d] Received %s: associated MME %d\n", instance, ITTI_MSG_NAME (msg_p),
                 S1AP_REGISTER_ENB_CNF(msg_p).nb_mme);
@@ -206,7 +206,7 @@ void *eNB_app_task(void *args_p) {
       break;
 
     case F1AP_SETUP_RESP:
-      AssertFatal(RC.rrc[0]->node_type == ngran_eNB_DU, "Should not have received F1AP_REGISTER_ENB_CNF in CU/eNB\n");
+      AssertFatal(NODE_IS_DU(RC.rrc[0]->node_type), "Should not have received F1AP_REGISTER_ENB_CNF in CU/eNB\n");
 
       LOG_I(ENB_APP, "Received %s: associated ngran_eNB_CU %s with %d cells to activate\n", ITTI_MSG_NAME (msg_p),
 	    F1AP_SETUP_RESP(msg_p).gNB_CU_name,F1AP_SETUP_RESP(msg_p).num_cells_to_activate);

@@ -244,7 +244,7 @@ mac_rrc_data_ind(
 {
 
 
-  if ( RC.rrc[module_idP]->node_type  == ngran_eNB_DU) {
+  if (NODE_IS_DU(RC.rrc[module_idP]->node_type)) {
     LOG_W(RRC,"[DU %d][RAPROC] Received SDU for CCCH on SRB %d length %d for UE id %d RNTI %x \n",
             module_idP, srb_idP, sdu_lenP, UE_id, rntiP);
   

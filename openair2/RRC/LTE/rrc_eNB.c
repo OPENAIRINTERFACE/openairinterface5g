@@ -154,8 +154,7 @@ init_SI(
 	      PROTOCOL_RRC_CTXT_ARGS(ctxt_pP));
 
   LOG_I(RRC,"[eNB %d] Node type %d \n ", ctxt_pP->module_id, rrc->node_type);
-  if ((rrc->node_type == ngran_eNB_DU)    || 
-      (rrc->node_type == ngran_eNB)       ) {
+  if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
     // copy basic Cell parameters
     carrier->physCellId      = configuration->Nid_cell[CC_id];
     carrier->p_eNB           = configuration->nb_antenna_ports[CC_id];
@@ -208,11 +207,7 @@ init_SI(
 #endif
 
   }
-  if (rrc->node_type != ngran_eNB_DU) { 
-
-  	/*if ((rrc->node_type == ngran_eNB_CU)  || 
-      (rrc->node_type == ngran_ng_eNB_CU) ||
-      (rrc->node_type == ngran_eNB)) { */ 
+  if (!NODE_IS_DU(rrc->node_type)) {
     carrier->SIB23 = (uint8_t*) malloc16(64);
     AssertFatal(carrier->SIB23!=NULL,"cannot allocate memory for SIB");
     carrier->sizeof_SIB23 = do_SIB23(ctxt_pP->module_id,
@@ -376,7 +371,7 @@ init_SI(
 #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
 
   // LTE-M stuff here (take out CU-DU for now)
-  if (rrc->node_type == ngran_eNB) {
+  if (NODE_IS_MONOLITHIC(rrc->node_type)) {
     if ((carrier->mib.message.schedulingInfoSIB1_BR_r13>0) && 
         (carrier->sib1_BR!=NULL)) {
       AssertFatal(carrier->sib1_BR->nonCriticalExtension!=NULL,
@@ -457,7 +452,7 @@ init_SI(
   }
   else 
   */
-  if (rrc->node_type == ngran_eNB) {
+  if (NODE_IS_MONOLITHIC(rrc->node_type)) {
     LOG_D(RRC, "About to call rrc_mac_config_req_eNB for ngran_eNB\n");
     
     rrc_mac_config_req_eNB(ctxt_pP->module_id, CC_id,
@@ -560,7 +555,7 @@ init_MCCH(
   // call mac_config_req with appropriate structure from ASN.1 description
   //  LOG_I(RRC, "DUY: serviceID is %d\n",RC.rrc[enb_mod_idP]->mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->tmgi_r9.serviceId_r9.buf[2]);
   //  LOG_I(RRC, "DUY: session ID is %d\n",RC.rrc[enb_mod_idP]->mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->sessionId_r9->buf[0]);
-  if (rrc->node_type == ngran_eNB) {
+  if (NODE_IS_MONOLITHIC(rrc->node_type)) {
     rrc_mac_config_req_eNB(enb_mod_idP, CC_id,
                            0,0,0,0,0,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
@@ -623,9 +618,7 @@ static void init_MBMS(
                              , &(RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->pmch_InfoList_r9)
                              ,NULL);
     
-    if ((RC.rrc[enb_mod_idP]->node_type  != ngran_eNB_CU) ||
-        (RC.rrc[enb_mod_idP]->node_type  != ngran_ng_eNB_CU) ||
-        (RC.rrc[enb_mod_idP]->node_type  != ngran_gNB_CU)   ) {
+    if (!NODE_IS_CU(RC.rrc[enb_mod_idP]->node_type)) {
       rrc_rlc_config_asn1_req(&ctxt,
                               NULL, // LTE_SRB_ToAddModList
                               NULL,   // LTE_DRB_ToAddModList
@@ -927,9 +920,7 @@ rrc_eNB_free_UE(
   }
 
    if(EPC_MODE_ENABLED) {
-     if (RC.rrc[enb_mod_idP]->node_type == ngran_eNB
-         || RC.rrc[enb_mod_idP]->node_type == ngran_eNB_CU
-         || RC.rrc[enb_mod_idP]->node_type == ngran_gNB_CU) {
+     if (!NODE_IS_DU(RC.rrc[enb_mod_idP]->node_type)) {
        if((ue_context_pP->ue_context.ul_failure_timer >= 20000) && (mac_eNB_get_rrc_status(enb_mod_idP, rnti) >= RRC_CONNECTED)) {
          LOG_I(RRC, "[eNB %d] S1AP_UE_CONTEXT_RELEASE_REQ sent for RNTI %x, cause 21, radio connection with ue lost\n",
                enb_mod_idP,
@@ -1085,14 +1076,12 @@ void release_UE_in_freeList(module_id_t mod_id) {
         }
       }
 
-      if (RC.rrc[mod_id]->node_type != ngran_eNB_CU
-          && RC.rrc[mod_id]->node_type != ngran_ng_eNB_CU
-          && RC.rrc[mod_id]->node_type != ngran_gNB_CU) {
+      if (!NODE_IS_CU(RC.rrc[mod_id]->node_type)) {
         rrc_mac_remove_ue(mod_id,rnti);
         rrc_rlc_remove_ue(&ctxt);
         pdcp_remove_UE(&ctxt);
       }
-      else if (RC.rrc[mod_id]->node_type == ngran_eNB_CU || RC.rrc[mod_id]->node_type == ngran_ng_eNB_CU) {
+      else {
         MessageDef *m = itti_alloc_new_message(TASK_RRC_ENB, F1AP_UE_CONTEXT_RELEASE_CMD);
         F1AP_UE_CONTEXT_RELEASE_CMD(m).rnti = rnti;
         F1AP_UE_CONTEXT_RELEASE_CMD(m).cause = F1AP_CAUSE_RADIO_NETWORK;
@@ -1187,8 +1176,7 @@ rrc_eNB_generate_SecurityModeCommand(
     rrc_eNB_mui,
     size);
 
-  if ((RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_DU) &&
-      (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_DU)) {
+  if (!NODE_IS_DU(RC.rrc[ctxt_pP->module_id]->node_type)) {
     LOG_I(RRC,"calling rrc_data_req :securityModeCommand\n");
 
     rrc_data_req(ctxt_pP,
@@ -1338,7 +1326,7 @@ rrc_eNB_generate_RRCConnectionReestablishment(
         LOG_D(RRC,
               PROTOCOL_RRC_CTXT_UE_FMT" RRC_eNB --- MAC_CONFIG_REQ  (SRB1) ---> MAC_eNB\n",
               PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
-        if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB) {
+        if (NODE_IS_MONOLITHIC(RC.rrc[ctxt_pP->module_id]->node_type)) {
           rrc_mac_config_req_eNB(ctxt_pP->module_id,
                                  ue_context_pP->ue_context.primaryCC_id,
                                  0,0,0,0,0,
@@ -1391,9 +1379,7 @@ rrc_eNB_generate_RRCConnectionReestablishment(
         PROTOCOL_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel DL-CCCH, Generating LTE_RRCConnectionReestablishment (bytes %d)\n",
         PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
         ue_p->Srb0.Tx_buffer.payload_size);
-  if ((RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) &&
-     (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU) &&
-     (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_CU)) {
+  if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
 	  int UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
 	  if(UE_id != -1){
 	    // activate release timer, if RRCComplete not received after 100 frames, remove UE
@@ -1996,9 +1982,7 @@ rrc_eNB_generate_RRCConnectionReestablishmentReject(
 )
 //-----------------------------------------------------------------------------
 {
- if ( (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) &&
-       (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU)&& 
-       (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_CU)   ) {
+ if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
   int UE_id = find_UE_id(ctxt_pP->module_id, ctxt_pP->rnti);
 
   if(UE_id != -1) {
@@ -2103,8 +2087,7 @@ rrc_eNB_generate_RRCConnectionRelease(
   }
 
   pthread_mutex_unlock(&rrc_release_freelist);
-  if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB_CU
-      || RC.rrc[ctxt_pP->module_id]->node_type == ngran_ng_eNB_CU) {
+  if (NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
     MessageDef *m = itti_alloc_new_message(TASK_RRC_ENB, F1AP_UE_CONTEXT_RELEASE_CMD);
     F1AP_UE_CONTEXT_RELEASE_CMD(m).rnti = ctxt_pP->rnti;
     F1AP_UE_CONTEXT_RELEASE_CMD(m).cause = F1AP_CAUSE_RADIO_NETWORK;
@@ -5567,7 +5550,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
             DRB2LCHAN[i] = (uint8_t) * DRB_configList->list.array[i]->logicalChannelIdentity;
           }
 
-	  if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB) {
+	  if (NODE_IS_MONOLITHIC(RC.rrc[ctxt_pP->module_id]->node_type)) {
 	    rrc_mac_config_req_eNB(ctxt_pP->module_id,
                              ue_context_pP->ue_context.primaryCC_id,
                              0,0,0,0,0,
@@ -5610,9 +5593,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
             /*      rrc_pdcp_config_req (ctxt_pP->module_id, frameP, 1, CONFIG_ACTION_REMOVE,
                (ue_mod_idP * NB_RB_MAX) + DRB2LCHAN[i],UNDEF_SECURITY_MODE);
              */
-          if ( (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) &&
-             (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU) &&
-             (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_CU)   ) {
+          if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
             rrc_rlc_config_req(ctxt_pP,
                                SRB_FLAG_NO,
                                MBMS_FLAG_NO,
@@ -5626,7 +5607,7 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
           LOG_D(RRC,
                 PROTOCOL_RRC_CTXT_UE_FMT" RRC_eNB --- MAC_CONFIG_REQ  (DRB) ---> MAC_eNB\n",
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
-          if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB) {
+          if (NODE_IS_MONOLITHIC(RC.rrc[ctxt_pP->module_id]->node_type)) {
             rrc_mac_config_req_eNB(ctxt_pP->module_id,
                                    ue_context_pP->ue_context.primaryCC_id,
                                    0,0,0,0,0,
@@ -5990,7 +5971,7 @@ char openair_rrc_eNB_configuration(
 
   LOG_W(RRC, "[inst %d] RRC->MCC/MSG->MCC %d/%d \n", ctxt.module_id, RC.rrc[ctxt.module_id]->mcc, rrc_configuration_req->mcc);
   */
-  if (RC.rrc[ctxt.module_id]->node_type == ngran_eNB_CU || RC.rrc[ctxt.module_id]->node_type == ngran_ng_eNB_CU) 
+  if (NODE_IS_CU(RC.rrc[ctxt.module_id]->node_type))
   	// msg_p = itti_alloc_new_message (TASK_ENB_APP, F1AP_SCTP_REQ);
     // RCconfig_CU_F1(msg_p, enb_id);
     setup_ngran_CU(RC.rrc[ctxt.module_id]);
@@ -6230,9 +6211,7 @@ rrc_eNB_decode_ccch(
                                    NULL
                                    , (LTE_PMCH_InfoList_r9_t *) NULL
                                    ,NULL);
-          if ((RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) &&
-             (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU)&&
-             (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_CU)   ) {
+          if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
             rrc_rlc_config_asn1_req(ctxt_pP,
                                     ue_context_p->ue_context.SRB_configList,
                                     (LTE_DRB_ToAddModList_t *) NULL,
@@ -6313,9 +6292,7 @@ rrc_eNB_decode_ccch(
               if ((ue_context_p = rrc_eNB_ue_context_stmsi_exist(ctxt_pP, mme_code, m_tmsi))) {
                 LOG_I(RRC," S-TMSI exists, ue_context_p %p, old rnti %x => %x\n",ue_context_p,ue_context_p->ue_context.rnti,ctxt_pP->rnti);
 
-                if ((RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) &&
-                    (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU) &&
-                    (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_CU)   ) {
+                if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
                   rrc_mac_remove_ue(ctxt_pP->module_id, ue_context_p->ue_context.rnti);
                 }
                 else {
@@ -6419,10 +6396,9 @@ rrc_eNB_decode_ccch(
             LOG_I(RRC, PROTOCOL_RRC_CTXT_UE_FMT" Can't create new context for UE random UE identity (0x%" PRIx64 ")\n",
                   PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
                   random_value);
-            if (RC.rrc[ctxt_pP->module_id] == ngran_eNB)
+            if (NODE_IS_MONOLITHIC(RC.rrc[ctxt_pP->module_id]->node_type))
               rrc_mac_remove_ue(ctxt_pP->module_id,ctxt_pP->rnti);
-            else if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB_CU ||
-                RC.rrc[ctxt_pP->module_id]->node_type == ngran_ng_eNB_CU) {
+            else if (NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
               MessageDef *m = itti_alloc_new_message(TASK_RRC_ENB, F1AP_UE_CONTEXT_RELEASE_CMD);
               F1AP_UE_CONTEXT_RELEASE_CMD(m).rnti = ctxt_pP->rnti;
               F1AP_UE_CONTEXT_RELEASE_CMD(m).cause = F1AP_CAUSE_RADIO_NETWORK;
@@ -6484,9 +6460,7 @@ rrc_eNB_decode_ccch(
 #endif
                                  ,NULL);
 
-        if ( (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_eNB_CU) &&
-             (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU) &&
-             (RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_CU)   ) {
+        if (!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
           rrc_rlc_config_asn1_req(ctxt_pP,
                                   ue_context_p->ue_context.SRB_configList,
                                   (LTE_DRB_ToAddModList_t *) NULL,
@@ -6654,9 +6628,7 @@ rrc_eNB_decode_dcch(
                 break;
               }
 
-              AssertFatal(RC.rrc[ctxt_pP->module_id]->node_type != ngran_eNB_CU
-                          && RC.rrc[ctxt_pP->module_id]->node_type  != ngran_ng_eNB_CU
-                          && RC.rrc[ctxt_pP->module_id]->node_type  != ngran_gNB_CU,
+              AssertFatal(!NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type),
                           "CU cannot decode DCCH: no access to RC.mac[]\n");
 
               if(RC.mac[ctxt_pP->module_id]->UE_list.UE_sched_ctrl[UE_id].crnti_reconfigurationcomplete_flag == 1) {
@@ -6906,7 +6878,7 @@ rrc_eNB_decode_dcch(
           if (ul_dcch_msg->message.choice.c1.choice.rrcConnectionSetupComplete.criticalExtensions.choice.c1.
               present ==
               LTE_RRCConnectionSetupComplete__criticalExtensions__c1_PR_rrcConnectionSetupComplete_r8) {
-            AssertFatal(RC.rrc[ctxt_pP->module_id]->node_type != ngran_eNB_DU && RC.rrc[ctxt_pP->module_id]->node_type != ngran_gNB_DU,
+            AssertFatal(!NODE_IS_DU(RC.rrc[ctxt_pP->module_id]->node_type),
                         "should not be reached in DU\n");
             rrc_eNB_process_RRCConnectionSetupComplete(
               ctxt_pP,
@@ -7436,7 +7408,7 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id)
               ue_context_p->ue_context.rnti,
               ue_context_p->ue_context.ue_release_timer_thres_s1);
 
-        if (EPC_MODE_ENABLED && RC.rrc[ctxt_pP->module_id]->node_type != ngran_eNB_DU)
+        if (EPC_MODE_ENABLED && !NODE_IS_DU(RC.rrc[ctxt_pP->module_id]->node_type))
           rrc_eNB_generate_RRCConnectionRelease(ctxt_pP, ue_context_p);
         else
           ue_to_be_removed = ue_context_p;
@@ -7489,7 +7461,7 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id)
           ue_context_p->ue_context.ue_release_timer_rrc = 1;
           ue_context_p->ue_context.ue_release_timer_thres_rrc = 100;
 
-          if (EPC_MODE_ENABLED && RC.rrc[ctxt_pP->module_id]->node_type != ngran_eNB_DU) {
+          if (EPC_MODE_ENABLED && !NODE_IS_DU(RC.rrc[ctxt_pP->module_id]->node_type)) {
             if (rrc_release_info.RRC_release_ctrl[release_num].flag == 4) { // if timer_s1 == 0
               rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_CPLT(ctxt_pP->module_id,
                   ue_context_p->ue_context.eNB_ue_s1ap_id);
@@ -7512,7 +7484,7 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id)
             if (rrc_ue_s1ap_ids != NULL) {
               rrc_eNB_S1AP_remove_ue_ids(RC.rrc[ctxt_pP->module_id], rrc_ue_s1ap_ids);
             }
-          } /* EPC_MODE_ENABLED && node_type != ngran_eNB_DU */
+          } /* EPC_MODE_ENABLED && !NODE_IS_DU */
 
           rrc_release_info.RRC_release_ctrl[release_num].flag = 0;
           rrc_release_info.num_UEs--;
@@ -7851,7 +7823,7 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
 
     /* Messages from F1AP task */
     case F1AP_SETUP_REQ:
-      AssertFatal(RC.rrc[0]->node_type == ngran_eNB_CU || RC.rrc[0]->node_type == ngran_ng_eNB_CU,
+      AssertFatal(NODE_IS_CU(RC.rrc[instance]->node_type),
 		  "should not receive F1AP_SETUP_REQUEST, need call by CU!\n");
       LOG_I(RRC,"[eNB %d] Received %s : %p\n", instance, msg_name_p, &F1AP_SETUP_REQ(msg_p));
       handle_f1_setup_req(&F1AP_SETUP_REQ(msg_p));
