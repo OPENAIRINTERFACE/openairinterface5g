@@ -1799,8 +1799,8 @@ schedule_ulsch_rnti(module_id_t module_idP,
             T_INT(subframeP),
             T_INT(harq_pid),
             T_INT(UE_template_ptr->mcs_UL[harq_pid]),
-            T_INT(first_rb_slice[CC_id]),
-            T_INT(rb_table[rb_table_index]),
+            T_INT(UE_template_ptr->first_rb_ul[harq_pid]),
+            T_INT(UE_template_ptr->nb_rb_ul[harq_pid]),
             T_INT(round_index));
 
           /* Add UL_config PDUs */

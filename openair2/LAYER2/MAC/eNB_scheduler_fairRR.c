@@ -2994,10 +2994,10 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
           last_ulsch_ue_id[CC_id] = ulsch_ue_select[CC_id].list[ulsch_ue_num].UE_id;
         }
       } else if (ulsch_ue_select[CC_id].list[ulsch_ue_num].ue_priority == SCH_UL_RETRANS) { // round > 0 => retransmission
-        T(T_ENB_MAC_UE_UL_SCHEDULE_RETRANSMISSION, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP),
-          T_INT(subframeP), T_INT(harq_pid), T_INT(UE_template->mcs_UL[harq_pid]), T_INT(first_rb[CC_id]), T_INT(rb_table[rb_table_index]),
-          T_INT(round));
         round = UE_sched_ctrl->round_UL[CC_id][harq_pid];
+        T(T_ENB_MAC_UE_UL_SCHEDULE_RETRANSMISSION, T_INT(module_idP), T_INT(CC_id), T_INT(rnti), T_INT(frameP),
+          T_INT(subframeP), T_INT(harq_pid), T_INT(UE_template->mcs_UL[harq_pid]), T_INT(ulsch_ue_select[CC_id].list[ulsch_ue_num].start_rb), T_INT(ulsch_ue_select[CC_id].list[ulsch_ue_num].nb_rb),
+          T_INT(round));
         UE_list->eNB_UE_stats[CC_id][UE_id].normalized_rx_power=normalized_rx_power;
         UE_list->eNB_UE_stats[CC_id][UE_id].target_rx_power=target_rx_power;
         uint8_t mcs_rv = 0;
