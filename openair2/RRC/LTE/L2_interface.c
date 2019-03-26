@@ -362,8 +362,7 @@ void mac_eNB_rrc_ul_failure(const module_id_t Mod_instP,
     flexran_agent_get_rrc_xface(Mod_instP)->flexran_agent_notify_ue_state_change(Mod_instP,
 								     rntiP, PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
   }
-
-  rrc_mac_remove_ue(Mod_instP,rntiP);
+  //rrc_mac_remove_ue(Mod_instP,rntiP);
 }
 
 void mac_eNB_rrc_uplane_failure(const module_id_t Mod_instP,
