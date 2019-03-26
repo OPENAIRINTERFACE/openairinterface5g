@@ -104,4 +104,8 @@ int get_symbolsperslot(nfapi_nr_config_request_t *cfg);
 
 void get_band(uint32_t downlink_frequency,   uint8_t *current_band,   int32_t *current_offset, lte_frame_type_t *current_type);
 
+uint64_t from_nrarfcn(int nr_bandP, uint32_t dl_nrarfcn);
+
+uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint32_t bw);
+
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/
