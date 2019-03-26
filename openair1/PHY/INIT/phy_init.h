@@ -391,7 +391,7 @@ void init_nr_transport(PHY_VARS_gNB *gNB);
 
 void init_dfts(void);
 
-int get_band(uint32_t downlink_frequency,   uint8_t *current_band,   int32_t *current_offset, lte_frame_type_t *current_type);
+void get_band(uint32_t downlink_frequency,   uint8_t *current_band,   int32_t *current_offset, lte_frame_type_t *current_type);
 
 
 /** @} */

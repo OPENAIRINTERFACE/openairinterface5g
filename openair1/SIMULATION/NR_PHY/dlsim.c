@@ -154,7 +154,7 @@ int main(int argc, char **argv)
   int pbch_tx_ant;
   int N_RB_DL=273,mu=1;
 
-  uint64_t ssb_pattern = 0;
+  uint64_t ssb_pattern = 0x01;
 
   unsigned char frame_type = 0;
   unsigned char pbch_phase = 0;

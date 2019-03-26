@@ -337,13 +337,14 @@ nr_bandentry_t nr_bandtable[] = {
   {86, 1710000, 1785000,     000,     000, 20, 342000}
 };
 
-int get_band(uint32_t downlink_frequency,   uint8_t *current_band,   int32_t *current_offset, lte_frame_type_t *current_type) {
+void get_band(uint32_t downlink_frequency,   uint8_t *current_band,   int32_t *current_offset, lte_frame_type_t *current_type) {
 
     int ind;
     int64_t dl_freq_khz = downlink_frequency/1000;
     for ( ind=0;
           ind < sizeof(nr_bandtable) / sizeof(nr_bandtable[0]);
           ind++) {
+
       *current_band = nr_bandtable[ind].band;
       LOG_I(PHY, "Scanning band %d, dl_min %"PRIu32", ul_min %"PRIu32"\n", ind, nr_bandtable[ind].dl_min,nr_bandtable[ind].ul_min);
 
@@ -360,9 +361,8 @@ int get_band(uint32_t downlink_frequency,   uint8_t *current_band,   int32_t *cu
       }
     }
 
-    if( ind == sizeof(nr_bandtable) / sizeof(nr_bandtable[0])) {
-      LOG_E(PHY,"Can't find EUTRA band for frequency %d\n", downlink_frequency);
-      return(-1);
-    }
+    AssertFatal(ind != (sizeof(nr_bandtable) / sizeof(nr_bandtable[0])),
+	    "Can't find EUTRA band for frequency %d\n", downlink_frequency);
+
 }
 
