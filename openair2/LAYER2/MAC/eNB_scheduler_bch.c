@@ -372,7 +372,15 @@ schedule_SI_BR(module_id_t module_idP, frame_t frameP,
         long si_TBS_r13 = si_TBS_r13tab[schedulingInfoList_BR_r13->list.array[i]->si_TBS_r13];
 
         // check if the SI is to be scheduled now
-        int period_in_sf = 80 << si_Periodicity;	// 2^i * 80 subframes, note: si_Periodicity is 2^i * 80ms
+        int period_in_sf;
+        if ((si_Periodicity >= 0) && (si_Periodicity < 25)) {
+          // 2^i * 80 subframes, note: si_Periodicity is 2^i * 80ms
+          period_in_sf = 80 << ((int) si_Periodicity);
+        } else if (si_Periodicity < 0) {
+          period_in_sf = 80;
+        } else if (si_Periodicity > 24) {
+          period_in_sf = 80 << 24;
+        }
         int sf_mod_period = absSF % period_in_sf;
         int k = sf_mod_period & 3;
         // Note: definition of k and rvidx from 36.321 section 5.3.1
