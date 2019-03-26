@@ -592,7 +592,8 @@ void phy_init_nr_ue__PDSCH( NR_UE_PDSCH* const pdsch, const NR_DL_FRAME_PARMS* c
   AssertFatal( pdsch, "pdsch==0" );
 
   pdsch->pmi_ext = (uint8_t*)malloc16_clear( fp->N_RB_DL );
-  pdsch->llr[0] = (int16_t*)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) );
+  pdsch->llr[0] = (int16_t*)malloc16_clear( (8*(3*8*6144))*sizeof(int16_t) );
+  pdsch->layer_llr[0] = (int16_t*)malloc16_clear( (8*(3*8*6144))*sizeof(int16_t) );
   pdsch->llr128 = (int16_t**)malloc16_clear( sizeof(int16_t*) );
   // FIXME! no further allocation for (int16_t*)pdsch->llr128 !!! expect SIGSEGV
   // FK, 11-3-2015: this is only as a temporary pointer, no memory is stored there
@@ -761,7 +762,8 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
       for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
         (*pdsch_vars_th)[th_id][eNB_id]->llr_shifts      = (uint8_t*)malloc16_clear(7*2*fp->N_RB_DL*12);
         (*pdsch_vars_th)[th_id][eNB_id]->llr_shifts_p        = (*pdsch_vars_th)[0][eNB_id]->llr_shifts;
-        (*pdsch_vars_th)[th_id][eNB_id]->llr[1]              = (int16_t*)malloc16_clear( (8*((3*8*8448)+12))*sizeof(int16_t) );
+        (*pdsch_vars_th)[th_id][eNB_id]->llr[1]              = (int16_t*)malloc16_clear( (8*(3*8*8448))*sizeof(int16_t) );
+        (*pdsch_vars_th)[th_id][eNB_id]->layer_llr[1]        = (int16_t*)malloc16_clear( (8*(3*8*8448))*sizeof(int16_t) );
         (*pdsch_vars_th)[th_id][eNB_id]->llr128_2ndstream    = (int16_t**)malloc16_clear( sizeof(int16_t*) );
         (*pdsch_vars_th)[th_id][eNB_id]->rho                 = (int32_t**)malloc16_clear( fp->nb_antennas_rx*sizeof(int32_t*) );
       }
@@ -882,7 +884,8 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   if (abstraction_flag == 0) {
     for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
         //phy_init_lte_ue__PDSCH( (*pdsch_vars_th)[th_id][eNB_id], fp );
-        (*pdsch_vars_th)[th_id][eNB_id]->llr[1] = (int16_t*)malloc16_clear( (8*((3*8*8448)+12))*sizeof(int16_t) );
+        (*pdsch_vars_th)[th_id][eNB_id]->llr[1] = (int16_t*)malloc16_clear( (8*(3*8*8448))*sizeof(int16_t) );
+        (*pdsch_vars_th)[th_id][eNB_id]->layer_llr[1] = (int16_t*)malloc16_clear( (8*(3*8*8448))*sizeof(int16_t) );
     }
 
   } else { //abstraction == 1
