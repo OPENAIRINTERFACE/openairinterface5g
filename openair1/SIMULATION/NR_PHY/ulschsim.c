@@ -146,7 +146,7 @@ int main(int argc, char **argv) {
   //char input_val_str[50],input_val_str2[50];
   //uint16_t NB_RB=25;
   SCM_t channel_model = AWGN;  //Rayleigh1_anticorr;
-  uint8_t N_RB_DL = 106, N_RB_UL = 106, mu = 1;
+  uint16_t N_RB_DL = 106, N_RB_UL = 106, mu = 1;
   unsigned char frame_type = 0;
   unsigned char pbch_phase = 0;
   int frame = 0, subframe = 0;
@@ -162,7 +162,7 @@ int main(int argc, char **argv) {
   //int run_initial_sync=0;
   int loglvl = OAILOG_WARNING;
   float target_error_rate = 0.01;
-
+  uint64_t SSB_positions=0x01;
   uint16_t nb_symb_sch = 12;
   uint16_t nb_rb = 50;
   uint8_t Imcs = 9;
@@ -176,7 +176,7 @@ int main(int argc, char **argv) {
   //logInit();
   randominit(0);
 
-  while ((c = getopt(argc, argv, "df:hpg:i:j:n:l:m:r:s:S:y:z:N:F:R:P:")) != -1) {
+  while ((c = getopt(argc, argv, "df:hpg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:")) != -1) {
     switch (c) {
       case 'f':
          write_output_file = 1;
@@ -287,6 +287,10 @@ int main(int argc, char **argv) {
 
         break;
 
+      case 'M':
+        SSB_positions = atoi(optarg);
+        break;
+
       case 'N':
         Nid_cell = atoi(optarg);
         break;
@@ -346,6 +350,7 @@ int main(int argc, char **argv) {
           printf("-z Number of RX antennas used in UE\n");
           printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
           printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
+          printf("-M Multiple SSB positions in burst\n");
           printf("-N Nid_cell\n");
           printf("-R N_RB_DL\n");
           printf("-O oversampling factor (1,2,4,8,16)\n");
@@ -365,7 +370,8 @@ int main(int argc, char **argv) {
   if (snr1set == 0)
     snr1 = snr0 + 10;
 
-  gNB2UE = new_channel_desc_scm(n_tx, n_rx, channel_model, 61.44e6, //N_RB2sampling_rate(N_RB_DL),
+  gNB2UE = new_channel_desc_scm(n_tx, n_rx, channel_model,
+                                61.44e6, //N_RB2sampling_rate(N_RB_DL),
                                 40e6, //N_RB2channel_bandwidth(N_RB_DL),
                                 0, 0, 0);
 
@@ -389,7 +395,7 @@ int main(int argc, char **argv) {
 
   crcTableInit();
 
-  nr_phy_config_request_sim(gNB, N_RB_DL, N_RB_DL, mu, Nid_cell);
+  nr_phy_config_request_sim(gNB, N_RB_DL, N_RB_DL, mu, Nid_cell, SSB_positions);
 
   phy_init_nr_gNB(gNB, 0, 0);
   //init_eNB_afterRU();
@@ -649,8 +655,10 @@ int main(int argc, char **argv) {
            (float) n_false_positive / (float) n_trials);
     printf("*****************************************\n");
 
-    if ((float) n_errors / (float) n_trials < target_error_rate)
+    if ((float) n_errors / (float) n_trials < target_error_rate) {
+      printf("PUSCH test OK\n");
       break;
+    }
   }
 
   /*LOG_M("txsigF0.m","txsF0", gNB->common_vars.txdataF[0],frame_length_complex_samples_no_prefix,1,1);
