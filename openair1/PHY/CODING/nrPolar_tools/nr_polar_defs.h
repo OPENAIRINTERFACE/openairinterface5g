@@ -184,7 +184,7 @@ int8_t polar_decoder_dci(double *input,
                          uint8_t pathMetricAppr,
                          uint16_t n_RNTI);
 
-void generic_polar_decoder(t_nrPolar_params *,
+void generic_polar_decoder(const t_nrPolar_params *,
                            decoder_node_t *);
 
 void build_decoder_tree(t_nrPolar_params *pp);

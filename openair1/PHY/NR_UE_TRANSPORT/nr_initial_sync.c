@@ -54,10 +54,61 @@ int cnt=0;
 #define DEBUG_INITIAL_SYNCH
 
 
+// create a new node of SSB structure
+NR_UE_SSB* create_ssb_node(uint8_t  i, uint8_t  h) {
+
+  NR_UE_SSB *new_node = (NR_UE_SSB*)malloc(sizeof(NR_UE_SSB));
+  new_node->i_ssb = i;
+  new_node->n_hf = h;
+  new_node->c_re = 0;
+  new_node->c_im = 0;
+  new_node->metric = 0;
+  new_node->next_ssb = NULL;
+
+  return new_node;
+}
+
+
+// insertion of the structure in the ordered list (highest metric first)
+NR_UE_SSB* insert_into_list(NR_UE_SSB *head, NR_UE_SSB *node) {
+
+  if (node->metric > head->metric) {
+    node->next_ssb = head;
+    head = node;
+    return head;
+  }
+
+  NR_UE_SSB *current = head;
+  while (current->next_ssb !=NULL) {
+    NR_UE_SSB *temp=current->next_ssb;
+    if(node->metric > temp->metric) {
+      node->next_ssb = temp;
+      current->next_ssb = node;
+      return head;
+    }
+    else
+      current = temp;
+  }
+  current->next_ssb = node;
+
+  return head;
+}
+
+
+void free_list(NR_UE_SSB *node) {
+  if (node->next_ssb != NULL)
+    free_list(node->next_ssb);
+  free(node);
+}
+
+
 int nr_pbch_detection(PHY_VARS_NR_UE *ue, int pbch_initial_symbol, runmode_t mode)
 {
   NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   int ret =-1;
+
+  NR_UE_SSB *best_ssb = NULL;
+  NR_UE_SSB *current_ssb;
 
 #ifdef DEBUG_INITIAL_SYNCH
   LOG_I(PHY,"[UE%d] Initial sync: starting PBCH detection (rx_offset %d)\n",ue->Mod_id,
@@ -70,30 +121,59 @@ int nr_pbch_detection(PHY_VARS_NR_UE *ue, int pbch_initial_symbol, runmode_t mod
   // loops over possible pbch dmrs cases to retrive best estimated i_ssb (and n_hf for Lmax=4) for multiple ssb detection
   for (int hf = 0; hf < N_hf; hf++) {
     for (int l = 0; l < N_L ; l++) {
-      if (ret !=0) {
+
+      // initialization of structure
+      current_ssb = create_ssb_node(l,hf);
 
 #if UE_TIMING_TRACE
-        start_meas(&ue->dlsch_channel_estimation_stats);
+      start_meas(&ue->dlsch_channel_estimation_stats);
 #endif
-        for(int i=pbch_initial_symbol; i<pbch_initial_symbol+3;i++)
-          nr_pbch_channel_estimation(ue,0,0,i,i-pbch_initial_symbol,l,hf);
+      // computing correlation between received DMRS symbols and transmitted sequence for current i_ssb and n_hf
+      for(int i=pbch_initial_symbol; i<pbch_initial_symbol+3;i++)
+          nr_pbch_dmrs_correlation(ue,0,0,i,i-pbch_initial_symbol,current_ssb);
 #if UE_TIMING_TRACE
-        stop_meas(&ue->dlsch_channel_estimation_stats);
+      stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif
+      
+      current_ssb->metric = current_ssb->c_re*current_ssb->c_re + current_ssb->c_im+current_ssb->c_re;
+      
+      // generate a list of SSB structures
+      if (best_ssb == NULL)
+        best_ssb = current_ssb;
+      else
+        best_ssb = insert_into_list(best_ssb,current_ssb);
 
-        ret = nr_rx_pbch(ue,
-	                 &ue->proc.proc_rxtx[0],
-		         ue->pbch_vars[0],
-		         frame_parms,
-		         0,
-			 l,
-                         SISO,
-		         ue->high_speed_flag);
-
-      }
     }
   }
 
+  NR_UE_SSB *temp_ptr=best_ssb;
+  while (ret!=0 && temp_ptr != NULL) {
+
+#if UE_TIMING_TRACE
+    start_meas(&ue->dlsch_channel_estimation_stats);
+#endif
+  // computing channel estimation for selected best ssb
+    for(int i=pbch_initial_symbol; i<pbch_initial_symbol+3;i++)
+      nr_pbch_channel_estimation(ue,0,0,i,i-pbch_initial_symbol,temp_ptr->i_ssb,temp_ptr->n_hf);
+#if UE_TIMING_TRACE
+    stop_meas(&ue->dlsch_channel_estimation_stats);
+#endif
+
+    ret = nr_rx_pbch(ue,
+	             0,
+		     ue->pbch_vars[0],
+		     frame_parms,
+		     0,
+		     temp_ptr->i_ssb,
+                     SISO,
+                     ue->high_speed_flag);
+
+    temp_ptr=temp_ptr->next_ssb;
+  }
+
+  free_list(best_ssb);
+
+  
   if (ret==0) {
     
     frame_parms->nb_antenna_ports_eNB = 1; //pbch_tx_ant;

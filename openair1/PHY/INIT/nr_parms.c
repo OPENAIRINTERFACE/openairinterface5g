@@ -300,3 +300,6 @@ void nr_dump_frame_parms(NR_DL_FRAME_PARMS *fp)
   LOG_I(PHY,"fp->initial_bwp_dl.location=%d\n",fp->initial_bwp_dl.location);
   LOG_I(PHY,"fp->initial_bwp_dl.ofdm_symbol_size=%d\n",fp->initial_bwp_dl.ofdm_symbol_size);
 }
+
+
+

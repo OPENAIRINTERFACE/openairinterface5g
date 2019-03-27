@@ -321,4 +321,23 @@ typedef struct NR_DL_FRAME_PARMS {
 
 } NR_DL_FRAME_PARMS;
 
+#define KHz (1000UL)
+#define MHz (1000*KHz)
+
+typedef struct nr_bandentry_s {
+  int16_t band;
+  uint64_t ul_min;
+  uint64_t ul_max;
+  uint64_t dl_min;
+  uint64_t dl_max;
+  uint64_t N_OFFs_DL;
+  uint64_t step_size;
+} nr_bandentry_t;
+
+typedef struct nr_band_info_s {
+  int nbands;
+  nr_bandentry_t band_info[100];
+} nr_band_info_t;
+
+
 #endif

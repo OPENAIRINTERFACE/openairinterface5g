@@ -150,64 +150,12 @@ void init_UE(int nb_inst);
 int32_t **rxdata;
 int32_t **txdata;
 
-#define KHz (1000UL)
-#define MHz (1000*KHz)
 #define SAIF_ENABLED
 
 #ifdef SAIF_ENABLED
   uint64_t  g_ue_rx_thread_busy = 0;
 #endif
 
-typedef struct eutra_band_s {
-  int16_t band;
-  uint32_t ul_min;
-  uint32_t ul_max;
-  uint32_t dl_min;
-  uint32_t dl_max;
-  lte_frame_type_t frame_type;
-} eutra_band_t;
-
-typedef struct band_info_s {
-  int nbands;
-  eutra_band_t band_info[100];
-} band_info_t;
-
-band_info_t bands_to_scan;
-
-static const eutra_band_t eutra_bands[] = {
-  {1,  1920000, 1980000, 2110000, 2170000, FDD},
-  {2,  1850000, 1910000, 1930000, 1990000, FDD},
-  {3,  1710000, 1785000, 1805000, 1880000, FDD},
-  {5,   824000,  849000,  869000,  894000, FDD},
-  {7,  2500000, 2570000, 2620000, 2690000, FDD},
-  {8,   880000,  915000,  925000,  960000, FDD},
-  {12,  698000,  716000,  728000,  746000, FDD},
-  {20,  832000,  862000,  791000,  821000, FDD},
-  {25, 1850000, 1915000, 1930000, 1995000, FDD},
-  {28,  703000,  758000,  758000,  813000, FDD},
-  {34, 2010000, 2025000, 2010000, 2025000, TDD},
-  {38, 2570000, 2620000, 2570000, 2630000, TDD},
-  {39, 1880000, 1920000, 1880000, 1920000, TDD},
-  {40, 2300000, 2400000, 2300000, 2400000, TDD},
-  {41, 2496000, 2690000, 2496000, 2690000, TDD},
-  {50, 1432000, 1517000, 1432000, 1517000, TDD},
-  {51, 1427000, 1432000, 1427000, 1432000, TDD},
-  {66, 1710000, 1780000, 2110000, 2200000, FDD},
-  {70, 1695000, 1710000, 1995000, 2020000, FDD},
-  {71,  663000,  698000,  617000,  652000, FDD},
-  {74, 1427000, 1470000, 1475000, 1518000, FDD},
-  {75,     000,     000, 1432000, 1517000, FDD},
-  {76,     000,     000, 1427000, 1432000, FDD},
-  {77, 3300000, 4200000, 3300000, 4200000, TDD},
-  {78, 3300000, 3800000, 3300000, 3800000, TDD},
-  {79, 4400000, 5000000, 4400000, 5000000, TDD},
-  {80, 1710000, 1785000,     000,     000, FDD},
-  {81,  860000,  915000,     000,     000, FDD},
-  {82,  832000,  862000,     000,     000, FDD},
-  {83,  703000,  748000,     000,     000, FDD},
-  {84, 1920000, 1980000,     000,     000, FDD},
-  {86, 1710000, 1785000,     000,     000, FDD}
-};
 
 PHY_VARS_NR_UE *init_nr_ue_vars(NR_DL_FRAME_PARMS *frame_parms,
                                 uint8_t UE_id,
@@ -354,29 +302,11 @@ static void *UE_thread_synch(void *arg) {
   init_thread(100000, 500000, FIFO_PRIORITY-1, &cpuset, threadname);
   UE->is_synchronized = 0;
 
+  printf("UE_scan %d\n",UE->UE_scan);
+
   if (UE->UE_scan == 0) {
-    int ind;
-    int64_t dl_freq_khz = downlink_frequency[0][0]/1000;
-    for ( ind=0;
-          ind < sizeof(eutra_bands) / sizeof(eutra_bands[0]);
-          ind++) {
-      current_band = eutra_bands[ind].band;
-      current_type = eutra_bands[ind].frame_type;
-      LOG_D(PHY, "Scanning band %d, dl_min %"PRIu32", ul_min %"PRIu32"\n", current_band, eutra_bands[ind].dl_min,eutra_bands[ind].ul_min);
 
-      if ( eutra_bands[ind].dl_min <= dl_freq_khz && eutra_bands[ind].dl_max >= dl_freq_khz ) {
-        for (i=0; i<4; i++)
-          uplink_frequency_offset[CC_id][i] = (eutra_bands[ind].ul_min - eutra_bands[ind].dl_min)*1000;
-
-        break;
-      }
-    }
-
-
-    AssertFatal( ind < sizeof(eutra_bands) / sizeof(eutra_bands[0]), "Can't find EUTRA band for frequency");
-
-    UE->frame_parms.eutra_band = current_band;
-    UE->frame_parms.frame_type = current_type;
+    get_band(downlink_frequency[CC_id][0], &UE->frame_parms.eutra_band,   &uplink_frequency_offset[CC_id][0], &UE->frame_parms.frame_type);
 
     LOG_I( PHY, "[SCHED][UE] Check absolute frequency DL %"PRIu32", UL %"PRIu32" (oai_exit %d, rx_num_channels %d)\n",
            downlink_frequency[0][0], downlink_frequency[0][0]+uplink_frequency_offset[0][0],
@@ -397,7 +327,8 @@ static void *UE_thread_synch(void *arg) {
     sync_mode = pbch;
   } else {
     current_band=0;
-
+    LOG_E(PHY,"Fixme!\n");
+    /*
     for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
       downlink_frequency[UE->rf_map.card][UE->rf_map.chain+i] = bands_to_scan.band_info[CC_id].dl_min;
       uplink_frequency_offset[UE->rf_map.card][UE->rf_map.chain+i] =
@@ -407,6 +338,7 @@ static void *UE_thread_synch(void *arg) {
         downlink_frequency[CC_id][i]+uplink_frequency_offset[CC_id][i];
       openair0_cfg[UE->rf_map.card].rx_gain[UE->rf_map.chain+i] = UE->rx_total_gain_dB;
     }
+    */
   }
 
   //    AssertFatal(UE->rfdevice.trx_start_func(&UE->rfdevice) == 0, "Could not start the device\n");
@@ -421,6 +353,7 @@ static void *UE_thread_synch(void *arg) {
     AssertFatal ( 0== pthread_mutex_unlock(&UE->proc.mutex_synch), "");
 
     switch (sync_mode) {
+      /*
       case pss:
         LOG_I(PHY,"[SCHED][UE] Scanning band %d (%d), freq %u\n",bands_to_scan.band_info[current_band].band, current_band,bands_to_scan.band_info[current_band].dl_min+current_offset);
         //lte_sync_timefreq(UE,current_band,bands_to_scan.band_info[current_band].dl_min+current_offset);
@@ -449,7 +382,7 @@ static void *UE_thread_synch(void *arg) {
         }
 
         break;
-
+      */
       case pbch:
 #if DISABLE_LOG_X
         printf("[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
@@ -767,10 +700,6 @@ static void *UE_thread_rxn_txnp4(void *arg) {
 
 void readFrame(PHY_VARS_NR_UE *UE,  openair0_timestamp *timestamp) {
   void *rxp[NB_ANTENNAS_RX];
-  void *dummy_tx[UE->frame_parms.nb_antennas_tx];
-
-  for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-    dummy_tx[i]=malloc16_clear(UE->frame_parms.samples_per_subframe*4);
 
   for(int x=0; x<10; x++) {
     for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
@@ -781,36 +710,27 @@ void readFrame(PHY_VARS_NR_UE *UE,  openair0_timestamp *timestamp) {
                                             timestamp,
                                             rxp,
                                             UE->frame_parms.samples_per_subframe,
-                                            UE->frame_parms.nb_antennas_rx), "");
+                                            UE->frame_parms.nb_antennas_rx), "readFrame error");
   }
 
-  for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-    free(dummy_tx[i]);
 }
 
 void trashFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
-  void *dummy_tx[UE->frame_parms.nb_antennas_tx];
-
-  for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-    dummy_tx[i]=malloc16_clear(UE->frame_parms.samples_per_subframe*4);
-
   void *dummy_rx[UE->frame_parms.nb_antennas_rx];
 
   for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
     dummy_rx[i]=malloc16(UE->frame_parms.samples_per_subframe*4);
 
   for (int sf=0; sf<NR_NUMBER_OF_SUBFRAMES_PER_FRAME; sf++) {
-    //      printf("Reading dummy sf %d\n",sf);
-    UE->rfdevice.trx_read_func(&UE->rfdevice,
-                               timestamp,
-                               dummy_rx,
-                               UE->frame_parms.samples_per_subframe,
-                               UE->frame_parms.nb_antennas_rx);
-    usleep(500); // this sleep improves in the case of simulated RF and doesn't harm with true radio
+    //printf("Reading dummy sf %d\n",sf);
+    AssertFatal( UE->frame_parms.samples_per_subframe ==
+		 UE->rfdevice.trx_read_func(&UE->rfdevice,
+					    timestamp,
+					    dummy_rx,
+					    UE->frame_parms.samples_per_subframe,
+					    UE->frame_parms.nb_antennas_rx), "trashFrame error");
+    //usleep(500); // this sleep improves in the case of simulated RF and doesn't harm with true radio
   }
-
-  for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-    free(dummy_tx[i]);
 
   for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
     free(dummy_rx[i]);
@@ -819,10 +739,6 @@ void trashFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
 void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
   if (UE->no_timing_correction==0) {
     LOG_I(PHY,"Resynchronizing RX by %d samples (mode = %d)\n",UE->rx_offset,UE->mode);
-    void *dummy_tx[UE->frame_parms.nb_antennas_tx];
-
-    for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-      dummy_tx[i]=malloc16_clear(UE->frame_parms.samples_per_subframe*4);
 
     for ( int size=UE->rx_offset ; size > 0 ; size -= UE->frame_parms.samples_per_subframe ) {
       int unitTransfer=size>UE->frame_parms.samples_per_subframe ? UE->frame_parms.samples_per_subframe : size ;
@@ -831,11 +747,8 @@ void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
                                              timestamp,
                                              (void **)UE->common_vars.rxdata,
                                              unitTransfer,
-                                             UE->frame_parms.nb_antennas_rx),"");
+                                             UE->frame_parms.nb_antennas_rx),"syncInFrame error");
     }
-
-    for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-      free(dummy_tx[i]);
   }
 }
 
@@ -964,7 +877,7 @@ void *UE_thread(void *arg) {
                                                 &timestamp,
                                                 (void **)UE->common_vars.rxdata,
                                                 UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0,
-                                                UE->frame_parms.nb_antennas_rx),"");
+                                                UE->frame_parms.nb_antennas_rx),"first symbol read error");
         //write_output("txdata_sym.m", "txdata_sym", UE->common_vars.rxdata[0], (UE->frame_parms.ofdm_symbol_size+UE->frame_parms.nb_prefix_samples0), 1, 1);
         //nr_slot_fep(UE,0, 0, 0, 1, NR_PDCCH_EST);
       } //UE->mode != loop_through_memory
@@ -1043,7 +956,7 @@ void *UE_thread(void *arg) {
                                              &timestamp,
                                              rxp,
                                              readBlockSize,
-                                             UE->frame_parms.nb_antennas_rx),"");
+                                             UE->frame_parms.nb_antennas_rx),"read error");
       AssertFatal( writeBlockSize ==
                    UE->rfdevice.trx_write_func(&UE->rfdevice,
                        timestamp+
@@ -1053,7 +966,7 @@ void *UE_thread(void *arg) {
                        txp,
                        writeBlockSize,
                        UE->frame_parms.nb_antennas_tx,
-                       1),"");
+                       1),"write error");
 
       if( slot_nr==(nb_slot_frame-1)) {
         // read in first symbol of next frame and adjust for timing drift
@@ -1065,7 +978,7 @@ void *UE_thread(void *arg) {
                                                  &timestamp,
                                                  (void **)UE->common_vars.rxdata,
                                                  first_symbols,
-                                                 UE->frame_parms.nb_antennas_rx),"");
+                                                 UE->frame_parms.nb_antennas_rx),"first symbols read error");
         else
           LOG_E(PHY,"can't compensate: diff =%d\n", first_symbols);
       }
