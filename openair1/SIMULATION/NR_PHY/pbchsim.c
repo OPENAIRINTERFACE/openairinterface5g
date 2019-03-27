@@ -618,9 +618,18 @@ int main(int argc, char **argv)
 		      0,
 		      0,
 		      NR_PBCH_EST);
+
+          nr_pbch_channel_estimation(UE,0,0,i,i-(UE->symbol_offset+1),ssb_index%8,n_hf);
         }
 
-	ret = nr_pbch_detection(UE,UE->symbol_offset+1,0);
+        ret = nr_rx_pbch(UE,
+	                 0,
+		         UE->pbch_vars[0],
+		         frame_parms,
+		         0,
+		         ssb_index%8,
+                         SISO,
+                         UE->high_speed_flag);
 
 	if (ret==0) {
 	  //UE->rx_ind.rx_indication_body->mib_pdu.ssb_index;  //not yet detected automatically
