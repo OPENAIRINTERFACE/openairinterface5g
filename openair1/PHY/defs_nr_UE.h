@@ -1143,6 +1143,7 @@ typedef struct {
   //  uint8_t               prach_timer;
   uint8_t               decode_SIB;
   uint8_t               decode_MIB;
+  uint8_t	   ssb_periodicity;
   /// temporary offset during cell search prior to MIB decoding
   int              ssb_offset;
   uint16_t	   symbol_offset; // offset in terms of symbols for detected ssb in sync

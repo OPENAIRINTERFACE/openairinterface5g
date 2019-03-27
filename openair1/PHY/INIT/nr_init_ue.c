@@ -906,6 +906,8 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
   ue->decode_MIB = 1;
   ue->decode_SIB = 1;
 
+  ue->ssb_periodicity = 20; // initialization of ssb periodicity
+
   init_prach_tables(839);
 
 
