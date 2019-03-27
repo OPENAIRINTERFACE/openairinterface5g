@@ -1226,6 +1226,7 @@ schedule_ulsch(module_id_t module_idP,
 
   if (sched_subframe < subframeP) {
     sched_frame++;
+    sched_frame %= 1024;
   }
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
