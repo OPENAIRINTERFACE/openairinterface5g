@@ -129,12 +129,13 @@ int main(int argc, char **argv) {
   char c;
   int i,sf;
   double SNR, SNR_lin, snr0 = -2.0, snr1 = 2.0;
+  double sigma2, sigma2_dB;
   double snr_step = 0.1;
   uint8_t snr1set = 0;
   int slot = 0;
   int **txdata;
   int32_t **txdataF;
-  double **s_re, **s_im, **r_re, **r_im;
+  double **r_re, **r_im;
   FILE *output_fd = NULL;
   //uint8_t write_output_file = 0;
   int trial, n_trials = 1, n_errors = 0, n_false_positive = 0;
@@ -395,17 +396,11 @@ int main(int argc, char **argv) {
 
   frame_length_complex_samples = frame_parms->samples_per_subframe;
   //frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP;
-  s_re   = malloc(2 * sizeof(double *));
-  s_im   = malloc(2 * sizeof(double *));
   r_re   = malloc(2 * sizeof(double *));
   r_im   = malloc(2 * sizeof(double *));
   txdata = malloc(2 * sizeof(int *   ));
 
   for (i = 0; i < 2; i++) {
-    s_re[i] = malloc(frame_length_complex_samples * sizeof(double));
-    bzero(s_re[i], frame_length_complex_samples * sizeof(double));
-    s_im[i] = malloc(frame_length_complex_samples * sizeof(double));
-    bzero(s_im[i], frame_length_complex_samples * sizeof(double));
     r_re[i] = malloc(frame_length_complex_samples * sizeof(double));
     bzero(r_re[i], frame_length_complex_samples * sizeof(double));
     r_im[i] = malloc(frame_length_complex_samples * sizeof(double));
@@ -710,10 +705,29 @@ m, l, k, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
   ///////////
   ////////////////////////////////////////////////////
 
+  for (i=0; i<frame_length_complex_samples; i++) {
+    for (ap=0; ap<frame_parms->nb_antennas_tx; ap++) {
+      r_re[ap][i] = ((double)(((short *)txdata[ap]))[(i<<1)]);
+      r_im[ap][i] = ((double)(((short *)txdata[ap]))[(i<<1)+1]);
+    }
+  }
+
+  txlev = signal_energy(&txdata[0][5*frame_parms->ofdm_symbol_size + 4*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
+          frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
+
+
   for (SNR = snr0; SNR < snr1; SNR += snr_step) {
 
     n_errors = 0;
     n_false_positive = 0;
+
+     SNR_lin = pow(10, SNR / 10.0);
+        sigma   = 1.0 / sqrt(2 * SNR_lin);
+
+  //AWGN
+      sigma2_dB = 10*log10((double)txlev)-SNR;
+      sigma2 = pow(10,sigma2_dB/10);
+
     
     for (trial = 0; trial < n_trials; trial++) {
 
@@ -721,6 +735,13 @@ m, l, k, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
       errors_scrambling  = 0;
       errors_bit         = 0;
       scrambling_index   = 0;
+
+      for (i=0; i<frame_length_complex_samples; i++) {
+        for (ap=0; ap<frame_parms->nb_antennas_rx; ap++) {
+          ((short*) gNB->common_vars.rxdata[ap])[2*i]   = (short) ((r_re[ap][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+          ((short*) gNB->common_vars.rxdata[ap])[2*i+1] = (short) ((r_im[ap][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+        }
+      }
 
       for (i = 0; i < available_bits; i++) {
 
@@ -746,9 +767,7 @@ m, l, k, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
         	modulated_input[i] = -1.0;    ///sqrt(2);
 
 ////////////////////////////////////////////
-  
-        SNR_lin = pow(10, SNR / 10.0);
-        sigma   = 1.0 / sqrt(2 * SNR_lin);
+
 #if 1
         channel_output_fixed[i] = (short) quantize(sigma / 4.0 / 4.0,
                                                    modulated_input[i] + sigma * gaussdouble(0.0, 1.0),
@@ -870,15 +889,11 @@ m, l, k, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
   }
 
   for (i = 0; i < 2; i++) {
-    free(s_re[i]);
-    free(s_im[i]);
     free(r_re[i]);
     free(r_im[i]);
     free(txdata[i]);
   }
 
-  free(s_re);
-  free(s_im);
   free(r_re);
   free(r_im);
   free(txdata);
