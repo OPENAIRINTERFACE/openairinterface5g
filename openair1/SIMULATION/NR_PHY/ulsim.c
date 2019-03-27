@@ -163,6 +163,10 @@ int main(int argc, char **argv) {
   uint8_t Imcs = 9;
   int eNB_id = 0;
   int ap;
+  int tx_offset;
+  int sample_offsetF;
+  int slot_offsetF;
+  int txlev;
 
   cpuf = get_cpu_freq_GHz();
 
@@ -627,7 +631,7 @@ int main(int argc, char **argv) {
   if (start_sc >= frame_parms->ofdm_symbol_size)
     start_sc -= frame_parms->ofdm_symbol_size;
 
-
+  slot_offsetF = slot*frame_parms->symbols_per_slot*frame_parms->ofdm_symbol_size;
 
   for (ap=0; ap<harq_process_ul_ue->Nl; ap++) {
 
@@ -642,15 +646,18 @@ int main(int argc, char **argv) {
     uint16_t m=0, n=0, dmrs_idx=0, k=0;
 
     for (l=start_symbol; l<start_symbol+nb_symb_sch; l++) {
+
       k = start_sc;
+      sample_offsetF = l*frame_parms->ofdm_symbol_size + k + slot_offsetF;
+
       for (i=0; i<nb_rb*NR_NB_SC_PER_RB; i++) {
         if ((l == dmrs_symbol) && (k == ((start_sc+get_dmrs_freq_idx(n, k_prime, delta, dmrs_type))%(frame_parms->ofdm_symbol_size)))) {
-          ((int16_t*)txdataF[ap])[(l*frame_parms->ofdm_symbol_size + k)<<1] = (Wt[l_prime[0]]*Wf[k_prime]*amp*mod_dmrs[dmrs_idx<<1]) >> 15;
-          ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (Wt[l_prime[0]]*Wf[k_prime]*amp*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
+          ((int16_t*)txdataF[ap])[(sample_offsetF)<<1] = (Wt[l_prime[0]]*Wf[k_prime]*amp*mod_dmrs[dmrs_idx<<1]) >> 15;
+          ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = (Wt[l_prime[0]]*Wf[k_prime]*amp*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
 #ifdef DEBUG_PUSCH_MAPPING
 printf("dmrs_idx %d\t l %d \t k %d \t k_prime %d \t n %d \t txdataF: %d %d\n",
-dmrs_idx, l, k, k_prime, n, ((int16_t*)txdataF[ap])[(l*frame_parms->ofdm_symbol_size + k)<<1],
-((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1]);
+dmrs_idx, l, k, k_prime, n, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
+((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1]);
 #endif
           dmrs_idx++;
           k_prime++;
@@ -660,12 +667,12 @@ dmrs_idx, l, k, k_prime, n, ((int16_t*)txdataF[ap])[(l*frame_parms->ofdm_symbol_
 
         else {
 
-          ((int16_t*)txdataF[ap])[(l*frame_parms->ofdm_symbol_size + k)<<1] = (amp * tx_layers[ap][m<<1]) >> 15;
-          ((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (amp * tx_layers[ap][(m<<1) + 1]) >> 15;
+          ((int16_t*)txdataF[ap])[(sample_offsetF)<<1] = (amp * tx_layers[ap][m<<1]) >> 15;
+          ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = (amp * tx_layers[ap][(m<<1) + 1]) >> 15;
 #ifdef DEBUG_PUSCH_MAPPING
 printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
-m, l, k, ((int16_t*)txdataF[ap])[(l*frame_parms->ofdm_symbol_size + k)<<1],
-((int16_t*)txdataF[ap])[((l*frame_parms->ofdm_symbol_size + k)<<1) + 1]);
+m, l, k, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
+((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1]);
 #endif
           m++;
         }
@@ -675,9 +682,33 @@ m, l, k, ((int16_t*)txdataF[ap])[(l*frame_parms->ofdm_symbol_size + k)<<1],
     }
   }
 
-
   ///////////
   ////////////////////////////////////////////////////////////////////////
+
+
+  /////////////////////////IFFT///////////////////////
+  ///////////
+
+  tx_offset = slot*frame_parms->samples_per_slot;
+
+  for (ap=0; ap<harq_process_ul_ue->Nl; ap++) {
+      if (frame_parms->Ncp == 1) { // extended cyclic prefix
+  PHY_ofdm_mod(&txdataF[ap][slot_offsetF],
+         &txdata[ap][tx_offset],
+         frame_parms->ofdm_symbol_size,
+         12,
+         frame_parms->nb_prefix_samples,
+         CYCLIC_PREFIX);
+      } else { // normal cyclic prefix
+  nr_normal_prefix_mod(&txdataF[ap][slot_offsetF],
+           &txdata[ap][tx_offset],
+           14,
+           frame_parms);
+      }
+    }
+
+  ///////////
+  ////////////////////////////////////////////////////
 
   for (SNR = snr0; SNR < snr1; SNR += snr_step) {
 
