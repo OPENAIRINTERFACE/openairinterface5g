@@ -150,7 +150,7 @@ int msc_init(const msc_env_t envP, const int max_threadsP)
     pointer_p = malloc(MSC_MAX_MESSAGE_LENGTH);
     AssertFatal (pointer_p, "malloc failed!\n");
     rv = lfds611_stack_guaranteed_push( g_msc_memory_stack_p, pointer_p );
-    AssertFatal (rv, "lfds611_stack_guaranteed_push failed for item %u\n", i);
+    AssertFatal (rv, "lfds611_stack_guaranteed_push failed for item %d\n", i);
   }
 
   for (i = MIN_MSC_PROTOS; i < MAX_MSC_PROTOS; i++) {

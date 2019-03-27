@@ -72,7 +72,7 @@ uninitvar:openair2/UTIL/OTG/otg_rx_socket.c
 // iteration of the loop.
 nullPointer:common/utils/T/local_tracer.c:243
 //-----------------------------------------------------------------------------
-// once again cppcheck is not to understand that fds is initialized in the
+// once again cppcheck does not understand that fds is initialized in the
 // first iteration of the loop
 nullPointer:common/utils/T/tracer/multi.c:264
 nullPointer:common/utils/T/tracer/multi.c:265

@@ -104,7 +104,7 @@ void et_parse_s1ap(xmlDocPtr doc, const xmlNode const *s1ap_node, et_s1ap_t * co
               rc = et_hex2data( &s1ap->binary_stream[s1ap->binary_stream_pos], xml_char, xmlStrlen(xml_char));
               s1ap->binary_stream_pos += xmlStrlen(xml_char)/2;
               //et_display_node(cur_node, 0);
-              AssertFatal (rc >= 0, "ERROR in converting hex string %s len %d size %d rc %d\n", xml_char, xmlStrlen(xml_char), size, rc);
+              AssertFatal (rc >= 0, "ERROR in converting hex string %s len %d size %u rc %d\n", xml_char, xmlStrlen(xml_char), size, rc);
               go_deeper_in_tree = 0;
               //}
               xmlFree(xml_char);

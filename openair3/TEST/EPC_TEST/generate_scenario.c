@@ -353,7 +353,7 @@ void enb_config_init(const  char const * lib_config_file_name_pP)
       setting_enb   = config_setting_get_elem(setting, i);
       active_enb[i] = config_setting_get_string (setting_enb);
       AssertFatal (active_enb[i] != NULL,
-                   "Failed to parse config file %s, %uth attribute %s \n",
+                   "Failed to parse config file %s, %dth attribute %s \n",
                    lib_config_file_name_pP, i, ENB_CONFIG_STRING_ACTIVE_ENBS);
       active_enb[i] = strdup(active_enb[i]);
       num_enb_properties += 1;
@@ -393,7 +393,7 @@ void enb_config_init(const  char const * lib_config_file_name_pP)
             )
         ) {
         AssertError (0, parse_errors ++,
-                     "Failed to parse eNB configuration file %s, %u th enb\n",
+                     "Failed to parse eNB configuration file %s, %d th enb\n",
                      lib_config_file_name_pP, i);
         continue; // FIXME this prevents segfaults below, not sure what happens after function exit
       }
@@ -441,7 +441,7 @@ void enb_config_init(const  char const * lib_config_file_name_pP)
                  )
               ) {
               AssertError (0, parse_errors ++,
-                           "Failed to parse eNB configuration file %s, %u th enb %u th mme address !\n",
+                           "Failed to parse eNB configuration file %s, %d th enb %d th mme address !\n",
                            lib_config_file_name_pP, i, j);
               continue; // FIXME will prevent segfaults below, not sure what happens at function exit...
             }

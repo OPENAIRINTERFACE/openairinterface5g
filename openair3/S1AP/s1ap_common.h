@@ -105,8 +105,8 @@ extern int asn1_xer_print;
     } \
     if (ie == NULL ) { \
       S1AP_ERROR("S1AP_FIND_PROTOCOLIE_BY_ID: %s %d: ie is NULL\n",__FILE__,__LINE__);\
-      if (mandatory)  _Assert_Exit_ \
     } \
+    if (mandatory)  DevAssert(ie != NULL); \
   } while(0)
 /** \brief Function callback prototype.
  **/
