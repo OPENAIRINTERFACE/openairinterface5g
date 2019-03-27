@@ -38,8 +38,10 @@ void mac_top_init_gNB(void);
 
 int rrc_mac_config_req_gNB(module_id_t Mod_idP, 
                            int CC_id,
+						   int cellid,
                            int p_gNB,
                            int nr_bandP,
+                           uint64_t ssb_pattern,
                            uint64_t dl_CarrierFreqP,
                            int dl_BandwidthP,
                            NR_BCCH_BCH_Message_t *mib,
@@ -99,5 +101,11 @@ int get_spf(nfapi_nr_config_request_t *cfg);
 int to_absslot(nfapi_nr_config_request_t *cfg,int frame,int slot);
 
 int get_symbolsperslot(nfapi_nr_config_request_t *cfg);
+
+void get_band(uint32_t downlink_frequency,   uint8_t *current_band,   int32_t *current_offset, lte_frame_type_t *current_type);
+
+uint64_t from_nrarfcn(int nr_bandP, uint32_t dl_nrarfcn);
+
+uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint32_t bw);
 
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

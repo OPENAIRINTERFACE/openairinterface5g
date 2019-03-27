@@ -2942,6 +2942,7 @@ void nr_ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
 		   ue->pbch_vars[eNB_id],
 		   &ue->frame_parms,
 		   eNB_id,
+		   ue->rx_ind.rx_indication_body[0].mib_pdu.ssb_index,
 		   SISO,
 		   ue->high_speed_flag);
 
@@ -4961,7 +4962,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 		nr_tti_rx,
 		0,
 		0,
-		1,
 		NR_PDCCH_EST);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP, VCD_FUNCTION_OUT);
 #if UE_TIMING_TRACE
@@ -5006,7 +5006,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 		  nr_tti_rx,
 		  0,
 		  0,
-		  1,
 		  NR_PDSCH_EST);
       
       //printf("phy procedure pdsch start measurement\n"); 
@@ -5084,15 +5083,27 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   if ( (nr_tti_rx == 0) && (ue->decode_MIB == 1))
     {
       LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
-      for (int i=0; i<3; i++)
+
+      uint8_t i_ssb = ue->rx_ind.rx_indication_body[0].mib_pdu.ssb_index;
+      uint8_t n_hf = (((ue->rx_ind.rx_indication_body[0].mib_pdu.additional_bits)>>4)&0x01);
+
+      for (int i=1; i<4; i++) {
 	nr_slot_fep(ue,
-		    (5+i), //mu=1 case B
+		    (ue->symbol_offset+i), //mu=1 case B
 		    nr_tti_rx,
 		    0,
 		    0,
-		    1,
 		    NR_PBCH_EST);
+
+#if UE_TIMING_TRACE
+  	start_meas(&ue->dlsch_channel_estimation_stats);
+#endif
+   	nr_pbch_channel_estimation(ue,0,0,ue->symbol_offset+i,i-1,i_ssb,n_hf);
+#if UE_TIMING_TRACE
+  	stop_meas(&ue->dlsch_channel_estimation_stats);
+#endif
       
+      }
       nr_ue_pbch_procedures(eNB_id,ue,proc,0);
     }
   

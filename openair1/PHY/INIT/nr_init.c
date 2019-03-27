@@ -357,7 +357,9 @@ void install_schedule_handlers(IF_Module_t *if_inst)
 
 /// this function is a temporary addition for NR configuration
 
-void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu,int Nid_cell) {
+
+void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu,int Nid_cell,uint64_t position_in_burst) {
+
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   nfapi_nr_config_request_t *gNB_config = &gNB->gNB_config;
   //overwrite for new NR parameters
@@ -372,15 +374,17 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,int N_RB_DL,int N_RB_UL,int mu,
   gNB_config->sch_config.n_ssb_crb.value = (N_RB_DL-20);
   gNB_config->sch_config.ssb_subcarrier_offset.value = 0;
   gNB_config->sch_config.physical_cell_id.value=Nid_cell;
+  gNB_config->sch_config.ssb_scg_position_in_burst.value=position_in_burst;
   gNB_config->subframe_config.dl_cyclic_prefix_type.value = (fp->Ncp == NORMAL) ? NFAPI_CP_NORMAL : NFAPI_CP_EXTENDED;
 
   gNB->mac_enabled     = 1;
-  fp->dl_CarrierFreq = from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
-  fp->ul_CarrierFreq = fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
+  fp->dl_CarrierFreq = 3500000000;//from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
+  fp->ul_CarrierFreq = 3500000000;//fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
   fp->threequarter_fs                    = 0;
   nr_init_frame_parms(gNB_config, fp);
   gNB->configured                                   = 1;
   LOG_I(PHY,"gNB configured\n");
+
 }
 
 
@@ -398,6 +402,7 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   gNB_config->sch_config.ssb_subcarrier_offset.value    = phy_config->cfg->sch_config.ssb_subcarrier_offset.value;//0;
   gNB_config->sch_config.n_ssb_crb.value                = (phy_config->cfg->rf_config.dl_carrier_bandwidth.value-20);
   gNB_config->sch_config.physical_cell_id.value         = phy_config->cfg->sch_config.physical_cell_id.value;
+  gNB_config->sch_config.ssb_scg_position_in_burst.value= phy_config->cfg->sch_config.ssb_scg_position_in_burst.value;
 
   if (phy_config->cfg->subframe_config.duplex_mode.value == 0) {
     gNB_config->subframe_config.duplex_mode.value    = TDD;

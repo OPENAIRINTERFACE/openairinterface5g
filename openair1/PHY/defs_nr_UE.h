@@ -950,6 +950,16 @@ typedef struct {
   int16_t *prach;
 } NR_UE_PRACH;
 
+// structure used for multiple SSB detection
+typedef struct NR_UE_SSB {
+  uint8_t i_ssb;   // i_ssb between 0 and 7 (it corresponds to ssb_index only for Lmax=4,8)
+  uint8_t n_hf;    // n_hf = 0,1 for Lmax =4 or n_hf = 0 for Lmax =8,64
+  uint32_t metric; // metric to order SSB hypothesis
+  uint32_t c_re;
+  uint32_t c_im;
+  struct NR_UE_SSB *next_ssb;
+} NR_UE_SSB;
+
 /*typedef enum {
   /// do not detect any DCIs in the current subframe
   NO_DCI = 0x0,
@@ -1143,6 +1153,7 @@ typedef struct {
   uint8_t               decode_MIB;
   /// temporary offset during cell search prior to MIB decoding
   int              ssb_offset;
+  uint16_t	   symbol_offset; // offset in terms of symbols for detected ssb in sync
   int              rx_offset; /// Timing offset
   int              rx_offset_diff; /// Timing adjustment for ofdm symbol0 on HW USRP
   int              time_sync_cell;
@@ -1306,6 +1317,7 @@ typedef struct {
 #endif
 
 } PHY_VARS_NR_UE;
+
 
 /* this structure is used to pass both UE phy vars and
  * proc to the function UE_thread_rxn_txnp4

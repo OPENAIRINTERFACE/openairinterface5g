@@ -661,7 +661,7 @@ void set_default_frame_parms(NR_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
         config[CC_id]->rf_config.dl_carrier_bandwidth.value = 106;
         config[CC_id]->rf_config.ul_carrier_bandwidth.value = 106;
         config[CC_id]->sch_config.physical_cell_id.value = 0;
-
+	frame_parms[CC_id]->eutra_band = 78;
         frame_parms[CC_id]->frame_type          = FDD;
         frame_parms[CC_id]->tdd_config          = 3;
         //frame_parms[CC_id]->tdd_config_S        = 0;
@@ -932,14 +932,14 @@ int main( int argc, char **argv ) {
 
       LOG_I(PHY,"Set nb_rx_antenna %d , nb_tx_antenna %d \n",frame_parms[CC_id]->nb_antennas_rx, frame_parms[CC_id]->nb_antennas_tx);
   
-    //init_ul_hopping(frame_parms[CC_id]);
-    //phy_init_nr_top(frame_parms[CC_id]);
-  }
+      get_band(downlink_frequency[CC_id][0], &frame_parms[CC_id]->eutra_band,   &uplink_frequency_offset[CC_id][0], &frame_parms[CC_id]->frame_type);
 
-  for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
-        //init prach for openair1 test
-        // prach_fmt = get_prach_fmt(frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex, frame_parms->frame_type);
-        // N_ZC = (prach_fmt <4)?839:139;
+      //init_ul_hopping(frame_parms[CC_id]);
+      //phy_init_nr_top(frame_parms[CC_id]);
+      
+      //init prach for openair1 test
+      // prach_fmt = get_prach_fmt(frame_parms->prach_config_common.prach_ConfigInfo.prach_ConfigIndex, frame_parms->frame_type);
+      // N_ZC = (prach_fmt <4)?839:139;
   }
 
   NB_UE_INST=1;
