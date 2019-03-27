@@ -43,6 +43,8 @@ ENB_PROCESS_ASSERTION = -12
 ENB_PROCESS_REALTIME_ISSUE = -13
 ENB_PROCESS_NOLOGFILE_TO_ANALYZE = -14
 UE_PROCESS_NOLOGFILE_TO_ANALYZE = -20
+UE_PROCESS_COULD_NOT_SYNC = -21
+UE_PROCESS_ASSERTION = -22
 HSS_PROCESS_FAILED = -2
 HSS_PROCESS_OK = +2
 MME_PROCESS_FAILED = -3
@@ -332,8 +334,6 @@ class SSHConnection():
 		self.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
 		self.command('mv log/* ' + 'build_log_' + self.testCase_id, '\$', 5)
 		self.command('mv compile_oai_enb.log ' + 'build_log_' + self.testCase_id, '\$', 5)
-		# Workaround to run with develop-nr
-		self.command('if [ -e ran_build ]; then cp -rf ran_build lte_build_oai; fi', '\$', 30)
 		self.close()
 		self.CreateHtmlTestRow(self.Build_eNB_args, 'OK', ALL_PROCESSES_OK)
 
@@ -2086,6 +2086,9 @@ class SSHConnection():
 		pdcpFailure = 0
 		ulschFailure = 0
 		no_cell_sync_found = False
+		mib_found = False
+		frequency_found = False
+		self.htmlUEFailureMsg = ''
 		for line in ue_log_file.readlines():
 			result = re.search('[Ss]egmentation [Ff]ault', str(line))
 			if result is not None:
@@ -2105,66 +2108,78 @@ class SSHConnection():
 			result = re.search('uci->stat', str(line))
 			if result is not None:
 				uciStatMsgCount += 1
-			# full pattern
 			# No cell synchronization found, abandoning
 			result = re.search('No cell synchronization found, abandoning', str(line))
 			if result is not None:
 				no_cell_sync_found = True
-			# MIB Information => FDD, NORMAL, NidCell 421, N_RB_DL 50, PHICH DURATION 0, PHICH RESOURCE 1/6, TX_ANT 2
-			# mask --> FDD  NORMAL 421 50  0 1/6 2
 			result = re.search("MIB Information => ([a-zA-Z]{1,10}), ([a-zA-Z]{1,10}), NidCell (?P<nidcell>\d{1,3}), N_RB_DL (?P<n_rb_dl>\d{1,3}), PHICH DURATION (?P<phich_duration>\d), PHICH RESOURCE (?P<phich_resource>.{1,4}), TX_ANT (?P<tx_ant>\d)", str(line))
-			if result is not None:
+			if result is not None and (not mib_found):
 				try:
-					print('\033[94m' + "MIB Information: " + result.group(1) + ', ' + result.group(2) + '\033[0m')
-					print('\033[94m' + "nidcell = " + result.group('nidcell') + '\033[0m')
-					print('\033[94m' + "n_rb_dl = " + result.group('n_rb_dl') + '\033[0m')
-					print('\033[94m' + "phich_duration = " + result.group('phich_duration') + '\033[0m')
-					print('\033[94m' + "phich_resource = " + result.group('phich_resource') + '\033[0m')
-					print('\033[94m' + "tx_ant = " + result.group('tx_ant') + '\033[0m')
+					mibMsg = "MIB Information: " + result.group(1) + ', ' + result.group(2)
+					self.htmlUEFailureMsg += mibMsg + '\n'
+					logging.debug('\033[94m' + mibMsg + '\033[0m')
+					mibMsg = "    nidcell = " + result.group('nidcell')
+					self.htmlUEFailureMsg += mibMsg
+					logging.debug('\033[94m' + mibMsg + '\033[0m')
+					mibMsg = "    n_rb_dl = " + result.group('n_rb_dl')
+					self.htmlUEFailureMsg += mibMsg + '\n'
+					logging.debug('\033[94m' + mibMsg + '\033[0m')
+					mibMsg = "    phich_duration = " + result.group('phich_duration')
+					self.htmlUEFailureMsg += mibMsg
+					logging.debug('\033[94m' + mibMsg + '\033[0m')
+					mibMsg = "    phich_resource = " + result.group('phich_resource')
+					self.htmlUEFailureMsg += mibMsg + '\n'
+					logging.debug('\033[94m' + mibMsg + '\033[0m')
+					mibMsg = "    tx_ant = " + result.group('tx_ant')
+					self.htmlUEFailureMsg += mibMsg + '\n'
+					logging.debug('\033[94m' + mibMsg + '\033[0m')
+					mib_found = True
 				except Exception as e:
-					print('\033[91m' + "a marker was not found" + '\033[0m')
-			# Measured Carrier Frequency 816000688 Hz (offset 12 Hz)
-			# mask --> 816000688i
+					logging.error('\033[91m' + "MIB marker was not found" + '\033[0m')
 			result = re.search("Measured Carrier Frequency (?P<measured_carrier_frequency>\d{1,15}) Hz", str(line))
-			if result is not None:
+			if result is not None and (not frequency_found):
 				try:
-					print('\033[94m' + "Measured Carrier Frequency = " + result.group('measured_carrier_frequency') + '\033[0m')
+					mibMsg = "Measured Carrier Frequency = " + result.group('measured_carrier_frequency') + ' Hz'
+					self.htmlUEFailureMsg += mibMsg + '\n'
+					logging.debug('\033[94m' + mibMsg + '\033[0m')
+					frequency_found = True
 				except Exception as e:
-					print('\033[91m' + "Measured Carrier Frequency not found" + '\033[0m')
-			# Found Orange FR (name from internal table)
-			# mask Orange FR
+					logging.error('\033[91m' + "Measured Carrier Frequency not found" + '\033[0m')
 			result = re.search("Found (?P<operator>[\w,\s]{1,15}) \(name from internal table\)", str(line))
 			if result is not None:
 				try:
-					print('\033[94m' + "The operator is: " + result.group('operator') + '\033[0m')
+					mibMsg = "The operator is: " + result.group('operator')
+					self.htmlUEFailureMsg += mibMsg + '\n'
+					logging.debug('\033[94m' + mibMsg + '\033[0m')
 				except Exception as e:
-					print('\033[91m' + "Operator name not found" + '\033[0m')
-			# SIB5 InterFreqCarrierFreq element 0/3
-			# mask -- 0 and 3
+					logging.error('\033[91m' + "Operator name not found" + '\033[0m')
 			result = re.search("SIB5 InterFreqCarrierFreq element (.{1,4})/(.{1,4})", str(line))
 			if result is not None:
 				try:
-					print('\033[94m' + "SIB5 InterFreqCarrierFreq element " + result.group(1) + '/' + result.group(2) + '\033[0m')
+					mibMsg = "SIB5 InterFreqCarrierFreq element " + result.group(1) + '/' + result.group(2)
+					self.htmlUEFailureMsg += mibMsg + ' -> '
+					logging.debug('\033[94m' + mibMsg + '\033[0m')
 				except Exception as e:
-					print('\033[91m' + "SIB5 InterFreqCarrierFreq element not found" + '\033[0m')
-			# DL Carrier Frequency/ARFCN : 2645000000/3000
-			# mask 2645000000
-			result = re.search("DL Carrier Frequency/ARFCN : (?P<carrier_frequency>)\d{1,15}/\d{1,4}", str(line))
+					logging.error('\033[91m' + "SIB5 InterFreqCarrierFreq element not found" + '\033[0m')
+			result = re.search("DL Carrier Frequency/ARFCN : (?P<carrier_frequency>\d{1,15}/\d{1,4})", str(line))
 			if result is not None:
 				try:
-					print('\033[94m' + "DL Carrier Frequency is: " + result.group('carrier_frequency') + '\033[0m')
+					freq = result.group('carrier_frequency')
+					new_freq = re.sub('/[0-9]+','',freq)
+					float_freq = float(new_freq) / 1000000
+					self.htmlUEFailureMsg += 'DL Freq: ' + ('%.1f' % float_freq) + ' MHz'
+					logging.debug('\033[94m' + "    DL Carrier Frequency is: " + freq + '\033[0m')
 				except Exception as e:
-					print('\033[91m' + "DL Carrier Frequency not found" + '\033[0m')
-			# AllowedMeasBandwidth : 100
-			# mask 100
+					logging.error('\033[91m' + "    DL Carrier Frequency not found" + '\033[0m')
 			result = re.search("AllowedMeasBandwidth : (?P<allowed_bandwidth>\d{1,7})", str(line))
 			if result is not None:
 				try:
-					print('\033[94m' + "AllowedMeasBandwidth: " + result.group('allowed_bandwidth') + '\033[0m')
+					prb = result.group('allowed_bandwidth')
+					self.htmlUEFailureMsg += ' -- PRB: ' + prb + '\n'
+					logging.debug('\033[94m' + "    AllowedMeasBandwidth: " + prb + '\033[0m')
 				except Exception as e:
-					print('\033[91m' + "AllowedMeasBandwidth not found" + '\033[0m')
+					logging.error('\033[91m' + "    AllowedMeasBandwidth not found" + '\033[0m')
 		ue_log_file.close()
-		self.htmlUEFailureMsg = ''
 		if uciStatMsgCount > 0:
 			statMsg = 'UE showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
@@ -2186,12 +2201,19 @@ class SSHConnection():
 			return ENB_PROCESS_SEG_FAULT
 		if foundAssertion:
 			logging.debug('\u001B[1;37;43m UE ended with an assertion! \u001B[0m')
-			self.htmlUEFailureMsg += msgAssertion  
-			return ENB_PROCESS_ASSERTION
+			# removed for esthetics
+			#self.htmlUEFailureMsg += msgAssertion
+			self.htmlUEFailureMsg += 'UE ended with an assertion!\n'
+			if not mib_found or not frequency_found:
+				return UE_PROCESS_ASSERTION
 		if foundRealTimeIssue:
 			logging.debug('\u001B[1;37;41m UE faced real time issues! \u001B[0m')
 			self.htmlUEFailureMsg += 'UE faced real time issues!\n'
 			#return ENB_PROCESS_REALTIME_ISSUE
+		if no_cell_sync_found and not mib_found:
+			logging.debug('\u001B[1;37;41m UE could not synchronize ! \u001B[0m')
+			self.htmlUEFailureMsg += 'UE could not synchronize!\n'
+			return UE_PROCESS_COULD_NOT_SYNC
 		if rlcDiscardBuffer > 0:
 			rlcMsg = 'UE RLC discarded ' + str(rlcDiscardBuffer) + ' buffer(s)'
 			logging.debug('\u001B[1;37;41m ' + rlcMsg + ' \u001B[0m')
@@ -2386,21 +2408,27 @@ class SSHConnection():
 				copyin_res = self.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/' + self.UELogFile, '.')
 				if (copyin_res == -1):
 					logging.debug('\u001B[1;37;41m Could not copy UE logfile to analyze it! \u001B[0m')
-					self.htmlUEFailureMsg = 'Could not copy UE logfile to analyze it!'
-					self.CreateHtmlTestRow('N/A', 'KO', UE_PROCESS_NOLOGFILE_TO_ANALYZE)
+					optionsMsg = '<pre style="background-color:white">Could not copy UE logfile to analyze it!</pre>'
+					self.CreateHtmlTestRow(optionsMsg, 'KO', UE_PROCESS_NOLOGFILE_TO_ANALYZE, 'UE')
 					self.UELogFile = ''
 					return
 				logging.debug('\u001B[1m Analyzing UE logfile \u001B[0m')
 				logStatus = self.AnalyzeLogFile_UE(self.UELogFile)
 				if (logStatus < 0):
-					self.CreateHtmlTestRow('N/A', 'KO', logStatus)
+					optionsMsg = '<pre style="background-color:white"><b>Sniffing Unsuccessful</b>\n'
+					optionsMsg += self.htmlUEFailureMsg
+					optionsMsg += '</pre>'
+					self.CreateHtmlTestRow(optionsMsg, 'KO', logStatus, 'UE')
 					self.CreateHtmlTabFooter(False)
 					sys.exit(1)
 				else:
-					self.CreateHtmlTestRow('<pre style="background-color:white">sniffing successful</pre>', 'OK', ALL_PROCESSES_OK)
+					optionsMsg = '<pre style="background-color:white"><b>Sniffing Successful</b>\n'
+					optionsMsg += self.htmlUEFailureMsg
+					optionsMsg += '</pre>'
+					self.CreateHtmlTestRow(optionsMsg, 'OK', ALL_PROCESSES_OK)
 				self.UELogFile = ''
 			else:
-				self.CreateHtmlTestRow('<pre style="background-color:white">sniffing successful</pre>', 'OK', ALL_PROCESSES_OK)
+				self.CreateHtmlTestRow('<pre style="background-color:white">No Log File to analyze</pre>', 'OK', ALL_PROCESSES_OK)
 
 	def AutoTerminateUEandeNB(self):
 		self.testCase_id = 'AUTO-KILL-UE'
@@ -2574,6 +2602,9 @@ class SSHConnection():
 #-----------------------------------------------------------
 	def CreateHtmlHeader(self):
 		if (not self.htmlHeaderCreated):
+			logging.debug('\u001B[1m----------------------------------------\u001B[0m')
+			logging.debug('\u001B[1m  Creating HTML header \u001B[0m')
+			logging.debug('\u001B[1m----------------------------------------\u001B[0m')
 			self.htmlFile = open('test_results.html', 'w')
 			self.htmlFile.write('<!DOCTYPE html>\n')
 			self.htmlFile.write('<html class="no-js" lang="en-US">\n')
@@ -2720,6 +2751,9 @@ class SSHConnection():
 
 	def CreateHtmlFooter(self, passStatus):
 		if (os.path.isfile('test_results.html')):
+			logging.debug('\u001B[1m----------------------------------------\u001B[0m')
+			logging.debug('\u001B[1m  Creating HTML footer \u001B[0m')
+			logging.debug('\u001B[1m----------------------------------------\u001B[0m')
 			self.RetrieveSystemVersion()
 			self.htmlFile = open('test_results.html', 'a')
 			self.htmlFile.write('</div>\n')
@@ -2777,12 +2811,14 @@ class SSHConnection():
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' process not found</td>\n')
 				elif (processesStatus == ENB_PROCESS_SEG_FAULT):
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' process ended in Segmentation Fault</td>\n')
-				elif (processesStatus == ENB_PROCESS_ASSERTION):
+				elif (processesStatus == ENB_PROCESS_ASSERTION) or (processesStatus == UE_PROCESS_ASSERTION):
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' process ended in Assertion</td>\n')
 				elif (processesStatus == ENB_PROCESS_REALTIME_ISSUE):
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - ' + machine + ' process faced Real Time issue(s)</td>\n')
 				elif (processesStatus == ENB_PROCESS_NOLOGFILE_TO_ANALYZE) or (processesStatus == UE_PROCESS_NOLOGFILE_TO_ANALYZE):
-					self.htmlFile.write('        <td bgcolor = "orange" >OK</td>\n')
+					self.htmlFile.write('        <td bgcolor = "orange" >OK?</td>\n')
+				elif (processesStatus == UE_PROCESS_COULD_NOT_SYNC):
+					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - UE could not sync</td>\n')
 				elif (processesStatus == HSS_PROCESS_FAILED):
 					self.htmlFile.write('        <td bgcolor = "lightcoral" >KO - HSS process not found</td>\n')
 				elif (processesStatus == MME_PROCESS_FAILED):
