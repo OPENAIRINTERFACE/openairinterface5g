@@ -58,11 +58,7 @@ extern eNB_DLSCH_INFO eNB_dlsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][MAX_MOBILES
 
 
 
-#ifndef PHYSIM
-#define NB_INST 1
-#else
 extern unsigned char NB_INST;
-#endif
 extern unsigned char NB_eNB_INST;
 extern unsigned char NB_UE_INST;
 extern unsigned char NB_RN_INST;

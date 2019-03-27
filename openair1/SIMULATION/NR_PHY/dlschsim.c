@@ -409,7 +409,7 @@ int main(int argc, char **argv) {
 		r_im[i] = malloc(frame_length_complex_samples * sizeof(double));
 		bzero(r_im[i], frame_length_complex_samples * sizeof(double));
 		txdata[i] = malloc(frame_length_complex_samples * sizeof(int));
-		bzero(r_re[i], frame_length_complex_samples * sizeof(int));
+		bzero(r_re[i], frame_length_complex_samples * sizeof(int)); // [hna] r_re should be txdata
 	}
 
 	if (pbch_file_fd != NULL) {
@@ -485,7 +485,7 @@ int main(int argc, char **argv) {
 	rel15->nb_layers = Nl;
 	rel15->nb_re_dmrs = nb_re_dmrs;
 	rel15->transport_block_size = TBS;
-	double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384);
+	double *modulated_input = malloc16(sizeof(double) * 16 * 68 * 384); // [hna] 16 segments, 68*Zc
 	short *channel_output_fixed = malloc16(sizeof(short) * 16 * 68 * 384);
 	short *channel_output_uncoded = malloc16(sizeof(unsigned short) * 16 * 68 * 384);
 	double errors_bit_uncoded = 0;

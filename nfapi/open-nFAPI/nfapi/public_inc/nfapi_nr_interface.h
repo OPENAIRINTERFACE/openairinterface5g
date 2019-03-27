@@ -673,4 +673,45 @@ typedef struct {
   nfapi_vendor_extension_tlv_t vendor_extension;
 } nfapi_nr_dl_config_request_t;
 
+
+typedef enum {nr_pusch_freq_hopping_disabled = 0 , 
+              nr_pusch_freq_hopping_enabled = 1
+              } nr_pusch_freq_hopping_t;
+
+typedef struct{
+    uint8_t aperiodicSRS_ResourceTrigger;
+} nfapi_nr_ul_srs_config_t;
+
+typedef struct {
+    uint8_t bandwidth_part_ind;
+    uint16_t number_rbs;
+    uint16_t start_rb;
+    uint8_t frame_offset;
+    uint16_t number_symbols;
+    uint16_t start_symbol;
+    nr_pusch_freq_hopping_t pusch_freq_hopping;
+    uint8_t mcs;
+    uint8_t Qm;
+    uint8_t ndi;
+    uint8_t rv;
+    uint8_t harq_process_nbr;
+    int8_t accumulated_delta_PUSCH;
+    int8_t absolute_delta_PUSCH;
+    uint8_t n_layers;
+    uint8_t tpmi;
+    uint8_t n_dmrs_cdm_groups;
+    uint8_t dmrs_ports[4];
+    uint8_t n_front_load_symb;
+    nfapi_nr_ul_srs_config_t srs_config;
+    uint8_t csi_reportTriggerSize;
+    uint8_t maxCodeBlockGroupsPerTransportBlock;
+    uint8_t ptrs_dmrs_association_port;
+    uint8_t beta_offset_ind;
+} nfapi_nr_ul_config_ulsch_pdu_rel15_t;
+
+typedef struct {
+  uint16_t rnti;
+  nfapi_nr_ul_config_ulsch_pdu_rel15_t ulsch_pdu_rel15;
+} nfapi_nr_ul_config_ulsch_pdu;
+
 #endif
