@@ -293,9 +293,6 @@ case $key in
     -v9)
     VM_NAME=ci-l2-sim
     ARCHIVES_LOC=l2_sim
-    LOG_PATTERN=.Rel14.txt
-    NB_PATTERN_FILES=6
-    BUILD_OPTIONS="--eNB -t ETHERNET"
     RUN_OPTIONS="complex"
     NBARGS=$[$NBARGS+256]
     shift
@@ -372,9 +369,6 @@ case $key in
         l2-sim)
         VM_NAME=ci-l2-sim
         ARCHIVES_LOC=l2_sim
-        LOG_PATTERN=.Rel14.txt
-        NB_PATTERN_FILES=6
-        BUILD_OPTIONS="--eNB -t ETHERNET"
         RUN_OPTIONS="complex"
         NBARGS=$[$NBARGS+256]
         ;;
@@ -540,11 +534,23 @@ ARCHIVES_LOC=${JENKINS_WKSP}/archives/${ARCHIVES_LOC}
 STATUS=0
 if [ $CREATE_CMD -eq 1 ]
 then
-    create_vm
+    if [[ $VM_NAME =~ .*-l2-sim.* ]]
+    then
+        echo "Selected variant is no more a build variant"
+        exit 0
+    else
+        create_vm
+    fi
 fi
 if [ $BUILD_CMD -eq 1 ]
 then
-    build_on_vm
+    if [[ $VM_NAME =~ .*-l2-sim.* ]]
+    then
+        echo "Selected variant is no more a build variant"
+        exit 0
+    else
+        build_on_vm
+    fi
     if [ $DAEMON -eq 0 ] && [ $STATUS -eq 0 ]
     then
         check_on_vm_build
@@ -552,7 +558,13 @@ then
 fi
 if [ $WAIT_CMD -eq 1 ]
 then
-    wait_on_vm_build
+    if [[ $VM_NAME =~ .*-l2-sim.* ]]
+    then
+        echo "Selected variant is no more a build variant"
+        exit 0
+    else
+        wait_on_vm_build
+    fi
     if [ $STATUS -eq 0 ]
     then
         check_on_vm_build

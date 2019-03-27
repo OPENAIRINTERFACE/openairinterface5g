@@ -405,6 +405,26 @@ function install_epc_on_vm {
     fi
 }
 
+function add_user_to_epc_lists {
+    local LOC_EPC_VM_CMDS=$1
+    local LOC_EPC_VM_IP_ADDR=$2
+    local LOC_NB_USERS=$3
+    if [ $LTEBOX -eq 1 ]
+    then
+        scp -o StrictHostKeyChecking=no $JENKINS_WKSP/ci-scripts/add_user_to_subscriber_list.awk ubuntu@$LOC_EPC_VM_IP_ADDR:/home/ubuntu/
+        echo "cd /opt/hss_sim0609" > $LOC_EPC_VM_CMDS
+        echo "sudo cp subscriber.data subscriber.data.orig" >> $LOC_EPC_VM_CMDS
+        echo "sudo cp profile.data profile.data.orig" >> $LOC_EPC_VM_CMDS
+        echo "sudo awk -v num_ues=$LOC_NB_USERS -f /home/ubuntu/add_user_to_subscriber_list.awk subscriber.data.orig > /tmp/subscriber.data" >> $LOC_EPC_VM_CMDS
+        echo "sudo awk -v num_ues=$LOC_NB_USERS -f /home/ubuntu/add_user_to_subscriber_list.awk profile.data.orig > /tmp/profile.data" >> $LOC_EPC_VM_CMDS
+        echo "sudo cp /tmp/subscriber.data subscriber.data" >> $LOC_EPC_VM_CMDS
+        echo "sudo cp /tmp/profile.data profile.data" >> $LOC_EPC_VM_CMDS
+
+        ssh -o StrictHostKeyChecking=no ubuntu@$LOC_EPC_VM_IP_ADDR < $LOC_EPC_VM_CMDS
+        rm -f $LOC_EPC_VM_CMDS
+    fi
+}
+
 function start_epc {
     local LOC_EPC_VM_NAME=$1
     local LOC_EPC_VM_CMDS=$2
@@ -589,11 +609,30 @@ function start_l2_sim_enb {
     sleep 10
 }
 
+function add_ue_l2_sim_ue {
+    local LOC_UE_VM_IP_ADDR=$2
+    local LOC_NB_UES=$3
+    echo "cd /home/ubuntu/tmp/" > $1
+    echo "source oaienv" >> $1
+    echo "echo \"cd openair3/NAS/TOOLS/\"" >> $1
+    echo "cd openair3/NAS/TOOLS/" >> $1
+    echo "echo \"awk -v num_ues=$LOC_NB_UES -f /home/ubuntu/tmp/ci-scripts/add_user_to_conf_file.awk ue_eurecom_test_sfr.conf > ue_eurecom_test_sfr_multi_ues.conf\"" >> $1
+    echo "awk -v num_ues=$LOC_NB_UES -f /home/ubuntu/tmp/ci-scripts/add_user_to_conf_file.awk ue_eurecom_test_sfr.conf > ue_eurecom_test_sfr_multi_ues.conf" >> $1
+    echo "echo \"cd /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/\"" >> $1
+    echo "cd /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/" >> $1
+    echo "echo \"sudo ../../../targets/bin/conf2uedata -c ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr_multi_ues.conf -o .\"" >> $1
+    echo "sudo ../../../targets/bin/conf2uedata -c ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr_multi_ues.conf -o . > /home/ubuntu/tmp/cmake_targets/log/ue_adapt.txt 2>&1" >> $1
+
+    ssh -o StrictHostKeyChecking=no ubuntu@$LOC_UE_VM_IP_ADDR < $1
+    rm $1
+}
+
 function start_l2_sim_ue {
     local LOC_UE_VM_IP_ADDR=$2
     local LOC_ENB_VM_IP_ADDR=$3
     local LOC_LOG_FILE=$4
     local LOC_CONF_FILE=$5
+    local LOC_NB_UES=$6
     echo "echo \"sudo apt-get --yes --quiet install daemon \"" > $1
     echo "sudo apt-get --yes install daemon >> /home/ubuntu/tmp/cmake_targets/log/daemon-install.txt 2>&1" >> $1
     echo "cd /home/ubuntu/tmp/ci-scripts/conf_files/" >> $1
@@ -602,7 +641,7 @@ function start_l2_sim_ue {
     echo "echo \"cd /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/\"" >> $1
     echo "sudo chmod 777 /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/" >> $1
     echo "cd /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/" >> $1
-    echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --L2-emul 3 --num-ues 1\" > ./my-lte-softmodem-run.sh " >> $1
+    echo "echo \"ulimit -c unlimited && ./lte-uesoftmodem -O /home/ubuntu/tmp/ci-scripts/conf_files/ci-$LOC_CONF_FILE --L2-emul 3 --num-ues $LOC_NB_UES\" > ./my-lte-softmodem-run.sh " >> $1
     echo "chmod 775 ./my-lte-softmodem-run.sh" >> $1
     echo "cat ./my-lte-softmodem-run.sh" >> $1
     echo "if [ -e /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE ]; then sudo sudo rm -f /home/ubuntu/tmp/cmake_targets/log/$LOC_LOG_FILE; fi" >> $1
@@ -672,8 +711,8 @@ function run_test_on_vm {
         echo "ENB_VM_CMD_FILE     = $ENB_VM_CMDS"
         UE_VM_NAME=`echo $VM_NAME | sed -e "s#l2-sim#ue-ethernet#"`
         UE_VM_CMDS=${UE_VM_NAME}_cmds.txt
-        echo "ENB_VM_NAME         = $ENB_VM_NAME"
-        echo "ENB_VM_CMD_FILE     = $ENB_VM_CMDS"
+        echo "UE_VM_NAME          = $UE_VM_NAME"
+        echo "UE_VM_CMD_FILE      = $UE_VM_CMDS"
     else
         echo "VM_NAME             = $VM_NAME"
         echo "VM_CMD_FILE         = $VM_CMDS"
@@ -1317,6 +1356,9 @@ function run_test_on_vm {
         install_epc_on_vm $EPC_VM_NAME $EPC_VM_CMDS
         EPC_VM_IP_ADDR=`uvt-kvm ip $EPC_VM_NAME`
 
+        # adding 16 users to EPC subscriber lists
+        add_user_to_epc_lists $EPC_VM_CMDS $EPC_VM_IP_ADDR 16
+
         # Starting EPC
         start_epc $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
 
@@ -1326,14 +1368,14 @@ function run_test_on_vm {
         echo "############################################################"
         echo "Starting the eNB in FDD-5MHz mode"
         echo "############################################################"
-        CURRENT_ENB_LOG_FILE=fdd_05MHz_enb.log
+        CURRENT_ENB_LOG_FILE=fdd_05MHz_01users_enb.log
         start_l2_sim_enb $ENB_VM_CMDS $ENB_VM_IP_ADDR $EPC_VM_IP_ADDR $UE_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 25 rcc.band7.tm1.nfapi.conf
 
         echo "############################################################"
-        echo "Starting the UEs"
+        echo "Starting the UE (1 user)"
         echo "############################################################"
-        CURRENT_UE_LOG_FILE=fdd_05MHz_ue.log
-        start_l2_sim_ue $UE_VM_CMDS $UE_VM_IP_ADDR $ENB_VM_IP_ADDR $CURRENT_UE_LOG_FILE ue.nfapi.conf
+        CURRENT_UE_LOG_FILE=fdd_05MHz_01users_ue.log
+        start_l2_sim_ue $UE_VM_CMDS $UE_VM_IP_ADDR $ENB_VM_IP_ADDR $CURRENT_UE_LOG_FILE ue.nfapi.conf 1
         if [ $UE_SYNC -eq 0 ]
         then
             echo "Problem w/ eNB and UE not syncing"
@@ -1350,7 +1392,61 @@ function run_test_on_vm {
         echo "############################################################"
         echo "Pinging the EPC from UE"
         echo "############################################################"
-        PING_LOG_FILE=fdd_05MHz_ping_epc.txt
+        PING_LOG_FILE=fdd_05MHz_01users_ping_epc.txt
+        ping_epc_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR $REAL_EPC_IP_ADDR $PING_LOG_FILE
+        scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
+        check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
+
+        echo "############################################################"
+        echo "Pinging the UE from EPC"
+        echo "############################################################"
+        PING_LOG_FILE=fdd_05MHz_01users_ping_ue.txt
+        get_ue_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR
+        ping_ue_ip_addr $EPC_VM_CMDS $EPC_VM_IP_ADDR $UE_IP_ADDR $PING_LOG_FILE
+        scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
+        check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
+
+        echo "############################################################"
+        echo "Terminate enb/ue simulators"
+        echo "############################################################"
+        terminate_enb_ue_basic_sim $ENB_VM_CMDS $ENB_VM_IP_ADDR
+        terminate_enb_ue_basic_sim $UE_VM_CMDS $UE_VM_IP_ADDR
+        scp -o StrictHostKeyChecking=no ubuntu@$ENB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+        scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+
+        echo "############################################################"
+        echo "Adding UE to conf file and recompile"
+        echo "############################################################"
+        add_ue_l2_sim_ue $UE_VM_CMDS $UE_VM_IP_ADDR 4
+
+        echo "############################################################"
+        echo "Starting the eNB in FDD-5MHz mode"
+        echo "############################################################"
+        CURRENT_ENB_LOG_FILE=fdd_05MHz_04users_enb.log
+        start_l2_sim_enb $ENB_VM_CMDS $ENB_VM_IP_ADDR $EPC_VM_IP_ADDR $UE_VM_IP_ADDR $CURRENT_ENB_LOG_FILE 25 rcc.band7.tm1.nfapi.conf
+
+        echo "############################################################"
+        echo "Starting the UE (4 users)"
+        echo "############################################################"
+        CURRENT_UE_LOG_FILE=fdd_05MHz_04users_ue.log
+        start_l2_sim_ue $UE_VM_CMDS $UE_VM_IP_ADDR $ENB_VM_IP_ADDR $CURRENT_UE_LOG_FILE ue.nfapi.conf 4
+        if [ $UE_SYNC -eq 0 ]
+        then
+            echo "Problem w/ eNB and UE not syncing"
+            terminate_enb_ue_basic_sim $ENB_VM_CMDS $ENB_VM_IP_ADDR
+            terminate_enb_ue_basic_sim $UE_VM_CMDS $UE_VM_IP_ADDR
+            scp -o StrictHostKeyChecking=no ubuntu@$ENB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
+            scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
+            terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
+            echo "TEST_KO" > $ARCHIVES_LOC/test_final_status.log
+            STATUS=-1
+            return
+        fi
+
+        echo "############################################################"
+        echo "Pinging the EPC from UE"
+        echo "############################################################"
+        PING_LOG_FILE=fdd_05MHz_04users_ping_epc.txt
         ping_epc_ip_addr $UE_VM_CMDS $UE_VM_IP_ADDR $REAL_EPC_IP_ADDR $PING_LOG_FILE
         scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
         check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
