@@ -425,9 +425,11 @@ int nr_generate_pbch(NR_gNB_PBCH *pbch,
       m++;
     }
 
+
     if (k >= frame_parms->ofdm_symbol_size)
       k-=frame_parms->ofdm_symbol_size;
   }
+
 
   return 0;
 }

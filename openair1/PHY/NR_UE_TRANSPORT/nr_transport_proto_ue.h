@@ -1141,8 +1141,13 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 		     NR_UE_PBCH *nr_ue_pbch_vars,
 		     NR_DL_FRAME_PARMS *frame_parms,
 		     uint8_t eNB_id,
+                     uint8_t i_ssb,
 		     MIMO_mode_t mimo_mode,
 		     uint32_t high_speed_flag);
+
+int nr_pbch_detection(PHY_VARS_NR_UE *ue,
+		      int pbch_initial_symbol,
+		      runmode_t mode);
 
 uint16_t rx_pbch_emul(PHY_VARS_NR_UE *phy_vars_ue,
                       uint8_t eNB_id,
