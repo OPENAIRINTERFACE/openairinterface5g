@@ -1117,6 +1117,8 @@ schedule_ulsch(module_id_t module_idP,
   eNB_MAC_INST *mac = NULL;
   slice_info_t *sli = NULL;
   COMMON_channels_t *cc = NULL;
+  int sched_subframe;
+  int sched_frame;
 
   /* Init */
   mac = RC.mac[module_idP];
@@ -1125,11 +1127,6 @@ schedule_ulsch(module_id_t module_idP,
 
   start_meas(&(mac->schedule_ulsch));
 
-  /* Second setup step */
-  int sched_subframe = 0;
-  int sched_frame = 0;
-
-  /* Second init step */
   sched_subframe = (subframeP + 4) % 10;
   sched_frame = frameP;
   cc = mac->common_channels;
