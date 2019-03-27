@@ -61,10 +61,10 @@ void free_nr_ue_dlsch(NR_UE_DLSCH_t *dlsch);
 NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t max_turbo_iterations,uint8_t N_RB_DL, uint8_t abstraction_flag);
 
 
-void free_ue_ulsch(NR_UE_ULSCH_t *ulsch);
+void free_nr_ue_ulsch(NR_UE_ULSCH_t *ulsch);
 
 
-NR_UE_ULSCH_t *new_ue_ulsch(unsigned char N_RB_UL, uint8_t abstraction_flag);
+NR_UE_ULSCH_t *new_nr_ue_ulsch(unsigned char N_RB_UL, int number_of_harq_pids, uint8_t abstraction_flag);
 
 void fill_UE_dlsch_MCH(PHY_VARS_NR_UE *ue,int mcs,int ndi,int rvidx,int eNB_id);
 
@@ -1006,6 +1006,25 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                          uint8_t is_crnti,
                          uint8_t llr8_flag);
 
+int nr_ulsch_encoding(NR_UE_ULSCH_t *ulsch,
+                     NR_DL_FRAME_PARMS* frame_parms,
+                     uint8_t harq_pid);
+
+/*! \brief Perform PUSCH scrambling. TS 38.211 V15.4.0 subclause 6.3.1.1
+  @param[in] in Pointer to input bits
+  @param[in] size of input bits
+  @param[in] Nid cell id
+  @param[in] n_RNTI CRNTI
+  @param[out] out the scrambled bits
+*/
+
+void nr_pusch_codeword_scrambling(uint8_t *in,
+                         uint16_t size,
+                         uint32_t Nid,
+                         uint32_t n_RNTI,
+                         uint32_t* out);
+
+
 uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 						 UE_nr_rxtx_proc_t *proc,
                          int eNB_id,
@@ -1122,8 +1141,13 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 		     NR_UE_PBCH *nr_ue_pbch_vars,
 		     NR_DL_FRAME_PARMS *frame_parms,
 		     uint8_t eNB_id,
+                     uint8_t i_ssb,
 		     MIMO_mode_t mimo_mode,
 		     uint32_t high_speed_flag);
+
+int nr_pbch_detection(PHY_VARS_NR_UE *ue,
+		      int pbch_initial_symbol,
+		      runmode_t mode);
 
 uint16_t rx_pbch_emul(PHY_VARS_NR_UE *phy_vars_ue,
                       uint8_t eNB_id,

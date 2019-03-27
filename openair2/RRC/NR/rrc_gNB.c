@@ -236,7 +236,7 @@ static void init_NR_SI(const protocol_ctxt_t* const ctxt_pP,
   RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].Ncp_UL          = configuration->UL_prefix_type[CC_id];
   RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].dl_CarrierFreq  = configuration->downlink_frequency[CC_id];
   RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].ul_CarrierFreq  = configuration->downlink_frequency[CC_id]+ configuration->uplink_frequency_offset[CC_id];
-  
+
   ///MIB
   RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].sizeof_MIB      = 0;
   RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].MIB             = (uint8_t*) malloc16(4);
@@ -261,11 +261,13 @@ static void init_NR_SI(const protocol_ctxt_t* const ctxt_pP,
   
   LOG_I(NR_RRC,"Done init_NR_SI\n");
   
-  
+
   rrc_mac_config_req_gNB(ctxt_pP->module_id,
                          CC_id,
+			 RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].physCellId,
                          RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].p_gNB,
                          configuration->nr_band[CC_id],
+			 configuration->ServingCellConfigCommon_ssb_PositionsInBurst_PR[CC_id],
                          RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].dl_CarrierFreq,
                          configuration->N_RB_DL[CC_id],
                          (NR_BCCH_BCH_Message_t *)&RC.nrrrc[ctxt_pP->module_id]->carrier[CC_id].mib,

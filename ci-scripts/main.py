@@ -2542,14 +2542,19 @@ elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
 		Usage()
 		sys.exit('Insufficient Parameter')
 	count = 0
+	foundCount = 0
 	while (count < SSH.nbTestXMLfiles):
 		xml_test_file = sys.path[0] + "/" + SSH.testXMLfiles[count]
-		xmlTree = ET.parse(xml_test_file)
-		xmlRoot = xmlTree.getroot()
-		SSH.htmlTabRefs.append(xmlRoot.findtext('htmlTabRef',default='test-tab-' + str(count)))
-		SSH.htmlTabNames.append(xmlRoot.findtext('htmlTabName',default='Test-' + str(count)))
-		SSH.htmlTabIcons.append(xmlRoot.findtext('htmlTabIcon',default='info-sign'))
+		if (os.path.isfile(xml_test_file)):
+			xmlTree = ET.parse(xml_test_file)
+			xmlRoot = xmlTree.getroot()
+			SSH.htmlTabRefs.append(xmlRoot.findtext('htmlTabRef',default='test-tab-' + str(count)))
+			SSH.htmlTabNames.append(xmlRoot.findtext('htmlTabName',default='Test-' + str(count)))
+			SSH.htmlTabIcons.append(xmlRoot.findtext('htmlTabIcon',default='info-sign'))
+			foundCount += 1
 		count += 1
+	if foundCount != SSH.nbTestXMLfiles:
+		SSH.nbTestXMLfiles = foundCount
 	SSH.CreateHtmlHeader()
 elif re.match('^FinalizeHtml$', mode, re.IGNORECASE):
 	SSH.CreateHtmlFooter(SSH.finalStatus)

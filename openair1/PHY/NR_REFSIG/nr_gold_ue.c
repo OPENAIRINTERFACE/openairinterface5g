@@ -29,15 +29,14 @@ void nr_gold_pbch(PHY_VARS_NR_UE* ue)
   unsigned char Lmax, l, n_hf, N_hf;
 
   Nid = ue->frame_parms.Nid_cell;
-
-  Lmax = 8; //(fp->dl_CarrierFreq < 3e9)? 4:8;
+  Lmax = ue->frame_parms.Lmax;
   N_hf = (Lmax == 4)? 2:1;
 
   for (n_hf = 0; n_hf < N_hf; n_hf++) {
 
     for (l = 0; l < Lmax ; l++) {
       i_ssb = l & (Lmax-1);
-      i_ssb2 = (i_ssb<<2) + n_hf;
+      i_ssb2 = i_ssb + (n_hf<<2);
 
       x1 = 1 + (1<<31);
       x2 = (1<<11) * (i_ssb2 + 1) * ((Nid>>2) + 1) + (1<<6) * (i_ssb2 + 1) + (Nid&3);

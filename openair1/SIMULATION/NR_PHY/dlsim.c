@@ -101,7 +101,9 @@ int rrc_init_nr_global_param(void){return(0);}
 
 void config_common(int Mod_idP, 
                    int CC_idP,
+		   int Nid_cell,
                    int nr_bandP,
+		   uint64_t ssb_pattern,
                    uint64_t dl_CarrierFreqP,
                    uint32_t dl_BandwidthP
 		   );
@@ -134,6 +136,7 @@ int main(int argc, char **argv)
   int trial,n_trials=1,n_errors,n_errors2,n_alamouti;
   uint8_t transmission_mode = 1,n_tx=1,n_rx=1;
   uint16_t Nid_cell=0;
+  uint64_t SSB_positions=0x01;
 
   channel_desc_t *gNB2UE;
   uint32_t nsymb,tx_lev,tx_lev1 = 0,tx_lev2 = 0;
@@ -150,6 +153,8 @@ int main(int argc, char **argv)
   double pbch_sinr;
   int pbch_tx_ant;
   int N_RB_DL=273,mu=1;
+
+  uint64_t ssb_pattern = 0x01;
 
   unsigned char frame_type = 0;
   unsigned char pbch_phase = 0;
@@ -182,7 +187,7 @@ int main(int argc, char **argv)
 
   randominit(0);
 
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:N:F:GR:dP:IL:")) != -1) {
+  while ((c = getopt (argc, argv, "f:hA:pf:g:i:j:n:s:S:t:x:y:z:M:N:F:GR:dP:IL:")) != -1) {
     switch (c) {
     case 'f':
       write_output_file=1;
@@ -309,6 +314,10 @@ int main(int argc, char **argv)
 
       break;
 
+    case 'M':
+      SSB_positions = atoi(optarg);
+      break;
+
     case 'N':
       Nid_cell = atoi(optarg);
       break;
@@ -361,6 +370,7 @@ int main(int argc, char **argv)
       printf("-z Number of RX antennas used in UE\n");
       printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
       printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
+      printf("-M Multiple SSB positions in burst\n");
       printf("-N Nid_cell\n");
       printf("-R N_RB_DL\n");
       printf("-O oversampling factor (1,2,4,8,16)\n");
@@ -396,7 +406,7 @@ int main(int argc, char **argv)
   frame_parms->N_RB_UL = N_RB_DL;
 
   // stub to configure frame_parms
-  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell);
+  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
   // call MAC to configure common parameters
 
   phy_init_nr_gNB(gNB,0,0);
@@ -499,7 +509,7 @@ int main(int argc, char **argv)
   mac_top_init_gNB();
   gNB_mac = RC.nrmac[0];
 
-  config_common(0,0,78,(uint64_t)3640000000L,N_RB_DL);
+  config_common(0,0,Nid_cell,78,ssb_pattern,(uint64_t)3640000000L,N_RB_DL);
   config_nr_mib(0,0,1,kHz30,0,0,0,0);
 
   nr_l2_init_ue();
