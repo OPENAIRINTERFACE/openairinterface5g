@@ -260,7 +260,11 @@ uint32_t flexran_get_total_size_dl_mac_sdus(mid_t mod_id, mid_t ue_id, int cc_id
 uint32_t flexran_get_total_size_ul_mac_sdus(mid_t mod_id, mid_t ue_id, int cc_id)
 {
   if (!mac_is_present(mod_id)) return 0;
-  return RC.mac[mod_id]->eNB_stats[cc_id].total_ulsch_bytes_rx;
+  uint64_t bytes = 0;
+  for (int i = 0; i < NB_RB_MAX; ++i) {
+    bytes += RC.mac[mod_id]->UE_list.eNB_UE_stats[cc_id][ue_id].num_bytes_rx[i];
+  }
+  return bytes;
 }
 
 uint32_t flexran_get_TBS_dl(mid_t mod_id, mid_t ue_id, int cc_id)
