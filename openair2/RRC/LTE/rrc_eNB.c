@@ -1630,6 +1630,8 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
   LTE_C_RNTI_t                           *cba_RNTI                         = NULL;
   int                                    measurements_enabled;
   uint8_t next_xid = rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id);
+  int ret = 0;
+
   ue_context_pP->ue_context.Status = RRC_CONNECTED;
   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 1; // set rrc inactivity when UE goes into RRC_CONNECTED
   ue_context_pP->ue_context.reestablishment_xid = next_xid;
@@ -1735,10 +1737,36 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
 
   create_tunnel_req.rnti       = ctxt_pP->rnti; // warning put zero above
   create_tunnel_req.num_tunnels    = j;
-  gtpv1u_update_s1u_tunnel(
+
+    ret = gtpv1u_update_s1u_tunnel(
     ctxt_pP->instance,
     &create_tunnel_req,
     reestablish_rnti);
+    if ( ret != 0 ) {
+      LOG_E(RRC,"gtpv1u_update_s1u_tunnel failed,start to release UE %x\n",reestablish_rnti);
+      // update s1u tunnel failed,reset rnti?
+      if (eNB_ue_s1ap_id > 0) {
+        h_rc = hashtable_get(rrc_instance_p->s1ap_id2_s1ap_ids, (hash_key_t)eNB_ue_s1ap_id, (void**)&rrc_ue_s1ap_ids_p);
+        if (h_rc == HASH_TABLE_OK ) {
+          rrc_ue_s1ap_ids_p->ue_rnti = reestablish_rnti;
+        }
+      }
+      if (ue_initial_id != 0) {
+        h_rc = hashtable_get(rrc_instance_p->initial_id2_s1ap_ids, (hash_key_t)ue_initial_id, (void**)&rrc_ue_s1ap_ids_p);
+        if (h_rc == HASH_TABLE_OK ) {
+          rrc_ue_s1ap_ids_p->ue_rnti = reestablish_rnti;
+        }
+      }
+      ue_context_pP->ue_context.ue_release_timer_s1 = 1;
+      ue_context_pP->ue_context.ue_release_timer_thres_s1 = 100;
+      ue_context_pP->ue_context.ue_release_timer = 0;
+      ue_context_pP->ue_context.ue_reestablishment_timer = 0;
+      ue_context_pP->ue_context.ul_failure_timer = 20000; // set ul_failure to 20000 for triggering rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ
+      rrc_eNB_free_UE(ctxt_pP->module_id,ue_context_pP);
+      ue_context_pP->ue_context.ul_failure_timer = 0;
+      put_UE_in_freelist(ctxt_pP->module_id, ctxt_pP->rnti, 0);
+      return;
+    }
   } /* EPC_MODE_ENABLED */
 
   /* Update RNTI in ue_context */

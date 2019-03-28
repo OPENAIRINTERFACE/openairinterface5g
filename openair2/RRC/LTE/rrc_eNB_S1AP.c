@@ -935,6 +935,8 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
   gtpv1u_enb_create_tunnel_req_t  create_tunnel_req;
   gtpv1u_enb_create_tunnel_resp_t create_tunnel_resp;
   uint8_t                         inde_list[NB_RB_MAX - 3]= {0};
+  int                             ret;
+
   struct rrc_eNB_ue_context_s *ue_context_p = NULL;
   protocol_ctxt_t              ctxt;
   ue_initial_id  = S1AP_INITIAL_CONTEXT_SETUP_REQ (msg_p).ue_initial_id;
@@ -976,10 +978,23 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
 
       create_tunnel_req.rnti       = ue_context_p->ue_context.rnti; // warning put zero above
       //      create_tunnel_req.num_tunnels    = i;
-      gtpv1u_create_s1u_tunnel(
+
+      ret = gtpv1u_create_s1u_tunnel(
         instance,
         &create_tunnel_req,
         &create_tunnel_resp);
+      if ( ret != 0 ) {
+        LOG_E(RRC,"rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ : gtpv1u_create_s1u_tunnel failed,start to release UE %x\n",ue_context_p->ue_context.rnti);
+        ue_context_p->ue_context.ue_release_timer_s1 = 1;
+        ue_context_p->ue_context.ue_release_timer_thres_s1 = 100;
+        ue_context_p->ue_context.ue_release_timer = 0;
+        ue_context_p->ue_context.ue_reestablishment_timer = 0;
+        ue_context_p->ue_context.ul_failure_timer = 20000; // set ul_failure to 20000 for triggering rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ
+        rrc_eNB_free_UE(ctxt.module_id,ue_context_p);
+        ue_context_p->ue_context.ul_failure_timer = 0;
+        return (0);
+      }
+
       rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
         &ctxt,
         &create_tunnel_resp,
@@ -1252,6 +1267,8 @@ int rrc_eNB_process_S1AP_E_RAB_SETUP_REQ(MessageDef *msg_p, const char *msg_name
   struct rrc_eNB_ue_context_s *ue_context_p = NULL;
   protocol_ctxt_t              ctxt;
   uint8_t                      e_rab_done;
+  int                          ret = 0;
+
   ue_initial_id  = S1AP_E_RAB_SETUP_REQ (msg_p).ue_initial_id;
   eNB_ue_s1ap_id = S1AP_E_RAB_SETUP_REQ (msg_p).eNB_ue_s1ap_id;
   ue_context_p   = rrc_eNB_get_ue_context_from_s1ap_ids(instance, ue_initial_id, eNB_ue_s1ap_id);
@@ -1314,10 +1331,22 @@ int rrc_eNB_process_S1AP_E_RAB_SETUP_REQ(MessageDef *msg_p, const char *msg_name
       create_tunnel_req.rnti       = ue_context_p->ue_context.rnti; // warning put zero above
       create_tunnel_req.num_tunnels    = e_rab_done;
       // NN: not sure if we should create a new tunnel: need to check teid, etc.
-      gtpv1u_create_s1u_tunnel(
+      ret = gtpv1u_create_s1u_tunnel(
         instance,
         &create_tunnel_req,
         &create_tunnel_resp);
+      if ( ret != 0 ) {
+        LOG_E(RRC,"rrc_eNB_process_S1AP_E_RAB_SETUP_REQ : gtpv1u_create_s1u_tunnel failed,start to release UE %x\n",ue_context_p->ue_context.rnti);
+        ue_context_p->ue_context.ue_release_timer_s1 = 1;
+        ue_context_p->ue_context.ue_release_timer_thres_s1 = 100;
+        ue_context_p->ue_context.ue_release_timer = 0;
+        ue_context_p->ue_context.ue_reestablishment_timer = 0;
+        ue_context_p->ue_context.ul_failure_timer = 20000; // set ul_failure to 20000 for triggering rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ
+        rrc_eNB_free_UE(ctxt.module_id,ue_context_p);
+        ue_context_p->ue_context.ul_failure_timer = 0;
+        return (0);
+      }
+
       rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
         &ctxt,
         &create_tunnel_resp,
