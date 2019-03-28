@@ -466,16 +466,27 @@ function report_test {
         echo "        <th>Statistics</th>" >> ./test_simulator_results.html
         echo "      </tr>" >> ./test_simulator_results.html
 
+        EPC_CONFIGS=("wS1" "noS1")
         TRANS_MODES=("fdd")
         BW_CASES=(05)
         NB_USERS=(01 04)
-        for TMODE in ${TRANS_MODES[@]}
+        for CN_CONFIG in ${EPC_CONFIGS[@]}
         do
-          for BW in ${BW_CASES[@]}
+          echo "      <tr bgcolor = \"#8FBC8F\" >" >> ./test_simulator_results.html
+          if [[ $CN_CONFIG =~ .*wS1.* ]]
+          then
+              echo "          <td align = \"center\" colspan = 4 >Test with EPC (aka withS1)</td>" >> ./test_simulator_results.html
+          else
+              echo "          <td align = \"center\" colspan = 4 >Test without EPC (aka noS1)</td>" >> ./test_simulator_results.html
+          fi
+          echo "      </tr>" >> ./test_simulator_results.html
+          for TMODE in ${TRANS_MODES[@]}
           do
-            for UES in ${NB_USERS[@]}
+            for BW in ${BW_CASES[@]}
             do
-                ENB_LOG=$ARCHIVES_LOC/${TMODE}_${BW}MHz_${UES}users_enb.log
+              for UES in ${NB_USERS[@]}
+              do
+                ENB_LOG=$ARCHIVES_LOC/${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_enb.log
                 UE_LOG=`echo $ENB_LOG | sed -e "s#enb#ue#"`
                 if [ -f $ENB_LOG ] && [ -f $UE_LOG ]
                 then
@@ -515,7 +526,7 @@ function report_test {
                     echo "        </pre></td>" >> ./test_simulator_results.html
                     echo "      </tr>" >> ./test_simulator_results.html
                 fi
-                PING_LOGS=`ls $ARCHIVES_LOC/${TMODE}_${BW}MHz_${UES}users_ping*.txt`
+                PING_LOGS=`ls $ARCHIVES_LOC/${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_ping*.txt`
                 for PING_CASE in $PING_LOGS
                 do
                     echo "      <tr>" >> ./test_simulator_results.html
@@ -553,6 +564,7 @@ function report_test {
                     echo "      </tr>" >> ./test_simulator_results.html
                 done
 
+              done
             done
           done
         done
