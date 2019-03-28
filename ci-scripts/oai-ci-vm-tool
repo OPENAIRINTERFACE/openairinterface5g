@@ -39,7 +39,7 @@ function variant_usage {
     echo "    --variant phy-sim      OR -v3"
     echo "    --variant cppcheck     OR -v4"
     echo "    --variant gnb-usrp     OR -v5"
-    echo "    --variant nu-ue-usrp   OR -v6"
+    echo "    --variant nr-ue-usrp   OR -v6"
     echo "    --variant enb-ethernet OR -v7"
     echo "    --variant ue-ethernet  OR -v8"
 }
@@ -354,7 +354,7 @@ case $key in
         BUILD_OPTIONS="--gNB -w USRP"
         NBARGS=$[$NBARGS+256]
         ;;
-        nu-ue-usrp)
+        nr-ue-usrp)
         VM_NAME=ci-ue-nr-usrp
         ARCHIVES_LOC=nrue_usrp
         LOG_PATTERN=.Rel15.txt
