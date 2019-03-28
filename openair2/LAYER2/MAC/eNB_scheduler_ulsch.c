@@ -1624,6 +1624,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
           /* Store information for possible retransmission */
           UE_template_ptr->nb_rb_ul[harq_pid] = rb_table[rb_table_index];
           UE_template_ptr->first_rb_ul[harq_pid] = first_rb_slice[CC_id];
+          UE_template_ptr->cqi_req[harq_pid] = cqi_req;
           UE_sched_ctrl_ptr->ul_scheduled |= (1 << harq_pid);
 
           if (UE_id == UE_list->head) {
@@ -1811,6 +1812,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 
           ul_req_index = 0;
           dlsch_flag = 0;
+          cqi_req = UE_template_ptr->cqi_req[harq_pid];
 
           for(ul_req_index = 0; ul_req_index < ul_req_tmp_body->number_of_pdus; ul_req_index++) {
             if(ul_req_tmp_body->ul_config_pdu_list[ul_req_index].pdu_type == NFAPI_UL_CONFIG_UCI_HARQ_PDU_TYPE &&
