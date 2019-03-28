@@ -215,6 +215,14 @@ function report_test {
         BW_CASES=(05 10 20)
         for TMODE in ${TRANS_MODES[@]}
         do
+            echo "      <tr bgcolor = \"#8FBC8F\" >" >> ./test_simulator_results.html
+            if [[ $TMODE =~ .*fdd.* ]]
+            then
+                echo "          <td align = \"center\" colspan = 4 >Test in FDD</td>" >> ./test_simulator_results.html
+            else
+                echo "          <td align = \"center\" colspan = 4 >Test in TDD</td>" >> ./test_simulator_results.html
+            fi
+            echo "      </tr>" >> ./test_simulator_results.html
             for BW in ${BW_CASES[@]}
             do
                 ENB_LOG=$ARCHIVES_LOC/${TMODE}_${BW}MHz_enb.log
@@ -526,7 +534,7 @@ function report_test {
                     echo "        </pre></td>" >> ./test_simulator_results.html
                     echo "      </tr>" >> ./test_simulator_results.html
                 fi
-                PING_LOGS=`ls $ARCHIVES_LOC/${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_ping*.txt`
+                PING_LOGS=`ls $ARCHIVES_LOC/${TMODE}_${BW}MHz_${UES}users_${CN_CONFIG}_ping*.log`
                 for PING_CASE in $PING_LOGS
                 do
                     echo "      <tr>" >> ./test_simulator_results.html
