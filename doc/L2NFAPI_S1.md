@@ -2,7 +2,7 @@
   <tr style="border-collapse: collapse; border: none;">
     <td style="border-collapse: collapse; border: none;">
       <a href="http://www.openairinterface.org/">
-         <img src="../images/oai_final_logo.png" alt="" border=3 height=50 width=150>
+         <img src="./images/oai_final_logo.png" alt="" border=3 height=50 width=150>
          </img>
       </a>
     </td>
