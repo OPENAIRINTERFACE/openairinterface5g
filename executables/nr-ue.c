@@ -131,55 +131,6 @@ typedef enum {
   si=2
 } sync_mode_t;
 
-#define KHz (1000UL)
-#define MHz (1000*KHz)
-typedef struct eutra_band_s {
-  int16_t band;
-  uint32_t ul_min;
-  uint32_t ul_max;
-  uint32_t dl_min;
-  uint32_t dl_max;
-  lte_frame_type_t frame_type;
-} eutra_band_t;
-
-typedef struct band_info_s {
-  int nbands;
-  eutra_band_t band_info[100];
-} band_info_t;
-
-band_info_t bands_to_scan;
-
-static const eutra_band_t eutra_bands[] = {
-  { 1, 1920    * MHz, 1980    * MHz, 2110    * MHz, 2170    * MHz, FDD},
-  { 2, 1850    * MHz, 1910    * MHz, 1930    * MHz, 1990    * MHz, FDD},
-  { 3, 1710    * MHz, 1785    * MHz, 1805    * MHz, 1880    * MHz, FDD},
-  { 4, 1710    * MHz, 1755    * MHz, 2110    * MHz, 2155    * MHz, FDD},
-  { 5,  824    * MHz,  849    * MHz,  869    * MHz,  894    * MHz, FDD},
-  { 6,  830    * MHz,  840    * MHz,  875    * MHz,  885    * MHz, FDD},
-  { 7, 2500    * MHz, 2570    * MHz, 2620    * MHz, 2690    * MHz, FDD},
-  { 8,  880    * MHz,  915    * MHz,  925    * MHz,  960    * MHz, FDD},
-  { 9, 1749900 * KHz, 1784900 * KHz, 1844900 * KHz, 1879900 * KHz, FDD},
-  {10, 1710    * MHz, 1770    * MHz, 2110    * MHz, 2170    * MHz, FDD},
-  {11, 1427900 * KHz, 1452900 * KHz, 1475900 * KHz, 1500900 * KHz, FDD},
-  {12,  698    * MHz,  716    * MHz,  728    * MHz,  746    * MHz, FDD},
-  {13,  777    * MHz,  787    * MHz,  746    * MHz,  756    * MHz, FDD},
-  {14,  788    * MHz,  798    * MHz,  758    * MHz,  768    * MHz, FDD},
-  {17,  704    * MHz,  716    * MHz,  734    * MHz,  746    * MHz, FDD},
-  {20,  832    * MHz,  862    * MHz,  791    * MHz,  821    * MHz, FDD},
-  {22, 3510    * MHz, 3590    * MHz, 3410    * MHz, 3490    * MHz, FDD},
-  {33, 1900    * MHz, 1920    * MHz, 1900    * MHz, 1920    * MHz, TDD},
-  {34, 2010    * MHz, 2025    * MHz, 2010    * MHz, 2025    * MHz, TDD},
-  {35, 1850    * MHz, 1910    * MHz, 1850    * MHz, 1910    * MHz, TDD},
-  {36, 1930    * MHz, 1990    * MHz, 1930    * MHz, 1990    * MHz, TDD},
-  {37, 1910    * MHz, 1930    * MHz, 1910    * MHz, 1930    * MHz, TDD},
-  {38, 2570    * MHz, 2620    * MHz, 2570    * MHz, 2630    * MHz, TDD},
-  {39, 1880    * MHz, 1920    * MHz, 1880    * MHz, 1920    * MHz, TDD},
-  {40, 2300    * MHz, 2400    * MHz, 2300    * MHz, 2400    * MHz, TDD},
-  {41, 2496    * MHz, 2690    * MHz, 2496    * MHz, 2690    * MHz, TDD},
-  {42, 3400    * MHz, 3600    * MHz, 3400    * MHz, 3600    * MHz, TDD},
-  {43, 3600    * MHz, 3800    * MHz, 3600    * MHz, 3800    * MHz, TDD},
-  {44, 703    * MHz, 803    * MHz, 703    * MHz, 803    * MHz, TDD},
-};
 
 PHY_VARS_NR_UE *init_nr_ue_vars(NR_DL_FRAME_PARMS *frame_parms,
                                 uint8_t UE_id,
@@ -226,20 +177,8 @@ static void UE_synch(void *arg) {
   if (UE->UE_scan == 0) {
     int ind;
 
-    for ( ind=0; ind < sizeof(eutra_bands) / sizeof(eutra_bands[0]);
-          ind++) {
-      current_band = eutra_bands[ind].band;
-      LOG_D(PHY, "Scanning band %d, dl_min %"PRIu32", ul_min %"PRIu32"\n", current_band, eutra_bands[ind].dl_min,eutra_bands[ind].ul_min);
-
-      if ( eutra_bands[ind].dl_min <= downlink_frequency[0][0] && eutra_bands[ind].dl_max >= downlink_frequency[0][0] ) {
-        for (i=0; i<4; i++)
-          uplink_frequency_offset[CC_id][i] = eutra_bands[ind].ul_min - eutra_bands[ind].dl_min;
-
-        break;
-      }
-    }
-
-    AssertFatal( ind < sizeof(eutra_bands) / sizeof(eutra_bands[0]), "Can't find EUTRA band for frequency");
+    get_band(downlink_frequency[CC_id][0], &UE->frame_parms.eutra_band,   &uplink_frequency_offset[CC_id][0], &UE->frame_parms.frame_type);
+    
     LOG_I( PHY, "[SCHED][UE] Check absolute frequency DL %"PRIu32", UL %"PRIu32" (oai_exit %d, rx_num_channels %d)\n",
            downlink_frequency[0][0], downlink_frequency[0][0]+uplink_frequency_offset[0][0],
            oai_exit, openair0_cfg[0].rx_num_channels);
@@ -259,7 +198,8 @@ static void UE_synch(void *arg) {
     sync_mode = pbch;
   } else {
     current_band=0;
-
+    LOG_E(PHY,"Fixme!\n");
+    /*
     for (i=0; i<openair0_cfg[UE->rf_map.card].rx_num_channels; i++) {
       downlink_frequency[UE->rf_map.card][UE->rf_map.chain+i] = bands_to_scan.band_info[CC_id].dl_min;
       uplink_frequency_offset[UE->rf_map.card][UE->rf_map.chain+i] =
@@ -269,11 +209,13 @@ static void UE_synch(void *arg) {
         downlink_frequency[CC_id][i]+uplink_frequency_offset[CC_id][i];
       openair0_cfg[UE->rf_map.card].rx_gain[UE->rf_map.chain+i] = UE->rx_total_gain_dB;
     }
+    */
   }
 
   LOG_W(PHY, "Starting sync detection\n");
 
   switch (sync_mode) {
+    /*
     case pss:
       LOG_I(PHY,"[SCHED][UE] Scanning band %d (%d), freq %u\n",bands_to_scan.band_info[current_band].band, current_band,bands_to_scan.band_info[current_band].dl_min+current_offset);
       //lte_sync_timefreq(UE,current_band,bands_to_scan.band_info[current_band].dl_min+current_offset);
@@ -302,7 +244,8 @@ static void UE_synch(void *arg) {
       }
 
       break;
-
+    */
+    
     case pbch:
       LOG_I(PHY, "[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
 
