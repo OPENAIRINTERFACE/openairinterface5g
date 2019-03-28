@@ -150,7 +150,7 @@ function ping_ue_ip_addr {
 
 function ping_epc_ip_addr {
     echo "echo \"COMMAND IS: ping -I oaitun_ue1 -c 20 $3\" > $4" > $1
-    echo "rm -f $4" >> $1
+    echo "echo \"ping -I oaitun_ue1 -c 20 $3\"" >> $1
     echo "ping -I oaitun_ue1 -c 20 $3 | tee -a $4" >> $1
     cat $1
     ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
@@ -267,26 +267,42 @@ function check_iperf {
 }
 
 function terminate_enb_ue_basic_sim {
+    # mode = 0 : eNB + UE
+    # mode = 1 : eNB
+    # mode = 2 : UE
+    local LOC_MODE=$3
     echo "NB_OAI_PROCESSES=\`ps -aux | grep modem | grep -v grep | grep -c softmodem\`" > $1
-    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then echo \"sudo daemon --name=enb_daemon --stop\"; fi" >> $1
-    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sudo daemon --name=enb_daemon --stop; fi" >> $1
-    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then echo \"sudo daemon --name=ue_daemon --stop\"; fi" >> $1
-    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sudo daemon --name=ue_daemon --stop; fi" >> $1
+    if [ $LOC_MODE -eq 0 ] || [ $LOC_MODE -eq 1 ]
+    then
+        echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then echo \"sudo daemon --name=enb_daemon --stop\"; fi" >> $1
+        echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sudo daemon --name=enb_daemon --stop; fi" >> $1
+    fi
+    if [ $LOC_MODE -eq 0 ] || [ $LOC_MODE -eq 2 ]
+    then
+        echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then echo \"sudo daemon --name=ue_daemon --stop\"; fi" >> $1
+        echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sudo daemon --name=ue_daemon --stop; fi" >> $1
+    fi
     echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sleep 5; fi" >> $1
     echo "echo \"ps -aux | grep softmodem\"" >> $1
     echo "ps -aux | grep softmodem | grep -v grep" >> $1
     echo "NB_OAI_PROCESSES=\`ps -aux | grep modem | grep -v grep | grep -c softmodem\`" >> $1
-    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then echo \"sudo killall --signal SIGINT lte-softmodem\"; fi" >> $1
-    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sudo killall --signal SIGINT lte-softmodem; fi" >> $1
-    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sleep 5; fi" >> $1
-    echo "echo \"ps -aux | grep softmodem\"" >> $1
-    echo "ps -aux | grep softmodem | grep -v grep" >> $1
-    echo "NB_OAI_PROCESSES=\`ps -aux | grep modem | grep -v grep | grep -c softmodem\`" >> $1
-    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then echo \"sudo killall --signal SIGKILL lte-softmodem\"; fi" >> $1
-    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sudo killall --signal SIGKILL lte-softmodem; fi" >> $1
-    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then echo \"sudo killall --signal SIGKILL lte-uesoftmodem\"; fi" >> $1
-    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sudo killall --signal SIGKILL lte-uesoftmodem; fi" >> $1
-    echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sleep 5; fi" >> $1
+    if [ $LOC_MODE -eq 0 ] || [ $LOC_MODE -eq 1 ]
+    then
+        echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then echo \"sudo killall --signal SIGINT lte-softmodem\"; fi" >> $1
+        echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sudo killall --signal SIGINT lte-softmodem; fi" >> $1
+        echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sleep 5; fi" >> $1
+        echo "echo \"ps -aux | grep softmodem\"" >> $1
+        echo "ps -aux | grep softmodem | grep -v grep" >> $1
+        echo "NB_OAI_PROCESSES=\`ps -aux | grep modem | grep -v grep | grep -c softmodem\`" >> $1
+        echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then echo \"sudo killall --signal SIGKILL lte-softmodem\"; fi" >> $1
+        echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sudo killall --signal SIGKILL lte-softmodem; fi" >> $1
+    fi
+    if [ $LOC_MODE -eq 0 ] || [ $LOC_MODE -eq 2 ]
+    then
+        echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then echo \"sudo killall --signal SIGKILL lte-uesoftmodem\"; fi" >> $1
+        echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sudo killall --signal SIGKILL lte-uesoftmodem; fi" >> $1
+        echo "if [ \$NB_OAI_PROCESSES -ne 0 ]; then sleep 5; fi" >> $1
+    fi
     echo "echo \"ps -aux | grep softmodem\"" >> $1
     echo "ps -aux | grep softmodem | grep -v grep" >> $1
     ssh -o StrictHostKeyChecking=no ubuntu@$2 < $1
@@ -413,6 +429,8 @@ function add_user_to_epc_lists {
     then
         scp -o StrictHostKeyChecking=no $JENKINS_WKSP/ci-scripts/add_user_to_subscriber_list.awk ubuntu@$LOC_EPC_VM_IP_ADDR:/home/ubuntu/
         echo "cd /opt/hss_sim0609" > $LOC_EPC_VM_CMDS
+        echo "if [ -e subscriber.data.orig ]; then sudo mv subscriber.data.orig subscriber.data; fi" >> $1
+        echo "if [ -e profile.data.orig ]; then sudo mv profile.data.orig profile.data; fi" >> $1
         echo "sudo cp subscriber.data subscriber.data.orig" >> $LOC_EPC_VM_CMDS
         echo "sudo cp profile.data profile.data.orig" >> $LOC_EPC_VM_CMDS
         echo "sudo awk -v num_ues=$LOC_NB_USERS -f /home/ubuntu/add_user_to_subscriber_list.awk subscriber.data.orig > /tmp/subscriber.data" >> $LOC_EPC_VM_CMDS
@@ -614,14 +632,24 @@ function add_ue_l2_sim_ue {
     local LOC_NB_UES=$3
     echo "cd /home/ubuntu/tmp/" > $1
     echo "source oaienv" >> $1
-    echo "echo \"cd openair3/NAS/TOOLS/\"" >> $1
-    echo "cd openair3/NAS/TOOLS/" >> $1
-    echo "echo \"awk -v num_ues=$LOC_NB_UES -f /home/ubuntu/tmp/ci-scripts/add_user_to_conf_file.awk ue_eurecom_test_sfr.conf > ue_eurecom_test_sfr_multi_ues.conf\"" >> $1
-    echo "awk -v num_ues=$LOC_NB_UES -f /home/ubuntu/tmp/ci-scripts/add_user_to_conf_file.awk ue_eurecom_test_sfr.conf > ue_eurecom_test_sfr_multi_ues.conf" >> $1
+    if [ $LOC_NB_UES -gt 1 ]
+    then
+        echo "echo \"cd openair3/NAS/TOOLS/\"" >> $1
+        echo "cd openair3/NAS/TOOLS/" >> $1
+        echo "echo \"awk -v num_ues=$LOC_NB_UES -f /home/ubuntu/tmp/ci-scripts/add_user_to_conf_file.awk ue_eurecom_test_sfr.conf > ue_eurecom_test_sfr_multi_ues.conf\"" >> $1
+        echo "awk -v num_ues=$LOC_NB_UES -f /home/ubuntu/tmp/ci-scripts/add_user_to_conf_file.awk ue_eurecom_test_sfr.conf > ue_eurecom_test_sfr_multi_ues.conf" >> $1
+    fi
     echo "echo \"cd /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/\"" >> $1
     echo "cd /home/ubuntu/tmp/cmake_targets/lte_build_oai/build/" >> $1
-    echo "echo \"sudo ../../../targets/bin/conf2uedata -c ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr_multi_ues.conf -o .\"" >> $1
-    echo "sudo ../../../targets/bin/conf2uedata -c ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr_multi_ues.conf -o . > /home/ubuntu/tmp/cmake_targets/log/ue_adapt.txt 2>&1" >> $1
+    echo "sudo rm -f *.u*" >> $1
+    if [ $LOC_NB_UES -eq 1 ]
+    then
+        echo "echo \"sudo ../../../targets/bin/conf2uedata -c ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf -o .\"" >> $1
+        echo "sudo ../../../targets/bin/conf2uedata -c ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf -o . > /home/ubuntu/tmp/cmake_targets/log/ue_adapt.txt 2>&1" >> $1
+    else
+        echo "echo \"sudo ../../../targets/bin/conf2uedata -c ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr_multi_ues.conf -o .\"" >> $1
+        echo "sudo ../../../targets/bin/conf2uedata -c ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr_multi_ues.conf -o . > /home/ubuntu/tmp/cmake_targets/log/ue_adapt.txt 2>&1" >> $1
+    fi
 
     ssh -o StrictHostKeyChecking=no ubuntu@$LOC_UE_VM_IP_ADDR < $1
     rm $1
@@ -894,7 +922,7 @@ function run_test_on_vm {
         if [ $UE_SYNC -eq 0 ]
         then
             echo "Problem w/ eNB and UE not syncing"
-            terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+            terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR 0
             scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
             recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
@@ -934,7 +962,7 @@ function run_test_on_vm {
         echo "############################################################"
         echo "Terminate enb/ue simulators"
         echo "############################################################"
-        terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+        terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR 0
         scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
         scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
         recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
@@ -954,7 +982,7 @@ function run_test_on_vm {
         if [ $UE_SYNC -eq 0 ]
         then
             echo "Problem w/ eNB and UE not syncing"
-            terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+            terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR 0
             scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
             recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
@@ -994,7 +1022,7 @@ function run_test_on_vm {
         echo "############################################################"
         echo "Terminate enb/ue simulators"
         echo "############################################################"
-        terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+        terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR 0
         scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
         scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
         recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
@@ -1014,7 +1042,7 @@ function run_test_on_vm {
         if [ $UE_SYNC -eq 0 ]
         then
             echo "Problem w/ eNB and UE not syncing"
-            terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+            terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR 0
             scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
             recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
@@ -1045,7 +1073,7 @@ function run_test_on_vm {
         echo "############################################################"
         echo "Terminate enb/ue simulators"
         echo "############################################################"
-        terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+        terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR 0
         scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
         scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
         recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
@@ -1113,7 +1141,7 @@ function run_test_on_vm {
             if [ $UE_SYNC -eq 0 ]
             then
                 echo "Problem w/ eNB and UE not syncing"
-                terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+                terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR 0
                 scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
                 scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
                 recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
@@ -1130,7 +1158,7 @@ function run_test_on_vm {
             echo "############################################################"
             echo "Terminate enb/ue simulators"
             echo "############################################################"
-            terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+            terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR 0
             scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
             recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
@@ -1157,7 +1185,7 @@ function run_test_on_vm {
         if [ $UE_SYNC -eq 0 ]
         then
             echo "Problem w/ eNB and UE not syncing"
-            terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+            terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR 0
             scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
             recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
@@ -1189,7 +1217,7 @@ function run_test_on_vm {
         echo "############################################################"
         echo "Terminate enb/ue simulators"
         echo "############################################################"
-        terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+        terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR 0
         scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
         scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
         recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
@@ -1210,7 +1238,7 @@ function run_test_on_vm {
 #        if [ $UE_SYNC -eq 0 ]
 #        then
 #            echo "Problem w/ eNB and UE not syncing"
-#            terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+#            terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR 0
 #            scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
 #            scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
 #            recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
@@ -1241,7 +1269,7 @@ function run_test_on_vm {
 #        echo "############################################################"
 #        echo "Terminate enb/ue simulators"
 #        echo "############################################################"
-#        terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+#        terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR 0
 #        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
 #        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
 #        recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
@@ -1262,7 +1290,7 @@ function run_test_on_vm {
 #        if [ $UE_SYNC -eq 0 ]
 #        then
 #            echo "Problem w/ eNB and UE not syncing"
-#            terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+#            terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR 0
 #            scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
 #            scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
 #            recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
@@ -1293,7 +1321,7 @@ function run_test_on_vm {
 #        echo "############################################################"
 #        echo "Terminate enb/ue simulators"
 #        echo "############################################################"
-#        terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR
+#        terminate_enb_ue_basic_sim $VM_CMDS $VM_IP_ADDR 0
 #        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
 #        scp -o StrictHostKeyChecking=no ubuntu@$VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
 #        recover_core_dump $VM_CMDS $VM_IP_ADDR $ARCHIVES_LOC/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
@@ -1359,6 +1387,9 @@ function run_test_on_vm {
         # adding 16 users to EPC subscriber lists
         add_user_to_epc_lists $EPC_VM_CMDS $EPC_VM_IP_ADDR 16
 
+        # For re-runs
+        add_ue_l2_sim_ue $UE_VM_CMDS $UE_VM_IP_ADDR 1
+
         # Starting EPC
         start_epc $EPC_VM_NAME $EPC_VM_CMDS $EPC_VM_IP_ADDR
 
@@ -1379,8 +1410,8 @@ function run_test_on_vm {
         if [ $UE_SYNC -eq 0 ]
         then
             echo "Problem w/ eNB and UE not syncing"
-            terminate_enb_ue_basic_sim $ENB_VM_CMDS $ENB_VM_IP_ADDR
-            terminate_enb_ue_basic_sim $UE_VM_CMDS $UE_VM_IP_ADDR
+            terminate_enb_ue_basic_sim $ENB_VM_CMDS $ENB_VM_IP_ADDR 1
+            terminate_enb_ue_basic_sim $UE_VM_CMDS $UE_VM_IP_ADDR 2
             scp -o StrictHostKeyChecking=no ubuntu@$ENB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
             terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
@@ -1409,8 +1440,8 @@ function run_test_on_vm {
         echo "############################################################"
         echo "Terminate enb/ue simulators"
         echo "############################################################"
-        terminate_enb_ue_basic_sim $ENB_VM_CMDS $ENB_VM_IP_ADDR
-        terminate_enb_ue_basic_sim $UE_VM_CMDS $UE_VM_IP_ADDR
+        terminate_enb_ue_basic_sim $ENB_VM_CMDS $ENB_VM_IP_ADDR 1
+        terminate_enb_ue_basic_sim $UE_VM_CMDS $UE_VM_IP_ADDR 2
         scp -o StrictHostKeyChecking=no ubuntu@$ENB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
         scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
 
@@ -1433,8 +1464,8 @@ function run_test_on_vm {
         if [ $UE_SYNC -eq 0 ]
         then
             echo "Problem w/ eNB and UE not syncing"
-            terminate_enb_ue_basic_sim $ENB_VM_CMDS $ENB_VM_IP_ADDR
-            terminate_enb_ue_basic_sim $UE_VM_CMDS $UE_VM_IP_ADDR
+            terminate_enb_ue_basic_sim $ENB_VM_CMDS $ENB_VM_IP_ADDR 1
+            terminate_enb_ue_basic_sim $UE_VM_CMDS $UE_VM_IP_ADDR 2
             scp -o StrictHostKeyChecking=no ubuntu@$ENB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
             scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
             terminate_epc $EPC_VM_CMDS $EPC_VM_IP_ADDR
@@ -1452,10 +1483,18 @@ function run_test_on_vm {
         check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
 
         echo "############################################################"
+        echo "Pinging the UE from EPC"
+        echo "############################################################"
+        PING_LOG_FILE=fdd_05MHz_04users_ping_ue.txt
+        ping_ue_ip_addr $EPC_VM_CMDS $EPC_VM_IP_ADDR $UE_IP_ADDR $PING_LOG_FILE
+        scp -o StrictHostKeyChecking=no ubuntu@$EPC_VM_IP_ADDR:/home/ubuntu/$PING_LOG_FILE $ARCHIVES_LOC
+        check_ping_result $ARCHIVES_LOC/$PING_LOG_FILE 20
+
+        echo "############################################################"
         echo "Terminate enb/ue simulators"
         echo "############################################################"
-        terminate_enb_ue_basic_sim $ENB_VM_CMDS $ENB_VM_IP_ADDR
-        terminate_enb_ue_basic_sim $UE_VM_CMDS $UE_VM_IP_ADDR
+        terminate_enb_ue_basic_sim $ENB_VM_CMDS $ENB_VM_IP_ADDR 1
+        terminate_enb_ue_basic_sim $UE_VM_CMDS $UE_VM_IP_ADDR 2
         scp -o StrictHostKeyChecking=no ubuntu@$ENB_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_ENB_LOG_FILE $ARCHIVES_LOC
         scp -o StrictHostKeyChecking=no ubuntu@$UE_VM_IP_ADDR:/home/ubuntu/tmp/cmake_targets/log/$CURRENT_UE_LOG_FILE $ARCHIVES_LOC
 

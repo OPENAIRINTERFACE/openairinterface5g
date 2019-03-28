@@ -468,11 +468,14 @@ function report_test {
 
         TRANS_MODES=("fdd")
         BW_CASES=(05)
+        NB_USERS=(01 04)
         for TMODE in ${TRANS_MODES[@]}
         do
-            for BW in ${BW_CASES[@]}
+          for BW in ${BW_CASES[@]}
+          do
+            for UES in ${NB_USERS[@]}
             do
-                ENB_LOG=$ARCHIVES_LOC/${TMODE}_${BW}MHz_enb.log
+                ENB_LOG=$ARCHIVES_LOC/${TMODE}_${BW}MHz_${UES}users_enb.log
                 UE_LOG=`echo $ENB_LOG | sed -e "s#enb#ue#"`
                 if [ -f $ENB_LOG ] && [ -f $UE_LOG ]
                 then
@@ -512,9 +515,9 @@ function report_test {
                     echo "        </pre></td>" >> ./test_simulator_results.html
                     echo "      </tr>" >> ./test_simulator_results.html
                 fi
-                PING_CASE=$ARCHIVES_LOC/${TMODE}_${BW}MHz_ping_epc.txt
-                if [ -f $PING_CASE ]
-                then
+                PING_LOGS=`ls $ARCHIVES_LOC/${TMODE}_${BW}MHz_${UES}users_ping*.txt`
+                for PING_CASE in $PING_LOGS
+                do
                     echo "      <tr>" >> ./test_simulator_results.html
                     NAME=`echo $PING_CASE | sed -e "s#$ARCHIVES_LOC/##"`
                     echo "        <td>$NAME</td>" >> ./test_simulator_results.html
@@ -548,9 +551,10 @@ function report_test {
                         echo "        </td>" >> ./test_simulator_results.html
                     fi
                     echo "      </tr>" >> ./test_simulator_results.html
-                fi
+                done
 
             done
+          done
         done
 
         echo "   </table>" >> ./test_simulator_results.html
