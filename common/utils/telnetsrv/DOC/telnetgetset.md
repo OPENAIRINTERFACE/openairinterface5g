@@ -10,12 +10,12 @@ telnet, phypb = 65000
 telnet, hsize = 50
 telnet, hfile = "oaitelnet.history"
 softmodem> telnet set loopc 100
-telnet, loopc set to 
+telnet, loopc set to
 100
 softmodem> telnet get loopc
 telnet, loopc = 100
-softmodem> 
+softmodem>
 
 ```
-[oai telnetserver home](telnetsrv.md)  
+[oai telnetserver home](telnetsrv.md)
 [oai telnetserver usage home](telnetusage.md)

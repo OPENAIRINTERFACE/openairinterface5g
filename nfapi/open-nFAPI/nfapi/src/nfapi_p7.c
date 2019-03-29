@@ -4437,8 +4437,8 @@ static uint8_t unpack_tx_request(uint8_t **ppReadPackedMsg, uint8_t *end, void *
 						 pull16(ppReadPackedMsg, &index, end)))
 						  return 0;
 
-					  pdu->pdu_length = length;
-					  pdu->pdu_index = index;
+                                          pdu->pdu_length = length;
+                                          pdu->pdu_index = index;
 					
 
 					// TODO : May need to rethink this bit

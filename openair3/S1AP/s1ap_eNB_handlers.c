@@ -272,15 +272,11 @@ int s1ap_eNB_handle_s1_setup_failure(uint32_t               assoc_id,
   S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_S1SetupFailureIEs_t, ie, container,
                              S1AP_ProtocolIE_ID_id_Cause,true);
 
-  if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-    if ((ie->value.choice.Cause.present == S1AP_Cause_PR_misc) &&
-        (ie->value.choice.Cause.choice.misc == S1AP_CauseMisc_unspecified)) {
-      S1AP_WARN("Received s1 setup failure for MME... MME is not ready\n");
-    } else {
-      S1AP_ERROR("Received s1 setup failure for MME... please check your parameters\n");
-    }
+  if ((ie->value.choice.Cause.present == S1AP_Cause_PR_misc) &&
+      (ie->value.choice.Cause.choice.misc == S1AP_CauseMisc_unspecified)) {
+    S1AP_WARN("Received s1 setup failure for MME... MME is not ready\n");
   } else {
-    return -1;
+    S1AP_ERROR("Received s1 setup failure for MME... please check your parameters\n");
   }
 
   mme_desc_p->state = S1AP_ENB_STATE_WAITING;
@@ -318,68 +314,60 @@ int s1ap_eNB_handle_s1_setup_response(uint32_t               assoc_id,
   /* The list of served gummei can contain at most 8 elements.
    * LTE related gummei is the first element in the list, i.e with an id of 0.
    */
-  if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-    S1AP_DEBUG("servedGUMMEIs.list.count %d\n", ie->value.choice.ServedGUMMEIs.list.count);
-    DevAssert(ie->value.choice.ServedGUMMEIs.list.count > 0);
-    DevAssert(ie->value.choice.ServedGUMMEIs.list.count <= S1AP_maxnoofRATs);
+  S1AP_DEBUG("servedGUMMEIs.list.count %d\n", ie->value.choice.ServedGUMMEIs.list.count);
+  DevAssert(ie->value.choice.ServedGUMMEIs.list.count > 0);
+  DevAssert(ie->value.choice.ServedGUMMEIs.list.count <= S1AP_maxnoofRATs);
 
-    for (i = 0; i < ie->value.choice.ServedGUMMEIs.list.count; i++) {
-      S1AP_ServedGUMMEIsItem_t *gummei_item_p;
-      struct served_gummei_s   *new_gummei_p;
-      int j;
-      gummei_item_p = ie->value.choice.ServedGUMMEIs.list.array[i];
-      new_gummei_p = calloc(1, sizeof(struct served_gummei_s));
-      STAILQ_INIT(&new_gummei_p->served_plmns);
-      STAILQ_INIT(&new_gummei_p->served_group_ids);
-      STAILQ_INIT(&new_gummei_p->mme_codes);
-      S1AP_DEBUG("servedPLMNs.list.count %d\n", gummei_item_p->servedPLMNs.list.count);
+  for (i = 0; i < ie->value.choice.ServedGUMMEIs.list.count; i++) {
+    S1AP_ServedGUMMEIsItem_t *gummei_item_p;
+    struct served_gummei_s   *new_gummei_p;
+    int j;
+    gummei_item_p = ie->value.choice.ServedGUMMEIs.list.array[i];
+    new_gummei_p = calloc(1, sizeof(struct served_gummei_s));
+    STAILQ_INIT(&new_gummei_p->served_plmns);
+    STAILQ_INIT(&new_gummei_p->served_group_ids);
+    STAILQ_INIT(&new_gummei_p->mme_codes);
+    S1AP_DEBUG("servedPLMNs.list.count %d\n", gummei_item_p->servedPLMNs.list.count);
 
-      for (j = 0; j < gummei_item_p->servedPLMNs.list.count; j++) {
-        S1AP_PLMNidentity_t *plmn_identity_p;
-        struct plmn_identity_s *new_plmn_identity_p;
-        plmn_identity_p = gummei_item_p->servedPLMNs.list.array[j];
-        new_plmn_identity_p = calloc(1, sizeof(struct plmn_identity_s));
-        TBCD_TO_MCC_MNC(plmn_identity_p, new_plmn_identity_p->mcc,
-                        new_plmn_identity_p->mnc, new_plmn_identity_p->mnc_digit_length);
-        STAILQ_INSERT_TAIL(&new_gummei_p->served_plmns, new_plmn_identity_p, next);
-        new_gummei_p->nb_served_plmns++;
-      }
-
-      for (j = 0; j < gummei_item_p->servedGroupIDs.list.count; j++) {
-        S1AP_MME_Group_ID_t       *mme_group_id_p;
-        struct served_group_id_s *new_group_id_p;
-        mme_group_id_p = gummei_item_p->servedGroupIDs.list.array[j];
-        new_group_id_p = calloc(1, sizeof(struct served_group_id_s));
-        OCTET_STRING_TO_INT16(mme_group_id_p, new_group_id_p->mme_group_id);
-        STAILQ_INSERT_TAIL(&new_gummei_p->served_group_ids, new_group_id_p, next);
-        new_gummei_p->nb_group_id++;
-      }
-
-      for (j = 0; j < gummei_item_p->servedMMECs.list.count; j++) {
-        S1AP_MME_Code_t        *mme_code_p;
-        struct mme_code_s *new_mme_code_p;
-        mme_code_p = gummei_item_p->servedMMECs.list.array[j];
-        new_mme_code_p = calloc(1, sizeof(struct mme_code_s));
-        OCTET_STRING_TO_INT8(mme_code_p, new_mme_code_p->mme_code);
-        STAILQ_INSERT_TAIL(&new_gummei_p->mme_codes, new_mme_code_p, next);
-        new_gummei_p->nb_mme_code++;
-      }
-
-      STAILQ_INSERT_TAIL(&mme_desc_p->served_gummei, new_gummei_p, next);
+    for (j = 0; j < gummei_item_p->servedPLMNs.list.count; j++) {
+      S1AP_PLMNidentity_t *plmn_identity_p;
+      struct plmn_identity_s *new_plmn_identity_p;
+      plmn_identity_p = gummei_item_p->servedPLMNs.list.array[j];
+      new_plmn_identity_p = calloc(1, sizeof(struct plmn_identity_s));
+      TBCD_TO_MCC_MNC(plmn_identity_p, new_plmn_identity_p->mcc,
+                      new_plmn_identity_p->mnc, new_plmn_identity_p->mnc_digit_length);
+      STAILQ_INSERT_TAIL(&new_gummei_p->served_plmns, new_plmn_identity_p, next);
+      new_gummei_p->nb_served_plmns++;
     }
-  } else {
-    return -1;
+
+    for (j = 0; j < gummei_item_p->servedGroupIDs.list.count; j++) {
+      S1AP_MME_Group_ID_t       *mme_group_id_p;
+      struct served_group_id_s *new_group_id_p;
+      mme_group_id_p = gummei_item_p->servedGroupIDs.list.array[j];
+      new_group_id_p = calloc(1, sizeof(struct served_group_id_s));
+      OCTET_STRING_TO_INT16(mme_group_id_p, new_group_id_p->mme_group_id);
+      STAILQ_INSERT_TAIL(&new_gummei_p->served_group_ids, new_group_id_p, next);
+      new_gummei_p->nb_group_id++;
+    }
+
+    for (j = 0; j < gummei_item_p->servedMMECs.list.count; j++) {
+      S1AP_MME_Code_t        *mme_code_p;
+      struct mme_code_s *new_mme_code_p;
+      mme_code_p = gummei_item_p->servedMMECs.list.array[j];
+      new_mme_code_p = calloc(1, sizeof(struct mme_code_s));
+      OCTET_STRING_TO_INT8(mme_code_p, new_mme_code_p->mme_code);
+      STAILQ_INSERT_TAIL(&new_gummei_p->mme_codes, new_mme_code_p, next);
+      new_gummei_p->nb_mme_code++;
+    }
+
+    STAILQ_INSERT_TAIL(&mme_desc_p->served_gummei, new_gummei_p, next);
   }
 
   /* Set the capacity of this MME */
   S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_S1SetupResponseIEs_t, ie, container,
                              S1AP_ProtocolIE_ID_id_RelativeMMECapacity, true);
 
-  if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-    mme_desc_p->relative_mme_capacity = ie->value.choice.RelativeMMECapacity;
-  } else {
-    return -1;
-  }
+  mme_desc_p->relative_mme_capacity = ie->value.choice.RelativeMMECapacity;
 
   /* Optionaly set the mme name */
   S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_S1SetupResponseIEs_t, ie, container,

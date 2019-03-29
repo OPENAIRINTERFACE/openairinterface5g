@@ -40,9 +40,6 @@
 
 #include "common/utils/LOG/log.h"
 
-/*Flags showing if a mac agent has already been registered*/
-unsigned int mac_agent_registered[NUM_MAX_ENB];
-
 /*Array containing the Agent-MAC interfaces*/
 AGENT_MAC_xface *agent_mac_xface[NUM_MAX_ENB];
 
@@ -83,7 +80,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
 
           for (i = 0; i < report_config->nr_ue; i++) {
 
-                UE_id = flexran_get_ue_id(mod_id, i);
+                UE_id = flexran_get_mac_ue_id(mod_id, i);
 
                 ue_report[i]->rnti = report_config->ue_report_type[i].ue_rnti;
                 ue_report[i]->has_rnti = 1;
@@ -102,12 +99,14 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                         }
 
                         ue_report[i]->bsr = elem;
+                        ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_BSR;
                 }
 
                 /* Check flag for creation of PHR report */
                 if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PHR) {
                         ue_report[i]->phr = flexran_get_ue_phr (enb_id, UE_id); // eNB_UE_list->UE_template[UE_PCCID(enb_id,UE_id)][UE_id].phr_info;
                         ue_report[i]->has_phr = 1;
+                        ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PHR;
 
                 }
 
@@ -148,7 +147,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                         // Add RLC buffer status reports to the full report
                         if (ue_report[i]->n_rlc_report > 0)
                             ue_report[i]->rlc_report = rlc_reports;
-
+                        ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_RLC_BS;
 
                 }
 
@@ -161,7 +160,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                                        // found in stats_common.pb-c.h. See
                                        // flex_ce_type in FlexRAN specification
                         ue_report[i]->has_pending_mac_ces = 1;
-
+                        ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_MAC_CE_BS;
                 }
 
                 /* Check flag for creation of DL CQI report */
@@ -386,7 +385,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                     dl_report->csi_report = csi_reports;
                     //Add the DL CQI report to the stats report
                      ue_report[i]->dl_cqi_report = dl_report;
-
+                    ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_DL_CQI;
                 }
 
                 /* Check flag for creation of paging buffer status report */
@@ -431,6 +430,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                             paging_report->paging_info = p_info;
                             //Add the paging report to the UE report
                             ue_report[i]->pbr = paging_report;
+                            ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PBS;
                 }
 
                   /* Check flag for creation of UL CQI report */
@@ -502,7 +502,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                           }
                         //  Add full UL CQI report to the UE report
                         ue_report[i]->ul_cqi_report = full_ul_report;
-
+                        ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_UL_CQI;
 
                      }
                       if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_MAC_STATS) {
@@ -598,7 +598,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
 
 
                         ue_report[i]->mac_stats = macstats;
-
+                        ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_MAC_STATS;
                }
 
 
@@ -640,6 +640,7 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
                             ni_report->p0_nominal_pucch = flexran_get_p0_nominal_pucch(enb_id, 0);
                             ni_report->has_p0_nominal_pucch = 1;
                             cell_report[i]->noise_inter_report = ni_report;
+                            cell_report[i]->flags |= PROTOCOL__FLEX_CELL_STATS_TYPE__FLCST_NOISE_INTERFERENCE;
                       }
             }
 
@@ -660,14 +661,9 @@ int flexran_agent_mac_stats_reply(mid_t mod_id,
   return -1;
 }
 
-int flexran_agent_mac_destroy_stats_reply(Protocol__FlexranMessage *msg) {
-  //TODO: Need to deallocate memory for the stats reply message
-  if(msg->msg_case != PROTOCOL__FLEXRAN_MESSAGE__MSG_STATS_REPLY_MSG)
-    goto error;
-  free(msg->stats_reply_msg->header);
+int flexran_agent_mac_destroy_stats_reply(Protocol__FlexStatsReply *reply) {
   int i, j, k;
 
-  Protocol__FlexStatsReply *reply = msg->stats_reply_msg;
   Protocol__FlexDlCqiReport *dl_report;
   Protocol__FlexUlCqiReport *ul_report;
   Protocol__FlexPagingBufferReport *paging_report;
@@ -758,25 +754,24 @@ int flexran_agent_mac_destroy_stats_reply(Protocol__FlexranMessage *msg) {
 	free(ul_report->pucch_dbm[j]);
       }
       free(ul_report->pucch_dbm);
+      free(ul_report);
     }
-    free(reply->ue_report[i]);
+    if (reply->ue_report[i]->flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_MAC_STATS) {
+      for (j = 0; j < reply->ue_report[i]->mac_stats->n_mac_sdus_dl; j++)
+        free(reply->ue_report[i]->mac_stats->mac_sdus_dl[j]);
+      free(reply->ue_report[i]->mac_stats->mac_sdus_dl);
+      free(reply->ue_report[i]->mac_stats);
+    }
   }
-  free(reply->ue_report);
 
   // Free memory for all Cell reports
   for (i = 0; i < reply->n_cell_report; i++) {
-    free(reply->cell_report[i]->noise_inter_report);
-    free(reply->cell_report[i]);
+    if (reply->cell_report[i]->flags & PROTOCOL__FLEX_CELL_STATS_TYPE__FLCST_NOISE_INTERFERENCE) {
+      free(reply->cell_report[i]->noise_inter_report);
+    }
   }
-  free(reply->cell_report);
 
-  free(reply);
-  free(msg);
   return 0;
-
- error:
-  //LOG_E(MAC, "%s: an error occured\n", __FUNCTION__);
-  return -1;
 }
 
 int flexran_agent_mac_sr_info(mid_t mod_id, const void *params, Protocol__FlexranMessage **msg) {
@@ -905,7 +900,7 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
 
   //  LOG_I(FLEXRAN_AGENT, "Sending subframe trigger for frame %d and subframe %d\n", flexran_get_current_frame(mod_id), (flexran_get_current_subframe(mod_id) + 1) % 10);
 
-  sf_trigger_msg->n_dl_info = flexran_get_num_ues(mod_id);
+  sf_trigger_msg->n_dl_info = flexran_get_mac_num_ues(mod_id);
 
   Protocol__FlexDlInfo **dl_info = NULL;
 
@@ -921,9 +916,9 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
       dl_info[i] = malloc(sizeof(Protocol__FlexDlInfo));
       if(dl_info[i] == NULL)
 	goto error;
-      UE_id = flexran_get_ue_id(mod_id, i);
+      UE_id = flexran_get_mac_ue_id(mod_id, i);
       protocol__flex_dl_info__init(dl_info[i]);
-      dl_info[i]->rnti = flexran_get_ue_crnti(mod_id, UE_id);
+      dl_info[i]->rnti = flexran_get_mac_ue_crnti(mod_id, UE_id);
       dl_info[i]->has_rnti = 1;
       /*Fill in the right id of this round's HARQ process for this UE*/
       //      uint8_t harq_id;
@@ -957,7 +952,7 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
   /* Fill in the number of UL reception status related info, based on the number of currently
    * transmitting UEs
    */
-  sf_trigger_msg->n_ul_info = flexran_get_num_ues(mod_id);
+  sf_trigger_msg->n_ul_info = flexran_get_mac_num_ues(mod_id);
 
   Protocol__FlexUlInfo **ul_info = NULL;
 
@@ -972,9 +967,9 @@ int flexran_agent_mac_sf_trigger(mid_t mod_id, const void *params, Protocol__Fle
 	goto error;
       protocol__flex_ul_info__init(ul_info[i]);
 
-      UE_id = flexran_get_ue_id(mod_id, i);
+      UE_id = flexran_get_mac_ue_id(mod_id, i);
 
-      ul_info[i]->rnti = flexran_get_ue_crnti(mod_id, UE_id);
+      ul_info[i]->rnti = flexran_get_mac_ue_crnti(mod_id, UE_id);
       ul_info[i]->has_rnti = 1;
       /* Fill in the Tx power control command for this UE (if available),
        * primary carrier */
@@ -1357,9 +1352,15 @@ void flexran_agent_send_sf_trigger(mid_t mod_id) {
 
 
 
-int flexran_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
-  if (mac_agent_registered[mod_id]) {
+int flexran_agent_register_mac_xface(mid_t mod_id)
+{
+  if (agent_mac_xface[mod_id]) {
     LOG_E(MAC, "MAC agent for eNB %d is already registered\n", mod_id);
+    return -1;
+  }
+  AGENT_MAC_xface *xface = malloc(sizeof(AGENT_MAC_xface));
+  if (!xface) {
+    LOG_E(FLEXRAN_AGENT, "could not allocate memory for MAC agent xface %d\n", mod_id);
     return -1;
   }
 
@@ -1371,14 +1372,125 @@ int flexran_agent_register_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
 
   xface->dl_scheduler_loaded_lib = NULL;
   xface->ul_scheduler_loaded_lib = NULL;
-  mac_agent_registered[mod_id] = 1;
   agent_mac_xface[mod_id] = xface;
 
   return 0;
 }
 
-int flexran_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
+void flexran_agent_fill_mac_cell_config(mid_t mod_id, uint8_t cc_id,
+    Protocol__FlexCellConfig *conf) {
+  if (!conf->si_config) {
+    conf->si_config = malloc(sizeof(Protocol__FlexSiConfig));
+    if (conf->si_config)
+      protocol__flex_si_config__init(conf->si_config);
+  }
 
+  if (conf->si_config) {
+    conf->si_config->sfn = flexran_get_current_system_frame_num(mod_id);
+    conf->si_config->has_sfn = 1;
+  }
+
+  /* get a pointer to the config which is maintained in the agent throughout
+  * its lifetime */
+  conf->slice_config = flexran_agent_get_slice_config(mod_id);
+}
+
+void flexran_agent_fill_mac_ue_config(mid_t mod_id, mid_t ue_id,
+    Protocol__FlexUeConfig *ue_conf)
+{
+  if (ue_conf->has_rnti && ue_conf->rnti != flexran_get_mac_ue_crnti(mod_id, ue_id)) {
+    LOG_E(FLEXRAN_AGENT, "ue_config existing RNTI %x does not match MAC RNTI %x\n",
+          ue_conf->rnti, flexran_get_mac_ue_crnti(mod_id, ue_id));
+    return;
+  }
+  ue_conf->rnti = flexran_get_mac_ue_crnti(mod_id, ue_id);
+  ue_conf->has_rnti = 1;
+
+  ue_conf->dl_slice_id = flexran_get_ue_dl_slice_id(mod_id, ue_id);
+  ue_conf->has_dl_slice_id = 1;
+  ue_conf->ul_slice_id = flexran_get_ue_ul_slice_id(mod_id, ue_id);
+  ue_conf->has_ul_slice_id = 1;
+
+  ue_conf->ue_aggregated_max_bitrate_ul = flexran_get_ue_aggregated_max_bitrate_ul(mod_id, ue_id);
+  ue_conf->has_ue_aggregated_max_bitrate_ul = 1;
+
+  ue_conf->ue_aggregated_max_bitrate_dl = flexran_get_ue_aggregated_max_bitrate_dl(mod_id, ue_id);
+  ue_conf->has_ue_aggregated_max_bitrate_dl = 1;
+
+  /* TODO update through RAN API */
+  //config->has_pcell_carrier_index = 1;
+  //config->pcell_carrier_index = UE_PCCID(mod_id, i);
+
+  //TODO: Set carrier aggregation support (boolean)
+}
+
+void flexran_agent_fill_mac_lc_ue_config(mid_t mod_id, mid_t ue_id,
+    Protocol__FlexLcUeConfig *lc_ue_conf)
+{
+  lc_ue_conf->rnti = flexran_get_mac_ue_crnti(mod_id, ue_id);
+  lc_ue_conf->has_rnti = 1;
+
+  lc_ue_conf->n_lc_config = flexran_get_num_ue_lcs(mod_id, ue_id);
+  if (lc_ue_conf->n_lc_config == 0)
+    return;
+
+  Protocol__FlexLcConfig **lc_config =
+    calloc(lc_ue_conf->n_lc_config, sizeof(Protocol__FlexLcConfig *));
+  if (!lc_config) {
+    LOG_E(FLEXRAN_AGENT, "could not allocate memory for lc_config of UE %x\n", lc_ue_conf->rnti);
+    lc_ue_conf->n_lc_config = 0;
+    return; // can not allocate memory, skip rest
+  }
+  for (int j = 0; j < lc_ue_conf->n_lc_config; j++) {
+    lc_config[j] = malloc(sizeof(Protocol__FlexLcConfig));
+    if (!lc_config[j]) continue; // go over this error, try entry
+    protocol__flex_lc_config__init(lc_config[j]);
+
+    lc_config[j]->has_lcid = 1;
+    lc_config[j]->lcid = j+1;
+
+    const int lcg = flexran_get_lcg(mod_id, ue_id, j+1);
+    if (lcg >= 0 && lcg <= 3) {
+      lc_config[j]->has_lcg = 1;
+      lc_config[j]->lcg = flexran_get_lcg(mod_id, ue_id, j+1);
+    }
+
+    lc_config[j]->has_direction = 1;
+    lc_config[j]->direction = flexran_get_direction(ue_id, j+1);
+    //TODO: Bearer type. One of FLQBT_* values. Currently only default bearer supported
+    lc_config[j]->has_qos_bearer_type = 1;
+    lc_config[j]->qos_bearer_type = PROTOCOL__FLEX_QOS_BEARER_TYPE__FLQBT_NON_GBR;
+
+    //TODO: Set the QCI defined in TS 23.203, coded as defined in TS 36.413
+    // One less than the actual QCI value. Needs to be generalized
+    lc_config[j]->has_qci = 1;
+    lc_config[j]->qci = 1;
+    if (lc_config[j]->direction == PROTOCOL__FLEX_QOS_BEARER_TYPE__FLQBT_GBR) {
+      /* TODO all of the need to be taken from API */
+      //TODO: Set the max bitrate (UL)
+      lc_config[j]->has_e_rab_max_bitrate_ul = 0;
+      lc_config[j]->e_rab_max_bitrate_ul = 0;
+      //TODO: Set the max bitrate (DL)
+      lc_config[j]->has_e_rab_max_bitrate_dl = 0;
+      lc_config[j]->e_rab_max_bitrate_dl = 0;
+      //TODO: Set the guaranteed bitrate (UL)
+      lc_config[j]->has_e_rab_guaranteed_bitrate_ul = 0;
+      lc_config[j]->e_rab_guaranteed_bitrate_ul = 0;
+      //TODO: Set the guaranteed bitrate (DL)
+      lc_config[j]->has_e_rab_guaranteed_bitrate_dl = 0;
+      lc_config[j]->e_rab_guaranteed_bitrate_dl = 0;
+    }
+  }
+  lc_ue_conf->lc_config = lc_config;
+}
+
+int flexran_agent_unregister_mac_xface(mid_t mod_id)
+{
+  if (!agent_mac_xface[mod_id]) {
+    LOG_E(FLEXRAN_AGENT, "MAC agent CM for eNB %d is not registered\n", mod_id);
+    return -1;
+  }
+  AGENT_MAC_xface *xface = agent_mac_xface[mod_id];
   //xface->agent_ctxt = NULL;
   xface->flexran_agent_send_sr_info = NULL;
   xface->flexran_agent_send_sf_trigger = NULL;
@@ -1387,10 +1499,15 @@ int flexran_agent_unregister_mac_xface(mid_t mod_id, AGENT_MAC_xface *xface) {
 
   xface->dl_scheduler_loaded_lib = NULL;
   xface->ul_scheduler_loaded_lib = NULL;
-  mac_agent_registered[mod_id] = 0;
+  free(xface);
   agent_mac_xface[mod_id] = NULL;
 
   return 0;
+}
+
+AGENT_MAC_xface *flexran_agent_get_mac_xface(mid_t mod_id)
+{
+  return agent_mac_xface[mod_id];
 }
 
 void flexran_create_config_structures(mid_t mod_id)

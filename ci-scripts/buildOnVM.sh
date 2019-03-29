@@ -111,7 +111,7 @@ function build_on_vm {
     fi
 
     echo "############################################################"
-    echo "Copying GIT repo into VM ($VM_NAME)" 
+    echo "Copying GIT repo into VM ($VM_NAME)"
     echo "############################################################"
     if [[ "$VM_NAME" == *"-flexran-rtc"* ]]
     then

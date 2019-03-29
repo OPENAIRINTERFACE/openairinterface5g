@@ -335,8 +335,8 @@ static int trx_iris_read(openair0_device *device, openair0_timestamp *ptimestamp
             ((__m256i *)buff[i])[j] = _mm256_srai_epi16(buff_tmp[i][j],4);
 #else
             ((__m128i *)buff[i])[j] = _mm_srai_epi16(buff_tmp[i][j],4);
-#endif  
-#endif  
+#endif
+#endif
           }
         }
     }
@@ -534,7 +534,7 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
     args["driver"] = "iris";
     char *iris_addrs = device->openair0_cfg[0].sdr_addrs;
     if (iris_addrs == NULL)
-    { 
+    {
         s->iris.push_back(SoapySDR::Device::make(args));
     }
     else
@@ -695,14 +695,14 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
         }
 
 
-        
+
         printf("Actual master clock: %fMHz...\n", (s->iris[r]->getMasterClockRate() / 1e6));
 
         int tx_filt_bw = openair0_cfg[0].tx_bw;
         int rx_filt_bw = openair0_cfg[0].rx_bw;
 #ifdef MOVE_DC  //the filter is centered around the carrier, so we have to expand it if we have moved the DC tone.
-        tx_filt_bw *= 3; 
-        rx_filt_bw *= 3; 
+        tx_filt_bw *= 3;
+        rx_filt_bw *= 3;
 #endif
         /* Setting TX/RX BW */
         for (i = 0; i < s->tx_num_channels; i++) {
@@ -848,8 +848,3 @@ int device_init(openair0_device *device, openair0_config_t *openair0_cfg) {
 }
 }
 /*@}*/
-
-
-
-
-

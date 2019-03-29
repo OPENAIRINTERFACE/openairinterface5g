@@ -38,7 +38,8 @@ int sctp_itti_send_init_msg_multi_cnf(task_id_t task_id, instance_t instance, in
   return itti_send_msg_to_task(task_id, instance, message_p);
 }
 
-int sctp_itti_send_new_message_ind(task_id_t task_id, instance_t instance, uint32_t assoc_id, uint8_t *buffer,
+int sctp_itti_send_new_message_ind(task_id_t task_id, instance_t instance,
+                                   uint32_t assoc_id, uint8_t *buffer,
                                    uint32_t buffer_length, uint16_t stream)
 {
   MessageDef      *message_p;

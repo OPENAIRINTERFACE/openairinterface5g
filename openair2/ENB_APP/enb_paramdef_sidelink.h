@@ -20,7 +20,7 @@
  */
 
 /*! \file openair2/ENB_APP/enb_paramdef_sidelink.h
- * \brief definition of configuration parameters for sidelink eNodeB modules 
+ * \brief definition of configuration parameters for sidelink eNodeB modules
  * \author Raymond KNOPP
  * \date 2018
  * \version 0.1
@@ -180,4 +180,3 @@ typedef struct ccparams_sidelink_s {
 {ENB_CONFIG_STRING_DISCRXPOOLPS_RC_SFBITMAP_CHOICE_BS_ASN_BITS_UNUSED,NULL,   0,   iptr:(int32_t *)&SLparams.discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused,         defintval:1,       TYPE_UINT,    0} \
 }
 #endif
-

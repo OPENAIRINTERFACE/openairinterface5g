@@ -102,7 +102,7 @@ check_supported_distribution() {
         "ubuntu14.04") return 0 ;;
         "fedora24")    return 0 ;;
         "rhel7")       return 0 ;;
-	"rhel7.6")     return 0 ;; 
+	"rhel7.6")     return 0 ;;
         "centos7")     return 0 ;;
     esac
     return 1
@@ -639,8 +639,6 @@ check_install_oai_software() {
 	libidn2-0-dev  \
 	libidn11-dev \
 	libmysqlclient-dev  \
-	liboctave-dev \
-	libpgm-dev \
 	libpython2.7-dev \
 	libsctp1  \
 	libsctp-dev  \
@@ -651,7 +649,6 @@ check_install_oai_software() {
 	libxml2-dev  \
 	libxslt1-dev \
 	mscgen  \
-	octave \
 	octave-signal \
 	openssh-client \
 	openssh-server \
@@ -663,7 +660,8 @@ check_install_oai_software() {
 	pydb \
 	libyaml-dev \
 	wget \
-	libxpm-dev
+	libxpm-dev \
+        libboost-all-dev
 
     $SUDO update-alternatives --set "$LAPACK_LIBNAME" "$LAPACK_TARGET"
 
@@ -711,8 +709,6 @@ check_install_oai_software() {
       libidn2-devel  \
       libidn-devel \
       mariadb-devel \
-      octave-devel \
-      openpgm-devel \
       lksctp-tools \
       lksctp-tools-devel \
       openssl-devel \
@@ -722,8 +718,6 @@ check_install_oai_software() {
       libxml2 \
       libxml2-devel \
       libxslt-devel \
-      octave \
-      octave-signal \
       openssh-clients \
       openssh-server \
       openssl \
@@ -746,7 +740,7 @@ check_install_oai_software() {
       libyaml-devel
   fi
 
-    install_asn1c_from_source
+    install_asn1c_from_source $1
     $SUDO rm -fr /opt/ssh
     $SUDO git clone https://gist.github.com/2190472.git /opt/ssh
 }

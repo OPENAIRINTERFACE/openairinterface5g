@@ -40,7 +40,6 @@
 #include "LTE_UL-AM-RLC.h"
 #include "LTE_DL-AM-RLC.h"
 
-
 //-----------------------------------------------------------------------------
 uint32_t
 rlc_am_get_status_pdu_buffer_occupancy(

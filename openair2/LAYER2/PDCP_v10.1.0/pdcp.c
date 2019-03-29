@@ -48,6 +48,7 @@
 #include "platform_constants.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "msc.h"
+#include "common/ngran_types.h"
 #include "targets/COMMON/openairinterface5g_limits.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
 #include "UTIL/OSA/osa_defs.h"
@@ -57,6 +58,11 @@
 
 #  include "gtpv1u_eNB_task.h"
 #  include "gtpv1u.h"
+
+#include "ENB_APP/enb_config.h"
+#ifndef UETARGET
+#include "LAYER2/PROTO_AGENT/proto_agent.h"
+#endif
 
 extern int otg_enabled;
 extern uint8_t nfapi_mode;
@@ -184,10 +190,22 @@ boolean_t pdcp_data_req(
                                   sdu_buffer_sizeP);
         LOG_UI(PDCP, "Before rlc_data_req 1, srb_flagP: %d, rb_idP: %d \n", srb_flagP, rb_idP);
       }
+#ifndef UETARGET
+      if (NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
+        /* currently, there is no support to send also the source/destinationL2Id */
+        proto_agent_send_rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP,
+                                      confirmP, sdu_buffer_sizeP, pdcp_pdu_p);
+        /* assume good status */
+        rlc_status = RLC_OP_STATUS_OK;
 
-      rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_YES, rb_idP, muiP, confirmP, sdu_buffer_sizeP, pdcp_pdu_p
-                                ,NULL, NULL
-                               );
+      } else
+#endif
+      {
+        rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_YES, rb_idP, muiP,
+                                  confirmP, sdu_buffer_sizeP, pdcp_pdu_p
+                                  ,NULL, NULL
+                                  );
+      }
     } else {
       rlc_status = RLC_OP_STATUS_OUT_OF_RESSOURCES;
       LOG_E(PDCP,PROTOCOL_CTXT_FMT" PDCP_DATA_REQ SDU DROPPED, OUT OF MEMORY \n",
@@ -346,38 +364,129 @@ boolean_t pdcp_data_req(
      */
     LOG_DUMPMSG(PDCP,DEBUG_PDCP,(char *)pdcp_pdu_p->data,pdcp_pdu_size,
                 "[MSG] PDCP DL %s PDU on rb_id %d\n",(srb_flagP)? "CONTROL" : "DATA", rb_idP);
-    LOG_D(PDCP, "Before rlc_data_req 2, srb_flagP: %d, rb_idP: %d \n", srb_flagP, rb_idP);
-    rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP, confirmP, pdcp_pdu_size, pdcp_pdu_p
-                              ,sourceL2Id
-                              ,destinationL2Id
+   
+    if ((pdcp_pdu_p!=NULL) && (srb_flagP == 0) && (ctxt_pP->enb_flag == 1))
+    {
+
+#ifndef UETARGET
+       LOG_D(PDCP, "pdcp data req on drb %d, size %d, rnti %x, node_type %d \n", 
+            rb_idP, pdcp_pdu_size, ctxt_pP->rnti, RC.rrc[ctxt_pP->module_id]->node_type);
+
+       if (NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
+         /* currently, there is no support to send also the source/destinationL2Id */
+         proto_agent_send_rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP,
+                                       confirmP, pdcp_pdu_size, pdcp_pdu_p);
+         /* assume good status */
+         rlc_status = RLC_OP_STATUS_OK;
+         ret = TRUE;
+         LOG_D(PDCP, "proto_agent_send_rlc_data_req for UE RNTI %x, rb %d, pdu size %d \n", 
+               ctxt_pP->rnti, rb_idP, pdcp_pdu_size);
+
+      } else if (NODE_IS_DU(RC.rrc[ctxt_pP->module_id]->node_type)){
+        LOG_E(PDCP, "Can't be DU, bad node type %d \n", RC.rrc[ctxt_pP->module_id]->node_type);
+        ret=FALSE;
+      } else
+#endif
+      {
+        rlc_status = rlc_data_req(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP,
+                                  confirmP, pdcp_pdu_size, pdcp_pdu_p, sourceL2Id,
+                                  destinationL2Id
                              );
-  }
+          switch (rlc_status) {
+            case RLC_OP_STATUS_OK:
+              LOG_D(PDCP, "Data sending request over RLC succeeded!\n");
+              ret=TRUE;
+              break;
 
-  switch (rlc_status) {
-    case RLC_OP_STATUS_OK:
-      LOG_D(PDCP, "Data sending request over RLC succeeded!\n");
-      ret=TRUE;
-      break;
+            case RLC_OP_STATUS_BAD_PARAMETER:
+              LOG_W(PDCP, "Data sending request over RLC failed with 'Bad Parameter' reason!\n");
+              ret= FALSE;
+              break;
 
-    case RLC_OP_STATUS_BAD_PARAMETER:
-      LOG_W(PDCP, "Data sending request over RLC failed with 'Bad Parameter' reason!\n");
-      ret= FALSE;
-      break;
+            case RLC_OP_STATUS_INTERNAL_ERROR:
+              LOG_W(PDCP, "Data sending request over RLC failed with 'Internal Error' reason!\n");
+              ret= FALSE;
+              break;
 
-    case RLC_OP_STATUS_INTERNAL_ERROR:
-      LOG_W(PDCP, "Data sending request over RLC failed with 'Internal Error' reason!\n");
-      ret= FALSE;
-      break;
+            case RLC_OP_STATUS_OUT_OF_RESSOURCES:
+              LOG_W(PDCP, "Data sending request over RLC failed with 'Out of Resources' reason!\n");
+              ret= FALSE;
+              break;
 
-    case RLC_OP_STATUS_OUT_OF_RESSOURCES:
-      LOG_W(PDCP, "Data sending request over RLC failed with 'Out of Resources' reason!\n");
-      ret= FALSE;
-      break;
+            default:
+              LOG_W(PDCP, "RLC returned an unknown status code after PDCP placed the order to send some data (Status Code:%d)\n", rlc_status);
+              ret= FALSE;
+              break;
+          } // switch case 
+      } /* end if node_type is CU */
+    }
+    else // SRB
+    {
 
-    default:
-      LOG_W(PDCP, "RLC returned an unknown status code after PDCP placed the order to send some data (Status Code:%d)\n", rlc_status);
-      ret= FALSE;
-      break;
+#ifndef UETARGET
+      if (NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
+        // DL transfer
+        MessageDef                            *message_p;
+        // Note: the acyual task must be TASK_PDCP_ENB, but this task is not created
+        message_p = itti_alloc_new_message (TASK_PDCP_ENB, F1AP_DL_RRC_MESSAGE);
+        F1AP_DL_RRC_MESSAGE (message_p).rrc_container =  &pdcp_pdu_p->data[0] ;
+        F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = pdcp_pdu_size;
+        F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id  = 0;  
+        F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id  = 0;
+        F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id  = 0xFFFFFFFF; // unknown
+        F1AP_DL_RRC_MESSAGE (message_p).rnti = ctxt_pP->rnti;
+        F1AP_DL_RRC_MESSAGE (message_p).srb_id = rb_idP;
+        F1AP_DL_RRC_MESSAGE (message_p).execute_duplication      = 1;
+        F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc      = 0;
+        itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
+        //CU_send_DL_RRC_MESSAGE_TRANSFER(ctxt_pP->module_id, message_p);
+        LOG_I(PDCP, "Send F1AP_DL_RRC_MESSAGE with ITTI\n");
+        ret=TRUE;
+
+      } else
+#endif
+      {
+        rlc_status = rlc_data_req(ctxt_pP
+                                  , srb_flagP
+                                  , MBMS_FLAG_NO
+                                  , rb_idP
+                                  , muiP
+                                  , confirmP
+                                  , pdcp_pdu_size
+                                  , pdcp_pdu_p
+#ifdef Rel14
+                                  ,NULL
+                                  ,NULL
+#endif
+                                  );
+        switch (rlc_status) {
+          case RLC_OP_STATUS_OK:
+            LOG_D(PDCP, "Data sending request over RLC succeeded!\n");
+            ret=TRUE;
+            break;
+
+          case RLC_OP_STATUS_BAD_PARAMETER:
+            LOG_W(PDCP, "Data sending request over RLC failed with 'Bad Parameter' reason!\n");
+            ret= FALSE;
+            break;
+
+          case RLC_OP_STATUS_INTERNAL_ERROR:
+            LOG_W(PDCP, "Data sending request over RLC failed with 'Internal Error' reason!\n");
+            ret= FALSE;
+            break;
+
+          case RLC_OP_STATUS_OUT_OF_RESSOURCES:
+            LOG_W(PDCP, "Data sending request over RLC failed with 'Out of Resources' reason!\n");
+            ret= FALSE;
+            break;
+
+          default:
+            LOG_W(PDCP, "RLC returned an unknown status code after PDCP placed the order to send some data (Status Code:%d)\n", rlc_status);
+            ret= FALSE;
+            break;
+        } // switch case
+      }
+    }
   }
 
   if (ctxt_pP->enb_flag == ENB_FLAG_YES) {
@@ -610,13 +719,13 @@ pdcp_data_ind(
         }
 
         security_ok = pdcp_validate_security(ctxt_pP,
-                                             pdcp_p,
-                                             srb_flagP,
-                                             rb_idP,
-                                             pdcp_header_len,
+                               pdcp_p,
+                               srb_flagP,
+                               rb_idP,
+                               pdcp_header_len,
                                              rx_hfn_for_count,
                                              pdcp_sn_for_count,
-                                             sdu_buffer_pP->data,
+                               sdu_buffer_pP->data,
                                              sdu_buffer_sizeP - pdcp_tailer_len) == 0;
 
         if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
@@ -679,106 +788,35 @@ pdcp_data_ind(
     payload_offset=pdcp_header_len;// PDCP_USER_PLANE_DATA_PDU_LONG_SN_HEADER_SIZE;
 
     switch (pdcp_p->rlc_mode) {
-      case RLC_MODE_AM: {
-        /* process as described in 36.323 5.1.2.1.2 */
-        int reordering_window;
+    case RLC_MODE_AM: {
+      /* process as described in 36.323 5.1.2.1.2 */
+      int reordering_window;
 
-        if (pdcp_p->seq_num_size == 7)
-          reordering_window = REORDERING_WINDOW_SN_7BIT;
-        else
-          reordering_window = REORDERING_WINDOW_SN_12BIT;
+      if (pdcp_p->seq_num_size == 7)
+        reordering_window = REORDERING_WINDOW_SN_7BIT;
+      else
+        reordering_window = REORDERING_WINDOW_SN_12BIT;
 
-        if (sequence_number - pdcp_p->last_submitted_pdcp_rx_sn > reordering_window ||
-            (pdcp_p->last_submitted_pdcp_rx_sn - sequence_number >= 0 &&
-             pdcp_p->last_submitted_pdcp_rx_sn - sequence_number < reordering_window)) {
-          /* TODO: specs say to decipher and do header decompression */
-          LOG_W(PDCP,
-                PROTOCOL_PDCP_CTXT_FMT"discard PDU, out of\n",
-                PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p));
-          LOG_W(PDCP, "Ignoring PDU...\n");
-          free_mem_block(sdu_buffer_pP, __func__);
-          /* TODO: indicate integrity verification failure to upper layer */
-          return FALSE;
-        } else if (pdcp_p->next_pdcp_rx_sn - sequence_number > reordering_window) {
-          pdcp_p->rx_hfn++;
-          rx_hfn_for_count  = pdcp_p->rx_hfn;
-          pdcp_sn_for_count = sequence_number;
-          pdcp_p->next_pdcp_rx_sn = sequence_number + 1;
-        } else if (sequence_number - pdcp_p->next_pdcp_rx_sn >= reordering_window) {
-          rx_hfn_for_count  = pdcp_p->rx_hfn - 1;
-          pdcp_sn_for_count = sequence_number;
-        } else if (sequence_number >= pdcp_p->next_pdcp_rx_sn) {
-          rx_hfn_for_count  = pdcp_p->rx_hfn;
-          pdcp_sn_for_count = sequence_number;
-          pdcp_p->next_pdcp_rx_sn = sequence_number + 1;
-
-          if (pdcp_p->next_pdcp_rx_sn > pdcp_p->maximum_pdcp_rx_sn) {
-            pdcp_p->next_pdcp_rx_sn = 0;
-            pdcp_p->rx_hfn++;
-          }
-        } else { /* sequence_number < pdcp_p->next_pdcp_rx_sn */
-          rx_hfn_for_count  = pdcp_p->rx_hfn;
-          pdcp_sn_for_count = sequence_number;
-        }
-
-        if (pdcp_p->security_activated == 1) {
-          if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
-            start_meas(&eNB_pdcp_stats[ctxt_pP->module_id].validate_security);
-          } else {
-            start_meas(&UE_pdcp_stats[ctxt_pP->module_id].validate_security);
-          }
-
-          security_ok = pdcp_validate_security(ctxt_pP,
-                                               pdcp_p,
-                                               srb_flagP,
-                                               rb_idP,
-                                               pdcp_header_len,
-                                               rx_hfn_for_count,
-                                               pdcp_sn_for_count,
-                                               sdu_buffer_pP->data,
-                                               sdu_buffer_sizeP - pdcp_tailer_len) == 0;
-
-          if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
-            stop_meas(&eNB_pdcp_stats[ctxt_pP->module_id].validate_security);
-          } else {
-            stop_meas(&UE_pdcp_stats[ctxt_pP->module_id].validate_security);
-          }
-        } else {
-          security_ok = 1;
-        }
-
-        if (security_ok == 0) {
-          LOG_W(PDCP,
-                PROTOCOL_PDCP_CTXT_FMT"security not validated for incoming PDPC DRB RLC/AM PDU\n",
-                PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p));
-          LOG_W(PDCP, "Ignoring PDU...\n");
-          free_mem_block(sdu_buffer_pP, __func__);
-          /* TODO: indicate integrity verification failure to upper layer */
-          return FALSE;
-        }
-
-        /* TODO: specs say we have to store this PDU in a list and then deliver
-         *       stored packets to upper layers according to a well defined
-         *       procedure. The code below that deals with delivery is today
-         *       too complex to do this properly, so we only send the current
-         *       received packet. This is not correct and has to be fixed
-         *       some day.
-         *       In the meantime, let's pretend the last submitted PDCP SDU
-         *       is the current one.
-         * TODO: we also have to deal with re-establishment PDU (control PDUs)
-         *       that contain no SDU.
-         */
-        pdcp_p->last_submitted_pdcp_rx_sn = sequence_number;
-        break;
-        } /* case RLC_MODE_AM */
-
-      case RLC_MODE_UM:
-
-        /* process as described in 36.323 5.1.2.1.3 */
-        if (sequence_number < pdcp_p->next_pdcp_rx_sn) {
-          pdcp_p->rx_hfn++;
-        }
-
+      if (sequence_number - pdcp_p->last_submitted_pdcp_rx_sn > reordering_window ||
+          (pdcp_p->last_submitted_pdcp_rx_sn - sequence_number >= 0 &&
+           pdcp_p->last_submitted_pdcp_rx_sn - sequence_number < reordering_window)) {
+        /* TODO: specs say to decipher and do header decompression */
+        LOG_W(PDCP,
+              PROTOCOL_PDCP_CTXT_FMT"discard PDU, out of\n",
+              PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p));
+        LOG_W(PDCP, "Ignoring PDU...\n");
+        free_mem_block(sdu_buffer_pP, __func__);
+        /* TODO: indicate integrity verification failure to upper layer */
+        return FALSE;
+      } else if (pdcp_p->next_pdcp_rx_sn - sequence_number > reordering_window) {
+        pdcp_p->rx_hfn++;
+        rx_hfn_for_count  = pdcp_p->rx_hfn;
+        pdcp_sn_for_count = sequence_number;
+        pdcp_p->next_pdcp_rx_sn = sequence_number + 1;
+      } else if (sequence_number - pdcp_p->next_pdcp_rx_sn >= reordering_window) {
+        rx_hfn_for_count  = pdcp_p->rx_hfn - 1;
+        pdcp_sn_for_count = sequence_number;
+      } else if (sequence_number >= pdcp_p->next_pdcp_rx_sn) {
         rx_hfn_for_count  = pdcp_p->rx_hfn;
         pdcp_sn_for_count = sequence_number;
         pdcp_p->next_pdcp_rx_sn = sequence_number + 1;
@@ -787,48 +825,119 @@ pdcp_data_ind(
           pdcp_p->next_pdcp_rx_sn = 0;
           pdcp_p->rx_hfn++;
         }
+      } else { /* sequence_number < pdcp_p->next_pdcp_rx_sn */
+        rx_hfn_for_count  = pdcp_p->rx_hfn;
+        pdcp_sn_for_count = sequence_number;
+      }
 
-        if (pdcp_p->security_activated == 1) {
-          if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
-            start_meas(&eNB_pdcp_stats[ctxt_pP->module_id].validate_security);
-          } else {
-            start_meas(&UE_pdcp_stats[ctxt_pP->module_id].validate_security);
-          }
+    if (pdcp_p->security_activated == 1) {
+      if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
+        start_meas(&eNB_pdcp_stats[ctxt_pP->module_id].validate_security);
+      } else {
+        start_meas(&UE_pdcp_stats[ctxt_pP->module_id].validate_security);
+      }
 
-          security_ok = pdcp_validate_security(ctxt_pP,
-                                               pdcp_p,
-                                               srb_flagP,
-                                               rb_idP,
-                                               pdcp_header_len,
-                                               rx_hfn_for_count,
-                                               pdcp_sn_for_count,
-                                               sdu_buffer_pP->data,
-                                               sdu_buffer_sizeP - pdcp_tailer_len) == 0;
+        security_ok = pdcp_validate_security(ctxt_pP,
+        pdcp_p,
+        srb_flagP,
+        rb_idP,
+        pdcp_header_len,
+                                             rx_hfn_for_count,
+                                             pdcp_sn_for_count,
+        sdu_buffer_pP->data,
+                                             sdu_buffer_sizeP - pdcp_tailer_len) == 0;
 
-          if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
-            stop_meas(&eNB_pdcp_stats[ctxt_pP->module_id].validate_security);
-          } else {
-            stop_meas(&UE_pdcp_stats[ctxt_pP->module_id].validate_security);
-          }
+      if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
+        stop_meas(&eNB_pdcp_stats[ctxt_pP->module_id].validate_security);
+      } else {
+        stop_meas(&UE_pdcp_stats[ctxt_pP->module_id].validate_security);
+      }
+      } else {
+        security_ok = 1;
+    }
+
+      if (security_ok == 0) {
+        LOG_W(PDCP,
+              PROTOCOL_PDCP_CTXT_FMT"security not validated for incoming PDPC DRB RLC/AM PDU\n",
+              PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p));
+        LOG_W(PDCP, "Ignoring PDU...\n");
+        free_mem_block(sdu_buffer_pP, __func__);
+        /* TODO: indicate integrity verification failure to upper layer */
+        return FALSE;
+      }
+
+      /* TODO: specs say we have to store this PDU in a list and then deliver
+       *       stored packets to upper layers according to a well defined
+       *       procedure. The code below that deals with delivery is today
+       *       too complex to do this properly, so we only send the current
+       *       received packet. This is not correct and has to be fixed
+       *       some day.
+       *       In the meantime, let's pretend the last submitted PDCP SDU
+       *       is the current one.
+       * TODO: we also have to deal with re-establishment PDU (control PDUs)
+       *       that contain no SDU.
+       */
+      pdcp_p->last_submitted_pdcp_rx_sn = sequence_number;
+      break;
+    } /* case RLC_MODE_AM */
+
+    case RLC_MODE_UM:
+
+      /* process as described in 36.323 5.1.2.1.3 */
+      if (sequence_number < pdcp_p->next_pdcp_rx_sn) {
+        pdcp_p->rx_hfn++;
+      }
+
+      rx_hfn_for_count  = pdcp_p->rx_hfn;
+      pdcp_sn_for_count = sequence_number;
+      pdcp_p->next_pdcp_rx_sn = sequence_number + 1;
+
+      if (pdcp_p->next_pdcp_rx_sn > pdcp_p->maximum_pdcp_rx_sn) {
+        pdcp_p->next_pdcp_rx_sn = 0;
+        pdcp_p->rx_hfn++;
+      }
+
+      if (pdcp_p->security_activated == 1) {
+        if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
+          start_meas(&eNB_pdcp_stats[ctxt_pP->module_id].validate_security);
+  } else {
+          start_meas(&UE_pdcp_stats[ctxt_pP->module_id].validate_security);
+        }
+
+        security_ok = pdcp_validate_security(ctxt_pP,
+                                             pdcp_p,
+                                             srb_flagP,
+                                             rb_idP,
+                                             pdcp_header_len,
+                                             rx_hfn_for_count,
+                                             pdcp_sn_for_count,
+                                             sdu_buffer_pP->data,
+                                             sdu_buffer_sizeP - pdcp_tailer_len) == 0;
+
+        if (ctxt_pP->enb_flag == ENB_FLAG_NO) {
+          stop_meas(&eNB_pdcp_stats[ctxt_pP->module_id].validate_security);
         } else {
-          security_ok = 1;
+          stop_meas(&UE_pdcp_stats[ctxt_pP->module_id].validate_security);
         }
+      } else {
+        security_ok = 1;
+      }
 
-        if (security_ok == 0) {
-          LOG_W(PDCP,
-                PROTOCOL_PDCP_CTXT_FMT"security not validated for incoming PDPC DRB RLC/UM PDU\n",
-                PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p));
-          LOG_W(PDCP, "Ignoring PDU...\n");
-          free_mem_block(sdu_buffer_pP, __func__);
-          /* TODO: indicate integrity verification failure to upper layer */
-          return FALSE;
-        }
+      if (security_ok == 0) {
+        LOG_W(PDCP,
+              PROTOCOL_PDCP_CTXT_FMT"security not validated for incoming PDPC DRB RLC/UM PDU\n",
+              PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p));
+        LOG_W(PDCP, "Ignoring PDU...\n");
+        free_mem_block(sdu_buffer_pP, __func__);
+        /* TODO: indicate integrity verification failure to upper layer */
+        return FALSE;
+      }
 
-        break;
+      break;
 
-      default:
-        LOG_E(PDCP, "bad RLC mode, cannot happen.\n");
-        exit(1);
+    default:
+      LOG_E(PDCP, "bad RLC mode, cannot happen.\n");
+      exit(1);
     } /* switch (pdcp_p->rlc_mode) */
   } else { /* MBMS_flagP == 0 */
     payload_offset=0;
@@ -857,32 +966,37 @@ pdcp_data_ind(
    */
 
   if (LINK_ENB_PDCP_TO_GTPV1U) {
-    if ((TRUE == ctxt_pP->enb_flag) && (FALSE == srb_flagP)) {
-      MSC_LOG_TX_MESSAGE(
-        MSC_PDCP_ENB,
-        MSC_GTPU_ENB,
-        NULL,0,
-        "0 GTPV1U_ENB_TUNNEL_DATA_REQ  ue %x rab %u len %u",
-        ctxt_pP->rnti,
-        rb_id + 4,
-        sdu_buffer_sizeP - payload_offset);
-      //LOG_T(PDCP,"Sending to GTPV1U %d bytes\n", sdu_buffer_sizeP - payload_offset);
-      gtpu_buffer_p = itti_malloc(TASK_PDCP_ENB, TASK_GTPV1_U,
-                                  sdu_buffer_sizeP - payload_offset + GTPU_HEADER_OVERHEAD_MAX);
-      AssertFatal(gtpu_buffer_p != NULL, "OUT OF MEMORY");
-      memcpy(&gtpu_buffer_p[GTPU_HEADER_OVERHEAD_MAX], &sdu_buffer_pP->data[payload_offset], sdu_buffer_sizeP - payload_offset);
-      message_p = itti_alloc_new_message(TASK_PDCP_ENB, GTPV1U_ENB_TUNNEL_DATA_REQ);
-      AssertFatal(message_p != NULL, "OUT OF MEMORY");
-      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).buffer   = gtpu_buffer_p;
-      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).length   = sdu_buffer_sizeP - payload_offset;
-      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).offset   = GTPU_HEADER_OVERHEAD_MAX;
-      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rnti   = ctxt_pP->rnti;
-      GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rab_id   = rb_id + 4;
-      itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p);
-      packet_forwarded = TRUE;
-    }
+  if ((TRUE == ctxt_pP->enb_flag) && (FALSE == srb_flagP)) {
+    LOG_D(PDCP, "Sending packet to GTP, Calling GTPV1U_ENB_TUNNEL_DATA_REQ  ue %x rab %u len %u\n",
+            ctxt_pP->rnti,
+            rb_id + 4,
+            sdu_buffer_sizeP - payload_offset );
+
+    MSC_LOG_TX_MESSAGE(
+      MSC_PDCP_ENB,
+      MSC_GTPU_ENB,
+      NULL,0,
+      "0 GTPV1U_ENB_TUNNEL_DATA_REQ  ue %x rab %u len %u",
+      ctxt_pP->rnti,
+      rb_id + 4,
+      sdu_buffer_sizeP - payload_offset);
+    //LOG_T(PDCP,"Sending to GTPV1U %d bytes\n", sdu_buffer_sizeP - payload_offset);
+    gtpu_buffer_p = itti_malloc(TASK_PDCP_ENB, TASK_GTPV1_U,
+                                sdu_buffer_sizeP - payload_offset + GTPU_HEADER_OVERHEAD_MAX);
+    AssertFatal(gtpu_buffer_p != NULL, "OUT OF MEMORY");
+    memcpy(&gtpu_buffer_p[GTPU_HEADER_OVERHEAD_MAX], &sdu_buffer_pP->data[payload_offset], sdu_buffer_sizeP - payload_offset);
+    message_p = itti_alloc_new_message(TASK_PDCP_ENB, GTPV1U_ENB_TUNNEL_DATA_REQ);
+    AssertFatal(message_p != NULL, "OUT OF MEMORY");
+    GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).buffer       = gtpu_buffer_p;
+    GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).length       = sdu_buffer_sizeP - payload_offset;
+    GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).offset       = GTPU_HEADER_OVERHEAD_MAX;
+    GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rnti         = ctxt_pP->rnti;
+    GTPV1U_ENB_TUNNEL_DATA_REQ(message_p).rab_id       = rb_id + 4;
+    itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p);
+    packet_forwarded = TRUE;
+  }
   } else {
-    packet_forwarded = FALSE;
+  packet_forwarded = FALSE;
   }
 
 #ifdef MBMS_MULTICAST_OUT
@@ -921,28 +1035,28 @@ pdcp_data_ind(
         ((pdcp_data_ind_header_t *) new_sdu_p->data)->rb_id = rb_id;
 
         if (EPC_MODE_ENABLED) {
-          /* for the UE compiled in S1 mode, we need 1 here
-           * for the UE compiled in noS1 mode, we need 0
-           * TODO: be sure of this
-           */
-          if (nfapi_mode == 3) {
+        /* for the UE compiled in S1 mode, we need 1 here
+         * for the UE compiled in noS1 mode, we need 0
+         * TODO: be sure of this
+         */
+        if (nfapi_mode == 3) {
 #ifdef UESIM_EXPANSION
 
             if (UE_NAS_USE_TUN) {
               ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst  = ctxt_pP->module_id;
             } else {
-              ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst  = 0;
+          ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst  = 0;
             }
 
 #else
-            ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst  = ctxt_pP->module_id;
+          ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst  = ctxt_pP->module_id;
 #endif
           } else {  // nfapi_mode
             if (UE_NAS_USE_TUN) {
               ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst  = ctxt_pP->module_id;
-            } else {
-              ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst  = 1;
-            }
+        } else {
+          ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst  = 1;
+        }
           } // nfapi_mode
         }
       } else {
@@ -951,9 +1065,9 @@ pdcp_data_ind(
       }
 
       if( LOG_DEBUGFLAG(DEBUG_PDCP) ) {
-        static uint32_t pdcp_inst = 0;
-        ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst = pdcp_inst++;
-        LOG_D(PDCP, "inst=%d size=%d\n", ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst, ((pdcp_data_ind_header_t *) new_sdu_p->data)->data_size);
+      static uint32_t pdcp_inst = 0;
+      ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst = pdcp_inst++;
+      LOG_D(PDCP, "inst=%d size=%d\n", ((pdcp_data_ind_header_t *) new_sdu_p->data)->inst, ((pdcp_data_ind_header_t *) new_sdu_p->data)->data_size);
       }
 
       memcpy(&new_sdu_p->data[sizeof (pdcp_data_ind_header_t)],
@@ -969,26 +1083,33 @@ pdcp_data_ind(
     //util_print_hex_octets(PDCP, &new_sdu_p->data[sizeof (pdcp_data_ind_header_t)], sdu_buffer_sizeP - payload_offset);
     //util_flush_hex_octets(PDCP, &new_sdu_p->data[sizeof (pdcp_data_ind_header_t)], sdu_buffer_sizeP - payload_offset);
 
-    /*
-       * Update PDCP statistics
-     * XXX Following two actions are identical, is there a merge error?
-     */
+#if defined(STOP_ON_IP_TRAFFIC_OVERLOAD)
+    /* This was an "orphan else" in tag 2019.w07 and discovered during merge.
+     * Commenting so it could be reintegrated. */
+    //else {
+    //  AssertFatal(0, PROTOCOL_PDCP_CTXT_FMT" PDCP_DATA_IND SDU DROPPED, OUT OF MEMORY \n",
+    //              PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP, pdcp_p));
+    //}
 
-    for (pdcp_uid=0; pdcp_uid< MAX_MOBILES_PER_ENB; pdcp_uid++) {
-      if (pdcp_enb[ctxt_pP->module_id].rnti[pdcp_uid] == ctxt_pP->rnti ) {
-        break;
-      }
-    }
-
-    Pdcp_stats_rx[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
-    Pdcp_stats_rx_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
-    Pdcp_stats_rx_bytes[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=(sdu_buffer_sizeP  - payload_offset);
-    Pdcp_stats_rx_bytes_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=(sdu_buffer_sizeP  - payload_offset);
-    Pdcp_stats_rx_sn[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=sequence_number;
-    Pdcp_stats_rx_aiat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (pdcp_enb[ctxt_pP->module_id].sfn - Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
-    Pdcp_stats_rx_aiat_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=(pdcp_enb[ctxt_pP->module_id].sfn - Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
-    Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=pdcp_enb[ctxt_pP->module_id].sfn;
+#endif
   }
+
+  /* Update PDCP statistics */
+  for (pdcp_uid=0; pdcp_uid< MAX_MOBILES_PER_ENB;pdcp_uid++){
+    if (pdcp_enb[ctxt_pP->module_id].rnti[pdcp_uid] == ctxt_pP->rnti ){
+      break;
+    }
+  }	
+  
+  Pdcp_stats_rx[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
+  Pdcp_stats_rx_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]++;
+  Pdcp_stats_rx_bytes[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=(sdu_buffer_sizeP  - payload_offset);
+  Pdcp_stats_rx_bytes_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=(sdu_buffer_sizeP  - payload_offset);
+  
+  Pdcp_stats_rx_sn[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=sequence_number;
+  Pdcp_stats_rx_aiat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+= (pdcp_enb[ctxt_pP->module_id].sfn - Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
+  Pdcp_stats_rx_aiat_tmp_w[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]+=(pdcp_enb[ctxt_pP->module_id].sfn - Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]);
+  Pdcp_stats_rx_iat[ctxt_pP->module_id][pdcp_uid][rb_idP+rb_offset]=pdcp_enb[ctxt_pP->module_id].sfn;
 
   free_mem_block(sdu_buffer_pP, __func__);
 
@@ -1051,6 +1172,8 @@ void pdcp_update_stats(const protocol_ctxt_t *const  ctxt_pP) {
     }
   }
 }
+
+
 //-----------------------------------------------------------------------------
 void
 pdcp_run (
@@ -1173,6 +1296,41 @@ pdcp_run (
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_RUN, VCD_FUNCTION_OUT);
 }
 
+void pdcp_init_stats_UE(module_id_t mod, uint16_t uid)
+{
+  Pdcp_stats_tx_window_ms[mod][uid] = 100;
+  Pdcp_stats_rx_window_ms[mod][uid] = 100;
+
+  for (int i = 0; i < NB_RB_MAX; ++i) {
+    Pdcp_stats_tx_bytes[mod][uid][i] = 0;
+    Pdcp_stats_tx_bytes_w[mod][uid][i] = 0;
+    Pdcp_stats_tx_bytes_tmp_w[mod][uid][i] = 0;
+    Pdcp_stats_tx[mod][uid][i] = 0;
+    Pdcp_stats_tx_w[mod][uid][i] = 0;
+    Pdcp_stats_tx_tmp_w[mod][uid][i] = 0;
+    Pdcp_stats_tx_sn[mod][uid][i] = 0;
+    Pdcp_stats_tx_throughput_w[mod][uid][i] = 0;
+    Pdcp_stats_tx_aiat[mod][uid][i] = 0;
+    Pdcp_stats_tx_aiat_w[mod][uid][i] = 0;
+    Pdcp_stats_tx_aiat_tmp_w[mod][uid][i] = 0;
+    Pdcp_stats_tx_iat[mod][uid][i] = 0;
+
+    Pdcp_stats_rx[mod][uid][i] = 0;
+    Pdcp_stats_rx_w[mod][uid][i] = 0;
+    Pdcp_stats_rx_tmp_w[mod][uid][i] = 0;
+    Pdcp_stats_rx_bytes[mod][uid][i] = 0;
+    Pdcp_stats_rx_bytes_w[mod][uid][i] = 0;
+    Pdcp_stats_rx_bytes_tmp_w[mod][uid][i] = 0;
+    Pdcp_stats_rx_sn[mod][uid][i] = 0;
+    Pdcp_stats_rx_goodput_w[mod][uid][i] = 0;
+    Pdcp_stats_rx_aiat[mod][uid][i] = 0;
+    Pdcp_stats_rx_aiat_w[mod][uid][i] = 0;
+    Pdcp_stats_rx_aiat_tmp_w[mod][uid][i] = 0;
+    Pdcp_stats_rx_iat[mod][uid][i] = 0;
+    Pdcp_stats_rx_outoforder[mod][uid][i] = 0;
+  }
+}
+
 void pdcp_add_UE(const protocol_ctxt_t *const  ctxt_pP) {
   int i, ue_flag=1; //, ret=-1; to be decied later
 
@@ -1190,6 +1348,7 @@ void pdcp_add_UE(const protocol_ctxt_t *const  ctxt_pP) {
         pdcp_enb[ctxt_pP->module_id].uid[i]=i;
         pdcp_enb[ctxt_pP->module_id].num_ues++;
         printf("add new uid is %d %x\n\n", i, ctxt_pP->rnti);
+        pdcp_init_stats_UE(ctxt_pP->module_id, i);
         // ret=1;
         break;
       }
@@ -2142,9 +2301,8 @@ void pdcp_layer_init(void)
   memset(pdcp_enb, 0, sizeof(pdcp_enb_t));
   memset(Pdcp_stats_tx_window_ms, 0, sizeof(Pdcp_stats_tx_window_ms));
   memset(Pdcp_stats_rx_window_ms, 0, sizeof(Pdcp_stats_rx_window_ms));
-
-  for (i =0; i< MAX_NUM_CCs ; i ++) {
-    for (j=0; j< MAX_MOBILES_PER_ENB; j++) {
+  for (i = 0; i < MAX_eNB; i++) {
+    for (j = 0; j < MAX_MOBILES_PER_ENB; j++) {
       Pdcp_stats_tx_window_ms[i][j]=100;
       Pdcp_stats_rx_window_ms[i][j]=100;
     }

@@ -52,4 +52,3 @@ struct x2ap_eNB_data_s *x2ap_get_eNB(x2ap_eNB_instance_t *instance_p,
                                      uint16_t cnx_id);
 
 #endif /* X2AP_ENB_MANAGEMENT_PROCEDURES_H_ */
-

@@ -101,6 +101,8 @@ typedef enum {
 #define CONFIG_STRING_RU_NBIOTRRC_LIST            "NbIoT_RRC_instances"
 #define CONFIG_STRING_RU_SDR_ADDRS                "sdr_addrs"
 #define CONFIG_STRING_RU_SDR_CLK_SRC              "clock_src"
+#define CONFIG_STRING_RU_SF_EXTENSION             "sf_extension"
+#define CONFIG_STRING_RU_END_OF_BURST_DELAY       "end_of_burst_delay"
 
 #define RU_LOCAL_IF_NAME_IDX          0
 #define RU_LOCAL_ADDRESS_IDX          1
@@ -122,6 +124,8 @@ typedef enum {
 #define RU_NBIOTRRC_LIST_IDX          17
 #define RU_SDR_ADDRS                  18
 #define RU_SDR_CLK_SRC                19
+#define RU_SF_EXTENSION_IDX           20
+#define RU_END_OF_BURST_DELAY_IDX     21
 
 
 
@@ -149,7 +153,9 @@ typedef enum {
 {CONFIG_STRING_RU_ATT_RX,                   	 NULL,       0,       uptr:NULL,       defintval:0,		TYPE_UINT,	  0}, \
 {CONFIG_STRING_RU_NBIOTRRC_LIST,                 NULL,       0,       uptr:NULL,       defintarrayval:DEFENBS,  TYPE_INTARRAY,    1}, \
 {CONFIG_STRING_RU_SDR_ADDRS,                 	 NULL,       0,       strptr:NULL,     defstrval:"type=b200",   TYPE_STRING,      0}, \
-{CONFIG_STRING_RU_SDR_CLK_SRC,               	 NULL,       0,       strptr:NULL,     defstrval:"internal",   TYPE_STRING,      0}, \
+{CONFIG_STRING_RU_SDR_CLK_SRC,               	 NULL,       0,       strptr:NULL,     defstrval:"internal",    TYPE_STRING,      0}, \
+{CONFIG_STRING_RU_SF_EXTENSION,                  NULL,       0,       uptr:NULL,       defuintval:312,          TYPE_UINT,        0}, \
+{CONFIG_STRING_RU_END_OF_BURST_DELAY,            NULL,       0,       uptr:NULL,       defuintval:400,          TYPE_UINT,        0}, \
 }
 
 /*---------------------------------------------------------------------------------------------------------------------------------------*/
@@ -197,7 +203,7 @@ typedef enum {
 #define ENB_CONFIG_STRING_REMOTE_S_PORTC                "remote_s_portc"
 #define ENB_CONFIG_STRING_LOCAL_S_PORTD                 "local_s_portd"
 #define ENB_CONFIG_STRING_REMOTE_S_PORTD                "remote_s_portd"
-
+#define ENB_CONFIG_STRING_NR_CELLID                     "nr_cellid"
 /*-----------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            cell configuration parameters                                                                */
 /*   optname                                   helpstr   paramflags    XXXptr        defXXXval                   type           numelt     */
@@ -217,6 +223,7 @@ typedef enum {
 {ENB_CONFIG_STRING_REMOTE_S_PORTC,               NULL,   0,            uptr:NULL,   defuintval:50000,            TYPE_UINT,      0},  \
 {ENB_CONFIG_STRING_LOCAL_S_PORTD,                NULL,   0,            uptr:NULL,   defuintval:50001,            TYPE_UINT,      0},  \
 {ENB_CONFIG_STRING_REMOTE_S_PORTD,               NULL,   0,            uptr:NULL,   defuintval:50001,            TYPE_UINT,      0},  \
+{ENB_CONFIG_STRING_NR_CELLID,                    NULL,   0,            u64ptr:NULL,   defint64val:0,                TYPE_UINT64,    0},  \
 }															     	
 #define ENB_ENB_ID_IDX                  0
 #define ENB_CELL_TYPE_IDX               1
@@ -232,6 +239,7 @@ typedef enum {
 #define ENB_REMOTE_S_PORTC_IDX          11
 #define ENB_LOCAL_S_PORTD_IDX           12
 #define ENB_REMOTE_S_PORTD_IDX          13
+#define ENB_NRCELLID_IDX                14
 
 #define TRACKING_AREA_CODE_OKRANGE {0x0001,0xFFFD}
 #define ENBPARAMS_CHECK {                                         \
@@ -308,7 +316,7 @@ typedef enum {
 #define ENB_CONFIG_STRING_NB_V1310                               "nb_v1310"
 
 
-#define ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL0    "pucch_NumRepetitionCE_Msg4_Level0_r13" 
+#define ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL0    "pucch_NumRepetitionCE_Msg4_Level0_r13"
 #define ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL1    "pucch_NumRepetitionCE_Msg4_Level1_r13"
 #define ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL2    "pucch_NumRepetitionCE_Msg4_Level2_r13"
 #define ENB_CONFIG_STRING_PUCCH_NUM_REPETITION_CE_MSG4_LEVEL3    "pucch_NumRepetitionCE_Msg4_Level3_r13"
@@ -373,7 +381,7 @@ typedef enum {
 #define ENB_CONFIG_STRING_PUSCH_MAX_NUM_REPETITION_CE_MODE_B_R13        "pusch_maxNumRepetitionCEmodeB_r13"
 #define ENB_CONFIG_STRING_PUSCH_HOPPING_OFFSET_V1310                    "pusch_HoppingOffset_v1310"
 
-		
+
 //TTN - for D2D
 //SIB18
 #define ENB_CONFIG_STRING_RXPOOL_SC_CP_LEN                              "rxPool_sc_CP_Len"
@@ -956,6 +964,58 @@ typedef struct srb1_params_s {
 {CONFIG_STRING_FLEXRAN_CACHE,                  NULL,   0,   strptr:NULL,   defstrval:"/mnt/oai_agent_cache",  TYPE_STRING,   0},           \
 {CONFIG_STRING_FLEXRAN_AWAIT_RECONF,           NULL,   0,   strptr:NULL,   defstrval:"no",                    TYPE_STRING,   0}            \
 }
+
+/*----------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------------------------------------------------------------------------------*/
+/* CU/DU configuration section names*/
+#define CONFIG_STRING_DU_LIST			"DU"
+#define CONFIG_STRING_CU_LIST			"CU"
+#define DU_TYPE_LTE					0
+#define DU_TYPE_WIFI					1
+#define ENB_CONFIG_STRING_CU_INTERFACES_CONFIG		"CU_INTERFACES"
+#define ENB_CONFIG_STRING_CU_INTERFACE_NAME_FOR_F1U     "CU_INTERFACE_NAME_FOR_F1U"
+#define ENB_CONFIG_STRING_CU_IPV4_ADDRESS_FOR_F1U       "CU_IPV4_ADDRESS_FOR_F1U"
+#define ENB_CONFIG_STRING_CU_PORT_FOR_F1U               "CU_PORT_FOR_F1U"
+#define ENB_CONFIG_STRING_DU_TYPE	                "DU_TYPE"
+#define ENB_CONFIG_STRING_F1_U_CU_TRANSPORT_TYPE        "F1_U_CU_TRANSPORT_TYPE"
+
+#define ENB_CONFIG_STRING_DU_INTERFACES_CONFIG		"DU_INTERFACES"
+#define ENB_CONFIG_STRING_DU_INTERFACE_NAME_FOR_F1U     "DU_INTERFACE_NAME_FOR_F1U"
+#define ENB_CONFIG_STRING_DU_IPV4_ADDRESS_FOR_F1U       "DU_IPV4_ADDRESS_FOR_F1U"
+#define ENB_CONFIG_STRING_DU_PORT_FOR_F1U               "DU_PORT_FOR_F1U"
+#define ENB_CONFIG_STRING_F1_U_DU_TRANSPORT_TYPE        "F1_U_DU_TRANSPORT_TYPE"
+
+#define CONFIG_STRING_CU_BALANCING			"CU_BALANCING"
+
+#define CUPARAMS_DESC { \
+{ENB_CONFIG_STRING_CU_INTERFACE_NAME_FOR_F1U,           	NULL,   0,   strptr:NULL,   defstrval:"eth0",   	TYPE_STRING,   0},           \
+{ENB_CONFIG_STRING_CU_IPV4_ADDRESS_FOR_F1U,                   	NULL,   0,   strptr:NULL,   defstrval:"127.0.0.1",   	TYPE_STRING,   0},           \
+{ENB_CONFIG_STRING_CU_PORT_FOR_F1U,                 	 	NULL,   0,   uptr:NULL,     defintval:2210,   		TYPE_UINT,     0},            \
+{ENB_CONFIG_STRING_F1_U_CU_TRANSPORT_TYPE,                  	NULL,   0,   strptr:NULL,   defstrval:"TCP",   		TYPE_STRING,   0},            \
+{ENB_CONFIG_STRING_DU_TYPE,                  			NULL,   0,   strptr:NULL,   defstrval:"LTE",   		TYPE_STRING,   0},            \
+}
+
+#define DUPARAMS_DESC { \
+{ENB_CONFIG_STRING_DU_INTERFACE_NAME_FOR_F1U,           	NULL,   0,   strptr:NULL,   defstrval:"eth0",   	TYPE_STRING,   0},           \
+{ENB_CONFIG_STRING_DU_IPV4_ADDRESS_FOR_F1U,                  	NULL,   0,   strptr:NULL,   defstrval:"127.0.0.1",   	TYPE_STRING,   0},           \
+{ENB_CONFIG_STRING_DU_PORT_FOR_F1U,                  		NULL,   0,   uptr:NULL,     defintval:2210,   		TYPE_UINT,     0},            \
+{ENB_CONFIG_STRING_F1_U_DU_TRANSPORT_TYPE,                   	NULL,   0,   strptr:NULL,   defstrval:"TCP",   		TYPE_STRING,   0},           \
+}
+
+#define CU_BAL_DESC { \
+{CONFIG_STRING_CU_BALANCING,           				NULL,   0,   strptr:NULL,   defstrval:"ALL",   	TYPE_STRING,   0},           \
+}
+
+#define CU_INTERFACE_F1U 	                     0
+#define CU_ADDRESS_F1U 		  		     1
+#define CU_PORT_F1U 	              		     2
+#define CU_TYPE_F1U 	              		     3
+
+#define DU_INTERFACE_F1U	                     0
+#define DU_ADDRESS_F1U		  		     1
+#define DU_PORT_F1U	               		     2
+#define DU_TYPE_F1U	               		     3
+#define DU_TECH					     4
 
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/

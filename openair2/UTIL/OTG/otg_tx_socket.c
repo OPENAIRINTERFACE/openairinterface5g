@@ -231,7 +231,7 @@ void client_socket_udp_ip4(int src, int dst, int state,int ctime) {
       //
 
       free(payload);
-      free(tx_buffer);      
+      free(tx_buffer);
     }
 
     if(udp_send == -1) {

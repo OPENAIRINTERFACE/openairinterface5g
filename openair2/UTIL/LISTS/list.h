@@ -112,9 +112,9 @@ typedef struct {
   size_t atomSize;
   size_t increment;
 } varArray_t;
- 
+
 static inline varArray_t * initVarArray(size_t increment, size_t atomSize) {
-    varArray_t * tmp=malloc(sizeof(varArray_t)+increment*atomSize);
+    varArray_t * tmp=(varArray_t *)malloc(sizeof(varArray_t)+increment*atomSize);
     tmp->size=0;
     tmp->atomSize=atomSize;
     tmp->mallocedSize=increment;
@@ -129,7 +129,7 @@ static inline void * dataArray(varArray_t * input) {
 static inline void appendVarArray(varArray_t * input, void* data) {
   if (input->size>=input->mallocedSize) {
      input->mallocedSize+=input->increment;
-     input=realloc(input,sizeof(varArray_t)+input->mallocedSize*input->atomSize);
+     input=(varArray_t *)realloc(input,sizeof(varArray_t)+input->mallocedSize*input->atomSize);
   }
   memcpy((uint8_t*)(input+1)+input->atomSize*input->size++, data, input->atomSize);
 }

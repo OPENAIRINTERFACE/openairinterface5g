@@ -818,7 +818,6 @@ void tx_rf(RU_t *ru) {
     T_INT(0), T_BUFFER(&ru->common.txdata[0][proc->subframe_tx * fp->samples_per_tti], fp->samples_per_tti * 4));
   lte_subframe_t SF_type     = subframe_select(fp,proc->subframe_tx%10);
   lte_subframe_t prevSF_type = subframe_select(fp,(proc->subframe_tx+9)%10);
-  lte_subframe_t nextSF_type = subframe_select(fp,(proc->subframe_tx+1)%10);
   int sf_extension = 0;
 
   if ((SF_type == SF_DL) ||
@@ -826,24 +825,24 @@ void tx_rf(RU_t *ru) {
     int siglen=fp->samples_per_tti,flags=1;
 
     if (SF_type == SF_S) {
-      siglen = fp->dl_symbols_in_S_subframe*(fp->ofdm_symbol_size+fp->nb_prefix_samples0);
+      /* end_of_burst_delay is used to stop TX only "after a while".
+       * If we stop right after effective signal, with USRP B210 and
+       * B200mini, we observe a high EVM on the S subframe (on the
+       * PSS).
+       * A value of 400 (for 30.72MHz) solves this issue. This is
+       * the default.
+       */
+      siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0)
+               + (fp->dl_symbols_in_S_subframe - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples)
+               + ru->end_of_burst_delay;
       flags=3; // end of burst
     }
 
-    if ((fp->frame_type == TDD) &&
-        (SF_type == SF_DL)&&
-        (prevSF_type == SF_UL) &&
-        (nextSF_type == SF_DL)) {
+    if (fp->frame_type == TDD &&
+        SF_type == SF_DL &&
+        prevSF_type == SF_UL) {
       flags = 2; // start of burst
-      sf_extension = ru->N_TA_offset;
-    }
-
-    if ((fp->frame_type == TDD) &&
-        (SF_type == SF_DL)&&
-        (prevSF_type == SF_UL) &&
-        (nextSF_type == SF_UL)) {
-      flags = 4; // start of burst and end of burst (only one DL SF between two UL)
-      sf_extension = ru->N_TA_offset;
+      sf_extension = ru->sf_extension;
     }
 
 #if defined(__x86_64) || defined(__i386__)
@@ -1386,6 +1385,22 @@ int setup_RU_buffers(RU_t *ru) {
        * TODO: find a proper cleaner solution
        */
       ru->N_TA_offset = 0;
+
+    if      (frame_parms->N_RB_DL == 100) /* no scaling to do */;
+    else if (frame_parms->N_RB_DL == 50) {
+      ru->sf_extension       /= 2;
+      ru->end_of_burst_delay /= 2;
+    } else if (frame_parms->N_RB_DL == 25) {
+      ru->sf_extension       /= 4;
+      ru->end_of_burst_delay /= 4;
+    } else {
+      printf("not handled, todo\n");
+      exit(1);
+    }
+  } else {
+    ru->N_TA_offset = 0;
+    ru->sf_extension = 0;
+    ru->end_of_burst_delay = 0;
   }
 
   if (ru->openair0_cfg.mmapped_dma == 1) {
@@ -2883,6 +2898,9 @@ void RCconfig_RU(void) {
         RC.ru[j]->max_pdschReferenceSignalPower     = *(RUParamList.paramarray[j][RU_MAX_RS_EPRE_IDX].uptr);;
         RC.ru[j]->max_rxgain                        = *(RUParamList.paramarray[j][RU_MAX_RXGAIN_IDX].uptr);
         RC.ru[j]->num_bands                         = RUParamList.paramarray[j][RU_BAND_LIST_IDX].numelt;
+        /* sf_extension is in unit of samples for 30.72MHz here, has to be scaled later */
+        RC.ru[j]->sf_extension                      = *(RUParamList.paramarray[j][RU_SF_EXTENSION_IDX].uptr);
+        RC.ru[j]->end_of_burst_delay                = *(RUParamList.paramarray[j][RU_END_OF_BURST_DELAY_IDX].uptr);
 
         for (i=0; i<RC.ru[j]->num_bands; i++) RC.ru[j]->band[i] = RUParamList.paramarray[j][RU_BAND_LIST_IDX].iptr[i];
       } //strcmp(local_rf, "yes") == 0

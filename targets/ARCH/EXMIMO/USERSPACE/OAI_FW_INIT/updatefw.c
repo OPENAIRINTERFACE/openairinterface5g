@@ -677,7 +677,7 @@ int main(int argc, char** argv) {
   } /* pflag */
 
   if (verboselevel >= VERBOSE_LEVEL_MAIN_STEPS) printf("Info: action #5 done.\n");
-  
+
   fclose(p_elfimage);
 
   /* Did we pretend ? */

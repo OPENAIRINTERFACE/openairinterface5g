@@ -46,6 +46,7 @@
 
 //#define DEBUG_DCI
 
+
 #include "../LTE_TRANSPORT/dci_tools_common_extern.h"
 #include "../LTE_TRANSPORT/transport_proto.h"
 #include "transport_proto_ue.h"
@@ -1281,7 +1282,7 @@ void compute_llr_offset(LTE_DL_FRAME_PARMS *frame_parms,
         symbol_mod = (symbol >= (7-frame_parms->Ncp))? (symbol-(7-frame_parms->Ncp)) : symbol;
         if((symbol_mod == 0) || symbol_mod == (4-frame_parms->Ncp))
         {
-	  if (frame_parms->nb_antenna_ports_eNB == 2) 
+	  if (frame_parms->nb_antenna_ports_eNB == 2)
 	    crs_re = 4;
 	  else
 	    crs_re = 2;

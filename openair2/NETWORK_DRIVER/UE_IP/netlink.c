@@ -120,7 +120,7 @@ int ue_ip_netlink_init(void)
                 &nasmesh_mutex, // NULL
                 THIS_MODULE);
 #endif /* LINUX_VERSION_CODE >= KERNEL_VERSION(3,6,0) */
-             
+
 
 
   if (nas_nl_sk == NULL) {

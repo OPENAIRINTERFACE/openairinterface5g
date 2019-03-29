@@ -25,7 +25,7 @@ void dumpVarArray(varArray_t *input) {
   printf("\n");
 }
 void sumUpStats(time_stats_t * res, time_stats_t * src, int lastActive) {
-  	reset_meas(res);
+  reset_meas(res);
 	for (int i=0; i<RX_NB_TH; i++) {
 	  res->diff+=src[i].diff;
 	  res->diff_square+=src[i].diff_square;
@@ -36,7 +36,7 @@ void sumUpStats(time_stats_t * res, time_stats_t * src, int lastActive) {
 	res->p_time=src[lastActive].p_time;
 }
 void sumUpStatsSlot(time_stats_t *res, time_stats_t src[RX_NB_TH][2], int lastActive) {
-  	reset_meas(res);
+  reset_meas(res);
 	for (int i=0; i<RX_NB_TH; i++) {
 	  res->diff+=src[i][0].diff+src[i][1].diff;
 	  res->diff_square+=src[i][0].diff_square+src[i][1].diff_square;
@@ -94,7 +94,7 @@ void logDistribution(FILE* fd, time_stats_t *ptr, varArray_t *sortedList, int dr
 	  squareRoot(ptr),
 	  (double)ptr->max, *(double*)dataArray(sortedList),
 	  median(sortedList),q1(sortedList),q3(sortedList),
-	  dropped); 
+	  dropped);
 }
 
 struct option * parse_oai_options(paramdef_t *options) {
@@ -125,7 +125,7 @@ struct option * parse_oai_options(paramdef_t *options) {
       case TYPE_UINT16:
 	*options[i].u16ptr=options[i].defintval;
 	break;
-	
+
       default:
 	printf("not parsed type for default value %s\n", options[i].optname );
 	exit(1);
@@ -155,11 +155,11 @@ void display_options_values(paramdef_t *options, int verbose) {
 	case TYPE_UINT8:
 	  sprintf(varText,"%d",(int)*ptr->u8ptr);
 	  break;
-	  
+
 	case TYPE_UINT16:
 	  sprintf(varText,"%d",(int)*ptr->u16ptr);
 	  break;
-	  
+
 	default:
 	  printf("not decoded type\n");
 	  exit(1);

@@ -38,10 +38,10 @@ log level/verbosity  comp 33 USIM set to info / medium (disabled)
 log level/verbosity  comp 34 LOCALIZE set to info / medium (disabled)
 log level/verbosity  comp 35 RRH set to info / medium (disabled)
 softmodem> softmodem log show
-Available log levels: 
-   emerg alert crit error warn notice info debug file trace 
-Available verbosity: 
-   none low medium high full 
+Available log levels:
+   emerg alert crit error warn notice info debug file trace
+Available verbosity:
+   none low medium high full
 component                 verbosity  level  enabled
 00               PHY:    medium      info  N
 01               MAC:    medium      info  N
@@ -89,8 +89,8 @@ log level/verbosity  comp 3 OCG set to error / medium (enabled)
 log level/verbosity  comp 4 OMG set to error / medium (enabled)
 softmodem> exit
 Connection closed by foreign host.
-```  
+```
 
-[oai telnetserver home](telnetsrv.md)  
+[oai telnetserver home](telnetsrv.md)
 [oai telnetserver usage home](telnetusage.md)
 [oai Wikis home](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/home)

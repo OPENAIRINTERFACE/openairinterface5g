@@ -352,7 +352,7 @@ void fill_dci_and_dlsch(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t 
                 &rel8->resource_block_coding,rel8->resource_block_coding,rel8->rnti,rel8->rnti_type,rel8->dci_format,rel8->harq_process);
   
     dci_alloc->format = format1A;
-    
+
     switch (fp->N_RB_DL) {
     case 6:
       if (fp->frame_type == TDD) {
@@ -1726,8 +1726,8 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,mDCI_ALLOC_t *dc
   dlsch0->subframe_tx[(subframe + 2) % 10] = 1;
   LOG_D(PHY,"PDSCH : resource_block_coding %x\n",rel13->resource_block_coding);
 
-  conv_eMTC_rballoc (rel13->resource_block_coding, 
-		     fp->N_RB_DL, 
+  conv_eMTC_rballoc (rel13->resource_block_coding,
+		     fp->N_RB_DL,
 		     dlsch0_harq->rb_alloc);
 
   dlsch0_harq->nb_rb = RIV2nb_rb_LUT6[rel13->resource_block_coding & 31];       // this is the 6PRB RIV
@@ -1767,7 +1767,7 @@ void fill_mdci_and_dlsch(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc,mDCI_ALLOC_t *dc
     else if (rel13->tpc == 0)  //N1A_PRB=2, get TBS from table using mcs and nb_rb=2
       dlsch0_harq->TBS         = TBStable[get_I_TBS(dlsch0_harq->mcs)][1];
     else if (rel13->tpc == 1)  //N1A_PRB=3, get TBS from table using mcs and nb_rb=3
-      dlsch0_harq->TBS         = TBStable[get_I_TBS(dlsch0_harq->mcs)][2];      
+      dlsch0_harq->TBS         = TBStable[get_I_TBS(dlsch0_harq->mcs)][2];
     LOG_D(PHY,"TBS = %d(%d)\n",dlsch0_harq->TBS,dlsch0_harq->mcs);
   }
   dlsch0->active = 1;
@@ -1968,7 +1968,7 @@ void fill_dci0(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t *proc,
 
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 int get_narrowband_index(int N_RB_UL,int rb) {
-  
+
   switch (N_RB_UL) {
   case 6: // 6 PRBs, N_NB=1, i_0=0
   case 25: // 25 PRBs, N_NB=4, i_0=0
@@ -2116,7 +2116,7 @@ void fill_ulsch(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_ulsch_pdu *ulsch_pdu
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
 int get_first_rb_in_narrowband(int N_RB_UL,int rb) {
-  
+
   switch (N_RB_UL) {
   case 6: // 6 PRBs, N_NB=1, i_0=0
   case 25: // 25 PRBs, N_NB=4, i_0=0
@@ -2288,6 +2288,3 @@ void fill_mpdcch_dci0 (PHY_VARS_eNB * eNB, L1_rxtx_proc_t * proc, mDCI_ALLOC_t *
   }
 }
 #endif
-
-
-

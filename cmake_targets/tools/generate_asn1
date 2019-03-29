@@ -2,23 +2,29 @@
 
 function main()
 {
-mkdir -p $1
-cd $1
+PROTOCOL_DIR=$1
+mkdir -p ${PROTOCOL_DIR}
+cd ${PROTOCOL_DIR}
+
+# Because use $* also include directory, so we need shift
 shift
 
-#if this script is called with only 2 arguments (so 1 here after the shift), it's for RRC
-#(there may be a better way...)
-if [ $# -eq 1 ]; then
+# There are three types parameter for asn1c
+# One is for RRC
+# and one is for F1AP
+# another is for other protocols
 
-#asn1c does not work well with extension groups, we need the following fix:
-# replace [[ by '<name> SEQUENCE {'
-#     and ]] by '} OPTIONAL'
-#<name> is ext<N> with N starting from 1 and incremented at each new [[ ]] just
-#following another [[ ]]
-#
-#this is what the following C program does
+if echo ${PROTOCOL_DIR} | grep -q "RRC"; then
 
-echo generate asnfix.c
+    #asn1c does not work well with extension groups, we need the following fix:
+    # replace [[ by '<name> SEQUENCE {'
+    #     and ]] by '} OPTIONAL'
+    #<name> is ext<N> with N starting from 1 and incremented at each new [[ ]] just
+    #following another [[ ]]
+    #
+    #this is what the following C program does
+
+    echo generate asnfix.c
 
 cat << EOF > asnfix.c
 /* transforms:
@@ -85,30 +91,34 @@ int main(void)
 }
 EOF
 
-echo compile asnfix.c
+    echo compile asnfix.c
 
-gcc -Wall -o asnfix asnfix.c
+    gcc -Wall -o asnfix asnfix.c
 
-echo run asnfix on $1
+    echo run asnfix on $1
 
-./asnfix < $1 > fixed_grammar.asn
+    ./asnfix < $1 > fixed_grammar.asn
 
-rm -f asnfix asnfix.c
+    rm -f asnfix asnfix.c
 
-echo done with asnfix
+    echo done with asnfix
 
-echo running asn1c
+    echo running asn1c
 
-asn1c -gen-PER -fcompound-names fixed_grammar.asn 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample
+    asn1c -gen-PER -fcompound-names -no-gen-example fixed_grammar.asn 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample
 
-rm -f fixed_grammar.asn
+    rm -f fixed_grammar.asn
 
-echo asn1c done
+    echo asn1c done
 
+elif echo ${PROTOCOL_DIR} | grep -q "F1AP"; then
+    
+    asn1c -gen-PER -fcompound-names -no-gen-example -findirect-choice -fno-include-deps $* 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample
+    
 else
-
-asn1c -gen-PER -fcompound-names $* 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample
-
+    
+    asn1c -gen-PER -fcompound-names -no-gen-example $* 2>&1 | grep -v -- '->' | grep -v '^Compiled' |grep -v sample
+    
 fi
 
 awk ' 

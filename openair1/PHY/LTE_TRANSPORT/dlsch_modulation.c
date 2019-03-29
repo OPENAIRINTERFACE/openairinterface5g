@@ -2034,7 +2034,7 @@ int allocate_REs_in_RB_MCH(int32_t **txdataF,
 
     break;
     default:
-        LOG_E(PHY,"Invalid modulation order %i_n",mod_order); 
+        LOG_E(PHY,"Invalid modulation order %i_n",mod_order);
     break;
     }
   }
