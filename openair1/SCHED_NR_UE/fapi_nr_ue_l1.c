@@ -232,7 +232,6 @@ int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){
       printf("half frame bit:              %d\n", phy_config->config_req.pbch_config.half_frame_bit);
       printf("-------------------------------\n");
 
-      PHY_vars_UE_g[0][0]->proc.proc_rxtx[0].frame_rx = phy_config->config_req.pbch_config.system_frame_number;
     }
         
     if(phy_config->config_req.config_mask & FAPI_NR_CONFIG_REQUEST_MASK_DL_BWP_COMMON){

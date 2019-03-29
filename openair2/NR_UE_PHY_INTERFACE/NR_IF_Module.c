@@ -102,13 +102,13 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
 			0, 0); //  TODO check tx/rx frame/slot is need for NR version
 
   switch(ret){
-  case CONNECTION_OK:
+  case UE_CONNECTION_OK:
     break;
-  case CONNECTION_LOST:
+  case UE_CONNECTION_LOST:
     break;
-  case PHY_RESYNCH:
+  case UE_PHY_RESYNCH:
     break;
-  case PHY_HO_PRACH:
+  case UE_PHY_HO_PRACH:
     break;
   default:
     break;

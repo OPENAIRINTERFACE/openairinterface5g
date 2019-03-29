@@ -32,6 +32,7 @@
 
 
 #include "coding_defs.h"
+#include "assertions.h"
 
 /*ref 36-212 v8.6.0 , pp 8-9 */
 /* the highest degree is set by default */
@@ -275,7 +276,7 @@ int check_crc(uint8_t* decoded_bytes, uint32_t n, uint32_t F, uint8_t crc_type)
     break;
 
   default:
-    crc_len=3;
+    AssertFatal(1,"Invalid crc_type \n");
   }
 
   for (int i=0; i<crc_len; i++)
@@ -309,6 +310,9 @@ int check_crc(uint8_t* decoded_bytes, uint32_t n, uint32_t F, uint8_t crc_type)
       crc = crc8(decoded_bytes,
                  n-8)>>24;
       break;
+
+    default:
+      AssertFatal(1,"Invalid crc_type \n");
     }
 
     if (crc == oldcrc)

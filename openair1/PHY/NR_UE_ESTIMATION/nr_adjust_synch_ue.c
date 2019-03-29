@@ -52,9 +52,7 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
 
   ncoef = 32767 - coef;
 
-//#ifdef DEBUG_PHY
-  LOG_D(PHY,"AbsSubframe %d.%d: rx_offset (before) = %d\n",ue->proc.proc_rxtx[0].frame_rx%1024,subframe,ue->rx_offset);
-//#endif //DEBUG_PHY
+  LOG_D(PHY,"AbsSubframe %d: rx_offset (before) = %d\n",subframe,ue->rx_offset);
 
 
   // we only use channel estimates from tx antenna 0 here
@@ -122,8 +120,7 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
 
 
       #ifdef DEBUG_PHY
-      LOG_D(PHY,"AbsSubframe %d.%d: ThreadId %d diff =%i rx_offset (final) = %i : clear %d,max_pos = %d,max_pos_fil = %d (peak %d) max_val %d target_pos %d \n",
-              ue->proc.proc_rxtx[ue->current_thread_id[subframe]].frame_rx,
+      LOG_D(PHY,"AbsSubframe %d: ThreadId %d diff =%i rx_offset (final) = %i : clear %d,max_pos = %d,max_pos_fil = %d (peak %d) max_val %d target_pos %d \n",
               subframe,
               ue->current_thread_id[subframe],
               diff,

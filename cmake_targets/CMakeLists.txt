@@ -671,7 +671,7 @@ add_boolean_option(EXMIMO_IOT              True "????")
 add_boolean_option(LOCALIZATION            False "???")
 add_integer_option(MAX_NUM_CCs             1     "????")
 add_boolean_option(MU_RECEIVER             False "????")
-add_boolean_option(PHYSIM                  True  "for L1 simulators (dlsim, ulsim, ...)")
+add_boolean_option(PHYSIM                  False  "for L1 simulators (dlsim, ulsim, ...)")
 add_boolean_option(PHY_CONTEXT             True "not clear: must remain False for dlsim")
 add_boolean_option(PHY_EMUL                False "not clear: must remain False for dlsim")
 add_boolean_option(SMBV                    False "Rohde&Schwarz SMBV100A vector signal generator")
@@ -1275,6 +1275,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_dlsch.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_dlsch_tools.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_dlsch_coding.c
+  ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_ulsch_decoding.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_tbs_tools.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_sch_dmrs.c
   ${OPENAIR1_DIR}/PHY/NR_REFSIG/nr_gold.c
@@ -1304,6 +1305,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/nr_initial_sync.c
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/nr_pbch.c
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/nr_dlsch_demodulation.c
+  ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/nr_ulsch_coding.c
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/nr_dlsch_decoding.c
   ${OPENAIR1_DIR}/PHY/NR_UE_TRANSPORT/nr_dlsch_llr_computation.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_tbs_tools.c
@@ -2394,11 +2396,10 @@ add_executable(nr-uesoftmodem
   ${rrc_h}
   ${s1ap_h}
 #  ${OPENAIR_BIN_DIR}/messages_xml.h
-  ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
-  ${OPENAIR_TARGETS}/RT/USER/nr-ue.c
-  ${OPENAIR_TARGETS}/RT/USER/nr-uesoftmodem.c
+  ${OPENAIR_DIR}/common/utils/threadPool/thread-pool.c
+  ${OPENAIR_DIR}/executables//nr-uesoftmodem.c
+  ${OPENAIR_DIR}/executables/nr-ue.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-#  ${OPENAIR_TARGETS}/COMMON/create_tasks_ue.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
@@ -2525,6 +2526,12 @@ add_executable(nr_dlsim
   ${OPENAIR_DIR}/common/utils/backtrace.c
   ${T_SOURCE})   
 target_link_libraries(nr_dlsim  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON RRC_LIB NR_RRC_LIB CONFIG_LIB L2_NR -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
+
+add_executable(nr_ulschsim
+  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/ulschsim.c
+  ${OPENAIR_DIR}/common/utils/backtrace.c
+  ${T_SOURCE})
+target_link_libraries(nr_ulschsim -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB -Wl,--end-group m pthread ${ATLAS_LIBRARIES} ${T_LIB} dl)
 
 
 foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)

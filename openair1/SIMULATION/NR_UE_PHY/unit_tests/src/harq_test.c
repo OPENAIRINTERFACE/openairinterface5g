@@ -54,6 +54,8 @@
 int test_harq_uplink(PHY_VARS_NR_UE *phy_vars_ue)
 {
   int gNB_id = 0;
+  int thread_number = 0;
+  int code_word_idx = 0;
   int harq_pid = 0;
   int ndi = 1;
   uint8_t rnti_type = _C_RNTI_;
@@ -61,7 +63,7 @@ int test_harq_uplink(PHY_VARS_NR_UE *phy_vars_ue)
 
   printf("\nHARQ Uplink \n");
 
-  config_uplink_harq_process(phy_vars_ue , gNB_id, NR_DEFAULT_DLSCH_HARQ_PROCESSES);
+  config_uplink_harq_process(phy_vars_ue , gNB_id, thread_number, code_word_idx, NR_DEFAULT_DLSCH_HARQ_PROCESSES);
 
   NR_UE_ULSCH_t *ulsch_harq = phy_vars_ue->ulsch[gNB_id];
 
@@ -91,7 +93,7 @@ int test_harq_uplink(PHY_VARS_NR_UE *phy_vars_ue)
     }
   }
 
-  release_uplink_harq_process(phy_vars_ue , gNB_id);
+  release_uplink_harq_process(phy_vars_ue , gNB_id, thread_number, code_word_idx);
 
   return 0;
 }

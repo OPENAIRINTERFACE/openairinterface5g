@@ -39,7 +39,7 @@
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "SCHED_NR_UE/defs.h"
 #include "SIMULATION/TOOLS/sim.h"
-#include "targets/RT/USER/nr-uesoftmodem.h"
+#include "executables/nr-uesoftmodem.h"
 #include "PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.h"
 #include "PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
 //#define DEBUG_DLSCH_DECODING
@@ -76,11 +76,11 @@ void free_nr_ue_dlsch(NR_UE_DLSCH_t *dlsch)
           }
         
         for (r=0; r<(MAX_NUM_NR_DLSCH_SEGMENTS); r++) {
-			if (dlsch->harq_processes[i]->p_nrLDPC_procBuf[r]){
-			  nrLDPC_free_mem(dlsch->harq_processes[i]->p_nrLDPC_procBuf[r]);
-			  dlsch->harq_processes[i]->p_nrLDPC_procBuf[r] = NULL;
-			}
-		}
+          if (dlsch->harq_processes[i]->p_nrLDPC_procBuf[r]){
+            nrLDPC_free_mem(dlsch->harq_processes[i]->p_nrLDPC_procBuf[r]);
+            dlsch->harq_processes[i]->p_nrLDPC_procBuf[r] = NULL;
+          }
+        }
 
         free16(dlsch->harq_processes[i],sizeof(NR_DL_UE_HARQ_t));
         dlsch->harq_processes[i] = NULL;
@@ -143,7 +143,7 @@ NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint
 
         if (abstraction_flag == 0) {
           for (r=0; r<MAX_NUM_NR_DLSCH_SEGMENTS/bw_scaling; r++) { 
-			dlsch->harq_processes[i]->p_nrLDPC_procBuf[r] = nrLDPC_init_mem();
+            dlsch->harq_processes[i]->p_nrLDPC_procBuf[r] = nrLDPC_init_mem();
             dlsch->harq_processes[i]->c[r] = (uint8_t*)malloc16(1056);
 
             if (dlsch->harq_processes[i]->c[r])
@@ -192,7 +192,7 @@ void nr_dlsch_unscrambling(int16_t* llr,
       reset = 0;
     }
     if (((s>>(i&0x1f))&1)==1)
-        llr[i] = -llr[i];
+      llr[i] = -llr[i];
   }
 
 }
@@ -203,7 +203,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                          NR_UE_DLSCH_t *dlsch,
                          NR_DL_UE_HARQ_t *harq_process,
                          uint32_t frame,
-						 uint16_t nb_symb_sch,
+                         uint16_t nb_symb_sch,
                          uint8_t nr_tti_rx,
                          uint8_t harq_pid,
                          uint8_t is_crnti,
@@ -247,7 +247,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
   //NR_DL_UE_HARQ_t *harq_process = dlsch->harq_processes[0];
 
-   if (!dlsch_llr) {
+  if (!dlsch_llr) {
     printf("dlsch_decoding.c: NULL dlsch_llr pointer\n");
     return(dlsch->max_ldpc_iterations);
   }
@@ -305,57 +305,59 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     // This is a new packet, so compute quantities regarding segmentation
     harq_process->B = A+24;
     nr_segmentation(NULL,
-    	                    NULL,
-    	                    harq_process->B,
-    	                    &harq_process->C,
-    	                    &harq_process->K,
-     						&harq_process->Z,
-    	                    &harq_process->F);
-    						p_decParams->Z = harq_process->Z;
+                    NULL,
+                    harq_process->B,
+                    &harq_process->C,
+                    &harq_process->K,
+                    &harq_process->Z, // [hna] Z is Zc
+                    &harq_process->F);
+
+    p_decParams->Z = harq_process->Z;
 
 #ifdef DEBUG_DLSCH_DECODING
     printf("dlsch decoding nr segmentation Z %d\n", p_decParams->Z);
-	if (!frame%100)
-    	printf("K %d C %d Z %d nl %d \n", harq_process->K, harq_process->C, p_decParams->Z, harq_process->Nl);
+    if (!frame%100)
+      printf("K %d C %d Z %d nl %d \n", harq_process->K, harq_process->C, p_decParams->Z, harq_process->Nl);
 #endif
   }
-      Coderate = (float) A /(float) G;
-      if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25){
-  		  p_decParams->BG = 2;
-  		  if (Coderate < 0.3333){
-  			  p_decParams->R = 15;
-  			  kc = 52;
-  		  }
-  		  else if (Coderate <0.6667){
-  			  p_decParams->R = 13;
-  			  kc = 32;
-  		  }
-  		  else {
-  		  	  p_decParams->R = 23;
-  		  	  kc = 17;
-  		  }
-  	  }
-  	  else{
-  		  p_decParams->BG = 1;
-  		  if (Coderate < 0.6667){
-  			  p_decParams->R = 13;
-  			  kc = 68;
-  		  }
-  		  else if (Coderate <0.8889){
-  			  p_decParams->R = 23;
-  			  kc = 35;
-  		  }
-  		  else {
-  			  p_decParams->R = 89;
-  			  kc = 27;
-  		  }
-  	  }
 
-  	  //printf("coderate %f kc %d \n", Coderate, kc);
+  Coderate = (float) A /(float) G;
+  if ((A <=292) || ((A<=3824) && (Coderate <= 0.6667)) || Coderate <= 0.25)
+  {
+    p_decParams->BG = 2;
+    if (Coderate < 0.3333){
+      p_decParams->R = 15;
+      kc = 52;
+    }
+    else if (Coderate <0.6667){
+      p_decParams->R = 13;
+      kc = 32;
+    }
+    else {
+      p_decParams->R = 23;
+      kc = 17;
+    }
+  }
+  else{
+    p_decParams->BG = 1;
+    if (Coderate < 0.6667){
+      p_decParams->R = 13;
+      kc = 68;
+    }
+    else if (Coderate <0.8889){
+      p_decParams->R = 23;
+      kc = 35;
+    }
+    else {
+      p_decParams->R = 89;
+      kc = 27;
+    }
+  }
 
-      p_decParams->numMaxIter = dlsch->max_ldpc_iterations;
-      p_decParams->outMode= 0;
+  //printf("coderate %f kc %d \n", Coderate, kc);
 
+  p_decParams->numMaxIter = dlsch->max_ldpc_iterations;
+  p_decParams->outMode= 0;
 
   err_flag = 0;
   r_offset = 0;
@@ -363,27 +365,27 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   unsigned char bw_scaling =1;
 
   switch (frame_parms->N_RB_DL) {
+    case 106:
+      bw_scaling =2;
+      break;
 
-  case 106:
-    bw_scaling =2;
-    break;
-
-  default:
-    bw_scaling =1;
-    break;
+    default:
+      bw_scaling =1;
+      break;
   }
 
   if (harq_process->C > MAX_NUM_NR_DLSCH_SEGMENTS/bw_scaling) {
     LOG_E(PHY,"Illegal harq_process->C %d > %d\n",harq_process->C,MAX_NUM_NR_DLSCH_SEGMENTS/bw_scaling);
     return((1+dlsch->max_ldpc_iterations));
   }
+
 #ifdef DEBUG_DLSCH_DECODING
   printf("Segmentation: C %d, K %d\n",harq_process->C,harq_process->K);
 #endif
 
   opp_enabled=1;
 
-  Kr = harq_process->K;
+  Kr = harq_process->K; // [hna] overwrites this line "Kr = p_decParams->Z*kb"
   Kr_bytes = Kr>>3;
 
   K_bytes_F = Kr_bytes-(harq_process->F>>3);
@@ -400,11 +402,11 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 #endif
     nr_deinterleaving_ldpc(E,
                            harq_process->Qm,
-                           harq_process->w[r],
+                           harq_process->w[r], // [hna] w is e
                            dlsch_llr+r_offset);
 
     //for (int i =0; i<16; i++)
-    //        	printf("rx output deinterleaving w[%d]= %d r_offset %d\n", i,harq_process->w[r][i], r_offset);
+    //          printf("rx output deinterleaving w[%d]= %d r_offset %d\n", i,harq_process->w[r][i], r_offset);
 
 #if UE_TIMING_TRACE
     stop_meas(dlsch_deinterleaving_stats);
@@ -441,30 +443,29 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 #endif
       LOG_E(PHY,"dlsch_decoding.c: Problem in rate_matching\n");
       return(dlsch->max_ldpc_iterations);
-    } else
-    {
+    } else {
 #if UE_TIMING_TRACE
       stop_meas(dlsch_rate_unmatching_stats);
 #endif
     }
 
     //for (int i =0; i<16; i++)
-    //    	printf("rx output ratematching d[%d]= %d r_offset %d\n", i,harq_process->d[r][i], r_offset);
+    //      printf("rx output ratematching d[%d]= %d r_offset %d\n", i,harq_process->d[r][i], r_offset);
 
     r_offset += E;
 
 #ifdef DEBUG_DLSCH_DECODING
     if (r==0) {
-              write_output("decoder_llr.m","decllr",dlsch_llr,G,1,0);
-              write_output("decoder_in.m","dec",&harq_process->d[0][0],(3*8*Kr_bytes)+12,1,0);
+      write_output("decoder_llr.m","decllr",dlsch_llr,G,1,0);
+      write_output("decoder_in.m","dec",&harq_process->d[0][0],(3*8*Kr_bytes)+12,1,0);
     }
 
     printf("decoder input(segment %d) :",r);
-    int i; for (i=0;i<(3*8*Kr_bytes)+12;i++)
+    int i;
+    for (i=0;i<(3*8*Kr_bytes)+12;i++)
       printf("%d : %d\n",i,harq_process->d[r][i]);
-      printf("\n");
+    printf("\n");
 #endif
-
 
     //    printf("Clearing c, %p\n",harq_process->c[r]);
     memset(harq_process->c[r],0,Kr_bytes);
@@ -482,74 +483,70 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     if (err_flag == 0) {
 
 #if UE_TIMING_TRACE
-        start_meas(dlsch_turbo_decoding_stats);
+      start_meas(dlsch_turbo_decoding_stats);
 #endif
 
       //LOG_E(PHY,"AbsSubframe %d.%d Start LDPC segment %d/%d A %d ",frame%1024,nr_tti_rx,r,harq_process->C-1, A);
 
       //printf("harq process dr iteration %d\n", p_decParams->numMaxIter);
 
+      memset(pv,0,2*harq_process->Z*sizeof(int16_t));
+      //memset(pl,0,2*p_decParams->Z*sizeof(int8_t));
+      memset((pv+K_bytes_F),127,harq_process->F*sizeof(int16_t));
 
-        memset(pv,0,2*harq_process->Z*sizeof(int16_t));
-        //memset(pl,0,2*p_decParams->Z*sizeof(int8_t));
-    	memset((pv+K_bytes_F),127,harq_process->F*sizeof(int16_t));
+      for (i=((2*p_decParams->Z)>>3), j = 0; i < K_bytes_F; i++, j++)
+      {
+        pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
+      }
 
-      	for (i=((2*p_decParams->Z)>>3), j = 0; i < K_bytes_F; i++, j++)
-      	{
-      		pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
-      	}
+      for (i=Kr_bytes,j=K_bytes_F-((2*p_decParams->Z)>>3); i < ((kc*p_decParams->Z)>>3); i++, j++)
+      {
+        pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
+      }
 
-		for (i=Kr_bytes,j=K_bytes_F-((2*p_decParams->Z)>>3); i < ((kc*p_decParams->Z)>>3); i++, j++)
-		      	{
-		      		pv[i]= _mm_loadu_si128((__m128i*)(&harq_process->d[r][8*j]));
-		      	}
-      	
-		for (i=0, j=0; j < ((kc*p_decParams->Z)>>4);  i+=2, j++)
-      	      	{
-      				
-      	      		pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
-      	      		
-      	      	}
+      for (i=0, j=0; j < ((kc*p_decParams->Z)>>4);  i+=2, j++)
+      {
+        pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
+      }
 
-		no_iteration_ldpc = nrLDPC_decoder(p_decParams,
-						   (int8_t*)&pl[0],
-						   llrProcBuf,
+      no_iteration_ldpc = nrLDPC_decoder(p_decParams,
+                           (int8_t*)&pl[0],
+                           llrProcBuf,
                            p_nrLDPC_procBuf[r],
                            p_procTime);
 
-		// Fixme: correct type is unsigned, but nrLDPC_decoder and all called behind use signed int
-		if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {
-		  printf("Segment %d CRC OK\n",r);
-		  ret = 2;
-		}
-		else {
-		  printf("CRC NOK\n");
-		  ret = 1+dlsch->max_ldpc_iterations;
-		}
-		
+      // Fixme: correct type is unsigned, but nrLDPC_decoder and all called behind use signed int
+      if (check_crc((uint8_t*)llrProcBuf,length_dec,harq_process->F,crc_type)) {
+        printf("Segment %d CRC OK\n",r);
+        ret = 2;
+      }
+      else {
+        printf("CRC NOK\n");
+        ret = 1+dlsch->max_ldpc_iterations;
+      }
 
-		nb_total_decod++;
-		if (no_iteration_ldpc > dlsch->max_ldpc_iterations){
-		  nb_error_decod++;
-		}
+      nb_total_decod++;
+      if (no_iteration_ldpc > dlsch->max_ldpc_iterations){
+        nb_error_decod++;
+      }
 
-		ret=no_iteration_ldpc;
+      ret=no_iteration_ldpc;
 
-		//if (!nb_total_decod%10000){
-		//printf("Error number of iteration LPDC %d %ld/%ld \n", no_iteration_ldpc, nb_error_decod,nb_total_decod);fflush(stdout);
-		//}
-		//else
-		//printf("OK number of iteration LPDC %d\n", no_iteration_ldpc);
+      //if (!nb_total_decod%10000){
+      //printf("Error number of iteration LPDC %d %ld/%ld \n", no_iteration_ldpc, nb_error_decod,nb_total_decod);fflush(stdout);
+      //}
+      //else
+      //printf("OK number of iteration LPDC %d\n", no_iteration_ldpc);
 
-		for (int m=0; m < Kr>>3; m ++)
-		      	      	{
-		      				harq_process->c[r][m]= (uint8_t) llrProcBuf[m];
-		      	      	}
+      for (int m=0; m < Kr>>3; m ++)
+      {
+        harq_process->c[r][m]= (uint8_t) llrProcBuf[m];
+      }
 
 #ifdef DEBUG_DLSCH_DECODING
       //printf("output decoder %d %d %d %d %d \n", harq_process->c[r][0], harq_process->c[r][1], harq_process->c[r][2],harq_process->c[r][3], harq_process->c[r][4]);
       for (int k=0;k<A>>3;k++)
-       printf("output decoder [%d] =  0x%02x \n", k, harq_process->c[r][k]);
+        printf("output decoder [%d] =  0x%02x \n", k, harq_process->c[r][k]);
       printf("no_iterations_ldpc %d (ret %d)\n",no_iteration_ldpc,ret);
       //write_output("dec_output.m","dec0",harq_process->c[0],Kr_bytes,1,4);
 #endif
@@ -664,18 +661,18 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
 
 #ifdef UE_DLSCH_PARALLELISATION
 uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
-			 UE_nr_rxtx_proc_t *proc,
-                         int eNB_id,
-                         short *dlsch_llr,
-                         NR_DL_FRAME_PARMS *frame_parms,
-                         NR_UE_DLSCH_t *dlsch,
-                         NR_DL_UE_HARQ_t *harq_process,
-                         uint32_t frame,
-			 uint16_t nb_symb_sch,
-                         uint8_t nr_tti_rx,
-                         uint8_t harq_pid,
-                         uint8_t is_crnti,
-                         uint8_t llr8_flag)
+                                    UE_nr_rxtx_proc_t *proc,
+                                    int eNB_id,
+                                    short *dlsch_llr,
+                                    NR_DL_FRAME_PARMS *frame_parms,
+                                    NR_UE_DLSCH_t *dlsch,
+                                    NR_DL_UE_HARQ_t *harq_process,
+                                    uint32_t frame,
+                                    uint16_t nb_symb_sch,
+                                    uint8_t nr_tti_rx,
+                                    uint8_t harq_pid,
+                                    uint8_t is_crnti,
+                                    uint8_t llr8_flag)
 {
 
 #if UE_TIMING_TRACE
@@ -786,27 +783,28 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
       // This is a new packet, so compute quantities regarding segmentation
       harq_process->B = A+24;
       nr_segmentation(NULL,
-          	          NULL,
-          	          harq_process->B,
-          	          &harq_process->C,
-          	          &harq_process->K,
-           		  &harq_process->Z,
-          	          &harq_process->F);
-          		  p_decParams->Z = harq_process->Z;
+                      NULL,
+                      harq_process->B,
+                      &harq_process->C,
+                      &harq_process->K,
+                      &harq_process->Z,
+                      &harq_process->F);
+
+      p_decParams->Z = harq_process->Z;
 
     }
 
- 	kb = harq_process->K/harq_process->Z;
-  	  if ( kb==22){
-  		  p_decParams->BG = 1;
-  		  p_decParams->R = 13;
-  		  kc = 68;
-  	  }
-  	  else{
-  		  p_decParams->BG = 2;
-  		  p_decParams->R = 13;
-  		  kc = 52;
-  	  	  }
+  kb = harq_process->K/harq_process->Z;
+      if ( kb==22){
+        p_decParams->BG = 1;
+        p_decParams->R = 13;
+        kc = 68;
+      }
+      else{
+        p_decParams->BG = 2;
+        p_decParams->R = 13;
+        kc = 52;
+      }
 
       p_decParams->numMaxIter = 2;
       Kr = p_decParams->Z*kb;
@@ -842,135 +840,133 @@ uint32_t  nr_dlsch_decoding_mthread(PHY_VARS_NR_UE *phy_vars_ue,
 #endif
 
   opp_enabled=1;
-if (harq_process->C>1) { // wakeup worker if more than 1 segment
-     if (pthread_mutex_lock(&proc->mutex_dlsch_td) != 0) {
-         LOG_E( PHY, "[SCHED][UE %d][Slot0] error locking mutex for UE dlsch td\n",phy_vars_ue->Mod_id );
-         exit_fun("nothing to add");
-     }
+  if (harq_process->C>1) { // wakeup worker if more than 1 segment
+    if (pthread_mutex_lock(&proc->mutex_dlsch_td) != 0) {
+      LOG_E( PHY, "[SCHED][UE %d][Slot0] error locking mutex for UE dlsch td\n",phy_vars_ue->Mod_id );
+      exit_fun("nothing to add");
+    }
 
-     /*Qm= harq_process->Qm;
-     Nl=harq_process->Nl;
-     r_thread = harq_process->C/2-1;
-     C= harq_process->C;
+  /*Qm= harq_process->Qm;
+    Nl=harq_process->Nl;
+    r_thread = harq_process->C/2-1;
+    C= harq_process->C;
 
-     Gp = G/Nl/Qm;
-      GpmodC = Gp%C;
-
-
-
-      if (r_thread < (C-(GpmodC)))
-        Er = Nl*Qm * (Gp/C);
-      else
-        Er = Nl*Qm * ((GpmodC==0?0:1) + (Gp/C));
-     printf("mthread Er %d\n", Er);
-
-     printf("mthread instance_cnt_dlsch_td %d\n",  proc->instance_cnt_dlsch_td);*/
-
-     proc->instance_cnt_dlsch_td++;
-               proc->eNB_id    = eNB_id;
-               proc->harq_pid  = harq_pid;
-               proc->llr8_flag = llr8_flag;
-               //proc->r[0] = 1;
-
-     if (proc->instance_cnt_dlsch_td == 0)
-     {
-     LOG_D(PHY,"unblock dlsch td processing thread blocked on instance_cnt_dlsch_td : %d \n", proc->instance_cnt_dlsch_td );
-         if (pthread_cond_signal(&proc->cond_dlsch_td) != 0) {
-             LOG_E( PHY, "[SCHED][UE %d][Slot0] ERROR pthread_cond_signal for UE dlsch td\n", phy_vars_ue->Mod_id);
-             exit_fun("nothing to add");
-         }
-         if (pthread_mutex_unlock(&proc->mutex_dlsch_td) != 0) {
-             LOG_E( PHY, "[SCHED][UE %d][Slot0] error unlocking mutex for UE dlsch td \n",phy_vars_ue->Mod_id );
-             exit_fun("nothing to add");
-         }
-
-     } else
-     {
-         LOG_E( PHY, "[SCHED][UE %d] UE dlsch td thread busy (IC %d)!!\n", phy_vars_ue->Mod_id, proc->instance_cnt_dlsch_td);
-         if (proc->instance_cnt_dlsch_td > 4)
-             exit_fun("instance_cnt_dlsch_td > 4");
-     }
-     //AssertFatal(pthread_cond_signal(&proc->cond_slot1_dl_processing) ==0 ,"");
-     AssertFatal(pthread_mutex_unlock(&proc->mutex_dlsch_td) ==0,"");
-
-     if (harq_process->C>2) {
-    	 if (pthread_mutex_lock(&proc->mutex_dlsch_td1) != 0) {
-    	          LOG_E( PHY, "[SCHED][UE %d][Slot0] error locking mutex for UE dlsch td\n",phy_vars_ue->Mod_id );
-    	          exit_fun("nothing to add");
-    	      }
-
-    	 proc->instance_cnt_dlsch_td1++;
-                    proc->eNB_id    = eNB_id;
-                    proc->harq_pid  = harq_pid;
-                    proc->llr8_flag = llr8_flag;
-                   // proc->Er = Er;
-
-          if (proc->instance_cnt_dlsch_td1 == 0)
-          {
-          LOG_D(PHY,"unblock slot1 dl processing thread blocked on instance_cnt_dlsch_td : %d \n", proc->instance_cnt_dlsch_td1 );
-              if (pthread_cond_signal(&proc->cond_dlsch_td1) != 0) {
-                  LOG_E( PHY, "[SCHED][UE %d][Slot0] ERROR pthread_cond_signal for UE dlsch td\n", phy_vars_ue->Mod_id);
-                  exit_fun("nothing to add");
-              }
-              if (pthread_mutex_unlock(&proc->mutex_dlsch_td1) != 0) {
-                  LOG_E( PHY, "[SCHED][UE %d][Slot0] error unlocking mutex for UE dlsch td \n",phy_vars_ue->Mod_id );
-                  exit_fun("nothing to add");
-              }
-
-          } else
-          {
-              LOG_E( PHY, "[SCHED][UE %d] UE dlsch td thread 1 busy (IC %d)!!\n", phy_vars_ue->Mod_id, proc->instance_cnt_dlsch_td1);
-              if (proc->instance_cnt_dlsch_td1 > 4)
-                  exit_fun("instance_cnt_dlsch_td1 > 4");
-          }
-
-          AssertFatal(pthread_mutex_unlock(&proc->mutex_dlsch_td1) ==0,"");
-
-     }
-	/*
-	if (pthread_mutex_timedlock(&proc->mutex_td,&wait) != 0) {
-       printf("[eNB] ERROR pthread_mutex_lock for TD thread (IC %d)\n", proc->instance_cnt_td);
-       exit_fun( "error locking mutex_fep" );
-       return -1;
-     }
-
-     if (proc->instance_cnt_td==0) {
-       printf("[UE] TD thread busy\n");
-       exit_fun("TD thread busy");
-       pthread_mutex_unlock( &proc->mutex_td );
-       return -1;
-     }
-
-     ++proc->instance_cnt_td;
-
-     proc->tdp.UE        = phy_vars_ue;
-     proc->tdp.eNB_id    = eNB_id;
-     proc->tdp.harq_pid  = harq_pid;
-     proc->tdp.llr8_flag = llr8_flag;
-
-     printf("----- 2thread llr flag %d tdp flag %d\n",llr8_flag, proc->tdp.llr8_flag);
+    Gp = G/Nl/Qm;
+    GpmodC = Gp%C;
 
 
-     // wakeup worker to do second half segments
-     if (pthread_cond_signal(&proc->cond_td) != 0) {
-       printf("[UE] ERROR pthread_cond_signal for td thread exit\n");
-       exit_fun( "ERROR pthread_cond_signal" );
-       return (1+dlsch->last_iteration_cnt);
-     }
 
-     pthread_mutex_unlock( &proc->mutex_td );*/
+    if (r_thread < (C-(GpmodC)))
+      Er = Nl*Qm * (Gp/C);
+    else
+      Er = Nl*Qm * ((GpmodC==0?0:1) + (Gp/C));
+    printf("mthread Er %d\n", Er);
+
+    printf("mthread instance_cnt_dlsch_td %d\n",  proc->instance_cnt_dlsch_td);*/
+
+    proc->instance_cnt_dlsch_td++;
+    proc->eNB_id    = eNB_id;
+    proc->harq_pid  = harq_pid;
+    proc->llr8_flag = llr8_flag;
+  //proc->r[0] = 1;
+
+    if (proc->instance_cnt_dlsch_td == 0)
+    {
+      LOG_D(PHY,"unblock dlsch td processing thread blocked on instance_cnt_dlsch_td : %d \n", proc->instance_cnt_dlsch_td );
+      if (pthread_cond_signal(&proc->cond_dlsch_td) != 0) {
+        LOG_E( PHY, "[SCHED][UE %d][Slot0] ERROR pthread_cond_signal for UE dlsch td\n", phy_vars_ue->Mod_id);
+        exit_fun("nothing to add");
+      }
+      if (pthread_mutex_unlock(&proc->mutex_dlsch_td) != 0) {
+        LOG_E( PHY, "[SCHED][UE %d][Slot0] error unlocking mutex for UE dlsch td \n",phy_vars_ue->Mod_id );
+        exit_fun("nothing to add");
+      }
+    } else
+    {
+      LOG_E( PHY, "[SCHED][UE %d] UE dlsch td thread busy (IC %d)!!\n", phy_vars_ue->Mod_id, proc->instance_cnt_dlsch_td);
+      if (proc->instance_cnt_dlsch_td > 4)
+        exit_fun("instance_cnt_dlsch_td > 4");
+    }
+  //AssertFatal(pthread_cond_signal(&proc->cond_slot1_dl_processing) ==0 ,"");
+    AssertFatal(pthread_mutex_unlock(&proc->mutex_dlsch_td) ==0,"");
+
+    if (harq_process->C>2) {
+      if (pthread_mutex_lock(&proc->mutex_dlsch_td1) != 0) {
+        LOG_E( PHY, "[SCHED][UE %d][Slot0] error locking mutex for UE dlsch td\n",phy_vars_ue->Mod_id );
+        exit_fun("nothing to add");
+      }
+
+      proc->instance_cnt_dlsch_td1++;
+      proc->eNB_id    = eNB_id;
+      proc->harq_pid  = harq_pid;
+      proc->llr8_flag = llr8_flag;
+   // proc->Er = Er;
+
+      if (proc->instance_cnt_dlsch_td1 == 0)
+      {
+        LOG_D(PHY,"unblock slot1 dl processing thread blocked on instance_cnt_dlsch_td : %d \n", proc->instance_cnt_dlsch_td1 );
+        if (pthread_cond_signal(&proc->cond_dlsch_td1) != 0) {
+          LOG_E( PHY, "[SCHED][UE %d][Slot0] ERROR pthread_cond_signal for UE dlsch td\n", phy_vars_ue->Mod_id);
+          exit_fun("nothing to add");
+        }
+        if (pthread_mutex_unlock(&proc->mutex_dlsch_td1) != 0) {
+          LOG_E( PHY, "[SCHED][UE %d][Slot0] error unlocking mutex for UE dlsch td \n",phy_vars_ue->Mod_id );
+          exit_fun("nothing to add");
+        }
+      } else
+      {
+        LOG_E( PHY, "[SCHED][UE %d] UE dlsch td thread 1 busy (IC %d)!!\n", phy_vars_ue->Mod_id, proc->instance_cnt_dlsch_td1);
+        if (proc->instance_cnt_dlsch_td1 > 4)
+          exit_fun("instance_cnt_dlsch_td1 > 4");
+      }
+
+      AssertFatal(pthread_mutex_unlock(&proc->mutex_dlsch_td1) ==0,"");
+
+    }
+  /*
+    if (pthread_mutex_timedlock(&proc->mutex_td,&wait) != 0) {
+      printf("[eNB] ERROR pthread_mutex_lock for TD thread (IC %d)\n", proc->instance_cnt_td);
+      exit_fun( "error locking mutex_fep" );
+      return -1;
+    }
+
+    if (proc->instance_cnt_td==0) {
+      printf("[UE] TD thread busy\n");
+      exit_fun("TD thread busy");
+      pthread_mutex_unlock( &proc->mutex_td );
+      return -1;
+    }
+
+    ++proc->instance_cnt_td;
+
+    proc->tdp.UE        = phy_vars_ue;
+    proc->tdp.eNB_id    = eNB_id;
+    proc->tdp.harq_pid  = harq_pid;
+    proc->tdp.llr8_flag = llr8_flag;
+
+    printf("----- 2thread llr flag %d tdp flag %d\n",llr8_flag, proc->tdp.llr8_flag);
 
 
-     Cby2 = 1; //harq_process->C/2;
-     //proc->decoder_main_available = 1;
-   }
-   else {
-     Cby2 = 1;
-   }
+    // wakeup worker to do second half segments
+    if (pthread_cond_signal(&proc->cond_td) != 0) {
+      printf("[UE] ERROR pthread_cond_signal for td thread exit\n");
+      exit_fun( "ERROR pthread_cond_signal" );
+      return (1+dlsch->last_iteration_cnt);
+    }
 
-  //for (r=0; r<Cby2; r++) {
-	r = 0;  
-	if (r==0) r_offset =0;
+    pthread_mutex_unlock( &proc->mutex_td );*/
+
+
+    Cby2 = 1; //harq_process->C/2;
+  //proc->decoder_main_available = 1;
+  }
+  else {
+    Cby2 = 1;
+  }
+
+//for (r=0; r<Cby2; r++) {
+    r = 0;  
+    if (r==0) r_offset =0;
 
     Kr = harq_process->K;
     Kr_bytes = Kr>>3;
@@ -1041,27 +1037,27 @@ if (harq_process->C>1) { // wakeup worker if more than 1 segment
     }
 
     //for (int i =0; i<16; i++)
-    //    	printf("rx output ratematching d[%d]= %d r_offset %d\n", i,harq_process->d[r][i], r_offset);
+    //      printf("rx output ratematching d[%d]= %d r_offset %d\n", i,harq_process->d[r][i], r_offset);
 
     //r_offset += E;
     //printf("main thread r_offset %d\n",r_offset);
  
 #ifdef DEBUG_DLSCH_DECODING   
     for (int i =0; i<16; i++)
-             printf("rx output ratematching d[%d]= %d r_offset %d\n", i,harq_process->d[r][i], r_offset);
+      printf("rx output ratematching d[%d]= %d r_offset %d\n", i,harq_process->d[r][i], r_offset);
 #endif
 
 #ifdef DEBUG_DLSCH_DECODING
 
     if (r==0) {
-              write_output("decoder_llr.m","decllr",dlsch_llr,G,1,0);
-              write_output("decoder_in.m","dec",&harq_process->d[0][96],(3*8*Kr_bytes)+12,1,0);
+      write_output("decoder_llr.m","decllr",dlsch_llr,G,1,0);
+      write_output("decoder_in.m","dec",&harq_process->d[0][96],(3*8*Kr_bytes)+12,1,0);
     }
 
     printf("decoder input(segment %d) :",r);
     for (int i=0;i<(3*8*Kr_bytes);i++)
       printf("%d : %d\n",i,harq_process->d[r][i]);
-      printf("\n");
+    printf("\n");
 #endif
 
 
@@ -1082,98 +1078,94 @@ if (harq_process->C>1) { // wakeup worker if more than 1 segment
                             Kr,r,harq_process->C,harq_process->nb_rb,crc_type,A,harq_process->TBS,
                             harq_process->B,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round,dlsch->max_ldpc_iterations);
 */
-    	if (llr8_flag) {
-    		AssertFatal (Kr >= 256, "turbo algo issue Kr=%d cb_cnt=%d C=%d nbRB=%d TBSInput=%d TBSHarq=%d TBSplus24=%d mcs=%d Qm=%d RIV=%d round=%d\n",
-    				Kr,r,harq_process->C,harq_process->nb_rb,A,harq_process->TBS,harq_process->B,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round);
-    	}
+      if (llr8_flag) {
+        AssertFatal (Kr >= 256, "turbo algo issue Kr=%d cb_cnt=%d C=%d nbRB=%d TBSInput=%d TBSHarq=%d TBSplus24=%d mcs=%d Qm=%d RIV=%d round=%d\n",
+            Kr,r,harq_process->C,harq_process->nb_rb,A,harq_process->TBS,harq_process->B,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round);
+      }
 #if UE_TIMING_TRACE
-        start_meas(dlsch_turbo_decoding_stats);
+      start_meas(dlsch_turbo_decoding_stats);
 #endif
       LOG_D(PHY,"mthread AbsSubframe %d.%d Start turbo segment %d/%d \n",frame%1024,nr_tti_rx,r,harq_process->C-1);
-      
-            for (int cnt =0; cnt < (kc-2)*p_decParams->Z; cnt++){
-            inv_d[cnt] = (1)*harq_process->d[r][cnt];
-            }
 
-		memset(pv,0,2*p_decParams->Z*sizeof(int16_t));
-        //memset(pl,0,2*p_decParams->Z*sizeof(int8_t));
-		memset((pv+K_bytes_F),127,harq_process->F*sizeof(int16_t));
+      for (int cnt =0; cnt < (kc-2)*p_decParams->Z; cnt++){
+        inv_d[cnt] = (1)*harq_process->d[r][cnt];
+      }
 
-
-      	for (i=((2*p_decParams->Z)>>3), j = 0; i < K_bytes_F+((2*p_decParams->Z)>>3); i++, j++)
-      	{
-      		pv[i]= _mm_loadu_si128((__m128i*)(&inv_d[8*j]));
-      	}
-
-		for (i=Kr_bytes+((2*p_decParams->Z)>>3),j=Kr_bytes; i < ((kc*p_decParams->Z)>>3); i++, j++)
-		      	{
-		      		pv[i]= _mm_loadu_si128((__m128i*)(&inv_d[8*j]));
-		      	}
-
-		for (i=0, j=0; j < ((kc*p_decParams->Z)>>4);  i+=2, j++)
-      	      	{
-
-      	      		pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
-
-      	      	}
-
-		no_iteration_ldpc = nrLDPC_decoder(p_decParams,
-						   (int8_t*)&pl[0],
-						   llrProcBuf,
-                           p_nrLDPC_procBuf,
-						   p_procTime);
-
-		nb_total_decod++;
-		if (no_iteration_ldpc > 10){
-		  nb_error_decod++;
-		  ret = 1+dlsch->max_ldpc_iterations;
-		}
-		else {
-		  ret=2;
-		}
-		
-		if (check_crc(llrProcBuf,harq_process->B,harq_process->F,crc_type)) {
-		  printf("CRC OK\n");
-		  ret = 2;
-		}
-		else {
-		  printf("CRC NOK\n");
-		  ret = 1+dlsch->max_ldpc_iterations;
-		}
-		
-		//if (!nb_total_decod%10000){
-				printf("Error number of iteration LPDC %d %ld/%ld \n", no_iteration_ldpc, nb_error_decod,nb_total_decod);fflush(stdout);
-		//}
-
-		//else
-			//printf("OK number of iteration LPDC %d\n", no_iteration_ldpc);
-
-		for (int m=0; m < Kr>>3; m ++)
-		      	      	{
-		      				harq_process->c[r][m]= (uint8_t) llrProcBuf[m];
-		      	      	}
-
-		      	/*for (int u=0; u < Kr>>3; u ++)
-		      	      	      	{
-		      						ullrProcBuf[u]= (uint8_t) llrProcBuf[u];
-		      	      	      	}
+      memset(pv,0,2*p_decParams->Z*sizeof(int16_t));
+      //memset(pl,0,2*p_decParams->Z*sizeof(int8_t));
+      memset((pv+K_bytes_F),127,harq_process->F*sizeof(int16_t));
 
 
-		      	printf("output unsigned ullrProcBuf \n");
+      for (i=((2*p_decParams->Z)>>3), j = 0; i < K_bytes_F+((2*p_decParams->Z)>>3); i++, j++)
+      {
+        pv[i]= _mm_loadu_si128((__m128i*)(&inv_d[8*j]));
+      }
 
-		      	for (int j=0; j < Kr>>3; j ++)
-		      	      	       	      	{
+      for (i=Kr_bytes+((2*p_decParams->Z)>>3),j=Kr_bytes; i < ((kc*p_decParams->Z)>>3); i++, j++)
+      {
+        pv[i]= _mm_loadu_si128((__m128i*)(&inv_d[8*j]));
+      }
 
-		      	      						printf(" %d \n", ullrProcBuf[j]);
+      for (i=0, j=0; j < ((kc*p_decParams->Z)>>4);  i+=2, j++)
+      {
+        pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
+      }
 
-		      	      	      	      	}
-		     	printf(" \n");*/
-		//printf("output channel decoder %d %d %d %d %d \n", harq_process->c[r][0], harq_process->c[r][1], harq_process->c[r][2],harq_process->c[r][3], harq_process->c[r][4]);
+      no_iteration_ldpc = nrLDPC_decoder(p_decParams,
+               (int8_t*)&pl[0],
+               llrProcBuf,
+               p_nrLDPC_procBuf,
+               p_procTime);
 
-		 //printf("output decoder %d %d %d %d %d \n", harq_process->c[r][0], harq_process->c[r][1], harq_process->c[r][2],harq_process->c[r][3], harq_process->c[r][4]);
+      nb_total_decod++;
+      if (no_iteration_ldpc > 10){
+        nb_error_decod++;
+        ret = 1+dlsch->max_ldpc_iterations;
+      }
+      else {
+        ret=2;
+      }
+
+      if (check_crc(llrProcBuf,harq_process->B,harq_process->F,crc_type)) {
+        printf("CRC OK\n");
+        ret = 2;
+      }
+      else {
+        printf("CRC NOK\n");
+        ret = 1+dlsch->max_ldpc_iterations;
+      }
+
+    //if (!nb_total_decod%10000){
+        printf("Error number of iteration LPDC %d %ld/%ld \n", no_iteration_ldpc, nb_error_decod,nb_total_decod);fflush(stdout);
+    //}
+
+    //else
+      //printf("OK number of iteration LPDC %d\n", no_iteration_ldpc);
+
+      for (int m=0; m < Kr>>3; m ++)
+      {
+        harq_process->c[r][m]= (uint8_t) llrProcBuf[m];
+      }
+
+    /*for (int u=0; u < Kr>>3; u ++)
+      {
+        ullrProcBuf[u]= (uint8_t) llrProcBuf[u];
+      }
+
+
+      printf("output unsigned ullrProcBuf \n");
+
+      for (int j=0; j < Kr>>3; j ++)
+      {
+        printf(" %d \n", ullrProcBuf[j]);
+      }
+      printf(" \n");*/
+    //printf("output channel decoder %d %d %d %d %d \n", harq_process->c[r][0], harq_process->c[r][1], harq_process->c[r][2],harq_process->c[r][3], harq_process->c[r][4]);
+
+    //printf("output decoder %d %d %d %d %d \n", harq_process->c[r][0], harq_process->c[r][1], harq_process->c[r][2],harq_process->c[r][3], harq_process->c[r][4]);
 #ifdef DEBUG_DLSCH_DECODING
-	for (int k=0;k<32;k++)
-       		printf("output decoder [%d] =  0x%02x \n", k, harq_process->c[r][k]);
+      for (int k=0;k<32;k++)
+        printf("output decoder [%d] =  0x%02x \n", k, harq_process->c[r][k]);
 #endif
 
 #if UE_TIMING_TRACE
@@ -1252,40 +1244,40 @@ if (harq_process->C>1) { // wakeup worker if more than 1 segment
   */
   uint32_t wait = 0;
   if (harq_process->C==2){
-	  while((proc->decoder_thread_available == 0) )
+    while((proc->decoder_thread_available == 0) )
   {
           usleep(1);
           wait++;
   }
   }
   else if ((harq_process->C==3) ){
-	  while((proc->decoder_thread_available == 0) || (proc->decoder_thread_available1 == 0))
-			  {
-			            usleep(1);
-			            wait++;
-			    }
+    while((proc->decoder_thread_available == 0) || (proc->decoder_thread_available1 == 0))
+        {
+                  usleep(1);
+                  wait++;
+          }
   }
 
   proc->decoder_main_available = 0;
   
   for (r=0; r<harq_process->C; r++) {
 
-	  Kr = harq_process->K; //to check if same K in all segments
-	  Kr_bytes = Kr>>3;
+    Kr = harq_process->K; //to check if same K in all segments
+    Kr_bytes = Kr>>3;
 
-	    memcpy(harq_process->b+offset,
-	             harq_process->c[r],
-	             Kr_bytes- - (harq_process->F>>3) -((harq_process->C>1)?3:0));
-	    offset += (Kr_bytes - (harq_process->F>>3) - ((harq_process->C>1)?3:0));
+      memcpy(harq_process->b+offset,
+               harq_process->c[r],
+               Kr_bytes- - (harq_process->F>>3) -((harq_process->C>1)?3:0));
+      offset += (Kr_bytes - (harq_process->F>>3) - ((harq_process->C>1)?3:0));
 
 #ifdef DEBUG_DLSCH_DECODING
-	    printf("Segment %d : Kr= %d bytes\n",r,Kr_bytes);
-	    printf("copied %d bytes to b sequence (harq_pid %d)\n",
-	              (Kr_bytes - (harq_process->F>>3)-((harq_process->C>1)?3:0)),harq_pid);
-	              printf("b[0] = %x,c[%d] = %x\n",
-	              harq_process->b[offset],
-	              harq_process->F>>3,
-	              harq_process->c[r]);
+      printf("Segment %d : Kr= %d bytes\n",r,Kr_bytes);
+      printf("copied %d bytes to b sequence (harq_pid %d)\n",
+                (Kr_bytes - (harq_process->F>>3)-((harq_process->C>1)?3:0)),harq_pid);
+                printf("b[0] = %x,c[%d] = %x\n",
+                harq_process->b[offset],
+                harq_process->F>>3,
+                harq_process->c[r]);
 #endif
   }
 
@@ -1346,14 +1338,14 @@ void *nr_dlsch_decoding_2thread0(void *arg)
     char threadname[256];
     sprintf(threadname,"UE_thread_dlsch_td_%d", proc->sub_frame_start);
 
-	cpu_set_t cpuset;
+  cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     if ( (proc->sub_frame_start+1)%RX_NB_TH == 0 && threads.dlsch_td_one != -1 )
-    	CPU_SET(threads.dlsch_td_one, &cpuset);
+      CPU_SET(threads.dlsch_td_one, &cpuset);
     if ( (proc->sub_frame_start+1)%RX_NB_TH == 1 && threads.dlsch_td_two != -1 )
-    	CPU_SET(threads.dlsch_td_two, &cpuset);
+      CPU_SET(threads.dlsch_td_two, &cpuset);
     if ( (proc->sub_frame_start+1)%RX_NB_TH == 2 && threads.dlsch_td_three != -1 )
-    	CPU_SET(threads.dlsch_td_three, &cpuset);
+      CPU_SET(threads.dlsch_td_three, &cpuset);
 
 
 
@@ -1376,42 +1368,42 @@ void *nr_dlsch_decoding_2thread0(void *arg)
   init_thread(900000,1000000 , FIFO_PRIORITY-1, &cpuset, threadname);
   while (!oai_exit) {
 
-		//proc->decoder_thread_available = 1;
-		
-	        if (pthread_mutex_lock(&proc->mutex_dlsch_td) != 0) {
-	            LOG_E( PHY, "[SCHED][UE] error locking mutex for UE dlsch td\n" );
-	            exit_fun("nothing to add");
-	        }
-	        while (proc->instance_cnt_dlsch_td < 0) {
-	            // most of the time, the thread is waiting here
-	            pthread_cond_wait( &proc->cond_dlsch_td, &proc->mutex_dlsch_td );
-	        }
-	        if (pthread_mutex_unlock(&proc->mutex_dlsch_td) != 0) {
-	            LOG_E( PHY, "[SCHED][UE] error unlocking mutex for UE dlsch_td \n" );
-	            exit_fun("nothing to add");
-	        }
+    //proc->decoder_thread_available = 1;
+    
+          if (pthread_mutex_lock(&proc->mutex_dlsch_td) != 0) {
+              LOG_E( PHY, "[SCHED][UE] error locking mutex for UE dlsch td\n" );
+              exit_fun("nothing to add");
+          }
+          while (proc->instance_cnt_dlsch_td < 0) {
+              // most of the time, the thread is waiting here
+              pthread_cond_wait( &proc->cond_dlsch_td, &proc->mutex_dlsch_td );
+          }
+          if (pthread_mutex_unlock(&proc->mutex_dlsch_td) != 0) {
+              LOG_E( PHY, "[SCHED][UE] error unlocking mutex for UE dlsch_td \n" );
+              exit_fun("nothing to add");
+          }
 
-	        uint32_t wait = 0;
-	        while(proc->decoder_main_available == 0)
-	        {
-	            usleep(1);
-	            wait++;
-	        }
+          uint32_t wait = 0;
+          while(proc->decoder_main_available == 0)
+          {
+              usleep(1);
+              wait++;
+          }
 
-	        //proc->decoder_thread_available = 0;
-	        //PHY_VARS_NR_UE *phy_vars_ue   		= tdp->UE;
-	        int eNB_id         				= proc->eNB_id;
-	        int harq_pid      				= proc->harq_pid;
-	        llr8_flag1     					= proc->llr8_flag;
-	        //r_offset						= proc->Er;
-	        //UE_rxtx_proc_t *proc    		= tdp->proc;
-	        int frame                       = proc->frame_rx;
-	        int subframe      				= proc->nr_tti_rx;
-	        NR_UE_DLSCH_t *dlsch 			= phy_vars_ue->dlsch[phy_vars_ue->current_thread_id[subframe]][eNB_id][0];
-	        NR_DL_UE_HARQ_t *harq_process  = dlsch->harq_processes[harq_pid];
-	        short *dlsch_llr 				= phy_vars_ue->pdsch_vars[phy_vars_ue->current_thread_id[subframe]][eNB_id]->llr[0];
-	        //printf("2thread0 llr flag %d tdp flag %d\n",llr8_flag1, tdp->llr8_flag);
-	        p_nrLDPC_procBuf = harq_process->p_nrLDPC_procBuf[1];
+          //proc->decoder_thread_available = 0;
+          //PHY_VARS_NR_UE *phy_vars_ue       = tdp->UE;
+          int eNB_id                = proc->eNB_id;
+          int harq_pid              = proc->harq_pid;
+          llr8_flag1              = proc->llr8_flag;
+          //r_offset            = proc->Er;
+          //UE_rxtx_proc_t *proc        = tdp->proc;
+          int frame                       = proc->frame_rx;
+          int subframe              = proc->nr_tti_rx;
+          NR_UE_DLSCH_t *dlsch      = phy_vars_ue->dlsch[phy_vars_ue->current_thread_id[subframe]][eNB_id][0];
+          NR_DL_UE_HARQ_t *harq_process  = dlsch->harq_processes[harq_pid];
+          short *dlsch_llr        = phy_vars_ue->pdsch_vars[phy_vars_ue->current_thread_id[subframe]][eNB_id]->llr[0];
+          //printf("2thread0 llr flag %d tdp flag %d\n",llr8_flag1, tdp->llr8_flag);
+          p_nrLDPC_procBuf = harq_process->p_nrLDPC_procBuf[1];
 
   /*
   if (nb_rb > frame_parms->N_RB_DL) {
@@ -1444,27 +1436,27 @@ void *nr_dlsch_decoding_2thread0(void *arg)
     harq_process->B = A+24;
 
     nr_segmentation(NULL,
-    	                    NULL,
-    	                    harq_process->B,
-    	                    &harq_process->C,
-    	                    &harq_process->K,
-   			    &harq_process->Z,
-    	                    &harq_process->F);
-    	p_decParams->Z = harq_process->Z;
+                          NULL,
+                          harq_process->B,
+                          &harq_process->C,
+                          &harq_process->K,
+            &harq_process->Z,
+                          &harq_process->F);
+      p_decParams->Z = harq_process->Z;
 
     }
 
   kb = harq_process->K/harq_process->Z;
-	  if ( kb==22){
-		  p_decParams->BG = 1;
-		  p_decParams->R = 13;
-		  kc = 68;
-	  }
-	  else{
-		  p_decParams->BG = 2;
-		  p_decParams->R = 13;
-		  kc = 52;
-	  	  }
+    if ( kb==22){
+      p_decParams->BG = 1;
+      p_decParams->R = 13;
+      kc = 68;
+    }
+    else{
+      p_decParams->BG = 2;
+      p_decParams->R = 13;
+      kc = 52;
+        }
 
   p_decParams->numMaxIter = 2;
   Kr = p_decParams->Z*kb;
@@ -1510,14 +1502,14 @@ void *nr_dlsch_decoding_2thread0(void *arg)
   Cprime = C; //assume CBGTI not present
 
   if (r <= Cprime - ((G/(Nl*Qm))%Cprime) - 1)
-	  r_offset = Nl*Qm*(G/(Nl*Qm*Cprime));
+    r_offset = Nl*Qm*(G/(Nl*Qm*Cprime));
   else
-	  r_offset = Nl*Qm*((G/(Nl*Qm*Cprime))+1);
+    r_offset = Nl*Qm*((G/(Nl*Qm*Cprime))+1);
 
-		//	printf("thread0 r_offset %d\n",r_offset);
-  	       
+    //  printf("thread0 r_offset %d\n",r_offset);
+           
   //for (r=(harq_process->C/2); r<harq_process->C; r++) {
-  	     r=1; //(harq_process->C/2);
+         r=1; //(harq_process->C/2);
 
 
   Kr = harq_process->K;
@@ -1537,7 +1529,7 @@ void *nr_dlsch_decoding_2thread0(void *arg)
                            dlsch_llr+r_offset);
 
     //for (int i =0; i<16; i++)
-    //        	printf("rx output deinterleaving w[%d]= %d r_offset %d\n", i,harq_process->w[r][i], r_offset);
+    //          printf("rx output deinterleaving w[%d]= %d r_offset %d\n", i,harq_process->w[r][i], r_offset);
 
 #if UE_TIMING_TRACE
     stop_meas(dlsch_deinterleaving_stats);
@@ -1582,7 +1574,7 @@ void *nr_dlsch_decoding_2thread0(void *arg)
     }
 
     //for (int i =0; i<16; i++)
-    //    	printf("rx output ratematching d[%d]= %d r_offset %d\n", i,harq_process->d[r][i], r_offset);
+    //      printf("rx output ratematching d[%d]= %d r_offset %d\n", i,harq_process->d[r][i], r_offset);
 
     //r_offset += E;
 
@@ -1616,10 +1608,10 @@ void *nr_dlsch_decoding_2thread0(void *arg)
                             Kr,r,harq_process->C,harq_process->nb_rb,crc_type,A,harq_process->TBS,
                             harq_process->B,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round,dlsch->max_ldpc_iterations);
 */
-    	if (llr8_flag1) {
-    		AssertFatal (Kr >= 256, "turbo algo issue Kr=%d cb_cnt=%d C=%d nbRB=%d TBSInput=%d TBSHarq=%d TBSplus24=%d mcs=%d Qm=%d RIV=%d round=%d\n",
-    				Kr,r,harq_process->C,harq_process->nb_rb,A,harq_process->TBS,harq_process->B,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round);
-    	}
+      if (llr8_flag1) {
+        AssertFatal (Kr >= 256, "turbo algo issue Kr=%d cb_cnt=%d C=%d nbRB=%d TBSInput=%d TBSHarq=%d TBSplus24=%d mcs=%d Qm=%d RIV=%d round=%d\n",
+            Kr,r,harq_process->C,harq_process->nb_rb,A,harq_process->TBS,harq_process->B,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round);
+      }
 #if UE_TIMING_TRACE
         start_meas(dlsch_turbo_decoding_stats);
 #endif
@@ -1634,58 +1626,58 @@ void *nr_dlsch_decoding_2thread0(void *arg)
         memset((pv+K_bytes_F),127,harq_process->F*sizeof(int16_t));
 
         for (i=((2*p_decParams->Z)>>3), j = 0; i < K_bytes_F+((2*p_decParams->Z)>>3); i++, j++)
-      	{
-      		pv[i]= _mm_loadu_si128((__m128i*)(&inv_d[8*j]));
-      	}
+        {
+          pv[i]= _mm_loadu_si128((__m128i*)(&inv_d[8*j]));
+        }
 
-		for (i=Kr_bytes+((2*p_decParams->Z)>>3),j=Kr_bytes; i < ((kc*p_decParams->Z)>>3); i++, j++)
-		      	{
-		      		pv[i]= _mm_loadu_si128((__m128i*)(&inv_d[8*j]));
-		      	}
+    for (i=Kr_bytes+((2*p_decParams->Z)>>3),j=Kr_bytes; i < ((kc*p_decParams->Z)>>3); i++, j++)
+            {
+              pv[i]= _mm_loadu_si128((__m128i*)(&inv_d[8*j]));
+            }
 
-		for (i=0, j=0; j < ((kc*p_decParams->Z)>>4);  i+=2, j++)
-      	      	{
+    for (i=0, j=0; j < ((kc*p_decParams->Z)>>4);  i+=2, j++)
+                {
 
-      	      		pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
+                  pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
 
-      	      	}
+                }
 
-		no_iteration_ldpc = nrLDPC_decoder(p_decParams,
-						   (int8_t*)&pl[0],
-						   llrProcBuf,
+    no_iteration_ldpc = nrLDPC_decoder(p_decParams,
+               (int8_t*)&pl[0],
+               llrProcBuf,
                            p_nrLDPC_procBuf,                
-						   p_procTime);
+               p_procTime);
 
-		if (no_iteration_ldpc > 10)
-			printf("Error number of iteration LPDC %d\n", no_iteration_ldpc);
-		//else
-			//printf("OK number of iteration LPDC %d\n", no_iteration_ldpc);
+    if (no_iteration_ldpc > 10)
+      printf("Error number of iteration LPDC %d\n", no_iteration_ldpc);
+    //else
+      //printf("OK number of iteration LPDC %d\n", no_iteration_ldpc);
 
-		for (int m=0; m < Kr>>3; m ++)
-		      	      	{
-		      				harq_process->c[r][m]= (uint8_t) llrProcBuf[m];
-		      	      	}
+    for (int m=0; m < Kr>>3; m ++)
+                    {
+                  harq_process->c[r][m]= (uint8_t) llrProcBuf[m];
+                    }
 
-		      	/*for (int u=0; u < Kr>>3; u ++)
-		      	      	      	{
-		      						ullrProcBuf[u]= (uint8_t) llrProcBuf[u];
-		      	      	      	}
+            /*for (int u=0; u < Kr>>3; u ++)
+                            {
+                      ullrProcBuf[u]= (uint8_t) llrProcBuf[u];
+                            }
 
 
-		      	printf("output unsigned ullrProcBuf \n");
+            printf("output unsigned ullrProcBuf \n");
 
-		      	for (int j=0; j < Kr>>3; j ++)
-		      	      	       	      	{
+            for (int j=0; j < Kr>>3; j ++)
+                                    {
 
-		      	      						printf(" %d \n", ullrProcBuf[j]);
+                              printf(" %d \n", ullrProcBuf[j]);
 
-		      	      	      	      	}
-		     	printf(" \n");*/
-#ifdef DEBUG_DLSCH_DECODING	     	
-	for (int k=0;k<2;k++)
-  		printf("segment 1 output decoder [%d] =  0x%02x \n", k, harq_process->c[r][k]);
+                                    }
+          printf(" \n");*/
+#ifdef DEBUG_DLSCH_DECODING       
+  for (int k=0;k<2;k++)
+      printf("segment 1 output decoder [%d] =  0x%02x \n", k, harq_process->c[r][k]);
 #endif 
-		
+    
 #if UE_TIMING_TRACE
       stop_meas(dlsch_turbo_decoding_stats);
 #endif
@@ -1818,7 +1810,7 @@ void *nr_dlsch_decoding_2thread0(void *arg)
 #define FIFO_PRIORITY   39
 void *nr_dlsch_decoding_2thread1(void *arg)
 {
-	static __thread int UE_dlsch_td_retval1;
+  static __thread int UE_dlsch_td_retval1;
     struct nr_rxtx_thread_data *rtd = arg;
     UE_nr_rxtx_proc_t *proc = rtd->proc;
     PHY_VARS_NR_UE    *phy_vars_ue   = rtd->UE;
@@ -1860,14 +1852,14 @@ void *nr_dlsch_decoding_2thread1(void *arg)
     char threadname[256];
     sprintf(threadname,"UE_thread_dlsch_td1_%d", proc->sub_frame_start);
 
-	cpu_set_t cpuset;
+  cpu_set_t cpuset;
     CPU_ZERO(&cpuset);
     if ( (proc->sub_frame_start+1)%RX_NB_TH == 0 && threads.dlsch_td_one != -1 )
-    	CPU_SET(threads.dlsch_td_one, &cpuset);
+      CPU_SET(threads.dlsch_td_one, &cpuset);
     if ( (proc->sub_frame_start+1)%RX_NB_TH == 1 && threads.dlsch_td_two != -1 )
-    	CPU_SET(threads.dlsch_td_two, &cpuset);
+      CPU_SET(threads.dlsch_td_two, &cpuset);
     if ( (proc->sub_frame_start+1)%RX_NB_TH == 2 && threads.dlsch_td_three != -1 )
-    	CPU_SET(threads.dlsch_td_three, &cpuset);
+      CPU_SET(threads.dlsch_td_three, &cpuset);
 
 
 
@@ -1881,51 +1873,51 @@ void *nr_dlsch_decoding_2thread1(void *arg)
     uint32_t ret,offset;
     uint32_t r,r_offset=0,Kr,Kr_bytes,err_flag=0,K_bytes_F;
     uint8_t crc_type;
-  	uint8_t C,Cprime;
+    uint8_t C,Cprime;
     uint8_t Qm;
-   	uint8_t Nl;
+    uint8_t Nl;
     //uint32_t Er;
 
-	init_thread(900000,1000000 , FIFO_PRIORITY-1, &cpuset, threadname);
-	printf("2thread1 oai_exit %d\n", oai_exit);
-	while (!oai_exit) {
-	        if (pthread_mutex_lock(&proc->mutex_dlsch_td1) != 0) {
-	            LOG_E( PHY, "[SCHED][UE] error locking mutex for UE dlsch td\n" );
-	            exit_fun("nothing to add");
-	        }
-	        while (proc->instance_cnt_dlsch_td1 < 0) {
-	            // most of the time, the thread is waiting here
-	            pthread_cond_wait( &proc->cond_dlsch_td1, &proc->mutex_dlsch_td1 );
-	        }
-	        if (pthread_mutex_unlock(&proc->mutex_dlsch_td1) != 0) {
-	            LOG_E( PHY, "[SCHED][UE] error unlocking mutex for UE dlsch_td \n" );
-	            exit_fun("nothing to add");
-	        }
+  init_thread(900000,1000000 , FIFO_PRIORITY-1, &cpuset, threadname);
+  printf("2thread1 oai_exit %d\n", oai_exit);
+  while (!oai_exit) {
+          if (pthread_mutex_lock(&proc->mutex_dlsch_td1) != 0) {
+              LOG_E( PHY, "[SCHED][UE] error locking mutex for UE dlsch td\n" );
+              exit_fun("nothing to add");
+          }
+          while (proc->instance_cnt_dlsch_td1 < 0) {
+              // most of the time, the thread is waiting here
+              pthread_cond_wait( &proc->cond_dlsch_td1, &proc->mutex_dlsch_td1 );
+          }
+          if (pthread_mutex_unlock(&proc->mutex_dlsch_td1) != 0) {
+              LOG_E( PHY, "[SCHED][UE] error unlocking mutex for UE dlsch_td \n" );
+              exit_fun("nothing to add");
+          }
 
-	        //printf("2thread1 main available %d\n", proc->decoder_main_available);
+          //printf("2thread1 main available %d\n", proc->decoder_main_available);
 
-	        uint32_t wait = 0;
-	        	          while(proc->decoder_main_available == 0)
-	        	          {
-	        	                  usleep(1);
-	        	                  wait++;
-	        	          }
-	        	
-	        //proc->decoder_thread_available1 = 0;
-	        //PHY_VARS_NR_UE *phy_vars_ue   		= tdp->UE;
-	        int eNB_id         				= proc->eNB_id;
-	        int harq_pid      				= proc->harq_pid;
-	        llr8_flag1     					= proc->llr8_flag;
-	        //r_offset						= proc->Er;
-	        //UE_rxtx_proc_t *proc    		= tdp->proc;
-	        int frame                       = proc->frame_rx;
-	        int subframe      				= proc->nr_tti_rx;
-	        NR_UE_DLSCH_t *dlsch 			= phy_vars_ue->dlsch[phy_vars_ue->current_thread_id[subframe]][eNB_id][0];
-	        NR_DL_UE_HARQ_t *harq_process  = dlsch->harq_processes[harq_pid];
-	        short *dlsch_llr 				= phy_vars_ue->pdsch_vars[phy_vars_ue->current_thread_id[subframe]][eNB_id]->llr[0];
-	        //printf("2thread0 llr flag %d tdp flag %d\n",llr8_flag1, tdp->llr8_flag);
-	        //printf("2thread1 nr_tti_tx %d subframe %d SF thread id %d r_offset %d\n", proc->nr_tti_rx, subframe, phy_vars_ue->current_thread_id[subframe], r_offset);
-	        p_nrLDPC_procBuf = harq_process->p_nrLDPC_procBuf[2];
+          uint32_t wait = 0;
+                      while(proc->decoder_main_available == 0)
+                      {
+                              usleep(1);
+                              wait++;
+                      }
+            
+          //proc->decoder_thread_available1 = 0;
+          //PHY_VARS_NR_UE *phy_vars_ue       = tdp->UE;
+          int eNB_id                = proc->eNB_id;
+          int harq_pid              = proc->harq_pid;
+          llr8_flag1              = proc->llr8_flag;
+          //r_offset            = proc->Er;
+          //UE_rxtx_proc_t *proc        = tdp->proc;
+          int frame                       = proc->frame_rx;
+          int subframe              = proc->nr_tti_rx;
+          NR_UE_DLSCH_t *dlsch      = phy_vars_ue->dlsch[phy_vars_ue->current_thread_id[subframe]][eNB_id][0];
+          NR_DL_UE_HARQ_t *harq_process  = dlsch->harq_processes[harq_pid];
+          short *dlsch_llr        = phy_vars_ue->pdsch_vars[phy_vars_ue->current_thread_id[subframe]][eNB_id]->llr[0];
+          //printf("2thread0 llr flag %d tdp flag %d\n",llr8_flag1, tdp->llr8_flag);
+          //printf("2thread1 nr_tti_tx %d subframe %d SF thread id %d r_offset %d\n", proc->nr_tti_rx, subframe, phy_vars_ue->current_thread_id[subframe], r_offset);
+          p_nrLDPC_procBuf = harq_process->p_nrLDPC_procBuf[2];
 
   /*
   if (nb_rb > frame_parms->N_RB_DL) {
@@ -1960,27 +1952,27 @@ void *nr_dlsch_decoding_2thread1(void *arg)
     // This is a new packet, so compute quantities regarding segmentation
     harq_process->B = A+24;
     nr_segmentation(NULL,
-        	          NULL,
-        	          harq_process->B,
-        	          &harq_process->C,
-        	          &harq_process->K,
-         		  &harq_process->Z,
-        	          &harq_process->F);
-        			  p_decParams->Z = harq_process->Z;
+                    NULL,
+                    harq_process->B,
+                    &harq_process->C,
+                    &harq_process->K,
+              &harq_process->Z,
+                    &harq_process->F);
+                p_decParams->Z = harq_process->Z;
 
     }
 
     kb = harq_process->K/harq_process->Z;
-  	  if ( kb==22){
-  		  p_decParams->BG = 1;
-  		  p_decParams->R = 89;
-  		  kc = 68;
-  	  }
-  	  else{
-  		  p_decParams->BG = 2;
-  		  p_decParams->R = 13;
-  		  kc = 52;
-  	  	  }
+      if ( kb==22){
+        p_decParams->BG = 1;
+        p_decParams->R = 89;
+        kc = 68;
+      }
+      else{
+        p_decParams->BG = 2;
+        p_decParams->R = 13;
+        kc = 52;
+          }
 
     p_decParams->numMaxIter = 2;
     Kr = p_decParams->Z*kb;
@@ -2025,23 +2017,23 @@ void *nr_dlsch_decoding_2thread1(void *arg)
   Cprime = C; //assume CBGTI not present
 
   if (r <= Cprime - ((G/(Nl*Qm))%Cprime) - 1)
-	  r_offset = Nl*Qm*(G/(Nl*Qm*Cprime));
+    r_offset = Nl*Qm*(G/(Nl*Qm*Cprime));
   else
-	  r_offset = Nl*Qm*((G/(Nl*Qm*Cprime))+1);
+    r_offset = Nl*Qm*((G/(Nl*Qm*Cprime))+1);
 
-  	       //printf("sub thread r_offset %d\n", r_offset);
+           //printf("sub thread r_offset %d\n", r_offset);
 
   //for (r=(harq_process->C/2); r<harq_process->C; r++) {
-  	     r=2; //(harq_process->C/2);
-  	   r_offset = r*r_offset;
-	 //printf("thread1 r=%d r_offset %d \n",r, r_offset);
+         r=2; //(harq_process->C/2);
+       r_offset = r*r_offset;
+   //printf("thread1 r=%d r_offset %d \n",r, r_offset);
 
 
-  	  Kr = harq_process->K;
-  	  Kr_bytes = Kr>>3;
-  	  K_bytes_F = Kr_bytes-(harq_process->F>>3);
+      Kr = harq_process->K;
+      Kr_bytes = Kr>>3;
+      K_bytes_F = Kr_bytes-(harq_process->F>>3);
 
-  	  Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0, harq_process->Nl);
+      Tbslbrm = nr_compute_tbs(28,nb_rb,frame_parms->symbols_per_slot,0,0, harq_process->Nl);
 
     E = nr_get_E(G, harq_process->C, harq_process->Qm, harq_process->Nl, r);
 
@@ -2059,7 +2051,7 @@ void *nr_dlsch_decoding_2thread1(void *arg)
                            dlsch_llr+r_offset);
 
     //for (int i =0; i<16; i++)
-    //        	printf("rx output deinterleaving w[%d]= %d r_offset %d\n", i,harq_process->w[r][i], r_offset);
+    //          printf("rx output deinterleaving w[%d]= %d r_offset %d\n", i,harq_process->w[r][i], r_offset);
 
 #if UE_TIMING_TRACE
     stop_meas(dlsch_deinterleaving_stats);
@@ -2082,15 +2074,15 @@ void *nr_dlsch_decoding_2thread1(void *arg)
 #endif
 
     if (nr_rate_matching_ldpc_rx(Ilbrm,
-     	 	 	 	 Tbslbrm,
-				 p_decParams->BG,
-				 p_decParams->Z,
-				 harq_process->d[r],
-				 harq_process->w[r],
-				 harq_process->C,
-				 harq_process->rvidx,
-				 (harq_process->round==0)?1:0,
-				 E)==-1) {
+             Tbslbrm,
+         p_decParams->BG,
+         p_decParams->Z,
+         harq_process->d[r],
+         harq_process->w[r],
+         harq_process->C,
+         harq_process->rvidx,
+         (harq_process->round==0)?1:0,
+         E)==-1) {
 #if UE_TIMING_TRACE
       stop_meas(dlsch_rate_unmatching_stats);
 #endif
@@ -2104,7 +2096,7 @@ void *nr_dlsch_decoding_2thread1(void *arg)
     }
 
     //for (int i =0; i<16; i++)
-    //    	printf("rx output ratematching d[%d]= %d r_offset %d\n", i,harq_process->d[r][i], r_offset);
+    //      printf("rx output ratematching d[%d]= %d r_offset %d\n", i,harq_process->d[r][i], r_offset);
 
     //r_offset += E;
 
@@ -2136,71 +2128,71 @@ void *nr_dlsch_decoding_2thread1(void *arg)
                             Kr,r,harq_process->C,harq_process->nb_rb,crc_type,A,harq_process->TBS,
                             harq_process->B,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round,dlsch->max_ldpc_iterations);
 */
-    	if (llr8_flag1) {
-    		AssertFatal (Kr >= 256, "turbo algo issue Kr=%d cb_cnt=%d C=%d nbRB=%d TBSInput=%d TBSHarq=%d TBSplus24=%d mcs=%d Qm=%d RIV=%d round=%d\n",
-    				Kr,r,harq_process->C,harq_process->nb_rb,A,harq_process->TBS,harq_process->B,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round);
-    	}
+      if (llr8_flag1) {
+        AssertFatal (Kr >= 256, "turbo algo issue Kr=%d cb_cnt=%d C=%d nbRB=%d TBSInput=%d TBSHarq=%d TBSplus24=%d mcs=%d Qm=%d RIV=%d round=%d\n",
+            Kr,r,harq_process->C,harq_process->nb_rb,A,harq_process->TBS,harq_process->B,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round);
+      }
 #if UE_TIMING_TRACE
         start_meas(dlsch_turbo_decoding_stats);
 #endif
 //      LOG_D(PHY,"AbsSubframe %d.%d Start turbo segment %d/%d \n",frame%1024,subframe,r,harq_process->C-1);
 
-		memset(pv,0,2*p_decParams->Z*sizeof(int16_t));
+    memset(pv,0,2*p_decParams->Z*sizeof(int16_t));
         //memset(pl,0,2*p_decParams->Z*sizeof(int8_t));
-		memset((pv+K_bytes_F),127,harq_process->F*sizeof(int16_t));
+    memset((pv+K_bytes_F),127,harq_process->F*sizeof(int16_t));
 
         for (i=((2*p_decParams->Z)>>3), j = 0; i < K_bytes_F+((2*p_decParams->Z)>>3); i++, j++)
-      	{
-      		pv[i]= _mm_loadu_si128((__m128i*)(&inv_d[8*j]));
-      	}
+        {
+          pv[i]= _mm_loadu_si128((__m128i*)(&inv_d[8*j]));
+        }
 
-		for (i=Kr_bytes+((2*p_decParams->Z)>>3),j=Kr_bytes; i < ((kc*p_decParams->Z)>>3); i++, j++)
-		      	{
-		      		pv[i]= _mm_loadu_si128((__m128i*)(&inv_d[8*j]));
-		      	}
+    for (i=Kr_bytes+((2*p_decParams->Z)>>3),j=Kr_bytes; i < ((kc*p_decParams->Z)>>3); i++, j++)
+            {
+              pv[i]= _mm_loadu_si128((__m128i*)(&inv_d[8*j]));
+            }
 
-		for (i=0, j=0; j < ((kc*p_decParams->Z)>>4);  i+=2, j++)
-      	      	{
+    for (i=0, j=0; j < ((kc*p_decParams->Z)>>4);  i+=2, j++)
+                {
 
-      	      		pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
+                  pl[j] = _mm_packs_epi16(pv[i],pv[i+1]);
 
-      	      	}
+                }
 
-		no_iteration_ldpc = nrLDPC_decoder(p_decParams,
-						   (int8_t*)&pl[0],
-						   llrProcBuf,
+    no_iteration_ldpc = nrLDPC_decoder(p_decParams,
+               (int8_t*)&pl[0],
+               llrProcBuf,
                            p_nrLDPC_procBuf,                
-						   p_procTime);
+               p_procTime);
 
-		if (no_iteration_ldpc > 10)
-			printf("Error number of iteration LPDC %d\n", no_iteration_ldpc);
-		//else
-		//	printf("OK number of iteration LPDC %d\n", no_iteration_ldpc);
+    if (no_iteration_ldpc > 10)
+      printf("Error number of iteration LPDC %d\n", no_iteration_ldpc);
+    //else
+    //  printf("OK number of iteration LPDC %d\n", no_iteration_ldpc);
 
-		for (int m=0; m < Kr>>3; m ++)
-		      	      	{
-		      				harq_process->c[r][m]= (uint8_t) llrProcBuf[m];
-		      	      	}
+    for (int m=0; m < Kr>>3; m ++)
+                    {
+                  harq_process->c[r][m]= (uint8_t) llrProcBuf[m];
+                    }
 
-		      	/*for (int u=0; u < Kr>>3; u ++)
-		      	      	      	{
-		      						ullrProcBuf[u]= (uint8_t) llrProcBuf[u];
-		      	      	      	}
+            /*for (int u=0; u < Kr>>3; u ++)
+                            {
+                      ullrProcBuf[u]= (uint8_t) llrProcBuf[u];
+                            }
 
 
-		      	printf("output unsigned ullrProcBuf \n");
+            printf("output unsigned ullrProcBuf \n");
 
-		      	for (int j=0; j < Kr>>3; j ++)
-		      	      	       	      	{
+            for (int j=0; j < Kr>>3; j ++)
+                                    {
 
-		      	      						printf(" %d \n", ullrProcBuf[j]);
+                              printf(" %d \n", ullrProcBuf[j]);
 
-		      	      	      	      	}
-		     	printf(" \n");*/
+                                    }
+          printf(" \n");*/
 #endif
-		//printf("output channel decoder %d %d %d %d %d \n", harq_process->c[r][0], harq_process->c[r][1], harq_process->c[r][2],harq_process->c[r][3], harq_process->c[r][4]);
+    //printf("output channel decoder %d %d %d %d %d \n", harq_process->c[r][0], harq_process->c[r][1], harq_process->c[r][2],harq_process->c[r][3], harq_process->c[r][4]);
 
-		 //printf("output decoder %d %d %d %d %d \n", harq_process->c[r][0], harq_process->c[r][1], harq_process->c[r][2],harq_process->c[r][3], harq_process->c[r][4]);
+     //printf("output decoder %d %d %d %d %d \n", harq_process->c[r][0], harq_process->c[r][1], harq_process->c[r][2],harq_process->c[r][3], harq_process->c[r][4]);
 
 #if UE_TIMING_TRACE
       stop_meas(dlsch_turbo_decoding_stats);
@@ -2239,7 +2231,7 @@ void *nr_dlsch_decoding_2thread1(void *arg)
           //printf("end 2thread1 proc->instance_cnt_dlsch_td1 %d\n", proc->instance_cnt_dlsch_td1);
       }
 
-	//printf("after 2thread1 after oai exit proc->instance_cnt_dlsch_td %d\n", proc->instance_cnt_dlsch_td1);
+  //printf("after 2thread1 after oai exit proc->instance_cnt_dlsch_td %d\n", proc->instance_cnt_dlsch_td1);
       // thread finished
           free(arg);
           return &UE_dlsch_td_retval1;

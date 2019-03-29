@@ -361,8 +361,13 @@ void phy_config_harq_ue(module_id_t Mod_id,int CC_id,uint8_t eNB_id,
                         uint16_t max_harq_tx )
 {
 
+  int num_of_threads,num_of_code_words;
+
   PHY_VARS_NR_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id][CC_id];
-  phy_vars_ue->ulsch[eNB_id]->Mlimit = max_harq_tx;
+
+  for (num_of_threads=0;num_of_threads<RX_NB_TH_MAX;num_of_threads++)
+    for (num_of_code_words=0;num_of_code_words<NR_MAX_NB_CODEWORDS;num_of_code_words++)
+      phy_vars_ue->ulsch[eNB_id][num_of_threads][num_of_code_words]->Mlimit = max_harq_tx;
 }
 
 extern uint16_t beta_cqi[16];
@@ -922,13 +927,13 @@ void init_nr_ue_transport(PHY_VARS_NR_UE *ue,int abstraction_flag) {
   for (i=0; i<NUMBER_OF_CONNECTED_eNB_MAX; i++) {
     for (j=0; j<2; j++) {
       for (k=0; k<RX_NB_TH_MAX; k++) {
-	AssertFatal((ue->dlsch[k][i][j]  = new_nr_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_LDPC_ITERATIONS,ue->frame_parms.N_RB_DL, abstraction_flag))!=NULL,"Can't get ue dlsch structures\n");
+        AssertFatal((ue->dlsch[k][i][j]  = new_nr_ue_dlsch(1,NUMBER_OF_HARQ_PID_MAX,NSOFT,MAX_LDPC_ITERATIONS,ue->frame_parms.N_RB_DL, abstraction_flag))!=NULL,"Can't get ue dlsch structures\n");
+        LOG_D(PHY,"dlsch[%d][%d][%d] => %p\n",k,i,j,ue->dlsch[k][i][j]);
 
-	LOG_D(PHY,"dlsch[%d][%d][%d] => %p\n",k,i,j,ue->dlsch[k][i][j]);
+        AssertFatal((ue->ulsch[k][i][j]  = new_nr_ue_ulsch(ue->frame_parms.N_RB_UL, NUMBER_OF_HARQ_PID_MAX, abstraction_flag))!=NULL,"Can't get ue ulsch structures\n");
+        LOG_D(PHY,"ulsch[%d][%d][%d] => %p\n",k,i,j,ue->ulsch[k][i][j]);
       }
     }
-
-    //AssertFatal((ue->ulsch[i]  = new_ue_ulsch(ue->frame_parms.N_RB_UL, abstraction_flag))!=NULL,"Can't get ue ulsch structures\n");
 
     ue->dlsch_SI[i]  = new_nr_ue_dlsch(1,1,NSOFT,MAX_LDPC_ITERATIONS,ue->frame_parms.N_RB_DL, abstraction_flag);
     ue->dlsch_ra[i]  = new_nr_ue_dlsch(1,1,NSOFT,MAX_LDPC_ITERATIONS,ue->frame_parms.N_RB_DL, abstraction_flag);

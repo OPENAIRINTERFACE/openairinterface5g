@@ -131,10 +131,10 @@ pipeline {
             }
         }
 
-        stage ("Start VM -- nu-ue-usrp") {
+        stage ("Start VM -- nr-ue-usrp") {
             steps {
                 timeout (time: 5, unit: 'MINUTES') {
-                    sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant nu-ue-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
+                    sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant nr-ue-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
             }
         }
@@ -239,7 +239,7 @@ pipeline {
                     steps {
                         gitlabCommitStatus(name: "Build nr-UE-usrp") {
                             timeout (time: 20, unit: 'MINUTES') {
-                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant nu-ue-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant nr-ue-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
                             }
                         }
                     }
