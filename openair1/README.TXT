@@ -9,7 +9,7 @@ General remarks: every directory contains at least defs.h (for declaration of st
 |   |-- INIT		   // variables defined in vars.h are initialzed here (memory allocation)
 |   |-- LTE_ESTIMATION     // estimation for LTE
 |   |-- LTE_REFSIG 	   // reference signals for LTE (sync and pilot sequences) reference signals from 36-211 
-|   |-- NR_REFSIG 	   // reference signals for NR (sync and pilot sequences) reference signals from 38-211 
+|   |-- NR_REFSIG 	   // reference signals for NR (sync and pilot sequences) reference signals from 38-211
 |   |-- LTE_TRANSPORT      // these are the top level routines for different transport and physical channels (for example DL-SCH, PSS) implements a subset of 36-211,36-212
 |   |-- LTE_UE_TRANSPORT      // these are the top level routines for different transport and physical channels (for example DL-SCH, PSS) implements a subset of 36-211,36-212
 |   |-- NR_TRANSPORT      // these are the top level routines for different transport and physical channels (for example DL-SCH, PSS) implements a subset of 38-211,38-212
@@ -27,18 +27,18 @@ General remarks: every directory contains at least defs.h (for declaration of st
 |   |-- spec_defs_top.h
 |   |-- types.h
 |   `-- vars.h		  
-|-- SCHED		  // schedules the different LTE eNB functions 
+|-- SCHED		  // schedules the different LTE eNB functions
 |   |-- defs.h
 |   |-- extern.h
 |   |-- phy_procedures_lte_eNb.c // LTE PHY procedures for eNB (from 36-213) 
 |   |-- phy_procedures_lte_common.c  // LTE PHY procedures common for UE and eNB (from 36-213)
 |   |-- prach_procedures.c  //LTE PRACH  procedures (from 36-213)
-|   |-- ru_procedures.c  //RU  procedures 
+|   |-- ru_procedures.c  //RU  procedures
 |   |-- fapi_l1.c  //L1 side of the FAPI interface
 |   |-- phy_mac_stub.c  //MAC stub that generates channels when used in phy-test-mode
 |   |-- rt_compat.h
 |   `-- vars.h
-|-- SCHED_UE		  // schedules the different LTE UE functions 
+|-- SCHED_UE		  // schedules the different LTE UE functions
 |   |-- phy_procedures_lte_ue.c  // LTE PHY procedures for UE (from 36-213)
 |   |-- pucch_pc.c // power control for PUCCH
 |   |-- pusch_pc.c // power control for PUSCH
@@ -53,7 +53,7 @@ General remarks: every directory contains at least defs.h (for declaration of st
 |   |   |-- dlsim.c         // PDSCH simulation testbench
 |   |   |-- ulsim.c         // PUSCH simulation testbench
 |   |   |-- pucchsim.c      // PUCCH simulation testbench
-|   |-- RF  		    // RF simulation tools 
+|   |-- RF  		    // RF simulation tools
 |   |-- ETH_TRANSPORT
 |   `-- TOOLS
 

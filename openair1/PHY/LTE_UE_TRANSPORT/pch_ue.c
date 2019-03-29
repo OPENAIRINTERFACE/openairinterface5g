@@ -48,7 +48,7 @@ int init_ue_paging_info(PHY_VARS_UE *ue, long defaultPagingCycle, long nB) {
    else if (Ns==4)
      ue->PO = (fp->frame_type==FDD) ? (4*(i_s&1)+(5*(i_s>>1))) : ((i_s&1)+(5*(i_s>>1))); 
    else
-     AssertFatal(1==0,"init_ue_paging_info: Ns is %d\n",Ns);
+     AssertFatal(1==0,"init_ue_paging_info: Ns is %u\n",Ns);
 
    return(0);
 }

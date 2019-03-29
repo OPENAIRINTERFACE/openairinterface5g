@@ -3167,7 +3167,7 @@ PMI_FEEDBACK:
 
                         if (n_frames==1)
                           printf("DCI misdetection trial %u\n",trials);
->>>>>>> new set of cppcheck fixes
+
                       }
 
                       //      for (i=1;i<=round;i++)

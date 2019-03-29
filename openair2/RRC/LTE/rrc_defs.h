@@ -16,7 +16,7 @@
  * limitations under the License.
  *-------------------------------------------------------------------------------
  * For more information about the OpenAirInterface (OAI) Software Alliance:
- *      contact@openairinterface.org
+ *      conmnc_digit_lengtht@openairinterface.org
  */
 
 /*! \file RRC/LTE/defs.h
@@ -36,6 +36,7 @@
 #include <string.h>
 
 #include "collection/tree.h"
+#include "common/ngran_types.h"
 #include "rrc_types.h"
 //#include "PHY/phy_defs.h"
 #include "LAYER2/RLC/rlc.h"
@@ -663,8 +664,10 @@ typedef struct {
   uint32_t                              N_RB_DL;
   uint32_t                              pbch_repetition;
   LTE_BCCH_BCH_Message_t                mib;
+  LTE_BCCH_BCH_Message_t                *mib_DU;
   LTE_BCCH_DL_SCH_Message_t             siblock1;
   LTE_BCCH_DL_SCH_Message_t             siblock1_BR;
+  LTE_BCCH_DL_SCH_Message_t             *siblock1_DU;
   LTE_BCCH_DL_SCH_Message_t             systemInformation;
   LTE_BCCH_DL_SCH_Message_t             systemInformation_BR;
   //  SystemInformation_t               systemInformation;
@@ -691,14 +694,17 @@ typedef struct {
   LTE_SystemInformationBlockType21_r14_t *sib21;
   // End - TTN
   SRB_INFO                          SI;
-  SRB_INFO                          Srb0;
   uint8_t                           *paging[MAX_MOBILES_PER_ENB];
   uint32_t                           sizeof_paging[MAX_MOBILES_PER_ENB];
 } rrc_eNB_carrier_data_t;
 
+  
 typedef struct eNB_RRC_INST_s {
   /// southbound midhaul configuration
+  ngran_node_t                    node_type;
   eth_params_t                    eth_params_s;
+  char                            *node_name;
+  uint32_t                        node_id;
   rrc_eNB_carrier_data_t          carrier[MAX_NUM_CCs];
   uid_allocator_t                    uid_allocator; // for rrc_ue_head
   RB_HEAD(rrc_ue_tree_s, rrc_eNB_ue_context_s)     rrc_ue_head; // ue_context tree key search by rnti
@@ -720,6 +726,10 @@ typedef struct eNB_RRC_INST_s {
 
   //RRC configuration
   RrcConfigurationReq configuration;
+
+  /// NR cell id
+  uint64_t nr_cellid;
+
   // other RAN parameters
   int srb1_timer_poll_retransmit;
   int srb1_poll_pdu;
@@ -728,6 +738,11 @@ typedef struct eNB_RRC_INST_s {
   int srb1_timer_reordering;
   int srb1_timer_status_prohibit;
   int srs_enable[MAX_NUM_CCs];
+  int cell_info_configured;
+  pthread_mutex_t cell_info_mutex;
+  uint16_t sctp_in_streams;
+  uint16_t sctp_out_streams;
+
 } eNB_RRC_INST;
 
 #define MAX_UE_CAPABILITY_SIZE 255

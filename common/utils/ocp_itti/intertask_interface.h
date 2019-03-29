@@ -1,6 +1,6 @@
 /*
   Author: Laurent THOMAS, Open Cells
-  Copyleft: OpenAirInterface software alliance and it's licence 
+  Copyleft: OpenAirInterface software alliance and it's licence
 */
 #ifndef INTERTASK_INTERFACE_H_
 #define INTERTASK_INTERFACE_H_
@@ -300,6 +300,8 @@ typedef struct {
   TASK_DEF(TASK_MSC,      TASK_PRIORITY_MED,  200, NULL, NULL)\
   TASK_DEF(TASK_GTPV1_U,  TASK_PRIORITY_MED,  1000,NULL, NULL)\
   TASK_DEF(TASK_UDP,      TASK_PRIORITY_MED,  1000, NULL, NULL)\
+  TASK_DEF(TASK_CU_F1,    TASK_PRIORITY_MED,  200, NULL, NULL) \
+  TASK_DEF(TASK_DU_F1,    TASK_PRIORITY_MED,  200, NULL, NULL) \
   TASK_DEF(TASK_MAX,      TASK_PRIORITY_MED,  200, NULL, NULL)
 
 #define TASK_DEF(TaskID, pRIO, qUEUEsIZE, FuNc, ThreadFunc)          { pRIO, qUEUEsIZE, #TaskID, FuNc, ThreadFunc },

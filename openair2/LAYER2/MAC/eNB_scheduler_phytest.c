@@ -169,7 +169,7 @@ schedule_ue_spec_phy_test(
 			      1, // number of subbands
 			      //			     uint8_t codebook_index,
 			      4, // UE category capacity
-			      LTE_PDSCH_ConfigDedicated__p_a_dB0, 
+			      LTE_PDSCH_ConfigDedicated__p_a_dB0,
 			      0, // delta_power_offset for TM5
 			      0, // ngap
 			      0, // nprb

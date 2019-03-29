@@ -573,7 +573,7 @@ int is_prach_subframe(LTE_DL_FRAME_PARMS *frame_parms, uint32_t frame, uint8_t s
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   for (int i=0; i<4; i++) {
     if (frame_parms->prach_emtc_config_common.prach_ConfigInfo.prach_CElevel_enable[i] == 1) 
-      prach_mask |= (is_prach_subframe0(frame_parms, frame_parms->prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[i], 
+      prach_mask |= (is_prach_subframe0(frame_parms, frame_parms->prach_emtc_config_common.prach_ConfigInfo.prach_ConfigIndex[i],
                                         frame, subframe) << (i+1));
   }
 #endif

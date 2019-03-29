@@ -6,7 +6,7 @@ Shared library full names are built by the loader using the format:
 1.  the < *module version* > and < *path* > optional  parameters, are defined at run-time, depending on the configuration.
 
 ## loader parameters
-The loader is using the [configuration module](../../../config/DOC/config.md), and defines global and per library parameters. Global parameters must be specified under the **loader** section and library specific parameters under a **loader.<*module name*>** section. Module specific parameters override the global parameters. 
+The loader is using the [configuration module](../../../config/DOC/config.md), and defines global and per library parameters. Global parameters must be specified under the **loader** section and library specific parameters under a **loader.<*module name*>** section. Module specific parameters override the global parameters.
 ### Global loader parameters
 | name | type | default | description |
 |:---:|:---:|:---:|:----|
@@ -39,7 +39,7 @@ If you want to load a device called *liboai_device_USRP.so* without writting a s
 
 With this latest example, nn the softmodem logs, you can check that the right device library has been loaded:
 ```bash
-[LIBCONFIG] loader.oai_device.shlibpath not found in /usr/local/oai/develop-nb-iot-merge/openairinterface5g/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.nbiot.band7.tm1.50PRB.usrpb210.conf 
+[LIBCONFIG] loader.oai_device.shlibpath not found in /usr/local/oai/develop-nb-iot-merge/openairinterface5g/targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.nbiot.band7.tm1.50PRB.usrpb210.conf
 [LIBCONFIG] loader.oai_device.shlibversion set to default value ""
 [LIBCONFIG] loader.oai_device: 1/2 parameters successfully set, (1 to default value)
 [CONFIG] shlibversion set to  _USRP from command line

@@ -228,8 +228,8 @@ pdcp_validate_security(
     	  " Security: failed MAC-I Algo %X UE %"PRIx16" ",
     	  pdcp_pP->integrityProtAlgorithm,
     	  ctxt_pP->rnti);
-      LOG_E(PDCP, "[OSA][RB %d] %s failed to validate MAC-I of incoming PDU\n",
-            rb_id, (pdcp_pP->is_ue != 0) ? "UE" : "eNB");
+      LOG_E(PDCP, "[OSA][RB %d] %s failed to validate MAC-I (key %llx) of incoming PDU\n",
+            rb_id, (pdcp_pP->is_ue != 0) ? "UE" : "eNB",((long long unsigned int*)decrypt_params.key)[0]);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDCP_VALIDATE_SECURITY, VCD_FUNCTION_OUT);
       return -1;
     }

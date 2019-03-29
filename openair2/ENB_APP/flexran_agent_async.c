@@ -36,13 +36,18 @@ flexran_agent_async_channel_t * flexran_agent_async_channel_info(mid_t mod_id, c
   flexran_agent_async_channel_t *channel;
   channel = (flexran_agent_async_channel_t *) malloc(sizeof(flexran_agent_channel_t));
   
-  if (channel == NULL)
-    goto error;
+  if (channel == NULL) {
+    LOG_E(FLEXRAN_AGENT, "could not allocate memory for flexran_agent_async_channel_t\n");
+    return NULL;
+  }
 
   channel->enb_id = mod_id;
   /*Create a socket*/
   channel->link = new_link_client(dst_ip, dst_port);
-  if (channel->link == NULL) goto error;
+  if (channel->link == NULL) {
+    LOG_E(FLEXRAN_AGENT, "could not create new link client\n");
+    goto error;
+  }
   
   LOG_I(FLEXRAN_AGENT,"starting enb agent client for module id %d on ipv4 %s, port %d\n",  
 	channel->enb_id,
@@ -53,21 +58,32 @@ flexran_agent_async_channel_t * flexran_agent_async_channel_info(mid_t mod_id, c
    * create a message queue
    */ 
   // Set size of queues statically for now
-  channel->send_queue = new_message_queue(500);
-  if (channel->send_queue == NULL) goto error;
-  channel->receive_queue = new_message_queue(500);
-  if (channel->receive_queue == NULL) goto error;
+//  channel->send_queue = new_message_queue(500);
+  // not using the circular buffer: affects the PDCP split
+  channel->send_queue = new_message_queue();
+  if (channel->send_queue == NULL) {
+    LOG_E(FLEXRAN_AGENT, "could not create send_queue\n");
+    goto error;
+  }
+  // not using the circular buffer: affects the PDCP split
+  //channel->receive_queue = new_message_queue(500);
+  channel->receive_queue = new_message_queue();
+  if (channel->receive_queue == NULL) {
+    LOG_E(FLEXRAN_AGENT, "could not create send_queue\n");
+    goto error;
+  }
   
-   /* 
-   * create a link manager 
-   */  
+  /* create a link manager */
   channel->manager = create_link_manager(channel->send_queue, channel->receive_queue, channel->link);
-  if (channel->manager == NULL) goto error;
+  if (channel->manager == NULL) {
+    LOG_E(FLEXRAN_AGENT, "could not create link_manager\n");
+    goto error;
+  }
   
   return channel;
 
  error:
-  LOG_I(FLEXRAN_AGENT,"there was an error\n");
+  LOG_I(FLEXRAN_AGENT, "%s(): there was an error\n", __func__);
   return NULL;
 }
 
@@ -78,11 +94,11 @@ int flexran_agent_async_msg_send(void *data, int size, int priority, void *chann
   return message_put(channel->send_queue, data, size, priority);
 }
 
-int flexran_agent_async_msg_recv(void **data, int *size, int *priority, void *channel_info) {
+int flexran_agent_async_msg_recv(void **data, int *priority, void *channel_info) {
   flexran_agent_async_channel_t *channel;
   channel = (flexran_agent_async_channel_t *)channel_info;
 
-  return message_get(channel->receive_queue, data, size, priority);
+  return message_get(channel->receive_queue, data, priority);
 }
 
 void flexran_agent_async_release(flexran_agent_channel_t *channel) {

@@ -60,4 +60,3 @@ void x2ap_eNB_itti_send_sctp_close_association(instance_t instance, int32_t asso
 
   itti_send_msg_to_task(TASK_SCTP, instance, message_p);
 }
-

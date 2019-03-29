@@ -33,4 +33,3 @@ int x2ap_eNB_decode_pdu(X2AP_X2AP_PDU_t *pdu, const uint8_t *const buffer, uint3
 __attribute__ ((warn_unused_result));
 
 #endif /* X2AP_ENB_DECODER_H_ */
-

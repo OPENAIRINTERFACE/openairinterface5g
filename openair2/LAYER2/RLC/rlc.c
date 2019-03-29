@@ -37,6 +37,9 @@
 #include "targets/COMMON/openairinterface5g_limits.h"
 #include "assertions.h"
 
+#include "common/ran_context.h"
+extern RAN_CONTEXT_t RC;
+
 extern boolean_t pdcp_data_ind(
   const protocol_ctxt_t *const ctxt_pP,
   const srb_flag_t srb_flagP,
@@ -48,6 +51,10 @@ extern boolean_t pdcp_data_ind(
 #define DEBUG_RLC_PDCP_INTERFACE 1
 //#define TRACE_RLC_PAYLOAD 1
 #define DEBUG_RLC_DATA_REQ 1
+
+
+
+#include "proto_agent.h"
 
 //-----------------------------------------------------------------------------
 void rlc_util_print_hex_octets(comp_name_t componentP, unsigned char *dataP, const signed long sizeP)
@@ -323,6 +330,8 @@ rlc_op_status_t rlc_data_req     (const protocol_ctxt_t *const ctxt_pP,
 #endif
                                  ) {
   //-----------------------------------------------------------------------------
+  
+ 
   mem_block_t           *new_sdu_p    = NULL;
   rlc_mode_t             rlc_mode     = RLC_MODE_NONE;
   rlc_union_t           *rlc_union_p = NULL;
@@ -596,13 +605,28 @@ void rlc_data_ind     (
     T(T_ENB_RLC_UL, T_INT(ctxt_pP->module_id), T_INT(ctxt_pP->rnti), T_INT(rb_idP), T_INT(sdu_sizeP));
 
 #endif
-  pdcp_data_ind (
-    ctxt_pP,
-    srb_flagP,
-    MBMS_flagP,
-    rb_idP,
-    sdu_sizeP,
-    sdu_pP);
+
+#ifndef UETARGET
+  const ngran_node_t type = RC.rrc[ctxt_pP->module_id]->node_type;
+  AssertFatal(type != ngran_eNB_CU && type != ngran_ng_eNB_CU && type != ngran_gNB_CU,
+              "Can't be CU, bad node type %d\n", type);
+
+  if (NODE_IS_DU(type)) {
+     if (srb_flagP == 1) {
+       MessageDef *msg = itti_alloc_new_message(TASK_RLC_ENB, F1AP_UL_RRC_MESSAGE);
+       F1AP_UL_RRC_MESSAGE(msg).rnti = ctxt_pP->rnti;
+       F1AP_UL_RRC_MESSAGE(msg).srb_id = rb_idP;
+       F1AP_UL_RRC_MESSAGE(msg).rrc_container = sdu_pP->data;
+       F1AP_UL_RRC_MESSAGE(msg).rrc_container_length = sdu_sizeP;
+       itti_send_msg_to_task(TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id), msg);
+     } else {
+       proto_agent_send_pdcp_data_ind (ctxt_pP, srb_flagP, MBMS_flagP, rb_idP, sdu_sizeP, sdu_pP);
+     }
+  } else
+#endif
+  { // case monolithic eNodeB or UE
+    pdcp_data_ind(ctxt_pP, srb_flagP, MBMS_flagP, rb_idP, sdu_sizeP, sdu_pP);
+  }
 }
 //-----------------------------------------------------------------------------
 void rlc_data_conf     (const protocol_ctxt_t *const ctxt_pP,
@@ -647,12 +671,12 @@ rlc_module_init (void) {
     }
   }
 
-  for (k=0; k < RLC_MAX_MBMS_LC; k++) {
+    for (k=0; k < RLC_MAX_MBMS_LC; k++) {
     rlc_mbms_lcid2service_session_id_eNB[0][k].service_id = 0;
     rlc_mbms_lcid2service_session_id_eNB[0][k].session_id = 0;
-  }
+    }
 
-  for (k=0; k < NB_RB_MBMS_MAX; k++) {
+    for (k=0; k < NB_RB_MBMS_MAX; k++) {
     rlc_mbms_rbid2lcid_eNB[0][k] = RLC_LC_UNALLOCATED;
   }
 

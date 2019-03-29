@@ -393,15 +393,18 @@ int logInit (void) {
   register_log_component("mRAL","",RAL_UE);
   register_log_component("ENB_APP","log",ENB_APP);
   register_log_component("FLEXRAN_AGENT","log",FLEXRAN_AGENT);
+  register_log_component("PROTO_AGENT","log",PROTO_AGENT);
   register_log_component("TMR","",TMR);
   register_log_component("USIM","txt",USIM);
   register_log_component("SIM","txt",SIM);
+  /* following log component are used for the localization*/
   /* following log component are used for the localization*/
   register_log_component("LOCALIZE","log",LOCALIZE);
   register_log_component("NAS","log",NAS);
   register_log_component("UDP","",UDP_);
   register_log_component("GTPV1U","",GTPU);
   register_log_component("S1AP","",S1AP);
+  register_log_component("F1AP","",F1AP);
   register_log_component("X2AP","",X2AP);
   register_log_component("SCTP","",SCTP);
   register_log_component("X2AP","",X2AP);

@@ -760,7 +760,7 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
 			   sib1_v13ext
 #endif
 			   ) {
-  
+
   int i;
 
   int UE_id = -1;
@@ -822,60 +822,42 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
       RC.mac[Mod_idP]->common_channels[CC_idP].sib1_v13ext = sib1_v13ext;
     }
 #endif
-    if (radioResourceConfigCommon != NULL) {
-      LOG_I(MAC, "[CONFIG]SIB2/3 Contents (partial)\n");
-      LOG_I(MAC, "[CONFIG]pusch_config_common.n_SB = %ld\n",
-	    radioResourceConfigCommon->
-	    pusch_ConfigCommon.pusch_ConfigBasic.n_SB);
-      LOG_I(MAC, "[CONFIG]pusch_config_common.hoppingMode = %ld\n",
-	    radioResourceConfigCommon->
-	    pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode);
-      LOG_I(MAC,
-	    "[CONFIG]pusch_config_common.pusch_HoppingOffset = %ld\n",
-	    radioResourceConfigCommon->
-	    pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset);
-      LOG_I(MAC, "[CONFIG]pusch_config_common.enable64QAM = %d\n",
-	    radioResourceConfigCommon->
-	    pusch_ConfigCommon.pusch_ConfigBasic.enable64QAM);
-      LOG_I(MAC,
-	    "[CONFIG]pusch_config_common.groupHoppingEnabled = %d\n",
-	    radioResourceConfigCommon->
-	    pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.
-	    groupHoppingEnabled);
-      LOG_I(MAC,
-	    "[CONFIG]pusch_config_common.groupAssignmentPUSCH = %ld\n",
-	    radioResourceConfigCommon->
-	    pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.
-	    groupAssignmentPUSCH);
-      LOG_I(MAC,
-	    "[CONFIG]pusch_config_common.sequenceHoppingEnabled = %d\n",
-	    radioResourceConfigCommon->
-	    pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.
-	    sequenceHoppingEnabled);
-      LOG_I(MAC, "[CONFIG]pusch_config_common.cyclicShift  = %ld\n",
-	    radioResourceConfigCommon->
-	    pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift);
-
-      AssertFatal(radioResourceConfigCommon->
-		  rach_ConfigCommon.maxHARQ_Msg3Tx > 0,
-		  "radioResourceconfigCommon %d == 0\n",
-		  (int) radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx);
-
-      RC.mac[Mod_idP]->common_channels[CC_idP].radioResourceConfigCommon = radioResourceConfigCommon;
-      RC.mac[Mod_idP]->common_channels[CC_idP].radioResourceConfigCommon_BR = radioResourceConfigCommon_BR;
-      if (ul_CarrierFreq > 0) RC.mac[Mod_idP]->common_channels[CC_idP].ul_CarrierFreq        = ul_CarrierFreq;
-      if (ul_Bandwidth) 	RC.mac[Mod_idP]->common_channels[CC_idP].ul_Bandwidth        = *ul_Bandwidth;
-      else RC.mac[Mod_idP]->common_channels[CC_idP].ul_Bandwidth                             = RC.mac[Mod_idP]->common_channels[CC_idP].mib->message.dl_Bandwidth;
-
-      config_sib2(Mod_idP, CC_idP, radioResourceConfigCommon,
+    AssertFatal(radioResourceConfigCommon != NULL, "radioResourceConfigCommon is null\n");
+    LOG_I(MAC, "[CONFIG]SIB2/3 Contents (partial)\n");
+    LOG_I(MAC, "[CONFIG]pusch_config_common.n_SB = %ld\n",
+	        radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.n_SB);
+    LOG_I(MAC, "[CONFIG]pusch_config_common.hoppingMode = %ld\n",
+	        radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.hoppingMode);
+    LOG_I(MAC, "[CONFIG]pusch_config_common.pusch_HoppingOffset = %ld\n",
+          radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.pusch_HoppingOffset);
+    LOG_I(MAC, "[CONFIG]pusch_config_common.enable64QAM = %d\n",
+          radioResourceConfigCommon->pusch_ConfigCommon.pusch_ConfigBasic.enable64QAM);
+    LOG_I(MAC, "[CONFIG]pusch_config_common.groupHoppingEnabled = %d\n",
+	        radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupHoppingEnabled);
+    LOG_I(MAC, "[CONFIG]pusch_config_common.groupAssignmentPUSCH = %ld\n",
+          radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH);
+    LOG_I(MAC, "[CONFIG]pusch_config_common.sequenceHoppingEnabled = %d\n",
+	        radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.sequenceHoppingEnabled);
+    LOG_I(MAC, "[CONFIG]pusch_config_common.cyclicShift  = %ld\n",
+          radioResourceConfigCommon->pusch_ConfigCommon.ul_ReferenceSignalsPUSCH.cyclicShift);
+    
+    AssertFatal(radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx > 0,
+                "radioResourceconfigCommon %d == 0\n",
+		            (int) radioResourceConfigCommon->rach_ConfigCommon.maxHARQ_Msg3Tx);
+    
+    RC.mac[Mod_idP]->common_channels[CC_idP].radioResourceConfigCommon = radioResourceConfigCommon;
+    RC.mac[Mod_idP]->common_channels[CC_idP].radioResourceConfigCommon_BR = radioResourceConfigCommon_BR;
+    if (ul_CarrierFreq > 0) RC.mac[Mod_idP]->common_channels[CC_idP].ul_CarrierFreq = ul_CarrierFreq;
+    if (ul_Bandwidth) RC.mac[Mod_idP]->common_channels[CC_idP].ul_Bandwidth = *ul_Bandwidth;
+    else RC.mac[Mod_idP]->common_channels[CC_idP].ul_Bandwidth = RC.mac[Mod_idP]->common_channels[CC_idP].mib->message.dl_Bandwidth;
+    
+    config_sib2(Mod_idP, CC_idP, radioResourceConfigCommon,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-		  radioResourceConfigCommon_BR,
+                radioResourceConfigCommon_BR,
 #endif
-		  NULL, ul_Bandwidth, additionalSpectrumEmission,
-		  mbsfn_SubframeConfigList);
-
-
-    }
+                NULL, ul_Bandwidth, additionalSpectrumEmission,
+                mbsfn_SubframeConfigList);
+    
   } // mib != NULL
 
   if (mobilityControlInfo !=NULL){
@@ -896,7 +878,7 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
   if (logicalChannelConfig != NULL) {	// check for eMTC specific things
     UE_id = find_UE_id(Mod_idP, rntiP);
 
-    if (UE_id<0) { 
+    if (UE_id<0) {
       LOG_E(MAC,"Configuration received for unknown UE (%x), shouldn't happen\n",rntiP);
       return(-1);
     }
@@ -905,10 +887,10 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
 	UE_list->UE_template[CC_idP][UE_id].lcgidpriority[logicalChannelIdentity] =  logicalChannelConfig->ul_SpecificParameters->priority;
     } else UE_list->UE_template[CC_idP][UE_id].lcgidmap[logicalChannelIdentity]   =  0;
   }
-  
+
   if (physicalConfigDedicated != NULL) {
     UE_id = find_UE_id(Mod_idP, rntiP);
-    if (UE_id<0) { 
+    if (UE_id<0) {
       LOG_E(MAC,"Configuration received for unknown UE (%x), shouldn't happen\n",rntiP);
       return(-1);
     }
@@ -920,7 +902,7 @@ int rrc_mac_config_req_eNB(module_id_t Mod_idP,
 #if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
 
   if (sCellToAddMod_r10 != NULL) {
-    if (UE_id<0) { 
+    if (UE_id<0) {
       LOG_E(MAC,"Configuration received for unknown UE (%x), shouldn't happen\n",rntiP);
       return(-1);
     }

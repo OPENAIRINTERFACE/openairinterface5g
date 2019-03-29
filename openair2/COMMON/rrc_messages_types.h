@@ -32,7 +32,8 @@
 #include "as_message.h"
 #include "rrc_types.h"
 #include "s1ap_messages_types.h"
-  #include "LTE_SystemInformationBlockType2.h"
+#include "f1ap_messages_types.h"
+#include "LTE_SystemInformationBlockType2.h"
 #include "LTE_SL-OffsetIndicator-r12.h"
 #include "LTE_SubframeBitmapSL-r12.h"
 #include "LTE_SL-CP-Len-r12.h"
@@ -191,7 +192,7 @@ typedef struct RrcConfigurationReq_s {
 
   RadioResourceConfig     radioresourceconfig[MAX_NUM_CCs];
   RadioResourceConfig     radioresourceconfig_BR[MAX_NUM_CCs];
-   
+
 #if (LTE_RRC_VERSION >= MAKE_VERSION(13, 0, 0))
   //MIB
   long	 		  schedulingInfoSIB1_BR_r13[MAX_NUM_CCs];
@@ -254,11 +255,11 @@ typedef struct RrcConfigurationReq_s {
   bool  sib2_freq_hoppingParameters_r13_exists             [MAX_NUM_CCs];
   long  *sib2_mpdcch_pdsch_hoppingNB_r13                   [MAX_NUM_CCs];
   long  *sib2_interval_DLHoppingConfigCommonModeA_r13      [MAX_NUM_CCs];
-  long  sib2_interval_DLHoppingConfigCommonModeA_r13_val  [MAX_NUM_CCs];         
-  long  *sib2_interval_DLHoppingConfigCommonModeB_r13      [MAX_NUM_CCs]; 
-  long  sib2_interval_DLHoppingConfigCommonModeB_r13_val  [MAX_NUM_CCs];        
+  long  sib2_interval_DLHoppingConfigCommonModeA_r13_val  [MAX_NUM_CCs];
+  long  *sib2_interval_DLHoppingConfigCommonModeB_r13      [MAX_NUM_CCs];
+  long  sib2_interval_DLHoppingConfigCommonModeB_r13_val  [MAX_NUM_CCs];
   long  *sib2_interval_ULHoppingConfigCommonModeA_r13      [MAX_NUM_CCs];
-  long  sib2_interval_ULHoppingConfigCommonModeA_r13_val  [MAX_NUM_CCs];         
+  long  sib2_interval_ULHoppingConfigCommonModeA_r13_val  [MAX_NUM_CCs];
   long  *sib2_interval_ULHoppingConfigCommonModeB_r13      [MAX_NUM_CCs];
   long  sib2_interval_ULHoppingConfigCommonModeB_r13_val  [MAX_NUM_CCs];
   long  *sib2_mpdcch_pdsch_hoppingOffset_r13               [MAX_NUM_CCs];
