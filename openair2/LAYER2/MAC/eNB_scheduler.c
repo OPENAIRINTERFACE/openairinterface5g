@@ -126,9 +126,11 @@ void schedule_SRS(module_id_t module_idP,
             continue;
           }
 
-          AssertFatal(UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated != NULL,
-                      "physicalConfigDedicated is null for UE %d\n",
-                      UE_id);
+	      if(UE_list->UE_template[CC_id][UE_id].physicalConfigDedicated == NULL) {
+	        LOG_E(MAC,"physicalConfigDedicated is null for UE %d\n",UE_id);
+	        printf("physicalConfigDedicated is null for UE %d\n",UE_id);
+	        return;
+	      }
 
           /* CDRX condition on Active Time and SRS type-0 report (36.321 5.7) */
           UE_scheduling_control = &(UE_list->UE_sched_ctrl[UE_id]);
