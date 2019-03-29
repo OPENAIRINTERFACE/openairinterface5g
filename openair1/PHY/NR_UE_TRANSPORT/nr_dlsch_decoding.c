@@ -39,7 +39,7 @@
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "SCHED_NR_UE/defs.h"
 #include "SIMULATION/TOOLS/sim.h"
-#include "targets/RT/USER/nr-uesoftmodem.h"
+#include "executables/nr-uesoftmodem.h"
 #include "PHY/CODING/nrLDPC_decoder/nrLDPC_decoder.h"
 #include "PHY/CODING/nrLDPC_decoder/nrLDPC_types.h"
 //#define DEBUG_DLSCH_DECODING

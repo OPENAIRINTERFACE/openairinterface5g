@@ -203,14 +203,14 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #endif
     }
     else {
-      LOG_E(PHY,"[UE][FATAL] Frame %d nr_tti_rx %d: no active DLSCH\n",ue->proc.proc_rxtx[0].frame_rx,nr_tti_rx);
+      LOG_E(PHY,"[UE][FATAL] nr_tti_rx %d: no active DLSCH\n",nr_tti_rx);
       return(-1);
     }
     beamforming_mode  = ue->transmission_mode[eNB_id]<7?0:ue->transmission_mode[eNB_id];
     break;
 
   default:
-    LOG_E(PHY,"[UE][FATAL] Frame %d nr_tti_rx %d: Unknown PDSCH format %d\n",ue->proc.proc_rxtx[0].frame_rx,nr_tti_rx,type);
+    LOG_E(PHY,"[UE][FATAL] nr_tti_rx %d: Unknown PDSCH format %d\n",nr_tti_rx,type);
     return(-1);
     break;
   }

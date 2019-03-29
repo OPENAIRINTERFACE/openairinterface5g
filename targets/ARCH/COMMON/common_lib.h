@@ -424,7 +424,7 @@ extern "C"
   * \returns 0 in success 
   */
   int openair0_set_rx_frequencies(openair0_device* device, openair0_config_t *openair0_cfg);
-
+#define gettid() syscall(__NR_gettid)
 /*@}*/
 
 #ifdef __cplusplus
