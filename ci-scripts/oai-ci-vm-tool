@@ -34,14 +34,17 @@ function top_usage {
 }
 
 function variant_usage {
+    echo " # OpenAirInterface Build Variants"
     echo "    --variant enb-usrp     OR -v1"
     echo "    --variant basic-sim    OR -v2"
     echo "    --variant phy-sim      OR -v3"
     echo "    --variant cppcheck     OR -v4"
     echo "    --variant enb-ethernet OR -v7"
     echo "    --variant ue-ethernet  OR -v8"
-    echo "    --variant l2-sim       OR -v9"
+    echo " # non-OSA Build Variants"
     echo "    --variant flexran-rtc  OR -v10"
+    echo " # OpenAirInterface Test Variants"
+    echo "    --variant l2-sim       OR -v22"
 }
 
 MY_DIR=$(dirname $(readlink -f $0))
@@ -290,19 +293,19 @@ case $key in
     NBARGS=$[$NBARGS+256]
     shift
     ;;
-    -v9)
-    VM_NAME=ci-l2-sim
-    ARCHIVES_LOC=l2_sim
-    RUN_OPTIONS="complex"
-    NBARGS=$[$NBARGS+256]
-    shift
-    ;;
     -v10)
     VM_NAME=ci-flexran-rtc
     ARCHIVES_LOC=flexran
     LOG_PATTERN=.Rel14.txt
     NB_PATTERN_FILES=1
     BUILD_OPTIONS="cmake . && make -j2"
+    NBARGS=$[$NBARGS+256]
+    shift
+    ;;
+    -v22)
+    VM_NAME=ci-l2-sim
+    ARCHIVES_LOC=l2_sim
+    RUN_OPTIONS="complex"
     NBARGS=$[$NBARGS+256]
     shift
     ;;
@@ -366,18 +369,18 @@ case $key in
         BUILD_OPTIONS="--UE -t ETHERNET"
         NBARGS=$[$NBARGS+256]
         ;;
-        l2-sim)
-        VM_NAME=ci-l2-sim
-        ARCHIVES_LOC=l2_sim
-        RUN_OPTIONS="complex"
-        NBARGS=$[$NBARGS+256]
-        ;;
         flexran-rtc)
         VM_NAME=ci-flexran-rtc
         ARCHIVES_LOC=flexran
         LOG_PATTERN=.Rel14.txt
         NB_PATTERN_FILES=1
         BUILD_OPTIONS="cmake . && make -j2"
+        NBARGS=$[$NBARGS+256]
+        ;;
+        l2-sim)
+        VM_NAME=ci-l2-sim
+        ARCHIVES_LOC=l2_sim
+        RUN_OPTIONS="complex"
         NBARGS=$[$NBARGS+256]
         ;;
         *)
