@@ -404,20 +404,23 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
     // check threshold
     if (UE_list->UE_sched_ctrl[UE_id].ul_failure_timer > 4000) {
       // note: probably ul_failure_timer should be less than UE radio link failure time(see T310/N310/N311)
-      // inform RRC of failure and clear timer
-      LOG_I(MAC,
-	    "UE %d rnti %x: UL Failure after repeated PDCCH orders: Triggering RRC \n",
-	    UE_id, rnti);
-      mac_eNB_rrc_ul_failure(module_idP, CC_id, frameP, subframeP,rnti);
+      if (NODE_IS_DU(RC.rrc[module_idP]->node_type)) {
+        MessageDef *m = itti_alloc_new_message(TASK_MAC_ENB, F1AP_UE_CONTEXT_RELEASE_REQ);
+        F1AP_UE_CONTEXT_RELEASE_REQ(m).rnti = rnti;
+        F1AP_UE_CONTEXT_RELEASE_REQ(m).cause = F1AP_CAUSE_RADIO_NETWORK;
+        F1AP_UE_CONTEXT_RELEASE_REQ(m).cause_value = 1; // 1 = F1AP_CauseRadioNetwork_rl_failure
+        F1AP_UE_CONTEXT_RELEASE_REQ(m).rrc_container = NULL;
+        F1AP_UE_CONTEXT_RELEASE_REQ(m).rrc_container_length = 0;
+        itti_send_msg_to_task(TASK_DU_F1, module_idP, m);
+      } else {
+        // inform RRC of failure and clear timer
+        LOG_I(MAC,
+        "UE %d rnti %x: UL Failure after repeated PDCCH orders: Triggering RRC \n",
+        UE_id, rnti);
+        mac_eNB_rrc_ul_failure(module_idP, CC_id, frameP, subframeP,rnti);
+      }
       UE_list->UE_sched_ctrl[UE_id].ul_failure_timer = 0;
       UE_list->UE_sched_ctrl[UE_id].ul_out_of_sync   = 1;
-
-      //Inform the controller about the UE deactivation. Should be moved to RRC agent in the future
-      if (rrc_agent_registered[module_idP]) {
-        LOG_W(MAC, "notify flexran Agent of UE state change\n");
-        agent_rrc_xface[module_idP]->flexran_agent_notify_ue_state_change(module_idP,
-            rnti, PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
-      }
     }
   }				// ul_failure_timer>0
 }
@@ -695,16 +698,13 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frameP,
     schedule_ue_spec_phy_test(module_idP,frameP,subframeP,mbsfn_status);
   }
 
-  if (RC.flexran[module_idP]->enabled)
-    flexran_agent_send_update_stats(module_idP);
-  
   // Allocate CCEs for good after scheduling is done
   for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
     if(cc[CC_id].tdd_Config == NULL || !(is_UL_sf(&cc[CC_id],subframeP)))
       allocate_CCEs(module_idP, CC_id, frameP, subframeP, 2);
   }
 
-  if (mac_agent_registered[module_idP] && subframeP == 9) {
+  if (flexran_agent_get_mac_xface(module_idP) && subframeP == 9) {
     flexran_agent_slice_update(module_idP);
   }
 

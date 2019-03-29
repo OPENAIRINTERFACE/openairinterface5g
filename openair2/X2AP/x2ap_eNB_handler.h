@@ -37,4 +37,3 @@ int x2ap_eNB_handle_message(instance_t instance, uint32_t assoc_id, int32_t stre
                             const uint8_t * const data, const uint32_t data_length);
 
 #endif /* X2AP_ENB_HANDLERS_H_ */
-

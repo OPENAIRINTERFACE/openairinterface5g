@@ -17,7 +17,7 @@ openairinterface5g
 ├── maketags : Script to generate emacs tags
 ├── nfapi : Contains the NFAPI code. A local Readme file provides more details.
 ├── openair1 : 3GPP LTE Rel-10/12 PHY layer + PHY RF simulation. A local Readme file provides more details.
-├── openair2 : 3GPP LTE Rel-10 RLC/MAC/PDCP/RRC/X2AP implementation. 
+├── openair2 : 3GPP LTE Rel-10 RLC/MAC/PDCP/RRC/X2AP implementation.
     ├── COMMON
     ├── DOCS
     ├── ENB_APP

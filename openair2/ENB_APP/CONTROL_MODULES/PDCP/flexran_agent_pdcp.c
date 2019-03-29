@@ -28,42 +28,36 @@
 
 #include "flexran_agent_pdcp.h"
 
-
-/*Trigger boolean for PDCP measurement*/
-bool triggered_pdcp = false;
-/*Flags showing if a pdcp agent has already been registered*/
-unsigned int pdcp_agent_registered[NUM_MAX_ENB];
-
 /*Array containing the Agent-PDCP interfaces*/
 AGENT_PDCP_xface *agent_pdcp_xface[NUM_MAX_ENB];
 
 // MAX_MOBILES_PER_ENB
 
 void flexran_agent_pdcp_aggregate_stats(const mid_t mod_id,
-					const mid_t ue_id,
+					uint16_t uid,
 					Protocol__FlexPdcpStats *pdcp_aggr_stats){
 
   int lcid=0;
   /* only calculate the DRBs */ 
-  //LOG_I(FLEXRAN_AGENT, "enb %d ue %d \n", mod_id, ue_id);
+  //LOG_I(FLEXRAN_AGENT, "enb %d ue %d \n", mod_id, uid);
   
   for (lcid=NUM_MAX_SRB ; lcid < NUM_MAX_SRB + NUM_MAX_DRB; lcid++){
     
-    pdcp_aggr_stats->pkt_tx += flexran_get_pdcp_tx(mod_id,ue_id,lcid);
-    pdcp_aggr_stats->pkt_tx_bytes += flexran_get_pdcp_tx_bytes(mod_id,ue_id,lcid);
-    pdcp_aggr_stats->pkt_tx_w += flexran_get_pdcp_tx_w(mod_id,ue_id,lcid);
-    pdcp_aggr_stats->pkt_tx_bytes_w += flexran_get_pdcp_tx_bytes_w(mod_id,ue_id,lcid);
-    pdcp_aggr_stats->pkt_tx_aiat += flexran_get_pdcp_tx_aiat(mod_id,ue_id,lcid);
-    pdcp_aggr_stats->pkt_tx_aiat_w += flexran_get_pdcp_tx_aiat_w(mod_id,ue_id,lcid);
+    pdcp_aggr_stats->pkt_tx += flexran_get_pdcp_tx(mod_id, uid, lcid);
+    pdcp_aggr_stats->pkt_tx_bytes += flexran_get_pdcp_tx_bytes(mod_id, uid, lcid);
+    pdcp_aggr_stats->pkt_tx_w += flexran_get_pdcp_tx_w(mod_id, uid, lcid);
+    pdcp_aggr_stats->pkt_tx_bytes_w += flexran_get_pdcp_tx_bytes_w(mod_id, uid, lcid);
+    pdcp_aggr_stats->pkt_tx_aiat += flexran_get_pdcp_tx_aiat(mod_id, uid, lcid);
+    pdcp_aggr_stats->pkt_tx_aiat_w += flexran_get_pdcp_tx_aiat_w(mod_id, uid, lcid);
     
       
-    pdcp_aggr_stats->pkt_rx += flexran_get_pdcp_rx(mod_id,ue_id,lcid);
-    pdcp_aggr_stats->pkt_rx_bytes += flexran_get_pdcp_rx_bytes(mod_id,ue_id,lcid);
-    pdcp_aggr_stats->pkt_rx_w += flexran_get_pdcp_rx_w(mod_id,ue_id,lcid);
-    pdcp_aggr_stats->pkt_rx_bytes_w += flexran_get_pdcp_rx_bytes_w(mod_id,ue_id,lcid);
-    pdcp_aggr_stats->pkt_rx_aiat += flexran_get_pdcp_rx_aiat(mod_id,ue_id,lcid);
-    pdcp_aggr_stats->pkt_rx_aiat_w += flexran_get_pdcp_rx_aiat_w(mod_id,ue_id,lcid);
-    pdcp_aggr_stats->pkt_rx_oo += flexran_get_pdcp_rx_oo(mod_id,ue_id,lcid);
+    pdcp_aggr_stats->pkt_rx += flexran_get_pdcp_rx(mod_id, uid, lcid);
+    pdcp_aggr_stats->pkt_rx_bytes += flexran_get_pdcp_rx_bytes(mod_id, uid, lcid);
+    pdcp_aggr_stats->pkt_rx_w += flexran_get_pdcp_rx_w(mod_id, uid, lcid);
+    pdcp_aggr_stats->pkt_rx_bytes_w += flexran_get_pdcp_rx_bytes_w(mod_id, uid, lcid);
+    pdcp_aggr_stats->pkt_rx_aiat += flexran_get_pdcp_rx_aiat(mod_id, uid, lcid);
+    pdcp_aggr_stats->pkt_rx_aiat_w += flexran_get_pdcp_rx_aiat_w(mod_id, uid, lcid);
+    pdcp_aggr_stats->pkt_rx_oo += flexran_get_pdcp_rx_oo(mod_id, uid, lcid);
     
   }
   
@@ -78,7 +72,6 @@ int flexran_agent_pdcp_stats_reply(mid_t mod_id,
   
   // Protocol__FlexHeader *header;
   int i;
-  int UE_id;
   // int cc_id = 0;
  
   
@@ -86,7 +79,8 @@ int flexran_agent_pdcp_stats_reply(mid_t mod_id,
   if (report_config->nr_ue > 0) {
     
     for (i = 0; i < report_config->nr_ue; i++) {
-      UE_id = flexran_get_ue_id(mod_id, i);
+      const rnti_t rnti = report_config->ue_report_type[i].ue_rnti;
+      const uint16_t uid = flexran_get_pdcp_uid_from_rnti(mod_id, rnti);
 
       /* Check flag for creation of buffer status report */
       if (report_config->ue_report_type[i].ue_report_flags & PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PDCP_STATS) {
@@ -97,7 +91,7 @@ int flexran_agent_pdcp_stats_reply(mid_t mod_id,
 	  goto error;
 	protocol__flex_pdcp_stats__init(pdcp_aggr_stats);
 	
-	flexran_agent_pdcp_aggregate_stats(mod_id, UE_id, pdcp_aggr_stats);
+	flexran_agent_pdcp_aggregate_stats(mod_id, uid, pdcp_aggr_stats);
 
 	pdcp_aggr_stats->has_pkt_tx=1;
 	pdcp_aggr_stats->has_pkt_tx_bytes =1;
@@ -106,7 +100,7 @@ int flexran_agent_pdcp_stats_reply(mid_t mod_id,
 	pdcp_aggr_stats->has_pkt_tx_aiat =1; 
 	pdcp_aggr_stats->has_pkt_tx_aiat_w =1;
 
-	pdcp_aggr_stats->pkt_tx_sn = flexran_get_pdcp_tx_sn(mod_id, UE_id, DEFAULT_DRB);
+	pdcp_aggr_stats->pkt_tx_sn = flexran_get_pdcp_tx_sn(mod_id, uid, DEFAULT_DRB);
 	pdcp_aggr_stats->has_pkt_tx_sn =1;
 	
 	pdcp_aggr_stats->has_pkt_rx =1;
@@ -117,14 +111,14 @@ int flexran_agent_pdcp_stats_reply(mid_t mod_id,
 	pdcp_aggr_stats->has_pkt_rx_aiat_w =1;
 	pdcp_aggr_stats->has_pkt_rx_oo =1;
 
-	pdcp_aggr_stats->pkt_rx_sn = flexran_get_pdcp_rx_sn(mod_id, UE_id, DEFAULT_DRB);
+	pdcp_aggr_stats->pkt_rx_sn = flexran_get_pdcp_rx_sn(mod_id, uid, DEFAULT_DRB);
 	pdcp_aggr_stats->has_pkt_rx_sn =1;
 
 	pdcp_aggr_stats->sfn = flexran_get_pdcp_sfn(mod_id);
 	pdcp_aggr_stats->has_sfn =1;
 
 	ue_report[i]->pdcp_stats = pdcp_aggr_stats;
-
+        ue_report[i]->flags |= PROTOCOL__FLEX_UE_STATS_TYPE__FLUST_PDCP_STATS;
       }
     }
   }  else {
@@ -144,30 +138,51 @@ int flexran_agent_pdcp_stats_reply(mid_t mod_id,
   return -1;
 }
 
+int flexran_agent_pdcp_destroy_stats_reply(Protocol__FlexStatsReply *reply)
+{
+  for (int i = 0; i < reply->n_ue_report; ++i) {
+    if (reply->ue_report[i]->pdcp_stats)
+      free(reply->ue_report[i]->pdcp_stats);
+  }
+  return 0;
+}
 
 
-int flexran_agent_register_pdcp_xface(mid_t mod_id, AGENT_PDCP_xface *xface) {
-  if (pdcp_agent_registered[mod_id]) {
-    LOG_E(PDCP, "PDCP agent for eNB %d is already registered\n", mod_id);
+int flexran_agent_register_pdcp_xface(mid_t mod_id)
+{
+  if (agent_pdcp_xface[mod_id]) {
+    LOG_E(FLEXRAN_AGENT, "PDCP agent CM for eNB %d is already registered\n", mod_id);
+    return -1;
+  }
+  AGENT_PDCP_xface *xface = malloc(sizeof(AGENT_PDCP_xface));
+  if (!xface) {
+    LOG_E(FLEXRAN_AGENT, "could not allocate memory for PDCP agent xface %d\n", mod_id);
     return -1;
   }
 
   //xface->flexran_pdcp_stats_measurement = NULL;
 
-  pdcp_agent_registered[mod_id] = 1;
   agent_pdcp_xface[mod_id] = xface;
 
   return 0;
 }
 
-int flexran_agent_unregister_pdcp_xface(mid_t mod_id, AGENT_PDCP_xface *xface) {
-
+int flexran_agent_unregister_pdcp_xface(mid_t mod_id)
+{
+  if (!agent_pdcp_xface[mod_id]) {
+    LOG_E(FLEXRAN_AGENT, "PDCP agent CM for eNB %d is not registered\n", mod_id);
+    return -1;
+  }
   //xface->agent_ctxt = NULL;
   //xface->flexran_pdcp_stats_measurement = NULL;
 
-  
-  pdcp_agent_registered[mod_id] = 0;
+  free(agent_pdcp_xface[mod_id]);
   agent_pdcp_xface[mod_id] = NULL;
 
   return 0;
+}
+
+AGENT_PDCP_xface *flexran_agent_get_pdcp_xface(mid_t mod_id)
+{
+  return agent_pdcp_xface[mod_id];
 }

@@ -4,7 +4,7 @@
 ```C
 int  logInit (void);
 ```
-Allocate the internal data used by the logging utility, set the configuration, using the [configuration  module](../../../config/DOC/config.md) 
+Allocate the internal data used by the logging utility, set the configuration, using the [configuration  module](../../../config/DOC/config.md)
 
 ```C
 void logClean (void)
@@ -30,9 +30,9 @@ void close_component_filelog(int comp)
 Redirect or reset to stdout the output stream used by the logging facility. When the output stream is redirected to a file, it is created under /tmp with a hard-coded filename including the componemt name.
 
 ```C
-SET_LOG_DEBUG(flag) 
+SET_LOG_DEBUG(flag)
 CLEAR_LOG_DEBUG(flag)
-SET_LOG_DUMP(flag) 
+SET_LOG_DUMP(flag)
 CLEAR_LOG_DUMP(flag)
 ```
  These macros are used to set or clear the corresponding bit flag, trigerring the activation or un-activation of conditional code or memory dumps generation.
@@ -42,8 +42,8 @@ Example of using the logging utility APIs can be found, for initialization and c
 #### components and debug flags definitions
 
 Adding a new component is just adding an item in the `comp_name_t` enum defined in [log.h](../log.h) . You must also declare it in the T Tracer facility [message fefinitions](../../T/T_messages.txt).
-To add a flag than can then be used for adding conditional code or memory dumps you have to add the flag definition in the `LOG_MASKMAP_INIT` macro, in [log.h](../log.h). 
+To add a flag than can then be used for adding conditional code or memory dumps you have to add the flag definition in the `LOG_MASKMAP_INIT` macro, in [log.h](../log.h).
 
-[logging facility developer main page](devusage.md)  
-[logging facility  main page](log.md)  
+[logging facility developer main page](devusage.md)
+[logging facility  main page](log.md)
 [oai Wikis home](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/home)

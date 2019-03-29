@@ -1222,7 +1222,7 @@ void fill_nfapi_ulsch_harq_information(module_id_t module_idP,
 uint16_t fill_nfapi_uci_acknak(module_id_t module_idP,
 							int CC_idP,
 							uint16_t rntiP,
-							uint16_t absSFP, 
+							uint16_t absSFP,
 							uint8_t cce_idxP);
 
 void fill_nfapi_dl_dci_1A(nfapi_dl_config_request_pdu_t * dl_config_pdu,

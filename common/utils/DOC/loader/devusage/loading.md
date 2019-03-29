@@ -10,16 +10,16 @@ Typical loader usage looks like:
 /* shared library loader include file */
 #include "common/utils/load_module_shlib.h"
 .............
-/* 
-  define and initialize the array, describing the list of functions 
+/*
+  define and initialize the array, describing the list of functions
   implemented in "mymodule"
 */
   loader_shlibfunc_t mymodule_fdesc[2];
-  mymodule_fdesc[0].fname="mymodule_f1"; 
-  mymodule_fdesc[1].fname="mymodule_f2"; 
+  mymodule_fdesc[0].fname="mymodule_f1";
+  mymodule_fdesc[1].fname="mymodule_f2";
 
 /*
- load the library, it's name must be libmymod.so. Configuration can be 
+ load the library, it's name must be libmymod.so. Configuration can be
  used to specify a specific path to look for libmymod.so. Configuration
  can also specify a version, for example "V1", in this case the loader
  will look for libmymodV1.so
@@ -28,13 +28,13 @@ Typical loader usage looks like:
   if (ret < 0) {
        fprintf(stderr,"Library couldn't be loaded\n");
   } else {
-/* 
+/*
 library has been loaded, we probably want to call some functions...
 */
   ret=((funcf1_t)mymodule_fdesc[0].fptr)();
 
 ..................
-/* 
+/*
 later and/or somewhere else in the code you may want to call function "mymodule_f2"
 You can use the loader get_shlibmodule_fptr(char *modname, char *fname) function
 to retrieve the pointer to that function
@@ -50,7 +50,7 @@ if (f2 != NULL) {
 }
 ...............
 ```
-When loading a shared library the loader looks for a symbol named `< module name > _autoinit` and, if it finds it, calls it. The `autoinit` function is called without any argument and the returned value, if any, is not tested. 
+When loading a shared library the loader looks for a symbol named `< module name > _autoinit` and, if it finds it, calls it. The `autoinit` function is called without any argument and the returned value, if any, is not tested.
 
-[loader home page](../loader.md)  
+[loader home page](../loader.md)
 [loader developer home page](../../loader/devusage.md)

@@ -1,6 +1,6 @@
-To add a new parameter in an existing section you  insert an item in a `paramdef_t` array, which describes the parameters to be read in the existing `config_get` call. You also need to increment the numparams argument.  
+To add a new parameter in an existing section you  insert an item in a `paramdef_t` array, which describes the parameters to be read in the existing `config_get` call. You also need to increment the numparams argument.
 
-existing code:  
+existing code:
 ```c
 unsigned int varopt1;
 paramdef_t someoptions[] = {
@@ -11,10 +11,10 @@ paramdef_t someoptions[] = {
    {"opt1",  "<help opt1>",   0,      uptr:&varopt1, defuintval:0, TYPE_UINT,  0 },
 };
 
-config_get( someoptions,sizeof(someoptions)/sizeof(paramdef_t),"somesection"); 
+config_get( someoptions,sizeof(someoptions)/sizeof(paramdef_t),"somesection");
 
 ```
-new code:  
+new code:
 ```c
 unsigned int varopt1;
 
@@ -31,7 +31,7 @@ paramdef_t someoptions[] = {
    {"opt2",  "<help opt2>",   0,      strptr:&varopt2,defstrval:"",TYPE_STRING,0   },
 };
 
-config_get( someoptions,sizeof(someoptions)/sizeof(paramdef_t),"somesection"); 
+config_get( someoptions,sizeof(someoptions)/sizeof(paramdef_t),"somesection");
 
 ```
 
@@ -57,10 +57,10 @@ The configuration module provides a mechanism to check the parameter value read 
  A `checkedparam_t` structure array provides the parameter verification procedures:
 
 ```c
-/* 
+/*
    definition of the verification to be done on param opt1 and opt2.
    opt1 is an integer option we must be set to 0,2,3,4 or 7 in the
-   config source.  
+   config source.
    if opt1 is set to 0 in the config file, it will be set to 1, etc
    opt2 is C string option with the authorize values "zero","oneThird","twoThird","one"
  */
@@ -82,5 +82,5 @@ for(int i=0 ; i < sizeof(someoptions)/sizeof(paramdesc_t) ; i ++) {
 ```
 When you need a specific verification algorithm, you can provide your own verification function and use it in place of the available ones, in the `checkedparam_t` union. If no existing structure definition match your need, you can enhance the configuration module. You then have to add a new verification function in https://gitlab.eurecom.fr/oai/openairinterface5g/blob/develop/common/config/config_userapi.c and add a new structure definition in the `checkedparam_t` type defined in https://gitlab.eurecom.fr/oai/openairinterface5g/blob/develop/common/config/config_paramdesc.h
 
-[Configuration module developer main page](../../config/devusage.md)  
+[Configuration module developer main page](../../config/devusage.md)
 [Configuration module home](../../config.md)

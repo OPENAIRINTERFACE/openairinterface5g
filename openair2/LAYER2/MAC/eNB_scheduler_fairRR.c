@@ -841,6 +841,7 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
 #ifdef DEBUG_eNB_SCHEDULER
   int k;
 #endif
+
   start_meas(&eNB->schedule_dlsch);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME
   (VCD_SIGNAL_DUMPER_FUNCTIONS_SCHEDULE_DLSCH, VCD_FUNCTION_IN);
@@ -1219,8 +1220,8 @@ schedule_ue_spec_fairRR(module_id_t module_idP,
           }
 
           add_ue_dlsch_info(module_idP,
-                            CC_id, 
-                            UE_id, 
+                            CC_id,
+                            UE_id,
                             subframeP,
                             S_DL_SCHEDULED,
                             rnti);

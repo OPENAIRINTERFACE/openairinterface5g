@@ -1,6 +1,6 @@
 /*
   Author: Laurent THOMAS, Open Cells
-  copyleft: OpenAirInterface Software Alliance and it's licence 
+  copyleft: OpenAirInterface Software Alliance and it's licence
 */
 #include <vector>
 #include <map>
@@ -122,7 +122,7 @@ extern "C" {
       pthread_mutex_unlock (&t->queue_cond_lock);
       t->admin.func(NULL);
       pthread_mutex_lock (&t->queue_cond_lock);
-    } 
+    }
     pthread_mutex_unlock (&t->queue_cond_lock);
     return ret;
   }
@@ -290,12 +290,12 @@ extern "C" {
       struct sched_param sparam;
       memset(&sparam, 0, sizeof(sparam));
       sparam.sched_priority = sched_get_priority_max(SCHED_FIFO)-10;
-      policy = SCHED_FIFO ; 
+      policy = SCHED_FIFO ;
       if (pthread_setschedparam(t->thread, policy, &sparam) != 0) {
 	LOG_E(TMR,"task %s : Failed to set pthread priority\n",  itti_get_task_name(task_id) );
       }
     }
-#endif    
+#endif
     return 0;
   }
 

@@ -264,7 +264,7 @@ case $key in
     ARCHIVES_LOC=cppcheck
     LOG_PATTERN=cppcheck.xml
     NB_PATTERN_FILES=1
-    BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2 --suppressions-list=ci-scripts/cppcheck_suppressions.list"
+    BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2 --suppressions-list=ci-scripts/cppcheck_suppressions.list -I common/utils -j4"
     NBARGS=$[$NBARGS+256]
     shift
     ;;
@@ -344,7 +344,7 @@ case $key in
         ARCHIVES_LOC=cppcheck
         LOG_PATTERN=cppcheck.xml
         NB_PATTERN_FILES=1
-        BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2 --suppressions-list=ci-scripts/cppcheck_suppressions.list"
+        BUILD_OPTIONS="--enable=warning --force --xml --xml-version=2 --suppressions-list=ci-scripts/cppcheck_suppressions.list -I common/utils -j4"
         NBARGS=$[$NBARGS+256]
         ;;
         enb-ethernet)

@@ -96,14 +96,14 @@ void rx_prach0(PHY_VARS_eNB *eNB,
   int prach_ifft_cnt=0;
 #endif
 
-  
+
   if(eNB)  {
     fp    = &(eNB->frame_parms);
     nb_rx = fp->nb_antennas_rx;
   } else {
     fp    = &(ru->frame_parms);
     nb_rx = ru->nb_rx;
-  } 
+  }
   AssertFatal(fp!=NULL,"rx_prach called without valid RU or eNB descriptor\n");
 
   frame_type          = fp->frame_type;
@@ -154,7 +154,7 @@ void rx_prach0(PHY_VARS_eNB *eNB,
 
       if (LOG_DEBUGFLAG(PRACH)){
         if (((eNB->proc.frame_prach)&1023) < 20) LOG_I(PHY,"PRACH (eNB) : running rx_prach (br_flag %d, ce_level %d) for frame %d subframe %d, prach_FreqOffset %d, prach_ConfigIndex %d, rootSequenceIndex %d, repetition number %d,numRepetitionsPrePreambleAttempt %d\n",
-			  	     br_flag,ce_level,eNB->proc.frame_prach,subframe,
+               br_flag,ce_level,eNB->proc.frame_prach,subframe,
 				     fp->prach_emtc_config_common.prach_ConfigInfo.prach_FreqOffset[ce_level],
 				     prach_ConfigIndex,rootSequenceIndex,
 				     eNB->prach_vars_br.repetition_number[ce_level],

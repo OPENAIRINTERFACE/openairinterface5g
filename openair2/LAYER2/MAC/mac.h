@@ -82,6 +82,7 @@
  * @{
  */
 
+#define MAX_MAC_INST 16
 #define BCCH_PAYLOAD_SIZE_MAX 128
 #define CCCH_PAYLOAD_SIZE_MAX 128
 #define PCCH_PAYLOAD_SIZE_MAX 128
@@ -1010,6 +1011,8 @@ typedef struct {
   sub_frame_t Msg3_subframe;
   /// Frame where Msg3 is to be sent
   frame_t Msg3_frame;
+  /// Delay cnt for Msg4 transmission (waiting for RRC message piggyback)
+  int Msg4_delay_cnt;
   /// Subframe where Msg4 is to be sent
   sub_frame_t Msg4_subframe;
   /// Frame where Msg4 is to be sent
@@ -1098,13 +1101,13 @@ typedef struct {
   int avail;
   int num_UEs;
   boolean_t active[MAX_MOBILES_PER_ENB];
-  
+
   /// Sorting criteria for the UE list in the MAC preprocessor
   uint16_t sorting_criteria[MAX_NUM_SLICES][CR_NUM];
   uint16_t first_rb_offset[NFAPI_CC_MAX][MAX_NUM_SLICES];
-  
+
   int assoc_dl_slice_idx[MAX_MOBILES_PER_ENB];
-  int assoc_ul_slice_idx[MAX_MOBILES_PER_ENB];  
+  int assoc_ul_slice_idx[MAX_MOBILES_PER_ENB];
 } UE_list_t;
 
 /*! \brief deleting control information*/

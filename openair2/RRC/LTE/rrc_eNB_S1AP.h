@@ -73,14 +73,14 @@ rrc_eNB_S1AP_remove_ue_ids(
 void
 rrc_eNB_generate_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t *const ctxt_pP,
     rrc_eNB_ue_context_t          *const ue_context_pP,
-    const uint8_t                ho_state
-                                                      );
+                                                     const uint8_t                ho_state
+                                                     );
 
 int
 rrc_eNB_modify_dedicatedRRCConnectionReconfiguration(const protocol_ctxt_t *const ctxt_pP,
     rrc_eNB_ue_context_t          *const ue_context_pP,
-    const uint8_t                ho_state
-                                                    );
+                                                     const uint8_t                ho_state
+                                                     );
 
 /*! \fn void rrc_eNB_send_S1AP_INITIAL_CONTEXT_SETUP_RESP(uint8_t mod_id, uint8_t ue_index)
  *\brief create a S1AP_INITIAL_CONTEXT_SETUP_RESP for S1AP.
@@ -148,6 +148,16 @@ void rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ (
   const long                               cause_valueP
 );
 
+/*! \fn rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_CPLT(const module_id_t enb_mod_idP, const struct rrc_eNB_ue_context_s *const ue_context_pP)
+ *\brief create a S1AP_UE_CONTEXT_RELEASE_COMPLETE message, the message is sent by the eNB to S1AP task to acknowledge/complete the release of the UE-associated S1-logical connection over the S1 interface. .
+ *\param enb_mod_idP Instance ID of eNB.
+ *\param eNB_ue_s1ap_id UE's S1AP ID in the eNB.
+ */
+void rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_CPLT(
+  module_id_t enb_mod_idP,
+  uint32_t eNB_ue_s1ap_id
+);
+
 /* Down link procedures */
 
 /*! \fn rrc_eNB_process_S1AP_DOWNLINK_NAS(MessageDef *msg_p, const char *msg_name, instance_t instance, mui_t *rrc_eNB_mui)
@@ -183,7 +193,7 @@ int rrc_eNB_process_S1AP_E_RAB_SETUP_REQ(MessageDef *msg_p, const char *msg_name
  *\brief send a S1AP dedicated E_RAB setup response
  *\param ctxt_pP contxt infirmation
  *\param e_contxt_pP ue specific context at the eNB
- *\param xid transaction identifier
+ *\param xid transaction identifier 
  *\return 0 when successful, -1 if the UE index can not be retrieved.
  */
 int rrc_eNB_send_S1AP_E_RAB_SETUP_RESP(const protocol_ctxt_t *const ctxt_pP, rrc_eNB_ue_context_t  *const ue_context_pP, uint8_t xid );

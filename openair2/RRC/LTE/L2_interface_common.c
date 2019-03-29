@@ -44,6 +44,8 @@
 //#define RRC_DATA_REQ_DEBUG
 //#define DEBUG_RRC 1
 
+extern RAN_CONTEXT_t RC;
+
 //------------------------------------------------------------------------------
 uint8_t
 rrc_data_req(
@@ -94,6 +96,8 @@ rrc_data_req(
     RRC_DCCH_DATA_REQ (message_p).confirmp  = confirmP;
     RRC_DCCH_DATA_REQ (message_p).sdu_size  = sdu_sizeP;
     RRC_DCCH_DATA_REQ (message_p).sdu_p     = message_buffer;
+    //memcpy (RRC_DCCH_DATA_REQ (message_p).sdu_p, buffer_pP, sdu_sizeP);
+
     RRC_DCCH_DATA_REQ (message_p).mode      = modeP;
     RRC_DCCH_DATA_REQ (message_p).module_id = ctxt_pP->module_id;
     RRC_DCCH_DATA_REQ (message_p).rnti      = ctxt_pP->rnti;
@@ -103,6 +107,15 @@ rrc_data_req(
       ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE,
       ctxt_pP->instance,
       message_p);
+    LOG_I(RRC,"sent RRC_DCCH_DATA_REQ to TASK_PDCP_ENB\n");
+#ifndef UETARGET
+    /* Hack: only trigger PDCP if in CU, otherwise it is triggered by RU threads
+     * Ideally, PDCP would not neet to be triggered like this but react to ITTI
+     * messages automatically */
+    if (NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type))
+      pdcp_run(ctxt_pP);
+#endif
+
     return TRUE; // TODO should be changed to a CNF message later, currently RRC lite does not used the returned value anyway.
 
   }

@@ -39,7 +39,7 @@ void handle_rach(UL_IND_t *UL_info) {
 		     );
   }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0)) 
+#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   if (UL_info->rach_ind_br.rach_indication_body.number_of_preambles>0) {
 
     AssertFatal(UL_info->rach_ind_br.rach_indication_body.number_of_preambles<5,"More than 4 preambles not supported\n");

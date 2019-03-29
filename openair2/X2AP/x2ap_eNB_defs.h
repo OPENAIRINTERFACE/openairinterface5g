@@ -44,22 +44,22 @@
 typedef enum {
   /* Disconnected state: initial state for any association. */
   X2AP_ENB_STATE_DISCONNECTED = 0x0,
-  
+
   /* State waiting for x2 Setup response message if the target eNB accepts or
    * X2 Setup failure if rejects the eNB.
    */
   X2AP_ENB_STATE_WAITING     = 0x1,
-  
+
   /* The eNB is successfully connected to another eNB. */
   X2AP_ENB_STATE_CONNECTED   = 0x2,
-  
+
   /* X2AP is ready, and the eNB is successfully connected to another eNB. */
   X2AP_ENB_STATE_READY             = 0x3,
 
   X2AP_ENB_STATE_OVERLOAD          = 0x4,
 
   X2AP_ENB_STATE_RESETTING         = 0x5,
-  
+
   /* Max number of states available */
   X2AP_ENB_STATE_MAX,
 } x2ap_eNB_state_t;
@@ -93,13 +93,13 @@ typedef struct x2ap_eNB_data_s {
 
   /* This is the optional name provided by the MME */
   char *eNB_name;
-  
-  /*  target eNB ID */ 
+
+  /*  target eNB ID */
   uint32_t eNB_id;
-  
+
   /* Current eNB load information (if any). */
   //x2ap_load_state_t overload_state;
-  
+
   /* Current eNB->eNB X2AP association state */
   x2ap_eNB_state_t state;
 
@@ -208,4 +208,3 @@ RB_PROTOTYPE(x2ap_eNB_map, x2ap_eNB_data_s, entry, x2ap_eNB_compare_assoc_id);
 
 
 #endif /* X2AP_ENB_DEFS_H_ */
-

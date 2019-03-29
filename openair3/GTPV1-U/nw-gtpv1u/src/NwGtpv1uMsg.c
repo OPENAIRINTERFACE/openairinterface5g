@@ -144,7 +144,7 @@ nwGtpv1uGpduMsgNew( NW_IN NwGtpv1uStackHandleT hGtpuStackHandle,
     AssertFatal((msgExtraLen + NW_GTPV1U_EPC_MIN_HEADER_SIZE) <= tpduOffset,
                 "Mismatch GTPU len, msgExtraLen %u tpduOffset %u",
                 msgExtraLen,
-                tpduOffset);
+                (uint32_t) tpduOffset);
     pMsg->msgBuf       = tpdu;
     pMsg->msgBufLen    = tpduLength + msgExtraLen + NW_GTPV1U_EPC_MIN_HEADER_SIZE;
     pMsg->msgBufOffset = tpduOffset - (msgExtraLen + NW_GTPV1U_EPC_MIN_HEADER_SIZE);

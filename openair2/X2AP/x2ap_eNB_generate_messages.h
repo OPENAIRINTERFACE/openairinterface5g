@@ -61,4 +61,3 @@ int x2ap_eNB_generate_x2_handover_cancel (x2ap_eNB_instance_t *instance_p, x2ap_
                                           x2ap_handover_cancel_cause_t cause);
 
 #endif /*  X2AP_ENB_GENERATE_MESSAGES_H_ */
-

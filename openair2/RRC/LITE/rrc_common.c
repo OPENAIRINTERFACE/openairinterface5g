@@ -282,7 +282,7 @@ rrc_rx_tx(
         UE_rrc_inst[ctxt_pP->module_id].Info[enb_indexP].T310_active = 0;
         rrc_t310_expiration (ctxt_pP, enb_indexP);
         VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_RX_TX,VCD_FUNCTION_OUT);
-	LOG_I(RRC,"Returning RRC_PHY_RESYNCH: T310 expired\n"); 
+	LOG_I(RRC,"Returning RRC_PHY_RESYNCH: T310 expired\n");
         return RRC_PHY_RESYNCH;
       }
 
@@ -358,7 +358,7 @@ rrc_rx_tx(
       }
       if (ue_context_p->ue_context.ue_release_timer>0) {
 	ue_context_p->ue_context.ue_release_timer++;
-	if (ue_context_p->ue_context.ue_release_timer >= 
+	if (ue_context_p->ue_context.ue_release_timer >=
 	    ue_context_p->ue_context.ue_release_timer_thres) {
 	  LOG_I(RRC,"Removing UE %x instance (release timer %d)\n",ue_context_p->ue_context.rnti,ue_context_p->ue_context.ue_release_timer);
 	  ue_to_be_removed = ue_context_p;
@@ -493,4 +493,3 @@ binary_search_float(
 
   return first;
 }
-

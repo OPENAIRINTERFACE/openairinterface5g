@@ -616,7 +616,7 @@ int et_scenario_set_packet_received(et_packet_t * const packet)
 
   if (0 != packet->timer_id) {
     rc = timer_remove(packet->timer_id);
-    AssertFatal(rc == 0, "TODO: Debug Timer on Rx packet num %d unknown", packet->packet_number);
+    AssertFatal(rc == 0, "TODO: Debug Timer on Rx packet num %u unknown", packet->packet_number);
     g_scenario->timer_count--;
     return rc;
   }
@@ -919,7 +919,7 @@ void et_s1ap_update_assoc_id_of_packets(const int32_t assoc_id,
         break;
 
       default:
-        AssertFatal(0, "Unknown chunk_type %d packet num %d", packet->sctp_hdr.chunk_type, packet->packet_number);
+        AssertFatal(0, "Unknown chunk_type %d packet num %u", packet->sctp_hdr.chunk_type, packet->packet_number);
         ;
     }
     packet = packet->next;
