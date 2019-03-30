@@ -1234,12 +1234,16 @@ schedule_ulsch(module_id_t module_idP,
 
   /* Note: RC.nb_mac_CC[module_idP] should be lower than or equal to NFAPI_CC_MAX */
   for (int CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++, cc++) {
-    first_rb[CC_id] = 1;  // leave out first RB for PUCCH
-
 #if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     first_rb[CC_id] = (emtc_active[CC_id] == 1) ? 7 : 1;
 #else
-    first_rb[CC_id] = 1;
+    /* Note: the size of PUCCH is arbitrary, to be done properly. */
+    switch (RC.eNB[module_idP][CC_id]->frame_parms.N_RB_DL) {
+    case 25:  first_rb[CC_id] = 1; break; // leave out first RB for PUCCH
+    case 50:  first_rb[CC_id] = 2; break; // leave out first RB for PUCCH
+    case 100: first_rb[CC_id] = 3; break; // leave out first RB for PUCCH
+    default: LOG_E(MAC, "nb RBs not handled, todo.\n"); exit(1);
+    }
 #endif
 
     RA_t *ra_ptr = cc->ra;
@@ -1351,6 +1355,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
 
   if (sched_subframeP < subframeP) {
     sched_frame++;
+    sched_frame %= 1024;
   }
 
   /* NFAPI struct init */
@@ -1366,6 +1371,21 @@ schedule_ulsch_rnti(module_id_t module_idP,
   /* Note: RC.nb_mac_CC[module_idP] should be lower than or equal to NFAPI_CC_MAX */
   for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++) {
     n_rb_ul_tab[CC_id] = to_prb(cc[CC_id].ul_Bandwidth); // return total number of PRB
+    /* HACK: let's remove the PUCCH from available RBs
+     * we suppose PUCCH size is:
+     * - for 25 RBs: 1 RB (top and bottom of ressource grid)
+     * - for 50:     2 RBs
+     * - for 100:    3 RBs
+     * This is totally arbitrary and might even be wrong.
+     * We suppose 'first_rb[]' has been correctly populated by the caller,
+     * so we only remove the top part of the resource grid.
+     */
+    switch (n_rb_ul_tab[CC_id]) {
+    case 25:  n_rb_ul_tab[CC_id] -= 1; break;
+    case 50:  n_rb_ul_tab[CC_id] -= 2; break;
+    case 100: n_rb_ul_tab[CC_id] -= 3; break;
+    default: LOG_E(MAC, "RBs setting not handled. Todo.\n"); exit(1);
+    }
     UE_list->first_rb_offset[CC_id][slice_idx] = cmin(n_rb_ul_tab[CC_id], sli->ul[slice_idx].first_rb);
   }
 
@@ -1374,7 +1394,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
    * pre_assigned_mcs_ul
    * pre_allocated_rb_table_index_ul
    */
-  ulsch_scheduler_pre_processor(module_idP, slice_idx, frameP, subframeP, sched_subframeP, first_rb);
+  ulsch_scheduler_pre_processor(module_idP, slice_idx, frameP, subframeP, sched_frame, sched_subframeP, first_rb);
 
   for (CC_id = 0; CC_id < RC.nb_mac_CC[module_idP]; CC_id++) {
     first_rb_slice[CC_id] = first_rb[CC_id] + UE_list->first_rb_offset[CC_id][slice_idx];
@@ -1467,7 +1487,7 @@ schedule_ulsch_rnti(module_id_t module_idP,
         /* New transmission */
         if (round_index == 0) {
           /* Be sure that there are some free RBs */
-          if (first_rb_slice[CC_id] >= n_rb_ul_tab[CC_id] - 1) {
+          if (first_rb_slice[CC_id] >= n_rb_ul_tab[CC_id]) {
             LOG_W(MAC, "[eNB %d] frame %d, subframe %d, UE %d/%x CC %d: dropping, not enough RBs\n",
               module_idP,
               frameP,
@@ -1903,7 +1923,20 @@ schedule_ulsch_rnti(module_id_t module_idP,
             sched_frame,
             sched_subframeP,
             cqi_req);
-        }  // end of round > 0
+
+          /* HACK: RBs used by retransmission have to be reserved.
+           * The current mechanism uses the notion of 'first_rb', so
+           * we skip all RBs below the ones retransmitted. This is
+           * not correct. Imagine only RB 23 is retransmitted, then all
+           * RBs < 23 will be marked unusable for new transmissions (case where round == 0).
+           * Note also that this code works only if the preprocessor orders
+           * UEs with retransmission with higher priority than UEs with new
+           * transmission.
+           * All this should be cleaned up properly.
+           */
+          if (first_rb_slice[CC_id] < UE_template_ptr->first_rb_ul[harq_pid] + UE_template_ptr->nb_rb_ul[harq_pid])
+            first_rb_slice[CC_id] = UE_template_ptr->first_rb_ul[harq_pid] + UE_template_ptr->nb_rb_ul[harq_pid];
+        }  // end of round > 0 
       }  // UE_is_to_be_scheduled
     }  // loop over all active CC_ids
   }  // loop over UE_ids
