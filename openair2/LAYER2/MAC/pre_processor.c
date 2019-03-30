@@ -1745,7 +1745,7 @@ void ulsch_scheduler_pre_processor(module_id_t module_idP,
 
       //      mac_xface->get_ue_active_harq_pid(module_idP,CC_id,rnti,frameP,subframeP,&harq_pid,&round,openair_harq_UL);
 
-      if (UE_list->UE_sched_ctrl[UE_id].round_UL[CC_id] > 0) {
+      if (UE_list->UE_sched_ctrl[UE_id].round_UL[CC_id][harq_pid] > 0) {
         nb_allocated_rbs[CC_id][UE_id] = UE_list->UE_template[CC_id][UE_id].nb_rb_ul[harq_pid];
       } else {
         nb_allocated_rbs[CC_id][UE_id] =
