@@ -166,7 +166,6 @@ int main(int argc, char **argv) {
   int ap;
   int tx_offset;
   int sample_offsetF;
-  int slot_offsetF;
   int txlev;
 
   cpuf = get_cpu_freq_GHz();
@@ -626,8 +625,6 @@ int main(int argc, char **argv) {
   if (start_sc >= frame_parms->ofdm_symbol_size)
     start_sc -= frame_parms->ofdm_symbol_size;
 
-  slot_offsetF = slot*frame_parms->symbols_per_slot*frame_parms->ofdm_symbol_size;
-
   for (ap=0; ap<harq_process_ul_ue->Nl; ap++) {
 
     // DMRS params for this ap
@@ -643,7 +640,7 @@ int main(int argc, char **argv) {
     for (l=start_symbol; l<start_symbol+nb_symb_sch; l++) {
 
       k = start_sc;
-      sample_offsetF = l*frame_parms->ofdm_symbol_size + k + slot_offsetF;
+      sample_offsetF = l*frame_parms->ofdm_symbol_size + k;
 
       for (i=0; i<nb_rb*NR_NB_SC_PER_RB; i++) {
         if ((l == dmrs_symbol) && (k == ((start_sc+get_dmrs_freq_idx(n, k_prime, delta, dmrs_type))%(frame_parms->ofdm_symbol_size)))) {
@@ -688,14 +685,14 @@ m, l, k, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
 
   for (ap=0; ap<harq_process_ul_ue->Nl; ap++) {
       if (frame_parms->Ncp == 1) { // extended cyclic prefix
-  PHY_ofdm_mod(&txdataF[ap][slot_offsetF],
+  PHY_ofdm_mod(txdataF[ap],
          &txdata[ap][tx_offset],
          frame_parms->ofdm_symbol_size,
          12,
          frame_parms->nb_prefix_samples,
          CYCLIC_PREFIX);
       } else { // normal cyclic prefix
-  nr_normal_prefix_mod(&txdataF[ap][slot_offsetF],
+  nr_normal_prefix_mod(txdataF[ap],
            &txdata[ap][tx_offset],
            14,
            frame_parms);
