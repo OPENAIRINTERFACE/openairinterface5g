@@ -308,16 +308,13 @@ for (int i=0; i<n_dmrs>>4; i++) {
 
 
     // Non interleaved VRB to PRB mapping
-  uint16_t start_sc = frame_parms.first_carrier_offset + frame_parms.ssb_start_subcarrier;
-  if (start_sc >= frame_parms.ofdm_symbol_size)
-    start_sc -= frame_parms.ofdm_symbol_size;
- /*rel15->start_prb*NR_NB_SC_PER_RB +
-  ((pdcch_params.search_space_type == NFAPI_NR_SEARCH_SPACE_TYPE_COMMON) && (pdcch_params.dci_format == NFAPI_NR_DL_DCI_FORMAT_1_0))?\
-       ((frame_parms.ssb_start_subcarrier/NR_NB_SC_PER_RB + pdcch_params.rb_offset)*NR_NB_SC_PER_RB) : 0;*/
+ uint16_t start_sc = frame_parms.first_carrier_offset + rel15->start_prb*NR_NB_SC_PER_RB;
+ if (start_sc >= frame_parms.ofdm_symbol_size)
+   start_sc -= frame_parms.ofdm_symbol_size;
 
 #ifdef DEBUG_DLSCH_MAPPING
-printf("PDSCH resource mapping started (start SC %d\tstart symbol %d\tN_PRB %d\tnb_symbols %d)\n",
-start_sc, rel15->start_symbol, rel15->n_prb, rel15->nb_symbols);
+ printf("PDSCH resource mapping started (start SC %d\tstart symbol %d\tN_PRB %d\tnb_symbols %d)\n",
+	start_sc, rel15->start_symbol, rel15->n_prb, rel15->nb_symbols);
 #endif
 
   for (int ap=0; ap<rel15->nb_layers; ap++) {
