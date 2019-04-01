@@ -124,11 +124,16 @@ function check_on_vm_build {
 
     if [ $KEEP_VM_ALIVE -eq 0 ]
     then
+      if [[ "$VM_NAME" == *"-enb-ethernet"* ]] || [[ "$VM_NAME" == *"-ue-ethernet"* ]]
+      then
+        echo "Hack to not destroy in current pipeline"
+      else
         echo "############################################################"
         echo "Destroying VM"
         echo "############################################################"
         uvt-kvm destroy $VM_NAME
         ssh-keygen -R $VM_IP_ADDR
+      fi
     fi
     rm -f $VM_CMDS
 
