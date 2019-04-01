@@ -32,7 +32,7 @@
 	<testCase id="090104">
 		<class>Initialize_OAI_UE</class>
 		<desc>Initialize OAI UE -- sniffing SFR frequency</desc>
-		<Initialize_OAI_UE_args>-C 806000000 -r 50 --ue-rxgain 120 --ue-scan-carrier --no-L2-connect</Initialize_OAI_UE_args>
+		<Initialize_OAI_UE_args>-C 806000000 -r 50 --ue-rxgain 130 --ue-scan-carrier --no-L2-connect</Initialize_OAI_UE_args>
 	</testCase>
 
 	<testCase id="000001">
