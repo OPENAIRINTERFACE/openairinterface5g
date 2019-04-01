@@ -215,7 +215,7 @@ uint8_t nr_generate_pdsch(NR_gNB_DLSCH_t dlsch,
   nr_dlsch_encoding(harq->pdu, slot, &dlsch, &frame_parms);
 #ifdef DEBUG_DLSCH
 printf("PDSCH encoding:\nPayload:\n");
-for (int i=0; i<TBS>>7; i++) {
+for (int i=0; i<harq->B>>7; i++) {
   for (int j=0; j<16; j++)
     printf("0x%02x\t", harq->pdu[(i<<4)+j]);
   printf("\n");

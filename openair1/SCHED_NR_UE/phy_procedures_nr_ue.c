@@ -3768,7 +3768,7 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   // to be updated by higher layer
   uint8_t nb_re_dmrs = 6;
   uint16_t length_dmrs = 1;
-  uint16_t nb_symb_sch = 8;
+  uint16_t nb_symb_sch = 9;
 
   if (dlsch0==NULL)
     AssertFatal(0,"dlsch0 should be defined at this level \n");
@@ -3833,20 +3833,20 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
       // start ldpc decode for CW 0
       dlsch0->harq_processes[harq_pid]->G = nr_get_G(dlsch0->harq_processes[harq_pid]->nb_rb,
-    		  	  	  	  	  	  	  	  	  	  nb_symb_sch,
-												  nb_re_dmrs,
-												  length_dmrs,
-												  dlsch0->harq_processes[harq_pid]->Qm,
-												  dlsch0->harq_processes[harq_pid]->Nl);
+						     nb_symb_sch,
+						     nb_re_dmrs,
+						     length_dmrs,
+						     dlsch0->harq_processes[harq_pid]->Qm,
+						     dlsch0->harq_processes[harq_pid]->Nl);
 #if UE_TIMING_TRACE
       start_meas(&ue->dlsch_unscrambling_stats);
 #endif
       nr_dlsch_unscrambling(pdsch_vars->llr[0],
-    		  	  	  	  	dlsch0->harq_processes[harq_pid]->G,
+			    dlsch0->harq_processes[harq_pid]->G,
                             0,
-							ue->frame_parms.Nid_cell,
-							dlsch0->rnti);
-
+			    ue->frame_parms.Nid_cell,
+			    dlsch0->rnti);
+      
 
 #if UE_TIMING_TRACE
       stop_meas(&ue->dlsch_unscrambling_stats);
@@ -3913,11 +3913,11 @@ void nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       {
           // start ldpc decode for CW 1
           dlsch1->harq_processes[harq_pid]->G = nr_get_G(dlsch1->harq_processes[harq_pid]->nb_rb,
-              		  	  	  	  	  	  	  	  	  	  nb_symb_sch,
-          												  nb_re_dmrs,
-          												  length_dmrs,
-          												  dlsch1->harq_processes[harq_pid]->Qm,
-          												  dlsch1->harq_processes[harq_pid]->Nl);
+							 nb_symb_sch,
+							 nb_re_dmrs,
+							 length_dmrs,
+							 dlsch1->harq_processes[harq_pid]->Qm,
+							 dlsch1->harq_processes[harq_pid]->Nl);
 #if UE_TIMING_TRACE
           start_meas(&ue->dlsch_unscrambling_stats);
 #endif
@@ -4309,7 +4309,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   int frame_rx = proc->frame_rx;
   int nr_tti_rx = proc->nr_tti_rx;
   NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][0];
-  uint16_t nb_symb_sch = 8; // to be updated by higher layer
+  uint16_t nb_symb_sch = 9; // to be updated by higher layer
   uint8_t nb_symb_pdcch = pdcch_vars->coreset[0].duration;
   uint8_t dci_cnt = 0;
   
@@ -4407,6 +4407,12 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 			   nb_symb_pdcch, //ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->num_pdcch_symbols,
 			   (nb_symb_sch+nb_symb_pdcch-1)); //ue->frame_parms.symbols_per_tti>>1,
 
+    /*
+    write_output("rxF_ext.m","rxFe",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->rxdataF_ext[0][0],ue->frame_parms.N_RB_DL*12*14,1,1);
+    write_output("rxF_comp.m","rxFc",&ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->rxdataF_comp0[0][0],ue->frame_parms.N_RB_DL*12*14,1,1);
+    write_output("rxF_llr.m","rxFllr",ue->pdsch_vars[ue->current_thread_id[nr_tti_rx]][eNB_id]->llr[0],(nb_symb_sch-1)*50*12+50*6,1,0);
+    */
+    
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
   }
 
