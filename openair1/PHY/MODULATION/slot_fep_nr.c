@@ -35,7 +35,7 @@
 #endif*/
 
 int nr_slot_fep(PHY_VARS_NR_UE *ue,
-		unsigned char l,
+		unsigned char symbol,
 		unsigned char Ns,
 		int sample_offset,
 		int no_prefix,
@@ -44,7 +44,6 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   NR_UE_COMMON *common_vars   = &ue->common_vars;
   unsigned char aa;
-  unsigned char symbol = l;//+((7-frame_parms->Ncp)*(Ns&1)); ///symbol within sub-frame
   unsigned int nb_prefix_samples;
   unsigned int nb_prefix_samples0;
   if (ue->is_synchronized) {
@@ -146,7 +145,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
           nb_prefix_samples,nb_prefix_samples0,slot_offset,sample_offset,rx_offset,frame_length_samples);
 #endif
 
-    if (l==0) {
+    if (symbol==0) {
 
       if (rx_offset > (frame_length_samples - frame_parms->ofdm_symbol_size))
         memcpy((short *)&common_vars->rxdata[aa][frame_length_samples],
@@ -171,8 +170,8 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 #endif
       }
     } else {
-      rx_offset += (frame_parms->ofdm_symbol_size+nb_prefix_samples)*l;// +
-      //                   (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1);
+      rx_offset += (frame_parms->ofdm_symbol_size+nb_prefix_samples)*symbol;
+      //                  + (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1);
 
       if (rx_offset > (frame_length_samples - frame_parms->ofdm_symbol_size))
         memcpy((void *)&common_vars->rxdata[aa][frame_length_samples],
@@ -215,14 +214,13 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
   case NR_PDCCH_EST:
 
 #ifdef DEBUG_FEP
-    printf("PDCCH Channel estimation aatx %d, slot %d, symbol %d start_sc %d\n",aa,Ns,l,coreset_start_subcarrier);
+    printf("PDCCH Channel estimation aatx %d, slot %d, symbol %d start_sc %d\n",aa,Ns,symbol,coreset_start_subcarrier);
 #endif
 #if UE_TIMING_TRACE
     start_meas(&ue->dlsch_channel_estimation_stats);
 #endif
     nr_pdcch_channel_estimation(ue,0,
 				Ns,
-				l,
 				symbol,
 				coreset_start_subcarrier,
 				nb_rb_coreset);
@@ -234,7 +232,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
     
   case NR_PDSCH_EST:
 #ifdef DEBUG_FEP
-    printf("Channel estimation aatx %d, slot %d, symbol %d\n",aa,Ns,l);
+    printf("Channel estimation aatx %d, slot %d, symbol %d\n",aa,Ns,symbol);
 #endif
 #if UE_TIMING_TRACE
     start_meas(&ue->dlsch_channel_estimation_stats);
@@ -246,7 +244,6 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
     nr_pdsch_channel_estimation(ue,0,
 				Ns,
 				p,
-				l,
 				symbol,
 				bwp_start_subcarrier,
 				nb_rb_pdsch);

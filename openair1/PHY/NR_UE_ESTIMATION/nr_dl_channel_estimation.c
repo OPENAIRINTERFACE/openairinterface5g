@@ -67,7 +67,7 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
   k = nushift;
 
 #ifdef DEBUG_CH
-  printf("PBCH DMRS Correlation : ThreadId %d, eNB_offset %d , OFDM size %d, Ncp=%d, Ns=%d, k=%d symbol %d\n",ue->current_thread_id[Ns>>1], eNB_offset,ue->frame_parms.ofdm_symbol_size,
+  printf("PBCH DMRS Correlation : ThreadId %d, eNB_offset %d , OFDM size %d, Ncp=%d, Ns=%d, k=%d symbol %d\n",ue->current_thread_id[Ns], eNB_offset,ue->frame_parms.ofdm_symbol_size,
          ue->frame_parms.Ncp,Ns,k, symbol);
 #endif
 
@@ -326,6 +326,9 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
     re_offset = (re_offset+4)&(ue->frame_parms.ofdm_symbol_size-1);
     rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+re_offset)];
 
+    ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
+    ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
+
 #ifdef DEBUG_CH
     printf("pilot 2 : rxF - > (%d,%d) ch -> (%d,%d), pil -> (%d,%d) \n",rxF[0],rxF[1],ch[0],ch[1],pil[0],pil[1]);
 #endif
@@ -413,7 +416,6 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
 int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
 				uint8_t eNB_offset,
 				unsigned char Ns,
-				unsigned char l,
 				unsigned char symbol,
 				unsigned short coreset_start_subcarrier,
 				unsigned short nb_rb_coreset)
@@ -444,8 +446,8 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
   k = coreset_start_subcarrier;
 
 #ifdef DEBUG_PDCCH
-  printf("PDCCH Channel Estimation : ThreadId %d, eNB_offset %d ch_offset %d, OFDM size %d, Ncp=%d, l=%d, Ns=%d, k=%d symbol %d\n",ue->current_thread_id[Ns], eNB_offset,ch_offset,ue->frame_parms.ofdm_symbol_size,
-         ue->frame_parms.Ncp,l,Ns,k, symbol);
+  printf("PDCCH Channel Estimation : ThreadId %d, eNB_offset %d ch_offset %d, OFDM size %d, Ncp=%d, Ns=%d, k=%d symbol %d\n",ue->current_thread_id[Ns], eNB_offset,ch_offset,ue->frame_parms.ofdm_symbol_size,
+         ue->frame_parms.Ncp,Ns,k, symbol);
 #endif
 
   fl = filt16a_l1;
@@ -616,14 +618,14 @@ int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
     break;
   }
 
-  if( (Ns== 1) && (l == 0))
+  if( (Ns== 1) && (symbol == 0))
   {
       // do ifft of channel estimate
       for (aarx=0; aarx<ue->frame_parms.nb_antennas_rx; aarx++)
           for (p=0; p<ue->frame_parms.nb_antenna_ports_eNB; p++) {
               if (ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].dl_ch_estimates[eNB_offset][(p<<1)+aarx])
               {
-                  LOG_D(PHY,"Channel Impulse Computation Slot %d ThreadId %d Symbol %d \n", Ns, ue->current_thread_id[Ns], l);
+                  LOG_D(PHY,"Channel Impulse Computation Slot %d ThreadId %d Symbol %d \n", Ns, ue->current_thread_id[Ns], symbol);
                   idft((int16_t*) &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].dl_ch_estimates[eNB_offset][(p<<1)+aarx][0],
                           (int16_t*) ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns]].dl_ch_estimates_time[eNB_offset][(p<<1)+aarx],1);
               }
@@ -637,11 +639,10 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                               uint8_t eNB_offset,
                               unsigned char Ns,
                               unsigned short p,
-                              unsigned char l,
                               unsigned char symbol,
-							  unsigned short bwp_start_subcarrier,
-							  unsigned short nb_rb_pdsch)
-{
+			      unsigned short bwp_start_subcarrier,
+			      unsigned short nb_rb_pdsch)  {
+
   int pilot[1320] __attribute__((aligned(16)));
   unsigned char aarx;
   unsigned short k;
@@ -669,8 +670,8 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   int re_offset = k;
 
 #ifdef DEBUG_CH
-  printf("PDSCH Channel Estimation : ThreadId %d, eNB_offset %d ch_offset %d, symbol_offset %d OFDM size %d, Ncp=%d, l=%d, Ns=%d, k=%d symbol %d\n",ue->current_thread_id[Ns], eNB_offset,ch_offset,symbol_offset,ue->frame_parms.ofdm_symbol_size,
-         ue->frame_parms.Ncp,l,Ns,k, symbol);
+  printf("PDSCH Channel Estimation : ThreadId %d, eNB_offset %d ch_offset %d, symbol_offset %d OFDM size %d, Ncp=%d, Ns=%d, k=%d symbol %d\n",ue->current_thread_id[Ns], eNB_offset,ch_offset,symbol_offset,ue->frame_parms.ofdm_symbol_size,
+         ue->frame_parms.Ncp,Ns,k, symbol);
 #endif
 
   switch (nushift) {

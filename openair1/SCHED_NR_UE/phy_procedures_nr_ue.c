@@ -2938,7 +2938,7 @@ void nr_ue_pbch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCH_PROCEDURES, VCD_FUNCTION_IN);
 
   //LOG_I(PHY,"[UE  %d] Frame %d, Trying PBCH %d (NidCell %d, eNB_id %d)\n",ue->Mod_id,frame_rx,pbch_phase,ue->frame_parms.Nid_cell,eNB_id);
-  ret = nr_rx_pbch(ue, proc->subframe_rx,
+  ret = nr_rx_pbch(ue, nr_tti_rx,
 		   ue->pbch_vars[eNB_id],
 		   &ue->frame_parms,
 		   eNB_id,
@@ -4941,7 +4941,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][0];
   uint16_t nb_symb_sch = 8; // to be updated by higher layer
   uint8_t nb_symb_pdcch = pdcch_vars->coreset[0].duration;
-  uint8_t ssb_periodicity = ue->ssb_periodicity; // initialized to 20ms in nr_init_ue and never changed for now
+  uint8_t ssb_periodicity = 10; //ue->ssb_periodicity; // initialized to 20ms in nr_init_ue and never changed for now
   uint8_t ssb_frame_periodicity;  
   uint8_t dci_cnt = 0;
   
@@ -5085,15 +5085,18 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   ssb_frame_periodicity = ssb_periodicity/10 ;  // 10ms is the frame length
 
   frame_rx += ue->trashed_frames;
+  int ssb_slot = (pbch_config.ssb_index)/2;
+
 
   // looking for pbch only in frames according to ssb periodicity
-  if ( (nr_tti_rx == 0) && (ue->decode_MIB == 1) && !((frame_rx-(pbch_config.system_frame_number))%ssb_frame_periodicity))
+  if ((ue->decode_MIB == 1) && (nr_tti_rx == ssb_slot) )//&& !((frame_rx-(pbch_config.system_frame_number))%ssb_frame_periodicity))
     {
       LOG_D(PHY," ------  PBCH ChannelComp/LLR: frame.slot %d.%d ------  \n", frame_rx%1024, nr_tti_rx);
 
       for (int i=1; i<4; i++) {
+
 	nr_slot_fep(ue,
-		    (ue->symbol_offset+i),
+		    (ue->symbol_offset+i)%(ue->frame_parms.symbols_per_slot),
 		    nr_tti_rx,
 		    0,
 		    0,
@@ -5102,7 +5105,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 #if UE_TIMING_TRACE
   	start_meas(&ue->dlsch_channel_estimation_stats);
 #endif
-   	nr_pbch_channel_estimation(ue,0,0,ue->symbol_offset+i,i-1,(pbch_config.ssb_index)&7,pbch_config.half_frame_bit);
+   	nr_pbch_channel_estimation(ue,0,nr_tti_rx,(ue->symbol_offset+i)%(ue->frame_parms.symbols_per_slot),i-1,(pbch_config.ssb_index)&7,pbch_config.half_frame_bit);
 #if UE_TIMING_TRACE
   	stop_meas(&ue->dlsch_channel_estimation_stats);
 #endif
