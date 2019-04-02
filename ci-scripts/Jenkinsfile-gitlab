@@ -36,6 +36,21 @@ def doFlexranCtrlTest = false
 // Location of the executor node
 def nodeExecutor = params.nodeExecutor
 
+// Stage Pass Statuses
+def build_enb_usrp = false
+def build_basic_sim = false
+def build_phy_sim = false
+def build_enb_ethernet = false
+def build_ue_ethernet = false
+def test_basic_sim = false
+def test_phy_sim = false
+def test_l2_sim = false
+def test_fdd_mono_band7 = false
+def test_fdd_mono_band13 = false
+def test_tdd_mono_band40 = false
+def test_fdd_if4p5_band7 = false
+def test_tdd_if4p5_band40 = false
+
 pipeline {
     agent {
         label nodeExecutor
@@ -88,6 +103,9 @@ pipeline {
                 echo "GitLab Act      is ${env.gitlabActionType}"
                 script {
                     if ("MERGE".equals(env.gitlabActionType)) {
+                        // since a bit, in push events, gitlabUserEmail is not populated
+                        gitCommitAuthorEmailAddr = ${env.gitlabUserEmail}
+                        echo "GitLab Usermail is ${gitCommitAuthorEmailAddr}"
                         // GitLab-Jenkins plugin integration is lacking to perform the merge by itself
                         // Doing it manually --> it may have merge conflicts
                         sh "./ci-scripts/doGitLabMerge.sh --src-branch ${env.gitlabSourceBranch} --src-commit ${env.gitlabMergeRequestLastCommit} --target-branch ${env.gitlabTargetBranch} --target-commit ${GIT_COMMIT}"
@@ -107,6 +125,10 @@ pipeline {
                     } else {
                         echo "Git Branch      is ${GIT_BRANCH}"
                         echo "Git Commit      is ${GIT_COMMIT}"
+                        // since a bit, in push events, gitlabUserEmail is not populated
+                        gitCommitAuthorEmailAddr = sh returnStdout: true, script: 'git log -n1 --pretty=format:%ae ${GIT_COMMIT}'
+                        gitCommitAuthorEmailAddr = gitCommitAuthorEmailAddr.trim()
+                        echo "GitLab Usermail is ${gitCommitAuthorEmailAddr}"
                         sh "git log -n1 --pretty=format:\"%s\" > .git/CI_COMMIT_MSG"
 
                         sh "zip -r -qq localZip.zip ."
@@ -214,12 +236,26 @@ pipeline {
                             }
                         }
                     }
+                    post {
+                        success {
+                            script {
+                                build_enb_usrp = true
+                            }
+                        }
+                    }
                 }
                 stage ("Build basic simulator") {
                     steps {
                         gitlabCommitStatus(name: "Build basic-sim") {
                             timeout (time: 20, unit: 'MINUTES') {
                                 sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant basic-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                            }
+                        }
+                    }
+                    post {
+                        success {
+                            script {
+                                build_basic_sim = true
                             }
                         }
                     }
@@ -232,12 +268,26 @@ pipeline {
                             }
                         }
                     }
+                    post {
+                        success {
+                            script {
+                                build_enb_ethernet = true
+                            }
+                        }
+                    }
                 }
                 stage ("Build UE-ethernet") {
                     steps {
                         gitlabCommitStatus(name: "Build UE-ethernet") {
                             timeout (time: 20, unit: 'MINUTES') {
                                 sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
+                            }
+                        }
+                    }
+                    post {
+                        success {
+                            script {
+                                build_ue_ethernet = true
                             }
                         }
                     }
@@ -256,6 +306,13 @@ pipeline {
                         gitlabCommitStatus(name: "Build phy-sim") {
                             timeout (time: 20, unit: 'MINUTES') {
                                sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant phy-sim --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
+                            }
+                        }
+                    }
+                    post {
+                        success {
+                            script {
+                                build_phy_sim = true
                             }
                         }
                     }
@@ -349,6 +406,13 @@ pipeline {
                                     }
                                 }
                             }
+                            post {
+                                success {
+                                    script {
+                                        test_phy_sim = true
+                                    }
+                                }
+                            }
                         }
                         stage ("Build Flexran Controller") {
                             when {
@@ -380,6 +444,13 @@ pipeline {
                                     }
                                 }
                             }
+                            post {
+                                success {
+                                    script {
+                                        test_basic_sim = true
+                                    }
+                                }
+                            }
                         }
                         stage ("Test L2 simulator") {
                             steps {
@@ -392,6 +463,13 @@ pipeline {
                                         } catch (Exception e) {
                                             currentBuild.result = 'FAILURE'
                                         }
+                                    }
+                                }
+                            }
+                            post {
+                                success {
+                                    script {
+                                        test_l2_sim = true
                                     }
                                 }
                             }
@@ -426,9 +504,13 @@ pipeline {
                         }
                     }
                     post {
+                        success {
+                            script {
+                                test_fdd_mono_band7 = true
+                            }
+                        }
                         // In case of any non-success, we are retrieving the HTML report of the last completed
-                        // slave job.
-                        // The only drop-back is that we may retrieve the HTML report of a previous build
+                        // slave job. The only drop-back is that we may retrieve the HTML report of a previous build
                         always {
                             script {
                                 if (!fileExists('test_results-eNB-CI-FDD-Band7-B210.html')) {
@@ -477,9 +559,13 @@ pipeline {
                         }
                     }
                     post {
+                        success {
+                            script {
+                                test_tdd_mono_band40 = true
+                            }
+                        }
                         // In case of any non-success, we are retrieving the HTML report of the last completed
-                        // slave job.
-                        // The only drop-back is that we may retrieve the HTML report of a previous build
+                        // slave job. The only drop-back is that we may retrieve the HTML report of a previous build
                         always {
                             script {
                                 if (!fileExists('test_results-eNB-CI-TDD-Band40-B210.html')) {
@@ -528,9 +614,13 @@ pipeline {
                         }
                     }
                     post {
+                        success {
+                            script {
+                                test_fdd_if4p5_band7 = true
+                            }
+                        }
                         // In case of any non-success, we are retrieving the HTML report of the last completed
-                        // slave job.
-                        // The only drop-back is that we may retrieve the HTML report of a previous build
+                        // slave job.  The only drop-back is that we may retrieve the HTML report of a previous build
                         always {
                             script {
                                 if (!fileExists('test_results-eNB-CI-IF4p5-FDD-Band7-B210.html')) {
@@ -579,9 +669,13 @@ pipeline {
                         }
                     }
                     post {
+                        success {
+                            script {
+                                test_tdd_if4p5_band40 = true
+                            }
+                        }
                         // In case of any non-success, we are retrieving the HTML report of the last completed
-                        // slave job.
-                        // The only drop-back is that we may retrieve the HTML report of a previous build
+                        // slave job. The only drop-back is that we may retrieve the HTML report of a previous build
                         always {
                             script {
                                 if (!fileExists('test_results-eNB-CI-IF4p5-TDD-Band40-B210.html')) {
@@ -630,9 +724,13 @@ pipeline {
                         }
                     }
                     post {
+                        success {
+                            script {
+                                test_fdd_mono_band13 = true
+                            }
+                        }
                         // In case of any non-success, we are retrieving the HTML report of the last completed
-                        // slave job.
-                        // The only drop-back is that we may retrieve the HTML report of a previous build
+                        // slave job. The only drop-back is that we may retrieve the HTML report of a previous build
                         always {
                             script {
                                 if (!fileExists('test_results-eNB-CI-MONO-FDD-Band13-B210.html')) {
@@ -682,8 +780,7 @@ pipeline {
                     }
                     post {
                         // In case of any non-success, we are retrieving the HTML report of the last completed
-                        // slave job.
-                        // The only drop-back is that we may retrieve the HTML report of a previous build
+                        // slave job. The only drop-back is that we may retrieve the HTML report of a previous build
                         always {
                             script {
                                 if (!fileExists('test_results-UE-CI-FDD-Band20-B200.html')) {
@@ -738,15 +835,78 @@ pipeline {
             script {
                 // Stage destroy may not be run if error in previous stage
                 sh "./ci-scripts/oai-ci-vm-tool destroy --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
-                emailext attachmentsPattern: '*results*.html',
-                     body: '''Hi,
+                def bodyMsg = '''Hi,
+
+'''
+                if ((!build_enb_usrp) || (!build_basic_sim) || (!build_phy_sim) || (!build_enb_ethernet) || (!build_ue_ethernet) ||
+                    (!test_basic_sim) || (!test_phy_sim) || (!test_l2_sim) ||
+                    (!test_fdd_mono_band7) || (!test_fdd_mono_band13) || (!test_tdd_mono_band40) || (!test_fdd_if4p5_band7) || (!test_tdd_if4p5_band40)) {
+                    bodyMsg +=  '''Stages that did fail:
+'''
+                }
+                if (!build_enb_usrp) {
+                    bodyMsg +=  '''  -- Build eNB + USRP stage
+'''
+                }
+                if (!build_basic_sim) {
+                    bodyMsg +=  '''  -- Build Basic-Simulator stage
+'''
+                }
+                if (!build_phy_sim) {
+                    bodyMsg +=  '''  -- Build Physical-Simulators stage
+'''
+                }
+                if (!build_enb_ethernet) {
+                    bodyMsg +=  '''  -- Build eNB + ETHERNET transport stage
+'''
+                }
+                if (!build_ue_ethernet) {
+                    bodyMsg +=  '''  -- Build UE + ETHERNET transport stage
+'''
+                }
+                if (!test_basic_sim) {
+                    bodyMsg +=  '''  -- Test Basic-Simulator stage
+'''
+                }
+                if (!test_phy_sim) {
+                    bodyMsg +=  '''  -- Test Physical-Simulators stage
+'''
+                }
+                if (!test_l2_sim) {
+                    bodyMsg +=  '''  -- Test L2-nFAPI-Simulator stage
+'''
+                }
+                if (!test_fdd_mono_band7) {
+                    bodyMsg +=  '''  -- Test B210-FDD-Monolithic-Band7 stage
+'''
+                }
+                if (!test_fdd_mono_band13) {
+                    bodyMsg +=  '''  -- Test B210-FDD-Monolithic-Band13 stage
+'''
+                }
+                if (!test_tdd_mono_band40) {
+                    bodyMsg +=  '''  -- Test B210-TDD-Monolithic-Band40 stage
+'''
+                }
+                if (!test_fdd_if4p5_band7) {
+                    bodyMsg +=  '''  -- Test B210-FDD-IF4.5-Band7 stage
+'''
+                }
+                if (!test_tdd_if4p5_band40) {
+                    bodyMsg +=  '''  -- Test B210-TDD-IF4.5-Band40 stage
+'''
+                }
+               bodyMsg += '''
+
 Here are attached HTML report files for $PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!
 
 Regards,
-OAI CI Team''',
+OAI CI Team'''
+                emailext attachmentsPattern: '*results*.html',
+                     body: bodyMsg,
                      replyTo: 'no-reply@openairinterface.org',
                      subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS!',
-                     to: env.gitlabUserEmail
+                     to: gitCommitAuthorEmailAddr
 
                 if (fileExists('.git/CI_COMMIT_MSG')) {
                     sh "rm -f .git/CI_COMMIT_MSG"
