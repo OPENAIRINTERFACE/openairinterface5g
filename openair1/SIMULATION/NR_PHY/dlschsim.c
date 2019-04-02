@@ -174,7 +174,7 @@ int main(int argc, char **argv) {
 	//logInit();
 	randominit(0);
 
-	while ((c = getopt(argc, argv, "df:hpg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:")) != -1) {
+	while ((c = getopt(argc, argv, "df:hpg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:L:")) != -1) {
 		switch (c) {
 		case 'f':
 			write_output_file = 1;
@@ -314,6 +314,10 @@ int main(int argc, char **argv) {
 				printf("Illegal PBCH phase (0-3) got %d\n", pbch_phase);
 
 			break;
+
+		case 'L':
+		  loglvl = atoi(optarg);
+		  break;
 
 		case 'm':
 			Imcs = atoi(optarg);

@@ -1985,18 +1985,18 @@ void nr_dlsch_channel_level(int **dl_ch_estimates_ext,
 //==============================================================================================
 
 unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
-                                        int **dl_ch_estimates,
-                                        int **rxdataF_ext,
-                                        int **dl_ch_estimates_ext,
-                                        unsigned short pmi,
-                                        unsigned char *pmi_ext,
-                                        unsigned int *rb_alloc,
-                                        unsigned char symbol,
-										unsigned short start_rb,
-										unsigned short nb_rb_pdsch,
-                                        unsigned char nr_tti_rx,
-                                        uint32_t high_speed_flag,
-                                        NR_DL_FRAME_PARMS *frame_parms) {
+					   int **dl_ch_estimates,
+					   int **rxdataF_ext,
+					   int **dl_ch_estimates_ext,
+					   unsigned short pmi,
+					   unsigned char *pmi_ext,
+					   unsigned int *rb_alloc, //unused in NR
+					   unsigned char symbol,
+					   unsigned short start_rb,
+					   unsigned short nb_rb_pdsch,
+					   unsigned char nr_tti_rx,
+					   uint32_t high_speed_flag,
+					   NR_DL_FRAME_PARMS *frame_parms) {
 
 
 
@@ -2008,20 +2008,8 @@ unsigned short nr_dlsch_extract_rbs_single(int **rxdataF,
 
   unsigned char pilots=0,j=0;
 
-  //symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
-  pilots = (symbol==2) ? 1 : 0; //to updated from config
-  //l=symbol;
-  //nsymb = (frame_parms->Ncp==NORMAL) ? 14:12;
-  k = frame_parms->first_carrier_offset + 516; //0
-
- /* if (frame_parms->frame_type == TDD) {  // TDD
-    sss_symb = nsymb-1;
-    pss_symb = 2;
-  } else {
-    sss_symb = (nsymb>>1)-2;
-    pss_symb = (nsymb>>1)-1;
-  }*/
-
+  pilots = (symbol==2) ? 1 : 0; //to updated from config!!!
+  k = frame_parms->first_carrier_offset + 12*start_rb; 
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
