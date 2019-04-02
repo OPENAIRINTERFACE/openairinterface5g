@@ -48,16 +48,14 @@
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
 #include "PHY/NR_TRANSPORT/nr_sch_dmrs.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
-
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "SCHED_NR/sched_nr.h"
-
 //#include "PHY/MODULATION/modulation_common.h"
 //#include "common/config/config_load_configmodule.h"
 //#include "UTIL/LISTS/list.h"
 //#include "common/ran_context.h"
 
 //#define DEBUG_ULSCHSIM
-
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
@@ -487,6 +485,7 @@ int main(int argc, char **argv) {
   uint8_t  bit_index;
   uint32_t errors_scrambling;
   uint32_t scrambling_index;
+  uint8_t symbol;
   int16_t **tx_layers;
   int32_t *mod_symbols[MAX_NUM_NR_RE];
   uint16_t n_dmrs;
@@ -573,7 +572,7 @@ int main(int argc, char **argv) {
     nr_modulation(scrambled_output[cwd], // assume one codeword for the moment
                   available_bits,
                   mod_order,
-                  ulsch_ue[cwd]->d_mod);
+                  (int16_t *)ulsch_ue[cwd]->d_mod);
 
     ///////////
     ////////////////////////////////////////////////////////////////////////
@@ -718,12 +717,12 @@ m, l, k, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
     n_errors = 0;
     n_false_positive = 0;
 
-     SNR_lin = pow(10, SNR / 10.0);
-        sigma   = 1.0 / sqrt(2 * SNR_lin);
+    SNR_lin = pow(10, SNR / 10.0);
+    sigma   = 1.0 / sqrt(2 * SNR_lin);
 
-  //AWGN
-      sigma2_dB = 10*log10((double)txlev)-SNR;
-      sigma2 = pow(10,sigma2_dB/10);
+    //AWGN
+    sigma2_dB = 10*log10((double)txlev)-SNR;
+    sigma2 = pow(10,sigma2_dB/10);
 
     
     for (trial = 0; trial < n_trials; trial++) {
@@ -795,37 +794,70 @@ m, l, k, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
 #endif
       
 
-      ////////////////////////////////////////////////////////////
-      //////////////////// ULSCH unscrambling ////////////////////
-      ////////////////////////////////////////////////////////////
+      //----------------------------------------------------------
+      //-------------------- LLRs computation --------------------
+      //----------------------------------------------------------
 
-      nr_ulsch_unscrambling(channel_output_fixed, available_bits, 0, Nid_cell, n_rnti);
+      int sch_sym_start   = NR_SYMBOLS_PER_SLOT-nb_symb_sch;
+      uint32_t nb_re;
+      uint32_t d_mod_offset = 0;
+      uint32_t llr_offset   = 0;
+
+      for(symbol = sch_sym_start; symbol < 14; symbol++) {
+      	
+      	if (symbol == 2)  // [hna] here it is assumed that symbol 2 carries 6 DMRS REs (dmrs-type 1)
+	      nb_re = nb_rb*6;
+        else
+	      nb_re = nb_rb*12;
+
+        nr_ulsch_compute_llr(&ulsch_ue[0]->d_mod[d_mod_offset],
+                             gNB->pusch_vars[UE_id]->ul_ch_mag,
+                             gNB->pusch_vars[UE_id]->ul_ch_magb,
+                             &gNB->pusch_vars[UE_id]->llr[llr_offset],
+                             nb_re,
+                             symbol,
+                             rel15_ul->Qm);
+
+        d_mod_offset = d_mod_offset +  nb_re;                 // [hna] d_mod is incremented by  nb_re
+        llr_offset   = llr_offset   + (nb_re * rel15_ul->Qm); // [hna] llr   is incremented by (nb_re*mod_order) because each RE has (mod_order) coded bit (i.e LLRs)
+      }
 
       ////////////////////////////////////////////////////////////
-      ////////////////////////////////////////////////////////////
+      
 
+      //----------------------------------------------------------
+      //------------------- ULSCH unscrambling -------------------
+      //----------------------------------------------------------
+
+      nr_ulsch_unscrambling(gNB->pusch_vars[UE_id]->llr, available_bits, 0, Nid_cell, n_rnti);
 
       ////////////////////////////////////////////////////////////
-      ////////////////////// ULSCH decoding //////////////////////
-      ////////////////////////////////////////////////////////////
+      
 
-      ret = nr_ulsch_decoding(gNB, UE_id, channel_output_fixed, frame_parms, frame,
+      //----------------------------------------------------------
+      //--------------------- ULSCH decoding ---------------------
+      //----------------------------------------------------------
+
+      ret = nr_ulsch_decoding(gNB, UE_id, gNB->pusch_vars[UE_id]->llr, frame_parms, frame,
                               nb_symb_sch, subframe, harq_pid, is_crnti, llr8_flag);
 
       if (ret > ulsch_gNB->max_ldpc_iterations)
         n_errors++;
 
       ////////////////////////////////////////////////////////////
-      ////////////////////////////////////////////////////////////
 
 
-      ////////////////////////////////////////////////////////////
-      /////////////////////// count errors ///////////////////////
-      ////////////////////////////////////////////////////////////      
+      //----------------------------------------------------------
+      //---------------------- count errors ----------------------
+      //----------------------------------------------------------      
 
       for (i = 0; i < TBS; i++) {
         
-        if(((ulsch_ue[0]->g[i] == 0) && (channel_output_fixed[i] < 0)) || ((ulsch_ue[0]->g[i] == 1) && (channel_output_fixed[i] >= 0))) {
+        if(((ulsch_ue[0]->g[i] == 0) && (gNB->pusch_vars[UE_id]->llr[i] <= 0)) || 
+           ((ulsch_ue[0]->g[i] == 1) && (gNB->pusch_vars[UE_id]->llr[i] >= 0)))
+        {
+        	if(errors_scrambling == 0)
+        		printf("First bit in error = %d\n",i);
         	errors_scrambling++;
         }
 
@@ -839,14 +871,18 @@ m, l, k, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
       }
 
       ////////////////////////////////////////////////////////////
-      ////////////////////////////////////////////////////////////
+
+      if (errors_scrambling > 0) {
+        if (n_trials == 1)
+          printf("errors_scrambling %d (trial %d)\n", errors_scrambling, trial);
+      }
 
       if (errors_bit > 0) {
         n_false_positive++;
         if (n_trials == 1)
           printf("errors_bit %d (trial %d)\n", errors_bit, trial);
       }
-    }
+    } // [hna] for (trial = 0; trial < n_trials; trial++)
     
     printf("*****************************************\n");
     printf("SNR %f, BLER %f (false positive %f)\n", SNR,
@@ -858,7 +894,8 @@ m, l, k, ((int16_t*)txdataF[ap])[(sample_offsetF)<<1],
       printf("PUSCH test OK\n");
       break;
     }
-  }
+  } // [hna] for (SNR = snr0; SNR < snr1; SNR += snr_step)
+
 
   for (i = 0; i < 2; i++) {
 

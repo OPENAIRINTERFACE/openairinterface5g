@@ -204,7 +204,7 @@ typedef struct {
   /// Scrambled "b"-sequences (for definition see 36-211 V8.6 2009-03, p.14)
   uint8_t b_tilde[MAX_NUM_NR_CHANNEL_BITS];
   /// Modulated "d"-sequences (for definition see 36-211 V8.6 2009-03, p.14)
-  int32_t d_mod[MAX_NUM_NR_RE];
+  int32_t d_mod[MAX_NUM_NR_RE] __attribute__ ((aligned(16)));
   /// Transform-coded "z"-sequences (for definition see 36-211 V8.6 2009-03, p.14-15)
   int32_t z[MAX_NUM_NR_RE];
   /*

@@ -80,8 +80,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   NR_DL_FRAME_PARMS *const fp       = &gNB->frame_parms;
   nfapi_nr_config_request_t *cfg    = &gNB->gNB_config;
   NR_gNB_COMMON *const common_vars  = &gNB->common_vars;
-  /*LTE_eNB_PUSCH **const pusch_vars  = gNB->pusch_vars;
-  LTE_eNB_SRS *const srs_vars       = gNB->srs_vars;
+  NR_gNB_PUSCH **const pusch_vars   = gNB->pusch_vars;
+  /*LTE_eNB_SRS *const srs_vars       = gNB->srs_vars;
   LTE_eNB_PRACH *const prach_vars   = &gNB->prach_vars;*/
 
   int i;
@@ -200,39 +200,38 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   for (i=0; i<64; i++) prach_vars->prach_ifft[0][i]    = (int32_t *)malloc16_clear(1024*2*sizeof(int32_t));
 
   prach_vars->rxsigF[0]        = (int16_t **)malloc16_clear(64*sizeof(int16_t *));
+*/
 
-  for (int ulsch_id=0; ulsch_id<NUMBER_OF_NR_ULSCH_MAX; ulsch_id++) {
+  for (int UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++) {
     //FIXME
-
-    pusch_vars[UE_id] = (LTE_eNB_PUSCH *)malloc16_clear( NUMBER_OF_UE_MAX*sizeof(LTE_eNB_PUSCH) );
-    pusch_vars[UE_id]->rxdataF_ext      = (int32_t **)malloc16( 2*sizeof(int32_t *) );
-    pusch_vars[UE_id]->rxdataF_ext2     = (int32_t **)malloc16( 2*sizeof(int32_t *) );
-    pusch_vars[UE_id]->drs_ch_estimates = (int32_t **)malloc16( 2*sizeof(int32_t *) );
+    pusch_vars[UE_id] = (NR_gNB_PUSCH *)malloc16_clear( sizeof(NR_gNB_PUSCH) );
+    pusch_vars[UE_id]->rxdataF_ext           = (int32_t **)malloc16( 2*sizeof(int32_t *) );
+    pusch_vars[UE_id]->rxdataF_ext2          = (int32_t **)malloc16( 2*sizeof(int32_t *) );
+    pusch_vars[UE_id]->drs_ch_estimates      = (int32_t **)malloc16( 2*sizeof(int32_t *) );
     pusch_vars[UE_id]->drs_ch_estimates_time = (int32_t **)malloc16( 2*sizeof(int32_t *) );
-    pusch_vars[UE_id]->rxdataF_comp     = (int32_t **)malloc16( 2*sizeof(int32_t *) );
-    pusch_vars[UE_id]->ul_ch_mag  = (int32_t **)malloc16( 2*sizeof(int32_t *) );
-    pusch_vars[UE_id]->ul_ch_magb = (int32_t **)malloc16( 2*sizeof(int32_t *) );
+    pusch_vars[UE_id]->rxdataF_comp          = (int32_t **)malloc16( 2*sizeof(int32_t *) );
+    pusch_vars[UE_id]->ul_ch_mag             = (int32_t **)malloc16( 2*sizeof(int32_t *) );
+    pusch_vars[UE_id]->ul_ch_magb            = (int32_t **)malloc16( 2*sizeof(int32_t *) );
 
     for (i=0; i<2; i++) {
       // RK 2 times because of output format of FFT!
       // FIXME We should get rid of this
-      pusch_vars[UE_id]->rxdataF_ext[i]      = (int32_t *)malloc16_clear( sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12*fp->symbols_per_slot );
-      pusch_vars[UE_id]->rxdataF_ext2[i]     = (int32_t *)malloc16_clear( sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12*fp->symbols_per_slot );
-      pusch_vars[UE_id]->drs_ch_estimates[i] = (int32_t *)malloc16_clear( sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12*fp->symbols_per_slot );
+      pusch_vars[UE_id]->rxdataF_ext[i]           = (int32_t *)malloc16_clear( sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12*fp->symbols_per_slot );
+      pusch_vars[UE_id]->rxdataF_ext2[i]          = (int32_t *)malloc16_clear( sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12*fp->symbols_per_slot );
+      pusch_vars[UE_id]->drs_ch_estimates[i]      = (int32_t *)malloc16_clear( sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12*fp->symbols_per_slot );
       pusch_vars[UE_id]->drs_ch_estimates_time[i] = (int32_t *)malloc16_clear( 2*sizeof(int32_t)*fp->ofdm_symbol_size );
-      pusch_vars[UE_id]->rxdataF_comp[i]     = (int32_t *)malloc16_clear( sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12*fp->symbols_per_slot );
-      pusch_vars[UE_id]->ul_ch_mag[i]  = (int32_t *)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12 );
-      pusch_vars[UE_id]->ul_ch_magb[i] = (int32_t *)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12 );
+      pusch_vars[UE_id]->rxdataF_comp[i]          = (int32_t *)malloc16_clear( sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12*fp->symbols_per_slot );
+      pusch_vars[UE_id]->ul_ch_mag[i]             = (int32_t *)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12 );
+      pusch_vars[UE_id]->ul_ch_magb[i]            = (int32_t *)malloc16_clear( fp->symbols_per_slot*sizeof(int32_t)*cfg->rf_config.ul_carrier_bandwidth.value*12 );
     }
 
-    pusch_vars[UE_id]->llr = (int16_t *)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) );
+    pusch_vars[UE_id]->llr = (int16_t *)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) ); // [hna] 6144 is LTE and (8*((3*8*6144)+12)) is not clear 
   } //UE_id
-
+/*
   for (UE_id=0; UE_id<NUMBER_OF_UE_MAX; UE_id++)
     gNB->UE_stats_ptr[UE_id] = &gNB->UE_stats[UE_id];
-
-  gNB->pdsch_config_dedicated->p_a = dB0; //defaul value until overwritten by RRCConnectionReconfiguration
 */
+  gNB->pdsch_config_dedicated->p_a = dB0; //defaul value until overwritten by RRCConnectionReconfiguration
   return (0);
 }
 /*
@@ -283,8 +282,8 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB) {
   //NR_DL_FRAME_PARMS* const fp       = &gNB->frame_parms;
   //nfapi_nr_config_request_t *cfg       = &gNB->gNB_config;
   NR_gNB_COMMON *const common_vars  = &gNB->common_vars;
-  /*LTE_eNB_PUSCH **const pusch_vars   = gNB->pusch_vars;
-  LTE_eNB_SRS *const srs_vars        = gNB->srs_vars;
+  NR_gNB_PUSCH **const pusch_vars   = gNB->pusch_vars;
+  /*LTE_eNB_SRS *const srs_vars        = gNB->srs_vars;
   LTE_eNB_PRACH *const prach_vars    = &gNB->prach_vars;*/
   uint32_t ***pdcch_dmrs             = gNB->nr_gold_pdcch_dmrs;
 
