@@ -134,10 +134,11 @@ void free_context_synchro_nr(void);
 void init_context_pss_nr(NR_DL_FRAME_PARMS *frame_parms_ue);
 void free_context_pss_nr(void);
 int set_pss_nr(int ofdm_symbol_size);
-int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int rate_change);
+int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int is, int rate_change);
 int pss_search_time_nr(int **rxdata, ///rx data in time domain
                        NR_DL_FRAME_PARMS *frame_parms,
 		       int fo_flag,
+                       int corr_samples,
                        int *eNB_id,
 		       int *f_off);
 

@@ -4941,7 +4941,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
   NR_UE_PDCCH *pdcch_vars  = ue->pdcch_vars[ue->current_thread_id[nr_tti_rx]][0];
   uint16_t nb_symb_sch = 8; // to be updated by higher layer
   uint8_t nb_symb_pdcch = pdcch_vars->coreset[0].duration;
-  uint8_t ssb_periodicity = 10; //ue->ssb_periodicity; // initialized to 20ms in nr_init_ue and never changed for now
+  uint8_t ssb_periodicity = ue->ssb_periodicity; // initialized to 20ms in nr_init_ue and never changed for now
   uint8_t ssb_frame_periodicity;  
   uint8_t dci_cnt = 0;
   

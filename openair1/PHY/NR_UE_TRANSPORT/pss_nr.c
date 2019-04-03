@@ -608,10 +608,14 @@ void restore_frame_context_pss_nr(NR_DL_FRAME_PARMS *frame_parms_ue, int rate_ch
 *
 ********************************************************************/
 
-void decimation_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int rate_change, int **rxdata)
+void decimation_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int rate_change, int is, int **rxdata)
 {
+  int samples_for_frame;
   NR_DL_FRAME_PARMS *frame_parms = &(PHY_vars_UE->frame_parms);
-  int samples_for_frame = NR_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_tti;
+  if (is==0)
+    samples_for_frame = frame_parms->samples_per_frame + frame_parms->ofdm_symbol_size;
+  else
+    samples_for_frame = frame_parms->samples_per_frame;
 
   AssertFatal(frame_parms->samples_per_tti > 3839,"Illegal samples_per_tti %d\n",frame_parms->samples_per_tti);
 
@@ -626,11 +630,11 @@ void decimation_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int rate_change, int **r
 /* build with cic filter does not work properly. Performances are significantly deteriorated */
 #ifdef CIC_DECIMATOR
 
-  cic_decimator((int16_t *)&(PHY_vars_UE->common_vars.rxdata[0][0]), (int16_t *)&(rxdata[0][0]),
+  cic_decimator((int16_t *)&(PHY_vars_UE->common_vars.rxdata[0][is*frame_parms->samples_per_frame]), (int16_t *)&(rxdata[0][0]),
                             samples_for_frame, rate_change, CIC_FILTER_STAGE_NUMBER, 0, FIR_RATE_CHANGE);
 #else
 
-  fir_decimator((int16_t *)&(PHY_vars_UE->common_vars.rxdata[0][0]), (int16_t *)&(rxdata[0][0]),
+  fir_decimator((int16_t *)&(PHY_vars_UE->common_vars.rxdata[0][frame_parms->samples_per_frame]), (int16_t *)&(rxdata[0][0]),
                             samples_for_frame, rate_change, 0);
 
 #endif
@@ -658,37 +662,43 @@ void decimation_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int rate_change, int **r
 *
 *********************************************************************/
 
-int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int rate_change)
+int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int is, int rate_change)
 {
   NR_DL_FRAME_PARMS *frame_parms = &(PHY_vars_UE->frame_parms);
   int synchro_position;
-  int **rxdata = NULL;
+  int **rxdata;
   int fo_flag = PHY_vars_UE->UE_fo_compensation;  // flag to enable freq offset estimation and compensation
+  int samples_for_frame;
+
+  // to take into account the possibility of PSS to be found between the two frames 
+  // the analysis of the first of two frames is extended by one symbol (duration of PSS)
+  if (is==0)
+    samples_for_frame = frame_parms->samples_per_frame + frame_parms->ofdm_symbol_size;
+  else
+    samples_for_frame = frame_parms->samples_per_frame;
 
 #ifdef DBG_PSS_NR
-
-  int samples_for_frame = frame_parms->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
-
-  LOG_M("rxdata0_rand.m","rxd0_rand", &PHY_vars_UE->common_vars.rxdata[0][0], samples_for_frame, 1, 1);
-
+  LOG_M("rxdata0_rand.m","rxd0_rand", &PHY_vars_UE->common_vars.rxdata[0][0], 2*frame_parms->samples_per_frame, 1, 1);
 #endif
+
+  rxdata = (int32_t**)malloc16(frame_parms->nb_antennas_rx*sizeof(int32_t*));
+  for (int aa=0; aa < frame_parms->nb_antennas_rx; aa++)
+      rxdata[aa] = (int32_t*) malloc16_clear( (samples_for_frame+8192)*sizeof(int32_t));
 
   if (rate_change != 1) {
 
-    rxdata = (int32_t**)malloc16(frame_parms->nb_antennas_rx*sizeof(int32_t*));
-
-    for (int aa=0; aa < frame_parms->nb_antennas_rx; aa++) {
-      rxdata[aa] = (int32_t*) malloc16_clear( (frame_parms->samples_per_subframe*10+8192)*sizeof(int32_t));
-    }
 #ifdef SYNCHRO_DECIMAT
 
-    decimation_synchro_nr(PHY_vars_UE, rate_change, rxdata);
+    decimation_synchro_nr(PHY_vars_UE, rate_change, is, rxdata);
 
 #endif
   }
   else {
+    for (int aa=0; aa < frame_parms->nb_antennas_rx; aa++)
+      memcpy(&(rxdata[aa][0]),
+             &(PHY_vars_UE->common_vars.rxdata[aa][is*frame_parms->samples_per_frame]),
+             samples_for_frame*sizeof(int32_t));
 
-    rxdata = PHY_vars_UE->common_vars.rxdata;
   }
 
 #ifdef DBG_PSS_NR
@@ -708,6 +718,7 @@ int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int rate_change)
   synchro_position = pss_search_time_nr(rxdata,
                                         frame_parms,
 					fo_flag,
+                                        samples_for_frame,
                                         (int *)&PHY_vars_UE->common_vars.eNb_id,
 					(int *)&PHY_vars_UE->common_vars.freq_offset);
 
@@ -727,21 +738,16 @@ int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int rate_change)
 #endif
 
 #ifdef SYNCHRO_DECIMAT
+  if (rate_change != 1)
+    restore_frame_context_pss_nr(frame_parms, rate_change);  
+#endif
 
-  if (rate_change != 1) {
-
-    if (rxdata[0] != NULL) {
-
-      for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
+  if (rxdata[0] != NULL) {
+      for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++)
         free(rxdata[aa]);
-      }
 
       free(rxdata);
-    }
-
-    restore_frame_context_pss_nr(frame_parms, rate_change);  
   }
-#endif
 
   return synchro_position;
 }
@@ -820,6 +826,7 @@ static inline double angle64(int64_t x)
 int pss_search_time_nr(int **rxdata, ///rx data in time domain
                        NR_DL_FRAME_PARMS *frame_parms,
 		       int fo_flag,
+                       int corr_samples,
                        int *eNB_id,
 		       int *f_off)
 {
@@ -830,7 +837,7 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
   double ffo_est=0;
 
 
-  unsigned int length = (NR_NUMBER_OF_SUBFRAMES_PER_FRAME*frame_parms->samples_per_subframe);  /* 1 frame for now, it should be 2 TODO_NR */
+  unsigned int length = corr_samples;
 
   AssertFatal(length>0,"illegal length %d\n",length);
   for (int i = 0; i < NUMBER_PSS_SEQUENCE; i++) AssertFatal(pss_corr_ue[i] != NULL,"pss_corr_ue[%d] not yet allocated! Exiting.\n", i);

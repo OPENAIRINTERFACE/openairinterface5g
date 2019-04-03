@@ -444,16 +444,16 @@ void UE_processing(void *arg) {
 #endif
 }
 
-void readFrame(PHY_VARS_NR_UE *UE,  openair0_timestamp *timestamp) {
+void readFrames(PHY_VARS_NR_UE *UE,  openair0_timestamp *timestamp) {
   void *rxp[NB_ANTENNAS_RX];
   void *dummy_tx[UE->frame_parms.nb_antennas_tx];
 
   for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
     dummy_tx[i]=malloc16_clear(UE->frame_parms.samples_per_subframe*4);
 
-  for(int x=0; x<10; x++) {
+  for(int x=0; x<20; x++) {  // two frames for initial sync
     for (int i=0; i<UE->frame_parms.nb_antennas_rx; i++)
-      rxp[i] = ((void *)&UE->common_vars.rxdata[i][0]) + 4*x*UE->frame_parms.samples_per_subframe;
+      rxp[i] = ((void *)&UE->common_vars.rxdata_is[i][0]) + 4*x*UE->frame_parms.samples_per_subframe;
 
     AssertFatal( UE->frame_parms.samples_per_subframe ==
                  UE->rfdevice.trx_read_func(&UE->rfdevice,
@@ -575,7 +575,7 @@ void *UE_thread(void *arg) {
         } else
           trashFrame(UE, &timestamp);
       } else {
-        readFrame(UE, &timestamp);
+        readFrames(UE, &timestamp);
         pushTpool(Tpool, syncMsg);
         syncRunning=true;
       }
