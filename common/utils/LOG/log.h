@@ -45,14 +45,15 @@
 #include <time.h>
 #include <stdint.h>
 #ifndef __STDC_FORMAT_MACROS
-#define __STDC_FORMAT_MACROS
+  #define __STDC_FORMAT_MACROS
 #endif
 #include <inttypes.h>
 #ifndef _GNU_SOURCE
-#define _GNU_SOURCE
+  #define _GNU_SOURCE
 #endif
 #include <pthread.h>
 #include "T.h"
+#include <common/utils/utils.h>
 /*----------------------------------------------------------------------------*/
 
 #ifdef __cplusplus
@@ -127,11 +128,11 @@ extern "C" {
 
 /** @defgroup macros to identify a debug entity
  *  @ingroup each macro is a bit mask where the unique bit set identifies an entity to be debugged
- *            it allows to dynamically activate or not blocks of code. The  LOG_MASKMAP_INIT macro 
+ *            it allows to dynamically activate or not blocks of code. The  LOG_MASKMAP_INIT macro
  *            is used to map a character string name to each debug bit, it allows to set or clear
  *            the corresponding bit via the defined name, from the configuration or from the telnet
  *            server.
- *  @brief 
+ *  @brief
  * @{*/
 #define DEBUG_PRACH        (1<<0)
 #define DEBUG_RU           (1<<1)
@@ -150,22 +151,22 @@ extern "C" {
 
 
 #define LOG_MASKMAP_INIT {\
-  {"PRACH",       DEBUG_PRACH},\
-  {"RU",          DEBUG_RU},\
-  {"UE_PHYPROC",  DEBUG_UE_PHYPROC},\
-  {"LTEESTIM",    DEBUG_LTEESTIM},\
-  {"DLCELLSPEC",  DEBUG_DLCELLSPEC},\
-  {"ULSCH",       DEBUG_ULSCH},\
-  {"RRC",         DEBUG_RRC},\
-  {"PDCP",        DEBUG_PDCP},\
-  {"DFT",         DEBUG_DFT},\
-  {"ASN1",        DEBUG_ASN1},\
-  {"CTRLSOCKET",  DEBUG_CTRLSOCKET},\
-  {"SECURITY",    DEBUG_SECURITY},\
-  {"NAS",         DEBUG_NAS},\
-  {"UE_TIMING",   UE_TIMING},\
-  {NULL,-1}\
-}
+    {"PRACH",       DEBUG_PRACH},\
+    {"RU",          DEBUG_RU},\
+    {"UE_PHYPROC",  DEBUG_UE_PHYPROC},\
+    {"LTEESTIM",    DEBUG_LTEESTIM},\
+    {"DLCELLSPEC",  DEBUG_DLCELLSPEC},\
+    {"ULSCH",       DEBUG_ULSCH},\
+    {"RRC",         DEBUG_RRC},\
+    {"PDCP",        DEBUG_PDCP},\
+    {"DFT",         DEBUG_DFT},\
+    {"ASN1",        DEBUG_ASN1},\
+    {"CTRLSOCKET",  DEBUG_CTRLSOCKET},\
+    {"SECURITY",    DEBUG_SECURITY},\
+    {"NAS",         DEBUG_NAS},\
+    {"UE_TIMING",   UE_TIMING},\
+    {NULL,-1}\
+  }
 
 
 
@@ -178,51 +179,51 @@ extern "C" {
 
 
 typedef enum {
-    MIN_LOG_COMPONENTS = 0,
-    PHY = MIN_LOG_COMPONENTS,
-    MAC,
-    EMU,
-    SIM,
-    OCG,
-    OMG,
-    OPT,
-    OTG,
-    OTG_LATENCY,
-    OTG_LATENCY_BG,
-    OTG_GP,
-    OTG_GP_BG,
-    OTG_JITTER,
-    RLC,
-    PDCP,
-    RRC,
-    NAS,
-    PERF,
-    OIP,
-    CLI,
-    MSC,
-    OCM,
-    UDP_,
-    GTPU,
-    SPGW,
-    S1AP,
-    SCTP,
-    HW,
-    OSA,
-    RAL_ENB,
-    RAL_UE,
-    ENB_APP,
-    FLEXRAN_AGENT,
-    TMR,
-    USIM,
-    LOCALIZE,
-    X2AP,
-    GNB_APP,
-    NR_RRC,
-    NR_MAC,
-    NR_PHY,
-    LOADER,
-    ASN,
-    MAX_LOG_PREDEF_COMPONENTS,
+  MIN_LOG_COMPONENTS = 0,
+  PHY = MIN_LOG_COMPONENTS,
+  MAC,
+  EMU,
+  SIM,
+  OCG,
+  OMG,
+  OPT,
+  OTG,
+  OTG_LATENCY,
+  OTG_LATENCY_BG,
+  OTG_GP,
+  OTG_GP_BG,
+  OTG_JITTER,
+  RLC,
+  PDCP,
+  RRC,
+  NAS,
+  PERF,
+  OIP,
+  CLI,
+  MSC,
+  OCM,
+  UDP_,
+  GTPU,
+  SPGW,
+  S1AP,
+  SCTP,
+  HW,
+  OSA,
+  RAL_ENB,
+  RAL_UE,
+  ENB_APP,
+  FLEXRAN_AGENT,
+  TMR,
+  USIM,
+  LOCALIZE,
+  X2AP,
+  GNB_APP,
+  NR_RRC,
+  NR_MAC,
+  NR_PHY,
+  LOADER,
+  ASN,
+  MAX_LOG_PREDEF_COMPONENTS,
 }
 comp_name_t;
 
@@ -231,42 +232,42 @@ comp_name_t;
 
 
 typedef struct {
-    char *name; /*!< \brief string name of item */
-    int value;  /*!< \brief integer value of mapping */
+  char *name; /*!< \brief string name of item */
+  int value;  /*!< \brief integer value of mapping */
 } mapping;
 
 typedef int(*log_vprint_func_t)(FILE *stream, const char *format, va_list ap );
 typedef int(*log_print_func_t)(FILE *stream, const char *format, ... );
 typedef struct  {
-    const char        *name;
-    int               level;
-    int               savedlevel;
-    int               flag;
-    int               filelog;
-    char              *filelog_name;
-    FILE              *stream;
-    log_vprint_func_t vprint;
-    log_print_func_t  print;
-    /* SR: make the log buffer component relative */
-    char             log_buffer[MAX_LOG_TOTAL];
+  const char        *name;
+  int               level;
+  int               savedlevel;
+  int               flag;
+  int               filelog;
+  char              *filelog_name;
+  FILE              *stream;
+  log_vprint_func_t vprint;
+  log_print_func_t  print;
+  /* SR: make the log buffer component relative */
+  char             log_buffer[MAX_LOG_TOTAL];
 } log_component_t;
 
 
 typedef struct {
-    log_component_t         log_component[MAX_LOG_COMPONENTS];
-    char                    level2string[NUM_LOG_LEVEL];
-    int                     flag;
-    char*                   filelog_name;
-    uint64_t                debug_mask;
-    uint64_t                dump_mask;
+  log_component_t         log_component[MAX_LOG_COMPONENTS];
+  char                    level2string[NUM_LOG_LEVEL];
+  int                     flag;
+  char                   *filelog_name;
+  uint64_t                debug_mask;
+  uint64_t                dump_mask;
 } log_t;
 
 
 #if defined(ENABLE_ITTI)
 typedef enum log_instance_type_e {
-    LOG_INSTANCE_UNKNOWN,
-    LOG_INSTANCE_ENB,
-    LOG_INSTANCE_UE,
+  LOG_INSTANCE_UNKNOWN,
+  LOG_INSTANCE_ENB,
+  LOG_INSTANCE_UE,
 } log_instance_type_t;
 
 void log_set_instance_type (log_instance_type_t instance);
@@ -277,9 +278,9 @@ void log_set_instance_type (log_instance_type_t instance);
 log_t *g_log;
 #else
 #ifdef __cplusplus
-   extern "C" {
+extern "C" {
 #endif
-extern log_t *g_log;
+  extern log_t *g_log;
 #ifdef __cplusplus
 }
 #endif
@@ -289,7 +290,7 @@ extern log_t *g_log;
 /*----------------------------------------------------------------------------*/
 int  logInit (void);
 void logRecord_mt(const char *file, const char *func, int line,int comp, int level, const char *format, ...) __attribute__ ((format (printf, 6, 7)));
-void log_dump(int component, void *buffer, int buffsize,int datatype, const char* format, ... );
+void log_dump(int component, void *buffer, int buffsize,int datatype, const char *format, ... );
 int  set_log(int component, int level);
 void set_glog(int level);
 
@@ -332,22 +333,22 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 #define LOG_CONFIG_DUMP_FORMAT                             "%s_dump"
 
 #define LOG_CONFIG_HELP_OPTIONS      " list of comma separated options to enable log module behavior. Available options: \n"\
-                                     " nocolor:   disable color usage in log messages\n"\
-				     " level:     add log level indication in log messages\n"\
-				     " thread:    add threads names in log messages\n"
-				     
+  " nocolor:   disable color usage in log messages\n"\
+  " level:     add log level indication in log messages\n"\
+  " thread:    add threads names in log messages\n"
 
 
-                   
+
+
 /*------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                       LOG globalconfiguration parameters										                                                */
-/*   optname                            help                                                paramflags       XXXptr	                   defXXXval				      type	 numelt	*/
+/*                                       LOG globalconfiguration parameters                                                                   */
+/*   optname                            help                                                paramflags       XXXptr                    defXXXval              type   numelt */
 /*------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define LOG_GLOBALPARAMS_DESC { \
-{LOG_CONFIG_STRING_GLOBAL_LOG_LEVEL,    "Default log level for all componemts\n",              0,  	      strptr:(char **)&gloglevel,    defstrval:log_level_names[2].name,    TYPE_STRING,    0}, \
-{LOG_CONFIG_STRING_GLOBAL_LOG_ONLINE,   "Default console output option, for all components\n", 0,  	      iptr:&(consolelog),            defintval:1,                          TYPE_INT,       0}, \
-{LOG_CONFIG_STRING_GLOBAL_LOG_OPTIONS,  LOG_CONFIG_HELP_OPTIONS,                               0,  	      strlistptr:NULL,               defstrlistval:NULL,                   TYPE_STRINGLIST,0} \
-}
+    {LOG_CONFIG_STRING_GLOBAL_LOG_LEVEL,    "Default log level for all componemts\n",              0,         strptr:(char **)&gloglevel,    defstrval:log_level_names[2].name,    TYPE_STRING,    0}, \
+    {LOG_CONFIG_STRING_GLOBAL_LOG_ONLINE,   "Default console output option, for all components\n", 0,         iptr:&(consolelog),            defintval:1,                          TYPE_INT,       0}, \
+    {LOG_CONFIG_STRING_GLOBAL_LOG_OPTIONS,  LOG_CONFIG_HELP_OPTIONS,                               0,         strlistptr:NULL,               defstrlistval:NULL,                   TYPE_STRINGLIST,0} \
+  }
 
 #define LOG_OPTIONS_IDX   2
 /*----------------------------------------------------------------------------------*/
@@ -359,23 +360,23 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 #define LOG_DUMP_DOUBLE     1
 // debugging macros
 #define LOG_F  LOG_I           /* because  LOG_F was originaly to dump a message or buffer but is also used as a regular level...., to dump use LOG_DUMPMSG */
-#  if T_TRACER 
-     /* per component, level dependant macros */
-#    define LOG_E(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_ERR    ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_ERR, x)     ;} else { T(T_LEGACY_ ## c ## _ERROR, T_PRINTF(x))   ;}} while (0) 
-#    define LOG_W(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_WARNING) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_WARNING, x) ;} else { T(T_LEGACY_ ## c ## _WARNING, T_PRINTF(x)) ;}} while (0) 
-#    define LOG_I(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_INFO   ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x)    ;} else { T(T_LEGACY_ ## c ## _INFO, T_PRINTF(x))    ;}} while (0) 
-#    define LOG_D(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_DEBUG  ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_DEBUG, x)   ;} else { T(T_LEGACY_ ## c ## _DEBUG, T_PRINTF(x))   ;}} while (0) 
-#    define LOG_T(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_TRACE  ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_TRACE, x)   ;} else { T(T_LEGACY_ ## c ## _TRACE, T_PRINTF(x))   ;}} while (0) 
-    /* macro used to dump a buffer or a message as in openair2/RRC/LTE/RRC_eNB.c, replaces LOG_F macro */
+#  if T_TRACER
+/* per component, level dependant macros */
+#    define LOG_E(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_ERR    ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_ERR, x)     ;} else { T(T_LEGACY_ ## c ## _ERROR, T_PRINTF(x))   ;}} while (0)
+#    define LOG_W(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_WARNING) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_WARNING, x) ;} else { T(T_LEGACY_ ## c ## _WARNING, T_PRINTF(x)) ;}} while (0)
+#    define LOG_I(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_INFO   ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x)    ;} else { T(T_LEGACY_ ## c ## _INFO, T_PRINTF(x))    ;}} while (0)
+#    define LOG_D(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_DEBUG  ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_DEBUG, x)   ;} else { T(T_LEGACY_ ## c ## _DEBUG, T_PRINTF(x))   ;}} while (0)
+#    define LOG_T(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_TRACE  ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_TRACE, x)   ;} else { T(T_LEGACY_ ## c ## _TRACE, T_PRINTF(x))   ;}} while (0)
+/* macro used to dump a buffer or a message as in openair2/RRC/LTE/RRC_eNB.c, replaces LOG_F macro */
 #    define LOG_DUMPMSG(c, f, b, s, x...) do {  if(g_log->dump_mask & f) log_dump(c, b, s, LOG_DUMP_CHAR, x)  ;}   while (0)  /* */
 #    define nfapi_log(FILE, FNC, LN, COMP, LVL, F...)  do { if (T_stdout) { logRecord_mt(__FILE__, __FUNCTION__, __LINE__,COMP, LVL, F)  ;}}   while (0)  /* */
-     /* bitmask dependant macros, to isolate debugging code */
+/* bitmask dependant macros, to isolate debugging code */
 #    define LOG_DEBUGFLAG(D) (g_log->debug_mask & D)
 
-     /* bitmask dependant macros, to generate debug file such as matlab file or message dump */
+/* bitmask dependant macros, to generate debug file such as matlab file or message dump */
 #    define LOG_DUMPFLAG(D) (g_log->dump_mask & D)
 #    define LOG_M(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format);} while(0)/* */
-     /* define variable only used in LOG macro's */
+/* define variable only used in LOG macro's */
 #    define LOG_VAR(A,B) A B
 #  else /* T_TRACER: remove all debugging and tracing messages, except errors */
 #    define LOG_I(c, x...) do {logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x) ; } while(0)/* */
@@ -385,15 +386,15 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 #    define LOG_T(c, x...) /* */
 
 #    define LOG_DUMPMSG(c, b, s, x...) /* */
-#    define nfapi_log(FILE, FNC, LN, COMP, LVL, FMT...) 
+#    define nfapi_log(FILE, FNC, LN, COMP, LVL, FMT...)
 #    define LOG_DEBUGFLAG(D)  ( 0 )
-#    define LOG_DUMPFLAG(D) ( 0 ) 
+#    define LOG_DUMPFLAG(D) ( 0 )
 #    define LOG_M(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format);} while(0)
 #    define LOG_VAR(A,B)
 #  endif /* T_TRACER */
 /* avoid warnings for variables only used in LOG macro's but set outside debug section */
-#define	GCC_NOTUSED		__attribute__((unused))
-#define LOG_USEDINLOG_VAR(A,B) GCC_NOTUSED A B 
+#define GCC_NOTUSED   __attribute__((unused))
+#define LOG_USEDINLOG_VAR(A,B) GCC_NOTUSED A B
 
 /* unfiltered macros, usefull for simulators or messages at init time, before log is configured */
 #define LOG_UM(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format);} while(0)
@@ -425,78 +426,82 @@ static __inline__ uint64_t rdtsc(void) {
 
 extern double cpuf;
 
-static inline uint64_t checkTCPU(int timeout, char * file, int line) {
-    static __thread uint64_t  lastCPUTime=0;
-    static __thread uint64_t  last=0;
-    uint64_t cur=rdtsc();
-    struct timespec CPUt;
-    clock_gettime(CLOCK_THREAD_CPUTIME_ID, &CPUt);
-    uint64_t CPUTime=CPUt.tv_sec*1000*1000+CPUt.tv_nsec/1000;
-    double microCycles=(double)(cpuf*1000);
-    int duration=(int)((cur-last)/microCycles);
-    if ( last!=0 && duration > timeout ) {
-      //struct timespec ts;
-      //clock_gettime(CLOCK_MONOTONIC, &ts);
-      printf("%s:%d lte-ue delay %d (exceed %d), CPU for this period: %lld\n", file, line,
-               duration, timeout, (long long)CPUTime-lastCPUTime );
-    }
-    last=cur;
-    lastCPUTime=CPUTime;
-    return cur;
+static inline uint64_t checkTCPU(int timeout, char *file, int line) {
+  static __thread uint64_t  lastCPUTime=0;
+  static __thread uint64_t  last=0;
+  uint64_t cur=rdtsc();
+  struct timespec CPUt;
+  clock_gettime(CLOCK_THREAD_CPUTIME_ID, &CPUt);
+  uint64_t CPUTime=CPUt.tv_sec*1000*1000+CPUt.tv_nsec/1000;
+  double microCycles=(double)(cpuf*1000);
+  int duration=(int)((cur-last)/microCycles);
+
+  if ( last!=0 && duration > timeout ) {
+    //struct timespec ts;
+    //clock_gettime(CLOCK_MONOTONIC, &ts);
+    printf("%s:%d lte-ue delay %d (exceed %d), CPU for this period: %lld\n", file, line,
+           duration, timeout, (long long)CPUTime-lastCPUTime );
+  }
+
+  last=cur;
+  lastCPUTime=CPUTime;
+  return cur;
 }
 
-static inline unsigned long long checkT(int timeout, char * file, int line) {
-    static __thread unsigned long long last=0;
-    unsigned long long cur=rdtsc();
-    int microCycles=(int)(cpuf*1000);
-    int duration=(int)((cur-last)/microCycles);
-    if ( last!=0 && duration > timeout )
-        printf("%s:%d lte-ue delay %d (exceed %d)\n", file, line,
-               duration, timeout);
-    last=cur;
-    return cur;
+static inline unsigned long long checkT(int timeout, char *file, int line) {
+  static __thread unsigned long long last=0;
+  unsigned long long cur=rdtsc();
+  int microCycles=(int)(cpuf*1000);
+  int duration=(int)((cur-last)/microCycles);
+
+  if ( last!=0 && duration > timeout )
+    printf("%s:%d lte-ue delay %d (exceed %d)\n", file, line,
+           duration, timeout);
+
+  last=cur;
+  return cur;
 }
 
 typedef struct m {
-    uint64_t iterations;
-    uint64_t sum;
-    uint64_t maxArray[11];
+  uint64_t iterations;
+  uint64_t sum;
+  uint64_t maxArray[11];
 } Meas;
 
-static inline void printMeas(char * txt, Meas *M, int period) {
-    if (M->iterations%period == 0 ) {
-        char txt2[512];
-        sprintf(txt2,"%s avg=%" PRIu64 " iterations=%" PRIu64 " max=%" 
-                PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 "\n",
-                txt,
-                M->sum/M->iterations,
-                M->iterations,
-                M->maxArray[1],M->maxArray[2], M->maxArray[3],M->maxArray[4], M->maxArray[5], 
-                M->maxArray[6],M->maxArray[7], M->maxArray[8],M->maxArray[9],M->maxArray[10]);
+static inline void printMeas(char *txt, Meas *M, int period) {
+  if (M->iterations%period == 0 ) {
+    char txt2[512];
+    sprintf(txt2,"%s avg=%" PRIu64 " iterations=%" PRIu64 " max=%"
+            PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 "\n",
+            txt,
+            M->sum/M->iterations,
+            M->iterations,
+            M->maxArray[1],M->maxArray[2], M->maxArray[3],M->maxArray[4], M->maxArray[5],
+            M->maxArray[6],M->maxArray[7], M->maxArray[8],M->maxArray[9],M->maxArray[10]);
 #if DISABLE_LOG_X
-        printf("%s",txt2);
+    printf("%s",txt2);
 #else
-        LOG_W(PHY, "%s",txt2);
+    LOG_W(PHY, "%s",txt2);
 #endif
-    }
+  }
 }
 
-static inline int cmpint(const void* a, const void* b) {
-    uint64_t* aa=(uint64_t*)a;
-    uint64_t* bb=(uint64_t*)b;
-    return (int)(*aa-*bb);
+static inline int cmpint(const void *a, const void *b) {
+  uint64_t *aa=(uint64_t *)a;
+  uint64_t *bb=(uint64_t *)b;
+  return (int)(*aa-*bb);
 }
 
-static inline void updateTimes(uint64_t start, Meas *M, int period, char * txt) {
-    if (start!=0) {
-        uint64_t end=rdtsc();
-        long long diff=(end-start)/(cpuf*1000);
-        M->maxArray[0]=diff;
-        M->sum+=diff;
-        M->iterations++;
-        qsort(M->maxArray, 11, sizeof(uint64_t), cmpint);
-        printMeas(txt,M,period);
-    }
+static inline void updateTimes(uint64_t start, Meas *M, int period, char *txt) {
+  if (start!=0) {
+    uint64_t end=rdtsc();
+    long long diff=(end-start)/(cpuf*1000);
+    M->maxArray[0]=diff;
+    M->sum+=diff;
+    M->iterations++;
+    qsort(M->maxArray, 11, sizeof(uint64_t), cmpint);
+    printMeas(txt,M,period);
+  }
 }
 
 #define check(a) do { checkT(a,__FILE__,__LINE__); } while (0)

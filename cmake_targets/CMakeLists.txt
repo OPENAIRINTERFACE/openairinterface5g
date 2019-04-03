@@ -2397,7 +2397,7 @@ add_executable(nr-uesoftmodem
   ${s1ap_h}
 #  ${OPENAIR_BIN_DIR}/messages_xml.h
   ${OPENAIR_DIR}/common/utils/threadPool/thread-pool.c
-  ${OPENAIR_DIR}/executables//nr-uesoftmodem.c
+  ${OPENAIR_DIR}/executables/nr-uesoftmodem.c
   ${OPENAIR_DIR}/executables/nr-ue.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c
@@ -2431,8 +2431,8 @@ add_executable(nr-uesoftmodem-nos1
   ${s1ap_h}
 #  ${OPENAIR_BIN_DIR}/messages_xml.h
   ${OPENAIR_TARGETS}/RT/USER/rt_wrapper.c
-  ${OPENAIR_TARGETS}/RT/USER/nr-ue.c
-  ${OPENAIR_TARGETS}/RT/USER/nr-uesoftmodem.c
+  ${OPENAIR_DIR}/executables/nr-ue.c
+  ${OPENAIR_DIR}/executables/nr-uesoftmodem.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   #${OPENAIR_TARGETS}/COMMON/create_tasks_ue.c
   ${OPENAIR_TARGETS}/ARCH/COMMON/common_lib.c

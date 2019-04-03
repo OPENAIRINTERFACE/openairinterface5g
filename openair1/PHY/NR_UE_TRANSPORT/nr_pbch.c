@@ -410,7 +410,7 @@ unsigned char sign(int8_t x) {
 uint8_t pbch_deinterleaving_pattern[32] = {28,0,31,30,7,29,25,27,5,8,24,9,10,11,12,13,1,4,3,14,15,16,17,2,26,18,19,20,21,22,6,23};
 
 int nr_rx_pbch( PHY_VARS_NR_UE *ue,
-                int subframe_rx,
+                UE_nr_rxtx_proc_t *proc,
                 NR_UE_PBCH *nr_ue_pbch_vars,
                 NR_DL_FRAME_PARMS *frame_parms,
                 uint8_t eNB_id,
@@ -448,15 +448,15 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
     symbol_offset=0;
 
 #ifdef DEBUG_PBCH
-  //printf("address dataf %p",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF);
+  //printf("address dataf %p",nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[proc->subframe_rx]].rxdataF);
   write_output("rxdataF0_pbch.m","rxF0pbch",
-               &nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF[0][(symbol_offset+1)*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size*3,1,1);
+               &nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[proc->subframe_rx]].rxdataF[0][(symbol_offset+1)*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size*3,1,1);
 #endif
 
   // symbol refers to symbol within SSB. symbol_offset is the offset of the SSB wrt start of slot
   for (symbol=1; symbol<4; symbol++) {
-    nr_pbch_extract(nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].rxdataF,
-                    nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe_rx]].dl_ch_estimates[eNB_id],
+    nr_pbch_extract(nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[proc->subframe_rx]].rxdataF,
+                    nr_ue_common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[proc->subframe_rx]].dl_ch_estimates[eNB_id],
                     nr_ue_pbch_vars->rxdataF_ext,
                     nr_ue_pbch_vars->dl_ch_estimates_ext,
                     symbol,
@@ -591,6 +591,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 #endif
 
   ue->dl_indication.rx_ind = &ue->rx_ind; //  hang on rx_ind instance
+  ue->dl_indication.proc=proc;
   //ue->rx_ind.sfn_slot = 0;  //should be set by higher-1-layer, i.e. clean_and_set_if_instance()
   ue->rx_ind.rx_indication_body[0].pdu_type = FAPI_NR_RX_PDU_TYPE_MIB;
   ue->rx_ind.rx_indication_body[0].mib_pdu.pdu = &decoded_output[0];

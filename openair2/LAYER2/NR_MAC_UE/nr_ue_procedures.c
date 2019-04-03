@@ -193,6 +193,7 @@ int8_t nr_ue_process_dlsch(module_id_t module_id, int cc_id, uint8_t gNB_index, 
 }
 
 int8_t nr_ue_decode_mib(
+	UE_nr_rxtx_proc_t *proc,
 	module_id_t module_id,
 	int 		cc_id,
 	uint8_t 	gNB_index,
@@ -594,6 +595,7 @@ int8_t nr_ue_decode_mib(
 	    if(mac->if_module != NULL && mac->if_module->phy_config_request != NULL){
 		mac->if_module->phy_config_request(&mac->phy_config);
 	    }
+	    proc->decoded_frame_rx=frame;
     //}
     return 0;
 }

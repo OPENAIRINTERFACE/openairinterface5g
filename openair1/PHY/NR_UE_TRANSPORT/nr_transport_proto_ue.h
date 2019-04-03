@@ -1137,7 +1137,7 @@ int rx_sss(PHY_VARS_NR_UE *phy_vars_ue,int32_t *tot_metric,uint8_t *flip_max,uin
   \returns number of tx antennas or -1 if error
 */
 int nr_rx_pbch( PHY_VARS_NR_UE *ue,
-		     int subframe_rx,
+		     UE_nr_rxtx_proc_t *proc,
 		     NR_UE_PBCH *nr_ue_pbch_vars,
 		     NR_DL_FRAME_PARMS *frame_parms,
 		     uint8_t eNB_id,
@@ -1145,7 +1145,8 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 		     MIMO_mode_t mimo_mode,
 		     uint32_t high_speed_flag);
 
-int nr_pbch_detection(PHY_VARS_NR_UE *ue,
+int nr_pbch_detection(UE_nr_rxtx_proc_t *proc,
+		      PHY_VARS_NR_UE *ue,
 		      int pbch_initial_symbol,
 		      runmode_t mode);
 
@@ -1433,7 +1434,8 @@ void generate_RIV_tables(void);
   @param phy_vars_ue Pointer to UE variables
   @param mode current running mode
 */
-int nr_initial_sync(PHY_VARS_NR_UE *phy_vars_ue, runmode_t mode);
+int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
+                    PHY_VARS_NR_UE *phy_vars_ue, runmode_t mode);
 
 
 /*!

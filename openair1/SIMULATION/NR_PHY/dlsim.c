@@ -684,7 +684,8 @@ int main(int argc, char **argv)
 	  LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1],frame_length_complex_samples,1,1);
       }
       if (UE->is_synchronized == 0) {
-	ret = nr_initial_sync(UE, normal_txrx);
+	UE_nr_rxtx_proc_t proc={0};
+	ret = nr_initial_sync(&proc, UE, normal_txrx);
 	printf("nr_initial_sync1 returns %d\n",ret);
 	if (ret<0) n_errors++;
       }
