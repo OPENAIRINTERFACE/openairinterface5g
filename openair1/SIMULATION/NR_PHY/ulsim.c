@@ -46,7 +46,7 @@
 #include "PHY/NR_TRANSPORT/nr_transport.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
-#include "PHY/NR_TRANSPORT/nr_sch_dmrs.h"
+#include "PHY/NR_REFSIG/dmrs_nr.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "SCHED_NR/sched_nr.h"
@@ -592,7 +592,7 @@ int main(int argc, char **argv) {
   dmrs_type = UE->dmrs_UplinkConfig.pusch_dmrs_type;
   mapping_type = UE->pusch_config.pusch_TimeDomainResourceAllocation[0]->mappingType;
 
-  l0 = get_l0(mapping_type, 2, 1);
+  l0 = get_l0_ul(mapping_type, 2);
   nr_modulation(pusch_dmrs[l0][0], n_dmrs, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
 
 
@@ -642,7 +642,7 @@ int main(int argc, char **argv) {
       sample_offsetF = l*frame_parms->ofdm_symbol_size + k;
 
       for (i=0; i<nb_rb*NR_NB_SC_PER_RB; i++) {
-        if ((l == dmrs_symbol) && (k == ((start_sc+get_dmrs_freq_idx(n, k_prime, delta, dmrs_type))%(frame_parms->ofdm_symbol_size)))) {
+        if ((l == dmrs_symbol) && (k == ((start_sc+get_dmrs_freq_idx_ul(n, k_prime, delta, dmrs_type))%(frame_parms->ofdm_symbol_size)))) {
           ((int16_t*)txdataF[ap])[(sample_offsetF)<<1] = (Wt[l_prime[0]]*Wf[k_prime]*amp*mod_dmrs[dmrs_idx<<1]) >> 15;
           ((int16_t*)txdataF[ap])[((sample_offsetF)<<1) + 1] = (Wt[l_prime[0]]*Wf[k_prime]*amp*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
 #ifdef DEBUG_PUSCH_MAPPING

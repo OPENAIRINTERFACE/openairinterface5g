@@ -226,6 +226,45 @@ void lte_gold_new(LTE_DL_FRAME_PARMS *frame_parms, uint32_t lte_gold_table[20][2
 
 /*******************************************************************
 *
+* NAME :         get_l0_ul
+*
+* PARAMETERS :   mapping_type : PUSCH mapping type
+*                dmrs_typeA_position  : higher layer parameter
+*
+* RETURN :       demodulation reference signal for PUSCH
+*
+* DESCRIPTION :  see TS 38.211 V15.4.0 Demodulation reference signals for PUSCH
+*
+*********************************************************************/
+
+uint8_t get_l0_ul(uint8_t mapping_type, uint8_t dmrs_typeA_position) {
+
+  return ((mapping_type==typeA)?dmrs_typeA_position:0);
+
+}
+
+/*******************************************************************
+*
+* NAME :         get_dmrs_freq_idx_ul
+*
+* PARAMETERS :   n : index of DMRS symbol
+*                k_prime  : k_prime = {0,1}
+*                delta : given by Tables 6.4.1.1.3-1 and 6.4.1.1.3-2
+*                dmrs_type  : DMRS configuration type
+*
+* RETURN :       demodulation reference signal for PUSCH
+*
+* DESCRIPTION :  see TS 38.211 V15.4.0 Demodulation reference signals for PUSCH
+*
+*********************************************************************/
+
+uint16_t get_dmrs_freq_idx_ul(uint8_t n, uint8_t k_prime, uint8_t delta, uint8_t dmrs_type) {
+  uint16_t dmrs_idx = (dmrs_type)? (6*n+k_prime+delta):((n<<2)+(k_prime<<1)+delta);
+  return dmrs_idx;
+}
+
+/*******************************************************************
+*
 * NAME :         get_dmrs_pbch
 *
 * PARAMETERS :   i_ssb : index of ssb/pbch beam

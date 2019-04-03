@@ -25,6 +25,8 @@
 #include <stdint.h>
 #include "PHY/defs_nr_common.h"
 
+#define DMRS_MOD_ORDER 2
+
 /*! \brief Perform NR modulation. TS 38.211 V15.4.0 subclause 5.1
   @param[in] in, Pointer to input bits
   @param[in] length, size of input bits

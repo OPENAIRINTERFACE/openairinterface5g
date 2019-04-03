@@ -172,7 +172,7 @@ for (int l=0; l<rel15->nb_layers; l++)
   uint8_t dmrs_type = config->pdsch_config.dmrs_type.value;
   uint8_t mapping_type = config->pdsch_config.mapping_type.value;
 
-  l0 = get_l0(mapping_type, 2, 0);//config->pdsch_config.dmrs_typeA_position.value);
+  l0 = get_l0(mapping_type, 2);//config->pdsch_config.dmrs_typeA_position.value);
   nr_modulation(pdsch_dmrs[l0][0], n_dmrs, DMRS_MOD_ORDER, mod_dmrs); // currently only codeword 0 is modulated. Qm = 2 as DMRS is QPSK modulated
 
 #ifdef DEBUG_DLSCH
