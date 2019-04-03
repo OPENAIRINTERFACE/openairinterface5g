@@ -771,7 +771,7 @@ static inline double angle64(int64_t x)
 *
 * PARAMETERS :   received buffer
 *                frame parameters
-*https://www.ilpost.it/
+*
 * RETURN :       position of detected pss
 *
 * DESCRIPTION :  Synchronisation on pss sequence is based on a time domain correlation between received samples and pss sequence
