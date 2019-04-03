@@ -89,7 +89,7 @@ pipeline {
                 script {
                     if ("MERGE".equals(env.gitlabActionType)) {
                         // since a bit, in push events, gitlabUserEmail is not populated
-                        gitCommitAuthorEmailAddr = ${env.gitlabUserEmail}
+                        gitCommitAuthorEmailAddr = env.gitlabUserEmail
                         echo "GitLab Usermail is ${gitCommitAuthorEmailAddr}"
                         // GitLab-Jenkins plugin integration is lacking to perform the merge by itself
                         // Doing it manually --> it may have merge conflicts
