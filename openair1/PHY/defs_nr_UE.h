@@ -278,16 +278,6 @@ typedef struct {
 } NR_UE_COMMON_PER_THREAD;
 
 typedef struct {
-  /// \brief Holds the transmit data in time domain.
-  /// For IFFT_FPGA this points to the same memory as PHY_vars->tx_vars[a].TX_DMA_BUFFER.
-  /// - first index: tx antenna [0..nb_antennas_tx[
-  /// - second index: sample [0..FRAME_LENGTH_COMPLEX_SAMPLES[
-  int32_t **txdata;
-  /// \brief Holds the transmit data in the frequency domain.
-  /// For IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER.
-  /// - first index: tx antenna [0..nb_antennas_tx[
-  /// - second index: sample [0..FRAME_LENGTH_COMPLEX_SAMPLES_NO_PREFIX[
-  int32_t **txdataF;
   /// TX buffers for multiple layers
   int32_t *txdataF_layers[NR_MAX_NB_LAYERS];
   } NR_UE_PUSCH;

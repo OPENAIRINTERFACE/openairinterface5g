@@ -650,15 +650,6 @@ void phy_init_nr_ue_PUSCH( NR_UE_PUSCH* const pusch, const NR_DL_FRAME_PARMS* co
   int i;
   AssertFatal( pusch, "pusch==0" );
 
-  pusch->txdata  = (int32_t**)malloc16( fp->nb_antennas_tx*sizeof(int32_t*) );
-  pusch->txdataF = (int32_t **)malloc16( fp->nb_antennas_tx*sizeof(int32_t*) );
-
-  for (i=0; i<fp->nb_antennas_tx; i++) {
-
-    pusch->txdata[i]  = (int32_t*)malloc16_clear( fp->samples_per_subframe*10*sizeof(int32_t) );
-    pusch->txdataF[i] = (int32_t *)malloc16_clear( fp->ofdm_symbol_size*fp->symbols_per_slot*10*sizeof(int32_t) );
-  }
-
   for (i=0; i<NR_MAX_NB_LAYERS; i++)
     pusch->txdataF_layers[i] = (int32_t *)malloc16((NR_MAX_PUSCH_ENCODED_LENGTH)*sizeof(int32_t*));
 
@@ -800,7 +791,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue,
     for (i=0; i<fp->nb_antennas_rx; i++) {
       common_vars->rxdata[i] = (int32_t*) malloc16_clear( (2*(fp->samples_per_frame)+2048)*sizeof(int32_t) );
       for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
-          common_vars->common_vars_rx_data_per_thread[th_id].rxdataF[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*(fp->ofdm_symbol_size*14) );
+          common_vars->common_vars_rx_data_per_thread[th_id].rxdataF[i] = (int32_t*)malloc16_clear( sizeof(int32_t)*(fp->samples_per_slot_wCP) );
       }
     }
   }
