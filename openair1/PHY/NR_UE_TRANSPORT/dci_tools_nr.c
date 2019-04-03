@@ -1039,7 +1039,7 @@ int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
 
   LOG_D(PHY,"\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> dci_format=%d, rnti=%d, dci_length=%d, dci_pdu[0]=0x%lx, dci_pdu[1]=0x%lx\n",dci_format,rnti,dci_length,dci_pdu[0],dci_pdu[1]);
 
-  memset(nr_dci_info_extracted,0,sizeof(nr_dci_info_extracted));
+  memset(nr_dci_info_extracted,0,sizeof(*nr_dci_info_extracted));
 
   LOG_D(PHY,"\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> Entering function nr_extract_dci_info(dci_format=%d) \n",dci_format);
 
