@@ -527,7 +527,7 @@ int main(int argc, char **argv)
   UE->if_inst->ul_indication = dummy_nr_ue_ul_indication;
   
 
-  //mac->if_module = nr_ue_if_module_init(0);
+  UE_mac->if_module = nr_ue_if_module_init(0);
 
   
   // generate signal

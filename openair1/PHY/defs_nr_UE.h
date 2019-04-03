@@ -1020,7 +1020,7 @@ typedef struct {
   /// UE FAPI DCI request
   nr_dcireq_t dcireq;
 
-  // CHECK if we need those as they are also included in dl_indictation
+  // pointers to the next 2 strcutres are also included in dl_indictation
   /// UE FAPI indication for DLSCH reception
   fapi_nr_rx_indication_t rx_ind;
   /// UE FAPI indication for DCI reception

@@ -52,7 +52,7 @@
 
 //#define DEBUG_DCI
 #define NR_PDCCH_DCI_TOOLS
-//#define NR_PDCCH_DCI_TOOLS_DEBUG
+#define NR_PDCCH_DCI_TOOLS_DEBUG
 
 typedef unsigned __int128 uint128_t;
 

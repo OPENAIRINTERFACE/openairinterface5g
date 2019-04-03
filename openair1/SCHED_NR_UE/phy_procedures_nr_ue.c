@@ -119,6 +119,7 @@ uint8_t nr_dci_decoding_procedure(int s,
                                   format_found_t *format_found,
                                   uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES]);
 
+/*
 int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
 					    uint8_t eNB_id,
 					    int frame,
@@ -139,7 +140,7 @@ int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
 					    uint16_t n_RB_DLBWP,
 					    uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES],
 					    NR_DCI_INFO_EXTRACTED_t *nr_dci_info_extracted);
-
+*/
 
 #if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
 extern uint32_t downlink_frequency[MAX_NUM_CCs][4];
@@ -3150,7 +3151,6 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
 #endif
 
     ue->dci_ind.number_of_dcis = dci_cnt;
-    ue->dl_indication.dci_ind = &ue->dci_ind; //  hang on rx_ind instance
 
     for (int i=0; i<dci_cnt; i++) {
       /*
@@ -3198,7 +3198,7 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
 				     dci_alloc_rx[i].rnti,
 				     dci_alloc_rx[i].dci_pdu,
 				     &ue->dci_ind.dci_list[i].dci,
-				     dci_fields_sizes,
+				     dci_fields_sizes_cnt[i],
 				     dci_alloc_rx[i].format,
 				     nr_tti_rx,
 				     pdcch_vars2->n_RB_BWP[nb_searchspace_active],
@@ -3238,9 +3238,17 @@ int nr_ue_pdcch_procedures(uint8_t eNB_id,PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *
         
       } // end for loop dci_cnt
 
-    //  TODO: check where should we send up this message.
-    //ue->if_inst->dl_indication(&ue->dl_indication);
-
+    // fill dl_indication message
+    ue->dl_indication.module_id = ue->Mod_id;
+    ue->dl_indication.cc_id = ue->CC_id;
+    ue->dl_indication.gNB_index = eNB_id;
+    ue->dl_indication.frame = frame_rx;
+    ue->dl_indication.slot = nr_tti_rx;
+    ue->dl_indication.rx_ind = NULL; //no data, only dci for now
+    ue->dl_indication.dci_ind = &ue->dci_ind; 
+    
+    //  send to mac
+    ue->if_inst->dl_indication(&ue->dl_indication);
 
 #if UE_TIMING_TRACE
   stop_meas(&ue->dlsch_rx_pdcch_stats);
@@ -4383,7 +4391,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,UE_nr_rxtx_proc_t *proc,uint8_t eN
 
     LOG_I(PHY,"[UE  %d] Frame %d, nr_tti_rx %d: found %d DCIs\n",ue->Mod_id,frame_rx,nr_tti_rx,dci_cnt);
     
-    if (0/*ue->no_timing_correction==0*/) {
+    if (ue->no_timing_correction==0) {
       LOG_I(PHY,"start adjust sync slot = %d no timing %d\n", nr_tti_rx, ue->no_timing_correction);
       nr_adjust_synch_ue(&ue->frame_parms,
 			 ue,
