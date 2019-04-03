@@ -590,8 +590,8 @@ void phy_scope_UE(FD_lte_phy_scope_ue *form,
   time = calloc(samples_per_frame,sizeof(float));
   corr = calloc(samples_per_frame,sizeof(float));
 
-  chest_t = (int16_t**) phy_vars_ue->common_vars.common_vars_rx_data_per_thread[phy_vars_ue->current_thread_id[subframe]].dl_ch_estimates_time[eNB_id];
-  chest_f = (int16_t**) phy_vars_ue->common_vars.common_vars_rx_data_per_thread[phy_vars_ue->current_thread_id[subframe]].dl_ch_estimates[eNB_id];
+  chest_t = (int16_t**) phy_vars_ue->pdcch_vars[phy_vars_ue->current_thread_id[subframe]][eNB_id]->dl_ch_estimates_time;
+  chest_f = (int16_t**) phy_vars_ue->pdcch_vars[phy_vars_ue->current_thread_id[subframe]][eNB_id]->dl_ch_estimates;
 
   pbch_llr = (int16_t*) phy_vars_ue->pbch_vars[eNB_id]->llr;
   pbch_comp = (int16_t*) phy_vars_ue->pbch_vars[eNB_id]->rxdataF_comp[0];

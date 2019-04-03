@@ -45,7 +45,6 @@
 int nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
 				uint8_t eNB_offset,
 				unsigned char Ns,
-				unsigned char l,
 				unsigned char symbol,
 				unsigned short coreset_start_subcarrier,
 				unsigned short nb_rb_coreset);
@@ -69,7 +68,6 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                               uint8_t eNB_offset,
                               unsigned char Ns,
                               unsigned short p,
-                              unsigned char l,
                               unsigned char symbol,
 			      unsigned short bwp_start_subcarrier,
 			      unsigned short nb_rb_pdsch);

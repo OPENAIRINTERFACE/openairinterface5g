@@ -342,7 +342,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 	  if (beamforming_mode==0) { //else if nb_antennas_ports_eNB==1 && beamforming_mode == 0
 		  //printf("start nr dlsch extract nr_tti_rx %d thread id %d \n", nr_tti_rx, ue->current_thread_id[nr_tti_rx]);
     nb_rb = nr_dlsch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
-                                     common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].dl_ch_estimates[eNB_id],
+                                     pdsch_vars[eNB_id]->dl_ch_estimates,
                                      pdsch_vars[eNB_id]->rxdataF_ext,
                                      pdsch_vars[eNB_id]->dl_ch_estimates_ext,
                                      dlsch0_harq->pmi_alloc,

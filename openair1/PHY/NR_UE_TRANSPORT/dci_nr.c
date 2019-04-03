@@ -843,7 +843,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
     printf("\t<-NR_PDCCH_DCI_DEBUG (nr_rx_pdcch)-> in nr_pdcch_extract_rbs_single(rxdataF -> rxdataF_ext || dl_ch_estimates -> dl_ch_estimates_ext)\n");
 #endif
     nr_pdcch_extract_rbs_single(common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].rxdataF,
-                                common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[nr_tti_rx]].dl_ch_estimates[eNB_id],
+                                pdcch_vars[eNB_id]->dl_ch_estimates,
                                 pdcch_vars[eNB_id]->rxdataF_ext,
                                 pdcch_vars[eNB_id]->dl_ch_estimates_ext,
                                 s,

@@ -1731,16 +1731,31 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 uint32_t nr_get_G(uint16_t nb_rb, uint16_t nb_symb_sch,uint8_t nb_re_dmrs,uint16_t length_dmrs, uint8_t Qm, uint8_t Nl) ;
 
 uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
-                         short *dlsch_llr,
-                         NR_DL_FRAME_PARMS *frame_parms,
-                         NR_UE_DLSCH_t *dlsch,
-                         NR_DL_UE_HARQ_t *harq_process,
-                         uint32_t frame,
-						 uint16_t nb_symb_sch,
-                         uint8_t nr_tti_rx,
-                         uint8_t harq_pid,
-                         uint8_t is_crnti,
+			    short *dlsch_llr,
+			    NR_DL_FRAME_PARMS *frame_parms,
+			    NR_UE_DLSCH_t *dlsch,
+			    NR_DL_UE_HARQ_t *harq_process,
+			    uint32_t frame,
+			    uint16_t nb_symb_sch,
+			    uint8_t nr_tti_rx,
+			    uint8_t harq_pid,
+			    uint8_t is_crnti,
 			    uint8_t llr8_flag);
+
+int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
+			uint8_t eNB_id,
+			lte_frame_type_t frame_type,
+			uint8_t dci_length,
+			uint16_t rnti,
+			uint64_t dci_pdu[2],
+			fapi_nr_dci_pdu_rel15_t *nr_pdci_info_extracted,
+			uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS],
+			NR_DCI_format_t dci_format,
+			uint8_t nr_tti_rx,
+			uint16_t n_RB_ULBWP,
+			uint16_t n_RB_DLBWP,
+			uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES]);
+
 
 /**@}*/
 #endif

@@ -95,11 +95,8 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
         uint8_t dci_length,
         uint16_t rnti,
         uint64_t dci_pdu[2],
-        NR_DCI_INFO_EXTRACTED_t *nr_pdci_info_extracted,
+        fapi_nr_dci_pdu_rel15_t *nr_pdci_info_extracted,
         uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS],
-        NR_DL_UE_HARQ_t *pdlsch0_harq,
-        NR_UE_DLSCH_t *pdlsch0,
-        NR_UE_ULSCH_t *ulsch0,
         NR_DCI_format_t dci_format,
         uint8_t nr_tti_rx,
         uint16_t n_RB_ULBWP,
@@ -631,7 +628,7 @@ int nr_extract_dci_info(PHY_VARS_NR_UE *ue,
       case TB1_MCS: // 18 TB1_MCS: (field defined for -,-,-,format1_1,-,-,-,-)
         nr_pdci_info_extracted->tb1_mcs                          = (uint8_t)nr_dci_field(dci_pdu,dci_fields_sizes_format,dci_field);
         //(((((*(uint128_t *)dci_pdu)  << (left_shift - dci_fields_sizes[dci_field][dci_format]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[dci_field][dci_format]));
-        if (nr_pdci_info_extracted->mcs < 29) pdlsch0_harq->mcs  = nr_pdci_info_extracted->tb1_mcs;
+        //if (nr_pdci_info_extracted->mcs < 29) pdlsch0_harq->mcs  = nr_pdci_info_extracted->tb1_mcs;
         #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
           printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) -> nr_pdci_info_extracted->tb1_mcs=%x\n",nr_pdci_info_extracted->tb1_mcs);
         #endif
@@ -1025,98 +1022,50 @@ int nr_generate_ue_ul_dlsch_params_from_dci(PHY_VARS_NR_UE *ue,
         uint16_t rnti,
         uint8_t dci_length,
         NR_DCI_format_t dci_format,
-        NR_UE_PDCCH *pdcch_vars,
-        NR_UE_PDSCH *pdsch_vars,
-        NR_UE_DLSCH_t **dlsch,
-        NR_UE_ULSCH_t *ulsch,
         NR_DL_FRAME_PARMS *frame_parms,
         PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
-        uint8_t beamforming_mode,
         uint8_t dci_fields_sizes[NBR_NR_DCI_FIELDS][NBR_NR_FORMATS],
         uint16_t n_RB_ULBWP,
         uint16_t n_RB_DLBWP,
         uint16_t crc_scrambled_values[TOTAL_NBR_SCRAMBLED_VALUES],
-        NR_DCI_INFO_EXTRACTED_t *nr_dci_info_extracted)
+        fapi_nr_dci_pdu_rel15_t *nr_dci_info_extracted)
 {
   /*
    * Note only format0_0 and format1_0 are implemented
    */
 
-  //uint8_t harq_pid=0;
   uint8_t frame_type=frame_parms->frame_type;
-  //uint8_t tpmi=0;
-  NR_UE_DLSCH_t *dlsch0=NULL;//*dlsch1=NULL;
-  NR_DL_UE_HARQ_t *dlsch0_harq=NULL;//*dlsch1_harq=NULL;
-  NR_UE_ULSCH_t *ulsch0=NULL;//*ulsch1=NULL;
-  
-  
-  NR_DCI_INFO_EXTRACTED_t *ptr_nr_dci_info_extracted = nr_dci_info_extracted;
-  
-  
   uint8_t status=0;
-  #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
-    printf("\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> dci_format=%d, rnti=%d, dci_length=%d, dci_pdu[0]=0x%lx, dci_pdu[1]=0x%lx\n",
-             dci_format,rnti,dci_length,dci_pdu[0],dci_pdu[1]);
-  #endif
 
-  
+  LOG_D(PHY,"\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> dci_format=%d, rnti=%d, dci_length=%d, dci_pdu[0]=0x%lx, dci_pdu[1]=0x%lx\n",dci_format,rnti,dci_length,dci_pdu[0],dci_pdu[1]);
 
-//  uint8_t dci_fields_sizes_format[NBR_NR_DCI_FIELDS] ={0};
-//  for (int m=0; m<NBR_NR_DCI_FIELDS; m++) dci_fields_sizes_format[m]=dci_fields_sizes[m][dci_format];
-/*
-  dlsch0 = dlsch[0];
-  dlsch0->active = 0;
-  if (dci_fields_sizes[HARQ_PROCESS_NUMBER][dci_format] != 0) { // 27 HARQ_PROCESS_NUMBER (27 is the position in dci_fields_sizes array for field HARQ_PROCESS_NUMBER)
-    //for (int i=0; i<=HARQ_PROCESS_NUMBER; i++) left_shift = left_shift + dci_fields_sizes[i][dci_format];
-    nr_dci_info_extracted->harq_process_number = (uint8_t)nr_dci_field(dci_pdu,dci_fields_sizes_format,HARQ_PROCESS_NUMBER);
-    //(((((*(uint128_t *)dci_pdu)  << (left_shift - dci_fields_sizes[HARQ_PROCESS_NUMBER][dci_format]))) & pdu_bitmap) >> (dci_length - dci_fields_sizes[HARQ_PROCESS_NUMBER][dci_format]));
-    //left_shift = 0;
-    #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
-      printf("\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> nr_dci_info_extracted->harq_process_number=%x\n",nr_dci_info_extracted->harq_process_number);
-    for (int i=0; i<1000; i++) printf("%d",i);
-   #endif
-  }
+  memset(nr_dci_info_extracted,0,sizeof(nr_dci_info_extracted));
 
+  LOG_D(PHY,"\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> Entering function nr_extract_dci_info(dci_format=%d) \n",dci_format);
 
-  dlsch0_harq   = dlsch[0]->harq_processes[nr_dci_info_extracted->harq_process_number];
-  ulsch0 = ulsch;
-  //printf("nr_dci_info_extracted.harq_process_number = %d\n",nr_dci_info_extracted.harq_process_number);
-  //printf("dlsch0 = %d\n",dlsch0);
-  //printf("dlsch0_harq = %d\n",dlsch0_harq);
-
-  if (!dlsch[0]) return -1;
-  if (!ulsch) return -1;
-*/
-  memset(&nr_dci_info_extracted,0,sizeof(nr_dci_info_extracted));
-//  printf("we reach this point\n");
-  #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
-    printf("\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> Entering function nr_extract_dci_info(dci_format=%d) \n",dci_format);
-  #endif
   status = nr_extract_dci_info(ue,
                                eNB_id,
                                frame_type,
                                dci_length,
                                rnti,
                                dci_pdu,
-                               ptr_nr_dci_info_extracted,//&nr_dci_info_extracted,
+                               nr_dci_info_extracted,//&nr_dci_info_extracted,
                                dci_fields_sizes,
-                               dlsch0_harq,
-                               dlsch0,
-                               ulsch0,
                                dci_format,
                                nr_tti_rx,
                                n_RB_ULBWP,
                                n_RB_DLBWP,
                                crc_scrambled_values);
-  //printf("\n>>> inside nr_generate_ue_ul_dlsch_params_from_dci after nr_extract_dci_info: mcs=%d\n",nr_dci_info_extracted->mcs);
-  #ifdef NR_PDCCH_DCI_TOOLS_DEBUG
-    if(status == 0) {
-      printf("\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> bad DCI %d !!! \n",dci_format);
-      return(-1);
-    }
-    //printf("\n>>> inside nr_generate_ue_ul_dlsch_params_from_dci after nr_extract_dci_info: modified mcs=%d \n",nr_dci_info_extracted->mcs);
-    printf("\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> Ending function nr_extract_dci_info()\n");
-  #endif
+
+  if(status == 0) {
+    LOG_W(PHY,"\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> bad DCI %d !!! \n",dci_format);
+    return(-1);
+  }
+
+  LOG_D(PHY,"\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci) -> Ending function nr_extract_dci_info()\n");
+
+  //fill 
+  
   return(0);
 }
 

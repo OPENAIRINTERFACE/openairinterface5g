@@ -45,11 +45,14 @@
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 
 #include "SCHED_NR/sched_nr.h"
+#include "SCHED_NR/fapi_nr_l1.h"
 #include "SCHED_NR_UE/fapi_nr_ue_l1.h"
 
 #include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include "LAYER2/NR_MAC_UE/mac_defs.h"
 #include "LAYER2/NR_MAC_UE/mac_extern.h"
+#include "LAYER2/NR_MAC_UE/mac_proto.h"
+#include "LAYER2/NR_MAC_gNB/mac_proto.h"
 
 #include "NR_PHY_INTERFACE/NR_IF_Module.h"
 #include "NR_UE_PHY_INTERFACE/NR_IF_Module.h"
@@ -77,8 +80,8 @@ int32_t get_uldl_offset(int nr_bandP) {return(0);}
 
 NR_IF_Module_t *NR_IF_Module_init(int Mod_id){return(NULL);}
 
-int8_t dummy_nr_ue_dl_indication(nr_downlink_indication_t *dl_info){return(0);}
-int8_t dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info){return(0);}
+int dummy_nr_ue_dl_indication(nr_downlink_indication_t *dl_info){return(0);}
+int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info){return(0);}
 
 lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe) { return(SF_DL);}
 
@@ -111,7 +114,7 @@ void config_common(int Mod_idP,
 
 // needed for some functions
 PHY_VARS_NR_UE ***PHY_vars_UE_g;
-uint16_t conjugate[8]__attribute__((aligned(32))) = {-1,1,-1,1,-1,1,-1,1};
+short conjugate[8]__attribute__((aligned(32))) = {-1,1,-1,1,-1,1,-1,1};
 
 int main(int argc, char **argv)
 {
@@ -510,7 +513,7 @@ int main(int argc, char **argv)
   gNB_mac = RC.nrmac[0];
 
   config_common(0,0,Nid_cell,78,ssb_pattern,(uint64_t)3640000000L,N_RB_DL);
-  config_nr_mib(0,0,1,kHz30,0,0,0,0);
+  config_nr_mib(0,0,1,kHz30,0,0,0,0,0);
 
   nr_l2_init_ue();
   UE_mac = get_mac_inst(0);
