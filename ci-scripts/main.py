@@ -118,6 +118,7 @@ class SSHConnection():
 		self.htmlFooterCreated = False
 		self.htmlUEConnected = -1
 		self.htmleNBFailureMsg = ''
+		self.htmlUEFailureMsg = ''
 		self.picocom_closure = False
 		self.idle_sleep_time = 0
 		self.htmlTabRefs = []
@@ -437,12 +438,14 @@ class SSHConnection():
 		if self.eNBIPAddress == '' or self.eNBUserName == '' or self.eNBPassword == '' or self.eNBSourceCodePath == '':
 			Usage()
 			sys.exit('Insufficient Parameter')
-		initialize_eNB_flag = True
-		pStatus = self.CheckProcessExist(initialize_eNB_flag)
-		if (pStatus < 0):
-			self.CreateHtmlTestRow(self.Initialize_eNB_args, 'KO', pStatus)
-			self.CreateHtmlTabFooter(False)
-			sys.exit(1)
+		result = re.search('noS1', str(self.Initialize_eNB_args))
+		if result is None:
+			initialize_eNB_flag = True
+			pStatus = self.CheckProcessExist(initialize_eNB_flag)
+			if (pStatus < 0):
+				self.CreateHtmlTestRow(self.Initialize_eNB_args, 'KO', pStatus)
+				self.CreateHtmlTabFooter(False)
+				sys.exit(1)
 		# If tracer options is on, running tshark on EPC side and capture traffic b/ EPC and eNB
 		result = re.search('T_stdout', str(self.Initialize_eNB_args))
 		if result is not None:
@@ -487,7 +490,7 @@ class SSHConnection():
 			result = re.search('type: b200', str(self.ssh.before))
 			if result is not None:
 				logging.debug('Found a B2xx device --> resetting it')
-				self.command('echo ' + self.eNBPassword + ' | sudo -S sudo b2xx_fx3_utils --reset-device', '\$', 5)
+				self.command('echo ' + self.eNBPassword + ' | sudo -S b2xx_fx3_utils --reset-device', '\$', 5)
 				# Reloading FGPA bin firmware
 				self.command('echo ' + self.eNBPassword + ' | sudo -S uhd_find_devices', '\$', 5)
 		# Make a copy and adapt to EPC / eNB IP addresses
@@ -596,38 +599,21 @@ class SSHConnection():
 		result = re.search('type: b200', str(self.ssh.before))
 		if result is not None:
 			logging.debug('Found a B2xx device --> resetting it')
-			self.command('echo ' + self.UEPassword + ' | sudo -S sudo b2xx_fx3_utils --reset-device', '\$', 5)
+			self.command('echo ' + self.UEPassword + ' | sudo -S b2xx_fx3_utils --reset-device', '\$', 5)
 			# Reloading FGPA bin firmware
 			self.command('echo ' + self.UEPassword + ' | sudo -S uhd_find_devices', '\$', 5)
 		else:
 			logging.debug('Did not find any B2xx device')
 		self.command('cd ' + self.UESourceCodePath, '\$', 5)
-		# Initialize_OAI_UE_args usually start with -C and followed by the location in repository
-		#full_config_file = self.Initialize_OAI_UE_args.replace('-O ','')
-		#extIdx = full_config_file.find('.conf')
-		#if (extIdx > 0):
-		#	extra_options = full_config_file[extIdx + 5:]
-		#	# if tracer options is on, compiling and running T Tracer
-		#	result = re.search('T_stdout', str(extra_options))
-		##	if result is not None:
-		#		logging.debug('\u001B[1m Compiling and launching T Tracer\u001B[0m')
-		#		self.command('cd common/utils/T/tracer', '\$', 5)
-		#		self.command('make', '\$', 10)
-		#		self.command('echo $USER; nohup ./record -d ../T_messages.txt -o ' + self.UESourceCodePath + '/cmake_targets/ue_' + self.testCase_id + '_record.raw -ON -off VCD -off HEAVY -off LEGACY_GROUP_TRACE -off LEGACY_GROUP_DEBUG > ' + self.UESourceCodePath + '/cmake_targets/enb_' + self.testCase_id + '_record.log 2>&1 &', self.UEUserName, 5)
-		#		self.command('cd ' + self.UESourceCodePath, '\$', 5)
-		#	full_config_file = full_config_file[:extIdx + 5]
-		#	config_path, config_file = os.path.split(full_config_file)
-		#ci_full_config_file = config_path + '/ci-' + config_file
-		#rruCheck = False
-		#result = re.search('rru', str(config_file))
-		#if result is not None:
-		#	rruCheck = True
-		## Make a copy and adapt to EPC / UE IP addresses
-		#self.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
-		#self.command('sed -i -e \'s/CI_UE_IP_ADDR/' + self.UEIPAddress + '/\' ' + ci_full_config_file, '\$', 2);
-		# Launch UE with the modified config file
 		self.command('source oaienv', '\$', 5)
 		self.command('cd cmake_targets/lte_build_oai/build', '\$', 5)
+		result = re.search('--no-L2-connect', str(self.Initialize_OAI_UE_args))
+		# We may have to regenerate the .u* files
+		if result is None:
+			self.command('sed -e "s#93#92#" -e "s#8baf473f2f8fd09487cccbd7097c6862#fec86ba6eb707ed08905757b1bb44b8f#" -e "s#e734f8734007d6c5ce7a0508809e7e9c#C42449363BBAD02B66D16BC975D77CC1#" ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf > ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf', '\$', 5)
+			self.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf .u*', '\$', 5)
+			self.command('echo ' + self.UEPassword + ' | sudo -S ../../../targets/bin/conf2uedata -c ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf -o .', '\$', 5)
+		# Launch UE with the modified config file
 		self.command('echo "ulimit -c unlimited && ./lte-uesoftmodem ' + self.Initialize_OAI_UE_args + '" > ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
 		self.command('chmod 775 ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
 		self.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf ' + self.UESourceCodePath + '/cmake_targets/ue_' + self.testCase_id + '.log', '\$', 5)
@@ -640,27 +626,6 @@ class SSHConnection():
 		while (doLoop):
 			loopCounter = loopCounter - 1
 			if (loopCounter == 0):
-				# In case of T tracer recording, we may need to kill it
-				#result = re.search('T_stdout', str(self.Initialize_OAI_UE_args))
-				#if result is not None:
-				#	self.command('killall --signal SIGKILL record', '\$', 5)
-				self.close()
-				doLoop = False
-				logging.error('\u001B[1;37;41m UE logging system did not show got sync! \u001B[0m')
-				self.CreateHtmlTestRow(self.Initialize_OAI_UE_args, 'KO', ALL_PROCESSES_OK, 'OAI UE')
-				self.CreateHtmlTabFooter(False)
-				## In case of T tracer recording, we need to kill tshark on EPC side
-				#result = re.search('T_stdout', str(self.Initialize_OAI_UE_args))
-				#if result is not None:
-				#	self.open(self.EPCIPAddress, self.EPCUserName, self.EPCPassword)
-				#	logging.debug('\u001B[1m Stopping tshark \u001B[0m')
-				#	self.command('echo ' + self.EPCPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
-				#	self.close()
-				#	time.sleep(1)
-				#	pcap_log_file = 'enb_' + self.testCase_id + '_s1log.pcap'
-				#	copyin_res = self.copyin(self.EPCIPAddress, self.EPCUserName, self.EPCPassword, '/tmp/' + pcap_log_file, '.')
-				#	if (copyin_res == 0):
-				#		self.copyout(self.UEIPAddress, self.UEUserName, self.UEPassword, pcap_log_file, self.UESourceCodePath + '/cmake_targets/.')
 				sys.exit(1)
 			else:
 				self.command('stdbuf -o0 cat ue_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync"', '\$', 4)
@@ -1233,7 +1198,85 @@ class SSHConnection():
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
+	def PingNoS1(self):
+		ping_from_eNB = re.search('oaitun_enb1', str(self.ping_args))
+		if ping_from_eNB is not None:
+			if self.eNBIPAddress == '' or self.eNBUserName == '' or self.eNBPassword == '':
+				Usage()
+				sys.exit('Insufficient Parameter')
+		else:
+			if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '':
+				Usage()
+				sys.exit('Insufficient Parameter')
+		try:
+			if ping_from_eNB is not None:
+				self.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
+				self.command('cd ' + self.eNBSourceCodePath + '/cmake_targets/', '\$', 5)
+			else:
+				self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
+				self.command('cd ' + self.UESourceCodePath + '/cmake_targets/', '\$', 5)
+			self.command('cd cmake_targets', '\$', 5)
+			ping_time = re.findall("-c (\d+)",str(self.ping_args))
+			ping_status = self.command('stdbuf -o0 ping ' + self.ping_args + ' 2>&1 | stdbuf -o0 tee -a ping_' + self.testCase_id + '.log', '\$', int(ping_time[0])*1.5)
+			# TIMEOUT CASE
+			if ping_status < 0:
+				message = 'Ping with OAI UE crashed due to TIMEOUT!'
+				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				return
+			result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', str(self.ssh.before))
+			if result is None:
+				message = 'Packet Loss Not Found!'
+				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				return
+			packetloss = result.group('packetloss')
+			if float(packetloss) == 100:
+				message = 'Packet Loss is 100%'
+				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				return
+			result = re.search('rtt min\/avg\/max\/mdev = (?P<rtt_min>[0-9\.]+)\/(?P<rtt_avg>[0-9\.]+)\/(?P<rtt_max>[0-9\.]+)\/[0-9\.]+ ms', str(self.ssh.before))
+			if result is None:
+				message = 'Ping RTT_Min RTT_Avg RTT_Max Not Found!'
+				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+				return
+			rtt_min = result.group('rtt_min')
+			rtt_avg = result.group('rtt_avg')
+			rtt_max = result.group('rtt_max')
+			pal_msg = 'Packet Loss : ' + packetloss + '%'
+			min_msg = 'RTT(Min)    : ' + rtt_min + ' ms'
+			avg_msg = 'RTT(Avg)    : ' + rtt_avg + ' ms'
+			max_msg = 'RTT(Max)    : ' + rtt_max + ' ms'
+			logging.debug('\u001B[1;37;44m OAI UE ping result \u001B[0m')
+			logging.debug('\u001B[1;34m    ' + pal_msg + '\u001B[0m')
+			logging.debug('\u001B[1;34m    ' + min_msg + '\u001B[0m')
+			logging.debug('\u001B[1;34m    ' + avg_msg + '\u001B[0m')
+			logging.debug('\u001B[1;34m    ' + max_msg + '\u001B[0m')
+			qMsg = pal_msg + '\n' + min_msg + '\n' + avg_msg + '\n' + max_msg
+			packetLossOK = True
+			if packetloss is not None:
+				if float(packetloss) > float(self.ping_packetloss_threshold):
+					qMsg += '\nPacket Loss too high'
+					logging.debug('\u001B[1;37;41m Packet Loss too high \u001B[0m')
+					packetLossOK = False
+				elif float(packetloss) > 0:
+					qMsg += '\nPacket Loss is not 0%'
+					logging.debug('\u001B[1;30;43m Packet Loss is not 0% \u001B[0m')
+			self.close()
+			html_queue = SimpleQueue()
+			ip_addr = 'TBD'
+			html_cell = '<pre style="background-color:white">OAI UE ping result\n' + qMsg + '</pre>'
+			html_queue.put(html_cell)
+			if packetLossOK:
+				self.CreateHtmlTestRowQueue(self.ping_args, 'OK', len(self.UEDevices), html_queue)
+			else:
+				self.CreateHtmlTestRowQueue(self.ping_args, 'KO', len(self.UEDevices), html_queue)
+		except:
+			os.kill(os.getppid(),signal.SIGUSR1)
+
 	def Ping(self):
+		result = re.search('noS1', str(self.Initialize_eNB_args))
+		if result is not None:
+			self.PingNoS1()
+			return
 		if self.EPCIPAddress == '' or self.EPCUserName == '' or self.EPCPassword == '' or self.EPCSourceCodePath == '':
 			Usage()
 			sys.exit('Insufficient Parameter')
@@ -1924,6 +1967,7 @@ class SSHConnection():
 		if (not os.path.isfile('./' + eNBlogFile)):
 			return -1
 		enb_log_file = open('./' + eNBlogFile, 'r')
+		exitSignalReceived = False
 		foundAssertion = False
 		msgAssertion = ''
 		msgLine = 0
@@ -1954,17 +1998,20 @@ class SSHConnection():
 						self.htmleNBFailureMsg += '<span class="glyphicon glyphicon-ok-circle"></span> Command line option(s) correctly applied <span class="glyphicon glyphicon-arrow-right"></span> ' + self.rruOptions + '\n\n'
 					else:
 						self.htmleNBFailureMsg += '<span class="glyphicon glyphicon-ban-circle"></span> Command line option(s) NOT applied <span class="glyphicon glyphicon-arrow-right"></span> ' + self.rruOptions + '\n\n'
-			result = re.search('[Ss]egmentation [Ff]ault', str(line))
+			result = re.search('Exiting OAI softmodem', str(line))
 			if result is not None:
+				exitSignalReceived = True
+			result = re.search('[Ss]egmentation [Ff]ault', str(line))
+			if result is not None and not exitSignalReceived:
 				foundSegFault = True
 			result = re.search('[Cc]ore [dD]ump', str(line))
-			if result is not None:
+			if result is not None and not exitSignalReceived:
 				foundSegFault = True
 			result = re.search('[Aa]ssertion', str(line))
-			if result is not None:
+			if result is not None and not exitSignalReceived:
 				foundAssertion = True
 			result = re.search('LLL', str(line))
-			if result is not None:
+			if result is not None and not exitSignalReceived:
 				foundRealTimeIssue = True
 			if foundAssertion and (msgLine < 3):
 				msgLine += 1
@@ -2075,39 +2122,52 @@ class SSHConnection():
 		if (not os.path.isfile('./' + UElogFile)):
 			return -1
 		ue_log_file = open('./' + UElogFile, 'r')
+		exitSignalReceived = False
 		foundAssertion = False
 		msgAssertion = ''
 		msgLine = 0
 		foundSegFault = False
 		foundRealTimeIssue = False
-		rlcDiscardBuffer = 0
-		rachCanceledProcedure = 0
 		uciStatMsgCount = 0
-		pdcpFailure = 0
-		ulschFailure = 0
+		pdcpDataReqFailedCount = 0
+		badDciCount = 0
+		rrcConnectionRecfgComplete = 0
 		no_cell_sync_found = False
 		mib_found = False
 		frequency_found = False
+		plmn_found = False
 		self.htmlUEFailureMsg = ''
 		for line in ue_log_file.readlines():
-			result = re.search('[Ss]egmentation [Ff]ault', str(line))
+			result = re.search('Exiting OAI softmodem', str(line))
 			if result is not None:
+				exitSignalReceived = True
+			result = re.search('[Ss]egmentation [Ff]ault', str(line))
+			if result is not None and not exitSignalReceived:
 				foundSegFault = True
 			result = re.search('[Cc]ore [dD]ump', str(line))
-			if result is not None:
+			if result is not None and not exitSignalReceived:
 				foundSegFault = True
 			result = re.search('[Aa]ssertion', str(line))
-			if result is not None:
+			if result is not None and not exitSignalReceived:
 				foundAssertion = True
 			result = re.search('LLL', str(line))
-			if result is not None:
+			if result is not None and not exitSignalReceived:
 				foundRealTimeIssue = True
 			if foundAssertion and (msgLine < 3):
 				msgLine += 1
 				msgAssertion += str(line)
 			result = re.search('uci->stat', str(line))
-			if result is not None:
+			if result is not None and not exitSignalReceived:
 				uciStatMsgCount += 1
+			result = re.search('PDCP data request failed', str(line))
+			if result is not None and not exitSignalReceived:
+				pdcpDataReqFailedCount += 1
+			result = re.search('bad DCI 1A', str(line))
+			if result is not None and not exitSignalReceived:
+				badDciCount += 1
+			result = re.search('Generating RRCConnectionReconfigurationComplete', str(line))
+			if result is not None:
+				rrcConnectionRecfgComplete += 1
 			# No cell synchronization found, abandoning
 			result = re.search('No cell synchronization found, abandoning', str(line))
 			if result is not None:
@@ -2145,6 +2205,15 @@ class SSHConnection():
 					frequency_found = True
 				except Exception as e:
 					logging.error('\033[91m' + "Measured Carrier Frequency not found" + '\033[0m')
+			result = re.search("PLMN MCC (?P<mcc>\d{1,3}), MNC (?P<mnc>\d{1,3}), TAC", str(line))
+			if result is not None and (not plmn_found):
+				try:
+					mibMsg = 'PLMN MCC = ' + result.group('mcc') + ' MNC = ' + result.group('mnc')
+					self.htmlUEFailureMsg += mibMsg + '\n'
+					logging.debug('\033[94m' + mibMsg + '\033[0m')
+					plmn_found = True
+				except Exception as e:
+					logging.error('\033[91m' + "PLMN not found" + '\033[0m')
 			result = re.search("Found (?P<operator>[\w,\s]{1,15}) \(name from internal table\)", str(line))
 			if result is not None:
 				try:
@@ -2180,30 +2249,28 @@ class SSHConnection():
 				except Exception as e:
 					logging.error('\033[91m' + "    AllowedMeasBandwidth not found" + '\033[0m')
 		ue_log_file.close()
+		if rrcConnectionRecfgComplete > 0:
+			statMsg = 'UE connected to eNB (' + str(rrcConnectionRecfgComplete) + ' RRCConnectionReconfigurationComplete message(s) generated)'
+			logging.debug('\033[94m' + statMsg + '\033[0m')
+			self.htmlUEFailureMsg += statMsg + '\n'
 		if uciStatMsgCount > 0:
 			statMsg = 'UE showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 			self.htmlUEFailureMsg += statMsg + '\n'
-		if pdcpFailure > 0:
-			statMsg = 'UE showed ' + str(pdcpFailure) + ' "PDCP Out of Resources" message(s)'
+		if pdcpDataReqFailedCount > 0:
+			statMsg = 'UE showed ' + str(pdcpDataReqFailedCount) + ' "PDCP data request failed" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 			self.htmlUEFailureMsg += statMsg + '\n'
-		if ulschFailure > 0:
-			statMsg = 'UE showed ' + str(ulschFailure) + ' "ULSCH in error in round" message(s)'
+		if badDciCount > 0:
+			statMsg = 'UE showed ' + str(badDciCount) + ' "bad DCI 1A" message(s)'
 			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
 			self.htmlUEFailureMsg += statMsg + '\n'
-		if rachCanceledProcedure > 0:
-			rachMsg = 'UE cancelled ' + str(rachCanceledProcedure) + ' RA procedure(s)'
-			logging.debug('\u001B[1;30;43m ' + rachMsg + ' \u001B[0m')
-			self.htmlUEFailureMsg += rachMsg + '\n'
 		if foundSegFault:
 			logging.debug('\u001B[1;37;41m UE ended with a Segmentation Fault! \u001B[0m')
 			return ENB_PROCESS_SEG_FAULT
 		if foundAssertion:
-			logging.debug('\u001B[1;37;43m UE ended with an assertion! \u001B[0m')
-			# removed for esthetics
-			#self.htmlUEFailureMsg += msgAssertion
-			self.htmlUEFailureMsg += 'UE ended with an assertion!\n'
+			logging.debug('\u001B[1;30;43m UE showed an assertion! \u001B[0m')
+			self.htmlUEFailureMsg += 'UE showed an assertion!\n'
 			if not mib_found or not frequency_found:
 				return UE_PROCESS_ASSERTION
 		if foundRealTimeIssue:
@@ -2214,11 +2281,6 @@ class SSHConnection():
 			logging.debug('\u001B[1;37;41m UE could not synchronize ! \u001B[0m')
 			self.htmlUEFailureMsg += 'UE could not synchronize!\n'
 			return UE_PROCESS_COULD_NOT_SYNC
-		if rlcDiscardBuffer > 0:
-			rlcMsg = 'UE RLC discarded ' + str(rlcDiscardBuffer) + ' buffer(s)'
-			logging.debug('\u001B[1;37;41m ' + rlcMsg + ' \u001B[0m')
-			self.htmlUEFailureMsg += rlcMsg + '\n'
-			return ENB_PROCESS_REALTIME_ISSUE
 		return 0
 
 	def TerminateeNB(self):
@@ -2374,61 +2436,36 @@ class SSHConnection():
 			self.command('echo ' + self.UEPassword + ' | sudo -S killall --signal SIGKILL lte-uesoftmodem || true', '\$', 5)
 			time.sleep(5)
 		self.close()
-		# If tracer options is on, stopping tshark on EPC side
-		result = re.search('T_stdout', str(self.Initialize_OAI_UE_args))
+		result = re.search('ue_', str(self.UELogFile))
 		if result is not None:
-			self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
-			logging.debug('\u001B[1m Stopping tshark \u001B[0m')
-			self.command('echo ' + self.UEPassword + ' | sudo -S killall --signal SIGKILL tshark', '\$', 5)
-			time.sleep(1)
-			pcap_log_file = self.UELogFile.replace('.log', '_s1log.pcap')
-			self.command('echo ' + self.UEPassword + ' | sudo -S chmod 666 /tmp/' + pcap_log_file, '\$', 5)
-			self.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, '/tmp/' + pcap_log_file, '.')
-			self.copyout(self.UEIPAddress, self.UEUserName, self.UEPassword, pcap_log_file, self.UESourceCodePath + '/cmake_targets/.')
-			self.close()
-			logging.debug('\u001B[1m Replaying RAW record file\u001B[0m')
-			self.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
-			self.command('cd ' + self.UESourceCodePath + '/common/utils/T/tracer/', '\$', 5)
-			raw_record_file = self.UELogFile.replace('.log', '_record.raw')
-			replay_log_file = self.UELogFile.replace('.log', '_replay.log')
-			extracted_txt_file = self.UELogFile.replace('.log', '_extracted_messages.txt')
-			extracted_log_file = self.UELogFile.replace('.log', '_extracted_messages.log')
-			self.command('./extract_config -i ' + self.UESourceCodePath + '/cmake_targets/' + raw_record_file + ' > ' + self.UESourceCodePath + '/cmake_targets/' + extracted_txt_file, '\$', 5)
-			self.command('echo $USER; nohup ./replay -i ' + self.UESourceCodePath + '/cmake_targets/' + raw_record_file + ' > ' + self.UESourceCodePath + '/cmake_targets/' + replay_log_file + ' 2>&1 &', self.UEUserName, 5)
-			self.command('./textlog -d ' +  self.UESourceCodePath + '/cmake_targets/' + extracted_txt_file + ' -no-gui -ON -full > ' + self.UESourceCodePath + '/cmake_targets/' + extracted_log_file, '\$', 5)
-			self.close()
-			self.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/' + extracted_log_file, '.')
-			logging.debug('\u001B[1m Analyzing UE replay logfile \u001B[0m')
-			logStatus = self.AnalyzeLogFile_UE(extracted_log_file)
-			self.CreateHtmlTestRow(html_queue, 'OK', ALL_PROCESSES_OK)
+			copyin_res = self.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/' + self.UELogFile, '.')
+			if (copyin_res == -1):
+				logging.debug('\u001B[1;37;41m Could not copy UE logfile to analyze it! \u001B[0m')
+				self.htmlUEFailureMsg = 'Could not copy UE logfile to analyze it!'
+				self.CreateHtmlTestRow('N/A', 'KO', UE_PROCESS_NOLOGFILE_TO_ANALYZE, 'UE')
+				self.UELogFile = ''
+				return
+			logging.debug('\u001B[1m Analyzing UE logfile \u001B[0m')
+			logStatus = self.AnalyzeLogFile_UE(self.UELogFile)
+			result = re.search('--no-L2-connect', str(self.Initialize_OAI_UE_args))
+			if result is not None:
+				ueAction = 'Sniffing'
+			else:
+				ueAction = 'Connection'
+			if (logStatus < 0):
+				logging.debug('\u001B[1m' + ueAction + ' Failed \u001B[0m')
+				self.htmlUEFailureMsg = '<b>' + ueAction + ' Failed</b>\n' + self.htmlUEFailureMsg
+				self.CreateHtmlTestRow('N/A', 'KO', logStatus, 'UE')
+				self.CreateHtmlTabFooter(False)
+				sys.exit(1)
+			else:
+				logging.debug('\u001B[1m' + ueAction + ' Completed \u001B[0m')
+				self.htmlUEFailureMsg = '<b>' + ueAction + ' Completed</b>\n' + self.htmlUEFailureMsg
+				self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 			self.UELogFile = ''
 		else:
-			result = re.search('ue_', str(self.UELogFile))
-			if result is not None:
-				copyin_res = self.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/' + self.UELogFile, '.')
-				if (copyin_res == -1):
-					logging.debug('\u001B[1;37;41m Could not copy UE logfile to analyze it! \u001B[0m')
-					optionsMsg = '<pre style="background-color:white">Could not copy UE logfile to analyze it!</pre>'
-					self.CreateHtmlTestRow(optionsMsg, 'KO', UE_PROCESS_NOLOGFILE_TO_ANALYZE, 'UE')
-					self.UELogFile = ''
-					return
-				logging.debug('\u001B[1m Analyzing UE logfile \u001B[0m')
-				logStatus = self.AnalyzeLogFile_UE(self.UELogFile)
-				if (logStatus < 0):
-					optionsMsg = '<pre style="background-color:white"><b>Sniffing Unsuccessful</b>\n'
-					optionsMsg += self.htmlUEFailureMsg
-					optionsMsg += '</pre>'
-					self.CreateHtmlTestRow(optionsMsg, 'KO', logStatus, 'UE')
-					self.CreateHtmlTabFooter(False)
-					sys.exit(1)
-				else:
-					optionsMsg = '<pre style="background-color:white"><b>Sniffing Successful</b>\n'
-					optionsMsg += self.htmlUEFailureMsg
-					optionsMsg += '</pre>'
-					self.CreateHtmlTestRow(optionsMsg, 'OK', ALL_PROCESSES_OK)
-				self.UELogFile = ''
-			else:
-				self.CreateHtmlTestRow('<pre style="background-color:white">No Log File to analyze</pre>', 'OK', ALL_PROCESSES_OK)
+			self.htmlUEFailureMsg = 'No Log File to analyze!'
+			self.CreateHtmlTestRow('N/A', 'OK', ALL_PROCESSES_OK)
 
 	def AutoTerminateUEandeNB(self):
 		self.testCase_id = 'AUTO-KILL-UE'
@@ -2541,8 +2578,8 @@ class SSHConnection():
 		self.command('echo ' + self.UEPassword + ' | sudo -S rm ue*.log core* ue_*record.raw ue_*.pcap ue_*txt', '\$', 5)
 		self.close()
 
-	def RetrieveSystemVersion(self):
-		if self.eNBIPAddress == 'none':
+	def RetrieveSystemVersion(self, machine):
+		if self.eNBIPAddress == 'none' or self.UEIPAddress == 'none':
 			self.OsVersion = 'Ubuntu 16.04.5 LTS'
 			self.KernelVersion = '4.15.0-45-generic'
 			self.UhdVersion = '3.13.0.1-0'
@@ -2550,21 +2587,22 @@ class SSHConnection():
 			self.CpuNb = '4'
 			self.CpuModel = 'Intel(R) Core(TM) i5-6200U'
 			self.CpuMHz = '2399.996 MHz'
-			return
-		machine = None
-		if self.eNBIPAddress != '' and self.eNBUserName != '' and self.eNBPassword != '':
-			machine = 'eNB'
-			IPAddress = self.eNBIPAddress
-			UserName = self.eNBUserName
-			Password = self.eNBPassword
-		elif self.UEIPAddress != '' and self.UEUserName != '' and self.UEPassword != '':
-			machine = 'UE'
-			IPAddress = self.UEIPAddress
-			UserName = self.UEUserName
-			Password = self.UEPassword
-		if machine is None:
-			Usage()
-			sys.exit('Insufficient Parameter')
+			return 0
+		if machine == 'eNB':
+			if self.eNBIPAddress != '' and self.eNBUserName != '' and self.eNBPassword != '':
+				IPAddress = self.eNBIPAddress
+				UserName = self.eNBUserName
+				Password = self.eNBPassword
+			else:
+				return -1
+		if machine == 'UE':
+			if self.UEIPAddress != '' and self.UEUserName != '' and self.UEPassword != '':
+				IPAddress = self.UEIPAddress
+				UserName = self.UEUserName
+				Password = self.UEPassword
+			else:
+				return -1
+
 		self.open(IPAddress, UserName, Password)
 		self.command('lsb_release -a', '\$', 5)
 		result = re.search('Description:\\\\t(?P<os_type>[a-zA-Z0-9\-\_\.\ ]+)', str(self.ssh.before))
@@ -2689,6 +2727,10 @@ class SSHConnection():
 				self.htmlUEConnected = len(self.UEDevices)
 				self.htmlFile.write('  <h2><span class="glyphicon glyphicon-phone"></span> <span class="glyphicon glyphicon-menu-right"></span> ' + str(len(self.UEDevices)) + ' UE(s) is(are) connected to ADB bench server</h2>\n')
 				self.htmlFile.write('  <h2><span class="glyphicon glyphicon-phone"></span> <span class="glyphicon glyphicon-menu-right"></span> ' + str(len(self.CatMDevices)) + ' CAT-M UE(s) is(are) connected to bench server</h2>\n')
+			else:
+				self.UEDevices.append('OAI-UE')
+				self.htmlUEConnected = len(self.UEDevices)
+				self.htmlFile.write('  <h2><span class="glyphicon glyphicon-phone"></span> <span class="glyphicon glyphicon-menu-right"></span> ' + str(len(self.UEDevices)) + ' OAI UE(s) is(are) connected to CI bench</h2>\n')
 			self.htmlFile.write('  <br>\n')
 			self.htmlFile.write('  <ul class="nav nav-pills">\n')
 			count = 0
@@ -2727,6 +2769,8 @@ class SSHConnection():
 				if (self.ADBIPAddress != 'none'):
 					self.GetAllUEDevices(terminate_ue_flag)
 					self.GetAllCatMDevices(terminate_ue_flag)
+				else:
+					self.UEDevices.append('OAI-UE')
 				self.htmlUEConnected = len(self.UEDevices)
 
 			i = 0
@@ -2754,34 +2798,40 @@ class SSHConnection():
 			logging.debug('\u001B[1m----------------------------------------\u001B[0m')
 			logging.debug('\u001B[1m  Creating HTML footer \u001B[0m')
 			logging.debug('\u001B[1m----------------------------------------\u001B[0m')
-			self.RetrieveSystemVersion()
+
 			self.htmlFile = open('test_results.html', 'a')
 			self.htmlFile.write('</div>\n')
 			self.htmlFile.write('  <p></p>\n')
 			self.htmlFile.write('  <table class="table table-condensed">\n')
-			self.htmlFile.write('      <tr>\n')
-			self.htmlFile.write('        <th colspan=8>eNB Server Characteristics</th>\n')
-			self.htmlFile.write('      </tr>\n')
-			self.htmlFile.write('      <tr>\n')
-			self.htmlFile.write('        <td>OS Version</td>\n')
-			self.htmlFile.write('        <td><span class="label label-default">' + self.OsVersion + '</span></td>\n')
-			self.htmlFile.write('        <td>Kernel Version</td>\n')
-			self.htmlFile.write('        <td><span class="label label-default">' + self.KernelVersion + '</span></td>\n')
-			self.htmlFile.write('        <td>UHD Version</td>\n')
-			self.htmlFile.write('        <td><span class="label label-default">' + self.UhdVersion + '</span></td>\n')
-			self.htmlFile.write('        <td>USRP Board</td>\n')
-			self.htmlFile.write('        <td><span class="label label-default">' + self.UsrpBoard + '</span></td>\n')
-			self.htmlFile.write('      </tr>\n')
-			self.htmlFile.write('      <tr>\n')
-			self.htmlFile.write('        <td>Nb CPUs</td>\n')
-			self.htmlFile.write('        <td><span class="label label-default">' + self.CpuNb + '</span></td>\n')
-			self.htmlFile.write('        <td>CPU Model Name</td>\n')
-			self.htmlFile.write('        <td><span class="label label-default">' + self.CpuModel + '</span></td>\n')
-			self.htmlFile.write('        <td>CPU Frequency</td>\n')
-			self.htmlFile.write('        <td><span class="label label-default">' + self.CpuMHz + '</span></td>\n')
-			self.htmlFile.write('        <td></td>\n')
-			self.htmlFile.write('        <td></td>\n')
-			self.htmlFile.write('      </tr>\n')
+
+			machines = [ 'eNB', 'UE' ]
+			for machine in machines:
+				res = self.RetrieveSystemVersion(machine)
+				if res == -1:
+					continue
+				self.htmlFile.write('      <tr>\n')
+				self.htmlFile.write('        <th colspan=8>' + str(machine) + ' Server Characteristics</th>\n')
+				self.htmlFile.write('      </tr>\n')
+				self.htmlFile.write('      <tr>\n')
+				self.htmlFile.write('        <td>OS Version</td>\n')
+				self.htmlFile.write('        <td><span class="label label-default">' + self.OsVersion + '</span></td>\n')
+				self.htmlFile.write('        <td>Kernel Version</td>\n')
+				self.htmlFile.write('        <td><span class="label label-default">' + self.KernelVersion + '</span></td>\n')
+				self.htmlFile.write('        <td>UHD Version</td>\n')
+				self.htmlFile.write('        <td><span class="label label-default">' + self.UhdVersion + '</span></td>\n')
+				self.htmlFile.write('        <td>USRP Board</td>\n')
+				self.htmlFile.write('        <td><span class="label label-default">' + self.UsrpBoard + '</span></td>\n')
+				self.htmlFile.write('      </tr>\n')
+				self.htmlFile.write('      <tr>\n')
+				self.htmlFile.write('        <td>Nb CPUs</td>\n')
+				self.htmlFile.write('        <td><span class="label label-default">' + self.CpuNb + '</span></td>\n')
+				self.htmlFile.write('        <td>CPU Model Name</td>\n')
+				self.htmlFile.write('        <td><span class="label label-default">' + self.CpuModel + '</span></td>\n')
+				self.htmlFile.write('        <td>CPU Frequency</td>\n')
+				self.htmlFile.write('        <td><span class="label label-default">' + self.CpuMHz + '</span></td>\n')
+				self.htmlFile.write('        <td></td>\n')
+				self.htmlFile.write('        <td></td>\n')
+				self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('      <tr>\n')
 			self.htmlFile.write('        <th colspan=5 bgcolor = "#33CCFF">Final Status</th>\n')
 			if passStatus:
@@ -2840,9 +2890,19 @@ class SSHConnection():
 					result = re.search('showed|Reestablishment|Could not copy eNB logfile', self.htmleNBFailureMsg)
 					if result is not None:
 						cellBgColor = 'orange'
-				self.htmlFile.write('        <td bgcolor = "' + cellBgColor + '" colspan=' + str(self.htmlUEConnected) + '><pre style="background-color:' +
- cellBgColor + '">' + self.htmleNBFailureMsg + '</pre></td>\n')
+				self.htmlFile.write('        <td bgcolor = "' + cellBgColor + '" colspan=' + str(self.htmlUEConnected) + '><pre style="background-color:' + cellBgColor + '">' + self.htmleNBFailureMsg + '</pre></td>\n')
 				self.htmleNBFailureMsg = ''
+			elif (len(str(self.htmlUEFailureMsg)) > 2):
+				cellBgColor = 'white'
+				result = re.search('ended with|faced real time issues', self.htmlUEFailureMsg)
+				if result is not None:
+					cellBgColor = 'red'
+				else:
+					result = re.search('showed|Could not copy UE logfile|No Log File to analyze', self.htmlUEFailureMsg)
+					if result is not None:
+						cellBgColor = 'orange'
+				self.htmlFile.write('        <td bgcolor = "' + cellBgColor + '" colspan=' + str(self.htmlUEConnected) + '><pre style="background-color:' + cellBgColor + '">' + self.htmlUEFailureMsg + '</pre></td>\n')
+				self.htmlUEFailureMsg = ''
 			else:
 				i = 0
 				while (i < self.htmlUEConnected):
@@ -3274,8 +3334,9 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 			SSH.ShowTestID()
 			GetParametersFromXML(action)
 			if action == 'Initialize_UE' or action == 'Attach_UE' or action == 'Detach_UE' or action == 'Ping' or action == 'Iperf' or action == 'Reboot_UE':
-				terminate_ue_flag = False
-				SSH.GetAllUEDevices(terminate_ue_flag)
+				if (SSH.ADBIPAddress != 'none'):
+					terminate_ue_flag = False
+					SSH.GetAllUEDevices(terminate_ue_flag)
 			if action == 'Build_eNB':
 				SSH.BuildeNB()
 			elif action == 'Initialize_eNB':
