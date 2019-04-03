@@ -841,7 +841,6 @@ int pss_search_time_nr(int **rxdata, ///rx data in time domain
   AssertFatal(length>0,"illegal length %d\n",length);
   for (int i = 0; i < NUMBER_PSS_SEQUENCE; i++) AssertFatal(pss_corr_ue[i] != NULL,"pss_corr_ue[%d] not yet allocated! Exiting.\n", i);
 
-  printf("%d\n\n",length);
   peak_value = 0;
   peak_position = 0;
   pss_source = 0;
